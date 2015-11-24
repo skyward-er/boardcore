@@ -1,0 +1,3 @@
+[submodule "libs/miosix-kernel"]
+	path = libs/miosix-kernel
+	url = https://miosix.org/git-public/miosix-kernel.git
