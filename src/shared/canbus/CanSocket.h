@@ -62,4 +62,4 @@ class CanSocket
 };
 
 
-#endif /* defined(CANSOCKET_H) */
+#endif /* CANSOCKET_H */

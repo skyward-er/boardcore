@@ -55,13 +55,17 @@ class CanManager {
         void showMatrix();
 
         static CanManager* getCanManager(CAN_TypeDef* CanStruct);
+
         void registerSocket(CanSocket *socket, uint8_t id);
         void unregisterSocket(CanSocket *socket, uint8_t id);
+
         void sendMessage(uint8_t id, const unsigned char *message, int size);
         void dispatchMessage(CanMsg message);
+
         void canSetup();
         void configureInterrupt();
         void queueHandler();
+
         CanManager(const CanManager&)=delete;
         CanManager& operator=(const CanManager&)=delete;
         ~CanManager();
@@ -90,4 +94,4 @@ class CanManager {
             [FILTER_IDS_PER_ROW];
 };
 
-#endif /* defined(CANMANAGER_H) */
+#endif /* CANMANAGER_H */

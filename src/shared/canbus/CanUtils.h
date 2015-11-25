@@ -77,6 +77,11 @@ enum CanBS2Quantum {
     CAN_BS2_8tq     = 7
 };
 
+enum CanIdTypes {
+    CAN_ID_STD      = 0,
+    CAN_ID_EXT      = 4
+};
+
 #pragma pack(1)
 struct CanMsg{
     uint32_t StdId;
