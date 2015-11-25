@@ -36,13 +36,8 @@ TODO:
 #include <canbus/CanUtils.h>
 
 #define TMIDxR_TXRQ       ((uint32_t)0x00000001) /* Transmit mailbox request */
-#define CAN_Id_Standard   ((uint32_t)0x00000000)  /*!< Standard Id */
-#define CAN_Id_Extended   ((uint32_t)0x00000004)  /*!< Extended Id */
 
 static const int numCanInterface=2; //CAN1, CAN2
-static const uint8_t STD_ID=0x00;
-static const uint8_t EXT_ID=0x04;
-
 
 typedef std::multimap<int,CanSocket *>::iterator iterator;
 
@@ -193,11 +188,11 @@ void CanManager::sendMessage(uint8_t id, const unsigned char *message, int size)
     CANx->sTxMailBox[txMailBox].TIR &= TMIDxR_TXRQ;
 
     //devo scrivere cose diverse nel registro CAN_TIxR in base al tipo di id
-    if (CAN_ID_TYPE==STD_ID){
+    if (CAN_ID_TYPE==CAN_ID_STD){
         CANx->sTxMailBox[txMailBox].TIR |= ((id << 21));
     }
     else{
-        CANx->sTxMailBox[txMailBox].TIR |= ((id<< 3) | EXT_ID | CAN_TI0R_RTR);  
+        CANx->sTxMailBox[txMailBox].TIR |= ((id<< 3) | CAN_ID_EXT | CAN_TI0R_RTR);  
     }
 
     packet.DLC &= (uint8_t)0x0000000F; //mi assicuro siano solo 4 bit
@@ -230,7 +225,7 @@ void CanManager::sendMessage(uint8_t id, const unsigned char *message, int size)
 void CanManager::dispatchMessage(CanMsg message){
     uint8_t id;
 
-    if(message.IDE==CAN_Id_Standard)
+    if(message.IDE==CAN_ID_STD)
         id=message.StdId;
     else
         id=message.ExtId;
@@ -257,7 +252,7 @@ void CanManager::dispatchMessage(CanMsg message){
 TODO: rimuovere la struttura per togliere il codice di st
 */
 void CanManager::canSetup(){
-    CAN_ID_TYPE=STD_ID;
+    CAN_ID_TYPE=CAN_ID_STD;
 
     if(CANx==CAN1){
         {
@@ -475,7 +470,7 @@ void __attribute__((used)) CAN1_RX0_IRQHandlerImpl() {
     CanMsg RxMessage;
 
     RxMessage.IDE = (uint8_t)0x04 & CAN1->sFIFOMailBox[CAN_FIFO0].RIR;
-    if (RxMessage.IDE == CAN_Id_Standard)
+    if (RxMessage.IDE == CAN_ID_STD)
         RxMessage.StdId = (uint32_t)0x000007FF & (CAN1->sFIFOMailBox[CAN_FIFO0].RIR >> 21);
     else
         RxMessage.ExtId = (uint32_t)0x1FFFFFFF & (CAN1->sFIFOMailBox[CAN_FIFO0].RIR >> 3);
@@ -497,15 +492,12 @@ void __attribute__((used)) CAN1_RX0_IRQHandlerImpl() {
     /* Release FIFO0 */
     CAN1->RF0R |= CAN_RF0R_RFOM0;
 
-    manager->counterFIFO0++;
-
     bool hppw=false;
-    if(manager->messageQueue.IRQput(RxMessage,hppw)==false)
-    {
-        //[increment fault counter]
-    }
 
-    if(hppw) Scheduler::IRQfindNextThread();
+    manager->messageQueue.IRQput(RxMessage,hppw);
+
+    if(hppw) 
+        Scheduler::IRQfindNextThread();
 }
 
 
@@ -525,7 +517,7 @@ void __attribute__((used)) CAN1_RX1_IRQHandlerImpl() {
     CanMsg RxMessage;
 
     RxMessage.IDE = (uint8_t)0x04 & CAN1->sFIFOMailBox[CAN_FIFO1].RIR;
-    if (RxMessage.IDE == CAN_Id_Standard)
+    if (RxMessage.IDE == CAN_ID_STD)
         RxMessage.StdId = (uint32_t)0x000007FF & (CAN1->sFIFOMailBox[CAN_FIFO1].RIR >> 21);
     else
         RxMessage.ExtId = (uint32_t)0x1FFFFFFF & (CAN1->sFIFOMailBox[CAN_FIFO1].RIR >> 3);
@@ -547,15 +539,11 @@ void __attribute__((used)) CAN1_RX1_IRQHandlerImpl() {
     /* Release FIFO1 */
     CAN1->RF1R |= CAN_RF1R_RFOM1;
 
-    manager->counterFIFO1++;
-
     bool hppw=false;
-    if(manager->messageQueue.IRQput(RxMessage,hppw)==false)
-    {
-        //[increment fault counter]
-    }
 
-    if(hppw) Scheduler::IRQfindNextThread();
+    manager->messageQueue.IRQput(RxMessage,hppw);
+    if(hppw) 
+        Scheduler::IRQfindNextThread();
 }
 
 
@@ -570,19 +558,14 @@ void __attribute__((naked)) CAN2_RX0_IRQHandler() {
 }
 
 void __attribute__((used)) CAN2_RX0_IRQHandlerImpl() {
-
     CanManager *manager = managerInstance[1];
     CanMsg RxMessage;
 
     RxMessage.IDE = (uint8_t)0x04 & CAN2->sFIFOMailBox[CAN_FIFO0].RIR;
-    if (RxMessage.IDE == CAN_Id_Standard)
-    {
+    if (RxMessage.IDE == CAN_ID_STD)
         RxMessage.StdId = (uint32_t)0x000007FF & (CAN2->sFIFOMailBox[CAN_FIFO0].RIR >> 21);
-    }
     else
-    {
         RxMessage.ExtId = (uint32_t)0x1FFFFFFF & (CAN2->sFIFOMailBox[CAN_FIFO0].RIR >> 3);
-    }
 
 
     RxMessage.RTR = (uint8_t)0x02 & CAN2->sFIFOMailBox[CAN_FIFO0].RIR;
@@ -602,16 +585,11 @@ void __attribute__((used)) CAN2_RX0_IRQHandlerImpl() {
     /* Release FIFO0 */
     CAN2->RF0R |= CAN_RF0R_RFOM0;
 
-    manager->counterFIFO0++;
-
     bool hppw=false;
-    if(manager->messageQueue.IRQput(RxMessage,hppw)==false)
-    {
-        //[increment fault counter]
-    }
+    manager->messageQueue.IRQput(RxMessage,hppw);
 
-    if(hppw) Scheduler::IRQfindNextThread();
-
+    if(hppw) 
+        Scheduler::IRQfindNextThread();
 }
 
 
@@ -628,15 +606,10 @@ void __attribute__((used)) CAN2_RX1_IRQHandlerImpl() {
     CanMsg RxMessage;
 
     RxMessage.IDE = (uint8_t)0x04 & CAN2->sFIFOMailBox[CAN_FIFO1].RIR;
-    if (RxMessage.IDE == CAN_Id_Standard)
-    {
+    if (RxMessage.IDE == CAN_ID_STD)
         RxMessage.StdId = (uint32_t)0x000007FF & (CAN2->sFIFOMailBox[CAN_FIFO1].RIR >> 21);
-    }
     else
-    {
         RxMessage.ExtId = (uint32_t)0x1FFFFFFF & (CAN2->sFIFOMailBox[CAN_FIFO1].RIR >> 3);
-    }
-
 
     RxMessage.RTR = (uint8_t)0x02 & CAN2->sFIFOMailBox[CAN_FIFO1].RIR;
     /* Get the DLC */
@@ -655,20 +628,9 @@ void __attribute__((used)) CAN2_RX1_IRQHandlerImpl() {
     /* Release FIFO1 */
     CAN2->RF1R |= CAN_RF1R_RFOM1;
 
-    manager->counterFIFO1++;
-
     bool hppw=false;
-    if(manager->messageQueue.IRQput(RxMessage,hppw)==false)
-    {
-        //[increment fault counter]
-    }
+    manager->messageQueue.IRQput(RxMessage,hppw);
 
-    if(hppw) Scheduler::IRQfindNextThread();
-
+    if(hppw) 
+        Scheduler::IRQfindNextThread();
 }
-
-
-
-
-
-
