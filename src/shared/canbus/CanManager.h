@@ -48,7 +48,6 @@ static const int FILTER_CAN2_INDEX   = 14;
 
 class CanManager {
     public:
-        int counterFIFO1,counterFIFO0;
         uint8_t CAN_ID_TYPE;
         Queue<CanMsg,6> messageQueue;
 
