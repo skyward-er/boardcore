@@ -46,8 +46,6 @@ CanManager* managerInstance[numCanInterface]={0};
 
 CanManager::CanManager(CAN_TypeDef* CanStruct){
     CANx = CanStruct;
-    counterFIFO0=0; //debug
-    counterFIFO1=0; //debug
     terminate=false;
     pthread_create(&t,NULL,threadLauncher,reinterpret_cast<void*>(this));
 
@@ -453,44 +451,67 @@ CanManager::~CanManager()
         managerInstance[1]=NULL;
 }
 
-
-//Interrupt CAN1 FIFO0
-
 void __attribute__((naked)) CAN1_RX0_IRQHandler() {
+
     saveContext();
-    asm volatile("bl _Z23CAN1_RX0_IRQHandlerImplv");
+    asm volatile("mov r0, #0");
+    asm volatile("mov r1, #0");
+    asm volatile("bl _Z18CAN_IRQHandlerImplii");
     restoreContext();
 }
 
-void __attribute__((used)) CAN1_RX0_IRQHandlerImpl() {
+void __attribute__((naked)) CAN1_RX1_IRQHandler() {
+    const void *canN = (void *)CAN1; (void)canN;
+
+    saveContext();
+    asm volatile("mov r0, #0");
+    asm volatile("mov r1, #1");
+    asm volatile("bl _Z18CAN_IRQHandlerImplii");
+    restoreContext();
+}
+
+void __attribute__((naked)) CAN2_RX0_IRQHandler() {
+    saveContext();
+    asm volatile("mov r0, #1");
+    asm volatile("mov r1, #0");
+    asm volatile("bl _Z18CAN_IRQHandlerImplii");
+    restoreContext();
+}
+
+void __attribute__((naked)) CAN2_RX1_IRQHandler() {
+    saveContext();
+    asm volatile("mov r0, #1");
+    asm volatile("mov r1, #1");
+    asm volatile("bl _Z18CAN_IRQHandlerImplii");
+    restoreContext();
+}
+
+void __attribute__((used)) CAN_IRQHandlerImpl(int can_dev, int fifo) {
     //per prima cosa "resetto" l'interrupt altrimenti entro in un ciclo
     //  CAN1->RF0R |= CAN_RF0R_RFOM0; non è lui xD
+    
+    can_dev &= 0x01;
+    CAN_TypeDef *can = can_dev?CAN2:CAN1;
 
-    CanManager *manager = managerInstance[0];
+    CanManager *manager = managerInstance[can_dev];
     CanMsg RxMessage;
 
-    RxMessage.IDE = (uint8_t)0x04 & CAN1->sFIFOMailBox[CAN_FIFO0].RIR;
+    RxMessage.IDE = (uint8_t)0x04 & can->sFIFOMailBox[fifo].RIR;
     if (RxMessage.IDE == CAN_ID_STD)
-        RxMessage.StdId = (uint32_t)0x000007FF & (CAN1->sFIFOMailBox[CAN_FIFO0].RIR >> 21);
+        RxMessage.StdId = (uint32_t)0x000007FF & (can->sFIFOMailBox[fifo].RIR >> 21);
     else
-        RxMessage.ExtId = (uint32_t)0x1FFFFFFF & (CAN1->sFIFOMailBox[CAN_FIFO0].RIR >> 3);
+        RxMessage.ExtId = (uint32_t)0x1FFFFFFF & (can->sFIFOMailBox[fifo].RIR >> 3);
 
-    RxMessage.RTR = (uint8_t)0x02 & CAN1->sFIFOMailBox[CAN_FIFO0].RIR;
-    /* Get the DLC */
-    RxMessage.DLC = (uint8_t)0x0F & CAN1->sFIFOMailBox[CAN_FIFO0].RDTR;
-    /* Get the FMI */
-    RxMessage.FMI = (uint8_t)0xFF & (CAN1->sFIFOMailBox[CAN_FIFO0].RDTR >> 8);
+    RxMessage.RTR = (uint8_t)0x02 & can->sFIFOMailBox[fifo].RIR;
+    RxMessage.DLC = (uint8_t)0x0F & can->sFIFOMailBox[fifo].RDTR;
+    RxMessage.FMI = (uint8_t)0xFF & (can->sFIFOMailBox[fifo].RDTR >> 8);
+
     /* Get the data field */
-    RxMessage.Data[0] = (uint8_t)0xFF & CAN1->sFIFOMailBox[CAN_FIFO0].RDLR;
-    RxMessage.Data[1] = (uint8_t)0xFF & (CAN1->sFIFOMailBox[CAN_FIFO0].RDLR >> 8);
-    RxMessage.Data[2] = (uint8_t)0xFF & (CAN1->sFIFOMailBox[CAN_FIFO0].RDLR >> 16);
-    RxMessage.Data[3] = (uint8_t)0xFF & (CAN1->sFIFOMailBox[CAN_FIFO0].RDLR >> 24);
-    RxMessage.Data[4] = (uint8_t)0xFF & CAN1->sFIFOMailBox[CAN_FIFO0].RDHR;
-    RxMessage.Data[5] = (uint8_t)0xFF & (CAN1->sFIFOMailBox[CAN_FIFO0].RDHR >> 8);
-    RxMessage.Data[6] = (uint8_t)0xFF & (CAN1->sFIFOMailBox[CAN_FIFO0].RDHR >> 16);
-    RxMessage.Data[7] = (uint8_t)0xFF & (CAN1->sFIFOMailBox[CAN_FIFO0].RDHR >> 24);
+    *((uint32_t*)RxMessage.Data)     = can->sFIFOMailBox[fifo].RDLR;
+    *((uint32_t*)(RxMessage.Data+4)) = can->sFIFOMailBox[fifo].RDHR;
+
     /* Release FIFO0 */
-    CAN1->RF0R |= CAN_RF0R_RFOM0;
+    can->RF0R |= CAN_RF0R_RFOM0;
 
     bool hppw=false;
 
@@ -502,135 +523,3 @@ void __attribute__((used)) CAN1_RX0_IRQHandlerImpl() {
 
 
 //Interrupt CAN1 FIFO1
-
-void __attribute__((naked)) CAN1_RX1_IRQHandler() {
-    saveContext();
-    asm volatile("bl _Z23CAN1_RX1_IRQHandlerImplv");
-    restoreContext();
-}
-
-void __attribute__((used)) CAN1_RX1_IRQHandlerImpl() {
-    //per prima cosa "resetto" l'interrupt altrimenti entro in un ciclo
-    //  CAN1->RF0R |= CAN_RF0R_RFOM0; non è lui xD
-
-    CanManager *manager = managerInstance[0];
-    CanMsg RxMessage;
-
-    RxMessage.IDE = (uint8_t)0x04 & CAN1->sFIFOMailBox[CAN_FIFO1].RIR;
-    if (RxMessage.IDE == CAN_ID_STD)
-        RxMessage.StdId = (uint32_t)0x000007FF & (CAN1->sFIFOMailBox[CAN_FIFO1].RIR >> 21);
-    else
-        RxMessage.ExtId = (uint32_t)0x1FFFFFFF & (CAN1->sFIFOMailBox[CAN_FIFO1].RIR >> 3);
-
-    RxMessage.RTR = (uint8_t)0x02 & CAN1->sFIFOMailBox[CAN_FIFO1].RIR;
-    /* Get the DLC */
-    RxMessage.DLC = (uint8_t)0x0F & CAN1->sFIFOMailBox[CAN_FIFO1].RDTR;
-    /* Get the FMI */
-    RxMessage.FMI = (uint8_t)0xFF & (CAN1->sFIFOMailBox[CAN_FIFO1].RDTR >> 8);
-    /* Get the data field */
-    RxMessage.Data[0] = (uint8_t)0xFF & CAN1->sFIFOMailBox[CAN_FIFO1].RDLR;
-    RxMessage.Data[1] = (uint8_t)0xFF & (CAN1->sFIFOMailBox[CAN_FIFO1].RDLR >> 8);
-    RxMessage.Data[2] = (uint8_t)0xFF & (CAN1->sFIFOMailBox[CAN_FIFO1].RDLR >> 16);
-    RxMessage.Data[3] = (uint8_t)0xFF & (CAN1->sFIFOMailBox[CAN_FIFO1].RDLR >> 24);
-    RxMessage.Data[4] = (uint8_t)0xFF & CAN1->sFIFOMailBox[CAN_FIFO1].RDHR;
-    RxMessage.Data[5] = (uint8_t)0xFF & (CAN1->sFIFOMailBox[CAN_FIFO1].RDHR >> 8);
-    RxMessage.Data[6] = (uint8_t)0xFF & (CAN1->sFIFOMailBox[CAN_FIFO1].RDHR >> 16);
-    RxMessage.Data[7] = (uint8_t)0xFF & (CAN1->sFIFOMailBox[CAN_FIFO1].RDHR >> 24);
-    /* Release FIFO1 */
-    CAN1->RF1R |= CAN_RF1R_RFOM1;
-
-    bool hppw=false;
-
-    manager->messageQueue.IRQput(RxMessage,hppw);
-    if(hppw) 
-        Scheduler::IRQfindNextThread();
-}
-
-
-
-
-//Interrupt CAN2 FIFO0
-
-void __attribute__((naked)) CAN2_RX0_IRQHandler() {
-    saveContext();
-    asm volatile("bl _Z23CAN2_RX0_IRQHandlerImplv");
-    restoreContext();
-}
-
-void __attribute__((used)) CAN2_RX0_IRQHandlerImpl() {
-    CanManager *manager = managerInstance[1];
-    CanMsg RxMessage;
-
-    RxMessage.IDE = (uint8_t)0x04 & CAN2->sFIFOMailBox[CAN_FIFO0].RIR;
-    if (RxMessage.IDE == CAN_ID_STD)
-        RxMessage.StdId = (uint32_t)0x000007FF & (CAN2->sFIFOMailBox[CAN_FIFO0].RIR >> 21);
-    else
-        RxMessage.ExtId = (uint32_t)0x1FFFFFFF & (CAN2->sFIFOMailBox[CAN_FIFO0].RIR >> 3);
-
-
-    RxMessage.RTR = (uint8_t)0x02 & CAN2->sFIFOMailBox[CAN_FIFO0].RIR;
-    /* Get the DLC */
-    RxMessage.DLC = (uint8_t)0x0F & CAN2->sFIFOMailBox[CAN_FIFO0].RDTR;
-    /* Get the FMI */
-    RxMessage.FMI = (uint8_t)0xFF & (CAN2->sFIFOMailBox[CAN_FIFO0].RDTR >> 8);
-    /* Get the data field */
-    RxMessage.Data[0] = (uint8_t)0xFF & CAN2->sFIFOMailBox[CAN_FIFO0].RDLR;
-    RxMessage.Data[1] = (uint8_t)0xFF & (CAN2->sFIFOMailBox[CAN_FIFO0].RDLR >> 8);
-    RxMessage.Data[2] = (uint8_t)0xFF & (CAN2->sFIFOMailBox[CAN_FIFO0].RDLR >> 16);
-    RxMessage.Data[3] = (uint8_t)0xFF & (CAN2->sFIFOMailBox[CAN_FIFO0].RDLR >> 24);
-    RxMessage.Data[4] = (uint8_t)0xFF & CAN2->sFIFOMailBox[CAN_FIFO0].RDHR;
-    RxMessage.Data[5] = (uint8_t)0xFF & (CAN2->sFIFOMailBox[CAN_FIFO0].RDHR >> 8);
-    RxMessage.Data[6] = (uint8_t)0xFF & (CAN2->sFIFOMailBox[CAN_FIFO0].RDHR >> 16);
-    RxMessage.Data[7] = (uint8_t)0xFF & (CAN2->sFIFOMailBox[CAN_FIFO0].RDHR >> 24);
-    /* Release FIFO0 */
-    CAN2->RF0R |= CAN_RF0R_RFOM0;
-
-    bool hppw=false;
-    manager->messageQueue.IRQput(RxMessage,hppw);
-
-    if(hppw) 
-        Scheduler::IRQfindNextThread();
-}
-
-
-//Interrupt CAN2 FIFO1
-
-void __attribute__((naked)) CAN2_RX1_IRQHandler() {
-    saveContext();
-    asm volatile("bl _Z23CAN2_RX1_IRQHandlerImplv");
-    restoreContext();
-}
-
-void __attribute__((used)) CAN2_RX1_IRQHandlerImpl() {
-    CanManager *manager = managerInstance[1];
-    CanMsg RxMessage;
-
-    RxMessage.IDE = (uint8_t)0x04 & CAN2->sFIFOMailBox[CAN_FIFO1].RIR;
-    if (RxMessage.IDE == CAN_ID_STD)
-        RxMessage.StdId = (uint32_t)0x000007FF & (CAN2->sFIFOMailBox[CAN_FIFO1].RIR >> 21);
-    else
-        RxMessage.ExtId = (uint32_t)0x1FFFFFFF & (CAN2->sFIFOMailBox[CAN_FIFO1].RIR >> 3);
-
-    RxMessage.RTR = (uint8_t)0x02 & CAN2->sFIFOMailBox[CAN_FIFO1].RIR;
-    /* Get the DLC */
-    RxMessage.DLC = (uint8_t)0x0F & CAN2->sFIFOMailBox[CAN_FIFO1].RDTR;
-    /* Get the FMI */
-    RxMessage.FMI = (uint8_t)0xFF & (CAN2->sFIFOMailBox[CAN_FIFO1].RDTR >> 8);
-    /* Get the data field */
-    RxMessage.Data[0] = (uint8_t)0xFF & CAN2->sFIFOMailBox[CAN_FIFO1].RDLR;
-    RxMessage.Data[1] = (uint8_t)0xFF & (CAN2->sFIFOMailBox[CAN_FIFO1].RDLR >> 8);
-    RxMessage.Data[2] = (uint8_t)0xFF & (CAN2->sFIFOMailBox[CAN_FIFO1].RDLR >> 16);
-    RxMessage.Data[3] = (uint8_t)0xFF & (CAN2->sFIFOMailBox[CAN_FIFO1].RDLR >> 24);
-    RxMessage.Data[4] = (uint8_t)0xFF & CAN2->sFIFOMailBox[CAN_FIFO1].RDHR;
-    RxMessage.Data[5] = (uint8_t)0xFF & (CAN2->sFIFOMailBox[CAN_FIFO1].RDHR >> 8);
-    RxMessage.Data[6] = (uint8_t)0xFF & (CAN2->sFIFOMailBox[CAN_FIFO1].RDHR >> 16);
-    RxMessage.Data[7] = (uint8_t)0xFF & (CAN2->sFIFOMailBox[CAN_FIFO1].RDHR >> 24);
-    /* Release FIFO1 */
-    CAN2->RF1R |= CAN_RF1R_RFOM1;
-
-    bool hppw=false;
-    manager->messageQueue.IRQput(RxMessage,hppw);
-
-    if(hppw) 
-        Scheduler::IRQfindNextThread();
-}
