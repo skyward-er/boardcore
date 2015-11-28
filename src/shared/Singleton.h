@@ -1,7 +1,5 @@
-/* CAN-Bus Driver
- *
- * Copyright (c) 2015 Skyward Experimental Rocketry
- * Authors: Matteo Piazzolla, Alain Carlucci
+/* Copyright (c) 2015 Skyward Experimental Rocketry
+ * Authors: Illya Dudchenko
  * 
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -22,24 +20,22 @@
  * THE SOFTWARE.
  */
 
-#include "CanManager.h"
+#ifndef SINGLETON_H
+#define SINGLETON_H
 
+template<typename T>
+class Singleton {
+    public:
+        inline static T* getInstance() {
+            if(!instance) 
+                instance = new T(); 
+            return instance;
+        }
+    protected:
+        static T* instance;
+};
 
-void CanManager::addBus(initializer_list<canbus_init_t> init_list) {
-    for(const auto& i : init_list) {
-        typedef Gpio<i.gpio, rx> port;
-        port::mode(i.mode);
+template<class T>
+T* Singleton<T>::instance = NULL;
 
-        if(af >= 0) 
-            port::alternateFunction(i.af);
-
-        bus = new CanBus(i.can);
-    }
-}
-
-CanBus *CanManager::getBus(uint32_t id) {
-    if(id >= bus.size())
-        return NULL;
-
-    return &bus[id];
-}
+#endif // SINGLETON_H
