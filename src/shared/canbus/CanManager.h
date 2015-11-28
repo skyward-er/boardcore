@@ -26,11 +26,12 @@
 #define CANMANAGER_H
 
 #include <Common.h>
-#include <canbus/CanUtils.h>
+#include "CanUtils.h"
 
 using namespace miosix;
 
-class CanSocket;
+using std::vector;
+using std::initializer_list;
 
 /* Classe per la gestione dell'interfaccia can su stm32.
  * La classe funziona simil-socket, alla costruzione viene inizializzata e 
@@ -41,56 +42,61 @@ class CanSocket;
  * ricostruirlo dall'altra parte
  */
 
-static const int FILTER_ROWS_PER_CAN = 14;
-static const int FILTER_IDS_PER_ROW  = 4;
-static const int FILTER_CAN1_INDEX   = 0;
-static const int FILTER_CAN2_INDEX   = 14;
+static const int8_t AF_NONE = -1;
 
-class CanManager {
-    public:
-        uint8_t CAN_ID_TYPE;
-        Queue<CanMsg,6> messageQueue;
+/** CanBus Init structure */
+struct canbus_init_t {
+    /** CAN1, CAN2, ... */
+    CAN_TypeDef *can;
 
-        void showMatrix();
+    /** GPIOx_BASE */
+    GPIO_TypeDef *gpio;
 
-        static CanManager* getCanManager(CAN_TypeDef* CanStruct);
+    /** RX port */
+    uint8_t rx; 
 
-        void registerSocket(CanSocket *socket, uint8_t id);
-        void unregisterSocket(CanSocket *socket, uint8_t id);
+    /** TX port */
+    uint8_t tx; 
 
-        void sendMessage(uint8_t id, const unsigned char *message, int size);
-        void dispatchMessage(CanMsg message);
+    /** Pin Mode */
+    Mode mode;
 
-        void canSetup();
-        void configureInterrupt();
-        void queueHandler();
-
-        CanManager(const CanManager&)=delete;
-        CanManager& operator=(const CanManager&)=delete;
-        ~CanManager();
-
-    private:
-        volatile CAN_TypeDef* CANx;
-
-        FastMutex mutex;
-        std::multimap<int,CanSocket *> messageConsumers;
-
-        volatile bool terminate;
-        pthread_t t;
-
-        CanManager(CAN_TypeDef* Canx);
-        void addToFilterBank(uint8_t id);
-        bool addToFiltersMatrix(uint16_t filter,uint8_t* row);
-
-        static void *threadLauncher(void *arg);
-
-        //Filters Bank Matrix
-        uint16_t filterMatrix
-            [FILTER_ROWS_PER_CAN+FILTER_ROWS_PER_CAN]
-            [FILTER_IDS_PER_ROW];
-        uint8_t availableMatrix
-            [FILTER_ROWS_PER_CAN+FILTER_ROWS_PER_CAN]
-            [FILTER_IDS_PER_ROW];
+    /** Alternate function id or AF_NONE */
+    int8_t af;
 };
+
+class CanManager : public Singleton<CanManager>{
+    friend class Singleton<CanManager>;
+    public:
+
+        bool addHWFilter(uint8_t id, unsigned can_id);
+        void delHWFilter(uint8_t id, unsigned can_id);
+
+        unsigned getNumFilters(unsigned can_id) const;
+        
+        void addBus(initializer_list<canbus_init_t> init_list);
+
+        CanBus *getBus(uint32_t id);
+
+        /** Rule of 5 */
+        CanManager(const CanManager&) = delete;
+        CanManager(const CanManager&&) = delete;
+        CanManager& operator=(const CanManager&) = delete;
+
+        ~CanManager() {
+            // TODO Maybe unconfigure ports?
+            while(bus.size() > 0) {
+                delete bus[bus.size()-1];
+                bus.pop_back();
+            } 
+        }
+    private:
+        CanManager() {
+             
+        }
+
+        vector<CanBus> bus;
+};
+
 
 #endif /* CANMANAGER_H */
