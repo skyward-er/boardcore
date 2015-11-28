@@ -29,6 +29,7 @@ OPT_BOARD := stm32f429zi_stm32f4discovery
 #OPT_BOARD := stm32f100cb_tempsensor
 #OPT_BOARD := stm32f429zi_oledboard2
 #OPT_BOARD := efm32gg332f1024_polinode
+#OPT_BOARD := stm32f411re_nucleo
 
 ##
 ## Optimization flags, choose one.
@@ -312,13 +313,19 @@ endif
 
 # No options
 
+##---------------------------------------------------------------------------
+## stm32f411re_nucleo
+##
+
+# No options
+
 ############################################################################
 ## From the options selected above, now fill all the variables needed to  ##
 ## build Miosix. You should modify something here only if you are adding  ##
 ## a new board or porting Miosix to a new architecture                    ##
 ############################################################################
 
-ifneq ($(MAKEFILE_VERSION),1.04)
+ifneq ($(MAKEFILE_VERSION),1.06)
     $(info You are using an incompatible makefile. Make sure it matches \
       the one distributed with the current version of the kernel)
     $(error Error)
@@ -363,6 +370,8 @@ else ifeq ($(OPT_BOARD),stm32f429zi_oledboard2)
     ARCH := cortexM4_stm32f4
 else ifeq ($(OPT_BOARD),efm32gg332f1024_polinode)
     ARCH := cortexM3_efm32gg
+else ifeq ($(OPT_BOARD),stm32f411re_nucleo)
+    ARCH := cortexM4_stm32f4
 else
     $(info Error: no board specified in miosix/config/Makefile.inc)
     $(error Error)
@@ -440,7 +449,7 @@ ifeq ($(ARCH),arm7_lpc2000)
                      -ffunction-sections -Wall -g -c
     CXXFLAGS_BASE += -D_ARCH_ARM7_LPC2000 -mcpu=arm7tdmi $(OPT_OPTIMIZATION) \
                      -ffunction-sections $(OPT_EXCEPT) -Wall -g -c
-    LFLAGS_BASE   := -mcpu=arm7tdmi -Wl,--gc-sections,-Map,bin/main.map          \
+    LFLAGS_BASE   := -mcpu=arm7tdmi -Wl,--gc-sections,-Map,main.map          \
                      -Wl,-T$(KPATH)/$(LINKER_SCRIPT) $(OPT_EXCEPT)           \
                       $(OPT_OPTIMIZATION) -nostdlib
 
@@ -454,7 +463,7 @@ ifeq ($(ARCH),arm7_lpc2000)
     ## This is the program that is invoked when the user types 'make program'
     ## The command must provide a way to program the board, or print an error
     ## message saying that 'make program' is not supported for that board.
-    PROGRAM_CMDLINE := lpc21isp -verify bin/main.hex /dev/ttyUSB0 115200 14746
+    PROGRAM_CMDLINE := lpc21isp -verify main.hex /dev/ttyUSB0 115200 14746
 
 ##-----------------------------------------------------------------------------
 ## ARCHITECTURE: cortexM3_stm32
@@ -494,9 +503,9 @@ else ifeq ($(ARCH),cortexM3_stm32)
         ## board.
         ifeq ($(LINKER_SCRIPT),$(LINKER_SCRIPT_PATH)stm32_512k+64k_all_in_xram.ld)
         PROGRAM_CMDLINE := $(KPATH)/_tools/bootloaders/stm32/pc_loader/pc_loader \
-        /dev/ttyUSB0 bin/main.bin
+        /dev/ttyUSB0 main.bin
         else
-        PROGRAM_CMDLINE := stm32flash -w bin/main.hex -v /dev/ttyUSB0
+        PROGRAM_CMDLINE := stm32flash -w main.hex -v /dev/ttyUSB0
         endif
 
     ##-------------------------------------------------------------------------
@@ -532,9 +541,9 @@ else ifeq ($(ARCH),cortexM3_stm32)
         ## error message saying that 'make program' is not supported for that
         ## board.
         ifeq ($(LINKER_SCRIPT),$(LINKER_SCRIPT_PATH)stm32_512k+64k_ram.ld)
-        PROGRAM_CMDLINE := mp3v2_bootloader --ram bin/main.bin
+        PROGRAM_CMDLINE := mp3v2_bootloader --ram main.bin
         else
-        PROGRAM_CMDLINE := mp3v2_bootloader --code bin/main.bin
+        PROGRAM_CMDLINE := mp3v2_bootloader --code main.bin
         endif
 
     ##-------------------------------------------------------------------------
@@ -569,8 +578,8 @@ else ifeq ($(ARCH),cortexM3_stm32)
         ## The command must provide a way to program the board, or print an
         ## error message saying that 'make program' is not supported for that
         ## board.
-        #PROGRAM_CMDLINE := sudo vsprog -cstm32_vl -ms -I bin/main.hex -oe -owf -ovf
-        PROGRAM_CMDLINE := stm32flash -w bin/main.hex -v /dev/ttyUSB1
+        #PROGRAM_CMDLINE := sudo vsprog -cstm32_vl -ms -I main.hex -oe -owf -ovf
+        PROGRAM_CMDLINE := stm32flash -w main.hex -v /dev/ttyUSB1
 
     ##-------------------------------------------------------------------------
     ## BOARD: stm32f103ve_strive_mini
@@ -605,7 +614,7 @@ else ifeq ($(ARCH),cortexM3_stm32)
         ## error message saying that 'make program' is not supported for that
         ## board.
         PROGRAM_CMDLINE := "c:/Program Files/STMicroelectronics/STM32 ST-LINK Utility/ST-LINK Utility/ST-LINK_CLI.exe" \
-        -c JTAG -Rst -P bin/main.hex 0x08000000 -Run
+        -c JTAG -Rst -P main.hex 0x08000000 -Run
 
     ##-------------------------------------------------------------------------
     ## BOARD: HY RedBull V2 (or V1)
@@ -639,9 +648,9 @@ else ifeq ($(ARCH),cortexM3_stm32)
         ## error message saying that 'make program' is not supported for that
         ## board.
         PROGRAM_CMDLINE := "C:/Program Files/SEGGER/JLinkARM_V434d/JFlashARM.exe" \
-        -openprjSTM32F10xxE.jflash -openbin/main.hex -auto -exit
+        -openprjSTM32F10xxE.jflash -openmain.hex -auto -exit
         #PROGRAM_CMDLINE := "c:/Program Files/STMicroelectronics/STM32 ST-LINK Utility/ST-LINK Utility/ST-LINK_CLI.exe" \
-        #-c JTAG -Rst -P bin/main.hex 0x08000000 -Run
+        #-c JTAG -Rst -P main.hex 0x08000000 -Run
         
     ##-------------------------------------------------------------------------
     ## BOARD: stm32f103cb_als_mainboard_rev2
@@ -674,7 +683,7 @@ else ifeq ($(ARCH),cortexM3_stm32)
         ## The command must provide a way to program the board, or print an
         ## error message saying that 'make program' is not supported for that
         ## board.
-        PROGRAM_CMDLINE := stm32flash -w bin/main.bin -v /dev/ttyUSB1
+        PROGRAM_CMDLINE := stm32flash -w main.bin -v /dev/ttyUSB1
     
     ##-------------------------------------------------------------------------
     ## BOARD: stm32f100cb_tempsensor
@@ -708,7 +717,7 @@ else ifeq ($(ARCH),cortexM3_stm32)
         ## The command must provide a way to program the board, or print an
         ## error message saying that 'make program' is not supported for that
         ## board.
-        PROGRAM_CMDLINE := stm32flash -w bin/main.hex -v /dev/ttyUSB1
+        PROGRAM_CMDLINE := stm32flash -w main.hex -v /dev/ttyUSB1
     
     ##-------------------------------------------------------------------------
     ## End of board list
@@ -736,7 +745,7 @@ else ifeq ($(ARCH),cortexM3_stm32)
     CXXFLAGS_BASE += -D_ARCH_CORTEXM3_STM32 $(CLOCK_FREQ) $(XRAM)            \
                      $(OPT_EXCEPT) -mcpu=cortex-m3 -mthumb                   \
                      $(OPT_OPTIMIZATION) -ffunction-sections -Wall -g -c
-    LFLAGS_BASE   := -mcpu=cortex-m3 -mthumb -Wl,--gc-sections,-Map,bin/main.map \
+    LFLAGS_BASE   := -mcpu=cortex-m3 -mthumb -Wl,--gc-sections,-Map,main.map \
                      -Wl,-T$(KPATH)/$(LINKER_SCRIPT) $(OPT_EXCEPT)           \
                      $(OPT_OPTIMIZATION) -nostdlib
 
@@ -773,8 +782,9 @@ else ifeq ($(ARCH),cortexM4_stm32f4)
         ## Select architecture specific files
         ## These are the files in arch/<arch name>/<board name>
         ARCH_SRC :=                                  \
-        $(BOARD_INC)/interfaces-impl/bsp.cpp         \
-        arch/common/drivers/servo_stm32.cpp
+        arch/common/drivers/stm32_hardware_rng.cpp   \
+        arch/common/drivers/servo_stm32.cpp          \
+        $(BOARD_INC)/interfaces-impl/bsp.cpp
 
         ## Add a #define to allow querying board name
         CFLAGS_BASE   += -D_BOARD_STM32F4DISCOVERY 
@@ -786,7 +796,7 @@ else ifeq ($(ARCH),cortexM4_stm32f4)
         ## The command must provide a way to program the board, or print an
         ## error message saying that 'make program' is not supported for that
         ## board.
-        PROGRAM_CMDLINE := qstlink2 -cqewV ./bin/main.bin
+        PROGRAM_CMDLINE := qstlink2 -cqewV ./main.bin
 
     ##-------------------------------------------------------------------------
     ## BOARD: stm32f4bitsboard
@@ -804,6 +814,7 @@ else ifeq ($(ARCH),cortexM4_stm32f4)
         ## Select architecture specific files
         ## These are the files in arch/<arch name>/<board name>
         ARCH_SRC :=                                  \
+        arch/common/drivers/stm32_hardware_rng.cpp   \
         $(BOARD_INC)/interfaces-impl/bsp.cpp
 
         ## Add a #define to allow querying board name
@@ -819,7 +830,7 @@ else ifeq ($(ARCH),cortexM4_stm32f4)
         ## The command must provide a way to program the board, or print an
         ## error message saying that 'make program' is not supported for that
         ## board.
-        PROGRAM_CMDLINE := stm32flash -w ./bin/main.bin -v /dev/ttyUSB1
+        PROGRAM_CMDLINE := stm32flash -w ./main.bin -v /dev/ttyUSB1
         
     ##-------------------------------------------------------------------------
     ## BOARD: stm32f429zi_stm32f4discovery
@@ -837,6 +848,7 @@ else ifeq ($(ARCH),cortexM4_stm32f4)
         ## Select architecture specific files
         ## These are the files in arch/<arch name>/<board name>
         ARCH_SRC :=                                  \
+        arch/common/drivers/stm32_hardware_rng.cpp   \
         $(BOARD_INC)/interfaces-impl/bsp.cpp
 
         ## Add a #define to allow querying board name
@@ -849,7 +861,7 @@ else ifeq ($(ARCH),cortexM4_stm32f4)
         ## The command must provide a way to program the board, or print an
         ## error message saying that 'make program' is not supported for that
         ## board.
-        PROGRAM_CMDLINE := qstlink2 -cqewV ./bin/main.bin
+        PROGRAM_CMDLINE := qstlink2 -cqewV ./main.bin
 
     ##-------------------------------------------------------------------------
     ## BOARD: stm32f429zi_oledboard2
@@ -867,6 +879,7 @@ else ifeq ($(ARCH),cortexM4_stm32f4)
         ## Select architecture specific files
         ## These are the files in arch/<arch name>/<board name>
         ARCH_SRC :=                                  \
+        arch/common/drivers/stm32_hardware_rng.cpp   \
         $(BOARD_INC)/interfaces-impl/bsp.cpp
 
         ## Add a #define to allow querying board name
@@ -879,7 +892,40 @@ else ifeq ($(ARCH),cortexM4_stm32f4)
         ## The command must provide a way to program the board, or print an
         ## error message saying that 'make program' is not supported for that
         ## board.
-        PROGRAM_CMDLINE := stm32flash -w bin/main.bin -v /dev/ttyUSB1
+        PROGRAM_CMDLINE := stm32flash -w main.bin -v /dev/ttyUSB1
+
+    ##-------------------------------------------------------------------------
+    ## BOARD: stm32f411re_nucleo
+    ##
+    else ifeq ($(OPT_BOARD),stm32f411re_nucleo)
+
+        ## Base directory with header files for this board
+        BOARD_INC := arch/cortexM4_stm32f4/stm32f411re_nucleo
+
+        ## Select linker script and boot file
+        ## Their path must be relative to the miosix directory.
+        BOOT_FILE := $(BOARD_INC)/core/stage_1_boot.o
+        LINKER_SCRIPT := $(BOARD_INC)/stm32_512k+128k_rom.ld
+
+        ## Select architecture specific files
+        ## These are the files in arch/<arch name>/<board name>
+        ARCH_SRC :=                                  \
+        $(BOARD_INC)/interfaces-impl/bsp.cpp
+
+        ## Add a #define to allow querying board name
+        CFLAGS_BASE   += -D_BOARD_STM32F411RE_NUCLEO
+        CXXFLAGS_BASE += -D_BOARD_STM32F411RE_NUCLEO
+        
+        ## Select clock frequency (HSE_VALUE is the xtal on board, fixed)
+        CLOCK_FREQ := -DHSE_VALUE=8000000 -DSYSCLK_FREQ_84MHz=84000000
+
+        ## Select programmer command line
+        ## This is the program that is invoked when the user types
+        ## 'make program'
+        ## The command must provide a way to program the board, or print an
+        ## error message saying that 'make program' is not supported for that
+        ## board.
+        PROGRAM_CMDLINE := qstlink2 -cqewV ./main.bin
 
     ##-------------------------------------------------------------------------
     ## End of board list
@@ -909,7 +955,7 @@ else ifeq ($(ARCH),cortexM4_stm32f4)
                      $(OPT_EXCEPT) $(OPT_OPTIMIZATION) -ffunction-sections      \
                      -Wall -g -c
     LFLAGS_BASE   := -mcpu=cortex-m4 -mthumb -mfloat-abi=hard -mfpu=fpv4-sp-d16 \
-                     -Wl,--gc-sections,-Map,bin/main.map                            \
+                     -Wl,--gc-sections,-Map,main.map                            \
                      -Wl,-T$(KPATH)/$(LINKER_SCRIPT) $(OPT_EXCEPT)              \
                      $(OPT_OPTIMIZATION) -nostdlib
 
@@ -918,7 +964,6 @@ else ifeq ($(ARCH),cortexM4_stm32f4)
     ARCH_SRC +=                                              \
     arch/common/core/interrupts_cortexMx.cpp                 \
     arch/common/drivers/serial_stm32.cpp                     \
-    arch/common/drivers/stm32_hardware_rng.cpp               \
     arch/common/drivers/dcc.cpp                              \
     $(ARCH_INC)/interfaces-impl/portability.cpp              \
     $(ARCH_INC)/interfaces-impl/delays.cpp                   \
@@ -967,9 +1012,9 @@ else ifeq ($(ARCH),cortexM3_stm32f2)
         ## board.
         ifeq ($(LINKER_SCRIPT),$(LINKER_SCRIPT_PATH)stm32_1m+128k_all_in_xram.ld)
         PROGRAM_CMDLINE := $(KPATH)/_tools/bootloaders/stm32/pc_loader/pc_loader \
-        /dev/ttyUSB0 bin/main.bin
+        /dev/ttyUSB0 main.bin
         else
-            PROGRAM_CMDLINE := qstlink2 -cqewV ./bin/main.bin
+            PROGRAM_CMDLINE := qstlink2 -cqewV ./main.bin
         endif
 
     ##-------------------------------------------------------------------------
@@ -1009,9 +1054,9 @@ else ifeq ($(ARCH),cortexM3_stm32f2)
         ## board.
         ifeq ($(LINKER_SCRIPT),$(LINKER_SCRIPT_PATH)stm32_1m+128k_code_in_xram.ld)
         PROGRAM_CMDLINE := $(KPATH)/_tools/bootloaders/stm32/pc_loader/pc_loader \
-        /dev/ttyUSB1 bin/main.bin
+        /dev/ttyUSB1 main.bin
         else
-        PROGRAM_CMDLINE := stm32flash -w bin/main.hex -v /dev/ttyUSB1
+        PROGRAM_CMDLINE := stm32flash -w main.hex -v /dev/ttyUSB1
         endif
 
     ##-------------------------------------------------------------------------
@@ -1048,7 +1093,7 @@ else ifeq ($(ARCH),cortexM3_stm32f2)
         ## The command must provide a way to program the board, or print an
         ## error message saying that 'make program' is not supported for that
         ## board.
-        PROGRAM_CMDLINE := stm32flash -w bin/main.hex -v /dev/ttyUSB1
+        PROGRAM_CMDLINE := stm32flash -w main.hex -v /dev/ttyUSB1
 
     ##-------------------------------------------------------------------------
     ## BOARD: stm32f205rg_sony-newman
@@ -1084,7 +1129,7 @@ else ifeq ($(ARCH),cortexM3_stm32f2)
         ## board.
         ## The magic.bin is somewhat used by the bootloader to detect a good fw
         PROGRAM_CMDLINE := perl -e 'print "\xe7\x91\x11\xc0"' > magic.bin; \
-            dfu-util -d 0fce:f0fa -a 0 -i 0 -s 0x08040000 -D bin/main.bin;     \
+            dfu-util -d 0fce:f0fa -a 0 -i 0 -s 0x08040000 -D main.bin;     \
             dfu-util -d 0fce:f0fa -a 0 -i 0 -s 0x080ffffc -D magic.bin;    \
             rm magic.bin
 
@@ -1114,7 +1159,7 @@ else ifeq ($(ARCH),cortexM3_stm32f2)
     CXXFLAGS_BASE += -D_ARCH_CORTEXM3_STM32F2 $(CLOCK_FREQ) $(XRAM)          \
                      $(OPT_EXCEPT) -mcpu=cortex-m3 -mthumb                   \
                      $(OPT_OPTIMIZATION) -ffunction-sections -Wall -g -c
-    LFLAGS_BASE   := -mcpu=cortex-m3 -mthumb -Wl,--gc-sections,-Map,bin/main.map \
+    LFLAGS_BASE   := -mcpu=cortex-m3 -mthumb -Wl,--gc-sections,-Map,main.map \
                      -Wl,-T$(KPATH)/$(LINKER_SCRIPT) $(OPT_EXCEPT)           \
                      $(OPT_OPTIMIZATION) -nostdlib
 
@@ -1166,7 +1211,7 @@ else ifeq ($(ARCH),cortexM3_stm32l1)
         ## The command must provide a way to program the board, or print an
         ## error message saying that 'make program' is not supported for that
         ## board.
-        PROGRAM_CMDLINE := stm32flash -w bin/main.bin -v /dev/ttyUSB1
+        PROGRAM_CMDLINE := stm32flash -w main.bin -v /dev/ttyUSB1
 
     ##-------------------------------------------------------------------------
     ## End of board list
@@ -1194,7 +1239,7 @@ else ifeq ($(ARCH),cortexM3_stm32l1)
     CXXFLAGS_BASE += -D_ARCH_CORTEXM3_STM32L1 $(CLOCK_FREQ) $(XRAM)          \
                      $(OPT_EXCEPT) -mcpu=cortex-m3 -mthumb                   \
                      $(OPT_OPTIMIZATION) -ffunction-sections -Wall -g -c
-    LFLAGS_BASE   := -mcpu=cortex-m3 -mthumb -Wl,--gc-sections,-Map,bin/main.map \
+    LFLAGS_BASE   := -mcpu=cortex-m3 -mthumb -Wl,--gc-sections,-Map,main.map \
                      -Wl,-T$(KPATH)/$(LINKER_SCRIPT) $(OPT_EXCEPT)           \
                      $(OPT_OPTIMIZATION) -nostdlib
 
@@ -1273,7 +1318,7 @@ else ifeq ($(ARCH),cortexM3_efm32gg)
     CXXFLAGS_BASE += -D_ARCH_CORTEXM3_EFM32GG $(CLOCK_FREQ)                  \
                      $(OPT_EXCEPT) -mcpu=cortex-m3 -mthumb                   \
                      $(OPT_OPTIMIZATION) -ffunction-sections -Wall -g -c
-    LFLAGS_BASE   := -mcpu=cortex-m3 -mthumb -Wl,--gc-sections,-Map,bin/main.map \
+    LFLAGS_BASE   := -mcpu=cortex-m3 -mthumb -Wl,--gc-sections,-Map,main.map \
                      -Wl,-T$(KPATH)/$(LINKER_SCRIPT) $(OPT_EXCEPT)           \
                      $(OPT_OPTIMIZATION) -nostdlib
 
