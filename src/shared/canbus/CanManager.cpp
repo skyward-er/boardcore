@@ -43,3 +43,29 @@ CanBus *CanManager::getBus(uint32_t id) {
 
     return &bus[id];
 }
+
+bool addHWFilter(uint8_t id, unsigned can_id) {
+    if(enabled_filters >= max_filters)
+        return false;
+
+    if(filters[id] == 0) {
+        //enable filter 
+    }
+
+    ++filters[id];
+    ++enabled_filters;
+
+    return true;
+}
+
+void delHWFilter(uint8_t id, unsigned can_id) {
+    if(filters[id] == 0)
+        return;
+
+    if(filters[id] == 1) {
+        // remove filter
+    }
+
+    --filters[id];
+    --enabled_filters;
+}

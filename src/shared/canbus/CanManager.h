@@ -92,10 +92,14 @@ class CanManager : public Singleton<CanManager>{
         }
     private:
         CanManager() {
-             
+             memset(filters, 0, sizeof(filters));
         }
 
         vector<CanBus> bus;
+        uint8_t filters[256];
+        uint8_t enabled_filters;
+
+        const int max_filters = 14;
 };
 
 
