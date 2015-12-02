@@ -168,18 +168,11 @@ void CanBus::sendMessage(uint8_t id, const unsigned char *message, int size){
     while(txMailBox<0 && timeout >0){ 
 
         if ((CANx->TSR&CAN_TSR_TME0) == CAN_TSR_TME0)
-        {
             txMailBox = 0;
-        }
         else if ((CANx->TSR&CAN_TSR_TME1) == CAN_TSR_TME1)
-        {
             txMailBox = 1;
-        }
         else if ((CANx->TSR&CAN_TSR_TME2) == CAN_TSR_TME2)
-        {
             txMailBox = 2;
-
-        }
         timeout--;
     }
 
@@ -425,8 +418,8 @@ void CanBus::addToFilterBank(uint8_t id){
     /* Second 16-bit identifier and Second 16-bit mask */
     /* Or Third 16-bit identifier and Fourth 16-bit identifier */
     CAN1->sFilterRegister[filtro].FR2 = 
-        ((0x0000FFFF & filterSlot[3] << 16) |
-         (0x0000FFFF & (uint32_t)filterSlot[2]));
+        ((0x0000FFFF & (uint32_t)filterSlot[3]) << 16) |
+         (0x0000FFFF & (uint32_t)filterSlot[2]);
 
     //modalità di utilizzo del filtro 0 mascheramento 1 lista di id
     // come IdList posso usare lo spazio della maschera per un altro id
@@ -452,7 +445,6 @@ CanBus::~CanBus()
 }
 
 void __attribute__((naked)) CAN1_RX0_IRQHandler() {
-
     saveContext();
     asm volatile("mov r0, #0");
     asm volatile("mov r1, #0");
@@ -461,8 +453,6 @@ void __attribute__((naked)) CAN1_RX0_IRQHandler() {
 }
 
 void __attribute__((naked)) CAN1_RX1_IRQHandler() {
-    const void *canN = (void *)CAN1; (void)canN;
-
     saveContext();
     asm volatile("mov r0, #0");
     asm volatile("mov r1, #1");
@@ -521,5 +511,3 @@ void __attribute__((used)) CAN_IRQHandlerImpl(int can_dev, int fifo) {
         Scheduler::IRQfindNextThread();
 }
 
-
-//Interrupt CAN1 FIFO1
