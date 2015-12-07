@@ -96,10 +96,33 @@ class CanManager : public Singleton<CanManager>{
         }
 
         vector<CanBus> bus;
-        uint8_t filters[256];
-        uint8_t enabled_filters;
+        uint8_t filters[filter_max_id];
 
-        const int max_filters = 14;
+        // TODO change "2" with number of available CAN buses
+        uint8_t enabled_filters[2];
+
+        // sizeof(id) = 11 bit 
+        constexpr int filter_max_id_log2 = 11;
+        constexpr int filter_max_id = (1 << filter_max_id_log2);
+
+        // 32 bit = 2 filters * 16 bit
+        constexpr int filterbank_size_bit = 32;
+        constexpr int filters_per_bank = 4;
+        constexpr int filter_size_bit = filterbank_size_bit / filters_per_bank;
+        
+        // registers per bank: 2, FR1, FR2
+        constexpr int registers_per_bank = 2;
+        // TODO check this formula --v
+        constexpr int shift_reg = (filters_per_bank / registers_per_bank) - 1;
+
+        // 16 bit - 11 bit = 5 bit
+        constexpr int filter_id_shift = filter_size_bit / filter_max_id_log2;
+        constexpr int filter_null = 0xffff;
+
+        constexpr int max_chan_filters = 14 * filters_per_bank;
+
+        // TODO 2 == number of can buses
+        constexpr int max_glob_filters = 2 * max_chan_filters;
 };
 
 
