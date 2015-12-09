@@ -103,6 +103,9 @@ bool addHWFilter(uint16_t id, unsigned can_id) {
 }
 
 void delHWFilter(uint16_t id, unsigned can_id) {
+    uint32_t position = max_chan_filters * can_id;
+    uint32_t pos1 = 0, pos2 = 0;
+
     /** Invalid id */
     if(id >= filter_max_id)
         return false;
@@ -111,7 +114,20 @@ void delHWFilter(uint16_t id, unsigned can_id) {
         return;
 
     if(filters[id] == 1) {
-        // remove filter
+        while(position < max_chan_filters * (can_id + 1)) {
+            pos1 = position / filters_per_bank;
+            pos2 = (position % filters_per_bank) >> shift_reg;
+
+            // pos2 == 0,1 -> 0; pos2 == 2,3 -> 1
+            reg = &CAN1->sFilterRegister[pos1].FR1 + pos2;
+
+            pos2 *= filter_size_bit;
+            if((CAN1->sFilterRegister[pos1] >> (1 << pos2)) & 0xffff == id)
+                break;
+
+            ++position; 
+        }
+        reg |= (0xffff << (1 << pos2)); // clear 
     }
 
     --filters[id];
