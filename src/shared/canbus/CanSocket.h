@@ -30,12 +30,12 @@
 using std::list;
 using std::pair;
 
-class CanManager;
+class CanBus;
 class CanSocket
 {
     public:
         CanSocket();
-        void open(CanManager *manager, uint8_t id);
+        void open(CanBus *bus, uint8_t id);
 
         void send(const void *message, int size,uint8_t id_dest);
 
@@ -43,7 +43,7 @@ class CanSocket
 
         void close();
 
-        bool isOpen() const { return manager != NULL; }
+        bool isOpen() const { return bus != NULL; }
 
         void addToMessageList(unsigned char *message, uint8_t size);
 
@@ -51,7 +51,7 @@ class CanSocket
         ~CanSocket();
 
     private:
-        CanManager *manager = NULL;
+        CanBus *bus = NULL;
         uint8_t id;
 
         pthread_mutex_t mutex;

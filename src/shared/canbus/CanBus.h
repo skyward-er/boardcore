@@ -58,13 +58,13 @@ class CanBus {
 
         CanBus(const CanBus&)=delete;
         CanBus& operator=(const CanBus&)=delete;
-        ~CanBus();
+        ~CanBus() { }
 
     private:
         volatile CAN_TypeDef* CANx;
 
         FastMutex mutex;
-        std::multimap<int,CanSocket *> messageConsumers;
+        std::multimap<int,CanSocket* > messageConsumers;
 
         volatile bool terminate;
         pthread_t t;

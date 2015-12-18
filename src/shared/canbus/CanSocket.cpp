@@ -28,8 +28,8 @@ TODO:
 - receive non bloccante
 */
 
-#include <canbus/CanSocket.h>
-#include <canbus/CanManager.h>
+#include "CanSocket.h"
+#include "CanBus.h"
 
 CanSocket::CanSocket(){
     pthread_mutex_init(&mutex,NULL); 
@@ -37,14 +37,14 @@ CanSocket::CanSocket(){
 }
 
 /**
-  Apre una connessione simil-socket tramite un oggetto CanManager 
-  \param manager L'istanza del CanManager
+  Apre una connessione simil-socket tramite un oggetto CanBus 
+  \param bus L'istanza del CanBus
   \param id l'id Standard o Esteso del socket TODO: rimuoverlo da parametro e prenderlo direttamente dall'oggetto
   */
-void CanSocket::open(CanManager *manager, uint8_t id){
+void CanSocket::open(CanBus *bus, uint8_t id){
     if(isOpen()) close();
-    manager->registerSocket(this,id);
-    this->manager=manager;
+    bus->registerSocket(this,id);
+    this->bus=bus;
     this->id=id;
 }
 
@@ -52,7 +52,7 @@ void CanSocket::open(CanManager *manager, uint8_t id){
 void CanSocket::send(const void *message, int size,uint8_t id_dest){
     if(!isOpen()) return;
     const uint8_t *m=static_cast<const uint8_t *>(message);
-    manager->sendMessage(id_dest,m,size);
+    bus->sendMessage(id_dest,m,size);
 
 }
 /**
@@ -92,15 +92,15 @@ void CanSocket::addToMessageList(unsigned char *message, uint8_t size){
 }
 
 /**
-  chiude il socket rimuovendolo dal manager
+  chiude il socket rimuovendolo dal bus
   */
 void CanSocket::close(){
     if(!isOpen()) 
         return;
 
     pthread_mutex_lock(&mutex);
-    manager->unregisterSocket(this,id);
-    manager=0;
+    bus->unregisterSocket(this,id);
+    bus=0;
     pthread_mutex_unlock(&mutex);
 
     pthread_mutex_lock(&mutex);
