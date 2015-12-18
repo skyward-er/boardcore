@@ -24,76 +24,75 @@
 
 #include "CanManager.h"
 
+template< uint32_t gpio, uint8_t rx>
+void CanManager::addBus(const canbus_init_t& i) {
+    typedef Gpio<gpio, rx> port;
+    
+    port::mode(i.mode);
 
-void CanManager::addBus(initializer_list<canbus_init_t> init_list) {
-    for(const auto& i : init_list) {
-        typedef Gpio<i.gpio, rx> port;
-        port::mode(i.mode);
+    if(i.af >= 0) 
+        port::alternateFunction(i.af);
 
-        if(af >= 0) 
-            port::alternateFunction(i.af);
-
-        bus = new CanBus(i.can);
-    }
+    bus.push_back(new CanBus(i.can));
 }
 
 CanBus *CanManager::getBus(uint32_t id) {
     if(id >= bus.size())
         return NULL;
 
-    return &bus[id];
+    return bus[id];
 }
 
-bool addHWFilter(uint16_t id, unsigned can_id) {
-    uint32_t position = max_chan_filters * can_id;
+bool CanManager::addHWFilter(uint16_t id, unsigned can_id) {
+    uint32_t position = CanManager::max_chan_filters * can_id;
     uint32_t pos1 = 0, pos2 = 0;
-    uint32_t *reg;
+    __IO uint32_t *reg;
 
     /** Invalid id */
-    if(id >= filter_max_id)
+    if(id >= CanManager::filter_max_id)
         return false;
 
-    if(enabled_filters[can_id] >= max_chan_filters)
+    if(enabled_filters[can_id] >= CanManager::max_chan_filters)
         return false;
 
     if(filters[id] == 0) {
 
         // find first empty position
-        while(position < max_chan_filters * (can_id + 1)) {
-            pos1 = position / filters_per_bank;
-            pos2 = (position % filters_per_bank) >> shift_reg;
+        while(position < CanManager::max_chan_filters * (can_id + 1)) {
+            pos1 = position / CanManager::filters_per_bank;
+            pos2 = (position % CanManager::filters_per_bank) >> shift_reg;
 
             // pos2 == 0,1 -> 0; pos2 == 2,3 -> 1
-            reg = &CAN1->sFilterRegister[pos1].FR1 + pos2;
+            reg = &(Config->sFilterRegister[pos1].FR1) + (pos2 >> 1);
 
             pos2 *= filter_size_bit;
-            if((CAN1->sFilterRegister[pos1] >> (1 << pos2)) & 0xffff == filter_null)
+            if((((*reg) >> (1 << pos2)) & 0xffff) == CanManager::filter_null)
                 break;
 
             ++position; 
         }
         
         // enter filter initialization mode
-        CAN1->FMR |= CAN_FMR_FINIT;
+        Config->FMR |= CAN_FMR_FINIT;
 
         // 16-bit scale for the filter
-        CAN1->FS1R &= ~(1 << pos1);
+        Config->FS1R &= ~(1 << pos1);
 
         // set the filter
-        reg &= ~(0xffff << (1 << pos2));                 // clear 
-        reg &= ((id << filter_id_shift) << (1 << pos2)); // set
+        *reg &= ~(0xffff << (1 << pos2));                 // clear 
+        *reg &= ((id << filter_id_shift) << (1 << pos2)); // set
         
         // disable masking
-        CAN1->FM1R |= 1 << pos1;
+        Config->FM1R |= 1 << pos1;
         
         // bind to FIFO0
-        CAN1->FFA1R &= ~(1 << pos1);
+        Config->FFA1R &= ~(1 << pos1);
 
         // enable filter bank
-        CAN1->FA1R |= 1 << pos1;
+        Config->FA1R |= 1 << pos1;
         
         // exit filter initialization mode
-        CAN1->FMR &= ~CAN_FMR_FINIT;
+        Config->FMR &= ~CAN_FMR_FINIT;
     }
 
     ++filters[id];
@@ -102,32 +101,34 @@ bool addHWFilter(uint16_t id, unsigned can_id) {
     return true;
 }
 
-void delHWFilter(uint16_t id, unsigned can_id) {
-    uint32_t position = max_chan_filters * can_id;
+void CanManager::delHWFilter(uint16_t id, unsigned can_id) {
+    uint32_t position = CanManager::max_chan_filters * can_id;
     uint32_t pos1 = 0, pos2 = 0;
+    __IO uint32_t *reg;
 
     /** Invalid id */
-    if(id >= filter_max_id)
-        return false;
+    if(id >= CanManager::filter_max_id)
+        return;
 
     if(filters[id] == 0)
         return;
 
     if(filters[id] == 1) {
-        while(position < max_chan_filters * (can_id + 1)) {
-            pos1 = position / filters_per_bank;
-            pos2 = (position % filters_per_bank) >> shift_reg;
+        while(position < CanManager::max_chan_filters * (can_id + 1)) {
+            pos1 = position / CanManager::filters_per_bank;
+            pos2 = (position % CanManager::filters_per_bank) 
+                >> CanManager::shift_reg;
 
             // pos2 == 0,1 -> 0; pos2 == 2,3 -> 1
-            reg = &CAN1->sFilterRegister[pos1].FR1 + pos2;
+            reg = &Config->sFilterRegister[pos1].FR1 + (pos2 >> 1);
 
-            pos2 *= filter_size_bit;
-            if((CAN1->sFilterRegister[pos1] >> (1 << pos2)) & 0xffff == id)
+            pos2 *= CanManager::filter_size_bit;
+            if((((*reg) >> (1 << pos2)) & 0xffff) == id)
                 break;
 
             ++position; 
         }
-        reg |= (0xffff << (1 << pos2)); // clear 
+        *reg |= (0xffff << (1 << pos2)); // clear 
     }
 
     --filters[id];
