@@ -117,7 +117,7 @@ class CanManager {
         // 16 bit - 11 bit = 5 bit
         static constexpr int filter_id_shift = 
             filter_size_bit / filter_max_id_log2;
-        static constexpr int filter_null = 0xffff;
+        static constexpr uint32_t filter_null = 0xffff;
 
         static constexpr int max_chan_filters = 14 * filters_per_bank;
 
