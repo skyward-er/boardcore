@@ -37,10 +37,11 @@ CanSocket::CanSocket(){
 }
 
 /**
-  Apre una connessione simil-socket tramite un oggetto CanBus 
-  \param bus L'istanza del CanBus
-  \param id l'id Standard o Esteso del socket TODO: rimuoverlo da parametro e prenderlo direttamente dall'oggetto
-  */
+    Apre una connessione simil-socket tramite un oggetto CanBus 
+    \param bus L'istanza del CanBus
+    \param id l'id Standard o Esteso del socket 
+    TODO: rimuoverlo da parametro e prenderlo direttamente dall'oggetto
+*/
 void CanSocket::open(CanBus *bus, uint8_t id){
     if(isOpen()) close();
     bus->registerSocket(this,id);
@@ -56,10 +57,10 @@ void CanSocket::send(const void *message, int size,uint8_t id_dest){
 
 }
 /**
-  prende dalla coda un messaggio ricevuto
-  \param message dove copiare il messaggio
-  \param size dove scrivere la lunghezza del messaggio ricevuto
-  */
+    prende dalla coda un messaggio ricevuto
+    \param message dove copiare il messaggio
+    \param size dove scrivere la lunghezza del messaggio ricevuto
+*/
 bool CanSocket::receive(void *message, int& size){
     if(!isOpen())
         return false;
@@ -79,8 +80,8 @@ bool CanSocket::receive(void *message, int& size){
 }
 
 /**
-  aggiunge un messaggio alla coda interna
-  */
+    aggiunge un messaggio alla coda interna
+*/
 void CanSocket::addToMessageList(unsigned char *message, uint8_t size){
     pthread_mutex_lock(&mutex);
     uint8_t* msg = new uint8_t[size+1]; //TODO chiedere a fede
@@ -92,8 +93,8 @@ void CanSocket::addToMessageList(unsigned char *message, uint8_t size){
 }
 
 /**
-  chiude il socket rimuovendolo dal bus
-  */
+    chiude il socket rimuovendolo dal bus
+*/
 void CanSocket::close(){
     if(!isOpen()) 
         return;
@@ -104,7 +105,8 @@ void CanSocket::close(){
     pthread_mutex_unlock(&mutex);
 
     pthread_mutex_lock(&mutex);
-    for (list<msg_p>::iterator it = receivedMessageQueue.begin(); it != receivedMessageQueue.end();++it){
+    for (list<msg_p>::iterator it = receivedMessageQueue.begin(); 
+            it != receivedMessageQueue.end(); ++it){
         delete receivedMessageQueue.front().first;
         it = receivedMessageQueue.erase(it);
     }

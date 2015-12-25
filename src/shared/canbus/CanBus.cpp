@@ -35,9 +35,11 @@ TODO:
 #include "CanSocket.h"
 #include "CanUtils.h"
 
-#define TMIDxR_TXRQ       ((uint32_t)0x00000001) /* Transmit mailbox request */
+// Transmit mailbox request
+#define TMIDxR_TXRQ       ((uint32_t)0x00000001) 
 
-static const int numCanInterface=2; //CAN1, CAN2
+//CAN1, CAN2
+static const int numCanInterface=2; 
 
 typedef std::multimap<int,CanSocket *>::iterator iterator;
 
@@ -81,7 +83,7 @@ CanBus* CanBus::getCanBus(CAN_TypeDef* CanStruct) {
   registra nella propria mappa l'oggetto socket e imposta i filtri del can
   \param socket l'oggetto socket
   \param s l'id
-  */
+*/
 void CanBus::registerSocket(CanSocket *socket, uint8_t id)
 {
     //Lock mutex, add to multimap
@@ -96,16 +98,17 @@ void CanBus::registerSocket(CanSocket *socket, uint8_t id)
   rimuove  l'oggetto socket ed i relativi filtri 
   \param socket l'oggetto socket
   \param s l'id
-  */
+*/
 void CanBus::unregisterSocket(CanSocket *socket, uint8_t id)
 {
     //Lock mutex, remove from multimap, remove from filter bank
     {
         Lock<FastMutex> l(mutex);
 
-        std::pair<iterator, iterator> iteratorpair = messageConsumers.equal_range(id);
+        std::pair<iterator, iterator> iteratorpair = 
+            messageConsumers.equal_range(id);
 
-        for (iterator it = iteratorpair.first ; it != iteratorpair.second; ++it) {
+        for (iterator it=iteratorpair.first; it!=iteratorpair.second; ++it) {
             if (it->second == socket) {
                 messageConsumers.erase(it);
                 break;
@@ -115,7 +118,8 @@ void CanBus::unregisterSocket(CanSocket *socket, uint8_t id)
 }
 
 /**
-  funzione eseguita dal thread che smista i messaggi ricevuti tra i vari receiver
+  funzione eseguita dal thread che smista i messaggi 
+  ricevuti tra i vari receiver
   */
 void CanBus::queueHandler(){
     while(terminate==false)
@@ -144,7 +148,7 @@ void* CanBus::threadLauncher(void* arg)
    \param message il messaggio da inviare
    \param size la dimensione del messaggio
    */
-void CanBus::sendMessage(uint8_t id, const unsigned char *message, int size){
+void CanBus::sendMessage(uint8_t id, const unsigned char *message, int size) {
     int timeout = 100;
     int txMailBox = -1; 
 
@@ -157,11 +161,10 @@ void CanBus::sendMessage(uint8_t id, const unsigned char *message, int size){
         packet.DLC=8;
 
 
-    for(int i=0;i<size && i<8;i++){
+    for(int i=0;i<size && i<8;i++)
         packet.Data[i]=(uint8_t)message[i];
-    }
 
-    /* aspetto finchè si libera una mailbox  */ 
+    // aspetto finchè si libera una mailbox
     
     //è corretto? deve essere bloccante? 
     //ritorno null se dopo un tot non riesce ad inviare?
@@ -179,16 +182,15 @@ void CanBus::sendMessage(uint8_t id, const unsigned char *message, int size){
     CANx->sTxMailBox[txMailBox].TIR &= TMIDxR_TXRQ;
 
     //devo scrivere cose diverse nel registro CAN_TIxR in base al tipo di id
-    if (CAN_ID_TYPE==CAN_ID_STD){
+    if (CAN_ID_TYPE==CAN_ID_STD)
         CANx->sTxMailBox[txMailBox].TIR |= ((id << 21));
-    }
-    else{
-        CANx->sTxMailBox[txMailBox].TIR |= ((id<< 3) | CAN_ID_EXT | CAN_TI0R_RTR);  
-    }
+    else
+        CANx->sTxMailBox[txMailBox].TIR |= ((id<<3)|CAN_ID_EXT|CAN_TI0R_RTR);  
 
     packet.DLC &= (uint8_t)0x0000000F; //mi assicuro siano solo 4 bit
-
-    CANx->sTxMailBox[txMailBox].TDTR &= (uint32_t)0xFFFFFFF0; //azzero la size nel registro
+    
+    //azzero la size nel registro
+    CANx->sTxMailBox[txMailBox].TDTR &= (uint32_t)0xFFFFFFF0; 
     CANx->sTxMailBox[txMailBox].TDTR |= packet.DLC;
 
     //scrivo il dato nella parte bassa e alta del registro
@@ -212,7 +214,7 @@ void CanBus::sendMessage(uint8_t id, const unsigned char *message, int size){
 /**
   smista il messaggio tra i vari receiver registrati ad un determinato id
   \param message il messaggio da smistare
-  */
+*/
 void CanBus::dispatchMessage(CanMsg message){
     uint8_t id;
 
@@ -229,8 +231,8 @@ void CanBus::dispatchMessage(CanMsg message){
 
     {
         Lock<FastMutex> l(mutex);
-        pair<iterator, iterator> iteratorpair = messageConsumers.equal_range(id);
-        for (iterator it = iteratorpair.first; it != iteratorpair.second; ++it) {
+        pair<iterator,iterator> iteratorpair = messageConsumers.equal_range(id);
+        for (iterator it=iteratorpair.first; it != iteratorpair.second; ++it) {
             CanSocket* socket = it->second;
             socket->addToMessageList(data,message.DLC);
         }
@@ -239,13 +241,13 @@ void CanBus::dispatchMessage(CanMsg message){
 
 
 /**
-  inizializza il l'interfaccia can scelta 
-TODO: rimuovere la struttura per togliere il codice di st
+   inizializza il l'interfaccia can scelta 
+   TODO: rimuovere la struttura per togliere il codice di st
 */
-void CanBus::canSetup(){
+void CanBus::canSetup() {
     CAN_ID_TYPE=CAN_ID_STD;
 
-    if(CANx==CAN1){
+    if(CANx==CAN1) {
         {
             FastInterruptDisableLock dLock;
             RCC->APB1ENR |= RCC_APB1ENR_CAN1EN; 
@@ -256,7 +258,8 @@ void CanBus::canSetup(){
         NVIC_SetPriority(CAN1_RX1_IRQn,15); //Low priority   
         NVIC_EnableIRQ(CAN1_RX1_IRQn);
     }
-    if(CANx==CAN2){
+
+    if(CANx==CAN2) {
         {
             FastInterruptDisableLock dLock;
             RCC->APB1ENR |= RCC_APB1ENR_CAN1EN; 
@@ -319,14 +322,15 @@ void CanBus::canSetup(){
 
     //pagina 165
     //if(RCC->CFGR & (1<<15)) //check se il clock viene diviso
-    //freq /= (1<<(((RCC->CFGR>>13)&0x3)+1); //freq = 168Mhz e viene diviso per 1,2,4,8,16 in base ai bit 14 e 13
+    //freq /= (1<<(((RCC->CFGR>>13)&0x3)+1); 
+    //freq = 168Mhz e viene diviso per 1,2,4,8,16 in base ai bit 14 e 13
 
 #ifdef LOOPBACK
     uint8_t CAN_Mode = CAN_LOOPBACK;
 #else
     uint8_t CAN_Mode = CAN_NORMAL;
 #endif
-    /* setto i bit di timing e la modalità*/
+    // setto i bit di timing e la modalità
     CANx->BTR = (CAN_Mode << 30) | \
                 (CAN_SJW  << 24) | \
                 (CAN_BS1  << 16) | \
@@ -336,11 +340,7 @@ void CanBus::canSetup(){
 
     //pulisco il bit INRQ per uscire dall'inizializzazione
     CANx->MCR &= ~((uint32_t)CAN_MCR_INRQ);
-
 }
-
-
-
 
 bool CanBus::addToFiltersMatrix(uint16_t filter,uint8_t* row) {
     uint8_t offset;
@@ -363,7 +363,8 @@ bool CanBus::addToFiltersMatrix(uint16_t filter,uint8_t* row) {
 
 void CanBus::addToFilterBank(uint8_t id){
     //TODO: seleziono automaticamente un filtro libero
-    //mi segno i filtri che uso, la modalità di utilizzo e quanti spazi ho riempito per filtro
+    //mi segno i filtri che uso, la modalità di utilizzo 
+    //e quanti spazi ho riempito per filtro
     //in modo da massimizzare il numero di id impostabili 
     //reminder: ovviamente non superare il max numero di filtri
 
@@ -377,7 +378,6 @@ void CanBus::addToFilterBank(uint8_t id){
     uint32_t filtro=row; 
     uint32_t posizione_filtro = ((uint32_t)1) << filtro;
 
-
     uint32_t filterSlot[4];
 
     filterSlot[0]=filterMatrix[filtro][0]<<5;
@@ -386,17 +386,14 @@ void CanBus::addToFilterBank(uint8_t id){
     filterSlot[3]=filterMatrix[filtro][3]<<5;
 
 
-    // uso CAN1 perchè i registri dei filtri sono condivisi tra CAN1 [0-13] e CAN2 [14-27]
+    // uso CAN1 perchè i registri dei filtri sono 
+    // condivisi tra CAN1 [0-13] e CAN2 [14-27]
     // http://www.developermemo.com/1609181/
 
     // attivo la modalità di inizializzazione per i filtri
     CAN1->FMR |= CAN_FMR_FINIT;
 
     //CAN1->FMR = (CAN1->FMR & 0xFFFF0000) | (14 << 8) | CAN_FMR_FINIT;
-
-
-
-
 
     //disattivo il filtro selezionato
     CAN1->FA1R &= ~(uint32_t)posizione_filtro;
@@ -488,9 +485,11 @@ void __attribute__((used)) CAN_IRQHandlerImpl(int can_dev, int fifo) {
 
     RxMessage.IDE = (uint8_t)0x04 & can->sFIFOMailBox[fifo].RIR;
     if (RxMessage.IDE == CAN_ID_STD)
-        RxMessage.StdId = (uint32_t)0x000007FF & (can->sFIFOMailBox[fifo].RIR >> 21);
+        RxMessage.StdId = (uint32_t)0x000007FF & 
+            (can->sFIFOMailBox[fifo].RIR >> 21);
     else
-        RxMessage.ExtId = (uint32_t)0x1FFFFFFF & (can->sFIFOMailBox[fifo].RIR >> 3);
+        RxMessage.ExtId = (uint32_t)0x1FFFFFFF & 
+            (can->sFIFOMailBox[fifo].RIR >> 3);
 
     RxMessage.RTR = (uint8_t)0x02 & can->sFIFOMailBox[fifo].RIR;
     RxMessage.DLC = (uint8_t)0x0F & can->sFIFOMailBox[fifo].RDTR;
@@ -510,4 +509,3 @@ void __attribute__((used)) CAN_IRQHandlerImpl(int can_dev, int fifo) {
     if(hppw) 
         Scheduler::IRQfindNextThread();
 }
-
