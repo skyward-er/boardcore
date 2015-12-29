@@ -104,22 +104,23 @@ class CanManager {
 
         // 32 bit = 2 filters * 16 bit
         static constexpr int filterbank_size_bit = 32;
-        static constexpr int filters_per_bank = 4;
+        static constexpr int filters_per_bank = 2;
+        static constexpr int filters_per_row = 4;
         static constexpr int filter_size_bit = 
             filterbank_size_bit / filters_per_bank;
         
         // registers per bank: 2, FR1, FR2
         static constexpr int registers_per_bank = 2;
         // TODO check this formula --v
-        static constexpr int shift_reg = 
-            filters_per_bank / registers_per_bank - 1;
+        static constexpr int separation_bit =  // 2
+            filters_per_row / registers_per_bank;
 
         // 16 bit - 11 bit = 5 bit
         static constexpr int filter_id_shift = 
             filter_size_bit / filter_max_id_log2;
         static constexpr uint32_t filter_null = 0xffff;
 
-        static constexpr int max_chan_filters = 14 * filters_per_bank;
+        static constexpr int max_chan_filters = 14 * filters_per_row;
 
         // TODO 2 == number of can buses
         static constexpr int max_glob_filters = 2 * max_chan_filters;
