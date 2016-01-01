@@ -24,7 +24,7 @@
 
 #include "CanManager.h"
 
-template< uint32_t gpio, uint8_t rx>
+template<uint32_t gpio, uint8_t rx>
 void CanManager::addBus(const canbus_init_t& i) {
     typedef Gpio<gpio, rx> port;
     
@@ -33,14 +33,27 @@ void CanManager::addBus(const canbus_init_t& i) {
     if(i.af >= 0) 
         port::alternateFunction(i.af);
 
-    bus.push_back(new CanBus(i.can));
+    bus.push_back(CanBus(i.can));
+
+    for(const auto& j : i.interrupts) {
+        NVIC_SetPriority(j, 15);
+        NVIC_EnableIRQ(j);
+    }
+
+    // TODO de-hardcode this part 
+    {
+        FastInterruptDisableLock dLock;
+        RCC->APB1ENR |= RCC_APB1ENR_CAN1EN; 
+        RCC->APB1ENR |= RCC_APB1ENR_CAN2EN; 
+        RCC_SYNC();
+    }
 }
 
 CanBus *CanManager::getBus(uint32_t id) {
     if(id >= bus.size())
         return NULL;
 
-    return bus[id];
+    return &bus[id];
 }
 
 bool CanManager::addHWFilter(uint16_t id, unsigned can_id) {
@@ -64,9 +77,9 @@ bool CanManager::addHWFilter(uint16_t id, unsigned can_id) {
 
             // pos2 == 0,1 -> 0; pos2 == 2,3 -> 1
             reg = &(Config->sFilterRegister[pos1].FR1) + 
-                (pos2 >> (separation_bit-1));
+                (pos2 >> separation_bit);
 
-            pos2 &= separation_bit-1;
+            pos2 &= separation_bit;
             pos2 *= filter_size_bit;
             if((((*reg) >> (1 << pos2)) & 0xffff) == filter_null)
                 break;
@@ -103,17 +116,17 @@ bool CanManager::addHWFilter(uint16_t id, unsigned can_id) {
     return true;
 }
 
-void CanManager::delHWFilter(uint16_t id, unsigned can_id) {
+bool CanManager::delHWFilter(uint16_t id, unsigned can_id) {
     uint32_t position = max_chan_filters * can_id;
     uint32_t pos1 = 0, pos2 = 0;
     __IO uint32_t *reg;
 
     /** Invalid id */
     if(id >= filter_max_id)
-        return;
+        return false;
 
     if(filters[id] == 0)
-        return;
+        return false;
 
     if(filters[id] == 1) {
         while(position < max_chan_filters * (can_id + 1)) {
@@ -122,9 +135,9 @@ void CanManager::delHWFilter(uint16_t id, unsigned can_id) {
 
             // pos2 == 0,1 -> 0; pos2 == 2,3 -> 1
             reg = &(Config->sFilterRegister[pos1].FR1) + 
-                (pos2 >> (separation_bit-1));
+                (pos2 >> separation_bit);
 
-            pos2 &= separation_bit-1;
+            pos2 &= separation_bit;
             pos2 *= filter_size_bit;
             if((((*reg) >> (1 << pos2)) & 0xffff) == filter_null)
                 break;
@@ -136,4 +149,6 @@ void CanManager::delHWFilter(uint16_t id, unsigned can_id) {
 
     --filters[id];
     --enabled_filters[can_id];
+
+    return true;
 }
