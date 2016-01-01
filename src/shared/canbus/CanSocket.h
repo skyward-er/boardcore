@@ -26,6 +26,7 @@
 #define CANSOCKET_H
 
 #include <Common.h>
+#include "CanBus.h"
 
 using std::list;
 using std::pair;

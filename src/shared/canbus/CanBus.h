@@ -27,6 +27,7 @@
 
 #include <Common.h>
 #include "CanUtils.h"
+#include "CanManager.h"
 
 static const int FILTER_ROWS_PER_CAN = 14;
 static const int FILTER_IDS_PER_ROW  = 4;
@@ -36,18 +37,14 @@ static const int FILTER_CAN2_INDEX   = 14;
 using namespace miosix;
 
 class CanSocket;
+class CanManager;
 
 class CanBus {
     public:
-        uint8_t CAN_ID_TYPE;
         Queue<CanMsg,6> messageQueue;
 
-        void showMatrix();
-
-        static CanBus* getCanBus(CAN_TypeDef* CanStruct);
-
-        void registerSocket(CanSocket *socket, uint8_t id);
-        void unregisterSocket(CanSocket *socket, uint8_t id);
+        bool registerSocket(CanSocket *socket, uint16_t id);
+        bool unregisterSocket(CanSocket *socket, uint16_t id);
 
         void sendMessage(uint8_t id, const unsigned char *message, int size);
         void dispatchMessage(CanMsg message);
@@ -56,11 +53,16 @@ class CanBus {
         void configureInterrupt();
         void queueHandler();
 
-        CanBus(const CanBus&)=delete;
-        CanBus& operator=(const CanBus&)=delete;
+        CanBus(CAN_TypeDef* Canx);
         ~CanBus() { }
 
+        CanBus(const CanBus&)            = delete;
+        CanBus(const CanBus&&)           = delete;
+        CanBus& operator=(const CanBus&) = delete;
     private:
+        const CanManager& manager;
+        const int id;
+
         volatile CAN_TypeDef* CANx;
 
         FastMutex mutex;
@@ -69,19 +71,7 @@ class CanBus {
         volatile bool terminate;
         pthread_t t;
 
-        CanBus(CAN_TypeDef* Canx);
-        void addToFilterBank(uint8_t id);
-        bool addToFiltersMatrix(uint16_t filter,uint8_t* row);
-
         static void *threadLauncher(void *arg);
-
-        //Filters Bank Matrix
-        uint16_t filterMatrix
-            [FILTER_ROWS_PER_CAN+FILTER_ROWS_PER_CAN]
-            [FILTER_IDS_PER_ROW];
-        uint8_t availableMatrix
-            [FILTER_ROWS_PER_CAN+FILTER_ROWS_PER_CAN]
-            [FILTER_IDS_PER_ROW];
 };
 
 #endif /* CANBUS_H */

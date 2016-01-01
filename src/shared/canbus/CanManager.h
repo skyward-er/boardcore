@@ -33,7 +33,7 @@
 using namespace miosix;
 
 using std::vector;
-using std::initializer_list;
+using std::array;
 
 /* Classe per la gestione dell'interfaccia can su stm32.
  * La classe funziona simil-socket, alla costruzione viene inizializzata e 
@@ -65,14 +65,18 @@ struct canbus_init_t {
 
     /** Alternate function id or AF_NONE */
     const int8_t af;
-};
 
+    /** Array of interrupts */
+    const vector<int> interrupts;
+};  
+
+class CanBus;
 class CanManager {
     //friend class Singleton<CanManager>;
     public:
 
         bool addHWFilter(uint16_t id, unsigned can_id);
-        void delHWFilter(uint16_t id, unsigned can_id);
+        bool delHWFilter(uint16_t id, unsigned can_id);
 
         unsigned getNumFilters(unsigned can_id) const;
         
@@ -88,16 +92,12 @@ class CanManager {
 
         ~CanManager() {
             // TODO Maybe unconfigure ports?
-            while(bus.size() > 0) {
-                delete bus[bus.size()-1];
-                bus.pop_back();
-            } 
         }
         // Private constructor
         CanManager(CAN_TypeDef *config_bus) : Config(config_bus) {
              memset(filters, 0, sizeof(filters));
         }
-    private:
+
         // sizeof(id) = 11 bit 
         static constexpr int filter_max_id_log2 = 11;
         static constexpr int filter_max_id = (1 << filter_max_id_log2);
@@ -125,9 +125,10 @@ class CanManager {
         // TODO 2 == number of can buses
         static constexpr int max_glob_filters = 2 * max_chan_filters;
 
+    private:
         uint16_t filters[CanManager::filter_max_id];
 
-        vector<CanBus* > bus;
+        vector<CanBus> bus;
 
         // TODO change "2" with number of available CAN buses
         uint16_t enabled_filters[2];
