@@ -51,17 +51,8 @@ struct canbus_init_t {
     /** CAN1, CAN2, ... */
     CAN_TypeDef *can;
 
-    /** GPIOx_BASE */
-    const uint32_t gpio;
-
-    /** RX port */
-    const uint8_t rx; 
-
-    /** TX port */
-    const uint8_t tx; 
-
     /** Pin Mode */
-    const Mode mode;
+    const miosix::Mode::Mode_ mode;
 
     /** Alternate function id or AF_NONE */
     const int8_t af;
@@ -74,13 +65,12 @@ class CanBus;
 class CanManager {
     //friend class Singleton<CanManager>;
     public:
-
         bool addHWFilter(uint16_t id, unsigned can_id);
         bool delHWFilter(uint16_t id, unsigned can_id);
 
         unsigned getNumFilters(unsigned can_id) const;
         
-        template< uint32_t gpio, uint8_t rx>
+        template<uint32_t gpio, uint8_t rx, uint8_t tx>
         void addBus(const canbus_init_t& i);
 
         CanBus *getBus(uint32_t id);
@@ -93,8 +83,9 @@ class CanManager {
         ~CanManager() {
             // TODO Maybe unconfigure ports?
         }
+
         // Private constructor
-        CanManager(CAN_TypeDef *config_bus) : Config(config_bus) {
+        CanManager(volatile CAN_TypeDef* Config) : Config(Config) {
              memset(filters, 0, sizeof(filters));
         }
 
@@ -132,8 +123,9 @@ class CanManager {
 
         // TODO change "2" with number of available CAN buses
         uint16_t enabled_filters[2];
-        CAN_TypeDef * const Config;
+        volatile CAN_TypeDef * const Config;
 };
 
+#define sCanManager CanManager::getInstance()
 
 #endif /* CANMANAGER_H */

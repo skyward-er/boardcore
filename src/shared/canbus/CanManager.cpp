@@ -24,16 +24,23 @@
 
 #include "CanManager.h"
 
-template<uint32_t gpio, uint8_t rx>
+extern CanBus *global_bus_ptr[2];
+extern uint32_t global_bus_ctr;
+
+template<uint32_t gpio, uint8_t rx, uint8_t tx>
 void CanManager::addBus(const canbus_init_t& i) {
-    typedef Gpio<gpio, rx> port;
+    typedef Gpio<gpio, rx> rport;
+    typedef Gpio<gpio, tx> tport;
     
-    port::mode(i.mode);
+    rport::mode(i.mode);
+    tport::mode(i.mode);
 
-    if(i.af >= 0) 
-        port::alternateFunction(i.af);
+    if(i.af >= 0) {
+        rport::alternateFunction(i.af);
+        tport::alternateFunction(i.af);
+    }
 
-    bus.push_back(CanBus(i.can));
+    bus.push_back(CanBus(i.can, this, bus.size()));
 
     for(const auto& j : i.interrupts) {
         NVIC_SetPriority(j, 15);
@@ -47,6 +54,9 @@ void CanManager::addBus(const canbus_init_t& i) {
         RCC->APB1ENR |= RCC_APB1ENR_CAN2EN; 
         RCC_SYNC();
     }
+
+    // Used by CanInterrupt.cpp
+    global_bus_ptr[global_bus_ctr++] = &bus[bus.size()-1];
 }
 
 CanBus *CanManager::getBus(uint32_t id) {

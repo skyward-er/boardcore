@@ -35,10 +35,8 @@ class CanBus;
 class CanSocket
 {
     public:
-        CanSocket();
-        void open(CanBus *bus, uint8_t id);
-
-        void send(const void *message, int size,uint8_t id_dest);
+        CanSocket(uint16_t filter_id);
+        void open(CanBus *bus);
 
         bool receive(void *message, int& size);
 
@@ -47,13 +45,14 @@ class CanSocket
         bool isOpen() const { return bus != NULL; }
 
         void addToMessageList(unsigned char *message, uint8_t size);
+        uint16_t getFilterId() const { return filter_id; }
 
         CanSocket& operator=(const CanSocket&)=delete;
         ~CanSocket();
 
     private:
         CanBus *bus = NULL;
-        uint8_t id;
+        const uint16_t filter_id;
 
         pthread_mutex_t mutex;
         pthread_cond_t cond;

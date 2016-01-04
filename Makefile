@@ -18,7 +18,9 @@ SUBDIRS := $(KPATH)
 ##
 SRC := \
 	src/shared/canbus/CanManager.cpp \
+	src/shared/canbus/CanBus.cpp \
 	src/shared/canbus/CanSocket.cpp \
+	src/shared/canbus/CanInterrupt.cpp \
 	src/main.cpp
 
 ##
