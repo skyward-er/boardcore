@@ -75,6 +75,11 @@ void tt(void *arg) {
 }
 
 int main() {
+    CanManager c(CAN1);
+    canbus_init_t st = {CAN1, Mode::ALTERNATE,  9};
+    c.addBus<GPIOA_BASE, 11, 12>(st);
+    CanBus* bus = c.getBus(0);
+    /*
     log(NAME);
     log("*** Ready ***");
     //InputHandler& backend = InputHandler::instance();
@@ -101,12 +106,12 @@ int main() {
     while(1) {
 
         #ifdef SENDBOARD
-            /*while(1) {
-                Event e = backend.popEvent();
-                if(e.getEvent() == EventType::ButtonA)
-                    break;
-                miosix::Thread::sleep(20);
-            }*/
+            //while(1) {
+            //    Event e = backend.popEvent();
+            //    if(e.getEvent() == EventType::ButtonA)
+            //        break;
+            //    miosix::Thread::sleep(20);
+            //}
             Thread::sleep(3000);
 
             log("Sending message...");
@@ -118,5 +123,5 @@ int main() {
 
     socket.close();
 
-    return 0;
+    return 0;*/
 }

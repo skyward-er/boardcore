@@ -38,63 +38,65 @@ TODO:
 // Transmit mailbox request
 #define TMIDxR_TXRQ       ((uint32_t)0x00000001) 
 
-
-typedef std::multimap<int,CanSocket *>::iterator iterator;
-
-
-CanBus::CanBus(CAN_TypeDef* CanStruct){
-    CANx = CanStruct;
+CanBus::CanBus(CAN_TypeDef *bus, CanManager& manager, const int id) : 
+    CANx(bus), manager(manager), id(id) {
     terminate=false;
     pthread_create(&t,NULL,threadLauncher,reinterpret_cast<void*>(this));
+    this->canSetup();
 }
 
 // Bind a socket and set proper filters
-bool CanBus::registerSocket(CanSocket *socket, uint16_t id) {
-    if(id >= CanManager::filter_max_id)
+bool CanBus::registerSocket(CanSocket *socket) {
+    uint16_t filter_id = socket->getFilterId();
+
+    if(filter_id >= CanManager::filter_max_id)
         return false;
 
-    //Lock mutex, add to multimap
+    //Lock mutex, add to map
     {
         Lock<FastMutex> l(mutex);
-        if(!manager.addHWFilter(id, this->id)) {
+
+        set<CanSocket *> &ids = socket_map[filter_id];
+        if(ids.find(socket) == ids.end())
+            return false;
+
+        if(!manager.addHWFilter(filter_id, this->id)) {
             // TODO: log error 
             return false;
         }
-        messageConsumers.insert(std::pair<int,CanSocket *>(id, socket));
+       
+        ids.insert(socket);
     }
 
     return true;
 }
 
 // Unbind a socket and unset filters
-bool CanBus::unregisterSocket(CanSocket *socket, uint16_t id) {
+bool CanBus::unregisterSocket(CanSocket *socket) {
+    uint16_t filter_id = socket->getFilterId();
+
     if(id >= CanManager::filter_max_id)
         return false;
 
-    //Lock mutex, remove from multimap, remove from filter bank
+    //Lock mutex, remove from map and from filter bank
     {
-        bool found = false;
         Lock<FastMutex> l(mutex);
 
-        std::pair<iterator, iterator> ip = 
-            messageConsumers.equal_range(id);
+        set<CanSocket *> &ids = socket_map[filter_id];
+        auto it = ids.find(socket);
 
-        for (auto& it = ip.first; it != ip.second; ++it) {
-            if (it->second == socket) {
-                messageConsumers.erase(it);
-                found = true;
-                break;
-            }
-        }
-
-        if(!found)
+        if(it == ids.end())
             return false;
 
-        if(!delHWFilter(id, this->id)) {
+        if(!manager.delHWFilter(filter_id, this->id)) {
             // log unconsistency error
             return false;
         }
+
+        ids.erase(it);
     }
+
+    return true;
 }
 
 /**
@@ -126,23 +128,23 @@ void* CanBus::threadLauncher(void* arg)
    invia un messaggio ad un determinato id di destinazione
    \param id identificativo del destinatario (Standard o Esteso)
    \param message il messaggio da inviare
-   \param size la dimensione del messaggio
+   \param len la dimensione del messaggio
    */
 bool CanBus::sendMessage(uint8_t id, 
-        const unsigned char *message, size_t size) {
+        const uint8_t *message, uint8_t len) {
     int txMailBox = -1; 
     CanMsg packet;
 
-    if(size == 0)
+    if(len == 0)
         return false;
 
     packet.StdId = id;
-    packet.DLC = size <= 8 ? size : 8;
+    packet.DLC = len <= 8 ? len : 8;
 
-    memcpy(packet.Data[i], message[i], packet.DLC);
+    memcpy(packet.Data, message, packet.DLC);
 
     {
-        Lock<FastMutex> lock;
+        Lock<FastMutex> l(mutex);
 
         int timeout = 10;
         while(txMailBox < 0 && timeout > 0){ 
@@ -198,35 +200,31 @@ bool CanBus::sendMessage(uint8_t id,
   \param message il messaggio da smistare
 */
 void CanBus::dispatchMessage(CanMsg message){
-    uint32_t id;
+    uint32_t filter_id;
 
     if(message.IDE == CAN_ID_STD)
-        id = message.StdId;
+        filter_id = message.StdId;
     else
-        id = message.ExtId;
+        filter_id = message.ExtId;
 
-    uint8_t data[8];
+    if(filter_id >= (uint32_t)CanManager::filter_max_id) {
+        // log unsupported message
+        return;
+    }
 
     if(message.DLC > 8) 
         message.DLC = 8;
 
-    memcpy(data, message.Data, message.DLC);
-
     {
         Lock<FastMutex> l(mutex);
-        pair<iterator,iterator> ip = messageConsumers.equal_range(id);
-        for(auto& it : ip) {
-            CanSocket* socket = it->second;
-            socket->addToMessageList(data, message.DLC);
-        }
+
+        set<CanSocket *> &ids = socket_map[filter_id];
+       
+        for(auto socket : ids)
+            socket->addToMessageList(message.Data, message.DLC);
     }
 }
 
-
-/**
-   inizializza il l'interfaccia can scelta 
-   TODO: rimuovere la struttura per togliere il codice di st
-*/
 void CanBus::canSetup() {
 
     /*!<FIFO Message Pending Interrupt Enable */
@@ -299,71 +297,3 @@ void CanBus::canSetup() {
     CANx->MCR &= ~((uint32_t)CAN_MCR_INRQ);
 }
 
-void __attribute__((naked)) CAN1_RX0_IRQHandler() {
-    saveContext();
-    asm volatile("mov r0, #0");
-    asm volatile("mov r1, #0");
-    asm volatile("bl _Z18CAN_IRQHandlerImplii");
-    restoreContext();
-}
-
-void __attribute__((naked)) CAN1_RX1_IRQHandler() {
-    saveContext();
-    asm volatile("mov r0, #0");
-    asm volatile("mov r1, #1");
-    asm volatile("bl _Z18CAN_IRQHandlerImplii");
-    restoreContext();
-}
-
-void __attribute__((naked)) CAN2_RX0_IRQHandler() {
-    saveContext();
-    asm volatile("mov r0, #1");
-    asm volatile("mov r1, #0");
-    asm volatile("bl _Z18CAN_IRQHandlerImplii");
-    restoreContext();
-}
-
-void __attribute__((naked)) CAN2_RX1_IRQHandler() {
-    saveContext();
-    asm volatile("mov r0, #1");
-    asm volatile("mov r1, #1");
-    asm volatile("bl _Z18CAN_IRQHandlerImplii");
-    restoreContext();
-}
-
-void __attribute__((used)) CAN_IRQHandlerImpl(int can_dev, int fifo) {
-    //per prima cosa "resetto" l'interrupt altrimenti entro in un ciclo
-    //  CAN1->RF0R |= CAN_RF0R_RFOM0; non è lui xD
-    
-    can_dev &= 0x01;
-    CAN_TypeDef *can = can_dev?CAN2:CAN1;
-
-    CanBus *manager = managerInstance[can_dev];
-    CanMsg RxMessage;
-
-    RxMessage.IDE = (uint8_t)0x04 & can->sFIFOMailBox[fifo].RIR;
-    if (RxMessage.IDE == CAN_ID_STD)
-        RxMessage.StdId = (uint32_t)0x000007FF & 
-            (can->sFIFOMailBox[fifo].RIR >> 21);
-    else
-        RxMessage.ExtId = (uint32_t)0x1FFFFFFF & 
-            (can->sFIFOMailBox[fifo].RIR >> 3);
-
-    RxMessage.RTR = (uint8_t)0x02 & can->sFIFOMailBox[fifo].RIR;
-    RxMessage.DLC = (uint8_t)0x0F & can->sFIFOMailBox[fifo].RDTR;
-    RxMessage.FMI = (uint8_t)0xFF & (can->sFIFOMailBox[fifo].RDTR >> 8);
-
-    /* Get the data field */
-    *((uint32_t*)RxMessage.Data)     = can->sFIFOMailBox[fifo].RDLR;
-    *((uint32_t*)(RxMessage.Data+4)) = can->sFIFOMailBox[fifo].RDHR;
-
-    /* Release FIFO0 */
-    can->RF0R |= CAN_RF0R_RFOM0;
-
-    bool hppw=false;
-
-    manager->messageQueue.IRQput(RxMessage,hppw);
-
-    if(hppw) 
-        Scheduler::IRQfindNextThread();
-}

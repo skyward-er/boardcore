@@ -29,12 +29,8 @@
 #include "CanUtils.h"
 #include "CanManager.h"
 
-static const int FILTER_ROWS_PER_CAN = 14;
-static const int FILTER_IDS_PER_ROW  = 4;
-static const int FILTER_CAN1_INDEX   = 0;
-static const int FILTER_CAN2_INDEX   = 14;
-
 using namespace miosix;
+using std::set;
 
 class CanSocket;
 class CanManager;
@@ -43,30 +39,29 @@ class CanBus {
     public:
         Queue<CanMsg,6> messageQueue;
 
-        bool registerSocket(CanSocket *socket, uint16_t id);
-        bool unregisterSocket(CanSocket *socket, uint16_t id);
+        bool registerSocket(CanSocket *socket);
+        bool unregisterSocket(CanSocket *socket);
 
-        void sendMessage(uint8_t id, const unsigned char *message, int size);
+        bool sendMessage(uint8_t id, const uint8_t *message, uint8_t len);
         void dispatchMessage(CanMsg message);
 
-        void canSetup();
-        void configureInterrupt();
         void queueHandler();
+        volatile CAN_TypeDef* getBus() { return CANx; }
 
-        CanBus(CAN_TypeDef* Canx);
+        CanBus(CAN_TypeDef * bus, CanManager& manager, const int id);
         ~CanBus() { }
 
         CanBus(const CanBus&)            = delete;
         CanBus(const CanBus&&)           = delete;
         CanBus& operator=(const CanBus&) = delete;
     private:
-        const CanManager& manager;
+        void canSetup();
+        volatile CAN_TypeDef* CANx;
+        CanManager& manager;
         const int id;
 
-        volatile CAN_TypeDef* CANx;
-
         FastMutex mutex;
-        std::multimap<int,CanSocket* > messageConsumers;
+        set<CanSocket *> socket_map[1 << 11];
 
         volatile bool terminate;
         pthread_t t;
