@@ -24,46 +24,11 @@
 
 #include "CanManager.h"
 
-extern CanBus *global_bus_ptr[2];
-extern uint32_t global_bus_ctr;
-
-template<uint32_t gpio, uint8_t rx, uint8_t tx>
-void CanManager::addBus(const canbus_init_t& i) {
-    typedef Gpio<gpio, rx> rport;
-    typedef Gpio<gpio, tx> tport;
-    
-    rport::mode(i.mode);
-    tport::mode(i.mode);
-
-    if(i.af >= 0) {
-        rport::alternateFunction(i.af);
-        tport::alternateFunction(i.af);
-    }
-
-    bus.push_back(CanBus(i.can, this, bus.size()));
-
-    for(const auto& j : i.interrupts) {
-        NVIC_SetPriority(j, 15);
-        NVIC_EnableIRQ(j);
-    }
-
-    // TODO de-hardcode this part 
-    {
-        FastInterruptDisableLock dLock;
-        RCC->APB1ENR |= RCC_APB1ENR_CAN1EN; 
-        RCC->APB1ENR |= RCC_APB1ENR_CAN2EN; 
-        RCC_SYNC();
-    }
-
-    // Used by CanInterrupt.cpp
-    global_bus_ptr[global_bus_ctr++] = &bus[bus.size()-1];
-}
-
 CanBus *CanManager::getBus(uint32_t id) {
     if(id >= bus.size())
         return NULL;
 
-    return &bus[id];
+    return bus[id];
 }
 
 bool CanManager::addHWFilter(uint16_t id, unsigned can_id) {

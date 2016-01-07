@@ -34,17 +34,12 @@ using namespace miosix;
 
 using std::vector;
 using std::array;
-
-/* Classe per la gestione dell'interfaccia can su stm32.
- * La classe funziona simil-socket, alla costruzione viene inizializzata e 
- * configurata l'interfaccia. Un oggetto di tipo CanSocket si registra alla 
- * classe e tramite essa può inviare o ricevere messaggi
- *
- * TODO: la classe dovrà dividere il messaggio in più pacchetti e 
- * ricostruirlo dall'altra parte
- */
+class CanBus;
 
 static const int8_t AF_NONE = -1;
+
+extern CanBus *global_bus_ptr[2];
+extern uint32_t global_bus_ctr;
 
 /** CanBus Init structure */
 struct canbus_init_t {
@@ -58,10 +53,9 @@ struct canbus_init_t {
     const int8_t af;
 
     /** Array of interrupts */
-    const vector<int> interrupts;
+    const vector<IRQn_Type> interrupts;
 };  
 
-class CanBus;
 class CanManager {
     //friend class Singleton<CanManager>;
     public:
@@ -71,7 +65,37 @@ class CanManager {
         unsigned getNumFilters(unsigned can_id) const;
         
         template<uint32_t gpio, uint8_t rx, uint8_t tx>
-        void addBus(const canbus_init_t& i);
+        void addBus(const canbus_init_t& i) {
+            typedef Gpio<gpio, rx> rport;
+            typedef Gpio<gpio, tx> tport;
+            
+            rport::mode(i.mode);
+            tport::mode(i.mode);
+
+            if(i.af >= 0) {
+                rport::alternateFunction(i.af);
+                tport::alternateFunction(i.af);
+            }
+
+            CanBus *canbus = new CanBus(i.can, this, bus.size());
+            bus.push_back(canbus);
+
+            for(const auto& j : i.interrupts) {
+                NVIC_SetPriority(j, 15);
+                NVIC_EnableIRQ(j);
+            }
+
+            // TODO de-hardcode this part 
+            {
+                FastInterruptDisableLock dLock;
+                RCC->APB1ENR |= RCC_APB1ENR_CAN1EN; 
+                RCC->APB1ENR |= RCC_APB1ENR_CAN2EN; 
+                RCC_SYNC();
+            }
+
+            // Used by CanInterrupt.cpp
+            global_bus_ptr[global_bus_ctr++] = canbus;
+        }
 
         CanBus *getBus(uint32_t id);
 
@@ -119,7 +143,7 @@ class CanManager {
     private:
         uint16_t filters[CanManager::filter_max_id];
 
-        vector<CanBus> bus;
+        vector<CanBus *> bus;
 
         // TODO change "2" with number of available CAN buses
         uint16_t enabled_filters[2];
