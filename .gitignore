@@ -8,7 +8,7 @@ bin/*
 *.map
 *.elf
 *.bin
-.*.swp
+.*.sw?
 .*.pyc
 
 ._*
