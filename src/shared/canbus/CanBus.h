@@ -27,7 +27,6 @@
 
 #include <Common.h>
 #include "CanUtils.h"
-#include "CanManager.h"
 
 using namespace miosix;
 using std::set;
@@ -48,7 +47,7 @@ class CanBus {
         void queueHandler();
         volatile CAN_TypeDef* getBus() { return CANx; }
 
-        CanBus(CAN_TypeDef * bus, CanManager& manager, const int id);
+        CanBus(CAN_TypeDef* bus, CanManager* manager, const int id);
         ~CanBus() { }
 
         CanBus(const CanBus&)            = delete;
@@ -57,7 +56,7 @@ class CanBus {
     private:
         void canSetup();
         volatile CAN_TypeDef* CANx;
-        CanManager& manager;
+        CanManager* manager;
         const int id;
 
         FastMutex mutex;

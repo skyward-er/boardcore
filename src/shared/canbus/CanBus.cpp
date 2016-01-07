@@ -32,13 +32,14 @@ TODO:
 */
 
 #include "CanBus.h"
+#include "CanManager.h"
 #include "CanSocket.h"
 #include "CanUtils.h"
 
 // Transmit mailbox request
 #define TMIDxR_TXRQ       ((uint32_t)0x00000001) 
 
-CanBus::CanBus(CAN_TypeDef *bus, CanManager& manager, const int id) : 
+CanBus::CanBus(CAN_TypeDef *bus, CanManager* manager, const int id) : 
     CANx(bus), manager(manager), id(id) {
     terminate=false;
     pthread_create(&t,NULL,threadLauncher,reinterpret_cast<void*>(this));
@@ -60,7 +61,7 @@ bool CanBus::registerSocket(CanSocket *socket) {
         if(ids.find(socket) == ids.end())
             return false;
 
-        if(!manager.addHWFilter(filter_id, this->id)) {
+        if(!manager->addHWFilter(filter_id, this->id)) {
             // TODO: log error 
             return false;
         }
@@ -88,7 +89,7 @@ bool CanBus::unregisterSocket(CanSocket *socket) {
         if(it == ids.end())
             return false;
 
-        if(!manager.delHWFilter(filter_id, this->id)) {
+        if(!manager->delHWFilter(filter_id, this->id)) {
             // log unconsistency error
             return false;
         }
