@@ -54,7 +54,7 @@ void CanSocket::open(CanBus *bus){
     \param message dove copiare il messaggio
     \param size dove scrivere la lunghezza del messaggio ricevuto
 */
-bool CanSocket::receive(void *message, int& size){
+bool CanSocket::receive(void *message, int size){
     if(!isOpen())
         return false;
 

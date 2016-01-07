@@ -41,7 +41,7 @@ class CanBus {
         bool registerSocket(CanSocket *socket);
         bool unregisterSocket(CanSocket *socket);
 
-        bool sendMessage(uint8_t id, const uint8_t *message, uint8_t len);
+        bool send(uint16_t id, const uint8_t *message, uint8_t len);
         void dispatchMessage(CanMsg message);
 
         void queueHandler();
