@@ -38,7 +38,7 @@ class CanSocket
         CanSocket(uint16_t filter_id);
         void open(CanBus *bus);
 
-        bool receive(void *message, int& size);
+        bool receive(void *message, int size);
 
         void close();
 

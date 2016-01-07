@@ -131,12 +131,14 @@ void* CanBus::threadLauncher(void* arg)
    \param message il messaggio da inviare
    \param len la dimensione del messaggio
    */
-bool CanBus::sendMessage(uint8_t id, 
-        const uint8_t *message, uint8_t len) {
+bool CanBus::send(uint16_t id, const uint8_t *message, uint8_t len) {
     int txMailBox = -1; 
     CanMsg packet;
 
     if(len == 0)
+        return false;
+
+    if(id > CanManager::filter_max_id)
         return false;
 
     packet.StdId = id;
