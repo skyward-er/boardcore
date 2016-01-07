@@ -106,6 +106,10 @@ class CanManager {
 
         ~CanManager() {
             // TODO Maybe unconfigure ports?
+            while(bus.size() > 0) {
+                delete bus[bus.size()-1];
+                bus.pop_back();
+            }
         }
 
         // Private constructor
