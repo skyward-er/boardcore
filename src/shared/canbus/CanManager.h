@@ -31,6 +31,7 @@
 #include "CanBus.h"
 
 using namespace miosix;
+using namespace std;
 
 using std::vector;
 using std::array;
@@ -77,17 +78,16 @@ class CanManager {
                 tport::alternateFunction(i.af);
             }
 
-            for(const auto& j : i.interrupts) {
-                NVIC_SetPriority(j, 15);
-                NVIC_EnableIRQ(j);
-            }
-
             // TODO de-hardcode this part 
             {
                 FastInterruptDisableLock dLock;
-                RCC->APB1ENR |= RCC_APB1ENR_CAN1EN; 
-                RCC->APB1ENR |= RCC_APB1ENR_CAN2EN; 
+                RCC->APB1ENR |= RCC_APB1ENR_CAN1EN | RCC_APB1ENR_CAN2EN; 
                 RCC_SYNC();
+            }
+
+            for(const auto& j : i.interrupts) {
+                NVIC_SetPriority(j, 15);
+                NVIC_EnableIRQ(j);
             }
 
             CanBus *canbus = new CanBus(i.can, this, bus.size());
@@ -114,6 +114,7 @@ class CanManager {
 
         CanManager(volatile CAN_TypeDef* Config) : Config(Config) {
              memset(filters, 0, sizeof(filters));
+             memset(enabled_filters, 0, sizeof(enabled_filters));
         }
 
         // sizeof(id) = 11 bit 
