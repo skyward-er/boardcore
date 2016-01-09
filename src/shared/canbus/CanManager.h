@@ -26,71 +26,134 @@
 #define CANMANAGER_H
 
 #include <Common.h>
-#include <canbus/CanUtils.h>
+#include <Singleton.h>
+#include "CanUtils.h"
+#include "CanBus.h"
 
 using namespace miosix;
 
-class CanSocket;
+using std::vector;
+using std::array;
+class CanBus;
 
-/* Classe per la gestione dell'interfaccia can su stm32.
- * La classe funziona simil-socket, alla costruzione viene inizializzata e 
- * configurata l'interfaccia. Un oggetto di tipo CanSocket si registra alla 
- * classe e tramite essa può inviare o ricevere messaggi
- *
- * TODO: la classe dovrà dividere il messaggio in più pacchetti e 
- * ricostruirlo dall'altra parte
- */
+static const int8_t AF_NONE = -1;
 
-static const int FILTER_ROWS_PER_CAN = 14;
-static const int FILTER_IDS_PER_ROW  = 4;
-static const int FILTER_CAN1_INDEX   = 0;
-static const int FILTER_CAN2_INDEX   = 14;
+extern CanBus *global_bus_ptr[2];
+extern uint32_t global_bus_ctr;
+
+/** CanBus Init structure */
+struct canbus_init_t {
+    /** CAN1, CAN2, ... */
+    CAN_TypeDef *can;
+
+    /** Pin Mode */
+    const miosix::Mode::Mode_ mode;
+
+    /** Alternate function id or AF_NONE */
+    const int8_t af;
+
+    /** Array of interrupts */
+    const vector<IRQn_Type> interrupts;
+};  
 
 class CanManager {
+    //friend class Singleton<CanManager>;
     public:
-        uint8_t CAN_ID_TYPE;
-        Queue<CanMsg,6> messageQueue;
+        bool addHWFilter(uint16_t id, unsigned can_id);
+        bool delHWFilter(uint16_t id, unsigned can_id);
 
-        void showMatrix();
+        unsigned getNumFilters(unsigned can_id) const;
+        
+        template<uint32_t gpio, uint8_t rx, uint8_t tx>
+        void addBus(const canbus_init_t& i) {
+            typedef Gpio<gpio, rx> rport;
+            typedef Gpio<gpio, tx> tport;
+            
+            rport::mode(i.mode);
+            tport::mode(i.mode);
 
-        static CanManager* getCanManager(CAN_TypeDef* CanStruct);
+            if(i.af >= 0) {
+                rport::alternateFunction(i.af);
+                tport::alternateFunction(i.af);
+            }
 
-        void registerSocket(CanSocket *socket, uint8_t id);
-        void unregisterSocket(CanSocket *socket, uint8_t id);
+            CanBus *canbus = new CanBus(i.can, this, bus.size());
+            bus.push_back(canbus);
 
-        void sendMessage(uint8_t id, const unsigned char *message, int size);
-        void dispatchMessage(CanMsg message);
+            for(const auto& j : i.interrupts) {
+                NVIC_SetPriority(j, 15);
+                NVIC_EnableIRQ(j);
+            }
 
-        void canSetup();
-        void configureInterrupt();
-        void queueHandler();
+            // TODO de-hardcode this part 
+            {
+                FastInterruptDisableLock dLock;
+                RCC->APB1ENR |= RCC_APB1ENR_CAN1EN; 
+                RCC->APB1ENR |= RCC_APB1ENR_CAN2EN; 
+                RCC_SYNC();
+            }
 
-        CanManager(const CanManager&)=delete;
-        CanManager& operator=(const CanManager&)=delete;
-        ~CanManager();
+            // Used by CanInterrupt.cpp
+            global_bus_ptr[global_bus_ctr++] = canbus;
+        }
+
+        CanBus *getBus(uint32_t id);
+
+        /** Rule of 5 */
+        CanManager(const CanManager&) = delete;
+        CanManager(const CanManager&&) = delete;
+        CanManager& operator=(const CanManager&) = delete;
+
+        ~CanManager() {
+            // TODO Maybe unconfigure ports?
+            while(bus.size() > 0) {
+                delete bus[bus.size()-1];
+                bus.pop_back();
+            }
+        }
+
+        // Private constructor
+        CanManager(volatile CAN_TypeDef* Config) : Config(Config) {
+             memset(filters, 0, sizeof(filters));
+        }
+
+        // sizeof(id) = 11 bit 
+        static constexpr int filter_max_id_log2 = 11;
+        static constexpr int filter_max_id = (1 << filter_max_id_log2);
+
+        // 32 bit = 2 filters * 16 bit
+        static constexpr int filterbank_size_bit = 32;
+        static constexpr int filters_per_bank = 2;
+        static constexpr int filters_per_row = 4;
+        static constexpr int filter_size_bit = 
+            filterbank_size_bit / filters_per_bank;
+        
+        // registers per bank: 2, FR1, FR2
+        static constexpr int registers_per_bank = 2;
+        // TODO check this formula --v
+        static constexpr int separation_bit =  // 2
+            filters_per_row / registers_per_bank;
+
+        // 16 bit - 11 bit = 5 bit
+        static constexpr int filter_id_shift = 
+            filter_size_bit / filter_max_id_log2;
+        static constexpr uint32_t filter_null = 0xffff;
+
+        static constexpr int max_chan_filters = 14 * filters_per_row;
+
+        // TODO 2 == number of can buses
+        static constexpr int max_glob_filters = 2 * max_chan_filters;
 
     private:
-        volatile CAN_TypeDef* CANx;
+        uint16_t filters[CanManager::filter_max_id];
 
-        FastMutex mutex;
-        std::multimap<int,CanSocket *> messageConsumers;
+        vector<CanBus *> bus;
 
-        volatile bool terminate;
-        pthread_t t;
-
-        CanManager(CAN_TypeDef* Canx);
-        void addToFilterBank(uint8_t id);
-        bool addToFiltersMatrix(uint16_t filter,uint8_t* row);
-
-        static void *threadLauncher(void *arg);
-
-        //Filters Bank Matrix
-        uint16_t filterMatrix
-            [FILTER_ROWS_PER_CAN+FILTER_ROWS_PER_CAN]
-            [FILTER_IDS_PER_ROW];
-        uint8_t availableMatrix
-            [FILTER_ROWS_PER_CAN+FILTER_ROWS_PER_CAN]
-            [FILTER_IDS_PER_ROW];
+        // TODO change "2" with number of available CAN buses
+        uint16_t enabled_filters[2];
+        volatile CAN_TypeDef * const Config;
 };
+
+#define sCanManager CanManager::getInstance()
 
 #endif /* CANMANAGER_H */

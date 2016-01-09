@@ -1,7 +1,5 @@
-/* CAN-Bus Driver
- *
- * Copyright (c) 2015 Skyward Experimental Rocketry
- * Authors: Matteo Piazzolla, Alain Carlucci
+/* Copyright (c) 2015 Skyward Experimental Rocketry
+ * Authors: Illya Dudchenko
  * 
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -22,44 +20,22 @@
  * THE SOFTWARE.
  */
 
-#ifndef CANSOCKET_H
-#define CANSOCKET_H
+#ifndef SINGLETON_H
+#define SINGLETON_H
 
-#include <Common.h>
-#include "CanBus.h"
-
-using std::list;
-using std::pair;
-
-class CanBus;
-class CanSocket
-{
+template<typename T>
+class Singleton {
     public:
-        CanSocket(uint16_t filter_id);
-        void open(CanBus *bus);
-
-        bool receive(void *message, int size);
-
-        void close();
-
-        bool isOpen() const { return bus != NULL; }
-
-        void addToMessageList(unsigned char *message, uint8_t size);
-        uint16_t getFilterId() const { return filter_id; }
-
-        CanSocket& operator=(const CanSocket&)=delete;
-        ~CanSocket();
-
-    private:
-        CanBus *bus = NULL;
-        const uint16_t filter_id;
-
-        pthread_mutex_t mutex;
-        pthread_cond_t cond;
-
-        typedef pair<const unsigned char *, int> msg_p;
-        list<msg_p> receivedMessageQueue;
+        inline static T* getInstance() {
+            if(!instance) 
+                instance = new T(); 
+            return instance;
+        }
+    protected:
+        static T* instance;
 };
 
+template<class T>
+T* Singleton<T>::instance = NULL;
 
-#endif /* CANSOCKET_H */
+#endif // SINGLETON_H

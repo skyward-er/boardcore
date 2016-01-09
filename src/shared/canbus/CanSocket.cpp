@@ -28,39 +28,33 @@ TODO:
 - receive non bloccante
 */
 
-#include <canbus/CanSocket.h>
-#include <canbus/CanManager.h>
+#include "CanSocket.h"
+#include "CanBus.h"
 
-CanSocket::CanSocket(){
+CanSocket::CanSocket(const uint16_t filter_id) : filter_id(filter_id) {
     pthread_mutex_init(&mutex,NULL); 
     pthread_cond_init(&cond,NULL);
 }
 
 /**
-  Apre una connessione simil-socket tramite un oggetto CanManager 
-  \param manager L'istanza del CanManager
-  \param id l'id Standard o Esteso del socket TODO: rimuoverlo da parametro e prenderlo direttamente dall'oggetto
-  */
-void CanSocket::open(CanManager *manager, uint8_t id){
-    if(isOpen()) close();
-    manager->registerSocket(this,id);
-    this->manager=manager;
-    this->id=id;
+    Apre una connessione simil-socket tramite un oggetto CanBus 
+    \param bus L'istanza del CanBus
+    \param id l'id Standard o Esteso del socket 
+    TODO: rimuoverlo da parametro e prenderlo direttamente dall'oggetto
+*/
+void CanSocket::open(CanBus *bus){
+    if(isOpen()) 
+        close();
+    bus->registerSocket(this);
+    this->bus=bus;
 }
 
-
-void CanSocket::send(const void *message, int size,uint8_t id_dest){
-    if(!isOpen()) return;
-    const uint8_t *m=static_cast<const uint8_t *>(message);
-    manager->sendMessage(id_dest,m,size);
-
-}
 /**
-  prende dalla coda un messaggio ricevuto
-  \param message dove copiare il messaggio
-  \param size dove scrivere la lunghezza del messaggio ricevuto
-  */
-bool CanSocket::receive(void *message, int& size){
+    prende dalla coda un messaggio ricevuto
+    \param message dove copiare il messaggio
+    \param size dove scrivere la lunghezza del messaggio ricevuto
+*/
+bool CanSocket::receive(void *message, int size){
     if(!isOpen())
         return false;
 
@@ -79,8 +73,8 @@ bool CanSocket::receive(void *message, int& size){
 }
 
 /**
-  aggiunge un messaggio alla coda interna
-  */
+    aggiunge un messaggio alla coda interna
+*/
 void CanSocket::addToMessageList(unsigned char *message, uint8_t size){
     pthread_mutex_lock(&mutex);
     uint8_t* msg = new uint8_t[size+1]; //TODO chiedere a fede
@@ -92,19 +86,20 @@ void CanSocket::addToMessageList(unsigned char *message, uint8_t size){
 }
 
 /**
-  chiude il socket rimuovendolo dal manager
-  */
+    chiude il socket rimuovendolo dal bus
+*/
 void CanSocket::close(){
     if(!isOpen()) 
         return;
 
     pthread_mutex_lock(&mutex);
-    manager->unregisterSocket(this,id);
-    manager=0;
+    bus->unregisterSocket(this);
+    bus=0;
     pthread_mutex_unlock(&mutex);
 
     pthread_mutex_lock(&mutex);
-    for (list<msg_p>::iterator it = receivedMessageQueue.begin(); it != receivedMessageQueue.end();++it){
+    for (list<msg_p>::iterator it = receivedMessageQueue.begin(); 
+            it != receivedMessageQueue.end(); ++it){
         delete receivedMessageQueue.front().first;
         it = receivedMessageQueue.erase(it);
     }
