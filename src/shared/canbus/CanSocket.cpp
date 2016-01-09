@@ -31,7 +31,7 @@ TODO:
 #include "CanSocket.h"
 #include "CanBus.h"
 
-CanSocket::CanSocket(){
+CanSocket::CanSocket(const uint16_t filter_id) : filter_id(filter_id) {
     pthread_mutex_init(&mutex,NULL); 
     pthread_cond_init(&cond,NULL);
 }
@@ -42,26 +42,19 @@ CanSocket::CanSocket(){
     \param id l'id Standard o Esteso del socket 
     TODO: rimuoverlo da parametro e prenderlo direttamente dall'oggetto
 */
-void CanSocket::open(CanBus *bus, uint8_t id){
-    if(isOpen()) close();
-    bus->registerSocket(this,id);
+void CanSocket::open(CanBus *bus){
+    if(isOpen()) 
+        close();
+    bus->registerSocket(this);
     this->bus=bus;
-    this->id=id;
 }
 
-
-void CanSocket::send(const void *message, int size,uint8_t id_dest){
-    if(!isOpen()) return;
-    const uint8_t *m=static_cast<const uint8_t *>(message);
-    bus->sendMessage(id_dest,m,size);
-
-}
 /**
     prende dalla coda un messaggio ricevuto
     \param message dove copiare il messaggio
     \param size dove scrivere la lunghezza del messaggio ricevuto
 */
-bool CanSocket::receive(void *message, int& size){
+bool CanSocket::receive(void *message, int size){
     if(!isOpen())
         return false;
 
@@ -100,7 +93,7 @@ void CanSocket::close(){
         return;
 
     pthread_mutex_lock(&mutex);
-    bus->unregisterSocket(this,id);
+    bus->unregisterSocket(this);
     bus=0;
     pthread_mutex_unlock(&mutex);
 
