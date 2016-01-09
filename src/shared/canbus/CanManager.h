@@ -77,9 +77,6 @@ class CanManager {
                 tport::alternateFunction(i.af);
             }
 
-            CanBus *canbus = new CanBus(i.can, this, bus.size());
-            bus.push_back(canbus);
-
             for(const auto& j : i.interrupts) {
                 NVIC_SetPriority(j, 15);
                 NVIC_EnableIRQ(j);
@@ -92,6 +89,9 @@ class CanManager {
                 RCC->APB1ENR |= RCC_APB1ENR_CAN2EN; 
                 RCC_SYNC();
             }
+
+            CanBus *canbus = new CanBus(i.can, this, bus.size());
+            bus.push_back(canbus);
 
             // Used by CanInterrupt.cpp
             global_bus_ptr[global_bus_ctr++] = canbus;
@@ -112,7 +112,6 @@ class CanManager {
             }
         }
 
-        // Private constructor
         CanManager(volatile CAN_TypeDef* Config) : Config(Config) {
              memset(filters, 0, sizeof(filters));
         }
@@ -125,18 +124,18 @@ class CanManager {
         static constexpr int filterbank_size_bit = 32;
         static constexpr int filters_per_bank = 2;
         static constexpr int filters_per_row = 4;
-        static constexpr int filter_size_bit = 
+        static constexpr int filter_size_bit = // 16
             filterbank_size_bit / filters_per_bank;
         
         // registers per bank: 2, FR1, FR2
         static constexpr int registers_per_bank = 2;
         // TODO check this formula --v
         static constexpr int separation_bit =  // 2
-            filters_per_row / registers_per_bank;
+            filters_per_row / registers_per_bank - 1;
 
         // 16 bit - 11 bit = 5 bit
         static constexpr int filter_id_shift = 
-            filter_size_bit / filter_max_id_log2;
+            filter_size_bit - filter_max_id_log2;
         static constexpr uint32_t filter_null = 0xffff;
 
         static constexpr int max_chan_filters = 14 * filters_per_row;
@@ -145,7 +144,7 @@ class CanManager {
         static constexpr int max_glob_filters = 2 * max_chan_filters;
 
     private:
-        uint16_t filters[CanManager::filter_max_id];
+        uint8_t filters[CanManager::filter_max_id];
 
         vector<CanBus *> bus;
 
