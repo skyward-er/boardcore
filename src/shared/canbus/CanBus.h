@@ -22,44 +22,50 @@
  * THE SOFTWARE.
  */
 
-#ifndef CANSOCKET_H
-#define CANSOCKET_H
+#ifndef CANBUS_H
+#define CANBUS_H
 
 #include <Common.h>
-#include "CanBus.h"
+#include "CanUtils.h"
 
-using std::list;
-using std::pair;
+using namespace miosix;
+using std::set;
 
-class CanBus;
-class CanSocket
-{
+class CanSocket;
+class CanManager;
+
+class CanBus {
     public:
-        CanSocket(uint16_t filter_id);
-        void open(CanBus *bus);
+        Queue<CanMsg,6> messageQueue;
 
-        bool receive(void *message, int size);
+        bool registerSocket(CanSocket *socket);
+        bool unregisterSocket(CanSocket *socket);
 
-        void close();
+        bool send(uint16_t id, const uint8_t *message, uint8_t len);
+        void dispatchMessage(CanMsg message);
 
-        bool isOpen() const { return bus != NULL; }
+        void queueHandler();
+        volatile CAN_TypeDef* getBus() { return CANx; }
 
-        void addToMessageList(unsigned char *message, uint8_t size);
-        uint16_t getFilterId() const { return filter_id; }
+        CanBus(CAN_TypeDef* bus, CanManager* manager, const int id);
+        ~CanBus() { }
 
-        CanSocket& operator=(const CanSocket&)=delete;
-        ~CanSocket();
-
+        CanBus(const CanBus&)            = delete;
+        CanBus(const CanBus&&)           = delete;
+        CanBus& operator=(const CanBus&) = delete;
     private:
-        CanBus *bus = NULL;
-        const uint16_t filter_id;
+        void canSetup();
+        volatile CAN_TypeDef* CANx;
+        CanManager* manager;
+        const int id;
 
-        pthread_mutex_t mutex;
-        pthread_cond_t cond;
+        FastMutex mutex;
+        set<CanSocket *> socket_map[1 << 11];
 
-        typedef pair<const unsigned char *, int> msg_p;
-        list<msg_p> receivedMessageQueue;
+        volatile bool terminate;
+        pthread_t t;
+
+        static void *threadLauncher(void *arg);
 };
 
-
-#endif /* CANSOCKET_H */
+#endif /* CANBUS_H */

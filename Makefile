@@ -1,7 +1,7 @@
 ##
 ## Makefile for Miosix embedded OS
 ##
-MAKEFILE_VERSION := 1.06
+MAKEFILE_VERSION := 1.08
 ## Path to kernel directory (edited by init_project_out_of_git_repo.pl)
 KPATH := libs/miosix-kernel/miosix
 ## Path to config directory (edited by init_project_out_of_git_repo.pl)
@@ -18,7 +18,9 @@ SUBDIRS := $(KPATH)
 ##
 SRC := \
 	src/shared/canbus/CanManager.cpp \
+	src/shared/canbus/CanBus.cpp \
 	src/shared/canbus/CanSocket.cpp \
+	src/shared/canbus/CanInterrupt.cpp \
 	src/main.cpp
 
 ##
@@ -51,8 +53,8 @@ LFLAGS   := $(LFLAGS_BASE)
 DFLAGS   := -MMD -MP
 BIN 	 := bin
 
-LINK_LIBS := $(LIBS) -L$(KPATH) -Wl,--start-group -lmiosix -lstdc++ -lc \
-             -lm -lgcc -Wl,--end-group
+LINK_LIBS := $(LIBS) -L$(KPATH)/bin/$(OPT_BOARD) -Wl,--start-group \
+			 -lmiosix -lstdc++ -lc -lm -lgcc -Wl,--end-group
 
 all: folders all-recursive main
 
@@ -74,18 +76,21 @@ clean-recursive:
 	  clean || exit 1;)
 
 clean-topdir:
-	rm -f $(OBJ) $(addprefix obj/,$(OBJ)) \
+	@ echo "[RM]   Cleaning files"
+	@rm -f $(OBJ) $(addprefix obj/,$(OBJ)) \
 		$(BIN)/main.elf $(BIN)/main.hex $(BIN)/main.bin $(BIN)/main.map \
 		$(OBJ:.o=.d)
 
 main: folders main.elf
-	$(CP) -O ihex   $(BIN)/main.elf $(BIN)/main.hex
-	$(CP) -O binary $(BIN)/main.elf $(BIN)/main.bin
-	$(SZ) $(BIN)/main.elf
+	@ echo "[CP]   Linking binary"
+	@$(CP) -O ihex   $(BIN)/main.elf $(BIN)/main.hex
+	@$(CP) -O binary $(BIN)/main.elf $(BIN)/main.bin
+	@$(SZ) $(BIN)/main.elf
 
 main.elf: folders $(OBJ) all-recursive
-	@ echo "linking"
-	$(CXX) $(LFLAGS) -o $(BIN)/main.elf $(addprefix obj/,$(OBJ)) $(KPATH)/$(BOOT_FILE) $(LINK_LIBS)
+	@ echo "[LD]   Linking binary"
+	@ $(CXX) $(LFLAGS) -o $(BIN)/main.elf $(addprefix obj/,$(OBJ)) \
+		$(KPATH)/$(BOOT_FILE) $(LINK_LIBS)
 
 %.o: %.s
 	@ echo "[AS]  " $<
@@ -100,7 +105,7 @@ main.elf: folders $(OBJ) all-recursive
 	@ $(CXX) $(DFLAGS) $(CXXFLAGS) $< -o obj/$@
 
 folders:
-	mkdir -pv $(dir $(addprefix obj/,$(OBJ)))
+	@ mkdir -pv $(dir $(addprefix obj/,$(OBJ)))
 
 #pull in dependecy info for existing .o files
 -include $(OBJ:.o=.d)
