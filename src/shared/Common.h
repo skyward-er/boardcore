@@ -29,9 +29,10 @@
 
 #include <iostream>
 #include <list>
-#include <map>
+#include <set>
 #include <string>
 #include <vector>
+#include <array>
 
 /* Miosix */
 #include <miosix.h>

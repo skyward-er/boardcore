@@ -24,18 +24,6 @@
 
 #include "CanManager.h"
 
-template< uint32_t gpio, uint8_t rx>
-void CanManager::addBus(const canbus_init_t& i) {
-    typedef Gpio<gpio, rx> port;
-    
-    port::mode(i.mode);
-
-    if(i.af >= 0) 
-        port::alternateFunction(i.af);
-
-    bus.push_back(new CanBus(i.can));
-}
-
 CanBus *CanManager::getBus(uint32_t id) {
     if(id >= bus.size())
         return NULL;
@@ -44,29 +32,31 @@ CanBus *CanManager::getBus(uint32_t id) {
 }
 
 bool CanManager::addHWFilter(uint16_t id, unsigned can_id) {
-    uint32_t position = CanManager::max_chan_filters * can_id;
+    uint32_t position = max_chan_filters * can_id;
     uint32_t pos1 = 0, pos2 = 0;
     __IO uint32_t *reg;
 
     /** Invalid id */
-    if(id >= CanManager::filter_max_id)
+    if(id >= filter_max_id)
         return false;
 
-    if(enabled_filters[can_id] >= CanManager::max_chan_filters)
+    if(enabled_filters[can_id] >= max_chan_filters)
         return false;
 
     if(filters[id] == 0) {
 
         // find first empty position
-        while(position < CanManager::max_chan_filters * (can_id + 1)) {
-            pos1 = position / CanManager::filters_per_bank;
-            pos2 = (position % CanManager::filters_per_bank) >> shift_reg;
+        while(position < max_chan_filters * (can_id + 1)) {
+            pos1 = position / filters_per_bank;
+            pos2 = position % filters_per_bank;
 
             // pos2 == 0,1 -> 0; pos2 == 2,3 -> 1
-            reg = &(Config->sFilterRegister[pos1].FR1) + (pos2 >> 1);
+            reg = &(Config->sFilterRegister[pos1].FR1) + 
+                (pos2 >> separation_bit);
 
+            pos2 &= separation_bit;
             pos2 *= filter_size_bit;
-            if((((*reg) >> (1 << pos2)) & 0xffff) == CanManager::filter_null)
+            if((((*reg) >> (1 << pos2)) & 0xffff) == filter_null)
                 break;
 
             ++position; 
@@ -101,29 +91,30 @@ bool CanManager::addHWFilter(uint16_t id, unsigned can_id) {
     return true;
 }
 
-void CanManager::delHWFilter(uint16_t id, unsigned can_id) {
-    uint32_t position = CanManager::max_chan_filters * can_id;
+bool CanManager::delHWFilter(uint16_t id, unsigned can_id) {
+    uint32_t position = max_chan_filters * can_id;
     uint32_t pos1 = 0, pos2 = 0;
     __IO uint32_t *reg;
 
     /** Invalid id */
-    if(id >= CanManager::filter_max_id)
-        return;
+    if(id >= filter_max_id)
+        return false;
 
     if(filters[id] == 0)
-        return;
+        return false;
 
     if(filters[id] == 1) {
-        while(position < CanManager::max_chan_filters * (can_id + 1)) {
-            pos1 = position / CanManager::filters_per_bank;
-            pos2 = (position % CanManager::filters_per_bank) 
-                >> CanManager::shift_reg;
+        while(position < max_chan_filters * (can_id + 1)) {
+            pos1 = position / filters_per_bank;
+            pos2 = position % filters_per_bank;
 
             // pos2 == 0,1 -> 0; pos2 == 2,3 -> 1
-            reg = &Config->sFilterRegister[pos1].FR1 + (pos2 >> 1);
+            reg = &(Config->sFilterRegister[pos1].FR1) + 
+                (pos2 >> separation_bit);
 
-            pos2 *= CanManager::filter_size_bit;
-            if((((*reg) >> (1 << pos2)) & 0xffff) == id)
+            pos2 &= separation_bit;
+            pos2 *= filter_size_bit;
+            if((((*reg) >> (1 << pos2)) & 0xffff) == filter_null)
                 break;
 
             ++position; 
@@ -133,4 +124,6 @@ void CanManager::delHWFilter(uint16_t id, unsigned can_id) {
 
     --filters[id];
     --enabled_filters[can_id];
+
+    return true;
 }
