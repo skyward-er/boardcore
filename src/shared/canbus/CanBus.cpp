@@ -62,7 +62,6 @@ bool CanBus::registerSocket(CanSocket *socket) {
             return false;
 
         if(!manager->addHWFilter(filter_id, this->id)) {
-            cout << "DAFAQ" << endl;
             // TODO: log error 
             return false;
         }
