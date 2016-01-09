@@ -58,10 +58,11 @@ bool CanBus::registerSocket(CanSocket *socket) {
         Lock<FastMutex> l(mutex);
 
         set<CanSocket *> &ids = socket_map[filter_id];
-        if(ids.find(socket) == ids.end())
+        if(ids.find(socket) != ids.end())
             return false;
 
         if(!manager->addHWFilter(filter_id, this->id)) {
+            cout << "DAFAQ" << endl;
             // TODO: log error 
             return false;
         }
@@ -107,13 +108,11 @@ bool CanBus::unregisterSocket(CanSocket *socket) {
 void CanBus::queueHandler(){
     while(terminate==false)
     {
-        while(!messageQueue.isEmpty()){
-            CanMsg message;
+        CanMsg message;
+        messageQueue.waitUntilNotEmpty();
 
-            messageQueue.get(message);
-
-            dispatchMessage(message);
-        }
+        messageQueue.get(message);
+        dispatchMessage(message);
     }
 }
 
