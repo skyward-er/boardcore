@@ -169,7 +169,7 @@ bool CanBus::send(uint16_t id, const uint8_t *message, uint8_t len) {
         CANx->sTxMailBox[txMailBox].TIR |= ((id << 21));
 
         // Make sure DLC is 4 bits only
-        packet.DLC &= (uint8_t)0x0000000F;
+        packet.DLC &= (uint8_t)0x0F;
         
         // Clean up size
         CANx->sTxMailBox[txMailBox].TDTR &= (uint32_t)0xFFFFFFF0; 
