@@ -44,34 +44,41 @@ bool CanManager::addHWFilter(uint16_t id, unsigned can_id) {
         return false;
 
     if(filters[id] == 0) {
+        // enter filter initialization mode
+        Config->FMR |= CAN_FMR_FINIT;
 
         // find first empty position
         while(position < max_chan_filters * (can_id + 1)) {
             pos1 = position / filters_per_bank;
             pos2 = position % filters_per_bank;
 
-            // pos2 == 0,1 -> 0; pos2 == 2,3 -> 1
+            if(!(Config->FA1R & (1 << pos1))) {
+                uint32_t erase = filter_null | (filter_null << filter_size_bit);
+                Config->sFilterRegister[pos1].FR1 = erase;
+                Config->sFilterRegister[pos1].FR2 = erase;
+            }
+
             reg = &(Config->sFilterRegister[pos1].FR1) + 
                 (pos2 >> separation_bit);
 
             pos2 &= separation_bit;
             pos2 *= filter_size_bit;
-            if((((*reg) >> (1 << pos2)) & 0xffff) == filter_null)
+
+            if((((*reg) >> pos2) & 0xffff) == filter_null)
                 break;
 
             ++position; 
         }
+        // disable this filter
+        Config->FA1R &= ~(1 << pos1);
         
-        // enter filter initialization mode
-        Config->FMR |= CAN_FMR_FINIT;
-
         // 16-bit scale for the filter
         Config->FS1R &= ~(1 << pos1);
 
         // set the filter
-        *reg &= ~(0xffff << (1 << pos2));                 // clear 
-        *reg &= ((id << filter_id_shift) << (1 << pos2)); // set
-        
+        *reg &= ~(0xffff << pos2);                        // clear
+        *reg |= ((id << filter_id_shift) << pos2);        // set
+
         // disable masking
         Config->FM1R |= 1 << pos1;
         
@@ -104,6 +111,9 @@ bool CanManager::delHWFilter(uint16_t id, unsigned can_id) {
         return false;
 
     if(filters[id] == 1) {
+        // enter filter initialization mode
+        Config->FMR |= CAN_FMR_FINIT;
+
         while(position < max_chan_filters * (can_id + 1)) {
             pos1 = position / filters_per_bank;
             pos2 = position % filters_per_bank;
@@ -114,12 +124,16 @@ bool CanManager::delHWFilter(uint16_t id, unsigned can_id) {
 
             pos2 &= separation_bit;
             pos2 *= filter_size_bit;
-            if((((*reg) >> (1 << pos2)) & 0xffff) == filter_null)
+
+            if((((*reg) >> pos2) & 0xffff) == filter_null)
                 break;
 
             ++position; 
         }
-        *reg |= (0xffff << (1 << pos2)); // clear 
+        *reg |= (0xffff << pos2); // clear
+
+        // exit filter initialization mode
+        Config->FMR &= ~CAN_FMR_FINIT;
     }
 
     --filters[id];
