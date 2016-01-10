@@ -145,7 +145,7 @@ class CanManager {
         static constexpr int max_glob_filters = 2 * max_chan_filters;
 
     private:
-        uint8_t filters[CanManager::filter_max_id];
+        uint8_t filters[2][CanManager::filter_max_id];
 
         vector<CanBus *> bus;
 
