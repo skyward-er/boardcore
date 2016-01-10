@@ -31,7 +31,7 @@ CanBus *CanManager::getBus(uint32_t id) {
     return bus[id];
 }
 
-bool CanManager::addHWFilter(uint16_t id, unsigned can_id) {
+bool CanManager::addHWFilter(uint16_t id, uint32_t can_id) {
     uint32_t position = max_chan_filters * can_id;
     uint32_t pos1 = 0, pos2 = 0;
     __IO uint32_t *reg;
@@ -43,7 +43,9 @@ bool CanManager::addHWFilter(uint16_t id, unsigned can_id) {
     if(enabled_filters[can_id] >= max_chan_filters)
         return false;
 
-    if(filters[can_id][id] == 0) {
+    auto filter_pos = filters[can_id].find(id);
+
+    if(filter_pos == filters[can_id].end() || filter_pos->second == 0) {
         // enter filter initialization mode
         Config->FMR |= CAN_FMR_FINIT;
 
@@ -91,15 +93,17 @@ bool CanManager::addHWFilter(uint16_t id, unsigned can_id) {
         
         // exit filter initialization mode
         Config->FMR &= ~CAN_FMR_FINIT;
-    }
 
-    ++filters[can_id][id];
+        filters[can_id][id] = 1;
+    } else
+        ++filters[can_id][id];
+
     ++enabled_filters[can_id];
 
     return true;
 }
 
-bool CanManager::delHWFilter(uint16_t id, unsigned can_id) {
+bool CanManager::delHWFilter(uint16_t id, uint32_t can_id) {
     uint32_t position = max_chan_filters * can_id;
     uint32_t pos1 = 0, pos2 = 0;
     __IO uint32_t *reg;
@@ -108,7 +112,8 @@ bool CanManager::delHWFilter(uint16_t id, unsigned can_id) {
     if(id >= filter_max_id || can_id >= bus.size())
         return false;
 
-    if(filters[can_id][id] == 0)
+    auto filter_pos = filters[can_id].find(id);
+    if(filter_pos == filters[can_id].end() || filter_pos->second <= 0)
         return false;
 
     if(filters[can_id][id] == 1) {
@@ -126,7 +131,7 @@ bool CanManager::delHWFilter(uint16_t id, unsigned can_id) {
             pos2 &= separation_bit;
             pos2 *= filter_size_bit;
 
-            if((((*reg) >> pos2) & 0xffff) == (id << filter_id_shift))
+            if((((*reg) >> pos2) & 0xffff) == (uint32_t)(id << filter_id_shift))
                 break;
 
             ++position; 
@@ -138,7 +143,9 @@ bool CanManager::delHWFilter(uint16_t id, unsigned can_id) {
         Config->FMR &= ~CAN_FMR_FINIT;
     }
 
-    --filters[can_id][id];
+    if(--(filter_pos->second) <= 0)
+        filters[can_id].erase(filter_pos);
+
     --enabled_filters[can_id];
 
     return true;
