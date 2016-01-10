@@ -60,8 +60,8 @@ struct canbus_init_t {
 class CanManager {
     //friend class Singleton<CanManager>;
     public:
-        bool addHWFilter(uint16_t id, unsigned can_id);
-        bool delHWFilter(uint16_t id, unsigned can_id);
+        bool addHWFilter(uint16_t id, uint32_t can_id);
+        bool delHWFilter(uint16_t id, uint32_t can_id);
 
         unsigned getNumFilters(unsigned can_id) const;
         
@@ -113,7 +113,6 @@ class CanManager {
         }
 
         CanManager(volatile CAN_TypeDef* Config) : Config(Config) {
-             memset(filters, 0, sizeof(filters));
              memset(enabled_filters, 0, sizeof(enabled_filters));
         }
 
@@ -135,7 +134,7 @@ class CanManager {
             filters_per_row / registers_per_bank - 1;
 
         // 16 bit - 11 bit = 5 bit
-        static constexpr int filter_id_shift = 
+        static constexpr uint32_t filter_id_shift = 
             filter_size_bit - filter_max_id_log2;
         static constexpr uint32_t filter_null = 0xffff;
 
@@ -145,8 +144,7 @@ class CanManager {
         static constexpr int max_glob_filters = 2 * max_chan_filters;
 
     private:
-        uint8_t filters[2][CanManager::filter_max_id];
-
+        map<uint16_t, uint8_t> filters[2];
         vector<CanBus *> bus;
 
         // TODO change "2" with number of available CAN buses
