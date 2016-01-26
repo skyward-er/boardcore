@@ -21,10 +21,11 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
+
+#include "BusTemplate.h"
 #include <stdint.h>
 #include "data.h"
-#include <ios>
-#include "stdio.h"
+#include <cmath>
 /*
 indirizzi dei registri a 6 bit
 per scrivere in un registro bisogna settare il bit più significativo dell'indirizzo
@@ -32,37 +33,6 @@ a 0 e per leggere a 1
 il bit subito dopo è un bit di parità oppure per burst operation
 
 */
-
-
-class Sensor{
-public:
-    void static WriteReg(uint8_t reg, uint8_t value){
-        bool rw = (0x80 & reg)>>7;
-        printf("0w 1r: %d  ", rw);
-        bool parity = (0x40 & reg)>>6;
-        printf("parity %d\n", parity );
-       // std::cout << "Write to Address: "<< std::hex << reg << " Value: "<< value << std::endl;
-        printf("Write to Address: Ox%02x  Value: Ox%02x \n", (0x3f & reg),value);
-    }
-    uint8_t static ReadReg(uint8_t reg){
-        bool rw = (0x80 & reg)>>7;
-        printf("0 write 1 read: %d\n", rw);
-        bool parity = (0x40 & reg)>>6;
-        printf("parity %d\n", parity );
-
-
-        char ch[8];
-        //std::cout << "Read from Address " << std::hex << reg << std::endl;
-        printf("Read from Address Ox%02x\n", (0x3f & reg));
-
-        std::cin >> ch;
-        int v = atoi(ch);
-        printf("scritto Ox%02x\n", (0xff & v));
-
-        return (0xFF & v);
-    }
-
-};
 
 class RegMap_MAX21105
 {
@@ -104,53 +74,47 @@ public:
 
     static constexpr uint8_t OTP_STS_CFG    = 0x1C;
 
-    static constexpr uint8_t MIF_CFG       = 0x16;
+    static constexpr uint8_t MIF_CFG        = 0x16;
 
 
+
+
+    SET_PWR
 };
 
 template<class RegMap>
-//class IMUMax21105 : public Sensor<ProtocolSPI<BusSPI<2>, 3>>
-class IMUMax21105 : public Sensor
+class IMUMax21105 : public Sensor<ProtocolSPI<BusSPI<2>, 3>>
 {
     // assert bus class here
 public:
     IMUMax21105(){
-        //Init();
+        Init();
     }
 
     uint8_t ReadWhoAmI()
     {
-        return ReadReg(RegMap::WHO_AM_I);
+        return ReadReg(RegMap_MAX21105::WHO_AM_I);
     }
 
     void Init(){
         //seleziono il bank 0 dei registri
-        WriteReg(RegMap::EXT_STATUS,0x00);
+        WriteReg(RegMap_MAX21105::EXT_STATUS,0x00);
         //Power Down
-        WriteReg(RegMap::SET_PWR,0x78);
+        WriteReg(RegMap_MAX21105::SET_PWR,0x78);
 
         // Gyro: 2kHz BW, 1000dps FS
-        WriteReg(RegMap::SNS_CFG_1,0x3c);
-        WriteReg(RegMap::SNS_CFG_2,0x10);
+        WriteReg(RegMap_MAX21105::SNS_CFG_1,0x3c);
+        WriteReg(RegMap_MAX21105::SNS_CFG_2,0x10);
 
         //Acc 16g FS, no self test
-        WriteReg(RegMap::ACC_CFG_1,0x00);
+        WriteReg(RegMap_MAX21105::ACC_CFG_1,0x00);
         // no high-pass, unfiltered
-        WriteReg(RegMap::ACC_CFG_2,0x00);
+        WriteReg(RegMap_MAX21105::ACC_CFG_2,0x00);
 
         // Acc Low-Noise + Gyro Low-Noise
-        WriteReg(RegMap::SET_PWR,0x78);
-
-
+        WriteReg(RegMap_MAX21105::SET_PWR,0x78);
 
     }
-
-/*
-Self Test del Gyroscopio,
-si forzano delle
-*/
-
 
 
     SampleGyro ReadGyro(){
@@ -192,27 +156,100 @@ si forzano delle
         return ((ReadReg(RegMap::GYRO_Z_H) <<8) | ReadReg(RegMap::GYRO_Z_L))*1.0 ;
     }
 
-    bool SelfTestAcc(){}
-    bool SelfTestGyro(){}
-
     bool SelfTest(){
         bool flag=false;
-        if(!SelfTestAcc()){
+        if(!SelfTestAcc();){
             std::cout << "IMUMax21105 Accelerometer not working" << std::endl;
             flag=true;
         }
-        if(!SelfTestGyro()){
+        if(!SelfTestGyro();){
             std::cout << "IMUMax21105 Gyroscope not working" << std::endl;
             flag=true;
         }
         return flag;
     }
 
-     bool Test()  { return who_am_i_value == ReadWhoAmI(); }
+//TODO: capire se ha senso
+/*
+Self Test del Gyroscopio,
+Prendo 5 campioni del giroscopio e ne faccio la media, 
+imposto la modalità self test e ne prendo altri 5 facendone nuovamente la media.
+Se la distanza è maggiore di quella nel datasheet o non passa la condizione
+X>0, Y<0, Z>0 il test fallisce e ritorna falso
+*/ 
+    bool SelfTestGyro(){
+
+        constexpr uint8_t min_x = 8;
+        constexpr uint8_t min_y = -50;
+        constexpr uint8_t min_z = 8;
+        constexpr uint8_t max_x = 50;
+        constexpr uint8_t max_y = -8;
+        constexpr uint8_t max_z = 50;
+
+      // Self Test Gyroscopio
+        float Ax_no_test=0;
+        float Ay_no_test=0;
+        float Az_no_test=0;
+
+        for(int i=0;i<5;++i){
+            //sleep
+            Ax_no_test+=ReadGyroX();
+            Ay_no_test+=ReadGyroY();
+            Az_no_test+=ReadGyroZ();
+        }
+
+        Ax_no_test=Ax_no_test/5;
+        Ay_no_test=Ay_no_test/5;
+        Az_no_test=Az_no_test/5;
+
+        //seleziono il bank 0 dei registri
+        WriteReg(RegMap_MAX21105::EXT_STATUS,0x00);
+        //Power Down
+        WriteReg(RegMap_MAX21105::SET_PWR,0x78);
+        // Gyro: 2kHz BW, 1000dps FS 
+        //Testing Positive sign {+X, -Y, +Z}
+        WriteReg(RegMap_MAX21105::SNS_CFG_1,0x7c);
+        WriteReg(RegMap_MAX21105::SNS_CFG_2,0x10);
+        // Acc Low-Noise + Gyro Low-Noise
+        WriteReg(RegMap_MAX21105::SET_PWR,0x78);
+        //sleep
+        
+        float Ax_test=0;
+        float Ay_test=0;
+        float Az_test=0;
+
+        for(int i=0;i<5;++i){
+            Ax_test+=ReadGyroX();
+            Ay_test+=ReadGyroY();
+            Az_test+=ReadGyroZ();
+        }
+        
+        Ax_test=Ax_test/5;
+        Ay_test=Ay_test/5;
+        Az_test=Az_test/5;
+        
+        float deltaX,deltaY,deltaZ;
+        deltaX = std::abs(Ax_st - Ax_no_test);
+        deltaY = -std::abs(Ay_st - Ay_no_test);
+        deltaZ = std::abs(Az_st - Az_no_test);
+
+        if ((min_x <= deltaX <= max_x) && (min_y <= deltaY <= max_y) && (min_z <= deltaZ <= max_z)){
+            return true;
+        }
+        return false;
+    }
+
+    bool SelfTestAcc(){
+        //16g X positive force
+        WriteReg(RegMap_MAX21105::SET_ACC_PWR,0x8);
+    }
+
+
+
+    inline bool Test() const override { return who_am_i_value == ReadWhoAmI(); }
 
 private:
     constexpr static uint8_t who_am_i_value = 0xb4;
-
     bool parity_bit=1;
 
     void WriteReg(uint8_t reg, uint8_t value){
@@ -221,5 +258,9 @@ private:
     uint8_t ReadReg(uint8_t reg){
         return Sensor::ReadReg((1<<7) | (parity_bit << 6) | (reg & 0x3f));
     }
+
+
+
+
 
 };
