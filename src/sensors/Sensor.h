@@ -30,8 +30,11 @@
 
 class Sensor {
     public:
-        virtual void Init() = 0;
-        virtual bool SelfTest() = 0;
+        virtual bool init() = 0;
+        virtual bool selfTest() = 0;
+        uint8_t getLastError() const { return last_error; }
+    private:
+        uint8_t last_error = 0;
 };
 
 class GyroSensor : public virtual Sensor {
@@ -42,6 +45,16 @@ class GyroSensor : public virtual Sensor {
 class AccelSensor : public virtual Sensor {
     public:
         virtual Vec3 getSpeed() = 0;
+};
+
+class CompassSensor : public virtual Sensor {
+    public:
+        virtual Vec3 getCompass() = 0;
+};
+
+class TemperatureSensor : public virtual Sensor {
+    public:
+        virtual float getTemperature() = 0;
 };
 
 #endif /* ifndef SENSORS_H */
