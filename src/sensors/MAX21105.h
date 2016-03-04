@@ -34,8 +34,7 @@ il bit subito dopo è un bit di parità oppure per burst operation
 
 */
 
-class RegMap_MAX21105
-{
+class RegMap_MAX21105 {
 public:
     static constexpr uint8_t WHO_AM_I       = 0x20; //default value 0xb4
     static constexpr uint8_t EXT_STATUS     = 0x22;
@@ -83,20 +82,18 @@ public:
 };
 
 template<class RegMap>
-class IMUMax21105 : public Sensor<ProtocolSPI<BusSPI<2>, 3>>
-{
+class IMUMax21105 : public Sensor< ProtocolSPI<BusSPI<2>, 3> > {
     // assert bus class here
 public:
-    IMUMax21105(){
+    IMUMax21105() {
         Init();
     }
 
-    uint8_t ReadWhoAmI()
-    {
+    uint8_t ReadWhoAmI() {
         return ReadReg(RegMap_MAX21105::WHO_AM_I);
     }
 
-    void Init(){
+    void Init() {
         //seleziono il bank 0 dei registri
         WriteReg(RegMap_MAX21105::EXT_STATUS,0x00);
         //Power Down
@@ -116,53 +113,52 @@ public:
 
     }
 
-
-    SampleGyro ReadGyro(){
+    SampleGyro ReadGyro() {
         float x = ReadGyroX();
         float y = ReadGyroY();
         float z = ReadGyroZ();
         return SampleGyro(x,y,z);
     }
 
-    SampleAccelerometer ReadAccelerometer(){
+    SampleAccelerometer ReadAccelerometer() {
         float x = ReadAccX();
         float y = ReadAccY();
         float z = ReadAccZ();
         return SampleAccelerometer(x,y,z);
     }
 
-    inline uint16_t ReadAccX(){
+    inline uint16_t ReadAccX() {
         return ((ReadReg(RegMap::ACCE_X_H) <<8) | ReadReg(RegMap::ACCE_X_L))*1.0 ;
     }
 
-    inline uint16_t ReadAccY(){
+    inline uint16_t ReadAccY() {
         return ((ReadReg(RegMap::ACCE_Y_H) <<8) | ReadReg(RegMap::ACCE_Y_L))*1.0 ;
     }
 
-    inline uint16_t ReadAccZ(){
+    inline uint16_t ReadAccZ() {
         return ((ReadReg(RegMap::ACCE_Z_H) <<8) | ReadReg(RegMap::ACCE_Z_L))*1.0 ;
     }
 
 
-    inline uint16_t ReadGyroX(){
+    inline uint16_t ReadGyroX() {
         return ((ReadReg(RegMap::GYRO_X_H) <<8) | ReadReg(RegMap::GYRO_X_L))*1.0 ;
     }
 
-    inline uint16_t ReadGyroY(){
+    inline uint16_t ReadGyroY() {
         return ((ReadReg(RegMap::GYRO_Y_H) <<8) | ReadReg(RegMap::GYRO_Y_L))*1.0 ;
     }
 
-    inline uint16_t ReadGyroZ(){
+    inline uint16_t ReadGyroZ() {
         return ((ReadReg(RegMap::GYRO_Z_H) <<8) | ReadReg(RegMap::GYRO_Z_L))*1.0 ;
     }
 
-    bool SelfTest(){
+    bool SelfTest() {
         bool flag=false;
-        if(!SelfTestAcc();){
+        if(!SelfTestAcc()) {
             std::cout << "IMUMax21105 Accelerometer not working" << std::endl;
             flag=true;
         }
-        if(!SelfTestGyro();){
+        if(!SelfTestGyro()) {
             std::cout << "IMUMax21105 Gyroscope not working" << std::endl;
             flag=true;
         }
@@ -177,8 +173,7 @@ imposto la modalità self test e ne prendo altri 5 facendone nuovamente la media
 Se la distanza è maggiore di quella nel datasheet o non passa la condizione
 X>0, Y<0, Z>0 il test fallisce e ritorna falso
 */ 
-    bool SelfTestGyro(){
-
+    bool SelfTestGyro() {
         constexpr uint8_t min_x = 8;
         constexpr uint8_t min_y = -50;
         constexpr uint8_t min_z = 8;
@@ -233,9 +228,10 @@ X>0, Y<0, Z>0 il test fallisce e ritorna falso
         deltaY = -std::abs(Ay_st - Ay_no_test);
         deltaZ = std::abs(Az_st - Az_no_test);
 
-        if ((min_x <= deltaX <= max_x) && (min_y <= deltaY <= max_y) && (min_z <= deltaZ <= max_z)){
+        if ((min_x <= deltaX && deltaX <= max_x) && 
+            (min_y <= deltaY && deltaY <= max_y) && 
+            (min_z <= deltaZ && deltaZ <= max_z))
             return true;
-        }
         return false;
     }
 
@@ -244,9 +240,9 @@ X>0, Y<0, Z>0 il test fallisce e ritorna falso
         WriteReg(RegMap_MAX21105::SET_ACC_PWR,0x8);
     }
 
-
-
-    inline bool Test() const override { return who_am_i_value == ReadWhoAmI(); }
+    inline bool Test() const override { 
+        return who_am_i_value == ReadWhoAmI(); 
+    }
 
 private:
     constexpr static uint8_t who_am_i_value = 0xb4;
@@ -255,12 +251,8 @@ private:
     void WriteReg(uint8_t reg, uint8_t value){
         Sensor::WriteReg((0<<7) | (parity_bit << 6)| (reg & 0x3f), value);
     }
+
     uint8_t ReadReg(uint8_t reg){
         return Sensor::ReadReg((1<<7) | (parity_bit << 6) | (reg & 0x3f));
     }
-
-
-
-
-
 };

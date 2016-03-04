@@ -11,49 +11,50 @@ using namespace miosix;
 #define CS_DELAY 20
 
 template<unsigned N, class GpioMosi, class GpioMiso, class GpioSclk>
-class BusSPI : public Singletone<BusSPI<N,
+class BusSPI : public Singleton< BusSPI<N, GpioMosi, GpioMiso, GpioSclk> > {
 
- GpioMosi, GpioMiso, GpioSclk>>
-{
-    friend class Singletone<BusSPI<N, GpioMosi, GpioMiso, GpioSclk>>;
-    typedef Singletone<BusSPI<N, GpioMosi, GpioMiso, GpioSclk>> SingletoneType;
+    friend class Singleton<BusSPI<N, GpioMosi, GpioMiso, GpioSclk> >;
+    typedef Singleton<BusSPI<N, GpioMosi, GpioMiso, GpioSclk> > SingletonType;
 public:
-    inline static int Write(const void* buffer, size_t len) {return SingletoneType::GetInstance()->_write(buffer, len);}
-    inline static void Init() { SingletoneType::GetInstance(); }
-    inline static int Read(void* buffer, size_t max_len) {return SingletoneType::GetInstance()->_read(buffer, max_len);}
+    inline static int Write(const void* buffer, size_t len) {
+        return SingletonType::GetInstance()->_write(buffer, len);
+    }
+    inline static void Init() { 
+        SingletonType::GetInstance(); 
+    }
+    inline static int Read(void* buffer, size_t max_len) {
+        return SingletonType::GetInstance()->_read(buffer, max_len);
+    }
 private:
-    inline int _write(const void* buffer, size_t len) const
-    {
+    inline int _write(const void* buffer, size_t len) const {
         // DMA??
         const uint8_t* buf_ptr = (const uint8_t*)buffer;
         for(unsigned i=0;i<len;i++)
             _write(*(buf_ptr++));
         return 0;
     }
-    inline void _write(uint8_t byte) const
-    {
-        cout << "writing " << (int) byte << endl;
+
+    inline void _write(uint8_t byte) const {
         GetSpiAddr(N)->DR=byte;
         while((GetSpiAddr(N)->SR & SPI_SR_RXNE)==0);
         byte=GetSpiAddr(N)->DR;
     }
-    inline int _read(void* buffer, size_t max_len) const
-    {
+
+    inline int _read(void* buffer, size_t max_len) const {
         // conditional var??
         uint8_t* buf_ptr = (uint8_t*)buffer;
         for(unsigned i=0;i<max_len;i++)
             *(buf_ptr++) = _read();
         return 0;
     }
-    inline uint8_t _read() const
-    {
+
+    inline uint8_t _read() const {
         GetSpiAddr(N)->DR=0;
         while((GetSpiAddr(N)->SR & SPI_SR_RXNE)==0);
         return GetSpiAddr(N)->DR;
     }
-    BusSPI()
-    {
-        cout << "Creating Bus SPI " << N << "...\n";
+
+    BusSPI() {
         GpioMosi::mode(Mode::ALTERNATE);
         GpioMosi::alternateFunction(GetAlternativeFunctionNumber(N));
         GpioMiso::mode(Mode::ALTERNATE);
@@ -62,25 +63,23 @@ private:
         GpioSclk::alternateFunction(GetAlternativeFunctionNumber(N));
         usleep(CS_DELAY);
         EnablePeriphBus(GetSpiAddr(N));
-        GetSpiAddr(N)->CR1 =    SPI_CR1_SSM
-                              | SPI_CR1_SSI
-                              | SPI_CR1_MSTR
-                              | SPI_CR1_BR_2
-                              | SPI_CR1_SPE;
-
-        cout << "Created..\n";
+        GetSpiAddr(N)->CR1 = SPI_CR1_SSM
+                           | SPI_CR1_SSI
+                           | SPI_CR1_MSTR
+                           | SPI_CR1_BR_2
+                           | SPI_CR1_SPE;
     }
-    inline static constexpr int GetAlternativeFunctionNumber(int n_spi)
-    {
+
+    inline static constexpr int GetAlternativeFunctionNumber(int n_spi) {
         return n_spi == 1 || n_spi == 2 ? 5 : 6;
     }
-    constexpr SPI_TypeDef* GetSpiAddr(unsigned n)
-    {
+
+    constexpr SPI_TypeDef* GetSpiAddr(unsigned n) {
         return  n==1 ? SPI1 :
                 n==2 ? SPI2 : SPI3;
     }
-    static inline void EnablePeriphBus(SPI_TypeDef* spi)
-    {
+
+    static inline void EnablePeriphBus(SPI_TypeDef* spi) {
         if(spi == SPI1)
             RCC->APB2ENR |= RCC_APB2ENR_SPI1EN;
         else if(spi == SPI2)
@@ -91,40 +90,40 @@ private:
 };
 
 template<unsigned N>
-class BusI2C
-{
-    friend class Singletone<BusI2C<N>>;
+class BusI2C {
+    friend class Singleton< BusI2C<N> >;
 public:
-    static void Init() { Singletone<BusI2C<N>>::GetInstance(); }
-    static int Write(const void* buffer, size_t len) {return Singletone<BusI2C<N>>::GetInstance()->_write(buffer, len);}
-    static int Read(void* buffer, size_t max_len) {return Singletone<BusI2C<N>>::GetInstance()->_read(buffer, max_len);}
+    static void Init() { 
+        Singleton< BusI2C<N> >::GetInstance(); 
+    }
+    static int Write(const void* buffer, size_t len) {
+        return Singleton<BusI2C<N>>::GetInstance()->_write(buffer, len);
+    }
+    static int Read(void* buffer, size_t max_len) {
+        return Singleton<BusI2C<N>>::GetInstance()->_read(buffer, max_len);
+    }
 protected:
-    int _write(const void* buffer, size_t len)
-    {
+    int _write(const void* buffer, size_t len) {
         // DMA??
         return 0;
     }
-    int _read(void* buffer, size_t max_len)
-    {
+    int _read(void* buffer, size_t max_len) {
         // conditional var??
         return 0;
     }
-    inline BusI2C(){cout << "Bus I2C " << N << " created\n";}
+    inline BusI2C() { }
 };
 
 template<class Bus, class GpioCS>
-class ProtocolSPI
-{
+class ProtocolSPI {
 public:
-    static void Init()
-    {
+    static void Init() {
         GpioCS::mode(Mode::OUTPUT);
         GpioCS::high();
         Bus::Init();
     }
 
-    static uint8_t ReadReg(uint8_t reg)
-    {
+    static uint8_t ReadReg(uint8_t reg) {
         GpioCS::low();
         reg |= 0x80;
         Bus::Write(&reg, sizeof(reg));
@@ -132,8 +131,8 @@ public:
         GpioCS::high();
         return reg;
     }
-    static void WriteReg(uint8_t reg, uint8_t val)
-    {
+
+    static void WriteReg(uint8_t reg, uint8_t val) {
         GpioCS::low();
         Bus::Write(&reg, sizeof(reg));
         Bus::Write(&val, sizeof(reg));
@@ -142,10 +141,12 @@ public:
 };
 
 template<class Bus, unsigned ID>
-class ProtocolI2C
-{
+class ProtocolI2C {
 public:
-    static inline void Init() {Bus::Init();}
+    static inline void Init() {
+        Bus::Init();\
+    }
+
     static uint8_t ReadReg(uint8_t reg)
     {
         static const uint8_t id = ID;
@@ -158,18 +159,22 @@ public:
 };
 
 template<class Protocol>
-class Sensor
-{
+class Sensor {
 public:
-    inline Sensor() { Protocol::Init(); }
-    inline static uint8_t ReadReg(uint8_t reg) { return Protocol::ReadReg(reg); }
-    inline static void WriteReg(uint8_t reg, uint8_t value) { Protocol::WriteReg(reg, value); }
+    inline Sensor() { 
+        Protocol::Init(); 
+    }
+    inline static uint8_t ReadReg(uint8_t reg) { 
+        return Protocol::ReadReg(reg); 
+    }
+    inline static void WriteReg(uint8_t reg, uint8_t value) { 
+        Protocol::WriteReg(reg, value); 
+    }
     virtual void Init() = 0;
     virtual bool Test() const = 0;
 };
 
-class RegMap_AXEL
-{
+class RegMap_AXEL {
 public:
     static constexpr uint8_t REG_X_L        = 0x28;
     static constexpr uint8_t REG_X_H        = 0x29;
@@ -182,19 +187,15 @@ public:
 };
 
 template<class RegMap>
-class Axel : public Sensor<ProtocolI2C<BusI2C<2>, 3>>
-{
+class Axel : public Sensor<ProtocolI2C<BusI2C<2>, 3>> {
     // assert bus class here
 public:
-    int ReadAxelX()
-    {
+    int ReadAxelX() {
         return Sensor::ReadReg(RegMap::REG_X_L);
     }
-    int ReadWhoAmI()
-    {
+    int ReadWhoAmI() {
         return Sensor::ReadReg(RegMap::REG_WHO_AM_I);
     }
 };
-
 
 #endif // BUSTEMPLATE_H
