@@ -1,7 +1,7 @@
-/* Sensors Base Classes
+/* SI7021 Driver 
  *
  * Copyright (c) 2016 Skyward Experimental Rocketry
- * Authors: Alain Carlucci
+ * Authors: Silvano Seva
  * 
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -22,53 +22,51 @@
  * THE SOFTWARE.
  */
 
-#ifndef SENSORS_H
-#define SENSORS_H
-#include <Common.h>
-#include <math/Vec3.h>
-#include <math/Quaternion.h>
+#ifndef SI7021_H
+#define SI7021_H 
+#include "Sensor.h"
+#include "BusTemplate.h"
 
-class Sensor {
+
+template <typename BusType>
+class SI7021 : public HumiditySensor, public TemperatureSensor {
+    
     public:
-        virtual bool init() = 0;
-        virtual bool selfTest() = 0;
-        uint8_t getLastError() const { return last_error; }
-
-        enum eErrors {
-            ERR_NOT_ME          = 0x01,
-            ERR_RESET_TIMEOUT   = 0x02,
-            ERR_X_SELFTEST_FAIL   = 0x03,
-            ERR_Y_SELFTEST_FAIL   = 0x04,
-            ERR_Z_SELFTEST_FAIL   = 0x05
-        };
+        SI7021() {
+            
+        }
+        
+        bool init() { return true; } //nothing to do, at boot everything is configured correctly
+        
+        bool selfTest() {
+            
+        }
+        
+        float getTemperature() {
+            
+            
+        }
+        
+        float getHumidity() {
+            
+        }
         
     private:
-        uint8_t last_error = 0;
+        BusType bus;
+        
+        enum commands {
+            CMD_MEAS_HUM = 0xF5,
+            CMD_MEAS_TEMP = 0xF3,
+            CMD_MEAS_TEMP_PREV_HUM = 0xE0,  //read temperature value from previous RH measurement
+            CMR_RESET = 0xFE,
+            CMD_WRITE_USR1 = 0xE6,
+            CMD_WRITE_USR7 = 0xE7,
+            CMD_WRITE_HEAT_CTL = 0x51,
+            CMD_READ_HEAT_CTL = 0x11,
+            CMD_READ_ID1 = 0xFA,
+            CMD_READ_ID2 = 0xFC,
+            CMD_READ_FW_REV = 0x84,
+        };
+    
 };
-
-class GyroSensor : public virtual Sensor {
-    public:
-        virtual Vec3 getOrientation() = 0;
-};
-
-class AccelSensor : public virtual Sensor {
-    public:
-        virtual Vec3 getSpeed() = 0;
-};
-
-class CompassSensor : public virtual Sensor {
-    public:
-        virtual Vec3 getCompass() = 0;
-};
-
-class TemperatureSensor : public virtual Sensor {
-    public:
-        virtual float getTemperature() = 0;
-};
-
-class HumiditySensor : public virtual Sensor {
-    public:
-        virtual float getHumidity() = 0;
-};
-
-#endif /* ifndef SENSORS_H */
+#endif

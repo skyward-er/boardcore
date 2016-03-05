@@ -178,6 +178,8 @@ class FXAS21002 : public GyroSensor {
         uint16_t getXaxis() { return (bus.ReadReg(regMap::REG_OUT_X_MSB) << 8) | bus.ReadReg(regMap::REG_OUT_X_LSB); }
         uint16_t getYaxis() { return (bus.ReadReg(regMap::REG_OUT_Y_MSB) << 8) | bus.ReadReg(regMap::REG_OUT_Y_LSB); }
         uint16_t getZaxis() { return (bus.ReadReg(regMap::REG_OUT_Z_MSB) << 8) | bus.ReadReg(regMap::REG_OUT_Z_LSB); }
+                
+        Vec3 getOrientation() { return Vec3(); }
                         
         enum dataRates {
             DR_800HZ = 0,
