@@ -144,7 +144,7 @@ template<class Bus, unsigned ID>
 class ProtocolI2C {
 public:
     static inline void Init() {
-        Bus::Init();\
+        Bus::Init();
     }
 
     static uint8_t ReadReg(uint8_t reg)
