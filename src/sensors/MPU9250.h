@@ -80,6 +80,10 @@ class MPU9250 : public GyroSensor, public AccelSensor,
             // 0000xyyy : x = FCHOICE, y = A_DLPF_CFG 
             bus.WriteReg(REG_ACCEL_CONFIG2, 0b00001000);
 
+            // Interrupt status is cleared after any read operation.
+            // TODO: configure miosix interrupt as RISING EDGE!
+            bus.WriteReg(REG_INT_PIN_CFG, 0b00110000);
+            bus.WriteReg(REG_INT_ENABLE, 0b00000001);
             return true;
         }
 
@@ -112,6 +116,11 @@ class MPU9250 : public GyroSensor, public AccelSensor,
             REG_GYRO_CONFIG     = 0x1B,
             REG_ACCEL_CONFIG    = 0x1C,
             REG_ACCEL_CONFIG2   = 0x1D,
+
+            REG_INT_PIN_CFG     = 0x37,
+            REG_INT_ENABLE      = 0x38,
+            REG_INT_STATUS      = 0x3A,
+
             REG_PWR_MGMT_1      = 0x6B,
             REG_PWR_MGMT_2      = 0x6C,
             REG_WHO_AM_I        = 0x75
