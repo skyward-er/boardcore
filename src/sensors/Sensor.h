@@ -33,6 +33,11 @@ class Sensor {
         virtual bool init() = 0;
         virtual bool selfTest() = 0;
         uint8_t getLastError() const { return last_error; }
+
+        enum eErrors {
+            ERR_NOT_ME          = 0x01,
+            ERR_RESET_TIMEOUT   = 0x02
+        };
     private:
         uint8_t last_error = 0;
 };
