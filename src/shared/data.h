@@ -34,7 +34,12 @@
 #include <memory.h>
 
 
-enum SampleDataType { ALTIMETER_DATATYPE=1, ACCELEROMETER_DATATYPE=2, GPS_DATATYPE=3, GYROSCOPE_DATATYPE=4};
+enum SampleDataType { 
+    ALTIMETER_DATATYPE      = 1, 
+    ACCELEROMETER_DATATYPE  = 2,
+    GPS_DATATYPE            = 3,
+    GYROSCOPE_DATATYPE      = 4
+};
 
 //classe base per i Sample, deve avere anche lei la funzione per la serializzazione
 class Sample {

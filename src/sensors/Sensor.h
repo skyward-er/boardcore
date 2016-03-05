@@ -39,7 +39,7 @@ class Sensor {
 
 class GyroSensor : public virtual Sensor {
     public:
-        virtual Quaternion getOrientation() = 0;
+        virtual Vec3 getOrientation() = 0;
 };
 
 class AccelSensor : public virtual Sensor {
