@@ -35,10 +35,10 @@
 
 
 enum SampleDataType { 
-    ALTIMETER_DATATYPE      = 1, 
-    ACCELEROMETER_DATATYPE  = 2,
-    GPS_DATATYPE            = 3,
-    GYROSCOPE_DATATYPE      = 4
+    DATATYPE_ALTIMETER      = 1, 
+    DATATYPE_ACCEL          = 2,
+    DATATYPE_GPS            = 3,
+    DATATYPE_GYRO           = 4
 };
 
 //classe base per i Sample, deve avere anche lei la funzione per la serializzazione
@@ -64,7 +64,7 @@ public:
 	}
 
 	SampleAltimeter(float altitude) {
-		this->type = SampleDataType::ALTIMETER_DATATYPE;
+		this->type = SampleDataType::DATATYPE_ALTIMETER;
 		this->altitude = altitude;
 	}
 
@@ -87,7 +87,7 @@ public:
 	}
 
 	SampleAccelerometer(float x,float y,float z) {
-		this->type = SampleDataType::ACCELEROMETER_DATATYPE;
+		this->type = SampleDataType::DATATYPE_ACCEL;
 		this->x=x;
 		this->y=y;
 		this->z=z;
@@ -113,7 +113,7 @@ public:
 	}
 
 	SampleGyro(float x,float y,float z) {
-		this->type = SampleDataType::GYROSCOPE_DATATYPE;
+		this->type = SampleDataType::DATATYPE_GYRO;
 		this->x=x;
 		this->y=y;
 		this->z=z;
@@ -143,7 +143,7 @@ public:
 	}
 
 	SampleGPS(uint8_t gLatitude, uint8_t gLongitude, double mLatitude, double mLongitude) {
-		this->type = SampleDataType::GPS_DATATYPE;
+		this->type = SampleDataType::DATATYPE_GPS;
 		this->gLatitude=gLatitude;
 		this->gLongitude=gLongitude;
 		this->mLatitude=mLatitude;
