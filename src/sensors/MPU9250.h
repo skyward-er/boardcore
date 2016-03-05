@@ -102,11 +102,6 @@ class MPU9250 : public GyroSensor, public AccelSensor,
         float getTemperature() {
             return 0.0f;             
         }
-
-        enum eErrors {
-            ERR_NOT_ME          = 0x01,
-            ERR_RESET_TIMEOUT   = 0x02
-        };
     private:
         BusType bus;
         constexpr static uint8_t who_am_i_value = 0x71;
