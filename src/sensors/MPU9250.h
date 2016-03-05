@@ -37,7 +37,7 @@ class MPU9250 : public GyroSensor, public AccelSensor,
         }
 
         bool init() {
-            uint8_t whoami = mBus.ReadReg(regMap::WHO_AM_I)
+            uint8_t whoami = bus.ReadReg(regMap::WHO_AM_I)
 
             if(whoami != who_am_i_value) {
                 last_error = ERR_NOT_ME;
@@ -50,7 +50,7 @@ class MPU9250 : public GyroSensor, public AccelSensor,
             // Reset Timeout
             int timeout = 10;
             while(--timeout > 0) {
-                if(!(mBus.ReadReg(REG_PWR_MGMT_1) & 0x80))
+                if(!(bus.ReadReg(REG_PWR_MGMT_1) & 0x80))
                     break;
                 Thread::Sleep(1);
             }
@@ -87,8 +87,8 @@ class MPU9250 : public GyroSensor, public AccelSensor,
             return false; 
         }
 
-        Quaternion getOrientation() {
-            return Quaternion(); 
+        Vec3 getOrientation() {
+            return Vec3(); 
         }
 
         Vec3 getSpeed() {
