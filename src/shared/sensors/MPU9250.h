@@ -33,11 +33,11 @@ class MPU9250 : public GyroSensor, public AccelSensor,
     public:
         MPU9250() {
             gyro_scale = GYROS_2000;
-            accel_scale = ACCELS_16g;
+            accel_scale = ACCELS_16G;
         }
 
         bool init() {
-            uint8_t whoami = bus.ReadReg(regMap::WHO_AM_I)
+            uint8_t whoami = bus.ReadReg(REG_WHO_AM_I);
 
             if(whoami != who_am_i_value) {
                 last_error = ERR_NOT_ME;
@@ -52,7 +52,7 @@ class MPU9250 : public GyroSensor, public AccelSensor,
             while(--timeout > 0) {
                 if(!(bus.ReadReg(REG_PWR_MGMT_1) & 0x80))
                     break;
-                Thread::Sleep(1);
+                Thread::sleep(1);
             }
 
             if(timeout == 0) {
