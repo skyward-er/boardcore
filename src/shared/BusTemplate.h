@@ -2,8 +2,8 @@
 #define BUSTEMPLATE_H
 
 #include <stdint.h>
-#include "miosix.h"
-#include "singleton.h"
+#include <miosix.h>
+#include <Singleton.h>
 
 using namespace std;
 using namespace miosix;
@@ -158,7 +158,7 @@ public:
 
 };
 
-template<class Protocol>
+/*template<class Protocol>
 class Sensor {
 public:
     inline Sensor() { 
@@ -197,5 +197,5 @@ public:
         return Sensor::ReadReg(RegMap::REG_WHO_AM_I);
     }
 };
-
+*/
 #endif // BUSTEMPLATE_H

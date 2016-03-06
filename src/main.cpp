@@ -2,6 +2,7 @@
 #include <canbus/CanManager.h>
 #include <canbus/CanSocket.h>
 #include <canbus/CanUtils.h>
+#include <sensors/MPU9250.h>
 
 using namespace std;
 using namespace miosix;
