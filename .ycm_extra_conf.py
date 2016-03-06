@@ -59,7 +59,6 @@ flags = [
     '-Imiosix-kernel',
     '-Isrc/shared',
     '-Wall',
-    '-Wno-unused-but-set-variable',
     '-nostdlib',
     '-std=c++11',
     '-std=gnu++11',
