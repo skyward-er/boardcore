@@ -152,6 +152,6 @@ class CanManager {
         volatile CAN_TypeDef * const Config;
 };
 
-#define sCanManager CanManager::getInstance()
+#define sCanManager CanManager::GetInstance()
 
 #endif /* CANMANAGER_H */

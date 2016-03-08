@@ -26,7 +26,7 @@
 template<typename T>
 class Singleton {
     public:
-        inline static T* getInstance() {
+        inline static T* GetInstance() {
             if(!instance) 
                 instance = new T(); 
             return instance;
