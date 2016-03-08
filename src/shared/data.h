@@ -2,17 +2,17 @@
  *
  * Copyright (c) 2015 Skyward Experimental Rocketry
  * Authors: Matteo Piazzolla
- * 
+ *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
  * in the Software without restriction, including without limitation the rights
  * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
  * copies of the Software, and to permit persons to whom the Software is
  * furnished to do so, subject to the following conditions:
- * 
+ *
  * The above copyright notice and this permission notice shall be included in
  * all copies or substantial portions of the Software.
- * 
+ *
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
  * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.  IN NO EVENT SHALL THE
@@ -34,8 +34,8 @@
 #include <memory.h>
 
 
-enum SampleDataType { 
-    DATATYPE_ALTIMETER      = 1, 
+enum SampleDataType {
+    DATATYPE_ALTIMETER      = 1,
     DATATYPE_ACCEL          = 2,
     DATATYPE_GPS            = 3,
     DATATYPE_GYRO           = 4
@@ -92,6 +92,13 @@ public:
 		this->y=y;
 		this->z=z;
 	}
+
+  SampleAccelerometer SampleAccelerometer::average(SampleAccelerometer& s1){
+    float avg_x=(this.x+s1.x)/2;
+    float avg_y=(this.y+s1.y)/2;
+    float avg_z=(this.z+s1.z)/2;
+    return new SampleAccelerometer(avgx,avgy,avgz);
+  }
 
 	template <class Archive>
 	void serialize(Archive & ar)
@@ -183,4 +190,3 @@ CEREAL_REGISTER_TYPE_WITH_NAME(SampleAltimeter, "alt");
 CEREAL_REGISTER_TYPE_WITH_NAME(SampleAccelerometer, "acc");
 CEREAL_REGISTER_TYPE_WITH_NAME(SampleGyro, "gyr");
 CEREAL_REGISTER_TYPE_WITH_NAME(SampleGPS, "gps");
-

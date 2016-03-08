@@ -1,7 +1,7 @@
 /* MAX21105 Driver
  *
  * Copyright (c) 2015 Skyward Experimental Rocketry
- * Authors: Matteo Piazzolla
+ * Authors: Matteo Michele Piazzolla
  * 
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -24,7 +24,7 @@
 
 #include "BusTemplate.h"
 #include <stdint.h>
-#include "data.h"
+#include "Data.h"
 #include <cmath>
 /*
 indirizzi dei registri a 6 bit
