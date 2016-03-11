@@ -89,30 +89,35 @@ private:
     }
 };
 
-template<unsigned N>
-class BusI2C {
-    friend class Singleton< BusI2C<N> >;
-public:
-    static void Init() { 
-        Singleton< BusI2C<N> >::GetInstance(); 
-    }
-    static int Write(const void* buffer, size_t len) {
-        return Singleton<BusI2C<N>>::GetInstance()->_write(buffer, len);
-    }
-    static int Read(void* buffer, size_t max_len) {
-        return Singleton<BusI2C<N>>::GetInstance()->_read(buffer, max_len);
-    }
-protected:
-    int _write(const void* buffer, size_t len) {
-        // DMA??
-        return 0;
-    }
-    int _read(void* buffer, size_t max_len) {
-        // conditional var??
-        return 0;
-    }
-    inline BusI2C() { }
-};
+/*
+ * NOTE: this driver is not needed anymore, as it is yet implemented in miosix.
+ *       See miosix/arch/common/drivers/stm32f2_f4_i2c.h
+ */
+
+// template<unsigned N>
+// class BusI2C {
+//     friend class Singleton< BusI2C<N> >;
+// public:
+//     static void Init() { 
+//         Singleton< BusI2C<N> >::GetInstance(); 
+//     }
+//     static int Write(const void* buffer, size_t len) {
+//         return Singleton<BusI2C<N>>::GetInstance()->_write(buffer, len);
+//     }
+//     static int Read(void* buffer, size_t max_len) {
+//         return Singleton<BusI2C<N>>::GetInstance()->_read(buffer, max_len);
+//     }
+// protected:
+//     int _write(const void* buffer, size_t len) {
+//         // DMA??
+//         return 0;
+//     }
+//     int _read(void* buffer, size_t max_len) {
+//         // conditional var??
+//         return 0;
+//     }
+//     inline BusI2C() { }
+// };
 
 template<class Bus, class GpioCS>
 class ProtocolSPI {
@@ -140,23 +145,28 @@ public:
     }
 };
 
-template<class Bus, unsigned ID>
-class ProtocolI2C {
-public:
-    static inline void Init() {
-        Bus::Init();
-    }
+/*
+ * NOTE: this driver is not needed anymore, as it is yet implemented in miosix.
+ *       See miosix/arch/common/drivers/stm32f2_f4_i2c.h
+ */
 
-    static uint8_t ReadReg(uint8_t reg)
-    {
-        static const uint8_t id = ID;
-        Bus::Write(&id, sizeof(id));
-        Bus::Write(&reg, sizeof(reg));
-        Bus::Read(&reg, sizeof(reg));
-        return reg;
-    }
-
-};
+// template<class Bus, unsigned ID>
+// class ProtocolI2C {
+// public:
+//     static inline void Init() {
+//         Bus::Init();
+//     }
+// 
+//     static uint8_t ReadReg(uint8_t reg)
+//     {
+//         static const uint8_t id = ID;
+//         Bus::Write(&id, sizeof(id));
+//         Bus::Write(&reg, sizeof(reg));
+//         Bus::Read(&reg, sizeof(reg));
+//         return reg;
+//     }
+// 
+// };
 
 template<class Protocol>
 class Sensor {
