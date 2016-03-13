@@ -2,6 +2,7 @@
 #define BUSTEMPLATE_H
 
 #include <stdint.h>
+#include <stdio.h>
 #include <miosix.h>
 #include <Singleton.h>
 
@@ -89,6 +90,11 @@ private:
     }
 };
 
+/*
+ * NOTE: this driver exists yet as a part of miosix kernel
+ */
+
+/*
 template<unsigned N>
 class BusI2C {
     friend class Singleton< BusI2C<N> >;
@@ -112,7 +118,7 @@ protected:
         return 0;
     }
     inline BusI2C() { }
-};
+}; */
 
 template<class Bus, class GpioCS>
 class ProtocolSPI {
@@ -142,20 +148,39 @@ public:
 
 template<class Bus, unsigned ID>
 class ProtocolI2C {
-public:
-    static inline void Init() {
-        Bus::Init();
-    }
-
-    static uint8_t ReadReg(uint8_t reg)
-    {
-        static const uint8_t id = ID;
-        Bus::Write(&id, sizeof(id));
-        Bus::Write(&reg, sizeof(reg));
-        Bus::Read(&reg, sizeof(reg));
-        return reg;
-    }
-
+    
+    public:
+        static inline void init() {
+            bus = Bus::instance();
+            bus.init();
+        }
+        
+        /**
+         * Sends the \param len bytes stored in \param *data buffer to the register specified
+         * by \param regAddress        
+         */
+        static void writeRegister(uint8_t regAddress, uint8_t *data, uint8_t len) {
+            
+            uint8_t buf[len+1];     //pack register address and payload
+            buf[0] = regAddress;
+            
+            memcpy(buf+1, data, len);
+            
+            bus.send(ID, reinterpret_cast<void*>(buf), len+1);
+        }
+        
+        /**
+         * Reads \param len bytes storing them into \param *data buffer from the register specified
+         * by \param regAddress        
+         */
+        static void readRegister(uint8_t regAddress, uint8_t *data, uint8_t len) {
+            
+            bus.send(ID,reinterpret_cast<void*>(&regAddress),1);
+            bus.receive(ID,reinterpret_cast<void*>(data),len);
+        }
+        
+    private:
+        Bus bus;
 };
 
 /*template<class Protocol>
