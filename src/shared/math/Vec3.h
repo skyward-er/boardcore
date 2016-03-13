@@ -24,6 +24,8 @@
 #ifndef VEC3_H
 #define VEC3_H 
 
+#include <Common.h>
+
 class Vec3 {
     public:
         Vec3() : x(0), y(0), z(0) {}
@@ -33,7 +35,7 @@ class Vec3 {
         float getY() const { return y; }
         float getZ() const { return z; }
 
-        float clear() {
+        void clear() {
             x = y = z = 0;
         }
 
