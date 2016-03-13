@@ -21,11 +21,77 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
-#ifndef VECTORS_H
-#define VECTORS_H 
+#ifndef VEC3_H
+#define VEC3_H 
 
 class Vec3 {
+    public:
+        Vec3() : x(0), y(0), z(0) {}
+        Vec3(float x, float y, float z) : x(x), y(y), z(z) {}
 
+        float getX() const { return x; }
+        float getY() const { return y; }
+        float getZ() const { return z; }
+
+        float clear() {
+            x = y = z = 0;
+        }
+
+        float magnitude() const {
+            return sqrt(x*x + y*y + z*z);
+        }
+
+        bool normalize() {
+            float l = magnitude();
+            if (l <= 0)
+                return false;
+
+            (*this) *= 1.0f/l;
+            return true;
+        }
+
+        void operator*=(float value) {
+            x *= value;
+            y *= value;
+            z *= value;
+        }
+
+        void operator+=(const Vec3 &v) {
+            x += v.x;
+            y += v.y;
+            z += v.z;
+        }
+
+        void operator-=(const Vec3 &v) {
+            x -= v.x;
+            y -= v.y;
+            z -= v.z;
+        }
+
+        Vec3 operator*(float v) const {
+            return Vec3(x*v, y*v, z*v);
+        }
+
+        Vec3 operator+(const Vec3 &v) const {
+            return Vec3(x+v.x, y+v.y, z+v.z);
+        }
+
+        Vec3 operator-(const Vec3 &v) const {
+            return Vec3(x-v.x, y-v.y, z-v.z);
+        }
+
+        float dot(const Vec3 &v) const {
+            return x*v.x + y*v.y + z*v.z;
+        }
+
+        Vec3 cross(const Vec3 &v) const {
+            return Vec3(y * v.z - z * v.y,
+                        z * v.x - x * v.z,
+                        x * v.y - y * v.x);
+        }
+
+    private:
+        float x, y, z;
 };
 
-#endif /* ifndef VECTORS_H */
+#endif /* ifndef VEC3_H */
