@@ -61,24 +61,109 @@ class Si7021 : public HumiditySensor, public TemperatureSensor {
         
         float getTemperature() {
             
+            uint8_t buf[2] = {CMD_MEAS_TEMP, 0};
+            bus.send(slaveAddr,reinterpret_cast<void*>(buf),1);
+            bus.recv(slaveAddr,reinterpret_cast<void*>(buf),2);
             
+            uint16_t retVal = (buf[1] << 8) | buf[0];
+            
+            float temp = (172.72 * retVal)/65535;
+            return temp - 46.85;
         }
         
         float getHumidity() {
             
+            uint8_t buf[2] = {CMD_MEAS_HUM, 0};
+            bus.send(slaveAddr,reinterpret_cast<void*>(buf),1);
+            bus.recv(slaveAddr,reinterpret_cast<void*>(buf),2);
+            
+            uint16_t retVal = (buf[1] << 8) | buf[0];
+            
+            float temp = (125 * retVal)/65535;
+            return temp - 6;
+        }
+        
+        /**
+         * \return temperature measurement made along the previous humidity measurement.
+         * \code
+         *      getHumidity(); //reads current humidity
+         *      getTempRh();   //returns temperature reading made along the humidity reading
+         * \endcode
+         */
+        
+        float getTempRh() {
+            
+            uint8_t buf[2] = {CMD_MEAS_TEMP_PREV_HUM, 0};
+            bus.send(slaveAddr,reinterpret_cast<void*>(buf),1);
+            bus.recv(slaveAddr,reinterpret_cast<void*>(buf),2);
+            
+            uint16_t retVal = (buf[1] << 8) | buf[0];
+            
+            float temp = (172.72 * retVal)/65535;
+            return temp - 46.85;    
+        }
+        
+        void heaterOn() {
+            
+            uint8_t cmd[2] = {CMD_READ_USR1, 0};
+            uint8_t regValue;
+            
+            bus.send(slaveAddr,reinterpret_cast<void*>(&cmd),1);
+            bus.recv(slaveAddr,reinterpret_cast<void*>(&regValue),1);
+            
+            regValue |= 0b00000100;
+            cmd[0] = CMD_WRITE_USR1;
+            cmd[1] = regValue;
+            
+            bus.send(slaveAddr,reinterpret_cast<void*>(&cmd),2);         
+        }
+        
+        void heaterOff() {
+            
+            uint8_t cmd[2] = {CMD_READ_USR1, 0};
+            uint8_t regValue;
+            
+            bus.send(slaveAddr,reinterpret_cast<void*>(&cmd),1);
+            bus.recv(slaveAddr,reinterpret_cast<void*>(&regValue),1);
+            
+            regValue &= ~0b00000100;
+            cmd[0] = CMD_WRITE_USR1;
+            cmd[1] = regValue;
+            
+            bus.send(slaveAddr,reinterpret_cast<void*>(&cmd),2);          
+        }
+        
+        /**
+         * Set internal heater draw current value, it also can be used to turn on/off the internal heater
+         * @param level current draw level, between 0 and 16: 0 -> heater off, 16 -> heater at max power
+         */
+        
+        void setHeaterLevel(uint8_t level) {
+            
+            if(level == 0)
+                heaterOff();
+            else if(level <= 16)
+            {
+                heaterOn();
+                
+                uint8_t buf[2] = {CMD_WRITE_HEAT_CTL, 0};
+                buf[1] = level - 1;
+                
+                bus.send(slaveAddr,reinterpret_cast<void*>(&buf),2);
+            }
         }
         
     private:
-        BusType bus;
+        BusType bus;        
         static constexpr uint8_t slaveAddr = 0x40;
         
         enum commands {
-            CMD_MEAS_HUM = 0xF5,
-            CMD_MEAS_TEMP = 0xF3,
+            CMD_MEAS_HUM = 0xE5,
+            CMD_MEAS_TEMP = 0xE3,
             CMD_MEAS_TEMP_PREV_HUM = 0xE0,  //read temperature value from previous RH measurement
             CMR_RESET = 0xFE,
             CMD_WRITE_USR1 = 0xE6,
-            CMD_WRITE_USR7 = 0xE7,
+            CMD_READ_USR1 = 0xE7,
             CMD_WRITE_HEAT_CTL = 0x51,
             CMD_READ_HEAT_CTL = 0x11,
             CMD_READ_ID1_1 = 0xFA,
