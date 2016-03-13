@@ -44,46 +44,39 @@ class MPU9250 : public GyroSensor, public AccelSensor,
                 return false;
             }
 
-            // MSB: reset, LSB: clock=auto
-            bus.WriteReg(REG_PWR_MGMT_1, 0b10000001 );
+            uint8_t init_data[][2] = {
+                {REG_PWR_MGMT_1,     0x80},
+                {REG_PWR_MGMT_1,     0x01},
+                {REG_PWR_MGMT_2,     0x00}, // Enable all sensors
+                {REG_CONFIG,         0x00}, // DLPF_CFG = xxxxx000
+                {REG_SMPLRT_DIV,     0x00}, // Do not divide
+                {REG_GYRO_CONFIG,    0x03 | ((gyro_scale  & 3) << 3)},
+                {REG_ACCEL_CONFIG,   0x00 | ((accel_scale & 3) << 3)},
+                {REG_ACCEL_CONFIG2,  0x08}, // FCHOICE = 1, A_DLPF_CFG = 000
+                {REG_INT_PIN_CFG,    0x30},
+                {REG_INT_ENABLE,     0x00}, // No interrupts
 
-            // Reset Timeout
-            int timeout = 10;
-            while(--timeout > 0) {
-                if(!(bus.ReadReg(REG_PWR_MGMT_1) & 0x80))
-                    break;
+                // I2C
+                {REG_USER_CTRL,      0x20}, // Master mode
+                {REG_I2C_MST_CTRL,   0x0D}, // Multi-master @ 400KHz
+
+                // Let's try with slv4 because reg+1 = do, do+1 = ctrl
+                {REG_I2C_SLV4_ADDR, AK8963_I2C_ADDR}, // AK8963 
+
+                {REG_I2C_SLV4_REG, AK8963_CNTL2}, 
+                {REG_I2C_SLV4_DO, 0x01},    // Reset AK8963
+                {REG_I2C_SLV4_CTRL, 0x81},  // Enable I2C and set 1 byte
+
+                {REG_I2C_SLV4_REG, AK8963_CNTL1}, 
+                {REG_I2C_SLV4_DO, 0x12},    // Continuous measurement @ 16bit
+                {REG_I2C_SLV4_CTRL, 0x81}   // Enable I2C and set 1 byte
+            }; 
+
+            for(int i=0; i < sizeof(init_data)/sizeof(init_data[0]); i++) {
+                bus.WriteReg(init_data[i][0], init_data[i][1]);
                 Thread::sleep(1);
             }
 
-            if(timeout == 0) {
-                last_error = ERR_RESET_TIMEOUT;
-                return false;
-            }
-
-            // Enable all sensors
-            bus.WriteReg(REG_PWR_MGMT_2, 0b00000000 );
-
-            // DLPF_CFG = xxxxx000
-            bus.WriteReg(REG_CONFIG, 0b00000000);
-
-            // Do not divide
-            bus.WriteReg(REG_SMPLRT_DIV, 0x00);
-
-            // Gyro Config: FChoice = 0b11: use DLPF_CFG
-            bus.WriteReg(REG_GYRO_CONFIG, 0b00000011 | 
-                    ((gyro_scale & 0x03) << 3));
-
-            // Write Accel Scale
-            bus.WriteReg(REG_ACCEL_CONFIG, 0b00000000 |
-                    ((accel_scale & 0x03) << 3));
-
-            // 0000xyyy : x = FCHOICE, y = A_DLPF_CFG 
-            bus.WriteReg(REG_ACCEL_CONFIG2, 0b00001000);
-
-            // Interrupt status is cleared after any read operation.
-            // TODO: configure miosix interrupt as RISING EDGE!
-            bus.WriteReg(REG_INT_PIN_CFG, 0b00110000);
-            bus.WriteReg(REG_INT_ENABLE, 0b00000001);
             return true;
         }
 
@@ -110,6 +103,14 @@ class MPU9250 : public GyroSensor, public AccelSensor,
         BusType bus;
         constexpr static uint8_t who_am_i_value = 0x71;
 
+        enum eMagnetoMap {
+            AK8963_I2C_ADDR     = 0x0c,
+
+            AK8963_STATUS1      = 0x02,
+            AK8963_CNTL1        = 0x0a,
+            AK8963_CNTL2        = 0x0b,
+        };
+
         enum eRegMap {
             REG_SMPLRT_DIV      = 0x19,
             REG_CONFIG          = 0x1A,
@@ -117,10 +118,22 @@ class MPU9250 : public GyroSensor, public AccelSensor,
             REG_ACCEL_CONFIG    = 0x1C,
             REG_ACCEL_CONFIG2   = 0x1D,
 
+            REG_I2C_MST_CTRL    = 0x24, 
+            REG_I2C_SLV0_ADDR   = 0x25, // unused.
+            REG_I2C_SLV0_REG    = 0x26, // unused.
+            REG_I2C_SLV0_CTRL   = 0x27, // unused.
+            REG_I2C_SLV0_DO     = 0x63, // unused.
+
+            REG_I2C_SLV4_ADDR   = 0x31,
+            REG_I2C_SLV4_REG    = 0x32,
+            REG_I2C_SLV4_DO     = 0x33,
+            REG_I2C_SLV4_CTRL   = 0x34,
+
             REG_INT_PIN_CFG     = 0x37,
             REG_INT_ENABLE      = 0x38,
             REG_INT_STATUS      = 0x3A,
 
+            REG_USER_CTRL       = 0x6A,
             REG_PWR_MGMT_1      = 0x6B,
             REG_PWR_MGMT_2      = 0x6C,
             REG_WHO_AM_I        = 0x75
