@@ -29,17 +29,34 @@
 
 
 template <typename BusType>
-class SI7021 : public HumiditySensor, public TemperatureSensor {
+class Si7021 : public HumiditySensor, public TemperatureSensor {
     
     public:
-        SI7021() {
-            
-        }
+        Si7021() { }
         
-        bool init() { return true; } //nothing to do, at boot everything is configured correctly
+        bool init() { return selfTest(); }
         
         bool selfTest() {
             
+            //test the whoami value
+            uint8_t buf[6] = {CMD_READ_ID2_1, CMD_READ_ID2_2,0,0,0,0};
+            
+            if(!bus.send(slaveAddr, reinterpret_cast<void*>(buf),2)) {
+                last_error = ERR_BUS_FAULT;
+                return false;
+            }
+            
+            if(!bus.recv(slaveAddr, reinterpret_cast<void*>(buf),6)) {
+                last_error = ERR_BUS_FAULT;
+                return false;
+            }
+            
+            if(buf[0] != 0x15) {
+                last_error = ERR_NOT_ME;
+                return false;
+            }
+            
+            return true;           
         }
         
         float getTemperature() {
@@ -53,6 +70,7 @@ class SI7021 : public HumiditySensor, public TemperatureSensor {
         
     private:
         BusType bus;
+        static constexpr uint8_t slaveAddr = 0x40;
         
         enum commands {
             CMD_MEAS_HUM = 0xF5,
@@ -63,8 +81,10 @@ class SI7021 : public HumiditySensor, public TemperatureSensor {
             CMD_WRITE_USR7 = 0xE7,
             CMD_WRITE_HEAT_CTL = 0x51,
             CMD_READ_HEAT_CTL = 0x11,
-            CMD_READ_ID1 = 0xFA,
-            CMD_READ_ID2 = 0xFC,
+            CMD_READ_ID1_1 = 0xFA,
+            CMD_READ_ID1_2 = 0x0F,
+            CMD_READ_ID2_1 = 0xFC,
+            CMD_READ_ID2_2 = 0xC9,
             CMD_READ_FW_REV = 0x84,
         };
     

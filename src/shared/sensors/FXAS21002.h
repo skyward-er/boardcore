@@ -44,7 +44,7 @@ class FXAS21002 : public GyroSensor {
                 return false;
             }
             
-            uint8_t regCtrl2 = ReadReg(regMap::REG_CTRL2);
+            uint8_t regCtrl2 = bus.ReadReg(regMap::REG_CTRL2);
             
             //enable data ready interrupt and set as active high
             bus.WriteReg(regMap::REG_CTRL2, regCtrl2 |= 0b00000110);      

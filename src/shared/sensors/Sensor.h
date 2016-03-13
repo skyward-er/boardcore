@@ -37,9 +37,10 @@ class Sensor {
         enum eErrors {
             ERR_NOT_ME          = 0x01,
             ERR_RESET_TIMEOUT   = 0x02,
-            ERR_X_SELFTEST_FAIL   = 0x03,
-            ERR_Y_SELFTEST_FAIL   = 0x04,
-            ERR_Z_SELFTEST_FAIL   = 0x05
+            ERR_BUS_FAULT       = 0x03,     //bus write/read has encountered an error
+            ERR_X_SELFTEST_FAIL   = 0x04,
+            ERR_Y_SELFTEST_FAIL   = 0x05,
+            ERR_Z_SELFTEST_FAIL   = 0x06
         };
         
     private:
