@@ -1,4 +1,4 @@
-/* SI7021 Driver 
+/* Si7021 Driver 
  *
  * Copyright (c) 2016 Skyward Experimental Rocketry
  * Authors: Silvano Seva
