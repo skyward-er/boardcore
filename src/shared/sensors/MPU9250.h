@@ -31,7 +31,7 @@ template <typename BusType>
 class MPU9250 : public GyroSensor, public AccelSensor, 
                 public CompassSensor, public TemperatureSensor {
     public:
-        MPU9250() {
+        MPU9250() : temp(0.0f) {
             gyro_scale = GYROS_2000;
             accel_scale = ACCELS_16G;
         }
@@ -57,7 +57,7 @@ class MPU9250 : public GyroSensor, public AccelSensor,
                 {REG_INT_ENABLE,     0x00}, // No interrupts
 
                 // I2C
-                {REG_USER_CTRL,      0x20}, // Master mode
+                {REG_USER_CTRL,      0x20}, // Master mode TODO: I2C_IF_DIS???
                 {REG_I2C_MST_CTRL,   0x0D}, // Multi-master @ 400KHz
 
                 // Let's try with slv4 because reg+1 = do, do+1 = ctrl
@@ -80,28 +80,40 @@ class MPU9250 : public GyroSensor, public AccelSensor,
             return true;
         }
 
+        void updateData() {
+            //                                 xh    xl    yh    yl    zh    zl
+            // uint8_t accel = {0x3b | 0x80, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00}
+            //                                th    tl
+            // uint8_t temp = {0x41 | 0x80, 0x00, 0x00}
+            //                                xh    xl    yh    yl    zh    zl
+            // uint8_t gyro = {0x3b | 0x80, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00}
+            // TODO magneto
+        }
+
         bool selfTest() {
             return false; 
         }
 
         Vec3 getOrientation() {
-            return Vec3(); 
+            return gyro; 
         }
 
-        Vec3 getSpeed() {
-            return Vec3(); 
+        Vec3 getAccel() {
+            return accel; 
         }
 
         Vec3 getCompass() {
-            return Vec3(); 
+            return magneto; 
         }
 
         float getTemperature() {
-            return 0.0f;             
+            return temp;             
         }
     private:
         BusType bus;
         constexpr static uint8_t who_am_i_value = 0x71;
+        Vec3 accel, gyro, magneto;
+        float temp;
 
         enum eMagnetoMap {
             AK8963_I2C_ADDR     = 0x0c,

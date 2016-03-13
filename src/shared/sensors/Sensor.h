@@ -54,7 +54,7 @@ class GyroSensor : public virtual Sensor {
 
 class AccelSensor : public virtual Sensor {
     public:
-        virtual Vec3 getSpeed() = 0;
+        virtual Vec3 getAccel() = 0;
 };
 
 class CompassSensor : public virtual Sensor {
