@@ -27,16 +27,6 @@
 
 using namespace miosix;
 
-typedef struct {
-    uint16_t sens;
-    uint16_t off;
-    uint16_t tcs;
-    uint16_t tco;
-    uint16_t tref;
-    uint16_t tempsens;
-} calibration_data;
-
-
 template<class BusType, typename GpioCS>
 class MS580301BA07 : public PressureSensor, public TemperatureSensor {
 public:
@@ -125,6 +115,15 @@ public:
     }
 
 private:
+    typedef struct {
+        uint16_t sens;
+        uint16_t off;
+        uint16_t tcs;
+        uint16_t tco;
+        uint16_t tref;
+        uint16_t tempsens;
+    } calibration_data;
+
     BusType bus;
     calibration_data cd ={0};
     uint32_t ref_pressure=0;
