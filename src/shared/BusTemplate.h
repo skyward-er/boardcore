@@ -135,7 +135,11 @@ template<class Bus, unsigned ID>
 class ProtocolI2C {
     public:
         static inline void init() {
-            bus.init(); // FIXME: @redman: what happens if this is called multiple times?
+            
+            if(!initialized){
+                bus.init();
+                initialized = true;
+            }
         }
         
         /**
@@ -161,7 +165,8 @@ class ProtocolI2C {
         }
         
     private:
-        static Bus &bus = Bus::instance();
+        static Bus& bus = Bus::instance();
+        static bool initialized = false;
 
         ProtocolI2C() = delete;
         ~ProtocolI2C() = delete;
