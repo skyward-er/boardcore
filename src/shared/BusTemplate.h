@@ -17,13 +17,13 @@ class BusSPI : public Singleton< BusSPI<N, GpioMosi, GpioMiso, GpioSclk> > {
     friend class Singleton<BusSPI<N, GpioMosi, GpioMiso, GpioSclk> >;
     typedef Singleton<BusSPI<N, GpioMosi, GpioMiso, GpioSclk> > SingletonType;
 public:
-    inline static int Write(const void* buffer, size_t len) {
+    inline static int write(const void* buffer, size_t len) {
         return SingletonType::GetInstance()->_write(buffer, len);
     }
-    inline static void Init() { 
+    inline static void init() { 
         SingletonType::GetInstance(); 
     }
-    inline static int Read(void* buffer, size_t max_len) {
+    inline static int read(void* buffer, size_t max_len) {
         return SingletonType::GetInstance()->_read(buffer, max_len);
     }
 private:
@@ -36,9 +36,9 @@ private:
     }
 
     inline void _write(uint8_t byte) const {
-        GetSpiAddr(N)->DR=byte;
-        while((GetSpiAddr(N)->SR & SPI_SR_RXNE)==0);
-        byte=GetSpiAddr(N)->DR;
+        getSPIAddr(N)->DR=byte;
+        while((getSPIAddr(N)->SR & SPI_SR_RXNE)==0);
+        byte=getSPIAddr(N)->DR;
     }
 
     inline int _read(void* buffer, size_t max_len) const {
@@ -50,9 +50,9 @@ private:
     }
 
     inline uint8_t _read() const {
-        GetSpiAddr(N)->DR=0;
-        while((GetSpiAddr(N)->SR & SPI_SR_RXNE)==0);
-        return GetSpiAddr(N)->DR;
+        getSPIAddr(N)->DR=0;
+        while((getSPIAddr(N)->SR & SPI_SR_RXNE)==0);
+        return getSPIAddr(N)->DR;
     }
 
     BusSPI() {
@@ -63,8 +63,8 @@ private:
         GpioSclk::mode(Mode::ALTERNATE);
         GpioSclk::alternateFunction(GetAlternativeFunctionNumber(N));
         usleep(CS_DELAY);
-        EnablePeriphBus(GetSpiAddr(N));
-        GetSpiAddr(N)->CR1 = SPI_CR1_SSM
+        enableSPIBus(getSPIAddr(N));
+        getSPIAddr(N)->CR1 = SPI_CR1_SSM
                            | SPI_CR1_SSI
                            | SPI_CR1_MSTR
                            | SPI_CR1_BR_2
@@ -75,12 +75,12 @@ private:
         return n_spi == 1 || n_spi == 2 ? 5 : 6;
     }
 
-    constexpr SPI_TypeDef* GetSpiAddr(unsigned n) {
+    constexpr SPI_TypeDef* getSPIAddr(unsigned n) {
         return  n==1 ? SPI1 :
                 n==2 ? SPI2 : SPI3;
     }
 
-    static inline void EnablePeriphBus(SPI_TypeDef* spi) {
+    static inline void enableSPIBus(SPI_TypeDef* spi) {
         if(spi == SPI1)
             RCC->APB2ENR |= RCC_APB2ENR_SPI1EN;
         else if(spi == SPI2)
@@ -90,79 +90,52 @@ private:
     }
 };
 
-/*
- * NOTE: this driver exists yet as a part of miosix kernel
- */
-
-/*
-template<unsigned N>
-class BusI2C {
-    friend class Singleton< BusI2C<N> >;
-public:
-    static void Init() { 
-        Singleton< BusI2C<N> >::GetInstance(); 
-    }
-    static int Write(const void* buffer, size_t len) {
-        return Singleton<BusI2C<N>>::GetInstance()->_write(buffer, len);
-    }
-    static int Read(void* buffer, size_t max_len) {
-        return Singleton<BusI2C<N>>::GetInstance()->_read(buffer, max_len);
-    }
-protected:
-    int _write(const void* buffer, size_t len) {
-        // DMA??
-        return 0;
-    }
-    int _read(void* buffer, size_t max_len) {
-        // conditional var??
-        return 0;
-    }
-    inline BusI2C() { }
-}; */
-
 template<class Bus, class GpioCS>
 class ProtocolSPI {
 public:
-    static void Init() {
+    static inline void init() {
         GpioCS::mode(Mode::OUTPUT);
         GpioCS::high();
-        Bus::Init();
+        Bus::init();
     }
 
-    static uint8_t ReadReg(uint8_t reg) {
+    static uint8_t read(uint8_t reg) {
         GpioCS::low();
         reg |= 0x80;
-        Bus::Write(&reg, sizeof(reg));
-        Bus::Read(&reg, sizeof(reg));
+        Bus::write(&reg, sizeof(reg));
+        Bus::read(&reg, sizeof(reg));
         GpioCS::high();
         return reg;
     }
 
-    static void WriteReg(uint8_t reg, uint8_t val) {
+    static void write(uint8_t reg, uint8_t val) {
         GpioCS::low();
-        Bus::Write(&reg, sizeof(reg));
-        Bus::Write(&val, sizeof(reg));
+        Bus::write(&reg, sizeof(reg));
+        Bus::write(&val, sizeof(reg));
         GpioCS::high();
     }
+private:
+    ProtocolSPI() = delete;
+    ~ProtocolSPI() = delete;
+    ProtocolSPI(const ProtocolSPI& o) = delete;
+    ProtocolSPI(const ProtocolSPI&& o) = delete;
+    ProtocolSPI& operator=(const ProtocolSPI& other);
 };
 
 template<class Bus, unsigned ID>
 class ProtocolI2C {
-    
     public:
         static inline void init() {
-            bus = Bus::instance();
-            bus.init();
+            bus.init(); // FIXME: @redman: what happens if this is called multiple times?
         }
         
         /**
          * Sends the \param len bytes stored in \param *data buffer to the register specified
          * by \param regAddress        
          */
-        static void writeRegister(uint8_t regAddress, uint8_t *data, uint8_t len) {
-            
+        static void write(uint8_t addr, uint8_t *data, uint8_t len) {
             uint8_t buf[len+1];     //pack register address and payload
-            buf[0] = regAddress;
+            buf[0] = addr;
             
             memcpy(buf+1, data, len);
             
@@ -173,54 +146,19 @@ class ProtocolI2C {
          * Reads \param len bytes storing them into \param *data buffer from the register specified
          * by \param regAddress        
          */
-        static void readRegister(uint8_t regAddress, uint8_t *data, uint8_t len) {
-            
-            bus.send(ID,reinterpret_cast<void*>(&regAddress),1);
+        static void read(uint8_t addr, uint8_t *data, uint8_t len) {
+            bus.send(ID,reinterpret_cast<void*>(&addr),1);
             bus.receive(ID,reinterpret_cast<void*>(data),len);
         }
         
     private:
-        Bus bus;
+        static Bus &bus = Bus::instance();
+
+        ProtocolI2C() = delete;
+        ~ProtocolI2C() = delete;
+        ProtocolI2C(const ProtocolI2C& o) = delete;
+        ProtocolI2C(const ProtocolI2C&& o) = delete;
+        ProtocolI2C& operator=(const ProtocolI2C& other);
 };
 
-/*template<class Protocol>
-class Sensor {
-public:
-    inline Sensor() { 
-        Protocol::Init(); 
-    }
-    inline static uint8_t ReadReg(uint8_t reg) { 
-        return Protocol::ReadReg(reg); 
-    }
-    inline static void WriteReg(uint8_t reg, uint8_t value) { 
-        Protocol::WriteReg(reg, value); 
-    }
-    virtual void Init() = 0;
-    virtual bool Test() const = 0;
-};
-
-class RegMap_AXEL {
-public:
-    static constexpr uint8_t REG_X_L        = 0x28;
-    static constexpr uint8_t REG_X_H        = 0x29;
-    static constexpr uint8_t REG_Y_L        = 0x2A;
-    static constexpr uint8_t REG_Y_H        = 0x2B;
-    static constexpr uint8_t REG_Z_H        = 0x2C;
-    static constexpr uint8_t REG_Z_L        = 0x2D;
-    static constexpr uint8_t REG_STAT       = 0x2E;
-    static constexpr uint8_t REG_WHO_AM_I   = 0x0F;
-};
-
-template<class RegMap>
-class Axel : public Sensor<ProtocolI2C<BusI2C<2>, 3>> {
-    // assert bus class here
-public:
-    int ReadAxelX() {
-        return Sensor::ReadReg(RegMap::REG_X_L);
-    }
-    int ReadWhoAmI() {
-        return Sensor::ReadReg(RegMap::REG_WHO_AM_I);
-    }
-};
-*/
 #endif // BUSTEMPLATE_H

@@ -37,7 +37,7 @@ class MPU9250 : public GyroSensor, public AccelSensor,
         }
 
         bool init() {
-            uint8_t whoami = bus.ReadReg(REG_WHO_AM_I);
+            uint8_t whoami = bus.read(REG_WHO_AM_I);
 
             if(whoami != who_am_i_value) {
                 last_error = ERR_NOT_ME;
@@ -73,7 +73,7 @@ class MPU9250 : public GyroSensor, public AccelSensor,
             }; 
 
             for(int i=0; i < sizeof(init_data)/sizeof(init_data[0]); i++) {
-                bus.WriteReg(init_data[i][0], init_data[i][1]);
+                bus.write(init_data[i][0], init_data[i][1]);
                 Thread::sleep(1);
             }
 
