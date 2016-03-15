@@ -13,7 +13,6 @@ using namespace miosix;
 
 template<unsigned N, class GpioMosi, class GpioMiso, class GpioSclk>
 class BusSPI : public Singleton< BusSPI<N, GpioMosi, GpioMiso, GpioSclk> > {
-
     friend class Singleton<BusSPI<N, GpioMosi, GpioMiso, GpioSclk> >;
     typedef Singleton<BusSPI<N, GpioMosi, GpioMiso, GpioSclk> > SingletonType;
 public:
@@ -129,50 +128,52 @@ private:
     ProtocolSPI(const ProtocolSPI& o) = delete;
     ProtocolSPI(const ProtocolSPI&& o) = delete;
     ProtocolSPI& operator=(const ProtocolSPI& other);
+    ProtocolSPI& operator=(const ProtocolSPI&& other);
 };
 
 template<class Bus, unsigned ID>
-class ProtocolI2C {
-    public:
-        static inline void init() {
-            
-            if(!initialized){
-                bus.init();
-                initialized = true;
-            }
-        }
+class ProtocolI2C : public Singleton<ProtocolI2C<Bus, ID> >{
+    friend class Singleton< ProtocolI2C<Bus, ID> >;
+    typedef Singleton< ProtocolI2C<Bus, ID> > SingletonType;
+public:
+    static inline void init() {
+        SingletonType::GetInstance(); 
+    }
+    
+    /**
+     * Sends the \param len bytes stored in \param *data buffer 
+     * to the register specified by \param regAddress        
+     */
+    static void write(uint8_t addr, uint8_t *data, uint8_t len) {
+        uint8_t buf[len+1];     //pack register address and payload
+        buf[0] = addr;
         
-        /**
-         * Sends the \param len bytes stored in \param *data buffer to the register specified
-         * by \param regAddress        
-         */
-        static void write(uint8_t addr, uint8_t *data, uint8_t len) {
-            uint8_t buf[len+1];     //pack register address and payload
-            buf[0] = addr;
-            
-            memcpy(buf+1, data, len);
-            
-            bus.send(ID, reinterpret_cast<void*>(buf), len+1);
-        }
+        memcpy(buf+1, data, len);
         
-        /**
-         * Reads \param len bytes storing them into \param *data buffer from the register specified
-         * by \param regAddress        
-         */
-        static void read(uint8_t addr, uint8_t *data, uint8_t len) {
-            bus.send(ID,reinterpret_cast<void*>(&addr),1);
-            bus.receive(ID,reinterpret_cast<void*>(data),len);
-        }
-        
-    private:
-        static Bus& bus = Bus::instance();
-        static bool initialized = false;
+        bus.send(ID, reinterpret_cast<void*>(buf), len+1);
+    }
+    
+    /** 
+     * Reads \param len bytes storing them into \param *data buffer 
+     * from the register specified by \param regAddress        
+     */
+    static void read(uint8_t addr, uint8_t *data, uint8_t len) {
+        bus.send(ID,reinterpret_cast<void*>(&addr),1);
+        bus.receive(ID,reinterpret_cast<void*>(data),len);
+    }
+    
+private:
+    static Bus& bus = Bus::instance();
 
-        ProtocolI2C() = delete;
-        ~ProtocolI2C() = delete;
-        ProtocolI2C(const ProtocolI2C& o) = delete;
-        ProtocolI2C(const ProtocolI2C&& o) = delete;
-        ProtocolI2C& operator=(const ProtocolI2C& other);
+    ProtocolI2C() {
+        bus.init();
+    }
+
+    ~ProtocolI2C() = delete;
+    ProtocolI2C(const ProtocolI2C& o) = delete;
+    ProtocolI2C(const ProtocolI2C&& o) = delete;
+    ProtocolI2C& operator=(const ProtocolI2C& other);
+    ProtocolI2C& operator=(const ProtocolI2C&& other);
 };
 
 #endif // BUSTEMPLATE_H
