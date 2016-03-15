@@ -94,6 +94,10 @@ class MPU9250 : public GyroSensor, public AccelSensor,
             return false; 
         }
 
+        void updateParams() {
+        
+        }
+
         Vec3 getOrientation() {
             return gyro; 
         }

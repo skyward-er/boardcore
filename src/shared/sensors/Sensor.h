@@ -28,19 +28,48 @@
 #include <math/Vec3.h>
 #include <math/Quaternion.h>
 
+/** Sensors class diagram
+ *               ________ 
+ *              | Sensor |                      <- Sensor parent
+ *      _______/ -------- \________
+ * ____/_______   _|__________   __\_______ 
+ *| GyroSensor | | ...Sensor  | | AnySensor|    <- Virtual childs
+ * ------------   ------------   ---------- 
+ *    |     _______/       \       /
+ *  __|____/_             __\_____/_
+ * | ABC1234 |           | LOL12345 |           <- You write these
+ *  ---------             ----------
+ */
+
 class Sensor {
     public:
+        /** Here the code to initialize this sensor */
         virtual bool init() = 0;
+
+        /** Self test code
+         * It should return a boolean:
+         *    True  = sensor ok
+         *    False = sensor ko, write into last_error the error code.
+         * Anyone should be able to call getLastError() and read the error.
+         */
         virtual bool selfTest() = 0;
+
+        /** This method is called once every N msec, read new values and
+         * store them in local variables
+         */
+        virtual void updateParams() = 0;
+
+        /** Return last error code */
         uint8_t getLastError() const { return last_error; }
 
+        /** Errors (for each subsensor) */
         enum eErrors {
-            ERR_NOT_ME          = 0x01,
-            ERR_RESET_TIMEOUT   = 0x02,
-            ERR_BUS_FAULT       = 0x03,     //bus write/read has encountered an error
-            ERR_X_SELFTEST_FAIL   = 0x04,
-            ERR_Y_SELFTEST_FAIL   = 0x05,
-            ERR_Z_SELFTEST_FAIL   = 0x06
+            ERR_NOT_ME              = 0x01,
+            ERR_RESET_TIMEOUT       = 0x02,
+            ERR_BUS_FAULT           = 0x03, // A bus op has encountered an error
+            ERR_X_SELFTEST_FAIL     = 0x04,
+            ERR_Y_SELFTEST_FAIL     = 0x05,
+            ERR_Z_SELFTEST_FAIL     = 0x06
         };
         
     private:
@@ -70,6 +99,11 @@ class TemperatureSensor : public virtual Sensor {
 class HumiditySensor : public virtual Sensor {
     public:
         virtual float getHumidity() = 0;
+};
+
+class PressureSensor : public virtual Sensor {
+    public:
+        virtual float getPressure() = 0;
 };
 
 #endif /* ifndef SENSORS_H */
