@@ -1,7 +1,7 @@
 /* MS580301BA07 Driver
  *
  * Copyright (c) 2015 Skyward Experimental Rocketry
- * Authors: Davide Benini, Matteo Piazzolla
+ * Authors: Davide Benini, Matteo Piazzolla, Alain Carlucci
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -21,11 +21,11 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
+
+#include "Sensor.h"
 #include <BusTemplate.h>
-#include <Common.h>
-#include <data.h>
 
-
+using namespace miosix;
 
 typedef struct {
     uint16_t sens;
@@ -37,142 +37,145 @@ typedef struct {
 } calibration_data;
 
 
-
-
-class RegMap_MS580301BA07
-{
+template<class BusType, typename GpioCS>
+class MS580301BA07 : public PressureSensor, public TemperatureSensor {
 public:
+    /* Class constructor. Reset lastPressure and lastTemperature */
+    MS580301BA07() : lastPressure(0.0f), lastTemperature(0.0f) {}
 
+    bool init() {
+        // TODO: check the who_am_i value!
+        
+        do {
+            bus.read(RESET_DEV);
+            cd.sens = readReg(PROM_READ_MASK | PROM_SENS_MASK);
+            if(cd.sens == 0)
+                Thread::sleep(1);
+        } while (cd.sens == 0);
 
-    static constexpr uint8_t RESET_DEV                 = 0x1E;
+        cd.off  = readReg(PROM_READ_MASK | PROM_OFF_MASK);
+        cd.tcs  = readReg(PROM_READ_MASK | PROM_TCS_MASK);
+        cd.tco  = readReg(PROM_READ_MASK | PROM_TCO_MASK);
+        cd.tref = readReg(PROM_READ_MASK | PROM_TREF_MASK);
+        cd.tempsens = readReg(PROM_READ_MASK | PROM_TEMPSENS_MASK);
 
-    static constexpr uint8_t CONVERT_D1_256            = 0x40;
-    static constexpr uint8_t CONVERT_D1_512            = 0x42;
-    static constexpr uint8_t CONVERT_D1_1024           = 0x44;
-    static constexpr uint8_t CONVERT_D1_2048           = 0x46;
-    static constexpr uint8_t CONVERT_D1_4096           = 0x48;
-
-    static constexpr uint8_t CONVERT_D2_256            = 0x50;
-    static constexpr uint8_t CONVERT_D2_512            = 0x52;
-    static constexpr uint8_t CONVERT_D2_1024           = 0x54;
-    static constexpr uint8_t CONVERT_D2_2048           = 0x56;
-    static constexpr uint8_t CONVERT_D2_4096           = 0x58;
-
-    static constexpr uint8_t ADC_READ                  = 0x00;
-
-    static constexpr uint8_t PROM_READ_MASK            = 0xA0;
-    static constexpr uint8_t PROM_SENS_MASK            = 0x02;
-    static constexpr uint8_t PROM_OFF_MASK             = 0x04;
-    static constexpr uint8_t PROM_TCS_MASK             = 0x06;
-    static constexpr uint8_t PROM_TCO_MASK             = 0x08;
-    static constexpr uint8_t PROM_TREF_MASK            = 0x0A;
-    static constexpr uint8_t PROM_TEMPSENS_MASK        = 0xC;
-
-
-};
-
-template<class RegMap>
-class MS580301BA07 : public Sensor<ProtocolSPI<BusSPI<2>, 3>>
-{
-    // assert bus class here
-public:
-
-  calibration_data cd ={0};
-  uint32_t ref_pressure=0;
-
-
-    MS580301BA07(){
-        Init();
-        Calibrate()
+        // TODO: @teo_piaz You wrote some "_calibrate();" calls without
+        // the function implementation.
+        
+        return true; 
     }
 
-
-    uint16_t ReadCalibrationRegister(uint8_t reg){
-      uint8_t rcv[2];
-      GpioCS::low();
-      reg |= 0x80;
-      Bus::Write(&reg, sizeof(reg));
-      Bus::Read(&rcv, 2);
-      uint16_t data = rcv[0]<<8 | rcv[1];
-      GpioCS::high();
-      return data;
+    bool selfTest() {
+        return false; 
     }
 
-    void Init(){
-      do{
-
-      SensorReset();
-      Sensor::ReadReg(RegMap::RESET_DEV);
-
-      cd.sens = ReadCalibrationRegister(RegMap::PROM_READ_MASK | RegMap::PROM_SENS_MASK);
-      } while(cd.sens==0);
-      cd.off  = ReadCalibrationRegister(RegMap::PROM_READ_MASK | RegMap::PROM_OFF_MASK);
-      cd.tcs  = ReadCalibrationRegister(RegMap::PROM_READ_MASK | RegMap::PROM_TCS_MASK);
-      cd.tco  = ReadCalibrationRegister(RegMap::PROM_READ_MASK | RegMap::PROM_TCO_MASK);
-      cd.tref = ReadCalibrationRegister(RegMap::PROM_READ_MASK | RegMap::PROM_TREF_MASK);
-      cd.tempsens = ReadCalibrationRegister(RegMap::PROM_READ_MASK | RegMap::PROM_TEMPSENS_MASK);
+    float getPressure() {
+        return lastPressure; 
     }
 
-
-    void SensorReset(){
-        Sensor::ReadReg(RegMap::RESET_DEV);
+    float getTemperature() {
+        return lastTemperature; 
     }
 
+    void updateParams() {
+        uint8_t rcvbuf[3];
+        uint32_t pressure = 0;
+        uint32_t temperature =0;
 
-    uint32_t ReadPressure(){
+        //TODO: dubbio, non devo fare un ADC read sola?
+        //FIXME: add a timeout
+        do {
+            GpioCS::low();
+            bus.write(CONVERT_D1_4096);
+            bus.write(ADC_READ);
+            bus.read(rcvbuf, 3);
+            GpioCS::high();
 
-      uint32_t pressure=0;
-      uint32_t temperature =0;
+            // FIXME: is this an endianness swapping? miosix should have a 
+            // function that do this with only one assembly line.
+            pressure = rcvbuf[2] 
+                        | ((uint32_t)rcvbuf[1] << 8) 
+                        | ((uint32_t)rcvbuf[0] << 16);
 
-      //TODO: dubbio, non devo fare un ADC read sola?
+            if (pressure == 0)
+                Thread::sleep(1);
+        } while (pressure == 0);
+
         do{
+            GpioCS::low();
+            bus.write(CONVERT_D2_4096);
+            bus.write(ADC_READ);
+            bus.read(rcvbuf, 3);
+            temperature = (uint32_t) rcvbuf[2] 
+                        | ((uint32_t)rcvbuf[1] << 8) 
+                        | ((uint32_t)rcvbuf[0] << 16);
+            if(temperature == 0)
+                Thread::sleep(1);
+        } while(temperature == 0);
+
+        // FIXME: is this code correct? seems doing floating point ops
+        // using int variables
+        // FIXME: this code is using cd.* variables but cd is always zero.
+        int32_t dt = temperature - cd.tref * (1 << 8);
+        lastTemperature = 2000 + dt * (cd.tempsens) / (1 << 23);
+
+        int64_t offs =  cd.off * (1 << 16) + (cd.tco * dt) / (1 << 7);
+        int64_t senst =  cd.sens * (1 << 15) + (cd.tcs * dt) / (1 << 8);
+        lastPressure = (pressure * senst / (1 << 21) - offs) / (1 << 15);
+    }
+
+private:
+    BusType bus;
+    calibration_data cd ={0};
+    uint32_t ref_pressure=0;
+    float lastTemperature;
+    float lastPressure;
+
+    uint16_t readReg(uint8_t reg){
+        uint8_t rcv[2];
         GpioCS::low();
-        Bus::Write(RegMap::CONVERT_D1_4096,sizeof(RegMap::CONVERT_D1_4096));
-        Bus::Write(RegMap::ADC_READ,sizeof(RegMap::ADC_READ));
-        uint32_t rcvbuf;
-        Bus::Read(&reg, 3);
+        reg |= 0x80;
+        bus.write(reg);
+        bus.read(&rcv, 2);
+        uint16_t data = (rcv[0] << 8) | rcv[1];
         GpioCS::high();
-
-            pressure = (uint32_t)rcvbuf[2] | (((uint32_t)rcvbuf[1])<<8) | (((uint32_t)rcvbuf[0])<<16);
-        }while(pressure==0);
-
-        do{
-        GpioCS::low();
-        Bus::Write(RegMap::CONVERT_D2_4096,sizeof(RegMap::CONVERT_D2_4096));
-        Bus::Write(RegMap::ADC_READ,sizeof(RegMap::ADC_READ));
-        uint32_t rcvbuf;
-        Bus::Read(&reg, 3);
-            temperature = (uint32_t)rcvbuf[2] | (((uint32_t)rcvbuf[1])<<8) | (((uint32_t)rcvbuf[0])<<16);
-        } while(temperature==0);
-
-        int32_t dt = temperature - cd.tref*pow(2,8);
-        comp_temp = 2000 + dt*(cd.tempsens)/pow(2,23);
-        int64_t offs = (cd.off*pow(2,16))+((cd.tco*dt)/pow(2,7));
-        int64_t senst =  cd.sens*pow(2,15) + (cd.tcs*dt)/pow(2,8);
-        comp_pressure = (pressure*senst/pow(2,21)-offs)/pow(2,15);
-        return comp_pressure;
+        return data;
     }
 
-    void SetReferencePressure(uint32_t ref){
-        ref_pressure = ref;
-    }
+    enum eRegisters {
+        RESET_DEV                 = 0x1E,
 
-    uint32_t ReadAltitude(){
-        ReadPressure();
-        altitude =(int32_t)(44330769 - 44330769*pow(((double)comp_pressure/ref_pressure),0.1902));
-        return altitude;
-    }
+        CONVERT_D1_256            = 0x40,
+        CONVERT_D1_512            = 0x42,
+        CONVERT_D1_1024           = 0x44,
+        CONVERT_D1_2048           = 0x46,
+        CONVERT_D1_4096           = 0x48,
+
+        CONVERT_D2_256            = 0x50,
+        CONVERT_D2_512            = 0x52,
+        CONVERT_D2_1024           = 0x54,
+        CONVERT_D2_2048           = 0x56,
+        CONVERT_D2_4096           = 0x58,
+
+        ADC_READ                  = 0x00,
+
+        PROM_READ_MASK            = 0xA0,
+        PROM_SENS_MASK            = 0x02,
+        PROM_OFF_MASK             = 0x04,
+        PROM_TCS_MASK             = 0x06,
+        PROM_TCO_MASK             = 0x08,
+        PROM_TREF_MASK            = 0x0A,
+        PROM_TEMPSENS_MASK        = 0x0C,
+    };
 
 
-
-    bool SelfTest(){
-      //TODO: test
-      return false;
-    }
-
-
-
-
-
-
+    // FIXME: is this also an altimeter!? no -> plz move this code away
+    // uint32_t ReadAltitude() {
+    //     ReadPressure();
+    //     altitude =(int32_t)(44330769 - 44330769*pow(((double)comp_pressure/ref_pressure),0.1902));
+    //     return altitude;
+    // }
+    // void setReferencePressure(uint32_t ref){
+    //     ref_pressure = ref;
+    // }
 };
