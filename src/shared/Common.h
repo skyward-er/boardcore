@@ -34,6 +34,7 @@
 #include <vector>
 #include <array>
 #include <map>
+#include <cassert>
 
 /* Miosix */
 #include <miosix.h>
