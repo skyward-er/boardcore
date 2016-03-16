@@ -27,7 +27,7 @@
 #include "Sensor.h"
 #include <BusTemplate.h>
 
-/** This is a thermocouple */
+/** This is a thermocouple reading chip */
 
 template <class BusType>
 class MAX31856 : public TemperatureSensor {
@@ -36,6 +36,8 @@ public:
     MAX31856() : lastTemperature(0.0f), cjEnabled(true) { }
 
     bool init() {
+        
+        //NOTE: this sensor seems doesn't have a WHOAMI register
         
         uint8_t cr0val = bus.read(REG_CR0); //get CR0 register actual value
         
@@ -47,7 +49,18 @@ public:
     }
     
     bool selfTest() {
-        return false;
+        
+        /* The only self test that can be performed is checking if any
+         * fault condition has occurred, this is done simply verifyng
+         * that fault status register is nonzero
+         */
+        
+        uint8_t status = bus.read(REG_SR);
+        
+        if(status)
+            return false;
+        else
+            return true;
     }
 
     void updateParams() {
