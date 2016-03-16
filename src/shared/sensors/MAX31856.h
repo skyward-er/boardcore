@@ -36,7 +36,7 @@ public:
     MAX31856() : lastTemperature(0.0f), cjEnabled(true) { }
 
     bool init() {
-        // TODO: check WHO_AM_I
+        
         uint8_t cr0val = bus.read(REG_CR0); //get CR0 register actual value
         
         cr0val |= 0x01; //select 50Hz noise rejection
@@ -51,11 +51,9 @@ public:
     }
 
     void updateParams() {
-        uint32_t temp = getThermocoupleTemp();
-
-        // TODO convert uint32 temp to a float value
         
-        lastTemperature = temp;
+        requestConversion();
+        lastTemperature = getColdJunctionTemp() + getThermocoupleTemp();
     }
 
     float getTemperature() {
@@ -151,28 +149,33 @@ public:
     /**
      * @return cold junction temperature
      */
-    uint16_t getColdJunctionTemp() {
-        return bus.read(REG_CJTH) << 8 | bus.read(REG_CJTL);
+    float getColdJunctionTemp() {
+        
+        int16_t temp = (bus.read(REG_CJTH) << 8) | bus.read(REG_CJTL);
+        return static_cast<float>(temp) * 0.015625;      
     }
     
     /**
      * Set cold junction temperature, this is possible
      * only if internal cold junction temperature sensor is disabled
      */
-    void setColdJunctionTemp(uint16_t temp) {
+    void setColdJunctionTemp(float temp) {
+        
         if(!cjEnabled){
-            bus.write(REG_CJTH, (temp & 0xFF00) >> 16);
-            bus.write(REG_CJTL, temp & 0x00FF);
+            
+            int16_t setTemp = static_cast<int16_t>(temp / 0.015625);
+            bus.write(REG_CJTH, (setTemp & 0xFF00) >> 16);
+            bus.write(REG_CJTL, setTemp & 0x00FF);
         }
     }
     
     /**
      * @return thermocouple temperature value, 19 bit right-aligned
      */
-    uint32_t getThermocoupleTemp() {
-        return bus.read(REG_LTCBH) << 16 |
-               bus.read(REG_LTCBM) << 8 |
-               bus.read(REG_LTCBL);
+    float getThermocoupleTemp() {
+        
+        int32_t temp = (bus.read(REG_LTCBH) << 16) | (bus.read(REG_LTCBM) << 8) | bus.read(REG_LTCBL);
+        return static_cast<float>(temp) * 0.0078125;
     }
     
 private:
