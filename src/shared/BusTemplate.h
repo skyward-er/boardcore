@@ -136,15 +136,12 @@ class ProtocolI2C : public Singleton<ProtocolI2C<Bus, ID> >{
     friend class Singleton< ProtocolI2C<Bus, ID> >;
     typedef Singleton< ProtocolI2C<Bus, ID> > SingletonType;
 public:
-    static inline void init() {
-        SingletonType::GetInstance(); 
-    }
     
     /**
      * Sends the \param len bytes stored in \param *data buffer 
      * to the register specified by \param regAddress        
      */
-    static void write(uint8_t addr, uint8_t *data, uint8_t len) {
+    void write(uint8_t addr, uint8_t *data, uint8_t len) {
         uint8_t buf[len+1];     //pack register address and payload
         buf[0] = addr;
         
@@ -157,19 +154,18 @@ public:
      * Reads \param len bytes storing them into \param *data buffer 
      * from the register specified by \param regAddress        
      */
-    static void read(uint8_t addr, uint8_t *data, uint8_t len) {
+    void read(uint8_t addr, uint8_t *data, uint8_t len) {
         bus.send(ID,reinterpret_cast<void*>(&addr),1);
         bus.receive(ID,reinterpret_cast<void*>(data),len);
     }
-    
-private:
-    static Bus& bus = Bus::instance();
 
-    ProtocolI2C() {
+private:
+    Bus& bus;
+
+    ProtocolI2C() : bus(Bus::instance()) {
         bus.init();
     }
 
-    ~ProtocolI2C() = delete;
     ProtocolI2C(const ProtocolI2C& o) = delete;
     ProtocolI2C(const ProtocolI2C&& o) = delete;
     ProtocolI2C& operator=(const ProtocolI2C& other);
