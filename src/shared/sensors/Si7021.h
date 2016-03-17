@@ -39,17 +39,10 @@ public:
     bool selfTest() {
         
         //test the whoami value
-        uint8_t buf[6] = {CMD_READ_ID2_1, CMD_READ_ID2_2,0,0,0,0};
+        uint8_t buf[6];
         
-        if(!bus.send(slaveAddr, reinterpret_cast<void*>(buf),2)) {
-            last_error = ERR_BUS_FAULT;
-            return false;
-        }
-        
-        if(!bus.recv(slaveAddr, reinterpret_cast<void*>(buf),6)) {
-            last_error = ERR_BUS_FAULT;
-            return false;
-        }
+        BusType::send(CMD_READ_ID1_1,NULL,0);        
+        BusType::read(CMD_READ_ID1_2,buf,6);
         
         if(buf[0] != 0x15) {
             last_error = ERR_NOT_ME;
@@ -61,9 +54,8 @@ public:
     
     float getTemperature() {
         
-        uint8_t buf[2] = {CMD_MEAS_TEMP, 0};
-        bus.send(slaveAddr,reinterpret_cast<void*>(buf),1);
-        bus.recv(slaveAddr,reinterpret_cast<void*>(buf),2);
+        uint8_t buf[2];
+        BusType::read(CMD_MEAS_TEMP,buf,2);
         
         uint16_t retVal = (buf[1] << 8) | buf[0];
         
@@ -73,9 +65,8 @@ public:
     
     float getHumidity() {
         
-        uint8_t buf[2] = {CMD_MEAS_HUM, 0};
-        bus.send(slaveAddr,reinterpret_cast<void*>(buf),1);
-        bus.recv(slaveAddr,reinterpret_cast<void*>(buf),2);
+        uint8_t buf[2];
+        BusType::read(CMD_MEAS_HUM,buf,2);
         
         uint16_t retVal = (buf[1] << 8) | buf[0];
         
@@ -93,9 +84,8 @@ public:
     
     float getTempRh() {
         
-        uint8_t buf[2] = {CMD_MEAS_TEMP_PREV_HUM, 0};
-        bus.send(slaveAddr,reinterpret_cast<void*>(buf),1);
-        bus.recv(slaveAddr,reinterpret_cast<void*>(buf),2);
+        uint8_t buf[2];
+        BusType::read(CMD_MEAS_TEMP_PREV_HUM,buf,2);
         
         uint16_t retVal = (buf[1] << 8) | buf[0];
         
@@ -105,32 +95,22 @@ public:
     
     void heaterOn() {
         
-        uint8_t cmd[2] = {CMD_READ_USR1, 0};
         uint8_t regValue;
-        
-        bus.send(slaveAddr,reinterpret_cast<void*>(&cmd),1);
-        bus.recv(slaveAddr,reinterpret_cast<void*>(&regValue),1);
+        BusType::read(CMD_READ_USR1,&regValue,1);
         
         regValue |= 0b00000100;
-        cmd[0] = CMD_WRITE_USR1;
-        cmd[1] = regValue;
         
-        bus.send(slaveAddr,reinterpret_cast<void*>(&cmd),2);         
+        BusType::write(CMD_WRITE_USR1,&regValue,1);
     }
     
     void heaterOff() {
         
-        uint8_t cmd[2] = {CMD_READ_USR1, 0};
         uint8_t regValue;
-        
-        bus.send(slaveAddr,reinterpret_cast<void*>(&cmd),1);
-        bus.recv(slaveAddr,reinterpret_cast<void*>(&regValue),1);
+        BusType::read(CMD_READ_USR1,&regValue,1);
         
         regValue &= ~0b00000100;
-        cmd[0] = CMD_WRITE_USR1;
-        cmd[1] = regValue;
         
-        bus.send(slaveAddr,reinterpret_cast<void*>(&cmd),2);          
+        BusType::write(CMD_WRITE_USR1,&regValue,1);     
     }
     
     /**
@@ -145,16 +125,14 @@ public:
         else if(level <= 16)
         {
             heaterOn();
+            uint8_t lvl = level - 1;
             
-            uint8_t buf[2] = {CMD_WRITE_HEAT_CTL, 0};
-            buf[1] = level - 1;
-            
-            bus.send(slaveAddr,reinterpret_cast<void*>(&buf),2);
+            BusType::write(CMD_WRITE_HEAT_CTL,&lvl,1);
         }
     }
     
 private:
-    BusType bus;        
+//     BusType bus;        
     static constexpr uint8_t slaveAddr = 0x40;
     
     enum commands {
