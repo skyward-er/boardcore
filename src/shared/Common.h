@@ -1,4 +1,4 @@
-/* Copyright (c) 2015 Skyward Experimental Rocketry
+/* Copyright (c) 2015-2016 Skyward Experimental Rocketry
  * Authors: Alain Carlucci
  * 
  * Permission is hereby granted, free of charge, to any person obtaining a copy
