@@ -1,6 +1,6 @@
 all:
 	@echo "MAKEFILE WRAPPER. PLEASE USE ./sbs FOR A BETTER EXPERIENCE :)"
-	@./sbs
+	@./sbs -v
 
 .PHONY: clean
 
