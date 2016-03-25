@@ -8,30 +8,6 @@
 ##
 
 ##
-## Target board, choose one. This also implicitly select the target
-## architecture
-##
-#OPT_BOARD := lpc2138_miosix_board
-#OPT_BOARD := stm32f103ze_stm3210e-eval
-#OPT_BOARD := stm32f103ve_mp3v2
-#OPT_BOARD := stm32f100rb_stm32vldiscovery
-#OPT_BOARD := stm32f103ve_strive_mini
-#OPT_BOARD := stm32f103ze_redbull_v2
-#OPT_BOARD := stm32f407vg_stm32f4discovery
-#OPT_BOARD := stm32f207ig_stm3220g-eval
-#OPT_BOARD := stm32f207zg_ethboard_v2
-#OPT_BOARD := stm32f207ze_als_camboard
-#OPT_BOARD := stm32l151_als_mainboard
-#OPT_BOARD := stm32f407vg_bitsboard
-#OPT_BOARD := stm32f205rg_sony-newman
-OPT_BOARD := stm32f429zi_stm32f4discovery
-#OPT_BOARD := stm32f103cb_als_mainboard_rev2
-#OPT_BOARD := stm32f100cb_tempsensor
-#OPT_BOARD := stm32f429zi_oledboard2
-#OPT_BOARD := efm32gg332f1024_polinode
-#OPT_BOARD := stm32f411re_nucleo
-
-##
 ## Optimization flags, choose one.
 ## -O0 produces large and slow code, but is useful for in circuit debugging.
 ## -O2 is recomended otherwise, as it provides a good balance between code
@@ -152,6 +128,7 @@ ifeq ($(OPT_BOARD),stm32f407vg_stm32f4discovery)
 
     ## Select clock frequency (HSE_VALUE is the xtal on board, fixed)
     CLOCK_FREQ := -DHSE_VALUE=8000000 -DSYSCLK_FREQ_168MHz=168000000
+    #CLOCK_FREQ := -DHSE_VALUE=8000000 -DSYSCLK_FREQ_100MHz=100000000
     #CLOCK_FREQ := -DHSE_VALUE=8000000 -DSYSCLK_FREQ_84MHz=84000000
 
 endif
@@ -260,8 +237,10 @@ ifeq ($(OPT_BOARD),stm32f429zi_stm32f4discovery)
     ## the PLL, it is not possible to generate a precise 48MHz output when
     ## running the core at 180MHz. If 180MHz is chosen the USB peripheral will
     ## NOT WORK and the SDIO and RNG will run ~6% slower (45MHz insteand of 48)
-    CLOCK_FREQ := -DHSE_VALUE=8000000 -DSYSCLK_FREQ_168MHz=168000000
     #CLOCK_FREQ := -DHSE_VALUE=8000000 -DSYSCLK_FREQ_180MHz=180000000
+    CLOCK_FREQ := -DHSE_VALUE=8000000 -DSYSCLK_FREQ_168MHz=168000000
+    #CLOCK_FREQ := -DHSE_VALUE=8000000 -DSYSCLK_FREQ_100MHz=100000000
+
 endif
 
 ##---------------------------------------------------------------------------
@@ -305,10 +284,11 @@ ifeq ($(OPT_BOARD),stm32f429zi_oledboard2)
     ## NOT WORK and the SDIO and RNG will run ~6% slower (45MHz insteand of 48)
     CLOCK_FREQ := -DHSE_VALUE=8000000 -DSYSCLK_FREQ_168MHz=168000000
     #CLOCK_FREQ := -DHSE_VALUE=8000000 -DSYSCLK_FREQ_180MHz=180000000
+
 endif
 
 ##---------------------------------------------------------------------------
-## efm32gg332f1024_polinode
+## efm32gg332f1024_wandstem
 ##
 
 # No options
@@ -316,8 +296,41 @@ endif
 ##---------------------------------------------------------------------------
 ## stm32f411re_nucleo
 ##
+ifeq ($(OPT_BOARD),stm32f411re_nucleo)
 
-# No options
+    # Select clock frequency
+    CLOCK_FREQ := -DHSE_VALUE=8000000 -DSYSCLK_FREQ_100MHz=100000000
+    #CLOCK_FREQ := -DHSE_VALUE=8000000 -DSYSCLK_FREQ_84MHz=84000000
+
+endif
+
+##---------------------------------------------------------------------------
+## stm32f429zi_skyward_anakin
+##
+ifeq ($(OPT_BOARD),stm32f429zi_skyward_anakin)
+
+    ## Linker script type, there are three options
+    ## 1) Code in FLASH, stack + heap in internal RAM (file *_rom.ld)
+    ##    the most common choice, available for all microcontrollers
+    ## 2) Code in FLASH, stack + heap in external RAM (file *16m_xram.ld)
+    ##    You must uncomment -D__ENABLE_XRAM below in this case.
+    LINKER_SCRIPT_PATH := arch/cortexM4_stm32f4/stm32f429zi_stm32f4discovery/
+    #LINKER_SCRIPT := $(LINKER_SCRIPT_PATH)stm32_2m+256k_rom.ld
+    LINKER_SCRIPT := $(LINKER_SCRIPT_PATH)stm32_2m+8m_xram.ld
+
+    ## Uncommenting __ENABLE_XRAM enables the initialization of the external
+    ## 8MB SDRAM memory. Do not uncomment this even if you don't use a linker
+    ## script that requires it, as it is used for the LCD framebuffer.
+    XRAM := -D__ENABLE_XRAM
+    
+    ## Select clock frequency.
+    ## Warning: due to a limitation in the PLL, it is not possible to generate
+    ## a precise 48MHz output when running the core at 180MHz. If 180MHz is
+    ## chosen the SDIO and RNG will run ~6% slower (45MHz insteand of 48)
+    CLOCK_FREQ := -DHSE_VALUE=25000000 -DSYSCLK_FREQ_180MHz=180000000
+    #CLOCK_FREQ := -DHSE_VALUE=25000000 -DSYSCLK_FREQ_168MHz=168000000
+
+endif
 
 ############################################################################
 ## From the options selected above, now fill all the variables needed to  ##
@@ -368,9 +381,11 @@ else ifeq ($(OPT_BOARD),stm32f100cb_tempsensor)
     ARCH := cortexM3_stm32
 else ifeq ($(OPT_BOARD),stm32f429zi_oledboard2)
     ARCH := cortexM4_stm32f4
-else ifeq ($(OPT_BOARD),efm32gg332f1024_polinode)
+else ifeq ($(OPT_BOARD),efm32gg332f1024_wandstem)
     ARCH := cortexM3_efm32gg
 else ifeq ($(OPT_BOARD),stm32f411re_nucleo)
+    ARCH := cortexM4_stm32f4
+else ifeq ($(OPT_BOARD),stm32f429zi_skyward_anakin)
     ARCH := cortexM4_stm32f4
 else
     $(info Error: no board specified in miosix/config/Makefile.inc)
@@ -449,7 +464,7 @@ ifeq ($(ARCH),arm7_lpc2000)
                      -ffunction-sections -Wall -g -c
     CXXFLAGS_BASE += -D_ARCH_ARM7_LPC2000 -mcpu=arm7tdmi $(OPT_OPTIMIZATION) \
                      -ffunction-sections $(OPT_EXCEPT) -Wall -g -c
-    LFLAGS_BASE   := -mcpu=arm7tdmi -Wl,--gc-sections,-Map,main.map          \
+    LFLAGS_BASE   := -mcpu=arm7tdmi -Wl,--gc-sections,-Map,$(MAIN_MAP_FILE)          \
                      -Wl,-T$(KPATH)/$(LINKER_SCRIPT) $(OPT_EXCEPT)           \
                       $(OPT_OPTIMIZATION) -nostdlib
 
@@ -745,7 +760,7 @@ else ifeq ($(ARCH),cortexM3_stm32)
     CXXFLAGS_BASE += -D_ARCH_CORTEXM3_STM32 $(CLOCK_FREQ) $(XRAM)            \
                      $(OPT_EXCEPT) -mcpu=cortex-m3 -mthumb                   \
                      $(OPT_OPTIMIZATION) -ffunction-sections -Wall -g -c
-    LFLAGS_BASE   := -mcpu=cortex-m3 -mthumb -Wl,--gc-sections,-Map,main.map \
+    LFLAGS_BASE   := -mcpu=cortex-m3 -mthumb -Wl,--gc-sections,-Map,$(MAIN_MAP_FILE) \
                      -Wl,-T$(KPATH)/$(LINKER_SCRIPT) $(OPT_EXCEPT)           \
                      $(OPT_OPTIMIZATION) -nostdlib
 
@@ -782,6 +797,7 @@ else ifeq ($(ARCH),cortexM4_stm32f4)
         ## Select architecture specific files
         ## These are the files in arch/<arch name>/<board name>
         ARCH_SRC :=                                  \
+        arch/common/drivers/stm32f2_f4_i2c.cpp       \
         arch/common/drivers/stm32_hardware_rng.cpp   \
         arch/common/drivers/servo_stm32.cpp          \
         $(BOARD_INC)/interfaces-impl/bsp.cpp
@@ -848,6 +864,7 @@ else ifeq ($(ARCH),cortexM4_stm32f4)
         ## Select architecture specific files
         ## These are the files in arch/<arch name>/<board name>
         ARCH_SRC :=                                  \
+        arch/common/drivers/stm32f2_f4_i2c.cpp       \
         arch/common/drivers/stm32_hardware_rng.cpp   \
         $(BOARD_INC)/interfaces-impl/bsp.cpp
 
@@ -915,9 +932,6 @@ else ifeq ($(ARCH),cortexM4_stm32f4)
         ## Add a #define to allow querying board name
         CFLAGS_BASE   += -D_BOARD_STM32F411RE_NUCLEO
         CXXFLAGS_BASE += -D_BOARD_STM32F411RE_NUCLEO
-        
-        ## Select clock frequency (HSE_VALUE is the xtal on board, fixed)
-        CLOCK_FREQ := -DHSE_VALUE=8000000 -DSYSCLK_FREQ_84MHz=84000000
 
         ## Select programmer command line
         ## This is the program that is invoked when the user types
@@ -926,6 +940,38 @@ else ifeq ($(ARCH),cortexM4_stm32f4)
         ## error message saying that 'make program' is not supported for that
         ## board.
         PROGRAM_CMDLINE := qstlink2 -cqewV ./main.bin
+
+    ##-------------------------------------------------------------------------
+    ## stm32f429zi_skyward_anakin
+    ##
+    else ifeq ($(OPT_BOARD),stm32f429zi_skyward_anakin)
+
+        ## Base directory with header files for this board
+        BOARD_INC := arch/cortexM4_stm32f4/stm32f429zi_skyward_anakin
+
+        ## Select linker script and boot file
+        ## Their path must be relative to the miosix directory.
+        BOOT_FILE := $(BOARD_INC)/core/stage_1_boot.o
+        #LINKER_SCRIPT := already selected in board options
+
+        ## Select architecture specific files
+        ## These are the files in arch/<arch name>/<board name>
+        ARCH_SRC :=                                  \
+        arch/common/drivers/stm32f2_f4_i2c.cpp       \
+        arch/common/drivers/stm32_hardware_rng.cpp   \
+        $(BOARD_INC)/interfaces-impl/bsp.cpp
+
+        ## Add a #define to allow querying board name
+        CFLAGS_BASE   += -D_BOARD_STM32F429ZI_SKYWARD_ANAKIN
+        CXXFLAGS_BASE += -D_BOARD_STM32F429ZI_SKYWARD_ANAKIN
+
+        ## Select programmer command line
+        ## This is the program that is invoked when the user types
+        ## 'make program'
+        ## The command must provide a way to program the board, or print an
+        ## error message saying that 'make program' is not supported for that
+        ## board.
+        PROGRAM_CMDLINE := stm32flash -w main.bin -v /dev/ttyUSB0
 
     ##-------------------------------------------------------------------------
     ## End of board list
@@ -955,7 +1001,7 @@ else ifeq ($(ARCH),cortexM4_stm32f4)
                      $(OPT_EXCEPT) $(OPT_OPTIMIZATION) -ffunction-sections      \
                      -Wall -g -c
     LFLAGS_BASE   := -mcpu=cortex-m4 -mthumb -mfloat-abi=hard -mfpu=fpv4-sp-d16 \
-                     -Wl,--gc-sections,-Map,main.map                            \
+                     -Wl,--gc-sections,-Map,$(MAIN_MAP_FILE)                            \
                      -Wl,-T$(KPATH)/$(LINKER_SCRIPT) $(OPT_EXCEPT)              \
                      $(OPT_OPTIMIZATION) -nostdlib
 
@@ -1159,7 +1205,7 @@ else ifeq ($(ARCH),cortexM3_stm32f2)
     CXXFLAGS_BASE += -D_ARCH_CORTEXM3_STM32F2 $(CLOCK_FREQ) $(XRAM)          \
                      $(OPT_EXCEPT) -mcpu=cortex-m3 -mthumb                   \
                      $(OPT_OPTIMIZATION) -ffunction-sections -Wall -g -c
-    LFLAGS_BASE   := -mcpu=cortex-m3 -mthumb -Wl,--gc-sections,-Map,main.map \
+    LFLAGS_BASE   := -mcpu=cortex-m3 -mthumb -Wl,--gc-sections,-Map,$(MAIN_MAP_FILE) \
                      -Wl,-T$(KPATH)/$(LINKER_SCRIPT) $(OPT_EXCEPT)           \
                      $(OPT_OPTIMIZATION) -nostdlib
 
@@ -1239,7 +1285,7 @@ else ifeq ($(ARCH),cortexM3_stm32l1)
     CXXFLAGS_BASE += -D_ARCH_CORTEXM3_STM32L1 $(CLOCK_FREQ) $(XRAM)          \
                      $(OPT_EXCEPT) -mcpu=cortex-m3 -mthumb                   \
                      $(OPT_OPTIMIZATION) -ffunction-sections -Wall -g -c
-    LFLAGS_BASE   := -mcpu=cortex-m3 -mthumb -Wl,--gc-sections,-Map,main.map \
+    LFLAGS_BASE   := -mcpu=cortex-m3 -mthumb -Wl,--gc-sections,-Map,$(MAIN_MAP_FILE) \
                      -Wl,-T$(KPATH)/$(LINKER_SCRIPT) $(OPT_EXCEPT)           \
                      $(OPT_OPTIMIZATION) -nostdlib
 
@@ -1261,11 +1307,11 @@ else ifeq ($(ARCH),cortexM3_efm32gg)
     ARCH_INC := arch/cortexM3_efm32gg/common
 
     ##-------------------------------------------------------------------------
-    ## BOARD: efm32gg332f1024_polinode
+    ## BOARD: efm32gg332f1024_wandstem
     ##
-    ifeq ($(OPT_BOARD),efm32gg332f1024_polinode)
+    ifeq ($(OPT_BOARD),efm32gg332f1024_wandstem)
         ## Base directory with header files for this board
-        BOARD_INC := arch/cortexM3_efm32gg/efm32gg332f1024_polinode
+        BOARD_INC := arch/cortexM3_efm32gg/efm32gg332f1024_wandstem
 
         ## Select linker script and boot file
         ## Their path must be relative to the miosix directory.
@@ -1278,7 +1324,7 @@ else ifeq ($(ARCH),cortexM3_efm32gg)
         $(BOARD_INC)/interfaces-impl/bsp.cpp
 
         ## Add a #define to allow querying board name
-        CFLAGS_BASE   += -DEFM32GG332F1024 -D_BOARD_POLINODE
+        CFLAGS_BASE   += -DEFM32GG332F1024 -D_BOARD_WANDSTEM
         CXXFLAGS_BASE += $(CFLAGS_BASE)
 
         ## Clock frequency
@@ -1318,7 +1364,7 @@ else ifeq ($(ARCH),cortexM3_efm32gg)
     CXXFLAGS_BASE += -D_ARCH_CORTEXM3_EFM32GG $(CLOCK_FREQ)                  \
                      $(OPT_EXCEPT) -mcpu=cortex-m3 -mthumb                   \
                      $(OPT_OPTIMIZATION) -ffunction-sections -Wall -g -c
-    LFLAGS_BASE   := -mcpu=cortex-m3 -mthumb -Wl,--gc-sections,-Map,main.map \
+    LFLAGS_BASE   := -mcpu=cortex-m3 -mthumb -Wl,--gc-sections,-Map,$(MAIN_MAP_FILE) \
                      -Wl,-T$(KPATH)/$(LINKER_SCRIPT) $(OPT_EXCEPT)           \
                      $(OPT_OPTIMIZATION) -nostdlib
 

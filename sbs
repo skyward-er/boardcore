@@ -1,0 +1,149 @@
+#!/usr/bin/python
+
+# Skyward Build System Configuration File
+#
+# Copyright (c) 2015-2016 Skyward Experimental Rocketry
+# Authors: Alain Carlucci
+# 
+# Permission is hereby granted, free of charge, to any person obtaining a copy
+# of this software and associated documentation files (the "Software"), to deal
+# in the Software without restriction, including without limitation the rights
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+# copies of the Software, and to permit persons to whom the Software is
+# furnished to do so, subject to the following conditions:
+# 
+# The above copyright notice and this permission notice shall be included in
+# all copies or substantial portions of the Software.
+# 
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.  IN NO EVENT SHALL THE
+# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+# THE SOFTWARE.
+
+from optparse import OptionParser
+import os, shutil, subprocess, sys
+
+try:
+    import ConfigParser as cp #python 2
+except ImportError:
+    import configparser as cp #python 3
+
+def build_makefile(template, board):
+    rmap = { "BOARD_DEFINE": "export OPT_BOARD := %s\n" % board['id'],
+             "MAP_FILE": "export MAIN_MAP_FILE := bin/%s.map\n" % board['bin'],
+             "SOURCE_FILES": "%s\n" % (" ".join(board['files'])),
+             "BIN_NAME": board['bin'] 
+    }
+    
+    for i in rmap:
+        template = template.replace("{SBS_%s}" % i , rmap[i])
+    return template
+
+def banner():
+    print("****************************************************************************")
+    print("*         ____  _                                _                         *")
+    print("*        / ___|| | ___   ___      ____ _ _ __ __| |                        *")
+    print("*        \\___ \\| |/ / | | \\ \\ /\\ / / _` | '__/ _` |                        *")
+    print("*         ___) |   <| |_| |\\ V  V / (_| | | | (_| |                        *")
+    print("*        |____/|_|\\_\\\\__, | \\_/\\_/ \\__,_|_|  \\__,_|                        *")
+    print("*         ____       |___/    _   ____            _                        *")
+    print("*        | __ ) _   _(_) | __| | / ___| _   _ ___| |_ ___ _ __ ___         *")
+    print("*        |  _ \\| | | | | |/ _` | \\___ \\| | | / __| __/ _ \\ '_ ` _ \\        *")
+    print("*        | |_) | |_| | | | (_| |  ___) | |_| \\__ \\ ||  __/ | | | | |       *")
+    print("*        |____/ \\__,_|_|_|\\__,_| |____/ \\__, |___/\\__\\___|_| |_| |_|       *")
+    print("****************************************|___/*******************************")
+
+parser = OptionParser()
+parser.add_option("-c", "--clean", help="Run a 'make clean'", dest="clean", 
+        action="store_true")
+parser.add_option("-b", "--board", help="Build a specific board", dest="board")
+parser.add_option("-v", "--verbose", help="Print a verbose output", dest="log", 
+        action="store_true")
+parser.add_option("-j", "--jobs", 
+        help="Specifies the number of jobs (commands) to run simultaneously.", 
+        type="int", dest="JOBS", default=8)
+
+(options, args) = parser.parse_args()
+
+banner()
+
+conf = cp.RawConfigParser()
+conf.read("sbs.conf")
+
+mainmask = "src/entrypoints/%s.cpp"
+srcfiles={}
+boards={}
+for i in conf.sections():
+    stype = conf.get(i, 'Type')
+    if stype == 'srcfiles':
+        srcfiles[i] = [x.strip() for x in conf.get(i, 'Files').split("\n")]
+    elif stype == 'board':
+        boards[i] = {   'id': conf.get(i, 'BoardId'), 
+                        'bin': conf.get(i, 'BinName'),
+                        'files': [mainmask % conf.get(i, 'Main').strip()] +
+                         [x.strip() for x in conf.get(i, 'Include').split(' ')]
+                    }
+    else:
+        print('Type not implemented')
+
+if len(boards) == 0:
+    print('[SBS] No boards found. Terminating.')
+    sys.exit(0)
+
+if options.board != None:
+    try:
+        good = boards[options.board]
+    except KeyError:
+        print('[SBS] Board not found. Terminating.')
+        sys.exit(2)
+    boards = {options.board : good}
+
+# substitute includes
+for i in boards:
+    files = []
+    for j in boards[i]['files']:
+        if j.startswith('%'):
+            files += srcfiles[j[1:]]
+        else:
+            files += [j]
+    boards[i]['files'] = files
+
+shutil.rmtree('build',ignore_errors=True, onerror=None)
+os.mkdir('build')
+
+make_template = ""
+with open('Makefile.template') as f:
+    make_template = str(f.read())
+
+if len(make_template) == 0:
+    print('Makefile template empty or not found')
+    sys.exit(-1)
+
+cleanparam = []
+if options.log == True:
+    procout = None
+else:
+    procout = open(os.devnull, 'w') 
+
+action = ["Build","Building"]
+if options.clean == True:
+    cleanparam = ["clean"]
+    action = ["Clean", "Cleaning"]
+
+for i in boards:
+    print('[SBS] %s %s' % (action[1],i))
+    with open('build/%s' % i, 'w') as f:
+        f.write(build_makefile(make_template, boards[i]))
+    try:
+        subprocess.check_call(['make', '-j', str(options.JOBS), '-f', 'build/%s' % i] + cleanparam, stdout=procout)
+    except subprocess.CalledProcessError:
+        print('[SBS] %s Failed. Terminating.' % action[0])
+        sys.exit(-1)
+
+    print('[SBS] %s OK' % action[0])
+
+if options.clean == True:
+    shutil.rmtree('build',ignore_errors=True, onerror=None)
