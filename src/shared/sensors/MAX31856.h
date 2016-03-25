@@ -1,6 +1,6 @@
 /* MAX31856 Driver
  *
- * Copyright (c) 2015 Skyward Experimental Rocketry
+ * Copyright (c) 2015-2016 Skyward Experimental Rocketry
  * Authors: Silvano Seva
  * 
  * Permission is hereby granted, free of charge, to any person obtaining a copy
