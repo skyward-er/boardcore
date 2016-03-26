@@ -103,11 +103,11 @@ clean-topdir:
 
 %.o : %.c
 	$(ECHO) "[CC]  " $<
-	$(Q) $(CC)  $(DFLAGS) $(CFLAGS) $< -o obj/$@
+	$(Q) $(CC)  $(DFLAGS) $(CFLAGS) {SBS_CUSTOM_DEFINES} $< -o obj/$@
 
 %.o : %.cpp
 	$(ECHO) "[CXX] " $<
-	$(Q) $(CXX) $(DFLAGS) $(CXXFLAGS) $< -o obj/$@
+	$(Q) $(CXX) $(DFLAGS) $(CXXFLAGS) {SBS_CUSTOM_DEFINES} $< -o obj/$@
 
 folders:
 	$(Q) mkdir -pv $(dir $(addprefix obj/,$(OBJ)))

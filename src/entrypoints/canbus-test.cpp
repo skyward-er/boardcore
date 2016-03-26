@@ -8,11 +8,6 @@ using namespace std;
 using namespace miosix;
 
 #define CAN_PACKETID 0x49
-#ifdef SENDBOARD
-    #define NAME "Send Board"
-#else
-    #define NAME "Recv Board"
-#endif
 
 int main() {
     CanManager c(CAN1);
@@ -27,28 +22,20 @@ int main() {
     //c.addBus<GPIOB_BASE, 5, 6>(st2);
 
     CanBus* bus = c.getBus(0);
+    CanSocket socket(CAN_PACKETID);
+    char buf[64]={0};
+    socket.open(bus);
 
-    cout << NAME << endl;
     cout << "*** Ready ***" << endl;
 
 
-#ifdef SENDBOARD
     while(1) {
         const char *pkt = "TestMSG";
-        cout << "Sending pkt" << endl;
         bus->send(CAN_PACKETID, (const uint8_t *)pkt, strlen(pkt));
-        Thread::sleep(1000);
-    }
-#else
-    char buf[64]={0};
-    CanSocket socket(CAN_PACKETID);
-    socket.open(bus);
-
-    while(1) {
-        socket.receive(&buf, 64);
+        socket.receive(buf, 64);
         cout << "Recv pkt: '" << buf << "'" << endl;
+        Thread::sleep(250);
     }
 
     socket.close();
-#endif
 }

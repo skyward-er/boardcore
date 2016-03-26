@@ -35,6 +35,7 @@ def build_makefile(template, board):
     rmap = { "BOARD_DEFINE": "export OPT_BOARD := %s\n" % board['id'],
              "MAP_FILE": "export MAIN_MAP_FILE := bin/%s.map\n" % board['bin'],
              "SOURCE_FILES": "%s\n" % (" ".join(board['files'])),
+             "CUSTOM_DEFINES": board['defines'],
              "BIN_NAME": board['bin'] 
     }
     
@@ -83,6 +84,7 @@ for i in conf.sections():
     elif stype == 'board':
         boards[i] = {   'id': conf.get(i, 'BoardId'), 
                         'bin': conf.get(i, 'BinName'),
+                        'defines': conf.get(i, 'Defines'),
                         'files': [mainmask % conf.get(i, 'Main').strip()] +
                          [x.strip() for x in conf.get(i, 'Include').split(' ')]
                     }
