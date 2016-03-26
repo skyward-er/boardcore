@@ -44,12 +44,16 @@ void banner() {
 }
 
 void *test_canbus_recv(void *arg) {
+    printf("[CAN RECV] Thread started\n");
+
     CanBus *bus = static_cast<CanBus *>(arg);
     CanSocket socket(CAN_MYID);
     char buf[16]={0};
+
+    printf("[CAN RECV] Opening socket\n");
     socket.open(bus);
 
-    printf("[CAN RECV] Thread started\n");
+    printf("[CAN RECV] Waiting for packets\n");
     while(true) {
         memset(buf, 0, sizeof(buf));
         socket.receive(buf, 16);
@@ -79,6 +83,7 @@ int main() {
     };
     c.addBus<GPIOA_BASE, 11, 12>(st);
 
+    printf("[MAIN] Requesting bus\n");
     bus = c.getBus(0);
 
     Thread::create(test_canbus_recv, 1024, 1, static_cast<void *>(bus), Thread::JOINABLE);
