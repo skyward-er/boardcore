@@ -18,21 +18,21 @@ class BusSPI : public Singleton< BusSPI<N, GpioMosi, GpioMiso, GpioSclk> > {
 public:
 
     inline static int write(const void* buffer, size_t len) {
-        return SingletonType::GetInstance()->_write(buffer, len);
+        return SingletonType::getInstance()->_write(buffer, len);
     }
     inline static int write(uint8_t byte) {
-        return SingletonType::GetInstance()->_write(byte);
+        return SingletonType::getInstance()->_write(byte);
     }
 
     inline static void init() { 
-        SingletonType::GetInstance(); 
+        SingletonType::getInstance(); 
     }
     inline static int read(void* buffer, size_t max_len) {
-        return SingletonType::GetInstance()->_read(buffer, max_len);
+        return SingletonType::getInstance()->_read(buffer, max_len);
     }
 
     inline static uint8_t read() {
-        return SingletonType::GetInstance()->_read();
+        return SingletonType::getInstance()->_read();
     }
 private:
     inline int _write(const void* buffer, size_t len) const {
