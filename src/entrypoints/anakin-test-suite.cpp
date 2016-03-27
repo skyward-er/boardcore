@@ -161,9 +161,6 @@ int main() {
 #endif
 
 
-	MS580301BA07<spiMS580301BA07> altimetro;
-	
-	altimetro.init();
 	
 
     // Bye.
