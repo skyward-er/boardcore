@@ -115,6 +115,14 @@ public:
         GpioCS::high();
         return reg;
     }
+    
+    static void read(uint8_t reg, uint8_t *buf, int size) {
+        GpioCS::low();
+        reg |= 0x80;
+        Bus::write(&reg, sizeof(reg));
+        Bus::read(buf, size);
+        GpioCS::high();
+    }
 
     static void write(uint8_t reg, uint8_t val) {
         GpioCS::low();
@@ -122,9 +130,14 @@ public:
         Bus::write(&val, sizeof(reg));
         GpioCS::high();
     }
+        static void write(uint8_t cmd) {
+        GpioCS::low();
+        Bus::write(&cmd, sizeof(cmd));
+        GpioCS::high();
+    }
 private:
-    ProtocolSPI() = delete;
-    ~ProtocolSPI() = delete;
+   // ProtocolSPI() = delete;
+    //~ProtocolSPI() = delete;
     ProtocolSPI(const ProtocolSPI& o) = delete;
     ProtocolSPI(const ProtocolSPI&& o) = delete;
     ProtocolSPI& operator=(const ProtocolSPI& other);

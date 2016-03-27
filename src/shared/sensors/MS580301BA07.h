@@ -27,17 +27,25 @@
 
 using namespace miosix;
 
-template<class BusType, typename GpioCS>
+template<class Bus>
 class MS580301BA07 : public PressureSensor, public TemperatureSensor {
+	
 public:
     /* Class constructor. Reset lastPressure and lastTemperature */
-    MS580301BA07() : lastPressure(0.0f), lastTemperature(0.0f) {}
+//    MS580301BA07() : lastPressure(0.0f), lastTemperature(0.0f) {}
+    MS580301BA07(){}
+
+    bool selfTest(){
+
+		return true;
+		}
+
 
     bool init() {
-        // TODO: check the who_am_i value!
-        
+        printf("init\n");
+
         do {
-            bus.read(RESET_DEV);
+            Bus::read(RESET_DEV);
             cd.sens = readReg(PROM_READ_MASK | PROM_SENS_MASK);
             if(cd.sens == 0)
                 Thread::sleep(1);
@@ -48,16 +56,12 @@ public:
         cd.tco  = readReg(PROM_READ_MASK | PROM_TCO_MASK);
         cd.tref = readReg(PROM_READ_MASK | PROM_TREF_MASK);
         cd.tempsens = readReg(PROM_READ_MASK | PROM_TEMPSENS_MASK);
-
-        // TODO: @teo_piaz You wrote some "_calibrate();" calls without
-        // the function implementation.
+	
         
         return true; 
     }
 
-    bool selfTest() {
-        return false; 
-    }
+
 
     float getPressure() {
         return lastPressure; 
@@ -75,11 +79,8 @@ public:
         //TODO: dubbio, non devo fare un ADC read sola?
         //FIXME: add a timeout
         do {
-            GpioCS::low();
-            bus.write(CONVERT_D1_4096);
-            bus.write(ADC_READ);
-            bus.read(rcvbuf, 3);
-            GpioCS::high();
+            Bus::write(CONVERT_D1_4096);
+            Bus::read(ADC_READ,rcvbuf, 3);
 
             // FIXME: is this an endianness swapping? miosix should have a 
             // function that do this with only one assembly line.
@@ -92,10 +93,8 @@ public:
         } while (pressure == 0);
 
         do{
-            GpioCS::low();
-            bus.write(CONVERT_D2_4096);
-            bus.write(ADC_READ);
-            bus.read(rcvbuf, 3);
+            Bus::write(CONVERT_D2_4096);
+            Bus::read(ADC_READ,rcvbuf, 3);
             temperature = (uint32_t) rcvbuf[2] 
                         | ((uint32_t)rcvbuf[1] << 8) 
                         | ((uint32_t)rcvbuf[0] << 16);
@@ -124,7 +123,10 @@ private:
         uint16_t tempsens;
     } calibration_data;
 
-    BusType bus;
+
+   // BusType bus;
+    
+    
     calibration_data cd ={0};
     uint32_t ref_pressure=0;
     float lastTemperature;
@@ -132,12 +134,8 @@ private:
 
     uint16_t readReg(uint8_t reg){
         uint8_t rcv[2];
-        GpioCS::low();
-        reg |= 0x80;
-        bus.write(reg);
-        bus.read(&rcv, 2);
+        //Bus::read(reg,&rcv, 2);
         uint16_t data = (rcv[0] << 8) | rcv[1];
-        GpioCS::high();
         return data;
     }
 
@@ -167,7 +165,6 @@ private:
         PROM_TEMPSENS_MASK        = 0x0C,
     };
 
-
     // FIXME: is this also an altimeter!? no -> plz move this code away
     // uint32_t ReadAltitude() {
     //     ReadPressure();
@@ -177,4 +174,5 @@ private:
     // void setReferencePressure(uint32_t ref){
     //     ref_pressure = ref;
     // }
+   
 };
