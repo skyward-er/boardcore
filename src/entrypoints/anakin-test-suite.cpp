@@ -22,7 +22,7 @@
 
 #include <Common.h>
 #include <BusTemplate.h>
-//#include <sensors/FXAS21002.h>
+#include <sensors/FXAS21002.h>
 //#include <sensors/MAX21105.h>
 #include <sensors/MPU9250.h>
 #include <sensors/MS580301BA07.h>
@@ -46,7 +46,7 @@ typedef BusSPI < 1, GpioMosi, GpioMiso, GpioSck> busSPI1;
 // Here's the list of SPI sensors that should be tested
 //    | NAME      | CSPORT | CSPIN |
 SENSOR(MPU9250,      D,       13);
-SENSOR(FXAS21102,    G,       10);
+SENSOR(FXAS21002,    G,       10);
 SENSOR(MAX21105,     E,        2);
 SENSOR(MAX31856,     B,       11);
 SENSOR(LSM9DS0_G,    G,        9);
@@ -117,7 +117,7 @@ int main() {
 
     // First check: compare sensors WHO_AM_I against the reference value
     TEST(MPU9250,   0x75, 0x71);
-    TEST(FXAS21102, 0x0c, 0xd7);
+    TEST(FXAS21002, 0x0c, 0xd7);
     TEST(MAX21105,  0x20, 0xb4);
     TEST(LSM9DS0_G, 0x0f, 0xd4);
     TEST(LSM9DS0_A, 0x0f, 0x49);
