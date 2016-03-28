@@ -44,6 +44,7 @@ public:
             return false;
         }
 
+        // Init this sensor
         uint8_t init_data[][2] = {
             {EXT_STATUS,         0x00},  // Choose the bank 0
             {SET_PWR,            0x00},  // Power down
