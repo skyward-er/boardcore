@@ -69,7 +69,9 @@ class Sensor {
             ERR_BUS_FAULT           = 0x03, // A bus op has encountered an error
             ERR_X_SELFTEST_FAIL     = 0x04,
             ERR_Y_SELFTEST_FAIL     = 0x05,
-            ERR_Z_SELFTEST_FAIL     = 0x06
+            ERR_Z_SELFTEST_FAIL     = 0x06,
+            ERR_ACCEL_SELFTEST      = 0x07,
+            ERR_GYRO_SELFTEST       = 0x08,
         };
         
     protected:
