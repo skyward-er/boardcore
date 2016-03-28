@@ -22,10 +22,11 @@
 
 #include <Common.h>
 #include <BusTemplate.h>
-#include <canbus/CanManager.h>
-#include <canbus/CanSocket.h>
-#include <canbus/CanUtils.h>
-#include "src/shared/sensors/MS580301BA07.h"
+//#include <sensors/FXAS21002.h>
+//#include <sensors/MAX21105.h>
+#include <sensors/MPU9250.h>
+#include <sensors/MS580301BA07.h>
+//#include <sensors/Si7021.h>
 
 using namespace miosix;
 
@@ -35,13 +36,6 @@ using namespace miosix;
 
 #define READ(NAME, ID) spi ## NAME::read(ID)
 #define TEST(NAME, REG, REF) test_and_print(#NAME, REG, READ(NAME, REG), REF)
-
-//#define DO_ENDLESS_CANBUS_TEST 
-#ifndef BOARDNAME
-    #define BOARDNAME "UNKNOWN"
-#endif
-
-static const uint8_t CAN_MYID = 0x49;
 
 // SPI1 
 typedef Gpio<GPIOA_BASE, 5> GpioSck;
@@ -65,8 +59,6 @@ static const char mKO[] = "FAIL";
 
 int num_ok = 0, num_fail = 0;
 
-
-
 void banner() {
 printf("------------------------------------------------------------------------------\n"
        "d888888b d88888b .d8888. d888888b   .d8888. db    db d888888b d888888b d88888b\n"
@@ -78,71 +70,25 @@ printf("------------------------------------------------------------------------
        "------------------------------------------------------------------------------\n\n");
 }
 
-void *test_canbus_recv(void *arg) {
-    CanManager c(CAN1);
-    CanBus* bus = c.getBus(0);
-    CanSocket socket(CAN_MYID);
-    char buf[64]={0};
-    socket.open(bus);
-
-    printf("[CAN RECV] Thread started\n");
-    while(true) {
-        memset(buf, 0, sizeof(buf));
-        socket.receive(buf, 64);
-        printf("[CAN RECV]: %s\n", buf);
-    }
-    socket.close();
-    return NULL;
-}
-
-void test_canbus_send() {
-    CanManager c(CAN1);
-
-    canbus_init_t st = {
-        CAN1, Mode::ALTERNATE,  9, {CAN1_RX0_IRQn,CAN1_RX1_IRQn}
-    };
-    c.addBus<GPIOA_BASE, 11, 12>(st);
-
-    CanBus* bus = c.getBus(0);
-
-    printf("[CAN SEND] Starting test...\n");
-    while(true) {
-        const char *pkt = BOARDNAME;
-        bus->send(CAN_MYID, (const uint8_t *)pkt, strlen(pkt));
-        Thread::sleep(250);
-    }
-}
-
 void test_and_print(const char *name, uint8_t reg, uint8_t test, uint8_t reference) {
     if (test == reference) 
         ++num_ok;
     else
         ++num_fail;
-    printf("[%10s] [REG 0x%02x]: 0x%02x -> [%s]\n", name, reg, test, (test == reference)?mOK:mKO);
+    printf("[%13s] [REG 0x%02x]: 0x%02x -> [%s]\n", name, reg, test, (test == reference)?mOK:mKO);
 }
 
-int main() {
-	
-	
-    banner();
-    // Pausa per lasciare il tempo ai sensori di accendersi 
-    Thread::sleep(100);
+void assert_true(const char *name, const char *func, bool value) {
+    if(value)
+        ++num_ok;
+    else
+        ++num_fail;
 
-    printf("Polling sensors...\n");
-    TEST(MPU9250,   0x75, 0x71);
-    TEST(FXAS21102, 0x0c, 0xd7);
-    TEST(MAX21105,  0x20, 0xb4);
-    TEST(LSM9DS0_G, 0x0f, 0xd4);
-    TEST(LSM9DS0_A, 0x0f, 0x49);
-        
-    TEST(LPS331AP, 0x0f, 0xBB);
+    printf("[%13s] [FUNC %8s] -> [%s]\n", name, func, (value)?mOK:mKO);
+}
 
-	//double read and check different const registers
-    TEST(MS580301BA07, 0xA4, READ(MS580301BA07, 0xA4));
-    TEST(MS580301BA07, 0xAA, READ(MS580301BA07, 0xAA));
-    TEST(MS580301BA07, 0xAC, READ(MS580301BA07, 0xAC));
-
-    // Still not working. Why? :(
+void test_max31856() {
+    // Check if a bunch of register have the reference value
     TEST(MAX31856,  0x00, 0x00); // config 0
     TEST(MAX31856,  0x01, 0x03); // config 1
     TEST(MAX31856,  0x02, 0xFF); // mask 
@@ -150,18 +96,39 @@ int main() {
     TEST(MAX31856,  0x04, 0xc0); // lo fault
     TEST(MAX31856,  0x05, 0x7f); // lol
     TEST(MAX31856,  0x0F, 0x00); // fault status reg
+}
 
-#ifdef DO_ENDLESS_CANBUS_TEST
-    Thread::create(test_canbus_recv, 1024, 1, 0, Thread::JOINABLE);
-    test_canbus_send();
-#else
+void test_altimeter() {
+	MS580301BA07<spiMS580301BA07> altiMS580;
+
+	// Read and check different const registers
+    TEST(MS580301BA07, 0xA4, READ(MS580301BA07, 0xA4));
+    TEST(MS580301BA07, 0xAA, READ(MS580301BA07, 0xAA));
+    TEST(MS580301BA07, 0xAC, READ(MS580301BA07, 0xAC));
+	assert_true("MS580301BA07", "init()", altiMS580.init());
+}
+
+int main() {
+    banner();
+    // Pausa per lasciare il tempo ai sensori di accendersi 
+    Thread::sleep(100);
+
+    printf("Polling sensors...\n");
+
+    // First check: compare sensors WHO_AM_I against the reference value
+    TEST(MPU9250,   0x75, 0x71);
+    TEST(FXAS21102, 0x0c, 0xd7);
+    TEST(MAX21105,  0x20, 0xb4);
+    TEST(LSM9DS0_G, 0x0f, 0xd4);
+    TEST(LSM9DS0_A, 0x0f, 0x49);
+    TEST(LPS331AP, 0x0f, 0xBB);
+
+    test_max31856();
+    test_altimeter();
+
     printf("---------------------\n");
     printf("NUM TEST OK:  %5d\n"
            "NUM TEST FAIL:%5d\n\n", num_ok, num_fail);
-#endif
-
-
-	
 
     // Bye.
     while(1) { Thread::sleep(1000); }

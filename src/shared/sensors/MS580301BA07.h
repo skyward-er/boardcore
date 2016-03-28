@@ -32,24 +32,25 @@ class MS580301BA07 : public PressureSensor, public TemperatureSensor {
 	
 public:
     /* Class constructor. Reset lastPressure and lastTemperature */
-//    MS580301BA07() : lastPressure(0.0f), lastTemperature(0.0f) {}
-    MS580301BA07(){}
+    MS580301BA07() : lastPressure(0.0f), lastTemperature(0.0f) {}
 
-    bool selfTest(){
-
-		return true;
-		}
-
+    bool selfTest() {
+		return false;
+    }
 
     bool init() {
-        printf("init\n");
-
+        int timeout = 30;
         do {
             Bus::read(RESET_DEV);
             cd.sens = readReg(PROM_READ_MASK | PROM_SENS_MASK);
             if(cd.sens == 0)
                 Thread::sleep(1);
-        } while (cd.sens == 0);
+        } while (cd.sens == 0 && --timeout > 0);
+
+        if(timeout <= 0) {
+            last_error = ERR_RESET_TIMEOUT;
+            return false;
+        }
 
         cd.off  = readReg(PROM_READ_MASK | PROM_OFF_MASK);
         cd.tcs  = readReg(PROM_READ_MASK | PROM_TCS_MASK);
@@ -57,11 +58,8 @@ public:
         cd.tref = readReg(PROM_READ_MASK | PROM_TREF_MASK);
         cd.tempsens = readReg(PROM_READ_MASK | PROM_TEMPSENS_MASK);
 	
-        
         return true; 
     }
-
-
 
     float getPressure() {
         return lastPressure; 
@@ -114,6 +112,9 @@ public:
     }
 
 private:
+    float lastPressure;
+    float lastTemperature;
+
     typedef struct {
         uint16_t sens;
         uint16_t off;
@@ -122,19 +123,13 @@ private:
         uint16_t tref;
         uint16_t tempsens;
     } calibration_data;
-
-
-   // BusType bus;
     
-    
-    calibration_data cd ={0};
-    uint32_t ref_pressure=0;
-    float lastTemperature;
-    float lastPressure;
+    calibration_data cd = {0};
+    uint32_t ref_pressure = 0;
 
     uint16_t readReg(uint8_t reg){
         uint8_t rcv[2];
-        //Bus::read(reg,&rcv, 2);
+        Bus::read(reg, rcv, 2);
         uint16_t data = (rcv[0] << 8) | rcv[1];
         return data;
     }
@@ -165,7 +160,7 @@ private:
         PROM_TEMPSENS_MASK        = 0x0C,
     };
 
-    // FIXME: is this also an altimeter!? no -> plz move this code away
+    // FIXME: is this also an altimeter!? if not plz move this code away
     // uint32_t ReadAltitude() {
     //     ReadPressure();
     //     altitude =(int32_t)(44330769 - 44330769*pow(((double)comp_pressure/ref_pressure),0.1902));

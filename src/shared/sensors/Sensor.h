@@ -72,7 +72,7 @@ class Sensor {
             ERR_Z_SELFTEST_FAIL     = 0x06
         };
         
-    private:
+    protected:
         uint8_t last_error = 0;
 };
 
