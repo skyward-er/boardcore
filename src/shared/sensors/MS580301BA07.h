@@ -22,6 +22,9 @@
  * THE SOFTWARE.
  */
 
+#ifndef MS580301BA07_H
+#define MS580301BA07_H
+
 #include "Sensor.h"
 #include <BusTemplate.h>
 
@@ -171,3 +174,5 @@ private:
     // }
    
 };
+
+#endif
