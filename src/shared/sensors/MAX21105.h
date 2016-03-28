@@ -23,12 +23,18 @@
  */
 
 #include "Sensor.h"
+#include "interfaces/endianness.h"
 #include <BusTemplate.h>
 
 template<class Bus>
-class MAX21105 : public AccelSensor, public GyroSensor {
+class MAX21105 : public AccelSensor, 
+    public GyroSensor, public TemperatureSensor {
 public:
-    MAX21105() {  }
+    MAX21105(uint8_t accelFullScale, uint8_t gyroFullScale) : 
+        last_temperature(0.0f) { 
+        accelFS = accelFullScale & 0x03;
+        gyroFS  = gyroFullScale & 0x03;
+    }
 
     bool init() {
         uint8_t who_am_i = Bus::read(WHO_AM_I);
@@ -38,27 +44,31 @@ public:
             return false;
         }
 
-        //seleziono il bank 0 dei registri
-        writeReg(EXT_STATUS,0x00);
-        //Power Down
-        writeReg(SET_PWR,0x78);
+        uint8_t init_data[][2] = {
+            {EXT_STATUS,         0x00},  // Choose the bank 0
+            {SET_PWR,            0x00},  // Power down
 
-        // Gyro: 2kHz BW, 1000dps FS
-        writeReg(SNS_CFG_1,0x3c);
-        writeReg(SNS_CFG_2,0x10);
+            // Gyro: 2kHz BW
+            {SNS_CFG_1,          (uint8_t)(0x20 | gyroFS)},  
+            {SNS_CFG_2,          0x10},
 
-        //Acc 16g FS, no self test
-        writeReg(ACC_CFG_1,0x00);
-        // no high-pass, unfiltered
-        writeReg(ACC_CFG_2,0x00);
+            // Accel: Set scale & no self test
+            {SET_ACC_PWR,        (uint8_t)(0x00 | (accelFS << 6))}, 
+            {ACC_CFG_1,          0x02},  // 400Hz 
+            {ACC_CFG_2,          0x00},  // Low pass filter
+            {SET_PWR,            0x78},  // Power up (Accel + Gyro) Low-Noise
+        };
 
-        // Acc Low-Noise + Gyro Low-Noise
-        writeReg(SET_PWR,0x78);
+        for(size_t i=0; i < sizeof(init_data)/sizeof(init_data[0]); i++) {
+            Bus::write(init_data[i][0], init_data[i][1]);
+            Thread::sleep(1);
+        }
 
         return true;
     }
 
     bool selfTest() {
+        /*
         if(!SelfTestAcc()) {
             last_error = ERR_ACCEL_SELFTEST;
             return false;
@@ -68,11 +78,41 @@ public:
             return false;
         }
         return true;
+        */
+        return false;
     }
 
     void updateParams() {
-        last_accel = readAccelerometer();
-        last_gyro = readGyro();
+        #pragma pack(1)
+        union {
+            struct {
+                int16_t gyro[3];
+                int16_t accel[3];
+                int16_t temp;
+            };
+            int16_t buf[7];
+        } raw_data;
+        #pragma pack()
+
+        Bus::read(GYRO_X_H, reinterpret_cast<uint8_t *>(raw_data.buf), 
+                sizeof(raw_data.buf));
+
+        for(size_t i=0; i<(sizeof(raw_data.buf)/sizeof(raw_data.buf[0]));i++)
+            raw_data.buf[i] = fromBigEndian16(raw_data.buf[i]);
+
+        last_accel = Vec3(
+            normalizeAccel(raw_data.accel[0]),
+            normalizeAccel(raw_data.accel[1]),
+            normalizeAccel(raw_data.accel[2]) 
+        );
+
+        last_gyro = Vec3(
+            normalizeGyro(raw_data.gyro[0]),
+            normalizeGyro(raw_data.gyro[1]),
+            normalizeGyro(raw_data.gyro[2]) 
+        );
+
+        last_temperature = normalizeTemp(raw_data.temp);
     }
 
     Vec3 getOrientation() {
@@ -83,21 +123,51 @@ public:
         return last_accel;
     }
 
+    float getTemperature() {
+        return last_temperature; 
+    }
+
+    enum accelFullScale {
+        ACC_FS_16G     = 0,
+        ACC_FS_8G      = 1,
+        ACC_FS_4G      = 2,
+        ACC_FS_2G      = 3,
+    };
+    
+    enum gyroFullScale {
+        GYRO_FS_2000   = 0,
+        GYRO_FS_1000   = 1,
+        GYRO_FS_500    = 2,
+        GYRO_FS_250    = 3,
+    };
+
 private:
     Vec3 last_accel, last_gyro;
+    float last_temperature;
+    uint16_t cnt;
+    uint8_t accelFS, gyroFS;
 
-    constexpr static uint8_t who_am_i_value = 0xb4;
-    bool parity_bit=1;
+    static constexpr const uint8_t who_am_i_value = 0xb4;
+    static constexpr const float accelFSMAP[] = {16.0,8.0,4.0,2.0};
+    static constexpr const float gyroFSMAP[]  = {2000,1000,500,250};
 
-    void writeReg(uint8_t reg, uint8_t value){
-        Bus::write((0<<7) | (parity_bit << 6)| (reg & 0x3f), value);
+    inline constexpr float normalizeAccel(int16_t val) {
+        return 
+            static_cast<float>(val) / 32768.0f * accelFSMAP[accelFS]
+            * EARTH_GRAVITY;
     }
 
-    uint8_t readReg(uint8_t reg){
-        return Bus::read((1<<7) | (parity_bit << 6) | (reg & 0x3f));
+    inline constexpr float normalizeGyro(int16_t val) {
+        return 
+            static_cast<float>(val) / 32768.0f * gyroFSMAP[gyroFS]
+            * DEGREES_TO_RADIANS;
     }
 
-    enum RegMap {
+    inline constexpr float normalizeTemp(int16_t val) {
+        return static_cast<float>(val) / 256.0f;
+    }
+
+    enum regMap {
 		SET_PWR        = 0x00,
 		SNS_CFG_1      = 0x01,
 		SNS_CFG_2      = 0x02,
@@ -109,7 +179,7 @@ private:
 		MIF_CFG        = 0x16,
 		OTP_STS_CFG    = 0x1C,
 
-        WHO_AM_I       = 0x20, //default value 0xb4
+        WHO_AM_I       = 0x20, 
         EXT_STATUS     = 0x22,
 
         GYRO_X_H       = 0x24,
@@ -145,6 +215,7 @@ imposto la modalità self test e ne prendo altri 5 facendone nuovamente la media
 Se la distanza è maggiore di quella nel datasheet o non passa la condizione
 X>0, Y<0, Z>0 il test fallisce e ritorna falso
 */
+/*
     bool SelfTestGyro() {
         constexpr uint8_t min_x = 8;
         constexpr uint8_t min_y = -50;
@@ -215,36 +286,17 @@ X>0, Y<0, Z>0 il test fallisce e ritorna falso
         return Vec3(readAccX(), readAccY(), readAccZ());
     }
 
-    inline uint16_t readAccX() {
-        return ((readReg(ACCE_X_H) <<8) | readReg(ACCE_X_L))*1.0 ;
-    }
-
-    inline uint16_t readAccY() {
-        return ((readReg(ACCE_Y_H) <<8) | readReg(ACCE_Y_L))*1.0 ;
-    }
-
-    inline uint16_t readAccZ() {
-        return ((readReg(ACCE_Z_H) <<8) | readReg(ACCE_Z_L))*1.0 ;
-    }
-
-
-    inline uint16_t readGyroX() {
-        return ((readReg(GYRO_X_H) <<8) | readReg(GYRO_X_L))*1.0 ;
-    }
-
-    inline uint16_t readGyroY() {
-        return ((readReg(GYRO_Y_H) <<8) | readReg(GYRO_Y_L))*1.0 ;
-    }
-
-    inline uint16_t readGyroZ() {
-        return ((readReg(GYRO_Z_H) <<8) | readReg(GYRO_Z_L))*1.0 ;
-    }
-
     bool SelfTestAcc(){
         //16g X positive force
         writeReg(SET_ACC_PWR,0x8);
         //TODO: test acc
         return true;
     }
-
+*/
 };
+
+template<typename Bus>
+constexpr float MAX21105<Bus>::accelFSMAP[];
+
+template<typename Bus>
+constexpr float MAX21105<Bus>::gyroFSMAP[];
