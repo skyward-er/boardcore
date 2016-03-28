@@ -20,27 +20,12 @@
  * THE SOFTWARE.
  */
 
-#ifndef COMMON_H
-#define COMMON_H
+#ifndef CONSTANTS_H
+#define CONSTANTS_H
 
-#include <cstdio>
-#include <cstring>
-#include <cstdint>
-
-#include <iostream>
-#include <list>
-#include <set>
-#include <string>
-#include <vector>
-#include <array>
-#include <map>
-#include <cassert>
-
-/* Miosix */
-#include <miosix.h>
-#include <pthread.h>
-#include <kernel/scheduler/scheduler.h>
-
-#include "Constants.h"
+static constexpr const float PI                 = 3.14159265f;
+static constexpr const float EARTH_GRAVITY      = 9.80665f;
+static constexpr const float DEGREES_TO_RADIANS = PI / 180.0f;
+static constexpr const float RADIANS_TO_DEGREES = 180.0f / PI;
 
 #endif
