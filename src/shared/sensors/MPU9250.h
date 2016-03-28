@@ -27,7 +27,7 @@
 #include "Sensor.h"
 #include <BusTemplate.h>
 
-template <typename BusType>
+template <typename Bus>
 class MPU9250 : public GyroSensor, public AccelSensor, 
                 public CompassSensor, public TemperatureSensor {
 
@@ -38,7 +38,7 @@ public:
     }
 
     bool init() {
-        uint8_t whoami = bus.read(REG_WHO_AM_I);
+        uint8_t whoami = Bus::read(REG_WHO_AM_I);
 
         if(whoami != who_am_i_value) {
             last_error = ERR_NOT_ME;
@@ -74,7 +74,7 @@ public:
         }; 
 
         for(int i=0; i < sizeof(init_data)/sizeof(init_data[0]); i++) {
-            bus.write(init_data[i][0], init_data[i][1]);
+            Bus::write(init_data[i][0], init_data[i][1]);
             Thread::sleep(1);
         }
 
@@ -115,7 +115,6 @@ public:
         return temp;             
     }
 private:
-    BusType bus;
     constexpr static uint8_t who_am_i_value = 0x71;
     Vec3 accel, gyro, magneto;
     float temp;
