@@ -90,23 +90,23 @@ public:
          * status, pressure and temperature registers values
          */
         
-        uint8_t data[6];
-        BusType::read(STATUS,data,6);
+        uint8_t data[5];
+        BusType::read(STATUS,data,5);
         
         if(sensorMode == MPL3115_MODE_BAROMETER) {            
 
             //see datasheet at page 21 for more informations about calculations below
-            uint32_t press = (static_cast<uint32_t>(data[1]) << 16) | (static_cast<uint32_t>(data[2]) << 8) | static_cast<uint32_t>(data[3]);
+            uint32_t press = (static_cast<uint32_t>(data[0]) << 16) | (static_cast<uint32_t>(data[1]) << 8) | static_cast<uint32_t>(data[2]);
             lastPress = static_cast<float>(press) / 64;                    
         }
         
         if(sensorMode == MPL3115_MODE_ALTIMETER) {
   
-            uint32_t altitude = (static_cast<uint32_t>(data[1]) << 24) | (static_cast<uint32_t>(data[2]) << 16) | (static_cast<uint32_t>(data[3]) << 8);
+            uint32_t altitude = (static_cast<uint32_t>(data[0]) << 24) | (static_cast<uint32_t>(data[1]) << 16) | (static_cast<uint32_t>(data[2]) << 8);
             lastAlt =  static_cast<float>(altitude) / 65536;                    
         }
 
-        uint16_t temp = (static_cast<uint16_t>(data[4]) << 8) | static_cast<uint16_t>(data[5]);
+        uint16_t temp = (static_cast<uint16_t>(data[3]) << 8) | static_cast<uint16_t>(data[4]);
         lastTemp =  static_cast<float>(temp) / 256;
     }
     
