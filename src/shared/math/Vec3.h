@@ -31,23 +31,21 @@ class Vec3 {
         Vec3() { clear(); }
 
         Vec3(float x, float y, float z) {
-            d[0] = x; 
-            d[1] = y;
-            d[2] = z;
+            this->x = x; 
+            this->y = y;
+            this->z = z;
         }
 
-        float get(uint8_t i) const { 
-            assert(i < 3); 
-            return d[i]; 
-        }
+        float getX() const { return x; }
+        float getY() const { return y; }
+        float getZ() const { return z; }
 
-        void set(uint8_t i, float value) { 
-            assert(i < 3); 
-            d[i] = value;
-        }
+        void setX(float value) { x = value; }
+        void setY(float value) { y = value; }
+        void setZ(float value) { z = value; }
 
         void clear() {
-            d[0] = d[1] = d[2] = 0.0f;
+            x = y = z = 0.0f;
         }
 
         float magnitude() const {
@@ -64,47 +62,47 @@ class Vec3 {
         }
 
         void operator*=(float value) {
-            d[0] *= value;
-            d[1] *= value;
-            d[2] *= value;
+            x *= value;
+            y *= value;
+            z *= value;
         }
 
         void operator+=(const Vec3 &v) {
-            d[0] += v.get(0);
-            d[1] += v.get(1);
-            d[2] += v.get(2);
+            x += v.getX();
+            y += v.getY();
+            z += v.getZ();
         }
 
         void operator-=(const Vec3 &v) {
-            d[0] -= v.get(0);
-            d[1] -= v.get(1);
-            d[2] -= v.get(2);
+            x -= v.getX();
+            y -= v.getY();
+            z -= v.getZ();
         }
 
         Vec3 operator*(float v) const {
-            return Vec3(d[0]*v, d[1]*v, d[2]*v);
+            return Vec3(x*v, y*v, z*v);
         }
 
         Vec3 operator+(const Vec3 &v) const {
-            return Vec3(d[0]+v.get(0), d[1]+v.get(1), d[2]+v.get(2));
+            return Vec3(x+v.getX(), y+v.getY(), z+v.getZ());
         }
 
         Vec3 operator-(const Vec3 &v) const {
-            return Vec3(d[0]-v.get(0), d[1]-v.get(1), d[2]-v.get(2));
+            return Vec3(x-v.getX(), y-v.getY(), z-v.getZ());
         }
 
         float dot(const Vec3 &v) const {
-            return d[0]*v.get(0) + d[1]*v.get(1) + d[2]*v.get(2);
+            return x*v.getX() + y*v.getY() + z*v.getZ();
         }
 
         Vec3 cross(const Vec3 &v) const {
-            return Vec3(d[1] * v.get(2) - d[2] * v.get(1),
-                        d[2] * v.get(0) - d[0] * v.get(2),
-                        d[0] * v.get(1) - d[1] * v.get(0));
+            return Vec3(y * v.getZ() - z * v.getY(),
+                        z * v.getX() - x * v.getZ(),
+                        x * v.getY() - y * v.getX());
         }
 
     private:
-        float d[3];
+        float x, y, z;
 };
 
 #endif /* ifndef VEC3_H */
