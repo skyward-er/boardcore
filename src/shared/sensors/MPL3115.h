@@ -187,6 +187,58 @@ public:
      */
     void setAltOffset(int8_t offset) { BusType::write(ALTIT_OFFSET,&offset,1); }
     
+    /**
+     * Set oversampling ratio. Allowed values are: 1,2,4,8,16,32,64,128
+     * Higher the oversample ratio, lower the sample rate allowed.
+     * For further informations about minimum time between samples and its
+     * relation with oversampling ratio see datasheet at page 31
+     */
+    void setOversampleRatio(uint8_t ratio) {
+        
+        uint8_t temp, osr = 0;
+        
+        BusType::read(CTRL_REG1,&temp,1);
+        temp &= ~0b00111000;    //oversample ratio bits are 4th to 6th
+        
+        switch(ratio) {
+            case 1:
+            break;
+            
+            case 2:
+                osr = 0x01;
+            break;
+            
+            case 4:
+                osr = 0x02;
+            break;
+            
+            case 8:
+                osr = 0x03;
+            break;
+            
+            case 16:
+                osr = 0x04;
+            break;
+            
+            case 32:
+                osr = 0x05;
+            break;
+            
+            case 64:
+                osr = 0x06;
+            break;
+            
+            case 128:
+                osr = 0x7;
+            break;
+            
+            default:
+            break;
+        }
+        
+        temp |= osr << 3;
+        BusType::write(CTRL_REG1,&temp,1);
+    }
    enum sensMode {       
        MPL3115_MODE_BAROMETER = 0x01,
        MPL3115_MODE_ALTIMETER = 0x02        
