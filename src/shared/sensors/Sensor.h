@@ -108,4 +108,9 @@ class PressureSensor : public virtual Sensor {
         virtual float getPressure() = 0;
 };
 
+class AltitudeSensor : public virtual Sensor {
+    public:
+        virtual float getAltitude() = 0;
+};
+
 #endif /* ifndef SENSORS_H */
