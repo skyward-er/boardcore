@@ -23,7 +23,7 @@
 #include <Common.h>
 #include <BusTemplate.h>
 #include <sensors/FXAS21002.h>
-//#include <sensors/MAX21105.h>
+#include <sensors/MAX21105.h>
 #include <sensors/MPU9250.h>
 #include <sensors/MS580301BA07.h>
 //#include <sensors/Si7021.h>
@@ -36,6 +36,8 @@ using namespace miosix;
 
 #define READ(NAME, ID) spi ## NAME::read(ID)
 #define TEST(NAME, REG, REF) test_and_print(#NAME, REG, READ(NAME, REG), REF)
+
+#define ACCEL_ENDLESS_TEST
 
 // SPI1 
 typedef Gpio<GPIOA_BASE, 5> GpioSck;
@@ -84,7 +86,7 @@ void assert_true(const char *name, const char *func, bool value) {
     else
         ++num_fail;
 
-    printf("[%13s] [FUNC %8s] -> [%s]\n", name, func, (value)?mOK:mKO);
+    printf("[%13s] [FUNC %9s] -> [%s]\n", name, func, (value)?mOK:mKO);
 }
 
 void test_max31856() {
@@ -109,6 +111,11 @@ void test_altimeter() {
 }
 
 int main() {
+    MAX21105<spiMAX21105> max21(
+        MAX21105<spiMAX21105>::ACC_FS_2G,
+        MAX21105<spiMAX21105>::GYRO_FS_500
+    );
+
     banner();
     // Pausa per lasciare il tempo ai sensori di accendersi 
     Thread::sleep(100);
@@ -126,9 +133,28 @@ int main() {
     test_max31856();
     test_altimeter();
 
+    assert_true("MAX21105", "init()", max21.init());
+
     printf("---------------------\n");
     printf("NUM TEST OK:  %5d\n"
            "NUM TEST FAIL:%5d\n\n", num_ok, num_fail);
+
+#ifdef ACCEL_ENDLESS_TEST
+    uint16_t cnt=0;
+    while(true) {
+        max21.updateParams(); 
+        Vec3 a = max21.getAccel();
+        Vec3 g = max21.getOrientation();
+        float temp = max21.getTemperature();
+
+        printf("%05u[ACC %+5.2f,%+5.2f,%+5.2f] "
+               "[GYR %+5.2f,%+5.2f,%+5.2f] "
+               "[TMP %+5.2fC] \r",
+                (++cnt), a.get(0), a.get(1), a.get(2),
+                g.get(0),g.get(1),g.get(2), temp);
+        Thread::sleep(10);
+    }
+#endif
 
     // Bye.
     while(1) { Thread::sleep(1000); }
