@@ -80,7 +80,7 @@ public:
         
         do{
             
-            BusType::read(DR_STATUS,&temp,1);
+            BusType::read(OUT_P_MSB,&temp,1);
             Thread::sleep(6);   //minimum sample time is 6 ms
             
         }while(!(temp & 0x03));
