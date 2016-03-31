@@ -209,7 +209,7 @@ private:
     
     void readImpl(uint8_t addr, uint8_t *data, uint8_t len) {
         bus.send(ID,reinterpret_cast<void*>(&addr),1);
-        bus.receive(ID,reinterpret_cast<void*>(data),len);
+        bus.recv(ID,reinterpret_cast<void*>(data),len);
     }
 
     ProtocolI2C(const ProtocolI2C& o) = delete;
