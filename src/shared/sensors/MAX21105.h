@@ -1,7 +1,7 @@
 /* MAX21105 Driver
  *
  * Copyright (c) 2015-2016 Skyward Experimental Rocketry
- * Authors: Matteo Piazzolla, Alain Carlucci
+ * Authors: Matteo Michele Piazzolla, Alain Carlucci
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -145,7 +145,6 @@ public:
 private:
     Vec3 last_accel, last_gyro;
     float last_temperature;
-    uint16_t cnt;
     uint8_t accelFS, gyroFS;
 
     static constexpr const uint8_t who_am_i_value = 0xb4;
