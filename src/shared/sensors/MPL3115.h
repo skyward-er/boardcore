@@ -106,8 +106,8 @@ public:
             lastAlt =  static_cast<float>(altitude) / 65536;                    
         }
 
-        uint16_t temp = (static_cast<uint16_t>(data[3]) << 8) | static_cast<uint16_t>(data[4]);
-        lastTemp =  static_cast<float>(temp) / 256;
+        uint16_t temperature = (static_cast<uint16_t>(data[3]) << 8) | static_cast<uint16_t>(data[4]);
+        lastTemp =  static_cast<float>(temperature) / 256;
     }
     
     /**
