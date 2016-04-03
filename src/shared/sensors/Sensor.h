@@ -72,6 +72,7 @@ class Sensor {
             ERR_Z_SELFTEST_FAIL     = 0x06,
             ERR_ACCEL_SELFTEST      = 0x07,
             ERR_GYRO_SELFTEST       = 0x08,
+            ERR_CANT_TALK_TO_CHILD  = 0x09, // MPU9250 can't talk to AK8963
         };
         
     protected:

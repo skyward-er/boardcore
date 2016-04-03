@@ -27,14 +27,16 @@
 #include "Sensor.h"
 #include <BusTemplate.h>
 
+// TODO: fix normalizeTemp() (is /512.0f correct?)
 template <typename Bus>
 class MPU9250 : public GyroSensor, public AccelSensor, 
                 public CompassSensor, public TemperatureSensor {
 
 public:
-    MPU9250() : temp(0.0f) {
-        gyro_scale = GYROS_2000;
-        accel_scale = ACCELS_16G;
+    MPU9250(uint8_t accelFullScale, uint8_t gyroFullScale) : 
+        last_temperature(0.0f) {
+            accelFS = accelFullScale & 0x03;
+            gyroFS = gyroFullScale & 0x03;
     }
 
     bool init() {
@@ -45,84 +47,224 @@ public:
             return false;
         }
 
+        // Warning: do not reset this sensor at startup, otherwise 
+        // its magnetometer could randomly stop working.
+
         uint8_t init_data[][2] = {
-            {REG_PWR_MGMT_1,     0x80},
             {REG_PWR_MGMT_1,     0x01},
             {REG_PWR_MGMT_2,     0x00}, // Enable all sensors
             {REG_CONFIG,         0x00}, // DLPF_CFG = xxxxx000
             {REG_SMPLRT_DIV,     0x00}, // Do not divide
-            {REG_GYRO_CONFIG,    0x03 | ((gyro_scale  & 3) << 3)},
-            {REG_ACCEL_CONFIG,   0x00 | ((accel_scale & 3) << 3)},
+            {REG_GYRO_CONFIG,    (uint8_t) (0x03 | ((gyroFS  & 3) << 3))},
+            {REG_ACCEL_CONFIG,   (uint8_t) (0x00 | ((accelFS & 3) << 3))},
             {REG_ACCEL_CONFIG2,  0x08}, // FCHOICE = 1, A_DLPF_CFG = 000
             {REG_INT_PIN_CFG,    0x30},
             {REG_INT_ENABLE,     0x00}, // No interrupts
 
-            // I2C
+            // I2C (MPU9250 <-> AK8963)
             {REG_USER_CTRL,      0x20}, // Master mode TODO: I2C_IF_DIS???
-            {REG_I2C_MST_CTRL,   0x0D}, // Multi-master @ 400KHz
-
-            // Let's try with slv4 because reg+1 = do, do+1 = ctrl
-            {REG_I2C_SLV4_ADDR, AK8963_I2C_ADDR}, // AK8963 
-
-            {REG_I2C_SLV4_REG, AK8963_CNTL2}, 
-            {REG_I2C_SLV4_DO, 0x01},    // Reset AK8963
-            {REG_I2C_SLV4_CTRL, 0x81},  // Enable I2C and set 1 byte
-
-            {REG_I2C_SLV4_REG, AK8963_CNTL1}, 
-            {REG_I2C_SLV4_DO, 0x12},    // Continuous measurement @ 16bit
-            {REG_I2C_SLV4_CTRL, 0x81}   // Enable I2C and set 1 byte
+            {REG_I2C_MST_CTRL,   0x00}, // I2C @ 348khz(400 seems giving issues)
         }; 
 
-        for(int i=0; i < sizeof(init_data)/sizeof(init_data[0]); i++) {
+        for(size_t i=0; i < sizeof(init_data)/sizeof(init_data[0]); i++)
             Bus::write(init_data[i][0], init_data[i][1]);
-            Thread::sleep(1);
+
+        uint8_t ak_wia = akReadReg(AK8963_WIA);
+
+        if(ak_wia != 0x48) {
+            last_error = ERR_CANT_TALK_TO_CHILD; // TODO
+            return false;
         }
 
+        akWriteReg(AK8963_CNTL2, 0x01);
+        Thread::sleep(1);
+        akWriteReg(AK8963_CNTL1, 0x16);
+        Thread::sleep(1);
         return true;
     }
 
-    void updateData() {
-        //                                 xh    xl    yh    yl    zh    zl
-        // uint8_t accel = {0x3b | 0x80, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00}
-        //                                th    tl
-        // uint8_t temp = {0x41 | 0x80, 0x00, 0x00}
-        //                                xh    xl    yh    yl    zh    zl
-        // uint8_t gyro = {0x3b | 0x80, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00}
-        // TODO magneto
+    void updateParams() {
+        #pragma pack(1)
+        union {
+            struct { 
+                uint8_t status1;
+                int16_t mag[3];
+                uint8_t status2;
+            };
+            uint8_t raw[8];
+        } ak;
+
+        union {
+            struct {
+                int16_t accel[3];
+                int16_t temp;
+                int16_t gyro[3];
+            };
+            int16_t buf[7];
+        } raw_data;
+        #pragma pack()
+
+        akReadReg_1(AK8963_STATUS1, sizeof(ak.raw));
+
+        Bus::read(REG_ACCEL_XOUT_H, reinterpret_cast<uint8_t *>(raw_data.buf), 
+                sizeof(raw_data.buf));
+
+        for(size_t i=0; i<(sizeof(raw_data.buf)/sizeof(raw_data.buf[0]));i++)
+            raw_data.buf[i] = fromBigEndian16(raw_data.buf[i]);
+
+        akReadReg_2(ak.raw, sizeof(ak.raw));
+
+        last_accel = Vec3(
+            normalizeAccel(raw_data.accel[0]),
+            normalizeAccel(raw_data.accel[1]),
+            normalizeAccel(raw_data.accel[2]) 
+        );
+
+        last_gyro = Vec3(
+            normalizeGyro(raw_data.gyro[0]),
+            normalizeGyro(raw_data.gyro[1]),
+            normalizeGyro(raw_data.gyro[2]) 
+        );
+
+        last_magneto = Vec3(
+            normalizeMagneto(ak.mag[0]),
+            normalizeMagneto(ak.mag[1]),
+            normalizeMagneto(ak.mag[2]) 
+        );
+
+        last_temperature = normalizeTemp(raw_data.temp);
     }
 
     bool selfTest() {
         return false; 
     }
 
-    void updateParams() {
-    
-    }
-
     Vec3 getOrientation() {
-        return gyro; 
+        return last_gyro; 
     }
 
     Vec3 getAccel() {
-        return accel; 
+        return last_accel; 
     }
 
     Vec3 getCompass() {
-        return magneto; 
+        return last_magneto; 
     }
 
     float getTemperature() {
-        return temp;             
+        return last_temperature;
     }
+
+    enum gyroFullScale {
+        GYRO_FS_250           = 0,
+        GYRO_FS_500           = 1,
+        GYRO_FS_1000          = 2,
+        GYRO_FS_2000          = 3
+    };
+
+    enum accelFullScale {
+        ACC_FS_2G             = 0,
+        ACC_FS_4G             = 1,
+        ACC_FS_8G             = 2,
+        ACC_FS_16G            = 3
+    };
+
 private:
     constexpr static uint8_t who_am_i_value = 0x71;
-    Vec3 accel, gyro, magneto;
-    float temp;
+    static constexpr const float accelFSMAP[] = {2.0,4.0,8.0,16.0};
+    static constexpr const float gyroFSMAP[]  = {250,500,1000,2000};
+
+    uint8_t gyroFS;
+    uint8_t accelFS;
+
+    Vec3 last_accel, last_gyro, last_magneto;
+    float last_temperature;
+
+    inline constexpr float normalizeAccel(int16_t val) {
+        return 
+            static_cast<float>(val) / 32768.0f * accelFSMAP[accelFS]
+            * EARTH_GRAVITY;
+    }
+
+    inline constexpr float normalizeGyro(int16_t val) {
+        return 
+            static_cast<float>(val) / 32768.0f * gyroFSMAP[gyroFS]
+            * DEGREES_TO_RADIANS;
+    }
+
+    inline constexpr float normalizeMagneto(int16_t val) {
+        // Page 50 @ Register Map document
+        return static_cast<float>(val) / 32760.0f * 4912.0f;
+    }
+
+    inline constexpr float normalizeTemp(int16_t val) {
+        // Page 33 @ Register Map Document
+        return static_cast<float>(val) / 512.0f + 21.0f;
+    }
+
+    uint8_t akReadReg(uint8_t reg) {
+        uint8_t regs[][2] = {
+            { REG_I2C_SLV4_ADDR,    (uint8_t)(AK8963_I2C_ADDR | 0x80)},
+            { REG_I2C_SLV4_REG,     reg },
+            { REG_I2C_SLV4_CTRL,    0x80 },
+        };
+
+        for(size_t i=0;i<sizeof(regs)/sizeof(regs[0]);i++)
+            Bus::write(regs[i][0], regs[i][1]);
+
+        int timeout = 20; 
+        while(--timeout >= 0) {
+            if(Bus::read(REG_I2C_MST_STATUS) & 0x40)
+                break;
+            Thread::sleep(1);
+        }
+
+        if(timeout < 0)
+            return -1;
+        
+        uint8_t ret = Bus::read(REG_I2C_SLV4_DI);
+        return ret;
+    }
+
+    // This is an optimized version of the common burst-read:
+    // _1 tells to the i2c master to begin reading and.. (See _2)
+    void akReadReg_1(uint8_t addr, uint8_t len) {
+        assert(len < 16 && len > 0);
+        uint8_t regs[][2] = {
+            { REG_I2C_SLV0_ADDR,    (uint8_t)(AK8963_I2C_ADDR | 0x80)},
+            { REG_I2C_SLV0_REG,     addr },
+            { REG_I2C_SLV0_CTRL,    (uint8_t)(0x80 + len)},
+        };
+
+        for(size_t i=0;i<sizeof(regs)/sizeof(regs[0]);i++)
+            Bus::write(regs[i][0], regs[i][1]);
+    }
+
+    // _2 this one moves the data from spi to the local processor
+    void akReadReg_2(uint8_t *buf, uint8_t len) {
+        Bus::read(REG_EXT_SENS_DATA_00, buf, len);
+    }
+
+    void akWriteReg(uint8_t reg, uint8_t data) {
+        uint8_t regs[][2] = {
+            { REG_I2C_SLV4_ADDR,    AK8963_I2C_ADDR},
+            { REG_I2C_SLV4_REG,     reg},
+            { REG_I2C_SLV4_DO,      data},
+            { REG_I2C_SLV4_CTRL,    0x80},
+        };
+
+        for(size_t i=0;i<sizeof(regs)/sizeof(regs[0]);i++)
+            Bus::write(regs[i][0], regs[i][1]);
+
+        Thread::sleep(1);
+    }
 
     enum eMagnetoMap {
         AK8963_I2C_ADDR     = 0x0c,
 
+        AK8963_WIA          = 0x00,
         AK8963_STATUS1      = 0x02,
+        AK8963_HXL          = 0x03,
         AK8963_CNTL1        = 0x0a,
         AK8963_CNTL2        = 0x0b,
     };
@@ -135,42 +277,37 @@ private:
         REG_ACCEL_CONFIG2   = 0x1D,
 
         REG_I2C_MST_CTRL    = 0x24, 
-        REG_I2C_SLV0_ADDR   = 0x25, // unused.
-        REG_I2C_SLV0_REG    = 0x26, // unused.
-        REG_I2C_SLV0_CTRL   = 0x27, // unused.
-        REG_I2C_SLV0_DO     = 0x63, // unused.
+        REG_I2C_SLV0_ADDR   = 0x25,
+        REG_I2C_SLV0_REG    = 0x26,
+        REG_I2C_SLV0_CTRL   = 0x27,
+        REG_I2C_SLV0_DO     = 0x63,
 
         REG_I2C_SLV4_ADDR   = 0x31,
         REG_I2C_SLV4_REG    = 0x32,
         REG_I2C_SLV4_DO     = 0x33,
         REG_I2C_SLV4_CTRL   = 0x34,
+        REG_I2C_SLV4_DI     = 0x35,
+        REG_I2C_MST_STATUS  = 0x36,
+
+        REG_ACCEL_XOUT_H    = 0x3b,
 
         REG_INT_PIN_CFG     = 0x37,
         REG_INT_ENABLE      = 0x38,
         REG_INT_STATUS      = 0x3A,
+
+        REG_EXT_SENS_DATA_00= 0x49,
 
         REG_USER_CTRL       = 0x6A,
         REG_PWR_MGMT_1      = 0x6B,
         REG_PWR_MGMT_2      = 0x6C,
         REG_WHO_AM_I        = 0x75
     };
-
-    enum eGyroScale {
-        GYROS_250           = 0,
-        GYROS_500           = 1,
-        GYROS_1000          = 2,
-        GYROS_2000          = 3
-    };
-
-    enum eAccelScale {
-        ACCELS_2G           = 0,
-        ACCELS_4G           = 1,
-        ACCELS_8G           = 2,
-        ACCELS_16G          = 3
-    };
-
-    eGyroScale gyro_scale;
-    eAccelScale accel_scale;
 };  
+
+template<typename Bus>
+constexpr float MPU9250<Bus>::accelFSMAP[];
+
+template<typename Bus>
+constexpr float MPU9250<Bus>::gyroFSMAP[];
 
 #endif /* ifndef MAX9250_H */
