@@ -177,6 +177,10 @@ public:
         Bus::write(&cmd, sizeof(cmd));
         GpioCS::high();
     }
+
+	static inline void write(uint8_t reg, uint8_t *buf, int size) {
+	    read_low(reg, buf, size);
+	}
 private:
     ProtocolSPI() = delete;
     ~ProtocolSPI() = delete;
