@@ -35,7 +35,7 @@ class iNEMOLSM9DS0 : public GyroSensor, public AccelSensor,
   public:
     iNEMOLSM9DS0(uint8_t accelFullScale, uint8_t gyroFullScale, uint8_t compassFullScale) : 
       last_temp(0.0f) { 
-      accelFS = accelFullScale & 0x03;
+      accelFS = accelFullScale & 0x7;
       gyroFS  = gyroFullScale & 0x03;
       compassFS = compassFullScale & 0x03;
     }
@@ -49,32 +49,55 @@ class iNEMOLSM9DS0 : public GyroSensor, public AccelSensor,
             last_error = ERR_NOT_ME;
             return false;
         }
+        
+
         //gyro configuration
         //95 ODR 25 cutoff normal mode, xyz enabled
-        BusG::write(CTRL_REG1_G, 0x1F);
+        BusG::write(CTRL_REG1_G, 0x0F);
+        BusG::write(CTRL_REG2_G, 0x00);
 
         //TODO: CTRL_REG2_G
 
         //INT_G pin interrupt enable Fifo overrun interrupt
-        BusG::write(CTRL_REG3_G, 0x82);
+        BusG::write(CTRL_REG3_G, 0x88);
 
         //[5:4] scale
         //(00: 245 dps; 01: 500 dps; 10: 2000 dps; 11: 2000 dps)
         //continuous update, 2000dps
-        BusG::write(CTRL_REG4_G, 0x30);
+        BusG::write(CTRL_REG4_G, 0x00 | (gyroFS<<4) );   
 
         //FIFO enabled, get data after the first low pass filter
-        BusG::write(CTRL_REG5_G, 0x47);
+        BusG::write(CTRL_REG5_G, 0x00);
+
+
+
+
+
+        BusG::write(CTRL_REG0_XM, 0x00);
+
 
         //accelerometer configuration
+        //reset internal memory
+        BusG::write(CTRL_REG0_XM, 0x80);
         //1600Hz data rate, continuous update, xyz enabled
-        BusXM::write(CTRL_REG2_XM,0xA7);
+        BusXM::write(CTRL_REG1_XM,0x57);
+        //antialias filter 773 Hz, normal mode no test
+        printf("PRIMA %x (%x)\n",BusXM::read(CTRL_REG2_XM),accelFS);
+        BusXM::write(CTRL_REG2_XM,0x00 | (accelFS<<3));   
+        printf("dopo %x\n",BusXM::read(CTRL_REG2_XM));
 
-        //antialias filter 773 Hz, 16g full scale, normal mode
-        BusXM::write(CTRL_REG5_XM,0x10);
-
-        //temperature sensor enabled, hi-res magnetic, 100hz magnetic data rate, 2 gauss
-        BusXM::write(CTRL_REG6_XM,0xF4);
+        //interrupt not enabled
+        BusXM::write(CTRL_REG3_XM,0x00);
+        BusXM::write(CTRL_REG4_XM,0x00);
+        //temperature sensor enabled, 100hz magnetic data rate, 2 gauss
+        BusXM::write(CTRL_REG5_XM,0xF4);
+        // 2 gauss 
+        BusXM::write(CTRL_REG6_XM,0x00 | (compassFS<<5));  
+        BusXM::write(CTRL_REG7_XM,0x00);
+        
+        return true;
+        
+        
 
 
         return true;
@@ -85,16 +108,16 @@ class iNEMOLSM9DS0 : public GyroSensor, public AccelSensor,
       }
 
 
-	void updateParams(){
-    int16_t data[6];
+    void updateParams(){
+    int16_t data[3];
 
     BusG::read(OUT_X_L_G|0x40,reinterpret_cast<uint8_t *>(data),6);
 
     last_gyro = Vec3(normalizeGyro(data[0]),
-				   normalizeGyro(data[1]),
-				   normalizeGyro(data[2]));
+                   normalizeGyro(data[1]),
+                   normalizeGyro(data[2]));
 
-    BusXM::read(OUT_X_L_A,reinterpret_cast<uint8_t *>(data),6);
+    BusXM::read(OUT_X_L_A|0x40,reinterpret_cast<uint8_t *>(data),6);
 
     last_acc = Vec3(
         normalizeAccel(data[0]),
@@ -102,7 +125,7 @@ class iNEMOLSM9DS0 : public GyroSensor, public AccelSensor,
         normalizeAccel(data[2])
     );
 
-    BusXM::read(OUT_X_L_M,reinterpret_cast<uint8_t *>(data),6);
+    BusXM::read(OUT_X_L_M|0x40,reinterpret_cast<uint8_t *>(data),6);
 
     last_compass = Vec3(
         normalizeCompass(data[0]),
@@ -110,38 +133,38 @@ class iNEMOLSM9DS0 : public GyroSensor, public AccelSensor,
         normalizeCompass(data[2])
     );
 
-    uint16_t temp=0;
-    BusXM::read(OUT_TEMP_L_XM,reinterpret_cast<uint8_t *>(temp),2);
-    last_temp = normalizeTemp(static_cast<float>(temp));
+	
+    uint8_t temp[2];
+    
+    temp[1] = BusXM::read(OUT_TEMP_H_XM);
+    Thread::sleep(1);
+    temp[0] = BusXM::read(OUT_TEMP_L_XM);
+    Thread::sleep(1);
+
+    uint16_t temp16 = ((uint16_t) BusXM::read(OUT_TEMP_H_XM) <<8) |  (uint16_t) temp[0];
+    
+    last_temp = static_cast<float>(temp16)/8.0f+21.0f;
 
   }
-
-
-	Vec3 getOrientation() { return last_gyro; }
-
-	Vec3 getAccel() { return last_acc; }
-
-  Vec3 getCompass(){ return last_compass; }
-
-
-  float getTemperature(){
-		return last_temp;
-	}
-
+  
+    Vec3 getOrientation() { return last_gyro; }
+    Vec3 getAccel() { return last_acc; }
+    Vec3 getCompass(){ return last_compass; }
+    float getTemperature(){ return last_temp; }
 
 
   enum accelFullScale {
-      ACC_FS_16G     = 0,
-      ACC_FS_8G      = 1,
+      ACC_FS_16G     = 4,
+      ACC_FS_8G      = 3,
       ACC_FS_6G      = 2,
-      ACC_FS_4G      = 3,
-      ACC_FS_2G      = 4,
+      ACC_FS_4G      = 1,
+      ACC_FS_2G      = 0,
   };
   
   enum gyroFullScale {
-      GYRO_FS_2000   = 0,
+	  GYRO_FS_245    = 0,
       GYRO_FS_500    = 1,
-      GYRO_FS_245    = 2,
+      GYRO_FS_2000   = 2,
   };
 
   enum compassFullScale {
@@ -154,32 +177,32 @@ class iNEMOLSM9DS0 : public GyroSensor, public AccelSensor,
 
 private:
   
-  	Vec3 last_acc, last_gyro, last_compass;
-  	float last_temp;
-  	
+    Vec3 last_acc, last_gyro, last_compass;
+    float last_temp;
+    
     uint8_t accelFS, gyroFS, compassFS;
-  	
-  	constexpr static uint8_t whoami_g_value = 0xD4;
-  	constexpr static uint8_t whoami_xm_value = 0x49;
+    
+    constexpr static uint8_t whoami_g_value = 0xD4;
+    constexpr static uint8_t whoami_xm_value = 0x49;
 
-    static constexpr const float accelFSMAP[] = {16.0,8.0,6.0,4.0,2.0};
+    static constexpr const float accelFSMAP[] = {2.0,4.0,6.0,8.0,16.0};
     static constexpr const float compassFSMAP[] = {12.0,8.0,4.0,2.0};
-    static constexpr const float gyroFSMAP[] = {2000,500,450};
+    static constexpr const float gyroFSMAP[] = {245,500,2000};
 
 
-  	inline constexpr float normalizeAccel(int16_t val) {
-  		return 
-  		static_cast<float>(val) / 32768.0f * accelFSMAP[accelFS] * EARTH_GRAVITY;
-  	}
+    inline constexpr float normalizeAccel(int16_t val) {
+        return 
+        static_cast<float>(val) * (accelFSMAP[accelFS] / 32768.0f) * EARTH_GRAVITY;
+    }
 
     inline constexpr float normalizeGyro(int16_t val) {
       return 
-        static_cast<float>(val) / 32768.0f * gyroFSMAP[gyroFS] * DEGREES_TO_RADIANS;
+        static_cast<float>(val)* (gyroFSMAP[gyroFS] / 32768.0f) * DEGREES_TO_RADIANS;
     }
 
     inline constexpr float normalizeCompass(int16_t val) {
       return 
-        static_cast<float>(val) / 32768.0f * compassFSMAP[compassFS];
+        static_cast<float>(val) * (compassFSMAP[compassFS] / 32768.0f);
     }
 
     inline constexpr float normalizeTemp(int16_t val) {
