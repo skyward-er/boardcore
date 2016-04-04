@@ -28,9 +28,30 @@
 #include <BusTemplate.h>
 
 // TODO: fix normalizeTemp() (is /512.0f correct?)
+// TODO: Self-Test
 template <typename Bus>
 class MPU9250 : public GyroSensor, public AccelSensor, 
                 public CompassSensor, public TemperatureSensor {
+
+#pragma pack(1)
+typedef union {
+    struct { 
+        uint8_t status1;
+        int16_t mag[3];
+        uint8_t status2;
+    };
+    uint8_t raw[8];
+} akdata_t;
+
+typedef union {
+    struct {
+        int16_t accel[3];
+        int16_t temp;
+        int16_t gyro[3];
+    };
+    int16_t buf[7];
+} mpudata_t;
+#pragma pack()
 
 public:
     MPU9250(uint8_t accelFullScale, uint8_t gyroFullScale) : 
@@ -84,33 +105,11 @@ public:
     }
 
     void updateParams() {
-        #pragma pack(1)
-        union {
-            struct { 
-                uint8_t status1;
-                int16_t mag[3];
-                uint8_t status2;
-            };
-            uint8_t raw[8];
-        } ak;
-
-        union {
-            struct {
-                int16_t accel[3];
-                int16_t temp;
-                int16_t gyro[3];
-            };
-            int16_t buf[7];
-        } raw_data;
-        #pragma pack()
+        akdata_t ak;
+        mpudata_t raw_data;
 
         akReadReg_1(AK8963_STATUS1, sizeof(ak.raw));
-
-        Bus::read(REG_ACCEL_XOUT_H, reinterpret_cast<uint8_t *>(raw_data.buf), 
-                sizeof(raw_data.buf));
-
-        for(size_t i=0; i<(sizeof(raw_data.buf)/sizeof(raw_data.buf[0]));i++)
-            raw_data.buf[i] = fromBigEndian16(raw_data.buf[i]);
+        readRAWData(raw_data);
 
         akReadReg_2(ak.raw, sizeof(ak.raw));
 
@@ -136,6 +135,32 @@ public:
     }
 
     bool selfTest() {
+        uint8_t st_gyro[3], st_accel[3];
+        mpudata_t test, real;
+        uint16_t cfg; // [ REG_GYRO_CONFIG REG_ACCEL_CONFIG ]
+
+        readRAWData(real);
+        Bus::read(REG_GYRO_CONFIG, 
+                reinterpret_cast<uint8_t *>(&cfg), sizeof(cfg)); 
+
+        // -- ENABLE SELF TEST --
+        cfg |= 0xe0e0;
+        Bus::write(REG_GYRO_CONFIG, 
+                reinterpret_cast<uint8_t *>(&cfg), sizeof(cfg));
+
+        // -- SELF TEST ROUTINE --
+        Bus::read(REG_ST_GYRO, st_gyro, sizeof(st_gyro)); 
+        Bus::read(REG_ST_ACCEL, st_accel, sizeof(st_accel)); 
+        Thread::sleep(10);
+        readRAWData(test);
+
+        // -- DISABLE SELF TEST --
+        cfg &= ~(0xe0e0);
+        Bus::write(REG_GYRO_CONFIG,
+                reinterpret_cast<uint8_t *>(&cfg), sizeof(cfg));
+
+        // TODO Self-Test
+
         return false; 
     }
 
@@ -226,7 +251,7 @@ private:
         return ret;
     }
 
-    // This is an optimized version of the common burst-read:
+    // This is an optimized version of the common (i2c) burst-read:
     // _1 tells to the i2c master to begin reading and.. (See _2)
     void akReadReg_1(uint8_t addr, uint8_t len) {
         assert(len < 16 && len > 0);
@@ -259,7 +284,7 @@ private:
         Thread::sleep(1);
     }
 
-    enum eMagnetoMap {
+    enum magnetoMap {
         AK8963_I2C_ADDR     = 0x0c,
 
         AK8963_WIA          = 0x00,
@@ -269,7 +294,10 @@ private:
         AK8963_CNTL2        = 0x0b,
     };
 
-    enum eRegMap {
+    enum regMap {
+        REG_ST_GYRO         = 0x00,
+        REG_ST_ACCEL        = 0x0D,
+
         REG_SMPLRT_DIV      = 0x19,
         REG_CONFIG          = 0x1A,
         REG_GYRO_CONFIG     = 0x1B,
@@ -302,6 +330,15 @@ private:
         REG_PWR_MGMT_2      = 0x6C,
         REG_WHO_AM_I        = 0x75
     };
+
+    void readRAWData(mpudata_t &out) {
+        Bus::read(REG_ACCEL_XOUT_H,
+                reinterpret_cast<uint8_t *>(out.buf), sizeof(out.buf));
+
+        // BigEndian -> CPUArch (LittleEndian as usual)
+        for(size_t i=0; i<(sizeof(out.buf)/sizeof(out.buf[0]));i++)
+            out.buf[i] = fromBigEndian16(out.buf[i]);
+    }
 };  
 
 template<typename Bus>
