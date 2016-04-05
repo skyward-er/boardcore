@@ -25,6 +25,8 @@
 
 #include <Common.h>
 
+using namespace std;
+using namespace miosix;
 class Leds {
 public:
 
@@ -33,7 +35,7 @@ public:
      */
     static void set(uint16_t leds) {
         for(int i=0;i<10;i++)
-            set(i, (byte & (1 << i)) != 0);
+            set(i, (leds & (1 << i)) != 0);
     }
 
     /** Param id should be in range [0,10). */
