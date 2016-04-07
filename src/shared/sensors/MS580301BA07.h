@@ -118,14 +118,16 @@ public:
                 Thread::sleep(1);
         } while(temperature == 0);
 
-        int32_t dt = temperature - cd.tref * (1 << 8);
-        int64_t dt_full = 2000 + ((dt * cd.tempsens) >> 23);
-        lastTemperature =  dt_full / 100.0f;
+        int32_t dt = temperature - (cd.tref << 8);
+        int32_t temp = 2000 + ((dt * cd.tempsens) >> 23);
+        lastTemperature =  temp / 100.0f;
 
-        int64_t offs =  cd.off * (1 << 16) + (cd.tco * dt) / (1 << 7);
-        int64_t senst =  cd.sens * (1 << 15) + (cd.tcs * dt) / (1 << 8);
-        int32_t pres1 = (((pressure * senst) >> 21) - offs) >> 15;
-        lastPressure = pres1 / 100.0f;
+        int64_t offs =  ((int64_t)cd.off << 16) + (((int64_t)cd.tco * dt) >> 7);
+        int64_t senst =  ((int64_t)cd.sens << 15) + (((int64_t)cd.tcs * dt) >> 8);
+
+        int64_t ttemp = pressure * senst;
+        int32_t pres = ((ttemp >> 21) - offs) >> 15;
+        lastPressure = pres / 100.0f;
     }
 
 private:
