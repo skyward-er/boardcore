@@ -31,15 +31,14 @@
 using namespace miosix;
 
 template<class Bus>
-class MS580301BA07 : public PressureSensor, public TemperatureSensor {
+class MS580301BA07 : public PressureSensor, public TemperatureSensor,
+    public AltitudeSensor {
 	
 public:
     /* Class constructor. Reset lastPressure and lastTemperature */
-    MS580301BA07() : lastPressure(0.0f), lastTemperature(0.0f) {}
-
-    bool selfTest() {
-		return false;
-    }
+    MS580301BA07() : 
+        lastPressure(0.0f), lastTemperature(0.0f), 
+        localPressure(1013.25) {}
 
     bool init() {
         int timeout = 30;
@@ -48,9 +47,9 @@ public:
             cd.sens = readReg(PROM_READ_MASK | PROM_SENS_MASK);
             if(cd.sens == 0)
                 Thread::sleep(1);
-        } while (cd.sens == 0 && --timeout > 0);
+        } while (cd.sens == 0 && --timeout >= 0);
 
-        if(timeout <= 0) {
+        if(timeout < 0) {
             last_error = ERR_RESET_TIMEOUT;
             return false;
         }
@@ -64,6 +63,10 @@ public:
         return true; 
     }
 
+    bool selfTest() {
+		return false;
+    }
+
     float getPressure() {
         return lastPressure; 
     }
@@ -72,16 +75,26 @@ public:
         return lastTemperature; 
     }
 
+    void setLocalPressure(float mBarPressure) {
+        localPressure = mBarPressure;
+    }
+
+    // TODO documentation about these constants
+    float getAltitude() {
+        return 44330.769 * 
+            (1.0f - pow(lastPressure/localPressure,0.19019f));
+    }
+
     void updateParams() {
         uint8_t rcvbuf[3];
         uint32_t pressure = 0;
         uint32_t temperature =0;
 
-        //TODO: dubbio, non devo fare un ADC read sola?
-        //FIXME: add a timeout
+        // FIXME (URGENT) add a timeout
         do {
             Bus::write(CONVERT_D1_4096);
-            Bus::read(ADC_READ,rcvbuf, 3);
+            Thread::sleep(30);
+            Bus::read_low(ADC_READ,rcvbuf, 3);
 
             // FIXME: is this an endianness swapping? miosix should have a 
             // function that do this with only one assembly line.
@@ -93,9 +106,11 @@ public:
                 Thread::sleep(1);
         } while (pressure == 0);
 
-        do{
+        // FIXME (URGENT) add a timeout
+        do {
             Bus::write(CONVERT_D2_4096);
-            Bus::read(ADC_READ,rcvbuf, 3);
+            Thread::sleep(30);
+            Bus::read_low(ADC_READ,rcvbuf, 3);
             temperature = (uint32_t) rcvbuf[2] 
                         | ((uint32_t)rcvbuf[1] << 8) 
                         | ((uint32_t)rcvbuf[0] << 16);
@@ -103,20 +118,18 @@ public:
                 Thread::sleep(1);
         } while(temperature == 0);
 
-        // FIXME: is this code correct? seems doing floating point ops
-        // using int variables
-        // FIXME: this code is using cd.* variables but cd is always zero.
         int32_t dt = temperature - cd.tref * (1 << 8);
-        lastTemperature = 2000 + dt * (cd.tempsens) / (1 << 23);
+        int64_t dt_full = 2000 + ((dt * cd.tempsens) >> 23);
+        lastTemperature =  dt_full / 100.0f;
 
         int64_t offs =  cd.off * (1 << 16) + (cd.tco * dt) / (1 << 7);
         int64_t senst =  cd.sens * (1 << 15) + (cd.tcs * dt) / (1 << 8);
-        lastPressure = (pressure * senst / (1 << 21) - offs) / (1 << 15);
+        int32_t pres1 = (((pressure * senst) >> 21) - offs) >> 15;
+        lastPressure = pres1 / 100.0f;
     }
 
 private:
-    float lastPressure;
-    float lastTemperature;
+    float lastPressure, lastTemperature, localPressure;
 
     typedef struct {
         uint16_t sens;
@@ -128,7 +141,6 @@ private:
     } calibration_data;
     
     calibration_data cd = {0};
-    uint32_t ref_pressure = 0;
 
     uint16_t readReg(uint8_t reg){
         uint8_t rcv[2];
@@ -162,17 +174,6 @@ private:
         PROM_TREF_MASK            = 0x0A,
         PROM_TEMPSENS_MASK        = 0x0C,
     };
-
-    // FIXME: is this also an altimeter!? if not plz move this code away
-    // uint32_t ReadAltitude() {
-    //     ReadPressure();
-    //     altitude =(int32_t)(44330769 - 44330769*pow(((double)comp_pressure/ref_pressure),0.1902));
-    //     return altitude;
-    // }
-    // void setReferencePressure(uint32_t ref){
-    //     ref_pressure = ref;
-    // }
-   
 };
 
 #endif
