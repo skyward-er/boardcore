@@ -56,7 +56,7 @@ public:
         return false; 
     }
 
-    void updateParams() {
+    bool updateParams() {
         #pragma pack(1)
         struct {
             int32_t press;
@@ -72,6 +72,8 @@ public:
 
         last_pressure = normalizePressure(data.press);
         last_temperature = normalizeTemp(data.temp);
+
+        return true;
     }
 
     float getPressure() {
@@ -101,6 +103,7 @@ private:
         // Page 29 @ Datasheet
         return static_cast<float>(val) / 480.0f + 42.5f;
     }
+
     enum regMap {
         REG_WHO_AM_I        = 0x0f, 
         REG_RES_CONF        = 0x10, 

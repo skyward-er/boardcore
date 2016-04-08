@@ -54,10 +54,13 @@ class Sensor {
          */
         virtual bool selfTest() = 0;
 
-        /** This method is called once every N msec, read new values and
-         * store them in local variables
+        /** 
+         * This method is called once every N msec, read new values and
+         * store them in local variables.
+         *
+         * You should check getLastError() if this function returns false.
          */
-        virtual void updateParams() = 0;
+        virtual bool updateParams() = 0;
 
         /** Return last error code */
         uint8_t getLastError() const { return last_error; }
@@ -81,7 +84,7 @@ class Sensor {
 
 class GyroSensor : public virtual Sensor {
     public:
-        virtual Vec3 getOrientation() = 0;
+        virtual Vec3 getRotation() = 0;
 };
 
 class AccelSensor : public virtual Sensor {

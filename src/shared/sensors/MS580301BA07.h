@@ -46,9 +46,9 @@ public:
             cd.sens = readReg(PROM_READ_MASK | PROM_SENS_MASK);
             if(cd.sens == 0)
                 Thread::sleep(1);
-        } while (cd.sens == 0 && --timeout >= 0);
+        } while (cd.sens == 0 && --timeout > 0);
 
-        if(timeout < 0) {
+        if(timeout <= 0) {
             last_error = ERR_RESET_TIMEOUT;
             return false;
         }
@@ -84,7 +84,7 @@ public:
             (1.0f - pow(lastPressure/localPressure,0.19019f));
     }
 
-    void updateParams() {
+    bool updateParams() {
         uint8_t rcvbuf[3];
         uint32_t pressure = 0, temperature = 0, timeout;
 
@@ -100,8 +100,10 @@ public:
                         | ((uint32_t)rcvbuf[0] << 16);
         } while (pressure == 0 && --timeout > 0);
 
-        if(timeout == 0)
-            return;
+        if(timeout == 0) {
+            last_error = ERR_RESET_TIMEOUT;
+            return false;
+        }
 
         timeout = 3;
         do {
@@ -115,8 +117,10 @@ public:
                         | ((uint32_t)rcvbuf[0] << 16);
         } while(temperature == 0 && --timeout > 0);
 
-        if(timeout == 0)
-            return;
+        if(timeout == 0) {
+            last_error = ERR_RESET_TIMEOUT;
+            return false;
+        }
 
         int32_t dt = temperature - (cd.tref << 8);
         int32_t temp = 2000 + ((dt * cd.tempsens) >> 23);
@@ -128,6 +132,7 @@ public:
         int64_t ttemp = pressure * senst;
         int32_t pres = ((ttemp >> 21) - offs) >> 15;
         lastPressure = pres / 100.0f;
+        return true;
     }
 
 private:

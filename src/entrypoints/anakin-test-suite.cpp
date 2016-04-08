@@ -144,7 +144,7 @@ int main() {
     while(true) {
         max21.updateParams(); 
         Vec3 a = max21.getAccel();
-        Vec3 g = max21.getOrientation();
+        Vec3 g = max21.getRotation();
         float temp = max21.getTemperature();
 
         printf("%05u[ACC %+5.2f,%+5.2f,%+5.2f] "

@@ -48,25 +48,22 @@ public:
         return true;
     }
     
+        
+    /* The only self test that can be performed is checking if any
+     * fault condition has occurred, this is done simply verifyng
+     * that fault status register is nonzero
+     */
     bool selfTest() {
-        
-        /* The only self test that can be performed is checking if any
-         * fault condition has occurred, this is done simply verifyng
-         * that fault status register is nonzero
-         */
-        
         uint8_t status = bus.read(REG_SR);
         
-        if(status)
-            return false;
-        else
-            return true;
+        return (status == 0);
     }
 
-    void updateParams() {
-        
+    bool updateParams() {
         requestConversion();
         lastTemperature = getColdJunctionTemp() + getThermocoupleTemp();
+
+        return true;
     }
 
     float getTemperature() {
@@ -115,7 +112,9 @@ public:
      */
     void requestConversion() {
         uint8_t regVal = bus.read(REG_CR0);
-        bus.write(REG_CR0, regVal | 0x40);   //conversion trigger is the 7-th bit of CR0 register
+
+        // conversion trigger is the 7-th bit of CR0 register
+        bus.write(REG_CR0, regVal | 0x40);   
     }
     
     /**
@@ -128,25 +127,14 @@ public:
         regVal &= 0x8F; //clear bits from 7-th to 5-th
         
         switch(samplesNum){
-            case 1:
-                //do nothing, since single conversion is set writing 000 to the register
-                break;
-            
-            case 2:
-                regVal |= 0b00000001 << 4;
-                break;
-                
-            case 4:
-                regVal |= 00000010 << 4;
-                break;
-
-            case 8:
-                regVal |= 00000011 << 4;
-                break;
-                
-            case 16:
-                regVal |= 00000100 << 4;
-                break;                  
+            // 1: do nothing, since single conversion 
+            // is set writing 000 to the register
+            case 1: break;
+            case 2: regVal |= 0b00000001 << 4; break;
+            case 4: regVal |= 00000010 << 4; break;
+            case 8: regVal |= 00000011 << 4; break;
+            case 16: regVal |= 00000100 << 4; break;                  
+            default: assert(false); break;
         }
         bus.write(REG_CR1, regVal);
     }
@@ -163,7 +151,6 @@ public:
      * @return cold junction temperature
      */
     float getColdJunctionTemp() {
-        
         int16_t temp = (bus.read(REG_CJTH) << 8) | bus.read(REG_CJTL);
         return static_cast<float>(temp) * 0.015625;      
     }
@@ -173,9 +160,7 @@ public:
      * only if internal cold junction temperature sensor is disabled
      */
     void setColdJunctionTemp(float temp) {
-        
-        if(!cjEnabled){
-            
+        if(!cjEnabled) {
             int16_t setTemp = static_cast<int16_t>(temp / 0.015625);
             bus.write(REG_CJTH, (setTemp & 0xFF00) >> 16);
             bus.write(REG_CJTL, setTemp & 0x00FF);
@@ -186,8 +171,9 @@ public:
      * @return thermocouple temperature value, 19 bit right-aligned
      */
     float getThermocoupleTemp() {
-        
-        int32_t temp = (bus.read(REG_LTCBH) << 16) | (bus.read(REG_LTCBM) << 8) | bus.read(REG_LTCBL);
+        int32_t temp = (bus.read(REG_LTCBH) << 16) 
+                     | (bus.read(REG_LTCBM) << 8) 
+                     | bus.read(REG_LTCBL);
         return static_cast<float>(temp) * 0.0078125;
     }
     
