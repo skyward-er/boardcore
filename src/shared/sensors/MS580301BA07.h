@@ -28,8 +28,7 @@
 #include "Sensor.h"
 #include <BusTemplate.h>
 
-using namespace miosix;
-
+// TODO second order temperature compensation 
 template<class Bus>
 class MS580301BA07 : public PressureSensor, public TemperatureSensor,
     public AltitudeSensor {
@@ -79,7 +78,7 @@ public:
         localPressure = mBarPressure;
     }
 
-    // TODO documentation about these constants
+    // TODO move this code away
     float getAltitude() {
         return 44330.769 * 
             (1.0f - pow(lastPressure/localPressure,0.19019f));
@@ -87,43 +86,44 @@ public:
 
     void updateParams() {
         uint8_t rcvbuf[3];
-        uint32_t pressure = 0;
-        uint32_t temperature =0;
+        uint32_t pressure = 0, temperature = 0, timeout;
 
-        // FIXME (URGENT) add a timeout
+        timeout = 3;
         do {
             Bus::write(CONVERT_D1_4096);
-            Thread::sleep(30);
+            Thread::sleep(10);
             Bus::read_low(ADC_READ,rcvbuf, 3);
 
-            // FIXME: is this an endianness swapping? miosix should have a 
-            // function that do this with only one assembly line.
+            // TODO use swapBytes
             pressure = rcvbuf[2] 
                         | ((uint32_t)rcvbuf[1] << 8) 
                         | ((uint32_t)rcvbuf[0] << 16);
+        } while (pressure == 0 && --timeout > 0);
 
-            if (pressure == 0)
-                Thread::sleep(1);
-        } while (pressure == 0);
+        if(timeout == 0)
+            return;
 
-        // FIXME (URGENT) add a timeout
+        timeout = 3;
         do {
             Bus::write(CONVERT_D2_4096);
-            Thread::sleep(30);
+            Thread::sleep(10);
             Bus::read_low(ADC_READ,rcvbuf, 3);
+
+            // TODO use swapBytes
             temperature = (uint32_t) rcvbuf[2] 
                         | ((uint32_t)rcvbuf[1] << 8) 
                         | ((uint32_t)rcvbuf[0] << 16);
-            if(temperature == 0)
-                Thread::sleep(1);
-        } while(temperature == 0);
+        } while(temperature == 0 && --timeout > 0);
+
+        if(timeout == 0)
+            return;
 
         int32_t dt = temperature - (cd.tref << 8);
         int32_t temp = 2000 + ((dt * cd.tempsens) >> 23);
         lastTemperature =  temp / 100.0f;
 
-        int64_t offs =  ((int64_t)cd.off << 16) + (((int64_t)cd.tco * dt) >> 7);
-        int64_t senst =  ((int64_t)cd.sens << 15) + (((int64_t)cd.tcs * dt) >> 8);
+        int64_t offs = ((int64_t)cd.off << 16)+(((int64_t)cd.tco * dt) >> 7);
+        int64_t senst = ((int64_t)cd.sens << 15)+(((int64_t)cd.tcs * dt) >> 8);
 
         int64_t ttemp = pressure * senst;
         int32_t pres = ((ttemp >> 21) - offs) >> 15;
