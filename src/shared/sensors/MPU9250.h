@@ -104,7 +104,7 @@ public:
         return true;
     }
 
-    void updateParams() {
+    bool updateParams() {
         akdata_t ak;
         mpudata_t raw_data;
 
@@ -132,6 +132,7 @@ public:
         );
 
         last_temperature = normalizeTemp(raw_data.temp);
+        return true;
     }
 
     bool selfTest() {
@@ -164,7 +165,7 @@ public:
         return false; 
     }
 
-    Vec3 getOrientation() {
+    Vec3 getRotation() {
         return last_gyro; 
     }
 

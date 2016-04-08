@@ -83,7 +83,7 @@ public:
         return false;
     }
 
-    void updateParams() {
+    bool updateParams() {
         #pragma pack(1)
         union {
             struct {
@@ -114,9 +114,10 @@ public:
         );
 
         last_temperature = normalizeTemp(raw_data.temp);
+        return true;
     }
 
-    Vec3 getOrientation() {
+    Vec3 getRotation() {
         return last_gyro;
     }
 

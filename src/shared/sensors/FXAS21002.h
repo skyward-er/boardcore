@@ -97,12 +97,13 @@ public:
         return true;
     }
 
-    Vec3 getOrientation() { 
-        return local_orientation; 
+    Vec3 getRotation() { 
+        return last_gyro; 
     }
 
-    void updateParams() {
-        local_orientation = Vec3(getXaxis(), getYaxis(), getZaxis()); 
+    bool updateParams() {
+        last_gyro = Vec3(getXaxis(), getYaxis(), getZaxis()); 
+        return true;
     }
 
     // Reset device. Restore all registers to their default values
@@ -203,7 +204,7 @@ public:
     };
 
 private:
-    Vec3 local_orientation;
+    Vec3 last_gyro;
     constexpr static uint8_t who_am_i_value = 0xD7;
             
     enum regMap { 

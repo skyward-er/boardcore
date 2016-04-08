@@ -28,7 +28,7 @@
 #include "Sensor.h"
 #include <BusTemplate.h>
 
-template <typename BusType>
+template <typename Bus>
 class Si7021 : public HumiditySensor, public TemperatureSensor {
     
 public:
@@ -41,21 +41,22 @@ public:
         //test the whoami value
         uint8_t buf[6];
         
-        BusType::send(CMD_READ_ID1_1,NULL,0);        
-        BusType::read(CMD_READ_ID1_2,buf,6);
+        Bus::send(CMD_READ_ID1_1,NULL,0);        
+        Bus::read(CMD_READ_ID1_2,buf,6);
         
         if(buf[0] != 0x15) {
             last_error = ERR_NOT_ME;
             return false;
         }
-        
-        return true;           
+
+        return true;
     }
+
+    bool updateParams() { return true; }
     
     float getTemperature() {
-        
         uint8_t buf[2];
-        BusType::read(CMD_MEAS_TEMP,buf,2);
+        Bus::read(CMD_MEAS_TEMP,buf,2);
         
         uint16_t retVal = (buf[1] << 8) | buf[0];
         
@@ -66,7 +67,7 @@ public:
     float getHumidity() {
         
         uint8_t buf[2];
-        BusType::read(CMD_MEAS_HUM,buf,2);
+        Bus::read(CMD_MEAS_HUM,buf,2);
         
         uint16_t retVal = (buf[1] << 8) | buf[0];
         
@@ -85,7 +86,7 @@ public:
     float getTempRh() {
         
         uint8_t buf[2];
-        BusType::read(CMD_MEAS_TEMP_PREV_HUM,buf,2);
+        Bus::read(CMD_MEAS_TEMP_PREV_HUM,buf,2);
         
         uint16_t retVal = (buf[1] << 8) | buf[0];
         
@@ -96,43 +97,41 @@ public:
     void heaterOn() {
         
         uint8_t regValue;
-        BusType::read(CMD_READ_USR1,&regValue,1);
+        Bus::read(CMD_READ_USR1,&regValue,1);
         
         regValue |= 0b00000100;
         
-        BusType::write(CMD_WRITE_USR1,&regValue,1);
+        Bus::write(CMD_WRITE_USR1,&regValue,1);
     }
     
     void heaterOff() {
         
         uint8_t regValue;
-        BusType::read(CMD_READ_USR1,&regValue,1);
+        Bus::read(CMD_READ_USR1,&regValue,1);
         
         regValue &= ~0b00000100;
         
-        BusType::write(CMD_WRITE_USR1,&regValue,1);     
+        Bus::write(CMD_WRITE_USR1,&regValue,1);     
     }
     
     /**
-        * Set internal heater draw current value, it also can be used to turn on/off the internal heater
-        * @param level current draw level, between 0 and 16: 0 -> heater off, 16 -> heater at max power
-        */
-    
+     * Set internal heater draw current value, 
+     * it also can be used to turn on/off the internal heater
+     * @param level current draw level, between 0 and 16: 
+     *        0 -> heater off, 16 -> heater at max power
+     */
     void setHeaterLevel(uint8_t level) {
-        
         if(level == 0)
             heaterOff();
-        else if(level <= 16)
-        {
+        else if(level <= 16) {
             heaterOn();
             uint8_t lvl = level - 1;
             
-            BusType::write(CMD_WRITE_HEAT_CTL,&lvl,1);
+            Bus::write(CMD_WRITE_HEAT_CTL,&lvl,1);
         }
     }
     
 private:
-//     BusType bus;        
     static constexpr uint8_t slaveAddr = 0x40;
     
     enum commands {
