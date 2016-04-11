@@ -29,6 +29,7 @@
 #include <stdio.h>
 #include <miosix.h>
 #include <Singleton.h>
+#include <util/software_i2c.h>
 
 using namespace std;
 using namespace miosix;
