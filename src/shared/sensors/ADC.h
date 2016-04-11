@@ -53,6 +53,8 @@ public:
 				RCC->APB2ENR |= RCC_APB2ENR_ADC3EN;
 				printf("ADC3\n");
 			}
+			
+			RCC_SYNC();
 		}
 
     }
