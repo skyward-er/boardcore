@@ -40,7 +40,7 @@ public:
         lastPress = 0;
         lastTemp = 0;
 
-        setMode(MPL3115_MODE_BAROMETER);
+        setMode(MODE_BAROMETER);
         
         // raise and event flag on new pressure/altitude data and on new temperature data
         uint8_t value = 0x03;
@@ -61,7 +61,7 @@ public:
         return false;
     }
     
-    void updateParams() {
+    bool updateParams() {
         
         /* To start a new one-shot conversion we have to set OST bit whith
          * SBYB bit cleared; these bit are, respectively, the second and 
@@ -78,13 +78,13 @@ public:
         temp &= ~0x03;      //clear first and second bits
         temp |= 0x02;       //set second bit
         BusType::write(devAddr,CTRL_REG1,&temp,1);
-        
+
         do{
             
-            BusType::read(devAddr,OUT_P_MSB,&temp,1);
+            BusType::read(devAddr,CTRL_REG1,&temp,1);
             Thread::sleep(6);   //minimum sample time is 6 ms
-            
-        }while(!(temp & 0x03));
+
+        }while(!(temp & 0x02));
         
         /* This device supports register pointer auto-increment when reading
          * registers from 0x00 to 0x05, so with one read of 6 bytes we get 
@@ -92,16 +92,16 @@ public:
          */
         
         uint8_t data[5];
-        BusType::read(devAddr,STATUS,data,5);
+        BusType::read(devAddr,OUT_P_MSB,data,5);
         
-        if(sensorMode == MPL3115_MODE_BAROMETER) {            
+        if(sensorMode == MODE_BAROMETER) {            
 
             //see datasheet at page 21 for more informations about calculations below
             uint32_t press = (static_cast<uint32_t>(data[0]) << 16) | (static_cast<uint32_t>(data[1]) << 8) | static_cast<uint32_t>(data[2]);
             lastPress = static_cast<float>(press) / 64;                    
         }
         
-        if(sensorMode == MPL3115_MODE_ALTIMETER) {
+        if(sensorMode == MODE_ALTIMETER) {
   
             uint32_t altitude = (static_cast<uint32_t>(data[0]) << 24) | (static_cast<uint32_t>(data[1]) << 16) | (static_cast<uint32_t>(data[2]) << 8);
             lastAlt =  static_cast<float>(altitude) / 65536;                    
@@ -109,7 +109,9 @@ public:
 
         uint16_t temperature = (static_cast<uint16_t>(data[3]) << 8) | static_cast<uint16_t>(data[4]);
         lastTemp =  static_cast<float>(temperature) / 256;
-    }
+        
+        return true;
+    }    
     
     /**
      * @return last pressure measured.
@@ -120,7 +122,7 @@ public:
     
     float getPressure() { 
         
-        if(sensorMode == MPL3115_MODE_BAROMETER)
+        if(sensorMode == MODE_BAROMETER)
             return lastPress;
         else
             return 0;
@@ -134,7 +136,7 @@ public:
      */
                
     float getAltitude() {
-        if(sensorMode == MPL3115_MODE_ALTIMETER)
+        if(sensorMode == MODE_ALTIMETER)
             return lastAlt;
         else
             return 0;
@@ -155,9 +157,9 @@ public:
         uint8_t temp;
         BusType::read(devAddr,CTRL_REG1,&temp,1);
         
-        if(mode == MPL3115_MODE_ALTIMETER)
+        if(mode == MODE_ALTIMETER)
             temp |= 0x80;
-        else if(mode == MPL3115_MODE_BAROMETER)
+        else if(mode == MODE_BAROMETER)
             temp &= ~0x80;
         else
             return false;
@@ -241,8 +243,8 @@ public:
         BusType::write(devAddr,CTRL_REG1,&temp,1);
     }
    enum sensMode {       
-       MPL3115_MODE_BAROMETER = 0x01,
-       MPL3115_MODE_ALTIMETER = 0x02        
+       MODE_BAROMETER = 0x01,
+       MODE_ALTIMETER = 0x02        
     };
     
 private:
