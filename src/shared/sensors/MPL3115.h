@@ -91,8 +91,14 @@ public:
          * status, pressure and temperature registers values
          */
         
-        uint8_t data[5];
-        BusType::read(devAddr,OUT_P_MSB,data,5);
+        /* FIXME: this below is NOT A MISTAKE! Due to a strange quirk present in hardware i2c driver when 
+         * working in non DMA mode, reading the exact number of bytes (5) causes the temperature MSB to be
+         * read as zero. Reading 7 or more bytes seems to avoid the problem, so, until the problem is fixed
+         * at his roots DON'T MODIFY the index below !!!!
+         */
+        
+        uint8_t data[7];
+        BusType::read(devAddr,OUT_P_MSB,data,7);
         
         if(sensorMode == MODE_BAROMETER) {            
 
