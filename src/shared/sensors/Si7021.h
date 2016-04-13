@@ -49,7 +49,7 @@ public:
         buf[0] = CMD_READ_ID2_2;        
         
         BusType::write(slaveAddr,CMD_READ_ID2_1,buf,1);        
-        BusType::read(slaveAddr,0,buf,6,false);
+        BusType::read(slaveAddr,0,buf,6);
 
         if(buf[0] != 0x15) {
             last_error = ERR_NOT_ME;
@@ -59,7 +59,7 @@ public:
         return true;           
     }
     
-    void updateParams(){
+    bool updateParams(){
         
         uint8_t buf[2];                        
         BusType::read(slaveAddr,CMD_MEAS_HUM,buf,2);        
@@ -67,6 +67,8 @@ public:
         
         BusType::read(slaveAddr,CMD_MEAS_TEMP_PREV_HUM,buf,2);                
         temperature = ((static_cast<float>((buf[0] << 8) | buf[1])*175.72)/65536) - 46.85;
+        
+        return true;
     }
     
     float getTemperature() { return temperature; }
