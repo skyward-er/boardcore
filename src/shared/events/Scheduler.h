@@ -1,7 +1,7 @@
 /* Event scheduler
  *
  * Copyright (c) 2015-2016 Skyward Experimental Rocketry
- * Author: Alain Carlucci
+ * Author: Alain Carlucci, Federico Terraneo, Matteo Michele Piazzolla
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -31,51 +31,71 @@
 #include <queue>
 
 
-/** HOW TO USE THE EVENT SCHEDULER
- *  sEventScheduler->add(nonblocking_std::function_without_sleeps, millisec);
- *  and.. it works like magic. :)
+/** 
+ * HOW TO USE THE EVENT SCHEDULER
+ * sEventScheduler->add(nonblocking_std::function_without_sleeps, millisec);
+ * and.. it works like magic. :)
  *
- *  Example: 
- *     void magic_std::function() { // do something NONBLOCKING and WITHOUT SLEEPS }
- *     sEventScheduler->add(magic_std::function, 150);
+ * Example: 
+ *    void magic_std::function() { // do something NONBLOCKING and WITHOUT SLEEPS }
+ *    sEventScheduler->add(magic_std::function, 150);
  */
-class EventScheduler : Singleton<EventScheduler>, ActiveObject{
+class EventScheduler : Singleton<EventScheduler>, ActiveObject {
     friend class Singleton<EventScheduler>;
     typedef std::function<void()> function_t;
 
-    /** std::function you want to call + timer */
-    struct schedule_t{
-        function_t f;
-        uint32_t interval_ms;
+    /** 
+     * std::function you want to call + timer
+     */
+    struct schedule_t {
+        function_t function;  ///< Task function
+        uint32_t intervalMs; ///< Task period
     };
 
-    /** A single event */
+    /**
+     * A single event
+     */
     struct event_t { 
-        schedule_t schedule;
-        int64_t next_tick;
+        schedule_t schedule; ///< The task and period
+        int64_t nextTick;   ///< Absolute time of next activation
 
         bool operator<(const event_t& e) const {
-            return e.next_tick < next_tick; // Reverse sort? Maybe :P
+            return e.nextTick < nextTick;
         }
     };
 
 public:
-    void add(function_t func, uint32_t interval_ms) {
-        schedule_t s = { func, interval_ms };
-        queue(s);
-    }
+    /**
+     * Add a task function to be called periodically by the scheduler
+     * \param func function to be called
+     * \param intervalMs inter call period
+     */
+    void add(function_t func, uint32_t intervalMs);
 
 private:
+    /**
+     * Overrides ActiveObject::run()
+     */
     void run();
 
-    std::priority_queue<event_t> agenda;
+    miosix::FastMutex mutex;             ///< Mutex to protect agenda
+    miosix::ConditionVariable condvar;   ///< Used when agenda is empty
+    std::priority_queue<event_t> agenda; ///< Ordered list of functions
 
-    miosix::FastMutex mutex;
-    miosix::ConditionVariable cond_var;
-
-    // (Re)Enqueue a schedule
-    void queue(schedule_t schedule);
+    /**
+     * (Re)Enqueue a schedule.
+     * 
+     * Requires the mutex to be locked.
+     * \param event event to be scheduled. Note: this parameter is
+     * modified, in detail the nextTick field is overvritten in
+     * order to respect the task interval. This is done for
+     * performance reason
+     */
+    void enqueue(event_t& event);
     
+    /**
+     * Constructor
+     */
     EventScheduler();
 };
 
