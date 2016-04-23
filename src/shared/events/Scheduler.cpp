@@ -24,45 +24,32 @@
 
 #include "Scheduler.h"
 
-using miosix::Thread;
-using miosix::TICK_FREQ;
-using miosix::getTick;
+using namespace miosix;
+using namespace std;
 
-using std::push_heap;
-using std::pop_heap;
 
-void __event_scheduler_thread(void *arg) {
-    sEventScheduler->run();
-}
-
-EventScheduler::EventScheduler() {
-    Thread::create(__event_scheduler_thread, 1024);
-}
-
-EventScheduler::~EventScheduler() {
-    // This should never happen
-}
+EventScheduler::EventScheduler() : ActiveObject(1024){}
 
 void EventScheduler::run() {
     while(true) {
+        
         mutex.lock();
 
         while(agenda.size() == 0)
             cond_var.wait(mutex);
 
-        if(agenda[0].next_tick <= getTick()) {
-            event_t e = agenda[0];
-            pop_heap(agenda.begin(), agenda.end());
-            agenda.pop_back();
+        if(agenda.top().next_tick <= getTick()) {
+            event_t e = agenda.top();
+            agenda.pop();
 
             mutex.unlock();
             e.schedule.f();
 
             queue(e.schedule);
         } else {
-            mutex.unlock();
 
-            int64_t sleep_time = agenda[0].next_tick - getTick();
+            int64_t sleep_time = agenda.top().next_tick - getTick();
+            mutex.unlock();
 
             if(sleep_time > 0)
                 Thread::sleep(sleep_time);
@@ -76,10 +63,11 @@ void EventScheduler::queue(schedule_t schedule) {
         getTick() + schedule.interval_ms * TICK_FREQ / 1000
     };
 
-    mutex.lock();
-    agenda.push_back(event);
-    push_heap(agenda.begin(), agenda.end());
-    mutex.unlock();
+    {
+        Lock<FastMutex> l(mutex);
+        agenda.push(event);
+
+    }
     cond_var.broadcast();
 }
 

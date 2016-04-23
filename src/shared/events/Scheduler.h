@@ -27,58 +27,56 @@
 
 #include <Common.h>
 #include <Singleton.h>
+#include <ActiveObject.h>
+#include <queue>
 
-using miosix::FastMutex;
-using miosix::ConditionVariable;
-using std::vector;
-using std::function;
 
 /** HOW TO USE THE EVENT SCHEDULER
- *  sEventScheduler->add(nonblocking_function_without_sleeps, millisec);
+ *  sEventScheduler->add(nonblocking_std::function_without_sleeps, millisec);
  *  and.. it works like magic. :)
  *
  *  Example: 
- *     void magic_function() { // do something NONBLOCKING and WITHOUT SLEEPS }
- *     sEventScheduler->add(magic_function, 150);
+ *     void magic_std::function() { // do something NONBLOCKING and WITHOUT SLEEPS }
+ *     sEventScheduler->add(magic_std::function, 150);
  */
-class EventScheduler : Singleton<EventScheduler> {
+class EventScheduler : Singleton<EventScheduler>, ActiveObject{
     friend class Singleton<EventScheduler>;
-    typedef function<void()> function_t;
+    typedef std::function<void()> function_t;
 
-    /** Function you want to call + timer */
-    typedef struct {
+    /** std::function you want to call + timer */
+    struct schedule_t{
         function_t f;
         uint32_t interval_ms;
-    } schedule_t;
+    };
 
     /** A single event */
-    typedef struct event_t { 
+    struct event_t { 
         schedule_t schedule;
         int64_t next_tick;
 
         bool operator<(const event_t& e) const {
             return e.next_tick < next_tick; // Reverse sort? Maybe :P
         }
-    } event_t;
+    };
+
 public:
     void add(function_t func, uint32_t interval_ms) {
         schedule_t s = { func, interval_ms };
         queue(s);
     }
 
-    // Do not call this directly.
-    void run();
 private:
-    /** This vector is a HEAP! (std::push_heap, std::pop_heap, ...) */
-    vector<event_t> agenda;
-    FastMutex mutex;
-    ConditionVariable cond_var;
+    void run();
+
+    std::priority_queue<event_t> agenda;
+
+    miosix::FastMutex mutex;
+    miosix::ConditionVariable cond_var;
 
     // (Re)Enqueue a schedule
     void queue(schedule_t schedule);
     
     EventScheduler();
-    ~EventScheduler();
 };
 
 #define sEventScheduler Singleton<EventScheduler>::getInstance()
