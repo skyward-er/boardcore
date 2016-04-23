@@ -1,7 +1,7 @@
 /* Event scheduler
  *
  * Copyright (c) 2015-2016 Skyward Experimental Rocketry
- * Author: Alain Carlucci
+ * Author: Alain Carlucci, Federico Terraneo, Matteo Michele Piazzolla
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -24,50 +24,46 @@
 
 #include "Scheduler.h"
 
-using namespace miosix;
 using namespace std;
+using namespace miosix;
 
-
-EventScheduler::EventScheduler() : ActiveObject(1024){}
+void EventScheduler::add(function_t func, uint32_t intervalMs) {
+    schedule_t schedule = { func, intervalMs };
+    event_t event = { schedule };
+    
+    Lock<FastMutex> l(mutex);
+    enqueue(event);
+}
 
 void EventScheduler::run() {
-    while(true) {
+    for(;;) {
+        int64_t wakeupTime = -1;
+        function_t func;
         
-        mutex.lock();
-
-        while(agenda.size() == 0)
-            cond_var.wait(mutex);
-
-        if(agenda.top().next_tick <= getTick()) {
-            event_t e = agenda.top();
-            agenda.pop();
-
-            mutex.unlock();
-            e.schedule.f();
-
-            queue(e.schedule);
-        } else {
-
-            int64_t sleep_time = agenda.top().next_tick - getTick();
-            mutex.unlock();
-
-            if(sleep_time > 0)
-                Thread::sleep(sleep_time);
+        {
+            Lock<FastMutex> l(mutex);
+            
+            while(agenda.size() == 0) condvar.wait(mutex);
+            
+            if(agenda.top().nextTick <= getTick()) {
+                event_t e = agenda.top();
+                agenda.pop();
+                enqueue(e);
+                func=e.schedule.function;
+            } else {
+                wakeupTime = agenda.top().nextTick;
+            }
         }
+        
+        if(wakeupTime>0) Thread::sleepUntil(wakeupTime);
+        if(func) func();
     }
 }
 
-void EventScheduler::queue(schedule_t schedule) {
-    event_t event = { 
-        schedule,
-        getTick() + schedule.interval_ms * TICK_FREQ / 1000
-    };
-
-    {
-        Lock<FastMutex> l(mutex);
-        agenda.push(event);
-
-    }
-    cond_var.broadcast();
+void EventScheduler::enqueue(event_t& event) {
+    event.nextTick = getTick() + event.schedule.intervalMs * TICK_FREQ / 1000;
+    agenda.push(event);
+    condvar.broadcast();
 }
 
+EventScheduler::EventScheduler() : ActiveObject(1024) {}
