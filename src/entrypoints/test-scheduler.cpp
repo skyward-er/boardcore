@@ -10,20 +10,25 @@ using namespace miosix;
 void supercar(void *arg);
 
 
-template<typename P>
+template<typename P, unsigned N>
 void blinker()
 {
     if(P::value()) P::low(); else P::high();
+    static int64_t lastcall=-1;
+    int64_t newcall=getTick();
+    int64_t period=newcall-lastcall;
+    if(lastcall>0) printf("%d\t%lld\t%lld\n",N,period,period-N);
+    lastcall=newcall;
 }
 
 int main() {
     //Thread *ledTh=Thread::create(supercar,STACK_MIN);
 
-    sEventScheduler->add(blinker<leds::led9>,100);
-    sEventScheduler->add(blinker<leds::led8>,200);
-    sEventScheduler->add(blinker<leds::led7>,500);
-    sEventScheduler->add(blinker<leds::led6>,1000);
-    sEventScheduler->add(blinker<leds::led5>,50);
+    sEventScheduler->add(blinker<leds::led9,100>,100);
+    sEventScheduler->add(blinker<leds::led8,200>,200);
+    sEventScheduler->add(blinker<leds::led7,500>,500);
+    sEventScheduler->add(blinker<leds::led6,1000>,1000);
+    sEventScheduler->add(blinker<leds::led5,50>,50);
     for(;;){
         Thread::sleep(10);
     }
