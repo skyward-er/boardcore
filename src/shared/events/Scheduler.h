@@ -60,7 +60,9 @@ class EventScheduler : Singleton<EventScheduler>, ActiveObject {
         int64_t nextTick;   ///< Absolute time of next activation
 
         bool operator<(const event_t& e) const {
-            return e.nextTick < nextTick;
+            //Note: operator < is reversed, so that the priority_queue
+            //will return the lowest element first
+            return this->nextTick > e.nextTick;
         }
     };
 
