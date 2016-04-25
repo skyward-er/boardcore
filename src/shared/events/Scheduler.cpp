@@ -28,11 +28,13 @@ using namespace std;
 using namespace miosix;
 
 void EventScheduler::add(function_t func, uint32_t intervalMs) {
-    schedule_t schedule = { func, intervalMs };
-    event_t event = { schedule };
-    
-    Lock<FastMutex> l(mutex);
-    enqueue(event);
+    task_t task = { func, intervalMs, false };
+    addTask(task);
+}
+
+void EventScheduler::addOnce(function_t func, uint32_t delayMs) {
+    task_t task = { func, delayMs, true };
+    addTask(task);
 }
 
 void EventScheduler::run() {
@@ -45,11 +47,15 @@ void EventScheduler::run() {
             
             while(agenda.size() == 0) condvar.wait(mutex);
             
-            if(agenda.top().nextTick <= getTick()) {
+            int64_t now = getTick();
+            if(agenda.top().nextTick <= now) {
                 event_t e = agenda.top();
                 agenda.pop();
-                enqueue(e);
-                func=e.schedule.function;
+                func = e.task->function;
+                if(e.task->once==false) {
+                    enqueue(e);
+                    //updateStats(e,now);
+                } else tasks.erase(e.task);
             } else {
                 wakeupTime = agenda.top().nextTick;
             }
@@ -60,8 +66,18 @@ void EventScheduler::run() {
     }
 }
 
+void EventScheduler::addTask(const EventScheduler::task_t& task) {
+    Lock<FastMutex> l(mutex);
+    tasks.push_back(task);
+    
+    auto it = tasks.end();
+    --it; //This makes it point to the last element of the list
+    event_t event = { it, getTick() };
+    enqueue(event);
+}
+
 void EventScheduler::enqueue(event_t& event) {
-    event.nextTick = getTick() + event.schedule.intervalMs * TICK_FREQ / 1000;
+    event.nextTick += event.task->intervalMs * TICK_FREQ / 1000;
     agenda.push(event);
     condvar.broadcast();
 }
