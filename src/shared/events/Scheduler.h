@@ -28,6 +28,7 @@
 #include <Common.h>
 #include <Singleton.h>
 #include <ActiveObject.h>
+#include <list>
 #include <queue>
 
 
@@ -42,22 +43,40 @@
  */
 class EventScheduler : Singleton<EventScheduler>, ActiveObject {
     friend class Singleton<EventScheduler>;
+public:
     typedef std::function<void()> function_t;
+    
+    /**
+     * Add a task function to be called periodically by the scheduler
+     * \param func function to be called
+     * \param intervalMs inter call period
+     */
+    void add(function_t func, uint32_t intervalMs);
+    
+    /**
+     * Add a single shot task function to be called only once, after the
+     * given delay
+     * \param func function to be called
+     * \param delayMs delay before the call
+     */
+    void addOnce(function_t func, uint32_t delayMs);
 
+private:
     /** 
      * std::function you want to call + timer
      */
-    struct schedule_t {
-        function_t function;  ///< Task function
+    struct task_t {
+        function_t function; ///< Task function
         uint32_t intervalMs; ///< Task period
+        bool once;           ///< true if the task is not periodic
     };
 
     /**
      * A single event
      */
     struct event_t { 
-        schedule_t schedule; ///< The task and period
-        int64_t nextTick;   ///< Absolute time of next activation
+        std::list<task_t>::iterator task; ///< The task and period
+        int64_t nextTick;                 ///< Absolute time of next activation
 
         bool operator<(const event_t& e) const {
             //Note: operator < is reversed, so that the priority_queue
@@ -65,25 +84,19 @@ class EventScheduler : Singleton<EventScheduler>, ActiveObject {
             return this->nextTick > e.nextTick;
         }
     };
-
-public:
-    /**
-     * Add a task function to be called periodically by the scheduler
-     * \param func function to be called
-     * \param intervalMs inter call period
-     */
-    void add(function_t func, uint32_t intervalMs);
-
-private:
+    
     /**
      * Overrides ActiveObject::run()
      */
     void run();
 
-    miosix::FastMutex mutex;             ///< Mutex to protect agenda
-    miosix::ConditionVariable condvar;   ///< Used when agenda is empty
-    std::priority_queue<event_t> agenda; ///< Ordered list of functions
-
+    /**
+     * Add a task to be executed, both periodic and single shot.
+     * In addition, also takes care of genrating the (first) event for the task
+     * \param pask the task to add
+     */
+    void addTask(const task_t& task);
+    
     /**
      * (Re)Enqueue a schedule.
      * 
@@ -99,6 +112,11 @@ private:
      * Constructor
      */
     EventScheduler();
+    
+    miosix::FastMutex mutex;             ///< Mutex to protect agenda
+    miosix::ConditionVariable condvar;   ///< Used when agenda is empty
+    std::list<task_t> tasks;             ///< Holds all tasks to be scheduled
+    std::priority_queue<event_t> agenda; ///< Ordered list of functions
 };
 
 #define sEventScheduler Singleton<EventScheduler>::getInstance()
