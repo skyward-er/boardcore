@@ -45,8 +45,8 @@ void EventScheduler::add(function_t func, uint32_t intervalMs, const string& nam
     addTask(task);
 }
 
-void EventScheduler::addOnce(function_t func, uint32_t delayMs, const string& name) {
-    task_t task = { func, delayMs, name, true, -1 };
+void EventScheduler::addOnce(function_t func, uint32_t delayMs) {
+    task_t task = { func, delayMs, "", true, -1 };
     addTask(task);
 }
 
