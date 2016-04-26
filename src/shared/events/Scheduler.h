@@ -26,11 +26,27 @@
 #define EVENT_SCHEDULER_H
 
 #include <Common.h>
+#include <math/Stats.h>
 #include <Singleton.h>
 #include <ActiveObject.h>
 #include <list>
 #include <queue>
 
+/**
+ * Statistics for a task
+ */
+struct TaskStatResult
+{
+    std::string name;            ///< Task name
+    StatsResult activationStats; ///< Task activation stats
+    StatsResult periodStats;     ///< Task period stats
+    StatsResult workloadStats;   ///< Task workload stats
+};
+
+/**
+ * Allows printing TaskStatResult to an ostream
+ */
+std::ostream& operator<<(std::ostream& os, const TaskStatResult& sr);
 
 /** 
  * HOW TO USE THE EVENT SCHEDULER
@@ -51,7 +67,7 @@ public:
      * \param func function to be called
      * \param intervalMs inter call period
      */
-    void add(function_t func, uint32_t intervalMs);
+    void add(function_t func, uint32_t intervalMs, const std::string& name);
     
     /**
      * Add a single shot task function to be called only once, after the
@@ -59,16 +75,26 @@ public:
      * \param func function to be called
      * \param delayMs delay before the call
      */
-    void addOnce(function_t func, uint32_t delayMs);
+    void addOnce(function_t func, uint32_t delayMs, const std::string& name);
+    
+    /**
+     * \return statistics for all tasks
+     */
+    std::vector<TaskStatResult> getTaskStats();
 
 private:
     /** 
      * std::function you want to call + timer
      */
     struct task_t {
-        function_t function; ///< Task function
-        uint32_t intervalMs; ///< Task period
-        bool once;           ///< true if the task is not periodic
+        function_t function;   ///< Task function
+        uint32_t intervalMs;   ///< Task period
+        std::string name;      ///< Task name
+        bool once;             ///< true if the task is not periodic
+        int64_t lastcall;      ///< Last activation for period computaton
+        Stats activationStats; ///< Stats about activation error
+        Stats periodStats;     ///< Stats about period error
+        Stats workloadStats;   ///< Stats about time the task takes to compute
     };
 
     /**
@@ -107,6 +133,14 @@ private:
      * performance reason
      */
     void enqueue(event_t& event);
+    
+    /**
+     * Update task stats
+     * \param e current event
+     * \param startTime start of execution time
+     * \param endTime end of execution time
+     */
+    void updateStats(event_t& e, int64_t startTime, int64_t endTime);
     
     /**
      * Constructor

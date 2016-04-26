@@ -27,42 +27,71 @@
 using namespace std;
 using namespace miosix;
 
-void EventScheduler::add(function_t func, uint32_t intervalMs) {
-    task_t task = { func, intervalMs, false };
+std::ostream& operator<<(std::ostream& os, const TaskStatResult& sr)
+{
+    os<<sr.name
+      <<"\nactivation "<<sr.activationStats
+      <<"\nperiod     "<<sr.periodStats
+      <<"\nworkload   "<<sr.workloadStats<<'\n';
+    return os;
+}
+
+//
+// class EventScheduler
+//
+
+void EventScheduler::add(function_t func, uint32_t intervalMs, const string& name) {
+    task_t task = { func, intervalMs, name, false, -1 };
     addTask(task);
 }
 
-void EventScheduler::addOnce(function_t func, uint32_t delayMs) {
-    task_t task = { func, delayMs, true };
+void EventScheduler::addOnce(function_t func, uint32_t delayMs, const string& name) {
+    task_t task = { func, delayMs, name, true, -1 };
     addTask(task);
+}
+
+vector<TaskStatResult> EventScheduler::getTaskStats()
+{
+    Lock<FastMutex> l(mutex);
+    vector<TaskStatResult> result;
+    result.reserve(tasks.size());
+    for(auto it : tasks)
+        result.push_back(
+            {
+                it.name,
+                it.activationStats.getStats(),
+                it.periodStats.getStats(),
+                it.workloadStats.getStats(),
+            });
+    return result;
 }
 
 void EventScheduler::run() {
+    Lock<FastMutex> l(mutex);
     for(;;) {
-        int64_t wakeupTime = -1;
-        function_t func;
+        while(agenda.size() == 0) condvar.wait(mutex);
         
-        {
-            Lock<FastMutex> l(mutex);
+        int64_t now = getTick();
+        int64_t nextTick = agenda.top().nextTick;
+        if(nextTick <= now) {
+            event_t e = agenda.top();
+            agenda.pop();
             
-            while(agenda.size() == 0) condvar.wait(mutex);
-            
-            int64_t now = getTick();
-            if(agenda.top().nextTick <= now) {
-                event_t e = agenda.top();
-                agenda.pop();
-                func = e.task->function;
-                if(e.task->once==false) {
-                    enqueue(e);
-                    //updateStats(e,now);
-                } else tasks.erase(e.task);
-            } else {
-                wakeupTime = agenda.top().nextTick;
+            {
+                Unlock<FastMutex> u(l);
+                //FIXME: what if function throws?? this will stop all tasks!
+                e.task->function();
             }
+            
+            if(e.task->once==false) {
+                updateStats(e,now,getTick());
+                //NOTE: enqueue writes in nextTick, so has to be called after
+                enqueue(e);
+            } else tasks.erase(e.task);
+        } else {
+            Unlock<FastMutex> u(l);
+            Thread::sleepUntil(nextTick);
         }
-        
-        if(wakeupTime>0) Thread::sleepUntil(wakeupTime);
-        if(func) func();
     }
 }
 
@@ -80,6 +109,27 @@ void EventScheduler::enqueue(event_t& event) {
     event.nextTick += event.task->intervalMs * TICK_FREQ / 1000;
     agenda.push(event);
     condvar.broadcast();
+}
+
+void EventScheduler::updateStats(event_t& e, int64_t startTime, int64_t endTime)
+{
+    const float tickToMs = 1000.f / TICK_FREQ;
+    
+    //Activation stats
+    float activationError = startTime - e.nextTick;
+    e.task->activationStats.add(activationError * tickToMs);
+    
+    //Period stats
+    int64_t last=e.task->lastcall;
+    if(last>=0)
+    {
+        float period = startTime - last;
+        e.task->periodStats.add(period * tickToMs);
+    }
+    e.task->lastcall = startTime;
+    
+    //Workload stats
+    e.task->workloadStats.add(endTime - startTime);
 }
 
 EventScheduler::EventScheduler() : ActiveObject(1024) {}
