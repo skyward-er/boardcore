@@ -75,7 +75,7 @@ public:
      * \param func function to be called
      * \param delayMs delay before the call
      */
-    void addOnce(function_t func, uint32_t delayMs, const std::string& name);
+    void addOnce(function_t func, uint32_t delayMs);
     
     /**
      * \return statistics for all tasks
