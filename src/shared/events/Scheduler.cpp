@@ -56,6 +56,8 @@ vector<TaskStatResult> EventScheduler::getTaskStats()
     vector<TaskStatResult> result;
     result.reserve(tasks.size());
     for(auto it : tasks)
+    {
+        if(it.once) continue;
         result.push_back(
             {
                 it.name,
@@ -63,6 +65,7 @@ vector<TaskStatResult> EventScheduler::getTaskStats()
                 it.periodStats.getStats(),
                 it.workloadStats.getStats(),
             });
+    }
     return result;
 }
 
