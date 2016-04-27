@@ -151,6 +151,7 @@ private:
     miosix::ConditionVariable condvar;   ///< Used when agenda is empty
     std::list<task_t> tasks;             ///< Holds all tasks to be scheduled
     std::priority_queue<event_t> agenda; ///< Ordered list of functions
+    uint32_t permanentTasks;             ///< Number of non-oneshot tasks
 };
 
 #define sEventScheduler Singleton<EventScheduler>::getInstance()
