@@ -29,20 +29,21 @@
 #include <BusTemplate.h>
 
 template <typename BusType>
-class MPL3115 : public PressureSensor, public TemperatureSensor, public AltitudeSensor {
+class MPL3115 : public PressureSensor, public TemperatureSensor, 
+                public AltitudeSensor {
 
 public:
     MPL3115() { init(); }
     
     bool init() {
-        
         lastAlt = 0;
         lastPress = 0;
         lastTemp = 0;
 
         setMode(MODE_BAROMETER);
         
-        // raise and event flag on new pressure/altitude data and on new temperature data
+        // raise and event flag on new pressure/altitude 
+        // data and on new temperature data
         uint8_t value = 0x03;
         BusType::write(devAddr,PT_DATA_CFG,&value,1);
         
@@ -50,7 +51,6 @@ public:
     }
     
     bool selfTest() {
-        
         uint8_t value = 0;
         BusType::read(devAddr,WHO_AM_I,&value,1);
                 
@@ -62,13 +62,12 @@ public:
     }
     
     bool updateParams() {
-        
         /* To start a new one-shot conversion we have to set OST bit whith
          * SBYB bit cleared; these bit are, respectively, the second and 
          * first bits from right in control register 1.
-         * After having done this, we poll data register status register checking
-         * if PDR and TDR bits are set, meaning that we have new data both for
-         * pressure / altitude and for temperature.
+         * After having done this, we poll data register status register 
+         * checking if PDR and TDR bits are set, meaning that we have new data 
+         * both for pressure / altitude and for temperature.
          * PDR bit is the second from right, while TDR is the first one         
          */
         
@@ -91,10 +90,11 @@ public:
          * status, pressure and temperature registers values
          */
         
-        /* FIXME: this below is NOT A MISTAKE! Due to a strange quirk present in hardware i2c driver when 
-         * working in non DMA mode, reading the exact number of bytes (5) causes the temperature MSB to be
-         * read as zero. Reading 7 or more bytes seems to avoid the problem, so, until the problem is fixed
-         * at his roots DON'T MODIFY the index below !!!!
+        /* FIXME: this below is NOT A MISTAKE! Due to a strange quirk present 
+         * in hardware i2c driver when working in non DMA mode, reading the 
+         * exact number of bytes (5) causes the temperature MSB to be read as 
+         * zero. Reading 7 or more bytes seems to avoid the problem, so, until
+         * the problem is fixed at his roots DON'T MODIFY the index below !!!!
          */
         
         uint8_t data[7];
@@ -102,18 +102,23 @@ public:
         
         if(sensorMode == MODE_BAROMETER) {            
 
-            //see datasheet at page 21 for more informations about calculations below
-            uint32_t press = (static_cast<uint32_t>(data[0]) << 16) | (static_cast<uint32_t>(data[1]) << 8) | static_cast<uint32_t>(data[2]);
+            // See datasheet at page 21 for more informations about 
+            // calculations below
+            uint32_t press = (static_cast<uint32_t>(data[0]) << 16) 
+                           | (static_cast<uint32_t>(data[1]) << 8) 
+                           | static_cast<uint32_t>(data[2]);
             lastPress = static_cast<float>(press) / 64;                    
         }
         
         if(sensorMode == MODE_ALTIMETER) {
-  
-            uint32_t altitude = (static_cast<uint32_t>(data[0]) << 24) | (static_cast<uint32_t>(data[1]) << 16) | (static_cast<uint32_t>(data[2]) << 8);
+            uint32_t altitude = (static_cast<uint32_t>(data[0]) << 24) 
+                              | (static_cast<uint32_t>(data[1]) << 16) 
+                              | (static_cast<uint32_t>(data[2]) << 8);
             lastAlt =  static_cast<float>(altitude) / 65536;                    
         }
 
-        uint16_t temperature = (static_cast<uint16_t>(data[3]) << 8) | static_cast<uint16_t>(data[4]);
+        uint16_t temperature = (static_cast<uint16_t>(data[3]) << 8) 
+                             | static_cast<uint16_t>(data[4]);
         lastTemp =  static_cast<float>(temperature) / 256;
         
         return true;
@@ -125,7 +130,6 @@ public:
      * is called, ZERO IS RETURNED to signal that a wrong request has
      * been performed!!
      */
-    
     float getPressure() { 
         
         if(sensorMode == MODE_BAROMETER)
@@ -140,7 +144,6 @@ public:
      * is called, ZERO IS RETURNED to signal that a wrong request has
      * been performed!!
      */
-               
     float getAltitude() {
         if(sensorMode == MODE_ALTIMETER)
             return lastAlt;
@@ -180,21 +183,27 @@ public:
      * @param offset offset trim value as 8 bit two's complement number.
      * Range is from -8 to +7.9375°C, 0.0625°C per LSB
      */
-    void setTempOffset(int8_t offset) { BusType::write(devAddr,TEMP_OFFSET,&offset,1); }
+    void setTempOffset(int8_t offset) { 
+        BusType::write(devAddr,TEMP_OFFSET,&offset,1); 
+    }
     
     /**
      * Correction factor used to trim pressure output value
      * @param offset offset trim value as 8 bit two's complement number.
      * Range is from -512 to +508 Pa, 4 Pa per LSB
      */
-    void setPressOffset(int8_t offset) { BusType::write(devAddr,PRESS_OFFSET,&offset,1); }
+    void setPressOffset(int8_t offset) { 
+        BusType::write(devAddr,PRESS_OFFSET,&offset,1); 
+    }
     
     /**
      * Correction factor used to trim altitude output value
      * @param offset offset trim value as 8 bit two's complement number.
      * The range of values are from -128 to +127 meters
      */
-    void setAltOffset(int8_t offset) { BusType::write(devAddr,ALTIT_OFFSET,&offset,1); }
+    void setAltOffset(int8_t offset) { 
+        BusType::write(devAddr,ALTIT_OFFSET,&offset,1); 
+    }
     
     /**
      * Set oversampling ratio. Allowed values are: 1,2,4,8,16,32,64,128
@@ -203,7 +212,6 @@ public:
      * relation with oversampling ratio see datasheet at page 31
      */
     void setOversampleRatio(uint8_t ratio) {
-        
         uint8_t temp, osr = 0;
         
         BusType::read(devAddr,CTRL_REG1,&temp,1);

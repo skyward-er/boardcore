@@ -54,7 +54,9 @@ std::ostream& operator<<(std::ostream& os, const TaskStatResult& sr);
  * and.. it works like magic. :)
  *
  * Example: 
- *    void magic_std::function() { // do something NONBLOCKING and WITHOUT SLEEPS }
+ *    void magic_std::function() { 
+ *        // do something NONBLOCKING and WITHOUT SLEEPS 
+ *    }
  *    sEventScheduler->add(magic_std::function, 150);
  */
 class EventScheduler : Singleton<EventScheduler>, ActiveObject {

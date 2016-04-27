@@ -62,22 +62,26 @@ static const char mKO[] = "FAIL";
 int num_ok = 0, num_fail = 0;
 
 void banner() {
-printf("------------------------------------------------------------------------------\n"
-       "d888888b d88888b .d8888. d888888b   .d8888. db    db d888888b d888888b d88888b\n"
-       "`~~88~~' 88'     88'  YP `~~88~~'   88'  YP 88    88   `88'   `~~88~~' 88'    \n"
-       "   88    88ooooo `8bo.      88      `8bo.   88    88    88       88    88ooooo\n"
-       "   88    88~~~~~   `Y8b.    88        `Y8b. 88    88    88       88    88~~~~~\n"
-       "   88    88.     db   8D    88      db   8D 88b  d88   .88.      88    88.    \n"
-       "   YP    Y88888P `8888Y'    YP      `8888Y' ~Y8888P' Y888888P    YP    Y88888P\n"
-       "------------------------------------------------------------------------------\n\n");
+    printf(
+"----------------------------------------------------------------------------\n"
+"d888888b d88888b .d8888. d888888b .d8888. db    db d888888b d888888b d88888b\n"
+"`~~88~~' 88'     88'  YP `~~88~~' 88'  YP 88    88   `88'   `~~88~~' 88'    \n"
+"   88    88ooooo `8bo.      88    `8bo.   88    88    88       88    88ooooo\n"
+"   88    88~~~~~   `Y8b.    88      `Y8b. 88    88    88       88    88~~~~~\n"
+"   88    88.     db   8D    88    db   8D 88b  d88   .88.      88    88.    \n"
+"   YP    Y88888P `8888Y'    YP    `8888Y' ~Y8888P' Y888888P    YP    Y88888P\n"
+"----------------------------------------------------------------------------\n"
+    "\n");
 }
 
-void test_and_print(const char *name, uint8_t reg, uint8_t test, uint8_t reference) {
+void test_and_print(const char *name, uint8_t reg, 
+        uint8_t test, uint8_t reference) {
     if (test == reference) 
         ++num_ok;
     else
         ++num_fail;
-    printf("[%13s] [REG 0x%02x]: 0x%02x -> [%s]\n", name, reg, test, (test == reference)?mOK:mKO);
+    printf("[%13s] [REG 0x%02x]: 0x%02x -> [%s]\n", name, reg, 
+            test, (test == reference)?mOK:mKO);
 }
 
 void assert_true(const char *name, const char *func, bool value) {

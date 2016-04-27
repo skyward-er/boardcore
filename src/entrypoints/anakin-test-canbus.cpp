@@ -86,7 +86,8 @@ int main() {
     printf("[MAIN] Requesting bus\n");
     bus = c.getBus(0);
 
-    Thread::create(test_canbus_recv, 1024, 1, static_cast<void *>(bus), Thread::JOINABLE);
+    Thread::create(test_canbus_recv, 1024, 1, 
+            static_cast<void *>(bus), Thread::JOINABLE);
     test_canbus_send(bus);
     
     return 0;
