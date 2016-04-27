@@ -1,3 +1,24 @@
+/* Copyright (c) 2015-2016 Skyward Experimental Rocketry
+ * Authors: Silvano Seva
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in
+ * all copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.  IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+ * THE SOFTWARE.
+ */
 
 #include "stm32f2_f4_i2c.h"
 #include <miosix.h>
@@ -46,7 +67,8 @@ void __attribute__((used)) I2C1rxDmaHandlerImpl()
     I2C1->CR1 |= I2C_CR1_STOP;
     if(waiting==0) return;
     waiting->IRQwakeup();
-    if(waiting->IRQgetPriority()>Thread::IRQgetCurrentThread()->IRQgetPriority())
+    if(waiting->IRQgetPriority() > 
+            Thread::IRQgetCurrentThread()->IRQgetPriority())
         Scheduler::IRQfindNextThread();
     waiting=0;
 }
@@ -126,7 +148,8 @@ void __attribute__((used)) I2C1HandlerImpl()
     if(waiting==0 || !rxFinished) return;
     #endif
     waiting->IRQwakeup();
-    if(waiting->IRQgetPriority()>Thread::IRQgetCurrentThread()->IRQgetPriority())
+    if(waiting->IRQgetPriority() > 
+            Thread::IRQgetCurrentThread()->IRQgetPriority())
         Scheduler::IRQfindNextThread();
     waiting=0;
 }
@@ -150,7 +173,8 @@ void __attribute__((used)) I2C1errHandlerImpl()
     error=true;
     if(waiting==0) return;
     waiting->IRQwakeup();
-    if(waiting->IRQgetPriority()>Thread::IRQgetCurrentThread()->IRQgetPriority())
+    if(waiting->IRQgetPriority() > 
+            Thread::IRQgetCurrentThread()->IRQgetPriority())
         Scheduler::IRQfindNextThread();
     waiting=0;
 }
@@ -217,15 +241,16 @@ void I2C1Driver::init()
     I2C1->CR1=I2C_CR1_PE; //Enable peripheral
 }
 
-bool I2C1Driver::send(unsigned char address, const void *data, int len, bool sendStop)
+bool I2C1Driver::send(unsigned char address, 
+        const void *data, int len, bool sendStop)
 {
-    /* if sendStop is true user is requesting to have the stop condition sent, so 
-     * noStop has to be set to false */
+    /* if sendStop is true user is requesting to have the stop condition sent, 
+     * so noStop has to be set to false 
+     */
     noStop = !sendStop;
     
     address &= 0xfe; //Mask bit 0, as we are writing
-    if(start(address)==false || (I2C1->SR2 & I2C_SR2_TRA)==0)
-    {
+    if(start(address)==false || (I2C1->SR2 & I2C_SR2_TRA)==0) {
         I2C1->CR1 |= I2C_CR1_STOP;
         return false;
     }
@@ -273,8 +298,7 @@ bool I2C1Driver::send(unsigned char address, const void *data, int len, bool sen
     I2C1->CR2 |= I2C_CR2_ITERREN;
     
     const uint8_t *txData = reinterpret_cast<const uint8_t*>(data);
-    for(int i=0; i<len && !error; i++)
-    {
+    for(int i=0; i<len && !error; i++) {
         I2C1->DR = txData[i];        
         while(!(I2C1->SR1 & I2C_SR1_TXE)) ;
     }
@@ -282,8 +306,7 @@ bool I2C1Driver::send(unsigned char address, const void *data, int len, bool sen
     I2C1->CR2 &= ~I2C_CR2_ITERREN;
     #endif
         
-    /*
-     * The main idea of this driver is to avoid having the processor spinning
+    /* The main idea of this driver is to avoid having the processor spinning
      * waiting on some status flag. Why? Because I2C is slow compared to a
      * modern processor. A 120MHz core does 1200 clock cycles in the time it
      * takes to transfer a single bit through an I2C clocked at 100KHz.
@@ -307,13 +330,13 @@ bool I2C1Driver::send(unsigned char address, const void *data, int len, bool sen
      * bit, plus the stop bit. That's 12000 wasted CPU cycles. Thanks, ST...
      */
     
-    if(sendStop)
-    {
+    if(sendStop) {
         I2C1->CR1 |= I2C_CR1_STOP;
         while(I2C1->SR2 & I2C_SR2_MSL) ; //Wait for stop bit sent
-    }else
-    {
-        I2C1->DR = 0x00;    //Dummy write, is the only way to clear the TxE flag if stop bit is not sent...
+    } else {
+        // Dummy write, is the only way to clear 
+        // the TxE flag if stop bit is not sent...
+        I2C1->DR = 0x00;    
     }
     return !error;
 }
@@ -321,8 +344,7 @@ bool I2C1Driver::send(unsigned char address, const void *data, int len, bool sen
 bool I2C1Driver::recv(unsigned char address, void *data, int len)
 {
     address |= 0x01;
-    if(start(address,len==1)==false || I2C1->SR2 & I2C_SR2_TRA)
-    {        
+    if(start(address,len==1)==false || I2C1->SR2 & I2C_SR2_TRA) {        
         I2C1->CR1 |= I2C_CR1_STOP;
         return false;
     }
@@ -348,9 +370,9 @@ bool I2C1Driver::recv(unsigned char address, void *data, int len)
 
     {
         FastInterruptDisableLock dLock;
-        while(waiting)
-        {
+        while(waiting) {
             waiting->IRQwait();
+
             {
                 FastInterruptEnableLock eLock(dLock);
                 Thread::yield();
@@ -372,8 +394,7 @@ bool I2C1Driver::recv(unsigned char address, void *data, int len)
     
     rxBuf = reinterpret_cast<uint8_t*>(data);
 
-    if(len > 1)
-    {                
+    if(len > 1) {                
         I2C1->CR2 |= I2C_CR2_ITERREN | I2C_CR2_ITEVTEN | I2C_CR2_ITBUFEN;
                         
         rxBufCnt = 0;
@@ -399,7 +420,8 @@ bool I2C1Driver::recv(unsigned char address, void *data, int len)
     while(!(I2C1->SR1 & I2C_SR1_RXNE)) ;
     rxBuf[len-1] = I2C1->DR;
     
-    rxBuf = 0;      //set pointer to rx buffer to zero after having used it, see i2c event ISR 
+    //set pointer to rx buffer to zero after having used it, see i2c event ISR 
+    rxBuf = 0;
     
     I2C1->CR2 &= ~I2C_CR2_ITERREN; 
     #endif
@@ -410,24 +432,18 @@ bool I2C1Driver::recv(unsigned char address, void *data, int len)
 
 bool I2C1Driver::start(unsigned char address, bool immediateNak)
 {    
-    /*
-     * Because the only way to send a restart is having the send function not sending
-     * a stop condition after the data transfer, here we have to manage a couple of 
-     * things in SR1: 
+    /* Because the only way to send a restart is having the send function not 
+     * sending a stop condition after the data transfer, here we have to manage
+     * a couple of things in SR1: 
      * - the BTF flag is set, cleared by a dummy read of DR
-     * - The Berr flag is set, this because the I2C harware detects the start condition
-     * sent without a stop before it as a misplaced start and rises an error     
+     * - The Berr flag is set, this because the I2C harware detects the start 
+     *   condition sent without a stop before it as a misplaced start and 
+     *   rises an error
      */
-/*    if(noStop)
-    {        
-        I2C1->DR;     //dummy read, it clears the BTF bit in SR1  
-        I2C1->SR1 = 0; //clear the Berr bit                   
-        noStop = false;
-    }  */  
 
     I2C1->CR1 |= I2C_CR1_START | I2C_CR1_ACK;
     if(!waitStatus1()) return false;    
-    if((I2C1->SR1 & I2C_SR1_SB)==0) return false; //Must read SR1 to clear flag  
+    if((I2C1->SR1 & I2C_SR1_SB)==0) return false; //Must read SR1 to clear flag
     I2C1->DR=address;
     if(immediateNak) I2C1->CR1 &= ~I2C_CR1_ACK;
     if(!waitStatus1()) return false;    

@@ -140,7 +140,8 @@ public:
         Bus::write(REG_CTRL0, regCtrl0);
     }
     
-    // Set internal low pass filter bandwidth. See datasheet at page 39 for further details
+    // Set internal low pass filter bandwidth. 
+    // See datasheet at page 39 for further details
     void setBandwidth(uint8_t bandwidth) {
         uint8_t regCtrl0 = Bus::read(REG_CTRL0);
                     
@@ -150,7 +151,8 @@ public:
         Bus::write(REG_CTRL0, regCtrl0);
     }
     
-    // Set internal high pass filter bandwidth. See datasheet at page 39 for further details
+    // Set internal high pass filter bandwidth. 
+    // See datasheet at page 39 for further details
     void setHiPassFreq(uint8_t freq) {
         uint8_t regCtrl0 = Bus::read(REG_CTRL0);
                     

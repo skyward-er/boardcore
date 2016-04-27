@@ -112,7 +112,7 @@ class CanManager {
             }
         }
 
-        CanManager(volatile CAN_TypeDef* Config) : Config(Config) {
+        explicit CanManager(volatile CAN_TypeDef* Config) : Config(Config) {
              memset(enabled_filters, 0, sizeof(enabled_filters));
         }
 

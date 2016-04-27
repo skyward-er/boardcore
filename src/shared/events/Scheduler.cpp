@@ -40,7 +40,8 @@ std::ostream& operator<<(std::ostream& os, const TaskStatResult& sr)
 // class EventScheduler
 //
 
-void EventScheduler::add(function_t func, uint32_t intervalMs, const string& name) {
+void EventScheduler::add(function_t func, uint32_t intervalMs, 
+        const string& name) {
     task_t task = { func, intervalMs, name, false, -1 };
     addTask(task);
 }

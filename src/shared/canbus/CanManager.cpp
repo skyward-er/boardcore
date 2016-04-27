@@ -33,7 +33,6 @@ CanBus *CanManager::getBus(uint32_t id) {
 
 bool CanManager::addHWFilter(uint16_t id, uint32_t can_id) {
     uint32_t position = max_chan_filters * can_id;
-    uint32_t pos1 = 0, pos2 = 0;
     __IO uint32_t *reg;
 
     /** Invalid id */
@@ -50,6 +49,7 @@ bool CanManager::addHWFilter(uint16_t id, uint32_t can_id) {
         Config->FMR |= CAN_FMR_FINIT;
 
         // find first empty position
+        uint32_t pos1 = 0, pos2 = 0;
         while(position < max_chan_filters * (can_id + 1)) {
             pos1 = position / filters_per_row;
             pos2 = position % filters_per_row;
@@ -105,7 +105,6 @@ bool CanManager::addHWFilter(uint16_t id, uint32_t can_id) {
 
 bool CanManager::delHWFilter(uint16_t id, uint32_t can_id) {
     uint32_t position = max_chan_filters * can_id;
-    uint32_t pos1 = 0, pos2 = 0;
     __IO uint32_t *reg;
 
     /** Invalid id */
@@ -120,7 +119,9 @@ bool CanManager::delHWFilter(uint16_t id, uint32_t can_id) {
         // enter filter initialization mode
         Config->FMR |= CAN_FMR_FINIT;
 
+        uint32_t pos2 = 0;
         while(position < max_chan_filters * (can_id + 1)) {
+            uint32_t pos1 = 0;
             pos1 = position / filters_per_row;
             pos2 = position % filters_per_row;
 

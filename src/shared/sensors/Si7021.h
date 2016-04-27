@@ -63,10 +63,12 @@ public:
         
         uint8_t buf[2];                        
         BusType::read(slaveAddr,CMD_MEAS_HUM,buf,2);        
-        humidity = ((static_cast<float>((buf[0] << 8) | buf[1])*125)/65536) - 6;             
+        humidity = ((static_cast<float>((buf[0] << 8) | buf[1])*125)/65536) - 6;
         
         BusType::read(slaveAddr,CMD_MEAS_TEMP_PREV_HUM,buf,2);                
-        temperature = ((static_cast<float>((buf[0] << 8) | buf[1])*175.72)/65536) - 46.85;
+        temperature = (
+            (static_cast<float>((buf[0] << 8) | buf[1])*175.72)/65536i
+        ) - 46.85;
         
         return true;
     }
@@ -77,13 +79,14 @@ public:
     float getHumidity() { return humidity; }
     
     /**
-        * \return temperature measurement made along the previous humidity measurement.
-        * \code
-        *      getHumidity(); //reads current humidity
-        *      getTempRh();   //returns temperature reading made along the humidity reading
-        * \endcode
-        */
-    
+     * \return temperature measurement made along the previous 
+     *         humidity measurement.
+     * \code
+     *      getHumidity(); //reads current humidity
+     *      getTempRh();   //returns temperature reading made along 
+     *                       the humidity reading
+     * \endcode
+     */
     float getTempRh() {
         
         uint8_t buf[2];
@@ -116,10 +119,12 @@ public:
     }
     
     /**
-        * Set internal heater draw current value, it also can be used to turn on/off the internal heater
-        * @param level current draw level, between 0 and 16: 0 -> heater off, 16 -> heater at max power
-        */
-    
+     * Set internal heater draw current value, it also can be used to 
+     * turn on/off the internal heater 
+     *
+     * @param level current draw level, between 0 and 16: 
+     *                  0 -> heater off, 16 -> heater at max power
+     */
     void setHeaterLevel(uint8_t level) {
         
         if(level == 0)
@@ -134,7 +139,6 @@ public:
     }
     
 private:
-//     BusType bus;        
     static constexpr uint8_t slaveAddr = 0x40 << 1;
     
     float temperature;
@@ -143,7 +147,8 @@ private:
     enum commands {
         CMD_MEAS_HUM = 0xE5,
         CMD_MEAS_TEMP = 0xE3,
-        CMD_MEAS_TEMP_PREV_HUM = 0xE0,  //read temperature value from previous RH measurement
+        CMD_MEAS_TEMP_PREV_HUM = 0xE0,  // Read temperature value from 
+                                        // previous RH measurement
         CMR_RESET = 0xFE,
         CMD_WRITE_USR1 = 0xE6,
         CMD_READ_USR1 = 0xE7,
@@ -155,6 +160,5 @@ private:
         CMD_READ_ID2_2 = 0xC9,
         CMD_READ_FW_REV = 0x84,
     };
-
 };
 #endif

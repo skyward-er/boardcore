@@ -1,25 +1,37 @@
+/* Copyright (c) 2015-2016 Skyward Experimental Rocketry
+ * Authors: Matteo Piazzolla, Federico Terraneo
+ * 
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ * 
+ * The above copyright notice and this permission notice shall be included in
+ * all copies or substantial portions of the Software.
+ * 
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.  IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+ * THE SOFTWARE.
+ */
 
 #include <Common.h>
 #include <BusTemplate.h>
 #include "drivers/stm32f2_f4_i2c.h"
 #include <events/Scheduler.h>
 
-
 using namespace miosix;
-
-void supercar(void *arg);
-
 
 template<typename P, unsigned N>
 void blinker()
 {
     if(P::value()) P::low(); else P::high();
     delayMs(2);
-//     static int64_t lastcall=-1;
-//     int64_t newcall=getTick();
-//     int64_t period=newcall-lastcall;
-//     if(lastcall>0) printf("%d\t%lld\t%lld\n",N,period,period-N);
-//     lastcall=newcall;
 }
 
 int main() {
@@ -37,48 +49,5 @@ int main() {
         cout<<result.size()<<" tasks"<<endl;
         for( auto it : result) cout<<it<<endl;
         cout<<"--- end ---"<<endl;
-    }
-}
-
-
-
-
-
-void supercar(void *arg)
-{
-    vector<GpioPin> pins={
-        leds::led9::getPin(),
-        leds::led8::getPin(),
-        leds::led7::getPin(),
-        leds::led6::getPin(),
-        leds::led5::getPin(),
-        leds::led4::getPin(),
-        leds::led3::getPin(),
-        leds::led2::getPin()
-    };
-    size_t cur=0;
-    size_t prev=0;
-    enum {
-        FORWARD,
-        BACKWARD
-    } dir=FORWARD;
-    for(;;)
-    {
-        switch(dir)
-        {
-            case FORWARD:
-                if(cur==pins.size()-1) dir=BACKWARD;
-                else cur++;
-                break;
-            case BACKWARD:
-                if(cur==0) dir=FORWARD;
-                else cur--;
-                break;
-        }
-        pins.at(prev).low();
-        Thread::sleep(100);
-        pins.at(cur).high();
-        prev=cur;
-        Thread::sleep(100);
     }
 }

@@ -22,7 +22,8 @@
  * THE SOFTWARE.
  */
 
-#pragma once
+#ifndef DATA_H
+#define DATA_H
 
 #include <cereal/archives/json.hpp>
 #include <cereal/archives/binary.hpp>
@@ -33,7 +34,6 @@
 #include <vector>
 #include <memory.h>
 
-
 enum SampleDataType { 
     DATATYPE_ALTIMETER      = 1, 
     DATATYPE_ACCEL          = 2,
@@ -41,15 +41,15 @@ enum SampleDataType {
     DATATYPE_GYRO           = 4
 };
 
-//classe base per i Sample, deve avere anche lei la funzione per la serializzazione
+// Classe base per i Sample, deve avere anche lei la 
+// funzione per la serializzazione
 class Sample {
 public:
 	uint8_t type;
 	virtual ~Sample() {};
 
 	template <class Archive>
-	void serialize(Archive & ar)
-	{
+	void serialize(Archive & ar) {
 		ar(type);
 	}
 
@@ -94,12 +94,9 @@ public:
 	}
 
 	template <class Archive>
-	void serialize(Archive & ar)
-	{
+	void serialize(Archive & ar) {
 		ar(type,x,y,z);
 	}
-
-
 };
 
 class SampleGyro : public Sample {
@@ -120,15 +117,10 @@ public:
 	}
 
 	template <class Archive>
-	void serialize(Archive & ar)
-	{
+	void serialize(Archive & ar) {
 		ar(type,x,y,z);
 	}
-
-
 };
-
-
 
 class SampleGPS : public Sample {
 public:
@@ -137,12 +129,12 @@ public:
 	double mLatitude;
 	double mLongitude;
 
-
 	SampleGPS() {
 		SampleGPS(0,0,0,0);
 	}
 
-	SampleGPS(uint8_t gLatitude, uint8_t gLongitude, double mLatitude, double mLongitude) {
+	SampleGPS(uint8_t gLatitude, uint8_t gLongitude, 
+	        double mLatitude, double mLongitude) {
 		this->type = SampleDataType::DATATYPE_GPS;
 		this->gLatitude=gLatitude;
 		this->gLongitude=gLongitude;
@@ -151,14 +143,10 @@ public:
 	}
 
 	template <class Archive>
-	void serialize(Archive & ar)
-	{
+	void serialize(Archive & ar) {
 		ar(type,gLatitude,gLongitude,mLatitude,mLongitude);
 	}
-
-
 };
-
 
 class Record {
 public:
@@ -166,13 +154,13 @@ public:
 	std::vector<std::unique_ptr<Sample>> samples;
 
 	template <class Archive>
-	void serialize(Archive & ar)
-	{
+	void serialize(Archive & ar) {
 		ar(timestamp,samples);
 	}
 };
 
-// è necessario registrare le classi che estendono delle classi base per la serializzazione
+// e` necessario registrare le classi che 
+// estendono delle classi base per la serializzazione
 /*
 CEREAL_REGISTER_TYPE(SampleAltimeter)
 CEREAL_REGISTER_TYPE(SampleAccelerometer)
@@ -184,3 +172,4 @@ CEREAL_REGISTER_TYPE_WITH_NAME(SampleAccelerometer, "acc");
 CEREAL_REGISTER_TYPE_WITH_NAME(SampleGyro, "gyr");
 CEREAL_REGISTER_TYPE_WITH_NAME(SampleGPS, "gps");
 
+#endif DATA_H

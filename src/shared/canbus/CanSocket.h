@@ -35,7 +35,7 @@ class CanBus;
 class CanSocket
 {
     public:
-        CanSocket(uint16_t filter_id);
+        explicit CanSocket(uint16_t filter_id);
         void open(CanBus *bus);
 
         bool receive(void *message, int size);

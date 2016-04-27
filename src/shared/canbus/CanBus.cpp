@@ -130,7 +130,6 @@ void* CanBus::threadLauncher(void* arg)
    \param len la dimensione del messaggio
    */
 bool CanBus::send(uint16_t id, const uint8_t *message, uint8_t len) {
-    int txMailBox = -1; 
     CanMsg packet;
 
     if(len == 0)
@@ -145,6 +144,7 @@ bool CanBus::send(uint16_t id, const uint8_t *message, uint8_t len) {
     memcpy(packet.Data, message, packet.DLC);
 
     {
+        int txMailBox = -1; 
         Lock<FastMutex> l(mutex);
 
         int timeout = 10;

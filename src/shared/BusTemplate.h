@@ -1,7 +1,8 @@
 /* Bus base class
  *
  * Copyright (c) 2015-2016 Skyward Experimental Rocketry
- * Authors: Illya Dudchenko, Matteo Michele Piazzolla, Silvano Seva, Alain Carlucci
+ * Authors: Illya Dudchenko, Matteo Michele Piazzolla, Silvano Seva, 
+ *          Alain Carlucci
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -192,90 +193,6 @@ private:
     ProtocolSPI& operator=(const ProtocolSPI&& other);
 };
 
-/*********************************************
- * MODIFIED VERSION OF ProtocolI2C THAT USES *
- * SOFTWARE I2C DRIVER, TO BE USED UNTIL THE *
- * HARDWARE ONE DOESN'T WORK                 *
- ********************************************/
-
-// class ProtocolI2C : public Singleton<ProtocolI2C>{
-//     friend class Singleton< ProtocolI2C >;
-//     typedef Singleton< ProtocolI2C > SingletonType;
-// public:
-//     
-//     static inline void init() {
-//         SingletonType::getInstance();
-//     }
-//     
-//     /**
-//      * Sends the \param len bytes stored in \param *data buffer 
-//      * to the register specified by \param regAddress        
-//      */
-//     static inline void write(uint8_t address, uint8_t regAddr, uint8_t *data, uint8_t len) {                
-//         SingletonType::getInstance() -> writeImpl(address,regAddr,data,len);
-//     }
-//     
-//     /** 
-//      * Reads \param len bytes storing them into \param *data buffer 
-//      * from the register specified by \param regAddress        
-//      * The \param sendRegAddr is used in Si7021 driver to disable the transmission of the
-//      * register address. If set to false the driver will send the slave address in read mode
-//      * and then it will immediately enter in listening mode
-//      */
-//     static inline void read(uint8_t address, uint8_t regAddr, uint8_t *data, uint8_t len, bool sendRegAddr = true) {                
-//         SingletonType::getInstance() -> readImpl(address,regAddr,data,len,sendRegAddr);
-//     }
-// 
-// private:
-// 
-//     typedef Gpio<GPIOB_BASE,7> sda;
-//     typedef Gpio<GPIOB_BASE,8> scl;
-//     
-//     typedef SoftwareI2C<sda, scl> i2c;
-// 
-//     ProtocolI2C() { i2c::init(); }
-//     
-//     /* The actual write and read functions implementation.
-//      * This is a workaround needed to adapt ProtocolI2C class
-//      * to miosix i2c driver class implementation 
-//      */
-//     
-//     void writeImpl(uint8_t address, uint8_t regAddr, uint8_t *data, uint8_t len) {
-//         
-//         i2c::sendStart();
-//         i2c::send(address & 0xfe);  //set LSB to zero
-//         i2c::send(regAddr);
-//         
-//         for(int i=0; i<len; i++)
-//             i2c::send(data[i]);
-//         
-//         i2c::sendStop();
-//     }
-//     
-//     void readImpl(uint8_t address, uint8_t regAddr, uint8_t *data, uint8_t len, bool sendRegAddr) {
-//                         
-//         if(sendRegAddr){
-//             i2c::sendStart();
-//             i2c::send(address & 0xfe);
-//             i2c::send(regAddr);        
-//         }
-//         
-//         i2c::init();
-//         i2c::sendStart();
-//         i2c::send(address | 0x01);
-//         
-//         for(int i = 0; i<len-1; i++)
-//             data[i] = i2c::recvWithAck();
-//         
-//         data[len-1] = i2c::recvWithNack();
-//         i2c::sendStop();
-//     }
-// 
-//     ProtocolI2C(const ProtocolI2C& o) = delete;
-//     ProtocolI2C(const ProtocolI2C&& o) = delete;
-//     ProtocolI2C& operator=(const ProtocolI2C& other);
-//     ProtocolI2C& operator=(const ProtocolI2C&& other);
-// };
 
 /*********************************************
  * VERSION OF ProtocolI2C THAT USES HARDWARE *
@@ -296,7 +213,8 @@ public:
      * Sends the \param len bytes stored in \param *data buffer 
      * to the register specified by \param regAddress        
      */
-    static inline void write(uint8_t address, uint8_t regAddr, uint8_t *data, uint8_t len) {                
+    static inline void write(uint8_t address, uint8_t regAddr, 
+            uint8_t *data, uint8_t len) {                
         SingletonType::getInstance() -> writeImpl(address,regAddr,data,len);
     }
     
@@ -304,7 +222,8 @@ public:
      * Reads \param len bytes storing them into \param *data buffer 
      * from the register specified by \param regAddress        
      */
-    static inline void read(uint8_t address, uint8_t regAddr, uint8_t *data, uint8_t len) {                
+    static inline void read(uint8_t address, uint8_t regAddr, 
+            uint8_t *data, uint8_t len) {                
         SingletonType::getInstance() -> readImpl(address,regAddr,data,len);
     }
 
@@ -318,7 +237,8 @@ private:
      * to miosix i2c driver class implementation 
      */
     
-    void writeImpl(uint8_t address, uint8_t regAddr, uint8_t *data, uint8_t len) {
+    void writeImpl(uint8_t address, uint8_t regAddr, 
+            uint8_t *data, uint8_t len) {
         uint8_t buf[len+1];     //pack register address and payload
         buf[0] = regAddr;
         
@@ -327,7 +247,8 @@ private:
         bus.send(address, reinterpret_cast<void*>(buf), len+1);
     }
     
-    void readImpl(uint8_t address, uint8_t regAddr, uint8_t *data, uint8_t len) {
+    void readImpl(uint8_t address, uint8_t regAddr, 
+            uint8_t *data, uint8_t len) {
         bus.send(address,reinterpret_cast<void*>(&regAddr),1,false);
         bus.recv(address,reinterpret_cast<void*>(data),len);
     }
