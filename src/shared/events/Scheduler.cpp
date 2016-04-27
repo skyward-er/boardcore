@@ -82,12 +82,16 @@ void EventScheduler::run() {
             
             {
                 Unlock<FastMutex> u(l);
+                #ifndef __NO_EXCEPTIONS
                 try {
+                #endif
                     e.task->function();
+                #ifndef __NO_EXCEPTIONS
                 } catch(...) {
                     //TODO: can't propagate exception or the event scheduler
                     //will stop working, but we may want to log it
                 }
+                #endif
             }
             
             if(e.task->once==false) {
