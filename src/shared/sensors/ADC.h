@@ -34,8 +34,8 @@ public:
     }
 
     bool init() {
-		GpioADC::mode(Mode::INPUT_ANALOG);
-		enableADC(ADCx);
+        GpioADC::mode(Mode::INPUT_ANALOG);
+        enableADC(ADCx);
 
         ADCx->SQR1 = 0x0; //One conversion
         ADCx->SQR3 = CHANNEL;

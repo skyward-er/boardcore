@@ -23,7 +23,7 @@
  */
 
 #ifndef CANUTILS_H
-#define	CANUTILS_H
+#define CANUTILS_H
 
 #include <Common.h>
 
@@ -94,4 +94,4 @@ struct CanMsg{
 };
 #pragma pack()
 
-#endif	/* CANUTILS_H */
+#endif  /* CANUTILS_H */

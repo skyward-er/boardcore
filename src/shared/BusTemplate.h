@@ -136,7 +136,7 @@ public:
         Bus::init();
     }
 
-	/* The standard, single-byte SPI read */
+    /* The standard, single-byte SPI read */
     static uint8_t read(uint8_t reg) {
         GpioCS::low();
         reg |= 0x80;
@@ -146,27 +146,27 @@ public:
         return reg;
     }
     
-	/* The standard, multi-byte SPI read */
+    /* The standard, multi-byte SPI read */
     static inline void read(uint8_t reg, uint8_t *buf, int size) {
-		read_low(reg | 0x80, buf, size);
+        read_low(reg | 0x80, buf, size);
     }
 
-	/* Read without ask anything */
-	static void read(uint8_t *buf, int size) {
-		GpioCS::low();
-		Bus::read(buf, size);
-		GpioCS::high();
-	}
+    /* Read without ask anything */
+    static void read(uint8_t *buf, int size) {
+        GpioCS::low();
+        Bus::read(buf, size);
+        GpioCS::high();
+    }
 
-	/* Low-level read: write reg (without | 0x80) and read 
-	 * next N bytes, where N is 'size'
+    /* Low-level read: write reg (without | 0x80) and read 
+     * next N bytes, where N is 'size'
      */
-	static void read_low(uint8_t reg, uint8_t *buf, int size) {
-		GpioCS::low();
-		Bus::write(&reg, sizeof(reg));
-		Bus::read(buf, size);
-		GpioCS::high();
-	}
+    static void read_low(uint8_t reg, uint8_t *buf, int size) {
+        GpioCS::low();
+        Bus::write(&reg, sizeof(reg));
+        Bus::read(buf, size);
+        GpioCS::high();
+    }
  
     static void write(uint8_t reg, uint8_t val) {
         GpioCS::low();
@@ -181,9 +181,9 @@ public:
         GpioCS::high();
     }
 
-	static inline void write(uint8_t reg, uint8_t *buf, int size) {
-	    read_low(reg, buf, size);
-	}
+    static inline void write(uint8_t reg, uint8_t *buf, int size) {
+        read_low(reg, buf, size);
+    }
 private:
     ProtocolSPI() = delete;
     ~ProtocolSPI() = delete;
