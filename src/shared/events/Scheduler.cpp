@@ -82,8 +82,12 @@ void EventScheduler::run() {
             
             {
                 Unlock<FastMutex> u(l);
-                //FIXME: what if function throws?? this will stop all tasks!
-                e.task->function();
+                try {
+                    e.task->function();
+                } catch(...) {
+                    //TODO: can't propagate exception or the event scheduler
+                    //will stop working, but we may want to log it
+                }
             }
             
             if(e.task->once==false) {
