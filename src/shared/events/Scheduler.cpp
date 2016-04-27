@@ -54,7 +54,7 @@ vector<TaskStatResult> EventScheduler::getTaskStats()
 {
     Lock<FastMutex> l(mutex);
     vector<TaskStatResult> result;
-    result.reserve(tasks.size());
+    result.reserve(permanentTasks);
     for(auto it : tasks)
     {
         if(it.once) continue;
@@ -101,6 +101,7 @@ void EventScheduler::run() {
 void EventScheduler::addTask(const EventScheduler::task_t& task) {
     Lock<FastMutex> l(mutex);
     tasks.push_back(task);
+    if(task.once==false) permanentTasks++;
     
     auto it = tasks.end();
     --it; //This makes it point to the last element of the list
@@ -135,4 +136,4 @@ void EventScheduler::updateStats(event_t& e, int64_t startTime, int64_t endTime)
     e.task->workloadStats.add(endTime - startTime);
 }
 
-EventScheduler::EventScheduler() : ActiveObject(1024) {}
+EventScheduler::EventScheduler() : ActiveObject(1024), permanentTasks(0) {}
