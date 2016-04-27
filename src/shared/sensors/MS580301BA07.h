@@ -32,7 +32,7 @@
 template<class Bus>
 class MS580301BA07 : public PressureSensor, public TemperatureSensor,
     public AltitudeSensor {
-	
+
 public:
     /* Class constructor. Reset lastPressure and lastTemperature */
     MS580301BA07() : 
@@ -58,12 +58,12 @@ public:
         cd.tco  = readReg(PROM_READ_MASK | PROM_TCO_MASK);
         cd.tref = readReg(PROM_READ_MASK | PROM_TREF_MASK);
         cd.tempsens = readReg(PROM_READ_MASK | PROM_TEMPSENS_MASK);
-	
+
         return true; 
     }
 
     bool selfTest() {
-		return false;
+        return false;
     }
 
     float getPressure() {

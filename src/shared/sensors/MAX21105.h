@@ -169,16 +169,16 @@ private:
     }
 
     enum regMap {
-		SET_PWR        = 0x00,
-		SNS_CFG_1      = 0x01,
-		SNS_CFG_2      = 0x02,
-		SNS_CFG_3      = 0x03,
-		SET_ACC_PWR    = 0x04,
-		ACC_CFG_1      = 0x05,
-		ACC_CFG_2      = 0x06,
-		SET_TEMP_DR    = 0x13,
-		MIF_CFG        = 0x16,
-		OTP_STS_CFG    = 0x1C,
+        SET_PWR        = 0x00,
+        SNS_CFG_1      = 0x01,
+        SNS_CFG_2      = 0x02,
+        SNS_CFG_3      = 0x03,
+        SET_ACC_PWR    = 0x04,
+        ACC_CFG_1      = 0x05,
+        ACC_CFG_2      = 0x06,
+        SET_TEMP_DR    = 0x13,
+        MIF_CFG        = 0x16,
+        OTP_STS_CFG    = 0x1C,
 
         WHO_AM_I       = 0x20, 
         EXT_STATUS     = 0x22,

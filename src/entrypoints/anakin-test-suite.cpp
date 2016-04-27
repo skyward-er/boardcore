@@ -105,13 +105,13 @@ void test_max31856() {
 }
 
 void test_altimeter() {
-	MS580301BA07<spiMS580301BA07> altiMS580;
+    MS580301BA07<spiMS580301BA07> altiMS580;
 
-	// Read and check different const registers
+    // Read and check different const registers
     TEST(MS580301BA07, 0xA4, READ(MS580301BA07, 0xA4));
     TEST(MS580301BA07, 0xAA, READ(MS580301BA07, 0xAA));
     TEST(MS580301BA07, 0xAC, READ(MS580301BA07, 0xAC));
-	assert_true("MS580301BA07", "init()", altiMS580.init());
+    assert_true("MS580301BA07", "init()", altiMS580.init());
 }
 
 int main() {

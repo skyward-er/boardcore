@@ -21,7 +21,7 @@
  */
 
 #ifndef STM32F2_I2C_H
-#define	STM32F2_I2C_H
+#define STM32F2_I2C_H
 
 #include <interfaces/arch_registers.h>
 #include "board_settings.h"
