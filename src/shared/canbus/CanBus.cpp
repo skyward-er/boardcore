@@ -251,9 +251,13 @@ void CanBus::canSetup() {
     /* Unset the automatic wake-up mode */
     CANx->MCR &= ~CAN_MCR_AWUM;
 
+    //TODO: automatic retransmission causes the same packet to be resent forever
+    //until the intended recipient acks it. That is a bit too much, so we're
+    //disabling it. Maybe add a config option to allow setting it back?
     /* Unset the no automatic retransmission */
-    CANx->MCR &= ~CAN_MCR_NART;
-
+    //CANx->MCR &= ~CAN_MCR_NART;
+    CANx->MCR |= CAN_MCR_NART;
+    
     /* Set the receive FIFO locked mode */
     CANx->MCR &= ~CAN_MCR_RFLM;
 
