@@ -66,29 +66,34 @@ void *test_canbus_recv(void *arg) {
 void test_canbus_send(CanBus *bus) {
     printf("[CAN SEND] Starting test...\n");
     while(true) {
+        getchar();
+        leds::led0::high();
         const char *pkt = BOARDNAME;
         bus->send(CAN_MYID, (const uint8_t *)pkt, strlen(pkt));
         Thread::sleep(250);
+        leds::led0::low();
     }
 }
 
 int main() {
     CanManager c(CAN1);
-    CanBus *bus;
 
     banner();
 
-    canbus_init_t st = {
+    canbus_init_t st0 = {
         CAN1, Mode::ALTERNATE,  9, {CAN1_RX0_IRQn,CAN1_RX1_IRQn}
     };
-    c.addBus<GPIOA_BASE, 11, 12>(st);
+    c.addBus<GPIOA_BASE, 11, 12>(st0);
+    canbus_init_t st1 = {
+        CAN2, Mode::ALTERNATE,  9, {CAN2_RX0_IRQn,CAN2_RX1_IRQn}
+    };
+    c.addBus<GPIOB_BASE, 12, 13>(st2);
 
-    printf("[MAIN] Requesting bus\n");
-    bus = c.getBus(0);
-
+    //Receive on CAN1
     Thread::create(test_canbus_recv, 1024, 1, 
-            static_cast<void *>(bus), Thread::JOINABLE);
-    test_canbus_send(bus);
+            static_cast<void *>(c.getBus(0)), Thread::JOINABLE);
+    //Send on CAN2
+    test_canbus_send(c.getBus(1));
     
     return 0;
 }
