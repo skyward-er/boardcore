@@ -47,7 +47,6 @@ private:
     static uint8_t instanceIndex;           //used to keep track of which chip's sockets are used
     static bool initialized;                //flag used to check if chip was initialized or not
     uint8_t sockn;        
-//     static miosix::Thread *waiting[8];
     static uint8_t interruptFlags[8];       //content of socket's interrupt register
     static W5200& w5200;
 };
