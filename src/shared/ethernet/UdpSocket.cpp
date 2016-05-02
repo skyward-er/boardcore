@@ -26,8 +26,6 @@ using namespace miosix;
 
 /** W5200 external interrupt IRQ handler **/
 
-Thread *waiting[8];
-
 void __attribute__((naked))  EXTI1_IRQHandler()
 {
     saveContext();
@@ -41,11 +39,12 @@ void __attribute__((used))  EXTIrqHandler()
     UdpSocket::irqHandler();
 }
 
+Thread *waiting[8] = {0};
+
 /** class methods implementation **/
 
 uint8_t UdpSocket::instanceIndex = 0;
 bool UdpSocket::initialized = false;
-// Thread UdpSocket::*waiting[8] = {0};
 uint8_t UdpSocket::interruptFlags[8];    
 W5200& UdpSocket::w5200 = W5200::instance();
 
@@ -64,12 +63,14 @@ UdpSocket::UdpSocket(const uint16_t& sockPort)
             sockn = count;            
         }
     }
-    
-    if(!emptyFound)
+
+    if(!emptyFound) {
         puts("[Udp Socket] ERROR! No more sockets can be created!!");
-    else {        
+    }else {        
+        w5200.setSocketModeReg(sockn,SOCKn_MR_UDP);
         w5200.setSocketSourcePort(sockn,sockPort);
         w5200.setSocketInterruptMaskReg(sockn,0xFF);
+        w5200.setSocketCommandReg(sockn,SOCKn_CR_OPEN);
     }
 }
 
@@ -126,12 +127,14 @@ bool UdpSocket::sendTo(const uint8_t* destIp, const uint16_t& destPort, const ui
         }
     }
     
+    //the 4-th bit of socket interrupt register, if set, signals send failed
     if(interruptFlags[sockn] & 0x08) {
         interruptFlags[sockn] &= ~0x08;
         return false;        
     }
     
-    interruptFlags[sockn] &= ~0x10;
+    //clear both send ok and send fail flags
+    interruptFlags[sockn] &= ~0x18;         
     return true;
 }
 
@@ -145,22 +148,28 @@ uint16_t UdpSocket::receive(uint8_t* sourceIp, uint16_t *sourcePort, uint8_t* da
         while(waiting[sockn] && !(interruptFlags[sockn] & 0x04))
         {
             waiting[sockn]->IRQwait();
-            {
+            {                
                 FastInterruptEnableLock eLock(dLock);
                 Thread::yield();
             }
         }
     }
     
+    //clear received data flag
     interruptFlags[sockn] &= ~0x04;
+
+    //get new packet len
+    uint16_t len = w5200.getReceivedSize(sockn);  
+    uint8_t buffer[len];
     
-    uint8_t header[6];
-    uint16_t len = w5200.getReceivedSize(sockn);    
-    w5200.readData(sockn,header,6);
-    w5200.readData(sockn,data,len - 8);
-    
-    memcpy(sourceIp,header,4);
-    *sourcePort = (header[4] << 8) | header[5];
+    //read all the packet, that is made of sourceIp + sourcePort +
+    //payload len + payload. Since the header length is of 8 bytes,
+    //the payload length is len - 8 bytes! :)
+    w5200.readData(sockn,buffer,len);    
+
+    memcpy(sourceIp,buffer,4);
+    *sourcePort = (buffer[4] << 8) | buffer[5];
+    memcpy(data,buffer + 8,len - 8);
     
     return len - 8;
 }
@@ -168,21 +177,30 @@ uint16_t UdpSocket::receive(uint8_t* sourceIp, uint16_t *sourcePort, uint8_t* da
 
 void UdpSocket::irqHandler()
 {
+    //read socket interrupt register. In this register is signalled
+    //which of the sockets has rised an interrupt, in this way: if the
+    //n-th bit is set the n-th socket has rised and interrupt
+    
     uint8_t sockGlobalInt = w5200.readSocketInterruptReg();
     bool hasLowerPriority = false;
 
     for(uint8_t i = 0; i < 8; i++) {        
         if(sockGlobalInt & (0x01 << i)) {    
             
+             //read single socket interrupt register
             interruptFlags[i] = w5200.getSocketInterruptReg(i);
             w5200.clearSocketInterruptReg(i);
-            waiting[i]->IRQwakeup();
-            waiting[i] = 0;
-            
-            if(waiting[i]->IRQgetPriority() > Thread::IRQgetCurrentThread()->IRQgetPriority())
-                hasLowerPriority = true;
+            if(waiting[i]) {
+                waiting[i]->IRQwakeup();
+                waiting[i] = 0;
+                
+                if(waiting[i]->IRQgetPriority() > Thread::IRQgetCurrentThread()->IRQgetPriority())
+                    hasLowerPriority = true;
+            }
         }
     }
+    
+    sockGlobalInt = 0;
     
     if(hasLowerPriority)
         Scheduler::IRQfindNextThread();    
