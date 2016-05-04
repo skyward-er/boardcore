@@ -1,7 +1,7 @@
 /* MS580301BA07 Driver
  *
  * Copyright (c) 2015-2016 Skyward Experimental Rocketry
- * Authors: Davide Benini, Matteo Piazzolla, Alain Carlucci
+ * Authors: Davide Benini, Matteo Michele Piazzolla, Alain Carlucci
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal

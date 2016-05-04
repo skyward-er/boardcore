@@ -1,7 +1,7 @@
 /* FXAS21002 Driver 
  *
  * Copyright (c) 2016 Skyward Experimental Rocketry
- * Authors: Alain Carlucci, Matteo Piazzolla, Silvano Seva
+ * Authors: Alain Carlucci, Matteo Michele Piazzolla, Silvano Seva
  * 
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal

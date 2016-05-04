@@ -1,5 +1,5 @@
 /* Copyright (c) 2015-2016 Skyward Experimental Rocketry
- * Authors: Matteo Piazzolla, Federico Terraneo
+ * Authors: Matteo Michele Piazzolla, Federico Terraneo
  * 
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
