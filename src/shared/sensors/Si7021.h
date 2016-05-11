@@ -67,7 +67,7 @@ public:
         
         BusType::read(slaveAddr,CMD_MEAS_TEMP_PREV_HUM,buf,2);                
         temperature = (
-            (static_cast<float>((buf[0] << 8) | buf[1])*175.72)/65536i
+            (static_cast<float>((buf[0] << 8) | buf[1])*175.72)/65536
         ) - 46.85;
         
         return true;
