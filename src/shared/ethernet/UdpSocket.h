@@ -50,7 +50,7 @@ public:
      * \param len number of bytes to be sent
      * \return true if sending was ok, false on failure
      */
-    bool sendTo(const uint8_t *destIp, const uint16_t& destPort, const uint8_t *data, uint16_t& len);
+    bool sendTo(const uint8_t *destIp, const uint16_t destPort, const void *data, uint16_t len);
     
     /**
      * Listen for incoming data. This is a locking function, calling thread
@@ -60,7 +60,7 @@ public:
      * \param data pointer to buffer in which store the data received
      * \return number of bytes received
      */
-    uint16_t receive(uint8_t *sourceIp, uint16_t *sourcePort, uint8_t *data);
+    uint16_t receive(uint8_t *sourceIp, uint16_t *sourcePort, void *data);
     
     /**
      * IRQ handler function used internally.

@@ -107,11 +107,11 @@ void UdpSocket::init()
 }
 
 
-bool UdpSocket::sendTo(const uint8_t* destIp, const uint16_t& destPort, const uint8_t* data, uint16_t& len)
+bool UdpSocket::sendTo(const uint8_t* destIp, const uint16_t destPort, const void* data, uint16_t len)
 {
     w5200.setSocketDestIp(sockn,destIp);
     w5200.setSocketDestPort(sockn,destPort);
-    w5200.writeData(sockn,data,len);
+    w5200.writeData(sockn,reinterpret_cast<const uint8_t*>(data),len);
     w5200.setSocketCommandReg(sockn,SOCKn_CR_SEND);
     
     waiting[sockn] = Thread::getCurrentThread();
@@ -138,7 +138,7 @@ bool UdpSocket::sendTo(const uint8_t* destIp, const uint16_t& destPort, const ui
     return true;
 }
 
-uint16_t UdpSocket::receive(uint8_t* sourceIp, uint16_t *sourcePort, uint8_t* data)
+uint16_t UdpSocket::receive(uint8_t* sourceIp, uint16_t *sourcePort, void* data)
 {
     w5200.setSocketCommandReg(sockn,SOCKn_CR_RECV);
     
@@ -169,7 +169,7 @@ uint16_t UdpSocket::receive(uint8_t* sourceIp, uint16_t *sourcePort, uint8_t* da
 
     memcpy(sourceIp,buffer,4);
     *sourcePort = (buffer[4] << 8) | buffer[5];
-    memcpy(data,buffer + 8,len - 8);
+    memcpy(reinterpret_cast<uint8_t*>(data),buffer + 8,len - 8);
     
     return len - 8;
 }
