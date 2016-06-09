@@ -87,7 +87,7 @@ int main() {
     canbus_init_t st1 = {
         CAN2, Mode::ALTERNATE,  9, {CAN2_RX0_IRQn,CAN2_RX1_IRQn}
     };
-    c.addBus<GPIOB_BASE, 12, 13>(st2);
+    c.addBus<GPIOB_BASE, 12, 13>(st1);
 
     //Receive on CAN1
     Thread::create(test_canbus_recv, 1024, 1, 
