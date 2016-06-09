@@ -33,7 +33,7 @@ class MPL3115 : public PressureSensor, public TemperatureSensor,
                 public AltitudeSensor {
 
 public:
-    MPL3115() { init(); }
+    MPL3115() { }
     
     bool init() {
         lastAlt = 0;

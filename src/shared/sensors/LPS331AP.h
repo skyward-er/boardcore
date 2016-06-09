@@ -28,7 +28,7 @@
 #include <BusTemplate.h>
 
 template <typename Bus>
-class LPS331AP : public PressureSensor, TemperatureSensor {
+class LPS331AP : public PressureSensor, public TemperatureSensor {
 
 public:
 

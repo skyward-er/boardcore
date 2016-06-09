@@ -61,8 +61,13 @@ public:
         Bus::write(REG_CTRL1, regCtrl1);
         
         // Wait until boot is completed
-        // FIXME: add a timeout
-        while(Bus::read(REG_INT_SRC_FLAG) & 0b00001000) ;
+        uint8_t timeout = 10;
+        while((Bus::read(REG_INT_SRC_FLAG) & 0b00001000) && --timeout > 0) {
+            Thread::sleep(1);
+        }
+
+        if(timeout == 0)
+            return false;
         
         return true;            
     }

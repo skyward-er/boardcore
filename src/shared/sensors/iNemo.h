@@ -75,9 +75,7 @@ public:
         //1600Hz data rate, continuous update, xyz enabled
         BusXM::write(CTRL_REG1_XM,0x57);
         //antialias filter 773 Hz, normal mode no test
-        printf("PRIMA %x (%x)\n",BusXM::read(CTRL_REG2_XM),accelFS);
         BusXM::write(CTRL_REG2_XM,0x00 | (accelFS<<3));   
-        printf("dopo %x\n",BusXM::read(CTRL_REG2_XM));
 
         //interrupt not enabled
         BusXM::write(CTRL_REG3_XM,0x00);
