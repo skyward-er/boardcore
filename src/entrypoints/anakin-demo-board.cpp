@@ -32,6 +32,7 @@
 #include <sensors/Si7021.h>
 #include <sensors/iNemo.h>
 #include <drivers/stm32f2_f4_i2c.h> 
+#include <ethernet/UdpSocket.h>
 
 using namespace miosix;
 
@@ -205,6 +206,20 @@ float averageFloat(const vector<float>& in) {
 
 int main() {
     Thread::sleep(100);
+    
+    //Ethernet setup
+    const uint8_t ipAddr[] = {192,168,1,30}; // Device's IP address
+    const uint8_t mask[] = {255,255,255,0};  // Subnet mask
+    
+    const uint8_t destIp[] = {192,168,1,4};  // Destination IP address
+    const uint16_t destPort = 1234;          // Destination port
+            
+    W5200& eth = W5200::instance();
+    eth.setIpAddress(ipAddr);
+    eth.setSubnetMask(mask);
+    
+    //This socket listens on UDP port 2020
+    UdpSocket sock(2020);    
 
     sDemoBoard->init();
     while(1) {
@@ -236,7 +251,7 @@ int main() {
         packet.humidity = humim;
         packet.pressure = presm;
 
-        // TODO send packet
+        sock.sendTo(destIp,destPort,&packet,sizeof(packet));
 
         printf( "[%5.2f %5.2f %5.2f] "
                 "[%5.2f %5.2f %5.2f] "
