@@ -23,10 +23,12 @@
 #ifndef W5200_DEFS_H
 #define W5200_DEFS_H
 
+#include <Common.h>
+
 /* Maximum number of sockets managed by the device */
 constexpr uint8_t MAX_SOCK_NUM = 8;
 
-constexpr uint32_t COMMON_BASE = 0x0000;
+static constexpr uint32_t COMMON_BASE = 0x0000;
 
 //TX buffer memory base address
 constexpr uint32_t TX_BUF_BASE = COMMON_BASE + 0x8000;
@@ -138,10 +140,10 @@ enum eW5200SockNIRValues {
     SOCKn_IR_RECV      = 0x04, // Some data received
     SOCKn_IR_TIMEOUT   = 0x08, // Timeout occurred in ARP or TCP
     SOCKn_IR_SEND_OK   = 0x10, // SEND command completed
-}
+};
 
 /* SOCKn_SR values */
-enum eW5200SockNSRValues {
+enum eW5200SockStatus {
     SOCK_CLOSED        = 0x00, // Socket closed
     SOCK_INIT          = 0x13, // TCP init state
     SOCK_LISTEN        = 0x14, // TCP server listen for connection state

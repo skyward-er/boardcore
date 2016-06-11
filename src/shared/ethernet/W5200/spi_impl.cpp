@@ -20,33 +20,49 @@
  * THE SOFTWARE.
  */
 
-#include <Common.h>
-#include <ethernet/UdpSocket.h>
+#include "spi_impl.h"
 
 using namespace miosix;
-using namespace std;
 
-int main() {
-    const uint8_t ipAddr[] = {192,168,1,30}; // Device's IP address
-    const uint8_t mask[] = {255,255,255,0};  // Subnet mask
-    const uint8_t destIp[] = {192,168,1,4};  // Destination IP address
+void Spi_init()
+{
+    eth::sck::mode(Mode::ALTERNATE);
+    eth::sck::alternateFunction(5);
     
-    /* unsigned char message[] = "Message from the hell...\n"; */
+    eth::miso::mode(Mode::ALTERNATE);
+    eth::miso::alternateFunction(5);
     
-    W5200& eth = W5200::instance();
-    eth.setIpAddress(ipAddr);
-    eth.setSubnetMask(mask);
-    
-    UdpSocket sock(2020);
+    eth::mosi::mode(Mode::ALTERNATE);
+    eth::mosi::alternateFunction(5);
 
-    float arr[2] = {0,0};
+    eth::cs::mode(Mode::OUTPUT);
     
-    while(1) {
-        arr[0] += 10.0;
-        arr[1] += 0.10;
-        sock.sendTo(destIp,1234,arr,sizeof(arr));
-        Thread::sleep(20);
-    }
     
-    return 0;
+    RCC->APB2ENR |= RCC_APB2ENR_SPI5EN;
+    RCC_SYNC();
+
+    //APB bus frequency is 90MHz, so leaving the BR[2:0] bits
+    //in CR1 makes the SPI clock frequency to be 45MHz
+    
+    SPI5->CR1 = SPI_CR1_SSM //CS handled in software
+              | SPI_CR1_SSI //Internal CS high
+              | SPI_CR1_SPE //SPI enabled
+              | SPI_CR1_MSTR; //Master mode
+}
+
+unsigned char Spi_sendRecv(unsigned char data)
+{
+    SPI5->DR = data;
+    while ((SPI5->SR & SPI_SR_RXNE) == 0); //Wait
+    return SPI5->DR;
+}
+
+void Spi_CS_high()
+{
+    eth::cs::high();
+}
+
+void Spi_CS_low()
+{
+    eth::cs::low();
 }
