@@ -31,10 +31,15 @@
 #include <sensors/MS580301BA07.h>
 #include <sensors/Si7021.h>
 #include <sensors/iNemo.h>
+#include <math/Vec3.h>
+#include <math/Matrix.h>
 #include <drivers/stm32f2_f4_i2c.h> 
 #include <ethernet/UdpSocket.h>
 
 using namespace miosix;
+
+//#define ENABLE_ETHERNET
+static constexpr float lowpass_beta = 0.25f;
 
 #define SENSOR(NAME,CSPORT,CSPIN) \
     typedef Gpio<GPIO ## CSPORT ## _BASE, CSPIN> CS_ ## NAME; \
@@ -69,9 +74,13 @@ struct pkt_t {
 #pragma pack()
 
 // Please don't judge me for these lines
-#define PUSH(a,x) do { sensors.push_back(a); x.push_back(a); } while(0)
-#define PUSH2(a,x,y) do { PUSH(a,x); y.push_back(a); } while(0)
-#define PUSH3(a,x,y,z) do { PUSH2(a,x,y); z.push_back(a); } while(0)
+#define PUSH(a,b,x) do { sensor_t zz = a,b; \
+    sensors.push_back(zz); x.push_back(zz); } while(0)
+#define PUSH2(a,b,x,y) do { sensor_t zz = a,b; \
+    PUSH(a,b,x); y.push_back(zz); } while(0)
+#define PUSH3(a,b,x,y,z) do { sensor_t zz = a,b; \
+    PUSH2(a,b,x,y); z.push_back(zz); } while(0)
+#define PP(name, func) do { printf("[Sensor] " name " started\n");func;}while(0)
 
 class DemoBoard : public Singleton<DemoBoard> {
     friend class Singleton<DemoBoard>;
@@ -79,27 +88,51 @@ public:
     void init() {}
 
     void update() {
-        for(Sensor *s : sensors)
-            s->updateParams();
+        for(const sensor_t& s : sensors)
+            (s.sensor)->updateParams();
     }
-    #define FUNC(x,y,z,w) x y () const \
-        { x j; for(z *i : w){j.push_back(i->y());} return j; }
 
-    FUNC(vector<Vec3>,  getAccel,       AccelSensor,        accel)
-    FUNC(vector<Vec3>,  getRotation,    GyroSensor,         gyro)
-    FUNC(vector<Vec3>,  getCompass,     CompassSensor,      compass)
-    FUNC(vector<float>, getTemperature, TemperatureSensor,  temps)
-    FUNC(vector<float>, getHumidity,    HumiditySensor,     humidity)
-    FUNC(vector<float>, getPressure,    PressureSensor,     pressure)
+// Read a float value 
+#define RFLO(x,y,z,w) vector<x> y () const {                 \
+    vector<x> j;                                             \
+    for(const sensor_t& i : w) {                             \
+        j.push_back((dynamic_cast<z *>(i.sensor))->y());     \
+    }                                                        \
+    return j;                                                \
+}
 
-#undef FUNC
+// Read a Vec3 value and multiply it by the sensor transform matrix
+#define RVEC(x,y,z,w) vector<x> y () const {                               \
+    vector<x> j;                                                           \
+    for(const sensor_t& i : w) {                                           \
+        x vec = *(i.transform) * (dynamic_cast<z *>(i.sensor))->y();       \
+        j.push_back(vec);                                                  \
+    }                                                                      \
+    return j;                                                              \
+}
+
+    RVEC(Vec3,  getAccel,       AccelSensor,        accel)
+    RVEC(Vec3,  getRotation,    GyroSensor,         gyro)
+    RVEC(Vec3,  getCompass,     CompassSensor,      compass)
+    RFLO(float, getTemperature, TemperatureSensor,  temps)
+    RFLO(float, getHumidity,    HumiditySensor,     humidity)
+    RFLO(float, getPressure,    PressureSensor,     pressure)
+
+#undef RFLO
+#undef RVEC
 private:
     DemoBoard() {
+        static const float v_inemo[16] = { 0,1,0,0, -1,0,0,0, 0,0,1,0, 0,0,0,1};
+        static const float v_mpu  [16] = {-1,0,0,0, 0,-1,0,0, 0,0,1,0, 0,0,0,1};
+        static const Mat4 idMat = Mat4();
+        static const Mat4 iNemoMat = Mat4(v_inemo);
+        static const Mat4 mpuMat = Mat4(v_mpu);
+
         // ----- FXAS21102 -----
         typedef FXAS21002<spiFXAS21002> fx_t; 
         fx_t *fx = new fx_t();
         if(fx->init())
-            PUSH(fx, gyro);
+            PP("FXAS21102", PUSH({fx, &idMat}, gyro));
         else 
             printf("Cannot start FXAS21102\n");
 
@@ -109,7 +142,7 @@ private:
                                           pd_inemo_t::GYRO_FS_245,
                                           pd_inemo_t::COMPASS_FS_2);
         if(nemo->init())
-            PUSH3(nemo, accel, gyro, compass);
+            PP("iNemo",PUSH3({nemo, &iNemoMat}, accel, gyro, compass));
         else
             printf("Cannot start iNemo\n");
 
@@ -117,7 +150,7 @@ private:
         typedef LPS331AP<spiLPS331AP> lps_t;
         lps_t *lps = new lps_t(lps_t::SS_25HZ);
         if(lps->init())
-            PUSH2(lps, pressure, temps);
+            PP("LPS331AP",PUSH2({lps, &idMat}, pressure, temps));
         else
             printf("Cannot start LPS\n");
 
@@ -125,7 +158,7 @@ private:
         typedef MAX21105<spiMAX21105> max21_t;
         max21_t *max21 = new max21_t(max21_t::ACC_FS_2G, max21_t::GYRO_FS_500);
         if(max21->init())
-            PUSH3(max21, accel, gyro, temps);
+            PP("MAX21105",PUSH3({max21, &idMat}, accel, gyro, temps));
         else
             printf("Cannot start MAX21105\n");
 
@@ -138,7 +171,7 @@ private:
         typedef MPL3115< ProtocolI2C<miosix::I2C1Driver> > mpl_t;
         mpl_t *mpl = new mpl_t();
         if(mpl->init())
-            PUSH2(mpl, pressure, temps);
+            PP("MPL3115",PUSH2({mpl, &idMat}, pressure, temps));
         else
             printf("Cannot start MPL3115\n");
         
@@ -146,7 +179,7 @@ private:
         typedef MPU9250<spiMPU9250> mpu_t;
         mpu_t *mpu = new mpu_t(mpu_t::ACC_FS_2G, mpu_t::GYRO_FS_250);
         if(mpu->init())
-            PUSH3(mpu, accel, compass, temps);
+            PP("MPU9250",PUSH3({mpu, &mpuMat}, accel, compass, temps));
         else
             printf("Cannot start MPU9250\n");
 
@@ -154,7 +187,7 @@ private:
         typedef MS580301BA07<spiMS580301BA07> ms5_t;
         ms5_t *ms5 = new ms5_t();
         if(ms5->init())
-            PUSH2(ms5, pressure, temps);
+            PP("MS580301BA07",PUSH2({ms5, &idMat}, pressure, temps));
         else
             printf("Cannot start MS580\n");
 
@@ -162,7 +195,7 @@ private:
         typedef Si7021< ProtocolI2C<miosix::I2C1Driver> > si_t;
         si_t *si = new si_t();
         if(si->init())
-            PUSH2(si, humidity, temps);
+            PP("Si7021",PUSH2({si, &idMat}, humidity, temps));
         else
             printf("Cannot start Si7021\n");
 
@@ -175,13 +208,18 @@ private:
         printf("  + %d pressure sensors\n", pressure.size());
     }
 
-    vector<Sensor *>            sensors;
-    vector<GyroSensor *>        gyro;
-    vector<AccelSensor *>       accel;
-    vector<CompassSensor *>     compass;
-    vector<TemperatureSensor *> temps;
-    vector<HumiditySensor *>    humidity;
-    vector<PressureSensor *>    pressure;
+    typedef struct {
+        Sensor *sensor;
+        const Mat4 *transform;
+    } sensor_t;
+
+    vector<sensor_t> sensors;
+    vector<sensor_t> accel;
+    vector<sensor_t> gyro;
+    vector<sensor_t> compass;
+    vector<sensor_t> temps;
+    vector<sensor_t> humidity;
+    vector<sensor_t> pressure;
     #define sDemoBoard DemoBoard::getInstance()
 };
 
@@ -204,24 +242,84 @@ float averageFloat(const vector<float>& in) {
     return out;
 }
 
+class LowPassFilter {
+public:
+    /* For each call, increment id of 3 * data.size() to avoid overlapping */ 
+    static void process(uint16_t id, vector<Vec3>& data) {
+        for(size_t i = 0; i < data.size(); i++)
+            process(id + i * 3, data[i]);
+    }
+
+    /* For each call, increment id of data.size() to avoid overlapping */
+    static void process(uint16_t id, vector<float>& data) {
+        for(size_t i = 0; i < data.size(); i++)
+            process(id + i, data[i]);
+    }
+
+    static void printStorage() {
+        printf("Lowpass: [");
+        for(const float& f : storage)
+            printf("%5.2f ", f);
+        printf("]\n");
+    }
+private:
+    static float process(uint16_t id, float in) {
+        if(id >= storage.size())
+            storage.resize(id+1, 0.0);
+
+        storage[id] += lowpass_beta * (in - storage[id]);
+        return storage[id];
+    }
+
+    static void process(uint16_t id, Vec3& data) {
+        data.setX(process(id + 0, data.getX()));
+        data.setY(process(id + 1, data.getY()));
+        data.setZ(process(id + 2, data.getZ()));
+    }
+
+    static vector<float> storage;
+};
+
+vector<float> LowPassFilter::storage;
+
+#define VECARRAY_FILTER(id, array) do {   \
+    LowPassFilter::process(id, array);    \
+    id += array.size() * 3;               \
+} while(0)
+
+#define FLOATARRAY_FILTER(id, array) do { \
+    LowPassFilter::process(id, array);    \
+    id += array.size();                   \
+} while(0)
+
+#define COPYVEC(arr,v) do { \
+    arr[0] = v.getX();      \
+    arr[1] = v.getY();      \
+    arr[2] = v.getZ();      \
+} while(0)
+
 int main() {
     Thread::sleep(100);
+    sDemoBoard->init();
     
     //Ethernet setup
+#ifdef ENABLE_ETHERNET
     const uint8_t ipAddr[] = {192,168,1,30}; // Device's IP address
     const uint8_t mask[] = {255,255,255,0};  // Subnet mask
     
     const uint8_t destIp[] = {192,168,1,4};  // Destination IP address
     const uint16_t destPort = 1234;          // Destination port
             
+    printf("[Ethernet] Starting...\n");
     W5200& eth = W5200::instance();
     eth.setIpAddress(ipAddr);
     eth.setSubnetMask(mask);
+    printf("[Ethernet] Got addr\n");
     
     //This socket listens on UDP port 2020
     UdpSocket sock(2020);    
-
-    sDemoBoard->init();
+    printf("[Ethernet] Socket ready\n");
+#endif
     while(1) {
         sDemoBoard->update();
         Thread::sleep(20);
@@ -233,15 +331,21 @@ int main() {
         vector<float> humid = sDemoBoard->getHumidity();
         vector<float> press = sDemoBoard->getPressure();
 
+        uint16_t id = 0;
+        
+        VECARRAY_FILTER(id, accels);
+        VECARRAY_FILTER(id, rots);
+        VECARRAY_FILTER(id, compsv);
+        FLOATARRAY_FILTER(id, temps);
+        FLOATARRAY_FILTER(id, humid);
+        FLOATARRAY_FILTER(id, press);
+
         Vec3 acc = averageVec(accels);
         Vec3 rot = averageVec(rots);
         Vec3 comps = averageVec(compsv);
         float tempm = averageFloat(temps);
         float humim = averageFloat(humid);
         float presm = averageFloat(press);
-
-#define COPYVEC(arr,v) do { \
-    arr[0] = v.getX(); arr[1] = v.getY(); arr[2] = v.getZ(); } while(0)
 
         pkt_t packet;
         COPYVEC(packet.accel, acc);
@@ -251,7 +355,9 @@ int main() {
         packet.humidity = humim;
         packet.pressure = presm;
 
+#ifdef ENABLE_ETHERNET
         sock.sendTo(destIp,destPort,&packet,sizeof(packet));
+#endif
 
         printf( "[%5.2f %5.2f %5.2f] "
                 "[%5.2f %5.2f %5.2f] "

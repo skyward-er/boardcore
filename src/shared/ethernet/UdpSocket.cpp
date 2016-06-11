@@ -48,11 +48,13 @@ uint8_t UdpSocket::interruptFlags[8];
 W5200& UdpSocket::w5200 = W5200::instance();
 
 UdpSocket::UdpSocket(const uint16_t& sockPort) {
+    printf("[UdpSocket] Hello\n");
     if(!initialized)
         init();
     
     bool emptyFound = false;
     
+    printf("[UdpSocket] Init ok. Looping...\n");
     for(uint8_t count = 0; count < maxSockNum && !emptyFound; count++) {
         if(!(instanceIndex & (0x01 << count))) {
             emptyFound = true;
@@ -61,6 +63,7 @@ UdpSocket::UdpSocket(const uint16_t& sockPort) {
         }
     }
 
+    printf("[UdpSocket] Loop ok\n");
     if(!emptyFound) {
         // FIXME: No I/O here.
         puts("[Udp Socket] ERROR! No more sockets can be created!!");
@@ -69,6 +72,7 @@ UdpSocket::UdpSocket(const uint16_t& sockPort) {
         w5200.setSocketSourcePort(sockn,sockPort);
         w5200.setSocketInterruptMaskReg(sockn,0xFF);
         w5200.setSocketCommandReg(sockn,SOCKn_CR_OPEN);
+        printf("[UdpSocket] Setting commands ok\n");
     }
 }
 
@@ -88,6 +92,7 @@ void UdpSocket::init() {
         RCC_SYNC();
     }
     
+    printf("prima\n");
     SYSCFG->EXTICR[0] |= SYSCFG_EXTICR1_EXTI1_PC;
     EXTI->IMR |= EXTI_IMR_MR1;
     EXTI->FTSR |= EXTI_FTSR_TR1;
@@ -96,8 +101,10 @@ void UdpSocket::init() {
     NVIC_ClearPendingIRQ(EXTI1_IRQn);
     NVIC_EnableIRQ(EXTI1_IRQn);
     
+    printf("Neh..\n");
     w5200.setModeReg(0x00);
     w5200.setSocketInterruptMask(0xFF);
+    printf("Nope\n");
     
     initialized = true;
 }
