@@ -5,4 +5,4 @@ if [ $# -ne 1 ]; then
     exit -1
 fi;
 
-stm32flash -b 576000 -w $1 -v /dev/ttyUSB0
+stm32flash -b 460800 -w $1 -v /dev/ttyUSB0
