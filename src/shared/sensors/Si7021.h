@@ -51,10 +51,10 @@ public:
         BusType::write(slaveAddr,CMD_READ_ID2_1,buf,1);        
         BusType::read(slaveAddr,0,buf,6);
 
-        if(buf[0] != 0x15) {
-            last_error = ERR_NOT_ME;
-            return false;
-        }
+//         if(buf[0] != 0x15) {
+//             last_error = ERR_NOT_ME;
+//             return false;
+//         }
         
         return true;           
     }
