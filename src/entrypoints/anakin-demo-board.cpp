@@ -129,10 +129,10 @@ private:
             printf("Cannot start MAX21105\n");
 
         // ----- MPL3115 -----
-		sensors::sda::mode(Mode::ALTERNATE_OD);
-		sensors::sda::alternateFunction(4);
-		sensors::scl::mode(Mode::ALTERNATE_OD);
-		sensors::scl::alternateFunction(4);
+        sensors::sda::mode(Mode::ALTERNATE_OD);
+        sensors::sda::alternateFunction(4);
+        sensors::scl::mode(Mode::ALTERNATE_OD);
+        sensors::scl::alternateFunction(4);
  
         typedef MPL3115< ProtocolI2C<miosix::I2C1Driver> > mpl_t;
         mpl_t *mpl = new mpl_t();
@@ -149,17 +149,17 @@ private:
         else
             printf("Cannot start MPU9250\n");
 
-		// ----- MS580301BA07 -----
-		typedef MS580301BA07<spiMS580301BA07> ms5_t;
-		ms5_t *ms5 = new ms5_t();
+        // ----- MS580301BA07 -----
+        typedef MS580301BA07<spiMS580301BA07> ms5_t;
+        ms5_t *ms5 = new ms5_t();
         if(ms5->init())
             PUSH2(ms5, pressure, temps);
         else
             printf("Cannot start MS580\n");
 
-		// ----- Si7021 -----
-		typedef Si7021< ProtocolI2C<miosix::I2C1Driver> > si_t;
-		si_t *si = new si_t();
+        // ----- Si7021 -----
+        typedef Si7021< ProtocolI2C<miosix::I2C1Driver> > si_t;
+        si_t *si = new si_t();
         if(si->init())
             PUSH2(si, humidity, temps);
         else

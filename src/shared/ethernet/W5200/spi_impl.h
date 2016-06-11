@@ -20,33 +20,17 @@
  * THE SOFTWARE.
  */
 
+#ifndef SPI_IMPL_H
+#define SPI_IMPL_H
+
 #include <Common.h>
-#include <ethernet/UdpSocket.h>
 
-using namespace miosix;
-using namespace std;
+void Spi_init();
 
-int main() {
-    const uint8_t ipAddr[] = {192,168,1,30}; // Device's IP address
-    const uint8_t mask[] = {255,255,255,0};  // Subnet mask
-    const uint8_t destIp[] = {192,168,1,4};  // Destination IP address
-    
-    /* unsigned char message[] = "Message from the hell...\n"; */
-    
-    W5200& eth = W5200::instance();
-    eth.setIpAddress(ipAddr);
-    eth.setSubnetMask(mask);
-    
-    UdpSocket sock(2020);
+unsigned char Spi_sendRecv(unsigned char data);
 
-    float arr[2] = {0,0};
-    
-    while(1) {
-        arr[0] += 10.0;
-        arr[1] += 0.10;
-        sock.sendTo(destIp,1234,arr,sizeof(arr));
-        Thread::sleep(20);
-    }
-    
-    return 0;
-}
+void Spi_CS_high();
+
+void Spi_CS_low();
+
+#endif // SPI_IMPL_H
