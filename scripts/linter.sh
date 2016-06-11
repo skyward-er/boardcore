@@ -26,5 +26,4 @@ check OUT "Checking for tabulations instead of spaces" "grep -Pr '\t' src"
 check OUT "MMP wants his full name" "grep -rl 'Matteo Piazzolla' src/"
 check OUT "Launching cppcheck" "cppcheck -q --suppress=unusedFunction --suppress=missingInclude --std=c++11 --enable=all src/ 2>&1"
 
-
 exit 0
