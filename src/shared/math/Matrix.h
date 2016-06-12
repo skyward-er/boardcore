@@ -41,7 +41,7 @@
 class Mat4 {
 public:
     Mat4();
-    Mat4(const float v[16]);
+    explicit Mat4(const float v[16]);
 
     Mat4 operator*(const Mat4 &o) const;
 
@@ -58,7 +58,7 @@ public:
 class Mat3 {
 public:
     Mat3();
-    Mat3(const float v[9]);
+    explicit Mat3(const float v[9]);
 
     Mat3 operator*(const Mat3 &o) const;
 
