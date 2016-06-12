@@ -100,8 +100,9 @@ if len(boards) == 0:
     sys.exit(0)
 
 if options.list == True:
+    printf('[SBS] List of available boards:');
     for board in boards:
-        print board
+        print(board)
     sys.exit(0)
 
 if options.board != None:
