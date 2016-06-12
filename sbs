@@ -61,6 +61,10 @@ parser = OptionParser()
 parser.add_option("-c", "--clean", help="Run a 'make clean'", dest="clean", 
         action="store_true")
 parser.add_option("-b", "--board", help="Build a specific board", dest="board")
+parser.add_option("-l", "--list", help="List all build configurations", dest="list",
+    default=False, action='store_true')
+
+
 parser.add_option("-v", "--verbose", help="Print a verbose output", dest="log", 
         action="store_true")
 parser.add_option("-j", "--jobs", 
@@ -93,6 +97,11 @@ for i in conf.sections():
 
 if len(boards) == 0:
     print('[SBS] No boards found. Terminating.')
+    sys.exit(0)
+
+if options.list == True:
+    for board in boards:
+        print board
     sys.exit(0)
 
 if options.board != None:
