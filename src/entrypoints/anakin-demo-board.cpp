@@ -22,6 +22,7 @@
 
 #include <Common.h>
 #include <BusTemplate.h>
+#include <Leds.h>
 #include <sensors/FXAS21002.h>
 #include <sensors/LPS331AP.h>
 #include <sensors/MAX21105.h>
@@ -39,7 +40,8 @@
 using namespace miosix;
 
 //#define ENABLE_ETHERNET
-static constexpr float lowpass_beta = 0.25f;
+constexpr uint32_t lp_alpha = 250;
+constexpr uint32_t hp_beta = 700;
 
 #define SENSOR(NAME,CSPORT,CSPIN) \
     typedef Gpio<GPIO ## CSPORT ## _BASE, CSPIN> CS_ ## NAME; \
@@ -70,6 +72,7 @@ struct pkt_t {
     float temperature;
     float humidity;
     float pressure;
+    float orientation[3];
 };
 #pragma pack()
 
@@ -242,7 +245,38 @@ float averageFloat(const vector<float>& in) {
     return out;
 }
 
-class LowPassFilter {
+template<uint32_t alpha>
+class LowPassPolicy {
+protected:
+    static float process(uint16_t id, float in) {
+        if(id >= storage.size())
+            storage.resize(id+1, 0.0);
+
+        storage[id] += (alpha / 1000.0f) * (in - storage[id]);
+        return storage[id];
+    }
+    static vector<float> storage;
+};
+
+template<uint32_t beta>
+class HighPassPolicy {
+protected:
+    static float process(uint16_t id, float in) {
+        if(id >= storage.size()) {
+            storage.resize(id+1, 0.0);
+            unfiltered.resize(id+1, 0.0);
+        }
+
+        storage[id] = (beta / 1000.0f) * (storage[id] + in - unfiltered[id]);
+        unfiltered[id] = in;
+        return storage[id];
+    }
+    static vector<float> unfiltered;
+    static vector<float> storage;
+};
+
+template<typename FilterPolicy>
+class BandFilter : private FilterPolicy {
 public:
     /* For each call, increment id of 3 * data.size() to avoid overlapping */ 
     static void process(uint16_t id, vector<Vec3>& data) {
@@ -253,43 +287,35 @@ public:
     /* For each call, increment id of data.size() to avoid overlapping */
     static void process(uint16_t id, vector<float>& data) {
         for(size_t i = 0; i < data.size(); i++)
-            process(id + i, data[i]);
+            FilterPolicy::process(id + i, data[i]);
     }
 
     static void printStorage() {
         printf("Lowpass: [");
-        for(const float& f : storage)
+        for(const float& f : FilterPolicy::storage)
             printf("%5.2f ", f);
         printf("]\n");
     }
-private:
-    static float process(uint16_t id, float in) {
-        if(id >= storage.size())
-            storage.resize(id+1, 0.0);
-
-        storage[id] += lowpass_beta * (in - storage[id]);
-        return storage[id];
-    }
 
     static void process(uint16_t id, Vec3& data) {
-        data.setX(process(id + 0, data.getX()));
-        data.setY(process(id + 1, data.getY()));
-        data.setZ(process(id + 2, data.getZ()));
+        data.setX(FilterPolicy::process(id + 0, data.getX()));
+        data.setY(FilterPolicy::process(id + 1, data.getY()));
+        data.setZ(FilterPolicy::process(id + 2, data.getZ()));
     }
-
-    static vector<float> storage;
 };
 
-vector<float> LowPassFilter::storage;
+template<uint32_t alpha> vector<float> LowPassPolicy<alpha>::storage;
+template<uint32_t beta> vector<float> HighPassPolicy<beta>::storage;
+template<uint32_t beta> vector<float> HighPassPolicy<beta>::unfiltered;
 
-#define VECARRAY_FILTER(id, array) do {   \
-    LowPassFilter::process(id, array);    \
-    id += array.size() * 3;               \
+#define VECARRAY_FILTER(id, array) do {               \
+    BandFilter<LowPassPolicy<lp_alpha> >::process(id, array);    \
+    id += array.size() * 3;                           \
 } while(0)
 
-#define FLOATARRAY_FILTER(id, array) do { \
-    LowPassFilter::process(id, array);    \
-    id += array.size();                   \
+#define FLOATARRAY_FILTER(id, array) do {             \
+    BandFilter<LowPassPolicy<lp_alpha> >::process(id, array);    \
+    id += array.size();                               \
 } while(0)
 
 #define COPYVEC(arr,v) do { \
@@ -320,6 +346,13 @@ int main() {
     UdpSocket sock(2020);    
     printf("[Ethernet] Socket ready\n");
 #endif
+
+    Vec3 orientation;
+    Vec3 angularvel;
+    int ignore_ctr = 100;
+    int led_status = 0x200;
+
+    Leds::init();
     while(1) {
         sDemoBoard->update();
         Thread::sleep(20);
@@ -335,6 +368,7 @@ int main() {
         
         VECARRAY_FILTER(id, accels);
         VECARRAY_FILTER(id, rots);
+        BandFilter<HighPassPolicy<hp_beta> >::process(0, rots);
         VECARRAY_FILTER(id, compsv);
         FLOATARRAY_FILTER(id, temps);
         FLOATARRAY_FILTER(id, humid);
@@ -351,9 +385,25 @@ int main() {
         COPYVEC(packet.accel, acc);
         COPYVEC(packet.gyro, rot);
         COPYVEC(packet.compass, comps);
+        COPYVEC(packet.orientation, orientation);
         packet.temperature = tempm;
         packet.humidity = humim;
         packet.pressure = presm;
+
+        Leds::set(led_status);
+        if(ignore_ctr == 0) {
+            led_status <<= 1;
+            if(led_status == 0x400)
+                led_status = 0x04;
+            angularvel  += rot * 0.2f;
+            orientation += angularvel * 0.2f;
+            BandFilter<HighPassPolicy<999> >::process(4, orientation);
+        } else {
+            led_status ^= 0x200;
+            --ignore_ctr;
+            if(ignore_ctr == 0)
+                led_status = 0x04;
+        }
 
 #ifdef ENABLE_ETHERNET
         sock.sendTo(destIp,destPort,&packet,sizeof(packet));
@@ -361,10 +411,12 @@ int main() {
 
         printf( "[%5.2f %5.2f %5.2f] "
                 "[%5.2f %5.2f %5.2f] "
+                "[%d %5.2f %5.2f %5.2f] "
                 "[%5.2f %5.2f %5.2f] " 
                 "[%5.2f %5.2f %5.2f] \r",
                 acc.getX(), acc.getY(), acc.getZ(),
-                rot.getX(), rot.getY(), rot.getZ(),
+                rot.getX(), rot.getY(), rot.getZ(), ignore_ctr,
+                orientation.getX(), orientation.getY(), orientation.getZ(),
                 comps.getX(), comps.getY(), comps.getZ(),
                 tempm, humim, presm);
 
