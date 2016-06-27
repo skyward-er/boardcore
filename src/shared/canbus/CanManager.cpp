@@ -33,7 +33,7 @@ CanBus *CanManager::getBus(uint32_t id) {
 
 bool CanManager::addHWFilter(uint16_t id, uint32_t can_id) {
     uint32_t position = max_chan_filters * can_id;
-    __IO uint32_t *reg;
+    __IO uint32_t *reg = NULL;
 
     /** Invalid id */
     if(id >= filter_max_id || can_id >= bus.size()) 
@@ -72,6 +72,9 @@ bool CanManager::addHWFilter(uint16_t id, uint32_t can_id) {
             ++position; 
         }
 
+        if(reg == NULL)
+            return false;
+
         // disable this filter
         Config->FA1R &= ~(1 << pos1);
         
@@ -105,7 +108,7 @@ bool CanManager::addHWFilter(uint16_t id, uint32_t can_id) {
 
 bool CanManager::delHWFilter(uint16_t id, uint32_t can_id) {
     uint32_t position = max_chan_filters * can_id;
-    __IO uint32_t *reg;
+    __IO uint32_t *reg = NULL;
 
     /** Invalid id */
     if(id >= filter_max_id || can_id >= bus.size())
@@ -137,6 +140,9 @@ bool CanManager::delHWFilter(uint16_t id, uint32_t can_id) {
 
             ++position; 
         }
+
+        if(reg == NULL)
+            return false;
 
         *reg |= (0xffff << pos2); // clear
 
