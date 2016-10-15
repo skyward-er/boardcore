@@ -115,24 +115,26 @@ bool UdpSocket::sendTo(const uint8_t* destIp, const uint16_t destPort, const
     w5200.setSocketDestPort(sockn,destPort);
     w5200.writeData(sockn,reinterpret_cast<const uint8_t*>(data),len);
     w5200.setSocketCommandReg(sockn,SOCKn_CR_SEND);
+
+// PATCH: the code below was commented out to make sendTo call nonlocking
     
-    waiting[sockn] = Thread::getCurrentThread();
-    {
-        FastInterruptDisableLock dLock;
-        while(waiting[sockn] && !(interruptFlags[sockn] & 0x18)) {
-            waiting[sockn]->IRQwait();
-            {
-                FastInterruptEnableLock eLock(dLock);
-                Thread::yield();
-            }
-        }
-    }
-    
-    // The 4-th bit of socket interrupt register, if set, signals send failed
-    if(interruptFlags[sockn] & 0x08) {
-        interruptFlags[sockn] &= ~0x08;
-        return false;        
-    }
+//     waiting[sockn] = Thread::getCurrentThread();
+//     {
+//         FastInterruptDisableLock dLock;
+//         while(waiting[sockn] && !(interruptFlags[sockn] & 0x18)) {
+//             waiting[sockn]->IRQwait();
+//             {
+//                 FastInterruptEnableLock eLock(dLock);
+//                 Thread::yield();
+//             }
+//         }
+//     }
+//     
+//     // The 4-th bit of socket interrupt register, if set, signals send failed
+//     if(interruptFlags[sockn] & 0x08) {
+//         interruptFlags[sockn] &= ~0x08;
+//         return false;        
+//     }
     
     // Clear both send ok and send fail flags
     interruptFlags[sockn] &= ~0x18;         
