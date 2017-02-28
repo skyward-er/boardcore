@@ -27,7 +27,7 @@
 #include <stdexcept>
 #include <string>
 
-class UdpSocket
+class UdpManager
 {
 public:
   
@@ -37,9 +37,9 @@ public:
      * NOTE: <b>You can create eight socket maximum!<b> This because
      * the ethernet chip supports at least eight concurrent sockets
      */
-    UdpSocket(const uint16_t& sockPort);
+    UdpManager(const uint16_t& sockPort);
     
-    ~UdpSocket();
+    ~UdpManager();
     
     /**
      * Send data to a host. This is a locking function, calling thread
