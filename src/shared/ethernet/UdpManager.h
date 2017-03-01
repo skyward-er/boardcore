@@ -23,18 +23,56 @@
 #include <Common.h>
 #include <Singleton.h>
 #include <e20/e20.h>
+#include <functional>
+#include "W5200/w5200.h"
+#include "PacketBuffer.h"
 
 class UdpManager : Singleton<UdpManager> {
     friend class Singleton<UdpManager>;
 public:
-    void start();
-    void gumby();    
-private:
-
-    int count;
-    miosix::FixedEventQueue<20> evtQueue;
+//     static UdpManager& instance();
+    void setPort(uint16_t port);
+    void sendPacketTo(const uint8_t* ip, const uint16_t port, const void* data, 
+                                                                 size_t len);
+    bool newReceivedPackets();
+    void readPacket();
     
-    friend void _evt_mgmt_thread(void *args);
+    //Internally used handlers!!
+    void IRQ_handler(uint8_t irqNum);
+//     void tx_handler();
+//     void tx_end_handler();
+//     void rx_handler();
+//     void timeout_handler();
+
+    static enum  {
+        
+        IRQ_PHY = 0,    //IRQ from ethernet chip
+        IRQ_TMO = 1     //IRQ from timeout timer
+    }IRQ_source;
+    
+private:
+    
+    static const unsigned int EVT_QUEUE_SIZE = 20;
+    static const unsigned int TX_BUF_SIZE = 1000;
+    static const unsigned int RX_BUF_SIZE = 1000;
+    static const uint8_t PHY_TX_SOCK_NUM = 0;
+    static const uint8_t PHY_RX_SOCK_NUM = 1;
+
+    
+    W5200& phy = W5200::instance();
+    uint16_t rxPacketCounter;
+    
+    miosix::FixedEventQueue<EVT_QUEUE_SIZE> evtQueue;
+    
+    PacketBuffer *txBuffer;
+    PacketBuffer *rxBuffer;
+    
+    friend void _evt_mgmt_thread(void *args);   
+    
+    void tx_handler();
+    void tx_end_handler();
+    void rx_handler();
+    void timeout_handler();   
     
     UdpManager();
     UdpManager(const UdpManager& other);
