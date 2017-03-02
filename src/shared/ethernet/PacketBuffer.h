@@ -53,6 +53,7 @@ public:
     
 private:
     size_t storageSize;
+    size_t usedSize;
     uint32_t writeIndex;
     uint32_t readIndex;
     bool valid;

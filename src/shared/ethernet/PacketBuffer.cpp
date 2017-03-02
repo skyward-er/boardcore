@@ -4,7 +4,7 @@ using namespace std;
 using namespace miosix;
 
 PacketBuffer::PacketBuffer(size_t storageSize) : storageSize(storageSize), 
-                                    writeIndex(0), readIndex(0), valid(true)  {
+                     usedSize(0), writeIndex(0), readIndex(0), valid(true)  {
     #ifndef __NO_EXCEPTIONS
     try {
         buffer = new uint8_t[storageSize];
@@ -34,22 +34,36 @@ bool PacketBuffer::push(packet_header_t& header, const uint8_t* payload) {
         return false;
     }
     
-    size_t usedSpace = sizeof(packet_header_t) + header.payloadSize;
+    size_t packetSize = sizeof(packet_header_t) + header.payloadSize;
 
+/********** TODO: legacy code, remove this chunk after testing. **********/
+    
     // We had to split the check into two sections because of this corner case:
     // readIndex and writeIndex are initially set to zero and we attempt to 
     // write something to the buffer. In this case the check 
-    // (writeIndex + usedSpace) % storageSize >= readIndex will fail because 
+    // (writeIndex + packetSize) % storageSize >= readIndex will fail because 
     // readIndex is zero
     
-    bool overflows = (writeIndex + usedSpace) >= storageSize;
-    bool overwrites = (writeIndex + usedSpace) % storageSize >= readIndex;
+//     bool overflows = (writeIndex + packetSize) >= storageSize;
+//     bool overwrites = (writeIndex + packetSize) % storageSize >= readIndex;
+// 
+//     if(readIndex == 0 && overflows) {
+//         puts("ofl!");
+//         return false;
+//     }
+//     
+//     if(readIndex != 0 && overwrites) {
+//         puts("ovw!");
+//         return false;
+//     }
 
-    if(readIndex == 0 && overflows) {
-        return false;
-    }
+/**************************************************************************/
     
-    if(readIndex != 0 && overwrites) {
+    // Simple technique to avoid ring buffer writeIndex slip ahead readIndex:
+    // we keep track of the amount of space used and we reject a new incoming
+    // packet if usedSize + packetSize is greater that the ring buffer size.
+    
+    if(usedSize + packetSize >= storageSize) {
         return false;
     }
     
@@ -70,6 +84,7 @@ bool PacketBuffer::push(packet_header_t& header, const uint8_t* payload) {
         }
         
         writeIndex = (writeIndex + header.payloadSize) % storageSize;
+        usedSize += packetSize;
     }
     
     return true;
@@ -137,11 +152,15 @@ void PacketBuffer::popFront() {
     {
         Lock< FastMutex > l(mutex);
         readIndex = (readIndex + packetSize) % storageSize;
+        usedSize -= packetSize;
     }
 }
 
 bool PacketBuffer::empty() {
     
     Lock< FastMutex > l(mutex);
-    return readIndex == writeIndex;
+    return usedSize == 0;
+
+//TODO line below is legacy code, remove after testing    
+//     return readIndex == writeIndex;
 }
