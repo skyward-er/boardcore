@@ -35,11 +35,12 @@ void Irq_impl() {
     TIM7->SR = 0;
     auto inst = Singleton< WatchdogTimer >::getInstance();
     inst->stop();
+    inst->triggered = true;
     inst->irqCallback();
 }
 
 
-WatchdogTimer::WatchdogTimer() : ms_to_tick(1) {
+WatchdogTimer::WatchdogTimer() : ms_to_tick(1), triggered(false) {
 
     {
         FastInterruptDisableLock dLock;
@@ -94,11 +95,13 @@ WatchdogTimer::~WatchdogTimer() {
 void WatchdogTimer::clear() {
     
     TIM7->CNT = 0;
+    triggered = false;
 }
 
 void WatchdogTimer::start() {
     
-    TIM7->CR1 |= TIM_CR1_CEN;
+    triggered = false;
+    TIM7->CR1 |= TIM_CR1_CEN;    
 }
 
 void WatchdogTimer::stop() {
