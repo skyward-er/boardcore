@@ -1,6 +1,7 @@
 /*
- * <one line to give the program's name and a brief idea of what it does.>
- * Copyright (C) 2017  <copyright holder> <email>
+ *
+ * Copyright (c) 2017 Skyward Experimental Rocketry
+ * Author: Silvano Seva
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -51,7 +52,7 @@ UdpManager::UdpManager() : rxPacketCounter(0) {
         RCC->APB2ENR |= RCC_APB2ENR_SYSCFGEN;
         RCC_SYNC();
     }
-    
+
     SYSCFG->EXTICR[0] |= SYSCFG_EXTICR1_EXTI1_PC;
     EXTI->IMR |= EXTI_IMR_MR1;
     EXTI->FTSR |= EXTI_FTSR_TR1;
@@ -71,10 +72,8 @@ UdpManager::UdpManager() : rxPacketCounter(0) {
 
     }
     else {
-    
-    //Finally start _evt_mgmt_thread
         Thread::create(_evt_mgmt_thread,1024);
-    }
+     }
 }
 
 UdpManager::~UdpManager() {
@@ -106,17 +105,27 @@ bool UdpManager::newReceivedPackets() {
 }
 
 void UdpManager::sendPacketTo(const uint8_t* ip, const uint16_t port,
-                                            const void* data, size_t len) {
+                                            const void* data, size_t len) {    
     packet_header_t header;
     header.ipAddress = *(reinterpret_cast< const uint32_t* >(ip));
     header.port = port;
     header.payloadSize = len;
     
     bool wasEmpty = txBuffer->empty();
-    txBuffer->push(header,reinterpret_cast< const uint8_t*>(data));
+    bool ok = txBuffer->push(header,reinterpret_cast< const uint8_t*>(data));
     
-    if(wasEmpty) {                
-        evtQueue.post(bind(&UdpManager::tx_handler,this));
+    if(!ok) {
+        //TODO: better failure logging
+        puts("UDP->sendPacketTo: failed to enqueue the new packet");
+    }
+    else if(wasEmpty) {
+        
+        bool pok = evtQueue.postNonBlocking(bind(&UdpManager::tx_handler,this));
+        
+        if(!pok) {
+            //TODO: better failure logging
+            puts("UDP->sendPacketTo: job queue full, failed to post tx_handler");
+        }
     }
 }
 
@@ -170,8 +179,6 @@ void UdpManager::tx_handler() {
         return;
     }
     
-    puts("yolla!");
-
     packet_header_t header = txBuffer->getHeader();
     uint8_t *addr = reinterpret_cast< uint8_t* >(&header.ipAddress);
     
@@ -191,16 +198,22 @@ void UdpManager::tx_end_handler() {
         return;
     }
     
-    puts("finish!");
-    
-    evtQueue.post(bind(&UdpManager::tx_handler,this));
+    bool ok = evtQueue.postNonBlocking(bind(&UdpManager::tx_handler,this));
+    if(!ok) {
+        //TODO: better failure logging
+        puts("UDP->tx_end_handler: job queue full, failed to post tx_handler");
+    }
 }
 
 void UdpManager::timeout_handler() {
 
     //TODO: send timeout error infos!
 
-    evtQueue.post(bind(&UdpManager::tx_end_handler,this));    
+   bool ok = evtQueue.postNonBlocking(bind(&UdpManager::tx_end_handler,this));
+   if(!ok) {
+        //TODO: better failure logging
+        puts("UDP->timeout_handler: job queue full, failed to post tx_end_handler");
+    }
 }
 
 void UdpManager::rx_handler() {

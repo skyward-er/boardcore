@@ -1,6 +1,7 @@
 /*
- * <one line to give the program's name and a brief idea of what it does.>
- * Copyright (C) 2017  <copyright holder> <email>
+ *
+ * Copyright (c) 2017 Skyward Experimental Rocketry
+ * Author: Silvano Seva
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -23,7 +24,6 @@
 #include <Common.h>
 #include <Singleton.h>
 #include <e20/e20.h>
-#include <functional>
 #include "W5200/w5200.h"
 #include "PacketBuffer.h"
 
@@ -37,13 +37,9 @@ public:
     bool newReceivedPackets();
     void readPacket();
     
-    //Internally used handlers!!
+    //Internally used handler!!
     void IRQ_handler(uint8_t irqNum);
-//     void tx_handler();
-//     void tx_end_handler();
-//     void rx_handler();
-//     void timeout_handler();
-
+    
     static enum  {
         
         IRQ_PHY = 0,    //IRQ from ethernet chip
@@ -53,8 +49,8 @@ public:
 private:
     
     static const unsigned int EVT_QUEUE_SIZE = 20;
-    static const unsigned int TX_BUF_SIZE = 1000;
-    static const unsigned int RX_BUF_SIZE = 1000;
+    static const unsigned int TX_BUF_SIZE = 100000;
+    static const unsigned int RX_BUF_SIZE = 100000;
     static const uint8_t PHY_TX_SOCK_NUM = 0;
     static const uint8_t PHY_RX_SOCK_NUM = 1;
 
