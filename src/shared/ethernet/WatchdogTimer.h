@@ -59,11 +59,18 @@ public:
     void setCallback(std::function<void ()>& callback){ 
         irqCallback = callback; }
     
+    /**
+     * @return true if timer expired. Calling start() and clear() reset the
+     * flag to false
+     */
+    bool expired() { return triggered; }
+    
 private:
     WatchdogTimer();
     ~WatchdogTimer();
     
     float ms_to_tick;   //conversion factor, number of counter ticks in a ms
+    bool triggered;
     std::function<void ()> irqCallback;
     
     friend void Irq_impl();
