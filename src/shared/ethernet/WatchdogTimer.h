@@ -56,7 +56,7 @@ public:
      * it must be written properly!! It cannot malloc, printf and other things 
      * like that
      */
-    void setCallback(std::function<void ()>& callback){ 
+    void setCallback(std::function<void ()> callback){ 
         irqCallback = callback; }
     
     /**

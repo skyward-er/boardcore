@@ -30,9 +30,9 @@ void __attribute__((naked))  TIM7_IRQHandler() {
     restoreContext(); 
 }
 
-void Irq_impl() {
+void __attribute__((used)) Irq_impl() {
     
-    TIM7->SR = 0;
+    TIM7->SR = 0;    
     auto inst = Singleton< WatchdogTimer >::getInstance();
     inst->stop();
     inst->triggered = true;
