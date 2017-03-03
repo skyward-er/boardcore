@@ -249,13 +249,10 @@ void UdpManager::tx_handler() {
 
     wdt->clear();
     wdt->start();
-    Thread::sleep(10);
 }
 
 void UdpManager::tx_end_handler() {
-    
-    puts("tend");
-    
+
     if(txBuffer->empty()) {
         return;
     }
