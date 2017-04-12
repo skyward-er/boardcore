@@ -1,9 +1,37 @@
+/* Bus base class
+ *
+ * Copyright (c) 2015-2016 Skyward Experimental Rocketry
+ * Authors: Illya Dudchenko, Matteo Michele Piazzolla, Silvano Seva, 
+ *          Alain Carlucci
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in
+ * all copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.  IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+ * THE SOFTWARE.
+ */
+ 
 #ifndef BUSTEMPLATE_H
 #define BUSTEMPLATE_H
 
 #include <stdint.h>
-#include "miosix.h"
-#include "singleton.h"
+#include <stdio.h>
+#include <miosix.h>
+#include <Singleton.h>
+#include "i2c/stm32f2_f4_i2c.h"
+#include <util/software_i2c.h>
 
 using namespace std;
 using namespace miosix;
@@ -12,18 +40,26 @@ using namespace miosix;
 
 template<unsigned N, class GpioMosi, class GpioMiso, class GpioSclk>
 class BusSPI : public Singleton< BusSPI<N, GpioMosi, GpioMiso, GpioSclk> > {
-
     friend class Singleton<BusSPI<N, GpioMosi, GpioMiso, GpioSclk> >;
     typedef Singleton<BusSPI<N, GpioMosi, GpioMiso, GpioSclk> > SingletonType;
 public:
-    inline static int Write(const void* buffer, size_t len) {
-        return SingletonType::GetInstance()->_write(buffer, len);
+
+    inline static int write(const void* buffer, size_t len) {
+        return SingletonType::getInstance()->_write(buffer, len);
     }
-    inline static void Init() { 
-        SingletonType::GetInstance(); 
+    inline static int write(uint8_t byte) {
+        return SingletonType::getInstance()->_write(byte);
     }
-    inline static int Read(void* buffer, size_t max_len) {
-        return SingletonType::GetInstance()->_read(buffer, max_len);
+
+    inline static void init() { 
+        SingletonType::getInstance(); 
+    }
+    inline static int read(void* buffer, size_t max_len) {
+        return SingletonType::getInstance()->_read(buffer, max_len);
+    }
+
+    inline static uint8_t read() {
+        return SingletonType::getInstance()->_read();
     }
 private:
     inline int _write(const void* buffer, size_t len) const {
@@ -35,9 +71,9 @@ private:
     }
 
     inline void _write(uint8_t byte) const {
-        GetSpiAddr(N)->DR=byte;
-        while((GetSpiAddr(N)->SR & SPI_SR_RXNE)==0);
-        byte=GetSpiAddr(N)->DR;
+        getSPIAddr(N)->DR=byte;
+        while((getSPIAddr(N)->SR & SPI_SR_RXNE)==0);
+        byte=getSPIAddr(N)->DR;
     }
 
     inline int _read(void* buffer, size_t max_len) const {
@@ -49,9 +85,9 @@ private:
     }
 
     inline uint8_t _read() const {
-        GetSpiAddr(N)->DR=0;
-        while((GetSpiAddr(N)->SR & SPI_SR_RXNE)==0);
-        return GetSpiAddr(N)->DR;
+        getSPIAddr(N)->DR=0;
+        while((getSPIAddr(N)->SR & SPI_SR_RXNE)==0);
+        return getSPIAddr(N)->DR;
     }
 
     BusSPI() {
@@ -62,10 +98,12 @@ private:
         GpioSclk::mode(Mode::ALTERNATE);
         GpioSclk::alternateFunction(GetAlternativeFunctionNumber(N));
         usleep(CS_DELAY);
-        EnablePeriphBus(GetSpiAddr(N));
-        GetSpiAddr(N)->CR1 = SPI_CR1_SSM
+        enableSPIBus(getSPIAddr(N));
+        getSPIAddr(N)->CR1 = SPI_CR1_SSM
                            | SPI_CR1_SSI
                            | SPI_CR1_MSTR
+        //                   | SPI_CR1_BR_0 
+        //                   | SPI_CR1_BR_1
                            | SPI_CR1_BR_2
                            | SPI_CR1_SPE;
     }
@@ -74,12 +112,12 @@ private:
         return n_spi == 1 || n_spi == 2 ? 5 : 6;
     }
 
-    constexpr SPI_TypeDef* GetSpiAddr(unsigned n) {
+    constexpr SPI_TypeDef* getSPIAddr(unsigned n) {
         return  n==1 ? SPI1 :
                 n==2 ? SPI2 : SPI3;
     }
 
-    static inline void EnablePeriphBus(SPI_TypeDef* spi) {
+    static inline void enableSPIBus(SPI_TypeDef* spi) {
         if(spi == SPI1)
             RCC->APB2ENR |= RCC_APB2ENR_SPI1EN;
         else if(spi == SPI2)
@@ -89,123 +127,135 @@ private:
     }
 };
 
-/*
- * NOTE: this driver is not needed anymore, as it is yet implemented in miosix.
- *       See miosix/arch/common/drivers/stm32f2_f4_i2c.h
- */
-
-// template<unsigned N>
-// class BusI2C {
-//     friend class Singleton< BusI2C<N> >;
-// public:
-//     static void Init() { 
-//         Singleton< BusI2C<N> >::GetInstance(); 
-//     }
-//     static int Write(const void* buffer, size_t len) {
-//         return Singleton<BusI2C<N>>::GetInstance()->_write(buffer, len);
-//     }
-//     static int Read(void* buffer, size_t max_len) {
-//         return Singleton<BusI2C<N>>::GetInstance()->_read(buffer, max_len);
-//     }
-// protected:
-//     int _write(const void* buffer, size_t len) {
-//         // DMA??
-//         return 0;
-//     }
-//     int _read(void* buffer, size_t max_len) {
-//         // conditional var??
-//         return 0;
-//     }
-//     inline BusI2C() { }
-// };
-
 template<class Bus, class GpioCS>
 class ProtocolSPI {
 public:
-    static void Init() {
+    static inline void init() {
         GpioCS::mode(Mode::OUTPUT);
         GpioCS::high();
-        Bus::Init();
+        Bus::init();
     }
 
-    static uint8_t ReadReg(uint8_t reg) {
+    /* The standard, single-byte SPI read */
+    static uint8_t read(uint8_t reg) {
         GpioCS::low();
         reg |= 0x80;
-        Bus::Write(&reg, sizeof(reg));
-        Bus::Read(&reg, sizeof(reg));
+        Bus::write(&reg, sizeof(reg));
+        Bus::read(&reg, sizeof(reg));
         GpioCS::high();
         return reg;
     }
+    
+    /* The standard, multi-byte SPI read */
+    static inline void read(uint8_t reg, uint8_t *buf, int size) {
+        read_low(reg | 0x80, buf, size);
+    }
 
-    static void WriteReg(uint8_t reg, uint8_t val) {
+    /* Read without ask anything */
+    static void read(uint8_t *buf, int size) {
         GpioCS::low();
-        Bus::Write(&reg, sizeof(reg));
-        Bus::Write(&val, sizeof(reg));
+        Bus::read(buf, size);
         GpioCS::high();
     }
+
+    /* Low-level read: write reg (without | 0x80) and read 
+     * next N bytes, where N is 'size'
+     */
+    static void read_low(uint8_t reg, uint8_t *buf, int size) {
+        GpioCS::low();
+        Bus::write(&reg, sizeof(reg));
+        Bus::read(buf, size);
+        GpioCS::high();
+    }
+ 
+    static void write(uint8_t reg, uint8_t val) {
+        GpioCS::low();
+        Bus::write(&reg, sizeof(reg));
+        Bus::write(&val, sizeof(reg));
+        GpioCS::high();
+    }
+
+    static void write(uint8_t cmd) {
+        GpioCS::low();
+        Bus::write(&cmd, sizeof(cmd));
+        GpioCS::high();
+    }
+
+    static inline void write(uint8_t reg, uint8_t *buf, int size) {
+        read_low(reg, buf, size);
+    }
+private:
+    ProtocolSPI() = delete;
+    ~ProtocolSPI() = delete;
+    ProtocolSPI(const ProtocolSPI& o) = delete;
+    ProtocolSPI(const ProtocolSPI&& o) = delete;
+    ProtocolSPI& operator=(const ProtocolSPI& other);
+    ProtocolSPI& operator=(const ProtocolSPI&& other);
 };
 
-/*
- * NOTE: this driver is not needed anymore, as it is yet implemented in miosix.
- *       See miosix/arch/common/drivers/stm32f2_f4_i2c.h
- */
+/*********************************************
+ * VERSION OF ProtocolI2C THAT USES HARDWARE *
+ * I2C DRIVER                                *
+ ********************************************/
 
-// template<class Bus, unsigned ID>
-// class ProtocolI2C {
-// public:
-//     static inline void Init() {
-//         Bus::Init();
-//     }
-// 
-//     static uint8_t ReadReg(uint8_t reg)
-//     {
-//         static const uint8_t id = ID;
-//         Bus::Write(&id, sizeof(id));
-//         Bus::Write(&reg, sizeof(reg));
-//         Bus::Read(&reg, sizeof(reg));
-//         return reg;
-//     }
-// 
-// };
-
-template<class Protocol>
-class Sensor {
+template<class Bus>
+class ProtocolI2C : public Singleton<ProtocolI2C<Bus> >{
+    friend class Singleton< ProtocolI2C<Bus> >;
+    typedef Singleton< ProtocolI2C<Bus> > SingletonType;
 public:
-    inline Sensor() { 
-        Protocol::Init(); 
+    
+    static inline void init() {
+        SingletonType::getInstance();
     }
-    inline static uint8_t ReadReg(uint8_t reg) { 
-        return Protocol::ReadReg(reg); 
+    
+    /**
+     * Sends the \param len bytes stored in \param *data buffer 
+     * to the register specified by \param regAddress        
+     */
+    static inline void write(uint8_t address, uint8_t regAddr, 
+            uint8_t *data, uint8_t len) {                
+        SingletonType::getInstance() -> writeImpl(address,regAddr,data,len);
     }
-    inline static void WriteReg(uint8_t reg, uint8_t value) { 
-        Protocol::WriteReg(reg, value); 
+    
+    /** 
+     * Reads \param len bytes storing them into \param *data buffer 
+     * from the register specified by \param regAddress        
+     */
+    static inline void read(uint8_t address, uint8_t regAddr, 
+            uint8_t *data, uint8_t len) {                
+        SingletonType::getInstance() -> readImpl(address,regAddr,data,len);
     }
-    virtual void Init() = 0;
-    virtual bool Test() const = 0;
-};
 
-class RegMap_AXEL {
-public:
-    static constexpr uint8_t REG_X_L        = 0x28;
-    static constexpr uint8_t REG_X_H        = 0x29;
-    static constexpr uint8_t REG_Y_L        = 0x2A;
-    static constexpr uint8_t REG_Y_H        = 0x2B;
-    static constexpr uint8_t REG_Z_H        = 0x2C;
-    static constexpr uint8_t REG_Z_L        = 0x2D;
-    static constexpr uint8_t REG_STAT       = 0x2E;
-    static constexpr uint8_t REG_WHO_AM_I   = 0x0F;
-};
+private:
+    Bus& bus = Bus::instance();
 
-template<class RegMap>
-class Axel : public Sensor<ProtocolI2C<BusI2C<2>, 3>> {
-    // assert bus class here
-public:
-    int ReadAxelX() {
-        return Sensor::ReadReg(RegMap::REG_X_L);
+    ProtocolI2C() { }
+    
+    /* The actual write and read functions implementation.
+     * This is a workaround needed to adapt ProtocolI2C class
+     * to miosix i2c driver class implementation 
+     */
+    
+    void writeImpl(uint8_t address, uint8_t regAddr, 
+            uint8_t *data, uint8_t len) {
+        uint8_t buf[len+1];     //pack register address and payload
+        buf[0] = regAddr;
+        
+        memcpy(buf+1, data, len);
+
+        bus.send(address, reinterpret_cast<void*>(buf), len+1);
     }
-    int ReadWhoAmI() {
-        return Sensor::ReadReg(RegMap::REG_WHO_AM_I);
+    
+    void readImpl(uint8_t address, uint8_t regAddr, 
+            uint8_t *data, uint8_t len) {
+        bus.send(address,reinterpret_cast<void*>(&regAddr),1,false);
+        bus.recv(address,reinterpret_cast<void*>(data),len);
     }
+
+    ProtocolI2C(const ProtocolI2C& o) = delete;
+    ProtocolI2C(const ProtocolI2C&& o) = delete;
+    ProtocolI2C& operator=(const ProtocolI2C& other);
+    ProtocolI2C& operator=(const ProtocolI2C&& other);
 };
 
 #endif // BUSTEMPLATE_H

@@ -1,7 +1,7 @@
 /* CAN-Bus Driver
  *
- * Copyright (c) 2015 Skyward Experimental Rocketry
- * Authors: Matteo Piazzolla, Alain Carlucci
+ * Copyright (c) 2015-2016 Skyward Experimental Rocketry
+ * Authors: Matteo Michele Piazzolla, Alain Carlucci
  * 
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -130,7 +130,6 @@ void* CanBus::threadLauncher(void* arg)
    \param len la dimensione del messaggio
    */
 bool CanBus::send(uint16_t id, const uint8_t *message, uint8_t len) {
-    int txMailBox = -1; 
     CanMsg packet;
 
     if(len == 0)
@@ -145,6 +144,7 @@ bool CanBus::send(uint16_t id, const uint8_t *message, uint8_t len) {
     memcpy(packet.Data, message, packet.DLC);
 
     {
+        int txMailBox = -1; 
         Lock<FastMutex> l(mutex);
 
         int timeout = 10;
@@ -251,9 +251,13 @@ void CanBus::canSetup() {
     /* Unset the automatic wake-up mode */
     CANx->MCR &= ~CAN_MCR_AWUM;
 
+    //TODO: automatic retransmission causes the same packet to be resent forever
+    //until the intended recipient acks it. That is a bit too much, so we're
+    //disabling it. Maybe add a config option to allow setting it back?
     /* Unset the no automatic retransmission */
-    CANx->MCR &= ~CAN_MCR_NART;
-
+    //CANx->MCR &= ~CAN_MCR_NART;
+    CANx->MCR |= CAN_MCR_NART;
+    
     /* Set the receive FIFO locked mode */
     CANx->MCR &= ~CAN_MCR_RFLM;
 
