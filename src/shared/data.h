@@ -1,14 +1,8 @@
 /* Common data structures
  *
-<<<<<<< HEAD
- * Copyright (c) 2015 Skyward Experimental Rocketry
- * Authors: Matteo Piazzolla
- *
-=======
  * Copyright (c) 2015-2016 Skyward Experimental Rocketry
  * Authors: Matteo Michele Piazzolla
  * 
->>>>>>> master
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
  * in the Software without restriction, including without limitation the rights
