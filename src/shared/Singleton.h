@@ -1,5 +1,5 @@
-/* Copyright (c) 2015 Skyward Experimental Rocketry
- * Authors: Illya Dudchenko
+/* Copyright (c) 2015-2016 Skyward Experimental Rocketry
+ * Authors: Illya Dudchenko, Matteo Michele Piazzolla, Federico Terraneo
  * 
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -26,16 +26,14 @@
 template<typename T>
 class Singleton {
     public:
-        inline static T* GetInstance() {
-            if(!instance) 
-                instance = new T(); 
-            return instance;
+        inline static T* getInstance() {
+            static T instance;
+            return &instance;            
         }
     protected:
-        static T* instance;
+        Singleton(){}
+
 };
 
-template<class T>
-T* Singleton<T>::instance = NULL;
 
 #endif // SINGLETON_H

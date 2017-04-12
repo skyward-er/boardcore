@@ -13,3 +13,4 @@ bin/*
 
 ._*
 .DS_Store
+build

@@ -1,7 +1,7 @@
 /* CAN-Bus Driver
  *
- * Copyright (c) 2015 Skyward Experimental Rocketry
- * Authors: Matteo Piazzolla, Alain Carlucci
+ * Copyright (c) 2015-2016 Skyward Experimental Rocketry
+ * Authors: Matteo Michele Piazzolla, Alain Carlucci
  * 
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -33,8 +33,7 @@ CanBus *CanManager::getBus(uint32_t id) {
 
 bool CanManager::addHWFilter(uint16_t id, uint32_t can_id) {
     uint32_t position = max_chan_filters * can_id;
-    uint32_t pos1 = 0, pos2 = 0;
-    __IO uint32_t *reg;
+    __IO uint32_t *reg = NULL;
 
     /** Invalid id */
     if(id >= filter_max_id || can_id >= bus.size()) 
@@ -50,6 +49,7 @@ bool CanManager::addHWFilter(uint16_t id, uint32_t can_id) {
         Config->FMR |= CAN_FMR_FINIT;
 
         // find first empty position
+        uint32_t pos1 = 0, pos2 = 0;
         while(position < max_chan_filters * (can_id + 1)) {
             pos1 = position / filters_per_row;
             pos2 = position % filters_per_row;
@@ -71,6 +71,9 @@ bool CanManager::addHWFilter(uint16_t id, uint32_t can_id) {
 
             ++position; 
         }
+
+        if(reg == NULL)
+            return false;
 
         // disable this filter
         Config->FA1R &= ~(1 << pos1);
@@ -105,8 +108,7 @@ bool CanManager::addHWFilter(uint16_t id, uint32_t can_id) {
 
 bool CanManager::delHWFilter(uint16_t id, uint32_t can_id) {
     uint32_t position = max_chan_filters * can_id;
-    uint32_t pos1 = 0, pos2 = 0;
-    __IO uint32_t *reg;
+    __IO uint32_t *reg = NULL;
 
     /** Invalid id */
     if(id >= filter_max_id || can_id >= bus.size())
@@ -120,7 +122,9 @@ bool CanManager::delHWFilter(uint16_t id, uint32_t can_id) {
         // enter filter initialization mode
         Config->FMR |= CAN_FMR_FINIT;
 
+        uint32_t pos2 = 0;
         while(position < max_chan_filters * (can_id + 1)) {
+            uint32_t pos1 = 0;
             pos1 = position / filters_per_row;
             pos2 = position % filters_per_row;
 
@@ -136,6 +140,9 @@ bool CanManager::delHWFilter(uint16_t id, uint32_t can_id) {
 
             ++position; 
         }
+
+        if(reg == NULL)
+            return false;
 
         *reg |= (0xffff << pos2); // clear
 

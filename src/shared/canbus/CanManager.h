@@ -1,7 +1,7 @@
 /* CAN-Bus Driver
  *
- * Copyright (c) 2015 Skyward Experimental Rocketry
- * Authors: Matteo Piazzolla, Alain Carlucci
+ * Copyright (c) 2015-2016 Skyward Experimental Rocketry
+ * Authors: Matteo Michele Piazzolla, Alain Carlucci
  * 
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -112,7 +112,7 @@ class CanManager {
             }
         }
 
-        CanManager(volatile CAN_TypeDef* Config) : Config(Config) {
+        explicit CanManager(volatile CAN_TypeDef* Config) : Config(Config) {
              memset(enabled_filters, 0, sizeof(enabled_filters));
         }
 
