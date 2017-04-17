@@ -35,7 +35,7 @@
 #include <math/Vec3.h>
 #include <math/Matrix.h>
 #include <drivers/stm32f2_f4_i2c.h> 
-#include <ethernet/UdpSocket.h>
+#include <ethernet/UdpManager.h>
 
 using namespace miosix;
 
@@ -343,7 +343,7 @@ int main() {
     printf("[Ethernet] Got addr\n");
     
     //This socket listens on UDP port 2020
-    UdpSocket sock(2020);    
+    //UdpManager::getInstance().setTxPort(2020);    
     printf("[Ethernet] Socket ready\n");
 #endif
 
@@ -406,7 +406,7 @@ int main() {
         }
 
 #ifdef ENABLE_ETHERNET
-        sock.sendTo(destIp,destPort,&packet,sizeof(packet));
+        sock.sendPacketTo(destIp,destPort,&packet,sizeof(packet));
 #endif
 
         printf( "[%5.2f %5.2f %5.2f] "
