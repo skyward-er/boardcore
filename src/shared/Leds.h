@@ -66,5 +66,4 @@ private:
     Leds() {}
 };
 
-vector<GpioPin> Leds::pins;
 #endif
