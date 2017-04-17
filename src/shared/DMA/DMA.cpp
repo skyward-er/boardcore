@@ -165,7 +165,6 @@ void SPIRequest::IRQbeginTransaction()
     DMA2_Stream0->CR   = DMA_SxCR_CHSEL_1 | DMA_SxCR_CHSEL_0 // Channel 3
                        | DMA_SxCR_PL_1    //High priority because fifo disabled
                        | DMA_SxCR_MINC    //Increment memory pointer
-                       | DMA_SxCR_TCIE    //Interrupt on transfer complete
                        | DMA_SxCR_TEIE    //Interrupt on transfer error
                        | DMA_SxCR_DMEIE   //Interrupt on direct mode error
                        | DMA_SxCR_EN;     //Start DMA
@@ -179,6 +178,7 @@ void SPIRequest::IRQbeginTransaction()
                        | DMA_SxCR_PL_1    //High priority because fifo disabled
                        | DMA_SxCR_MINC    //Increment memory pointer
                        | DMA_SxCR_DIR_0   //Memory to peripheral
+                       | DMA_SxCR_TCIE    //Interrupt on transfer complete
                        | DMA_SxCR_TEIE    //Interrupt on transfer error 
                        | DMA_SxCR_DMEIE   //Interrupt on direct mode error
                        | DMA_SxCR_EN;     //Start DMA
