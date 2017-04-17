@@ -35,7 +35,7 @@ typedef Gpio<GPIOA_BASE,7> mosi;
 /**
  * DMA RX end of transfer
  */
-void __attribute__((naked)) DMA2_Stream3_IRQHandler()
+void __attribute__((naked)) DMA2_Stream5_IRQHandler()
 {
     saveContext();
     asm volatile("bl _Z20SPI1rxDmaHandlerImplv");
@@ -142,8 +142,8 @@ SPIDriver::SPIDriver()
 //                  | SPI_CR1_BR_1 //Less than 10MHz
                   | SPI_CR1_BR_2 // fClock / 32
                   | SPI_CR1_SPE; //SPI enabled
-        NVIC_SetPriority(DMA2_Stream3_IRQn,10);//Low priority for DMA
-        NVIC_EnableIRQ(DMA2_Stream3_IRQn);
+        NVIC_SetPriority(DMA2_Stream5_IRQn,10);//Low priority for DMA
+        NVIC_EnableIRQ(DMA2_Stream5_IRQn);
     }
 }
 
@@ -171,11 +171,11 @@ void SPIRequest::IRQbeginTransaction()
                        | DMA_SxCR_EN;     //Start DMA
     
     // Tx
-    DMA2_Stream3->CR   = 0;
-    DMA2_Stream3->PAR  = reinterpret_cast<unsigned int>(&SPI1->DR);
-    DMA2_Stream3->M0AR = reinterpret_cast<unsigned int>(toPeripheral.data());
-    DMA2_Stream3->NDTR = toPeripheral.size();
-    DMA2_Stream3->CR   = DMA_SxCR_CHSEL_1 | DMA_SxCR_CHSEL_0 // Channel 3
+    DMA2_Stream5->CR   = 0;
+    DMA2_Stream5->PAR  = reinterpret_cast<unsigned int>(&SPI1->DR);
+    DMA2_Stream5->M0AR = reinterpret_cast<unsigned int>(toPeripheral.data());
+    DMA2_Stream5->NDTR = toPeripheral.size();
+    DMA2_Stream5->CR   = DMA_SxCR_CHSEL_1 | DMA_SxCR_CHSEL_0 // Channel 3
                        | DMA_SxCR_PL_1    //High priority because fifo disabled
                        | DMA_SxCR_MINC    //Increment memory pointer
                        | DMA_SxCR_DIR_0   //Memory to peripheral
@@ -192,5 +192,5 @@ void SPIRequest::IRQendTransaction()
     chipSelect.high();
     
     //TX dma channel has no IRQ, so clear flag here
-    DMA2->HIFCR=DMA_LIFCR_CTCIF3;
+    DMA2->HIFCR=DMA_HIFCR_CTCIF5;
 }
