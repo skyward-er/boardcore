@@ -31,9 +31,13 @@
 template <typename Bus>
 class FXAS21002 : public GyroSensor {
 public:
-    FXAS21002() { }
+    FXAS21002()
+    {
     
-    bool init() {
+    }
+    
+    bool init()
+    {
         uint8_t whoami = Bus::read(REG_WHO_AM_I);
         
         if(whoami != who_am_i_value) {
@@ -73,7 +77,8 @@ public:
     }
     
     // Performs a device self test, see datasheet for further details
-    bool selfTest() {
+    bool selfTest()
+    {
         // Trigger a self test
         Bus::write(REG_CTRL1, Bus::read(REG_CTRL1) | 0b00010000);
         
@@ -102,12 +107,12 @@ public:
         return true;
     }
 
-    Vec3 getRotation() { 
-        return last_gyro; 
-    }
+    Vec3* gyroDataPtr() override { return &mLastGyro; }
 
     bool updateParams() {
-        last_gyro = Vec3(getXaxis(), getYaxis(), getZaxis()); 
+        mLastGyro.setX(getXaxis());
+        mLastGyro.setY(getYaxis());
+        mLastGyro.setZ(getZaxis()); 
         return true;
     }
 
@@ -174,18 +179,6 @@ public:
     void disableHiPassFiter() { 
         Bus::write(REG_CTRL0, Bus::read(REG_CTRL0) & (~0b00000100)); 
     }
-    
-    uint16_t getXaxis() { 
-        return (Bus::read(REG_OUT_X_MSB) << 8) | Bus::read(REG_OUT_X_LSB); 
-    }
-
-    uint16_t getYaxis() { 
-        return (Bus::read(REG_OUT_Y_MSB) << 8) | Bus::read(REG_OUT_Y_LSB); 
-    }
-
-    uint16_t getZaxis() { 
-        return (Bus::read(REG_OUT_Z_MSB) << 8) | Bus::read(REG_OUT_Z_LSB); 
-    }
                     
     enum dataRates {
         DR_800HZ = 0,
@@ -211,7 +204,6 @@ public:
     };
 
 private:
-    Vec3 last_gyro;
     constexpr static uint8_t who_am_i_value = 0xD7;
             
     enum regMap { 
@@ -238,6 +230,18 @@ private:
         REG_CTRL2 = 0x14,
         REG_CTRL3 = 0x15            
     };
+
+    uint16_t getXaxis() { 
+        return (Bus::read(REG_OUT_X_MSB) << 8) | Bus::read(REG_OUT_X_LSB); 
+    }
+
+    uint16_t getYaxis() { 
+        return (Bus::read(REG_OUT_Y_MSB) << 8) | Bus::read(REG_OUT_Y_LSB); 
+    }
+
+    uint16_t getZaxis() { 
+        return (Bus::read(REG_OUT_Z_MSB) << 8) | Bus::read(REG_OUT_Z_LSB); 
+    }
 };
 
 #endif

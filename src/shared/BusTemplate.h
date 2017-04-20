@@ -158,6 +158,10 @@ public:
         GpioCS::high();
     }
 
+    static miosix::GpioPin getCSPin() {
+        return GpioCS::getPin();
+    }
+
     /* Low-level read: write reg (without | 0x80) and read 
      * next N bytes, where N is 'size'
      */
@@ -188,9 +192,9 @@ private:
     ProtocolSPI() = delete;
     ~ProtocolSPI() = delete;
     ProtocolSPI(const ProtocolSPI& o) = delete;
-    ProtocolSPI(const ProtocolSPI&& o) = delete;
-    ProtocolSPI& operator=(const ProtocolSPI& other);
-    ProtocolSPI& operator=(const ProtocolSPI&& other);
+    ProtocolSPI(ProtocolSPI&& o) = delete;
+    ProtocolSPI& operator=(const ProtocolSPI&) = delete;
+    ProtocolSPI& operator=(ProtocolSPI&&) = delete;
 };
 
 

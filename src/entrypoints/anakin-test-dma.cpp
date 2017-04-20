@@ -23,8 +23,11 @@
 #include <Common.h>
 #include <BusTemplate.h>
 #include <sensors/MPU9250.h>
+#include <sensors/iNemo.h>
 #include <DMA/DMA.h>
 #include <Leds.h>
+#include <DMA/SensorSampling.h>
+#include <events/Scheduler.h>
 
 using namespace miosix;
 
@@ -34,19 +37,31 @@ typedef Gpio<GPIOA_BASE, 7> GpioMosi;
 typedef BusSPI < 1, GpioMosi, GpioMiso, GpioSck> busSPI1;
 
 typedef Gpio<GPIOD_BASE, 13> CS_MPU9250;
+typedef Gpio<GPIOG_BASE, 9> CS_INEMO_G;
+typedef Gpio<GPIOG_BASE, 11> CS_INEMO_A;
+
 typedef ProtocolSPI<busSPI1, CS_MPU9250> spiMPU9250;
+typedef ProtocolSPI<busSPI1, CS_INEMO_A> spiINEMOA;
+typedef ProtocolSPI<busSPI1, CS_INEMO_G> spiINEMOG;
+
+typedef MPU9250<spiMPU9250> mpu_t;
+typedef iNEMOLSM9DS0<spiINEMOG,spiINEMOA> inemo_t;
 
 int main()
 {
-    //uint8_t whoami = spiMPU9250::read(0x75);   
-    //printf("%02x\n", whoami);
-    Leds::init();
-    Leds::set(0, true);
-    Leds::set(1, false);
-    Leds::set(2, true);
+    SensorSampling ss;
 
-    CS_MPU9250::mode(Mode::OUTPUT); 
-    CS_MPU9250::high();
+    mpu_t test( mpu_t::ACC_FS_2G, mpu_t::GYRO_FS_250);
+    test.init();
+
+    inemo_t inemo(inemo_t::ACC_FS_2G, inemo_t::GYRO_FS_245, inemo_t::COMPASS_FS_2);
+    inemo.init();
+
+    ss.AddSensor(dynamic_cast<Sensor*>(&test));
+    ss.AddSensor(dynamic_cast<Sensor*>(&inemo));
+
+    sEventScheduler->add(std::bind(&SensorSampling::Update, ss), 10, "Sample 10ms");
+    /*
     std::vector<SPIRequest> requests;
     requests.push_back(
         SPIRequest(CS_MPU9250::getPin(),{0x80 | 0x75, 0, 0, 0, 0, 0, 0, 0, 0})
@@ -61,6 +76,7 @@ int main()
     printf("D\n");
     memDump(result.data(),result.size());
     printf("E\n");
+    */
 
     while(1){
         // Yo

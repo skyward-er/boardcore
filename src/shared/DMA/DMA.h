@@ -46,15 +46,15 @@ private:
 class SPIRequest
 {
 public:
-    SPIRequest(miosix::GpioPin pin) : chipSelect(pin) {}
+    SPIRequest(int id, miosix::GpioPin pin) : mId(id), chipSelect(pin) {}
     
-    SPIRequest(miosix::GpioPin pin, const std::vector<uint8_t>& data)
-        : chipSelect(pin)
+    SPIRequest(int id, miosix::GpioPin pin, const std::vector<uint8_t>& data) :
+        mId(id), chipSelect(pin)
     {
         setDataToPeripheral(data);
     }
     
-    void setDataToPeripheral(uint8_t *data, size_t size)
+    void setDataToPeripheral(const uint8_t* data, size_t size)
     {
         toPeripheral.resize(size);
         memcpy(toPeripheral.data(),data,size);
@@ -67,19 +67,24 @@ public:
         fromPeripheral.resize(data.size());
     }
     
-    uint8_t readResponseByteFromPeripheral(int index)
+    uint8_t readResponseByteFromPeripheral(int index) const
     {
         return fromPeripheral.at(index);
     }
     
-    std::vector<uint8_t> readResponseFromPeripheral()
+    const std::vector<uint8_t>& readResponseFromPeripheral() const
     {
         return fromPeripheral;
     }
     
-    bool empty()
+    bool empty() const
     {
         return toPeripheral.empty();
+    }
+
+    int id() const
+    {
+        return mId;
     }
     
     void IRQbeginTransaction();
@@ -87,6 +92,7 @@ public:
     void IRQendTransaction();
     
 private:
+    const int mId;
     miosix::GpioPin chipSelect;
     std::vector<uint8_t> toPeripheral;
     std::vector<uint8_t> fromPeripheral;

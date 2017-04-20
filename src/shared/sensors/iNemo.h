@@ -32,21 +32,25 @@
 
 template <typename BusG,typename BusXM>
 class iNEMOLSM9DS0 : public GyroSensor, public AccelSensor,
-    public CompassSensor, public TemperatureSensor {
+    public CompassSensor, public TemperatureSensor
+{
 
 public:
     iNEMOLSM9DS0(uint8_t accelFullScale, uint8_t gyroFullScale, 
-            uint8_t compassFullScale) : last_temp(0.0f) { 
+            uint8_t compassFullScale) : last_temp(0.0f)
+    { 
         accelFS = accelFullScale & 0x7;
         gyroFS  = gyroFullScale & 0x03;
         compassFS = compassFullScale & 0x03;
     }
 
-    bool init() {
+    bool init()
+    {
         uint8_t whoami_g = BusG::read(RegMap::WHO_AM_I_G);
         uint8_t whoami_xm = BusG::read(RegMap::WHO_AM_I_XM);
 
-        if((whoami_g != whoami_g_value) | (whoami_xm !=whoami_g_value) ) {
+        if((whoami_g != whoami_g_value) | (whoami_xm !=whoami_g_value) ) 
+        {
             last_error = ERR_NOT_ME;
             return false;
         }
@@ -89,12 +93,57 @@ public:
         return true;
     }
 
-    bool selfTest() {
+    bool selfTest()
+    {
         return false;
     }
 
+    std::vector<SPIRequest> buildDMARequest() override 
+    {
+        printf("iNemo::buildDMARequest()\n");
+        std::vector<SPIRequest> v = {
+            SPIRequest(0, BusG::getCSPin(),  { OUT_X_L_G|0xc0,0,0,0,0,0,0 }),
+            SPIRequest(1, BusXM::getCSPin(), { OUT_X_L_A|0xc0,0,0,0,0,0,0 }),
+            SPIRequest(2, BusXM::getCSPin(), { OUT_X_L_M|0xc0,0,0,0,0,0,0 }),
+            SPIRequest(3, BusXM::getCSPin(), { OUT_TEMP_L_XM|0xc0,0,0}),
+        };
 
-    bool updateParams(){
+        return v;
+    }
+
+    void onDMAUpdate(const SPIRequest& req) override 
+    {
+        printf("iNemo::onDMAUpdate()\n");
+        const auto& r = req.readResponseFromPeripheral();
+        int16_t* data = (int16_t*)&r[1]; // FIXME: segmentation fault? 
+                                         // copy in a new vector
+
+        switch(req.id())
+        {
+            case 0:
+                mLastGyro.setX(normalizeGyro(data[0]));
+                mLastGyro.setY(normalizeGyro(data[1]));
+                mLastGyro.setZ(normalizeGyro(data[2]));
+                break;
+            case 1:
+                mLastAccel.setX(normalizeAccel(data[0]));
+                mLastAccel.setY(normalizeAccel(data[1]));
+                mLastAccel.setZ(normalizeAccel(data[2]));
+                break;
+            case 2:
+                mLastCompass.setX(normalizeCompass(data[0]));
+                mLastCompass.setY(normalizeCompass(data[1]));
+                mLastCompass.setZ(normalizeCompass(data[2]));
+                break;
+            case 3:
+                last_temp = static_cast<float>(data[0])/8.0f+21.0f;
+                break;
+        }
+    }
+
+    bool updateParams()
+    {
+        /*
         int16_t data[3];
 
         BusG::read(OUT_X_L_G|0x40,reinterpret_cast<uint8_t *>(data),6);
@@ -130,13 +179,14 @@ public:
                         |  (uint16_t) temp[0];
 
         last_temp = static_cast<float>(temp16)/8.0f+21.0f;
+        */
         return true;
     }
 
-    Vec3 getRotation() { return last_gyro; }
-    Vec3 getAccel() { return last_acc; }
-    Vec3 getCompass(){ return last_compass; }
-    float getTemperature(){ return last_temp; }
+    Vec3* accelDataPtr() override { return &mLastAccel; }
+    Vec3* gyroDataPtr()  override { return &mLastGyro; }
+    Vec3* compassDataPtr() override { return &mLastCompass; }
+    float* tempDataPtr() override { return &mLastTemp; }
 
     enum accelFullScale {
         ACC_FS_16G     = 4,
