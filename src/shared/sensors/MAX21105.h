@@ -30,10 +30,15 @@ template<class Bus>
 class MAX21105 : public AccelSensor, 
     public GyroSensor, public TemperatureSensor {
 public:
-    MAX21105(uint8_t accelFullScale, uint8_t gyroFullScale) : 
-        last_temperature(0.0f) { 
+    MAX21105(uint8_t accelFullScale, uint8_t gyroFullScale)
+    {
         accelFS = accelFullScale & 0x03;
         gyroFS  = gyroFullScale & 0x03;
+        mLastTemp = 0.0f;
+    }
+
+    ~MAX21105()
+    {
     }
 
     bool init() {
@@ -98,36 +103,25 @@ public:
         Bus::read(GYRO_X_H, reinterpret_cast<uint8_t *>(raw_data.buf), 
                 sizeof(raw_data.buf));
 
-        for(size_t i=0; i<(sizeof(raw_data.buf)/sizeof(raw_data.buf[0]));i++)
+        constexpr size_t dSize = (sizeof(raw_data.buf)/sizeof(raw_data.buf[0]));
+        for(size_t i=0; i< dSize;i++)
             raw_data.buf[i] = fromBigEndian16(raw_data.buf[i]);
 
-        last_accel = Vec3(
-            normalizeAccel(raw_data.accel[0]),
-            normalizeAccel(raw_data.accel[1]),
-            normalizeAccel(raw_data.accel[2]) 
-        );
+        mLastAccel.setX(normalizeAccel(raw_data.accel[0]));
+        mLastAccel.setY(normalizeAccel(raw_data.accel[1]));
+        mLastAccel.setZ(normalizeAccel(raw_data.accel[2]));
 
-        last_gyro = Vec3(
-            normalizeGyro(raw_data.gyro[0]),
-            normalizeGyro(raw_data.gyro[1]),
-            normalizeGyro(raw_data.gyro[2]) 
-        );
+        mLastGyro.setX(normalizeGyro(raw_data.gyro[0]));
+        mLastGyro.setY(normalizeGyro(raw_data.gyro[1]));
+        mLastGyro.setZ(normalizeGyro(raw_data.gyro[2]));
 
-        last_temperature = normalizeTemp(raw_data.temp);
+        mLastTemp = normalizeTemp(raw_data.temp);
         return true;
     }
 
-    Vec3 getRotation() {
-        return last_gyro;
-    }
-
-    Vec3 getAccel() {
-        return last_accel;
-    }
-
-    float getTemperature() {
-        return last_temperature; 
-    }
+    Vec3* accelDataPtr() override { return &mLastAccel; }
+    Vec3* gyroDataPtr()  override { return &mLastGyro; }
+    float* tempDataPtr() override { return &mLastTemp; }
 
     enum accelFullScale {
         ACC_FS_16G     = 0,
@@ -144,8 +138,6 @@ public:
     };
 
 private:
-    Vec3 last_accel, last_gyro;
-    float last_temperature;
     uint8_t accelFS, gyroFS;
 
     static constexpr const uint8_t who_am_i_value = 0xb4;

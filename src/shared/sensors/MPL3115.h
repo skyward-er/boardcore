@@ -30,16 +30,18 @@
 
 template <typename BusType>
 class MPL3115 : public PressureSensor, public TemperatureSensor, 
-                public AltitudeSensor {
+                public AltitudeSensor
+{
 
 public:
-    MPL3115() { }
+    MPL3115()
+    { 
+        mLastPressure = 0.0f;
+        mLastTemp = 0.0f;
+        mLastAltitude = 0.0f;
+    }
     
     bool init() {
-        lastAlt = 0;
-        lastPress = 0;
-        lastTemp = 0;
-
         setMode(MODE_BAROMETER);
         
         // raise and event flag on new pressure/altitude 
@@ -107,51 +109,26 @@ public:
             uint32_t press = (static_cast<uint32_t>(data[0]) << 16) 
                            | (static_cast<uint32_t>(data[1]) << 8) 
                            | static_cast<uint32_t>(data[2]);
-            lastPress = static_cast<float>(press) / 64;                    
+            mLastPressure = static_cast<float>(press) / 64;                    
         }
         
         if(sensorMode == MODE_ALTIMETER) {
             uint32_t altitude = (static_cast<uint32_t>(data[0]) << 24) 
                               | (static_cast<uint32_t>(data[1]) << 16) 
                               | (static_cast<uint32_t>(data[2]) << 8);
-            lastAlt =  static_cast<float>(altitude) / 65536;                    
+            mLastAltitude = static_cast<float>(altitude) / 65536;                    
         }
 
         uint16_t temperature = (static_cast<uint16_t>(data[3]) << 8) 
                              | static_cast<uint16_t>(data[4]);
-        lastTemp =  static_cast<float>(temperature) / 256;
+        mLastTemp = static_cast<float>(temperature) / 256;
         
         return true;
     }    
     
-    /**
-     * @return last pressure measured.
-     * NOTE: if sensor is not set in barometer mode and this function
-     * is called, ZERO IS RETURNED to signal that a wrong request has
-     * been performed!!
-     */
-    float getPressure() { 
-        
-        if(sensorMode == MODE_BAROMETER)
-            return lastPress;
-        else
-            return 0;
-    }
-    
-    /**
-     * @return last altitude measured.
-     * NOTE: if sensor is not set in altimeter mode and this function
-     * is called, ZERO IS RETURNED to signal that a wrong request has
-     * been performed!!
-     */
-    float getAltitude() {
-        if(sensorMode == MODE_ALTIMETER)
-            return lastAlt;
-        else
-            return 0;
-    }
-    
-    float getTemperature() { return lastTemp; }
+    float* pressureDataPtr() override { return &mLastPressure; }
+    float* altitudeDataPtr() override { return &mLastAltitude; }
+    float* tempDataPtr() override { return &mLastTemp; }
 
     /**
      * Set sensor mode: altimeter or barometer
@@ -218,37 +195,14 @@ public:
         temp &= ~0b00111000;    //oversample ratio bits are 4th to 6th
         
         switch(ratio) {
-            case 1:
-            break;
-            
-            case 2:
-                osr = 0x01;
-            break;
-            
-            case 4:
-                osr = 0x02;
-            break;
-            
-            case 8:
-                osr = 0x03;
-            break;
-            
-            case 16:
-                osr = 0x04;
-            break;
-            
-            case 32:
-                osr = 0x05;
-            break;
-            
-            case 64:
-                osr = 0x06;
-            break;
-            
-            case 128:
-                osr = 0x7;
-            break;
-            
+            case 1:   osr = 0x00; break;
+            case 2:   osr = 0x01; break;
+            case 4:   osr = 0x02; break;
+            case 8:   osr = 0x03; break;
+            case 16:  osr = 0x04; break;
+            case 32:  osr = 0x05; break;
+            case 64:  osr = 0x06; break;
+            case 128: osr = 0x07; break;
             default:
             break;
         }

@@ -35,11 +35,13 @@
 #include <array>
 #include <map>
 #include <cassert>
+#include <memory>
 
 /* Miosix */
 #include <miosix.h>
 #include <pthread.h>
 #include <kernel/scheduler/scheduler.h>
+#include <interfaces/endianness.h>
 
 #include "Constants.h"
 

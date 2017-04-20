@@ -27,6 +27,7 @@
 #include <Common.h>
 #include <math/Vec3.h>
 #include <math/Quaternion.h>
+#include <DMA/DMA.h>
 
 /** Sensors class diagram
  *               ________ 
@@ -53,6 +54,15 @@ class Sensor {
          * Anyone should be able to call getLastError() and read the error.
          */
         virtual bool selfTest() = 0;
+
+        virtual std::vector<SPIRequest> buildDMARequest() {
+            printf("** SENSOR::buildDMARequest **\n"); 
+            return std::vector<SPIRequest>();
+        }
+
+        virtual void onDMAUpdate(const SPIRequest& req) {
+            printf("** SENSOR::onDMAUpdate **\n");
+        }
 
         /** 
          * This method is called once every N msec, read new values and
@@ -84,37 +94,51 @@ class Sensor {
 
 class GyroSensor : public virtual Sensor {
     public:
-        virtual Vec3 getRotation() = 0;
+        virtual Vec3* gyroDataPtr() = 0;
+    protected:
+        Vec3 mLastGyro; 
 };
 
 class AccelSensor : public virtual Sensor {
     public:
-        virtual Vec3 getAccel() = 0;
+        virtual Vec3* accelDataPtr() = 0;
+    protected:
+        Vec3 mLastAccel; 
 };
 
 class CompassSensor : public virtual Sensor {
     public:
-        virtual Vec3 getCompass() = 0;
+        virtual Vec3* compassDataPtr() = 0;
+    protected:
+        Vec3 mLastCompass;
 };
 
 class TemperatureSensor : public virtual Sensor {
     public:
-        virtual float getTemperature() = 0;
+        virtual float* tempDataPtr() = 0;
+    protected:
+        float mLastTemp;
 };
 
 class HumiditySensor : public virtual Sensor {
     public:
-        virtual float getHumidity() = 0;
+        virtual float* humidityDataPtr() = 0;
+    protected:
+        float mLastHumidity;
 };
 
 class PressureSensor : public virtual Sensor {
     public:
-        virtual float getPressure() = 0;
+        virtual float* pressureDataPtr() = 0;
+    protected:
+        float mLastPressure;
 };
 
 class AltitudeSensor : public virtual Sensor {
     public:
-        virtual float getAltitude() = 0;
+        virtual float* altitudeDataPtr() = 0;
+    protected:
+        float mLastAltitude;
 };
 
 #endif /* ifndef SENSORS_H */

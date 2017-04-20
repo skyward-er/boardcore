@@ -30,14 +30,23 @@
 
 // TODO second order temperature compensation 
 template<class Bus>
-class MS580301BA07 : public PressureSensor, public TemperatureSensor,
-    public AltitudeSensor {
+class MS580301BA07 : public PressureSensor, public TemperatureSensor
+{
 
 public:
     /* Class constructor. Reset lastPressure and lastTemperature */
-    MS580301BA07() : 
-        lastPressure(0.0f), lastTemperature(0.0f), 
-        localPressure(1013.25) {}
+    MS580301BA07() : localPressure(1013.25)
+    {
+        mLastTemp = 0;
+        mLastPressure = 0;
+    }
+
+    ~MS580301BA07()
+    {
+    }
+
+    float* tempDataPtr() override { return &mLastTemp; }
+    float* pressureDataPtr() override { return &mLastPressure; }
 
     bool init() {
         int timeout = 30;
@@ -66,14 +75,6 @@ public:
         return false;
     }
 
-    float getPressure() {
-        return lastPressure; 
-    }
-
-    float getTemperature() {
-        return lastTemperature; 
-    }
-
     void setLocalPressure(float mBarPressure) {
         localPressure = mBarPressure;
     }
@@ -81,7 +82,7 @@ public:
     // TODO move this code away
     float getAltitude() {
         return 44330.769 * 
-            (1.0f - pow(lastPressure/localPressure,0.19019f));
+            (1.0f - pow(mLastPressure/localPressure,0.19019f));
     }
 
     bool updateParams() {
@@ -117,26 +118,27 @@ public:
                         | ((uint32_t)rcvbuf[0] << 16);
         } while(temperature == 0 && --timeout > 0);
 
-        if(timeout == 0) {
+        if(timeout == 0)
+        {
             last_error = ERR_RESET_TIMEOUT;
             return false;
         }
 
         int32_t dt = temperature - (cd.tref << 8);
         int32_t temp = 2000 + ((dt * cd.tempsens) >> 23);
-        lastTemperature =  temp / 100.0f;
+        mLastTemp =  temp / 100.0f;
 
         int64_t offs = ((int64_t)cd.off << 16)+(((int64_t)cd.tco * dt) >> 7);
         int64_t senst = ((int64_t)cd.sens << 15)+(((int64_t)cd.tcs * dt) >> 8);
 
         int64_t ttemp = pressure * senst;
         int32_t pres = ((ttemp >> 21) - offs) >> 15;
-        lastPressure = pres / 100.0f;
+        mLastPressure = pres / 100.0f;
         return true;
     }
 
 private:
-    float lastPressure, lastTemperature, localPressure;
+    float localPressure;
 
     typedef struct {
         uint16_t sens;

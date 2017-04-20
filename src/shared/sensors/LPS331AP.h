@@ -28,16 +28,19 @@
 #include <BusTemplate.h>
 
 template <typename Bus>
-class LPS331AP : public PressureSensor, public TemperatureSensor {
-
+class LPS331AP : public PressureSensor, public TemperatureSensor
+{
 public:
 
-    LPS331AP(uint8_t samplingSpeed) : 
-        last_pressure(0.0f), last_temperature(0.0f) { 
+    LPS331AP(uint8_t samplingSpeed)
+    { 
+        mLastPressure = 0.0f;
+        mLastTemp = 0.0f;
         hi_speed = (samplingSpeed == SS_25HZ);
     }
 
-    bool init() {
+    bool init()
+    {
         uint8_t whoami = Bus::read(REG_WHO_AM_I);
 
         if(whoami != who_am_i_value) {
@@ -52,11 +55,16 @@ public:
         return true;
     }
 
-    bool selfTest() {
+    bool selfTest() 
+    {
         return false; 
     }
 
-    bool updateParams() {
+    float* tempDataPtr() override { return &mLastTemp; }
+    float* pressureDataPtr() override { return &mLastPressure; }
+
+    bool updateParams()
+    {
         #pragma pack(1)
         struct {
             int32_t press;
@@ -70,18 +78,10 @@ public:
 
         data.press >>= 8; // Remove status and realign bytes
 
-        last_pressure = normalizePressure(data.press);
-        last_temperature = normalizeTemp(data.temp);
+        mLastPressure = normalizePressure(data.press);
+        mLastTemp = normalizeTemp(data.temp);
 
         return true;
-    }
-
-    float getPressure() {
-        return last_pressure; 
-    }
-    
-    float getTemperature() {
-        return last_temperature;
     }
 
     enum samplingSpeed {
@@ -92,7 +92,6 @@ public:
 private:
     constexpr static uint8_t who_am_i_value = 0xbb;
     uint8_t hi_speed;
-    float last_pressure, last_temperature;
 
     inline constexpr float normalizePressure(int32_t val) {
         // Page 28 @ Datasheet
