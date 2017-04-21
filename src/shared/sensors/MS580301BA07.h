@@ -45,9 +45,6 @@ public:
     {
     }
 
-    float* tempDataPtr() override { return &mLastTemp; }
-    float* pressureDataPtr() override { return &mLastPressure; }
-
     bool init() {
         int timeout = 30;
         do {

@@ -66,11 +66,6 @@ public:
         return true;
     }
 
-    float getTemperature() {
-        return lastTemperature; 
-    }
-
-
     // ----------- BELOW THERMOCOUPLE TUNING FUNCTIONS. ------------
     
     /**

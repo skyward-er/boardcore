@@ -107,8 +107,6 @@ public:
         return true;
     }
 
-    Vec3* gyroDataPtr() override { return &mLastGyro; }
-
     bool updateParams() {
         mLastGyro.setX(getXaxis());
         mLastGyro.setY(getYaxis());

@@ -81,9 +81,6 @@ public:
         return true;
     }
     
-    float* tempDataPtr() override { return &mLastTemp; }
-    float* humidityDataPtr() override { return &mLastHumidity; }
-    
     /**
      * \return temperature measurement made along the previous 
      *         humidity measurement.

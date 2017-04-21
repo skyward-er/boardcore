@@ -28,39 +28,59 @@
 #include <Leds.h>
 #include <DMA/SensorSampling.h>
 #include <events/Scheduler.h>
+#include <boards/Board.h>
 
 using namespace miosix;
 
-typedef Gpio<GPIOA_BASE, 5> GpioSck;
-typedef Gpio<GPIOA_BASE, 6> GpioMiso;
-typedef Gpio<GPIOA_BASE, 7> GpioMosi;
-typedef BusSPI < 1, GpioMosi, GpioMiso, GpioSck> busSPI1;
-
-typedef Gpio<GPIOD_BASE, 13> CS_MPU9250;
-typedef Gpio<GPIOG_BASE, 9> CS_INEMO_G;
-typedef Gpio<GPIOG_BASE, 11> CS_INEMO_A;
-
-typedef ProtocolSPI<busSPI1, CS_MPU9250> spiMPU9250;
-typedef ProtocolSPI<busSPI1, CS_INEMO_A> spiINEMOA;
-typedef ProtocolSPI<busSPI1, CS_INEMO_G> spiINEMOG;
-
-typedef MPU9250<spiMPU9250> mpu_t;
-typedef iNEMOLSM9DS0<spiINEMOG,spiINEMOA> inemo_t;
 
 int main()
 {
-    SensorSampling ss;
+    sBoard->init();
 
-    mpu_t test( mpu_t::ACC_FS_2G, mpu_t::GYRO_FS_250);
-    test.init();
+    const std::vector<SingleSensor>& data = sBoard->debugGetSensors();
+    int ctr=0;
+    while(1)
+    {
+        printf("---------%05d----------\n", ctr++);
+        for(const auto& s : data)
+        {
+            printf("Sensor %03d:", s.sensor);
+            if(s.value == nullptr)
+            {
+                printf("NULLPTR\n");
+                continue;
+            }
 
-    inemo_t inemo(inemo_t::ACC_FS_2G, inemo_t::GYRO_FS_245, inemo_t::COMPASS_FS_2);
-    inemo.init();
-
-    ss.AddSensor(dynamic_cast<Sensor*>(&test));
-    ss.AddSensor(dynamic_cast<Sensor*>(&inemo));
-
-    sEventScheduler->add(std::bind(&SensorSampling::Update, ss), 10, "Sample 10ms");
+            switch(s.data)
+            {
+                case DATA_VEC3:
+                {
+                    const Vec3* d = (const Vec3*) s.value;
+                    printf("(%f,%f,%f)\n", d->getX(), d->getY(), d->getZ());
+                    break;
+                }
+                case DATA_FLOAT:
+                {
+                    const float* d = (const float*) s.value;
+                    printf("%f\n", *d);
+                    break;
+                }
+                case DATA_INT:
+                {
+                    const int* d = (const int*) s.value; 
+                    printf("[%08x]\n", *d);
+                    break;
+                }
+                default:
+                {
+                    printf("Unhandled %d\n", s.data);
+                    break;
+                }
+            }
+        }
+        printf("-----------------------\n");
+        Thread::sleep(10);
+    }
     /*
     std::vector<SPIRequest> requests;
     requests.push_back(
