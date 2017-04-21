@@ -31,7 +31,8 @@
 // TODO: Self-Test
 template <typename Bus>
 class MPU9250 : public GyroSensor, public AccelSensor, 
-                public CompassSensor, public TemperatureSensor 
+                public CompassSensor, public TemperatureSensor,
+                public DebugIntSensor
 {
 
 #pragma pack(1)
@@ -61,20 +62,18 @@ public:
         gyroFS = gyroFullScale & 0x03;
         magnetoFSMState = 0;
         mLastTemp = 0.0f;
+        mDebugInt = 0;
     }
 
     ~MPU9250()
     {
     }
 
-    Vec3* accelDataPtr() override { return &mLastAccel; }
-    Vec3* gyroDataPtr()  override { return &mLastGyro; }
-    Vec3* compassDataPtr() override { return &mLastCompass; }
-    float* tempDataPtr() override { return &mLastTemp; }
-
     std::vector<SPIRequest> buildDMARequest() override 
     {
-        printf("MPU9250::buildDMARequest()\n");
+        int p = (mDebugInt & 0xff) + 1;
+        mDebugInt = (mDebugInt & 0xffffff00) | (p & 0xff);
+
         std::vector<uint8_t> v = 
             { (REG_ACCEL_XOUT_H | 0x80), 0,0,0,0,0,0,0 };
 
@@ -83,7 +82,9 @@ public:
 
     void onDMAUpdate(const SPIRequest& req) override 
     {
-        printf("MPU9250::onDMAUpdate()\n");
+        int p = ((mDebugInt >> 8) & 0xff) + 1;
+        mDebugInt = (mDebugInt & 0xffff00ff) | ((p & 0xff) << 8);
+
         const auto& r = req.readResponseFromPeripheral();
         const mpudata_t* raw_data = (const mpudata_t*) r.data();
 
@@ -149,6 +150,7 @@ public:
 
     bool updateParams() 
     {
+
         akdata_t ak;
 
         /* Magnetometer FSM ( Board <-SPI-> MPU9250 <-I2C-> Magneto )
@@ -164,16 +166,26 @@ public:
         switch(magnetoFSMState)
         {
             case 1: // ReadI2C
+            {
+                int p = ((mDebugInt >> 16) & 0xff) + 1;
+                mDebugInt = (mDebugInt & 0xff00ffff) | ((p & 0xff) << 16);
+
                 akReadReg_1(AK8963_STATUS1, sizeof(ak.raw));
                 magnetoFSMState = 2;
                 break;
+            }
             case 2: // CopyToMem
+            {
+                int p = ((mDebugInt >> 24) & 0x7f) + 1;
+                mDebugInt = (mDebugInt & 0x00ffffff) | ((p & 0x7f) << 24);
+
                 akReadReg_2(ak.raw, sizeof(ak.raw));
                 mLastCompass.setX(normalizeMagneto(ak.mag[0]));
                 mLastCompass.setY(normalizeMagneto(ak.mag[1]));
                 mLastCompass.setZ(normalizeMagneto(ak.mag[2]));
                 magnetoFSMState = 1;
                 break;
+            }
             default:
                 return false;
         }

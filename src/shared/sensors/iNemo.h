@@ -183,11 +183,6 @@ public:
         return true;
     }
 
-    Vec3* accelDataPtr() override { return &mLastAccel; }
-    Vec3* gyroDataPtr()  override { return &mLastGyro; }
-    Vec3* compassDataPtr() override { return &mLastCompass; }
-    float* tempDataPtr() override { return &mLastTemp; }
-
     enum accelFullScale {
         ACC_FS_16G     = 4,
         ACC_FS_8G      = 3,

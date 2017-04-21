@@ -94,51 +94,58 @@ class Sensor {
 
 class GyroSensor : public virtual Sensor {
     public:
-        virtual Vec3* gyroDataPtr() = 0;
+        const Vec3* gyroDataPtr() const { return &mLastGyro; }
     protected:
         Vec3 mLastGyro; 
 };
 
 class AccelSensor : public virtual Sensor {
     public:
-        virtual Vec3* accelDataPtr() = 0;
+        const Vec3* accelDataPtr() const { return &mLastAccel; }
     protected:
         Vec3 mLastAccel; 
 };
 
 class CompassSensor : public virtual Sensor {
     public:
-        virtual Vec3* compassDataPtr() = 0;
+        const Vec3* compassDataPtr() const { return &mLastCompass; }
     protected:
         Vec3 mLastCompass;
 };
 
 class TemperatureSensor : public virtual Sensor {
     public:
-        virtual float* tempDataPtr() = 0;
+        const float* tempDataPtr() const { return &mLastTemp; }
     protected:
         float mLastTemp;
 };
 
 class HumiditySensor : public virtual Sensor {
     public:
-        virtual float* humidityDataPtr() = 0;
+        const float* humidityDataPtr() const { return &mLastHumidity; }
     protected:
         float mLastHumidity;
 };
 
 class PressureSensor : public virtual Sensor {
     public:
-        virtual float* pressureDataPtr() = 0;
+        const float* pressureDataPtr() const { return &mLastPressure; }
     protected:
         float mLastPressure;
 };
 
 class AltitudeSensor : public virtual Sensor {
     public:
-        virtual float* altitudeDataPtr() = 0;
+        const float* altitudeDataPtr() const { return &mLastAltitude; }
     protected:
         float mLastAltitude;
+};
+
+class DebugIntSensor : public virtual Sensor {
+    public:
+        const int* debugIntPtr() const { return &mDebugInt; }
+    protected:
+        int mDebugInt;
 };
 
 #endif /* ifndef SENSORS_H */

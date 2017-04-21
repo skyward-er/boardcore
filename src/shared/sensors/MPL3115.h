@@ -126,10 +126,6 @@ public:
         return true;
     }    
     
-    float* pressureDataPtr() override { return &mLastPressure; }
-    float* altitudeDataPtr() override { return &mLastAltitude; }
-    float* tempDataPtr() override { return &mLastTemp; }
-
     /**
      * Set sensor mode: altimeter or barometer
      * true is returned in case of success, false if 

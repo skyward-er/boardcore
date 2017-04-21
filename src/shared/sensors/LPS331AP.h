@@ -60,9 +60,6 @@ public:
         return false; 
     }
 
-    float* tempDataPtr() override { return &mLastTemp; }
-    float* pressureDataPtr() override { return &mLastPressure; }
-
     bool updateParams()
     {
         #pragma pack(1)

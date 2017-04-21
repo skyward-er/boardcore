@@ -5,10 +5,11 @@
 #include <DMA/DMA.h>
 
 class Sensor;
-class SensorSampling {
+class DMASensorSampler
+{
 public:
-    SensorSampling() {}
-    ~SensorSampling() {}
+    DMASensorSampler() {}
+    ~DMASensorSampler() {}
 
     void AddSensor(Sensor* sensor)
     {
@@ -29,6 +30,26 @@ public:
 private:
     std::vector<Sensor*> mSensors;
     std::vector<SPIRequest> mRequests;
+};
+
+class SimpleSensorSampler
+{
+public:
+    SimpleSensorSampler() {}
+    ~SimpleSensorSampler() {}
+
+    void AddSensor(Sensor* sensor)
+    {
+        mSensors.push_back(sensor);
+    }
+
+    void Update()
+    {
+        for(Sensor* s : mSensors)
+            s->updateParams();
+    }
+private:
+    std::vector<Sensor*> mSensors;
 };
 
 #endif /* ifndef SENSOR_SAMPLING_H */
