@@ -10,7 +10,7 @@ PacketBuffer::PacketBuffer(size_t storageSize) : storageSize(storageSize),
         buffer = new uint8_t[storageSize];
     }catch(std::bad_alloc& exc)
     {
-        std::cout << "bad alloc! " << exc.what() << endl;
+        printf("bad alloc!\n");
         valid = false;
     }
     #else

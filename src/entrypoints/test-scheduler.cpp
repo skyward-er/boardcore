@@ -45,9 +45,10 @@ int main() {
     for(;;){
         Thread::sleep(1000);
         auto result = sEventScheduler->getTaskStats();
-        cout<<"--- begin ---"<<endl;
-        cout<<result.size()<<" tasks"<<endl;
-        for( auto it : result) cout<<it<<endl;
-        cout<<"--- end ---"<<endl;
+        printf("--- begin ---\n");
+        printf("%u tasks\n", result.size());
+        for( auto& it : result) 
+            printf("Name: %s\n", it.name.c_str());
+        printf("--- end ---\n");
     }
 }
