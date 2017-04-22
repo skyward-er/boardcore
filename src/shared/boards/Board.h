@@ -29,11 +29,16 @@
 
 enum AnakinSensor
 {
-    ACCEL_MPU_9250   = 0,
-    GYRO_MPU_9250    = 1,
-    MAGNETO_MPU_9250 = 2,
-    TEMP_MPU_9250    = 3,
-    DEBUG_MPU_9250   = 4,
+    MPU_9250_ACCEL   = 0,
+    MPU_9250_GYRO    = 1,
+    MPU_9250_COMPASS = 2,
+    MPU_9250_TEMP    = 3,
+    MPU_9250_DEBUG   = 4,
+
+    INEMO_ACCEL      = 5,
+    INEMO_GYRO       = 6,
+    INEMO_COMPASS    = 7,
+    INEMO_TEMP       = 8,
 };
 
 enum DataType
@@ -97,18 +102,28 @@ public:
         typedef MPU9250<spiMPU9250> mpu_t;
         typedef iNEMOLSM9DS0<spiINEMOG,spiINEMOA> inemo_t;
 
-        mpu_t* mpu9250 = new mpu_t(mpu_t::ACC_FS_16G, mpu_t::GYRO_FS_250);
+        mpu_t* mpu9250 = new mpu_t(mpu_t::ACC_FS_2G, mpu_t::GYRO_FS_250);
+        inemo_t* iNemo = new inemo_t(inemo_t::ACC_FS_16G, inemo_t::GYRO_FS_245,
+                                     inemo_t::COMPASS_FS_2);
 
         mpu9250->init();
+        iNemo->init();
 
-        AddSensor(ACCEL_MPU_9250, DATA_VEC3, mpu9250->accelDataPtr());
-        AddSensor(GYRO_MPU_9250, DATA_VEC3, mpu9250->gyroDataPtr());
-        AddSensor(MAGNETO_MPU_9250, DATA_VEC3, mpu9250->compassDataPtr());
-        AddSensor(TEMP_MPU_9250, DATA_FLOAT, mpu9250->tempDataPtr());
-        AddSensor(DEBUG_MPU_9250, DATA_INT, mpu9250->debugIntPtr());
+        AddSensor(MPU_9250_ACCEL,   DATA_VEC3, mpu9250->accelDataPtr());
+        AddSensor(MPU_9250_GYRO,    DATA_VEC3, mpu9250->gyroDataPtr());
+        AddSensor(MPU_9250_COMPASS, DATA_VEC3, mpu9250->compassDataPtr());
+        AddSensor(MPU_9250_TEMP,    DATA_FLOAT, mpu9250->tempDataPtr());
+        AddSensor(MPU_9250_DEBUG,   DATA_INT, mpu9250->debugIntPtr());
+
+        AddSensor(INEMO_ACCEL,      DATA_VEC3, iNemo->accelDataPtr());
+        AddSensor(INEMO_GYRO,       DATA_VEC3, iNemo->gyroDataPtr());
+        AddSensor(INEMO_COMPASS,    DATA_VEC3, iNemo->compassDataPtr());
+        AddSensor(INEMO_TEMP,       DATA_FLOAT, iNemo->tempDataPtr());
 
         printf("Adding sensors to 100Hz DMA sampler\n");
         m100HzDMA.AddSensor(mpu9250);
+        m100HzDMA.AddSensor(iNemo);
+
         printf("Adding sensors to 10Hz Simple sampler\n");
         m10HzSimple.AddSensor(mpu9250);
 

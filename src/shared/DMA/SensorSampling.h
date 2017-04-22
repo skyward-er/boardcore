@@ -13,10 +13,12 @@ public:
 
     void AddSensor(Sensor* sensor)
     {
-        mSensors.push_back(sensor);
         std::vector<SPIRequest> requests = sensor->buildDMARequest();
         for(size_t i=0; i<requests.size();i++)
-            mRequests.push_back(std::move(requests[i]));
+        {
+            mRequests.push_back(requests[i]);
+            mSensors.push_back(sensor);
+        }
     }
 
     void Update()

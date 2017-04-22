@@ -51,7 +51,7 @@ typedef union {
         int16_t temp;
         int16_t gyro[3];
     };
-    int16_t buf[7];
+    int16_t buf[8];
 } mpudata_t;
 #pragma pack()
 
@@ -75,7 +75,12 @@ public:
         mDebugInt = (mDebugInt & 0xffffff00) | (p & 0xff);
 
         std::vector<uint8_t> v = 
-            { (REG_ACCEL_XOUT_H | 0x80), 0,0,0,0,0,0,0 };
+        { 
+            (REG_ACCEL_XOUT_H | 0x80), 0,
+            0,0,0,0,0,0, // accel
+            0,0,         // temp
+            0,0,0,0,0,0, // gyro
+        };
 
         return { SPIRequest(0, Bus::getCSPin(), v) };
     }
@@ -86,17 +91,25 @@ public:
         mDebugInt = (mDebugInt & 0xffff00ff) | ((p & 0xff) << 8);
 
         const auto& r = req.readResponseFromPeripheral();
-        const mpudata_t* raw_data = (const mpudata_t*) r.data();
+        mpudata_t raw_data;
 
-        mLastAccel.setX(normalizeAccel(raw_data->accel[0]));
-        mLastAccel.setY(normalizeAccel(raw_data->accel[1]));
-        mLastAccel.setZ(normalizeAccel(raw_data->accel[2]));
+        memcpy(&raw_data.buf, &(r[2]), sizeof(raw_data));
+        for(int i=0;i<3;i++)
+        {
+            raw_data.accel[i] = fromBigEndian16(raw_data.accel[i]);
+            raw_data.gyro[i] = fromBigEndian16(raw_data.gyro[i]);
+        }
+        raw_data.temp = fromBigEndian16(raw_data.temp);
 
-        mLastGyro.setX(normalizeGyro(raw_data->gyro[0]));
-        mLastGyro.setY(normalizeGyro(raw_data->gyro[1]));
-        mLastGyro.setZ(normalizeGyro(raw_data->gyro[2]));
+        mLastAccel.setX(normalizeAccel(raw_data.accel[0]));
+        mLastAccel.setY(normalizeAccel(raw_data.accel[1]));
+        mLastAccel.setZ(normalizeAccel(raw_data.accel[2]));
 
-        mLastTemp = normalizeTemp(raw_data->temp);
+        mLastGyro.setX(normalizeGyro(raw_data.gyro[0]));
+        mLastGyro.setY(normalizeGyro(raw_data.gyro[1]));
+        mLastGyro.setZ(normalizeGyro(raw_data.gyro[2]));
+
+        mLastTemp = normalizeTemp(raw_data.temp);
     }
 
     bool init() 
