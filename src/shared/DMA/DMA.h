@@ -40,6 +40,16 @@ private:
     SPIDriver(const SPIDriver&);
     SPIDriver& operator= (const SPIDriver&);
     
+    inline void enableDMA()
+    {
+        SPI1->CR2 = SPI_CR2_TXDMAEN
+                  | SPI_CR2_RXDMAEN;
+    }
+
+    inline void disableDMA() 
+    {
+        SPI1->CR2 = 0; 
+    }
     pthread_mutex_t mutex;
 };
 

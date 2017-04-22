@@ -97,6 +97,7 @@ bool SPIDriver::transaction(vector<SPIRequest>& requests)
     
     pthread_mutex_lock(&mutex);
     error=false;
+    enableDMA();
     
     waiting=Thread::getCurrentThread();  
     requestIndex=0;
@@ -118,6 +119,7 @@ bool SPIDriver::transaction(vector<SPIRequest>& requests)
     }
    
     bool result=!error;
+    disableDMA();
     pthread_mutex_unlock(&mutex);
     return result;
 }
@@ -137,8 +139,6 @@ SPIDriver::SPIDriver()
         RCC->AHB1ENR |= RCC_AHB1ENR_DMA2EN;
         RCC->APB2ENR |= RCC_APB2ENR_SPI1EN;
 
-        SPI1->CR2 = SPI_CR2_TXDMAEN
-                  | SPI_CR2_RXDMAEN;
         SPI1->CR1 = SPI_CR1_SSM  //Software cs
                   | SPI_CR1_SSI  //Hardware cs internally tied high
                   | SPI_CR1_MSTR //Master mode

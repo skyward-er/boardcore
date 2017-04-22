@@ -39,10 +39,11 @@ class MPU9250 : public GyroSensor, public AccelSensor,
 typedef union {
     struct { 
         uint8_t status1;
+        uint8_t padding;
         int16_t mag[3];
         uint8_t status2;
     };
-    uint8_t raw[8];
+    uint8_t raw[9];
 } akdata_t;
 
 typedef union {
@@ -193,6 +194,7 @@ public:
                 mDebugInt = (mDebugInt & 0x00ffffff) | ((p & 0x7f) << 24);
 
                 akReadReg_2(ak.raw, sizeof(ak.raw));
+
                 mLastCompass.setX(normalizeMagneto(ak.mag[0]));
                 mLastCompass.setY(normalizeMagneto(ak.mag[1]));
                 mLastCompass.setZ(normalizeMagneto(ak.mag[2]));
