@@ -63,15 +63,19 @@ void __attribute__((used)) SPI1rxDmaHandlerImpl()
     
     (*requestVector)[requestIndex].IRQendTransaction();
 
-    if( ++requestIndex >= requestVector->size() ) {
+    if( ++requestIndex >= requestVector->size() )
+    {
         waiting->IRQwakeup();
         if(waiting->IRQgetPriority() > 
-                            Thread::IRQgetCurrentThread()->IRQgetPriority()) {
+                            Thread::IRQgetCurrentThread()->IRQgetPriority()) 
+        {
             Scheduler::IRQfindNextThread();
         }
 
         waiting=0;
-    } else {
+    } 
+    else
+    {
         (*requestVector)[requestIndex].IRQbeginTransaction();
     }
 }

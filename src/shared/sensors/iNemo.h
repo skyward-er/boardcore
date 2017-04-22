@@ -100,12 +100,11 @@ public:
 
     std::vector<SPIRequest> buildDMARequest() override 
     {
-        printf("iNemo::buildDMARequest()\n");
         std::vector<SPIRequest> v = {
-            SPIRequest(0, BusG::getCSPin(),  { OUT_X_L_G|0xc0,0,0,0,0,0,0 }),
-            SPIRequest(1, BusXM::getCSPin(), { OUT_X_L_A|0xc0,0,0,0,0,0,0 }),
-            SPIRequest(2, BusXM::getCSPin(), { OUT_X_L_M|0xc0,0,0,0,0,0,0 }),
-            SPIRequest(3, BusXM::getCSPin(), { OUT_TEMP_L_XM|0xc0,0,0}),
+            SPIRequest(0, BusG::getCSPin(),  { OUT_X_L_G|0xc0,0,0,0,0,0,0,0}),
+            SPIRequest(1, BusXM::getCSPin(), { OUT_X_L_A|0xc0,0,0,0,0,0,0,0}),
+            SPIRequest(2, BusXM::getCSPin(), { OUT_X_L_M|0xc0,0,0,0,0,0,0,0}),
+            SPIRequest(3, BusXM::getCSPin(), { OUT_TEMP_L_XM|0xc0,0,0,0}),
         };
 
         return v;
@@ -113,10 +112,10 @@ public:
 
     void onDMAUpdate(const SPIRequest& req) override 
     {
-        printf("iNemo::onDMAUpdate()\n");
         const auto& r = req.readResponseFromPeripheral();
-        int16_t* data = (int16_t*)&r[1]; // FIXME: segmentation fault? 
-                                         // copy in a new vector
+
+        uint16_t data[3];
+        memcpy(data, &r[2], r.size()-1);
 
         switch(req.id())
         {
@@ -136,51 +135,14 @@ public:
                 mLastCompass.setZ(normalizeCompass(data[2]));
                 break;
             case 3:
-                last_temp = static_cast<float>(data[0])/8.0f+21.0f;
+                last_temp = static_cast<float>(*data)/8.0f+21.0f;
                 break;
         }
     }
 
     bool onSimpleUpdate()
     {
-        /*
-        int16_t data[3];
-
-        BusG::read(OUT_X_L_G|0x40,reinterpret_cast<uint8_t *>(data),6);
-
-        last_gyro = Vec3(normalizeGyro(data[0]),
-                normalizeGyro(data[1]),
-                normalizeGyro(data[2]));
-
-        BusXM::read(OUT_X_L_A|0x40,reinterpret_cast<uint8_t *>(data),6);
-
-        last_acc = Vec3(
-                normalizeAccel(data[0]),
-                normalizeAccel(data[1]),
-                normalizeAccel(data[2])
-                );
-
-        BusXM::read(OUT_X_L_M|0x40,reinterpret_cast<uint8_t *>(data),6);
-
-        last_compass = Vec3(
-                normalizeCompass(data[0]),
-                normalizeCompass(data[1]),
-                normalizeCompass(data[2])
-                );
-
-        uint8_t temp[2];
-
-        temp[1] = BusXM::read(OUT_TEMP_H_XM);
-        Thread::sleep(1);
-        temp[0] = BusXM::read(OUT_TEMP_L_XM);
-        Thread::sleep(1);
-
-        uint16_t temp16 = ((uint16_t) BusXM::read(OUT_TEMP_H_XM) <<8) 
-                        |  (uint16_t) temp[0];
-
-        last_temp = static_cast<float>(temp16)/8.0f+21.0f;
-        */
-        return true;
+        return false;
     }
 
     enum accelFullScale {
