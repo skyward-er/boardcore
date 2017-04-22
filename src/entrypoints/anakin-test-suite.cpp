@@ -145,11 +145,11 @@ int main() {
 
 #ifdef ACCEL_ENDLESS_TEST
     uint16_t cnt=0;
-    Vec3* a = max21.accelDataPtr();
-    Vec3* g = max21.gyroDataPtr();
-    float* temp = max21.tempDataPtr();
+    const Vec3* a = max21.accelDataPtr();
+    const Vec3* g = max21.gyroDataPtr();
+    const float* temp = max21.tempDataPtr();
     while(true) {
-        max21.updateParams(); 
+        max21.onSimpleUpdate(); 
 
         printf("%05u[ACC %+5.2f,%+5.2f,%+5.2f] "
                "[GYR %+5.2f,%+5.2f,%+5.2f] "

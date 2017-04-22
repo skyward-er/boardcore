@@ -88,7 +88,7 @@ public:
         return false;
     }
 
-    bool updateParams() {
+    bool onSimpleUpdate() {
         #pragma pack(1)
         union {
             struct {

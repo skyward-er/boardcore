@@ -63,7 +63,7 @@ public:
         return false;
     }
     
-    bool updateParams() {
+    bool onSimpleUpdate() {
         /* To start a new one-shot conversion we have to set OST bit whith
          * SBYB bit cleared; these bit are, respectively, the second and 
          * first bits from right in control register 1.

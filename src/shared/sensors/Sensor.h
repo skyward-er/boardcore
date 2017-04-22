@@ -70,7 +70,7 @@ class Sensor {
          *
          * You should check getLastError() if this function returns false.
          */
-        virtual bool updateParams() = 0;
+        virtual bool onSimpleUpdate() = 0;
 
         /** Return last error code */
         uint8_t getLastError() const { return last_error; }

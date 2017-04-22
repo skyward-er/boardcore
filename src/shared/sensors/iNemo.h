@@ -141,7 +141,7 @@ public:
         }
     }
 
-    bool updateParams()
+    bool onSimpleUpdate()
     {
         /*
         int16_t data[3];

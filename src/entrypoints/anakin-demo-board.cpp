@@ -92,7 +92,7 @@ public:
 
     void update() {
         for(const sensor_t& s : sensors)
-            (s.sensor)->updateParams();
+            (s.sensor)->onSimpleUpdate();
     }
 
 // Read a float value 

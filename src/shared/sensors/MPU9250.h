@@ -148,7 +148,7 @@ public:
         return true;
     }
 
-    bool updateParams() 
+    bool onSimpleUpdate() 
     {
 
         akdata_t ak;
