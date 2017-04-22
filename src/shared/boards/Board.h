@@ -121,7 +121,7 @@ public:
         AddSensor(INEMO_TEMP,       DATA_FLOAT, iNemo->tempDataPtr());
 
         printf("Adding sensors to 100Hz DMA sampler\n");
-        m100HzDMA.AddSensor(mpu9250);
+      m100HzDMA.AddSensor(mpu9250);
         m100HzDMA.AddSensor(iNemo);
 
         printf("Adding sensors to 10Hz Simple sampler\n");
