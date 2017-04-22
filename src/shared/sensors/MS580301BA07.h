@@ -82,7 +82,7 @@ public:
             (1.0f - pow(mLastPressure/localPressure,0.19019f));
     }
 
-    bool updateParams() {
+    bool onSimpleUpdate() {
         uint8_t rcvbuf[3];
         uint32_t pressure = 0, temperature = 0, timeout;
 

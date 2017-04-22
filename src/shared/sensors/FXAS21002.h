@@ -107,7 +107,7 @@ public:
         return true;
     }
 
-    bool updateParams() {
+    bool onSimpleUpdate() {
         mLastGyro.setX(getXaxis());
         mLastGyro.setY(getYaxis());
         mLastGyro.setZ(getZaxis()); 

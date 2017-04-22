@@ -59,7 +59,7 @@ public:
         return (status == 0);
     }
 
-    bool updateParams() {
+    bool onSimpleUpdate() {
         requestConversion();
         lastTemperature = getColdJunctionTemp() + getThermocoupleTemp();
 

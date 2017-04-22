@@ -66,7 +66,7 @@ public:
         return true;           
     }
     
-    bool updateParams()
+    bool onSimpleUpdate()
     {
         
         uint8_t buf[2];                        

@@ -44,7 +44,7 @@ int main()
     
     while(1)
     {
-        baro.updateParams();
+        baro.onSimpleUpdate();
         printf("press %f, temp %f, alt %f\n",
                 *(baro.pressureDataPtr()),
                 *(baro.tempDataPtr()), 

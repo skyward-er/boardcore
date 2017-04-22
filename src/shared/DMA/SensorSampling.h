@@ -46,7 +46,7 @@ public:
     void Update()
     {
         for(Sensor* s : mSensors)
-            s->updateParams();
+            s->onSimpleUpdate();
     }
 private:
     std::vector<Sensor*> mSensors;
