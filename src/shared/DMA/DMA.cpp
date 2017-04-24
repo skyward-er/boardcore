@@ -139,6 +139,7 @@ SPIDriver::SPIDriver()
         RCC->AHB1ENR |= RCC_AHB1ENR_DMA2EN;
         RCC->APB2ENR |= RCC_APB2ENR_SPI1EN;
 
+        disableDMA();
         SPI1->CR1 = SPI_CR1_SSM  //Software cs
                   | SPI_CR1_SSI  //Hardware cs internally tied high
                   | SPI_CR1_MSTR //Master mode
