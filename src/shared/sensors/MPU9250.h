@@ -31,8 +31,7 @@
 // TODO: Self-Test
 template <typename Bus>
 class MPU9250 : public GyroSensor, public AccelSensor, 
-                public CompassSensor, public TemperatureSensor,
-                public DebugIntSensor
+                public CompassSensor, public TemperatureSensor
 {
 
 #pragma pack(1)
@@ -63,7 +62,6 @@ public:
         gyroFS = gyroFullScale & 0x03;
         magnetoFSMState = 0;
         mLastTemp = 0.0f;
-        mDebugInt = 0;
     }
 
     ~MPU9250()
@@ -72,9 +70,6 @@ public:
 
     std::vector<SPIRequest> buildDMARequest() override 
     {
-        int p = (mDebugInt & 0xff) + 1;
-        mDebugInt = (mDebugInt & 0xffffff00) | (p & 0xff);
-
         std::vector<uint8_t> v = 
         { 
             (REG_ACCEL_XOUT_H | 0x80), 0,
@@ -88,9 +83,6 @@ public:
 
     void onDMAUpdate(const SPIRequest& req) override 
     {
-        int p = ((mDebugInt >> 8) & 0xff) + 1;
-        mDebugInt = (mDebugInt & 0xffff00ff) | ((p & 0xff) << 8);
-
         const auto& r = req.readResponseFromPeripheral();
         mpudata_t raw_data;
 
@@ -113,7 +105,7 @@ public:
         mLastTemp = normalizeTemp(raw_data.temp);
     }
 
-    bool init() 
+    bool init() override
     {
         uint8_t whoami = Bus::read(REG_WHO_AM_I);
 
@@ -162,7 +154,7 @@ public:
         return true;
     }
 
-    bool onSimpleUpdate() 
+    bool onSimpleUpdate() override
     {
 
         akdata_t ak;
@@ -180,19 +172,10 @@ public:
         switch(magnetoFSMState)
         {
             case 1: // ReadI2C
-            {
-                int p = ((mDebugInt >> 16) & 0xff) + 1;
-                mDebugInt = (mDebugInt & 0xff00ffff) | ((p & 0xff) << 16);
-
                 akReadReg_1(AK8963_STATUS1, sizeof(ak.raw));
                 magnetoFSMState = 2;
                 break;
-            }
             case 2: // CopyToMem
-            {
-                int p = ((mDebugInt >> 24) & 0x7f) + 1;
-                mDebugInt = (mDebugInt & 0x00ffffff) | ((p & 0x7f) << 24);
-
                 akReadReg_2(ak.raw, sizeof(ak.raw));
 
                 mLastCompass.setX(normalizeMagneto(ak.mag[0]));
@@ -200,7 +183,6 @@ public:
                 mLastCompass.setZ(normalizeMagneto(ak.mag[2]));
                 magnetoFSMState = 1;
                 break;
-            }
             default:
                 return false;
         }
@@ -208,7 +190,7 @@ public:
         return true;
     }
 
-    bool selfTest() 
+    bool selfTest() override
     {
         uint8_t st_gyro[3], st_accel[3];
         mpudata_t test, real;
@@ -257,8 +239,8 @@ public:
 
 private:
     constexpr static uint8_t who_am_i_value = 0x71;
-    static constexpr const float accelFSMAP[] = {2.0,4.0,8.0,16.0};
-    static constexpr const float gyroFSMAP[]  = {250,500,1000,2000};
+    constexpr static float accelFSMAP[] = {2.0,4.0,8.0,16.0};
+    constexpr static float gyroFSMAP[]  = {250,500,1000,2000};
 
     uint8_t gyroFS;
     uint8_t accelFS;
