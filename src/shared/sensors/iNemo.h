@@ -37,11 +37,12 @@ class iNEMOLSM9DS0 : public GyroSensor, public AccelSensor,
 
 public:
     iNEMOLSM9DS0(uint8_t accelFullScale, uint8_t gyroFullScale, 
-            uint8_t compassFullScale) : last_temp(0.0f)
+            uint8_t compassFullScale)
     { 
         accelFS = accelFullScale & 0x7;
         gyroFS  = gyroFullScale & 0x03;
         compassFS = compassFullScale & 0x03;
+        mLastTemp = 0.0f;
     }
 
     bool init()
@@ -114,8 +115,8 @@ public:
     {
         const auto& r = req.readResponseFromPeripheral();
 
-        uint16_t data[3];
-        memcpy(data, &r[2], r.size()-1);
+        int16_t data[3];
+        memcpy(data, &r[2], r.size()-2);
 
         switch(req.id())
         {
@@ -135,7 +136,7 @@ public:
                 mLastCompass.setZ(normalizeCompass(data[2]));
                 break;
             case 3:
-                last_temp = static_cast<float>(*data)/8.0f+21.0f;
+                mLastTemp = static_cast<float>(data[0])/8.0f+21.0f;
                 break;
         }
     }
@@ -166,9 +167,6 @@ public:
         COMPASS_FS_2    = 3,
     };
 private:
-    Vec3 last_acc, last_gyro, last_compass;
-    float last_temp;
-
     uint8_t accelFS, gyroFS, compassFS;
 
     constexpr static uint8_t whoami_g_value = 0xD4;
