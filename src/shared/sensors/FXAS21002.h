@@ -221,27 +221,30 @@ public:
     }
     */
                     
-    enum dataRates {
-        DR_800HZ = 0,
-        DR_400HZ = 1,
-        DR_200HZ = 2,
-        DR_100HZ = 3,
-        DR_50HZ = 4,
-        DR_25HZ = 5,
+    enum dataRates
+    {
+        DR_800HZ  = 0,
+        DR_400HZ  = 1,
+        DR_200HZ  = 2,
+        DR_100HZ  = 3,
+        DR_50HZ   = 4,
+        DR_25HZ   = 5,
         DR_12_5HZ = 6            
     };
     
-    enum opModes {
+    enum opModes 
+    {
         STANDBY = 0x00,
-        READY = 0x01,
-        ACTIVE = 0x02
+        READY   = 0x01,
+        ACTIVE  = 0x02
     };
     
-    enum gyroFullScale {
+    enum gyroFullScale 
+    {
         DPS2000 = 0x00,
         DPS1000 = 0x01,
-        DPS500 = 0x02,
-        DPS250 = 0x03
+        DPS500  = 0x02,
+        DPS250  = 0x03
     };
 
 private:
@@ -249,7 +252,8 @@ private:
     constexpr static float gyroFSMAP[] = {2000, 1000, 500, 250};
     uint8_t mCurScale;
             
-    enum regMap { 
+    enum regMap
+    { 
         REG_STATUS = 0x00,
         REG_OUT_X_MSB = 0x01,
         REG_OUT_X_LSB = 0x02,
