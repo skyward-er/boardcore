@@ -99,13 +99,15 @@ public:
         return false;
     }
 
+
+
     std::vector<SPIRequest> buildDMARequest() override 
     {
         std::vector<SPIRequest> v = {
-            SPIRequest(0, BusG::getCSPin(),  { OUT_X_L_G|0xc0,0,0,0,0,0,0,0}),
-            SPIRequest(1, BusXM::getCSPin(), { OUT_X_L_A|0xc0,0,0,0,0,0,0,0}),
-            SPIRequest(2, BusXM::getCSPin(), { OUT_X_L_M|0xc0,0,0,0,0,0,0,0}),
-            SPIRequest(3, BusXM::getCSPin(), { OUT_TEMP_L_XM|0xc0,0,0,0}),
+            SPIRequest(DMA_GYRO, BusG::getCSPin(),  { OUT_X_L_G|0xc0,0,0,0,0,0,0,0}),
+            SPIRequest(DMA_ACC, BusXM::getCSPin(), { OUT_X_L_A|0xc0,0,0,0,0,0,0,0}),
+            SPIRequest(DMA_COMP, BusXM::getCSPin(), { OUT_X_L_M|0xc0,0,0,0,0,0,0,0}),
+            SPIRequest(DMA_TEMP, BusXM::getCSPin(), { OUT_TEMP_L_XM|0xc0,0,0,0}),
         };
 
         return v;
@@ -120,22 +122,22 @@ public:
 
         switch(req.id())
         {
-            case 0:
+            case DMA_GYRO:
                 mLastGyro.setX(normalizeGyro(data[0]));
                 mLastGyro.setY(normalizeGyro(data[1]));
                 mLastGyro.setZ(normalizeGyro(data[2]));
                 break;
-            case 1:
+            case DMA_ACC:
                 mLastAccel.setX(normalizeAccel(data[0]));
                 mLastAccel.setY(normalizeAccel(data[1]));
                 mLastAccel.setZ(normalizeAccel(data[2]));
                 break;
-            case 2:
+            case DMA_COMP:
                 mLastCompass.setX(normalizeCompass(data[0]));
                 mLastCompass.setY(normalizeCompass(data[1]));
                 mLastCompass.setZ(normalizeCompass(data[2]));
                 break;
-            case 3:
+            case DMA_TEMP:
                 mLastTemp = static_cast<float>(data[0])/8.0f+21.0f;
                 break;
         }
@@ -145,6 +147,13 @@ public:
     {
         return false;
     }
+     
+    enum{
+        DMA_GYRO = 0,
+        DMA_ACC  = 1,
+        DMA_COMP = 2,
+        DMA_TEMP = 3
+    };
 
     enum accelFullScale {
         ACC_FS_16G     = 4,
