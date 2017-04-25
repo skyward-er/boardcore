@@ -27,8 +27,8 @@
 
 #include <memory>
 #include "Common.h"
-#include "PDU.h"
-#include "HooksInterface.h"
+#include "../PDU.h"
+#include "../HooksInterface.h"
 #include "interfaces/endianness.h"
 
 class SlaveEngine

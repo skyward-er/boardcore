@@ -28,7 +28,7 @@
 #include <memory>
 #include <stdexcept>
 #include "Common.h"
-#include "PDU.h"
+#include "../PDU.h"
 #include "drivers/serial_stm32.h"
 
 #if defined SERIAL_2_DMA
