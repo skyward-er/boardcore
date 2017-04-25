@@ -1,4 +1,4 @@
-/* Modbus protocol PDU data structure
+/* Container for all the headers, user has only to include this file
  *
  * Copyright (c) 2017 Skyward Experimental Rocketry
  * Author: Silvano Seva
@@ -22,50 +22,12 @@
  * THE SOFTWARE.
  */
 
-#ifndef PDU_H
-#define PDU_H
+#ifndef MODBUS_H
+#define MODBUS_H
 
-#include "Common.h"
-#include <stddef.h>
+#include "PDU.h"
+#include "ExceptionCodes.h"
+#include "slave/SlaveInterface.h"
+#include "slave/SlaveEngine.h"
 
-class PDU
-{
-public:
-    
-    /**
-     * Create a new PDU structure
-     * @param fCode: PDU's function code
-     * @param data: pointer to data to be put into PDU's data field
-     * @param dataSize: size of PDU's data field
-     */
-    PDU(uint8_t fCode, const uint8_t const *data, uint8_t dataSize);
-    
-    /**
-     * Default constructor does nothing
-     */
-    PDU();        
-    ~PDU();        
-    
-    /**
-     * @return PDU's function code
-     */
-    uint8_t funcCode() const;
-    
-    /**
-     * @return std::pair: first field is data size, the second one is
-     * a uint8_t const* to internal data.
-     */
-    std::pair< uint8_t, uint8_t const* > data() const;
-    
-private:
-    
-    uint8_t fuCode;
-    uint8_t pSize;
-    uint8_t *pData;
-    
-    PDU(const PDU& other);    
-    PDU& operator=(const PDU& other);    
-    bool operator==(const PDU& other);
-};
-
-#endif // PDU_H
+#endif
