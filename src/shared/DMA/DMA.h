@@ -21,7 +21,7 @@
  */
 
 #ifndef SPI_DRIVER_H
-#define	SPI_DRIVER_H
+#define SPI_DRIVER_H
 
 #include <Common.h>
 

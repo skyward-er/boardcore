@@ -154,7 +154,7 @@ int main() {
         printf("%05u[ACC %+5.2f,%+5.2f,%+5.2f] "
                "[GYR %+5.2f,%+5.2f,%+5.2f] "
                "[TMP %+5.2fC] \r",
-                (++cnt), a->getX(), a->getY(), a->getZ(),
+                (uint16_t)(++cnt), a->getX(), a->getY(), a->getZ(),
                 g->getX(),g->getY(), g->getZ(), *temp);
         Thread::sleep(10);
     }
