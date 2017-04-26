@@ -133,7 +133,7 @@ private:
 
         // ----- FXAS21102 -----
         typedef FXAS21002<spiFXAS21002> fx_t; 
-        fx_t *fx = new fx_t();
+        fx_t *fx = new fx_t(fx_t::DPS500);
         if(fx->init())
             PP("FXAS21102", PUSH({fx, &idMat}, gyro));
         else 
