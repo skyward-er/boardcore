@@ -30,6 +30,7 @@
 #include <sensors/iNemo.h>
 #include <sensors/FXAS21002.h>
 #include <sensors/MPU9250.h>
+#include <sensors/LPS331AP.h>
 
 enum AnakinSensor
 {
@@ -43,6 +44,9 @@ enum AnakinSensor
     INEMO_COMPASS    = 6,
     INEMO_TEMP       = 7,
     FXAS_GYRO        = 8,
+
+    LPS331AP_PRESS   = 9,
+    LPS331AP_TEMP    = 10,
 };
 
 enum DataType
@@ -87,11 +91,13 @@ typedef Gpio<GPIOD_BASE, 13> CS_MPU9250;
 typedef Gpio<GPIOG_BASE, 9> CS_INEMO_G;
 typedef Gpio<GPIOG_BASE, 11> CS_INEMO_A;
 typedef Gpio<GPIOG_BASE, 10> CS_FXAS21002;
+typedef Gpio<GPIOE_BASE, 4> CS_LPS331AP;
 
 typedef ProtocolSPI<busSPI1, CS_MPU9250> spiMPU9250;
 typedef ProtocolSPI<busSPI1, CS_INEMO_A> spiINEMOA;
 typedef ProtocolSPI<busSPI1, CS_INEMO_G> spiINEMOG;
 typedef ProtocolSPI<busSPI1, CS_FXAS21002> spiFXAS21002;
+typedef ProtocolSPI<busSPI1, CS_LPS331AP> spiLPS331AP;
 
 #define INIT_AND_CHECK(x) do {                                      \
     if (!x->init()) { printf("=== ERR: CANNOT INIT " #x "\n"); }    \
@@ -113,15 +119,18 @@ public:
         typedef MPU9250<spiMPU9250> mpu_t;
         typedef iNEMOLSM9DS0<spiINEMOG,spiINEMOA> inemo_t;
         typedef FXAS21002<spiFXAS21002> fxas_t;
+        typedef LPS331AP<spiLPS331AP> lps331ap_t;
 
         mpu_t* mpu9250 = new mpu_t(mpu_t::ACC_FS_2G, mpu_t::GYRO_FS_250);
         inemo_t* iNemo = new inemo_t(inemo_t::ACC_FS_16G, inemo_t::GYRO_FS_245,
                                      inemo_t::COMPASS_FS_2);
         fxas_t* fxas   = new fxas_t(fxas_t::DPS500);
+        lps331ap_t* lps= new lps331ap_t(lps331ap_t::SS_25HZ);
 
         INIT_AND_CHECK(mpu9250);
         INIT_AND_CHECK(iNemo);
         INIT_AND_CHECK(fxas);
+        INIT_AND_CHECK(lps);
 
         AddSensor(MPU_9250_ACCEL,   DATA_VEC3, mpu9250->accelDataPtr());
         AddSensor(MPU_9250_GYRO,    DATA_VEC3, mpu9250->gyroDataPtr());
@@ -134,10 +143,16 @@ public:
         AddSensor(INEMO_TEMP,       DATA_FLOAT, iNemo->tempDataPtr());
         AddSensor(FXAS_GYRO,        DATA_VEC3, fxas->gyroDataPtr());
 
+        AddSensor(LPS331AP_PRESS,   DATA_FLOAT, lps->pressureDataPtr());
+        AddSensor(LPS331AP_TEMP,    DATA_FLOAT, lps->tempDataPtr());
+
         printf("Adding sensors to 100Hz DMA sampler\n");
         m100HzDMA.AddSensor(mpu9250);
         m100HzDMA.AddSensor(iNemo);
         m100HzDMA.AddSensor(fxas);
+
+        printf("Adding sensors to 25Hz DMA sampler\n");
+        m25HzDMA.AddSensor(lps);
 
         printf("Adding sensors to 10Hz Simple sampler\n");
         m10HzSimple.AddSensor(mpu9250);
@@ -145,7 +160,7 @@ public:
 
         printf("Adding samplers to scheduler\n");
         ADD_SAMPLER(DMA, m100HzDMA, 10); // 10ms
-        ADD_SAMPLER(DMA, m10HzDMA, 100); // 100ms
+        ADD_SAMPLER(DMA, m25HzDMA, 40);  // 25ms
         ADD_SAMPLER(Simple, m100HzSimple, 10); // 10ms
         ADD_SAMPLER(Simple, m10HzSimple, 100); // 100ms
     }
@@ -156,7 +171,7 @@ public:
     }
 
 private:
-    DMASensorSampler m100HzDMA, m10HzDMA;
+    DMASensorSampler m100HzDMA, m25HzDMA;
     SimpleSensorSampler m100HzSimple, m10HzSimple;
     bool mInited;
     AnakinBoard()
