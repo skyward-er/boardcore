@@ -116,7 +116,7 @@ public:
             uint32_t altitude = (static_cast<uint32_t>(data[0]) << 24) 
                               | (static_cast<uint32_t>(data[1]) << 16) 
                               | (static_cast<uint32_t>(data[2]) << 8);
-            mLastAltitude = static_cast<float>(altitude) / 65536;                    
+            mLastAltitude = static_cast<float>(altitude) / 65536;
         }
 
         uint16_t temperature = (static_cast<uint16_t>(data[3]) << 8) 

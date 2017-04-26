@@ -98,7 +98,8 @@ typedef ProtocolSPI<busSPI1, CS_FXAS21002> spiFXAS21002;
 } while(0)
 
 #define ADD_SAMPLER(type, name, rate) \
-    sEventScheduler->add(std::bind(& type ## SensorSampler::Update,name), rate, #rate "ms")
+    sEventScheduler->add(std::bind(& type ## SensorSampler::Update,name), \
+            rate, #name "-" #rate "ms")
 class AnakinBoard : public Singleton<AnakinBoard>, public Board
 {
     friend class Singleton<AnakinBoard>;

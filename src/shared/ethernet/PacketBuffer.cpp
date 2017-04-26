@@ -1,10 +1,32 @@
+/* Copyright (c) 2016-2017 Skyward Experimental Rocketry
+ * Author: Silvano Seva
+ * 
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ * 
+ * The above copyright notice and this permission notice shall be included in
+ * all copies or substantial portions of the Software.
+ * 
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.  IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+ * THE SOFTWARE.
+ */
 #include "PacketBuffer.h"
 
 using namespace std;
 using namespace miosix;
 
 PacketBuffer::PacketBuffer(size_t storageSize) : storageSize(storageSize), 
-                     usedSize(0), writeIndex(0), readIndex(0), valid(true)  {
+                     usedSize(0), writeIndex(0), readIndex(0), valid(true)
+{
     #ifndef __NO_EXCEPTIONS
     try {
         buffer = new uint8_t[storageSize];
@@ -21,18 +43,16 @@ PacketBuffer::PacketBuffer(size_t storageSize) : storageSize(storageSize),
     #endif
 }
 
-PacketBuffer::~PacketBuffer() {
-    
-    if(valid) {
+PacketBuffer::~PacketBuffer()
+{
+    if(valid)
         delete[] buffer;
-    }
 }
 
-bool PacketBuffer::push(packet_header_t& header, const uint8_t* payload) {
-    
-    if(!valid) {
+bool PacketBuffer::push(packet_header_t& header, const uint8_t* payload)
+{
+    if(!valid)
         return false;
-    }
     
     size_t packetSize = sizeof(packet_header_t) + header.payloadSize;
 
@@ -63,9 +83,8 @@ bool PacketBuffer::push(packet_header_t& header, const uint8_t* payload) {
     // we keep track of the amount of space used and we reject a new incoming
     // packet if usedSize + packetSize is greater that the ring buffer size.
     
-    if(usedSize + packetSize >= storageSize) {
+    if(usedSize + packetSize >= storageSize)
         return false;
-    }
     
     // to store the packet into the ring buffer first copy the header
     // and then copy the payload
@@ -90,26 +109,25 @@ bool PacketBuffer::push(packet_header_t& header, const uint8_t* payload) {
     return true;
 }
 
-packet_header_t PacketBuffer::getHeader() {
-
+packet_header_t PacketBuffer::getHeader()
+{
     packet_header_t header;
     uint8_t *dest = reinterpret_cast< uint8_t* >(&header);
     memset(dest,0x00,sizeof(packet_header_t));
     
-    if(valid) {
+    if(valid)
+    {
         Lock< FastMutex > l(mutex);
-        for(unsigned int i=0; i<sizeof(packet_header_t); i++) {
+        for(unsigned int i=0; i<sizeof(packet_header_t); i++)
             dest[i] = buffer[(readIndex + i) % storageSize];
-        }
     }
     return header;
 }
 
-void PacketBuffer::getData(uint8_t* data) {
-    
-    if(!valid) {
+void PacketBuffer::getData(uint8_t* data)
+{
+    if(!valid)
         return;
-    }
     
     /* Packet size is stored in header, so first get the payloadSize.
      * The data is stored sizeof(packet_header_t) bytes next the read pointer,
@@ -130,11 +148,11 @@ void PacketBuffer::getData(uint8_t* data) {
     }
 }
 
-void PacketBuffer::popFront() {
+void PacketBuffer::popFront()
+{
     
-    if((!valid) || empty()) { //this means that list is empty
+    if((!valid) || empty()) //this means that list is empty
         return;
-    }
     
     /* Popping a packet out of list simply means move the readIndex forward
      * of the size of the packet at list's head.
@@ -156,8 +174,8 @@ void PacketBuffer::popFront() {
     }
 }
 
-bool PacketBuffer::empty() {
-    
+bool PacketBuffer::empty()
+{
     Lock< FastMutex > l(mutex);
     return usedSize == 0;
 

@@ -1,5 +1,5 @@
 /* Copyright (c) 2015-2016 Skyward Experimental Rocketry
- * Authors: Alain Carlucci, Matteo Piazzolla
+ * Authors: Alain Carlucci, Matteo Michele Piazzolla
  * 
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -103,7 +103,8 @@ int main() {
     Thread::sleep(2000);
     printf("Calibrating..\n");
 
-    vec_t data[10] caa;
+    vec_t caa[10];
+
     for(int i=0;i<10;i++) {
         for(int j=0;j<3;j++) {
             AccelSensor *a = accels[j];

@@ -71,7 +71,9 @@ public:
         
         uint8_t buf[2];                        
         BusType::read(slaveAddr,CMD_MEAS_HUM,buf,2);        
-        mLastHumidity = ((static_cast<float>((buf[0] << 8) | buf[1])*125)/65536) - 6;
+        mLastHumidity = ( 
+            (static_cast<float>((buf[0] << 8) | buf[1])*125) / 65536
+        ) - 6;
         
         BusType::read(slaveAddr,CMD_MEAS_TEMP_PREV_HUM,buf,2);                
         mLastTemp = (

@@ -1,6 +1,6 @@
 /* ST iNEMO LSM9DS0 Driver
  *
- * Copyright (c) 2016 Skyward Experimental Rocketry
+ * Copyright (c) 2016-2017 Skyward Experimental Rocketry
  * Authors: Matteo Michele Piazzolla, Alain Carlucci
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -99,15 +99,17 @@ public:
         return false;
     }
 
-
-
     std::vector<SPIRequest> buildDMARequest() override 
     {
         std::vector<SPIRequest> v = {
-            SPIRequest(DMA_GYRO, BusG::getCSPin(),  { OUT_X_L_G|0xc0,0,0,0,0,0,0,0}),
-            SPIRequest(DMA_ACC, BusXM::getCSPin(), { OUT_X_L_A|0xc0,0,0,0,0,0,0,0}),
-            SPIRequest(DMA_COMP, BusXM::getCSPin(), { OUT_X_L_M|0xc0,0,0,0,0,0,0,0}),
-            SPIRequest(DMA_TEMP, BusXM::getCSPin(), { OUT_TEMP_L_XM|0xc0,0,0,0}),
+            SPIRequest(DMA_GYRO, BusG::getCSPin(),  
+                { OUT_X_L_G | 0xc0, 0,0,0,0,0,0,0}),
+            SPIRequest(DMA_ACC,  BusXM::getCSPin(),  
+                { OUT_X_L_A | 0xc0, 0,0,0,0,0,0,0}),
+            SPIRequest(DMA_COMP, BusXM::getCSPin(), 
+                { OUT_X_L_M | 0xc0,0,0,0,0,0,0,0}),
+            SPIRequest(DMA_TEMP, BusXM::getCSPin(), 
+                { OUT_TEMP_L_XM | 0xc0, 0,0,0}),
         };
 
         return v;
