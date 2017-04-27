@@ -27,8 +27,20 @@
 #include <BusTemplate.h>
 
 template<class Bus>
-class MAX21105 : public AccelSensor, 
-    public GyroSensor, public TemperatureSensor {
+class MAX21105 : public AccelSensor, public GyroSensor, 
+                 public TemperatureSensor
+{
+    #pragma pack(1)
+    union rawdata_t
+    {
+        struct {
+            int16_t gyro[3];
+            int16_t accel[3];
+            int16_t temp;
+        };
+        int16_t raw[7];
+    };
+    #pragma pack()
 public:
     MAX21105(uint8_t accelFullScale, uint8_t gyroFullScale)
     {
@@ -41,16 +53,19 @@ public:
     {
     }
 
-    bool init() {
+    bool init() override
+    {
         uint8_t who_am_i = Bus::read(WHO_AM_I);
 
-        if(who_am_i != who_am_i_value) {
+        if(who_am_i != who_am_i_value)
+        {
             last_error = ERR_NOT_ME;
             return false;
         }
 
         // Init this sensor
-        uint8_t init_data[][2] = {
+        uint8_t init_data[][2] =
+        {
             {EXT_STATUS,         0x00},  // Choose the bank 0
             {SET_PWR,            0x00},  // Power down
 
@@ -65,7 +80,8 @@ public:
             {SET_PWR,            0x78},  // Power up (Accel + Gyro) Low-Noise
         };
 
-        for(size_t i=0; i < sizeof(init_data)/sizeof(init_data[0]); i++) {
+        for(size_t i=0; i < sizeof(init_data)/sizeof(init_data[0]); i++)
+        {
             Bus::write(init_data[i][0], init_data[i][1]);
             Thread::sleep(1);
         }
@@ -73,7 +89,8 @@ public:
         return true;
     }
 
-    bool selfTest() {
+    bool selfTest() override
+    {
         /*
         if(!SelfTestAcc()) {
             last_error = ERR_ACCEL_SELFTEST;
@@ -88,24 +105,27 @@ public:
         return false;
     }
 
-    bool onSimpleUpdate() {
-        #pragma pack(1)
-        union {
-            struct {
-                int16_t gyro[3];
-                int16_t accel[3];
-                int16_t temp;
-            };
-            int16_t buf[7];
-        } raw_data;
-        #pragma pack()
+    std::vector<SPIRequest> buildDMARequest() override 
+    {
+        return { SPIRequest(0, Bus::getCSPin(),
+        {
+            (GYRO_X_H | 0x80), 0,
+            0,0,0,0,0,0, // gyro
+            0,0,         // accel
+            0,0,0,0,0,0, // temp
+        }
+        )};
+    }
 
-        Bus::read(GYRO_X_H, reinterpret_cast<uint8_t *>(raw_data.buf), 
-                sizeof(raw_data.buf));
+    void onDMAUpdate(const SPIRequest& req) override
+    {
+        const auto& r = req.readResponseFromPeripheral();
+        const int16_t* ptr = (const int16_t*) &r[2];
+        rawdata_t raw_data;
 
-        constexpr size_t dSize = (sizeof(raw_data.buf)/sizeof(raw_data.buf[0]));
+        constexpr size_t dSize = 7; // 3 (gyro) + 3 (accel) + 1 (temp)
         for(size_t i=0; i< dSize;i++)
-            raw_data.buf[i] = fromBigEndian16(raw_data.buf[i]);
+            raw_data.raw[i] = fromBigEndian16(ptr[i]);
 
         mLastAccel.setX(normalizeAccel(raw_data.accel[0]));
         mLastAccel.setY(normalizeAccel(raw_data.accel[1]));
@@ -116,7 +136,10 @@ public:
         mLastGyro.setZ(normalizeGyro(raw_data.gyro[2]));
 
         mLastTemp = normalizeTemp(raw_data.temp);
-        return true;
+    }
+
+    bool onSimpleUpdate() override {
+        return false;
     }
 
     enum accelFullScale {

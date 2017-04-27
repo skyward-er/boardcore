@@ -26,16 +26,7 @@
 #include <Common.h>
 #include <BusTemplate.h>
 #include <Singleton.h>
-#include <events/Scheduler.h>
-
 #include <sensors/Sensor.h>
-#include <sensors/iNemo.h>
-#include <sensors/FXAS21002.h>
-#include <sensors/MPU9250.h>
-#include <sensors/LPS331AP.h>
-
-#include <DMA/DMA.h>
-#include <DMA/SensorSampling.h>
 
 enum DataType
 {
