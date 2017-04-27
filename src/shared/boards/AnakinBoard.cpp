@@ -54,7 +54,7 @@ bool AnakinBoard::init()
     m100HzDMA.AddSensor(mS_FXAS);
 
     printf("Adding sensors to 25Hz DMA sampler\n");
-    m25HzDMA.AddSensor(mS_FXAS);
+    m25HzDMA.AddSensor(mS_LPS331AP);
 
     printf("Adding sensors to 10Hz Simple sampler\n");
     m10HzSimple.AddSensor(mS_MPU9250);
