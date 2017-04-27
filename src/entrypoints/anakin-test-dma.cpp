@@ -23,16 +23,39 @@
 #include <Common.h>
 #include <Leds.h>
 #include <boards/AnakinBoard.h>
+#include <log/Log.h>
 
 using namespace miosix;
 
 
 int main()
 {
+    Leds::init();
+    Leds::set(0);
+    Log::getInstance();
     sBoard->init();
 
     const std::vector<SingleSensor>& data = sBoard->debugGetSensors();
     int ctr=0;
+
+    while(1)
+    {
+        for(const auto& s : data)
+        {
+            switch(s.data)
+            {
+                case DATA_VEC3:
+                    sLog->logSensorVec3(s.sensor, *(Vec3 *)s.value);
+                    break;
+                case DATA_FLOAT:
+                    sLog->logSensorFloat(s.sensor, *(float *)s.value);
+                    break;
+                default:
+                    break;
+            }
+        }
+    
+    }
     while(1)
     {
         printf("---------%05d----------\n", ctr++);

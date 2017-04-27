@@ -130,12 +130,12 @@ const unsigned char MAX_OPEN_FILES=8;
 /// \def WITH_BOOTLOG
 /// Uncomment to print bootlogs on stdout.
 /// By default it is defined (bootlogs are printed)
-#define WITH_BOOTLOG
+//#define WITH_BOOTLOG
 
 /// \def WITH_ERRLOG
 /// Uncomment for debug information on stdout.
 /// By default it is defined (error information is printed)
-#define WITH_ERRLOG
+//#define WITH_ERRLOG
 
 
 
