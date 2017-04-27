@@ -55,7 +55,10 @@ int main()
             }
         }
     
+        Thread::sleep(10);
     }
+
+    // NOT EXECUTED
     while(1)
     {
         printf("---------%05d----------\n", ctr++);
