@@ -33,7 +33,6 @@ class LPS331AP : public PressureSensor, public TemperatureSensor
 {
     struct data_t
     {
-        int16_t padding;
         int32_t press;
         int16_t temp;
     };
@@ -82,7 +81,7 @@ public:
     void onDMAUpdate(const SPIRequest& req) override
     {
         const auto& r = req.readResponseFromPeripheral();
-        const data_t *data = (const data_t*) &r[0];
+        const data_t *data = (const data_t*) &r[2];
     
         // Remove status and realign bytes
         int32_t pressure = data->press >> 8;
