@@ -20,8 +20,8 @@ typedef Gpio<GPIOA_BASE, 7> GpioMosi;
 typedef BusSPI < 1, GpioMosi, GpioMiso, GpioSck> busSPI1;
 
 typedef ProtocolSPI<busSPI1, Gpio<GPIOD_BASE, 13>> spiMPU9250;
-typedef ProtocolSPI<busSPI1, Gpio<GPIOG_BASE,  9>> spiINEMOA;
-typedef ProtocolSPI<busSPI1, Gpio<GPIOG_BASE, 11>> spiINEMOG;
+typedef ProtocolSPI<busSPI1, Gpio<GPIOG_BASE, 11>> spiINEMOA;
+typedef ProtocolSPI<busSPI1, Gpio<GPIOG_BASE,  9>> spiINEMOG;
 typedef ProtocolSPI<busSPI1, Gpio<GPIOG_BASE, 10>> spiFXAS21002;
 typedef ProtocolSPI<busSPI1, Gpio<GPIOE_BASE,  4>> spiLPS331AP;
 typedef ProtocolSPI<busSPI1, Gpio<GPIOE_BASE,  2>> spiMAX21105;
