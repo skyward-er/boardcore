@@ -35,7 +35,7 @@ class MS580301BA07 : public PressureSensor, public TemperatureSensor
 
 public:
     /* Class constructor. Reset lastPressure and lastTemperature */
-    MS580301BA07() : localPressure(1013.25)
+    MS580301BA07() : mLocalPressure(1013.25)
     {
         mLastTemp = 0;
         mLastPressure = 0;
@@ -45,16 +45,19 @@ public:
     {
     }
 
-    bool init() {
+    bool init()
+    {
         int timeout = 30;
-        do {
+        do
+        {
             Bus::read(RESET_DEV);
             cd.sens = readReg(PROM_READ_MASK | PROM_SENS_MASK);
             if(cd.sens == 0)
                 Thread::sleep(1);
         } while (cd.sens == 0 && --timeout > 0);
 
-        if(timeout <= 0) {
+        if(timeout <= 0)
+        {
             last_error = ERR_RESET_TIMEOUT;
             return false;
         }
@@ -65,62 +68,108 @@ public:
         cd.tref = readReg(PROM_READ_MASK | PROM_TREF_MASK);
         cd.tempsens = readReg(PROM_READ_MASK | PROM_TEMPSENS_MASK);
 
+        mStatus = 0;
+        mTimeout = 10;
+
         return true; 
     }
 
-    bool selfTest() {
+    bool selfTest()
+    {
         return false;
     }
 
-    void setLocalPressure(float mBarPressure) {
-        localPressure = mBarPressure;
+    void setLocalPressure(float mBarPressure)
+    {
+        mLocalPressure = mBarPressure;
     }
 
     // TODO move this code away
+    /*
     float getAltitude() {
         return 44330.769 * 
-            (1.0f - pow(mLastPressure/localPressure,0.19019f));
+            (1.0f - pow(mLastPressure/mLocalPressure,0.19019f));
     }
+    */
 
     bool onSimpleUpdate() {
         uint8_t rcvbuf[3];
-        uint32_t pressure = 0, temperature = 0, timeout;
+        uint32_t temperature = 0;
 
-        timeout = 3;
-        do {
-            Bus::write(CONVERT_D1_4096);
-            Thread::sleep(10);
-            Bus::read_low(ADC_READ,rcvbuf, 3);
-
-            // TODO use swapBytes
-            pressure = rcvbuf[2] 
-                        | ((uint32_t)rcvbuf[1] << 8) 
-                        | ((uint32_t)rcvbuf[0] << 16);
-        } while (pressure == 0 && --timeout > 0);
-
-        if(timeout == 0) {
-            last_error = ERR_RESET_TIMEOUT;
-            return false;
-        }
-
-        timeout = 3;
-        do {
-            Bus::write(CONVERT_D2_4096);
-            Thread::sleep(10);
-            Bus::read_low(ADC_READ,rcvbuf, 3);
-
-            // TODO use swapBytes
-            temperature = (uint32_t) rcvbuf[2] 
-                        | ((uint32_t)rcvbuf[1] << 8) 
-                        | ((uint32_t)rcvbuf[0] << 16);
-        } while(temperature == 0 && --timeout > 0);
-
-        if(timeout == 0)
+        switch(mStatus)
         {
-            last_error = ERR_RESET_TIMEOUT;
-            return false;
+            case STATE_INIT:
+                Bus::write(CONVERT_D1_4096);
+                mTimeout = TIMEOUT;
+                mStatus = STATE_SAMPLED_PRESSURE;
+            case STATE_SAMPLED_PRESSURE:
+                Bus::read_low(ADC_READ,rcvbuf, 3);
+                mInternalPressure = rcvbuf[2] 
+                                  | ((uint32_t)rcvbuf[1] << 8) 
+                                  | ((uint32_t)rcvbuf[0] << 16);
+                if(mInternalPressure != 0)
+                {
+                    Bus::write(CONVERT_D2_4096); // Begin temperature sampling
+                    mStatus = STATE_SAMPLED_TEMPERATURE;
+                    mTimeout = TIMEOUT;
+                }
+                else 
+                {
+                    if(--mTimeout == 0)
+                    {
+                        last_error = ERR_RESET_TIMEOUT;
+                        mStatus = STATE_ERROR;
+                    }
+                }
+                break;
+            case STATE_SAMPLED_TEMPERATURE:
+                Bus::read_low(ADC_READ,rcvbuf, 3);
+
+                // TODO use swapBytes
+                temperature = (uint32_t) rcvbuf[2] 
+                            | ((uint32_t)rcvbuf[1] << 8) 
+                            | ((uint32_t)rcvbuf[0] << 16);
+                if(temperature != 0)
+                {
+                    updateData(mInternalPressure, temperature);
+                    Bus::write(CONVERT_D1_4096); // Begin pressure sampling
+                    mTimeout = TIMEOUT;
+                    mStatus = STATE_SAMPLED_PRESSURE;
+                }
+                else
+                {
+                    if(--mTimeout == 0)
+                    {
+                        last_error = ERR_RESET_TIMEOUT;
+                        mStatus = STATE_ERROR;
+                    }
+                }
+                break;
+            case STATE_ERROR:
+                return false;
+                break;
         }
 
+        return true;
+    }
+
+private:
+    static constexpr uint8_t TIMEOUT = 5;
+    enum FSM_State
+    {
+        STATE_INIT                  = 0,
+        STATE_SAMPLED_PRESSURE      = 1,
+        STATE_SAMPLED_TEMPERATURE   = 2,
+        STATE_ERROR                 = 30,
+    };
+    uint8_t mStatus;
+    uint8_t mTimeout;
+    uint32_t mInternalPressure;
+
+    float mLocalPressure;
+
+    void updateData(uint32_t pressure, uint32_t temperature)
+    {
         int32_t dt = temperature - (cd.tref << 8);
         int32_t temp = 2000 + ((dt * cd.tempsens) >> 23);
         mLastTemp =  temp / 100.0f;
@@ -131,11 +180,7 @@ public:
         int64_t ttemp = pressure * senst;
         int32_t pres = ((ttemp >> 21) - offs) >> 15;
         mLastPressure = pres / 100.0f;
-        return true;
     }
-
-private:
-    float localPressure;
 
     typedef struct {
         uint16_t sens;
