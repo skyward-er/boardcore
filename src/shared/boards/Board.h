@@ -27,6 +27,7 @@
 #include <BusTemplate.h>
 #include <Singleton.h>
 #include <sensors/Sensor.h>
+#include <log/Log.h>
 
 enum DataType
 {

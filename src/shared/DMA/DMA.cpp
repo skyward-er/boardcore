@@ -22,7 +22,6 @@
 
 #include "DMA.h"
 #include <kernel/scheduler/scheduler.h>
-#include <Leds.h>
 
 using namespace std;
 using namespace miosix;
@@ -52,9 +51,6 @@ static bool error = false;
  */
 void __attribute__((used)) SPI1rxDmaHandlerImpl()
 {
-    Leds::set(0, true);
-    Leds::set(1, true);
-    Leds::set(2, true);
     if(DMA2->LISR & (DMA_LISR_TEIF0 | DMA_LISR_DMEIF0)) 
         error = true;
     DMA2->LIFCR = DMA_LIFCR_CTCIF0

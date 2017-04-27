@@ -1,7 +1,7 @@
 #include "AnakinBoard.h"
 
-#define INIT_AND_CHECK(x) do {                                      \
-    if (!x->init()) { printf("=== ERR: CANNOT INIT " #x "\n"); }    \
+#define INIT_AND_CHECK(x) do {                                       \
+    if (!x->init()) { sLog->logString("=== ERR: CANNOT INIT " #x); } \
 } while(0)
 
 #define ADD_SAMPLER(type, name, rate) \
@@ -63,21 +63,21 @@ bool AnakinBoard::init()
     AddSensor(MS580_PRESSURE,   DATA_FLOAT,    mS_MS580->pressureDataPtr());
     AddSensor(MS580_TEMP,       DATA_FLOAT,    mS_MS580->tempDataPtr());
 
-    printf("Adding sensors to 100Hz DMA sampler\n");
+    sLog->logString("Adding sensors to 100Hz DMA sampler\n");
     m100HzDMA.AddSensor(mS_MPU9250);
     m100HzDMA.AddSensor(mS_INEMO);
     m100HzDMA.AddSensor(mS_FXAS);
     m100HzDMA.AddSensor(mS_MAX21105);
 
-    printf("Adding sensors to 25Hz DMA sampler\n");
+    sLog->logString("Adding sensors to 25Hz DMA sampler\n");
     m25HzDMA.AddSensor(mS_LPS331AP);
 
-    printf("Adding sensors to 10Hz Simple sampler\n");
+    sLog->logString("Adding sensors to 10Hz Simple sampler\n");
     m10HzSimple.AddSensor(mS_MPU9250);
     m10HzSimple.AddSensor(mS_FXAS);
     m10HzSimple.AddSensor(mS_MS580);
 
-    printf("Adding samplers to scheduler\n");
+    sLog->logString("Adding samplers to scheduler\n");
     ADD_SAMPLER(DMA, m100HzDMA, 10); // 10ms
     ADD_SAMPLER(DMA, m25HzDMA, 40);  // 25ms
     ADD_SAMPLER(Simple, m100HzSimple, 10); // 10ms
