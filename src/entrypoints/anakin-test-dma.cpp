@@ -21,14 +21,8 @@
  */
 
 #include <Common.h>
-#include <BusTemplate.h>
-#include <sensors/MPU9250.h>
-#include <sensors/iNemo.h>
-#include <DMA/DMA.h>
 #include <Leds.h>
-#include <DMA/SensorSampling.h>
-#include <events/Scheduler.h>
-#include <boards/Board.h>
+#include <boards/AnakinBoard.h>
 
 using namespace miosix;
 
