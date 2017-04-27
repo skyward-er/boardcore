@@ -9,6 +9,7 @@
 #include <sensors/MPU9250.h>
 #include <sensors/LPS331AP.h>
 #include <sensors/MAX21105.h>
+#include <sensors/MS580301BA07.h>
 
 #include <DMA/DMA.h>
 #include <DMA/SensorSampling.h>
@@ -24,13 +25,15 @@ typedef ProtocolSPI<busSPI1, Gpio<GPIOG_BASE, 11>> spiINEMOG;
 typedef ProtocolSPI<busSPI1, Gpio<GPIOG_BASE, 10>> spiFXAS21002;
 typedef ProtocolSPI<busSPI1, Gpio<GPIOE_BASE,  4>> spiLPS331AP;
 typedef ProtocolSPI<busSPI1, Gpio<GPIOE_BASE,  2>> spiMAX21105;
-typedef ProtocolSPI<busSPI1, Gpio<GPIOB_BASE, 11>> spiMAX31856;
+typedef ProtocolSPI<busSPI1, Gpio<GPIOB_BASE, 10>> spiMS580301BA07;
+//typedef ProtocolSPI<busSPI1, Gpio<GPIOB_BASE, 11>> spiMAX31856;
 
 typedef MPU9250<spiMPU9250> mpu_t;
 typedef iNEMOLSM9DS0<spiINEMOG,spiINEMOA> inemo_t;
 typedef FXAS21002<spiFXAS21002> fxas_t;
 typedef LPS331AP<spiLPS331AP> lps331ap_t;
 typedef MAX21105<spiMAX21105> max21105_t;
+typedef MS580301BA07<spiMS580301BA07> ms580_t;
 
 // AnakinSensor numbers must be in range 0 <= x <= 65535 (uint16_t)
 enum AnakinSensor
@@ -53,6 +56,9 @@ enum AnakinSensor
     MAX21105_ACCEL   = 11,
     MAX21105_GYRO    = 12,
     MAX21105_TEMP    = 13,
+
+    MS580_PRESSURE   = 14,
+    MS580_TEMP       = 15,
 };
 
 class AnakinBoard : public Singleton<AnakinBoard>, public Board
@@ -74,6 +80,7 @@ private:
     fxas_t*     mS_FXAS;
     lps331ap_t* mS_LPS331AP;
     max21105_t* mS_MAX21105;
+    ms580_t*    mS_MS580;
 
     AnakinBoard();
 

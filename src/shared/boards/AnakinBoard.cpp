@@ -33,12 +33,14 @@ bool AnakinBoard::init()
     mS_LPS331AP  = new lps331ap_t   (lps331ap_t::SS_25HZ);
     mS_MAX21105  = new max21105_t   (max21105_t::ACC_FS_16G, 
                                      max21105_t::GYRO_FS_250);
+    mS_MS580     = new ms580_t();
 
     INIT_AND_CHECK(mS_MPU9250);
     INIT_AND_CHECK(mS_INEMO);
     INIT_AND_CHECK(mS_FXAS);
     INIT_AND_CHECK(mS_LPS331AP);
     INIT_AND_CHECK(mS_MAX21105);
+    INIT_AND_CHECK(mS_MS580);
 
     AddSensor(MPU9250_ACCEL,    DATA_VEC3,     mS_MPU9250->accelDataPtr());
     AddSensor(MPU9250_GYRO,     DATA_VEC3,     mS_MPU9250->gyroDataPtr());
@@ -58,6 +60,9 @@ bool AnakinBoard::init()
     AddSensor(MAX21105_GYRO,    DATA_VEC3,     mS_MAX21105->gyroDataPtr());
     AddSensor(MAX21105_TEMP,    DATA_FLOAT,    mS_MAX21105->tempDataPtr());
 
+    AddSensor(MS580_PRESSURE,   DATA_FLOAT,    mS_MS580->pressureDataPtr());
+    AddSensor(MS580_TEMP,       DATA_FLOAT,    mS_MS580->tempDataPtr());
+
     printf("Adding sensors to 100Hz DMA sampler\n");
     m100HzDMA.AddSensor(mS_MPU9250);
     m100HzDMA.AddSensor(mS_INEMO);
@@ -70,6 +75,7 @@ bool AnakinBoard::init()
     printf("Adding sensors to 10Hz Simple sampler\n");
     m10HzSimple.AddSensor(mS_MPU9250);
     m10HzSimple.AddSensor(mS_FXAS);
+    m10HzSimple.AddSensor(mS_MS580);
 
     printf("Adding samplers to scheduler\n");
     ADD_SAMPLER(DMA, m100HzDMA, 10); // 10ms
