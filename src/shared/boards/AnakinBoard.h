@@ -2,46 +2,57 @@
 #define BOARDS_ANAKINBOARD_H
 
 #include "Board.h"
+#include <events/Scheduler.h>
+
+#include <sensors/iNemo.h>
+#include <sensors/FXAS21002.h>
+#include <sensors/MPU9250.h>
+#include <sensors/LPS331AP.h>
+#include <sensors/MAX21105.h>
+
+#include <DMA/DMA.h>
+#include <DMA/SensorSampling.h>
 
 typedef Gpio<GPIOA_BASE, 5> GpioSck;
 typedef Gpio<GPIOA_BASE, 6> GpioMiso;
 typedef Gpio<GPIOA_BASE, 7> GpioMosi;
 typedef BusSPI < 1, GpioMosi, GpioMiso, GpioSck> busSPI1;
 
-typedef Gpio<GPIOD_BASE, 13> CS_MPU9250;
-typedef Gpio<GPIOG_BASE, 9> CS_INEMO_G;
-typedef Gpio<GPIOG_BASE, 11> CS_INEMO_A;
-typedef Gpio<GPIOG_BASE, 10> CS_FXAS21002;
-typedef Gpio<GPIOE_BASE, 4> CS_LPS331AP;
-
-typedef ProtocolSPI<busSPI1, CS_MPU9250> spiMPU9250;
-typedef ProtocolSPI<busSPI1, CS_INEMO_A> spiINEMOA;
-typedef ProtocolSPI<busSPI1, CS_INEMO_G> spiINEMOG;
-typedef ProtocolSPI<busSPI1, CS_FXAS21002> spiFXAS21002;
-typedef ProtocolSPI<busSPI1, CS_LPS331AP> spiLPS331AP;
+typedef ProtocolSPI<busSPI1, Gpio<GPIOD_BASE, 13>> spiMPU9250;
+typedef ProtocolSPI<busSPI1, Gpio<GPIOG_BASE,  9>> spiINEMOA;
+typedef ProtocolSPI<busSPI1, Gpio<GPIOG_BASE, 11>> spiINEMOG;
+typedef ProtocolSPI<busSPI1, Gpio<GPIOG_BASE, 10>> spiFXAS21002;
+typedef ProtocolSPI<busSPI1, Gpio<GPIOE_BASE,  4>> spiLPS331AP;
+typedef ProtocolSPI<busSPI1, Gpio<GPIOE_BASE,  2>> spiMAX21105;
+typedef ProtocolSPI<busSPI1, Gpio<GPIOB_BASE, 11>> spiMAX31856;
 
 typedef MPU9250<spiMPU9250> mpu_t;
 typedef iNEMOLSM9DS0<spiINEMOG,spiINEMOA> inemo_t;
 typedef FXAS21002<spiFXAS21002> fxas_t;
 typedef LPS331AP<spiLPS331AP> lps331ap_t;
-
+typedef MAX21105<spiMAX21105> max21105_t;
 
 // AnakinSensor numbers must be in range 0 <= x <= 65535 (uint16_t)
 enum AnakinSensor
 {
-    MPU_9250_ACCEL   = 0,
-    MPU_9250_GYRO    = 1,
-    MPU_9250_COMPASS = 2,
-    MPU_9250_TEMP    = 3,
+    MPU9250_ACCEL    = 0,
+    MPU9250_GYRO     = 1,
+    MPU9250_COMPASS  = 2,
+    MPU9250_TEMP     = 3,
 
     INEMO_ACCEL      = 4,
     INEMO_GYRO       = 5,
     INEMO_COMPASS    = 6,
     INEMO_TEMP       = 7,
-    FXAS_GYRO        = 8,
+
+    FXAS21002_GYRO   = 8,
 
     LPS331AP_PRESS   = 9,
     LPS331AP_TEMP    = 10,
+
+    MAX21105_ACCEL   = 11,
+    MAX21105_GYRO    = 12,
+    MAX21105_TEMP    = 13,
 };
 
 class AnakinBoard : public Singleton<AnakinBoard>, public Board
@@ -62,6 +73,7 @@ private:
     inemo_t*    mS_INEMO;
     fxas_t*     mS_FXAS;
     lps331ap_t* mS_LPS331AP;
+    max21105_t* mS_MAX21105;
 
     AnakinBoard();
 
