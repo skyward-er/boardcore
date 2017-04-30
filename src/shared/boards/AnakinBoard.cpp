@@ -18,6 +18,14 @@ bool AnakinBoard::init()
 {
     if(mInited)
         return false;
+    
+    spiMPU9250::init();
+    spiINEMOA::init();
+    spiINEMOG::init();
+    spiFXAS21002::init();
+    spiLPS331AP::init();
+    spiMAX21105::init();
+    spiMS580301BA07::init();
 
     mInited = true;
     mS_MPU9250   = new mpu_t        (mpu_t::ACC_FS_16G, 
@@ -70,7 +78,6 @@ bool AnakinBoard::init()
 
     sLog->logString("Adding sensors to 10Hz Simple sampler\n");
     m10HzSimple.AddSensor(mS_MPU9250);
-    m10HzSimple.AddSensor(mS_FXAS);
     m10HzSimple.AddSensor(mS_MS580);
 
     sLog->logString("Adding samplers to scheduler\n");
