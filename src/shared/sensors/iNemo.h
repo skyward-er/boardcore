@@ -39,7 +39,7 @@ public:
     iNEMOLSM9DS0(uint8_t accelFullScale, uint8_t gyroFullScale, 
             uint8_t compassFullScale)
     { 
-        accelFS = accelFullScale & 0x7;
+        accelFS = accelFullScale & 0x07;
         gyroFS  = gyroFullScale & 0x03;
         compassFS = compassFullScale & 0x03;
         mLastTemp = 0.0f;
@@ -48,9 +48,9 @@ public:
     bool init()
     {
         uint8_t whoami_g = BusG::read(RegMap::WHO_AM_I_G);
-        uint8_t whoami_xm = BusG::read(RegMap::WHO_AM_I_XM);
+        uint8_t whoami_xm = BusXM::read(RegMap::WHO_AM_I_XM);
 
-        if((whoami_g != whoami_g_value) | (whoami_xm !=whoami_g_value) ) 
+        if((whoami_g != whoami_g_value) || (whoami_xm !=whoami_xm_value) ) 
         {
             last_error = ERR_NOT_ME;
             return false;
@@ -72,13 +72,12 @@ public:
 
         //FIFO enabled, get data after the first low pass filter
         BusG::write(CTRL_REG5_G, 0x00);
-        BusG::write(CTRL_REG0_XM, 0x00);
 
         //accelerometer configuration
         //reset internal memory
-        BusG::write(CTRL_REG0_XM, 0x80);
-        //1600Hz data rate, continuous update, xyz enabled
-        BusXM::write(CTRL_REG1_XM,0x57);
+        BusXM::write(CTRL_REG0_XM, 0x80);
+        //100Hz data rate, continuous update, xyz enabled
+        BusXM::write(CTRL_REG1_XM,0x67);
         //antialias filter 773 Hz, normal mode no test
         BusXM::write(CTRL_REG2_XM,0x00 | (accelFS<<3));   
 
@@ -101,7 +100,7 @@ public:
 
     std::vector<SPIRequest> buildDMARequest() override 
     {
-        std::vector<SPIRequest> v = {
+        return {
             SPIRequest(DMA_GYRO, BusG::getCSPin(),  
                 { OUT_X_L_G | 0xc0, 0,0,0,0,0,0,0}),
             SPIRequest(DMA_ACC,  BusXM::getCSPin(),  
@@ -111,8 +110,6 @@ public:
             SPIRequest(DMA_TEMP, BusXM::getCSPin(), 
                 { OUT_TEMP_L_XM | 0xc0, 0,0,0}),
         };
-
-        return v;
     }
 
     void onDMAUpdate(const SPIRequest& req) override 
@@ -121,6 +118,7 @@ public:
 
         int16_t data[3];
         memcpy(data, &r[2], r.size()-2);
+        // printf("ID: %d  --> ", req.id()); memDump(r.data(), r.size());
 
         switch(req.id())
         {
