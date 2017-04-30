@@ -71,7 +71,7 @@ public:
     {
         return { 
             SPIRequest(0, Bus::getCSPin(), { 
-                REG_STATUS | 0xc0, 0,
+                REG_STATUS | 0xc0,
                 0,0,0,0, // pressure    (int32_t)
                 0,0      // temperature (int16_t)
             })
@@ -81,7 +81,7 @@ public:
     void onDMAUpdate(const SPIRequest& req) override
     {
         const auto& r = req.readResponseFromPeripheral();
-        const data_t *data = (const data_t*) &r[2];
+        const data_t *data = (const data_t*) &r[1];
     
         // Remove status and realign bytes
         int32_t pressure = data->press >> 8;

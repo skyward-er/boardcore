@@ -109,7 +109,7 @@ public:
     {
         return { SPIRequest(0, Bus::getCSPin(),
         {
-            (GYRO_X_H | 0x80), 0,
+            (GYRO_X_H | 0x80),
             0,0,0,0,0,0, // gyro
             0,0,         // accel
             0,0,0,0,0,0, // temp
@@ -120,7 +120,7 @@ public:
     void onDMAUpdate(const SPIRequest& req) override
     {
         const auto& r = req.readResponseFromPeripheral();
-        const int16_t* ptr = (const int16_t*) &r[2];
+        const int16_t* ptr = (const int16_t*) &r[1];
         rawdata_t raw_data;
 
         constexpr size_t dSize = 7; // 3 (gyro) + 3 (accel) + 1 (temp)

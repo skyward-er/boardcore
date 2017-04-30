@@ -102,13 +102,13 @@ public:
     {
         return {
             SPIRequest(DMA_GYRO, BusG::getCSPin(),  
-                { OUT_X_L_G | 0xc0, 0,0,0,0,0,0,0}),
+                { OUT_X_L_G | 0xc0, 0,0,0,0,0,0}),
             SPIRequest(DMA_ACC,  BusXM::getCSPin(),  
-                { OUT_X_L_A | 0xc0, 0,0,0,0,0,0,0}),
+                { OUT_X_L_A | 0xc0, 0,0,0,0,0,0}),
             SPIRequest(DMA_COMP, BusXM::getCSPin(), 
-                { OUT_X_L_M | 0xc0,0,0,0,0,0,0,0}),
+                { OUT_X_L_M | 0xc0, 0,0,0,0,0,0}),
             SPIRequest(DMA_TEMP, BusXM::getCSPin(), 
-                { OUT_TEMP_L_XM | 0xc0, 0,0,0}),
+                { OUT_TEMP_L_XM | 0xc0, 0,0}),
         };
     }
 
@@ -117,7 +117,7 @@ public:
         const auto& r = req.readResponseFromPeripheral();
 
         int16_t data[3];
-        memcpy(data, &r[2], r.size()-2);
+        memcpy(data, &r[1], r.size()-1);
         // printf("ID: %d  --> ", req.id()); memDump(r.data(), r.size());
 
         switch(req.id())
