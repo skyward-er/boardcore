@@ -33,7 +33,13 @@ int main()
     auto sample=[&]()
     {
         if(spi.transaction(req)==false) puts("DMA error");
-        for(auto& r : req) inemo.onDMAUpdate(r);
+        for(auto& r : req)
+        {
+            inemo.onDMAUpdate(r);
+            printf("ID: %d  --> ", r.id());
+            auto& resp=r.readResponseFromPeripheral();
+            memDump(resp.data(), resp.size());
+        }
     };
     
     for(int i=0;i<2;i++)
