@@ -125,7 +125,7 @@ public:
     std::vector<SPIRequest> buildDMARequest() override
     {
         std::vector<uint8_t> data = {
-            REG_OUT_X_MSB | 0x80, 0,
+            REG_OUT_X_MSB | 0x80,
             0,0,0,0,0,0
         };
 
@@ -136,7 +136,7 @@ public:
     {
         const auto& r = req.readResponseFromPeripheral();
         int16_t data[3];
-        memcpy(data, &r[2], sizeof(data));
+        memcpy(data, &r[1], sizeof(data));
 
         for(int i=0;i<3;i++)
             data[i] = fromBigEndian16(data[i]);

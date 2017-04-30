@@ -4,10 +4,6 @@
     if (!x->init()) { sLog->logString("=== ERR: CANNOT INIT " #x); } \
 } while(0)
 
-#define ADD_SAMPLER(type, name, rate) \
-    sEventScheduler->add(std::bind(& type ## SensorSampler::Update,name), \
-            rate, #name "-" #rate "ms")
-
 AnakinBoard::AnakinBoard()
 {
     mInited = false;
@@ -78,6 +74,10 @@ bool AnakinBoard::init()
     m10HzSimple.AddSensor(mS_MS580);
 
     sLog->logString("Adding samplers to scheduler\n");
+    #define ADD_SAMPLER(type, name, rate) \
+        sEventScheduler->add(std::bind(& type ## SensorSampler::Update,name),\
+                rate, #name "-" #rate "ms")
+
     ADD_SAMPLER(DMA, m100HzDMA, 10); // 10ms
     ADD_SAMPLER(DMA, m25HzDMA, 40);  // 25ms
     ADD_SAMPLER(Simple, m100HzSimple, 10); // 10ms
