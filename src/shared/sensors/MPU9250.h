@@ -38,7 +38,6 @@ class MPU9250 : public GyroSensor, public AccelSensor,
 typedef union {
     struct { 
         uint8_t status1;
-        uint8_t padding;
         int16_t mag[3];
         uint8_t status2;
     };
@@ -72,7 +71,7 @@ public:
     {
         std::vector<uint8_t> v = 
         { 
-            (REG_ACCEL_XOUT_H | 0x80), 0,
+            (REG_ACCEL_XOUT_H | 0x80),
             0,0,0,0,0,0, // accel
             0,0,         // temp
             0,0,0,0,0,0, // gyro
@@ -86,7 +85,7 @@ public:
         const auto& r = req.readResponseFromPeripheral();
         mpudata_t raw_data;
 
-        memcpy(&raw_data.buf, &(r[2]), sizeof(raw_data));
+        memcpy(&raw_data.buf, &(r[1]), sizeof(raw_data));
         for(int i=0;i<3;i++)
         {
             raw_data.accel[i] = fromBigEndian16(raw_data.accel[i]);
