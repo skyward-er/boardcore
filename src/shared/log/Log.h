@@ -44,7 +44,7 @@ public:
         std::vector<uint8_t> buf(2 + sizeof(float));
         buf[0] = DATA_FLOAT;
         buf[1] = id;
-        memcpy(&buf[2], &data, sizeof(float));
+        *((float *)&buf[2]) = data;
 
         queue(std::move(buf));
     }
@@ -56,9 +56,9 @@ public:
         buf[0] = DATA_VEC3;
         buf[1] = id;
 
-        tmp = data.getX(); memcpy(&buf[2], &tmp, sizeof(float));
-        tmp = data.getY(); memcpy(&buf[6], &tmp, sizeof(float));
-        tmp = data.getZ(); memcpy(&buf[10], &tmp, sizeof(float));
+        tmp = data.getX(); *((float *)&buf[2]) = tmp;
+        tmp = data.getY(); *((float *)&buf[6]) = tmp;
+        tmp = data.getZ(); *((float *)&buf[10]) = tmp;
 
         queue(std::move(buf));
     }
@@ -89,15 +89,17 @@ private:
 
     Log() : ActiveObject(1024)
     {
+        /*
         struct termios t;
         tcgetattr(STDIN_FILENO, &t);
         t.c_lflag &= ~(ISIG | ICANON | ECHO);
         tcsetattr(STDIN_FILENO,TCSANOW, &t);
+        */
     }
 
     void write(const std::vector<uint8_t>& data)
     {
-        const char map[]="0123456789abcdef\r\n";
+        static const char map[]="0123456789abcdef";
         for(size_t i=0;i<data.size();i++)
         {
             const char& di = data[i];
@@ -106,7 +108,7 @@ private:
             out[1] = map[di & 0x0f];
             ::write(1, out, 2);
         } 
-        ::write(1, &map[16], 2);
+        ::write(1, "\r\n", 2);
     }
 
     void queue(std::vector<uint8_t>&& data)
