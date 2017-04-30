@@ -24,6 +24,9 @@ typedef iNEMOLSM9DS0<spiINEMOG,spiINEMOA> inemo_t;
 int main()
 {
     puts("\n\n---");
+    spiMPU9250::init();
+    spiINEMOA::init();
+    spiINEMOG::init();
     auto& spi=SPIDriver::instance();
     
     inemo_t inemo(inemo_t::ACC_FS_16G,inemo_t::GYRO_FS_245,inemo_t::COMPASS_FS_2);
