@@ -36,7 +36,7 @@
 using namespace std;
 using namespace miosix;
 
-#define CS_DELAY 20
+static const int csDelay=20;
 
 template<unsigned N, class GpioMosi, class GpioMiso, class GpioSclk>
 class BusSPI : public Singleton< BusSPI<N, GpioMosi, GpioMiso, GpioSclk> > {
@@ -94,29 +94,34 @@ private:
     BusSPI() {
         //FIXME: this code is duplicated here and in the DMA driver,
         //and both of them initialize SPI1
-        GpioMosi::mode(Mode::ALTERNATE);
-        GpioMosi::alternateFunction(GetAlternativeFunctionNumber(N));
-        GpioMiso::mode(Mode::ALTERNATE);
-        GpioMiso::alternateFunction(GetAlternativeFunctionNumber(N));
-        GpioSclk::mode(Mode::ALTERNATE);
-        GpioSclk::alternateFunction(GetAlternativeFunctionNumber(N));
-        usleep(CS_DELAY);
-        enableSPIBus(getSPIAddr(N));
-        if(getSPIAddr(N) == SPI1)
         {
-            getSPIAddr(N)->CR1 = SPI_CR1_SSM  //Software cs
-                    | SPI_CR1_SSI  //Hardware cs internally tied high
-                    | SPI_CR1_MSTR //Master mode
-                    | SPI_CR1_BR_1
-                    | SPI_CR1_BR_2 // SPI FREQ=90MHz / 128 = 703KHz
-                    | SPI_CR1_SPE; //SPI enabled
-        } else {
-            getSPIAddr(N)->CR1 = SPI_CR1_SSM  //Software cs
-                    | SPI_CR1_SSI  //Hardware cs internally tied high
-                    | SPI_CR1_MSTR //Master mode
-                    | SPI_CR1_BR_2 // SPI clock divided by 32
-                    | SPI_CR1_SPE; //SPI enabled
+            //Interrupts are disabled to prevent bugs if more than one threads
+            //does a read-modify-write to shared registers at the same time
+            FastInterruptDisableLock dLock;
+            IRQenableSPIBus(getSPIAddr(N));
+            GpioMosi::mode(Mode::ALTERNATE);
+            GpioMosi::alternateFunction(GetAlternativeFunctionNumber(N));
+            GpioMiso::mode(Mode::ALTERNATE);
+            GpioMiso::alternateFunction(GetAlternativeFunctionNumber(N));
+            GpioSclk::mode(Mode::ALTERNATE);
+            GpioSclk::alternateFunction(GetAlternativeFunctionNumber(N));
+            if(getSPIAddr(N) == SPI1)
+            {
+                getSPIAddr(N)->CR1 = SPI_CR1_SSM  //Software cs
+                        | SPI_CR1_SSI  //Hardware cs internally tied high
+                        | SPI_CR1_MSTR //Master mode
+                        | SPI_CR1_BR_1
+                        | SPI_CR1_BR_2 // SPI FREQ=90MHz / 128 = 703KHz
+                        | SPI_CR1_SPE; //SPI enabled
+            } else {
+                getSPIAddr(N)->CR1 = SPI_CR1_SSM  //Software cs
+                        | SPI_CR1_SSI  //Hardware cs internally tied high
+                        | SPI_CR1_MSTR //Master mode
+                        | SPI_CR1_BR_2 // SPI clock divided by 32
+                        | SPI_CR1_SPE; //SPI enabled
+            }
         }
+        usleep(csDelay);
     }
 
     inline static constexpr int GetAlternativeFunctionNumber(int n_spi) {
@@ -128,10 +133,7 @@ private:
                 n==2 ? SPI2 : SPI3;
     }
 
-    static inline void enableSPIBus(SPI_TypeDef* spi) {
-        //Interrupts are disabled to prevent bugs if more than one threads does
-        //a read-modify-write to RCC registers at the same time
-        FastInterruptDisableLock dLock;
+    static inline void IRQenableSPIBus(SPI_TypeDef* spi) {
         if(spi == SPI1)
             RCC->APB2ENR |= RCC_APB2ENR_SPI1EN;
         else if(spi == SPI2)
