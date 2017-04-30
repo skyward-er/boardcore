@@ -73,7 +73,8 @@ private:
     inline void _write(uint8_t byte) const {
         getSPIAddr(N)->DR=byte;
         while((getSPIAddr(N)->SR & SPI_SR_RXNE)==0);
-        byte=getSPIAddr(N)->DR;
+        volatile uint8_t temp;
+        temp = getSPIAddr(N)->DR;
     }
 
     inline int _read(void* buffer, size_t max_len) const {
