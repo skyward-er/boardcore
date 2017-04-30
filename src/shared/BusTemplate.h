@@ -91,6 +91,8 @@ private:
     }
 
     BusSPI() {
+        //FIXME: this code is duplicated here and in the DMA driver,
+        //and both of them initialize SPI1
         GpioMosi::mode(Mode::ALTERNATE);
         GpioMosi::alternateFunction(GetAlternativeFunctionNumber(N));
         GpioMiso::mode(Mode::ALTERNATE);
@@ -99,13 +101,21 @@ private:
         GpioSclk::alternateFunction(GetAlternativeFunctionNumber(N));
         usleep(CS_DELAY);
         enableSPIBus(getSPIAddr(N));
-        getSPIAddr(N)->CR1 = SPI_CR1_SSM
-                           | SPI_CR1_SSI
-                           | SPI_CR1_MSTR
-        //                   | SPI_CR1_BR_0 
-        //                   | SPI_CR1_BR_1
-                           | SPI_CR1_BR_2
-                           | SPI_CR1_SPE;
+        if(getSPIAddr(N) == SPI1)
+        {
+            getSPIAddr(N)->CR1 = SPI_CR1_SSM  //Software cs
+                    | SPI_CR1_SSI  //Hardware cs internally tied high
+                    | SPI_CR1_MSTR //Master mode
+                    | SPI_CR1_BR_1
+                    | SPI_CR1_BR_2 // SPI FREQ=90MHz / 128 = 703KHz
+                    | SPI_CR1_SPE; //SPI enabled
+        } else {
+            getSPIAddr(N)->CR1 = SPI_CR1_SSM  //Software cs
+                    | SPI_CR1_SSI  //Hardware cs internally tied high
+                    | SPI_CR1_MSTR //Master mode
+                    | SPI_CR1_BR_2 // SPI clock divided by 32
+                    | SPI_CR1_SPE; //SPI enabled
+        }
     }
 
     inline static constexpr int GetAlternativeFunctionNumber(int n_spi) {
@@ -118,6 +128,9 @@ private:
     }
 
     static inline void enableSPIBus(SPI_TypeDef* spi) {
+        //Interrupts are disabled to prevent bugs if more than one threads does
+        //a read-modify-write to RCC registers at the same time
+        FastInterruptDisableLock dLock;
         if(spi == SPI1)
             RCC->APB2ENR |= RCC_APB2ENR_SPI1EN;
         else if(spi == SPI2)
