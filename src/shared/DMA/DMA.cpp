@@ -34,15 +34,15 @@ typedef Gpio<GPIOA_BASE,7> mosi;
 /**
  * DMA RX end of transfer
  */
-void __attribute__((naked)) DMA2_Stream5_IRQHandler()
+void __attribute__((naked)) DMA2_Stream0_IRQHandler()
 {
     saveContext();
     asm volatile("bl _Z20SPI1rxDmaHandlerImplv");
     restoreContext();
 }
 
-static Thread *waiting = NULL;
-static vector<SPIRequest> *requestVector;
+static Thread *waiting = nullptr;
+static vector<SPIRequest> *requestVector = nullptr;
 static size_t requestIndex = 0;
 static bool error = false;
 
@@ -53,10 +53,16 @@ void __attribute__((used)) SPI1rxDmaHandlerImpl()
 {
     if(DMA2->LISR & (DMA_LISR_TEIF0 | DMA_LISR_DMEIF0)) 
         error = true;
+    if(DMA2->HISR & (DMA_HISR_TEIF5 | DMA_HISR_DMEIF5)) 
+        error = true;
     DMA2->LIFCR = DMA_LIFCR_CTCIF0
                 | DMA_LIFCR_CTEIF0
                 | DMA_LIFCR_CDMEIF0;
+    DMA2->HIFCR = DMA_HIFCR_CTCIF5
+                | DMA_HIFCR_CTEIF5
+                | DMA_HIFCR_CDMEIF5;
     
+    if(requestVector==nullptr) return;
     (*requestVector)[requestIndex].IRQendTransaction();
 
     if( ++requestIndex >= requestVector->size() )
@@ -114,8 +120,9 @@ bool SPIDriver::transaction(vector<SPIRequest>& requests)
         }
     }
    
-    bool result=!error;
     disableDMA();
+    requestVector=nullptr;
+    bool result=!error;
     pthread_mutex_unlock(&mutex);
     return result;
 }
@@ -143,8 +150,8 @@ SPIDriver::SPIDriver()
 //                  | SPI_CR1_BR_1 //Less than 10MHz
                   | SPI_CR1_BR_2 // fClock / 32
                   | SPI_CR1_SPE; //SPI enabled
-        NVIC_SetPriority(DMA2_Stream5_IRQn,10);//Low priority for DMA
-        NVIC_EnableIRQ(DMA2_Stream5_IRQn);
+        NVIC_SetPriority(DMA2_Stream0_IRQn,10);//Low priority for DMA
+        NVIC_EnableIRQ(DMA2_Stream0_IRQn);
     }
 }
 
@@ -166,6 +173,7 @@ void SPIRequest::IRQbeginTransaction()
     DMA2_Stream0->CR   = DMA_SxCR_CHSEL_1 | DMA_SxCR_CHSEL_0 // Channel 3
                        | DMA_SxCR_PL_1    //High priority because fifo disabled
                        | DMA_SxCR_MINC    //Increment memory pointer
+                       | DMA_SxCR_TCIE    //Interrupt on transfer complete
                        | DMA_SxCR_TEIE    //Interrupt on transfer error
                        | DMA_SxCR_DMEIE   //Interrupt on direct mode error
                        | DMA_SxCR_EN;     //Start DMA
@@ -179,7 +187,6 @@ void SPIRequest::IRQbeginTransaction()
                        | DMA_SxCR_PL_1    //High priority because fifo disabled
                        | DMA_SxCR_MINC    //Increment memory pointer
                        | DMA_SxCR_DIR_0   //Memory to peripheral
-                       | DMA_SxCR_TCIE    //Interrupt on transfer complete
                        | DMA_SxCR_TEIE    //Interrupt on transfer error 
                        | DMA_SxCR_DMEIE   //Interrupt on direct mode error
                        | DMA_SxCR_EN;     //Start DMA
@@ -188,10 +195,6 @@ void SPIRequest::IRQbeginTransaction()
     
 void SPIRequest::IRQendTransaction()
 {
-    //FIXME: ensure dead time between CS high and CS low!!!
-    //And, is it really needed?
     chipSelect.high();
-    
-    //TX dma channel has no IRQ, so clear flag here
-    DMA2->HIFCR=DMA_HIFCR_CTCIF5;
+    delayUs(10); //FIXME: properly size the delay
 }
