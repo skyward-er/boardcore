@@ -4,7 +4,7 @@ using namespace miosix;
 
 void busfault(void *useless)
 {
-    printf("Hello, i'm a bus fault!\n");
+    printf("If you can read this, Mr. BusFault is not here.\n");
 }
 
 int main()
