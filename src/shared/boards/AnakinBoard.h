@@ -74,7 +74,7 @@ public:
 
 private:
     DMASensorSampler m100HzDMA, m25HzDMA;
-    SimpleSensorSampler m100HzSimple, m10HzSimple;
+    SimpleSensorSampler m10HzSimple;
     mpu_t*      mS_MPU9250;
     inemo_t*    mS_INEMO;
     fxas_t*     mS_FXAS;
