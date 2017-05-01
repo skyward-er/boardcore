@@ -28,6 +28,8 @@ bool AnakinBoard::init()
     spiMS580301BA07::init();
 
     mInited = true;
+    mS_MAX21105  = new max21105_t   (max21105_t::ACC_FS_16G, 
+                                     max21105_t::GYRO_FS_250);
     mS_MPU9250   = new mpu_t        (mpu_t::ACC_FS_16G, 
                                      mpu_t::GYRO_FS_250);
     mS_INEMO     = new inemo_t      (inemo_t::ACC_FS_16G, 
@@ -35,15 +37,16 @@ bool AnakinBoard::init()
                                      inemo_t::COMPASS_FS_2);
     mS_FXAS      = new fxas_t       (fxas_t::DPS500);
     mS_LPS331AP  = new lps331ap_t   (lps331ap_t::SS_25HZ);
-    mS_MAX21105  = new max21105_t   (max21105_t::ACC_FS_16G, 
-                                     max21105_t::GYRO_FS_250);
     mS_MS580     = new ms580_t();
 
+    //The MAX21105 has to be initialized first as it is prone to listening
+    //to the initialization of the other sensors and switch by mistake to
+    //I2C mode
+    INIT_AND_CHECK(mS_MAX21105);
     INIT_AND_CHECK(mS_MPU9250);
     INIT_AND_CHECK(mS_INEMO);
     INIT_AND_CHECK(mS_FXAS);
     INIT_AND_CHECK(mS_LPS331AP);
-    INIT_AND_CHECK(mS_MAX21105);
     INIT_AND_CHECK(mS_MS580);
 
     AddSensor(MPU9250_ACCEL,    DATA_VEC3,     mS_MPU9250->accelDataPtr());
