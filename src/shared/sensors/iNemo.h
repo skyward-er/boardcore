@@ -76,19 +76,33 @@ public:
         //accelerometer configuration
         //reset internal memory
         BusXM::write(CTRL_REG0_XM, 0x80);
+
+        uint8_t timeout = 10;
+
+        while(BusXM::read(CTRL_REG0_XM) != 0x00 && --timeout > 0)
+            Thread::sleep(1);
+
+        if(timeout == 0)
+        {
+            last_error = ERR_RESET_TIMEOUT;
+            return false;
+        }
+
         //100Hz data rate, continuous update, xyz enabled
         BusXM::write(CTRL_REG1_XM,0x67);
         //antialias filter 773 Hz, normal mode no test
-        BusXM::write(CTRL_REG2_XM,0x00 | (accelFS<<3));   
+        BusXM::write(CTRL_REG2_XM,(0x01 << 6) | (accelFS << 3));   
 
         //interrupt not enabled
         BusXM::write(CTRL_REG3_XM,0x00);
         BusXM::write(CTRL_REG4_XM,0x00);
-        //temperature sensor enabled, 100hz magnetic data rate, 2 gauss
-        BusXM::write(CTRL_REG5_XM,0xF4);
+
+        //temperature sensor enabled, 50hz magnetic data rate, 2 gauss
+        BusXM::write(CTRL_REG5_XM,0xF0);
+
         // 2 gauss 
         BusXM::write(CTRL_REG6_XM,0x00 | (compassFS<<5));  
-        BusXM::write(CTRL_REG7_XM,0x00);
+        BusXM::write(CTRL_REG7_XM,0x80);
 
         return true;
     }
@@ -116,9 +130,11 @@ public:
     {
         const auto& r = req.readResponseFromPeripheral();
 
-        int16_t data[3];
+        int16_t data[3] = {0};
         memcpy(data, &r[1], r.size()-1);
-        // printf("ID: %d  --> ", req.id()); memDump(r.data(), r.size());
+        //printf("ID: %d  --> %+05d,%+05d,%+05d -> ", 
+        //  req.id(),data[0],data[1],data[2]);
+        //memDump(r.data(),r.size());
 
         switch(req.id())
         {
