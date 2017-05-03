@@ -183,6 +183,11 @@ void SPIRequest::IRQbeginTransaction()
     DMA2_Stream0->PAR  = reinterpret_cast<unsigned int>(&SPI1->DR);
     DMA2_Stream0->M0AR = reinterpret_cast<unsigned int>(fromPeripheral.data());
     DMA2_Stream0->NDTR = fromPeripheral.size();
+
+    DMA2_Stream0->FCR  = DMA_SxFCR_FEIE   //Enable interrupt on FIFO error 
+                       | DMA_SxFCR_FTH_0  //FTH = 11 -> Full FIFO
+                       | DMA_SxFCR_FTH_1;
+
     DMA2_Stream0->CR   = DMA_SxCR_CHSEL_1 | DMA_SxCR_CHSEL_0 // Channel 3
                        | DMA_SxCR_PL_1    //High priority because fifo disabled
                        | DMA_SxCR_MINC    //Increment memory pointer
@@ -190,12 +195,18 @@ void SPIRequest::IRQbeginTransaction()
                        | DMA_SxCR_TEIE    //Interrupt on transfer error
                        | DMA_SxCR_DMEIE   //Interrupt on direct mode error
                        | DMA_SxCR_EN;     //Start DMA
+
     
     // Tx
     DMA2_Stream5->CR   = 0;
     DMA2_Stream5->PAR  = reinterpret_cast<unsigned int>(&SPI1->DR);
     DMA2_Stream5->M0AR = reinterpret_cast<unsigned int>(toPeripheral.data());
     DMA2_Stream5->NDTR = toPeripheral.size();
+
+    DMA2_Stream5->FCR  = DMA_SxFCR_FEIE   //Enable interrupt on FIFO error 
+                       | DMA_SxFCR_FTH_0  //FTH = 11 -> Full FIFO
+                       | DMA_SxFCR_FTH_1;
+
     DMA2_Stream5->CR   = DMA_SxCR_CHSEL_1 | DMA_SxCR_CHSEL_0 // Channel 3
                        | DMA_SxCR_PL_1    //High priority because fifo disabled
                        | DMA_SxCR_MINC    //Increment memory pointer
