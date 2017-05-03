@@ -32,6 +32,7 @@
 #include <Singleton.h>
 #include "i2c/stm32f2_f4_i2c.h"
 #include <util/software_i2c.h>
+#include <DMA/DMA.h>
 
 using namespace std;
 using namespace miosix;
@@ -91,12 +92,13 @@ private:
         return getSPIAddr(N)->DR;
     }
 
-    BusSPI() {
-        //FIXME: this code is duplicated here and in the DMA driver,
-        //and both of them initialize SPI1
-        {
-            //Interrupts are disabled to prevent bugs if more than one threads
-            //does a read-modify-write to shared registers at the same time
+    BusSPI()
+    {
+        //Interrupts are disabled to prevent bugs if more than one threads
+        //does a read-modify-write to shared registers at the same time
+        if(getSPIAddr(N) == SPI1)
+            SPIDriver::instance();
+        else {
             FastInterruptDisableLock dLock;
             IRQenableSPIBus(getSPIAddr(N));
             GpioMosi::mode(Mode::ALTERNATE);
@@ -105,21 +107,11 @@ private:
             GpioMiso::alternateFunction(GetAlternativeFunctionNumber(N));
             GpioSclk::mode(Mode::ALTERNATE);
             GpioSclk::alternateFunction(GetAlternativeFunctionNumber(N));
-            if(getSPIAddr(N) == SPI1)
-            {
-                getSPIAddr(N)->CR1 = SPI_CR1_SSM  //Software cs
-                        | SPI_CR1_SSI  //Hardware cs internally tied high
-                        | SPI_CR1_MSTR //Master mode
-                        | SPI_CR1_BR_1
-                        | SPI_CR1_BR_2 // SPI FREQ=90MHz / 128 = 703KHz
-                        | SPI_CR1_SPE; //SPI enabled
-            } else {
-                getSPIAddr(N)->CR1 = SPI_CR1_SSM  //Software cs
-                        | SPI_CR1_SSI  //Hardware cs internally tied high
-                        | SPI_CR1_MSTR //Master mode
-                        | SPI_CR1_BR_2 // SPI clock divided by 32
-                        | SPI_CR1_SPE; //SPI enabled
-            }
+            getSPIAddr(N)->CR1 = SPI_CR1_SSM  //Software cs
+                    | SPI_CR1_SSI  //Hardware cs internally tied high
+                    | SPI_CR1_MSTR //Master mode
+                    | SPI_CR1_BR_2 // SPI clock divided by 32
+                    | SPI_CR1_SPE; //SPI enabled
         }
         usleep(csDelay);
     }
