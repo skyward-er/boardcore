@@ -27,13 +27,34 @@
 
 class SPIRequest;
 
+enum DMAFIFOStatus
+{
+    DFS_UNK = -1,// Unk
+    DFS_EE  = 0, // x == 0
+    DFS_10  = 1, // 0  <  x < 25
+    DFS_25  = 2, // 25 <= x < 50
+    DFS_50  = 3, // 50 <= x < 75
+    DFS_75  = 4, // 75 <= x < 100
+    DFS_100 = 5, // x == 100
+};
+
 class SPIDriver
 {
 public:
     static SPIDriver& instance();
     
     bool transaction(std::vector<SPIRequest>& requests);
-    
+
+    DMAFIFOStatus getTxFIFOStatus() const
+    {
+        return intToFIFOStatus((DMA2_Stream5->FCR & DMA_SxFCR_FS) >> 3);
+    }
+
+    DMAFIFOStatus getRxFIFOStatus() const
+    {
+        return intToFIFOStatus((DMA2_Stream0->FCR & DMA_SxFCR_FS) >> 3);
+    }
+
 private:
     SPIDriver();
     
@@ -50,6 +71,21 @@ private:
     {
         SPI1->CR2 = 0; 
     }
+
+    inline DMAFIFOStatus intToFIFOStatus(uint8_t s) const
+    {
+        switch(s)
+        {
+            case 0: return DFS_10;
+            case 1: return DFS_25;
+            case 2: return DFS_50;
+            case 3: return DFS_75;
+            case 4: return DFS_EE;
+            case 5: return DFS_100;
+        }
+        return DFS_UNK;
+    }
+
     pthread_mutex_t mutex;
 };
 

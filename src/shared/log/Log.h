@@ -20,6 +20,7 @@ class Log : public Singleton<Log>, ActiveObject
         DATA_FLOAT  = 2,
         DATA_INT    = 3,
         DATA_STRING = 4,
+        DATA_LIMITED_INT = 5,
     };
 
     friend class Singleton<Log>;
@@ -45,6 +46,19 @@ public:
         buf[0] = DATA_FLOAT;
         buf[1] = id;
         *((float *)&buf[2]) = data;
+
+        queue(std::move(buf));
+    }
+
+    void logLimitedInt(uint8_t id, int min, int max, int data)
+    {
+        assert(max > min);
+        uint32_t v = (data - min) * 256 / (max - min); 
+
+        std::vector<uint8_t> buf(2 + 1);
+        buf[0] = DATA_LIMITED_INT;
+        buf[1] = id;
+        buf[2] = v & 0xff;
 
         queue(std::move(buf));
     }

@@ -30,6 +30,7 @@ using namespace miosix;
 
 int main()
 {
+    printf("\n");
     Leds::init();
     Leds::set(0);
     Log::getInstance();
@@ -38,6 +39,9 @@ int main()
     const std::vector<SingleSensor>& data = sBoard->debugGetSensors();
     int ctr=0;
 
+    char buf[128] = {0};
+
+    const SPIDriver& spi = SPIDriver::instance();
     while(1)
     {
         for(const auto& s : data)
@@ -54,8 +58,13 @@ int main()
                     break;
             }
         }
+        DMAFIFOStatus tx = spi.getTxFIFOStatus();
+        DMAFIFOStatus rx = spi.getRxFIFOStatus();
+
+        if(tx > -1) sLog->logLimitedInt(17, DFS_EE, DFS_100, tx);
+        if(rx > -1) sLog->logLimitedInt(18, DFS_EE, DFS_100, rx);
     
-        Thread::sleep(10);
+        Thread::sleep(1);
     }
 
     // NOT EXECUTED
