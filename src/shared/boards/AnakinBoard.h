@@ -86,11 +86,6 @@ private:
     ms580_t*    mS_MS580;
 
     AnakinBoard();
-
-    AnakinBoard(const AnakinBoard&) = delete;
-    AnakinBoard(AnakinBoard&&) = delete;
-    AnakinBoard& operator=(const AnakinBoard&) = delete;
-    AnakinBoard& operator=(AnakinBoard&&) = delete;
 };
 
 #ifdef sBoard
