@@ -188,16 +188,18 @@ void SPIRequest::IRQbeginTransaction()
     DMA2_Stream0->NDTR = fromPeripheral.size();
 
     DMA2_Stream0->FCR  = DMA_SxFCR_FEIE   //Enable interrupt on FIFO error 
+                       | DMA_SxFCR_DMDIS  //Enable FIFO
                        | DMA_SxFCR_FTH_0  //FTH = 11 -> Full FIFO
                        | DMA_SxFCR_FTH_1;
 
     DMA2_Stream0->CR   = DMA_SxCR_CHSEL_1 | DMA_SxCR_CHSEL_0 // Channel 3
-                       | DMA_SxCR_PL_1    //High priority because fifo disabled
-                       | DMA_SxCR_MINC    //Increment memory pointer
-                       | DMA_SxCR_TCIE    //Interrupt on transfer complete
-                       | DMA_SxCR_TEIE    //Interrupt on transfer error
-                       | DMA_SxCR_DMEIE   //Interrupt on direct mode error
-                       | DMA_SxCR_EN;     //Start DMA
+                       | DMA_SxCR_MBURST_0 //Read 4 byte at a time from RAM
+                       | DMA_SxCR_PL_1     //High priority because fifo disabled
+                       | DMA_SxCR_MINC     //Increment memory pointer
+                       | DMA_SxCR_TCIE     //Interrupt on transfer complete
+                       | DMA_SxCR_TEIE     //Interrupt on transfer error
+                       | DMA_SxCR_DMEIE    //Interrupt on direct mode error
+                       | DMA_SxCR_EN;      //Start DMA
 
     
     // Tx
@@ -207,16 +209,18 @@ void SPIRequest::IRQbeginTransaction()
     DMA2_Stream5->NDTR = toPeripheral.size();
 
     DMA2_Stream5->FCR  = DMA_SxFCR_FEIE   //Enable interrupt on FIFO error 
+                       | DMA_SxFCR_DMDIS  //Enable FIFO
                        | DMA_SxFCR_FTH_0  //FTH = 11 -> Full FIFO
                        | DMA_SxFCR_FTH_1;
 
     DMA2_Stream5->CR   = DMA_SxCR_CHSEL_1 | DMA_SxCR_CHSEL_0 // Channel 3
-                       | DMA_SxCR_PL_1    //High priority because fifo disabled
-                       | DMA_SxCR_MINC    //Increment memory pointer
-                       | DMA_SxCR_DIR_0   //Memory to peripheral
-                       | DMA_SxCR_TEIE    //Interrupt on transfer error 
-                       | DMA_SxCR_DMEIE   //Interrupt on direct mode error
-                       | DMA_SxCR_EN;     //Start DMA
+                       | DMA_SxCR_MBURST_0 //Read 4 byte at a time from RAM
+                       | DMA_SxCR_PL_1     //High priority because fifo disabled
+                       | DMA_SxCR_MINC     //Increment memory pointer
+                       | DMA_SxCR_DIR_0    //Memory to peripheral
+                       | DMA_SxCR_TEIE     //Interrupt on transfer error 
+                       | DMA_SxCR_DMEIE    //Interrupt on direct mode error
+                       | DMA_SxCR_EN;      //Start DMA
 }
     
 void SPIRequest::IRQendTransaction()
