@@ -352,7 +352,6 @@ int main() {
     int ignore_ctr = 100;
     int led_status = 0x200;
 
-    Leds::init();
     while(1) {
         sDemoBoard->update();
         Thread::sleep(20);

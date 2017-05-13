@@ -60,7 +60,6 @@ void fifoQueueSz(void *arg)
 int main()
 {
     printf("\n");
-    Leds::init();
     Leds::set(0);
     Log::getInstance();
     sBoard->init();

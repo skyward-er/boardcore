@@ -1,5 +1,5 @@
 /* Copyright (c) 2016 Skyward Experimental Rocketry
- * Authors: Alain Carlucci, Matteo Michele Piazzolla
+ * Authors: Alain Carlucci, Matteo Michele Piazzolla, Federico Terraneo
  * 
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -24,22 +24,23 @@
 #define LEDS_H
 
 #include <Common.h>
+#include <array>
 
-using namespace std;
-using namespace miosix;
 class Leds {
 public:
-
-    /** Every bit of the param leds is the value for the n-th led.
-     * For example leds = 0x201 means (only) first and last led on.
+    /**
+     * Turn on/off all leds using a bitmask
+     * \param leds bitmask specifing which led has to be turned on
      */
     static void set(uint16_t leds) {
         for(int i=0;i<10;i++)
             set(i, (leds & (1 << i)) != 0);
     }
 
-    /** Param id should be in range [0,10). */
-    static void set(uint8_t id,  bool enable) {
+    /**
+     * \param id should be in range [0,10).
+     */
+    static void set(uint8_t id, bool enable) {
         if(id >= pins.size())
             return;
 
@@ -49,21 +50,13 @@ public:
             pins[id].low();
     }
 
-    /** Call this function on board startup, before the first set() call. */
-    inline static void init() {
-        #define PIN(x,y) Gpio<GPIO##x##_BASE, y>::getPin()
-        pins = { 
-            PIN(B, 0), PIN(A,15), PIN(B, 4), PIN(C, 4), PIN(C, 5), 
-            PIN(F, 6), PIN(D, 3), PIN(D, 4), PIN(G, 2), PIN(G, 3)
-        };
-        #undef PIN
-        for(auto& pin : pins)
-            pin.mode(Mode::OUTPUT);
-    }
-
 private:
-    static vector<GpioPin> pins;
-    Leds() {}
+    static const int numLeds=10;
+    static std::array<miosix::GpioPin,numLeds> pins;
+    
+    Leds()=delete;
+    Leds(const Leds&)=delete;
+    Leds& operator=(const Leds&)=delete;
 };
 
 #endif
