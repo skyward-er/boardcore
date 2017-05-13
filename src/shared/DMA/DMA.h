@@ -54,6 +54,7 @@ public:
     {
         return intToFIFOStatus((DMA2_Stream0->FCR & DMA_SxFCR_FS) >> 3);
     }
+    uint32_t getFIFOFaultCtr() const;
 
 private:
     SPIDriver();

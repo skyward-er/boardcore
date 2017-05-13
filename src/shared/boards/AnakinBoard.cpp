@@ -49,26 +49,27 @@ bool AnakinBoard::init()
     INIT_AND_CHECK(mS_LPS331AP);
     INIT_AND_CHECK(mS_MS580);
 
-    AddSensor(MPU9250_ACCEL,    DATA_VEC3,     mS_MPU9250->accelDataPtr());
-    AddSensor(MPU9250_GYRO,     DATA_VEC3,     mS_MPU9250->gyroDataPtr());
-    AddSensor(MPU9250_COMPASS,  DATA_VEC3,     mS_MPU9250->compassDataPtr());
-    AddSensor(MPU9250_TEMP,     DATA_FLOAT,    mS_MPU9250->tempDataPtr());
+    AddSensor(ACCEL_MPU9250,    DATA_VEC3,     mS_MPU9250->accelDataPtr());
+    AddSensor(GYRO_MPU9250,     DATA_VEC3,     mS_MPU9250->gyroDataPtr());
+    AddSensor(COMPASS_MPU9250,  DATA_VEC3,     mS_MPU9250->compassDataPtr());
+    AddSensor(TEMP_MPU9250,     DATA_FLOAT,    mS_MPU9250->tempDataPtr());
 
-    AddSensor(INEMO_ACCEL,      DATA_VEC3,     mS_INEMO->accelDataPtr());
-    AddSensor(INEMO_GYRO,       DATA_VEC3,     mS_INEMO->gyroDataPtr());
-    AddSensor(INEMO_COMPASS,    DATA_VEC3,     mS_INEMO->compassDataPtr());
-    AddSensor(INEMO_TEMP,       DATA_FLOAT,    mS_INEMO->tempDataPtr());
-    AddSensor(FXAS21002_GYRO,   DATA_VEC3,     mS_FXAS->gyroDataPtr());
+    AddSensor(ACCEL_INEMO,      DATA_VEC3,     mS_INEMO->accelDataPtr());
+    AddSensor(GYRO_INEMO,       DATA_VEC3,     mS_INEMO->gyroDataPtr());
+    AddSensor(COMPASS_INEMO,    DATA_VEC3,     mS_INEMO->compassDataPtr());
+    AddSensor(TEMP_INEMO,       DATA_FLOAT,    mS_INEMO->tempDataPtr());
 
-    AddSensor(LPS331AP_PRESS,   DATA_FLOAT,    mS_LPS331AP->pressureDataPtr());
-    AddSensor(LPS331AP_TEMP,    DATA_FLOAT,    mS_LPS331AP->tempDataPtr());
+    AddSensor(GYRO_FXAS21002,   DATA_VEC3,     mS_FXAS->gyroDataPtr());
 
-    AddSensor(MAX21105_ACCEL,   DATA_VEC3,     mS_MAX21105->accelDataPtr());
-    AddSensor(MAX21105_GYRO,    DATA_VEC3,     mS_MAX21105->gyroDataPtr());
-    AddSensor(MAX21105_TEMP,    DATA_FLOAT,    mS_MAX21105->tempDataPtr());
+    AddSensor(PRESS_LPS331AP,   DATA_FLOAT,    mS_LPS331AP->pressureDataPtr());
+    AddSensor(TEMP_LPS331AP,    DATA_FLOAT,    mS_LPS331AP->tempDataPtr());
 
-    AddSensor(MS580_PRESSURE,   DATA_FLOAT,    mS_MS580->pressureDataPtr());
-    AddSensor(MS580_TEMP,       DATA_FLOAT,    mS_MS580->tempDataPtr());
+    AddSensor(ACCEL_MAX21105,   DATA_VEC3,     mS_MAX21105->accelDataPtr());
+    AddSensor(GYRO_MAX21105,    DATA_VEC3,     mS_MAX21105->gyroDataPtr());
+    AddSensor(TEMP_MAX21105,    DATA_FLOAT,    mS_MAX21105->tempDataPtr());
+
+    AddSensor(PRESS_MS580,      DATA_FLOAT,    mS_MS580->pressureDataPtr());
+    AddSensor(TEMP_MS580,       DATA_FLOAT,    mS_MS580->tempDataPtr());
 
     sLog->logString("Adding sensors to 100Hz DMA sampler\n");
     m100HzDMA.AddSensor(mS_MPU9250);

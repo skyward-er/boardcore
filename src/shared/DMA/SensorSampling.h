@@ -24,6 +24,7 @@
 
 #include <Common.h>
 #include <DMA/DMA.h>
+#include <log/Log.h>
 
 class Sensor;
 class DMASensorSampler
@@ -45,10 +46,11 @@ public:
     void Update()
     {
         auto& driver = SPIDriver::instance(); 
-        driver.transaction(mRequests);
+        bool ret = driver.transaction(mRequests);
 
-        for(size_t i=0; i< mSensors.size(); i++)
-            mSensors[i]->onDMAUpdate(mRequests[i]);
+        if(ret)
+            for(size_t i=0; i< mSensors.size(); i++)
+                mSensors[i]->onDMAUpdate(mRequests[i]);
     }
 private:
     std::vector<Sensor*> mSensors;

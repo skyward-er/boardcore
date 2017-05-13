@@ -102,9 +102,7 @@ void EventScheduler::run() {
             } else tasks.erase(e.task);
         } else {
             Unlock<FastMutex> u(l);
-            leds::led9::high();
             Thread::sleepUntil(nextTick);
-            leds::led9::low();
         }
     }
 }

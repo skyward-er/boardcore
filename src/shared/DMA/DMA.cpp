@@ -35,6 +35,7 @@ static Thread *waiting = nullptr;
 static vector<SPIRequest> *requestVector = nullptr;
 static size_t requestIndex = 0;
 static bool error = false;
+static uint32_t fifoFaultCtr = 0;
 
 /**
  * DMA RX end of transfer
@@ -52,10 +53,16 @@ void __attribute__((naked)) DMA2_Stream0_IRQHandler()
 void __attribute__((used)) SPI1rxDmaHandlerImpl()
 {
     if(DMA2->LISR & (DMA_LISR_TEIF0 | DMA_LISR_DMEIF0 | DMA_LISR_FEIF0)) 
+    {
         error = true;
-    if(DMA2->HISR & (DMA_HISR_TEIF5 | DMA_HISR_DMEIF5 | DMA_HISR_FEIF5)) 
+        fifoFaultCtr++;
+    }
+    if(DMA2->HISR & (DMA_HISR_TEIF5 | DMA_HISR_DMEIF5)) 
+    {
         error = true;
-    
+        fifoFaultCtr++;
+    }
+
     DMA2->LIFCR = DMA_LIFCR_CTCIF0
                 | DMA_LIFCR_CTEIF0
                 | DMA_LIFCR_CDMEIF0
@@ -65,6 +72,7 @@ void __attribute__((used)) SPI1rxDmaHandlerImpl()
                 | DMA_HIFCR_CTEIF5
                 | DMA_HIFCR_CDMEIF5
                 | DMA_HIFCR_CFEIF5;
+    
     
     if(requestVector==nullptr) return;
     (*requestVector)[requestIndex].IRQendTransaction();
@@ -171,6 +179,11 @@ SPIDriver::SPIDriver()
     }
 }
 
+uint32_t SPIDriver::getFIFOFaultCtr() const
+{
+    return fifoFaultCtr;
+}
+
 //
 // class SPIRequest
 //
@@ -193,7 +206,6 @@ void SPIRequest::IRQbeginTransaction()
                        | DMA_SxFCR_FTH_1;
 
     DMA2_Stream0->CR   = DMA_SxCR_CHSEL_1 | DMA_SxCR_CHSEL_0 // Channel 3
-                       | DMA_SxCR_MBURST_0 //Read 4 byte at a time from RAM
                        | DMA_SxCR_PL_1     //High priority because fifo disabled
                        | DMA_SxCR_MINC     //Increment memory pointer
                        | DMA_SxCR_TCIE     //Interrupt on transfer complete
@@ -214,7 +226,6 @@ void SPIRequest::IRQbeginTransaction()
                        | DMA_SxFCR_FTH_1;
 
     DMA2_Stream5->CR   = DMA_SxCR_CHSEL_1 | DMA_SxCR_CHSEL_0 // Channel 3
-                       | DMA_SxCR_MBURST_0 //Read 4 byte at a time from RAM
                        | DMA_SxCR_PL_1     //High priority because fifo disabled
                        | DMA_SxCR_MINC     //Increment memory pointer
                        | DMA_SxCR_DIR_0    //Memory to peripheral
