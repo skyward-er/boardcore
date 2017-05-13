@@ -57,6 +57,9 @@ void __attribute__((used)) SPI1rxDmaHandlerImpl()
         error = true;
         fifoFaultCtr++;
     }
+
+    // FEIF5 is not checked because is ALWAYS 1 both if FIFO is enabled
+    // or disabled. Tests show that all data are transferred correctly!
     if(DMA2->HISR & (DMA_HISR_TEIF5 | DMA_HISR_DMEIF5)) 
     {
         error = true;
