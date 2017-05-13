@@ -21,6 +21,7 @@ class Log : public Singleton<Log>, ActiveObject
         DATA_INT    = 3,
         DATA_STRING = 4,
         DATA_LIMITED_INT = 5,
+        DATA_UINT32 = 6,
     };
 
     friend class Singleton<Log>;
@@ -46,6 +47,16 @@ public:
         buf[0] = DATA_FLOAT;
         buf[1] = id;
         *((float *)&buf[2]) = data;
+
+        queue(std::move(buf));
+    }
+
+    void logUInt32(uint8_t id, uint32_t data)
+    {
+        std::vector<uint8_t> buf(2 + sizeof(uint32_t));
+        buf[0] = DATA_UINT32;
+        buf[1] = id;
+        memcpy(&buf[2], &data, sizeof(uint32_t));
 
         queue(std::move(buf));
     }

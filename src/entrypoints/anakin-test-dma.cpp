@@ -27,6 +27,35 @@
 
 using namespace miosix;
 
+void fifoQueueSz(void *arg)
+{
+    const SPIDriver& spi = SPIDriver::instance();
+    int tx_accum = 0, rx_accum = 0, sz_ctr = 0;
+
+    sLog->logString("Thread started");
+
+    while(1)
+    {
+        DMAFIFOStatus tx = spi.getTxFIFOStatus();
+        DMAFIFOStatus rx = spi.getRxFIFOStatus();
+
+        if(tx > -1 && rx > -1)
+        {
+            tx_accum += tx;
+            rx_accum += rx;
+            if(++sz_ctr == 100)
+            {
+                float tx1 = tx_accum / (float)(DFS_100 - DFS_EE + 1) * 255.0f;
+                float rx1 = rx_accum / (float)(DFS_100 - DFS_EE + 1) * 255.0f;
+                tx_accum = rx_accum = sz_ctr = 0;
+                sLog->logLimitedInt(17, 0, 255, tx1);
+                sLog->logLimitedInt(18, 0, 255, rx1);
+                sLog->logUInt32(19, spi.getFIFOFaultCtr());
+            }
+        }
+        Thread::sleep(1);
+    }
+}
 
 int main()
 {
@@ -39,9 +68,7 @@ int main()
     const std::vector<SingleSensor>& data = sBoard->debugGetSensors();
     int ctr=0;
 
-    char buf[128] = {0};
-
-    const SPIDriver& spi = SPIDriver::instance();
+    Thread::create(fifoQueueSz, 1024);
     while(1)
     {
         for(const auto& s : data)
@@ -58,13 +85,8 @@ int main()
                     break;
             }
         }
-        DMAFIFOStatus tx = spi.getTxFIFOStatus();
-        DMAFIFOStatus rx = spi.getRxFIFOStatus();
-
-        if(tx > -1) sLog->logLimitedInt(17, DFS_EE, DFS_100, tx);
-        if(rx > -1) sLog->logLimitedInt(18, DFS_EE, DFS_100, rx);
     
-        Thread::sleep(1);
+        Thread::sleep(10);
     }
 
     // NOT EXECUTED

@@ -38,27 +38,30 @@ typedef MS580301BA07<spiMS580301BA07> ms580_t;
 // AnakinSensor numbers must be in range 0 <= x <= 65535 (uint16_t)
 enum AnakinSensor
 {
-    MPU9250_ACCEL    = 0,
-    MPU9250_GYRO     = 1,
-    MPU9250_COMPASS  = 2,
-    MPU9250_TEMP     = 3,
+    ACCEL_MPU9250    = 0,
+    ACCEL_INEMO      = 1,
+    ACCEL_MAX21105   = 2,
 
-    INEMO_ACCEL      = 4,
-    INEMO_GYRO       = 5,
-    INEMO_COMPASS    = 6,
-    INEMO_TEMP       = 7,
+    GYRO_MPU9250     = 3,
+    GYRO_INEMO       = 4,
+    GYRO_FXAS21002   = 5,
+    GYRO_MAX21105    = 6,
 
-    FXAS21002_GYRO   = 8,
+    COMPASS_MPU9250  = 7,
+    COMPASS_INEMO    = 8,
 
-    LPS331AP_PRESS   = 9,
-    LPS331AP_TEMP    = 10,
+    TEMP_MPU9250     = 9,
+    TEMP_INEMO       = 10,
+    TEMP_LPS331AP    = 11,
+    TEMP_MAX21105    = 12,
+    TEMP_MS580       = 13,
 
-    MAX21105_ACCEL   = 11,
-    MAX21105_GYRO    = 12,
-    MAX21105_TEMP    = 13,
+    PRESS_LPS331AP   = 14,
+    PRESS_MS580      = 15,
 
-    MS580_PRESSURE   = 14,
-    MS580_TEMP       = 15,
+    UNUSED_16        = 16,
+    RESERVED_17      = 17,
+    RESERVED_18      = 18,
 };
 
 class AnakinBoard : public Singleton<AnakinBoard>, public Board
