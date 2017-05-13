@@ -51,17 +51,20 @@ void __attribute__((naked)) DMA2_Stream0_IRQHandler()
  */
 void __attribute__((used)) SPI1rxDmaHandlerImpl()
 {
-    if(DMA2->LISR & (DMA_LISR_TEIF0 | DMA_LISR_DMEIF0)) 
+    if(DMA2->LISR & (DMA_LISR_TEIF0 | DMA_LISR_DMEIF0 | DMA_LISR_FEIF0)) 
         error = true;
-    if(DMA2->HISR & (DMA_HISR_TEIF5 | DMA_HISR_DMEIF5)) 
+    if(DMA2->HISR & (DMA_HISR_TEIF5 | DMA_HISR_DMEIF5 | DMA_HISR_FEIF5)) 
         error = true;
     
     DMA2->LIFCR = DMA_LIFCR_CTCIF0
                 | DMA_LIFCR_CTEIF0
-                | DMA_LIFCR_CDMEIF0;
+                | DMA_LIFCR_CDMEIF0
+                | DMA_LIFCR_CFEIF0;
+
     DMA2->HIFCR = DMA_HIFCR_CTCIF5
                 | DMA_HIFCR_CTEIF5
-                | DMA_HIFCR_CDMEIF5;
+                | DMA_HIFCR_CDMEIF5
+                | DMA_HIFCR_CFEIF5;
     
     if(requestVector==nullptr) return;
     (*requestVector)[requestIndex].IRQendTransaction();
