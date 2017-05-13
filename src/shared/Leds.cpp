@@ -1,5 +1,5 @@
 /* Copyright (c) 2016-2017 Skyward Experimental Rocketry
- * Authors: Alain Carlucci
+ * Authors: Alain Carlucci, Federico Terraneo
  * 
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -22,4 +22,10 @@
 
 #include "Leds.h"
 
-std::vector<GpioPin> Leds::pins;
+//Relying on the BSP to provide leds and configure them as output
+#define LED(x) miosix::leds::led##x::getPin()
+std::array<miosix::GpioPin,Leds::numLeds> Leds::pins{{
+    LED(0), LED(1), LED(2), LED(3), LED(4),
+    LED(5), LED(6), LED(7), LED(8), LED(9)
+}};
+#undef LED
