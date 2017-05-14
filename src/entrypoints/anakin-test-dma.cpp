@@ -23,7 +23,7 @@
 #include <Common.h>
 #include <Leds.h>
 #include <boards/AnakinBoard.h>
-#include <log/Log.h>
+#include <diagnostic/Log.h>
 
 using namespace miosix;
 
