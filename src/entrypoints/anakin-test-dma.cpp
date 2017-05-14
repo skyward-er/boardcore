@@ -21,7 +21,7 @@
  */
 
 #include <Common.h>
-#include <Leds.h>
+#include <drivers/Leds.h>
 #include <boards/AnakinBoard.h>
 #include <diagnostic/Log.h>
 #include <diagnostic/CpuMeter.h>
