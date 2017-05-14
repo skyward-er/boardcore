@@ -36,6 +36,9 @@ TODO:
 #include "CanSocket.h"
 #include "CanUtils.h"
 
+using namespace miosix;
+using std::set;
+
 // Transmit mailbox request
 #define TMIDxR_TXRQ       ((uint32_t)0x00000001) 
 

@@ -24,6 +24,9 @@
 
 #include "CanManager.h"
 
+using namespace miosix;
+using namespace std;
+
 CanBus *CanManager::getBus(uint32_t id) {
     if(id >= bus.size())
         return NULL;

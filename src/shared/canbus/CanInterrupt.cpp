@@ -24,6 +24,8 @@
 
 #include "CanBus.h"
 
+using namespace miosix;
+
 CanBus * global_bus_ptr[2] = {NULL, NULL};
 uint32_t global_bus_ctr = 0;
 

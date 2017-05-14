@@ -30,11 +30,6 @@
 #include "CanUtils.h"
 #include "CanBus.h"
 
-using namespace miosix;
-using namespace std;
-
-using std::vector;
-using std::array;
 class CanBus;
 
 static const int8_t AF_NONE = -1;
@@ -54,7 +49,7 @@ struct canbus_init_t {
     const int8_t af;
 
     /** Array of interrupts */
-    const vector<IRQn_Type> interrupts;
+    const std::vector<IRQn_Type> interrupts;
 };  
 
 class CanManager {
@@ -67,8 +62,8 @@ class CanManager {
         
         template<uint32_t gpio, uint8_t rx, uint8_t tx>
         void addBus(const canbus_init_t& i) {
-            typedef Gpio<gpio, rx> rport;
-            typedef Gpio<gpio, tx> tport;
+            typedef miosix::Gpio<gpio, rx> rport;
+            typedef miosix::Gpio<gpio, tx> tport;
             
             rport::mode(i.mode);
             tport::mode(i.mode);
@@ -80,7 +75,7 @@ class CanManager {
 
             // TODO de-hardcode this part 
             {
-                FastInterruptDisableLock dLock;
+                miosix::FastInterruptDisableLock dLock;
                 RCC->APB1ENR |= RCC_APB1ENR_CAN1EN | RCC_APB1ENR_CAN2EN; 
                 RCC_SYNC();
             }
@@ -144,8 +139,8 @@ class CanManager {
         static constexpr int max_glob_filters = 2 * max_chan_filters;
 
     private:
-        map<uint16_t, uint8_t> filters[2];
-        vector<CanBus *> bus;
+        std::map<uint16_t, uint8_t> filters[2];
+        std::vector<CanBus *> bus;
 
         // TODO change "2" with number of available CAN buses
         uint16_t enabled_filters[2];
