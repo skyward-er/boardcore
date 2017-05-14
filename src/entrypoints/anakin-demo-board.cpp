@@ -35,7 +35,7 @@
 #include <math/Vec3.h>
 #include <math/Matrix.h>
 #include <drivers/stm32f2_f4_i2c.h> 
-#include <ethernet/UdpManager.h>
+#include <drivers/ethernet/UdpManager.h>
 
 using namespace miosix;
 using std::vector;

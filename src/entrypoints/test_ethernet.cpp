@@ -21,7 +21,7 @@
  */
 
 #include <Common.h>
-#include <ethernet/UdpManager.h>
+#include <drivers/ethernet/UdpManager.h>
 #include <string>
 
 using namespace miosix;
