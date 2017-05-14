@@ -23,7 +23,7 @@
 #include "Sensor.h"
 #include "Common.h"
 
-using namespace miosix;
+// using namespace miosix;
 
 template<unsigned N,unsigned CHANNEL, class GpioADC>
 class SensorADC  {
@@ -34,7 +34,7 @@ public:
     }
 
     bool init() {
-        GpioADC::mode(Mode::INPUT_ANALOG);
+        GpioADC::mode(miosix::Mode::INPUT_ANALOG);
         enableADC(ADCx);
 
         ADCx->SQR1 = 0x0; //One conversion
@@ -60,7 +60,7 @@ public:
     }
 
     static inline void enableADC(ADC_TypeDef* adc) {
-        FastInterruptDisableLock dLock;
+        miosix::FastInterruptDisableLock dLock;
 
         if(adc == ADC1){
             RCC->APB2ENR |= RCC_APB2ENR_ADC1EN;
@@ -88,7 +88,7 @@ public:
                     | ADC_CR2_CONT
                     | ADC_CR2_ADON;
 
-        Thread::sleep(10);
+        miosix::Thread::sleep(10);
         ADCx->CR2|=ADC_CR2_ADON; //Setting ADC ON twice starts a conversion
         while((ADCx->SR & ADC_SR_EOC)==0);
             last_value = ADCx->DR;

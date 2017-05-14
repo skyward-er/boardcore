@@ -1,4 +1,5 @@
 
+
 #include <sensors/iNemo.h>
 #include <sensors/FXAS21002.h>
 #include <sensors/MPU9250.h>
@@ -20,6 +21,8 @@ typedef ProtocolSPI<busSPI1, Gpio<GPIOG_BASE,  9>> spiINEMOG;
 
 typedef MPU9250<spiMPU9250> mpu_t;
 typedef iNEMOLSM9DS0<spiINEMOG,spiINEMOA> inemo_t;
+
+typedef SensorADC<0,0,Gpio<GPIOA_BASE,0>> adc1;
 
 int main()
 {

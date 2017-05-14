@@ -28,15 +28,12 @@
 #include <Common.h>
 #include "CanUtils.h"
 
-using namespace miosix;
-using std::set;
-
 class CanSocket;
 class CanManager;
 
 class CanBus {
     public:
-        Queue<CanMsg,6> messageQueue;
+        miosix::Queue<CanMsg,6> messageQueue;
 
         bool registerSocket(CanSocket *socket);
         bool unregisterSocket(CanSocket *socket);
@@ -59,8 +56,8 @@ class CanBus {
         CanManager* manager;
         const int id;
 
-        FastMutex mutex;
-        set<CanSocket *> socket_map[1 << 11];
+        miosix::FastMutex mutex;
+        std::set<CanSocket *> socket_map[1 << 11];
 
         volatile bool terminate;
         pthread_t t;
