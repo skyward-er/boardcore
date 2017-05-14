@@ -28,8 +28,8 @@
 #include <sensors/MAX21105.h>
 #include <sensors/MS580301BA07.h>
 
-#include <DMA/DMA.h>
-#include <DMA/SensorSampling.h>
+#include <spi/SensorSpi.h>
+#include <sensors/SensorSampling.h>
 
 using namespace miosix;
 

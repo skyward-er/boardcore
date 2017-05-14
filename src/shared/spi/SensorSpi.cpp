@@ -20,7 +20,7 @@
  * THE SOFTWARE.
  */
 
-#include "DMA.h"
+#include "SensorSpi.h"
 #include <kernel/scheduler/scheduler.h>
 
 using namespace std;
