@@ -109,6 +109,8 @@ public:
 
         queue(std::move(buf));
     }
+
+    uint32_t getLogQueueSize() const { return mQueue.size(); }
 protected:
     void run() override 
     {
