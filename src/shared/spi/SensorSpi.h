@@ -20,8 +20,8 @@
  * THE SOFTWARE.
  */
 
-#ifndef SPI_DRIVER_H
-#define SPI_DRIVER_H
+#ifndef SENSOR_SPI_H
+#define SENSOR_SPI_H
 
 #include <Common.h>
 
@@ -145,4 +145,4 @@ private:
     std::vector<uint8_t> fromPeripheral;
 };
 
-#endif //SPI_DRIVER_H
+#endif //SENSOR_SPI_H

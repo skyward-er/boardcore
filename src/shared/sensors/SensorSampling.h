@@ -23,7 +23,7 @@
 #define SENSOR_SAMPLING_H
 
 #include <Common.h>
-#include <DMA/DMA.h>
+#include <spi/SensorSpi.h>
 #include <diagnostic/Log.h>
 
 class Sensor;
