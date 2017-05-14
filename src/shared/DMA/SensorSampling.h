@@ -24,7 +24,7 @@
 
 #include <Common.h>
 #include <DMA/DMA.h>
-#include <log/Log.h>
+#include <diagnostic/Log.h>
 
 class Sensor;
 class DMASensorSampler
