@@ -26,7 +26,7 @@
 #define MPL3115_H
 
 #include "Sensor.h"
-#include <BusTemplate.h>
+#include <drivers/BusTemplate.h>
 
 template <typename BusType>
 class MPL3115 : public PressureSensor, public TemperatureSensor, 

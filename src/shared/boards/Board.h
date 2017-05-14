@@ -24,7 +24,7 @@
 #define BOARD_H
 
 #include <Common.h>
-#include <BusTemplate.h>
+#include <drivers/BusTemplate.h>
 #include <Singleton.h>
 #include <sensors/Sensor.h>
 #include <diagnostic/Log.h>

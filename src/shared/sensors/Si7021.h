@@ -26,7 +26,7 @@
 #define SI7021_H 
 
 #include "Sensor.h"
-#include <BusTemplate.h>
+#include <drivers/BusTemplate.h>
 
 template <typename BusType>
 class Si7021 : public HumiditySensor, public TemperatureSensor {

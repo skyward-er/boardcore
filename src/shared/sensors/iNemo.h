@@ -27,7 +27,7 @@
 #define INEMO_H
 
 #include "Sensor.h"
-#include "BusTemplate.h"
+#include <drivers/BusTemplate.h>
 #include "Common.h"
 
 template <typename BusG,typename BusXM>

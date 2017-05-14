@@ -21,7 +21,7 @@
  */
 
 #include <Common.h>
-#include <BusTemplate.h>
+#include <drivers/BusTemplate.h>
 #include "drivers/stm32f2_f4_i2c.h"
 #include <events/Scheduler.h>
 

@@ -21,7 +21,7 @@
  */
 
 #include <Common.h>
-#include <BusTemplate.h>
+#include <drivers/BusTemplate.h>
 #include <sensors/FXAS21002.h>
 #include <sensors/MAX21105.h>
 #include <sensors/MPU9250.h>

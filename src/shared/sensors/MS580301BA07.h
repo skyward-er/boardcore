@@ -26,7 +26,7 @@
 #define MS580301BA07_H
 
 #include "Sensor.h"
-#include <BusTemplate.h>
+#include <drivers/BusTemplate.h>
 
 // TODO second order temperature compensation 
 template<class Bus>

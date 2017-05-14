@@ -25,7 +25,7 @@
 #define MAX31856_H
 
 #include "Sensor.h"
-#include <BusTemplate.h>
+#include <drivers/BusTemplate.h>
 
 /** This is a thermocouple reading chip */
 

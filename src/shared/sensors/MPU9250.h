@@ -25,7 +25,7 @@
 #ifndef MAX9250_H
 #define MAX9250_H 
 #include "Sensor.h"
-#include <BusTemplate.h>
+#include <drivers/BusTemplate.h>
 
 // TODO: fix normalizeTemp() (is /512.0f correct?)
 // TODO: Self-Test
