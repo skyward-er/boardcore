@@ -53,7 +53,7 @@ public:
             Bus::read(RESET_DEV);
             cd.sens = readReg(PROM_READ_MASK | PROM_SENS_MASK);
             if(cd.sens == 0)
-                Thread::sleep(1);
+                miosix::Thread::sleep(1);
         } while (cd.sens == 0 && --timeout > 0);
 
         if(timeout <= 0)

@@ -145,9 +145,9 @@ public:
         }
 
         akWriteReg(AK8963_CNTL2, 0x01);
-        Thread::sleep(1);
+        miosix::Thread::sleep(1);
         akWriteReg(AK8963_CNTL1, 0x16);
-        Thread::sleep(1);
+        miosix::Thread::sleep(1);
 
         magnetoFSMState = 1;
         return true;
@@ -207,7 +207,7 @@ public:
         // -- SELF TEST ROUTINE --
         Bus::read(REG_ST_GYRO, st_gyro, sizeof(st_gyro)); 
         Bus::read(REG_ST_ACCEL, st_accel, sizeof(st_accel)); 
-        Thread::sleep(10);
+        miosix::Thread::sleep(10);
         readRAWData(test);
 
         // -- DISABLE SELF TEST --
@@ -286,7 +286,7 @@ private:
         while(--timeout >= 0) {
             if(Bus::read(REG_I2C_MST_STATUS) & 0x40)
                 break;
-            Thread::sleep(1);
+            miosix::Thread::sleep(1);
         }
 
         if(timeout < 0)
@@ -329,7 +329,7 @@ private:
         for(size_t i=0;i<sizeof(regs)/sizeof(regs[0]);i++)
             Bus::write(regs[i][0], regs[i][1]);
 
-        Thread::sleep(1);
+        miosix::Thread::sleep(1);
     }
 
     enum magnetoMap 

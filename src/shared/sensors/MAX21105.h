@@ -84,7 +84,7 @@ public:
         for(size_t i=0; i < sizeof(init_data)/sizeof(init_data[0]); i++)
         {
             Bus::write(init_data[i][0], init_data[i][1]);
-            Thread::sleep(1);
+            miosix::Thread::sleep(1);
         }
 
         return true;

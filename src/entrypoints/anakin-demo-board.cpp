@@ -38,6 +38,7 @@
 #include <ethernet/UdpManager.h>
 
 using namespace miosix;
+using std::vector;
 
 //#define ENABLE_ETHERNET
 constexpr uint32_t lp_alpha = 250;

@@ -80,7 +80,7 @@ public:
         uint8_t timeout = 10;
 
         while(BusXM::read(CTRL_REG0_XM) != 0x00 && --timeout > 0)
-            Thread::sleep(1);
+            miosix::Thread::sleep(1);
 
         if(timeout == 0)
         {

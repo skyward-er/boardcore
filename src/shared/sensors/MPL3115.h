@@ -41,7 +41,8 @@ public:
         mLastAltitude = 0.0f;
     }
     
-    bool init() {
+    bool init()
+    {
         setMode(MODE_BAROMETER);
         
         // raise and event flag on new pressure/altitude 
@@ -52,7 +53,8 @@ public:
         return true;
     }
     
-    bool selfTest() {
+    bool selfTest()
+    {
         uint8_t value = 0;
         BusType::read(devAddr,WHO_AM_I,&value,1);
                 
@@ -63,7 +65,8 @@ public:
         return false;
     }
     
-    bool onSimpleUpdate() {
+    bool onSimpleUpdate()
+    {
         /* To start a new one-shot conversion we have to set OST bit whith
          * SBYB bit cleared; these bit are, respectively, the second and 
          * first bits from right in control register 1.
@@ -80,12 +83,11 @@ public:
         temp |= 0x02;       //set second bit
         BusType::write(devAddr,CTRL_REG1,&temp,1);
 
-        do{
-            
+        do
+        {
             BusType::read(devAddr,CTRL_REG1,&temp,1);
-            Thread::sleep(6);   //minimum sample time is 6 ms
-
-        }while(!(temp & 0x02));
+            miosix::Thread::sleep(6);   //minimum sample time is 6 ms
+        } while(!(temp & 0x02));
         
         /* This device supports register pointer auto-increment when reading
          * registers from 0x00 to 0x05, so with one read of 6 bytes we get 
@@ -102,7 +104,8 @@ public:
         uint8_t data[7];
         BusType::read(devAddr,OUT_P_MSB,data,7);
         
-        if(sensorMode == MODE_BAROMETER) {            
+        if(sensorMode == MODE_BAROMETER)
+        {
 
             // See datasheet at page 21 for more informations about 
             // calculations below
@@ -112,7 +115,8 @@ public:
             mLastPressure = static_cast<float>(press) / 64;                    
         }
         
-        if(sensorMode == MODE_ALTIMETER) {
+        if(sensorMode == MODE_ALTIMETER)
+        {
             uint32_t altitude = (static_cast<uint32_t>(data[0]) << 24) 
                               | (static_cast<uint32_t>(data[1]) << 16) 
                               | (static_cast<uint32_t>(data[2]) << 8);
@@ -131,8 +135,8 @@ public:
      * true is returned in case of success, false if 
      * the value passed in @param mode was not recognized
      */
-    bool setMode(uint8_t mode) {
-        
+    bool setMode(uint8_t mode)
+    {
         if(sensorMode == mode)
             return true;
         
@@ -156,7 +160,8 @@ public:
      * @param offset offset trim value as 8 bit two's complement number.
      * Range is from -8 to +7.9375°C, 0.0625°C per LSB
      */
-    void setTempOffset(int8_t offset) { 
+    void setTempOffset(int8_t offset)
+    {
         BusType::write(devAddr,TEMP_OFFSET,&offset,1); 
     }
     
@@ -165,7 +170,8 @@ public:
      * @param offset offset trim value as 8 bit two's complement number.
      * Range is from -512 to +508 Pa, 4 Pa per LSB
      */
-    void setPressOffset(int8_t offset) { 
+    void setPressOffset(int8_t offset)
+    {
         BusType::write(devAddr,PRESS_OFFSET,&offset,1); 
     }
     
@@ -174,7 +180,8 @@ public:
      * @param offset offset trim value as 8 bit two's complement number.
      * The range of values are from -128 to +127 meters
      */
-    void setAltOffset(int8_t offset) { 
+    void setAltOffset(int8_t offset)
+    {
         BusType::write(devAddr,ALTIT_OFFSET,&offset,1); 
     }
     
@@ -184,13 +191,15 @@ public:
      * For further informations about minimum time between samples and its
      * relation with oversampling ratio see datasheet at page 31
      */
-    void setOversampleRatio(uint8_t ratio) {
+    void setOversampleRatio(uint8_t ratio)
+    {
         uint8_t temp, osr = 0;
         
         BusType::read(devAddr,CTRL_REG1,&temp,1);
         temp &= ~0b00111000;    //oversample ratio bits are 4th to 6th
         
-        switch(ratio) {
+        switch(ratio)
+        {
             case 1:   osr = 0x00; break;
             case 2:   osr = 0x01; break;
             case 4:   osr = 0x02; break;
@@ -206,9 +215,11 @@ public:
         temp |= osr << 3;
         BusType::write(devAddr,CTRL_REG1,&temp,1);
     }
-   enum sensMode {       
-       MODE_BAROMETER = 0x01,
-       MODE_ALTIMETER = 0x02        
+
+    enum sensMode
+    {
+        MODE_BAROMETER = 0x01,
+        MODE_ALTIMETER = 0x02        
     };
     
 private:
@@ -219,7 +230,8 @@ private:
     float lastPress;
     float lastAlt;
     
-    enum registers {
+    enum registers
+    {
         STATUS          = 0x00,
         OUT_P_MSB       = 0x01,
         OUT_P_CSB       = 0x02,

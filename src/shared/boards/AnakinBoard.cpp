@@ -111,7 +111,7 @@ bool AnakinBoard::init()
         sEventScheduler->add(std::bind(& type ## SensorSampler::Update,name),\
                 rate, #name "-" #rate "ms",start)
 
-    int64_t start=getTick(); //Synchronize activation
+    int64_t start=miosix::getTick(); //Synchronize activation
     ADD_SAMPLER(DMA, m100HzDMA, 10); // 10ms
     ADD_SAMPLER(DMA, m25HzDMA, 40);  // 25ms
     ADD_SAMPLER(Simple, m10HzSimple, 100); // 100ms

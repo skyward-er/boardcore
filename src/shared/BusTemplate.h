@@ -34,9 +34,6 @@
 #include <util/software_i2c.h>
 #include <DMA/DMA.h>
 
-using namespace std;
-using namespace miosix;
-
 static const int csDelay=20;
 
 template<unsigned N, class GpioMosi, class GpioMiso, class GpioSclk>
@@ -99,13 +96,13 @@ private:
         if(getSPIAddr(N) == SPI1)
             SPIDriver::instance();
         else {
-            FastInterruptDisableLock dLock;
+            miosix::FastInterruptDisableLock dLock;
             IRQenableSPIBus(getSPIAddr(N));
-            GpioMosi::mode(Mode::ALTERNATE);
+            GpioMosi::mode(miosix::Mode::ALTERNATE);
             GpioMosi::alternateFunction(GetAlternativeFunctionNumber(N));
-            GpioMiso::mode(Mode::ALTERNATE);
+            GpioMiso::mode(miosix::Mode::ALTERNATE);
             GpioMiso::alternateFunction(GetAlternativeFunctionNumber(N));
-            GpioSclk::mode(Mode::ALTERNATE);
+            GpioSclk::mode(miosix::Mode::ALTERNATE);
             GpioSclk::alternateFunction(GetAlternativeFunctionNumber(N));
             getSPIAddr(N)->CR1 = SPI_CR1_SSM  //Software cs
                     | SPI_CR1_SSI  //Hardware cs internally tied high
@@ -139,7 +136,7 @@ template<class Bus, class GpioCS>
 class ProtocolSPI {
 public:
     static inline void init() {
-        GpioCS::mode(Mode::OUTPUT);
+        GpioCS::mode(miosix::Mode::OUTPUT);
         GpioCS::high();
         Bus::init();
     }
