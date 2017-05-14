@@ -23,7 +23,7 @@
  */
 
 #include <Common.h>
-#include <BusTemplate.h>
+#include <drivers/BusTemplate.h>
 #include <drivers/canbus/CanManager.h>
 #include <drivers/canbus/CanSocket.h>
 #include <drivers/canbus/CanUtils.h>

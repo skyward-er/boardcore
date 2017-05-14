@@ -26,7 +26,7 @@
 #define FXAS21002_H 
 
 #include "Sensor.h"
-#include "BusTemplate.h"
+#include <drivers/BusTemplate.h>
 
 template <typename Bus>
 class FXAS21002 : public GyroSensor {

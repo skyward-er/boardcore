@@ -24,7 +24,7 @@
 
 #include "Sensor.h"
 #include "interfaces/endianness.h"
-#include <BusTemplate.h>
+#include <drivers/BusTemplate.h>
 
 template<class Bus>
 class MAX21105 : public AccelSensor, public GyroSensor, 

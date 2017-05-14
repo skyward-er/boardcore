@@ -26,7 +26,7 @@
 #define LPS331AP_H 
 
 #include "Sensor.h"
-#include <BusTemplate.h>
+#include <drivers/BusTemplate.h>
 
 template <typename Bus>
 class LPS331AP : public PressureSensor, public TemperatureSensor
