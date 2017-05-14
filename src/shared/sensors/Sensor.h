@@ -27,7 +27,7 @@
 #include <Common.h>
 #include <math/Vec3.h>
 #include <math/Quaternion.h>
-#include <DMA/DMA.h>
+#include <drivers/spi/SensorSpi.h>
 
 /** Sensors class diagram
  *               ________ 

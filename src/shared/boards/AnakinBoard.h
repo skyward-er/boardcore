@@ -33,8 +33,8 @@
 #include <sensors/MAX21105.h>
 #include <sensors/MS580301BA07.h>
 
-#include <DMA/DMA.h>
-#include <DMA/SensorSampling.h>
+#include <drivers/spi/SensorSpi.h>
+#include <sensors/SensorSampling.h>
 
 typedef miosix::Gpio<GPIOA_BASE, 5> GpioSck;
 typedef miosix::Gpio<GPIOA_BASE, 6> GpioMiso;

@@ -21,9 +21,9 @@
  */
 
 #include <Common.h>
-#include <canbus/CanManager.h>
-#include <canbus/CanSocket.h>
-#include <canbus/CanUtils.h>
+#include <drivers/canbus/CanManager.h>
+#include <drivers/canbus/CanSocket.h>
+#include <drivers/canbus/CanUtils.h>
 #include <sensors/MPU9250.h>
 
 using namespace std;
