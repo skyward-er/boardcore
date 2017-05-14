@@ -32,7 +32,7 @@
 #include <Singleton.h>
 #include "i2c/stm32f2_f4_i2c.h"
 #include <util/software_i2c.h>
-#include <DMA/DMA.h>
+#include <drivers/spi/SensorSpi.h>
 
 static const int csDelay=20;
 
