@@ -32,6 +32,7 @@ void fifoQueueSz(void *arg)
 {
     const SPIDriver& spi = SPIDriver::instance();
     int tx_accum = 0, rx_accum = 0, sz_ctr = 0;
+    int qsize_accum = 0;
 
     sLog->logString("Thread started");
 
@@ -44,15 +45,18 @@ void fifoQueueSz(void *arg)
         {
             tx_accum += tx;
             rx_accum += rx;
+            qsize_accum += sLog->getLogQueueSize();
             if(++sz_ctr == 100)
             {
                 float tx1 = tx_accum / (float)(DFS_100 - DFS_EE + 1) * 255.0f;
                 float rx1 = rx_accum / (float)(DFS_100 - DFS_EE + 1) * 255.0f;
-                tx_accum = rx_accum = sz_ctr = 0;
+                float qsz = qsize_accum / 100.0f * 255.0f;
+                tx_accum = rx_accum = sz_ctr = qsize_accum = 0;
                 sLog->logLimitedInt(17, 0, 255, tx1);
                 sLog->logLimitedInt(18, 0, 255, rx1);
                 sLog->logUInt32(19, spi.getFIFOFaultCtr());
                 sLog->logUInt32(20, averageCpuUtilization());
+                sLog->logLimitedInt(21, 0, 255, qsz);
             }
         }
         Thread::sleep(1);
@@ -90,68 +94,5 @@ int main()
         Thread::sleep(100);
     }
 
-    // NOT EXECUTED
-    while(1)
-    {
-        printf("---------%05d----------\n", ctr++);
-        for(const auto& s : data)
-        {
-            printf("Sensor %03d:", s.sensor);
-            if(s.value == nullptr)
-            {
-                printf("NULLPTR\n");
-                continue;
-            }
-
-            switch(s.data)
-            {
-                case DATA_VEC3:
-                {
-                    const Vec3* d = (const Vec3*) s.value;
-                    printf("(%f,%f,%f)\n", d->getX(), d->getY(), d->getZ());
-                    break;
-                }
-                case DATA_FLOAT:
-                {
-                    const float* d = (const float*) s.value;
-                    printf("%f\n", *d);
-                    break;
-                }
-                case DATA_INT:
-                {
-                    const int* d = (const int*) s.value; 
-                    printf("[%08x]\n", *d);
-                    break;
-                }
-                default:
-                {
-                    printf("Unhandled %d\n", s.data);
-                    break;
-                }
-            }
-        }
-        printf("-----------------------\n");
-        Thread::sleep(10);
-    }
-    /*
-    std::vector<SPIRequest> requests;
-    requests.push_back(
-        SPIRequest(CS_MPU9250::getPin(),{0x80 | 0x75, 0, 0, 0, 0, 0, 0, 0, 0})
-    );
-
-    printf("A\n");
-    auto& driver=SPIDriver::instance();
-    printf("B\n");
-    bool ret = driver.transaction(requests);
-    printf("C: %d\n", ret);
-    auto result=requests[0].readResponseFromPeripheral();
-    printf("D\n");
-    memDump(result.data(),result.size());
-    printf("E\n");
-    */
-
-    while(1){
-        // Yo
-    }
     return 0;
 }

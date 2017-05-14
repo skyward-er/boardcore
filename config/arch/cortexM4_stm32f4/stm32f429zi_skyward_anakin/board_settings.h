@@ -64,7 +64,7 @@ const unsigned int AUX_TIMER_MAX=0xffff; ///<\internal Aux timer is 16 bits
 
 /// Serial port
 const unsigned int defaultSerial=1;
-const unsigned int defaultSerialSpeed=19200;
+const unsigned int defaultSerialSpeed=115200;
 const bool defaultSerialFlowctrl=false;
 //#define SERIAL_1_DMA //Serial 1 has no DMA as it would conflict with SPI6
 #define SERIAL_2_DMA   //Serial 2 is used by the piksi GPS, enable DMA
