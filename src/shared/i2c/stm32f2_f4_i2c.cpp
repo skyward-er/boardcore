@@ -33,8 +33,8 @@
 
 using namespace miosix;
 
-static bool error;        ///< Set to true by IRQ on error
-static Thread *waiting=0; ///< Thread waiting for an operation to complete
+static volatile bool error; ///< Set to true by IRQ on error
+static Thread *waiting=0;   ///< Thread waiting for an operation to complete
 
 /* In non-DMA mode the variables below are used to
  * handle the reception of 2 or more bytes through 
