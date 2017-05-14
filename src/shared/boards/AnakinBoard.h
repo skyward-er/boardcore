@@ -36,19 +36,19 @@
 #include <DMA/DMA.h>
 #include <DMA/SensorSampling.h>
 
-typedef Gpio<GPIOA_BASE, 5> GpioSck;
-typedef Gpio<GPIOA_BASE, 6> GpioMiso;
-typedef Gpio<GPIOA_BASE, 7> GpioMosi;
+typedef miosix::Gpio<GPIOA_BASE, 5> GpioSck;
+typedef miosix::Gpio<GPIOA_BASE, 6> GpioMiso;
+typedef miosix::Gpio<GPIOA_BASE, 7> GpioMosi;
 typedef BusSPI < 1, GpioMosi, GpioMiso, GpioSck> busSPI1;
 
-typedef ProtocolSPI<busSPI1, Gpio<GPIOD_BASE, 13>> spiMPU9250;
-typedef ProtocolSPI<busSPI1, Gpio<GPIOG_BASE, 11>> spiINEMOA;
-typedef ProtocolSPI<busSPI1, Gpio<GPIOG_BASE,  9>> spiINEMOG;
-typedef ProtocolSPI<busSPI1, Gpio<GPIOG_BASE, 10>> spiFXAS21002;
-typedef ProtocolSPI<busSPI1, Gpio<GPIOE_BASE,  4>> spiLPS331AP;
-typedef ProtocolSPI<busSPI1, Gpio<GPIOE_BASE,  2>> spiMAX21105;
-typedef ProtocolSPI<busSPI1, Gpio<GPIOB_BASE, 10>> spiMS580301BA07;
-//typedef ProtocolSPI<busSPI1, Gpio<GPIOB_BASE, 11>> spiMAX31856;
+typedef ProtocolSPI<busSPI1, miosix::Gpio<GPIOD_BASE, 13>> spiMPU9250;
+typedef ProtocolSPI<busSPI1, miosix::Gpio<GPIOG_BASE, 11>> spiINEMOA;
+typedef ProtocolSPI<busSPI1, miosix::Gpio<GPIOG_BASE,  9>> spiINEMOG;
+typedef ProtocolSPI<busSPI1, miosix::Gpio<GPIOG_BASE, 10>> spiFXAS21002;
+typedef ProtocolSPI<busSPI1, miosix::Gpio<GPIOE_BASE,  4>> spiLPS331AP;
+typedef ProtocolSPI<busSPI1, miosix::Gpio<GPIOE_BASE,  2>> spiMAX21105;
+typedef ProtocolSPI<busSPI1, miosix::Gpio<GPIOB_BASE, 10>> spiMS580301BA07;
+//typedef ProtocolSPI<busSPI1, miosix::Gpio<GPIOB_BASE, 11>> spiMAX31856;
 
 typedef MPU9250<spiMPU9250> mpu_t;
 typedef iNEMOLSM9DS0<spiINEMOG,spiINEMOA> inemo_t;

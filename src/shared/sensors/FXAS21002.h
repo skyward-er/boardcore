@@ -50,7 +50,7 @@ public:
         uint8_t timeout = 20;
         while((Bus::read(REG_CTRL1) & 0b01000000) && --timeout > 0)
         {
-            Thread::sleep(1);
+            miosix::Thread::sleep(1);
         }
 
         if(timeout == 0)
@@ -76,7 +76,7 @@ public:
         timeout = 20;
         while(!(Bus::read(REG_INT_SRC_FLAG) & 0b00001000) && --timeout > 0)
         {
-            Thread::sleep(1);
+            miosix::Thread::sleep(1);
         }
 
         if(timeout == 0)
