@@ -24,6 +24,7 @@
 #include <Leds.h>
 #include <boards/AnakinBoard.h>
 #include <diagnostic/Log.h>
+#include <diagnostic/CpuMeter.h>
 
 using namespace miosix;
 
@@ -51,6 +52,7 @@ void fifoQueueSz(void *arg)
                 sLog->logLimitedInt(17, 0, 255, tx1);
                 sLog->logLimitedInt(18, 0, 255, rx1);
                 sLog->logUInt32(19, spi.getFIFOFaultCtr());
+                sLog->logUInt32(20, averageCpuUtilization());
             }
         }
         Thread::sleep(1);
@@ -85,7 +87,7 @@ int main()
             }
         }
     
-        Thread::sleep(10);
+        Thread::sleep(100);
     }
 
     // NOT EXECUTED
