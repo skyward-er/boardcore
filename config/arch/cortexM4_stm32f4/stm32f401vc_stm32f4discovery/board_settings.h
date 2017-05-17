@@ -1,5 +1,5 @@
 /***************************************************************************
- *   Copyright (C) 2015 by Terraneo Federico                               *
+ *   Copyright (C) 2012, 2013, 2014 by Terraneo Federico                   *
  *                                                                         *
  *   This program is free software; you can redistribute it and/or modify  *
  *   it under the terms of the GNU General Public License as published by  *
@@ -36,13 +36,6 @@
  */
 #define BOARD_SETTINGS_VERSION 100
 
-/**
- * Select hardware revision (10=1.0, 11=1.1, ...).
- * Different versions of the board were built, with minor differences in GPIO
- * usage. Default is currently the latest one, which is v1.4
- */
-#define WANDSTEM_HW_REV 14
-
 namespace miosix {
 
 /**
@@ -51,15 +44,16 @@ namespace miosix {
  */
 
 /// Size of stack for main().
-const unsigned int MAIN_STACK_SIZE=4096;
+/// The C standard library is stack-heavy (iprintf requires 1KB) but the
+/// STM32F401VC only has 192KB of RAM so there is room for a big 4K stack.
+const unsigned int MAIN_STACK_SIZE=4*1024;
 
-/// Frequency of tick (in Hz). The frequency of the efm32gg332f1024 timer in
-/// the board can be divided by 1000. This allows to use a 1KHz tick and
-/// the minimun Thread::sleep value is 1ms
+/// Frequency of tick (in Hz). The frequency of the STM32F401VC timer in the
+/// stm32vldiscovery board can be divided by 1000. This allows to use a 1KHz
+/// tick and the minimun Thread::sleep value is 1ms
 /// For the priority scheduler this is also the context switch frequency
 const unsigned int TICK_FREQ=1000;
 
-//FIXME: this is here only to make it compile, there's no AUX_TIMER yet in portability.cpp
 ///\internal Aux timer run @ 100KHz
 ///Note that since the timer is only 16 bits this imposes a limit on the
 ///burst measurement of 655ms. If due to a pause_kernel() or
@@ -68,9 +62,19 @@ const unsigned int TICK_FREQ=1000;
 const unsigned int AUX_TIMER_CLOCK=100000;
 const unsigned int AUX_TIMER_MAX=0xffff; ///<\internal Aux timer is 16 bits
 
-// /// Serial port
-const unsigned int defaultSerial=0;
-const unsigned int defaultSerialSpeed=115200;
+/// Serial port
+const unsigned int defaultSerial=2;
+const unsigned int defaultSerialSpeed=19200;
+const bool defaultSerialFlowctrl=false;
+//#define SERIAL_1_DMA //Serial 1 is not used, so not enabling DMA
+//#define SERIAL_2_DMA //Serial 2 DMA conflicts with I2S driver in the examples
+//#define SERIAL_3_DMA //Serial 3 is not used, so not enabling DMA
+
+//#define I2C_WITH_DMA
+
+//SD card driver
+static const unsigned char sdVoltage=30; //Board powered @ 3.0V
+#define SD_ONE_BIT_DATABUS //Can't use 4 bit databus due to pin conflicts
 
 /**
  * \}
