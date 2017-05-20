@@ -71,7 +71,7 @@ unique_ptr< PDU > SlaveEngine::ProcessRequest(unique_ptr< PDU > request)
             
         //write single register
         case 0x06:
-            response = DoWriteRegister(rdata);
+            response = DoWriteRegister(data);
             break;
             
         //write multiple registers
@@ -84,7 +84,7 @@ unique_ptr< PDU > SlaveEngine::ProcessRequest(unique_ptr< PDU > request)
             // reply with an exception packet
             uint8_t errc = modbus::EXC_ILLEGAL_FUN;
             uint8_t exceptCode = request->funcCode() + 0x80;
-            response = new PDU(exeptCode,&errc,1);
+            response = new PDU(exceptCode,&errc,1);
     }
     
     return unique_ptr< PDU >(response);
