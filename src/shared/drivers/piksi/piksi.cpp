@@ -1,3 +1,24 @@
+/* Copyright (c) 2017 Skyward Experimental Rocketry
+ * Authors: Federico Terraneo
+ * 
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ * 
+ * The above copyright notice and this permission notice shall be included in
+ * all copies or substantial portions of the Software.
+ * 
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.  IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+ * THE SOFTWARE.
+ */
 
 #include "piksi.h"
 #include <unistd.h>
@@ -88,11 +109,11 @@ GPSData Piksi::waitForGpsData()
 
 Piksi::~Piksi()
 {
-    close(fd);
-    pthread_mutex_destroy(&mutex);
-    pthread_cond_destroy(&cond);
     quit=true;
     pthread_join(thread,NULL);
+    pthread_mutex_destroy(&mutex);
+    pthread_cond_destroy(&cond);
+    close(fd);
 }
 
 void* Piksi::threadLauncher(void* arg)
@@ -111,13 +132,10 @@ void Piksi::run()
 
 unsigned int Piksi::readData(unsigned char *buffer, unsigned int size)
 {
-    for(;;)
-    {
-        int result=read(fd,buffer,size);
-        if(result>0) return result;
-        usleep(10000); //We want to retry but avoid 100% CPU utilization
-        return 0;      //To go to a loop of run() and notice the quit flag
-    }
+    int result=read(fd,buffer,size);
+    if(result>0) return result;
+    usleep(10000); //We want to retry but avoid 100% CPU utilization
+    return 0;      //To go to a loop of run() and notice the quit flag
 }
 
 unsigned int Piksi::lookForMessages(uint8_t *buffer, unsigned int size)
