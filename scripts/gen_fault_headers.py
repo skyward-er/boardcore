@@ -58,6 +58,7 @@ def genEnum(name, s, inc):
             a += "    " + i + " = " + str(s[i]) + ",\n"
         cnt += 1
     a += "};\n"
+    a += "const std::size_t %s_SIZE = %d;\n" %(name, cnt)
     return a
 
 def genHeaderFile(fileName,csvFile):
@@ -99,17 +100,14 @@ def genHeaderFile(fileName,csvFile):
 #ifndef SKYWARD_FAULT_CTRL_LIST_H
 #define SKYWARD_FAULT_CTRL_LIST_H
 
-namespace FaultCounter
-{
-
 ''') % (csvFile, fileHash(csvFile), datetime.datetime.now())
-    content += genEnum("FaultCategory", categories, False)
-    content += "\n"
     content += genEnum("Fault", enums, True)
+    content += "\nnamespace FaultCounterData\n{\n\n"
+    content += genEnum("FaultCategory", categories, False)
     content += '''
 
 // Usage: categoryID = FaultCounter::FaultToCategory[faultID];
-static const uint32_t FaultToCategory[] = 
+const uint32_t FaultToCategory[] = 
 {
     '''
     colCnt = 0
@@ -122,7 +120,7 @@ static const uint32_t FaultToCategory[] =
     content += '''
 }; /* CategoryMapping */
 
-} /* FaultCounter */
+} /* FaultCounterData */
 
 #endif /* SKYWARD_FAULT_CTRL_LIST_H */
 
