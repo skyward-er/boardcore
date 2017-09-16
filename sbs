@@ -63,8 +63,7 @@ parser.add_option("-c", "--clean", help="Run a 'make clean'", dest="clean",
 parser.add_option("-b", "--board", help="Build a specific board", dest="board")
 parser.add_option("-l", "--list", help="List all build configurations", dest="list",
     default=False, action='store_true')
-
-
+parser.add_option("-g", "--gen-faults", help="Generate fault list header files and exit", dest="genhdr", default=False, action='store_true')
 parser.add_option("-v", "--verbose", help="Print a verbose output", dest="log", 
         action="store_true")
 parser.add_option("-j", "--jobs", 
@@ -74,6 +73,12 @@ parser.add_option("-j", "--jobs",
 (options, args) = parser.parse_args()
 
 banner()
+
+if options.genhdr == True:
+    d1 = "data/fault_list.csv"
+    d2 = "src/shared/diagnostic/FaultCounterData.h"
+    os.system("/usr/bin/python scripts/gen_fault_headers.py %s %s" %(d1,d2))
+    exit(0)
 
 conf = cp.RawConfigParser()
 conf.read("sbs.conf")
