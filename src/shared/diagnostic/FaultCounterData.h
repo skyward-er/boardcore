@@ -28,34 +28,36 @@
 
 // CSV File:         data/fault_list.csv
 // SHA1 of CSV File: e9a518af53ac91c2e57142fda140689918338c66
-// Autogen date:     2017-09-16 19:03:30.061175
+// Autogen date:     2017-09-16 21:53:44.208079
 
 #include <cstdint>
 
 #ifndef SKYWARD_FAULT_CTRL_LIST_H
 #define SKYWARD_FAULT_CTRL_LIST_H
 
-namespace FaultCounter
+enum class Fault
+{
+    F_ANAKIN_TEST_FAULT = 0,
+};
+const std::size_t Fault_SIZE = 1;
+
+namespace FaultCounterData
 {
 
 enum class FaultCategory
 {
     ANAKIN = 0,
 };
-
-enum class Fault
-{
-    F_ANAKIN_TEST_FAULT = 0,
-};
+const std::size_t FaultCategory_SIZE = 1;
 
 
 // Usage: categoryID = FaultCounter::FaultToCategory[faultID];
-static const uint32_t FaultToCategory[] = 
+const uint32_t FaultToCategory[] = 
 {
     0, 
 }; /* CategoryMapping */
 
-} /* FaultCounter */
+} /* FaultCounterData */
 
 #endif /* SKYWARD_FAULT_CTRL_LIST_H */
 
