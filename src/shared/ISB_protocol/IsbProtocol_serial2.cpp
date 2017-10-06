@@ -50,9 +50,15 @@ IsbProtocol_serial2::IsbProtocol_serial2()
         RCC_SYNC();
         
         u2tx::mode(Mode::ALTERNATE);
-        u2rx::mode(Mode::ALTERNATE);
         u2tx::alternateFunction(7);
+        
+        #ifdef _ARCH_CORTEXM3_STM32
+        u2rx::mode(Mode::INPUT);
+        #else
+        u2rx::mode(Mode::ALTERNATE);
         u2rx::alternateFunction(7);
+        #endif
+        
         u2rts::mode(Mode::OUTPUT);
         u2rts::low();
     }
@@ -199,10 +205,18 @@ void IsbProtocol_serial2::sendData(uint8_t dstAddr, uint8_t* data, size_t len)
 void IsbProtocol_serial2::setBaud(uint32_t baud)
 {
     uint32_t busFreq = SystemCoreClock;
+    
+    #ifdef _ARCH_CORTEXM3_STM32
+    if(RCC->CFGR & RCC_CFGR_PPRE1_2)
+    {
+        busFreq/=1<<(((RCC->CFGR>>8) & 0x3)+1);
+    }
+    #else
     if(RCC->CFGR & RCC_CFGR_PPRE1_2)
     {
         busFreq/=1<<(((RCC->CFGR>>10) & 0x3)+1);
     }
+    #endif
     
     uint32_t quot=2*busFreq/baud; //2*freq for round to nearest
     USART2->BRR=quot/2 + (quot & 1);    
