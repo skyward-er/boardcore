@@ -42,8 +42,10 @@ Q := @
 ECHO := @echo
 endif
 
+BINDIR := bin/$(BOARD_UUID)
+OBJDIR := obj/$(BOARD_UUID)
 ## Replaces both "foo.cpp"-->"foo.o" and "foo.c"-->"foo.o"
-OBJ := $(addsuffix .o, $(basename $(SRC)))
+OBJ := $(addprefix $(OBJDIR)/, $(addsuffix .o, $(basename $(SRC))))
 
 ## Includes the miosix base directory for C/C++
 ## Always include CONFPATH first, as it overrides the config file location
@@ -56,12 +58,11 @@ CFLAGS   := $(CFLAGS_BASE)   -I$(CONFPATH) -I$(CONFPATH)/config/$(BOARD_INC)  \
 AFLAGS   := $(AFLAGS_BASE)
 LFLAGS   := $(LFLAGS_BASE)
 DFLAGS   := -MMD -MP
-BIN 	 := bin
 
 LINK_LIBS := $(LIBS) -L$(KPATH)/bin/$(OPT_BOARD) -Wl,--start-group \
 			 -lmiosix -lstdc++ -lc -lm -lgcc -Wl,--end-group
 
-all: folders all-recursive {SBS_BIN_NAME}
+all: folders all-recursive $(BINDIR)/{SBS_BIN_NAME}.bin
 
 clean: clean-recursive clean-topdir
 
@@ -82,35 +83,40 @@ clean-recursive:
 
 clean-topdir:
 	$(ECHO) "[RM]   Cleaning files"
-	$(Q)rm -f $(OBJ) $(addprefix obj/,$(OBJ)) \
-		$(BIN)/{SBS_BIN_NAME}.elf $(BIN)/{SBS_BIN_NAME}.hex $(BIN)/{SBS_BIN_NAME}.bin $(BIN)/{SBS_BIN_NAME}.map \
+	$(Q)rm -f $(OBJ) \
+		$(BINDIR)/{SBS_BIN_NAME}.elf $(BINDIR)/{SBS_BIN_NAME}.hex \
+		$(BINDIR)/{SBS_BIN_NAME}.bin $(BINDIR)/{SBS_BIN_NAME}.map \
 		$(OBJ:.o=.d)
+	$(Q)rm -rf $(BINDIR) $(OBJDIR)
 
-{SBS_BIN_NAME}: folders {SBS_BIN_NAME}.elf
+$(BINDIR)/{SBS_BIN_NAME}.bin: folders $(BINDIR)/{SBS_BIN_NAME}.elf
 	$(ECHO) "[CP]   Linking binary"
-	$(Q)$(CP) -O ihex   $(BIN)/{SBS_BIN_NAME}.elf $(BIN)/{SBS_BIN_NAME}.hex
-	$(Q)$(CP) -O binary $(BIN)/{SBS_BIN_NAME}.elf $(BIN)/{SBS_BIN_NAME}.bin
-	$(Q)$(SZ) $(BIN)/{SBS_BIN_NAME}.elf
+	$(Q)$(CP) -O ihex   $(BINDIR)/{SBS_BIN_NAME}.elf $(BINDIR)/{SBS_BIN_NAME}.hex
+	$(Q)$(CP) -O binary $(BINDIR)/{SBS_BIN_NAME}.elf $(BINDIR)/{SBS_BIN_NAME}.bin
+	$(Q)$(SZ) $(BINDIR)/{SBS_BIN_NAME}.elf
 
-{SBS_BIN_NAME}.elf: folders $(OBJ) all-recursive
+$(BINDIR)/{SBS_BIN_NAME}.elf: folders $(OBJ) all-recursive
 	$(ECHO) "[LD]   Linking binary"
-	$(Q) $(CXX) $(LFLAGS) -o $(BIN)/{SBS_BIN_NAME}.elf $(addprefix obj/,$(OBJ)) \
+	$(Q) $(CXX) $(LFLAGS) -o $@ $(OBJ) \
 		$(KPATH)/$(BOOT_FILE) $(LINK_LIBS)
 
-%.o: %.s
+$(OBJDIR)/%.o: %.s
 	$(ECHO) "[AS]  " $<
 	$(Q) $(AS)  $(AFLAGS) $< -o $@
 
-%.o : %.c
+$(OBJDIR)/%.o : %.c
 	$(ECHO) "[CC]  " $<
-	$(Q) $(CC)  $(DFLAGS) $(CFLAGS) {SBS_CUSTOM_DEFINES} $< -o obj/$@
+	$(Q) $(CC)  $(DFLAGS) $(CFLAGS) {SBS_CUSTOM_DEFINES} $< -o $@
 
-%.o : %.cpp
+$(OBJDIR)/%.o : %.cpp
 	$(ECHO) "[CXX] " $<
-	$(Q) $(CXX) $(DFLAGS) $(CXXFLAGS) {SBS_CUSTOM_DEFINES} $< -o obj/$@
+	$(Q) $(CXX) $(DFLAGS) $(CXXFLAGS) {SBS_CUSTOM_DEFINES} $< -o $@
 
 folders:
-	$(Q) mkdir -pv $(dir $(addprefix obj/,$(OBJ)))
+	$(Q) mkdir -pv $(dir $(OBJ)) $(BINDIR)
 
 #pull in dependecy info for existing .o files
 -include $(OBJ:.o=.d)
+
+.PHONY: clean folders program clean-topdir clean-recursive
+.NOTPARALLEL: clean-topdir clean-recursive folders clean program
