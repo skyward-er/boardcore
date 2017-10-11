@@ -31,8 +31,9 @@ try:
 except ImportError:
     import configparser as cp #python 3
 
-def build_makefile(template, board):
-    rmap = { "BOARD_DEFINE": "export OPT_BOARD := %s\n" % board['id'],
+def build_makefile(template, board, bname):
+    rmap = { "BOARD_DEFINE": "export OPT_BOARD := %s\nexport BOARD_UUID := %s\n" % (
+        board['id'], bname),
              "MAP_FILE": "export MAIN_MAP_FILE := bin/%s.map\n" % board['bin'],
              "SOURCE_FILES": "%s\n" % (" ".join(board['files'])),
              "CUSTOM_DEFINES": board['defines'],
@@ -153,7 +154,7 @@ if options.clean == True:
 for i in boards:
     print('[SBS] %s %s' % (action[1],i))
     with open('build/%s' % i, 'w') as f:
-        f.write(build_makefile(make_template, boards[i]))
+        f.write(build_makefile(make_template, boards[i], i))
     try:
         subprocess.check_call(['make', '-j', str(options.JOBS), '-f', 'build/%s' % i] + cleanparam, stdout=procout)
     except subprocess.CalledProcessError:
