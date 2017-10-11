@@ -56,7 +56,7 @@ CFLAGS   := $(CFLAGS_BASE)   -I$(CONFPATH) -I$(CONFPATH)/config/$(BOARD_INC)  \
             -I. -I$(KPATH) -I$(KPATH)/arch/common -I$(KPATH)/$(ARCH_INC)      \
             -I$(KPATH)/$(BOARD_INC) $(INCLUDE_DIRS)
 AFLAGS   := $(AFLAGS_BASE)
-LFLAGS   := $(LFLAGS_BASE)
+LFLAGS   := $(LFLAGS_BASE) -Wl,--gc-sections,-Map,$(BINDIR)/${SBS_BIN_NAME}.map
 DFLAGS   := -MMD -MP
 
 LINK_LIBS := $(LIBS) -L$(KPATH)/bin/$(OPT_BOARD) -Wl,--start-group \
