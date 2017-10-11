@@ -1,6 +1,5 @@
 /***************************************************************************
- *   Copyright (C) 2016 by Terraneo Federico and Silvano Seva              *
- *   for Skyward Experimental Rocketry                                     *
+ *   Copyright (C) 2014 by Terraneo Federico                               *
  *                                                                         *
  *   This program is free software; you can redistribute it and/or modify  *
  *   it under the terms of the GNU General Public License as published by  *
@@ -45,13 +44,13 @@ namespace miosix {
  */
 
 /// Size of stack for main().
-/// The C standard library is stack-heavy (iprintf requires 1.5KB) and the
-/// STM32F205RC has 128KB of RAM so there is room for a big 4K stack.
+/// The C standard library is stack-heavy (iprintf requires 1KB) but the
+/// STM32F407VG only has 192KB of RAM so there is room for a big 4K stack.
 const unsigned int MAIN_STACK_SIZE=4*1024;
 
-/// Frequency of tick (in Hz). The frequency of the STM32F205RC timer in the
-/// Miosix board can be divided by 1000. This allows to use a 1KHz tick and
-/// the minimun Thread::sleep value is 1ms
+/// Frequency of tick (in Hz). The frequency of the STM32F100RB timer in the
+/// stm32vldiscovery board can be divided by 1000. This allows to use a 1KHz
+/// tick and the minimun Thread::sleep value is 1ms
 /// For the priority scheduler this is also the context switch frequency
 const unsigned int TICK_FREQ=1000;
 
@@ -64,16 +63,20 @@ const unsigned int AUX_TIMER_CLOCK=100000;
 const unsigned int AUX_TIMER_MAX=0xffff; ///<\internal Aux timer is 16 bits
 
 /// Serial port
-const unsigned int defaultSerial=1;
+/// Using the Serial port 3 because it is the virtual serial port available 
+/// through ST-LINK on the stm32f469i-disco board  
+const unsigned int defaultSerial=3;
 const unsigned int defaultSerialSpeed=19200;
 const bool defaultSerialFlowctrl=false;
-//#define SERIAL_1_DMA //Serial 1 has no DMA as it would conflict with SPI6
-// #define SERIAL_2_DMA   //Serial 2 is used by the piksi GPS, enable DMA
-//#define SERIAL_3_DMA //Serial 3 is not used
+//#define SERIAL_1_DMA //Serial 1 is not used, so not enabling DMA
+//#define SERIAL_2_DMA //Serial 2 is not used, so not enabling DMA
+#define SERIAL_3_DMA
 
-//STM32Serial class supports only USART1, for USART2 and USART3 low-level
-//access is needed to write modbus RTU driver properly
-#define STM32_NO_SERIAL_2_3
+//#define I2C_WITH_DMA
+
+//SD card driver
+static const unsigned char sdVoltage=30; //Board powered @ 3.0V
+#define SD_ONE_BIT_DATABUS //Can't use 4 bit databus due to pin conflicts
 
 /**
  * \}

@@ -36,6 +36,7 @@
 #OPT_BOARD := stm32f401vc_stm32f4discovery
 #OPT_BOARD := stm32f103c8_breakout
 #OPT_BOARD := stm32f100c8_microboard
+#OPT_BOARD := stm32f469ni_stm32f469i-disco
 
 ##
 ## Optimization flags, choose one.
@@ -394,6 +395,39 @@ endif
 
 # No options
 
+##---------------------------------------------------------------------------
+## stm32f469ni_stm32f469i-disco
+##
+ifeq ($(OPT_BOARD),stm32f469ni_stm32f469i-disco)
+
+    ## Linker script type, there are three options
+    ## 1) Code in FLASH, stack + heap in internal RAM (file *_rom.ld)
+    ##    the most common choice, available for all microcontrollers
+    ## 2) Code in FLASH, stack + heap in external RAM (file *16m_xram.ld)
+    ##    You must uncomment -D__ENABLE_XRAM below in this case.
+    ## 3) Code in FLASH, stack + heap in external RAM (file *12m_xram.ld)
+    ##    Same as above, but leaves the upper 4MB of RAM for the LCD.
+    LINKER_SCRIPT_PATH := arch/cortexM4_stm32f4/stm32f469ni_stm32f469i-disco/
+    LINKER_SCRIPT := $(LINKER_SCRIPT_PATH)stm32_2m+384k_rom.ld
+    #LINKER_SCRIPT := $(LINKER_SCRIPT_PATH)stm32_2m+16m_xram.ld
+    #LINKER_SCRIPT := $(LINKER_SCRIPT_PATH)stm32_2m+12m_xram.ld
+
+    ## Uncommenting __ENABLE_XRAM enables the initialization of the external
+    ## 16MB SDRAM memory. Do not uncomment this even if you don't use a linker
+    ## script that requires it, as it is used for the LCD framebuffer.
+    #XRAM := -D__ENABLE_XRAM
+    
+    ## Select clock frequency. Warning: the default clock frequency for
+    ## this board is 168MHz and not 180MHz because, due to a limitation in
+    ## the PLL, it is not possible to generate a precise 48MHz output when
+    ## running the core at 180MHz. If 180MHz is chosen the USB peripheral will
+    ## NOT WORK and the SDIO and RNG will run ~6% slower (45MHz insteand of 48)
+    #CLOCK_FREQ := -DHSE_VALUE=8000000 -DSYSCLK_FREQ_180MHz=180000000
+    CLOCK_FREQ := -DHSE_VALUE=8000000 -DSYSCLK_FREQ_168MHz=168000000
+    #CLOCK_FREQ := -DHSE_VALUE=8000000 -DSYSCLK_FREQ_100MHz=100000000
+
+endif
+
 ############################################################################
 ## From the options selected above, now fill all the variables needed to  ##
 ## build Miosix. You should modify something here only if you are adding  ##
@@ -459,6 +493,8 @@ else ifeq ($(OPT_BOARD),stm32f103c8_breakout)
     ARCH := cortexM3_stm32
 else ifeq ($(OPT_BOARD),stm32f100c8_microboard)
     ARCH := cortexM3_stm32
+else ifeq ($(OPT_BOARD),stm32f469ni_stm32f469i-disco)
+    ARCH := cortexM4_stm32f4
 else
     $(info Error: no board specified in miosix/config/Makefile.inc)
     $(error Error)
@@ -890,7 +926,8 @@ else ifeq ($(ARCH),cortexM3_stm32)
         ## Select architecture specific files
         ## These are the files in arch/<arch name>/<board name>
         ARCH_SRC :=                                  \
-        $(BOARD_INC)/interfaces-impl/bsp.cpp
+        $(BOARD_INC)/interfaces-impl/bsp.cpp         \
+        $(BOARD_INC)/drivers/rtc.cpp
 
         ## Add a #define to allow querying board name
         CFLAGS_BASE   += -D_BOARD_MICROBOARD -DSTM32F10X_MD_VL 
@@ -1133,6 +1170,8 @@ else ifeq ($(ARCH),cortexM4_stm32f4)
         ARCH_SRC :=                                  \
         arch/common/drivers/stm32f2_f4_i2c.cpp       \
         arch/common/drivers/stm32_hardware_rng.cpp   \
+        arch/common/drivers/stm32_sgm.cpp            \
+        arch/common/drivers/stm32_wd.cpp             \
         $(BOARD_INC)/interfaces-impl/bsp.cpp
 
         ## Add a #define to allow querying board name
@@ -1172,6 +1211,38 @@ else ifeq ($(ARCH),cortexM4_stm32f4)
 
         ## Select clock frequency (HSE_VALUE is the xtal on board, fixed)
         CLOCK_FREQ := -DHSE_VALUE=8000000 -DSYSCLK_FREQ_84MHz=84000000
+
+        ## Select programmer command line
+        ## This is the program that is invoked when the user types
+        ## 'make program'
+        ## The command must provide a way to program the board, or print an
+        ## error message saying that 'make program' is not supported for that
+        ## board.
+        PROGRAM_CMDLINE := qstlink2 -cqewV ./main.bin
+
+    ##-------------------------------------------------------------------------
+    ## BOARD: stm32f469ni_stm32f469i-disco
+    ##
+    else ifeq ($(OPT_BOARD),stm32f469ni_stm32f469i-disco)
+
+        ## Base directory with header files for this board
+        BOARD_INC := arch/cortexM4_stm32f4/stm32f469ni_stm32f469i-disco
+
+        ## Select linker script and boot file
+        ## Their path must be relative to the miosix directory.
+        BOOT_FILE := $(BOARD_INC)/core/stage_1_boot.o
+        #LINKER_SCRIPT := already selected in board options
+
+        ## Select architecture specific files
+        ## These are the files in arch/<arch name>/<board name>
+        ARCH_SRC :=                                  \
+        arch/common/drivers/stm32f2_f4_i2c.cpp       \
+        arch/common/drivers/stm32_hardware_rng.cpp   \
+        $(BOARD_INC)/interfaces-impl/bsp.cpp
+
+        ## Add a #define to allow querying board name
+        CFLAGS_BASE   += -D_BOARD_STM32F469NI_STM32F469I_DISCO
+        CXXFLAGS_BASE += -D_BOARD_STM32F469NI_STM32F469I_DISCO
 
         ## Select programmer command line
         ## This is the program that is invoked when the user types
