@@ -29,6 +29,58 @@
 #include <cstring>
 #include "miosix.h"
 
+/* This class is a kind of driver to be used to excange data between the 
+ * stormtrooper master and the other stormtrooper slave boards through the 
+ * RS485 lines. The communication model is this: all the boards are connected
+ * on the same bus and each board has a unique node address. To avoid conflicts,
+ * the master is the only device on the bus that can initiate a communication;
+ * thus, to communicate with a specific slave, the master sends a packet 
+ * containing the targeted slave address and the data and then waits for the 
+ * response (if expected). Owing to this model, if two stormtrooper slaves need
+ * to exchange data they have to rely on the stormtrooper master acting as a
+ * router between them.
+ * 
+ * The packet structure is this:
+ * 
+ * +------+-----+------+-----+
+ * | addr | len | data | CRC |
+ * +------+-----+------+-----+
+ * 
+ * -> addr: target node address, 8 bit
+ * -> len: lenght of the data field, 8 bit
+ * -> data: data bytes, up to 255
+ * -> CRC: 16 bit field calculated on addr, len and data using the ccitt CRC16
+ *         formula
+ * 
+ * On the bus data is sent using 9 bit long frames with one stop bit. If the 9th
+ * bit is set to 1 means that the byte received is an address byte and so a 
+ * packet is incoming
+ * 
+ * 
+ * Here is a sample code about this class' usage:
+ * 
+ * auto comm = IsbProtocol_serial2::instance();
+ *
+ * comm.setBaud(9600);           //set baud to 9600 bps 
+ * comm.setNodeAddress(0xAB);    //set node ID
+ *
+ * // this to check if new data arrived and to copy the bytes into a local buffer
+ * 
+ * uint8_t rx_buf[256];
+ * 
+ * if(comm.newDataAvailable() > 0)
+ * {
+ *     comm.getData(rx_buf);
+ * }
+ * 
+ * // this to send data
+ * 
+ * uint8_t tx_buf[] = "Some data for you! :)";
+ * 
+ * comm.sendData(0xE0, tx_buf, sizeof(tx_buf));
+ * 
+ */
+
 class IsbProtocol_serial3
 {
 public:
