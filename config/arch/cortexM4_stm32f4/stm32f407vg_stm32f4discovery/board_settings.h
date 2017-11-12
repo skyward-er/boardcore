@@ -68,7 +68,7 @@ const unsigned int defaultSerialSpeed=19200;
 const bool defaultSerialFlowctrl=false;
 // Aux serial port (hardcoded USART2 PA2=TX, PA3=RX).
 // Uncomment AUX_SERIAL to enable. The device will appear as /dev/auxtty.
-//#define AUX_SERIAL "auxtty"
+#define AUX_SERIAL "auxtty"
 const unsigned int auxSerialSpeed=9600;
 const bool auxSerialFlowctrl=false;
 //#define SERIAL_1_DMA //Serial 1 is not used, so not enabling DMA
