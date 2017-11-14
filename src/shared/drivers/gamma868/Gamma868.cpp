@@ -20,71 +20,53 @@
  * THE SOFTWARE.
  */
 
-#include <cstdio>
-#include "miosix.h"
-#include <drivers/gamma868/Gamma868.h>
-#include <string.h>
+#include "Gamma868.h"
+#include <stdio.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
+#include <string.h>
 
 using namespace std;
+
+#ifdef _MIOSIX
+
+#include <miosix.h>
+
 using namespace miosix;
 
-typedef Gpio<GPIOG_BASE,13> greenLed;
-typedef Gpio<GPIOG_BASE,14> redLed;
-typedef Gpio<GPIOA_BASE,0> button;
+#endif //_MIOSIX
 
-int ping = 0;
-Gamma868 gamma("/dev/auxtty"); 
+#define MAX_IN_BUFFER 100
+#define MAX_OUT_BUFFER 100
+#define CMD_LEN 3
+#define DATA_LEN 10
 
-void sender(void *arg);
-void receiver();
-int main() {
-    
-    //Discovery gpio setup
-    {
-        FastInterruptDisableLock dLock;
-        greenLed::mode(Mode::OUTPUT);
-        redLed::mode(Mode::OUTPUT);
-        button::mode(Mode::INPUT);
-    }
-    
-    Thread::create(sender, STACK_MIN);
-    
-    receiver();
-    
-    
-    return 0;
+Gamma868::Gamma868(const char *serialPath)
+{
+    fd=open(serialPath,O_RDWR);
+    if(fd<0) printf("Cannot open %s\n", serialPath);
 }
 
-void sender(void *arg){
-    while(1){
-        while(1){
-            if(button::value()==1) break;       //Wait for button
-        }
-        
-        printf("Writing... \n");
-        char msg[2];
-        msg[0] = '#';
-        msg[1] = '?';
-        gamma.send(msg);
-        Thread::sleep(200);
-    }
+bool Gamma868::send(const char *msg)
+{
+    //TODO output buffer and synchronize
+    int length = strlen(msg);
+    write(fd, msg, length);
+    return true;
 }
 
-void receiver(){
-    while(1){
-        //read 
-        int conflen = 5;
-        char config[conflen];
-        printf("Reading: \n");
-        gamma.waitFor(conflen, config);
-        
-        for(int i = 0; i < conflen ; i++){
-            printf("Received: %02X\n", config[i]);
+bool Gamma868::waitFor(int bufLen, char *buf)
+{
+    //TODO synchronize
+    char received[bufLen];
+    read(fd, &received, bufLen);
+    
+    for(int i = 0; i < bufLen; i++){
+            printf("Received obj: %02X\n", received[i]);
         }
-        
-        //Thread::sleep(200);
+    for(int i = 0; i < bufLen; i++){
+        buf[i] = received[i];
     }
+    return true;
 }
