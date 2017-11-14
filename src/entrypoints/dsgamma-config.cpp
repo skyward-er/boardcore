@@ -1,11 +1,23 @@
-/*
- * !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
- * !! NEEDS AN OPEN auxtty@9600       !!
- * !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+/* Copyright (c) 2017 Skyward Experimental Rocketry
+ * Authors: Alvise de'Faveri Tron, Nuno Barcellos
  * 
- * 1. Connect the device's RX and TX to the auxtty usart pins (USART3: PB9 tx, PB10 rx)
- * 2. Connect device's LRN SW pin to learnSwitch and LRN LED to learnAck (default PB2, PB0)
- * 3. Connect to the default serial port to read/write (PA10 tx, PA11 rx)
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ * 
+ * The above copyright notice and this permission notice shall be included in
+ * all copies or substantial portions of the Software.
+ * 
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.  IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+ * THE SOFTWARE.
  */
 
 #include <cstdio>
@@ -18,6 +30,7 @@
 using namespace std;
 using namespace miosix;
 
+//GAMMA868 configuration status
 struct config{
     int local_addr[3] = {127, 127, 127};
     int dest_addr[3] = {127, 127, 127};
@@ -27,12 +40,12 @@ struct config{
     int baudrate = 4;
 };
 
-//STM32F429 specific
+//PIN CONFIG
 typedef Gpio<GPIOG_BASE,13> greenLed;
 typedef Gpio<GPIOG_BASE,14> redLed;
+typedef Gpio<GPIOA_BASE,0> button;
 typedef Gpio<GPIOB_BASE,2> learnSwitch;
 typedef Gpio<GPIOB_BASE,0> learnAck;
-typedef Gpio<GPIOA_BASE,0> button;
 
 //Needed to check if learn mode is really active.
 FastMutex learnMutex;          
@@ -42,6 +55,7 @@ int learnMode=0;
 //Serial port
 int fd = -1;
 
+//Functions
 int initialize();
 int enterLearnMode();
 void confirmLearnMode(void *arg);
@@ -52,6 +66,18 @@ int writeConfig(config conf);
 void waitForButton();
 void waitForOk();
 
+/*
+ * GAMMA868 Configuration Software:
+ * This software is intended for stm32f429i discovery boards. 
+ * 
+ * Discovery board should be connected as follows
+ * - Default USART(default @19200 baud)     Anything with a keyboard.
+ * - Auxtty USART(must be @9600 baud)       Gamma868 SERIAL(pin 18: rx, 17:tx)
+ * - learnSwitch (see pin config)           Gamma868 LRN SW(pin 5)
+ * - learnAck (see pin config)              Gamma868 LRN LED(pin 6)
+ * 
+ * Gamma module must be in SERIAL MODEM mode (see documentation).
+ */
 int main(){
     
     printf("\n----- GAMMA868 CONFIGURATOR -----\n");
@@ -137,7 +163,6 @@ int initialize(){
         printf("Ok\n");
         return 0;
     }
-    
 }
 
 /*
@@ -153,6 +178,7 @@ int enterLearnMode(){
     Thread *checkLearnModeThread, *timeoutThread;
     checkLearnModeThread = Thread::create(confirmLearnMode,STACK_MIN);
     timeoutThread = Thread::create(timer,STACK_MIN);
+    
     if(checkLearnModeThread == NULL || timeoutThread == NULL){
         printf("Failed: learn mode control threads not created.\n");
         return -1;
@@ -194,7 +220,7 @@ void printConfig(){
 }
 
 /*
- * Sends new configuration to the gamma868 module.
+ * Sends configuration to the gamma868 module.
  */
 int writeConfig(struct config conf){
     //TODO check values before writing 
