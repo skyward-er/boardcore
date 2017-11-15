@@ -38,18 +38,19 @@ class Gamma868 {
     public:
         Gamma868(const char *serialPath);
         bool send(const char *msg);
-        bool waitFor(int bufLen, char *buf);
+        bool receive(int bufLen, char *buf);
         //~Gamma868();
         
-        //bool isConnected() checks if learn switch is pulled up
-        bool enterLearnMode();
-        char *readConfiguration();
-        bool configure(Configuration newConf);
-        void exitLearnMode();
+        /*
+         * TODO:
+         * bool isConnected() checks if learn switch is pulled up??
+         * bool enterLearnMode();
+         * char *readConfiguration();
+         * bool configure(Configuration newConf);
+         * void exitLearnMode();
+         */
        
     private:
-        int checkConfiguration(Configuration config);
-        int timeout(int millis);
         
         int fd;
         //pthread_t thread;
