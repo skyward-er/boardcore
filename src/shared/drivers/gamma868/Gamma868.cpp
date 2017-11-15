@@ -54,10 +54,10 @@ bool Gamma868::send(const char *msg)
 bool Gamma868::receive(int bufLen, char *buf)
 {
     //TODO synchronize
-    char received[bufLen+2];
-    read(fd, &received, bufLen+2);
+    char received[bufLen+1];
+    read(fd, &received, bufLen+1);
     
-    for(int i = 0; bufLen < bufLen; i++){
+    for(int i = 0; i < bufLen; i++){
         buf[i] = received[i];
     }
     return true;

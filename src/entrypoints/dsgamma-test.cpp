@@ -31,7 +31,7 @@
 using namespace std;
 using namespace miosix;
 
-#define MSG_LEN 6
+#define PKT_LEN 24
 
 typedef Gpio<GPIOG_BASE,13> greenLed;
 typedef Gpio<GPIOG_BASE,14> redLed;
@@ -44,8 +44,8 @@ long long sendTime = 0;
 int nTentativi = 0;
 int tot = 0;
 
-void sender();
-void receiver(void *arg);
+void sender(void *arg);
+void receiver();
 int main() {
     
     //Discovery gpio setup
@@ -56,14 +56,15 @@ int main() {
         button::mode(Mode::INPUT);
     }
     
-    sender();
+    Thread::create(sender, STACK_MIN);
+    
+    receiver();
     
     
     return 0;
 }
 
-void sender(){
-
+void sender(void *arg){
     while(1){
         
         while(1){
@@ -72,15 +73,13 @@ void sender(){
         
         printf("Writing... \n");
         
-        nTentativi++;
-        if(nTentativi == 1) Thread::create(receiver, STACK_MIN);
-
-        char msg[MSG_LEN];
-        for(int i = 0; i < nTentativi; i++){
+        char msg[PKT_LEN];
+        for(int i = 0; i < PKT_LEN; i++){
             msg[i] = '#';
         }
         
         sendTime = miosix::getTick();
+        nTentativi++;
         gamma.send(msg);
         
         printf("Ok \n" );
@@ -88,15 +87,16 @@ void sender(){
     }
 }
 
-void receiver(void *arg){
-    
+void receiver(){
     while(1){
         //read 
-        char inputBuf[MSG_LEN];
+        // int len = 1; // SENDER ONLY
+        int len = PKT_LEN;
+        char inputBuf[len];
         printf("Reading: \n");
-        gamma.receive(MSG_LEN, inputBuf);
+        gamma.receive(len, inputBuf);
         
-        for(int i = 0; i < MSG_LEN ; i++){
+        for(int i = 0; i < len ; i++){
             printf("Received: %c\n", inputBuf[i]);
         }
         
@@ -106,15 +106,13 @@ void receiver(void *arg){
         
         printf("--------------RESULT------------");
         tot += rtt;
-        
-        if(nTentativi > 0)
-        printf("Tentativi: %d  Media: %d \n", nTentativi, tot/(2 * nTentativi));
+        printf("Tentativi: %d  Media: %d \n", nTentativi, tot/(2*nTentativi));
         
         // RECEIVER ONLY
-        //Thread::sleep(50);
-        //gamma.send(inputBuf);
+        Thread::sleep(200);
+        gamma.send(inputBuf);
          
         
-        //Thread::sleep(200);
+        //Thread::sleep(1000);
     }
 }
