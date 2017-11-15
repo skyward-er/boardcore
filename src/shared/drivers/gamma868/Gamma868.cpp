@@ -21,11 +21,6 @@
  */
 
 #include "Gamma868.h"
-#include <stdio.h>
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <fcntl.h>
-#include <string.h>
 
 using namespace std;
 
@@ -53,12 +48,13 @@ bool Gamma868::send(const char *msg)
 
 bool Gamma868::receive(int bufLen, char *buf)
 {
-    //TODO synchronize
+    pthread_mutex_lock(&readingMutex);
     char received[bufLen+1];
     read(fd, &received, bufLen+1);
     
     for(int i = 0; i < bufLen; i++){
         buf[i] = received[i];
     }
+    pthread_mutex_unlock(&readingMutex);
     return true;
 }

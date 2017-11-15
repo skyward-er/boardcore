@@ -20,24 +20,23 @@
  * THE SOFTWARE.
  */
 
-#include <cstdio>
 #include "miosix.h"
 #include <drivers/gamma868/Gamma868.h>
-#include <string.h>
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <fcntl.h>
 
 using namespace std;
 using namespace miosix;
 
-#define PKT_LEN 24
+
+/*
+ * STRANGE THING #1 (AKA BUG):
+ * Stack overflow if PKT_LEN in greater than 24 !!!!!
+ */
+#define PKT_LEN 14
 
 typedef Gpio<GPIOG_BASE,13> greenLed;
 typedef Gpio<GPIOG_BASE,14> redLed;
 typedef Gpio<GPIOA_BASE,0> button;
 
-int ping = 0;
 Gamma868 gamma("/dev/auxtty"); 
 
 long long sendTime = 0;
@@ -58,28 +57,34 @@ int main() {
     
     Thread::create(sender, STACK_MIN);
     
-    receiver();
+    receiver();     //Runs in a loop
     
     
     return 0;
 }
 
 void sender(void *arg){
+    
+    char msg[PKT_LEN];
+    
     while(1){
         
+        //Wait for button
         while(1){
-            if(button::value()==1) break;       //Wait for button
+            if(button::value()==1) break;       
         }
         
+        //Prepare a packet of PKT_LEN chars with all #
         printf("Writing... \n");
-        
-        char msg[PKT_LEN];
         for(int i = 0; i < PKT_LEN; i++){
             msg[i] = '#';
         }
         
+        //Save current time
         sendTime = miosix::getTick();
         nTentativi++;
+        
+        //Send
         gamma.send(msg);
         
         printf("Ok \n" );
@@ -88,31 +93,36 @@ void sender(void *arg){
 }
 
 void receiver(){
-    while(1){
-        //read 
-        // int len = 1; // SENDER ONLY
-        int len = PKT_LEN;
-        char inputBuf[len];
+    
+    int len = PKT_LEN;
+    char inputBuf[len];
+    long long arrivalTime;
+        
+    while(1){ 
+        
+        //Read PKT_LEN bytes
         printf("Reading: \n");
         gamma.receive(len, inputBuf);
         
+        //Print received chars
         for(int i = 0; i < len ; i++){
             printf("Received: %c\n", inputBuf[i]);
         }
         
-        long long arrivalTime = miosix::getTick();
+        //Calculate Round Trip Time
+        arrivalTime = miosix::getTick();
         int rtt = arrivalTime - sendTime;
         printf("RTT: %d\n", rtt);
         
         printf("--------------RESULT------------");
         tot += rtt;
+        
+        //Print Delay calculation
+        if(nTentativi > 0)
         printf("Tentativi: %d  Media: %d \n", nTentativi, tot/(2*nTentativi));
         
-        // RECEIVER ONLY
-        Thread::sleep(200);
+        //------------------ RECEIVER ONLY -----------------
         gamma.send(inputBuf);
-         
-        
-        //Thread::sleep(1000);
+        //--------------------------------------------------
     }
 }
