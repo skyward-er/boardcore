@@ -37,11 +37,6 @@ using namespace miosix;
 
 #endif //_MIOSIX
 
-#define MAX_IN_BUFFER 100
-#define MAX_OUT_BUFFER 100
-#define CMD_LEN 3
-#define DATA_LEN 10
-
 Gamma868::Gamma868(const char *serialPath)
 {
     fd=open(serialPath,O_RDWR);
@@ -56,16 +51,13 @@ bool Gamma868::send(const char *msg)
     return true;
 }
 
-bool Gamma868::waitFor(int bufLen, char *buf)
+bool Gamma868::receive(int bufLen, char *buf)
 {
     //TODO synchronize
-    char received[bufLen];
-    read(fd, &received, bufLen);
+    char received[bufLen+2];
+    read(fd, &received, bufLen+2);
     
-    for(int i = 0; i < bufLen; i++){
-            printf("Received obj: %02X\n", received[i]);
-        }
-    for(int i = 0; i < bufLen; i++){
+    for(int i = 0; bufLen < bufLen; i++){
         buf[i] = received[i];
     }
     return true;

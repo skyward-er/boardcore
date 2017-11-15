@@ -31,6 +31,8 @@
 using namespace std;
 using namespace miosix;
 
+#define MSG_LEN 6
+
 typedef Gpio<GPIOG_BASE,13> greenLed;
 typedef Gpio<GPIOG_BASE,14> redLed;
 typedef Gpio<GPIOA_BASE,0> button;
@@ -38,8 +40,12 @@ typedef Gpio<GPIOA_BASE,0> button;
 int ping = 0;
 Gamma868 gamma("/dev/auxtty"); 
 
-void sender(void *arg);
-void receiver();
+long long sendTime = 0;
+int nTentativi = 0;
+int tot = 0;
+
+void sender();
+void receiver(void *arg);
 int main() {
     
     //Discovery gpio setup
@@ -50,40 +56,64 @@ int main() {
         button::mode(Mode::INPUT);
     }
     
-    Thread::create(sender, STACK_MIN);
-    
-    receiver();
+    sender();
     
     
     return 0;
 }
 
-void sender(void *arg){
+void sender(){
+
     while(1){
+        
         while(1){
             if(button::value()==1) break;       //Wait for button
         }
         
         printf("Writing... \n");
-        char msg[2];
-        msg[0] = '#';
-        msg[1] = '?';
+        
+        nTentativi++;
+        if(nTentativi == 1) Thread::create(receiver, STACK_MIN);
+
+        char msg[MSG_LEN];
+        for(int i = 0; i < nTentativi; i++){
+            msg[i] = '#';
+        }
+        
+        sendTime = miosix::getTick();
         gamma.send(msg);
+        
+        printf("Ok \n" );
         Thread::sleep(200);
     }
 }
 
-void receiver(){
+void receiver(void *arg){
+    
     while(1){
         //read 
-        int conflen = 5;
-        char config[conflen];
+        char inputBuf[MSG_LEN];
         printf("Reading: \n");
-        gamma.waitFor(conflen, config);
+        gamma.receive(MSG_LEN, inputBuf);
         
-        for(int i = 0; i < conflen ; i++){
-            printf("Received: %02X\n", config[i]);
+        for(int i = 0; i < MSG_LEN ; i++){
+            printf("Received: %c\n", inputBuf[i]);
         }
+        
+        long long arrivalTime = miosix::getTick();
+        int rtt = arrivalTime - sendTime;
+        printf("RTT: %d\n", rtt);
+        
+        printf("--------------RESULT------------");
+        tot += rtt;
+        
+        if(nTentativi > 0)
+        printf("Tentativi: %d  Media: %d \n", nTentativi, tot/(2 * nTentativi));
+        
+        // RECEIVER ONLY
+        //Thread::sleep(50);
+        //gamma.send(inputBuf);
+         
         
         //Thread::sleep(200);
     }
