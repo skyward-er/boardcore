@@ -24,6 +24,11 @@
 #define GAMMA868_H
 
 #include <pthread.h>
+#include <stdio.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
+#include <string.h>
 
 struct Configuration{
     int local_addr[3] = {127, 127, 127};
@@ -53,9 +58,8 @@ class Gamma868 {
     private:
         
         int fd;
-        //pthread_t thread;
+        pthread_t writeThread;
         pthread_mutex_t readingMutex;
-        pthread_cond_t readingCond;
         pthread_mutex_t writingMutex;
         pthread_cond_t writingCond;
 };
