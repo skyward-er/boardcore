@@ -26,14 +26,13 @@
 using namespace std;
 using namespace miosix;
 
-#define CMD_LEN 1
-#define DATA_LEN 64
-
+/* DISCOVERY F429I*/
 typedef Gpio<GPIOG_BASE,13> greenLed;
 typedef Gpio<GPIOG_BASE,14> redLed;
 typedef Gpio<GPIOA_BASE,0> button;
 
-Gamma868 gamma("/dev/auxtty"); 
+
+Gamma868 gamma("/dev/auxtty"); //create object
 
 long long sendTime = 0;
 int nTentativi = 0;
@@ -42,6 +41,8 @@ int state = 0; //0 = normal, 1 = sender, 2 = echo receiver
 
 void btnClick(void *arg);
 void stdInput(void *arg);
+void handleCommand(char *cmd);
+void handleData(char *data);
 void receiver();
 
 int main() {
@@ -102,7 +103,7 @@ void stdInput(void *arg){
         }
         
         //----------------SEND DATA----------------
-        gamma.send(DATA_LEN, msg);
+        gamma.send(strlen(msg), msg);
         //-----------------------------------------
         
         printf("Ok \n" );
