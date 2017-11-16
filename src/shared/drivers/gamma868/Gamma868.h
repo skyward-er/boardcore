@@ -29,20 +29,45 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <string.h>
+#ifdef _MIOSIX
 
-struct Configuration{
-    int local_addr[3] = {127, 127, 127};
-    int dest_addr[3] = {127, 127, 127};
-    int lora_mode = 6;
-    int lora_pow = 15;
-    int handshake = 0;
-    int baudrate = 4;
-};
+#include <miosix.h>
+
+using namespace miosix;
+
+#endif //_MIOSIX   
+
+#include "gamma_config.h"
 
 class Gamma868 {
     public:
         Gamma868(const char *serialPath);
-        bool send(const char *msg);
+        
+        /*
+         * Starts a thread that reads from the buffer and sends to the gamma module.
+         */
+        void start(){
+            Thread::create(&Gamma868::static_readFromBuffer,
+                              STACK_DEFAULT_FOR_PTHREAD,
+                              MAIN_PRIORITY,
+                              reinterpret_cast<void*>(this));
+        }
+        
+        /*
+         * Message goes in a queue (non blocking).
+         * Returns number of bytes effectively stored in the buffer.
+         */
+        int send(int msg_len, const char *msg);
+        
+        /*
+         * Message is sent as soon as possible (blocking).
+         */
+        bool sendCmd(int cmd_len, const char *cmd);
+        
+        /*
+         * Read from the Blocking.
+         * Returns true if the received stream is a command.
+         */
         bool receive(int bufLen, char *buf);
         //~Gamma868();
         
@@ -54,14 +79,35 @@ class Gamma868 {
          * bool configure(Configuration newConf);
          * void exitLearnMode();
          */
-       
-    private:
         
+    private:
         int fd;
         pthread_t writeThread;
         pthread_mutex_t readingMutex;
         pthread_mutex_t writingMutex;
-        pthread_cond_t writingCond;
+        pthread_mutex_t bufMutex;
+        
+        FastMutex ledMutex;          
+        ConditionVariable ledCond; 
+        int sent=0;
+        
+        int first = 0;
+        int last = 0;
+        char buffer[MAX_BUFFER];
+        
+        unsigned int bufSize();
+        
+        void readFromBuffer();
+        void waitForLed();
+        
+                
+        static void* static_readFromBuffer(void * object){
+            reinterpret_cast<Gamma868*>(object)->readFromBuffer();
+        }
+        
+        static void* static_waitForLed(void * object){
+             reinterpret_cast<Gamma868*>(object)->waitForLed();
+        }
 };
 
 #endif /* GAMMA868_H */
