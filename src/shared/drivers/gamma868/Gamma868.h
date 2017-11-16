@@ -108,6 +108,18 @@ class Gamma868 {
         static void* static_waitForLed(void * object){
              reinterpret_cast<Gamma868*>(object)->waitForLed();
         }
+        
+        void printBufContent(){
+            printf("Buffer: first %d last %d occupied %u total size %d\n", 
+                    first, last, bufSize(), MAX_BUFFER);
+        
+            int offset = first;
+            for (int i = 0; i < MAX_BUFFER; i++){
+                if (offset + i == MAX_BUFFER) offset = -i;
+                printf("%c", buffer[i]);
+            }
+            printf("\n");
+        }
 };
 
 #endif /* GAMMA868_H */

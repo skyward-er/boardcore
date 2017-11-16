@@ -24,11 +24,21 @@
 
 using namespace std;
 
+/*
+ * A serial port attached to the Gamma868 RX and TX pins is expected 
+ * to be passed to the object in order to communicate with the device.
+ * NOTE that the serial port has to be already open and at the baudrate
+ * at which the module has been configured (default is 9600 baud).
+ * 
+ * The object also uses 2 other pins, gammaSwitch and gammaLed, which are
+ * defined in the gamma_config.h file. 
+ */
 Gamma868::Gamma868(const char *serialPath)
 {
     fd=open(serialPath,O_RDWR);
     if(fd<0) printf("Cannot open %s\n", serialPath);
-    led::mode(Mode::INPUT);
+    gammaLed::mode(Mode::INPUT);
+    
 }
 
 
@@ -44,9 +54,8 @@ int Gamma868::send(int msg_len, const char *msg)
     {
         int i = 0;
         pthread_mutex_lock(&bufMutex);
-        printf("Locked buffer mutex (send)\n");
         for(i = 0; i < msg_len; i++){
-            buffer[last] = msg[last];
+            buffer[last] = msg[i];
             last++;
             if(last == MAX_BUFFER) last = 0;
             if(last == first){
@@ -55,7 +64,7 @@ int Gamma868::send(int msg_len, const char *msg)
             }
         }
         pthread_mutex_unlock(&bufMutex);
-        printf("Unocked buffer mutex (send)\n");
+        
         retVal = i;
     }
     return retVal;
@@ -77,10 +86,8 @@ bool Gamma868::sendCmd(int cmd_len, const char *cmd){
 
     //Send to gamma (synchronized)
     pthread_mutex_lock(&writingMutex); 
-    printf("Locked writing mutex (sendcmd)\n");
         write(fd, pkt, HEAD_LEN + cmd_len + END_LEN);
     pthread_mutex_unlock(&writingMutex);  
-    printf("Unocked writing mutex (sendcmd)\n");
 
     return true;
 }
@@ -96,11 +103,12 @@ bool Gamma868::receive(int bufLen, char *buf)
     bool cmd = false;
     
     //Read what you received (synchronized ?)
+    //First byte: start
+    while(init != START){
+        read(fd, &init, 1);
+    }
+    
     pthread_mutex_lock(&readingMutex);
-        //First byte: start
-        while(init != START){
-            read(fd, &init, 1);
-        }
         //Second byte: type of data
         read(fd, &type, 1);
         if(type == DATA){
@@ -124,49 +132,54 @@ bool Gamma868::receive(int bufLen, char *buf)
  *  sends it in packets of fixed dimension, then until the end of transmission.
  */
 void Gamma868::readFromBuffer(){
-    while(1){
-    if(bufSize() > 0){
-        int nChar = bufSize() > 64 ? 64 : bufSize();
+    while(1){                                   //Continuously check the buffer
         
-        //Prepare header
-        char pkt[HEAD_LEN + DATA_LEN + END_LEN];
-        pkt[0] = START;
-        pkt[1] = DATA;
-        //Copy from circular buffer (Synchronized)
-        pthread_mutex_lock(&bufMutex);
-            for(int i = 0; i < nChar; i++){
-                pkt[i+HEAD_LEN] = buffer[first];
-                first++;
-                if(first == MAX_BUFFER)
-                    first = 0;
-                if(first == last){
-                    break;
-                }
-            }    
-        pthread_mutex_unlock(&bufMutex);
-        pkt[DATA_LEN + HEAD_LEN] = END;
-  
-        //Send
-        pthread_mutex_lock(&writingMutex); 
-        printf("Locked writing mutex (cycle)\n");
-            Thread::create(&Gamma868::static_waitForLed, 
-                                STACK_DEFAULT_FOR_PTHREAD,
-                                MAIN_PRIORITY,
-                                reinterpret_cast<void*>(this));
+    if(bufSize() > MIN_TO_SEND){                         //If there's something in it...
+       
+        while(bufSize() > 0){                   //Read and send all the buffer
+            //Prepare header
+            char pkt[HEAD_LEN + DATA_LEN + END_LEN];
+            pkt[0] = START;
+            pkt[1] = DATA;
+            
+            pthread_mutex_lock(&bufMutex);      //Lock the buffer
+                int nChar = bufSize() > 64 ? 64 : bufSize();
+                
+                //Copy from circular buffer
+                for(int i = 0; i < nChar; i++){
+                    pkt[i+HEAD_LEN] = buffer[first];
+                    first++;
+                    if(first == MAX_BUFFER)
+                        first = 0;
+                    if(first == last){
+                        break;
+                    }
+                }    
+            pthread_mutex_unlock(&bufMutex);
 
-            write(fd, pkt, HEAD_LEN + DATA_LEN + END_LEN);
-            {
-                Lock<FastMutex> l(ledMutex);
-                while(sent==0) ledCond.wait(l);
-                sent = 0;
-            }
-        printf("Unocked writing mutex (cycle)\n");
-        pthread_mutex_unlock(&writingMutex);   
-        
-    }
-    Thread::sleep(200);
+            pkt[DATA_LEN + HEAD_LEN] = END;
+
+            //Start thread that will notify the end of the message sending
+            Thread::create(&Gamma868::static_waitForLed, 
+                        STACK_DEFAULT_FOR_PTHREAD,
+                        MAIN_PRIORITY,
+                        reinterpret_cast<void*>(this));
+            //Send
+            pthread_mutex_lock(&writingMutex); 
+
+                write(fd, pkt, HEAD_LEN + DATA_LEN + END_LEN);
+
+                {
+                    Lock<FastMutex> l(ledMutex);
+                    while(sent==0) ledCond.wait(l);
+                    sent = 0;
+                }
+            pthread_mutex_unlock(&writingMutex);
+        }
+        Thread::sleep(200); //TODO needed?
     }
     
+    }  
 }
 
 /*
@@ -177,10 +190,10 @@ void Gamma868::readFromBuffer(){
 void Gamma868::waitForLed(){
     bool sending = false;
     while(1){
-        if(led::value() == 1 && !sending){
+        if(gammaLed::value() == 1 && !sending){
             sending = true;
         }
-        if(sending && led::value() == 0){
+        if(sending && gammaLed::value() == 0){
             Lock<FastMutex> l(ledMutex);
             sent++;
             ledCond.signal();
