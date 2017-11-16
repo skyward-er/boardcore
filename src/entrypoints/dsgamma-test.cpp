@@ -26,12 +26,8 @@
 using namespace std;
 using namespace miosix;
 
-
-/*
- * STRANGE THING #1 (AKA BUG):
- * Stack overflow if PKT_LEN in greater than 24 !!!!!
- */
-#define PKT_LEN 14
+#define CMD_LEN 1
+#define DATA_LEN 64
 
 typedef Gpio<GPIOG_BASE,13> greenLed;
 typedef Gpio<GPIOG_BASE,14> redLed;
@@ -42,10 +38,14 @@ Gamma868 gamma("/dev/auxtty");
 long long sendTime = 0;
 int nTentativi = 0;
 int tot = 0;
+int state = 0; //0 = normal, 1 = sender, 2 = echo receiver
 
-void sender(void *arg);
+void btnClick(void *arg);
+void stdInput(void *arg);
 void receiver();
+
 int main() {
+    gamma.start(); //!!!!!IMPORTANT!!!!!!!!
     
     //Discovery gpio setup
     {
@@ -55,17 +55,17 @@ int main() {
         button::mode(Mode::INPUT);
     }
     
-    Thread::create(sender, STACK_MIN);
-    
+    //STACK_DEFAULT_FOR_PTHREAD is needed for printf())
+    Thread::create(btnClick, STACK_DEFAULT_FOR_PTHREAD);
+    Thread::create(stdInput, STACK_DEFAULT_FOR_PTHREAD);
     receiver();     //Runs in a loop
-    
     
     return 0;
 }
 
-void sender(void *arg){
+void btnClick(void *arg){
     
-    char msg[PKT_LEN];
+    char msg[CMD_LEN];
     
     while(1){
         
@@ -74,55 +74,94 @@ void sender(void *arg){
             if(button::value()==1) break;       
         }
         
-        //Prepare a packet of PKT_LEN chars with all #
-        printf("Writing... \n");
-        for(int i = 0; i < PKT_LEN; i++){
-            msg[i] = '#';
-        }
-        
-        //Save current time
-        sendTime = miosix::getTick();
-        nTentativi++;
-        
-        //Send
-        gamma.send(msg);
+        //---------------Send COMMAND----------------
+        printf("Writing CMD... \n");
+        msg[0] = (char) 10;
+        gamma.sendCmd(CMD_LEN, msg);
+        //------------------------------------------
+        state = 1;
         
         printf("Ok \n" );
         Thread::sleep(200);
     }
 }
 
+void stdInput(void *arg){
+    
+    char msg[DATA_LEN + 1];
+    
+    while(1){
+        
+        //Wait for button
+        scanf("%s", msg);
+        
+        //Save current time
+        if(state == 1){
+            sendTime = miosix::getTick();
+            nTentativi++;
+        }
+        
+        //----------------SEND DATA----------------
+        gamma.send(DATA_LEN, msg);
+        //-----------------------------------------
+        
+        printf("Ok \n" );
+        Thread::sleep(200);
+    }
+}
+
+/*
+ * Continuosusly reads from the device.
+ */
 void receiver(){
     
-    int len = PKT_LEN;
-    char inputBuf[len];
-    long long arrivalTime;
+    char inputBuf[DATA_LEN];
         
     while(1){ 
         
         //Read PKT_LEN bytes
         printf("Reading: \n");
-        gamma.receive(len, inputBuf);
+        bool cmdReceived = gamma.receive(DATA_LEN, inputBuf);
         
-        //Print received chars
-        for(int i = 0; i < len ; i++){
-            printf("Received: %c\n", inputBuf[i]);
-        }
-        
-        //Calculate Round Trip Time
-        arrivalTime = miosix::getTick();
+        if(cmdReceived) 
+            handleCommand(inputBuf);
+        else
+            handleData(inputBuf);
+    }
+}
+
+void handleCommand(char *cmd){
+    printf("Command received!\n");
+    switch((int)cmd[0]){
+                case 0: 
+                    state = 0;
+                    break;
+                case 10:
+                    state = 2;
+                    break;
+                default:
+                    printf("Unknown command\n");
+            }
+}
+
+void handleData(char *data){
+
+    long long arrivalTime = miosix::getTick();
+    printf("Received: %s\n", data);
+    
+
+    if(state == 2){
+        gamma.send(DATA_LEN, data);
+    }  else if (state == 1) {
         int rtt = arrivalTime - sendTime;
         printf("RTT: %d\n", rtt);
-        
+
         printf("--------------RESULT------------");
         tot += rtt;
-        
+
         //Print Delay calculation
         if(nTentativi > 0)
         printf("Tentativi: %d  Media: %d \n", nTentativi, tot/(2*nTentativi));
-        
-        //------------------ RECEIVER ONLY -----------------
-        gamma.send(inputBuf);
-        //--------------------------------------------------
+
     }
 }
