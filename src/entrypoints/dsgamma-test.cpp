@@ -152,10 +152,6 @@ void receiver(void *arg){
 }
 
 
-cd ~/skyward/Skyward-boardcore/bin/dsgamma-config 
-&&
-openocd -f interface/stlink-v2.cfg -c "set WORKAREASIZE 0x2000" -f target/stm32f4x_stlink.cfg -c "program dsgamma-config.elf verify reset exit"
-
 void handleCommand(char *cmd){
     printf("Command received!\n");
     char c = (char)20;
