@@ -22,9 +22,15 @@
 
 #include "miosix.h"
 #include <drivers/gamma868/Gamma868.h>
+#include <stdio.h>
+#include <string.h>
 
 using namespace std;
 using namespace miosix;
+
+#define SENDER 1
+#define ECHO_RECEIVER 2
+#define NORMAL 0
 
 /* DISCOVERY F429I*/
 typedef Gpio<GPIOG_BASE,13> greenLed;
@@ -32,18 +38,20 @@ typedef Gpio<GPIOG_BASE,14> redLed;
 typedef Gpio<GPIOA_BASE,0> button;
 
 
-Gamma868 gamma("/dev/auxtty"); //create object
+Gamma868 gamma("/dev/auxtty"); //create gamma object
 
+//RTT calculation
 long long sendTime = 0;
 int nTentativi = 0;
 int tot = 0;
-int state = 0; //0 = normal, 1 = sender, 2 = echo receiver
+int state = NORMAL;
+int charSent = 0;
 
 void btnClick(void *arg);
-void stdInput(void *arg);
+void stdInput();
 void handleCommand(char *cmd);
 void handleData(char *data);
-void receiver();
+void receiver(void *arg);
 
 int main() {
     gamma.start(); //!!!!!IMPORTANT!!!!!!!!
@@ -58,12 +66,15 @@ int main() {
     
     //STACK_DEFAULT_FOR_PTHREAD is needed for printf())
     Thread::create(btnClick, STACK_DEFAULT_FOR_PTHREAD);
-    Thread::create(stdInput, STACK_DEFAULT_FOR_PTHREAD);
-    receiver();     //Runs in a loop
+    Thread::create(receiver, STACK_DEFAULT_FOR_PTHREAD);
+    stdInput();     //Runs in a loop
     
     return 0;
 }
 
+/*
+ * Handles the button click (send an echo command).
+ */
 void btnClick(void *arg){
     
     char msg[CMD_LEN];
@@ -80,16 +91,18 @@ void btnClick(void *arg){
         msg[0] = (char) 10;
         gamma.sendCmd(CMD_LEN, msg);
         //------------------------------------------
-        state = 1;
-        
         printf("Ok \n" );
-        Thread::sleep(200);
+	
+	Thread::sleep(200);
     }
 }
 
-void stdInput(void *arg){
+/*
+ * Handles standard input (sends the string).
+ */
+void stdInput(){
     
-    char msg[DATA_LEN + 1];
+    char msg[100 + 1];
     
     while(1){
         
@@ -97,31 +110,38 @@ void stdInput(void *arg){
         scanf("%s", msg);
         
         //Save current time
-        if(state == 1){
-            sendTime = miosix::getTick();
-            nTentativi++;
+        if(state == SENDER && msg[0] == 'a'){
+            for(int i = 0; i < 10; i++)
+	    {
+		for(int j = 0; j < MIN_TO_SEND; j++)
+		{
+		    msg[j] = (char) j;
+		    
+		}
+		gamma.send(MIN_TO_SEND, msg);
+		sendTime = miosix::getTick();
+		nTentativi++;
+		Thread::sleep(1000);
+	    }
         }
         
         //----------------SEND DATA----------------
-        gamma.send(strlen(msg), msg);
+        //gamma.send(strlen(msg), msg);
         //-----------------------------------------
         
         printf("Ok \n" );
-        Thread::sleep(200);
     }
 }
 
 /*
- * Continuosusly reads from the device.
+ * Continuously reads from the device.
  */
-void receiver(){
+void receiver(void *arg){
     
     char inputBuf[DATA_LEN];
         
     while(1){ 
-        
-        //Read PKT_LEN bytes
-        printf("Reading: \n");
+	printf("Reading: \n");
         bool cmdReceived = gamma.receive(DATA_LEN, inputBuf);
         
         if(cmdReceived) 
@@ -131,27 +151,41 @@ void receiver(){
     }
 }
 
+
+cd ~/skyward/Skyward-boardcore/bin/dsgamma-config 
+&&
+openocd -f interface/stlink-v2.cfg -c "set WORKAREASIZE 0x2000" -f target/stm32f4x_stlink.cfg -c "program dsgamma-config.elf verify reset exit"
+
 void handleCommand(char *cmd){
     printf("Command received!\n");
+    char c = (char)20;
     switch((int)cmd[0]){
-                case 0: 
-                    state = 0;
-                    break;
-                case 10:
-                    state = 2;
-                    break;
-                default:
-                    printf("Unknown command\n");
-            }
+	    case 0: 
+		state = NORMAL;
+		break; 
+	    case 10:
+		state = ECHO_RECEIVER;
+		gamma.sendCmd(1, &c);
+		break;
+	    case 20:
+		printf("ACK\n");
+		state = SENDER;
+		break;
+	    default:
+		printf("Unknown command\n");
+	}
 }
 
 void handleData(char *data){
 
     long long arrivalTime = miosix::getTick();
-    printf("Received: %s\n", data);
-    
+    printf("Received: ");
+    for(int i = 0; i < DATA_LEN; i++){
+	printf("%c", data[i]);
+    }
+    printf("\n");
 
-    if(state == 2){
+    if(state == ECHO_RECEIVER){
         gamma.send(DATA_LEN, data);
     }  else if (state == 1) {
         int rtt = arrivalTime - sendTime;
