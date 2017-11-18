@@ -29,15 +29,14 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <string.h>
+
 #ifdef _MIOSIX
-
 #include <miosix.h>
-
 using namespace miosix;
-
 #endif //_MIOSIX   
 
-#include "gamma_config.h"
+#include "CircularBuffer.h"
+#include "gamma_config.h"	//Defines are in here.
 
 class Gamma868 {
     public:
@@ -47,7 +46,7 @@ class Gamma868 {
          * Starts a thread that reads from the buffer and sends to the gamma module.
          */
         void start(){
-            Thread::create(&Gamma868::static_readFromBuffer,
+            writerThread = Thread::create(&Gamma868::static_writerThreadTask,
                               STACK_DEFAULT_FOR_PTHREAD,
                               MAIN_PRIORITY,
                               reinterpret_cast<void*>(this));
@@ -57,7 +56,7 @@ class Gamma868 {
          * Message goes in a queue (non blocking).
          * Returns number of bytes effectively stored in the buffer.
          */
-        int send(int msg_len, const char *msg);
+        unsigned int send(unsigned int msg_len, const char *msg);
         
         /*
          * Message is sent as soon as possible (blocking).
@@ -69,6 +68,7 @@ class Gamma868 {
          * Returns true if the received stream is a command.
          */
         bool receive(int bufLen, char *buf);
+	
         //~Gamma868();
         
         /*
@@ -82,44 +82,35 @@ class Gamma868 {
         
     private:
         int fd;
-        pthread_t writeThread;
+	CircularBuffer outBuffer;
+	Thread *writerThread;
+	
         pthread_mutex_t readingMutex;
         pthread_mutex_t writingMutex;
-        pthread_mutex_t bufMutex;
         
         FastMutex ledMutex;          
         ConditionVariable ledCond; 
-        int sent=0;
+        int pktSent=0;
         
-        int first = 0;
-        int last = 0;
-        char buffer[MAX_BUFFER];
-        
-        unsigned int bufSize();
-        
-        void readFromBuffer();
+        void writerThreadTask();
         void waitForLed();
         
-                
-        static void* static_readFromBuffer(void * object){
-            reinterpret_cast<Gamma868*>(object)->readFromBuffer();
+	/*
+	 * Static wrapper for running it in a thread.
+	 */        
+        static void* static_writerThreadTask(void * object){
+            reinterpret_cast<Gamma868*>(object)->writerThreadTask();
+	    return 0;
         }
         
+        /*
+	 * Static wrapper for running it in a thread.
+	 */ 
         static void* static_waitForLed(void * object){
              reinterpret_cast<Gamma868*>(object)->waitForLed();
+	     return 0;
         }
-        
-        void printBufContent(){
-            printf("Buffer: first %d last %d occupied %u total size %d\n", 
-                    first, last, bufSize(), MAX_BUFFER);
-        
-            int offset = first;
-            for (int i = 0; i < MAX_BUFFER; i++){
-                if (offset + i == MAX_BUFFER) offset = -i;
-                printf("%c", buffer[i]);
-            }
-            printf("\n");
-        }
+       
 };
 
 #endif /* GAMMA868_H */
