@@ -1,18 +1,14 @@
 # Skyward Boardcore
 
-Description
-----------
-
 Skyward boardcore was born as Skyward's software framework, a common place where 
-to manage and share all the code that is destined to the rocket.
+to manage and share all the code that is destined for the rocket.
 
 It is founded on sbs (Skyward Build System),
 a tool that permits to easily compile and reuse code for different target boards on the miosix kernel.
 
 If you are new to this place, please read the **coding rules**(TODO) of our community before you start coding!
 
-Content
---------
+### Content:
 | Folder        | AL's definition           | Comments  |
 | ----------- |----------------------| ----------|
 | bin/ | compiled binaries |   |
