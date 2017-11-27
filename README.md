@@ -49,11 +49,3 @@ pat yourself on the shoulder - you've got things *working*!
 In the [Wiki](https://github.com/skyward-er/skyward-boardcore/wiki) you will find some first-steps guides (configuring the IDE, building a firmware etc) as well as the **coding rules** and some **best practices** we follow: read them before you start coding!
 
 Or, if you just want to start messing around, try [this](https://github.com/skyward-er/skyward-boardcore/wiki/Writing-a-driver).
-
-Useful links
------------
-
-* [Miosix Wiki](https://miosix.org/wiki/index.php?title=Main_Page) for the installation.
-* [Miosix Doxygen](https://miosix.org/doxygen/doxygen_k2.01/index.html) for the full documentation (classes, constants ecc).
-* [ELC Handbook](https://github.com/skyward-er/elc-internal-reports/tree/master/The%20ELC%20Handbook) 
-* [Wiki di skyward](todo)
