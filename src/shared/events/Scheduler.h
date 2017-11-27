@@ -21,14 +21,14 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
- 
+
 #ifndef EVENT_SCHEDULER_H
 #define EVENT_SCHEDULER_H
 
-#include <Common.h>
-#include <math/Stats.h>
-#include <Singleton.h>
 #include <ActiveObject.h>
+#include <Common.h>
+#include <Singleton.h>
+#include <math/Stats.h>
 #include <list>
 #include <queue>
 
@@ -37,10 +37,10 @@
  */
 struct TaskStatResult
 {
-    std::string name;            ///< Task name
-    StatsResult activationStats; ///< Task activation stats
-    StatsResult periodStats;     ///< Task period stats
-    StatsResult workloadStats;   ///< Task workload stats
+    std::string name;             ///< Task name
+    StatsResult activationStats;  ///< Task activation stats
+    StatsResult periodStats;      ///< Task period stats
+    StatsResult workloadStats;    ///< Task workload stats
 };
 
 /**
@@ -48,22 +48,24 @@ struct TaskStatResult
  */
 std::ostream& operator<<(std::ostream& os, const TaskStatResult& sr);
 
-/** 
+/**
  * HOW TO USE THE EVENT SCHEDULER
  * sEventScheduler->add(nonblocking_std::function_without_sleeps, millisec);
  * and.. it works like magic. :)
  *
- * Example: 
- *    void magic_std::function() { 
- *        // do something NONBLOCKING and WITHOUT SLEEPS 
+ * Example:
+ *    void magic_std::function() {
+ *        // do something NONBLOCKING and WITHOUT SLEEPS
  *    }
  *    sEventScheduler->add(magic_std::function, 150);
  */
-class EventScheduler : Singleton<EventScheduler>, ActiveObject {
+class EventScheduler : Singleton<EventScheduler>, ActiveObject
+{
     friend class Singleton<EventScheduler>;
+
 public:
     typedef std::function<void()> function_t;
-    
+
     /**
      * Add a task function to be called periodically by the scheduler
      * \param func function to be called
@@ -72,8 +74,8 @@ public:
      * useful for synchronizing tasks
      */
     void add(function_t func, uint32_t intervalMs, const std::string& name,
-             int64_t start=miosix::getTick());
-    
+             int64_t start = miosix::getTick());
+
     /**
      * Add a single shot task function to be called only once, after the
      * given delay
@@ -83,42 +85,45 @@ public:
      * useful for synchronizing tasks
      */
     void addOnce(function_t func, uint32_t delayMs,
-                 int64_t start=miosix::getTick());
-    
+                 int64_t start = miosix::getTick());
+
     /**
      * \return statistics for all tasks
      */
     std::vector<TaskStatResult> getTaskStats();
 
 private:
-    /** 
+    /**
      * std::function you want to call + timer
      */
-    struct task_t {
-        function_t function;   ///< Task function
-        uint32_t intervalMs;   ///< Task period
-        std::string name;      ///< Task name
-        bool once;             ///< true if the task is not periodic
-        int64_t lastcall;      ///< Last activation for period computaton
-        Stats activationStats; ///< Stats about activation error
-        Stats periodStats;     ///< Stats about period error
-        Stats workloadStats;   ///< Stats about time the task takes to compute
+    struct task_t
+    {
+        function_t function;    ///< Task function
+        uint32_t intervalMs;    ///< Task period
+        std::string name;       ///< Task name
+        bool once;              ///< true if the task is not periodic
+        int64_t lastcall;       ///< Last activation for period computaton
+        Stats activationStats;  ///< Stats about activation error
+        Stats periodStats;      ///< Stats about period error
+        Stats workloadStats;    ///< Stats about time the task takes to compute
     };
 
     /**
      * A single event
      */
-    struct event_t { 
-        std::list<task_t>::iterator task; ///< The task and period
-        int64_t nextTick;                 ///< Absolute time of next activation
+    struct event_t
+    {
+        std::list<task_t>::iterator task;  ///< The task and period
+        int64_t nextTick;                  ///< Absolute time of next activation
 
-        bool operator<(const event_t& e) const {
-            //Note: operator < is reversed, so that the priority_queue
-            //will return the lowest element first
+        bool operator<(const event_t& e) const
+        {
+            // Note: operator < is reversed, so that the priority_queue
+            // will return the lowest element first
             return this->nextTick > e.nextTick;
         }
     };
-    
+
     /**
      * Overrides ActiveObject::run()
      */
@@ -130,10 +135,10 @@ private:
      * \param pask the task to add
      */
     void addTask(const task_t& task, int64_t start);
-    
+
     /**
      * (Re)Enqueue a schedule.
-     * 
+     *
      * Requires the mutex to be locked.
      * \param event event to be scheduled. Note: this parameter is
      * modified, in detail the nextTick field is overvritten in
@@ -141,7 +146,7 @@ private:
      * performance reason
      */
     void enqueue(event_t& event);
-    
+
     /**
      * Update task stats
      * \param e current event
@@ -149,17 +154,17 @@ private:
      * \param endTime end of execution time
      */
     void updateStats(event_t& e, int64_t startTime, int64_t endTime);
-    
+
     /**
      * Constructor
      */
     EventScheduler();
-    
-    miosix::FastMutex mutex;             ///< Mutex to protect agenda
-    miosix::ConditionVariable condvar;   ///< Used when agenda is empty
-    std::list<task_t> tasks;             ///< Holds all tasks to be scheduled
-    std::priority_queue<event_t> agenda; ///< Ordered list of functions
-    uint32_t permanentTasks;             ///< Number of non-oneshot tasks
+
+    miosix::FastMutex mutex;              ///< Mutex to protect agenda
+    miosix::ConditionVariable condvar;    ///< Used when agenda is empty
+    std::list<task_t> tasks;              ///< Holds all tasks to be scheduled
+    std::priority_queue<event_t> agenda;  ///< Ordered list of functions
+    uint32_t permanentTasks;              ///< Number of non-oneshot tasks
 };
 
 #define sEventScheduler Singleton<EventScheduler>::getInstance()

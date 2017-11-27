@@ -1,16 +1,16 @@
 /* Copyright (c) 2015-2017 Skyward Experimental Rocketry
  * Authors: Alain Carlucci
- * 
+ *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
  * in the Software without restriction, including without limitation the rights
  * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
  * copies of the Software, and to permit persons to whom the Software is
  * furnished to do so, subject to the following conditions:
- * 
+ *
  * The above copyright notice and this permission notice shall be included in
  * all copies or substantial portions of the Software.
- * 
+ *
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
  * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.  IN NO EVENT SHALL THE
@@ -30,11 +30,9 @@
 class FaultCounterMgr : public Singleton<FaultCounterMgr>
 {
     friend class Singleton<FaultCounterMgr>;
-public:
-    ~FaultCounterMgr()
-    {
 
-    }
+public:
+    ~FaultCounterMgr() {}
 
     void Increment(const Fault id)
     {
@@ -46,7 +44,7 @@ public:
         mCounters[numId]++;
         mCategories[catId]++;
 
-        mFaultTriggered[numId] = 1;
+        mFaultTriggered[numId]    = 1;
         mCategoryTriggered[catId] = 1;
     }
 
@@ -70,8 +68,8 @@ private:
 
     FaultCounterMgr()
     {
-        memset(mCounters, 0, sizeof(mCounters)); 
-        memset(mCategories, 0, sizeof(mCategories)); 
+        memset(mCounters, 0, sizeof(mCounters));
+        memset(mCategories, 0, sizeof(mCategories));
 
         // TODO: static bitmap?
         mFaultTriggered.resize(Fault_SIZE);

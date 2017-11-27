@@ -24,10 +24,10 @@
 #define BOARD_H
 
 #include <Common.h>
-#include <drivers/BusTemplate.h>
 #include <Singleton.h>
-#include <sensors/Sensor.h>
 #include <diagnostic/Log.h>
+#include <drivers/BusTemplate.h>
+#include <sensors/Sensor.h>
 
 enum DataType
 {
@@ -44,12 +44,13 @@ struct SingleSensor
     const void* value;
 
     SingleSensor() {}
-    SingleSensor(uint16_t sensor, DataType data, const void* value) :
-        sensor(sensor), data(data), value(value)
-    { }
+    SingleSensor(uint16_t sensor, DataType data, const void* value)
+        : sensor(sensor), data(data), value(value)
+    {
+    }
 };
 
-class Board 
+class Board
 {
 public:
     Board() : mInited(false) {}
@@ -58,13 +59,12 @@ public:
 protected:
     bool mInited;
     std::vector<SingleSensor> mSensorData;
-    std::vector<Sensor *> mRawSensors;
+    std::vector<Sensor*> mRawSensors;
 
     void AddSensor(uint16_t sensor, DataType data, const void* value)
     {
-        mSensorData.push_back(SingleSensor(sensor,data,value)); 
+        mSensorData.push_back(SingleSensor(sensor, data, value));
     }
 };
-
 
 #endif /* BOARD_H */
