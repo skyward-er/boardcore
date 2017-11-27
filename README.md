@@ -6,7 +6,7 @@ Here we develop and manage all the code that is destined to the boards.
 Our software is mainly built upon [miosix](https://miosix.org/), a lightweigth OS
 for embedded developing which provides support for basic things such as Threads, GPIO, Time and many other.  
 
-Building is made with [SBS](todo) (Skyward Build System),
+Building is made with [SBS](https://github.com/skyward-er/skyward-boardcore/wiki/SBS-Quick-Guide) (Skyward Build System),
 which was created to easily compile and reuse code for different boards. 
 
 ### Content
@@ -37,7 +37,7 @@ cd skyward-boardcore
 ./sbs 
 ```
 
-If sbs exited with an *OK* message, check that the **bin/** folder contains the boards' binaries and then
+If SBS exited with an *OK* message, check that the **bin/** folder contains the boards' binaries and then
 pat yourself on the shoulder - you've got things *working*!
 
 *Mac users:*
@@ -46,6 +46,6 @@ pat yourself on the shoulder - you've got things *working*!
 
 ### What's next?
 
-In the [Wiki](https://github.com/skyward-er/skyward-boardcore/wiki) you will find some first-steps guides (configuring the IDE, building a firmware etc) as well as the **coding rules** and some **best practices** we chose to follow: read them before you start coding!
+In the [Wiki](https://github.com/skyward-er/skyward-boardcore/wiki) you will find some first-steps guides (configuring the IDE, building a firmware etc) as well as the **coding rules** and some **best practices** we follow: read them before you start coding!
 
 Or, if you just want to start messing around, try [this](https://github.com/skyward-er/skyward-boardcore/wiki/Writing-a-driver).
