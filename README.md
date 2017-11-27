@@ -46,6 +46,6 @@ pat yourself on the shoulder - you've got things *working*!
 
 ### What's next?
 
-Wanna start messing around? Start with [this](https://github.com/skyward-er/skyward-boardcore/wiki/Writing-a-driver).
+In the [Wiki](https://github.com/skyward-er/skyward-boardcore/wiki) you will find some first-steps guides (configuring the IDE, building a firmware etc) as well as the **coding rules** and some **best practices** we chose to follow: read them before you start coding!
 
-Please also consider reading the **code conventions** and **best practices** which you'll found in [the wiki](https://github.com/skyward-er/skyward-boardcore/wiki).
+Or, if you just want to start messing around, try [this](https://github.com/skyward-er/skyward-boardcore/wiki/Writing-a-driver).
