@@ -23,8 +23,6 @@
 #include "Common.h"
 #include "Sensor.h"
 
-// using namespace miosix;
-
 template <unsigned N, unsigned CHANNEL, class GpioADC>
 class SensorADC
 {
