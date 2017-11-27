@@ -29,21 +29,20 @@
  * Deriving from this class causes a thread to be spawned for each
  * instance. This thread will call the run() function.
  */
-class ActiveObject {
-    
+class ActiveObject
+{
+
 public:
     /**
      * Constructor
      * \param stacksize the stack of the thread that will be spawned
      * \param priority priority of the thread that will be spawned
      */
-    ActiveObject(unsigned int stacksize = miosix::STACK_DEFAULT_FOR_PTHREAD,
+    ActiveObject(unsigned int stacksize    = miosix::STACK_DEFAULT_FOR_PTHREAD,
                  miosix::Priority priority = miosix::MAIN_PRIORITY)
     {
-        thread=miosix::Thread::create(threadLauncher,
-                              stacksize,
-                              priority,
-                              reinterpret_cast<void*>(this));
+        thread = miosix::Thread::create(threadLauncher, stacksize, priority,
+                                        reinterpret_cast<void*>(this));
     }
 
 protected:
@@ -51,9 +50,9 @@ protected:
      * The thread that will be spawned just calls this function.
      * Override it to implement your logic.
      */
-    virtual void run()=0;
+    virtual void run() = 0;
 
-    miosix::Thread* thread; ///< Gives access to the thread object
+    miosix::Thread* thread;  ///< Gives access to the thread object
 
 private:
     /**

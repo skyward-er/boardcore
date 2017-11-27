@@ -1,16 +1,16 @@
 /* Copyright (c) 2017 Skyward Experimental Rocketry
  * Author: Alain Carlucci
- * 
+ *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
  * in the Software without restriction, including without limitation the rights
  * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
  * copies of the Software, and to permit persons to whom the Software is
  * furnished to do so, subject to the following conditions:
- * 
+ *
  * The above copyright notice and this permission notice shall be included in
  * all copies or substantial portions of the Software.
- * 
+ *
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
  * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.  IN NO EVENT SHALL THE
@@ -23,8 +23,8 @@
 #define SENSOR_SAMPLING_H
 
 #include <Common.h>
-#include <drivers/spi/SensorSpi.h>
 #include <diagnostic/Log.h>
+#include <drivers/spi/SensorSpi.h>
 
 class Sensor;
 class DMASensorSampler
@@ -36,7 +36,7 @@ public:
     void AddSensor(Sensor* sensor)
     {
         std::vector<SPIRequest> requests = sensor->buildDMARequest();
-        for(size_t i=0; i<requests.size();i++)
+        for (size_t i = 0; i < requests.size(); i++)
         {
             mRequests.push_back(requests[i]);
             mSensors.push_back(sensor);
@@ -45,13 +45,14 @@ public:
 
     void Update()
     {
-        auto& driver = SPIDriver::instance(); 
-        bool ret = driver.transaction(mRequests);
+        auto& driver = SPIDriver::instance();
+        bool ret     = driver.transaction(mRequests);
 
-        if(ret)
-            for(size_t i=0; i< mSensors.size(); i++)
+        if (ret)
+            for (size_t i = 0; i < mSensors.size(); i++)
                 mSensors[i]->onDMAUpdate(mRequests[i]);
     }
+
 private:
     std::vector<Sensor*> mSensors;
     std::vector<SPIRequest> mRequests;
@@ -63,16 +64,14 @@ public:
     SimpleSensorSampler() {}
     ~SimpleSensorSampler() {}
 
-    void AddSensor(Sensor* sensor)
-    {
-        mSensors.push_back(sensor);
-    }
+    void AddSensor(Sensor* sensor) { mSensors.push_back(sensor); }
 
     void Update()
     {
-        for(Sensor* s : mSensors)
+        for (Sensor* s : mSensors)
             s->onSimpleUpdate();
     }
+
 private:
     std::vector<Sensor*> mSensors;
 };

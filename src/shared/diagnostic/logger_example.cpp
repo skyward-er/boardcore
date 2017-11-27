@@ -23,26 +23,27 @@
 
 #include "logger.hpp"
 
-int main() {
-  int i = 42;
-  auto Logger = logging::Logger();
+int main()
+{
+    int i       = 42;
+    auto Logger = logging::Logger();
 
-  Logger.log<logging::INFO>("Some warning using variable i (=", i, ")");
-  Logger.log<logging::WARNING>("Some warning using variable i (=", i, ")");
-  Logger.log<logging::ERROR>("Some warning using variable i (=", i, ")");
-  Logger.log<logging::CRITICAL>("Some warning using variable i (=", i, ")");
+    Logger.log<logging::INFO>("Some warning using variable i (=", i, ")");
+    Logger.log<logging::WARNING>("Some warning using variable i (=", i, ")");
+    Logger.log<logging::ERROR>("Some warning using variable i (=", i, ")");
+    Logger.log<logging::CRITICAL>("Some warning using variable i (=", i, ")");
 
-  // Set severity to >= WARNING.
-  Logger.setLogLevel(logging::WARNING);
-  Logger.log<logging::INFO>("Some warning using variable i (=", i, ")");
-  Logger.log<logging::WARNING>("Some warning using variable i (=", i, ")");
-  Logger.log<logging::ERROR>("Some warning using variable i (=", i, ")");
-  Logger.log<logging::CRITICAL>("Some warning using variable i (=", i, ")");
+    // Set severity to >= WARNING.
+    Logger.setLogLevel(logging::WARNING);
+    Logger.log<logging::INFO>("Some warning using variable i (=", i, ")");
+    Logger.log<logging::WARNING>("Some warning using variable i (=", i, ")");
+    Logger.log<logging::ERROR>("Some warning using variable i (=", i, ")");
+    Logger.log<logging::CRITICAL>("Some warning using variable i (=", i, ")");
 
-  // Set severity to >= ERROR.
-  Logger.setLogLevel(logging::ERROR);
-  Logger.log<logging::INFO>("Some warning using variable i (=", i, ")");
-  Logger.log<logging::WARNING>("Some warning using variable i (=", i, ")");
-  Logger.log<logging::ERROR>("Some warning using variable i (=", i, ")");
-  Logger.log<logging::CRITICAL>("Some warning using variable i (=", i, ")");
+    // Set severity to >= ERROR.
+    Logger.setLogLevel(logging::ERROR);
+    Logger.log<logging::INFO>("Some warning using variable i (=", i, ")");
+    Logger.log<logging::WARNING>("Some warning using variable i (=", i, ")");
+    Logger.log<logging::ERROR>("Some warning using variable i (=", i, ")");
+    Logger.log<logging::CRITICAL>("Some warning using variable i (=", i, ")");
 }
