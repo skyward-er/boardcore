@@ -71,8 +71,8 @@ public:
         unsigned int nChar = size() > n ? n : size();
         int i              = 0;
 
-        // 	    printf("BEFORE READING\n");
-        // 	    print();
+        //     printf("BEFORE READING\n");
+        //     print();
 
         pthread_mutex_lock(&outBufMutex);
         for (i = 0; i < (int)nChar; i++)
@@ -89,8 +89,8 @@ public:
         }
         pthread_mutex_unlock(&outBufMutex);
 
-        // 	    printf("AFTER READING\n");
-        // 	    print();
+        //     printf("AFTER READING\n");
+        //     print();
 
         return i;
     }
@@ -103,8 +103,8 @@ public:
     {
         unsigned int i = 0;
 
-        // 	    printf("BEFORE WRITING %s\n", chars);
-        // 	    print();
+        //     printf("BEFORE WRITING %s\n", chars);
+        //     print();
 
         pthread_mutex_lock(&outBufMutex);
         if ((int)size() < totalSize)
@@ -125,8 +125,8 @@ public:
         }
         pthread_mutex_unlock(&outBufMutex);
 
-        // 	    printf("AFTER WRITING\n");
-        // 	    print();
+        //     printf("AFTER WRITING\n");
+        //     print();
 
         return i;
     }
