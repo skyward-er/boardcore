@@ -118,5 +118,5 @@ void WatchdogTimer::setDuration(uint16_t duration)
 {
 
     float ticks = static_cast<float>(duration) * ms_to_tick;
-    TIM7->ARR = static_cast<uint16_t>(ticks + 0.5f);  // round to nearest
+    TIM7->ARR   = static_cast<uint16_t>(ticks + 0.5f);  // round to nearest
 }

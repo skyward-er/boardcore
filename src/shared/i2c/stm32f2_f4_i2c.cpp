@@ -90,12 +90,12 @@ void DMA1_Stream7_IRQHandler()
 
     // We can't just wake the thread because the I2C is double buffered, and
     // this  interrupt is fired at the same time as the second last byte is
-    // starting  to be sent out of the bus. If we return now, the main code would
-    // send a  stop condiotion too soon, and the last byte would never be sent.
-    // Instead,  we change from DMA mode to IRQ mode, so when the second last byte
-    // is sent,  that interrupt is fired and the last byte is sent out.  Note that
-    // since no thread is awakened from this IRQ, there's no need for  the
-    // saveContext(), restoreContext() and __attribute__((naked))
+    // starting  to be sent out of the bus. If we return now, the main code
+    // would send a  stop condiotion too soon, and the last byte would never be
+    // sent. Instead,  we change from DMA mode to IRQ mode, so when the second
+    // last byte is sent,  that interrupt is fired and the last byte is sent
+    // out.  Note that since no thread is awakened from this IRQ, there's no
+    // need for  the saveContext(), restoreContext() and __attribute__((naked))
     I2C1->CR2 &= ~I2C_CR2_DMAEN;
     I2C1->CR2 |= I2C_CR2_ITBUFEN | I2C_CR2_ITEVTEN;
 }
