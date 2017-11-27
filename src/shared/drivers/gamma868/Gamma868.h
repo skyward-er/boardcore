@@ -30,11 +30,6 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 
-#ifdef _MIOSIX
-#include <miosix.h>
-using namespace miosix;
-#endif  //_MIOSIX
-
 #include "CircularBuffer.h"
 #include "gamma_config.h"  //Defines are in here.
 
@@ -46,12 +41,7 @@ public:
     /*
      * Starts a thread that reads from the buffer and sends to the gamma module.
      */
-    void start()
-    {
-        writerThread = Thread::create(&Gamma868::static_writerThreadTask,
-                                      STACK_DEFAULT_FOR_PTHREAD, MAIN_PRIORITY,
-                                      reinterpret_cast<void *>(this));
-    }
+    void start();
 
     /*
      * Message goes in a queue (non blocking).
