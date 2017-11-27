@@ -23,6 +23,7 @@
  */
 
 #pragma once
+#include <Common.h>
 
 /**
  * Utility class implementing the Active Object pattern
