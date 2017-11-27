@@ -1,0 +1,12 @@
+{
+    BasedOnStyle: Google,
+    AccessModifierOffset: -4,
+    AlignConsecutiveAssignments: true,
+    BreakBeforeBraces: Allman,
+    IndentCaseLabels: true,
+    IndentWidth: 4,
+    AllowShortIfStatementsOnASingleLine: false,
+    AllowShortLoopsOnASingleLine: false,
+    ConstructorInitializerAllOnOneLineOrOnePerLine: false,
+    KeepEmptyLinesAtTheStartOfBlocks: true,
+}

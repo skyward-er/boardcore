@@ -1,16 +1,16 @@
 /* Copyright (c) 2017 Skyward Experimental Rocketry
  * Authors: Federico Terraneo
- * 
+ *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
  * in the Software without restriction, including without limitation the rights
  * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
  * copies of the Software, and to permit persons to whom the Software is
  * furnished to do so, subject to the following conditions:
- * 
+ *
  * The above copyright notice and this permission notice shall be included in
  * all copies or substantial portions of the Software.
- * 
+ *
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
  * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.  IN NO EVENT SHALL THE
@@ -31,39 +31,39 @@ using namespace std;
 #include <miosix.h>
 using namespace miosix;
 
-#endif //_MIOSIX
+#endif  //_MIOSIX
 
 // Polling test, usng getGpsData()
 
 int main()
 {
-    #ifdef _MIOSIX
-    
+#ifdef _MIOSIX
+
     Piksi piksi("/dev/gps");
-    #else //_MIOSIX
+#else   //_MIOSIX
     Piksi piksi("/dev/ttyUSB0");
-    #endif //_MIOSIX
-    
-    for(;;)
+#endif  //_MIOSIX
+
+    for (;;)
     {
         Thread::sleep(200);
-        try {
-        auto gps=piksi.getGpsData();
-        #ifdef _MIOSIX
-        long long now=getTick();
-        #else //_MIOSIX
-        long long now=clock()/(CLOCKS_PER_SEC/1000);
-        #endif //_MIOSIX
-        cout<<" t: "<<now-gps.timestamp
-            <<" lat: "<<gps.latitude
-            <<" lon: "<<gps.longitude
-            <<" h: "<<gps.height
-            <<" vn: "<<gps.velocityNorth
-            <<" ve: "<<gps.velocityEast
-            <<" vd: "<<gps.velocityDown
-            <<" ns: "<<gps.numSatellites<<endl;
-        } catch(...) {
-            cout<<"---"<<endl;
+        try
+        {
+            auto gps = piksi.getGpsData();
+#ifdef _MIOSIX
+            long long now = getTick();
+#else   //_MIOSIX
+            long long now = clock() / (CLOCKS_PER_SEC / 1000);
+#endif  //_MIOSIX
+            cout << " t: " << now - gps.timestamp << " lat: " << gps.latitude
+                 << " lon: " << gps.longitude << " h: " << gps.height
+                 << " vn: " << gps.velocityNorth << " ve: " << gps.velocityEast
+                 << " vd: " << gps.velocityDown << " ns: " << gps.numSatellites
+                 << endl;
+        }
+        catch (...)
+        {
+            cout << "---" << endl;
         }
     }
 }
@@ -77,7 +77,7 @@ int main()
 //     #else //_MIOSIX
 //     Piksi piksi("/dev/ttyUSB0");
 //     #endif //_MIOSIX
-// 
+//
 //     for(;;)
 //     {
 //         auto gps=piksi.waitForGpsData();
