@@ -13,18 +13,18 @@ which was created to easily compile and reuse code for different boards.
 
 | Folder        | What's in it  |
 | ----------- | ---------------------- | 
-| bin/ | compiled binaries that can be flashed on a target board |
-| build/ | sbs stuff, not interesting |
-| config/ |  miosix external config (boards ecc)|
-| data/ | configuration (barely used now) |
-| libs/ | external libs (Miosix kernel as a git submodule) |
-| obj/ | build folder, not interesting |  |
-| scripts/ | some tools (e.g. script for flashing on the boards) |
-| src/ | sources! |
-| src/entrypoints | software each file here is a 'main' |
-| src/shared | objects, drivers and other stuff written by us |
+| **bin/** | compiled binaries that can be flashed on a target board |
+| **build/** | sbs stuff, not interesting |
+| **config/** |  miosix external config (boards ecc)|
+| **data/** | configuration (barely used now) |
+| **libs/** | external libs (Miosix kernel as a git submodule) |
+| **obj/** | build folder, not interesting |  |
+| **scripts/** | some tools (e.g. script for flashing on the boards) |
+| **src/** | sources! |
+| **src/entrypoints** | software each file here is a 'main' |
+| **src/shared** | objects, drivers and other stuff written by us |
 
-In the main folder you will find sbs.conf which defines all the boards that sbs will build.
+In the main folder you will find **sbs.conf** which defines all the boards that sbs will build.
 
 ### Getting Started
 
@@ -37,30 +37,15 @@ cd skyward-boardcore
 ./sbs 
 ```
 
-If sbs exited with an *OK* message, check that the *bin/* folder contains the boards' binaries and then
+If sbs exited with an *OK* message, check that the **bin/** folder contains the boards' binaries and then
 pat yourself on the shoulder - you've got things *working*!
 
 *Mac users:*
 
 > "You're entering a world of pain"
 
-Next steps
-----------
+### What's next?
 
-To start messing around try these:
+Wanna start messing around? Start with [this](https://github.com/skyward-er/skyward-boardcore/wiki/Writing-a-driver).
 
-* [SBS Quick Guide](todo)
-* [Eclipse configuration](todo)
-* [Writing a Driver](todo)
-* [Flashing on a STM32 DISCOVERY](todo)
-* [Flashing on a TROOPER](todo)
-
-Also refer to [our wiki](https://github.com/skyward-er/skyward-boardcore/wiki) for coding conventions, best practices etc .
-
-Useful links
------------
-
-* [Miosix Wiki](https://miosix.org/wiki/index.php?title=Main_Page) for the installation.
-* [Miosix Doxygen](https://miosix.org/doxygen/doxygen_k2.01/index.html) for the full documentation (classes, constants ecc).
-* [ELC Handbook](https://github.com/skyward-er/elc-internal-reports/tree/master/The%20ELC%20Handbook) 
-* [Wiki di skyward](todo)
+Please also consider reading the **code conventions** and **best practices** which you'll found in [the wiki](https://github.com/skyward-er/skyward-boardcore/wiki).
