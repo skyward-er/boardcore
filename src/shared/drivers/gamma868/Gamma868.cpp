@@ -45,9 +45,9 @@ Gamma868::Gamma868(const char *serialPath)
 
 void Gamma868::start()
 {
-	writerThread = Thread::create(&Gamma868::static_writerThreadTask,
-								  STACK_DEFAULT_FOR_PTHREAD, MAIN_PRIORITY,
-								  reinterpret_cast<void *>(this));
+    writerThread = Thread::create(&Gamma868::static_writerThreadTask,
+                                  STACK_DEFAULT_FOR_PTHREAD, MAIN_PRIORITY,
+                                  reinterpret_cast<void *>(this));
 }
 
 /*
