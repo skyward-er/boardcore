@@ -20,13 +20,14 @@
  * THE SOFTWARE.
  */
 
-#include <drivers/gamma868/Gamma868.h>
 #include <stdio.h>
 #include <string.h>
 #include "miosix.h"
 
 using namespace std;
 using namespace miosix;
+
+#include <drivers/gamma868/Gamma868.h>
 
 #define SENDER 1
 #define ECHO_RECEIVER 2
