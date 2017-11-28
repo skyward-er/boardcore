@@ -30,6 +30,11 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 
+#ifdef _MIOSIX
+#include <miosix.h>
+using namespace miosix;
+#endif  //_MIOSIX
+
 #include "CircularBuffer.h"
 #include "gamma_config.h"  //Defines are in here.
 
