@@ -1,5 +1,0 @@
-This class is present also in Miosix, there are small differences between the
-two, and some skyward files include the header in this directory, while some
-other include the one in the kernel.
-
-Integrate the changes made in this file in the kernel, and remove this file!
