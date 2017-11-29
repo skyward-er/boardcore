@@ -31,7 +31,6 @@
 #include <miosix.h>
 #include <stdint.h>
 #include <stdio.h>
-#include <util/software_i2c.h>
 #include "i2c/stm32f2_f4_i2c.h"
 
 static const int csDelay = 20;

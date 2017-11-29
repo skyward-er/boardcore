@@ -60,30 +60,6 @@ bool PacketBuffer::push(packet_header_t& header, const uint8_t* payload)
 
     size_t packetSize = sizeof(packet_header_t) + header.payloadSize;
 
-    /********** TODO: legacy code, remove this chunk after testing. **********/
-
-    // We had to split the check into two sections because of this corner case:
-    // readIndex and writeIndex are initially set to zero and we attempt to
-    // write something to the buffer. In this case the check
-    // (writeIndex + packetSize) % storageSize >= readIndex will fail because
-    // readIndex is zero
-
-    //     bool overflows = (writeIndex + packetSize) >= storageSize;
-    //     bool overwrites = (writeIndex + packetSize) % storageSize >=
-    //     readIndex;
-    //
-    //     if(readIndex == 0 && overflows) {
-    //         puts("ofl!");
-    //         return false;
-    //     }
-    //
-    //     if(readIndex != 0 && overwrites) {
-    //         puts("ovw!");
-    //         return false;
-    //     }
-
-    /**************************************************************************/
-
     // Simple technique to avoid ring buffer writeIndex slip ahead readIndex:
     // we keep track of the amount of space used and we reject a new incoming
     // packet if usedSize + packetSize is greater that the ring buffer size.
@@ -186,7 +162,4 @@ bool PacketBuffer::empty()
 {
     Lock<FastMutex> l(mutex);
     return usedSize == 0;
-
-    // TODO line below is legacy code, remove after testing
-    //     return readIndex == writeIndex;
 }

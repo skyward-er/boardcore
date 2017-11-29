@@ -29,10 +29,6 @@
 #include <kernel/scheduler/scheduler.h>
 #include <miosix.h>
 
-#warning
-#warning "Integrate this duplicate driver in Miosix, see FIXME.txt"
-#warning
-
 // #define I2C_WITH_DMA
 
 using namespace miosix;
