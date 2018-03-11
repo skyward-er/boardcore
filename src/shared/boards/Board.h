@@ -25,7 +25,6 @@
 
 #include <Common.h>
 #include <Singleton.h>
-#include <diagnostic/Log.h>
 #include <drivers/BusTemplate.h>
 #include <sensors/Sensor.h>
 
