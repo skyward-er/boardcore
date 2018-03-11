@@ -27,25 +27,46 @@
 #include <BusTemplate.h>
 
 template<class Bus>
-class MAX21105 : public AccelSensor, 
-    public GyroSensor, public TemperatureSensor {
+class MAX21105 : public AccelSensor, public GyroSensor, 
+                 public TemperatureSensor
+{
+    #pragma pack(1)
+    union rawdata_t
+    {
+        struct {
+            int16_t gyro[3];
+            int16_t accel[3];
+            int16_t temp;
+        };
+        int16_t raw[7];
+    };
+    #pragma pack()
 public:
-    MAX21105(uint8_t accelFullScale, uint8_t gyroFullScale) : 
-        last_temperature(0.0f) { 
+    MAX21105(uint8_t accelFullScale, uint8_t gyroFullScale)
+    {
         accelFS = accelFullScale & 0x03;
         gyroFS  = gyroFullScale & 0x03;
+        mLastTemp = 0.0f;
     }
 
-    bool init() {
+    ~MAX21105()
+    {
+    }
+
+    bool init() override
+    {
         uint8_t who_am_i = Bus::read(WHO_AM_I);
 
-        if(who_am_i != who_am_i_value) {
+        if(who_am_i != who_am_i_value)
+        {
             last_error = ERR_NOT_ME;
             return false;
         }
 
         // Init this sensor
-        uint8_t init_data[][2] = {
+        uint8_t init_data[][2] =
+        {
+            {MIF_CFG,      0b00101001},  // SPI 4 wire, I2C OFF (important!)
             {EXT_STATUS,         0x00},  // Choose the bank 0
             {SET_PWR,            0x00},  // Power down
 
@@ -60,7 +81,8 @@ public:
             {SET_PWR,            0x78},  // Power up (Accel + Gyro) Low-Noise
         };
 
-        for(size_t i=0; i < sizeof(init_data)/sizeof(init_data[0]); i++) {
+        for(size_t i=0; i < sizeof(init_data)/sizeof(init_data[0]); i++)
+        {
             Bus::write(init_data[i][0], init_data[i][1]);
             Thread::sleep(1);
         }
@@ -68,7 +90,8 @@ public:
         return true;
     }
 
-    bool selfTest() {
+    bool selfTest() override
+    {
         /*
         if(!SelfTestAcc()) {
             last_error = ERR_ACCEL_SELFTEST;
@@ -83,50 +106,41 @@ public:
         return false;
     }
 
-    bool updateParams() {
-        #pragma pack(1)
-        union {
-            struct {
-                int16_t gyro[3];
-                int16_t accel[3];
-                int16_t temp;
-            };
-            int16_t buf[7];
-        } raw_data;
-        #pragma pack()
-
-        Bus::read(GYRO_X_H, reinterpret_cast<uint8_t *>(raw_data.buf), 
-                sizeof(raw_data.buf));
-
-        for(size_t i=0; i<(sizeof(raw_data.buf)/sizeof(raw_data.buf[0]));i++)
-            raw_data.buf[i] = fromBigEndian16(raw_data.buf[i]);
-
-        last_accel = Vec3(
-            normalizeAccel(raw_data.accel[0]),
-            normalizeAccel(raw_data.accel[1]),
-            normalizeAccel(raw_data.accel[2]) 
-        );
-
-        last_gyro = Vec3(
-            normalizeGyro(raw_data.gyro[0]),
-            normalizeGyro(raw_data.gyro[1]),
-            normalizeGyro(raw_data.gyro[2]) 
-        );
-
-        last_temperature = normalizeTemp(raw_data.temp);
-        return true;
+    std::vector<SPIRequest> buildDMARequest() override 
+    {
+        return { SPIRequest(0, Bus::getCSPin(),
+        {
+            (GYRO_X_H | 0x80),
+            0,0,0,0,0,0, // gyro
+            0,0,         // accel
+            0,0,0,0,0,0, // temp
+        }
+        )};
     }
 
-    Vec3 getRotation() {
-        return last_gyro;
+    void onDMAUpdate(const SPIRequest& req) override
+    {
+        const auto& r = req.readResponseFromPeripheral();
+        const int16_t* ptr = (const int16_t*) &r[1];
+        rawdata_t raw_data;
+
+        constexpr size_t dSize = 7; // 3 (gyro) + 3 (accel) + 1 (temp)
+        for(size_t i=0; i< dSize;i++)
+            raw_data.raw[i] = fromBigEndian16(ptr[i]);
+
+        mLastAccel.setX(normalizeAccel(raw_data.accel[0]));
+        mLastAccel.setY(normalizeAccel(raw_data.accel[1]));
+        mLastAccel.setZ(normalizeAccel(raw_data.accel[2]));
+
+        mLastGyro.setX(normalizeGyro(raw_data.gyro[0]));
+        mLastGyro.setY(normalizeGyro(raw_data.gyro[1]));
+        mLastGyro.setZ(normalizeGyro(raw_data.gyro[2]));
+
+        mLastTemp = normalizeTemp(raw_data.temp);
     }
 
-    Vec3 getAccel() {
-        return last_accel;
-    }
-
-    float getTemperature() {
-        return last_temperature; 
+    bool onSimpleUpdate() override {
+        return false;
     }
 
     enum accelFullScale {
@@ -144,8 +158,6 @@ public:
     };
 
 private:
-    Vec3 last_accel, last_gyro;
-    float last_temperature;
     uint8_t accelFS, gyroFS;
 
     static constexpr const uint8_t who_am_i_value = 0xb4;

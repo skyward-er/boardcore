@@ -23,31 +23,48 @@
 #ifndef BOARD_H
 #define BOARD_H
 
-class Board : public Singleton<Board> {
-    friend class Singleton<Board>;
-public:
-    CanManager *getCanManager() const = 0;
-private:
-    Board() = 0;
+#include <Common.h>
+#include <BusTemplate.h>
+#include <Singleton.h>
+#include <sensors/Sensor.h>
+#include <diagnostic/Log.h>
+
+enum DataType
+{
+    DATA_VEC3  = 0,
+    DATA_QUAT  = 1,
+    DATA_FLOAT = 2,
+    DATA_INT   = 3,
 };
 
-class Stm32TestBoard : public Board {
-    friend class Singleton<Stm32TestBoard>;
+struct SingleSensor
+{
+    uint16_t sensor;
+    DataType data;
+    const void* value;
+
+    SingleSensor() {}
+    SingleSensor(uint16_t sensor, DataType data, const void* value) :
+        sensor(sensor), data(data), value(value)
+    { }
+};
+
+class Board 
+{
 public:
-    CanManager *getCanManager() const {
-        return mCanManager; 
-    }
+    Board() : mInited(false) {}
+    virtual bool init() = 0;
 
-private:
-    Board() {
-        mCanManager.addBus( {
-        //   ADDR | GPIO BUS | RX | TX |      MODE      | ALT
-            {CAN1, GPIOA_BASE, 11,  12, Mode::ALTERNATE,  9},
-            {CAN2, GPIOB_BASE,  5,   6, Mode::ALTERNATE,  9},
-        );
-    }
+protected:
+    bool mInited;
+    std::vector<SingleSensor> mSensorData;
+    std::vector<Sensor *> mRawSensors;
 
-    CanManager mCanManager;
-}
+    void AddSensor(uint16_t sensor, DataType data, const void* value)
+    {
+        mSensorData.push_back(SingleSensor(sensor,data,value)); 
+    }
+};
+
 
 #endif /* BOARD_H */

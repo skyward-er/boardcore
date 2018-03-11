@@ -59,17 +59,12 @@ public:
         return (status == 0);
     }
 
-    bool updateParams() {
+    bool onSimpleUpdate() {
         requestConversion();
         lastTemperature = getColdJunctionTemp() + getThermocoupleTemp();
 
         return true;
     }
-
-    float getTemperature() {
-        return lastTemperature; 
-    }
-
 
     // ----------- BELOW THERMOCOUPLE TUNING FUNCTIONS. ------------
     

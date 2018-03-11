@@ -68,16 +68,22 @@ public:
      * Add a task function to be called periodically by the scheduler
      * \param func function to be called
      * \param intervalMs inter call period
+     * \param start the first activation will be at time start+intervalMs,
+     * useful for synchronizing tasks
      */
-    void add(function_t func, uint32_t intervalMs, const std::string& name);
+    void add(function_t func, uint32_t intervalMs, const std::string& name,
+             int64_t start=miosix::getTick());
     
     /**
      * Add a single shot task function to be called only once, after the
      * given delay
      * \param func function to be called
      * \param delayMs delay before the call
+     * \param start the first activation will be at time start+intervalMs,
+     * useful for synchronizing tasks
      */
-    void addOnce(function_t func, uint32_t delayMs);
+    void addOnce(function_t func, uint32_t delayMs,
+                 int64_t start=miosix::getTick());
     
     /**
      * \return statistics for all tasks
@@ -123,7 +129,7 @@ private:
      * In addition, also takes care of genrating the (first) event for the task
      * \param pask the task to add
      */
-    void addTask(const task_t& task);
+    void addTask(const task_t& task, int64_t start);
     
     /**
      * (Re)Enqueue a schedule.

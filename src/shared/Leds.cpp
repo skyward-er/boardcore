@@ -1,5 +1,5 @@
-/* Copyright (c) 2015-2016 Skyward Experimental Rocketry
- * Authors: Alain Carlucci
+/* Copyright (c) 2016-2017 Skyward Experimental Rocketry
+ * Authors: Alain Carlucci, Federico Terraneo
  * 
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -20,26 +20,12 @@
  * THE SOFTWARE.
  */
 
-#ifndef COMMON_H
-#define COMMON_H
+#include "Leds.h"
 
-#include <cstdio>
-#include <cstring>
-#include <cstdint>
-
-#include <set>
-#include <vector>
-#include <array>
-#include <map>
-#include <cassert>
-#include <memory>
-
-/* Miosix */
-#include <miosix.h>
-#include <pthread.h>
-#include <kernel/scheduler/scheduler.h>
-#include <interfaces/endianness.h>
-
-#include "Constants.h"
-
-#endif
+//Relying on the BSP to provide leds and configure them as output
+#define LED(x) miosix::leds::led##x::getPin()
+std::array<miosix::GpioPin,Leds::numLeds> Leds::pins{{
+    LED(0), LED(1), LED(2), LED(3), LED(4),
+    LED(5), LED(6), LED(7), LED(8), LED(9)
+}};
+#undef LED

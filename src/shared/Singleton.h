@@ -23,16 +23,33 @@
 #ifndef SINGLETON_H
 #define SINGLETON_H
 
+/**
+ * WARNING: deriving from this class is not enough to make a singleton,
+ * you also have to declare the constructor of your class private!
+ * 
+ * \code
+ * class Foo : public Singleton<Foo>
+ * {
+ * private:
+ *     Foo() {} //Ok, private constructor
+ * };
+ * \endcode
+ */
 template<typename T>
 class Singleton {
-    public:
-        inline static T* getInstance() {
-            static T instance;
-            return &instance;            
-        }
-    protected:
-        Singleton(){}
-
+public:
+    /**
+     * \return a pointer to the only instance of the class T
+     */
+    inline static T* getInstance() {
+        static T instance;
+        return &instance;
+    }
+protected:
+    Singleton(){}
+private:
+    Singleton(const Singleton&)=delete;
+    Singleton& operator=(const Singleton&)=delete;
 };
 
 

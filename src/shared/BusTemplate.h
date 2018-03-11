@@ -32,11 +32,12 @@
 #include <Singleton.h>
 #include "i2c/stm32f2_f4_i2c.h"
 #include <util/software_i2c.h>
+#include <DMA/DMA.h>
 
 using namespace std;
 using namespace miosix;
 
-#define CS_DELAY 20
+static const int csDelay=20;
 
 template<unsigned N, class GpioMosi, class GpioMiso, class GpioSclk>
 class BusSPI : public Singleton< BusSPI<N, GpioMosi, GpioMiso, GpioSclk> > {
@@ -73,7 +74,8 @@ private:
     inline void _write(uint8_t byte) const {
         getSPIAddr(N)->DR=byte;
         while((getSPIAddr(N)->SR & SPI_SR_RXNE)==0);
-        byte=getSPIAddr(N)->DR;
+        volatile uint8_t temp;
+        temp = getSPIAddr(N)->DR;
     }
 
     inline int _read(void* buffer, size_t max_len) const {
@@ -90,22 +92,28 @@ private:
         return getSPIAddr(N)->DR;
     }
 
-    BusSPI() {
-        GpioMosi::mode(Mode::ALTERNATE);
-        GpioMosi::alternateFunction(GetAlternativeFunctionNumber(N));
-        GpioMiso::mode(Mode::ALTERNATE);
-        GpioMiso::alternateFunction(GetAlternativeFunctionNumber(N));
-        GpioSclk::mode(Mode::ALTERNATE);
-        GpioSclk::alternateFunction(GetAlternativeFunctionNumber(N));
-        usleep(CS_DELAY);
-        enableSPIBus(getSPIAddr(N));
-        getSPIAddr(N)->CR1 = SPI_CR1_SSM
-                           | SPI_CR1_SSI
-                           | SPI_CR1_MSTR
-        //                   | SPI_CR1_BR_0 
-        //                   | SPI_CR1_BR_1
-                           | SPI_CR1_BR_2
-                           | SPI_CR1_SPE;
+    BusSPI()
+    {
+        //Interrupts are disabled to prevent bugs if more than one threads
+        //does a read-modify-write to shared registers at the same time
+        if(getSPIAddr(N) == SPI1)
+            SPIDriver::instance();
+        else {
+            FastInterruptDisableLock dLock;
+            IRQenableSPIBus(getSPIAddr(N));
+            GpioMosi::mode(Mode::ALTERNATE);
+            GpioMosi::alternateFunction(GetAlternativeFunctionNumber(N));
+            GpioMiso::mode(Mode::ALTERNATE);
+            GpioMiso::alternateFunction(GetAlternativeFunctionNumber(N));
+            GpioSclk::mode(Mode::ALTERNATE);
+            GpioSclk::alternateFunction(GetAlternativeFunctionNumber(N));
+            getSPIAddr(N)->CR1 = SPI_CR1_SSM  //Software cs
+                    | SPI_CR1_SSI  //Hardware cs internally tied high
+                    | SPI_CR1_MSTR //Master mode
+                    | SPI_CR1_BR_2 // SPI clock divided by 32
+                    | SPI_CR1_SPE; //SPI enabled
+        }
+        usleep(csDelay);
     }
 
     inline static constexpr int GetAlternativeFunctionNumber(int n_spi) {
@@ -117,7 +125,7 @@ private:
                 n==2 ? SPI2 : SPI3;
     }
 
-    static inline void enableSPIBus(SPI_TypeDef* spi) {
+    static inline void IRQenableSPIBus(SPI_TypeDef* spi) {
         if(spi == SPI1)
             RCC->APB2ENR |= RCC_APB2ENR_SPI1EN;
         else if(spi == SPI2)
@@ -158,6 +166,10 @@ public:
         GpioCS::high();
     }
 
+    static miosix::GpioPin getCSPin() {
+        return GpioCS::getPin();
+    }
+
     /* Low-level read: write reg (without | 0x80) and read 
      * next N bytes, where N is 'size'
      */
@@ -188,9 +200,9 @@ private:
     ProtocolSPI() = delete;
     ~ProtocolSPI() = delete;
     ProtocolSPI(const ProtocolSPI& o) = delete;
-    ProtocolSPI(const ProtocolSPI&& o) = delete;
-    ProtocolSPI& operator=(const ProtocolSPI& other);
-    ProtocolSPI& operator=(const ProtocolSPI&& other);
+    ProtocolSPI(ProtocolSPI&& o) = delete;
+    ProtocolSPI& operator=(const ProtocolSPI&) = delete;
+    ProtocolSPI& operator=(ProtocolSPI&&) = delete;
 };
 
 /*********************************************
