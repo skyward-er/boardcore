@@ -1,5 +1,7 @@
-/* Copyright (c) 2015-2016 Skyward Experimental Rocketry
- * Authors: Alain Carlucci
+/* Container for all the headers, user has only to include this file
+ *
+ * Copyright (c) 2017 Skyward Experimental Rocketry
+ * Author: Silvano Seva
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -20,12 +22,12 @@
  * THE SOFTWARE.
  */
 
-#ifndef CONSTANTS_H
-#define CONSTANTS_H
+#ifndef MODBUS_H
+#define MODBUS_H
 
-static constexpr const float PI                 = 3.14159265f;
-static constexpr const float EARTH_GRAVITY      = 9.80665f;
-static constexpr const float DEGREES_TO_RADIANS = PI / 180.0f;
-static constexpr const float RADIANS_TO_DEGREES = 180.0f / PI;
+#include "PDU.h"
+#include "ExceptionCodes.h"
+#include "slave/SlaveInterface.h"
+#include "slave/SlaveEngine.h"
 
 #endif

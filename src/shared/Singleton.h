@@ -28,7 +28,7 @@ class Singleton {
     public:
         inline static T* getInstance() {
             static T instance;
-            return &instance;
+            return &instance;            
         }
     protected:
         Singleton(){}

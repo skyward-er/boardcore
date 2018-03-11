@@ -1,5 +1,7 @@
-/* Copyright (c) 2015-2016 Skyward Experimental Rocketry
- * Authors: Alain Carlucci
+/* FSM Events
+ *
+ * Copyright (c) 2015-2016 Skyward Experimental Rocketry
+ * Author: Matteo Michele Piazzolla, Alain Carlucci
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -20,12 +22,55 @@
  * THE SOFTWARE.
  */
 
-#ifndef CONSTANTS_H
-#define CONSTANTS_H
+#ifndef FSM_H
+#define FSM_H
+#include "ActiveObject.h"
+#include "SyncQueue.h"
+#include "Event.h"
 
-static constexpr const float PI                 = 3.14159265f;
-static constexpr const float EARTH_GRAVITY      = 9.80665f;
-static constexpr const float DEGREES_TO_RADIANS = PI / 180.0f;
-static constexpr const float RADIANS_TO_DEGREES = 180.0f / PI;
 
-#endif
+template<class T>
+class FSM : ActiveObject
+{
+
+
+public:
+
+	FSM(void (T::*initialState)(const Event*)) {
+		state = initialState;
+        specialEvent.sig=ENTRY;
+		dispatchEvent(&specialEvent);
+	}
+
+    void postEvent(Event* e) {
+    	eventList.put(e);
+    }
+
+	virtual ~FSM(){}
+    void transition(void (T::*nextState)(const Event*)) {
+    	specialEvent.sig=EXIT;
+		(static_cast<T*>(this)->*state)(&specialEvent);
+    	state = nextState;
+    	specialEvent.sig=ENTRY;
+		(static_cast<T*>(this)->*state)(&specialEvent);
+    }
+protected:
+
+
+private:
+    void (T::*state)(const Event*);
+    SynchronizedQueue<Event*> eventList;
+	Event specialEvent;
+
+	void dispatchEvent(const Event* e) {
+		(static_cast<T*>(this)->*state)(e);
+	}
+
+    void run() {
+    	while(true){
+    		const Event*  e = eventList.get();
+    		dispatchEvent(e);
+    	}
+    }
+};
+#endif //FSM_H

@@ -1,5 +1,7 @@
-/* Copyright (c) 2015-2016 Skyward Experimental Rocketry
- * Authors: Alain Carlucci
+/* Modbus protocol PDU data structure
+ *
+ * Copyright (c) 2017 Skyward Experimental Rocketry
+ * Author: Silvano Seva
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -20,12 +22,45 @@
  * THE SOFTWARE.
  */
 
-#ifndef CONSTANTS_H
-#define CONSTANTS_H
 
-static constexpr const float PI                 = 3.14159265f;
-static constexpr const float EARTH_GRAVITY      = 9.80665f;
-static constexpr const float DEGREES_TO_RADIANS = PI / 180.0f;
-static constexpr const float RADIANS_TO_DEGREES = 180.0f / PI;
+#include "PDU.h"
 
-#endif
+PDU::PDU() : fuCode(0), pSize(0), pData(nullptr) {
+
+}
+
+PDU::PDU(uint8_t fCode, const uint8_t* data, uint8_t dataSize) : fuCode(fCode),
+                                                             pSize(dataSize) {
+    
+    #ifndef __NO_EXCEPTIONS
+    try {
+        pData = new uint8_t[pSize];
+    }catch(std::bad_alloc& exc)
+    {
+        std::cout << "bad alloc! " << exc.what() << std::endl;
+        pData = nullptr;
+    }
+    #else
+    pData = new (std::nothrow) uint8_t[pSize];
+    #endif
+    
+    std::memcpy(pData,data,pSize);
+}
+
+PDU::~PDU() {
+    
+    if(pData != nullptr) {
+        delete[] pData;
+    }
+}
+
+uint8_t PDU::funcCode() const {
+    
+    return fuCode;
+}
+
+std::pair< uint8_t, uint8_t const* > PDU::data() const {    
+    
+    return std::pair< uint8_t, const uint8_t* >(pSize, pData);    
+}
+

@@ -1,5 +1,7 @@
-/* Copyright (c) 2015-2016 Skyward Experimental Rocketry
- * Authors: Alain Carlucci
+/* Modbus protocol exception codes
+ *
+ * Copyright (c) 2017 Skyward Experimental Rocketry
+ * Author: Silvano Seva
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -20,12 +22,20 @@
  * THE SOFTWARE.
  */
 
-#ifndef CONSTANTS_H
-#define CONSTANTS_H
+#ifndef EXC_CODES_H
+#define EXC_CODES_H
 
-static constexpr const float PI                 = 3.14159265f;
-static constexpr const float EARTH_GRAVITY      = 9.80665f;
-static constexpr const float DEGREES_TO_RADIANS = PI / 180.0f;
-static constexpr const float RADIANS_TO_DEGREES = 180.0f / PI;
+#include "Common.h"
+
+namespace modbus
+{
+    static constexpr uint8_t EXC_ILLEGAL_FUN   = 0x01; ///< Illegal function    
+    static constexpr uint8_t EXC_ILLEGAL_ADDR  = 0x02; ///< Illegal data address
+    static constexpr uint8_t EXC_ILLEGAL_VAL   = 0x03; ///< Illegal data value
+    static constexpr uint8_t EXC_SLAVE_FAILURE = 0x04; ///< Slave internal failure
+    static constexpr uint8_t ACKNOWLEDGE       = 0x05; ///< Acknowledge
+    static constexpr uint8_t SLAVE_BUSY        = 0x06; ///< Slave busy
+    static constexpr uint8_t EXC_MEM_PARITY    = 0x08; ///< Memory parity error
+}
 
 #endif
