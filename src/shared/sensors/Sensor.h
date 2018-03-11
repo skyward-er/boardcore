@@ -58,13 +58,13 @@ public:
 
     virtual std::vector<SPIRequest> buildDMARequest()
     {
-        printf("** SENSOR::buildDMARequest **\n");
+        //printf("** SENSOR::buildDMARequest **\n");
         return std::vector<SPIRequest>();
     }
 
     virtual void onDMAUpdate(const SPIRequest& req)
     {
-        printf("** SENSOR::onDMAUpdate **\n");
+        //printf("** SENSOR::onDMAUpdate **\n");
     }
 
     /**

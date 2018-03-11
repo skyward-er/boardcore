@@ -54,6 +54,7 @@ bool AnakinBoard::init()
     spiMAX21105::init();
     spiMS580301BA07::init();
 
+	//Raw sensors
     mInited = true;
     mS_MAX21105 =
         new max21105_t(max21105_t::ACC_FS_16G, max21105_t::GYRO_FS_250);

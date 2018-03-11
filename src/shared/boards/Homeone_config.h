@@ -1,5 +1,5 @@
-/* Copyright (c) 2015-2017 Skyward Experimental Rocketry
- * Authors: Alain Carlucci
+/* Copyright (c) 2017 Skyward Experimental Rocketry
+ * Authors: Alvise de' Faveri Tron
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -18,15 +18,20 @@
  * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
+ *
+ *
+ *
+ * !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+ * !!!!!!                        WORK IN PROGRESS                              !!!
+ * !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+ *
+ * These lines where copy-pasted from the Anakin Board and are just
+ * a sample of what has to be done.
  */
-
-#ifndef BOARDS_ANAKINBOARD_H
-#define BOARDS_ANAKINBOARD_H
-
-#include <events/Scheduler.h>
-#include <diagnostic/Log.h>
-#include "Board.h"
-
+ 
+#ifndef HOMEONE_CONFIG_H
+#define HOMEONE_CONFIG_H
+ 
 #include <sensors/FXAS21002.h>
 #include <sensors/LPS331AP.h>
 #include <sensors/MAX21105.h>
@@ -35,7 +40,6 @@
 #include <sensors/iNemo.h>
 
 #include <drivers/spi/SensorSpi.h>
-#include <sensors/SensorSampling.h>
 
 typedef miosix::Gpio<GPIOA_BASE, 5> GpioSck;
 typedef miosix::Gpio<GPIOA_BASE, 6> GpioMiso;
@@ -87,35 +91,4 @@ enum AnakinSensor
     RESERVED_18 = 18,
 };
 
-class AnakinBoard : public Singleton<AnakinBoard>, public Board
-{
-    friend class Singleton<AnakinBoard>;
-
-public:
-    bool init() override;
-
-    const std::vector<SingleSensor>& debugGetSensors() const
-    {
-        return mSensorData;
-    }
-
-private:
-    DMASensorSampler m100HzDMA, m25HzDMA;
-    SimpleSensorSampler m10HzSimple;
-    mpu_t* mS_MPU9250;
-    inemo_t* mS_INEMO;
-    fxas_t* mS_FXAS;
-    lps331ap_t* mS_LPS331AP;
-    max21105_t* mS_MAX21105;
-    ms580_t* mS_MS580;
-
-    AnakinBoard();
-};
-
-#ifdef sBoard
-#error YOU ARE TRYING TO USE MULTIPLE BOARDS.
-#else
-#define sBoard AnakinBoard::getInstance()
-#endif
-
-#endif /* ifndef BOARDS_ANAKINBOARD_H */
+#endif /* ifndef HOMEONE_CONFIG_H */
