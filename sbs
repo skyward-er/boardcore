@@ -31,8 +31,9 @@ try:
 except ImportError:
     import configparser as cp #python 3
 
-def build_makefile(template, board):
-    rmap = { "BOARD_DEFINE": "export OPT_BOARD := %s\n" % board['id'],
+def build_makefile(template, board, bname):
+    rmap = { "BOARD_DEFINE": "export OPT_BOARD := %s\nexport BOARD_UUID := %s\n" % (
+        board['id'], bname),
              "MAP_FILE": "export MAIN_MAP_FILE := bin/%s.map\n" % board['bin'],
              "SOURCE_FILES": "%s\n" % (" ".join(board['files'])),
              "CUSTOM_DEFINES": board['defines'],
@@ -63,8 +64,7 @@ parser.add_option("-c", "--clean", help="Run a 'make clean'", dest="clean",
 parser.add_option("-b", "--board", help="Build a specific board", dest="board")
 parser.add_option("-l", "--list", help="List all build configurations", dest="list",
     default=False, action='store_true')
-
-
+parser.add_option("-g", "--gen-faults", help="Generate fault list header files and exit", dest="genhdr", default=False, action='store_true')
 parser.add_option("-v", "--verbose", help="Print a verbose output", dest="log", 
         action="store_true")
 parser.add_option("-j", "--jobs", 
@@ -74,6 +74,12 @@ parser.add_option("-j", "--jobs",
 (options, args) = parser.parse_args()
 
 banner()
+
+if options.genhdr == True:
+    d1 = "data/fault_list.csv"
+    d2 = "src/shared/diagnostic/FaultCounterData.h"
+    os.system("/usr/bin/python scripts/gen_fault_headers.py %s %s" %(d1,d2))
+    exit(0)
 
 conf = cp.RawConfigParser()
 conf.read("sbs.conf")
@@ -148,7 +154,7 @@ if options.clean == True:
 for i in boards:
     print('[SBS] %s %s' % (action[1],i))
     with open('build/%s' % i, 'w') as f:
-        f.write(build_makefile(make_template, boards[i]))
+        f.write(build_makefile(make_template, boards[i], i))
     try:
         subprocess.check_call(['make', '-j', str(options.JOBS), '-f', 'build/%s' % i] + cleanparam, stdout=procout)
     except subprocess.CalledProcessError:
