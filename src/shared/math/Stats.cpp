@@ -23,16 +23,16 @@
  */
 
 #include "Stats.h"
-#include <limits>
-#include <cmath>
 #include <algorithm>
+#include <cmath>
+#include <limits>
 
 using namespace std;
 
 ostream& operator<<(ostream& os, const StatsResult& sr)
 {
-    os<<"min="<<sr.minValue<<" max="<<sr.maxValue
-      <<" mean="<<sr.mean<<" stdev="<<sr.stdev;
+    os << "min=" << sr.minValue << " max=" << sr.maxValue << " mean=" << sr.mean
+       << " stdev=" << sr.stdev;
     return os;
 }
 
@@ -42,17 +42,19 @@ ostream& operator<<(ostream& os, const StatsResult& sr)
 
 Stats::Stats()
     : minValue(numeric_limits<float>::max()),
-      maxValue(numeric_limits<float>::min()),
-      mean(0.f), m2(0.f), n(0) {}
+      maxValue(numeric_limits<float>::min()), mean(0.f), m2(0.f), n(0)
+{
+}
 
 void Stats::add(float data)
 {
-    if(isnan(data)) return;
-    
-    minValue=min(minValue,data);
-    maxValue=max(maxValue,data);
-    
-    //Stable algorithm for computing variance, see wikipedia
+    if (isnan(data))
+        return;
+
+    minValue = min(minValue, data);
+    maxValue = max(maxValue, data);
+
+    // Stable algorithm for computing variance, see wikipedia
     n++;
     float delta = data - mean;
     mean += delta / n;
@@ -61,14 +63,14 @@ void Stats::add(float data)
 
 StatsResult Stats::getStats() const
 {
-    switch(n)
+    switch (n)
     {
         case 0:
-            return { NAN, NAN, NAN, NAN };
+            return {NAN, NAN, NAN, NAN};
         case 1:
-            return { minValue, maxValue, mean, NAN };
+            return {minValue, maxValue, mean, NAN};
         default:
-            return { minValue, maxValue, mean, sqrtf(m2/(n-1)) };
+            return {minValue, maxValue, mean, sqrtf(m2 / (n - 1))};
     }
 }
 
@@ -77,14 +79,16 @@ StatsResult Stats::getStats() const
 #include <fstream>
 #include <iostream>
 
-int main(int argc, char *argv[])
+int main(int argc, char* argv[])
 {
-    if(argc!=2) return -1;
+    if (argc != 2)
+        return -1;
     ifstream in(argv[1]);
     Stats stats;
     float f;
-    while(in>>f) stats.add(f);
-    cout<<stats.getStats()<<endl;
+    while (in >> f)
+        stats.add(f);
+    cout << stats.getStats() << endl;
 }
 
-#endif //STATS_TESTCASE
+#endif  // STATS_TESTCASE

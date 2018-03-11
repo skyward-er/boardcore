@@ -31,10 +31,10 @@
  */
 struct StatsResult
 {
-    float minValue; ///< Min value found so far
-    float maxValue; ///< Max value found so far
-    float mean;     ///< Mean of datased
-    float stdev;    ///< Standard deviation of datset
+    float minValue;  ///< Min value found so far
+    float maxValue;  ///< Max value found so far
+    float mean;      ///< Mean of datased
+    float stdev;     ///< Standard deviation of datset
 };
 
 /**
@@ -53,17 +53,17 @@ public:
      * Constructor
      */
     Stats();
-    
+
     /**
      * Add an element
      */
     void add(float data);
-    
+
     /**
      * Return statistics of the elements added so far
      */
     StatsResult getStats() const;
-    
+
 private:
     float minValue, maxValue, mean, m2;
     unsigned int n;

@@ -1,18 +1,18 @@
-/* Vector3 
+/* Vector3
  *
  * Copyright (c) 2016 Skyward Experimental Rocketry
  * Authors: Alain Carlucci
- * 
+ *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
  * in the Software without restriction, including without limitation the rights
  * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
  * copies of the Software, and to permit persons to whom the Software is
  * furnished to do so, subject to the following conditions:
- * 
+ *
  * The above copyright notice and this permission notice shall be included in
  * all copies or substantial portions of the Software.
- * 
+ *
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
  * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.  IN NO EVENT SHALL THE
@@ -22,89 +22,93 @@
  * THE SOFTWARE.
  */
 #ifndef VEC3_H
-#define VEC3_H 
+#define VEC3_H
 
 #include <Common.h>
 
-class Vec3 {
+class Vec3
+{
     friend class Mat4;
     friend class Mat3;
-    public:
-        Vec3() { clear(); }
 
-        Vec3(float x, float y, float z) {
-            this->x = x; 
-            this->y = y;
-            this->z = z;
-        }
+public:
+    Vec3() { clear(); }
 
-        float getX() const { return x; }
-        float getY() const { return y; }
-        float getZ() const { return z; }
+    Vec3(float x, float y, float z)
+    {
+        this->x = x;
+        this->y = y;
+        this->z = z;
+    }
 
-        void setX(float value) { x = value; }
-        void setY(float value) { y = value; }
-        void setZ(float value) { z = value; }
+    float getX() const { return x; }
+    float getY() const { return y; }
+    float getZ() const { return z; }
 
-        void clear() {
-            x = y = z = 0.0f;
-        }
+    void setX(float value) { x = value; }
+    void setY(float value) { y = value; }
+    void setZ(float value) { z = value; }
 
-        float magnitude() const {
-            return sqrt( dot(*this) );
-        }
+    void clear() { x = y = z = 0.0f; }
 
-        bool normalize() {
-            float l = magnitude();
-            if (l <= 0)
-                return false;
+    float magnitude() const { return sqrt(dot(*this)); }
 
-            (*this) *= 1.0f/l;
-            return true;
-        }
+    bool normalize()
+    {
+        float l = magnitude();
+        if (l <= 0)
+            return false;
 
-        void operator*=(float value) {
-            x *= value;
-            y *= value;
-            z *= value;
-        }
+        (*this) *= 1.0f / l;
+        return true;
+    }
 
-        void operator+=(const Vec3 &v) {
-            x += v.getX();
-            y += v.getY();
-            z += v.getZ();
-        }
+    void operator*=(float value)
+    {
+        x *= value;
+        y *= value;
+        z *= value;
+    }
 
-        void operator-=(const Vec3 &v) {
-            x -= v.getX();
-            y -= v.getY();
-            z -= v.getZ();
-        }
+    void operator+=(const Vec3 &v)
+    {
+        x += v.getX();
+        y += v.getY();
+        z += v.getZ();
+    }
 
-        Vec3 operator*(float v) const {
-            return Vec3(x*v, y*v, z*v);
-        }
+    void operator-=(const Vec3 &v)
+    {
+        x -= v.getX();
+        y -= v.getY();
+        z -= v.getZ();
+    }
 
-        Vec3 operator+(const Vec3 &v) const {
-            return Vec3(x+v.getX(), y+v.getY(), z+v.getZ());
-        }
+    Vec3 operator*(float v) const { return Vec3(x * v, y * v, z * v); }
 
-        Vec3 operator-(const Vec3 &v) const {
-            return Vec3(x-v.getX(), y-v.getY(), z-v.getZ());
-        }
+    Vec3 operator+(const Vec3 &v) const
+    {
+        return Vec3(x + v.getX(), y + v.getY(), z + v.getZ());
+    }
 
-        float dot(const Vec3 &v) const {
-            return x*v.getX() + y*v.getY() + z*v.getZ();
-        }
+    Vec3 operator-(const Vec3 &v) const
+    {
+        return Vec3(x - v.getX(), y - v.getY(), z - v.getZ());
+    }
 
-        Vec3 cross(const Vec3 &v) const {
-            return Vec3(y * v.getZ() - z * v.getY(),
-                        z * v.getX() - x * v.getZ(),
-                        x * v.getY() - y * v.getX());
-        }
+    float dot(const Vec3 &v) const
+    {
+        return x * v.getX() + y * v.getY() + z * v.getZ();
+    }
 
-    private:
-        float x, y, z;
+    Vec3 cross(const Vec3 &v) const
+    {
+        return Vec3(y * v.getZ() - z * v.getY(), z * v.getX() - x * v.getZ(),
+                    x * v.getY() - y * v.getX());
+    }
+
+private:
+    float x, y, z;
 };
 
 #endif /* ifndef VEC3_H */
