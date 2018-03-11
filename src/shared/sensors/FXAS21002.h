@@ -31,49 +31,66 @@
 template <typename Bus>
 class FXAS21002 : public GyroSensor {
 public:
-    FXAS21002() { }
+    FXAS21002(uint8_t curScale) : mCurScale(curScale & 0x03)
+    {
     
-    bool init() {
+    }
+    
+    bool init() override
+    {
         uint8_t whoami = Bus::read(REG_WHO_AM_I);
         
-        if(whoami != who_am_i_value) {
+        if(whoami != who_am_i_value)
+        {
             last_error = ERR_NOT_ME;
             return false;
         }
         
-        uint8_t regCtrl2 = Bus::read(REG_CTRL2);
-        
-        // Enable data ready interrupt and set as active high
-        Bus::write(REG_CTRL2, regCtrl2 |= 0b00000110);      
-        
-        // Enable wrap to one function
-        // Auto increment rolls back from z_axis_lsb to x_axis_msb
-        Bus::write(REG_CTRL3, Bus::read(REG_CTRL3) | 0b00001000);
-        
-        uint8_t regCtrl1 = Bus::read(REG_CTRL1);
-                    
-        // Set data rate to 100Hz
-        regCtrl1 |= DR_100Hz << 2;
-        
-        // Set device in ready mode
-        regCtrl1 |= 0b00000010;
-        
-        Bus::write(REG_CTRL1, regCtrl1);
-        
-        // Wait until boot is completed
-        uint8_t timeout = 10;
-        while((Bus::read(REG_INT_SRC_FLAG) & 0b00001000) && --timeout > 0) {
+        Bus::write(REG_CTRL1, 0b01000000);
+        uint8_t timeout = 20;
+        while((Bus::read(REG_CTRL1) & 0b01000000) && --timeout > 0)
+        {
             Thread::sleep(1);
         }
 
         if(timeout == 0)
+        {
+            last_error = ERR_RESET_TIMEOUT;
             return false;
+        }
+
+        // Set current scale
+        Bus::write(REG_CTRL0, mCurScale);
+
+        // Datarate 100HZ + Enable READY bit
+        Bus::write(REG_CTRL1, (DR_100HZ << 2) | 0x02);
+
+        // Enable data ready interrupt and set as active high
+        Bus::write(REG_CTRL2, 0b00000110);
+
+        // Enable wrap to one function
+        // Auto increment rolls back from z_axis_lsb to x_axis_msb
+        Bus::write(REG_CTRL3, Bus::read(REG_CTRL3) | 0b00001000);
+        
+        // Wait until boot is completed
+        timeout = 20;
+        while(!(Bus::read(REG_INT_SRC_FLAG) & 0b00001000) && --timeout > 0)
+        {
+            Thread::sleep(1);
+        }
+
+        if(timeout == 0)
+        {
+            last_error = ERR_RESET_TIMEOUT;
+            return false;
+        }
         
         return true;            
     }
     
     // Performs a device self test, see datasheet for further details
-    bool selfTest() {
+    bool selfTest() override
+    {
         // Trigger a self test
         Bus::write(REG_CTRL1, Bus::read(REG_CTRL1) | 0b00010000);
         
@@ -84,17 +101,20 @@ public:
         int16_t zAxis = (Bus::read(REG_OUT_Z_MSB) << 8) 
                       | Bus::read(REG_OUT_Z_LSB);
         
-        if(xAxis < 7000 || xAxis > 25000) {
+        if(xAxis < 7000 || xAxis > 25000)
+        {
             last_error = ERR_X_SELFTEST_FAIL;
             return false;
         }
         
-        if(yAxis < 7000 || yAxis > 25000) {
+        if(yAxis < 7000 || yAxis > 25000)
+        {
             last_error = ERR_Y_SELFTEST_FAIL;
             return false;
         }
         
-        if(zAxis < 7000 || zAxis > 25000) {
+        if(zAxis < 7000 || zAxis > 25000)
+        {
             last_error = ERR_Z_SELFTEST_FAIL;
             return false;
         }
@@ -102,23 +122,40 @@ public:
         return true;
     }
 
-    Vec3 getRotation() { 
-        return last_gyro; 
+    std::vector<SPIRequest> buildDMARequest() override
+    {
+        std::vector<uint8_t> data = {
+            REG_OUT_X_MSB | 0x80,
+            0,0,0,0,0,0
+        };
+
+        return { SPIRequest(0, Bus::getCSPin(), data) };
     }
 
-    bool updateParams() {
-        last_gyro = Vec3(getXaxis(), getYaxis(), getZaxis()); 
-        return true;
+    void onDMAUpdate(const SPIRequest& req) override
+    {
+        const auto& r = req.readResponseFromPeripheral();
+        int16_t data[3];
+        memcpy(data, &r[1], sizeof(data));
+
+        for(int i=0;i<3;i++)
+            data[i] = fromBigEndian16(data[i]);
+
+        mLastGyro.setX(normalizeGyro(data[0]));
+        mLastGyro.setY(normalizeGyro(data[1]));
+        mLastGyro.setZ(normalizeGyro(data[2])); 
     }
 
-    // Reset device. Restore all registers to their default values
-    void reset() {
-        Bus::write(REG_CTRL1, Bus::read(REG_CTRL1) | 0b01000000);
-        while(Bus::read(REG_CTRL1) & 0b01000000) ;
+    bool onSimpleUpdate() override
+    {
+        return false;
     }
-    
+
+    /* UNUSED CODE
+
     // Set operating mode. Modes available are: STANDBY, READY, ACTIVE
-    void setPowerMode(uint8_t mode) {
+    void setPowerMode(uint8_t mode)
+    {
         uint8_t regCtrl1 = Bus::read(REG_CTRL1);
                     
         regCtrl1 &= ~0x03;      //clear last two bits
@@ -127,7 +164,8 @@ public:
         Bus::write(REG_CTRL1, regCtrl1);
     }
 
-    void setSampleRate(uint8_t rate) {
+    void setSampleRate(uint8_t rate)
+    {
         uint8_t regCtrl1 = Bus::read(REG_CTRL1);
                     
         regCtrl1 &= ~0b00011100;      //clear sample rate bits
@@ -136,18 +174,22 @@ public:
         Bus::write(REG_CTRL1, regCtrl1);
     }
     
-    void setFullScaleRange(uint8_t range) {
+    void setFullScaleRange(uint8_t range)
+    {
         uint8_t regCtrl0 = Bus::read(REG_CTRL0);
+        range &= 0x03;
                     
-        regCtrl0 &= ~0b00000011;      //clear full scale range bits
+        regCtrl0 &= ~(0x03);          //clear full scale range bits
         regCtrl0 |= range;            //set range
         
+        mCurScale = range;
         Bus::write(REG_CTRL0, regCtrl0);
     }
     
     // Set internal low pass filter bandwidth. 
     // See datasheet at page 39 for further details
-    void setBandwidth(uint8_t bandwidth) {
+    void setBandwidth(uint8_t bandwidth)
+    {
         uint8_t regCtrl0 = Bus::read(REG_CTRL0);
                     
         regCtrl0 &= ~0b11000000;      //clear bandwidth bits
@@ -158,7 +200,8 @@ public:
     
     // Set internal high pass filter bandwidth. 
     // See datasheet at page 39 for further details
-    void setHiPassFreq(uint8_t freq) {
+    void setHiPassFreq(uint8_t freq)
+    {
         uint8_t regCtrl0 = Bus::read(REG_CTRL0);
                     
         regCtrl0 &= ~0b00011000;      //clear full hi pass freq bits
@@ -167,54 +210,50 @@ public:
         Bus::write(REG_CTRL0, regCtrl0);
     }
     
-    void enableHiPassFiter() { 
+    void enableHiPassFiter()
+    { 
         Bus::write(REG_CTRL0, Bus::read(REG_CTRL0) | 0b00000100); 
     }
     
-    void disableHiPassFiter() { 
+    void disableHiPassFiter()
+    { 
         Bus::write(REG_CTRL0, Bus::read(REG_CTRL0) & (~0b00000100)); 
     }
-    
-    uint16_t getXaxis() { 
-        return (Bus::read(REG_OUT_X_MSB) << 8) | Bus::read(REG_OUT_X_LSB); 
-    }
-
-    uint16_t getYaxis() { 
-        return (Bus::read(REG_OUT_Y_MSB) << 8) | Bus::read(REG_OUT_Y_LSB); 
-    }
-
-    uint16_t getZaxis() { 
-        return (Bus::read(REG_OUT_Z_MSB) << 8) | Bus::read(REG_OUT_Z_LSB); 
-    }
+    */
                     
-    enum dataRates {
-        DR_800HZ = 0,
-        DR_400HZ = 1,
-        DR_200HZ = 2,
-        DR_100Hz = 3,
-        DR_50HZ = 4,
-        DR_25HZ = 5,
+    enum dataRates
+    {
+        DR_800HZ  = 0,
+        DR_400HZ  = 1,
+        DR_200HZ  = 2,
+        DR_100HZ  = 3,
+        DR_50HZ   = 4,
+        DR_25HZ   = 5,
         DR_12_5HZ = 6            
     };
     
-    enum opModes {
+    enum opModes 
+    {
         STANDBY = 0x00,
-        READY = 0x01,
-        ACTIVE = 0x02
+        READY   = 0x01,
+        ACTIVE  = 0x02
     };
     
-    enum fullScaleRanges {
+    enum gyroFullScale 
+    {
         DPS2000 = 0x00,
         DPS1000 = 0x01,
-        DPS500 = 0x02,
-        DPS250 = 0x03
+        DPS500  = 0x02,
+        DPS250  = 0x03
     };
 
 private:
-    Vec3 last_gyro;
     constexpr static uint8_t who_am_i_value = 0xD7;
+    constexpr static float gyroFSMAP[] = {2000, 1000, 500, 250};
+    uint8_t mCurScale;
             
-    enum regMap { 
+    enum regMap
+    { 
         REG_STATUS = 0x00,
         REG_OUT_X_MSB = 0x01,
         REG_OUT_X_LSB = 0x02,
@@ -238,6 +277,16 @@ private:
         REG_CTRL2 = 0x14,
         REG_CTRL3 = 0x15            
     };
+
+    inline constexpr float normalizeGyro(int16_t val)
+    {
+        return
+            static_cast<float>(val) / 32768.0f * gyroFSMAP[mCurScale]
+            * DEGREES_TO_RADIANS;
+    }
 };
+
+template<typename Bus>
+constexpr float FXAS21002<Bus>::gyroFSMAP[];
 
 #endif

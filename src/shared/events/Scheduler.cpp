@@ -41,14 +41,14 @@ std::ostream& operator<<(std::ostream& os, const TaskStatResult& sr)
 //
 
 void EventScheduler::add(function_t func, uint32_t intervalMs, 
-        const string& name) {
+        const string& name, int64_t start) {
     task_t task = { func, intervalMs, name, false, -1 };
-    addTask(task);
+    addTask(task, start);
 }
 
-void EventScheduler::addOnce(function_t func, uint32_t delayMs) {
+void EventScheduler::addOnce(function_t func, uint32_t delayMs, int64_t start) {
     task_t task = { func, delayMs, "", true, -1 };
-    addTask(task);
+    addTask(task, start);
 }
 
 vector<TaskStatResult> EventScheduler::getTaskStats()
@@ -107,14 +107,14 @@ void EventScheduler::run() {
     }
 }
 
-void EventScheduler::addTask(const EventScheduler::task_t& task) {
+void EventScheduler::addTask(const EventScheduler::task_t& task, int64_t start) {
     Lock<FastMutex> l(mutex);
     tasks.push_back(task);
     if(task.once==false) permanentTasks++;
     
     auto it = tasks.end();
     --it; //This makes it point to the last element of the list
-    event_t event = { it, getTick() };
+    event_t event = { it, start };
     enqueue(event);
 }
 
@@ -145,4 +145,4 @@ void EventScheduler::updateStats(event_t& e, int64_t startTime, int64_t endTime)
     e.task->workloadStats.add(endTime - startTime);
 }
 
-EventScheduler::EventScheduler() : ActiveObject(1024), permanentTasks(0) {}
+EventScheduler::EventScheduler() : ActiveObject(1024,PRIORITY_MAX-1), permanentTasks(0) {}

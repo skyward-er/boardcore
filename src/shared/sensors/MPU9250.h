@@ -31,7 +31,8 @@
 // TODO: Self-Test
 template <typename Bus>
 class MPU9250 : public GyroSensor, public AccelSensor, 
-                public CompassSensor, public TemperatureSensor {
+                public CompassSensor, public TemperatureSensor
+{
 
 #pragma pack(1)
 typedef union {
@@ -40,7 +41,7 @@ typedef union {
         int16_t mag[3];
         uint8_t status2;
     };
-    uint8_t raw[8];
+    uint8_t raw[9];
 } akdata_t;
 
 typedef union {
@@ -49,18 +50,62 @@ typedef union {
         int16_t temp;
         int16_t gyro[3];
     };
-    int16_t buf[7];
+    int16_t buf[8];
 } mpudata_t;
 #pragma pack()
 
 public:
-    MPU9250(uint8_t accelFullScale, uint8_t gyroFullScale) : 
-        last_temperature(0.0f) {
-            accelFS = accelFullScale & 0x03;
-            gyroFS = gyroFullScale & 0x03;
+    MPU9250(uint8_t accelFullScale, uint8_t gyroFullScale)
+    {
+        accelFS = accelFullScale & 0x03;
+        gyroFS = gyroFullScale & 0x03;
+        magnetoFSMState = 0;
+        mLastTemp = 0.0f;
     }
 
-    bool init() {
+    ~MPU9250()
+    {
+    }
+
+    std::vector<SPIRequest> buildDMARequest() override 
+    {
+        std::vector<uint8_t> v = 
+        { 
+            (REG_ACCEL_XOUT_H | 0x80),
+            0,0,0,0,0,0, // accel
+            0,0,         // temp
+            0,0,0,0,0,0, // gyro
+        };
+
+        return { SPIRequest(0, Bus::getCSPin(), v) };
+    }
+
+    void onDMAUpdate(const SPIRequest& req) override 
+    {
+        const auto& r = req.readResponseFromPeripheral();
+        mpudata_t raw_data;
+
+        memcpy(&raw_data.buf, &(r[1]), sizeof(raw_data));
+        for(int i=0;i<3;i++)
+        {
+            raw_data.accel[i] = fromBigEndian16(raw_data.accel[i]);
+            raw_data.gyro[i] = fromBigEndian16(raw_data.gyro[i]);
+        }
+        raw_data.temp = fromBigEndian16(raw_data.temp);
+
+        mLastAccel.setX(normalizeAccel(raw_data.accel[0]));
+        mLastAccel.setY(normalizeAccel(raw_data.accel[1]));
+        mLastAccel.setZ(normalizeAccel(raw_data.accel[2]));
+
+        mLastGyro.setX(normalizeGyro(raw_data.gyro[0]));
+        mLastGyro.setY(normalizeGyro(raw_data.gyro[1]));
+        mLastGyro.setZ(normalizeGyro(raw_data.gyro[2]));
+
+        mLastTemp = normalizeTemp(raw_data.temp);
+    }
+
+    bool init() override
+    {
         uint8_t whoami = Bus::read(REG_WHO_AM_I);
 
         if(whoami != who_am_i_value) {
@@ -71,7 +116,8 @@ public:
         // Warning: do not reset this sensor at startup, otherwise 
         // its magnetometer could randomly stop working.
 
-        uint8_t init_data[][2] = {
+        uint8_t init_data[][2] = 
+        {
             {REG_PWR_MGMT_1,     0x01},
             {REG_PWR_MGMT_2,     0x00}, // Enable all sensors
             {REG_CONFIG,         0x00}, // DLPF_CFG = xxxxx000
@@ -92,7 +138,8 @@ public:
 
         uint8_t ak_wia = akReadReg(AK8963_WIA);
 
-        if(ak_wia != 0x48) {
+        if(ak_wia != 0x48) 
+        {
             last_error = ERR_CANT_TALK_TO_CHILD; // TODO
             return false;
         }
@@ -101,41 +148,49 @@ public:
         Thread::sleep(1);
         akWriteReg(AK8963_CNTL1, 0x16);
         Thread::sleep(1);
+
+        magnetoFSMState = 1;
         return true;
     }
 
-    bool updateParams() {
+    bool onSimpleUpdate() override
+    {
+
         akdata_t ak;
-        mpudata_t raw_data;
 
-        akReadReg_1(AK8963_STATUS1, sizeof(ak.raw));
-        readRAWData(raw_data);
+        /* Magnetometer FSM ( Board <-SPI-> MPU9250 <-I2C-> Magneto )
+         *              ______________
+         *   __________/            __v________
+         *  / State 1  \           /  State 2  \
+         * |  ReadI2C  |          |  CopyToMem |
+         * \__________/           \___________/
+         *         ^_______________/
+         *
+         */
 
-        akReadReg_2(ak.raw, sizeof(ak.raw));
+        switch(magnetoFSMState)
+        {
+            case 1: // ReadI2C
+                akReadReg_1(AK8963_STATUS1, sizeof(ak.raw));
+                magnetoFSMState = 2;
+                break;
+            case 2: // CopyToMem
+                akReadReg_2(ak.raw, sizeof(ak.raw));
 
-        last_accel = Vec3(
-            normalizeAccel(raw_data.accel[0]),
-            normalizeAccel(raw_data.accel[1]),
-            normalizeAccel(raw_data.accel[2]) 
-        );
+                mLastCompass.setX(normalizeMagneto(ak.mag[0]));
+                mLastCompass.setY(normalizeMagneto(ak.mag[1]));
+                mLastCompass.setZ(normalizeMagneto(ak.mag[2]));
+                magnetoFSMState = 1;
+                break;
+            default:
+                return false;
+        }
 
-        last_gyro = Vec3(
-            normalizeGyro(raw_data.gyro[0]),
-            normalizeGyro(raw_data.gyro[1]),
-            normalizeGyro(raw_data.gyro[2]) 
-        );
-
-        last_magneto = Vec3(
-            normalizeMagneto(ak.mag[0]),
-            normalizeMagneto(ak.mag[1]),
-            normalizeMagneto(ak.mag[2]) 
-        );
-
-        last_temperature = normalizeTemp(raw_data.temp);
         return true;
     }
 
-    bool selfTest() {
+    bool selfTest() override
+    {
         uint8_t st_gyro[3], st_accel[3];
         mpudata_t test, real;
         uint16_t cfg; // [ REG_GYRO_CONFIG REG_ACCEL_CONFIG ]
@@ -165,30 +220,16 @@ public:
         return false; 
     }
 
-    Vec3 getRotation() {
-        return last_gyro; 
-    }
-
-    Vec3 getAccel() {
-        return last_accel; 
-    }
-
-    Vec3 getCompass() {
-        return last_magneto; 
-    }
-
-    float getTemperature() {
-        return last_temperature;
-    }
-
-    enum gyroFullScale {
+    enum gyroFullScale
+    {
         GYRO_FS_250           = 0,
         GYRO_FS_500           = 1,
         GYRO_FS_1000          = 2,
         GYRO_FS_2000          = 3
     };
 
-    enum accelFullScale {
+    enum accelFullScale
+    {
         ACC_FS_2G             = 0,
         ACC_FS_4G             = 1,
         ACC_FS_8G             = 2,
@@ -197,38 +238,41 @@ public:
 
 private:
     constexpr static uint8_t who_am_i_value = 0x71;
-    static constexpr const float accelFSMAP[] = {2.0,4.0,8.0,16.0};
-    static constexpr const float gyroFSMAP[]  = {250,500,1000,2000};
+    constexpr static float accelFSMAP[] = {2.0,4.0,8.0,16.0};
+    constexpr static float gyroFSMAP[]  = {250,500,1000,2000};
 
     uint8_t gyroFS;
     uint8_t accelFS;
+    uint8_t magnetoFSMState;
 
-    Vec3 last_accel, last_gyro, last_magneto;
-    float last_temperature;
-
-    inline constexpr float normalizeAccel(int16_t val) {
+    inline constexpr float normalizeAccel(int16_t val) 
+    {
         return 
             static_cast<float>(val) / 32768.0f * accelFSMAP[accelFS]
             * EARTH_GRAVITY;
     }
 
-    inline constexpr float normalizeGyro(int16_t val) {
+    inline constexpr float normalizeGyro(int16_t val) 
+    {
         return 
             static_cast<float>(val) / 32768.0f * gyroFSMAP[gyroFS]
             * DEGREES_TO_RADIANS;
     }
 
-    inline constexpr float normalizeMagneto(int16_t val) {
+    inline constexpr float normalizeMagneto(int16_t val) 
+    {
         // Page 50 @ Register Map document
         return static_cast<float>(val) / 32760.0f * 4912.0f;
     }
 
-    inline constexpr float normalizeTemp(int16_t val) {
+    inline constexpr float normalizeTemp(int16_t val) 
+    {
         // Page 33 @ Register Map Document
         return static_cast<float>(val) / 512.0f + 21.0f;
     }
 
-    uint8_t akReadReg(uint8_t reg) {
+    uint8_t akReadReg(uint8_t reg) 
+    {
         uint8_t regs[][2] = {
             { REG_I2C_SLV4_ADDR,    (uint8_t)(AK8963_I2C_ADDR | 0x80)},
             { REG_I2C_SLV4_REG,     reg },
@@ -254,7 +298,8 @@ private:
 
     // This is an optimized version of the common (i2c) burst-read:
     // _1 tells to the i2c master to begin reading and.. (See _2)
-    void akReadReg_1(uint8_t addr, uint8_t len) {
+    void akReadReg_1(uint8_t addr, uint8_t len) 
+    {
         assert(len < 16 && len > 0);
         uint8_t regs[][2] = {
             { REG_I2C_SLV0_ADDR,    (uint8_t)(AK8963_I2C_ADDR | 0x80)},
@@ -267,11 +312,13 @@ private:
     }
 
     // _2 this one moves the data from spi to the local processor
-    void akReadReg_2(uint8_t *buf, uint8_t len) {
+    void akReadReg_2(uint8_t *buf, uint8_t len) 
+    {
         Bus::read(REG_EXT_SENS_DATA_00, buf, len);
     }
 
-    void akWriteReg(uint8_t reg, uint8_t data) {
+    void akWriteReg(uint8_t reg, uint8_t data) 
+    {
         uint8_t regs[][2] = {
             { REG_I2C_SLV4_ADDR,    AK8963_I2C_ADDR},
             { REG_I2C_SLV4_REG,     reg},
@@ -285,7 +332,8 @@ private:
         Thread::sleep(1);
     }
 
-    enum magnetoMap {
+    enum magnetoMap 
+    {
         AK8963_I2C_ADDR     = 0x0c,
 
         AK8963_WIA          = 0x00,
@@ -295,7 +343,8 @@ private:
         AK8963_CNTL2        = 0x0b,
     };
 
-    enum regMap {
+    enum regMap
+    {
         REG_ST_GYRO         = 0x00,
         REG_ST_ACCEL        = 0x0D,
 
@@ -332,7 +381,8 @@ private:
         REG_WHO_AM_I        = 0x75
     };
 
-    void readRAWData(mpudata_t &out) {
+    void readRAWData(mpudata_t &out) 
+    {
         Bus::read(REG_ACCEL_XOUT_H,
                 reinterpret_cast<uint8_t *>(out.buf), sizeof(out.buf));
 

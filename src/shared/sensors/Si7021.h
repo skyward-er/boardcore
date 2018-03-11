@@ -32,9 +32,16 @@ template <typename BusType>
 class Si7021 : public HumiditySensor, public TemperatureSensor {
     
 public:
-    Si7021() { }
+    Si7021()
+    {
+        mLastHumidity = 0; 
+        mLastTemp = 0;
+    }
     
-    bool init() { return selfTest(); }
+    bool init()
+    {
+        return true;
+    }
     
     bool selfTest() {
         
@@ -59,24 +66,22 @@ public:
         return true;           
     }
     
-    bool updateParams(){
+    bool onSimpleUpdate()
+    {
         
         uint8_t buf[2];                        
         BusType::read(slaveAddr,CMD_MEAS_HUM,buf,2);        
-        humidity = ((static_cast<float>((buf[0] << 8) | buf[1])*125)/65536) - 6;
+        mLastHumidity = ( 
+            (static_cast<float>((buf[0] << 8) | buf[1])*125) / 65536
+        ) - 6;
         
         BusType::read(slaveAddr,CMD_MEAS_TEMP_PREV_HUM,buf,2);                
-        temperature = (
+        mLastTemp = (
             (static_cast<float>((buf[0] << 8) | buf[1])*175.72)/65536
         ) - 46.85;
         
         return true;
     }
-    
-    float getTemperature() { return temperature; }
-    
-       
-    float getHumidity() { return humidity; }
     
     /**
      * \return temperature measurement made along the previous 

@@ -48,14 +48,13 @@ int main() {
     char buf[64]={0};
     socket.open(bus);
 
-    cout << "*** Ready ***" << endl;
-
+    printf("*** Ready ***\n");
 
     while(1) {
         const char *pkt = "TestMSG";
         bus->send(CAN_PACKETID, (const uint8_t *)pkt, strlen(pkt));
         socket.receive(buf, 64);
-        cout << "Recv pkt: '" << buf << "'" << endl;
+        printf("Recv pkt: '%s'\n", buf);
         Thread::sleep(250);
     }
 

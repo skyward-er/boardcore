@@ -1,6 +1,6 @@
 /* ST iNEMO LSM9DS0 Driver
  *
- * Copyright (c) 2016 Skyward Experimental Rocketry
+ * Copyright (c) 2016-2017 Skyward Experimental Rocketry
  * Authors: Matteo Michele Piazzolla, Alain Carlucci
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -32,21 +32,26 @@
 
 template <typename BusG,typename BusXM>
 class iNEMOLSM9DS0 : public GyroSensor, public AccelSensor,
-    public CompassSensor, public TemperatureSensor {
+    public CompassSensor, public TemperatureSensor
+{
 
 public:
     iNEMOLSM9DS0(uint8_t accelFullScale, uint8_t gyroFullScale, 
-            uint8_t compassFullScale) : last_temp(0.0f) { 
-        accelFS = accelFullScale & 0x7;
+            uint8_t compassFullScale)
+    { 
+        accelFS = accelFullScale & 0x07;
         gyroFS  = gyroFullScale & 0x03;
         compassFS = compassFullScale & 0x03;
+        mLastTemp = 0.0f;
     }
 
-    bool init() {
+    bool init()
+    {
         uint8_t whoami_g = BusG::read(RegMap::WHO_AM_I_G);
-        uint8_t whoami_xm = BusG::read(RegMap::WHO_AM_I_XM);
+        uint8_t whoami_xm = BusXM::read(RegMap::WHO_AM_I_XM);
 
-        if((whoami_g != whoami_g_value) | (whoami_xm !=whoami_g_value) ) {
+        if((whoami_g != whoami_g_value) || (whoami_xm !=whoami_xm_value) ) 
+        {
             last_error = ERR_NOT_ME;
             return false;
         }
@@ -67,76 +72,104 @@ public:
 
         //FIFO enabled, get data after the first low pass filter
         BusG::write(CTRL_REG5_G, 0x00);
-        BusG::write(CTRL_REG0_XM, 0x00);
 
         //accelerometer configuration
         //reset internal memory
-        BusG::write(CTRL_REG0_XM, 0x80);
-        //1600Hz data rate, continuous update, xyz enabled
-        BusXM::write(CTRL_REG1_XM,0x57);
+        BusXM::write(CTRL_REG0_XM, 0x80);
+
+        uint8_t timeout = 10;
+
+        while(BusXM::read(CTRL_REG0_XM) != 0x00 && --timeout > 0)
+            Thread::sleep(1);
+
+        if(timeout == 0)
+        {
+            last_error = ERR_RESET_TIMEOUT;
+            return false;
+        }
+
+        //100Hz data rate, continuous update, xyz enabled
+        BusXM::write(CTRL_REG1_XM,0x67);
         //antialias filter 773 Hz, normal mode no test
-        BusXM::write(CTRL_REG2_XM,0x00 | (accelFS<<3));   
+        BusXM::write(CTRL_REG2_XM,(0x01 << 6) | (accelFS << 3));   
 
         //interrupt not enabled
         BusXM::write(CTRL_REG3_XM,0x00);
         BusXM::write(CTRL_REG4_XM,0x00);
-        //temperature sensor enabled, 100hz magnetic data rate, 2 gauss
-        BusXM::write(CTRL_REG5_XM,0xF4);
+
+        //temperature sensor enabled, 50hz magnetic data rate, 2 gauss
+        BusXM::write(CTRL_REG5_XM,0xF0);
+
         // 2 gauss 
         BusXM::write(CTRL_REG6_XM,0x00 | (compassFS<<5));  
-        BusXM::write(CTRL_REG7_XM,0x00);
+        BusXM::write(CTRL_REG7_XM,0x80);
 
         return true;
     }
 
-    bool selfTest() {
+    bool selfTest()
+    {
         return false;
     }
 
-
-    bool updateParams(){
-        int16_t data[3];
-
-        BusG::read(OUT_X_L_G|0x40,reinterpret_cast<uint8_t *>(data),6);
-
-        last_gyro = Vec3(normalizeGyro(data[0]),
-                normalizeGyro(data[1]),
-                normalizeGyro(data[2]));
-
-        BusXM::read(OUT_X_L_A|0x40,reinterpret_cast<uint8_t *>(data),6);
-
-        last_acc = Vec3(
-                normalizeAccel(data[0]),
-                normalizeAccel(data[1]),
-                normalizeAccel(data[2])
-                );
-
-        BusXM::read(OUT_X_L_M|0x40,reinterpret_cast<uint8_t *>(data),6);
-
-        last_compass = Vec3(
-                normalizeCompass(data[0]),
-                normalizeCompass(data[1]),
-                normalizeCompass(data[2])
-                );
-
-        uint8_t temp[2];
-
-        temp[1] = BusXM::read(OUT_TEMP_H_XM);
-        Thread::sleep(1);
-        temp[0] = BusXM::read(OUT_TEMP_L_XM);
-        Thread::sleep(1);
-
-        uint16_t temp16 = ((uint16_t) BusXM::read(OUT_TEMP_H_XM) <<8) 
-                        |  (uint16_t) temp[0];
-
-        last_temp = static_cast<float>(temp16)/8.0f+21.0f;
-        return true;
+    std::vector<SPIRequest> buildDMARequest() override 
+    {
+        return {
+            SPIRequest(DMA_GYRO, BusG::getCSPin(),  
+                { OUT_X_L_G | 0xc0, 0,0,0,0,0,0}),
+            SPIRequest(DMA_ACC,  BusXM::getCSPin(),  
+                { OUT_X_L_A | 0xc0, 0,0,0,0,0,0}),
+            SPIRequest(DMA_COMP, BusXM::getCSPin(), 
+                { OUT_X_L_M | 0xc0, 0,0,0,0,0,0}),
+            SPIRequest(DMA_TEMP, BusXM::getCSPin(), 
+                { OUT_TEMP_L_XM | 0xc0, 0,0}),
+        };
     }
 
-    Vec3 getRotation() { return last_gyro; }
-    Vec3 getAccel() { return last_acc; }
-    Vec3 getCompass(){ return last_compass; }
-    float getTemperature(){ return last_temp; }
+    void onDMAUpdate(const SPIRequest& req) override 
+    {
+        const auto& r = req.readResponseFromPeripheral();
+
+        int16_t data[3] = {0};
+        memcpy(data, &r[1], r.size()-1);
+        //printf("ID: %d  --> %+05d,%+05d,%+05d -> ", 
+        //  req.id(),data[0],data[1],data[2]);
+        //memDump(r.data(),r.size());
+
+        switch(req.id())
+        {
+            case DMA_GYRO:
+                mLastGyro.setX(normalizeGyro(data[0]));
+                mLastGyro.setY(normalizeGyro(data[1]));
+                mLastGyro.setZ(normalizeGyro(data[2]));
+                break;
+            case DMA_ACC:
+                mLastAccel.setX(normalizeAccel(data[0]));
+                mLastAccel.setY(normalizeAccel(data[1]));
+                mLastAccel.setZ(normalizeAccel(data[2]));
+                break;
+            case DMA_COMP:
+                mLastCompass.setX(normalizeCompass(data[0]));
+                mLastCompass.setY(normalizeCompass(data[1]));
+                mLastCompass.setZ(normalizeCompass(data[2]));
+                break;
+            case DMA_TEMP:
+                mLastTemp = static_cast<float>(data[0])/8.0f+21.0f;
+                break;
+        }
+    }
+
+    bool onSimpleUpdate()
+    {
+        return false;
+    }
+     
+    enum{
+        DMA_GYRO = 0,
+        DMA_ACC  = 1,
+        DMA_COMP = 2,
+        DMA_TEMP = 3
+    };
 
     enum accelFullScale {
         ACC_FS_16G     = 4,
@@ -159,9 +192,6 @@ public:
         COMPASS_FS_2    = 3,
     };
 private:
-    Vec3 last_acc, last_gyro, last_compass;
-    float last_temp;
-
     uint8_t accelFS, gyroFS, compassFS;
 
     constexpr static uint8_t whoami_g_value = 0xD4;

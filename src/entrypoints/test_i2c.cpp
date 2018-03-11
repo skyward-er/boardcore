@@ -44,11 +44,11 @@ int main()
     
     while(1)
     {
-        baro.updateParams();
+        baro.onSimpleUpdate();
         printf("press %f, temp %f, alt %f\n",
-                baro.getPressure(),
-                baro.getTemperature(), 
-                baro.getAltitude()
+                *(baro.pressureDataPtr()),
+                *(baro.tempDataPtr()), 
+                *(baro.altitudeDataPtr())
         );
 
         Thread::sleep(1000);

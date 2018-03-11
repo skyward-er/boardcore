@@ -27,6 +27,7 @@
 #include <Common.h>
 #include <math/Vec3.h>
 #include <math/Quaternion.h>
+#include <DMA/DMA.h>
 
 /** Sensors class diagram
  *               ________ 
@@ -54,13 +55,22 @@ class Sensor {
          */
         virtual bool selfTest() = 0;
 
+        virtual std::vector<SPIRequest> buildDMARequest() {
+            printf("** SENSOR::buildDMARequest **\n"); 
+            return std::vector<SPIRequest>();
+        }
+
+        virtual void onDMAUpdate(const SPIRequest& req) {
+            printf("** SENSOR::onDMAUpdate **\n");
+        }
+
         /** 
          * This method is called once every N msec, read new values and
          * store them in local variables.
          *
          * You should check getLastError() if this function returns false.
          */
-        virtual bool updateParams() = 0;
+        virtual bool onSimpleUpdate() = 0;
 
         /** Return last error code */
         uint8_t getLastError() const { return last_error; }
@@ -84,37 +94,58 @@ class Sensor {
 
 class GyroSensor : public virtual Sensor {
     public:
-        virtual Vec3 getRotation() = 0;
+        const Vec3* gyroDataPtr() const { return &mLastGyro; }
+    protected:
+        Vec3 mLastGyro; 
 };
 
 class AccelSensor : public virtual Sensor {
     public:
-        virtual Vec3 getAccel() = 0;
+        const Vec3* accelDataPtr() const { return &mLastAccel; }
+    protected:
+        Vec3 mLastAccel; 
 };
 
 class CompassSensor : public virtual Sensor {
     public:
-        virtual Vec3 getCompass() = 0;
+        const Vec3* compassDataPtr() const { return &mLastCompass; }
+    protected:
+        Vec3 mLastCompass;
 };
 
 class TemperatureSensor : public virtual Sensor {
     public:
-        virtual float getTemperature() = 0;
+        const float* tempDataPtr() const { return &mLastTemp; }
+    protected:
+        float mLastTemp;
 };
 
 class HumiditySensor : public virtual Sensor {
     public:
-        virtual float getHumidity() = 0;
+        const float* humidityDataPtr() const { return &mLastHumidity; }
+    protected:
+        float mLastHumidity;
 };
 
 class PressureSensor : public virtual Sensor {
     public:
-        virtual float getPressure() = 0;
+        const float* pressureDataPtr() const { return &mLastPressure; }
+    protected:
+        float mLastPressure;
 };
 
 class AltitudeSensor : public virtual Sensor {
     public:
-        virtual float getAltitude() = 0;
+        const float* altitudeDataPtr() const { return &mLastAltitude; }
+    protected:
+        float mLastAltitude;
+};
+
+class DebugIntSensor : public virtual Sensor {
+    public:
+        const int* debugIntPtr() const { return &mDebugInt; }
+    protected:
+        int mDebugInt;
 };
 
 #endif /* ifndef SENSORS_H */

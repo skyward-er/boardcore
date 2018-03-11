@@ -24,20 +24,29 @@
 
 #ifndef LPS331AP_H
 #define LPS331AP_H 
+
 #include "Sensor.h"
 #include <BusTemplate.h>
 
 template <typename Bus>
-class LPS331AP : public PressureSensor, public TemperatureSensor {
-
+class LPS331AP : public PressureSensor, public TemperatureSensor
+{
+    struct data_t
+    {
+        int32_t press;
+        int16_t temp;
+    };
 public:
 
-    LPS331AP(uint8_t samplingSpeed) : 
-        last_pressure(0.0f), last_temperature(0.0f) { 
-        hi_speed = (samplingSpeed == SS_25HZ);
+    LPS331AP(uint8_t samplingSpeed)
+    { 
+        mLastPressure = 0.0f;
+        mLastTemp = 0.0f;
+        mHighSpeed = (samplingSpeed == SS_25HZ);
     }
 
-    bool init() {
+    bool init()
+    {
         uint8_t whoami = Bus::read(REG_WHO_AM_I);
 
         if(whoami != who_am_i_value) {
@@ -45,61 +54,65 @@ public:
             return false;
         }
 
-        uint8_t reg1 = hi_speed ? 0xf0 : 0xe0;
-        uint8_t reg2 = hi_speed ? 0x69 : 0x7a;
+        uint8_t reg1 = mHighSpeed ? 0xf0 : 0xe0;
+        uint8_t reg2 = mHighSpeed ? 0x69 : 0x7a;
         Bus::write(REG_CTRL1, reg1);    // Power on, 3-wire SPI
         Bus::write(REG_RES_CONF, reg2); // AVG_P: 384, AVG_T: 64
+
         return true;
     }
 
-    bool selfTest() {
+    bool selfTest() 
+    {
         return false; 
     }
 
-    bool updateParams() {
-        #pragma pack(1)
-        struct {
-            int32_t press;
-            int16_t temp;
-        } data = {0};
-        #pragma pack()
-        
-        // 0x40: read from STATUS up to sizeof(data) bytes
-        Bus::read(REG_STATUS | 0x40, 
-                reinterpret_cast<uint8_t *>(&data), sizeof(data));
-
-        data.press >>= 8; // Remove status and realign bytes
-
-        last_pressure = normalizePressure(data.press);
-        last_temperature = normalizeTemp(data.temp);
-
-        return true;
+    std::vector<SPIRequest> buildDMARequest() override 
+    {
+        return { 
+            SPIRequest(0, Bus::getCSPin(), { 
+                REG_STATUS | 0xc0,
+                0,0,0,0, // pressure    (int32_t)
+                0,0      // temperature (int16_t)
+            })
+        };
     }
 
-    float getPressure() {
-        return last_pressure; 
-    }
+    void onDMAUpdate(const SPIRequest& req) override
+    {
+        const auto& r = req.readResponseFromPeripheral();
+        const data_t *data = (const data_t*) &r[1];
     
-    float getTemperature() {
-        return last_temperature;
+        // Remove status and realign bytes
+        int32_t pressure = data->press >> 8;
+
+        mLastPressure = normalizePressure(pressure);
+        mLastTemp = normalizeTemp(data->temp);
     }
 
-    enum samplingSpeed {
+    bool onSimpleUpdate() override
+    {
+        return false;
+    }
+
+    enum samplingSpeed
+    {
         SS_25HZ     = 0, // 25Hz
         SS_12HZ5    = 1, // 12.5Hz
     };
 
 private:
     constexpr static uint8_t who_am_i_value = 0xbb;
-    uint8_t hi_speed;
-    float last_pressure, last_temperature;
+    uint8_t mHighSpeed;
 
-    inline constexpr float normalizePressure(int32_t val) {
+    inline constexpr float normalizePressure(int32_t val)
+    {
         // Page 28 @ Datasheet
         return static_cast<float>(val) / 4096.0f;
     }
 
-    inline constexpr float normalizeTemp(int16_t val) {
+    inline constexpr float normalizeTemp(int16_t val)
+    {
         // Page 29 @ Datasheet
         return static_cast<float>(val) / 480.0f + 42.5f;
     }

@@ -92,34 +92,34 @@ public:
 
     void update() {
         for(const sensor_t& s : sensors)
-            (s.sensor)->updateParams();
+            (s.sensor)->onSimpleUpdate();
     }
 
 // Read a float value 
-#define RFLO(x,y,z,w) vector<x> y () const {                 \
+#define RFLO(x,y,k,z,w) vector<x> y () const {               \
     vector<x> j;                                             \
     for(const sensor_t& i : w) {                             \
-        j.push_back((dynamic_cast<z *>(i.sensor))->y());     \
+        j.push_back(*((dynamic_cast<z *>(i.sensor))->k()));  \
     }                                                        \
     return j;                                                \
 }
 
 // Read a Vec3 value and multiply it by the sensor transform matrix
-#define RVEC(x,y,z,w) vector<x> y () const {                               \
+#define RVEC(x,y,k,z,w) vector<x> y () const {                             \
     vector<x> j;                                                           \
     for(const sensor_t& i : w) {                                           \
-        x vec = *(i.transform) * (dynamic_cast<z *>(i.sensor))->y();       \
+        x vec = *(i.transform) * *((dynamic_cast<z *>(i.sensor))->k());    \
         j.push_back(vec);                                                  \
     }                                                                      \
     return j;                                                              \
 }
 
-    RVEC(Vec3,  getAccel,       AccelSensor,        accel)
-    RVEC(Vec3,  getRotation,    GyroSensor,         gyro)
-    RVEC(Vec3,  getCompass,     CompassSensor,      compass)
-    RFLO(float, getTemperature, TemperatureSensor,  temps)
-    RFLO(float, getHumidity,    HumiditySensor,     humidity)
-    RFLO(float, getPressure,    PressureSensor,     pressure)
+    RVEC(Vec3,  getAccel,       accelDataPtr,   AccelSensor,        accel)
+    RVEC(Vec3,  getRotation,    gyroDataPtr,    GyroSensor,         gyro)
+    RVEC(Vec3,  getCompass,     compassDataPtr, CompassSensor,      compass)
+    RFLO(float, getTemperature, tempDataPtr,    TemperatureSensor,  temps)
+    RFLO(float, getHumidity,    humidityDataPtr,HumiditySensor,     humidity)
+    RFLO(float, getPressure,    pressureDataPtr,PressureSensor,     pressure)
 
 #undef RFLO
 #undef RVEC
@@ -133,7 +133,7 @@ private:
 
         // ----- FXAS21102 -----
         typedef FXAS21002<spiFXAS21002> fx_t; 
-        fx_t *fx = new fx_t();
+        fx_t *fx = new fx_t(fx_t::DPS500);
         if(fx->init())
             PP("FXAS21102", PUSH({fx, &idMat}, gyro));
         else 
@@ -352,7 +352,6 @@ int main() {
     int ignore_ctr = 100;
     int led_status = 0x200;
 
-    Leds::init();
     while(1) {
         sDemoBoard->update();
         Thread::sleep(20);
