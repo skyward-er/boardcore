@@ -193,7 +193,6 @@ private:
     ProtocolSPI& operator=(const ProtocolSPI&& other);
 };
 
-
 /*********************************************
  * VERSION OF ProtocolI2C THAT USES HARDWARE *
  * I2C DRIVER                                *

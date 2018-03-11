@@ -1,5 +1,7 @@
-/* Copyright (c) 2015-2016 Skyward Experimental Rocketry
- * Authors: Alain Carlucci
+/* FSM SynchronizedQueue
+ *
+ * Copyright (c) 2015-2016 Skyward Experimental Rocketry
+ * Author: Matteo Michele Piazzolla, Alain Carlucci
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -20,12 +22,50 @@
  * THE SOFTWARE.
  */
 
-#ifndef CONSTANTS_H
-#define CONSTANTS_H
+#ifndef SYNC_QUEUE_H_
+#define SYNC_QUEUE_H_
 
-static constexpr const float PI                 = 3.14159265f;
-static constexpr const float EARTH_GRAVITY      = 9.80665f;
-static constexpr const float DEGREES_TO_RADIANS = PI / 180.0f;
-static constexpr const float RADIANS_TO_DEGREES = 180.0f / PI;
+#include <list>
+#include "miosix.h"
 
-#endif
+
+template<typename T>
+class SynchronizedQueue
+{
+public:
+	SynchronizedQueue() {}
+	void put(const T& data);
+	T get();
+
+private:
+	SynchronizedQueue(const SynchronizedQueue&)=delete;
+	SynchronizedQueue& operator=(const SynchronizedQueue&)=delete;
+	std::list<T> queue;
+	miosix::Mutex m_mutex;
+	miosix::ConditionVariable m_cv;
+};
+
+
+
+template<typename T>
+void SynchronizedQueue<T>::put(const T& data)
+{
+	m_mutex.lock();
+	queue.push_back(data);
+	m_cv.signal();
+	m_mutex.unlock();
+}
+
+template<typename T>
+T SynchronizedQueue<T>::get()
+{
+	m_mutex.lock();
+	while(queue.empty()) m_cv.wait(m_mutex);
+	T result=queue.front();
+	queue.pop_front();
+	m_mutex.unlock();
+
+	return result;
+}
+
+#endif //SYNC_QUEUE_H_

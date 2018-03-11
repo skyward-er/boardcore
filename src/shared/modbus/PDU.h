@@ -1,5 +1,7 @@
-/* Copyright (c) 2015-2016 Skyward Experimental Rocketry
- * Authors: Alain Carlucci
+/* Modbus protocol PDU data structure
+ *
+ * Copyright (c) 2017 Skyward Experimental Rocketry
+ * Author: Silvano Seva
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -20,12 +22,50 @@
  * THE SOFTWARE.
  */
 
-#ifndef CONSTANTS_H
-#define CONSTANTS_H
+#ifndef PDU_H
+#define PDU_H
 
-static constexpr const float PI                 = 3.14159265f;
-static constexpr const float EARTH_GRAVITY      = 9.80665f;
-static constexpr const float DEGREES_TO_RADIANS = PI / 180.0f;
-static constexpr const float RADIANS_TO_DEGREES = 180.0f / PI;
+#include "Common.h"
+#include <stddef.h>
 
-#endif
+class PDU
+{
+public:
+    
+    /**
+     * Create a new PDU structure
+     * @param fCode: PDU's function code
+     * @param data: pointer to data to be put into PDU's data field
+     * @param dataSize: size of PDU's data field
+     */
+    PDU(uint8_t fCode, const uint8_t const *data, uint8_t dataSize);
+    
+    /**
+     * Default constructor does nothing
+     */
+    PDU();        
+    ~PDU();        
+    
+    /**
+     * @return PDU's function code
+     */
+    uint8_t funcCode() const;
+    
+    /**
+     * @return std::pair: first field is data size, the second one is
+     * a uint8_t const* to internal data.
+     */
+    std::pair< uint8_t, uint8_t const* > data() const;
+    
+private:
+    
+    uint8_t fuCode;
+    uint8_t pSize;
+    uint8_t *pData;
+    
+    PDU(const PDU& other);    
+    PDU& operator=(const PDU& other);    
+    bool operator==(const PDU& other);
+};
+
+#endif // PDU_H
