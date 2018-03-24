@@ -65,15 +65,18 @@ public:
      */
     bool receive(int bufLen, char *buf);
 
+    /*
+     * Set a new configuration to gamma.
+     * Returns true if the configuration was set right.
+     */
+    bool configure(Configuration newConf);
     //~Gamma868();
+    
 
     /*
      * TODO:
      * bool isConnected() checks if learn switch is pulled up??
-     * bool enterLearnMode();
      * char *readConfiguration();
-     * bool configure(Configuration newConf);
-     * void exitLearnMode();
      */
 
 private:
@@ -88,8 +91,20 @@ private:
     ConditionVariable ledCond;
     int pktSent = 0;
 
+    FastMutex learnMutex;
+    ConditionVariable learnCond;
+    int learnMode = 0;
+
     void writerThreadTask();
     void waitForLed();
+
+    bool enterLearnMode();
+    bool exitLearnMode();
+    void confirmLearnMode();
+    void timer();
+    void printConfig();
+    void waitForOk();
+    int writeConfig(struct Configuration conf);
 
     /*
      * Static wrapper for running it in a thread.
@@ -106,6 +121,24 @@ private:
     static void *static_waitForLed(void *object)
     {
         reinterpret_cast<Gamma868 *>(object)->waitForLed();
+        return 0;
+    }
+
+    /*
+     * Static wrapper for running it in a thread.
+     */
+    static void *static_confirmLearnMode(void *object)
+    {
+        reinterpret_cast<Gamma868 *>(object)->confirmLearnMode();
+        return 0;
+    }
+
+    /*
+     * Static wrapper for running it in a thread.
+     */
+    static void *static_timer(void *object)
+    {
+        reinterpret_cast<Gamma868 *>(object)->timer();
         return 0;
     }
 };
