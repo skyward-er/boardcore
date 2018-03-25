@@ -1,5 +1,5 @@
 /* Copyright (c) 2017 Skyward Experimental Rocketry
- * Authors: Alvise De Faveri
+ * Authors: Alvise De Faveri, Nuno Barcellos
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -38,26 +38,4 @@ struct Configuration
     int baudrate      = 0;   // 9600 baud
 };
 
-// Buffer config
-#define OUT_BUFFER_SIZE 10
-
-/*
- * Change this if you want to send even if the buffer contains
- * less chars than the packet (note that the packet has fixed size).
- */
-#define MIN_TO_SEND 5
-
-#define SEND_SLEEP_TIME 0
-
-// Protocol config
-#define HEAD_LEN 2
-#define CMD_LEN 1
-#define DATA_LEN 5
-#define END_LEN 1
-
-#define START '#'
-#define CMD '!'
-#define DATA '?'
-#define END '%'
-
-#endif
+#endif /* CONFIG_H */
