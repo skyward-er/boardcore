@@ -1,5 +1,5 @@
 /* Copyright (c) 2017 Skyward Experimental Rocketry
- * Authors: Alvise de'Faveri Tron
+ * Authors: Alvise de'Faveri Tron, Nuno Barcellos
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -35,7 +35,6 @@
 using namespace miosix;
 #endif  //_MIOSIX
 
-#include "CircularBuffer.h"
 #include "gamma_config.h"  //Defines are in here.
 
 class Gamma868
@@ -44,34 +43,21 @@ public:
     Gamma868(const char *serialPath);
 
     /*
-     * Starts a thread that reads from the buffer and sends to the gamma module.
-     */
-    void start();
-
-    /*
-     * Message goes in a queue (non blocking).
-     * Returns number of bytes effectively stored in the buffer.
-     */
-    unsigned int send(unsigned int msg_len, const char *msg);
-
-    /*
      * Message is sent as soon as possible (blocking).
      */
-    bool sendCmd(int cmd_len, const char *cmd);
+    bool send(int pkt_len, const char *pkt);
 
     /*
-     * Read from the Blocking.
+     * Read from the gamma868 serial (blocking).
      * Returns true if the received stream is a command.
      */
-    bool receive(int bufLen, char *buf);
+    void receive(int pkt_len, char *pkt);
 
     /*
      * Set a new configuration to gamma.
      * Returns true if the configuration was set right.
      */
-    bool configure(Configuration newConf);
-    //~Gamma868();
-    
+    bool config(Configuration newConf);    
 
     /*
      * TODO:
@@ -81,8 +67,6 @@ public:
 
 private:
     int fd;
-    CircularBuffer outBuffer;
-    Thread *writerThread;
 
     pthread_mutex_t readingMutex;
     pthread_mutex_t writingMutex;
@@ -95,9 +79,6 @@ private:
     ConditionVariable learnCond;
     int learnMode = 0;
 
-    void writerThreadTask();
-    void waitForLed();
-
     bool enterLearnMode();
     bool exitLearnMode();
     void confirmLearnMode();
@@ -105,24 +86,6 @@ private:
     void printConfig();
     void waitForOk();
     int writeConfig(struct Configuration conf);
-
-    /*
-     * Static wrapper for running it in a thread.
-     */
-    static void *static_writerThreadTask(void *object)
-    {
-        reinterpret_cast<Gamma868 *>(object)->writerThreadTask();
-        return 0;
-    }
-
-    /*
-     * Static wrapper for running it in a thread.
-     */
-    static void *static_waitForLed(void *object)
-    {
-        reinterpret_cast<Gamma868 *>(object)->waitForLed();
-        return 0;
-    }
 
     /*
      * Static wrapper for running it in a thread.

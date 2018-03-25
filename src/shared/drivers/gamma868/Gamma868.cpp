@@ -1,5 +1,5 @@
 /* Copyright (c) 2017 Skyward Experimental Rocketry
- * Authors: Alvise de'Faveri Tron
+ * Authors: Alvise de'Faveri Tron, Nuno Barcellos
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -43,90 +43,51 @@ Gamma868::Gamma868(const char *serialPath)
     gammaSwitch::high();
 }
 
-void Gamma868::start()
-{
-    writerThread = Thread::create(&Gamma868::static_writerThreadTask,
-                                  STACK_DEFAULT_FOR_PTHREAD, MAIN_PRIORITY,
-                                  reinterpret_cast<void *>(this));
-}
-
-/*
- * Adds data to the output buffer (non blocking).
- * Returns how many chars could be effectively stored in the buffer.
- */
-unsigned int Gamma868::send(unsigned int msg_len, const char *msg)
-{
-    return outBuffer.write(msg_len, msg);
-}
-
 /*
  * Immediately sends command (blocking).
  */
-bool Gamma868::sendCmd(int cmd_len, const char *cmd)
+bool Gamma868::send(int pkt_len, const char *pkt)
 {
-
-    char pkt[HEAD_LEN + cmd_len + END_LEN];
-
-    // Prepare packet
-    pkt[0]                  = START;
-    pkt[1]                  = CMD;
-    pkt[2]                  = cmd[0];
-    pkt[HEAD_LEN + CMD_LEN] = END;
-
     // Send to gamma
     pthread_mutex_lock(&writingMutex);
-    write(fd, pkt, HEAD_LEN + cmd_len + END_LEN);
+    write(fd, pkt, pkt_len);
     pthread_mutex_unlock(&writingMutex);
 
     return true;
 }
 
 /*
- * Reads from the gamma868 serial. (blocking)
+ * Reads from the gamma868 serial (blocking).
  */
-bool Gamma868::receive(int bufLen, char *buf)
+void Gamma868::receive(int pkt_len, char *pkt)
 {
     char init = (char)0;
-    char type = (char)0;
     char end  = (char)0;
-    bool cmd  = false;
 
     // Read until you find the start byte.
-    while (init != START)
+    while (init != '#')
     {
         read(fd, &init, 1);
     }
 
     pthread_mutex_lock(&readingMutex);  // TODO is sync needed?
-
-    // Read second byte (type of data)
-    read(fd, &type, 1);
-    if (type == DATA)
-    {
-        read(fd, buf, bufLen);  // If it's data, read all the bufLen chars
-    }
-    else if (type == CMD)
-    {
-        read(fd, buf, CMD_LEN);  // If it's a command, just read 1 char
-        cmd = true;
-    }
-
+    
+    read(fd, pkt, pkt_len);  // Read all the bufLen chars
+   
     // End byte
     read(fd, &end, 1);
-
+    
     pthread_mutex_unlock(&readingMutex);
 
-    if (end != END)
+    if (end != '%')
         printf("Did not find end char! stream may be inconsistent\n");
-
-    return cmd;
 }
 
 /*
  * Set a new configuration to gamma.
  * Returns true if the configuration was set right.
  */
-bool Gamma868::configure(Configuration newConf)
+bool Gamma868::config(Configuration newConf)
 {
     if (enterLearnMode())
     {
@@ -253,22 +214,6 @@ bool Gamma868::exitLearnMode()
     write(fd, "#Q", 2);
 
     return true;
-
-    // TODO: verify if exited learn mode?!
-
-    // int curState = gammaLed::value();
-
-    // if (curState == -1)
-    // {
-    //     printf("Failed!\n");
-    //     return false;
-    // }
-    // else
-    // {
-    //     printf("Ok\n");
-    //     learnMode = 0;
-    //     return true;
-    // }
 }
 
 /*
@@ -356,76 +301,4 @@ void Gamma868::waitForOk()
     read(fd, reply, 3);
     printf("%s\n", reply);
     Thread::sleep(100);
-}
-
-/*
- * Continuously checks the buffer and, if there's something in it, sends
- * it in packets of fixed dimension, waiting each time until the end of
- * transmission.
- */
-void Gamma868::writerThreadTask()
-{
-    while (1)
-    {
-        if (outBuffer.size() >= MIN_TO_SEND)
-        {
-            // Prepare header
-            char pkt[HEAD_LEN + DATA_LEN + END_LEN];
-            pkt[0] = START;
-            pkt[1] = DATA;
-
-            // Send in packets of fixed size
-            while (outBuffer.size() >= MIN_TO_SEND)
-            {
-                // Read from the buffer
-                outBuffer.read(DATA_LEN, pkt, 2);
-                pkt[DATA_LEN + HEAD_LEN] = END;
-
-                // Start thread that will notify when the device has finished
-                // transmission
-                Thread::create(&Gamma868::static_waitForLed,
-                               STACK_DEFAULT_FOR_PTHREAD, MAIN_PRIORITY,
-                               reinterpret_cast<void *>(this));
-                // Send
-                pthread_mutex_lock(&writingMutex);
-                write(fd, pkt, HEAD_LEN + DATA_LEN + END_LEN);
-                // TODO start timeout
-                {
-                    Lock<FastMutex> l(ledMutex);
-                    while (pktSent == 0)
-                        ledCond.wait(l);  // waitForLed will change the
-                                          // variable.
-                    pktSent = 0;
-                }
-                pthread_mutex_unlock(&writingMutex);
-            }
-
-            // Wait some time (set in gamma_config) before checking the buffer
-            // again
-            Thread::sleep(SEND_SLEEP_TIME);
-        }
-    }
-}
-
-/*
- * Changes the associated condition variable when the device's led goes off.
- * TODO put it inside the function?
- */
-void Gamma868::waitForLed()
-{
-    bool sending = false;
-    while (1)
-    {
-        if (gammaLed::value() == 1 /*&& !sending*/)
-        {
-            sending = true;
-        }
-        if (/*sending &&*/ gammaLed::value() == 0)
-        {
-            Lock<FastMutex> l(ledMutex);
-            pktSent++;
-            ledCond.signal();
-            break;
-        }
-    }
 }

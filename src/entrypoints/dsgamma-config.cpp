@@ -30,8 +30,6 @@ using namespace miosix;
 #include <drivers/gamma868/Gamma868.h>
 
 /* DISCOVERY F429I*/
-// typedef Gpio<GPIOG_BASE, 13> greenLed;
-// typedef Gpio<GPIOG_BASE, 14> redLed;
 typedef Gpio<GPIOA_BASE, 0> button;
 
 Gamma868 gamma("/dev/auxtty");  // create gamma object
@@ -40,8 +38,6 @@ void waitForButton();
 
 int main()
 {
-    gamma.start();  //!!!!!IMPORTANT!!!!!!!!
-
     // Discovery gpio setup
     {
         FastInterruptDisableLock dLock;
@@ -84,7 +80,7 @@ int main()
         // printf("BAUDRATE (0-4):\n");
         // scanf("%d", &newConf.baudrate);
 
-        bool configStatus = gamma.configure(newConf);
+        bool configStatus = gamma.config(newConf);
         if(configStatus == true){
             printf("New configuration set!\n");
         }
