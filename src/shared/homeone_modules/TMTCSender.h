@@ -1,7 +1,5 @@
-/* FSM SynchronizedQueue
- *
- * Copyright (c) 2015-2016 Skyward Experimental Rocketry
- * Author: Matteo Michele Piazzolla, Alain Carlucci
+/* Copyright (c) 2015-2017 Skyward Experimental Rocketry
+ * Authors: Alvise de' Faveri Tron
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -22,57 +20,42 @@
  * THE SOFTWARE.
  */
 
-#ifndef SYNC_QUEUE_H_
-#define SYNC_QUEUE_H_
+#ifndef TMTCSENDER_H
+#define TMTCSENDER_H
 
-#include <list>
-#include "miosix.h"
+#include "TMTCManager.h"
+#include "events/SyncQueue.h"
 
-
-template<typename T>
-class SynchronizedQueue
-{
+class TMTCSender : ActiveObject {
+        
 public:
-	SynchronizedQueue() {}
-	void put(const T& data);
-	T get();
-	int len();
+    TMTCSender(Gamma868* gamma){}
+    
+    void addToBuffer(message_t* message){
+	   outBuffer.put(message);
+    }
 
+    void printBuffer() {
+        message_t* msg;
+
+        while (outBuffer.len() > 0)
+        {
+            msg = outBuffer.get();
+            printf ("%d\n", msg->type);
+        }
+    }
+    
+    ~TMTCSender() {}
+    
+protected:
+    void run() {
+       printBuffer();
+    }
+    
 private:
-	SynchronizedQueue(const SynchronizedQueue&)=delete;
-	SynchronizedQueue& operator=(const SynchronizedQueue&)=delete;
-	std::list<T> queue;
-	miosix::Mutex m_mutex;
-	miosix::ConditionVariable m_cv;
+    SynchronizedQueue<message_t*> outBuffer;
+    Gamma868* gamma;
+    
 };
 
-
-
-template<typename T>
-void SynchronizedQueue<T>::put(const T& data)
-{
-	m_mutex.lock();
-	queue.push_back(data);
-	m_cv.signal();
-	m_mutex.unlock();
-}
-
-template<typename T>
-T SynchronizedQueue<T>::get()
-{
-	m_mutex.lock();
-	while(queue.empty()) m_cv.wait(m_mutex);
-	T result=queue.front();
-	queue.pop_front();
-	m_mutex.unlock();
-
-	return result;
-}
-
-template<typename T>
-int SynchronizedQueue<T>::len()
-{
-	return queue.size();
-}
-
-#endif //SYNC_QUEUE_H_
+#endif

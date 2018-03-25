@@ -26,8 +26,10 @@
 #include <ActiveObject.h>
 #include <Common.h>
 #include <Singleton.h>
-#include <Gamma868.h>
-#include "SyncQueue.h"
+#include <drivers/gamma868/Gamma868.h>
+
+class TMTCReceiver;
+class TMTCSender;
 
 #define PAYLOAD_LEN 10
 
@@ -45,61 +47,6 @@ typedef struct {
     uint8_t data[PAYLOAD_LEN];
 } message_t;
 
-class TMTCReceiver : ActiveObject {
-    
-public:
-    TMTCReceiver(Gamma868 gamma){
-	this.gamma = gamma;
-    }
-    
-    ~TMTCReceiver() {}
-    
-protected:
-    run() override{
-	message_t message;
-	gamma.receive(sizeof(message_t), &message);
-	msg_type type = message.type;
-	
-	printf("RECEIVED MESSAGE %d\n", type);
-    }
-    
-
-private:
-    Gamma868 gamma;
-    
-};
-
-class TMRCSender : ActiveObject {
-        
-public:
-    TMRCSender(Gamma868 gamma){
-	this.gamma = gamma;
-    }
-    
-    addToBuffer(message_t* message){
-	outBuffer.put(message);
-	
-    }
-    
-    ~TMRCSender() {}
-    
-protected:
-    run() override{
-	
-	message_t toSend = NULL;
-	toSend = outBuffer.get();
-	
-	if(toSend != NULL){
-	    gamma.send();
-	}
-    }
-    
-private:
-    SynchronizedQueue<message_t> outBuffer;
-    Gamma868 gamma;
-    
-};
-
 
 class TMTCManager : public Singleton<TMTCManager>
 {
@@ -109,27 +56,21 @@ class TMTCManager : public Singleton<TMTCManager>
 public:
     ~TMTCManager() {}
     
-    void send(message_t msg){
-	sender.addToBuffer(&msg);
-    }
+    void send(message_t* msg);
     
-    void setActive(bool status){
-	this.status = status;
-    }
+    //void setActive(bool st);
 
 protected:
 
 
 private:
-    TMTCManager(){
-	printf("TMTC Built\n");
-    }
+    TMTCManager();
     
     bool status;
-    Gamma868 gamma("/dev/auxtty");
+    Gamma868* gamma;
     
-    TMRCSender sender(gamma);
-    TMTCReceiver receiver(gamma);
+    TMTCSender* sender;
+    TMTCReceiver* receiver;
    
 };
 
