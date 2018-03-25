@@ -1,7 +1,5 @@
-/* FSM SynchronizedQueue
- *
- * Copyright (c) 2015-2016 Skyward Experimental Rocketry
- * Author: Matteo Michele Piazzolla, Alain Carlucci
+/* Copyright (c) 2018 Skyward Experimental Rocketry
+ * Authors: Alvise de'Faveri Tron, Nuno Barcellos
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -22,57 +20,15 @@
  * THE SOFTWARE.
  */
 
-#ifndef SYNC_QUEUE_H_
-#define SYNC_QUEUE_H_
+#include "homeone_modules/TMTCManager.h"
 
-#include <list>
-#include "miosix.h"
-
-
-template<typename T>
-class SynchronizedQueue
+int main()
 {
-public:
-	SynchronizedQueue() {}
-	void put(const T& data);
-	T get();
-	int len();
+    message_t msg;
+    msg.type = msg_type::PING_RESPONSE;
+    sTMTCManager->send(&msg);
 
-private:
-	SynchronizedQueue(const SynchronizedQueue&)=delete;
-	SynchronizedQueue& operator=(const SynchronizedQueue&)=delete;
-	std::list<T> queue;
-	miosix::Mutex m_mutex;
-	miosix::ConditionVariable m_cv;
-};
+    while(true);
 
-
-
-template<typename T>
-void SynchronizedQueue<T>::put(const T& data)
-{
-	m_mutex.lock();
-	queue.push_back(data);
-	m_cv.signal();
-	m_mutex.unlock();
+    return 0;
 }
-
-template<typename T>
-T SynchronizedQueue<T>::get()
-{
-	m_mutex.lock();
-	while(queue.empty()) m_cv.wait(m_mutex);
-	T result=queue.front();
-	queue.pop_front();
-	m_mutex.unlock();
-
-	return result;
-}
-
-template<typename T>
-int SynchronizedQueue<T>::len()
-{
-	return queue.size();
-}
-
-#endif //SYNC_QUEUE_H_
