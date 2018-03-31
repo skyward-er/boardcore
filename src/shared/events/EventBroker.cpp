@@ -41,6 +41,8 @@ void EventBroker::post(const Event& ev, uint8_t topic)
 
         for (auto it = begin; it != end; it++)
         {
+            // TODO: This may cause a deadlock if subscribe(...) in called in
+            // postEvent(...), but it should never happen anyway. What to do?
             (*it)->postEvent(ev);
         }
     }
