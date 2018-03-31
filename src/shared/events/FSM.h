@@ -36,7 +36,7 @@ class FSMBase
 public:
     FSMBase() {}
 
-    void postEvent(Event e) { eventList.put(e); }
+    void postEvent(const Event& e) { eventList.put(e); }
 
     virtual ~FSMBase(){};
 
@@ -49,36 +49,36 @@ class FSM : public FSMBase, ActiveObject
 {
 
 public:
-    FSM(void (T::*initialState)(const Event*)) : FSMBase(), ActiveObject()
+    FSM(void (T::*initialState)(const Event&)) : FSMBase(), ActiveObject()
     {
         state            = initialState;
         specialEvent.sig = EV_ENTRY;
-        dispatchEvent(&specialEvent);
+        dispatchEvent(specialEvent);
     }
 
     virtual ~FSM(){};
-    void transition(void (T::*nextState)(const Event*))
+    void transition(void (T::*nextState)(const Event&))
     {
         specialEvent.sig = EV_EXIT;
-        (static_cast<T*>(this)->*state)(&specialEvent);
+        (static_cast<T*>(this)->*state)(specialEvent);
         state            = nextState;
         specialEvent.sig = EV_ENTRY;
-        (static_cast<T*>(this)->*state)(&specialEvent);
+        (static_cast<T*>(this)->*state)(specialEvent);
     }
 
 protected:
 private:
-    void (T::*state)(const Event*);
+    void (T::*state)(const Event&);
     Event specialEvent;
 
-    void dispatchEvent(const Event* e) { (static_cast<T*>(this)->*state)(e); }
+    void dispatchEvent(const Event& e) { (static_cast<T*>(this)->*state)(e); }
 
     void run()
     {
         while (true)
         {
-            const Event e = eventList.get();
-            dispatchEvent(&e);
+            Event e = eventList.get();
+            dispatchEvent(e);
         }
     }
 };

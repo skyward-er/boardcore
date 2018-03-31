@@ -44,6 +44,12 @@ using miosix::Unlock;
 using miosix::getTick;
 using miosix::Thread;
 
+/**
+ * The EventBroker class implements the pub-sub paradigm to dispatch events to
+ * multiple objects. An object of type FSM can subscribe to a topic in the
+ * public topics enum and publish an event into it. The event will be posted in
+ * to each FSM object subscribed to that specific topic.
+ */
 class EventBroker : Singleton<EventBroker>, ActiveObject
 {
     friend class Singleton<EventBroker>;
@@ -54,7 +60,7 @@ public:
      * @param ev
      * @param topic
      */
-    void post(Event ev, uint8_t topic);
+    void post(const Event& ev, uint8_t topic);
 
     /**
      * Posts an event after the specified delay
@@ -63,7 +69,8 @@ public:
      * @param delay_ms Delay in milliseconds
      * @return Unique id representing the event in the delayed events list.
      */
-    uint16_t postDelayed(Event event, uint8_t topic, unsigned int delay_ms);
+    uint16_t postDelayed(const Event& event, uint8_t topic,
+                         unsigned int delay_ms);
 
     /**
      * Removes a delayed event before it is posted.
