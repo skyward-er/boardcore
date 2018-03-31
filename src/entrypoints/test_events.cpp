@@ -159,10 +159,11 @@ int main()
 {
     printf("Test start.\n\n");
     TestFSM fsm;
-
     Event ev1{EV_EV1};
     Event ev2{EV_EV2};
-    // Event evD{EV_DELAYED};
+
+    // No one is subscribed yet
+    // sEventBroker->post(ev1, TOPIC1);
 
     sEventBroker->subscribe(&fsm, TOPIC1);
 
