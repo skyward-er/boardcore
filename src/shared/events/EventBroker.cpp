@@ -29,7 +29,7 @@ EventBroker::EventBroker() : ActiveObject()  // TODO: Specify stack size
 {
 }
 
-void EventBroker::post(Event ev, uint8_t topic)
+void EventBroker::post(const Event& ev, uint8_t topic)
 {
     Lock<Mutex> lock(mtx_subscribers);
 
@@ -43,7 +43,7 @@ void EventBroker::post(Event ev, uint8_t topic)
     }
 }
 
-uint16_t EventBroker::postDelayed(Event ev, uint8_t topic,
+uint16_t EventBroker::postDelayed(const Event& ev, uint8_t topic,
                                   unsigned int delay_ms)
 {
     Lock<Mutex> lock(mtx_delayed_events);

@@ -45,9 +45,9 @@ public:
     ~TestFSM() {}
 
 private:
-    void state0(const Event* e)
+    void state0(const Event& e)
     {
-        switch (e->sig)
+        switch (e.sig)
         {
             case EV_ENTRY:
                 printf("Entering State 0\n");
@@ -68,9 +68,9 @@ private:
         }
     }
 
-    void state1(const Event* e)
+    void state1(const Event& e)
     {
-        switch (e->sig)
+        switch (e.sig)
         {
             case EV_ENTRY:
             {
@@ -96,9 +96,9 @@ private:
         }
     }
 
-    void state2(const Event* e)
+    void state2(const Event& e)
     {
-        switch (e->sig)
+        switch (e.sig)
         {
             case EV_ENTRY:
             {
@@ -125,9 +125,9 @@ private:
         }
     }
 
-    void state3(const Event* e)
+    void state3(const Event& e)
     {
-        switch (e->sig)
+        switch (e.sig)
         {
             case EV_ENTRY:
             {
