@@ -33,13 +33,16 @@ void EventBroker::post(const Event& ev, uint8_t topic)
 {
     Lock<Mutex> lock(mtx_subscribers);
 
-    auto begin = subscribers[topic].begin();
-    auto end   = subscribers[topic].end();
-
-    for (auto it = begin; it != end; it++)
+    if (subscribers.count(topic) > 0)
     {
-        (*it)->postEvent(ev);  // TODO: Should not pass a pointer to a local
-                               // object
+        vector<FSMBase*>& subs = subscribers.at(topic);
+        auto begin             = subs.begin();
+        auto end               = subs.end();
+
+        for (auto it = begin; it != end; it++)
+        {
+            (*it)->postEvent(ev);
+        }
     }
 }
 
