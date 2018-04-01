@@ -1,4 +1,4 @@
-/* Copyright (c) 2015-2017 Skyward Experimental Rocketry
+/* Copyright (c) 2018 Skyward Experimental Rocketry
  * Authors: Alvise de' Faveri Tron
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -27,53 +27,113 @@
 #include <Common.h>
 #include <Singleton.h>
 #include <drivers/gamma868/Gamma868.h>
+#include <events/SyncQueue.h>
+#include <libs/mavlink_skyward_lib/mavlink_lib/skyward/mavlink.h>
 
-class TMTCReceiver;
-class TMTCSender;
+/*
+ * The Receiver class is an ActiveObject that reads incoming packets
+ * from the RF module and forwards an event to the EventBroker accordingly to
+ * the received message.
+ */
+class Receiver : ActiveObject {
+    
+public:
+    /* Constructor: sets the RF driver to use */
+    Receiver(Gamma868* gamma) {
+        this->gamma = gamma;
+    }
+    
+    /* Deconstructor */
+    ~Receiver() {}
+    
+protected:
+    /* Function executed in a separate thread */
+    void run();
 
-#define PAYLOAD_LEN 10
+private:
+    Gamma868* gamma;
 
-enum msg_type 
-{
-    TM,
-    STATUS_TC,
-    STATUS_RESPONSE,
-    PING_TC,
-    PING_RESPONSE
 };
 
-typedef struct {
-    msg_type type;
-    uint8_t data[PAYLOAD_LEN];
-} message_t;
+/*
+ * The Sender class is an ActiveObject that forwards on the RF module 
+ * the packets that are in its queue using the driver's blocking functions.
+ */
+class Sender : ActiveObject {
+        
+public:
+    /* Constructor: sets the RF driver to use */
+    Sender(Gamma868* gamma) {
+        this->gamma = gamma;
+    }
+    
+    /* Put a message into the synchronized queue */
+    void addToBuffer(mavlink_message_t* message);
+
+    /* Deconstructor */
+    ~Sender() {}
+    
+protected:
+    /* Function executed in a separate thread */
+    void run();
+
+private:
+    SynchronizedQueue< mavlink_message_t*> outBuffer;
+    Gamma868* gamma;
+    
+};
 
 
+/*
+ * The TMTCManager class handles the communication with the Ground Station
+ * through the Gamma868 RF module driver.
+ *
+ * It is composed of:
+ *  - the Gamma driver, which uses only blocking functions.
+ *  - the Sender, an ActiveObject that sends packets through the driver.
+ *  - the Receiver, an ActiveObject that processes the incoming packets.
+ *
+ * All the functions of the Manager are non-blocking.
+ */
 class TMTCManager : public Singleton<TMTCManager>
 {
 
     friend class Singleton<TMTCManager>;
 
 public:
+    /*
+     * Class deconstructor.
+     */
     ~TMTCManager() {}
     
-    void send(message_t* msg);
-    
-    //void setActive(bool st);
+    /*
+     * Non-blocking function to send a message through the RF module:
+     * adds the message to the queue of the TMTCSender.
+     * @param  msg       buffer that contains the message
+     * @param  len       length of the message in bytes
+     */
+    void send(uint8_t* msg, uint8_t len);
 
 protected:
 
 
 private:
+    /*
+     * Private constructor to implement the Singleton pattern.
+     */
     TMTCManager();
     
-    bool status;
+    /* Gamma RF driver */
     Gamma868* gamma;
     
-    TMTCSender* sender;
-    TMTCReceiver* receiver;
+    /* Sender ActiveObject */
+    Sender* sender;
+    /* Receiver ActiveObject */
+    Receiver* receiver;
    
 };
 
+/* Define to access the singleton object from other files */
 #define sTMTCManager TMTCManager::getInstance()
 
 #endif /* ifndef TMTCMANAGER_H */
