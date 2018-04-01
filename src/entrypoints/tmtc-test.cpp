@@ -20,12 +20,11 @@
  * THE SOFTWARE.
  */
 
-#include "homeone_modules/TMTCManager.h"
+#include "boards/homeone/TMTC/TMTCManager.h"
 
 int main()
 {
-    message_t msg;
-    msg.type = msg_type::PING_RESPONSE;
+    mavlink_ping_t msg;
     sTMTCManager->send(&msg);
 
     while(true);

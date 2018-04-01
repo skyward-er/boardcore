@@ -1,4 +1,4 @@
-/* Copyright (c) 2015-2017 Skyward Experimental Rocketry
+/* Copyright (c) 2018 Skyward Experimental Rocketry
  * Authors: Alvise de' Faveri Tron
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -22,15 +22,52 @@
 
 
 #include "TMTCManager.h"
-#include "TMTCSender.h"
-#include "TMTCReceiver.h"
 
-TMTCManager::TMTCManager() {
-	gamma = new Gamma868("/dev/auxtty");
-	sender = new TMTCSender(gamma);
-	receiver = new TMTCReceiver(gamma);
+/* Run() function of the Receiver: handle incoming commands */
+void Receiver::run(){
+	mavlink_message_t msg;
+
+	while(1)
+	{
+		uint8_t rcvByte;
+		gamma.receive(1, &rcvByte); //Blocking function
+
+		if (mavlink_parse_char(MAVLINK_COMM_0, byte, &msg))
+		{
+			printf("Received message with ID %d, sequence: %d from component %d of 
+			                  system %d", msg.msgid, msg.seq, msg.compid, msg.sysid);
+		}
+	}
 }
 
-void TMTCManager::send(message_t* msg) {
+
+/* Run() function of the Sender: read from the out buffer and write on the driver */
+void Sender::run(){
+   mavlink_message_t* msg;
+
+	while(1){
+	    while (outBuffer.len() > 0) 
+	    {
+	        msg = outBuffer.get();
+	        printf ("%d\n", msg->data[0]);
+	    }
+	}
+}
+
+/* Sender function to add a message to the queue */
+void Sender::addToBuffer(mavlink_message_t* message){
+   outBuffer.put(message);
+}
+
+
+/* TMTCManager Constructor: has some memory allocation */
+TMTCManager::TMTCManager(){
+    gamma = new Gamma868("/dev/tty");
+    sender = new Sender(gamma);
+    receiver = new Receiver(gamma);
+}
+
+/* TMTCManager non-blocking send() function */
+void TMTCManager::send(mavlink_message_t* msg) {
 	sender->addToBuffer(msg);
 }
