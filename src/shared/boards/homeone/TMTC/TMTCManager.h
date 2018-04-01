@@ -27,8 +27,12 @@
 #include <Common.h>
 #include <Singleton.h>
 #include <drivers/gamma868/Gamma868.h>
-#include <events/SyncQueue.h>
+#include "CircularBuffer.h"
 #include <libs/mavlink_skyward_lib/mavlink_lib/skyward/mavlink.h>
+
+#ifndef TMTC_OUT_BUFFER_SIZE
+#define TMTC_OUT_BUFFER_SIZE 256
+#endif
 
 /*
  * The Receiver class is an ActiveObject that reads incoming packets
@@ -36,6 +40,7 @@
  * the received message.
  */
 class Receiver : ActiveObject {
+    friend class TMTCManager;
     
 public:
     /* Constructor: sets the RF driver to use */
@@ -60,15 +65,14 @@ private:
  * the packets that are in its queue using the driver's blocking functions.
  */
 class Sender : ActiveObject {
+    friend class TMTCManager;
         
 public:
     /* Constructor: sets the RF driver to use */
     Sender(Gamma868* gamma) {
         this->gamma = gamma;
+        this->outBuffer = new CircularBuffer(TMTC_OUT_BUFFER_SIZE);
     }
-    
-    /* Put a message into the synchronized queue */
-    void addToBuffer(mavlink_message_t* message);
 
     /* Deconstructor */
     ~Sender() {}
@@ -78,9 +82,8 @@ protected:
     void run();
 
 private:
-    SynchronizedQueue< mavlink_message_t*> outBuffer;
     Gamma868* gamma;
-    
+    CircularBuffer* outBuffer;
 };
 
 
@@ -112,10 +115,11 @@ public:
      * @param  msg       buffer that contains the message
      * @param  len       length of the message in bytes
      */
-    void send(uint8_t* msg, uint8_t len);
+    void send(uint8_t* msg, uint8_t len){
+        sender->outBuffer->write(msg, len);
+    }
 
 protected:
-
 
 private:
     /*

@@ -26,16 +26,16 @@
 /* Run() function of the Receiver: handle incoming commands */
 void Receiver::run(){
 	mavlink_message_t msg;
+	uint8_t byte;
 
 	while(1)
 	{
-		uint8_t rcvByte;
-		gamma.receive(1, &rcvByte); //Blocking function
+		gamma->receive(1, &byte); //Blocking function
 
 		if (mavlink_parse_char(MAVLINK_COMM_0, byte, &msg))
 		{
-			printf("Received message with ID %d, sequence: %d from component %d of 
-			                  system %d", msg.msgid, msg.seq, msg.compid, msg.sysid);
+			printf("Received message with ID %d, sequence: %d from component %d of system %d",
+								 msg.msgid, msg.seq, msg.compid, msg.sysid);
 		}
 	}
 }
@@ -43,31 +43,23 @@ void Receiver::run(){
 
 /* Run() function of the Sender: read from the out buffer and write on the driver */
 void Sender::run(){
-   mavlink_message_t* msg;
+   uint8_t msg[100];
 
 	while(1){
-	    while (outBuffer.len() > 0) 
+	    while (outBuffer->size() > 0) 
 	    {
-	        msg = outBuffer.get();
-	        printf ("%d\n", msg->data[0]);
+	        outBuffer->read(msg, outBuffer->size());
+	        printf ("%d\n", msg[0]);
 	    }
 	}
-}
-
-/* Sender function to add a message to the queue */
-void Sender::addToBuffer(mavlink_message_t* message){
-   outBuffer.put(message);
 }
 
 
 /* TMTCManager Constructor: has some memory allocation */
 TMTCManager::TMTCManager(){
     gamma = new Gamma868("/dev/tty");
+    //TODO: check gamma status and configuration
+
     sender = new Sender(gamma);
     receiver = new Receiver(gamma);
-}
-
-/* TMTCManager non-blocking send() function */
-void TMTCManager::send(mavlink_message_t* msg) {
-	sender->addToBuffer(msg);
 }
