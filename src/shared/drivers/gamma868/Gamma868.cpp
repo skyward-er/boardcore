@@ -21,8 +21,8 @@
  */
 
 #include "Gamma868.h"
-#include "miosix.h"
 
+using namespace miosix;
 /*
  * A serial port attached to the Gamma868 RX and TX pins is expected
  * to be passed to the object in order to communicate with the device.
@@ -46,12 +46,13 @@ Gamma868::Gamma868(const char *serialPath)
 /*
  * Immediately sends command (blocking).
  */
-bool Gamma868::send(int pkt_len, const char *pkt)
+bool Gamma868::send(const uint8_t* pkt, uint32_t pkt_len)
 {
     // Send to gamma
-    pthread_mutex_lock(&writingMutex);
-    write(fd, pkt, pkt_len);
-    pthread_mutex_unlock(&writingMutex);
+    {
+        Lock<FastMutex> l(gammaMutex);
+        write(fd, pkt, pkt_len);
+    }
 
     return true;
 }
@@ -59,28 +60,13 @@ bool Gamma868::send(int pkt_len, const char *pkt)
 /*
  * Reads from the gamma868 serial (blocking).
  */
-void Gamma868::receive(int pkt_len, char *pkt)
+void Gamma868::receive(uint8_t* pkt, uint32_t pkt_len)
 {
-    char init = (char)0;
-    char end  = (char)0;
-
-    // Read until you find the start byte.
-    while (init != '#')
     {
-        read(fd, &init, 1);
+        Lock<FastMutex> l(gammaMutex);
+        read(fd, pkt, pkt_len);  // Read all the bufLen chars
     }
 
-    pthread_mutex_lock(&readingMutex);  // TODO is sync needed?
-    
-    read(fd, pkt, pkt_len);  // Read all the bufLen chars
-   
-    // End byte
-    read(fd, &end, 1);
-    
-    pthread_mutex_unlock(&readingMutex);
-
-    if (end != '%')
-        printf("Did not find end char! stream may be inconsistent\n");
 }
 
 /*
