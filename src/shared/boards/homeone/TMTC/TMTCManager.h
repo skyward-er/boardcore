@@ -29,15 +29,12 @@
 #include <drivers/gamma868/Gamma868.h>
 #include "CircularBuffer.h"
 #include <libs/mavlink_skyward_lib/mavlink_lib/skyward/mavlink.h>
-
-#ifndef TMTC_OUT_BUFFER_SIZE
-#define TMTC_OUT_BUFFER_SIZE 256
-#endif
+#include "TMTC_config.h"
 
 /*
- * The Receiver class is an ActiveObject that reads incoming packets
- * from the RF module and forwards an event to the EventBroker accordingly to
- * the received message.
+ * The Receiver class is an ActiveObject that reads incoming packets from the RF
+ * module and forwards an event to the EventBroker accordingly to the received
+ * message.
  */
 class Receiver : ActiveObject {
     friend class TMTCManager;
@@ -52,7 +49,10 @@ public:
     ~Receiver() {}
     
 protected:
-    /* Function executed in a separate thread */
+    /* 
+     * Function executed in a separate thread: waits for a packet and forwards
+     * the corresponding event.
+     */
     void run();
 
 private:
@@ -62,13 +62,13 @@ private:
 
 /*
  * The Sender class is an ActiveObject that forwards on the RF module 
- * the packets that are in its queue using the driver's blocking functions.
+ * the packets that are in its buffer using the driver's blocking functions.
  */
 class Sender : ActiveObject {
     friend class TMTCManager;
         
 public:
-    /* Constructor: sets the RF driver to use */
+    /* Constructor: sets the RF driver to use and creates the output buffer*/
     Sender(Gamma868* gamma) {
         this->gamma = gamma;
         this->outBuffer = new CircularBuffer(TMTC_OUT_BUFFER_SIZE);
@@ -78,7 +78,10 @@ public:
     ~Sender() {}
     
 protected:
-    /* Function executed in a separate thread */
+    /* 
+     * Function executed in a separate thread: reads from the outBuffer and sends
+     * on the gamma868 module.
+     */
     void run();
 
 private:
@@ -111,13 +114,13 @@ public:
     
     /*
      * Non-blocking function to send a message through the RF module:
-     * adds the message to the queue of the TMTCSender.
+     * adds the message to the queue of the Sender if there's enough space
+     * 
      * @param  msg       buffer that contains the message
      * @param  len       length of the message in bytes
+     * @return           false if there isn't enough space in the buffer
      */
-    void send(uint8_t* msg, uint8_t len){
-        sender->outBuffer->write(msg, len);
-    }
+    bool send(uint8_t* msg, uint8_t len);
 
 protected:
 
