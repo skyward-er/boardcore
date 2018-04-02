@@ -20,8 +20,8 @@
  * THE SOFTWARE.
  */
 
-#ifndef CONFIG_H
-#define CONFIG_H
+#ifndef GAMMA_CONFIG
+#define GAMMA_CONFIG
 
 // DISCOVERY gpio configuration
 typedef Gpio<GPIOB_BASE, 0> gammaLed;
