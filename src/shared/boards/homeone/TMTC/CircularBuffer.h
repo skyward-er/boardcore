@@ -30,7 +30,7 @@ class CircularBuffer
 public:
 
     /*
-     * Creates a buffer with given dimension (uses new!).
+     * Creates a buffer with given dimension (uses dynamic allocation).
      */
     CircularBuffer(uint32_t totalSize){
         this->totalSize = totalSize;
@@ -42,7 +42,7 @@ public:
      * Calculates the occupied portion of the buffer.
      */
 
-    uint32_t size()
+    uint32_t occupiedSize()
     {
         if (full)
             return totalSize;
@@ -53,6 +53,14 @@ public:
     }
 
     /*
+     * Calculates the occupied portion of the buffer.
+     */
+    uint32_t freeSize()
+    {
+        return totalSize - occupiedSize();
+    }
+
+    /*
      * Reads at maximum n chars from the buffer and stores them in *buf
      * in subsequent positions.
      * Returns the number of characters read (could be less than n
@@ -60,7 +68,7 @@ public:
      */
     uint32_t read(uint8_t* buf, uint32_t len)
     {
-        uint32_t availableLen = size() > len ? len : size();
+        uint32_t availableLen = occupiedSize() > len ? len : occupiedSize();
         uint32_t i = 0;
 
         {
@@ -115,21 +123,21 @@ public:
     }
 
     /*
-     * TODO toString.
      * Prints the whole content of the buffer (for debug pupouses).
-
-     void print(){
-        printf("Buffer: first %d last %d occupied %u total size %d\n",
-                first, last, size(), totalSize);
+     */
+     void print() {
+        #ifdef DEBUG
+        printf("Buffer: first %u last %u occupied %u total size %u\n",
+                        first, last, occupiedSize(), totalSize);
 
         int offset = first;
-        for (int i = 0; i < totalSize; i++){
-            if (offset + i == totalSize) offset = -i;
-            printf("%c", buffer[i]);
+        for (int i = 0; i < occupiedSize(); i++){
+            if (offset == totalSize) offset = 0;
+            printf("%c ", buffer[offset]);
         }
         printf("\n");
+        #endif
     }
-    */
 
 private:
     uint32_t totalSize;
