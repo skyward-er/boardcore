@@ -23,6 +23,13 @@
 #ifndef TMTC_CONFIG
 #define TMTC_CONFIG
 
+#include <Common.h>
+#include <ActiveObject.h>
+
+#include <drivers/gamma868/Gamma868.h>
+#include <libs/mavlink_skyward_lib/mavlink_lib/skyward/mavlink.h>
+#include "CircularBuffer.h"
+
 #define TMTC_OUT_BUFFER_SIZE (20*sizeof(mavlink_message_t)) // Default size of the output messages buffer
 #define TMTC_SEND_TIMEOUT 10 // Default timeout before sending next packet
 #define MAX_PKT_SIZE (5*sizeof(mavlink_message_t)) 	// Maxmimum dimension of the packet

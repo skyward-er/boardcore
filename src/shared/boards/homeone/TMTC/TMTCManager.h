@@ -23,72 +23,12 @@
 #ifndef TMTCMANAGER_H
 #define TMTCMANAGER_H
 
-#include <ActiveObject.h>
-#include <Common.h>
-#include <Singleton.h>
-#include <drivers/gamma868/Gamma868.h>
-#include "CircularBuffer.h"
-#include <libs/mavlink_skyward_lib/mavlink_lib/skyward/mavlink.h>
 #include "TMTC_config.h"
+#include "TMTCSender.h"
+#include "TMTCReceiver.h"
 
-/*
- * The Receiver class is an ActiveObject that reads incoming packets from the RF
- * module and forwards an event to the EventBroker accordingly to the received
- * message.
- */
-class Receiver : ActiveObject {
-    friend class TMTCManager;
-    
-public:
-    /* Constructor: sets the RF driver to use */
-    Receiver(Gamma868* gamma) {
-        this->gamma = gamma;
-    }
-    
-    /* Deconstructor */
-    ~Receiver() {}
-    
-protected:
-    /* 
-     * Function executed in a separate thread: waits for a packet and forwards
-     * the corresponding event.
-     */
-    void run();
 
-private:
-    Gamma868* gamma;
-
-};
-
-/*
- * The Sender class is an ActiveObject that forwards on the RF module 
- * the packets that are in its buffer using the driver's blocking functions.
- */
-class Sender : ActiveObject {
-    friend class TMTCManager;
-        
-public:
-    /* Constructor: sets the RF driver to use and creates the output buffer*/
-    Sender(Gamma868* gamma) {
-        this->gamma = gamma;
-        this->outBuffer = new CircularBuffer(TMTC_OUT_BUFFER_SIZE);
-    }
-
-    /* Deconstructor */
-    ~Sender() {}
-    
-protected:
-    /* 
-     * Function executed in a separate thread: reads from the outBuffer and sends
-     * on the gamma868 module.
-     */
-    void run();
-
-private:
-    Gamma868* gamma;
-    CircularBuffer* outBuffer;
-};
-
+#include <Singleton.h>
 
 /*
  * The TMTCManager class handles the communication with the Ground Station

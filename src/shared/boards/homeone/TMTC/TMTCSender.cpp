@@ -20,24 +20,29 @@
  * THE SOFTWARE.
  */
 
-#include "TMTCManager.h"
+#include "TMTCSender.h"
 
-/* TMTCManager Constructor: initialise objects (has memory allocation) */
-TMTCManager::TMTCManager() {
-    gamma = new Gamma868("/dev/tty");
-    //TODO: check gamma status and configuration
+/* 
+ * Run() function of the Sender: 
+ * read from the out buffer and write on the RF serial. 
+ */
+void Sender::run() {
+   uint8_t msgTemp[MAX_PKT_SIZE];
+   uint32_t readBytes;
+   bool sent;
 
-    sender = new Sender(gamma);
-    receiver = new Receiver(gamma);
-}
+	while(1) {
+	    if (outBuffer->occupiedSize() > 0) {
+	    	/* Read from the buffer at maximum MAX_PKT_SIZE bytes */
+	        readBytes = outBuffer->read(msgTemp, MAX_PKT_SIZE);
 
-/* TMTCManager non-blocking send() function */
-bool TMTCManager::send(uint8_t* msg, uint8_t len) {
-	/* Check if there's enough free space in the Sender's outBuffer */
-    if(sender->outBuffer->freeSize() >= len){
-        sender->outBuffer->write(msg, len);
-        return true;
-    } else {
-        return false;
-    }   
+	        /* Try sending the packet for a limited number of times */
+	        for (int i = 0; i < MAX_TRIES_PER_PACKET; i++) {
+	        	sent = gamma->send(msgTemp, readBytes);
+	        	if(sent) break;
+	    	}
+	    }
+	    Thread::sleep(TMTC_SEND_TIMEOUT);
+	}
+
 }

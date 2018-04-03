@@ -20,24 +20,52 @@
  * THE SOFTWARE.
  */
 
-#include "TMTCManager.h"
+#ifndef TMTCRECEIVER_H
+#define TMTCRECEIVER_H
 
-/* TMTCManager Constructor: initialise objects (has memory allocation) */
-TMTCManager::TMTCManager() {
-    gamma = new Gamma868("/dev/tty");
-    //TODO: check gamma status and configuration
+#include "TMTC_config.h"
 
-    sender = new Sender(gamma);
-    receiver = new Receiver(gamma);
-}
+/*
+ * The Receiver class is an ActiveObject that reads incoming packets from the RF
+ * module and forwards an event to the EventBroker accordingly to the received
+ * message.
+ */
+class Receiver : ActiveObject {
+    friend class TMTCManager;
+    
+public:
+    /* Constructor: sets the RF driver to use */
+    Receiver(Gamma868* gamma) {
+        this->gamma = gamma;
+    }
+    
+    /* Deconstructor */
+    ~Receiver() {}
+    
+protected:
+    /* 
+     * Function executed in a separate thread: waits for a packet and forwards
+     * the corresponding event.
+     */
+    void run();
 
-/* TMTCManager non-blocking send() function */
-bool TMTCManager::send(uint8_t* msg, uint8_t len) {
-	/* Check if there's enough free space in the Sender's outBuffer */
-    if(sender->outBuffer->freeSize() >= len){
-        sender->outBuffer->write(msg, len);
-        return true;
-    } else {
-        return false;
-    }   
-}
+private:
+
+    /* 
+     * Send an acknowlege message back to the sender to notify the Ground Station
+     * that you correctly received a message with a given sequence number.
+     */
+    void sendAck(mavlink_message_t* msg);
+
+    /* PING message handler */
+    void handlePing(mavlink_ping_t* msg);
+
+    /* TEST_MSG message handler */
+    void handleTestMsg(mavlink_test_msg_t* msg);
+
+    /* RF module */
+    Gamma868* gamma;
+
+};
+
+#endif

@@ -20,24 +20,38 @@
  * THE SOFTWARE.
  */
 
-#include "TMTCManager.h"
+#ifndef TMTCSENDER_H
+#define TMTCSENDER_H
 
-/* TMTCManager Constructor: initialise objects (has memory allocation) */
-TMTCManager::TMTCManager() {
-    gamma = new Gamma868("/dev/tty");
-    //TODO: check gamma status and configuration
+#include "TMTC_config.h"
 
-    sender = new Sender(gamma);
-    receiver = new Receiver(gamma);
-}
+/*
+ * The Sender class is an ActiveObject that forwards on the RF module 
+ * the packets that are in its buffer using the driver's blocking functions.
+ */
+class Sender : ActiveObject {
+    friend class TMTCManager;
+        
+public:
+    /* Constructor: sets the RF driver to use and creates the output buffer*/
+    Sender(Gamma868* gamma) {
+        this->gamma = gamma;
+        this->outBuffer = new CircularBuffer(TMTC_OUT_BUFFER_SIZE);
+    }
 
-/* TMTCManager non-blocking send() function */
-bool TMTCManager::send(uint8_t* msg, uint8_t len) {
-	/* Check if there's enough free space in the Sender's outBuffer */
-    if(sender->outBuffer->freeSize() >= len){
-        sender->outBuffer->write(msg, len);
-        return true;
-    } else {
-        return false;
-    }   
-}
+    /* Deconstructor */
+    ~Sender() {}
+    
+protected:
+    /* 
+     * Function executed in a separate thread: reads from the outBuffer and sends
+     * on the gamma868 module.
+     */
+    void run();
+
+private:
+    Gamma868* gamma;
+    CircularBuffer* outBuffer;
+};
+
+#endif

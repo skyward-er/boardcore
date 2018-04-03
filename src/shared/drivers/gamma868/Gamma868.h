@@ -26,8 +26,8 @@
 #include <Common.h>
 #include <fcntl.h>
 
+//TODO: change this
 #ifdef _MIOSIX
-#include <miosix.h>
 using namespace miosix;
 #endif  //_MIOSIX
 
