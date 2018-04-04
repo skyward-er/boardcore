@@ -87,7 +87,7 @@ public:
      * @param subscriber
      * @param topic
      */
-    void subscribe(FSMBase* subscriber, uint8_t topic);
+    void subscribe(EventHandler* subscriber, uint8_t topic);
 
 private:
     /**
@@ -112,7 +112,7 @@ private:
     vector<DelayedEvent> delayed_events;
     Mutex mtx_delayed_events;
 
-    map<uint8_t, vector<FSMBase*>> subscribers;
+    map<uint8_t, vector<EventHandler*>> subscribers;
     Mutex mtx_subscribers;
 
     uint16_t eventCounter = 0;
