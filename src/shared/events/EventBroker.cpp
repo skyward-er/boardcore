@@ -22,9 +22,6 @@
 
 #include "EventBroker.h"
 
-// Maximum lenght of the sleep in the event broker run method, in ms.
-#define EVENT_BROKER_MAX_SLEEP 250;
-
 EventBroker::EventBroker() : ActiveObject()  // TODO: Specify stack size
 {
 }
@@ -131,6 +128,8 @@ void EventBroker::run()
             unsigned int interval_ms = static_cast<unsigned int>(
                 interval_ticks / miosix::TICK_FREQ * 1000);
 
+            // Sleep until the next event if it is going to expire before the
+            // normal sleep period.
             if (sleep_ms > interval_ms)
             {
                 sleep_ms = interval_ms;
