@@ -31,25 +31,25 @@
 
 #include <iostream>
 
-class FSMBase
+class EventHandler
 {
 public:
-    FSMBase() {}
+    EventHandler() {}
 
     void postEvent(const Event& e) { eventList.put(e); }
 
-    virtual ~FSMBase(){};
+    virtual ~EventHandler(){};
 
 protected:
     SynchronizedQueue<Event> eventList;
 };
 
 template <class T>
-class FSM : public FSMBase, ActiveObject
+class FSM : public EventHandler, ActiveObject
 {
 
 public:
-    FSM(void (T::*initialState)(const Event&)) : FSMBase(), ActiveObject()
+    FSM(void (T::*initialState)(const Event&)) : EventHandler(), ActiveObject()
     {
         state            = initialState;
         specialEvent.sig = EV_ENTRY;
