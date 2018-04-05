@@ -22,9 +22,6 @@
 
 #include "EventBroker.h"
 
-// Maximum lenght of the sleep in the event broker run method, in ms.
-#define EVENT_BROKER_MAX_SLEEP 250;
-
 EventBroker::EventBroker() : ActiveObject()  // TODO: Specify stack size
 {
 }
@@ -35,9 +32,9 @@ void EventBroker::post(const Event& ev, uint8_t topic)
 
     if (subscribers.count(topic) > 0)
     {
-        vector<FSMBase*>& subs = subscribers.at(topic);
-        auto begin             = subs.begin();
-        auto end               = subs.end();
+        vector<EventHandler*>& subs = subscribers.at(topic);
+        auto begin                  = subs.begin();
+        auto end                    = subs.end();
 
         for (auto it = begin; it != end; it++)
         {
@@ -131,6 +128,8 @@ void EventBroker::run()
             unsigned int interval_ms = static_cast<unsigned int>(
                 interval_ticks / miosix::TICK_FREQ * 1000);
 
+            // Sleep until the next event if it is going to expire before the
+            // normal sleep period.
             if (sleep_ms > interval_ms)
             {
                 sleep_ms = interval_ms;
@@ -145,7 +144,7 @@ void EventBroker::run()
     }
 }
 
-void EventBroker::subscribe(FSMBase* subscriber, uint8_t topic)
+void EventBroker::subscribe(EventHandler* subscriber, uint8_t topic)
 {
     Lock<Mutex> lock(mtx_subscribers);
     subscribers[topic].push_back(subscriber);

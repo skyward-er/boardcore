@@ -44,6 +44,9 @@ using miosix::Unlock;
 using miosix::getTick;
 using miosix::Thread;
 
+// Maximum lenght of the sleep in the event broker run method, in ms.
+#define EVENT_BROKER_MAX_SLEEP 250;
+
 /**
  * The EventBroker class implements the pub-sub paradigm to dispatch events to
  * multiple objects. An object of type FSM can subscribe to a topic in the
@@ -66,7 +69,8 @@ public:
      * Posts an event after the specified delay
      * @param event
      * @param topic
-     * @param delay_ms Delay in milliseconds
+     * @param delay_ms Delay in milliseconds. Events with delay shorter than
+     * EVENT_BROKER_MAX_SLEEP are not guaranteed to be posted in time.
      * @return Unique id representing the event in the delayed events list.
      */
     uint16_t postDelayed(const Event& event, uint8_t topic,
@@ -87,7 +91,7 @@ public:
      * @param subscriber
      * @param topic
      */
-    void subscribe(FSMBase* subscriber, uint8_t topic);
+    void subscribe(EventHandler* subscriber, uint8_t topic);
 
 private:
     /**
@@ -112,7 +116,7 @@ private:
     vector<DelayedEvent> delayed_events;
     Mutex mtx_delayed_events;
 
-    map<uint8_t, vector<FSMBase*>> subscribers;
+    map<uint8_t, vector<EventHandler*>> subscribers;
     Mutex mtx_subscribers;
 
     uint16_t eventCounter = 0;
