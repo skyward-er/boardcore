@@ -20,38 +20,36 @@
  * THE SOFTWARE.
  */
 
-#ifndef TMTCSENDER_H
-#define TMTCSENDER_H
+#ifndef TCHANDLER_H
+#define TCHANDLER_H
 
-#include "TMTC_config.h"
+#include <Common.h>
+#include "TMTCConfig.h"
 
 /*
- * The Sender class is an ActiveObject that forwards on the RF module 
- * the packets that are in its buffer using the driver's blocking functions.
+ * The TCHandler class contains the functions that handle the TCs receiver from ground. 
  */
-class Sender : ActiveObject {
-    friend class TMTCManager;
-        
+class TCHandler{
+    
 public:
-    /* Constructor: sets the RF driver to use and creates the output buffer*/
-    Sender(Gamma868* gamma) {
-        this->gamma = gamma;
-        this->outBuffer = new CircularBuffer(TMTC_OUT_BUFFER_SIZE);
+    /* Constructor */
+    TCHandler() {
+        //TODO: set a reference to the EventBroker
+    }
+    
+    /* Deconstructor */
+    ~TCHandler() {}
+
+    /* PING message handler */
+    static void handlePing(mavlink_ping_t* msg) {
+        printf("Received ping\n");
     }
 
-    /* Deconstructor */
-    ~Sender() {}
-    
-protected:
-    /* 
-     * Function executed in a separate thread: reads from the outBuffer and sends
-     * on the gamma868 module.
-     */
-    void run();
-
-private:
-    Gamma868* gamma;
-    CircularBuffer* outBuffer;
+    /* TEST_MSG message handler */
+    static void handleTestMsg(mavlink_test_msg_t* msg) {
+        printf("Received test message\n");
+        
+    }
 };
 
 #endif
