@@ -22,22 +22,111 @@
 
 #include "TMTCManager.h"
 
-/* TMTCManager Constructor: initialise objects (has memory allocation) */
+/* 
+ * Constructor: initialise objects (has memory allocation).
+ */
 TMTCManager::TMTCManager() {
     gamma = new Gamma868("/dev/tty");
+    outBuffer = new CircularBuffer(TMTC_OUT_BUFFER_SIZE);
     //TODO: check gamma status and configuration
-
-    sender = new Sender(gamma);
-    receiver = new Receiver(gamma);
+    senderThread = miosix::Thread::create(senderLauncher, TMTC_SENDER_STACKSIZE, TMTC_SENDER_PRIORITY,
+                                        reinterpret_cast<void*>(this));
+    receiverThread = miosix::Thread::create(receiverLauncher, TMTC_RECEIVER_STACKSIZE, TMTC_RECEIVER_PRIORITY,
+                                        reinterpret_cast<void*>(this));
 }
 
-/* TMTCManager non-blocking send() function */
-bool TMTCManager::send(uint8_t* msg, uint8_t len) {
-	/* Check if there's enough free space in the Sender's outBuffer */
-    if(sender->outBuffer->freeSize() >= len){
-        sender->outBuffer->write(msg, len);
+/* 
+ * Non-blocking send function: copies the message in the outBuffer if there's enough space.
+ */
+bool TMTCManager::enqueueMsg(uint8_t* msg, uint8_t len) {
+    if(outBuffer->freeSize() >= len){
+        outBuffer->write(msg, len);
         return true;
-    } else {
-        return false;
-    }   
+    }
+
+    return false; 
+}
+
+/* 
+ * Sending thread's run() function: read from the outBuffer and forward on the link.
+ */
+void TMTCManager::runSender() {
+   uint8_t msgTemp[TMTC_MAX_PKT_SIZE];
+
+	while(1) {
+	    if (outBuffer->occupiedSize() > 0) {
+	    	// Read from the buffer at maximum MAX_PKT_SIZE bytes
+	        uint32_t readBytes = outBuffer->read(msgTemp, TMTC_MAX_PKT_SIZE);
+
+	        // Try sending the packet (multiple times)
+	        for (int i = 0; i < TMTC_MAX_TRIES_PER_PACKET; i++) {
+	        	bool sent = gamma->send(msgTemp, readBytes);
+	        	if(sent)
+	        		break;
+	    	}
+	    }
+	    Thread::sleep(TMTC_SEND_TIMEOUT);
+	}
+
+}
+
+/* 
+ * Receiving thread's run() function: parse the received packet one byte at a time 
+ * until you find a complete mavlink message and halde it with the appropriate handler.
+ */
+void TMTCManager::runReceiver() {
+	mavlink_message_t msg;
+	mavlink_status_t status;
+	uint8_t byte;
+
+	while(1)
+	{
+		gamma->receive(&byte, 1); //Blocking function
+
+		// Parse one char at a time until you find a complete message 
+		if (mavlink_parse_char(MAVLINK_COMM_0, byte, &msg, &status))
+		{
+			printf("Received message with ID %d, sequence: %d from component %d of system %d",
+								msg.msgid, msg.seq, msg.compid, msg.sysid);
+
+			// If the received message is not an ACK, send an ACK back to ground 	
+//			TODO: create ACK message in mavlink
+//			if(msg.msgid != MAVLINK_MSG_ID_ACK)
+				sendAck(&msg);
+
+			// Handle the message depending on the message type 
+			switch(msg.msgid) {
+			    case MAVLINK_MSG_ID_PING:
+			    {
+			        mavlink_ping_t ping;
+			        mavlink_msg_ping_decode(&msg ,&ping);
+			        TCHandler::handlePing(&ping);
+			    }
+			    break;
+			    case MAVLINK_MSG_ID_TEST_MSG:
+			    {
+			        mavlink_test_msg_t test;
+			        mavlink_msg_test_msg_decode(&msg, &test);
+			        TCHandler::handleTestMsg(&test);
+			    }
+			    break;
+			}
+
+		}
+	}
+}
+
+/* 
+ * Send an ACK to notify the sender that you received the given message.
+ */
+void TMTCManager::sendAck(mavlink_message_t* msg){
+	// Create ack message 
+	mavlink_message_t ack_msg;
+	//TODO: mavlink_msg_ack_pack(SYS_ID,COMPONENT_ID, &ack_msg, msg->msgid, msg->seq);
+
+	// Send message back to the sender through the callback 
+	bool ackSent = enqueueMsg( (uint8_t*)&ack_msg, sizeof(ack_msg) );
+	if(!ackSent) {
+        //TODO: fault counter? retry?
+    } 
 }

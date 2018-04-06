@@ -1,5 +1,5 @@
 /* Copyright (c) 2018 Skyward Experimental Rocketry
- * Authors: Alvise de' Faveri Tron
+ * Authors: Alvise De Faveri
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -20,29 +20,17 @@
  * THE SOFTWARE.
  */
 
-#include "TMTCSender.h"
+#ifndef TMTC_CONFIG
+#define TMTC_CONFIG
 
-/* 
- * Run() function of the Sender: 
- * read from the out buffer and write on the RF serial. 
- */
-void Sender::run() {
-   uint8_t msgTemp[MAX_PKT_SIZE];
-   uint32_t readBytes;
-   bool sent;
+#define TMTC_OUT_BUFFER_SIZE (20*sizeof(mavlink_message_t)) // Default size of the output messages buffer
+#define TMTC_SEND_TIMEOUT 10 // Default timeout before sending next packet
+#define TMTC_MAX_PKT_SIZE (5*sizeof(mavlink_message_t)) 	// Maxmimum dimension of the packet
+#define TMTC_MAX_TRIES_PER_PACKET 3	// Maximum number of tries when sending a packet
 
-	while(1) {
-	    if (outBuffer->occupiedSize() > 0) {
-	    	/* Read from the buffer at maximum MAX_PKT_SIZE bytes */
-	        readBytes = outBuffer->read(msgTemp, MAX_PKT_SIZE);
+#define TMTC_SENDER_STACKSIZE STACK_DEFAULT_FOR_PTHREAD
+#define TMTC_SENDER_PRIORITY MAIN_PRIORITY
+#define TMTC_RECEIVER_STACKSIZE STACK_DEFAULT_FOR_PTHREAD
+#define TMTC_RECEIVER_PRIORITY MAIN_PRIORITY
 
-	        /* Try sending the packet for a limited number of times */
-	        for (int i = 0; i < MAX_TRIES_PER_PACKET; i++) {
-	        	sent = gamma->send(msgTemp, readBytes);
-	        	if(sent) break;
-	    	}
-	    }
-	    Thread::sleep(TMTC_SEND_TIMEOUT);
-	}
-
-}
+#endif /* CONFIG_H */
