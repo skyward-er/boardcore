@@ -2,7 +2,7 @@
 This module is in charge of managing the communication with the ground station through a Gamma868 driver,
 handling the incoming Telecommands and buffering the packets to send.
 
-### TABLE of CONTENT
+## Table of Contents
 
 | File  |  Description |
 |-------|--------------|
@@ -11,10 +11,10 @@ handling the incoming Telecommands and buffering the packets to send.
 | CircularBuffer | A fixed dimension synchronized array, where messages can be enqueued and dequeued without delays. |
 | TMTCConfig | Lists all the includes and defines that are used in the module. |
 
-### CONFIGURATION
+## Configuration
 
 See TMTCConfig.h file to see all the configurable parameters.
 
-### USE
+### Use
 
 Include TMTCManager.h and use `sTMTCManager` to access the object.
