@@ -1,7 +1,5 @@
-/* Event scheduler
- *
- * Copyright (c) 2015-2018 Skyward Experimental Rocketry
- * Author: Matteo Michele Piazzolla
+/* Copyright (c) 2015-2017 Skyward Experimental Rocketry
+ * Authors: Luca Erbetta <luca.erbetta@skywarder.eu>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -22,41 +20,14 @@
  * THE SOFTWARE.
  */
 
-#ifndef SRC_SHARED_EVENTS_EVENT_H
-#define SRC_SHARED_EVENTS_EVENT_H
+#include <Common.h>
+using namespace miosix;
 
-#include <stdint.h>
-
-enum EventSignal : uint8_t
+int main()
 {
-    EV_ENTRY,
-    EV_EXIT,
-    EV_FIRST_SIGNAL
-};
-
-/**
- * 	Example definiton of custom signals:
-
-        enum CustomSignal : uint8_t
-        {
-                SIG_ONE = SG_FIRST_SIGNAL,
-                SIG_TWO,
-                SIG_THREE,
-                SIG_FOUR
-        };
-
- */
-
-struct Event
-{
-    uint8_t sig;
-};
-
-/* Example of extended Event structure
-
-        struct ExtendedEvent : public Event{
-                uint32_t custom_member;
-        };
-*/
-
-#endif /* SRC_SHARED_EVENTS_EVENT_H */
+    while (true)
+    {
+        printf("Serial is working!\n");
+        Thread::sleep(1000);
+    }
+}

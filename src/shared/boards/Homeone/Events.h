@@ -1,7 +1,5 @@
-/* Event scheduler
- *
- * Copyright (c) 2015-2018 Skyward Experimental Rocketry
- * Author: Matteo Michele Piazzolla
+/* Copyright (c) 2015-2018 Skyward Experimental Rocketry
+ * Authors: Luca Erbetta
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -21,42 +19,37 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
+#ifndef SRC_SHARED_BOARDS_HOMEONE_EVENTS_H
+#define SRC_SHARED_BOARDS_HOMEONE_EVENTS_H
 
-#ifndef SRC_SHARED_EVENTS_EVENT_H
-#define SRC_SHARED_EVENTS_EVENT_H
+#include "events/Event.h"
 
-#include <stdint.h>
-
-enum EventSignal : uint8_t
+namespace HomeoneBoard
 {
-    EV_ENTRY,
-    EV_EXIT,
-    EV_FIRST_SIGNAL
-};
-
 /**
- * 	Example definiton of custom signals:
-
-        enum CustomSignal : uint8_t
-        {
-                SIG_ONE = SG_FIRST_SIGNAL,
-                SIG_TWO,
-                SIG_THREE,
-                SIG_FOUR
-        };
-
+ * Definition of all events in the Homeone Board software
+ *
+ *
+ * Event naming convention:
+ *
+ * EV_<COMPONENT>_<EVENT-NAME>
+ *
+ * Example:
+ *
+ * Component: Flight Mode Manager (FMM)
+ * Event name: Apogee
+ * --> EV_FMM_APOGEE
+ *
  */
-
-struct Event
+enum Events : uint8_t
 {
-    uint8_t sig;
+    EV_FMM_ARM = EV_FIRST_SIGNAL,
+    EV_FMM_DISARM,
+    EV_FMM_LAUNCH,
+    EV_FMM_ASCENT_TIMEOUT,
+    EV_FMM_APOGEE,
+    EV_FMM_MAIN_PARACHUTE_DEPLOY
 };
+}
 
-/* Example of extended Event structure
-
-        struct ExtendedEvent : public Event{
-                uint32_t custom_member;
-        };
-*/
-
-#endif /* SRC_SHARED_EVENTS_EVENT_H */
+#endif /* SRC_SHARED_BOARDS_HOMEONE_EVENTS_H */
