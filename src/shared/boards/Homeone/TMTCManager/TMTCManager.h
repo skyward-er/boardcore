@@ -28,7 +28,7 @@
 #include <drivers/gamma868/Gamma868.h>
 #include <libs/mavlink_skyward_lib/mavlink_lib/skyward/mavlink.h>
 #include "CircularBuffer.h"
-#include "TMTCConfig.h"
+#include "TMTC_Config.h"
 #include "TCHandler.h"
 
 /*
@@ -61,6 +61,15 @@ public:
 protected:
 
 private:
+
+    /* RF module driver */
+    Gamma868* gamma;
+    /* Synchronized buffer for outgoing messages */
+    CircularBuffer* outBuffer;
+    /* Pointers to sending and receiving threads */
+    miosix::Thread* senderThread;
+    miosix::Thread* receiverThread;
+    
     /*
      * Private constructor that realizes the Singleton pattern.
      */
@@ -104,14 +113,6 @@ private:
     {
         reinterpret_cast<TMTCManager*>(arg)->runReceiver();
     }
-
-    /* RF module driver */
-    Gamma868* gamma;
-    /* Synchronized buffer for outgoing messages */
-    CircularBuffer* outBuffer;
-    /* Pointers to sending and receiving threads */
-    miosix::Thread* senderThread;
-    miosix::Thread* receiverThread;
    
 };
 

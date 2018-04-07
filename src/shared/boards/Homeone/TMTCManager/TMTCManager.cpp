@@ -101,15 +101,15 @@ void TMTCManager::runReceiver() {
 			        mavlink_ping_t ping;
 			        mavlink_msg_ping_decode(&msg ,&ping);
 			        TCHandler::handlePing(&ping);
+    			    break;
 			    }
-			    break;
 			    case MAVLINK_MSG_ID_TEST_MSG:
 			    {
 			        mavlink_test_msg_t test;
 			        mavlink_msg_test_msg_decode(&msg, &test);
 			        TCHandler::handleTestMsg(&test);
+    			    break;
 			    }
-			    break;
 			}
 
 		}

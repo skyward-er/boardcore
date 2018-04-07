@@ -23,6 +23,8 @@
 #ifndef TMTC_CONFIG
 #define TMTC_CONFIG
 
+#warning TMTC COSTANTS ARE ONLY PLACEHOLDER VALUES
+
 #define TMTC_OUT_BUFFER_SIZE (20*sizeof(mavlink_message_t)) // Default size of the output messages buffer
 #define TMTC_SEND_TIMEOUT 10 // Default timeout before sending next packet
 #define TMTC_MAX_PKT_SIZE (5*sizeof(mavlink_message_t)) 	// Maxmimum dimension of the packet
