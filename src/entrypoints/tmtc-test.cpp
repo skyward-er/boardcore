@@ -20,7 +20,7 @@
  * THE SOFTWARE.
  */
 
-#include "boards/homeone/TMTC/TMTCManager.h"
+#include "boards/homeone/TMTCManager/TMTCManager.h"
 
 int main()
 {
