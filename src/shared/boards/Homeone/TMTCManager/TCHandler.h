@@ -24,7 +24,7 @@
 #define TCHANDLER_H
 
 #include <Common.h>
-#include "TMTCConfig.h"
+#include "TMTC_Config.h"
 
 /*
  * The TCHandler class contains the functions that handle the TCs receiver from ground. 
