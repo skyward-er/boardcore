@@ -1,6 +1,6 @@
 [submodule "libs/miosix-kernel"]
 	path = libs/miosix-kernel
-	url = https://github.com/carpikes/miosix-kernel.git
+	url = https://github.com/skyward-er/miosix-kernel.git
 	branch = master
 [submodule "libs/mavlink_skyward_lib"]
 	path = libs/mavlink_skyward_lib
