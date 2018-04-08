@@ -24,8 +24,8 @@
 #define GAMMA_CONFIG
 
 // DISCOVERY gpio configuration
-typedef Gpio<GPIOB_BASE, 0> gammaLed;
-typedef Gpio<GPIOB_BASE, 2> gammaSwitch;
+typedef miosix::Gpio<GPIOB_BASE, 0> gammaLed;
+typedef miosix::Gpio<GPIOB_BASE, 2> gammaSwitch;
 
 // Module internal config
 struct Configuration

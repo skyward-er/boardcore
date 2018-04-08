@@ -26,7 +26,7 @@
  * Constructor: initialise objects (has memory allocation).
  */
 TMTCManager::TMTCManager() {
-    gamma = new Gamma868("/dev/radio");
+    gamma = new Gamma868(RADIO_DEVICE_NAME);
     outBuffer = new CircularBuffer(TMTC_OUT_BUFFER_SIZE);
     //TODO: check gamma status and configuration
     senderThread = miosix::Thread::create(senderLauncher, TMTC_SENDER_STACKSIZE, TMTC_SENDER_PRIORITY,
@@ -65,7 +65,7 @@ void TMTCManager::runSender() {
 	        		break;
 	    	}
 	    }
-	    Thread::sleep(TMTC_SEND_TIMEOUT);
+	    miosix::Thread::sleep(TMTC_SEND_TIMEOUT);
 	}
 
 }

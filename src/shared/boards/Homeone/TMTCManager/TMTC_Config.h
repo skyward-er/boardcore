@@ -25,14 +25,16 @@
 
 #warning TMTC COSTANTS ARE ONLY PLACEHOLDER VALUES
 
+#define RADIO_DEVICE_NAME "/dev/radio"
+
 #define TMTC_OUT_BUFFER_SIZE (20*sizeof(mavlink_message_t)) // Default size of the output messages buffer
-#define TMTC_SEND_TIMEOUT 10 // Default timeout before sending next packet
+#define TMTC_SEND_TIMEOUT 1000 // Default timeout before sending next packet
 #define TMTC_MAX_PKT_SIZE (5*sizeof(mavlink_message_t)) 	// Maxmimum dimension of the packet
 #define TMTC_MAX_TRIES_PER_PACKET 3	// Maximum number of tries when sending a packet
 
-#define TMTC_SENDER_STACKSIZE STACK_DEFAULT_FOR_PTHREAD
-#define TMTC_SENDER_PRIORITY MAIN_PRIORITY
-#define TMTC_RECEIVER_STACKSIZE STACK_DEFAULT_FOR_PTHREAD
-#define TMTC_RECEIVER_PRIORITY MAIN_PRIORITY
+#define TMTC_SENDER_STACKSIZE miosix::STACK_DEFAULT_FOR_PTHREAD
+#define TMTC_SENDER_PRIORITY miosix::MAIN_PRIORITY
+#define TMTC_RECEIVER_STACKSIZE miosix::STACK_DEFAULT_FOR_PTHREAD
+#define TMTC_RECEIVER_PRIORITY miosix::MAIN_PRIORITY
 
 #endif /* CONFIG_H */
