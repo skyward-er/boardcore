@@ -26,7 +26,7 @@
  * Constructor: initialise objects (has memory allocation).
  */
 TMTCManager::TMTCManager() {
-    gamma = new Gamma868("/dev/tty");
+    gamma = new Gamma868("/dev/radio");
     outBuffer = new CircularBuffer(TMTC_OUT_BUFFER_SIZE);
     //TODO: check gamma status and configuration
     senderThread = miosix::Thread::create(senderLauncher, TMTC_SENDER_STACKSIZE, TMTC_SENDER_PRIORITY,
@@ -90,8 +90,7 @@ void TMTCManager::runReceiver() {
 								msg.msgid, msg.seq, msg.compid, msg.sysid);
 
 			// If the received message is not an ACK, send an ACK back to ground 	
-//			TODO: create ACK message in mavlink
-//			if(msg.msgid != MAVLINK_MSG_ID_ACK)
+			if(msg.msgid != MAVLINK_MSG_ID_ACK)
 				sendAck(&msg);
 
 			// Handle the message depending on the message type 
@@ -101,13 +100,6 @@ void TMTCManager::runReceiver() {
 			        mavlink_ping_t ping;
 			        mavlink_msg_ping_decode(&msg ,&ping);
 			        TCHandler::handlePing(&ping);
-    			    break;
-			    }
-			    case MAVLINK_MSG_ID_TEST_MSG:
-			    {
-			        mavlink_test_msg_t test;
-			        mavlink_msg_test_msg_decode(&msg, &test);
-			        TCHandler::handleTestMsg(&test);
     			    break;
 			    }
 			}
@@ -122,7 +114,7 @@ void TMTCManager::runReceiver() {
 void TMTCManager::sendAck(mavlink_message_t* msg){
 	// Create ack message 
 	mavlink_message_t ack_msg;
-	//TODO: mavlink_msg_ack_pack(SYS_ID,COMPONENT_ID, &ack_msg, msg->msgid, msg->seq);
+	mavlink_msg_ack_pack(1, 1, &ack_msg, msg->msgid, msg->seq);
 
 	// Send message back to the sender through the callback 
 	bool ackSent = enqueueMsg( (uint8_t*)&ack_msg, sizeof(ack_msg) );

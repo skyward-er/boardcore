@@ -45,11 +45,6 @@ public:
         printf("Received ping\n");
     }
 
-    /* TEST_MSG message handler */
-    static void handleTestMsg(mavlink_test_msg_t* msg) {
-        printf("Received test message\n");
-        
-    }
 };
 
 #endif
