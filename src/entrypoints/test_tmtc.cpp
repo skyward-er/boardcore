@@ -28,6 +28,7 @@ int main()
 
     while(1){
     	sTMTCManager->enqueueMsg( (uint8_t*)&msg, sizeof(mavlink_ping_t) );
+    	printf("Ping..\n");
     	sleep(100);
 	}
 
