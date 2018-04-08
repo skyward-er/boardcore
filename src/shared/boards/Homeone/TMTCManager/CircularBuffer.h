@@ -72,7 +72,7 @@ public:
         uint32_t i = 0;
 
         {
-            Lock<FastMutex> l(mutex);
+            miosix::Lock<miosix::FastMutex> l(mutex);
 
             for (i = 0; i < availableLen; i++) {
 
@@ -101,7 +101,7 @@ public:
         uint32_t i = 0;
 
         {
-            Lock<FastMutex> l(mutex);
+            miosix::Lock<miosix::FastMutex> l(mutex);
 
             if (!full) {
                 for (i = 0; i < len; i++) {
@@ -146,7 +146,7 @@ private:
     bool full = false;
     uint8_t* buffer;
 
-    FastMutex mutex;
+    miosix::FastMutex mutex;
 };
 
 #endif /* CIRCULARBUFFER_H */

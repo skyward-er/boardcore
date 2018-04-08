@@ -37,7 +37,7 @@ Gamma868::Gamma868(const char *serialPath)
 {
     fd = open(serialPath, O_RDWR);
     if (fd < 0)
-        printf("Cannot open %s\n", serialPath); //TODO: handle error opening serial
+        printf("[Gamma868] Cannot open %s\n", serialPath); //TODO: handle error opening serial
     gammaLed::mode(Mode::INPUT);
     gammaSwitch::mode(Mode::OUTPUT);
     gammaSwitch::high();
@@ -63,7 +63,6 @@ bool Gamma868::send(const uint8_t* pkt, uint32_t pkt_len)
 void Gamma868::receive(uint8_t* pkt, uint32_t pkt_len)
 {
     {
-        Lock<FastMutex> l(gammaMutex);
         read(fd, pkt, pkt_len);  // Read all the pkt_len chars
     }
 

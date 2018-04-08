@@ -28,7 +28,6 @@
 
 //TODO: change this
 #ifdef _MIOSIX
-using namespace miosix;
 #endif  //_MIOSIX
 
 #include "gamma_config.h"  //Defines are in here.
@@ -72,14 +71,14 @@ public:
 private:
     int fd;
 
-    FastMutex gammaMutex;
+    miosix::FastMutex gammaMutex;
 
-    FastMutex ledMutex;
-    ConditionVariable ledCond;
+    miosix::FastMutex ledMutex;
+    miosix::ConditionVariable ledCond;
     int pktSent = 0;
 
-    FastMutex learnMutex;
-    ConditionVariable learnCond;
+    miosix::FastMutex learnMutex;
+    miosix::ConditionVariable learnCond;
     int learnMode = 0;
 
     bool enterLearnMode();

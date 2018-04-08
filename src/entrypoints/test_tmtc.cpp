@@ -20,6 +20,7 @@
  * THE SOFTWARE.
  */
 
+#include <Common.h>
 #include "boards/homeone/TMTCManager/TMTCManager.h"
 
 int main()
@@ -27,9 +28,12 @@ int main()
     mavlink_ping_t msg;
 
     while(1){
+		printf("Enqueuing ping\n");
     	sTMTCManager->enqueueMsg( (uint8_t*)&msg, sizeof(mavlink_ping_t) );
-    	printf("Ping..\n");
-    	sleep(100);
+
+    	miosix::ledOn();
+    	miosix::delayMs(100);
+    	miosix::ledOff();
 	}
 
     while(true);
