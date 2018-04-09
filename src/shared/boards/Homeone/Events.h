@@ -24,6 +24,10 @@
 
 #include "events/Event.h"
 
+// Common includes
+#include "Topics.h"
+#include "events/EventBroker.h"
+
 namespace HomeoneBoard
 {
 /**
@@ -43,12 +47,16 @@ namespace HomeoneBoard
  */
 enum Events : uint8_t
 {
+    // Flight Mode manager
     EV_FMM_ARM = EV_FIRST_SIGNAL,
     EV_FMM_DISARM,
     EV_FMM_LAUNCH,
     EV_FMM_ASCENT_TIMEOUT,
     EV_FMM_APOGEE,
-    EV_FMM_MAIN_PARACHUTE_DEPLOY
+    EV_FMM_MAIN_PARACHUTE_DEPLOY,
+
+    // Sensor manager
+    EV_SM_START_SAMPLING
 };
 }
 

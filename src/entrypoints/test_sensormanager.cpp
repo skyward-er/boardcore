@@ -19,21 +19,27 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
-#ifndef SRC_SHARED_BOARDS_HOMEONE_TOPICS_H
-#define SRC_SHARED_BOARDS_HOMEONE_TOPICS_H
 
-#include <stdint.h>
+#include "Common.h"
+#include "boards/Homeone/Events.h"
+#include "boards/Homeone/SensorManager/SensorManager.h"
 
-namespace HomeoneBoard
+using namespace miosix;
+using namespace HomeoneBoard;
+using Sensors::SensorManager;
+
+int main()
 {
-/**
- * Definition of various event topics to use in the EventBroker
- */
-enum Topics : uint8_t
-{
-    TOPIC_FMM_FSM,    // Flight Mode Manager Finite state machine events
-    TOPIC_SENSORS_SM  // Sensor manager
-};
+    Event ev{EV_SM_START_SAMPLING};
+
+    SensorManager* sm = Singleton<SensorManager>::getInstance();
+    printf("Waiting...\n");
+    Thread::sleep(5000);
+
+    sEventBroker->post(ev, TOPIC_SENSORS_SM);
+    for (;;)
+    {
+        // printf("%f\n", sSensorManager->value);
+        Thread::sleep(100);
+    }
 }
-
-#endif /* SRC_SHARED_BOARDS_HOMEONE_TOPICS_H_ */
