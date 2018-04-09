@@ -19,21 +19,37 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
-#ifndef SRC_SHARED_BOARDS_HOMEONE_TOPICS_H
-#define SRC_SHARED_BOARDS_HOMEONE_TOPICS_H
+#ifndef SRC_SHARED_BOARDS_HOMEONE_SENSORMANAGER_TESTSENSOR_H
+#define SRC_SHARED_BOARDS_HOMEONE_SENSORMANAGER_TESTSENSOR_H
 
-#include <stdint.h>
+#include <cmath>
+#include "Common.h"
+#include "sensors/Sensor.h"
 
-namespace HomeoneBoard
+using miosix::getTick;
+using miosix::TICK_FREQ;
+
+class TestSensor : public Sensor
 {
-/**
- * Definition of various event topics to use in the EventBroker
- */
-enum Topics : uint8_t
-{
-    TOPIC_FMM_FSM,    // Flight Mode Manager Finite state machine events
-    TOPIC_SENSORS_SM  // Sensor manager
+public:
+    TestSensor() : mLastSample(0) {}
+    virtual ~TestSensor() {}
+
+    bool init() { return true; }
+    bool onSimpleUpdate()
+    {
+        // printf("onSimpleUpdate\n");
+        mLastSample = 10 * sin(PI * static_cast<float>(getTick()) /
+                               static_cast<float>(TICK_FREQ));
+        return true;
+    }
+
+    bool selfTest() { return true; }
+
+    float getLastSample() { return mLastSample; }
+
+private:
+    float mLastSample;
 };
-}
 
-#endif /* SRC_SHARED_BOARDS_HOMEONE_TOPICS_H_ */
+#endif /* SRC_SHARED_BOARDS_HOMEONE_SENSORMANAGER_TESTSENSOR_H */
