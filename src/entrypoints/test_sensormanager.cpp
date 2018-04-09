@@ -27,19 +27,20 @@
 using namespace miosix;
 using namespace HomeoneBoard;
 using Sensors::SensorManager;
+using Sensors::SensorData;
 
 int main()
 {
     Event ev{EV_SM_START_SAMPLING};
 
     SensorManager* sm = Singleton<SensorManager>::getInstance();
+
     printf("Waiting...\n");
     Thread::sleep(5000);
 
     sEventBroker->post(ev, TOPIC_SENSORS_SM);
     for (;;)
     {
-        // printf("%f\n", sSensorManager->value);
         Thread::sleep(100);
     }
 }

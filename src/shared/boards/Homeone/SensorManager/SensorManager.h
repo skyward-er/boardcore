@@ -36,11 +36,20 @@ namespace Sensors
 {
 
 /**
+ * Common storage point for all the latest samples of each sensor.
+ */
+struct SensorData
+{
+    float testSensorData;
+};
+
+/**
  * The SensorManager class manages all the sensors connected to the Homeone
  * Board.
  * The class is implemented as a Pseudo-Finite-State-Machine with only one
  * "state". This is done to easily receive and dispatch events thanks to the
  * methods provided by the FSM class.
+ *
  * Sensors are grouped by "type" (Simple or DMA) and "sample frequency" and
  * grouped in various SensorSampler objects. These objects are then added to the
  * scheduler that manages the timings for the sampling.
@@ -50,6 +59,13 @@ namespace Sensors
 class SensorManager : public FSM<SensorManager>, public Singleton<SensorManager>
 {
     friend class Singleton<SensorManager>;
+
+public:
+    /**
+     * Returns a copy of the struct containing the latest available samples from
+     * each sensor at the time of the call.
+     */
+    SensorData getSensorData();
 
 private:
     SensorManager();
@@ -66,6 +82,12 @@ private:
     void initSamplers();
 
     /**
+         * Pseudo-FSM-State used to handle events
+         * @param ev Event to handle.
+         */
+    void handleEvent(const Event& ev);
+
+    /**
      * Adds all the SensorSamplers to the scheduler and begins sampling.
      */
     void startSampling();
@@ -78,21 +100,30 @@ private:
      */
 
     /**
-     * Simple, 10 Hz Sensor sampler Callback.
+     * Simple, 10 Hz SensorSampler Callback.
      */
     void onSimple10HZCallback();
 
     /**
-     * Pseud-FSM-State used to handle events
-     * @param ev Event to handle.
+     * Task that sends samples at a fixed rate to the TMTCManager.
      */
-    void handleEvent(const Event& ev);
+    void sendSamplesToTMTC();
 
     // DMASensorSampler m100HzDMA, m25HzDMA;
     SimpleSensorSampler m10HzSimple;
 
     // Sensors
-    TestSensor* test_sensor;
+    TestSensor* mTestSensor;
+
+    // Sensor data
+    SensorData mSensorData{};
+
+    /*
+     * Mutex to synchronize mSensorData. We might want to change this:
+     * locking and unlocking this mutex each time a new sample is available
+     * might be unacceptably slow.
+     */
+    miosix::FastMutex mSensorDataMutex;
 };
 }
 }
