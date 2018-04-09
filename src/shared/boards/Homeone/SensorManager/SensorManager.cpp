@@ -25,6 +25,9 @@
 #include "boards/Homeone/Events.h"
 #include "events/Scheduler.h"
 
+using miosix::Lock;
+using miosix::FastMutex;
+
 namespace HomeoneBoard
 {
 namespace Sensors
@@ -38,21 +41,9 @@ SensorManager::SensorManager() : FSM(&SensorManager::handleEvent)
     initSamplers();
 }
 
-void SensorManager::initSensors() { test_sensor = new TestSensor(); }
+void SensorManager::initSensors() { mTestSensor = new TestSensor(); }
 
-void SensorManager::initSamplers() { m10HzSimple.AddSensor(test_sensor); }
-
-void SensorManager::startSampling()
-{
-    // Simple 10 Hz Sampler callback and scheduler function
-    std::function<void()> simple10HzCallback =
-        std::bind(&SensorManager::onSimple10HZCallback, this);
-
-    std::function<void()> simple10HzSampler = std::bind(
-        &SimpleSensorSampler::Update, &m10HzSimple, simple10HzCallback);
-
-    sEventScheduler->add(simple10HzSampler, 100, "simple_10hz");
-}
+void SensorManager::initSamplers() { m10HzSimple.AddSensor(mTestSensor); }
 
 void SensorManager::handleEvent(const Event& ev)
 {
@@ -66,14 +57,52 @@ void SensorManager::handleEvent(const Event& ev)
     }
 }
 
+SensorData SensorManager::getSensorData()
+{
+    Lock<FastMutex> lock(mSensorDataMutex);
+    return mSensorData;
+}
+
+void SensorManager::startSampling()
+{
+    // Simple 10 Hz Sampler callback and scheduler function
+    std::function<void()> simple10HzCallback =
+        std::bind(&SensorManager::onSimple10HZCallback, this);
+
+    std::function<void()> simple10HzSampler = std::bind(
+        &SimpleSensorSampler::Update, &m10HzSimple, simple10HzCallback);
+
+    sEventScheduler->add(simple10HzSampler, 100, "simple_10hz");
+
+    // Finally add TMTC send task
+    std::function<void()> tmtc_send =
+        std::bind(&SensorManager::sendSamplesToTMTC, this);
+    sEventScheduler->add(tmtc_send, 1000, "tmtc_send");
+}
+
 void SensorManager::onSimple10HZCallback()
 {
+    {
+        /*
+         * We don't need a mutex to access the data in the sensor object since
+         * we are in the same thread that modifies it, but we need one to write
+         * it to the SensorData struct which is accessible from other threads.
+         */
+        Lock<FastMutex> lock(mSensorDataMutex);
+        mSensorData.testSensorData = *(mTestSensor->testDataPtr());
+    }
     // This is just a test
-    float value = test_sensor->getLastSample();
-    printf("%f\n", value);
+    printf("%f\n", *(mTestSensor->testDataPtr()));
 
     // TODO: Send samples to logger
     // TODO: Send pressure samples to FMM
+}
+
+void SensorManager::sendSamplesToTMTC()
+{
+    // TODO: Send samples to TMTC
+
+    printf("TMTC send \n");
 }
 }
 }

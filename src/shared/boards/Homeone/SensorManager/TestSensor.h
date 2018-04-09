@@ -46,7 +46,7 @@ public:
 
     bool selfTest() { return true; }
 
-    float getLastSample() { return mLastSample; }
+    float* testDataPtr() { return &mLastSample; }
 
 private:
     float mLastSample;
