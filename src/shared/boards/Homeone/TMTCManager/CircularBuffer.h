@@ -35,6 +35,8 @@ public:
     CircularBuffer(uint32_t totalSize){
         this->totalSize = totalSize;
         buffer = new uint8_t[totalSize];
+
+        memset(buffer, 0, totalSize);
     }
 
 
@@ -74,12 +76,14 @@ public:
         {
             miosix::Lock<miosix::FastMutex> l(mutex);
 
+
             for (i = 0; i < availableLen; i++) {
 
                 if (i == 0 && full)
                     full = false;
 
                 buf[i] = buffer[first];
+                printf("Reading %c(%d), first %lu last %lu\n", buf[i], buf[i], first, last);
 
                 first++;
                 if (first == totalSize)
@@ -118,6 +122,7 @@ public:
                 }
             }
         }
+        print();
 
         return i;
     }
@@ -126,17 +131,17 @@ public:
      * Prints the whole content of the buffer (for debug pupouses).
      */
      void print() {
-        #ifdef DEBUG
-        printf("Buffer: first %u last %u occupied %u total size %u\n",
+        printf("Buffer: first %lu last %lu occupied %lu total size %lu\n",
                         first, last, occupiedSize(), totalSize);
 
-        int offset = first;
-        for (int i = 0; i < occupiedSize(); i++){
+        uint32_t offset = first;
+        for (uint8_t i = 0; i < occupiedSize(); i++){
+            printf("%c(%d) ", buffer[offset], buffer[offset]);
+
+            offset++;
             if (offset == totalSize) offset = 0;
-            printf("%c ", buffer[offset]);
         }
         printf("\n");
-        #endif
     }
 
 private:
