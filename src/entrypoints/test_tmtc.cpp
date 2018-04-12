@@ -32,13 +32,10 @@ int main()
 		mavlink_message_t ack_msg;
 		mavlink_msg_ack_pack(1, 1, &ack_msg, 2, 2);
 
-		// Send message back to the sender through the callback 
 		sTMTCManager->enqueueMsg( (uint8_t*)&ack_msg, sizeof(ack_msg) );
 
     	miosix::delayMs(1000);
 	}
-
-    while(true);
 
     return 0;
 }
