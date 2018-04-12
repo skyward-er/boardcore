@@ -21,22 +21,24 @@
  */
 
 #include <Common.h>
-#include "boards/homeone/TMTCManager/TMTCManager.h"
+#include "boards/Homeone/TMTCManager/TMTCManager.h"
 
 int main()
 {
     mavlink_ping_t msg;
 
-    while(1){
-		printf("Enqueuing ping\n");
-    	sTMTCManager->enqueueMsg( (uint8_t*)&msg, sizeof(mavlink_ping_t) );
+    while (1)
+    {
+        printf("Enqueuing ping\n");
+        sTMTCManager->enqueueMsg((uint8_t*)&msg, sizeof(mavlink_ping_t));
 
-    	miosix::ledOn();
-    	miosix::delayMs(100);
-    	miosix::ledOff();
-	}
+        miosix::ledOn();
+        miosix::delayMs(100);
+        miosix::ledOff();
+    }
 
-    while(true);
+    while (true)
+        ;
 
     return 0;
 }
