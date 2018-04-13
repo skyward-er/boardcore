@@ -46,9 +46,6 @@ struct SensorData
 /**
  * The SensorManager class manages all the sensors connected to the Homeone
  * Board.
- * The class is implemented as a Pseudo-Finite-State-Machine with only one
- * "state". This is done to easily receive and dispatch events thanks to the
- * methods provided by the FSM class.
  *
  * Sensors are grouped by "type" (Simple or DMA) and "sample frequency" and
  * grouped in various SensorSampler objects. These objects are then added to the
@@ -56,7 +53,7 @@ struct SensorData
  * After a SensorSampler has finished sampling its sensors, it will call a
  * callback, where these samples can be processed and dispatched.
  */
-class SensorManager : public FSM<SensorManager>, public Singleton<SensorManager>
+class SensorManager : public EventHandler, public Singleton<SensorManager>
 {
     friend class Singleton<SensorManager>;
 
@@ -82,7 +79,7 @@ private:
     void initSamplers();
 
     /**
-         * Pseudo-FSM-State used to handle events
+         * Handle received events.
          * @param ev Event to handle.
          */
     void handleEvent(const Event& ev);

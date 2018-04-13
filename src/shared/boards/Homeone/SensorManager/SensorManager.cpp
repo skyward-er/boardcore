@@ -33,7 +33,7 @@ namespace HomeoneBoard
 namespace Sensors
 {
 
-SensorManager::SensorManager() : FSM(&SensorManager::handleEvent)
+SensorManager::SensorManager() : EventHandler()
 {
     sEventBroker->subscribe(this, TOPIC_SENSORS_SM);
 
