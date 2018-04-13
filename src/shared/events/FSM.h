@@ -31,29 +31,40 @@
 
 #include <iostream>
 
-class EventHandler
+class EventHandler : ActiveObject
 {
 public:
-    EventHandler() {}
+    EventHandler() : ActiveObject() {}
 
     void postEvent(const Event& e) { eventList.put(e); }
 
     virtual ~EventHandler(){};
 
 protected:
+    virtual void handleEvent(const Event& ev) = 0;
+
+    void run()
+    {
+        while (true)
+        {
+            Event e = eventList.get();
+            handleEvent(e);
+        }
+    }
+
     SynchronizedQueue<Event> eventList;
 };
 
 template <class T>
-class FSM : public EventHandler, ActiveObject
+class FSM : public EventHandler
 {
 
 public:
-    FSM(void (T::*initialState)(const Event&)) : EventHandler(), ActiveObject()
+    FSM(void (T::*initialState)(const Event&)) : EventHandler()
     {
         state            = initialState;
         specialEvent.sig = EV_ENTRY;
-        dispatchEvent(specialEvent);
+        handleEvent(specialEvent);
     }
 
     virtual ~FSM(){};
@@ -67,19 +78,9 @@ public:
     }
 
 protected:
+    void handleEvent(const Event& e) { (static_cast<T*>(this)->*state)(e); }
 private:
     void (T::*state)(const Event&);
     Event specialEvent;
-
-    void dispatchEvent(const Event& e) { (static_cast<T*>(this)->*state)(e); }
-
-    void run()
-    {
-        while (true)
-        {
-            Event e = eventList.get();
-            dispatchEvent(e);
-        }
-    }
 };
 #endif  // SRC_SHARED_EVENTS_FSM_H
