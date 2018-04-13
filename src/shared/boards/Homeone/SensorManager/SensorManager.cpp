@@ -59,8 +59,9 @@ void SensorManager::handleEvent(const Event& ev)
 
 SensorData SensorManager::getSensorData()
 {
-    Lock<FastMutex> lock(mSensorDataMutex);
-    return mSensorData;
+    SensorData data;
+    data.testSensorData = *(mTestSensor->testDataPtr());
+    return data;
 }
 
 void SensorManager::startSampling()

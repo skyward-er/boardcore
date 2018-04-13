@@ -58,12 +58,6 @@ class SensorManager : public EventHandler, public Singleton<SensorManager>
     friend class Singleton<SensorManager>;
 
 public:
-    /**
-     * Returns a copy of the struct containing the latest available samples from
-     * each sensor at the time of the call.
-     */
-    SensorData getSensorData();
-
 private:
     SensorManager();
     ~SensorManager(){};
@@ -83,6 +77,14 @@ private:
          * @param ev Event to handle.
          */
     void handleEvent(const Event& ev);
+
+    /**
+    * Returns a copy of the struct containing the latest available samples
+    * from each sensor at the time of the call.
+    * This function is not thread-safe: it must be called in the scheduler
+    * thread or be opportunely guarded by mutex.
+    */
+    SensorData getSensorData();
 
     /**
      * Adds all the SensorSamplers to the scheduler and begins sampling.
@@ -111,16 +113,6 @@ private:
 
     // Sensors
     TestSensor* mTestSensor;
-
-    // Sensor data
-    SensorData mSensorData{};
-
-    /*
-     * Mutex to synchronize mSensorData. We might want to change this:
-     * locking and unlocking this mutex each time a new sample is available
-     * might be unacceptably slow.
-     */
-    miosix::FastMutex mSensorDataMutex;
 };
 }
 }
