@@ -27,7 +27,8 @@
 
 enum Topics : uint8_t
 {
-    TOPIC1
+    TOPIC1,
+    TOPIC2
 };
 
 enum TestEventSignal : uint8_t
@@ -43,6 +44,14 @@ public:
     TestFSM() : FSM(&TestFSM::state0) {}
 
     ~TestFSM() {}
+
+protected:
+    void handleEvent(const Event& ev)
+    {
+        float t = static_cast<float>(miosix::getTick()) / miosix::TICK_FREQ;
+        printf("\nT: %.3f\n", t);
+        FSM::handleEvent(ev);
+    }
 
 private:
     void state0(const Event& e)
@@ -167,6 +176,8 @@ int main()
 
     sEventBroker->subscribe(&fsm, TOPIC1);
 
+    Thread::sleep(1000);
+    sEventBroker->post(ev1, TOPIC2);
     Thread::sleep(1000);
     sEventBroker->post(ev1, TOPIC1);
     Thread::sleep(5000);
