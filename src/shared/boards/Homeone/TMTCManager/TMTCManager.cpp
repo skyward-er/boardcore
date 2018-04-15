@@ -95,9 +95,9 @@ void TMTCManager::runReceiver() {
 
 			// Handle the message depending on the message type 
 			switch(msg.msgid) {
-				//TODO invoke handlers
-			    case default:
+			    default:
 			    {
+			        //TIOD
     			    break;
 			    }
 			}
