@@ -28,27 +28,30 @@ namespace HomeoneBoard
 {
 /**
  * Definition of all events in the Homeone Board software
- *
- *
- * Event naming convention:
- *
- * EV_<COMPONENT>_<EVENT-NAME>
- *
- * Example:
- *
- * Component: Flight Mode Manager (FMM)
- * Event name: Apogee
- * --> EV_FMM_APOGEE
- *
  */
 enum Events : uint8_t
 {
-    EV_FMM_ARM = EV_FIRST_SIGNAL,
-    EV_FMM_DISARM,
-    EV_FMM_LAUNCH,
+    EV_ARM = EV_FIRST_SIGNAL,
+    EV_DISARM,
+
+    EV_ENABLE_TEST_MODE,
+    EV_RESET_BOARD,
+
+    EV_START_LAUNCH,
+    EV_ABORT_LAUNCH,
+
+    EV_UNBILICAL_DETATCHED,
+
     EV_FMM_ASCENT_TIMEOUT,
-    EV_FMM_APOGEE,
-    EV_FMM_MAIN_PARACHUTE_DEPLOY
+
+    EV_ADA_START,
+    EV_ADA_GO_ACTIVE,
+    EV_ADA_STOP,
+
+    EV_APOGEE_DETECTED,
+    EV_DEPLOY_MAIN_PARACHUTE,
+
+    EV_STOP_SAMPLING
 };
 }
 

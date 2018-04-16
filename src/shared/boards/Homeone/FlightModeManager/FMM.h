@@ -45,17 +45,26 @@ public:
 private:
     // States declarations
 
+    void testing(const Event& e);
+    void aborted(const Event& e);
     void disarmed(const Event& e);
     void armed(const Event& e);
     void ascending(const Event& e);
     void apogeeDetection(const Event& e);
     void descendingPhase_1(const Event& e);
     void descendingPhase_2(const Event& e);
+    void landed(const Event& e);
 
     // Event definitions
     Event ev_ascent_timeout{EV_FMM_ASCENT_TIMEOUT};
-    Event ev_apogee{EV_FMM_APOGEE};
-    Event ev_main_parachute_deploy{EV_FMM_MAIN_PARACHUTE_DEPLOY};
+
+    Event ev_ada_start{EV_ADA_START};
+    Event ev_ada_active_mode{EV_ADA_GO_ACTIVE};
+    Event ev_ada_stop{EV_ADA_STOP};
+
+    Event ev_apogee_detected{EV_APOGEE_DETECTED};
+
+    Event ev_main_parachute_deploy{EV_DEPLOY_MAIN_PARACHUTE};
 
     // State variables
     uint16_t delayed_event_id = 0;

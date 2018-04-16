@@ -31,7 +31,9 @@ namespace HomeoneBoard
  */
 enum Topics : uint8_t
 {
-    TOPIC_FMM_FSM  // Flight Mode Manager Finite state machine events
+    TOPIC_FMM_FSM,  // Flight Mode Manager Finite state machine events
+    TOPIC_FMM_ADA,  // Flight Mode Manager Apogee Detection Algorithm
+    TOPIC_SAMPLING
 };
 }
 
