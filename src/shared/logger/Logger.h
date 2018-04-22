@@ -125,6 +125,7 @@ private:
 
     FILE *file;
 
+    int statTooLargeSample=0; ///< Number of dropped samples because too large
     int statDroppedSamples=0; ///< Number of dropped sample due to fifo full
     int statWriteFailed=0;    ///< Number of fwrite() that failed
     int statWriteTime=0;      ///< Time to perform an fwrite() of a buffer
