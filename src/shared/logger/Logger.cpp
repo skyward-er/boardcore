@@ -1,11 +1,16 @@
 
-#include <logger/Logger.h>
+#include "Logger.h"
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
+#include <cereal/archives/portable_binary.hpp>
 
 using namespace std;
 using namespace miosix;
+
+//
+// class Logger
+//
 
 void Logger::start()
 {
@@ -57,6 +62,46 @@ void Logger::stop()
     fclose(file);
     printf("File closed\n");
     stopSensing=false;
+}
+
+LogResult Logger::log(const LogBase& lb)
+{
+    //TODO: to increase performance, make a custom ostream/streambuf that
+    //writes dirctly to the Record eliminating heap usage within stringstream
+    stringstream ss;
+    unique_ptr<const LogBase> up(&lb);
+    try {
+        cereal::PortableBinaryOutputArchive archive(ss);
+        archive(up);
+        up.release();
+    } catch(...) {
+        // We are using unique_ptr only because cereal requires it.
+        // We are not the owner of the object and we must not delete it.
+        // If an exception is thrown, however, unique_ptr deletes the object.
+        // This may be one of the very few cases where a try/catch is used
+        // *not* to delete an object.
+        up.release();
+        throw;
+    }
+    ss.seekp(0,ios::end);
+    unsigned int size=ss.tellp();
+    
+    //FIXME from here change
+    if(size>maxRecordSize) return LogResult::TooLarge;
+    char data[maxRecordSize];
+    ss.read(data,size);
+//     Record sample=readSensors();
+//     processSensorData(sample);
+//     {
+//         FastInterruptDisableLock dLock;
+//         if(queuedSamples.IRQput(sample)==false) statDroppedSamples++;
+//         else statQueuePush++;
+//         //TODO use a fucking costant NO MAGIC NUMBER :D
+//         if(wakeupTime%150==0){
+//             rtx->writeRecord(&sample);
+//         }
+//     }
+    return LogResult::Ignored;
 }
 
 Logger::Logger()
