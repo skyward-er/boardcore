@@ -2,21 +2,9 @@
 #pragma once
 
 #include <cstdio>
-// #include <cstring>
 #include <list>
-// #include <stdexcept>
 #include <miosix.h>
-// #include <math.h>
-// #include <stdlib.h>
-// 
-// #include "kernel/queue.h"
-// 
-// 
-// 
-// #include "rtx.h"
-// #include "pwm.h"
-// 
-// #include "safe.h"
+#include "LogBase.h"
 
 /**
  * Possible outcomes of Logger::log()
@@ -25,7 +13,8 @@ enum class LogResult
 {
     Queued,  ///< Data has been accepted by the logger and will be written
     Dropped, ///< Buffers are currently full, data will not be written. Sorry :(
-    Ignored  ///< Logger is currently stopped, data will not be written
+    Ignored, ///< Logger is currently stopped, data will not be written
+    TooLarge ///< Data is too large to be logged. Increase maxRecordSize
 };
 
 /**
@@ -62,11 +51,11 @@ public:
     
     /**
      * Nonblocking call. Call this function to log a class.
-     * \param t The class to be logged, must be serializable using cereal.
+     * \param lb The class to be logged, read the LogBase documentation for
+     * requirements.
      * \return whether the class has been logged
      */
-    template<typename T>
-    LogResult log(const T& t);
+    LogResult log(const LogBase& lb);
     
 private:
     Logger();
@@ -96,8 +85,6 @@ private:
      * Log logger stats using the logger itself
      */
     void logStats();
-    
-    
     
     static const unsigned int filenameMaxRetry=100;
     static const unsigned int maxRecordSize=256;
@@ -146,20 +133,3 @@ private:
     int statBufferFilled=0;   ///< Number of buffers filled
     int statBufferWritten=0;  ///< Number of buffers successfully written to disk
 };
-
-template<typename T>
-LogResult Logger::log(const T& t)
-{
-//     Record sample=readSensors();
-//     processSensorData(sample);
-//     {
-//         FastInterruptDisableLock dLock;
-//         if(queuedSamples.IRQput(sample)==false) statDroppedSamples++;
-//         else statQueuePush++;
-//         //TODO use a fucking costant NO MAGIC NUMBER :D
-//         if(wakeupTime%150==0){
-//             rtx->writeRecord(&sample);
-//         }
-//     }
-    return LogResult::Ignored;
-}
