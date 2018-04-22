@@ -66,6 +66,9 @@ void Logger::stop()
 
 LogResult Logger::log(const LogBase& lb)
 {
+    //Performance hack, the actual check is done after interrupts are disabled
+    if(started==false) return LogResult::Ignored;
+    
     //TODO: to increase performance, make a custom ostream/streambuf that
     //writes dirctly to the Record eliminating heap usage within stringstream
     stringstream ss;
@@ -83,25 +86,28 @@ LogResult Logger::log(const LogBase& lb)
         up.release();
         throw;
     }
-    ss.seekp(0,ios::end);
-    unsigned int size=ss.tellp();
     
-    //FIXME from here change
-    if(size>maxRecordSize) return LogResult::TooLarge;
-    char data[maxRecordSize];
-    ss.read(data,size);
-//     Record sample=readSensors();
-//     processSensorData(sample);
-//     {
-//         FastInterruptDisableLock dLock;
-//         if(queuedSamples.IRQput(sample)==false) statDroppedSamples++;
-//         else statQueuePush++;
-//         //TODO use a fucking costant NO MAGIC NUMBER :D
-//         if(wakeupTime%150==0){
-//             rtx->writeRecord(&sample);
-//         }
-//     }
-    return LogResult::Ignored;
+    //Transfer the serialized data from the stringstream to the record
+    Record record;
+    ss.seekp(0,ios::end);
+    record.size=ss.tellp();
+    if(record.size>maxRecordSize)
+    {
+        statTooLargeSample++;
+        return LogResult::TooLarge;
+    }
+    ss.read(record.data,record.size);
+    
+    // Critical section
+    FastInterruptDisableLock dLock;
+    if(started==false) return LogResult::Ignored;
+    if(queuedSamples.IRQput(record)==false)
+    {
+        statDroppedSamples++;
+        return LogResult::Dropped;
+    }
+    statQueuePush++;
+    return LogResult::Queued;
 }
 
 Logger::Logger()
