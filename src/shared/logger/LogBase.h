@@ -87,3 +87,44 @@ inline std::ostream& operator<<(std::ostream& os, const LogBase& lb)
     lb.print(os);
     return os;
 }
+
+/**
+ * Statistics for the logger
+ */
+class LogStats : public LogBase
+{
+public:
+    /**
+     * Constructor
+     */
+    LogStats();
+    
+    /**
+     * Used by cereal to serialize the class
+     * \param ar a cereal archive
+     */
+    template<typename Archive>
+    void serialize(Archive& ar)
+    {
+        ar(cereal::base_class<LogBase>(this),
+            statTooLargeSamples,statDroppedSamples,statQueuedSamples,
+            statBufferFilled,statBufferWritten,statWriteFailed,
+            statWriteTime,statMaxWriteTime);
+    }
+    
+    /**
+     * Print the class fields to an ostream.
+     * Used by the program that decodes the logged data after the flight.
+     * \param os ostream where to print the class fields
+     */
+    void print(std::ostream& os) const;
+    
+    int statTooLargeSamples=0; ///< Number of dropped samples because too large
+    int statDroppedSamples=0;  ///< Number of dropped samples due to fifo full
+    int statQueuedSamples=0;   ///< Number of samples written to buffer
+    int statBufferFilled=0;    ///< Number of buffers filled
+    int statBufferWritten=0;   ///< Number of buffers written to disk
+    int statWriteFailed=0;     ///< Number of fwrite() that failed
+    int statWriteTime=0;       ///< Time to perform an fwrite() of a buffer
+    int statMaxWriteTime=0;    ///< Max time to perform an fwrite() of a buffer  
+};

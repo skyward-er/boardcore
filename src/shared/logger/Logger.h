@@ -2,6 +2,7 @@
 #pragma once
 
 #include <cstdio>
+#include <queue>
 #include <list>
 #include <miosix.h>
 #include "LogBase.h"
@@ -24,11 +25,18 @@ class Logger
 {
 public:
     /**
+     * \return an instance to the logger
+     */
+    static Logger& instance();
+    
+    /**
      * Blocking call. May take a long time.
      * 
      * Call this function to start the logger.
      * When this function returns, the logger is started, and subsequent calls
      * to log will actually log the data.
+     * 
+     * \throws runtime_error if the log could not be opened
      */
     void start();
     
@@ -62,14 +70,8 @@ private:
     Logger(const Logger&)=delete;
     Logger& operator= (const Logger&)=delete;
     
-    static void packThreadLauncher(void *argv);
     static void writeThreadLauncher(void *argv);
     static void statsThreadLauncher(void *argv);
-    
-    /**
-     * This thread packs queued data in buffers to optimize write throughput
-     */
-    void packThread();
     
     /**
      * This thread writes packed buffers to disk
@@ -86,19 +88,10 @@ private:
      */
     void logStats();
     
-    static const unsigned int filenameMaxRetry=100;
-    static const unsigned int maxRecordSize=256;
-    static const unsigned int numFifoRecords=64;
-    static const unsigned int bufferSize=32*1024; ///< Size of buffer
-    static const unsigned int numBuffers=3;       ///< Number of buffers
-
-    class Record
-    {
-    public:
-        Record() : size(0) {}
-        char data[maxRecordSize];
-        unsigned int size;
-    };
+    static const unsigned int filenameMaxRetry=100; ///< Limit on new filename
+    static const unsigned int maxDataSize=256;      ///< Limit on logged data
+    static const unsigned int bufferSize=32*1024;   ///< Size of each buffer
+    static const unsigned int numBuffers=4;         ///< Number of buffers
     
     class Buffer
     {
@@ -108,29 +101,20 @@ private:
         unsigned int size;
     };
 
-    /// This is a FIFO buffer between senseThread() and packThread()
-    miosix::Queue<Record,numFifoRecords> queuedSamples;
+    std::queue<Buffer *,std::list<Buffer *>> fullList;  ///< Full buffers
+    std::queue<Buffer *,std::list<Buffer *>> emptyList; ///< Empty buffers
+    miosix::Mutex mutex;  ///< To allow concurrent access to the queues
+    miosix::Mutex mutex2; ///< To allow concurrent log
+    miosix::ConditionVariable cond; ///< To lock when buffers are all empty
+    
+    Buffer *currentBuffer=nullptr; ///< Producer side current buffer
 
-    std::list<Buffer *> fullList;  ///< Buffers between packThread() and writeThread()
-    std::list<Buffer *> emptyList; ///< Buffers between packThread() and writeThread()
-    miosix::FastMutex listHandlingMutex;   ///< To allow concurrent access to the lists
-    miosix::ConditionVariable listWaiting; ///< To lock when buffers are all full/empty
-
-    miosix::Thread *statsT;   ///< Thred printing stats
     miosix::Thread *writeT;   ///< Thread writing data to disk
-    miosix::Thread *packT;    ///< Thread packing queued data in buffers
+    miosix::Thread *statsT;   ///< Thred printing stats
     
     volatile bool started=false;///< Logger is started and accepting data
-    bool stopSensing=false;   ///< Signals threads to stop and terminate
+    bool stopSensing=true;      ///< Signals threads to stop and terminate
 
     FILE *file;
-
-    int statTooLargeSample=0; ///< Number of dropped samples because too large
-    int statDroppedSamples=0; ///< Number of dropped sample due to fifo full
-    int statWriteFailed=0;    ///< Number of fwrite() that failed
-    int statWriteTime=0;      ///< Time to perform an fwrite() of a buffer
-    int statMaxWriteTime=0;   ///< Max time to perform an fwrite() of a buffer
-    int statQueuePush=0;      ///< Number of records successfully pushed to queue
-    int statBufferFilled=0;   ///< Number of buffers filled
-    int statBufferWritten=0;  ///< Number of buffers successfully written to disk
+    LogStats s;
 };
