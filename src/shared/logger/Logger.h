@@ -90,7 +90,7 @@ private:
     
     static const unsigned int filenameMaxRetry=100; ///< Limit on new filename
     static const unsigned int maxDataSize=256;      ///< Limit on logged data
-    static const unsigned int bufferSize=32*1024;   ///< Size of each buffer
+    static const unsigned int bufferSize=128*1024;  ///< Size of each buffer
     static const unsigned int numBuffers=4;         ///< Number of buffers
     
     class Buffer
