@@ -46,9 +46,10 @@ CEREAL_REGISTER_TYPE(Dummy);
 void logthread(void*)
 {
     Logger& log=Logger::instance();
-    for(;;)
+    const int period=5;
+    for(auto t=getTick();;t+=period)
     {
-        Thread::sleep(5);
+        Thread::sleepUntil(t);
         for(int i=0;i<5;i++)
         {
             Dummy d;
