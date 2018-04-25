@@ -191,6 +191,8 @@ void Logger::writeThread()
             size_t result=fwrite(buffer->data,1,buffer->size,file);
             if(result!=buffer->size)
             {
+                //If this fails and your board uses SDRAM,
+                //define and increase OVERRIDE_SD_CLOCK_DIVIDER_MAX
                 //perror("fwrite");
                 s.statWriteFailed++;
             } else s.statBufferWritten++;
