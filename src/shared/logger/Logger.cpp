@@ -20,6 +20,7 @@ Logger& Logger::instance()
 
 void Logger::start()
 {
+    if(started) return;
     stopSensing=false;
     
     char filename[32];
@@ -55,6 +56,7 @@ void Logger::start()
 
 void Logger::stop()
 {
+    if(started==false) return;
     logStats();
     started=false;
     {
@@ -185,9 +187,13 @@ void Logger::writeThread()
             Timer timer;
             timer.start();
             ledOn();
-            if(fwrite(buffer->data,1,buffer->size,file)!=buffer->size)
+            
+            size_t result=fwrite(buffer->data,1,buffer->size,file);
+            if(result!=buffer->size)
+            {
+                //perror("fwrite");
                 s.statWriteFailed++;
-            else s.statBufferWritten++;
+            } else s.statBufferWritten++;
             ledOff();
             timer.stop();
             s.statWriteTime=timer.interval();
