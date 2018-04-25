@@ -58,6 +58,15 @@ public:
     LogBase();
     
     /**
+     * Set timestamp for this class
+     * \param timestamp timestamp
+     */
+    void setTimestamp(long long timestamp)
+    {
+        this->timestamp=timestamp;
+    }
+    
+    /**
      * Used by cereal to serialize the class
      * \param ar a cereal archive
      */

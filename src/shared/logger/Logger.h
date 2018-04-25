@@ -86,7 +86,7 @@ private:
     /**
      * Log logger stats using the logger itself
      */
-    void logStats() { s.timestamp=miosix::getTick(); log(s); }
+    void logStats() { s.setTimestamp(miosix::getTick()); log(s); }
     
     static const unsigned int filenameMaxRetry=100; ///< Limit on new filename
     static const unsigned int maxDataSize=256;      ///< Limit on logged data
