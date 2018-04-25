@@ -86,7 +86,7 @@ private:
     /**
      * Log logger stats using the logger itself
      */
-    void logStats();
+    void logStats() { log(s); }
     
     static const unsigned int filenameMaxRetry=100; ///< Limit on new filename
     static const unsigned int maxDataSize=256;      ///< Limit on logged data
@@ -115,6 +115,6 @@ private:
     volatile bool started=false;///< Logger is started and accepting data
     bool stopSensing=true;      ///< Signals threads to stop and terminate
 
-    FILE *file;
-    LogStats s;
+    FILE *file; ///< Log file
+    LogStats s; ///< Logger stats
 };

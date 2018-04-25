@@ -4,7 +4,6 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <stdexcept>
-#include <cereal/archives/portable_binary.hpp>
 
 using namespace std;
 using namespace miosix;
@@ -29,10 +28,10 @@ void Logger::start()
         sprintf(filename,"/sd/%02d.dat",i);
         struct stat st;
         if(stat(filename,&st)==0) continue; //File exists
-        if(i==filenameMaxRetry-1) puts("Too many existing files");
+        if(i==filenameMaxRetry-1) puts("Too many files, appending to last");
     }
     
-    file=fopen(filename,"a+");
+    file=fopen(filename,"ab");
     if(file==NULL) throw runtime_error("Error opening log file");
     setbuf(file,NULL);
     
@@ -61,10 +60,12 @@ void Logger::stop()
         //We lock mutex2 to be sure no other caller is still executing a log()
         Lock<Mutex> l2(mutex2);
         Lock<Mutex> l(mutex);
-        fullList.push(currentBuffer);
-        cond.broadcast();
-        currentBuffer=nullptr;
-        s.statBufferFilled++;
+        if(currentBuffer)
+        {
+            fullList.push(currentBuffer);
+            s.statBufferFilled++;
+            currentBuffer=nullptr;
+        }
     }
     stopSensing=true;
     cond.broadcast();
@@ -75,10 +76,9 @@ void Logger::stop()
 
 LogResult Logger::log(const LogBase& lb)
 {
-    if(started==false) return LogResult::Ignored;
-    
     //TODO: due to using a mutex log() may block, evaluate other sync primitives
     Lock<Mutex> l2(mutex2);
+    if(started==false) return LogResult::Ignored;
     
     //First, make sure we have a valid buffer
     if(currentBuffer==nullptr)
@@ -216,9 +216,4 @@ void Logger::statsThread()
     } catch(exception& e) {
         printf("Error: statsThread failed due to an exception: %s\n",e.what());
     }
-}
-
-void Logger::logStats()
-{
-
 }
