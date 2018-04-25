@@ -27,7 +27,8 @@ void Logger::start()
     {
         sprintf(filename,"/sd/%02d.dat",i);
         struct stat st;
-        if(stat(filename,&st)==0) continue; //File exists
+        if(stat(filename,&st)!=0) break;
+        //File exists
         if(i==filenameMaxRetry-1) puts("Too many files, appending to last");
     }
     
