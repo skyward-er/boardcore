@@ -1,6 +1,8 @@
 
 #include "LogBase.h"
+#ifdef _MIOSIX
 #include <miosix.h>
+#endif //_MIOSIX
 
 using namespace std;
 
@@ -29,6 +31,7 @@ LogStats::LogStats() {}
 
 void LogStats::print(ostream& os) const
 {
+    LogBase::print(os);
     os<<"ls: "<<statTooLargeSamples
       <<"ds: "<<statDroppedSamples
       <<"qs: "<<statQueuedSamples
