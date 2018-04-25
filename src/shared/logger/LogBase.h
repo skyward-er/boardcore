@@ -3,6 +3,7 @@
 
 #include <ostream>
 #include <cereal/types/polymorphic.hpp>
+#include <cereal/archives/portable_binary.hpp>
 
 /**
  * Base class from which every class that is loggable has to derive.
