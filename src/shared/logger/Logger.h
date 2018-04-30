@@ -84,20 +84,6 @@ public:
      */
     bool isStarted() const { return started; }
 
-#ifdef USE_CEREAL
-
-    /**
-     * Nonblocking call. Call this function to log a class.
-     * \param lb The class to be logged, read the LogBase.h documentation for
-     * requirements.
-     * \return whether the class has been logged
-     *
-     * \throws cereal exceptions
-     */
-    LogResult log(const LogBase &lb);
-    
-#else //USE_CEREAL
-
     /**
      * Nonblocking call. Call this function to log a class.
      * \param lb The class to be logged, read the LogBase.h documentation for
@@ -111,8 +97,6 @@ public:
         return logImpl(typeid(t).name(),&t,sizeof(t));
     }
 
-#endif //USE_CEREAL
-
 private:
     Logger();
     Logger(const Logger &) = delete;
@@ -122,8 +106,6 @@ private:
     static void writeThreadLauncher(void *argv);
     static void statsThreadLauncher(void *argv);
     
-#ifndef USE_CEREAL
-    
     /**
      * Non-template dependente part of log
      * \param name class anem
@@ -131,8 +113,6 @@ private:
      * \param size class size
      */
     LogResult logImpl(const char *name, const void *data, unsigned int size);
-    
-#endif //USE_CEREAL
 
     /**
      * This thread packs logged data into buffers

@@ -44,27 +44,6 @@
 
 using namespace std;
 
-#ifdef USE_CEREAL
-
-using namespace cereal;
-
-int main(int argc, char *argv[])
-try {
-    if(argc!=2) return 1;
-    ifstream in(argv[1]);
-    for(;;)
-    {
-        PortableBinaryInputArchive archive(in);
-        unique_ptr<LogBase> lb;
-        archive(lb);
-        cout<<*lb<<endl;
-    }
-} catch(cereal::Exception&) {
-    return 0;
-}
-
-#else //USE_CEREAL
-
 string demangle(const string& name)
 {
     string result=name;
@@ -119,5 +98,3 @@ try {
 } catch(exception&) {
     return 0;
 }
-
-#endif //USE_CEREAL
