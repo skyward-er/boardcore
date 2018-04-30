@@ -62,6 +62,8 @@ public:
      * \param lb The class to be logged, read the LogBase documentation for
      * requirements.
      * \return whether the class has been logged
+     * 
+     * \throws cereal exceptions
      */
     LogResult log(const LogBase& lb);
     
@@ -70,8 +72,14 @@ private:
     Logger(const Logger&)=delete;
     Logger& operator= (const Logger&)=delete;
     
+    static void packThreadLauncher(void *argv);
     static void writeThreadLauncher(void *argv);
     static void statsThreadLauncher(void *argv);
+    
+    /**
+     * This thread packs logged data into buffers
+     */
+    void packThread();
     
     /**
      * This thread writes packed buffers to disk
@@ -89,10 +97,31 @@ private:
     void logStats() { s.setTimestamp(miosix::getTick()); log(s); }
     
     static const unsigned int filenameMaxRetry=100; ///< Limit on new filename
-    static const unsigned int maxDataSize=256;      ///< Limit on logged data
+    static const unsigned int maxRecordSize=256;    ///< Limit on logged data
+    static const unsigned int numRecords=1024;      ///< Size of record queues
     static const unsigned int bufferSize=64*1024;   ///< Size of each buffer
     static const unsigned int numBuffers=8;         ///< Number of buffers
     
+    /**
+     * A record is a single serialized logged class. Records are used to
+     * make log() lock-free. Since each call to log() works on its independent
+     * Record, calls to log do not need a global mutex which could block
+     * threads calling log() concurrently
+     */
+    class Record
+    {
+    public:
+        Record() : size(0) {}
+        char data[maxRecordSize];
+        unsigned int size;
+    };
+    
+    /**
+     * A buffer is what is written on disk. It is filled by packing records.
+     * The reason why we don't write records directly is that they are too
+     * small to efficiently use disk bandwidth. SD cards are much faster when
+     * data is written in large chunks.
+     */
     class Buffer
     {
     public:
@@ -101,19 +130,18 @@ private:
         unsigned int size;
     };
 
+    miosix::Queue<Record *,numRecords> fullQueue;       ///< Full records
+    miosix::Queue<Record *,numRecords> emptyQueue;      ///< Empty Records
     std::queue<Buffer *,std::list<Buffer *>> fullList;  ///< Full buffers
     std::queue<Buffer *,std::list<Buffer *>> emptyList; ///< Empty buffers
-    miosix::Mutex mutex;  ///< To allow concurrent access to the queues
-    miosix::Mutex mutex2; ///< To allow concurrent log
+    miosix::FastMutex mutex;  ///< To allow concurrent access to the queues
     miosix::ConditionVariable cond; ///< To lock when buffers are all empty
-    
-    Buffer *currentBuffer=nullptr; ///< Producer side current buffer
 
+    miosix::Thread *packT;    ///< Thread packing logged data
     miosix::Thread *writeT;   ///< Thread writing data to disk
     miosix::Thread *statsT;   ///< Thred printing stats
     
     volatile bool started=false;///< Logger is started and accepting data
-    bool stopSensing=true;      ///< Signals threads to stop and terminate
 
     FILE *file; ///< Log file
     LogStats s; ///< Logger stats
