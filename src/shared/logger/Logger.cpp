@@ -1,3 +1,29 @@
+/***************************************************************************
+ *   Copyright (C) 2018 by Terraneo Federico                               *
+ *                                                                         *
+ *   This program is free software; you can redistribute it and/or modify  *
+ *   it under the terms of the GNU General Public License as published by  *
+ *   the Free Software Foundation; either version 2 of the License, or     *
+ *   (at your option) any later version.                                   *
+ *                                                                         *
+ *   This program is distributed in the hope that it will be useful,       *
+ *   but WITHOUT ANY WARRANTY; without even the implied warranty of        *
+ *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the         *
+ *   GNU General Public License for more details.                          *
+ *                                                                         *
+ *   As a special exception, if other files instantiate templates or use   *
+ *   macros or inline functions from this file, or you compile this file   *
+ *   and link it with other works to produce a work based on this file,    *
+ *   this file does not by itself cause the resulting work to be covered   *
+ *   by the GNU General Public License. However the source code for this   *
+ *   file must still be made available in accordance with the GNU General  *
+ *   Public License. This exception does not invalidate any other reasons  *
+ *   why a work based on this file might be covered by the GNU General     *
+ *   Public License.                                                       *
+ *                                                                         *
+ *   You should have received a copy of the GNU General Public License     *
+ *   along with this program; if not, see <http://www.gnu.org/licenses/>   *
+ ***************************************************************************/ 
 
 #include <fcntl.h>
 #include <sys/stat.h>
@@ -94,6 +120,8 @@ void Logger::stop()
     fclose(file);
 }
 
+#ifdef USE_CEREAL
+
 LogResult Logger::log(const LogBase& lb)
 {
     if (started == false)
@@ -149,6 +177,8 @@ LogResult Logger::log(const LogBase& lb)
     return LogResult::Queued;
 }
 
+#endif //USE_CEREAL
+
 Logger::Logger()
 {
     // Allocate buffers and put them in the empty list
@@ -172,6 +202,43 @@ void Logger::statsThreadLauncher(void* argv)
 {
     reinterpret_cast<Logger*>(argv)->statsThread();
 }
+
+#ifndef USE_CEREAL
+
+LogResult Logger::logImpl(const char* name, const void* data, unsigned int size)
+{
+    if (started == false)
+        return LogResult::Ignored;
+    
+    unsigned int nameSize = strlen(name);
+    unsigned int recordSize = nameSize + 1 + size;
+    if (recordSize > maxRecordSize)
+    {
+        s.statTooLargeSamples++;
+        return LogResult::TooLarge;
+    }
+
+    Record* record = nullptr;
+    {
+        FastInterruptDisableLock dLock;
+        // We disable interrupts because IRQget() is nonblocking, unlike get()
+        if (emptyQueue.IRQget(record) == false)
+        {
+            s.statDroppedSamples++;
+            return LogResult::Dropped;
+        }
+    }
+    
+    memcpy(record->data, name, nameSize + 1); //Copy also the \0
+    memcpy(record->data + nameSize + 1, data, size);
+    record->size = recordSize;
+
+    fullQueue.put(record);
+    s.statQueuedSamples++;
+    return LogResult::Queued;
+}
+
+#endif //USE_CEREAL
 
 void Logger::packThread()
 {
