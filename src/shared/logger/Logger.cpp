@@ -173,20 +173,12 @@ void Logger::packThread()
      * can proceed in parallel.
      */
     try {
-        Buffer *buffer=nullptr;
         for(;;)
         {
+            Buffer *buffer=nullptr;
             {
                 Lock<FastMutex> l(mutex);
-                //Put back previous buffer (except first time)
-                if(buffer)
-                {
-                    fullList.push(buffer);
-                    cond.broadcast();
-                    s.statBufferFilled++;
-                }
-                
-                //Get a full buffer, wait if none is available
+                //Get an empty buffer, wait if none is available
                 while(emptyList.empty()) cond.wait(l);
                 buffer=emptyList.front();
                 emptyList.pop();
@@ -200,7 +192,8 @@ void Logger::packThread()
                 //When stop() is called, it pushes a nullptr signaling to stop
                 if(record==nullptr)
                 {
-                    fullList.push(buffer);
+                    Lock<FastMutex> l(mutex);
+                    fullList.push(buffer);  //Don't lose the buffer
                     fullList.push(nullptr); //Signal writeThread to stop
                     cond.broadcast();
                     s.statBufferFilled++;
@@ -211,6 +204,14 @@ void Logger::packThread()
                 buffer->size+=record->size;
                 emptyQueue.put(record);
             } while(bufferSize-buffer->size>=maxRecordSize);
+            
+            {
+                Lock<FastMutex> l(mutex);
+                //Put back full buffer
+                fullList.push(buffer);
+                cond.broadcast();
+                s.statBufferFilled++;
+            }
         }
     } catch(exception& e) {
         printf("Error: packThread failed due to an exception: %s\n",e.what());
@@ -220,18 +221,11 @@ void Logger::packThread()
 void Logger::writeThread()
 {
     try {
-        Buffer *buffer=nullptr;
         for(;;)
         {
+            Buffer *buffer=nullptr;
             {
                 Lock<FastMutex> l(mutex);
-                //Put back previous buffer (except first time)
-                if(buffer)
-                {
-                    emptyList.push(buffer);
-                    cond.broadcast();
-                }
-                
                 //Get a full buffer, wait if none is available
                 while(fullList.empty()) cond.wait(l);
                 buffer=fullList.front();
@@ -259,6 +253,13 @@ void Logger::writeThread()
             timer.stop();
             s.statWriteTime=timer.interval();
             s.statMaxWriteTime=max(s.statMaxWriteTime,s.statWriteTime);
+            
+            {
+                Lock<FastMutex> l(mutex);
+                //Put back empty buffer
+                emptyList.push(buffer);
+                cond.broadcast();
+            }
         }
     } catch(exception& e) {
         printf("Error: writeThread failed due to an exception: %s\n",e.what());
