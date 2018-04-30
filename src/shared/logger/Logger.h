@@ -86,8 +86,13 @@ public:
 
     /**
      * Nonblocking call. Call this function to log a class.
-     * \param lb The class to be logged, read the LogBase.h documentation for
-     * requirements.
+     * \param t the class to be logged. This class has the following
+     * requirements:
+     * - it must be trivially_copyable, so no pointers or references inside
+     *   the class, no stl containers, no virtual functions, no base classes.
+     * - it must have a "void print(std::ostream& os) const" member function
+     *   that prints all its data fields in text form (this is not used by the
+     *   logger, but by the log decoder program)
      * \return whether the class has been logged
      */
     template<typename T>
