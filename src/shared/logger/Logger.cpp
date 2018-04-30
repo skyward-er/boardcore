@@ -120,65 +120,6 @@ void Logger::stop()
     fclose(file);
 }
 
-#ifdef USE_CEREAL
-
-LogResult Logger::log(const LogBase& lb)
-{
-    if (started == false)
-        return LogResult::Ignored;
-
-    Record* record = nullptr;
-    {
-        FastInterruptDisableLock dLock;
-        // We disable interrupts because IRQget() is nonblocking, unlike get()
-        if (emptyQueue.IRQget(record) == false)
-        {
-            s.statDroppedSamples++;
-            return LogResult::Dropped;
-        }
-    }
-    record->size = 0;
-
-    // TODO: to increase performance, make a custom ostream/streambuf that
-    // writes dirctly to the buffer eliminating heap usage within stringstream
-    stringstream ss;
-    unique_ptr<const LogBase> up(&lb);
-    try
-    {
-        cereal::PortableBinaryOutputArchive archive(ss);
-        archive(up);
-        up.release();
-    }
-    catch (...)
-    {
-        // We are using unique_ptr only because cereal requires it.
-        // We are not the owner of the object and we must not delete it.
-        // If an exception is thrown, however, unique_ptr deletes the object.
-        // This may be one of the very few cases where a try/catch is used
-        // *not* to delete an object.
-        up.release();
-        emptyQueue.put(record);  // Don't lose the record
-        throw;
-    }
-
-    ss.seekp(0, ios::end);
-    unsigned int dataSize = ss.tellp();
-    if (dataSize > maxRecordSize)
-    {
-        s.statTooLargeSamples++;
-        emptyQueue.put(record);  // Don't lose the record
-        return LogResult::TooLarge;
-    }
-    ss.read(record->data, dataSize);
-    record->size = dataSize;
-
-    fullQueue.put(record);
-    s.statQueuedSamples++;
-    return LogResult::Queued;
-}
-
-#endif //USE_CEREAL
-
 Logger::Logger()
 {
     // Allocate buffers and put them in the empty list
@@ -202,8 +143,6 @@ void Logger::statsThreadLauncher(void* argv)
 {
     reinterpret_cast<Logger*>(argv)->statsThread();
 }
-
-#ifndef USE_CEREAL
 
 LogResult Logger::logImpl(const char* name, const void* data, unsigned int size)
 {
@@ -237,8 +176,6 @@ LogResult Logger::logImpl(const char* name, const void* data, unsigned int size)
     s.statQueuedSamples++;
     return LogResult::Queued;
 }
-
-#endif //USE_CEREAL
 
 void Logger::packThread()
 {

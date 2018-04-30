@@ -29,44 +29,6 @@
 #include <miosix.h>
 #endif //_MIOSIX
 
-#ifdef USE_CEREAL
-
-class Dummy : public LogBase
-{
-public:
-    Dummy() { memset(x,0,sizeof(x)); }
-    
-    void correctValue()
-    {
-        for(int i=0;i<num;i++) x[i]=42;
-    }
-
-    template<typename Archive>
-    void serialize(Archive& ar)
-    {
-        ar(cereal::base_class<LogBase>(this),x);
-    }
-    
-    void print(std::ostream& os) const
-    {
-        LogBase::print(os);
-        for(int i=0;i<num;i++)
-        {
-            if(x[i]==42) continue;
-            os<<"unserialized incorrectly, x["<<i<<"]="<<x[i];
-            return;
-        }
-        os<<"ok";
-    }
-private:
-    static const int num=50;
-    int x[num];
-};
-
-CEREAL_REGISTER_TYPE(Dummy);
-
-#else //USE_CEREAL
-
 class Dummy
 {
 public:
@@ -101,5 +63,3 @@ private:
     static const int num=50;
     int x[num];
 };
-
-#endif //USE_CEREAL
