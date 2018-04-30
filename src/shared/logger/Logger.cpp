@@ -309,10 +309,10 @@ void Logger::statsThread()
             if (started == false)
                 return;
             logStats();
-            printf("ls:%d ds:%d qs:%d bf:%d bw:%d wf:%d wt:%d mwt:%d\n",
-                   s.statTooLargeSamples, s.statDroppedSamples,
-                   s.statQueuedSamples, s.statBufferFilled, s.statBufferWritten,
-                   s.statWriteFailed, s.statWriteTime, s.statMaxWriteTime);
+//             printf("ls:%d ds:%d qs:%d bf:%d bw:%d wf:%d wt:%d mwt:%d\n",
+//                    s.statTooLargeSamples, s.statDroppedSamples,
+//                    s.statQueuedSamples, s.statBufferFilled, s.statBufferWritten,
+//                    s.statWriteFailed, s.statWriteTime, s.statMaxWriteTime);
         }
     }
     catch (exception& e)
