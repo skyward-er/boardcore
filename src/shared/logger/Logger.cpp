@@ -21,7 +21,6 @@ Logger& Logger::instance()
 void Logger::start()
 {
     if(started) return;
-    stopSensing=false;
     
     char filename[32];
     for(unsigned int i=0;i<filenameMaxRetry;i++)
@@ -37,16 +36,37 @@ void Logger::start()
     if(file==NULL) throw runtime_error("Error opening log file");
     setbuf(file,NULL);
     
+    //The boring part, start threads one by one and if they fail, undo
+    //Perhaps excessive defensive programming as thread creation failure is
+    //highly unlikely (only if ram is full)
+    
+    packT=Thread::create(packThreadLauncher,4096,1,this,Thread::JOINABLE);
+    if(!packT)
+    {
+        fclose(file);
+        throw runtime_error("Error creating pack thread");
+    }
+    
     writeT=Thread::create(writeThreadLauncher,4096,1,this,Thread::JOINABLE);
     if(!writeT)
     {
+        fullQueue.put(nullptr); //Signal packThread to stop
+        packT->join();
+        //packThread has pushed a buffer and a nullptr to writeThread, remove it
+        while(fullList.front()!=nullptr)
+        {
+            emptyList.push(fullList.front());
+            fullList.pop();
+        }
+        fullList.pop(); //Remove nullptr
         fclose(file);
         throw runtime_error("Error creating write thread");
     }
     statsT=Thread::create(statsThreadLauncher,4096,1,this,Thread::JOINABLE);
     if(!statsT)
     {
-        stopSensing=true;
+        fullQueue.put(nullptr); //Signal packThread to stop
+        packT->join();
         writeT->join();
         fclose(file);
         throw runtime_error("Error creating stats thread");
@@ -59,19 +79,8 @@ void Logger::stop()
     if(started==false) return;
     logStats();
     started=false;
-    {
-        //We lock mutex2 to be sure no other caller is still executing a log()
-        Lock<Mutex> l2(mutex2);
-        Lock<Mutex> l(mutex);
-        if(currentBuffer)
-        {
-            fullList.push(currentBuffer);
-            s.statBufferFilled++;
-            currentBuffer=nullptr;
-        }
-    }
-    stopSensing=true;
-    cond.broadcast();
+    fullQueue.put(nullptr); //Signal packThread to stop
+    packT->join();
     writeT->join();
     statsT->join();
     fclose(file);
@@ -79,24 +88,20 @@ void Logger::stop()
 
 LogResult Logger::log(const LogBase& lb)
 {
-    //TODO: due to using a mutex log() may block, evaluate other sync primitives
-    Lock<Mutex> l2(mutex2);
     if(started==false) return LogResult::Ignored;
     
-    //First, make sure we have a valid buffer
-    if(currentBuffer==nullptr)
+    Record *record=nullptr;
     {
-        Lock<Mutex> l(mutex);
-        if(emptyList.empty())
+        FastInterruptDisableLock dLock;
+        //We disable interrupts because IRQget() is nonblocking, unlike get()
+        if(emptyQueue.IRQget(record)==false)
         {
             s.statDroppedSamples++;
             return LogResult::Dropped;
         }
-        currentBuffer=emptyList.front();
-        emptyList.pop();
-        currentBuffer->size=0;
     }
-    
+    record->size=0;
+
     //TODO: to increase performance, make a custom ostream/streambuf that
     //writes dirctly to the buffer eliminating heap usage within stringstream
     stringstream ss;
@@ -112,36 +117,22 @@ LogResult Logger::log(const LogBase& lb)
         // This may be one of the very few cases where a try/catch is used
         // *not* to delete an object.
         up.release();
+        emptyQueue.put(record); //Don't lose the record
         throw;
     }
     
     ss.seekp(0,ios::end);
     unsigned int dataSize=ss.tellp();
-    if(dataSize>maxDataSize)
+    if(dataSize>maxRecordSize)
     {
         s.statTooLargeSamples++;
+        emptyQueue.put(record); //Don't lose the record
         return LogResult::TooLarge;
     }
-    ss.read(currentBuffer->data+currentBuffer->size,dataSize);
-    currentBuffer->size+=dataSize;
+    ss.read(record->data,dataSize);
+    record->size=dataSize;
     
-    //If there's not enough space, commit the buffer
-    if(bufferSize-currentBuffer->size<maxDataSize)
-    {
-        Lock<Mutex> l(mutex);
-        fullList.push(currentBuffer);
-        cond.broadcast();
-        currentBuffer=nullptr;
-        s.statBufferFilled++;
-        //Optimization: see if we can already find a buffer (saves a mutex lock)
-        if(emptyList.empty()==false)
-        {
-            currentBuffer=emptyList.front();
-            emptyList.pop();
-            currentBuffer->size=0;
-        }
-    }
-    
+    fullQueue.put(record);
     s.statQueuedSamples++;
     return LogResult::Queued;
 }
@@ -150,6 +141,12 @@ Logger::Logger()
 {
     //Allocate buffers and put them in the empty list
     for(unsigned int i=0;i<numBuffers;i++) emptyList.push(new Buffer);
+    for(unsigned int i=0;i<numRecords;i++) emptyQueue.put(new Record);
+}
+
+void Logger::packThreadLauncher(void* argv)
+{
+    reinterpret_cast<Logger*>(argv)->packThread();
 }
 
 void Logger::writeThreadLauncher(void* argv)
@@ -162,6 +159,64 @@ void Logger::statsThreadLauncher(void* argv)
     reinterpret_cast<Logger*>(argv)->statsThread();
 }
 
+void Logger::packThread()
+{
+    /*
+     * The first implementation of this class had the log() function write
+     * directly the serialized data to the buffers. So, no Records nor
+     * packThread existed. However, to be able to call log() concurrently
+     * without messing up the buffer, a mutex was needed. Thus, if many
+     * threads call log(), contention on that mutex would occur, serializing
+     * accesses and slowing down the (potentially real-time) callers. For this
+     * reason Records and the pack thread were added.
+     * Now each log() works independently on its own Record, and log() accesses
+     * can proceed in parallel.
+     */
+    try {
+        Buffer *buffer=nullptr;
+        for(;;)
+        {
+            {
+                Lock<FastMutex> l(mutex);
+                //Put back previous buffer (except first time)
+                if(buffer)
+                {
+                    fullList.push(buffer);
+                    cond.broadcast();
+                    s.statBufferFilled++;
+                }
+                
+                //Get a full buffer, wait if none is available
+                while(emptyList.empty()) cond.wait(l);
+                buffer=emptyList.front();
+                emptyList.pop();
+                buffer->size=0;
+            }
+            
+            do {
+                Record *record=nullptr;
+                fullQueue.get(record);
+                
+                //When stop() is called, it pushes a nullptr signaling to stop
+                if(record==nullptr)
+                {
+                    fullList.push(buffer);
+                    fullList.push(nullptr); //Signal writeThread to stop
+                    cond.broadcast();
+                    s.statBufferFilled++;
+                    return;
+                }
+                
+                memcpy(buffer->data+buffer->size,record->data,record->size);
+                buffer->size+=record->size;
+                emptyQueue.put(record);
+            } while(bufferSize-buffer->size>=maxRecordSize);
+        }
+    } catch(exception& e) {
+        printf("Error: packThread failed due to an exception: %s\n",e.what());
+    }
+}
+
 void Logger::writeThread()
 {
     try {
@@ -169,19 +224,22 @@ void Logger::writeThread()
         for(;;)
         {
             {
-                Lock<Mutex> l(mutex);
+                Lock<FastMutex> l(mutex);
                 //Put back previous buffer (except first time)
-                if(buffer) emptyList.push(buffer);
+                if(buffer)
+                {
+                    emptyList.push(buffer);
+                    cond.broadcast();
+                }
                 
                 //Get a full buffer, wait if none is available
-                while(fullList.empty())
-                {
-                    if(stopSensing) return; //Stop only when all buffers written
-                    cond.wait(l);
-                }
+                while(fullList.empty()) cond.wait(l);
                 buffer=fullList.front();
                 fullList.pop();
             }
+            
+            //When packThread stops, it pushes a nullptr signaling to stop
+            if(buffer==nullptr) return;
             
             //Write data to disk
             Timer timer;
@@ -196,6 +254,7 @@ void Logger::writeThread()
                 //perror("fwrite");
                 s.statWriteFailed++;
             } else s.statBufferWritten++;
+
             ledOff();
             timer.stop();
             s.statWriteTime=timer.interval();
@@ -215,7 +274,7 @@ void Logger::statsThread()
         for(;;)
         {
             Thread::sleep(1000);
-            if(stopSensing) return;
+            if(started==false) return;
             logStats();
             printf("ls:%d ds:%d qs:%d bf:%d bw:%d wf:%d wt:%d mwt:%d\n",
                 s.statTooLargeSamples,s.statDroppedSamples,s.statQueuedSamples,
