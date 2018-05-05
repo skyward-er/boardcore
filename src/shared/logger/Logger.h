@@ -98,7 +98,7 @@ public:
     template<typename T>
     LogResult log(const T& t)
     {
-        //static_assert(std::is_trivially_copyable<T>::value);
+        //static_assert(std::is_trivially_copyable<T>::value,"");
         return logImpl(typeid(t).name(),&t,sizeof(t));
     }
 

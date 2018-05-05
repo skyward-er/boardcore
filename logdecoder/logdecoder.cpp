@@ -32,69 +32,27 @@
 
 #include <iostream>
 #include <fstream>
-#include <string>
-#include <map>
-#include <functional>
 #include <stdexcept>
-#include <cxxabi.h>
+#include "logger/Serialization.h"
+
+//TODO: add here include files of serialized classes
 #include "../src/shared/logger/LogBase.h"
 #include "../src/entrypoints/test_logger.h"
 
-//TODO: add here include files of serialized classes
-
 using namespace std;
-
-string demangle(const string& name)
-{
-    string result=name;
-    int status;
-    char* demangled = abi::__cxa_demangle(name.c_str(), NULL, 0, &status);
-    if (status == 0 && demangled)
-        result = demangled;
-    if (demangled)
-        free(demangled);
-    return result;
-}
-
-string readName(ifstream& in)
-{
-    string result;
-    while(char c=in.get()) result+=c; //Not very optimized
-    return result;
-}
-
-map<string,function<void (ostream&,istream&)>> unserializers;
-
-#define REGISTER_UNSERIALIZER(x)                               \
-unserializers[typeid(x).name()]=[](ostream& out, istream& in){ \
-    x object;                                                  \
-    in.read(reinterpret_cast<char*>(&object),sizeof(x));       \
-    object.print(out);                                         \
-}
 
 int main(int argc, char *argv[])
 try {
     if(argc!=2) return 1;
     ifstream in(argv[1]);
     in.exceptions(ios::eofbit);
+    Unserializer us;
 
-    //TODO: Without cereal, you have to register the serialized types
-    REGISTER_UNSERIALIZER(LogStats);
-    REGISTER_UNSERIALIZER(Dummy);
+    //TODO: Register the serialized classes
+    us.registerType<LogStats>();
+    us.registerType<Dummy>();
     
-    for(;;)
-    {
-        string name=readName(in);
-        auto u=unserializers.find(name);
-        if(u==unserializers.end())
-        {
-            cerr<<"Don't know how to unserialize "<<demangle(name)<<endl;
-            return 1;
-        }
-        cout<<"type="<<demangle(name)<<' ';
-        u->second(cout,in);
-        cout<<'\n';
-    }
+    us.unserialize(cout,in);
 } catch(exception&) {
     return 0;
 }
