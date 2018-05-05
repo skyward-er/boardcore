@@ -1,5 +1,5 @@
 /* Copyright (c) 2018 Skyward Experimental Rocketry
- * Authors: Alvise de' Faveri Tron
+ * Authors: Terraneo Federico
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -20,31 +20,56 @@
  * THE SOFTWARE.
  */
 
-#ifndef TCHANDLER_H
-#define TCHANDLER_H
+#include <cstdio>
+#include <logger/Logger.h>
+#include <diagnostic/CpuMeter.h>
+#include "test_logger.h"
 
-#include <Common.h>
-#include "TMTC_Config.h"
+using namespace std;
+using namespace miosix;
 
-/*
- * The TCHandler class contains the functions that handle the TCs receiver from ground. 
- */
-class TCHandler{
-    
-public:
-    /* Constructor */
-    TCHandler() {
-        //TODO: set a reference to the EventBroker
+void logthread(void*)
+{
+    Logger& log=Logger::instance();
+    const int period=5;
+    for(auto t=getTick();;t+=period)
+    {
+        Thread::sleepUntil(t);
+        for(int i=0;i<5;i++)
+        {
+            Dummy d;
+            d.correctValue();
+            log.log(d);
+        }
     }
-    
-    /* Deconstructor */
-    ~TCHandler() {}
+}
 
-    /* PING message handler */
-    static void handlePing(mavlink_ping_t* msg) {
-        printf("Received ping\n");
+void printutil(void*)
+{
+    for(;;)
+    {
+        Thread::sleep(1000);
+        printf("cpu: %5.1f\n",averageCpuUtilization());
     }
+}
 
-};
-
-#endif
+int main()
+{
+    Thread::create(printutil,4096);
+    
+    Logger& log=Logger::instance();
+    log.start();
+    
+    puts("type enter to start test");
+    getchar();
+    
+    Thread::create(logthread,4096);
+    
+    puts("type enter to stop test");
+    getchar();
+    
+    log.stop();
+    
+    puts("stopped");
+    for(;;) { Thread::sleep(1000); }
+}
