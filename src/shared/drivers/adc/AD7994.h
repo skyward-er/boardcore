@@ -86,7 +86,7 @@ public:
     }
 
     /**
-     * Returns a pointer to the lates samples
+     * Returns a pointer to the latest samples
      * @return
      */
     uint16_t* adcDataPtr() { return samples; }
