@@ -28,9 +28,6 @@
 class Transmitter
 {
 public:
-
-	Transmitter();
-
     /*
      * Send a packet. Pure virtual function.
      * @param pkt               Pointer to the packet (needs to be at least pkt_len bytes).
