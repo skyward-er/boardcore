@@ -26,13 +26,15 @@
 #include <Common.h>
 #include <fcntl.h>
 
+#include <drivers/Transmitter.h>
+
 //TODO: change this
 #ifdef _MIOSIX
 #endif  //_MIOSIX
 
 #include "gamma_config.h"  //Defines are in here.
 
-class Gamma868
+class Gamma868 : public Transmitter
 {
 public:
     /*
