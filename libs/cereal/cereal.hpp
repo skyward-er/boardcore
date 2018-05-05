@@ -44,6 +44,18 @@
 #include <cereal/details/helpers.hpp>
 #include <cereal/types/base_class.hpp>
 
+#ifdef _MIOSIX
+#include <sstream>
+namespace std {
+inline string to_string(uint32_t i)
+{
+    ostringstream ss;
+    ss<<i;
+    return ss.str();
+}
+}
+#endif //_MIOSIX
+
 namespace cereal
 {
   // ######################################################################

@@ -29,7 +29,7 @@
 #include <libs/mavlink_skyward_lib/mavlink_lib/skyward/mavlink.h>
 #include "CircularBuffer.h"
 #include "TMTC_Config.h"
-#include "TCHandler.h"
+#include "TCHandlers.h"
 
 /*
  * The TMTCManager class handles the communication with the Ground Station.

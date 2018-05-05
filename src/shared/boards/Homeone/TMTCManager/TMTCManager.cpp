@@ -95,11 +95,9 @@ void TMTCManager::runReceiver() {
 
 			// Handle the message depending on the message type 
 			switch(msg.msgid) {
-			    case MAVLINK_MSG_ID_PING:
+			    default:
 			    {
-			        mavlink_ping_t ping;
-			        mavlink_msg_ping_decode(&msg ,&ping);
-			        TCHandler::handlePing(&ping);
+			        //TIOD
     			    break;
 			    }
 			}
