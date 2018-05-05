@@ -49,10 +49,7 @@ Gamma868::Gamma868(const char *serialPath)
 bool Gamma868::send(const uint8_t* pkt, uint32_t pkt_len)
 {
     // Send to gamma
-    {
-        Lock<FastMutex> l(gammaMutex);
-        write(fd, pkt, pkt_len);
-    }
+    write(fd, pkt, pkt_len);
 
     return true;
 }
@@ -62,10 +59,7 @@ bool Gamma868::send(const uint8_t* pkt, uint32_t pkt_len)
  */
 void Gamma868::receive(uint8_t* pkt, uint32_t pkt_len)
 {
-    {
-        read(fd, pkt, pkt_len);  // Read all the pkt_len chars
-    }
-
+    read(fd, pkt, pkt_len);  // Read all the pkt_len chars
 }
 
 /*
