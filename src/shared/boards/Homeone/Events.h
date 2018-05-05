@@ -1,5 +1,5 @@
-/* Copyright (c) 2017 Skyward Experimental Rocketry
- * Authors: Alvise De Faveri, Nuno Barcellos
+/* Copyright (c) 2015-2018 Skyward Experimental Rocketry
+ * Authors: Luca Erbetta
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -19,23 +19,37 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
+#ifndef SRC_SHARED_BOARDS_HOMEONE_EVENTS_H
+#define SRC_SHARED_BOARDS_HOMEONE_EVENTS_H
 
-#ifndef GAMMA_CONFIG
-#define GAMMA_CONFIG
+#include "events/Event.h"
 
-// DISCOVERY gpio configuration
-typedef miosix::Gpio<GPIOB_BASE, 0> gammaLed;
-typedef miosix::Gpio<GPIOB_BASE, 2> gammaSwitch;
-
-// Module internal config
-struct Configuration
+namespace HomeoneBoard
 {
-    int local_addr[3] = {126, 126, 126};
-    int dest_addr[3]  = {126, 126, 126};
-    int lora_mode     = 1;   // SF6
-    int lora_pow      = 15;  //+20dbm
-    int handshake     = 0;   // No handshake
-    int baudrate      = 0;   // 9600 baud
+/**
+ * Definition of all events in the Homeone Board software
+ *
+ *
+ * Event naming convention:
+ *
+ * EV_<COMPONENT>_<EVENT-NAME>
+ *
+ * Example:
+ *
+ * Component: Flight Mode Manager (FMM)
+ * Event name: Apogee
+ * --> EV_FMM_APOGEE
+ *
+ */
+enum Events : uint8_t
+{
+    EV_FMM_ARM = EV_FIRST_SIGNAL,
+    EV_FMM_DISARM,
+    EV_FMM_LAUNCH,
+    EV_FMM_ASCENT_TIMEOUT,
+    EV_FMM_APOGEE,
+    EV_FMM_MAIN_PARACHUTE_DEPLOY
 };
+}
 
-#endif /* CONFIG_H */
+#endif /* SRC_SHARED_BOARDS_HOMEONE_EVENTS_H */

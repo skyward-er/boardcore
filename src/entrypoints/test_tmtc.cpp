@@ -1,5 +1,5 @@
-/* Copyright (c) 2015-2017 Skyward Experimental Rocketry
- * Authors: Alvise de' Faveri Tron
+/* Copyright (c) 2018 Skyward Experimental Rocketry
+ * Authors: Alvise de'Faveri Tron, Nuno Barcellos
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -20,17 +20,22 @@
  * THE SOFTWARE.
  */
 
+#include <Common.h>
+#include "boards/Homeone/TMTCManager/TMTCManager.h"
 
-#include "TMTCManager.h"
-#include "TMTCSender.h"
-#include "TMTCReceiver.h"
+int main()
+{
 
-TMTCManager::TMTCManager() {
-	gamma = new Gamma868("/dev/auxtty");
-	sender = new TMTCSender(gamma);
-	receiver = new TMTCReceiver(gamma);
-}
+    while(1){
+		printf("Enqueuing ack\n");
 
-void TMTCManager::send(message_t* msg) {
-	sender->addToBuffer(msg);
+		mavlink_message_t ack_msg;
+		mavlink_msg_ack_pack(1, 1, &ack_msg, 2, 2);
+
+		sTMTCManager->enqueueMsg( (uint8_t*)&ack_msg, sizeof(ack_msg) );
+
+    	miosix::delayMs(1000);
+	}
+
+    return 0;
 }

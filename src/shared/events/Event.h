@@ -1,30 +1,62 @@
-/*
- * Event.h
+/* Event scheduler
  *
- *  Created on: 11 mar 2017
- *      Author: matteo
+ * Copyright (c) 2015-2018 Skyward Experimental Rocketry
+ * Author: Matteo Michele Piazzolla
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in
+ * all copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.  IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+ * THE SOFTWARE.
  */
 
-#ifndef EVENT_H_
-#define EVENT_H_
+#ifndef SRC_SHARED_EVENTS_EVENT_H
+#define SRC_SHARED_EVENTS_EVENT_H
 
-enum Signal{
-	ENTRY,
-	EXIT,
-    FIRST_SIGNAL
+#include <stdint.h>
+
+enum EventSignal : uint8_t
+{
+    EV_ENTRY,
+    EV_EXIT,
+    EV_FIRST_SIGNAL
 };
 
+/**
+ * 	Example definiton of custom signals:
 
-struct Event{
-	uint8_t sig;
+        enum CustomSignal : uint8_t
+        {
+                SIG_ONE = SG_FIRST_SIGNAL,
+                SIG_TWO,
+                SIG_THREE,
+                SIG_FOUR
+        };
+
+ */
+
+struct Event
+{
+    uint8_t sig;
 };
 
 /* Example of extended Event structure
-struct ExtendedEvent : public Event{
-	uint32_t custom_event;
-};
+
+        struct ExtendedEvent : public Event{
+                uint32_t custom_member;
+        };
 */
 
-
-
-#endif /* EVENT_H_ */
+#endif /* SRC_SHARED_EVENTS_EVENT_H */

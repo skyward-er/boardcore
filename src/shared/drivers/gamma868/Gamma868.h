@@ -23,16 +23,11 @@
 #ifndef GAMMA868_H
 #define GAMMA868_H
 
+#include <Common.h>
 #include <fcntl.h>
-#include <pthread.h>
-#include <stdio.h>
-#include <string.h>
-#include <sys/stat.h>
-#include <sys/types.h>
 
+//TODO: change this
 #ifdef _MIOSIX
-#include <miosix.h>
-using namespace miosix;
 #endif  //_MIOSIX
 
 #include "gamma_config.h"  //Defines are in here.
@@ -40,43 +35,50 @@ using namespace miosix;
 class Gamma868
 {
 public:
-    Gamma868(const char *serialPath);
-
     /*
-     * Message is sent as soon as possible (blocking).
+     * Create a Gamma868 object using the given path as the serial port to use.
+     * @param serialPath        Name of the serial port (es. /dev/tty)
      */
-    bool send(int pkt_len, const char *pkt);
+    Gamma868(const char* serialPath);
 
     /*
-     * Read from the gamma868 serial (blocking).
-     * Returns true if the received stream is a command.
+     * Send a message through the serial port to the gamma868 module (blocking).
+     * @param pkt               Pointer to the packet (needs to be at least pkt_len bytes).
+     * @param pkt_len           Lenght of the packet to be sent.
+     * @return                  True if the message was sent correctly.
      */
-    void receive(int pkt_len, char *pkt);
+    bool send(const uint8_t* pkt, uint32_t pkt_len);
 
     /*
-     * Set a new configuration to gamma.
-     * Returns true if the configuration was set right.
+     * Send a message through the serial port to the gamma868 module (blocking).
+     * @param pkt               Pointer to the buffer (needs to be at least pkt_len bytes).
+     * @param pkt_len           Lenght of the packet to be received.
+     */
+    void receive(uint8_t* pkt, uint32_t pkt_len);
+
+    /*
+     * Set a new configuration to the gamma868 module.
+     * @retun                   True if the configuration was set correctly.
      */
     bool config(Configuration newConf);    
 
     /*
      * TODO:
      * bool isConnected() checks if learn switch is pulled up??
-     * char *readConfiguration();
+     * Configuration readConfiguration();
      */
 
 private:
     int fd;
 
-    pthread_mutex_t readingMutex;
-    pthread_mutex_t writingMutex;
+    miosix::FastMutex gammaMutex;
 
-    FastMutex ledMutex;
-    ConditionVariable ledCond;
+    miosix::FastMutex ledMutex;
+    miosix::ConditionVariable ledCond;
     int pktSent = 0;
 
-    FastMutex learnMutex;
-    ConditionVariable learnCond;
+    miosix::FastMutex learnMutex;
+    miosix::ConditionVariable learnCond;
     int learnMode = 0;
 
     bool enterLearnMode();
@@ -90,7 +92,7 @@ private:
     /*
      * Static wrapper for running it in a thread.
      */
-    static void *static_confirmLearnMode(void *object)
+    static void* static_confirmLearnMode(void *object)
     {
         reinterpret_cast<Gamma868 *>(object)->confirmLearnMode();
         return 0;
@@ -99,7 +101,7 @@ private:
     /*
      * Static wrapper for running it in a thread.
      */
-    static void *static_timer(void *object)
+    static void* static_timer(void *object)
     {
         reinterpret_cast<Gamma868 *>(object)->timer();
         return 0;
