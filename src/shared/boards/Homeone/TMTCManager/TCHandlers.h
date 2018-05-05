@@ -1,5 +1,5 @@
-/* Copyright (c) 2017 Skyward Experimental Rocketry
- * Authors: Alvise De Faveri, Nuno Barcellos
+/* Copyright (c) 2018 Skyward Experimental Rocketry
+ * Authors: Alvise de' Faveri Tron
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -20,22 +20,28 @@
  * THE SOFTWARE.
  */
 
-#ifndef GAMMA_CONFIG
-#define GAMMA_CONFIG
+#ifndef TCHANDLER_H
+#define TCHANDLER_H
 
-// DISCOVERY gpio configuration
-typedef miosix::Gpio<GPIOB_BASE, 0> gammaLed;
-typedef miosix::Gpio<GPIOB_BASE, 2> gammaSwitch;
+#include <Common.h>
+#include "TMTC_Config.h"
 
-// Module internal config
-struct Configuration
-{
-    int local_addr[3] = {126, 126, 126};
-    int dest_addr[3]  = {126, 126, 126};
-    int lora_mode     = 1;   // SF6
-    int lora_pow      = 15;  //+20dbm
-    int handshake     = 0;   // No handshake
-    int baudrate      = 0;   // 9600 baud
+/*
+ * The TCHandler class contains the functions that handle the TCs receiver from ground. 
+ */
+class TCHandler{
+    
+public:
+    /* Constructor */
+    TCHandler() {
+        //TODO: set a reference to the EventBroker
+    }
+    
+    /* Deconstructor */
+    ~TCHandler() {}
+
+    /* TODO Handlers */
+
 };
 
-#endif /* CONFIG_H */
+#endif

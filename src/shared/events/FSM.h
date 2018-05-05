@@ -1,7 +1,7 @@
-/* FSM Events
+/* Finite State Machine
  *
- * Copyright (c) 2015-2016 Skyward Experimental Rocketry
- * Author: Matteo Michele Piazzolla, Alain Carlucci
+ * Copyright (c) 2015-2018 Skyward Experimental Rocketry
+ * Author: Matteo Michele Piazzolla, Alain Carlucci, Luca Erbetta
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -22,55 +22,65 @@
  * THE SOFTWARE.
  */
 
-#ifndef FSM_H
-#define FSM_H
+#ifndef SRC_SHARED_EVENTS_FSM_H
+#define SRC_SHARED_EVENTS_FSM_H
+
 #include "ActiveObject.h"
-#include "SyncQueue.h"
-#include "Event.h"
+#include "events/Event.h"
+#include "events/SyncQueue.h"
 
+#include <iostream>
 
-template<class T>
-class FSM : ActiveObject
+class EventHandler : ActiveObject
+{
+public:
+    EventHandler() : ActiveObject() {}
+
+    void postEvent(const Event& e) { eventList.put(e); }
+
+    virtual ~EventHandler(){};
+
+protected:
+    virtual void handleEvent(const Event& ev) = 0;
+
+    void run()
+    {
+        while (true)
+        {
+            Event e = eventList.get();
+            handleEvent(e);
+        }
+    }
+
+    SynchronizedQueue<Event> eventList;
+};
+
+template <class T>
+class FSM : public EventHandler
 {
 
-
 public:
-
-	FSM(void (T::*initialState)(const Event*)) {
-		state = initialState;
-        specialEvent.sig=ENTRY;
-		dispatchEvent(&specialEvent);
-	}
-
-    void postEvent(Event* e) {
-    	eventList.put(e);
+    FSM(void (T::*initialState)(const Event&)) : EventHandler()
+    {
+        state            = initialState;
+        specialEvent.sig = EV_ENTRY;
+        handleEvent(specialEvent);
     }
 
-	virtual ~FSM(){}
-    void transition(void (T::*nextState)(const Event*)) {
-    	specialEvent.sig=EXIT;
-		(static_cast<T*>(this)->*state)(&specialEvent);
-    	state = nextState;
-    	specialEvent.sig=ENTRY;
-		(static_cast<T*>(this)->*state)(&specialEvent);
+    virtual ~FSM(){};
+    void transition(void (T::*nextState)(const Event&))
+    {
+        specialEvent.sig = EV_EXIT;
+        (static_cast<T*>(this)->*state)(specialEvent);
+        state            = nextState;
+        specialEvent.sig = EV_ENTRY;
+        (static_cast<T*>(this)->*state)(specialEvent);
     }
+
 protected:
-
-
+    void handleEvent(const Event& e) { (static_cast<T*>(this)->*state)(e); }
 private:
-    void (T::*state)(const Event*);
-    SynchronizedQueue<Event*> eventList;
-	Event specialEvent;
-
-	void dispatchEvent(const Event* e) {
-		(static_cast<T*>(this)->*state)(e);
-	}
-
-    void run() {
-    	while(true){
-    		const Event*  e = eventList.get();
-    		dispatchEvent(e);
-    	}
-    }
+    void (T::*state)(const Event&);
+    Event specialEvent;
 };
-#endif //FSM_H
+#endif  // SRC_SHARED_EVENTS_FSM_H

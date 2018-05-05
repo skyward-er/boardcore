@@ -1,5 +1,5 @@
 /* Copyright (c) 2015-2017 Skyward Experimental Rocketry
- * Authors: Alvise de' Faveri Tron
+ * Authors: Luca Erbetta <luca.erbetta@skywarder.eu>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -20,22 +20,14 @@
  * THE SOFTWARE.
  */
 
-#ifndef TMTCRECEIVER_H
-#define TMTCRECEIVER_H
+#include <Common.h>
+using namespace miosix;
 
-class TMTCReceiver : ActiveObject {
-    
-public:
-    TMTCReceiver(Gamma868* gamma) {}
-    
-    ~TMTCReceiver() {}
-    
-protected:
-    void run() {} 
-
-private:
-    Gamma868* gamma;
-
-};
-
-#endif
+int main()
+{
+    while (true)
+    {
+        printf("Serial is working!\n");
+        Thread::sleep(1000);
+    }
+}

@@ -1,5 +1,5 @@
-/* Copyright (c) 2018 Skyward Experimental Rocketry
- * Authors: Alvise de'Faveri Tron, Nuno Barcellos
+/* Copyright (c) 2015-2018 Skyward Experimental Rocketry
+ * Authors: Luca Erbetta
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -19,16 +19,22 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
+#ifndef SRC_SHARED_BOARDS_HOMEONE_FLIGHTMODEMANAGER_FMM_CONFIG_H
+#define SRC_SHARED_BOARDS_HOMEONE_FLIGHTMODEMANAGER_FMM_CONFIG_H
 
-#include "homeone_modules/TMTCManager.h"
+#warning "FMM COSTANTS ARE ONLY PLACEHOLDER VALUES"
 
-int main()
+namespace HomeoneBoard
 {
-    message_t msg;
-    msg.type = msg_type::PING_RESPONSE;
-    sTMTCManager->send(&msg);
+namespace FMM
+{
+// TODO: Change with real values
 
-    while(true);
-
-    return 0;
+// State timeouts
+static const unsigned int ASCENDING_TIMEOUT_MS             = 5 * 1000;
+static const unsigned int APOGEE_DETECTION_TIMEOUT_MS      = 5 * 1000;
+static const unsigned int MAIN_PARACHUTE_DEPLOY_TIMEOUT_MS = 5 * 1000;
 }
+}
+
+#endif /* SRC_SHARED_BOARDS_HOMEONE_FLIGHTMODEMANAGER_FMM_CONFIG_H */

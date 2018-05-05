@@ -1,5 +1,5 @@
-/* Copyright (c) 2015-2017 Skyward Experimental Rocketry
- * Authors: Alvise de' Faveri Tron
+/* Copyright (c) 2018 Skyward Experimental Rocketry
+ * Authors: Alvise De Faveri
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -20,42 +20,21 @@
  * THE SOFTWARE.
  */
 
-#ifndef TMTCSENDER_H
-#define TMTCSENDER_H
+#ifndef TMTC_CONFIG
+#define TMTC_CONFIG
 
-#include "TMTCManager.h"
-#include "events/SyncQueue.h"
+#warning TMTC COSTANTS ARE ONLY PLACEHOLDER VALUES
 
-class TMTCSender : ActiveObject {
-        
-public:
-    TMTCSender(Gamma868* gamma){}
-    
-    void addToBuffer(message_t* message){
-	   outBuffer.put(message);
-    }
+#define RADIO_DEVICE_NAME "/dev/radio"
 
-    void printBuffer() {
-        message_t* msg;
+#define TMTC_OUT_BUFFER_SIZE (20*sizeof(mavlink_message_t)) // Default size of the output messages buffer
+#define TMTC_SEND_TIMEOUT 1000 // Default timeout before sending next packet
+#define TMTC_MAX_PKT_SIZE (5*sizeof(mavlink_message_t)) 	// Maxmimum dimension of the packet
+#define TMTC_MAX_TRIES_PER_PACKET 3	// Maximum number of tries when sending a packet
 
-        while (outBuffer.len() > 0)
-        {
-            msg = outBuffer.get();
-            printf ("%d\n", msg->type);
-        }
-    }
-    
-    ~TMTCSender() {}
-    
-protected:
-    void run() {
-       printBuffer();
-    }
-    
-private:
-    SynchronizedQueue<message_t*> outBuffer;
-    Gamma868* gamma;
-    
-};
+#define TMTC_SENDER_STACKSIZE miosix::STACK_DEFAULT_FOR_PTHREAD
+#define TMTC_SENDER_PRIORITY miosix::MAIN_PRIORITY
+#define TMTC_RECEIVER_STACKSIZE miosix::STACK_DEFAULT_FOR_PTHREAD
+#define TMTC_RECEIVER_PRIORITY miosix::MAIN_PRIORITY
 
-#endif
+#endif /* CONFIG_H */

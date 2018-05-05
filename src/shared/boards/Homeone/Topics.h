@@ -1,5 +1,5 @@
-/* Copyright (c) 2015-2017 Skyward Experimental Rocketry
- * Authors: Alvise de' Faveri Tron
+/* Copyright (c) 2015-2018 Skyward Experimental Rocketry
+ * Authors: Luca Erbetta
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -19,61 +19,20 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
+#ifndef SRC_SHARED_BOARDS_HOMEONE_TOPICS_H
+#define SRC_SHARED_BOARDS_HOMEONE_TOPICS_H
 
-#ifndef TMTCMANAGER_H
-#define TMTCMANAGER_H
+#include <stdint.h>
 
-#include <ActiveObject.h>
-#include <Common.h>
-#include <Singleton.h>
-#include <drivers/gamma868/Gamma868.h>
-
-class TMTCReceiver;
-class TMTCSender;
-
-#define PAYLOAD_LEN 10
-
-enum msg_type 
+namespace HomeoneBoard
 {
-    TM,
-    STATUS_TC,
-    STATUS_RESPONSE,
-    PING_TC,
-    PING_RESPONSE
-};
-
-typedef struct {
-    msg_type type;
-    uint8_t data[PAYLOAD_LEN];
-} message_t;
-
-
-class TMTCManager : public Singleton<TMTCManager>
+/**
+ * Definition of various event topics to use in the EventBroker
+ */
+enum Topics : uint8_t
 {
-
-    friend class Singleton<TMTCManager>;
-
-public:
-    ~TMTCManager() {}
-    
-    void send(message_t* msg);
-    
-    //void setActive(bool st);
-
-protected:
-
-
-private:
-    TMTCManager();
-    
-    bool status;
-    Gamma868* gamma;
-    
-    TMTCSender* sender;
-    TMTCReceiver* receiver;
-   
+    TOPIC_FMM_FSM  // Flight Mode Manager Finite state machine events
 };
+}
 
-#define sTMTCManager TMTCManager::getInstance()
-
-#endif /* ifndef TMTCMANAGER_H */
+#endif /* SRC_SHARED_BOARDS_HOMEONE_TOPICS_H_ */
