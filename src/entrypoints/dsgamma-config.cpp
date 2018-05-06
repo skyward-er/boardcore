@@ -32,12 +32,13 @@ using namespace miosix;
 /* DISCOVERY F429I*/
 typedef Gpio<GPIOA_BASE, 0> button;
 
-Gamma868 gamma("/dev/auxtty");  // create gamma object
+// Gamma868 gamma("/dev/auxtty");  // create gamma object
 
 void waitForButton();
 
 int main()
 {
+    Gamma868 gamma("/dev/auxtty");  // create gamma object
     // Discovery gpio setup
     {
         FastInterruptDisableLock dLock;
