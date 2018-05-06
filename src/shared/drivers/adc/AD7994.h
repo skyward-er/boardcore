@@ -44,11 +44,6 @@ public:
     virtual ~AD7994() {}
 
     /**
-     * Initializes the ADC
-     */
-    bool init() { return true; }
-
-    /**
      * Enables the specified ADC channel
      * @param channel Channel number [1-4]
      */
