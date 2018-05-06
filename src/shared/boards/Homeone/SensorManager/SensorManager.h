@@ -26,6 +26,7 @@
 
 #include "SensorManagerConfig.h"
 #include "events/FSM.h"
+#include "logger/Logger.h"
 #include "sensors/SensorSampling.h"
 
 // Forward declarations
@@ -126,7 +127,8 @@ private:
     /**
      * Task that sends samples at a fixed rate to the TMTCManager.
      */
-    void sendSamplesToTMTC();
+    void lowRateTMTC();
+    void highRateTMTC();
 
     // Sensor samplers
     SimpleSensorSampler sampler_20hz_simple;
@@ -139,6 +141,12 @@ private:
     AD7994Type* adc_ad7994;
     MAX21105Type* imu_max21105;
     MPU9250Type* imu_mpu9250;
+
+    // Logger ref
+    Logger& log;
+
+    // Tmtc message buffer
+    uint8_t tmtc_buffer[2041];  // TODO: Use appropriate size
 };
 }
 }

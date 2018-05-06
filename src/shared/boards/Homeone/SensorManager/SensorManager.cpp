@@ -22,8 +22,11 @@
 
 #include "SensorManager.h"
 
+#include <libs/mavlink_skyward_lib/mavlink_lib/skyward/mavlink.h>
+
 #include "TestSensor.h"
 #include "boards/Homeone/Events.h"
+#include "boards/Homeone/TMTCManager/TMTCManager.h"
 #include "events/Scheduler.h"
 
 #include "drivers/adc/AD7994.h"
@@ -38,7 +41,7 @@ namespace HomeoneBoard
 namespace Sensors
 {
 
-SensorManager::SensorManager() : EventHandler()
+SensorManager::SensorManager() : EventHandler(), log(Logger::instance())
 {
     sEventBroker->subscribe(this, TOPIC_SENSORS_SM);
 
@@ -110,10 +113,14 @@ void SensorManager::startSampling()
 
     sEventScheduler->add(dma_500Hz_sampler, 2, "dma_500hz");
 
-    // Finally add TMTC send task
-    std::function<void()> tmtc_send =
-        std::bind(&SensorManager::sendSamplesToTMTC, this);
-    sEventScheduler->add(tmtc_send, 1000, "tmtc_send");
+    // Finally add TMTC send tasks
+    std::function<void()> tmtc_low_rate =
+        std::bind(&SensorManager::lowRateTMTC, this);
+    sEventScheduler->add(tmtc_low_rate, 1000, "tmtc_lr");
+
+    std::function<void()> tmtc_high_rate =
+        std::bind(&SensorManager::lowRateTMTC, this);
+    sEventScheduler->add(tmtc_high_rate, 100, "tmtc_hr");
 }
 
 void SensorManager::onSimple20HZCallback()
@@ -127,14 +134,43 @@ void SensorManager::onSimple20HZCallback()
 
 void SensorManager::onDMA500HZCallback()
 {
-    // TODO: Send samples to logger
+    log.log(*(imu_max21105->gyroDataPtr()));
+    log.log(*(imu_max21105->accelDataPtr()));
+    log.log(*(imu_max21105->tempDataPtr()));
+
+    log.log(*(imu_mpu9250->gyroDataPtr()));
+    log.log(*(imu_mpu9250->accelDataPtr()));
+    log.log(*(imu_mpu9250->tempDataPtr()));
 }
 
-void SensorManager::sendSamplesToTMTC()
+void SensorManager::lowRateTMTC()
 {
-    // TODO: Send samples to TMTC
+    mavlink_message_t low_rate_samples_msg;
 
-    printf("TMTC send \n");
+    // TODO: Use data from adis
+    Vec3 gyro         = *(imu_mpu9250->gyroDataPtr());
+    Vec3 accel        = *(imu_mpu9250->accelDataPtr());
+    uint16_t pressure = 0;  // Use actual data
+
+    mavlink_msg_sample_data_pack(1, 1, &low_rate_samples_msg, pressure, accel.x,
+                                 accel.y, accel.z, gyro.x, gyro.y, gyro.z);
+    int msg_len =
+        mavlink_msg_to_send_buffer(tmtc_buffer, &low_rate_samples_msg);
+
+    sTMTCManager->enqueueMsg(tmtc_buffer, msg_len);
+}
+
+void SensorManager::highRateTMTC()
+{
+    mavlink_message_t high_rate_samples_msg;
+
+    uint16_t pressure = 0;  // Use actual data
+
+    mavlink_msg_hr_sample_data_pack(1, 1, &high_rate_samples_msg, pressure);
+    int msg_len =
+        mavlink_msg_to_send_buffer(tmtc_buffer, &high_rate_samples_msg);
+
+    sTMTCManager->enqueueMsg(tmtc_buffer, msg_len);
 }
 }
 }
