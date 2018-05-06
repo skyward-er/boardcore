@@ -46,7 +46,7 @@ class Sensor
 {
 public:
     /** Here the code to initialize this sensor */
-    virtual bool init() = 0;
+    // virtual bool init() = 0;
 
     /** Self test code
      * It should return a boolean:
@@ -58,13 +58,13 @@ public:
 
     virtual std::vector<SPIRequest> buildDMARequest()
     {
-        //printf("** SENSOR::buildDMARequest **\n");
+        // printf("** SENSOR::buildDMARequest **\n");
         return std::vector<SPIRequest>();
     }
 
     virtual void onDMAUpdate(const SPIRequest& req)
     {
-        //printf("** SENSOR::onDMAUpdate **\n");
+        // printf("** SENSOR::onDMAUpdate **\n");
     }
 
     /**
