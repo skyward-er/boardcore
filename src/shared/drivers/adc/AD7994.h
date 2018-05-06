@@ -26,18 +26,26 @@
 #include <stdint.h>
 
 #include "Singleton.h"
-#include "drivers/BusTemplate.h"
 #include "sensors/Sensor.h"
 
 /**
  * Driver for the AD7994 Analog Digital Converter
  */
 template <typename BusI2C>
-class AD7994 : public Sensor, Singleton<AD7994<BusI2C>>
+class AD7994 : public Sensor
 {
-    friend class Singleton<AD7994<BusI2C>>;
-
 public:
+    /**
+     *
+     * @param i2c_address address of the AD7994 on the I2C bus
+     */
+    AD7994(uint8_t i2c_address) : address(i2c_address) {}
+
+    virtual ~AD7994() {}
+
+    /**
+     * Initializes the ADC
+     */
     bool init() { return true; }
 
     /**
@@ -51,7 +59,7 @@ public:
             uint8_t mask = 1 << (channel - 1);
 
             // If this channel is not yet selected
-            if (selecteChannels & mask == 0)
+            if (selectedChannels & mask == 0)
             {
                 // Select it and increase the counter
                 selectedChannels |= mask;
@@ -70,7 +78,7 @@ public:
         {
             uint8_t mask = ~(1 << (channel - 1));
             // If this channel is already selected
-            if (selecteChannels & mask > 0)
+            if (selectedChannels & mask > 0)
             {
                 // Deselect it and decrease the counter
                 selectedChannels &= mask;
@@ -95,17 +103,17 @@ public:
     {
         // 1: Program address register to start conversion
         // TODO: Check if we have to write these bits beforehand
-        BusI2C::write(address, selectedChannels << 4);
+        uint8_t data = selectedChannels << 4;
+        BusI2C::directWrite(address, &data, 1);
 
         return true;
     }
-    bool selftTest() { return true; }
+
+    bool selfTest() { return true; }
 
 private:
-    AD7994() {}
-    virtual ~AD7994() {}
-
-    static const uint8_t address;
+    // Address of the AD7994 on the I2C bus
+    uint8_t address;
 
     uint8_t selectedChannelsNum = 0;    // Number of selected channels
     uint8_t selectedChannels    = 0x0;  // The 4 most significant bits in the
@@ -120,4 +128,5 @@ private:
         CONFIG_REG            = 0x02
     };
 };
+
 #endif /* SRC_SHARED_DRIVERS_ADC_AD7994_H */
