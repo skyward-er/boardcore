@@ -119,7 +119,7 @@ private:
     void onSimple20HZCallback();
 
     /**
-     * Simple, 20 Hz SensorSampler Callback.
+     * DMA, 500 Hz SensorSampler Callback.
      */
     void onDMA500HZCallback();
 
