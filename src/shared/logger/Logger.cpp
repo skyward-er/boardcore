@@ -29,6 +29,7 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <stdexcept>
+#include <interfaces/atomic_ops.h>
 #include "Logger.h"
 
 using namespace std;
@@ -153,7 +154,7 @@ LogResult Logger::logImpl(const char* name, const void* data, unsigned int size)
     unsigned int recordSize = nameSize + 1 + size;
     if (recordSize > maxRecordSize)
     {
-        s.statTooLargeSamples++;
+        atomicAdd(&s.statTooLargeSamples, 1);
         return LogResult::TooLarge;
     }
 
@@ -173,7 +174,7 @@ LogResult Logger::logImpl(const char* name, const void* data, unsigned int size)
     record->size = recordSize;
 
     fullQueue.put(record);
-    s.statQueuedSamples++;
+    atomicAdd(&s.statQueuedSamples, 1);
     return LogResult::Queued;
 }
 
