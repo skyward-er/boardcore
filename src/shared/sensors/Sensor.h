@@ -46,7 +46,7 @@ class Sensor
 {
 public:
     /** Here the code to initialize this sensor */
-    // virtual bool init() = 0;
+    virtual bool init() { return true; };
 
     /** Self test code
      * It should return a boolean:
