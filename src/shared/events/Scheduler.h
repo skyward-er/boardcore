@@ -58,6 +58,13 @@ std::ostream& operator<<(std::ostream& os, const TaskStatResult& sr);
  *        // do something NONBLOCKING and WITHOUT SLEEPS
  *    }
  *    sEventScheduler->add(magic_std::function, 150);
+ *
+ * **IMPORTANT REMINDER**
+ * Tasks in the event scheduler are meant to be added at inizialization.
+ * DO NOT add task with long intervals/delays BEFORE adding the ones with
+ * shorter intervals/delays: when adding first a task with a long delay, other
+ * tasks are not executed until the long interval has expired once, producing
+ * unwanted delays.
  */
 class EventScheduler : Singleton<EventScheduler>, ActiveObject
 {
