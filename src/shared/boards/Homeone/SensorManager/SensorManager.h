@@ -24,11 +24,15 @@
 
 #include "Singleton.h"
 
+#include "SensorManagerConfig.h"
 #include "events/FSM.h"
 #include "sensors/SensorSampling.h"
 
-// Forward declaration
+// Forward declarations
 class TestSensor;
+
+template <typename BusI2C>
+class AD7994;
 
 namespace HomeoneBoard
 {
@@ -101,18 +105,19 @@ private:
     /**
      * Simple, 10 Hz SensorSampler Callback.
      */
-    void onSimple10HZCallback();
+    void onSimple20HZCallback();
 
     /**
      * Task that sends samples at a fixed rate to the TMTCManager.
      */
     void sendSamplesToTMTC();
 
-    // DMASensorSampler m100HzDMA, m25HzDMA;
-    SimpleSensorSampler m10HzSimple;
+    // Sensor samplers
+    SimpleSensorSampler sampler_20hz_simple;
 
     // Sensors
-    TestSensor* mTestSensor;
+    TestSensor* sensor_test;
+    AD7994<I2C_1>* adc_ad7994;
 };
 }
 }

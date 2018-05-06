@@ -21,8 +21,10 @@
  */
 
 #include "SensorManager.h"
+
 #include "TestSensor.h"
 #include "boards/Homeone/Events.h"
+#include "drivers/adc/AD7994.h"
 #include "events/Scheduler.h"
 
 using miosix::Lock;
@@ -41,9 +43,19 @@ SensorManager::SensorManager() : EventHandler()
     initSamplers();
 }
 
-void SensorManager::initSensors() { mTestSensor = new TestSensor(); }
+void SensorManager::initSensors()
+{
+    sensor_test = new TestSensor();
+    adc_ad7994  = new AD7994<I2C_1>(AD7994_I2C_ADDRESS);
 
-void SensorManager::initSamplers() { m10HzSimple.AddSensor(mTestSensor); }
+    adc_ad7994->init();
+}
+
+void SensorManager::initSamplers()
+{
+    sampler_20hz_simple.AddSensor(sensor_test);
+    sampler_20hz_simple.AddSensor(adc_ad7994);
+}
 
 void SensorManager::handleEvent(const Event& ev)
 {
@@ -60,20 +72,21 @@ void SensorManager::handleEvent(const Event& ev)
 SensorData SensorManager::getSensorData()
 {
     SensorData data;
-    data.testSensorData = *(mTestSensor->testDataPtr());
+    data.testSensorData = *(sensor_test->testDataPtr());
     return data;
 }
 
 void SensorManager::startSampling()
 {
-    // Simple 10 Hz Sampler callback and scheduler function
-    std::function<void()> simple10HzCallback =
-        std::bind(&SensorManager::onSimple10HZCallback, this);
+    // Simple 20 Hz Sampler callback and scheduler function
+    std::function<void()> simple_20Hz_callback =
+        std::bind(&SensorManager::onSimple20HZCallback, this);
 
-    std::function<void()> simple10HzSampler = std::bind(
-        &SimpleSensorSampler::Update, &m10HzSimple, simple10HzCallback);
+    std::function<void()> simple_20Hz_sampler =
+        std::bind(&SimpleSensorSampler::Update, &sampler_20hz_simple,
+                  simple_20Hz_callback);
 
-    sEventScheduler->add(simple10HzSampler, 100, "simple_10hz");
+    sEventScheduler->add(simple_20Hz_sampler, 50, "simple_20hz");
 
     // Finally add TMTC send task
     std::function<void()> tmtc_send =
@@ -81,19 +94,10 @@ void SensorManager::startSampling()
     sEventScheduler->add(tmtc_send, 1000, "tmtc_send");
 }
 
-void SensorManager::onSimple10HZCallback()
+void SensorManager::onSimple20HZCallback()
 {
-    {
-        /*
-         * We don't need a mutex to access the data in the sensor object since
-         * we are in the same thread that modifies it, but we need one to write
-         * it to the SensorData struct which is accessible from other threads.
-         */
-        Lock<FastMutex> lock(mSensorDataMutex);
-        mSensorData.testSensorData = *(mTestSensor->testDataPtr());
-    }
     // This is just a test
-    printf("%f\n", *(mTestSensor->testDataPtr()));
+    printf("%f\n", *(sensor_test->testDataPtr()));
 
     // TODO: Send samples to logger
     // TODO: Send pressure samples to FMM
