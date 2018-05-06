@@ -26,7 +26,23 @@
 #include <drivers/BusTemplate.h>
 #include <drivers/stm32f2_f4_i2c.h>
 
-typedef ProtocolI2C<miosix::I2C1Driver> I2C_1;
+using miosix::Gpio;
+
+typedef ProtocolI2C<miosix::I2C1Driver> busI2C1;
+
+// SPI1
+typedef Gpio<GPIOA_BASE, 5> GpioSck;
+typedef Gpio<GPIOA_BASE, 6> GpioMiso;
+typedef Gpio<GPIOA_BASE, 7> GpioMosi;
+typedef BusSPI<1, GpioMosi, GpioMiso, GpioSck> busSPI1;
+
+// CSs
+typedef Gpio<GPIOC_BASE, 3> csMPU9250;
+typedef Gpio<GPIOC_BASE, 1> csMAX21105;
+
+// Spi protocol defs
+typedef ProtocolSPI<busSPI1, csMPU9250> spiMPU9250;
+typedef ProtocolSPI<busSPI1, csMAX21105> spiMAX21105;
 
 static const uint8_t AD7994_I2C_ADDRESS = 0x24;  // Todo: Update with real value
 

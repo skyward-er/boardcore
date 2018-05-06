@@ -24,8 +24,11 @@
 
 #include "TestSensor.h"
 #include "boards/Homeone/Events.h"
-#include "drivers/adc/AD7994.h"
 #include "events/Scheduler.h"
+
+#include "drivers/adc/AD7994.h"
+#include "sensors/MAX21105.h"
+#include "sensors/MPU9250.h"
 
 using miosix::Lock;
 using miosix::FastMutex;
@@ -46,15 +49,25 @@ SensorManager::SensorManager() : EventHandler()
 void SensorManager::initSensors()
 {
     sensor_test = new TestSensor();
-    adc_ad7994  = new AD7994<I2C_1>(AD7994_I2C_ADDRESS);
 
-    adc_ad7994->init();
+    adc_ad7994 = new AD7994Type(AD7994_I2C_ADDRESS);
+
+    imu_max21105 =
+        new MAX21105Type(0, 0);  // TODO: Update with correct parameters
+    imu_max21105->init();
+
+    imu_mpu9250 =
+        new MPU9250Type(0, 0);  // TODO: Update with correct parameters
+    imu_mpu9250->init();
 }
 
 void SensorManager::initSamplers()
 {
     sampler_20hz_simple.AddSensor(sensor_test);
     sampler_20hz_simple.AddSensor(adc_ad7994);
+
+    sampler_500hz_dma.AddSensor(imu_max21105);
+    sampler_500hz_dma.AddSensor(imu_mpu9250);
 }
 
 void SensorManager::handleEvent(const Event& ev)
@@ -79,14 +92,23 @@ SensorData SensorManager::getSensorData()
 void SensorManager::startSampling()
 {
     // Simple 20 Hz Sampler callback and scheduler function
-    std::function<void()> simple_20Hz_callback =
+    std::function<void()> simple_20hz_callback =
         std::bind(&SensorManager::onSimple20HZCallback, this);
 
-    std::function<void()> simple_20Hz_sampler =
+    std::function<void()> simple_20hz_sampler =
         std::bind(&SimpleSensorSampler::Update, &sampler_20hz_simple,
-                  simple_20Hz_callback);
+                  simple_20hz_callback);
 
-    sEventScheduler->add(simple_20Hz_sampler, 50, "simple_20hz");
+    sEventScheduler->add(simple_20hz_sampler, 50, "simple_20hz");
+
+    // DMA 500 Hz Sampler callback and scheduler function
+    std::function<void()> dma_500hz_callback =
+        std::bind(&SensorManager::onDMA500HZCallback, this);
+
+    std::function<void()> dma_500Hz_sampler = std::bind(
+        &DMASensorSampler::Update, &sampler_500hz_dma, dma_500hz_callback);
+
+    sEventScheduler->add(dma_500Hz_sampler, 2, "dma_500hz");
 
     // Finally add TMTC send task
     std::function<void()> tmtc_send =
@@ -101,6 +123,11 @@ void SensorManager::onSimple20HZCallback()
 
     // TODO: Send samples to logger
     // TODO: Send pressure samples to FMM
+}
+
+void SensorManager::onDMA500HZCallback()
+{
+    // TODO: Send samples to logger
 }
 
 void SensorManager::sendSamplesToTMTC()

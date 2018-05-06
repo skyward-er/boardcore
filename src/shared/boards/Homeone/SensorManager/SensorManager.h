@@ -34,6 +34,17 @@ class TestSensor;
 template <typename BusI2C>
 class AD7994;
 
+template <typename BusSPI>
+class MPU9250;
+
+template <typename BusSPI>
+class MAX21105;
+
+// Type definitions
+typedef AD7994<busI2C1> AD7994Type;
+typedef MPU9250<spiMPU9250> MPU9250Type;
+typedef MAX21105<spiMAX21105> MAX21105Type;
+
 namespace HomeoneBoard
 {
 namespace Sensors
@@ -103,9 +114,14 @@ private:
      */
 
     /**
-     * Simple, 10 Hz SensorSampler Callback.
+     * Simple, 20 Hz SensorSampler Callback.
      */
     void onSimple20HZCallback();
+
+    /**
+     * Simple, 20 Hz SensorSampler Callback.
+     */
+    void onDMA500HZCallback();
 
     /**
      * Task that sends samples at a fixed rate to the TMTCManager.
@@ -114,10 +130,15 @@ private:
 
     // Sensor samplers
     SimpleSensorSampler sampler_20hz_simple;
+    DMASensorSampler sampler_500hz_dma;
 
     // Sensors
-    TestSensor* sensor_test;
-    AD7994<I2C_1>* adc_ad7994;
+
+    TestSensor* sensor_test;  // TODO: Remove test sensor
+
+    AD7994Type* adc_ad7994;
+    MAX21105Type* imu_max21105;
+    MPU9250Type* imu_mpu9250;
 };
 }
 }
