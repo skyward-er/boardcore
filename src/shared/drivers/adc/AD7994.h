@@ -29,6 +29,17 @@
 #include "sensors/Sensor.h"
 
 /**
+ * Struct containing the data from each ADC channel
+ */
+struct ADCData
+{
+    uint16_t val_ch1;
+    uint16_t val_ch2;
+    uint16_t val_ch3;
+    uint16_t val_ch4;
+};
+
+/**
  * Driver for the AD7994 Analog Digital Converter
  */
 template <typename BusI2C>
@@ -92,7 +103,7 @@ public:
      * Returns a pointer to the latest samples
      * @return
      */
-    uint16_t* adcDataPtr() { return samples; }
+    ADCData* adcDataPtr() { return &samples; }
 
     bool onSimpleUpdate()
     {
@@ -100,7 +111,7 @@ public:
         // TODO: Check if we have to write these bits beforehand
         uint8_t data = selectedChannels << 4;
         BusI2C::directWrite(address, &data, 1);
-
+        // TODO: Read data
         return true;
     }
 
@@ -114,7 +125,7 @@ private:
     uint8_t selectedChannels    = 0x0;  // The 4 most significant bits in the
                                         // address pointer register
 
-    uint16_t samples[4];
+    ADCData samples;
 
     enum Registers : uint8_t
     {
