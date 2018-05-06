@@ -34,21 +34,6 @@ typedef BusSPI<1, GpioMosi, GpioMiso, GpioSck> busSPI1;
 
 int main()
 {
-	ADIS16405<busSPI1> imu;
-
-	printf("Initializing ADIS16405.. ");
-	if(imu.init()==true)
-		printf("ok\n");
-	else
-		printf("failed\n");
-
-	printf("ADIS16405 self test.. ");
-
-	if(imu.selfTest()==false)
-		printf("ok\n");
-	else
-		printf("failed\n");
-	
 
     while(true);
 }
