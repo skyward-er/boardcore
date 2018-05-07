@@ -31,7 +31,13 @@ namespace HomeoneBoard
  */
 enum Topics : uint8_t
 {
-    TOPIC_FMM_FSM  // Flight Mode Manager Finite state machine events
+    
+DIAGNOSTICS,
+STATE_MACHINE,
+FLIGHT_EVENTS,
+CONFIGURATION,
+SENSORS
+
 };
 }
 
