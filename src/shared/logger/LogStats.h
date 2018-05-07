@@ -25,21 +25,49 @@
  *   along with this program; if not, see <http://www.gnu.org/licenses/>   *
  ***************************************************************************/ 
 
-#include "LogBase.h"
+#pragma once
 
-using namespace std;
+#include <ostream>
 
-//
-// class LogStats
-//
-
-LogStats::LogStats() {}
-
-void LogStats::print(ostream& os) const
+/**
+ * Statistics for the logger
+ */
+class LogStats
 {
-    os << "timestamp=" << timestamp
-       << " ls=" << statTooLargeSamples << " ds=" << statDroppedSamples
-       << " qs=" << statQueuedSamples << " bf=" << statBufferFilled
-       << " bw=" << statBufferWritten << " wf=" << statWriteFailed
-       << " wt=" << statWriteTime << " mwt=" << statMaxWriteTime;
-}
+public:
+    /**
+     * Constructor
+     */
+    LogStats() {}
+    
+    /**
+     * Set timestamp for this class
+     * \param timestamp timestamp
+     */
+    void setTimestamp(long long timestamp) { this->timestamp = timestamp; }
+
+    /**
+     * Print the class fields to an ostream.
+     * Used by the program that decodes the logged data after the flight.
+     * \param os ostream where to print the class fields
+     */
+    void print(std::ostream& os) const
+    {
+        os << "timestamp=" << timestamp
+           << " ls=" << statTooLargeSamples << " ds=" << statDroppedSamples
+           << " qs=" << statQueuedSamples << " bf=" << statBufferFilled
+           << " bw=" << statBufferWritten << " wf=" << statWriteFailed
+           << " wt=" << statWriteTime << " mwt=" << statMaxWriteTime;
+    }
+
+    long long timestamp; ///< Timestamp
+    int statTooLargeSamples =
+        0;  ///< Number of dropped samples because too large
+    int statDroppedSamples = 0;  ///< Number of dropped samples due to fifo full
+    int statQueuedSamples  = 0;  ///< Number of samples written to buffer
+    int statBufferFilled   = 0;  ///< Number of buffers filled
+    int statBufferWritten  = 0;  ///< Number of buffers written to disk
+    int statWriteFailed    = 0;  ///< Number of fwrite() that failed
+    int statWriteTime      = 0;  ///< Time to perform an fwrite() of a buffer
+    int statMaxWriteTime = 0;  ///< Max time to perform an fwrite() of a buffer
+};

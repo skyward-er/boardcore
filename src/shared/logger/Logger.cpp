@@ -30,10 +30,12 @@
 #include <sys/types.h>
 #include <stdexcept>
 #include <interfaces/atomic_ops.h>
+#include <tscpp/buffer.h>
 #include "Logger.h"
 
 using namespace std;
 using namespace miosix;
+using namespace tscpp;
 
 //
 // class Logger
@@ -149,14 +151,6 @@ LogResult Logger::logImpl(const char* name, const void* data, unsigned int size)
 {
     if (started == false)
         return LogResult::Ignored;
-    
-    unsigned int nameSize = strlen(name);
-    unsigned int recordSize = nameSize + 1 + size;
-    if (recordSize > maxRecordSize)
-    {
-        atomicAdd(&s.statTooLargeSamples, 1);
-        return LogResult::TooLarge;
-    }
 
     Record* record = nullptr;
     {
@@ -169,10 +163,15 @@ LogResult Logger::logImpl(const char* name, const void* data, unsigned int size)
         }
     }
     
-    memcpy(record->data, name, nameSize + 1); //Copy also the \0
-    memcpy(record->data + nameSize + 1, data, size);
-    record->size = recordSize;
-
+    auto result = serializeImpl(record->data, maxRecordSize, name, data, size);
+    if (result == BufferTooSmall)
+    {
+        emptyQueue.put(record);
+        atomicAdd(&s.statTooLargeSamples, 1);
+        return LogResult::TooLarge;
+    }
+    
+    record->size = result;
     fullQueue.put(record);
     atomicAdd(&s.statQueuedSamples, 1);
     return LogResult::Queued;

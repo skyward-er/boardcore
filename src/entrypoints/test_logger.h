@@ -23,7 +23,6 @@
 #pragma once
 
 #include <cstring>
-#include <logger/LogBase.h>
 
 #ifdef _MIOSIX
 #include <miosix.h>

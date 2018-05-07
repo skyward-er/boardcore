@@ -33,26 +33,27 @@
 #include <iostream>
 #include <fstream>
 #include <stdexcept>
-#include "logger/Serialization.h"
+#include <tscpp/stream.h>
 
 //TODO: add here include files of serialized classes
-#include "../src/shared/logger/LogBase.h"
+#include "../src/shared/logger/LogStats.h"
 #include "../src/entrypoints/test_logger.h"
 
 using namespace std;
+using namespace tscpp;
 
 int main(int argc, char *argv[])
 try {
+    TypePoolStream tp;
+    //TODO: Register the serialized classes
+    tp.registerType<LogStats>([](LogStats& t){ t.print(cout); cout<<'\n'; });
+    tp.registerType<Dummy>([](Dummy& t){ t.print(cout); cout<<'\n'; });
+
     if(argc!=2) return 1;
     ifstream in(argv[1]);
     in.exceptions(ios::eofbit);
-    Unserializer us;
-
-    //TODO: Register the serialized classes
-    us.registerType<LogStats>();
-    us.registerType<Dummy>();
-    
-    us.unserialize(cout,in);
+    UnknownInputArchive ia(in,tp);
+    for(;;) ia.unserialize();
 } catch(exception&) {
     return 0;
 }
