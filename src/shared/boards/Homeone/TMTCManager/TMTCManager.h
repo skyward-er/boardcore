@@ -29,7 +29,6 @@
 #include <libs/mavlink_skyward_lib/mavlink_lib/skyward/mavlink.h>
 #include "CircularBuffer.h"
 #include "TMTC_Config.h"
-#include "TCHandlers.h"
 
 /*
  * The TMTCManager class handles the communication with the Ground Station.
@@ -56,16 +55,16 @@ public:
      * @param  len       length of the message in bytes
      * @return           false if there isn't enough space in the buffer
      */
-    bool enqueueMsg(uint8_t* msg, uint8_t len);
+    bool enqueueMsg(const uint8_t* msg, const uint8_t len);
 
 protected:
 
 private:
-
     /* RF module driver */
     Gamma868* gamma;
     /* Synchronized buffer for outgoing messages */
     CircularBuffer* outBuffer;
+    
     /* Pointers to sending and receiving threads */
     miosix::Thread* senderThread;
     miosix::Thread* receiverThread;
@@ -74,6 +73,24 @@ private:
      * Private constructor that realizes the Singleton pattern.
      */
     TMTCManager();
+
+    /*
+     * Calls the runSender() member function
+     * @param arg       the object pointer cast to void*
+     */
+    static void senderLauncher(void* arg)
+    {
+        reinterpret_cast<TMTCManager*>(arg)->runSender();
+    }
+
+    /*
+     * Calls the runReceiver() member function
+     * @param arg       the object pointer cast to void*
+     */
+    static void receiverLauncher(void* arg)
+    {
+        reinterpret_cast<TMTCManager*>(arg)->runReceiver();
+    }
 
     /*  
      * Function ran by the sending thread:
@@ -93,26 +110,39 @@ private:
      * Send an acknowlege message back to the sender to notify the Ground Station
      * that you correctly received the message with a given sequence number.
      */
-    void sendAck(mavlink_message_t* msg);
-    
+    void sendAck(const mavlink_message_t* msg);
+
+    /* -------------------------- MESSAGE HANDLERS ------------------------- */
 
     /*
-     * Calls the runSender() member function
-     * @param arg       the object pointer cast to void*
+     * Handle Ping command.
      */
-    static void senderLauncher(void* arg)
-    {
-        reinterpret_cast<TMTCManager*>(arg)->runSender();
-    }
+    void handlePingCommand(const mavlink_message_t* command);
 
     /*
-     * Calls the runReceiver() member function
-     * @param arg       the object pointer cast to void*
+     * Handle a no argument command according to command in it.
      */
-    static void receiverLauncher(void* arg)
-    {
-        reinterpret_cast<TMTCManager*>(arg)->runReceiver();
-    }
+    void handleNoArgCommand(const mavlink_message_t* command);
+
+    /*
+     * Handle the Launch Command.
+     */
+    void handleLaunchCommand(const mavlink_message_t* command);
+
+    /*
+     * Handle a Status request.
+     */
+    void handleStatusRequestCommand(const mavlink_message_t* command);
+
+    /*
+     * Handle the calibration command.
+     */
+    void handleCalibrationCommand(const mavlink_message_t* command);
+
+    /*
+     * Handle a raw_event message.
+     */
+    void handleRawEventMessage(const mavlink_message_t* rawEventMsg);
    
 };
 
