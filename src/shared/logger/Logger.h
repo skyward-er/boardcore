@@ -32,7 +32,7 @@
 #include <list>
 #include <queue>
 #include <type_traits>
-#include "LogBase.h"
+#include "LogStats.h"
 
 /**
  * Possible outcomes of Logger::log()
