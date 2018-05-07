@@ -7,7 +7,6 @@ handling the incoming Telecommands and buffering the packets to send.
 | File  |  Description |
 |-------|--------------|
 | TMTCManager | Creates the sender and receiver threads. Has a non-blocking enqueueMsg() function to send messages. |
-| TCHandler | Contains a handler for each type of mavlink message |
 | CircularBuffer | A fixed dimension synchronized array, where messages can be enqueued and dequeued without delays. |
 | TMTCConfig | Lists all the includes and defines that are used in the module. |
 
@@ -17,4 +16,8 @@ See TMTCConfig.h file to see all the configurable parameters.
 
 ### Use
 
-Include TMTCManager.h and use `sTMTCManager` to access the object.
+Include TMTCManager.h and use `sTMTCManager` to access the object, such as:
+
+```
+sTMTCManager->enqueueMg(msg, msg_len);
+```
