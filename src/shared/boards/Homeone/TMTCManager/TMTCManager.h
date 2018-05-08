@@ -25,10 +25,13 @@
 
 #include <Common.h>
 #include <Singleton.h>
-#include <drivers/gamma868/Gamma868.h>
-#include <libs/mavlink_skyward_lib/mavlink_lib/skyward/mavlink.h>
 #include "CircularBuffer.h"
 #include "TMTC_Config.h"
+#include <drivers/gamma868/Gamma868.h>
+#include <libs/mavlink_skyward_lib/mavlink_lib/skyward/mavlink.h>
+#include "events/EventBroker.h"
+#include "boards/Homeone/Events.h"
+#include "boards/Homeone/Topics.h"
 
 /*
  * The TMTCManager class handles the communication with the Ground Station.
@@ -64,7 +67,25 @@ private:
     Gamma868* gamma;
     /* Synchronized buffer for outgoing messages */
     CircularBuffer* outBuffer;
-    
+
+    /* Events to be posted in the EventBtoker */ 
+    Event ev_ping{HomeoneBoard::EV_PING_RECEIVED};
+    Event ev_nosecone_status{HomeoneBoard::EV_NOSECONE_STATUS_REQUEST};
+    Event ev_ignition_status{HomeoneBoard::EV_IGNITION_STATUS_REQUEST};
+    Event ev_arm{HomeoneBoard::EV_ARM};
+    Event ev_disarm{HomeoneBoard::EV_DISARM};
+    Event ev_abort{HomeoneBoard::EV_ABORT_LAUNCH};
+    Event ev_start_lauch{HomeoneBoard::EV_START_LAUNCH};
+    Event ev_nosecone_open{HomeoneBoard::EV_NOSECONE_OPEN};
+    Event ev_nosecone_close{HomeoneBoard::EV_NOSECONE_CLOSE};
+    Event ev_test{HomeoneBoard::EV_TEST_MODE};
+    Event ev_reset{HomeoneBoard::EV_RESET_BOARD};
+    Event ev_calib{HomeoneBoard::EV_BAROMETER_CALIBRATION};
+    Event ev_start_sampling{HomeoneBoard::EV_START_SAMPLING};
+    Event ev_stop_sampling{HomeoneBoard::EV_STOP_SAMPLING};
+
+    Event ev_raw{HomeoneBoard::EV_PING_RECEIVED};
+
     /* Pointers to sending and receiving threads */
     miosix::Thread* senderThread;
     miosix::Thread* receiverThread;
