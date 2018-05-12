@@ -23,6 +23,10 @@
 #include <Common.h>
 #include "boards/Homeone/TMTCManager/TMTCManager.h"
 
+using namespace miosix;
+using namespace HomeoneBoard;
+using namespace TMTC;
+
 int main()
 {
 

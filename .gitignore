@@ -11,6 +11,11 @@ bin/*
 .*.sw?
 .*.pyc
 
+.project 
+.cproject 
+.settings 
+STM32F429zi_Discovery.xml
+
 ._*
 .DS_Store
 build

@@ -24,21 +24,21 @@
 #define CIRCULARBUFFER_H
 
 #include <miosix.h>
+#include <stdio.h>
 
 class CircularBuffer
 {
 public:
-
     /*
      * Creates a buffer with given dimension (uses dynamic allocation).
      */
-    CircularBuffer(const uint32_t totalSize){
+    CircularBuffer(const uint32_t totalSize)
+    {
         this->totalSize = totalSize;
-        buffer = new uint8_t[totalSize];
+        buffer          = new uint8_t[totalSize];
 
         memset(buffer, 0, totalSize);
     }
-
 
     /*
      * Calculates the occupied portion of the buffer.
@@ -58,13 +58,11 @@ public:
     /*
      * Calculates the occupied portion of the buffer.
      */
-    uint32_t freeSize()
-    {
-        return totalSize - occupiedSize();
-    }
+    uint32_t freeSize() { return totalSize - occupiedSize(); }
 
     /*
-     * Reads and deletes from the queues at maximum n chars from the buffer and stores them in *buf
+     * Reads and deletes from the queues at maximum n chars from the buffer and
+     * stores them in *buf
      * in subsequent positions.
      * Returns the number of characters read (could be less than n
      * if the buffer contains less than n characters).
@@ -72,14 +70,14 @@ public:
     uint32_t read(uint8_t* buf, uint32_t len)
     {
         uint32_t occupied_size = occupiedSize();
-        uint32_t availableLen = occupied_size > len ? len : occupied_size;
-        uint32_t i = 0;
+        uint32_t availableLen  = occupied_size > len ? len : occupied_size;
+        uint32_t i             = 0;
 
         {
             miosix::Lock<miosix::FastMutex> l(mutex);
 
-
-            for (i = 0; i < availableLen; i++) {
+            for (i = 0; i < availableLen; i++)
+            {
 
                 if (i == 0 && full)
                     full = false;
@@ -108,15 +106,18 @@ public:
         {
             miosix::Lock<miosix::FastMutex> l(mutex);
 
-            if (!full) {
-                for (i = 0; i < len; i++) {
+            if (!full)
+            {
+                for (i = 0; i < len; i++)
+                {
 
                     buffer[last] = buf[i];
 
                     last++;
                     last %= totalSize;
 
-                    if (last == first) {
+                    if (last == first)
+                    {
                         full = true;
                         break;
                     }
@@ -130,27 +131,27 @@ public:
     /*
      * Prints the whole content of the buffer (for debug pupouses).
      */
-    void printContent() {
-        #ifdef DEBUG 
-       printf("Buffer: first %lu last %lu occupied %lu total size %lu\n",
-                        first, last, occupiedSize(), totalSize);
+    void printContent()
+    {
+        printf("Buffer: first %lu last %lu occupied %lu total size %lu\n",
+               first, last, occupiedSize(), totalSize);
 
         uint32_t offset = first;
-        for (uint8_t i = 0; i < occupiedSize(); i++) {
+        for (uint8_t i = 0; i < occupiedSize(); i++)
+        {
             printf("%c(%d) ", buffer[offset], buffer[offset]);
 
             offset++;
             offset %= totalSize;
         }
         printf("\n");
-        #endif
     }
 
 private:
     uint32_t totalSize;
     uint32_t first = 0;
-    uint32_t last = 0;
-    bool full = false;
+    uint32_t last  = 0;
+    bool full      = false;
     uint8_t* buffer;
 
     miosix::FastMutex mutex;
