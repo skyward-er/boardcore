@@ -1,5 +1,5 @@
 /* Copyright (c) 2018 Skyward Experimental Rocketry
- * Authors: Alvise de'Faveri Tron, Nuno Barcellos
+ * Authors: Terraneo Federico
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -20,23 +20,45 @@
  * THE SOFTWARE.
  */
 
-#include <Common.h>
-#include "boards/Homeone/TMTCManager/TMTCManager.h"
+#pragma once
 
-int main()
+#include <cstring>
+
+#ifdef _MIOSIX
+#include <miosix.h>
+#endif //_MIOSIX
+
+class Dummy
 {
-
-    while(1){
-    	
-    	printf("Enqueuing heartbeat\n");
-
-		mavlink_message_t ping_msg;
-		mavlink_msg_ping_tc_pack(1, 1, &ping_msg, miosix::getTick());
-
-		sTMTCManager->enqueueMsg( (uint8_t*)&ping_msg, sizeof(ping_msg) );
-
-    	miosix::delayMs(5000);
-	}
-
-    return 0;
-}
+public:
+    Dummy()
+    {
+#ifdef _MIOSIX
+        timestamp=miosix::getTick();
+#else //_MIOSIX
+        timestamp=0;
+#endif //_MIOSIX
+        memset(x,0,sizeof(x));
+    }
+    
+    void correctValue()
+    {
+        for(int i=0;i<num;i++) x[i]=42;
+    }
+    
+    void print(std::ostream& os) const
+    {
+        os<<"timestamp="<<timestamp<<' ';
+        for(int i=0;i<num;i++)
+        {
+            if(x[i]==42) continue;
+            os<<"unserialized incorrectly, x["<<i<<"]="<<x[i];
+            return;
+        }
+        os<<"ok";
+    }
+private:
+    long long timestamp;
+    static const int num=50;
+    int x[num];
+};

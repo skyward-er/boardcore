@@ -1,5 +1,5 @@
 /* Copyright (c) 2018 Skyward Experimental Rocketry
- * Authors: Alvise de'Faveri Tron, Nuno Barcellos
+ * Authors: Nuno Barcellos
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -20,23 +20,31 @@
  * THE SOFTWARE.
  */
 
+#ifndef TRANSMITTER_H
+#define TRANSMITTER_H
+
 #include <Common.h>
-#include "boards/Homeone/TMTCManager/TMTCManager.h"
 
-int main()
+class Transmitter
 {
+public:
+    Transmitter() {}
+    virtual ~Transmitter() {}
 
-    while(1){
-    	
-    	printf("Enqueuing heartbeat\n");
+    /*
+     * Send a packet. Pure virtual function.
+     * @param pkt               Pointer to the packet (needs to be at least pkt_len bytes).
+     * @param pkt_len           Lenght of the packet to be sent.
+     * @return                  True if the message was sent correctly.
+     */
+    virtual bool send(const uint8_t* pkt, uint32_t pkt_len) = 0;
 
-		mavlink_message_t ping_msg;
-		mavlink_msg_ping_tc_pack(1, 1, &ping_msg, miosix::getTick());
+    /*
+     * Receive a packet. Pure virtual function.
+     * @param pkt               Pointer to the buffer (needs to be at least pkt_len bytes).
+     * @param pkt_len           Lenght of the packet to be received.
+     */
+    virtual void receive(uint8_t* pkt, uint32_t pkt_len) = 0;
+};
 
-		sTMTCManager->enqueueMsg( (uint8_t*)&ping_msg, sizeof(ping_msg) );
-
-    	miosix::delayMs(5000);
-	}
-
-    return 0;
-}
+#endif

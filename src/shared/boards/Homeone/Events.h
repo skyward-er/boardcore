@@ -31,27 +31,27 @@ namespace HomeoneBoard
  */
 enum Events : uint8_t
 {
-    EV_ARM = EV_FIRST_SIGNAL,
-    EV_DISARM,
-
-    EV_ENABLE_TEST_MODE,
-    EV_RESET_BOARD,
-
-    EV_START_LAUNCH,
-    EV_ABORT_LAUNCH,
-
-    EV_UNBILICAL_DETATCHED,
-
-    EV_FMM_ASCENT_TIMEOUT,
-
-    EV_ADA_START,
-    EV_ADA_GO_ACTIVE,
-    EV_ADA_STOP,
-
-    EV_APOGEE_DETECTED,
-    EV_DEPLOY_MAIN_PARACHUTE,
-
-    EV_STOP_SAMPLING
+    EV_PING_RECEIVED           = 1,
+    EV_SHUTDOWN_COMPLETE       = 2,
+    EV_NOSECONE_STATUS_REQUEST = 3,
+    EV_IGNITION_STATUS_REQUEST = 4,
+    EV_ARM                     = 32,
+    EV_DISARM                  = 33,
+    EV_ABORT_LAUNCH            = 34,
+    EV_UMBILICAL_DISCONNECTED  = 35,
+    EV_APOGEE_DETECTED         = 36,
+    EV_APOGEE_TIMEOUT          = 37,
+    EV_MAIN_CHUTE_ALTITUDE     = 38,
+    EV_DESCENT_TIMEOUT         = 39,
+    EV_START_SAMPLING          = 64,
+    EV_STOP_SAMPLING           = 65,
+    EV_START_LAUNCH            = 66,
+    EV_NOSECONE_CLOSE          = 67,
+    EV_NOSECONE_OPEN           = 68,
+    EV_TEST_MODE               = 69,
+    EV_RESET_BOARD             = 70,
+    EV_BAROMETER_CALIBRATION   = 128,
+    EV_PRESSURE_SAMPLE         = 192
 };
 }
 
