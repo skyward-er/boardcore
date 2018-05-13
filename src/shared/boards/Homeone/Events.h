@@ -33,7 +33,7 @@ namespace HomeoneBoard
 enum Events : uint8_t
 {
     EV_PING_RECEIVED           = 1,
-    EV_HEARTHBEAT_RECEIVED     = 2,
+    EV_HEARTBEAT_RECEIVED      = 2,
     EV_SHUTDOWN_COMPLETE       = 3,
     EV_NOSECONE_STATUS_REQUEST = 4,
     EV_IGNITION_STATUS_REQUEST = 5,
