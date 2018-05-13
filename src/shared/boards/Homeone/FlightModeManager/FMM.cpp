@@ -35,7 +35,8 @@ namespace FMM
 FlightModeManagerFSM::FlightModeManagerFSM()
     : FSM(&FlightModeManagerFSM::disarmed)
 {
-    sEventBroker->subscribe(this, TOPIC_FMM_FSM);
+    sEventBroker->subscribe(this, TOPIC_COMMANDS);
+    sEventBroker->subscribe(this, TOPIC_FLIGHT_EVENTS);
 }
 
 void FlightModeManagerFSM::disarmed(const Event& e)
@@ -51,14 +52,17 @@ void FlightModeManagerFSM::disarmed(const Event& e)
 
         // Transition to armed
         case EV_ARM:
-            printf("EEV_ARM\n");
+            printf("EV_ARM\n");
             transition(&FlightModeManagerFSM::armed);
             break;
 
         // Transition to testing
-        case EV_ENABLE_TEST_MODE:
-            printf("EV_ENABLE_TEST_MODE\n");
+        case EV_TC_TEST_MODE:
+            printf("EV_TC_TEST_MODE\n");
             transition(&FlightModeManagerFSM::testing);
+
+            // Send test mode enabled event
+            sEventBroker->post(Event{EV_TEST_MODE}, TOPIC_CONFIGURATION);
             break;
 
         // Transition to aborted
@@ -66,7 +70,28 @@ void FlightModeManagerFSM::disarmed(const Event& e)
             printf("EV_ABORT_LAUNCH\n");
             transition(&FlightModeManagerFSM::aborted);
 
-            // TODO: Start abort procedure
+            // TODO: Do additional abort operations?
+            break;
+
+        case EV_TC_START_SAMPLING:
+            sEventBroker->post(Event{EV_START_SAMPLING}, TOPIC_CONFIGURATION);
+            break;
+
+        case EV_TC_STOP_SAMPLING:
+            sEventBroker->post(Event{EV_STOP_SAMPLING}, TOPIC_CONFIGURATION);
+            break;
+
+        case EV_TC_STOP_SAMPLING:
+            sEventBroker->post(Event{EV_STOP_SAMPLING}, TOPIC_CONFIGURATION);
+            break;
+
+        case EV_TC_ALTIMETER_CALIBRATION:
+            // Copy the event and change its id
+            Event ev_calib = e;
+            ev_calib.sig   = EV_ALTIMETER_CALIBRATION;
+
+            // Post it on the CONFIGURATION topic
+            sEventBroker->post(ev_calib, TOPIC_CONFIGURATION);
             break;
 
         default:
@@ -80,6 +105,9 @@ void FlightModeManagerFSM::armed(const Event& e)
     switch (e.sig)
     {
         case EV_ENTRY:
+            // TODO: Should we start sampling here? in case we forget to send
+            // the command
+
             printf("Armed state entry\n");
             break;
         case EV_EXIT:
@@ -93,7 +121,7 @@ void FlightModeManagerFSM::armed(const Event& e)
             break;
 
         // Transition to ascending
-        case EV_UNBILICAL_DETATCHED:
+        case EV_UMBILICAL_DISCONNECTED:
             printf("EV_UNBILICAL_DETATCHED\n");
             transition(&FlightModeManagerFSM::ascending);
             break;
@@ -122,9 +150,17 @@ void FlightModeManagerFSM::testing(const Event& e)
             break;
 
         // Reset the board
-        case EV_RESET_BOARD:
+        case EV_TC_RESET_BOARD:
             printf("EV_RESET_BOARD\n");
-            // TODO: Reset board
+            sEventBroker->post(Event{EV_RESET_BOARD}, TOPIC_CONFIGURATION);
+            break;
+
+        case EV_TC_NOSECONE_OPEN:
+            sEventBroker->post(Event{EV_NOSECONE_OPEN}, TOPIC_CONFIGURATION);
+            break;
+
+        case EV_TC_NOSECONE_CLOSE:
+            sEventBroker->post(Event{EV_NOSECONE_CLOSE}, TOPIC_CONFIGURATION);
             break;
 
         default:
@@ -158,10 +194,10 @@ void FlightModeManagerFSM::ascending(const Event& e)
             printf("Ascending state entry\n");
             // State timeout
             delayed_event_id = sEventBroker->postDelayed(
-                ev_ascent_timeout, TOPIC_FMM_FSM, ASCENDING_TIMEOUT_MS);
+                Event{EV_ASCENT_TIMEOUT}, TOPIC_FLIGHT_EVENTS,
+                ASCENDING_TIMEOUT_MS);
 
-            // Start the ada in passive mode
-            sEventBroker->post(ev_ada_start, TOPIC_FMM_ADA);
+            // TODO: Start the ada in passive mode
             break;
         case EV_EXIT:
             printf("Ascending state exit\n");
@@ -172,7 +208,7 @@ void FlightModeManagerFSM::ascending(const Event& e)
             break;
 
         // Transition to apogeeDetection
-        case EV_FMM_ASCENT_TIMEOUT:
+        case EV_ASCENT_TIMEOUT:
             printf("EV_FMM_ASCENT_TIMEOUT\n");
             transition(&FlightModeManagerFSM::apogeeDetection);
             break;
@@ -190,18 +226,24 @@ void FlightModeManagerFSM::apogeeDetection(const Event& e)
             printf("Apogee state entry\n");
             // State timeout
             delayed_event_id = sEventBroker->postDelayed(
-                ev_apogee_detected, TOPIC_FMM_FSM, APOGEE_DETECTION_TIMEOUT_MS);
+                Event{EV_APOGEE_TIMEOUT}, TOPIC_FLIGHT_EVENTS,
+                APOGEE_DETECTION_TIMEOUT_MS);
 
-            // ADA active mode
-            sEventBroker->post(ev_ada_active_mode, TOPIC_FMM_ADA);
+            // TODO: ADA active mode
             break;
         case EV_EXIT:
             printf("Apogee state exit\n");
 
-            // Stop the ada
-            sEventBroker->post(ev_ada_stop, TOPIC_FMM_ADA);
+            // TODO: Stop the ada
 
             sEventBroker->removeDelayed(delayed_event_id);
+            break;
+
+        case EV_APOGEE_TIMEOUT:
+            printf("EV_APOGEE_TIMEOUT\n");
+
+            // Post apogee detected event
+            sEventBroker->post(Event{EV_APOGEE_DETECTED}, TOPIC_FLIGHT_EVENTS);
             break;
 
         // Transition to descendingPhase_1
@@ -223,7 +265,7 @@ void FlightModeManagerFSM::descendingPhase_1(const Event& e)
             printf("Descending_1 state entry\n");
             // State timeout
             delayed_event_id = sEventBroker->postDelayed(
-                ev_main_parachute_deploy, TOPIC_FMM_FSM,
+                Event{EV_DESCENT_TIMEOUT}, TOPIC_FLIGHT_EVENTS,
                 MAIN_PARACHUTE_DEPLOY_TIMEOUT_MS);
 
             // TODO: Start altitude detection
@@ -235,8 +277,14 @@ void FlightModeManagerFSM::descendingPhase_1(const Event& e)
             sEventBroker->removeDelayed(delayed_event_id);
             break;
 
+        case EV_DESCENT_TIMEOUT:
+            // Post main chute altitude detected event
+            sEventBroker->post(Event{EV_MAIN_CHUTE_ALTITUDE},
+                               TOPIC_FLIGHT_EVENTS);
+            break;
+
         // Transition to descendingPhase_2
-        case EV_DEPLOY_MAIN_PARACHUTE:
+        case EV_MAIN_CHUTE_ALTITUDE:
             printf("EV_FMM_MAIN_PARACHUTE_DEPLOY\n");
             transition(&FlightModeManagerFSM::descendingPhase_2);
             break;
@@ -259,11 +307,8 @@ void FlightModeManagerFSM::descendingPhase_2(const Event& e)
             break;
 
         // Transition to landed
-        case EV_STOP_SAMPLING:
-            printf("Descending_2 state exit\n");
-
-            // Post the event on TOPIC_SAMPLING
-            sEventBroker->post(e, TOPIC_SAMPLING);
+        case EV_TC_STOP_SAMPLING:
+            sEventBroker->post(Event{EV_STOP_SAMPLING}, TOPIC_CONFIGURATION);
 
             transition(&FlightModeManagerFSM::landed);
             break;
