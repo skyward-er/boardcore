@@ -22,14 +22,6 @@
 
 #include "TMTCManager.h"
 
-extern void defaultHandler(const mavlink_message_t* command);
-extern void handlePingCommand(const mavlink_message_t* command);
-extern void handleNoArgCommand(const mavlink_message_t* command);
-extern void handleLaunchCommand(const mavlink_message_t* command);
-extern void handleStatusRequestCommand(const mavlink_message_t* command);
-extern void handleCalibrationCommand(const mavlink_message_t* command);
-extern void handleRawEventMessage(const mavlink_message_t* command);
-
 namespace HomeoneBoard
 {
 namespace TMTC
@@ -83,6 +75,7 @@ void TMTCManager::runSender()
                     break;
             }
         }
+        //TODO: should this be done only if something has been sent?
         miosix::Thread::sleep(TMTC_SEND_TIMEOUT);
     }
 }
@@ -90,7 +83,7 @@ void TMTCManager::runSender()
 /*
  * Receiving thread's run() function: parse the received packet one byte at a
  * time
- * until you find a complete mavlink message and dispatch it with the
+ * until you find a complete Mavlink message and dispatch it with the
  * appropriate handler.
  */
 void TMTCManager::runReceiver()
@@ -113,21 +106,13 @@ void TMTCManager::runReceiver()
                 msg.msgid, msg.seq, msg.compid, msg.sysid);
 #endif
 
-            // If the received message is not a HEARTBEAT, send an ACK back to
-            // ground
+            // Send Ack
             if (msg.msgid != MAVLINK_MSG_ID_HEART_BEAT)
                 sendAck(&msg);
 
             // Handle the command
-            if (msgHandlersMap.find(msg.msgid) != msgHandlersMap.end())
-            {
-                MessageHandler_t handler = msgHandlersMap[msg.msgid];
-                (*handler)(&msg);
-            }
-            else
-            {
-                TMTC_TRACE("Unhandled message.");
-            }
+			MessageHandler_t handler = getMsgHandler(msg.msgid);
+			(*handler)(&msg);
         }
 
         // TODO: aggiornare statistiche TMTC nell'housekeeping

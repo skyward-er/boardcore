@@ -32,27 +32,23 @@ namespace HomeoneBoard
 namespace TMTC
 {
 
-/*
+/**
  * The TMTCManager class handles the communication with the Ground Station.
  * It uses a Gamma868 transceiver and implements the Mavlink protocol.
  *
+ * SENDER:
  * Since the transceiver's driver defines blocking functions and the LoRa
  * protocol used by the Gamma can be very slow, a synchronized CircularBuffer
  * is used to store outgoing messages: the Sender thread will then periodically
  * send them over the link.
  *
+ * RECEIVER:
  * A Receiver thread is also used to read the Gamma868 buffer byte-per-byte and
- * then,
- * when an entire message is read, an appropriate handler defined in the
- * MessageHandlers
- * class is called.
+ * then, when an entire message is read, an appropriate handler defined in
+ * MessageHandlers.h is called.
  *
- * Use: at the end of the file you can find the sTMTCManager define. To use the
- * TMTC,
- * simply write sTMTCManager->enqueueMsg(msg, len).
- * Note that the message should already be a mavlink message when it is
- * enqueued: no wrapping
- * is made by the TMTC when sending.
+ * USE:
+ * At the end of the file you can find the sTMTCManager define.
  */
 class TMTCManager : public Singleton<TMTCManager>
 {
@@ -67,6 +63,8 @@ public:
     /*
      * Non-blocking function that can be used to send a message: copies the
      * message into a synchronized buffer.
+     * Note that the message should already be a Mavlink message when it is
+     * enqueued: no wrapping is made by the TMTC when sending.
      * @param  msg       buffer that contains the message
      * @param  len       length of the message in bytes
      * @return           false if there isn't enough space in the buffer
@@ -90,7 +88,7 @@ private:
     TMTCManager();
 
     /*
-     * Calls the runSender() member function
+     * Calls the runSender() member function.
      * @param arg       the object pointer cast to void*
      */
     static void senderLauncher(void* arg)
@@ -99,7 +97,7 @@ private:
     }
 
     /*
-     * Calls the runReceiver() member function
+     * Calls the runReceiver() member function.
      * @param arg       the object pointer cast to void*
      */
     static void receiverLauncher(void* arg)
@@ -109,8 +107,8 @@ private:
 
     /*
      * Function ran by the sending thread:
-     * look for messages in the outBuffer an send them through the link using
-     * the module's driver.
+     * looks for messages in the outBuffer an sends them through the link
+     * using the module's driver.
      */
     void runSender();
 
@@ -122,7 +120,7 @@ private:
     void runReceiver();
 
     /*
-     * Send an acknowlege message back to the sender to notify the Ground
+     * Send an acknowledge message back to the sender to notify the Ground
      * Station
      * that you correctly received the message with a given sequence number.
      */
@@ -136,6 +134,6 @@ private:
 #define sTMTCManager TMTCManager::getInstance()
 #else
 #error TMTCMANAGER ALREADY DEFINED
-#endif /* ifndef sTMTCManager */
+#endif /* sTMTCManager */
 
-#endif /* ifndef TMTCMANAGER_H */
+#endif /* TMTCMANAGER_H */

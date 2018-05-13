@@ -28,22 +28,6 @@ namespace TMTC
 {
 
 /**
- * Check that the map contains the given msgId and return it, else return the
- * defaultHandler.
- */
-MessageHandler_t getMsgHandler(const uint8_t msgId)
-{
-    if (msgHandlersMap.find(msgId) != msgHandlersMap.end())
-    {
-        return msgHandlersMap[msgId];
-    }
-    else
-    {
-        return (MessageHandler_t)&defaultHandler;
-    }
-}
-
-/**
  * Default message handler: print a message.
  */
 void defaultHandler(const mavlink_message_t* command)
@@ -65,20 +49,15 @@ void handlePingCommand(const mavlink_message_t* command)
  */
 void handleNoArgCommand(const mavlink_message_t* command)
 {
-    // Retrieve the command id from the payload of the message.
     uint8_t msgId = mavlink_msg_noarg_tc_get_command_id(command);
 
-    // Handle according to the id
     switch (msgId)
     {
-        // If the request is for debug info, get them directly from the Board
-        // object.
         case MAV_CMD_REQ_DEBUG_INFO:
         {
-            // TODO recuperare info direttamente da sBoard
+            // TODO: debug info command
             break;
         }
-        // In any other case, post an event according to the translation map.
         default:
         {
             if (noArgCmdMap.find(msgId) != noArgCmdMap.end())
@@ -104,7 +83,7 @@ void handleLaunchCommand(const mavlink_message_t* command)
 {
     generatedEvt.sig = EV_START_LAUNCH;
     sEventBroker->post(generatedEvt, FLIGHT_EVENTS);
-    // TODO: use the real launch event.
+    // TODO: populate launch event
 }
 
 /**
@@ -112,12 +91,12 @@ void handleLaunchCommand(const mavlink_message_t* command)
  */
 void handleStatusRequestCommand(const mavlink_message_t* command)
 {
-    // Handle depending the board id
+
     switch (mavlink_msg_request_board_status_tc_get_board_id(command))
     {
         case MAV_HOMEONE_BOARD:
         {
-            // TODO: recuperare direttamente da sBoard.
+            // TODO: handle HomeoneBoard status request
             break;
         }
         case MAV_IGNITION_BOARD:
@@ -134,7 +113,7 @@ void handleStatusRequestCommand(const mavlink_message_t* command)
         }
         case MAV_ALL_BOARDS:
         {
-            // TODO
+            // TODO: Handle all boards status request
             break;
         }
     }
@@ -146,7 +125,7 @@ void handleStatusRequestCommand(const mavlink_message_t* command)
  */
 void handleCalibrationCommand(const mavlink_message_t* command)
 {
-    // TODO
+    // TODO: handle calibration command
 }
 
 /**
