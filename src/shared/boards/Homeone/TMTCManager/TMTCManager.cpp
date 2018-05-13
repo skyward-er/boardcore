@@ -22,6 +22,7 @@
 
 #include "TMTCManager.h"
 
+using namespace HomeoneBoard;
 /* 
  * Constructor: initialise objects (has memory allocation).
  */
@@ -29,10 +30,6 @@ TMTCManager::TMTCManager() {
     gamma = new Gamma868(RADIO_DEVICE_NAME);
     outBuffer = new CircularBuffer(TMTC_OUT_BUFFER_SIZE);
     //TODO: check gamma status and configuration
-    senderThread = miosix::Thread::create(senderLauncher, TMTC_SENDER_STACKSIZE, TMTC_SENDER_PRIORITY,
-                                        reinterpret_cast<void*>(this));
-    receiverThread = miosix::Thread::create(receiverLauncher, TMTC_RECEIVER_STACKSIZE, TMTC_RECEIVER_PRIORITY,
-                                        reinterpret_cast<void*>(this));
 }
 
 /* 
@@ -186,7 +183,7 @@ void TMTCManager::sendAck(const mavlink_message_t* msg) {
  * Handle Ping command: post the event on the EventBroker.
  */
 void TMTCManager::handlePingCommand(const mavlink_message_t* command) {
-	// TODO: post event in eventBroker
+	sEventBroker->post(ev_ping, DIAGNOSTICS);
 }
 
 /*
@@ -197,42 +194,52 @@ void TMTCManager::handleNoArgCommand(const mavlink_message_t* command) {
 	switch(mavlink_msg_noarg_tc_get_command_id(command)) {
 		case MAV_CMD_ARM:
 		{
+			sEventBroker->post(ev_arm, FLIGHT_EVENTS);
 			break;
 		}
 		case MAV_CMD_DISARM:
 		{
+			sEventBroker->post(ev_disarm, FLIGHT_EVENTS);
 			break;
 		}
 		case MAV_CMD_ABORT:
 		{
+			sEventBroker->post(ev_abort, FLIGHT_EVENTS);
 			break;
 		}
 		case MAV_CMD_NOSECONE_OPEN:
 		{
+			sEventBroker->post(ev_nosecone_open, FLIGHT_EVENTS);
 			break;
 		}
 		case MAV_CMD_NOSECONE_CLOSE:
 		{
+			sEventBroker->post(ev_nosecone_close, FLIGHT_EVENTS);
 			break;
 		}
 		case MAV_CMD_START_SAMPLING:
 		{
+			sEventBroker->post(ev_start_sampling, FLIGHT_EVENTS);
 			break;
 		}
 		case MAV_CMD_STOP_SAMPLING:
 		{
+			sEventBroker->post(ev_stop_sampling, FLIGHT_EVENTS);
 			break;
 		}
 		case MAV_CMD_TEST_MODE:
 		{
+			sEventBroker->post(ev_test, STATE_MACHINE);
 			break;
 		}
 		case MAV_CMD_BOARD_RESET:
 		{
+			sEventBroker->post(ev_reset, STATE_MACHINE);
 			break;
 		}
 		case MAV_CMD_REQ_DEBUG_INFO:
 		{
+			// TODO recuperare info direttamente da sBoard
 			break;
 		}
 		default:
@@ -248,7 +255,8 @@ void TMTCManager::handleNoArgCommand(const mavlink_message_t* command) {
  * Handle the Launch Command.
  */
 void TMTCManager::handleLaunchCommand(const mavlink_message_t* command) {
-	// TODO check the launch command
+    sEventBroker->post(ev_start_lauch, FLIGHT_EVENTS);
+    //TODO inserire nell'evento il codice di lancio
 }
 
 /*
@@ -259,21 +267,22 @@ void TMTCManager::handleStatusRequestCommand(const mavlink_message_t* command) {
 	switch(mavlink_msg_request_board_status_tc_get_board_id(command)) {
 		case MAV_HOMEONE_BOARD: 
 		{
-			// TODO: Board status ?
+			// TODO: recuperare direttamente da sBoard
 			break;
 		}
 		case MAV_IGNITION_BOARD: 
 		{
-			// TODO IgnitionController.getStatus();
+			sEventBroker->post(ev_ignition_status, DIAGNOSTICS);
 			break;
 		}
 		case MAV_NOSECONE_BOARD: 
 		{
-			// TODO DeploymentController.getStatus();
+			sEventBroker->post(ev_nosecone_status, DIAGNOSTICS);
 			break;
 		}
 		case MAV_ALL_BOARDS: 
 		{
+			// TODO
 			break;
 		}
 	}
@@ -284,6 +293,7 @@ void TMTCManager::handleStatusRequestCommand(const mavlink_message_t* command) {
  * Handle the calibration command: post the corresponding event in the eventBroker.
  */
 void TMTCManager::handleCalibrationCommand(const mavlink_message_t* command) {
+	//TODO 
 }
 
 /*
@@ -292,5 +302,8 @@ void TMTCManager::handleCalibrationCommand(const mavlink_message_t* command) {
  * in the payload.
  */
 void TMTCManager::handleRawEventMessage(const mavlink_message_t* rawEventMsg){
-	// TODO: post event directly in the eventBroker
+	uint8_t evId = mavlink_msg_raw_event_tc_get_Event_id(rawEventMsg);
+	uint8_t topicId = mavlink_msg_raw_event_tc_get_Topic_id(rawEventMsg);
+	ev_raw.sig = evId;
+	sEventBroker->post(ev_raw, topicId);
 }

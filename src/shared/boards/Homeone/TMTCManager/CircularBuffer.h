@@ -32,7 +32,7 @@ public:
     /*
      * Creates a buffer with given dimension (uses dynamic allocation).
      */
-    CircularBuffer(uint32_t totalSize){
+    CircularBuffer(const uint32_t totalSize){
         this->totalSize = totalSize;
         buffer = new uint8_t[totalSize];
 
@@ -46,6 +46,7 @@ public:
 
     uint32_t occupiedSize()
     {
+        miosix::Lock<miosix::FastMutex> l(mutex);
         if (full)
             return totalSize;
         else if (last < first)
@@ -63,14 +64,15 @@ public:
     }
 
     /*
-     * Reads at maximum n chars from the buffer and stores them in *buf
+     * Reads and deletes from the queues at maximum n chars from the buffer and stores them in *buf
      * in subsequent positions.
      * Returns the number of characters read (could be less than n
      * if the buffer contains less than n characters).
      */
     uint32_t read(uint8_t* buf, uint32_t len)
     {
-        uint32_t availableLen = occupiedSize() > len ? len : occupiedSize();
+        uint32_t occupied_size = occupiedSize();
+        uint32_t availableLen = occupied_size > len ? len : occupied_size;
         uint32_t i = 0;
 
         {
@@ -83,11 +85,10 @@ public:
                     full = false;
 
                 buf[i] = buffer[first];
-                printf("Reading %c(%d), first %lu last %lu\n", buf[i], buf[i], first, last);
 
                 first++;
-                if (first == totalSize)
-                    first = 0;
+                first %= totalSize;
+
                 if (first == last)
                     break;
             }
@@ -113,8 +114,8 @@ public:
                     buffer[last] = buf[i];
 
                     last++;
-                    if (last == totalSize)
-                        last = 0;
+                    last %= totalSize;
+
                     if (last == first) {
                         full = true;
                         break;
@@ -122,7 +123,6 @@ public:
                 }
             }
         }
-        print();
 
         return i;
     }
@@ -130,18 +130,20 @@ public:
     /*
      * Prints the whole content of the buffer (for debug pupouses).
      */
-     void print() {
-        printf("Buffer: first %lu last %lu occupied %lu total size %lu\n",
+    void printContent() {
+        #ifdef DEBUG 
+       printf("Buffer: first %lu last %lu occupied %lu total size %lu\n",
                         first, last, occupiedSize(), totalSize);
 
         uint32_t offset = first;
-        for (uint8_t i = 0; i < occupiedSize(); i++){
+        for (uint8_t i = 0; i < occupiedSize(); i++) {
             printf("%c(%d) ", buffer[offset], buffer[offset]);
 
             offset++;
-            if (offset == totalSize) offset = 0;
+            offset %= totalSize;
         }
         printf("\n");
+        #endif
     }
 
 private:
