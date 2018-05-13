@@ -48,8 +48,6 @@ enum Events : uint8_t
     EV_TEST_MODE             = 48,
     EV_RESET_BOARD           = 49,
 
-    EV_ARM                    = 64,
-    EV_DISARM                 = 65,
     EV_START_LAUNCH           = 72,
     EV_ABORT_LAUNCH           = 73,
     EV_UMBILICAL_DISCONNECTED = 80,
@@ -66,6 +64,8 @@ enum Events : uint8_t
     EV_TC_NOSECONE_CLOSE        = 145,
     EV_TC_TEST_MODE             = 152,
     EV_TC_RESET_BOARD           = 160,
+    EV_TC_ARM                   = 161,
+    EV_TC_DISARM                = 162,
     EV_TC_ALTIMETER_CALIBRATION = 168,
 
     EV_PRESSURE_SAMPLE = 192
