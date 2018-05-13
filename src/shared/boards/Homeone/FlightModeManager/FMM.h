@@ -39,8 +39,8 @@ class FlightModeManager : public FSM<FlightModeManager>
     friend class Singleton<FlightModeManager>;
 
 public:
-    FlightModeManagerFSM();
-    ~FlightModeManagerFSM() {}
+    FlightModeManager();
+    ~FlightModeManager() {}
 
 private:
     // States declarations
