@@ -1,5 +1,5 @@
-/* Copyright (c) 2015-2018 Skyward Experimental Rocketry
- * Authors: Luca Erbetta
+/* Copyright (c) 2018 Skyward Experimental Rocketry
+ * Authors: Nuno Barcellos
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -19,54 +19,32 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
-#ifndef SRC_SHARED_BOARDS_HOMEONE_EVENTS_H
-#define SRC_SHARED_BOARDS_HOMEONE_EVENTS_H
 
-#include "events/Event.h"
+#ifndef TRANSMITTER_H
+#define TRANSMITTER_H
 
-namespace HomeoneBoard
+#include <Common.h>
+
+class Transmitter
 {
-/**
- * Definition of all events in the Homeone Board software
- *
- *
- * Event naming convention:
- *
- * EV_<COMPONENT>_<EVENT-NAME>
- *
- * Example:
- *
- * Component: Flight Mode Manager (FMM)
- * Event name: Apogee
- * --> EV_FMM_APOGEE
- *
- */
-enum Events : uint8_t
-{
+public:
+    Transmitter() {}
+    virtual ~Transmitter() {}
 
-EV_PING_RECEIVED = 1,
-EV_SHUTDOWN_COMPLETE = 2,
-EV_NOSECONE_STATUS_REQUEST = 3,
-EV_IGNITION_STATUS_REQUEST = 4,
-EV_ARM = 32,
-EV_DISARM = 33,
-EV_ABORT_LAUNCH = 34,
-EV_UMBILICAL_DISCONNECTED = 35,
-EV_APOGEE_DETECTED = 36,
-EV_APOGEE_TIMEOUT = 37,
-EV_MAIN_CHUTE_ALTITUDE = 38,
-EV_DESCENT_TIMEOUT = 39,
-EV_START_SAMPLING = 64,
-EV_STOP_SAMPLING = 65,
-EV_START_LAUNCH = 66,
-EV_NOSECONE_CLOSE = 67,
-EV_NOSECONE_OPEN = 68,
-EV_TEST_MODE = 69,
-EV_RESET_BOARD = 70,
-EV_BAROMETER_CALIBRATION = 128,
-EV_PRESSURE_SAMPLE = 192
+    /*
+     * Send a packet. Pure virtual function.
+     * @param pkt               Pointer to the packet (needs to be at least pkt_len bytes).
+     * @param pkt_len           Lenght of the packet to be sent.
+     * @return                  True if the message was sent correctly.
+     */
+    virtual bool send(const uint8_t* pkt, uint32_t pkt_len) = 0;
+
+    /*
+     * Receive a packet. Pure virtual function.
+     * @param pkt               Pointer to the buffer (needs to be at least pkt_len bytes).
+     * @param pkt_len           Lenght of the packet to be received.
+     */
+    virtual void receive(uint8_t* pkt, uint32_t pkt_len) = 0;
 };
 
-}
-
-#endif /* SRC_SHARED_BOARDS_HOMEONE_EVENTS_H */
+#endif

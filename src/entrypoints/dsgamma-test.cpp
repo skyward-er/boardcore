@@ -36,7 +36,6 @@ using namespace miosix;
 /* DISCOVERY F429I*/
 typedef Gpio<GPIOA_BASE, 0> button;
 
-Gamma868 gamma("/dev/auxtty");  // create gamma object
 
 // RTT calculation
 // long long sendTime = 0;
@@ -49,6 +48,7 @@ int main()
         button::mode(Mode::INPUT);
     }
 
+    Gamma868 gamma("/dev/auxtty");  // create gamma object
 
     printf("Press the button to start receiving \n");
     // Wait for button
@@ -58,13 +58,13 @@ int main()
             break;
     }
 
-    char inputBuf[DATA_LEN];
+    uint8_t inputBuf[DATA_LEN];
 
     while (1)
     {
         // long long arrivalTime = miosix::getTick();
         printf("Reading: \n");
-        gamma.receive(DATA_LEN, inputBuf);
+        gamma.receive(inputBuf,DATA_LEN);
 
         printf("Received: ");
 
@@ -76,7 +76,7 @@ int main()
         // int rtt = arrivalTime - sendTime;
         // printf("\nRTT: %d\n\n", rtt);
 
-        gamma.send(DATA_LEN, inputBuf);
+        gamma.send(inputBuf,DATA_LEN);
         // sendTime = miosix::getTick();
     }
 
