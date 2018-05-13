@@ -37,7 +37,7 @@ Gamma868::Gamma868(const char *serialPath)
 {
     fd = open(serialPath, O_RDWR);
     if (fd < 0)
-        printf("[Gamma868] Cannot open %s\n", serialPath); //TODO: handle error opening serial
+        printf("[Gamma868] Cannot open %s\n", serialPath); //TODO: handle error
     gammaLed::mode(Mode::INPUT);
     gammaSwitch::mode(Mode::OUTPUT);
     gammaSwitch::high();

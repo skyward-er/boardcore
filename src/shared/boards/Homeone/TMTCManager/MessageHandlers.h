@@ -40,17 +40,6 @@ typedef struct eventEntry_type
 } eventEntry_t;
 
 /*
- * Getter for the Handler function of a mavlink message:
- * @param msgId   the id of the mavlink message (i.e. the code which identifies
- * the message type).
- * @return        the function that handles that message as defined in the
- * msgHandlersMap
- *                (or the defaultHandler() if the command is not directly
- * handled).
- */
-MessageHandler_t getMsgHandler(const uint8_t msgId);
-
-/*
  * MessageHandlers: functions that specify how a message of a certain type
  * should be handled.
  */
@@ -65,7 +54,7 @@ void handleRawEventMessage(const mavlink_message_t* command);
 Event generatedEvt;
 
 // clang-format off
-/* Map that contains the handler reference for each handled command. */
+/* Map that contains a handler reference for each handled command. */
 std::map<uint8_t, MessageHandler_t> msgHandlersMap = {
     {
         MAVLINK_MSG_ID_PING_TC,
@@ -136,6 +125,28 @@ std::map<uint8_t, eventEntry_t> noArgCmdMap = {
     }
 };
 // clang-format on
+
+/*
+ * Getter for the Handler function of a Mavlink message.
+ * @param msgId   the id of the Mavlink message (i.e. the code which identifies
+ *                the message type).
+ * @return        the function that handles that message as defined in the
+ *                msgHandlersMap
+ *                (or the defaultHandler() if the command is not directly
+ *                handled).
+ */
+MessageHandler_t getMsgHandler(const uint8_t msgId)
+{
+    if (msgHandlersMap.find(msgId) != msgHandlersMap.end())
+    {
+        return msgHandlersMap[msgId];
+    }
+    else
+    {
+        return (MessageHandler_t)&defaultHandler;
+    }
+}
+
 }
 }
 
