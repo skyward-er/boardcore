@@ -56,15 +56,11 @@ private:
     void landed(const Event& e);
 
     // Event definitions
-    Event ev_ascent_timeout{EV_FMM_ASCENT_TIMEOUT};
+    // Event ev_ascent_timeout{EV_ASCENT_TIMEOUT};
 
-    Event ev_ada_start{EV_ADA_START};
-    Event ev_ada_active_mode{EV_ADA_GO_ACTIVE};
-    Event ev_ada_stop{EV_ADA_STOP};
+    // Event ev_apogee_detected{EV_APOGEE_DETECTED};
 
-    Event ev_apogee_detected{EV_APOGEE_DETECTED};
-
-    Event ev_main_parachute_deploy{EV_DEPLOY_MAIN_PARACHUTE};
+    // Event ev_main_chute_altitude{EV_MAIN_CHUTE_ALTITUDE};
 
     // State variables
     uint16_t delayed_event_id = 0;
