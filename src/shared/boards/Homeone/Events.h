@@ -40,10 +40,11 @@ enum Events : uint8_t
     EV_NOSECONE_STATUS         = 6,
     EV_IGNITION_STATUS         = 7,
 
-    EV_BAROMETER_CALIBRATION = 32,
+    EV_ALTIMETER_CALIBRATION = 32,
     EV_START_SAMPLING        = 40,
     EV_STOP_SAMPLING         = 41,
-    EV_NOSECONE_CLOSE        = 42,
+    EV_NOSECONE_OPEN         = 42,
+    EV_NOSECONE_CLOSE        = 43,
     EV_TEST_MODE             = 48,
     EV_RESET_BOARD           = 49,
 
@@ -65,10 +66,16 @@ enum Events : uint8_t
     EV_TC_NOSECONE_CLOSE        = 145,
     EV_TC_TEST_MODE             = 152,
     EV_TC_RESET_BOARD           = 160,
-    EV_TC_BAROMETER_CALIBRATION = 168,
+    EV_TC_ALTIMETER_CALIBRATION = 168,
 
     EV_PRESSURE_SAMPLE = 192
 
+};
+
+struct AltimeterCalibrationEvent : Event
+{
+    uint16_t T0;  // Calibration temperature
+    uint16_t P0;  // Calibration pressure
 };
 }
 
