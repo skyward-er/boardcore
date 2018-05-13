@@ -34,9 +34,9 @@ namespace FMM  // Flight Mode Manager
 /**
  * Implementation of the Flight Mode Manager Finite State Machine
  */
-class FlightModeManagerFSM : public FSM<FlightModeManagerFSM>
+class FlightModeManager : public FSM<FlightModeManager>
 {
-    friend class Singleton<FlightModeManagerFSM>;
+    friend class Singleton<FlightModeManager>;
 
 public:
     FlightModeManagerFSM();

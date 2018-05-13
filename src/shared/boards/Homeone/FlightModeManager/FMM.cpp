@@ -32,14 +32,13 @@ namespace HomeoneBoard
 namespace FMM
 {
 
-FlightModeManagerFSM::FlightModeManagerFSM()
-    : FSM(&FlightModeManagerFSM::disarmed)
+FlightModeManager::FlightModeManager() : FSM(&FlightModeManager::disarmed)
 {
     sEventBroker->subscribe(this, TOPIC_COMMANDS);
     sEventBroker->subscribe(this, TOPIC_FLIGHT_EVENTS);
 }
 
-void FlightModeManagerFSM::disarmed(const Event& e)
+void FlightModeManager::disarmed(const Event& e)
 {
     switch (e.sig)
     {
@@ -53,13 +52,13 @@ void FlightModeManagerFSM::disarmed(const Event& e)
         // Transition to armed
         case EV_TC_ARM:
             printf("EV_ARM\n");
-            transition(&FlightModeManagerFSM::armed);
+            transition(&FlightModeManager::armed);
             break;
 
         // Transition to testing
         case EV_TC_TEST_MODE:
             printf("EV_TC_TEST_MODE\n");
-            transition(&FlightModeManagerFSM::testing);
+            transition(&FlightModeManager::testing);
 
             // Send test mode enabled event
             sEventBroker->post(Event{EV_TEST_MODE}, TOPIC_CONFIGURATION);
@@ -68,7 +67,7 @@ void FlightModeManagerFSM::disarmed(const Event& e)
         // Transition to aborted
         case EV_ABORT_LAUNCH:
             printf("EV_ABORT_LAUNCH\n");
-            transition(&FlightModeManagerFSM::aborted);
+            transition(&FlightModeManager::aborted);
 
             // TODO: Do additional abort operations?
             break;
@@ -100,7 +99,7 @@ void FlightModeManagerFSM::disarmed(const Event& e)
     }
 }
 
-void FlightModeManagerFSM::armed(const Event& e)
+void FlightModeManager::armed(const Event& e)
 {
     switch (e.sig)
     {
@@ -117,19 +116,19 @@ void FlightModeManagerFSM::armed(const Event& e)
         // Transition to disarmed
         case EV_TC_DISARM:
             printf("EV_DISARM\n");
-            transition(&FlightModeManagerFSM::disarmed);
+            transition(&FlightModeManager::disarmed);
             break;
 
         // Transition to ascending
         case EV_UMBILICAL_DISCONNECTED:
             printf("EV_UNBILICAL_DETATCHED\n");
-            transition(&FlightModeManagerFSM::ascending);
+            transition(&FlightModeManager::ascending);
             break;
 
         // Transition to aborted
         case EV_ABORT_LAUNCH:
             printf("EV_ABORT_LAUNCH\n");
-            transition(&FlightModeManagerFSM::aborted);
+            transition(&FlightModeManager::aborted);
             break;
 
         default:
@@ -138,7 +137,7 @@ void FlightModeManagerFSM::armed(const Event& e)
     }
 }
 
-void FlightModeManagerFSM::testing(const Event& e)
+void FlightModeManager::testing(const Event& e)
 {
     switch (e.sig)
     {
@@ -169,7 +168,7 @@ void FlightModeManagerFSM::testing(const Event& e)
     }
 }
 
-void FlightModeManagerFSM::aborted(const Event& e)
+void FlightModeManager::aborted(const Event& e)
 {
     switch (e.sig)
     {
@@ -186,7 +185,7 @@ void FlightModeManagerFSM::aborted(const Event& e)
     }
 }
 
-void FlightModeManagerFSM::ascending(const Event& e)
+void FlightModeManager::ascending(const Event& e)
 {
     switch (e.sig)
     {
@@ -210,7 +209,7 @@ void FlightModeManagerFSM::ascending(const Event& e)
         // Transition to apogeeDetection
         case EV_ASCENT_TIMEOUT:
             printf("EV_FMM_ASCENT_TIMEOUT\n");
-            transition(&FlightModeManagerFSM::apogeeDetection);
+            transition(&FlightModeManager::apogeeDetection);
             break;
         default:
             printf("Unknown event received.\n");
@@ -218,7 +217,7 @@ void FlightModeManagerFSM::ascending(const Event& e)
     }
 }
 
-void FlightModeManagerFSM::apogeeDetection(const Event& e)
+void FlightModeManager::apogeeDetection(const Event& e)
 {
     switch (e.sig)
     {
@@ -249,7 +248,7 @@ void FlightModeManagerFSM::apogeeDetection(const Event& e)
         // Transition to descendingPhase_1
         case EV_APOGEE_DETECTED:
             printf("EV_APOGEE_DETECTED\n");
-            transition(&FlightModeManagerFSM::descendingPhase_1);
+            transition(&FlightModeManager::descendingPhase_1);
             break;
         default:
             printf("Unknown event received.\n");
@@ -257,7 +256,7 @@ void FlightModeManagerFSM::apogeeDetection(const Event& e)
     }
 }
 
-void FlightModeManagerFSM::descendingPhase_1(const Event& e)
+void FlightModeManager::descendingPhase_1(const Event& e)
 {
     switch (e.sig)
     {
@@ -286,7 +285,7 @@ void FlightModeManagerFSM::descendingPhase_1(const Event& e)
         // Transition to descendingPhase_2
         case EV_MAIN_CHUTE_ALTITUDE:
             printf("EV_FMM_MAIN_PARACHUTE_DEPLOY\n");
-            transition(&FlightModeManagerFSM::descendingPhase_2);
+            transition(&FlightModeManager::descendingPhase_2);
             break;
 
         default:
@@ -295,7 +294,7 @@ void FlightModeManagerFSM::descendingPhase_1(const Event& e)
     }
 }
 
-void FlightModeManagerFSM::descendingPhase_2(const Event& e)
+void FlightModeManager::descendingPhase_2(const Event& e)
 {
     switch (e.sig)
     {
@@ -310,7 +309,7 @@ void FlightModeManagerFSM::descendingPhase_2(const Event& e)
         case EV_TC_STOP_SAMPLING:
             sEventBroker->post(Event{EV_STOP_SAMPLING}, TOPIC_CONFIGURATION);
 
-            transition(&FlightModeManagerFSM::landed);
+            transition(&FlightModeManager::landed);
             break;
 
         default:
@@ -319,7 +318,7 @@ void FlightModeManagerFSM::descendingPhase_2(const Event& e)
     }
 }
 
-void FlightModeManagerFSM::landed(const Event& e)
+void FlightModeManager::landed(const Event& e)
 {
     switch (e.sig)
     {
