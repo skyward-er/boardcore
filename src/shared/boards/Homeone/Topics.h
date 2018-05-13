@@ -31,13 +31,11 @@ namespace HomeoneBoard
  */
 enum Topics : uint8_t
 {
-    
-DIAGNOSTICS,
-STATE_MACHINE,
-FLIGHT_EVENTS,
-CONFIGURATION,
-SENSORS
-
+    DIAGNOSTICS,
+    CONFIGURATION,
+    COMMANDS,
+    FLIGHT_EVENTS,
+    SENSORS
 };
 }
 
