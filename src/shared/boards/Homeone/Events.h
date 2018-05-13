@@ -28,31 +28,47 @@ namespace HomeoneBoard
 {
 /**
  * Definition of all events in the Homeone Board software
+ * Refer to section 5.1.1 of the Software Design Document.
  */
 enum Events : uint8_t
 {
     EV_PING_RECEIVED           = 1,
-    EV_SHUTDOWN_COMPLETE       = 2,
-    EV_NOSECONE_STATUS_REQUEST = 3,
-    EV_IGNITION_STATUS_REQUEST = 4,
-    EV_ARM                     = 32,
-    EV_DISARM                  = 33,
-    EV_ABORT_LAUNCH            = 34,
-    EV_UMBILICAL_DISCONNECTED  = 35,
-    EV_ASCENT_TIMEOUT          = 36,
-    EV_APOGEE_DETECTED         = 37,
-    EV_APOGEE_TIMEOUT          = 38,
-    EV_MAIN_CHUTE_ALTITUDE     = 39,
-    EV_DESCENT_TIMEOUT         = 40,
-    EV_START_SAMPLING          = 64,
-    EV_STOP_SAMPLING           = 65,
-    EV_START_LAUNCH            = 66,
-    EV_NOSECONE_CLOSE          = 67,
-    EV_NOSECONE_OPEN           = 68,
-    EV_TEST_MODE               = 69,
-    EV_RESET_BOARD             = 70,
-    EV_BAROMETER_CALIBRATION   = 128,
-    EV_PRESSURE_SAMPLE         = 192
+    EV_HEARTHBEAT_RECEIVED     = 2,
+    EV_SHUTDOWN_COMPLETE       = 3,
+    EV_NOSECONE_STATUS_REQUEST = 4,
+    EV_IGNITION_STATUS_REQUEST = 5,
+    EV_NOSECONE_STATUS         = 6,
+    EV_IGNITION_STATUS         = 7,
+
+    EV_BAROMETER_CALIBRATION = 32,
+    EV_START_SAMPLING        = 40,
+    EV_STOP_SAMPLING         = 41,
+    EV_NOSECONE_CLOSE        = 42,
+    EV_TEST_MODE             = 48,
+    EV_RESET_BOARD           = 49,
+
+    EV_ARM                    = 64,
+    EV_DISARM                 = 65,
+    EV_START_LAUNCH           = 72,
+    EV_ABORT_LAUNCH           = 73,
+    EV_UMBILICAL_DISCONNECTED = 80,
+    EV_ASCENT_TIMEOUT         = 81,
+    EV_APOGEE_DETECTED        = 82,
+    EV_APOGEE_TIMEOUT         = 83,
+    EV_MAIN_CHUTE_ALTITUDE    = 84,
+    EV_DESCENT_TIMEOUT        = 85,
+
+    EV_TC_START_LAUNCH          = 128,
+    EV_TC_START_SAMPLING        = 136,
+    EV_TC_STOP_SAMPLING         = 137,
+    EV_TC_NOSECONE_OPEN         = 144,
+    EV_TC_NOSECONE_CLOSE        = 145,
+    EV_TC_TEST_MODE             = 152,
+    EV_TC_RESET_BOARD           = 160,
+    EV_TC_BAROMETER_CALIBRATION = 168,
+
+    EV_PRESSURE_SAMPLE = 192
+
 };
 }
 
