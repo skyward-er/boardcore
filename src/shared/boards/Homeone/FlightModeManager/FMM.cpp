@@ -80,11 +80,8 @@ void FlightModeManager::disarmed(const Event& e)
             sEventBroker->post(Event{EV_STOP_SAMPLING}, TOPIC_CONFIGURATION);
             break;
 
-        case EV_TC_STOP_SAMPLING:
-            sEventBroker->post(Event{EV_STOP_SAMPLING}, TOPIC_CONFIGURATION);
-            break;
-
         case EV_TC_ALTIMETER_CALIBRATION:
+        {
             // Copy the event and change its id
             Event ev_calib = e;
             ev_calib.sig   = EV_ALTIMETER_CALIBRATION;
@@ -92,7 +89,7 @@ void FlightModeManager::disarmed(const Event& e)
             // Post it on the CONFIGURATION topic
             sEventBroker->post(ev_calib, TOPIC_CONFIGURATION);
             break;
-
+        }
         default:
             printf("Unknown event received.\n");
             break;
