@@ -51,7 +51,7 @@ void FlightModeManagerFSM::disarmed(const Event& e)
             break;
 
         // Transition to armed
-        case EV_ARM:
+        case EV_TC_ARM:
             printf("EV_ARM\n");
             transition(&FlightModeManagerFSM::armed);
             break;
@@ -115,7 +115,7 @@ void FlightModeManagerFSM::armed(const Event& e)
             break;
 
         // Transition to disarmed
-        case EV_DISARM:
+        case EV_TC_DISARM:
             printf("EV_DISARM\n");
             transition(&FlightModeManagerFSM::disarmed);
             break;
