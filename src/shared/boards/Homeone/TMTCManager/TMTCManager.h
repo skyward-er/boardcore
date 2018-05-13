@@ -25,18 +25,19 @@
 
 #include <Common.h>
 #include <Singleton.h>
-#include "CircularBuffer.h"
-#include "TMTC_Config.h"
 #include <drivers/gamma868/Gamma868.h>
 #include <libs/mavlink_skyward_lib/mavlink_lib/skyward/mavlink.h>
-#include "events/EventBroker.h"
+#include "CircularBuffer.h"
+#include "TMTC_Config.h"
 #include "boards/Homeone/Events.h"
 #include "boards/Homeone/Topics.h"
+#include "events/EventBroker.h"
 
 /*
  * The TMTCManager class handles the communication with the Ground Station.
  * It is composed of:
- *  - the Gamma868 driver, which uses blocking functions to receive from and send
+ *  - the Gamma868 driver, which uses blocking functions to receive from and
+ * send
  *    to the RF module.
  *  - a Sender thread that sends packets through the driver.
  *  - a Receiver thread that processes the incoming packets.
@@ -50,7 +51,7 @@ public:
      * Class deconstructor.
      */
     ~TMTCManager() {}
-    
+
     /*
      * Non-blocking function that can be used to send a message: copies the
      * message into a synchronized buffer.
@@ -61,35 +62,34 @@ public:
     bool enqueueMsg(const uint8_t* msg, const uint8_t len);
 
 protected:
-
 private:
     /* RF module driver */
     Gamma868* gamma;
     /* Synchronized buffer for outgoing messages */
     CircularBuffer* outBuffer;
 
-    /* Events to be posted in the EventBtoker */ 
+    /* Events to be posted in the EventBtoker */
     Event ev_ping{HomeoneBoard::EV_PING_RECEIVED};
     Event ev_nosecone_status{HomeoneBoard::EV_NOSECONE_STATUS_REQUEST};
     Event ev_ignition_status{HomeoneBoard::EV_IGNITION_STATUS_REQUEST};
-    Event ev_arm{HomeoneBoard::EV_ARM};
-    Event ev_disarm{HomeoneBoard::EV_DISARM};
+    Event ev_arm{HomeoneBoard::EV_TC_ARM};
+    Event ev_disarm{HomeoneBoard::EV_TC_DISARM};
     Event ev_abort{HomeoneBoard::EV_ABORT_LAUNCH};
-    Event ev_start_lauch{HomeoneBoard::EV_START_LAUNCH};
-    Event ev_nosecone_open{HomeoneBoard::EV_NOSECONE_OPEN};
-    Event ev_nosecone_close{HomeoneBoard::EV_NOSECONE_CLOSE};
-    Event ev_test{HomeoneBoard::EV_TEST_MODE};
-    Event ev_reset{HomeoneBoard::EV_RESET_BOARD};
-    Event ev_calib{HomeoneBoard::EV_BAROMETER_CALIBRATION};
-    Event ev_start_sampling{HomeoneBoard::EV_START_SAMPLING};
-    Event ev_stop_sampling{HomeoneBoard::EV_STOP_SAMPLING};
+    Event ev_start_lauch{HomeoneBoard::EV_TC_START_LAUNCH};
+    Event ev_nosecone_open{HomeoneBoard::EV_TC_NOSECONE_OPEN};
+    Event ev_nosecone_close{HomeoneBoard::EV_TC_NOSECONE_CLOSE};
+    Event ev_test{HomeoneBoard::EV_TC_TEST_MODE};
+    Event ev_reset{HomeoneBoard::EV_TC_RESET_BOARD};
+    Event ev_calib{HomeoneBoard::EV_TC_ALTIMETER_CALIBRATION};
+    Event ev_start_sampling{HomeoneBoard::EV_TC_START_SAMPLING};
+    Event ev_stop_sampling{HomeoneBoard::EV_TC_STOP_SAMPLING};
 
     Event ev_raw{HomeoneBoard::EV_PING_RECEIVED};
 
     /* Pointers to sending and receiving threads */
     miosix::Thread* senderThread;
     miosix::Thread* receiverThread;
-    
+
     /*
      * Private constructor that realizes the Singleton pattern.
      */
@@ -113,22 +113,23 @@ private:
         reinterpret_cast<TMTCManager*>(arg)->runReceiver();
     }
 
-    /*  
+    /*
      * Function ran by the sending thread:
      * look for messages in the outBuffer an send them through the link using
      * the module's driver.
      */
     void runSender();
 
-    /*  
+    /*
      * Function ran by the receiving thread:
-     * read and parse incoming messages from the module's buffer and handle them 
+     * read and parse incoming messages from the module's buffer and handle them
      * according to their content.
      */
     void runReceiver();
 
-    /* 
-     * Send an acknowlege message back to the sender to notify the Ground Station
+    /*
+     * Send an acknowlege message back to the sender to notify the Ground
+     * Station
      * that you correctly received the message with a given sequence number.
      */
     void sendAck(const mavlink_message_t* msg);
@@ -164,7 +165,6 @@ private:
      * Handle a raw_event message.
      */
     void handleRawEventMessage(const mavlink_message_t* rawEventMsg);
-   
 };
 
 /* Define a singleton object that can be accessed from other files */
@@ -172,6 +172,6 @@ private:
 #define sTMTCManager TMTCManager::getInstance()
 #else
 #error TMTCMANAGER ALREADY DEFINED
-#endif/* ifndef sTMTCManager */
+#endif /* ifndef sTMTCManager */
 
 #endif /* ifndef TMTCMANAGER_H */
