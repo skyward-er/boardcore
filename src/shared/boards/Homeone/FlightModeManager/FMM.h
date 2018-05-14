@@ -34,28 +34,33 @@ namespace FMM  // Flight Mode Manager
 /**
  * Implementation of the Flight Mode Manager Finite State Machine
  */
-class FlightModeManagerFSM : public FSM<FlightModeManagerFSM>
+class FlightModeManager : public FSM<FlightModeManager>
 {
-    friend class Singleton<FlightModeManagerFSM>;
+    friend class Singleton<FlightModeManager>;
 
 public:
-    FlightModeManagerFSM();
-    ~FlightModeManagerFSM() {}
+    FlightModeManager();
+    ~FlightModeManager() {}
 
 private:
     // States declarations
 
+    void testing(const Event& e);
+    void aborted(const Event& e);
     void disarmed(const Event& e);
     void armed(const Event& e);
     void ascending(const Event& e);
     void apogeeDetection(const Event& e);
     void descendingPhase_1(const Event& e);
     void descendingPhase_2(const Event& e);
+    void landed(const Event& e);
 
     // Event definitions
-    Event ev_ascent_timeout{EV_FMM_ASCENT_TIMEOUT};
-    Event ev_apogee{EV_FMM_APOGEE};
-    Event ev_main_parachute_deploy{EV_FMM_MAIN_PARACHUTE_DEPLOY};
+    // Event ev_ascent_timeout{EV_ASCENT_TIMEOUT};
+
+    // Event ev_apogee_detected{EV_APOGEE_DETECTED};
+
+    // Event ev_main_chute_altitude{EV_MAIN_CHUTE_ALTITUDE};
 
     // State variables
     uint16_t delayed_event_id = 0;
