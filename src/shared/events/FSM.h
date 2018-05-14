@@ -43,7 +43,7 @@ public:
 protected:
     virtual void handleEvent(const Event& ev) = 0;
 
-    void run()
+    virtual void run()
     {
         while (true)
         {
