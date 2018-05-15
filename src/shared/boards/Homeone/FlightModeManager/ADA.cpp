@@ -22,13 +22,19 @@
 
 #include "ADA.h"
 #include "boards/Homeone/Events.h"
+#include "boards/Homeone/Topics.h"
+#include "events/EventBroker.h"
 
 namespace HomeoneBoard
 {
 namespace FMM  // Flight Mode Manager
 {
 
-ADA::ADA() : FSM(&ADA::idle) {}
+ADA::ADA() : FSM(&ADA::idle)
+{
+    sEventBroker->subscribe(this, TOPIC_FLIGHT_EVENTS);
+    sEventBroker->subscribe(this, TOPIC_SENSORS);
+}
 
 ADA::~ADA() {}
 
@@ -100,7 +106,7 @@ void ADA::stopped(const Event& e)
     }
 }
 
-void ADA::onNewSample(ADASample sample, bool active)
+void ADA::onNewSample(ADASample sample, bool send_apogee_event)
 {
     // TODO: ADA Implementation
 }

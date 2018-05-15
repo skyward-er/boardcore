@@ -36,6 +36,7 @@ struct ADASample
 {
     uint16_t pressure;
 };
+
 /**
  * Apogee Detection Algorithm Class.
  *
@@ -47,8 +48,9 @@ public:
     ~ADA();
 
 private:
-    void onNewSample(ADASample sample, bool active);
+    void onNewSample(ADASample sample, bool send_apogee_event);
 
+    // State functions
     void idle(const Event&);
     void shadow_mode(const Event&);
     void active_mode(const Event&);
