@@ -232,7 +232,8 @@ void FlightModeManager::apogeeDetection(const Event& e)
         case EV_EXIT:
             printf("Apogee state exit\n");
 
-            // TODO: Stop the ada
+            // Stop the ADA
+            sEventBroker->post(Event{EV_ADA_STOP}, TOPIC_FLIGHT_EVENTS);
 
             sEventBroker->removeDelayed(delayed_event_id);
             break;
@@ -266,8 +267,6 @@ void FlightModeManager::descendingPhase_1(const Event& e)
                 Event{EV_DESCENT_TIMEOUT}, TOPIC_FLIGHT_EVENTS,
                 MAIN_PARACHUTE_DEPLOY_TIMEOUT_MS);
 
-            // Stop the ADA
-            sEventBroker->post(Event{EV_ADA_STOP}, TOPIC_FLIGHT_EVENTS);
             // TODO: Start altitude detection
             break;
         case EV_EXIT:
