@@ -20,12 +20,12 @@
  * THE SOFTWARE.
  */
 
-#include <boards/Homeone/FlightModeManager/FMM.h>
-#include "events/EventBroker.h"
+#include <boards/Homeone/FlightModeManager/FlightModeManager.h>
+#include <events/EventBroker.h>
 
-#include "boards/Homeone/Events.h"
-#include "boards/Homeone/FlightModeManager/FMM_Config.h"
-#include "boards/Homeone/Topics.h"
+#include <boards/Homeone/Events.h>
+#include <boards/Homeone/FlightModeManager/FMM_Config.h>
+#include <boards/Homeone/Topics.h>
 
 namespace HomeoneBoard
 {
@@ -193,7 +193,8 @@ void FlightModeManager::ascending(const Event& e)
                 Event{EV_ASCENT_TIMEOUT}, TOPIC_FLIGHT_EVENTS,
                 ASCENDING_TIMEOUT_MS);
 
-            // TODO: Start the ada in passive mode
+            // ADA passive mode
+            sEventBroker->post(Event{EV_ADA_SHADOW_MODE}, TOPIC_FLIGHT_EVENTS);
             break;
         case EV_EXIT:
             printf("Ascending state exit\n");
@@ -225,7 +226,8 @@ void FlightModeManager::apogeeDetection(const Event& e)
                 Event{EV_APOGEE_TIMEOUT}, TOPIC_FLIGHT_EVENTS,
                 APOGEE_DETECTION_TIMEOUT_MS);
 
-            // TODO: ADA active mode
+            // ADA active mode
+            sEventBroker->post(Event{EV_ADA_ACTIVE_MODE}, TOPIC_FLIGHT_EVENTS);
             break;
         case EV_EXIT:
             printf("Apogee state exit\n");
@@ -264,6 +266,8 @@ void FlightModeManager::descendingPhase_1(const Event& e)
                 Event{EV_DESCENT_TIMEOUT}, TOPIC_FLIGHT_EVENTS,
                 MAIN_PARACHUTE_DEPLOY_TIMEOUT_MS);
 
+            // Stop the ADA
+            sEventBroker->post(Event{EV_ADA_STOP}, TOPIC_FLIGHT_EVENTS);
             // TODO: Start altitude detection
             break;
         case EV_EXIT:
