@@ -20,7 +20,7 @@
  * THE SOFTWARE.
  */
 
-#include <boards/Homeone/FlightModeManager/FMM.h>
+#include <boards/Homeone/FlightModeManager/FlightModeManager.h>
 
 using HomeoneBoard::FMM::FlightModeManager;
 
