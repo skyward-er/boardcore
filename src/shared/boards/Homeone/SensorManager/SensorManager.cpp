@@ -43,7 +43,7 @@ namespace Sensors
 
 SensorManager::SensorManager() : EventHandler(), log(Logger::instance())
 {
-    sEventBroker->subscribe(this, TOPIC_SENSORS_SM);
+    sEventBroker->subscribe(this, TOPIC_CONFIGURATION);
 
     initSensors();
     initSamplers();
@@ -77,7 +77,7 @@ void SensorManager::handleEvent(const Event& ev)
 {
     switch (ev.sig)
     {
-        case EV_SM_START_SAMPLING:
+        case EV_START_SAMPLING:
             startSampling();
             break;
         default:
@@ -152,8 +152,10 @@ void SensorManager::lowRateTMTC()
     Vec3 accel        = *(imu_mpu9250->accelDataPtr());
     uint16_t pressure = 0;  // Use actual data
 
-    mavlink_msg_sample_data_pack(1, 1, &low_rate_samples_msg, pressure, accel.x,
-                                 accel.y, accel.z, gyro.x, gyro.y, gyro.z);
+    mavlink_msg_sample_data_tm_pack(1, 1, &low_rate_samples_msg, pressure,
+                                    accel.getX(), accel.getY(), accel.getZ(),
+                                    gyro.getX(), gyro.getY(), gyro.getZ());
+
     int msg_len =
         mavlink_msg_to_send_buffer(tmtc_buffer, &low_rate_samples_msg);
 
@@ -166,7 +168,7 @@ void SensorManager::highRateTMTC()
 
     uint16_t pressure = 0;  // Use actual data
 
-    mavlink_msg_hr_sample_data_pack(1, 1, &high_rate_samples_msg, pressure);
+    mavlink_msg_hr_sample_data_tm_pack(1, 1, &high_rate_samples_msg, pressure);
     int msg_len =
         mavlink_msg_to_send_buffer(tmtc_buffer, &high_rate_samples_msg);
 
