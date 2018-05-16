@@ -19,24 +19,53 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
-#ifndef SRC_SHARED_BOARDS_HOMEONE_TOPICS_H
-#define SRC_SHARED_BOARDS_HOMEONE_TOPICS_H
+#ifndef SRC_SHARED_BOARDS_HOMEONE_FLIGHTMODEMANAGER_FSM_H
+#define SRC_SHARED_BOARDS_HOMEONE_FLIGHTMODEMANAGER_FSM_H
 
-#include <stdint.h>
+#include "Singleton.h"
+
+#include "events/Event.h"
+#include "events/FSM.h"
 
 namespace HomeoneBoard
 {
-/**
- * Definition of various event topics to use in the EventBroker
- */
-enum Topics : uint8_t
+namespace FMM  // Flight Mode Manager
 {
-    TOPIC_DIAGNOSTICS,
-    TOPIC_CONFIGURATION,
-    TOPIC_COMMANDS,
-    TOPIC_FLIGHT_EVENTS,
-    TOPIC_SENSORS
+/**
+ * Implementation of the Flight Mode Manager Finite State Machine
+ */
+class FlightModeManager : public FSM<FlightModeManager>
+{
+    friend class Singleton<FlightModeManager>;
+
+public:
+    FlightModeManager();
+    ~FlightModeManager() {}
+
+private:
+    // States declarations
+
+    void testing(const Event& e);
+    void aborted(const Event& e);
+    void disarmed(const Event& e);
+    void armed(const Event& e);
+    void ascending(const Event& e);
+    void apogeeDetection(const Event& e);
+    void descendingPhase_1(const Event& e);
+    void descendingPhase_2(const Event& e);
+    void landed(const Event& e);
+
+    // Event definitions
+    // Event ev_ascent_timeout{EV_ASCENT_TIMEOUT};
+
+    // Event ev_apogee_detected{EV_APOGEE_DETECTED};
+
+    // Event ev_main_chute_altitude{EV_MAIN_CHUTE_ALTITUDE};
+
+    // State variables
+    uint16_t delayed_event_id = 0;
 };
 }
+}
 
-#endif /* SRC_SHARED_BOARDS_HOMEONE_TOPICS_H_ */
+#endif /* SRC_SHARED_BOARDS_HOMEONE_FLIGHTMODEMANAGER_FSM_H */

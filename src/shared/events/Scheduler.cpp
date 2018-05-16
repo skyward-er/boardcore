@@ -41,13 +41,13 @@ std::ostream& operator<<(std::ostream& os, const TaskStatResult& sr)
 void EventScheduler::add(function_t func, uint32_t intervalMs,
                          const string& name, int64_t start)
 {
-    task_t task = {func, intervalMs, name, false, -1};
+    task_t task = {func, intervalMs, name, false, -1, {}, {}, {}};
     addTask(task, start);
 }
 
 void EventScheduler::addOnce(function_t func, uint32_t delayMs, int64_t start)
 {
-    task_t task = {func, delayMs, "", true, -1};
+    task_t task = {func, delayMs, "", true, -1, {}, {}, {}};
     addTask(task, start);
 }
 

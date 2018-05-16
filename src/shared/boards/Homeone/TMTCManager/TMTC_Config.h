@@ -37,4 +37,13 @@
 #define TMTC_RECEIVER_STACKSIZE miosix::STACK_DEFAULT_FOR_PTHREAD
 #define TMTC_RECEIVER_PRIORITY miosix::MAIN_PRIORITY
 
+#define TMTC_MAV_SYSID 1
+#define TMTC_MAV_COMPID 1
+
+#ifdef DEBUG
+#define TMTC_TRACE(x) printf(x)
+#else
+#define TMTC_TRACE(x) 
+#endif
+
 #endif /* CONFIG_H */
