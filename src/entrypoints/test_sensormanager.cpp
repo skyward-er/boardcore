@@ -33,7 +33,7 @@ int main()
 {
     Event ev{EV_START_SAMPLING};
 
-    SensorManager* sm = Singleton<SensorManager>::getInstance();
+    Singleton<SensorManager>::getInstance();
 
     printf("Waiting...\n");
     Thread::sleep(5000);
