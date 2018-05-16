@@ -111,8 +111,7 @@ void TMTCManager::runReceiver()
                 sendAck(&msg);
 
             // Handle the command
-			MessageHandler_t handler = getMsgHandler(msg.msgid);
-			(*handler)(&msg);
+			handleMavlinkMessage(&msg);
         }
 
         // TODO: aggiornare statistiche TMTC nell'housekeeping
