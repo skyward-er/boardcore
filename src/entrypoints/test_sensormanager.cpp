@@ -31,14 +31,14 @@ using Sensors::SensorData;
 
 int main()
 {
-    Event ev{EV_SM_START_SAMPLING};
+    Event ev{EV_START_SAMPLING};
 
     SensorManager* sm = Singleton<SensorManager>::getInstance();
 
     printf("Waiting...\n");
     Thread::sleep(5000);
 
-    sEventBroker->post(ev, TOPIC_SENSORS_SM);
+    sEventBroker->post(ev, TOPIC_CONFIGURATION);
     for (;;)
     {
         Thread::sleep(100);
