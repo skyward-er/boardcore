@@ -51,10 +51,10 @@ OBJ := $(addprefix $(OBJDIR)/, $(addsuffix .o, $(basename $(SRC))))
 ## Always include CONFPATH first, as it overrides the config file location
 CXXFLAGS := $(CXXFLAGS_BASE) -I$(CONFPATH) -I$(CONFPATH)/config/$(BOARD_INC)  \
             -I. -I$(KPATH) -I$(KPATH)/arch/common -I$(KPATH)/$(ARCH_INC)      \
-            -I$(KPATH)/$(BOARD_INC) $(INCLUDE_DIRS) -std=c++11 -O0
+            -I$(KPATH)/$(BOARD_INC) $(INCLUDE_DIRS) -Wall -Wextra -pedantic
 CFLAGS   := $(CFLAGS_BASE)   -I$(CONFPATH) -I$(CONFPATH)/config/$(BOARD_INC)  \
             -I. -I$(KPATH) -I$(KPATH)/arch/common -I$(KPATH)/$(ARCH_INC)      \
-            -I$(KPATH)/$(BOARD_INC) $(INCLUDE_DIRS)
+            -I$(KPATH)/$(BOARD_INC) $(INCLUDE_DIRS) -Wall -Wextra -pedantic
 AFLAGS   := $(AFLAGS_BASE)
 LFLAGS   := $(LFLAGS_BASE) -Wl,--gc-sections,-Map,$(BINDIR)/${SBS_BIN_NAME}.map
 DFLAGS   := -MMD -MP

@@ -1,5 +1,5 @@
-/* Copyright (c) 2018 Skyward Experimental Rocketry
- * Authors: Alvise de' Faveri Tron
+/* Copyright (c) 2015-2018 Skyward Experimental Rocketry
+ * Authors: Luca Erbetta
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -20,28 +20,13 @@
  * THE SOFTWARE.
  */
 
-#ifndef TCHANDLER_H
-#define TCHANDLER_H
+#include <boards/Homeone/FlightModeManager/FlightModeManager.h>
 
-#include <Common.h>
-#include "TMTC_Config.h"
+using HomeoneBoard::FMM::FlightModeManager;
 
-/*
- * The TCHandler class contains the functions that handle the TCs receiver from ground. 
- */
-class TCHandler{
-    
-public:
-    /* Constructor */
-    TCHandler() {
-        //TODO: set a reference to the EventBroker
-    }
-    
-    /* Deconstructor */
-    ~TCHandler() {}
+int main()
+{
+    FlightModeManager mgr;
 
-    /* TODO Handlers */
-
-};
-
-#endif
+    return 0;
+}

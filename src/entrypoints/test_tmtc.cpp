@@ -27,14 +27,15 @@ int main()
 {
 
     while(1){
-		printf("Enqueuing ack\n");
+    	
+    	printf("Enqueuing heartbeat\n");
 
-		mavlink_message_t ack_msg;
-		mavlink_msg_ack_pack(1, 1, &ack_msg, 2, 2);
+		mavlink_message_t ping_msg;
+		mavlink_msg_ping_tc_pack(1, 1, &ping_msg, miosix::getTick());
 
-		sTMTCManager->enqueueMsg( (uint8_t*)&ack_msg, sizeof(ack_msg) );
+		sTMTCManager->enqueueMsg( (uint8_t*)&ping_msg, sizeof(ping_msg) );
 
-    	miosix::delayMs(1000);
+    	miosix::delayMs(5000);
 	}
 
     return 0;
