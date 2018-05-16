@@ -29,123 +29,221 @@ namespace HomeoneBoard
 namespace TMTC
 {
 
-/* Define a standard function prototype for handling mavlink messages. */
-typedef void (*MessageHandler_t)(const mavlink_message_t* command);
+/* Define the pair <MESSAGEID, COMMANDID> to use it as the map's key type */
+typedef struct msgEntry_type
+{
+    uint8_t messageId; // Mavlink message type id
+    uint8_t commandId; // 0 if there's no command in the message
 
-/* Define the couple <EVENTID, TOPICID> to use it in the noargCmdMap */
-typedef struct eventEntry_type
+    /* The < operator is used to define an order */
+    bool operator<(msgEntry_type const &other) const 
+    {
+        if (messageId < other.messageId) {
+            return true; 
+        }
+        else if (messageId == other.messageId) {
+            if (commandId < other.commandId) {
+                return true; 
+            }
+        }
+        return false;
+    }
+} msgEntry_t;
+
+/* Define the pair <EVENTID, TOPICID> to use it as the map's value */
+typedef struct evtEntry_type
 {
     Events event;
     Topics topicID;
-} eventEntry_t;
+} evtEntry_t;
 
-/*
- * MessageHandlers: functions that specify how a message of a certain type
- * should be handled.
- */
-void defaultHandler(const mavlink_message_t* command);
-void handlePingCommand(const mavlink_message_t* command);
-void handleNoArgCommand(const mavlink_message_t* command);
-void handleLaunchCommand(const mavlink_message_t* command);
-void handleStatusRequestCommand(const mavlink_message_t* command);
-void handleCalibrationCommand(const mavlink_message_t* command);
-void handleRawEventMessage(const mavlink_message_t* command);
 
-Event generatedEvt;
+    /*
+     * Map that contains an <EventID,TopicID> couple for each command that can
+     * be directly mapped to an event.
+     *
+     * Usage:
+     * { 
+     *   { <type ID of the Mavlink message> , <command ID contained (or 0)> },
+     *   { <ID of event to be posted>       , <Topic in which it should be posted> } 
+     * }
+     */
+    // clang-format off
+    static const std::map<msgEntry_t, evtEntry_t> commandTranslationMap = {
+        // No argument commands
+        {
+            {MAVLINK_MSG_ID_NOARG_TC,   MAV_CMD_ARM}, 
+            {EV_TC_ARM,                 TOPIC_COMMANDS} 
+        },
+        {
+            {MAVLINK_MSG_ID_NOARG_TC,   MAV_CMD_DISARM}, 
+            {EV_TC_DISARM,              TOPIC_COMMANDS}
+        },
+        {
+            {MAVLINK_MSG_ID_NOARG_TC,   MAV_CMD_ABORT}, 
+            {EV_ABORT_LAUNCH,           TOPIC_COMMANDS}
+        },
+        {
+            {MAVLINK_MSG_ID_NOARG_TC,   MAV_CMD_NOSECONE_OPEN}, 
+            {EV_TC_NOSECONE_OPEN,       TOPIC_COMMANDS}
+        },
+        {
+            {MAVLINK_MSG_ID_NOARG_TC,   MAV_CMD_NOSECONE_CLOSE}, 
+            {EV_TC_NOSECONE_CLOSE,      TOPIC_COMMANDS}
+        },
+        {
+            {MAVLINK_MSG_ID_NOARG_TC,   MAV_CMD_START_SAMPLING}, 
+            {EV_TC_START_SAMPLING,      TOPIC_COMMANDS}
+        },
+        {
+            {MAVLINK_MSG_ID_NOARG_TC,   MAV_CMD_STOP_SAMPLING}, 
+            {EV_TC_STOP_SAMPLING,       TOPIC_COMMANDS}
+        },
+        {
+            {MAVLINK_MSG_ID_NOARG_TC,   MAV_CMD_TEST_MODE}, 
+            {EV_TC_TEST_MODE,           TOPIC_COMMANDS}
+        },
+        {
+            {MAVLINK_MSG_ID_NOARG_TC,   MAV_CMD_BOARD_RESET}, 
+            {EV_TC_RESET_BOARD,         TOPIC_COMMANDS}
+        },
+        // Board status request
+        {
+            {MAVLINK_MSG_ID_REQUEST_BOARD_STATUS_TC, MAV_NOSECONE_BOARD},
+            {EV_NOSECONE_STATUS_REQUEST,             TOPIC_COMMANDS}
+        },
+        {
+            {MAVLINK_MSG_ID_REQUEST_BOARD_STATUS_TC, MAV_IGNITION_BOARD},
+            {EV_IGNITION_STATUS_REQUEST,             TOPIC_COMMANDS}
+        },
+        {
+            {MAVLINK_MSG_ID_REQUEST_BOARD_STATUS_TC, MAV_HOMEONE_BOARD},
+            {EV_HOMEONE_STATUS_REQUEST,              TOPIC_COMMANDS}
+        },
+        // Ping message
+        {
+            {MAVLINK_MSG_ID_PING_TC,                 0},
+            {EV_PING_RECEIVED,          TOPIC_COMMANDS}
+        },
+        // Start Launch command
+        {
+            {MAVLINK_MSG_ID_START_LAUNCH_TC,         0},
+            {EV_TC_START_LAUNCH,        TOPIC_COMMANDS}
+        },
+        // Barometers calibration command
+        {
+            {EV_TC_ALTIMETER_CALIBRATION,            0},
+            {EV_PING_RECEIVED,          TOPIC_COMMANDS}
+        }
+    };
+    // clang-format on
 
-// clang-format off
-/* Map that contains a handler reference for each handled command. */
-std::map<uint8_t, MessageHandler_t> msgHandlersMap = {
+    /**
+     *
+     */
+    bool retrieveEvtEntry (msgEntry_t key, evtEntry_t* retrievedEntry) 
     {
-        MAVLINK_MSG_ID_PING_TC,
-        (MessageHandler_t)&handlePingCommand
-    },
-    {
-        MAVLINK_MSG_ID_NOARG_TC,
-        (MessageHandler_t)&handleNoArgCommand
-    },
-    {
-        MAVLINK_MSG_ID_START_LAUNCH_TC,
-        (MessageHandler_t)&handleLaunchCommand
-    },
-    {
-        MAVLINK_MSG_ID_REQUEST_BOARD_STATUS_TC,
-        (MessageHandler_t)&handleStatusRequestCommand
-    },
-    {
-        MAVLINK_MSG_ID_CALIBRATE_BAROMETERS_TC,
-        (MessageHandler_t)&handleCalibrationCommand
-    },
-    {
-        MAVLINK_MSG_ID_RAW_EVENT_TC,
-        (MessageHandler_t)&handleRawEventMessage
+        if (commandTranslationMap.find(key) != commandTranslationMap.end())
+        {
+            *retrievedEntry = commandTranslationMap.find(key)->second;
+            return true;
+        } 
+        else {
+            TMTC_TRACE("Received unknown command message.\n");
+            return false;
+        }
     }
-};
 
-/*
- * Map that contains an <EventID,TopicID> couple for each noarg_command that can
- * be directly mapped to an event.
- */
-std::map<uint8_t, eventEntry_t> noArgCmdMap = {
+    /**
+     *
+     */
+    void handleMavlinkMessage(const mavlink_message_t* msg) 
     {
-        MAV_CMD_ARM,
-        {.event = EV_ARM, .topicID = FLIGHT_EVENTS}
-    },
-    {
-        MAV_CMD_DISARM,
-        {.event = EV_DISARM, .topicID = FLIGHT_EVENTS}
-    },
-    {
-        MAV_CMD_ABORT,
-        {.event = EV_IGNITION_STATUS_REQUEST, .topicID = FLIGHT_EVENTS}
-    },
-    {
-        MAV_CMD_NOSECONE_OPEN,
-        {.event = EV_NOSECONE_OPEN, .topicID = FLIGHT_EVENTS}
-    },
-    {
-        MAV_CMD_NOSECONE_CLOSE,
-        {.event = EV_NOSECONE_CLOSE, .topicID = FLIGHT_EVENTS}
-    },
-    {
-        MAV_CMD_START_SAMPLING,
-        {.event = EV_START_SAMPLING, .topicID = FLIGHT_EVENTS}
-    },
-    {
-        MAV_CMD_STOP_SAMPLING,
-        {.event = EV_STOP_SAMPLING, .topicID = FLIGHT_EVENTS}
-    },
-    {
-        MAV_CMD_TEST_MODE,
-        {.event = EV_TEST_MODE, .topicID = STATE_MACHINE}
-    },
-    {
-        MAV_CMD_BOARD_RESET,
-        {.event = EV_RESET_BOARD, .topicID = STATE_MACHINE}
-    }
-};
-// clang-format on
+        uint8_t msgId = msg->msgid;
 
-/*
- * Getter for the Handler function of a Mavlink message.
- * @param msgId   the id of the Mavlink message (i.e. the code which identifies
- *                the message type).
- * @return        the function that handles that message as defined in the
- *                msgHandlersMap
- *                (or the defaultHandler() if the command is not directly
- *                handled).
- */
-MessageHandler_t getMsgHandler(const uint8_t msgId)
-{
-    if (msgHandlersMap.find(msgId) != msgHandlersMap.end())
-    {
-        return msgHandlersMap[msgId];
+        msgEntry_t key;
+        evtEntry_t evtEntry;
+
+        switch (msgId) 
+        {
+            case MAVLINK_MSG_ID_NOARG_TC:
+            {
+                /* Construct key */
+                key = {msgId, mavlink_msg_noarg_tc_get_command_id(msg)};
+                /* Post event */
+                if(retrieveEvtEntry(key, &evtEntry)) {
+                    Event evt = {evtEntry.event};
+                    sEventBroker->post( evt, evtEntry.topicID );
+                }
+                break;
+            }
+            case MAVLINK_MSG_ID_REQUEST_BOARD_STATUS_TC:
+            {
+                /* Construct key */
+                key = {msgId,  
+                            mavlink_msg_request_board_status_tc_get_board_id(msg)};
+                /* Post event */
+                if(retrieveEvtEntry(key, &evtEntry)) {
+                    Event evt = {evtEntry.event};
+                    sEventBroker->post( evt, evtEntry.topicID );
+                }
+                break;
+            }
+            case MAVLINK_MSG_ID_PING_TC:
+            {
+                /* Construct key */
+                key = {msgId, 0};
+                /* Post event */
+                if(retrieveEvtEntry(key, &evtEntry)) {
+                    Event evt = {evtEntry.event};
+                    sEventBroker->post( evt, evtEntry.topicID );
+                }
+                break;
+            }
+            case MAVLINK_MSG_ID_START_LAUNCH_TC:
+            {
+                /* Construct key */
+                key = {msgId, 0};
+                /* Post event */
+                if(retrieveEvtEntry(key, &evtEntry)) {
+                    StartLaunchEvent startLaunchEvt;
+                    startLaunchEvt.sig = evtEntry.event;
+                    startLaunchEvt.launchCode = 
+                            mavlink_msg_start_launch_tc_get_launch_code(msg);
+                    
+                    sEventBroker->post( startLaunchEvt, evtEntry.topicID );
+                }
+                break;
+            }
+            case EV_TC_ALTIMETER_CALIBRATION:
+            {
+                /* Construct key */
+                key = {msgId, 0};
+                /* Post event */
+                if(retrieveEvtEntry(key, &evtEntry)) {
+                    AltimeterCalibrationEvent generatedCalibEvt;
+                    generatedCalibEvt.sig = evtEntry.event;
+                    generatedCalibEvt.T0 = 
+                                mavlink_msg_calibrate_barometers_tc_get_T0(msg);
+                    generatedCalibEvt.P0 = 
+                                mavlink_msg_calibrate_barometers_tc_get_P0(msg);
+                    
+                    sEventBroker->post( generatedCalibEvt, evtEntry.topicID );
+                }
+                break;
+            }
+            case MAVLINK_MSG_ID_RAW_EVENT_TC:
+            {
+                #ifdef DEBUG
+                /* Retrive event from the message*/
+                Event evt = {mavlink_msg_raw_event_tc_get_Event_id(msg)};
+                sEventBroker->post( evt, mavlink_msg_raw_event_tc_get_Topic_id(msg));
+                #endif
+                break;
+            }
+        }
     }
-    else
-    {
-        return (MessageHandler_t)&defaultHandler;
-    }
-}
+
 
 }
 }
