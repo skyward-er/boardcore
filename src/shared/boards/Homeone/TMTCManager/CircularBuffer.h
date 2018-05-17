@@ -29,8 +29,8 @@
 class CircularBuffer
 {
 public:
-    /*
-     * Creates a buffer with given dimension (uses dynamic allocation).
+    /**
+     * Create a buffer with given dimension (uses dynamic allocation).
      */
     CircularBuffer(const uint32_t totalSize)
     {
@@ -40,8 +40,8 @@ public:
         memset(buffer, 0, totalSize);
     }
 
-    /*
-     * Calculates the occupied portion of the buffer.
+    /**
+     * Calculate the occupied portion of the buffer.
      */
 
     uint32_t occupiedSize()
@@ -55,17 +55,19 @@ public:
             return last - first;
     }
 
-    /*
-     * Calculates the occupied portion of the buffer.
+    /**
+     * Calculate the free portion of the buffer.
      */
     uint32_t freeSize() { return totalSize - occupiedSize(); }
 
-    /*
-     * Reads and deletes from the queues at maximum n chars from the buffer and
-     * stores them in *buf
-     * in subsequent positions.
-     * Returns the number of characters read (could be less than n
-     * if the buffer contains less than n characters).
+    /**
+     * Read (removing from the queue) at maximum n chars and
+     * stores them in *buf in subsequent positions.
+     *
+     * \param buf   where to store the read chars
+     * \param len   how many characters to read (at maximum)
+     * \return 		number of read characters (could be less than len
+     * 				if the buffer contains less than n characters)
      */
     uint32_t read(uint8_t* buf, uint32_t len)
     {
@@ -95,9 +97,12 @@ public:
         return i;
     }
 
-    /*
-     * Writes n characters in the buffer (or until it is full).
-     * Returns the number of chars effectively written.
+    /**
+     * Write n characters in the buffer (or until it is full).
+     *
+     * \param buf   pointer to the message to write
+     * \param len   how many characters to write (at maximum)
+     * \return 		number of chars written
      */
     uint32_t write(const uint8_t* buf, uint32_t len)
     {
@@ -129,7 +134,7 @@ public:
     }
 
     /*
-     * Prints the whole content of the buffer (for debug pupouses).
+     * Print the whole content of the buffer (for debug purposes).
      */
     void printContent()
     {

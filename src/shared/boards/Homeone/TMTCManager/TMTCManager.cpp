@@ -27,7 +27,7 @@ namespace HomeoneBoard
 namespace TMTC
 {
 
-/*
+/**
  * Constructor: initialise objects (has memory allocation).
  */
 TMTCManager::TMTCManager()
@@ -37,7 +37,7 @@ TMTCManager::TMTCManager()
     // TODO: check gamma status and configuration
 }
 
-/*
+/**
  * Non-blocking send function: copies the message in the outBuffer if there's
  * enough space.
  */
@@ -52,7 +52,7 @@ bool TMTCManager::enqueueMsg(const uint8_t* msg, const uint8_t len)
     return false;
 }
 
-/*
+/**
  * Sending thread's run() function: read from the outBuffer and forward on the
  * link.
  */
@@ -80,7 +80,7 @@ void TMTCManager::runSender()
     }
 }
 
-/*
+/**
  * Receiving thread's run() function: parse the received packet one byte at a
  * time
  * until you find a complete Mavlink message and dispatch it with the
@@ -101,17 +101,17 @@ void TMTCManager::runReceiver()
         {
 #ifdef DEBUG
             printf(
-                "Received message with ID %d, sequence: %d from component %d "
+                "[TMTC] Received message with ID %d, sequence: %d from component %d "
                 "of system %d\n",
                 msg.msgid, msg.seq, msg.compid, msg.sysid);
 #endif
 
             // Send Ack
-            if (msg.msgid != MAVLINK_MSG_ID_HEART_BEAT)
+            if (msg.msgid != MAVLINK_MSG_ID_ACK_TM)
                 sendAck(&msg);
 
             // Handle the command
-			handleMavlinkMessage(&msg);
+			MessageHandler::handleMavlinkMessage(&msg);
         }
 
         // TODO: aggiornare statistiche TMTC nell'housekeeping
@@ -119,7 +119,7 @@ void TMTCManager::runReceiver()
     }
 }
 
-/*
+/**
  * Send an ACK to notify the sender that you received the given message.
  */
 void TMTCManager::sendAck(const mavlink_message_t* msg)
@@ -137,7 +137,7 @@ void TMTCManager::sendAck(const mavlink_message_t* msg)
     bool ackSent = enqueueMsg(bufferMsg, msgLen);
 
 #ifdef DEBUG
-    printf("Sent Ack: ");
+    printf("[TMTC] Sent Ack: ");
     for (int i = 0; i < msgLen; i++)
         printf("%x ", bufferMsg[i]);
     printf("\n");

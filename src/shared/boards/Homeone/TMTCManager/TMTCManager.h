@@ -25,7 +25,8 @@
 
 #include <Singleton.h>
 #include "CircularBuffer.h"
-#include "MessageHandlers.h"
+#include "MessageHandler.h"
+#include "TMTC_Config.h"
 
 namespace HomeoneBoard
 {
@@ -56,7 +57,7 @@ class TMTCManager : public Singleton<TMTCManager>
 
 public:
     /*
-     * Class deconstructor.
+     * Class destructor.
      */
     ~TMTCManager() {}
 
@@ -65,9 +66,9 @@ public:
      * message into a synchronized buffer.
      * Note that the message should already be a Mavlink message when it is
      * enqueued: no wrapping is made by the TMTC when sending.
-     * @param  msg       buffer that contains the message
-     * @param  len       length of the message in bytes
-     * @return           false if there isn't enough space in the buffer
+     * \param  msg       buffer that contains the message
+     * \param  len       length of the message in bytes
+     * \return           false if there isn't enough space in the buffer
      */
     bool enqueueMsg(const uint8_t* msg, const uint8_t len);
 
@@ -89,7 +90,7 @@ private:
 
     /*
      * Calls the runSender() member function.
-     * @param arg       the object pointer cast to void*
+     * \param arg       this object's pointer, casted to void*
      */
     static void senderLauncher(void* arg)
     {
@@ -98,7 +99,7 @@ private:
 
     /*
      * Calls the runReceiver() member function.
-     * @param arg       the object pointer cast to void*
+     * \param arg       this object's pointer, casted to void*
      */
     static void receiverLauncher(void* arg)
     {
@@ -121,8 +122,8 @@ private:
 
     /*
      * Send an acknowledge message back to the sender to notify the Ground
-     * Station
-     * that you correctly received the message with a given sequence number.
+     * Station that you correctly received a message.
+     * \param msg    Mavlink message to acknowledge.
      */
     void sendAck(const mavlink_message_t* msg);
 };
