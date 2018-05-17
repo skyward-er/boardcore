@@ -30,6 +30,11 @@ void EventBroker::post(const Event& ev, uint8_t topic)
 {
     Lock<Mutex> lock(mtx_subscribers);
 
+#ifdef DEBUG
+#include <stdio.h>
+    printf("[EventBroker] Event: %d, Topic: %d\n", ev.sig, topic);
+#endif
+
     if (subscribers.count(topic) > 0)
     {
         vector<EventHandler*>& subs = subscribers.at(topic);
