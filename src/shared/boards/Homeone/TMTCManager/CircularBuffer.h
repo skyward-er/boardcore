@@ -66,8 +66,8 @@ public:
      *
      * \param buf   where to store the read chars
      * \param len   how many characters to read (at maximum)
-     * \return 		number of read characters (could be less than len
-     * 				if the buffer contains less than n characters)
+     * \return      number of read characters (could be less than len
+     *              if the buffer contains less than n characters)
      */
     uint32_t read(uint8_t* buf, uint32_t len)
     {
@@ -102,7 +102,7 @@ public:
      *
      * \param buf   pointer to the message to write
      * \param len   how many characters to write (at maximum)
-     * \return 		number of chars written
+     * \return      number of chars written
      */
     uint32_t write(const uint8_t* buf, uint32_t len)
     {
