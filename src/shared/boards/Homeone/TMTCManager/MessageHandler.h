@@ -22,8 +22,8 @@
 #ifndef TMTC_MESSAGE_HANDLERS_H
 #define TMTC_MESSAGE_HANDLERS_H
 
-#include "TMTC_Config.h"
 #include <map>
+#include "TMTC_Config.h"
 
 namespace HomeoneBoard
 {
@@ -33,18 +33,21 @@ namespace TMTC
 /* Define the pair <MESSAGEID, COMMANDID> to identify a command */
 typedef struct msgEntry_type
 {
-    uint8_t messageId; // Mavlink message type id
-    uint8_t commandId; // 0 if there's no command in the message
+    uint8_t messageId;  // Mavlink message type id
+    uint8_t commandId;  // 0 if there's no command in the message
 
     /* The < operator is used to define an order */
-    bool operator<(msgEntry_type const &other) const 
+    bool operator<(msgEntry_type const& other) const
     {
-        if (messageId < other.messageId) {
-            return true; 
+        if (messageId < other.messageId)
+        {
+            return true;
         }
-        else if (messageId == other.messageId) {
-            if (commandId < other.commandId) {
-                return true; 
+        else if (messageId == other.messageId)
+        {
+            if (commandId < other.commandId)
+            {
+                return true;
             }
         }
         return false;
@@ -62,13 +65,13 @@ typedef struct evtEntry_type
  * This class wraps up the components needed to handle incoming commands.
  *
  * Every member of the class is static, so the class itself has no need to be
- * instantiated (it should be accessed using directly MessageHandler::function()).
+ * instantiated (it should be accessed using directly
+ * MessageHandler::function()).
  */
 class MessageHandler
 {
 
 private:
-
     /**
      * Map that contains an <EventID, TopicID> pair for each command that can
      * be directly mapped to an event.
@@ -80,29 +83,27 @@ private:
      * This is how an entry looks like:
      * {
      *   {<type ID of the Mavlink message>, <command ID contained (or 0)>},
-     *   {<ID of event to be posted>      , <Topic in which it should be posted>}
+     *   {<ID of event to be posted>      , <Topic where to post it>}
      * }
      */
-	static std::map<msgEntry_t, evtEntry_t> commandTranslationMap;
+    static std::map<msgEntry_t, evtEntry_t> commandTranslationMap;
 
     /**
-     * Searches a msgEntry in the map: if the map doesn't contain it, returns false.
-     * \param key				command to be searched in the map.
-     * \param retrievedEntry	where to return the map's value.
-     * \return 					true if the map contains the key.
+     * Searches a msgEntry in the map: if the map doesn't contain it, returns
+     * false.
+     * \param key               command to be searched in the map.
+     * \param retrievedEntry    where to return the map's value.
+     * \return                  true if the map contains the key.
      */
-    static bool retrieveEvtEntry (msgEntry_t key, evtEntry_t* retrievedEntry);
+    static bool retrieveEvtEntry(msgEntry_t key, evtEntry_t* retrievedEntry);
 
 public:
-
     /**
      * Handles the given Mavlink message according to its type id.
      * \param msg    pointer to the Mavlink message that was received.
      */
     static void handleMavlinkMessage(const mavlink_message_t* msg);
-
 };
-
 }
 }
 

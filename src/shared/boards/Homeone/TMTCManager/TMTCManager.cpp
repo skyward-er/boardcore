@@ -75,7 +75,7 @@ void TMTCManager::runSender()
                     break;
             }
         }
-        //TODO: should this be done only if something has been sent?
+        // TODO: should this be done only if something has been sent?
         miosix::Thread::sleep(TMTC_SEND_TIMEOUT);
     }
 }
@@ -101,7 +101,8 @@ void TMTCManager::runReceiver()
         {
 #ifdef DEBUG
             printf(
-                "[TMTC] Received message with ID %d, sequence: %d from component %d "
+                "[TMTC] Received message with ID %d, sequence: %d from "
+                "component %d "
                 "of system %d\n",
                 msg.msgid, msg.seq, msg.compid, msg.sysid);
 #endif
@@ -111,7 +112,7 @@ void TMTCManager::runReceiver()
                 sendAck(&msg);
 
             // Handle the command
-			MessageHandler::handleMavlinkMessage(&msg);
+            MessageHandler::handleMavlinkMessage(&msg);
         }
 
         // TODO: aggiornare statistiche TMTC nell'housekeeping

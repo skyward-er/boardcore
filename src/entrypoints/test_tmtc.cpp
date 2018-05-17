@@ -32,15 +32,15 @@ int main()
 
     while(1)
     {
-    	printf("Enqueuing ping\n");
+        printf("Enqueuing ping\n");
 
-		mavlink_message_t ping_msg;
-		mavlink_msg_ping_tc_pack(1, 1, &ping_msg, miosix::getTick());
+        mavlink_message_t ping_msg;
+        mavlink_msg_ping_tc_pack(1, 1, &ping_msg, miosix::getTick());
 
-		sTMTCManager->enqueueMsg( (uint8_t*)&ping_msg, sizeof(ping_msg) );
+        sTMTCManager->enqueueMsg( (uint8_t*)&ping_msg, sizeof(ping_msg) );
 
-    	miosix::delayMs(5000);
-	}
+        miosix::delayMs(5000);
+    }
 
     return 0;
 }
