@@ -22,8 +22,12 @@
 
 #include "TMTCManager.h"
 
-using namespace HomeoneBoard;
-/*
+namespace HomeoneBoard
+{
+namespace TMTC
+{
+
+/**
  * Constructor: initialise objects (has memory allocation).
  */
 TMTCManager::TMTCManager()
@@ -33,7 +37,7 @@ TMTCManager::TMTCManager()
     // TODO: check gamma status and configuration
 }
 
-/*
+/**
  * Non-blocking send function: copies the message in the outBuffer if there's
  * enough space.
  */
@@ -48,7 +52,7 @@ bool TMTCManager::enqueueMsg(const uint8_t* msg, const uint8_t len)
     return false;
 }
 
-/*
+/**
  * Sending thread's run() function: read from the outBuffer and forward on the
  * link.
  */
@@ -71,14 +75,15 @@ void TMTCManager::runSender()
                     break;
             }
         }
+        //TODO: should this be done only if something has been sent?
         miosix::Thread::sleep(TMTC_SEND_TIMEOUT);
     }
 }
 
-/*
+/**
  * Receiving thread's run() function: parse the received packet one byte at a
  * time
- * until you find a complete mavlink message and dispatch it with the
+ * until you find a complete Mavlink message and dispatch it with the
  * appropriate handler.
  */
 void TMTCManager::runReceiver()
@@ -96,68 +101,17 @@ void TMTCManager::runReceiver()
         {
 #ifdef DEBUG
             printf(
-                "Received message with ID %d, sequence: %d from component %d "
+                "[TMTC] Received message with ID %d, sequence: %d from component %d "
                 "of system %d\n",
                 msg.msgid, msg.seq, msg.compid, msg.sysid);
 #endif
 
-            // If the received message is not a HEARTBEAT, send an ACK back to
-            // ground
-            if (msg.msgid != MAVLINK_MSG_ID_HEART_BEAT)  // TODO: maybe for the
-                                                         // heartbeat too?
+            // Send Ack
+            if (msg.msgid != MAVLINK_MSG_ID_ACK_TM)
                 sendAck(&msg);
 
-            // Handle the message depending on the message type: decode it
-            // to its proper specific command type and use the appropriate
-            // handler.
-            switch (msg.msgid)
-            {
-                case MAVLINK_MSG_ID_PING_TC:
-                {
-                    TMTC_TRACE("Received PING message\n");
-                    handlePingCommand(&msg);
-                    break;
-                }
-                case MAVLINK_MSG_ID_NOARG_TC:
-                {
-                    TMTC_TRACE("Received NOARG COMMAND message\n");
-                    handleNoArgCommand(&msg);
-
-                    break;
-                }
-                case MAVLINK_MSG_ID_START_LAUNCH_TC:
-                {
-                    TMTC_TRACE("Received START_LAUNCH message\n");
-                    handleLaunchCommand(&msg);
-                    break;
-                }
-                case MAVLINK_MSG_ID_REQUEST_BOARD_STATUS_TC:
-                {
-                    TMTC_TRACE("Received REQUEST_BOARD_STATUS message\n");
-                    handleStatusRequestCommand(&msg);
-                    break;
-                }
-                case MAVLINK_MSG_ID_CALIBRATE_BAROMETERS_TC:
-                {
-                    TMTC_TRACE("Received CALIBRATE_BAROMETERS message\n");
-                    handleCalibrationCommand(&msg);
-                    break;
-                }
-#ifdef DEBUG
-                /* Only handle the RAW_EVENT message when in debug mode */
-                case MAVLINK_MSG_ID_RAW_EVENT_TC:
-                {
-                    TMTC_TRACE("Received RAW_EVENT message\n");
-                    handleRawEventMessage(&msg);
-                    break;
-                }
-#endif
-                default:
-                {
-                    TMTC_TRACE("Received unknown message\n");
-                    break;
-                }
-            }
+            // Handle the command
+			MessageHandler::handleMavlinkMessage(&msg);
         }
 
         // TODO: aggiornare statistiche TMTC nell'housekeeping
@@ -165,7 +119,7 @@ void TMTCManager::runReceiver()
     }
 }
 
-/*
+/**
  * Send an ACK to notify the sender that you received the given message.
  */
 void TMTCManager::sendAck(const mavlink_message_t* msg)
@@ -183,7 +137,7 @@ void TMTCManager::sendAck(const mavlink_message_t* msg)
     bool ackSent = enqueueMsg(bufferMsg, msgLen);
 
 #ifdef DEBUG
-    printf("Sent Ack: ");
+    printf("[TMTC] Sent Ack: ");
     for (int i = 0; i < msgLen; i++)
         printf("%x ", bufferMsg[i]);
     printf("\n");
@@ -194,141 +148,5 @@ void TMTCManager::sendAck(const mavlink_message_t* msg)
         // TODO: fault counter? retry?
     }
 }
-
-/* -------------------------- MESSAGE HANDLERS ------------------------- */
-
-/*
- * Handle Ping command: post the event on the EventBroker.
- */
-void TMTCManager::handlePingCommand(const mavlink_message_t* command)
-{
-    sEventBroker->post(ev_ping, TOPIC_DIAGNOSTICS);
 }
-
-/*
- * Handle a no argument command according to command id.
- */
-void TMTCManager::handleNoArgCommand(const mavlink_message_t* command)
-{
-    // Retrieve the command id from the payload of the message.
-    switch (mavlink_msg_noarg_tc_get_command_id(command))
-    {
-        case MAV_CMD_ARM:
-        {
-            sEventBroker->post(ev_arm, TOPIC_COMMANDS);
-            break;
-        }
-        case MAV_CMD_DISARM:
-        {
-            sEventBroker->post(ev_disarm, TOPIC_COMMANDS);
-            break;
-        }
-        case MAV_CMD_ABORT:
-        {
-            sEventBroker->post(ev_abort, TOPIC_COMMANDS);
-            break;
-        }
-        case MAV_CMD_NOSECONE_OPEN:
-        {
-            sEventBroker->post(ev_nosecone_open, TOPIC_COMMANDS);
-            break;
-        }
-        case MAV_CMD_NOSECONE_CLOSE:
-        {
-            sEventBroker->post(ev_nosecone_close, TOPIC_COMMANDS);
-            break;
-        }
-        case MAV_CMD_START_SAMPLING:
-        {
-            sEventBroker->post(ev_start_sampling, TOPIC_COMMANDS);
-            break;
-        }
-        case MAV_CMD_STOP_SAMPLING:
-        {
-            sEventBroker->post(ev_stop_sampling, TOPIC_COMMANDS);
-            break;
-        }
-        case MAV_CMD_TEST_MODE:
-        {
-            sEventBroker->post(ev_test, TOPIC_COMMANDS);
-            break;
-        }
-        case MAV_CMD_BOARD_RESET:
-        {
-            sEventBroker->post(ev_reset, TOPIC_COMMANDS);
-            break;
-        }
-        case MAV_CMD_REQ_DEBUG_INFO:
-        {
-            // TODO recuperare info direttamente da sBoard
-            break;
-        }
-        default:
-        {
-            // TODO: segnalare errore
-            break;
-        }
-    }
-}
-
-/*
- * Handle the Launch Command.
- */
-void TMTCManager::handleLaunchCommand(const mavlink_message_t* command)
-{
-    sEventBroker->post(ev_start_lauch, TOPIC_COMMANDS);
-    // TODO inserire nell'evento il codice di lancio
-}
-
-/*
- * Handle a Status request depending on the payload of the message.
- */
-void TMTCManager::handleStatusRequestCommand(const mavlink_message_t* command)
-{
-    // Handle depending the board id
-    switch (mavlink_msg_request_board_status_tc_get_board_id(command))
-    {
-        case MAV_HOMEONE_BOARD:
-        {
-            // TODO: recuperare direttamente da sBoard
-            break;
-        }
-        case MAV_IGNITION_BOARD:
-        {
-            sEventBroker->post(ev_ignition_status, TOPIC_DIAGNOSTICS);
-            break;
-        }
-        case MAV_NOSECONE_BOARD:
-        {
-            sEventBroker->post(ev_nosecone_status, TOPIC_DIAGNOSTICS);
-            break;
-        }
-        case MAV_ALL_BOARDS:
-        {
-            // TODO
-            break;
-        }
-    }
-}
-
-/*
- * Handle the calibration command: post the corresponding event in the
- * eventBroker.
- */
-void TMTCManager::handleCalibrationCommand(const mavlink_message_t* command)
-{
-    // TODO
-}
-
-/*
- * Handle a raw_event message: post the event contained in the payload
- * of the message directly in the EventBroker with the topic described
- * in the payload.
- */
-void TMTCManager::handleRawEventMessage(const mavlink_message_t* rawEventMsg)
-{
-    uint8_t evId    = mavlink_msg_raw_event_tc_get_Event_id(rawEventMsg);
-    uint8_t topicId = mavlink_msg_raw_event_tc_get_Topic_id(rawEventMsg);
-    ev_raw.sig      = evId;
-    sEventBroker->post(ev_raw, topicId);
 }
