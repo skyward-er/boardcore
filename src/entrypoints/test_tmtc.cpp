@@ -23,12 +23,16 @@
 #include <Common.h>
 #include "boards/Homeone/TMTCManager/TMTCManager.h"
 
+using namespace miosix;
+using namespace HomeoneBoard;
+using namespace TMTC;
+
 int main()
 {
 
-    while(1){
-    	
-    	printf("Enqueuing heartbeat\n");
+    while(1)
+    {
+    	printf("Enqueuing ping\n");
 
 		mavlink_message_t ping_msg;
 		mavlink_msg_ping_tc_pack(1, 1, &ping_msg, miosix::getTick());
