@@ -34,6 +34,15 @@ TMTCManager::TMTCManager()
 {
     gamma     = new Gamma868(RADIO_DEVICE_NAME);
     outBuffer = new CircularBuffer(TMTC_OUT_BUFFER_SIZE);
+
+    receiverThread = miosix::Thread::create(receiverLauncher, TMTC_RECEIVER_STACKSIZE, TMTC_RECEIVER_PRIORITY,
+                                           reinterpret_cast<void*>(this));
+    senderThread = miosix::Thread::create(senderLauncher, TMTC_SENDER_STACKSIZE, TMTC_SENDER_PRIORITY,
+                                           reinterpret_cast<void*>(this));
+
+#ifdef DEBUG
+        printf("Created TMTCManager with a %d bytes buffer.\n", TMTC_OUT_BUFFER_SIZE);
+#endif
     // TODO: check gamma status and configuration
 }
 
@@ -46,6 +55,10 @@ bool TMTCManager::enqueueMsg(const uint8_t* msg, const uint8_t len)
     if (outBuffer->freeSize() >= len)
     {
         outBuffer->write(msg, len);
+#ifdef DEBUG
+	printf("[TMTC] Enqueueing\n");
+	outBuffer->printContent();
+#endif
         return true;
     }
 
@@ -60,10 +73,20 @@ void TMTCManager::runSender()
 {
     uint8_t msgTemp[TMTC_MAX_PKT_SIZE];
 
+#ifdef DEBUG
+	printf("[TMTC] Sender is running\n");
+	outBuffer->printContent();
+#endif
+
     while (1)
     {
         if (outBuffer->occupiedSize() > 0)
         {
+		#ifdef DEBUG
+			printf("[TMTC] Sender is sending\n");
+			outBuffer->printContent();
+		#endif
+
             // Read from the buffer at maximum MAX_PKT_SIZE bytes
             uint32_t readBytes = outBuffer->read(msgTemp, TMTC_MAX_PKT_SIZE);
 
@@ -75,6 +98,7 @@ void TMTCManager::runSender()
                     break;
             }
         }
+        printf("[TMTC] Sent message\n");
         // TODO: should this be done only if something has been sent?
         miosix::Thread::sleep(TMTC_SEND_TIMEOUT);
     }
