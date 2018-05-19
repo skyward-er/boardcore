@@ -21,6 +21,7 @@
  */
 
 #include <Common.h>
+#define DEBUG
 #include "boards/Homeone/TMTCManager/TMTCManager.h"
 
 using namespace miosix;
@@ -32,12 +33,26 @@ int main()
 
     while(1)
     {
+#ifdef DEBUG
         printf("Enqueuing ping\n");
+#endif
 
-        mavlink_message_t ping_msg;
-        mavlink_msg_ping_tc_pack(1, 1, &ping_msg, miosix::getTick());
+        // Create a Mavlink message
+        mavlink_message_t pingMsg;
+        uint8_t bufferMsg[sizeof(mavlink_message_t) + 1];
 
-        sTMTCManager->enqueueMsg( (uint8_t*)&ping_msg, sizeof(ping_msg) );
+        // Populate Mavlink message passing the parameters of the specific message
+        mavlink_msg_ping_tc_pack(1, 1, &pingMsg, miosix::getTick());
+
+        // Convert it into a byte stream
+        int msgLen = mavlink_msg_to_send_buffer(bufferMsg, &pingMsg);
+
+        // Send the message
+        bool ackSent = sTMTCManager->enqueueMsg(bufferMsg, msgLen);
+
+        ledOn();
+        miosix::delayMs(200);
+        ledOff();
 
         miosix::delayMs(5000);
     }

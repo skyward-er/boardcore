@@ -33,11 +33,11 @@
 #define RADIO_DEVICE_NAME "/dev/radio"
 
 // Default size of the output buffer
-#define TMTC_OUT_BUFFER_SIZE (20*sizeof(mavlink_message_t))
+#define TMTC_OUT_BUFFER_SIZE (10*sizeof(mavlink_ping_tc_t))
 // Default timeout before sending next packet
 #define TMTC_SEND_TIMEOUT 300 
 // Maximum dimension a sent packet
-#define TMTC_MAX_PKT_SIZE (5*sizeof(mavlink_message_t))
+#define TMTC_MAX_PKT_SIZE (2*sizeof(mavlink_ping_tc_t))
 // Maximum number of retransmissions when sending a packet
 #define TMTC_MAX_TRIES_PER_PACKET 1
 
