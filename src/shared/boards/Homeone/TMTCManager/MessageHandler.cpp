@@ -27,7 +27,11 @@ namespace TMTC
 {
 
 /**
- *  Command->Event translation map
+ *  Command->Event translation map.
+ *
+ *  NOTE: if you want to build your own implementation of the TMTC, you should
+ *  modify this translation Map and the corresponding entry in the
+ *  handleMavlinkMessage() function.
  */
 // clang-format off
 std::map<msgEntry_t, evtEntry_t> MessageHandler::commandTranslationMap = {
@@ -100,7 +104,7 @@ std::map<msgEntry_t, evtEntry_t> MessageHandler::commandTranslationMap = {
 // clang-format on
 
 /**
- *  Handle the Mavlink message, posting the corresponding event if needed
+ *  Handle the Mavlink message, posting the corresponding event if needed.
  */
 void MessageHandler::handleMavlinkMessage(const mavlink_message_t* msg)
 {
@@ -108,6 +112,7 @@ void MessageHandler::handleMavlinkMessage(const mavlink_message_t* msg)
 
     msgEntry_t key;
     evtEntry_t evtEntry;
+    bool handled = false;
 
     switch (msgId)
     {
@@ -120,6 +125,7 @@ void MessageHandler::handleMavlinkMessage(const mavlink_message_t* msg)
             {
                 Event evt = {evtEntry.event};
                 sEventBroker->post(evt, evtEntry.topicID);
+                handled = true;
             }
             break;
         }
@@ -133,6 +139,7 @@ void MessageHandler::handleMavlinkMessage(const mavlink_message_t* msg)
             {
                 Event evt = {evtEntry.event};
                 sEventBroker->post(evt, evtEntry.topicID);
+                handled = true;
             }
             break;
         }
@@ -145,6 +152,7 @@ void MessageHandler::handleMavlinkMessage(const mavlink_message_t* msg)
             {
                 Event evt = {evtEntry.event};
                 sEventBroker->post(evt, evtEntry.topicID);
+                handled = true;
             }
             break;
         }
@@ -161,6 +169,7 @@ void MessageHandler::handleMavlinkMessage(const mavlink_message_t* msg)
                     mavlink_msg_start_launch_tc_get_launch_code(msg);
 
                 sEventBroker->post(startLaunchEvt, evtEntry.topicID);
+                handled = true;
             }
             break;
         }
@@ -179,6 +188,7 @@ void MessageHandler::handleMavlinkMessage(const mavlink_message_t* msg)
                     mavlink_msg_calibrate_barometers_tc_get_P0(msg);
 
                 sEventBroker->post(generatedCalibEvt, evtEntry.topicID);
+                handled = true;
             }
             break;
         }
@@ -189,8 +199,24 @@ void MessageHandler::handleMavlinkMessage(const mavlink_message_t* msg)
             Event evt = {mavlink_msg_raw_event_tc_get_Event_id(msg)};
             sEventBroker->post(evt, mavlink_msg_raw_event_tc_get_Topic_id(msg));
 #endif
+            handled = true;
             break;
         }
+        default:
+        {
+#ifdef DEBUG
+            printf("[TMTC] Received message is not of a known type\n");
+#endif
+            handled = true;
+            break;
+        }
+    }
+
+    if(!handled)
+    {
+#ifdef DEBUG
+        printf("[TMTC] Received unknown command message.\n");
+#endif
     }
 }
 
@@ -200,18 +226,14 @@ void MessageHandler::handleMavlinkMessage(const mavlink_message_t* msg)
 bool MessageHandler::retrieveEvtEntry(msgEntry_t key,
                                       evtEntry_t* retrievedEntry)
 {
+	/* Check if the key is contained in the map */
     if (commandTranslationMap.find(key) != commandTranslationMap.end())
     {
         *retrievedEntry = commandTranslationMap.find(key)->second;
         return true;
     }
-    else
-    {
-#ifdef DEBUG
-        printf("[TMTC] Received unknown command message.\n");
-#endif
-        return false;
-    }
+
+    return false;
 }
 }
 }

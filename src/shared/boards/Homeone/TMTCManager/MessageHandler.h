@@ -65,7 +65,7 @@ typedef struct evtEntry_type
  * This class wraps up the components needed to handle incoming commands.
  *
  * Every member of the class is static, so the class itself has no need to be
- * instantiated (it should be accessed using directly
+ * instantiated (it can be accessed using directly
  * MessageHandler::function()).
  */
 class MessageHandler
