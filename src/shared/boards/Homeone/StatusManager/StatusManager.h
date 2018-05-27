@@ -24,21 +24,15 @@
 #define SRC_SHARED_BOARDS_HOMEONE_STATUSMANAGER_STATUSMANAGER_H_
 
 #include "Status.h"
+#include <boards/Homeone/FlightModeManager/FlightModeManager.h>
+#include <boards/Homeone/TMTCManager/TMTCManager.h>
+#include <logger/Logger.h>
+
 
 namespace HomeoneBoard
 {
 namespace Status
 {
-
-struct HomeoneStatus
-{
-	FMMStatus fmm;
-	TMTCStatus tmtc;
-	SensorManagerStatus sensors;
-	LoggerStatus logger;
-	IgnitionControllerStatus ignition;
-	DeploymentControllerStatus deployment;
-};
 
 class StatusManager: public EventHandler, Singleton<StatusManager>
 {
@@ -46,36 +40,6 @@ class StatusManager: public EventHandler, Singleton<StatusManager>
 
 public:
     ~StatusManager() {}
-
-    HomeoneStatus status;
-
-    void notifyUpdate(componentId_t compId)
-    {
-    	// TODO: disable interrupts, update timestamp, log status
-    	switch(compId)
-    	{
-    		case FMM_COMP_ID:
-    			// log(boardStatus.fmm)
-    			printf("FMM status updated!\n");
-    			break;
-    		case TMTC_COMP_ID:
-    			// log(boardStatus.tmtc)
-    	    	printf("TMTC status updated!\n");
-    			break;
-    		case SENSOR_MANAGER_COMP_ID:
-    	    	printf("SensorManager status updated!\n");
-    			break;
-    		case LOGGER_COMP_ID:
-				printf("Logger status updated!\n");
-    			break;
-    		case IGNITION_CONTROLLER_COMP_ID:
-				printf("IgnitionController status updated!\n");
-    			break;
-    		case DEPLOYMENT_CONTROLLER_COMP_ID:
-				printf("DeploymentController status updated!\n");
-    			break;
-    	}
-    }
 
 protected:
     void handleEvent(const Event& e) override
@@ -89,14 +53,29 @@ protected:
 				break;
 			case EV_HOMEONE_STATUS_REQUEST:
 				break;
-			/* TODO:
 			case EV_DEBUG_INFO_REQUEST:
 				break;
 			case EV_LOW_RATE_TM:
+				// char telemetryMsg[sizeof(LRTelemetry)];
+				// LRTelemetry.build(&buffer, sensors->getStatus().pressure1);
+				// TODO: TMTCManager.send(telemetryMsg);
 				break;
 			case EV_HIGH_RATE_TM:
+				// char telemetryMsg[sizeof(LRTelemetry)];
+				// LRTelemetry.build(&buffer, sensors->getStatus().pressure1);
+				// TODO: TMTCManager.send(telemetryMsg);
 				break;
-		     */
+
+			/* TODO:
+			case EV_ENABLE_LOW_RATE_TM:
+				break;
+			case EV_DISABLE_LOW_RATE_TM:
+				break;
+			case EV_ENABLE_HIGH_RATE_TM:
+				break;
+			case EV_DISABLE_HIGH_RATE_TM:
+				break; */
+
 		}
     }
 
@@ -106,6 +85,17 @@ private:
 	{
 		// TODO: add high rate and low rate sampling events
 	}
+
+	FlightModeManager* fmm;
+	TMTCManager* tmtc;
+	Logger* logger;
+	/*
+	 * TODO:
+	 * 	SensorManager* sensors;
+	 *  IgnitionController* ignition;
+	 *  DeploymentController* deployment;
+	*/
+
 };
 
 }
