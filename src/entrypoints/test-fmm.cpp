@@ -24,9 +24,11 @@
 
 using HomeoneBoard::FMM::FlightModeManager;
 
+FlightModeManager* mgr;
+
 int main()
 {
-    FlightModeManager mgr;
+    mgr = sFlightModeManager;
 
     return 0;
 }
