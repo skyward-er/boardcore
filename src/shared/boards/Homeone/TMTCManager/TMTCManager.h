@@ -27,11 +27,29 @@
 #include "CircularBuffer.h"
 #include "MessageHandler.h"
 #include "TMTC_Config.h"
+#include "boards/Homeone/StatusManager/Status.h"
 
 namespace HomeoneBoard
 {
 namespace TMTC
 {
+
+/*
+ * Status of the component, wraps the mavlink stats
+ * which are updated at every byte reception.
+ */
+struct TMTCStatus : ComponentStatus
+{
+    mavlink_status_t mavstatus;
+    uint8_t sendErrors;
+    uint8_t ackErrors;
+
+	TMTCStatus()
+	{
+		compId = TMTC_COMP_ID;
+		healthStatus = COMP_UNINIT;
+	}
+};
 
 /**
  * The TMTCManager class handles the communication with the Ground Station.
@@ -74,12 +92,11 @@ public:
 
 protected:
 private:
-    /* RF module driver */
+
+    TMTCStatus status;
     Gamma868* gamma;
-    /* Synchronized buffer for outgoing messages */
     CircularBuffer* outBuffer;
 
-    /* Pointers to sending and receiving threads */
     miosix::Thread* senderThread;
     miosix::Thread* receiverThread;
 

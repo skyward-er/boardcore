@@ -44,6 +44,8 @@ TMTCManager::TMTCManager()
         printf("Created TMTCManager with a %d bytes buffer.\n", TMTC_OUT_BUFFER_SIZE);
 #endif
     // TODO: check gamma status and configuration
+
+	status.healthStatus = COMP_OK;
 }
 
 /**
@@ -90,30 +92,30 @@ void TMTCManager::runSender()
             // Read from the buffer at maximum MAX_PKT_SIZE bytes
             uint32_t readBytes = outBuffer->read(msgTemp, TMTC_MAX_PKT_SIZE);
 
-            // Try sending the packet (multiple times)
-            for (int i = 0; i < TMTC_MAX_TRIES_PER_PACKET; i++)
-            {
-                bool sent = gamma->send(msgTemp, readBytes);
-                if (sent)
-                    break;
-            }
+			bool sent = gamma->send(msgTemp, readBytes);
+			if (sent)
+				break;
+			else
+				status.sendErrors++;
+#ifdef DEBUG
+            printf("[TMTC] Sent message\n");
+#endif
         }
-        printf("[TMTC] Sent message\n");
         // TODO: should this be done only if something has been sent?
         miosix::Thread::sleep(TMTC_SEND_TIMEOUT);
     }
+
+
+	status.healthStatus = COMP_FAILED;
 }
 
 /**
  * Receiving thread's run() function: parse the received packet one byte at a
- * time
- * until you find a complete Mavlink message and dispatch it with the
- * appropriate handler.
+ * time until you find a complete Mavlink message and dispatch it.
  */
 void TMTCManager::runReceiver()
 {
     mavlink_message_t msg;
-    mavlink_status_t status;
     uint8_t byte;
 
     while (1)
@@ -121,7 +123,7 @@ void TMTCManager::runReceiver()
         gamma->receive(&byte, 1);  // Blocking function
 
         // Parse one char at a time until you find a complete message
-        if (mavlink_parse_char(MAVLINK_COMM_0, byte, &msg, &status))
+        if (mavlink_parse_char(MAVLINK_COMM_0, byte, &msg, &(status.mavstatus)))
         {
 #ifdef DEBUG
             printf(
@@ -139,9 +141,9 @@ void TMTCManager::runReceiver()
             MessageHandler::handleMavlinkMessage(&msg);
         }
 
-        // TODO: aggiornare statistiche TMTC nell'housekeeping
-        // sBoard->updateTMTCStats(&status);
     }
+
+	status.healthStatus = COMP_FAILED;
 }
 
 /**
@@ -170,7 +172,7 @@ void TMTCManager::sendAck(const mavlink_message_t* msg)
 
     if (!ackSent)
     {
-        // TODO: fault counter? retry?
+        status.ackErrors++;
     }
 }
 }

@@ -23,11 +23,7 @@
 #ifndef SRC_SHARED_BOARDS_HOMEONE_STATUSMANAGER_STATUS_H_
 #define SRC_SHARED_BOARDS_HOMEONE_STATUSMANAGER_STATUS_H_
 
-#include "States.h"
-
 namespace HomeoneBoard
-{
-namespace Status
 {
 
 /*************** Base struct *********************/
@@ -38,73 +34,24 @@ enum componentId_t
 	SENSOR_MANAGER_COMP_ID,
 	LOGGER_COMP_ID,
 	IGNITION_CONTROLLER_COMP_ID,
-	DEPLOYMENT_CONTROLLER_COMP_ID
+	DEPLOYMENT_CONTROLLER_COMP_ID,
+	SCHEDULER_COMP_ID,
+	EVENT_BROKER_COMP_ID,
+	CANBUS_MANAGER_COMP_ID
 };
 
 enum healthStatus_t
 {
-	UNINIT,
-	OK,
-	ERROR,  // Error flag, still alive
-	FAILED	// Dead
+	COMP_UNINIT,
+	COMP_OK,
+	COMP_ERROR,  // Error flag, still alive
+	COMP_FAILED	 // Dead
 };
 
 struct ComponentStatus
 {
 	componentId_t compId;
 	healthStatus_t healthStatus;
-	uint64_t lastModified;
 };
-
-
-
-/************* Implementations ***************/
-/* FlightModeManager */
-struct FMMStatus : ComponentStatus
-{
-	fmmState_t currentState;
-	fmmState_t previousState;
-	// TODO: other stuff?
-};
-
-/* TMTCManager */
-struct TMTCStatus : ComponentStatus
-{
-	// TODO: mavlink_status_t
-	uint32_t maxOccupiedBuffer;
-};
-
-/* SensorManager*/
-struct SensorManagerStatus : ComponentStatus
-{
-	// TODO: put last sensors values here
-};
-
-/* SDLogger */
-struct LoggerStatus : ComponentStatus
-{
-	uint32_t maxOccupiedBuffer;
-};
-
-/* IgnitionController */
-struct IgnitionControllerStatus : ComponentStatus
-{
-	ignitionState_t state;
-	bool ignitionAttached;
-};
-
-/* DeploymentController */
-struct DeploymentControllerStatus : ComponentStatus
-{
-	deploymentState_t state;
-	bool noseconeAttached;
-};
-
-// TODO: scheduler?
-// TODO: canbus?
-// TODO: CPU and Memory usage
-
-}
-}
 
 #endif /* SRC_SHARED_BOARDS_HOMEONE_STATUSMANAGER_STATUS_H_ */
