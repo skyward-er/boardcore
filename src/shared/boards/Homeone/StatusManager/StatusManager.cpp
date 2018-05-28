@@ -1,5 +1,5 @@
 /* Copyright (c) 2018 Skyward Experimental Rocketry
- * Authors: Alvise de' Faveri Tron
+ * Authors: Elvis
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -20,54 +20,44 @@
  * THE SOFTWARE.
  */
 
-#ifndef SRC_SHARED_BOARDS_HOMEONE_STATUSMANAGER_STATUSMANAGER_H_
-#define SRC_SHARED_BOARDS_HOMEONE_STATUSMANAGER_STATUSMANAGER_H_
-
-#include "Status.h"
-#include "TelemetryBuilders.h"
-#include "boards/Homeone/TMTCManager/TMTCManager.h"
+#include <boards/Homeone/StatusManager/StatusManager.h>
 
 namespace HomeoneBoard
 {
 namespace Status
 {
 
-/**
- * This class is in charge of collecting Status information from the board's
- * SW Modules and sending them through the TMTC whenever a status request event
- * is received.
- */
-class StatusManager: public EventHandler, public Singleton<StatusManager>
+void StatusManager::handleEvent(const Event& e)
 {
-    friend class Singleton<StatusManager> ;
+    switch (e.sig)
+    {
+        case EV_LOW_RATE_TM:
+            TMTC::sTMTCManager->enqueueMsg(lr_tm.serialize(), lr_tm.getSize());
+            break;
+        case EV_HIGH_RATE_TM:
+            TMTC::sTMTCManager->enqueueMsg(hr_tm.serialize(), hr_tm.getSize());
+            break;
+        case EV_NOSECONE_STATUS_REQUEST:
+            TMTC::sTMTCManager->enqueueMsg(nos_tm.serialize(), nos_tm.getSize());
+            break;
+        case EV_IGNITION_STATUS_REQUEST:
+            TMTC::sTMTCManager->enqueueMsg(ign_tm.serialize(), ign_tm.getSize());
+            break;
+        case EV_HOMEONE_STATUS_REQUEST:
+            TMTC::sTMTCManager->enqueueMsg(home_tm.serialize(), home_tm.getSize());
+            break;
+        case EV_DEBUG_INFO_REQUEST:
+            TMTC::sTMTCManager->enqueueMsg(debug_tm.serialize(), debug_tm.getSize());
+            break;
 
-public:
-    ~StatusManager(){};
-
-protected:
-    /* EventHandler implementation */
-    void handleEvent(const Event& e) override;
-
-private:
-    LR_TM_Builder lr_tm;
-    HR_TM_Builder hr_tm;
-    Nosecone_TM_Builder nos_tm;
-    Ignition_TM_Builder ign_tm;
-    Homeone_TM_Builder home_tm;
-    Debug_TM_Builder debug_tm;
-
-    StatusManager(){};
-
-};
+            /* TODO:
+             case EV_ENABLE_TM:
+             break;
+             case EV_DISABLE_TM:
+             break; */
+        }
+    }
 
 }
-}
-
-#ifndef sStatusManager
-#define sStatusManager StatusManager::getInstance()
-#else
-#error STATUS MANAGER ALREADY DEFINED
-#endif /* sStatusManager */
-
-#endif /* SRC_SHARED_BOARDS_HOMEONE_STATUSMANAGER_STATUSMANAGER_H_ */
-
+/* namespace Status */
+} /* namespace HomeoneBoard */
