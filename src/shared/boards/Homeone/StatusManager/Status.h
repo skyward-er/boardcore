@@ -54,4 +54,6 @@ struct ComponentStatus
 	healthStatus_t healthStatus;
 };
 
+}
+
 #endif /* SRC_SHARED_BOARDS_HOMEONE_STATUSMANAGER_STATUS_H_ */

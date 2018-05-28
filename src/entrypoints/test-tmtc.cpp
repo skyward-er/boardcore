@@ -27,19 +27,13 @@ using namespace miosix;
 using namespace HomeoneBoard;
 using namespace TMTC;
 
-#include "boards/Homeone/StatusManager/StatusManager.h"
-
 int main()
 {
 
-
-	sStatusManager->status.fmm.state = ARMED;
-
     while(1)
     {
-#ifdef DEBUG
-        printf("Enqueuing ping\n");
-#endif
+        printf("[TEST] Enqueueing ping\n");
+
         // Create a Mavlink message
         mavlink_message_t pingMsg;
         uint8_t bufferMsg[sizeof(mavlink_message_t) + 1];
@@ -53,11 +47,14 @@ int main()
         // Send the message
         bool ackSent = sTMTCManager->enqueueMsg(bufferMsg, msgLen);
 
+        if(!ackSent)
+        printf("[TEST] Could not enqueue ping\n");
+
         ledOn();
         miosix::delayMs(200);
         ledOff();
 
-        miosix::delayMs(5000);
+        miosix::Thread::sleep(5000);
     }
 
     return 0;
