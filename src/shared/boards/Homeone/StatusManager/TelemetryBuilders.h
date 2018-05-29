@@ -26,6 +26,7 @@
 #include "boards/Homeone/FlightModeManager/FlightModeManager.h"
 #include "boards/Homeone/TMTCManager/TMTCManager.h"
 #include "logger/Logger.h"
+#include <diagnostic/CpuMeter.h>
 
 namespace HomeoneBoard
 {
@@ -33,9 +34,9 @@ namespace Status
 {
 
 /**
- * Helper structures: encapsulate the logic needed for encoding
- * a telemetry in a mavlink message and converting it in a
- * char array to send it over the TMTC.
+ * These builders are helper structures that encapsulate the logic
+ * of retrieving telemetry informations, building mavlink messages
+ * and converting them in a byte stream.
  */
 struct TelemetryBuilder
 {
@@ -43,8 +44,9 @@ struct TelemetryBuilder
     uint8_t serializedMsg[sizeof(mavlink_message_t)];
 
     virtual ~TelemetryBuilder(){};
-    virtual uint8_t msgLen() = 0;
-    virtual void encode() = 0;
+
+    virtual uint8_t msgLen() = 0; // Length of the mavlink message payload
+    virtual void encode() = 0;    // Encode mavlink message
 
     uint8_t getSize()
     {
@@ -53,6 +55,7 @@ struct TelemetryBuilder
 
     uint8_t* serialize()
     {
+        // TODO: disable interrupts
         encode();
         mavlink_msg_to_send_buffer(serializedMsg, &mavMsg);
         return serializedMsg;
@@ -169,7 +172,7 @@ public:
     {
         // TODO get values from all boards
         // CPU, heap, all stacks, selected info...
-        mavlink_msg_debug_info_tm_pack(1, 1, &mavMsg, 0);
+        mavlink_msg_debug_info_tm_pack(1, 1, &mavMsg, averageCpuUtilization());
     }
 };
 
