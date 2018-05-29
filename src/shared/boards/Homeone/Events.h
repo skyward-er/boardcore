@@ -74,6 +74,8 @@ enum Events : uint8_t
 
 	EV_LOW_RATE_TM  = 180,
 	EV_HIGH_RATE_TM = 181,
+	EV_START_TM     = 182,
+	EV_STOP_TM      = 183,
 
     EV_PRESSURE_SAMPLE = 192
 

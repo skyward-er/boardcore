@@ -74,16 +74,23 @@ class TMTCManager : public Singleton<TMTCManager>
     friend class Singleton<TMTCManager>;
 
 public:
-    /*
+    /**
      * Class destructor.
      */
     ~TMTCManager() {}
 
-    /*
+    /**
+     * \return a copy of the status struct.
+     */
+    TMTCStatus getStatus()
+    {
+        return status;
+    }
+
+    /**
      * Non-blocking function that can be used to send a message: copies the
      * message into a synchronized buffer.
-     * Note that the message should already be a Mavlink message when it is
-     * enqueued: no wrapping is made by the TMTC when sending.
+     * Note that the message should already be a Mavlink message.
      * \param  msg       buffer that contains the message
      * \param  len       length of the message in bytes
      * \return           false if there isn't enough space in the buffer
@@ -100,12 +107,12 @@ private:
     miosix::Thread* senderThread;
     miosix::Thread* receiverThread;
 
-    /*
+    /**
      * Private constructor that realizes the Singleton pattern.
      */
     TMTCManager();
 
-    /*
+    /**
      * Calls the runSender() member function.
      * \param arg       this object's pointer, casted to void*
      */
@@ -114,7 +121,7 @@ private:
         reinterpret_cast<TMTCManager*>(arg)->runSender();
     }
 
-    /*
+    /**
      * Calls the runReceiver() member function.
      * \param arg       this object's pointer, casted to void*
      */
@@ -123,21 +130,21 @@ private:
         reinterpret_cast<TMTCManager*>(arg)->runReceiver();
     }
 
-    /*
+    /**
      * Function ran by the sending thread:
      * looks for messages in the outBuffer an sends them through the link
      * using the module's driver.
      */
     void runSender();
 
-    /*
+    /**
      * Function ran by the receiving thread:
      * read and parse incoming messages from the module's buffer and handle them
      * according to their content.
      */
     void runReceiver();
 
-    /*
+    /**
      * Send an acknowledge message back to the sender to notify the Ground
      * Station that you correctly received a message.
      * \param msg    Mavlink message to acknowledge.

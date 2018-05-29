@@ -26,6 +26,8 @@
 #include "Status.h"
 #include "TelemetryBuilders.h"
 #include "boards/Homeone/TMTCManager/TMTCManager.h"
+#include <events/Scheduler.h>
+#include <events/EventBroker.h>
 
 namespace HomeoneBoard
 {
@@ -49,6 +51,11 @@ protected:
     void handleEvent(const Event& e) override;
 
 private:
+    static const uint16_t HR_rate = 100;
+    static const uint16_t LR_rate = 1000;
+    static const uint64_t TM_timeout = 1000000; // TODO decide timeout
+    bool enable;
+
     LR_TM_Builder lr_tm;
     HR_TM_Builder hr_tm;
     Nosecone_TM_Builder nos_tm;

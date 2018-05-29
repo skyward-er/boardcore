@@ -27,15 +27,32 @@ namespace HomeoneBoard
 namespace Status
 {
 
+void postLR()
+{
+    sEventBroker->post(Event{EV_LOW_RATE_TM}, TOPIC_TELEMETRY);
+}
+
+void postHR()
+{
+    sEventBroker->post(Event{EV_LOW_RATE_TM}, TOPIC_TELEMETRY);
+}
+
+void postStopTM()
+{
+    sEventBroker->post(Event{EV_LOW_RATE_TM}, TOPIC_TELEMETRY);
+}
+
 void StatusManager::handleEvent(const Event& e)
 {
     switch (e.sig)
     {
         case EV_LOW_RATE_TM:
-            TMTC::sTMTCManager->enqueueMsg(lr_tm.serialize(), lr_tm.getSize());
+            if (enable)
+                TMTC::sTMTCManager->enqueueMsg(lr_tm.serialize(), lr_tm.getSize());
             break;
         case EV_HIGH_RATE_TM:
-            TMTC::sTMTCManager->enqueueMsg(hr_tm.serialize(), hr_tm.getSize());
+            if(enable)
+                TMTC::sTMTCManager->enqueueMsg(hr_tm.serialize(), hr_tm.getSize());
             break;
         case EV_NOSECONE_STATUS_REQUEST:
             TMTC::sTMTCManager->enqueueMsg(nos_tm.serialize(), nos_tm.getSize());
@@ -49,15 +66,17 @@ void StatusManager::handleEvent(const Event& e)
         case EV_DEBUG_INFO_REQUEST:
             TMTC::sTMTCManager->enqueueMsg(debug_tm.serialize(), debug_tm.getSize());
             break;
-
-            /* TODO:
-             case EV_ENABLE_TM:
-             break;
-             case EV_DISABLE_TM:
-             break; */
+        case EV_START_TM:
+            enable = true;
+            sEventScheduler->add(postLR, LR_rate, "HR_TM_Task");
+            sEventScheduler->add(postHR, HR_rate, "LR_TM_Task");
+            sEventScheduler->addOnce(postStopTM, TM_timeout);
+            break;
+        case EV_STOP_TM:
+            enable = false;
+            break;
         }
     }
 
-}
-/* namespace Status */
+} /* namespace Status */
 } /* namespace HomeoneBoard */
