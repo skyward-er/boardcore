@@ -89,9 +89,9 @@ private:
     void initSamplers();
 
     /**
-         * Handle received events.
-         * @param ev Event to handle.
-         */
+    * Handle received events.
+    * @param ev Event to handle.
+    */
     void handleEvent(const Event& ev);
 
     /**
