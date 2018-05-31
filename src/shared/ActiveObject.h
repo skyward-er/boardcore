@@ -46,6 +46,7 @@ public:
                                         reinterpret_cast<void*>(this));
     }
 
+    virtual ~ActiveObject() {}
 protected:
     /**
      * The thread that will be spawned just calls this function.

@@ -21,21 +21,41 @@
  */
 
 #include <Common.h>
+#define DEBUG
 #include "boards/Homeone/TMTCManager/TMTCManager.h"
+
+using namespace miosix;
+using namespace HomeoneBoard;
+using namespace TMTC;
 
 int main()
 {
 
-    while(1){
-		printf("Enqueuing ack\n");
+    while(1)
+    {
+#ifdef DEBUG
+        printf("Enqueuing ping\n");
+#endif
 
-		mavlink_message_t ack_msg;
-		mavlink_msg_ack_pack(1, 1, &ack_msg, 2, 2);
+        // Create a Mavlink message
+        mavlink_message_t pingMsg;
+        uint8_t bufferMsg[sizeof(mavlink_message_t) + 1];
 
-		sTMTCManager->enqueueMsg( (uint8_t*)&ack_msg, sizeof(ack_msg) );
+        // Populate Mavlink message passing the parameters of the specific message
+        mavlink_msg_ping_tc_pack(1, 1, &pingMsg, miosix::getTick());
 
-    	miosix::delayMs(1000);
-	}
+        // Convert it into a byte stream
+        int msgLen = mavlink_msg_to_send_buffer(bufferMsg, &pingMsg);
+
+        // Send the message
+        bool ackSent = sTMTCManager->enqueueMsg(bufferMsg, msgLen);
+
+        ledOn();
+        miosix::delayMs(200);
+        ledOff();
+
+        miosix::delayMs(5000);
+    }
 
     return 0;
 }

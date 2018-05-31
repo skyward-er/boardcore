@@ -19,24 +19,16 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
-#ifndef SRC_SHARED_BOARDS_HOMEONE_TOPICS_H
-#define SRC_SHARED_BOARDS_HOMEONE_TOPICS_H
 
-#include <stdint.h>
+#include <boards/Homeone/FlightModeManager/FlightModeManager.h>
 
-namespace HomeoneBoard
+using HomeoneBoard::FMM::FlightModeManager;
+
+FlightModeManager* mgr;
+
+int main()
 {
-/**
- * Definition of various event topics to use in the EventBroker
- */
-enum Topics : uint8_t
-{
-    TOPIC_DIAGNOSTICS,
-    TOPIC_CONFIGURATION,
-    TOPIC_COMMANDS,
-    TOPIC_FLIGHT_EVENTS,
-    TOPIC_SENSORS
-};
+    mgr = sFlightModeManager;
+
+    return 0;
 }
-
-#endif /* SRC_SHARED_BOARDS_HOMEONE_TOPICS_H_ */

@@ -19,24 +19,28 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
-#ifndef SRC_SHARED_BOARDS_HOMEONE_TOPICS_H
-#define SRC_SHARED_BOARDS_HOMEONE_TOPICS_H
 
-#include <stdint.h>
+#include "Common.h"
+#include "boards/Homeone/Events.h"
+#include "boards/Homeone/SensorManager/SensorManager.h"
 
-namespace HomeoneBoard
+using namespace miosix;
+using namespace HomeoneBoard;
+using Sensors::SensorManager;
+using Sensors::SensorData;
+
+int main()
 {
-/**
- * Definition of various event topics to use in the EventBroker
- */
-enum Topics : uint8_t
-{
-    TOPIC_DIAGNOSTICS,
-    TOPIC_CONFIGURATION,
-    TOPIC_COMMANDS,
-    TOPIC_FLIGHT_EVENTS,
-    TOPIC_SENSORS
-};
+    Event ev{EV_START_SAMPLING};
+
+    Singleton<SensorManager>::getInstance();
+
+    printf("Waiting...\n");
+    Thread::sleep(5000);
+
+    sEventBroker->post(ev, TOPIC_CONFIGURATION);
+    for (;;)
+    {
+        Thread::sleep(100);
+    }
 }
-
-#endif /* SRC_SHARED_BOARDS_HOMEONE_TOPICS_H_ */

@@ -23,18 +23,38 @@
 #ifndef TMTC_CONFIG
 #define TMTC_CONFIG
 
-#warning TMTC COSTANTS ARE ONLY PLACEHOLDER VALUES
+#include <Common.h>
+#include <drivers/gamma868/Gamma868.h>
+#include <libs/mavlink_skyward_lib/mavlink_lib/skyward/mavlink.h>
+#include "boards/Homeone/Events.h"
+#include "boards/Homeone/Topics.h"
+#include "events/EventBroker.h"     
 
 #define RADIO_DEVICE_NAME "/dev/radio"
 
-#define TMTC_OUT_BUFFER_SIZE (20*sizeof(mavlink_message_t)) // Default size of the output messages buffer
-#define TMTC_SEND_TIMEOUT 1000 // Default timeout before sending next packet
-#define TMTC_MAX_PKT_SIZE (5*sizeof(mavlink_message_t)) 	// Maxmimum dimension of the packet
-#define TMTC_MAX_TRIES_PER_PACKET 3	// Maximum number of tries when sending a packet
+// Default size of the output buffer
+#define TMTC_OUT_BUFFER_SIZE (10*sizeof(mavlink_ping_tc_t))
+// Default timeout before sending next packet
+#define TMTC_SEND_TIMEOUT 300 
+// Maximum dimension a sent packet
+#define TMTC_MAX_PKT_SIZE (2*sizeof(mavlink_ping_tc_t))
+// Maximum number of retransmissions when sending a packet
+#define TMTC_MAX_TRIES_PER_PACKET 1
 
 #define TMTC_SENDER_STACKSIZE miosix::STACK_DEFAULT_FOR_PTHREAD
 #define TMTC_SENDER_PRIORITY miosix::MAIN_PRIORITY
 #define TMTC_RECEIVER_STACKSIZE miosix::STACK_DEFAULT_FOR_PTHREAD
 #define TMTC_RECEIVER_PRIORITY miosix::MAIN_PRIORITY
+
+// Mavlink messages sysID and compID
+#define TMTC_MAV_SYSID 1
+#define TMTC_MAV_COMPID 1
+
+// Define a debug trace
+#ifdef DEBUG
+#define TMTC_TRACE(x) printf(x)
+#else
+#define TMTC_TRACE(x) 
+#endif /* DEBUG */
 
 #endif /* CONFIG_H */

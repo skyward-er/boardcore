@@ -1,5 +1,5 @@
-/* Copyright (c) 2015-2018 Skyward Experimental Rocketry
- * Authors: Luca Erbetta
+/* Copyright (c) 2018 Skyward Experimental Rocketry
+ * Authors: Terraneo Federico
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -19,24 +19,46 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
-#ifndef SRC_SHARED_BOARDS_HOMEONE_TOPICS_H
-#define SRC_SHARED_BOARDS_HOMEONE_TOPICS_H
 
-#include <stdint.h>
+#pragma once
 
-namespace HomeoneBoard
+#include <cstring>
+
+#ifdef _MIOSIX
+#include <miosix.h>
+#endif //_MIOSIX
+
+class Dummy
 {
-/**
- * Definition of various event topics to use in the EventBroker
- */
-enum Topics : uint8_t
-{
-    TOPIC_DIAGNOSTICS,
-    TOPIC_CONFIGURATION,
-    TOPIC_COMMANDS,
-    TOPIC_FLIGHT_EVENTS,
-    TOPIC_SENSORS
+public:
+    Dummy()
+    {
+#ifdef _MIOSIX
+        timestamp=miosix::getTick();
+#else //_MIOSIX
+        timestamp=0;
+#endif //_MIOSIX
+        memset(x,0,sizeof(x));
+    }
+    
+    void correctValue()
+    {
+        for(int i=0;i<num;i++) x[i]=42;
+    }
+    
+    void print(std::ostream& os) const
+    {
+        os<<"timestamp="<<timestamp<<' ';
+        for(int i=0;i<num;i++)
+        {
+            if(x[i]==42) continue;
+            os<<"unserialized incorrectly, x["<<i<<"]="<<x[i];
+            return;
+        }
+        os<<"ok";
+    }
+private:
+    long long timestamp;
+    static const int num=50;
+    int x[num];
 };
-}
-
-#endif /* SRC_SHARED_BOARDS_HOMEONE_TOPICS_H_ */

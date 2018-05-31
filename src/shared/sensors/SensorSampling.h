@@ -26,7 +26,8 @@
 #include <diagnostic/Log.h>
 #include <drivers/spi/SensorSpi.h>
 
-class Sensor;
+#include "Sensor.h"
+
 class DMASensorSampler
 {
 public:
@@ -53,6 +54,13 @@ public:
                 mSensors[i]->onDMAUpdate(mRequests[i]);
     }
 
+    void UpdateAndCallback(std::function<void()> onSampleUpdateCallback)
+    {
+        Update();
+
+        onSampleUpdateCallback();
+    }
+
 private:
     std::vector<Sensor*> mSensors;
     std::vector<SPIRequest> mRequests;
@@ -70,6 +78,13 @@ public:
     {
         for (Sensor* s : mSensors)
             s->onSimpleUpdate();
+    }
+
+    void UpdateAndCallback(std::function<void()> onSampleUpdateCallback)
+    {
+        Update();
+
+        onSampleUpdateCallback();
     }
 
 private:

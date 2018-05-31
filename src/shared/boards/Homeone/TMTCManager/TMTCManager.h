@@ -23,21 +23,33 @@
 #ifndef TMTCMANAGER_H
 #define TMTCMANAGER_H
 
-#include <Common.h>
 #include <Singleton.h>
-#include <drivers/gamma868/Gamma868.h>
-#include <libs/mavlink_skyward_lib/mavlink_lib/skyward/mavlink.h>
 #include "CircularBuffer.h"
+#include "MessageHandler.h"
 #include "TMTC_Config.h"
-#include "TCHandlers.h"
 
-/*
+namespace HomeoneBoard
+{
+namespace TMTC
+{
+
+/**
  * The TMTCManager class handles the communication with the Ground Station.
- * It is composed of:
- *  - the Gamma868 driver, which uses blocking functions to receive from and send
- *    to the RF module.
- *  - a Sender thread that sends packets through the driver.
- *  - a Receiver thread that processes the incoming packets.
+ * It uses a Gamma868 transceiver and implements the Mavlink protocol.
+ *
+ * SENDER:
+ * Since the transceiver's driver defines blocking functions and the LoRa
+ * protocol used by the Gamma can be very slow, a synchronized CircularBuffer
+ * is used to store outgoing messages: the Sender thread will then periodically
+ * send them over the link.
+ *
+ * RECEIVER:
+ * A Receiver thread is also used to read the Gamma868 buffer byte-per-byte and
+ * then, when an entire message is read, an appropriate handler defined in
+ * MessageHandlers.h is called.
+ *
+ * USE:
+ * At the end of the file you can find the sTMTCManager define.
  */
 class TMTCManager : public Singleton<TMTCManager>
 {
@@ -45,60 +57,40 @@ class TMTCManager : public Singleton<TMTCManager>
 
 public:
     /*
-     * Class deconstructor.
+     * Class destructor.
      */
     ~TMTCManager() {}
-    
+
     /*
      * Non-blocking function that can be used to send a message: copies the
      * message into a synchronized buffer.
-     * @param  msg       buffer that contains the message
-     * @param  len       length of the message in bytes
-     * @return           false if there isn't enough space in the buffer
+     * Note that the message should already be a Mavlink message when it is
+     * enqueued: no wrapping is made by the TMTC when sending.
+     * \param  msg       buffer that contains the message
+     * \param  len       length of the message in bytes
+     * \return           false if there isn't enough space in the buffer
      */
-    bool enqueueMsg(uint8_t* msg, uint8_t len);
+    bool enqueueMsg(const uint8_t* msg, const uint8_t len);
 
 protected:
-
 private:
-
     /* RF module driver */
     Gamma868* gamma;
     /* Synchronized buffer for outgoing messages */
     CircularBuffer* outBuffer;
+
     /* Pointers to sending and receiving threads */
     miosix::Thread* senderThread;
     miosix::Thread* receiverThread;
-    
+
     /*
      * Private constructor that realizes the Singleton pattern.
      */
     TMTCManager();
 
-    /*  
-     * Function ran by the sending thread:
-     * look for messages in the outBuffer an send them through the link using
-     * the module's driver.
-     */
-    void runSender();
-
-    /*  
-     * Function ran by the receiving thread:
-     * read and parse incoming messages from the module's buffer and handle them 
-     * according to their content.
-     */
-    void runReceiver();
-
-    /* 
-     * Send an acknowlege message back to the sender to notify the Ground Station
-     * that you correctly received the message with a given sequence number.
-     */
-    void sendAck(mavlink_message_t* msg);
-    
-
     /*
-     * Calls the runSender() member function
-     * @param arg       the object pointer cast to void*
+     * Calls the runSender() member function.
+     * \param arg       this object's pointer, casted to void*
      */
     static void senderLauncher(void* arg)
     {
@@ -106,21 +98,43 @@ private:
     }
 
     /*
-     * Calls the runReceiver() member function
-     * @param arg       the object pointer cast to void*
+     * Calls the runReceiver() member function.
+     * \param arg       this object's pointer, casted to void*
      */
     static void receiverLauncher(void* arg)
     {
         reinterpret_cast<TMTCManager*>(arg)->runReceiver();
     }
-   
+
+    /*
+     * Function ran by the sending thread:
+     * looks for messages in the outBuffer an sends them through the link
+     * using the module's driver.
+     */
+    void runSender();
+
+    /*
+     * Function ran by the receiving thread:
+     * read and parse incoming messages from the module's buffer and handle them
+     * according to their content.
+     */
+    void runReceiver();
+
+    /*
+     * Send an acknowledge message back to the sender to notify the Ground
+     * Station that you correctly received a message.
+     * \param msg    Mavlink message to acknowledge.
+     */
+    void sendAck(const mavlink_message_t* msg);
 };
+}
+}
 
 /* Define a singleton object that can be accessed from other files */
 #ifndef sTMTCManager
-#define sTMTCManager TMTCManager::getInstance()
+#define sTMTCManager HomeoneBoard::TMTC::TMTCManager::getInstance()
 #else
 #error TMTCMANAGER ALREADY DEFINED
-#endif/* ifndef sTMTCManager */
+#endif /* sTMTCManager */
 
-#endif /* ifndef TMTCMANAGER_H */
+#endif /* TMTCMANAGER_H */
