@@ -44,7 +44,7 @@ public:
         }
     }
 
-    void Update(std::function<void()> onSampleUpdateCallback)
+    void Update()
     {
         auto& driver = SPIDriver::instance();
         bool ret     = driver.transaction(mRequests);
@@ -52,6 +52,11 @@ public:
         if (ret)
             for (size_t i = 0; i < mSensors.size(); i++)
                 mSensors[i]->onDMAUpdate(mRequests[i]);
+    }
+
+    void UpdateAndCallback(std::function<void()> onSampleUpdateCallback)
+    {
+        Update();
 
         onSampleUpdateCallback();
     }
@@ -69,10 +74,15 @@ public:
 
     void AddSensor(Sensor* sensor) { mSensors.push_back(sensor); }
 
-    void Update(std::function<void()> onSampleUpdateCallback)
+    void Update()
     {
         for (Sensor* s : mSensors)
             s->onSimpleUpdate();
+    }
+
+    void UpdateAndCallback(std::function<void()> onSampleUpdateCallback)
+    {
+        Update();
 
         onSampleUpdateCallback();
     }
