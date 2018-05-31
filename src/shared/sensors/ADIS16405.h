@@ -152,7 +152,7 @@ public:
 
 private:
     /* ADIS Register addresses */
-    enum adis_regaddr
+    enum adis_regaddr : uint8_t
     {
         // Name         address         default    function
         ADIS_FLASH_CNT  = 0x00,  //  N/A     Flash memory write count
@@ -212,21 +212,23 @@ private:
 
     uint16_t readReg(adis_regaddr addr)
     {
-        uint8_t txbuf[2] = {addr, 0};
         uint8_t rxbuf[2];
 
-        Bus::write(txbuf, sizeof(txbuf));
-        Bus::read(rxbuf, sizeof(rxbuf));
+        Bus::read(addr, rxbuf, sizeof(rxbuf));
 
         return rxbuf[0] << 8 | rxbuf[1];
     }
 
     void writeReg(adis_regaddr addr, uint16_t value)
     {  // todo:array
+
+        // TODO: Why addr +1?
         uint8_t txbuf[4] = {((addr + 1) | 0x80), value >> 8, (addr | 0x80),
                             value};
 
-        Bus::write(txbuf, sizeof(txbuf));
+        // TODO: update with BusTemplate function. Commented to make it compile
+        // for now
+        // Bus::write(txbuf, sizeof(txbuf));
 
         // TODO: check! Do I have to read here??
         // Bus::read(NULL,sizeof(txbuf));
