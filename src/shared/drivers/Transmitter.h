@@ -1,5 +1,5 @@
-/* Copyright (c) 2015-2018 Skyward Experimental Rocketry
- * Authors: Luca Erbetta
+/* Copyright (c) 2018 Skyward Experimental Rocketry
+ * Authors: Nuno Barcellos
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -19,24 +19,32 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
-#ifndef SRC_SHARED_BOARDS_HOMEONE_TOPICS_H
-#define SRC_SHARED_BOARDS_HOMEONE_TOPICS_H
 
-#include <stdint.h>
+#ifndef TRANSMITTER_H
+#define TRANSMITTER_H
 
-namespace HomeoneBoard
+#include <Common.h>
+
+class Transmitter
 {
-/**
- * Definition of various event topics to use in the EventBroker
- */
-enum Topics : uint8_t
-{
-    TOPIC_DIAGNOSTICS,
-    TOPIC_CONFIGURATION,
-    TOPIC_COMMANDS,
-    TOPIC_FLIGHT_EVENTS,
-    TOPIC_SENSORS
+public:
+    Transmitter() {}
+    virtual ~Transmitter() {}
+
+    /*
+     * Send a packet. Pure virtual function.
+     * @param pkt               Pointer to the packet (needs to be at least pkt_len bytes).
+     * @param pkt_len           Lenght of the packet to be sent.
+     * @return                  True if the message was sent correctly.
+     */
+    virtual bool send(const uint8_t* pkt, uint32_t pkt_len) = 0;
+
+    /*
+     * Receive a packet. Pure virtual function.
+     * @param pkt               Pointer to the buffer (needs to be at least pkt_len bytes).
+     * @param pkt_len           Lenght of the packet to be received.
+     */
+    virtual void receive(uint8_t* pkt, uint32_t pkt_len) = 0;
 };
-}
 
-#endif /* SRC_SHARED_BOARDS_HOMEONE_TOPICS_H_ */
+#endif

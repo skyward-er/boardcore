@@ -43,7 +43,7 @@ public:
 protected:
     virtual void handleEvent(const Event& ev) = 0;
 
-    void run()
+    void run() override
     {
         while (true)
         {
@@ -64,7 +64,7 @@ public:
     {
         state            = initialState;
         specialEvent.sig = EV_ENTRY;
-        handleEvent(specialEvent);
+        postEvent(specialEvent);
     }
 
     virtual ~FSM(){};
@@ -78,7 +78,11 @@ public:
     }
 
 protected:
-    void handleEvent(const Event& e) { (static_cast<T*>(this)->*state)(e); }
+    void handleEvent(const Event& e) override
+    {
+        (static_cast<T*>(this)->*state)(e);
+    }
+
 private:
     void (T::*state)(const Event&);
     Event specialEvent;

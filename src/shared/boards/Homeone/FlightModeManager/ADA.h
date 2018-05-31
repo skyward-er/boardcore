@@ -19,48 +19,44 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
-#ifndef SRC_SHARED_BOARDS_HOMEONE_FLIGHTMODEMANAGER_FSM_H
-#define SRC_SHARED_BOARDS_HOMEONE_FLIGHTMODEMANAGER_FSM_H
+#ifndef SRC_SHARED_BOARDS_HOMEONE_FLIGHTMODEMANAGER_ADA_H
+#define SRC_SHARED_BOARDS_HOMEONE_FLIGHTMODEMANAGER_ADA_H
 
-#include "Singleton.h"
+#include <events/FSM.h>
+#include <miosix.h>
 
-#include "events/Event.h"
-#include "events/FSM.h"
+using miosix::FastMutex;
 
 namespace HomeoneBoard
 {
 namespace FMM  // Flight Mode Manager
 {
-/**
- * Implementation of the Flight Mode Manager Finite State Machine
- */
-class FlightModeManagerFSM : public FSM<FlightModeManagerFSM>
-{
-    friend class Singleton<FlightModeManagerFSM>;
 
+struct ADASample
+{
+    uint16_t pressure;
+};
+
+/**
+ * Apogee Detection Algorithm Class.
+ *
+ */
+class ADA : public FSM<ADA>
+{
 public:
-    FlightModeManagerFSM();
-    ~FlightModeManagerFSM() {}
+    ADA();
+    ~ADA();
 
 private:
-    // States declarations
+    void onNewSample(ADASample sample, bool send_apogee_event);
 
-    void disarmed(const Event& e);
-    void armed(const Event& e);
-    void ascending(const Event& e);
-    void apogeeDetection(const Event& e);
-    void descendingPhase_1(const Event& e);
-    void descendingPhase_2(const Event& e);
-
-    // Event definitions
-    Event ev_ascent_timeout{EV_FMM_ASCENT_TIMEOUT};
-    Event ev_apogee{EV_FMM_APOGEE};
-    Event ev_main_parachute_deploy{EV_FMM_MAIN_PARACHUTE_DEPLOY};
-
-    // State variables
-    uint16_t delayed_event_id = 0;
+    // State functions
+    void idle(const Event&);
+    void shadow_mode(const Event&);
+    void active_mode(const Event&);
+    void stopped(const Event&);
 };
 }
 }
 
-#endif /* SRC_SHARED_BOARDS_HOMEONE_FLIGHTMODEMANAGER_FSM_H */
+#endif /* SRC_SHARED_BOARDS_HOMEONE_FLIGHTMODEMANAGER_ADA_H */

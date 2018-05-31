@@ -19,24 +19,31 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
-#ifndef SRC_SHARED_BOARDS_HOMEONE_TOPICS_H
-#define SRC_SHARED_BOARDS_HOMEONE_TOPICS_H
+#ifndef SRC_SHARED_BOARDS_HOMEONE_SENSORMANAGER_SENSORMANAGERCONFIG_H
+#define SRC_SHARED_BOARDS_HOMEONE_SENSORMANAGER_SENSORMANAGERCONFIG_H
 
-#include <stdint.h>
+#include <Common.h>
+#include <drivers/BusTemplate.h>
+#include <drivers/stm32f2_f4_i2c.h>
 
-namespace HomeoneBoard
-{
-/**
- * Definition of various event topics to use in the EventBroker
- */
-enum Topics : uint8_t
-{
-    TOPIC_DIAGNOSTICS,
-    TOPIC_CONFIGURATION,
-    TOPIC_COMMANDS,
-    TOPIC_FLIGHT_EVENTS,
-    TOPIC_SENSORS
-};
-}
+using miosix::Gpio;
 
-#endif /* SRC_SHARED_BOARDS_HOMEONE_TOPICS_H_ */
+typedef ProtocolI2C<miosix::I2C1Driver> busI2C1;
+
+// SPI1
+typedef Gpio<GPIOA_BASE, 5> GpioSck;
+typedef Gpio<GPIOA_BASE, 6> GpioMiso;
+typedef Gpio<GPIOA_BASE, 7> GpioMosi;
+typedef BusSPI<1, GpioMosi, GpioMiso, GpioSck> busSPI1;
+
+// CSs
+typedef Gpio<GPIOC_BASE, 3> csMPU9250;
+typedef Gpio<GPIOC_BASE, 1> csMAX21105;
+
+// Spi protocol defs
+typedef ProtocolSPI<busSPI1, csMPU9250> spiMPU9250;
+typedef ProtocolSPI<busSPI1, csMAX21105> spiMAX21105;
+
+static const uint8_t AD7994_I2C_ADDRESS = 0x24;  // Todo: Update with real value
+
+#endif /* SRC_SHARED_BOARDS_HOMEONE_SENSORMANAGER_SENSORMANAGERCONFIG_H */
