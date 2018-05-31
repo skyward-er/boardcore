@@ -132,7 +132,7 @@ private:
 
 /* Define a singleton object that can be accessed from other files */
 #ifndef sTMTCManager
-#define sTMTCManager TMTCManager::getInstance()
+#define sTMTCManager HomeoneBoard::TMTC::TMTCManager::getInstance()
 #else
 #error TMTCMANAGER ALREADY DEFINED
 #endif /* sTMTCManager */
