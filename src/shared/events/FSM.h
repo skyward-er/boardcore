@@ -64,7 +64,7 @@ public:
     {
         state            = initialState;
         specialEvent.sig = EV_ENTRY;
-        handleEvent(specialEvent);
+        postEvent(specialEvent);
     }
 
     virtual ~FSM(){};

@@ -34,26 +34,26 @@ namespace FMM  // Flight Mode Manager
 /**
  * Implementation of the Flight Mode Manager Finite State Machine
  */
-class FlightModeManager : public FSM<FlightModeManager>
+class FlightModeManager : public FSM<FlightModeManager>,
+                          public Singleton<FlightModeManager>
 {
     friend class Singleton<FlightModeManager>;
 
-public:
+private:
     FlightModeManager();
     ~FlightModeManager() {}
 
-private:
     // States declarations
 
-    void testing(const Event& e);
-    void aborted(const Event& e);
-    void disarmed(const Event& e);
-    void armed(const Event& e);
-    void ascending(const Event& e);
-    void apogeeDetection(const Event& e);
-    void descendingPhase_1(const Event& e);
-    void descendingPhase_2(const Event& e);
-    void landed(const Event& e);
+    void state_testing(const Event& e);
+    void state_aborted(const Event& e);
+    void state_disarmed(const Event& e);
+    void state_armed(const Event& e);
+    void state_ascending(const Event& e);
+    void state_apogeeDetection(const Event& e);
+    void state_descendingPhase_1(const Event& e);
+    void state_descendingPhase_2(const Event& e);
+    void state_landed(const Event& e);
 
     // Event definitions
     // Event ev_ascent_timeout{EV_ASCENT_TIMEOUT};
@@ -67,5 +67,7 @@ private:
 };
 }
 }
+
+#define sFlightModeManager FlightModeManager::getInstance()
 
 #endif /* SRC_SHARED_BOARDS_HOMEONE_FLIGHTMODEMANAGER_FSM_H */
