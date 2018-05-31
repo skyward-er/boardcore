@@ -41,8 +41,6 @@ namespace HomeoneBoard
 namespace Sensors
 {
 
-// using namespace TMTC;
-
 SensorManager::SensorManager() : EventHandler(), log(Logger::instance())
 {
     sEventBroker->subscribe(this, TOPIC_CONFIGURATION);
@@ -53,7 +51,7 @@ SensorManager::SensorManager() : EventHandler(), log(Logger::instance())
 
 void SensorManager::initSensors()
 {
-    sensor_test = new TestSensor();
+    sensor_test = new TestSensor();  // TODO: Remove this
 
     adc_ad7994 = new AD7994Type(AD7994_I2C_ADDRESS);
 
@@ -82,6 +80,9 @@ void SensorManager::handleEvent(const Event& ev)
         case EV_START_SAMPLING:
             startSampling();
             break;
+        case EV_STOP_SAMPLING:
+            // TODO: stop the samplers or just stop logging
+            break;
         default:
             printf("Unrecognized event\n");
     }
@@ -96,6 +97,11 @@ SensorData SensorManager::getSensorData()
 
 void SensorManager::startSampling()
 {
+    /*
+     * std::bind syntax:
+     * std::bind(&MyClass::someFunction, &myclass_instance, [someFunction args])
+     */
+
     // Simple 20 Hz Sampler callback and scheduler function
     std::function<void()> simple_20hz_callback =
         std::bind(&SensorManager::onSimple20HZCallback, this);
