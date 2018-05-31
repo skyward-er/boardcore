@@ -30,6 +30,7 @@
 #include "events/Scheduler.h"
 
 #include "drivers/adc/AD7994.h"
+#include "sensors/ADIS16405.h"
 #include "sensors/MAX21105.h"
 #include "sensors/MPU9250.h"
 
@@ -62,6 +63,9 @@ void SensorManager::initSensors()
     imu_mpu9250 =
         new MPU9250Type(0, 0);  // TODO: Update with correct parameters
     imu_mpu9250->init();
+
+    imu_adis16405 = new ADIS16405Type();
+    imu_adis16405->init();
 }
 
 void SensorManager::initSamplers()
@@ -71,6 +75,7 @@ void SensorManager::initSamplers()
 
     sampler_500hz_dma.AddSensor(imu_max21105);
     sampler_500hz_dma.AddSensor(imu_mpu9250);
+    sampler_500hz_dma.AddSensor(imu_adis16405);
 }
 
 void SensorManager::handleEvent(const Event& ev)
@@ -150,15 +155,18 @@ void SensorManager::onDMA500HZCallback()
     log.log(*(imu_mpu9250->gyroDataPtr()));
     log.log(*(imu_mpu9250->accelDataPtr()));
     log.log(*(imu_mpu9250->tempDataPtr()));
+
+    log.log(*(imu_adis16405->gyroDataPtr()));
+    log.log(*(imu_adis16405->accelDataPtr()));
+    log.log(*(imu_adis16405->tempDataPtr()));
 }
 
 void SensorManager::lowRateTMTC()
 {
     mavlink_message_t low_rate_samples_msg;
 
-    // TODO: Use data from adis
-    Vec3 gyro         = *(imu_mpu9250->gyroDataPtr());
-    Vec3 accel        = *(imu_mpu9250->accelDataPtr());
+    Vec3 gyro         = *(imu_adis16405->gyroDataPtr());
+    Vec3 accel        = *(imu_adis16405->accelDataPtr());
     uint16_t pressure = 0;  // Use actual data
 
     mavlink_msg_sample_data_tm_pack(1, 1, &low_rate_samples_msg, pressure,
