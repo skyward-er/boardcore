@@ -41,6 +41,8 @@ namespace HomeoneBoard
 namespace Sensors
 {
 
+// using namespace TMTC;
+
 SensorManager::SensorManager() : EventHandler(), log(Logger::instance())
 {
     sEventBroker->subscribe(this, TOPIC_CONFIGURATION);
@@ -99,7 +101,7 @@ void SensorManager::startSampling()
         std::bind(&SensorManager::onSimple20HZCallback, this);
 
     std::function<void()> simple_20hz_sampler =
-        std::bind(&SimpleSensorSampler::Update, &sampler_20hz_simple,
+        std::bind(&SimpleSensorSampler::UpdateAndCallback, &sampler_20hz_simple,
                   simple_20hz_callback);
 
     sEventScheduler->add(simple_20hz_sampler, 50, "simple_20hz");
@@ -108,8 +110,9 @@ void SensorManager::startSampling()
     std::function<void()> dma_500hz_callback =
         std::bind(&SensorManager::onDMA500HZCallback, this);
 
-    std::function<void()> dma_500Hz_sampler = std::bind(
-        &DMASensorSampler::Update, &sampler_500hz_dma, dma_500hz_callback);
+    std::function<void()> dma_500Hz_sampler =
+        std::bind(&DMASensorSampler::UpdateAndCallback, &sampler_500hz_dma,
+                  dma_500hz_callback);
 
     sEventScheduler->add(dma_500Hz_sampler, 2, "dma_500hz");
 
