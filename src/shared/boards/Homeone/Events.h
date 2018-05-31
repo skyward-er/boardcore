@@ -41,8 +41,9 @@ enum Events : uint8_t
     EV_SHUTDOWN_COMPLETE  = 6,
     EV_NOSECONE_STATUS_REQUEST = 7,
     EV_IGNITION_STATUS_REQUEST = 8,
-    EV_NOSECONE_STATUS         = 9,
-    EV_IGNITION_STATUS         = 10,
+    EV_HOMEONE_STATUS_REQUEST   = 9,
+    EV_NOSECONE_STATUS         = 10,
+    EV_IGNITION_STATUS         = 11,
 
     EV_ALTIMETER_CALIBRATION = 32,
     EV_START_SAMPLING        = 40,
@@ -86,9 +87,15 @@ struct AltimeterCalibrationEvent : Event
     uint16_t P0;  // Calibration pressure
 };
 
+
 struct PressureSampleEvent : Event
 {
     uint16_t pressure;
+};
+
+struct StartLaunchEvent : Event
+{
+    uint64_t launchCode;
 };
 }
 

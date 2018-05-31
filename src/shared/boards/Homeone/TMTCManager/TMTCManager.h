@@ -23,24 +23,33 @@
 #ifndef TMTCMANAGER_H
 #define TMTCMANAGER_H
 
-#include <Common.h>
 #include <Singleton.h>
-#include <drivers/gamma868/Gamma868.h>
-#include <libs/mavlink_skyward_lib/mavlink_lib/skyward/mavlink.h>
 #include "CircularBuffer.h"
+#include "MessageHandler.h"
 #include "TMTC_Config.h"
-#include "boards/Homeone/Events.h"
-#include "boards/Homeone/Topics.h"
-#include "events/EventBroker.h"
 
-/*
+namespace HomeoneBoard
+{
+namespace TMTC
+{
+
+/**
  * The TMTCManager class handles the communication with the Ground Station.
- * It is composed of:
- *  - the Gamma868 driver, which uses blocking functions to receive from and
- * send
- *    to the RF module.
- *  - a Sender thread that sends packets through the driver.
- *  - a Receiver thread that processes the incoming packets.
+ * It uses a Gamma868 transceiver and implements the Mavlink protocol.
+ *
+ * SENDER:
+ * Since the transceiver's driver defines blocking functions and the LoRa
+ * protocol used by the Gamma can be very slow, a synchronized CircularBuffer
+ * is used to store outgoing messages: the Sender thread will then periodically
+ * send them over the link.
+ *
+ * RECEIVER:
+ * A Receiver thread is also used to read the Gamma868 buffer byte-per-byte and
+ * then, when an entire message is read, an appropriate handler defined in
+ * MessageHandlers.h is called.
+ *
+ * USE:
+ * At the end of the file you can find the sTMTCManager define.
  */
 class TMTCManager : public Singleton<TMTCManager>
 {
@@ -48,16 +57,18 @@ class TMTCManager : public Singleton<TMTCManager>
 
 public:
     /*
-     * Class deconstructor.
+     * Class destructor.
      */
     ~TMTCManager() {}
 
     /*
      * Non-blocking function that can be used to send a message: copies the
      * message into a synchronized buffer.
-     * @param  msg       buffer that contains the message
-     * @param  len       length of the message in bytes
-     * @return           false if there isn't enough space in the buffer
+     * Note that the message should already be a Mavlink message when it is
+     * enqueued: no wrapping is made by the TMTC when sending.
+     * \param  msg       buffer that contains the message
+     * \param  len       length of the message in bytes
+     * \return           false if there isn't enough space in the buffer
      */
     bool enqueueMsg(const uint8_t* msg, const uint8_t len);
 
@@ -67,24 +78,6 @@ private:
     Gamma868* gamma;
     /* Synchronized buffer for outgoing messages */
     CircularBuffer* outBuffer;
-
-    /* Events to be posted in the EventBtoker */
-    Event ev_ping{HomeoneBoard::EV_PING_RECEIVED};
-    Event ev_nosecone_status{HomeoneBoard::EV_NOSECONE_STATUS_REQUEST};
-    Event ev_ignition_status{HomeoneBoard::EV_IGNITION_STATUS_REQUEST};
-    Event ev_arm{HomeoneBoard::EV_TC_ARM};
-    Event ev_disarm{HomeoneBoard::EV_TC_DISARM};
-    Event ev_abort{HomeoneBoard::EV_ABORT_LAUNCH};
-    Event ev_start_lauch{HomeoneBoard::EV_TC_START_LAUNCH};
-    Event ev_nosecone_open{HomeoneBoard::EV_TC_NOSECONE_OPEN};
-    Event ev_nosecone_close{HomeoneBoard::EV_TC_NOSECONE_CLOSE};
-    Event ev_test{HomeoneBoard::EV_TC_TEST_MODE};
-    Event ev_reset{HomeoneBoard::EV_TC_RESET_BOARD};
-    Event ev_calib{HomeoneBoard::EV_TC_ALTIMETER_CALIBRATION};
-    Event ev_start_sampling{HomeoneBoard::EV_TC_START_SAMPLING};
-    Event ev_stop_sampling{HomeoneBoard::EV_TC_STOP_SAMPLING};
-
-    Event ev_raw{HomeoneBoard::EV_PING_RECEIVED};
 
     /* Pointers to sending and receiving threads */
     miosix::Thread* senderThread;
@@ -96,8 +89,8 @@ private:
     TMTCManager();
 
     /*
-     * Calls the runSender() member function
-     * @param arg       the object pointer cast to void*
+     * Calls the runSender() member function.
+     * \param arg       this object's pointer, casted to void*
      */
     static void senderLauncher(void* arg)
     {
@@ -105,8 +98,8 @@ private:
     }
 
     /*
-     * Calls the runReceiver() member function
-     * @param arg       the object pointer cast to void*
+     * Calls the runReceiver() member function.
+     * \param arg       this object's pointer, casted to void*
      */
     static void receiverLauncher(void* arg)
     {
@@ -115,8 +108,8 @@ private:
 
     /*
      * Function ran by the sending thread:
-     * look for messages in the outBuffer an send them through the link using
-     * the module's driver.
+     * looks for messages in the outBuffer an sends them through the link
+     * using the module's driver.
      */
     void runSender();
 
@@ -128,50 +121,20 @@ private:
     void runReceiver();
 
     /*
-     * Send an acknowlege message back to the sender to notify the Ground
-     * Station
-     * that you correctly received the message with a given sequence number.
+     * Send an acknowledge message back to the sender to notify the Ground
+     * Station that you correctly received a message.
+     * \param msg    Mavlink message to acknowledge.
      */
     void sendAck(const mavlink_message_t* msg);
-
-    /* -------------------------- MESSAGE HANDLERS ------------------------- */
-
-    /*
-     * Handle Ping command.
-     */
-    void handlePingCommand(const mavlink_message_t* command);
-
-    /*
-     * Handle a no argument command according to command in it.
-     */
-    void handleNoArgCommand(const mavlink_message_t* command);
-
-    /*
-     * Handle the Launch Command.
-     */
-    void handleLaunchCommand(const mavlink_message_t* command);
-
-    /*
-     * Handle a Status request.
-     */
-    void handleStatusRequestCommand(const mavlink_message_t* command);
-
-    /*
-     * Handle the calibration command.
-     */
-    void handleCalibrationCommand(const mavlink_message_t* command);
-
-    /*
-     * Handle a raw_event message.
-     */
-    void handleRawEventMessage(const mavlink_message_t* rawEventMsg);
 };
+}
+}
 
 /* Define a singleton object that can be accessed from other files */
 #ifndef sTMTCManager
 #define sTMTCManager TMTCManager::getInstance()
 #else
 #error TMTCMANAGER ALREADY DEFINED
-#endif /* ifndef sTMTCManager */
+#endif /* sTMTCManager */
 
-#endif /* ifndef TMTCMANAGER_H */
+#endif /* TMTCMANAGER_H */
