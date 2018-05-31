@@ -41,10 +41,14 @@ class MPU9250;
 template <typename BusSPI>
 class MAX21105;
 
+template <typename BusSPI>
+class ADIS16405;
+
 // Type definitions
 typedef AD7994<busI2C1> AD7994Type;
 typedef MPU9250<spiMPU9250> MPU9250Type;
 typedef MAX21105<spiMAX21105> MAX21105Type;
+typedef ADIS16405<spiADIS16405> ADIS16405Type;
 
 namespace HomeoneBoard
 {
@@ -141,6 +145,7 @@ private:
     AD7994Type* adc_ad7994;
     MAX21105Type* imu_max21105;
     MPU9250Type* imu_mpu9250;
+    ADIS16405Type* imu_adis16405;
 
     // Logger ref
     Logger& log;
