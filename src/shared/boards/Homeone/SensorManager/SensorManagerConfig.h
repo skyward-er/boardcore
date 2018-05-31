@@ -29,8 +29,8 @@
 
 using miosix::Gpio;
 
-using miosix::interfaces::spi1;
-using miosix::sensors;
+using namespace miosix::interfaces;
+using namespace miosix::sensors;
 
 typedef ProtocolI2C<miosix::I2C1Driver> busI2C1;
 
@@ -38,9 +38,9 @@ typedef ProtocolI2C<miosix::I2C1Driver> busI2C1;
 typedef BusSPI<1, spi1::mosi, spi1::miso, spi1::sck> busSPI1;
 
 // Spi protocol defs
-typedef ProtocolSPI<busSPI1, sensors::mpu9250::cs> spiMPU9250;
-typedef ProtocolSPI<busSPI1, sensors::max21105::cs> spiMAX21105;
-typedef ProtocolSPI<busSPI1, sensors::adis16405::cs> spiADIS16405;
+typedef ProtocolSPI<busSPI1, mpu9250::cs> spiMPU9250;
+typedef ProtocolSPI<busSPI1, max21105::cs> spiMAX21105;
+typedef ProtocolSPI<busSPI1, adis16405::cs> spiADIS16405;
 
 static const uint8_t AD7994_I2C_ADDRESS = 0x24;  // Todo: Update with real value
 
