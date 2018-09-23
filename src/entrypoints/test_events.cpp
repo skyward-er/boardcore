@@ -24,6 +24,11 @@
 #include "events/EventBroker.h"
 #include "events/FSM.h"
 #include "events/Scheduler.h"
+#include <miosix.h>
+
+using namespace miosix;
+
+using profiling1=Gpio<GPIOD_BASE,4>;
 
 enum Topics : uint8_t
 {
@@ -48,6 +53,7 @@ public:
 protected:
     void handleEvent(const Event& ev)
     {
+        profiling1::low();
         float t = static_cast<float>(miosix::getTick()) / miosix::TICK_FREQ;
         printf("\nT: %.3f\n", t);
         FSM::handleEvent(ev);
@@ -166,6 +172,7 @@ private:
 
 int main()
 {
+    profiling1::mode(Mode::OUTPUT); profiling1::low();
     printf("Test start.\n\n");
     TestFSM fsm;
     Event ev1{EV_EV1};
@@ -179,6 +186,7 @@ int main()
     Thread::sleep(1000);
     sEventBroker->post(ev1, TOPIC2);
     Thread::sleep(1000);
+    profiling1::high();
     sEventBroker->post(ev1, TOPIC1);
     Thread::sleep(5000);
     sEventBroker->post(ev2, TOPIC1);
