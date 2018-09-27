@@ -19,3 +19,5 @@ STM32F429zi_Discovery.xml
 ._*
 .DS_Store
 build
+*.sublime-workspace
+*.sublime-project
