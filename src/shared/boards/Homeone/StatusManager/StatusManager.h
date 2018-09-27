@@ -24,10 +24,15 @@
 #define SRC_SHARED_BOARDS_HOMEONE_STATUSMANAGER_STATUSMANAGER_H_
 
 #include "Status.h"
+#include <Common.h>
 #include "TelemetryBuilders.h"
 #include "boards/Homeone/TMTCManager/TMTCManager.h"
 #include <events/Scheduler.h>
 #include <events/EventBroker.h>
+
+#define HR_TM_RATE 100
+#define LR_TM_RATE 1000
+#define TM_TIMEOUT 1000000
 
 namespace HomeoneBoard
 {
@@ -51,19 +56,13 @@ protected:
     void handleEvent(const Event& e) override;
 
 private:
-    static const uint16_t HR_rate = 100;
-    static const uint16_t LR_rate = 1000;
-    static const uint64_t TM_timeout = 1000000; // TODO decide timeout
-    bool enable;
+    /* Automatic Telemetries flag */
+    bool autoTmEnable = false;
 
-    LR_TM_Builder lr_tm;
-    HR_TM_Builder hr_tm;
-    Nosecone_TM_Builder nos_tm;
-    Ignition_TM_Builder ign_tm;
-    Homeone_TM_Builder home_tm;
-    Debug_TM_Builder debug_tm;
-
-    StatusManager(){};
+    /* Constructor*/
+    StatusManager() {
+        sEventBroker->subscribe(this, TOPIC_STATUS);
+    }
 
 };
 
