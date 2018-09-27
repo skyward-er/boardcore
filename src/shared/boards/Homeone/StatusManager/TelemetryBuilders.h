@@ -24,6 +24,7 @@
 #define SRC_SHARED_BOARDS_HOMEONE_STATUSMANAGER_TELEMETRYBUILDERS_H_
 
 #include "boards/Homeone/FlightModeManager/FlightModeManager.h"
+#include <Common.h>
 #include "boards/Homeone/TMTCManager/TMTCManager.h"
 #include "logger/Logger.h"
 #include <diagnostic/CpuMeter.h>
