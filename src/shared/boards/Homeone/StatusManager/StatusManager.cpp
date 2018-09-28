@@ -113,7 +113,7 @@ void StatusManager::handleEvent(const Event& e)
     uint8_t serializedMsg[sizeof(mavlink_message_t)];
     uint16_t msgLen = mavlink_msg_to_send_buffer(serializedMsg, &mavMsg);
 
-    TMTC::sTMTCManager->enqueueMsg(serializedMsg, msgLen);
+    sTMTCManager->enqueueMsg(serializedMsg, msgLen);
 }
 
 } /* namespace Status */
