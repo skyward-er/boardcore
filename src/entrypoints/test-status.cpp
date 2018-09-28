@@ -9,9 +9,15 @@ using namespace Status;
 
 int main()
 {
-
+	printf("Creating Status Manager\n");
 	sStatusManager;
-	printf("Created Status Manager");
+	printf("Created Status Manager\n");
+
+	while(1) {
+		Event ev = { EV_DEBUG_INFO_REQUEST };
+		sEventBroker->post(ev, TOPIC_DIAGNOSTICS);
+		Thread::sleep(1000);
+	}
 
 	return 0;
 }

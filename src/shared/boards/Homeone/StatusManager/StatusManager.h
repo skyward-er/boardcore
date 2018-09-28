@@ -23,16 +23,16 @@
 #ifndef SRC_SHARED_BOARDS_HOMEONE_STATUSMANAGER_STATUSMANAGER_H_
 #define SRC_SHARED_BOARDS_HOMEONE_STATUSMANAGER_STATUSMANAGER_H_
 
-#include "Status.h"
 #include <Common.h>
-#include "TelemetryBuilders.h"
-#include "boards/Homeone/TMTCManager/TMTCManager.h"
 #include <events/Scheduler.h>
 #include <events/EventBroker.h>
+#include "Status.h"
+#include "boards/Homeone/TMTCManager/TMTCManager.h"
+#include <diagnostic/CpuMeter.h>
 
 #define HR_TM_RATE 100
 #define LR_TM_RATE 1000
-#define TM_TIMEOUT 1000000
+#define AUTOTM_TIMEOUT 1000000
 
 namespace HomeoneBoard
 {
