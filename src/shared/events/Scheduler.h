@@ -66,7 +66,7 @@ std::ostream& operator<<(std::ostream& os, const TaskStatResult& sr);
  * tasks are not executed until the long interval has expired once, producing
  * unwanted delays.
  */
-class EventScheduler : Singleton<EventScheduler>, ActiveObject
+class EventScheduler : public Singleton<EventScheduler>, ActiveObject
 {
     friend class Singleton<EventScheduler>;
 
@@ -174,6 +174,6 @@ private:
     uint32_t permanentTasks;              ///< Number of non-oneshot tasks
 };
 
-#define sEventScheduler Singleton<EventScheduler>::getInstance()
+#define sEventScheduler EventScheduler::getInstance()
 
 #endif

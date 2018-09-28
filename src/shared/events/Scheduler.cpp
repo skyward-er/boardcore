@@ -161,6 +161,6 @@ void EventScheduler::updateStats(event_t& e, int64_t startTime, int64_t endTime)
 }
 
 EventScheduler::EventScheduler()
-    : ActiveObject(1024, PRIORITY_MAX - 1), permanentTasks(0)
+    : ActiveObject(2048, PRIORITY_MAX - 1), permanentTasks(0)
 {
 }

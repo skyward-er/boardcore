@@ -156,7 +156,10 @@ for i in boards:
     with open('build/%s' % i, 'w') as f:
         f.write(build_makefile(make_template, boards[i], i))
     try:
-        subprocess.check_call(['make', '-j', str(options.JOBS), '-f', 'build/%s' % i] + cleanparam, stdout=procout)
+        if 'VERBOSE' in os.environ:
+            subprocess.check_call(['make', '-j', str(options.JOBS), '-f', 'build/%s' % i] + cleanparam) # Don't eat stdiout
+        else:
+            subprocess.check_call(['make', '-j', str(options.JOBS), '-f', 'build/%s' % i] + cleanparam, stdout=procout) # Eat stdout
     except subprocess.CalledProcessError:
         print('[SBS] %s Failed. Terminating.' % action[0])
         sys.exit(-1)
