@@ -85,7 +85,7 @@ private:
     {
         // conditional var??
         uint8_t* buf_ptr = (uint8_t*)buffer;
-        for (unsigned i = 0; i < max_len; i++)
+        for (unsigned i  = 0; i < max_len; i++)
             *(buf_ptr++) = _read();
         return 0;
     }
@@ -248,6 +248,15 @@ public:
     }
 
     /**
+     * Sends the \param len bytes stored in \param *data buffer without
+     * specifying a register
+     */
+    static inline void directWrite(uint8_t address, uint8_t* data, uint8_t len)
+    {
+        SingletonType::getInstance()->writeImpl(address, data, len);
+    }
+
+    /**
      * Reads \param len bytes storing them into \param *data buffer
      * from the register specified by \param regAddress
      */
@@ -267,14 +276,19 @@ private:
      * to miosix i2c driver class implementation
      */
 
+    void writeImpl(uint8_t address, uint8_t* data, uint8_t len)
+    {
+        bus.send(address, reinterpret_cast<void*>(data), len);
+    }
+
     void writeImpl(uint8_t address, uint8_t regAddr, uint8_t* data, uint8_t len)
     {
         uint8_t buf[len + 1];  // pack register address and payload
         buf[0] = regAddr;
 
         memcpy(buf + 1, data, len);
-
-        bus.send(address, reinterpret_cast<void*>(buf), len + 1);
+        writeImpl(address, buf, len + 1);
+        // bus.send(address, reinterpret_cast<void*>(buf), len + 1);
     }
 
     void readImpl(uint8_t address, uint8_t regAddr, uint8_t* data, uint8_t len)

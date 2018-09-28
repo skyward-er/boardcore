@@ -24,6 +24,10 @@
 
 #include "events/Event.h"
 
+// Common includes
+#include "Topics.h"
+#include "events/EventBroker.h"
+
 namespace HomeoneBoard
 {
 /**
