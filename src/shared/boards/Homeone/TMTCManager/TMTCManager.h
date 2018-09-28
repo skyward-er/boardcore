@@ -23,10 +23,13 @@
 #ifndef TMTCMANAGER_H
 #define TMTCMANAGER_H
 
+#include "TMTC_Config.h"
 #include <Singleton.h>
 #include "CircularBuffer.h"
-#include "MessageHandler.h"
-#include "TMTC_Config.h"
+#include <drivers/gamma868/Gamma868.h>
+#include "boards/Homeone/Events.h"
+#include "boards/Homeone/Topics.h"
+#include "events/EventBroker.h"  
 #include "boards/Homeone/StatusManager/Status.h"
 
 namespace HomeoneBoard
@@ -144,6 +147,13 @@ private:
      */
     void runReceiver();
 
+
+    /**
+     *  Handle the Mavlink message, posting the corresponding event if needed.
+     * \param msg           pointer to the mavlink message to handle
+     */
+    void handleMavlinkMessage(const mavlink_message_t* msg);
+
     /**
      * Send an acknowledge message back to the sender to notify the Ground
      * Station that you correctly received a message.
@@ -151,8 +161,9 @@ private:
      */
     void sendAck(const mavlink_message_t* msg);
 };
-}
-}
+
+} /* namespace HomeoneBoard */
+} /* namespace TMTC */
 
 /* Define a singleton object that can be accessed from other files */
 #ifndef sTMTCManager
