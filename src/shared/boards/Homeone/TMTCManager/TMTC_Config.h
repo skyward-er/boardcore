@@ -24,11 +24,7 @@
 #define TMTC_CONFIG
 
 #include <Common.h>
-#include <drivers/gamma868/Gamma868.h>
-#include <libs/mavlink_skyward_lib/mavlink_lib/skyward/mavlink.h>
-#include "boards/Homeone/Events.h"
-#include "boards/Homeone/Topics.h"
-#include "events/EventBroker.h"     
+#include <libs/mavlink_skyward_lib/mavlink_lib/skyward/mavlink.h>  
 
 #define RADIO_DEVICE_NAME "/dev/radio"
 
@@ -52,9 +48,9 @@
 
 // Define a debug trace
 #ifdef DEBUG
-#define TMTC_TRACE(x) printf(x)
+#define TMTC_TRACE(x, ...) printf(x, ##__VA_ARGS__)
 #else
-#define TMTC_TRACE(x) 
+#define TMTC_TRACE(x, ...) 
 #endif /* DEBUG */
 
 #endif /* CONFIG_H */
