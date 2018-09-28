@@ -1,5 +1,5 @@
-/* Copyright (c) 2015-2018 Skyward Experimental Rocketry
- * Authors: Luca Erbetta
+/* Copyright (c) 2018 Skyward Experimental Rocketry
+ * Authors: Alvise de'Faveri Tron, Nuno Barcellos
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -19,25 +19,43 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
-#ifndef SRC_SHARED_BOARDS_HOMEONE_TOPICS_H
-#define SRC_SHARED_BOARDS_HOMEONE_TOPICS_H
 
-#include <stdint.h>
+#include <Common.h>
+#include "boards/Homeone/TMTCManager/TMTCManager.h"
 
-namespace HomeoneBoard
+using namespace miosix;
+using namespace HomeoneBoard;
+using namespace TMTC;
+
+int main()
 {
-/**
- * Definition of various event topics to use in the EventBroker
- */
-enum Topics : uint8_t
-{
-    TOPIC_DIAGNOSTICS,
-    TOPIC_CONFIGURATION,
-    TOPIC_COMMANDS,
-    TOPIC_FLIGHT_EVENTS,
-    TOPIC_SENSORS,
-    TOPIC_STATUS
-};
+
+    while(1)
+    {
+        printf("[TEST] Enqueueing ping\n");
+
+        // Create a Mavlink message
+        mavlink_message_t pingMsg;
+        uint8_t bufferMsg[sizeof(mavlink_message_t) + 1];
+
+        // Populate Mavlink message passing the parameters of the specific message
+        mavlink_msg_ping_tc_pack(1, 1, &pingMsg, miosix::getTick());
+
+        // Convert it into a byte stream
+        int msgLen = mavlink_msg_to_send_buffer(bufferMsg, &pingMsg);
+
+        // Send the message
+        bool ackSent = sTMTCManager->enqueueMsg(bufferMsg, msgLen);
+
+        if(!ackSent)
+        printf("[TEST] Could not enqueue ping\n");
+
+        ledOn();
+        miosix::delayMs(200);
+        ledOff();
+
+        miosix::Thread::sleep(5000);
+    }
+
+    return 0;
 }
-
-#endif /* SRC_SHARED_BOARDS_HOMEONE_TOPICS_H_ */
