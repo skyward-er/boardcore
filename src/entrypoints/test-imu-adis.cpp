@@ -24,9 +24,27 @@
 #include <drivers/BusTemplate.h>
 #include <sensors/ADIS16405.h>
 #include <sensors/MPU9250.h>
+#include <sensors/bme280.h>
 
+#include <interfaces-impl/hwmapping.h>
 
 using namespace miosix;
+using namespace miosix::interfaces;
+// SPI1
+/*typedef Gpio<GPIOA_BASE, 5> GpioSck;
+typedef Gpio<GPIOA_BASE, 6> GpioMiso;
+typedef Gpio<GPIOA_BASE, 7> GpioMosi;
+typedef Gpio<GPIOC_BASE, 3> CS_MPU9250;*/
+
+// Testing the pressure sensor on MPU's place
+// SPI1 binding al sensore
+typedef BusSPI<1,spi1::mosi,spi1::miso,spi1::sck> busSPI1; //Creo la SPI1
+typedef ProtocolSPI<busSPI1,sensors::mpu9250::cs> spiMPU9250_a; //La lego al Chip Select 1 per la IMU 1
+typedef BME280<spiMPU9250_a> mpu1_t; //Passo il bus creato al sensore
+
+// typedef BusSPI<1,spi1::mosi,spi1::miso,spi1::sck> busSPI1; //Creo la SPI1
+// typedef ProtocolSPI<busSPI1,sensors::max21105::cs> spiMAX21105_a; //La lego al Chip Select 1 per la IMU 1
+// typedef MPU9250<spiMPU9250_a> max1_t; //Passo il bus creato al sensore
 
 // SPI1
 /*typedef Gpio<GPIOA_BASE, 5> GpioSck;
@@ -35,36 +53,47 @@ typedef Gpio<GPIOA_BASE, 7> GpioMosi;
 typedef Gpio<GPIOC_BASE, 3> CS_MPU9250;*/
 
 // SPI1 binding al sensore
-//typedef BusSPI<1,spi1::mosi,spi1::miso,spi1::sck> busSPI1; //Creo la SPI1
-//typedef ProtocolSPI<busSPI1,mpu9250::cs> spiMPU9250_a; //La lego al Chip Select 1 per la IMU 1
-//typedef MPU9250<spiMPU9250_a> mpu1_t; //Passo il bus creato al sensore
-
-// SPI1
-typedef Gpio<GPIOA_BASE, 5> GpioSck;
-typedef Gpio<GPIOA_BASE, 6> GpioMiso;
-typedef Gpio<GPIOA_BASE, 7> GpioMosi;
-typedef Gpio<GPIOC_BASE, 3> CS_MPU9250;
-
-// SPI1 binding al sensore
-typedef BusSPI<1,GpioMosi,GpioMiso,GpioSck> busSPI1; //Creo la SPI1
+/*typedef BusSPI<1,GpioMosi,GpioMiso,GpioSck> busSPI1; //Creo la SPI1
 typedef ProtocolSPI<busSPI1,CS_MPU9250> spiMPU9250_a; //La lego al Chip Select 1 per la IMU 1
-typedef MPU9250<spiMPU9250_a> mpu1_t; //Passo il bus creato al sensore
+typedef MPU9250<spiMPU9250_a> mpu1_t; //Passo il bus creato al sensore*/
 
 
 int main()
 {
-	mpu1_t* mpu1 = new mpu1_t(mpu1_t::ACC_FS_2G, mpu1_t::GYRO_FS_250);
-	AccelSensor *myMPU = mpu1;
+	// MPU9250
+	spiMPU9250_a::init();
+	mpu1_t* mpu1 = new mpu1_t();
+	// mpu1_t* mpu1 = new mpu1_t(mpu1_t::ACC_FS_2G, mpu1_t::GYRO_FS_250);
+	// AccelSensor *myMPU = mpu1;
 	if(mpu1->init())
-		printf("Sensor Init succeeded\n" );
+		printf("MPU9250 Init succeeded\n" );
 	else
-		printf("Sensor Init failede\n");
-	sleep(2);
+		printf("MPU9250 Init failed\n");
+
+	// // MAX21105
+	// spiMAX21105_a::init();
+	// max1_t* max1 = new max1_t(max1_t::ACC_FS_2G, max1_t::GYRO_FS_250);
+	// AccelSensor *myMAX = max1;
+	// if(max1->init())
+	// 	printf("MAX21105 Init succeeded\n" );
+	// else
+	// 	printf("MAX21105 Init failed\n");
+
+	Thread::sleep(2000);
+
     while(true)
     {
-    	const Vec3* last_data = myMPU->accelDataPtr();
+    	if(mpu1->init())
+		printf("MPU9250 Init succeeded\n" );
+		else
+			printf("MPU9250 Init failed\n");
 
-    	printf("%f %f %f\n", last_data->getX(),last_data->getY(),last_data->getZ());
-    	sleep(1);
+  //   	const Vec3* last_data = myMPU->accelDataPtr();
+  //   	// const Vec3* last_data = myMAX->accelDataPtr();
+
+  //   	printf("new max data:\n" );
+
+  //   	printf("%f %f %f\n", last_data->getX(),last_data->getY(),last_data->getZ());
+		// Thread::sleep(2000);
     }
 }
