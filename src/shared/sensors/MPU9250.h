@@ -111,7 +111,7 @@ public:
     bool init() override
     {
         uint8_t whoami = Bus::read(REG_WHO_AM_I);
-
+        printf("whoami %d\n", whoami);
         if (whoami != who_am_i_value)
         {
             last_error = ERR_NOT_ME;

@@ -102,10 +102,10 @@ private:
     {
         // Interrupts are disabled to prevent bugs if more than one threads
         // does a read-modify-write to shared registers at the same time
-        if (getSPIAddr(N) == SPI1)
-            SPIDriver::instance();
-        else
-        {
+        // if (getSPIAddr(N) == SPI1)
+            // SPIDriver::instance();
+        // else
+        // {
             miosix::FastInterruptDisableLock dLock;
             IRQenableSPIBus(getSPIAddr(N));
             GpioMosi::mode(miosix::Mode::ALTERNATE);
@@ -120,7 +120,7 @@ private:
                 | SPI_CR1_MSTR  // Master mode
                 | SPI_CR1_BR_2  // SPI clock divided by 32
                 | SPI_CR1_SPE;  // SPI enabled
-        }
+        // }
         usleep(csDelay);
     }
 
