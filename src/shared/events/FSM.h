@@ -31,7 +31,7 @@
 
 #include <iostream>
 
-class EventHandler : ActiveObject
+class EventHandler : public ActiveObject
 {
 public:
     EventHandler() : ActiveObject() {}

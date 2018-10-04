@@ -29,6 +29,7 @@ FlightModeManager* mgr;
 int main()
 {
     mgr = sFlightModeManager;
+    mgr->start();
 
     return 0;
 }

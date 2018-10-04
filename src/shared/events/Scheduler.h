@@ -66,7 +66,7 @@ std::ostream& operator<<(std::ostream& os, const TaskStatResult& sr);
  * tasks are not executed until the long interval has expired once, producing
  * unwanted delays.
  */
-class EventScheduler : public Singleton<EventScheduler>, ActiveObject
+class EventScheduler : public Singleton<EventScheduler>, public ActiveObject
 {
     friend class Singleton<EventScheduler>;
 

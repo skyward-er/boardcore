@@ -21,14 +21,14 @@
  */
 
 #include <Common.h>
+#include <miosix.h>
 #include "events/EventBroker.h"
 #include "events/FSM.h"
 #include "events/Scheduler.h"
-#include <miosix.h>
 
 using namespace miosix;
 
-using profiling1=Gpio<GPIOD_BASE,4>;
+using profiling1 = Gpio<GPIOD_BASE, 4>;
 
 enum Topics : uint8_t
 {
@@ -172,9 +172,16 @@ private:
 
 int main()
 {
-    profiling1::mode(Mode::OUTPUT); profiling1::low();
-    printf("Test start.\n\n");
     TestFSM fsm;
+
+    // Start active objects
+    sEventBroker->start();
+    fsm.start();
+
+    profiling1::mode(Mode::OUTPUT);
+    profiling1::low();
+    printf("Test start.\n\n");
+
     Event ev1{EV_EV1};
     Event ev2{EV_EV2};
 
