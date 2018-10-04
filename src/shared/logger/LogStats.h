@@ -23,11 +23,12 @@
  *                                                                         *
  *   You should have received a copy of the GNU General Public License     *
  *   along with this program; if not, see <http://www.gnu.org/licenses/>   *
- ***************************************************************************/ 
+ ***************************************************************************/
 
 #pragma once
 
 #include <ostream>
+#include <string>
 
 /**
  * Statistics for the logger
@@ -39,13 +40,19 @@ public:
      * Constructor
      */
     LogStats() {}
-    
+
     /**
      * Set timestamp for this class
      * \param timestamp timestamp
      */
     void setTimestamp(long long timestamp) { this->timestamp = timestamp; }
 
+    static std::string header()
+    {
+        return "timestamp,stat_toolarge,stat_dropped,stat_queued,stat_buf_"
+               "filled,stat_buf_written,stat_w_failed,stat_w_time,stat_max_"
+               "time,stat_last_error\n";
+    }
     /**
      * Print the class fields to an ostream.
      * Used by the program that decodes the logged data after the flight.
@@ -53,14 +60,14 @@ public:
      */
     void print(std::ostream& os) const
     {
-        os << "timestamp=" << timestamp
-           << " ls=" << statTooLargeSamples << " ds=" << statDroppedSamples
-           << " qs=" << statQueuedSamples << " bf=" << statBufferFilled
-           << " bw=" << statBufferWritten << " wf=" << statWriteFailed
-           << " wt=" << statWriteTime << " mwt=" << statMaxWriteTime;
+        os << timestamp << "," << statTooLargeSamples << ","
+           << statDroppedSamples << "," << statQueuedSamples << ","
+           << statBufferFilled << "," << statBufferWritten << ","
+           << statWriteFailed << "," << statWriteTime << "," << statMaxWriteTime
+           << "," << statWriteError << "\n";
     }
 
-    long long timestamp; ///< Timestamp
+    long long timestamp;  ///< Timestamp
     int statTooLargeSamples =
         0;  ///< Number of dropped samples because too large
     int statDroppedSamples = 0;  ///< Number of dropped samples due to fifo full
@@ -68,6 +75,7 @@ public:
     int statBufferFilled   = 0;  ///< Number of buffers filled
     int statBufferWritten  = 0;  ///< Number of buffers written to disk
     int statWriteFailed    = 0;  ///< Number of fwrite() that failed
+    int statWriteError     = 0;  ///< Error of the last fwrite() that failed
     int statWriteTime      = 0;  ///< Time to perform an fwrite() of a buffer
     int statMaxWriteTime = 0;  ///< Max time to perform an fwrite() of a buffer
 };
