@@ -43,6 +43,8 @@ AnakinBoard::AnakinBoard()
 
 bool AnakinBoard::init()
 {
+    sLog->start();
+
     if (mInited)
         return false;
 
@@ -54,12 +56,12 @@ bool AnakinBoard::init()
     spiMAX21105::init();
     spiMS580301BA07::init();
 
-	//Raw sensors
+    // Raw sensors
     mInited = true;
     mS_MAX21105 =
         new max21105_t(max21105_t::ACC_FS_16G, max21105_t::GYRO_FS_250);
-    mS_MPU9250  = new mpu_t(mpu_t::ACC_FS_16G, mpu_t::GYRO_FS_250);
-    mS_INEMO    = new inemo_t(inemo_t::ACC_FS_16G, inemo_t::GYRO_FS_245,
+    mS_MPU9250 = new mpu_t(mpu_t::ACC_FS_16G, mpu_t::GYRO_FS_250);
+    mS_INEMO   = new inemo_t(inemo_t::ACC_FS_16G, inemo_t::GYRO_FS_245,
                            inemo_t::COMPASS_FS_2);
     mS_FXAS     = new fxas_t(fxas_t::DPS500);
     mS_LPS331AP = new lps331ap_t(lps331ap_t::SS_25HZ);

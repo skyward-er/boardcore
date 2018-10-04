@@ -22,7 +22,9 @@
  * THE SOFTWARE.
  */
 
-#pragma once
+#ifndef SRC_SHARED_ACTIVEOBJECT_H
+#define SRC_SHARED_ACTIVEOBJECT_H
+
 #include <Common.h>
 
 /**
@@ -42,11 +44,20 @@ public:
     ActiveObject(unsigned int stacksize    = miosix::STACK_DEFAULT_FOR_PTHREAD,
                  miosix::Priority priority = miosix::MAIN_PRIORITY)
     {
-        thread = miosix::Thread::create(threadLauncher, stacksize, priority,
+        this->priority   = priority;
+        this->stack_size = stacksize;
+    }
+
+    void start()
+    {
+        thread = miosix::Thread::create(threadLauncher, stack_size, priority,
                                         reinterpret_cast<void*>(this));
+        started = true;
     }
 
     virtual ~ActiveObject() {}
+
+    bool isStarted() { return started; }
 protected:
     /**
      * The thread that will be spawned just calls this function.
@@ -54,7 +65,7 @@ protected:
      */
     virtual void run() = 0;
 
-    miosix::Thread* thread;  ///< Gives access to the thread object
+    miosix::Thread* thread = nullptr;  ///< Gives access to the thread object
 
 private:
     /**
@@ -65,4 +76,10 @@ private:
     {
         reinterpret_cast<ActiveObject*>(arg)->run();
     }
+
+    bool started = false;
+    unsigned int stack_size;
+    miosix::Priority priority;
 };
+
+#endif SRC_SHARED_ACTIVEOBJECT_H

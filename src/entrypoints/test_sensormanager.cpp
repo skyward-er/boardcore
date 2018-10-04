@@ -23,6 +23,7 @@
 #include "Common.h"
 #include "boards/Homeone/Events.h"
 #include "boards/Homeone/SensorManager/SensorManager.h"
+#include "events/Scheduler.h"
 
 using namespace miosix;
 using namespace HomeoneBoard;
@@ -31,9 +32,12 @@ using Sensors::SensorData;
 
 int main()
 {
-    Event ev{EV_START_SAMPLING};
+    // Start active objects
+    sEventBroker->start();
+    sEventScheduler->start();
+    Singleton<SensorManager>::getInstance()->start();
 
-    Singleton<SensorManager>::getInstance();
+    Event ev{EV_START_SAMPLING};
 
     printf("Waiting...\n");
     Thread::sleep(5000);

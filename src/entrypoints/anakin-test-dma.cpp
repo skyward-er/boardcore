@@ -65,6 +65,7 @@ void fifoQueueSz(void* arg)
 
 int main()
 {
+    sLog->start();
     printf("\n");
     Leds::set(0);
     Log::getInstance();

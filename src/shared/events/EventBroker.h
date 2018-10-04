@@ -53,7 +53,7 @@ using miosix::Thread;
  * public topics enum and publish an event into it. The event will be posted in
  * to each FSM object subscribed to that specific topic.
  */
-class EventBroker : Singleton<EventBroker>, ActiveObject
+class EventBroker : Singleton<EventBroker>, public ActiveObject
 {
     friend class Singleton<EventBroker>;
 

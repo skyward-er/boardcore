@@ -39,6 +39,7 @@ void blinker()
 
 int main()
 {
+    sEventScheduler->start();
     // Thread *ledTh=Thread::create(supercar,STACK_MIN);
 
     sEventScheduler->add(blinker<leds::led9, 100>, 100, "task100");
