@@ -1,5 +1,5 @@
 /* Copyright (c) 2018 Skyward Experimental Rocketry
- * Authors: Alvise de'Faveri Tron, Nuno Barcellos
+ * Authors: Alvise de' Faveri Tron
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -20,42 +20,47 @@
  * THE SOFTWARE.
  */
 
-#include <Common.h>
-#define DEBUG
-#include "boards/Homeone/TMTCManager/TMTCManager.h"
+#ifndef SRC_SHARED_BOARDS_HOMEONE_STATUSMANAGER_STATES_H_
+#define SRC_SHARED_BOARDS_HOMEONE_STATUSMANAGER_STATES_H_
 
-using namespace miosix;
-using namespace HomeoneBoard;
-using namespace TMTC;
 
-int main()
+// TODO: put these enums in the Status of the components?
+namespace HomeoneBoard
 {
 
-    while(1)
-    {
-#ifdef DEBUG
-        printf("Enqueuing ping\n");
-#endif
+enum fmmState_t
+{
+	FMM_DISARMED,
+	FMM_ARMED,
+	FMM_TESTING,
+	FMM_ABORTED,
+	FMM_ASCENDING,
+	FMM_APOGEE_DETECTION,
+	FMM_DESCENDING_PHASE_1,
+	FMM_DESCENDING_PHASE_2,
+	FMM_LANDED
+};
 
-        // Create a Mavlink message
-        mavlink_message_t pingMsg;
-        uint8_t bufferMsg[sizeof(mavlink_message_t) + 1];
+enum sensorManagerState_t
+{
+	SM_SAMPLING,
+	SM_NOT_SAMPLING
+};
 
-        // Populate Mavlink message passing the parameters of the specific message
-        mavlink_msg_ping_tc_pack(1, 1, &pingMsg, miosix::getTick());
+enum ignitionState_t
+{
+	IGNITION_ARMED,
+	IGNITION_STARTED,
+	IGNITION_ABORTED
+};
 
-        // Convert it into a byte stream
-        int msgLen = mavlink_msg_to_send_buffer(bufferMsg, &pingMsg);
+enum deploymentState_t
+{
+	NOSECONE_CLOSED,
+	NOSECONE_OPEN,
+	FIRST_DROGUE_DEPLOYED,
+	SECOND_DROGUE_DEPLOYED
+};
 
-        // Send the message
-        bool ackSent = sTMTCManager->enqueueMsg(bufferMsg, msgLen);
-
-        ledOn();
-        miosix::delayMs(200);
-        ledOff();
-
-        miosix::delayMs(5000);
-    }
-
-    return 0;
 }
+#endif /* SRC_SHARED_BOARDS_HOMEONE_STATUSMANAGER_STATES_H_ */

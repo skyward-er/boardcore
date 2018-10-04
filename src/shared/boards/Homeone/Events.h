@@ -42,8 +42,7 @@ enum Events : uint8_t
     EV_NOSECONE_STATUS_REQUEST = 7,
     EV_IGNITION_STATUS_REQUEST = 8,
     EV_HOMEONE_STATUS_REQUEST   = 9,
-    EV_NOSECONE_STATUS         = 10,
-    EV_IGNITION_STATUS         = 11,
+	EV_DEBUG_INFO_REQUEST       = 10,
 
     EV_ALTIMETER_CALIBRATION = 32,
     EV_START_SAMPLING        = 40,
@@ -76,6 +75,11 @@ enum Events : uint8_t
     EV_TC_ARM                   = 161,
     EV_TC_DISARM                = 162,
     EV_TC_ALTIMETER_CALIBRATION = 168,
+
+	EV_LOW_RATE_TM  = 180,
+	EV_HIGH_RATE_TM = 181,
+	EV_START_TM     = 182,
+	EV_STOP_TM      = 183,
 
     EV_PRESSURE_SAMPLE = 192
 

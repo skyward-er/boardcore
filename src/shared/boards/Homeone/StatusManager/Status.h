@@ -1,5 +1,5 @@
-/* Copyright (c) 2015-2018 Skyward Experimental Rocketry
- * Authors: Luca Erbetta
+/* Copyright (c) 2018 Skyward Experimental Rocketry
+ * Authors: Alvise de' Faveri Tron
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -19,25 +19,41 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
-#ifndef SRC_SHARED_BOARDS_HOMEONE_TOPICS_H
-#define SRC_SHARED_BOARDS_HOMEONE_TOPICS_H
 
-#include <stdint.h>
+#ifndef SRC_SHARED_BOARDS_HOMEONE_STATUSMANAGER_STATUS_H_
+#define SRC_SHARED_BOARDS_HOMEONE_STATUSMANAGER_STATUS_H_
 
 namespace HomeoneBoard
 {
-/**
- * Definition of various event topics to use in the EventBroker
- */
-enum Topics : uint8_t
+
+/*************** Base struct *********************/
+enum componentId_t
 {
-    TOPIC_DIAGNOSTICS,
-    TOPIC_CONFIGURATION,
-    TOPIC_COMMANDS,
-    TOPIC_FLIGHT_EVENTS,
-    TOPIC_SENSORS,
-    TOPIC_STATUS
+	FMM_COMP_ID,
+	TMTC_COMP_ID,
+	SENSOR_MANAGER_COMP_ID,
+	LOGGER_COMP_ID,
+	IGNITION_CONTROLLER_COMP_ID,
+	DEPLOYMENT_CONTROLLER_COMP_ID,
+	SCHEDULER_COMP_ID,
+	EVENT_BROKER_COMP_ID,
+	CANBUS_MANAGER_COMP_ID
 };
+
+enum healthStatus_t
+{
+	COMP_UNINIT,
+	COMP_OK,
+	COMP_ERROR,  // Error flag, still alive
+	COMP_FAILED	 // Dead
+};
+
+struct ComponentStatus
+{
+	componentId_t compId;
+	healthStatus_t healthStatus;
+};
+
 }
 
-#endif /* SRC_SHARED_BOARDS_HOMEONE_TOPICS_H_ */
+#endif /* SRC_SHARED_BOARDS_HOMEONE_STATUSMANAGER_STATUS_H_ */
