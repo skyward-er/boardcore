@@ -82,4 +82,4 @@ private:
     miosix::Priority priority;
 };
 
-#endif SRC_SHARED_ACTIVEOBJECT_H
+#endif  // SRC_SHARED_ACTIVEOBJECT_H
