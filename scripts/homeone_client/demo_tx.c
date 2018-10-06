@@ -21,7 +21,7 @@ compile with the command: gcc demo_tx.c rs232.c -Wall -Wextra -o2 -o test_tx
 
 #include "rs232.h"
 
-int cport_nr = 5;
+int cport_nr = 6;
 
 void sendAck()
 {
@@ -40,40 +40,42 @@ void sendAck()
     printf("sent: %s\n", bufferMsg);
 }
 
+void sendDebugInfoReq()
+{
+    uint8_t bufferMsg[sizeof(mavlink_message_t) + 1];  // TODO Check this number
+    mavlink_message_t msg;
+
+    // Create ack message passing the parameters
+    mavlink_msg_debug_info_tm_pack(1, 1, &msg, 1);
+    // Convert it into a byte stream
+    int msgLen = mavlink_msg_to_send_buffer(bufferMsg, &msg);
+
+    // Send the message back to the sender
+    RS232_SendBuf(cport_nr, bufferMsg, msgLen);
+
+    printf("sent: %s\n", bufferMsg);
+}
+
 
 int main()
 {
-  int i=0,      
-      bdrate=19200;       /* 9600 baud */
+  int i=0, bdrate=57600;  
 
-  char mode[]={'8','N','1',0},
-       str[2][512];
+  char mode[]={'8','N','1',0};
 
-
-  strcpy(str[0], "The quick brown fox jumped over the lazy grey dog.\n");
-
-  strcpy(str[1], "Happy serial programming!\n");
-
-  if(RS232_OpenComport(cport_nr, 19200, "8N1"))
+  if(RS232_OpenComport(cport_nr, bdrate, "8N1"))
   {
     printf("Can not open comport\n");
-
-    return(0);
+    return -1;
   }
 
   while(1)
   {
-    sendAck();
+    char c;
+    scanf("%c", &c);
+    sendDebugInfoReq();
 
-#ifdef _WIN32
-    Sleep(1000);
-#else
-    usleep(1000000);  /* sleep for 1 Second */
-#endif
-
-    i++;
-
-    i %= 2;
+    //sendAck();
   }
 
   return(0);
