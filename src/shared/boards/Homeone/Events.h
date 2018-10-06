@@ -66,6 +66,7 @@ enum Events : uint8_t
     EV_ADA_STOP        = 88,
 
     EV_TC_START_LAUNCH          = 128,
+    EV_TC_ABORT_LAUNCH          = 129,
     EV_TC_START_SAMPLING        = 136,
     EV_TC_STOP_SAMPLING         = 137,
     EV_TC_NOSECONE_OPEN         = 144,
