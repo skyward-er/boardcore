@@ -20,23 +20,25 @@
  * THE SOFTWARE.
  */
 
-#ifndef TMTC_CONFIG
-#define TMTC_CONFIG
+#ifndef TMTC_CONFIG_H
+#define TMTC_CONFIG_H
 
 #include <Common.h>
 #include <libs/mavlink_skyward_lib/mavlink_lib/skyward/mavlink.h>  
+#include <boards/Homeone/Events.h>
+#include <boards/Homeone/Topics.h>
 
+// Name of the device in the fs
 #define RADIO_DEVICE_NAME "/dev/radio"
 
-// Default size of the output buffer
-#define TMTC_OUT_BUFFER_SIZE (10*sizeof(mavlink_ping_tc_t))
-// Default timeout before sending next packet
-#define TMTC_SEND_TIMEOUT 300 
-// Maximum dimension a sent packet
-#define TMTC_MAX_PKT_SIZE (2*sizeof(mavlink_ping_tc_t))
-// Maximum number of retransmissions when sending a packet
-#define TMTC_MAX_TRIES_PER_PACKET 1
+// Maximum number of messages in the queue
+#define TMTC_OUT_BUFFER_SIZE 1000
+// Minimum sleep time between sends
+#define TMTC_MIN_GUARANTEED_SLEEP 10 
+// Maximum number of consecutive messages sent before sleeping
+#define TMTC_MAX_PKT_SIZE (1*sizeof(mavlink_message_t))
 
+// Sender and Receiver threads parameters
 #define TMTC_SENDER_STACKSIZE miosix::STACK_DEFAULT_FOR_PTHREAD
 #define TMTC_SENDER_PRIORITY miosix::MAIN_PRIORITY
 #define TMTC_RECEIVER_STACKSIZE miosix::STACK_DEFAULT_FOR_PTHREAD
@@ -46,11 +48,34 @@
 #define TMTC_MAV_SYSID 1
 #define TMTC_MAV_COMPID 1
 
-// Define a debug trace
-#ifdef DEBUG
-#define TMTC_TRACE(x, ...) printf(x, ##__VA_ARGS__)
-#else
-#define TMTC_TRACE(x, ...) 
-#endif /* DEBUG */
+namespace HomeoneBoard
+{
+namespace TMTC
+{
 
-#endif /* CONFIG_H */
+static const std::map<uint8_t, uint8_t> statusCmdToEvt = 
+{
+    { MAV_NOSECONE_BOARD, EV_NOSECONE_STATUS_REQUEST },
+    { MAV_IGNITION_BOARD, EV_IGNITION_STATUS_REQUEST },
+    { MAV_HOMEONE_BOARD,  EV_HOMEONE_STATUS_REQUEST }
+};
+
+static const std::map<uint8_t, uint8_t> noargCmdToEvt = 
+{
+    { MAV_CMD_ARM,              EV_TC_ARM    }, 
+    { MAV_CMD_DISARM,           EV_TC_DISARM }, 
+    { MAV_CMD_ABORT,            EV_TC_ABORT_LAUNCH  }, 
+    { MAV_CMD_NOSECONE_OPEN,    EV_TC_NOSECONE_OPEN }, 
+    { MAV_CMD_NOSECONE_CLOSE,   EV_TC_NOSECONE_CLOSE }, 
+    { MAV_CMD_START_SAMPLING,   EV_TC_START_SAMPLING }, 
+    { MAV_CMD_STOP_SAMPLING,    EV_TC_STOP_SAMPLING }, 
+    { MAV_CMD_TEST_MODE,        EV_TC_TEST_MODE   }, 
+    { MAV_CMD_BOARD_RESET,      EV_TC_RESET_BOARD }, 
+    { MAV_CMD_REQ_DEBUG_INFO,   EV_DEBUG_INFO_REQUEST }
+};
+
+} /* namespace TMTC */
+} /* namespace HomeoneBoard */
+
+
+#endif /* TMTC_CONFIG_H */
