@@ -9,9 +9,11 @@ using namespace Status;
 
 int main()
 {
-	printf("Creating Status Manager\n");
 	sStatusManager;
 	printf("Created Status Manager\n");
+
+	sTMTCManager;
+	sEventBroker;
 
 	while(1) {
 		Event ev = { EV_DEBUG_INFO_REQUEST };
