@@ -9,7 +9,7 @@ exit the program by pressing Ctrl-C
 compile with the command: gcc demo_rx.c rs232.c -Wall -Wextra -o2 -o test_rx
 
 **************************************************/
-
+#include <libs/mavlink_skyward_lib/mavlink_lib/skyward/mavlink.h>
 #include <stdlib.h>
 #include <stdio.h>
 
@@ -22,51 +22,72 @@ compile with the command: gcc demo_rx.c rs232.c -Wall -Wextra -o2 -o test_rx
 #include "rs232.h"
 
 
+void handleMavlinkMessage(const mavlink_message_t* msg);
 
 int main()
 {
-  int i, n,
-      cport_nr=0,        /* /dev/ttyS0 (COM1 on windows) */
-      bdrate=9600;       /* 9600 baud */
+    int i, n,
+      cport_nr=6,        /* /dev/ttyS0 (COM1 on windows) */
+      bdrate=57600;
 
-  unsigned char buf[4096];
+    unsigned char buf[1000];
+    mavlink_message_t msg;
+    mavlink_status_t mavstatus;
 
-  char mode[]={'8','N','1',0};
+    char mode[]={'8','N','1',0};
 
 
-  if(RS232_OpenComport(cport_nr, bdrate, mode))
-  {
-    printf("Can not open comport\n");
-
-    return(0);
-  }
-
-  while(1)
-  {
-    n = RS232_PollComport(cport_nr, buf, 4095);
-
-    if(n > 0)
+    if(RS232_OpenComport(cport_nr, bdrate, mode))
     {
-      buf[n] = 0;   /* always put a "null" at the end of a string! */
+        printf("Can not open comport\n");
 
-      for(i=0; i < n; i++)
-      {
-        if(buf[i] < 32)  /* replace unreadable control-codes by dots */
-        {
-          buf[i] = '.';
-        }
-      }
-
-      printf("received %i bytes: %s\n", n, (char *)buf);
+        return -1;
     }
 
-#ifdef _WIN32
-    Sleep(100);
-#else
-    usleep(100000);  /* sleep for 100 milliSeconds */
-#endif
-  }
+    printf("Entering infinite loop\n");
+
+    while(1)
+    {
+        if(RS232_PollComport(cport_nr, buf, 1000) > 0)
+        {
+            printf("[RCV] byte arrived\n");
+            /* Parse one char at a time until you find a complete message */
+            for(int i = 0; i < 1000; i++) {
+                if (mavlink_parse_char(MAVLINK_COMM_0, buf[i], &msg, &(mavstatus)))
+                {
+                    printf(
+                        "[RCV] Received message with ID %d, sequence: %d from "
+                        "component %d of system %d\n",
+                        msg.msgid, msg.seq, msg.compid, msg.sysid);
+
+                    /* Handle the command */
+                    handleMavlinkMessage(&msg);
+                }
+            }
+        }
+        //sleep(10);
+    }
+
+// #ifdef _WIN32
+//     Sleep(100);
+// #else
+//     usleep(100000);  /* sleep for 100 milliSeconds */
+// #endif
+//   }
 
   return(0);
 }
 
+
+void handleMavlinkMessage(const mavlink_message_t* msg) {
+    switch(msg->msgid) {
+        case MAVLINK_MSG_ID_DEBUG_INFO_TM: 
+            printf("[RCV] Received debug info %d\n", mavlink_msg_debug_info_tm_get_placeholder(msg));
+            break;
+        case MAVLINK_MSG_ID_ACK_TM: 
+            printf("[RCV] ACK received\n");
+            break;
+        default:
+            printf("[Response] Unknown message received\n");
+    }
+}
