@@ -33,80 +33,67 @@ namespace TMTC
 TMTCManager::TMTCManager()
 {
     gamma     = new Gamma868(RADIO_DEVICE_NAME);
-    outBuffer = new CircularBuffer(TMTC_OUT_BUFFER_SIZE);
+    outBuffer = new ByteSyncedCircularBuffer(TMTC_OUT_BUFFER_SIZE);
 
-    receiverThread = miosix::Thread::create(receiverLauncher, TMTC_RECEIVER_STACKSIZE, TMTC_RECEIVER_PRIORITY,
-                                           reinterpret_cast<void*>(this));
-    senderThread = miosix::Thread::create(senderLauncher, TMTC_SENDER_STACKSIZE, TMTC_SENDER_PRIORITY,
-                                           reinterpret_cast<void*>(this));
+    receiverThread = miosix::Thread::create(
+        receiverLauncher, TMTC_RECEIVER_STACKSIZE, TMTC_RECEIVER_PRIORITY,
+        reinterpret_cast<void*>(this));
+    senderThread = miosix::Thread::create(
+        senderLauncher, TMTC_SENDER_STACKSIZE, TMTC_SENDER_PRIORITY,
+        reinterpret_cast<void*>(this));
 
-    printf("[TMTC] Created TMTCManager with a %d bytes buffer.\n", TMTC_OUT_BUFFER_SIZE);
+    TRACE("%s", "[TMTC] Created TMTCManager\n");
     
-    // TODO: check gamma status and configuration
+    // TODO: check gamma status and configuration?
 
     status.healthStatus = COMP_OK;
 }
 
 /**
- * Non-blocking send function: copies the message in the outBuffer if there's
- * enough space.
+ * Non-blocking send function
  */
 bool TMTCManager::enqueueMsg(const uint8_t* msg, const uint8_t len)
 {
-    if (outBuffer->freeSize() >= len)
-    {
-        outBuffer->write(msg, len);
+    size_t written = outBuffer->put(msg, len);
 
-        printf("[TMTC] Enqueueing\n");
-        // outBuffer->printContent();
+    TRACE("[TMTC] Enqueueing %d bytes\n", len);
 
-        return true;
-    }
-
-    return false;
+    return (written > 0);
 }
 
 /**
- * Sending thread's run() function: read from the outBuffer and forward on the
- * link.
+ * Sending thread's run() function
  */
 void TMTCManager::runSender()
 {
     uint8_t msgTemp[TMTC_MAX_PKT_SIZE];
 
-    printf("[TMTC] Sender is running\n");
-    // outBuffer->printContent();
+    TRACE("%s", "[TMTC] Sender is running\n");
 
     while (1)
     {
-        if (outBuffer->occupiedSize() > 0)
+        /* Read from the buffer at maximum MAX_PKT_SIZE bytes and send them */
+        while ( !(outBuffer->isEmpty()) )
         {
-
-            printf("[TMTC] Sender is sending\n");
-            // outBuffer->printContent();
-
-            // Read from the buffer at maximum MAX_PKT_SIZE bytes
-            uint32_t readBytes = outBuffer->read(msgTemp, TMTC_MAX_PKT_SIZE);
-
+            TRACE("[TMTC] Found %u bytes\n", outBuffer->count());
+            uint32_t readBytes = outBuffer->pop(msgTemp, TMTC_MAX_PKT_SIZE);
             bool sent = gamma->send(msgTemp, readBytes);
-            if (sent)
-                break;
-            else
-                status.sendErrors++;
 
-            printf("[TMTC] Sent message\n");
+            TRACE("[TMTC] Sending %lu bytes\n", readBytes);
+
+            if (!sent)
+                status.sendErrors++; // TODO: fault counter?
         }
-        // TODO: should this be done only if something has been sent?
-        miosix::Thread::sleep(TMTC_SEND_TIMEOUT);
-    }
 
+        /* Sleep guarantees that commands from the GS can be received */
+        miosix::Thread::sleep(TMTC_MIN_GUARANTEED_SLEEP);
+    }
 
     status.healthStatus = COMP_FAILED;
 }
 
 /**
- * Receiving thread's run() function: parse the received packet one byte at a
- * time until you find a complete Mavlink message and dispatch it.
+ * Receiving thread's run() function
  */
 void TMTCManager::runReceiver()
 {
@@ -117,24 +104,21 @@ void TMTCManager::runReceiver()
     {
         gamma->receive(&byte, 1);  // Blocking function
 
-        // Parse one char at a time until you find a complete message
+        /* Parse one char at a time until you find a complete message */
         if (mavlink_parse_char(MAVLINK_COMM_0, byte, &msg, &(status.mavstatus)))
         {
-
-            printf(
+            TRACE(
                 "[TMTC] Received message with ID %d, sequence: %d from "
-                "component %d "
-                "of system %d\n",
+                "component %d of system %d\n",
                 msg.msgid, msg.seq, msg.compid, msg.sysid);
 
-            // Send Ack
+            /* Send Ack */
             if (msg.msgid != MAVLINK_MSG_ID_ACK_TM)
                 sendAck(&msg);
 
-            // Handle the command
+            /* Handle the command */
             handleMavlinkMessage(&msg);
         }
-
     }
 
     status.healthStatus = COMP_FAILED;
@@ -153,8 +137,16 @@ void TMTCManager::handleMavlinkMessage(const mavlink_message_t* msg)
         {
             uint8_t commandId = mavlink_msg_noarg_tc_get_command_id(msg);
 
-            Event evt = {commandId}; // TODO: check that mavlink commands are same as events
-            sEventBroker->post(evt, TOPIC_COMMANDS);
+            try
+            {
+                uint8_t sig = noargCmdToEvt.at(commandId);
+                sEventBroker->post(Event {sig}, TOPIC_COMMANDS);
+            } 
+            catch (int e) 
+            {
+                TRACE("[TMTC] Unkown noArg command %d\n", commandId);
+            }
+
             break;
         }
 
@@ -162,8 +154,16 @@ void TMTCManager::handleMavlinkMessage(const mavlink_message_t* msg)
         {
             uint8_t boardId = mavlink_msg_request_board_status_tc_get_board_id(msg);
 
-            Event evt = {(uint8_t)(EV_NOSECONE_STATUS_REQUEST + boardId)}; // TODO: check that mavlink board order is the same as events
-            sEventBroker->post(evt, TOPIC_COMMANDS);
+            try
+            {
+                uint8_t sig = statusCmdToEvt.at(boardId);
+                sEventBroker->post(Event {sig}, TOPIC_COMMANDS);
+            } 
+            catch (int e) 
+            {
+                TRACE("[TMTC] Unkown status command %d\n", boardId);
+            }
+           
             break;
         }
 
@@ -206,7 +206,7 @@ void TMTCManager::handleMavlinkMessage(const mavlink_message_t* msg)
 
         default:
         {
-            printf("[TMTC] Received message is not of a known type\n");
+            TRACE("%s", "[TMTC] Received message is not of a known type\n");
             status.healthStatus = COMP_ERROR;
             // TODO: fault counter?
             break;
@@ -222,13 +222,13 @@ void TMTCManager::sendAck(const mavlink_message_t* msg)
     uint8_t bufferMsg[sizeof(mavlink_message_t) + 1];  // TODO Check this number
     mavlink_message_t ackMsg;
 
-    // Create ack message passing the parameters
+    /* Create ack message passing the parameters */
     mavlink_msg_ack_tm_pack(TMTC_MAV_SYSID, TMTC_MAV_COMPID, &ackMsg,
                             msg->msgid, msg->seq);
-    // Convert it into a byte stream
+    /* Convert it into a byte stream */
     int msgLen = mavlink_msg_to_send_buffer(bufferMsg, &ackMsg);
 
-    // Send the message back to the sender
+    /* Send the message back to the sender */
     bool ackSent = enqueueMsg(bufferMsg, msgLen);
 
 #ifdef DEBUG

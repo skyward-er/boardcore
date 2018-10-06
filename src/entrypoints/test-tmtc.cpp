@@ -30,9 +30,11 @@ using namespace TMTC;
 int main()
 {
 
+    sTMTCManager;
+
     while(1)
     {
-        printf("[TEST] Enqueueing ping\n");
+        printf("[TmtcTest] Enqueueing ping\n");
 
         // Create a Mavlink message
         mavlink_message_t pingMsg;
@@ -48,13 +50,13 @@ int main()
         bool ackSent = sTMTCManager->enqueueMsg(bufferMsg, msgLen);
 
         if(!ackSent)
-        printf("[TEST] Could not enqueue ping\n");
+            printf("[TmtcTest] Could not enqueue ping\n");
 
-        ledOn();
-        miosix::delayMs(200);
-        ledOff();
+        // ledOn();
+        // miosix::delayMs(200);
+        // ledOff();
 
-        miosix::Thread::sleep(5000);
+        miosix::Thread::sleep(1000);
     }
 
     return 0;

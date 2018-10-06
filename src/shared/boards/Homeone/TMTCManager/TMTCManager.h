@@ -24,13 +24,13 @@
 #define TMTCMANAGER_H
 
 #include "TMTC_Config.h"
+
 #include <Singleton.h>
-#include "CircularBuffer.h"
+#include <events/EventBroker.h>  
+#include <utils/ByteSyncedCircularBuffer.h> 
+
 #include <drivers/gamma868/Gamma868.h>
-#include "boards/Homeone/Events.h"
-#include "boards/Homeone/Topics.h"
-#include "events/EventBroker.h"  
-#include "boards/Homeone/StatusManager/Status.h"
+#include <boards/Homeone/StatusManager/Status.h>
 
 namespace HomeoneBoard
 {
@@ -66,11 +66,7 @@ struct TMTCStatus : ComponentStatus
  *
  * RECEIVER:
  * A Receiver thread is also used to read the Gamma868 buffer byte-per-byte and
- * then, when an entire message is read, an appropriate handler defined in
- * MessageHandlers.h is called.
- *
- * USE:
- * At the end of the file you can find the sTMTCManager define.
+ * then, when an entire message is read, an appropriate handler is called.
  */
 class TMTCManager : public Singleton<TMTCManager>
 {
@@ -83,7 +79,7 @@ public:
     ~TMTCManager() {}
 
     /**
-     * \return a copy of the status struct.
+     * @return a copy of the status struct.
      */
     TMTCStatus getStatus()
     {
@@ -94,9 +90,9 @@ public:
      * Non-blocking function that can be used to send a message: copies the
      * message into a synchronized buffer.
      * Note that the message should already be a Mavlink message.
-     * \param  msg       buffer that contains the message
-     * \param  len       length of the message in bytes
-     * \return           false if there isn't enough space in the buffer
+     * @param  msg       buffer that contains the message
+     * @param  len       length of the message in bytes
+     * @return           false if there isn't enough space in the buffer
      */
     bool enqueueMsg(const uint8_t* msg, const uint8_t len);
 
@@ -105,7 +101,7 @@ private:
 
     TMTCStatus status;
     Gamma868* gamma;
-    CircularBuffer* outBuffer;
+    ByteSyncedCircularBuffer* outBuffer;
 
     miosix::Thread* senderThread;
     miosix::Thread* receiverThread;
@@ -117,7 +113,7 @@ private:
 
     /**
      * Calls the runSender() member function.
-     * \param arg       this object's pointer, casted to void*
+     * @param arg       this object's pointer, casted to void*
      */
     static void senderLauncher(void* arg)
     {
@@ -126,7 +122,7 @@ private:
 
     /**
      * Calls the runReceiver() member function.
-     * \param arg       this object's pointer, casted to void*
+     * @param arg       this object's pointer, casted to void*
      */
     static void receiverLauncher(void* arg)
     {
@@ -142,22 +138,21 @@ private:
 
     /**
      * Function ran by the receiving thread:
-     * read and parse incoming messages from the module's buffer and handle them
+     * reads and parses incoming messages from the module's buffer and handles them
      * according to their content.
      */
     void runReceiver();
 
 
     /**
-     *  Handle the Mavlink message, posting the corresponding event if needed.
-     * \param msg           pointer to the mavlink message to handle
+     *  Handles the Mavlink message, posting the corresponding event if needed.
+     * @param msg           pointer to the mavlink message to handle
      */
     void handleMavlinkMessage(const mavlink_message_t* msg);
 
     /**
-     * Send an acknowledge message back to the sender to notify the Ground
-     * Station that you correctly received a message.
-     * \param msg    Mavlink message to acknowledge.
+     * Sends an acknowledge message back to the Ground Station.
+     * @param msg    Mavlink message to acknowledge.
      */
     void sendAck(const mavlink_message_t* msg);
 };
