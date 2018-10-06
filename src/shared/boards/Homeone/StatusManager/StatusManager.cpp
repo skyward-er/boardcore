@@ -45,6 +45,14 @@ void postStopTM()
     sEventBroker->post(Event{EV_STOP_TM}, TOPIC_STATUS);
 }
 
+StatusManager::StatusManager() {
+    sEventBroker->subscribe(this, TOPIC_STATUS);
+    sEventBroker->subscribe(this, TOPIC_DIAGNOSTICS);
+
+    start();
+}
+
+
 /* EventHandler implementation */
 void StatusManager::handleEvent(const Event& e)
 {
@@ -52,6 +60,8 @@ void StatusManager::handleEvent(const Event& e)
 
     switch (e.sig)
     {
+        TRACE("[StatusManager] Received event: %d", e.sig);
+        
         /* Automatic Telemetries */
         case EV_START_TM:
             // TODO: quando viene mandato?
@@ -107,6 +117,8 @@ void StatusManager::handleEvent(const Event& e)
             break;
 
         default:
+            TRACE("[StatusManager] Event not recognized: %d", e.sig);
+            return;
             break;
     }
 

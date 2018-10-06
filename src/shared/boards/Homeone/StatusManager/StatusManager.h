@@ -60,9 +60,7 @@ private:
     bool autoTmEnable = false;
 
     /* Constructor*/
-    StatusManager() {
-        sEventBroker->subscribe(this, TOPIC_STATUS);
-    }
+    StatusManager();
 
 };
 
