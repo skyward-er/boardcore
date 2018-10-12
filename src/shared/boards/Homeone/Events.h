@@ -36,13 +36,13 @@ namespace HomeoneBoard
  */
 enum Events : uint8_t
 {
-    EV_PING_RECEIVED      = 4,  // TODO: Assert that this is = EV_FIRST_SIGNAL
-    EV_HEARTBEAT_RECEIVED = 5,
-    EV_SHUTDOWN_COMPLETE  = 6,
+    EV_PING_RECEIVED           = EV_FIRST_SIGNAL,
+    EV_HEARTBEAT_RECEIVED      = 5,
+    EV_SHUTDOWN_COMPLETE       = 6,
     EV_NOSECONE_STATUS_REQUEST = 7,
     EV_IGNITION_STATUS_REQUEST = 8,
-    EV_HOMEONE_STATUS_REQUEST   = 9,
-	EV_DEBUG_INFO_REQUEST       = 10,
+    EV_HOMEONE_STATUS_REQUEST  = 9,
+    EV_DEBUG_INFO_REQUEST      = 10,
 
     EV_ALTIMETER_CALIBRATION = 32,
     EV_START_SAMPLING        = 40,
@@ -77,10 +77,10 @@ enum Events : uint8_t
     EV_TC_DISARM                = 162,
     EV_TC_ALTIMETER_CALIBRATION = 168,
 
-	EV_LOW_RATE_TM  = 180,
-	EV_HIGH_RATE_TM = 181,
-	EV_START_TM     = 182,
-	EV_STOP_TM      = 183,
+    EV_LOW_RATE_TM  = 180,
+    EV_HIGH_RATE_TM = 181,
+    EV_START_TM     = 182,
+    EV_STOP_TM      = 183,
 
     EV_PRESSURE_SAMPLE = 192
 
@@ -91,7 +91,6 @@ struct AltimeterCalibrationEvent : Event
     uint16_t T0;  // Calibration temperature
     uint16_t P0;  // Calibration pressure
 };
-
 
 struct PressureSampleEvent : Event
 {
