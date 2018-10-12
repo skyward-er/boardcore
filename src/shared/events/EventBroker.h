@@ -45,7 +45,7 @@ using miosix::getTick;
 using miosix::Thread;
 
 // Maximum lenght of the sleep in the event broker run method, in ms.
-#define EVENT_BROKER_MAX_SLEEP 250;
+static const unsigned int EVENT_BROKER_MIN_DELAY = 250;
 
 /**
  * The EventBroker class implements the pub-sub paradigm to dispatch events to

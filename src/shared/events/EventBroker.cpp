@@ -115,7 +115,7 @@ void EventBroker::run()
         }
 
         // How long to sleep in this cycle
-        unsigned int sleep_ms = EVENT_BROKER_MAX_SLEEP;
+        unsigned int sleep_ms = EVENT_BROKER_MIN_DELAY;
 
         if (delayed_events.size() > 0)
         {
