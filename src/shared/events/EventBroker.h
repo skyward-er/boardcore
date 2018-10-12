@@ -44,7 +44,7 @@ using miosix::Unlock;
 using miosix::getTick;
 using miosix::Thread;
 
-// Maximum lenght of the sleep in the event broker run method, in ms.
+// Minimum guaranteed delay for an event posted with postDelayed(...)
 static const unsigned int EVENT_BROKER_MIN_DELAY = 250;
 
 /**
