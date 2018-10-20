@@ -86,8 +86,9 @@ public:
      * Subscribe to a specific topic.
      * Since there is no way to unsubscribe for now, the subscribed FSM
      * MUST NOT be destroyed before the termination of the program.
-     * This function is meant to be called at initialization. DO NOT call it in
-     * response to an event, or it will cause a deadlock.
+     * This function is meant to be called at initialization.
+     * DO NOT call it after initialization.
+     * DO NOT call it in response to an event, or it will cause a deadlock.
      * @param subscriber
      * @param topic
      */
