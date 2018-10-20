@@ -70,7 +70,7 @@ public:
      * @param event
      * @param topic
      * @param delay_ms Delay in milliseconds. Events with delay shorter than
-     * EVENT_BROKER_MAX_SLEEP are not guaranteed to be posted in time.
+     * EVENT_BROKER_MIN_DELAY are not guaranteed to be posted in time.
      * @return Unique id representing the event in the delayed events list.
      */
     uint16_t postDelayed(const Event& event, uint8_t topic,
