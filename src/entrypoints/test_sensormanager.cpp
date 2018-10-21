@@ -28,7 +28,6 @@
 using namespace miosix;
 using namespace HomeoneBoard;
 using Sensors::SensorManager;
-using Sensors::SensorData;
 
 int main()
 {
