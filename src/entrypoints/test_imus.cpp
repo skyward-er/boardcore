@@ -1,4 +1,4 @@
-/* Copyright (c) 2015-2017 Skyward Experimental Rocketry
+/* Copyright (c) 2015-2018 Skyward Experimental Rocketry
  * Authors: Luca Erbetta <luca.erbetta@skywarder.eu>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -21,16 +21,46 @@
  */
 
 #include <Common.h>
+#include <interfaces-impl/hwmapping.h>
+#include "boards/Homeone/SensorManager/SensorManagerConfig.h"
+#include "sensors/MPU9250/MPU9250.h"
 
-using namespace miosix;
+using miosix::Thread;
 
+enum REGS
+{
+    REG_WHO_AM_I     = 117,
+    REG_USER_CONTROL = 106
+};
+
+uint8_t who_am_i_value = 0x68;
+
+void readWhoAmI() { printf("WHO AM I: %d\n", spiMPU9250::read(REG_WHO_AM_I)); }
+
+typedef MPU9250<spiMPU9250> MPU9250Type;
 int main()
 {
+    spiMAX21105::init();
+    spiMPU9250::init();
+
+    MPU9250Type imu{1, 1};
+
+    // suint8;_t user_ctrl = spiMPU9250::read(REG_USER_CONTROL);
+    // spiMPU9250::write(REG_USER_CONTROL, 16);
+
+    Thread::sleep(500);
+
+    // MPU9250<spiMPU9250> mpu(1, 1);
+
     while (true)
     {
-        printf("Serial is working!\n");
-        Thread::sleep(1000);
+        imu.init();
+        // readWhoAmI();
+        // mpu.init();
+        miosix::ledOn();
+        // printf("Serial is working!\n");
+        Thread::sleep(500);
+        miosix::ledOff();
+        Thread::sleep(500);
     }
-
-    return 0;
 }

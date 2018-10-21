@@ -26,7 +26,7 @@
 
 #include "SensorManagerConfig.h"
 #include "events/FSM.h"
-#include "logger/Logger.h"
+#include "logger/LogProxy.h"
 #include "sensors/SensorSampling.h"
 
 // Forward declarations
@@ -48,20 +48,12 @@ class ADIS16405;
 typedef AD7994<busI2C1> AD7994Type;
 typedef MPU9250<spiMPU9250> MPU9250Type;
 typedef MAX21105<spiMAX21105> MAX21105Type;
-typedef ADIS16405<spiADIS16405> ADIS16405Type;
+// typedef ADIS16405<spiADIS16405> ADIS16405Type;
 
 namespace HomeoneBoard
 {
 namespace Sensors
 {
-
-/**
- * Common storage point for all the latest samples of each sensor.
- */
-struct SensorData
-{
-    float testSensorData;
-};
 
 /**
  * The SensorManager class manages all the sensors connected to the Homeone
@@ -99,14 +91,6 @@ private:
     void handleEvent(const Event& ev);
 
     /**
-    * Returns a copy of the struct containing the latest available samples
-    * from each sensor at the time of the call.
-    * This function is not thread-safe: it must be called in the scheduler
-    * thread or be opportunely guarded by mutex.
-    */
-    SensorData getSensorData();
-
-    /**
      * Adds all the SensorSamplers to the scheduler and begins sampling.
      */
     void startSampling();
@@ -128,12 +112,6 @@ private:
      */
     void onDMA500HZCallback();
 
-    /**
-     * Task that sends samples at a fixed rate to the TMTCManager.
-     */
-    void lowRateTMTC();
-    void highRateTMTC();
-
     // Sensor samplers
     SimpleSensorSampler sampler_20hz_simple;
     DMASensorSampler sampler_500hz_dma;
@@ -145,10 +123,10 @@ private:
     AD7994Type* adc_ad7994;
     MAX21105Type* imu_max21105;
     MPU9250Type* imu_mpu9250;
-    ADIS16405Type* imu_adis16405;
+    // ADIS16405Type* imu_adis16405;
 
     // Logger ref
-    Logger& log;
+    LoggerProxy& logger;
 
     // Tmtc message buffer
     uint8_t tmtc_buffer[2041];  // TODO: Use appropriate size
