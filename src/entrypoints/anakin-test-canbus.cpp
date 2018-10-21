@@ -82,10 +82,12 @@ void test_canbus_send(CanBus *bus)
 
 int main()
 {
+    /* CAN1 = define di ST */
     CanManager c(CAN1);
 
     banner();
 
+    /*  */
     canbus_init_t st0 = {
         CAN1, Mode::ALTERNATE, 9, {CAN1_RX0_IRQn, CAN1_RX1_IRQn}};
     c.addBus<GPIOA_BASE, 11, 12>(st0);
