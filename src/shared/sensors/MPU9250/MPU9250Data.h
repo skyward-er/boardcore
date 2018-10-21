@@ -1,5 +1,5 @@
-/* Copyright (c) 2015-2017 Skyward Experimental Rocketry
- * Authors: Luca Erbetta <luca.erbetta@skywarder.eu>
+/* Copyright (c) 2015-2018 Skyward Experimental Rocketry
+ * Authors: Luca Erbetta
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -19,18 +19,17 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
+#ifndef SRC_SHARED_SENSORS_MPU9250_MPU9250DATA_H
+#define SRC_SHARED_SENSORS_MPU9250_MPU9250DATA_H
 
-#include <Common.h>
+#include "math/Vec3.h"
 
-using namespace miosix;
-
-int main()
+struct MPU9250Data
 {
-    while (true)
-    {
-        printf("Serial is working!\n");
-        Thread::sleep(1000);
-    }
+    Vec3 accel;
+    Vec3 gyro;
+    Vec3 compass;
+    float temp;
+};
 
-    return 0;
-}
+#endif /* SRC_SHARED_SENSORS_MPU9250_MPU9250DATA_H */
