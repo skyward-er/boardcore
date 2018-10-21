@@ -1,5 +1,5 @@
-/* Copyright (c) 2015-2017 Skyward Experimental Rocketry
- * Authors: Luca Erbetta <luca.erbetta@skywarder.eu>
+/* Copyright (c) 2015-2018 Skyward Experimental Rocketry
+ * Authors: Luca Erbetta
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -20,17 +20,13 @@
  * THE SOFTWARE.
  */
 
-#include <Common.h>
+#include "LogProxy.h"
 
-using namespace miosix;
-
-int main()
+template <>
+LogResult LoggerProxy::log<MPU9250Data>(const MPU9250Data& t)
 {
-    while (true)
-    {
-        printf("Serial is working!\n");
-        Thread::sleep(1000);
-    }
+    miosix::PauseKernelLock kLock;
 
-    return 0;
+    lr_data.mpu9250_accel = t.accel;
+    return logger.log(t);
 }

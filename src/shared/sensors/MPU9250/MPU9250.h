@@ -25,7 +25,7 @@
 #ifndef MAX9250_H
 #define MAX9250_H
 #include <drivers/BusTemplate.h>
-#include "Sensor.h"
+#include "../Sensor.h"
 
 // TODO: fix normalizeTemp() (is /512.0f correct?)
 // TODO: Self-Test
@@ -112,6 +112,7 @@ public:
     {
         uint8_t whoami = Bus::read(REG_WHO_AM_I);
 
+        printf("WHOAMI: %d\n", whoami);
         if (whoami != who_am_i_value)
         {
             last_error = ERR_NOT_ME;
@@ -406,7 +407,7 @@ private:
                   sizeof(out.buf));
 
         // BigEndian -> CPUArch (LittleEndian as usual)
-        for (size_t i = 0; i < (sizeof(out.buf) / sizeof(out.buf[0])); i++)
+        for (size_t i  = 0; i < (sizeof(out.buf) / sizeof(out.buf[0])); i++)
             out.buf[i] = fromBigEndian16(out.buf[i]);
     }
 };

@@ -1,5 +1,5 @@
-/* Copyright (c) 2015-2017 Skyward Experimental Rocketry
- * Authors: Luca Erbetta <luca.erbetta@skywarder.eu>
+/* Copyright (c) 2015-2018 Skyward Experimental Rocketry
+ * Authors: Luca Erbetta
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -19,18 +19,57 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
+#ifndef SRC_SHARED_LOGGER_LOGPROXY_H
+#define SRC_SHARED_LOGGER_LOGPROXY_H
 
-#include <Common.h>
+#include "Logger.h"
+#include "Singleton.h"
 
-using namespace miosix;
+#include "sensors/MPU9250/MPU9250Data.h"
 
-int main()
+class LoggerProxy : public Singleton<LoggerProxy>
 {
-    while (true)
+    friend class Singleton<LoggerProxy>;
+
+public:
+    struct LowRateData
     {
-        printf("Serial is working!\n");
-        Thread::sleep(1000);
+        Vec3 mpu9250_accel;
+    };
+
+    struct HighRateData
+    {
+        float pressure_sample;
+        uint8_t last_fmm_event;
+        uint8_t last_ign_event;
+        uint8_t last_nsc_event;
+    };
+
+    LoggerProxy() : logger(Logger::instance()) {}
+
+    template <typename T>
+    inline LogResult log(const T& t)
+    {
+        return logger.log(t);
     }
 
-    return 0;
-}
+    LowRateData getLowRateData()
+    {
+        miosix::PauseKernelLock kLock;
+        return lr_data;
+    }
+
+    HighRateData getHighRateData()
+    {
+        miosix::PauseKernelLock kLock;
+        return hr_data;
+    }
+
+private:
+    LowRateData lr_data;
+    HighRateData hr_data;
+
+    Logger& logger;
+};
+
+#endif /* SRC_SHARED_LOGGER_LOGPROXY_H */

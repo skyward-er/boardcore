@@ -28,8 +28,6 @@ EventBroker::EventBroker() : ActiveObject()  // TODO: Specify stack size
 
 void EventBroker::post(const Event& ev, uint8_t topic)
 {
-    Lock<Mutex> lock(mtx_subscribers);
-
 #ifdef DEBUG
 #include <stdio.h>
     printf("[EventBroker] Event: %d, Topic: %d\n", ev.sig, topic);
