@@ -1,7 +1,5 @@
-/* CAN-Bus Driver
- *
- * Copyright (c) 2015-2016 Skyward Experimental Rocketry
- * Authors: Matteo Michele Piazzolla, Alain Carlucci
+/* Copyright (c) 2015-2018 Skyward Experimental Rocketry
+ * Authors: Matteo Michele Piazzolla
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -22,44 +20,24 @@
  * THE SOFTWARE.
  */
 
-#ifndef CANSOCKET_H
-#define CANSOCKET_H
+#ifndef CANPUBLISHER_H
+#define CANPUBLISHER_H
 
-#include <Common.h>
-#include "CanBus.h"
+class CanPublisher{
 
-using std::list;
-using std::pair;
+    private:
+    uint16_t topic;
+    CanBus* bus;
 
-class CanBus;
-class CanSocket
-{
-public:
-    explicit CanSocket(uint16_t filter_id);
-    void open(CanBus *bus);
+    public:
+    CanPublisher(){}
+    CanPublisher(uint16_t topic, CanBus* bus) : topic(topic), bus(bus){}
 
-    bool receive(void *message, int size);
+    void publish(const uint8_t* msg, size_t size){
+        size = size <= 8 ? size : 8;
+        bus->send(this->topic, msg, size);
+    }
 
-    void close();
-
-    bool isOpen() const { return bus != NULL; }
-
-    void addToMessageList(unsigned char *message, uint8_t size);
-    uint16_t getFilterId() const { return filter_id; }
-    bool haveMessage();
-
-    CanSocket &operator=(const CanSocket &) = delete;
-    ~CanSocket();
-
-private:
-    CanBus *bus = NULL;
-    const uint16_t filter_id;
-
-    pthread_mutex_t mutex;
-    pthread_cond_t cond;
-
-    typedef pair<const unsigned char *, int> msg_p;
-    list<msg_p> receivedMessageQueue;
 };
 
-#endif /* CANSOCKET_H */
+#endif //CANPUBLISHER_H
