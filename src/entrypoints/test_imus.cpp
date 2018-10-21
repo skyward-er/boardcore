@@ -23,7 +23,7 @@
 #include <Common.h>
 #include <interfaces-impl/hwmapping.h>
 #include "boards/Homeone/SensorManager/SensorManagerConfig.h"
-#include "sensors/MPU9250.h"
+#include "sensors/MPU9250/MPU9250.h"
 
 using miosix::Thread;
 
@@ -37,13 +37,16 @@ uint8_t who_am_i_value = 0x68;
 
 void readWhoAmI() { printf("WHO AM I: %d\n", spiMPU9250::read(REG_WHO_AM_I)); }
 
+typedef MPU9250<spiMPU9250> MPU9250Type;
 int main()
 {
     spiMAX21105::init();
     spiMPU9250::init();
 
-    // suint8_t user_ctrl = spiMPU9250::read(REG_USER_CONTROL);
-    spiMPU9250::write(REG_USER_CONTROL, 16);
+    MPU9250Type imu{1, 1};
+
+    // suint8;_t user_ctrl = spiMPU9250::read(REG_USER_CONTROL);
+    // spiMPU9250::write(REG_USER_CONTROL, 16);
 
     Thread::sleep(500);
 
@@ -51,7 +54,8 @@ int main()
 
     while (true)
     {
-        readWhoAmI();
+        imu.init();
+        // readWhoAmI();
         // mpu.init();
         miosix::ledOn();
         // printf("Serial is working!\n");

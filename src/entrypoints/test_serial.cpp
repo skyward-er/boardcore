@@ -21,6 +21,7 @@
  */
 
 #include <Common.h>
+
 using namespace miosix;
 
 int main()
@@ -30,4 +31,6 @@ int main()
         printf("Serial is working!\n");
         Thread::sleep(1000);
     }
+
+    return 0;
 }
