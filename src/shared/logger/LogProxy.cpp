@@ -19,57 +19,14 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
-#ifndef SRC_SHARED_LOGGER_LOGPROXY_H
-#define SRC_SHARED_LOGGER_LOGPROXY_H
 
-#include "Logger.h"
-#include "Singleton.h"
+#include "LogProxy.h"
 
-#include "sensors/MPU9250/MPU9250Data.h"
-
-class LoggerProxy : public Singleton<LoggerProxy>
+template <>
+LogResult LoggerProxy::log<MPU9250Data>(const MPU9250Data& t)
 {
-    friend class Singleton<LoggerProxy>;
+    miosix::PauseKernelLock kLock;
 
-public:
-    struct LowRateData
-    {
-        Vec3 mpu9250_accel;
-    };
-
-    struct HighRateData
-    {
-        float pressure_sample;
-        uint8_t last_fmm_event;
-        uint8_t last_ign_event;
-        uint8_t last_nsc_event;
-    };
-
-    LoggerProxy() : logger(Logger::instance()) {}
-
-    template <typename T>
-    inline LogResult log(const T& t)
-    {
-        return logger.log(t);
-    }
-
-    LowRateData getLowRateData()
-    {
-        miosix::PauseKernelLock kLock;
-        return lr_data;
-    }
-
-    HighRateData getHighRateData()
-    {
-        miosix::PauseKernelLock kLock;
-        return hr_data;
-    }
-
-private:
-    LowRateData lr_data;
-    HighRateData hr_data;
-
-    Logger& logger;
-};
-
-#endif /* SRC_SHARED_LOGGER_LOGPROXY_H */
+    lr_data.mpu9250_accel = t.accel;
+    return logger.log(t);
+}
