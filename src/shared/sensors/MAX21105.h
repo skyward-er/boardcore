@@ -62,7 +62,7 @@ public:
 
         // Init this sensor
         uint8_t init_data[][2] = {
-            {MIF_CFG, 0b00101001},  // SPI 4 wire, I2C OFF (important!)
+            {MIF_CFG, 0x29},  // SPI 4 wire, I2C OFF (important!)
             {EXT_STATUS, 0x00},     // Choose the bank 0
             {SET_PWR, 0x00},        // Power down
 

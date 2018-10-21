@@ -65,6 +65,11 @@ enum Events : uint8_t
     EV_ADA_ACTIVE_MODE = 87,
     EV_ADA_STOP        = 88,
 
+    EV_IGN_ABORT = 100,
+    EV_IGN_LAUNCH = 101,
+    EV_IGN_GET_STATUS = 102,
+    EV_IGN_WAIT = 103,
+
     EV_TC_START_LAUNCH          = 128,
     EV_TC_ABORT_LAUNCH          = 129,
     EV_TC_START_SAMPLING        = 136,

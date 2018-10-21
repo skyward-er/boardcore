@@ -36,6 +36,7 @@ enum Topics : uint8_t
     TOPIC_COMMANDS,
     TOPIC_FLIGHT_EVENTS,
     TOPIC_SENSORS,
+    TOPIC_IGNITION,
     TOPIC_STATUS
 };
 }
