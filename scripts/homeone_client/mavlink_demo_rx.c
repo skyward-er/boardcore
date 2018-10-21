@@ -1,15 +1,10 @@
 
 /**************************************************
-
-file: demo_rx.c
-purpose: simple demo that receives characters from
-the serial port and print them on the screen,
-exit the program by pressing Ctrl-C
-
-compile with the command: gcc demo_rx.c rs232.c -Wall -Wextra -o2 -o test_rx
+Ssimple demo that receives mavlink
+messages on the serial port and prints them on the screen.
 
 **************************************************/
-#include <libs/mavlink_skyward_lib/mavlink_lib/skyward/mavlink.h>
+#include "../../libs/mavlink_skyward_lib/mavlink_lib/skyward/mavlink.h"
 #include <stdlib.h>
 #include <stdio.h>
 
@@ -24,11 +19,18 @@ compile with the command: gcc demo_rx.c rs232.c -Wall -Wextra -o2 -o test_rx
 
 void handleMavlinkMessage(const mavlink_message_t* msg);
 
-int main()
+int main(int argc, char *argv[])
 {
+
+    if(argc < 2)
+    {
+      printf("Usage: %s <PORT>\n", argv[0]);
+      return -1;
+    }
+
     int i, n,
-      cport_nr=6,        /* /dev/ttyS0 (COM1 on windows) */
-      bdrate=57600;
+      cport_nr = atoi(argv[1]),     
+      bdrate = atoi(argv[2]);
 
     unsigned char buf[1000];
     mavlink_message_t msg;

@@ -1,15 +1,10 @@
 
 /**************************************************
-
-file: demo_tx.c
-purpose: simple demo that transmits characters to
-the serial port and print them on the screen,
-exit the program by pressing Ctrl-C
-
-compile with the command: gcc demo_tx.c rs232.c -Wall -Wextra -o2 -o test_tx
+Simple demo that transmits mavlink messages
+to the serial port.
 
 **************************************************/
-#include <libs/mavlink_skyward_lib/mavlink_lib/skyward/mavlink.h>
+#include "../../libs/mavlink_skyward_lib/mavlink_lib/skyward/mavlink.h"
 #include <stdlib.h>
 #include <stdio.h>
 
@@ -21,7 +16,7 @@ compile with the command: gcc demo_tx.c rs232.c -Wall -Wextra -o2 -o test_tx
 
 #include "rs232.h"
 
-int cport_nr = 6;
+int cport_nr;
 
 void sendAck()
 {
@@ -57,27 +52,37 @@ void sendDebugInfoReq()
 }
 
 
-int main()
+int main(int argc, char *argv[])
 {
-  int i=0, bdrate=57600;  
 
-  char mode[]={'8','N','1',0};
+    if(argc < 2)
+    {
+      printf("Usage: %s <PORT>\n", argv[0]);
+      return -1;
+    }
 
-  if(RS232_OpenComport(cport_nr, bdrate, "8N1"))
-  {
-    printf("Can not open comport\n");
-    return -1;
-  }
+    int i=0, bdrate = atoi(argv[2]);  
+    cport_nr = atoi(argv[1]);
 
-  while(1)
-  {
+    char mode[]={'8','N','1',0};
+
+    if(RS232_OpenComport(cport_nr, bdrate, "8N1"))
+    {
+        printf("Can not open comport %d\n", cport_nr);
+        return -1;
+    }
+
     char c;
-    scanf("%c", &c);
-    sendDebugInfoReq();
 
-    //sendAck();
-  }
+    while(1)
+    {
+        scanf("%c", &c);
+        RS232_SendBuf(cport_nr, &c, 1);
 
-  return(0);
+        // sendDebugInfoReq();
+        // sendAck();
+    }
+
+    return(0);
 }
 

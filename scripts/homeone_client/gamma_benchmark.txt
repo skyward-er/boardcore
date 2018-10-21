@@ -1,0 +1,27 @@
+LoRa modules test:
+
+-> PC: 	running scripts/homeone-client/continuous_tc
+-> Discovery: 
+-> RF modules: Gamma868 (RF solutions), baudrate 57600
+
+SF6
+-----
+Packet Size - Min Sleep
+249         - 800
+128         - 425
+64          - 250
+32          - 175
+16          - 125
+8           - 120
+2           - 40
+
+SF12
+-----
+Packet Size - Min Sleep
+249         - 
+128         - 
+64          - 
+32          - 
+16          - 
+8           - 
+2           - 
