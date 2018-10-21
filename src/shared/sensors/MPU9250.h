@@ -254,25 +254,25 @@ private:
     uint8_t accelFS;
     uint8_t magnetoFSMState;
 
-    inline const float normalizeAccel(int16_t val)
+    inline float normalizeAccel(int16_t val)
     {
         return static_cast<float>(val) / 32768.0f * accelFSMAP[accelFS] *
                EARTH_GRAVITY;
     }
 
-    inline const float normalizeGyro(int16_t val)
+    inline float normalizeGyro(int16_t val)
     {
         return static_cast<float>(val) / 32768.0f * gyroFSMAP[gyroFS] *
                DEGREES_TO_RADIANS;
     }
 
-    inline const float normalizeMagneto(int16_t val)
+    inline float normalizeMagneto(int16_t val)
     {
         // Page 50 @ Register Map document
         return static_cast<float>(val) / 32760.0f * 4912.0f;
     }
 
-    inline const float normalizeTemp(int16_t val)
+    inline float normalizeTemp(int16_t val)
     {
         // Page 33 @ Register Map Document
         return static_cast<float>(val) / 512.0f + 21.0f;
