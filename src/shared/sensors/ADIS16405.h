@@ -126,7 +126,7 @@ public:
         memcpy(&raw_data, &(r[2]),
                sizeof(raw_data));  // coping from 2nd, the first 2 are address
 
-        adisdata_t* data;
+        adisdata_t* data = NULL;
         bufferToBurstData(raw_data + 2, data);  // first 2 bytes are padding
 
         mLastGyro.setX(data->xgyro_out);  // TODO: do I have to normalize?????
