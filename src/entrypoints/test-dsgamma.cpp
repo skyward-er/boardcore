@@ -1,8 +1,5 @@
-
-
 #include <stdio.h>
 #include <string.h>
-#include "debug.h"
 #include "miosix.h"
 
 using namespace std;
@@ -41,14 +38,14 @@ int main()
 
     Gamma868 gamma("/dev/radio");  // create gamma object
 
-    printf("Press the button to start receiving \n");
+    //printf("Press the button to start receiving \n");
     // Wait for button
     Thread::sleep(1000);
-    while (1)
-    {
-        if (button::value() == 1)
-            break;
-    }
+    // while (1)
+    // {
+    //     if (button::value() == 1)
+    //         break;
+    // }
     printf("Receiving...\n");
 
     //  uint8_t inputBuf[DATA_LEN];
@@ -76,7 +73,7 @@ int main()
 
                     if (c == 255)
                     {
-                        TRACE("Starting!\n");
+                        TRACE("Starting!\n", 0);
                         start_t = miosix::getTick();
                         // printf("%c", c);
                         //  inputBuf[index] = c;
@@ -94,7 +91,7 @@ int main()
 
                     if (c == 255)
                     {
-                        TRACE("Starting!\n");
+                        TRACE("Starting!\n", 0);
 
                         // printf("%c", c);
                         // inputBuf[index] = c;
@@ -128,7 +125,7 @@ int main()
 
                     if (c == 255 && pkt_count >= 252)
                     {
-                        TRACE("Ending\n");
+                        TRACE("Ending\n", 0);
 
                         state = ST_SEND_DATA;
                     }
