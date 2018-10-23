@@ -46,6 +46,7 @@ public:
 
     void addToMessageList(unsigned char *message, uint8_t size);
     uint16_t getFilterId() const { return filter_id; }
+    bool haveMessage();
 
     CanSocket &operator=(const CanSocket &) = delete;
     ~CanSocket();

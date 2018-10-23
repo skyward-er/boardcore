@@ -28,8 +28,6 @@ EventBroker::EventBroker() : ActiveObject()  // TODO: Specify stack size
 
 void EventBroker::post(const Event& ev, uint8_t topic)
 {
-    Lock<Mutex> lock(mtx_subscribers);
-
 #ifdef DEBUG
 #include <stdio.h>
     printf("[EventBroker] Event: %d, Topic: %d\n", ev.sig, topic);
@@ -115,7 +113,7 @@ void EventBroker::run()
         }
 
         // How long to sleep in this cycle
-        unsigned int sleep_ms = EVENT_BROKER_MAX_SLEEP;
+        unsigned int sleep_ms = EVENT_BROKER_MIN_DELAY;
 
         if (delayed_events.size() > 0)
         {

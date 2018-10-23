@@ -1,5 +1,5 @@
-/* Copyright (c) 2015-2017 Skyward Experimental Rocketry
- * Authors: Luca Erbetta <luca.erbetta@skywarder.eu>
+/* Copyright (c) 2015-2018 Skyward Experimental Rocketry
+ * Authors: Luca Erbetta
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -19,18 +19,22 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
+#ifndef SRC_SHARED_DEBUG_H
+#define SRC_SHARED_DEBUG_H
 
-#include <Common.h>
+// clang-format off
+#ifdef DEBUG
 
-using namespace miosix;
+#define D(x) x
+#include <cstdio>
+#define TRACE(...) printf(__VA_ARGS__)
 
-int main()
-{
-    while (true)
-    {
-        printf("Serial is working!\n");
-        Thread::sleep(1000);
-    }
+#else
 
-    return 0;
-}
+#define D(x)
+#define TRACE(...) (void)0
+
+#endif
+
+// clang-format on
+#endif /* SRC_SHARED_DEBUG_H */

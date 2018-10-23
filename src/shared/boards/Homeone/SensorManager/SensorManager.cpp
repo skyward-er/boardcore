@@ -22,8 +22,6 @@
 
 #include "SensorManager.h"
 
-#include <libs/mavlink_skyward_lib/mavlink_lib/skyward/mavlink.h>
-
 #include "TestSensor.h"
 #include "boards/Homeone/Events.h"
 #include "boards/Homeone/TMTCManager/TMTCManager.h"
@@ -32,7 +30,9 @@
 #include "drivers/adc/AD7994.h"
 #include "sensors/ADIS16405.h"
 #include "sensors/MAX21105.h"
-#include "sensors/MPU9250.h"
+
+#include "sensors/MPU9250/MPU9250.h"
+#include "sensors/MPU9250/MPU9250Data.h"
 
 using miosix::Lock;
 using miosix::FastMutex;
@@ -42,7 +42,8 @@ namespace HomeoneBoard
 namespace Sensors
 {
 
-SensorManager::SensorManager() : EventHandler(), log(Logger::instance())
+SensorManager::SensorManager()
+    : EventHandler(), logger(*LoggerProxy::getInstance())
 {
     sEventBroker->subscribe(this, TOPIC_CONFIGURATION);
 
@@ -64,8 +65,8 @@ void SensorManager::initSensors()
         new MPU9250Type(0, 0);  // TODO: Update with correct parameters
     imu_mpu9250->init();
 
-    imu_adis16405 = new ADIS16405Type();
-    imu_adis16405->init();
+    // imu_adis16405 = new ADIS16405Type();
+    // imu_adis16405->init();
 }
 
 void SensorManager::initSamplers()
@@ -75,7 +76,7 @@ void SensorManager::initSamplers()
 
     sampler_500hz_dma.AddSensor(imu_max21105);
     sampler_500hz_dma.AddSensor(imu_mpu9250);
-    sampler_500hz_dma.AddSensor(imu_adis16405);
+    // sampler_500hz_dma.AddSensor(imu_adis16405);
 }
 
 void SensorManager::handleEvent(const Event& ev)
@@ -91,13 +92,6 @@ void SensorManager::handleEvent(const Event& ev)
         default:
             printf("Unrecognized event\n");
     }
-}
-
-SensorData SensorManager::getSensorData()
-{
-    SensorData data;
-    data.testSensorData = *(sensor_test->testDataPtr());
-    return data;
 }
 
 void SensorManager::startSampling()
@@ -126,15 +120,6 @@ void SensorManager::startSampling()
                   dma_500hz_callback);
 
     sEventScheduler->add(dma_500Hz_sampler, 2, "dma_500hz");
-
-    // Finally add TMTC send tasks
-    std::function<void()> tmtc_low_rate =
-        std::bind(&SensorManager::lowRateTMTC, this);
-    sEventScheduler->add(tmtc_low_rate, 1000, "tmtc_lr");
-
-    std::function<void()> tmtc_high_rate =
-        std::bind(&SensorManager::lowRateTMTC, this);
-    sEventScheduler->add(tmtc_high_rate, 100, "tmtc_hr");
 }
 
 void SensorManager::onSimple20HZCallback()
@@ -148,48 +133,19 @@ void SensorManager::onSimple20HZCallback()
 
 void SensorManager::onDMA500HZCallback()
 {
-    log.log(*(imu_max21105->gyroDataPtr()));
-    log.log(*(imu_max21105->accelDataPtr()));
-    log.log(*(imu_max21105->tempDataPtr()));
+    /*MAX21105Data max21105_data{*(imu_max21105->accelDataPtr()),
+                               *(imu_max21105->gyroDataPtr()),
+                               *(imu_max21105->tempDataPtr())};*/
 
-    log.log(*(imu_mpu9250->gyroDataPtr()));
-    log.log(*(imu_mpu9250->accelDataPtr()));
-    log.log(*(imu_mpu9250->tempDataPtr()));
+    MPU9250Data mpu9255_data{
+        *(imu_mpu9250->accelDataPtr()), *(imu_mpu9250->gyroDataPtr()),
+        *(imu_mpu9250->compassDataPtr()), *(imu_mpu9250->tempDataPtr())};
 
-    log.log(*(imu_adis16405->gyroDataPtr()));
-    log.log(*(imu_adis16405->accelDataPtr()));
-    log.log(*(imu_adis16405->tempDataPtr()));
-}
+    logger.log(mpu9255_data);
 
-void SensorManager::lowRateTMTC()
-{
-    mavlink_message_t low_rate_samples_msg;
-
-    Vec3 gyro         = *(imu_adis16405->gyroDataPtr());
-    Vec3 accel        = *(imu_adis16405->accelDataPtr());
-    uint16_t pressure = 0;  // Use actual data
-
-    mavlink_msg_sample_data_tm_pack(1, 1, &low_rate_samples_msg, pressure,
-                                    accel.getX(), accel.getY(), accel.getZ(),
-                                    gyro.getX(), gyro.getY(), gyro.getZ());
-
-    int msg_len =
-        mavlink_msg_to_send_buffer(tmtc_buffer, &low_rate_samples_msg);
-
-    sTMTCManager->enqueueMsg(tmtc_buffer, msg_len);
-}
-
-void SensorManager::highRateTMTC()
-{
-    mavlink_message_t high_rate_samples_msg;
-
-    uint16_t pressure = 0;  // Use actual data
-
-    mavlink_msg_hr_sample_data_tm_pack(1, 1, &high_rate_samples_msg, pressure);
-    int msg_len =
-        mavlink_msg_to_send_buffer(tmtc_buffer, &high_rate_samples_msg);
-
-    sTMTCManager->enqueueMsg(tmtc_buffer, msg_len);
+    /*  log.log(*(imu_adis16405->gyroDataPtr()));
+      log.log(*(imu_adis16405->accelDataPtr()));
+      log.log(*(imu_adis16405->tempDataPtr()));*/
 }
 }
 }

@@ -21,3 +21,9 @@ STM32F429zi_Discovery.xml
 build
 *.sublime-workspace
 *.sublime-project
+
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json

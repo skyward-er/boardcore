@@ -1,5 +1,5 @@
-/* Copyright (c) 2015-2017 Skyward Experimental Rocketry
- * Authors: Luca Erbetta <luca.erbetta@skywarder.eu>
+/* Copyright (c) 2015-2018 Skyward Experimental Rocketry
+ * Authors: Matteo Michele Piazzolla
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -20,17 +20,24 @@
  * THE SOFTWARE.
  */
 
-#include <Common.h>
+#ifndef CANPUBLISHER_H
+#define CANPUBLISHER_H
 
-using namespace miosix;
+class CanPublisher{
 
-int main()
-{
-    while (true)
-    {
-        printf("Serial is working!\n");
-        Thread::sleep(1000);
+    private:
+    uint16_t topic;
+    CanBus* bus;
+
+    public:
+    CanPublisher(){}
+    CanPublisher(uint16_t topic, CanBus* bus) : topic(topic), bus(bus){}
+
+    void publish(const uint8_t* msg, size_t size){
+        size = size <= 8 ? size : 8;
+        bus->send(this->topic, msg, size);
     }
 
-    return 0;
-}
+};
+
+#endif //CANPUBLISHER_H
