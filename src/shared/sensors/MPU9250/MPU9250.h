@@ -25,7 +25,7 @@
 #ifndef MAX9250_H
 #define MAX9250_H
 #include <drivers/BusTemplate.h>
-#include "Sensor.h"
+#include "../Sensor.h"
 
 // TODO: fix normalizeTemp() (is /512.0f correct?)
 // TODO: Self-Test
@@ -112,6 +112,7 @@ public:
     {
         uint8_t whoami = Bus::read(REG_WHO_AM_I);
 
+        printf("WHOAMI: %d\n", whoami);
         if (whoami != who_am_i_value)
         {
             last_error = ERR_NOT_ME;
@@ -254,25 +255,25 @@ private:
     uint8_t accelFS;
     uint8_t magnetoFSMState;
 
-    inline const float normalizeAccel(int16_t val)
+    inline float normalizeAccel(int16_t val)
     {
         return static_cast<float>(val) / 32768.0f * accelFSMAP[accelFS] *
                EARTH_GRAVITY;
     }
 
-    inline const float normalizeGyro(int16_t val)
+    inline float normalizeGyro(int16_t val)
     {
         return static_cast<float>(val) / 32768.0f * gyroFSMAP[gyroFS] *
                DEGREES_TO_RADIANS;
     }
 
-    inline const float normalizeMagneto(int16_t val)
+    inline float normalizeMagneto(int16_t val)
     {
         // Page 50 @ Register Map document
         return static_cast<float>(val) / 32760.0f * 4912.0f;
     }
 
-    inline const float normalizeTemp(int16_t val)
+    inline float normalizeTemp(int16_t val)
     {
         // Page 33 @ Register Map Document
         return static_cast<float>(val) / 512.0f + 21.0f;
@@ -406,7 +407,7 @@ private:
                   sizeof(out.buf));
 
         // BigEndian -> CPUArch (LittleEndian as usual)
-        for (size_t i = 0; i < (sizeof(out.buf) / sizeof(out.buf[0])); i++)
+        for (size_t i  = 0; i < (sizeof(out.buf) / sizeof(out.buf[0])); i++)
             out.buf[i] = fromBigEndian16(out.buf[i]);
     }
 };

@@ -51,6 +51,16 @@ void CanSocket::open(CanBus *bus)
     this->bus = bus;
 }
 
+
+
+bool CanSocket::haveMessage(){
+    pthread_mutex_lock(&mutex);
+    bool res = (receivedMessageQueue.empty() == false);
+    pthread_mutex_unlock(&mutex);
+    return res;
+}
+
+
 /**
     prende dalla coda un messaggio ricevuto
     \param message dove copiare il messaggio
