@@ -1,4 +1,4 @@
-/* Copyright (c) 2015-2018 Skyward Experimental Rocketry
+/* Copyright (c) 2018 Skyward Experimental Rocketry
  * Authors: Luca Erbetta
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -22,12 +22,20 @@
 #ifndef SRC_SHARED_BOARDS_HOMEONE_SENSORMANAGER_SENSORMANAGER_H
 #define SRC_SHARED_BOARDS_HOMEONE_SENSORMANAGER_SENSORMANAGER_H
 
+#include <vector>
+
 #include "Singleton.h"
+#include "events/Scheduler.h"
 
 #include "SensorManagerConfig.h"
 #include "events/FSM.h"
 #include "logger/LogProxy.h"
 #include "sensors/SensorSampling.h"
+
+#include "SensorManagerData.h"
+
+using miosix::PauseKernelLock;
+using std::vector;
 
 // Forward declarations
 class TestSensor;
@@ -65,11 +73,23 @@ namespace Sensors
  * After a SensorSampler has finished sampling its sensors, it will call a
  * callback, where these samples can be processed and dispatched.
  */
-class SensorManager : public EventHandler, public Singleton<SensorManager>
+class SensorManager : public FSM<SensorManager>, public Singleton<SensorManager>
 {
     friend class Singleton<SensorManager>;
 
 public:
+    vector<TaskStatResult> getSchedulerStats()
+    {
+        PauseKernelLock l;  // Prevent any context-switch.
+        return scheduler_stats;
+    }
+
+    SensorManagerStatus getStatus()
+    {
+        PauseKernelLock l;  // Prevent any context-switch.
+        return status;
+    }
+
 private:
     SensorManager();
     ~SensorManager(){};
@@ -85,10 +105,16 @@ private:
     void initSamplers();
 
     /**
-    * Handle received events.
-    * @param ev Event to handle.
-    */
-    void handleEvent(const Event& ev);
+     * @brief Sensor manager state machine entry state
+     *
+     */
+    void stateIdle(const Event& ev);
+
+    /**
+     * @brief Sensor manager state machine sampling state
+     *
+     */
+    void stateSampling(const Event& ev);
 
     /**
      * Adds all the SensorSamplers to the scheduler and begins sampling.
@@ -99,16 +125,16 @@ private:
      * Callbacks. These functions are called each time the corresponding
      * SensorSampler has acquired new samples.
      * These functions are called on the scheduler (sampler) thread, so avoid
-     * performing non-critical, intensive tasks.
+     * performing non-critical and intensive tasks.
      */
 
     /**
-     * Simple, 20 Hz SensorSampler Callback.
+     * @brief Simple, 20 Hz SensorSampler Callback.
      */
     void onSimple20HZCallback();
 
     /**
-     * DMA, 500 Hz SensorSampler Callback.
+     * @brief DMA, 500 Hz SensorSampler Callback.
      */
     void onDMA500HZCallback();
 
@@ -117,21 +143,20 @@ private:
     DMASensorSampler sampler_500hz_dma;
 
     // Sensors
-
     TestSensor* sensor_test;  // TODO: Remove test sensor
-
     AD7994Type* adc_ad7994;
     MAX21105Type* imu_max21105;
     MPU9250Type* imu_mpu9250;
     // ADIS16405Type* imu_adis16405;
 
+    // Stats & status
+    vector<TaskStatResult> scheduler_stats;
+    SensorManagerStatus status;
+
     // Logger ref
     LoggerProxy& logger;
-
-    // Tmtc message buffer
-    uint8_t tmtc_buffer[2041];  // TODO: Use appropriate size
 };
-}
-}
+}  // namespace Sensors
+}  // namespace HomeoneBoard
 
 #endif /* SRC_SHARED_BOARDS_HOMEONE_SENSORMANAGER_SENSORMANAGER_H */
