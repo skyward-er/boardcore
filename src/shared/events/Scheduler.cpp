@@ -61,7 +61,9 @@ vector<TaskStatResult> EventScheduler::getTaskStats()
         if (it.once)
             continue;
         result.push_back({
-            it.name, it.activationStats.getStats(), it.periodStats.getStats(),
+            it.name,
+            it.activationStats.getStats(),
+            it.periodStats.getStats(),
             it.workloadStats.getStats(),
         });
     }

@@ -1,4 +1,4 @@
-/* Copyright (c) 2015-2018 Skyward Experimental Rocketry
+/* Copyright (c) 2018 Skyward Experimental Rocketry
  * Authors: Luca Erbetta
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -334,5 +334,5 @@ void FlightModeManager::state_landed(const Event& e)
             break;
     }
 }
-}
-}
+}  // namespace FMM
+}  // namespace HomeoneBoard
