@@ -27,6 +27,8 @@
 #include <boards/Homeone/FlightModeManager/FMM_Config.h>
 #include <boards/Homeone/Topics.h>
 
+#include "debug.h"
+
 namespace HomeoneBoard
 {
 namespace FMM
@@ -34,305 +36,237 @@ namespace FMM
 
 FlightModeManager::FlightModeManager() : FSM(&FlightModeManager::state_disarmed)
 {
-    sEventBroker->subscribe(this, TOPIC_COMMANDS);
-    sEventBroker->subscribe(this, TOPIC_FLIGHT_EVENTS);
+    // sEventBroker->subscribe(this, TOPIC_COMMANDS);
+    // sEventBroker->subscribe(this, TOPIC_FLIGHT_EVENTS);
 }
 
-void FlightModeManager::state_disarmed(const Event& e)
+void FlightModeManager::stateInit(const Event& ev)
 {
-    switch (e.sig)
+    switch (ev.sig)
     {
         case EV_ENTRY:
-            printf("Disarmed state entry\n");
+            TRACE("FMM: Entering stateInit\n");
+            status.state = FMMState::INIT;
+            logger.log(status);
             break;
         case EV_EXIT:
-            printf("Disarmed state exit\n");
+            TRACE("FMM: Exiting stateInit\n");
             break;
 
-        // Transition to armed
-        case EV_TC_ARM:
-            printf("EV_ARM\n");
-            transition(&FlightModeManager::state_armed);
-            break;
-
-        // Transition to testing
-        case EV_TC_TEST_MODE:
-            printf("EV_TC_TEST_MODE\n");
-            transition(&FlightModeManager::state_testing);
-
-            // Send test mode enabled event
-            sEventBroker->post(Event{EV_TEST_MODE}, TOPIC_CONFIGURATION);
-            break;
-
-        // Transition to aborted
-        case EV_ABORT_LAUNCH:
-            printf("EV_ABORT_LAUNCH\n");
-            transition(&FlightModeManager::state_aborted);
-
-            // TODO: Do additional abort operations?
-            break;
-
-        case EV_TC_START_SAMPLING:
-            sEventBroker->post(Event{EV_START_SAMPLING}, TOPIC_CONFIGURATION);
-            break;
-
-        case EV_TC_STOP_SAMPLING:
-            sEventBroker->post(Event{EV_STOP_SAMPLING}, TOPIC_CONFIGURATION);
-            break;
-
-        case EV_TC_ALTIMETER_CALIBRATION:
-        {
-            // Copy the event and change its id
-            Event ev_calib = e;
-            ev_calib.sig   = EV_ALTIMETER_CALIBRATION;
-
-            // Post it on the CONFIGURATION topic
-            sEventBroker->post(ev_calib, TOPIC_CONFIGURATION);
-            break;
-        }
         default:
-            printf("Unknown event received.\n");
+            TRACE("stateInit: Event %d not handled.\n", ev.sig);
             break;
     }
 }
 
-void FlightModeManager::state_armed(const Event& e)
+void FlightModeManager::stateTesting(const Event& ev)
 {
-    switch (e.sig)
+    switch (ev.sig)
     {
         case EV_ENTRY:
-            // TODO: Should we start sampling here? in case we forget to send
-            // the command
-
-            printf("Armed state entry\n");
+            TRACE("FMM: Entering stateTesting\n");
+            status.state = FMMState::TESTING;
+            logger.log(status);
             break;
         case EV_EXIT:
-            printf("Armed state exit\n");
-            break;
-
-        // Transition to disarmed
-        case EV_TC_DISARM:
-            printf("EV_DISARM\n");
-            transition(&FlightModeManager::state_disarmed);
-            break;
-
-        // Transition to ascending
-        case EV_UMBILICAL_DISCONNECTED:
-            printf("EV_UNBILICAL_DETATCHED\n");
-            transition(&FlightModeManager::state_ascending);
-            break;
-
-        // Transition to aborted
-        case EV_ABORT_LAUNCH:
-            printf("EV_ABORT_LAUNCH\n");
-            transition(&FlightModeManager::state_aborted);
+            TRACE("FMM: Exiting stateTesting\n");
             break;
 
         default:
-            printf("Unknown event received.\n");
+            TRACE("stateTesting: Event %d not handled.\n", ev.sig);
             break;
     }
 }
 
-void FlightModeManager::state_testing(const Event& e)
+void FlightModeManager::stateError(const Event& ev)
 {
-    switch (e.sig)
+    switch (ev.sig)
     {
         case EV_ENTRY:
-            printf("Testing state entry\n");
+            TRACE("FMM: Entering stateError\n");
+            status.state = FMMState::ERROR;
+            logger.log(status);
             break;
         case EV_EXIT:
-            printf("Testing state exit\n");
-            break;
-
-        // Reset the board
-        case EV_TC_RESET_BOARD:
-            printf("EV_RESET_BOARD\n");
-            sEventBroker->post(Event{EV_RESET_BOARD}, TOPIC_CONFIGURATION);
-            break;
-
-        case EV_TC_NOSECONE_OPEN:
-            sEventBroker->post(Event{EV_NOSECONE_OPEN}, TOPIC_CONFIGURATION);
-            break;
-
-        case EV_TC_NOSECONE_CLOSE:
-            sEventBroker->post(Event{EV_NOSECONE_CLOSE}, TOPIC_CONFIGURATION);
+            TRACE("FMM: Exiting stateError\n");
             break;
 
         default:
-            printf("Unknown event received.\n");
+            TRACE("stateError: Event %d not handled.\n", ev.sig);
             break;
     }
 }
 
-void FlightModeManager::state_aborted(const Event& e)
+void FlightModeManager::stateAborted(const Event& ev)
 {
-    switch (e.sig)
+    switch (ev.sig)
     {
         case EV_ENTRY:
-            printf("Aborted state entry\n");
+            TRACE("FMM: Entering stateAborted\n");
+            status.state = FMMState::ABORTED;
+            logger.log(status);
             break;
         case EV_EXIT:
-            printf("ERROR: Aborted state exit\n");
+            TRACE("FMM: Exiting stateAborted\n");
             break;
 
         default:
-            printf("Unknown event received.\n");
+            TRACE("stateAborted: Event %d not handled.\n", ev.sig);
             break;
     }
 }
 
-void FlightModeManager::state_ascending(const Event& e)
+void FlightModeManager::stateDisarmed(const Event& ev)
 {
-    switch (e.sig)
+    switch (ev.sig)
     {
         case EV_ENTRY:
-            printf("Ascending state entry\n");
-            // State timeout
-            delayed_event_id = sEventBroker->postDelayed(
-                Event{EV_ASCENT_TIMEOUT}, TOPIC_FLIGHT_EVENTS,
-                ASCENDING_TIMEOUT_MS);
-
-            // ADA passive mode
-            sEventBroker->post(Event{EV_ADA_SHADOW_MODE}, TOPIC_FLIGHT_EVENTS);
+            TRACE("FMM: Entering stateDisarmed\n");
+            status.state = FMMState::DISARMED;
+            logger.log(status);
             break;
         case EV_EXIT:
-            printf("Ascending state exit\n");
-
-            // Always remove delayed events to avoid errors.
-            sEventBroker->removeDelayed(delayed_event_id);
-
+            TRACE("FMM: Exiting stateDisarmed\n");
             break;
 
-        // Transition to apogeeDetection
-        case EV_ASCENT_TIMEOUT:
-            printf("EV_FMM_ASCENT_TIMEOUT\n");
-            transition(&FlightModeManager::state_apogeeDetection);
-            break;
         default:
-            printf("Unknown event received.\n");
+            TRACE("stateDisarmed: Event %d not handled.\n", ev.sig);
             break;
     }
 }
 
-void FlightModeManager::state_apogeeDetection(const Event& e)
+void FlightModeManager::stateArmed(const Event& ev)
 {
-    switch (e.sig)
+    switch (ev.sig)
     {
         case EV_ENTRY:
-            printf("Apogee state entry\n");
-            // State timeout
-            delayed_event_id = sEventBroker->postDelayed(
-                Event{EV_APOGEE_TIMEOUT}, TOPIC_FLIGHT_EVENTS,
-                APOGEE_DETECTION_TIMEOUT_MS);
-
-            // ADA active mode
-            sEventBroker->post(Event{EV_ADA_ACTIVE_MODE}, TOPIC_FLIGHT_EVENTS);
+            TRACE("FMM: Entering stateArmed\n");
+            status.state = FMMState::ARMED;
+            logger.log(status);
             break;
         case EV_EXIT:
-            printf("Apogee state exit\n");
-
-            // Stop the ADA
-            sEventBroker->post(Event{EV_ADA_STOP}, TOPIC_FLIGHT_EVENTS);
-
-            sEventBroker->removeDelayed(delayed_event_id);
+            TRACE("FMM: Exiting stateArmed\n");
             break;
 
-        case EV_APOGEE_TIMEOUT:
-            printf("EV_APOGEE_TIMEOUT\n");
-
-            // Post apogee detected event
-            sEventBroker->post(Event{EV_APOGEE_DETECTED}, TOPIC_FLIGHT_EVENTS);
-            break;
-
-        // Transition to descendingPhase_1
-        case EV_APOGEE_DETECTED:
-            printf("EV_APOGEE_DETECTED\n");
-            transition(&FlightModeManager::state_descendingPhase_1);
-            break;
         default:
-            printf("Unknown event received.\n");
+            TRACE("stateArmed: Event %d not handled.\n", ev.sig);
             break;
     }
 }
 
-void FlightModeManager::state_descendingPhase_1(const Event& e)
+void FlightModeManager::stateLaunching(const Event& ev)
 {
-    switch (e.sig)
+    switch (ev.sig)
     {
         case EV_ENTRY:
-            printf("Descending_1 state entry\n");
-            // State timeout
-            delayed_event_id = sEventBroker->postDelayed(
-                Event{EV_DESCENT_TIMEOUT}, TOPIC_FLIGHT_EVENTS,
-                MAIN_PARACHUTE_DEPLOY_TIMEOUT_MS);
-
-            // TODO: Start altitude detection
+            TRACE("FMM: Entering stateLaunching\n");
+            status.state = FMMState::LAUNCHING;
+            logger.log(status);
             break;
         case EV_EXIT:
-            printf("Descending_1 state exit\n");
-            // TODO: Stop altitude detection
-
-            sEventBroker->removeDelayed(delayed_event_id);
-            break;
-
-        case EV_DESCENT_TIMEOUT:
-            // Post main chute altitude detected event
-            sEventBroker->post(Event{EV_MAIN_CHUTE_ALTITUDE},
-                               TOPIC_FLIGHT_EVENTS);
-            break;
-
-        // Transition to descendingPhase_2
-        case EV_MAIN_CHUTE_ALTITUDE:
-            printf("EV_FMM_MAIN_PARACHUTE_DEPLOY\n");
-            transition(&FlightModeManager::state_descendingPhase_2);
+            TRACE("FMM: Exiting stateLaunching\n");
             break;
 
         default:
-            printf("Unknown event received.\n");
+            TRACE("stateLaunching: Event %d not handled.\n", ev.sig);
             break;
     }
 }
 
-void FlightModeManager::state_descendingPhase_2(const Event& e)
+void FlightModeManager::stateAscending(const Event& ev)
 {
-    switch (e.sig)
+    switch (ev.sig)
     {
         case EV_ENTRY:
-            printf("Descending_2 state entry\n");
+            TRACE("FMM: Entering stateAscending\n");
+            status.state = FMMState::ASCENDING;
+            logger.log(status);
             break;
         case EV_EXIT:
-            printf("Descending_2 state exit\n");
-            break;
-
-        // Transition to landed
-        case EV_TC_STOP_SAMPLING:
-            sEventBroker->post(Event{EV_STOP_SAMPLING}, TOPIC_CONFIGURATION);
-
-            transition(&FlightModeManager::state_landed);
+            TRACE("FMM: Exiting stateAscending\n");
             break;
 
         default:
-            printf("Unknown event received.\n");
+            TRACE("stateAscending: Event %d not handled.\n", ev.sig);
             break;
     }
 }
 
-void FlightModeManager::state_landed(const Event& e)
+void FlightModeManager::stateFirstDescentPhase(const Event& ev)
 {
-    switch (e.sig)
+    switch (ev.sig)
     {
         case EV_ENTRY:
-            printf("Landed state entry\n");
+            TRACE("FMM: Entering stateFirstDescentPhase\n");
+            status.state = FMMState::FIRST_DESCENT_PHASE;
+            logger.log(status);
             break;
         case EV_EXIT:
-            printf("ERROR: Landed state exit\n");
+            TRACE("FMM: Exiting stateFirstDescentPhase\n");
             break;
 
         default:
-            printf("Unknown event received.\n");
+            TRACE("stateFirstDescentPhase: Event %d not handled.\n", ev.sig);
             break;
     }
 }
+
+void FlightModeManager::stateSecondDescentPhase(const Event& ev)
+{
+    switch (ev.sig)
+    {
+        case EV_ENTRY:
+            TRACE("FMM: Entering stateSecondDescentPhase\n");
+            status.state = FMMState::SECOND_DESCENT_PHASE;
+            logger.log(status);
+            break;
+        case EV_EXIT:
+            TRACE("FMM: Exiting stateSecondDescentPhase\n");
+            break;
+
+        default:
+            TRACE("stateSecondDescentPhase: Event %d not handled.\n", ev.sig);
+            break;
+    }
+}
+
+void FlightModeManager::stateManualDescent(const Event& ev)
+{
+    switch (ev.sig)
+    {
+        case EV_ENTRY:
+            TRACE("FMM: Entering stateManualDescent\n");
+            status.state = FMMState::MANUAL_DESCENT;
+            logger.log(status);
+            break;
+        case EV_EXIT:
+            TRACE("FMM: Exiting stateManualDescent\n");
+            break;
+
+        default:
+            TRACE("stateManualDescent: Event %d not handled.\n", ev.sig);
+            break;
+    }
+}
+
+void FlightModeManager::stateLanded(const Event& ev)
+{
+    switch (ev.sig)
+    {
+        case EV_ENTRY:
+            TRACE("FMM: Entering stateLanded\n");
+            status.state = FMMState::LANDED;
+            logger.log(status);
+            break;
+        case EV_EXIT:
+            TRACE("FMM: Exiting stateLanded\n");
+            break;
+
+        default:
+            TRACE("stateLanded: Event %d not handled.\n", ev.sig);
+            break;
+    }
+}
+
 }  // namespace FMM
 }  // namespace HomeoneBoard
