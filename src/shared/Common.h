@@ -42,11 +42,6 @@
 
 #include "Constants.h"
 
-/* Debug trace */
-#ifdef DEBUG
-#define TRACE(x, ...) printf(x, ##__VA_ARGS__)
-#else
-#define TRACE(x, ...) 
-#endif /* DEBUG */
+#include "Debug.h"
 
 #endif

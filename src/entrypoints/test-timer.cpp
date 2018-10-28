@@ -32,7 +32,7 @@ int main()
     HardwareTimer<uint32_t, 2> timer2 = HardwareTimer<uint32_t, 2>::instance();
     HardwareTimer<uint16_t, 10> timer1 =
         HardwareTimer<uint16_t, 10>::instance();
-
+/*
     timer1.setPrescaler(9999);
     timer1.start();
     timer2.start();
@@ -56,4 +56,6 @@ int main()
                timer2.toMilliSeconds(t2), timer2.toMicroSeconds(t2));
         i++;
     }
+    */
+    return 0;
 }

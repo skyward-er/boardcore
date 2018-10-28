@@ -27,14 +27,14 @@
 #include <boards/Homeone/FlightModeManager/FMM_Config.h>
 #include <boards/Homeone/Topics.h>
 
-#include "debug.h"
+#include "Debug.h"
 
 namespace HomeoneBoard
 {
 namespace FMM
 {
 
-FlightModeManager::FlightModeManager() : FSM(&FlightModeManager::state_disarmed)
+FlightModeManager::FlightModeManager() : FSM(&FlightModeManager::stateDisarmed)
 {
     // sEventBroker->subscribe(this, TOPIC_COMMANDS);
     // sEventBroker->subscribe(this, TOPIC_FLIGHT_EVENTS);
