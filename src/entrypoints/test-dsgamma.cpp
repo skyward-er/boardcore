@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <string.h>
+#include "Common.h"
 #include "miosix.h"
 
 using namespace std;
@@ -8,14 +9,14 @@ using miosix::FastInterruptDisableLock;
 using miosix::Gpio;
 
 #include <drivers/gamma868/Gamma868.h>
-#include "drivers/timer.h"
+#include "drivers/HardwareTimer.h"
 
 // Protocol config
 //#define DATA_LEN 16384
 
 /* DISCOVERY F429I*/
 typedef Gpio<GPIOA_BASE, 0> button;
-typedef Timer<uint32_t, 4> Clock;
+typedef HardwareTimer<uint32_t, 4> Clock;
 // RTT calculation
 // long long sendTime = 0;
 enum State

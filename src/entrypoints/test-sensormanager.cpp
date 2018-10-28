@@ -1,4 +1,4 @@
-/* Copyright (c) 2015-2018 Skyward Experimental Rocketry
+/* Copyright (c) 2018 Skyward Experimental Rocketry
  * Authors: Luca Erbetta
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -27,23 +27,45 @@
 
 using namespace miosix;
 using namespace HomeoneBoard;
+
 using Sensors::SensorManager;
 
 int main()
 {
+    TRACE("DEBUG\n");
     // Start active objects
     sEventBroker->start();
     sEventScheduler->start();
-    Singleton<SensorManager>::getInstance()->start();
 
-    Event ev{EV_START_SAMPLING};
+    SensorManager& mgr = *SensorManager::getInstance();
+    mgr.start();
+    printf("Current State: %d\n", mgr.getStatus().state);
+    printf("Problematic sensors: %d\n\n", mgr.getStatus().problematic_sensors);
 
-    printf("Waiting...\n");
-    Thread::sleep(5000);
+    Thread::sleep(2000);
+    sEventBroker->post({EV_TC_START_SAMPLING}, TOPIC_CONFIGURATION);
+    Thread::sleep(500);
+    printf("Current State: %d\n\n", mgr.getStatus().state);
 
-    sEventBroker->post(ev, TOPIC_CONFIGURATION);
+    Thread::sleep(3000);
+
     for (;;)
     {
-        Thread::sleep(100);
+        printf("**STATS**\n");
+        std::vector<TaskStatResult> stats = mgr.getSchedulerStats();
+        for (TaskStatResult stat : stats)
+        {
+            printf("%s\n", stat.name.c_str());
+            printf("Activation:\tmax:%.2f,\tmin:%.2f,\tmean:%.2f\n",
+                   stat.activationStats.maxValue, stat.activationStats.minValue,
+                   stat.activationStats.mean);
+            printf("Period:   \tmax:%.2f,\tmin:%.2f,\tmean:%.2f\n",
+                   stat.periodStats.maxValue, stat.periodStats.minValue,
+                   stat.periodStats.mean);
+            printf("Workload:\tmax:%.2f,\tmin:%.2f,\tmean:%.2f\n\n",
+                   stat.workloadStats.maxValue, stat.workloadStats.minValue,
+                   stat.workloadStats.mean);
+        }
+        Thread::sleep(10000);
     }
 }
