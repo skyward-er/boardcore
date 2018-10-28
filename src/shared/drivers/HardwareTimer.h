@@ -27,7 +27,7 @@
 #include <kernel/scheduler/scheduler.h>
 #include <miosix.h>
 #include <cassert>
-#include "debug.h"
+#include "Debug.h"
 
 #if !defined _BOARD_STM32F429ZI_SKYWARD_HOMEONE &&  \
     !defined _BOARD_STM32F429ZI_STM32F4DISCOVERY && \
