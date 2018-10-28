@@ -1,7 +1,7 @@
-/* Finite State Machine
+/* Event Handler
  *
  * Copyright (c) 2015-2018 Skyward Experimental Rocketry
- * Author: Matteo Michele Piazzolla, Alain Carlucci, Luca Erbetta
+ * Author: Luca Erbetta
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -22,45 +22,35 @@
  * THE SOFTWARE.
  */
 
-#ifndef SRC_SHARED_EVENTS_FSM_H
-#define SRC_SHARED_EVENTS_FSM_H
+#ifndef SRC_SHARED_EVENTS_EVENT_HANDLER_H
+#define SRC_SHARED_EVENTS_EVENT_HANDLER_H
 
 #include "ActiveObject.h"
 #include "events/Event.h"
 #include "events/SyncQueue.h"
-#include "events/EventHandler.h"
 
-template <class T>
-class FSM : public EventHandler
+class EventHandler : public ActiveObject
 {
-
 public:
-    FSM(void (T::*initialState)(const Event&)) : EventHandler()
-    {
-        state            = initialState;
-        specialEvent.sig = EV_ENTRY;
-        postEvent(specialEvent);
-    }
+    EventHandler() : ActiveObject() {}
 
-    virtual ~FSM(){};
-    void transition(void (T::*nextState)(const Event&))
-    {
-        specialEvent.sig = EV_EXIT;
-        (static_cast<T*>(this)->*state)(specialEvent);
-        state            = nextState;
-        specialEvent.sig = EV_ENTRY;
-        (static_cast<T*>(this)->*state)(specialEvent);
-    }
+    void postEvent(const Event& e) { eventList.put(e); }
+
+    virtual ~EventHandler(){};
 
 protected:
-    void handleEvent(const Event& e) override
+    virtual void handleEvent(const Event& ev) = 0;
+
+    void run() override
     {
-        (static_cast<T*>(this)->*state)(e);
+        while (true)
+        {
+            Event e = eventList.get();
+            handleEvent(e);
+        }
     }
 
-private:
-    void (T::*state)(const Event&);
-    Event specialEvent;
+    SynchronizedQueue<Event> eventList;
 };
 
-#endif  // SRC_SHARED_EVENTS_FSM_H
+#endif /* SRC_SHARED_EVENTS_EVENT_HANDLER_H */

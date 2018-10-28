@@ -1,4 +1,4 @@
-/* Event scheduler
+/* Event
  *
  * Copyright (c) 2015-2018 Skyward Experimental Rocketry
  * Author: Matteo Michele Piazzolla
@@ -31,6 +31,8 @@ enum EventSignal : uint8_t
 {
     EV_ENTRY        = 0,
     EV_EXIT         = 1,
+    EV_EMPTY        = 2,
+    EV_INIT         = 3,
     EV_FIRST_SIGNAL = 4
 };
 
