@@ -1,10 +1,10 @@
 [submodule "libs/miosix-kernel"]
 	path = libs/miosix-kernel
-	url = https://github.com/skyward-er/miosix-kernel.git
+	url = git@git.skywarder.eu:elc/miosix-kernel.git
 	branch = master
 [submodule "libs/mavlink_skyward_lib"]
 	path = libs/mavlink_skyward_lib
-	url = https://github.com/skyward-er/mavlink_skyward_lib.git
+	url = git@git.skywarder.eu:r2a/mavlink_skyward_lib.git
 [submodule "libs/tscpp"]
 	path = libs/tscpp
 	url = https://github.com/fedetft/tscpp.git
