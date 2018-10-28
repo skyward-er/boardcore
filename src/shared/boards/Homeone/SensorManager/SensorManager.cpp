@@ -33,7 +33,7 @@
 #include "sensors/MPU9250/MPU9250.h"
 #include "sensors/MPU9250/MPU9250Data.h"
 
-#include "debug.h"
+#include "Debug.h"
 
 using miosix::FastMutex;
 using miosix::Lock;
