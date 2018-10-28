@@ -24,8 +24,10 @@
 
 #include "Singleton.h"
 
+#include "FMMStatus.h"
 #include "events/Event.h"
 #include "events/FSM.h"
+#include "logger/LogProxy.h"
 
 namespace HomeoneBoard
 {
@@ -43,30 +45,29 @@ private:
     FlightModeManager();
     ~FlightModeManager() {}
 
-    // States declarations
-
-    void state_testing(const Event& e);
-    void state_aborted(const Event& e);
-    void state_disarmed(const Event& e);
-    void state_armed(const Event& e);
-    void state_ascending(const Event& e);
-    void state_apogeeDetection(const Event& e);
-    void state_descendingPhase_1(const Event& e);
-    void state_descendingPhase_2(const Event& e);
-    void state_landed(const Event& e);
-
-    // Event definitions
-    // Event ev_ascent_timeout{EV_ASCENT_TIMEOUT};
-
-    // Event ev_apogee_detected{EV_APOGEE_DETECTED};
-
-    // Event ev_main_chute_altitude{EV_MAIN_CHUTE_ALTITUDE};
+    // State declarations
+    void stateInit(const Event& ev);
+    void stateTesting(const Event& ev);
+    void stateError(const Event& ev);
+    void stateAborted(const Event& ev);
+    void stateDisarmed(const Event& ev);
+    void stateArmed(const Event& ev);
+    void stateLaunching(const Event& ev);
+    void stateAscending(const Event& ev);
+    void stateFirstDescentPhase(const Event& ev);
+    void stateSecondDescentPhase(const Event& ev);
+    void stateManualDescent(const Event& ev);
+    void stateLanded(const Event& ev);
 
     // State variables
     uint16_t delayed_event_id = 0;
+
+    FMMStatus status;
+
+    LoggerProxy& logger = *(LoggerProxy::getInstance());
 };
-}
-}
+}  // namespace FMM
+}  // namespace HomeoneBoard
 
 #define sFlightModeManager FlightModeManager::getInstance()
 

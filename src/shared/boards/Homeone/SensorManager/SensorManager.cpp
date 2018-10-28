@@ -1,4 +1,4 @@
-/* Copyright (c) 2015-2018 Skyward Experimental Rocketry
+/* Copyright (c) 2018 Skyward Experimental Rocketry
  * Authors: Luca Erbetta
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -25,7 +25,6 @@
 #include "TestSensor.h"
 #include "boards/Homeone/Events.h"
 #include "boards/Homeone/TMTCManager/TMTCManager.h"
-#include "events/Scheduler.h"
 
 #include "drivers/adc/AD7994.h"
 #include "sensors/ADIS16405.h"
@@ -34,8 +33,10 @@
 #include "sensors/MPU9250/MPU9250.h"
 #include "sensors/MPU9250/MPU9250Data.h"
 
-using miosix::Lock;
+#include "Debug.h"
+
 using miosix::FastMutex;
+using miosix::Lock;
 
 namespace HomeoneBoard
 {
@@ -43,7 +44,7 @@ namespace Sensors
 {
 
 SensorManager::SensorManager()
-    : EventHandler(), logger(*LoggerProxy::getInstance())
+    : FSM(&SensorManager::stateIdle), logger(*LoggerProxy::getInstance())
 {
     sEventBroker->subscribe(this, TOPIC_CONFIGURATION);
 
@@ -59,11 +60,17 @@ void SensorManager::initSensors()
 
     imu_max21105 =
         new MAX21105Type(0, 0);  // TODO: Update with correct parameters
-    imu_max21105->init();
+    if (!imu_max21105->init())
+    {
+        status.problematic_sensors |= SENSOR_MAX21105;
+    }
 
     imu_mpu9250 =
         new MPU9250Type(0, 0);  // TODO: Update with correct parameters
-    imu_mpu9250->init();
+    if (!imu_mpu9250->init())
+    {
+        status.problematic_sensors |= SENSOR_MPU9255;
+    }
 
     // imu_adis16405 = new ADIS16405Type();
     // imu_adis16405->init();
@@ -74,23 +81,40 @@ void SensorManager::initSamplers()
     sampler_20hz_simple.AddSensor(sensor_test);
     sampler_20hz_simple.AddSensor(adc_ad7994);
 
-    sampler_500hz_dma.AddSensor(imu_max21105);
+    /*sampler_500hz_dma.AddSensor(imu_max21105);
     sampler_500hz_dma.AddSensor(imu_mpu9250);
-    // sampler_500hz_dma.AddSensor(imu_adis16405);
+    sampler_500hz_dma.AddSensor(imu_adis16405);*/
 }
 
-void SensorManager::handleEvent(const Event& ev)
+void SensorManager::stateIdle(const Event& ev)
 {
     switch (ev.sig)
     {
-        case EV_START_SAMPLING:
-            startSampling();
+        case EV_ENTRY:
             break;
-        case EV_STOP_SAMPLING:
-            // TODO: stop the samplers or just stop logging
+        case EV_EXIT:
+            break;
+        // TODO: Implement init error & self test
+        case EV_TC_START_SAMPLING:
+            transition(&SensorManager::stateSampling);
             break;
         default:
-            printf("Unrecognized event\n");
+            break;
+    }
+}
+
+void SensorManager::stateSampling(const Event& ev)
+{
+    switch (ev.sig)
+    {
+        case EV_ENTRY:
+            startSampling();
+            status.state = SensorManagerState::SAMPLING;
+            break;
+        case EV_EXIT:
+            break;
+        default:
+            break;
     }
 }
 
@@ -104,28 +128,40 @@ void SensorManager::startSampling()
     // Simple 20 Hz Sampler callback and scheduler function
     std::function<void()> simple_20hz_callback =
         std::bind(&SensorManager::onSimple20HZCallback, this);
-
     std::function<void()> simple_20hz_sampler =
         std::bind(&SimpleSensorSampler::UpdateAndCallback, &sampler_20hz_simple,
                   simple_20hz_callback);
 
-    sEventScheduler->add(simple_20hz_sampler, 50, "simple_20hz");
+    sEventScheduler->add(simple_20hz_sampler, 500,
+                         "simple_20hz");  // TODO: back to 50
 
     // DMA 500 Hz Sampler callback and scheduler function
     std::function<void()> dma_500hz_callback =
         std::bind(&SensorManager::onDMA500HZCallback, this);
-
     std::function<void()> dma_500Hz_sampler =
         std::bind(&DMASensorSampler::UpdateAndCallback, &sampler_500hz_dma,
                   dma_500hz_callback);
 
-    sEventScheduler->add(dma_500Hz_sampler, 2, "dma_500hz");
+    sEventScheduler->add(dma_500Hz_sampler, 1000,
+                         "dma_500hz");  // TODO: Back to 4 ms
+
+    // Lambda expression callback to log scheduler stats, at 5 Hz
+    sEventScheduler->add(
+        [&]() {
+            scheduler_stats = sEventScheduler->getTaskStats();
+
+            for (TaskStatResult stat : scheduler_stats)
+                logger.log(stat);
+        },
+        200, "stats");
+
+    TRACE("Scheduler initialization complete\n");
 }
 
 void SensorManager::onSimple20HZCallback()
 {
     // This is just a test
-    printf("%f\n", *(sensor_test->testDataPtr()));
+    printf("SIMPLE: %f\n", *(sensor_test->testDataPtr()));
 
     // TODO: Send samples to logger
     // TODO: Send pressure samples to FMM
@@ -133,19 +169,20 @@ void SensorManager::onSimple20HZCallback()
 
 void SensorManager::onDMA500HZCallback()
 {
+    printf("DMA: %f\n", *(sensor_test->testDataPtr()));
     /*MAX21105Data max21105_data{*(imu_max21105->accelDataPtr()),
-                               *(imu_max21105->gyroDataPtr()),
-                               *(imu_max21105->tempDataPtr())};*/
+     *(imu_max21105->gyroDataPtr()),
+     *(imu_max21105->tempDataPtr())};*/
 
-    MPU9250Data mpu9255_data{
-        *(imu_mpu9250->accelDataPtr()), *(imu_mpu9250->gyroDataPtr()),
-        *(imu_mpu9250->compassDataPtr()), *(imu_mpu9250->tempDataPtr())};
+    /* MPU9250Data mpu9255_data{
+     *(imu_mpu9250->accelDataPtr()), *(imu_mpu9250->gyroDataPtr()),
+     *(imu_mpu9250->compassDataPtr()), *(imu_mpu9250->tempDataPtr())};*/
 
-    logger.log(mpu9255_data);
+    // logger.log(mpu9255_data);
 
     /*  log.log(*(imu_adis16405->gyroDataPtr()));
       log.log(*(imu_adis16405->accelDataPtr()));
       log.log(*(imu_adis16405->tempDataPtr()));*/
 }
-}
-}
+}  // namespace Sensors
+}  // namespace HomeoneBoard

@@ -1,4 +1,4 @@
-/* Copyright (c) 2015-2018 Skyward Experimental Rocketry
+/* Copyright (c) 2018 Skyward Experimental Rocketry
  * Authors: Luca Erbetta
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -75,9 +75,9 @@ public:
     }
 
     /**
-    * Disables the specified ADC channel
-    * @param channel Channel number [1-4]
-    */
+     * Disables the specified ADC channel
+     * @param channel Channel number [1-4]
+     */
     void disableChannel(uint8_t channel)
     {
         if (channel >= 1 && channel <= 4)

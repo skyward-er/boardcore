@@ -1,7 +1,5 @@
-/* Event
- *
- * Copyright (c) 2015-2018 Skyward Experimental Rocketry
- * Author: Matteo Michele Piazzolla
+/* Copyright (c) 2015-2018 Skyward Experimental Rocketry
+ * Authors: Luca Erbetta
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -21,44 +19,22 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
+#ifndef SRC_SHARED_DEBUG_H
+#define SRC_SHARED_DEBUG_H
 
-#ifndef SRC_SHARED_EVENTS_EVENT_H
-#define SRC_SHARED_EVENTS_EVENT_H
+// clang-format off
+#ifdef DEBUG
 
-#include <stdint.h>
+#define D(x) x
+#include <cstdio>
+#define TRACE(...) printf(__VA_ARGS__)
 
-enum EventSignal : uint8_t
-{
-    EV_ENTRY        = 0,
-    EV_EXIT         = 1,
-    EV_EMPTY        = 2,
-    EV_INIT         = 3,
-    EV_FIRST_SIGNAL = 4
-};
+#else
 
-/**
- * 	Example definiton of custom signals:
+#define D(x)
+#define TRACE(...) (void)0
 
-        enum CustomSignal : uint8_t
-        {
-                SIG_ONE = SG_FIRST_SIGNAL,
-                SIG_TWO,
-                SIG_THREE,
-                SIG_FOUR
-        };
+#endif
 
- */
-
-struct Event
-{
-    uint8_t sig;
-};
-
-/* Example of extended Event structure
-
-        struct ExtendedEvent : public Event{
-                uint32_t custom_member;
-        };
-*/
-
-#endif /* SRC_SHARED_EVENTS_EVENT_H */
+// clang-format on
+#endif /* SRC_SHARED_DEBUG_H */
