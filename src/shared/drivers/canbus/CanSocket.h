@@ -44,17 +44,18 @@ public:
 
     bool isOpen() const { return bus != NULL; }
 
-    void addToMessageList(unsigned char *message, uint8_t size);
+    virtual void addToMessageList(unsigned char *message, uint8_t size);
     uint16_t getFilterId() const { return filter_id; }
     bool haveMessage();
 
     CanSocket &operator=(const CanSocket &) = delete;
     ~CanSocket();
 
-private:
+protected:
     CanBus *bus = NULL;
     const uint16_t filter_id;
 
+private:
     pthread_mutex_t mutex;
     pthread_cond_t cond;
 
