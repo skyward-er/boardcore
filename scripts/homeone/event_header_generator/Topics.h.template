@@ -57,11 +57,11 @@ enum Topics : uint8_t
  */
 string getTopicString(uint8_t topic)
 {{
-	static const map<uint8_t, string> event_string_map{{
+	static const map<uint8_t, string> topic_string_map{{
 {map_data}
 	}};
-	auto it = event_string_map.find(event);
-	return it == event_string_map.end() ? "TOPIC_UNKNOWN" : it->second; 
+	auto it = topic_string_map.find(topic);
+	return it == topic_string_map.end() ? "TOPIC_UNKNOWN" : it->second; 
 }}
 
 }}  // namespace HomeoneBoard
