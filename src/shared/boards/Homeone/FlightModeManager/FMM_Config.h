@@ -31,9 +31,10 @@ namespace FMM
 // TODO: Change with real values
 
 // State timeouts
-static const unsigned int ASCENDING_TIMEOUT_MS             = 5 * 1000;
-static const unsigned int APOGEE_DETECTION_TIMEOUT_MS      = 5 * 1000;
-static const unsigned int MAIN_PARACHUTE_DEPLOY_TIMEOUT_MS = 5 * 1000;
+static const unsigned int TIMEOUT_MS_AUTO_DISARM      = 5 * 1000;
+static const unsigned int TIMEOUT_MS_APOGEE_DETECTION = 5 * 1000;
+static const unsigned int TIMEOUT_MS_DPL_ALTITUDE     = 5 * 1000;
+static const unsigned int TIMEOUT_MS_END_MISSION      = 5 * 1000;
 }
 }
 

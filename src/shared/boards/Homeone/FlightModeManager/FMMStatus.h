@@ -30,7 +30,6 @@ enum class FMMState : uint8_t
     INIT,
     TESTING,
     ERROR,
-    ABORTED,
     DISARMED,
     ARMED,
     LAUNCHING,
