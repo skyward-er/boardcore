@@ -1,4 +1,4 @@
-/* CAN-Bus interfaces
+/* CAN-Bus Event Adapter
  *
  * Copyright (c) 2018-2019 Skyward Experimental Rocketry
  * Authors: Alvise de' Faveri Tron
@@ -22,41 +22,45 @@
  * THE SOFTWARE.
  */
 
-#ifndef CAN_INTERFACES_H
-#define CAN_INTERFACES_H
+#ifndef CAN_EVENT_ADAPTER_H
+#define CAN_EVENT_ADAPTER_H
 
-#include <Common.h>
-#include <events/Event.h>
+#include <drivers/canbus/CanManager.h>
+#include <drivers/canbus/CanBus.h>
+#include <drivers/canbus/CanUtils.h>
 
-namespace CanInterfaces 
-{
+#include "CanEventSocket.h"
 
 /**
- * CanTopics = Canbus FilterIds = Source of the Canbus message
- * Pay attention to the ORDER: higher number => higher priority
+ * This class adapts the CanBus driver to Events.
  */
-enum class CanTopic {
-    CAN_TOPIC_NOS,
-    CAN_TOPIC_LAUNCH,
-    CAN_TOPIC_IGN,
-    CAN_TOPIC_COMMANDS,
-    CAN_TOPIC_LAST
+class CanEventAdapter : public Singleton<CanEventAdapter>
+{
+    friend class Singleton<CanEventAdapter>;
+
+public:
+    /*
+     * Subscribe an EventHandler to a certain topic, so that it receives an event 
+     * whenever a message is received on the CANBUS. 
+     */
+    CanEventSocket* subscribe(EventHandler* callback, 
+                                const uint16_t topic, 
+                                const uint8_t signal);
+
+    /* Send an event on the CANBUS */
+    bool postEvent(const Event& ev, const uint16_t topic);
+
+    /* Send a raw message on the CANBUS */
+    bool postMsg(const uint8_t *message, const uint8_t len, const uint16_t topic);
+
+private:
+    CanEventAdapter();
+    ~CanEventAdapter(){}
+
+    const uint8_t BUS_ID = 0;
+    CanManager* can_manager;
 };
 
-const size_t CAN_MAX_PAYLOAD = 8;
+#define sCanEventAdapter CanEventAdapter::getInstance()
 
-inline uint8_t canTopicToInt(CanTopic cmd) 
-{
-    return static_cast<uint8_t>(cmd);
-}
-
-inline size_t canSize(const size_t msg_size) 
-{
-    size_t trim_size = (msg_size <= CAN_MAX_PAYLOAD) ? 
-    								msg_size : CAN_MAX_PAYLOAD;
-    return trim_size;
-}
-
-} /* namespace CanInterfaces */
-
-#endif /* CAN_INTERFACES_H */
+#endif /* CAN_EVENT_ADAPTER_H */
