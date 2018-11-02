@@ -26,8 +26,6 @@
 #include <boards/Homeone/Events.h>
 #include <boards/Homeone/Topics.h>
 
-#include <boards/Homeone/CanAbstraction.h>
-
 #include <cstdlib>
 
 #include <iostream>
@@ -40,20 +38,25 @@ uint8_t can_abort_ignition_msg[] = {'A','B','O','R','T','N','O','W'};
 uint8_t CAN_IGNITION = 0xAF;
 uint8_t CAN_IGNITION_STATUS = 0xFA;
 
-
 namespace HomeoneBoard
 {
 namespace IGN
 {
+
+using namespace CanInterfaces;
 
 IgnitionController::IgnitionController() : FSM(&IgnitionController::state_idle)
 {
     sEventBroker->subscribe(this, TOPIC_COMMANDS);
     sEventBroker->subscribe(this, TOPIC_IGNITION);
     
-    CanAbstraction canAbst(LINK_IGNITION);
-    ignitionPublisher = canAbst.getPublisher(CAN_IGNITION);
-    ignitionStatusSub = canAbst.getSubscriber(CAN_IGNITION);
+    canSocket = sCanEventAdapter->subscribe(this, 
+                                            canTopicToInt(CanTopic::CAN_TOPIC_IGN), 
+                                            EV_NEW_CAN_MSG);
+
+//    CanAbstraction canAbst(LINK_IGNITION);
+//    ignitionPublisher = canAbst.getPublisher(CAN_IGNITION);
+//    ignitionStatusSub = canAbst.getSubscriber(CAN_IGNITION);
     //ignitionStatusSub = canAbst.getSubscriber(CAN_IGNITION_STATUS);
     
     cout << "init ignition controller" << endl;
@@ -73,11 +76,15 @@ void IgnitionController::state_idle(const Event& e)
 
         case EV_IGN_ABORT:
             cout << "Abort Message" << endl;
-            ignitionPublisher->publish(can_abort_ignition_msg, sizeof(can_abort_ignition_msg));
+            sCanEventAdapter->postMsg(can_abort_ignition_msg, 
+                                        sizeof(can_abort_ignition_msg), 
+                                        canTopicToInt(CanTopic::CAN_TOPIC_COMMANDS));
             break;
 
         case EV_IGN_GET_STATUS:
-            transition(&IgnitionController::state_get_status);
+            sCanEventAdapter->postEvent({EV_IGN_GET_STATUS}, 
+                                        canTopicToInt(CanTopic::CAN_TOPIC_COMMANDS));
+            sEventBroker->postDelayed({EV_IGN_GET_STATUS}, TOPIC_IGNITION, 1000);
             break;
 
         case EV_IGN_LAUNCH:{
@@ -86,73 +93,27 @@ void IgnitionController::state_idle(const Event& e)
             uint64_t launchCode = launch_evt.launchCode;
 
             //TODO check endinaess
-            ignitionPublisher->publish((uint8_t*) &launchCode, sizeof(can_abort_ignition_msg));
+            sCanEventAdapter->postMsg((uint8_t*) &launchCode, 
+                                        sizeof(can_abort_ignition_msg), 
+                                        canTopicToInt(CanTopic::CAN_TOPIC_LAUNCH));
             break;
         }
-        default:
-            printf("Unknown event received.\n");
-            break;
-    }
-}
 
-void IgnitionController::state_get_status(const Event& e)
-{
-    switch (e.sig)
-    {
-        case EV_ENTRY:
-            cout << " requesting status..." << endl;
-            ignitionPublisher->publish(can_get_status_msg, sizeof(can_get_status_msg));
-            transition(&IgnitionController::state_wait_response);
-            break;
-            
-        case EV_EXIT:
-            break;
+        case EV_NEW_CAN_MSG:{
+            while(canSocket->haveMessage() == true) {
+                cout << "msg received" << endl;
+                uint8_t can_buffer[CAN_MAX_PAYLOAD];
+                bool res = canSocket->receive(&can_buffer, CAN_MAX_PAYLOAD);
 
-        default:
-            printf("Unknown event received.\n");
-            break;
-    }
-}
-
-void IgnitionController::state_wait_response(const Event& e)
-{
-    static uint8_t retry_counter = 0;
-
-    switch (e.sig)
-    {
-        case EV_ENTRY:
-            cout << "entry wait "<< endl;
-            sEventBroker->post(Event{EV_IGN_WAIT}, TOPIC_IGNITION);
-
-            break;
-            
-        case EV_EXIT:
-            break;
-
-        case EV_IGN_WAIT:{
-                cout << "trying to receive" << endl;
-                if(retry_counter > MAX_RETRY){
-                    cout << "too many attempt" << endl;
-                    retry_counter = 0;
-                    transition(&IgnitionController::state_idle);
+                if(res == true){
+                    updateInternalState(can_buffer);
                 }
-                else{
-                    retry_counter++;
-                    if(ignitionStatusSub->haveMessage() == true){
-                        cout << "msg received" << endl;
-                        uint8_t can_buffer[8];
-                        bool res = ignitionStatusSub->receive(&can_buffer, 8);
-                        if(res == true){
-                            updateInternalState(can_buffer);
-                            transition(&IgnitionController::state_idle);
-                        }
-                    }
-                    else{
-                        sEventBroker->post(Event{EV_IGN_WAIT}, TOPIC_IGNITION);
-                    }
-                }
+// TODO: handle abort
+//                if(res == false) {
+//                    transition(&IgnitionController::state_aborted);
+//                }
             }
-            break;
+        }
 
         default:
             printf("Unknown event received.\n");
@@ -172,8 +133,6 @@ void IgnitionController::updateInternalState(uint8_t *can_msg){
     cout << "u2_launch_done " << ignition_board_status.u2_launch_done << endl;
     memcpy((void*) &this->ignition_board_status, (void*)can_msg, sizeof(IgnitionBoardStatus));
 }
-
-
 
 }
 }
