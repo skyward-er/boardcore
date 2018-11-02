@@ -26,29 +26,20 @@
 
 #include "events/Event.h"
 #include "events/FSM.h"
-#include "drivers/canbus/CanSocket.h"
-#include "drivers/canbus/CanPublisher.h"
 
-struct IgnitionBoardStatus{
-    uint8_t u1_abort_cmd;
-    uint8_t u1_abort_timeout;
-    uint8_t u1_wrong_code;
-    uint8_t u1_launch_done;
-    uint8_t u2_abort_cmd;
-    uint8_t u2_abort_timeout;
-    uint8_t u2_wrong_code;
-    uint8_t u2_launch_done;
-};
+#include "drivers/canbus/can_events/CanEventAdapter.h"
+#include "boards/Homeone/CanInterfaces.h"
 
 namespace HomeoneBoard
 {
 namespace IGN  // IgnitionController
 {
+
 /**
  * Implementation of the IgnitionController Finite State Machine
  */
 class IgnitionController : public FSM<IgnitionController>,
-                          public Singleton<IgnitionController>
+                           public Singleton<IgnitionController>
 {
     friend class Singleton<IgnitionController>;
 
@@ -56,18 +47,17 @@ private:
     IgnitionController();
     ~IgnitionController() {}
 
-    CanPublisher* ignitionPublisher;
-    CanSocket* ignitionStatusSub;
-    // States declarations
+    CanEventSocket* canSocket;
 
+    // States declarations
     void state_idle(const Event& e);
     void state_get_status(const Event& e);
     void state_wait_response(const Event& e);
 
-
     void updateInternalState(uint8_t *can_msg);
+
     // State variables
-    IgnitionBoardStatus ignition_board_status;
+    CanInterfaces::IgnitionBoardStatus ignition_board_status;
     const uint8_t MAX_RETRY = 5;
 };
 }
