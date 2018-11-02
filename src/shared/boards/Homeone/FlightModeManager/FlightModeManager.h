@@ -29,6 +29,11 @@
 #include "events/FSM.h"
 #include "logger/LogProxy.h"
 
+#include <miosix.h>
+
+using miosix::FastMutex;
+using miosix::Lock;
+
 namespace HomeoneBoard
 {
 namespace FMM  // Flight Mode Manager
@@ -41,6 +46,13 @@ class FlightModeManager : public FSM<FlightModeManager>,
 {
     friend class Singleton<FlightModeManager>;
 
+public:
+    FMMStatus getStatus()
+    {
+        Lock<FastMutex> lock(mtx_status);
+        return status;
+    }
+
 private:
     FlightModeManager();
     ~FlightModeManager() {}
@@ -49,7 +61,6 @@ private:
     void stateInit(const Event& ev);
     void stateTesting(const Event& ev);
     void stateError(const Event& ev);
-    void stateAborted(const Event& ev);
     void stateDisarmed(const Event& ev);
     void stateArmed(const Event& ev);
     void stateLaunching(const Event& ev);
@@ -59,9 +70,12 @@ private:
     void stateManualDescent(const Event& ev);
     void stateLanded(const Event& ev);
 
+    // Other methods
+
     // State variables
     uint16_t delayed_event_id = 0;
 
+    FastMutex mtx_status;
     FMMStatus status;
 
     LoggerProxy& logger = *(LoggerProxy::getInstance());

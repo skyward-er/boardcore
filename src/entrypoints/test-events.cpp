@@ -22,6 +22,9 @@
 
 #include <Common.h>
 #include <miosix.h>
+
+#include "boards/Homeone/Events.h"
+#include "boards/Homeone/Topics.h"
 #include "events/EventBroker.h"
 #include "events/FSM.h"
 #include "events/Scheduler.h"

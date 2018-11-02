@@ -1,4 +1,5 @@
-/* Copyright (c) 2015-2018 Skyward Experimental Rocketry
+/*
+ * Copyright (c) 2018 Skyward Experimental Rocketry
  * Authors: Luca Erbetta
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -13,29 +14,37 @@
  *
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.  IN NO EVENT SHALL THE
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
  * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
  * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
-#ifndef SRC_SHARED_BOARDS_HOMEONE_FLIGHTMODEMANAGER_FMM_CONFIG_H
-#define SRC_SHARED_BOARDS_HOMEONE_FLIGHTMODEMANAGER_FMM_CONFIG_H
 
-#warning "FMM COSTANTS ARE ONLY PLACEHOLDER VALUES"
+#ifndef SRC_SHARED_BOARDS_HOMEONE_EVENTCLASSES_H
+#define SRC_SHARED_BOARDS_HOMEONE_EVENTCLASSES_H
+
+#include "Events.h"
+#include "events/Event.h"
 
 namespace HomeoneBoard
 {
-namespace FMM
+
+struct AltimeterCalibrationEvent : Event
 {
-// TODO: Change with real values
+    uint16_t T0;  // Calibration temperature
+    uint16_t P0;  // Calibration pressure
+};
 
-// State timeouts
-static const unsigned int TIMEOUT_MS_AUTO_DISARM      = 5 * 1000;
-static const unsigned int TIMEOUT_MS_APOGEE_DETECTION = 5 * 1000;
-static const unsigned int TIMEOUT_MS_DPL_ALTITUDE     = 5 * 1000;
-static const unsigned int TIMEOUT_MS_END_MISSION      = 5 * 1000;
-}
+struct PressureSampleEvent : Event
+{
+    uint16_t pressure;
+};
+
+struct StartLaunchEvent : Event
+{
+    uint64_t launchCode;
+};
 }
 
-#endif /* SRC_SHARED_BOARDS_HOMEONE_FLIGHTMODEMANAGER_FMM_CONFIG_H */
+#endif /* EVENTCLASSES_H */
