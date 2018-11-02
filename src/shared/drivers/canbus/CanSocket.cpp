@@ -22,12 +22,6 @@
  * THE SOFTWARE.
  */
 
-/*
-TODO:
-- gli id devono diventare uint16_t
-- receive non bloccante
-*/
-
 #include "CanSocket.h"
 #include "CanBus.h"
 
@@ -47,8 +41,10 @@ void CanSocket::open(CanBus *bus)
 {
     if (isOpen())
         close();
-    bus->registerSocket(this);
+    bool ok = bus->registerSocket(this);
     this->bus = bus;
+
+    if(!ok) TRACE("[CAN] Could not open socket %d.\n", filter_id);
 }
 
 
@@ -95,6 +91,7 @@ void CanSocket::addToMessageList(unsigned char *message, uint8_t size)
     memcpy(msg, message, size + 1);
     msg_p toPush(msg, size);
     receivedMessageQueue.push_back(toPush);
+    TRACE("[CAN] Received new message on topic %d\n", filter_id);
     pthread_cond_signal(&cond);
     pthread_mutex_unlock(&mutex);
 }

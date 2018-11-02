@@ -55,26 +55,31 @@ bool CanBus::registerSocket(CanSocket *socket)
 {
     uint16_t filter_id = socket->getFilterId();
 
-    if (filter_id >= CanManager::filter_max_id)
+    if (filter_id >= CanManager::filter_max_id){
+        TRACE("[CAN] Invalid filter id.\n");
         return false;
+    }
 
     // Lock mutex, add to map
     {
         Lock<FastMutex> l(mutex);
 
         set<CanSocket *> &ids = socket_map[filter_id];
-        if (ids.find(socket) != ids.end())
+        if (ids.find(socket) != ids.end()){
+            TRACE("[CAN] Filter already in use.\n");
             return false;
+        }
 
         if (!manager->addHWFilter(filter_id, this->id))
         {
-            // TODO: log error
+            TRACE("[CAN] Could not add HW filter.\n");
             return false;
         }
 
         ids.insert(socket);
     }
 
+    TRACE("[CAN] Created socket with filter=%d\n", filter_id);
     return true;
 }
 
@@ -230,8 +235,10 @@ void CanBus::dispatchMessage(CanMsg message)
 
         set<CanSocket *> &ids = socket_map[filter_id];
 
-        for (auto socket : ids)
+        for (auto socket : ids){
             socket->addToMessageList(message.Data, message.DLC);
+            TRACE("[CAN] Received message, sending to socket\n");
+        }
     }
 }
 

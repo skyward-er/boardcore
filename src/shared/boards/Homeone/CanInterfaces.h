@@ -1,5 +1,7 @@
-/* Copyright (c) 2015-2018 Skyward Experimental Rocketry
- * Authors: Matteo Michele Piazzolla
+/* CAN-Bus interfaces
+ *
+ * Copyright (c) 2015-2018 Skyward Experimental Rocketry
+ * Authors: Alvise de' Faveri Tron
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -20,24 +22,43 @@
  * THE SOFTWARE.
  */
 
-#ifndef CANPUBLISHER_H
-#define CANPUBLISHER_H
+#ifndef CAN_INTERFACES_H
+#define CAN_INTERFACES_H
 
-class CanPublisher{
+#include <stdint.h>
 
-    private:
-    uint16_t topic;
-    CanBus* bus;
+namespace CanInterfaces 
+{
 
-    public:
-    CanPublisher(){}
-    CanPublisher(uint16_t topic, CanBus* bus) : topic(topic), bus(bus){}
-
-    void publish(const uint8_t* msg, size_t size){
-        size = size <= 8 ? size : 8;
-        bus->send(this->topic, msg, size);
-    }
-
+/**
+ * CanTopics = Canbus FilterIds = Source of the Canbus message
+ * Pay attention to the ORDER: higher number => higher priority
+ */
+enum class CanTopic {
+    CAN_TOPIC_NOS,
+    CAN_TOPIC_LAUNCH,
+    CAN_TOPIC_IGN,
+    CAN_TOPIC_COMMANDS,
+    CAN_TOPIC_LAST
 };
 
-#endif //CANPUBLISHER_H
+inline uint8_t canTopicToInt(CanTopic cmd) 
+{
+    return static_cast<uint8_t>(cmd);
+}
+
+
+struct IgnitionBoardStatus{
+    uint8_t u1_abort_cmd;
+    uint8_t u1_abort_timeout;
+    uint8_t u1_wrong_code;
+    uint8_t u1_launch_done;
+    uint8_t u2_abort_cmd;
+    uint8_t u2_abort_timeout;
+    uint8_t u2_wrong_code;
+    uint8_t u2_launch_done;
+};
+
+} /* namespace CanInterfaces */
+
+#endif /* CAN_INTERFACES_H */

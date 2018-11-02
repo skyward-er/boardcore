@@ -88,7 +88,7 @@ enum Events : uint8_t
     EV_STOP_TM      = 183,
 
     EV_PRESSURE_SAMPLE = 192,
-    EV_CAN_MSG
+    EV_NEW_CAN_MSG
 };
 
 struct AltimeterCalibrationEvent : Event
@@ -105,13 +105,6 @@ struct PressureSampleEvent : Event
 struct StartLaunchEvent : Event
 {
     uint64_t launchCode;
-};
-
-struct CanEvent : Event
-{
-    uint16_t canTopic;
-
-    CanEvent(uint16_t canTopic): Event{EV_CAN_MSG}, canTopic(canTopic) {}
 };
 
 }

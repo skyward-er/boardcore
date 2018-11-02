@@ -1,4 +1,4 @@
-/* CAN-Bus Event Adapter
+/* Canbus Event Adapter
  *
  * Copyright (c) 2018-2019 Skyward Experimental Rocketry
  * Authors: Alvise de' Faveri Tron
@@ -22,19 +22,12 @@
  * THE SOFTWARE.
  */
 
-#include "CanAdapter.h"
-
-using namespace CanInterfaces;
-
-namespace HomeoneBoard
-{
-namespace CanEventAdapter
-{
+#include "CanEventAdapter.h"
 
 /**
  * Initialize the CanManager, the bus and the sockets
  */
-CanAdapter::CanAdapter()
+CanEventAdapter::CanEventAdapter()
 {
     can_manager = new CanManager(CAN1);
 
@@ -43,39 +36,49 @@ CanAdapter::CanAdapter()
     can_manager->addBus<GPIOA_BASE, 11, 12>(can_config);
 }
 
+
 /**
  * Create a new socket that listens to messages on a specific topic
+ * @param callback  eventHandler to be notified when a new msg is received
+ * @param topic     topic, a.k.a filterId, to be listened on the CANBUS
+ * @param signal    signal of the event sent to the callback when a message is received
+ * @return          a pointer to the EventSocket that is listening on the given topic
  */
-void CanAdapter::subscribe(EventHandler* callback, const CanTopic topic) 
+CanEventSocket* CanEventAdapter::subscribe(EventHandler* callback,
+                                        const uint16_t topic,
+                                        const uint8_t signal)
 {
-	CanEventSocket* socket = new CanEventSocket(callback, canTopicToInt(topic));
-	socket->open(can_manager->getBus(BUS_ID));
+    CanEventSocket* socket = new CanEventSocket(callback, topic, signal);
+    socket->open(can_manager->getBus(BUS_ID));
+
+    return socket;
 }
+
 
 /**
  * Send a generic event on the canbus
+ * @param ev     Event to be sent
+ * @param topic  ID of the message on the CANBUS
+ * @return       wether the event was sent successfully or not
  */
-void CanAdapter::post(const Event& ev)
+bool CanEventAdapter::postEvent(const Event& ev, const uint16_t topic)
 {
-    size_t ev_size = canSize(sizeof(Event));
-    const uint8_t* msg = reinterpret_cast<const uint8_t*>(&ev);
+    const uint8_t* msg = reinterpret_cast<const uint8_t *>(&ev);
 
-    CanBus* bus = can_manager->getBus(BUS_ID);
-    bus->send(canTopicToInt(CanTopic::CAN_TOPIC_COMMANDS), msg, ev_size);
+    return postMsg(msg, sizeof(Event), topic);
 }
 
-/**
- * Send a startLaunch event on the canbus
+
+/* Send a raw message on the CANBUS. The payload will be cut to 8 bytes if it's longer.
+ * @param message  pointer to the messahe to be sent
+ * @param len      length on the message (will be trimmed down to 8)        
+ * @param topic    ID of the message on the CANBUS
+ * @return         wether the message was sent successfully or not
  */
-void CanAdapter::post(const StartLaunchEvent& ev)
+bool CanEventAdapter::postMsg(const uint8_t *message, uint8_t len, const uint16_t topic)
 {
-    /* Put in the payload only the launch code */
-    size_t ev_size = canSize(sizeof(ev.launchCode));
-    const uint8_t* msg = reinterpret_cast<const uint8_t*>(&(ev.launchCode));
-
     CanBus* bus = can_manager->getBus(BUS_ID);
-    bus->send(canTopicToInt(CanTopic::CAN_TOPIC_LAUNCH), msg, ev_size);
-}
+    len = len > CAN_MAX_PAYLOAD ? CAN_MAX_PAYLOAD : len;
 
-} /* namespace CanEventAdapter */
-} /* namespace HomeoneBoard */
+    return bus->send(topic, message, len);
+}
