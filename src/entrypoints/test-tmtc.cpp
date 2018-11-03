@@ -45,7 +45,7 @@ static void onReceive(const mavlink_message_t& msg)
         bool ackSent = sender->enqueueMsg(ackMsg);
 
         if(!ackSent)
-            printf("[Receiver] Could not enqueue ack\n");
+            TRACE("[Receiver] Could not enqueue ack\n");
     }
 }
 
@@ -64,7 +64,7 @@ int main()
 
     while(1)
     {
-        printf("[TmtcTest] Enqueueing ping\n");
+        TRACE("[TmtcTest] Enqueueing ping\n");
 
         // Create a Mavlink message
         mavlink_message_t pingMsg;
@@ -74,7 +74,7 @@ int main()
         bool ackSent = sender->enqueueMsg(pingMsg);
 
         if(!ackSent)
-            printf("[TmtcTest] Could not enqueue ping\n");
+            TRACE("[TmtcTest] Could not enqueue ping\n");
 
         // ledOn();
         // miosix::delayMs(200);
