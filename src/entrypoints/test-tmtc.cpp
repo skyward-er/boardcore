@@ -21,16 +21,46 @@
  */
 
 #include <Common.h>
-#include "boards/Homeone/TMTCManager/TMTCManager.h"
+#include <drivers/gamma868/Gamma868.h>
+#include "drivers/mavlink/MavSender.h"
+#include "drivers/mavlink/MavReceiver.h"
 
 using namespace miosix;
-using namespace HomeoneBoard;
-using namespace TMTC;
+
+Gamma868* gamma868;
+
+MavSender* sender;
+MavReceiver* receiver;
+
+static void onReceive(const mavlink_message_t& msg) 
+{
+    if (msg.msgid != MAVLINK_MSG_ID_ACK_TM) 
+    {
+        TRACE("[TmtcTest] Sending ack\n");
+
+        mavlink_message_t ackMsg;
+        mavlink_msg_ack_tm_pack(1, 1, &ackMsg, msg.msgid, msg.seq);
+
+        /* Send the message back to the sender */
+        bool ackSent = sender->enqueueMsg(ackMsg);
+
+        if(!ackSent)
+            printf("[Receiver] Could not enqueue ack\n");
+    }
+}
 
 int main()
 {
+    gamma868 = new Gamma868("/dev/radio");
 
-    sTMTCManager;
+    sender = new MavSender(gamma868);
+    receiver = new MavReceiver(gamma868, &onReceive);
+
+    sender->start();
+    receiver->start();
+
+
+    // sTMTCManager;
 
     while(1)
     {
@@ -38,16 +68,10 @@ int main()
 
         // Create a Mavlink message
         mavlink_message_t pingMsg;
-        uint8_t bufferMsg[sizeof(mavlink_message_t) + 1];
-
-        // Populate Mavlink message passing the parameters of the specific message
         mavlink_msg_ping_tc_pack(1, 1, &pingMsg, miosix::getTick());
 
-        // Convert it into a byte stream
-        int msgLen = mavlink_msg_to_send_buffer(bufferMsg, &pingMsg);
-
         // Send the message
-        bool ackSent = sTMTCManager->enqueueMsg(bufferMsg, msgLen);
+        bool ackSent = sender->enqueueMsg(pingMsg);
 
         if(!ackSent)
             printf("[TmtcTest] Could not enqueue ping\n");
