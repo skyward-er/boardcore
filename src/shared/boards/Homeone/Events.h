@@ -26,15 +26,14 @@
  ******************************************************************************
  */
 
-// Generated from:
-// https://docs.google.com/spreadsheets/d/12TecOmDd7Uot-MvXkCbhDJRU48-XO6s5ChKDlr4AOvI
-// Autogen date:    2018-11-01 19:14:59.738365
+// Generated from:  https://docs.google.com/spreadsheets/d/12TecOmDd7Uot-MvXkCbhDJRU48-XO6s5ChKDlr4AOvI
+// Autogen date:    2018-11-03 20:03:32.248000
 
 #ifndef SRC_SHARED_BOARDS_HOMEONE_EVENTS_H
 #define SRC_SHARED_BOARDS_HOMEONE_EVENTS_H
 
-#include <map>
 #include <string>
+#include <map>
 
 #include "events/Event.h"
 
@@ -58,7 +57,7 @@ enum Events : uint8_t
     EV_BARO_CALIBRATION_TC,
     EV_BOARD_RESET_TC,
     EV_CUT_ALL_TC,
-    EV_CUT_DROUGE_,
+    EV_CUT_FIRST_DROGUE_TC,
     EV_DISARM_TC,
     EV_DPL_ALTITUDE,
     EV_END_MISSION_TC,
@@ -95,58 +94,60 @@ enum Events : uint8_t
 
 /**
  * @brief Returns the name of the provided event
- *
- * @param event
- * @return string
+ * 
+ * @param event 
+ * @return string 
  */
 string getEventString(uint8_t event)
 {
-    static const map<uint8_t, string> event_string_map{
-        {EV_ABORT_LAUNCH_TC, "EV_ABORT_LAUNCH_TC"},
-        {EV_ADA_APOGEE_DETECTED, "EV_ADA_APOGEE_DETECTED"},
-        {EV_ADA_DPL_ALT_DETECTED, "EV_ADA_DPL_ALT_DETECTED"},
-        {EV_APOGEE, "EV_APOGEE"},
-        {EV_ARM_TC, "EV_ARM_TC"},
-        {EV_ARMED, "EV_ARMED"},
-        {EV_BARO_CALIBRATION_TC, "EV_BARO_CALIBRATION_TC"},
-        {EV_BOARD_RESET_TC, "EV_BOARD_RESET_TC"},
-        {EV_CUT_ALL_TC, "EV_CUT_ALL_TC"},
-        {EV_CUT_DROUGE_, "EV_CUT_DROUGE_"},
-        {EV_DISARM_TC, "EV_DISARM_TC"},
-        {EV_DPL_ALTITUDE, "EV_DPL_ALTITUDE"},
-        {EV_END_MISSION_TC, "EV_END_MISSION_TC"},
-        {EV_GS_OFFLINE, "EV_GS_OFFLINE"},
-        {EV_IGN_ABORTED, "EV_IGN_ABORTED"},
-        {EV_IGN_GETSTATUS, "EV_IGN_GETSTATUS"},
-        {EV_IGN_OFFLINE, "EV_IGN_OFFLINE"},
-        {EV_INIT_ERROR, "EV_INIT_ERROR"},
-        {EV_INIT_OK, "EV_INIT_OK"},
-        {EV_LANDED, "EV_LANDED"},
-        {EV_LAUNCH, "EV_LAUNCH"},
-        {EV_LAUNCH_TC, "EV_LAUNCH_TC"},
-        {EV_LIFTOFF, "EV_LIFTOFF"},
-        {EV_MANUAL_MODE_TC, "EV_MANUAL_MODE_TC"},
-        {EV_NC_CLOSE_TC, "EV_NC_CLOSE_TC"},
-        {EV_NC_DETACHED, "EV_NC_DETACHED"},
-        {EV_NC_GETSTATUS, "EV_NC_GETSTATUS"},
-        {EV_NC_OFFLINE, "EV_NC_OFFLINE"},
-        {EV_NC_OPEN_TC, "EV_NC_OPEN_TC"},
-        {EV_NEW_CAN_MSG, "EV_NEW_CAN_MSG"},
-        {EV_SEND_HR_TM, "EV_SEND_HR_TM"},
-        {EV_SEND_LR_TM, "EV_SEND_LR_TM"},
-        {EV_START_LOGGING_TC, "EV_START_LOGGING_TC"},
-        {EV_STOP_LOGGING_TC, "EV_STOP_LOGGING_TC"},
-        {EV_TEST_MODE_TC, "EV_TEST_MODE_TC"},
-        {EV_TIMEOUT_APOGEE, "EV_TIMEOUT_APOGEE"},
-        {EV_TIMEOUT_ARM, "EV_TIMEOUT_ARM"},
-        {EV_TIMEOUT_CUTTING, "EV_TIMEOUT_CUTTING"},
-        {EV_TIMEOUT_DPL_ALT, "EV_TIMEOUT_DPL_ALT"},
-        {EV_TIMEOUT_END_MISSION, "EV_TIMEOUT_END_MISSION"},
-        {EV_TIMEOUT_SHADOW_MODE, "EV_TIMEOUT_SHADOW_MODE"},
-        {EV_UMBILICAL_DETACHED, "EV_UMBILICAL_DETACHED"}};
-    auto it = event_string_map.find(event);
+    static const map<uint8_t, string> event_string_map {
+        { EV_ABORT_LAUNCH_TC, "EV_ABORT_LAUNCH_TC" },
+        { EV_ADA_APOGEE_DETECTED, "EV_ADA_APOGEE_DETECTED" },
+        { EV_ADA_DPL_ALT_DETECTED, "EV_ADA_DPL_ALT_DETECTED" },
+        { EV_APOGEE, "EV_APOGEE" },
+        { EV_ARM_TC, "EV_ARM_TC" },
+        { EV_ARMED, "EV_ARMED" },
+        { EV_BARO_CALIBRATION_TC, "EV_BARO_CALIBRATION_TC" },
+        { EV_BOARD_RESET_TC, "EV_BOARD_RESET_TC" },
+        { EV_CUT_ALL_TC, "EV_CUT_ALL_TC" },
+        { EV_CUT_FIRST_DROGUE_TC, "EV_CUT_FIRST_DROGUE_TC" },
+        { EV_DISARM_TC, "EV_DISARM_TC" },
+        { EV_DPL_ALTITUDE, "EV_DPL_ALTITUDE" },
+        { EV_END_MISSION_TC, "EV_END_MISSION_TC" },
+        { EV_GS_OFFLINE, "EV_GS_OFFLINE" },
+        { EV_IGN_ABORTED, "EV_IGN_ABORTED" },
+        { EV_IGN_GETSTATUS, "EV_IGN_GETSTATUS" },
+        { EV_IGN_OFFLINE, "EV_IGN_OFFLINE" },
+        { EV_INIT_ERROR, "EV_INIT_ERROR" },
+        { EV_INIT_OK, "EV_INIT_OK" },
+        { EV_LANDED, "EV_LANDED" },
+        { EV_LAUNCH, "EV_LAUNCH" },
+        { EV_LAUNCH_TC, "EV_LAUNCH_TC" },
+        { EV_LIFTOFF, "EV_LIFTOFF" },
+        { EV_MANUAL_MODE_TC, "EV_MANUAL_MODE_TC" },
+        { EV_NC_CLOSE_TC, "EV_NC_CLOSE_TC" },
+        { EV_NC_DETACHED, "EV_NC_DETACHED" },
+        { EV_NC_GETSTATUS, "EV_NC_GETSTATUS" },
+        { EV_NC_OFFLINE, "EV_NC_OFFLINE" },
+        { EV_NC_OPEN_TC, "EV_NC_OPEN_TC" },
+        { EV_NEW_CAN_MSG, "EV_NEW_CAN_MSG" },
+        { EV_SEND_HR_TM, "EV_SEND_HR_TM" },
+        { EV_SEND_LR_TM, "EV_SEND_LR_TM" },
+        { EV_START_LOGGING_TC, "EV_START_LOGGING_TC" },
+        { EV_STOP_LOGGING_TC, "EV_STOP_LOGGING_TC" },
+        { EV_TEST_MODE_TC, "EV_TEST_MODE_TC" },
+        { EV_TIMEOUT_APOGEE, "EV_TIMEOUT_APOGEE" },
+        { EV_TIMEOUT_ARM, "EV_TIMEOUT_ARM" },
+        { EV_TIMEOUT_CUTTING, "EV_TIMEOUT_CUTTING" },
+        { EV_TIMEOUT_DPL_ALT, "EV_TIMEOUT_DPL_ALT" },
+        { EV_TIMEOUT_END_MISSION, "EV_TIMEOUT_END_MISSION" },
+        { EV_TIMEOUT_SHADOW_MODE, "EV_TIMEOUT_SHADOW_MODE" },
+        { EV_UMBILICAL_DETACHED, "EV_UMBILICAL_DETACHED" }
+    };
+    auto   it  = event_string_map.find(event);
     return it == event_string_map.end() ? "EV_EMPTY" : it->second;
 }
+
 }
 
 #endif /* SRC_SHARED_BOARDS_HOMEONE_EVENTS_H */
