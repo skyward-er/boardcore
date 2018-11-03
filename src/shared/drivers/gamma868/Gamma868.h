@@ -1,4 +1,4 @@
-/* Copyright (c) 2017 Skyward Experimental Rocketry
+/* Copyright (c) 2015-2018 Skyward Experimental Rocketry
  * Authors: Alvise de'Faveri Tron, Nuno Barcellos
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -26,17 +26,13 @@
 #include <Common.h>
 #include <fcntl.h>
 
-#include <drivers/Transmitter.h>
+#include "GammaTypes.h"
+#include <drivers/Transceiver.h>
 
-//TODO: change this
-#ifdef _MIOSIX
-#endif  //_MIOSIX
-
-#include "gamma_config.h"  //Defines are in here.
-
-class Gamma868 : public Transmitter
+class Gamma868 : public Transceiver
 {
 public:
+    const int LEARN_MODE_TIMEOUT = 5000;
     /*
      * Create a Gamma868 object using the given path as the serial port to use.
      * @param serialPath        Name of the serial port (es. /dev/tty)
@@ -44,70 +40,66 @@ public:
     Gamma868(const char* serialPath);
 
     /*
+     * Create a Gamma868 that can be configured through the LRN pin.
+     * @param serialPath        Name of the serial port (es. /dev/tty)
+     * @param lrn_pin           pin connected to the Learn Mode pin of the Gamma
+     */
+    Gamma868(const char* serialPath, miosix::GpioPin* lrn_pin);
+
+    /*
      * Send a message through the serial port to the gamma868 module (blocking).
      * @param pkt               Pointer to the packet (needs to be at least pkt_len bytes).
      * @param pkt_len           Lenght of the packet to be sent.
      * @return                  True if the message was sent correctly.
      */
-    bool send(const uint8_t* pkt, uint32_t pkt_len);
+    bool send(uint8_t* pkt, const uint32_t pkt_len) override;
 
     /*
-     * Send a message through the serial port to the gamma868 module (blocking).
+     * Receive a message through the serial port to the gamma868 module (blocking).
      * @param pkt               Pointer to the buffer (needs to be at least pkt_len bytes).
      * @param pkt_len           Lenght of the packet to be received.
      */
-    void receive(uint8_t* pkt, uint32_t pkt_len);
+    void receive(uint8_t* pkt, const uint32_t pkt_len) override;
 
     /*
-     * Set a new configuration to the gamma868 module.
-     * @retun                   True if the configuration was set correctly.
+     * Set a new configuration to the gamma868 module. Can be done only if the 
+     * learn pin has been specified in the constructor.
+     * @return       True if the configuration was set correctly.
      */
-    bool config(Configuration newConf);    
+    bool configure(const GammaConf& newConf); 
 
     /*
-     * TODO:
-     * bool isConnected() checks if learn switch is pulled up??
-     * Configuration readConfiguration();
+     * Reads the configuration from the device, updates the internal configuration
+     * variable and returns it. 
+     * Meaningful only if the learn pin has been specified in the constructor.
+     * @return       The current configuration.
      */
+    GammaConf readConfig();
+
+    /*
+     * Immediately returns the value of the configuration variable, without reading it from
+     * the device.
+     * @return       The current configuration.
+     * @warning      check the is_valid bit to see if the returned configuration is meaningful.
+     */
+    GammaConf getConfig() 
+    {
+        return conf;
+    }
 
 private:
     int fd;
 
-    miosix::FastMutex gammaMutex;
+    GammaConf conf;
+    bool conf_enabled;
+    miosix::GpioPin* gammaSwitch;
 
-    miosix::FastMutex ledMutex;
-    miosix::ConditionVariable ledCond;
-    int pktSent = 0;
+    void enterLearnMode();
+    void exitLearnMode();
 
-    miosix::FastMutex learnMutex;
-    miosix::ConditionVariable learnCond;
-    int learnMode = 0;
-
-    bool enterLearnMode();
-    bool exitLearnMode();
-    void confirmLearnMode();
-    void timer();
-    void printConfig();
+    void writeConfig(const GammaConf& conf);
+    bool updateConfig();
     void waitForOk();
-    int writeConfig(struct Configuration conf);
-
-    /*
-     * Static wrapper for running it in a thread.
-     */
-    static void* static_confirmLearnMode(void *object)
-    {
-        reinterpret_cast<Gamma868 *>(object)->confirmLearnMode();
-        return 0;
-    }
-
-    /*
-     * Static wrapper for running it in a thread.
-     */
-    static void* static_timer(void *object)
-    {
-        reinterpret_cast<Gamma868 *>(object)->timer();
-        return 0;
-    }
 };
 
 #endif /* GAMMA868_H */
