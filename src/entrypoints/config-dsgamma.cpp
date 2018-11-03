@@ -53,7 +53,7 @@ int main()
         waitForButton();
 
         // Write new configuration
-        struct Configuration newConf;
+        GammaConf newConf;
 
         newConf.local_addr[0] = 126;
         newConf.local_addr[1] = 126;
@@ -61,10 +61,10 @@ int main()
         newConf.dest_addr[0]  = 126;
         newConf.dest_addr[1]  = 126;
         newConf.dest_addr[2]  = 126;
-        newConf.lora_mode     = 1;   // SF6
-        newConf.lora_pow      = 15;  //+20dbm
-        newConf.handshake     = 0;   // No handshake
-        newConf.baudrate      = 0;   // 9600 baud
+        newConf.lora_sf     = SF6;   // SF6
+        newConf.lora_power      = dbm20;  //+20dbm
+        newConf.handshake     = false;   // No handshake
+        newConf.baudrate      = B9600;   // 9600 baud
 
         // printf("LOCAL ADDRESS (3 bytes, 0-127 each):\n");
         // scanf("%d %d %d", &newConf.local_addr[0], &newConf.local_addr[1],
@@ -81,7 +81,7 @@ int main()
         // printf("BAUDRATE (0-4):\n");
         // scanf("%d", &newConf.baudrate);
 
-        bool configStatus = gamma.config(newConf);
+        bool configStatus = gamma.configure(newConf);
         if(configStatus == true){
             printf("New configuration set!\n");
         }
