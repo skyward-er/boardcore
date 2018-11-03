@@ -49,7 +49,7 @@ public:
     bool haveMessage();
 
     CanSocket &operator=(const CanSocket &) = delete;
-    ~CanSocket();
+    virtual ~CanSocket();
 
 protected:
     CanBus *bus = NULL;
