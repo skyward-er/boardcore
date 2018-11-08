@@ -34,9 +34,7 @@ namespace Sensors
 enum class SensorManagerState : uint8_t
 {
     IDLE,
-    INIT_FAIL,
-    SELF_TEST_FAIL,
-    SAMPLING
+    LOGGING
 };
 
 enum Sensor : uint8_t
