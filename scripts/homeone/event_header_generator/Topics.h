@@ -27,13 +27,12 @@
  */
 
 // Generated from:  https://docs.google.com/spreadsheets/d/12TecOmDd7Uot-MvXkCbhDJRU48-XO6s5ChKDlr4AOvI
-// Autogen date:    2018-11-03 20:03:32.248000
+// Autogen date:    2018-11-08 21:25:25.931633
 
 #ifndef SRC_SHARED_BOARDS_HOMEONE_TOPICS_H
 #define SRC_SHARED_BOARDS_HOMEONE_TOPICS_H
 
 #include <stdint.h>
-#include <map>
 #include <string>
 
 using std::map;
@@ -60,19 +59,7 @@ enum Topics : uint8_t
  * @param event
  * @return string
  */
-string getTopicString(uint8_t topic)
-{
-	static const map<uint8_t, string> topic_string_map{
-        { TOPIC_ADA, "TOPIC_ADA" },
-        { TOPIC_DEPLOYMENT, "TOPIC_DEPLOYMENT" },
-        { TOPIC_FLIGHT_EVENTS, "TOPIC_FLIGHT_EVENTS" },
-        { TOPIC_FMM, "TOPIC_FMM" },
-        { TOPIC_IGNITION, "TOPIC_IGNITION" },
-        { TOPIC_TC, "TOPIC_TC" }
-	};
-	auto it = topic_string_map.find(topic);
-	return it == topic_string_map.end() ? "TOPIC_UNKNOWN" : it->second; 
-}
+string getTopicString(uint8_t topic);
 
 }  // namespace HomeoneBoard
 

@@ -125,7 +125,7 @@ print("{} events loaded.".format(len(events)))
 print("{} topics loaded.".format(len(topics)))
 
 enum_str = ""
-map_str = ""
+event_map_str = ""
 
 date = datetime.datetime.now()
 link = "https://docs.google.com/spreadsheets/d/{id}".format(id=SPREADSHEET_ID)
@@ -139,14 +139,14 @@ for e in events:
     endl = ",\n" if e != events[-1] else ""
     enum_str += "    " + e + \
         (" = EV_FIRST_SIGNAL" if e == events[0] else "") + endl
-    map_str += "        {{ {event}, {string} }}{endl}".format(
+    event_map_str += "        {{ {event}, {string} }}{endl}".format(
         event=e, string='"' + e + '"', endl=endl)
 
 with open('Events.h.template', 'r') as template_file:
     template = template_file.read()
 
 template = template.format(sheet_link=link, date=date,
-                           enum_data=enum_str, map_data=map_str)
+                           enum_data=enum_str)
 
 with open('Events.h', 'w') as header_file:
     header_file.write(template)
@@ -156,22 +156,33 @@ print("Events.h successfully generated.")
 
 print("Generating Topics.h...")
 enum_str = ""
-map_str = ""
+topic_map_str = ""
 
 for t in topics:
     endl = ",\n" if t != topics[-1] else ""
     enum_str += "    " + t + endl
-    map_str += "        {{ {topics}, {string} }}{endl}".format(
+    topic_map_str += "        {{ {topics}, {string} }}{endl}".format(
         topics=t, string='"' + t + '"', endl=endl)
 
 with open('Topics.h.template', 'r') as template_file:
     template = template_file.read()
 
 template = template.format(sheet_link=link, date=date,
-                           enum_data=enum_str, map_data=map_str)
+                           enum_data=enum_str)
 
 with open('Topics.h', 'w') as header_file:
     header_file.write(template)
 
+with open('EventFunctions.cpp.template', 'r') as cpp_template_file:
+    cpp = cpp_template_file.read()
+
+cpp = cpp.format(event_map_data=event_map_str, topic_map_data=topic_map_str)
+
+with open('EventFunctions.cpp', 'w') as cpp_file:
+    cpp_file.write(cpp)
+
 print("Topics.h successfully generated.")
-print("Done.")
+
+print()
+print("All files successfully generated. Please move Events.h, Topics.h, EventFunction.cpp into the Homeone board folder.")
+print(".... Done.")
