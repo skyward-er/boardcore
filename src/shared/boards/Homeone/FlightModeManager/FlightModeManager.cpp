@@ -81,7 +81,7 @@ void FlightModeManager::stateTesting(const Event& ev)
             TRACE("FMM: Exiting stateTesting\n");
             break;
 
-        case EV_BOARD_RESET_TC:
+        case EV_TC_BOARD_RESET:
             // TODO: Reboot the board
             break;
 
@@ -104,7 +104,7 @@ void FlightModeManager::stateError(const Event& ev)
             TRACE("FMM: Exiting stateError\n");
             break;
 
-        case EV_BOARD_RESET_TC:
+        case EV_TC_BOARD_RESET:
             // TODO: Reboot the board
             break;
 
@@ -127,7 +127,7 @@ void FlightModeManager::stateDisarmed(const Event& ev)
             TRACE("FMM: Exiting stateDisarmed\n");
             break;
 
-        case EV_TEST_MODE_TC:
+        case EV_TC_TEST_MODE:
             transition(&FlightModeManager::stateTesting);
             break;
 
@@ -137,7 +137,7 @@ void FlightModeManager::stateDisarmed(const Event& ev)
             transition(&FlightModeManager::stateError);
             break;
 
-        case EV_ARM_TC:
+        case EV_TC_ARM:
             transition(&FlightModeManager::stateArmed);
             break;
 
@@ -176,12 +176,12 @@ void FlightModeManager::stateArmed(const Event& ev)
             transition(&FlightModeManager::stateError);
             break;
 
-        case EV_DISARM_TC:
+        case EV_TC_DISARM:
         case EV_TIMEOUT_ARM:
             transition(&FlightModeManager::stateDisarmed);
             break;
 
-        case EV_LAUNCH_TC:
+        case EV_TC_LAUNCH:
             transition(&FlightModeManager::stateLaunching);
             break;
 
@@ -208,7 +208,7 @@ void FlightModeManager::stateLaunching(const Event& ev)
             transition(&FlightModeManager::stateAscending);
             break;
 
-        case EV_DISARM_TC:
+        case EV_TC_DISARM:
             transition(&FlightModeManager::stateDisarmed);
             break;
 
@@ -285,7 +285,7 @@ void FlightModeManager::stateFirstDescentPhase(const Event& ev)
             transition(&FlightModeManager::stateSecondDescentPhase);
             break;
 
-        case EV_MANUAL_MODE_TC:
+        case EV_TC_MANUAL_MODE:
             transition(&FlightModeManager::stateManualDescent);
             break;
 
@@ -318,7 +318,7 @@ void FlightModeManager::stateSecondDescentPhase(const Event& ev)
             sEventBroker->removeDelayed(delayed_event_id);
             break;
 
-        case EV_END_MISSION_TC:
+        case EV_TC_END_MISSION:
         case EV_TIMEOUT_END_MISSION:
             transition(&FlightModeManager::stateLanded);
             break;
@@ -346,7 +346,7 @@ void FlightModeManager::stateManualDescent(const Event& ev)
             TRACE("FMM: Exiting stateManualDescent\n");
             break;
 
-        case EV_END_MISSION_TC:
+        case EV_TC_END_MISSION:
         case EV_TIMEOUT_END_MISSION:
             transition(&FlightModeManager::stateLanded);
             break;
