@@ -36,8 +36,10 @@ namespace FMM
 
 FlightModeManager::FlightModeManager() : FSM(&FlightModeManager::stateDisarmed)
 {
-    // sEventBroker->subscribe(this, TOPIC_COMMANDS);
-    // sEventBroker->subscribe(this, TOPIC_FLIGHT_EVENTS);
+    sEventBroker->subscribe(this, TOPIC_TC);
+    sEventBroker->subscribe(this, TOPIC_FLIGHT_EVENTS);
+    sEventBroker->subscribe(this, TOPIC_ADA);
+    sEventBroker->subscribe(this, TOPIC_DEPLOYMENT);
 }
 
 void FlightModeManager::stateInit(const Event& ev)
