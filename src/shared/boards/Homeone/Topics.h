@@ -60,19 +60,7 @@ enum Topics : uint8_t
  * @param event
  * @return string
  */
-string getTopicString(uint8_t topic)
-{
-	static const map<uint8_t, string> topic_string_map{
-        { TOPIC_ADA, "TOPIC_ADA" },
-        { TOPIC_DEPLOYMENT, "TOPIC_DEPLOYMENT" },
-        { TOPIC_FLIGHT_EVENTS, "TOPIC_FLIGHT_EVENTS" },
-        { TOPIC_FMM, "TOPIC_FMM" },
-        { TOPIC_IGNITION, "TOPIC_IGNITION" },
-        { TOPIC_TC, "TOPIC_TC" }
-	};
-	auto it = topic_string_map.find(topic);
-	return it == topic_string_map.end() ? "TOPIC_UNKNOWN" : it->second; 
-}
+string getTopicString(uint8_t topic);
 
 }  // namespace HomeoneBoard
 
