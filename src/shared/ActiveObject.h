@@ -48,11 +48,15 @@ public:
         this->stack_size = stacksize;
     }
 
-    void start()
+    bool start()
     {
         thread = miosix::Thread::create(threadLauncher, stack_size, priority,
                                         reinterpret_cast<void*>(this));
-        started = true;
+
+        if(thread != nullptr)
+            started = true;
+
+        return started;
     }
 
     virtual ~ActiveObject() {}
