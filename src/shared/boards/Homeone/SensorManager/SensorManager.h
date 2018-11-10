@@ -114,7 +114,7 @@ private:
      * @brief Sensor manager state machine sampling state
      *
      */
-    void stateSampling(const Event& ev);
+    void stateLogging(const Event& ev);
 
     /**
      * Adds all the SensorSamplers to the scheduler and begins sampling.
@@ -155,6 +155,8 @@ private:
 
     // Logger ref
     LoggerProxy& logger;
+
+    bool enable_sensor_logging = false;
 };
 }  // namespace Sensors
 }  // namespace HomeoneBoard

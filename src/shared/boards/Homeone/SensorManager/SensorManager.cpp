@@ -24,7 +24,8 @@
 
 #include "TestSensor.h"
 #include "boards/Homeone/Events.h"
-#include "boards/Homeone/TMTCManager/TMTCManager.h"
+#include "boards/Homeone/Topics.h"
+#include "events/EventBroker.h"
 
 #include "drivers/adc/AD7994.h"
 #include "sensors/ADIS16405.h"
@@ -46,7 +47,8 @@ namespace Sensors
 SensorManager::SensorManager()
     : FSM(&SensorManager::stateIdle), logger(*LoggerProxy::getInstance())
 {
-    sEventBroker->subscribe(this, TOPIC_CONFIGURATION);
+    sEventBroker->subscribe(this, TOPIC_FLIGHT_EVENTS);
+    sEventBroker->subscribe(this, TOPIC_TC);
 
     initSensors();
     initSamplers();
@@ -91,28 +93,46 @@ void SensorManager::stateIdle(const Event& ev)
     switch (ev.sig)
     {
         case EV_ENTRY:
+            enable_sensor_logging = false;
+
+            TRACE("SM: Entering stateIdle\n");
+            status.state = SensorManagerState::IDLE;
+            logger.log(status);
             break;
         case EV_EXIT:
             break;
-        // TODO: Implement init error & self test
-        case EV_TC_START_SAMPLING:
-            transition(&SensorManager::stateSampling);
+
+        // Perform the transition in both cases
+        case EV_TC_START_LOGGING:
+        case EV_ARMED:
+            transition(&SensorManager::stateLogging);
             break;
+
         default:
             break;
     }
 }
 
-void SensorManager::stateSampling(const Event& ev)
+void SensorManager::stateLogging(const Event& ev)
 {
     switch (ev.sig)
     {
         case EV_ENTRY:
-            startSampling();
-            status.state = SensorManagerState::SAMPLING;
+            enable_sensor_logging = true;
+
+            TRACE("SM: Entering stateLogging\n");
+            status.state = SensorManagerState::LOGGING;
+            logger.log(status);
             break;
         case EV_EXIT:
             break;
+
+        // Go back to idle in both cases
+        case EV_TC_STOP_LOGGING:
+        case EV_LANDED:
+            transition(&SensorManager::stateIdle);
+            break;
+
         default:
             break;
     }

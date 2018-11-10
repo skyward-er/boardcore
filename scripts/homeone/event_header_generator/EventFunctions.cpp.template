@@ -1,0 +1,27 @@
+#include "Events.h"
+#include "Topics.h"
+
+#include <map>
+
+namespace HomeoneBoard
+{{
+
+string getEventString(uint8_t event)
+{{
+    static const map<uint8_t, string> event_string_map {{
+{event_map_data}
+    }};
+    auto   it  = event_string_map.find(event);
+    return it == event_string_map.end() ? "EV_UNKNOWN" : it->second;
+}}
+
+string getTopicString(uint8_t topic)
+{{
+	static const map<uint8_t, string> topic_string_map{{
+{topic_map_data}
+	}};
+	auto it = topic_string_map.find(topic);
+	return it == topic_string_map.end() ? "TOPIC_UNKNOWN" : it->second; 
+}}
+
+}}
