@@ -38,6 +38,7 @@ public:
 				char msg[CAN_MAX_LEN + 1] = {'\0'};
 
 				canSocket->receive(msg, CAN_MAX_LEN);
+
 				printf("[TestHandler] CanMsg: %s\n", msg);
 			}
 		}
