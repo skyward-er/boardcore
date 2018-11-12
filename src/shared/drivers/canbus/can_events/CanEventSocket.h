@@ -63,7 +63,7 @@ public:
         CanSocket(topic), handler(handler), signal(sig) {}
     
     /* TODO: Destructor */
-    ~CanEventSocket();
+    ~CanEventSocket() {};
 
     /* 
      * Method of the superclass that is executed on every Canbus message reception.
