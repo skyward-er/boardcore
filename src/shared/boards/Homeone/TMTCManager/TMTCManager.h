@@ -23,88 +23,46 @@
 #ifndef TMTCMANAGER_H
 #define TMTCMANAGER_H
 
-#include "TMTC_Config.h"
+#include "TMTCStatus.h"
 
 #include <Singleton.h>
-#include <events/EventBroker.h>  
-#include <utils/ByteSyncedCircularBuffer.h> 
+#include <events/EventBroker.h>
 
 #include <drivers/gamma868/Gamma868.h>
-#include <boards/Homeone/StatusManager/Status.h>
 
 namespace HomeoneBoard
 {
 namespace TMTC
 {
 
-/*
- * Status of the component, wraps the mavlink stats
- * which are updated at every byte reception.
- */
-struct TMTCStatus : ComponentStatus
-{
-    mavlink_status_t mavstatus;
-    uint8_t sendErrors;
-    uint8_t ackErrors;
-
-	TMTCStatus()
-	{
-		compId = TMTC_COMP_ID;
-		healthStatus = COMP_UNINIT;
-	}
-};
-
 /**
  * The TMTCManager class handles the communication with the Ground Station.
  * It uses a Gamma868 transceiver and implements the Mavlink protocol.
- *
- * SENDER:
- * Since the transceiver's driver defines blocking functions and the LoRa
- * protocol used by the Gamma can be very slow, a synchronized CircularBuffer
- * is used to store outgoing messages: the Sender thread will then periodically
- * send them over the link.
- *
- * RECEIVER:
- * A Receiver thread is also used to read the Gamma868 buffer byte-per-byte and
- * then, when an entire message is read, an appropriate handler is called.
  */
 class TMTCManager : public Singleton<TMTCManager>
 {
     friend class Singleton<TMTCManager>;
 
 public:
+    static const char* DEVICE_NAME = "/dev/radio";
+    static const uint8_t TMTC_MAV_SYSID = 1;
+    static const uint8_t TMTC_MAV_COMPID = 1;
+
     /**
      * Class destructor.
      */
     ~TMTCManager() {}
 
     /**
-     * @return a copy of the status struct.
+     * Non-blocking send wrapper.
      */
-    TMTCStatus getStatus()
+    void send(mavlink_message_t& msg)
     {
-        return status;
+        sender->enqueueMsg(msg);
     }
-
-    /**
-     * Non-blocking function that can be used to send a message: copies the
-     * message into a synchronized buffer.
-     * Note that the message should already be a Mavlink message.
-     * @param  msg       buffer that contains the message
-     * @param  len       length of the message in bytes
-     * @return           false if there isn't enough space in the buffer
-     */
-    bool enqueueMsg(const uint8_t* msg, const uint8_t len);
 
 protected:
 private:
-
-    TMTCStatus status;
-    Gamma868* gamma;
-    ByteSyncedCircularBuffer* outBuffer;
-
-    miosix::Thread* senderThread;
-    miosix::Thread* receiverThread;
 
     /**
      * Private constructor that realizes the Singleton pattern.
@@ -112,49 +70,48 @@ private:
     TMTCManager();
 
     /**
-     * Calls the runSender() member function.
-     * @param arg       this object's pointer, casted to void*
-     */
-    static void senderLauncher(void* arg)
-    {
-        reinterpret_cast<TMTCManager*>(arg)->runSender();
-    }
-
-    /**
-     * Calls the runReceiver() member function.
-     * @param arg       this object's pointer, casted to void*
-     */
-    static void receiverLauncher(void* arg)
-    {
-        reinterpret_cast<TMTCManager*>(arg)->runReceiver();
-    }
-
-    /**
-     * Function ran by the sending thread:
-     * looks for messages in the outBuffer an sends them through the link
-     * using the module's driver.
-     */
-    void runSender();
-
-    /**
-     * Function ran by the receiving thread:
-     * reads and parses incoming messages from the module's buffer and handles them
-     * according to their content.
-     */
-    void runReceiver();
-
-
-    /**
      *  Handles the Mavlink message, posting the corresponding event if needed.
-     * @param msg           pointer to the mavlink message to handle
+     * @param msg           mavlink message to handle
      */
-    void handleMavlinkMessage(const mavlink_message_t* msg);
+    void handleMavlinkMessage(const mavlink_message_t& msg);
 
     /**
      * Sends an acknowledge message back to the Ground Station.
      * @param msg    Mavlink message to acknowledge.
      */
     void sendAck(const mavlink_message_t* msg);
+
+    Gamma868* device;
+
+    MavSender* sender;
+    MavReceiver* receiver;
+
+    TMTCStatus status;
+
+    static const std::map<uint8_t, uint8_t> statusCmdToEvt = 
+    {
+        { MAV_NOSECONE_BOARD, EV_NOSECONE_STATUS_REQUEST },
+        { MAV_IGNITION_BOARD, EV_IGNITION_STATUS_REQUEST },
+        { MAV_HOMEONE_BOARD,  EV_HOMEONE_STATUS_REQUEST }
+    };
+
+    static const std::map<uint8_t, uint8_t> noargCmdToEvt = 
+    {
+        { MAV_CMD_ARM,              EV_TC_ARM    }, 
+        { MAV_CMD_DISARM,           EV_TC_DISARM }, 
+        { MAV_CMD_ABORT,            EV_TC_ABORT_LAUNCH  }, 
+        { MAV_CMD_NOSECONE_OPEN,    EV_TC_NC_OPEN }, 
+        { MAV_CMD_NOSECONE_CLOSE,   EV_TC_NC_CLOSE }, 
+        { MAV_CMD_START_SAMPLING,   EV_TC_START_LOGGIN }, 
+        { MAV_CMD_STOP_SAMPLING,    EV_TC_STOP_LOGGIN }, 
+        { MAV_CMD_TEST_MODE,        EV_TC_TEST_MODE   }, 
+        { MAV_CMD_BOARD_RESET,      EV_TC_BOARD_RESET }, 
+
+        { MAV_CMD_MANUAL_MODE,      EV_TC_MANUAL_MODE },
+        { MAV_CMD_CUT_ALL,          EV_TC_CUT_ALL },
+        { MAV_CMD_CUT_FIRST_DROGUE, EV_TC_CUT_FIRST_DROGUE },
+        { MAV_CMD_END_MISSION,      EV_TC_END_MISSION }
+    };
 };
 
 } /* namespace HomeoneBoard */
