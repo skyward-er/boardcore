@@ -176,7 +176,8 @@ with open('Topics.h', 'w') as header_file:
 with open('EventFunctions.cpp.template', 'r') as cpp_template_file:
     cpp = cpp_template_file.read()
 
-cpp = cpp.format(event_map_data=event_map_str, topic_map_data=topic_map_str)
+cpp = cpp.format(sheet_link=link, date=date,
+                 event_map_data=event_map_str, topic_map_data=topic_map_str)
 
 with open('EventFunctions.cpp', 'w') as cpp_file:
     cpp_file.write(cpp)
