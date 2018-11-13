@@ -29,33 +29,16 @@ using miosix::Thread;
 
 int main()
 {
-    HardwareTimer<uint32_t, 2> timer2 = HardwareTimer<uint32_t, 2>::instance();
-    HardwareTimer<uint16_t, 10> timer1 =
-        HardwareTimer<uint16_t, 10>::instance();
-/*
-    timer1.setPrescaler(9999);
-    timer1.start();
+    HardwareTimer<uint32_t, 2>& timer2 = HardwareTimer<uint32_t, 2>::instance();
+
     timer2.start();
-    int i = 0;
-    for (;;)
+
+    while (true)
     {
-        uint32_t start2 = timer2.tick();
-        Thread::sleep(10 * pow(10, i));
-        uint32_t end2 = timer2.tick();
+        uint32_t tick = timer2.tick();
+        printf("%d\t\t(%.3f)\n", tick, timer2.toMilliSeconds(tick));
 
-        uint16_t start1 = timer1.start();
-        Thread::sleep(10 * pow(10, i));
-        uint16_t end1 = timer1.tick();
-
-        uint32_t t2 = end2 - start2;
-        uint32_t t1 = end1 - start1;
-
-        printf("Timer1: %.6f, %.3f, %.3f\n", timer1.toSeconds(t1),
-               timer1.toMilliSeconds(t1), timer1.toMicroSeconds(t1));
-        printf("Timer2: %.6f, %.3f, %.3f\n\n", timer2.toSeconds(t2),
-               timer2.toMilliSeconds(t2), timer2.toMicroSeconds(t2));
-        i++;
+        usleep(100000);
     }
-    */
     return 0;
 }

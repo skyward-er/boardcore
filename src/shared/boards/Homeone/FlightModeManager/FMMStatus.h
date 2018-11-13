@@ -27,6 +27,7 @@
 
 enum class FMMState : uint8_t
 {
+    UNDEFINED,
     INIT,
     TESTING,
     ERROR,
@@ -42,7 +43,7 @@ enum class FMMState : uint8_t
 
 struct FMMStatus
 {
-    FMMState state;
+    FMMState state = FMMState::UNDEFINED;
 };
 
 #endif /* SRC_SHARED_BOARDS_HOMEONE_FLIGHTMODEMANAGER_FMMSTATUS_H */
