@@ -27,7 +27,7 @@
  */
 
 // Generated from:  https://docs.google.com/spreadsheets/d/12TecOmDd7Uot-MvXkCbhDJRU48-XO6s5ChKDlr4AOvI
-// Autogen date:    2018-11-08 21:25:25.931633
+// Autogen date:    2018-11-13 13:42:04.399741
 
 #ifndef SRC_SHARED_BOARDS_HOMEONE_EVENTS_H
 #define SRC_SHARED_BOARDS_HOMEONE_EVENTS_H
@@ -37,6 +37,7 @@
 
 #include "events/Event.h"
 #include "events/EventBroker.h"
+#include "Topics.h"
 
 using std::string;
 using std::map;
