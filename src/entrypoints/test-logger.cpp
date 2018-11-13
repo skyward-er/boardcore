@@ -23,7 +23,7 @@
 #include <cstdio>
 #include <logger/Logger.h>
 #include <diagnostic/CpuMeter.h>
-#include "test_logger.h"
+#include "test-logger.h"
 
 using namespace std;
 using namespace miosix;
