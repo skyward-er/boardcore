@@ -80,9 +80,8 @@ private:
 
     LoggerProxy& logger = *(LoggerProxy::getInstance());
 };
+
 }  // namespace FMM
 }  // namespace HomeoneBoard
-
-#define sFlightModeManager FlightModeManager::getInstance()
 
 #endif /* SRC_SHARED_BOARDS_HOMEONE_FLIGHTMODEMANAGER_FSM_H */
