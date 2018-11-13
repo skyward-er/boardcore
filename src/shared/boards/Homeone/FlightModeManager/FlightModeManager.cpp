@@ -34,7 +34,7 @@ namespace HomeoneBoard
 namespace FMM
 {
 
-FlightModeManager::FlightModeManager() : FSM(&FlightModeManager::stateDisarmed)
+FlightModeManager::FlightModeManager() : FSM(&FlightModeManager::stateInit)
 {
     sEventBroker->subscribe(this, TOPIC_TC);
     sEventBroker->subscribe(this, TOPIC_FLIGHT_EVENTS);
