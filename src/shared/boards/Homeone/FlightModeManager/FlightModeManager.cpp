@@ -63,7 +63,7 @@ void FlightModeManager::stateInit(const Event& ev)
             break;
 
         default:
-            TRACE("stateInit: Event %d not handled.\n", ev.sig);
+            TRACE("FMM stateInit: Event %d not handled.\n", ev.sig);
             break;
     }
 }
@@ -86,7 +86,7 @@ void FlightModeManager::stateTesting(const Event& ev)
             break;
 
         default:
-            TRACE("stateTesting: Event %d not handled.\n", ev.sig);
+            TRACE("FMM stateTesting: Event %d not handled.\n", ev.sig);
             break;
     }
 }
@@ -109,7 +109,7 @@ void FlightModeManager::stateError(const Event& ev)
             break;
 
         default:
-            TRACE("stateError: Event %d not handled.\n", ev.sig);
+            TRACE("FMM stateError: Event %d not handled.\n", ev.sig);
             break;
     }
 }
@@ -142,7 +142,7 @@ void FlightModeManager::stateDisarmed(const Event& ev)
             break;
 
         default:
-            TRACE("stateDisarmed: Event %d not handled.\n", ev.sig);
+            TRACE("FMM stateDisarmed: Event %d not handled.\n", ev.sig);
             break;
     }
 }
@@ -186,7 +186,7 @@ void FlightModeManager::stateArmed(const Event& ev)
             break;
 
         default:
-            TRACE("stateArmed: Event %d not handled.\n", ev.sig);
+            TRACE("FMM stateArmed: Event %d not handled.\n", ev.sig);
             break;
     }
 }
@@ -217,7 +217,7 @@ void FlightModeManager::stateLaunching(const Event& ev)
             break;
 
         default:
-            TRACE("stateLaunching: Event %d not handled.\n", ev.sig);
+            TRACE("FMM stateLaunching: Event %d not handled.\n", ev.sig);
             break;
     }
 }
@@ -252,7 +252,7 @@ void FlightModeManager::stateAscending(const Event& ev)
             break;
 
         default:
-            TRACE("stateAscending: Event %d not handled.\n", ev.sig);
+            TRACE("FMM stateAscending: Event %d not handled.\n", ev.sig);
             break;
     }
 }
@@ -290,7 +290,7 @@ void FlightModeManager::stateFirstDescentPhase(const Event& ev)
             break;
 
         default:
-            TRACE("stateFirstDescentPhase: Event %d not handled.\n", ev.sig);
+            TRACE("FMM stateFirstDescentPhase: Event %d not handled.\n", ev.sig);
             break;
     }
 }
@@ -324,7 +324,7 @@ void FlightModeManager::stateSecondDescentPhase(const Event& ev)
             break;
 
         default:
-            TRACE("stateSecondDescentPhase: Event %d not handled.\n", ev.sig);
+            TRACE("FMM stateSecondDescentPhase: Event %d not handled.\n", ev.sig);
             break;
     }
 }
@@ -352,7 +352,7 @@ void FlightModeManager::stateManualDescent(const Event& ev)
             break;
 
         default:
-            TRACE("stateManualDescent: Event %d not handled.\n", ev.sig);
+            TRACE("FMM stateManualDescent: Event %d not handled.\n", ev.sig);
             break;
     }
 }
@@ -374,7 +374,7 @@ void FlightModeManager::stateLanded(const Event& ev)
             break;
 
         default:
-            TRACE("stateLanded: Event %d not handled.\n", ev.sig);
+            TRACE("FMM stateLanded: Event %d not handled.\n", ev.sig);
             break;
     }
 }
