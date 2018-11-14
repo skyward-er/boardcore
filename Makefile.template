@@ -28,7 +28,7 @@ LIBS :=
 ##
 ## List here additional include directories (in the form -Iinclude_dir)
 ##
-INCLUDE_DIRS := -Isrc/shared -Ilibs -Imiosix-kernel -Imiosix
+INCLUDE_DIRS := -Isrc/shared -Isrc/tests -Ilibs -Imiosix-kernel -Imiosix
 
 ##############################################################################
 ## You should not need to modify anything below                             ##
