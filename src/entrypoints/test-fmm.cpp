@@ -5,6 +5,8 @@
 
 #include <miosix.h>
 #include <catch.hpp>
+#include <cstdint>
+#include <cstdio>
 #include <string>
 #include <vector>
 
@@ -75,17 +77,15 @@ int main()
 void checkTransition(FlightModeManager& mgr, FMMState previous,
                      FMMState expected)
 {
-    for (int i = 0; i < 1000; i++)
+    for (int i = 0; i < 500; i++)
     {
-        if (i == 999)
-            FAIL("Transition timeout\n");  // Fail the test. The state machine
-                                           // didn't change the state
         if (mgr.getStatus().state != previous)
-            break;
+            REQUIRE(mgr.getStatus().state == expected);
+
         usleep(100);
     }
-
-    REQUIRE(mgr.getStatus().state == expected);
+    FAIL("Transition timeout\n");  // Fail the test. The state machine
+                                   // didn't change the state
 }
 
 TEST_CASE("FlightModeManager", "[fmm]")

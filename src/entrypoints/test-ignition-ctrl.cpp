@@ -1,31 +1,41 @@
-#include <Common.h>
-#include "boards/Homeone/Events.h"
+/* Copyright (c) 2018 Skyward Experimental Rocketry
+ * Authors: Luca Erbetta
+ * 
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ * 
+ * The above copyright notice and this permission notice shall be included in
+ * all copies or substantial portions of the Software.
+ * 
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.  IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+ * THE SOFTWARE.
+ */
 
+#include <cstdio>
+
+#include "boards/Homeone/Events.h"
 #include "boards/Homeone/IgnitionController/IgnitionController.h"
 
-#include <iostream>
 using namespace miosix;
-using namespace HomeoneBoard;
-using namespace IGN;
+using namespace HomeoneBoard::Ignition;
+
 int main()
 {
-    sIgnitionController->start();
-    sEventBroker->start();
-
-    //CanAbstraction canAbst(LINK_IGNITION);
-    //ignitionPublisher = canAbst.getPublisher(CAN_IGNITION_STATUS);
-    //ignitionStatusSub = canAbst.getSubscriber(CAN_IGNITION);
-
-
-	while(1) {
-		Thread::sleep(100);
-        
-        StartLaunchEvent evt;
-        evt.launchCode = 1;
-        sEventBroker->post(evt, TOPIC_IGNITION);
-
-     //   ignitionPublisher->publish((uint8_t*) &launchCode, sizeof(can_abort_ignition_msg));
-	}
-
+    IgnitionController* ctrl = IgnitionController::getInstance();
+    ctrl->getStatus();
+    
+    for(;;)
+    {
+        printf("end\n");
+    }
 	return 0;
 }
