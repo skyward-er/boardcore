@@ -1,5 +1,5 @@
-/* Copyright (c) 2018 Skyward Experimental Rocketry
- * Authors: Luca Erbetta
+/* Copyright (c) 2015-2018 Skyward Experimental Rocketry
+ * Authors: Matteo Michele Piazzolla
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -19,61 +19,50 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
+#ifndef SRC_SHARED_BOARDS_HOMEONE_IGNITIONCTRL_FSM_H
+#define SRC_SHARED_BOARDS_HOMEONE_IGNITIONCTRL_FSM_H
 
-#ifndef SRC_SHARED_BOARDS_HOMEONE_IGNITIONCONTROLLER_IGNITIONCONTROLLER_H
-#define SRC_SHARED_BOARDS_HOMEONE_IGNITIONCONTROLLER_IGNITIONCONTROLLER_H
-
-#include "IgnitionStatus.h"
 #include "Singleton.h"
-#include "boards/Homeone/CanInterfaces.h"
-#include "events/FSM.h"
-#include "logger/LogProxy.h"
 
-class CanEventSocket;
+#include "events/Event.h"
+#include "events/FSM.h"
+
+#include "drivers/canbus/can_events/CanEventAdapter.h"
+#include "boards/Homeone/CanInterfaces.h"
 
 namespace HomeoneBoard
 {
-namespace Ignition
+namespace IGN  // IgnitionController
 {
 
+/**
+ * Implementation of the IgnitionController Finite State Machine
+ */
 class IgnitionController : public FSM<IgnitionController>,
                            public Singleton<IgnitionController>
 {
     friend class Singleton<IgnitionController>;
 
-public:
-    IgnitionStatus getStatus() { return status; }
-
-    CanInterfaces::IgnitionBoardStatus getBoardStatus() { return board_status; }
-
 private:
     IgnitionController();
-    ~IgnitionController();
+    ~IgnitionController() {}
 
-    void stateIdle(const Event& ev);
-    void stateAborted(const Event& ev);
-    void stateEnd(const Event& ev);
+    CanEventSocket* canSocket;
 
-    /**
-     * @brief Updates the status of the ignition board if received on the canbus
-     *
-     * @param ev ev The event notifying a new message on the canbus
-     * @return Wether the board status was updated or not
-     */
-    bool updateIgnBoardStatus(const Event& ev);
+    // States declarations
+    void state_idle(const Event& e);
+    void state_get_status(const Event& e);
+    void state_wait_response(const Event& e);
 
-    IgnitionStatus status;
-    CanInterfaces::IgnitionBoardStatus board_status;
+    void updateInternalState(uint8_t *can_msg);
 
-    LoggerProxy& logger = *(LoggerProxy::getInstance());
-
-    uint16_t ev_ign_offline_handle = 0;
-    uint16_t ev_get_status_handle  = 0;
-
-    CanEventSocket* can_socket;
+    // State variables
+    CanInterfaces::IgnitionBoardStatus ignition_board_status;
+    const uint8_t MAX_RETRY = 5;
 };
+}
+}
 
-}  // namespace Ignition
-}  // namespace HomeoneBoard
+#define sIgnitionController HomeoneBoard::IGN::IgnitionController::getInstance()
 
-#endif /* SRC_SHARED_BOARDS_HOMEONE_IGNITIONCONTROLLER_IGNITIONCONTROLLER_H */
+#endif /* SRC_SHARED_BOARDS_HOMEONE_IGNITIONCTRL_FSM_H */
