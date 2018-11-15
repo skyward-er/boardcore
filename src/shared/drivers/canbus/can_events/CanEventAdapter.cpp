@@ -36,6 +36,10 @@ CanEventAdapter::CanEventAdapter()
     can_manager->addBus<GPIOA_BASE, 11, 12>(can_config);
 }
 
+CanEventAdapter::~CanEventAdapter()
+{
+    delete can_manager;
+}
 
 /**
  * Create a new socket that listens to messages on a specific topic
@@ -52,20 +56,6 @@ CanEventSocket* CanEventAdapter::subscribe(EventHandler* callback,
     socket->open(can_manager->getBus(BUS_ID));
 
     return socket;
-}
-
-
-/**
- * Send a generic event on the canbus
- * @param ev     Event to be sent
- * @param topic  ID of the message on the CANBUS
- * @return       wether the event was sent successfully or not
- */
-bool CanEventAdapter::postEvent(const Event& ev, const uint16_t topic)
-{
-    const uint8_t* msg = reinterpret_cast<const uint8_t *>(&ev);
-
-    return postMsg(msg, sizeof(Event), topic);
 }
 
 

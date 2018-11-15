@@ -4,9 +4,6 @@
 
 using namespace HomeoneBoard;
 using namespace CanInterfaces;
-
-#define TOPIC_RCV canTopicToInt(CanTopic::CAN_TOPIC_COMMANDS)
-#define TOPIC_SND canTopicToInt(CanTopic::CAN_TOPIC_IGN)
 #define DEBUG
 
 /**
@@ -54,19 +51,20 @@ private:
  */
 int main() 
 {
-	TestHandler* rcv = new TestHandler(TOPIC_SND);
+	TestHandler* rcv = new TestHandler(CAN_TOPIC_IGNITION);
 	rcv->start();
 
 	rcv->postEvent(Event{10});
 
 	// uint8_t msg[7] = {'S','K','Y','W','A','R','D'};
 	// sCanEventAdapter->postMsg(msg, 7, TOPIC);
-
+	uint8_t buf[CAN_MAX_PAYLOAD];
 	while(1) 
 	{
 		printf("Sending... ");
 		/* Send event on the canbus */
-		bool ok = sCanEventAdapter->postEvent(Event{0xAA}, TOPIC_RCV);
+		int l = canMsgSimple(buf, 0x0A);
+		bool ok = sCanEventAdapter->postMsg(buf, l, CAN_TOPIC_HOMEONE);
 		printf("ok=%d\n", ok);
 
 		miosix::Thread::sleep(500);

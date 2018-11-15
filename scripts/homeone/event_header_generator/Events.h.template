@@ -37,6 +37,8 @@
 
 #include "events/Event.h"
 #include "events/EventBroker.h"
+#include "EventClasses.h"
+#include "Topics.h"
 
 using std::string;
 using std::map;

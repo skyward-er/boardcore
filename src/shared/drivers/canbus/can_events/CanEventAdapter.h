@@ -47,15 +47,12 @@ public:
                                 const uint16_t topic, 
                                 const uint8_t signal);
 
-    /* Send an event on the CANBUS */
-    bool postEvent(const Event& ev, const uint16_t topic);
-
     /* Send a raw message on the CANBUS */
     bool postMsg(const uint8_t *message, const uint8_t len, const uint16_t topic);
 
 private:
     CanEventAdapter();
-    ~CanEventAdapter(){}
+    ~CanEventAdapter();
 
     const uint8_t BUS_ID = 0;
     CanManager* can_manager;

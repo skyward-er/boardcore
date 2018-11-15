@@ -1,5 +1,4 @@
-/*
- * Copyright (c) 2018 Skyward Experimental Rocketry
+/* Copyright (c) 2018 Skyward Experimental Rocketry
  * Authors: Luca Erbetta
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -14,31 +13,36 @@
  *
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.  IN NO EVENT SHALL THE
  * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
  * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
 
-#include <miosix.h>
-#include <cstdio>
-#include "drivers/HardwareTimer.h"
+#ifndef SRC_SHARED_BOARDS_HOMEONE_IGNITIONCONTROLLER_IGNITIONSTATUS_H
+#define SRC_SHARED_BOARDS_HOMEONE_IGNITIONCONTROLLER_IGNITIONSTATUS_H
 
-using miosix::Thread;
+#include <cstdint>
 
-int main()
+namespace HomeoneBoard
 {
-    HardwareTimer<uint32_t, 2>& timer2 = HardwareTimer<uint32_t, 2>::instance();
+namespace Ignition
+{
 
-    timer2.start();
+enum IgnitionControllerState : uint8_t
+{
+    UNKNOWN,
+    IDLE,
+    ABORTED,
+    END
+};
 
-    while (true)
-    {
-        uint32_t tick = timer2.tick();
-        printf("%d\t\t(%.3f)\n", tick, timer2.toMilliSeconds(tick));
+struct IgnitionStatus
+{
+    IgnitionControllerState ctrl_state = IgnitionControllerState::UNKNOWN;
+};
 
-        usleep(100000);
-    }
-    return 0;
 }
+}
+#endif /* SRC_SHARED_BOARDS_HOMEONE_IGNITIONCONTROLLER_IGNITIONSTATUS_H */

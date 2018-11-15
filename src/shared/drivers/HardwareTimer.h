@@ -98,10 +98,8 @@ public:
      */
     float toMicroSeconds(T ticks)
     {
-        float ticks_per_micro =
-            getPrescalerInputFrequency() * 1.0f / (1 + prescaler) / 1000 / 1000;
-
-        return ticks * 1.0f / ticks_per_micro;
+        return (1.0f * ticks * 1000000 * (1 + prescaler)) /
+               (float)getPrescalerInputFrequency();
     }
 
     /**
@@ -113,10 +111,8 @@ public:
      */
     float toMilliSeconds(T ticks)
     {
-        float ticks_per_milli =
-            getPrescalerInputFrequency() * 1.0f / (1 + prescaler) / 1000;
-
-        return ticks * 1.0f / ticks_per_milli;
+        return (1.0f * ticks * 1000 * (1 + prescaler)) /
+               (float)getPrescalerInputFrequency();
     }
 
     /**
@@ -128,10 +124,8 @@ public:
      */
     float toSeconds(T ticks)
     {
-        float ticks_per_sec =
-            getPrescalerInputFrequency() * 1.0f / (1 + prescaler);
-
-        return ticks * 1.0f / ticks_per_sec;
+        return (1.0f * ticks * (1 + prescaler)) /
+               (float)getPrescalerInputFrequency();
     }
 
     /*static float toSeconds(T tick) {}
