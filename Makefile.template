@@ -5,7 +5,7 @@ MAKEFILE_VERSION := 1.07S
 ## Path to kernel directory (edited by init_project_out_of_git_repo.pl)
 KPATH := libs/miosix-kernel/miosix
 ## Path to config directory (edited by init_project_out_of_git_repo.pl)
-CONFPATH := .
+CONFPATH := libs/miosix-kernel/miosix
 {SBS_BOARD_DEFINE}
 {SBS_MAP_FILE}
 include $(CONFPATH)/config/Makefile.inc
