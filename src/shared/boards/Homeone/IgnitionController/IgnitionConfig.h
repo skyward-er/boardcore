@@ -1,5 +1,4 @@
-/*
- * Copyright (c) 2018 Skyward Experimental Rocketry
+/* Copyright (c) 2018 Skyward Experimental Rocketry
  * Authors: Luca Erbetta
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -14,31 +13,18 @@
  *
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.  IN NO EVENT SHALL THE
  * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
  * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
 
-#include <miosix.h>
-#include <cstdio>
-#include "drivers/HardwareTimer.h"
+#ifndef SRC_SHARED_BOARDS_HOMEONE_IGNITIONCONTROLLER_IGNITIONCONFIG_H
+#define SRC_SHARED_BOARDS_HOMEONE_IGNITIONCONTROLLER_IGNITIONCONFIG_H
 
-using miosix::Thread;
+//TODO: Update with real values
+static const unsigned int INTERVAL_MS_IGN_GET_STATUS = 2000;
+static const unsigned int TIMEOUT_MS_IGN_OFFLINE = 7*1000; 
 
-int main()
-{
-    HardwareTimer<uint32_t, 2>& timer2 = HardwareTimer<uint32_t, 2>::instance();
-
-    timer2.start();
-
-    while (true)
-    {
-        uint32_t tick = timer2.tick();
-        printf("%d\t\t(%.3f)\n", tick, timer2.toMilliSeconds(tick));
-
-        usleep(100000);
-    }
-    return 0;
-}
+#endif

@@ -41,7 +41,7 @@ struct PressureSampleEvent : Event
     uint16_t pressure;
 };
 
-struct StartLaunchEvent : Event
+struct LaunchEvent : Event
 {
     uint64_t launchCode;
 };

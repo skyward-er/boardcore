@@ -27,37 +27,63 @@
 
 #include <stdint.h>
 
-namespace CanInterfaces 
+namespace CanInterfaces
 {
 
 /**
  * CanTopics = Canbus FilterIds = Source of the Canbus message
- * Pay attention to the ORDER: higher number => higher priority
+ * Pay attention to the ORDER: lower number => higher priority
  */
-enum class CanTopic {
-    CAN_TOPIC_NOS,
-    CAN_TOPIC_LAUNCH,
-    CAN_TOPIC_IGN,
-    CAN_TOPIC_COMMANDS,
-    CAN_TOPIC_LAST
-};
-
-inline uint8_t canTopicToInt(CanTopic cmd) 
+enum CanTopic : uint16_t
 {
-    return static_cast<uint8_t>(cmd);
-}
-
-
-struct IgnitionBoardStatus{
-    uint8_t u1_abort_cmd;
-    uint8_t u1_abort_timeout;
-    uint8_t u1_wrong_code;
-    uint8_t u1_launch_done;
-    uint8_t u2_abort_cmd;
-    uint8_t u2_abort_timeout;
-    uint8_t u2_wrong_code;
-    uint8_t u2_launch_done;
+    CAN_TOPIC_HOMEONE  = 0,
+    CAN_TOPIC_LAUNCH   = 2,
+    CAN_TOPIC_IGNITION = 4,
+    CAN_TOPIC_NOSECONE = 8
 };
+
+enum CanMessageID : uint8_t
+{
+    CAN_MSG_ABORT,
+    CAN_MSG_REQ_IGN_STATUS,
+    CAN_MSG_REQ_NSC_STATUS,
+    CAN_MSG_IGN_STATUS,
+    CAN_MSG_NSC_STATUS
+};
+
+#pragma pack(1)
+
+struct CanMsg
+{
+    uint8_t msg_id;
+};
+
+
+struct IgnitionBoardStatus
+{
+    uint8_t u1_abort_cmd : 1;
+    uint8_t u1_abort_timeout : 1;
+    uint8_t u1_wrong_code : 1;
+    uint8_t u1_launch_done : 1;
+    uint8_t u2_abort_cmd : 1;
+    uint8_t u2_abort_timeout : 1;
+    uint8_t u2_wrong_code : 1;
+    uint8_t u2_launch_done : 1;
+};
+
+
+struct IgnitionStatusCanMsg : CanMsg
+{
+    IgnitionBoardStatus ign_status;
+};
+
+#pragma pack()
+
+int canMsgSimple(uint8_t* buf, uint8_t id);
+
+int canMsgIgnitionStatus(uint8_t* buf, IgnitionBoardStatus ign_status);
+
+int canMsgLaunch(uint8_t* buf, uint64_t launch_code);
 
 } /* namespace CanInterfaces */
 
