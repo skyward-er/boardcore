@@ -46,9 +46,7 @@ int main()
 
 TEST_CASE("Test Bitfield", "[bitfield]")
 {
-    REQUIRE(sizeof(CanMsg) == 1);
     REQUIRE(sizeof(IgnitionBoardStatus) == 1);
-    REQUIRE(sizeof(IgnitionStatusCanMsg) == 2);
 
     uint8_t bitmap;
     IgnitionBoardStatus brd{1, 0, 0, 0, 1, 1, 1, 1};

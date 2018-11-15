@@ -45,7 +45,7 @@ IgnitionController::~IgnitionController()
 {
     can_socket->close();
     delete can_socket;
-};
+}
 
 bool IgnitionController::updateIgnBoardStatus(const Event& ev)
 {

@@ -20,31 +20,12 @@
  * THE SOFTWARE.
  */
 
-#include <cstring>
+
 #include "CanInterfaces.h"
 
 namespace CanInterfaces
 {
     
-int canMsgSimple(uint8_t* buf, uint8_t id)
-{
-    memset(buf, 0, 8);
-    buf[0] = id;
-    return 1;
-}
 
-int canMsgIgnitionStatus(uint8_t* buf, IgnitionBoardStatus ign_status)
-{
-    memset(buf, 0, 8);
-    buf[0] = CAN_MSG_IGN_STATUS;
-    memcpy(++buf, &ign_status, sizeof(ign_status));
-    return 2;
-}
-
-int canMsgLaunch(uint8_t* buf, uint64_t launch_code)
-{
-    memcpy(buf, &launch_code, 8);
-    return 8;
-}
 
 }

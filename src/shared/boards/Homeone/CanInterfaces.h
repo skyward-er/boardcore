@@ -26,6 +26,7 @@
 #define CAN_INTERFACES_H
 
 #include <stdint.h>
+#include <cstring>
 
 namespace CanInterfaces
 {
@@ -51,15 +52,8 @@ enum CanMessageID : uint8_t
     CAN_MSG_NSC_STATUS
 };
 
-#pragma pack(1)
 
-struct CanMsg
-{
-    uint8_t msg_id;
-};
-
-
-struct IgnitionBoardStatus
+struct __attribute__((packed)) IgnitionBoardStatus
 {
     uint8_t u1_abort_cmd : 1;
     uint8_t u1_abort_timeout : 1;
@@ -72,18 +66,26 @@ struct IgnitionBoardStatus
 };
 
 
-struct IgnitionStatusCanMsg : CanMsg
+static inline int canMsgSimple(uint8_t* buf, uint8_t id)
+ {
+    memset(buf, 0, 8);
+    buf[0] = id;
+    return 1;
+}
+
+static inline int canMsgIgnitionStatus(uint8_t* buf, IgnitionBoardStatus ign_status)
 {
-    IgnitionBoardStatus ign_status;
-};
+    memset(buf, 0, 8);
+    buf[0] = CAN_MSG_IGN_STATUS;
+    memcpy(++buf, &ign_status, sizeof(ign_status));
+    return 2;
+}
 
-#pragma pack()
-
-inline int canMsgSimple(uint8_t* buf, uint8_t id);
-
-inline int canMsgIgnitionStatus(uint8_t* buf, IgnitionBoardStatus ign_status);
-
-inline int canMsgLaunch(uint8_t* buf, uint64_t launch_code);
+static inline int canMsgLaunch(uint8_t* buf, uint64_t launch_code)
+{
+    memcpy(buf, &launch_code, 8);
+    return 8;
+}
 
 } /* namespace CanInterfaces */
 
