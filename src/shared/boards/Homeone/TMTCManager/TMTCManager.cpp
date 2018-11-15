@@ -22,6 +22,8 @@
 
 #include "TMTCManager.h"
 
+#define TC(x) MAVLINK_MSG_ID_##X##_TC
+
 namespace HomeoneBoard
 {
 namespace TMTC
@@ -32,110 +34,46 @@ namespace TMTC
  */
 TMTCManager::TMTCManager()
 {
-    gamma     = new Gamma868(RADIO_DEVICE_NAME);
-    outBuffer = new ByteSyncedCircularBuffer(TMTC_OUT_BUFFER_SIZE);
+    device   = new Gamma868("/dev/radio");
+    sender   = new MavSender(device);
+    receiver = new MavReceiver(device, &handleMavlinkMessage);
 
-    receiverThread = miosix::Thread::create(
-        receiverLauncher, TMTC_RECEIVER_STACKSIZE, TMTC_RECEIVER_PRIORITY,
-        reinterpret_cast<void*>(this));
-    senderThread = miosix::Thread::create(
-        senderLauncher, TMTC_SENDER_STACKSIZE, TMTC_SENDER_PRIORITY,
-        reinterpret_cast<void*>(this));
+    sender->start();
+    receiver->start()
 
     TRACE("%s", "[TMTC] Created TMTCManager\n");
-    
-    // TODO: check gamma status and configuration?
-
-    status.healthStatus = COMP_OK;
 }
+
 
 /**
- * Non-blocking send function
+ * Send an ACK to notify the sender that you received the given message.
  */
-bool TMTCManager::enqueueMsg(const uint8_t* msg, const uint8_t len)
+void TMTCManager::sendAck(const mavlink_message_t& msg)
 {
-    size_t written = outBuffer->put(msg, len);
+    mavlink_message_t ackMsg;
+    mavlink_msg_ack_tm_pack(TMTC_MAV_SYSID, TMTC_MAV_COMPID, &ackMsg,
+                                    msg.msgid, msg.seq);
 
-    TRACE("[TMTC] Enqueueing %d bytes\n", len);
-
-    return (written > 0);
+    /* Send the message back to the sender */
+    send(ackMsg);
+    TRACE("[TMTC] Enqueued Ack\n", 0);
 }
 
-/**
- * Sending thread's run() function
- */
-void TMTCManager::runSender()
-{
-    uint8_t msgTemp[TMTC_MAX_PKT_SIZE];
-
-    TRACE("%s", "[TMTC] Sender is running\n");
-
-    while (1)
-    {
-        /* Read from the buffer at maximum MAX_PKT_SIZE bytes and send them */
-        while ( !(outBuffer->isEmpty()) )
-        {
-            TRACE("[TMTC] Found %u bytes\n", outBuffer->count());
-            uint32_t readBytes = outBuffer->pop(msgTemp, TMTC_MAX_PKT_SIZE);
-            bool sent = gamma->send(msgTemp, readBytes);
-
-            TRACE("[TMTC] Sending %lu bytes\n", readBytes);
-
-            if (!sent)
-                status.sendErrors++; // TODO: fault counter?
-        }
-
-        /* Sleep guarantees that commands from the GS can be received */
-        miosix::Thread::sleep(TMTC_MIN_GUARANTEED_SLEEP);
-    }
-
-    status.healthStatus = COMP_FAILED;
-}
-
-/**
- * Receiving thread's run() function
- */
-void TMTCManager::runReceiver()
-{
-    mavlink_message_t msg;
-    uint8_t byte;
-
-    while (1)
-    {
-        gamma->receive(&byte, 1);  // Blocking function
-
-        /* Parse one char at a time until you find a complete message */
-        if (mavlink_parse_char(MAVLINK_COMM_0, byte, &msg, &(status.mavstatus)))
-        {
-            TRACE(
-                "[TMTC] Received message with ID %d, sequence: %d from "
-                "component %d of system %d\n",
-                msg.msgid, msg.seq, msg.compid, msg.sysid);
-
-            /* Send Ack */
-            if (msg.msgid != MAVLINK_MSG_ID_ACK_TM)
-                sendAck(&msg);
-
-            /* Handle the command */
-            handleMavlinkMessage(&msg);
-        }
-    }
-
-    status.healthStatus = COMP_FAILED;
-}
 
 /**
  *  Handle the Mavlink message, posting the corresponding event if needed.
  */
-void TMTCManager::handleMavlinkMessage(const mavlink_message_t* msg)
+void TMTCManager::handleMavlinkMessage(const mavlink_message_t& msg)
 {
-    uint8_t msgId = msg->msgid;
+    uint8_t msgId = msg.msgid;
+
+    // TODO: reschedule GS_OFFLINE event
 
     switch (msgId)
     {
-        case MAVLINK_MSG_ID_NOARG_TC:
+        case TC(NOARG):
         {
-            uint8_t commandId = mavlink_msg_noarg_tc_get_command_id(msg);
+            uint8_t commandId = mavlink_msg_noarg_tc_get_command_id(&msg);
 
             try
             {
@@ -150,7 +88,7 @@ void TMTCManager::handleMavlinkMessage(const mavlink_message_t* msg)
             break;
         }
 
-        case MAVLINK_MSG_ID_REQUEST_BOARD_STATUS_TC:
+        case TC(REQUEST_BOARD_STATUS):
         {
             uint8_t boardId = mavlink_msg_request_board_status_tc_get_board_id(msg);
 
@@ -167,13 +105,13 @@ void TMTCManager::handleMavlinkMessage(const mavlink_message_t* msg)
             break;
         }
 
-        case MAVLINK_MSG_ID_PING_TC:
+        case TC(PING):
         {
             sEventBroker->post(Event {EV_PING_RECEIVED}, TOPIC_COMMANDS);
             break;
         }
 
-        case MAVLINK_MSG_ID_START_LAUNCH_TC:
+        case TC(START_LAUNCH):
         {
             StartLaunchEvent startLaunchEvt;
             startLaunchEvt.sig = EV_TC_START_LAUNCH;
@@ -183,7 +121,7 @@ void TMTCManager::handleMavlinkMessage(const mavlink_message_t* msg)
             break;
         }
 
-        case MAVLINK_MSG_ID_CALIBRATE_BAROMETERS_TC:
+        case TC(CALIBRATE_BAROMETERS):
         {
             AltimeterCalibrationEvent generatedCalibEvt;
             generatedCalibEvt.sig = EV_TC_ALTIMETER_CALIBRATION;
@@ -194,7 +132,7 @@ void TMTCManager::handleMavlinkMessage(const mavlink_message_t* msg)
             break;
         }
 
-        case MAVLINK_MSG_ID_RAW_EVENT_TC:
+        case TC(RAW_EVENT):
         {
 #ifdef DEBUG
             /* Retrieve event from the message*/
@@ -211,36 +149,6 @@ void TMTCManager::handleMavlinkMessage(const mavlink_message_t* msg)
             // TODO: fault counter?
             break;
         }
-    }
-}
-
-/**
- * Send an ACK to notify the sender that you received the given message.
- */
-void TMTCManager::sendAck(const mavlink_message_t* msg)
-{
-    uint8_t bufferMsg[sizeof(mavlink_message_t) + 1];  // TODO Check this number
-    mavlink_message_t ackMsg;
-
-    /* Create ack message passing the parameters */
-    mavlink_msg_ack_tm_pack(TMTC_MAV_SYSID, TMTC_MAV_COMPID, &ackMsg,
-                            msg->msgid, msg->seq);
-    /* Convert it into a byte stream */
-    int msgLen = mavlink_msg_to_send_buffer(bufferMsg, &ackMsg);
-
-    /* Send the message back to the sender */
-    bool ackSent = enqueueMsg(bufferMsg, msgLen);
-
-#ifdef DEBUG
-    printf("[TMTC] Sent Ack: ");
-    for (int i = 0; i < msgLen; i++)
-        printf("%x ", bufferMsg[i]);
-    printf("\n");
-#endif
-
-    if (!ackSent)
-    {
-        status.ackErrors++;
     }
 }
 
