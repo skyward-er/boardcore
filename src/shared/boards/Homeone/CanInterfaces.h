@@ -79,11 +79,11 @@ struct IgnitionStatusCanMsg : CanMsg
 
 #pragma pack()
 
-int canMsgSimple(uint8_t* buf, uint8_t id);
+inline int canMsgSimple(uint8_t* buf, uint8_t id);
 
-int canMsgIgnitionStatus(uint8_t* buf, IgnitionBoardStatus ign_status);
+inline int canMsgIgnitionStatus(uint8_t* buf, IgnitionBoardStatus ign_status);
 
-int canMsgLaunch(uint8_t* buf, uint64_t launch_code);
+inline int canMsgLaunch(uint8_t* buf, uint64_t launch_code);
 
 } /* namespace CanInterfaces */
 
