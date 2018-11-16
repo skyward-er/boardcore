@@ -30,7 +30,7 @@ using namespace HomeoneBoard::Ignition;
 
 int main()
 {
-    IgnitionController* ctrl = IgnitionController::getInstance();
+    IgnitionController* ctrl = new IgnitionController();
     ctrl->getStatus();
     
     for(;;)

@@ -22,9 +22,11 @@
 
 #include "IgnitionController.h"
 #include "IgnitionConfig.h"
+#include "boards/Homeone/CanInterfaces.h"
 #include "boards/Homeone/Events.h"
 #include "drivers/canbus/can_events/CanEventAdapter.h"
 #include "drivers/canbus/can_events/CanEventSocket.h"
+
 
 namespace HomeoneBoard
 {
@@ -56,7 +58,7 @@ bool IgnitionController::updateIgnBoardStatus(const Event& ev)
         bool res = can_socket->receive(buf, CAN_MAX_PAYLOAD);
         if (res)
         {
-            memcpy(&board_status, buf, sizeof(board_status));
+            memcpy(&status.board_status, buf, sizeof(status.board_status));
             return true;
         }
     }
@@ -109,10 +111,10 @@ void IgnitionController::stateIdle(const Event& ev)
                     TIMEOUT_MS_IGN_OFFLINE);
 
                 // Log ignition board status
-                logger.log(board_status);
+                logger.log(status);
 
-                if (board_status.u1_abort_cmd == 1 ||
-                    board_status.u2_abort_cmd == 1)
+                if (status.board_status.u1_abort_cmd == 1 ||
+                    status.board_status.u2_abort_cmd == 1)
                 {
                     // We've had an abort.
                     transition(&IgnitionController::stateAborted);
@@ -197,7 +199,7 @@ void IgnitionController::stateAborted(const Event& ev)
                     {EV_IGN_OFFLINE}, TOPIC_FLIGHT_EVENTS,
                     TIMEOUT_MS_IGN_OFFLINE);
 
-                logger.log(board_status);
+                logger.log(status);
             }
             break;
         }
