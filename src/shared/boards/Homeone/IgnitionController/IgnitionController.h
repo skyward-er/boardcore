@@ -27,6 +27,7 @@
 #include "Singleton.h"
 #include "events/FSM.h"
 #include "logger/LogProxy.h"
+#include "drivers/canbus/can_events/CanEventAdapter.h"
 
 class CanEventSocket;
 
@@ -38,7 +39,7 @@ namespace Ignition
 class IgnitionController : public FSM<IgnitionController>
 {
 public:
-    IgnitionController();
+    IgnitionController(CanEventAdapter& can_ev_adapter);
     ~IgnitionController();
 
     IgnitionStatus getStatus() { return status; }
@@ -58,6 +59,7 @@ private:
     IgnitionStatus status;
 
     LoggerProxy& logger = *(LoggerProxy::getInstance());
+    CanEventAdapter& can_ev_adapter;
 
     uint16_t ev_ign_offline_handle = 0;
     uint16_t ev_get_status_handle  = 0;

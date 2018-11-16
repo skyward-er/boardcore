@@ -25,8 +25,8 @@
 #ifndef CAN_EVENT_ADAPTER_H
 #define CAN_EVENT_ADAPTER_H
 
-#include <drivers/canbus/CanManager.h>
 #include <drivers/canbus/CanBus.h>
+#include <drivers/canbus/CanManager.h>
 #include <drivers/canbus/CanUtils.h>
 
 #include "CanEventSocket.h"
@@ -34,30 +34,27 @@
 /**
  * This class adapts the CanBus driver to Events.
  */
-class CanEventAdapter : public Singleton<CanEventAdapter>
+class CanEventAdapter
 {
-    friend class Singleton<CanEventAdapter>;
-
 public:
     /*
-     * Subscribe an EventHandler to a certain topic, so that it receives an event 
-     * whenever a message is received on the CANBUS. 
+     * Subscribe an EventHandler to a certain topic, so that it receives an
+     * event whenever a message is received on the CANBUS.
      */
-    CanEventSocket* subscribe(EventHandler* callback, 
-                                const uint16_t topic, 
-                                const uint8_t signal);
+    virtual CanEventSocket* subscribe(EventHandler* callback,
+                                      const uint16_t topic,
+                                      const uint8_t signal);
 
     /* Send a raw message on the CANBUS */
-    bool postMsg(const uint8_t *message, const uint8_t len, const uint16_t topic);
+    bool postMsg(const uint8_t* message, const uint8_t len,
+                 const uint16_t topic);
+
+    CanEventAdapter();
+    virtual ~CanEventAdapter();
 
 private:
-    CanEventAdapter();
-    ~CanEventAdapter();
-
     const uint8_t BUS_ID = 0;
     CanManager* can_manager;
 };
-
-#define sCanEventAdapter CanEventAdapter::getInstance()
 
 #endif /* CAN_EVENT_ADAPTER_H */
