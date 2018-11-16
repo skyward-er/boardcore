@@ -63,13 +63,13 @@ public:
         CanSocket(topic), handler(handler), signal(sig) {}
     
     /* TODO: Destructor */
-    ~CanEventSocket() {};
+    virtual ~CanEventSocket() {};
 
     /* 
      * Method of the superclass that is executed on every Canbus message reception.
      * The eventSocket overrides adding a postEvent() after every reception.
      */
-    void addToMessageList(unsigned char *message, uint8_t size) override
+    virtual void addToMessageList(unsigned char *message, uint8_t size) override
     {
         CanSocket::addToMessageList(message, size);
         handler->postEvent(CanEvent{signal, filter_id});
