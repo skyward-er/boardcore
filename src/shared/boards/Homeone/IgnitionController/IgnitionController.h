@@ -25,7 +25,6 @@
 
 #include "IgnitionStatus.h"
 #include "Singleton.h"
-#include "boards/Homeone/CanInterfaces.h"
 #include "events/FSM.h"
 #include "logger/LogProxy.h"
 
@@ -36,20 +35,14 @@ namespace HomeoneBoard
 namespace Ignition
 {
 
-class IgnitionController : public FSM<IgnitionController>,
-                           public Singleton<IgnitionController>
+class IgnitionController : public FSM<IgnitionController>
 {
-    friend class Singleton<IgnitionController>;
-
 public:
-    IgnitionStatus getStatus() { return status; }
-
-    CanInterfaces::IgnitionBoardStatus getBoardStatus() { return board_status; }
-
-private:
     IgnitionController();
     ~IgnitionController();
 
+    IgnitionStatus getStatus() { return status; }
+private:
     void stateIdle(const Event& ev);
     void stateAborted(const Event& ev);
     void stateEnd(const Event& ev);
@@ -63,7 +56,6 @@ private:
     bool updateIgnBoardStatus(const Event& ev);
 
     IgnitionStatus status;
-    CanInterfaces::IgnitionBoardStatus board_status;
 
     LoggerProxy& logger = *(LoggerProxy::getInstance());
 
