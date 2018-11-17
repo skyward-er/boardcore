@@ -216,8 +216,9 @@ protected:
                         }
                         else
                         {
-                            /* (E) check rest of source==target->super->super.. and store the entry path along the way    */
-                            /* indicate that LCA not found,  enter target and its superstate, save the superstate of target */
+                            /* (E) check rest of source==target->super->super.. and store the entry path along the way
+                            ** indicate that LCA not found, enter target and its superstate
+                            ** save the superstate of target */
                             tempIndex = (int8_t)0;
                             index = (int8_t)1;
                             path[1] = target;

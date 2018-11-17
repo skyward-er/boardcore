@@ -50,6 +50,8 @@ public:
                  const uint16_t topic);
 
     CanEventAdapter();
+    CanEventAdapter(CanEventAdapter& cea1) = delete;
+
     virtual ~CanEventAdapter();
 
 private:
