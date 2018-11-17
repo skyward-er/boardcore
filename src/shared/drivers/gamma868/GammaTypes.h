@@ -88,7 +88,7 @@ inline bool operator==(const GammaConf& lhs, const GammaConf& rhs)
 {
     return lhs.handshake == rhs.handshake &&
            lhs.local_addr == rhs.local_addr &&
-           lhs.local_addr == rhs.local_addr &&
+           lhs.dest_addr == rhs.dest_addr &&
            lhs.lora_sf == rhs.lora_sf &&
            lhs.lora_power == rhs.lora_power &&
            lhs.baudrate == rhs.baudrate;

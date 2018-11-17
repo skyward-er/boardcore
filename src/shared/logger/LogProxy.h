@@ -45,7 +45,7 @@ public:
         uint8_t last_nsc_event;
     };
 
-    LoggerProxy() : logger(Logger::instance()) {}
+    LoggerProxy() : lr_data(), hr_data(), logger(Logger::instance()) {}
 
     template <typename T>
     inline LogResult log(const T& t)
