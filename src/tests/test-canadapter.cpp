@@ -47,7 +47,7 @@ private:
     CanEventAdapter& can_ev_adapter;
 };
 
-/**s
+/**
  * Master board main
  */
 int main()
