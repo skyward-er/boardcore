@@ -181,7 +181,7 @@ bool RtuSlave::newDataReceived(uint8_t interface)
 
 pair< uint8_t, unique_ptr< PDU > > RtuSlave::readData(uint8_t fromInterface)
 {
-    uint8_t address = 
+    //uint8_t address =  TODO incomplete?
 }
 
 void RtuSlave::timerInit()

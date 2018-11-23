@@ -80,7 +80,7 @@ int main()
                         //  inputBuf[index] = c;
                         ++index;
                         state   = ST_WAIT_END_FRAME;
-                        start_t = miosix::getTick();
+                        end_t = miosix::getTick();
                     }
                     break;
                 }

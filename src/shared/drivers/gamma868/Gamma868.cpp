@@ -28,7 +28,7 @@ using namespace miosix;
  * to be passed to the object in order to communicate with the device.
  *
  */
-Gamma868::Gamma868(const char *serialPath) 
+Gamma868::Gamma868(const char *serialPath) : conf{}, gammaSwitch{} 
 {
     conf_enabled = false;
     fd = open(serialPath, O_RDWR);
