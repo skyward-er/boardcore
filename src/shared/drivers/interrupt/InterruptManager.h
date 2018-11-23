@@ -5,7 +5,8 @@
 #include "miosix.h"
 #include <type_traits>
 
-#if ((__GNUC__ < 4) || (__GNUC__ == 4 && __GNUC_MINOR__ < 7) || (__GNUC__ == 4 && __GNUC_MINOR__ == 7 && __GNUC_PATCHLEVEL__ < 3 ))
+#if ((__GNUC__ < 4) || (__GNUC__ == 4 && __GNUC_MINOR__ < 7) \
+|| (__GNUC__ == 4 && __GNUC_MINOR__ == 7 && __GNUC_PATCHLEVEL__ < 3 ))
 #error "This file can be compiled with gcc 4.7.3 or higher"
 #else
 
@@ -99,7 +100,9 @@ template<class _Gpio, int event_mode = EventMode::Rising>
 class IInterrupt : public IGenericInterrupt
 {
     typedef _Gpio gpio_pin;
-    static_assert(event_mode == EventMode::Rising || event_mode == EventMode::Falling || event_mode == EventMode::RisingAndFalling, 
+    static_assert(event_mode == EventMode::Rising || 
+                 event_mode == EventMode::Falling || 
+                 event_mode == EventMode::RisingAndFalling, 
             "event_mode template param shoud be member of EventMode struct");
     static_assert(std::is_base_of<miosix::GpioBase, _Gpio>::value, "_Gpio should be a Gpio template class");
     static_assert(  gpio_pin::valueP == GPIOA_BASE ||
@@ -127,7 +130,8 @@ public:
         if(gpio_pin::valueP != GPIOA_BASE)
         {
             RCC->APB2ENR |= RCC_APB2ENR_SYSCFGEN;
-            SYSCFG->EXTICR[GetEXTICR_register_offset(gpio_pin::valueN)] |= GetEXTICR_register_value(gpio_pin::valueP, gpio_pin::valueN);
+            auto exitcr_reg_value = GetEXTICR_register_value(gpio_pin::valueP, gpio_pin::valueN);
+            SYSCFG->EXTICR[GetEXTICR_register_offset(gpio_pin::valueN)] |= exitcr_reg_value;
         }
         gpio_pin::mode(miosix::Mode::INPUT_PULL_DOWN);
         EXTI->IMR |= GetInterruptMaskForLine(gpio_pin::valueN);

@@ -39,7 +39,7 @@ namespace Ignition
 class IgnitionController : public FSM<IgnitionController>
 {
 public:
-    IgnitionController(CanEventAdapter& can_ev_adapter);
+    explicit IgnitionController(CanEventAdapter& can_ev_adapter);
     ~IgnitionController();
 
     IgnitionStatus getStatus() { return status; }
