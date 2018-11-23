@@ -37,6 +37,62 @@
 
 using miosix::FastInterruptDisableLock;
 
+class TimerUtils
+{
+public:
+    enum class InputClock
+    {
+        APB1,
+        APB2
+    };
+
+    /**
+     * @brief returns the timer clock frequency before the prescaler.
+     * Function borrowed from the SyncronizedServo class in Miosix.
+     *
+     * @return unsigned int Prescaler input frequency
+     */
+    static unsigned int getPrescalerInputFrequency(InputClock input_clock)
+    {
+        // The global variable SystemCoreClock from ARM's CMSIS allows to
+        // know
+        // the CPU frequency.
+        unsigned int freq = SystemCoreClock;
+
+// The position of the PPRE1 bit in RCC->CFGR is different in some stm32
+#ifdef _ARCH_CORTEXM3_STM32
+        const unsigned int ppre1 = 8;
+#error "Architecture not currently supported"
+#else  // stm32f2 and f4
+        const unsigned int ppre1 = 10;
+        const unsigned int ppre2 = 13;
+#endif
+        // The timer frequency may however be a submultiple of the CPU
+        // frequency,
+        // due to the bus at whch the periheral is connected being slower.
+        // The
+        // RCC->CFGR register tells us how slower the APB1 bus is running.
+        // This formula takes into account that if the APB1 clock is divided
+        // by a
+        // factor of two or greater, the timer is clocked at twice the bus
+        // interface. After this, the freq variable contains the frequency
+        // in Hz
+        // at which the timer prescaler is clocked.
+        if (input_clock == InputClock::APB1)
+        {
+            if (RCC->CFGR & RCC_CFGR_PPRE1_2)
+                freq /= 1 << ((RCC->CFGR >> ppre1) & 0x3);
+        }
+        else
+        {
+            if (RCC->CFGR & RCC_CFGR_PPRE2_2)
+                freq /= 1 << ((RCC->CFGR >> ppre2) & 0x3);
+        }
+
+        return freq;
+    }
+};
+
 template <typename T, unsigned Tim>
 class HardwareTimer
 {
@@ -99,7 +155,7 @@ public:
     float toMicroSeconds(T ticks)
     {
         return (1.0f * ticks * 1000000 * (1 + prescaler)) /
-               (float)getPrescalerInputFrequency();
+               (float)TimerUtils::getPrescalerInputFrequency(clk);
     }
 
     /**
@@ -112,7 +168,7 @@ public:
     float toMilliSeconds(T ticks)
     {
         return (1.0f * ticks * 1000 * (1 + prescaler)) /
-               (float)getPrescalerInputFrequency();
+               (float)TimerUtils::getPrescalerInputFrequency(clk);
     }
 
     /**
@@ -125,7 +181,7 @@ public:
     float toSeconds(T ticks)
     {
         return (1.0f * ticks * (1 + prescaler)) /
-               (float)getPrescalerInputFrequency();
+               (float)TimerUtils::getPrescalerInputFrequency(clk);
     }
 
     /*static float toSeconds(T tick) {}
@@ -166,12 +222,6 @@ public:
     }
 
 private:
-    enum class InputClock
-    {
-        APB1,
-        APB2
-    };
-
     HardwareTimer()
     {
         switch (Tim)
@@ -238,7 +288,7 @@ private:
 
         if (Tim == 1 || (Tim >= 8 && Tim <= 11))
         {
-            clk = InputClock::APB2;
+            clk = TimerUtils::InputClock::APB2;
 
             FastInterruptDisableLock dLock;
             RCC->APB2ENR |= TIM_EN;
@@ -246,7 +296,7 @@ private:
         }
         else
         {
-            clk = InputClock::APB1;
+            clk = TimerUtils::InputClock::APB1;
 
             FastInterruptDisableLock dLock;
             RCC->APB1ENR |= TIM_EN;
@@ -268,55 +318,9 @@ private:
         // auto reload values
     }
 
-    /**
-     * @brief returns the timer clock frequency before the prescaler.
-     * Function borrowed from the SyncronizedServo class in Miosix.
-     *
-     * @return unsigned int Prescaler input frequency
-     */
-    unsigned int getPrescalerInputFrequency()
-    {
-        // The global variable SystemCoreClock from ARM's CMSIS allows to
-        // know
-        // the CPU frequency.
-        unsigned int freq = SystemCoreClock;
-
-// The position of the PPRE1 bit in RCC->CFGR is different in some stm32
-#ifdef _ARCH_CORTEXM3_STM32
-        const unsigned int ppre1 = 8;
-#error "Architecture not currently supported"
-#else  // stm32f2 and f4
-        const unsigned int ppre1 = 10;
-        const unsigned int ppre2 = 13;
-#endif
-        // The timer frequency may however be a submultiple of the CPU
-        // frequency,
-        // due to the bus at whch the periheral is connected being slower.
-        // The
-        // RCC->CFGR register tells us how slower the APB1 bus is running.
-        // This formula takes into account that if the APB1 clock is divided
-        // by a
-        // factor of two or greater, the timer is clocked at twice the bus
-        // interface. After this, the freq variable contains the frequency
-        // in Hz
-        // at which the timer prescaler is clocked.
-        if (clk == InputClock::APB1)
-        {
-            if (RCC->CFGR & RCC_CFGR_PPRE1_2)
-                freq /= 1 << ((RCC->CFGR >> ppre1) & 0x3);
-        }
-        else
-        {
-            if (RCC->CFGR & RCC_CFGR_PPRE2_2)
-                freq /= 1 << ((RCC->CFGR >> ppre2) & 0x3);
-        }
-
-        return freq;
-    }
-
     TIM_TypeDef* TIM;
     uint32_t TIM_EN;
-    InputClock clk;
+    TimerUtils::InputClock clk;
 
     T auto_reload;
     uint16_t prescaler;

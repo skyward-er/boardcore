@@ -23,29 +23,85 @@
 #ifndef SRC_SHARED_DRIVERS_PWM_PWM_H_
 #define SRC_SHARED_DRIVERS_PWM_PWM_H_
 
-class Pwm
+#include <miosix.h>
+
+/**
+ * @brief Class to generate PWM using hardware timers.
+ */
+class PWM
 {
 public:
-	/* Freq is intended being expressed in Hz and not KHz.
-	 * Duty's range is between 0 and 1 (percentage of one period).
-	*/
-	Pwm(unsigned int freq, float duty);
+    struct Timer
+    {
+        TIM_TypeDef* TIM;      // The timer we want to use
+        volatile uint32_t* bus_en_reg;  // APB1 or APB2 Peripheral clock enable register
+        uint32_t TIM_EN;       // Enable bit for the clock enable register
 
-	/*It is possible using 2 different channels and two different modes (channel 1 and 2
-	 * and mode 1 and 2).
-	 * Accepted channel's values: {1,2}.
-	 * Accepted mode's values: {1,2}.
-	*/
-	void configure(int channel, int mode);
+        unsigned int input_clock_freq;  // Timer input clock frequency [Hz]
+    };
 
-	/*Start must be invoked only after configure() has being called.
+    /**
+     * @brief Construct a new PWM object
+     *
+     * @param timer Struct containing timer register data
+     */
+    PWM(Timer timer);
+
+    /**
+     * @brief Enable the timer in PWM mode
+     *
+     * @param channel Channel for the selected timer
+     * @param duty_cycle_resolution Resolution for the duty cycle
+     */
+
+	/**
+	 * @brief Enable the timer in PWM mode
+	 * 
+	 * @param channel Channel for the selected timer
+	 * @param frequency PWM frequency
+	 * @param enable_compl_out Enable complementary output for supported timers
+	 * @param duty_cycle_resolution Resolution for the duty cycle
 	 */
-	void start();
-	void stop();
+    void enable(int channel, unsigned int frequency,
+                bool enable_compl_out          = false,
+                unsigned int duty_cycle_resolution = 1024);
+
+    /**
+     * @brief Set the duty cycle. Can be used when the PWM is already started
+     *
+     * @param duty_cycle Duty Cycle in fraction of the period. [0,1]
+     */
+    void setDutyCycle(float duty_cycle);
+
+    /**
+     * @brief Starts the PWM Generation
+     */
+    void start();
+
+    /**
+     * @brief Stops PWM generation
+     *
+     */
+    void stop();
+
+    /**
+     * @brief Disable the timer
+     *
+     */
+    void disable();
 
 private:
-	unsigned int freq;
-	float duty;
+    const Timer timer;
+
+	
+
+	bool enabled = false;
+	bool started = false;
+
+	int channel = 0;
+    float duty_cycle = 0.5;
+	bool enable_compl_out = false;
+    uint16_t duty_cycle_res = 1024;
 };
 
 #endif /* SRC_SHARED_DRIVERS_PWM_PWM_H_ */

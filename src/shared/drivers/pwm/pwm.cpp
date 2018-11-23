@@ -20,94 +20,214 @@
  * THE SOFTWARE.
  */
 
-
 #include "pwm.h"
-#include "miosix.h"
+#include "Common.h"
 
 using namespace std;
 using namespace miosix;
 
-//static const unsigned int pwmFreq = 1000; //1kHz
-//static const float duty = 0.9; //duty 30%
+PWM::PWM(Timer timer) : timer(timer) {}
 
-typedef Gpio<GPIOD_BASE,12> pwmOut; //ch1
-typedef Gpio<GPIOD_BASE,13> pwmOut2;  //ch2
-
-Pwm::Pwm(unsigned int fq, float dy)
+void PWM::enable(int channel, unsigned int frequency, bool enable_compl_out,
+                 unsigned int duty_cycle_resolution)
 {
-	freq = fq;
-	duty = dy;
-}
-
-void Pwm::configure(int channel, int mode)
-{
-	{
+    {
         FastInterruptDisableLock dLock;
 
-		RCC->APB1ENR |= RCC_APB1ENR_TIM4EN;
-		RCC_SYNC();
-	}
+        // Enable timer clock
+        *(timer.bus_en_reg) |= timer.TIM_EN;
+        RCC_SYNC();
+    }
 
+    this->enable_compl_out = enable_compl_out;
+    this->channel          = channel;
+    this->duty_cycle_res   = duty_cycle_resolution;
 
-	unsigned int fbus = SystemCoreClock;
-	if(RCC->CFGR & RCC_CFGR_PPRE1_2)
+	uint32_t psc =  (timer.input_clock_freq / (duty_cycle_resolution * frequency)) - 1;
+	if(psc > 0xFFFF)
 	{
-		fbus /= 1 << ((RCC->CFGR >> 10) & 0x3);
+		psc = 0xFFFF;
 	}
+    timer.TIM->PSC = psc;
+       
 
-	switch(mode)
-	{
-		case 1:
-			TIM4->PSC = (fbus / (0xFFFF * freq)) - 1;
-			TIM4->ARR = 0xFFFF;
-			break;
-		case 2:
-			static const unsigned int ticksPerPeriod = 10000;
-			unsigned int fclock = ticksPerPeriod * freq;
+    timer.TIM->ARR = timer.input_clock_freq / ((psc - 1) * frequency);
 
-			TIM4->PSC = (fbus / fclock) - 1;
-			TIM4->ARR = ticksPerPeriod;
-			break;
-	}
+    TRACE("CLK: %d RES: %d, F: %d\nPSC: %d ARR: %d\n", timer.input_clock_freq,
+          duty_cycle_resolution, frequency, timer.TIM->PSC, timer.TIM->ARR);
+    switch (channel)
+    {
+        case 0:
+            timer.TIM->CCMR1 |=
+                TIM_CCMR1_OC1M_2 | TIM_CCMR1_OC1M_1 | TIM_CCMR1_OC1PE;
+            timer.TIM->CCER |= TIM_CCER_CC1E;
 
-	switch(channel)
-	{
-		case 1:
-			{
-				FastInterruptDisableLock dLock;
-				pwmOut::mode(Mode::ALTERNATE);
-				pwmOut::alternateFunction(2);
-			}
-			TIM4->CCMR1 |= TIM_CCMR1_OC1M_2 | TIM_CCMR1_OC1M_1 | TIM_CCMR1_OC1PE;
-			TIM4->CCER |= TIM_CCER_CC1E;
-			TIM4->CCR1 = static_cast<uint16_t>(static_cast<float>(TIM4->ARR)*duty);
-			break;
-		case 2:
-			{
-				FastInterruptDisableLock dLock;
-				pwmOut2::mode(Mode::ALTERNATE);
-				pwmOut2::alternateFunction(2);
-			}
-			TIM4->CCMR1 |= TIM_CCMR1_OC2M_2 | TIM_CCMR1_OC2M_1 | TIM_CCMR1_OC2PE;
-			TIM4->CCER |= TIM_CCER_CC2E;
-			TIM4->CCR2 = static_cast<uint16_t>(static_cast<float>(TIM4->ARR)*duty);
-			break;
-	}
+            break;
+        case 1:
+            timer.TIM->CCMR1 |=
+                TIM_CCMR1_OC2M_2 | TIM_CCMR1_OC2M_1 | TIM_CCMR1_OC2PE;
+            timer.TIM->CCER |= TIM_CCER_CC2E;
+            break;
+        case 2:
+            timer.TIM->CCMR2 |=
+                TIM_CCMR2_OC3M_2 | TIM_CCMR2_OC3M_1 | TIM_CCMR2_OC3PE;
+            timer.TIM->CCER |= TIM_CCER_CC3E;
+            break;
+        case 3:
+            timer.TIM->CCMR2 |=
+                TIM_CCMR2_OC4M_2 | TIM_CCMR2_OC4M_1 | TIM_CCMR2_OC4PE;
+            timer.TIM->CCER |= TIM_CCER_CC4E;
+            break;
+    }
+	timer.TIM->CR1 |= TIM_CR1_ARPE;
+    enabled = true;
 
-	TIM4->CR1 |= TIM_CR1_ARPE;
+    setDutyCycle(duty_cycle);
 }
 
-void Pwm::start()
+void PWM::setDutyCycle(float duty_cycle)
 {
-	TIM4->CNT = 0;
-	TIM4->EGR |= TIM_EGR_UG;
-	TIM4->CR1 |= TIM_CR1_CEN;
+    this->duty_cycle = duty_cycle;
+
+    if (enabled)
+    {
+        switch (channel)
+        {
+            case 0:
+                timer.TIM->CCR1 =
+                    static_cast<uint16_t>(timer.TIM->ARR * duty_cycle);
+
+                break;
+            case 1:
+                timer.TIM->CCR2 =
+                    static_cast<uint16_t>(timer.TIM->ARR * duty_cycle);
+                break;
+            case 2:
+                timer.TIM->CCR2 =
+                    static_cast<uint16_t>(timer.TIM->ARR * duty_cycle);
+                break;
+            case 3:
+                timer.TIM->CCR2 =
+                    static_cast<uint16_t>(timer.TIM->ARR * duty_cycle);
+                break;
+        }
+    }
 }
 
-void Pwm::stop()
+/*
+void PWM::configure(int channel, int mode)
 {
-	TIM4->CCR1=0;
-	TIM4->CCR2=0;
 
-	TIM4->CR1 &= ~TIM_CR1_CEN;
+    unsigned int fbus = SystemCoreClock;
+    if (RCC->CFGR & RCC_CFGR_PPRE1_2)
+    {
+        fbus /= 1 << ((RCC->CFGR >> 10) & 0x3);
+    }
+
+    switch (mode)
+    {
+        case 1:
+
+            break;
+        case 2:
+            static const unsigned int ticksPerPeriod = 10000;
+            unsigned int fclock                      = ticksPerPeriod * freq;
+
+            timer.TIM->PSC = (fbus / fclock) - 1;
+            timer.TIM->ARR = ticksPerPeriod;
+            break;
+    }
+
+    switch (channel)
+    {
+        case 1:
+        {
+            FastInterruptDisableLock dLock;
+            pwmOut::mode(Mode::ALTERNATE);
+            pwmOut::alternateFunction(2);
+        }
+            timer.TIM->CCMR1 |=
+                TIM_CCMR1_OC1M_2 | TIM_CCMR1_OC1M_1 | TIM_CCMR1_OC1PE;
+            timer.TIM->CCER |= TIM_CCER_CC1E;
+            timer.TIM->CCR1 = static_cast<uint16_t>(
+                static_cast<float>(timer.TIM->ARR) * duty);
+            break;
+        case 2:
+        {
+            FastInterruptDisableLock dLock;
+            pwmOut2::mode(Mode::ALTERNATE);
+            pwmOut2::alternateFunction(2);
+        }
+            timer.TIM->CCMR1 |=
+                TIM_CCMR1_OC2M_2 | TIM_CCMR1_OC2M_1 | TIM_CCMR1_OC2PE;
+            timer.TIM->CCER |= TIM_CCER_CC2E;
+            timer.TIM->CCR2 = static_cast<uint16_t>(
+                static_cast<float>(timer.TIM->ARR) * duty);
+            break;
+    }
+
+    timer.TIM->CR1 |= TIM_CR1_ARPE;
+}*/
+
+void PWM::start()
+{
+    if (enabled)
+    {
+        timer.TIM->CNT = 0;
+        timer.TIM->EGR |= TIM_EGR_UG;
+        timer.TIM->CR1 |= TIM_CR1_CEN;
+        started = true;
+    }
+    else
+    {
+        TRACE("[PWM] Cannot start: PWM not enabled.\n");
+    }
+}
+
+void PWM::stop()
+{
+    if (started)
+    {
+        timer.TIM->CCR1 = 0;
+        timer.TIM->CCR2 = 0;
+
+        timer.TIM->CR1 &= ~TIM_CR1_CEN;
+        started = false;
+    }
+}
+
+void PWM::disable()
+{
+    if (enabled)
+    {
+        if (started)
+        {
+            stop();
+        }
+
+        switch (channel)
+        {
+            case 0:
+                timer.TIM->CCER &= ~TIM_CCER_CC1E;
+                break;
+            case 1:
+                timer.TIM->CCER &= ~TIM_CCER_CC2E;
+                break;
+            case 2:
+                timer.TIM->CCER &= ~TIM_CCER_CC3E;
+                break;
+            case 3:
+                timer.TIM->CCER &= ~TIM_CCER_CC4E;
+                break;
+        }
+
+        {
+            FastInterruptDisableLock dLock;
+
+            // Enable timer clock
+            *(timer.bus_en_reg) &= ~timer.TIM_EN;
+            RCC_SYNC();
+        }
+        enabled = false;
+    }
 }
