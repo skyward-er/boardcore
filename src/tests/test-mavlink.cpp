@@ -21,7 +21,9 @@
  */
 
 #include <Common.h>
-#include <boards/Homeone/TMTCManager/TMTCManager.h>
+#include <drivers/gamma868/Gamma868.h>
+#include "drivers/mavlink/MavSender.h"
+#include "drivers/mavlink/MavReceiver.h"
 
 using namespace miosix;
 
