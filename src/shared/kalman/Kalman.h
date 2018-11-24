@@ -18,16 +18,17 @@
  * (2) Define the state propagation matrix and initial state
  * (3) Call the update function for each new sample acquired
  */
-class Kalman {
+class Kalman
+{
 private:
-    Matrix R;               /**< Measurement variance vector */
-    Matrix Q;               /**< Model variance matrix */
-    Matrix H;               /**< Vector mapping the measurements to the state */
+    Matrix R; /**< Measurement variance vector */
+    Matrix Q; /**< Model variance matrix */
+    Matrix H; /**< Vector mapping the measurements to the state */
 public:
-    Matrix P;               /**< Error covariance matrix */
-    Matrix X;               /**< State matrix */
-    Matrix Phi;             /**< State propagation matrix */
-    
+    Matrix P;   /**< Error covariance matrix */
+    Matrix X;   /**< State matrix */
+    Matrix Phi; /**< State propagation matrix */
+
     /**
      * \brief Constructor
      * \param P_init Error covariance matrix
@@ -36,7 +37,7 @@ public:
      * \param H_init Vector mapping the measurements to the state
      */
     Kalman(Matrix P_init, Matrix R_init, Matrix Q_init, Matrix H_init);
-    
+
     /**
      * \brief Method for updating the estimate
      * \param y The measurement vector
