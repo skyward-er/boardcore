@@ -191,7 +191,7 @@ private:
     {
     public:
         Record() : size(0) {}
-        char data[maxRecordSize];
+        char data[maxRecordSize] = {};
         unsigned int size;
     };
 
@@ -205,7 +205,7 @@ private:
     {
     public:
         Buffer() : size(0) {}
-        char data[bufferSize];
+        char data[bufferSize] = {};
         unsigned int size;
     };
 

@@ -39,7 +39,7 @@ public:
     /**
      * Constructor
      */
-    LogStats() {}
+    LogStats() : timestamp(0) {}
 
     /**
      * Set timestamp for this class

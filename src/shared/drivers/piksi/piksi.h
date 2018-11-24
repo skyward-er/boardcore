@@ -61,7 +61,7 @@ public:
      * \param serialPath path to the device file of the Piksi serial port
      * \throws runtime_error if the serial port cannot be opened
      */
-    Piksi(const char *serialPath);
+    explicit Piksi(const char *serialPath);
 
     /**
      * \return the latest GPS data, or throws if the GPS has not yet got a fix.

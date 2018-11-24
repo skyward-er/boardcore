@@ -25,9 +25,9 @@
 
 #include "IgnitionStatus.h"
 #include "Singleton.h"
-#include "boards/Homeone/CanInterfaces.h"
 #include "events/FSM.h"
 #include "logger/LogProxy.h"
+#include "drivers/canbus/can_events/CanEventAdapter.h"
 
 class CanEventSocket;
 
@@ -36,20 +36,14 @@ namespace HomeoneBoard
 namespace Ignition
 {
 
-class IgnitionController : public FSM<IgnitionController>,
-                           public Singleton<IgnitionController>
+class IgnitionController : public FSM<IgnitionController>
 {
-    friend class Singleton<IgnitionController>;
-
 public:
-    IgnitionStatus getStatus() { return status; }
-
-    CanInterfaces::IgnitionBoardStatus getBoardStatus() { return board_status; }
-
-private:
-    IgnitionController();
+    explicit IgnitionController(CanEventAdapter& can_ev_adapter);
     ~IgnitionController();
 
+    IgnitionStatus getStatus() { return status; }
+private:
     void stateIdle(const Event& ev);
     void stateAborted(const Event& ev);
     void stateEnd(const Event& ev);
@@ -63,9 +57,9 @@ private:
     bool updateIgnBoardStatus(const Event& ev);
 
     IgnitionStatus status;
-    CanInterfaces::IgnitionBoardStatus board_status;
 
     LoggerProxy& logger = *(LoggerProxy::getInstance());
+    CanEventAdapter& can_ev_adapter;
 
     uint16_t ev_ign_offline_handle = 0;
     uint16_t ev_get_status_handle  = 0;

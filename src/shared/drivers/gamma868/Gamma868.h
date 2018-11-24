@@ -37,7 +37,7 @@ public:
      * Create a Gamma868 object using the given path as the serial port to use.
      * @param serialPath        Name of the serial port (es. /dev/tty)
      */
-    Gamma868(const char* serialPath);
+    explicit Gamma868(const char* serialPath);
 
     /*
      * Create a Gamma868 that can be configured through the LRN pin.
