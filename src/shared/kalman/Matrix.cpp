@@ -10,6 +10,7 @@
 #include <stdio.h>
 #include <iostream>
 #include <iomanip>
+#include <stdexcept>
 
 // --- Life cycle ---
 Matrix::Matrix() {
@@ -101,6 +102,7 @@ Matrix::Matrix(Matrix&& M) {
     }
     else {
         isHeapAllocated = false;
+        data = stackData;
         for (int i = 0; i < M.rows*M.columns; i++) {
             data[i] = M.data[i];
         }
@@ -155,7 +157,6 @@ void Matrix::set(float values[]) {
 }
 
 Matrix Matrix::multiply(Matrix B) {
-    printf("??????\n\n");
     if (columns == 1 && rows == 1) {
         // In case this matrix is a scalar
         Matrix result{B.rows, B.columns};
@@ -179,12 +180,10 @@ Matrix Matrix::multiply(Matrix B) {
     }
     else if (columns != B.rows) {
         // If neither of the multipliers is a scalar, matrix dimensions must agree
-//        throw std::invalid_argument("Matrix dimensions do not match");
+        throw std::invalid_argument("Matrix dimensions do not match");
     }
     else {
-        printf("NOPE\n");
         Matrix result{rows, B.columns};
-        printf("NOPE2\n");
         for (int i = 0; i < result.rows; i++) {
             for (int j = 0; j < result.columns; j++) {
                 for ( int k = 0; k < columns; k++) {
@@ -192,7 +191,6 @@ Matrix Matrix::multiply(Matrix B) {
                 }
             }
         }
-        printf("NOPE3\n");
         return result;
     }
 }
@@ -209,7 +207,7 @@ Matrix Matrix::transposed() {
 
 Matrix Matrix::sum(Matrix B) {
     if (rows != B.rows || columns != B.columns) {
-//        throw std::invalid_argument("Matrix dimensions do not match");
+        throw std::invalid_argument("Matrix dimensions do not match");
     }
     Matrix result{rows, columns};
     for (int i = 0; i < rows; i++) {
@@ -222,7 +220,7 @@ Matrix Matrix::sum(Matrix B) {
 
 Matrix Matrix::subtract(Matrix B) {
     if (rows != B.rows || columns != B.columns) {
-//        throw std::invalid_argument("Matrix dimensions do not match");
+        throw std::invalid_argument("Matrix dimensions do not match");
     }
     Matrix result{rows, columns};
     for (int i = 0; i < rows; i++) {
@@ -241,7 +239,7 @@ Matrix Matrix::inverse() {
     }
     float det = determinant();
     if (det == 0) {
-//        throw std::invalid_argument("Matrix is singular");
+        throw std::invalid_argument("Matrix is singular");
     }
     
     Matrix det_matrix{1,1};
@@ -298,8 +296,7 @@ Matrix Matrix::cofactorMatrix() {
     return cofactor_matrix;
 }
 
-void Matrix::luDecomposition(Matrix M, Matrix& lower, Matrix& upper)
-{
+void Matrix::luDecomposition(Matrix M, Matrix& lower, Matrix& upper) {
     int n = M.rows;
     
     // Decomposing matrix into Upper and Lower
@@ -367,7 +364,6 @@ Matrix Matrix::operator-(const Matrix& B) {
 }
 
 Matrix Matrix::operator*(const Matrix &B) {
-    printf("OPERATOR IN \n\n");
     return this->multiply(B);
 }
 
