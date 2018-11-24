@@ -155,6 +155,7 @@ void Matrix::set(float values[]) {
 }
 
 Matrix Matrix::multiply(Matrix B) {
+    printf("??????\n\n");
     if (columns == 1 && rows == 1) {
         // In case this matrix is a scalar
         Matrix result{B.rows, B.columns};
@@ -181,7 +182,9 @@ Matrix Matrix::multiply(Matrix B) {
 //        throw std::invalid_argument("Matrix dimensions do not match");
     }
     else {
+        printf("NOPE\n");
         Matrix result{rows, B.columns};
+        printf("NOPE2\n");
         for (int i = 0; i < result.rows; i++) {
             for (int j = 0; j < result.columns; j++) {
                 for ( int k = 0; k < columns; k++) {
@@ -189,6 +192,7 @@ Matrix Matrix::multiply(Matrix B) {
                 }
             }
         }
+        printf("NOPE3\n");
         return result;
     }
 }
@@ -363,6 +367,7 @@ Matrix Matrix::operator-(const Matrix& B) {
 }
 
 Matrix Matrix::operator*(const Matrix &B) {
+    printf("OPERATOR IN \n\n");
     return this->multiply(B);
 }
 
