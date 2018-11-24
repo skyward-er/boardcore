@@ -29,6 +29,38 @@ using namespace miosix;
 typedef miosix::Gpio<GPIOG_BASE, 13> greenLed;
 typedef miosix::Gpio<GPIOG_BASE, 14> redLed;
 
+
+int main(int argc, char const *argv[]) {
+
+    float P_data[9] = { 0.1,    0,      0,
+        0,      0.1,    0,
+        0,      0,      0.1
+    };
+    
+    float R_data[1] = {10};
+    
+    float Q_data[9] = { 0.01,   0,      0,
+        0,      0.01,   0,
+        0,      0,      0.01
+    };
+    
+    float H_data[3] = {1, 0, 0};
+    
+    float Phi_data[9] = {   1,    0,    0,
+        0,    1,    0,
+        0,    0,    1
+    };
+    
+    // Instanciate matrices
+    Matrix Phi{3,3, Phi_data};
+
+
+    Matrix::printMatrix(Phi*Phi*Phi);
+    return 0;
+}
+
+
+/*
 int main(int argc, char const *argv[]) {
     {
         FastInterruptDisableLock dLock;
@@ -109,3 +141,4 @@ int main(int argc, char const *argv[]) {
     printf("%d \n", timer.interval());
     return 0;
 }
+*/
