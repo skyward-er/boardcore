@@ -59,7 +59,7 @@ public:
      * it must be written properly!! It cannot malloc, printf and other things
      * like that
      */
-    void setCallback(std::function<void()> callback) { irqCallback = callback; }
+    void setCallback(std::function<void()> &callback) { irqCallback = callback; }
 
     /**
      * @return true if timer expired. Calling start() and clear() reset the

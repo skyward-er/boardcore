@@ -36,11 +36,11 @@ class CanSocket
 {
 public:
     explicit CanSocket(uint16_t filter_id);
-    void open(CanBus *bus);
+    virtual void open(CanBus *bus);
 
-    bool receive(void *message, int size);
+    virtual bool receive(void *message, int size);
 
-    void close();
+    virtual void close();
 
     bool isOpen() const { return bus != NULL; }
 

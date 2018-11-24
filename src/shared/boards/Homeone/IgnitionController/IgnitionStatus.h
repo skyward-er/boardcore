@@ -24,6 +24,7 @@
 #define SRC_SHARED_BOARDS_HOMEONE_IGNITIONCONTROLLER_IGNITIONSTATUS_H
 
 #include <cstdint>
+#include "boards/Homeone/CanInterfaces.h"
 
 namespace HomeoneBoard
 {
@@ -41,6 +42,7 @@ enum IgnitionControllerState : uint8_t
 struct IgnitionStatus
 {
     IgnitionControllerState ctrl_state = IgnitionControllerState::UNKNOWN;
+    CanInterfaces::IgnitionBoardStatus board_status;
 };
 
 }
