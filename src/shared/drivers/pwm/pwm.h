@@ -91,7 +91,8 @@ public:
 
     /**
      * @brief Set the Duty Cycle Resolution
-     * The duty cycle resolution is effectively changed once the timer is restarted.
+     * The duty cycle resolution is effectively changed once the timer is
+     * restarted.
      * @param duty_cycle_resolution Number of possible values of duty cycle
      */
     void setDutyCycleResolution(unsigned int duty_cycle_resolution);
@@ -103,7 +104,8 @@ public:
      * @param channel Output channel (1 to 4, refer to datasheet)
      * @param polarity Output polarity
      */
-    void enableChannel(Channel channel, float duty_cycle, Mode mode = Mode::MODE_1,
+    void enableChannel(Channel channel, float duty_cycle,
+                       Mode mode         = Mode::MODE_1,
                        Polarity polarity = Polarity::ACTIVE_HIGH);
 
     /**
@@ -135,17 +137,16 @@ private:
     struct ChannelConfig
     {
         bool enabled = false;
-        int test = 5;
+        int test     = 5;
         float duty_cycle;
         Mode mode;
         Polarity polarity;
     };
 
-   void hardwareEnableChannel(Channel channel);
-   void hardwareDisableChannel(Channel channel);
+    void hardwareEnableChannel(Channel channel);
+    void hardwareDisableChannel(Channel channel);
 
-   void hardawreSetDutyCycle(Channel channel);
-
+    void hardawreSetDutyCycle(Channel channel);
 
     const Timer timer;
     bool started = false;
