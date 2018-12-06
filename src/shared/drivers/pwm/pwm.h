@@ -1,5 +1,5 @@
 /* Copyright (c) 2017-2018 Skyward Experimental Rocketry
- * Authors: Andrea Palumbo
+ * Authors: Andrea Palumbo, Luca Erbetta
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -27,51 +27,99 @@
 
 /**
  * @brief Class to generate PWM using hardware timers.
+ * Class is NOT thread-safe. Every instante must be used by a single thread.
  */
 class PWM
 {
 public:
     struct Timer
     {
-        TIM_TypeDef* TIM;      // The timer we want to use
-        volatile uint32_t* bus_en_reg;  // APB1 or APB2 Peripheral clock enable register
-        uint32_t TIM_EN;       // Enable bit for the clock enable register
+        TIM_TypeDef* TIM;  // The timer we want to use
+        volatile uint32_t*
+            bus_en_reg;   // APB1 or APB2 Peripheral clock enable register
+        uint32_t TIM_EN;  // Enable bit for the clock enable register
 
         unsigned int input_clock_freq;  // Timer input clock frequency [Hz]
+    };
+
+    enum class Channel : int
+    {
+        CH1,
+        CH2,
+        CH3,
+        CH4
+    };
+
+    /**
+     * @brief PWM channel output polarity
+     *
+     */
+    enum class Polarity
+    {
+        ACTIVE_HIGH,
+        ACTIVE_LOW
+    };
+
+    /**
+     * @brief PWM mode selection. Refer to datasheet
+     * MODE_1  Channel high when CNT < CCRx
+     * MODE_2  Channel high when CNT > CCRx
+     */
+    enum class Mode
+    {
+        MODE_1,  // Channel high when CNT < CCRx
+        MODE_2   // Channel high when CNT > CCRx
     };
 
     /**
      * @brief Construct a new PWM object
      *
-     * @param timer Struct containing timer register data
+     * @param timer Timer object
+     * @param frequency PWM frequency
+     * @param duty_cycle_resolution Number of possible values in the range [0,1]
      */
-    PWM(Timer timer);
+    PWM(Timer timer, unsigned int frequency,
+        unsigned int duty_cycle_resolution = 1024);
 
     /**
-     * @brief Enable the timer in PWM mode
+     * @brief Set the PWM frequency
+     * The frequency is changed once the timer is restarted.
      *
-     * @param channel Channel for the selected timer
-     * @param duty_cycle_resolution Resolution for the duty cycle
+     * @param frequency
      */
-
-	/**
-	 * @brief Enable the timer in PWM mode
-	 * 
-	 * @param channel Channel for the selected timer
-	 * @param frequency PWM frequency
-	 * @param enable_compl_out Enable complementary output for supported timers
-	 * @param duty_cycle_resolution Resolution for the duty cycle
-	 */
-    void enable(int channel, unsigned int frequency,
-                bool enable_compl_out          = false,
-                unsigned int duty_cycle_resolution = 1024);
+    void setFrequency(unsigned int frequency);
 
     /**
-     * @brief Set the duty cycle. Can be used when the PWM is already started
-     *
-     * @param duty_cycle Duty Cycle in fraction of the period. [0,1]
+     * @brief Set the Duty Cycle Resolution
+     * The duty cycle resolution is effectively changed once the timer is restarted.
+     * @param duty_cycle_resolution Number of possible values of duty cycle
      */
-    void setDutyCycle(float duty_cycle);
+    void setDutyCycleResolution(unsigned int duty_cycle_resolution);
+
+    /**
+     * @brief Enable output on the specified channel
+     *
+     * @param mode PWM mode
+     * @param channel Output channel (1 to 4, refer to datasheet)
+     * @param polarity Output polarity
+     */
+    void enableChannel(Channel channel, float duty_cycle, Mode mode = Mode::MODE_1,
+                       Polarity polarity = Polarity::ACTIVE_HIGH);
+
+    /**
+     * @brief Set the duty cycle for the specified channel
+     *
+     * @param channel
+     * @param duty_cycle
+     */
+    void setDutyCycle(Channel channel, float duty_cycle);
+
+    /**
+     * @brief Disables output on the specified channel
+     *
+     * @param channel Channel to disable(1 to 4, refer to datasheet)
+     */
+    void disableChannel(Channel channel);
 
     /**
      * @brief Starts the PWM Generation
@@ -80,28 +128,32 @@ public:
 
     /**
      * @brief Stops PWM generation
-     *
      */
     void stop();
 
-    /**
-     * @brief Disable the timer
-     *
-     */
-    void disable();
-
 private:
+    struct ChannelConfig
+    {
+        bool enabled = false;
+        int test = 5;
+        float duty_cycle;
+        Mode mode;
+        Polarity polarity;
+    };
+
+   void hardwareEnableChannel(Channel channel);
+   void hardwareDisableChannel(Channel channel);
+
+   void hardawreSetDutyCycle(Channel channel);
+
+
     const Timer timer;
+    bool started = false;
 
-	
+    unsigned int frequency;
+    unsigned int duty_cycle_resolution;
 
-	bool enabled = false;
-	bool started = false;
-
-	int channel = 0;
-    float duty_cycle = 0.5;
-	bool enable_compl_out = false;
-    uint16_t duty_cycle_res = 1024;
+    ChannelConfig channels[4]{};
 };
 
 #endif /* SRC_SHARED_DRIVERS_PWM_PWM_H_ */
