@@ -34,7 +34,6 @@ CanSocket::CanSocket(const uint16_t filter_id) : filter_id(filter_id)
 /**
     Apre una connessione simil-socket tramite un oggetto CanBus
     \param bus L'istanza del CanBus
-    \param id l'id Standard o Esteso del socket
     TODO: rimuoverlo da parametro e prenderlo direttamente dall'oggetto
 */
 void CanSocket::open(CanBus *bus)

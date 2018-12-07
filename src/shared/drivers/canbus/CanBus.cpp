@@ -125,6 +125,7 @@ void CanBus::queueHandler()
         messageQueue.waitUntilNotEmpty();
 
         messageQueue.get(message);
+        TRACE("[CanBus] message received\n");
         dispatchMessage(message);
     }
 }
@@ -236,8 +237,8 @@ void CanBus::dispatchMessage(CanMsg message)
         set<CanSocket *> &ids = socket_map[filter_id];
 
         for (auto socket : ids){
+            TRACE("[CanBus] Adding message to a socket's list\n");
             socket->addToMessageList(message.Data, message.DLC);
-            TRACE("[CAN] Received message, sending to socket\n");
         }
     }
 }
