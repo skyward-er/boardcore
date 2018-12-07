@@ -1,5 +1,5 @@
 /* Copyright (c) 2018 Skyward Experimental Rocketry
- * Authors: Alvise de' Faveri Tron
+ * Authors: Alvise De Faveri
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -20,28 +20,57 @@
  * THE SOFTWARE.
  */
 
-#ifndef TMTC_STATUS_H
-#define TMTC_STATUS_H
+#ifndef HOMEONE_TMTC_TM_BUILDER_H
+#define HOMEONE_TMTC_TM_BUILDER_H
 
+#include <Common.h>
 #include <libs/mavlink_skyward_lib/mavlink_lib/skyward/mavlink.h>
 
 namespace HomeoneBoard
 {
 namespace TMTC
 {
-
-/*
- * Status of the component, wraps the mavlink stats
- * which are updated at every byte reception.
- */
-struct TMTCStatus
+namespace TMBuilder
 {
-    mavlink_status_t mavstatus;
-    uint8_t sendErrors;
-    uint8_t ackErrors;
-};
 
-}
+/**
+ * Parses a corresponding packed telemetry.
+ */
+static mavlink_message_t buildTelemetry(uint8_t requestedTelemetry) 
+{
+    mavlink_message_t responseMsg;
+
+    // TODO: tm builder
+    // mavlink_msg_ack_tm_pack(TMTC_MAV_SYSID, TMTC_MAV_COMPID, &ackMsg,
+    //                                 request.msgid, request.seq);
+
+    switch(requestedTelemetry)
+    {
+        case MavTMList::MAV_HOMEONE_TM_ID:
+        break;
+
+        case MavTMList::MAV_IGNITION_TM_ID:
+        break;
+
+        case MavTMList::MAV_NOSECONE_TM_ID:
+        break;
+
+        case MavTMList::MAV_HR_TM_ID:
+        break;
+
+        case MavTMList::MAV_LR_TM_ID:
+        break;
+
+        default:
+        break;
+    }
+
+    return responseMsg;
 }
 
-#endif /* TMTC_STATUS_H */
+} /* namespace TMBuilder */
+} /* namespace TMTC */
+} /* namespace HomeoneBoard */
+
+
+#endif /* HOMEONE_TMTC_TM_BUILDER_H */
