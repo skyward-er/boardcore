@@ -31,7 +31,7 @@ class MAX21105 : public AccelSensor, public GyroSensor, public TemperatureSensor
 {
 #pragma pack(1)
     union rawdata_t {
-        struct
+        __extension__ struct
         {
             int16_t gyro[3];
             int16_t accel[3];

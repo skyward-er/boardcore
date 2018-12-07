@@ -38,7 +38,7 @@ class MPU9250 : public GyroSensor,
 
 #pragma pack(1)
     typedef union {
-        struct
+        __extension__ struct
         {
             uint8_t status1;
             int16_t mag[3];
@@ -48,7 +48,7 @@ class MPU9250 : public GyroSensor,
     } akdata_t;
 
     typedef union {
-        struct
+        __extension__ struct
         {
             int16_t accel[3];
             int16_t temp;
