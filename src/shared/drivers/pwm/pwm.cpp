@@ -1,5 +1,5 @@
 /* Copyright (c) 2017-2018 Skyward Experimental Rocketry
- * Authors: Andrea Palumbo
+ * Authors: Andrea Palumbo, Luca Erbetta
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -26,161 +26,260 @@
 using namespace std;
 using namespace miosix;
 
-PWM::PWM(Timer timer) : timer(timer) {}
-
-void PWM::enable(int channel, unsigned int frequency, bool enable_compl_out,
-                 unsigned int duty_cycle_resolution)
+PWM::PWM(Timer timer, unsigned int frequency,
+         unsigned int duty_cycle_resolution)
+    : timer(timer), frequency(frequency),
+      duty_cycle_resolution(duty_cycle_resolution)
 {
+    for (int i = 0; i < 4; i++)
     {
-        FastInterruptDisableLock dLock;
-
-        // Enable timer clock
-        *(timer.bus_en_reg) |= timer.TIM_EN;
-        RCC_SYNC();
+        if (channels[i].test != 5)
+        {
+            TRACE("ERROR\n");
+        }
     }
+}
 
-    this->enable_compl_out = enable_compl_out;
-    this->channel          = channel;
-    this->duty_cycle_res   = duty_cycle_resolution;
+void PWM::setFrequency(unsigned int frequency) { this->frequency = frequency; }
 
-	uint32_t psc =  (timer.input_clock_freq / (duty_cycle_resolution * frequency)) - 1;
-	if(psc > 0xFFFF)
-	{
-		psc = 0xFFFF;
-	}
-    timer.TIM->PSC = psc;
-       
+void PWM::setDutyCycleResolution(unsigned int duty_cycle_resolution)
+{
+    this->duty_cycle_resolution = duty_cycle_resolution;
+}
 
-    timer.TIM->ARR = timer.input_clock_freq / ((psc - 1) * frequency);
+void PWM::enableChannel(Channel channel, float duty_cycle, Mode mode,
+                        Polarity polarity)
+{
+    int ch                  = static_cast<int>(channel);
+    channels[ch].enabled    = true;
+    channels[ch].duty_cycle = duty_cycle;
+    channels[ch].mode       = mode;
+    channels[ch].polarity   = polarity;
 
-    TRACE("CLK: %d RES: %d, F: %d\nPSC: %d ARR: %d\n", timer.input_clock_freq,
-          duty_cycle_resolution, frequency, timer.TIM->PSC, timer.TIM->ARR);
+    if (started)
+    {
+        hardwareEnableChannel(channel);
+    }
+}
+
+void PWM::hardwareEnableChannel(Channel channel)
+{
+    ChannelConfig cfg = channels[static_cast<int>(channel)];
+
+    // Set duty cycle
+    hardawreSetDutyCycle(channel);
+
     switch (channel)
     {
-        case 0:
-            timer.TIM->CCMR1 |=
-                TIM_CCMR1_OC1M_2 | TIM_CCMR1_OC1M_1 | TIM_CCMR1_OC1PE;
-            timer.TIM->CCER |= TIM_CCER_CC1E;
+        case Channel::CH1:
+            // Reset the channel 1 bits
+            timer.TIM->CCMR1 &= 0xFF00;
+            timer.TIM->CCER &= 0xFFF0;
 
+            // Enable preload of CCRx register
+            timer.TIM->CCMR1 |= TIM_CCMR1_OC1PE;
+
+            // Set mode
+            if (cfg.mode == Mode::MODE_1)
+            {
+                timer.TIM->CCMR1 |= TIM_CCMR1_OC1M_2 | TIM_CCMR1_OC1M_1;
+            }
+            else
+            {
+                timer.TIM->CCMR1 |=
+                    TIM_CCMR1_OC1M_2 | TIM_CCMR1_OC1M_1 | TIM_CCMR1_OC1M_0;
+            }
+
+            // Set polarity
+            if (cfg.polarity == Polarity::ACTIVE_LOW)
+            {
+                timer.TIM->CCER |= TIM_CCER_CC1P;
+            }
+            // Enable channel
+            timer.TIM->CCER |= TIM_CCER_CC1E;
             break;
-        case 1:
-            timer.TIM->CCMR1 |=
-                TIM_CCMR1_OC2M_2 | TIM_CCMR1_OC2M_1 | TIM_CCMR1_OC2PE;
+        case Channel::CH2:
+        // Reset the channel 1 bits
+            timer.TIM->CCMR1 &= 0x00FF;
+            timer.TIM->CCER &= 0xFF0F;
+
+            // Enable preload of CCRx register
+            timer.TIM->CCMR1 |= TIM_CCMR1_OC2PE;
+
+            // Set mode
+            if (cfg.mode == Mode::MODE_1)
+            {
+                timer.TIM->CCMR1 |= TIM_CCMR1_OC2M_2 | TIM_CCMR1_OC2M_1;
+            }
+            else
+            {
+                timer.TIM->CCMR1 |=
+                    TIM_CCMR1_OC2M_2 | TIM_CCMR1_OC2M_1 | TIM_CCMR1_OC2M_0;
+            }
+
+            // Set polarity
+            if (cfg.polarity == Polarity::ACTIVE_LOW)
+            {
+                timer.TIM->CCER |= TIM_CCER_CC2P;
+            }
+            // Enable channel
             timer.TIM->CCER |= TIM_CCER_CC2E;
             break;
-        case 2:
-            timer.TIM->CCMR2 |=
-                TIM_CCMR2_OC3M_2 | TIM_CCMR2_OC3M_1 | TIM_CCMR2_OC3PE;
+        case Channel::CH3:
+        // Reset the channel 1 bits
+            timer.TIM->CCMR2 &= 0xFF00;
+            timer.TIM->CCER &= 0xF0FF;
+
+            // Enable preload of CCRx register
+            timer.TIM->CCMR2 |= TIM_CCMR2_OC3PE;
+
+            // Set mode
+            if (cfg.mode == Mode::MODE_1)
+            {
+                timer.TIM->CCMR2 |= TIM_CCMR2_OC3M_2 | TIM_CCMR2_OC3M_1;
+            }
+            else
+            {
+                timer.TIM->CCMR2 |=
+                    TIM_CCMR2_OC3M_2 | TIM_CCMR2_OC3M_1 | TIM_CCMR2_OC3M_0;
+            }
+
+            // Set polarity
+            if (cfg.polarity == Polarity::ACTIVE_LOW)
+            {
+                timer.TIM->CCER |= TIM_CCER_CC3P;
+            }
+            // Enable channel
             timer.TIM->CCER |= TIM_CCER_CC3E;
             break;
-        case 3:
-            timer.TIM->CCMR2 |=
-                TIM_CCMR2_OC4M_2 | TIM_CCMR2_OC4M_1 | TIM_CCMR2_OC4PE;
+        case Channel::CH4:
+        // Reset the channel 1 bits
+            timer.TIM->CCMR2 &= 0x00FF;
+            timer.TIM->CCER &= 0x0FFF;
+
+            // Enable preload of CCRx register
+            timer.TIM->CCMR2 |= TIM_CCMR2_OC4PE;
+
+            // Set mode
+            if (cfg.mode == Mode::MODE_1)
+            {
+                timer.TIM->CCMR2 |= TIM_CCMR2_OC4M_2 | TIM_CCMR2_OC4M_1;
+            }
+            else
+            {
+                timer.TIM->CCMR2 |=
+                    TIM_CCMR2_OC4M_2 | TIM_CCMR2_OC4M_1 | TIM_CCMR2_OC4M_0;
+            }
+
+            // Set polarity
+            if (cfg.polarity == Polarity::ACTIVE_LOW)
+            {
+                timer.TIM->CCER |= TIM_CCER_CC4P;
+            }
+            // Enable channel
             timer.TIM->CCER |= TIM_CCER_CC4E;
             break;
     }
-	timer.TIM->CR1 |= TIM_CR1_ARPE;
-    enabled = true;
-
-    setDutyCycle(duty_cycle);
 }
 
-void PWM::setDutyCycle(float duty_cycle)
+void PWM::setDutyCycle(Channel channel, float duty_cycle)
 {
-    this->duty_cycle = duty_cycle;
-
-    if (enabled)
+    channels[static_cast<int>(channel)].duty_cycle = duty_cycle;
+    if (started && channels[static_cast<int>(channel)].enabled)
     {
-        switch (channel)
-        {
-            case 0:
-                timer.TIM->CCR1 =
-                    static_cast<uint16_t>(timer.TIM->ARR * duty_cycle);
-
-                break;
-            case 1:
-                timer.TIM->CCR2 =
-                    static_cast<uint16_t>(timer.TIM->ARR * duty_cycle);
-                break;
-            case 2:
-                timer.TIM->CCR2 =
-                    static_cast<uint16_t>(timer.TIM->ARR * duty_cycle);
-                break;
-            case 3:
-                timer.TIM->CCR2 =
-                    static_cast<uint16_t>(timer.TIM->ARR * duty_cycle);
-                break;
-        }
+        hardawreSetDutyCycle(channel);
     }
 }
 
-/*
-void PWM::configure(int channel, int mode)
+void PWM::hardawreSetDutyCycle(Channel channel)
 {
-
-    unsigned int fbus = SystemCoreClock;
-    if (RCC->CFGR & RCC_CFGR_PPRE1_2)
-    {
-        fbus /= 1 << ((RCC->CFGR >> 10) & 0x3);
-    }
-
-    switch (mode)
-    {
-        case 1:
-
-            break;
-        case 2:
-            static const unsigned int ticksPerPeriod = 10000;
-            unsigned int fclock                      = ticksPerPeriod * freq;
-
-            timer.TIM->PSC = (fbus / fclock) - 1;
-            timer.TIM->ARR = ticksPerPeriod;
-            break;
-    }
-
+    float duty_cycle = channels[static_cast<int>(channel)].duty_cycle;
     switch (channel)
     {
-        case 1:
-        {
-            FastInterruptDisableLock dLock;
-            pwmOut::mode(Mode::ALTERNATE);
-            pwmOut::alternateFunction(2);
-        }
-            timer.TIM->CCMR1 |=
-                TIM_CCMR1_OC1M_2 | TIM_CCMR1_OC1M_1 | TIM_CCMR1_OC1PE;
-            timer.TIM->CCER |= TIM_CCER_CC1E;
-            timer.TIM->CCR1 = static_cast<uint16_t>(
-                static_cast<float>(timer.TIM->ARR) * duty);
+        case Channel::CH1:
+            timer.TIM->CCR1 =
+                static_cast<uint16_t>(duty_cycle * timer.TIM->ARR);
             break;
-        case 2:
-        {
-            FastInterruptDisableLock dLock;
-            pwmOut2::mode(Mode::ALTERNATE);
-            pwmOut2::alternateFunction(2);
-        }
-            timer.TIM->CCMR1 |=
-                TIM_CCMR1_OC2M_2 | TIM_CCMR1_OC2M_1 | TIM_CCMR1_OC2PE;
-            timer.TIM->CCER |= TIM_CCER_CC2E;
-            timer.TIM->CCR2 = static_cast<uint16_t>(
-                static_cast<float>(timer.TIM->ARR) * duty);
+        case Channel::CH2:
+            timer.TIM->CCR2 =
+                static_cast<uint16_t>(duty_cycle * timer.TIM->ARR);
+            break;
+        case Channel::CH3:
+            timer.TIM->CCR3 =
+                static_cast<uint16_t>(duty_cycle * timer.TIM->ARR);
+            break;
+        case Channel::CH4:
+            timer.TIM->CCR4 =
+                static_cast<uint16_t>(duty_cycle * timer.TIM->ARR);
             break;
     }
+}
 
-    timer.TIM->CR1 |= TIM_CR1_ARPE;
-}*/
+void PWM::disableChannel(Channel channel)
+{
+    channels[static_cast<int>(channel)].enabled = false;
+
+    if (started)
+    {
+        hardwareDisableChannel(channel);
+    }
+}
+
+void PWM::hardwareDisableChannel(Channel channel)
+{
+    switch (channel)
+    {
+        case Channel::CH1:
+            timer.TIM->CCER &= ~TIM_CCER_CC1E;
+            break;
+        case Channel::CH2:
+            timer.TIM->CCER &= ~TIM_CCER_CC2E;
+            break;
+        case Channel::CH3:
+            timer.TIM->CCER &= ~TIM_CCER_CC3E;
+            break;
+        case Channel::CH4:
+            timer.TIM->CCER &= ~TIM_CCER_CC4E;
+            break;
+    }
+}
 
 void PWM::start()
 {
-    if (enabled)
+    if (!started)
     {
+        {
+            FastInterruptDisableLock dLock;
+
+            // Enable timer clock
+            *(timer.bus_en_reg) |= timer.TIM_EN;
+            RCC_SYNC();
+        }
+
+        timer.TIM->CR1 |= TIM_CR1_ARPE;
+
+        uint32_t psc =
+            (timer.input_clock_freq / (duty_cycle_resolution * frequency)) - 1;
+        if (psc > 0xFFFF)
+        {
+            psc = 0xFFFF;
+        }
+
+        timer.TIM->PSC = psc;
+        timer.TIM->ARR = timer.input_clock_freq / ((psc + 1) * frequency);
+
         timer.TIM->CNT = 0;
         timer.TIM->EGR |= TIM_EGR_UG;
+
+        for (int i = 0; i < 4; i++)
+        {
+            if (channels[i].enabled)
+                hardwareEnableChannel(static_cast<Channel>(i));
+        }
+
         timer.TIM->CR1 |= TIM_CR1_CEN;
+
         started = true;
-    }
-    else
-    {
-        TRACE("[PWM] Cannot start: PWM not enabled.\n");
     }
 }
 
@@ -192,34 +291,8 @@ void PWM::stop()
         timer.TIM->CCR2 = 0;
 
         timer.TIM->CR1 &= ~TIM_CR1_CEN;
+
         started = false;
-    }
-}
-
-void PWM::disable()
-{
-    if (enabled)
-    {
-        if (started)
-        {
-            stop();
-        }
-
-        switch (channel)
-        {
-            case 0:
-                timer.TIM->CCER &= ~TIM_CCER_CC1E;
-                break;
-            case 1:
-                timer.TIM->CCER &= ~TIM_CCER_CC2E;
-                break;
-            case 2:
-                timer.TIM->CCER &= ~TIM_CCER_CC3E;
-                break;
-            case 3:
-                timer.TIM->CCER &= ~TIM_CCER_CC4E;
-                break;
-        }
 
         {
             FastInterruptDisableLock dLock;
@@ -228,6 +301,5 @@ void PWM::disable()
             *(timer.bus_en_reg) &= ~timer.TIM_EN;
             RCC_SYNC();
         }
-        enabled = false;
     }
 }

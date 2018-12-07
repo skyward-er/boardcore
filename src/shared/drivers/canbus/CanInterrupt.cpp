@@ -75,6 +75,12 @@ void __attribute__((used)) CAN_IRQHandlerImpl(int can_dev, int fifo)
     //  CAN1->RF0R |= CAN_RF0R_RFOM0; non è lui xD
     can_dev &= 0x01;
 
+#ifdef DEBUG
+    ledOn();
+    Thread::sleep(50);
+    ledOff();
+#endif
+
     // TODO: check if this 'return' is allowed
     if (can_dev >= (int)global_bus_ctr)
         return;
@@ -95,8 +101,10 @@ void __attribute__((used)) CAN_IRQHandlerImpl(int can_dev, int fifo)
     RxMessage.FMI = (uint8_t)0xFF & (can->sFIFOMailBox[fifo].RDTR >> 8);
 
     /* Get the data field */
-    *((uint32_t *)RxMessage.Data)       = can->sFIFOMailBox[fifo].RDLR;
-    *((uint32_t *)(RxMessage.Data + 4)) = can->sFIFOMailBox[fifo].RDHR;
+    uint32_t DataLR = can->sFIFOMailBox[fifo].RDLR;
+    uint32_t DataHR = can->sFIFOMailBox[fifo].RDHR;
+    memcpy(RxMessage.Data, &DataLR, sizeof(uint32_t));
+    memcpy(RxMessage.Data + sizeof(uint32_t), &DataHR, sizeof(uint32_t));
 
     /* Release FIFO0 */
     can->RF0R |= CAN_RF0R_RFOM0;

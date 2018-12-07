@@ -27,7 +27,7 @@
  */
 
 // Generated from:  https://docs.google.com/spreadsheets/d/12TecOmDd7Uot-MvXkCbhDJRU48-XO6s5ChKDlr4AOvI
-// Autogen date:    2018-11-15 00:28:34.677964
+// Autogen date:    2018-12-07 04:51:36.327000
 
 
 #include "Events.h"
@@ -96,7 +96,9 @@ string getTopicString(uint8_t topic)
         { TOPIC_FLIGHT_EVENTS, "TOPIC_FLIGHT_EVENTS" },
         { TOPIC_FMM, "TOPIC_FMM" },
         { TOPIC_IGNITION, "TOPIC_IGNITION" },
-        { TOPIC_TC, "TOPIC_TC" }
+        { TOPIC_TC, "TOPIC_TC" },
+        { TOPIC_TMTC, "TOPIC_TMTC" },
+        { TOPIC_CAN, "TOPIC_CAN" }
 	};
 	auto it = topic_string_map.find(topic);
 	return it == topic_string_map.end() ? "TOPIC_UNKNOWN" : it->second; 

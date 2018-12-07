@@ -1,5 +1,5 @@
 /* Copyright (c) 2018 Skyward Experimental Rocketry
- * Authors: Alvise de' Faveri Tron
+ * Authors: Alvise De Faveri
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -20,58 +20,57 @@
  * THE SOFTWARE.
  */
 
-#ifndef SRC_SHARED_BOARDS_HOMEONE_STATUSMANAGER_STATUSMANAGER_H_
-#define SRC_SHARED_BOARDS_HOMEONE_STATUSMANAGER_STATUSMANAGER_H_
+#ifndef HOMEONE_TMTC_TM_BUILDER_H
+#define HOMEONE_TMTC_TM_BUILDER_H
 
 #include <Common.h>
-#include <events/Scheduler.h>
-#include <events/EventBroker.h>
-#include "Status.h"
-#include "boards/Homeone/TMTCManager/TMTCManager.h"
-#include <diagnostic/CpuMeter.h>
-
-#define HR_TM_RATE 100
-#define LR_TM_RATE 1000
-#define AUTOTM_TIMEOUT 1000000
+#include <libs/mavlink_skyward_lib/mavlink_lib/skyward/mavlink.h>
 
 namespace HomeoneBoard
 {
-namespace Status
+namespace TMTC
+{
+namespace TMBuilder
 {
 
 /**
- * This class is in charge of collecting Status information from the board's
- * SW Modules and sending them through the TMTC whenever a status request event
- * is received.
+ * Parses a corresponding packed telemetry.
  */
-class StatusManager: public EventHandler, public Singleton<StatusManager>
+static mavlink_message_t buildTelemetry(uint8_t requestedTelemetry) 
 {
-    friend class Singleton<StatusManager> ;
+    mavlink_message_t responseMsg;
 
-public:
-    ~StatusManager(){};
+    // TODO: tm builder
+    // mavlink_msg_ack_tm_pack(TMTC_MAV_SYSID, TMTC_MAV_COMPID, &ackMsg,
+    //                                 request.msgid, request.seq);
 
-protected:
-    /* EventHandler implementation */
-    void handleEvent(const Event& e) override;
+    switch(requestedTelemetry)
+    {
+        case MavTMList::MAV_HOMEONE_TM_ID:
+        break;
 
-private:
-    /* Automatic Telemetries flag */
-    bool autoTmEnable = false;
+        case MavTMList::MAV_IGNITION_TM_ID:
+        break;
 
-    /* Constructor*/
-    StatusManager();
+        case MavTMList::MAV_NOSECONE_TM_ID:
+        break;
 
-};
+        case MavTMList::MAV_HR_TM_ID:
+        break;
 
+        case MavTMList::MAV_LR_TM_ID:
+        break;
+
+        default:
+        break;
+    }
+
+    return responseMsg;
 }
-}
 
-#ifndef sStatusManager
-#define sStatusManager StatusManager::getInstance()
-#else
-#error STATUS MANAGER ALREADY DEFINED
-#endif /* sStatusManager */
+} /* namespace TMBuilder */
+} /* namespace TMTC */
+} /* namespace HomeoneBoard */
 
-#endif /* SRC_SHARED_BOARDS_HOMEONE_STATUSMANAGER_STATUSMANAGER_H_ */
 
+#endif /* HOMEONE_TMTC_TM_BUILDER_H */

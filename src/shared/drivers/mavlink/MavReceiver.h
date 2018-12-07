@@ -30,8 +30,9 @@
 #include <libs/mavlink_skyward_lib/mavlink_lib/skyward/mavlink.h>  
 #include <drivers/Transceiver.h>
 #include <ActiveObject.h>
+#include "MavSender.h"
 
-using MavHandler = std::function<void(const mavlink_message_t& msg)>;
+using MavHandler = std::function<void(MavSender* sender, const mavlink_message_t& msg)>;
 
 /**
  * Class to parse mavlink messages through a Transceiver. Lets you
@@ -44,9 +45,10 @@ public:
      * @param device   the device used for receiving messages
      * @param onRcv    function to be exectued on message reception 
      */
-    MavReceiver(Transceiver* device, MavHandler onRcv) : 
+    MavReceiver(Transceiver* device, MavSender* sender, MavHandler onRcv) : 
                                             ActiveObject(), 
                                             device(device), 
+                                            sender(sender),
                                             handleMavlinkMessage(onRcv) {}
     
     ~MavReceiver(){};
@@ -75,13 +77,14 @@ protected:
                     msg.msgid, msg.seq, msg.compid, msg.sysid);
 
                 /* Handle the command */
-                handleMavlinkMessage(msg);
+                handleMavlinkMessage(sender, msg);
             }
         }
     }
 
 private:
     Transceiver* device;
+    MavSender* sender;
     MavHandler handleMavlinkMessage;
 };
 
