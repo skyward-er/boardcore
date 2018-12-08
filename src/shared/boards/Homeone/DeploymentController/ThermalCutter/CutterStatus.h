@@ -1,16 +1,17 @@
-/* Copyright (c) 2015-2018 Skyward Experimental Rocketry
- * Authors: Alvise de' Faveri Tron
- *
+/* 
+ * Copyright (c) 2018 Skyward Experimental Rocketry
+ * Authors: Luca Erbetta
+ * 
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
  * in the Software without restriction, including without limitation the rights
  * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
  * copies of the Software, and to permit persons to whom the Software is
  * furnished to do so, subject to the following conditions:
- *
+ * 
  * The above copyright notice and this permission notice shall be included in
  * all copies or substantial portions of the Software.
- *
+ * 
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
  * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.  IN NO EVENT SHALL THE
@@ -20,45 +21,36 @@
  * THE SOFTWARE.
  */
 
-#ifndef SRC_SHARED_BOARDS_HOMEONE_DPLCONTROLLER_H
-#define SRC_SHARED_BOARDS_HOMEONE_DPLCONTROLLER_H
 
-#include "Singleton.h"
+#ifndef SRC_SHARED_BOARDS_HELITEST_THERMALCUTTER_CUTTERSTATUS_H
+#define SRC_SHARED_BOARDS_HELITEST_THERMALCUTTER_CUTTERSTATUS_H
 
-#include "events/Event.h"
-#include "events/FSM.h"
+#include <ostream>
+#include <string>
 
-namespace HomeoneBoard
+enum CutterState : uint8_t
 {
-namespace DPL  // DeploymentController
-{
-/**
- * Implementation of the DeploymentController Finite State Machine
- */
-class DeploymentController : public FSM<DeploymentController>
-{
-    DeploymentController();
-    ~DeploymentController() {}
-private:
-    
-
-    void stateIdle(const Event& ev)
-    {
-        switch(ev.sig)
-        {
-            
-        }
-    }
-    void stateCutting(const Event& ev)
-    {
-
-    }
-
-    void updateInternalState(uint8_t *can_msg);
-    // State variables
-    const uint8_t MAX_RETRY = 5;
+    CUTTER_IDLE,
+    CUTTER_CUTTING,
+    CUTTER_DONE
 };
-}
-}
 
-#endif /* SRC_SHARED_BOARDS_HOMEONE_DPLCONTROLLER_FSM_H */
+struct CutterStatus
+{
+    uint32_t timestamp;
+    uint8_t state      = CUTTER_IDLE;
+
+    // void log();
+
+    static std::string header()
+    {
+        return "timestamp,state\n";
+    }
+
+    void print(std::ostream& os) const
+    {
+        os << timestamp << "," << (int)state << "\n";
+    }
+};
+
+#endif
