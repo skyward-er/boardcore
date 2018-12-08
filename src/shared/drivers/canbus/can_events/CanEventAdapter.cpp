@@ -34,6 +34,9 @@ CanEventAdapter::CanEventAdapter()
     canbus_init_t can_config = {
         CAN1, miosix::Mode::ALTERNATE, 9, {CAN1_RX0_IRQn, CAN1_RX1_IRQn}};
     can_manager->addBus<GPIOA_BASE, 11, 12>(can_config);
+
+    if (can_manager->getBus(0) == NULL)
+        TRACE("[CanEvAdapter] Init ERROR: bus not created.");
 }
 
 CanEventAdapter::~CanEventAdapter()
