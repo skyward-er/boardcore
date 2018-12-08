@@ -27,7 +27,7 @@
  */
 
 // Generated from:  https://docs.google.com/spreadsheets/d/12TecOmDd7Uot-MvXkCbhDJRU48-XO6s5ChKDlr4AOvI
-// Autogen date:    2018-11-15 00:28:34.677964
+// Autogen date:    2018-12-08 15:16:01.039025
 
 #ifndef SRC_SHARED_BOARDS_HOMEONE_EVENTS_H
 #define SRC_SHARED_BOARDS_HOMEONE_EVENTS_H
@@ -73,7 +73,7 @@ enum Events : uint8_t
     EV_SEND_LR_TM,
     EV_TC_ABORT_LAUNCH,
     EV_TC_ARM,
-    EV_TC_BARO_CALIBRATION,
+    EV_TC_SET_DPL_PRESSURE,
     EV_TC_BOARD_RESET,
     EV_TC_CUT_ALL,
     EV_TC_CUT_FIRST_DROGUE,
@@ -92,7 +92,8 @@ enum Events : uint8_t
     EV_TIMEOUT_DPL_ALT,
     EV_TIMEOUT_END_MISSION,
     EV_TIMEOUT_SHADOW_MODE,
-    EV_UMBILICAL_DETACHED
+    EV_UMBILICAL_DETACHED,
+    EV_TIMEOUT_ADA_CALIBRATION
 };
 
 /**
