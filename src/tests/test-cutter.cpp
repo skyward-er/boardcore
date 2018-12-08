@@ -1,5 +1,6 @@
-/* Copyright (c) 2015-2018 Skyward Experimental Rocketry
- * Authors: Alvise de' Faveri Tron
+/*
+ * Copyright (c) 2018 Skyward Experimental Rocketry
+ * Authors: Luca Erbetta
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -20,45 +21,42 @@
  * THE SOFTWARE.
  */
 
-#ifndef SRC_SHARED_BOARDS_HOMEONE_DPLCONTROLLER_H
-#define SRC_SHARED_BOARDS_HOMEONE_DPLCONTROLLER_H
+#include <miosix.h>
+#include "boards/Homeone/DeploymentController/ThermalCutter/Cutter.h"
 
-#include "Singleton.h"
+using namespace miosix;
 
-#include "events/Event.h"
-#include "events/FSM.h"
-
-namespace HomeoneBoard
+int main()
 {
-namespace DPL  // DeploymentController
-{
-/**
- * Implementation of the DeploymentController Finite State Machine
- */
-class DeploymentController : public FSM<DeploymentController>
-{
-    DeploymentController();
-    ~DeploymentController() {}
-private:
-    
+    Cutter cutter;
+    Thread::sleep(500);
 
-    void stateIdle(const Event& ev)
+    printf("Starting drogue cutter\n");
+    cutter.startCutDrogue();
+
+    Thread::sleep(500);
+    printf("Stopping drogue cutter\n");
+    cutter.stopCutDrogue();
+
+    Thread::sleep(500);
+    printf("Cutting main chute\n");
+    cutter.startCutMainChute();
+
+    Thread::sleep(500);
+    printf("Starting drogue cutter\n");
+    cutter.startCutDrogue();
+
+    Thread::sleep(500);
+    printf("Stop main chute\n");
+    cutter.stopCutMainChute();
+
+    Thread::sleep(500);
+    printf("Stop drogue\n");
+    cutter.stopCutDrogue();
+
+    for (;;)
     {
-        switch(ev.sig)
-        {
-            
-        }
+        printf("END\n");
+        Thread::sleep(10000);
     }
-    void stateCutting(const Event& ev)
-    {
-
-    }
-
-    void updateInternalState(uint8_t *can_msg);
-    // State variables
-    const uint8_t MAX_RETRY = 5;
-};
 }
-}
-
-#endif /* SRC_SHARED_BOARDS_HOMEONE_DPLCONTROLLER_FSM_H */
