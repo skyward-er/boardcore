@@ -32,7 +32,7 @@ Gamma868* gamma868;
 MavSender* sender;
 MavReceiver* receiver;
 
-static void onReceive(const mavlink_message_t& msg) 
+static void onReceive(MavSender* sender, const mavlink_message_t& msg) 
 {
     if (msg.msgid != MAVLINK_MSG_ID_ACK_TM) 
     {
@@ -54,7 +54,7 @@ int main()
     gamma868 = new Gamma868("/dev/radio");
 
     sender = new MavSender(gamma868);
-    receiver = new MavReceiver(gamma868, &onReceive);
+    receiver = new MavReceiver(gamma868, sender, &onReceive);
 
     sender->start();
     receiver->start();
