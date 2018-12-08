@@ -28,3 +28,8 @@ enum class ADAState {
     FIRST_DESCENT_PHASE,
     END
 };
+
+struct ADAStatus
+{
+    ADAState state = ADAState::UNDEFINED;
+};

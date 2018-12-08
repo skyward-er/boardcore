@@ -24,6 +24,7 @@
 #include <boards/Homeone/ADA/ADAStatus.h>
 #include <events/FSM.h>
 #include <kalman/Kalman.h>
+#include "logger/LogProxy.h"
 
 class ADA : public FSM<ADA>
 {
@@ -41,12 +42,16 @@ private:
     void stateFirstDescentPhase(const Event& ev);
     void stateEnd(const Event& ev);
 
-    uint16_t cal_delayed_event_id = 0;     // Event id for calibration timeout
-    ADAState state = ADAState::UNDEFINED;  // Variable to store state
+    uint16_t cal_delayed_event_id = 0;      // Event id for calibration timeout
+    ADAStatus status;                       // Variable to store state
 
-    Kalman filter;  // Filter object that perfroms the computations
+    Kalman filter;          // Filter object that perfroms the computations
 
     // Calibration variables
-    int avg_n_samples = 0;  // Number of samples collected
-    float avg         = 0;  // Average pressure
+    int     avg_n_samples       = 0;    // Number of samples collected
+    float   avg                 = 0;    // Average pressure
+    float   dpl_target_pressure = 5000; // Parachute deployment altitude
+    
+    // Logger
+    LoggerProxy& logger = *(LoggerProxy::getInstance());
 };

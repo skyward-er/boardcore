@@ -30,16 +30,12 @@ namespace FMM
 
 // State timeouts
 static const unsigned int TIMEOUT_MS_CALIBRATION      = 15 * 1000;
-static const unsigned int DESCENT_DPL_ALTITUDE        = 5000;
 
 
 // Kalman parameters
-float P_data[9] = {0.1, 0, 0, 0, 0.1, 0, 0, 0, 0.1}; // Initial error covariance matrix
-
-float R_data[1] = {10}; // Measurement variance  
-
+float P_data[9] = {0.1, 0, 0, 0, 0.1, 0, 0, 0, 0.1};    // Initial error covariance matrix
+float R_data[1] = {10};                                 // Measurement variance  
 float Q_data[9] = {0.01, 0, 0, 0, 0.01, 0, 0, 0, 0.01}; // Model variance matrix
-
 float samplingPeriod = 0.01; // In seconds
 }
 }
