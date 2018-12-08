@@ -50,24 +50,20 @@ ADA::ADA()
     // Note that sampling frequency is supposed to be constant and known at
     // compile time. If this is not the case the matrix has to be updated at
     // each iteration
-    float Phi_data[9] = {1,
-                         samplingPeriod,
-                         0.5 * samplingPeriod * samplingPeriod,
-                         0,
-                         1,
-                         samplingPeriod,
-                         0,
-                         0,
-                         1};
+    float Phi_data[9] =
+                {   1,  samplingPeriod, 0.5 * samplingPeriod * samplingPeriod,
+                    0,  1,              samplingPeriod,
+                    0,  0,              1
+                };
     Matrix Phi{3, 3, Phi_data};
-    filter.Phi = Phi;
+    filter.Phi.set(Phi_data);
 }
 
 /* --- INSTANCE METHODS --- */
 
 void ADA::update(float pressure)
 {
-    switch (state)
+    switch (status.state)
     {
         case ADAState::CALIBRATING:
         {
@@ -152,10 +148,10 @@ void ADA::stateCalibrating(const Event& ev)
     {
         case EV_ENTRY:
             TRACE("ADA: Entering stateCalibrating\n");
-            state = ADAState::CALIBRATING;
-            cal_delayed_event_id =
-                sEventBroker->postDelayed({EV_TIMEOUT_ADA_CALIBRATION},
-                                          TOPIC_ADA, TIMEOUT_MS_CALIBRATION);
+            status.state = ADAState::CALIBRATING;
+            logger.log(status);
+            // TODO: Define event!!
+            cal_delayed_event_id = sEventBroker->postDelayed({EV_TIMEOUT_ADA_CALIBRATION}, TOPIC_ADA, TIMEOUT_MS_CALIBRATION);
             break;
         case EV_EXIT:
             TRACE("ADA: Exiting stateCalibrating\n");
@@ -183,13 +179,18 @@ void ADA::stateIdle(const Event& ev)
     {
         case EV_ENTRY:
             TRACE("ADA: Entering stateIdle\n");
-            state = ADAState::IDLE;
+            status.state = ADAState::IDLE;
+            logger.log(status);
             break;
         case EV_EXIT:
             TRACE("ADA: Exiting stateIdle\n");
             break;
         case EV_LIFTOFF:
             transition(&ADA::stateShadowMode);
+            break;
+        case EV_TC_BARO_CALIBRATION:
+            // TODO: Update here variable target pressure
+            // dpl_target_pressure = ev.data;
             break;
         default:
             TRACE("ADA stateIdle: %d event not handled", ev.sig);
@@ -211,7 +212,8 @@ void ADA::stateShadowMode(const Event& ev)
     {
         case EV_ENTRY:
             TRACE("ADA: Entering stateShadowMode\n");
-            state = ADAState::SHADOW_MODE;
+            status.state = ADAState::SHADOW_MODE;
+            logger.log(status);
             break;
         case EV_EXIT:
             TRACE("ADA: Exiting stateShadowMode\n");
@@ -240,7 +242,8 @@ void ADA::stateActive(const Event& ev)
     {
         case EV_ENTRY:
             TRACE("ADA: Entering stateActive\n");
-            state = ADAState::ACTIVE;
+            status.state = ADAState::ACTIVE;
+            logger.log(status);
             break;
         case EV_EXIT:
             TRACE("ADA: Exiting stateActive\n");
@@ -269,7 +272,8 @@ void ADA::stateFirstDescentPhase(const Event& ev)
     {
         case EV_ENTRY:
             TRACE("ADA: Entering stateFirstDescentPhase\n");
-            state = ADAState::FIRST_DESCENT_PHASE;
+            status.state = ADAState::FIRST_DESCENT_PHASE;
+            logger.log(status);
             break;
         case EV_EXIT:
             TRACE("ADA: Exiting stateFirstDescentPhase\n");
@@ -295,7 +299,8 @@ void ADA::stateEnd(const Event& ev)
     {
         case EV_ENTRY:
             TRACE("ADA: Entering stateEnd\n");
-            state = ADAState::END;
+            status.state = ADAState::END;
+            logger.log(status);
             break;
         case EV_EXIT:
             TRACE("ADA: Exiting stateEnd\n");
