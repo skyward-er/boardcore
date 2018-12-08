@@ -21,16 +21,18 @@
  */
 
 #include <Common.h>
-#include <boards/Homeone/TMTCManager/TMTCManager.h>
+#include <drivers/gamma868/Gamma868.h>
+#include "drivers/mavlink/MavSender.h"
+#include "drivers/mavlink/MavReceiver.h"
 
 using namespace miosix;
 
 Gamma868* gamma868;
 
-MavSender* g_sender;
-MavReceiver* g_receiver;
+MavSender* sender;
+MavReceiver* receiver;
 
-static void onReceive(MavSender* sender, const mavlink_message_t& msg) 
+static void onReceive(const mavlink_message_t& msg) 
 {
     if (msg.msgid != MAVLINK_MSG_ID_ACK_TM) 
     {
@@ -51,11 +53,11 @@ int main()
 {
     gamma868 = new Gamma868("/dev/radio");
 
-    g_sender = new MavSender(gamma868);
-    g_receiver = new MavReceiver(gamma868, g_sender, &onReceive);
+    sender = new MavSender(gamma868);
+    receiver = new MavReceiver(gamma868, &onReceive);
 
-    g_sender->start();
-    g_receiver->start();
+    sender->start();
+    receiver->start();
 
 
     // sTMTCManager;
@@ -69,7 +71,7 @@ int main()
         mavlink_msg_ping_tc_pack(1, 1, &pingMsg, miosix::getTick());
 
         // Send the message
-        bool ackSent = g_sender->enqueueMsg(pingMsg);
+        bool ackSent = sender->enqueueMsg(pingMsg);
 
         if(!ackSent)
             TRACE("[TmtcTest] Could not enqueue ping\n");

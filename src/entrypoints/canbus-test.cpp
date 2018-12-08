@@ -1,5 +1,5 @@
-/* Copyright (c) 2018 Skyward Experimental Rocketry
- * Authors: Alvise de' Faveri Tron
+/* Copyright (c) 2015-2016 Skyward Experimental Rocketry
+ * Authors: Alain Carlucci, Matteo Michele Piazzolla
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -20,40 +20,44 @@
  * THE SOFTWARE.
  */
 
-#ifndef SRC_SHARED_BOARDS_HOMEONE_STATUSMANAGER_STATUS_H_
-#define SRC_SHARED_BOARDS_HOMEONE_STATUSMANAGER_STATUS_H_
+#include <Common.h>
+#include <drivers/canbus/CanManager.h>
+#include <drivers/canbus/CanSocket.h>
+#include <drivers/canbus/CanUtils.h>
 
-namespace HomeoneBoard
+using namespace std;
+using namespace miosix;
+
+#define CAN_PACKETID 0x49
+
+int main()
 {
+    CanManager c(CAN1);
 
-/*************** Base struct *********************/
-enum componentId_t
-{
-	FMM_COMP_ID,
-	TMTC_COMP_ID,
-	SENSOR_MANAGER_COMP_ID,
-	LOGGER_COMP_ID,
-	IGNITION_CONTROLLER_COMP_ID,
-	DEPLOYMENT_CONTROLLER_COMP_ID,
-	SCHEDULER_COMP_ID,
-	EVENT_BROKER_COMP_ID,
-	CANBUS_MANAGER_COMP_ID
-};
+    canbus_init_t st = {
+        CAN1, Mode::ALTERNATE, 9, {CAN1_RX0_IRQn, CAN1_RX1_IRQn}};
+        
+    c.addBus<GPIOA_BASE, 11, 12>(st);
+    // canbus_init_t st2= {
+    //    CAN2, Mode::ALTERNATE,  9, {CAN2_RX0_IRQn,CAN2_RX1_IRQn}
+    //};
+    // c.addBus<GPIOB_BASE, 5, 6>(st2);
 
-enum healthStatus_t
-{
-	COMP_UNINIT,
-	COMP_OK,
-	COMP_ERROR,  // Error flag, still alive
-	COMP_FAILED	 // Dead
-};
+    CanBus *bus = c.getBus(0);
+    CanSocket socket(CAN_PACKETID);
+    char buf[64] = {0};
+    socket.open(bus);
 
-struct ComponentStatus
-{
-	componentId_t compId;
-	healthStatus_t healthStatus;
-};
+    printf("*** Ready ***\n");
 
+    while (1)
+    {
+        const char *pkt = "TestMSG";
+        bus->send(CAN_PACKETID, (const uint8_t *)pkt, strlen(pkt));
+        socket.receive(buf, 64);
+        printf("Recv pkt: '%s'\n", buf);
+        Thread::sleep(250);
+    }
+
+    socket.close();
 }
-
-#endif /* SRC_SHARED_BOARDS_HOMEONE_STATUSMANAGER_STATUS_H_ */
