@@ -85,13 +85,16 @@ void ADA::update(float pressure)
         case ADAState::SHADOW_MODE:
         {
             // Shadow mode state: update kalman, DO NOT send events
-            Matrix y{1, 1, &pressure};  // TODO: Check if & is appropriate
+            Matrix y{1, 1, &pressure};
             filter.update(y);
             // Check if the "pressure speed" (hence positive when decending) is
             // positive
             if (filter.X(1) > 0)
             {
-                // TODO: Log apogee detected
+                ApogeeDetected apogee_det;
+                apogee_det.tick  = miosix::getTick();
+                apogee_det.state = status.state;
+                logger.log(apogee_det);
             }
             break;
         }
@@ -99,14 +102,17 @@ void ADA::update(float pressure)
         case ADAState::ACTIVE:
         {
             // Active state send notifications for apogee
-            Matrix y{1, 1, &pressure};  // TODO: Check if & is appropriate
+            Matrix y{1, 1, &pressure};
             filter.update(y);
             // Check if the "pressure speed" (hence positive when decending) is
             // positive
             if (filter.X(1) > 0)
             {
                 sEventBroker->post({EV_ADA_APOGEE_DETECTED}, TOPIC_ADA);
-                // TODO: Log apogee detected
+                ApogeeDetected apogee_det;
+                apogee_det.tick  = miosix::getTick();
+                apogee_det.state = status.state;
+                logger.log(apogee_det);
             }
             break;
         }
@@ -114,12 +120,14 @@ void ADA::update(float pressure)
         case ADAState::FIRST_DESCENT_PHASE:
         {
             // Descent state: send notifications for target altitude reached
-            Matrix y{1, 1, &pressure};  // TODO: Check if & is appropriate
+            Matrix y{1, 1, &pressure};
             filter.update(y);
             if (filter.X(0) >= dpl_target_pressure)
             {
                 sEventBroker->post({EV_DPL_ALTITUDE}, TOPIC_ADA);
-                // TODO: Log dpl altitude reached
+                DplPressureReached dpl_reached;
+                dpl_reached.tick = miosix::getTick();
+                logger.log(dpl_reached);
             }
             break;
         }
@@ -171,8 +179,9 @@ void ADA::stateCalibrating(const Event& ev)
             transition(&ADA::stateIdle);
             break;
         case EV_TC_SET_DPL_PRESSURE:
-            // TODO: Update here variable target pressure
-            // dpl_target_pressure = ev.data;
+            const DeploymentPressureEvent& dpl_ev =
+                static_cast<const DeploymentPressureEvent&>(ev);
+            dpl_target_pressure = dpl_ev.dplPressure;
             break;
         default:
             TRACE("ADA stateCalibrating: %d event not handled", ev.sig);
@@ -204,8 +213,9 @@ void ADA::stateIdle(const Event& ev)
             transition(&ADA::stateShadowMode);
             break;
         case EV_TC_SET_DPL_PRESSURE:
-            // TODO: Update here variable target pressure
-            // dpl_target_pressure = ev.data;
+            const DeploymentPressureEvent& dpl_ev =
+                static_cast<const DeploymentPressureEvent&>(ev);
+            dpl_target_pressure = dpl_ev.dplPressure;
             break;
         default:
             TRACE("ADA stateIdle: %d event not handled", ev.sig);

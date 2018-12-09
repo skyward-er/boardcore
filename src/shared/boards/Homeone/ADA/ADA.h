@@ -50,7 +50,9 @@ private:
     // Calibration variables
     int     avg_n_samples       = 0;    // Number of samples collected
     float   avg                 = 0;    // Average pressure
-    float   dpl_target_pressure = 5000; // Parachute deployment altitude
+
+    // Parachute deployment altitude
+    uint16_t   dpl_target_pressure = 5000; // Set default value here
     
     // Logger
     LoggerProxy& logger = *(LoggerProxy::getInstance());

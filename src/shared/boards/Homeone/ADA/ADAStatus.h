@@ -19,6 +19,8 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
+
+// All possible states of the ADA FMM
 enum class ADAState {
     UNDEFINED,
     CALIBRATING,
@@ -29,7 +31,19 @@ enum class ADAState {
     END
 };
 
+// Struct to log current state
 struct ADAStatus
 {
     ADAState state = ADAState::UNDEFINED;
 };
+
+// Struct to log apogee detection
+struct ApogeeDetected {
+    ADAState state;
+    long long tick;
+};
+
+// Struct to log deployment pressure detection
+struct DplPressureReached {
+    long long tick;
+}
