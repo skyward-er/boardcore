@@ -1,5 +1,6 @@
-/* Copyright (c) 2015-2018 Skyward Experimental Rocketry
- * Authors: Alvise de' Faveri Tron
+/*
+ * Copyright (c) 2018 Skyward Experimental Rocketry
+ * Authors: Luca Erbetta
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -20,45 +21,27 @@
  * THE SOFTWARE.
  */
 
-#ifndef SRC_SHARED_BOARDS_HOMEONE_DPLCONTROLLER_H
-#define SRC_SHARED_BOARDS_HOMEONE_DPLCONTROLLER_H
+#pragma once
 
-#include "Singleton.h"
+#include "drivers/HardwareTimer.h"
+#include "drivers/pwm/pwm.h"
+#include "interfaces-impl/hwmapping.h"
 
-#include "events/Event.h"
-#include "events/FSM.h"
+static const PWM::Timer CUTTER_TIM{
+    TIM4, &(RCC->APB1ENR), RCC_APB1ENR_TIM4EN,
+    TimerUtils::getPrescalerInputFrequency(TimerUtils::InputClock::APB1)};
 
-namespace HomeoneBoard
-{
-namespace DPL  // DeploymentController
-{
+static const PWMChannel CUTTER_CHANNEL_DROGUE = PWMChannel::CH1;  // PD12
+static const PWMChannel CUTTER_CHANNEL_MAIN_CHUTE = PWMChannel::CH2;  // PD13
+
+typedef miosix::actuators::hbridger::ena DrogueCutterEna;
+typedef miosix::actuators::hbridgel::ena MainChuteCutterEna;
+
+static const unsigned int CUTTER_PWM_FREQUENCY = 150;
+static const float CUTTER_PWM_DUTY_CYCLE       = 32.0f / 256;
+
 /**
- * Implementation of the DeploymentController Finite State Machine
+ * @brief Delay to allow a safe shutdown of the hbridge
+ *
  */
-class DeploymentController : public FSM<DeploymentController>
-{
-    DeploymentController();
-    ~DeploymentController() {}
-private:
-    
-
-    void stateIdle(const Event& ev)
-    {
-        switch(ev.sig)
-        {
-            
-        }
-    }
-    void stateCutting(const Event& ev)
-    {
-
-    }
-
-    void updateInternalState(uint8_t *can_msg);
-    // State variables
-    const uint8_t MAX_RETRY = 5;
-};
-}
-}
-
-#endif /* SRC_SHARED_BOARDS_HOMEONE_DPLCONTROLLER_FSM_H */
+static const int HBRIDGE_DISABLE_DELAY_MS = 50;

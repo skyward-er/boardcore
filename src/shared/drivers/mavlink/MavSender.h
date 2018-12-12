@@ -51,7 +51,7 @@ public:
     /**
      * Non-blocking send function
      */
-    bool enqueueMsg(mavlink_message_t& msg)
+    bool enqueueMsg(const mavlink_message_t& msg)
     {
         miosix::Lock<miosix::FastMutex> l(mutex);
 

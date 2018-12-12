@@ -21,134 +21,123 @@
  */
 
 #include "TMTCManager.h"
-
-#define TC(x) MAVLINK_MSG_ID_##X##_TC
+#include "boards/Homeone/Topics.h"
+#include "TCHandler.h"
 
 namespace HomeoneBoard
 {
 namespace TMTC
 {
 
-/**
- * Constructor: initialise objects (has memory allocation).
- */
-TMTCManager::TMTCManager()
+TMTCManager::TMTCManager() : FSM(&TMTCManager::stateIdle)
 {
     device   = new Gamma868("/dev/radio");
     sender   = new MavSender(device);
-    receiver = new MavReceiver(device, &handleMavlinkMessage);
+    receiver = new MavReceiver(device, sender, &TCHandler::handleMavlinkMessage);
 
     sender->start();
-    receiver->start()
+    receiver->start();
 
-    TRACE("%s", "[TMTC] Created TMTCManager\n");
+    TRACE("[TMTC] Created TMTCManager\n");
+
+    sEventBroker->subscribe(this, TOPIC_FLIGHT_EVENTS);
+    sEventBroker->subscribe(this, TOPIC_TMTC);
+}
+
+TMTCManager::~TMTCManager()
+{
+    delete device;
+    delete sender;
+    delete receiver;
 }
 
 
-/**
- * Send an ACK to notify the sender that you received the given message.
- */
-void TMTCManager::sendAck(const mavlink_message_t& msg)
+/************************************
+ *         STATE HANDLERS           *
+ ************************************/
+
+void TMTCManager::stateIdle(const Event& ev)
 {
-    mavlink_message_t ackMsg;
-    mavlink_msg_ack_tm_pack(TMTC_MAV_SYSID, TMTC_MAV_COMPID, &ackMsg,
-                                    msg.msgid, msg.seq);
-
-    /* Send the message back to the sender */
-    send(ackMsg);
-    TRACE("[TMTC] Enqueued Ack\n", 0);
-}
-
-
-/**
- *  Handle the Mavlink message, posting the corresponding event if needed.
- */
-void TMTCManager::handleMavlinkMessage(const mavlink_message_t& msg)
-{
-    uint8_t msgId = msg.msgid;
-
-    // TODO: reschedule GS_OFFLINE event
-
-    switch (msgId)
+    switch(ev.sig) 
     {
-        case TC(NOARG):
-        {
-            uint8_t commandId = mavlink_msg_noarg_tc_get_command_id(&msg);
-
-            try
-            {
-                uint8_t sig = noargCmdToEvt.at(commandId);
-                sEventBroker->post(Event {sig}, TOPIC_COMMANDS);
-            } 
-            catch (int e) 
-            {
-                TRACE("[TMTC] Unkown noArg command %d\n", commandId);
-            }
-
+        case EV_ENTRY:
+            TRACE("[TMTC] Entering stateIdle\n");
             break;
-        }
 
-        case TC(REQUEST_BOARD_STATUS):
-        {
-            uint8_t boardId = mavlink_msg_request_board_status_tc_get_board_id(msg);
-
-            try
-            {
-                uint8_t sig = statusCmdToEvt.at(boardId);
-                sEventBroker->post(Event {sig}, TOPIC_COMMANDS);
-            } 
-            catch (int e) 
-            {
-                TRACE("[TMTC] Unkown status command %d\n", boardId);
-            }
-           
+        case EV_LIFTOFF:
+            TRACE("[TMTC] Liftoff signal received\n");
+            transition(&TMTCManager::stateHighRateTM);
             break;
-        }
 
-        case TC(PING):
-        {
-            sEventBroker->post(Event {EV_PING_RECEIVED}, TOPIC_COMMANDS);
+        case EV_EXIT:
+            TRACE("[TMTC] Exiting stateIdle\n");
             break;
-        }
-
-        case TC(START_LAUNCH):
-        {
-            StartLaunchEvent startLaunchEvt;
-            startLaunchEvt.sig = EV_TC_START_LAUNCH;
-            startLaunchEvt.launchCode = mavlink_msg_start_launch_tc_get_launch_code(msg);
-
-            sEventBroker->post(startLaunchEvt, TOPIC_COMMANDS);
-            break;
-        }
-
-        case TC(CALIBRATE_BAROMETERS):
-        {
-            AltimeterCalibrationEvent generatedCalibEvt;
-            generatedCalibEvt.sig = EV_TC_ALTIMETER_CALIBRATION;
-            generatedCalibEvt.T0 = mavlink_msg_calibrate_barometers_tc_get_T0(msg);
-            generatedCalibEvt.P0 = mavlink_msg_calibrate_barometers_tc_get_P0(msg);
-
-            sEventBroker->post(generatedCalibEvt, TOPIC_COMMANDS);
-            break;
-        }
-
-        case TC(RAW_EVENT):
-        {
-#ifdef DEBUG
-            /* Retrieve event from the message*/
-            Event evt = {mavlink_msg_raw_event_tc_get_Event_id(msg)};
-            sEventBroker->post(evt, mavlink_msg_raw_event_tc_get_Topic_id(msg));
-#endif
-            break;
-        }
 
         default:
-        {
-            TRACE("%s", "[TMTC] Received message is not of a known type\n");
-            status.healthStatus = COMP_ERROR;
-            // TODO: fault counter?
+            TRACE("[TMTC] Event not handled\n");
+            break;
+    }
+}
+void TMTCManager::stateHighRateTM(const Event& ev)
+{
+    switch(ev.sig) 
+    {
+        case EV_ENTRY:
+            TRACE("[TMTC] Entering stateHighRateTM\n");
+            sEventBroker->postDelayed(Event{EV_SEND_HR_TM}, TOPIC_TMTC, HR_TM_TIMEOUT);
+            break;
+
+        case EV_SEND_HR_TM: {
+            TRACE("[TMTC] Sending HR telemetry\n");
+
+            mavlink_message_t telem = TMBuilder::buildTelemetry(MAV_HR_TM_ID);
+            sender->enqueueMsg(telem);
+
+            sEventBroker->postDelayed(Event{EV_SEND_HR_TM}, TOPIC_TMTC, HR_TM_TIMEOUT);
             break;
         }
+
+        case EV_APOGEE:
+            TRACE("[TMTC] Apogee signal received\n");
+            transition(&TMTCManager::stateLowRateTM);
+            break;
+
+        case EV_EXIT:
+            TRACE("[TMTC] Exiting stateHighRateTM\n");
+            break;
+
+        default:
+            TRACE("[TMTC] Event not handled\n");
+            break;
+    }
+}
+
+void TMTCManager::stateLowRateTM(const Event& ev)
+{
+    switch(ev.sig) 
+    {
+        case EV_ENTRY:
+            TRACE("[TMTC] Entering stateLowRateTM\n");
+            sEventBroker->postDelayed(Event{EV_SEND_LR_TM}, TOPIC_TMTC, LR_TM_TIMEOUT);
+            break;
+
+        case EV_SEND_LR_TM: {
+            TRACE("[TMTC] Sending LR telemetry\n");
+
+            mavlink_message_t telem = TMBuilder::buildTelemetry(MAV_LR_TM_ID);
+            sender->enqueueMsg(telem);
+
+            sEventBroker->postDelayed(Event{EV_SEND_LR_TM}, TOPIC_TMTC, LR_TM_TIMEOUT);
+            break;
+        }
+
+        case EV_EXIT:
+            TRACE("[TMTC] Exiting stateLowRateTM\n");
+            break;
+
+        default:
+            TRACE("[TMTC] Event not handled\n");
+            break;
     }
 }
 

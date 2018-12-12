@@ -24,6 +24,7 @@
 #define SRC_SHARED_DRIVERS_PWM_PWM_H_
 
 #include <miosix.h>
+#include "pwmdata.h"
 
 /**
  * @brief Class to generate PWM using hardware timers.
@@ -42,35 +43,6 @@ public:
         unsigned int input_clock_freq;  // Timer input clock frequency [Hz]
     };
 
-    enum class Channel : int
-    {
-        CH1,
-        CH2,
-        CH3,
-        CH4
-    };
-
-    /**
-     * @brief PWM channel output polarity
-     *
-     */
-    enum class Polarity
-    {
-        ACTIVE_HIGH,
-        ACTIVE_LOW
-    };
-
-    /**
-     * @brief PWM mode selection. Refer to datasheet
-     * MODE_1  Channel high when CNT < CCRx
-     * MODE_2  Channel high when CNT > CCRx
-     */
-    enum class Mode
-    {
-        MODE_1,  // Channel high when CNT < CCRx
-        MODE_2   // Channel high when CNT > CCRx
-    };
-
     /**
      * @brief Construct a new PWM object
      *
@@ -80,6 +52,8 @@ public:
      */
     PWM(Timer timer, unsigned int frequency,
         unsigned int duty_cycle_resolution = 1024);
+
+    ~PWM();
 
     /**
      * @brief Set the PWM frequency
@@ -91,7 +65,8 @@ public:
 
     /**
      * @brief Set the Duty Cycle Resolution
-     * The duty cycle resolution is effectively changed once the timer is restarted.
+     * The duty cycle resolution is effectively changed once the timer is
+     * restarted.
      * @param duty_cycle_resolution Number of possible values of duty cycle
      */
     void setDutyCycleResolution(unsigned int duty_cycle_resolution);
@@ -103,8 +78,9 @@ public:
      * @param channel Output channel (1 to 4, refer to datasheet)
      * @param polarity Output polarity
      */
-    void enableChannel(Channel channel, float duty_cycle, Mode mode = Mode::MODE_1,
-                       Polarity polarity = Polarity::ACTIVE_HIGH);
+    void enableChannel(PWMChannel channel, float duty_cycle,
+                       PWMMode mode         = PWMMode::MODE_1,
+                       PWMPolarity polarity = PWMPolarity::ACTIVE_HIGH);
 
     /**
      * @brief Set the duty cycle for the specified channel
@@ -112,14 +88,14 @@ public:
      * @param channel
      * @param duty_cycle
      */
-    void setDutyCycle(Channel channel, float duty_cycle);
+    void setDutyCycle(PWMChannel channel, float duty_cycle);
 
     /**
      * @brief Disables output on the specified channel
      *
      * @param channel Channel to disable(1 to 4, refer to datasheet)
      */
-    void disableChannel(Channel channel);
+    void disableChannel(PWMChannel channel);
 
     /**
      * @brief Starts the PWM Generation
@@ -130,22 +106,25 @@ public:
      * @brief Stops PWM generation
      */
     void stop();
+    
+    /**
+     * @brief Returns true if the pwm generator is active
+     */
+    bool isStarted()
+    {
+        return started;
+    }
+
+    PWMChannelConfig getChannelConfig(PWMChannel channel)
+    {
+        return channels[static_cast<int>(channel)];
+    }
 
 private:
-    struct ChannelConfig
-    {
-        bool enabled = false;
-        int test = 5;
-        float duty_cycle;
-        Mode mode;
-        Polarity polarity;
-    };
+    void hardwareEnableChannel(PWMChannel channel);
+    void hardwareDisableChannel(PWMChannel channel);
 
-   void hardwareEnableChannel(Channel channel);
-   void hardwareDisableChannel(Channel channel);
-
-   void hardawreSetDutyCycle(Channel channel);
-
+    void hardwareSetDutyCycle(PWMChannel channel);
 
     const Timer timer;
     bool started = false;
@@ -153,7 +132,7 @@ private:
     unsigned int frequency;
     unsigned int duty_cycle_resolution;
 
-    ChannelConfig channels[4]{};
+    PWMChannelConfig channels[4]{};
 };
 
 #endif /* SRC_SHARED_DRIVERS_PWM_PWM_H_ */

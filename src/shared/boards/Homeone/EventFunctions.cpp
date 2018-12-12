@@ -27,7 +27,7 @@
  */
 
 // Generated from:  https://docs.google.com/spreadsheets/d/12TecOmDd7Uot-MvXkCbhDJRU48-XO6s5ChKDlr4AOvI
-// Autogen date:    2018-11-15 00:28:34.677964
+// Autogen date:    2018-12-08 15:16:01.039025
 
 
 #include "Events.h"
@@ -63,7 +63,7 @@ string getEventString(uint8_t event)
         { EV_SEND_LR_TM, "EV_SEND_LR_TM" },
         { EV_TC_ABORT_LAUNCH, "EV_TC_ABORT_LAUNCH" },
         { EV_TC_ARM, "EV_TC_ARM" },
-        { EV_TC_BARO_CALIBRATION, "EV_TC_BARO_CALIBRATION" },
+        { EV_TC_SET_DPL_PRESSURE, "EV_TC_SET_DPL_PRESSURE" },
         { EV_TC_BOARD_RESET, "EV_TC_BOARD_RESET" },
         { EV_TC_CUT_ALL, "EV_TC_CUT_ALL" },
         { EV_TC_CUT_FIRST_DROGUE, "EV_TC_CUT_FIRST_DROGUE" },
@@ -82,7 +82,8 @@ string getEventString(uint8_t event)
         { EV_TIMEOUT_DPL_ALT, "EV_TIMEOUT_DPL_ALT" },
         { EV_TIMEOUT_END_MISSION, "EV_TIMEOUT_END_MISSION" },
         { EV_TIMEOUT_SHADOW_MODE, "EV_TIMEOUT_SHADOW_MODE" },
-        { EV_UMBILICAL_DETACHED, "EV_UMBILICAL_DETACHED" }
+        { EV_UMBILICAL_DETACHED, "EV_UMBILICAL_DETACHED" },
+        { EV_TIMEOUT_ADA_CALIBRATION, "EV_TIMEOUT_ADA_CALIBRATION" }
     };
     auto   it  = event_string_map.find(event);
     return it == event_string_map.end() ? "EV_UNKNOWN" : it->second;
@@ -96,7 +97,9 @@ string getTopicString(uint8_t topic)
         { TOPIC_FLIGHT_EVENTS, "TOPIC_FLIGHT_EVENTS" },
         { TOPIC_FMM, "TOPIC_FMM" },
         { TOPIC_IGNITION, "TOPIC_IGNITION" },
-        { TOPIC_TC, "TOPIC_TC" }
+        { TOPIC_TC, "TOPIC_TC" },
+        { TOPIC_TMTC, "TOPIC_TMTC" },
+        { TOPIC_CAN, "TOPIC_CAN" }
 	};
 	auto it = topic_string_map.find(topic);
 	return it == topic_string_map.end() ? "TOPIC_UNKNOWN" : it->second; 
