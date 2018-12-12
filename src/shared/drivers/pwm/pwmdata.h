@@ -1,5 +1,6 @@
-/* Copyright (c) 2015-2018 Skyward Experimental Rocketry
- * Authors: Alvise de' Faveri Tron
+/*
+ * Copyright (c) 2018 Skyward Experimental Rocketry
+ * Authors: Luca Erbetta
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -20,45 +21,45 @@
  * THE SOFTWARE.
  */
 
-#ifndef SRC_SHARED_BOARDS_HOMEONE_DPLCONTROLLER_H
-#define SRC_SHARED_BOARDS_HOMEONE_DPLCONTROLLER_H
+#ifndef SRC_SHARED_DRIVERS_PWM_PWMDATA_H
+#define SRC_SHARED_DRIVERS_PWM_PWMDATA_H
 
-#include "Singleton.h"
-
-#include "events/Event.h"
-#include "events/FSM.h"
-
-namespace HomeoneBoard
-{
-namespace DPL  // DeploymentController
-{
 /**
- * Implementation of the DeploymentController Finite State Machine
+ * @brief PWM channel output polarity
+ *
  */
-class DeploymentController : public FSM<DeploymentController>
+enum class PWMPolarity
 {
-    DeploymentController();
-    ~DeploymentController() {}
-private:
-    
-
-    void stateIdle(const Event& ev)
-    {
-        switch(ev.sig)
-        {
-            
-        }
-    }
-    void stateCutting(const Event& ev)
-    {
-
-    }
-
-    void updateInternalState(uint8_t *can_msg);
-    // State variables
-    const uint8_t MAX_RETRY = 5;
+    ACTIVE_HIGH,
+    ACTIVE_LOW
 };
-}
-}
 
-#endif /* SRC_SHARED_BOARDS_HOMEONE_DPLCONTROLLER_FSM_H */
+/**
+ * @brief PWM mode selection. Refer to datasheet
+ * MODE_1  Channel high when CNT < CCRx
+ * MODE_2  Channel high when CNT > CCRx
+ */
+enum class PWMMode
+{
+    MODE_1,  // Channel high when CNT < CCRx
+    MODE_2   // Channel high when CNT > CCRx
+};
+
+enum class PWMChannel : int
+{
+    CH1,
+    CH2,
+    CH3,
+    CH4
+};
+
+struct PWMChannelConfig
+{
+    PWMChannel channel;
+    bool enabled = false;
+    float duty_cycle;
+    PWMMode mode;
+    PWMPolarity polarity;
+};
+
+#endif

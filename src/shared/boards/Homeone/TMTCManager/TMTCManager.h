@@ -25,33 +25,31 @@
 
 #include "TMTCStatus.h"
 
-#include <Singleton.h>
-#include <events/EventBroker.h>
+#include "events/FSM.h"
+#include "boards/Homeone/Events.h"
 
 #include <drivers/gamma868/Gamma868.h>
+#include <drivers/mavlink/MavSender.h>
+#include <drivers/mavlink/MavReceiver.h>
 
 namespace HomeoneBoard
 {
 namespace TMTC
 {
 
+// Mavlink messages sysID and compID
+static const unsigned int TMTC_MAV_SYSID    = 1;
+static const unsigned int TMTC_MAV_COMPID   = 1;
+
 /**
  * The TMTCManager class handles the communication with the Ground Station.
  * It uses a Gamma868 transceiver and implements the Mavlink protocol.
  */
-class TMTCManager : public Singleton<TMTCManager>
+class TMTCManager : public FSM<TMTCManager>
 {
-    friend class Singleton<TMTCManager>;
-
 public:
-    static const char* DEVICE_NAME = "/dev/radio";
-    static const uint8_t TMTC_MAV_SYSID = 1;
-    static const uint8_t TMTC_MAV_COMPID = 1;
-
-    /**
-     * Class destructor.
-     */
-    ~TMTCManager() {}
+    TMTCManager();
+    ~TMTCManager();
 
     /**
      * Non-blocking send wrapper.
@@ -63,65 +61,49 @@ public:
 
 protected:
 private:
-
-    /**
-     * Private constructor that realizes the Singleton pattern.
-     */
-    TMTCManager();
-
-    /**
-     *  Handles the Mavlink message, posting the corresponding event if needed.
-     * @param msg           mavlink message to handle
-     */
-    void handleMavlinkMessage(const mavlink_message_t& msg);
-
-    /**
-     * Sends an acknowledge message back to the Ground Station.
-     * @param msg    Mavlink message to acknowledge.
-     */
-    void sendAck(const mavlink_message_t* msg);
-
     Gamma868* device;
-
     MavSender* sender;
     MavReceiver* receiver;
 
-    TMTCStatus status;
+    HomeoneBoard::TMTC::TMTCStatus status;
 
-    static const std::map<uint8_t, uint8_t> statusCmdToEvt = 
-    {
-        { MAV_NOSECONE_BOARD, EV_NOSECONE_STATUS_REQUEST },
-        { MAV_IGNITION_BOARD, EV_IGNITION_STATUS_REQUEST },
-        { MAV_HOMEONE_BOARD,  EV_HOMEONE_STATUS_REQUEST }
-    };
+    /* State handlers */
+    void stateIdle(const Event& ev);
+    void stateHighRateTM(const Event& ev);
+    void stateLowRateTM(const Event& ev);
 
-    static const std::map<uint8_t, uint8_t> noargCmdToEvt = 
-    {
-        { MAV_CMD_ARM,              EV_TC_ARM    }, 
-        { MAV_CMD_DISARM,           EV_TC_DISARM }, 
-        { MAV_CMD_ABORT,            EV_TC_ABORT_LAUNCH  }, 
-        { MAV_CMD_NOSECONE_OPEN,    EV_TC_NC_OPEN }, 
-        { MAV_CMD_NOSECONE_CLOSE,   EV_TC_NC_CLOSE }, 
-        { MAV_CMD_START_SAMPLING,   EV_TC_START_LOGGIN }, 
-        { MAV_CMD_STOP_SAMPLING,    EV_TC_STOP_LOGGIN }, 
-        { MAV_CMD_TEST_MODE,        EV_TC_TEST_MODE   }, 
-        { MAV_CMD_BOARD_RESET,      EV_TC_BOARD_RESET }, 
+    // Maximum number of messages in the queue
+    static const unsigned int TMTC_OUT_BUFFER_SIZE = 1000;
+    // Minimum sleep time between sends
+    static const unsigned int TMTC_MIN_GUARANTEED_SLEEP = 250;
+    // Maximum number of consecutive messages sent before sleeping
+    static const unsigned int TMTC_MAX_PKT_SIZE = 1*sizeof(mavlink_message_t);
 
-        { MAV_CMD_MANUAL_MODE,      EV_TC_MANUAL_MODE },
-        { MAV_CMD_CUT_ALL,          EV_TC_CUT_ALL },
-        { MAV_CMD_CUT_FIRST_DROGUE, EV_TC_CUT_FIRST_DROGUE },
-        { MAV_CMD_END_MISSION,      EV_TC_END_MISSION }
-    };
+    static const unsigned int LR_TM_TIMEOUT = 1000;
+    static const unsigned int HR_TM_TIMEOUT = 250;
+};
+
+/**
+ * Map each noArg command to the corresponding event 
+ */
+static const std::map<uint8_t, uint8_t> noargCmdToEvt = 
+{
+    { MAV_CMD_ARM,              EV_TC_ARM    }, 
+    { MAV_CMD_DISARM,           EV_TC_DISARM }, 
+    { MAV_CMD_ABORT,            EV_TC_ABORT_LAUNCH  }, 
+    { MAV_CMD_NOSECONE_OPEN,    EV_TC_NC_OPEN }, 
+    { MAV_CMD_NOSECONE_CLOSE,   EV_TC_NC_CLOSE }, 
+    { MAV_CMD_START_LOGGING,    EV_TC_START_LOGGING }, 
+    { MAV_CMD_STOP_LOGGING,     EV_TC_STOP_LOGGING }, 
+    { MAV_CMD_TEST_MODE,        EV_TC_TEST_MODE   }, 
+    { MAV_CMD_BOARD_RESET,      EV_TC_BOARD_RESET }, 
+    { MAV_CMD_MANUAL_MODE,      EV_TC_MANUAL_MODE },
+    { MAV_CMD_CUT_ALL,          EV_TC_CUT_ALL },
+    { MAV_CMD_CUT_FIRST_DROGUE, EV_TC_CUT_FIRST_DROGUE },
+    { MAV_CMD_END_MISSION,      EV_TC_END_MISSION }
 };
 
 } /* namespace HomeoneBoard */
 } /* namespace TMTC */
-
-/* Define a singleton object that can be accessed from other files */
-#ifndef sTMTCManager
-#define sTMTCManager HomeoneBoard::TMTC::TMTCManager::getInstance()
-#else
-#error TMTCMANAGER ALREADY DEFINED
-#endif /* sTMTCManager */
 
 #endif /* TMTCMANAGER_H */
