@@ -29,8 +29,10 @@ from oauth2client import file, client, tools
 import re
 import datetime
 import sys
+from os.path import join
+import os
 
-
+OUTPUT_FOLDER = "generated"
 SCOPES = 'https://www.googleapis.com/auth/spreadsheets.readonly'
 
 service = None
@@ -100,12 +102,18 @@ def has_duplicates(lst):
     return False
 
 
+
 print("Homeone on-board software event header generator v0.2")
 print("Google sheets API auth in progress...")
+
 if auth():
     print("Auth successfull.")
 else:
     exit()
+
+directory = os.path.dirname(OUTPUT_FOLDER)
+if not os.path.exists(directory):
+    os.mkdir(OUTPUT_FOLDER)
 
 print("Reading from: https://docs.google.com/spreadsheets/d/12TecOmDd7Uot-MvXkCbhDJRU48-XO6s5ChKDlr4AOvI")
 
@@ -148,7 +156,7 @@ with open('Events.h.template', 'r') as template_file:
 template = template.format(sheet_link=link, date=date,
                            enum_data=enum_str)
 
-with open('Events.h', 'w') as header_file:
+with open(join(OUTPUT_FOLDER, 'Events.h'), 'w') as header_file:
     header_file.write(template)
 
 print("Events.h successfully generated.")
@@ -170,7 +178,7 @@ with open('Topics.h.template', 'r') as template_file:
 template = template.format(sheet_link=link, date=date,
                            enum_data=enum_str)
 
-with open('Topics.h', 'w') as header_file:
+with open(join(OUTPUT_FOLDER, 'Topics.h'), 'w') as header_file:
     header_file.write(template)
 
 with open('EventFunctions.cpp.template', 'r') as cpp_template_file:
@@ -179,7 +187,7 @@ with open('EventFunctions.cpp.template', 'r') as cpp_template_file:
 cpp = cpp.format(sheet_link=link, date=date,
                  event_map_data=event_map_str, topic_map_data=topic_map_str)
 
-with open('EventFunctions.cpp', 'w') as cpp_file:
+with open(join(OUTPUT_FOLDER, 'EventFunctions.cpp'), 'w') as cpp_file:
     cpp_file.write(cpp)
 
 print("Topics.h successfully generated.")
