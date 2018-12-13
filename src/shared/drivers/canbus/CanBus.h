@@ -28,24 +28,21 @@
 #include <Common.h>
 #include "CanUtils.h"
 
-class CanSocket;
 class CanManager;
+
+using CanDispatcher = std::function<void(CanMsg)>;
 
 class CanBus
 {
 public:
     miosix::Queue<CanMsg, 6> messageQueue;
 
-    bool registerSocket(CanSocket* socket);
-    bool unregisterSocket(CanSocket* socket);
-
     bool send(uint16_t id, const uint8_t* message, uint8_t len);
-    void dispatchMessage(CanMsg message);
 
     void queueHandler();
     volatile CAN_TypeDef* getBus() { return CANx; }
 
-    CanBus(CAN_TypeDef* bus, CanManager* manager, const int id);
+    CanBus(CAN_TypeDef* bus, CanManager* manager, const int id, CanDispatcher dispatcher);
     ~CanBus() {}
 
     CanBus(const CanBus&)  = delete;
@@ -59,12 +56,13 @@ private:
     const int id;
 
     miosix::FastMutex mutex;
-    std::set<CanSocket*> socket_map[1 << 11];
 
     volatile bool terminate;
     pthread_t t;
 
     static void* threadLauncher(void* arg);
+
+    CanDispatcher dispatchMessage;
 };
 
 #endif /* CANBUS_H */
