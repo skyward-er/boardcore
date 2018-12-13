@@ -57,45 +57,55 @@ class CanManager
 {
     // friend class Singleton<CanManager>;
 public:
+
+    /**
+     * @brief Adds a filter to receive Canbus messages.
+     * 
+     * @param           id filter ID
+     * @param can_id    on which canbus
+     * @return true     ok
+     * @return false    invalid filters
+     */
     bool addHWFilter(uint16_t id, uint32_t can_id);
     bool delHWFilter(uint16_t id, uint32_t can_id);
 
     unsigned getNumFilters(unsigned can_id) const;
 
     template <uint32_t gpio, uint8_t rx, uint8_t tx>
-    void addBus(const canbus_init_t &i)
+    void addBus(const canbus_init_t &i, CanDispatcher dispatcher)
     {
-        typedef miosix::Gpio<gpio, rx> rport;
-        typedef miosix::Gpio<gpio, tx> tport;
+    typedef miosix::Gpio<gpio, rx> rport;
+    typedef miosix::Gpio<gpio, tx> tport;
 
-        rport::mode(i.mode);
-        tport::mode(i.mode);
+    rport::mode(i.mode);
+    tport::mode(i.mode);
 
-        if (i.af >= 0)
-        {
-            rport::alternateFunction(i.af);
-            tport::alternateFunction(i.af);
-        }
-
-        // TODO de-hardcode this part
-        {
-            miosix::FastInterruptDisableLock dLock;
-            RCC->APB1ENR |= RCC_APB1ENR_CAN1EN | RCC_APB1ENR_CAN2EN;
-            RCC_SYNC();
-        }
-
-        for (const auto &j : i.interrupts)
-        {
-            NVIC_SetPriority(j, 15);
-            NVIC_EnableIRQ(j);
-        }
-
-        CanBus *canbus = new CanBus(i.can, this, bus.size());
-        bus.push_back(canbus);
-
-        // Used by CanInterrupt.cpp
-        global_bus_ptr[global_bus_ctr++] = canbus;
+    if (i.af >= 0)
+    {
+        rport::alternateFunction(i.af);
+        tport::alternateFunction(i.af);
     }
+
+    // TODO de-hardcode this part
+    {
+        miosix::FastInterruptDisableLock dLock;
+        RCC->APB1ENR |= RCC_APB1ENR_CAN1EN | RCC_APB1ENR_CAN2EN;
+        RCC_SYNC();
+    }
+
+    for (const auto &j : i.interrupts)
+    {
+        NVIC_SetPriority(j, 15);
+        NVIC_EnableIRQ(j);
+    }
+
+    CanBus *canbus = new CanBus(i.can, this, bus.size(), dispatcher);
+    bus.push_back(canbus);
+
+    // Used by CanInterrupt.cpp
+    global_bus_ptr[global_bus_ctr++] = canbus;
+}
+
 
     CanBus *getBus(uint32_t id);
 
