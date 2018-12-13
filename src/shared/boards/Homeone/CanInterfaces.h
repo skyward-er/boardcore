@@ -32,7 +32,7 @@ namespace CanInterfaces
 {
 
 /**
- * NOTICE: CAN_TOPIC = target board
+ * NOTICE: CAN_TOPIC = source of the can message
  */
 
 
