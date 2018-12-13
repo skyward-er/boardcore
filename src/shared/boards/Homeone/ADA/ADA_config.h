@@ -30,7 +30,7 @@ namespace FMM
 
 // State timeouts
 static const unsigned int TIMEOUT_MS_CALIBRATION      = 15 * 1000;
-
+static const unsigned int CALIBRATION_N_SAMPLES       = 5000;
 
 // Kalman parameters
 float P_data[9] = {0.1, 0, 0, 0, 0.1, 0, 0, 0, 0.1};    // Initial error covariance matrix

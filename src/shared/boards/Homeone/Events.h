@@ -27,8 +27,7 @@
  */
 
 // Generated from:  https://docs.google.com/spreadsheets/d/12TecOmDd7Uot-MvXkCbhDJRU48-XO6s5ChKDlr4AOvI
-// Autogen date:    2018-12-08 15:16:01.039025
-
+// Autogen date:    2018-12-13 19:38:35.317781
 
 #ifndef SRC_SHARED_BOARDS_HOMEONE_EVENTS_H
 #define SRC_SHARED_BOARDS_HOMEONE_EVENTS_H
@@ -53,9 +52,11 @@ namespace HomeoneBoard
 enum Events : uint8_t
 {
     EV_ADA_APOGEE_DETECTED = EV_FIRST_SIGNAL,
+    EV_ADA_CALIBRATION_COMPLETE,
     EV_ADA_DPL_ALT_DETECTED,
     EV_APOGEE,
     EV_ARMED,
+    EV_CUT_DROGUE,
     EV_DPL_ALTITUDE,
     EV_GS_OFFLINE,
     EV_IGN_ABORTED,
@@ -66,6 +67,7 @@ enum Events : uint8_t
     EV_LANDED,
     EV_LAUNCH,
     EV_LIFTOFF,
+    EV_NC_OPEN,
     EV_NC_DETACHED,
     EV_NC_GETSTATUS,
     EV_NC_OFFLINE,
@@ -76,6 +78,7 @@ enum Events : uint8_t
     EV_TC_ARM,
     EV_TC_SET_DPL_PRESSURE,
     EV_TC_BOARD_RESET,
+    EV_TC_CUT_MAIN,
     EV_TC_CUT_ALL,
     EV_TC_CUT_FIRST_DROGUE,
     EV_TC_DISARM,
@@ -86,6 +89,7 @@ enum Events : uint8_t
     EV_TC_NC_OPEN,
     EV_TC_START_LOGGING,
     EV_TC_STOP_LOGGING,
+    EV_TC_RESET_CALIBRATION,
     EV_TC_TEST_MODE,
     EV_TIMEOUT_APOGEE,
     EV_TIMEOUT_ARM,

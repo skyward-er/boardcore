@@ -20,7 +20,6 @@
  * THE SOFTWARE.
  */
 
-#include <Singleton.h>  // TODO: NEEDED ??
 #include <boards/Homeone/ADA/ADAStatus.h>
 #include <events/FSM.h>
 #include <kalman/Kalman.h>
@@ -48,11 +47,13 @@ private:
     Kalman filter;          // Filter object that perfroms the computations
 
     // Calibration variables
-    int     avg_n_samples       = 0;    // Number of samples collected
-    float   avg                 = 0;    // Average pressure
+    ADACalibrationData calibrationData;
 
-    // Parachute deployment altitude
-    uint16_t   dpl_target_pressure = 5000; // Set default value here
+    // Sum of all values squared divided by their number, to comupte variance
+    float avg_of_squares = 0.0;
+
+    // Parachute deployment pressure volts
+    uint16_t   dpl_target_pressure_v = 5000; // Set default value here
     
     // Logger
     LoggerProxy& logger = *(LoggerProxy::getInstance());
