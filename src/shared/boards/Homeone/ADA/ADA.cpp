@@ -70,9 +70,24 @@ void ADA::update(float pressure)
     {
         case ADAState::CALIBRATING:
         {
-            // Calibrating state: update the average
-            avg = (avg * avg_n_samples + pressure) / (avg_n_samples + 1);
-            avg_n_samples = avg_n_samples + 1;
+            // Calibrating state: update calibration data
+            //TODO: Controllare i calcoli perchè sono stordito
+
+            // Save old avg to compute var
+            float old_avg = calibrationData.avg;
+
+            // Update avg
+            calibrationData.avg = (calibrationData.avg * calibrationData.n_samples + pressure) / (calibrationData.n_samples + 1);
+            calibrationData.n_samples = calibrationData.n_samples + 1;
+
+            // Update var
+            float S_1 = calibrationData.var*(calibrationData.n_samples-1);
+            float S   = S_1 + (pressure - old_avg)*(pressure - calibrationData.avg);
+            calibrationData.var = S/calibrationData.n_samples;
+
+            if (calibrationData.n_samples >= CALIBRATION_N_SAMPLES) {
+                sEventBroker->post({EV_ADA_CALIBRATION_COMPLETE}, TOPIC_ADA);
+            }
             break;
         }
 
@@ -122,7 +137,7 @@ void ADA::update(float pressure)
             // Descent state: send notifications for target altitude reached
             Matrix y{1, 1, &pressure};
             filter.update(y);
-            if (filter.X(0) >= dpl_target_pressure)
+            if (filter.X(0) >= dpl_target_pressure_v)
             {
                 sEventBroker->post({EV_DPL_ALTITUDE}, TOPIC_ADA);
                 DplPressureReached dpl_reached;
@@ -167,21 +182,17 @@ void ADA::stateCalibrating(const Event& ev)
             TRACE("ADA: Entering stateCalibrating\n");
             status.state = ADAState::CALIBRATING;
             logger.log(status);
-            cal_delayed_event_id =
-                sEventBroker->postDelayed({EV_TIMEOUT_ADA_CALIBRATION},
-                                          TOPIC_ADA, TIMEOUT_MS_CALIBRATION);
             break;
         case EV_EXIT:
             TRACE("ADA: Exiting stateCalibrating\n");
-            sEventBroker->removeDelayed(cal_delayed_event_id);
             break;
-        case EV_TIMEOUT_ADA_CALIBRATION:
+        case EV_ADA_CALIBRATION_COMPLETE:
             transition(&ADA::stateIdle);
             break;
         case EV_TC_SET_DPL_PRESSURE:
             const DeploymentPressureEvent& dpl_ev =
                 static_cast<const DeploymentPressureEvent&>(ev);
-            dpl_target_pressure = dpl_ev.dplPressure;
+            dpl_target_pressure_v = dpl_ev.dplPressure;
             break;
         default:
             TRACE("ADA stateCalibrating: %d event not handled", ev.sig);
@@ -204,7 +215,7 @@ void ADA::stateIdle(const Event& ev)
             TRACE("ADA: Entering stateIdle\n");
             status.state = ADAState::IDLE;
             logger.log(status);
-            filter.X(0) = avg;  // Initialize the state with the average
+            filter.X(0) = calibrationData.avg;  // Initialize the state with the average
             break;
         case EV_EXIT:
             TRACE("ADA: Exiting stateIdle\n");
@@ -215,7 +226,10 @@ void ADA::stateIdle(const Event& ev)
         case EV_TC_SET_DPL_PRESSURE:
             const DeploymentPressureEvent& dpl_ev =
                 static_cast<const DeploymentPressureEvent&>(ev);
-            dpl_target_pressure = dpl_ev.dplPressure;
+            dpl_target_pressure_v = dpl_ev.dplPressure;
+            break;
+        case EV_TC_RESET_CALIBRATION:
+            transition(&ADA::stateCalibrating);
             break;
         default:
             TRACE("ADA stateIdle: %d event not handled", ev.sig);

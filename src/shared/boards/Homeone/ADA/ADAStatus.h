@@ -37,6 +37,13 @@ struct ADAStatus
     ADAState state = ADAState::UNDEFINED;
 };
 
+// Struct of calibration data
+struct ADACalibrationData {
+    float   var        = 0.0;      // Sample variance
+    int     n_samples  = 0;        // Number of samples collected
+    float   avg        = 0.0;      // Average pressure
+};
+
 // Struct to log apogee detection
 struct ApogeeDetected {
     ADAState state;
