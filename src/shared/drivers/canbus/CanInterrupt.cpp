@@ -75,12 +75,6 @@ void __attribute__((used)) CAN_IRQHandlerImpl(int can_dev, int fifo)
     //  CAN1->RF0R |= CAN_RF0R_RFOM0; non è lui xD
     can_dev &= 0x01;
 
-#ifdef DEBUG
-    ledOn();
-    Thread::sleep(50);
-    ledOff();
-#endif
-
     // TODO: check if this 'return' is allowed
     if (can_dev >= (int)global_bus_ctr)
         return;

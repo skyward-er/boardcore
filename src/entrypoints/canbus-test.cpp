@@ -52,11 +52,14 @@ int main()
 
     while (1)
     {
+        ledOn();
         const char *pkt = "TestMSG";
         bus->send(CAN_PACKETID, (const uint8_t *)pkt, strlen(pkt));
-        socket.receive(buf, 64);
+        //socket.receive(buf, 64);
         printf("Recv pkt: '%s'\n", buf);
         Thread::sleep(250);
+        ledOff();
+        Thread::sleep(150);
     }
 
     socket.close();
