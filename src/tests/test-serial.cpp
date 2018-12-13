@@ -28,7 +28,10 @@ int main()
 {
     while (true)
     {
+        ledOn();
         printf("Serial is working!\n");
+        Thread::sleep(1000);
+        ledOff();
         Thread::sleep(1000);
     }
 
