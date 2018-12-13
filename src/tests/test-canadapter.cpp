@@ -15,7 +15,6 @@ class TestHandler : public EventHandler
 public:
     /* Subscribe to new can msgs on the ignition topic */
     TestHandler(CanEventAdapter& can_ev_adapter, uint16_t topic)
-        : can_ev_adapter(can_ev_adapter)
     {
         canSocket = can_ev_adapter.subscribe(this, topic, EV_NEW_CAN_MSG);
         printf("[TestHandler] Created Can Socket\n");
@@ -44,7 +43,6 @@ public:
 
 private:
     CanEventSocket* canSocket;
-    CanEventAdapter& can_ev_adapter;
 };
 
 /**
@@ -54,7 +52,7 @@ int main()
 {
     CanEventAdapter* can_ev_adapter = new CanEventAdapter();
 
-    TestHandler* rcv = new TestHandler(*can_ev_adapter, CAN_TOPIC_IGNITION);
+    TestHandler* rcv = new TestHandler(*can_ev_adapter, CAN_TOPIC_HOMEONE);
     rcv->start();
 
     rcv->postEvent(Event{10});
@@ -70,6 +68,6 @@ int main()
         bool ok = can_ev_adapter->postMsg(buf, l, CAN_TOPIC_HOMEONE);
         printf("ok=%d\n", ok);
 
-        miosix::Thread::sleep(500);
+        miosix::Thread::sleep(2000);
     }
 }

@@ -297,7 +297,7 @@ void CanBus::canSetup()
     uint32_t CAN_BS2 = CAN_BS2_7tq;
 
     // can prescaler (CAN_BRT BRP)
-    uint16_t CAN_Prescaler = 3;
+    uint16_t CAN_Prescaler = 525;
     // 3 == 42000000 / (14 * 1000000); // quanta by baudrate
 
     // pagina 165

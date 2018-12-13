@@ -34,12 +34,13 @@
  */
 struct CanEvent : Event
 {
-    uint16_t canTopic; // The topic, aka id of the received message
+    uint16_t canTopic;  // The topic, aka id of the received message
 
-    CanEvent(uint8_t signal, uint16_t canTopic): 
-                                Event{signal}, canTopic(canTopic) {}
+    CanEvent(uint8_t signal, uint16_t canTopic)
+        : Event{signal}, canTopic(canTopic)
+    {
+    }
 };
-
 
 /**
  * This class is a CanSocket that listens for messages on the CANBUS and
@@ -57,28 +58,30 @@ public:
      * @param topic     which topic to listen to on the CANBUS
      * @param sig       the signal of the event sent when a message is received
      */
-    CanEventSocket(EventHandler* handler, 
-                    const uint16_t topic, 
-                    const uint8_t sig):
-        CanSocket(topic), handler(handler), signal(sig) {}
-    
-    /* TODO: Destructor */
-    virtual ~CanEventSocket() {};
-
-    /* 
-     * Method of the superclass that is executed on every Canbus message reception.
-     * The eventSocket overrides adding a postEvent() after every reception.
-     */
-    virtual void addToMessageList(unsigned char *message, uint8_t size) override
+    CanEventSocket(EventHandler* handler, const uint16_t topic,
+                   const uint8_t sig)
+        : CanSocket(topic), handler(handler), signal(sig)
     {
+    }
+
+    /* TODO: Destructor */
+    virtual ~CanEventSocket(){};
+
+    /*
+     * Method of the superclass that is executed on every Canbus message
+     * reception. The eventSocket overrides adding a postEvent() after every
+     * reception.
+     */
+    virtual void addToMessageList(unsigned char* message, uint8_t size) override
+    {
+        TRACE("[CANEVENT] Called subclass\n");
         CanSocket::addToMessageList(message, size);
         handler->postEvent(CanEvent{signal, filter_id});
     }
 
 private:
-    EventHandler* handler; // Callback 
-    const uint8_t signal;  // Signal of the event to be sent
-    
+    EventHandler* handler;  // Callback
+    const uint8_t signal;   // Signal of the event to be sent
 };
 
 #endif /* CAN_EVENT_SOCKET_H */
