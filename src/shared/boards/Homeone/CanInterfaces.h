@@ -32,6 +32,11 @@ namespace CanInterfaces
 {
 
 /**
+ * NOTICE: CAN_TOPIC = target board
+ */
+
+
+/**
  * CanTopics = Canbus FilterIds = Source of the Canbus message
  * Pay attention to the ORDER: lower number => higher priority
  */
