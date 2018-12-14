@@ -67,12 +67,8 @@ private:
     void stateHighRateTM(const Event& ev);
     void stateLowRateTM(const Event& ev);
 
-    // Maximum number of messages in the queue
-    static const unsigned int TMTC_OUT_BUFFER_SIZE = 1000;
-    // Minimum sleep time between sends
+    /* Minimum sleep time between sends */
     static const unsigned int TMTC_MIN_GUARANTEED_SLEEP = 250;
-    // Maximum number of consecutive messages sent before sleeping
-    static const unsigned int TMTC_MAX_PKT_SIZE = 1*sizeof(mavlink_message_t);
 
     static const unsigned int LR_TM_TIMEOUT = 1000;
     static const unsigned int HR_TM_TIMEOUT = 250;

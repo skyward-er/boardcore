@@ -57,6 +57,8 @@ void TMTCManager::stateIdle(const Event& ev)
     {
         case EV_ENTRY:
             TRACE("[TMTC] Entering stateIdle\n");
+            g_gsOfflineEvId = sEventBroker->postDelayed(Event{EV_GS_OFFLINE}, 
+                                                            GS_OFFLINE_TIMEOUT);
             break;
 
         case EV_LIFTOFF:

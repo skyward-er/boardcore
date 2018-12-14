@@ -33,6 +33,10 @@
 
 namespace HomeoneBoard
 {
+
+uint16_t g_gsOfflineEvId;
+static const unsigned int GS_OFFLINE_TIMEOUT = 1800000;
+
 namespace TCHandler
 {
 
@@ -77,7 +81,10 @@ static void handleMavlinkMessage(MavSender* sender, const mavlink_message_t& msg
 {
     sendAck(sender, msg);
 
-    // TODO: reschedule GS_OFFLINE event
+    /* Reschedule GS_OFFLINE evetn */
+    sEventBroker->removeDelayed(g_gsOfflineEvId);
+    g_gsOfflineEvId = sEventBroker->postDelayed(Event{EV_GS_OFFLINE}, 
+                                                            GS_OFFLINE_TIMEOUT);
     
     switch (msg.msgid)
     {
