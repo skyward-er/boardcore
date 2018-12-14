@@ -1,5 +1,5 @@
-/* Copyright (c) 2015-2019 Skyward Experimental Rocketry
- * Authors: Benedetta Margrethe Cattani
+/* Copyright (c) 2015-2018 Skyward Experimental Rocketry
+ * Authors: Alvise de'Faveri Tron
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -19,39 +19,64 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
-#ifndef SRC_SHARED_BOARDS_IGNITION_IGNMANAGER_H
-#define SRC_SHARED_BOARDS_IGNITION_IGNMANAGER_H
+#pragma once
 
-#include "Singleton.h"
-#include "MotorDriver.h"
-
-#include "events/Event.h"
-#include "Events.h"
-#include "events/FSM.h"
+#include <Singleton.h>
 
 namespace IgnBoard
 {
+
+
 /**
  * Implementation of the Ignition Board logic.
  */
-class IgnitionManager : public FSM<IgnitionManager>,
+class IgnitionManager : public Singleton<IgnitionManager>
 {
+    friend class Singleton<IgnitionManager>;
 
 public:
-    NoseconeManager();
-    ~NoseconeManager() {}
+    IgnitionManager()
+    {
+    	// Initialize canbus
+    	// Assign canReceiver function
+    	// Communication with board 2?
+    	// Set state
+    	// Send state
+    }
+
+    ~IgnitionManager() {}
+
+    void abort() 
+    {
+    	// Set abort pin to 1
+    	// wait
+    	// set internal state to abort
+    	// send status
+    }
+
+    void getStatus()
+    {
+    	// getStatus from other board
+    	// refresh myStatus
+    	// send status
+    }
+
+    void launch(uint64_t launch_code)
+    {
+    	// if not aborted
+    	// check launch code
+    	// send launch code to other board
+    	// poll for response
+    	// if nCycle > 1000
+    	// abort()
+    }
 
 private:
-    // States declarations
-    void state_close(const Event& e);
-    void state_opening(const Event& e);
-    void state_open(const Event& e);
-    void state_closing(const Event& e);
+	bool isAborted = false;
+	IgnitionBoardStatus myStatus;
 
-    MotorDriver driver;
+	CanManager c(CAN1);
 
 };
 
 }
-
-#endif /* SRC_SHARED_BOARDS_IGNITION_IGNMANAGER_H */
