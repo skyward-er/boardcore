@@ -26,8 +26,6 @@
 
 namespace HomeoneBoard
 {
-namespace TMTC
-{
 
 TMTCManager::TMTCManager() : FSM(&TMTCManager::stateIdle)
 {
@@ -142,4 +140,3 @@ void TMTCManager::stateLowRateTM(const Event& ev)
 }
 
 } /* namespace HomeoneBoard */
-} /* namespace TMTC */
