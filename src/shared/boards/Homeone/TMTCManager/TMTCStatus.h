@@ -20,14 +20,11 @@
  * THE SOFTWARE.
  */
 
-#ifndef TMTC_STATUS_H
-#define TMTC_STATUS_H
+#pragma once
 
 #include <libs/mavlink_skyward_lib/mavlink_lib/skyward/mavlink.h>
 
 namespace HomeoneBoard
-{
-namespace TMTC
 {
 
 /*
@@ -42,6 +39,3 @@ struct TMTCStatus
 };
 
 }
-}
-
-#endif /* TMTC_STATUS_H */

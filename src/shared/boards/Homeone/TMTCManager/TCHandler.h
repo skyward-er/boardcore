@@ -20,8 +20,7 @@
  * THE SOFTWARE.
  */
 
-#ifndef HOMEONE_TMTC_TC_HANDLER_H
-#define HOMEONE_TMTC_TC_HANDLER_H
+#pragma once
 
 #include <Common.h>
 #include <libs/mavlink_skyward_lib/mavlink_lib/skyward/mavlink.h>
@@ -34,10 +33,28 @@
 
 namespace HomeoneBoard
 {
-namespace TMTC
-{
 namespace TCHandler
 {
+
+/**
+ * Map each noArg command to the corresponding event 
+ */
+static const std::map<uint8_t, uint8_t> noargCmdToEvt = 
+{
+    { MAV_CMD_ARM,              EV_TC_ARM    }, 
+    { MAV_CMD_DISARM,           EV_TC_DISARM }, 
+    { MAV_CMD_ABORT,            EV_TC_ABORT_LAUNCH  }, 
+    { MAV_CMD_NOSECONE_OPEN,    EV_TC_NC_OPEN }, 
+    { MAV_CMD_NOSECONE_CLOSE,   EV_TC_NC_CLOSE }, 
+    { MAV_CMD_START_LOGGING,    EV_TC_START_LOGGING }, 
+    { MAV_CMD_STOP_LOGGING,     EV_TC_STOP_LOGGING }, 
+    { MAV_CMD_TEST_MODE,        EV_TC_TEST_MODE   }, 
+    { MAV_CMD_BOARD_RESET,      EV_TC_BOARD_RESET }, 
+    { MAV_CMD_MANUAL_MODE,      EV_TC_MANUAL_MODE },
+    { MAV_CMD_CUT_ALL,          EV_TC_CUT_ALL },
+    { MAV_CMD_CUT_FIRST_DROGUE, EV_TC_CUT_FIRST_DROGUE },
+    { MAV_CMD_END_MISSION,      EV_TC_END_MISSION }
+};
 
 /**
  * Send an ACK to notify the sender that you received the given message.
@@ -68,7 +85,7 @@ static void handleMavlinkMessage(MavSender* sender, const mavlink_message_t& msg
         {
             TRACE("[TMTC] Received NOARG command\n");
             uint8_t commandId = mavlink_msg_noarg_tc_get_command_id(&msg);
-            auto it = HomeoneBoard::TMTC::noargCmdToEvt.find(commandId);
+            auto it = HomeoneBoard::TCHandler::noargCmdToEvt.find(commandId);
             
             if( it != noargCmdToEvt.end() ) 
                 sEventBroker->post( Event{it->second}, TOPIC_TC );
@@ -124,8 +141,4 @@ static void handleMavlinkMessage(MavSender* sender, const mavlink_message_t& msg
 }
 
 } /* namespace TCHandler */
-} /* namespace TMTC */
 } /* namespace HomeoneBoard */
-
-
-#endif /* HOMEONE_TMTC_TC_HANDLER_H */
