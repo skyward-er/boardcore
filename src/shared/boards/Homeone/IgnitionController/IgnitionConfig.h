@@ -20,11 +20,7 @@
  * THE SOFTWARE.
  */
 
-#ifndef SRC_SHARED_BOARDS_HOMEONE_IGNITIONCONTROLLER_IGNITIONCONFIG_H
-#define SRC_SHARED_BOARDS_HOMEONE_IGNITIONCONTROLLER_IGNITIONCONFIG_H
-
+#pragma once
 //TODO: Update with real values
 static const unsigned int INTERVAL_MS_IGN_GET_STATUS = 2000;
 static const unsigned int TIMEOUT_MS_IGN_OFFLINE = 7*1000; 
-
-#endif

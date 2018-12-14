@@ -22,46 +22,31 @@
 
 #include "IgnitionController.h"
 #include "IgnitionConfig.h"
-#include "boards/Homeone/CanInterfaces.h"
+#include "boards/CanInterfaces.h"
 #include "boards/Homeone/Events.h"
-#include "drivers/canbus/can_events/CanEventAdapter.h"
-#include "drivers/canbus/can_events/CanEventSocket.h"
 
 namespace HomeoneBoard
 {
-namespace Ignition
-{
 
-IgnitionController::IgnitionController(CanEventAdapter& can_ev_adapter)
-    : FSM(&IgnitionController::stateIdle), can_ev_adapter(can_ev_adapter)
+IgnitionController::IgnitionController(CanBus* canbus)
+    : FSM(&IgnitionController::stateIdle), canbus(canbus) 
 {
-    can_socket = can_ev_adapter.subscribe(
-        this, CanInterfaces::CAN_TOPIC_IGNITION, EV_NEW_CAN_MSG);
-
     sEventBroker->subscribe(this, TOPIC_IGNITION);
     sEventBroker->subscribe(this, TOPIC_FLIGHT_EVENTS);
     sEventBroker->subscribe(this, TOPIC_TC);
-}
-
-IgnitionController::~IgnitionController()
-{
-    can_socket->close();
-    delete can_socket;
+    sEventBroker->subscribe(this, TOPIC_CAN);
 }
 
 bool IgnitionController::updateIgnBoardStatus(const Event& ev)
 {
-    const CanEvent& cev = static_cast<const CanEvent&>(ev);
+    const CanbusEvent& cev = static_cast<const CanbusEvent&>(ev);
+
     if (cev.canTopic == CanInterfaces::CAN_TOPIC_IGNITION)
     {
-        uint8_t buf[CAN_MAX_PAYLOAD];
-        bool res = can_socket->receive(buf, CAN_MAX_PAYLOAD);
-        if (res)
-        {
-            memcpy(&status.board_status, buf, sizeof(status.board_status));
-            return true;
-        }
+        memcpy(&status.board_status, cev.payload, sizeof(status.board_status));
+        return true;
     }
+
     return false;
 }
 
@@ -92,8 +77,7 @@ void IgnitionController::stateIdle(const Event& ev)
         {
             int len = CanInterfaces::canMsgSimple(
                 buf, CanInterfaces::CAN_MSG_REQ_IGN_STATUS);
-            can_ev_adapter.postMsg(buf, len,
-                                      CanInterfaces::CAN_TOPIC_HOMEONE);
+            canbus->send(CanInterfaces::CAN_TOPIC_HOMEONE, buf, len);
 
             ev_get_status_handle = sEventBroker->postDelayed(
                 {EV_IGN_GETSTATUS}, TOPIC_IGNITION, INTERVAL_MS_IGN_GET_STATUS);
@@ -133,8 +117,8 @@ void IgnitionController::stateIdle(const Event& ev)
         {
             int len =
                 CanInterfaces::canMsgSimple(buf, CanInterfaces::CAN_MSG_ABORT);
-                can_ev_adapter.postMsg(buf, len,
-                                      CanInterfaces::CAN_TOPIC_HOMEONE);
+            
+            canbus->send(CanInterfaces::CAN_TOPIC_HOMEONE, buf, len);
             break;
         }
         case EV_LAUNCH:
@@ -143,8 +127,7 @@ void IgnitionController::stateIdle(const Event& ev)
 
             int len = CanInterfaces::canMsgLaunch(buf, lev.launchCode);
 
-            can_ev_adapter.postMsg(buf, len,
-                                      CanInterfaces::CAN_TOPIC_LAUNCH);
+            canbus->send(CanInterfaces::CAN_TOPIC_HOMEONE, buf, len);
             break;
         }
         default:
@@ -174,8 +157,9 @@ void IgnitionController::stateAborted(const Event& ev)
         {
             int len = CanInterfaces::canMsgSimple(
                 buf, CanInterfaces::CAN_MSG_REQ_IGN_STATUS);
-            can_ev_adapter.postMsg(buf, len,
-                                      CanInterfaces::CAN_TOPIC_HOMEONE);
+
+            canbus->send(CanInterfaces::CAN_TOPIC_HOMEONE, buf, len);
+
             break;
         }
         // Still handle the abort, just in case we want to send it again
@@ -183,8 +167,8 @@ void IgnitionController::stateAborted(const Event& ev)
         {
             int len =
                 CanInterfaces::canMsgSimple(buf, CanInterfaces::CAN_MSG_ABORT);
-            can_ev_adapter.postMsg(buf, len,
-                                      CanInterfaces::CAN_TOPIC_HOMEONE);
+            
+            canbus->send(CanInterfaces::CAN_TOPIC_HOMEONE, buf, len);
             break;
         }
 
@@ -229,5 +213,4 @@ void IgnitionController::stateEnd(const Event& ev)
     }
 }
 
-}  // namespace Ignition
 }  // namespace HomeoneBoard
