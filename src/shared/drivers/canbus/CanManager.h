@@ -26,7 +26,6 @@
 #define CANMANAGER_H
 
 #include <Common.h>
-#include <Singleton.h>
 #include "CanBus.h"
 #include "CanUtils.h"
 
@@ -165,6 +164,6 @@ private:
     volatile CAN_TypeDef *const Config;
 };
 
-#define sCanManager CanManager::getInstance()
+//#define sCanManager CanManager::getInstance()
 
 #endif /* CANMANAGER_H */
