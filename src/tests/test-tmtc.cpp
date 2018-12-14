@@ -30,55 +30,71 @@ Gamma868* gamma868;
 MavSender* g_sender;
 MavReceiver* g_receiver;
 
-static void onReceive(MavSender* sender, const mavlink_message_t& msg) 
+static void onReceive(MavSender* sender, const mavlink_message_t& msg)
 {
-    if (msg.msgid != MAVLINK_MSG_ID_ACK_TM) 
+    //TRACE("Received message: %d\n", msg.msgid);
+
+    if (msg.msgid == MAVLINK_MSG_ID_HR_SAMPLE_DATA_TM)
     {
-        TRACE("[TmtcTest] Sending ack\n");
+        uint16_t p = mavlink_msg_hr_sample_data_tm_get_pressure(&msg);
 
-        mavlink_message_t ackMsg;
-        mavlink_msg_ack_tm_pack(1, 1, &ackMsg, msg.msgid, msg.seq);
+        if (p == 2)
+        {
+            TRACE("[Receiver] Sending ack\n");
+            mavlink_message_t ackMsg;
+            mavlink_msg_ack_tm_pack(1, 1, &ackMsg, msg.msgid, msg.seq);
 
-        /* Send the message back to the sender */
-        bool ackSent = sender->enqueueMsg(ackMsg);
+            bool ackSent = sender->enqueueMsg(ackMsg);
 
-        if(!ackSent)
-            TRACE("[Receiver] Could not enqueue ack\n");
+            if (!ackSent)
+                printf("[Receiver] Could not enqueue ack\n");
+        }
+    }
+    else if (msg.msgid == MAVLINK_MSG_ID_ACK_TM)
+    {
+        printf("[Sender] Received ack\n");
     }
 }
 
 int main()
 {
-    gamma868 = new Gamma868("/dev/radio");
+    TRACE("HELLO\n");
+    bool send = true;
+    gamma868  = new Gamma868("/dev/radio");
 
-    g_sender = new MavSender(gamma868);
+    g_sender   = new MavSender(gamma868);
     g_receiver = new MavReceiver(gamma868, g_sender, &onReceive);
 
     g_sender->start();
     g_receiver->start();
-
+    TRACE("HELLO2\n");
 
     // sTMTCManager;
 
-    while(1)
+    while (1)
     {
-        TRACE("[TmtcTest] Enqueueing ping\n");
+        if (send)
+        {
+            //TRACE("[TmtcTest] Enqueueing ping\n");
 
-        // Create a Mavlink message
-        mavlink_message_t pingMsg;
-        mavlink_msg_ping_tc_pack(1, 1, &pingMsg, miosix::getTick());
+            // Create a Mavlink message
+            mavlink_message_t hrMsg;
+            mavlink_msg_hr_sample_data_tm_pack(1, 1, &hrMsg, 1);
 
-        // Send the message
-        bool ackSent = g_sender->enqueueMsg(pingMsg);
+            // Send the message
+            bool ackSent = g_sender->enqueueMsg(hrMsg);
 
-        if(!ackSent)
-            TRACE("[TmtcTest] Could not enqueue ping\n");
+            mavlink_msg_hr_sample_data_tm_pack(1, 1, &hrMsg, 2);
+            ackSent = ackSent && g_sender->enqueueMsg(hrMsg);
 
+            if (!ackSent)
+                printf("[TmtcTest] Could not enqueue ping\n");
+        }
         // ledOn();
         // miosix::delayMs(200);
         // ledOff();
 
-        miosix::Thread::sleep(1000);
+        miosix::Thread::sleep(400);
     }
 
     return 0;

@@ -29,7 +29,7 @@
 
 #include <ActiveObject.h>
 #include <drivers/Transceiver.h>
-#include <libs/mavlink_skyward_lib/mavlink_lib/skyward/mavlink.h> 
+#include <libs/mavlink_skyward_lib/mavlink_lib/skyward/mavlink.h>
 
 /**
  * Class to bufferize the sending of mavlink messages over a transceiver.
@@ -38,14 +38,14 @@ class MavSender : public ActiveObject
 {
 
 public:
-    static const uint16_t MAV_MIN_GUARANTEED_SLEEP = 500;
-    static const uint16_t MAV_OUT_QUEUE_LEN = 10;
+    static const uint16_t MAV_MIN_GUARANTEED_SLEEP = 200;
+    static const uint16_t MAV_OUT_QUEUE_LEN        = 10;
 
     /**
      * @param device   the device used for sending messages
      */
     MavSender(Transceiver* device) : ActiveObject(), device(device) {}
-    
+
     ~MavSender(){};
 
     /**
@@ -55,13 +55,14 @@ public:
     {
         miosix::Lock<miosix::FastMutex> l(mutex);
 
-        if(messageQueue.isFull())
+        if (messageQueue.isFull())
         {
             return false;
         }
-        else {
+        else
+        {
             messageQueue.put(msg);
-            TRACE("[MAV] Enqueueing %d bytes\n", msg->len);
+            TRACE("[MAV] Enqueueing %d bytes\n", msg.len);
             return true;
         }
     }
@@ -82,7 +83,7 @@ protected:
         while (1)
         {
             /* Read from the buffer and send */
-            while (!(messageQueue.isEmpty()))
+            if (!messageQueue.isEmpty())
             {
                 {
                     /* Get mavlink message from queue */
