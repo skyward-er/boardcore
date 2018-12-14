@@ -30,17 +30,18 @@ namespace HomeoneBoard
 TMTCManager::TMTCManager() : FSM(&TMTCManager::stateIdle)
 {
     device   = new Gamma868("/dev/radio");
-    sender   = new MavSender(device);
-    receiver = new MavReceiver(device, sender, &TCHandler::handleMavlinkMessage);
 
-    sender->start();
-    receiver->start();
+    mavManager = new MavManager();
+    mavManager->addSender(device, 250);
+    mavManager->addReceiver(device, mavManager->getSender(0), 
+                                    &TCHandler::handleMavlinkMessage);
 
     TRACE("[TMTC] Created TMTCManager\n");
 
     sEventBroker->subscribe(this, TOPIC_FLIGHT_EVENTS);
     sEventBroker->subscribe(this, TOPIC_TMTC);
 }
+
 
 TMTCManager::~TMTCManager()
 {
@@ -49,10 +50,6 @@ TMTCManager::~TMTCManager()
     delete receiver;
 }
 
-
-/************************************
- *         STATE HANDLERS           *
- ************************************/
 
 void TMTCManager::stateIdle(const Event& ev)
 {
@@ -76,6 +73,8 @@ void TMTCManager::stateIdle(const Event& ev)
             break;
     }
 }
+
+
 void TMTCManager::stateHighRateTM(const Event& ev)
 {
     switch(ev.sig) 
@@ -109,6 +108,7 @@ void TMTCManager::stateHighRateTM(const Event& ev)
             break;
     }
 }
+
 
 void TMTCManager::stateLowRateTM(const Event& ev)
 {

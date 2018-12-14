@@ -28,8 +28,7 @@
 #include "boards/Homeone/Events.h"
 
 #include <drivers/gamma868/Gamma868.h>
-#include <drivers/mavlink/MavSender.h>
-#include <drivers/mavlink/MavReceiver.h>
+#include <drivers/mavlink/MavManager.h>
 
 namespace HomeoneBoard
 {
@@ -53,14 +52,13 @@ public:
      */
     void send(mavlink_message_t& msg)
     {
-        sender->enqueueMsg(msg);
+        mavManager->getSender(0)->enqueueMsg(msg);
     }
 
 protected:
 private:
     Gamma868* device;
-    MavSender* sender;
-    MavReceiver* receiver;
+    MavManager* mavManager;
 
     HomeoneBoard::TMTCStatus status;
 
