@@ -67,7 +67,7 @@ static void sendAck(MavSender* sender, const mavlink_message_t& msg)
 
     /* Send the message back to the sender */
     sender->enqueueMsg(ackMsg);
-    TRACE("[TMTC] Enqueued Ack\n", 0);
+    TRACE("[TMTC] Enqueued Ack\n");
 }
 
 /**

@@ -35,7 +35,6 @@ namespace CanInterfaces
  * NOTICE: CAN_TOPIC = source of the can message
  */
 
-
 /**
  * CanTopics = Canbus FilterIds = Source of the Canbus message
  * Pay attention to the ORDER: lower number => higher priority

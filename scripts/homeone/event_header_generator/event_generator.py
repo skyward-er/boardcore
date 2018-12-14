@@ -111,8 +111,8 @@ if auth():
 else:
     exit()
 
-directory = os.path.dirname(OUTPUT_FOLDER)
-if not os.path.exists(directory):
+#directory = os.path.dirname(OUTPUT_FOLDER)
+if not os.path.exists(OUTPUT_FOLDER):
     os.mkdir(OUTPUT_FOLDER)
 
 print("Reading from: https://docs.google.com/spreadsheets/d/12TecOmDd7Uot-MvXkCbhDJRU48-XO6s5ChKDlr4AOvI")
