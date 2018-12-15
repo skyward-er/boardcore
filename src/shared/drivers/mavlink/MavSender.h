@@ -22,8 +22,7 @@
  * THE SOFTWARE.
  */
 
-#ifndef MAV_SENDER_H
-#define MAV_SENDER_H
+#pragma once
 
 #include <Common.h>
 
@@ -38,13 +37,13 @@ class MavSender : public ActiveObject
 {
 
 public:
-    static const uint16_t MAV_MIN_GUARANTEED_SLEEP = 200;
-    static const uint16_t MAV_OUT_QUEUE_LEN        = 10;
+    static const uint16_t MAV_OUT_QUEUE_LEN  = 10;
 
     /**
      * @param device   the device used for sending messages
      */
-    MavSender(Transceiver* device) : ActiveObject(), device(device) {}
+    MavSender(Transceiver* device, uint16_t sleepTime) : 
+                ActiveObject(), device(device), sleep_after_send(sleepTime) {}
 
     ~MavSender(){};
 
@@ -53,8 +52,6 @@ public:
      */
     bool enqueueMsg(const mavlink_message_t& msg)
     {
-        miosix::Lock<miosix::FastMutex> l(mutex);
-
         if (messageQueue.isFull())
         {
             return false;
@@ -68,7 +65,6 @@ public:
     }
 
 protected:
-    Transceiver* device;
 
     /**
      * Ran in a separate thread. Periodically flushes the message queue
@@ -82,33 +78,28 @@ protected:
 
         while (1)
         {
-            /* Read from the buffer and send */
-            if (!messageQueue.isEmpty())
-            {
-                {
-                    /* Get mavlink message from queue */
-                    miosix::Lock<miosix::FastMutex> l(mutex);
-                    messageQueue.get(msgTemp);
-                }
+            /* Read mavlink message from buffer */
+            messageQueue.waitUntilNotEmpty();
+            messageQueue.get(msgTemp);
 
-                /* Convert into a byte stream */
-                int msgLen = mavlink_msg_to_send_buffer(bufferMsg, &msgTemp);
+            /* Convert into a byte stream */
+            int msgLen = mavlink_msg_to_send_buffer(bufferMsg, &msgTemp);
 
-                bool sent = device->send(bufferMsg, msgLen);
-                TRACE("[MAV] Sending %lu bytes\n", msgLen);
+            /* Send */
+            bool sent = device->send(bufferMsg, msgLen);
+            TRACE("[MAV] Sending %lu bytes\n", msgLen);
 
-                if (!sent)
-                    TRACE("[MAV] Error: could not send message\n", 0);
-            }
+            if (!sent)
+                TRACE("[MAV] Error: could not send message\n", 0);
 
             /* Sleep guarantees that commands from the GS can be received */
-            miosix::Thread::sleep(MAV_MIN_GUARANTEED_SLEEP);
+            miosix::Thread::sleep(sleep_after_send);
         }
     }
 
 private:
+    Transceiver* device;
     miosix::Queue<mavlink_message_t, MAV_OUT_QUEUE_LEN> messageQueue;
-    miosix::FastMutex mutex;
-};
 
-#endif /* MAV_SENDER_H */
+    const uint16_t sleep_after_send;
+};

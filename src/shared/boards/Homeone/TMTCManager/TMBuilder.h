@@ -20,15 +20,12 @@
  * THE SOFTWARE.
  */
 
-#ifndef HOMEONE_TMTC_TM_BUILDER_H
-#define HOMEONE_TMTC_TM_BUILDER_H
+#pragma once
 
 #include <Common.h>
 #include <libs/mavlink_skyward_lib/mavlink_lib/skyward/mavlink.h>
 
 namespace HomeoneBoard
-{
-namespace TMTC
 {
 namespace TMBuilder
 {
@@ -69,8 +66,4 @@ static mavlink_message_t buildTelemetry(uint8_t requestedTelemetry)
 }
 
 } /* namespace TMBuilder */
-} /* namespace TMTC */
 } /* namespace HomeoneBoard */
-
-
-#endif /* HOMEONE_TMTC_TM_BUILDER_H */

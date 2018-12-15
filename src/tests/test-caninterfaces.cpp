@@ -28,7 +28,7 @@
 #include <miosix.h>
 #include <catch.hpp>
 #include <cstdio>
-#include "boards/Homeone/CanInterfaces.h"
+#include "boards/CanInterfaces.h"
 
 using miosix::Thread;
 using namespace CanInterfaces;
