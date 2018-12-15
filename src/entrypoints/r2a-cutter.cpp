@@ -24,7 +24,7 @@
 #include <miosix.h>
 #include "boards/Homeone/DeploymentController/ThermalCutter/Cutter.h"
 
-typedef miosix::Gpio<GPIOA_BASE, 0> btn;
+typedef miosix::Gpio<GPIOG_BASE, 11> btn;
 
 static const int BUTTON_SLEEP = 10;
 
@@ -35,20 +35,22 @@ void awaitButton(int time)
     int pressed_for = 0;
     do
     {
-        if (btn::value() == 1)
-        {
-            pressed_for += BUTTON_SLEEP;
-            miosix::Thread::sleep(BUTTON_SLEEP);
+        if (btn::value() == 0)
+        {   
+            pressed_for += BUTTON_SLEEP;        
         }
         else
         {
             pressed_for = 0;
         }
+        miosix::Thread::sleep(BUTTON_SLEEP);
     } while (pressed_for < time);
 }
 
 int main()
 {
+    miosix::ledOff();
+    btn::mode(miosix::Mode::INPUT);
     Cutter cutter;
 
     printf("Press the button for 3 seconds to enable the cutter\n");
@@ -56,6 +58,7 @@ int main()
     awaitButton(3000);
 
     printf("Cutter enabled\n");
+    miosix::ledOn();
     cutter.startCutDrogue();  // TIM4-CH1
 
     Thread::sleep(5000);
@@ -63,7 +66,7 @@ int main()
     awaitButton(50);
     printf("Cutter disabled\n");
     cutter.stopCutDrogue();
-
+    miosix::ledOff();
     for(;;)
     {
         printf("End\n");
