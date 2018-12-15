@@ -53,15 +53,19 @@ public:
         return logger.log(t);
     }
 
-    LowRateData getLowRateData()
+    inline LogResult log(const LowRateData& t)
     {
-        miosix::PauseKernelLock kLock;
-        return lr_data;
+        {
+            miosix::PauseKernelLock kLock;
+            lr_data = t;
+        }
+        return logger.log(t);
     }
+
+    LowRateData getLowRateData() { return lr_data; }
 
     HighRateData getHighRateData()
     {
-        miosix::PauseKernelLock kLock;
         return hr_data;
     }
 
