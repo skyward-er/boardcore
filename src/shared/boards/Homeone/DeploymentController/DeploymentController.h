@@ -26,7 +26,7 @@
 #include "Singleton.h"
 
 #include "events/Event.h"
-#include "events/FSM.h"
+#include "events/HSM.h"
 
 namespace HomeoneBoard
 {
@@ -35,7 +35,7 @@ namespace DPL  // DeploymentController
 /**
  * Implementation of the DeploymentController Finite State Machine
  */
-class DeploymentController : public FSM<DeploymentController>
+class DeploymentController : public HSM<DeploymentController>
 {
     DeploymentController();
     ~DeploymentController() {}

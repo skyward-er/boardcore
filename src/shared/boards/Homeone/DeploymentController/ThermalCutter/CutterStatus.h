@@ -28,29 +28,17 @@
 #include <ostream>
 #include <string>
 
-enum CutterState : uint8_t
+enum class CutterState : uint8_t
 {
-    CUTTER_IDLE,
-    CUTTER_CUTTING,
-    CUTTER_DONE
+    IDLE,
+    CUTTING_DROGUE,
+    CUTTING_MAIN
 };
 
 struct CutterStatus
 {
-    uint32_t timestamp;
-    uint8_t state      = CUTTER_IDLE;
-
-    // void log();
-
-    static std::string header()
-    {
-        return "timestamp,state\n";
-    }
-
-    void print(std::ostream& os) const
-    {
-        os << timestamp << "," << (int)state << "\n";
-    }
+    unsigned int timestamp;
+    CutterState state = CutterState::IDLE;
 };
 
 #endif

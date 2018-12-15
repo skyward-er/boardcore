@@ -25,6 +25,4 @@ build
 .vscode/*
 
 store.json
-scripts/homeone/event_header_generator/EventFunctions.cpp
-scripts/homeone/event_header_generator/Events.h
-scripts/homeone/event_header_generator/Topics.h
+scripts/homeone/event_header_generator/generated/
