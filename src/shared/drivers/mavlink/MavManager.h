@@ -1,16 +1,18 @@
-/* Copyright (c) 2018 Skyward Experimental Rocketry
- * Authors: Luca Erbetta
- * 
+/* Mavlink receiver
+ *
+ * Copyright (c) 2015-2018 Skyward Experimental Rocketry
+ * Authors: Alvise de'Faveri Tron
+ *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
  * in the Software without restriction, including without limitation the rights
  * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
  * copies of the Software, and to permit persons to whom the Software is
  * furnished to do so, subject to the following conditions:
- * 
+ *
  * The above copyright notice and this permission notice shall be included in
  * all copies or substantial portions of the Software.
- * 
+ *
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
  * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.  IN NO EVENT SHALL THE
@@ -20,12 +22,47 @@
  * THE SOFTWARE.
  */
 
+#pragma once
 
-#include "CanInterfaces.h"
+#include <Common.h>
 
-namespace CanInterfaces
+#include <drivers/Transceiver.h>
+#include "MavReceiver.h"
+#include "MavSender.h"
+
+/**
+ * Manages MavSenders and MavReceivers.
+ */
+class MavManager
 {
-    
 
+public:
 
-}
+    MavManager(){}
+
+    ~MavManager()
+    {
+        while (senders.size() > 0)
+        {
+            delete senders[senders.size() - 1];
+            senders.pop_back();
+        }
+
+        while (receivers.size() > 0)
+        {
+            delete receivers[receivers.size() - 1];
+            receivers.pop_back();
+        }
+    }
+
+    uint16_t addSender(Transceiver* device, uint16_t sleepTime);
+    uint16_t addReceiver(Transceiver* device, MavSender* sender, MavHandler onRcv);
+
+    MavSender* getSender(uint16_t id);
+    MavReceiver* getReceiver(uint16_t id);
+
+private:
+
+    std::vector<MavSender *> senders;
+    std::vector<MavReceiver *> receivers;
+};

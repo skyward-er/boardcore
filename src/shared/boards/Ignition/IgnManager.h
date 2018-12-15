@@ -1,7 +1,5 @@
-/* CAN-Bus Event Adapter
- *
- * Copyright (c) 2018-2019 Skyward Experimental Rocketry
- * Authors: Alvise de' Faveri Tron
+/* Copyright (c) 2015-2018 Skyward Experimental Rocketry
+ * Authors: Alvise de'Faveri Tron
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -21,42 +19,64 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
+#pragma once
 
-#ifndef CAN_EVENT_ADAPTER_H
-#define CAN_EVENT_ADAPTER_H
+#include <Singleton.h>
 
-#include <drivers/canbus/CanBus.h>
-#include <drivers/canbus/CanManager.h>
-#include <drivers/canbus/CanUtils.h>
+namespace IgnBoard
+{
 
-#include "CanEventSocket.h"
 
 /**
- * This class adapts the CanBus driver to Events.
+ * Implementation of the Ignition Board logic.
  */
-class CanEventAdapter
+class IgnitionManager : public Singleton<IgnitionManager>
 {
+    friend class Singleton<IgnitionManager>;
+
 public:
-    /*
-     * Subscribe an EventHandler to a certain topic, so that it receives an
-     * event whenever a message is received on the CANBUS.
-     */
-    virtual CanEventSocket* subscribe(EventHandler* callback,
-                                      const uint16_t topic,
-                                      const uint8_t signal);
+    IgnitionManager()
+    {
+    	// Initialize canbus
+    	// Assign canReceiver function
+    	// Communication with board 2?
+    	// Set state
+    	// Send state
+    }
 
-    /* Send a raw message on the CANBUS */
-    bool postMsg(const uint8_t* message, const uint8_t len,
-                 const uint16_t topic);
+    ~IgnitionManager() {}
 
-    CanEventAdapter();
-    CanEventAdapter(CanEventAdapter& cea1) = delete;
+    void abort() 
+    {
+    	// Set abort pin to 1
+    	// wait
+    	// set internal state to abort
+    	// send status
+    }
 
-    virtual ~CanEventAdapter();
+    void getStatus()
+    {
+    	// getStatus from other board
+    	// refresh myStatus
+    	// send status
+    }
+
+    void launch(uint64_t launch_code)
+    {
+    	// if not aborted
+    	// check launch code
+    	// send launch code to other board
+    	// poll for response
+    	// if nCycle > 1000
+    	// abort()
+    }
 
 private:
-    const uint8_t BUS_ID = 0;
-    CanManager* can_manager;
+	bool isAborted = false;
+	IgnitionBoardStatus myStatus;
+
+	CanManager c(CAN1);
+
 };
 
-#endif /* CAN_EVENT_ADAPTER_H */
+}

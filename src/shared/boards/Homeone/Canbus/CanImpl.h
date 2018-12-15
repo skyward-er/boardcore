@@ -1,5 +1,5 @@
-/* Copyright (c) 2015-2016 Skyward Experimental Rocketry
- * Authors: Alain Carlucci, Matteo Michele Piazzolla
+/* Copyright (c) 2018 Skyward Experimental Rocketry
+ * Authors: Alvise De Faveri
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -20,47 +20,55 @@
  * THE SOFTWARE.
  */
 
+#pragma once
+
 #include <Common.h>
 #include <drivers/canbus/CanManager.h>
-#include <drivers/canbus/CanSocket.h>
 #include <drivers/canbus/CanUtils.h>
 
-using namespace std;
-using namespace miosix;
+#include "boards/CanInterfaces.h"
+#include "boards/Homeone/Events.h"
+#include "boards/Homeone/EventClasses.h"
+#include "boards/Homeone/Topics.h"
 
-#define CAN_PACKETID 0x49
+#include <events/EventBroker.h>
 
-int main()
+namespace HomeoneBoard
 {
-    CanManager c(CAN1);
+
+/**
+ * Canbus receiving function.
+ */
+void canRcv(CanMsg message) 
+{
+    TRACE("[CAN] Received message with id %d\n", message.DLC);
+
+    /* Create event */
+    CanbusEvent ev;
+    ev.sig = EV_NEW_CAN_MSG;
+    ev.canTopic = message.StdId;
+    ev.len = message.DLC;
+    memcpy(ev.payload, message.Data, 8);
+
+    /* Post event */
+    sEventBroker->post(ev, TOPIC_CAN);
+}
+
+/**
+ * Initialise CAN1 on PA11, PA12, set filters and set receiver function.
+ */
+void initCanbus(CanManager& c)
+{
+    c.addHWFilter(CanInterfaces::CAN_TOPIC_IGNITION, 0);
+    c.addHWFilter(CanInterfaces::CAN_TOPIC_NOSECONE, 0);
 
     canbus_init_t st = {
-        CAN1, Mode::ALTERNATE, 9, {CAN1_RX0_IRQn, CAN1_RX1_IRQn}};
-        
-    c.addBus<GPIOA_BASE, 11, 12>(st);
-    // canbus_init_t st2= {
-    //    CAN2, Mode::ALTERNATE,  9, {CAN2_RX0_IRQn,CAN2_RX1_IRQn}
-    //};
-    // c.addBus<GPIOB_BASE, 5, 6>(st2);
+        CAN1, miosix::Mode::ALTERNATE, 9, {CAN1_RX0_IRQn, CAN1_RX1_IRQn}};
+    c.addBus<GPIOA_BASE, 11, 12>(st, &canRcv);
 
-    CanBus *bus = c.getBus(0);
-    CanSocket socket(CAN_PACKETID);
-    char buf[64] = {0};
-    socket.open(bus);
+    // CanBus *bus = c.getBus(0);
 
-    printf("*** Ready ***\n");
-
-    while (1)
-    {
-        ledOn();
-        const char *pkt = "TestMSG";
-        bus->send(CAN_PACKETID, (const uint8_t *)pkt, strlen(pkt));
-        //socket.receive(buf, 64);
-        printf("Recv pkt: '%s'\n", buf);
-        Thread::sleep(250);
-        ledOff();
-        Thread::sleep(150);
-    }
-
-    socket.close();
+    TRACE("[CAN] Initialised CAN1 on PA11-12 \n");
 }
+
+} /* namespace HomeoneBoard */

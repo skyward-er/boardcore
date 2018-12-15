@@ -24,15 +24,17 @@
 
 #include "boards/Homeone/Events.h"
 #include "boards/Homeone/IgnitionController/IgnitionController.h"
+#include "boards/Homeone/Canbus/CanImpl.h"
 
 using namespace miosix;
-using namespace HomeoneBoard::Ignition;
+using namespace HomeoneBoard;
 
 int main()
 {
-    CanEventAdapter* can_ev_adapter = new CanEventAdapter();
+	CanManager c(CAN1);
+   	initCanbus(c);
 
-    IgnitionController* ctrl = new IgnitionController(*can_ev_adapter);
+    IgnitionController* ctrl = new IgnitionController(c.getBus(0));
     
     ctrl->getStatus();
     

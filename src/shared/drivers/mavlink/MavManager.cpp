@@ -1,7 +1,7 @@
-/* CAN-Bus Driver
+/* Mavlink receiver
  *
- * Copyright (c) 2015-2016 Skyward Experimental Rocketry
- * Authors: Matteo Michele Piazzolla, Alain Carlucci
+ * Copyright (c) 2015-2018 Skyward Experimental Rocketry
+ * Authors: Alvise de'Faveri Tron
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -22,45 +22,35 @@
  * THE SOFTWARE.
  */
 
-#ifndef CANSOCKET_H
-#define CANSOCKET_H
+#include "MavManager.h"
 
-#include <Common.h>
-#include "CanBus.h"
-
-using std::list;
-using std::pair;
-
-class CanBus;
-class CanSocket
+uint16_t MavManager::addSender(Transceiver* device, uint16_t sleepTime)
 {
-public:
-    explicit CanSocket(uint16_t filter_id);
-    virtual void open(CanBus *bus);
+    MavSender* sender = new MavSender(device, sleepTime);
+    senders.push_back(sender);
+    sender->start();
 
-    virtual bool receive(void *message, int size);
+    return senders.size();
+}
 
-    virtual void close();
 
-    bool isOpen() const { return bus != NULL; }
+uint16_t MavManager::addReceiver(Transceiver* device, MavSender* sender, MavHandler onRcv)
+{
+    MavReceiver* receiver = new MavReceiver(device, sender, onRcv);
+    receivers.push_back(receiver);
+    receiver->start();
 
-    virtual void addToMessageList(unsigned char *message, uint8_t size);
-    uint16_t getFilterId() const { return filter_id; }
-    bool haveMessage();
+    return receivers.size();
+}
 
-    CanSocket &operator=(const CanSocket &) = delete;
-    virtual ~CanSocket();
 
-protected:
-    CanBus *bus = NULL;
-    const uint16_t filter_id;
+MavSender* MavManager::getSender(uint16_t id) 
+{
+    return senders[id];
+}
 
-private:
-    pthread_mutex_t mutex;
-    pthread_cond_t cond;
 
-    typedef pair<const unsigned char *, int> msg_p;
-    list<msg_p> receivedMessageQueue;
-};
-
-#endif /* CANSOCKET_H */
+MavReceiver* MavManager::getReceiver(uint16_t id)
+{
+    return receivers[id];
+}

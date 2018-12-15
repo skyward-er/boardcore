@@ -20,15 +20,12 @@
  * THE SOFTWARE.
  */
 
-#ifndef SRC_SHARED_BOARDS_HOMEONE_IGNITIONCONTROLLER_IGNITIONSTATUS_H
-#define SRC_SHARED_BOARDS_HOMEONE_IGNITIONCONTROLLER_IGNITIONSTATUS_H
+#pragma once
 
 #include <cstdint>
-#include "boards/Homeone/CanInterfaces.h"
+#include "boards/CanInterfaces.h"
 
 namespace HomeoneBoard
-{
-namespace Ignition
 {
 
 enum IgnitionControllerState : uint8_t
@@ -46,5 +43,3 @@ struct IgnitionStatus
 };
 
 }
-}
-#endif /* SRC_SHARED_BOARDS_HOMEONE_IGNITIONCONTROLLER_IGNITIONSTATUS_H */
