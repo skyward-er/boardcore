@@ -37,7 +37,9 @@ enum Events : uint8_t
 	EV_ABORT,
 	EV_STATUS,
 	EV_TIMER_EXPIRED,
-	EV_OPEN_OK
+	EV_OPEN_OK,
+	EV_NC_STOP,
+	EV_MOTOR_LIMIT
 };
 }
 
