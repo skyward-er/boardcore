@@ -67,7 +67,7 @@ void canRcv(CanMsg message, IgnitionManager* mngr)
 /* Manager constructor: init canbus, set internal state and send state on canbus */
 IgnitionManager::IgnitionManager()
 {
-    CanManager c = new CanManager();
+    CanManager c = new CanManager(CAN1);
     initCanbus(c);
 
     // Communication with board 2?
