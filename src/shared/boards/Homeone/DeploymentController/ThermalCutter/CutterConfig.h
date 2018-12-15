@@ -31,8 +31,8 @@ static const PWM::Timer CUTTER_TIM{
     TIM4, &(RCC->APB1ENR), RCC_APB1ENR_TIM4EN,
     TimerUtils::getPrescalerInputFrequency(TimerUtils::InputClock::APB1)};
 
-static const PWMChannel CUTTER_CHANNEL_DROGUE = PWMChannel::CH1;  // PD12
-static const PWMChannel CUTTER_CHANNEL_MAIN_CHUTE = PWMChannel::CH2;  // PD13
+static const PWMChannel CUTTER_CHANNEL_DROGUE = PWMChannel::CH1;  // PD12, right
+static const PWMChannel CUTTER_CHANNEL_MAIN_CHUTE = PWMChannel::CH2;  // PD13, left
 
 typedef miosix::actuators::hbridger::ena DrogueCutterEna;
 typedef miosix::actuators::hbridgel::ena MainChuteCutterEna;
