@@ -20,8 +20,7 @@
  * THE SOFTWARE.
  */
 
-#ifndef SRC_SHARED_BOARDS_HELITEST_PINOBSERVER_H
-#define SRC_SHARED_BOARDS_HELITEST_PINOBSERVER_H
+#pragma once
 
 #include <miosix.h>
 #include <functional>
@@ -80,7 +79,7 @@ public:
     {
         Lock<FastMutex> lock(mtx_map);
         observed_pins.insert(
-            std::make_pair(pair<unsigned int, char>({p, n}),
+            std::make_pair(pair<unsigned int, unsigned char>({p, n}),
                            ObserverData{GpioPin{p, n}, trigger, callback,
                                         detection_threshold}));
     }
@@ -147,5 +146,3 @@ private:
     unsigned int poll_interval;
     bool stopped = true;
 };
-
-#endif
