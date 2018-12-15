@@ -28,7 +28,7 @@ using namespace IgnBoard;
 
 int main()
 {
-	IgnitionManager manager = new IgnitionManager();
+	IgnitionManager* manager = new IgnitionManager();
 
 	while(1) {
 		TRACE("Alive\n");

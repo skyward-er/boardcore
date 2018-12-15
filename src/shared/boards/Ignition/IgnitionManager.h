@@ -24,20 +24,14 @@
 #include <Common.h>
 #include <drivers/canbus/CanManager.h>
 #include <drivers/canbus/CanUtils.h>
-#include <interfaces-impl/hwmappings.h>
+#include <interfaces-impl/hwmapping.h>
+
+#include <boards/CanInterfaces.h>
 
 // TODO SPI
 
 namespace IgnBoard
 {
-
-/**
- * @brief Canbus receiving function.
- *
- * @param message   each message received on the CANBUS (with the HW filters)
- * @param mngr      IgnitionManager that implements the ignition functions
- */
-void canRcv(CanMsg message, IgnitionManager* mngr);
 
 
 /**
@@ -59,11 +53,11 @@ public:
 
 private:
     bool isAborted = false;
-    IgnitionBoardStatus myStatus;
+    CanInterfaces::IgnitionBoardStatus myStatus;
 
-    CanManager c(CAN1);
+    CanManager c;
 
-    static const uint64_t EXPECTED_LAUNCH_CODE = 0xAABBCCDDEEFFGGHH;
+    static const uint64_t EXPECTED_LAUNCH_CODE = 0xAABB;
     static const uint32_t ABORT_DURATION       = 10000;
     static const uint32_t LAUNCH_DURATION      = 10000;
 
@@ -75,5 +69,13 @@ private:
     void initCanbus(CanManager& c);
 
 };
+
+/**
+ * @brief Canbus receiving function.
+ *
+ * @param message   each message received on the CANBUS (with the HW filters)
+ * @param mngr      IgnitionManager that implements the ignition functions
+ */
+void canRcv(CanMsg message, IgnitionManager* mngr);
 
 }
