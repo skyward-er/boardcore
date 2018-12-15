@@ -21,25 +21,11 @@
  * THE SOFTWARE.
  */
 
-#pragma once
 
-#include "ThermalCutter/CutterStatus.h"
+#ifndef SRC_SHARED_BOARDS_HOMEONE_DEPLOYMENTCONTROLLER_DEPLOYMENTCONFIG_H
+#define SRC_SHARED_BOARDS_HOMEONE_DEPLOYMENTCONTROLLER_DEPLOYMENTCONFIG_H
 
-namespace HomeoneBoard
-{
+static const int CUT_DROGUE_TIMEOUT_MS = 1000;
+static const int CUT_MAIN_TIMEOUT_MS = CUT_DROGUE_TIMEOUT_MS;
 
-enum DeploymentCTRLState : uint8_t
-{
-    IDLE = 0,
-    CUTTING_DROGUE,
-    CUTTING_MAIN
-};
-
-struct DeploymentStatus
-{
-    long long timestamp;
-    DeploymentCTRLState state;
-    CutterStatus cutter_status;
-};
-
-} //HomeoneBoard
+#endif
