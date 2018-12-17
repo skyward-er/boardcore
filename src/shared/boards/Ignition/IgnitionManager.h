@@ -21,7 +21,14 @@
  */
 #pragma once
 
-#include <Singleton.h>
+#include <Common.h>
+#include <drivers/canbus/CanManager.h>
+#include <drivers/canbus/CanUtils.h>
+#include <interfaces-impl/hwmapping.h>
+
+#include <boards/CanInterfaces.h>
+
+// TODO SPI
 
 namespace IgnBoard
 {
@@ -30,53 +37,45 @@ namespace IgnBoard
 /**
  * Implementation of the Ignition Board logic.
  */
-class IgnitionManager : public Singleton<IgnitionManager>
+class IgnitionManager
 {
-    friend class Singleton<IgnitionManager>;
 
 public:
-    IgnitionManager()
-    {
-    	// Initialize canbus
-    	// Assign canReceiver function
-    	// Communication with board 2?
-    	// Set state
-    	// Send state
-    }
-
+    IgnitionManager();
     ~IgnitionManager() {}
 
-    void abort() 
-    {
-    	// Set abort pin to 1
-    	// wait
-    	// set internal state to abort
-    	// send status
-    }
+    void abort();
+    void getStatus();
+    void launch(uint64_t launch_code);
 
-    void getStatus()
-    {
-    	// getStatus from other board
-    	// refresh myStatus
-    	// send status
-    }
-
-    void launch(uint64_t launch_code)
-    {
-    	// if not aborted
-    	// check launch code
-    	// send launch code to other board
-    	// poll for response
-    	// if nCycle > 1000
-    	// abort()
-    }
+    void sendStatus();
+    bool checkLaunchCode(uint64_t launch_code);
 
 private:
-	bool isAborted = false;
-	IgnitionBoardStatus myStatus;
+    bool isAborted = false;
+    CanInterfaces::IgnitionBoardStatus myStatus;
 
-	CanManager c(CAN1);
+    CanManager c;
+
+    static const uint64_t EXPECTED_LAUNCH_CODE = 0xAABB;
+    static const uint32_t ABORT_DURATION       = 10000;
+    static const uint32_t LAUNCH_DURATION      = 10000;
+
+    /**
+     * @brief Initialise CAN, set hardware filters and receiver function.
+     *
+     * @param c CanManager to which the bus has to be added.
+     */
+    void initCanbus(CanManager& c);
 
 };
+
+/**
+ * @brief Canbus receiving function.
+ *
+ * @param message   each message received on the CANBUS (with the HW filters)
+ * @param mngr      IgnitionManager that implements the ignition functions
+ */
+void canRcv(CanMsg message, IgnitionManager* mngr);
 
 }
