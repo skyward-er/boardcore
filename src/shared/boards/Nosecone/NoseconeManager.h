@@ -19,45 +19,34 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
-#ifndef SRC_SHARED_BOARDS_HOMEONE_FLIGHTMODEMANAGER_FSM_H
-#define SRC_SHARED_BOARDS_HOMEONE_FLIGHTMODEMANAGER_FSM_H
+#pragma once
 
-#include "Singleton.h"
 #include "MotorDriver.h"
 
-#include "events/Event.h"
 #include "Events.h"
 #include "events/FSM.h"
 
 namespace NoseconeBoard
 {
-namespace FMM  // Flight Mode Manager
-{
 /**
  * Implementation of the Nosecone Manager Finite State Machine
  */
-class NoseconeManager : public FSM<NoseconeManager>,
-                          public Singleton<NoseconeManager>
-{
-    friend class Singleton<NoseconeManager>;
+class NoseconeManager : public FSM<NoseconeManager>
+ {
 
 private:
     NoseconeManager();
     ~NoseconeManager() {}
 
     // States declarations
-
-    void state_close(const Event& e);
+    void state_idle(const Event& e);
     void state_opening(const Event& e);
-    void state_open(const Event& e);
     void state_closing(const Event& e);
 
     MotorDriver driver;
 
 };
-}
-}
 
-#define sNoseconeManager NoseconeManager::getInstance()
+}
 
 #endif /* SRC_SHARED_BOARDS_HOMEONE_FLIGHTMODEMANAGER_FSM_H */

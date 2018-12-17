@@ -20,12 +20,7 @@
  * THE SOFTWARE.
  */
 
-#include <boards/Nosecone/NoseconeManager.h>
-
-#include <events/EventBroker.h>
-
-#include <boards/Nosecone/Events.h>
-#include <boards/Nosecone/Topics.h>
+#include "<boards/Nosecone/NoseconeManager.h"
 
 using rena  = miosix::Gpio<GPIOG_BASE, 2>;
 using namespace miosix;
@@ -34,103 +29,81 @@ using namespace actuators;
 
 namespace NoseconeBoard
 {
-namespace FMM
-{
 
 NoseconeManager::NoseconeManager() : FSM(&NoseconeManager::state_close)
 {
     sEventBroker->subscribe(this, TOPIC_NOSECONE);
 }
 
-/**
- *
- */
-void NoseconeManager::state_close(const Event& e)
+
+void NoseconeManager::state_idle(const Event& e)
 {
     switch (e.sig)
     {
         case EV_ENTRY:
-            printf("CLOSE state entry\n");
+            printf("IDLE state entry\n");
             driver.disable();
             printf("Disabled\n");
             break;
+
         case EV_EXIT:
-            printf("CLOSE state exit\n");
+            printf("IDLE state exit\n");
             break;
 
         case EV_OPEN:
-            printf("CLOSE state received EV_OPEN\n");
+            printf("IDLE state received EV_OPEN\n");
             transition(&NoseconeManager::state_opening);
             break;
-        case EV_STATUS:
-            printf("CLOSE state received EV_STATUS\n");
-            // TODO: send back status
+
+        case EV_CLOSE:
+            printf("IDLE state received EV_CLOSE\n");
+            transition(&NoseconeManager::state_closing);
             break;
+
+        case EV_GET_STATUS:
+            printf("IDLE state received EV_STATUS\n");
+            break;
+
         default:
             printf("Unknown event received.\n");
             break;
     }
 }
+
 
 void NoseconeManager::state_opening(const Event& e)
 {
     switch (e.sig)
     {
         case EV_ENTRY:
-          printf("OPENING state entry\n");
-          driver.enable_direct();
-          printf("Direct\n");
-          sEventBroker->postDelayed(Event{EV_TIMER_EXPIRED}, TOPIC_NOSECONE, 5000);
-          break;
+            printf("OPENING\n");
+            driver.enable_direct();
+            sEventBroker->postDelayed(Event{EV_TIMER_EXPIRED}, TOPIC_NOSECONE, 10000);
+            break;
 
         case EV_EXIT:
-            printf("OPENING state exit\n");
+            printf("[OPENING] exiting\n");
             break;
 
         case EV_TIMER_EXPIRED:
-            printf("OPEN received EV_TIMER_EXPIRED\n");
-            transition(&NoseconeManager::state_open);
+            printf("[OPEN] received EV_TIMER_EXPIRED\n");
+            transition(&NoseconeManager::state_idle);
             break;
 
-        case EV_ABORT:
-            printf("OPEN received EV_ABORT\n");
-            //transition(&NoseconeManager::state_error);
+        case EV_NC_STOP:
+            printf("[OPEN] received EV_NC_STOP\n");
+            transition(&NoseconeManager::state_idle);
+            break;
+
+        case EV_MOTOR_LIMIT:
+            printf("[OPEN] received EV_MOTOR_LIMIT\n");
+            transition(&NoseconeManager::state_idle);
             break;
 
         default:
             printf("Unknown event received.\n");
             break;
     }
-}
-
-void NoseconeManager::state_open(const Event& e)
-{
-  switch (e.sig)
-  {
-      case EV_ENTRY:
-          printf("OPEN state entry\n");
-          driver.disable();
-          printf("Disabled\n");
-          break;
-      case EV_EXIT:
-          printf("OPEN state exit\n");
-          break;
-
-      case EV_CLOSE:
-        printf("OPEN state received EV_CLOSE\n");
-        transition(&NoseconeManager::state_closing);
-      break;
-
-      case EV_STATUS:
-        printf("OPEN state received EV_STATUS\n");
-      // TODO: send back status
-      break;
-
-
-      default:
-          printf("Unknown event received.\n");
-          break;
-  }
 }
 
 
@@ -139,20 +112,29 @@ void NoseconeManager::state_closing(const Event& e)
   switch (e.sig)
   {
       case EV_ENTRY:
-          printf("CLOSING state entry\n");
+          printf("[CLOSING] state entry\n");
           driver.enable_reverse();
-          printf("Reverse\n");
-          sEventBroker->postDelayed(Event{EV_TIMER_EXPIRED}, TOPIC_NOSECONE, 5000);
+          sEventBroker->postDelayed(Event{EV_TIMER_EXPIRED}, TOPIC_NOSECONE, 10000);
           break;
 
       case EV_EXIT:
-          printf("CLOSING state exit\n");
+          printf("[CLOSING] exiting\n");
           break;
 
       case EV_TIMER_EXPIRED:
-          printf("OPEN received EV_TIMER_EXPIRED\n");
-          transition(&NoseconeManager::state_close);
-      break;
+          printf("[CLOSING] received EV_TIMER_EXPIRED\n");
+          transition(&NoseconeManager::state_idle);
+          break;
+
+      case EV_NC_STOP:
+          printf("[CLOSING] received EV_NC_STOP\n");
+          transition(&NoseconeManager::state_idle);
+          break;
+
+      case EV_MOTOR_LIMIT:
+          printf("[CLOSING] received EV_MOTOR_LIMIT\n");
+          transition(&NoseconeManager::state_idle);
+          break;
 
       default:
           printf("Unknown event received.\n");
@@ -161,4 +143,3 @@ void NoseconeManager::state_closing(const Event& e)
 }
 
 } // namespace NoseconeBoard
-} // namespace FMM
