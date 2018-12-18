@@ -28,8 +28,7 @@
 
 namespace HomeoneBoard
 {
-namespace Sensors
-{
+
 
 enum class SensorManagerState : uint8_t
 {
@@ -37,6 +36,7 @@ enum class SensorManagerState : uint8_t
     LOGGING
 };
 
+//Todo: Use bitmap?
 enum Sensor : uint8_t
 {
     SENSOR_NONE             = 0x0000,
@@ -56,6 +56,5 @@ struct SensorManagerStatus
     uint16_t problematic_sensors = 0x0000;
 };
 
-}  // namespace Sensors
 }  // namespace HomeoneBoard
 #endif /* SRC_SHARED_BOARDS_HOMEONE_SENSORMANAGER_SENSORMANAGERDATA_H */

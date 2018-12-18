@@ -19,23 +19,34 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
-#ifndef SRC_SHARED_BOARDS_HOMEONE_FLIGHTMODEMANAGER_FMM_CONFIG_H
-#define SRC_SHARED_BOARDS_HOMEONE_FLIGHTMODEMANAGER_FMM_CONFIG_H
+#ifndef SRC_SHARED_BOARDS_HOMEONE_SENSORMANAGER_SENSORMANAGERCONFIG_H
+#define SRC_SHARED_BOARDS_HOMEONE_SENSORMANAGER_SENSORMANAGERCONFIG_H
 
-#warning "FMM COSTANTS ARE ONLY PLACEHOLDER VALUES"
+#include <Common.h>
+#include <drivers/BusTemplate.h>
+#include <drivers/stm32f2_f4_i2c.h>
+#include <interfaces-impl/hwmapping.h>
+
+using miosix::Gpio;
 
 namespace HomeoneBoard
 {
-namespace FMM
-{
-// TODO: Change with real values
 
-// State timeouts
-static const unsigned int TIMEOUT_MS_AUTO_DISARM      = 5 * 1000;
-static const unsigned int TIMEOUT_MS_APOGEE_DETECTION = 5 * 1000;
-static const unsigned int TIMEOUT_MS_DPL_ALTITUDE     = 5 * 1000;
-static const unsigned int TIMEOUT_MS_END_MISSION      = 5 * 1000;
-}
-}
+// I2C 1
+typedef ProtocolI2C<miosix::I2C1Driver> busI2C1;
 
-#endif /* SRC_SHARED_BOARDS_HOMEONE_FLIGHTMODEMANAGER_FMM_CONFIG_H */
+// SPI1
+typedef BusSPI<1, miosix::interfaces::spi1::mosi,
+               miosix::interfaces::spi1::miso, miosix::interfaces::spi1::sck>
+    busSPI1;
+
+// Spi protocol defs
+typedef ProtocolSPI<busSPI1, miosix::sensors::mpu9250::cs> spiMPU9250;
+typedef ProtocolSPI<busSPI1, miosix::sensors::max21105::cs> spiMAX21105;
+typedef ProtocolSPI<busSPI1, miosix::sensors::adis16405::cs> spiADIS16405;
+
+static const uint8_t AD7994_I2C_ADDRESS = 0x24;  // Todo: Update with real value
+
+}  // namespace HomeoneBoard
+
+#endif /* SRC_SHARED_BOARDS_HOMEONE_SENSORMANAGER_SENSORMANAGERCONFIG_H */

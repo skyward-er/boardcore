@@ -27,21 +27,36 @@
 #include "drivers/pwm/pwm.h"
 #include "interfaces-impl/hwmapping.h"
 
+
+namespace HomeoneBoard
+{
+// clang-format off
+
+// Struct required by the PWM driver to know the specifics of the timer to use
 static const PWM::Timer CUTTER_TIM{
-    TIM4, &(RCC->APB1ENR), RCC_APB1ENR_TIM4EN,
-    TimerUtils::getPrescalerInputFrequency(TimerUtils::InputClock::APB1)};
+    TIM4, 
+    &(RCC->APB1ENR), 
+    RCC_APB1ENR_TIM4EN,
+    TimerUtils::getPrescalerInputFrequency(TimerUtils::InputClock::APB1)
+    };
 
-static const PWMChannel CUTTER_CHANNEL_DROGUE = PWMChannel::CH1;  // PD12, right
-static const PWMChannel CUTTER_CHANNEL_MAIN_CHUTE = PWMChannel::CH2;  // PD13, left
+// clang-format on
 
-typedef miosix::actuators::hbridger::ena DrogueCutterEna; //PG2
+// DROGUE --> Right H-Bridge, THCUT1 on theboard
+static const PWMChannel CUTTER_CHANNEL_DROGUE = PWMChannel::CH1; // PD12
+typedef miosix::actuators::hbridger::ena DrogueCutterEna; // PG2
+
+// MAIN CHUTE --> Left H-Bridge, THCUT2 on theboard
+static const PWMChannel CUTTER_CHANNEL_MAIN_CHUTE = PWMChannel::CH2; // PD13
 typedef miosix::actuators::hbridgel::ena MainChuteCutterEna; //PD11
 
+// PWM Frequency & duty-cycle
 static const unsigned int CUTTER_PWM_FREQUENCY = 150;
 static const float CUTTER_PWM_DUTY_CYCLE       = 32.0f / 256;
 
-/**
- * @brief Delay to allow a safe shutdown of the hbridge
- *
- */
+// Period of time where the IN must be kept low before bringing ENA/INH low
 static const int HBRIDGE_DISABLE_DELAY_MS = 50;
+ 
+} // HomeoneBoard
+
+

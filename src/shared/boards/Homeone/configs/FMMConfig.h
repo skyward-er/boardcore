@@ -19,44 +19,17 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
-#ifndef SRC_SHARED_BOARDS_HOMEONE_FLIGHTMODEMANAGER_ADA_H
-#define SRC_SHARED_BOARDS_HOMEONE_FLIGHTMODEMANAGER_ADA_H
-
-#include <events/FSM.h>
-#include <miosix.h>
-
-using miosix::FastMutex;
+#ifndef SRC_SHARED_BOARDS_HOMEONE_FLIGHTMODEMANAGER_FMM_CONFIG_H
+#define SRC_SHARED_BOARDS_HOMEONE_FLIGHTMODEMANAGER_FMM_CONFIG_H
 
 namespace HomeoneBoard
 {
-namespace FMM  // Flight Mode Manager
-{
 
-struct ADASample
-{
-    uint16_t pressure;
-};
-
-/**
- * Apogee Detection Algorithm Class.
- *
- */
-class ADA : public FSM<ADA>
-{
-public:
-    ADA();
-    ~ADA();
-
-private:
-    void onNewSample(ADASample sample);
-
-    // State functions
-    void idle(const Event&);
-    void shadow_mode(const Event&);
-    void active_mode(const Event&);
-    void stopped(const Event&);
-};
-}
+// State timeouts
+static const unsigned int TIMEOUT_FMM_AUTO_DISARM      = 5 * 1000;
+static const unsigned int TIMEOUT_FMM_APOGEE_DETECTION = 5 * 1000;
+static const unsigned int TIMEOUT_FMM_DPL_ALTITUDE     = 5 * 1000;
+static const unsigned int TIMEOUT_FMM_END_MISSION      = 5 * 1000;
 }
 
-#endif /* SRC_SHARED_BOARDS_HOMEONE_FLIGHTMODEMANAGER_ADA_H */
+#endif /* SRC_SHARED_BOARDS_HOMEONE_FLIGHTMODEMANAGER_FMM_CONFIG_H */

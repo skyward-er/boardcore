@@ -22,10 +22,11 @@
 
 #include <Common.h>
 #include <interfaces-impl/hwmapping.h>
-#include "boards/Homeone/SensorManager/SensorManagerConfig.h"
+#include "boards/Homeone/configs/SensorManagerConfig.h"
 #include "sensors/MPU9250/MPU9250.h"
 
 using miosix::Thread;
+using namespace HomeoneBoard;
 
 enum REGS
 {

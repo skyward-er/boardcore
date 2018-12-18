@@ -29,8 +29,6 @@
 using namespace miosix;
 using namespace HomeoneBoard;
 
-using Sensors::SensorManager;
-
 int main()
 {
     TRACE("DEBUG\n");

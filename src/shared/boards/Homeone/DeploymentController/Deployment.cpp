@@ -2,7 +2,7 @@
 
 #include <miosix.h>
 #include "Common.h"
-#include "DeploymentConfig.h"
+#include "boards/Homeone/configs/DeploymentConfig.h"
 #include "events/EventBroker.h"
 
 namespace HomeoneBoard
@@ -96,7 +96,7 @@ State DeploymentController::state_cuttingDrogue(const Event& ev)
             TRACE("[DPL_CTRL] ENTRY state_cuttingDrogue\n");
             cutter.startCutDrogue();
             delayed_ev_id = sEventBroker->postDelayed(
-                {EV_TIMEOUT_CUTTING}, TOPIC_DEPLOYMENT, CUT_DROGUE_TIMEOUT_MS);
+                {EV_TIMEOUT_CUTTING}, TOPIC_DEPLOYMENT, MAXIMUM_CUTTING_DURATION);
             break;
         case EV_EXIT:
             TRACE("[DPL_CTRL] EXIT state_cuttingDrogue\n");
@@ -135,7 +135,7 @@ State DeploymentController::state_cuttingMain(const Event& ev)
             cut_main = false;
             cutter.startCutMainChute();
             delayed_ev_id = sEventBroker->postDelayed(
-                {EV_TIMEOUT_CUTTING}, TOPIC_DEPLOYMENT, CUT_MAIN_TIMEOUT_MS);
+                {EV_TIMEOUT_CUTTING}, TOPIC_DEPLOYMENT, MAXIMUM_CUTTING_DURATION);
             break;
         case EV_EXIT:
             TRACE("[DPL_CTRL] EXIT state_cuttingMain\n");

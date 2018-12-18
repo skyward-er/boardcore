@@ -25,6 +25,7 @@
 #include "boards/Homeone/DeploymentController/ThermalCutter/Cutter.h"
 
 using namespace miosix;
+using namespace HomeoneBoard;
 
 int main()
 {
