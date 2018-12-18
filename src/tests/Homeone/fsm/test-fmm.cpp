@@ -17,7 +17,6 @@
 #include "events/EventBroker.h"
 
 using namespace HomeoneBoard;
-using HomeoneBoard::FMM::FlightModeManager;
 
 using miosix::Thread;
 using std::string;

@@ -25,13 +25,16 @@
 
 #include <miosix.h>
 
-#include "CutterConfig.h"
+#include "boards/Homeone/configs/CutterConfig.h"
 #include "drivers/pwm/pwm.h"
 #include "CutterStatus.h"
 
 using miosix::GpioPin;
 using miosix::Thread;
 
+namespace HomeoneBoard
+{
+    
 class Cutter
 {
 public:
@@ -122,3 +125,5 @@ private:
 
     CutterStatus status;
 };
+
+}

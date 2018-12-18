@@ -21,7 +21,7 @@
  */
 
 #include "IgnitionController.h"
-#include "IgnitionConfig.h"
+#include "boards/Homeone/configs/IgnitionConfig.h"
 #include "boards/CanInterfaces.h"
 #include "boards/Homeone/Events.h"
 
@@ -62,7 +62,7 @@ void IgnitionController::stateIdle(const Event& ev)
             logger.log(status);
 
             ev_ign_offline_handle = sEventBroker->postDelayed(
-                {EV_IGN_OFFLINE}, TOPIC_FLIGHT_EVENTS, TIMEOUT_MS_IGN_OFFLINE);
+                {EV_IGN_OFFLINE}, TOPIC_FLIGHT_EVENTS, TIMEOUT_IGN_OFFLINE);
 
             // Send first getstatus request
             sEventBroker->post({EV_IGN_GETSTATUS}, TOPIC_IGNITION);
@@ -80,7 +80,7 @@ void IgnitionController::stateIdle(const Event& ev)
             canbus->send(CanInterfaces::CAN_TOPIC_HOMEONE, buf, len);
 
             ev_get_status_handle = sEventBroker->postDelayed(
-                {EV_IGN_GETSTATUS}, TOPIC_IGNITION, INTERVAL_MS_IGN_GET_STATUS);
+                {EV_IGN_GETSTATUS}, TOPIC_IGNITION, INTERVAL_IGN_GET_STATUS);
             break;
         }
         case EV_NEW_CAN_MSG:
@@ -92,7 +92,7 @@ void IgnitionController::stateIdle(const Event& ev)
 
                 ev_ign_offline_handle = sEventBroker->postDelayed(
                     {EV_IGN_OFFLINE}, TOPIC_FLIGHT_EVENTS,
-                    TIMEOUT_MS_IGN_OFFLINE);
+                    TIMEOUT_IGN_OFFLINE);
 
                 // Log ignition board status
                 logger.log(status);
@@ -181,7 +181,7 @@ void IgnitionController::stateAborted(const Event& ev)
 
                 ev_ign_offline_handle = sEventBroker->postDelayed(
                     {EV_IGN_OFFLINE}, TOPIC_FLIGHT_EVENTS,
-                    TIMEOUT_MS_IGN_OFFLINE);
+                    TIMEOUT_IGN_OFFLINE);
 
                 logger.log(status);
             }

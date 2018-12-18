@@ -23,15 +23,13 @@
 #include <boards/Homeone/FlightModeManager/FlightModeManager.h>
 #include <events/EventBroker.h>
 
-#include <boards/Homeone/Events.h>
-#include <boards/Homeone/FlightModeManager/FMM_Config.h>
-#include <boards/Homeone/Topics.h>
+#include "boards/Homeone/Events.h"
+#include "boards/Homeone/configs/FMMConfig.h"
+#include "boards/Homeone/Topics.h"
 
 #include "Debug.h"
 
 namespace HomeoneBoard
-{
-namespace FMM
 {
 
 FlightModeManager::FlightModeManager() : FSM(&FlightModeManager::stateInit)
@@ -161,7 +159,7 @@ void FlightModeManager::stateArmed(const Event& ev)
 
             // Automatically disarm after TIMEOUT_MS_AUTO_DISARM milliseconds.
             delayed_event_id = sEventBroker->postDelayed(
-                {EV_TIMEOUT_ARM}, TOPIC_FMM, TIMEOUT_MS_AUTO_DISARM);
+                {EV_TIMEOUT_ARM}, TOPIC_FMM, TIMEOUT_FMM_AUTO_DISARM);
             break;
         case EV_EXIT:
             TRACE("FMM: Exiting stateArmed\n");
@@ -236,7 +234,7 @@ void FlightModeManager::stateAscending(const Event& ev)
 
             // Set apogee timeout
             delayed_event_id = sEventBroker->postDelayed(
-                {EV_TIMEOUT_APOGEE}, TOPIC_FMM, TIMEOUT_MS_APOGEE_DETECTION);
+                {EV_TIMEOUT_APOGEE}, TOPIC_FMM, TIMEOUT_FMM_APOGEE_DETECTION);
 
             break;
         case EV_EXIT:
@@ -271,7 +269,7 @@ void FlightModeManager::stateFirstDescentPhase(const Event& ev)
 
             // Set deployment timeut
             delayed_event_id = sEventBroker->postDelayed(
-                {EV_TIMEOUT_DPL_ALT}, TOPIC_FMM, TIMEOUT_MS_DPL_ALTITUDE);
+                {EV_TIMEOUT_DPL_ALT}, TOPIC_FMM, TIMEOUT_FMM_DPL_ALTITUDE);
             break;
         case EV_EXIT:
             TRACE("FMM: Exiting stateFirstDescentPhase\n");
@@ -309,7 +307,7 @@ void FlightModeManager::stateSecondDescentPhase(const Event& ev)
 
             // Set landing timeout
             delayed_event_id = sEventBroker->postDelayed(
-                {EV_TIMEOUT_END_MISSION}, TOPIC_FMM, TIMEOUT_MS_END_MISSION);
+                {EV_TIMEOUT_END_MISSION}, TOPIC_FMM, TIMEOUT_FMM_END_MISSION);
             break;
         case EV_EXIT:
             TRACE("FMM: Exiting stateSecondDescentPhase\n");
@@ -340,7 +338,7 @@ void FlightModeManager::stateManualDescent(const Event& ev)
 
             // Set landing timeout
             delayed_event_id = sEventBroker->postDelayed(
-                {EV_TIMEOUT_END_MISSION}, TOPIC_FMM, TIMEOUT_MS_END_MISSION);
+                {EV_TIMEOUT_END_MISSION}, TOPIC_FMM, TIMEOUT_FMM_END_MISSION);
             break;
         case EV_EXIT:
             TRACE("FMM: Exiting stateManualDescent\n");
@@ -379,5 +377,4 @@ void FlightModeManager::stateLanded(const Event& ev)
     }
 }
 
-}  // namespace FMM
 }  // namespace HomeoneBoard

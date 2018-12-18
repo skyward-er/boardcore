@@ -24,6 +24,8 @@
 #include <miosix.h>
 #include "boards/Homeone/DeploymentController/ThermalCutter/Cutter.h"
 
+using namespace HomeoneBoard;
+
 typedef miosix::Gpio<GPIOG_BASE, 11> btn;
 
 static const int BUTTON_SLEEP = 10;

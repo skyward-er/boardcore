@@ -36,8 +36,7 @@ using miosix::Lock;
 
 namespace HomeoneBoard
 {
-namespace FMM  // Flight Mode Manager
-{
+
 /**
  * Implementation of the Flight Mode Manager Finite State Machine
  */
@@ -81,7 +80,6 @@ private:
     LoggerProxy& logger = *(LoggerProxy::getInstance());
 };
 
-}  // namespace FMM
 }  // namespace HomeoneBoard
 
 #endif /* SRC_SHARED_BOARDS_HOMEONE_FLIGHTMODEMANAGER_FSM_H */

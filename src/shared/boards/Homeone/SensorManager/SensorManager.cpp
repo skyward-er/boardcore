@@ -41,8 +41,6 @@ using miosix::Lock;
 
 namespace HomeoneBoard
 {
-namespace Sensors
-{
 
 SensorManager::SensorManager()
     : FSM(&SensorManager::stateIdle), logger(*LoggerProxy::getInstance())
@@ -204,5 +202,5 @@ void SensorManager::onDMA500HZCallback()
       log.log(*(imu_adis16405->accelDataPtr()));
       log.log(*(imu_adis16405->tempDataPtr()));*/
 }
-}  // namespace Sensors
+
 }  // namespace HomeoneBoard
