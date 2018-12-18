@@ -31,6 +31,7 @@ State DeploymentController::state_ready(const Event& ev)
     {
         case EV_INIT:
             retState = transition(&DeploymentController::state_cutterIdle);
+            TRACE("[DPL_CTRL] INIT state_ready\n");
             break;
         case EV_ENTRY:
             TRACE("[DPL_CTRL] ENTRY state_ready\n");
@@ -53,7 +54,7 @@ State DeploymentController::state_ready(const Event& ev)
             // TODO: Send nosecone close command on CAN
             break;
         default:
-            retState = tran_super(&DeploymentController::state_ready);
+            retState = tran_super(&DeploymentController::Hsm_top);
             break;
     }
     return retState;
@@ -107,6 +108,7 @@ State DeploymentController::state_cuttingDrogue(const Event& ev)
         case EV_TC_CUT_MAIN:
         case EV_TC_CUT_ALL:
             cut_main = true;
+            break;
         case EV_TIMEOUT_CUTTING:
             TRACE("[DPL_CTRL] TIMEOUT state_cuttingDrogue\n");
             if (!cut_main)
