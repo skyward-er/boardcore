@@ -33,7 +33,7 @@ int main()
     sEventBroker->start();
     fsm.start();
 
-    Thread::sleep(500);
+    Thread::sleep(2000);
     printf("Posting cut drogue\n");
     sEventBroker->post({EV_CUT_DROGUE}, TOPIC_DEPLOYMENT);
     Thread::sleep(1500);
