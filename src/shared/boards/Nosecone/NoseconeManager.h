@@ -34,7 +34,7 @@ namespace NoseconeBoard
 class NoseconeManager : public FSM<NoseconeManager>
  {
 
-private:
+public:
     NoseconeManager();
     ~NoseconeManager() {}
 
@@ -48,5 +48,3 @@ private:
 };
 
 }
-
-#endif /* SRC_SHARED_BOARDS_HOMEONE_FLIGHTMODEMANAGER_FSM_H */

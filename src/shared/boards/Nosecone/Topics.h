@@ -1,5 +1,5 @@
-/* Copyright (c) 2018-2019 Skyward Experimental Rocketry
- * Authors: Benedetta Cattani
+/* Copyright (c) 2018 Skyward Experimental Rocketry
+ * Authors: Alvise de' Faveri Tron
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -19,29 +19,19 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
-#ifndef SRC_SHARED_BOARDS_NOSECONE_EVENTS_H
-#define SRC_SHARED_BOARDS_NOSECONE_EVENTS_H
+#pragma once
 
-#include "events/Event.h"
+#include <stdint.h>
+#include <string>
 
 namespace NoseconeBoard
 {
 /**
- * Definition of all events in the Nosecone Board software
- * Refer to section 5.1.1 of the MY ass Design Document.
+ * Definition of various event topics to use in the EventBroker
  */
-enum Events : uint8_t
+enum Topics : uint8_t
 {
-    EV_OPEN      = 4,
-    EV_CLOSE,
-	EV_ABORT,
-	EV_STATUS,
-	EV_TIMER_EXPIRED,
-	EV_OPEN_OK,
-	EV_NC_STOP,
-	EV_MOTOR_LIMIT,
-	EV_GET_STATUS
+    TOPIC_NOSECONE
 };
-}
 
-#endif /* SRC_SHARED_BOARDS_NOSECONE_EVENTS_H */
+}

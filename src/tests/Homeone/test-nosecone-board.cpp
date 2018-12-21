@@ -1,35 +1,35 @@
 #include <boards/Nosecone/NoseconeManager.h>
-#include <boards/Homeone/PinObserver.h>
+#include <PinObserver.h>
 
 using namespace NoseconeBoard;
 using namespace miosix;
 
 NoseconeManager* mgr;
-PinObserver* obs;
+PinObserver* pinObs;
 
-#define finecorsaOpenBus GPIOG
-#define finecorsaOpenPin 11
-#define finecorsaCloseBus GPIOG
-#define finecorsaClosePin 11
+typedef Gpio<GPIOG_BASE, 11> r_finecorsa;
+typedef Gpio<GPIOG_BASE, 11> l_finecorsa;
 
-typedef Gpio<finecorsaOpenBus, finecorsaBus> finecorsaOpen;
-typedef Gpio<finecorsaBus, finecorsaBus> finecorsa;
-
-void fineCorsaHandler(unsigned int p, unsigned char c) {
+void r_finecorsaHandler(unsigned int p, unsigned char c) {
   mgr->postEvent(Event{NoseconeBoard::EV_MOTOR_LIMIT});
 }
 
+void l_finecorsaHandler(unsigned int p, unsigned char c) {
+  mgr->postEvent(Event{NoseconeBoard::EV_MOTOR_LIMIT});
+}
+
+
 int main()
 {
-  finecorsa.mode(Mode::INPUT);
-  finecorsa.mode(Mode::INPUT);
+  r_finecorsa::mode(Mode::INPUT);
+  l_finecorsa::mode(Mode::INPUT);
+
+  mgr = new NoseconeManager();
+  mgr->start();
 
   pinObs = new PinObserver();
-  mgr = new NoseconeManager();
-
-  pinObs->observePin(finecorsaBus, finecorsaPin, FALLING_EDGE, fineCorsaHandler);
-
-  mgr->start();
+  pinObs->observePin(GPIOG_BASE, 11, PinObserver::Trigger::FALLING_EDGE, r_finecorsaHandler);
+  pinObs->observePin(GPIOG_BASE, 11, PinObserver::Trigger::FALLING_EDGE, l_finecorsaHandler);
   pinObs->start();
 
   while(1) 
