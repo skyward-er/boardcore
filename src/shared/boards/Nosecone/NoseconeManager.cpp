@@ -20,7 +20,10 @@
  * THE SOFTWARE.
  */
 
-#include "<boards/Nosecone/NoseconeManager.h"
+#include "NoseconeManager.h"
+#include "Events.h"
+#include "Topics.h"
+#include <events/EventBroker.h>
 
 using rena  = miosix::Gpio<GPIOG_BASE, 2>;
 using namespace miosix;
@@ -30,10 +33,8 @@ using namespace actuators;
 namespace NoseconeBoard
 {
 
-NoseconeManager::NoseconeManager() : FSM(&NoseconeManager::state_close)
-{
-    sEventBroker->subscribe(this, TOPIC_NOSECONE);
-}
+NoseconeManager::NoseconeManager() : FSM(&NoseconeManager::state_idle)
+{ }
 
 
 void NoseconeManager::state_idle(const Event& e)
