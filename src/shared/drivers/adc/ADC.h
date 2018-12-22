@@ -21,7 +21,7 @@
  */
 
 #include "Common.h"
-#include "Sensor.h"
+//#include "sensors/Sensor.h"
 
 template <unsigned N, unsigned CHANNEL, class GpioADC>
 class SensorADC
