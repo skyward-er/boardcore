@@ -29,7 +29,7 @@ int main()
 
   pinObs = new PinObserver();
   pinObs->observePin(GPIOG_BASE, 11, PinObserver::Trigger::FALLING_EDGE, r_finecorsaHandler);
-  pinObs->observePin(GPIOG_BASE, 11, PinObserver::Trigger::FALLING_EDGE, l_finecorsaHandler);
+  pinObs->observePin(GPIOG_BASE, 12, PinObserver::Trigger::FALLING_EDGE, l_finecorsaHandler);
   pinObs->start();
 
   while(1) 
