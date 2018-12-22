@@ -32,18 +32,21 @@ namespace NoseconeBoard
  * Implementation of the Nosecone Manager Finite State Machine
  */
 class NoseconeManager : public FSM<NoseconeManager>
- {
+{
 
 public:
     NoseconeManager();
     ~NoseconeManager() {}
 
+private:
+    MotorDriver motor;
+    static constexpr float OPENING_DUTY_CYCLE = 0.5f;
+    static constexpr float CLOSING_DUTY_CYCLE = 0.5f;
+
     // States declarations
     void state_idle(const Event& e);
     void state_opening(const Event& e);
     void state_closing(const Event& e);
-
-    MotorDriver driver;
 
 };
 

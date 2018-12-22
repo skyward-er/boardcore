@@ -43,7 +43,7 @@ void NoseconeManager::state_idle(const Event& e)
     {
         case EV_ENTRY:
             printf("IDLE state entry\n");
-            driver.disable();
+            motor.stop();
             printf("Disabled\n");
             break;
 
@@ -78,7 +78,7 @@ void NoseconeManager::state_opening(const Event& e)
     {
         case EV_ENTRY:
             printf("OPENING\n");
-            driver.enable_direct();
+            motor.start(MotorDirection::NORMAL_DIRECTION, OPENING_DUTY_CYCLE);
             sEventBroker->postDelayed(Event{EV_TIMER_EXPIRED}, TOPIC_NOSECONE, 10000);
             break;
 
@@ -114,7 +114,7 @@ void NoseconeManager::state_closing(const Event& e)
   {
       case EV_ENTRY:
           printf("[CLOSING] state entry\n");
-          driver.enable_reverse();
+          motor.start(MotorDirection::REVERSE_DIRECTION, CLOSING_DUTY_CYCLE);
           sEventBroker->postDelayed(Event{EV_TIMER_EXPIRED}, TOPIC_NOSECONE, 10000);
           break;
 
