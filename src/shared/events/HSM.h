@@ -32,6 +32,7 @@
 #include "events/Event.h"
 #include "events/SyncQueue.h"
 #include "events/EventHandler.h"
+#include "Debug.h"
 
 #include <assert.h>
 
@@ -67,7 +68,7 @@ public:
         StateHandler target = this->state;
         State retState;
         
-        assert((static_cast<T*>(this)->*temp)({EV_EMPTY}) == TRAN);
+        D(assert((static_cast<T*>(this)->*temp)({EV_EMPTY}) == TRAN));
         
         do {
             StateHandler statePath[HSM_MAX_NEST_DEPTH];
@@ -80,7 +81,7 @@ public:
                 ++index;
                 statePath[index] = this->temp;
                 (void)(static_cast<T*>(this)->*temp)({EV_EMPTY});
-                assert(index < HSM_MAX_NEST_DEPTH);
+                D(assert(index < HSM_MAX_NEST_DEPTH));
             }
             
             this->temp = statePath[0];
@@ -184,6 +185,7 @@ protected:
                 target = this->temp;
             }
             
+            target = path[0];
             
             /* (A) check source==target (transition to self) */
             if (source == target) {
@@ -333,7 +335,7 @@ protected:
                 }
                 this->temp = path[0];
                 /* entry path must not overflow */
-                assert(index < (int8_t)HSM_MAX_NEST_DEPTH);
+                D(assert(index < (int8_t)HSM_MAX_NEST_DEPTH));
                 
                 /* retrace the entry path in reverse (correct) order... */
                 do {
