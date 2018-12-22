@@ -51,8 +51,8 @@ static const PWMChannel CUTTER_CHANNEL_MAIN_CHUTE = PWMChannel::CH2; // PD13
 typedef miosix::actuators::hbridgel::ena MainChuteCutterEna; //PD11
 
 // PWM Frequency & duty-cycle
-static const unsigned int CUTTER_PWM_FREQUENCY = 150;
-static const float CUTTER_PWM_DUTY_CYCLE       = 32.0f / 256;
+static const unsigned int CUTTER_PWM_FREQUENCY = 15000;
+static const float CUTTER_PWM_DUTY_CYCLE       = 48.0f / 256;
 
 // Period of time where the IN must be kept low before bringing ENA/INH low
 static const int HBRIDGE_DISABLE_DELAY_MS = 50;
