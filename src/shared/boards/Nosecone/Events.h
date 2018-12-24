@@ -19,8 +19,7 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
-#ifndef SRC_SHARED_BOARDS_NOSECONE_EVENTS_H
-#define SRC_SHARED_BOARDS_NOSECONE_EVENTS_H
+#pragma once
 
 #include "events/Event.h"
 
@@ -32,16 +31,11 @@ namespace NoseconeBoard
  */
 enum Events : uint8_t
 {
-    EV_OPEN      = 4,
+    EV_OPEN = EV_FIRST_SIGNAL,
     EV_CLOSE,
-	EV_ABORT,
-	EV_STATUS,
-	EV_TIMER_EXPIRED,
-	EV_OPEN_OK,
-	EV_NC_STOP,
-	EV_MOTOR_LIMIT,
-	EV_GET_STATUS
+    EV_STOP,
+    EV_TIMER_EXPIRED,
+    EV_MOTOR_LIMIT
 };
-}
 
-#endif /* SRC_SHARED_BOARDS_NOSECONE_EVENTS_H */
+}

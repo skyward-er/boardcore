@@ -1,5 +1,5 @@
-/* Copyright (c) 2015-2018 Skyward Experimental Rocketry
- * Authors: Benedetta Margrethe Cattani, Alvise de' Faveri Tron
+/* Copyright (c) 2018 Skyward Experimental Rocketry
+ * Authors: Alvise De Faveri
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -21,40 +21,30 @@
  */
 #pragma once
 
-#include "Motor/MotorDriver.h"
-#include "Status/StatusManager.h"
-
-#include "Events.h"
-#include "events/FSM.h"
+#include <Common.h>
 #include <drivers/canbus/CanManager.h>
-#include <PinObserver.h>
+#include <drivers/canbus/CanUtils.h>
 
+#include <boards/Nosecone/Status/StatusManager.h>
 
 namespace NoseconeBoard
 {
+
 /**
- * Implementation of the Nosecone Manager Finite State Machine
+ * @brief Canbus receiving function.
+ *
+ * @param message  message to be handled
+ * @param c        manager to send back responses
+ * @param status   status to modify
  */
-class NoseconeManager : public FSM<NoseconeManager>
-{
+void canRcv(CanMsg message, CanManager* c, StatusManager* status);
 
-public:
-    NoseconeManager();
-    ~NoseconeManager() {}
 
-    CanManager canMgr;
-    StatusManager status;
-    PinObserver pinObs;
 
-private:
-    uint16_t delayedId;
-    MotorDriver* motor;
+/**
+ * @brief Initialise CAN1 on PA11, PA12, set filter and receiver function.
+ * 
+ */
+void initCanbus(CanManager& c, StatusManager& status);
 
-    /* States declarations */
-    void state_idle(const Event& e);
-    void state_opening(const Event& e);
-    void state_closing(const Event& e);
-
-};
-
-}
+} /* namespace NoseconeBoard */

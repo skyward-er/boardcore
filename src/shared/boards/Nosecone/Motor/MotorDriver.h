@@ -1,5 +1,6 @@
-/* Copyright (c) 2015-2018 Skyward Experimental Rocketry
- * Authors: Benedetta Margrethe Cattani, Alvise de' Faveri Tron
+/*
+ * Copyright (c) 2018 Skyward Experimental Rocketry
+ * Authors: Alvise de'Faveri Tron
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -21,40 +22,54 @@
  */
 #pragma once
 
-#include "Motor/MotorDriver.h"
-#include "Status/StatusManager.h"
+#include <Common.h>
+#include "MotorConfig.h"
 
-#include "Events.h"
-#include "events/FSM.h"
-#include <drivers/canbus/CanManager.h>
+#include <events/EventBroker.h>
+#include <boards/Nosecone/Status/StatusManager.h>
 #include <PinObserver.h>
-
 
 namespace NoseconeBoard
 {
+
 /**
- * Implementation of the Nosecone Manager Finite State Machine
+ * This class gives access to the H-Bridge that controls the DC motor of the nosecone.
  */
-class NoseconeManager : public FSM<NoseconeManager>
+class MotorDriver
 {
 
 public:
-    NoseconeManager();
-    ~NoseconeManager() {}
+    /**
+     * @brief Class constructor.
+     * 
+     * @param pinObs    needed to observe the motor limit pins (finecorsa) 
+     */
+    MotorDriver(PinObserver* pinObs, StatusManager* status);
 
-    CanManager canMgr;
-    StatusManager status;
-    PinObserver pinObs;
+    /**
+     * @brief Class destructor.
+     */
+    ~MotorDriver();
+
+    /**
+     * @brief Activates the H-Bridge to start the motor. The motor will send an
+     *        event when the limit is reached.
+     *
+     * @param direction     direction of activation (normal or reverse)
+     * @param dutyCycle     duty cycle of the PWM sent to the motor
+     * @return              false if the motor is already started
+     */
+    bool start(MotorDirection direction, float dutyCycle);
+
+    /**
+     * @brief Stop the motor
+     */
+    void stop();
 
 private:
-    uint16_t delayedId;
-    MotorDriver* motor;
-
-    /* States declarations */
-    void state_idle(const Event& e);
-    void state_opening(const Event& e);
-    void state_closing(const Event& e);
-
+    PWM pwm;
+    bool active;
+    StatusManager* status;
 };
 
-}
+} /* namespace  */
