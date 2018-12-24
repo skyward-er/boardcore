@@ -1,5 +1,5 @@
-/* Copyright (c) 2015-2019 Skyward Experimental Rocketry
- * Authors: Benedetta Margrethe Cattani
+/* Copyright (c) 2015-2018 Skyward Experimental Rocketry
+ * Authors: Benedetta Margrethe Cattani, Alvise de' Faveri Tron
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -24,123 +24,168 @@
 #include "Events.h"
 #include "Topics.h"
 #include <events/EventBroker.h>
+#include <boards/Nosecone/Status/StatusManager.h>
+#include <boards/Nosecone/Canbus/CanImpl.h>
 
-using rena  = miosix::Gpio<GPIOG_BASE, 2>;
 using namespace miosix;
-using namespace interfaces;
-using namespace actuators;
+using namespace CanInterfaces;
 
 namespace NoseconeBoard
 {
 
-NoseconeManager::NoseconeManager() : FSM(&NoseconeManager::state_idle)
-{ }
+NoseconeManager::NoseconeManager() : FSM(&NoseconeManager::state_idle), 
+                                     canMgr(CAN1)
+{
+    /* Set intial status */
+    uint8_t initStatus[sizeof(NoseconeBoardStatus)] = {0}; 
+    status.setStatus(NOSECONE_STATUS_BYTE, initStatus, sizeof(NoseconeBoardStatus)); 
 
+    /* Initialise canbus thread to receive external commands */
+    initCanbus(canMgr, status);
 
+    /* Initialize motor driver */
+    motor = new MotorDriver(&pinObs, &status);
+
+    /* Start observing motor limit pins */
+    pinObs.start();
+}
+
+/**
+ * From idle you can either open or close, in any order you desire.
+ */
 void NoseconeManager::state_idle(const Event& e)
 {
     switch (e.sig)
     {
         case EV_ENTRY:
-            printf("IDLE state entry\n");
-            motor.stop();
-            printf("Disabled\n");
+            TRACE("IDLE state entry\n");
+            motor->stop();
             break;
 
         case EV_EXIT:
-            printf("IDLE state exit\n");
+            TRACE("IDLE state exit\n");
             break;
 
         case EV_OPEN:
-            printf("IDLE state received EV_OPEN\n");
+            TRACE("IDLE state received EV_OPEN\n");
             transition(&NoseconeManager::state_opening);
             break;
 
         case EV_CLOSE:
-            printf("IDLE state received EV_CLOSE\n");
+            TRACE("IDLE state received EV_CLOSE\n");
             transition(&NoseconeManager::state_closing);
             break;
 
-        case EV_GET_STATUS:
-            printf("IDLE state received EV_STATUS\n");
-            break;
-
         default:
-            printf("Unknown event received.\n");
+            TRACE("Unknown event received.\n");
             break;
     }
 }
 
-
+/**
+ * From opening you can only go back to idle. This can be caused by:
+ * - motor limit reached (nominal case)
+ * - manual stop command
+ * - timeout (worst case)
+ * The corresponding flag is raised in all three cases, and reset on state entry.
+ */
 void NoseconeManager::state_opening(const Event& e)
 {
     switch (e.sig)
     {
         case EV_ENTRY:
-            printf("OPENING\n");
-            motor.start(MotorDirection::NORMAL_DIRECTION, OPENING_DUTY_CYCLE);
-            sEventBroker->postDelayed(Event{EV_TIMER_EXPIRED}, TOPIC_NOSECONE, 10000);
+            TRACE("[OPENING] entering\n");
+            motor->start(MotorDirection::NORMAL_DIRECTION, OPENING_DUTY_CYCLE);
+            delayedId = sEventBroker->postDelayed(Event{EV_TIMER_EXPIRED}, TOPIC_NOSECONE, 15000);
+
+            /* Clear status bits */
+            status.setStatusBit(OPEN_TIMEOUT_BYTE_OFFSET, OPEN_TIMEOUT_BIT_OFFSET, false);
+            status.setStatusBit(OPEN_STOP_BYTE_OFFSET, OPEN_STOP_BIT_OFFSET, false);
+            status.setStatusBit(OPEN_LIMIT_BYTE_OFFSET, OPEN_LIMIT_BIT_OFFSET, false);
+            /* Set open received bit */
+            status.setStatusBit(OPEN_RECEIVED_BYTE_OFFSET, OPEN_RECEIVED_BIT_OFFSET, true);
             break;
 
         case EV_EXIT:
-            printf("[OPENING] exiting\n");
+            sEventBroker->removeDelayed(delayedId);
+            TRACE("[OPENING] exiting\n");
             break;
-
-        case EV_TIMER_EXPIRED:
-            printf("[OPEN] received EV_TIMER_EXPIRED\n");
+        
+        case EV_STOP:
+            TRACE("[OPENING] received EV_STOP\n");
+            status.setStatusBit(OPEN_STOP_BYTE_OFFSET, OPEN_STOP_BIT_OFFSET, true);
             transition(&NoseconeManager::state_idle);
             break;
 
-        case EV_NC_STOP:
-            printf("[OPEN] received EV_NC_STOP\n");
+        case EV_TIMER_EXPIRED:
+            TRACE("[OPENING] received EV_TIMER_EXPIRED\n");
+            status.setStatusBit(OPEN_TIMEOUT_BYTE_OFFSET, OPEN_TIMEOUT_BIT_OFFSET, true);
             transition(&NoseconeManager::state_idle);
             break;
 
         case EV_MOTOR_LIMIT:
-            printf("[OPEN] received EV_MOTOR_LIMIT\n");
+            TRACE("[OPENING] received EV_MOTOR_LIMIT\n");
+            status.setStatusBit(OPEN_LIMIT_BYTE_OFFSET, OPEN_LIMIT_BIT_OFFSET, true);
             transition(&NoseconeManager::state_idle);
             break;
 
         default:
-            printf("Unknown event received.\n");
+            TRACE("Unknown event received.\n");
             break;
     }
 }
 
-
+/**
+ * From closing you can only go back to idle. This can be caused by:
+ * - motor limit reached (nominal case)
+ * - manual stop command
+ * - timeout (worst case)
+ * The corresponding flag is raised in all three cases, and reset on state entry.
+ */
 void NoseconeManager::state_closing(const Event& e)
 {
-  switch (e.sig)
-  {
-      case EV_ENTRY:
-          printf("[CLOSING] state entry\n");
-          motor.start(MotorDirection::REVERSE_DIRECTION, CLOSING_DUTY_CYCLE);
-          sEventBroker->postDelayed(Event{EV_TIMER_EXPIRED}, TOPIC_NOSECONE, 10000);
-          break;
+    switch (e.sig)
+    {
+        case EV_ENTRY:
+            TRACE("[CLOSING] entering\n");
+            motor->start(MotorDirection::REVERSE_DIRECTION, CLOSING_DUTY_CYCLE);
+            delayedId = sEventBroker->postDelayed(Event{EV_TIMER_EXPIRED}, TOPIC_NOSECONE, 15000);
 
-      case EV_EXIT:
-          printf("[CLOSING] exiting\n");
-          break;
+            /* Clear status bits */
+            status.setStatusBit(OPEN_TIMEOUT_BYTE_OFFSET, OPEN_TIMEOUT_BIT_OFFSET, false);
+            status.setStatusBit(OPEN_STOP_BYTE_OFFSET, OPEN_STOP_BIT_OFFSET, false);
+            status.setStatusBit(OPEN_LIMIT_BYTE_OFFSET, OPEN_LIMIT_BIT_OFFSET, false);
+            /* Set close received bit */
+            status.setStatusBit(OPEN_RECEIVED_BYTE_OFFSET, OPEN_RECEIVED_BIT_OFFSET, true);
+            break;
 
-      case EV_TIMER_EXPIRED:
-          printf("[CLOSING] received EV_TIMER_EXPIRED\n");
-          transition(&NoseconeManager::state_idle);
-          break;
+        case EV_EXIT:
+            sEventBroker->removeDelayed(delayedId);
+            TRACE("[CLOSING] exiting\n");
+            break;
+        
+        case EV_STOP:
+            TRACE("[CLOSING] received EV_STOP\n");
+            status.setStatusBit(OPEN_STOP_BYTE_OFFSET, OPEN_STOP_BIT_OFFSET, true);
+            transition(&NoseconeManager::state_idle);
+            break;
 
-      case EV_NC_STOP:
-          printf("[CLOSING] received EV_NC_STOP\n");
-          transition(&NoseconeManager::state_idle);
-          break;
+        case EV_TIMER_EXPIRED:
+            TRACE("[CLOSING] received EV_TIMER_EXPIRED\n");
+            status.setStatusBit(OPEN_TIMEOUT_BYTE_OFFSET, OPEN_TIMEOUT_BIT_OFFSET, true);
+            transition(&NoseconeManager::state_idle);
+            break;
 
-      case EV_MOTOR_LIMIT:
-          printf("[CLOSING] received EV_MOTOR_LIMIT\n");
-          transition(&NoseconeManager::state_idle);
-          break;
+        case EV_MOTOR_LIMIT:
+            TRACE("[CLOSING] received EV_MOTOR_LIMIT\n");
+            status.setStatusBit(OPEN_LIMIT_BYTE_OFFSET, OPEN_LIMIT_BIT_OFFSET, true);
+            transition(&NoseconeManager::state_idle);
+            break;
 
-      default:
-          printf("Unknown event received.\n");
-          break;
-  }
+        default:
+            TRACE("Unknown event received.\n");
+            break;
+    }
 }
 
-} // namespace NoseconeBoard
+} /* namespace NoseconeBoard */

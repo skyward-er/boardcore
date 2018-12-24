@@ -1,5 +1,5 @@
-/* Copyright (c) 2015-2018 Skyward Experimental Rocketry
- * Authors: Benedetta Margrethe Cattani, Alvise de' Faveri Tron
+/* Copyright (c) 2018 Skyward Experimental Rocketry
+ * Authors: Alvise de' Faveri Tron
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -19,42 +19,51 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
-#pragma once
 
-#include "Motor/MotorDriver.h"
-#include "Status/StatusManager.h"
+#include "StatusManager.h"
 
-#include "Events.h"
-#include "events/FSM.h"
-#include <drivers/canbus/CanManager.h>
-#include <PinObserver.h>
+using namespace CanInterfaces;
 
-
-namespace NoseconeBoard
-{
-/**
- * Implementation of the Nosecone Manager Finite State Machine
- */
-class NoseconeManager : public FSM<NoseconeManager>
+namespace NoseconeBoard 
 {
 
-public:
-    NoseconeManager();
-    ~NoseconeManager() {}
 
-    CanManager canMgr;
-    StatusManager status;
-    PinObserver pinObs;
+void StatusManager::getStatus(NoseconeBoardStatus* buff)
+{
+    miosix::FastInterruptDisableLock dLock;
+    memcpy(buff, &noseconeStatus_g, sizeof(NoseconeBoardStatus));
+}
 
-private:
-    uint16_t delayedId;
-    MotorDriver* motor;
 
-    /* States declarations */
-    void state_idle(const Event& e);
-    void state_opening(const Event& e);
-    void state_closing(const Event& e);
+bool StatusManager::setStatus(uint8_t offset, uint8_t* buff, uint8_t len)
+{
+    if(offset + len > sizeof(NoseconeBoardStatus)) 
+        return false;
 
-};
+    {
+        miosix::FastInterruptDisableLock dLock;
+        memcpy(reinterpret_cast<uint8_t*>(&noseconeStatus_g) + offset, buff, len);
+    }
+
+    return true;
+}
+
+
+bool StatusManager::setStatusBit(uint8_t byteOffset, uint8_t bitOffset, bool value)
+{
+    if(bitOffset >= 8 || byteOffset >= sizeof(NoseconeBoardStatus)) 
+        return false;
+
+    uint8_t* paramPtr = reinterpret_cast<uint8_t*>(&noseconeStatus_g) + byteOffset;
+
+    miosix::FastInterruptDisableLock dLock;
+    if(value) {
+        *paramPtr |= 1<<bitOffset;
+    } else {
+        *paramPtr &= ~(1<<bitOffset);
+    }
+
+    return true;
+}
 
 }
