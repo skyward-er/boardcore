@@ -68,12 +68,11 @@ struct __attribute__((packed)) IgnitionBoardStatus
 
 struct __attribute__((packed)) NoseconeBoardStatus
 {
-    // Byte 0
     uint8_t motor_active: 1;          
     uint8_t motor_last_direction: 1;  // if active=true means current direction
     uint8_t homeone_not_connected: 1;
     uint8_t padding: 5;
-    // Byte 1
+    
     uint8_t close_received: 1; // received at least a close command
     uint8_t close_timeout: 1;  // last close terminated for a timeout
     uint8_t close_stop: 1;     // last close terminated for a stop command
@@ -82,11 +81,9 @@ struct __attribute__((packed)) NoseconeBoardStatus
     uint8_t open_timeout: 1;  // last open terminated for a timeout
     uint8_t open_stop: 1;     // last open terminated for a stop command
     uint8_t open_limit: 1;    // last open terminated with motor limit event
-    // Byte 2
+
     uint16_t max_current_sensed;
-    // Byte 4
     uint16_t min_current_sensed;
-    // Byte 6
     uint16_t last_current_sensed;
 };
 

@@ -22,7 +22,6 @@
 #pragma once
 
 #include "Motor/MotorDriver.h"
-#include "Status/StatusManager.h"
 
 #include "Events.h"
 #include "events/FSM.h"
@@ -43,7 +42,6 @@ public:
     ~NoseconeManager() {}
 
     CanManager canMgr;
-    StatusManager status;
     PinObserver pinObs;
 
 private:

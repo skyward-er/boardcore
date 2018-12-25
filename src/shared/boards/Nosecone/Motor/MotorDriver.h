@@ -24,9 +24,9 @@
 
 #include <Common.h>
 #include "MotorConfig.h"
+#include "MotorSensor.h"
 
 #include <events/EventBroker.h>
-#include <boards/Nosecone/Status/StatusManager.h>
 #include <PinObserver.h>
 
 namespace NoseconeBoard
@@ -44,7 +44,7 @@ public:
      * 
      * @param pinObs    needed to observe the motor limit pins (finecorsa) 
      */
-    MotorDriver(PinObserver* pinObs, StatusManager* status);
+    MotorDriver(PinObserver* pinObs);
 
     /**
      * @brief Class destructor.
@@ -68,8 +68,8 @@ public:
 
 private:
     PWM pwm;
+    MotorSensor sensor;
     bool active;
-    StatusManager* status;
 };
 
 } /* namespace  */

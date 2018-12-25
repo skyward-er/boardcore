@@ -25,8 +25,6 @@
 #include <drivers/canbus/CanManager.h>
 #include <drivers/canbus/CanUtils.h>
 
-#include <boards/Nosecone/Status/StatusManager.h>
-
 namespace NoseconeBoard
 {
 
@@ -35,9 +33,8 @@ namespace NoseconeBoard
  *
  * @param message  message to be handled
  * @param c        manager to send back responses
- * @param status   status to modify
  */
-void canRcv(CanMsg message, CanManager* c, StatusManager* status);
+void canRcv(CanMsg message, CanManager* c);
 
 
 
@@ -45,6 +42,6 @@ void canRcv(CanMsg message, CanManager* c, StatusManager* status);
  * @brief Initialise CAN1 on PA11, PA12, set filter and receiver function.
  * 
  */
-void initCanbus(CanManager& c, StatusManager& status);
+void initCanbus(CanManager& c);
 
 } /* namespace NoseconeBoard */
