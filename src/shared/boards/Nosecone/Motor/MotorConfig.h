@@ -44,7 +44,7 @@ static const PWM::Timer MOTOR_TIM {
     &(RCC->APB1ENR), 
     RCC_APB1ENR_TIM4EN,
     TimerUtils::getPrescalerInputFrequency(TimerUtils::InputClock::APB1)
-    };
+};
 
 /* Pins definition */
 static const PWMChannel MOTOR_CH_RIGHT = PWMChannel::CH1; // PD12
@@ -53,10 +53,10 @@ typedef miosix::actuators::hbridger::ena RightEnable;     // PG2
 typedef miosix::actuators::hbridgel::ena LeftEnable;      // PD11
 
 /* Finecorsa */
-static constexpr unsigned int  r_end_port = GPIOG_BASE;
-static const unsigned char r_end_pin = 11;
-static constexpr unsigned int  l_end_port = GPIOG_BASE;
-static const unsigned char l_end_pin = 12;
+static const unsigned int  r_end_port = GPIOG_BASE;
+static const unsigned char r_end_pin = 6;
+static const unsigned int  l_end_port = GPIOG_BASE;
+static const unsigned char l_end_pin = 7;
 typedef miosix::Gpio<r_end_port, r_end_pin> RightMotorEnd;
 typedef miosix::Gpio<l_end_port, l_end_pin> LeftMotorEnd;
 

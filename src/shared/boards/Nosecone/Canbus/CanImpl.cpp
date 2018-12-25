@@ -25,6 +25,7 @@
 #include <boards/CanInterfaces.h>
 #include <boards/Nosecone/Events.h>
 #include <boards/Nosecone/Topics.h>
+#include <boards/Nosecone/Status/NoseconeStatus.h>
 
 #include <events/EventBroker.h>
 
@@ -36,12 +37,12 @@ namespace NoseconeBoard
 /**
  * Canbus receiving function.
  */
-void canRcv(CanMsg message, CanManager* c, StatusManager* status) 
+void canRcv(CanMsg message, CanManager* c) 
 {
 
     TRACE("[CAN] Received message with id %lu\n", message.StdId);
 
-    if (message.StdId == CanInterfaces::CAN_TOPIC_HOMEONE)
+    if (message.StdId == CAN_TOPIC_HOMEONE)
     {
         switch(message.Data[0]) 
         {
@@ -61,7 +62,7 @@ void canRcv(CanMsg message, CanManager* c, StatusManager* status)
             {
                 /* Retrieve and send status */
                 NoseconeBoardStatus st;
-                status->getStatus(&st);
+                getNoseconeStatus(&st);
                 canSendNoseconeStatus(c->getBus(0), st);
 
                 /* Reset timer */
@@ -80,19 +81,19 @@ void canRcv(CanMsg message, CanManager* c, StatusManager* status)
 }
 
 
-void initCanbus(CanManager& c, StatusManager& status)
+void initCanbus(CanManager& c)
 {
     using namespace std::placeholders;
 
     /* Subscribe to homeone commands */
-    c.addHWFilter(CanInterfaces::CAN_TOPIC_HOMEONE, 0);
+    c.addHWFilter(CAN_TOPIC_HOMEONE, 0);
 
     /* Create init structure */
     canbus_init_t st = {
         CAN1, miosix::Mode::ALTERNATE, 9, {CAN1_RX0_IRQn, CAN1_RX1_IRQn}};
  
-    /* Bind the receiving function to a bus and a StatusManager (see std::bind reference) */
-    auto dispatch = std::bind(canRcv, _1, &c, &status);
+    /* Bind the receiving function to a bus (see std::bind reference) */
+    auto dispatch = std::bind(canRcv, _1, &c);
 
     /* Init bus */
     c.addBus<GPIOA_BASE, 11, 12>(st, dispatch);

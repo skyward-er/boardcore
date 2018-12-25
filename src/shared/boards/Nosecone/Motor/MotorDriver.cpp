@@ -25,9 +25,11 @@
 
 #include <boards/Nosecone/Events.h>
 #include <boards/Nosecone/Topics.h>
+#include <boards/Nosecone/Status/NoseconeStatus.h>
+
+#define UNUSED(x) (void)(x)
 
 using namespace miosix;
-using namespace CanInterfaces;
 
 namespace NoseconeBoard
 {
@@ -36,17 +38,19 @@ namespace NoseconeBoard
  * whenever the limit is reached.
  */
 void r_finecorsaHandler(unsigned int p, unsigned char c) {
+    UNUSED(p);
+    UNUSED(c);
     sEventBroker->post(Event{EV_MOTOR_LIMIT}, TOPIC_NOSECONE);
 }
 
 void l_finecorsaHandler(unsigned int p, unsigned char c) {
+    UNUSED(p);
+    UNUSED(c);
     sEventBroker->post(Event{EV_MOTOR_LIMIT}, TOPIC_NOSECONE);
 }
 
 
-MotorDriver::MotorDriver(PinObserver* pinObs, StatusManager* status): 
-                pwm(MOTOR_TIM, MOTOR_PWM_FREQUENCY),
-                status(status)
+MotorDriver::MotorDriver(PinObserver* pinObs): pwm(MOTOR_TIM, MOTOR_PWM_FREQUENCY)
 {
     RightEnable::low();
     LeftEnable::low();
@@ -64,9 +68,11 @@ MotorDriver::MotorDriver(PinObserver* pinObs, StatusManager* status):
     pinObs->observePin(l_end_port, l_end_pin, PinObserver::Trigger::FALLING_EDGE, 
                             l_finecorsaHandler);
 
-    /* Set motor status bytes to 0 */
-    uint8_t initStatus = 0; 
-    status->setStatus(MOTOR_STATUS_BYTE, &initStatus, sizeof(uint8_t)); 
+    /* Set motor status */
+    status_g.motor_active = 0;
+
+    /* Start sensing hbrige current */
+    sensor.start();
 }
 
 MotorDriver::~MotorDriver()
@@ -78,10 +84,7 @@ MotorDriver::~MotorDriver()
 bool MotorDriver::start(MotorDirection direction, float dutyCycle)
 {   
     /* Read from status if the motor is active */
-    NoseconeBoardStatus st;
-    status->getStatus(&st);
-
-    if(st.motor_active) 
+    if(status_g.motor_active.load() == true) 
         return false;
 
     /* If it's not active, check the direction */
@@ -98,16 +101,15 @@ bool MotorDriver::start(MotorDirection direction, float dutyCycle)
                                                         PWMPolarity::ACTIVE_LOW);
         pwm.enableChannel(MOTOR_CH_LEFT,  dutyCycle, PWMMode::MODE_1, 
                                                         PWMPolarity::ACTIVE_HIGH);
-    };
+    }
     
     /* Activate PWM on both half bridges */
     RightEnable::high();
     LeftEnable::high();
 
     /* Update status */
-    status->setStatusBit(MOTOR_LAST_DIRECTION_BYTE_OFFSET, 
-                                    MOTOR_LAST_DIRECTION_BIT_OFFSET,  dir);
-    status->setStatusBit(MOTOR_ACTIVE_BYTE_OFFSET, MOTOR_ACTIVE_BIT_OFFSET, true);
+    status_g.motor_active = 1;
+    status_g.motor_active = dir;
 
     return true;
 }
@@ -122,7 +124,7 @@ void MotorDriver::stop()
     RightEnable::low();  // Disable hbridge
     LeftEnable::low(); 
 
-    status->setStatusBit(MOTOR_ACTIVE_BYTE_OFFSET, MOTOR_ACTIVE_BIT_OFFSET, false);
+    status_g.motor_active = 0;
 }
 
 }

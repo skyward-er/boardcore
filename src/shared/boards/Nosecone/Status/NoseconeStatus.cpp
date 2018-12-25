@@ -16,54 +16,35 @@
  * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.  IN NO EVENT SHALL THE
  * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
  * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
- * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+ * OUT OF OR IN CONNECTION\ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
+#include "NoseconeStatus.h"
 
-#include "StatusManager.h"
-
-using namespace CanInterfaces;
 
 namespace NoseconeBoard 
 {
 
 
-void StatusManager::getStatus(NoseconeBoardStatus* buff)
+/* Getter */
+void getNoseconeStatus(CanInterfaces::NoseconeBoardStatus* status) 
 {
-    miosix::FastInterruptDisableLock dLock;
-    memcpy(buff, &noseconeStatus_g, sizeof(NoseconeBoardStatus));
+    status->motor_active          = status_g.motor_active;        
+    status->motor_last_direction  = status_g.motor_last_direction;
+    status->homeone_not_connected = status_g.homeone_not_connected;
+
+    status->close_received = status_g.close_received;
+    status->close_timeout  = status_g.close_timeout;
+    status->close_stop     = status_g.close_stop;
+    status->close_limit    = status_g.close_limit;
+    status->open_received  = status_g.open_received;
+    status->open_timeout   = status_g.open_timeout;
+    status->open_stop      = status_g.open_stop;
+    status->open_limit     = status_g.open_limit;
+
+    status->max_current_sensed  = status_g.max_current_sensed;
+    status->min_current_sensed  = status_g.min_current_sensed;
+    status->last_current_sensed = status_g.last_current_sensed;
 }
 
-
-bool StatusManager::setStatus(uint8_t offset, uint8_t* buff, uint8_t len)
-{
-    if(offset + len > sizeof(NoseconeBoardStatus)) 
-        return false;
-
-    {
-        miosix::FastInterruptDisableLock dLock;
-        memcpy(reinterpret_cast<uint8_t*>(&noseconeStatus_g) + offset, buff, len);
-    }
-
-    return true;
-}
-
-
-bool StatusManager::setStatusBit(uint8_t byteOffset, uint8_t bitOffset, bool value)
-{
-    if(bitOffset >= 8 || byteOffset >= sizeof(NoseconeBoardStatus)) 
-        return false;
-
-    uint8_t* paramPtr = reinterpret_cast<uint8_t*>(&noseconeStatus_g) + byteOffset;
-
-    miosix::FastInterruptDisableLock dLock;
-    if(value) {
-        *paramPtr |= 1<<bitOffset;
-    } else {
-        *paramPtr &= ~(1<<bitOffset);
-    }
-
-    return true;
-}
-
-}
+} /* namespace NoseconeBoard */

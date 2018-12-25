@@ -4,7 +4,9 @@
 #include <boards/Nosecone/Events.h>
 #include <boards/Nosecone/Topics.h>
 
-#include <boards/Nosecone/Status/StatusManager.h>
+#include <boards/Nosecone/Status/NoseconeStatus.h>
+#include <boards/CanInterfaces.h>
+
 
 using namespace NoseconeBoard;
 using namespace miosix;
@@ -63,7 +65,7 @@ int main()
             case 'r': 
             {
                 NoseconeBoardStatus status;
-                mgr->status.getStatus(&status);
+                getNoseconeStatus(&status);
 
                 TRACE("Status:\n");
                 for(unsigned int i = 0; i < sizeof(NoseconeBoardStatus); i++)
@@ -77,7 +79,7 @@ int main()
                 TRACE("Unknown option\n");
                 break;
         }
-        
+
         #else
         miosix::Thread::sleep(1000);
         #endif
