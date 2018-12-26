@@ -52,14 +52,6 @@ static const PWMChannel MOTOR_CH_LEFT  = PWMChannel::CH2; // PD13
 typedef miosix::actuators::hbridger::ena RightEnable;     // PG2
 typedef miosix::actuators::hbridgel::ena LeftEnable;      // PD11
 
-/* Finecorsa */
-static const unsigned int  r_end_port = GPIOG_BASE;
-static const unsigned char r_end_pin = 6;
-static const unsigned int  l_end_port = GPIOG_BASE;
-static const unsigned char l_end_pin = 7;
-typedef miosix::Gpio<r_end_port, r_end_pin> RightMotorEnd;
-typedef miosix::Gpio<l_end_port, l_end_pin> LeftMotorEnd;
-
 /* PWM Frequency & duty-cycle */
 static const unsigned int MOTOR_PWM_FREQUENCY = 150;
 static constexpr float OPENING_DUTY_CYCLE = 0.5f;
