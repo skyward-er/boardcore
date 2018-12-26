@@ -29,13 +29,13 @@
 
 #include <boards/Nosecone/Status/NoseconeStatus.h>
 
-// typedef miosix::Gpio<GPIOF_BASE, 8> sensor_l;
-typedef miosix::Gpio<GPIOF_BASE, 6> sensor;
-
-using ADC_t = SensorADC<1, 5, sensor>;
-
 namespace NoseconeBoard
 {
+
+// typedef miosix::Gpio<GPIOF_BASE, 8> sensor_l;
+typedef miosix::Gpio<GPIOF_BASE, 6> hbridge_current_sensor;
+
+using ADC_t = SensorADC<1, 5, hbridge_current_sensor>;
 
 static const int SAMPLE_FREQ   = 10;
 static const int SAMPLE_PERIOD = 1000 / SAMPLE_FREQ;
@@ -54,6 +54,9 @@ public:
      */
     MotorSensor() 
     {
+        status_g.max_current_sensed = 0;
+        status_g.min_current_sensed = 0xFFFF;
+
         adc.init(); 
     }
 

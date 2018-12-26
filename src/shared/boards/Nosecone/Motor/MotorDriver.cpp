@@ -21,59 +21,43 @@
  * THE SOFTWARE.
  */
 #include <Common.h>
-#include "MotorDriver.h"
+#include <events/EventBroker.h>
 
 #include <boards/Nosecone/Events.h>
 #include <boards/Nosecone/Topics.h>
 #include <boards/Nosecone/Status/NoseconeStatus.h>
 
-#define UNUSED(x) (void)(x)
+#include "MotorDriver.h"
+#include "MotorLimit.h"
 
 using namespace miosix;
 
 namespace NoseconeBoard
 {
-/**
- * These handlers are used by the pinObserver to post an event
- * whenever the limit is reached.
- */
-void r_finecorsaHandler(unsigned int p, unsigned char c) {
-    UNUSED(p);
-    UNUSED(c);
-    sEventBroker->post(Event{EV_MOTOR_LIMIT}, TOPIC_NOSECONE);
-}
-
-void l_finecorsaHandler(unsigned int p, unsigned char c) {
-    UNUSED(p);
-    UNUSED(c);
-    sEventBroker->post(Event{EV_MOTOR_LIMIT}, TOPIC_NOSECONE);
-}
 
 
 MotorDriver::MotorDriver(PinObserver* pinObs): pwm(MOTOR_TIM, MOTOR_PWM_FREQUENCY)
 {
+    /* Set pins */
+    RightMotorEnd::mode(Mode::OUTPUT);
+    LeftMotorEnd::mode(Mode::OUTPUT);
     RightEnable::low();
     LeftEnable::low();
-    RightMotorEnd::mode(Mode::INPUT);
-    LeftMotorEnd::mode(Mode::INPUT);
-
     /* Start PWM with 0 duty cycle to keep IN pins low */
     pwm.enableChannel(MOTOR_CH_RIGHT, 0.0f);
     pwm.enableChannel(MOTOR_CH_LEFT,  0.0f);
     pwm.start();
 
-    /* Assign handlers for the motor limit pins */
-    pinObs->observePin(r_end_port, r_end_pin, PinObserver::Trigger::FALLING_EDGE, 
-                            r_finecorsaHandler);
-    pinObs->observePin(l_end_port, l_end_pin, PinObserver::Trigger::FALLING_EDGE, 
-                            l_finecorsaHandler);
+    /* Start observing motor limit pins */
+    MotorLimit::observeLimitPins(pinObs);
 
-    /* Set motor status */
+    /* Start sampling motor current */
+    currentSensor.start();
+
+    /* Set status */
     status_g.motor_active = 0;
-
-    /* Start sensing hbrige current */
-    sensor.start();
 }
+
 
 MotorDriver::~MotorDriver()
 {

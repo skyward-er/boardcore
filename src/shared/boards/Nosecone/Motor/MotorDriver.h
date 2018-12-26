@@ -26,7 +26,6 @@
 #include "MotorConfig.h"
 #include "MotorSensor.h"
 
-#include <events/EventBroker.h>
 #include <PinObserver.h>
 
 namespace NoseconeBoard
@@ -68,7 +67,7 @@ public:
 
 private:
     PWM pwm;
-    MotorSensor sensor;
+    MotorSensor currentSensor;
     bool active;
 };
 
