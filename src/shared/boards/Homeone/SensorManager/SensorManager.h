@@ -29,7 +29,7 @@
 
 #include "boards/Homeone/configs/SensorManagerConfig.h"
 #include "events/FSM.h"
-#include "logger/LogProxy.h"
+#include <boards/Homeone/LogProxy/LogProxy.h>
 #include "sensors/SensorSampling.h"
 
 #include "SensorManagerData.h"
