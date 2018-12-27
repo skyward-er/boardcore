@@ -36,7 +36,7 @@ int main()
     while (true)
     {
         uint32_t tick = timer2.tick();
-        printf("%d\t\t(%.3f)\n", tick, timer2.toMilliSeconds(tick));
+        printf("%lu\t\t(%.3f)\n", tick, timer2.toMilliSeconds(tick));
 
         usleep(100000);
     }
