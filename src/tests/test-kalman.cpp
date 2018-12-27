@@ -30,7 +30,7 @@ using namespace miosix;
 typedef miosix::Gpio<GPIOG_BASE, 13> greenLed;
 typedef miosix::Gpio<GPIOG_BASE, 14> redLed;
 
-int main(int argc, char const *argv[]) {
+int main() {
     {
         FastInterruptDisableLock dLock;
         greenLed::mode(Mode::OUTPUT);
@@ -82,7 +82,7 @@ int main(int argc, char const *argv[]) {
     timer.start();
     uint32_t tick1;
     uint32_t tick2;
-    for (int i = 0; i < timeArray.size(); i++) {
+    for (int i = 0; i < (int)timeArray.size(); i++) {
         if (i == 0) {
             filter.X.data[0] = zArray[0];
             continue;

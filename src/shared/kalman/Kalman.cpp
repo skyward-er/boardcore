@@ -10,7 +10,7 @@
 #include <iostream>
 
 Kalman::Kalman(Matrix P_init, Matrix R_init, Matrix Q_init, Matrix H_init)
-    : P(P_init), R(R_init), Q(Q_init), H(H_init), X(H_init.columns, 1),
+    : R(R_init), Q(Q_init), H(H_init), P(P_init), X(H_init.columns, 1),
       Phi(H.columns, H.columns)
 {
 }
