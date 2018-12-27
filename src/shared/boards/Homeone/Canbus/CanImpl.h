@@ -28,7 +28,6 @@
 
 #include "boards/CanInterfaces.h"
 #include "boards/Homeone/Events.h"
-#include "boards/Homeone/EventClasses.h"
 #include "boards/Homeone/Topics.h"
 
 #include <events/EventBroker.h>
@@ -41,7 +40,7 @@ namespace HomeoneBoard
  */
 void canRcv(CanMsg message) 
 {
-    TRACE("[CAN] Received message with id %d\n", message.DLC);
+    TRACE("[CAN] Received message with id %d\n", message.StdId);
 
     /* Create event */
     CanbusEvent ev;
