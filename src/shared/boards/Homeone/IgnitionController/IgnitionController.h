@@ -25,7 +25,7 @@
 #include "IgnitionStatus.h"
 #include "Singleton.h"
 #include "events/FSM.h"
-#include "logger/LogProxy.h"
+#include <boards/Homeone/LogProxy/LogProxy.h>
 #include "drivers/canbus/CanManager.h"
 #include "drivers/canbus/CanUtils.h"
 #include "boards/Homeone/EventClasses.h"

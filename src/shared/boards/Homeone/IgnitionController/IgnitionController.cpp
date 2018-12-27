@@ -52,7 +52,6 @@ bool IgnitionController::updateIgnBoardStatus(const Event& ev)
 
 void IgnitionController::stateIdle(const Event& ev)
 {
-    uint8_t buf[CAN_MAX_PAYLOAD];
 
     switch (ev.sig)
     {
@@ -75,9 +74,8 @@ void IgnitionController::stateIdle(const Event& ev)
 
         case EV_IGN_GETSTATUS:
         {
-            int len = CanInterfaces::canMsgSimple(
-                buf, CanInterfaces::CAN_MSG_REQ_IGN_STATUS);
-            canbus->send(CanInterfaces::CAN_TOPIC_HOMEONE, buf, len);
+            CanInterfaces::canSendHomeoneCommand(
+                            canbus, CanInterfaces::CAN_MSG_REQ_IGN_STATUS);
 
             ev_get_status_handle = sEventBroker->postDelayed(
                 {EV_IGN_GETSTATUS}, TOPIC_IGNITION, INTERVAL_IGN_GET_STATUS);
@@ -115,19 +113,14 @@ void IgnitionController::stateIdle(const Event& ev)
         case EV_GS_OFFLINE:
         case EV_TC_ABORT_LAUNCH:
         {
-            int len =
-                CanInterfaces::canMsgSimple(buf, CanInterfaces::CAN_MSG_ABORT);
-            
-            canbus->send(CanInterfaces::CAN_TOPIC_HOMEONE, buf, len);
+            CanInterfaces::canSendHomeoneCommand(canbus, CanInterfaces::CAN_MSG_ABORT);
             break;
         }
         case EV_LAUNCH:
         {
             const LaunchEvent& lev = static_cast<const LaunchEvent&>(ev);
 
-            int len = CanInterfaces::canMsgLaunch(buf, lev.launchCode);
-
-            canbus->send(CanInterfaces::CAN_TOPIC_HOMEONE, buf, len);
+            CanInterfaces::canSendLaunch(canbus, lev.launchCode);
             break;
         }
         default:
@@ -138,8 +131,6 @@ void IgnitionController::stateIdle(const Event& ev)
 
 void IgnitionController::stateAborted(const Event& ev)
 {
-    uint8_t buf[CAN_MAX_PAYLOAD];
-
     switch (ev.sig)
     {
         case EV_ENTRY:
@@ -155,20 +146,15 @@ void IgnitionController::stateAborted(const Event& ev)
 
         case EV_IGN_GETSTATUS:
         {
-            int len = CanInterfaces::canMsgSimple(
-                buf, CanInterfaces::CAN_MSG_REQ_IGN_STATUS);
-
-            canbus->send(CanInterfaces::CAN_TOPIC_HOMEONE, buf, len);
-
+            CanInterfaces::canSendHomeoneCommand(
+                            canbus, CanInterfaces::CAN_MSG_REQ_IGN_STATUS);
             break;
         }
         // Still handle the abort, just in case we want to send it again
         case EV_TC_ABORT_LAUNCH:
         {
-            int len =
-                CanInterfaces::canMsgSimple(buf, CanInterfaces::CAN_MSG_ABORT);
-            
-            canbus->send(CanInterfaces::CAN_TOPIC_HOMEONE, buf, len);
+            CanInterfaces::canSendHomeoneCommand(
+                            canbus, CanInterfaces::CAN_MSG_ABORT);
             break;
         }
 
