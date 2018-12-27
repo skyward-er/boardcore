@@ -19,32 +19,10 @@
  * OUT OF OR IN CONNECTION\ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
-#include "NoseconeStatus.h"
+#pragma once
 
-
-namespace NoseconeBoard 
+struct MotorStatus
 {
-
-
-/* Getter */
-void getNoseconeStatus(CanInterfaces::NoseconeBoardStatus* status) 
-{
-    status->motor_active          = status_g.motor_active;        
-    status->motor_last_direction  = status_g.motor_last_direction;
-    status->homeone_not_connected = status_g.homeone_not_connected;
-
-    status->close_received = status_g.close_received;
-    status->close_timeout  = status_g.close_timeout;
-    status->close_stop     = status_g.close_stop;
-    status->close_limit    = status_g.close_limit;
-    status->open_received  = status_g.open_received;
-    status->open_timeout   = status_g.open_timeout;
-    status->open_stop      = status_g.open_stop;
-    status->open_limit     = status_g.open_limit;
-
-    status->max_current_sensed  = status_g.max_current_sensed;
-    status->min_current_sensed  = status_g.min_current_sensed;
-    status->last_current_sensed = status_g.last_current_sensed;
-}
-
-} /* namespace NoseconeBoard */
+    bool motor_active;          
+    bool motor_last_direction;
+};

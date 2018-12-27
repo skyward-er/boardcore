@@ -1,25 +1,43 @@
-#include <boards/Nosecone/NoseconeManager.h>
+#include <boards/Nosecone/FSM/NoseconeManager.h>
 #include <events/EventBroker.h>
 
 #include <boards/Nosecone/Events.h>
 #include <boards/Nosecone/Topics.h>
 
-#include <boards/Nosecone/Status/NoseconeStatus.h>
+#include <boards/Nosecone/LogProxy/LogProxy.h>
 #include <boards/CanInterfaces.h>
+#include <boards/Nosecone/Canbus/CanImpl.h>
+#include <PinObserver.h>
 
 
 using namespace NoseconeBoard;
 using namespace miosix;
 using namespace CanInterfaces;
 
-NoseconeManager* mgr;
+PinObserver pinObs;
+MotorDriver motor(&pinObs);
+
+CanManager canMgr(CAN1);
+NoseconeManager noseconeMgr(motor);
+LoggerProxy* logger;
+
+void noseconeInit()
+{
+    /* Global environment */
+    sEventBroker->start();
+    logger = Singleton<LoggerProxy>::getInstance();
+
+    /* Canbus management */
+    CanImpl::initCanbus(canMgr);
+
+    /* Active Objects */
+    pinObs.start();
+    noseconeMgr.start();
+}
 
 int main()
 {
-    /* Manager starts everything else: motor, canbus, pinObserver ... */
-    mgr = new NoseconeManager();
-    mgr->start();
-    sEventBroker->start();
+    noseconeInit();
 
     TRACE("-----NOSECONE TEST---------\n");
     TRACE("  o - open\n");
@@ -64,8 +82,7 @@ int main()
 
             case 'r': 
             {
-                NoseconeBoardStatus status;
-                getNoseconeStatus(&status);
+                NoseconeBoardStatus status = logger->getNoseconeStatus();
 
                 TRACE("Status:\n");
                 for(unsigned int i = 0; i < sizeof(NoseconeBoardStatus); i++)

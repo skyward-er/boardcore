@@ -25,7 +25,6 @@
 
 #include <boards/Nosecone/Events.h>
 #include <boards/Nosecone/Topics.h>
-#include <boards/Nosecone/Status/NoseconeStatus.h>
 
 #include "MotorDriver.h"
 #include "MotorLimit.h"
@@ -38,11 +37,12 @@ namespace NoseconeBoard
 
 MotorDriver::MotorDriver(PinObserver* pinObs): pwm(MOTOR_TIM, MOTOR_PWM_FREQUENCY)
 {
-    /* Set pins */
-    RightMotorEnd::mode(Mode::OUTPUT);
-    LeftMotorEnd::mode(Mode::OUTPUT);
+    /* Enable pins */
+    RightEnable::mode(Mode::OUTPUT);
+    LeftEnable::mode(Mode::OUTPUT);
     RightEnable::low();
     LeftEnable::low();
+    
     /* Start PWM with 0 duty cycle to keep IN pins low */
     pwm.enableChannel(MOTOR_CH_RIGHT, 0.0f);
     pwm.enableChannel(MOTOR_CH_LEFT,  0.0f);
@@ -55,7 +55,8 @@ MotorDriver::MotorDriver(PinObserver* pinObs): pwm(MOTOR_TIM, MOTOR_PWM_FREQUENC
     currentSensor.start();
 
     /* Set status */
-    status_g.motor_active = 0;
+    status.motor_active = 0;
+    log();
 }
 
 
@@ -68,7 +69,7 @@ MotorDriver::~MotorDriver()
 bool MotorDriver::start(MotorDirection direction, float dutyCycle)
 {   
     /* Read from status if the motor is active */
-    if(status_g.motor_active.load() == true) 
+    if(status.motor_active == true) 
         return false;
 
     /* If it's not active, check the direction */
@@ -92,8 +93,9 @@ bool MotorDriver::start(MotorDirection direction, float dutyCycle)
     LeftEnable::high();
 
     /* Update status */
-    status_g.motor_active = 1;
-    status_g.motor_active = dir;
+    status.motor_active = true;
+    status.motor_last_direction = dir;
+    log();
 
     return true;
 }
@@ -108,7 +110,8 @@ void MotorDriver::stop()
     RightEnable::low();  // Disable hbridge
     LeftEnable::low(); 
 
-    status_g.motor_active = 0;
+    status.motor_active = false;
+    log();
 }
 
 }

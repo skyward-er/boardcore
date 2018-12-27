@@ -27,7 +27,9 @@
 #include "ActiveObject.h"
 #include "drivers/adc/ADC.h"
 
-#include <boards/Nosecone/Status/NoseconeStatus.h>
+#include "CurrentStatus.h"
+
+#include <boards/Nosecone/LogProxy/LogProxy.h>
 
 namespace NoseconeBoard
 {
@@ -52,44 +54,29 @@ public:
     /**
      * @brief Init ADC to read the current value.
      */
-    MotorSensor() 
-    {
-        status_g.max_current_sensed = 0;
-        status_g.min_current_sensed = 0xFFFF;
-
-        adc.init(); 
-    }
+    MotorSensor();
 
     /**
      * @brief Helper function to convert raw adc value, for debug pourposes.
      */
-    float adcToI(uint16_t adc_in)
-    {
-        float v    = (adc_in * 3.3f) / 4096;
-        float iout = v / 525;
-        return (iout - 0.000030) * 10000;
-    }
+    float adcToI(uint16_t adc_in);
 
 protected:
     /**
      * @brief Sensor sampling function, inherited from ActiveObject. 
      */
-    void run() override
+    void run() override;
+
+private:
+    CurrentStatus status;
+
+    /**
+     * @brief Save the status.
+     */
+    inline void log()
     {
-        /* Sample sensor */
-        adc.updateParams();
-        uint16_t adcval = adc.getValue();
-
-        /* Update global status */
-        if(adcval > status_g.max_current_sensed)
-            status_g.max_current_sensed = adcval;
-
-        if(adcval < status_g.min_current_sensed)
-            status_g.min_current_sensed = adcval;
-
-        status_g.last_current_sensed = adcval;
+        Singleton<LoggerProxy>::getInstance()->log(status);
     }
-
 };
 
 } /* namespace NoseconeBoard */
