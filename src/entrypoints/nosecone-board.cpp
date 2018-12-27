@@ -1,80 +1,59 @@
-#include <boards/Nosecone/FSM/NoseconeManager.h>
-#include <events/EventBroker.h>
-
-#include <boards/Nosecone/Events.h>
-#include <boards/Nosecone/Topics.h>
-
-#include <boards/Nosecone/LogProxy/LogProxy.h>
-#include <boards/CanInterfaces.h>
-#include <boards/Nosecone/Canbus/CanImpl.h>
-#include <PinObserver.h>
+#include <boards/Nosecone/NoseconeBoard.h>
 
 
 using namespace NoseconeBoard;
 using namespace miosix;
 using namespace CanInterfaces;
 
-PinObserver pinObs;
-MotorDriver motor(&pinObs);
-
-CanManager canMgr(CAN1);
-NoseconeManager noseconeMgr(motor);
-LoggerProxy* logger;
-
-void noseconeInit()
+void printHelp()
 {
-    /* Global environment */
-    sEventBroker->start();
-    logger = Singleton<LoggerProxy>::getInstance();
-
-    /* Canbus management */
-    CanImpl::initCanbus(canMgr);
-
-    /* Active Objects */
-    pinObs.start();
-    noseconeMgr.start();
-}
-
-int main()
-{
-    noseconeInit();
-
-    TRACE("-----NOSECONE TEST---------\n");
+    TRACE("-----NOSECONE BOARD---------\n");
     TRACE("  o - open\n");
     TRACE("  c - close\n");
     TRACE("  s - stop current action\n");
     TRACE("  r - read status\n");
-    TRACE("  p <id> <topic> - post any event\n");
-    TRACE("----------------------------\n");
+    TRACE("  p <id> - post any event\n");
+    TRACE("  h - print this menu\n");
+    TRACE("-----------------------------\n");
+}
+
+NoseconeBoardImpl board;
+
+int main()
+{
+    //board = new NoseconeBoardImpl();
+
+    printHelp();
 
     while(1) 
     {
         #ifdef DEBUG
-        TRACE("What do you want the nosecone to do?\n");
+        TRACE("Command: ");
         char cmd;
         scanf("%c", &cmd);
+        printf("\n");
 
         switch(cmd) 
         {
             case 'o':
-                sEventBroker->post(Event{NoseconeBoard::EV_OPEN}, TOPIC_NOSECONE);
+                board.postEvent(Event{NoseconeBoard::EV_OPEN});
                 break;
 
             case 'c':
-                sEventBroker->post(Event{NoseconeBoard::EV_CLOSE}, TOPIC_NOSECONE);
+                board.postEvent(Event{NoseconeBoard::EV_CLOSE});
                 break;
 
             case 's':
-                sEventBroker->post(Event{NoseconeBoard::EV_STOP}, TOPIC_NOSECONE);
+                board.postEvent(Event{NoseconeBoard::EV_STOP});
                 break;
 
             case 'p': 
             {
-                uint8_t id, topic;
-                TRACE("enter <id> <topic>: ");
+                uint8_t id;
+                TRACE("enter <id>: ");
 
-                scanf("%c %c", &id, &topic);
-                sEventBroker->post(Event{id}, topic);
+                scanf("%c", &id);
+                board.postEvent(Event{id});
 
                 TRACE("\n");
                 break;
@@ -82,7 +61,7 @@ int main()
 
             case 'r': 
             {
-                NoseconeBoardStatus status = logger->getNoseconeStatus();
+                NoseconeBoardStatus status = board.getStatus();
 
                 TRACE("Status:\n");
                 for(unsigned int i = 0; i < sizeof(NoseconeBoardStatus); i++)
@@ -91,6 +70,10 @@ int main()
                 }
                 TRACE("\n");
             }
+
+            case 'h':
+                printHelp();
+                break;
 
             default:
                 TRACE("Unknown option\n");

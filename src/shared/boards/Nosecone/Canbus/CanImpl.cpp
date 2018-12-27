@@ -68,7 +68,8 @@ void canRcv(CanMsg message, CanManager* c)
                 canSendNoseconeStatus(c->getBus(0), st);
 
                 /* Reset timer */
-                // TODO
+                canStatus.homeone_not_connected = 0;
+                // TODO reset timer & log
                 break;
             }
 

@@ -1,5 +1,5 @@
 /* Copyright (c) 2018-2019 Skyward Experimental Rocketry
- * Authors: Benedetta Cattani
+ * Authors: Benedetta Cattani, Alvise de'Faveri Tron
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
