@@ -27,6 +27,11 @@
 #include <boards/Nosecone/Events.h>
 #include <boards/Nosecone/Topics.h>
 
+namespace NoseconeBoard
+{
+namespace MotorLimit
+{
+
 static const unsigned int  r_limit_port = GPIOG_BASE;
 static const unsigned char r_limit_pin = 6;
 static const unsigned int  l_limit_port = GPIOG_BASE;
@@ -34,11 +39,6 @@ static const unsigned char l_limit_pin = 7;
 
 typedef miosix::Gpio<r_limit_port, r_limit_pin> RightMotorLimit;
 typedef miosix::Gpio<l_limit_port, l_limit_pin> LeftMotorLimit;
-
-namespace NoseconeBoard
-{
-namespace MotorLimit
-{
 
 /**
  * These handlers are used by the pinObserver to post an event
