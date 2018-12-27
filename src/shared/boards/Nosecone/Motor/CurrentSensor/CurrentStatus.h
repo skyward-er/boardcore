@@ -1,5 +1,5 @@
-/* Copyright (c) 2018-2019 Skyward Experimental Rocketry
- * Authors: Benedetta Cattani
+/* Copyright (c) 2018 Skyward Experimental Rocketry
+ * Authors: Alvise de' Faveri Tron
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -16,28 +16,14 @@
  * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.  IN NO EVENT SHALL THE
  * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
  * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
- * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+ * OUT OF OR IN CONNECTION\ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
 #pragma once
 
-#include "events/Event.h"
-
-namespace NoseconeBoard
+struct CurrentStatus
 {
-/**
- * Definition of all events in the Nosecone Board software
- * Refer to section 5.1.1 of the MY ass Design Document.
- */
-enum Events : uint8_t
-{
-    EV_OPEN = EV_FIRST_SIGNAL,
-    EV_CLOSE,
-    EV_STOP,
-    EV_CLOSE_TIMER_EXPIRED,
-    EV_OPEN_TIMER_EXPIRED,
-    EV_R_MOTOR_LIMIT,
-    EV_L_MOTOR_LIMIT
+    uint16_t max_current_sensed;
+    uint16_t min_current_sensed;
+    uint16_t last_current_sensed;
 };
-
-}

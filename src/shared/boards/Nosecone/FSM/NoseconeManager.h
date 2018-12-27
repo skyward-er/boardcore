@@ -21,13 +21,12 @@
  */
 #pragma once
 
-#include "Motor/MotorDriver.h"
+#include <events/FSM.h>
 
-#include "Events.h"
-#include "events/FSM.h"
-#include <drivers/canbus/CanManager.h>
-#include <PinObserver.h>
+#include <boards/Nosecone/Motor/MotorDriver.h>
+#include <boards/Nosecone/LogProxy/LogProxy.h>
 
+#include "NoseconeManagerStatus.h"
 
 namespace NoseconeBoard
 {
@@ -38,21 +37,27 @@ class NoseconeManager : public FSM<NoseconeManager>
 {
 
 public:
-    NoseconeManager();
+    NoseconeManager(MotorDriver& motor);
     ~NoseconeManager() {}
 
-    CanManager canMgr;
-    PinObserver pinObs;
-
 private:
+    MotorDriver& motor;
     uint16_t delayedId;
-    MotorDriver* motor;
+
+    NscMgrStatus status;
+
+    static const unsigned int OPEN_TIMEOUT = 15000;
+    static const unsigned int CLOSE_TIMEOUT = 10000;
 
     /* States declarations */
     void state_idle(const Event& e);
     void state_opening(const Event& e);
     void state_closing(const Event& e);
 
+    inline void log()
+    {
+        Singleton<LoggerProxy>::getInstance()->log(status);
+    }
 };
 
 }

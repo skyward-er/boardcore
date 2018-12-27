@@ -24,9 +24,14 @@
 #include <Common.h>
 #include <drivers/canbus/CanManager.h>
 #include <drivers/canbus/CanUtils.h>
+#include "CanStatus.h"
 
 namespace NoseconeBoard
 {
+namespace CanImpl
+{
+
+static CanStatus canStatus;
 
 /**
  * @brief Canbus receiving function.
@@ -44,4 +49,5 @@ void canRcv(CanMsg message, CanManager* c);
  */
 void initCanbus(CanManager& c);
 
+} /* namespace Can */
 } /* namespace NoseconeBoard */

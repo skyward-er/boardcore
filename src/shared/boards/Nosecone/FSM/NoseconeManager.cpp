@@ -21,33 +21,24 @@
  */
 
 #include "NoseconeManager.h"
-#include "Events.h"
-#include "Topics.h"
-
 #include <events/EventBroker.h>
-#include <boards/Nosecone/Canbus/CanImpl.h>
-#include "Status/NoseconeStatus.h"
+
+#include <boards/Nosecone/Events.h>
+#include <boards/Nosecone/Topics.h>
 
 using namespace miosix;
 
 namespace NoseconeBoard
 {
 
-NoseconeManager::NoseconeManager() : FSM(&NoseconeManager::state_idle), 
-                                     canMgr(CAN1)
+NoseconeManager::NoseconeManager(MotorDriver& motor) : 
+            FSM(&NoseconeManager::state_idle), 
+            motor(motor)
 {
     /* Set intial status */
-    status_g.close_received = false;
-    status_g.open_received = false;
-
-    /* Initialise canbus thread to receive external commands */
-    initCanbus(canMgr);
-
-    /* Initialize motor driver */
-    motor = new MotorDriver(&pinObs);
-
-    /* Start observing motor limit pins */
-    pinObs.start();
+    status.close_received = false;
+    status.open_received = false;
+    log();
 }
 
 /**
@@ -59,7 +50,7 @@ void NoseconeManager::state_idle(const Event& e)
     {
         case EV_ENTRY:
             TRACE("IDLE state entry\n");
-            motor->stop();
+            motor.stop();
             break;
 
         case EV_EXIT:
@@ -95,15 +86,18 @@ void NoseconeManager::state_opening(const Event& e)
     {
         case EV_ENTRY:
             TRACE("[OPENING] entering\n");
-            motor->start(MotorDirection::NORMAL_DIRECTION, OPENING_DUTY_CYCLE);
-            delayedId = sEventBroker->postDelayed(Event{EV_TIMER_EXPIRED}, TOPIC_NOSECONE, 15000);
+            motor.start(MotorDirection::NORMAL_DIRECTION, OPENING_DUTY_CYCLE);
+            delayedId = sEventBroker->postDelayed(Event{EV_OPEN_TIMER_EXPIRED},
+                                                        TOPIC_NOSECONE, 
+                                                        OPEN_TIMEOUT);
 
             /* Clear status bits */
-            status_g.open_timeout = false;
-            status_g.open_stop = false;
-            status_g.open_limit = false;
+            status.open_timeout = false;
+            status.open_stop = false;
+            status.open_limit = false;
             /* Set open received bit */
-            status_g.open_received = true;
+            status.open_received = true;
+            log();
             break;
 
         case EV_EXIT:
@@ -113,19 +107,22 @@ void NoseconeManager::state_opening(const Event& e)
         
         case EV_STOP:
             TRACE("[OPENING] received EV_STOP\n");
-            status_g.open_stop = true;
+            status.open_stop = true;
+            log();
             transition(&NoseconeManager::state_idle);
             break;
 
-        case EV_TIMER_EXPIRED:
+        case EV_OPEN_TIMER_EXPIRED:
             TRACE("[OPENING] received EV_TIMER_EXPIRED\n");
-            status_g.open_timeout = true;
+            status.open_timeout = true;
+            log();
             transition(&NoseconeManager::state_idle);
             break;
 
-        case EV_MOTOR_LIMIT:
+        case EV_R_MOTOR_LIMIT:
             TRACE("[OPENING] received EV_MOTOR_LIMIT\n");
-            status_g.open_limit = true;
+            status.open_limit = true;
+            log();
             transition(&NoseconeManager::state_idle);
             break;
 
@@ -148,15 +145,18 @@ void NoseconeManager::state_closing(const Event& e)
     {
         case EV_ENTRY:
             TRACE("[CLOSING] entering\n");
-            motor->start(MotorDirection::REVERSE_DIRECTION, CLOSING_DUTY_CYCLE);
-            delayedId = sEventBroker->postDelayed(Event{EV_TIMER_EXPIRED}, TOPIC_NOSECONE, 15000);
+            motor.start(MotorDirection::REVERSE_DIRECTION, CLOSING_DUTY_CYCLE);
+            delayedId = sEventBroker->postDelayed(Event{EV_CLOSE_TIMER_EXPIRED}, 
+                                                    TOPIC_NOSECONE, 
+                                                    CLOSE_TIMEOUT);
 
             /* Clear status bits */
-            status_g.close_timeout = false;
-            status_g.close_stop = false;
-            status_g.close_limit = false;
+            status.close_timeout = false;
+            status.close_stop = false;
+            status.close_limit = false;
             /* Set close received bit */
-            status_g.close_received = true;
+            status.close_received = true;
+            log();
             break;
 
         case EV_EXIT:
@@ -166,19 +166,22 @@ void NoseconeManager::state_closing(const Event& e)
         
         case EV_STOP:
             TRACE("[CLOSING] received EV_STOP\n");
-            status_g.close_stop = false;
+            status.close_stop = true;
+            log();
             transition(&NoseconeManager::state_idle);
             break;
 
-        case EV_TIMER_EXPIRED:
+        case EV_CLOSE_TIMER_EXPIRED:
             TRACE("[CLOSING] received EV_TIMER_EXPIRED\n");
-            status_g.close_timeout = false;
+            status.close_timeout = true;
+            log();
             transition(&NoseconeManager::state_idle);
             break;
 
-        case EV_MOTOR_LIMIT:
+        case EV_L_MOTOR_LIMIT:
             TRACE("[CLOSING] received EV_MOTOR_LIMIT\n");
-            status_g.close_limit = false;
+            status.close_limit = true;
+            log();
             transition(&NoseconeManager::state_idle);
             break;
 

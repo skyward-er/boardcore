@@ -23,10 +23,13 @@
 #pragma once
 
 #include <Common.h>
+
 #include "MotorConfig.h"
-#include "MotorSensor.h"
+#include "CurrentSensor/MotorSensor.h"
+#include "MotorStatus.h"
 
 #include <PinObserver.h>
+#include <boards/Nosecone/LogProxy/LogProxy.h>
 
 namespace NoseconeBoard
 {
@@ -65,10 +68,19 @@ public:
      */
     void stop();
 
+    /**
+     * @brief Save the status.
+     */
+    inline void log()
+    {
+        Singleton<LoggerProxy>::getInstance()->log(status);
+    }
+
 private:
     PWM pwm;
     MotorSensor currentSensor;
-    bool active;
+
+    MotorStatus status;
 };
 
 } /* namespace  */

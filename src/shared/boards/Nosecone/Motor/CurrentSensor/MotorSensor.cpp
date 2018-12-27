@@ -1,5 +1,6 @@
-/* Copyright (c) 2018-2019 Skyward Experimental Rocketry
- * Authors: Benedetta Cattani
+/*
+ * Copyright (c) 2018 Skyward Experimental Rocketry
+ * Authors: Alvise de' Faveri Tron
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -19,25 +20,45 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
-#pragma once
 
-#include "events/Event.h"
+#include "MotorSensor.h"
 
 namespace NoseconeBoard
 {
-/**
- * Definition of all events in the Nosecone Board software
- * Refer to section 5.1.1 of the MY ass Design Document.
- */
-enum Events : uint8_t
-{
-    EV_OPEN = EV_FIRST_SIGNAL,
-    EV_CLOSE,
-    EV_STOP,
-    EV_CLOSE_TIMER_EXPIRED,
-    EV_OPEN_TIMER_EXPIRED,
-    EV_R_MOTOR_LIMIT,
-    EV_L_MOTOR_LIMIT
-};
 
+MotorSensor::MotorSensor() 
+{
+    status.max_current_sensed = 0;
+    status.min_current_sensed = 0xFFFF;
+    log();
+
+    adc.init(); 
 }
+
+
+void MotorSensor::run()
+{
+    /* Sample sensor */
+    adc.updateParams();
+    uint16_t adcval = adc.getValue();
+
+    /* Update status */
+    if(adcval > status.max_current_sensed)
+        status.max_current_sensed = adcval;
+
+    if(adcval < status.min_current_sensed)
+        status.min_current_sensed = adcval;
+
+    status.last_current_sensed = adcval;
+    log();
+}
+
+
+float MotorSensor::adcToI(uint16_t adc_in)
+{
+    float v    = (adc_in * 3.3f) / 4096;
+    float iout = v / 525;
+    return (iout - 0.000030) * 10000;
+}
+
+} /* namespace NoseconeBoard */

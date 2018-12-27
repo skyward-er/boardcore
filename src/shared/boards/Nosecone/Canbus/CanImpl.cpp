@@ -22,16 +22,18 @@
 
 #include "CanImpl.h"
 
+#include <events/EventBroker.h>
+
 #include <boards/CanInterfaces.h>
 #include <boards/Nosecone/Events.h>
 #include <boards/Nosecone/Topics.h>
-#include <boards/Nosecone/Status/NoseconeStatus.h>
-
-#include <events/EventBroker.h>
+#include <boards/Nosecone/LogProxy/LogProxy.h>
 
 using namespace CanInterfaces;
 
 namespace NoseconeBoard
+{
+namespace CanImpl
 {
 
 /**
@@ -61,8 +63,8 @@ void canRcv(CanMsg message, CanManager* c)
             case CAN_MSG_REQ_NSC_STATUS: 
             {
                 /* Retrieve and send status */
-                NoseconeBoardStatus st;
-                getNoseconeStatus(&st);
+                NoseconeBoardStatus st = 
+                        LoggerProxy::getInstance()->getNoseconeStatus();
                 canSendNoseconeStatus(c->getBus(0), st);
 
                 /* Reset timer */
@@ -100,4 +102,5 @@ void initCanbus(CanManager& c)
     TRACE("[CAN] Initialised CAN1 on PA11-12 \n");
 }
 
+} /* namespace CanImpl */
 } /* namespace NoseconeBoard */

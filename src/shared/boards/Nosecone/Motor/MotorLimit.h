@@ -27,14 +27,13 @@
 #include <boards/Nosecone/Events.h>
 #include <boards/Nosecone/Topics.h>
 
-#define UNUSED(x) (void)(x)
+static const unsigned int  r_limit_port = GPIOG_BASE;
+static const unsigned char r_limit_pin = 6;
+static const unsigned int  l_limit_port = GPIOG_BASE;
+static const unsigned char l_limit_pin = 7;
 
-static const unsigned int  r_end_port = GPIOG_BASE;
-static const unsigned char r_end_pin = 6;
-static const unsigned int  l_end_port = GPIOG_BASE;
-static const unsigned char l_end_pin = 7;
-typedef miosix::Gpio<r_end_port, r_end_pin> RightMotorEnd;
-typedef miosix::Gpio<l_end_port, l_end_pin> LeftMotorEnd;
+typedef miosix::Gpio<r_limit_port, r_limit_pin> RightMotorLimit;
+typedef miosix::Gpio<l_limit_port, l_limit_pin> LeftMotorLimit;
 
 namespace NoseconeBoard
 {
@@ -48,13 +47,13 @@ namespace MotorLimit
 static void r_finecorsaHandler(unsigned int p, unsigned char c) {
     UNUSED(p);
     UNUSED(c);
-    sEventBroker->post(Event{EV_MOTOR_LIMIT}, TOPIC_NOSECONE);
+    sEventBroker->post(Event{EV_R_MOTOR_LIMIT}, TOPIC_NOSECONE);
 }
 
 static void l_finecorsaHandler(unsigned int p, unsigned char c) {
     UNUSED(p);
     UNUSED(c);
-    sEventBroker->post(Event{EV_MOTOR_LIMIT}, TOPIC_NOSECONE);
+    sEventBroker->post(Event{EV_L_MOTOR_LIMIT}, TOPIC_NOSECONE);
 }
 
 /**
@@ -63,13 +62,13 @@ static void l_finecorsaHandler(unsigned int p, unsigned char c) {
 static void observeLimitPins(PinObserver* pinObs)
 {
     /* Set motor limit pins */
-    RightMotorEnd::mode(miosix::Mode::INPUT);
-    LeftMotorEnd::mode(miosix::Mode::INPUT);
+    RightMotorLimit::mode(miosix::Mode::INPUT);
+    LeftMotorLimit::mode(miosix::Mode::INPUT);
 
     /* Assign handlers for the motor limit pins */
-    pinObs->observePin(r_end_port, r_end_pin, PinObserver::Trigger::FALLING_EDGE, 
+    pinObs->observePin(r_limit_port, r_limit_pin, PinObserver::Trigger::FALLING_EDGE, 
                             r_finecorsaHandler);
-    pinObs->observePin(l_end_port, l_end_pin, PinObserver::Trigger::FALLING_EDGE, 
+    pinObs->observePin(l_limit_port, l_limit_pin, PinObserver::Trigger::FALLING_EDGE, 
                             l_finecorsaHandler);
 }
 
