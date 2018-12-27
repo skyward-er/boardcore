@@ -11,6 +11,7 @@ Also soma additional features are provided:
 
 ## Camponents
 
+```plantuml
 @startuml
 
 skinparam class {
@@ -65,6 +66,7 @@ HB1 -right- HB2
 Logger -down-> SDCard
 
 @enduml
+```
 
 ## Description
 
