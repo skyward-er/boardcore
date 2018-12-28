@@ -1,19 +1,17 @@
 # Nosecone Board
 
-The bord's main pourpose is to control the motor to eject the nosecone.
-The motor is controlled via two half-bridges using PWM. Communication with the main board is done via canbus.
+## Features
 
-Also soma additional features are provided:
-- controlling motor limit (*finecorsa*)
-- reading the current that flows in the h-bridge
-- logging
-- reset if communication with the main board is lost
+- Canbus communication
+- H-Bridge control via PWM
+- Motor limit control (*finecorsa*)
+- H-Bridge current sensing
+- SD logging
+- reset if communication with main board is lost
 
-## Camponents
+## Components
 
-```plantuml
-@startuml
-
+ ```plantuml
 skinparam class {
     BackgroundColor<<Hardware>> White
     ArrowColor<<Hardware>> Black
@@ -64,15 +62,11 @@ MotorDriver -down-> HB2: IN
 HB1 -right- HB2
 
 Logger -down-> SDCard
-
-@enduml
-```
+ ```
 
 ## Description
 
-The main software components are:
-
-* **Canbus**: The shared Canbus driver provides a way to read and write canbus messages. In particular, the function that has to be executed on message reception is defined in CanImpl.
+* **Canbus**: The shared Canbus driver provides a way to read and write canbus messages. In particular, the function that has to be executed on message reception is defined in CanImpl.cpp.
 
 * **FSM**: There is a very simple state machine that receives events from various components via the EventBroker. This last component is needed so the FSM can post timeout events.
 
