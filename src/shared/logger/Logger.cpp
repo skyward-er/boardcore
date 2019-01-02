@@ -55,7 +55,7 @@ int Logger::start()
         return fileNumber;
 
     string filename;
-    for (fileNumber = 0; fileNumber < filenameMaxRetry; fileNumber++)
+    for (fileNumber = 0; fileNumber < (int)filenameMaxRetry; fileNumber++)
     {
         filename = getFileName(fileNumber);
         struct stat st;

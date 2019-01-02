@@ -20,27 +20,26 @@
  * THE SOFTWARE.
  */
 
-#ifndef SRC_SHARED_BOARDS_HOMEONE_IGNITIONCONTROLLER_IGNITIONCONTROLLER_H
-#define SRC_SHARED_BOARDS_HOMEONE_IGNITIONCONTROLLER_IGNITIONCONTROLLER_H
+#pragma once
 
 #include "IgnitionStatus.h"
 #include "Singleton.h"
 #include "events/FSM.h"
-#include "logger/LogProxy.h"
-#include "drivers/canbus/can_events/CanEventAdapter.h"
+#include <boards/Homeone/LogProxy/LogProxy.h>
+#include "drivers/canbus/CanManager.h"
+#include "drivers/canbus/CanUtils.h"
+#include "boards/Homeone/EventClasses.h"
 
 class CanEventSocket;
 
 namespace HomeoneBoard
 {
-namespace Ignition
-{
 
 class IgnitionController : public FSM<IgnitionController>
 {
 public:
-    explicit IgnitionController(CanEventAdapter& can_ev_adapter);
-    ~IgnitionController();
+    explicit IgnitionController(CanBus* canbus);
+    ~IgnitionController() {}
 
     IgnitionStatus getStatus() { return status; }
 private:
@@ -59,15 +58,11 @@ private:
     IgnitionStatus status;
 
     LoggerProxy& logger = *(LoggerProxy::getInstance());
-    CanEventAdapter& can_ev_adapter;
 
     uint16_t ev_ign_offline_handle = 0;
     uint16_t ev_get_status_handle  = 0;
 
-    CanEventSocket* can_socket;
+    CanBus* canbus;
 };
 
-}  // namespace Ignition
 }  // namespace HomeoneBoard
-
-#endif /* SRC_SHARED_BOARDS_HOMEONE_IGNITIONCONTROLLER_IGNITIONCONTROLLER_H */

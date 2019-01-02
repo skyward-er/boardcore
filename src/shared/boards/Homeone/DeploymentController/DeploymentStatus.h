@@ -23,24 +23,23 @@
 
 #pragma once
 
-#include<cstdint>
+#include "ThermalCutter/CutterStatus.h"
 
 namespace HomeoneBoard
-{
-namespace DPL  // DeploymentController
 {
 
 enum DeploymentCTRLState : uint8_t
 {
     IDLE = 0,
-    CUTTING
+    CUTTING_DROGUE,
+    CUTTING_MAIN
 };
 
 struct DeploymentStatus
 {
+    long long timestamp;
     DeploymentCTRLState state;
-    int num_attempts;
+    CutterStatus cutter_status;
 };
 
-} //DPL
 } //HomeoneBoard

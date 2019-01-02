@@ -21,53 +21,37 @@
  */
 
 #include "IgnitionController.h"
-#include "IgnitionConfig.h"
-#include "boards/Homeone/CanInterfaces.h"
+#include "boards/Homeone/configs/IgnitionConfig.h"
+#include "boards/CanInterfaces.h"
 #include "boards/Homeone/Events.h"
-#include "drivers/canbus/can_events/CanEventAdapter.h"
-#include "drivers/canbus/can_events/CanEventSocket.h"
 
 namespace HomeoneBoard
 {
-namespace Ignition
-{
 
-IgnitionController::IgnitionController(CanEventAdapter& can_ev_adapter)
-    : FSM(&IgnitionController::stateIdle), can_ev_adapter(can_ev_adapter)
+IgnitionController::IgnitionController(CanBus* canbus)
+    : FSM(&IgnitionController::stateIdle), canbus(canbus) 
 {
-    can_socket = can_ev_adapter.subscribe(
-        this, CanInterfaces::CAN_TOPIC_IGNITION, EV_NEW_CAN_MSG);
-
     sEventBroker->subscribe(this, TOPIC_IGNITION);
     sEventBroker->subscribe(this, TOPIC_FLIGHT_EVENTS);
     sEventBroker->subscribe(this, TOPIC_TC);
-}
-
-IgnitionController::~IgnitionController()
-{
-    can_socket->close();
-    delete can_socket;
+    sEventBroker->subscribe(this, TOPIC_CAN);
 }
 
 bool IgnitionController::updateIgnBoardStatus(const Event& ev)
 {
-    const CanEvent& cev = static_cast<const CanEvent&>(ev);
+    const CanbusEvent& cev = static_cast<const CanbusEvent&>(ev);
+
     if (cev.canTopic == CanInterfaces::CAN_TOPIC_IGNITION)
     {
-        uint8_t buf[CAN_MAX_PAYLOAD];
-        bool res = can_socket->receive(buf, CAN_MAX_PAYLOAD);
-        if (res)
-        {
-            memcpy(&status.board_status, buf, sizeof(status.board_status));
-            return true;
-        }
+        memcpy(&status.board_status, cev.payload, sizeof(status.board_status));
+        return true;
     }
+
     return false;
 }
 
 void IgnitionController::stateIdle(const Event& ev)
 {
-    uint8_t buf[CAN_MAX_PAYLOAD];
 
     switch (ev.sig)
     {
@@ -77,7 +61,7 @@ void IgnitionController::stateIdle(const Event& ev)
             logger.log(status);
 
             ev_ign_offline_handle = sEventBroker->postDelayed(
-                {EV_IGN_OFFLINE}, TOPIC_FLIGHT_EVENTS, TIMEOUT_MS_IGN_OFFLINE);
+                {EV_IGN_OFFLINE}, TOPIC_FLIGHT_EVENTS, TIMEOUT_IGN_OFFLINE);
 
             // Send first getstatus request
             sEventBroker->post({EV_IGN_GETSTATUS}, TOPIC_IGNITION);
@@ -90,13 +74,11 @@ void IgnitionController::stateIdle(const Event& ev)
 
         case EV_IGN_GETSTATUS:
         {
-            int len = CanInterfaces::canMsgSimple(
-                buf, CanInterfaces::CAN_MSG_REQ_IGN_STATUS);
-            can_ev_adapter.postMsg(buf, len,
-                                      CanInterfaces::CAN_TOPIC_HOMEONE);
+            CanInterfaces::canSendHomeoneCommand(
+                            canbus, CanInterfaces::CAN_MSG_REQ_IGN_STATUS);
 
             ev_get_status_handle = sEventBroker->postDelayed(
-                {EV_IGN_GETSTATUS}, TOPIC_IGNITION, INTERVAL_MS_IGN_GET_STATUS);
+                {EV_IGN_GETSTATUS}, TOPIC_IGNITION, INTERVAL_IGN_GET_STATUS);
             break;
         }
         case EV_NEW_CAN_MSG:
@@ -108,7 +90,7 @@ void IgnitionController::stateIdle(const Event& ev)
 
                 ev_ign_offline_handle = sEventBroker->postDelayed(
                     {EV_IGN_OFFLINE}, TOPIC_FLIGHT_EVENTS,
-                    TIMEOUT_MS_IGN_OFFLINE);
+                    TIMEOUT_IGN_OFFLINE);
 
                 // Log ignition board status
                 logger.log(status);
@@ -131,20 +113,14 @@ void IgnitionController::stateIdle(const Event& ev)
         case EV_GS_OFFLINE:
         case EV_TC_ABORT_LAUNCH:
         {
-            int len =
-                CanInterfaces::canMsgSimple(buf, CanInterfaces::CAN_MSG_ABORT);
-                can_ev_adapter.postMsg(buf, len,
-                                      CanInterfaces::CAN_TOPIC_HOMEONE);
+            CanInterfaces::canSendHomeoneCommand(canbus, CanInterfaces::CAN_MSG_ABORT);
             break;
         }
         case EV_LAUNCH:
         {
             const LaunchEvent& lev = static_cast<const LaunchEvent&>(ev);
 
-            int len = CanInterfaces::canMsgLaunch(buf, lev.launchCode);
-
-            can_ev_adapter.postMsg(buf, len,
-                                      CanInterfaces::CAN_TOPIC_LAUNCH);
+            CanInterfaces::canSendLaunch(canbus, lev.launchCode);
             break;
         }
         default:
@@ -155,8 +131,6 @@ void IgnitionController::stateIdle(const Event& ev)
 
 void IgnitionController::stateAborted(const Event& ev)
 {
-    uint8_t buf[CAN_MAX_PAYLOAD];
-
     switch (ev.sig)
     {
         case EV_ENTRY:
@@ -172,19 +146,15 @@ void IgnitionController::stateAborted(const Event& ev)
 
         case EV_IGN_GETSTATUS:
         {
-            int len = CanInterfaces::canMsgSimple(
-                buf, CanInterfaces::CAN_MSG_REQ_IGN_STATUS);
-            can_ev_adapter.postMsg(buf, len,
-                                      CanInterfaces::CAN_TOPIC_HOMEONE);
+            CanInterfaces::canSendHomeoneCommand(
+                            canbus, CanInterfaces::CAN_MSG_REQ_IGN_STATUS);
             break;
         }
         // Still handle the abort, just in case we want to send it again
         case EV_TC_ABORT_LAUNCH:
         {
-            int len =
-                CanInterfaces::canMsgSimple(buf, CanInterfaces::CAN_MSG_ABORT);
-            can_ev_adapter.postMsg(buf, len,
-                                      CanInterfaces::CAN_TOPIC_HOMEONE);
+            CanInterfaces::canSendHomeoneCommand(
+                            canbus, CanInterfaces::CAN_MSG_ABORT);
             break;
         }
 
@@ -197,7 +167,7 @@ void IgnitionController::stateAborted(const Event& ev)
 
                 ev_ign_offline_handle = sEventBroker->postDelayed(
                     {EV_IGN_OFFLINE}, TOPIC_FLIGHT_EVENTS,
-                    TIMEOUT_MS_IGN_OFFLINE);
+                    TIMEOUT_IGN_OFFLINE);
 
                 logger.log(status);
             }
@@ -229,5 +199,4 @@ void IgnitionController::stateEnd(const Event& ev)
     }
 }
 
-}  // namespace Ignition
 }  // namespace HomeoneBoard

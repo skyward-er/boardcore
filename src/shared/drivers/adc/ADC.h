@@ -19,15 +19,15 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
-
+#pragma once 
 #include "Common.h"
-#include "Sensor.h"
+//#include "sensors/Sensor.h"
 
-template <unsigned N, unsigned CHANNEL, class GpioADC>
+template <unsigned N, uint32_t CHANNEL, class GpioADC>
 class SensorADC
 {
 public:
-    SensorADC(uint8_t stime)
+    SensorADC(uint32_t stime)
     {
         ADCx         = getADC(N);
         samplingTime = stime;
@@ -52,9 +52,10 @@ public:
         {
             ADCx->SMPR2 = (samplingTime << (3 * (CHANNEL)));
         }
-        if (CHANNEL >= 10)
+        else
         {
-            ADCx->SMPR1 = (samplingTime << (3 * (CHANNEL - 10)));
+            uint32_t c = CHANNEL - 10;
+            ADCx->SMPR1 = (samplingTime << (3 * c));
         }
 
         return true;
@@ -118,6 +119,6 @@ public:
 
 private:
     uint16_t last_value;
-    uint8_t samplingTime;
+    uint32_t samplingTime;
     ADC_TypeDef* ADCx;
 };

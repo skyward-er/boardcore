@@ -554,6 +554,7 @@ int main(int argc, char const* argv[])
     timer.start();
     uint32_t tick1;
     uint32_t tick2;
+
     for (int i = 0; i < (int)timeArray.size(); i++)
     {
         if (i == 0)

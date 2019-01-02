@@ -25,12 +25,16 @@
 
 #include <miosix.h>
 
-#include "CutterConfig.h"
+#include "boards/Homeone/configs/CutterConfig.h"
 #include "drivers/pwm/pwm.h"
+#include "CutterStatus.h"
 
 using miosix::GpioPin;
 using miosix::Thread;
 
+namespace HomeoneBoard
+{
+    
 class Cutter
 {
 public:
@@ -57,40 +61,44 @@ public:
 
     void startCutDrogue()
     {
-        if (!cutting_drogue)
+        if (status.state == CutterState::IDLE)
         {
             enableCutter(CUTTER_CHANNEL_DROGUE, pin_enable_drogue);
-            cutting_drogue = true;
+            status.state = CutterState::CUTTING_DROGUE;
         }
     }
 
     void stopCutDrogue()
     {
-        if (cutting_drogue)
+        if (status.state == CutterState::CUTTING_DROGUE)
         {
             disableCutter(CUTTER_CHANNEL_DROGUE, pin_enable_drogue);
-            cutting_drogue = false;
+            status.state = CutterState::IDLE;
         }
     }
 
     void startCutMainChute()
     {
-        if (!cutting_main)
+        if (status.state == CutterState::IDLE)
         {
             enableCutter(CUTTER_CHANNEL_MAIN_CHUTE, pin_enable_main_chute);
-            cutting_main = true;
+            status.state = CutterState::CUTTING_MAIN;
         }
     }
 
     void stopCutMainChute()
     {
-        if (cutting_main)
+        if (status.state == CutterState::CUTTING_MAIN)
         {
             disableCutter(CUTTER_CHANNEL_MAIN_CHUTE, pin_enable_main_chute);
-            cutting_main = false;
+            status.state = CutterState::IDLE;
         }
     }
 
+    CutterStatus getStatus()
+    {
+        return status;
+    }
 private:
     void enableCutter(PWMChannel channel, miosix::GpioPin& ena_pin)
     {
@@ -115,6 +123,7 @@ private:
     GpioPin pin_enable_drogue;
     GpioPin pin_enable_main_chute;
 
-    bool cutting_main   = false;
-    bool cutting_drogue = false;
+    CutterStatus status;
 };
+
+}
