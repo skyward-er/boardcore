@@ -44,6 +44,13 @@ struct LaunchEvent : Event
 {
     uint64_t launchCode;
 };
+
+struct CanbusEvent : Event
+{
+    uint32_t canTopic;
+    uint8_t len;
+    uint8_t payload[8];
+};
 }
 
 #endif /* EVENTCLASSES_H */

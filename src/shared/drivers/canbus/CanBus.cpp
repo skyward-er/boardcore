@@ -33,7 +33,6 @@ TODO:
 
 #include "CanBus.h"
 #include "CanManager.h"
-#include "CanSocket.h"
 #include "CanUtils.h"
 
 using namespace miosix;
@@ -42,75 +41,12 @@ using std::set;
 // Transmit mailbox request
 #define TMIDxR_TXRQ ((uint32_t)0x00000001)
 
-CanBus::CanBus(CAN_TypeDef *bus, CanManager *manager, const int id)
-    : CANx(bus), manager(manager), id(id)
+CanBus::CanBus(CAN_TypeDef *bus, CanManager *manager, const int id, CanDispatcher dispatcher)
+    : CANx(bus), manager(manager), id(id), dispatchMessage(dispatcher)
 {
     terminate = false;
     pthread_create(&t, NULL, threadLauncher, reinterpret_cast<void *>(this));
     this->canSetup();
-}
-
-// Bind a socket and set proper filters
-bool CanBus::registerSocket(CanSocket *socket)
-{
-    uint16_t filter_id = socket->getFilterId();
-
-    if (filter_id >= CanManager::filter_max_id){
-        TRACE("[CAN] Invalid filter id.\n");
-        return false;
-    }
-
-    // Lock mutex, add to map
-    {
-        Lock<FastMutex> l(mutex);
-
-        set<CanSocket *> &ids = socket_map[filter_id];
-        if (ids.find(socket) != ids.end()){
-            TRACE("[CAN] Filter already in use.\n");
-            return false;
-        }
-
-        if (!manager->addHWFilter(filter_id, this->id))
-        {
-            TRACE("[CAN] Could not add HW filter.\n");
-            return false;
-        }
-
-        ids.insert(socket);
-    }
-
-    TRACE("[CAN] Created socket with filter=%d\n", filter_id);
-    return true;
-}
-
-// Unbind a socket and unset filters
-bool CanBus::unregisterSocket(CanSocket *socket)
-{
-    uint16_t filter_id = socket->getFilterId();
-
-    if (id >= CanManager::filter_max_id)
-        return false;
-
-    // Lock mutex, remove from map and from filter bank
-    {
-        Lock<FastMutex> l(mutex);
-
-        set<CanSocket *> &ids = socket_map[filter_id];
-        auto it               = ids.find(socket);
-
-        if (it == ids.end())
-            return false;
-
-        if (!manager->delHWFilter(filter_id, this->id))
-        {
-            // log unconsistency error
-            return false;
-        }
-
-        ids.erase(it);
-    }
-
-    return true;
 }
 
 /**
@@ -121,11 +57,31 @@ void CanBus::queueHandler()
 {
     while (terminate == false)
     {
+        /* Read fom queue */
         CanMsg message;
         messageQueue.waitUntilNotEmpty();
 
         messageQueue.get(message);
         TRACE("[CanBus] message received\n");
+
+        /* Check message */
+        uint32_t filter_id;
+
+        if (message.IDE == CAN_ID_STD)
+            filter_id = message.StdId;
+        else
+            filter_id = message.ExtId;
+
+        if (filter_id >= (uint32_t)CanManager::filter_max_id)
+        {
+            // log unsupported message
+            return;
+        }
+
+        if (message.DLC > 8)
+            message.DLC = 8;
+
+        /* Handle message */
         dispatchMessage(message);
     }
 }
@@ -209,39 +165,6 @@ bool CanBus::send(uint16_t id, const uint8_t *message, uint8_t len)
     return true;
 }
 
-/**
-  smista il messaggio tra i vari receiver registrati ad un determinato id
-  \param message il messaggio da smistare
-*/
-void CanBus::dispatchMessage(CanMsg message)
-{
-    uint32_t filter_id;
-
-    if (message.IDE == CAN_ID_STD)
-        filter_id = message.StdId;
-    else
-        filter_id = message.ExtId;
-
-    if (filter_id >= (uint32_t)CanManager::filter_max_id)
-    {
-        // log unsupported message
-        return;
-    }
-
-    if (message.DLC > 8)
-        message.DLC = 8;
-
-    {
-        Lock<FastMutex> l(mutex);
-
-        set<CanSocket *> &ids = socket_map[filter_id];
-
-        for (auto socket : ids){
-            TRACE("[CanBus] Adding message to a socket's list\n");
-            socket->addToMessageList(message.Data, message.DLC);
-        }
-    }
-}
 
 void CanBus::canSetup()
 {
@@ -297,7 +220,7 @@ void CanBus::canSetup()
     uint32_t CAN_BS2 = CAN_BS2_7tq;
 
     // can prescaler (CAN_BRT BRP)
-    uint16_t CAN_Prescaler = 3;
+    uint16_t CAN_Prescaler = 525;
     // 3 == 42000000 / (14 * 1000000); // quanta by baudrate
 
     // pagina 165

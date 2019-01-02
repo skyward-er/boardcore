@@ -27,9 +27,9 @@
 #include "Singleton.h"
 #include "events/Scheduler.h"
 
-#include "SensorManagerConfig.h"
+#include "boards/Homeone/configs/SensorManagerConfig.h"
 #include "events/FSM.h"
-#include "logger/LogProxy.h"
+#include <boards/Homeone/LogProxy/LogProxy.h>
 #include "sensors/SensorSampling.h"
 
 #include "SensorManagerData.h"
@@ -52,16 +52,14 @@ class MAX21105;
 template <typename BusSPI>
 class ADIS16405;
 
+
+namespace HomeoneBoard
+{
 // Type definitions
 typedef AD7994<busI2C1> AD7994Type;
 typedef MPU9250<spiMPU9250> MPU9250Type;
 typedef MAX21105<spiMAX21105> MAX21105Type;
 // typedef ADIS16405<spiADIS16405> ADIS16405Type;
-
-namespace HomeoneBoard
-{
-namespace Sensors
-{
 
 /**
  * The SensorManager class manages all the sensors connected to the Homeone
@@ -158,7 +156,7 @@ private:
 
     bool enable_sensor_logging = false;
 };
-}  // namespace Sensors
+
 }  // namespace HomeoneBoard
 
 #endif /* SRC_SHARED_BOARDS_HOMEONE_SENSORMANAGER_SENSORMANAGER_H */

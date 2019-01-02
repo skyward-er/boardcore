@@ -1,5 +1,5 @@
-/* Copyright (c) 2018-2019 Skyward Experimental Rocketry
- * Authors: Benedetta Cattani
+/* Copyright (c) 2018 Skyward Experimental Rocketry
+ * Authors: Alvise de' Faveri Tron
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -19,10 +19,10 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
-#ifndef SRC_SHARED_BOARDS_NOSECONE_TOPICS_H
-#define SRC_SHARED_BOARDS_NOSECONE_TOPICS_H
+#pragma once
 
 #include <stdint.h>
+#include <string>
 
 namespace NoseconeBoard
 {
@@ -33,6 +33,5 @@ enum Topics : uint8_t
 {
     TOPIC_NOSECONE
 };
-}
 
-#endif /* SRC_SHARED_BOARDS_NOSECONE_TOPICS_H */
+}

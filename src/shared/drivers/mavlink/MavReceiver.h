@@ -22,8 +22,7 @@
  * THE SOFTWARE.
  */
 
-#ifndef MAV_RECEIVER_H
-#define MAV_RECEIVER_H
+#pragma once
 
 #include <Common.h>
 
@@ -87,5 +86,3 @@ private:
     MavSender* sender;
     MavHandler handleMavlinkMessage;
 };
-
-#endif /* MAV_RECEIVER_H */
