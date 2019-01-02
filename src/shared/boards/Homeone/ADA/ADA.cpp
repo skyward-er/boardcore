@@ -71,7 +71,6 @@ void ADA::update(float pressure)
         case ADAState::CALIBRATING:
         {
             // Calibrating state: update calibration data
-            //TODO: Controllare i calcoli perchè sono stordito
 
             // Save old avg to compute var
             float old_avg = calibrationData.avg;
