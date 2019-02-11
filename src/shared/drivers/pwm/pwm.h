@@ -74,8 +74,9 @@ public:
     /**
      * @brief Enable output on the specified channel
      *
-     * @param mode PWM mode
      * @param channel Output channel (1 to 4, refer to datasheet)
+     * @param duty_cycle Duty cycle
+     * @param mode PWM mode
      * @param polarity Output polarity
      */
     void enableChannel(PWMChannel channel, float duty_cycle,
