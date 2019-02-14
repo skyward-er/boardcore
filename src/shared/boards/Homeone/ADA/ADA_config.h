@@ -1,5 +1,5 @@
 /* Copyright (c) 2018 Skyward Experimental Rocketry
- * Authors: Alvise De Faveri
+ * Authors: Luca Mozzarelli
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -20,54 +20,22 @@
  * THE SOFTWARE.
  */
 
-#pragma once
-
-#include <Common.h>
-#include <drivers/canbus/CanManager.h>
-#include <drivers/canbus/CanUtils.h>
-
-#include "boards/CanInterfaces.h"
-#include "boards/Homeone/Events.h"
-#include "boards/Homeone/Topics.h"
-
-#include <events/EventBroker.h>
+#warning "ADA COSTANTS ARE ONLY PLACEHOLDER VALUES"
 
 namespace HomeoneBoard
 {
-
-/**
- * Canbus receiving function.
- */
-void canRcv(CanMsg message) 
+namespace FMM
 {
-    TRACE("[CAN] Received message with id %d\n", message.StdId);
+// TODO: Change with real values
 
-    /* Create event */
-    CanbusEvent ev;
-    ev.sig = EV_NEW_CAN_MSG;
-    ev.canTopic = message.StdId;
-    ev.len = message.DLC;
-    memcpy(ev.payload, message.Data, 8);
+// State timeouts
+static const unsigned int TIMEOUT_MS_CALIBRATION      = 15 * 1000;
+static const unsigned int CALIBRATION_N_SAMPLES       = 5000;
 
-    /* Post event */
-    sEventBroker->post(ev, TOPIC_CAN);
+// Kalman parameters
+float P_data[9] = {0.1, 0, 0, 0, 0.1, 0, 0, 0, 0.1};    // Initial error covariance matrix
+float R_data[1] = {10};                                 // Measurement variance  
+float Q_data[9] = {0.01, 0, 0, 0, 0.01, 0, 0, 0, 0.01}; // Model variance matrix
+float samplingPeriod = 0.01; // In seconds
 }
-
-/**
- * Initialise CAN1 on PA11, PA12, set filters and set receiver function.
- */
-void initCanbus(CanManager& c)
-{
-    c.addHWFilter(CanInterfaces::CAN_TOPIC_IGNITION, 0);
-    c.addHWFilter(CanInterfaces::CAN_TOPIC_NOSECONE, 0);
-
-    canbus_init_t st = {
-        CAN1, miosix::Mode::ALTERNATE, 9, {CAN1_RX0_IRQn, CAN1_RX1_IRQn}};
-    c.addBus<GPIOA_BASE, 11, 12>(st, &canRcv);
-
-    // CanBus *bus = c.getBus(0);
-
-    TRACE("[CAN] Initialised CAN1 on PA11-12 \n");
 }
-
-} /* namespace HomeoneBoard */

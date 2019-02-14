@@ -27,7 +27,7 @@
 #include "FMMStatus.h"
 #include "events/Event.h"
 #include "events/FSM.h"
-#include "logger/LogProxy.h"
+#include <boards/Homeone/LogProxy/LogProxy.h>
 
 #include <miosix.h>
 

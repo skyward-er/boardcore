@@ -1,5 +1,5 @@
-/* Copyright (c) 2015-2019 Skyward Experimental Rocketry
- * Authors: Benedetta Margrethe Cattani
+/* Copyright (c) 2018 Skyward Experimental Rocketry
+ * Authors: Alvise de' Faveri Tron
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -16,37 +16,12 @@
  * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.  IN NO EVENT SHALL THE
  * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
  * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
- * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+ * OUT OF OR IN CONNECTION\ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
 #pragma once
 
-#include "MotorDriver.h"
-
-#include "Events.h"
-#include "events/FSM.h"
-
-namespace NoseconeBoard
+struct CanStatus
 {
-/**
- * Implementation of the Nosecone Manager Finite State Machine
- */
-class NoseconeManager : public FSM<NoseconeManager>
- {
-
-private:
-    NoseconeManager();
-    ~NoseconeManager() {}
-
-    // States declarations
-    void state_idle(const Event& e);
-    void state_opening(const Event& e);
-    void state_closing(const Event& e);
-
-    MotorDriver driver;
-
+    bool homeone_not_connected;
 };
-
-}
-
-#endif /* SRC_SHARED_BOARDS_HOMEONE_FLIGHTMODEMANAGER_FSM_H */

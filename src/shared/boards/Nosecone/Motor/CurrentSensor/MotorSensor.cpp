@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2018 Skyward Experimental Rocketry
- * Authors: Luca Erbetta
+ * Authors: Alvise de' Faveri Tron
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -14,31 +14,51 @@
  *
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.  IN NO EVENT SHALL THE
  * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
  * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
 
-#include <miosix.h>
-#include <cstdio>
-#include "drivers/HardwareTimer.h"
+#include "MotorSensor.h"
 
-using miosix::Thread;
-
-int main()
+namespace NoseconeBoard
 {
-    HardwareTimer<uint32_t, 2>& timer2 = HardwareTimer<uint32_t, 2>::instance();
 
-    timer2.start();
+MotorSensor::MotorSensor() 
+{
+    status.max_current_sensed = 0;
+    status.min_current_sensed = 0xFFFF;
+    log();
 
-    while (true)
-    {
-        uint32_t tick = timer2.tick();
-        printf("%lu\t\t(%.3f)\n", tick, timer2.toMilliSeconds(tick));
-
-        usleep(100000);
-    }
-    return 0;
+    adc.init(); 
 }
+
+
+void MotorSensor::run()
+{
+    /* Sample sensor */
+    adc.updateParams();
+    uint16_t adcval = adc.getValue();
+
+    /* Update status */
+    if(adcval > status.max_current_sensed)
+        status.max_current_sensed = adcval;
+
+    if(adcval < status.min_current_sensed)
+        status.min_current_sensed = adcval;
+
+    status.last_current_sensed = adcval;
+    log();
+}
+
+
+float MotorSensor::adcToI(uint16_t adc_in)
+{
+    float v    = (adc_in * 3.3f) / 4096;
+    float iout = v / 525;
+    return (iout - 0.000030) * 10000;
+}
+
+} /* namespace NoseconeBoard */

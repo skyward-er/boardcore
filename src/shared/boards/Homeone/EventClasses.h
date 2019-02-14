@@ -30,10 +30,9 @@
 namespace HomeoneBoard
 {
 
-struct AltimeterCalibrationEvent : Event
+struct DeploymentPressureEvent : Event
 {
-    uint16_t T0;  // Calibration temperature
-    uint16_t P0;  // Calibration pressure
+    uint16_t dplPressure;  // Deployment pressure
 };
 
 struct PressureSampleEvent : Event
