@@ -22,8 +22,6 @@
 
 #define CATCH_CONFIG_RUNNER
 #define CATCH_CONFIG_NO_POSIX_SIGNALS
-#define CATCH_CONFIG_NO_CPP11_GENERATED_METHODS
-#define CATCH_CONFIG_NO_CPP11_TYPE_TRAITS
 
 #include <miosix.h>
 #include <catch.hpp>
