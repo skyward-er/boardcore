@@ -39,9 +39,9 @@ cout << "------------------------------" << endl; \
 cout << "Triggering signal " << #SIGNAL << endl; \
 sEventBroker->post({SIGNAL}, TOPIC_TEST);\
 Thread::sleep(400); \
-test_value = HSM->test_in_state(STATE); \
-cout << "Check State " << #STATE << " " << (HSM->test_in_state(STATE)?"TRUE":"FALSE") << endl; \
-assert(HSM->test_in_state(STATE)); \
+test_value = HSM->testState(STATE); \
+cout << "Check State " << #STATE << " " << (HSM->testState(STATE)?"TRUE":"FALSE") << endl; \
+assert(HSM->testState(STATE)); \
 }while(0)
 
 
