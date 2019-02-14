@@ -1,5 +1,5 @@
-/* Copyright (c) 2015-2019 Skyward Experimental Rocketry
- * Authors: Benedetta Margrethe Cattani
+/* Copyright (c) 2018 Skyward Experimental Rocketry
+ * Authors: Alvise de' Faveri Tron
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -16,33 +16,13 @@
  * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.  IN NO EVENT SHALL THE
  * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
  * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
- * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+ * OUT OF OR IN CONNECTION\ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
-#include "MotorDriver.h"
+#pragma once
 
-using rena  = miosix::Gpio<GPIOG_BASE, 2>;
-using namespace miosix;
-using namespace interfaces;
-using namespace actuators;
-
-void MotorDriver::enable_reverse(){
-  hbridger::in::high();
-  hbridgel::in::low();
-  rena::high();
-  hbridgel::ena::high();
-}
-
-void MotorDriver::enable_direct(){
-  hbridger::in::low();
-  hbridgel::in::high();
-  rena::high();
-  hbridgel::ena::high();
-}
-
-void MotorDriver::disable(){
-  hbridger::in::low();
-  hbridgel::in::low();
-  rena::low();
-  hbridgel::ena::low();
-}
+struct MotorStatus
+{
+    bool motor_active;          
+    bool motor_last_direction;
+};

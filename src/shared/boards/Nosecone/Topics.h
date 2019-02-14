@@ -1,5 +1,5 @@
 /* Copyright (c) 2018 Skyward Experimental Rocketry
- * Authors: Alvise De Faveri
+ * Authors: Alvise de' Faveri Tron
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -19,55 +19,19 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
-
 #pragma once
 
-#include <Common.h>
-#include <drivers/canbus/CanManager.h>
-#include <drivers/canbus/CanUtils.h>
+#include <stdint.h>
+#include <string>
 
-#include "boards/CanInterfaces.h"
-#include "boards/Homeone/Events.h"
-#include "boards/Homeone/Topics.h"
-
-#include <events/EventBroker.h>
-
-namespace HomeoneBoard
+namespace NoseconeBoard
 {
-
 /**
- * Canbus receiving function.
+ * Definition of various event topics to use in the EventBroker
  */
-void canRcv(CanMsg message) 
+enum Topics : uint8_t
 {
-    TRACE("[CAN] Received message with id %d\n", message.StdId);
+    TOPIC_NOSECONE
+};
 
-    /* Create event */
-    CanbusEvent ev;
-    ev.sig = EV_NEW_CAN_MSG;
-    ev.canTopic = message.StdId;
-    ev.len = message.DLC;
-    memcpy(ev.payload, message.Data, 8);
-
-    /* Post event */
-    sEventBroker->post(ev, TOPIC_CAN);
 }
-
-/**
- * Initialise CAN1 on PA11, PA12, set filters and set receiver function.
- */
-void initCanbus(CanManager& c)
-{
-    c.addHWFilter(CanInterfaces::CAN_TOPIC_IGNITION, 0);
-    c.addHWFilter(CanInterfaces::CAN_TOPIC_NOSECONE, 0);
-
-    canbus_init_t st = {
-        CAN1, miosix::Mode::ALTERNATE, 9, {CAN1_RX0_IRQn, CAN1_RX1_IRQn}};
-    c.addBus<GPIOA_BASE, 11, 12>(st, &canRcv);
-
-    // CanBus *bus = c.getBus(0);
-
-    TRACE("[CAN] Initialised CAN1 on PA11-12 \n");
-}
-
-} /* namespace HomeoneBoard */

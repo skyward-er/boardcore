@@ -1,5 +1,5 @@
 /* Copyright (c) 2015-2018 Skyward Experimental Rocketry
- * Authors: Luca Erbetta
+ * Authors: Alvise de'Faveri Tron
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -22,56 +22,46 @@
 #ifndef SRC_SHARED_LOGGER_LOGPROXY_H
 #define SRC_SHARED_LOGGER_LOGPROXY_H
 
-#include "Logger.h"
+#include <logger/Logger.h>
 #include "Singleton.h"
 
-#include "sensors/MPU9250/MPU9250Data.h"
+#include <boards/CanInterfaces.h>
 
+/**
+ * This class is used to intercept calls to the logger and update internal state
+ * before logging.
+ */
 class LoggerProxy : public Singleton<LoggerProxy>
 {
     friend class Singleton<LoggerProxy>;
 
 public:
-    struct LowRateData
-    {
-        Vec3 mpu9250_accel;
-    };
+    /**
+     * @brief Create instance of Logger.
+     */
+    LoggerProxy() : status(), logger(Logger::instance()) {}
 
-    struct HighRateData
-    {
-        float pressure_sample;
-        uint8_t last_fmm_event;
-        uint8_t last_ign_event;
-        uint8_t last_nsc_event;
-    };
-
-    LoggerProxy() : lr_data(), hr_data(), logger(Logger::instance()) {}
-
+    /**
+     * @brief Simple log function. You have to specify what structure you are 
+     * logging.
+     * Note that specific log() functions are provided in the .cpp file for those  
+     * structures that have to be saved before logging.
+     */
     template <typename T>
     inline LogResult log(const T& t)
     {
         return logger.log(t);
     }
 
-    inline LogResult log(const LowRateData& t)
-    {
-        {
-            miosix::PauseKernelLock kLock;
-            lr_data = t;
-        }
-        return logger.log(t);
-    }
-
-    LowRateData getLowRateData() { return lr_data; }
-
-    HighRateData getHighRateData()
-    {
-        return hr_data;
+    /**
+     * @brief Internal status getter. Synchronization is guaranteed.
+     */
+    CanInterfaces::NoseconeBoardStatus getNoseconeStatus() { 
+        return status; 
     }
 
 private:
-    LowRateData lr_data;
-    HighRateData hr_data;
+    CanInterfaces::NoseconeBoardStatus status;
 
     Logger& logger;
 };

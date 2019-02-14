@@ -1,5 +1,5 @@
-/* Copyright (c) 2015-2019 Skyward Experimental Rocketry
- * Authors: Benedetta Margrethe Cattani
+/* Copyright (c) 2015-2018 Skyward Experimental Rocketry
+ * Authors: Benedetta Margrethe Cattani, Alvise de' Faveri Tron
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -19,32 +19,45 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
- #ifndef SRC_SHARED_BOARDS_NOSECONE_MOTORDRIVER
- #define SRC_SHARED_BOARDS_NOSECONE_MOTORDRIVER
+#pragma once
 
-#include <Common.h>
-#include <interfaces-impl/hwmapping.h>
+#include <events/FSM.h>
 
-// TODO: pass pins in constructor
+#include <boards/Nosecone/Motor/MotorDriver.h>
+#include <boards/Nosecone/LogProxy/LogProxy.h>
 
-class MotorDriver {
+#include "NoseconeManagerStatus.h"
+
+namespace NoseconeBoard
+{
+/**
+ * Implementation of the Nosecone Manager Finite State Machine
+ */
+class NoseconeManager : public FSM<NoseconeManager>
+{
 
 public:
-  MotorDriver() {}
+    NoseconeManager(MotorDriver& motor);
+    ~NoseconeManager() {}
 
-  /**
-   * Activates right part of the bridge.
-   */
-  void enable_reverse();
+private:
+    MotorDriver& motor;
+    uint16_t delayedId;
 
-  /**
-   * Activates left part of the bridge.
-   */
-  void enable_direct();
+    NscMgrStatus status;
 
-  /**
-   * Disables the bridge.
-   */
-  void disable();
+    static const unsigned int OPEN_TIMEOUT = 15000;
+    static const unsigned int CLOSE_TIMEOUT = 10000;
+
+    /* States declarations */
+    void state_idle(const Event& e);
+    void state_opening(const Event& e);
+    void state_closing(const Event& e);
+
+    inline void log()
+    {
+        Singleton<LoggerProxy>::getInstance()->log(status);
+    }
 };
-#endif
+
+}

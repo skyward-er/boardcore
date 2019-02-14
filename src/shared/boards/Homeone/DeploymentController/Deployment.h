@@ -4,7 +4,7 @@
 #include "boards/Homeone/Events.h"
 #include "DeploymentStatus.h"
 #include "ThermalCutter/Cutter.h"
-#include "logger/LogProxy.h"
+#include "boards/Homeone/LogProxy/LogProxy.h"
 
 namespace HomeoneBoard
 {

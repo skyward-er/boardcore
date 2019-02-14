@@ -1,4 +1,4 @@
-/* Copyright (c) 2018 Skyward Experimental Rocketry
+/* Copyright (c) 2015-2018 Skyward Experimental Rocketry
  * Authors: Luca Erbetta
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -19,50 +19,61 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
+#ifndef SRC_SHARED_LOGGER_LOGPROXY_H
+#define SRC_SHARED_LOGGER_LOGPROXY_H
 
-#pragma once
-
-#include "IgnitionStatus.h"
+#include "logger/Logger.h"
 #include "Singleton.h"
-#include "events/FSM.h"
-#include <boards/Homeone/LogProxy/LogProxy.h>
-#include "drivers/canbus/CanManager.h"
-#include "drivers/canbus/CanUtils.h"
-#include "boards/Homeone/EventClasses.h"
 
-class CanEventSocket;
+#include "sensors/MPU9250/MPU9250Data.h"
 
-namespace HomeoneBoard
+class LoggerProxy : public Singleton<LoggerProxy>
 {
+    friend class Singleton<LoggerProxy>;
 
-class IgnitionController : public FSM<IgnitionController>
-{
 public:
-    explicit IgnitionController(CanBus* canbus);
-    ~IgnitionController() {}
+    struct LowRateData
+    {
+        Vec3 mpu9250_accel;
+    };
 
-    IgnitionStatus getStatus() { return status; }
+    struct HighRateData
+    {
+        float pressure_sample;
+        uint8_t last_fmm_event;
+        uint8_t last_ign_event;
+        uint8_t last_nsc_event;
+    };
+
+    LoggerProxy() : lr_data(), hr_data(), logger(Logger::instance()) {}
+
+    template <typename T>
+    inline LogResult log(const T& t)
+    {
+        return logger.log(t);
+    }
+
+    inline LogResult log(const LowRateData& t)
+    {
+        {
+            miosix::PauseKernelLock kLock;
+            lr_data = t;
+        }
+        return logger.log(t);
+    }
+
+    LowRateData getLowRateData() { return lr_data; }
+
+    HighRateData getHighRateData()
+    {
+        return hr_data;
+    }
+
 private:
-    void stateIdle(const Event& ev);
-    void stateAborted(const Event& ev);
-    void stateEnd(const Event& ev);
+    LowRateData lr_data;
+    HighRateData hr_data;
 
-    /**
-     * @brief Updates the status of the ignition board if received on the canbus
-     *
-     * @param ev ev The event notifying a new message on the canbus
-     * @return Wether the board status was updated or not
-     */
-    bool updateIgnBoardStatus(const Event& ev);
-
-    IgnitionStatus status;
-
-    LoggerProxy& logger = *(LoggerProxy::getInstance());
-
-    uint16_t ev_ign_offline_handle = 0;
-    uint16_t ev_get_status_handle  = 0;
-
-    CanBus* canbus;
+    Logger& logger;
 };
 
-}  // namespace HomeoneBoard
+#endif /* SRC_SHARED_LOGGER_LOGPROXY_H */

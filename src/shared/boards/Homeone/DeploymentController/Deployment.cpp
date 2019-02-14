@@ -21,6 +21,7 @@ DeploymentController::~DeploymentController() {}
 
 State DeploymentController::state_init(const Event& ev)
 {
+    UNUSED(ev);
     return transition(&DeploymentController::state_cutterIdle);
 }
 

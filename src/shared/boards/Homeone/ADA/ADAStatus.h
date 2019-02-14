@@ -1,6 +1,5 @@
-/*
- * Copyright (c) 2018 Skyward Experimental Rocketry
- * Authors: Luca Erbetta
+/* Copyright (c) 2018 Skyward Experimental Rocketry
+ * Authors: Luca Mozzarelli
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -14,31 +13,44 @@
  *
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.  IN NO EVENT SHALL THE
  * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
  * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
 
-#include <miosix.h>
-#include <cstdio>
-#include "drivers/HardwareTimer.h"
+// All possible states of the ADA FMM
+enum class ADAState {
+    UNDEFINED,
+    CALIBRATING,
+    IDLE,
+    SHADOW_MODE,
+    ACTIVE,
+    FIRST_DESCENT_PHASE,
+    END
+};
 
-using miosix::Thread;
-
-int main()
+// Struct to log current state
+struct ADAStatus
 {
-    HardwareTimer<uint32_t, 2>& timer2 = HardwareTimer<uint32_t, 2>::instance();
+    ADAState state = ADAState::UNDEFINED;
+};
 
-    timer2.start();
+// Struct of calibration data
+struct ADACalibrationData {
+    float   var        = 0.0;      // Sample variance
+    int     n_samples  = 0;        // Number of samples collected
+    float   avg        = 0.0;      // Average pressure
+};
 
-    while (true)
-    {
-        uint32_t tick = timer2.tick();
-        printf("%lu\t\t(%.3f)\n", tick, timer2.toMilliSeconds(tick));
+// Struct to log apogee detection
+struct ApogeeDetected {
+    ADAState state;
+    long long tick;
+};
 
-        usleep(100000);
-    }
-    return 0;
+// Struct to log deployment pressure detection
+struct DplPressureReached {
+    long long tick;
 }
