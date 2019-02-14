@@ -52,6 +52,15 @@ public:
         (static_cast<T*>(this)->*state)(specialEvent);
     }
 
+     /**
+     * Test if the FSM is in a state
+     * @param test_state state to test
+     */
+    bool testState(void (T::*test_state)(const Event&))
+    {
+        return (this->state == test_state);
+    }
+
 protected:
     void handleEvent(const Event& e) override
     {
