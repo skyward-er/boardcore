@@ -79,7 +79,10 @@ public:
         sEventBroker->subscribe(this, TOPIC_T1);
     }
 
-    ~FSMExample() {}
+    ~FSMExample() {
+        TRACE("Unsubscribing FSM\n");
+        sEventBroker->unsubscribe(this);
+    }
 
     /*
      * State function definitions.
@@ -170,12 +173,17 @@ public:
                 v = 1;
 
                 // Post EV_D to itself in 1 seconds
-                sEventBroker->postDelayed(Event{EV_D}, TOPIC_T1, 1000);
+                delayed_event_id =
+                    sEventBroker->postDelayed(Event{EV_D}, TOPIC_T1, 1000);
 
                 break;
             }
             case EV_EXIT:
             {
+                // Always remove delayed events on exit, because they may not
+                // have been posted yet
+                // Uncomment the next line to pass the test
+                // sEventBroker->removeDelayed(delayed_event_id);
                 break;
             }
             case EV_D:  // We will receive this event 1 second after entering
@@ -212,5 +220,6 @@ public:
         }
     }
 
+    uint16_t delayed_event_id;
     int v;
 };
