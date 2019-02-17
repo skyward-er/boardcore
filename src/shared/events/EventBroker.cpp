@@ -21,6 +21,7 @@
  */
 
 #include "EventBroker.h"
+#include "Debug.h"
 
 EventBroker::EventBroker() : ActiveObject()  // TODO: Specify stack size
 {
@@ -28,10 +29,9 @@ EventBroker::EventBroker() : ActiveObject()  // TODO: Specify stack size
 
 void EventBroker::post(const Event& ev, uint8_t topic)
 {
-#ifdef DEBUG
-#include <stdio.h>
-    printf("[EventBroker] Event: %d, Topic: %d\n", ev.sig, topic);
-#endif
+    TRACE("[EventBroker] Event: %d, Topic: %d\n", ev.sig, topic);
+
+    Lock<FastMutex> lock(mtx_subscribers);
 
     if (subscribers.count(topic) > 0)
     {
@@ -51,16 +51,17 @@ void EventBroker::post(const Event& ev, uint8_t topic)
 uint16_t EventBroker::postDelayed(const Event& ev, uint8_t topic,
                                   unsigned int delay_ms)
 {
-    Lock<Mutex> lock(mtx_delayed_events);
+    Lock<FastMutex> lock(mtx_delayed_events);
 
     // Delay in system ticks
     long long delay_ticks =
         static_cast<long long>(delay_ms * miosix::TICK_FREQ / 1000);
 
-    DelayedEvent dev = {eventCounter++, ev, topic, getTick() + delay_ticks};
-    bool added       = false;
+    DelayedEvent dev{eventCounter++, ev, topic, getTick() + delay_ticks};
+    bool added = false;
 
-    // Add the new event in the list, ordered by deadline
+    // Add the new event in the list, ordered by deadline (first = nearest
+    // deadline)
     for (auto it = delayed_events.begin(); it != delayed_events.end(); it++)
     {
         if (dev.deadline < (*it).deadline)
@@ -81,7 +82,7 @@ uint16_t EventBroker::postDelayed(const Event& ev, uint8_t topic,
 
 void EventBroker::removeDelayed(uint16_t id)
 {
-    Lock<Mutex> lock(mtx_delayed_events);
+    Lock<FastMutex> lock(mtx_delayed_events);
     for (auto it = delayed_events.begin(); it != delayed_events.end(); it++)
     {
         if ((*it).sched_id == id)
@@ -92,10 +93,11 @@ void EventBroker::removeDelayed(uint16_t id)
     }
 }
 
+// Posts delayed events with expired deadline
 void EventBroker::run()
 {
-    Lock<Mutex> lock(mtx_delayed_events);
-    while (true)
+    Lock<FastMutex> lock(mtx_delayed_events);
+    while (!shouldStop())
     {
         while (delayed_events.size() > 0 &&
                delayed_events.front().deadline <= getTick())
@@ -107,7 +109,7 @@ void EventBroker::run()
             {
                 // Unlock the mutex to avoid a deadlock if someone calls
                 // postDelayed while receiving the event.
-                Unlock<Mutex> unlock(lock);
+                Unlock<FastMutex> unlock(lock);
                 post(dev.event, dev.topic);
             }
         }
@@ -117,11 +119,12 @@ void EventBroker::run()
 
         if (delayed_events.size() > 0)
         {
+            // Ticks until the next deadline
             long long interval_ticks =
                 delayed_events.front().deadline - getTick();
 
-            // Can only happen if the deadline has expired between the last time
-            // we checked its deadline and here
+            // Can only happen if the deadline has expired after the previous
+            // loop where we posted all expired events
             if (interval_ticks < 0)
             {
                 interval_ticks = 0;
@@ -141,7 +144,7 @@ void EventBroker::run()
 
         {
             // Unlock the mutex while sleeping
-            Unlock<Mutex> unlock(lock);
+            Unlock<FastMutex> unlock(lock);
             Thread::sleep(sleep_ms);
         }
     }
@@ -149,6 +152,50 @@ void EventBroker::run()
 
 void EventBroker::subscribe(EventHandler* subscriber, uint8_t topic)
 {
-    Lock<Mutex> lock(mtx_subscribers);
+    Lock<FastMutex> lock(mtx_subscribers);
     subscribers[topic].push_back(subscriber);
+
+    if(subscribers.count(topic) > 0)
+        TRACE("(SUB)Subscribers: %d\n", subscribers.at(topic).size());
+        else
+        {
+              TRACE("(SUB)Subscribers: 0\n");
+        }
+        
+}
+
+void EventBroker::unsubscribe(EventHandler* subscriber, uint8_t topic)
+{
+    Lock<FastMutex> lock(mtx_subscribers);
+
+    deleteSubscriber(subscribers.at(topic), subscriber);
+}
+
+void EventBroker::unsubscribe(EventHandler* subscriber)
+{
+    Lock<FastMutex> lock(mtx_subscribers);
+    for (auto it = subscribers.begin(); it != subscribers.end(); it++)
+    {
+        deleteSubscriber(it->second, subscriber);
+    }
+}
+
+void EventBroker::deleteSubscriber(vector<EventHandler*>& subs,
+                                   EventHandler* subscriber)
+{
+    auto it = subs.begin();
+
+    while (it != subs.end())
+    {
+        if (*it == subscriber)
+        {
+            it = subs.erase(it);
+        }
+        else
+        {
+            ++it;
+        }
+    }
+
+    TRACE("(UNS) Subscribers: %d\n", subs.size());
 }
