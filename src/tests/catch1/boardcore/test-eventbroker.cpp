@@ -57,8 +57,8 @@ TEST_CASE("EventBroker posts to different topics")
     Event ev;
     EventBroker broker;
 
-    EventCounter sub1;
-    EventCounter sub2;
+    EventCounter sub1(broker);
+    EventCounter sub2(broker);
 
     broker.subscribe(&sub1, TOPIC_1);
     broker.subscribe(&sub2, TOPIC_2);
@@ -102,9 +102,9 @@ TEST_CASE("EventHandlers can unsubscribe")
     Event ev{EV_A};
     EventBroker broker;
 
-    EventCounter sub1;
-    EventCounter sub2;
-    EventCounter sub3;
+    EventCounter sub1(broker);
+    EventCounter sub2(broker);
+    EventCounter sub3(broker);
 
     broker.subscribe(&sub1, TOPIC_1);
     broker.subscribe(&sub1, TOPIC_2);
@@ -190,7 +190,7 @@ TEST_CASE("Events can be dalayed")
     Event ev{EV_A};
     EventBroker broker;
 
-    EventCounter sub1;
+    EventCounter sub1(broker);
 
     broker.subscribe(&sub1, TOPIC_1);
 
