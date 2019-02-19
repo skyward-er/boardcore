@@ -12,7 +12,7 @@ using std::map;
  * How long should we wait for the state machine to handle the event?
  * Value in milliseconds
  */
-static const int SM_MAX_EVENT_HANDLING_TIME_MS = 1;
+static const int SM_EVENT_HANDLE_UNCERTAINTY = 1;
 
 /**
  * @brief Test if a specific transition occurs in a Finite State Machine
@@ -43,7 +43,7 @@ bool testFSMTransition(FSM_type& fsm, const Event& ev,
  * in response to an event, posted on a specific topic.
  * Once the event is posted, the state machine will process it asynchronously,
  * so we have to wait a little bit for it to happen. The wait time is defined in
- * SM_MAX_EVENT_HANDLING_TIME_MS. If the state machine takes longer than this
+ * SM_EVENT_HANDLE_UNCERTAINTY. If the state machine takes longer than this
  * time to process the event, the test will likely fail, as a transition will
  * not have occured.
  *
@@ -66,7 +66,7 @@ bool testFSMAsyncTransition(FSM_type& fsm, const Event& ev, uint8_t topic,
 {
     broker.post(ev, topic);
     // Wait for the event to be handled
-    miosix::Thread::sleep(SM_MAX_EVENT_HANDLING_TIME_MS);
+    miosix::Thread::sleep(SM_EVENT_HANDLE_UNCERTAINTY);
     return fsm.testState(expected_state);
 }
 
@@ -99,7 +99,7 @@ bool testHSMTransition(HSM_type& hsm, const Event& ev,
  * in response to an event, posted on a specific topic.
  * Once the event is posted, the state machine will process it asynchronously,
  * so we have to wait a little bit for it to happen. The wait time is defined in
- * SM_MAX_EVENT_HANDLING_TIME_MS. If the state machine takes longer than this
+ * SM_EVENT_HANDLE_UNCERTAINTY. If the state machine takes longer than this
  * time to process the event, the test will likely fail, as a transition will
  * not have occured.
  *
@@ -122,16 +122,16 @@ bool testHSMAsyncTransition(HSM_type& hsm, const Event& ev, uint8_t topic,
 {
     broker.post(ev, topic);
     // Wait for the event to be handled
-    miosix::Thread::sleep(SM_MAX_EVENT_HANDLING_TIME_MS);
+    miosix::Thread::sleep(SM_EVENT_HANDLE_UNCERTAINTY);
     return hsm.testState(expected_state);
 }
 
 /**
- * @brief Helper class to count how many events are sent to the topic it is
+ * @brief Helper class to count how many events are sent to the topic(s) it is
  * registered to.
  *
  * Useful if you want to check wether or not events are being
- * effectively sent on a topic.
+ * effectively posted
  */
 class EventCounter : public EventHandler
 {
@@ -194,7 +194,7 @@ public:
     }
 
     /**
-     * @brief Returns how many events have been received
+     * @brief Returns how many events have been received in total
      */
     unsigned int getTotalCount() { return total_count; }
 

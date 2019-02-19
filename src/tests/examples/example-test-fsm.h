@@ -24,8 +24,10 @@
 /**
  * Basic State Machine example. Explaination of this example and a graphical
  * representation of the state machine can be found on the Skyward Boardcore
- * Wiki on Gitlab:
+ * Wiki on Gitlab: 
  * https://git.skywarder.eu/r2a/skyward-boardcore/blob/master/src/entrypoints/examples/state-machines-examples.md
+ * 
+ * https://git.skywarder.eu/r2a/skyward-boardcore/wikis/State-Machines-Examples-and-Best-Practices
  */
 
 #include <events/EventBroker.h>
@@ -49,6 +51,37 @@ enum ExampleTopics : uint8_t
 {
     TOPIC_T1
 };
+
+/**
+ * @brief Logs every event received by the state machine
+ * This function can be expanded to log every event / transition of the state
+ * machine for later analysis, and as an aid for testing the state machine.
+ *
+ * @param state Current state of the state machine
+ * @param ev The event being handled
+ */
+void traceState(uint8_t state, const Event& ev)
+{
+    // Do not output anything for this test
+   /* switch (ev.sig)
+    {
+        case EV_ENTRY:
+        {
+            printf("(S%d) Entering state\n", state);
+            break;
+        }
+        case EV_EXIT:
+        {
+            printf("(S%d) Exiting state\n", state);
+            break;
+        }
+        default:
+        {
+            printf("(S%d) Received event %d\n", state, ev.sig);
+            break;
+        }
+    }*/
+}
 
 /*
  * Simple State machine definition
@@ -79,8 +112,8 @@ public:
         sEventBroker->subscribe(this, TOPIC_T1);
     }
 
-    ~FSMExample() {
-        TRACE("Unsubscribing FSM\n");
+    ~FSMExample() 
+    {
         sEventBroker->unsubscribe(this);
     }
 
@@ -93,6 +126,10 @@ public:
 
     void state_S1(const Event& ev)
     {
+        // Print every event we receive in order to see the behaviour of the
+        // state machine on the terminal.
+        traceState(STATE_S1, ev);
+
         switch (ev.sig)
         {
             // It's always good to add braces to every single case statement, to
@@ -131,6 +168,8 @@ public:
 
     void state_S2(const Event& ev)
     {
+        traceState(STATE_S2, ev);
+
         switch (ev.sig)
         {
             case EV_ENTRY:
@@ -139,11 +178,6 @@ public:
             }
             case EV_EXIT:
             {
-                break;
-            }
-            case EV_B:
-            {
-                transition(&FSMExample::state_S1);
                 break;
             }
             case EV_C:  // perform a state transition to S3 when receiving EV_C
@@ -165,6 +199,8 @@ public:
 
     void state_S3(const Event& ev)
     {
+        traceState(STATE_S3, ev);
+
         switch (ev.sig)
         {
             case EV_ENTRY:
@@ -173,17 +209,24 @@ public:
                 v = 1;
 
                 // Post EV_D to itself in 1 seconds
-                delayed_event_id =
+                delayed_ev_id =
                     sEventBroker->postDelayed(Event{EV_D}, TOPIC_T1, 1000);
 
                 break;
             }
             case EV_EXIT:
             {
-                // Always remove delayed events on exit, because they may not
-                // have been posted yet
-                // Uncomment the next line to pass the test
-                // sEventBroker->removeDelayed(delayed_event_id);
+                // Remove the delayed event in case it has not fired yet
+                // !!! This line is commented to show what can happen if we
+                // don't remove a delayed event. This is an error! Uncomment to
+                // fix, see the wiki for further information !!!
+
+                // sEventBroker->removeDelayed(delayed_ev_id);
+                break;
+            }
+            case EV_B:
+            {
+                transition(&FSMExample::state_S4);
                 break;
             }
             case EV_D:  // We will receive this event 1 second after entering
@@ -203,6 +246,8 @@ public:
     // this state
     void state_S4(const Event& ev)
     {
+        traceState(STATE_S4, ev);
+
         switch (ev.sig)
         {
             case EV_ENTRY:
@@ -213,13 +258,19 @@ public:
             {
                 break;
             }
+            case EV_D:
+            {
+                transition(&FSMExample::state_S3);
+                break;
+            }
             default:
             {
                 break;
             }
         }
     }
-
-    uint16_t delayed_event_id;
+    
+public:
+    uint16_t delayed_ev_id;
     int v;
 };

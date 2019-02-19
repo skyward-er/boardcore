@@ -76,12 +76,6 @@ TEST_CASE("Testing S2 Transitions")
     {
         REQUIRE(testFSMTransition(fsm, Event{EV_C}, &FSMExample::state_S3));
     }
-
-    // Test S2 to S1
-    SECTION("S2 -> EV_B -> S1")
-    {
-        REQUIRE(testFSMTransition(fsm, Event{EV_B}, &FSMExample::state_S1));
-    }
 }
 
 TEST_CASE("Testing S3 transitions")
@@ -115,9 +109,9 @@ TEST_CASE("Testing S4 transitions")
 
     // Then test S4 transitions
 
-    SECTION("S4 -> EV_D -> S4")
+    SECTION("S4 -> EV_D -> S3")
     {
-        REQUIRE(testFSMTransition(fsm, Event{EV_D}, &FSMExample::state_S4));
+        REQUIRE(testFSMTransition(fsm, Event{EV_D}, &FSMExample::state_S3));
     }
 
     SECTION("S4 -> EV_A -> S1 (Should not happen)")
@@ -158,31 +152,45 @@ TEST_CASE_METHOD(FSMTestFixture, "Testing async transitions")
 
     REQUIRE(testFSMAsyncTransition(fsm, Event{EV_C}, TOPIC_T1,
                                    &FSMExample::state_S3));
-
     SECTION("Automatic transition")
     {
-        // Should automatically move to S1 after 1 second. Sleep 1 ms more just
-        // to be sure
-        Thread::sleep(1001);
-        REQUIRE(fsm.testState(&FSMExample::state_S1));
+        SECTION("S3 --> S1 after 1 seconds")
+        {
+            // Should automatically move to S1 after 1 second.
+            Thread::sleep(995);
+            // Transition should not have occured yet
+            REQUIRE(fsm.testState(&FSMExample::state_S3));
 
-        // Now EV_A should bring us to S4
-        REQUIRE(testFSMAsyncTransition(fsm, Event{EV_A}, TOPIC_T1,
-                                       &FSMExample::state_S4));
-    }
+            Thread::sleep(10);
+            // Now it should
+            REQUIRE(fsm.testState(&FSMExample::state_S1));
+        }
 
-    SECTION("Delayed event must be removed if a transition occurs earlier")
-    {
-        EventCounter counter(*sEventBroker);
+        SECTION("S3 --> S4 if EV_B. Delayed event should be removed")
+        {
+            EventCounter counter{*sEventBroker};
 
-        // Move to S1 before the automatic transition
-        REQUIRE(testFSMAsyncTransition(fsm, Event{EV_D}, TOPIC_T1,
-                                       &FSMExample::state_S1));
-        counter.subscribe(TOPIC_T1);
+            // Post EV_B before EV_D fires. should move to S4 and remove EV_D
+            // from the delayed events
+            REQUIRE(testFSMAsyncTransition(fsm, Event{EV_B}, TOPIC_T1,
+                                           &FSMExample::state_S4));
 
-        Thread::sleep(1001);
+            // Subscribe the counter to TOPIC_1 to see if EV_D still fires
+            counter.subscribe(TOPIC_T1);
 
-        // The delayed event should not have been sent
-        REQUIRE(counter.getCount(EV_D) == 0);
+            // Wait for EV_D to fire
+            Thread::sleep(1005);
+
+            // Should not have received EV_D, since S3 should have removed the
+            // delayed event on exit. Spoiler: S3 didn't remove it, and the
+            // check will fail (CHECK works just like REQUIRE, but it will not
+            // stop the execution of the test in case it fails)
+            CHECK(counter.getCount(EV_D) == 0);
+
+            // Since S3 did not remove the delyaed event on exit, the event is
+            // fired when we are in S4, causing an unexpected transition back to
+            // S3, failing this test
+            REQUIRE(fsm.testState(&FSMExample::state_S4));
+        }
     }
 }
