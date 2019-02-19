@@ -44,7 +44,7 @@ using miosix::Lock;
 using miosix::Thread;
 using miosix::Unlock;
 
-// Minimum guaranteed delay for an event posted with postDelayed(...)
+// Minimum guaranteed delay for an event posted with postDelayed(...) in ms
 static const unsigned int EVENT_BROKER_MIN_DELAY = 250;
 
 /**

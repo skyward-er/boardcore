@@ -29,7 +29,7 @@ EventBroker::EventBroker() : ActiveObject()  // TODO: Specify stack size
 
 void EventBroker::post(const Event& ev, uint8_t topic)
 {
-    TRACE("[EventBroker] Event: %d, Topic: %d\n", ev.sig, topic);
+    //TRACE("[EventBroker] Event: %d, Topic: %d\n", ev.sig, topic);
 
     Lock<FastMutex> lock(mtx_subscribers);
 
@@ -114,38 +114,23 @@ void EventBroker::run()
             }
         }
 
-        // How long to sleep in this cycle
-        unsigned int sleep_ms = EVENT_BROKER_MIN_DELAY;
+        // When to wakeup for the next cycle
+        long long sleep_until =
+            getTick() + EVENT_BROKER_MIN_DELAY * miosix::TICK_FREQ / 1000;
 
         if (delayed_events.size() > 0)
         {
-            // Ticks until the next deadline
-            long long interval_ticks =
-                delayed_events.front().deadline - getTick();
-
-            // Can only happen if the deadline has expired after the previous
-            // loop where we posted all expired events
-            if (interval_ticks < 0)
+            // If a deadline expires earlier, sleep until the deadline instead
+            if (delayed_events.front().deadline < sleep_until)
             {
-                interval_ticks = 0;
-            }
-
-            // Time until the next deadline in ms
-            unsigned int interval_ms = static_cast<unsigned int>(
-                interval_ticks / miosix::TICK_FREQ * 1000);
-
-            // Sleep until the next event if it is going to expire before the
-            // normal sleep period.
-            if (sleep_ms > interval_ms)
-            {
-                sleep_ms = interval_ms;
+                sleep_until = delayed_events.front().deadline;
             }
         }
 
         {
             // Unlock the mutex while sleeping
             Unlock<FastMutex> unlock(lock);
-            Thread::sleep(sleep_ms);
+            Thread::sleepUntil(sleep_until);
         }
     }
 }
@@ -154,14 +139,6 @@ void EventBroker::subscribe(EventHandler* subscriber, uint8_t topic)
 {
     Lock<FastMutex> lock(mtx_subscribers);
     subscribers[topic].push_back(subscriber);
-
-    if(subscribers.count(topic) > 0)
-        TRACE("(SUB)Subscribers: %d\n", subscribers.at(topic).size());
-        else
-        {
-              TRACE("(SUB)Subscribers: 0\n");
-        }
-        
 }
 
 void EventBroker::unsubscribe(EventHandler* subscriber, uint8_t topic)
@@ -196,6 +173,4 @@ void EventBroker::deleteSubscriber(vector<EventHandler*>& subs,
             ++it;
         }
     }
-
-    TRACE("(UNS) Subscribers: %d\n", subs.size());
 }
