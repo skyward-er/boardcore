@@ -1,17 +1,17 @@
-/* 
+/*
  * Copyright (c) 2019 Skyward Experimental Rocketry
  * Authors: Luca Erbetta
- * 
+ *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
  * in the Software without restriction, including without limitation the rights
  * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
  * copies of the Software, and to permit persons to whom the Software is
  * furnished to do so, subject to the following conditions:
- * 
+ *
  * The above copyright notice and this permission notice shall be included in
  * all copies or substantial portions of the Software.
- * 
+ *
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
  * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.  IN NO EVENT SHALL THE
@@ -25,8 +25,7 @@
 #include <miosix.h>
 #include <cstdio>
 
-// Sleep helper
-void slp(unsigned int t = 100) { miosix::Thread::sleep(t); }
+using miosix::Thread;
 
 int main()
 {
@@ -44,22 +43,28 @@ int main()
 
     sEventBroker->post(Event{EV_C}, TOPIC_T1);  // Transition to S3
 
-    miosix::Thread::sleep(
-        100);  // Wait for the FSM thread to process the previous instructions
-
     printf("Waiting for the FSM to transition to S1\n");
-    miosix::Thread::sleep(1000);
+    Thread::sleep(1100);
 
-    // Since we've been in state S3, now v == 1 and EV_A will make the FSM
-    // transition to S4 instead of S1
+    // Now the FSM is in state S1 since EV_D is automatically posted 1 second
+    // after entering S3
+
+    // Since previously we've been in state S3, now v == 1 and EV_A will make
+    // the FSM transition to S4 instead of S1
     sEventBroker->post(Event{EV_A}, TOPIC_T1);
 
-    miosix::Thread::sleep(1000);
+    //Now the state machine is in state S4
+    
+    Thread::sleep(1000);
     printf("End\n");
 
     for (;;)
     {
-
-        miosix::Thread::sleep(10000);
+        Thread::sleep(10000);
     }
+
+    // Stop the threds, even though we will never reach this point, but just for
+    // correctness ;)
+    fsm.stop();
+    sEventBroker->stop();
 }

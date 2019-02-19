@@ -24,7 +24,10 @@
 /**
  * Basic State Machine example. Explaination of this example and a graphical
  * representation of the state machine can be found on the Skyward Boardcore
- * Wiki on Gitlab: <link here>
+ * Wiki on Gitlab:
+ * https://git.skywarder.eu/r2a/skyward-boardcore/blob/master/src/entrypoints/examples/state-machines-examples.md
+ *
+ * https://git.skywarder.eu/r2a/skyward-boardcore/wikis/State-Machines-Examples-and-Best-Practices
  */
 
 #include <events/EventBroker.h>
@@ -108,7 +111,7 @@ public:
         sEventBroker->subscribe(this, TOPIC_T1);
     }
 
-    ~FSMExample() {}
+    ~FSMExample() { sEventBroker->unsubscribe(this); }
 
 private:
     /*
@@ -174,11 +177,6 @@ private:
             {
                 break;
             }
-            case EV_B:
-            {
-                transition(&FSMExample::state_S1);
-                break;
-            }
             case EV_C:  // perform a state transition to S3 when receiving EV_C
             {
                 transition(&FSMExample::state_S3);
@@ -208,12 +206,20 @@ private:
                 v = 1;
 
                 // Post EV_D to itself in 1 seconds
-                sEventBroker->postDelayed(Event{EV_D}, TOPIC_T1, 1000);
+                delayed_ev_id =
+                    sEventBroker->postDelayed(Event{EV_D}, TOPIC_T1, 1000);
 
                 break;
             }
             case EV_EXIT:
             {
+                // Remove the delayed event in case it has not fired yet
+                sEventBroker->removeDelayed(delayed_ev_id);
+                break;
+            }
+            case EV_B:
+            {
+                transition(&FSMExample::state_S4);
                 break;
             }
             case EV_D:  // We will receive this event 1 second after entering
@@ -245,11 +251,18 @@ private:
             {
                 break;
             }
+            case EV_D:
+            {
+                transition(&FSMExample::state_S3);
+                break;
+            }
             default:
             {
                 break;
             }
         }
     }
+
+    uint16_t delayed_ev_id;
     int v;
 };
