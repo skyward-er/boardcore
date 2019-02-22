@@ -26,6 +26,7 @@
 #include <miosix.h>
 #include <stdint.h>
 
+#include "AD7994Data.h"
 #include "sensors/Sensor.h"
 
 /**
@@ -47,16 +48,14 @@ public:
         CH3,
         CH4
     };
-    
+
     /**
      * @brief AD7994 constructor. Invariant is respected as the sensor powers up
      * pointing at the conversion result register.
      *
      * @param i2c_address I2C address of the AD7994
      */
-    AD7994(uint8_t i2c_address) : i2c_address(i2c_address)
-    {
-    }
+    AD7994(uint8_t i2c_address) : i2c_address(i2c_address) {}
 
     ~AD7994() {}
 
@@ -134,13 +133,25 @@ public:
         miosix::delayUs(2);
 
         uint8_t data[2];
-        BusI2c::read(i2c_address, REG_CONVERSION_RESULT, &data, 2);
-        uint16_t val = data[0] << 8 | data[1];
+
+        BusI2c::directRead(i2c_address, &data, 2);
+
+        AD7994Sample sample = decodeConversion(data);
+        sample.timestamp = miosix::getTick();
+
+        // TODO: How to sample the other channels?
+        samples[0] = sample;
 
         return true;
     }
 
     bool selfTest() { return true; }
+
+    AD7994Sample getLastSample(Channel channel)
+    {
+        uint8_t ch = static_cast<uint8_t>(channel);
+        return samples[ch - 1];
+    }
 
 private:
     // Address of the AD7994 on the I2C bus
@@ -158,13 +169,33 @@ private:
         BusI2c::directWrite(i2c_address, &REG_CONVERSION_RESULT, 1);
     }
 
+    /**
+     * @brief Decodes the 2 bytes of the conversion register into an
+     * AD7994Sample structure
+     *
+     * @param data_ptr Pointer to the first of the 2 bytes of the conversione
+     * register
+     * @return AD7994Sample
+     */
+    AD7994Sample decodeConversion(uint8_t* data_ptr) {
+        uint16_t conv_reg = static_cast<uint16_t>(data_ptr[1]) << 8 + data_ptr[0];
+
+        AD7994Sample out;
+        out.value = conv_reg & 0x0FFF;
+        out.channel_id = (static_cast<uint8_t>(conv_reg >> 12) & 0x03) + 1;
+        out.alert_flag = static_cast<bool>(conv_reg >> 15);
+
+        return out;
+    }
+
     enum Registers : uint8_t
     {
         REG_CONVERSION_RESULT = 0b0000,
         REG_ALERT_STATUS      = 0b0001,
         REG_CONFIG            = 0b0010,
-
     };
+
+    AD7994Sample samples[4];
 };
 
 #endif /* SRC_SHARED_DRIVERS_ADC_AD7994_H */
