@@ -73,7 +73,7 @@ public:
      * from the register specified by \param regAddress
      */
     static inline void read(uint8_t address, uint8_t regAddr, uint8_t* data,
-                            uint8_t len);
+                            uint8_t len)
     {
         // First write the address of the register we want to read
         SwI2CType::sendStart();
@@ -82,6 +82,27 @@ public:
 
         // Now we can read
         SwI2CType::sendRepeatedStart();
+        SwI2CType::send((address << 1) | 0x01);  // Read request: last bit is 1
+
+        for (int i = 0; i < len - 1; i++)
+        {
+            data[i] = SwI2CType::recvWithAck();
+        }
+
+        // Read the last byte. End with NACK to signal we want to stop reading.
+        data[len - 1] = SwI2CType::recvWithNack();
+
+        SwI2CType::sendStop();
+    }
+
+    /**
+     * Reads \param len bytes storing them into \param *data buffer
+     * from the register specified by \param regAddress
+     */
+    static inline void directRead(uint8_t address, uint8_t* data, uint8_t len)
+    {
+        // Now we can read
+        SwI2CType::sendStart();
         SwI2CType::send((address << 1) | 0x01);  // Read request: last bit is 1
 
         for (int i = 0; i < len - 1; i++)
