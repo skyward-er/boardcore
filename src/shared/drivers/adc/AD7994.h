@@ -68,15 +68,15 @@ public:
      */
     bool init() override
     {
-        const uint8_t config_reg_value = 0b00001010;
+        uint8_t config_reg_value = 0b00001010;
 
         // Write the configuration register
-        BusI2c::write(i2c_address, REG_CONFIG, &config_reg_value, 1);
+        BusI2C::write(i2c_address, REG_CONFIG, &config_reg_value, 1);
 
         uint8_t read_config_reg_value;
 
         // Read back the value
-        BusI2c::read(i2c_address, REG_CONFIG, &read_config_reg_value, 1);
+        BusI2C::read(i2c_address, REG_CONFIG, &read_config_reg_value, 1);
 
         pointToConversionResult();
 
@@ -85,32 +85,32 @@ public:
 
     void enableChannel(Channel channel)
     {
-        uint8_t channel = static_cast<uint8_t> channel;
-        enabled_channels |= 1 << channel;
+        uint8_t ch = static_cast<uint8_t>(channel);
+        enabled_channels |= 1 << ch;
 
         uint8_t config_reg_value;
-        BusI2c::read(i2c_address, REG_CONFIG, &read_config_reg_value, 1);
+        BusI2C::read(i2c_address, REG_CONFIG, &config_reg_value, 1);
 
         // Update the config register value
         config_reg_value = (config_reg_value & 0x0F) | enabled_channels << 4;
 
-        BusI2c::write(i2c_address, REG_CONFIG, &config_reg_value, 1);
+        BusI2C::write(i2c_address, REG_CONFIG, &config_reg_value, 1);
 
         pointToConversionResult();
     }
 
     void disableChannel(Channel channel)
     {
-        uint8_t channel = static_cast<uint8_t> channel;
-        enabled_channels &= ~(1 << channel);
+        uint8_t ch = static_cast<uint8_t>(channel);
+        enabled_channels &= ~(1 << ch);
 
         uint8_t config_reg_value;
-        BusI2c::read(i2c_address, REG_CONFIG, &read_config_reg_value, 1);
+        BusI2C::read(i2c_address, REG_CONFIG, &config_reg_value, 1);
 
         // Update the config register value
         config_reg_value = (config_reg_value & 0x0F) | enabled_channels << 4;
 
-        BusI2c::write(i2c_address, REG_CONFIG, &config_reg_value, 1);
+        BusI2C::write(i2c_address, REG_CONFIG, &config_reg_value, 1);
 
         pointToConversionResult();
     }
@@ -134,7 +134,7 @@ public:
 
         uint8_t data[2];
 
-        BusI2c::directRead(i2c_address, &data, 2);
+        BusI2C::directRead(i2c_address, data, 2);
 
         AD7994Sample sample = decodeConversion(data);
         sample.timestamp = miosix::getTick();
@@ -166,7 +166,8 @@ private:
      */
     void pointToConversionResult()
     {
-        BusI2c::directWrite(i2c_address, &REG_CONVERSION_RESULT, 1);
+        uint8_t reg_addr = REG_CONVERSION_RESULT;
+        BusI2C::directWrite(i2c_address, &reg_addr, 1);
     }
 
     /**
