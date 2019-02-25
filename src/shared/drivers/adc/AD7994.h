@@ -179,7 +179,7 @@ private:
      * @return AD7994Sample
      */
     AD7994Sample decodeConversion(uint8_t* data_ptr) {
-        uint16_t conv_reg = static_cast<uint16_t>(data_ptr[1]) << 8 + data_ptr[0];
+        uint16_t conv_reg = static_cast<uint16_t>((data_ptr[0]) << 8) + data_ptr[1];
 
         AD7994Sample out;
         out.value = conv_reg & 0x0FFF;
@@ -191,9 +191,9 @@ private:
 
     enum Registers : uint8_t
     {
-        REG_CONVERSION_RESULT = 0b0000,
-        REG_ALERT_STATUS      = 0b0001,
-        REG_CONFIG            = 0b0010,
+        REG_CONVERSION_RESULT = 0x00,
+        REG_ALERT_STATUS      = 0x01,
+        REG_CONFIG            = 0x02,
     };
 
     AD7994Sample samples[4];
