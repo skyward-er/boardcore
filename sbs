@@ -31,20 +31,25 @@ try:
 except ImportError:
     import configparser as cp #python 3
 
-def build_makefile(template, board, bname):
-    rmap = { "BOARD_DEFINE": "export OPT_BOARD := %s\nexport BOARD_UUID := %s\n" % (
-        board['id'], bname),
-             "MAP_FILE": "export MAIN_MAP_FILE := bin/%s.map\n" % board['bin'],
-             "SOURCE_FILES": "%s\n" % (" ".join(board['files'])),
-             "CUSTOM_DEFINES": board['defines'],
-             "BIN_NAME": board['bin'] 
-    }
-    
-    for i in rmap:
-        template = template.replace("{SBS_%s}" % i , rmap[i])
-    return template
+#
+# Global variables
+#
+srcfiles={}
+boards={}
+tests={}
+entrypoints={}
 
-def banner():
+projconf = {
+    "ENTRY_PATH":"src/entrypoints",
+    "TESTS_PATH":"src/tests",
+    "SRC_PATH":"src/shared",
+    "SBS_BASE": "."
+}
+
+#
+# ASCII art
+#
+def printBanner():
     print("+---------------------------------------------------------------+")
     print("|   ____  _                                _                    |")
     print("|  / ___|| | ___   ___      ____ _ _ __ __| |                   |")
@@ -58,94 +63,149 @@ def banner():
     print("|  |____/ \\__,_|_|_|\\__,_| |____/ \\__, |___/\\__\\___|_| |_| |_|  |")
     print("+----------------------------------|___/-------------------v2.0-+")
 
-# Read command line options
-parser = OptionParser()
-parser.add_option("-c", "--clean", help="Run a 'make clean'", dest="clean", 
-        action="store_true")
-parser.add_option("-b", "--build", help="Build a specific entrypoint or test", dest="board")
-parser.add_option("-l", "--list", help="List all possible configurations", dest="list",
-    default=False, action='store_true')
-parser.add_option("-t", "--all-test", help="Build all tests", dest="all_tests", default=False, action='store_true')
-parser.add_option("-e", "--all-entry", help="Build all entrypoints", dest="all_entry", default=False, action='store_true')
-parser.add_option("-g", "--gen-faults", help="Generate fault list header files and exit", dest="genhdr", default=False, action='store_true')
-parser.add_option("-v", "--verbose", help="Print a verbose output", dest="log", 
-        action="store_true")
-parser.add_option("-j", "--jobs", 
-        help="Specifies the number of jobs (commands) to run simultaneously.", 
-        type="int", dest="JOBS", default=8)
+#
+# Command line options
+#
+def configCmdParser():
+	parser = OptionParser()
+	parser.add_option("-c", "--clean", help="Run a 'make clean'", dest="clean", 
+		action="store_true")
+	parser.add_option("-b", "--build", help="Build a specific entrypoint or test", dest="board")
+	parser.add_option("-l", "--list", help="List all possible configurations", dest="list",
+	    default=False, action='store_true')
+	parser.add_option("-t", "--all-test", help="Build all tests", dest="all_tests", default=False, action='store_true')
+	parser.add_option("-e", "--all-entrypoint", help="Build all entrypoints", dest="all_entry", default=False, action='store_true')
+	parser.add_option("-g", "--gen-faults", help="Generate fault list header files and exit", dest="genhdr", default=False, action='store_true')
+	parser.add_option("-v", "--verbose", help="Print a verbose output", dest="log", 
+		action="store_true")
+	parser.add_option("-j", "--jobs", 
+		help="Specifies the number of jobs (commands) to run simultaneously.", 
+		type="int", dest="JOBS", default=8)
+	return parser
 
+#
+# Generate fault counter headers
+#
+def genFaultCounters():
+    d1 = "data/fault_list.csv"
+    d2 = SBS_BASE + "/src/shared/diagnostic/FaultCounterData.h"
+    os.system("python %s/scripts/gen_fault_headers.py %s %s" %(SBS_BASE,d1,d2))
+
+#
+# Import srcfiles from boardcore's sbs.conf
+#
+def importSrcFiles(path):
+    conf = cp.RawConfigParser()
+    conf.read(path)
+
+    for i in conf.sections():
+        stype = conf.get(i, 'Type')
+        if stype == 'srcfiles':
+            srcfiles[i] = [projconf['SBS_BASE'] + "/" + x.strip() for x in conf.get(i, 'Files').split("\n")]
+
+#
+# Import project's conf
+#
+def parseConf(path):
+    mainmask = projconf['ENTRY_PATH'] + "/%s.cpp"
+    testmask = projconf['TESTS_PATH'] + "/%s.cpp"
+    conf = cp.RawConfigParser()
+    conf.read(path)
+
+    # Populate entrypoints and tests 
+    for i in conf.sections():
+        stype = conf.get(i, 'Type')
+        if stype == 'srcfiles':
+            srcfiles[i] = [x.strip() for x in conf.get(i, 'Files').split("\n")]
+        elif stype == 'board':
+            entrypoints[i] = {   'id': conf.get(i, 'BoardId'), 
+                            'bin': conf.get(i, 'BinName'),
+                            'defines': conf.get(i, 'Defines'),
+                            'files': [mainmask % conf.get(i, 'Main').strip()] +
+                             [x.strip() for x in conf.get(i, 'Include').split(' ')]
+                        }    
+        elif stype == 'test':
+            tests[i] = {   'id': conf.get(i, 'BoardId'), 
+                            'bin': conf.get(i, 'BinName'),
+                            'defines': conf.get(i, 'Defines') + " -I" + projconf['TESTS_PATH'],
+                            'files': [testmask % conf.get(i, 'Main').strip()] +
+                             [x.strip() for x in conf.get(i, 'Include').split(' ')]
+                        }
+        elif stype != 'project':
+            print('Type not implemented')
+
+    # Join tests and entrypoints in boards
+    boards.update(entrypoints)
+    boards.update(tests)
+
+    # Substitute includes
+    for i in boards:
+        files = []
+        for j in boards[i]['files']:
+            if j.startswith('%'):
+                files += srcfiles[j[1:]]
+            else:
+                files += [j]
+        boards[i]['files'] = files
+
+#
+# Set project parameters (for projects that are not boardcore)
+#
+def readProjectParams(conf):
+    global projconf
+
+    for i in projconf:
+        projconf[i] = conf.get('SBS_PROJECT', i)
+
+#
+# Fill in Makefile.template
+#
+def build_makefile(template, board, bname):
+    rmap = { "BOARD_DEFINE": "export OPT_BOARD := %s\nexport BOARD_UUID := %s\n" % (
+        board['id'], bname),
+             "MAP_FILE": "export MAIN_MAP_FILE := bin/%s.map\n" % board['bin'],
+             "SOURCE_FILES": "%s\n" % (" ".join(board['files'])),
+             "CUSTOM_DEFINES": board['defines'] + " -I" + projconf['SRC_PATH'],
+             "BIN_NAME": board['bin']
+    }
+
+    for i in rmap:
+        template = template.replace("{SBS_%s}" % i , rmap[i])
+
+    template = template.replace('{SBS_BASE_PATH}', projconf['SBS_BASE'])
+
+    return template
+
+#-------------------------------------------------------------
+#     Main
+
+printBanner()
+
+parser = configCmdParser()
 (options, args) = parser.parse_args()
 
-banner()
-
+# Fault headers generation
 if options.genhdr == True:
-    d1 = "data/fault_list.csv"
-    d2 = "src/shared/diagnostic/FaultCounterData.h"
-    os.system("/usr/bin/python scripts/gen_fault_headers.py %s %s" %(d1,d2))
+    genFaultCounters()
     exit(0)
 
-# Read SBS.conf file
+# Check if it's an external project
 conf = cp.RawConfigParser()
 conf.read("sbs.conf")
+if 'SBS_PROJECT' in conf.sections():
+    readProjectParams(conf)
+    importSrcFiles(projconf['SBS_BASE'] + "/sbs.conf")
 
-mainmask = "src/entrypoints/%s.cpp"
-testmask = "src/tests/%s.cpp"
-srcfiles={}
-boards={}
-tests={}
-entrypoints={}
+# Parse conf file
+parseConf("sbs.conf")
 
-for i in conf.sections():
-    stype = conf.get(i, 'Type')
-    if stype == 'srcfiles':
-        srcfiles[i] = [x.strip() for x in conf.get(i, 'Files').split("\n")]
-    elif stype == 'board':
-        entrypoints[i] = {   'id': conf.get(i, 'BoardId'), 
-                        'bin': conf.get(i, 'BinName'),
-                        'defines': conf.get(i, 'Defines'),
-                        'files': [mainmask % conf.get(i, 'Main').strip()] +
-                         [x.strip() for x in conf.get(i, 'Include').split(' ')]
-                    }     
-    elif stype == 'test':
-        tests[i] = {   'id': conf.get(i, 'BoardId'), 
-                        'bin': conf.get(i, 'BinName'),
-                        'defines': conf.get(i, 'Defines'),
-                        'files': [testmask % conf.get(i, 'Main').strip()] +
-                         [x.strip() for x in conf.get(i, 'Include').split(' ')]
-                    }
-    else:
-        print('Type not implemented')
-
-if (len(entrypoints) == 0 and len(tests) == 0 ):
+if (len(boards) == 0 ):
     print('[SBS] Nothing found in sbs.conf . Terminating.')
-    sys.exit(0)
-
-# Substitute includes
-for i in entrypoints:
-    files = []
-    for j in entrypoints[i]['files']:
-        if j.startswith('%'):
-            files += srcfiles[j[1:]]
-        else:
-            files += [j]
-    entrypoints[i]['files'] = files
-
-for i in tests:
-    files = []
-    for j in tests[i]['files']:
-        if j.startswith('%'):
-            files += srcfiles[j[1:]]
-        else:
-            files += [j]
-    tests[i]['files'] = files
-
-# Join lists
-boards.update(entrypoints)
-boards.update(tests)
+    exit(0)
 
 # Load Makefile template
 make_template = ""
-with open('Makefile.template') as f:
+with open( projconf['SBS_BASE'] + '/Makefile.template') as f:
     make_template = str(f.read())
 
 if len(make_template) == 0:
@@ -168,7 +228,7 @@ if options.list == True:
 shutil.rmtree('build',ignore_errors=True, onerror=None)
 os.mkdir('build')
 
-# Specific build
+# Single board
 if options.board != None:
     try:
         good = boards[options.board]
