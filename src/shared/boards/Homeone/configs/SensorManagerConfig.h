@@ -45,6 +45,9 @@ typedef ProtocolSPI<busSPI1, miosix::sensors::mpu9250::cs> spiMPU9250;
 typedef ProtocolSPI<busSPI1, miosix::sensors::max21105::cs> spiMAX21105;
 typedef ProtocolSPI<busSPI1, miosix::sensors::adis16405::cs> spiADIS16405;
 
+typedef miosix::sensors::ad7994::ab ad7994_busy_pin;
+typedef miosix::sensors::ad7994::nconvst ad7994_nconvst;
+
 static const uint8_t AD7994_I2C_ADDRESS = 0x24;  // Todo: Update with real value
 
 }  // namespace HomeoneBoard
