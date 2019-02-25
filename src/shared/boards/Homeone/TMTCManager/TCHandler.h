@@ -81,7 +81,7 @@ static void handleMavlinkMessage(MavSender* sender, const mavlink_message_t& msg
 {
     sendAck(sender, msg);
 
-    /* Reschedule GS_OFFLINE evetn */
+    /* Reschedule GS_OFFLINE event */
     sEventBroker->removeDelayed(g_gsOfflineEvId);
     g_gsOfflineEvId = sEventBroker->postDelayed(Event{EV_GS_OFFLINE}, 
                                                             GS_OFFLINE_TIMEOUT);
