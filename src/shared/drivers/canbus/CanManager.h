@@ -73,37 +73,43 @@ public:
     template <uint32_t gpio, uint8_t rx, uint8_t tx>
     void addBus(const canbus_init_t &i, CanDispatcher dispatcher)
     {
-    typedef miosix::Gpio<gpio, rx> rport;
-    typedef miosix::Gpio<gpio, tx> tport;
+        typedef miosix::Gpio<gpio, rx> rport;
+        typedef miosix::Gpio<gpio, tx> tport;
 
-    rport::mode(i.mode);
-    tport::mode(i.mode);
+        rport::mode(i.mode);
+        tport::mode(i.mode);
 
-    if (i.af >= 0)
-    {
-        rport::alternateFunction(i.af);
-        tport::alternateFunction(i.af);
+        if (i.af >= 0)
+        {
+            #ifndef _ARCH_CORTEXM3_STM32 //Only stm32f2 and stm32f4 have it
+            rport::alternateFunction(i.af);
+            tport::alternateFunction(i.af);
+            #endif //_ARCH_CORTEXM3_STM32
+        }
+
+        // TODO de-hardcode this part
+        {
+            miosix::FastInterruptDisableLock dLock;
+            #ifdef RCC_APB1ENR_CAN2EN
+            RCC->APB1ENR |= RCC_APB1ENR_CAN1EN | RCC_APB1ENR_CAN2EN;
+            #else
+            RCC->APB1ENR |= RCC_APB1ENR_CAN1EN;
+            #endif
+            RCC_SYNC();
+        }
+
+        for (const auto &j : i.interrupts)
+        {
+            NVIC_SetPriority(j, 15);
+            NVIC_EnableIRQ(j);
+        }
+
+        CanBus *canbus = new CanBus(i.can, this, bus.size(), dispatcher);
+        bus.push_back(canbus);
+
+        // Used by CanInterrupt.cpp
+        global_bus_ptr[global_bus_ctr++] = canbus;
     }
-
-    // TODO de-hardcode this part
-    {
-        miosix::FastInterruptDisableLock dLock;
-        RCC->APB1ENR |= RCC_APB1ENR_CAN1EN | RCC_APB1ENR_CAN2EN;
-        RCC_SYNC();
-    }
-
-    for (const auto &j : i.interrupts)
-    {
-        NVIC_SetPriority(j, 15);
-        NVIC_EnableIRQ(j);
-    }
-
-    CanBus *canbus = new CanBus(i.can, this, bus.size(), dispatcher);
-    bus.push_back(canbus);
-
-    // Used by CanInterrupt.cpp
-    global_bus_ptr[global_bus_ctr++] = canbus;
-}
 
 
     CanBus *getBus(uint32_t id);
