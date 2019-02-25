@@ -20,43 +20,22 @@
  * THE SOFTWARE.
  */
 
-#ifndef Kalman_h
-#define Kalman_h
-#include "Matrix.hpp"
-/*!
- * \class Kalman
- * \brief A class representing a Kalman filter
- *
- * To use the filter:
- * (1) Call the initializer with the appropriate matrices
- * (2) Define the state propagation matrix and initial state
- * (3) Call the update function for each new sample acquired
- */
-class Kalman
+#warning "ADA COSTANTS ARE ONLY PLACEHOLDER VALUES"
+
+namespace HomeoneBoard
 {
-private:
-    Matrix R; /**< Measurement variance vector */
-    Matrix Q; /**< Model variance matrix */
-    Matrix H; /**< Vector mapping the measurements to the state */
-public:
-    Matrix P;   /**< Error covariance matrix */
-    Matrix X;   /**< State matrix */
-    Matrix Phi; /**< State propagation matrix */
+namespace FMM
+{
+// TODO: Change with real values
 
-    /**
-     * \brief Constructor
-     * \param P_init Error covariance matrix
-     * \param R_init Measurement variance vector
-     * \param Q_init Model variance matrix
-     * \param H_init Vector mapping the measurements to the state
-     */
-    Kalman(Matrix P_init, Matrix R_init, Matrix Q_init, Matrix H_init);
+// State timeouts
+static const unsigned int TIMEOUT_MS_CALIBRATION      = 15 * 1000;
+static const unsigned int CALIBRATION_N_SAMPLES       = 5000;
 
-    /**
-     * \brief Method for updating the estimate
-     * \param y The measurement vector
-     */
-    void update(Matrix y);
-};
-
-#endif /* Kalman_h */
+// Kalman parameters
+float P_data[9] = {0.1, 0, 0, 0, 0.1, 0, 0, 0, 0.1};    // Initial error covariance matrix
+float R_data[1] = {10};                                 // Measurement variance  
+float Q_data[9] = {0.01, 0, 0, 0, 0.01, 0, 0, 0, 0.01}; // Model variance matrix
+float samplingPeriod = 0.01; // In seconds
+}
+}

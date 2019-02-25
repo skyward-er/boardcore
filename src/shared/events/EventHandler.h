@@ -29,21 +29,34 @@
 #include "events/Event.h"
 #include "events/SyncQueue.h"
 
+#include "Debug.h"
+
 class EventHandler : public ActiveObject
 {
 public:
     EventHandler() : ActiveObject() {}
 
-    void postEvent(const Event& e) { eventList.put(e); }
-
     virtual ~EventHandler(){};
+
+    virtual void postEvent(const Event& ev) { eventList.put(ev); }
+
+    virtual void stop() override
+    {
+        should_stop = true;        
+        
+        // Put empty event in the list to wake the runner thread
+        eventList.put(Event{EV_EMPTY});
+        thread->join();
+
+        stopped = true;
+    }
 
 protected:
     virtual void handleEvent(const Event& ev) = 0;
 
     void run() override
     {
-        while (true)
+        while (!shouldStop())
         {
             Event e = eventList.get();
             handleEvent(e);

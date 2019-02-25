@@ -35,16 +35,16 @@
 #include <map>
 #include <vector>
 
-using std::vector;
 using std::map;
+using std::vector;
 
-using miosix::Mutex;
-using miosix::Lock;
-using miosix::Unlock;
+using miosix::FastMutex;
 using miosix::getTick;
+using miosix::Lock;
 using miosix::Thread;
+using miosix::Unlock;
 
-// Minimum guaranteed delay for an event posted with postDelayed(...)
+// Minimum guaranteed delay for an event posted with postDelayed(...) in ms
 static const unsigned int EVENT_BROKER_MIN_DELAY = 250;
 
 /**
@@ -84,15 +84,35 @@ public:
 
     /**
      * Subscribe to a specific topic.
-     * Since there is no way to unsubscribe for now, the subscribed FSM
-     * MUST NOT be destroyed before the termination of the program.
-     * This function is meant to be called at initialization.
-     * DO NOT call it after initialization.
      * DO NOT call it in response to an event, or it will cause a deadlock.
      * @param subscriber
      * @param topic
      */
     void subscribe(EventHandler* subscriber, uint8_t topic);
+
+    /**
+     * @brief Unsubscribe an EventHandler from a specific topic
+     * This function should be used only for testing purposes
+     * @param subscriber
+     * @param topic
+     */
+    void unsubscribe(EventHandler* subscriber, uint8_t topic);
+
+    /**
+     * @brief Unsubribe an EventHandler from all the topics it is subscribed to.
+     * This function should be used only for testing purposes
+     * @param subscriber
+     */
+    void unsubscribe(EventHandler* subscriber);
+    /**
+     * @brief Construct a new Event Broker object.
+     * Public access required for testing purposes. Use the singleton interface
+     * to access this class in production code.
+     *
+     */
+    EventBroker();
+    
+    virtual ~EventBroker(){};
 
 private:
     /**
@@ -106,19 +126,19 @@ private:
         long long deadline;
     };
 
-    EventBroker();
-    virtual ~EventBroker(){};
-
     /**
      * Active Object run
      */
-    void run();
+    void run() override;
+
+    void deleteSubscriber(vector<EventHandler*>& sub_vector,
+                          EventHandler* subscriber);
 
     vector<DelayedEvent> delayed_events;
-    Mutex mtx_delayed_events;
+    FastMutex mtx_delayed_events;
 
     map<uint8_t, vector<EventHandler*>> subscribers;
-    Mutex mtx_subscribers;
+    FastMutex mtx_subscribers;
 
     uint16_t eventCounter = 0;
 };

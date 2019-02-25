@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Skyward Experimental Rocketry
+ * Copyright (c) 2019 Skyward Experimental Rocketry
  * Authors: Luca Erbetta
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -14,43 +14,49 @@
  *
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.  IN NO EVENT SHALL THE
  * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
  * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
 
-#ifndef SRC_SHARED_BOARDS_HOMEONE_EVENTCLASSES_H
-#define SRC_SHARED_BOARDS_HOMEONE_EVENTCLASSES_H
+#include <miosix.h>
+#include "drivers/BusTemplate.h"
+#include "drivers/adc/AD7994.h"
 
-#include "Events.h"
-#include "events/Event.h"
+using namespace miosix;
 
-namespace HomeoneBoard
+#ifdef _BOARD_STM32F429ZI_SKYWARD_HOMEONE
+
+#include <interfaces-impl/hwmapping.h>
+using I2CProtocol = ProtocolI2C<miosix::I2C1Driver>;
+
+using convst = miosix::sensors::ad7994::nconvst;
+using busy   = miosix::sensors::ad7994::ab;
+
+// Just for testing using a logic analyzer
+#elif defined _BOARD_STM32F429ZI_STM32F4DISCOVERY
+
+#include "drivers/SoftwareI2CAdapter.h"
+
+using scl = Gpio<GPIOA_BASE, 8>;
+using sda = Gpio<GPIOC_BASE, 9>;
+
+using I2CProtocol = ProtocolI2C<SoftwareI2CAdapter<sda, scalbln> >;
+
+using busy   = Gpio<GPIOC_BASE, 8>;
+using convst = Gpio<GPIOB_BASE, 7>;
+
+#endif
+
+int main()
 {
+    convst::mode(Mode::OUTPUT);
 
-struct DeploymentPressureEvent : Event
-{
-    uint16_t dplPressure;  // Deployment pressure
-};
-
-struct PressureSampleEvent : Event
-{
-    uint16_t pressure;
-};
-
-struct LaunchEvent : Event
-{
-    uint64_t launchCode;
-};
-
-struct CanbusEvent : Event
-{
-    uint32_t canTopic;
-    uint8_t len;
-    uint8_t payload[8];
-};
+    AD7994<I2CProtocol, busy, convst> ad{123};
+    for (;;)
+    {
+        ad.init();
+    }
 }
-
-#endif /* EVENTCLASSES_H */

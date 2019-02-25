@@ -41,6 +41,7 @@ static const int SAMPLE_PERIOD = 1000 / SAMPLE_FREQ;
 using miosix::Thread;
 
 using ADC_t = SensorADC<1, 5, csense>;
+
 float adcToI(uint16_t adc_in)
 {
     float v    = (adc_in * 3.3f) / 4096;

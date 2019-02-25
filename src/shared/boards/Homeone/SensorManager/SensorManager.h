@@ -40,8 +40,8 @@ using std::vector;
 // Forward declarations
 class TestSensor;
 
-template <typename BusI2C>
-class AD7994;
+/*template <typename BusI2C>
+class AD7994;*/
 
 template <typename BusSPI>
 class MPU9250;

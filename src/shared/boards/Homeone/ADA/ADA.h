@@ -20,43 +20,41 @@
  * THE SOFTWARE.
  */
 
-#ifndef Kalman_h
-#define Kalman_h
-#include "Matrix.hpp"
-/*!
- * \class Kalman
- * \brief A class representing a Kalman filter
- *
- * To use the filter:
- * (1) Call the initializer with the appropriate matrices
- * (2) Define the state propagation matrix and initial state
- * (3) Call the update function for each new sample acquired
- */
-class Kalman
+#include <boards/Homeone/ADA/ADAStatus.h>
+#include <events/FSM.h>
+#include <kalman/Kalman.h>
+#include "logger/LogProxy.h"
+
+class ADA : public FSM<ADA>
 {
-private:
-    Matrix R; /**< Measurement variance vector */
-    Matrix Q; /**< Model variance matrix */
-    Matrix H; /**< Vector mapping the measurements to the state */
+
 public:
-    Matrix P;   /**< Error covariance matrix */
-    Matrix X;   /**< State matrix */
-    Matrix Phi; /**< State propagation matrix */
+    ADA();
+    ~ADA() {}
+    void update(float pressure);
 
-    /**
-     * \brief Constructor
-     * \param P_init Error covariance matrix
-     * \param R_init Measurement variance vector
-     * \param Q_init Model variance matrix
-     * \param H_init Vector mapping the measurements to the state
-     */
-    Kalman(Matrix P_init, Matrix R_init, Matrix Q_init, Matrix H_init);
+private:
+    void stateCalibrating(const Event& ev);
+    void stateIdle(const Event& ev);
+    void stateShadowMode(const Event& ev);
+    void stateActive(const Event& ev);
+    void stateFirstDescentPhase(const Event& ev);
+    void stateEnd(const Event& ev);
 
-    /**
-     * \brief Method for updating the estimate
-     * \param y The measurement vector
-     */
-    void update(Matrix y);
+    uint16_t cal_delayed_event_id = 0;      // Event id for calibration timeout
+    ADAStatus status;                       // Variable to store state
+
+    Kalman filter;          // Filter object that perfroms the computations
+
+    // Calibration variables
+    ADACalibrationData calibrationData;
+
+    // Sum of all values squared divided by their number, to comupte variance
+    float avg_of_squares = 0.0;
+
+    // Parachute deployment pressure volts
+    uint16_t   dpl_target_pressure_v = 5000; // Set default value here
+    
+    // Logger
+    LoggerProxy& logger = *(LoggerProxy::getInstance());
 };
-
-#endif /* Kalman_h */
