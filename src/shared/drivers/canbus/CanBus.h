@@ -28,10 +28,9 @@
 #include <Common.h>
 #include "CanUtils.h"
 
-class CanManager;
-
 using CanDispatcher = std::function<void(CanMsg)>;
 
+class CanManager;
 class CanBus
 {
 public:
