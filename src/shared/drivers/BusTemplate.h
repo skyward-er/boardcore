@@ -266,6 +266,15 @@ public:
         SingletonType::getInstance()->readImpl(address, regAddr, data, len);
     }
 
+    /**
+     * Reads \param len bytes storing them into \param *data buffer
+     * without specifying the register to read from
+     */
+    static inline void directRead(uint8_t address, uint8_t* data, uint8_t len)
+    {
+        SingletonType::getInstance()->directReadImpl(address, data, len);
+    }
+
 private:
     Bus& bus = Bus::instance();
 
@@ -294,6 +303,11 @@ private:
     void readImpl(uint8_t address, uint8_t regAddr, uint8_t* data, uint8_t len)
     {
         bus.send(address, reinterpret_cast<void*>(&regAddr), 1, false);
+        bus.recv(address, reinterpret_cast<void*>(data), len);
+    }
+
+    void directReadImpl(uint8_t address, uint8_t* data, uint8_t len)
+    {
         bus.recv(address, reinterpret_cast<void*>(data), len);
     }
 

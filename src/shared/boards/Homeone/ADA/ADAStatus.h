@@ -20,43 +20,37 @@
  * THE SOFTWARE.
  */
 
-#ifndef Kalman_h
-#define Kalman_h
-#include "Matrix.hpp"
-/*!
- * \class Kalman
- * \brief A class representing a Kalman filter
- *
- * To use the filter:
- * (1) Call the initializer with the appropriate matrices
- * (2) Define the state propagation matrix and initial state
- * (3) Call the update function for each new sample acquired
- */
-class Kalman
-{
-private:
-    Matrix R; /**< Measurement variance vector */
-    Matrix Q; /**< Model variance matrix */
-    Matrix H; /**< Vector mapping the measurements to the state */
-public:
-    Matrix P;   /**< Error covariance matrix */
-    Matrix X;   /**< State matrix */
-    Matrix Phi; /**< State propagation matrix */
-
-    /**
-     * \brief Constructor
-     * \param P_init Error covariance matrix
-     * \param R_init Measurement variance vector
-     * \param Q_init Model variance matrix
-     * \param H_init Vector mapping the measurements to the state
-     */
-    Kalman(Matrix P_init, Matrix R_init, Matrix Q_init, Matrix H_init);
-
-    /**
-     * \brief Method for updating the estimate
-     * \param y The measurement vector
-     */
-    void update(Matrix y);
+// All possible states of the ADA FMM
+enum class ADAState {
+    UNDEFINED,
+    CALIBRATING,
+    IDLE,
+    SHADOW_MODE,
+    ACTIVE,
+    FIRST_DESCENT_PHASE,
+    END
 };
 
-#endif /* Kalman_h */
+// Struct to log current state
+struct ADAStatus
+{
+    ADAState state = ADAState::UNDEFINED;
+};
+
+// Struct of calibration data
+struct ADACalibrationData {
+    float   var        = 0.0;      // Sample variance
+    int     n_samples  = 0;        // Number of samples collected
+    float   avg        = 0.0;      // Average pressure
+};
+
+// Struct to log apogee detection
+struct ApogeeDetected {
+    ADAState state;
+    long long tick;
+};
+
+// Struct to log deployment pressure detection
+struct DplPressureReached {
+    long long tick;
+}
