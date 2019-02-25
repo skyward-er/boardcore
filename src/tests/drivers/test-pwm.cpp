@@ -1,11 +1,8 @@
 #include "Common.h"
 #include "drivers/HardwareTimer.h"
 #include "drivers/pwm/pwm.h"
-#include "interfaces-impl/hwmapping.h"
 
 using namespace miosix;
-using namespace interfaces;
-using namespace actuators;
 
 typedef Gpio<GPIOD_BASE, 12> ch1;      // ch1
 typedef Gpio<GPIOD_BASE, 13> ch2;      // ch2

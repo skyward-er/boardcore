@@ -1,11 +1,13 @@
+SBS_BASE = {SBS_BASE_PATH}
+
 ##
 ## Makefile for Miosix embedded OS
 ##
 MAKEFILE_VERSION := 1.07S
 ## Path to kernel directory (edited by init_project_out_of_git_repo.pl)
-KPATH := libs/miosix-kernel/miosix
+KPATH := $(SBS_BASE)/libs/miosix-kernel/miosix
 ## Path to config directory (edited by init_project_out_of_git_repo.pl)
-CONFPATH := libs/miosix-kernel/miosix
+CONFPATH := $(SBS_BASE)/libs/miosix-kernel/miosix
 {SBS_BOARD_DEFINE}
 {SBS_MAP_FILE}
 include $(CONFPATH)/config/Makefile.inc
@@ -28,7 +30,8 @@ LIBS :=
 ##
 ## List here additional include directories (in the form -Iinclude_dir)
 ##
-INCLUDE_DIRS := -Isrc/shared -Isrc/tests -Ilibs -Imiosix-kernel -Imiosix
+INCLUDE_DIRS := -I$(SBS_BASE)/libs -I$(SBS_BASE)/miosix-kernel -I$(SBS_BASE)/miosix \
+                -I$(SBS_BASE)/src/shared
 
 ##############################################################################
 ## You should not need to modify anything below                             ##
