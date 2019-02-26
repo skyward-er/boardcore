@@ -8,24 +8,21 @@ Boardcore is a framework for developing and building missile software for custom
 
 [Miosix](https://miosix.org/) is a lightweigth OS for embedded developing which provides support for basic things such as Threads, GPIO, Time and many other. You can find our fork of the kernel here: [skyward/miosix-kernel](https://git.skywarder.eu/elc/miosix-kernel)
 
-Building is made with [SBS](https://git.skywarder.eu/r2a/skyward-boardcore/wikis/Skyward-Build-Systems-(SBS)),
-which was created to easily compile and reuse code for different boards. 
+Building is made with [SBS](https://git.skywarder.eu/r2a/skyward-boardcore/wikis/Skyward-Build-Systems-(SBS)), which was created to easily compile and reuse code for different boards. 
 
 ### Content
 
-| Folder        | What's in it  |
-| ----------- | ---------------------- | 
-| **bin/** | compiled binaries that can be flashed on a target board |
-| **build/** | sbs stuff, not interesting |
-| **config/** |  miosix external config (boards ecc)|
-| **data/** | configuration (barely used now) |
-| **libs/** | external libs (Miosix kernel as a git submodule) |
-| **obj/** | build folder, not interesting |  |
-| **scripts/** | some tools (e.g. script for flashing on the boards) |
-| **src/** | sources! |
-| **src/entrypoints** | each file here is a 'main' |
-| **src/test** | contains the 'main' of every test |
-| **src/shared** | objects, drivers and other stuff written by us |
+| **src/**     | sources!                                                |
+| ------------ | ------------------------------------------------------- |
+| shared/      | objects, drivers and other stuff written by us          |
+| entrypoints/ | each file here is a 'main'                              |
+| tests/       | contains the 'main' of every test                       |
+| **bin/**     | compiled binaries that can be flashed on a target board |
+| **build/**   | sbs stuff, not interesting                              |
+| **data/**    | configuration (barely used now)                         |
+| **libs/**    | external libs (Miosix kernel as a git submodule)        |
+| **obj/**     | build folder, not interesting                           |
+| **scripts/** | some tools (e.g. script for flashing on the boards)     |
 
 In the main folder you will find **sbs.conf** which is used to configure the build system.
 
@@ -41,6 +38,7 @@ python sbs -v
 ```
 
 SBS will start building all the entrypoints. Depending on how many entrypoints there are, this operation can take several minutes.
+
 Once SBS finished, check the resulting message: if every build displays an *OK* message, pat yourself on the back - you've got things *working*!
 
 ### What's next?
