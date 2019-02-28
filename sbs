@@ -175,7 +175,6 @@ def build_makefile(template, board, bname):
 
     for incl in incllist:
         rmap["CUSTOM_DEFINES"] += " -I" + incl
-        print(incl)
 
     for i in rmap:
         template = template.replace("{SBS_%s}" % i , rmap[i])
