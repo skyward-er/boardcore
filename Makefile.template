@@ -31,7 +31,7 @@ LIBS :=
 ## List here additional include directories (in the form -Iinclude_dir)
 ##
 INCLUDE_DIRS := -I$(SBS_BASE)/libs -I$(SBS_BASE)/miosix-kernel -I$(SBS_BASE)/miosix \
-                -I$(SBS_BASE)/src/shared
+                -I$(SBS_BASE)/src/shared -Isrc/boards
 
 ##############################################################################
 ## You should not need to modify anything below                             ##
