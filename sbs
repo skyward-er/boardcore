@@ -43,7 +43,8 @@ projconf = {
     "ENTRY_PATH":"src/entrypoints",
     "TESTS_PATH":"src/tests",
     "SRC_PATH":"src/shared",
-    "SBS_BASE": "."
+    "SBS_BASE": ".",
+    "PROJECT_INCLUDES": "."
 }
 
 #
@@ -161,6 +162,8 @@ def readProjectParams(conf):
 # Fill in Makefile.template
 #
 def build_makefile(template, board, bname):
+    global projconf
+
     rmap = { "BOARD_DEFINE": "export OPT_BOARD := %s\nexport BOARD_UUID := %s\n" % (
         board['id'], bname),
              "MAP_FILE": "export MAIN_MAP_FILE := bin/%s.map\n" % board['bin'],
@@ -168,6 +171,9 @@ def build_makefile(template, board, bname):
              "CUSTOM_DEFINES": board['defines'] + " -I" + projconf['SRC_PATH'],
              "BIN_NAME": board['bin']
     }
+
+    for incl in projconf["PROJECT_INCLUDES"]:
+        rmap["CUSTOM_DEFINES"] += " -I" + incl
 
     for i in rmap:
         template = template.replace("{SBS_%s}" % i , rmap[i])
