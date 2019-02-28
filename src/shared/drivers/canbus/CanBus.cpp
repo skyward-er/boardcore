@@ -41,27 +41,25 @@ using std::set;
 // Transmit mailbox request
 #define TMIDxR_TXRQ ((uint32_t)0x00000001)
 
-CanBus::CanBus(CAN_TypeDef *bus, CanManager *manager, const int id, CanDispatcher dispatcher)
-    : CANx(bus), manager(manager), id(id), dispatchMessage(dispatcher)
+CanBus::CanBus(CAN_TypeDef *bus, CanManager *manager, const int can_id, CanDispatcher dispatcher)
+    : CANx(bus), manager(manager), id(can_id), dispatchMessage(dispatcher)
 {
     terminate = false;
-    pthread_create(&t, NULL, threadLauncher, reinterpret_cast<void *>(this));
     this->canSetup();
 }
 
 /**
-  funzione eseguita dal thread che smista i messaggi
-  ricevuti tra i vari receiver
-  */
-void CanBus::queueHandler()
+* Funzione eseguita dall'ActiveObject per ricevere messaggi
+*/
+void CanBus::rcvFunction()
 {
     while (terminate == false)
     {
         /* Read fom queue */
         CanMsg message;
-        messageQueue.waitUntilNotEmpty();
+        rcvQueue.waitUntilNotEmpty();  // blocks
 
-        messageQueue.get(message);
+        rcvQueue.get(message);
         TRACE("[CanBus] message received\n");
 
         /* Check message */
@@ -74,23 +72,17 @@ void CanBus::queueHandler()
 
         if (filter_id >= (uint32_t)CanManager::filter_max_id)
         {
-            // log unsupported message
+            TRACE("[CanBus] Unsupported message\n");
             return;
         }
 
+        /* Truncate payload length to maximum */
         if (message.DLC > 8)
             message.DLC = 8;
 
         /* Handle message */
         dispatchMessage(message);
     }
-}
-
-// metodo per eseguire queueHandler//
-void *CanBus::threadLauncher(void *arg)
-{
-    reinterpret_cast<CanBus *>(arg)->queueHandler();
-    return NULL;
 }
 
 /*
