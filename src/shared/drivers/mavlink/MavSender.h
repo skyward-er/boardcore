@@ -28,10 +28,17 @@
 
 #include <ActiveObject.h>
 #include <drivers/Transceiver.h>
-#include <libs/mavlink_skyward_lib/mavlink_lib/skyward/mavlink.h>
+
+/***** NOTE *****
+ * This driver uses mavlink helper struct and functions that are present in ANY mavlink library,
+ * but the mavlink library itself IS NOT included in boardcore. Hence, this will not compile alone.
+ * See mavlink/README for more info
+ */
+#include <mavlink_skyward_lib/mavlink_lib/skyward/mavlink.h>
 
 /**
  * Class to bufferize the sending of mavlink messages over a transceiver.
+ *
  */
 class MavSender : public ActiveObject
 {
@@ -40,15 +47,18 @@ public:
     static const uint16_t MAV_OUT_QUEUE_LEN  = 10;
 
     /**
-     * @param device   the device used for sending messages
+     * @param device    the device used for sending messages
+     * @param sleepTime min amount of ms to sleep after every send (guaranteed silence)
      */
-    MavSender(Transceiver* device, uint16_t sleepTime) : 
+    MavSender(Transceiver* device, uint16_t sleepTime = 0) : 
                 ActiveObject(), device(device), sleep_after_send(sleepTime) {}
 
     ~MavSender(){};
 
     /**
-     * Non-blocking send function
+     * Non-blocking send function. Message is put in the queue if not full.
+     * @param msg    message to send (mavlink struct)
+     * @return true if the message could be enqueued (queue not full)
      */
     bool enqueueMsg(const mavlink_message_t& msg)
     {
@@ -67,8 +77,9 @@ public:
 protected:
 
     /**
-     * Ran in a separate thread. Periodically flushes the message queue
-     * and sends all the enqueued messages.
+     * Inherited by ActiveObject.
+     * Periodically flushes the message queue and sends all the enqueued messages.
+     * After every send, a sleep is done to guarantee some silence on the channel.
      */
     void run() override
     {

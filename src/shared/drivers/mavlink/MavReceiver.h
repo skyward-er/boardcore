@@ -26,11 +26,19 @@
 
 #include <Common.h>
 
-#include <libs/mavlink_skyward_lib/mavlink_lib/skyward/mavlink.h>  
-#include <drivers/Transceiver.h>
 #include <ActiveObject.h>
+#include <drivers/Transceiver.h>
+
+/***** NOTE *****
+ * This driver uses mavlink helper struct and functions that are present in ANY mavlink library,
+ * but the mavlink library itself IS NOT included in boardcore. Hence, this will not compile alone.
+ * See mavlink/README for more info
+ */
+#include <mavlink_skyward_lib/mavlink_lib/skyward/mavlink.h>
+
 #include "MavSender.h"
 
+/* Alias of the function to be executed whenever a message is correctly parsed */
 using MavHandler = std::function<void(MavSender* sender, const mavlink_message_t& msg)>;
 
 /**
@@ -52,12 +60,14 @@ public:
     
     ~MavReceiver(){};
 
-    mavlink_status_t mavStatus;
+    mavlink_status_t mavStatus; // updated every message
 
 protected:
     /**
-     * Ran in a separate thread. Reads one char at a time from
+     * Inherited from ActiveObject: reads one char at a time from
      * the device and tries to parse a mavlink message.
+     * If the message is successfully parsed, executes the function that was
+     * passed in the constructor.
      */
     void run() override
     {
@@ -83,6 +93,6 @@ protected:
 
 private:
     Transceiver* device;
-    MavSender* sender;
-    MavHandler handleMavlinkMessage;
+    MavSender* sender;               // needed to send back a response
+    MavHandler handleMavlinkMessage; // function to be executed when a message is parsed
 };

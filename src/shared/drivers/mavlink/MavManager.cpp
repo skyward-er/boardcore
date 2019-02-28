@@ -24,6 +24,23 @@
 
 #include "MavManager.h"
 
+MavManager::~MavManager()
+{
+    /* Destroy senders */
+    while (senders.size() > 0)
+    {
+        delete senders[senders.size() - 1];
+        senders.pop_back();
+    }
+
+    /* Destroy receivers */
+    while (receivers.size() > 0)
+    {
+        delete receivers[receivers.size() - 1];
+        receivers.pop_back();
+    }
+}
+
 uint16_t MavManager::addSender(Transceiver* device, uint16_t sleepTime)
 {
     MavSender* sender = new MavSender(device, sleepTime);

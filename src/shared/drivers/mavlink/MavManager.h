@@ -31,7 +31,9 @@
 #include "MavSender.h"
 
 /**
- * Manages MavSenders and MavReceivers.
+ * This class is meant to simply manage a set of mavlink senders and receivers.
+ * The idea is that there might be more than one tranceiver to manage, for redundancy
+ * reasons or for having different channels for TCs and TMs.
  */
 class MavManager
 {
@@ -39,21 +41,7 @@ class MavManager
 public:
 
     MavManager(){}
-
-    ~MavManager()
-    {
-        while (senders.size() > 0)
-        {
-            delete senders[senders.size() - 1];
-            senders.pop_back();
-        }
-
-        while (receivers.size() > 0)
-        {
-            delete receivers[receivers.size() - 1];
-            receivers.pop_back();
-        }
-    }
+    ~MavManager();
 
     uint16_t addSender(Transceiver* device, uint16_t sleepTime);
     uint16_t addReceiver(Transceiver* device, MavSender* sender, MavHandler onRcv);
