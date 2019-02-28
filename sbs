@@ -163,6 +163,7 @@ def readProjectParams(conf):
 #
 def build_makefile(template, board, bname):
     global projconf
+    incllist = projconf["PROJECT_INCLUDES"].split()
 
     rmap = { "BOARD_DEFINE": "export OPT_BOARD := %s\nexport BOARD_UUID := %s\n" % (
         board['id'], bname),
@@ -172,8 +173,9 @@ def build_makefile(template, board, bname):
              "BIN_NAME": board['bin']
     }
 
-    for incl in projconf["PROJECT_INCLUDES"]:
+    for incl in incllist:
         rmap["CUSTOM_DEFINES"] += " -I" + incl
+        print(incl)
 
     for i in rmap:
         template = template.replace("{SBS_%s}" % i , rmap[i])
