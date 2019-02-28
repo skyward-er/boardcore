@@ -60,7 +60,7 @@ public:
     /**
      * @brief Adds a filter to receive Canbus messages.
      * 
-     * @param           id filter ID
+     * @param id        filter ID
      * @param can_id    on which canbus
      * @return true     ok
      * @return false    invalid filters
@@ -106,6 +106,7 @@ public:
 
         CanBus *canbus = new CanBus(i.can, this, bus.size(), dispatcher);
         bus.push_back(canbus);
+        canbus->start();
 
         // Used by CanInterrupt.cpp
         global_bus_ptr[global_bus_ctr++] = canbus;

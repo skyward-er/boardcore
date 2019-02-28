@@ -26,6 +26,7 @@
 
 using namespace miosix;
 
+/* Global array of all the physical CAN buses */
 CanBus *global_bus_ptr[2] = {NULL, NULL};
 uint32_t global_bus_ctr   = 0;
 
@@ -65,6 +66,9 @@ void __attribute__((naked)) CAN2_RX1_IRQHandler()
     restoreContext();
 }
 
+/*
+ * @brief This function populates the rcvQueue of the corresponding Canbus object.
+ */
 void __attribute__((used)) CAN_IRQHandlerImpl(int can_dev, int fifo)
 {
     CanBus *hlbus;
@@ -105,7 +109,7 @@ void __attribute__((used)) CAN_IRQHandlerImpl(int can_dev, int fifo)
 
     bool hppw = false;
 
-    hlbus->messageQueue.IRQput(RxMessage, hppw);
+    hlbus->rcvQueue.IRQput(RxMessage, hppw);
 
     if (hppw)
         Scheduler::IRQfindNextThread();
