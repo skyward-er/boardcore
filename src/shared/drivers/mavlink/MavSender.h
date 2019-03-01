@@ -47,8 +47,8 @@ public:
      * @param device    the device used for sending messages
      * @param sleepTime min amount of ms to sleep after every send (guaranteed silence)
      */
-    MavSender(Transceiver* device, uint16_t sleepTime = 0) : 
-                ActiveObject(), device(device), sleep_after_send(sleepTime) {}
+    MavSender(Transceiver* device, mavlink_status_t* status, uint16_t sleepTime = 0) : 
+                ActiveObject(), device(device), status(status), sleep_after_send(sleepTime) {}
 
     ~MavSender(){};
 
@@ -95,10 +95,14 @@ protected:
 
             /* Send */
             bool sent = device->send(bufferMsg, msgLen);
+
             TRACE("[MAV] Sending %d bytes\n", msgLen);
 
             if (!sent)
                 TRACE("[MAV] Error: could not send message\n");
+
+            /* Update status */
+            status->current_tx_seq++;
 
             /* Sleep guarantees that commands from the GS can be received */
             miosix::Thread::sleep(sleep_after_send);
@@ -107,6 +111,7 @@ protected:
 
 private:
     Transceiver* device;
+    mavlink_status_t* status;
     miosix::Queue<mavlink_message_t, MAV_OUT_QUEUE_LEN> messageQueue;
 
     const uint16_t sleep_after_send;

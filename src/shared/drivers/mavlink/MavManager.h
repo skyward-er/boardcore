@@ -33,6 +33,7 @@
 #include <drivers/Transceiver.h>
 #include "MavReceiver.h"
 #include "MavSender.h"
+#include "MavStatus.h"
 
 /**
  * This class is meant to simply manage a set of mavlink senders and receivers.
@@ -64,7 +65,7 @@ public:
 
     uint16_t addSender(Transceiver* device, uint16_t sleepTime)
     {
-        MavSender* sender = new MavSender(device, sleepTime);
+        MavSender* sender = new MavSender(device, &status, sleepTime);
         senders.push_back(sender);
         sender->start();
 
@@ -74,7 +75,7 @@ public:
 
     uint16_t addReceiver(Transceiver* device, MavSender* sender, MavHandler onRcv)
     {
-        MavReceiver* receiver = new MavReceiver(device, sender, onRcv);
+        MavReceiver* receiver = new MavReceiver(device, sender, onRcv, &status);
         receivers.push_back(receiver);
         receiver->start();
 
@@ -93,8 +94,18 @@ public:
         return receivers[id];
     }
 
+    MavStatus getStatus()
+    {
+        loggable_status.timestamp = miosix::getTick();
+        loggable_status.status = status;
+        return loggable_status;
+    }
+
 private:
 
     std::vector<MavSender *> senders;
     std::vector<MavReceiver *> receivers;
+
+    mavlink_status_t status;
+    MavStatus loggable_status;
 };
