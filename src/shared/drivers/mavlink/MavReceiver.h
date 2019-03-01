@@ -24,17 +24,15 @@
 
 #pragma once
 
-#include <Common.h>
+#ifndef MAVLINK_H
+    #error Wrong include order: you should include a MAVLINK_H before using this
+#endif
 
+#include <Common.h>
 #include <ActiveObject.h>
 #include <drivers/Transceiver.h>
 
-/***** NOTE *****
- * This driver uses mavlink helper struct and functions that are present in ANY mavlink library,
- * but the mavlink library itself IS NOT included in boardcore. Hence, this will not compile alone.
- * See mavlink/README for more info
- */
-#include <mavlink_skyward_lib/mavlink_lib/skyward/mavlink.h>
+#include <libs/mavlink_skyward_lib/mavlink_lib/protocol.h>
 
 #include "MavSender.h"
 

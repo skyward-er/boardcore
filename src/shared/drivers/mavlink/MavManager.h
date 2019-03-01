@@ -24,6 +24,10 @@
 
 #pragma once
 
+#ifndef MAVLINK_H
+    #error Wrong include order: you should include a MAVLINK_H before using this
+#endif
+
 #include <Common.h>
 
 #include <drivers/Transceiver.h>
@@ -41,13 +45,53 @@ class MavManager
 public:
 
     MavManager(){}
-    ~MavManager();
+    ~MavManager()
+    {
+        /* Destroy senders */
+        while (senders.size() > 0)
+        {
+            delete senders[senders.size() - 1];
+            senders.pop_back();
+        }
 
-    uint16_t addSender(Transceiver* device, uint16_t sleepTime);
-    uint16_t addReceiver(Transceiver* device, MavSender* sender, MavHandler onRcv);
+        /* Destroy receivers */
+        while (receivers.size() > 0)
+        {
+            delete receivers[receivers.size() - 1];
+            receivers.pop_back();
+        }
+    }
 
-    MavSender* getSender(uint16_t id);
-    MavReceiver* getReceiver(uint16_t id);
+    uint16_t addSender(Transceiver* device, uint16_t sleepTime)
+    {
+        MavSender* sender = new MavSender(device, sleepTime);
+        senders.push_back(sender);
+        sender->start();
+
+        return senders.size();
+    }
+
+
+    uint16_t addReceiver(Transceiver* device, MavSender* sender, MavHandler onRcv)
+    {
+        MavReceiver* receiver = new MavReceiver(device, sender, onRcv);
+        receivers.push_back(receiver);
+        receiver->start();
+
+        return receivers.size();
+    }
+
+
+    MavSender* getSender(uint16_t id) 
+    {
+        return senders[id];
+    }
+
+
+    MavReceiver* getReceiver(uint16_t id)
+    {
+        return receivers[id];
+    }
 
 private:
 
