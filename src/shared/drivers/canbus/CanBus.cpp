@@ -80,6 +80,14 @@ void CanBus::rcvFunction()
         if (message.DLC > 8)
             message.DLC = 8;
 
+        {
+            // Update status
+            Lock<FastMutex> l(statusMutex);
+            status.n_rcv++;
+            status.last_rcv = (uint8_t)filter_id;
+            status.last_rcv_ts = miosix::getTick();
+        }
+
         /* Handle message */
         dispatchMessage(message);
     }
@@ -108,7 +116,7 @@ bool CanBus::send(uint16_t id, const uint8_t *message, uint8_t len)
 
     {
         int txMailBox = -1;
-        Lock<FastMutex> l(mutex);
+        Lock<FastMutex> l(sendMutex);
 
         int timeout = 10;
         while (txMailBox < 0 && timeout > 0)
@@ -154,9 +162,23 @@ bool CanBus::send(uint16_t id, const uint8_t *message, uint8_t len)
         // Request transmission
         CANx->sTxMailBox[txMailBox].TIR |= TMIDxR_TXRQ;
     }
+
+    {
+        // Update status
+        Lock<FastMutex> l(statusMutex);
+        status.n_sent++;
+        status.last_sent = (uint8_t)id;
+        status.last_sent_ts = miosix::getTick();
+    }
+
     return true;
 }
 
+CanStatus CanBus::getStatus()
+{
+    Lock<FastMutex> l(statusMutex);
+    return status;
+}
 
 void CanBus::canSetup()
 {
