@@ -24,21 +24,18 @@
 
 #pragma once
 
-#include <Common.h>
+#ifndef MAVLINK_H
+    #error Wrong include order: you should include a MAVLINK_H before using this
+#endif
 
+#include <Common.h>
 #include <ActiveObject.h>
 #include <drivers/Transceiver.h>
 
-/***** NOTE *****
- * This driver uses mavlink helper struct and functions that are present in ANY mavlink library,
- * but the mavlink library itself IS NOT included in boardcore. Hence, this will not compile alone.
- * See mavlink/README for more info
- */
-#include <mavlink_skyward_lib/mavlink_lib/skyward/mavlink.h>
+#include <libs/mavlink_skyward_lib/mavlink_lib/protocol.h>
 
 /**
  * Class to bufferize the sending of mavlink messages over a transceiver.
- *
  */
 class MavSender : public ActiveObject
 {
@@ -98,10 +95,10 @@ protected:
 
             /* Send */
             bool sent = device->send(bufferMsg, msgLen);
-            TRACE("[MAV] Sending %lu bytes\n", msgLen);
+            TRACE("[MAV] Sending %d bytes\n", msgLen);
 
             if (!sent)
-                TRACE("[MAV] Error: could not send message\n", 0);
+                TRACE("[MAV] Error: could not send message\n");
 
             /* Sleep guarantees that commands from the GS can be received */
             miosix::Thread::sleep(sleep_after_send);
