@@ -5,6 +5,6 @@
 [submodule "libs/tscpp"]
 	path = libs/tscpp
 	url = https://github.com/fedetft/tscpp.git
-[submodule "libs/mavlink_skyward_lib"]
-	path = libs/mavlink_skyward_lib
+[submodule "mavlink_skyward_lib"]
+	path = mavlink_skyward_lib
 	url = ../mavlink_skyward_lib.git
