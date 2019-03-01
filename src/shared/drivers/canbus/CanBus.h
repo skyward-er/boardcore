@@ -61,8 +61,9 @@ public:
      */
     bool send(uint16_t id, const uint8_t* message, uint8_t len);
 
-    /* Getter */
+    /* Getters */
     volatile CAN_TypeDef* getBus() { return CANx; }
+    CanStatus getStatus();
 
     /* Rule of five */
     CanBus(const CanBus&)  = delete;
@@ -85,10 +86,12 @@ private:
     CanManager* manager;
     const int id;
 
-    miosix::FastMutex mutex;
+    miosix::FastMutex sendMutex;
+    miosix::FastMutex statusMutex;
     volatile bool terminate;
 
     CanDispatcher dispatchMessage;
+    CanStatus status;
 };
 
 #endif /* CANBUS_H */
