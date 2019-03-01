@@ -48,17 +48,15 @@ class MavReceiver : public ActiveObject
 public:
     /**
      * @param device   the device used for receiving messages
-     * @param onRcv    function to be exectued on message reception 
+     * @param sender   response callback
+     * @param onRcv    function to be executed on message reception 
+     * @param status   mavlink status struct
      */
-    MavReceiver(Transceiver* device, MavSender* sender, MavHandler onRcv) : 
-                                            ActiveObject(), 
-                                            device(device), 
-                                            sender(sender),
-                                            handleMavlinkMessage(onRcv) {}
+    MavReceiver(Transceiver* device, MavSender* sender, MavHandler onRcv, mavlink_status_t* status) : 
+                                            ActiveObject(), device(device), sender(sender),
+                                            handleMavlinkMessage(onRcv), status(status) {}
     
     ~MavReceiver(){};
-
-    mavlink_status_t mavStatus; // updated every message
 
 protected:
     /**
@@ -77,7 +75,7 @@ protected:
             device->receive(&byte, 1);  // Blocking function
 
             /* If a complete mavlink message was found */
-            if (mavlink_parse_char(MAVLINK_COMM_0, byte, &msg, &mavStatus))
+            if (mavlink_parse_char(MAVLINK_COMM_0, byte, &msg, status))
             {
                 TRACE("[MAV] Received message with ID %d, sequence: %d from "
                     "component %d of system %d\n",
@@ -93,4 +91,6 @@ private:
     Transceiver* device;
     MavSender* sender;               // needed to send back a response
     MavHandler handleMavlinkMessage; // function to be executed when a message is parsed
+
+    mavlink_status_t* status;
 };
