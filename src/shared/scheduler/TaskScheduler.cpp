@@ -22,36 +22,39 @@
  * THE SOFTWARE.
  */
 
-#include "Scheduler.h"
+#include "TaskScheduler.h"
 
 using namespace std;
 using namespace miosix;
 
-std::ostream& operator<<(std::ostream& os, const TaskStatResult& sr)
+TaskScheduler::TaskScheduler(unsigned int stacksize, miosix::Priority priority)
+    : ActiveObject(stacksize, priority), permanentTasks(0)
 {
-    os << sr.name << "\nactivation " << sr.activationStats << "\nperiod     "
-       << sr.periodStats << "\nworkload   " << sr.workloadStats << '\n';
-    return os;
 }
 
-//
-// class EventScheduler
-//
-
-void EventScheduler::add(function_t func, uint32_t intervalMs,
-                         const string& name, int64_t start)
+void TaskScheduler::stop()
 {
-    task_t task = {func, intervalMs, name, false, -1, {}, {}, {}};
+    // Signal the run function to stop
+    should_stop = true;
+    condvar.signal();  // Wake the run function even if there are no tasks
+
+    ActiveObject::stop();
+}
+
+void TaskScheduler::add(function_t func, uint32_t intervalMs, uint8_t id,
+                        int64_t start)
+{
+    task_t task = {func, intervalMs, id, false, -1, {}, {}, {}};
     addTask(task, start);
 }
 
-void EventScheduler::addOnce(function_t func, uint32_t delayMs, int64_t start)
+void TaskScheduler::addOnce(function_t func, uint32_t delayMs, int64_t start)
 {
-    task_t task = {func, delayMs, "", true, -1, {}, {}, {}};
+    task_t task = {func, delayMs, 255, true, -1, {}, {}, {}};
     addTask(task, start);
 }
 
-vector<TaskStatResult> EventScheduler::getTaskStats()
+vector<TaskStatResult> TaskScheduler::getTaskStats()
 {
     Lock<FastMutex> l(mutex);
     vector<TaskStatResult> result;
@@ -61,7 +64,7 @@ vector<TaskStatResult> EventScheduler::getTaskStats()
         if (it.once)
             continue;
         result.push_back({
-            it.name,
+            it.id,
             it.activationStats.getStats(),
             it.periodStats.getStats(),
             it.workloadStats.getStats(),
@@ -70,13 +73,19 @@ vector<TaskStatResult> EventScheduler::getTaskStats()
     return result;
 }
 
-void EventScheduler::run()
+void TaskScheduler::run()
 {
     Lock<FastMutex> l(mutex);
-    for (;;)
+    while (true)
     {
-        while (agenda.size() == 0)
+        while (agenda.size() == 0 && !shouldStop())
             condvar.wait(mutex);
+
+        // Return if the ActiveObject has been stopped.
+        if (shouldStop())
+        {
+            return;
+        }
 
         int64_t now      = getTick();
         int64_t nextTick = agenda.top().nextTick;
@@ -121,7 +130,7 @@ void EventScheduler::run()
     }
 }
 
-void EventScheduler::addTask(const EventScheduler::task_t& task, int64_t start)
+void TaskScheduler::addTask(const TaskScheduler::task_t& task, int64_t start)
 {
     Lock<FastMutex> l(mutex);
     tasks.push_back(task);
@@ -134,14 +143,14 @@ void EventScheduler::addTask(const EventScheduler::task_t& task, int64_t start)
     enqueue(event);
 }
 
-void EventScheduler::enqueue(event_t& event)
+void TaskScheduler::enqueue(event_t& event)
 {
     event.nextTick += event.task->intervalMs * TICK_FREQ / 1000;
     agenda.push(event);
     condvar.broadcast();
 }
 
-void EventScheduler::updateStats(event_t& e, int64_t startTime, int64_t endTime)
+void TaskScheduler::updateStats(event_t& e, int64_t startTime, int64_t endTime)
 {
     const float tickToMs = 1000.f / TICK_FREQ;
 
@@ -160,9 +169,4 @@ void EventScheduler::updateStats(event_t& e, int64_t startTime, int64_t endTime)
 
     // Workload stats
     e.task->workloadStats.add(endTime - startTime);
-}
-
-EventScheduler::EventScheduler()
-    : ActiveObject(2048, PRIORITY_MAX - 1), permanentTasks(0)
-{
 }
