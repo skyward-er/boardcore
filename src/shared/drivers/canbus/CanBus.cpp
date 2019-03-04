@@ -46,6 +46,7 @@ CanBus::CanBus(CAN_TypeDef *bus, CanManager *manager, const int can_id, CanDispa
 {
     terminate = false;
     this->canSetup();
+    memset(&status, 0, sizeof(status));
 }
 
 /**
