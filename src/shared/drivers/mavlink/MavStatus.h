@@ -1,6 +1,4 @@
-/* Mavlink receiver
- *
- * Copyright (c) 2015-2018 Skyward Experimental Rocketry
+/* Copyright (c) 2019 Skyward Experimental Rocketry
  * Authors: Alvise de'Faveri Tron
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -22,35 +20,15 @@
  * THE SOFTWARE.
  */
 
-#include "MavManager.h"
+#pragma once
 
-uint16_t MavManager::addSender(Transceiver* device, uint16_t sleepTime)
+#include <libs/mavlink_skyward_lib/mavlink_lib/mavlink_types.h>
+
+struct MavStatus
 {
-    MavSender* sender = new MavSender(device, sleepTime);
-    senders.push_back(sender);
-    sender->start();
-
-    return senders.size();
-}
-
-
-uint16_t MavManager::addReceiver(Transceiver* device, MavSender* sender, MavHandler onRcv)
-{
-    MavReceiver* receiver = new MavReceiver(device, sender, onRcv);
-    receivers.push_back(receiver);
-    receiver->start();
-
-    return receivers.size();
-}
-
-
-MavSender* MavManager::getSender(uint16_t id) 
-{
-    return senders[id];
-}
-
-
-MavReceiver* MavManager::getReceiver(uint16_t id)
-{
-    return receivers[id];
-}
+    uint64_t timestamp;
+    uint16_t n_send_queue;   // current len of the occupied portion of the queue
+    uint16_t max_send_queue;  // max occupied len of the queue
+    uint16_t n_send_errors;   // number of packet drops
+    mavlink_status_t mav_stats;
+};

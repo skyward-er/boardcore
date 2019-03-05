@@ -2,9 +2,9 @@
 	path = libs/miosix-kernel
 	url = ../../elc/miosix-kernel.git
 	branch = master
-[submodule "libs/mavlink_skyward_lib"]
-	path = libs/mavlink_skyward_lib
-	url = ../../r2a/mavlink_skyward_lib.git
 [submodule "libs/tscpp"]
 	path = libs/tscpp
 	url = https://github.com/fedetft/tscpp.git
+[submodule "libs/mavlink_skyward_lib"]
+	path = libs/mavlink_skyward_lib
+	url = ../mavlink_skyward_lib.git

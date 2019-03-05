@@ -25,43 +25,73 @@
 #ifndef CANBUS_H
 #define CANBUS_H
 
+#include <ActiveObject.h>
 #include <Common.h>
 #include "CanUtils.h"
 
+/* Alias for the function to be executed on receive */
 using CanDispatcher = std::function<void(CanMsg)>;
 
 class CanManager;
-class CanBus
+
+/*
+ * @brief Driver of the physical CAN bus.
+ */
+class CanBus : public ActiveObject
 {
+
 public:
-    miosix::Queue<CanMsg, 6> messageQueue;
-
-    bool send(uint16_t id, const uint8_t* message, uint8_t len);
-
-    void queueHandler();
-    volatile CAN_TypeDef* getBus() { return CANx; }
-
-    CanBus(CAN_TypeDef* bus, CanManager* manager, const int id, CanDispatcher dispatcher);
+    /*
+     * @param bus        the physical pins to be used
+     * @param manager    who created this bus object
+     * @param can_id     the id of the currently created canbus (CAN1, CAN2...)
+     * @param dispatcher function to be executed on receive 
+     */
+    CanBus(CAN_TypeDef* bus, CanManager* manager, const int can_id, CanDispatcher dispatcher);
     ~CanBus() {}
 
+    /* Receiving function executed by the ActiveObject */
+    void rcvFunction();
+
+    /* Sender function 
+     * @param id       Id of the message (aka topic)
+     * @para message   message as byte array
+     * @param len      length of the message (max 8 bytes, truncated if grater)
+     * @return true    if the message was sent correctly
+     */
+    bool send(uint16_t id, const uint8_t* message, uint8_t len);
+
+    /* Getters */
+    volatile CAN_TypeDef* getBus() { return CANx; }
+    CanStatus getStatus();
+
+    /* Rule of five */
     CanBus(const CanBus&)  = delete;
     CanBus(const CanBus&&) = delete;
     CanBus& operator=(const CanBus&) = delete;
 
+    /* Received messages queue, populated by interrupt */
+    miosix::Queue<CanMsg, 6> rcvQueue;
+
+protected:
+    /* Inherited from ActiveObject: executes the receiving function */
+    void run() override {
+        rcvFunction();
+    }
+
 private:
     void canSetup();
+
     volatile CAN_TypeDef* CANx;
     CanManager* manager;
     const int id;
 
-    miosix::FastMutex mutex;
-
+    miosix::FastMutex sendMutex;
+    miosix::FastMutex statusMutex;
     volatile bool terminate;
-    pthread_t t;
-
-    static void* threadLauncher(void* arg);
 
     CanDispatcher dispatchMessage;
+    CanStatus status;
 };
 
 #endif /* CANBUS_H */
