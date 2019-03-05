@@ -31,14 +31,14 @@ void task5hz()
 {
     static long long last_tick = getTick();
 
-    printf("%d: 5 Hz tick\n", getTick() - last_tick);
+    printf("%d: 5 Hz tick\n", (int)(getTick() - last_tick));
 }
 
 void task2hz()
 {
     static long long last_tick = getTick();
 
-    printf("%d: 2 Hz tick\n", getTick() - last_tick);
+    printf("%d: 2 Hz tick\n", (int)(getTick() - last_tick));
 }
 
 int main()
