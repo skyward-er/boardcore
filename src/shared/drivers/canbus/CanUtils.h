@@ -103,4 +103,13 @@ struct CanMsg
 };
 #pragma pack()
 
+struct CanStatus {
+    uint16_t n_sent;
+    uint16_t n_rcv;
+    uint8_t last_sent;
+    uint8_t last_rcv;
+    uint64_t last_sent_ts;
+    uint64_t last_rcv_ts;
+};
+
 #endif /* CANUTILS_H */

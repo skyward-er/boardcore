@@ -1,6 +1,4 @@
-/* Mavlink receiver
- *
- * Copyright (c) 2015-2018 Skyward Experimental Rocketry
+/* Copyright (c) 2015-2018 Skyward Experimental Rocketry
  * Authors: Alvise de'Faveri Tron
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -24,13 +22,19 @@
 
 #pragma once
 
-#include <Common.h>
+#ifndef MAVLINK_H
+    #error Wrong include order: you should include a MAVLINK_H before using this
+#endif
 
-#include <libs/mavlink_skyward_lib/mavlink_lib/skyward/mavlink.h>  
-#include <drivers/Transceiver.h>
+#include <Common.h>
 #include <ActiveObject.h>
+#include <drivers/Transceiver.h>
+
+#include <libs/mavlink_skyward_lib/mavlink_lib/protocol.h>
+
 #include "MavSender.h"
 
+/* Alias of the function to be executed whenever a message is correctly parsed */
 using MavHandler = std::function<void(MavSender* sender, const mavlink_message_t& msg)>;
 
 /**
@@ -42,22 +46,22 @@ class MavReceiver : public ActiveObject
 public:
     /**
      * @param device   the device used for receiving messages
-     * @param onRcv    function to be exectued on message reception 
+     * @param sender   response callback
+     * @param onRcv    function to be executed on message reception 
+     * @param status   mavlink status struct
      */
-    MavReceiver(Transceiver* device, MavSender* sender, MavHandler onRcv) : 
-                                            ActiveObject(), 
-                                            device(device), 
-                                            sender(sender),
-                                            handleMavlinkMessage(onRcv) {}
+    MavReceiver(Transceiver* device, MavSender* sender, MavHandler onRcv, mavlink_status_t* status) : 
+                                            ActiveObject(), device(device), sender(sender),
+                                            handleMavlinkMessage(onRcv), status(status) {}
     
     ~MavReceiver(){};
 
-    mavlink_status_t mavStatus;
-
 protected:
     /**
-     * Ran in a separate thread. Reads one char at a time from
+     * Inherited from ActiveObject: reads one char at a time from
      * the device and tries to parse a mavlink message.
+     * If the message is successfully parsed, executes the function that was
+     * passed in the constructor.
      */
     void run() override
     {
@@ -69,7 +73,7 @@ protected:
             device->receive(&byte, 1);  // Blocking function
 
             /* If a complete mavlink message was found */
-            if (mavlink_parse_char(MAVLINK_COMM_0, byte, &msg, &mavStatus))
+            if (mavlink_parse_char(MAVLINK_COMM_0, byte, &msg, status))
             {
                 TRACE("[MAV] Received message with ID %d, sequence: %d from "
                     "component %d of system %d\n",
@@ -83,6 +87,8 @@ protected:
 
 private:
     Transceiver* device;
-    MavSender* sender;
-    MavHandler handleMavlinkMessage;
+    MavSender* sender;               // needed to send back a response
+    MavHandler handleMavlinkMessage; // function to be executed when a message is parsed
+
+    mavlink_status_t* status;
 };
