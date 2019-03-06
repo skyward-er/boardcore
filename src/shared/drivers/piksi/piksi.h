@@ -25,24 +25,7 @@
 
 #include <pthread.h>
 #include "contiguous_queue.h"
-
-/**
- * The GPS information
- */
-struct GPSData
-{
-    /// timestamp in ms (anakin time, not GPS time). getTick()-timestamp tells
-    /// you how "old" the data is.
-    long long timestamp;
-
-    double latitude;      ///< [deg] //TODO: cast to float??
-    double longitude;     ///< [deg] //TODO: cast to float??
-    double height;        ///< [m]   //TODO: cast to float??
-    float velocityNorth;  ///< [m/s]
-    float velocityEast;   ///< [m/s]
-    float velocityDown;   ///< [m/s]
-    int numSatellites;    ///< [1]
-};
+#include "piksi_data.h"
 
 /**
  * Class to access the Piksi GPS.
