@@ -28,6 +28,7 @@
 #include <time.h>
 #include <unistd.h>
 #include <algorithm>
+#include <cmath>
 
 using namespace std;
 
@@ -89,12 +90,8 @@ GPSData Piksi::getGpsData()
 {
     GPSData result;
     pthread_mutex_lock(&mutex);
-    if (!firstFixReceived)
-    {
-        pthread_mutex_unlock(&mutex);
-        throw runtime_error("No fix");
-    }
     result = data;
+    result.fix = firstFixReceived;
     pthread_mutex_unlock(&mutex);
     return result;
 }
@@ -241,6 +238,10 @@ void Piksi::processVelNed(Piksi::MsgVelNed *msg)
     partialData.velocityNorth = static_cast<float>(msg->n) / 1000.f;
     partialData.velocityEast  = static_cast<float>(msg->e) / 1000.f;
     partialData.velocityDown  = static_cast<float>(msg->d) / 1000.f;
+
+    partialData.speed = sqrtf(powf(partialData.velocityNorth, 2) + 
+                              powf(partialData.velocityEast, 2) + 
+                              powf(partialData.velocityDown, 2))
 
     if (pos && gpsTimestamp == msg->ms)
     {

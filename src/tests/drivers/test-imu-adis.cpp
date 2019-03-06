@@ -22,7 +22,7 @@
 
 #include <Common.h>
 #include <drivers/BusTemplate.h>
-#include <sensors/ADIS16405.h>
+#include <sensors/ADIS16405/ADIS16405.h>
 #include <sensors/MPU9250/MPU9250.h>
 
 using namespace miosix;

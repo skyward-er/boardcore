@@ -22,42 +22,28 @@
  * THE SOFTWARE.
  */
 
-#ifndef EVENT_SCHEDULER_H
-#define EVENT_SCHEDULER_H
+#ifndef BOARDCORE_SRC_SHARED_SCHEDULER_TASKSCHEDULER_H
+#define BOARDCORE_SRC_SHARED_SCHEDULER_TASKSCHEDULER_H
 
+#include "TaskSchedulerData.h"
 #include <ActiveObject.h>
 #include <Common.h>
 #include <Singleton.h>
 #include <math/Stats.h>
 #include <list>
 #include <queue>
+#include <cstdint>
 
 /**
- * Statistics for a task
- */
-struct TaskStatResult
-{
-    std::string name;             ///< Task name
-    StatsResult activationStats;  ///< Task activation stats
-    StatsResult periodStats;      ///< Task period stats
-    StatsResult workloadStats;    ///< Task workload stats
-};
-
-/**
- * Allows printing TaskStatResult to an ostream
- */
-std::ostream& operator<<(std::ostream& os, const TaskStatResult& sr);
-
-/**
- * HOW TO USE THE EVENT SCHEDULER
- * sEventScheduler->add(nonblocking_std::function_without_sleeps, millisec);
+ * HOW TO USE THE TASK SCHEDULER
+ * TaskScheduler.add(nonblocking_std::function_without_sleeps, millisec);
  * and.. it works like magic. :)
  *
  * Example:
  *    void magic_std::function() {
  *        // do something NONBLOCKING and WITHOUT SLEEPS
  *    }
- *    sEventScheduler->add(magic_std::function, 150);
+ *    TaskScheduler.add(magic_std::function, 150);
  *
  * **IMPORTANT REMINDER**
  * Tasks in the event scheduler are meant to be added at inizialization.
@@ -66,13 +52,16 @@ std::ostream& operator<<(std::ostream& os, const TaskStatResult& sr);
  * tasks are not executed until the long interval has expired once, producing
  * unwanted delays.
  */
-class EventScheduler : public Singleton<EventScheduler>, public ActiveObject
+class TaskScheduler : public ActiveObject
 {
-    friend class Singleton<EventScheduler>;
-
 public:
     typedef std::function<void()> function_t;
 
+    /**
+     * Constructor
+     */
+    TaskScheduler(unsigned int stacksize    = miosix::STACK_DEFAULT_FOR_PTHREAD,
+    miosix::Priority priority = miosix::MAIN_PRIORITY);
     /**
      * Add a task function to be called periodically by the scheduler
      * \param func function to be called
@@ -80,7 +69,7 @@ public:
      * \param start the first activation will be at time start+intervalMs,
      * useful for synchronizing tasks
      */
-    void add(function_t func, uint32_t intervalMs, const std::string& name,
+    void add(function_t func, uint32_t intervalMs, uint8_t id,
              int64_t start = miosix::getTick());
 
     /**
@@ -94,6 +83,7 @@ public:
     void addOnce(function_t func, uint32_t delayMs,
                  int64_t start = miosix::getTick());
 
+    void stop() override;
     /**
      * \return statistics for all tasks
      */
@@ -107,7 +97,7 @@ private:
     {
         function_t function;    ///< Task function
         uint32_t intervalMs;    ///< Task period
-        std::string name;       ///< Task name
+        uint8_t id;             ///< Task id
         bool once;              ///< true if the task is not periodic
         int64_t lastcall;       ///< Last activation for period computaton
         Stats activationStats;  ///< Stats about activation error
@@ -134,8 +124,8 @@ private:
     /**
      * Overrides ActiveObject::run()
      */
-    void run();
-
+    void run() override;
+    
     /**
      * Add a task to be executed, both periodic and single shot.
      * In addition, also takes care of genrating the (first) event for the task
@@ -162,18 +152,11 @@ private:
      */
     void updateStats(event_t& e, int64_t startTime, int64_t endTime);
 
-    /**
-     * Constructor
-     */
-    EventScheduler();
-
     miosix::FastMutex mutex;              ///< Mutex to protect agenda
     miosix::ConditionVariable condvar;    ///< Used when agenda is empty
     std::list<task_t> tasks;              ///< Holds all tasks to be scheduled
     std::priority_queue<event_t> agenda;  ///< Ordered list of functions
     uint32_t permanentTasks;              ///< Number of non-oneshot tasks
 };
-
-#define sEventScheduler EventScheduler::getInstance()
 
 #endif
