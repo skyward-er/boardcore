@@ -99,8 +99,8 @@ Matrix::Matrix(const Matrix& M)
     else
     {
         // If the stack allocated array is too small we need to allocate it in
-        // the heap The allocation is done in a single block to reduce memory
-        // access
+        // the heap. The allocation is done in a single block to reduce memory
+        // access.
         data            = new float[rows * columns];
         isHeapAllocated = true;
     }
@@ -111,6 +111,34 @@ Matrix::Matrix(const Matrix& M)
             data[i * columns + j] = M.data[i * columns + j];
         }
     }
+}
+
+Matrix Matrix::operator=(const Matrix& M) {
+    Matrix A{M.rows, M.columns};
+    if (A.rows * A.columns <= MAX_STACK_MATRIX_SIZE)
+    {
+        // The class has a fixed size array allocated on the stack.
+        // If its size is enough to contain all the elements it won't use
+        // dynamic allocation, speeding things up considerably
+        A.data            = A.stackData;
+        A.isHeapAllocated = false;
+    }
+    else
+    {
+        // If the stack allocated array is too small we need to allocate it in
+        // the heap. The allocation is done in a single block to reduce memory
+        // access.
+        A.data            = new float[A.rows * A.columns];
+        A.isHeapAllocated = true;
+    }
+    for (int i = 0; i < rows; i++)
+    {
+        for (int j = 0; j < columns; j++)
+        {
+            A.data[i * A.columns + j] = M.data[i * M.columns + j];
+        }
+    }
+    return A;
 }
 
 Matrix::~Matrix()
@@ -279,38 +307,14 @@ Matrix Matrix::multiply(Matrix A, Matrix B)
 
 Matrix Matrix::sum(Matrix A, Matrix B)
 {
-    if (A.rows != B.rows || A.columns != B.columns)
-    {
-        throw std::invalid_argument("Matrix dimensions do not match");
-    }
-    Matrix result{A.rows, A.columns};
-    for (int i = 0; i < A.rows; i++)
-    {
-        for (int j = 0; j < A.columns; j++)
-        {
-            result.data[i * result.columns + j] =
-                A.data[i * A.columns + j] + B.data[i * B.columns + j];
-        }
-    }
-    return result;
+    A.sum(B);
+    return A;
 }
 
 Matrix Matrix::subtract(Matrix A, Matrix B)
 {
-    if (A.rows != B.rows || A.columns != B.columns)
-    {
-        throw std::invalid_argument("Matrix dimensions do not match");
-    }
-    Matrix result{A.rows, A.columns};
-    for (int i = 0; i < A.rows; i++)
-    {
-        for (int j = 0; j < A.columns; j++)
-        {
-            result.data[i * result.columns + j] =
-                A.data[i * A.columns + j] - B.data[i * B.columns + j];
-        }
-    }
-    return result;
+    A.subtract(B);
+    return A;
 }
 
 // --- Instance methods ---
@@ -338,19 +342,6 @@ void Matrix::sum(Matrix B)
     }
 }
 
-Matrix Matrix::transposed()
-{
-    Matrix new_matrix{columns, rows};
-    for (int i = 0; i < rows; i++)
-    {
-        for (int j = 0; j < columns; j++)
-        {
-            new_matrix.data[j * new_matrix.columns + i] = data[i * columns + j];
-        }
-    }
-    return new_matrix;
-}
-
 void Matrix::subtract(Matrix B)
 {
     if (rows != B.rows || columns != B.columns)
@@ -365,6 +356,19 @@ void Matrix::subtract(Matrix B)
                 data[i * columns + j] - B.data[i * B.columns + j];
         }
     }
+}
+
+Matrix Matrix::transposed()
+{
+    Matrix new_matrix{columns, rows};
+    for (int i = 0; i < rows; i++)
+    {
+        for (int j = 0; j < columns; j++)
+        {
+            new_matrix.data[j * new_matrix.columns + i] = data[i * columns + j];
+        }
+    }
+    return new_matrix;
 }
 
 Matrix Matrix::inverse()
