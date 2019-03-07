@@ -26,7 +26,7 @@
 #include <stdio.h>
 
 #define MAX_STACK_MATRIX_SIZE 9
-/*!
+/**
  * \brief A class representing a matrix and supporting basic algebra and
  * miscellaneous functions
  *
@@ -112,19 +112,27 @@ public:
      * Moves the contents from the given matrix to a new one.
      * If the source uses dynamic allocation this function copies the pointer in
      * M and sets it to nullptr. Otherwise it copies the values in the stack
-     * allocated array. \param M A reference to a reference to the matrix that
-     * will be moved
+     * allocated array.
+     * \param M A reference to a reference to the matrix that will be moved
      */
     Matrix(Matrix&& M);
 
     /**
-     * \brief Assignment overload
+     * \brief Assignment mover overload
      *
-     * Overloads the assigment operator in order to correctly copy the contents
-     * of an instance. \param M A reference to a reference to the matrix that
-     * will be moved
+     * Overloads the assigment operator in order to correctly move the contents
+     * of an instance.
+     * \param M A reference to a reference to the matrix that will be moved
      */
     Matrix& operator=(Matrix&& M);
+
+    /**
+     * \brief Assignment copy overload
+     *
+     * Overloads the assigment operator in order to correctly copy the contents
+     * of an instance.
+     */
+    Matrix operator=(const Matrix& M);
 
     /**
      * \brief Destructor
