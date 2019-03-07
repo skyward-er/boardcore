@@ -1,6 +1,7 @@
 #include <miosix.h>
 #include <map>
 
+#include "events/EventBroker.h"
 #include "events/FSM.h"
 #include "events/HSM.h"
 
