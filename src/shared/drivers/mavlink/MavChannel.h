@@ -208,6 +208,12 @@ public:
         return status;
     }
 
+    /* Setter */
+    void setSleepAfterSend(uint16_t newSleepTime)
+    {
+        sleep_after_send = newSleepTime;
+    }
+
 private:
     /**
      * Calls the run member function
@@ -230,7 +236,7 @@ private:
     // Sender and receiver
     Transceiver* device;
     MavHandler handleMavlinkMessage; // function to be executed when a message is rcv
-    const uint16_t sleep_after_send;
+    uint16_t sleep_after_send;
     miosix::Queue<mavlink_message_t, MAV_OUT_QUEUE_LEN> messageQueue;
 
     // Status
