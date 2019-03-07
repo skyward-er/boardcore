@@ -36,15 +36,19 @@ public:
     /*
      * Create a Gamma868 object using the given path as the serial port to use.
      * @param serialPath        Name of the serial port (es. /dev/tty)
+     * @param multiplier        If defined, after each send the send function
+     *                          will block for multiplier*n_bytes_sent milliseconds.
      */
-    explicit Gamma868(const char* serialPath);
+    explicit Gamma868(const char* serialPath, const uint16_t multiplier = 0);
 
     /*
      * Create a Gamma868 that can be configured through the LRN pin.
      * @param serialPath        Name of the serial port (es. /dev/tty)
      * @param lrn_pin           pin connected to the Learn Mode pin of the Gamma
+     * @param multiplier        If defined, after each send the send() function
+     *                          will block for multiplier*n_bytes_sent milliseconds.
      */
-    Gamma868(const char* serialPath, miosix::GpioPin* lrn_pin);
+    Gamma868(const char* serialPath, miosix::GpioPin* lrn_pin, const uint16_t multiplier = 0);
 
     /*
      * Send a message through the serial port to the gamma868 module (blocking).
@@ -89,6 +93,7 @@ public:
 
 private:
     int fd;
+    const uint16_t send_timeout_multiplier;
 
     GammaConf conf;
     bool conf_enabled;
