@@ -23,7 +23,6 @@
 
 #pragma once
 
-#include <cassert>
 #include <utility>
 #include <vector>
 #include "Common.h"
@@ -33,7 +32,22 @@
 using std::pair;
 using std::vector;
 
-template <unsigned ADC_n, class GpioPin>
+/**
+ * +++ THIS CLASS IS NOT FINISHED. THIS WILL NOT WORK +++
+ * @brief SensorADC class to sample data from multiple stm32 adc channels.
+ * Supports converting multiple channels with per-channel sample time.
+ * All channels are converted togheter, so the sampling frequency is the same
+ * for all channels.
+ * 
+ * DMA STREAMS for stm32f429zi: 
+ * ADC1: DMA2_Stream0, DMA2_Stream4 
+ * ADC2: DMA2_Stream2, DMA2_Stream3
+ * ADC3: DMA2_Stream0, DMA2_Stream1 
+ * 
+ * @tparam ADC_n Which adc to use (1,2,3 for stm32f429zi)
+ * @tparam DMA_Stream Which dma stream to use (see above)
+ */
+template <unsigned ADC_n, unsigned DMA_Stream>
 class SensorADC
 {
 public:
@@ -72,7 +86,36 @@ public:
         CYCLES_480 = 0x7
     };
 
-    SensorADC() : adc(getADC(ADC_n)) { enableADC(); }
+    SensorADC() : adc(getADC(ADC_n))
+    {
+
+        {
+            miosix::FastInterruptDisableLock dLock;
+
+            if (adc == ADC1)
+            {
+                RCC->APB2ENR |= RCC_APB2ENR_ADC1EN;
+            }
+            else if (adc == ADC2)
+            {
+                RCC->APB2ENR |= RCC_APB2ENR_ADC2EN;
+            }
+            else if (adc == ADC3)
+            {
+                RCC->APB2ENR |= RCC_APB2ENR_ADC3EN;
+            }
+
+            RCC->AHB1ENR |= RCC_AHB1ENR_DMA2EN;
+
+            RCC_SYNC();
+        }
+        adc->CR2 = ADC_CR2_ADON;
+        // CCR pre scaler
+        ADC->CCR = 0x3 << 16;
+
+        // DMA Setup
+        setupDMA();
+    }
 
     ~SensorADC() { disableADC(); }
 
@@ -80,12 +123,12 @@ public:
     {
         if (channels.size() == 16)
         {
-            ruturn false;
+            return false;
         }
 
         for (auto& i : channels)
         {
-            if (ch.first == i)
+            if (i.first == ch)
             {
                 // channel already enabled
                 return false;
@@ -113,76 +156,69 @@ public:
         }
     }
 
+    void update()
+    {
+        adc->CR2 |= ADC_CR2_SWSTART;
+        int i = 0;
+        while (adc->SR & ADC_SR_EOC == 0)
+        {
+            ++i;
+        }
+        adc->SR = 0;
+        printf("Waited %d cycles.  ", i);
+    }
+
+    uint16_t get() { return static_cast<uint16_t>(adc->DR & 0x0000FFFF); }
+
 private:
     constexpr ADC_TypeDef* getADC(unsigned n)
     {
         return n == 1 ? ADC1 : n == 2 ? ADC2 : ADC3;
     }
 
-    static void enableADC()
-    {
-        miosix::FastInterruptDisableLock dLock;
+    void enableADC() {}
 
-        if (adc == ADC1)
-        {
-            RCC->APB2ENR |= RCC_APB2ENR_ADC1EN;
-            TRACE("ADC1\n");
-        }
-        else if (adc == ADC2)
-        {
-            RCC->APB2ENR |= RCC_APB2ENR_ADC2EN;
-            TRACE("ADC2\n");
-        }
-        else if (adc == ADC3)
-        {
-            RCC->APB2ENR |= RCC_APB2ENR_ADC3EN;
-            TRACE("ADC3\n");
-        }
-
-        RCC_SYNC();
-    }
-
-    static inline void disableADC()
+    void disableADC()
     {
         miosix::FastInterruptDisableLock dLock;
 
         if (adc == ADC1)
         {
             RCC->APB2ENR &= ~RCC_APB2ENR_ADC1EN;
-            TRACE("ADC1\n");
         }
         else if (adc == ADC2)
         {
             RCC->APB2ENR &= ~RCC_APB2ENR_ADC2EN;
-            TRACE("ADC2\n");
         }
         else if (adc == ADC3)
         {
             RCC->APB2ENR &= ~RCC_APB2ENR_ADC3EN;
-            TRACE("ADC3\n");
         }
 
         RCC_SYNC();
     }
 
+    void setupDMA() {}
+
     void updateChannels()
     {
         // Clear the registers
-        adc->SQR1 = 0;
-        adc->SQR2 = 0;
-        adc->SQR3 = 0;
+        adc->SQR1  = 0;
+        adc->SQR2  = 0;
+        adc->SQR3  = 0;
         adc->SMPR1 = 0;
         adc->SMPR2 = 0;
 
-        if(channels.size() == 0)
+        if (channels.size() == 0)
         {
             // If no channel is enabled, clear the registers and return.
-            return;   
+            return;
         }
+
         // Store the channel sequence in the SQRx registers
         uint8_t L = channels.size() - 1;
 
-        uint32_t* sqr_ptr =
+        volatile uint32_t* sqr_ptr =
             &(adc->SQR3);  // Pointer to the SQR3 register, defining the first 6
                            // channels in the sequence. If more channels are to
                            // be converted, this pointer will be updated to
@@ -194,43 +230,44 @@ private:
         {
             if (i == 6)
             {
-                sqr_ptr = SQR2;
+                sqr_ptr = &(adc->SQR2);
                 offset  = 6;
             }
             else if (i == 12)
             {
-                sqr_ptr = SQR1;
+                sqr_ptr = &(adc->SQR1);
                 offset  = 12;
             }
 
-            *sqr_ptr |= (static_cast<uint8_t>(channels[i].first) - 1) 
-                                        << ((i - offset)*5;
+            *sqr_ptr |= static_cast<uint8_t>(channels[i].first)
+                        << ((i - offset) * 5);
         }
 
         adc->SQR1 |= L << 20;
 
         // Now update sample times for each channel
 
-        uint32_t* SMPR;
-        for(auto& i : channels)
+        volatile uint32_t* SMPR;
+        for (auto& i : channels)
         {
-            uint8_t ch = static_cast<uint8_t>(i.first) - 1; // CH1 --> 0
+            uint8_t ch = static_cast<uint8_t>(i.first) - 1;  // CH1 --> 0
             uint8_t sample_time = static_cast<uint8_t>(i.second);
-            if(ch >= 10)
+            if (ch >= 10)
             {
-                SMPR = &(adc->SMPR1);
+                SMPR   = &(adc->SMPR1);
                 offset = 10;
-            }else
+            }
+            else
             {
-                SMPR = &(adc->SMPR1);
+                SMPR   = &(adc->SMPR1);
                 offset = 0;
-            }  
-            
-            *SMPR |= static_cast<uint32_t>(sample_time) << ((ch - offset)*3)
+            }
+
+            *SMPR |= static_cast<uint32_t>(sample_time) << ((ch - offset) * 3);
         }
     }
 
     ADC_TypeDef* adc;
     // Channels to convert, in order of conversion. size() must not exceed 16.
-    vector<Pair<Channel, SampleTime>> channels;
+    vector<pair<Channel, SampleTime>> channels;
 };
