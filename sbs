@@ -223,10 +223,10 @@ if len(make_template) == 0:
 # Do things
 # List
 if options.list == True:
-    print('[SBS] List of available entrypoints:');
+    print('[SBS] List of available entrypoints:')
     for entrypoint in entrypoints:
         print(entrypoint)
-    print('\n[SBS] List of available tests:');
+    print('\n[SBS] List of available tests:')
     for test in tests:
         print(test)
     sys.exit(0)
@@ -268,10 +268,7 @@ for i in boards:
     with open('build/%s' % i, 'w') as f:
         f.write(build_makefile(make_template, boards[i], i))
     try:
-        if 'VERBOSE' in os.environ:
-            subprocess.check_call(['make', '-j', str(options.JOBS), '-f', 'build/%s' % i] + cleanparam) # Don't eat stdiout
-        else:
-            subprocess.check_call(['make', '-j', str(options.JOBS), '-f', 'build/%s' % i] + cleanparam, stdout=procout) # Eat stdout
+        subprocess.check_call(['make', '-j', str(options.JOBS), '-f', 'build/%s' % i] + cleanparam, stdout=procout)
     except subprocess.CalledProcessError:
         print('[SBS] %s Failed. Terminating.' % action[0])
         sys.exit(-1)
