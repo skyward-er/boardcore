@@ -64,9 +64,11 @@ public:
      */
     bool start()
     {
+        stop_flag = false;
+
+        // Start sender
         if (!sndStarted)
         {
-            // Start sender
             sndThread = miosix::Thread::create( sndLauncher, 
                 miosix::STACK_DEFAULT_FOR_PTHREAD, miosix::MAIN_PRIORITY,
                 reinterpret_cast<void*>(this), miosix::Thread::JOINABLE );
@@ -75,9 +77,9 @@ public:
                 sndStarted = true;
         }
 
+        // Start receiver
         if (!rcvStarted)
         {
-            // Start receiver
             rcvThread = miosix::Thread::create( rcvLauncher, 
                 miosix::STACK_DEFAULT_FOR_PTHREAD, miosix::MAIN_PRIORITY,
                 reinterpret_cast<void*>(this), miosix::Thread::JOINABLE );
@@ -90,6 +92,14 @@ public:
     }
 
     /**
+     * Stops sender and receiver.
+     */
+    void stop()
+    {
+        stop_flag = true;
+    }
+
+    /**
      * Reads one char at a time from the device and tries to parse a mavlink message.
      * If the message is successfully parsed, executes the function that was
      * passed in the constructor.
@@ -99,7 +109,7 @@ public:
         mavlink_message_t msg;
         uint8_t byte;
 
-        while(true)
+        while(!stop_flag)
         {
             device->receive(&byte, 1);  // Blocking function
             uint8_t parse_result = 0;
@@ -133,7 +143,7 @@ public:
         uint8_t bufferMsg[sizeof(mavlink_message_t) + 1];
         TRACE("%s", "[MAV] Sender is running\n");
 
-        while(true)
+        while(!stop_flag)
         {
             /* Readfrom buffer */
             messageQueue.waitUntilNotEmpty();
@@ -244,6 +254,7 @@ private:
     miosix::FastMutex mtx_status;
 
     // Threads
+    bool stop_flag = false;
     bool sndStarted = false;
     bool rcvStarted = false;
     miosix::Thread* sndThread = nullptr;
