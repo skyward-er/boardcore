@@ -64,7 +64,7 @@ int main()
         newConf.lora_sf     = SF6;   // SF6
         newConf.lora_power      = dbm20;  //+20dbm
         newConf.handshake     = false;   // No handshake
-        newConf.baudrate      = B9600;   // 9600 baud
+        newConf.baudrate      = B_9600;   // 9600 baud
 
         // printf("LOCAL ADDRESS (3 bytes, 0-127 each):\n");
         // scanf("%d %d %d", &newConf.local_addr[0], &newConf.local_addr[1],
