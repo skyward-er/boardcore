@@ -63,7 +63,7 @@ public:
 
     virtual ~HSM(){};
 
-    void start()
+    bool start() override
     {
         init();
 
