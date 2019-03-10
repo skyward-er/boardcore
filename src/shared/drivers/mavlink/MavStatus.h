@@ -22,7 +22,7 @@
 
 #pragma once
 
-#include <libs/mavlink_skyward_lib/mavlink_lib/mavlink_types.h>
+#include <mavlink_skyward_lib/mavlink_lib/mavlink_types.h>
 
 struct MavStatus
 {
