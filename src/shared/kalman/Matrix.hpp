@@ -96,7 +96,7 @@ public:
      * \param values An array of dimensions `n_rows*n_cols` containing all the
      * matrix values ordered left to right, top to bottom.
      */
-    Matrix(int n_rows, int n_cols, float values[]);
+    Matrix(int n_rows, int n_cols, const float values[]);
 
     /**
      * \brief Copy constructor

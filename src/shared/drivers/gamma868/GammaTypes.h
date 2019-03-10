@@ -29,11 +29,11 @@
 
 enum GammaBaudrate : uint8_t 
 {
-    B9600   = 0,
-    B192000 = 1,
-    B28800  = 2,
-    B38400  = 3,
-    B57600  = 4,
+    B_9600   = 0,
+    B_192000 = 1,
+    B_28800  = 2,
+    B_38400  = 3,
+    B_57600  = 4,
     LAST_BAUDRATE
 };
 
@@ -80,7 +80,7 @@ struct GammaConf
     std::array<uint8_t, 3> dest_addr  = {{ 125 }};
     GammaSF         lora_sf     = SF6;  
     GammaPower      lora_power  = dbm15;   
-    GammaBaudrate   baudrate    = B57600;
+    GammaBaudrate   baudrate    = B_57600;
 };
 
 /* Comparison operator */
