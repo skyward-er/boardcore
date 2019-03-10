@@ -67,7 +67,7 @@ public:
     {
         init();
 
-        EventHandler::start();
+        return EventHandler::start();
     }
 
     /**
