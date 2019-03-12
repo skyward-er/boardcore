@@ -113,7 +113,8 @@ Matrix::Matrix(const Matrix& M)
     }
 }
 
-Matrix Matrix::operator=(const Matrix& M) {
+Matrix Matrix::operator=(const Matrix& M) 
+{
     Matrix A{M.rows, M.columns};
     if (A.rows * A.columns <= MAX_STACK_MATRIX_SIZE)
     {
@@ -225,6 +226,16 @@ Matrix& Matrix::operator=(Matrix&& M)
     return *this;
 }
 
+Matrix Matrix::eye(int n)
+{
+    Matrix eye{n, n};
+    for (int i = 0; i < n; i++)
+    {
+        eye.data[i * eye.columns + i] = 1;
+    }
+    return eye;
+}
+
 // --- Class methods ---
 void Matrix::printMatrix(Matrix M)
 {
@@ -240,56 +251,14 @@ void Matrix::printMatrix(Matrix M)
     std::cout << std::endl;
 }
 
-Matrix Matrix::eye(int n)
+bool Matrix::multiply(Matrix A, Matrix B, Matrix& result)
 {
-    Matrix eye{n, n};
-    for (int i = 0; i < n; i++)
+    if (A.columns != B.rows || result.rows != A.rows || result.columns != B.columns)
     {
-        eye.data[i * eye.columns + i] = 1;
-    }
-    return eye;
-}
-
-Matrix Matrix::multiply(Matrix A, Matrix B)
-{
-    if (A.columns == 1 && A.rows == 1)
-    {
-        // In case this matrix is a scalar
-        Matrix result{B.rows, B.columns};
-        for (int i = 0; i < result.rows; i++)
-        {
-            for (int j = 0; j < result.columns; j++)
-            {
-                result.data[i * result.columns + j] =
-                    B.data[i * B.columns + j] * A.data[0];
-            }
-        }
-        return B;
-    }
-
-    else if (B.columns == 1 && B.rows == 1)
-    {
-        // In case the B matrix is a scalar
-        Matrix result{A.rows, A.columns};
-        for (int i = 0; i < A.rows; i++)
-        {
-            for (int j = 0; j < A.columns; j++)
-            {
-                result.data[i * result.columns + j] =
-                    A.data[i * A.columns + j] * B.data[0];
-            }
-        }
-        return result;
-    }
-    else if (A.columns != B.rows)
-    {
-        // If neither of the multipliers is a scalar, matrix dimensions must
-        // agree
-        throw std::invalid_argument("Matrix dimensions do not match");
+        return false;
     }
     else
     {
-        Matrix result{A.rows, B.columns};
         for (int i = 0; i < result.rows; i++)
         {
             for (int j = 0; j < result.columns; j++)
@@ -301,123 +270,142 @@ Matrix Matrix::multiply(Matrix A, Matrix B)
                 }
             }
         }
-        return result;
+        return true;
     }
 }
 
-Matrix Matrix::sum(Matrix A, Matrix B)
+bool Matrix::multiply(Matrix A, float b, Matrix& result)
 {
-    A.sum(B);
-    return A;
-}
-
-Matrix Matrix::subtract(Matrix A, Matrix B)
-{
-    A.subtract(B);
-    return A;
-}
-
-// --- Instance methods ---
-void Matrix::set(float values[])
-{
-    for (int i = 0; i < rows * columns; i++)
+    if ( result.rows != A.rows || result.columns != A.columns)
     {
-        data[i] = values[i];
+        return false;
     }
-}
-
-void Matrix::sum(Matrix B)
-{
-    if (rows != B.rows || columns != B.columns)
+    else
     {
-        throw std::invalid_argument("Matrix dimensions do not match");
-    }
-    for (int i = 0; i < rows; i++)
-    {
-        for (int j = 0; j < columns; j++)
+        for (int i = 0; i < result.rows; i++)
         {
-            data[i * columns + j] =
-                data[i * columns + j] + B.data[i * B.columns + j];
+            for (int j = 0; j < result.columns; j++)
+            {
+                result.data[i * result.columns + j] = A.data[i * A.columns + j]*b;
+            }
         }
+        return true;
     }
 }
 
-void Matrix::subtract(Matrix B)
+bool Matrix::sum(Matrix A, Matrix B, Matrix& result)
 {
-    if (rows != B.rows || columns != B.columns)
+    if (A.rows != B.rows || A.columns != B.columns || A.rows != result.rows || A.columns != result.columns)
     {
-        throw std::invalid_argument("Matrix dimensions do not match");
+        return false;
     }
-    for (int i = 0; i < rows; i++)
+    else
     {
-        for (int j = 0; j < columns; j++)
+        for(int i = 0; i < A.rows; i++)
         {
-            data[i * columns + j] =
-                data[i * columns + j] - B.data[i * B.columns + j];
+            for(int j = 0; j < A.columns; j++)
+            {
+                result.data[i * result.columns + j] = A.data[i * A.columns + j] + B.data[i * B.columns + j];
+            }
         }
+        return true;
     }
 }
 
-Matrix Matrix::transposed()
+bool Matrix::subtract(Matrix A, Matrix B, Matrix& result)
 {
-    Matrix new_matrix{columns, rows};
-    for (int i = 0; i < rows; i++)
+    if (A.rows != B.rows || A.columns != B.columns || A.rows != result.rows || A.columns != result.columns)
     {
-        for (int j = 0; j < columns; j++)
+        return false;
+    }
+    else
+    {
+        for(int i = 0; i < A.rows; i++)
         {
-            new_matrix.data[j * new_matrix.columns + i] = data[i * columns + j];
+            for(int j = 0; j < A.columns; j++)
+            {
+                result.data[i * result.columns + j] = A.data[i * A.columns + j] - B.data[i * B.columns + j];
+            }
         }
+        return true;
     }
-    return new_matrix;
 }
 
-Matrix Matrix::inverse()
+bool Matrix::transpose(Matrix A, Matrix& result)
 {
-    if (columns == 1 && rows == 1)
-    {
-        Matrix result{1, 1};
-        result.data[0] = 1 / data[0];
-        return result;
+    if (A.rows != result.columns || A.columns != result.rows) {
+        return false;
     }
-    float det = determinant();
-    if (det == 0)
-    {
-        throw std::invalid_argument("Matrix is singular");
+    else {
+        for (int i = 0; i < A.rows; i++)
+        {
+            for (int j = 0; j < A.columns; j++)
+            {
+                result.data[j * result.columns + i] = A.data[i * A.columns + j];
+            }
+        }
+        return true;
     }
-
-    Matrix det_matrix{1, 1};
-    det_matrix.data[0] = 1 / det;
-    return Matrix::multiply(((*this).cofactorMatrix().transposed()),
-                            det_matrix);
 }
 
-float Matrix::determinant()
+bool Matrix::invert(Matrix A, Matrix& result)
 {
+    float det;
+    if (!determinant(A, det) || det == 0)
+    {
+        return false;
+    }
+    else
+    {
+        Matrix B{A.rows, A.columns};
+        if (!cofactorMatrix(A, B))
+            return false;
+        if (!transpose(B, B))
+            return false;
+        if (!multiply(B, 1/det, result))
+            return false;
+        return true;
+    }
+}
+
+bool Matrix::determinant(Matrix A, float& result)
+{
+
+    // If the matrix is not square the determinant doesn't exist
+    if (A.rows != A.columns) {
+        return false;
+    }
+
     // Decomposing the matrix ito two triangular matrices
-    Matrix L{rows, columns};
-    Matrix U{rows, columns};
-    luDecomposition(*this, L, U);
-    printMatrix(L);
-    printMatrix(U);
+    Matrix L{A.rows, A.columns};
+    Matrix U{A.rows, A.columns};
+    
+    if (!luDecomposition(A, L, U))
+        return false;
 
     // The determinant of a triangular matrix is the product of the elements on
     // its diagonal
-    float detL = 1;
-    float detU = 1;
-    for (int i = 0; i < rows; i++)
+    float detL = 1.0f;
+    float detU = 1.0f;
+    for (int i = 0; i < A.rows; i++)
     {
-        detL = detL * L.data[i * columns + i];
-        detU = detU * U.data[i * columns + i];
+        detL = detL * L.data[i * L.columns + i];
+        detU = detU * U.data[i * U.columns + i];
     }
 
     // The determinant of the product of two matrices is the product of the
     // determinants
-    return detL * detU;
+    result = detL * detU;
+    return true;
 }
 
-float Matrix::minor(int a, int b)
+bool Matrix::minor(Matrix A, int a, int b, float& result)
 {
-    Matrix minor_matrix{rows - 1, columns - 1};
+    if (A.rows != A.columns)
+    {
+        return false;
+    }
+    Matrix minor_matrix{A.rows - 1, A.columns - 1};
     for (int i = 0; i < minor_matrix.rows; i++)
     {
         for (int j = 0; j < minor_matrix.columns; j++)
@@ -432,30 +420,47 @@ float Matrix::minor(int a, int b)
             else
                 k = j + 1;
             minor_matrix.data[i * minor_matrix.columns + j] =
-                data[h * columns + k];
+                A.data[h * A.columns + k];
         }
     }
-    return minor_matrix.determinant();
+    return determinant(minor_matrix, result);
 }
 
-Matrix Matrix::cofactorMatrix()
+bool Matrix::cofactorMatrix(Matrix A, Matrix& result)
 {
-    Matrix cofactor_matrix{rows, columns};
-    for (int i = 0; i < rows; i++)
+    if (A.rows != result.rows || A.columns != result.columns || A.rows != A.columns) 
     {
-        for (int j = 0; j < columns; j++)
+        return false;
+    }
+    for (int i = 0; i < A.rows; i++)
+    {
+        for (int j = 0; j < A.columns; j++)
         {
-            cofactor_matrix.data[i * cofactor_matrix.columns + j] =
-                (*this).minor(i, j);
+            float min;
+            if (!minor(A, i, j, min))
+            {
+                return false;
+            }
+            if ((i+j)%2 == 0) {
+                result.data[i * result.columns + j] = min;
+            }
+            else
+            {
+                result.data[i * result.columns + j] = -min;
+            }
+            
         }
     }
-    return cofactor_matrix;
+    return transpose(result, result);
 }
 
-void Matrix::luDecomposition(Matrix M, Matrix& lower, Matrix& upper)
+bool Matrix::luDecomposition(Matrix M, Matrix& lower, Matrix& upper)
 {
     int n = M.rows;
-
+    if (M.columns != n || lower.rows != n || lower.columns != n || upper.rows != n || upper.columns != n)
+    {
+        return false;
+    }
     // Decomposing matrix into Upper and Lower
     // triangular matrix
     for (int i = 0; i < n; i++)
@@ -466,7 +471,7 @@ void Matrix::luDecomposition(Matrix M, Matrix& lower, Matrix& upper)
         {
 
             // Summation of L(i, j) * U(j, k)
-            int sum = 0;
+            float sum = 0;
             for (int j = 0; j < i; j++)
                 sum += (lower.data[i * n + j] * upper.data[j * n + k]);
 
@@ -483,7 +488,7 @@ void Matrix::luDecomposition(Matrix M, Matrix& lower, Matrix& upper)
             {
 
                 // Summation of L(k, j) * U(j, i)
-                int sum = 0;
+                float sum = 0;
                 for (int j = 0; j < i; j++)
                     sum += (lower.data[k * n + j] * upper.data[j * n + i]);
 
@@ -493,15 +498,18 @@ void Matrix::luDecomposition(Matrix M, Matrix& lower, Matrix& upper)
             }
         }
     }
+    return true;
+}
+// --- Instance methods ---
+void Matrix::set(float values[])
+{
+    for (int i = 0; i < rows * columns; i++)
+    {
+        data[i] = values[i];
+    }
 }
 
-// --- Operator overload ---
-Matrix Matrix::operator+(const Matrix& B) { return Matrix::sum(*this, B); }
-
-Matrix Matrix::operator-(const Matrix& B) { return Matrix::subtract(*this, B); }
-
-Matrix Matrix::operator*(const Matrix& B) { return Matrix::multiply(*this, B); }
-
+// // --- Operator overload ---
 float& Matrix::operator()(int i, int j) { return data[i * columns + j]; }
 
 float& Matrix::operator()(int i) { return data[i]; }
