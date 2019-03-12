@@ -68,7 +68,7 @@ public:
      */
     bool init() override
     {
-        uint8_t config_reg_value = 0b00001010;
+        uint8_t config_reg_value = 0x0A;  //0b00001010
 
         // Write the configuration register
         BusI2C::write(i2c_address, REG_CONFIG, &config_reg_value, 1);
