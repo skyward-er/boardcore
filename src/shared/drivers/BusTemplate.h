@@ -296,8 +296,11 @@ private:
 
     void writeImpl(uint8_t address, uint8_t regAddr, uint8_t* data, uint8_t len)
     {
-        vector<uint8_t> buf(data, data + len); //Copy data array into buf
-        buf.insert(buf.begin(), regAddr); //Insert regAddr at the beginning of the vector
+        vector<uint8_t> buf;
+        buf.reserve(len+1); // Preallocate to increase performance
+        buf.push_back(regAddr);
+        
+        memcpy(buf.data() + 1, data, len);
 
         writeImpl(address, buf.data(), len + 1);
         // bus.send(address, reinterpret_cast<void*>(buf), len + 1);
