@@ -49,21 +49,6 @@ private:
      */
     float stackData[MAX_STACK_MATRIX_SIZE];
 
-    /**
-     * \brief LU decomposition
-     *
-     * Decomposes a square matrix into two triangular matrices so that M =
-     * lower*upper Source:
-     * https://www.geeksforgeeks.org/doolittle-algorithm-lu-decomposition/
-     *
-     * \param M The matrix to be decomposed
-     * \param lower A reference to a matrix with the same dimensions of M. Will
-     * be set to the lower triangular matrix \param upper A reference to a
-     * matrix with the same dimensions of M. Will be set to the upper triangular
-     * matrix
-     */
-    void luDecomposition(Matrix M, Matrix& lower, Matrix& upper);
-
 public:
     int rows;    /**< The number of rows in the matrix  */
     int columns; /**< The number of columns in the matrix  */
@@ -160,11 +145,25 @@ public:
     /**
      * \brief Matrix multiplication
      *
-     * Multipies the first matrix with the second one and returns the result as
-     * a new matrix \param A A matrix with n columns \param B A matrix with n
-     * rows \return A new matrix containing the result of `A * B`
+     * Multipies the first matrix with the second one
+     * \param A A matrix with n columns
+     * \param B A matrix with n rows
+     * \param result A reference to a matrix to be filled with the result
+     * \return `True` if the operation was successful, `False` otherwise
      */
-    static Matrix multiply(Matrix A, Matrix B);
+    static bool multiply(Matrix A, Matrix B, Matrix& result);
+
+    /**
+    * \brief Matrix-scalar multiplication
+    *
+    * Multipies all the elements in the matrix with the scalar
+    * \param A A matrix with n columns
+    * \param b A float scalar
+    * \param result A reference to a matrix to be filled with the result
+    * \return `True` if the operation was successful, `False` otherwise
+    */
+    static bool multiply(Matrix A, float b, Matrix& result);
+
 
     /**
      * \brief Matrix sum
@@ -172,10 +171,10 @@ public:
      * Sums the two matrices element by element
      * \param A First matrix addend
      * \param B Second matrix addend
-     * \return A new matrix of the same dimension of the two addends containing
-     * the result of `A + B`
+     * \param result A reference to a matrix to be filled with the result
+     * \return `True` if the operation was successful, `False` otherwise
      */
-    static Matrix sum(Matrix A, Matrix B);
+    static bool sum(Matrix A, Matrix B, Matrix& result);
 
     /**
      * \brief Matrix subtraction
@@ -183,10 +182,58 @@ public:
      * Subtracts matrix B from  matrix A
      * \param A The minuend
      * \param B The subtrahend
-     * \return A new matrix of the same dimension of the two passed containing
-     * the result of `A - B`
+     * \param result A reference to a matrix to be filled with the result
+     * \return `True` if the operation was successful, `False` otherwise
      */
-    static Matrix subtract(Matrix A, Matrix B);
+    static bool subtract(Matrix A, Matrix B, Matrix& result);
+
+    /**
+    * \brief Matrix transposition
+    *
+    * Transposes the given matrix
+    * \param A The matrix to be transposed
+    * \param result A reference to a matrix to be filled with the result
+    * \return `True` if the operation was successful, `False` otherwise
+    */
+    static bool transpose(Matrix A, Matrix& result);
+
+    static bool invert(Matrix A, Matrix& result);
+
+    static bool determinant(Matrix A, float& result);
+
+    /**
+     * \brief LU decomposition
+     *
+     * Decomposes a square matrix into two triangular matrices so that M =
+     * lower*upper Source:
+     * https://www.geeksforgeeks.org/doolittle-algorithm-lu-decomposition/
+     *
+     * \param M The matrix to be decomposed
+     * \param lower A reference to a matrix with the same dimensions of M. Will
+     * be set to the lower triangular matrix \param upper A reference to a
+     * matrix with the same dimensions of M. Will be set to the upper triangular
+     * matrix
+     */
+    static bool luDecomposition(Matrix M, Matrix& lower, Matrix& upper);
+
+    /**
+     * \brief Minors computation
+     *
+     * Computes the determinant of the matrix obtained removing the i-th row and
+     * j-th column
+     * \return A float representing the determinant of such matrix
+     */
+    static bool minor(Matrix A, int i, int j, float& result);
+
+    /**
+     * \brief Cofactor matrix
+     *
+     * Computes the matrix formed by the minors of the given matrix for each
+     * element
+     * \return A matrix of the same dimensions of `*this` where each element is the minor of the original matrix in that position
+     */
+    static bool cofactorMatrix(Matrix A, Matrix& result);
+
 
     /* --- INSTANCE METHODS --- */
 
@@ -199,69 +246,8 @@ public:
      */
     void set(float values[]);
 
-    /**
-     * \brief Matrix sum, result placed in caller
-     *
-     * Sums the two matrices element by element and places the result in *this
-     * \param B Second matrix addend
-     */
-    void sum(Matrix B);
-
-    /**
-     * \brief Matrix subtraction, result placed in caller
-     *
-     * Subtracts matrix B from the given matrix
-     * \param B The matrix to be subtracted from `*this`matrix
-     */
-    void subtract(Matrix B);
-
-    /**
-     * \brief Matrix transpose
-     *
-     * Computes the transposed of the current matrix
-     * \return A new matrix with the rows exchanged with the columns
-     */
-    Matrix transposed();
-
-    /**
-     * \brief Matrix inverse
-     *
-     *  Computes the inverse of the current matrix using the cofactor matrix
-     * method. \return A new matrix computed as the inverse of `*this` \warning
-     * This method could be slow for large matrices.
-     */
-    Matrix inverse();
-
-    /**
-     * \brief Minors computation
-     *
-     * Computes the determinant of the matrix obtained removing the i-th row and
-     * j-th column \return A float representing the determinant of such matrix
-     */
-    float minor(int i, int j);
-
-    /**
-     * \brief Cofactor matrix
-     *
-     * Computes the matrix formed by the minors of the given matrix for each
-     * element \return A matrix of the same dimensions of `*this` where each
-     * element is the minor of the original matrix in that position
-     */
-    Matrix cofactorMatrix();
-
-    /**
-     * \brief Matrix determinant
-     *
-     * Computes the determinant of a matrix using a LU decomposition
-     * \return A float representing the determinant
-     */
-    float determinant();
-
     /* --- OPERATORS OVERLOAD --- */
     // FOR NICE SYNTAX :)
-    Matrix operator+(const Matrix& B);
-    Matrix operator-(const Matrix& B);
-    Matrix operator*(const Matrix& B);
     float& operator()(int i, int j);
     float& operator()(int i);
 };
