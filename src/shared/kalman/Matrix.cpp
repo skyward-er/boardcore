@@ -451,7 +451,7 @@ bool Matrix::cofactorMatrix(Matrix A, Matrix& result)
             
         }
     }
-    return transpose(result, result);
+    return true;
 }
 
 bool Matrix::luDecomposition(Matrix M, Matrix& lower, Matrix& upper)
