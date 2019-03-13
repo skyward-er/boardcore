@@ -229,3 +229,20 @@ TEST_CASE("Inverse test") {
     REQUIRE( Matrix::invert(A, B) == false);
     REQUIRE( Matrix::invert(B, B) == false);
 }
+
+TEST_CASE("Eye test") {
+    Matrix I = Matrix::eye(5);
+    for (int i = 0; i < 5; i++)
+    {
+        for (int j = 0; j < 5; j++) {
+            if (i == j)
+            {
+                REQUIRE( I.data[i * I.columns + j] == 1);
+            }
+            else
+            {
+                REQUIRE( I.data[i * I.columns + j] == 0);
+            }
+        }
+    }
+}
