@@ -20,6 +20,9 @@
  * THE SOFTWARE.
  */
 
+// This prgram runs through a simulated flight and reports the apogee detection,
+// while measuring the time elapsed
+
 #include <Common.h>
 #include <drivers/HardwareTimer.h>
 #include <kalman/Kalman.h>
