@@ -29,17 +29,17 @@
 
 
 /** TESTS LIST
- * Constructors
- * Static: eye
- * Static: multiply         OK  
- * Static: sum              OK
- * Static: subtract         OK
- * Static: transpose        OK
- * Static: inverse          OK
- * Static: minor
- * Static: cofactorMatrix
- * Static: determinant      OK
- * Static: LU decomposition OK
+ * Constructors             ?
+ * Static: eye              DONE
+ * Static: multiply         DONE  
+ * Static: sum              DONE
+ * Static: subtract         DONE
+ * Static: transpose        DONE
+ * Static: inverse          DONE
+ * Static: minor            DONE
+ * Static: cofactorMatrix   DONE
+ * Static: determinant      DONE
+ * Static: LU decomposition DONE
  * set
 */
 TEST_CASE("Multiply test")
@@ -48,8 +48,9 @@ TEST_CASE("Multiply test")
     Matrix A{3,3, dataA};
     float dataB[] = { 1.0f, 2.0f, 3.7f};
     Matrix B{3,1, dataB};
+
     Matrix C{3,1};
-    Matrix::multiply(A, B, C);
+    REQUIRE( Matrix::multiply(A, B, C) == true );
 
     REQUIRE( C.rows    == 3 );
     REQUIRE( C.columns == 1 );
@@ -71,9 +72,8 @@ TEST_CASE("Sum test")
     float dataB[] = { 1.0f, 2.0f, 3.0f, 5.0f, 7.0f, 9.0f, 11.0f, 13.7f, 15.0f};
     Matrix B{3,3, dataB};
 
-    // Static
     Matrix C{A.rows, A.columns};
-    Matrix::sum(A, B, C);
+    REQUIRE( Matrix::sum(A, B, C) == true );
 
     REQUIRE( C.rows    == 3 );
     REQUIRE( C.columns == 3 );
@@ -101,9 +101,8 @@ TEST_CASE("Subtract test")
     float dataB[] = { 1.0f, 2.0f, 3.0f, 5.0f, 7.0f, 9.0f, 11.0f, 13.7f, 15.0f};
     Matrix B{3,3, dataB};
 
-    // Static
     Matrix C{A.rows, A.columns};
-    Matrix::subtract(A, B, C);
+    REQUIRE( Matrix::subtract(A, B, C) == true );
 
     REQUIRE( C.rows    == 3 );
     REQUIRE( C.columns == 3 );
@@ -128,7 +127,8 @@ TEST_CASE("Transpose test")
 {
     float dataA[] = { 1.0f, -2.0f, 3.0f, 4.5f, 5.0f, -6.0f, 7.0f, 8.0f, -9.0f };
     Matrix A = Matrix(3,3, dataA);
-    Matrix::transpose(A, A);
+
+    REQUIRE( Matrix::transpose(A, A) == true );
 
     REQUIRE( A.rows    == 3);
     REQUIRE( A.columns == 3);
@@ -146,7 +146,8 @@ TEST_CASE("Transpose test")
     float dataB[] = { 1, 2, 3.7};
     Matrix B{3,1, dataB};
     Matrix C{1,3};
-    Matrix::transpose(B, C);
+
+    REQUIRE( Matrix::transpose(B, C) == true );
 
     REQUIRE( C.rows    == 1);
     REQUIRE( C.columns == 3);
@@ -164,7 +165,8 @@ TEST_CASE("LU Decomposition test") {
     Matrix A = Matrix(3,3, dataA);
     Matrix L{3,3};
     Matrix U{3,3};
-    Matrix::luDecomposition(A, L, U);
+
+    REQUIRE( Matrix::luDecomposition(A, L, U) == true );
 
     REQUIRE( L(0,0) == Approx( 1.0f ));
     REQUIRE( L(0,1) == Approx( 0.0f ));
@@ -195,7 +197,8 @@ TEST_CASE("Determinant test") {
     float dataA[] = { 1.0f, -2.0f, 3.0f, 4.5f, 5.0f, -6.0f, 7.0f, 8.0f, -9.0f };
     Matrix A{3,3, dataA};
     float det;
-    Matrix::determinant(A, det);
+
+    REQUIRE( Matrix::determinant(A, det) == true );
     REQUIRE( det == Approx( 9.0 ));
 
     Matrix B{5, 4};
@@ -210,7 +213,8 @@ TEST_CASE("Determinant test") {
 TEST_CASE("Inverse test") {
     float dataA[] = { 1.0f, -2.0f, 3.0f, 4.5f, 5.0f, -6.0f, 7.0f, 8.0f, -9.0f };
     Matrix A = Matrix(3,3, dataA);
-    Matrix::invert(A, A);
+    
+    REQUIRE( Matrix::invert(A, A) == true);
 
     REQUIRE( A.rows    == 3);
     REQUIRE( A.columns == 3);
@@ -245,4 +249,37 @@ TEST_CASE("Eye test") {
             }
         }
     }
+}
+
+TEST_CASE("Minors test") {
+    float dataA[] = { 1.0f, -2.0f, 3.0f, 4.5f, 5.0f, -6.0f, 7.0f, 8.0f, -9.0f };
+    Matrix A = Matrix(3,3, dataA);
+    float minor;
+    REQUIRE( Matrix::minor(A, 2, 2, minor) == true );
+    REQUIRE(minor == Approx(14.0f) );
+
+    Matrix B{1,4};
+    REQUIRE( Matrix::minor(B, 1, 1, minor) == false );
+
+    float dataC[] = { 1.0f, -2.0f, 3.0f, 4.5f, 5.0f, -6.0f, 7.0f, 8.0f, -9.0f, 1.0f, -2.0f, 3.0f, 4.5f, 5.0f, -6.0f, 7.0f, 8.0f, -9.0f, 1.0f, -2.0f, 3.0f, 4.5f, 5.0f, -6.0f, 7.0f };
+    Matrix C{5, 5, dataC};
+    REQUIRE( Matrix::minor(C, 1, 3, minor) == true );
+    REQUIRE(minor == Approx(-1415.3f) );
+}
+
+TEST_CASE("Cofactor matrix") {
+    float dataA[] = { 1.0f, -2.0f, 3.0f, 4.5f, 5.0f, -6.0f, 7.0f, 8.0f, -9.0f };
+    Matrix A = Matrix(3,3, dataA);
+
+    REQUIRE( Matrix::cofactorMatrix(A, A) );
+
+    REQUIRE( A(0,0) == Approx( 3.0f ));
+    REQUIRE( A(0,1) == Approx(-1.5f ));
+    REQUIRE( A(0,2) == Approx( 1.0f ));
+    REQUIRE( A(1,0) == Approx( 6.0f ));
+    REQUIRE( A(1,1) == Approx(-30.0f));
+    REQUIRE( A(1,2) == Approx(-22.0f));
+    REQUIRE( A(2,0) == Approx(-3.0f ));
+    REQUIRE( A(2,1) == Approx( 19.5f));
+    REQUIRE( A(2,2) == Approx( 14.0f ));
 }
