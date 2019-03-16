@@ -350,6 +350,7 @@ bool Matrix::transpose(Matrix A, Matrix& result)
 
 bool Matrix::invert(Matrix A, Matrix& result)
 {
+    // std:cout << "ME HERE! \n";
     float det;
     if (!determinant(A, det) || det == 0)
     {
