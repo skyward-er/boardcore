@@ -22,6 +22,7 @@
 
 #include "Kalman.h"
 #include <iostream>
+#include "util/util.h"
 
 Kalman::Kalman(Matrix P_init, Matrix R_init, Matrix Q_init, Matrix H_init)
     : R(R_init), Q(Q_init), H(H_init), P(P_init), X(H_init.columns, 1),
@@ -31,52 +32,60 @@ Kalman::Kalman(Matrix P_init, Matrix R_init, Matrix Q_init, Matrix H_init)
 
 void Kalman::update(Matrix y)
 {
-    // y is the measurement vector
+    std::cout << miosix::MemoryProfiling::getCurrentFreeStack() << " 1 \n";
+
+    {// y is the measurement vector
 
     // Error matrix propagation
-    // Matrix P_new = Phi * P * Phi.transposed() + Q;
-    
+    // P_new = Phi * P * Phi.transposed() + Q;
+    std::cout << miosix::MemoryProfiling::getCurrentFreeStack() << " 2 \n";
+
     Matrix Phi_transposed{Phi.columns, Phi.rows};
     Matrix::transpose(Phi, Phi_transposed);
-    
     Matrix P_new{P.rows, P.columns};
     Matrix::multiply(Phi, P, P_new); // P_new = Phi*P
     Matrix::multiply(P_new, Phi_transposed, P_new); // Phi_new = P_new*Phi_transposed
     Matrix::sum(P_new, Q, P_new); // Phi_new = Phi_new + Q
 
+    std::cout << miosix::MemoryProfiling::getCurrentFreeStack() << " 2 \n";
+
     // Gain calculation
     // K = P_new * H.transposed() * (((H * P_new * H.transposed()) + R).inverse());
+    std::cout << H.rows << H.columns << "\n";
     Matrix H_transposed{H.columns, H.rows};
     Matrix::transpose(H, H_transposed);
-    Matrix A{H.rows, P_new.columns};
-    Matrix::multiply(H, P_new, A); // A = H*P_new
-    Matrix B{H.rows, H_transposed.columns};
-    Matrix::multiply(A, H_transposed, B); // B = A*H_transposed
-    Matrix::sum(B, R, B); // B = B+R
-    Matrix::invert(B, B); // B = B.inverse()
-    Matrix C{P_new.rows, H_transposed.columns};
-    Matrix::multiply(P_new, H_transposed, C); // C = P_new*H_transposed
-    Matrix K{C.rows, B.columns};
-    Matrix::multiply(C, B, K); // K = C*B
+    // Matrix A{H.rows, P_new.columns};
+    // Matrix::multiply(H, P_new, A); // A = H*P_new
+    // Matrix B{H.rows, H_transposed.columns};
+    // Matrix::multiply(A, H_transposed, B); // B = A*H_transposed
+    // Matrix::sum(B, R, B); // B = B+R
+    std::cout << miosix::MemoryProfiling::getCurrentFreeStack() << " 3 \n";
+    // Matrix::invert(B, B); // B = B.inverse()
+    
+    // Matrix C{P_new.rows, H_transposed.columns};
+    // Matrix::multiply(P_new, H_transposed, C); // C = P_new*H_transposed
+    // Matrix K{C.rows, B.columns};
+    // Matrix::multiply(C, B, K); // K = C*B
 
-    // Error matrix correction
-    // P = (Matrix::eye(3) - (K * H)) * P_new;
-    Matrix D{K.rows, H.columns};
-    Matrix::multiply(K, H, D); // D = K*H
-    Matrix::subtract(Matrix::eye(3), D, D); // D = I-D
-    Matrix::multiply(D, P_new, P); // P = D*P_new
+    // // Error matrix correction
+    // // P = (Matrix::eye(3) - (K * H)) * P_new;
+    // Matrix D{K.rows, H.columns};
+    // Matrix::multiply(K, H, D); // D = K*H
+    // Matrix::subtract(Matrix::eye(3), D, D); // D = I-D
+    // Matrix::multiply(D, P_new, P); // P = D*P_new
 
-    // State propagation
-    // X_new = Phi * X;
-    Matrix X_new{Phi.rows, X.columns};
-    Matrix::multiply(Phi, X, X_new);
+    // // State propagation
+    // // X_new = Phi * X;
+    // Matrix X_new{Phi.rows, X.columns};
+    // Matrix::multiply(Phi, X, X_new);
 
-    // State correction
-    // X = X_new + (K * (y - H * X_new));
-    Matrix E{y.rows, y.columns};
-    Matrix::multiply(H, X_new, E); // E = H*X_new
-    Matrix::subtract(y, E, E); // E = y-E
-    Matrix F{K.rows, E.columns};
-    Matrix::multiply(K, E, F); // F = K*E
-    Matrix::sum(X_new, F, X); // X = X_new+F
+    // // State correction
+    // // X = X_new + (K * (y - H * X_new));
+    // Matrix E{y.rows, y.columns};
+    // Matrix::multiply(H, X_new, E); // E = H*X_new
+    // Matrix::subtract(y, E, E); // E = y-E
+    // Matrix F{K.rows, E.columns};
+    // Matrix::multiply(K, E, F); // F = K*E
+    // Matrix::sum(X_new, F, X); // X = X_new+F
+    } 
 }
