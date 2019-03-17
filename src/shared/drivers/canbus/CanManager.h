@@ -26,7 +26,6 @@
 #define CANMANAGER_H
 
 #include <Common.h>
-#include <Singleton.h>
 #include "CanBus.h"
 #include "CanUtils.h"
 
@@ -57,13 +56,22 @@ class CanManager
 {
     // friend class Singleton<CanManager>;
 public:
+
+    /**
+     * @brief Adds a filter to receive Canbus messages.
+     * 
+     * @param id        filter ID
+     * @param can_id    on which canbus
+     * @return true     ok
+     * @return false    invalid filters
+     */
     bool addHWFilter(uint16_t id, uint32_t can_id);
     bool delHWFilter(uint16_t id, uint32_t can_id);
 
     unsigned getNumFilters(unsigned can_id) const;
 
     template <uint32_t gpio, uint8_t rx, uint8_t tx>
-    void addBus(const canbus_init_t &i)
+    void addBus(const canbus_init_t &i, CanDispatcher dispatcher)
     {
         typedef miosix::Gpio<gpio, rx> rport;
         typedef miosix::Gpio<gpio, tx> tport;
@@ -73,14 +81,20 @@ public:
 
         if (i.af >= 0)
         {
+            #ifndef _ARCH_CORTEXM3_STM32 //Only stm32f2 and stm32f4 have it
             rport::alternateFunction(i.af);
             tport::alternateFunction(i.af);
+            #endif //_ARCH_CORTEXM3_STM32
         }
 
         // TODO de-hardcode this part
         {
             miosix::FastInterruptDisableLock dLock;
+            #ifdef RCC_APB1ENR_CAN2EN
             RCC->APB1ENR |= RCC_APB1ENR_CAN1EN | RCC_APB1ENR_CAN2EN;
+            #else
+            RCC->APB1ENR |= RCC_APB1ENR_CAN1EN;
+            #endif
             RCC_SYNC();
         }
 
@@ -90,12 +104,14 @@ public:
             NVIC_EnableIRQ(j);
         }
 
-        CanBus *canbus = new CanBus(i.can, this, bus.size());
+        CanBus *canbus = new CanBus(i.can, this, bus.size(), dispatcher);
         bus.push_back(canbus);
+        canbus->start();
 
         // Used by CanInterrupt.cpp
         global_bus_ptr[global_bus_ctr++] = canbus;
     }
+
 
     CanBus *getBus(uint32_t id);
 
@@ -155,6 +171,6 @@ private:
     volatile CAN_TypeDef *const Config;
 };
 
-#define sCanManager CanManager::getInstance()
+//#define sCanManager CanManager::getInstance()
 
 #endif /* CANMANAGER_H */

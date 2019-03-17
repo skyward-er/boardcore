@@ -23,7 +23,7 @@
  *                                                                         *
  *   You should have received a copy of the GNU General Public License     *
  *   along with this program; if not, see <http://www.gnu.org/licenses/>   *
- ***************************************************************************/ 
+ ***************************************************************************/
 
 #pragma once
 
@@ -31,9 +31,11 @@
 #include <cstdio>
 #include <list>
 #include <queue>
+#include <string>
 #include <type_traits>
 #include "LogStats.h"
 
+using std::string;
 /**
  * Possible outcomes of Logger::log()
  */
@@ -64,8 +66,9 @@ public:
      * to log will actually log the data.
      *
      * \throws runtime_error if the log could not be opened
+     * \return log number
      */
-    void start();
+    int start();
 
     /**
      * Blocking call. May take a very long time (seconds).
@@ -76,6 +79,34 @@ public:
      * corrupting the filesystem.
      */
     void stop();
+
+    /**
+     * Return the number representing the current log file.
+     * @return log number
+     */
+    int getLogNumber() { return fileNumber; }
+
+    /**
+     * Returns the log filename for the specified number.
+     * IE: log_number = 16, returned: "/sd/log16.dat"
+     * @param log_number
+     * @return
+     */
+    static string getFileName(int log_number)
+    {
+        char filename[32];
+        sprintf(filename, "/sd/log%02d.dat", log_number);
+
+        return string(filename);
+    }
+
+    /**
+    * Returns current log filename
+    * @return
+    */
+    string getFileName() { return getFileName(fileNumber); }
+
+    LogStats getLogStats() { return s; }
 
     /**
      * Nonblocking call.
@@ -95,11 +126,11 @@ public:
      *   logger, but by the log decoder program)
      * \return whether the class has been logged
      */
-    template<typename T>
-    LogResult log(const T& t)
+    template <typename T>
+    LogResult log(const T &t)
     {
-        //static_assert(std::is_trivially_copyable<T>::value,"");
-        return logImpl(typeid(t).name(),&t,sizeof(t));
+        // static_assert(std::is_trivially_copyable<T>::value,"");
+        return logImpl(typeid(t).name(), &t, sizeof(t));
     }
 
 private:
@@ -110,7 +141,7 @@ private:
     static void packThreadLauncher(void *argv);
     static void writeThreadLauncher(void *argv);
     static void statsThreadLauncher(void *argv);
-    
+
     /**
      * Non-template dependente part of log
      * \param name class anem
@@ -160,7 +191,7 @@ private:
     {
     public:
         Record() : size(0) {}
-        char data[maxRecordSize];
+        char data[maxRecordSize] = {};
         unsigned int size;
     };
 
@@ -174,9 +205,11 @@ private:
     {
     public:
         Buffer() : size(0) {}
-        char data[bufferSize];
+        char data[bufferSize] = {};
         unsigned int size;
     };
+
+    int fileNumber = -1;
 
     miosix::Queue<Record *, numRecords> fullQueue;        ///< Full records
     miosix::Queue<Record *, numRecords> emptyQueue;       ///< Empty Records

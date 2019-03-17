@@ -21,3 +21,8 @@ STM32F429zi_Discovery.xml
 build
 *.sublime-workspace
 *.sublime-project
+
+.vscode/*
+
+store.json
+scripts/homeone/event_header_generator/generated/

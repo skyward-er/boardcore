@@ -64,6 +64,7 @@ public:
 
     virtual void onDMAUpdate(const SPIRequest& req)
     {
+        (void)req;
         // printf("** SENSOR::onDMAUpdate **\n");
     }
 

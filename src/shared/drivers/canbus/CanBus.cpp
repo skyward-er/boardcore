@@ -33,7 +33,6 @@ TODO:
 
 #include "CanBus.h"
 #include "CanManager.h"
-#include "CanSocket.h"
 #include "CanUtils.h"
 
 using namespace miosix;
@@ -42,93 +41,57 @@ using std::set;
 // Transmit mailbox request
 #define TMIDxR_TXRQ ((uint32_t)0x00000001)
 
-CanBus::CanBus(CAN_TypeDef *bus, CanManager *manager, const int id)
-    : CANx(bus), manager(manager), id(id)
+CanBus::CanBus(CAN_TypeDef *bus, CanManager *manager, const int can_id, CanDispatcher dispatcher)
+    : CANx(bus), manager(manager), id(can_id), dispatchMessage(dispatcher)
 {
     terminate = false;
-    pthread_create(&t, NULL, threadLauncher, reinterpret_cast<void *>(this));
     this->canSetup();
-}
-
-// Bind a socket and set proper filters
-bool CanBus::registerSocket(CanSocket *socket)
-{
-    uint16_t filter_id = socket->getFilterId();
-
-    if (filter_id >= CanManager::filter_max_id)
-        return false;
-
-    // Lock mutex, add to map
-    {
-        Lock<FastMutex> l(mutex);
-
-        set<CanSocket *> &ids = socket_map[filter_id];
-        if (ids.find(socket) != ids.end())
-            return false;
-
-        if (!manager->addHWFilter(filter_id, this->id))
-        {
-            // TODO: log error
-            return false;
-        }
-
-        ids.insert(socket);
-    }
-
-    return true;
-}
-
-// Unbind a socket and unset filters
-bool CanBus::unregisterSocket(CanSocket *socket)
-{
-    uint16_t filter_id = socket->getFilterId();
-
-    if (id >= CanManager::filter_max_id)
-        return false;
-
-    // Lock mutex, remove from map and from filter bank
-    {
-        Lock<FastMutex> l(mutex);
-
-        set<CanSocket *> &ids = socket_map[filter_id];
-        auto it               = ids.find(socket);
-
-        if (it == ids.end())
-            return false;
-
-        if (!manager->delHWFilter(filter_id, this->id))
-        {
-            // log unconsistency error
-            return false;
-        }
-
-        ids.erase(it);
-    }
-
-    return true;
+    memset(&status, 0, sizeof(status));
 }
 
 /**
-  funzione eseguita dal thread che smista i messaggi
-  ricevuti tra i vari receiver
-  */
-void CanBus::queueHandler()
+* Funzione eseguita dall'ActiveObject per ricevere messaggi
+*/
+void CanBus::rcvFunction()
 {
     while (terminate == false)
     {
+        /* Read fom queue */
         CanMsg message;
-        messageQueue.waitUntilNotEmpty();
+        rcvQueue.waitUntilNotEmpty();  // blocks
 
-        messageQueue.get(message);
+        rcvQueue.get(message);
+        TRACE("[CanBus] message received\n");
+
+        /* Check message */
+        uint32_t filter_id;
+
+        if (message.IDE == CAN_ID_STD)
+            filter_id = message.StdId;
+        else
+            filter_id = message.ExtId;
+
+        if (filter_id >= (uint32_t)CanManager::filter_max_id)
+        {
+            TRACE("[CanBus] Unsupported message\n");
+            return;
+        }
+
+        /* Truncate payload length to maximum */
+        if (message.DLC > 8)
+            message.DLC = 8;
+
+        {
+            // Update status
+            Lock<FastMutex> l(statusMutex);
+            status.n_rcv++;
+            status.last_rcv = (uint8_t)filter_id;
+            status.last_rcv_ts = miosix::getTick();
+        }
+
+        /* Handle message */
         dispatchMessage(message);
     }
-}
-
-// metodo per eseguire queueHandler//
-void *CanBus::threadLauncher(void *arg)
-{
-    reinterpret_cast<CanBus *>(arg)->queueHandler();
-    return NULL;
 }
 
 /*
@@ -154,7 +117,7 @@ bool CanBus::send(uint16_t id, const uint8_t *message, uint8_t len)
 
     {
         int txMailBox = -1;
-        Lock<FastMutex> l(mutex);
+        Lock<FastMutex> l(sendMutex);
 
         int timeout = 10;
         while (txMailBox < 0 && timeout > 0)
@@ -200,39 +163,22 @@ bool CanBus::send(uint16_t id, const uint8_t *message, uint8_t len)
         // Request transmission
         CANx->sTxMailBox[txMailBox].TIR |= TMIDxR_TXRQ;
     }
+
+    {
+        // Update status
+        Lock<FastMutex> l(statusMutex);
+        status.n_sent++;
+        status.last_sent = (uint8_t)id;
+        status.last_sent_ts = miosix::getTick();
+    }
+
     return true;
 }
 
-/**
-  smista il messaggio tra i vari receiver registrati ad un determinato id
-  \param message il messaggio da smistare
-*/
-void CanBus::dispatchMessage(CanMsg message)
+CanStatus CanBus::getStatus()
 {
-    uint32_t filter_id;
-
-    if (message.IDE == CAN_ID_STD)
-        filter_id = message.StdId;
-    else
-        filter_id = message.ExtId;
-
-    if (filter_id >= (uint32_t)CanManager::filter_max_id)
-    {
-        // log unsupported message
-        return;
-    }
-
-    if (message.DLC > 8)
-        message.DLC = 8;
-
-    {
-        Lock<FastMutex> l(mutex);
-
-        set<CanSocket *> &ids = socket_map[filter_id];
-
-        for (auto socket : ids)
-            socket->addToMessageList(message.Data, message.DLC);
-    }
+    Lock<FastMutex> l(statusMutex);
+    return status;
 }
 
 void CanBus::canSetup()
@@ -289,7 +235,7 @@ void CanBus::canSetup()
     uint32_t CAN_BS2 = CAN_BS2_7tq;
 
     // can prescaler (CAN_BRT BRP)
-    uint16_t CAN_Prescaler = 3;
+    uint16_t CAN_Prescaler = 525;
     // 3 == 42000000 / (14 * 1000000); // quanta by baudrate
 
     // pagina 165

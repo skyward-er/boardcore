@@ -27,6 +27,9 @@
 
 #include <Common.h>
 
+#define CAN_MAX_PAYLOAD 8
+#define CAN_MAX_LEN     16
+
 enum CanMode
 {
     CAN_NORMAL    = 0,
@@ -99,5 +102,14 @@ struct CanMsg
     uint8_t FMI;
 };
 #pragma pack()
+
+struct CanStatus {
+    uint16_t n_sent;
+    uint16_t n_rcv;
+    uint8_t last_sent;
+    uint8_t last_rcv;
+    uint64_t last_sent_ts;
+    uint64_t last_rcv_ts;
+};
 
 #endif /* CANUTILS_H */

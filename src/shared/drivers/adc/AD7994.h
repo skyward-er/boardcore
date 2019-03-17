@@ -1,4 +1,4 @@
-/* Copyright (c) 2015-2018 Skyward Experimental Rocketry
+/* Copyright (c) 2018-2019 Skyward Experimental Rocketry
  * Authors: Luca Erbetta
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -19,120 +19,203 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
+
 #ifndef SRC_SHARED_DRIVERS_ADC_AD7994_H
 #define SRC_SHARED_DRIVERS_ADC_AD7994_H
 
 #include <miosix.h>
 #include <stdint.h>
 
-#include "Singleton.h"
+#include "AD7994Data.h"
 #include "sensors/Sensor.h"
 
 /**
- * Struct containing the data from each ADC channel
- */
-struct ADCData
-{
-    uint16_t val_ch1;
-    uint16_t val_ch2;
-    uint16_t val_ch3;
-    uint16_t val_ch4;
-};
-
-/**
  * Driver for the AD7994 Analog Digital Converter
+ * CLASS INVARIANT: The address pointer register points to the conversion result
+ * register.
+ * This is done for performance reasons: we don't want to write to the
+ * address pointer register each time we perform a conversion (eg multiple times
+ * per second)
  */
-template <typename BusI2C>
+template <typename BusI2C, typename BusyPin, typename CONVST>
 class AD7994 : public Sensor
 {
 public:
+    enum class Channel : uint8_t
+    {
+        CH1 = 1,
+        CH2,
+        CH3,
+        CH4
+    };
+
     /**
+     * @brief AD7994 constructor. Invariant is respected as the sensor powers up
+     * pointing at the conversion result register.
      *
-     * @param i2c_address address of the AD7994 on the I2C bus
+     * @param i2c_address I2C address of the AD7994
      */
-    AD7994(uint8_t i2c_address) : address(i2c_address) {}
+    AD7994(uint8_t i2c_address) : i2c_address(i2c_address), enabled_channels{0,0,0,0}{}
 
-    virtual ~AD7994() {}
+    ~AD7994() {}
 
     /**
-     * Enables the specified ADC channel
-     * @param channel Channel number [1-4]
+     * @brief Initialize the sensor writing the configuration register
+     * This driver is designed to work in Mode 1
+     * The configuration register is set to enable the BUSY pin, I2C filtering
+     * and no enabled channels.
+     * @return true If the sensor was configured successfully
      */
-    void enableChannel(uint8_t channel)
+    bool init() override
     {
-        if (channel >= 1 && channel <= 4)
-        {
-            uint8_t mask = 1 << (channel - 1);
+        uint8_t config_reg_value = 0x0A;  //0b00001010
 
-            // If this channel is not yet selected
-            if (selectedChannels & mask == 0)
-            {
-                // Select it and increase the counter
-                selectedChannels |= mask;
-                selectedChannelsNum++;
+        // Write the configuration register
+        BusI2C::write(i2c_address, REG_CONFIG, &config_reg_value, 1);
+
+        uint8_t read_config_reg_value;
+
+        // Read back the value
+        BusI2C::read(i2c_address, REG_CONFIG, &read_config_reg_value, 1);
+
+        pointToConversionResult();
+
+        return read_config_reg_value == config_reg_value;
+    }
+
+    void enableChannel(Channel channel)
+    {
+        uint8_t ch = static_cast<uint8_t>(channel);
+        enabled_channels[ch-1] = true;
+
+        uint8_t config_reg_value;
+        BusI2C::read(i2c_address, REG_CONFIG, &config_reg_value, 1);
+
+        // Update the config register value
+        uint8_t channel_reg = 0;
+        for(int i = 0; i < 4; i++)
+        {
+            if(enabled_channels[i])
+                channel_reg |= 1 << i;
+        }
+        config_reg_value = (config_reg_value & 0x0F) | channel_reg << 4;
+
+        printf("channel_reg: %d\n", channel_reg);
+
+        BusI2C::write(i2c_address, REG_CONFIG, &config_reg_value, 1);
+
+        printf("REG_CONFIG: %d\n", config_reg_value);
+
+        pointToConversionResult();
+    }
+
+    void disableChannel(Channel channel)
+    {
+        uint8_t ch = static_cast<uint8_t>(channel);
+        enabled_channels[ch-1] = false;
+
+        uint8_t channel_reg = 0;
+        for(int i = 0; i < 4; i++)
+        {
+            if(enabled_channels[i])
+                channel_reg |= 1 << i;
+        }
+        
+        uint8_t config_reg_value;
+        BusI2C::read(i2c_address, REG_CONFIG, &config_reg_value, 1);
+
+        // Update the config register value
+        config_reg_value = (config_reg_value & 0x0F) | channel_reg << 4;
+
+        BusI2C::write(i2c_address, REG_CONFIG, &config_reg_value, 1);
+
+        pointToConversionResult();
+    }
+
+    /**
+     * @brief Triggers a new ADC conversion on the enabled channels and reads
+     * the value of the conversion register.
+     * TODO: Check how to sample multiple channels.
+     * @return true If the conversion was successful on all enabled channels
+     */
+    bool onSimpleUpdate() override
+    {
+
+        uint8_t data[2];
+
+        for(int i = 0; i < 4; i++)
+        {
+            if(enabled_channels[i]){
+                // Trigger a conversion
+                CONVST::high();
+                miosix::delayUs(1);
+                CONVST::low();
+
+                // Wait for the conversion to complete
+                miosix::delayUs(2);
+
+                BusI2C::directRead(i2c_address, data, 2);
+
+                samples[i] = decodeConversion(data);
+                samples[i].timestamp = miosix::getTick();
             }
         }
-    }
 
-    /**
-    * Disables the specified ADC channel
-    * @param channel Channel number [1-4]
-    */
-    void disableChannel(uint8_t channel)
-    {
-        if (channel >= 1 && channel <= 4)
-        {
-            uint8_t mask = ~(1 << (channel - 1));
-            // If this channel is already selected
-            if (selectedChannels & mask > 0)
-            {
-                // Deselect it and decrease the counter
-                selectedChannels &= mask;
-                selectedChannelsNum--;
-            }
-        }
-    }
-
-    void disableAllChannels()
-    {
-        selectedChannels    = 0;
-        selectedChannelsNum = 0;
-    }
-
-    /**
-     * Returns a pointer to the latest samples
-     * @return
-     */
-    ADCData* adcDataPtr() { return &samples; }
-
-    bool onSimpleUpdate()
-    {
-        // 1: Program address register to start conversion
-        // TODO: Check if we have to write these bits beforehand
-        uint8_t data = selectedChannels << 4;
-        BusI2C::directWrite(address, &data, 1);
-        // TODO: Read data
         return true;
     }
 
     bool selfTest() { return true; }
 
+    AD7994Sample getLastSample(Channel channel)
+    {
+        uint8_t ch = static_cast<uint8_t>(channel);
+        return samples[ch - 1];
+    }
+
 private:
     // Address of the AD7994 on the I2C bus
-    uint8_t address;
+    const uint8_t i2c_address;
 
-    uint8_t selectedChannelsNum = 0;    // Number of selected channels
-    uint8_t selectedChannels    = 0x0;  // The 4 most significant bits in the
-                                        // address pointer register
+    // The 4 LSBs indicate where the corresponding channel is enabled or not.
+    bool enabled_channels[4];
 
-    ADCData samples;
+    /**
+     * @brief Writes the conversion register address to the address pointer
+     * register in order to restore the class invariant.
+     */
+    void pointToConversionResult()
+    {
+        uint8_t reg_addr = REG_CONVERSION_RESULT;
+        BusI2C::directWrite(i2c_address, &reg_addr, 1);
+    }
+
+    /**
+     * @brief Decodes the 2 bytes of the conversion register into an
+     * AD7994Sample structure
+     *
+     * @param data_ptr Pointer to the first of the 2 bytes of the conversione
+     * register
+     * @return AD7994Sample
+     */
+    AD7994Sample decodeConversion(uint8_t* data_ptr) {
+        uint16_t conv_reg = static_cast<uint16_t>((data_ptr[0]) << 8) + data_ptr[1];
+
+        AD7994Sample out;
+        out.value = conv_reg & 0x0FFF;
+        out.channel_id = (static_cast<uint8_t>(conv_reg >> 12) & 0x03) + 1;
+        out.alert_flag = static_cast<bool>(conv_reg >> 15);
+
+        return out;
+    }
 
     enum Registers : uint8_t
     {
-        CONVERSION_RESULT_REG = 0x00,
-        ALERT_STATUS_REG      = 0x01,
-        CONFIG_REG            = 0x02
+        REG_CONVERSION_RESULT = 0x00,
+        REG_ALERT_STATUS      = 0x01,
+        REG_CONFIG            = 0x02,
     };
+
+    AD7994Sample samples[4];
 };
 
 #endif /* SRC_SHARED_DRIVERS_ADC_AD7994_H */

@@ -26,6 +26,7 @@
 
 using namespace miosix;
 
+/* Global array of all the physical CAN buses */
 CanBus *global_bus_ptr[2] = {NULL, NULL};
 uint32_t global_bus_ctr   = 0;
 
@@ -65,6 +66,9 @@ void __attribute__((naked)) CAN2_RX1_IRQHandler()
     restoreContext();
 }
 
+/*
+ * @brief This function populates the rcvQueue of the corresponding Canbus object.
+ */
 void __attribute__((used)) CAN_IRQHandlerImpl(int can_dev, int fifo)
 {
     CanBus *hlbus;
@@ -95,15 +99,17 @@ void __attribute__((used)) CAN_IRQHandlerImpl(int can_dev, int fifo)
     RxMessage.FMI = (uint8_t)0xFF & (can->sFIFOMailBox[fifo].RDTR >> 8);
 
     /* Get the data field */
-    *((uint32_t *)RxMessage.Data)       = can->sFIFOMailBox[fifo].RDLR;
-    *((uint32_t *)(RxMessage.Data + 4)) = can->sFIFOMailBox[fifo].RDHR;
+    uint32_t DataLR = can->sFIFOMailBox[fifo].RDLR;
+    uint32_t DataHR = can->sFIFOMailBox[fifo].RDHR;
+    memcpy(RxMessage.Data, &DataLR, sizeof(uint32_t));
+    memcpy(RxMessage.Data + sizeof(uint32_t), &DataHR, sizeof(uint32_t));
 
     /* Release FIFO0 */
     can->RF0R |= CAN_RF0R_RFOM0;
 
     bool hppw = false;
 
-    hlbus->messageQueue.IRQput(RxMessage, hppw);
+    hlbus->rcvQueue.IRQput(RxMessage, hppw);
 
     if (hppw)
         Scheduler::IRQfindNextThread();

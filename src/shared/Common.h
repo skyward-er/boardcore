@@ -42,4 +42,8 @@
 
 #include "Constants.h"
 
+#include "Debug.h"
+
+#define UNUSED(x) (void)(x)
+
 #endif

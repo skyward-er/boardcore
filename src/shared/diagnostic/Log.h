@@ -33,7 +33,7 @@
 #include <unistd.h>
 #include <queue>
 
-class Log : public Singleton<Log>, ActiveObject
+class Log : public Singleton<Log>, public ActiveObject
 {
     enum DataType
     {
@@ -55,7 +55,7 @@ public:
     {
         std::vector<uint8_t> buf(1 + str.length());
         buf[0] = DATA_STRING;
-        for (size_t i = 0; i < str.length(); i++)
+        for (size_t i  = 0; i < str.length(); i++)
             buf[1 + i] = str[i];
 
         queue(std::move(buf));
