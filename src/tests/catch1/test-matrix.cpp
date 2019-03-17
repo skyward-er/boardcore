@@ -25,7 +25,7 @@
 #endif
 
 #include  <catch.hpp>
-#include "kalman/Matrix.hpp"
+#include "kalman/Matrix.h"
 
 
 /** TESTS LIST

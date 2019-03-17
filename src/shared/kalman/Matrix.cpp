@@ -20,7 +20,7 @@
  * THE SOFTWARE.
  */
 
-#include "Matrix.hpp"
+#include "Matrix.h"
 #include <stdio.h>
 #include <iomanip>
 #include <iostream>
