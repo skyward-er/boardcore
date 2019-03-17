@@ -43,7 +43,7 @@ class AD7994 : public Sensor
 public:
     enum class Channel : uint8_t
     {
-        CH1,
+        CH1 = 1,
         CH2,
         CH3,
         CH4
@@ -55,7 +55,7 @@ public:
      *
      * @param i2c_address I2C address of the AD7994
      */
-    AD7994(uint8_t i2c_address) : i2c_address(i2c_address) {}
+    AD7994(uint8_t i2c_address) : i2c_address(i2c_address), enabled_channels{0,0,0,0}{}
 
     ~AD7994() {}
 
@@ -86,15 +86,25 @@ public:
     void enableChannel(Channel channel)
     {
         uint8_t ch = static_cast<uint8_t>(channel);
-        enabled_channels |= 1 << ch;
+        enabled_channels[ch-1] = true;
 
         uint8_t config_reg_value;
         BusI2C::read(i2c_address, REG_CONFIG, &config_reg_value, 1);
 
         // Update the config register value
-        config_reg_value = (config_reg_value & 0x0F) | enabled_channels << 4;
+        uint8_t channel_reg = 0;
+        for(int i = 0; i < 4; i++)
+        {
+            if(enabled_channels[i])
+                channel_reg |= 1 << i;
+        }
+        config_reg_value = (config_reg_value & 0x0F) | channel_reg << 4;
+
+        printf("channel_reg: %d\n", channel_reg);
 
         BusI2C::write(i2c_address, REG_CONFIG, &config_reg_value, 1);
+
+        printf("REG_CONFIG: %d\n", config_reg_value);
 
         pointToConversionResult();
     }
@@ -102,13 +112,20 @@ public:
     void disableChannel(Channel channel)
     {
         uint8_t ch = static_cast<uint8_t>(channel);
-        enabled_channels &= ~(1 << ch);
+        enabled_channels[ch-1] = false;
 
+        uint8_t channel_reg = 0;
+        for(int i = 0; i < 4; i++)
+        {
+            if(enabled_channels[i])
+                channel_reg |= 1 << i;
+        }
+        
         uint8_t config_reg_value;
         BusI2C::read(i2c_address, REG_CONFIG, &config_reg_value, 1);
 
         // Update the config register value
-        config_reg_value = (config_reg_value & 0x0F) | enabled_channels << 4;
+        config_reg_value = (config_reg_value & 0x0F) | channel_reg << 4;
 
         BusI2C::write(i2c_address, REG_CONFIG, &config_reg_value, 1);
 
@@ -123,24 +140,26 @@ public:
      */
     bool onSimpleUpdate() override
     {
-        // Trigger a conversion
-        CONVST::high();
-        miosix::delayUs(1);
-        CONVST::low();
-
-        // TODO: Do we have to wait longer if multiple channels are enabled?
-        // Wait for the conversion to complete
-        miosix::delayUs(2);
 
         uint8_t data[2];
 
-        BusI2C::directRead(i2c_address, data, 2);
+        for(int i = 0; i < 4; i++)
+        {
+            if(enabled_channels[i]){
+                // Trigger a conversion
+                CONVST::high();
+                miosix::delayUs(1);
+                CONVST::low();
 
-        AD7994Sample sample = decodeConversion(data);
-        sample.timestamp = miosix::getTick();
+                // Wait for the conversion to complete
+                miosix::delayUs(2);
 
-        // TODO: How to sample the other channels?
-        samples[0] = sample;
+                BusI2C::directRead(i2c_address, data, 2);
+
+                samples[i] = decodeConversion(data);
+                samples[i].timestamp = miosix::getTick();
+            }
+        }
 
         return true;
     }
@@ -158,7 +177,7 @@ private:
     const uint8_t i2c_address;
 
     // The 4 LSBs indicate where the corresponding channel is enabled or not.
-    uint8_t enabled_channels;
+    bool enabled_channels[4];
 
     /**
      * @brief Writes the conversion register address to the address pointer
