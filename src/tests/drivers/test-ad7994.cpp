@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2019 Skyward Experimental Rocketry
- * Authors: Luca Erbetta
+ * Authors: Luca Erbetta, Nuno Barcellos
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -27,7 +27,7 @@
 
 using namespace miosix;
 
-#ifdef _BOARD_STM32F429ZI_SKYWARD_HOMEONE
+// #ifdef _BOARD_STM32F429ZI_SKYWARD_HOMEONE
 
 #include <interfaces-impl/hwmapping.h>
 using I2CProtocol = ProtocolI2C<miosix::I2C1Driver>;
@@ -35,28 +35,54 @@ using I2CProtocol = ProtocolI2C<miosix::I2C1Driver>;
 using convst = miosix::sensors::ad7994::nconvst;
 using busy   = miosix::sensors::ad7994::ab;
 
-// Just for testing using a logic analyzer
-#elif defined _BOARD_STM32F429ZI_STM32F4DISCOVERY
+// // Just for testing using a logic analyzer
+// #elif defined _BOARD_STM32F429ZI_STM32F4DISCOVERY
 
-#include "drivers/SoftwareI2CAdapter.h"
+// #include "drivers/SoftwareI2CAdapter.h"
 
-using scl = Gpio<GPIOA_BASE, 8>;
-using sda = Gpio<GPIOC_BASE, 9>;
+// using scl = Gpio<GPIOB_BASE, 8>;
+// using sda = Gpio<GPIOB_BASE, 9>;
 
-using I2CProtocol = ProtocolI2C<SoftwareI2CAdapter<sda, scalbln> >;
+// using I2CProtocol = SoftwareI2CAdapter<sda, scl>;
 
-using busy   = Gpio<GPIOC_BASE, 8>;
-using convst = Gpio<GPIOB_BASE, 7>;
+// using busy   = Gpio<GPIOB_BASE, 1>;
+// using convst = Gpio<GPIOG_BASE, 9>;
 
-#endif
+// #endif
+
+typedef AD7994<I2CProtocol, busy, convst> AD7994_t;
 
 int main()
 {
+
+    // scl::mode(Mode::OUTPUT);
+    // sda::mode(Mode::OUTPUT);
+
     convst::mode(Mode::OUTPUT);
 
-    AD7994<I2CProtocol, busy, convst> ad{123};
+    // Address for part number AD7994-0, with AS pin HIGH
+    AD7994_t ad{0b0100010 << 1};
+    if(ad.init())
+        printf("Init succeeded\n");
+    else
+        printf("Init failed\n");
+
+    ad.enableChannel(AD7994_t::Channel::CH1);
+    ad.enableChannel(AD7994_t::Channel::CH2);
+    ad.enableChannel(AD7994_t::Channel::CH3);
+    ad.enableChannel(AD7994_t::Channel::CH4);
+
+    AD7994Sample sample;
+
     for (;;)
     {
-        ad.init();
+    	if(ad.onSimpleUpdate())
+    	{	
+    		sample = ad.getLastSample(AD7994_t::Channel::CH1);
+        	printf("timestamp: %d value: %d\n", sample.timestamp, sample.value);	
+    	}
+
+
+	    Thread::sleep(1000);
     }
 }
