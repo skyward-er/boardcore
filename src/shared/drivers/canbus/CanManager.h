@@ -56,10 +56,9 @@ class CanManager
 {
     // friend class Singleton<CanManager>;
 public:
-
     /**
      * @brief Adds a filter to receive Canbus messages.
-     * 
+     *
      * @param id        filter ID
      * @param can_id    on which canbus
      * @return true     ok
@@ -70,6 +69,9 @@ public:
 
     unsigned getNumFilters(unsigned can_id) const;
 
+    /**
+     * Add a new bus to the canmanager. Can add AT MOST 2 different buses
+     */
     template <uint32_t gpio, uint8_t rx, uint8_t tx>
     void addBus(const canbus_init_t &i, CanDispatcher dispatcher)
     {
@@ -81,20 +83,20 @@ public:
 
         if (i.af >= 0)
         {
-            #ifndef _ARCH_CORTEXM3_STM32 //Only stm32f2 and stm32f4 have it
+#ifndef _ARCH_CORTEXM3_STM32  // Only stm32f2 and stm32f4 have it
             rport::alternateFunction(i.af);
             tport::alternateFunction(i.af);
-            #endif //_ARCH_CORTEXM3_STM32
+#endif  //_ARCH_CORTEXM3_STM32
         }
 
         // TODO de-hardcode this part
         {
             miosix::FastInterruptDisableLock dLock;
-            #ifdef RCC_APB1ENR_CAN2EN
+#ifdef RCC_APB1ENR_CAN2EN
             RCC->APB1ENR |= RCC_APB1ENR_CAN1EN | RCC_APB1ENR_CAN2EN;
-            #else
+#else
             RCC->APB1ENR |= RCC_APB1ENR_CAN1EN;
-            #endif
+#endif
             RCC_SYNC();
         }
 
@@ -112,7 +114,6 @@ public:
         global_bus_ptr[global_bus_ctr++] = canbus;
     }
 
-
     CanBus *getBus(uint32_t id);
 
     /** Rule of 5 */
@@ -122,11 +123,35 @@ public:
 
     ~CanManager()
     {
+        // Disable interrupts
+        // TODO: Only disable the interrupts that we enabled
+        NVIC_DisableIRQ(CAN1_RX0_IRQn);
+        NVIC_DisableIRQ(CAN1_RX1_IRQn);
+        NVIC_DisableIRQ(CAN2_RX0_IRQn);
+        NVIC_DisableIRQ(CAN2_RX1_IRQn);
+
+        global_bus_ptr[0] = NULL;
+        global_bus_ptr[1] = NULL;
+
+        global_bus_ctr = 0;
+
         // TODO Maybe unconfigure ports?
         while (bus.size() > 0)
         {
+            bus[bus.size() - 1]->stop();  // Stop canbus thread
+
             delete bus[bus.size() - 1];
             bus.pop_back();
+        }
+
+        {
+            miosix::FastInterruptDisableLock dLock;
+#ifdef RCC_APB1ENR_CAN2EN
+            RCC->APB1ENR &= ~(RCC_APB1ENR_CAN1EN | RCC_APB1ENR_CAN2EN);
+#else
+            RCC->APB1ENR &= ~RCC_APB1ENR_CAN1EN;
+#endif
+            RCC_SYNC();
         }
     }
 
