@@ -21,10 +21,8 @@
  */
 
 #include "Matrix.h"
-#include <stdio.h>
 #include <iomanip>
 #include <iostream>
-#include <stdexcept>
 
 // --- Life cycle ---
 Matrix::Matrix() { data = nullptr; }
