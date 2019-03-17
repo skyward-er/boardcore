@@ -22,7 +22,7 @@
 
 #ifndef Kalman_h
 #define Kalman_h
-#include "Matrix.hpp"
+#include "Matrix.h"
 /*!
  * \class Kalman
  * \brief A class representing a Kalman filter
