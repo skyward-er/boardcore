@@ -35,17 +35,17 @@
 #include <map>
 #include <vector>
 
-using std::vector;
 using std::map;
+using std::vector;
 
-using miosix::Mutex;
-using miosix::Lock;
-using miosix::Unlock;
+using miosix::FastMutex;
 using miosix::getTick;
+using miosix::Lock;
 using miosix::Thread;
+using miosix::Unlock;
 
-// Maximum lenght of the sleep in the event broker run method, in ms.
-#define EVENT_BROKER_MAX_SLEEP 250;
+// Minimum guaranteed delay for an event posted with postDelayed(...) in ms
+static const unsigned int EVENT_BROKER_MIN_DELAY = 250;
 
 /**
  * The EventBroker class implements the pub-sub paradigm to dispatch events to
@@ -53,7 +53,7 @@ using miosix::Thread;
  * public topics enum and publish an event into it. The event will be posted in
  * to each FSM object subscribed to that specific topic.
  */
-class EventBroker : Singleton<EventBroker>, ActiveObject
+class EventBroker : Singleton<EventBroker>, public ActiveObject
 {
     friend class Singleton<EventBroker>;
 
@@ -70,7 +70,7 @@ public:
      * @param event
      * @param topic
      * @param delay_ms Delay in milliseconds. Events with delay shorter than
-     * EVENT_BROKER_MAX_SLEEP are not guaranteed to be posted in time.
+     * EVENT_BROKER_MIN_DELAY are not guaranteed to be posted in time.
      * @return Unique id representing the event in the delayed events list.
      */
     uint16_t postDelayed(const Event& event, uint8_t topic,
@@ -84,14 +84,35 @@ public:
 
     /**
      * Subscribe to a specific topic.
-     * Since there is no way to unsubscribe for now, the subscribed FSM
-     * MUST NOT be destroyed before the termination of the program.
-     * This function is meant to be called at initialization. DO NOT call it in
-     * response to an event, or it will cause a deadlock.
+     * DO NOT call it in response to an event, or it will cause a deadlock.
      * @param subscriber
      * @param topic
      */
     void subscribe(EventHandler* subscriber, uint8_t topic);
+
+    /**
+     * @brief Unsubscribe an EventHandler from a specific topic
+     * This function should be used only for testing purposes
+     * @param subscriber
+     * @param topic
+     */
+    void unsubscribe(EventHandler* subscriber, uint8_t topic);
+
+    /**
+     * @brief Unsubribe an EventHandler from all the topics it is subscribed to.
+     * This function should be used only for testing purposes
+     * @param subscriber
+     */
+    void unsubscribe(EventHandler* subscriber);
+    /**
+     * @brief Construct a new Event Broker object.
+     * Public access required for testing purposes. Use the singleton interface
+     * to access this class in production code.
+     *
+     */
+    EventBroker();
+    
+    virtual ~EventBroker(){};
 
 private:
     /**
@@ -105,19 +126,19 @@ private:
         long long deadline;
     };
 
-    EventBroker();
-    virtual ~EventBroker(){};
-
     /**
      * Active Object run
      */
-    void run();
+    void run() override;
+
+    void deleteSubscriber(vector<EventHandler*>& sub_vector,
+                          EventHandler* subscriber);
 
     vector<DelayedEvent> delayed_events;
-    Mutex mtx_delayed_events;
+    FastMutex mtx_delayed_events;
 
     map<uint8_t, vector<EventHandler*>> subscribers;
-    Mutex mtx_subscribers;
+    FastMutex mtx_subscribers;
 
     uint16_t eventCounter = 0;
 };

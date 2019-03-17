@@ -23,15 +23,15 @@
  *                                                                         *
  *   You should have received a copy of the GNU General Public License     *
  *   along with this program; if not, see <http://www.gnu.org/licenses/>   *
- ***************************************************************************/ 
+ ***************************************************************************/
 
+#include "Logger.h"
 #include <fcntl.h>
+#include <interfaces/atomic_ops.h>
 #include <sys/stat.h>
 #include <sys/types.h>
-#include <stdexcept>
-#include <interfaces/atomic_ops.h>
 #include <tscpp/buffer.h>
-#include "Logger.h"
+#include <stdexcept>
 
 using namespace std;
 using namespace miosix;
@@ -41,30 +41,34 @@ using namespace tscpp;
 // class Logger
 //
 
+typedef Gpio<GPIOG_BASE, 13> green_led;  // STM32F429ZI green led
+
 Logger& Logger::instance()
 {
     static Logger logger;
     return logger;
 }
 
-void Logger::start()
+int Logger::start()
 {
     if (started)
-        return;
+        return fileNumber;
 
-    char filename[32];
-    for (unsigned int i = 0; i < filenameMaxRetry; i++)
+    string filename;
+    for (fileNumber = 0; fileNumber < (int)filenameMaxRetry; fileNumber++)
     {
-        sprintf(filename, "/sd/%02d.dat", i);
+        filename = getFileName(fileNumber);
         struct stat st;
-        if (stat(filename, &st) != 0)
+        if (stat(filename.c_str(), &st) != 0)
+        {
             break;
+        }
         // File exists
-        if (i == filenameMaxRetry - 1)
+        if (fileNumber == filenameMaxRetry - 1)
             puts("Too many files, appending to last");
     }
 
-    file = fopen(filename, "ab");
+    file = fopen(filename.c_str(), "ab");
     if (file == NULL)
         throw runtime_error("Error opening log file");
     setbuf(file, NULL);
@@ -108,6 +112,7 @@ void Logger::start()
         throw runtime_error("Error creating stats thread");
     }
     started = true;
+    return fileNumber;
 }
 
 void Logger::stop()
@@ -162,7 +167,7 @@ LogResult Logger::logImpl(const char* name, const void* data, unsigned int size)
             return LogResult::Dropped;
         }
     }
-    
+
     auto result = serializeImpl(record->data, maxRecordSize, name, data, size);
     if (result == BufferTooSmall)
     {
@@ -170,7 +175,7 @@ LogResult Logger::logImpl(const char* name, const void* data, unsigned int size)
         atomicAdd(&s.statTooLargeSamples, 1);
         return LogResult::TooLarge;
     }
-    
+
     record->size = result;
     fullQueue.put(record);
     atomicAdd(&s.statQueuedSamples, 1);
@@ -264,7 +269,7 @@ void Logger::writeThread()
             // Write data to disk
             Timer timer;
             timer.start();
-            ledOn();
+            green_led::high();
 
             size_t result = fwrite(buffer->data, 1, buffer->size, file);
             if (result != buffer->size)
@@ -273,11 +278,12 @@ void Logger::writeThread()
                 // define and increase OVERRIDE_SD_CLOCK_DIVIDER_MAX
                 // perror("fwrite");
                 s.statWriteFailed++;
+                s.statWriteError = ferror(file);
             }
             else
                 s.statBufferWritten++;
 
-            ledOff();
+            green_led::low();
             timer.stop();
             s.statWriteTime    = timer.interval();
             s.statMaxWriteTime = max(s.statMaxWriteTime, s.statWriteTime);
@@ -309,10 +315,13 @@ void Logger::statsThread()
             if (started == false)
                 return;
             logStats();
-//             printf("ls:%d ds:%d qs:%d bf:%d bw:%d wf:%d wt:%d mwt:%d\n",
-//                    s.statTooLargeSamples, s.statDroppedSamples,
-//                    s.statQueuedSamples, s.statBufferFilled, s.statBufferWritten,
-//                    s.statWriteFailed, s.statWriteTime, s.statMaxWriteTime);
+            //             printf("ls:%d ds:%d qs:%d bf:%d bw:%d wf:%d wt:%d
+            //             mwt:%d\n",
+            //                    s.statTooLargeSamples, s.statDroppedSamples,
+            //                    s.statQueuedSamples, s.statBufferFilled,
+            //                    s.statBufferWritten,
+            //                    s.statWriteFailed, s.statWriteTime,
+            //                    s.statMaxWriteTime);
         }
     }
     catch (exception& e)

@@ -28,32 +28,7 @@
 #include "ActiveObject.h"
 #include "events/Event.h"
 #include "events/SyncQueue.h"
-
-#include <iostream>
-
-class EventHandler : ActiveObject
-{
-public:
-    EventHandler() : ActiveObject() {}
-
-    void postEvent(const Event& e) { eventList.put(e); }
-
-    virtual ~EventHandler(){};
-
-protected:
-    virtual void handleEvent(const Event& ev) = 0;
-
-    void run() override
-    {
-        while (true)
-        {
-            Event e = eventList.get();
-            handleEvent(e);
-        }
-    }
-
-    SynchronizedQueue<Event> eventList;
-};
+#include "events/EventHandler.h"
 
 template <class T>
 class FSM : public EventHandler
@@ -77,6 +52,15 @@ public:
         (static_cast<T*>(this)->*state)(specialEvent);
     }
 
+     /**
+     * Test if the FSM is in a state
+     * @param test_state state to test
+     */
+    bool testState(void (T::*test_state)(const Event&))
+    {
+        return (this->state == test_state);
+    }
+
 protected:
     void handleEvent(const Event& e) override
     {
@@ -87,4 +71,5 @@ private:
     void (T::*state)(const Event&);
     Event specialEvent;
 };
+
 #endif  // SRC_SHARED_EVENTS_FSM_H

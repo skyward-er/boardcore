@@ -43,7 +43,7 @@ public:
      * The instance pointed by @param hook will be deleted when the destructor 
      * of SlaveEngine is called
      */
-    SlaveEngine(HooksInterface *hook = nullptr);
+    explicit SlaveEngine(HooksInterface *hook = nullptr);
     
     ~SlaveEngine();
     
