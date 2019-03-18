@@ -36,7 +36,7 @@
 #include "catch1-tests-entry.cpp"
 #endif
 
-#include <catch.hpp>
+#include <utils/catch.hpp>
 
 int Factorial(int number)
 {
