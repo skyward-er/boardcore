@@ -22,7 +22,7 @@
  */
 
 #ifdef STANDALONE_CATCH1_TEST
-#include "catch1-tests-entry.cpp"
+#include "catch-tests-entry.cpp"
 #endif
 
 #include <miosix.h>
