@@ -62,14 +62,20 @@ class LM75B: public TemperatureSensor
         float getTemp()
         {
             uint16_t temp;
-            temp = BusType::read(slaveAddr, REG_TEMP, temp_array, 2);
+            BusType::read(slaveAddr, REG_TEMP, temp_array, 2);
+            temp = temp_array[0];
+            
             if(temp >= 0) 
             {
+                temp << 8;
+                temp = temp + temp_array[1];
                 temp = temp >> 5;
                 return float(temp)*0.125;
             }
             else
             {
+                temp << 8;
+                temp = temp + temp_array[1];
                 temp = temp >> 5;
                 return float(-temp)*0.125;
             }
