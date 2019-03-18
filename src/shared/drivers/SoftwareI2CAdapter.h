@@ -21,7 +21,7 @@
  * THE SOFTWARE.
  */
 
-#include <util\software_i2c.h>
+#include <util/software_i2c.h>
 
 /**
  * @brief Adapter for the SoftwareI2C class, in order to have a compatible
