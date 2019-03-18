@@ -44,20 +44,40 @@ class LM75B: public TemperatureSensor
             temp_array = {0, 0};
             slave_addr = slaveAddr;
             init();
-
         }
 
-        //TO DO
         bool init() 
         {
             BusType::write(slaveAddr, REG_CONF, &CONF_NORM, 1);
+            return true;
         }
 
-        // TO DO convertire il valore dall'array a float da mettere in mLastTemp
+        bool onSimpleUpdate()
+        {
+            mLastTemp = getTemp();
+            return true;
+        }
+
+        // TO DO controllare il segno
         float getTemp()
         {
-            BusType::read(slaveAddr, REG_TEMP, temp_array, 2);
+            uint16_t temp;
+            temp = BusType::read(slaveAddr, REG_TEMP, temp_array, 2);
+            if(temp >= 0) 
+            {
+                temp = temp >> 5;
+                return float(temp)*0.125;
+            }
+            else
+            {
+                temp = temp >> 5;
+                return float(-temp)*0.125;
+            }
+            
+            
         }
+
+
 
     private:
     
@@ -70,16 +90,16 @@ class LM75B: public TemperatureSensor
 
         enum Registers
         {
-            REG_CONF = 0x01H;   // R/W
-            REG_TEMP = 0x00H;   // R only
-            REG_TOS = 0x03H;    // R/W
-            REG_THYST = 0x02H;  // R/W
+            REG_CONF = 0x1H;   // R/W
+            REG_TEMP = 0x0H;   // R only
+            REG_TOS = 0x3H;    // R/W
+            REG_THYST = 0x2H;  // R/W
         };
 
-        //TO DO trovare il valore della configurazione normale
+        //TO DO controllare valore della configurazione normale
         enum ConfCommands
         {
-            CONF_NORM
+            CONF_NORM = 0x00;
         }
 
 
