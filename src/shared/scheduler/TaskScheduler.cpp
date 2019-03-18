@@ -76,7 +76,7 @@ vector<TaskStatResult> TaskScheduler::getTaskStats()
 void TaskScheduler::run()
 {
     Lock<FastMutex> l(mutex);
-    while (true)
+    while (!shouldStop())
     {
         while (agenda.size() == 0 && !shouldStop())
             condvar.wait(mutex);
