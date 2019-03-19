@@ -1,0 +1,4 @@
+#!/bin/bash
+
+python ./sbs "$@" 2>&1 | sed -e "s,.*warning:.*,$(tput setaf 3)&$(tput sgr0)," -e "s,.*error:.*,$(tput setaf 1)&$(tput sgr0)," -e "s,.*note:.*,$(tput setaf 4)&$(tput sgr0),"
+
