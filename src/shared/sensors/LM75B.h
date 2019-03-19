@@ -31,81 +31,94 @@
 
 #include "Sensor.h"
 
+enum class SlaveAddress: uint8_t
+{
+    ADDR_1 = 0x48,
+    ADDR_2 = 0x49,
+    ADDR_3 = 0x50
+};
+
 template <typename BusType> 
 class LM75B: public TemperatureSensor
 {
     public:
         // TO DO
         // @param slaveAddr     address of the sensor you want to use
-
-        LM75B(uint8_t slaveAddr)
+        LM75B(SlaveAddress slaveAddr) : slave_addr(static_cast<uint8_t>(slaveAddr))
         {
             mLastTemp = 0;
-            temp_array = {0, 0};
-            slave_addr = slaveAddr;
             init();
         }
 
-        bool init() 
+        bool selfTest() override
         {
-            BusType::write(slaveAddr, REG_CONF, &CONF_NORM, 1);
+            // TODO: self test me!!
             return true;
         }
 
-        bool onSimpleUpdate()
+        bool init() override
         {
-            mLastTemp = getTemp();
+            uint8_t conf = static_cast<uint8_t>(CONF_NORM);
+            BusType::write(slave_addr, REG_CONF, &conf, sizeof(uint8_t));
             return true;
         }
 
-        // TO DO controllare il segno
+        bool onSimpleUpdate() override
+        {
+            mLastTemp = updateTemp();
+            return true;
+        }
+
         float getTemp()
         {
+            return mLastTemp;
+        }
+
+    private:
+        const uint8_t slave_addr; 
+
+        uint8_t temp_array[2] = {0, 0};
+
+        enum Registers
+        {
+            REG_CONF = 0x01,   // R/W
+            REG_TEMP = 0x00,   // R only
+            REG_TOS = 0x03,    // R/W
+            REG_THYST = 0x02   // R/W
+        };
+
+        //TODO controllare valore della configurazione normale
+        enum ConfCommands
+        {
+            CONF_NORM = 0x00
+        };
+
+        // TODO con che ordine vengono letti i byte?
+        // TODO controllare il segno
+        float updateTemp()
+        {
             uint16_t temp;
-            BusType::read(slaveAddr, REG_TEMP, temp_array, 2);
+            BusType::read(slave_addr, REG_TEMP, temp_array, sizeof(uint16_t));
             temp = temp_array[0];
-            
-            if(temp >= 0) 
+
+            // MSB is the sign: 0->positive, 1->negative
+            static const uint8_t msb_mask = 0x80;
+            bool is_positive = ((temp_array[0] & msb_mask) == 0);
+
+            if(is_positive) 
             {
-                temp << 8;
-                temp = temp + temp_array[1];
+                temp <<= 8;
+                temp = temp | temp_array[1];
                 temp = temp >> 5;
                 return float(temp)*0.125;
             }
             else
             {
-                temp << 8;
-                temp = temp + temp_array[1];
+                temp <<= 8;
+                temp = temp | temp_array[1];
                 temp = temp >> 5;
                 return float(-temp)*0.125;
             }
-            
-            
-        }
-
-
-
-    private:
-    
-        // slave address first sensor is 0b1001000
-        // slave address second sensor is 0b1001001
-        // (slave address third sensor is 0b1001010) 
-        static constexpr uint8_t slave_addr; 
-
-        uint8_t temp_array[2];
-
-        enum Registers
-        {
-            REG_CONF = 0x1H;   // R/W
-            REG_TEMP = 0x0H;   // R only
-            REG_TOS = 0x3H;    // R/W
-            REG_THYST = 0x2H;  // R/W
-        };
-
-        //TO DO controllare valore della configurazione normale
-        enum ConfCommands
-        {
-            CONF_NORM = 0x00;
         }
 
 
