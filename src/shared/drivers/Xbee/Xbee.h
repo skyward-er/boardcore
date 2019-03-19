@@ -37,7 +37,7 @@ class Xbee : public Transceiver
         uint64_t target_addr = BROADCAST_ADDR;
 
         /*
-        * Send a message through the serial port to the gamma868 module (blocking).
+        * Send a message through the serial port to the Xbee module (blocking).
         * @param pkt               Pointer to the packet (needs to be at least pkt_len bytes).
         * @param pkt_len           Lenght of the packet to be sent (max 64KB per packet)
         * @return                  True if the message was sent correctly.
@@ -50,8 +50,8 @@ class Xbee : public Transceiver
             //pkt contruction:
             tx_pkt[DELIMITER] = START_DELIMITER;
 
-            tx_pkt[PKT_LEN_MSB] = (pkt_len && 0xff00)>>8;
-            tx_pkt[PKT_LEN_LSB] = pkt_len && 0xff; 
+            tx_pkt[PKT_LEN_MSB] = (pkt_len & 0xff00)>>8;
+            tx_pkt[PKT_LEN_LSB] = pkt_len & 0xff; 
 
             tx_pkt[AP_COMMAND] = AP_TX;
 
@@ -60,7 +60,7 @@ class Xbee : public Transceiver
             tx_pkt[HOST_ACKNOWLEDGE] = ACK_DISABLE;
 
             for(int i=0; i<ADDR_LEN_BYTE; i++)
-                tx_pkt[i+ADDR_MSB] = (target_addr && (0xff00000000000000>>8*i)) >> (56 - 8*i);
+                tx_pkt[i+ADDR_MSB] = (target_addr & (0xff00000000000000>>8*i)) >> (56 - 8*i);
             
             tx_pkt[RESERVED] = 0xff;  //reserved bytes
             tx_pkt[RESERVED+1] = 0xfe;
@@ -78,14 +78,17 @@ class Xbee : public Transceiver
             for(int i=0; i<PAYLOAD_START_BYTE+pkt_len; i++)
                 checksum += tx_pkt[i];
             tx_pkt[PAYLOAD_START_BYTE+pkt_len] = 0xff - (checksum & 0xff);
-
+            //TODO
             //send packet via SPI
+            //wait for IRQ
+            //receive send ”ok”
+            
             
 
         }
 
         /*
-        * Receive a message through the serial port to the gamma868 module (blocking).
+        * Receive a message through the serial port to the Xbee module (blocking).
         * @param pkt               Pointer to the buffer (needs to be at least pkt_len bytes).
         * @param pkt_len           Lenght of the packet to be received.
         */
