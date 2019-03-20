@@ -22,41 +22,80 @@
 
 #ifndef Kalman_h
 #define Kalman_h
-#include "Matrix.h"
+#include "matrix.h"
 /*!
  * \class Kalman
  * \brief A class representing a Kalman filter
  *
+ * m: number of inputs
+ * n: number of states
+ * p: number of outputs
+ * 
+ * x(k+1) = A x(k) + B u(k) + v1
+ * y(k)   = C x(k) + D u(k) + v2
+ * v1 ~ WN(0, V1)
+ * v2 ~ WN(0, V2)
+ * 
  * To use the filter:
  * (1) Call the initializer with the appropriate matrices
  * (2) Define the state propagation matrix and initial state
  * (3) Call the update function for each new sample acquired
  */
+template </* unsigned m, */unsigned n, unsigned p>
 class Kalman
 {
-private:
-    Matrix R; /**< Measurement variance vector */
-    Matrix Q; /**< Model variance matrix */
-    Matrix H; /**< Vector mapping the measurements to the state */
+// private:
+    // Matrix R; /**< Measurement variance vector */
+    // Matrix Q; /**< Model variance matrix */
+    // Matrix H; /**< Vector mapping the measurements to the state */
 public:
-    Matrix P;   /**< Error covariance matrix */
-    Matrix X;   /**< State matrix */
-    Matrix Phi; /**< State propagation matrix */
+    MatrixBase<float, n, n> A;      /**< State propagation matrix */
+    // MatrixBase<float, n, m> B; 
+    MatrixBase<float, p, n> C;      /**< Vector mapping the measurements to the state */
+    // MatrixBase<float, p, m> D;     
+    MatrixBase<float, n, 1> X;      /**< State matrix */
+    MatrixBase<float, n, n> V1;     /**< Model variance matrix */
+    MatrixBase<float, p, p> V2;     /**< Measurement variance vector */
+    // MatrixBase<float, , > V12; /**< Measurement variance vector */
+    MatrixBase<float, n, n > P;     /**< Error covariance matrix */
 
     /**
      * \brief Constructor
-     * \param P_init Error covariance matrix
-     * \param R_init Measurement variance vector
-     * \param Q_init Model variance matrix
-     * \param H_init Vector mapping the measurements to the state
      */
-    Kalman(Matrix P_init, Matrix R_init, Matrix Q_init, Matrix H_init);
+    Kalman() {};
 
     /**
-     * \brief Method for updating the estimate
-     * \param y The measurement vector
+     * \brief Predicts k steps ahead
      */
-    void update(Matrix y);
+    MatrixBase<float, n, 1> predict(int k);
+
+    /**
+    * \brief Method for updating the estimate
+    * \param y The measurement vector
+    */
+//    template <unsigned m, unsigned n, unsigned p>
+   void update(MatrixBase<float, p, 1> y)
+   {
+       // y is the measurement vector
+       
+       // Error matrix propagation
+       MatrixBase<float, n, n> P_new = A * P * transpose(A) + V1;
+       
+       // Gain calculation
+       MatrixBase<float, n, p> K = P_new * transpose(C) * inv((C * P_new * transpose(C)) + V2);
+       
+       // Build the identity matrix
+       MatrixBase<float, n, n> I{0};
+       for (int i = 0; i < n; i++) { I(i,i) = 1; }
+
+       // Error matrix correction
+       P = (I - (K*C)) * P_new;
+       
+       // State propagation
+       MatrixBase<float, n, 1> X_new = A * X;
+       // State correction
+       X = X_new + (K * (y - C * X_new));
+    };
 };
 
 #endif /* Kalman_h */
