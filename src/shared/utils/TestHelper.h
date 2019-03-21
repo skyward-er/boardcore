@@ -1,11 +1,40 @@
+/*
+ * Copyright (c) 2019 Skyward Experimental Rocketry
+ * Authors: Luca Erbetta
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in
+ * all copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.  IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+ * THE SOFTWARE.
+ */
+
+#pragma once
+
 #include <miosix.h>
+#include <cmath>
 #include <map>
 
 #include "events/EventBroker.h"
 #include "events/FSM.h"
 #include "events/HSM.h"
 
+#include "EventCounter.h"
+
 using miosix::FastMutex;
+using miosix::getTick;
 using miosix::Lock;
 using std::map;
 
@@ -13,10 +42,19 @@ using std::map;
  * How long should we wait for the state machine to handle the event?
  * Value in milliseconds
  */
-static const int SM_EVENT_HANDLE_UNCERTAINTY = 1;
+static const int EVENT_TIMING_UNCERTAINTY = 1;
+
 
 /**
- * @brief Test if a specific transition occurs in a Finite State Machine
+ * @brief Helper function used convert system ticks to milliseconds
+ */
+long long tickToMilliseconds(long long tick)
+{
+    return tick * 1000 / miosix::TICK_FREQ;
+}
+
+/**
+ * Tests if a specific transition occurs in a Finite State Machine
  * in response to an event.
  * Requires protected-level access to the FSM object, usually achieved by
  * "#define protected public"
@@ -44,7 +82,7 @@ bool testFSMTransition(FSM_type& fsm, const Event& ev,
  * in response to an event, posted on a specific topic.
  * Once the event is posted, the state machine will process it asynchronously,
  * so we have to wait a little bit for it to happen. The wait time is defined in
- * SM_EVENT_HANDLE_UNCERTAINTY. If the state machine takes longer than this
+ * EVENT_TIMING_UNCERTAINTY. If the state machine takes longer than this
  * time to process the event, the test will likely fail, as a transition will
  * not have occured.
  *
@@ -67,7 +105,7 @@ bool testFSMAsyncTransition(FSM_type& fsm, const Event& ev, uint8_t topic,
 {
     broker.post(ev, topic);
     // Wait for the event to be handled
-    miosix::Thread::sleep(SM_EVENT_HANDLE_UNCERTAINTY);
+    miosix::Thread::sleep(EVENT_TIMING_UNCERTAINTY);
     return fsm.testState(expected_state);
 }
 
@@ -100,7 +138,7 @@ bool testHSMTransition(HSM_type& hsm, const Event& ev,
  * in response to an event, posted on a specific topic.
  * Once the event is posted, the state machine will process it asynchronously,
  * so we have to wait a little bit for it to happen. The wait time is defined in
- * SM_EVENT_HANDLE_UNCERTAINTY. If the state machine takes longer than this
+ * EVENT_TIMING_UNCERTAINTY. If the state machine takes longer than this
  * time to process the event, the test will likely fail, as a transition will
  * not have occured.
  *
@@ -123,103 +161,65 @@ bool testHSMAsyncTransition(HSM_type& hsm, const Event& ev, uint8_t topic,
 {
     broker.post(ev, topic);
     // Wait for the event to be handled
-    miosix::Thread::sleep(SM_EVENT_HANDLE_UNCERTAINTY);
+    miosix::Thread::sleep(EVENT_TIMING_UNCERTAINTY);
     return hsm.testState(expected_state);
 }
 
 /**
- * @brief Helper class to count how many events are sent to the topic(s) it is
- * registered to.
+ * @brief Checks if an event is posted in a specific time window
+ * The time window is defined by the parameters as follows:
  *
- * Useful if you want to check wether or not events are being
- * effectively posted
+ * window = [when - uncertainty, when + uncertainty].
+ *
+ * If the event is posted inside the time
+ * window, the function returns true. False otherwise.
+ *
+ * Use this function with DEBUG *undefined*, as printfs are very slow and will
+ * mess with the timings, ultimately failing the tests.
+ *
+ * @param event_id The event to be checked
+ * @param topic The topic the event will be posted on
+ * @param when Expected time at which the event will be posted, in system ticks
+ * @param uncertainty Size of the time window
+ * @param broker
+ * @return True if the event is posted inside the time window
  */
-class EventCounter : public EventHandler
+bool expectEvent(uint8_t event_id, uint8_t topic, long long when,
+                 long long uncertainty = EVENT_TIMING_UNCERTAINTY,
+                 EventBroker& broker   = *sEventBroker)
 {
-public:
-    /**
-     * @brief Construct a new Event Counter object
-     * 
-     * @param broker EventBroker to listen events to
-     */
-    EventCounter(EventBroker& broker) : broker(broker)
+    EventCounter c{broker};
+    c.subscribe(topic);
+
+    long long window_start = when - uncertainty;
+    long long window_end   = when + uncertainty;
+
+    while (getTick() < window_end)
     {
-
-    }
-
-    ~EventCounter()
-    {
-        broker.unsubscribe(this);
-    }
-
-    /**
-     * @brief Subscribes to a topic in the EventBroker
-     * 
-     * @param topic 
-     */
-    void subscribe(uint8_t topic)
-    {
-        broker.subscribe(this, topic);
-    }
-
-    // Override postEvent not to put events in a queue, just count the events it
-    // receives.
-    void postEvent(const Event& ev) override
-    {
-        Lock<FastMutex> l(mutex);
-
-        ++map_counter[ev.sig];
-        ++total_count;
-
-        last_event = ev.sig;
-    }
-
-    /**
-     * @brief Returns the number of times a specific event has been received
-     */
-    unsigned int getCount(const Event& ev) { return getCount(ev.sig); }
-
-    /**
-     * @brief Returns the number of times a specific event has been received
-     */
-    unsigned int getCount(uint8_t ev_sig)
-    {
-        Lock<FastMutex> l(mutex);
-
-        if (map_counter.count(ev_sig) == 1)
+        if (c.getCount(event_id) > 0)
         {
-            return map_counter.at(ev_sig);
+            long long recv_tick = getTick();
+            if (recv_tick < window_start)
+            {
+                printf(
+                    "[expectEvent] Event %d on topic %d receveid %d ms before the opening of "
+                    "the window.\n", event_id, topic,
+                    static_cast<int>(
+                        tickToMilliseconds(window_start - recv_tick)));
+                return false;
+            }
+            printf(
+                "[expectEvent] Event %d on topic %d received inside the window, %d ms from "
+                "the target time.\n", event_id, topic,
+                static_cast<int>(tickToMilliseconds(abs(recv_tick - when))));
+
+            return true;
         }
 
-        return 0;
+        Thread::sleep(1);
     }
-
-    /**
-     * @brief Returns how many events have been received in total
-     */
-    unsigned int getTotalCount() { return total_count; }
-
-    /**
-     * @brief Returns the signature of the last event received (ev.sig)
-     */
-    uint8_t getLastEvent() { return last_event; }
-
-protected:
-    // Do nothing
-    void handleEvent(const Event& ev) override
-    {
-        // Avoid unused argument warning
-        (void)ev;
-    };
-
-private:
-    EventBroker& broker;
-
-    FastMutex mutex;
-    // Count how many times we have received each event
-    map<uint8_t, unsigned int> map_counter;
-
-    // How many events we have received in total
-    unsigned int total_count = 0;
-    uint8_t last_event;
-};
+    printf(
+        "[expectEvent] The event %d on topic %d was not yet received at the end of the "
+        "window.\n", event_id, topic);
+    return false;
+}
