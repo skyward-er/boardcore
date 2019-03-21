@@ -512,6 +512,16 @@ T det(const MatrixBase<T,3,3>& a)
 }
 
 /**
+ * Inverse of 1x1 matrix
+ */
+template<typename T>
+MatrixBase<T,1,1> inv(const MatrixBase<T,1,1>& a)
+{
+    if(a(0,0) == 0) throw std::runtime_error("matrix singular");
+    return MatrixBase<T, 1, 1>{1/a(0,0)};
+}
+
+/**
  * Inverse of 2x2 matrix
  * \code
  * Matrix2f a({1,2,3,4});
@@ -585,4 +595,19 @@ void operator/= (MatrixBase<T,R,C>& a, U b)
     for(unsigned r = 0; r < R; r++)
         for(unsigned c = 0; c < C; c++)
             a(r,c) /= b;
+}
+
+template<typename T, unsigned R, unsigned C>
+static void printMatrix(MatrixBase<T, R, C> M)
+{
+    for (int i = 0; i < R; i++)
+    {
+        for (int j = 0; j < C; j++)
+        {          
+            std::cout << std::setprecision(2) << std::fixed
+                      << M.data(i, j) << "\t";
+        }
+        std::cout << std::endl;
+    }
+    std::cout << std::endl;
 }

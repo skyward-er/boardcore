@@ -30,72 +30,89 @@
  * m: number of inputs
  * n: number of states
  * p: number of outputs
- * 
+ *
  * x(k+1) = A x(k) + B u(k) + v1
  * y(k)   = C x(k) + D u(k) + v2
  * v1 ~ WN(0, V1)
  * v2 ~ WN(0, V2)
- * 
+ *
  * To use the filter:
  * (1) Call the initializer with the appropriate matrices
  * (2) Define the state propagation matrix and initial state
  * (3) Call the update function for each new sample acquired
  */
-template </* unsigned m, */unsigned n, unsigned p>
+template </* unsigned m, */ unsigned n, unsigned p>
 class Kalman
 {
-// private:
+    // private:
     // Matrix R; /**< Measurement variance vector */
     // Matrix Q; /**< Model variance matrix */
     // Matrix H; /**< Vector mapping the measurements to the state */
 public:
-    MatrixBase<float, n, n> A;      /**< State propagation matrix */
-    // MatrixBase<float, n, m> B; 
-    MatrixBase<float, p, n> C;      /**< Vector mapping the measurements to the state */
-    // MatrixBase<float, p, m> D;     
-    MatrixBase<float, n, 1> X;      /**< State matrix */
-    MatrixBase<float, n, n> V1;     /**< Model variance matrix */
-    MatrixBase<float, p, p> V2;     /**< Measurement variance vector */
+    MatrixBase<float, n, n> A;  /**< State propagation matrix */
+    MatrixBase<float, p, n> C;  /**< Vector mapping measurements to the state */
+    MatrixBase<float, n, 1> X;  /**< State matrix */
+    MatrixBase<float, n, n> V1; /**< Model variance matrix */
+    MatrixBase<float, p, p> V2; /**< Measurement variance vector */
     // MatrixBase<float, , > V12; /**< Measurement variance vector */
-    MatrixBase<float, n, n > P;     /**< Error covariance matrix */
+    MatrixBase<float, n, n> P; /**< Error covariance matrix */
 
     /**
      * \brief Constructor
      */
-    Kalman() {};
+    Kalman(const MatrixBase<float, n, n>& A_init,
+           const MatrixBase<float, p, n>& C_init,
+           const MatrixBase<float, n, n>& V1_init,
+           const MatrixBase<float, p, p>& V2_init,
+           const MatrixBase<float, n, n>& P_init)
+        : A(A_init), C(C_init), V1(V1_init),V2(V2_init), P(P_init)
+        {};
 
     /**
-     * \brief Predicts k steps ahead
+     * \brief Method for updating the estimate
+     * \param y The measurement vector
      */
-    MatrixBase<float, n, 1> predict(int k);
+    //    template <unsigned m, unsigned n, unsigned p>
+    void update( const MatrixBase<float, p, 1> & y)
+    {
+        // y is the measurement vector
+
+        // Dynamic Riccati Equation
+        // P(t) = A*P(t-1)*A^T - A*P(t-1)*C^T * (C*P(t-1)*C^T + V2 )^-1 * C*P(t-1)*A^T + V1
+        P = A*P*transpose(A) - A*P*transpose(C) * inv(C*P*transpose(C) + V2) * C*P*transpose(A) + V1;
+
+        // Error
+        // e(t) = y(t) - y(t|t-1)
+        MatrixBase<float, p, 1> e = y - predictOutput(1);
+
+        // Gain calculation
+        // K(t) = A*P(t)*C^T * (C*P(t)*C^T + V2)^-1
+        MatrixBase<float, n, p> K = A*P*transpose(C) * inv(C*P*transpose(C) + V2);
+
+        // State correction
+        // x(t+1|t) = A*x(t|t-1) + K(t)*e(t)
+        X = A*X + K*e;
+    };
+
 
     /**
-    * \brief Method for updating the estimate
-    * \param y The measurement vector
-    */
-//    template <unsigned m, unsigned n, unsigned p>
-   void update(MatrixBase<float, p, 1> y)
-   {
-       // y is the measurement vector
-       
-       // Error matrix propagation
-       MatrixBase<float, n, n> P_new = A * P * transpose(A) + V1;
-       
-       // Gain calculation
-       MatrixBase<float, n, p> K = P_new * transpose(C) * inv((C * P_new * transpose(C)) + V2);
-       
-       // Build the identity matrix
-       MatrixBase<float, n, n> I{0};
-       for (int i = 0; i < n; i++) { I(i,i) = 1; }
+     * \brief Predicts k steps ahead the state
+     */
+    MatrixBase<float, n, 1> predictState(int k) {
+        MatrixBase<float, n, 1> X_hat = X;
+        for(int i = 1; i < k; i++)
+        {
+            X_hat = A*X;
+        }
+        return X_hat;
+    }
 
-       // Error matrix correction
-       P = (I - (K*C)) * P_new;
-       
-       // State propagation
-       MatrixBase<float, n, 1> X_new = A * X;
-       // State correction
-       X = X_new + (K * (y - C * X_new));
-    };
+    /**
+     * \brief Predicts k steps ahead the output
+     */
+    MatrixBase<float, p, 1> predictOutput(int k) {
+        return C*predictState(k);
+    }
+
 };
-
 #endif /* Kalman_h */
