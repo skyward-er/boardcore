@@ -22,7 +22,7 @@
 
 #ifndef Kalman_h
 #define Kalman_h
-#include "matrix.h"
+#include <kalman/matrix.h>
 /*!
  * \class Kalman
  * \brief A class representing a Kalman filter
@@ -41,7 +41,7 @@
  * (2) Define the state propagation matrix and initial state
  * (3) Call the update function for each new sample acquired
  */
-template </* unsigned m, */ unsigned n, unsigned p>
+template <unsigned n, unsigned p>
 class Kalman
 {
     // private:
@@ -54,7 +54,6 @@ public:
     MatrixBase<float, n, 1> X;  /**< State matrix */
     MatrixBase<float, n, n> V1; /**< Model variance matrix */
     MatrixBase<float, p, p> V2; /**< Measurement variance vector */
-    // MatrixBase<float, , > V12; /**< Measurement variance vector */
     MatrixBase<float, n, n> P; /**< Error covariance matrix */
 
     /**
@@ -73,25 +72,49 @@ public:
      * \param y The measurement vector
      */
     //    template <unsigned m, unsigned n, unsigned p>
-    void update( const MatrixBase<float, p, 1> & y)
+    bool update( const MatrixBase<float, p, 1> & y)
     {
-        // y is the measurement vector
+        // Variable names:
+        // x(k|k):      X
+        // x(k|k-1):    X_new
+        // P(k|k):      P
+        // P(k|k-1):    P_new
+        // y(k):        y
 
-        // Dynamic Riccati Equation
-        // P(t) = A*P(t-1)*A^T - A*P(t-1)*C^T * (C*P(t-1)*C^T + V2 )^-1 * C*P(t-1)*A^T + V1
-        P = A*P*transpose(A) - A*P*transpose(C) * inv(C*P*transpose(C) + V2) * C*P*transpose(A) + V1;
+        // State propagation
+        // x(k|k-1) = A*x(k-1|k-1)
+        MatrixBase<float,n,1> X_new = A*X;
 
-        // Error
-        // e(t) = y(t) - y(t|t-1)
-        MatrixBase<float, p, 1> e = y - predictOutput(1);
+        // Error covariance matrix correction
+        // P(k|k-1) = A*P(k-1|k-1)*A^T + V1
+        MatrixBase<float,n,n> P_new = A*P*transpose(A) + V1;
 
-        // Gain calculation
-        // K(t) = A*P(t)*C^T * (C*P(t)*C^T + V2)^-1
-        MatrixBase<float, n, p> K = A*P*transpose(C) * inv(C*P*transpose(C) + V2);
+        // Kalman gain calculation
+        // K(k) = P(k|k-1)*C^T*( C*P(k|k-1)*C^T + V2 )^-1
+        MatrixBase<float,p,p> temp = C*P_new*transpose(C) + V2;
+        if(fabs(det(temp)) < 1e-3) {
+            // Matrix ill conditioned
+            return false;
+        }
+        MatrixBase<float,n,p> K = P_new*transpose(C)*inv(temp);
+
+        // Eye matrix
+        MatrixBase<float,n,n> I(0);
+        for(uint8_t i = 0; i < n; i++)
+        {
+            I(i,i) = 1;
+        }
+        
+        // Error covariance matrix propagation
+        // P(k|k) = ( I-K(k)*C ) * P(k|k-1)
+        P = (I-K*C)*P_new;
+
 
         // State correction
-        // x(t+1|t) = A*x(t|t-1) + K(t)*e(t)
-        X = A*X + K*e;
+        // x(k|k) = x(k|k-1) + K(k) * ( y(k)-C*x(k|k-1) )
+        X = X_new + K*(y-C*X_new);
+
+        return true;
     };
 
 
