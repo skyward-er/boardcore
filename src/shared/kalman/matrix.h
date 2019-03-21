@@ -479,6 +479,20 @@ void operator*= (MatrixBase<T,R,C>& a, U b)
             a(r,c) *= b;
 }
 
+
+/**
+ * Determinant of 1x1 matrix
+ * \code
+ * Scalarf a(2);
+ * float d = det(a);
+ * \endcode
+ */
+template<typename T>
+T det(const MatrixBase<T,1,1>& a)
+{
+    return a(0,0);
+}
+
 /**
  * Determinant of 2x2 matrix
  * \code
