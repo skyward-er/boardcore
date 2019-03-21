@@ -30,7 +30,7 @@
 #include <cstdio>
 
 #include "events/EventBroker.h"
-#include "utils/SMTestHelper.h"
+#include "utils/TestHelper.h"
 
 using miosix::Thread;
 

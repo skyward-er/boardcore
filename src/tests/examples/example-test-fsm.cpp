@@ -38,7 +38,7 @@
 #include <utils/catch.hpp>
 
 #include "example-test-fsm.h"
-#include "utils/SMTestHelper.h"
+#include "utils/TestHelper.h"
 
 using miosix::Thread;
 
