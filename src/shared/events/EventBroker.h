@@ -104,6 +104,13 @@ public:
      * @param subscriber
      */
     void unsubscribe(EventHandler* subscriber);
+
+    /**
+     * @brief Unschedules all pending events.
+     * This function should be used only for testing purposes
+     */
+    void clearDelayedEvents();
+
     /**
      * @brief Construct a new Event Broker object.
      * Public access required for testing purposes. Use the singleton interface
