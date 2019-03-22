@@ -8,3 +8,6 @@
 [submodule "libs/tscpp"]
 	path = libs/tscpp
 	url = https://github.com/fedetft/tscpp.git
+[submodule "libs/simple-template-matrix"]
+	path = libs/simple-template-matrix
+	url = https://github.com/fedetft/simple-template-matrix.git
