@@ -33,16 +33,15 @@
 
 enum class SlaveAddress: uint8_t
 {
-    ADDR_1 = 0x48,
-    ADDR_2 = 0x49,
-    ADDR_3 = 0x50
+    ADDR_1 = 0x48,  //first TempSensor
+    ADDR_2 = 0x49,  //second TempSensor
+    ADDR_3 = 0x50   //third TempSensor (not in Rocksanne)
 };
 
 template <typename BusType> 
 class LM75B: public TemperatureSensor
 {
     public:
-        // TO DO
         // @param slaveAddr     address of the sensor you want to use
         LM75B(SlaveAddress slaveAddr) : slave_addr(static_cast<uint8_t>(slaveAddr))
         {
@@ -52,8 +51,18 @@ class LM75B: public TemperatureSensor
 
         bool selfTest() override
         {
-            // TODO: self test me!!
-            return true;
+            onSimpleUpdate();
+
+            //value must be in that range
+            if(mLastTemp > -125.0 && mLastTemp < 125.0)
+            {
+                return true;
+            }
+            else
+            {
+                return false;
+            }
+            
         }
 
         bool init() override
@@ -124,10 +133,4 @@ class LM75B: public TemperatureSensor
 
 };
 
-
-
-
-
-
 #endif
-
