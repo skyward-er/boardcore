@@ -22,7 +22,8 @@
 
 #ifndef Kalman_h
 #define Kalman_h
-#include <kalman/matrix.h>
+#include <libs/simple-template-matrix/matrix.h>
+
 /*!
  * \class Kalman
  * \brief A class representing a Kalman filter
@@ -44,26 +45,29 @@
 template <unsigned n, unsigned p>
 class Kalman
 {
-    // private:
-    // Matrix R; /**< Measurement variance vector */
-    // Matrix Q; /**< Model variance matrix */
-    // Matrix H; /**< Vector mapping the measurements to the state */
+    using MatrixNN = MatrixBase<float, n, n>;
+    using MatrixPN = MatrixBase<float, p, n>;
+    using MatrixNP = MatrixBase<float, n, p>;
+    using MatrixPP = MatrixBase<float, p, p>;
+    using CVectorN = MatrixBase<float, n, 1>;
+    using CVectorP = MatrixBase<float, p, 1>;
+    
 public:
-    MatrixBase<float, n, n> A;  /**< State propagation matrix */
-    MatrixBase<float, p, n> C;  /**< Vector mapping measurements to the state */
-    MatrixBase<float, n, 1> X;  /**< State matrix */
-    MatrixBase<float, n, n> V1; /**< Model variance matrix */
-    MatrixBase<float, p, p> V2; /**< Measurement variance vector */
-    MatrixBase<float, n, n> P; /**< Error covariance matrix */
+    MatrixNN A;  /**< State propagation matrix */
+    MatrixPN C;  /**< Vector mapping measurements to the state */
+    CVectorN X;  /**< State matrix */
+    MatrixNN V1; /**< Model variance matrix */
+    MatrixPP V2; /**< Measurement variance vector */
+    MatrixNN P;  /**< Error covariance matrix */
 
     /**
      * \brief Constructor
      */
-    Kalman(const MatrixBase<float, n, n>& A_init,
-           const MatrixBase<float, p, n>& C_init,
-           const MatrixBase<float, n, n>& V1_init,
-           const MatrixBase<float, p, p>& V2_init,
-           const MatrixBase<float, n, n>& P_init)
+    Kalman(const MatrixNN & A_init,
+           const MatrixPN & C_init,
+           const MatrixNN & V1_init,
+           const MatrixPP & V2_init,
+           const MatrixNN & P_init)
         : A(A_init), C(C_init), V1(V1_init),V2(V2_init), P(P_init)
         {};
 
@@ -72,7 +76,7 @@ public:
      * \param y The measurement vector
      */
     //    template <unsigned m, unsigned n, unsigned p>
-    bool update( const MatrixBase<float, p, 1> & y)
+    bool update( const CVectorP & y)
     {
         // Variable names:
         // x(k|k):      X
@@ -83,23 +87,23 @@ public:
 
         // State propagation
         // x(k|k-1) = A*x(k-1|k-1)
-        MatrixBase<float,n,1> X_new = A*X;
+        CVectorN X_new = A*X;
 
         // Error covariance matrix correction
         // P(k|k-1) = A*P(k-1|k-1)*A^T + V1
-        MatrixBase<float,n,n> P_new = A*P*transpose(A) + V1;
+        MatrixNN P_new = A*P*transpose(A) + V1;
 
         // Kalman gain calculation
         // K(k) = P(k|k-1)*C^T*( C*P(k|k-1)*C^T + V2 )^-1
-        MatrixBase<float,p,p> temp = C*P_new*transpose(C) + V2;
+        MatrixPP temp = C*P_new*transpose(C) + V2;
         if(fabs(det(temp)) < 1e-3) {
             // Matrix ill conditioned
             return false;
         }
-        MatrixBase<float,n,p> K = P_new*transpose(C)*inv(temp);
+        MatrixNP K = P_new*transpose(C)*inv(temp);
 
         // Eye matrix
-        MatrixBase<float,n,n> I(0);
+        MatrixNN I(0);
         for(uint8_t i = 0; i < n; i++)
         {
             I(i,i) = 1;
@@ -121,7 +125,7 @@ public:
     /**
      * \brief Predicts k steps ahead the state
      */
-    MatrixBase<float, n, 1> predictState(int k) {
+    CVectorN predictState(int k) {
         MatrixBase<float, n, 1> X_hat = X;
         for(int i = 1; i < k; i++)
         {
@@ -133,7 +137,7 @@ public:
     /**
      * \brief Predicts k steps ahead the output
      */
-    MatrixBase<float, p, 1> predictOutput(int k) {
+    CVectorP predictOutput(int k) {
         return C*predictState(k);
     }
 
