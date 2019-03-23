@@ -30,7 +30,9 @@
 #define LM75B_H
 
 #include "Sensor.h"
-#include "Stats.h"
+#include "math/Stats.h"
+
+#define NUM_SAMPLES 10
 
 enum class SlaveAddress: uint8_t
 {
@@ -46,16 +48,15 @@ class LM75B: public TemperatureSensor
         // @param slaveAddr     address of the sensor you want to use
         LM75B(SlaveAddress slaveAddr) : slave_addr(static_cast<uint8_t>(slaveAddr))
         {
-            mLastTemp = 0;
+            mLastTemp = 7;
             init();
         }
 
          //TODO aggiungimi controllo varianza
         bool selfTest() override
         {
-            float sample[NUM_SAMPLES];
             float stdev;
-            Stats stats = Stats();
+            Stats calc_stats;
 
             for(int i = 0; i < NUM_SAMPLES; i++) 
             {
@@ -75,12 +76,11 @@ class LM75B: public TemperatureSensor
 
             for(int i = 0; i < NUM_SAMPLES; i++)
             {
-                stats.add(sample[i]);
+                calc_stats.add(sample[i]);
             }
-            
-            stdev = stats.getStats.stdev;
+            stdev = calc_stats.getStats().stdev;
 
-            if(stdve < MAX_STDEV_VALUE)
+            if(stdev < MAX_STDEV_VALUE)
             {
                 return true;
             }
@@ -111,8 +111,11 @@ class LM75B: public TemperatureSensor
 
     private:
         const uint8_t slave_addr;
-        const int NUM_SAMPLES = 10; 
+
+        //max Standard deviation value accepted for temperature samples 
         const float MAX_STDEV_VALUE = 100;
+
+        float sample[NUM_SAMPLES];
 
         uint8_t temp_array[2] = {0, 0};
 
@@ -136,25 +139,31 @@ class LM75B: public TemperatureSensor
         {
             uint16_t temp;
             BusType::read(slave_addr, REG_TEMP, temp_array, sizeof(uint16_t));
-            temp = temp_array[0];
-
+            temp = temp_array[1];
             // MSB is the sign: 0->positive, 1->negative
             static const uint8_t msb_mask = 0x80;
             bool is_positive = ((temp_array[0] & msb_mask) == 0);
-
+            TRACE("temp is before: %d \n", temp);
+            //TRACE("bool is: %d\n", is_positive);
             if(is_positive) 
             {
-                temp <<= 8;
-                temp = temp | temp_array[1];
-                temp = temp >> 5;
+                //TRACE("positive\n");
+                temp >>= 1;
+                TRACE("after >>8 : %d \n", temp);
+                temp = temp | uint16_t(temp_array[1]);
+                TRACE("after |  : %d \n", temp);
+                temp = temp << 5;
+                TRACE("after <<5 : %d \n", temp);
                 return float(temp)*0.125;
             }
             else
             {
+                TRACE("negative\n");
                 temp <<= 8;
-                temp = temp | temp_array[1];
+                temp = temp | uint16_t(temp_array[1]);
                 temp = temp >> 5;
-                return float(-temp)*0.125;
+                TRACE("negative temp is %f", temp);
+                return -float(temp)*0.125;
             }
         }
 

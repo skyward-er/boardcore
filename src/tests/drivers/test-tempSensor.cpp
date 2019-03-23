@@ -43,5 +43,6 @@ int main()
         Thread::sleep(500);
         miosix::ledOff();
         Thread::sleep(500);
+        TRACE("LM75B temperature: %f\n", temp.getTemp());
     }
 }
