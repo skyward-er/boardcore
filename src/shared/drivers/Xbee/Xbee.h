@@ -1,4 +1,4 @@
-/* Copyright (c) 2015-2018 Skyward Experimental Rocketry
+/* Copyright (c) 2015-2019 Skyward Experimental Rocketry
  * Authors: Andrea Milluzzo, Artem Glukhov
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -33,6 +33,7 @@ static const uint16_t MAX_PAYLOAD_LEN = 0xFFFF;
 #include <vector>
 using std::vector;
 
+template <class BusType>
 class Xbee : public Transceiver
 {
     public:
@@ -81,16 +82,19 @@ class Xbee : public Transceiver
 
             //adding checksum
 
-//          TODO: CONVERT CHECKSUM CALCULATOR TO FUNCTION
+            //TODO: CONVERT CHECKSUM CALCULATOR TO FUNCTION <- HOW WITH STD_VECT???
             uint32_t checksum = 0;
             for(int i=0; i< (17 + pkt_len); i++)
                 checksum += tx_pkt.at(i);
             tx_pkt.push_back(0xff - (checksum & 0xff)); 
 
-
-            //TODO
             //send packet via SPI
-            //wait for IRQ
+            for(int i=0; i< (18 + pkt_len); i++){
+                bus.write(tx_pkt.at(i));      //<-- CS not defined, where and how to do it?
+            }
+            
+            //TODO
+            //wait for IRQ <-- INTERRUPT on PF10 (ask LucaErbettaSCS for problems with interrupt from PORT 9 to 10 in STM32)
             //receive send ”ok”
             
             
