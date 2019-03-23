@@ -30,6 +30,7 @@
 #define LM75B_H
 
 #include "Sensor.h"
+#include "Stats.h"
 
 enum class SlaveAddress: uint8_t
 {
@@ -49,12 +50,37 @@ class LM75B: public TemperatureSensor
             init();
         }
 
+         //TODO aggiungimi controllo varianza
         bool selfTest() override
         {
-            onSimpleUpdate();
+            float sample[NUM_SAMPLES];
+            float stdev;
+            Stats stats = Stats();
 
-            //value must be in that range
-            if(mLastTemp > -125.0 && mLastTemp < 125.0)
+            for(int i = 0; i < NUM_SAMPLES; i++) 
+            {
+                onSimpleUpdate();
+                sample[i] = mLastTemp;
+            }
+            
+            for(int i = 0; i < NUM_SAMPLES; i++)
+            {
+                //temperature can't be out of range of sensor
+                if(sample[i] < -125.0 && sample[i] > 125.0)
+                {
+                    return false;
+                }
+
+            }
+
+            for(int i = 0; i < NUM_SAMPLES; i++)
+            {
+                stats.add(sample[i]);
+            }
+            
+            stdev = stats.getStats.stdev;
+
+            if(stdve < MAX_STDEV_VALUE)
             {
                 return true;
             }
@@ -84,7 +110,9 @@ class LM75B: public TemperatureSensor
         }
 
     private:
-        const uint8_t slave_addr; 
+        const uint8_t slave_addr;
+        const int NUM_SAMPLES = 10; 
+        const float MAX_STDEV_VALUE = 100;
 
         uint8_t temp_array[2] = {0, 0};
 
