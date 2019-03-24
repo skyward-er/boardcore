@@ -44,7 +44,9 @@ projconf = {
     "TESTS_PATH":"src/tests",
     "SRC_PATH":"src/shared",
     "SBS_BASE": ".",
-    "PROJECT_INCLUDES": "."
+    "PROJECT_INCLUDES": "",
+    "PROJECT_SUBDIRS": "",
+    "PROJECT_LIBS": ""
 }
 
 #
@@ -164,17 +166,28 @@ def readProjectParams(conf):
 def build_makefile(template, board, bname):
     global projconf
     incllist = projconf["PROJECT_INCLUDES"].split()
+    liblist = projconf["PROJECT_LIBS"].split()
+    subdirs = projconf["PROJECT_SUBDIRS"].split()
 
-    rmap = { "BOARD_DEFINE": "export OPT_BOARD := %s\nexport BOARD_UUID := %s\n" % (
-        board['id'], bname),
+    rmap = { "BOARD_DEFINE": "export OPT_BOARD := %s\nexport BOARD_UUID := %s\n" % (board['id'], bname),
              "MAP_FILE": "export MAIN_MAP_FILE := bin/%s.map\n" % board['bin'],
              "SOURCE_FILES": "%s\n" % (" ".join(board['files'])),
-             "CUSTOM_DEFINES": board['defines'] + " -I" + projconf['SRC_PATH'],
+             "CUSTOM_DEFINES": board['defines'],
              "BIN_NAME": board['bin']
     }
 
+    rmap["PROJECT_INCLUDES"] = ""
+    rmap["PROJECT_LIBS"] = ""
+    rmap["PROJECT_SUBDIRS"] = ""
+
     for incl in incllist:
-        rmap["CUSTOM_DEFINES"] += " -I" + incl
+        rmap["PROJECT_INCLUDES"] += incl + " "
+    
+    for lib in liblist:
+        rmap["PROJECT_LIBS"] += lib + " "
+    
+    for sd in subdirs:
+        rmap["PROJECT_SUBDIRS"] += sd + " "
 
     for i in rmap:
         template = template.replace("{SBS_%s}" % i , rmap[i])
