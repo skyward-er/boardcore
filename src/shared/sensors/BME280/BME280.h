@@ -25,7 +25,7 @@
 #include <stdio.h>
 
 #include "BME280Data.h"
-#include "Sensor.h"
+#include "sensors/Sensor.h"
 #include "debug.h"
 
 template <class Bus>
