@@ -98,18 +98,16 @@ public:
         // Kalman gain calculation
         // K(k) = P(k|k-1)*C^T*( C*P(k|k-1)*C^T + V2 )^-1
         MatrixPP temp = C*P_new*transpose(C) + V2;
-        if(fabs(det(temp)) < 1e-3) {
+        float d = det(temp);
+        if(fabs(d) < 1e-3) {
             // Matrix ill conditioned
             return false;
         }
-        MatrixNP K = P_new*transpose(C)*inv(temp);
+        MatrixNP K = P_new*transpose(C)*inv(temp, d);
 
         // Eye matrix
-        MatrixNN I(0);
-        for(uint8_t i = 0; i < n; i++)
-        {
-            I(i,i) = 1;
-        }
+        
+        MatrixNN I = MatrixNN::eye();
         
         // Error covariance matrix propagation
         // P(k|k) = ( I-K(k)*C ) * P(k|k-1)
