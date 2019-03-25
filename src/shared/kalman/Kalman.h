@@ -28,15 +28,20 @@
  * \class Kalman
  * \brief A class representing a Kalman filter
  *
- * m: number of inputs
- * n: number of states
- * p: number of outputs
+ * ``` m ```: number of inputs
+ * ``` n ```: number of states
+ * ``` p ```: number of outputs
  *
+ * ``` 
  * x(k+1) = A x(k) + B u(k) + v1
  * y(k)   = C x(k) + D u(k) + v2
  * v1 ~ WN(0, V1)
  * v2 ~ WN(0, V2)
+ *  ```
  *
+ * EXOGENOUS INPUTS ARE NOT YET IMPLEMENTED
+ * COVARIANCE BETWEEN v1 AND v2 NOT YET IMPLEMENTED
+ * 
  * To use the filter:
  * (1) Call the initializer with the appropriate matrices
  * (2) Define the state propagation matrix and initial state
@@ -85,9 +90,6 @@ public:
         // P(k|k-1):    P_new
         // y(k):        y
 
-        // State propagation
-        // x(k|k-1) = A*x(k-1|k-1)
-        CVectorN X_new = A*X;
 
         // Error covariance matrix correction
         // P(k|k-1) = A*P(k-1|k-1)*A^T + V1
@@ -112,12 +114,14 @@ public:
         // Error covariance matrix propagation
         // P(k|k) = ( I-K(k)*C ) * P(k|k-1)
         P = (I-K*C)*P_new;
-
-
+        
+        // State propagation
+        // x(k|k-1) = A*x(k-1|k-1)
+        CVectorN X_new = A*X;
+        
         // State correction
         // x(k|k) = x(k|k-1) + K(k) * ( y(k)-C*x(k|k-1) )
         X = X_new + K*(y-C*X_new);
-
         return true;
     };
 

@@ -26,7 +26,8 @@
 #include <Common.h>
 #include <drivers/HardwareTimer.h>
 #include <kalman/Kalman.h>
-#include <kalman/Matrix.hpp>
+#include <iostream>
+#include "util/util.h"
 
 using namespace miosix;
 
@@ -525,28 +526,15 @@ int main(int argc, char const* argv[])
         133.281,  114.89,   104.396, 80.8236,  59.9147, 49.476,  31.2335,
         10.424,   -5.15584};
 
-    // Matrix initialization of the kalman filter
-    float P_data[9] = {0.1, 0, 0, 0, 0.1, 0, 0, 0, 0.1};
-
-    float R_data[1] = {10};
-
-    float Q_data[9] = {0.01, 0, 0, 0, 0.01, 0, 0, 0, 0.01};
-
-    float H_data[3] = {1, 0, 0};
-
-    float Phi_data[9] = {1, 0, 0, 0, 1, 0, 0, 0, 1};
-
     // Instanciate matrices
-    Matrix P{3, 3, P_data};
-    Matrix R{1, 1, R_data};
-    Matrix Q{3, 3, Q_data};
-    Matrix H{1, 3, H_data};
+    MatrixBase<float,3,3> P{0.1, 0, 0, 0, 0.1, 0, 0, 0, 0.1};
+    MatrixBase<float,1,1> V2{10};
+    MatrixBase<float,3,3> V1{0.01, 0, 0, 0, 0.01, 0, 0, 0, 0.01};
+    MatrixBase<float,1,3> C{1, 0, 0};
+    MatrixBase<float,3,3> A{1, 0, 0, 0, 1, 0, 0, 0, 1};
 
     // Instanciate filter object
-    Kalman filter = Kalman(P, R, Q, H);
-
-    // Set constant values in the state propagation matrix
-    filter.Phi.set(Phi_data);
+    Kalman<3,1> filter = Kalman<3,1>(A, C, V1, V2, P);
 
     float last_time = 0.0;  // Variable to save the time of the last sample
     float time;             // Current time as read from csv file
@@ -562,26 +550,27 @@ int main(int argc, char const* argv[])
     {
         if (i == 0)
         {
-            filter.X.data[0] = zArray[0];
+            filter.X(0,0) = zArray[0];
             continue;
         }
         time = timeArray[i];
         T    = time - last_time;
 
-        filter.Phi(0, 1) = T;
-        filter.Phi(0, 2) = 0.5 * T * T;
-        filter.Phi(1, 2) = T;
+        filter.A(0, 1) = T;
+        filter.A(0, 2) = 0.5 * T * T;
+        filter.A(1, 2) = T;
 
-        Matrix y{1, 1};
-        y(0) = zArray[i];
+        MatrixBase<float,1,1> y{};
+        y(0,0) = zArray[i];
 
         tick1 = timer.tick();
         filter.update(y);
         tick2 = timer.tick();
-        printf("%f \n", timer.toMilliSeconds(tick2 - tick1));
-        // printf("%f, %f, %f\n", filter.X(0), filter.X(1), filter.X(2));
+        // printf("%f \n", timer.toMilliSeconds(tick2 - tick1));
+        printf("%f, %f, %f;\n", filter.X(0,0), filter.X(1,0), filter.X(2,0));
+        // std::cout << MemoryProfiling::getCurrentFreeStack() << "\n";
         last_time = time;
-        if (filter.X(1) < 0)
+        if (filter.X(1,0) < 0)
         {
             greenLed::high();
             redLed::low();
