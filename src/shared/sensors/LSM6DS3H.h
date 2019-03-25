@@ -25,6 +25,7 @@
 #include <drivers/BusTemplate.h>
 #include "Common.h"
 #include "Sensor.h"
+#include "miosix.h"
 template <typename BusG>
 class LSM6DS3H : public GyroSensor, public AccelSensor
 {
@@ -74,13 +75,12 @@ public:
             last_error = ERR_NOT_ME;
             return false;
         }
-        return (accelSelfTest() & gyroSelfTest() );
+        return (accelSelfTest() & gyroSelfTest());
     }
-    // da settare la frequenza di taglio del passabasso
     void accelConfiguration()
     {
         uint8_t i=0;
-        uint8_t controlAccel = 0x61; //da vedere
+        uint8_t controlAccel = 0x61; 
         for (i = 0; i<=3; i++)
         {
             if ((uint8_t)accelFSMAP[i] == accelFS)
@@ -90,12 +90,8 @@ public:
                                             // ODR to 416HZ
             }
         }
-        // TODO
-        // imporre il dato sapendo che 00=ODR_XL/50; 01=ODR_XL/100;10=ODR_XL/9;
-        // 11=ODR_XL/400 ---->ODR è impostato a 416 hz
-        uint16_t LPFCutOff=0;
-        LPFCutOff          = (LPFCutOff << 7) & 0x84;
-        BusG::write(RegMap::CTRL8_XL, LPFCutOff);
+
+        BusG::write(RegMap::CTRL8_XL, 0x00); // no LPF2
         uint8_t enableXYZ = 0x38;
         BusG::write(RegMap::CTRL9_XL, enableXYZ);
     }
@@ -130,164 +126,218 @@ public:
         Data.accelZSample  = toFloat(datiAccel[4]+datiAccel[5]<<8, accelFS);
        
     }
-    /*bool accelSelfTest(){
-         uint8_t dataAvailable[2];
-         uint8_t c=0;
-         uint16_t rxData[2];
-         float OUTX_NOST[]={0, 0, 0, 0, 0};
-         float OUTY_NOST[]={0, 0, 0, 0, 0};
-         float OUTZ_NOST[]={0, 0, 0, 0, 0};
-         float OUTX_ST[]={0, 0, 0, 0, 0};
-         float OUTY_ST[]={0, 0, 0, 0, 0};
-         float OUTZ_ST[]={0, 0, 0, 0, 0};
-         BusG::write(RegMap::CTRL1_XL, 0x30);
-         BusG::write(RegMap::CTRL2_G, 0x00);
-         BusG::write(RegMap::CTRL3_C, 0x44);
-         BusG::write(RegMap::CTRL4_C, 0x00);
-         BusG::write(RegMap::CTRL5_C, 0x00);
-         BusG::write(RegMap::CTRL6_G, 0x00);
-         BusG::write(RegMap::CTRL7_G, 0x00);
-         BusG::write(RegMap::CTRL8_XL, 0x00);
-         BusG::write(RegMap::CTRL9_XL, 0x38);
-         BusG::write(RegMap::CTRL10_C, 0x00);
-         miosix::sleep(200 ms);
-         BusG::read(STATUS_REG, &dataAvailable[0]);
-         while ((dataAvailable[0]&0x01) == 0 ){
-                BusG::read(STATUS_REG, &dataAvailable[0]);
+   
+    bool accelSelfTest(){
+        uint8_t discard;
+        uint8_t c=0;
+        uint8_t rxData[2];
+        float OUTX_NOST[]={0, 0, 0, 0, 0};
+        float outXNoST;
+        float OUTY_NOST[]={0, 0, 0, 0, 0};
+        float outYNoST;
+        float OUTZ_NOST[]={0, 0, 0, 0, 0};
+        float outZNoST;
+        float OUTX_ST[]={0, 0, 0, 0, 0};
+        float outXST;
+        float OUTY_ST[]={0, 0, 0, 0, 0};
+        float outYST;
+        float OUTZ_ST[]={0, 0, 0, 0, 0};
+        float outZST;
+        BusG::write(CTRL1_XL, 0x30);
+        BusG::write(CTRL2_G, 0x00);
+        BusG::write(CTRL3_C, 0x44);
+        BusG::write(CTRL4_C, 0x00);
+        BusG::write(CTRL5_C, 0x00);
+        BusG::write(CTRL6_C, 0x00);
+        BusG::write(CTRL7_G, 0x00);
+        BusG::write(CTRL8_XL, 0x00);
+        BusG::write(CTRL9_XL, 0x38);
+        BusG::write(CTRL10_C, 0x00);
+        miosix::Thread::sleep(200);
+        discard = BusG::read(STATUS_REG);
+        while ((discard & 0x01) == 0 ){
+            discard = BusG::read(STATUS_REG);
+        }
+        BusG::read(OUT_X_L_XL, rxData, 2);
+        BusG::read(OUT_Y_L_XL, rxData, 2);
+        BusG::read(OUT_Z_L_XL, rxData, 2);
+        discard = BusG::read(STATUS_REG);
+        while ( c<=5 ){
+            while ((discard & 0x01) == 0 ){
+                discard = BusG::read(STATUS_REG);
             }
-         BusG::read(RegMap::OUT_X_L_XL, dataAvailable, 2);
-         BusG::read(RegMap::OUT_Y_L_XL, dataAvailable, 2);
-         BusG::read(RegMap::OUT_Z_L_XL, dataAvailable, 2);
-         while ( c<=5 ){
-            while ((dataAvailable[0]&0x01) == 0 ){
-                BusG::read(STATUS_REG, &dataAvailable[0]);
-            }
-            BusG::read(RegMap::OUT_X_L_XL, rxData, 2);
-            OUTX_NOST[c] = toFloat(rxData[0]+rxData[1]<<8, 2); 
-            BusG::read(RegMap::OUT_Y_L_XL, rxData, 2);
-            OUTY_NOST[c] = toFloat(rxData[0]+rxData[1]<<8, 2);
-            BusG::read(RegMap::OUT_Z_L_XL, rxData, 2);
-            OUTZ_NOST[c] = toFloat(rxData[0]+rxData[1]<<8, 2);
+            BusG::read(OUT_X_L_XL, rxData, 2);
+            OUTX_NOST[c] = toFloat(rxData[0]+(rxData[1]<<8), 2); 
+            BusG::read(OUT_Y_L_XL, rxData, 2);
+            OUTY_NOST[c] = toFloat(rxData[0]+(rxData[1]<<8), 2);
+            BusG::read(OUT_Z_L_XL, rxData, 2);
+            OUTZ_NOST[c] = toFloat(rxData[0]+(rxData[1]<<8), 2);
             c++;
-         }
-         //average the data on each axis
-         BusG::write(RegMap::CTRL5_C, 0x01);
-         miosix::sleep(200);
-         BusG::read(STATUS_REG, &dataAvailable[0]);
-         while ((dataAvailable[0]&0x01) == 0 ){
-                BusG::read(STATUS_REG, &dataAvailable[0]);
+        }
+        outXNoST = (OUTX_NOST[0]+OUTX_NOST[1]+OUTX_NOST[2]+OUTX_NOST[3]+OUTX_NOST[4])/5;
+        outYNoST = (OUTY_NOST[0]+OUTY_NOST[1]+OUTY_NOST[2]+OUTY_NOST[3]+OUTY_NOST[4])/5;
+        outZNoST = (OUTZ_NOST[0]+OUTZ_NOST[1]+OUTZ_NOST[2]+OUTZ_NOST[3]+OUTZ_NOST[4])/5;
+        BusG::write(CTRL5_C, 0x01);
+        miosix::Thread::sleep(200);
+        discard = BusG::read(STATUS_REG);
+        while ((discard & 0x01) == 0 ){
+            discard = BusG::read(STATUS_REG);
             }
-         BusG::read(RegMap::OUT_X_L_XL, dataAvailable, 2);
-         BusG::read(RegMap::OUT_Y_L_XL, dataAvailable, 2);
-         BusG::read(RegMap::OUT_Z_L_XL, dataAvailable, 2);
-         BusG::read(STATUS_REG, &dataAvailable[0]);
-         c=0;
-         while ( c<=5 ){
-            while ((dataAvailable[0]&0x01) == 0 ){
-                BusG::read(STATUS_REG, &dataAvailable[0]);
+        BusG::read(OUT_X_L_XL, rxData, 2);
+        BusG::read(OUT_Y_L_XL, rxData, 2);
+        BusG::read(OUT_Z_L_XL, rxData, 2);
+        discard = BusG::read(STATUS_REG);
+        c=0;
+        while ( c<=5 ){
+            while ((discard & 0x01) == 0 ){
+                discard = BusG::read(STATUS_REG);
             }
-            BusG::read(RegMap::OUT_X_L_XL, rxData, 2);
-            OUTX_ST[c] = toFloat(rxData[0]+rxData[1]<<8, 2); 
-            BusG::read(RegMap::OUT_Y_L_XL, rxData, 2);
-            OUTY_ST[c] = toFloat(rxData[0]+rxData[1]<<8, 2);
-            BusG::read(RegMap::OUT_Z_L_XL, rxData, 2);
-            OUTZ_ST[c] = toFloat(rxData[0]+rxData[1]<<8, 2);
+            BusG::read(OUT_X_L_XL, rxData, 2);
+            OUTX_ST[c] = toFloat(rxData[0]+(rxData[1]<<8), 2); 
+            BusG::read(OUT_Y_L_XL, rxData, 2);
+            OUTY_ST[c] = toFloat(rxData[0]+(rxData[1]<<8), 2);
+            BusG::read(OUT_Z_L_XL, rxData, 2);
+            OUTZ_ST[c] = toFloat(rxData[0]+(rxData[1]<<8), 2);
             c++;
-         }
-         //average the data on each axis
-         if ((uint8_t)(OUTX_ST-OUTX_NOST<=Max(ST_X) & (uint8_t)(OUTX_ST-OUTX_NOST)>=Min(ST_X)){
-            if ((uint8_t)(OUTY_ST-OUTY_NOST<=Max(ST_Y)) & (uint8_t)(OUTY_ST-OUTY_NOST)>=Min(ST_Y)){
-                if ((uint8_t)(OUTZ_ST-OUTZ_NOST<=Max(ST_Z)) & (uint8_t)(OUTZ_ST-OUTZ_NOST)>=Min(ST_Z)){
+        }
+        outXST = (OUTX_ST[0]+OUTX_ST[1]+OUTX_ST[2]+OUTX_ST[3]+OUTX_ST[4])/5;
+        outYST = (OUTY_ST[0]+OUTY_ST[1]+OUTY_ST[2]+OUTY_ST[3]+OUTY_ST[4])/5;
+        outZST = (OUTZ_ST[0]+OUTZ_ST[1]+OUTZ_ST[2]+OUTZ_ST[3]+OUTZ_ST[4])/5;
+        float maxSTX = max(OUTX_ST);
+        float maxSTY = max(OUTY_ST);
+        float maxSTZ = max(OUTZ_ST);
+        float minSTX = min(OUTX_ST);
+        float minSTY = min(OUTY_ST);
+        float minSTZ = min(OUTZ_ST);
+        if (((uint8_t)(outXST-outXNoST)<=maxSTX) & ((uint8_t)(outXST-outXNoST)>=minSTX)){
+            if (((uint8_t)(outYST-outYNoST)<=maxSTY) & ((uint8_t)(outYST-outYNoST)>=minSTY)){
+                if (((uint8_t)(outZST-outZNoST)<=maxSTZ) & ((uint8_t)(outZST-outZNoST)>=minSTZ)){
                     BusG::write(CTRL1_XL, 0x00);
                     BusG::write(CTRL5_C, 0x00);
                     return true;
                 }
             }
-         }
-            BusG::write(CTRL1_XL, 0x00);
-            BusG::write(CTRL5_C, 0x00);
-            return false;
+        }
+        BusG::write(CTRL1_XL, 0x00);
+        BusG::write(CTRL5_C, 0x00);
+        return false;
     }
     bool gyroSelfTest(){
-        uint8_t dataAvailable[2];
+        uint8_t discard;
         uint8_t c=0;
-        uint16_t rxData[2];
+        uint8_t rxData[2];
         float OUTX_NOST[]={0, 0, 0, 0, 0};
+        float outXNoST;
         float OUTY_NOST[]={0, 0, 0, 0, 0};
+        float outYNoST;
         float OUTZ_NOST[]={0, 0, 0, 0, 0};
-        float OUTX_ST[]  ={0, 0, 0, 0, 0};
-        float OUTY_ST[]  ={0, 0, 0, 0, 0};
-        float OUTZ_ST[]  ={0, 0, 0, 0, 0};
-        BusG::write(RegMap::CTRL1_XL, 0x00);
-        BusG::write(RegMap::CTRL2_G, 0x5C);
-        BusG::write(RegMap::CTRL3_C, 0x44);
-        BusG::write(RegMap::CTRL4_C, 0x00);
-        BusG::write(RegMap::CTRL5_C, 0x00);
-        BusG::write(RegMap::CTRL6_G, 0x00);
-        BusG::write(RegMap::CTRL7_G, 0x00);
-        BusG::write(RegMap::CTRL8_XL, 0x00);
-        BusG::write(RegMap::CTRL9_XL, 0x00);
-        BusG::write(RegMap::CTRL10_C, 0x38);
-        miosix::sleep(800 ms);
-        BusG::read(STATUS_REG, &dataAvailable[0]);
-         while ((dataAvailable[0]&0x01) == 0 ){
-                BusG::read(STATUS_REG, &dataAvailable[0]);
+        float outZNoST;
+        float OUTX_ST[]={0, 0, 0, 0, 0};
+        float outXST;
+        float OUTY_ST[]={0, 0, 0, 0, 0};
+        float outYST;
+        float OUTZ_ST[]={0, 0, 0, 0, 0};
+        float outZST;
+        BusG::write(CTRL1_XL, 0x00);
+        BusG::write(CTRL2_G, 0x5C);
+        BusG::write(CTRL3_C, 0x44);
+        BusG::write(CTRL4_C, 0x00);
+        BusG::write(CTRL5_C, 0x00);
+        BusG::write(CTRL6_C, 0x00);
+        BusG::write(CTRL7_G, 0x00);
+        BusG::write(CTRL8_XL, 0x00);
+        BusG::write(CTRL9_XL, 0x00);
+        BusG::write(CTRL10_C, 0x38);
+        miosix::Thread::sleep(800);
+        discard = BusG::read(STATUS_REG);
+         while ((discard & 0x01) == 0 ){
+                discard = BusG::read(STATUS_REG);
             }
-        BusG::read(RegMap::OUT_X_L_G, dataAvailable, 2);
-        BusG::read(RegMap::OUT_Y_L_G, dataAvailable, 2);
-        BusG::read(RegMap::OUT_Z_L_G, dataAvailable, 2);
-        
+        BusG::read(OUT_X_L_G, rxData, 2);
+        BusG::read(OUT_Y_L_G, rxData, 2);
+        BusG::read(OUT_Z_L_G, rxData, 2);
+        discard = BusG::read(STATUS_REG);
         while ( c<=5 ){
-            while ((dataAvailable[0]&0x02) == 0 ){
-                BusG::read(STATUS_REG, &dataAvailable[0]);
+            while ((discard & 0x02) == 0 ){
+                discard = BusG::read(STATUS_REG);
             }
-            BusG::read(RegMap::OUT_X_L_G, rxData, 2);
-            OUTX_NOST[c] = toFloat(rxData[0]+rxData[1]<<8, 2); 
-            BusG::read(RegMap::OUT_Y_L_G, rxData, 2);
-            OUTY_NOST[c] = toFloat(rxData[0]+rxData[1]<<8, 2);
-            BusG::read(RegMap::OUT_Z_L_G, rxData, 2);
-            OUTZ_NOST[c] = toFloat(rxData[0]+rxData[1]<<8, 2);
+            BusG::read(OUT_X_L_G, rxData, 2);
+            OUTX_NOST[c] = toFloat(rxData[0]+(rxData[1]<<8), 2); 
+            BusG::read(OUT_Y_L_G, rxData, 2);
+            OUTY_NOST[c] = toFloat(rxData[0]+(rxData[1]<<8), 2);
+            BusG::read(OUT_Z_L_G, rxData, 2);
+            OUTZ_NOST[c] = toFloat(rxData[0]+(rxData[1]<<8), 2);
             c++;
         }
-        //average the data on each axis
-        BusG::write(RegMap::CTRL5_C, 0x04);
-        miosix::sleep(60);
-        BusG::read(STATUS_REG, &dataAvailable[0]);
-        while ((dataAvailable[0]&0x02) == 0 ){
-                BusG::read(STATUS_REG, &dataAvailable[0]);
+        outXNoST = (OUTX_NOST[0]+OUTX_NOST[1]+OUTX_NOST[2]+OUTX_NOST[3]+OUTX_NOST[4])/5;
+        outYNoST = (OUTY_NOST[0]+OUTY_NOST[1]+OUTY_NOST[2]+OUTY_NOST[3]+OUTY_NOST[4])/5;
+        outZNoST = (OUTZ_NOST[0]+OUTZ_NOST[1]+OUTZ_NOST[2]+OUTZ_NOST[3]+OUTZ_NOST[4])/5;
+        BusG::write(CTRL5_C, 0x04);
+        miosix::Thread::sleep(60);
+        discard = BusG::read(STATUS_REG);
+        while ((discard & 0x02) == 0 ){
+                discard = BusG::read(STATUS_REG);
             }
-        BusG::read(RegMap::OUT_X_L_G, dataAvailable, 2);
-        BusG::read(RegMap::OUT_Y_L_G, dataAvailable, 2);
-        BusG::read(RegMap::OUT_Z_L_G, dataAvailable, 2);
-        BusG::read(STATUS_REG, &dataAvailable[0]);
+        BusG::read(OUT_X_L_G, rxData, 2);
+        BusG::read(OUT_Y_L_G, rxData, 2);
+        BusG::read(OUT_Z_L_G, rxData, 2);
+        discard = BusG::read(STATUS_REG);
         while ( c<=5 ){
-            while ((dataAvailable[0]&0x02) == 0 ){
-                BusG::read(STATUS_REG, &dataAvailable[0]);
+            while ((discard & 0x02) == 0 ){
+                discard = BusG::read(STATUS_REG);
             }
-            BusG::read(RegMap::OUT_X_L_G, rxData, 2);
-            OUTX_ST[c] = toFloat(rxData[0]+rxData[1]<<8, 2); 
-            BusG::read(RegMap::OUT_Y_L_G, rxData, 2);
-            OUTY_ST[c] = toFloat(rxData[0]+rxData[1]<<8, 2);
-            BusG::read(RegMap::OUT_Z_L_G, rxData, 2);
-            OUTZ_ST[c] = toFloat(rxData[0]+rxData[1]<<8, 2);
+            BusG::read(OUT_X_L_G, rxData, 2);
+            OUTX_ST[c] = toFloat(rxData[0]+(rxData[1]<<8), 2); 
+            BusG::read(OUT_Y_L_G, rxData, 2);
+            OUTY_ST[c] = toFloat(rxData[0]+(rxData[1]<<8), 2);
+            BusG::read(OUT_Z_L_G, rxData, 2);
+            OUTZ_ST[c] = toFloat(rxData[0]+(rxData[1]<<8), 2);
             c++;
         }
-        //average the data on each axis
-        if ((uint8_t)(OUTX_ST-OUTX_NOST<=Max(ST_X) & (uint8_t)(OUTX_ST-OUTX_NOST)>=Min(ST_X)){
-            if ((uint8_t)(OUTY_ST-OUTY_NOST<=Max(ST_Y)) & (uint8_t)(OUTY_ST-OUTY_NOST)>=Min(ST_Y)){
-                if ((uint8_t)(OUTZ_ST-OUTZ_NOST<=Max(ST_Z)) & (uint8_t)(OUTZ_ST-OUTZ_NOST)>=Min(ST_Z)){
+        outXST = (OUTX_ST[0]+OUTX_ST[1]+OUTX_ST[2]+OUTX_ST[3]+OUTX_ST[4])/5;
+        outYST = (OUTY_ST[0]+OUTY_ST[1]+OUTY_ST[2]+OUTY_ST[3]+OUTY_ST[4])/5;
+        outZST = (OUTZ_ST[0]+OUTZ_ST[1]+OUTZ_ST[2]+OUTZ_ST[3]+OUTZ_ST[4])/5;
+        float maxSTX = max(OUTX_ST);
+        float maxSTY = max(OUTY_ST);
+        float maxSTZ = max(OUTZ_ST);
+        float minSTX = min(OUTX_ST);
+        float minSTY = min(OUTY_ST);
+        float minSTZ = min(OUTZ_ST);
+        if (((uint8_t)(outXST-outXNoST)<=maxSTX) & ((uint8_t)(outXST-outXNoST)>=minSTX)){
+            if (((uint8_t)(outYST-outYNoST)<=maxSTY) & ((uint8_t)(outYST-outYNoST)>=minSTY)){
+                if (((uint8_t)(outZST-outZNoST)<=maxSTZ) & ((uint8_t)(outZST-outZNoST)>=minSTZ)){
                     BusG::write(CTRL2_G, 0x00);
                     BusG::write(CTRL5_C, 0x00);
                     return true;
                 }
             }
         }
-            BusG::write(CTRL2_G, 0x00);
-            BusG::write(CTRL5_C, 0x00);
-            return false;
+        BusG::write(CTRL2_G, 0x00);
+        BusG::write(CTRL5_C, 0x00);
+        return false;
 
     }
-    */
+    float min (float* var){
+        uint8_t min=var[0];
+        uint8_t i=0;
+        for(i=0; i<=5; i++){
+            if (var[i]<= min){
+                min= var[i];
+            }
+        }
+        return min;
+    }
+    float max (float* var){
+        uint8_t max=var[0];
+        uint8_t i=0;
+        for(i=0; i<=5; i++){
+            if (var[i]>= max){
+                max= var[i];
+            }
+        }
+        return max;
+    }
+    
     float toFloat(uint16_t var, uint16_t FScale){
         float out;
         if(var > 0x7FFF){
@@ -366,6 +416,8 @@ private:
 
         // FIFO data output registers
         FIFO_DATA_OUT_L = 0x3E,
-        FIFO_DATA_OUT_H = 0x3F
+        FIFO_DATA_OUT_H = 0x3F,
+        // STATUS register
+        STATUS_REG  = 0X1E
     };
 };
