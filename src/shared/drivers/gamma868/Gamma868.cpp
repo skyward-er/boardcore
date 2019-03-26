@@ -36,6 +36,7 @@ Gamma868::Gamma868(const char *serialPath, const uint16_t multiplier)
 
     if (fd < 0)
         TRACE("[Gamma868] Cannot open %s\n", serialPath);
+        // TODO: Signal an error if we fail here?
 }
 
 /*
@@ -51,6 +52,11 @@ Gamma868::Gamma868(const char *serialPath, GpioPin* lrn_pin, const uint16_t mult
 
     gammaSwitch->mode(Mode::OUTPUT);
     gammaSwitch->high();
+}
+
+Gamma868::~Gamma868()
+{
+    close(fd);
 }
 
 /*
