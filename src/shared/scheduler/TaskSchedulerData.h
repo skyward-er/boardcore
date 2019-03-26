@@ -1,16 +1,17 @@
-/* Copyright (c) 2019 Skyward Experimental Rocketry
- * Authors: Alvise de'Faveri Tron
- *
+/* 
+ * Copyright (c) 2019 Skyward Experimental Rocketry
+ * Authors: Alain Carlucci, Federico Terraneo, Matteo Michele Piazzolla
+ * 
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
  * in the Software without restriction, including without limitation the rights
  * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
  * copies of the Software, and to permit persons to whom the Software is
  * furnished to do so, subject to the following conditions:
- *
+ * 
  * The above copyright notice and this permission notice shall be included in
  * all copies or substantial portions of the Software.
- *
+ * 
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
  * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.  IN NO EVENT SHALL THE
@@ -20,15 +21,21 @@
  * THE SOFTWARE.
  */
 
-#pragma once
+#include <cstdint>
+#include <math/Stats.h>
 
-#include <mavlink_skyward_lib/mavlink_lib/mavlink_types.h>
+#ifndef BOARDCORE_SRC_SHARED_SCHEDULER_SCHEDULERDATA_H
+#define BOARDCORE_SRC_SHARED_SCHEDULER_SCHEDULERDATA_H
 
-struct MavStatus
+/**
+ * Statistics for a task
+ */
+struct TaskStatResult
 {
-    uint64_t timestamp;
-    uint16_t n_send_queue;   // current len of the occupied portion of the queue
-    uint16_t max_send_queue;  // max occupied len of the queue
-    uint16_t n_send_errors;   // number of packet drops
-    mavlink_status_t mav_stats;
+    uint8_t id;                   ///< Task id
+    StatsResult activationStats;  ///< Task activation stats
+    StatsResult periodStats;      ///< Task period stats
+    StatsResult workloadStats;    ///< Task workload stats
 };
+
+#endif

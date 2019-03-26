@@ -1,5 +1,5 @@
-/* Copyright (c) 2019 Skyward Experimental Rocketry
- * Authors: Alvise de'Faveri Tron
+/* Copyright (c) 2015-2018 Skyward Experimental Rocketry
+ * Authors: Luca Erbetta
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -19,16 +19,28 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
+#ifndef SRC_SHARED_SENSORS_BME280DATA_H
+#define SRC_SHARED_SENSORS_BME280DATA_H
 
-#pragma once
+#include <ostream>
+#include <string>
 
-#include <mavlink_skyward_lib/mavlink_lib/mavlink_types.h>
-
-struct MavStatus
+struct BME280Data
 {
-    uint64_t timestamp;
-    uint16_t n_send_queue;   // current len of the occupied portion of the queue
-    uint16_t max_send_queue;  // max occupied len of the queue
-    uint16_t n_send_errors;   // number of packet drops
-    mavlink_status_t mav_stats;
+    uint32_t timestamp;
+    float pressure, temperature;
+    uint32_t raw_pressure, raw_temperature;
+    
+    static std::string header()
+    {
+        return "timestamp,pressure,temperature,raw_pressure,raw_temperature\n";
+    }
+
+    void print(std::ostream& os) const
+    {
+        os << timestamp << "," << pressure << "," << temperature << ","
+           << raw_pressure << "," << raw_temperature << "\n";
+    }
 };
+
+#endif /* SRC_SHARED_SENSORS_BME280DATA_H */

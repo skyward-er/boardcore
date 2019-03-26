@@ -24,17 +24,15 @@
 
 #include <Common.h>
 #include <drivers/gamma868/Gamma868.h>
-#include <drivers/mavlink/MavChannel.h>
+#include <drivers/mavlink/multi/MavManager.h>
 
 
 using namespace miosix;
 
 Gamma868* gamma868;
-MavChannel* channel;
+MavManager* mavManager;
 
-
-// Receive function: sends an ACK back
-static void onReceive(MavChannel* channel, const mavlink_message_t& msg) 
+static void onReceive(MavSender* sender, const mavlink_message_t& msg) 
 {
     if (msg.msgid != MAVLINK_MSG_ID_ACK_TM) 
     {
@@ -44,7 +42,7 @@ static void onReceive(MavChannel* channel, const mavlink_message_t& msg)
         mavlink_msg_ack_tm_pack(1, 1, &ackMsg, msg.msgid, msg.seq);
 
         /* Send the message back to the sender */
-        bool ackSent = channel->enqueueMsg(ackMsg);
+        bool ackSent = sender->enqueueMsg(ackMsg);
 
         if(!ackSent)
             TRACE("[Receiver] Could not enqueue ack\n");
@@ -54,9 +52,11 @@ static void onReceive(MavChannel* channel, const mavlink_message_t& msg)
 int main()
 {
     gamma868 = new Gamma868("/dev/radio");
-    channel = new MavChannel(gamma868, &onReceive, 250);
 
-    // Send function: enqueue a ping every second
+    mavManager = new MavManager();
+    mavManager->addSender(gamma868, 250);
+    mavManager->addReceiver(gamma868, mavManager->getSender(0), &onReceive);
+
     while(1)
     {
         TRACE("[TmtcTest] Enqueueing ping\n");
@@ -66,7 +66,7 @@ int main()
         mavlink_msg_ping_tc_pack(1, 1, &pingMsg, miosix::getTick());
 
         // Send the message
-        bool ackSent = channel->enqueueMsg(pingMsg);
+        bool ackSent = mavManager->getSender(0)->enqueueMsg(pingMsg);
 
         if(!ackSent)
             TRACE("[TmtcTest] Could not enqueue ping\n");

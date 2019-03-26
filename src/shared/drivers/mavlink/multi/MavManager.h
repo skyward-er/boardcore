@@ -1,6 +1,4 @@
-/* Mavlink receiver
- *
- * Copyright (c) 2015-2018 Skyward Experimental Rocketry
+/* Copyright (c) 2015-2018 Skyward Experimental Rocketry
  * Authors: Alvise de'Faveri Tron
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -33,7 +31,7 @@
 #include <drivers/Transceiver.h>
 #include "MavReceiver.h"
 #include "MavSender.h"
-#include "MavStatus.h"
+#include "../MavStatus.h"
 
 /**
  * This class is meant to simply manage a set of mavlink senders and receivers.
@@ -45,7 +43,11 @@ class MavManager
 
 public:
 
-    MavManager(){}
+    MavManager()
+    {
+        memset(&status, 0, sizeof(status));
+    }
+    
     ~MavManager()
     {
         /* Destroy senders */
@@ -94,10 +96,11 @@ public:
         return receivers[id];
     }
 
+    /** WARNING: not synchronized **/
     MavStatus getStatus()
     {
         loggable_status.timestamp = miosix::getTick();
-        loggable_status.status = status;
+        loggable_status.mav_stats = status;
         return loggable_status;
     }
 

@@ -57,7 +57,7 @@ public:
      * @return true 
      * @return false 
      */
-    bool start()
+    virtual bool start()
     {
         if (!started && !stopped)
         {

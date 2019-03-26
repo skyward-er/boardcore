@@ -31,7 +31,11 @@
 #include <miosix.h>
 #include <stdint.h>
 #include <stdio.h>
+#include <vector>
+
 #include "i2c/stm32f2_f4_i2c.h"
+
+using std::vector;
 
 static const int csDelay = 20;
 
@@ -292,11 +296,13 @@ private:
 
     void writeImpl(uint8_t address, uint8_t regAddr, uint8_t* data, uint8_t len)
     {
-        uint8_t buf[len + 1];  // pack register address and payload
-        buf[0] = regAddr;
+        vector<uint8_t> buf;
+        buf.reserve(len+1); // Preallocate to increase performance
+        buf.push_back(regAddr);
+        
+        memcpy(buf.data() + 1, data, len);
 
-        memcpy(buf + 1, data, len);
-        writeImpl(address, buf, len + 1);
+        writeImpl(address, buf.data(), len + 1);
         // bus.send(address, reinterpret_cast<void*>(buf), len + 1);
     }
 

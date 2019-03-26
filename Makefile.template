@@ -15,7 +15,7 @@ include $(CONFPATH)/config/Makefile.inc
 ##
 ## List here subdirectories which contains makefiles
 ##
-SUBDIRS := $(KPATH) 
+SUBDIRS := $(KPATH) {SBS_PROJECT_SUBDIRS}
 
 ##
 ## List here your source files (both .s, .c and .cpp)
@@ -25,13 +25,13 @@ SRC := {SBS_SOURCE_FILES}
 ##
 ## List here additional static libraries with relative path
 ##
-LIBS := 
+LIBS := {SBS_PROJECT_LIBS}
 
 ##
 ## List here additional include directories (in the form -Iinclude_dir)
 ##
-INCLUDE_DIRS := -I$(SBS_BASE)/libs -I$(SBS_BASE)/miosix-kernel -I$(SBS_BASE)/miosix \
-                -I$(SBS_BASE)/src/shared -Isrc/boards
+INCLUDE_DIRS := -I$(SBS_BASE)/libs -I$(SBS_BASE)/libs/miosix-kernel/miosix \
+                {SBS_PROJECT_INCLUDES}
 
 ##############################################################################
 ## You should not need to modify anything below                             ##
