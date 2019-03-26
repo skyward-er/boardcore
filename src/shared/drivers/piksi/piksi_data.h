@@ -1,5 +1,5 @@
-/* Copyright (c) 2019 Skyward Experimental Rocketry
- * Authors: Alvise de'Faveri Tron
+/* Copyright (c) 2017-2019 Skyward Experimental Rocketry
+ * Authors: Federico Terraneo
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -20,15 +20,22 @@
  * THE SOFTWARE.
  */
 
-#pragma once
-
-#include <mavlink_skyward_lib/mavlink_lib/mavlink_types.h>
-
-struct MavStatus
+/**
+ * The GPS information
+ */
+struct GPSData
 {
-    uint64_t timestamp;
-    uint16_t n_send_queue;   // current len of the occupied portion of the queue
-    uint16_t max_send_queue;  // max occupied len of the queue
-    uint16_t n_send_errors;   // number of packet drops
-    mavlink_status_t mav_stats;
+    /// timestamp in ms (anakin time, not GPS time). getTick()-timestamp tells
+    /// you how "old" the data is.
+    long long timestamp;
+
+    bool fix;
+    double latitude;      ///< [deg] //TODO: cast to float??
+    double longitude;     ///< [deg] //TODO: cast to float??
+    double height;        ///< [m]   //TODO: cast to float??
+    float velocityNorth;  ///< [m/s]
+    float velocityEast;   ///< [m/s]
+    float velocityDown;   ///< [m/s]
+    float speed;          ///< [m/s]
+    int numSatellites;    ///< [1]
 };

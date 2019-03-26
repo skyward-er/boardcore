@@ -58,7 +58,7 @@ Matrix::Matrix(int n_rows, int n_cols)
     }
 }
 
-Matrix::Matrix(int n_rows, int n_cols, float values[])
+Matrix::Matrix(int n_rows, int n_cols, const float values[])
 {
     rows    = n_rows;
     columns = n_cols;

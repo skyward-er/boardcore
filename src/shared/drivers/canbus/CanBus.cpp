@@ -44,8 +44,8 @@ using std::set;
 CanBus::CanBus(CAN_TypeDef *bus, CanManager *manager, const int can_id, CanDispatcher dispatcher)
     : CANx(bus), manager(manager), id(can_id), dispatchMessage(dispatcher)
 {
-    terminate = false;
     this->canSetup();
+    memset(&status, 0, sizeof(status));
 }
 
 /**
@@ -53,7 +53,7 @@ CanBus::CanBus(CAN_TypeDef *bus, CanManager *manager, const int can_id, CanDispa
 */
 void CanBus::rcvFunction()
 {
-    while (terminate == false)
+    while (!should_stop)
     {
         /* Read fom queue */
         CanMsg message;
@@ -73,7 +73,7 @@ void CanBus::rcvFunction()
         if (filter_id >= (uint32_t)CanManager::filter_max_id)
         {
             TRACE("[CanBus] Unsupported message\n");
-            return;
+            continue;
         }
 
         /* Truncate payload length to maximum */
@@ -89,8 +89,10 @@ void CanBus::rcvFunction()
         }
 
         /* Handle message */
-        dispatchMessage(message);
+        dispatchMessage(message, status);
     }
+
+    TRACE("Canbus thread exit\n");
 }
 
 /*

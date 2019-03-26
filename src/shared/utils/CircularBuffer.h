@@ -20,37 +20,39 @@
  * THE SOFTWARE.
  */
 
-#ifndef SRC_SHARED_UTILS_CIRCULARBUFFER_H
-#define SRC_SHARED_UTILS_CIRCULARBUFFER_H
+#pragma once
 
 #include <cstring>
 #include <stdexcept>
+#include <type_traits>
 
-using std::runtime_error;
+using std::range_error;
 
 /**
  * Implementation of an non-synchronized circular buffer
  */
-template <typename T>
+template <typename T, unsigned int Size>
 class CircularBuffer
 {
+    static_assert(Size > 0, "Circular buffer size must be greater than 0!");
+
 public:
-    CircularBuffer(size_t size) : size(size), buffer(new T[size]) {}
-    ~CircularBuffer() { delete[] buffer; }
+    CircularBuffer() {}
+    virtual ~CircularBuffer() { }
 
     /**
      * Puts a copy of the element in the buffer
      * @param elem element
      */
-    CircularBuffer<T>& put(const T& elem)
+    virtual CircularBuffer<T, Size>& put(const T& elem)
     {
         buffer[write_ptr] = elem;
 
         if (!empty && write_ptr == read_ptr)
         {
-            read_ptr = (read_ptr + 1) % size;
+            read_ptr = (read_ptr + 1) % Size;
         }
-        write_ptr = (write_ptr + 1) % size;
+        write_ptr = (write_ptr + 1) % Size;
 
         empty = false;
         return *this;
@@ -58,49 +60,46 @@ public:
 
     /**
      * Gets the first element from the buffer, without removing it
-     * @warning Always catch the exception, because the buffer may have been
-     * emptied after the last call to isEmpty.
+     * @warning Remember to catch the exception!
      * @return the element
-     * @throws runtime_error if buffer is empty
+     * @throws range_error if buffer is empty
      */
-    const T& get()
+    virtual const T& get() const
     {
         if (!empty)
         {
             return buffer[read_ptr];
         }
         else
-            throw runtime_error("CircularBuffer is empty!");
+            throw range_error("CircularBuffer is empty!");
     }
 
     /**
      * Pops the first element in the buffer.
-     * @warning Always catch the exception, because the buffer may have been
-     * emptied after the last call to isEmpty.
+     * @warning Remember to catch the exception!
      * @return the element that has been popped
-     * @throws runtime_error if buffer is empty
+     * @throws range_error if buffer is empty
      */
-    const T& pop()
+    virtual const T& pop()
     {
         if (!empty)
         {
             size_t ptr = read_ptr;
-            read_ptr   = (read_ptr + 1) % size;
+            read_ptr   = (read_ptr + 1) % Size;
 
-            if (read_ptr == write_ptr)
-                empty = true;
+            empty = read_ptr == write_ptr;
 
             return buffer[ptr];
         }
         else
-            throw runtime_error("CircularBuffer is empty!");
+            throw range_error("CircularBuffer is empty!");
     }
 
     /**
      * Counts the elements in the buffer
      * @return number of elements in the buffer
      */
-    size_t count()
+    virtual size_t count() const
     {
         if (empty)
             return 0;
@@ -110,23 +109,23 @@ public:
         }
         else
         {
-            return size - read_ptr + write_ptr;
+            return Size - read_ptr + write_ptr;
         }
     }
 
-    bool isEmpty() { return empty; }
+    virtual bool isEmpty() const { return empty; }
 
+    virtual bool isFull() const { return count() == Size; }
     /**
      * Returns the maximum number of elements that can be stored in the buffer
      * @return buffer size
      */
-    size_t getSize() { return size; }
+    size_t getSize() const { return Size; }
 
 private:
-    const size_t size;
-    T* buffer;
+    T buffer[Size];
+    
     size_t write_ptr = 0, read_ptr = 0;
     bool empty = true;
 };
 
-#endif  // SRC_SHARED_UTILS_CIRCULARBUFFER_H

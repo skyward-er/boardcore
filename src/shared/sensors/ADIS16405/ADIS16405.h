@@ -26,7 +26,8 @@
 #define ADIS16405_H
 
 #include <drivers/BusTemplate.h>
-#include "Sensor.h"
+#include "sensors/Sensor.h"
+#include "ADIS16405Data.h"
 
 // TODO: add ADC/DAC interface
 template <class Bus>
@@ -35,32 +36,6 @@ class ADIS16405 : public AccelSensor,
                   public CompassSensor,
                   public TemperatureSensor
 {
-#pragma pack(1)
-    /*! \typedef
-     * Burst data collection. This establishes what we consider the right
-     * datatype
-     * for the registers because trying to work with 12 or 14 bit twos
-     * complement
-     * that doesn't sign extend to 16 bits is unpleasant.
-     */
-    typedef struct ADIS16405Data
-    {
-        uint16_t supply_out;  //  Power supply measurement
-        int16_t xgyro_out;    //  X-axis gyroscope output
-        int16_t ygyro_out;    //  Y-axis gyroscope output
-        int16_t zgyro_out;    //  Z-axis gyroscope output
-        int16_t xaccl_out;    //  X-axis accelerometer output
-        int16_t yaccl_out;    //  Y-axis accelerometer output
-        int16_t zaccl_out;    //  Z-axis accelerometer output
-        int16_t xmagn_out;    //  X-axis magnetometer measurement
-        int16_t ymagn_out;    //  Y-axis magnetometer measurement
-        int16_t zmagn_out;    //  Z-axis magnetometer measurement
-        int16_t temp_out;     //  Temperature output
-        uint16_t aux_adc;     //  Auxiliary ADC measurement
-    } adisdata_t;
-
-#pragma pack()
-
 public:
     ADIS16405() {}
     virtual ~ADIS16405() {}
@@ -121,12 +96,17 @@ public:
     void onDMAUpdate(const SPIRequest& req) override
     {
         const std::vector<uint8_t>& r = req.readResponseFromPeripheral();
-        uint8_t raw_data[sizeof(adisdata_t)];
+        uint8_t raw_data[sizeof(ADIS16405Data)+2];
+
+        // initializing array 
+        for (uint16_t i = 0; i < sizeof(ADIS16405Data) + 2; i++){ 
+            raw_data[i] = 0; 
+        } 
 
         memcpy(&raw_data, &(r[2]),
                sizeof(raw_data));  // coping from 2nd, the first 2 are address
 
-        adisdata_t* data = NULL;
+        ADIS16405Data* data = NULL;
         bufferToBurstData(raw_data + 2, data);  // first 2 bytes are padding
 
         mLastGyro.setX(data->xgyro_out);  // TODO: do I have to normalize?????
@@ -222,9 +202,14 @@ private:
     void writeReg(adis_regaddr addr, uint16_t value)
     {  // todo:array
 
+
+        // REMOVE! added it now to fix warnings
+        (void) addr;
+        (void) value;
+
         // TODO: Why addr +1?
-        uint8_t txbuf[4] = {((addr + 1) | 0x80), value >> 8, (addr | 0x80),
-                            value};
+        // uint8_t txbuf[4] = {((addr + 1) | 0x80), value >> 8, (addr | 0x80),
+                            // value};
 
         // TODO: update with BusTemplate function. Commented to make it compile
         // for now
@@ -243,7 +228,7 @@ private:
         return val;
     }
 
-    void bufferToBurstData(uint8_t* raw, adisdata_t* data)
+    void bufferToBurstData(uint8_t* raw, ADIS16405Data* data)
     {
         // TODO: check nd and ea bits
         data->supply_out = (raw[0] << 8 | raw[1]) & 0x3fff;

@@ -22,19 +22,20 @@
  */
 
 #ifdef STANDALONE_CATCH1_TEST
-#include "catch1-tests-entry.cpp"
+#include "catch-tests-entry.cpp"
 #endif
 
 #include <miosix.h>
-#include <catch.hpp>
 #include <cstdio>
+#include <utils/catch.hpp>
 
 #include "events/EventBroker.h"
-#include "state_machine_test_helper.h"
+#include "utils/TestHelper.h"
 
+using miosix::getTick;
 using miosix::Thread;
 
-//Uncertainty on the time of delivery of a delayed event, in ms
+// Uncertainty on the time of delivery of a delayed event, in ms
 static const unsigned int EVENT_DELAY_UNCERTAINTY = 1;
 
 enum TestTopics : uint8_t
@@ -52,7 +53,7 @@ enum TestEvents : uint8_t
     EV_D
 };
 
-TEST_CASE("EventBroker posts to different topics")
+TEST_CASE("EventBroker - Posts to different topics")
 {
     Event ev;
     EventBroker broker;
@@ -97,7 +98,7 @@ TEST_CASE("EventBroker posts to different topics")
     }
 }
 
-TEST_CASE("EventHandlers can unsubscribe")
+TEST_CASE("EventBroker - EventHandlers can unsubscribe")
 {
     Event ev{EV_A};
     EventBroker broker;
@@ -185,28 +186,59 @@ TEST_CASE("EventHandlers can unsubscribe")
     }
 }
 
-TEST_CASE("Events can be dalayed")
+class EventBrokerTestFixture
+{
+public:
+    EventBrokerTestFixture() { broker.start(); }
+
+    ~EventBrokerTestFixture()
+    {
+        broker.stop();
+        broker.clearDelayedEvents();
+    }
+
+protected:
+    EventBroker broker;
+};
+
+TEST_CASE_METHOD(EventBrokerTestFixture, "EventBroker - Events can be dalayed")
 {
     Event ev{EV_A};
-    EventBroker broker;
-
-    EventCounter sub1(broker);
-
-    broker.subscribe(&sub1, TOPIC_1);
-
-    // Start the thread, required for delayed events.
-    broker.start();
+    long long start = getTick();
 
     // Post delayed event by 1000 ms
     broker.postDelayed(ev, TOPIC_1, 1000);
+    broker.postDelayed(ev, TOPIC_2, 3000);
 
-    Thread::sleep(1000 - EVENT_DELAY_UNCERTAINTY);
-    // We shouldn't have received it yet
-    REQUIRE(sub1.getTotalCount() == 0);
-    Thread::sleep(EVENT_DELAY_UNCERTAINTY * 2);
-    // Now it should have arrived
-    REQUIRE(sub1.getTotalCount() == 1);
+    REQUIRE(expectEvent(EV_A, TOPIC_1, start + 1000, 2, broker));
+    REQUIRE(expectEvent(EV_A, TOPIC_2, start + 3000, 2, broker));
+}
 
-    // Stop the broker.
-    broker.stop();
+TEST_CASE_METHOD(EventBrokerTestFixture,
+                 "EventBroker - Delayed events can be removed")
+{
+    Event ev{EV_A};
+    long long start = getTick();
+
+    // Post delayed event by 1000 ms
+    uint16_t delayed = broker.postDelayed(ev, TOPIC_1, 1000);
+    broker.postDelayed(ev, TOPIC_2, 3000);
+
+    SECTION("Individual events can be removed")
+    {
+        Thread::sleep(500);
+        broker.removeDelayed(delayed);
+
+        REQUIRE_FALSE(expectEvent(EV_A, TOPIC_1, start + 1000, 2, broker));
+        REQUIRE(expectEvent(EV_A, TOPIC_2, start + 3000, 2, broker));
+    }
+
+    SECTION("All events can be removed")
+    {
+        Thread::sleep(500);
+        broker.clearDelayedEvents();
+
+        REQUIRE_FALSE(expectEvent(EV_A, TOPIC_1, start + 1000, 2, broker));
+        REQUIRE_FALSE(expectEvent(EV_A, TOPIC_2, start + 3000, 2, broker));
+    }
 }

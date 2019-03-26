@@ -28,7 +28,8 @@ using namespace miosix;
  * to be passed to the object in order to communicate with the device.
  *
  */
-Gamma868::Gamma868(const char *serialPath) : conf{}, gammaSwitch{} 
+Gamma868::Gamma868(const char *serialPath, const uint16_t multiplier)
+                            : send_timeout_multiplier(multiplier), conf{}, gammaSwitch{}
 {
     conf_enabled = false;
     fd = open(serialPath, O_RDWR);
@@ -42,8 +43,8 @@ Gamma868::Gamma868(const char *serialPath) : conf{}, gammaSwitch{}
  * to be passed to the object in order to communicate with the device.
  *
  */
-Gamma868::Gamma868(const char *serialPath, GpioPin* lrn_pin) 
-                                                : Gamma868(serialPath)
+Gamma868::Gamma868(const char *serialPath, GpioPin* lrn_pin, const uint16_t multiplier) 
+                                                : Gamma868(serialPath, multiplier)
 {
     gammaSwitch = lrn_pin;
     conf_enabled = true;
@@ -57,7 +58,9 @@ Gamma868::Gamma868(const char *serialPath, GpioPin* lrn_pin)
  */
 bool Gamma868::send(uint8_t* pkt, const uint32_t pkt_len)
 {
-    return write(fd, pkt, pkt_len) > 0;
+    bool ret = (write(fd, pkt, pkt_len) > 0);
+    Thread::sleep(send_timeout_multiplier * pkt_len);
+    return ret;
 }
 
 /*
