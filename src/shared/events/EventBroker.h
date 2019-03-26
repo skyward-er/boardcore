@@ -53,7 +53,7 @@ static const unsigned int EVENT_BROKER_MIN_DELAY = 250;
  * public topics enum and publish an event into it. The event will be posted in
  * to each FSM object subscribed to that specific topic.
  */
-class EventBroker : Singleton<EventBroker>, public ActiveObject
+class EventBroker : public Singleton<EventBroker>, public ActiveObject
 {
     friend class Singleton<EventBroker>;
 
