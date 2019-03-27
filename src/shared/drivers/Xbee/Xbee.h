@@ -137,11 +137,12 @@ class Xbee : public Transceiver
 
             //read packet from SPI
             Bus::read(rx_pkt.data(), 18+pkt_len);
+            uint16_t packet_length=pkt_length(rx_pkt.data());
 
             //verify checksum and packet length (must be <= pkt_len)
-            if(checksum_check(rx_pkt.data(),pkt_len) && pkt_length(rx_pkt.data())<=pkt_len){
+            if(checksum_check(rx_pkt.data(),packet_length) && packet_length<=pkt_len){
                 //Extrapolate the payload: copy the payload (from byte 15 to 15+pkt_length)
-                memcpy(pkt, rx_pkt.data()+15, pkt_length(rx_pkt.data()));
+                memcpy(pkt, rx_pkt.data()+15, packet_length);
             }
             else memcpy(pkt, __null, pkt_len);
 
