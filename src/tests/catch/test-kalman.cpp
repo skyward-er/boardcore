@@ -21,10 +21,10 @@
  */
 
 #ifdef STANDALONE_CATCH1_TEST
-#include "catch1-tests-entry.cpp"
+#include "catch-tests-entry.cpp"
 #endif
 
-#include <catch.hpp>
+#include <utils/catch.hpp>
 #include <iostream>
 #include "test-kalman-data.h"
 #include "kalman/Kalman.h"

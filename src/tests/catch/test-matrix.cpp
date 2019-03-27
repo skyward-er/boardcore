@@ -21,11 +21,11 @@
  */
 
 #ifdef STANDALONE_CATCH1_TEST
-#include  "catch1-tests-entry.cpp"
+#include  "catch-tests-entry.cpp"
 #endif
 
-#include  <catch.hpp>
-#include "kalman/matrix.h"
+#include  <utils/catch.hpp>
+#include <libs/simple-template-matrix/matrix.h>
 
 
 TEST_CASE("Multiply test")
