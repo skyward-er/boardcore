@@ -28,8 +28,13 @@
 #define ACK_DISABLE 0x00
 #define MAX_BROADCAST_HOP 0x00
 
-#include <drivers/Transceiver.h>
-
+#include "../Transceiver.h"     //instead of <drivers/Transceiver.h> because I think the compiler couldn't find it
+#include "../BusTemplate.h"
+#include <interfaces-impl/hwmapping.h>
+//the two lines below are temporary, just for autocomplete, thank you SCS
+using prova=BusSPI<1,miosix::interfaces::spi1::mosi, miosix::interfaces::spi1::miso, miosix::interfaces::spi1::sck>; 
+using Bus=ProtocolSPI<prova,miosix::sensors::ad7994::ab>;
+//template<typename Bus>
 class Xbee : public Transceiver
 {
     public:
@@ -93,7 +98,32 @@ class Xbee : public Transceiver
         * @param pkt_len           Lenght of the packet to be received.
         */
         void receive(uint8_t* pkt, const uint32_t pkt_len)
-        {
+        {   
+            uint8_t rx_pkt[18+pkt_len];
+            uint64_t checksum=0;
+            bool    checksum_correct
+
+            //read packet from SPI
+            Bus::
+
+            //calculate checksum,  **can I use a for loop?
+            
+            /*
+            for(int i=3; i<18+pkt_len; i++){
+                sum += rx_pkt[i];
+            }
+            uint8_t sumLSB = sum & 0b11111111;
+            uint8_t checksum = 0xFF - sumLSB;
+            */
+
+            //verify checksum
+            for(int i=3; i<18+pkt_len; i++){
+                checksum += rx_pkt[i];
+            }
+            if(checksum & 0xFF == 0xFF){
+                checksum_correct=true;
+            }
+            else checksum_correct=false;
 
         }
 
@@ -252,4 +282,15 @@ XBee: SPI packet structure (API mode):
         -   VERIFY:
             1   add all bytes including CRC (bytes 0 to n+1)
             2   if checksum is correct, the LSB two digits of the sum equal to 0xFF  
+
+
+    ADDENDUM:                                                   [cfr. datasheet pg.39]
+        -   SPI parameters:
+                Bit order: send MSB first
+                Clock phase (CPHA): sample data on first (leading) edge
+                Clock polarity (CPOL): first (leading) edge rises
+                (SPI mode 0)
+        -   Data format:
+                Only API mode 1
+        
 */  
