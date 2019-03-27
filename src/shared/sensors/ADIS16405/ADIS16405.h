@@ -1,6 +1,6 @@
 /* ADIS16405 Driver
  *
- * Copyright (c) 2018 Skyward Experimental Rocketry
+ * Copyright (c) 2018-2019 Skyward Experimental Rocketry
  * Authors: Nuno Barcellos
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -29,8 +29,21 @@
 #include "sensors/Sensor.h"
 #include "ADIS16405Data.h"
 
-// TODO: add ADC/DAC interface
-template <class Bus>
+// TODO: add ADC/DAC interface (left floating on the schematics but ask)
+// TODO: add calibration routines
+// TODO: add sleep/wakeup routines
+// TODO: add power management routines
+// TODO: add global commands routines
+// TODO: add sample rate routines (although it's strictly
+//       not recommended to change the e default sample rate)
+// TODO: add digital filtering routines (ask if needed)
+// TODO: add dynamic range  routines
+// TODO: add GPIO interface (ask if used)
+// TODO: add memory test routine
+
+
+// 16g,250hz
+template <typename BusSPI, typename rstPin>
 class ADIS16405 : public AccelSensor,
                   public GyroSensor,
                   public CompassSensor,
@@ -38,7 +51,10 @@ class ADIS16405 : public AccelSensor,
 {
 public:
     ADIS16405() {}
-    virtual ~ADIS16405() {}
+    virtual ~ADIS16405()
+    {
+        //TODO: should the device be put to sleep?
+    }
 
     std::vector<SPIRequest> buildDMARequest() override
     {
@@ -61,17 +77,79 @@ public:
         };
         // clang-format on
 
-        return {SPIRequest(0, Bus::getCSPin(), v)};
+        return {SPIRequest(0, BusSPI::getCSPin(), v)};
     }
 
     bool init() override
     {
-        // The module starts itself
         // Ensure right SPI frequency
         // Burst mode SPI < 1 MHz
+
+        rstPin::mode(miosix::Mode::OUTPUT);
+        rstPin::high();
+
+        miosix::delayMs(220); // 220 ms start-up time 
+        miosix::delayMs(1000); // TODO: remove
+        miosix::delayMs(1000); // TODO: remove
+
+        // TODO: wakeUp the device if it's sleeping
+        
+        uint16_t product_id = readReg2(ADIS_PRODUCT_ID,14);
+        printf("product_id: %d\n", product_id);
+        if (product_id != product_id_value)
+        {
+            last_error = ERR_NOT_ME;
+            return false;
+        }
+
         return true;
     }
 
+    void readTest()
+    {   
+        // float value1 = normalizeAccel(signExtend(readReg2(ADIS_XACCL_OUT,14) & 0x3fff, 14));
+        // float value1 = normalizeTemp(signExtend(readReg(ADIS_TEMP_OUT) & 0x0fff, 12));
+        // float value1 =  normalizePower(readReg2(ADIS_SUPPLY_OUT,14));
+        // printf("%f\n", value1);
+
+        // uint16_t product_id = readReg(ADIS_PRODUCT_ID);
+        // printf("product_id1: %d\n", product_id);
+        // product_id = readReg2(ADIS_PRODUCT_ID,14);
+        // printf("product_id2: %d\n", product_id);
+
+        // int16_t product_id = signExtend(readReg(ADIS_XACCL_OUT)&0x3fff,14);
+        // int16_t product_id = signExtend(readReg(ADIS_XACCL_OUT)&0x3fff,14);
+        uint16_t product_id = readReg(ADIS_SMPL_PRD);
+        printf("value: %d\n", product_id);
+
+    }
+
+    void writeTest()
+    {
+    }
+
+    void burstTest()
+    {
+        ADIS16405Data burstData;
+        burstDataCollect(&burstData);
+        printf("%f\t",normalizePower(burstData.supply_out));
+        // printf("%f\t",normalizeGyro(burstData.xgyro_out));
+        // printf("%f\t",normalizeGyro(burstData.ygyro_out));
+        // printf("%f\t",normalizeGyro(burstData.zgyro_out));
+        // printf("%f\t",normalizeAccel(burstData.xaccl_out));
+        // printf("%f\t",normalizeAccel(burstData.yaccl_out));
+        // printf("%f\t",normalizeAccel(burstData.zaccl_out));
+        // printf("%f\t",normalizeMagneto(burstData.xmagn_out));
+        // printf("%f\t",normalizeMagneto(burstData.ymagn_out));
+        // printf("%f\t",normalizeMagneto(burstData.zmagn_out));
+        // printf("%f\t",normalizeTemp(burstData.temp_out));
+        // printf("%f\t",normalizeADC(burstData.aux_adc));
+        printf("\n");
+    }
+
+    // Exercises all inertial sensors, measures each response,
+    // makes pass/fail decisions, and reports them to error flags
+    // in the DIAG_STAT register
     bool selfTest() override
     {
         // DIAG_STAT clears after each read so we read to clear it
@@ -79,49 +157,52 @@ public:
 
         uint16_t msc = readReg(ADIS_MSC_CTRL);
         writeReg(ADIS_MSC_CTRL, msc | 1 << 10);
-
+        msc = readReg(ADIS_MSC_CTRL);
+        
+        // MSC_CTRL[10] resets itself to 0 after completing the routine
         do
         {
             msc = readReg(ADIS_MSC_CTRL);
         } while (msc & 1 << 10);
 
+        // TODO: break the test into all the cases (identify the the fail bit)
         diagstat = readReg(ADIS_DIAG_STAT);  // 0 if successful, 1 if failed
-
-        if (diagstat == 0)
-            return true;
-        else
-            return false;
+        printf("diagstat: %d\n",diagstat);
+        return (diagstat == 0);
     }
 
     void onDMAUpdate(const SPIRequest& req) override
     {
-        const std::vector<uint8_t>& r = req.readResponseFromPeripheral();
-        uint8_t raw_data[sizeof(ADIS16405Data)+2];
+        // TODO: remove. Added to fix warning
+        (void) req;
 
-        // initializing array 
-        for (uint16_t i = 0; i < sizeof(ADIS16405Data) + 2; i++){ 
-            raw_data[i] = 0; 
-        } 
+        // const std::vector<uint8_t>& r = req.readResponseFromPeripheral();
+        // uint8_t rxbuf_data[sizeof(ADIS16405Data)+2];
 
-        memcpy(&raw_data, &(r[2]),
-               sizeof(raw_data));  // coping from 2nd, the first 2 are address
+        // // initializing array 
+        // for (uint16_t i = 0; i < sizeof(ADIS16405Data) + 2; i++){ 
+        //     rxbuf_data[i] = 0; 
+        // } 
 
-        ADIS16405Data* data = NULL;
-        bufferToBurstData(raw_data + 2, data);  // first 2 bytes are padding
+        // memcpy(&rxbuf_data, &(r[2]),
+        //        sizeof(rxbuf_data));  // coping from 2nd, the first 2 are address
 
-        mLastGyro.setX(data->xgyro_out);  // TODO: do I have to normalize?????
-        mLastGyro.setY(data->ygyro_out);  // TODO: do I have to normalize?????
-        mLastGyro.setZ(data->zgyro_out);  // TODO: do I have to normalize?????
+        // ADIS16405Data* data = NULL;
+        // bufferToBurstData(rxbuf_data + 2, data);  // first 2 bytes are padding
 
-        mLastAccel.setX(data->xaccl_out);  // TODO: do I have to normalize?????
-        mLastAccel.setY(data->yaccl_out);  // TODO: do I have to normalize?????
-        mLastAccel.setZ(data->zaccl_out);  // TODO: do I have to normalize?????
+        // mLastGyro.setX(data->xgyro_out);
+        // mLastGyro.setY(data->ygyro_out);
+        // mLastGyro.setZ(data->zgyro_out);
 
-        mLastGyro.setX(data->xmagn_out);  // TODO: do I have to normalize?????
-        mLastGyro.setY(data->ymagn_out);  // TODO: do I have to normalize?????
-        mLastGyro.setZ(data->zmagn_out);  // TODO: do I have to normalize?????
+        // mLastAccel.setX(data->xaccl_out);
+        // mLastAccel.setY(data->yaccl_out);
+        // mLastAccel.setZ(data->zaccl_out);
 
-        mLastTemp = data->temp_out;  // TODO: do I have to normalize?????
+        // mLastGyro.setX(data->xmagn_out);
+        // mLastGyro.setY(data->ymagn_out);
+        // mLastGyro.setZ(data->zmagn_out);
+
+        // mLastTemp = data->temp_out;
 
         // TODO:
         //  Power supply measurement
@@ -131,10 +212,13 @@ public:
     bool onSimpleUpdate() override { return true; }
 
 private:
-    /* ADIS Register addresses */
+    constexpr static uint16_t product_id_value = 0x4105;
+
+    /* ADIS Register map */
     enum adis_regaddr : uint8_t
-    {
-        // Name         address         default    function
+    {   
+        // clang-format off
+        // Name           address    default function
         ADIS_FLASH_CNT  = 0x00,  //  N/A     Flash memory write count
         ADIS_SUPPLY_OUT = 0x02,  //  N/A     Power supply measurement
         ADIS_XGYRO_OUT  = 0x04,  //  N/A     X-axis gyroscope output
@@ -151,75 +235,86 @@ private:
         ADIS_XGYRO_OFF  = 0x1A,  //  0x0000  X-axis gyroscope bias offset factor
         ADIS_YGYRO_OFF  = 0x1C,  //  0x0000  Y-axis gyroscope bias offset factor
         ADIS_ZGYRO_OFF  = 0x1E,  //  0x0000  Z-axis gyroscope bias offset factor
-        ADIS_XACCL_OFF =
-            0x20,  //  0x0000  X-axis acceleration bias offset factor
-        ADIS_YACCL_OFF =
-            0x22,  //  0x0000  Y-axis acceleration bias offset factor
-        ADIS_ZACCL_OFF =
-            0x24,  //  0x0000  Z-axis acceleration bias offset factor
-        ADIS_XMAGN_HIF =
-            0x26,  //  0x0000  X-axis magnetometer, hard-iron factor
-        ADIS_YMAGN_HIF =
-            0x28,  //  0x0000  Y-axis magnetometer, hard-iron factor
-        ADIS_ZMAGN_HIF =
-            0x2A,  //  0x0000  Z-axis magnetometer, hard-iron factor
-        ADIS_XMAGN_SIF =
-            0x2C,  //  0x0800  X-axis magnetometer, soft-iron factor
-        ADIS_YMAGN_SIF =
-            0x2E,  //  0x0800  Y-axis magnetometer, soft-iron factor
-        ADIS_ZMAGN_SIF =
-            0x30,  //  0x0800  Z-axis magnetometer, soft-iron factor
-        ADIS_GPIO_CTRL =
-            0x32,  //  0x0000  Auxiliary digital input/output control
-        ADIS_MSC_CTRL = 0x34,  //  0x0006  Miscellaneous control
-        ADIS_SMPL_PRD = 0x36,  //  0x0001  Internal sample period (rate) control
-        ADIS_SENS_AVG =
-            0x38,  //  0x0402  Dynamic range and digital filter control
-        ADIS_SLP_CNT   = 0x3A,  //  0x0000  Sleep mode control
-        ADIS_DIAG_STAT = 0x3C,  //  0x0000  System status
-        ADIS_GLOB_CMD  = 0x3E,  //  0x0000  System command
-        ADIS_ALM_MAG1  = 0x40,  //  0x0000  Alarm 1 amplitude threshold
-        ADIS_ALM_MAG2  = 0x42,  //  0x0000  Alarm spi_master_xact_data* caller,
-                                //  spi_master_xact_data* spi_xact, void* data2
-                                //  amplitude threshold
-        ADIS_ALM_SMPL1 = 0x44,  //  0x0000  Alarm 1 sample size
-        ADIS_ALM_SMPL2 = 0x46,  //  0x0000  Alarm 2 sample size
-        ADIS_ALM_CTRL  = 0x48,  //  0x0000  Alarm control
-        ADIS_AUX_DAC   = 0x4A,  //  0x0000  Auxiliary DAC data
-        //                = 0x4C to 0x55 //          Reserved
-        ADIS_PRODUCT_ID = 0x56  //          Product identifier
+        ADIS_XACCL_OFF  = 0x20,  //  0x0000  X-axis acceleration bias offset factor
+        ADIS_YACCL_OFF  = 0x22,  //  0x0000  Y-axis acceleration bias offset factor
+        ADIS_ZACCL_OFF  = 0x24,  //  0x0000  Z-axis acceleration bias offset factor
+        ADIS_XMAGN_HIF  = 0x26,  //  0x0000  X-axis magnetometer, hard-iron factor
+        ADIS_YMAGN_HIF  = 0x28,  //  0x0000  Y-axis magnetometer, hard-iron factor
+        ADIS_ZMAGN_HIF  = 0x2A,  //  0x0000  Z-axis magnetometer, hard-iron factor
+        ADIS_XMAGN_SIF  = 0x2C,  //  0x0800  X-axis magnetometer, soft-iron factor
+        ADIS_YMAGN_SIF  = 0x2E,  //  0x0800  Y-axis magnetometer, soft-iron factor
+        ADIS_ZMAGN_SIF  = 0x30,  //  0x0800  Z-axis magnetometer, soft-iron factor
+        ADIS_GPIO_CTRL  = 0x32,  //  0x0000  Auxiliary digital input/output control
+        ADIS_MSC_CTRL   = 0x34,  //  0x0006  Miscellaneous control
+        ADIS_SMPL_PRD   = 0x36,  //  0x0001  Internal sample period (rate) control
+        ADIS_SENS_AVG   = 0x38,  //  0x0402  Dynamic range and digital filter control
+        ADIS_SLP_CNT    = 0x3A,  //  0x0000  Sleep mode control
+        ADIS_DIAG_STAT  = 0x3C,  //  0x0000  System status
+        ADIS_GLOB_CMD   = 0x3E,  //  0x0000  System command
+        ADIS_ALM_MAG1   = 0x40,  //  0x0000  Alarm 1 amplitude threshold
+        ADIS_ALM_MAG2   = 0x42,  //  0x0000  Alarm spi_master_xact_data* caller,
+                                 //          spi_master_xact_data* spi_xact, void*
+                                 //          data2 amplitude threshold
+        ADIS_ALM_SMPL1  = 0x44,  //  0x0000  Alarm 1 sample size
+        ADIS_ALM_SMPL2  = 0x46,  //  0x0000  Alarm 2 sample size
+        ADIS_ALM_CTRL   = 0x48,  //  0x0000  Alarm control
+        ADIS_AUX_DAC    = 0x4A,  //  0x0000  Auxiliary DAC data
+        //              = 0x4C to 0x55       Reserved
+        ADIS_PRODUCT_ID = 0x56  //  0x4105   Product identifier
+        // clang-format on
     };
 
     uint16_t readReg(adis_regaddr addr)
     {
         uint8_t rxbuf[2];
-
-        Bus::read(addr, rxbuf, sizeof(rxbuf));
-
+        BusSPI::read_low(addr, rxbuf, 2);
         return rxbuf[0] << 8 | rxbuf[1];
     }
 
-    void writeReg(adis_regaddr addr, uint16_t value)
-    {  // todo:array
+    uint16_t readReg2(adis_regaddr addr, uint8_t nbits)
+    {
+        uint8_t rxbuf[2];
+        BusSPI::read_low(addr, rxbuf, 2);
 
-
-        // REMOVE! added it now to fix warnings
-        (void) addr;
-        (void) value;
-
-        // TODO: Why addr +1?
-        // uint8_t txbuf[4] = {((addr + 1) | 0x80), value >> 8, (addr | 0x80),
-                            // value};
-
-        // TODO: update with BusTemplate function. Commented to make it compile
-        // for now
-        // Bus::write(txbuf, sizeof(txbuf));
-
-        // TODO: check! Do I have to read here??
-        // Bus::read(NULL,sizeof(txbuf));
+        uint8_t mask = 0xFF >> (16 - nbits);
+        return (rxbuf[0] & mask) << 8 | rxbuf[1];
     }
 
-    int16_t signExtend(uint16_t val, int bits)
+    void writeReg(adis_regaddr addr, uint8_t value)
+    {   
+        BusSPI::write(addr | 0x80, value); // upper byte,lower byte
+        // printf("upper byte: %d lower byte: %d\n", addr | 0x80,value);
+    }
+
+    // void writeReg(adis_regaddr addr, uint16_t value)
+    // {
+    //     uint8_t txbuf[4] = {(uint8_t)((addr + 1) | 0x80),(uint8_t) (value >> 8),
+    //                         (uint8_t) (addr | 0x80), (uint8_t) value};
+
+    //     Bus::write(addr, txbuf, sizeof(txbuf));
+    // }
+
+    void burstDataCollect(ADIS16405Data* data)
+    {   
+        uint8_t rxbuf[sizeof(ADIS16405Data)];
+        BusSPI::read_low((ADIS_GLOB_CMD), rxbuf, sizeof(ADIS16405Data)); // TODO: remove 0x80?
+
+        // TODO: check nd and ea bits
+        data->supply_out = (rxbuf[0]  | rxbuf[1]) & 0x3fff;
+        data->xgyro_out  = signExtend((rxbuf[2]  | rxbuf[3]) & 0x3fff, 14);
+        data->ygyro_out  = signExtend((rxbuf[4]  | rxbuf[5]) & 0x3fff, 14);
+        data->zgyro_out  = signExtend((rxbuf[6]  | rxbuf[7]) & 0x3fff, 14);
+        data->xaccl_out  = signExtend((rxbuf[8]  | rxbuf[9]) & 0x3fff, 14);
+        data->yaccl_out  = signExtend((rxbuf[10] << 8 | rxbuf[11]) & 0x3fff, 14);
+        data->zaccl_out  = signExtend((rxbuf[12] << 8 | rxbuf[13]) & 0x3fff, 14);
+        data->xmagn_out  = signExtend((rxbuf[14] << 8 | rxbuf[15]) & 0x3fff, 14);
+        data->ymagn_out  = signExtend((rxbuf[16] << 8 | rxbuf[17]) & 0x3fff, 14);
+        data->zmagn_out  = signExtend((rxbuf[18] << 8 | rxbuf[19]) & 0x3fff, 14);
+        data->temp_out   = signExtend((rxbuf[20] << 8 | rxbuf[21]) & 0x0fff, 12);
+        data->aux_adc    = (rxbuf[22] << 8 | rxbuf[23]) & 0x0fff;
+    }
+
+    int16_t signExtend(uint16_t val, uint8_t bits)
     {
         if ((val & (1 << (bits - 1))) != 0)
         {
@@ -228,22 +323,40 @@ private:
         return val;
     }
 
-    void bufferToBurstData(uint8_t* raw, ADIS16405Data* data)
+    inline float normalizePower(uint16_t val)
     {
-        // TODO: check nd and ea bits
-        data->supply_out = (raw[0] << 8 | raw[1]) & 0x3fff;
-        data->xgyro_out  = signExtend((raw[2] << 8 | raw[3]) & 0x3fff, 14);
-        data->ygyro_out  = signExtend((raw[4] << 8 | raw[5]) & 0x3fff, 14);
-        data->zgyro_out  = signExtend((raw[6] << 8 | raw[7]) & 0x3fff, 14);
-        data->xaccl_out  = signExtend((raw[8] << 8 | raw[9]) & 0x3fff, 14);
-        data->yaccl_out  = signExtend((raw[10] << 8 | raw[11]) & 0x3fff, 14);
-        data->zaccl_out  = signExtend((raw[12] << 8 | raw[13]) & 0x3fff, 14);
-        data->xmagn_out  = signExtend((raw[14] << 8 | raw[15]) & 0x3fff, 14);
-        data->ymagn_out  = signExtend((raw[16] << 8 | raw[17]) & 0x3fff, 14);
-        data->zmagn_out  = signExtend((raw[18] << 8 | raw[19]) & 0x3fff, 14);
-        data->temp_out   = signExtend((raw[20] << 8 | raw[21]) & 0x0fff, 12);
-        data->aux_adc    = (raw[22] << 8 | raw[23]) & 0x0fff;
+        return static_cast<float>(val) * 2.418e-3f; // TODO: leave it in V or mV
     }
+
+    inline float normalizeAccel(int16_t val)
+    {
+        return static_cast<float>(val) * 3.33e-3f * EARTH_GRAVITY;
+    }
+
+    inline float normalizeGyro(int16_t val)
+    {
+        return static_cast<float>(val) * 0.05f * DEGREES_TO_RADIANS;
+    }
+
+    inline float normalizeMagneto(int16_t val)
+    {
+        return static_cast<float>(val) * 0.5e-3f; // TODO: leave it in gauss?
+    }
+
+    inline float normalizeTemp(int16_t val)
+    {
+        return static_cast<float>(val) * 0.14f;
+    }
+
+    inline float normalizeADC(uint16_t val)
+    {
+        return static_cast<float>(val) * 0.806e-6f; // TODO: leave it in V or mV or uV?
+    }
+
+    // TODO
+    void sleep(){}
+    void sleep(uint8_t dur){}
+    void wakeUp(){}
 };
 
 #endif
