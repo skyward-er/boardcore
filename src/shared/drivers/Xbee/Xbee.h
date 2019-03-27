@@ -132,31 +132,18 @@ class Xbee : public Transceiver
         */
         void receive(uint8_t* pkt, const uint32_t pkt_len)
         {   
-            uint8_t rx_pkt[18+pkt_len];
-            uint64_t checksum=0;
-            bool    checksum_correct
+            vector<uint8_t> rx_pkt;
+            rx_pkt.reserve(18+pkt_len);
 
             //read packet from SPI
-            Bus::
+            Bus::read(rx_pkt.data(), 18+pkt_len);
 
-            //calculate checksum,  **can I use a for loop?
-            
-            /*
-            for(int i=3; i<18+pkt_len; i++){
-                sum += rx_pkt[i];
+            //verify checksum and packet length (must be <= pkt_len)
+            if(checksum_check(rx_pkt.data(),pkt_len) && pkt_length(rx_pkt.data())<=pkt_len){
+                //Extrapolate the payload: copy the payload (from byte 15 to 15+pkt_length)
+                memcpy(pkt, rx_pkt.data()+15, pkt_length(rx_pkt.data()));
             }
-            uint8_t sumLSB = sum & 0b11111111;
-            uint8_t checksum = 0xFF - sumLSB;
-            */
-
-            //verify checksum
-            for(int i=3; i<18+pkt_len; i++){
-                checksum += rx_pkt[i];
-            }
-            if(checksum & 0xFF == 0xFF){
-                checksum_correct=true;
-            }
-            else checksum_correct=false;
+            else memcpy(pkt, __null, pkt_len);
 
         }
 
@@ -184,6 +171,21 @@ class Xbee : public Transceiver
             OPTION_BYTE,
             PAYLOAD_START_BYTE = 17
         };
+
+        uint16_t pkt_length(uint8_t* pkt){
+            return (pkt[1]<<8)+pkt[2];
+        }
+
+        bool checksum_check(uint8_t* pkt, const uint32_t pkt_len){
+            uint64_t checksum=0;
+            for(int i=3; i<18+pkt_len; i++){
+                checksum += pkt[i];
+            }
+            if(checksum & 0xFF == 0xFF){
+                return true;
+            }
+            else return false;
+        }
 };
 
 /*
