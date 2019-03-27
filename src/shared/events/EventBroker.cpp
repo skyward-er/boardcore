@@ -174,3 +174,9 @@ void EventBroker::deleteSubscriber(vector<EventHandler*>& subs,
         }
     }
 }
+
+void EventBroker::clearDelayedEvents()
+{
+    Lock<FastMutex> lock(mtx_delayed_events);
+    delayed_events.clear();
+}

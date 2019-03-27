@@ -97,6 +97,9 @@ public:
     void stop()
     {
         stop_flag = true;
+        
+        sndThread->join();
+        rcvThread->join();
     }
 
     /**

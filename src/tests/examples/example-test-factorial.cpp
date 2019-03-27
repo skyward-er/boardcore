@@ -33,10 +33,10 @@
 // togheter with all the others. Learn more on the skyward-boardcore wiki at:
 // https://git.skywarder.eu/r2a/skyward-boardcore/wikis/Testing
 #ifdef STANDALONE_CATCH1_TEST
-#include "catch1-tests-entry.cpp"
+#include "catch-tests-entry.cpp"
 #endif
 
-#include <catch.hpp>
+#include <utils/catch.hpp>
 
 int Factorial(int number)
 {

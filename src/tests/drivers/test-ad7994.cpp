@@ -61,7 +61,7 @@ int main()
     convst::mode(Mode::OUTPUT);
 
     // Address for part number AD7994-0, with AS pin HIGH
-    AD7994_t ad{0b0100010 << 1};
+    AD7994_t ad{0x22 << 1};
     if(ad.init())
         printf("Init succeeded\n");
     else
@@ -79,7 +79,7 @@ int main()
     	if(ad.onSimpleUpdate())
     	{	
     		sample = ad.getLastSample(AD7994_t::Channel::CH1);
-        	printf("timestamp: %d value: %d\n", sample.timestamp, sample.value);	
+        	printf("timestamp: %d value: %d\n", (int)sample.timestamp, (int)sample.value);	
     	}
 
 
