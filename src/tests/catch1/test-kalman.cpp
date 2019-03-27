@@ -43,41 +43,75 @@ TEST_CASE("Update test")
     Kalman<3, 1> filter{A, C, V1, V2, P0};
     MatrixBase<float, 1, 1> y{};
     float T;
-    float last_time = TIME_ARRAY[0];
-    filter.X(0, 0)  = Z_INPUT_ARRAY[0];
+    float last_time = TIME[0];
+    filter.X(0, 0)  = INPUT[0];
     for (unsigned i = 1; i < 101; i++)
     {
-        y(0, 0)        = Z_INPUT_ARRAY[i];
-        T              = TIME_ARRAY[i] - last_time;
+        y(0, 0)        = INPUT[i];
+        T              = TIME[i] - last_time;
         filter.A(0, 1) = T;
         filter.A(0, 2) = 0.5 * T * T;
         filter.A(1, 2) = T;
         filter.update(y);
-        if (filter.X(0, 0) != Approx(OUTPUT_STATE_1[i]).epsilon(0.01))
+        if (filter.X(0, 0) != Approx(STATE_1[i]).epsilon(0.01))
         {
-            FAIL("FAILED X(0,0) " << filter.X(0, 0) << " != " << OUTPUT_STATE_1[i] );
+            FAIL("FAILED X(0,0) " << filter.X(0, 0) << " != " << STATE_1[i] );
         }
         else
         {
             SUCCEED();
         }
-        if (filter.X(1, 0) != Approx(OUTPUT_STATE_2[i]).epsilon(0.01))
+        if (filter.X(1, 0) != Approx(STATE_2[i]).epsilon(0.01))
         {
-            FAIL("FAILED X(1,0) " << filter.X(1, 0) << " != " << OUTPUT_STATE_2[i] );
+            FAIL("FAILED X(1,0) " << filter.X(1, 0) << " != " << STATE_2[i] );
         }
         else
         {
             SUCCEED();
         }
-        if (filter.X(2, 0) != Approx(OUTPUT_STATE_3[i]).epsilon(0.01))
+        if (filter.X(2, 0) != Approx(STATE_3[i]).epsilon(0.01))
         {
-            FAIL("FAILED X(2,0) " << filter.X(2, 0) << " != " << OUTPUT_STATE_3[i] );
+            FAIL("FAILED X(2,0) " << filter.X(2, 0) << " != " << STATE_3[i] );
         }
         else
         {
             SUCCEED();
         }
 
-        last_time = TIME_ARRAY[i];
+
+        auto predictedState = filter.state(5);
+        if (predictedState(0,0) != Approx(PRED_STATE_1[i]).epsilon(0.01) ) {
+            FAIL("FAILED PREDICTED X(0,0) " << predictedState(0,0) << " != " << PRED_STATE_1[i] );
+        }
+        else
+        {
+            SUCCEED();
+        }
+        if (predictedState(1,0) != Approx(PRED_STATE_2[i]).epsilon(0.01) ) {
+            FAIL("FAILED PREDICTED X(1,0) " << predictedState(1,0) << " != " << PRED_STATE_2[i] );
+        }
+        else
+        {
+            SUCCEED();
+        }
+        if (predictedState(2,0) != Approx(PRED_STATE_3[i]).epsilon(0.01) ) {
+            FAIL("FAILED PREDICTED X(2,0) " << predictedState(2,0) << " != " << PRED_STATE_3[i] );
+        }
+        else
+        {
+            SUCCEED();
+        }
+
+        auto predictedOutput = filter.output(5);
+        if (predictedOutput(0,0) != Approx(PRED_STATE_1[i]).epsilon(0.01) ) {
+            FAIL("FAILED PREDICTED Y " << predictedState(0,0) << " != " << PRED_STATE_1[i] );
+        }
+        else
+        {
+            SUCCEED();
+        }
+        
+        
+        last_time = TIME[i];
     }
 }
