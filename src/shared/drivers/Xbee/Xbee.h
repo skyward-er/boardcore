@@ -1,4 +1,4 @@
-/* Copyright (c) 2015-2018 Skyward Experimental Rocketry
+/* Copyright (c) 2015-2019 Skyward Experimental Rocketry
  * Authors: Andrea Milluzzo, Artem Glukhov
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -20,17 +20,20 @@
  * THE SOFTWARE.
  */
 
-#pragma once;
+#pragma once
 
-#define START_DELIMITER 0x7E
-#define BROADCAST_ADDR 0x000000000000FFFF
-#define ADDR_LEN_BYTE 8
-#define ACK_DISABLE 0x00
-#define MAX_BROADCAST_HOP 0x00
+static const uint8_t START_DELIMITER = 0x7E;
+static const uint64_t BROADCAST_ADDR = 0x000000000000FFFF;  
+static const uint8_t ADDR_LEN_BYTE = 8;
+static const uint8_t ACK_DISABLE = 0x00;
+static const uint8_t MAX_BROADCAST_HOP = 0x00;
+static const uint16_t MAX_PAYLOAD_LEN = 0xFFFF;
 
 #include "../Transceiver.h"     //instead of <drivers/Transceiver.h> because I think the compiler couldn't find it
 #include "../BusTemplate.h"
+#include <vector>
 #include <interfaces-impl/hwmapping.h>
+using std::vector;
 //the two lines below are temporary, just for autocomplete, thank you SCS
 using prova=BusSPI<1,miosix::interfaces::spi1::mosi, miosix::interfaces::spi1::miso, miosix::interfaces::spi1::sck>; 
 using Bus=ProtocolSPI<prova,miosix::sensors::ad7994::ab>;
@@ -39,53 +42,63 @@ class Xbee : public Transceiver
 {
     public:
 
-        uint64_t target_addr = BROADCAST_ADDR;
-
         /*
         * Send a message through the serial port to the Xbee module (blocking).
         * @param pkt               Pointer to the packet (needs to be at least pkt_len bytes).
         * @param pkt_len           Lenght of the packet to be sent (max 64KB per packet)
-        * @return                  True if the message was sent correctly.
+        * @return true             True if the message was sent correctly. Information about transmission available. 
+        * @return false            If pkt is NULL or Xbee returns errors. Information about transmission available.
         */
-        bool send(uint8_t* pkt, const uint32_t pkt_len) //posso cambiare il tipo da uint32 a uint 16? non serve così grande
+        bool send(uint8_t* pkt, const uint32_t pkt_len) 
         {
-            uint8_t tx_pkt[18+pkt_len];
-            uint32_t checksum = 0;
+            if(pkt == NULL || pkt_len > MAX_PAYLOAD_LEN)
+                return false;
+
+            vector<uint8_t> tx_pkt;
+            tx_pkt.reserve(18+pkt_len);
 
             //pkt contruction:
-            tx_pkt[DELIMITER] = START_DELIMITER;
+            tx_pkt.push_back(START_DELIMITER);
 
-            tx_pkt[PKT_LEN_MSB] = (pkt_len & 0xff00)>>8;
-            tx_pkt[PKT_LEN_LSB] = pkt_len & 0xff; 
+            tx_pkt.push_back((pkt_len & 0xff00)>>8);
+            tx_pkt.push_back(pkt_len & 0xff); 
 
-            tx_pkt[AP_COMMAND] = AP_TX;
+            tx_pkt.push_back(AP_TX);
 
             //API frame construction
 
-            tx_pkt[HOST_ACKNOWLEDGE] = ACK_DISABLE;
+            tx_pkt.push_back(ACK_DISABLE);
 
+            const uint8_t* broadcast_ptr = static_cast<const uint8_t*>(&BROADCAST_ADDR); 
             for(int i=0; i<ADDR_LEN_BYTE; i++)
-                tx_pkt[i+ADDR_MSB] = (target_addr & (0xff00000000000000>>8*i)) >> (56 - 8*i);
+                tx_pkt.push_back(*broadcast_ptr + (ADDR_LEN_BYTE-1) - i ); //static_cast<const uint8_t*> is little endian, tx_pkt_address is stored in big endian format
             
-            tx_pkt[RESERVED] = 0xff;  //reserved bytes
-            tx_pkt[RESERVED+1] = 0xfe;
+            tx_pkt.push_back(0xff);  //reserved bytes
+            tx_pkt.push_back(0xfe);
 
-            tx_pkt[BROADCAST_HOP_NUM] = MAX_BROADCAST_HOP;
-            tx_pkt[OPTION_BYTE] = 0x43; //see option bits - Transmission packet structure
+            tx_pkt.push_back(MAX_BROADCAST_HOP);
+            tx_pkt.push_back(0x43); //see option bits - Transmission packet structure
 
             //adding payload           
 
             for(int i=0; i<pkt_len; i++)
-                tx_pkt[i+PAYLOAD_START_BYTE] = *(pkt+i); 
+                tx_pkt.push_back(*(pkt+i)); 
 
             //adding checksum
 
-            for(int i=0; i<PAYLOAD_START_BYTE+pkt_len; i++)
-                checksum += tx_pkt[i];
-            tx_pkt[PAYLOAD_START_BYTE+pkt_len] = 0xff - (checksum & 0xff);
-            //TODO
+            //TODO: CONVERT CHECKSUM CALCULATOR TO FUNCTION <- HOW WITH STD_VECT???
+            uint32_t checksum = 0;
+            for(int i=0; i< (17 + pkt_len); i++)
+                checksum += tx_pkt.at(i);
+            tx_pkt.push_back(0xff - (checksum & 0xff)); 
+
             //send packet via SPI
-            //wait for IRQ
+            for(int i=0; i< (18 + pkt_len); i++){
+                bus.write(tx_pkt.at(i));      //<-- CS not defined, where and how to do it?
+            }
+            
+            //TODO
+            //wait for IRQ <-- INTERRUPT on PF10 (ask LucaErbettaSCS for problems with interrupt from PORT 9 to 10 in STM32)
             //receive send ”ok”
             
             
