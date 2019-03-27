@@ -28,6 +28,9 @@ static const uint8_t ADDR_LEN_BYTE = 8;
 static const uint8_t ACK_DISABLE = 0x00;
 static const uint8_t MAX_BROADCAST_HOP = 0x00;
 static const uint16_t MAX_PAYLOAD_LEN = 0xFFFF;
+static const uint8_t TX_STATUS_PKT_LEN = 11;
+static const uint8_t TX_STATUS_BYTE = 8; 
+static const uint8_t TX_SUCCESS = 0x00;
 
 #include "../Transceiver.h"     //instead of <drivers/Transceiver.h> because I think the compiler couldn't find it
 #include "../BusTemplate.h"
@@ -93,16 +96,33 @@ class Xbee : public Transceiver
             tx_pkt.push_back(0xff - (checksum & 0xff)); 
 
             //send packet via SPI
-            for(int i=0; i< (18 + pkt_len); i++){
-                bus.write(tx_pkt.at(i));      //<-- CS not defined, where and how to do it?
-            }
+            Bus::write(tx_pkt.data(), tx_pkt.size());
             
             //TODO
             //wait for IRQ <-- INTERRUPT on PF10 (ask LucaErbettaSCS for problems with interrupt from PORT 9 to 10 in STM32)
-            //receive send ”ok”
             
             
+            //receiving TX status pkt
+            
+            vector<uint8_t> tx_status_pkt;
+            tx_status_pkt.reserve(TX_STATUS_PKT_LEN);
 
+            Bus::read(tx_status_pkt.data(), tx_pkt.size());
+
+            if ( !checksum_check(tx_pkt.data(), tx_pkt.size()))
+                return false;
+            
+            TXStatus = tx_status_pkt.at(TX_STATUS_BYTE); //Get status from TX Status Packet
+            if(TXStatus == TX_SUCCESS)
+                return true;   
+            
+            return false;
+
+        }
+
+        uint8_t getStatus()
+        {
+            return TXStatus;
         }
 
         /*
@@ -141,6 +161,8 @@ class Xbee : public Transceiver
         }
 
     private:
+
+        uint8_t TXStatus = NULL; 
 
         enum APCommands : uint8_t
         {
