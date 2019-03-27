@@ -76,14 +76,14 @@ int main(int argc, char const* argv[])
     uint32_t tick1;
     uint32_t tick2;
 
-    for (unsigned i = 0; i < TIME_ARRAY.size(); i++)
+    for (unsigned i = 0; i < TIME.size(); i++)
     {
         if (i == 0)
         {
-            filter.X(0,0) = Z_INPUT_ARRAY[0];
+            filter.X(0,0) = INPUT[0];
             continue;
         }
-        time = TIME_ARRAY[i];
+        time = TIME[i];
         T    = time - last_time;
 
         filter.A(0, 1) = T;
@@ -91,7 +91,7 @@ int main(int argc, char const* argv[])
         filter.A(1, 2) = T;
 
         MatrixBase<float,1,1> y{};
-        y(0,0) = Z_INPUT_ARRAY[i];
+        y(0,0) = INPUT[i];
 
         tick1 = timer.tick();
         filter.update(y);

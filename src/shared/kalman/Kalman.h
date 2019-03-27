@@ -127,11 +127,11 @@ public:
     /**
      * \brief Predicts k steps ahead the state
      */
-    CVectorN predictState(int k) {
+    CVectorN state(int k) {
         MatrixBase<float, n, 1> X_hat = X;
-        for(int i = 1; i < k; i++)
+        for(int i = 0; i < k; i++)
         {
-            X_hat = A*X;
+            X_hat = A*X_hat;
         }
         return X_hat;
     }
@@ -139,8 +139,8 @@ public:
     /**
      * \brief Predicts k steps ahead the output
      */
-    CVectorP predictOutput(int k) {
-        return C*predictState(k);
+    CVectorP output(int k) {
+        return C*state(k);
     }
 
 };
