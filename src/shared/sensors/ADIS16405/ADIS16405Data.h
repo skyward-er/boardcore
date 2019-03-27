@@ -21,32 +21,30 @@
  * THE SOFTWARE.
  */
 
-#pragma once
+#ifndef ADIS16405DATA_H
+#define ADIS16405DATA_H
 
 #include <cstdint>
 
-#pragma pack(1)
-    /*! \typedef
-     * Burst data collection. This establishes what we consider the right
-     * datatype
-     * for the registers because trying to work with 12 or 14 bit twos
-     * complement
-     * that doesn't sign extend to 16 bits is unpleasant.
-     */
-    struct ADIS16405Data
-    {
-        uint16_t supply_out;  //  Power supply measurement
-        int16_t xgyro_out;    //  X-axis gyroscope output
-        int16_t ygyro_out;    //  Y-axis gyroscope output
-        int16_t zgyro_out;    //  Z-axis gyroscope output
-        int16_t xaccl_out;    //  X-axis accelerometer output
-        int16_t yaccl_out;    //  Y-axis accelerometer output
-        int16_t zaccl_out;    //  Z-axis accelerometer output
-        int16_t xmagn_out;    //  X-axis magnetometer measurement
-        int16_t ymagn_out;    //  Y-axis magnetometer measurement
-        int16_t zmagn_out;    //  Z-axis magnetometer measurement
-        int16_t temp_out;     //  Temperature output
-        uint16_t aux_adc;     //  Auxiliary ADC measurement
-    };
+/*
+ * Burst data collection. This establishes right datatype for 
+ * the registers because trying to work with 12 or 14 bit twos
+ * complement that doesn't sign extend to 16 bits is unpleasant.
+ */
+struct ADIS16405Data
+{
+    uint16_t supply_out;  //  Power supply measurement
+    int16_t xgyro_out;    //  X-axis gyroscope output
+    int16_t ygyro_out;    //  Y-axis gyroscope output
+    int16_t zgyro_out;    //  Z-axis gyroscope output
+    int16_t xaccl_out;    //  X-axis accelerometer output
+    int16_t yaccl_out;    //  Y-axis accelerometer output
+    int16_t zaccl_out;    //  Z-axis accelerometer output
+    int16_t xmagn_out;    //  X-axis magnetometer measurement
+    int16_t ymagn_out;    //  Y-axis magnetometer measurement
+    int16_t zmagn_out;    //  Z-axis magnetometer measurement
+    int16_t temp_out;     //  Temperature output
+    uint16_t aux_adc;     //  Auxiliary ADC measurement
+};
 
-#pragma pack()
+#endif
