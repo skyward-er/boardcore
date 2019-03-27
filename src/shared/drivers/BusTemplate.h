@@ -202,6 +202,16 @@ public:
         GpioCS::high();
     }
 
+    /*  
+     * Write more than one byte without specifiing reg
+     */
+    static void write(uint8_t* buf, int size)
+    {
+        GpioCS::low();
+        Bus::read(buf, size);
+        GpioCS::high();
+    }
+
     static void write(uint8_t cmd)
     {
         GpioCS::low();
