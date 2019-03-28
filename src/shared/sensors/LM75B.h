@@ -33,6 +33,8 @@
 #include "math/Stats.h"
 
 #define NUM_SAMPLES 10
+#define MSB_BYTE 0
+#define LSB_BYTE 1
 
 enum class SlaveAddress: uint8_t
 {
@@ -139,30 +141,33 @@ class LM75B: public TemperatureSensor
         {
             uint16_t temp;
             BusType::read(slave_addr, REG_TEMP, temp_array, sizeof(uint16_t));
-            temp = temp_array[1];
+
+
+            TRACE("%x %x\n", temp_array[0], temp_array[0]);
+
+            temp = temp_array[MSB_BYTE];
             // MSB is the sign: 0->positive, 1->negative
             static const uint8_t msb_mask = 0x80;
-            bool is_positive = ((temp_array[0] & msb_mask) == 0);
+            bool is_positive = ((temp_array[MSB_BYTE] & msb_mask) == 0);
             TRACE("temp is before: %d \n", temp);
             //TRACE("bool is: %d\n", is_positive);
             if(is_positive) 
             {
                 //TRACE("positive\n");
-                temp >>= 1;
-                TRACE("after >>8 : %d \n", temp);
-                temp = temp | uint16_t(temp_array[1]);
+                temp <<= 8;
+                TRACE("after <<8 : %d \n", temp);
+                temp = temp | uint16_t(temp_array[LSB_BYTE]);
                 TRACE("after |  : %d \n", temp);
-                temp = temp << 5;
-                TRACE("after <<5 : %d \n", temp);
+                temp = temp >> 5;
+                TRACE("after >>5 : %d \n", temp);
                 return float(temp)*0.125;
             }
             else
             {
                 TRACE("negative\n");
                 temp <<= 8;
-                temp = temp | uint16_t(temp_array[1]);
+                temp = temp | uint16_t(temp_array[LSB_BYTE]);
                 temp = temp >> 5;
-                TRACE("negative temp is %f", temp);
                 return -float(temp)*0.125;
             }
         }
