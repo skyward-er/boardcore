@@ -31,7 +31,7 @@ using I2CProtocol = ProtocolI2C<miosix::I2C1Driver>;
 typedef LM75B<I2CProtocol> LM75BType;
 int main()
 {
-    LM75BType temp{SlaveAddress::ADDR_1};
+    LM75BType temp{(SlaveAddress)((uint8_t)SlaveAddress::ADDR_1 << 1)};
     Thread::sleep(500);
 
     while (true)
