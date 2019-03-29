@@ -27,9 +27,11 @@
 
 struct BME280Data
 {
-    uint32_t timestamp;
-    float pressure, temperature;
-    uint32_t raw_pressure, raw_temperature;
+    uint32_t timestamp = 0;
+    float pressure = 0;
+    float temperature = 0;
+    uint32_t raw_pressure = 0;
+    uint32_t raw_temperature = 0;
     
     static std::string header()
     {
