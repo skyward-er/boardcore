@@ -27,15 +27,15 @@
 
 #include "ActiveObject.h"
 #include "events/Event.h"
-#include "events/SyncQueue.h"
 #include "events/EventHandler.h"
+#include "events/SyncQueue.h"
 
 template <class T>
 class FSM : public EventHandler
 {
 
 public:
-    FSM(void (T::*initialState)(const Event&)) : EventHandler()
+    FSM(void (T::*initialState)(const Event&))
     {
         state            = initialState;
         specialEvent.sig = EV_ENTRY;
@@ -52,7 +52,7 @@ public:
         (static_cast<T*>(this)->*state)(specialEvent);
     }
 
-     /**
+    /**
      * Test if the FSM is in a state
      * @param test_state state to test
      */
