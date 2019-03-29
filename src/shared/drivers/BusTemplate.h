@@ -119,7 +119,8 @@ private:
                 SPI_CR1_SSM     // Software cs
                 | SPI_CR1_SSI   // Hardware cs internally tied high
                 | SPI_CR1_MSTR  // Master mode
-                | SPI_CR1_BR_2  // SPI clock divided by 32
+                | SPI_CR1_BR_1  
+                | SPI_CR1_BR_2  // SPI clock
                 | SPI_CR1_SPE;  // SPI enabled
             
             if (getSPIAddr(N) == SPI1)
