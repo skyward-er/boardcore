@@ -139,7 +139,7 @@ private:
     miosix::FastMutex mMutex;
     miosix::ConditionVariable mCondVar, mWaitVar;
 
-    Log() : ActiveObject(1024)
+    Log() : ActiveObject()
     {
         /*
         struct termios t;
