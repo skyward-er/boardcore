@@ -25,8 +25,6 @@
 
 
 // RESULT: Update operation 0.0319 on average
-
-#pragma once
 #include <Common.h>
 #include <drivers/HardwareTimer.h>
 #include <kalman/Kalman.h>

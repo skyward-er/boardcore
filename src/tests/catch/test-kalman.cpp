@@ -26,7 +26,7 @@
 
 #include <utils/catch.hpp>
 #include <iostream>
-#include "test-kalman-data.h"
+#include <src/tests/kalman/test-kalman-data.h>
 #include "kalman/Kalman.h"
 
 
