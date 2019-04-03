@@ -23,7 +23,7 @@
 #include "EventBroker.h"
 #include "Debug.h"
 
-EventBroker::EventBroker() : ActiveObject()  // TODO: Specify stack size
+EventBroker::EventBroker()
 {
 }
 
