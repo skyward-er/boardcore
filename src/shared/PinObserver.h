@@ -74,7 +74,7 @@ public:
      * @param poll_interval_ms Pin transition polling interval
      */
     PinObserver(unsigned int poll_interval_ms = 20)
-        : ActiveObject(), poll_interval(poll_interval_ms)
+        : poll_interval(poll_interval_ms)
     {
     }
 

@@ -42,11 +42,8 @@ public:
      * stacksize the stack of the thread that will be spawned \param priority
      * priority of the thread that will be spawned
      */
-    ActiveObject(unsigned int stacksize    = miosix::STACK_DEFAULT_FOR_PTHREAD,
-                 miosix::Priority priority = miosix::MAIN_PRIORITY)
+    ActiveObject()
     {
-        this->priority   = priority;
-        this->stack_size = stacksize;
     }
 
     virtual ~ActiveObject(){};
@@ -57,12 +54,13 @@ public:
      * @return true 
      * @return false 
      */
-    virtual bool start()
+    virtual bool start(unsigned int stacksize    = miosix::STACK_DEFAULT_FOR_PTHREAD,
+                 miosix::Priority priority = miosix::MAIN_PRIORITY)
     {
         if (!started && !stopped)
         {
             thread = miosix::Thread::create(
-                threadLauncher, stack_size, priority,
+                threadLauncher, stacksize, priority,
                 reinterpret_cast<void*>(this), miosix::Thread::JOINABLE);
 
             if (thread != nullptr)
@@ -129,9 +127,6 @@ private:
     }
 
     bool started = false;
-
-    unsigned int stack_size;
-    miosix::Priority priority;
 };
 
 #endif  // SRC_SHARED_ACTIVEOBJECT_H

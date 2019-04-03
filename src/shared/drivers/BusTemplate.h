@@ -89,7 +89,7 @@ private:
     {
         // conditional var??
         uint8_t* buf_ptr = (uint8_t*)buffer;
-        for (unsigned i  = 0; i < max_len; i++)
+        for (unsigned i = 0; i < max_len; i++)
             *(buf_ptr++) = _read();
         return 0;
     }
@@ -106,9 +106,6 @@ private:
     {
         // Interrupts are disabled to prevent bugs if more than one threads
         // does a read-modify-write to shared registers at the same time
-        if (getSPIAddr(N) == SPI1)
-            SPIDriver::instance();
-        else
         {
             miosix::FastInterruptDisableLock dLock;
             IRQenableSPIBus(getSPIAddr(N));
@@ -122,8 +119,14 @@ private:
                 SPI_CR1_SSM     // Software cs
                 | SPI_CR1_SSI   // Hardware cs internally tied high
                 | SPI_CR1_MSTR  // Master mode
-                | SPI_CR1_BR_2  // SPI clock divided by 32
+                | SPI_CR1_BR_1  
+                | SPI_CR1_BR_2  // SPI clock
                 | SPI_CR1_SPE;  // SPI enabled
+            
+            if (getSPIAddr(N) == SPI1)
+            {
+                SPIDriver::instance();
+            }
         }
         usleep(csDelay);
     }
@@ -297,9 +300,9 @@ private:
     void writeImpl(uint8_t address, uint8_t regAddr, uint8_t* data, uint8_t len)
     {
         vector<uint8_t> buf;
-        buf.reserve(len+1); // Preallocate to increase performance
+        buf.reserve(len + 1);  // Preallocate to increase performance
         buf.push_back(regAddr);
-        
+
         memcpy(buf.data() + 1, data, len);
 
         writeImpl(address, buf.data(), len + 1);
