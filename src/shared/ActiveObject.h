@@ -54,8 +54,12 @@ public:
      * @return true 
      * @return false 
      */
-    virtual bool start(unsigned int stacksize    = miosix::STACK_DEFAULT_FOR_PTHREAD,
-                 miosix::Priority priority = miosix::MAIN_PRIORITY)
+    virtual bool start()
+    {
+        return start(miosix::STACK_DEFAULT_FOR_PTHREAD, miosix::MAIN_PRIORITY);
+    }
+
+    virtual bool start(unsigned int stacksize, miosix::Priority priority)
     {
         if (!started && !stopped)
         {
