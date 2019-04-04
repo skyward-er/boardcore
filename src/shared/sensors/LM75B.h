@@ -150,7 +150,8 @@ class LM75B: public TemperatureSensor
             temp_for_swap = temp_array[0];
             temp_array[0] = temp_array[1];
             temp_array[1] = temp_for_swap;
-             
+
+            TRACE("After swap: %x %x\n", temp_array[0], temp_array[1]); 
             memcpy(&temp, temp_array, sizeof(uint16_t));
             TRACE("UINT16: %x\n", temp);
             foodx = temp >> 5;
