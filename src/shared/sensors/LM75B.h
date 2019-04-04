@@ -139,12 +139,28 @@ class LM75B: public TemperatureSensor
         // TODO controllare il segno
         float updateTemp()
         {
-            uint16_t temp;
+            uint16_t temp, foodx, foosx;
+            uint8_t temp_for_swap;
             BusType::read(slave_addr, REG_TEMP, temp_array, sizeof(uint16_t));
 
 
-            TRACE("%x %x\n", temp_array[0], temp_array[0]);
+            TRACE("Read: %x %x\n", temp_array[0], temp_array[1]);
 
+            //they must be swapped
+            temp_for_swap = temp_array[0];
+            temp_array[0] = temp_array[1];
+            temp_array[1] = temp_for_swap;
+             
+            memcpy(&temp, temp_array, sizeof(uint16_t));
+            TRACE("UINT16: %x\n", temp);
+            foodx = temp >> 5;
+            TRACE("SHIFTED 5 right: %x, FLOAT_VAL: %f\n", foodx, float(foodx)*0.125);
+            foosx = temp << 5;
+            TRACE("SHIFTED 5 left: %x, FLOAT_VAL: %f\n", foosx, float(foosx)*0.125);
+
+            return float(foodx)*0.125;
+
+            /*
             temp = temp_array[MSB_BYTE];
             // MSB is the sign: 0->positive, 1->negative
             static const uint8_t msb_mask = 0x80;
@@ -169,7 +185,7 @@ class LM75B: public TemperatureSensor
                 temp = temp | uint16_t(temp_array[LSB_BYTE]);
                 temp = temp >> 5;
                 return -float(temp)*0.125;
-            }
+            }*/
         }
 
 
