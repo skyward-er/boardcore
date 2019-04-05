@@ -115,12 +115,15 @@ private:
             GpioMiso::alternateFunction(GetAlternativeFunctionNumber(N));
             GpioSclk::mode(miosix::Mode::ALTERNATE);
             GpioSclk::alternateFunction(GetAlternativeFunctionNumber(N));
-            getSPIAddr(N)->CR1 =
-                SPI_CR1_SSM     // Software cs
-                | SPI_CR1_SSI   // Hardware cs internally tied high
-                | SPI_CR1_MSTR  // Master mode
-                | SPI_CR1_BR_2  // SPI clock divided by 32
-                | SPI_CR1_SPE;  // SPI enabled
+            getSPIAddr(N)->CR1=SPI_CR1_SSM  //No HW cs
+                            | SPI_CR1_SSI
+                            | SPI_CR1_SPE  //SPI enabled
+                            | SPI_CR1_BR_0
+                            | SPI_CR1_BR_1
+                            | SPI_CR1_BR_2
+                            | SPI_CR1_MSTR
+                            | SPI_CR1_CPOL
+                            | SPI_CR1_CPHA; 
             
             if (getSPIAddr(N) == SPI1)
             {
@@ -196,6 +199,22 @@ public:
     {
         GpioCS::low();
         Bus::write(&reg, sizeof(reg));
+        Bus::read(buf, size);
+        GpioCS::high();
+    }
+
+    static void read_adis(uint8_t reg, uint8_t* buf, int size)
+    {   
+        uint8_t padding = 0;
+
+        GpioCS::low();
+        Bus::write(&reg, sizeof(reg));
+        Bus::write(&padding, sizeof(padding));        
+        GpioCS::high();
+
+        miosix::delayUs(75);
+
+        GpioCS::low();
         Bus::read(buf, size);
         GpioCS::high();
     }
