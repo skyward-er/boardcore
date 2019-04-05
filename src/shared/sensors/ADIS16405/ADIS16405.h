@@ -84,55 +84,53 @@ public:
     {
         // Ensure right SPI frequency
         // Burst mode SPI < 1 MHz
+        // Low power mode SPI < 300 kHz
 
         rstPin::mode(miosix::Mode::OUTPUT);
         rstPin::high();
 
         miosix::delayMs(220); // 220 ms start-up time 
-        miosix::delayMs(1000); // TODO: remove
-        miosix::delayMs(1000); // TODO: remove
 
         // TODO: wakeUp the device if it's sleeping
         
-        uint16_t product_id = readReg2(ADIS_PRODUCT_ID,14);
-        printf("product_id: %d\n", product_id);
+        uint16_t product_id = readReg(ADIS_PRODUCT_ID);
         if (product_id != product_id_value)
         {
             last_error = ERR_NOT_ME;
             return false;
         }
 
+        writeReg(ADIS_ALM_CTRL,0x0000); // disable alarms
+
         return true;
     }
 
     void readTest()
     {   
-        // float value1 = normalizeAccel(signExtend(readReg2(ADIS_XACCL_OUT,14) & 0x3fff, 14));
-        // float value1 = normalizeTemp(signExtend(readReg(ADIS_TEMP_OUT) & 0x0fff, 12));
-        // float value1 =  normalizePower(readReg2(ADIS_SUPPLY_OUT,14));
-        // printf("%f\n", value1);
-
         // uint16_t product_id = readReg(ADIS_PRODUCT_ID);
-        // printf("product_id1: %d\n", product_id);
-        // product_id = readReg2(ADIS_PRODUCT_ID,14);
-        // printf("product_id2: %d\n", product_id);
+        // printf("product_id: %d\n", product_id);
 
-        // int16_t product_id = signExtend(readReg(ADIS_XACCL_OUT)&0x3fff,14);
-        // int16_t product_id = signExtend(readReg(ADIS_XACCL_OUT)&0x3fff,14);
-        uint16_t product_id = readReg(ADIS_SMPL_PRD);
-        printf("value: %d\n", product_id);
+        // float accel = normalizeAccel(signExtend(readReg(ADIS_YACCL_OUT) & 0x3FFF, 14));
+        // printf("temperature: %f\n", accel);
+        
+        // float temperature = normalizeTemp(signExtend(readReg(ADIS_TEMP_OUT) & 0x0FFF, 12));
+        // printf("temperature: %f\n", temperature);
+        
+        // float voltage = normalizePower(readReg(ADIS_SUPPLY_OUT) & 0x3FFF);
+        // printf("voltage: %f\n", voltage);
 
-    }
-
-    void writeTest()
-    {
+        // writeReg(ADIS_ZMAGN_SIF,0x0800);
+        // miosix::delayMs(1);
+        // uint16_t reg_value = readReg(ADIS_ZMAGN_SIF);
+        // printf("reg value: %d\n", reg_value);
+        // miosix::delayMs(200);
     }
 
     void burstTest()
     {
         ADIS16405Data burstData;
         burstDataCollect(&burstData);
-        printf("%f\t",normalizePower(burstData.supply_out));
+        printf("%f\t",normalizeSupply(burstData.supply_out));
         // printf("%f\t",normalizeGyro(burstData.xgyro_out));
         // printf("%f\t",normalizeGyro(burstData.ygyro_out));
         // printf("%f\t",normalizeGyro(burstData.zgyro_out));
@@ -155,10 +153,12 @@ public:
         // DIAG_STAT clears after each read so we read to clear it
         uint16_t diagstat = readReg(ADIS_DIAG_STAT);
 
-        uint16_t msc = readReg(ADIS_MSC_CTRL);
-        writeReg(ADIS_MSC_CTRL, msc | 1 << 10);
-        msc = readReg(ADIS_MSC_CTRL);
+        // uint16_t msc = readReg(ADIS_MSC_CTRL);
+        // writeReg(ADIS_MSC_CTRL, msc | 1 << 10);
+        // msc = readReg(ADIS_MSC_CTRL);
         
+        writeReg(ADIS_MSC_CTRL, 0x3504); // Config and start self test
+        uint16_t msc = 0;
         // MSC_CTRL[10] resets itself to 0 after completing the routine
         do
         {
@@ -166,7 +166,7 @@ public:
         } while (msc & 1 << 10);
 
         // TODO: break the test into all the cases (identify the the fail bit)
-        diagstat = readReg(ADIS_DIAG_STAT);  // 0 if successful, 1 if failed
+        diagstat = readReg(ADIS_DIAG_STAT);  // 0 if successful
         printf("diagstat: %d\n",diagstat);
         return (diagstat == 0);
     }
@@ -212,7 +212,8 @@ public:
     bool onSimpleUpdate() override { return true; }
 
 private:
-    constexpr static uint16_t product_id_value = 0x4105;
+    // constexpr static uint16_t product_id_value = 0x4105; // Typo in the datasheet
+    constexpr static uint16_t product_id_value = 16405; // == 0x4015
 
     /* ADIS Register map */
     enum adis_regaddr : uint8_t
@@ -267,51 +268,34 @@ private:
     uint16_t readReg(adis_regaddr addr)
     {
         uint8_t rxbuf[2];
-        BusSPI::read_low(addr, rxbuf, 2);
+        BusSPI::read_adis(addr, rxbuf, 2);
         return rxbuf[0] << 8 | rxbuf[1];
     }
 
-    uint16_t readReg2(adis_regaddr addr, uint8_t nbits)
+    void writeReg(adis_regaddr addr, uint16_t value)
     {
-        uint8_t rxbuf[2];
-        BusSPI::read_low(addr, rxbuf, 2);
-
-        uint8_t mask = 0xFF >> (16 - nbits);
-        return (rxbuf[0] & mask) << 8 | rxbuf[1];
+        BusSPI::write((addr+1) | 0x80, (uint8_t)(value >> 8));
+        BusSPI::write(addr | 0x80, (uint8_t) value);
     }
-
-    void writeReg(adis_regaddr addr, uint8_t value)
-    {   
-        BusSPI::write(addr | 0x80, value); // upper byte,lower byte
-        // printf("upper byte: %d lower byte: %d\n", addr | 0x80,value);
-    }
-
-    // void writeReg(adis_regaddr addr, uint16_t value)
-    // {
-    //     uint8_t txbuf[4] = {(uint8_t)((addr + 1) | 0x80),(uint8_t) (value >> 8),
-    //                         (uint8_t) (addr | 0x80), (uint8_t) value};
-
-    //     Bus::write(addr, txbuf, sizeof(txbuf));
-    // }
 
     void burstDataCollect(ADIS16405Data* data)
     {   
         uint8_t rxbuf[sizeof(ADIS16405Data)];
-        BusSPI::read_low((ADIS_GLOB_CMD), rxbuf, sizeof(ADIS16405Data)); // TODO: remove 0x80?
+        BusSPI::read_adis((ADIS_GLOB_CMD), rxbuf, sizeof(ADIS16405Data));
 
         // TODO: check nd and ea bits
-        data->supply_out = (rxbuf[0]  | rxbuf[1]) & 0x3fff;
-        data->xgyro_out  = signExtend((rxbuf[2]  | rxbuf[3]) & 0x3fff, 14);
-        data->ygyro_out  = signExtend((rxbuf[4]  | rxbuf[5]) & 0x3fff, 14);
-        data->zgyro_out  = signExtend((rxbuf[6]  | rxbuf[7]) & 0x3fff, 14);
-        data->xaccl_out  = signExtend((rxbuf[8]  | rxbuf[9]) & 0x3fff, 14);
-        data->yaccl_out  = signExtend((rxbuf[10] << 8 | rxbuf[11]) & 0x3fff, 14);
-        data->zaccl_out  = signExtend((rxbuf[12] << 8 | rxbuf[13]) & 0x3fff, 14);
-        data->xmagn_out  = signExtend((rxbuf[14] << 8 | rxbuf[15]) & 0x3fff, 14);
-        data->ymagn_out  = signExtend((rxbuf[16] << 8 | rxbuf[17]) & 0x3fff, 14);
-        data->zmagn_out  = signExtend((rxbuf[18] << 8 | rxbuf[19]) & 0x3fff, 14);
-        data->temp_out   = signExtend((rxbuf[20] << 8 | rxbuf[21]) & 0x0fff, 12);
-        data->aux_adc    = (rxbuf[22] << 8 | rxbuf[23]) & 0x0fff;
+        data->supply_out = (rxbuf[0] << 8 | rxbuf[1]) & 0x3FFF;
+        data->xgyro_out  = signExtend((rxbuf[2] << 8 | rxbuf[3]) & 0x3FFF, 14);
+        data->ygyro_out  = signExtend((rxbuf[4] << 8 | rxbuf[5]) & 0x3FFF, 14);
+        data->zgyro_out  = signExtend((rxbuf[6] << 8 | rxbuf[7]) & 0x3FFF, 14);
+        data->xaccl_out  = signExtend((rxbuf[8] << 8 | rxbuf[9]) & 0x3FFF, 14);
+        data->yaccl_out  = signExtend((rxbuf[10] << 8 | rxbuf[11]) & 0x3FFF, 14);
+        data->zaccl_out  = signExtend((rxbuf[12] << 8 | rxbuf[13]) & 0x3FFF, 14);
+        data->xmagn_out  = signExtend((rxbuf[14] << 8 | rxbuf[15]) & 0x3FFF, 14);
+        data->ymagn_out  = signExtend((rxbuf[16] << 8 | rxbuf[17]) & 0x3FFF, 14);
+        data->zmagn_out  = signExtend((rxbuf[18] << 8 | rxbuf[19]) & 0x3FFF, 14);
+        data->temp_out   = signExtend((rxbuf[20] << 8 | rxbuf[21]) & 0x0FFF, 12);
+        data->aux_adc    = (rxbuf[22] << 8 | rxbuf[23]) & 0x0FFF;
     }
 
     int16_t signExtend(uint16_t val, uint8_t bits)
@@ -323,9 +307,9 @@ private:
         return val;
     }
 
-    inline float normalizePower(uint16_t val)
+    inline float normalizeSupply(uint16_t val)
     {
-        return static_cast<float>(val) * 2.418e-3f; // TODO: leave it in V or mV
+        return static_cast<float>(val) * 2.418e-3f; // TODO: leave it in V or mV?
     }
 
     inline float normalizeAccel(int16_t val)
@@ -345,7 +329,7 @@ private:
 
     inline float normalizeTemp(int16_t val)
     {
-        return static_cast<float>(val) * 0.14f;
+        return static_cast<float>((val) * 0.14f + 25);
     }
 
     inline float normalizeADC(uint16_t val)

@@ -38,8 +38,8 @@ typedef Gpio<GPIOD_BASE, 5> rstPin;
 
 // SPI1 binding to the sensor
 typedef BusSPI<1,spi1::mosi,spi1::miso,spi1::sck> busSPI1; //Create SPI1
-typedef ProtocolSPI<busSPI1,miosix::sensors::adis16405::cs> spiADIS16405_a; //La lego al Chip Select 1 per la IMU 1
-typedef ADIS16405<spiADIS16405_a,rstPin> adis_t; //Passo il bus creato al sensore
+typedef ProtocolSPI<busSPI1,miosix::sensors::adis16405::cs> spiADIS16405; //La lego al Chip Select 1 per la IMU 1
+typedef ADIS16405<spiADIS16405,rstPin> adis_t; //Passo il bus creato al sensore
 
 int main()
 {	
@@ -47,7 +47,7 @@ int main()
 	// CS_ADIS16405::high();
 
 	// ADIS
-	spiADIS16405_a::init();
+	spiADIS16405::init();
 
 	Thread::sleep(1000);
 	adis_t* adis = new adis_t();
@@ -59,15 +59,16 @@ int main()
 
 	Thread::sleep(1000);
 	
-	// if(adis->selfTest())
-	// 	printf("Self test succeeded\n" );
-	// else
-	// 	printf("Self test failed\n");
+	if(adis->selfTest())
+		printf("Self test succeeded\n" );
+	else
+		printf("Self test failed\n");
 
 
     while(true)
     {
-    	adis->readTest();
+    	// adis->readTest();
+    	adis->burstTest();
 		Thread::sleep(100);
     }
 }
