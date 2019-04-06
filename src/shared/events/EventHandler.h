@@ -34,7 +34,7 @@
 class EventHandler : public ActiveObject
 {
 public:
-    EventHandler() : ActiveObject() {}
+    EventHandler() {}
 
     virtual ~EventHandler(){};
 
@@ -42,8 +42,8 @@ public:
 
     virtual void stop() override
     {
-        should_stop = true;        
-        
+        should_stop = true;
+
         // Put empty event in the list to wake the runner thread
         eventList.put(Event{EV_EMPTY});
         thread->join();

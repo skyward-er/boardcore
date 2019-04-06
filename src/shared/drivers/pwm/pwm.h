@@ -127,6 +127,8 @@ private:
 
     void hardwareSetDutyCycle(PWMChannel channel);
 
+    void hardwareUpdateRegisters();
+
     const Timer timer;
     bool started = false;
 
