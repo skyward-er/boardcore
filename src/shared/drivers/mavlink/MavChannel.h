@@ -208,7 +208,7 @@ public:
                     status.max_send_queue = status.n_send_queue;
             }
 
-            messageQueue.put(msg);
+            messageQueue.IRQput(msg);
             TRACE("[MAV] Enqueueing %d bytes\n", msg.len);
             return true;
         }
