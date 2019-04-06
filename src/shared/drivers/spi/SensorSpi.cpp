@@ -26,11 +26,6 @@
 using namespace std;
 using namespace miosix;
 
-// Mapping for anakin board SPI1 (the one attached to mems)
-typedef Gpio<GPIOA_BASE, 5> sck;
-typedef Gpio<GPIOA_BASE, 6> miso;
-typedef Gpio<GPIOA_BASE, 7> mosi;
-
 static Thread* waiting                   = nullptr;
 static vector<SPIRequest>* requestVector = nullptr;
 static size_t requestIndex               = 0;
@@ -148,15 +143,7 @@ SPIDriver::SPIDriver()
         // Interrupts are disabled to prevent bugs if more than one threads does
         // a read-modify-write to RCC  or GPIO->MODER registers at the same time
         FastInterruptDisableLock dLock;
-        mosi::mode(Mode::ALTERNATE);
-        mosi::alternateFunction(5);
-        miso::mode(Mode::ALTERNATE);
-        miso::alternateFunction(5);
-        sck::mode(Mode::ALTERNATE);
-        sck::alternateFunction(5);
-
         RCC->AHB1ENR |= RCC_AHB1ENR_DMA2EN;
-        RCC->APB2ENR |= RCC_APB2ENR_SPI1EN;
 
         /*
          * Table of the maximum speed of each sensor, used to set SPI speed
@@ -170,12 +157,6 @@ SPIDriver::SPIDriver()
          */
 
         disableDMA();
-        SPI1->CR1 = SPI_CR1_SSM     // Software cs
-                    | SPI_CR1_SSI   // Hardware cs internally tied high
-                    | SPI_CR1_MSTR  // Master mode
-                    | SPI_CR1_BR_1 |
-                    SPI_CR1_BR_2    // SPI FREQ=90MHz / 128 = 703KHz
-                    | SPI_CR1_SPE;  // SPI enabled
         NVIC_SetPriority(DMA2_Stream0_IRQn, 10);  // Low priority for DMA
         NVIC_EnableIRQ(DMA2_Stream0_IRQn);
     }

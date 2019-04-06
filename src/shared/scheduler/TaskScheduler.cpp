@@ -27,10 +27,7 @@
 using namespace std;
 using namespace miosix;
 
-TaskScheduler::TaskScheduler(unsigned int stacksize, miosix::Priority priority)
-    : ActiveObject(stacksize, priority), permanentTasks(0)
-{
-}
+TaskScheduler::TaskScheduler() : permanentTasks(0) {}
 
 void TaskScheduler::stop()
 {
