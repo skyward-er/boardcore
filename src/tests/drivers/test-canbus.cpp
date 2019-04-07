@@ -7,11 +7,13 @@ using namespace miosix;
 
 #define CAN_PACKETID 0x49
 
-void handleCan (CanMsg message) 
+void handleCan (CanMsg message, CanStatus status) 
 {
     unsigned char buf[65] = {0};
     memcpy(buf, message.Data, message.DLC);
     printf("Received %s\n", buf);
+
+    UNUSED(status);
 }
 
 int main()

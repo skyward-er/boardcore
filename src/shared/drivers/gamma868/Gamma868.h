@@ -50,6 +50,8 @@ public:
      */
     Gamma868(const char* serialPath, miosix::GpioPin* lrn_pin, const uint16_t multiplier = 0);
 
+    ~Gamma868();
+
     /*
      * Send a message through the serial port to the gamma868 module (blocking).
      * @param pkt               Pointer to the packet (needs to be at least pkt_len bytes).
@@ -62,8 +64,9 @@ public:
      * Receive a message through the serial port to the gamma868 module (blocking).
      * @param pkt               Pointer to the buffer (needs to be at least pkt_len bytes).
      * @param pkt_len           Lenght of the packet to be received.
+     * @return                  True if there was no error in the message received.
      */
-    void receive(uint8_t* pkt, const uint32_t pkt_len) override;
+    bool receive(uint8_t* pkt, const uint32_t pkt_len) override;
 
     /*
      * Set a new configuration to the gamma868 module. Can be done only if the 

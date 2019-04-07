@@ -36,6 +36,7 @@ Gamma868::Gamma868(const char *serialPath, const uint16_t multiplier)
 
     if (fd < 0)
         TRACE("[Gamma868] Cannot open %s\n", serialPath);
+        // TODO: Signal an error if we fail here?
 }
 
 /*
@@ -53,6 +54,11 @@ Gamma868::Gamma868(const char *serialPath, GpioPin* lrn_pin, const uint16_t mult
     gammaSwitch->high();
 }
 
+Gamma868::~Gamma868()
+{
+    close(fd);
+}
+
 /*
  * Immediately sends command (blocking).
  */
@@ -66,10 +72,11 @@ bool Gamma868::send(uint8_t* pkt, const uint32_t pkt_len)
 /*
  * Reads from the gamma868 serial (blocking).
  */
-void Gamma868::receive(uint8_t* pkt, const uint32_t pkt_len)
+bool Gamma868::receive(uint8_t* pkt, const uint32_t pkt_len)
 {
     read(fd, pkt, pkt_len);
     // TODO: optionally catch errors
+    return true;
 }
 
 /*

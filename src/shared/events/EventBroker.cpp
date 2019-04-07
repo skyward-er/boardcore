@@ -23,7 +23,7 @@
 #include "EventBroker.h"
 #include "Debug.h"
 
-EventBroker::EventBroker() : ActiveObject()  // TODO: Specify stack size
+EventBroker::EventBroker()
 {
 }
 
@@ -173,4 +173,10 @@ void EventBroker::deleteSubscriber(vector<EventHandler*>& subs,
             ++it;
         }
     }
+}
+
+void EventBroker::clearDelayedEvents()
+{
+    Lock<FastMutex> lock(mtx_delayed_events);
+    delayed_events.clear();
 }

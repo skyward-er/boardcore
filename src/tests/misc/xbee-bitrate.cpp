@@ -30,12 +30,26 @@
 #include "drivers/Xbee/Xbee.h"
 #include "math/Stats.h"
 
+#include <drivers/BusTemplate.h>
+
 using std::cin;
 using std::cout;
 
-using Timer                  = HardwareTimer<uint32_t, 2>;
+using HwTimer = HardwareTimer<uint32_t, 2>;
 static const unsigned int NUM_PACKETS = 0xFFFF + 1;
 static const unsigned int PKT_SIZE    = 256;
+
+using namespace miosix;
+using namespace interfaces;
+
+// SPI1 binding al sensore
+typedef BusSPI<2, spi2::mosi, spi2::miso, spi2::sck> busSPI2;  // Creo la SPI2
+typedef ProtocolSPI<busSPI2, InAir9B::cs>spiProt;      // La lego al Chip Select
+
+using ATTN = Gpio<GPIOF_BASE, 10>;
+
+typedef Xbee<spiProt, ATTN> xbee_t;
+xbee_t xbee;
 
 void printStat(const char* title, StatsResult r)
 {
@@ -43,17 +57,49 @@ void printStat(const char* title, StatsResult r)
            title, r.minValue, r.maxValue, r.mean, r.stdev);
 }
 
+
+void __attribute__((used)) EXTI10_IRQHandler()
+{
+    XbeeIRQ::handleInterrupt();
+}
+
+void enableXbeeInterrupt()
+{
+    {
+        FastInterruptDisableLock l;
+        RCC->APB2ENR |= RCC_APB2ENR_SYSCFGEN;
+    }
+    // Refer to the datasheet for a detailed description on the procedure and interrupt registers
+
+    // Clear the mask on the wanted line
+    EXTI->IMR |= EXTI_IMR_MR10;
+
+    // Trigger the interrupt on a falling edge
+    EXTI->FTSR |= EXTI_FTSR_TR10;
+
+    // Trigger the interrupt on a rising edge
+    //EXTI->RTSR |= EXTI_RTSR_TR0;
+
+    EXTI->PR |= EXTI_PR_PR10; // Reset pending register
+
+    // Enable interrupt on PF10 in SYSCFG
+    SYSCFG->EXTICR[3] = 0x5U<<8;
+
+    // Enable the interrput in the interrupt controller
+    NVIC_EnableIRQ(EXTI15_10_IRQn);
+    NVIC_SetPriority(EXTI15_10_IRQn, 15);
+}
+
 void send()
 {
     Stats times_stat{};
     Stats rates_stat{};
 
-    Timer& t = Timer::instance();
+    HwTimer& t = HwTimer::instance();
     t.start();
 
     float send_tick_acc = 0;
 
-    Xbee xbee;
     int send_fail_cnt = 0;
     uint8_t buf[PKT_SIZE];
 
@@ -100,12 +146,11 @@ void receive()
     Stats times_stat{};
     Stats rates_stat{};
 
-    Timer& t = Timer::instance();
+    HwTimer& t = HwTimer::instance();
     t.start();
 
     float rcv_tick_acc = 0;
 
-    Xbee xbee;
     int pkt_lost = 0;
     uint8_t buf[PKT_SIZE];
 
@@ -144,6 +189,8 @@ void receive()
 
 int main()
 {
+    enableXbeeInterrupt();
+
     cout << "(S)end or (R)eceive?\n";
     char c;
     cin >> &c;

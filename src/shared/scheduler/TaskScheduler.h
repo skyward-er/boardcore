@@ -25,14 +25,14 @@
 #ifndef BOARDCORE_SRC_SHARED_SCHEDULER_TASKSCHEDULER_H
 #define BOARDCORE_SRC_SHARED_SCHEDULER_TASKSCHEDULER_H
 
-#include "TaskSchedulerData.h"
 #include <ActiveObject.h>
 #include <Common.h>
 #include <Singleton.h>
 #include <math/Stats.h>
+#include <cstdint>
 #include <list>
 #include <queue>
-#include <cstdint>
+#include "TaskSchedulerData.h"
 
 /**
  * HOW TO USE THE TASK SCHEDULER
@@ -60,8 +60,8 @@ public:
     /**
      * Constructor
      */
-    TaskScheduler(unsigned int stacksize    = miosix::STACK_DEFAULT_FOR_PTHREAD,
-    miosix::Priority priority = miosix::MAIN_PRIORITY);
+    TaskScheduler();
+
     /**
      * Add a task function to be called periodically by the scheduler
      * \param func function to be called
@@ -125,7 +125,7 @@ private:
      * Overrides ActiveObject::run()
      */
     void run() override;
-    
+
     /**
      * Add a task to be executed, both periodic and single shot.
      * In addition, also takes care of genrating the (first) event for the task

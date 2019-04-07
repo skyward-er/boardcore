@@ -19,121 +19,76 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
-#ifndef SRC_SHARED_UTILS_SYNCEDCIRCULARBUFFER_H
-#define SRC_SHARED_UTILS_SYNCEDCIRCULARBUFFER_H
+
+#pragma once
 
 #include <miosix.h>
-#include <cstring>
-#include <stdexcept>
 
-using std::runtime_error;
+#include "CircularBuffer.h"
+
 using miosix::FastMutex;
 using miosix::Lock;
 
 /**
- * Implementation of an synchronized circular buffer
+ * Implementation of a synchronized circular buffer
  */
-template <typename T>
-class SyncedCircularBuffer
+template <typename T, unsigned int Size>
+class SyncedCircularBuffer : public CircularBuffer<T, Size>
 {
-public:
-    SyncedCircularBuffer(size_t size) : size(size), buffer(new T[size]) {}
-    ~SyncedCircularBuffer() { delete[] buffer; }
+    
+    using Super = CircularBuffer<T, Size>;
 
+public:
     /**
      * Puts a copy of the element in the buffer
      * @param elem element
      */
-    SyncedCircularBuffer<T>& put(const T& elem)
+    CircularBuffer<T, Size>& put(const T& elem) override
     {
         Lock<FastMutex> l(mutex);
-        buffer[write_ptr] = elem;
-
-        if (!empty && write_ptr == read_ptr)
-        {
-            read_ptr = (read_ptr + 1) % size;
-        }
-        write_ptr = (write_ptr + 1) % size;
-
-        empty = false;
-        return *this;
+        return Super::put(elem);
     }
 
     /**
      * Gets the first element from the buffer, without removing it
-     * @warning Always catch the exception, because the buffer may have been
-     * emptied after the last call to isEmpty.
+     * @warning Remember to catch the exception!
      * @return the element
-     * @throws runtime_error if buffer is empty
+     * @throws range_error if buffer is empty
      */
-    const T& get()
+    const T& get() const override
     {
         Lock<FastMutex> l(mutex);
-        if (!empty)
-        {
-            return buffer[read_ptr];
-        }
-        else
-            throw runtime_error("CircularBuffer is empty!");
+        return Super::get();
     }
 
     /**
      * Pops the first element in the buffer.
-     * @warning Always catch the exception, because the buffer may have been
-     * emptied after the last call to isEmpty.
+     * @warning Remember to catch the exception!
      * @return the element that has been popped
-     * @throws runtime_error if buffer is empty
+     * @throws range_error if buffer is empty
      */
-    const T& pop()
+    const T& pop() override
     {
         Lock<FastMutex> l(mutex);
-        if (!empty)
-        {
-            size_t ptr = read_ptr;
-            read_ptr   = (read_ptr + 1) % size;
-
-            if (read_ptr == write_ptr)
-                empty = true;
-
-            return buffer[ptr];
-        }
-        else
-            throw runtime_error("CircularBuffer is empty!");
+        return Super::pop();
     }
 
     /**
      * Counts the elements in the buffer
      * @return number of elements in the buffer
      */
-    size_t count()
+    size_t count() const override
     {
         Lock<FastMutex> l(mutex);
-        if (empty)
-            return 0;
-        if (write_ptr > read_ptr)
-        {
-            return write_ptr - read_ptr;
-        }
-        else
-        {
-            return size - read_ptr + write_ptr;
-        }
+        return Super::count();
     }
 
-    bool isEmpty() { return empty; }
-
-    /**
-     * Returns the maximum number of elements that can be stored in the buffer
-     * @return buffer size
-     */
-    size_t getSize() { return size; }
+    bool isEmpty() const override
+    {
+        Lock<FastMutex> l(mutex);
+        return Super::isEmpty();
+    }
 
 private:
-    const size_t size;
-    T* buffer;
-    size_t write_ptr = 0, read_ptr = 0;
-    bool empty = true;
-    FastMutex mutex;
+    mutable FastMutex mutex;
 };
-
-#endif /* SRC_SHARED_UTILS_SYNCEDCIRCULARBUFFER_H */

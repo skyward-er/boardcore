@@ -30,7 +30,7 @@
 #include "CanUtils.h"
 
 /* Alias for the function to be executed on receive */
-using CanDispatcher = std::function<void(CanMsg)>;
+using CanDispatcher = std::function<void(CanMsg,CanStatus)>;
 
 class CanManager;
 
@@ -65,6 +65,21 @@ public:
     volatile CAN_TypeDef* getBus() { return CANx; }
     CanStatus getStatus();
 
+    virtual void stop() override
+    {
+        should_stop = true;
+
+        //Wake the thread posting an empty can msg
+        CanMsg empty_msg;
+        empty_msg.StdId = 0xFFFFFFFF;
+        empty_msg.ExtId = 0xFFFFFFFF;
+        rcvQueue.put(empty_msg);
+
+        ActiveObject::stop();
+    }
+
+
+
     /* Rule of five */
     CanBus(const CanBus&)  = delete;
     CanBus(const CanBus&&) = delete;
@@ -88,7 +103,6 @@ private:
 
     miosix::FastMutex sendMutex;
     miosix::FastMutex statusMutex;
-    volatile bool terminate;
 
     CanDispatcher dispatchMessage;
     CanStatus status;

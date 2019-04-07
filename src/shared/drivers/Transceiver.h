@@ -43,8 +43,9 @@ public:
      * Receive a packet. Pure virtual function.
      * @param pkt               Pointer to the buffer (needs to be at least pkt_len bytes).
      * @param pkt_len           Lenght of the packet to be received.
+     * @return                  True if the message was received correctly.
      */
-    virtual void receive(uint8_t* pkt, const uint32_t pkt_len) = 0;
+    virtual bool receive(uint8_t* pkt, const uint32_t pkt_len) = 0;
 };
 
 #endif

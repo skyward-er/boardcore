@@ -61,16 +61,25 @@ void Stats::add(float data)
     m2 += delta * (data - mean);
 }
 
+void Stats::reset()
+{
+    minValue = numeric_limits<float>::max();
+    maxValue = numeric_limits<float>::min();
+    mean     = 0.f;
+    m2       = 0.f;
+    n        = 0;
+}
+
 StatsResult Stats::getStats() const
 {
     switch (n)
     {
         case 0:
-            return {NAN, NAN, NAN, NAN};
+            return {NAN, NAN, NAN, NAN, n};
         case 1:
-            return {minValue, maxValue, mean, NAN};
+            return {minValue, maxValue, mean, NAN, n};
         default:
-            return {minValue, maxValue, mean, sqrtf(m2 / (n - 1))};
+            return {minValue, maxValue, mean, sqrtf(m2 / (n - 1)), n};
     }
 }
 

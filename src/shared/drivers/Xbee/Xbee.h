@@ -22,29 +22,64 @@
 
 #pragma once
 
-static const uint8_t START_DELIMITER = 0x7E;
-static const uint64_t BROADCAST_ADDR = 0x000000000000FFFF;  
-static const uint8_t ADDR_LEN_BYTE = 8;
-static const uint8_t ACK_DISABLE = 0x00;
-static const uint8_t MAX_BROADCAST_HOP = 0x00;
-static const uint16_t MAX_PAYLOAD_LEN = 0xFFFF;
-static const uint8_t TX_STATUS_PKT_LEN = 11;
-static const uint8_t TX_STATUS_BYTE = 8; 
-static const uint8_t TX_SUCCESS = 0x00;
-
-#include "../Transceiver.h"     //instead of <drivers/Transceiver.h> because I think the compiler couldn't find it
-#include "../BusTemplate.h"
+#include <Common.h>
+#include <drivers/Transceiver.h>
+#include <drivers/BusTemplate.h>
 #include <vector>
 #include <interfaces-impl/hwmapping.h>
+
 using std::vector;
-//the two lines below are temporary, just for autocomplete, thank you SCS
-using prova=BusSPI<1,miosix::interfaces::spi1::mosi, miosix::interfaces::spi1::miso, miosix::interfaces::spi1::sck>; 
-using Bus=ProtocolSPI<prova,miosix::sensors::ad7994::ab>;
-//template<typename Bus>
+
+namespace XbeeIRQ
+{
+    // Thread pointers needed for the IRQHandler to know which thread to wake up
+    static miosix::Thread* send_thread = nullptr;
+    static miosix::Thread* rcv_thread = nullptr;
+    // Flag to indicate to the IRQHandler if the module is sending or receiving
+    static bool sending = false;
+
+    /**
+     * Handle ATTN interrupt, waking up the correct thread.
+     */
+    static void handleInterrupt()
+    {
+        miosix::Thread* waiting;
+
+        // Check which thread to wake up
+        if(sending) 
+        {
+            waiting = send_thread;
+            send_thread = 0;
+        }
+        else
+        {
+            waiting = rcv_thread;
+            rcv_thread = 0;
+        }
+
+        // Wake
+        waiting->IRQwakeup();
+        if (waiting->IRQgetPriority() >
+            miosix::Thread::IRQgetCurrentThread()->IRQgetPriority())
+        {
+            miosix::Scheduler::IRQfindNextThread();
+        }
+    }
+}
+
+// Next to lines are for IDE autocomplete. TODO REMOVE
+//using prova=BusSPI<1,miosix::interfaces::spi1::mosi, miosix::interfaces::spi1::miso, miosix::interfaces::spi1::sck>; 
+//using Bus=ProtocolSPI<prova,miosix::sensors::ad7994::ab>;
+
+
+/**
+ * WARNING: An IRQ linked with the ATTN pin of the Xbee module must be enabled before using this class.
+ *          See test/misc/xbee-bitrate for an example.
+ */
+template<typename Bus, class ATTN>
 class Xbee : public Transceiver
 {
     public:
-
         /*
         * Send a message through the serial port to the Xbee module (blocking).
         * @param pkt               Pointer to the packet (needs to be at least pkt_len bytes).
@@ -52,105 +87,201 @@ class Xbee : public Transceiver
         * @return true             True if the message was sent correctly. Information about transmission available. 
         * @return false            If pkt is NULL or Xbee returns errors. Information about transmission available.
         */
-        bool send(uint8_t* pkt, const uint32_t pkt_len) 
+        bool send(uint8_t* pkt, const uint32_t pkt_len) override
         {
             if(pkt == NULL || pkt_len > MAX_PAYLOAD_LEN)
                 return false;
 
+            // If I'm receiving, wait until everything is received
+            uint32_t to = SENDING_TIMEOUT;
+            while(hasData() && to > 0)
+            {
+                miosix::Thread::sleep(1);
+                to--;
+            }
+
             vector<uint8_t> tx_pkt;
             tx_pkt.reserve(18+pkt_len);
 
-            //pkt contruction:
+            //pkt contruction
             tx_pkt.push_back(START_DELIMITER);
-
+            //invert pkt_len bytes order
             tx_pkt.push_back((pkt_len & 0xff00)>>8);
             tx_pkt.push_back(pkt_len & 0xff); 
 
             tx_pkt.push_back(AP_TX);
 
             //API frame construction
+            tx_pkt.push_back(ID_ACK_DISABLE);
+            uint8_t addr_buffer[ADDR_LEN];
+            memcpy(addr_buffer, &BROADCAST_ADDR, ADDR_LEN);
 
-            tx_pkt.push_back(ACK_DISABLE);
-
-            const uint8_t* broadcast_ptr = static_cast<const uint8_t*>(&BROADCAST_ADDR); 
-            for(int i=0; i<ADDR_LEN_BYTE; i++)
-                tx_pkt.push_back(*broadcast_ptr + (ADDR_LEN_BYTE-1) - i ); //static_cast<const uint8_t*> is little endian, tx_pkt_address is stored in big endian format
+            for(int i=ADDR_LEN; i>0; i--)
+            {
+                // NOTE: tx_pkt_address is stored in big endian format
+                tx_pkt.push_back(addr_buffer[i]); 
+            }
             
             tx_pkt.push_back(0xff);  //reserved bytes
             tx_pkt.push_back(0xfe);
 
             tx_pkt.push_back(MAX_BROADCAST_HOP);
-            tx_pkt.push_back(0x43); //see option bits - Transmission packet structure
+            // see options bits
+            // NOTE: 0x43 = Point-Multipoint, No Ack, No route discovery 
+            tx_pkt.push_back(0x43); 
 
-            //adding payload           
-
-            for(int i=0; i<pkt_len; i++)
+            // payload           
+            for(uint32_t i=0; i<pkt_len; i++)
+            {
                 tx_pkt.push_back(*(pkt+i)); 
+            }
 
-            //adding checksum
-
-            //TODO: CONVERT CHECKSUM CALCULATOR TO FUNCTION <- HOW WITH STD_VECT???
+            // checksum
             uint32_t checksum = 0;
-            for(int i=0; i< (17 + pkt_len); i++)
+            for(uint32_t i=3; i < (HEADER_LEN + pkt_len); i++)
+            {
                 checksum += tx_pkt.at(i);
+            }
+
             tx_pkt.push_back(0xff - (checksum & 0xff)); 
 
             //send packet via SPI
             Bus::write(tx_pkt.data(), tx_pkt.size());
-            
-            //TODO
-            //wait for IRQ <-- INTERRUPT on PF10 (ask LucaErbettaSCS for problems with interrupt from PORT 9 to 10 in STM32)
-            
-            
-            //receiving TX status pkt
-            
-            vector<uint8_t> tx_status_pkt;
-            tx_status_pkt.reserve(TX_STATUS_PKT_LEN);
+            XbeeIRQ::sending = true;
 
-            Bus::read(tx_status_pkt.data(), tx_pkt.size());
+            // Wait for interrupt to wake the thread (BLOCKING)
+            XbeeIRQ::send_thread = miosix::Thread::getCurrentThread();
+            {
+                miosix::FastInterruptDisableLock dLock;
 
-            if ( !checksum_check(tx_pkt.data(), tx_pkt.size()))
+                while (XbeeIRQ::send_thread != 0)
+                {
+                    XbeeIRQ::send_thread->IRQwait();
+                    {
+                        miosix::FastInterruptEnableLock eLock(dLock);
+                        miosix::Thread::yield();
+                    }
+                }
+            }
+            XbeeIRQ::sending = false;
+
+            //receive TX status pkt
+            uint8_t tx_status_pkt[TX_STATUS_PKT_LEN];
+            Bus::read(tx_status_pkt, TX_STATUS_PKT_LEN);
+
+            if ( !checksum_check(tx_status_pkt, TX_STATUS_PKT_LEN) )
                 return false;
             
-            TXStatus = tx_status_pkt.at(TX_STATUS_BYTE); //Get status from TX Status Packet
+            // Get status from TX Status Packet
+            TXStatus = tx_status_pkt[TX_STATUS_BYTE];
             if(TXStatus == TX_SUCCESS)
-                return true;   
+            {
+                TRACE("[XBEE] Tx unsuccessful\n");
+                return false;   
+            }
             
-            return false;
-
+            return true;
         }
 
+        /*
+        * Wait for a new message to be received by the XBee
+        * @param buff         Pointer to the buffer (needs to be at least pkt_len bytes).
+        * @param buff_len     Lenght of the packet to be received.
+        * @return true        A message was found
+        * @return false       No valid message (no start frame or not an RX packet)
+        *                     Wrong checksum
+        *                     Buffer too small
+        */
+        bool receive(uint8_t* buff, const uint32_t buff_len) override
+        {   
+            // Wait for the IRQ
+            if(!hasData())
+            {
+                XbeeIRQ::rcv_thread = miosix::Thread::getCurrentThread();
+                {
+                    miosix::FastInterruptDisableLock dLock;
+
+                    while (XbeeIRQ::rcv_thread != 0)
+                    {
+                        XbeeIRQ::rcv_thread->IRQwait();
+                        {
+                            miosix::FastInterruptEnableLock eLock(dLock);
+                            miosix::Thread::yield();
+                        }
+                    }
+                }
+            }
+
+            vector<uint8_t> rcv_buffer;
+            uint8_t rcv_byte =0x00;
+
+            // Read bytes until start frame is found
+            while(rcv_byte != START_DELIMITER)
+            {
+                // In case no frame delimiter was found at all, return false
+                if(!hasData())
+                {
+                    return false;
+                }
+                else
+                {
+                    Bus::read(&rcv_byte, 1);
+                }
+            }
+
+            rcv_buffer.push_back(rcv_byte);
+
+            // Read packet len
+            uint16_t pkt_len;
+            Bus::read(&rcv_byte, 1); // Invert byte order: first byte
+            pkt_len = rcv_byte<<8;
+            rcv_buffer.push_back(rcv_byte);
+
+            Bus::read(&rcv_byte, 1); // Second byte
+            pkt_len |= rcv_byte;
+            rcv_buffer.push_back(rcv_byte);
+
+            // Read rest of packet
+            rcv_buffer.reserve(pkt_len + CHECKSUM_LEN + 3);
+            Bus::read(rcv_buffer.data() + 3, pkt_len + CHECKSUM_LEN);
+
+            uint32_t payload_len = pkt_len-12;
+
+            if(rcv_buffer.at(3) == AP_RX            // Received a RX frame
+                && payload_len <= buff_len       // The buffer is big enough
+                && checksum_check(rcv_buffer.data(), rcv_buffer.size()))  // Checksum ok
+            {
+                memcpy(buff, rcv_buffer.data()+15, payload_len);
+                return true;
+            }
+
+            return false;
+        }
+
+        /*
+         * @return  Status sent by the XBee after the last trasmission
+         */
         uint8_t getStatus()
         {
             return TXStatus;
         }
 
-        /*
-        * Receive a message through the serial port to the Xbee module (blocking).
-        * @param pkt               Pointer to the buffer (needs to be at least pkt_len bytes).
-        * @param pkt_len           Lenght of the packet to be received.
-        */
-        void receive(uint8_t* pkt, const uint32_t pkt_len)
-        {   
-            vector<uint8_t> rx_pkt;
-            rx_pkt.reserve(18+pkt_len);
-
-            //read packet from SPI
-            Bus::read(rx_pkt.data(), 18+pkt_len);
-            uint16_t packet_length=pkt_length(rx_pkt.data());
-
-            //verify checksum and packet length (must be <= pkt_len)
-            if(checksum_check(rx_pkt.data(),packet_length) && packet_length<=pkt_len){
-                //Extrapolate the payload: copy the payload (from byte 15 to 15+pkt_length)
-                memcpy(pkt, rx_pkt.data()+15, packet_length);
-            }
-            else memcpy(pkt, __null, pkt_len);
-
-        }
-
     private:
+        const uint8_t  START_DELIMITER = 0x7E;
+        const uint8_t  HEADER_LEN      = 17;
+        const uint8_t  CHECKSUM_LEN    = 1;
+        const uint64_t BROADCAST_ADDR  = 0xFFFF;  
+        static constexpr uint8_t  ADDR_LEN        = 8;
+        const uint8_t  ID_ACK_DISABLE    = 0x00;
+        const uint8_t  MAX_BROADCAST_HOP = 0x00;
+        const uint16_t MAX_PAYLOAD_LEN   = 0xFFFF;
+        static constexpr uint8_t  TX_STATUS_PKT_LEN = 11;
+        const uint8_t  TX_STATUS_BYTE    = 8; 
+        const uint8_t  TX_SUCCESS        = 0x00;
 
-        uint8_t TXStatus = NULL; 
+        const uint32_t SENDING_TIMEOUT = 10;
+
+        uint8_t TXStatus = 0; 
 
         enum APCommands : uint8_t
         {
@@ -173,21 +304,31 @@ class Xbee : public Transceiver
             PAYLOAD_START_BYTE = 17
         };
 
-        uint16_t pkt_length(uint8_t* pkt){
-            return (pkt[1]<<8)+pkt[2];
-        }
-
-        bool checksum_check(uint8_t* pkt, const uint32_t pkt_len){
+        /*
+         * Check validity of a received packet.
+         * This means calculating the checksum on the whole packet (payload + checksum)
+         */
+        bool checksum_check(uint8_t* pkt, const uint32_t pkt_len)
+        {
             uint64_t checksum=0;
-            for(int i=3; i<18+pkt_len; i++){
+            for(uint32_t i=3; i< (HEADER_LEN + pkt_len + CHECKSUM_LEN); i++)
+            {
                 checksum += pkt[i];
             }
-            if(checksum & 0xFF == 0xFF){
-                return true;
-            }
-            else return false;
+
+            return ( (checksum & 0xFF) == 0xFF);
+        }
+
+        /**
+         * Check the ATTN pin of the XBee (attention pin)
+         * @return The Xbee has data to send on the SPI
+         */
+        bool hasData()
+        {
+            return (ATTN::value() == 0);
         }
 };
+
 
 /*
 
