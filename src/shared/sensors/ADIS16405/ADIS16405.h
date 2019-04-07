@@ -96,7 +96,12 @@ public:
     void onDMAUpdate(const SPIRequest& req) override
     {
         const std::vector<uint8_t>& r = req.readResponseFromPeripheral();
-        uint8_t raw_data[sizeof(ADIS16405Data)];
+        uint8_t raw_data[sizeof(ADIS16405Data)+2];
+
+        // initializing array 
+        for (uint16_t i = 0; i < sizeof(ADIS16405Data) + 2; i++){ 
+            raw_data[i] = 0; 
+        } 
 
         memcpy(&raw_data, &(r[2]),
                sizeof(raw_data));  // coping from 2nd, the first 2 are address
@@ -197,9 +202,14 @@ private:
     void writeReg(adis_regaddr addr, uint16_t value)
     {  // todo:array
 
+
+        // REMOVE! added it now to fix warnings
+        (void) addr;
+        (void) value;
+
         // TODO: Why addr +1?
-        uint8_t txbuf[4] = {((addr + 1) | 0x80), value >> 8, (addr | 0x80),
-                            value};
+        // uint8_t txbuf[4] = {((addr + 1) | 0x80), value >> 8, (addr | 0x80),
+                            // value};
 
         // TODO: update with BusTemplate function. Commented to make it compile
         // for now

@@ -1,5 +1,5 @@
-/* Copyright (c) 2015-2019 Skyward Experimental Rocketry
- * Authors: Benedetta Margrethe Cattani
+/* Copyright (c) 2015-2018 Skyward Experimental Rocketry
+ * Authors: Luca Erbetta
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -19,61 +19,30 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
+#ifndef SRC_SHARED_SENSORS_BME280DATA_H
+#define SRC_SHARED_SENSORS_BME280DATA_H
 
-#include <Common.h>
-#include <interfaces-impl/hwmapping.h>
-using namespace miosix;
-using namespace interfaces;
-using namespace actuators;
+#include <ostream>
+#include <string>
 
-using rena   = Gpio<GPIOG_BASE, 2>;
-
-void enable_reverse(){
-  hbridger::in::high();
-  hbridgel::in::low();
-  rena::high();
-  hbridgel::ena::high();
-}
-
-void enable_direct(){
-  hbridger::in::low();
-  hbridgel::in::high();
-  rena::high();
-  hbridgel::ena::high();
-}
-
-void disable(){
-  hbridger::in::low();
-  hbridgel::in::low();
-  rena::low();
-  hbridgel::ena::low();
-}
-
-
-int main()
+struct BME280Data
 {
-    rena::mode(Mode::OUTPUT);
-    hbridger::in::mode(Mode::OUTPUT);
-    hbridgel::in::mode(Mode::OUTPUT);
-
-
-    while (true)
+    uint32_t timestamp = 0;
+    float pressure = 0;
+    float temperature = 0;
+    uint32_t raw_pressure = 0;
+    uint32_t raw_temperature = 0;
+    
+    static std::string header()
     {
-printf("Serial is working!\n");
-
-      Thread::sleep(1000);
-      disable();
-      printf("Disabled\n");
-      Thread::sleep(2000);
-      enable_direct();
-      printf("Direct\n");
-      Thread::sleep(3000);
-      enable_reverse();
-      printf("Reverse\n");
-      Thread::sleep(3000);
-      disable();
-      printf("Disabled\n");
-
-
+        return "timestamp,pressure,temperature,raw_pressure,raw_temperature\n";
     }
-}
+
+    void print(std::ostream& os) const
+    {
+        os << timestamp << "," << pressure << "," << temperature << ","
+           << raw_pressure << "," << raw_temperature << "\n";
+    }
+};
+
+#endif /* SRC_SHARED_SENSORS_BME280DATA_H */

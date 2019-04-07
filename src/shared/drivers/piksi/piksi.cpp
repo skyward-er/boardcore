@@ -241,7 +241,7 @@ void Piksi::processVelNed(Piksi::MsgVelNed *msg)
 
     partialData.speed = sqrtf(powf(partialData.velocityNorth, 2) + 
                               powf(partialData.velocityEast, 2) + 
-                              powf(partialData.velocityDown, 2))
+                              powf(partialData.velocityDown, 2));
 
     if (pos && gpsTimestamp == msg->ms)
     {

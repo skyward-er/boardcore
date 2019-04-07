@@ -63,11 +63,11 @@ public:
 
     virtual ~HSM(){};
 
-    void start()
+    bool start() override
     {
         init();
 
-        EventHandler::start();
+        return EventHandler::start();
     }
 
     /**
