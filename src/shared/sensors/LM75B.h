@@ -54,33 +54,24 @@ class LM75B: public TemperatureSensor
 
         bool selfTest() override
         {
-            bool flag_self_test = 1; //1 if test are passed, 0 if not
-
-            //TEST: reading default value of THYST register
+            //TEST: reading default value of THYST register, which is known
             uint8_t value_thyst;
             BusType::read(slave_addr, REG_THYST, &value_thyst, sizeof(uint8_t));
-            if(value_thyst == default_value_thyst)
+
+            if(value_thyst != default_value_thyst)
             {
-                TRACE("\nReading correct value of THYST register in LM75B");
-            }
-            else
-            {
-                TRACE("\nWarning: reading wrong value of THYST register in LM75B");
-                flag_self_test = 0;
+                TRACE("[LM75B] Error: reading wrong value of THYST register in LM75B\n");
+                return false;
             }
 
-
-            //TEST: reading default value of TOS register
+            //TEST: reading default value of TOS register, which is known
             uint8_t value_tos;
             BusType::read(slave_addr, REG_TOS, &value_tos, sizeof(uint8_t));
-            if(value_tos == default_value_tos)
+
+            if(value_tos != default_value_tos)
             {
-                TRACE("\nReading correct value of TOS register in LM75B");
-            }
-            else
-            {
-                TRACE("\nWarning: reading wrong value of TOS register in LM75B");
-                flag_self_test = 0;
+                TRACE("[LM75B] Error: reading wrong value of THYST register in LM75B\n");
+                return false;
             }
 
 
@@ -99,6 +90,7 @@ class LM75B: public TemperatureSensor
                 //temperature can't be out of range of sensor
                 if(sample[i] < -125.0 && sample[i] > 125.0)
                 {
+                    TRACE("[LM75B] Error: Temperature out of range\n");
                     return false;
                 }
 
@@ -112,22 +104,11 @@ class LM75B: public TemperatureSensor
 
             if(stdev < MAX_STDEV_VALUE)
             {
-                TRACE("\nStandard deviation of temperature is correct in LM75B");
-            }
-            else
-            {
-                TRACE("\nWarning: Standard deviation of temparature is out of range in LM75B");
-                flag_self_test = 0;
+                TRACE("[LM75B] Error: Standard deviation of temparature is out of range in LM75B");
+                return false;
             }
 
-            if(flag_self_test == 1) 
-            {
-                return 1;
-            }
-            else
-            {
-                return 0;
-            }
+            return true;
             
             
         }
@@ -177,28 +158,15 @@ class LM75B: public TemperatureSensor
         // TODO controllare il segno
         float updateTemp()
         {
-            uint16_t temp, foodx, foosx;
-            uint8_t temp_for_swap;
+            uint16_t temp;
             BusType::read(slave_addr, REG_TEMP, temp_array, sizeof(uint16_t));
 
+            TRACE("Read: %x%x\n", temp_array[0], temp_array[1]);
 
-            TRACE("Read: %x %x\n", temp_array[0], temp_array[1]);
+            temp = (uint16_t) ((temp_array[0] << 8) | temp_array[1]);
+            temp >>= 5;
 
-            //they must be swapped
-            temp_for_swap = temp_array[0];
-            temp_array[0] = temp_array[1];
-            temp_array[1] = temp_for_swap;
-
-            TRACE("After swap: %x %x\n", temp_array[0], temp_array[1]); 
-            memcpy(&temp, temp_array, sizeof(uint16_t));
-            TRACE("UINT16: %x\n", temp);
-            foodx = temp >> 5;
-            TRACE("SHIFTED 5 right: %x, FLOAT_VAL: %f\n", foodx, float(foodx)*0.125);
-            foosx = temp << 5;
-            TRACE("SHIFTED 5 left: %x, FLOAT_VAL: %f\n", foosx, float(foosx)*0.125);
-
-            return float(foodx)*0.125;
-
+            return float(temp)*0.125;
         }
 
 };
