@@ -32,9 +32,7 @@
 #include "Sensor.h"
 #include "math/Stats.h"
 
-#define NUM_SAMPLES 10
-#define MSB_BYTE 0
-#define LSB_BYTE 1
+#define NUM_SAMPLES 10  //numer of samples taken during self test
 
 enum class SlaveAddress: uint8_t
 {
@@ -54,9 +52,39 @@ class LM75B: public TemperatureSensor
             init();
         }
 
-         //TODO aggiungimi controllo varianza
         bool selfTest() override
         {
+            bool flag_self_test = 1; //1 if test are passed, 0 if not
+
+            //TEST: reading default value of THYST register
+            uint8_t value_thyst;
+            BusType::read(slave_addr, REG_THYST, &value_thyst, sizeof(uint8_t));
+            if(value_thyst == default_value_thyst)
+            {
+                TRACE("\nReading correct value of THYST register in LM75B");
+            }
+            else
+            {
+                TRACE("\nWarning: reading wrong value of THYST register in LM75B");
+                flag_self_test = 0;
+            }
+
+
+            //TEST: reading default value of TOS register
+            uint8_t value_tos;
+            BusType::read(slave_addr, REG_TOS, &value_tos, sizeof(uint8_t));
+            if(value_tos == default_value_tos)
+            {
+                TRACE("\nReading correct value of TOS register in LM75B");
+            }
+            else
+            {
+                TRACE("\nWarning: reading wrong value of TOS register in LM75B");
+                flag_self_test = 0;
+            }
+
+
+            //TEST: standard deviation of temperature value
             float stdev;
             Stats calc_stats;
 
@@ -84,12 +112,23 @@ class LM75B: public TemperatureSensor
 
             if(stdev < MAX_STDEV_VALUE)
             {
-                return true;
+                TRACE("\nStandard deviation of temperature is correct in LM75B");
             }
             else
             {
-                return false;
+                TRACE("\nWarning: Standard deviation of temparature is out of range in LM75B");
+                flag_self_test = 0;
             }
+
+            if(flag_self_test == 1) 
+            {
+                return 1;
+            }
+            else
+            {
+                return 0;
+            }
+            
             
         }
 
@@ -112,13 +151,8 @@ class LM75B: public TemperatureSensor
         }
 
     private:
-        const uint8_t slave_addr;
 
-        //max Standard deviation value accepted for temperature samples 
-        const float MAX_STDEV_VALUE = 100;
-
-        float sample[NUM_SAMPLES];
-
+        const uint8_t slave_addr;       
         uint8_t temp_array[2] = {0, 0};
 
         enum Registers
@@ -129,13 +163,17 @@ class LM75B: public TemperatureSensor
             REG_THYST = 0x02   // R/W
         };
 
-        //TODO controllare valore della configurazione normale
         enum ConfCommands
         {
             CONF_NORM = 0x00
         };
 
-        // TODO con che ordine vengono letti i byte?
+        //for testing
+        const uint8_t default_value_thyst = 75;
+        const uint8_t default_value_tos = 80;
+        const float MAX_STDEV_VALUE = 100;  //max Standard deviation value accepted for temperature samples
+        float sample[NUM_SAMPLES];
+
         // TODO controllare il segno
         float updateTemp()
         {
@@ -161,34 +199,7 @@ class LM75B: public TemperatureSensor
 
             return float(foodx)*0.125;
 
-            /*
-            temp = temp_array[MSB_BYTE];
-            // MSB is the sign: 0->positive, 1->negative
-            static const uint8_t msb_mask = 0x80;
-            bool is_positive = ((temp_array[MSB_BYTE] & msb_mask) == 0);
-            TRACE("temp is before: %d \n", temp);
-            //TRACE("bool is: %d\n", is_positive);
-            if(is_positive) 
-            {
-                //TRACE("positive\n");
-                temp <<= 8;
-                TRACE("after <<8 : %d \n", temp);
-                temp = temp | uint16_t(temp_array[LSB_BYTE]);
-                TRACE("after |  : %d \n", temp);
-                temp = temp >> 5;
-                TRACE("after >>5 : %d \n", temp);
-                return float(temp)*0.125;
-            }
-            else
-            {
-                TRACE("negative\n");
-                temp <<= 8;
-                temp = temp | uint16_t(temp_array[LSB_BYTE]);
-                temp = temp >> 5;
-                return -float(temp)*0.125;
-            }*/
         }
-
 
 };
 
