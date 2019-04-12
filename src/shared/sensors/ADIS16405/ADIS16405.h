@@ -29,18 +29,9 @@
 #include "sensors/Sensor.h"
 #include "ADIS16405Data.h"
 
-// TODO: add ADC/DAC interface (left floating on the schematics but ask)
-// TODO: add calibration routines
-// TODO: add sleep/wakeup routines
-// TODO: add power management routines
 // TODO: add global commands routines
-// TODO: add sample rate routines (although it's strictly
-//       not recommended to change the e default sample rate)
 // TODO: add digital filtering routines (ask if needed)
 // TODO: add dynamic range  routines
-// TODO: add GPIO interface (ask if used)
-// TODO: add memory test routine
-
 
 // 16g,250hz
 template <typename BusSPI, typename rstPin>
@@ -100,7 +91,7 @@ public:
             return false;
         }
 
-        return true;
+            return true;
     }
 
     void readTest()
@@ -117,7 +108,7 @@ public:
         // float voltage = normalizePower(readReg(ADIS_SUPPLY_OUT) & 0x3FFF);
         // printf("voltage: %f\n", voltage);
 
-        // writeReg(ADIS_ZMAGN_SIF,0x0800);
+        // writewriteReg(ADIS_ZMAGN_SIF,0x0800);
         // miosix::delayMs(1);
         // uint16_t reg_value = readReg(ADIS_ZMAGN_SIF);
         // printf("reg value: %d\n", reg_value);
@@ -128,10 +119,10 @@ public:
     {
         ADIS16405Data burstData;
         burstDataCollect(&burstData);
-        printf("%f\t",normalizeSupply(burstData.supply_out));
+        // printf("%f\t",normalizeSupply(burstData.supply_out));
         // printf("%f\t",normalizeGyro(burstData.xgyro_out));
         // printf("%f\t",normalizeGyro(burstData.ygyro_out));
-        // printf("%f\t",normalizeGyro(burstData.zgyro_out));
+        printf("%f\t",normalizeGyro(burstData.zgyro_out));
         // printf("%f\t",normalizeAccel(burstData.xaccl_out));
         // printf("%f\t",normalizeAccel(burstData.yaccl_out));
         // printf("%f\t",normalizeAccel(burstData.zaccl_out));
@@ -171,34 +162,49 @@ public:
     void onDMAUpdate(const SPIRequest& req) override
     {
         const std::vector<uint8_t>& r = req.readResponseFromPeripheral();
-        uint8_t raw_data[sizeof(ADIS16405Data)];
 
-        for (uint16_t i = 0; i < sizeof(ADIS16405Data); i++){ 
-            raw_data[i] = 0; 
-        } 
+        uint8_t raw_data[sizeof(ADIS16405Data)];        
+        memcpy(&raw_data, &(r[2]),sizeof(raw_data));
 
-        memcpy(&raw_data, &(r[2]),
-               sizeof(raw_data));  // coping from 2nd, the first 2 are address
+        ADIS16405Data data;
+        parseBurstData(raw_data,&data);
 
-        // ADIS16405Data* data = NULL;
-        // bufferToBurstData(raw_data + 2, data);  // first 2 bytes are padding
+        mLastGyro.setX(normalizeGyro(data.xgyro_out));
+        mLastGyro.setY(normalizeGyro(data.ygyro_out));
+        mLastGyro.setZ(normalizeGyro(data.zgyro_out));
 
-        // mLastGyro.setX(data->xgyro_out);
-        // mLastGyro.setY(data->ygyro_out);
-        // mLastGyro.setZ(data->zgyro_out);
+        mLastAccel.setX(normalizeAccel(data.xaccl_out));
+        mLastAccel.setY(normalizeAccel(data.yaccl_out));
+        mLastAccel.setZ(normalizeAccel(data.zaccl_out));
 
-        // mLastAccel.setX(data->xaccl_out);
-        // mLastAccel.setY(data->yaccl_out);
-        // mLastAccel.setZ(data->zaccl_out);
+        mLastCompass.setX(normalizeMagneto(data.xmagn_out));
+        mLastCompass.setY(normalizeMagneto(data.ymagn_out));
+        mLastCompass.setZ(normalizeMagneto(data.zmagn_out));
 
-        // mLastGyro.setX(data->xmagn_out);
-        // mLastGyro.setY(data->ymagn_out);
-        // mLastGyro.setZ(data->zmagn_out);
-
-        // mLastTemp = data->temp_out;
+        mLastTemp = normalizeTemp(data.temp_out);
     }
 
-    bool onSimpleUpdate() override { return true; }
+    bool onSimpleUpdate() override
+    { 
+        ADIS16405Data data;
+        burstDataCollect(&data);
+
+        mLastGyro.setX(normalizeGyro(data.xgyro_out));
+        mLastGyro.setY(normalizeGyro(data.ygyro_out));
+        mLastGyro.setZ(normalizeGyro(data.zgyro_out));
+
+        mLastAccel.setX(normalizeAccel(data.xaccl_out));
+        mLastAccel.setY(normalizeAccel(data.yaccl_out));
+        mLastAccel.setZ(normalizeAccel(data.zaccl_out));
+
+        mLastCompass.setX(normalizeMagneto(data.xmagn_out));
+        mLastCompass.setY(normalizeMagneto(data.ymagn_out));
+        mLastCompass.setZ(normalizeMagneto(data.zmagn_out));
+
+        mLastTemp = normalizeTemp(data.temp_out);
+
+        return true;
+    }
 
 private:
     // constexpr static uint16_t product_id_value = 0x4105; // Typo in the datasheet
@@ -272,22 +278,26 @@ private:
 
     void burstDataCollect(ADIS16405Data* data)
     {   
-        uint8_t rxbuf[sizeof(ADIS16405Data)];
-        BusSPI::read16((ADIS_GLOB_CMD) << 8, rxbuf, sizeof(ADIS16405Data));
+        uint8_t raw_data[sizeof(ADIS16405Data)];
+        BusSPI::read16((ADIS_GLOB_CMD) << 8, raw_data, sizeof(ADIS16405Data));
+        parseBurstData(raw_data, data);
+    }
 
+    void parseBurstData(uint8_t* raw, ADIS16405Data* data)
+    {
         // TODO: check nd and ea bits
-        data->supply_out = (rxbuf[0] << 8 | rxbuf[1]) & 0x3FFF;
-        data->xgyro_out  = signExtend((rxbuf[2] << 8 | rxbuf[3]) & 0x3FFF, 14);
-        data->ygyro_out  = signExtend((rxbuf[4] << 8 | rxbuf[5]) & 0x3FFF, 14);
-        data->zgyro_out  = signExtend((rxbuf[6] << 8 | rxbuf[7]) & 0x3FFF, 14);
-        data->xaccl_out  = signExtend((rxbuf[8] << 8 | rxbuf[9]) & 0x3FFF, 14);
-        data->yaccl_out  = signExtend((rxbuf[10] << 8 | rxbuf[11]) & 0x3FFF, 14);
-        data->zaccl_out  = signExtend((rxbuf[12] << 8 | rxbuf[13]) & 0x3FFF, 14);
-        data->xmagn_out  = signExtend((rxbuf[14] << 8 | rxbuf[15]) & 0x3FFF, 14);
-        data->ymagn_out  = signExtend((rxbuf[16] << 8 | rxbuf[17]) & 0x3FFF, 14);
-        data->zmagn_out  = signExtend((rxbuf[18] << 8 | rxbuf[19]) & 0x3FFF, 14);
-        data->temp_out   = signExtend((rxbuf[20] << 8 | rxbuf[21]) & 0x0FFF, 12);
-        data->aux_adc    = (rxbuf[22] << 8 | rxbuf[23]) & 0x0FFF;
+        data->supply_out = (raw[0] << 8 | raw[1]) & 0x3FFF;
+        data->xgyro_out  = signExtend((raw[2] << 8 | raw[3]) & 0x3FFF, 14);
+        data->ygyro_out  = signExtend((raw[4] << 8 | raw[5]) & 0x3FFF, 14);
+        data->zgyro_out  = signExtend((raw[6] << 8 | raw[7]) & 0x3FFF, 14);
+        data->xaccl_out  = signExtend((raw[8] << 8 | raw[9]) & 0x3FFF, 14);
+        data->yaccl_out  = signExtend((raw[10] << 8 | raw[11]) & 0x3FFF, 14);
+        data->zaccl_out  = signExtend((raw[12] << 8 | raw[13]) & 0x3FFF, 14);
+        data->xmagn_out  = signExtend((raw[14] << 8 | raw[15]) & 0x3FFF, 14);
+        data->ymagn_out  = signExtend((raw[16] << 8 | raw[17]) & 0x3FFF, 14);
+        data->zmagn_out  = signExtend((raw[18] << 8 | raw[19]) & 0x3FFF, 14);
+        data->temp_out   = signExtend((raw[20] << 8 | raw[21]) & 0x0FFF, 12);
+        data->aux_adc    = (raw[22] << 8 | raw[23]) & 0x0FFF;
     }
 
     int16_t signExtend(uint16_t val, uint8_t bits)
@@ -301,7 +311,7 @@ private:
 
     inline float normalizeSupply(uint16_t val)
     {
-        return static_cast<float>(val) * 2.418e-3f; // TODO: leave it in V or mV?
+        return static_cast<float>(val) * 2.418e-3f;
     }
 
     inline float normalizeAccel(int16_t val)
@@ -316,7 +326,7 @@ private:
 
     inline float normalizeMagneto(int16_t val)
     {
-        return static_cast<float>(val) * 0.5e-3f; // TODO: leave it in gauss?
+        return static_cast<float>(val) * 0.5e-3f;
     }
 
     inline float normalizeTemp(int16_t val)
@@ -326,13 +336,8 @@ private:
 
     inline float normalizeADC(uint16_t val)
     {
-        return static_cast<float>(val) * 0.806e-6f; // TODO: leave it in V or mV or uV?
+        return static_cast<float>(val) * 0.806e-6f;
     }
-
-    // TODO
-    void sleep(){}
-    void sleep(uint8_t dur){}
-    void wakeUp(){}
 };
 
 #endif
