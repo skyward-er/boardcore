@@ -24,6 +24,9 @@
 #include <drivers/BusTemplate.h>
 #include <interfaces-impl/hwmapping.h>
 #include <sensors/ADIS16405/ADIS16405.h>
+#include <sensors/SensorSampling.h>
+#include <math/Stats.h>
+#include <diagnostic/CpuMeter.h>
 
 using namespace miosix;
 using namespace miosix::interfaces;
@@ -34,6 +37,7 @@ using namespace miosix::interfaces;
 // typedef Gpio<GPIOA_BASE, 7> GpioMosi;
 // typedef Gpio<GPIOA_BASE, 8> CS_ADIS16405;
 
+// Reset pin
 typedef Gpio<GPIOD_BASE, 5> rstPin;
 
 // SPI1 binding to the sensor
@@ -43,10 +47,6 @@ typedef ADIS16405<spiADIS16405,rstPin> adis_t; //Passo il bus creato al sensore
 
 int main()
 {	
-	// CS_ADIS16405::mode(miosix::Mode::OUTPUT);
-	// CS_ADIS16405::high();
-
-	// ADIS
 	spiADIS16405::init();
 
 	Thread::sleep(1000);
@@ -62,10 +62,35 @@ int main()
 	else
 		printf("Self test failed\n");
 
+	SimpleSensorSampler sampler;
+	sampler.AddSensor(adis);
 
+	// DMASensorSampler sampler;
+	// sampler.AddSensor(adis);
+
+	StatsResult statResult;
+	Stats stats;
+
+	int counter = 0;
     while(true)
     {
-    	adis->onSimpleUpdate();
-		Thread::sleep(100);
+		sampler.Update();
+
+		stats.add(averageCpuUtilization());
+
+
+		if(counter == 2500){
+			statResult = stats.getStats();
+			printf("CPU usage: %f\n", statResult.mean);
+			counter = 0;
+		}
+		counter++;
+
+		Thread::sleep(2);
+
+  //   	const Vec3* last_data = adis->accelDataPtr();
+  //   	printf("%f %f %f\n", last_data->getX(), last_data->getY(),
+  //              last_data->getZ());
+		// Thread::sleep(100);
     }
 }
