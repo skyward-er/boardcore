@@ -32,20 +32,24 @@ public:
     virtual ~Transceiver() {}
 
     /*
-     * Send a packet. Pure virtual function.
-     * @param pkt               Pointer to the packet (needs to be at least pkt_len bytes).
-     * @param pkt_len           Lenght of the packet to be sent.
-     * @return                  True if the message was sent correctly.
+     * Send a packet.
+     * The function must block until the packet is sent (successfully or not)
+     *
+     * @param pkt       Pointer to the packet (needs to be at least pkt_len
+     * bytes).
+     * @param pkt_len   Lenght of the packet to be sent.
+     * @return          True if the message was sent correctly.
      */
-    virtual bool send(uint8_t* pkt, const uint32_t pkt_len) = 0;
+    virtual bool send(uint8_t* pkt, size_t pkt_len) = 0;
 
     /*
-     * Receive a packet. Pure virtual function.
-     * @param pkt               Pointer to the buffer (needs to be at least pkt_len bytes).
-     * @param pkt_len           Lenght of the packet to be received.
-     * @return                  True if the message was received correctly.
+     * Wait until a new packet is received.
+     *
+     * @param pkt       Buffer to store the received packet into.
+     * @param pkt_len   Maximum length of the received data.
+     * @return          Size of the data received or -1 if failure
      */
-    virtual bool receive(uint8_t* pkt, const uint32_t pkt_len) = 0;
+    virtual ssize_t receive(uint8_t* pkt, size_t pkt_len) = 0;
 };
 
 #endif

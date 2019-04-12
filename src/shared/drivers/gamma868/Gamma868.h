@@ -58,15 +58,15 @@ public:
      * @param pkt_len           Lenght of the packet to be sent.
      * @return                  True if the message was sent correctly.
      */
-    bool send(uint8_t* pkt, const uint32_t pkt_len) override;
+    bool send(uint8_t* pkt, size_t pkt_len) override;
 
     /*
      * Receive a message through the serial port to the gamma868 module (blocking).
      * @param pkt               Pointer to the buffer (needs to be at least pkt_len bytes).
-     * @param pkt_len           Lenght of the packet to be received.
-     * @return                  True if there was no error in the message received.
+     * @param pkt_len           Maximum lenght of the packet to be received.
+     * @return                  Size of the data received or -1 if failure
      */
-    bool receive(uint8_t* pkt, const uint32_t pkt_len) override;
+    ssize_t receive(uint8_t* pkt, size_t pkt_len) override;
 
     /*
      * Set a new configuration to the gamma868 module. Can be done only if the 
