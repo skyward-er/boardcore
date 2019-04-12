@@ -31,6 +31,7 @@
  * the registers because trying to work with 12 or 14 bit twos
  * complement that doesn't sign extend to 16 bits is unpleasant.
  */
+#pragma pack(1)
 struct ADIS16405Data
 {
     uint16_t supply_out;  //  Power supply measurement
@@ -46,5 +47,7 @@ struct ADIS16405Data
     int16_t temp_out;     //  Temperature output
     uint16_t aux_adc;     //  Auxiliary ADC measurement
 };
+#pragma pack()
+
 
 #endif
