@@ -100,8 +100,6 @@ public:
             return false;
         }
 
-        writeReg(ADIS_ALM_CTRL,0x0000); // disable alarms
-
         return true;
     }
 
@@ -153,12 +151,12 @@ public:
         // DIAG_STAT clears after each read so we read to clear it
         uint16_t diagstat = readReg(ADIS_DIAG_STAT);
 
-        // uint16_t msc = readReg(ADIS_MSC_CTRL);
-        // writeReg(ADIS_MSC_CTRL, msc | 1 << 10);
-        // msc = readReg(ADIS_MSC_CTRL);
+        uint16_t msc = readReg(ADIS_MSC_CTRL);
+        writeReg(ADIS_MSC_CTRL, msc | 1 << 10);
+        msc = readReg(ADIS_MSC_CTRL);
         
-        writeReg(ADIS_MSC_CTRL, 0x3504); // Config and start self test
-        uint16_t msc = 0;
+        // writeReg(ADIS_MSC_CTRL, 0x3504); // Config and start self test
+        
         // MSC_CTRL[10] resets itself to 0 after completing the routine
         do
         {
@@ -167,28 +165,23 @@ public:
 
         // TODO: break the test into all the cases (identify the the fail bit)
         diagstat = readReg(ADIS_DIAG_STAT);  // 0 if successful
-        printf("diagstat: %d\n",diagstat);
         return (diagstat == 0);
     }
 
     void onDMAUpdate(const SPIRequest& req) override
     {
-        // TODO: remove. Added to fix warning
-        (void) req;
+        const std::vector<uint8_t>& r = req.readResponseFromPeripheral();
+        uint8_t raw_data[sizeof(ADIS16405Data)];
 
-        // const std::vector<uint8_t>& r = req.readResponseFromPeripheral();
-        // uint8_t rxbuf_data[sizeof(ADIS16405Data)+2];
+        for (uint16_t i = 0; i < sizeof(ADIS16405Data); i++){ 
+            raw_data[i] = 0; 
+        } 
 
-        // // initializing array 
-        // for (uint16_t i = 0; i < sizeof(ADIS16405Data) + 2; i++){ 
-        //     rxbuf_data[i] = 0; 
-        // } 
-
-        // memcpy(&rxbuf_data, &(r[2]),
-        //        sizeof(rxbuf_data));  // coping from 2nd, the first 2 are address
+        memcpy(&raw_data, &(r[2]),
+               sizeof(raw_data));  // coping from 2nd, the first 2 are address
 
         // ADIS16405Data* data = NULL;
-        // bufferToBurstData(rxbuf_data + 2, data);  // first 2 bytes are padding
+        // bufferToBurstData(raw_data + 2, data);  // first 2 bytes are padding
 
         // mLastGyro.setX(data->xgyro_out);
         // mLastGyro.setY(data->ygyro_out);
@@ -203,10 +196,6 @@ public:
         // mLastGyro.setZ(data->zmagn_out);
 
         // mLastTemp = data->temp_out;
-
-        // TODO:
-        //  Power supply measurement
-        //  Auxiliary ADC measurement
     }
 
     bool onSimpleUpdate() override { return true; }
@@ -268,7 +257,10 @@ private:
     uint16_t readReg(adis_regaddr addr)
     {
         uint8_t rxbuf[2];
-        BusSPI::read_adis(addr, rxbuf, 2);
+        BusSPI::write(addr,0);
+        miosix::delayUs(9);
+        BusSPI::read(rxbuf, 2);
+        miosix::delayUs(9);
         return rxbuf[0] << 8 | rxbuf[1];
     }
 
@@ -281,7 +273,7 @@ private:
     void burstDataCollect(ADIS16405Data* data)
     {   
         uint8_t rxbuf[sizeof(ADIS16405Data)];
-        BusSPI::read_adis((ADIS_GLOB_CMD), rxbuf, sizeof(ADIS16405Data));
+        BusSPI::read16((ADIS_GLOB_CMD) << 8, rxbuf, sizeof(ADIS16405Data));
 
         // TODO: check nd and ea bits
         data->supply_out = (rxbuf[0] << 8 | rxbuf[1]) & 0x3FFF;
