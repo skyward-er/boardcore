@@ -46,13 +46,13 @@ class BusSPI : public Singleton<BusSPI<N, GpioMosi, GpioMiso, GpioSclk> >
     typedef Singleton<BusSPI<N, GpioMosi, GpioMiso, GpioSclk> > SingletonType;
 
 public:
-    inline static int write(const void* buffer, size_t len)
+    inline static void write(const void* buffer, size_t len)
     {
-        return SingletonType::getInstance()->_write(buffer, len);
+        SingletonType::getInstance()->_write(buffer, len);
     }
-    inline static int write(uint8_t byte)
+    inline static void write(uint8_t byte)
     {
-        return SingletonType::getInstance()->_write(byte);
+        SingletonType::getInstance()->_write(byte);
     }
 
     inline static void init() { SingletonType::getInstance(); }
@@ -66,14 +66,37 @@ public:
         return SingletonType::getInstance()->_read();
     }
 
+    /**
+     * Performs a full duplex transmission.
+     * The provided buffer is written on the bus and its content is then
+     * replaced by the received data.
+     *
+     * @param buf buffer containing the data to send & receive
+     */
+    inline static void transfer(uint8_t* buf, size_t max_len)
+    {
+        SingletonType::getInstance()->_transfer(buf, max_len);
+    }
+
+    /**
+     * Performs a full duplex transmission.
+     * The provided byte is written on the bus and its content is then
+     * replaced by the received data.
+     *
+     * @param byte Pointer to the byte containing the data to send & receive
+     */
+    inline static uint8_t transfer(uint8_t* byte)
+    {
+        return SingletonType::getInstance()->_transfer(byte);
+    }
+
 private:
-    inline int _write(const void* buffer, size_t len) const
+    inline void _write(const void* buffer, size_t len) const
     {
         // DMA??
         const uint8_t* buf_ptr = (const uint8_t*)buffer;
         for (unsigned i = 0; i < len; i++)
             _write(*(buf_ptr++));
-        return 0;
     }
 
     inline void _write(uint8_t byte) const
@@ -102,6 +125,37 @@ private:
         return getSPIAddr(N)->DR;
     }
 
+    /**
+     * Performs a full duplex transmission.
+     * The provided buffer is written on the bus and its content is then
+     * replaced by the received data.
+     *
+     * @param buf buffer containing the data to send & receive
+     */
+    inline void _transfer(uint8_t* buf, size_t max_len)
+    {
+        for (size_t i = 0; i < max_len; ++i)
+        {
+            _transfer(buf + i);
+        }
+    }
+
+    /**
+     * Performs a full duplex transmission.
+     * The provided byte is written on the bus and its value is then replaced by
+     * the received byte.
+     *
+     * @param byte pointer to the data to send & receive
+     */
+    inline uint8_t _transfer(uint8_t* byte)
+    {
+        getSPIAddr(N)->DR = *byte;
+        while ((getSPIAddr(N)->SR & SPI_SR_RXNE) == 0)
+            ;
+        *byte = getSPIAddr(N)->DR;
+        return *byte;
+    }
+
     BusSPI()
     {
         // Interrupts are disabled to prevent bugs if more than one threads
@@ -119,10 +173,9 @@ private:
                 SPI_CR1_SSM     // Software cs
                 | SPI_CR1_SSI   // Hardware cs internally tied high
                 | SPI_CR1_MSTR  // Master mode
-                | SPI_CR1_BR_1  
-                | SPI_CR1_BR_2  // SPI clock
-                | SPI_CR1_SPE;  // SPI enabled
-            
+                | SPI_CR1_BR_1 | SPI_CR1_BR_2  // SPI clock
+                | SPI_CR1_SPE;                 // SPI enabled
+
             if (getSPIAddr(N) == SPI1)
             {
                 SPIDriver::instance();
@@ -209,13 +262,13 @@ public:
         GpioCS::high();
     }
 
-    /*  
+    /*
      * Write more than one byte without specifiing reg
      */
     static void write(uint8_t* buf, int size)
     {
         GpioCS::low();
-        Bus::read(buf, size);
+        Bus::write(buf, size);
         GpioCS::high();
     }
 
