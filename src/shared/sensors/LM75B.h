@@ -22,86 +22,93 @@
  * THE SOFTWARE.
  */
 
-
-//NOTE:
-//fai array di due byte per temperatura
-
 #ifndef LM75B_H
 #define LM75B_H
 
 #include "Sensor.h"
 #include "math/Stats.h"
 
-#define NUM_SAMPLES 10  //numer of samples taken during self test
-
-enum class SlaveAddress: uint8_t
-{
-    ADDR_1 = 0x48,  //first TempSensor
-    ADDR_2 = 0x49,  //second TempSensor
-    ADDR_3 = 0x50   //third TempSensor (not in Rocksanne)
-};
-
 template <typename BusType> 
 class LM75B: public TemperatureSensor
 {
     public:
-        // @param slaveAddr     address of the sensor you want to use
-        LM75B(SlaveAddress slaveAddr) : slave_addr(static_cast<uint8_t>(slaveAddr))
+        /**
+         * @param slaveAddr     address of the sensor you want to use
+         */
+        LM75B(uint8_t slaveAddr) : slave_addr(slaveAddr)
         {
-            mLastTemp = 7;
+            mLastTemp = 0.0f;
             init();
         }
 
+        /**
+         * Initialize the sensor, writing the conf register and then reading it back.
+         * @return   whether the configuration was done correctly
+         */
+        bool init() override
+        {
+            uint8_t conf = static_cast<uint8_t>(CONF_NORM);
+            BusType::write(slave_addr, REG_CONF, &conf, sizeof(uint8_t));
+
+            // Check if the register was set correctly
+            BusType::read(slave_addr, REG_CONF, &conf, sizeof(uint8_t));
+            bool conf_ok = (conf == static_cast<uint8_t>(CONF_NORM));
+
+            return conf_ok;
+        }
+
+        /**
+         * Performed tests:
+         * - Read THYST and TOS known registers
+         * - Collect a bunch of samples and calculate stddev
+         *
+         * @return true if all tests passed
+         */
         bool selfTest() override
         {
-            //TEST: reading default value of THYST register, which is known
+            //TEST 1: reading default value of THYST register, which is known
             uint8_t value_thyst;
             BusType::read(slave_addr, REG_THYST, &value_thyst, sizeof(uint8_t));
 
-            if(value_thyst != default_value_thyst)
+            if(value_thyst != THYST_DEFAULT_VAL)
             {
                 TRACE("[LM75B] Error: reading wrong value of THYST register in LM75B\n");
                 return false;
             }
 
-            //TEST: reading default value of TOS register, which is known
+            //TEST 2: reading default value of TOS register, which is known
             uint8_t value_tos;
             BusType::read(slave_addr, REG_TOS, &value_tos, sizeof(uint8_t));
 
-            if(value_tos != default_value_tos)
+            if(value_tos != TOS_DEFAULT_VALUE)
             {
                 TRACE("[LM75B] Error: reading wrong value of THYST register in LM75B\n");
                 return false;
             }
 
-
-            //TEST: standard deviation of temperature value
+            //TEST 3: standard deviation of temperature value
             float stdev;
             Stats calc_stats;
 
-            for(int i = 0; i < NUM_SAMPLES; i++) 
+            // Get a bunch of samples
+            for(uint8_t i = 0; i < NUM_TEST_SAMPLES; i++) 
             {
                 onSimpleUpdate();
-                sample[i] = mLastTemp;
-            }
-            
-            for(int i = 0; i < NUM_SAMPLES; i++)
-            {
+
                 //temperature can't be out of range of sensor
-                if(sample[i] < -125.0 && sample[i] > 125.0)
+                if(mLastTemp > -125.0 && mLastTemp < 125.0)
+                {
+                    calc_stats.add(mLastTemp);
+                }
+                else
                 {
                     TRACE("[LM75B] Error: Temperature out of range\n");
                     return false;
                 }
-
             }
 
-            for(int i = 0; i < NUM_SAMPLES; i++)
-            {
-                calc_stats.add(sample[i]);
-            }
+            // Calculate standard dev
             stdev = calc_stats.getStats().stdev;
-
             if(stdev < MAX_STDEV_VALUE)
             {
                 TRACE("[LM75B] Error: Standard deviation of temparature is out of range in LM75B");
@@ -109,38 +116,40 @@ class LM75B: public TemperatureSensor
             }
 
             return true;
-            
-            
         }
 
-        bool init() override
-        {
-            uint8_t conf = static_cast<uint8_t>(CONF_NORM);
-            BusType::write(slave_addr, REG_CONF, &conf, sizeof(uint8_t));
-            return true;
-        }
-
+        /**
+         * Update temperature value.
+         * @return always true
+         */
         bool onSimpleUpdate() override
         {
             mLastTemp = updateTemp();
             return true;
         }
 
+        /**
+         * Unsynchronized getter of the last temperature value.
+         * @return last temperature value
+         */
         float getTemp()
         {
             return mLastTemp;
         }
 
     private:
+        static const uint8_t THYST_DEFAULT_VAL = 75;
+        static const uint8_t TOS_DEFAULT_VALUE = 80;
+        static const uint8_t NUM_TEST_SAMPLES  = 10;
+        static constexpr float MAX_STDEV_VALUE = 100.0f;
 
         const uint8_t slave_addr;       
-        uint8_t temp_array[2] = {0, 0};
 
         enum Registers
         {
-            REG_CONF = 0x01,   // R/W
-            REG_TEMP = 0x00,   // R only
-            REG_TOS = 0x03,    // R/W
+            REG_CONF  = 0x01,  // R/W
+            REG_TEMP  = 0x00,  // R only
+            REG_TOS   = 0x03,  // R/W
             REG_THYST = 0x02   // R/W
         };
 
@@ -149,21 +158,16 @@ class LM75B: public TemperatureSensor
             CONF_NORM = 0x00
         };
 
-        //for testing
-        const uint8_t default_value_thyst = 75;
-        const uint8_t default_value_tos = 80;
-        const float MAX_STDEV_VALUE = 100;  //max Standard deviation value accepted for temperature samples
-        float sample[NUM_SAMPLES];
-
         // TODO controllare il segno
         float updateTemp()
         {
+            uint8_t temp_array[2];
             uint16_t temp;
+
             BusType::read(slave_addr, REG_TEMP, temp_array, sizeof(uint16_t));
-
-            TRACE("Read: %x%x\n", temp_array[0], temp_array[1]);
-
+            // Switch endianness
             temp = (uint16_t) ((temp_array[0] << 8) | temp_array[1]);
+            // Last 5 bits have no meaning
             temp >>= 5;
 
             return float(temp)*0.125;

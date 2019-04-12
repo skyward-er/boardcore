@@ -28,10 +28,13 @@ using namespace miosix;
 #include <interfaces-impl/hwmapping.h>
 using I2CProtocol = ProtocolI2C<miosix::I2C1Driver>;
 
+uint8_t addr = 0x48 << 1;
+// uint8_t addr = 0x48 << 2;
+
 typedef LM75B<I2CProtocol> LM75BType;
 int main()
 {
-    LM75BType temp{(SlaveAddress)((uint8_t)SlaveAddress::ADDR_2 << 1)};
+    LM75BType temp{addr};
     Thread::sleep(500);
 
     while (true)
