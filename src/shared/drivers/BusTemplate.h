@@ -203,18 +203,14 @@ public:
         GpioCS::high();
     }
 
-    static void read_adis(uint8_t reg, uint8_t* buf, int size)
+    static void read16(uint16_t reg, uint8_t* buf, int size)
     {   
-        uint8_t padding = 0;
+        uint8_t msb = (uint8_t) (reg >> 8);
+        uint8_t lsb = (uint8_t) reg;
 
         GpioCS::low();
-        Bus::write(&reg, sizeof(reg));
-        Bus::write(&padding, sizeof(padding));        
-        GpioCS::high();
-
-        miosix::delayUs(75);
-
-        GpioCS::low();
+        Bus::write(&msb, sizeof(msb));
+        Bus::write(&lsb, sizeof(lsb));        
         Bus::read(buf, size);
         GpioCS::high();
     }
