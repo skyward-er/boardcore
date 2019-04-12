@@ -27,41 +27,43 @@
 
 using namespace miosix;
 
-// #ifdef _BOARD_STM32F429ZI_SKYWARD_HOMEONE
+// Homeone and deathstack already define pins
+#if defined(_BOARD_STM32F429ZI_SKYWARD_HOMEONE) || \
+        defined(_BOARD_STM32F429ZI_SKYWARD_DEATHST)
 
-#include <interfaces-impl/hwmapping.h>
-using I2CProtocol = ProtocolI2C<miosix::I2C1Driver>;
+    #include <interfaces-impl/hwmapping.h>
+    using I2CProtocol = ProtocolI2C<miosix::I2C1Driver>;
 
-using convst = miosix::sensors::ad7994::nconvst;
-using busy   = miosix::sensors::ad7994::ab;
+    using convst = miosix::sensors::ad7994::nconvst;
+    using busy   = miosix::sensors::ad7994::ab;
+    static constexpr uint8_t addr = miosix::sensors::ad7994::addr;
 
-// // Just for testing using a logic analyzer
-// #elif defined _BOARD_STM32F429ZI_STM32F4DISCOVERY
+// Define pins for other boards
+#else
+    #include "drivers/SoftwareI2CAdapter.h"
+    using scl = Gpio<GPIOB_BASE, 8>;
+    using sda = Gpio<GPIOB_BASE, 9>;
+    using I2CProtocol = SoftwareI2CAdapter<sda, scl>;
 
-// #include "drivers/SoftwareI2CAdapter.h"
-
-// using scl = Gpio<GPIOB_BASE, 8>;
-// using sda = Gpio<GPIOB_BASE, 9>;
-
-// using I2CProtocol = SoftwareI2CAdapter<sda, scl>;
-
-// using busy   = Gpio<GPIOB_BASE, 1>;
-// using convst = Gpio<GPIOG_BASE, 9>;
-
-// #endif
+    using busy   = Gpio<GPIOB_BASE, 1>;
+    using convst = Gpio<GPIOG_BASE, 9>;
+    static constexpr uint8_t addr = 0x22;
+#endif
 
 typedef AD7994<I2CProtocol, busy, convst> AD7994_t;
 
 int main()
 {
 
-    // scl::mode(Mode::OUTPUT);
-    // sda::mode(Mode::OUTPUT);
+#if !defined(_BOARD_STM32F429ZI_SKYWARD_HOMEONE) && \
+        !defined(_BOARD_STM32F429ZI_SKYWARD_DEATHST)
+    scl::mode(Mode::OUTPUT);
+    sda::mode(Mode::OUTPUT);
+#endif
 
     convst::mode(Mode::OUTPUT);
 
-    // Address for part number AD7994-0, with AS pin HIGH
-    AD7994_t ad{0x22 << 1};
+    AD7994_t ad{addr};
     if(ad.init())
         printf("Init succeeded\n");
     else
