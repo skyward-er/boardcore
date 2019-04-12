@@ -29,10 +29,8 @@
 #include <cassert>
 #include "Debug.h"
 
-#if !defined _BOARD_STM32F429ZI_SKYWARD_HOMEONE &&  \
-    !defined _BOARD_STM32F429ZI_STM32F4DISCOVERY && \
-    !defined _BOARD_STM32F429ZI_SKYWARD_ROGALLINA
-#error "Unsupported board!"
+#if !defined _ARCH_CORTEXM4_STM32F4
+#error "Unsupported architecture!"
 #endif
 
 using miosix::FastInterruptDisableLock;

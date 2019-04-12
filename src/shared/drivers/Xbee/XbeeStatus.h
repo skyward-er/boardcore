@@ -1,16 +1,17 @@
-/* Copyright (c) 2018 Skyward Experimental Rocketry
- * Authors: Nuno Barcellos
- *
+/* 
+ * Copyright (c) 2019 Skyward Experimental Rocketry
+ * Authors: Luca Erbetta
+ * 
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
  * in the Software without restriction, including without limitation the rights
  * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
  * copies of the Software, and to permit persons to whom the Software is
  * furnished to do so, subject to the following conditions:
- *
+ * 
  * The above copyright notice and this permission notice shall be included in
  * all copies or substantial portions of the Software.
- *
+ * 
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
  * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.  IN NO EVENT SHALL THE
@@ -20,36 +21,31 @@
  * THE SOFTWARE.
  */
 
-#ifndef TRANSCEIVER_H
-#define TRANSCEIVER_H
+#pragma once
 
-#include <Common.h>
+#include <cstdint>
+#include <cstdio>
 
-class Transceiver
+namespace Xbee
 {
-public:
-    Transceiver() {}
-    virtual ~Transceiver() {}
+    struct XbeeStatus
+    {
+        uint8_t tx_retry_count;
+        uint8_t tx_delivery_status;
+        uint8_t tx_discovery_status;
+        unsigned int tx_timeout_count;
 
-    /*
-     * Send a packet.
-     * The function must block until the packet is sent (successfully or not)
-     *
-     * @param pkt       Pointer to the packet (needs to be at least pkt_len
-     * bytes).
-     * @param pkt_len   Lenght of the packet to be sent.
-     * @return          True if the message was sent correctly.
-     */
-    virtual bool send(uint8_t* pkt, size_t pkt_len) = 0;
+        unsigned int rx_dropped_buffers = 0;
+        unsigned int rx_wrong_checksum = 0;
 
-    /*
-     * Wait until a new packet is received.
-     *
-     * @param pkt       Buffer to store the received packet into.
-     * @param pkt_len   Maximum length of the received data.
-     * @return          Size of the data received or -1 if failure
-     */
-    virtual ssize_t receive(uint8_t* pkt, size_t pkt_len) = 0;
-};
-
-#endif
+        void print()
+        {
+            printf("+++XBEE STATUS+++");
+            printf("TX: Timeouts: %d\n", tx_timeout_count);
+            printf("TXSTATUS: Retries: %d, Delivery: %02X, Discovery: %02X\n",
+                   tx_retry_count, tx_delivery_status, tx_discovery_status);
+            printf("RX: Dropped: %d, Checksum: %d\n", rx_dropped_buffers, rx_wrong_checksum);
+                
+        }
+    };
+}
