@@ -56,8 +56,6 @@ int main()
 		printf("ADIS Init succeeded\n" );
 	else
 		printf("ADIS Init failed\n");
-
-	Thread::sleep(1000);
 	
 	if(adis->selfTest())
 		printf("Self test succeeded\n" );
@@ -67,8 +65,7 @@ int main()
 
     while(true)
     {
-    	// adis->readTest();
-    	adis->burstTest();
+    	adis->onSimpleUpdate();
 		Thread::sleep(100);
     }
 }
