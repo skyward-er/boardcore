@@ -48,9 +48,10 @@ using namespace interfaces;
 typedef BusSPI<1, spi1::mosi, spi1::miso, spi1::sck> busSPI2;  // Creo la SPI2
 
 using ATTN = Gpio<GPIOF_BASE, 10>;
+using cs = Gpio<GPIOF_BASE, 9>;
 
-typedef Xbee::Xbee<busSPI2, InAir9B::cs, ATTN> Xbee_t;
-Xbee_t xbee;
+typedef Xbee::Xbee<busSPI2, cs, ATTN> Xbee_t;
+Xbee_t xbee_transceiver;
 
 void printStat(const char* title, StatsResult r)
 {
@@ -112,9 +113,9 @@ void send()
 
         uint32_t send_tick = t.tick();
         // Send message
-        if (!xbee.send(buf, PKT_SIZE))
+        if (!xbee_transceiver.send(buf, PKT_SIZE))
         {
-            fail_status.push_back(xbee.getStatus());
+            fail_status.push_back(xbee_transceiver.getStatus());
             if((*fail_status.end()).tx_timeout_count > 0)
             {
                 break;
@@ -172,7 +173,7 @@ void receive()
     for (unsigned int i = 0; i < NUM_PACKETS; i++)
     {
         uint32_t tick = t.tick();
-        xbee.receive(buf, PKT_SIZE);
+        xbee_transceiver.receive(buf, PKT_SIZE);
         tick = t.tick() - tick;
         rcv_tick_acc += tick;
         float byterate = PKT_SIZE * 1000 / t.toMilliSeconds(tick);
@@ -203,7 +204,7 @@ void receive()
 //     for (;;)
 //     {
 //         uint8_t buf[PKT_SIZE];
-//         if (xbee.receive(buf, PKT_SIZE))
+//         if (xbee_transceiver.receive(buf, PKT_SIZE))
 //         {
 //             printf("recv ok\n");
 //         }
@@ -219,7 +220,7 @@ void rcv(void*)
     uint8_t buf[PKT_SIZE];
     for (;;)
     {
-        ssize_t len = xbee.receive(buf, PKT_SIZE);
+        ssize_t len = xbee_transceiver.receive(buf, PKT_SIZE);
         if (len > 0)
         {
             printf("%c (%d)\n", buf[0], len);
@@ -240,12 +241,12 @@ int main()
     busSPI2::init();
 
     // Enable SPI
-    InAir9B::cs::low();
+    cs::low();
     Thread::sleep(10);
-    InAir9B::cs::high();
+    cs::high();
     Thread::sleep(10);
 
-    xbee.start();
+    xbee_transceiver.start();
 
 
     /* while(true)
@@ -256,7 +257,7 @@ int main()
          vector<uint8_t> buf(s.begin(), s.end());
          
 
-         xbee.send(buf.data(), buf.size());
+         xbee_transceiver.send(buf.data(), buf.size());
      }*/
     /*uint8_t snd[PKT_SIZE];
 
@@ -268,7 +269,7 @@ int main()
         memset(snd, i++, PKT_SIZE);
         if (i > 'z')
             i = 'a';
-        if (!xbee.send(snd, PKT_SIZE))
+        if (!xbee_transceiver.send(snd, PKT_SIZE))
         {
             // printf("Send error.\n");
         }
@@ -277,7 +278,7 @@ int main()
     /*uint8_t buf[PKT_SIZE];
     for (;;)
     {
-        ssize_t len = xbee.receive(buf, PKT_SIZE);
+        ssize_t len = xbee_transceiver.receive(buf, PKT_SIZE);
         if (len > 0)
         {
             printf("%c (%d)\n", buf[0], len);
