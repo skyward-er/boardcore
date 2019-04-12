@@ -1,0 +1,174 @@
+/* LM75B Driver
+ *
+ * Copyright (c) 2019 Skyward Experimental Rocketry
+ * Authors: Alessio Galluccio
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in
+ * all copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.  IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+ * THE SOFTWARE.
+ */
+
+
+//NOTE:
+//fai array di due byte per temperatura
+
+#ifndef LM75B_H
+#define LM75B_H
+
+#include "Sensor.h"
+#include "math/Stats.h"
+
+#define NUM_SAMPLES 10  //numer of samples taken during self test
+
+enum class SlaveAddress: uint8_t
+{
+    ADDR_1 = 0x48,  //first TempSensor
+    ADDR_2 = 0x49,  //second TempSensor
+    ADDR_3 = 0x50   //third TempSensor (not in Rocksanne)
+};
+
+template <typename BusType> 
+class LM75B: public TemperatureSensor
+{
+    public:
+        // @param slaveAddr     address of the sensor you want to use
+        LM75B(SlaveAddress slaveAddr) : slave_addr(static_cast<uint8_t>(slaveAddr))
+        {
+            mLastTemp = 7;
+            init();
+        }
+
+        bool selfTest() override
+        {
+            //TEST: reading default value of THYST register, which is known
+            uint8_t value_thyst;
+            BusType::read(slave_addr, REG_THYST, &value_thyst, sizeof(uint8_t));
+
+            if(value_thyst != default_value_thyst)
+            {
+                TRACE("[LM75B] Error: reading wrong value of THYST register in LM75B\n");
+                return false;
+            }
+
+            //TEST: reading default value of TOS register, which is known
+            uint8_t value_tos;
+            BusType::read(slave_addr, REG_TOS, &value_tos, sizeof(uint8_t));
+
+            if(value_tos != default_value_tos)
+            {
+                TRACE("[LM75B] Error: reading wrong value of THYST register in LM75B\n");
+                return false;
+            }
+
+
+            //TEST: standard deviation of temperature value
+            float stdev;
+            Stats calc_stats;
+
+            for(int i = 0; i < NUM_SAMPLES; i++) 
+            {
+                onSimpleUpdate();
+                sample[i] = mLastTemp;
+            }
+            
+            for(int i = 0; i < NUM_SAMPLES; i++)
+            {
+                //temperature can't be out of range of sensor
+                if(sample[i] < -125.0 && sample[i] > 125.0)
+                {
+                    TRACE("[LM75B] Error: Temperature out of range\n");
+                    return false;
+                }
+
+            }
+
+            for(int i = 0; i < NUM_SAMPLES; i++)
+            {
+                calc_stats.add(sample[i]);
+            }
+            stdev = calc_stats.getStats().stdev;
+
+            if(stdev < MAX_STDEV_VALUE)
+            {
+                TRACE("[LM75B] Error: Standard deviation of temparature is out of range in LM75B");
+                return false;
+            }
+
+            return true;
+            
+            
+        }
+
+        bool init() override
+        {
+            uint8_t conf = static_cast<uint8_t>(CONF_NORM);
+            BusType::write(slave_addr, REG_CONF, &conf, sizeof(uint8_t));
+            return true;
+        }
+
+        bool onSimpleUpdate() override
+        {
+            mLastTemp = updateTemp();
+            return true;
+        }
+
+        float getTemp()
+        {
+            return mLastTemp;
+        }
+
+    private:
+
+        const uint8_t slave_addr;       
+        uint8_t temp_array[2] = {0, 0};
+
+        enum Registers
+        {
+            REG_CONF = 0x01,   // R/W
+            REG_TEMP = 0x00,   // R only
+            REG_TOS = 0x03,    // R/W
+            REG_THYST = 0x02   // R/W
+        };
+
+        enum ConfCommands
+        {
+            CONF_NORM = 0x00
+        };
+
+        //for testing
+        const uint8_t default_value_thyst = 75;
+        const uint8_t default_value_tos = 80;
+        const float MAX_STDEV_VALUE = 100;  //max Standard deviation value accepted for temperature samples
+        float sample[NUM_SAMPLES];
+
+        // TODO controllare il segno
+        float updateTemp()
+        {
+            uint16_t temp;
+            BusType::read(slave_addr, REG_TEMP, temp_array, sizeof(uint16_t));
+
+            TRACE("Read: %x%x\n", temp_array[0], temp_array[1]);
+
+            temp = (uint16_t) ((temp_array[0] << 8) | temp_array[1]);
+            temp >>= 5;
+
+            return float(temp)*0.125;
+        }
+
+};
+
+#endif
