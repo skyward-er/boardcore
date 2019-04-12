@@ -145,7 +145,7 @@ void __attribute__((used)) EXTI15_10_IRQHandlerImpl()
 /** USAGE EXAMPLE:
 
     // Handle External Interrupt 9
-    void __attribute__((used)) EXTI9_IRQHandler()
+    void __attribute__((used)) EXTI9_IRQHandlerImpl()
     {
         // Do some small operation, e.g. set a boolean flag
         // No need to clear interrupt
