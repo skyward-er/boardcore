@@ -63,7 +63,7 @@ int main()
 
     convst::mode(Mode::OUTPUT);
 
-    AD7994_t ad{addr << 1};
+    AD7994_t ad{addr};
     if(ad.init())
         printf("Init succeeded\n");
     else
