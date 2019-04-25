@@ -352,7 +352,7 @@ for i in mainfiles:
 
     if p.returncode != 0:
         printout('[SBS] %s Failed. Terminating.' % action[0], RED, REVERSE)
-        #sys.exit(-1)
+        sys.exit(-1)
     else:
         printout('[SBS] %s OK - %s\n\n' % (action[0],i), GREEN, BOLD)
 
