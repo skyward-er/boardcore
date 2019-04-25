@@ -48,7 +48,7 @@ public:
 
     /**
      * \return the latest GPS data, or throws if the GPS has not yet got a fix.
-     * If the GPS has lost the fix, the same data is returened repeatedly,
+     * If the GPS has lost the fix, the same data is returned repeatedly,
      * use the timestamp field of the GPSData struct to know this.
      * \throws runtime_error is no data is available
      */
