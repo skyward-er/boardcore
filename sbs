@@ -318,11 +318,15 @@ else:
     cleanparam =[]
     action = ["Build","Building"]
 
+# Clean makefiles before building
+shutil.rmtree('build',ignore_errors=True, onerror=None)
+os.mkdir('build')
 
 # Populate and execute Makefile (build or clean)
 
 for i in mainfiles:
     printout('[SBS] %s %s' % (action[1],i), WHITE, BOLD)
+    
     with open('build/%s' % i, 'w') as f:
         f.write(build_makefile(make_template, mainfiles[i], i))
 
@@ -348,11 +352,10 @@ for i in mainfiles:
 
     if p.returncode != 0:
         printout('[SBS] %s Failed. Terminating.' % action[0], RED, REVERSE)
-        sys.exit(-1)
-
-    printout('[SBS] %s OK - %s\n\n' % (action[0],i), GREEN, BOLD)
+        #sys.exit(-1)
+    else:
+        printout('[SBS] %s OK - %s\n\n' % (action[0],i), GREEN, BOLD)
 
 # Clean
 if options.clean == True:
     shutil.rmtree('build',ignore_errors=True, onerror=None)
-    os.mkdir('build')
