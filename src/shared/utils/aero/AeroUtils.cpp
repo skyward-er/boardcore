@@ -20,6 +20,6 @@ float mslPressure(float pressure_ref, float temperature_ref, float altitude_ref)
 
 float mslTemperature(float temperature_ref, float altitude_ref)
 {
-    return temperature_ref - (altitude_ref * constants::a);
+    return temperature_ref + (altitude_ref * constants::a);
 }
 }  // namespace aeroutils
