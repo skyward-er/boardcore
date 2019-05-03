@@ -93,4 +93,19 @@ float mslPressure(float pressure_ref, float temperature_ref,
  */
 float mslTemperature(float temperature_ref, float altitude_ref);
 
+/**
+ * Returns the vertical speed (or rate of climb) of the rocket, assuming an
+ * International Standard Atmosphere model.
+ *
+ * @warning This function is valid for altitudes below 11000 meters above sea
+ * level
+ * 
+ * @param p Current pressure [Pa]
+ * @param dp_dt [Rate of change of pressure [Pa/s]]
+ * @param p_ref Reference pressure [Pa]
+ * @param t_ref Reference temperature [K]
+ * @return Vertical speed, positive upwards [m/s]
+ */
+float verticalSpeed(float p, float dp_dt, float p_ref, float t_ref);
+
 }  // namespace aeroutils

@@ -30,7 +30,7 @@
 #include <utils/catch.hpp>
 
 #include "events/EventBroker.h"
-#include "utils/TestHelper.h"
+#include "utils/testutils/TestHelper.h"
 
 using miosix::getTick;
 using miosix::Thread;
