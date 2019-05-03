@@ -31,7 +31,7 @@
 #include "events/FSM.h"
 #include "events/HSM.h"
 
-#include "EventCounter.h"
+#include "utils/EventCounter.h"
 
 using miosix::FastMutex;
 using miosix::getTick;
@@ -48,10 +48,7 @@ static const int EVENT_TIMING_UNCERTAINTY = 1;
 /**
  * @brief Helper function used convert system ticks to milliseconds
  */
-long long tickToMilliseconds(long long tick)
-{
-    return tick * 1000 / miosix::TICK_FREQ;
-}
+long long tickToMilliseconds(long long tick);
 
 /**
  * Tests if a specific transition occurs in a Finite State Machine
@@ -186,40 +183,4 @@ bool testHSMAsyncTransition(HSM_type& hsm, const Event& ev, uint8_t topic,
  */
 bool expectEvent(uint8_t event_id, uint8_t topic, long long when,
                  long long uncertainty = EVENT_TIMING_UNCERTAINTY,
-                 EventBroker& broker   = *sEventBroker)
-{
-    EventCounter c{broker};
-    c.subscribe(topic);
-
-    long long window_start = when - uncertainty;
-    long long window_end   = when + uncertainty;
-
-    while (getTick() < window_end)
-    {
-        if (c.getCount(event_id) > 0)
-        {
-            long long recv_tick = getTick();
-            if (recv_tick < window_start)
-            {
-                printf(
-                    "[expectEvent] Event %d on topic %d receveid %d ms before the opening of "
-                    "the window.\n", event_id, topic,
-                    static_cast<int>(
-                        tickToMilliseconds(window_start - recv_tick)));
-                return false;
-            }
-            printf(
-                "[expectEvent] Event %d on topic %d received inside the window, %d ms from "
-                "the target time.\n", event_id, topic,
-                static_cast<int>(tickToMilliseconds(abs(recv_tick - when))));
-
-            return true;
-        }
-
-        Thread::sleep(1);
-    }
-    printf(
-        "[expectEvent] The event %d on topic %d was not yet received at the end of the "
-        "window.\n", event_id, topic);
-    return false;
-}
+                 EventBroker& broker   = *sEventBroker);

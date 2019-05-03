@@ -22,4 +22,12 @@ float mslTemperature(float temperature_ref, float altitude_ref)
 {
     return temperature_ref + (altitude_ref * constants::a);
 }
+
+float verticalSpeed(float p, float dp_dt, float p_ref, float t_ref)
+{
+    using namespace constants;
+
+    return -(t_ref * dp_dt * powf(p / p_ref, n_inv)) / (a * n * p);
+}
+
 }  // namespace aeroutils
