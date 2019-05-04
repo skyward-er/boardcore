@@ -226,8 +226,9 @@ protected:
                                     tempIndex =
                                         (int8_t)1; /* indicate that LCA found */
                                     /* entry path must not overflow */
-                                    // ASSERT(index <
-                                    // (int8_t)HSM_MAX_NEST_DEPTH);
+
+                                    D(assert(index <
+                                             (int8_t)HSM_MAX_NEST_DEPTH));
 
                                     /* do not enter the source and terminate the
                                      * loop */
@@ -244,7 +245,7 @@ protected:
                             {
                                 /* the LCA not found yet? entry path must not
                                  * overflow */
-                                // ASSERT(index < (int8_t)HSM_MAX_NEST_DEPTH);
+                                D(assert(index < (int8_t)HSM_MAX_NEST_DEPTH));
                                 /* exit the source */
                                 (static_cast<T*>(this)->*source)({EV_EXIT});
                                 /* (F) check the rest of source->super ==
@@ -377,7 +378,9 @@ private:
         StateHandler target = this->state;
         State retState;
 
-        D(assert((static_cast<T*>(this)->*temp)({EV_EMPTY}) == TRAN));
+        State s = (static_cast<T*>(this)->*temp)({EV_EMPTY});
+        UNUSED(s); // Avoid warning when not compiling for DEBUG
+        D(assert(s == TRAN));
 
         do
         {

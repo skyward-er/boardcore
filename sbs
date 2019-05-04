@@ -2,8 +2,8 @@
 
 # Skyward Build System Configuration File
 #
-# Copyright (c) 2015-2016 Skyward Experimental Rocketry
-# Authors: Alain Carlucci
+# Copyright (c) 2015-2019 Skyward Experimental Rocketry
+# Authors: Alain Carlucci, Alvise de'Faveri Tron
 # 
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -23,8 +23,21 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 # THE SOFTWARE.
 
+#
+# This script provides a way to automatically build and execute Makefiles
+# for Miosix.
+# The script searches for an sbs.conf file in the directory in which it is executed.
+# The .conf file tells the script:
+# - where are the files containing a "main()", divided in entrypoints and tests
+# - for each main, which target board to set
+# - for each main, which DEFINE flags to set
+# - for each main, which additional .cpp files have to be compiled (srcfiles)
+# - for all files, which additional folders to include and/or static libraries
+# - the relative path to this folder
+#
+
 from optparse import OptionParser
-import os, shutil, subprocess, sys
+import os, shutil, subprocess, sys, time
 
 try:
     import ConfigParser as cp #python 2
@@ -35,10 +48,12 @@ except ImportError:
 # Global variables
 #
 srcfiles={}
-boards={}
+mainfiles={}
 tests={}
 entrypoints={}
+colors=False
 
+# Map for the project configuration, filled in when parsing sbs.conf
 projconf = {
     "ENTRY_PATH":"src/entrypoints",
     "TESTS_PATH":"src/tests",
@@ -50,7 +65,7 @@ projconf = {
 }
 
 #
-# ASCII art
+# ASCII art banner
 #
 def printBanner():
     print("+---------------------------------------------------------------+")
@@ -67,101 +82,119 @@ def printBanner():
     print("+----------------------------------|___/-------------------v2.0-+")
 
 #
-# Command line options
+# Colorized output helper functions 
+# NOTE: I don't know why but an extra \n is added at the end of each line,
+# so we have to use replace
+#
+BLACK, RED, GREEN, YELLOW, BLUE, MAGENTA, CYAN, WHITE = range(8)
+NORMAL, BOLD, DIM, NONE1, UNDERLINED, BLINK, NONE2, REVERSE, HIDDEN = range(9)
+def printout(text, colour=WHITE,style=NORMAL):
+    if colors:
+        seq = "\x1b[%d;%dm" % (style,30+colour) + text + "\x1b[0m"
+        print(seq.replace('\n','',1))
+    else:
+        print(text.replace('\n','',1))
+
+def print_make_output(text):
+    if "error" in text:
+        printout(text, RED, BOLD)
+    elif "warning" in text:
+        printout(text, YELLOW, BOLD)
+    elif "note" in text:
+        printout(text, BLUE)
+    else:
+        print(text.replace('\n','',1))
+
+#
+# Define all command line options
 #
 def configCmdParser():
-	parser = OptionParser()
-	parser.add_option("-c", "--clean", help="Run a 'make clean'", dest="clean", 
-		action="store_true")
-	parser.add_option("-b", "--build", help="Build a specific entrypoint or test", dest="board")
-	parser.add_option("-l", "--list", help="List all possible configurations", dest="list",
-	    default=False, action='store_true')
-	parser.add_option("-t", "--all-test", help="Build all tests", dest="all_tests", default=False, action='store_true')
-	parser.add_option("-e", "--all-entrypoint", help="Build all entrypoints", dest="all_entry", default=False, action='store_true')
-	parser.add_option("-g", "--gen-faults", help="Generate fault list header files and exit", dest="genhdr", default=False, action='store_true')
-	parser.add_option("-v", "--verbose", help="Print a verbose output", dest="log", 
-		action="store_true")
-	parser.add_option("-j", "--jobs", 
-		help="Specifies the number of jobs (commands) to run simultaneously.", 
-		type="int", dest="JOBS", default=8)
-	return parser
+    parser = OptionParser()
+    parser.add_option("-c", "--clean", help="Run a 'make clean'", dest="clean", 
+        action="store_true")
+    parser.add_option("-b", "--build", help="Build a specific entrypoint or test", dest="board")
+    parser.add_option("-l", "--list", help="List all possible configurations", dest="list",
+        default=False, action='store_true')
+    parser.add_option("-t", "--all-test", help="Build all tests", dest="all_tests", 
+        default=False, action='store_true')
+    parser.add_option("-e", "--all-entrypoint", help="Build all entrypoints", dest="all_entry", 
+        default=False, action='store_true')
+    parser.add_option("-g", "--gen-faults", help="Generate fault list header files and exit", 
+        dest="genhdr", default=False, action='store_true')
+    parser.add_option("-v", "--verbose", help="Print a verbose output", dest="log", 
+        action="store_true")
+    parser.add_option("-j", "--jobs", 
+        help="Specifies the number of jobs (commands) to run simultaneously.", 
+        type="int", dest="JOBS", default=8)
+    parser.add_option("-n", "--no-colors", help="Don't print colors in the output", dest="colors", 
+        default=True,  action="store_false")
+    return parser
 
 #
-# Generate fault counter headers
-#
-def genFaultCounters():
-    d1 = "data/fault_list.csv"
-    d2 = SBS_BASE + "/src/shared/diagnostic/FaultCounterData.h"
-    os.system("python %s/scripts/gen_fault_headers.py %s %s" %(SBS_BASE,d1,d2))
-
-#
-# Import srcfiles from boardcore's sbs.conf
-#
-def importSrcFiles(path):
-    conf = cp.RawConfigParser()
-    conf.read(path)
-
-    for i in conf.sections():
-        stype = conf.get(i, 'Type')
-        if stype == 'srcfiles':
-            srcfiles[i] = [projconf['SBS_BASE'] + "/" + x.strip() for x in conf.get(i, 'Files').split("\n")]
-
-#
-# Import project's conf
+# Parse the sbs.conf file: project-level config, entrypoints, tests and srcfiles
 #
 def parseConf(path):
-    mainmask = projconf['ENTRY_PATH'] + "/%s.cpp"
-    testmask = projconf['TESTS_PATH'] + "/%s.cpp"
+    global projconf
+    entrypoint_mask = projconf['ENTRY_PATH'] + "/%s.cpp"
+    test_mask = projconf['TESTS_PATH'] + "/%s.cpp"
+
+    # Parse .conf file
     conf = cp.RawConfigParser()
     conf.read(path)
 
-    # Populate entrypoints and tests 
+    # Read all sections
     for i in conf.sections():
         stype = conf.get(i, 'Type')
-        if stype == 'srcfiles':
+
+        if stype == 'project':
+            # Put all the project conf values in the corresponding map
+            for i in projconf:
+                projconf[i] = conf.get('SBS_PROJECT', i)
+        elif stype == 'srcfiles':
             srcfiles[i] = [x.strip() for x in conf.get(i, 'Files').split("\n")]
         elif stype == 'board':
             entrypoints[i] = {   'id': conf.get(i, 'BoardId'), 
                             'bin': conf.get(i, 'BinName'),
                             'defines': conf.get(i, 'Defines'),
-                            'files': [mainmask % conf.get(i, 'Main').strip()] +
+                            'files': [entrypoint_mask % conf.get(i, 'Main').strip()] +
                              [x.strip() for x in conf.get(i, 'Include').split(' ')]
                         }    
         elif stype == 'test':
             tests[i] = {   'id': conf.get(i, 'BoardId'), 
                             'bin': conf.get(i, 'BinName'),
                             'defines': conf.get(i, 'Defines') + " -I" + projconf['TESTS_PATH'],
-                            'files': [testmask % conf.get(i, 'Main').strip()] +
+                            'files': [test_mask % conf.get(i, 'Main').strip()] +
                              [x.strip() for x in conf.get(i, 'Include').split(' ')]
                         }
-        elif stype != 'project':
-            print('Type not implemented')
+        else:
+            print('[SBS] Syntax error in %s: type %s not implemented' % (path, stype))
+            exit(1)
 
-    # Join tests and entrypoints in boards
-    boards.update(entrypoints)
-    boards.update(tests)
+    # Join tests and entrypoints in mainfiles
+    mainfiles.update(entrypoints)
+    mainfiles.update(tests)
+
+    # Exit if nothing was found
+    if (len(mainfiles) == 0 ):
+        print('[SBS] Nothing found in sbs.conf . Terminating.')
+        exit(1)
+
+    # Import also srcfiles from boardcore if executing from another folders
+    if projconf['SBS_BASE'] != '.':
+        importSrcFiles(projconf['SBS_BASE'] + "/sbs.conf")
 
     # Substitute includes
-    for i in boards:
+    for i in mainfiles:
         files = []
-        for j in boards[i]['files']:
+        for j in mainfiles[i]['files']:
             if j.startswith('%'):
                 files += srcfiles[j[1:]]
             else:
                 files += [j]
-        boards[i]['files'] = files
+        mainfiles[i]['files'] = files
 
 #
-# Set project parameters (for projects that are not boardcore)
-#
-def readProjectParams(conf):
-    global projconf
-
-    for i in projconf:
-        projconf[i] = conf.get('SBS_PROJECT', i)
-
-#
-# Fill in Makefile.template
+# Create a Makefile for a specific board starting from Makefile.template
 #
 def build_makefile(template, board, bname):
     global projconf
@@ -196,44 +229,63 @@ def build_makefile(template, board, bname):
 
     return template
 
-#-------------------------------------------------------------
-#     Main
+#
+# Generate fault counter headers
+#
+def genFaultCounters():
+    d1 = "data/fault_list.csv"
+    d2 = SBS_BASE + "/src/shared/diagnostic/FaultCounterData.h"
+    os.system("python %s/scripts/gen_fault_headers.py %s %s" %(SBS_BASE,d1,d2))
+
+#
+# Import srcfiles groups from another .conf file.
+# Srcfiles are added only if there's not a group already with the same name.
+#
+def importSrcFiles(path):
+    conf = cp.RawConfigParser()
+    conf.read(path)
+
+    for i in conf.sections():
+        stype = conf.get(i, 'Type')
+        if stype == 'srcfiles':
+            if i not in srcfiles:
+                srcfiles[i] = [projconf['SBS_BASE'] + "/" + x.strip() for x in conf.get(i, 'Files').split("\n")]
+            else:
+                print('[SBS] Syntax error in %s: a srcfiles group named %s is already defined. Terminating' % (path, i))
+                exit(1)
+
+
+##-------------------------------------------------------------
+##                       MAIN
+##-------------------------------------------------------------
 
 printBanner()
 
+# Parse command line options
 parser = configCmdParser()
 (options, args) = parser.parse_args()
+colors = options.colors
+
+# Parse configuration file
+parseConf("sbs.conf")
+
+# Load Makefile.template
+make_template = ""
+with open( projconf['SBS_BASE'] + '/Makefile.template') as f:
+    make_template = str(f.read())
+if len(make_template) == 0:
+    print('[SBS]  Makefile template empty or not found.')
+    exit(1)
+
+#
+# Do things
+#
 
 # Fault headers generation
 if options.genhdr == True:
     genFaultCounters()
     exit(0)
 
-# Check if it's an external project
-conf = cp.RawConfigParser()
-conf.read("sbs.conf")
-if 'SBS_PROJECT' in conf.sections():
-    readProjectParams(conf)
-    importSrcFiles(projconf['SBS_BASE'] + "/sbs.conf")
-
-# Parse conf file
-parseConf("sbs.conf")
-
-if (len(boards) == 0 ):
-    print('[SBS] Nothing found in sbs.conf . Terminating.')
-    exit(0)
-
-# Load Makefile template
-make_template = ""
-with open( projconf['SBS_BASE'] + '/Makefile.template') as f:
-    make_template = str(f.read())
-
-if len(make_template) == 0:
-    print('Makefile template empty or not found')
-    sys.exit(-1)
-
-
-# Do things
 # List
 if options.list == True:
     print('[SBS] List of available entrypoints:')
@@ -242,51 +294,67 @@ if options.list == True:
     print('\n[SBS] List of available tests:')
     for test in tests:
         print(test)
-    sys.exit(0)
+    exit(0)
 
-# Clean before build
+# Set how many main files to build:
+if options.board != None:       # just one
+    try:
+        good = mainfiles[options.board]
+        mainfiles = {options.board : good}
+    except KeyError:
+        print('[SBS] No entrypoint or test named %s. Terminating.' % (options.board))
+        sys.exit(2)
+elif options.all_entry == True:  # all entrypoints
+    mainfiles = entrypoints
+elif options.all_tests == True:  # all tests
+    mainfiles = tests
+
+
+# Set action
+if options.clean == True:
+    cleanparam =["clean"]
+    action = ["Clean", "Cleaning"]
+else:
+    cleanparam =[]
+    action = ["Build","Building"]
+
+# Clean makefiles before building
 shutil.rmtree('build',ignore_errors=True, onerror=None)
 os.mkdir('build')
 
-# Single board
-if options.board != None:
-    try:
-        good = boards[options.board]
-        boards = {options.board : good}
-    except KeyError:
-        print('[SBS] Board or test not found. Terminating.')
-        sys.exit(2)
-# Build entrypoints
-elif options.all_entry == True:
-    boards = entrypoints
-# Build tests
-elif options.all_tests == True:
-    boards = tests
+# Populate and execute Makefile (build or clean)
 
-# Verbose
-cleanparam = []
-if options.log == True:
-    procout = None
-else:
-    procout = open(os.devnull, 'w') 
-
-# Build
-action = ["Build","Building"]
-if options.clean == True:
-    cleanparam = ["clean"]
-    action = ["Clean", "Cleaning"]
-
-for i in boards:
-    print('[SBS] %s %s' % (action[1],i))
+for i in mainfiles:
+    printout('[SBS] %s %s' % (action[1],i), WHITE, BOLD)
+    
     with open('build/%s' % i, 'w') as f:
-        f.write(build_makefile(make_template, boards[i], i))
-    try:
-        subprocess.check_call(['make', '-j', str(options.JOBS), '-f', 'build/%s' % i] + cleanparam, stdout=procout)
-    except subprocess.CalledProcessError:
-        print('[SBS] %s Failed. Terminating.' % action[0])
-        sys.exit(-1)
+        f.write(build_makefile(make_template, mainfiles[i], i))
 
-    print('[SBS] %s OK' % action[0])
+    p = subprocess.Popen(['make', '-j', str(options.JOBS), '-f', 'build/%s' % i]
+                            + cleanparam,
+                            universal_newlines=True,
+                            stdout=subprocess.PIPE, 
+                            stderr=subprocess.PIPE,
+                            bufsize=1)
+
+    # stdout printed only in verbose
+    with p.stdout:
+        for line in iter(p.stdout.readline, ''):
+            if options.log == True:
+                print_make_output(line)
+    #stderr always printed
+    with p.stderr:
+        for line in iter(p.stderr.readline, ''):
+            print_make_output(line)
+
+    while p.returncode == None:
+        p.poll()
+
+    if p.returncode != 0:
+        printout('[SBS] %s Failed. Terminating.' % action[0], RED, REVERSE)
+        sys.exit(-1)
+    else:
+        printout('[SBS] %s OK - %s\n\n' % (action[0],i), GREEN, BOLD)
 
 # Clean
 if options.clean == True:

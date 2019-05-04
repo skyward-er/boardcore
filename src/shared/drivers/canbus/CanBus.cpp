@@ -223,21 +223,21 @@ void CanBus::canSetup()
     /* Set the transmit FIFO priority */
     CANx->MCR &= ~CAN_MCR_TXFP;
 
-    /* quanta 1+6+7 = 14, 14 * 3 = 42, 42000000 / 42 = 1000000 */
-    /* CAN Baudrate = 1Mbps (CAN clocked at 42 MHz) Prescale = 3 */
-    /* Requires a clock with integer division into APB clock */
-
-    // sincronization with jump (CAN_BRT SJW)
-    uint8_t CAN_SJW = CAN_SJW_1tq;  // 1+6+7 = 14, 1+14+6 = 21, 1+15+5 = 21
-
-    // Bit Segment 1 = sample point (CAN_BRT TS1)
-    // Bit Segment 2 = transmit point (CAN_BRT TS2)
+    /**CAN TIMINGS:
+     * Quanta       = SJW + BS1 + BS2
+     * CAN Baudrate = APB Clock / (Quanta * Prescaler)
+     *
+     * e.g. quanta=1+6+7=14, prescaler=6, PCLK2=42MHz
+     *       =>   42M / (14 * 6) = 500kBit/s
+     */
+    // Synchronization with jump (CAN_BRT SJW)
+    uint8_t CAN_SJW = CAN_SJW_1tq;  
+    // Bit Segment 1 = sample point (CAN_BRT TS1)   
     uint32_t CAN_BS1 = CAN_BS1_6tq;
+    // Bit Segment 2 = transmit point (CAN_BRT TS2)
     uint32_t CAN_BS2 = CAN_BS2_7tq;
-
-    // can prescaler (CAN_BRT BRP)
-    uint16_t CAN_Prescaler = 525;
-    // 3 == 42000000 / (14 * 1000000); // quanta by baudrate
+    // Can Prescaler (CAN_BRT BRP)
+    uint16_t CAN_Prescaler = 6;
 
     // pagina 165
     // if(RCC->CFGR & (1<<15)) //check se il clock viene diviso

@@ -31,6 +31,11 @@ PWM::PWM(Timer timer, unsigned int frequency,
     : timer(timer), frequency(frequency),
       duty_cycle_resolution(duty_cycle_resolution)
 {
+    for (int i = 0; i < 4; i++)
+    {
+        channels[i].channel = static_cast<PWMChannel>(i);
+    }
+
     // Enable clock on the Timer
     {
         FastInterruptDisableLock dLock;
@@ -41,6 +46,8 @@ PWM::PWM(Timer timer, unsigned int frequency,
     }
 
     timer.TIM->CR1 |= TIM_CR1_ARPE;  // Auto reload register preload
+
+    hardwareUpdateRegisters();
 }
 
 PWM::~PWM()
@@ -55,11 +62,13 @@ PWM::~PWM()
     }
 }
 
-void PWM::setFrequency(unsigned int frequency) { this->frequency = frequency; }
+void PWM::setFrequency(unsigned int frequency) { this->frequency = frequency; 
+hardwareUpdateRegisters();}
 
 void PWM::setDutyCycleResolution(unsigned int duty_cycle_resolution)
 {
     this->duty_cycle_resolution = duty_cycle_resolution;
+    hardwareUpdateRegisters();
 }
 
 void PWM::enableChannel(PWMChannel channel, float duty_cycle, PWMMode mode,
@@ -197,6 +206,7 @@ void PWM::hardwareEnableChannel(PWMChannel channel)
 void PWM::setDutyCycle(PWMChannel channel, float duty_cycle)
 {
     channels[static_cast<int>(channel)].duty_cycle = duty_cycle;
+
     hardwareSetDutyCycle(channel);
 }
 
@@ -227,7 +237,7 @@ void PWM::hardwareSetDutyCycle(PWMChannel channel)
 void PWM::disableChannel(PWMChannel channel)
 {
     channels[static_cast<int>(channel)].enabled = false;
-    hardwareDisableChannel(channel);  
+    hardwareDisableChannel(channel);
 }
 
 void PWM::hardwareDisableChannel(PWMChannel channel)
@@ -249,20 +259,23 @@ void PWM::hardwareDisableChannel(PWMChannel channel)
     }
 }
 
+void PWM::hardwareUpdateRegisters()
+{
+    uint32_t psc =
+        (timer.input_clock_freq / (duty_cycle_resolution * frequency)) - 1;
+    if (psc > 0xFFFF)
+    {
+        psc = 0xFFFF;
+    }
+
+    timer.TIM->PSC = psc;
+    timer.TIM->ARR = timer.input_clock_freq / ((psc + 1) * frequency);
+}
+
 void PWM::start()
 {
     if (!started)
     {
-        uint32_t psc =
-            (timer.input_clock_freq / (duty_cycle_resolution * frequency)) - 1;
-        if (psc > 0xFFFF)
-        {
-            psc = 0xFFFF;
-        }
-
-        timer.TIM->PSC = psc;
-        timer.TIM->ARR = timer.input_clock_freq / ((psc + 1) * frequency);
-
         timer.TIM->CNT = 0;
         timer.TIM->EGR |= TIM_EGR_UG;
 

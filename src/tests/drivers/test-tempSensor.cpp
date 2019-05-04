@@ -1,5 +1,5 @@
-/* Copyright (c) 2015-2019 Skyward Experimental Rocketry
- * Authors: Benedetta Margrethe Cattani
+/* Copyright (c) 2019 Skyward Experimental Rocketry
+ * Authors: 
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -19,61 +19,33 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
-
 #include <Common.h>
-#include <interfaces-impl/hwmapping.h>
+#include "sensors/LM75B.h"
+#include "drivers/BusTemplate.h"
+
 using namespace miosix;
-using namespace interfaces;
-using namespace actuators;
 
-using rena   = Gpio<GPIOG_BASE, 2>;
+#include <interfaces-impl/hwmapping.h>
+using I2CProtocol = ProtocolI2C<miosix::I2C1Driver>;
 
-void enable_reverse(){
-  hbridger::in::high();
-  hbridgel::in::low();
-  rena::high();
-  hbridgel::ena::high();
-}
+uint8_t addr = 0x48 << 1;
+// uint8_t addr = 0x48 << 2;
 
-void enable_direct(){
-  hbridger::in::low();
-  hbridgel::in::high();
-  rena::high();
-  hbridgel::ena::high();
-}
-
-void disable(){
-  hbridger::in::low();
-  hbridgel::in::low();
-  rena::low();
-  hbridgel::ena::low();
-}
-
-
+typedef LM75B<I2CProtocol> LM75BType;
 int main()
 {
-    rena::mode(Mode::OUTPUT);
-    hbridger::in::mode(Mode::OUTPUT);
-    hbridgel::in::mode(Mode::OUTPUT);
-
+    LM75BType temp{addr};
+    Thread::sleep(500);
 
     while (true)
     {
-printf("Serial is working!\n");
+        bool result = temp.selfTest();
 
-      Thread::sleep(1000);
-      disable();
-      printf("Disabled\n");
-      Thread::sleep(2000);
-      enable_direct();
-      printf("Direct\n");
-      Thread::sleep(3000);
-      enable_reverse();
-      printf("Reverse\n");
-      Thread::sleep(3000);
-      disable();
-      printf("Disabled\n");
-
-
+        miosix::ledOn();
+        TRACE("LM75B self test result: %d\n", result);
+        Thread::sleep(500);
+        miosix::ledOff();
+        Thread::sleep(500);
+        TRACE("LM75B temperature: %f\n", temp.getTemp());
     }
 }

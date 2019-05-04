@@ -24,8 +24,6 @@
 #ifndef VEC3_H
 #define VEC3_H
 
-#include <Common.h>
-
 class Vec3
 {
     friend class Mat4;
