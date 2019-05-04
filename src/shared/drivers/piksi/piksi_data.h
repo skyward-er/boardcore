@@ -20,6 +20,8 @@
  * THE SOFTWARE.
  */
 
+#pragma once
+
 /**
  * The GPS information
  */
