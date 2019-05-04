@@ -42,7 +42,6 @@ int main()
 #else   //_MIOSIX
     Piksi piksi("/dev/ttyUSB0");
 #endif  //_MIOSIX
-
     for (;;)
     {
         Thread::sleep(200);
@@ -54,7 +53,7 @@ int main()
 #else   //_MIOSIX
             long long now = clock() / (CLOCKS_PER_SEC / 1000);
 #endif  //_MIOSIX
-            cout << " t: " << now - gps.timestamp << " lat: " << gps.latitude
+            cout << " t: " << gps.timestamp << " lat: " << gps.latitude
                  << " lon: " << gps.longitude << " h: " << gps.height
                  << " vn: " << gps.velocityNorth << " ve: " << gps.velocityEast
                  << " vd: " << gps.velocityDown << " ns: " << gps.numSatellites
