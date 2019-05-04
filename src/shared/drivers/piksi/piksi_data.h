@@ -31,7 +31,6 @@ struct GPSData
     /// you how "old" the data is.
     long long timestamp;
 
-    bool fix;
     double latitude;      ///< [deg] //TODO: cast to float??
     double longitude;     ///< [deg] //TODO: cast to float??
     double height;        ///< [m]   //TODO: cast to float??

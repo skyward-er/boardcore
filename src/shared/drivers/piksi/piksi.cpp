@@ -91,7 +91,13 @@ GPSData Piksi::getGpsData()
     GPSData result;
     pthread_mutex_lock(&mutex);
     result = data;
-    result.fix = firstFixReceived;
+    
+    if (!firstFixReceived)
+    {
+        pthread_mutex_unlock(&mutex);
+        throw runtime_error("No fix");
+    }
+
     pthread_mutex_unlock(&mutex);
     return result;
 }
