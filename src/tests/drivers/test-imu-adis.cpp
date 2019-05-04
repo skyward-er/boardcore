@@ -27,15 +27,10 @@
 #include <sensors/SensorSampling.h>
 #include <math/Stats.h>
 #include <diagnostic/CpuMeter.h>
+#include <drivers/spi/SensorSpi.h>
 
 using namespace miosix;
 using namespace miosix::interfaces;
-
-// SPI1
-// typedef Gpio<GPIOA_BASE, 5> GpioSck;
-// typedef Gpio<GPIOA_BASE, 6> GpioMiso;
-// typedef Gpio<GPIOA_BASE, 7> GpioMosi;
-// typedef Gpio<GPIOA_BASE, 8> CS_ADIS16405;
 
 // Reset pin
 typedef Gpio<GPIOD_BASE, 5> rstPin;
@@ -48,49 +43,73 @@ typedef ADIS16405<spiADIS16405,rstPin> adis_t; //Passo il bus creato al sensore
 int main()
 {	
 	spiADIS16405::init();
+	auto& spi = SPIDriver::instance();
 
 	Thread::sleep(1000);
-	adis_t* adis = new adis_t();
+	adis_t adis(adis_t::GYRO_FS_300);
 
-	if(adis->init())
-		printf("ADIS Init succeeded\n" );
+	if(adis.init())
+		printf("[ADIS16405] Init succeeded\n" );
 	else
-		printf("ADIS Init failed\n");
+		printf("[ADIS16405] Init failed\n");
 	
-	if(adis->selfTest())
-		printf("Self test succeeded\n" );
+	if(adis.selfTest())
+		printf("[ADIS16405] Self test succeeded\n" );
 	else
-		printf("Self test failed\n");
+		printf("[ADIS16405] Self test failed\n");
 
-	SimpleSensorSampler sampler;
-	sampler.AddSensor(adis);
+	auto req = adis.buildDMARequest();
+
+    
+    auto sample = [&]() {
+	    if (spi.transaction(req) == false)
+	        puts("DMA error");
+        for (auto& r : req)
+        {
+            adis.onDMAUpdate(r);
+            printf("ID: %d  --> ", r.id());
+            auto& resp = r.readResponseFromPeripheral();
+            memDump(resp.data(), resp.size());
+        }
+    };
+
+	// SimpleSensorSampler sampler;
+	// sampler.AddSensor(&adis);
 
 	// DMASensorSampler sampler;
-	// sampler.AddSensor(adis);
+	// sampler.AddSensor(&adis);
 
-	StatsResult statResult;
-	Stats stats;
+	// StatsResult statResult;
+	// Stats stats;
 
-	int counter = 0;
+	// int counter = 0;
+
+
+
+
+
+
     while(true)
     {
-		sampler.Update();
+		// sampler.Update();
 
-		stats.add(averageCpuUtilization());
+		// stats.add(averageCpuUtilization());
 
 
-		if(counter == 2500){
-			statResult = stats.getStats();
-			printf("CPU usage: %f\n", statResult.mean);
-			counter = 0;
-		}
-		counter++;
+		// if(counter == 2500){
+		// 	statResult = stats.getStats();
+		// 	printf("CPU usage: %f\n", statResult.mean);
+		// 	counter = 0;
+		// }
+		// counter++;
 
-		Thread::sleep(2);
+		// Thread::sleep(2);
 
-  //   	const Vec3* last_data = adis->accelDataPtr();
-  //   	printf("%f %f %f\n", last_data->getX(), last_data->getY(),
-  //              last_data->getZ());
-		// Thread::sleep(100);
+		sample();
+
+    	const Vec3* last_data = adis.accelDataPtr();
+    	printf("%f %f %f\n", last_data->getX(), last_data->getY(),
+               last_data->getZ());
+		Thread::sleep(100);
     }
 }
