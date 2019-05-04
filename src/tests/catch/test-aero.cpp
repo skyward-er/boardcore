@@ -1,0 +1,98 @@
+/**
+ * Copyright (c) 2019 Skyward Experimental Rocketry
+ * Authors: Luca Erbetta
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in
+ * all copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.  IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+ * THE SOFTWARE.
+ */
+
+#ifdef STANDALONE_CATCH1_TEST
+#include "catch-tests-entry.cpp"
+#endif
+
+#include <utils/catch.hpp>
+#include "utils/aero/AeroUtils.h"
+
+TEST_CASE("[AeroUtils] mslTemperature")
+{
+    using namespace aeroutils;
+    Approx isa_T0 =
+        Approx(288.151).margin(0.001);  // 15 deg celsius, 0.01% error allowed
+
+    // Test against various ISA altitudes
+    REQUIRE(mslTemperature(288.15, 0) == isa_T0);
+    REQUIRE(mslTemperature(287.825, 50) == isa_T0);
+    REQUIRE(mslTemperature(281.65, 1000) == isa_T0);
+    REQUIRE(mslTemperature(216.65, 11000) == isa_T0);
+    REQUIRE(mslTemperature(288.8, -100) == isa_T0);
+}
+
+TEST_CASE("[AeroUtils] mslPressure")
+{
+    using namespace aeroutils;
+    Approx isa_P0 =
+        Approx(101325).epsilon(0.0001);  // 15 deg celsius, 0.01% error allowed
+
+    // Test against various ISA altitudes
+    REQUIRE(mslPressure(101325, 288.15, 0) == isa_P0);
+    REQUIRE(mslPressure(100725.8, 287.825, 50) == isa_P0);
+    REQUIRE(mslPressure(89874.6, 281.65, 1000) == isa_P0);
+    REQUIRE(mslPressure(22632.1, 216.65, 11000) == isa_P0);
+    REQUIRE(mslPressure(102531.8, 288.8, -100) == isa_P0);
+}
+
+float mslAltitude(float pressure, float pressure_ref, float temperature_ref,
+                  float z_ref)
+{
+    using namespace aeroutils;
+    float t0 = mslTemperature(temperature_ref, z_ref);
+
+    return relAltitude(pressure,
+                       mslPressure(pressure_ref, temperature_ref, z_ref), t0);
+}
+
+TEST_CASE("[AeroUtils] relAltitude")
+{
+    REQUIRE(mslAltitude(101325, 101325, 288.150, 0) ==
+            Approx(0).epsilon(0.0001));
+    REQUIRE(mslAltitude(100726, 100726, 287.825, 50) ==
+            Approx(50).epsilon(0.0001));
+    REQUIRE(mslAltitude(89874.6, 89874.6, 281.650, 1000) ==
+            Approx(1000).epsilon(0.0001));
+    REQUIRE(mslAltitude(22632.1, 22632.1, 216.650, 11000) ==
+            Approx(11000).epsilon(0.0001));
+    REQUIRE(mslAltitude(102532, 102532, 288.800, -100) ==
+            Approx(-100).epsilon(0.0001));
+}
+
+TEST_CASE("[AeroUtils] verticalSpeed")
+{
+    using namespace aeroutils;
+
+    const int count = 5;
+    float p[]       = {100129.4, 99555.8, 89153.1, 23611.1, 101284.6};
+
+    float dp_dt[] = {-114.98, -114.45, -104.66, -35.691, -116.05};
+
+    Approx target_v_speed = Approx(10).epsilon(0.001);
+
+    for (int i = 0; i < count; i++)
+    {
+        REQUIRE(verticalSpeed(p[i], dp_dt[i], 100129.4, 297.5) == target_v_speed);
+    }
+}

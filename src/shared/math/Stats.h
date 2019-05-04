@@ -35,6 +35,7 @@ struct StatsResult
     float maxValue;  ///< Max value found so far
     float mean;      ///< Mean of datased
     float stdev;     ///< Standard deviation of datset
+    unsigned int nSamples;  ///< Number of samples
 };
 
 /**
@@ -58,6 +59,11 @@ public:
      * Add an element
      */
     void add(float data);
+
+    /**
+     * Reset all the stats
+     */
+    void reset();
 
     /**
      * Return statistics of the elements added so far
