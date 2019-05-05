@@ -84,6 +84,9 @@ public:
         return {SPIRequest(0, Bus::getCSPin(), v)};
     }
 
+    /*
+     * Only reads accelerometer, gyro and temp
+     */
     void onDMAUpdate(const SPIRequest &req) override
     {
         const auto &r = req.readResponseFromPeripheral();
@@ -143,6 +146,8 @@ public:
         for (size_t i = 0; i < sizeof(init_data) / sizeof(init_data[0]); i++)
             Bus::write(init_data[i][0], init_data[i][1]);
 
+       /*
+        MAGNETOMETER NOT WORKING (apparently)
         uint8_t ak_wia = akReadReg(AK8963_WIA);
 
         if (ak_wia != 0x48)
@@ -156,10 +161,14 @@ public:
         akWriteReg(AK8963_CNTL1, 0x16);
         miosix::Thread::sleep(1);
 
+        */
         magnetoFSMState = 1;
         return true;
     }
 
+    /**
+     * Only reads external magnetometer.
+     */
     bool onSimpleUpdate() override
     {
 
