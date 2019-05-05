@@ -324,6 +324,7 @@ private:
     inline float normalizeSupply(uint16_t val)
     {
         return static_cast<float>(val) * 2.418e-3f; // [V]
+    }
 
     inline float normalizeAccel(int16_t val)
     {
