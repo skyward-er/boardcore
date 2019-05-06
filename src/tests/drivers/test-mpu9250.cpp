@@ -24,50 +24,95 @@
 #include <drivers/BusTemplate.h>
 #include <interfaces-impl/hwmapping.h>
 #include <sensors/MPU9250/MPU9250.h>
+
+#include <drivers/spi/SensorSpi.h>
 #include <sensors/SensorSampling.h>
+#include <math/Stats.h>
+#include <diagnostic/CpuMeter.h>
 
 using namespace miosix;
 using namespace miosix::interfaces;
 
-//typedef Gpio<GPIOC_BASE, 3> CS_MPU9250;
+/* SPI1 binding to the sensor */
+// Create SPI1
+typedef BusSPI<1,spi1::mosi,spi1::miso,spi1::sck> busSPI1;
+// La lego al Chip Select 1 per la IMU 1
+typedef ProtocolSPI<busSPI1,sensors::mpu9250::cs> spiMPU9250_a;
+// La lego al Chip Select 1 per la IMU 1
+//typedef ProtocolSPI<busSPI1,CS_MPU9250> spiMPU9250_a;
+// Passo il bus creato al sensore
+typedef MPU9250<spiMPU9250_a> mpu_t;
 
-// SPI1 binding to the sensor
-typedef BusSPI<1,spi1::mosi,spi1::miso,spi1::sck> busSPI1; //Create SPI1
-typedef ProtocolSPI<busSPI1,sensors::mpu9250::cs> spiMPU9250_a; //La lego al Chip Select 1 per la IMU 1
-// typedef ProtocolSPI<busSPI1,CS_MPU9250> spiMPU9250_a; //La lego al Chip Select 1 per la IMU 1
-typedef MPU9250<spiMPU9250_a> mpu_t; //Passo il bus creato al sensore
+
+/*
+void sample(mpu_t* mpu, std::vector<SPIRequest> req) 
+{
+    puts("Starting DMA transaction...");
+
+    if (SPIDriver::instance().transaction(req) == false)
+        puts("DMA error");
+    else
+        puts("DMA transaction ok");
+    for (auto& r : req)
+    {
+        mpu->onDMAUpdate(r);
+        printf("ID: %d  --> ", r.id());
+        auto& resp = r.readResponseFromPeripheral();
+        memDump(resp.data(), resp.size());
+    }
+}
+*/
 
 int main()
-{	
-	// CS_MPU9250::mode(miosix::Mode::OUTPUT);
-	// CS_MPU9250::high();
-
+{   
     DMASensorSampler sampler;
 
-	spiMPU9250_a::init();
-	mpu_t* mpu = new mpu_t(1, 1);
+    spiMPU9250_a::init();
+    mpu_t* mpu = new mpu_t(1, 1);
 
-	Thread::sleep(1000);
-	
-	if(mpu->init()){
-		printf("MPU9250 Init succeeded\n" );
+    Thread::sleep(1000);
+    
+    if(mpu->init()){
+        printf("MPU9250 Init succeeded\n" );
         sampler.AddSensor(mpu);
     }
-	else {
-		printf("MPU9250 Init failed\n");
+    else {
+        printf("MPU9250 Init failed\n");
         for(;;);
     }
 
-	Thread::sleep(100);
+    Thread::sleep(100);
 
+    StatsResult statResult;
+    Stats stats;
 
+    int counter = 0;
     while(true)
     {
         sampler.Update();
 
-        const Vec3* last_data = mpu->accelDataPtr();
-        printf("%f %f %f\n", last_data->getX(), last_data->getY(),
-               last_data->getZ());
-        Thread::sleep(100);
+        stats.add(averageCpuUtilization());
+
+        if(counter == 250){
+            statResult = stats.getStats();
+            printf("CPU usage: %f\n", statResult.mean);
+            counter = 0;
+
+            const Vec3* last_data = mpu->accelDataPtr();
+            printf("%f %f %f\n", last_data->getX(), last_data->getY(),
+                   last_data->getZ());
+        }
+        counter++;
+
+        Thread::sleep(4);
     }
+
+    /*
+    auto req    = mpu->buildDMARequest();
+    for (;;)
+    {
+        Thread::sleep(50);
+        sample(mpu, req);
+    }
+    */
 }

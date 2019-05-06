@@ -114,7 +114,7 @@ public:
     bool init() override
     {
         uint8_t whoami = Bus::read(REG_WHO_AM_I);
-        printf("WHOAMI: %d\n", whoami);
+        // printf("WHOAMI: %d\n", whoami);
         if (whoami != who_am_i_value)
         {
             last_error = ERR_NOT_ME;
@@ -146,8 +146,8 @@ public:
         for (size_t i = 0; i < sizeof(init_data) / sizeof(init_data[0]); i++)
             Bus::write(init_data[i][0], init_data[i][1]);
 
-       /*
-        MAGNETOMETER NOT WORKING (apparently)
+        //  MAGNETOMETER NOT WORKING  
+        /*
         uint8_t ak_wia = akReadReg(AK8963_WIA);
 
         if (ak_wia != 0x48)

@@ -22,6 +22,7 @@
 
 #include "SensorSpi.h"
 #include <kernel/scheduler/scheduler.h>
+#include <interfaces-impl/hwmapping.h>
 
 using namespace std;
 using namespace miosix;
@@ -53,9 +54,9 @@ void __attribute__((used)) SPI1rxDmaHandlerImpl()
         fifoFaultCtr++;
     }
 
-    // FEIF5 is not checked because is ALWAYS 1 both if FIFO is enabled
+    // FEIF3 is not checked because is ALWAYS 1 both if FIFO is enabled
     // or disabled. Tests show that all data are transferred correctly!
-    if (DMA2->HISR & (DMA_HISR_TEIF5 | DMA_HISR_DMEIF5))
+    if (DMA2->LISR & (DMA_LISR_TEIF3 | DMA_LISR_DMEIF3))
     {
         error = true;
         fifoFaultCtr++;
@@ -64,8 +65,8 @@ void __attribute__((used)) SPI1rxDmaHandlerImpl()
     DMA2->LIFCR = DMA_LIFCR_CTCIF0 | DMA_LIFCR_CTEIF0 | DMA_LIFCR_CDMEIF0 |
                   DMA_LIFCR_CFEIF0;
 
-    DMA2->HIFCR = DMA_HIFCR_CTCIF5 | DMA_HIFCR_CTEIF5 | DMA_HIFCR_CDMEIF5 |
-                  DMA_HIFCR_CFEIF5;
+    DMA2->LIFCR |= DMA_LIFCR_CTCIF3 | DMA_LIFCR_CTEIF3 | DMA_LIFCR_CDMEIF3 |
+                  DMA_LIFCR_CFEIF3;
 
     if (requestVector == nullptr)
         return;
@@ -194,17 +195,17 @@ void SPIRequest::IRQbeginTransaction()
                        | DMA_SxCR_EN;    // Start DMA
 
     // Tx
-    DMA2_Stream5->CR   = 0;
-    DMA2_Stream5->PAR  = reinterpret_cast<unsigned int>(&SPI1->DR);
-    DMA2_Stream5->M0AR = reinterpret_cast<unsigned int>(toPeripheral.data());
-    DMA2_Stream5->NDTR = toPeripheral.size();
+    DMA2_Stream3->CR   = 0;
+    DMA2_Stream3->PAR  = reinterpret_cast<unsigned int>(&SPI1->DR);
+    DMA2_Stream3->M0AR = reinterpret_cast<unsigned int>(toPeripheral.data());
+    DMA2_Stream3->NDTR = toPeripheral.size();
 
-    DMA2_Stream5->FCR = DMA_SxFCR_FEIE     // Enable interrupt on FIFO error
+    DMA2_Stream3->FCR = DMA_SxFCR_FEIE     // Enable interrupt on FIFO error
                         | DMA_SxFCR_DMDIS  // Enable FIFO
                         | DMA_SxFCR_FTH_0  // FTH = 11 -> Full FIFO
                         | DMA_SxFCR_FTH_1;
 
-    DMA2_Stream5->CR = DMA_SxCR_CHSEL_1 | DMA_SxCR_CHSEL_0  // Channel 3
+    DMA2_Stream3->CR = DMA_SxCR_CHSEL_1 | DMA_SxCR_CHSEL_0  // Channel 3
                        | DMA_SxCR_PL_1   // High priority because fifo disabled
                        | DMA_SxCR_MINC   // Increment memory pointer
                        | DMA_SxCR_DIR_0  // Memory to peripheral
