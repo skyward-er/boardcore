@@ -33,7 +33,7 @@ using namespace miosix;
 using namespace miosix::interfaces;
 
 // Reset pin
-typedef Gpio<GPIOD_BASE, 5> rstPin;
+typedef Gpio<GPIOD_BASE, 5> rstPin; // PD5 for the HomeoneBoard
 
 // SPI1 binding to the sensor
 typedef BusSPI<1,spi1::mosi,spi1::miso,spi1::sck> busSPI1; //Create SPI1
@@ -41,75 +41,50 @@ typedef ProtocolSPI<busSPI1,miosix::sensors::adis16405::cs> spiADIS16405; //La l
 typedef ADIS16405<spiADIS16405,rstPin> adis_t; //Passo il bus creato al sensore
 
 int main()
-{	
-	spiADIS16405::init();
-	auto& spi = SPIDriver::instance();
+{   
+    spiADIS16405::init();
 
-	Thread::sleep(1000);
-	adis_t adis(adis_t::GYRO_FS_300);
+    Thread::sleep(1000);
+    adis_t adis(adis_t::GYRO_FS_300);
 
-	if(adis.init())
-		printf("[ADIS16405] Init succeeded\n" );
-	else
-		printf("[ADIS16405] Init failed\n");
-	
-	if(adis.selfTest())
-		printf("[ADIS16405] Self test succeeded\n" );
-	else
-		printf("[ADIS16405] Self test failed\n");
-
-	auto req = adis.buildDMARequest();
-
+    if(adis.init())
+        printf("[ADIS16405] Init succeeded\n" );
+    else
+        printf("[ADIS16405] Init failed\n");
     
-    auto sample = [&]() {
-	    if (spi.transaction(req) == false)
-	        puts("DMA error");
-        for (auto& r : req)
-        {
-            adis.onDMAUpdate(r);
-            printf("ID: %d  --> ", r.id());
-            auto& resp = r.readResponseFromPeripheral();
-            memDump(resp.data(), resp.size());
+    if(adis.selfTest())
+        printf("[ADIS16405] Self test succeeded\n" );
+    else
+        printf("[ADIS16405] Self test failed\n");
+
+
+    SimpleSensorSampler sampler;
+    sampler.AddSensor(&adis);
+
+    // DMASensorSampler sampler;
+    // sampler.AddSensor(&adis);
+
+    StatsResult statResult;
+    Stats stats;
+
+    int counter = 0;
+
+    while(true) {
+        sampler.Update();
+
+        stats.add(averageCpuUtilization());
+
+        if(counter == 2500) {
+            statResult = stats.getStats();
+            printf("CPU usage: %f\n", statResult.mean);
+            counter = 0;
+
+            const Vec3* last_data = adis.accelDataPtr();
+            printf("%f %f %f\n", last_data->getX(), last_data->getY(),
+                   last_data->getZ());
         }
-    };
+        counter++;    
 
-	// SimpleSensorSampler sampler;
-	// sampler.AddSensor(&adis);
-
-	// DMASensorSampler sampler;
-	// sampler.AddSensor(&adis);
-
-	// StatsResult statResult;
-	// Stats stats;
-
-	// int counter = 0;
-
-
-
-
-
-
-    while(true)
-    {
-		// sampler.Update();
-
-		// stats.add(averageCpuUtilization());
-
-
-		// if(counter == 2500){
-		// 	statResult = stats.getStats();
-		// 	printf("CPU usage: %f\n", statResult.mean);
-		// 	counter = 0;
-		// }
-		// counter++;
-
-		// Thread::sleep(2);
-
-		sample();
-
-    	const Vec3* last_data = adis.accelDataPtr();
-    	printf("%f %f %f\n", last_data->getX(), last_data->getY(),
-               last_data->getZ());
-		Thread::sleep(100);
+        Thread::sleep(100);
     }
 }
