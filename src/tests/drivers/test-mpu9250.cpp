@@ -106,13 +106,4 @@ int main()
 
         Thread::sleep(4);
     }
-
-    /*
-    auto req    = mpu->buildDMARequest();
-    for (;;)
-    {
-        Thread::sleep(50);
-        sample(mpu, req);
-    }
-    */
 }
