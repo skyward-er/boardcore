@@ -55,7 +55,18 @@ public:
         SingletonType::getInstance()->_write(byte);
     }
 
-    inline static void init() { SingletonType::getInstance(); }
+    inline static void init()
+    {
+        SingletonType::getInstance();
+    }
+
+    // inline static void init(uint8_t cpol, uint8_t cpha)
+    // {
+    //     _cpol = cpol;
+    //     _cpha = cpha;
+    //     SingletonType::getInstance();
+    // }
+
     inline static int read(void* buffer, size_t max_len)
     {
         return SingletonType::getInstance()->_read(buffer, max_len);
@@ -90,7 +101,15 @@ public:
         return SingletonType::getInstance()->_transfer(byte);
     }
 
+    static inline void setPolarity(uint8_t cpol, uint8_t cpha)
+    {
+        SingletonType::getInstance()->_setPolarity(cpol,cpha);
+    }
+
 private:
+    uint8_t _cpol;
+    uint8_t _cpha;
+
     inline void _write(const void* buffer, size_t len) const
     {
         // DMA??
@@ -156,6 +175,18 @@ private:
         return *byte;
     }
 
+    inline void _setPolarity(uint8_t cpol, uint8_t cpha)
+    {
+        if(cpol==0)
+             getSPIAddr(N)->CR1 &= ~SPI_CR1_CPOL;
+        if(cpha==0)
+             getSPIAddr(N)->CR1 &= ~SPI_CR1_CPHA;
+        if(cpol==1)
+             getSPIAddr(N)->CR1 |= SPI_CR1_CPOL;
+        if(cpha==1)
+             getSPIAddr(N)->CR1 |= SPI_CR1_CPHA;
+    }   
+
     BusSPI()
     {
         // Interrupts are disabled to prevent bugs if more than one threads
@@ -175,9 +206,7 @@ private:
                            // | SPI_CR1_BR_0
                             | SPI_CR1_BR_1
                             | SPI_CR1_BR_2
-                            | SPI_CR1_MSTR
-                            | SPI_CR1_CPOL
-                            | SPI_CR1_CPHA; 
+                            | SPI_CR1_MSTR; 
             
             if (getSPIAddr(N) == SPI1)
             {
@@ -298,6 +327,12 @@ public:
     {
         read_low(reg, buf, size);
     }
+
+    static inline void setPolarity(uint8_t cpol, uint8_t cpha)
+    {
+        Bus::setPolarity(cpol,cpha);
+    }
+
 
 private:
     ProtocolSPI()                     = delete;
