@@ -60,13 +60,6 @@ public:
         SingletonType::getInstance();
     }
 
-    // inline static void init(uint8_t cpol, uint8_t cpha)
-    // {
-    //     _cpol = cpol;
-    //     _cpha = cpha;
-    //     SingletonType::getInstance();
-    // }
-
     inline static int read(void* buffer, size_t max_len)
     {
         return SingletonType::getInstance()->_read(buffer, max_len);
