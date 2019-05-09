@@ -28,24 +28,27 @@ using namespace miosix;
 #include <interfaces-impl/hwmapping.h>
 using I2CProtocol = ProtocolI2C<miosix::I2C1Driver>;
 
-uint8_t addr = 0x48 << 1;
-// uint8_t addr = 0x48 << 2;
+uint8_t addr1 = 0x48 << 1;
+uint8_t addr2 = 0x49 << 1;
 
 typedef LM75B<I2CProtocol> LM75BType;
 int main()
 {
-    LM75BType temp{addr};
+    LM75BType temp1{addr1};
+    LM75BType temp2{addr2};
     Thread::sleep(500);
 
     while (true)
     {
-        bool result = temp.selfTest();
+        bool result1 = temp1.selfTest();
+        bool result2 = temp2.selfTest();
 
         miosix::ledOn();
-        TRACE("LM75B self test result: %d\n", result);
+        TRACE("LM75B self test result: temp1=%d temp2=%d\n", result1, result2);
         Thread::sleep(500);
         miosix::ledOff();
         Thread::sleep(500);
-        TRACE("LM75B temperature: %f\n", temp.getTemp());
+        TRACE("LM75B (1) temperature: %f\n", temp1.getTemp());
+        TRACE("LM75B (2) temperature: %f\n", temp2.getTemp());
     }
 }
