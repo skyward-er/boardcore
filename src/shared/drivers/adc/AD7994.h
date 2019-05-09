@@ -77,7 +77,8 @@ public:
         uint8_t read_config_reg_value;
 
         // Read back the value
-        BusI2C::read(i2c_address, REG_CONFIG, &read_config_reg_value, 1);
+        BusI2C::directRead(i2c_address, &read_config_reg_value, 1);
+        //BusI2C::read(i2c_address, REG_CONFIG, &read_config_reg_value, 1);
 
         pointToConversionResult();
 
