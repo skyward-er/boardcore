@@ -1,16 +1,17 @@
-/* Copyright (c) 2018 Skyward Experimental Rocketry
- * Authors: Nuno Barcellos
- *
+/**
+ * Copyright (c) 2019 Skyward Experimental Rocketry
+ * Authors: Luca Erbetta
+ * 
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
  * in the Software without restriction, including without limitation the rights
  * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
  * copies of the Software, and to permit persons to whom the Software is
  * furnished to do so, subject to the following conditions:
- *
+ * 
  * The above copyright notice and this permission notice shall be included in
  * all copies or substantial portions of the Software.
- *
+ * 
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
  * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.  IN NO EVENT SHALL THE
@@ -20,51 +21,26 @@
  * THE SOFTWARE.
  */
 
-#include <Common.h>
 #include <drivers/BusTemplate.h>
 #include <interfaces-impl/hwmapping.h>
-#include <sensors/MPU9250/MPU9250.h>
-
-#include <drivers/spi/SensorSpi.h>
-#include <sensors/SensorSampling.h>
 
 using namespace miosix;
-using namespace miosix::interfaces;
+using namespace interfaces;
 
-typedef BusSPI<1,spi1::mosi,spi1::miso,spi1::sck> busSPI1;
-typedef ProtocolSPI<busSPI1,sensors::mpu9250::cs> spiMPU9250_a;
-typedef MPU9250<spiMPU9250_a> mpu_t;
+typedef BusSPI<2, spi2::mosi, spi2::miso, spi2::sck> busSPI2;  // Creo la SPI2
+typedef ProtocolSPI<busSPI2, xbee::cs> pspi2;
 
 int main()
-{   
-    DMASensorSampler sampler;
-
-    spiMPU9250_a::init();
-    mpu_t* mpu = new mpu_t(1, 1);
-
-    Thread::sleep(1000);
-    
-    if(mpu->init()){
-        printf("MPU9250 Init succeeded\n" );
-        sampler.AddSensor(mpu);
-    }
-    else {
-        printf("MPU9250 Init failed\n");
-
-        while(!mpu->init()) {
-            printf("MPU9250 Init failed\n");
-            Thread::sleep(1000);
-        }
-    }
-
-    while(true)
+{
+    pspi2::init();
+    Thread::sleep(200);
+    uint8_t s = SPI2->I2SCFGR;
+    for(;;)
     {
-        sampler.Update();
+        pspi2::write(0x45);
+        uint8_t r = pspi2::read(0xF6);
+        printf("%d\n", r);
 
-        const Vec3* last_data = mpu->accelDataPtr();
-        printf("%f %f %f\n", last_data->getX(), last_data->getY(),
-               last_data->getZ());
-
-        Thread::sleep(100);
+        Thread::sleep(500);
     }
 }

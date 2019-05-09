@@ -22,7 +22,6 @@
 
 #include "SensorSpi.h"
 #include <kernel/scheduler/scheduler.h>
-#include <interfaces-impl/hwmapping.h>
 
 using namespace std;
 using namespace miosix;
