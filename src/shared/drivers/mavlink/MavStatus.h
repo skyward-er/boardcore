@@ -27,8 +27,9 @@
 struct MavStatus
 {
     uint64_t timestamp;
-    uint16_t n_send_queue;   // current len of the occupied portion of the queue
-    uint16_t max_send_queue;  // max occupied len of the queue
-    uint16_t n_send_errors;   // number of packet drops
+    uint16_t n_send_queue;  // current len of the occupied portion of the queue
+    uint16_t max_send_queue;     // max occupied len of the queue
+    uint16_t n_send_errors;      // Number of failed sends
+    uint16_t n_dropped_packets;  // number of packet drops
     mavlink_status_t mav_stats;
 };
