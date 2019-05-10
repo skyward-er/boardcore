@@ -100,9 +100,6 @@ public:
     }
 
 private:
-    uint8_t _cpol;
-    uint8_t _cpha;
-
     inline void _write(const void* buffer, size_t len) const
     {
         // DMA??
