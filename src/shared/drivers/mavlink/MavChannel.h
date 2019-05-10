@@ -32,8 +32,13 @@
 #include <Common.h>
 #include <drivers/Transceiver.h>
 #include "MavStatus.h"
+#include "utils/SyncedCircularBuffer.h"
 
-#define MAV_OUT_QUEUE_LEN 10
+static constexpr int MAV_OUT_QUEUE_LEN             = 10;
+static constexpr int MAV_OUT_BUFFER_SIZE           = 512;
+static constexpr int MAV_IN_BUFFER_SIZE            = 512;
+static constexpr int MAV_OUT_SEND_BUFFER_THRESHOLD = 230;
+static constexpr long long MAV_OUT_BUFFER_MAX_AGE  = 1500;
 
 /**
  * Class to parse mavlink messages through a Transceiver. Lets you
@@ -57,6 +62,7 @@ public:
           sleep_after_send(sleepTime)
     {
         memset(&status, 0, sizeof(MavStatus));
+        memset(out_buffer, 0, MAV_OUT_BUFFER_SIZE);
     }
 
     ~MavChannel() {}
@@ -86,8 +92,7 @@ public:
         {
             rcvThread = miosix::Thread::create(
                 rcvLauncher, miosix::STACK_DEFAULT_FOR_PTHREAD,
-                miosix::MAIN_PRIORITY, reinterpret_cast<void*>(this),
-                miosix::Thread::JOINABLE);
+                miosix::MAIN_PRIORITY, reinterpret_cast<void*>(this));
 
             if (rcvThread != nullptr)
                 rcvStarted = true;
@@ -102,10 +107,6 @@ public:
     void stop()
     {
         stop_flag = true;
-        mavlink_message_t msg;
-
-        mavlink_msg_noarg_tc_pack(0, 0, &msg, 0);
-        messageQueue.put(msg);
         sndThread->join();
     }
 
@@ -117,29 +118,33 @@ public:
     void runReceiver()
     {
         mavlink_message_t msg;
-        uint8_t byte;
+        uint8_t rcv_buffer[MAV_IN_BUFFER_SIZE];
 
         while (!stop_flag)
         {
-            device->receive(&byte, 1);  // Blocking function
+            ssize_t rcv_size =
+                device->receive(rcv_buffer,
+                                MAV_IN_BUFFER_SIZE);  // Blocking function
             uint8_t parse_result = 0;
-            {
-                // parse next byte
-                miosix::Lock<miosix::FastMutex> l(mtx_status);
-                parse_result = mavlink_parse_char(MAVLINK_COMM_0, byte, &msg,
-                                                  &(status.mav_stats));
-            }
 
-            /* If a complete mavlink message was found */
-            if (parse_result)
+            miosix::Lock<miosix::FastMutex> l(mtx_status);
+            for (ssize_t i = 0; i < rcv_size; i++)
             {
-                TRACE(
-                    "[MAV] Received message with ID %d, sequence: %d from "
-                    "component %d of system %d\n",
-                    msg.msgid, msg.seq, msg.compid, msg.sysid);
+                // Parse received bytes
+                parse_result = mavlink_parse_char(MAVLINK_COMM_0, rcv_buffer[i],
+                                                  &msg, &(status.mav_stats));
+                if (parse_result == 1)
+                {
+                    miosix::Unlock<miosix::FastMutex> unlock(l);
 
-                /* Handle the command */
-                handleMavlinkMessage(this, msg);
+                    TRACE(
+                        "[MAV] Received message with ID %d, sequence: %d from "
+                        "component %d of system %d\n",
+                        msg.msgid, msg.seq, msg.compid, msg.sysid);
+
+                    /* Handle the command */
+                    handleMavlinkMessage(this, msg);
+                }
             }
         }
     }
@@ -151,46 +156,53 @@ public:
      */
     void runSender()
     {
-        mavlink_message_t msgTemp;
-        uint8_t bufferMsg[sizeof(mavlink_message_t) + 1];
-        TRACE("%s", "[MAV] Sender is running\n");
+        TRACE("[MAV] Sender is running\n");
 
         while (!stop_flag)
         {
-            /* Readfrom buffer */
-            messageQueue.waitUntilNotEmpty();
-            if (stop_flag)
+            while (!message_queue.isEmpty())
             {
-                break;
-            }
-            messageQueue.get(msgTemp);
+                mavlink_message_t msgTemp = message_queue.pop();
+                int msgLen                = mavlink_msg_to_send_buffer(
+                    out_buffer + out_buffer_size, &msgTemp);
+                out_buffer_size += msgLen;
 
-            /* Update status */
+                if (out_buffer_size >= MAV_OUT_SEND_BUFFER_THRESHOLD)
+                {
+                    break;
+                }
+            }
+            if (out_buffer_size >= MAV_OUT_SEND_BUFFER_THRESHOLD ||
+                out_buffer_age >= MAV_OUT_BUFFER_MAX_AGE)
             {
-                miosix::Lock<miosix::FastMutex> l(mtx_status);
-                status.n_send_queue--;
+                sendBuffer();
             }
 
-            /* Convert into a byte stream */
-            int msgLen = mavlink_msg_to_send_buffer(bufferMsg, &msgTemp);
+            miosix::Thread::sleep(sleep_after_send);
+            out_buffer_age += sleep_after_send;
+        }
+    }
 
-            /* Send */
-            bool sent = device->send(bufferMsg, msgLen);
-            TRACE("[MAV] Sending %d bytes\n", msgLen);
+    void sendBuffer()
+    {
+        bool sent       = device->send(out_buffer, out_buffer_size);
+        out_buffer_age  = 0;
+        out_buffer_size = 0;
+
+        TRACE("[MAV] Sending %d bytes\n", out_buffer_size);
+
+        if (!sent)
+            TRACE("[MAV] Error: could not send message\n");
+
+        /* Update status */
+        {
+            miosix::Lock<miosix::FastMutex> l(mtx_status);
+
+            status.n_send_queue = message_queue.count();
+            status.mav_stats.current_tx_seq++;
 
             if (!sent)
-                TRACE("[MAV] Error: could not send message\n");
-
-            /* Update status */
-            {
-                miosix::Lock<miosix::FastMutex> l(mtx_status);
-                status.mav_stats.current_tx_seq++;
-                if (!sent)
-                    status.n_send_errors++;
-            }
-
-            /* Sleep guarantees that commands from the GS can be received */
-            miosix::Thread::sleep(sleep_after_send);
+                status.n_send_errors++;
         }
     }
 
@@ -201,31 +213,24 @@ public:
      */
     bool enqueueMsg(const mavlink_message_t& msg)
     {
-        if (messageQueue.isFull())
         {
-            /* Update status */
+            miosix::Lock<miosix::FastMutex> l(mtx_status);
+
+            if (message_queue.isFull())
             {
-                miosix::Lock<miosix::FastMutex> l(mtx_status);
-                status.n_send_errors++;
+                status.n_dropped_packets++;
             }
-
-            return false;
-        }
-
-        else
-        {
-            /* Update status */
+            else
             {
-                miosix::Lock<miosix::FastMutex> l(mtx_status);
-                status.n_send_queue++;
+                status.n_send_queue = message_queue.count();
                 if (status.n_send_queue > status.max_send_queue)
                     status.max_send_queue = status.n_send_queue;
             }
-
-            messageQueue.IRQput(msg);
-            TRACE("[MAV] Enqueueing %d bytes\n", msg.len);
-            return true;
         }
+
+        message_queue.put(msg);
+        TRACE("[MAV] Enqueueing %d bytes\n", msg.len);
+        return true;
     }
 
     /* Synchronized getter */
@@ -265,16 +270,22 @@ private:
     MavHandler
         handleMavlinkMessage;  // function to be executed when a message is rcv
     uint16_t sleep_after_send;
-    miosix::Queue<mavlink_message_t, MAV_OUT_QUEUE_LEN> messageQueue;
+
+    SyncedCircularBuffer<mavlink_message_t, MAV_OUT_QUEUE_LEN> message_queue;
+
+    uint8_t out_buffer[MAV_OUT_BUFFER_SIZE];
+    unsigned int out_buffer_size = 0;
+    long long out_buffer_age     = 0;
 
     // Status
     MavStatus status;
     miosix::FastMutex mtx_status;
 
     // Threads
-    bool stop_flag            = false;
-    bool sndStarted           = false;
-    bool rcvStarted           = false;
+    bool stop_flag  = false;
+    bool sndStarted = false;
+    bool rcvStarted = false;
+
     miosix::Thread* sndThread = nullptr;
     miosix::Thread* rcvThread = nullptr;
 };
