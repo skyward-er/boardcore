@@ -200,7 +200,7 @@ public:
 protected:
     void run() override
     {
-        while (!shouldStop())  // TODO: Stop condition
+        while (!shouldStop())
         {
             // Wait for RX or TX request
             {
