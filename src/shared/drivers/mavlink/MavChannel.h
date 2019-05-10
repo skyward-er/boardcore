@@ -172,14 +172,18 @@ public:
                     break;
                 }
             }
-            if (out_buffer_size >= MAV_OUT_SEND_BUFFER_THRESHOLD ||
-                out_buffer_age >= MAV_OUT_BUFFER_MAX_AGE)
+            if (out_buffer_size > 0)
             {
-                sendBuffer();
+                if (out_buffer_size >= MAV_OUT_SEND_BUFFER_THRESHOLD ||
+                    out_buffer_age >= MAV_OUT_BUFFER_MAX_AGE)
+                {
+                    sendBuffer();
+                }
+
+                out_buffer_age += sleep_after_send;
             }
 
-            miosix::Thread::sleep(sleep_after_send);
-            out_buffer_age += sleep_after_send;
+            miosix::Thread::sleep(sleep_after_send);         
         }
     }
 
