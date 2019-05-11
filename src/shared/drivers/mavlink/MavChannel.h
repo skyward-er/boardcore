@@ -183,17 +183,18 @@ public:
                 out_buffer_age += sleep_after_send;
             }
 
-            miosix::Thread::sleep(sleep_after_send);         
+            miosix::Thread::sleep(sleep_after_send);
         }
     }
 
     void sendBuffer()
     {
-        bool sent       = device->send(out_buffer, out_buffer_size);
-        out_buffer_age  = 0;
-        out_buffer_size = 0;
+        bool sent = device->send(out_buffer, out_buffer_size);
 
         TRACE("[MAV] Sending %d bytes\n", out_buffer_size);
+
+        out_buffer_age  = 0;
+        out_buffer_size = 0;
 
         if (!sent)
             TRACE("[MAV] Error: could not send message\n");
