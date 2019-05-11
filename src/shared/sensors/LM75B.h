@@ -38,7 +38,7 @@ class LM75B: public TemperatureSensor
         LM75B(uint8_t slaveAddr) : slave_addr(slaveAddr)
         {
             mLastTemp = 0.0f;
-            init();
+            //init();
         }
 
         /**
@@ -53,6 +53,11 @@ class LM75B: public TemperatureSensor
             // Check if the register was set correctly
             BusType::read(slave_addr, REG_CONF, &conf, sizeof(uint8_t));
             bool conf_ok = (conf == static_cast<uint8_t>(CONF_NORM));
+
+            if(conf_ok)
+            {
+                conf_ok = selfTest();
+            }
 
             return conf_ok;
         }
@@ -108,12 +113,14 @@ class LM75B: public TemperatureSensor
             }
 
             // Calculate standard dev
-            stdev = calc_stats.getStats().stdev;
+            // TODO: check actual MAX_VALUE of temp std dev
+            /*stdev = calc_stats.getStats().stdev;
             if(stdev < MAX_STDEV_VALUE)
             {
                 TRACE("[LM75B] Error: Standard deviation of temparature is out of range in LM75B");
-                return false;
+                //return false;
             }
+            */
 
             return true;
         }
