@@ -34,7 +34,6 @@ int main()
 {
     pspi2::init();
     Thread::sleep(200);
-    uint8_t s = SPI2->I2SCFGR;
     for(;;)
     {
         pspi2::write(0x45);
