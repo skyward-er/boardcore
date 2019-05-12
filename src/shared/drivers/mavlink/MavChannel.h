@@ -37,7 +37,7 @@
 static constexpr int MAV_OUT_QUEUE_LEN             = 10;
 static constexpr int MAV_OUT_BUFFER_SIZE           = 512;
 static constexpr int MAV_IN_BUFFER_SIZE            = 512;
-static constexpr int MAV_OUT_SEND_BUFFER_THRESHOLD = 230;
+static constexpr unsigned int MAV_OUT_SEND_BUFFER_THRESHOLD = 230;
 static constexpr long long MAV_OUT_BUFFER_MAX_AGE  = 1500;
 
 /**
