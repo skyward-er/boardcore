@@ -25,7 +25,6 @@
 #include <Common.h>
 #include <drivers/BusTemplate.h>
 #include <drivers/Transceiver.h>
-#include <interfaces-impl/hwmapping.h>
 #include <algorithm>
 #include <vector>
 
@@ -63,10 +62,13 @@ static constexpr uint8_t TX_STATUS_DELIVERY_SUCCESS = 0x00;
 static constexpr uint8_t TRANSMIT_OPTIONS = 0x43;
 
 // Frame Sizes
-static constexpr uint8_t API_HEADER_SIZE      = 3;
+static constexpr uint8_t API_HEADER_SIZE = 3;
+
 static constexpr uint8_t TX_FRAME_HEADER_SIZE = 14;
 static constexpr uint8_t RX_FRAME_HEADER_SIZE = 12;
 static constexpr uint8_t CHECKSUM_SIZE        = 1;
+static constexpr uint8_t TX_STATUS_FRAME_SIZE = 7;
+static constexpr uint8_t MODEM_STATUS_FRAME_SIZE = 2;
 
 // Bit definitions for status frame
 static constexpr uint8_t BIT_STATUS_RETRY_COUNT = 4;
@@ -105,8 +107,8 @@ class Xbee : public Transceiver, public ActiveObject
 {
 public:
     Xbee(unsigned int send_timeout) : send_timeout(send_timeout) {}
-    
-    Xbee() : Xbee(5000) {}
+
+    Xbee() : Xbee(1000) {}
     /*
      * Send a message through the XBee
      * Blocks until the message is sent (successfully or not)
@@ -118,6 +120,7 @@ public:
      */
     bool send(uint8_t* msg, size_t msg_len) override
     {
+        TRACE("Sending..\n");
         if (msg == nullptr || msg_len == 0)
         {
             return false;
@@ -129,6 +132,7 @@ public:
 
         // Send the packet
         setTxBuf(tx_pkt.data(), tx_pkt.size());
+        TRACE("TX Buf set.\n");
 
         // Wake the runner thread in order to send the data
         wakeThread();
@@ -140,6 +144,7 @@ public:
             if (timeout > send_timeout)
             {
                 // Timeout. Return error
+                TRACE("Timeout!\n");
                 ++status.tx_timeout_count;
                 return false;
             }
@@ -150,7 +155,7 @@ public:
         received_tx_status = false;
         if (status.tx_delivery_status != TX_STATUS_DELIVERY_SUCCESS)
         {
-            printf("Error: %02X\n", status.tx_delivery_status);
+            TRACE("Error: %02X\n", status.tx_delivery_status);
         }
         return status.tx_delivery_status == TX_STATUS_DELIVERY_SUCCESS;
     }
@@ -166,23 +171,21 @@ public:
     {
         Lock<FastMutex> l(rx_mutex);
 
-        while (rx_buf.size() == 0)
+        while (rx_frame.size() == 0)
         {
             rx_cond.wait(l);
         }
 
-        if (rx_buf.size() > rcv_buf_len)
+        if (rx_frame.size() > rcv_buf_len)
         {
-            rx_buf.clear();
-
             return -1;
         }
         else
         {
-            memcpy(rcv_buf, rx_buf.data(), rx_buf.size());
+            memcpy(rcv_buf, rx_frame.data(), rx_frame.size());
+            rcv_buf_len = rx_frame.size();
 
-            rcv_buf_len = rx_buf.size();
-            rx_buf.clear();
+            rx_frame.clear();
 
             return rcv_buf_len;
         }
@@ -198,21 +201,25 @@ public:
     XbeeStatus getStatus() { return status; }
 
 protected:
+    /**
+     * Sends and receives data, puts the thread to sleep if nothing to
+     * send/receive.
+     */
     void run() override
     {
+        bool waited = false;
+
         while (!shouldStop())
         {
             // Wait for RX or TX request
             {
-                Lock<FastMutex> l(tx_mutex);
                 miosix::FastInterruptDisableLock dLock;
 
-                // Check if we have data to send or receive with interrupts
-                // disabled to avoid race conditions
+                // Check if we have data to send (tx_buf.size > 0) or receive
+                // (attn == 0) with disabled interrupts to avoid race conditions
                 if (ATTN::value() != 0 && tx_buf.size() == 0)
                 {
-                    // If ATTN is not asserted we wait until it is, or until we
-                    // have something to send.
+                    // If we have nothing to receive or send, wait.
                     waiting = miosix::Thread::getCurrentThread();
 
                     while (waiting != 0)
@@ -220,22 +227,61 @@ protected:
                         waiting->IRQwait();
                         {
                             miosix::FastInterruptEnableLock eLock(dLock);
-                            miosix::Unlock<FastMutex> ul(l);
-
                             miosix::Thread::yield();
                         }
                     }
                 }
             }
-
             // Transfer any data on the tx buffer and receive any incoming data
             transferData();
         }
     }
 
 private:
+    enum class ParseResult : uint8_t
+    {
+        IDLE,
+        PARSING,
+        SUCCESS,
+        FAIL
+    };
+
+    enum class ParserState
+    {
+        FIND_START,
+        READ_LENGTH_1,
+        READ_LENGTH_2,
+        READ_FRAME,
+        READ_CHECKSUM
+    };
+
+    enum FrameType : uint8_t
+    {
+        FRAMETYPE_AT_COMMAND                    = 0x08,
+        FRAMETYPE_AT_QUEUE_PARAM_VALUE          = 0x09,
+        FRAMETYPE_TX_REQUEST                    = 0x10,
+        FRAMETYPE_EXPICIT_TX_REQUEST            = 0x11,
+        FRAMETYPE_REMOTE_AT_REQUEST             = 0x17,
+        FRAMETYPE_AT_COMMAND_RESPONSE           = 0x88,
+        FRAMETYPE_MODEM_STATUS                  = 0x8A,
+        FRAMETYPE_TRANSMIT_STATUS               = 0x8B,
+        FRAMETYPE_ROUTE_INFO_PACKET             = 0x8D,
+        FRAMETYPE_AGGREGATE_ADRESSING_UPDATE    = 0x8E,
+        FRAMETYPE_RX_PACKET                     = 0x90,
+        FRAMETYPE_EXPLICIT_RX_PACKET            = 0x91,
+        FRAMETYPE_DATA_SAMPLE_RX_INDICATOR      = 0x92,
+        FRAMETYPE_NODE_IDENTIFICATION_INDICATOR = 0x95,
+        FRAMETYPE_REMOTE_COMMAND_RESPONSE       = 0x97
+    };
+
+    /**
+     * Wake the AO thread from another thread.
+     * Cannot be called with disabled interrupts.
+     */
     void wakeThread()
     {
+        TRACE("Waking.\n");
+
         FastInterruptDisableLock dLock;
 
         if (waiting)
@@ -245,176 +291,204 @@ private:
         }
     }
 
+    /**
+     * Transfer data to/from the Xbee.
+     * Performs a full duplex transaction.
+     */
     void transferData()
     {
-        vector<uint8_t> buf;
-        size_t tx_size = 0;
-
-        {
-            Lock<FastMutex> l(tx_mutex);
-
-            // Check if we have data to send
-            if (tx_buf.size() > 0)
-            {
-                // Copy the tx buffer in a local buffer and free it
-                buf.insert(buf.end(), tx_buf.begin(), tx_buf.end());
-                tx_size = tx_buf.size();
-
-                tx_buf.clear();
-            }
-            else
-            {
-                // RX only
-                // Reserve space for start delimiter & length field
-                buf.resize(3, 0);
-            }
-        }
-
-        ParserState state = ParserState::FIND_START;
-
-        size_t index       = 0;
-        size_t start_index = 0;
-        size_t frame_len   = 0;
-        uint8_t checksum   = 0;
+        ParseResult result;
 
         CS::low();
+        vector<uint8_t> data;
 
-        vector<uint8_t> s;
-
-        while (state != ParserState::END)
         {
-            switch (state)
+            // Make a local copy of the TX buffer
+            FastInterruptDisableLock dLock;
+            data = tx_buf;
+
+            // Clear the tx buffer
+            tx_buf.clear();
+        }
+
+        // If there is data to send
+        if (data.size() > 0)
+        {
+            // Full duplex transfer, the data vector is replaced with received
+            // data, if any.
+            Bus::transfer(data.data(), data.size());
+
+            // Parse the received data
+            for (uint8_t rx : data)
             {
-                case ParserState::FIND_START:
-                {
-                    // buf.size() >= 3
-                    if (index < buf.size())
-                    {
-                        Bus::transfer(buf.data() + index);
-                        s.push_back(buf.at(index));
-                        if (buf.at(index) == START_DELIMITER)
-                        {
-                            start_index = index;
-                            state       = ParserState::READ_LENGTH;
-                        }
-                        ++index;
-                    }
-                    else  // If we're done transmiting or we didn't find a start
-                          // delimiter
-                    {
-                        state = ParserState::END;
-                    }
-                    break;
-                }
-                case ParserState::READ_LENGTH:
-                {
-                    // Reserve space for length field
-                    if (buf.size() < start_index + 3)
-                    {
-                        buf.resize(start_index + 3);
-                    }
+                result = parse(rx);
 
-                    Bus::transfer(buf.data() + index, 2);
-                    frame_len = (buf.at(index) << 8) + buf.at(index + 1);
-                    index += 2;
-
-                    state = ParserState::READ_FRAME;
-                    break;
-                }
-                case ParserState::READ_FRAME:
+                // We received something
+                if (result == ParseResult::SUCCESS)
                 {
-                    // Reserve for the rest of the packet
-                    size_t required_size = index + frame_len + CHECKSUM_SIZE;
-                    if (buf.size() < required_size)
-                    {
-                        buf.resize(required_size);
-                    }
-
-                    Bus::transfer(buf.data() + index, frame_len);
-                    index += frame_len;
-                    state = ParserState::READ_CHECKSUM;
-                    break;
-                }
-                case ParserState::READ_CHECKSUM:
-                {
-                    Bus::transfer(buf.data() + index);
-                    checksum = buf.at(index);
-                    index++;
-
-                    if (index >= tx_size)
-                    {
-                        // We sent all the data
-                        state = ParserState::END;
-                    }
-                    else
-                    {
-                        // We still have data to send
-                        state = ParserState::FIND_START;
-                    }
-
-                    // Handle the received packet
-                    handleFrame(buf.data() + start_index + API_HEADER_SIZE,
-                                frame_len, checksum);
-                }
-                case ParserState::END:
-                {
-                    break;
+                    handleFrame(parser_buf);
                 }
             }
+
+            // If there's nothing more to parse, return
+            if (result != ParseResult::PARSING)
+            {
+                CS::high();
+                return;
+            }
+
+            // If there is more data to be received, continue below.
+        }
+
+        // Read until we have received a packet (or no packet is found)
+        do
+        {
+            result = parse(Bus::read());
+        } while (result == ParseResult::PARSING);
+
+        if (result == ParseResult::SUCCESS)
+        {
+            handleFrame(parser_buf);
+        }
+        else if (result == ParseResult::FAIL)
+        {
+            TRACE("[Xbee] Read failed. Parser result: %d\n", (int)result);
         }
 
         CS::high();
     }
 
-    void handleFrame(uint8_t* frame_start, size_t frame_size, uint8_t checksum)
+    /**
+     * Parse received data one byte at a time, storing it in the parser_buf.
+     * When a full packet is received, returns ParseResult::SUCCESS.
+     * Returns ParseResult::FAIL if a full packet is received but checksum
+     * verification fails.
+     * In both cases, the frame is stored in parser_buf.
+     *
+     * Returns ParseResult::IDLE if no frame start delimiter has been found yet.
+     * Returns ParseResult::PARSING if a start delimiter was found and a packet
+     * is being parsed.
+     *
+     * @param byte byte to be parsed
+     * @return
+     */
+    ParseResult parse(uint8_t byte)
     {
-        if (verifyChecksum(frame_start, frame_size, checksum))
+        switch (parser_state)
         {
-            // The first byte indicates the frame type
-            switch (*frame_start)
-            {
-                case FRAMETYPE_RX_PACKET:
+            // Look for the start of frame delimiter
+            case ParserState::FIND_START:
+                if (byte == START_DELIMITER)
                 {
-                    uint8_t* payload_ptr = frame_start + RX_FRAME_HEADER_SIZE;
-                    size_t payload_size  = frame_size - RX_FRAME_HEADER_SIZE;
-                    if (payload_size > 0)
-                    {
-                        {
-                            Lock<FastMutex> l(rx_mutex);
+                    parser_state = ParserState::READ_LENGTH_1;
 
-                            if (rx_buf.size() > 0)
-                            {
-                                rx_buf.clear();
-                                ++status.rx_dropped_buffers;
-                            }
-                            rx_buf.insert(rx_buf.end(), payload_ptr,
-                                          payload_ptr + payload_size);
-                        }
-
-                        rx_cond.signal();
-                    }
-                    break;
+                    // Frame start found, clear old rx buf
+                    parser_buf.clear();
+                    parser_packet_length = 0;
                 }
-                case FRAMETYPE_TRANSMIT_STATUS:
+                else
                 {
-                    status.tx_retry_count =
-                        *(frame_start + BIT_STATUS_RETRY_COUNT);
-                    status.tx_delivery_status =
-                        *(frame_start + BIT_STATUS_DELIVERY);
-                    status.tx_discovery_status =
-                        *(frame_start + BIT_STATUS_DISCOVERY);
+                    return ParseResult::IDLE;
+                }
+                break;
+            // Read most significant byte of the length
+            case ParserState::READ_LENGTH_1:
+                parser_packet_length = byte << 8;
+                parser_state         = ParserState::READ_LENGTH_2;
+                break;
+            // Read least significant byte of the length
+            case ParserState::READ_LENGTH_2:
+                parser_packet_length += byte;
+
+                parser_state = ParserState::READ_FRAME;
+
+                // Now that we know how long the packet is, reserve memory to
+                // store it
+                parser_buf.reserve(parser_packet_length);
+                break;
+            // Read the data frame
+            case ParserState::READ_FRAME:
+                parser_buf.push_back(byte);
+
+                if (parser_buf.size() == parser_packet_length)
+                {
+                    parser_state = ParserState::READ_CHECKSUM;
+                }
+                break;
+            // Read & verify checksum
+            case ParserState::READ_CHECKSUM:
+                parser_state = ParserState::FIND_START;
+
+                if (verifyChecksum(parser_buf, byte))
+                {
+                    return ParseResult::SUCCESS;
+                }
+                else
+                {
+                    ++status.rx_wrong_checksum;
+                    TRACE("[Xbee] Rx checksum verification failed\n");
+                    return ParseResult::FAIL;
+                }
+                break;
+        }
+
+        return ParseResult::PARSING;
+    }
+
+    void handleFrame(const vector<uint8_t>& frame)
+    {
+        if (frame.size() == 0)
+        {
+            return;
+        }
+        // The first byte indicates the frame type
+        switch (frame[0])
+        {
+            case FRAMETYPE_RX_PACKET:
+            {
+                size_t payload_size = frame.size() - RX_FRAME_HEADER_SIZE;
+
+                if (payload_size > 0)
+                {
+                    Lock<FastMutex> l(rx_mutex);
+                    rx_frame.clear();
+                    rx_frame.insert(rx_frame.end(),
+                                    frame.begin() + RX_FRAME_HEADER_SIZE,
+                                    frame.end());
+                    rx_cond.signal();
+                }
+                break;
+            }
+            case FRAMETYPE_TRANSMIT_STATUS:
+            {
+                if (frame.size() == TX_STATUS_FRAME_SIZE)
+                {
+                    status.tx_retry_count      = frame[BIT_STATUS_RETRY_COUNT];
+                    status.tx_delivery_status  = frame[BIT_STATUS_DELIVERY];
+                    status.tx_discovery_status = frame[BIT_STATUS_DISCOVERY];
 
                     received_tx_status = true;
-                    break;
                 }
-                default:
-                    break;
+                else
+                {
+                    TRACE("[Xbee] Wrong TX status frame size.\n");
+                }
+                break;
             }
-        }
-        else
-        {
-            TRACE("[hf] Checksum failed\n");
-            ++status.rx_wrong_checksum;
+            case FRAMETYPE_MODEM_STATUS:
+            {
+                if (frame.size() == MODEM_STATUS_FRAME_SIZE)
+                {
+                    TRACE("[Xbee] Modem status: %d\n", frame[1]);
+                }
+                else
+                {
+                    TRACE("[Xbee] Wrong MODEM status frame size.\n");
+                }
+                break;
+            }
+            default:
+                break;
         }
     }
 
@@ -469,69 +543,49 @@ private:
     }
 
     /**
-     * Fill the tx buffer with the provided data
+     * Set the tx buffer with the provided data.
      */
     void setTxBuf(uint8_t* buf, size_t size)
     {
-        Lock<FastMutex> l(tx_mutex);
+        // We need to disable interrupts (instead of using a mutex) becouse we
+        // need to synchronize the access to the tx buf in the waiting thread
+        // before putting it to sleep (which requires disabling interrupts)
+        FastInterruptDisableLock dLock;
+
+        // Copy buf into tx_buf, removing old content
         tx_buf.clear();
         tx_buf.insert(tx_buf.end(), buf, buf + size);
     }
 
-    bool verifyChecksum(uint8_t* frame, size_t frame_len, uint8_t checksum)
+    bool verifyChecksum(vector<uint8_t> frame, uint8_t checksum)
     {
         // Sum all the bytes including checksum.
         // The sum can be stored in a uint8_t since we only care about the least
         // significant bits.
         uint8_t sum = checksum;
-        for (size_t i = 0; i < frame_len; ++i)
+        for (size_t i = 0; i < frame.size(); ++i)
         {
             sum += frame[i];
         }
         return sum == 0xFF;
     }
 
-    enum class ParserState
-    {
-        FIND_START,
-        READ_LENGTH,
-        READ_FRAME,
-        READ_CHECKSUM,
-        END
-    };
-
-    enum FrameType : uint8_t
-    {
-        FRAMETYPE_AT_COMMAND                    = 0x08,
-        FRAMETYPE_AT_QUEUE_PARAM_VALUE          = 0x09,
-        FRAMETYPE_TX_REQUEST                    = 0x10,
-        FRAMETYPE_EXPICIT_TX_REQUEST            = 0x11,
-        FRAMETYPE_REMOTE_AT_REQUEST             = 0x17,
-        FRAMETYPE_AT_COMMAND_RESPONSE           = 0x88,
-        FRAMETYPE_MODEM_STATUS                  = 0x8A,
-        FRAMETYPE_TRANSMIT_STATUS               = 0x8B,
-        FRAMETYPE_ROUTE_INFO_PACKET             = 0x8D,
-        FRAMETYPE_AGGREGATE_ADRESSING_UPDATE    = 0x8E,
-        FRAMETYPE_RX_PACKET                     = 0x90,
-        FRAMETYPE_EXPLICIT_RX_PACKET            = 0x91,
-        FRAMETYPE_DATA_SAMPLE_RX_INDICATOR      = 0x92,
-        FRAMETYPE_NODE_IDENTIFICATION_INDICATOR = 0x95,
-        FRAMETYPE_REMOTE_COMMAND_RESPONSE       = 0x97
-    };
-
     // How long to wait for a transmit status response.
     unsigned int send_timeout;
 
-    FastMutex tx_mutex;
     vector<uint8_t> tx_buf;
 
     bool received_tx_status = false;
 
     FastMutex rx_mutex;
-    vector<uint8_t> rx_buf;
+    vector<uint8_t> rx_frame;
     ConditionVariable rx_cond;
 
+    ParserState parser_state    = ParserState::FIND_START;
+    size_t parser_packet_length = 0;
+    vector<uint8_t> parser_buf;
+
     XbeeStatus status;
-};
+};  // namespace Xbee
 
 }  // namespace Xbee

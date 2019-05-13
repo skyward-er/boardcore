@@ -30,10 +30,10 @@ namespace Xbee
 {
     struct XbeeStatus
     {
-        uint8_t tx_retry_count;
-        uint8_t tx_delivery_status;
-        uint8_t tx_discovery_status;
-        unsigned int tx_timeout_count;
+        uint8_t tx_retry_count = 0;
+        uint8_t tx_delivery_status = 0;
+        uint8_t tx_discovery_status = 0;
+        unsigned int tx_timeout_count = 0;
 
         unsigned int rx_dropped_buffers = 0;
         unsigned int rx_wrong_checksum = 0;
