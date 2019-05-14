@@ -20,6 +20,10 @@
  * THE SOFTWARE.
  */
 
+#pragma once
+#include <string>
+#include <ostream>
+
 /**
  * The GPS information
  */

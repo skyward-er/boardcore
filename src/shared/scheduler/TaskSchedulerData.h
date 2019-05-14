@@ -1,17 +1,17 @@
-/* 
+/*
  * Copyright (c) 2019 Skyward Experimental Rocketry
  * Authors: Alain Carlucci, Federico Terraneo, Matteo Michele Piazzolla
- * 
+ *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
  * in the Software without restriction, including without limitation the rights
  * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
  * copies of the Software, and to permit persons to whom the Software is
  * furnished to do so, subject to the following conditions:
- * 
+ *
  * The above copyright notice and this permission notice shall be included in
  * all copies or substantial portions of the Software.
- * 
+ *
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
  * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.  IN NO EVENT SHALL THE
@@ -21,8 +21,10 @@
  * THE SOFTWARE.
  */
 
-#include <cstdint>
 #include <math/Stats.h>
+#include <cstdint>
+#include <ostream>
+#include <string>
 
 #ifndef BOARDCORE_SRC_SHARED_SCHEDULER_SCHEDULERDATA_H
 #define BOARDCORE_SRC_SHARED_SCHEDULER_SCHEDULERDATA_H
@@ -38,19 +40,24 @@ struct TaskStatResult
     StatsResult workloadStats;    ///< Task workload stats
     static std::string header()
     {
-        return "id,activationStats.minValue,activationStats.maxValue,activationStats.mean,activationStats.stdev,activationStats.nSamples,
-               periodStats.minValue,periodStats.maxValue,periodStats.mean,periodStats.stdev,periodStats.nSamples,
-               workloadStats.minValue,workloadStats.maxValue,workloadStats.mean,workloadStats.stdev,workloadStats.nSamples\n";
+        return "id,activationStats.minValue,activationStats.maxValue,"
+               "activationStats.mean,activationStats.stdev,activationStats."
+               "nSamples,periodStats.minValue,periodStats.maxValue,periodStats."
+               "mean,periodStats.stdev,periodStats.nSamples,workloadStats."
+               "minValue,workloadStats.maxValue,workloadStats.mean,"
+               "workloadStats.stdev,workloadStats.nSamples\n";
     }
 
     void print(std::ostream& os) const
     {
-        os << (int)id << "," << activationStats.minValue << "," << activationStats.maxValue << ","
-           << activationStats.mean << "," << activationStats.stdev <<"," << activationStats.nSamples << ","
+        os << (int)id << "," << activationStats.minValue << ","
+           << activationStats.maxValue << "," << activationStats.mean << ","
+           << activationStats.stdev << "," << activationStats.nSamples << ","
            << periodStats.minValue << "," << periodStats.maxValue << ","
-           << periodStats.mean << "," << periodStats.stdev <<"," << periodStats.nSamples <<","
-           << workloadStats.minValue << "," << workloadStats.maxValue << ","
-           << workloadStats.mean << "," << workloadStats.stdev <<"," << workloadStats.nSamples << "\n";
+           << periodStats.mean << "," << periodStats.stdev << ","
+           << periodStats.nSamples << "," << workloadStats.minValue << ","
+           << workloadStats.maxValue << "," << workloadStats.mean << ","
+           << workloadStats.stdev << "," << workloadStats.nSamples << "\n";
     }
 };
 

@@ -23,6 +23,8 @@
 #define SRC_SHARED_SENSORS_MPU9250_MPU9250DATA_H
 
 #include "math/Vec3.h"
+#include <string>
+#include <ostream>
 
 struct MPU9250Data
 {
