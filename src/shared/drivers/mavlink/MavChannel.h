@@ -85,6 +85,8 @@ public:
 
             if (sndThread != nullptr)
                 sndStarted = true;
+            else
+                TRACE("[MAVCHAN]Could not start sender!\n");
         }
 
         // Start receiver
@@ -96,8 +98,11 @@ public:
 
             if (rcvThread != nullptr)
                 rcvStarted = true;
+            else
+                TRACE("[MAVCHAN]Could not start receiver!\n");
         }
 
+        TRACE("[MAVCHAN]Start ok!\n");
         return (sndStarted && rcvStarted);
     }
 
@@ -160,25 +165,15 @@ public:
 
         while (!stop_flag)
         {
-            mavlink_message_t msgTemp = message_queue.pop();
-            int msgLen                = mavlink_msg_to_send_buffer(
-                out_buffer + out_buffer_size, &msgTemp);
-            out_buffer_size += msgLen;
-            sendBuffer();
-
-            /*
             while (!message_queue.isEmpty())
             {
                 mavlink_message_t msgTemp = message_queue.pop();
-                int msgLen                = mavlink_msg_to_send_buffer(
-                    out_buffer + out_buffer_size, &msgTemp);
-                out_buffer_size += msgLen;
-
-                if (out_buffer_size >= MAV_OUT_SEND_BUFFER_THRESHOLD)
-                {
-                    break;
-                }
+                int msgLen = mavlink_msg_to_send_buffer(out_buffer + out_buffer_size, &msgTemp);
+                out_buffer_size = msgLen;
+                sendBuffer();
             }
+
+            /*
             if (out_buffer_size > 0)
             {
                 if (out_buffer_size >= MAV_OUT_SEND_BUFFER_THRESHOLD ||
@@ -191,7 +186,7 @@ public:
             }
             */
 
-            miosix::Thread::sleep(sleep_after_send);
+            //miosix::Thread::sleep(sleep_after_send);
         }
     }
 
