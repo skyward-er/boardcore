@@ -1,4 +1,4 @@
-/* 
+/**
  * Copyright (c) 2019 Skyward Experimental Rocketry
  * Authors: Luca Erbetta
  * 
@@ -21,31 +21,25 @@
  * THE SOFTWARE.
  */
 
-#pragma once
+#include <drivers/BusTemplate.h>
+#include <interfaces-impl/hwmapping.h>
 
-#include <cstdint>
-#include <cstdio>
+using namespace miosix;
+using namespace interfaces;
 
-namespace Xbee
+typedef BusSPI<2, spi2::mosi, spi2::miso, spi2::sck> busSPI2;  // Creo la SPI2
+typedef ProtocolSPI<busSPI2, xbee::cs> pspi2;
+
+int main()
 {
-    struct XbeeStatus
+    pspi2::init();
+    Thread::sleep(200);
+    for(;;)
     {
-        uint8_t tx_retry_count = 0;
-        uint8_t tx_delivery_status = 0;
-        uint8_t tx_discovery_status = 0;
-        unsigned int tx_timeout_count = 0;
+        pspi2::write(0x45);
+        uint8_t r = pspi2::read(0xF6);
+        printf("%d\n", r);
 
-        unsigned int rx_dropped_buffers = 0;
-        unsigned int rx_wrong_checksum = 0;
-
-        void print()
-        {
-            printf("+++XBEE STATUS+++");
-            printf("TX: Timeouts: %d\n", tx_timeout_count);
-            printf("TXSTATUS: Retries: %d, Delivery: %02X, Discovery: %02X\n",
-                   tx_retry_count, tx_delivery_status, tx_discovery_status);
-            printf("RX: Dropped: %d, Checksum: %d\n", rx_dropped_buffers, rx_wrong_checksum);
-                
-        }
-    };
+        Thread::sleep(500);
+    }
 }

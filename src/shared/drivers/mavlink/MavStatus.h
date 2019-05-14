@@ -30,12 +30,13 @@ struct MavStatus
 {
     uint64_t timestamp;
     uint16_t n_send_queue;  // current len of the occupied portion of the queue
-    uint16_t max_send_queue;  // max occupied len of the queue
-    uint16_t n_send_errors;   // number of packet drops
+    uint16_t max_send_queue;     // max occupied len of the queue
+    uint16_t n_send_errors;      // Number of failed sends
+    uint16_t n_dropped_packets;  // number of packet drops
     mavlink_status_t mav_stats;
     static std::string header()
     {
-        return "timestamp,n_send_queue,max_send_queue,n_send_errors,mav_stats."
+        return "timestamp,n_send_queue,max_send_queue,n_send_errors,n_dropped_packets,mav_stats."
                "buffer_overrun,mav_stats.msg_received,mav_stats.parse_error,"
                "mav_stats.parse_state, "
                "mav_stats.packet_idx,mav_stats.current_rx_seq,mav_stats."
@@ -46,7 +47,7 @@ struct MavStatus
     void print(std::ostream& os) const
     {
         os << timestamp << "," << n_send_queue << "," << max_send_queue << ","
-           << n_send_errors << "," << (int)mav_stats.msg_received << ","
+           << n_send_errors << "," << n_dropped_packets << "," << (int)mav_stats.msg_received << ","
            << (int)mav_stats.buffer_overrun << "," << (int)mav_stats.parse_error
            << "," << (int)mav_stats.parse_state << ","
            << (int)mav_stats.packet_idx << "," << (int)mav_stats.current_rx_seq
