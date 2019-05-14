@@ -50,7 +50,7 @@ typedef BusSPI<2, spi2::mosi, spi2::miso, spi2::sck> busSPI2;  // Creo la SPI2
 using ATTN = Gpio<GPIOF_BASE, 10>;
 using cs   = Gpio<GPIOF_BASE, 9>;
 
-typedef Xbee::Xbee<busSPI2, cs, ATTN> Xbee_t;
+typedef Xbee::Xbee<busSPI2, cs, ATTN, xbee::reset> Xbee_t;
 Xbee_t xbee_transceiver;
 
 void printStat(const char* title, StatsResult r)
