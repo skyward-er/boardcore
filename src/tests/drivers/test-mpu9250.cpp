@@ -37,12 +37,12 @@ typedef MPU9250<spiMPU9250_a> mpu_t;
 
 int main()
 {   
-    DMASensorSampler sampler;
+    SimpleSensorSampler sampler;
 
     spiMPU9250_a::init();
     mpu_t* mpu = new mpu_t(1, 1);
 
-    Thread::sleep(1000);
+    Thread::sleep(100);
     
     if(mpu->init()){
         printf("MPU9250 Init succeeded\n" );
@@ -56,6 +56,8 @@ int main()
             Thread::sleep(1000);
         }
     }
+
+    Thread::sleep(100);
 
     while(true)
     {

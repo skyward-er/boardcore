@@ -147,54 +147,99 @@ public:
         };
         // clang-format on
 
-        for (size_t i = 0; i < sizeof(init_data) / sizeof(init_data[0]); i++){
+        for (size_t i = 0; i < sizeof(init_data) / sizeof(init_data[0]); i++)
             Bus::write(init_data[i][0], init_data[i][1]);
-            usleep(100);
 
-            /* Read back */
-            uint8_t c;
-            Bus::read(init_data[i][0], &c, 1);
-            if(c!= init_data[i][1]){
-                TRACE("[MPU9250] Error setting init reg %d\n", i);
-                return false;
-            }
+        //  MAGNETOMETER NOT WORKING  
+        /*
+        uint8_t ak_wia = akReadReg(AK8963_WIA);
+
+        if (ak_wia != 0x48)
+        {
+            last_error = ERR_CANT_TALK_TO_CHILD;  // TODO
+            return false;
         }
 
+        akWriteReg(AK8963_CNTL2, 0x01);
+        miosix::Thread::sleep(1);
+        akWriteReg(AK8963_CNTL1, 0x16);
+        miosix::Thread::sleep(1);
+
+        */
+        magnetoFSMState = 1;
         return true;
     }
+
+    /**
+     * MAGNETOMETER NOT WORKING
+     * Reads external magnetometer.
 
     bool onSimpleUpdate() override
     {
-        uint8_t buf[14];
-        mpudata_t raw_data;
 
-        Bus::read(REG_ACCEL_XOUT_H, buf, 14);
+        akdata_t ak;
 
-        memcpy(&raw_data.buf, buf, 14);
-        for (int i = 0; i < 3; i++)
+        /* Magnetometer FSM ( Board <-SPI-> MPU9250 <-I2C-> Magneto )
+         *              ______________
+         *   __________/            __v________
+         *  / State 1  \           /  State 2  \
+         * |  ReadI2C  |          |  CopyToMem |
+         * \__________/           \___________/
+         *         ^_______________/
+         *
+         
+
+        switch (magnetoFSMState)
         {
-            raw_data.accel[i] = fromBigEndian16(raw_data.accel[i]);
-            raw_data.gyro[i]  = fromBigEndian16(raw_data.gyro[i]);
+            case 1:  // ReadI2C
+                akReadReg_1(AK8963_STATUS1, sizeof(ak.raw));
+                magnetoFSMState = 2;
+                break;
+            case 2:  // CopyToMem
+                akReadReg_2(ak.raw, sizeof(ak.raw));
+
+                mLastCompass.setX(normalizeMagneto(ak.mag[0]));
+                mLastCompass.setY(normalizeMagneto(ak.mag[1]));
+                mLastCompass.setZ(normalizeMagneto(ak.mag[2]));
+                magnetoFSMState = 1;
+                break;
+            default:
+                return false;
         }
-        raw_data.temp = fromBigEndian16(raw_data.temp);
-
-        mLastAccel.setX(normalizeAccel(raw_data.accel[0]));
-        mLastAccel.setY(normalizeAccel(raw_data.accel[1]));
-        mLastAccel.setZ(normalizeAccel(raw_data.accel[2]));
-
-        mLastGyro.setX(normalizeGyro(raw_data.gyro[0]));
-        mLastGyro.setY(normalizeGyro(raw_data.gyro[1]));
-        mLastGyro.setZ(normalizeGyro(raw_data.gyro[2]));
-
-        mLastTemp = normalizeTemp(raw_data.temp);
 
         return true;
     }
-
+    */
 
     bool selfTest() override
     {
-        return true;
+        uint8_t st_gyro[3], st_accel[3];
+        mpudata_t test, real;
+        uint16_t cfg;  // [ REG_GYRO_CONFIG REG_ACCEL_CONFIG ]
+
+        readRAWData(real);
+        Bus::read(REG_GYRO_CONFIG, reinterpret_cast<uint8_t *>(&cfg),
+                  sizeof(cfg));
+
+        // -- ENABLE SELF TEST --
+        cfg |= 0xe0e0;
+        Bus::write(REG_GYRO_CONFIG, reinterpret_cast<uint8_t *>(&cfg),
+                   sizeof(cfg));
+
+        // -- SELF TEST ROUTINE --
+        Bus::read(REG_ST_GYRO, st_gyro, sizeof(st_gyro));
+        Bus::read(REG_ST_ACCEL, st_accel, sizeof(st_accel));
+        miosix::Thread::sleep(10);
+        readRAWData(test);
+
+        // -- DISABLE SELF TEST --
+        cfg &= ~(0xe0e0);
+        Bus::write(REG_GYRO_CONFIG, reinterpret_cast<uint8_t *>(&cfg),
+                   sizeof(cfg));
+
+        // TODO Self-Test
+
+        return false;
     }
 
     // clang-format off
