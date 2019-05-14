@@ -36,6 +36,22 @@ struct TaskStatResult
     StatsResult activationStats;  ///< Task activation stats
     StatsResult periodStats;      ///< Task period stats
     StatsResult workloadStats;    ///< Task workload stats
+    static std::string header()
+    {
+        return "id,activationStats.minValue,activationStats.maxValue,activationStats.mean,activationStats.stdev,activationStats.nSamples,
+               periodStats.minValue,periodStats.maxValue,periodStats.mean,periodStats.stdev,periodStats.nSamples,
+               workloadStats.minValue,workloadStats.maxValue,workloadStats.mean,workloadStats.stdev,workloadStats.nSamples\n";
+    }
+
+    void print(std::ostream& os) const
+    {
+        os << (int)id << "," << activationStats.minValue << "," << activationStats.maxValue << ","
+           << activationStats.mean << "," << activationStats.stdev <<"," << activationStats.nSamples << ","
+           << periodStats.minValue << "," << periodStats.maxValue << ","
+           << periodStats.mean << "," << periodStats.stdev <<"," << periodStats.nSamples <<","
+           << workloadStats.minValue << "," << workloadStats.maxValue << ","
+           << workloadStats.mean << "," << workloadStats.stdev <<"," << workloadStats.nSamples << "\n";
+    }
 };
 
 #endif

@@ -38,4 +38,15 @@ struct GPSData
     float velocityDown;   ///< [m/s]
     float speed;          ///< [m/s]
     int numSatellites;    ///< [1]
+    static std::string header()
+    {
+        return "timestamp,fix,latitude,longitude,height,velocityNorth,velocityEast,velocityDown,speed,numSatellites\n";
+    }
+
+    void print(std::ostream& os) const
+    {
+        os << timestamp << "," << fix << "," << latitude << ","
+           << longitude << "," << height <<"," << velocityNorth << "," << velocityEast << "," << velocityDown << ","
+           << speed << "," << numSatellites << "\n";
+    }
 };
