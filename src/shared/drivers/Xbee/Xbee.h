@@ -207,8 +207,6 @@ protected:
      */
     void run() override
     {
-        bool waited = false;
-
         while (!shouldStop())
         {
             // Wait for RX or TX request
@@ -297,7 +295,7 @@ private:
      */
     void transferData()
     {
-        ParseResult result;
+        ParseResult result = ParseResult::IDLE;
 
         CS::low();
         vector<uint8_t> data;
