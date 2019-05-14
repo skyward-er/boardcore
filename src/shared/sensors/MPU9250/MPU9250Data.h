@@ -22,16 +22,30 @@
 #ifndef SRC_SHARED_SENSORS_MPU9250_MPU9250DATA_H
 #define SRC_SHARED_SENSORS_MPU9250_MPU9250DATA_H
 
-#include "math/Vec3.h"
-#include <string>
 #include <ostream>
+#include "math/Vec3.h"
 
 struct MPU9250Data
 {
+    long long timestamp;
     Vec3 accel;
     Vec3 gyro;
     Vec3 compass;
     float temp;
+
+    static std::string header()
+    {
+        return "timestamp,acc_x,acc_y,acc_z,gyro_x,gyro_y,gyro_z,compass_x,"
+               "compass_y,compass_z\n";
+    }
+
+    void print(std::ostream& os) const
+    {
+        os << timestamp << "," << accel.getX() << "," << accel.getY() << ","
+           << accel.getZ() << "," << gyro.getX() << "," << gyro.getY() << ","
+           << gyro.getZ() << "," << compass.getX() << "," << compass.getY()
+           << "," << compass.getZ() << "\n";
+    }
 };
 
 #endif /* SRC_SHARED_SENSORS_MPU9250_MPU9250DATA_H */
