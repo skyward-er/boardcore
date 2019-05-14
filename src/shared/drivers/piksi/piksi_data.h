@@ -21,8 +21,6 @@
  */
 
 #pragma once
-#include <string>
-#include <ostream>
 
 /**
  * The GPS information
@@ -33,7 +31,6 @@ struct GPSData
     /// you how "old" the data is.
     long long timestamp;
 
-    bool fix;
     double latitude;      ///< [deg] //TODO: cast to float??
     double longitude;     ///< [deg] //TODO: cast to float??
     double height;        ///< [m]   //TODO: cast to float??
@@ -42,15 +39,4 @@ struct GPSData
     float velocityDown;   ///< [m/s]
     float speed;          ///< [m/s]
     int numSatellites;    ///< [1]
-    static std::string header()
-    {
-        return "timestamp,fix,latitude,longitude,height,velocityNorth,velocityEast,velocityDown,speed,numSatellites\n";
-    }
-
-    void print(std::ostream& os) const
-    {
-        os << timestamp << "," << fix << "," << latitude << ","
-           << longitude << "," << height <<"," << velocityNorth << "," << velocityEast << "," << velocityDown << ","
-           << speed << "," << numSatellites << "\n";
-    }
 };

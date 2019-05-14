@@ -21,20 +21,19 @@
  * THE SOFTWARE.
  */
 
-#pragma once
+#ifndef ADIS16405DATA_H
+#define ADIS16405DATA_H
 
 #include <cstdint>
 #include <ostream>
 #include <string>
 
-#pragma pack(1)
-/*! \typedef
- * Burst data collection. This establishes what we consider the right
- * datatype
- * for the registers because trying to work with 12 or 14 bit twos
- * complement
- * that doesn't sign extend to 16 bits is unpleasant.
+/*
+ * Burst data collection. This establishes right datatype for 
+ * the registers because trying to work with 12 or 14 bit twos
+ * complement that doesn't sign extend to 16 bits is unpleasant.
  */
+#pragma pack(1)
 struct ADIS16405Data
 {
     uint16_t supply_out;  //  Power supply measurement
@@ -49,6 +48,7 @@ struct ADIS16405Data
     int16_t zmagn_out;    //  Z-axis magnetometer measurement
     int16_t temp_out;     //  Temperature output
     uint16_t aux_adc;     //  Auxiliary ADC measurement
+
     static std::string header()
     {
         return "supply_out,xgyro_out,ygyro_out,zgyro_out,xaccl_out,yaccl_out,"
@@ -63,5 +63,7 @@ struct ADIS16405Data
            << zmagn_out << "," << temp_out << "," << aux_adc << "\n";
     }
 };
-
 #pragma pack()
+
+
+#endif

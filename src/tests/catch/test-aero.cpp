@@ -79,3 +79,20 @@ TEST_CASE("[AeroUtils] relAltitude")
     REQUIRE(mslAltitude(102532, 102532, 288.800, -100) ==
             Approx(-100).epsilon(0.0001));
 }
+
+TEST_CASE("[AeroUtils] verticalSpeed")
+{
+    using namespace aeroutils;
+
+    const int count = 5;
+    float p[]       = {100129.4, 99555.8, 89153.1, 23611.1, 101284.6};
+
+    float dp_dt[] = {-114.98, -114.45, -104.66, -35.691, -116.05};
+
+    Approx target_v_speed = Approx(10).epsilon(0.001);
+
+    for (int i = 0; i < count; i++)
+    {
+        REQUIRE(verticalSpeed(p[i], dp_dt[i], 100129.4, 297.5) == target_v_speed);
+    }
+}

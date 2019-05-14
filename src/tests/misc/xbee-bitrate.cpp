@@ -39,24 +39,24 @@ using std::string;
 
 using HwTimer                         = HardwareTimer<uint32_t, 2>;
 static const unsigned int NUM_PACKETS = 250;
-static unsigned int PKT_SIZE    = 256;
+static unsigned int PKT_SIZE          = 128;
 
 using namespace miosix;
 using namespace interfaces;
 
 // SPI1 binding al sensore
-typedef BusSPI<1, spi1::mosi, spi1::miso, spi1::sck> busSPI2;  // Creo la SPI2
+typedef BusSPI<2, spi2::mosi, spi2::miso, spi2::sck> busSPI2;  // Creo la SPI2
 
 using ATTN = Gpio<GPIOF_BASE, 10>;
-using cs = Gpio<GPIOF_BASE, 9>;
+using cs   = Gpio<GPIOF_BASE, 9>;
 
 typedef Xbee::Xbee<busSPI2, cs, ATTN> Xbee_t;
 Xbee_t xbee_transceiver;
 
 void printStat(const char* title, StatsResult r)
 {
-    printf("%s:\nMin: %.3f\nMax: %.3f\nMean: %.3f\nStddev:  %.3f\n\n",
-           title, r.minValue, r.maxValue, r.mean, r.stdev);
+    printf("%s:\nMin: %.3f\nMax: %.3f\nMean: %.3f\nStddev:  %.3f\n\n", title,
+           r.minValue, r.maxValue, r.mean, r.stdev);
 }
 
 void __attribute__((used)) EXTI10_IRQHandlerImpl() { Xbee::handleInterrupt(); }
@@ -91,6 +91,39 @@ void enableXbeeInterrupt()
     NVIC_SetPriority(EXTI15_10_IRQn, 15);
 }
 
+void reset();
+
+void send2()
+{
+    uint8_t buf[PKT_SIZE];
+    buf[0]            = '/';
+    buf[PKT_SIZE - 1] = '\\';
+
+    int fail = 0;
+    char c   = 48;
+    for (;;)
+    {
+        memset(buf + 1, c++, PKT_SIZE - 2);
+        if (c > 122)
+        {
+            c = 48;
+        }
+
+        if (!xbee_transceiver.send(buf, PKT_SIZE))
+        {
+            printf("[%d] Send error %d\n", (int)getTick(), ++fail);
+            reset();
+        }
+        else
+        {
+            if (c % 5 == 0)
+            {
+                printf("Send ok.\n");
+            }
+        }
+    }
+}
+
 void send()
 {
     printf("Packet size: %d\n", PKT_SIZE);
@@ -116,7 +149,7 @@ void send()
         if (!xbee_transceiver.send(buf, PKT_SIZE))
         {
             fail_status.push_back(xbee_transceiver.getStatus());
-            if((*fail_status.end()).tx_timeout_count > 0)
+            if ((*fail_status.end()).tx_timeout_count > 0)
             {
                 break;
             }
@@ -133,9 +166,9 @@ void send()
         send_tick_acc += send_tick;
     }
 
-    if(fail_status.size() > 0)
+    if (fail_status.size() > 0)
     {
-        for(auto s : fail_status)
+        for (auto s : fail_status)
         {
             s.print();
         }
@@ -180,7 +213,7 @@ void receive()
         times_stat.add(t.toMilliSeconds(tick));
         rates_stat.add(byterate);
 
-        //printf("%c\n", d);
+        // printf("%c\n", d);
 
         pkt_lost += buf[0] - last_pkt_id;
         last_pkt_id = buf[0] + 1;
@@ -221,19 +254,32 @@ void rcv(void*)
     for (;;)
     {
         ssize_t len = xbee_transceiver.receive(buf, PKT_SIZE);
-        if (len > 0)
+        for (ssize_t i = 0; i < len; i++)
         {
-            printf("%c (%d)\n", buf[0], len);
+            printf("%02X\n", buf[0]);
         }
-        else
+        if (len == 0)
         {
             printf("Receive failed.\n");
         }
     }
 }
 
+void reset()
+{
+    xbee::reset::mode(Mode::OUTPUT);
+    xbee::reset::low();
+    delayUs(100);
+    xbee::reset::mode(Mode::OPEN_DRAIN);
+}
+
 int main()
 {
+  //  xbee::sleep_req::mode(Mode::OUTPUT);
+    //xbee::sleep_req::low();
+
+   // xbee::reset::mode(Mode::OPEN_DRAIN);
+
     HwTimer& t = HwTimer::instance();
     t.setPrescaler(1024);
 
@@ -245,9 +291,11 @@ int main()
     Thread::sleep(10);
     cs::high();
     Thread::sleep(10);
+    
 
     xbee_transceiver.start();
 
+    send2();
 
     /* while(true)
      {
@@ -255,7 +303,7 @@ int main()
          cin >> s;
 
          vector<uint8_t> buf(s.begin(), s.end());
-         
+
 
          xbee_transceiver.send(buf.data(), buf.size());
      }*/
@@ -288,8 +336,6 @@ int main()
             printf("Receive failed.\n");
         }
     }*/
-
-    
 
     cout << "(S)end or (R)eceive?\n";
     char c;

@@ -25,6 +25,7 @@
 
 #include <miosix.h>
 #include <stdint.h>
+#include <Debug.h>
 
 #include "AD7994Data.h"
 #include "sensors/Sensor.h"
@@ -76,7 +77,8 @@ public:
         uint8_t read_config_reg_value;
 
         // Read back the value
-        BusI2C::read(i2c_address, REG_CONFIG, &read_config_reg_value, 1);
+        BusI2C::directRead(i2c_address, &read_config_reg_value, 1);
+        //BusI2C::read(i2c_address, REG_CONFIG, &read_config_reg_value, 1);
 
         pointToConversionResult();
 
@@ -100,11 +102,11 @@ public:
         }
         config_reg_value = (config_reg_value & 0x0F) | channel_reg << 4;
 
-        printf("channel_reg: %d\n", channel_reg);
+        TRACE("channel_reg: %d\n", channel_reg);
 
         BusI2C::write(i2c_address, REG_CONFIG, &config_reg_value, 1);
 
-        printf("REG_CONFIG: %d\n", config_reg_value);
+        TRACE("REG_CONFIG: %d\n", config_reg_value);
 
         pointToConversionResult();
     }

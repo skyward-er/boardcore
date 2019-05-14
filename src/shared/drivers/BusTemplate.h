@@ -55,7 +55,11 @@ public:
         SingletonType::getInstance()->_write(byte);
     }
 
-    inline static void init() { SingletonType::getInstance(); }
+    inline static void init()
+    {
+        SingletonType::getInstance();
+    }
+
     inline static int read(void* buffer, size_t max_len)
     {
         return SingletonType::getInstance()->_read(buffer, max_len);
@@ -88,6 +92,11 @@ public:
     inline static uint8_t transfer(uint8_t* byte)
     {
         return SingletonType::getInstance()->_transfer(byte);
+    }
+
+    static inline void setPolarity(uint8_t cpol, uint8_t cpha)
+    {
+        SingletonType::getInstance()->_setPolarity(cpol,cpha);
     }
 
 private:
@@ -156,6 +165,18 @@ private:
         return *byte;
     }
 
+    inline void _setPolarity(uint8_t cpol, uint8_t cpha)
+    {
+        if(cpol==0)
+             getSPIAddr(N)->CR1 &= ~SPI_CR1_CPOL;
+        if(cpha==0)
+             getSPIAddr(N)->CR1 &= ~SPI_CR1_CPHA;
+        if(cpol==1)
+             getSPIAddr(N)->CR1 |= SPI_CR1_CPOL;
+        if(cpha==1)
+             getSPIAddr(N)->CR1 |= SPI_CR1_CPHA;
+    }   
+
     BusSPI()
     {
         // Interrupts are disabled to prevent bugs if more than one threads
@@ -169,13 +190,13 @@ private:
             GpioMiso::alternateFunction(GetAlternativeFunctionNumber(N));
             GpioSclk::mode(miosix::Mode::ALTERNATE);
             GpioSclk::alternateFunction(GetAlternativeFunctionNumber(N));
-            getSPIAddr(N)->CR1 =
-                SPI_CR1_SSM     // Software cs
-                | SPI_CR1_SSI   // Hardware cs internally tied high
-                | SPI_CR1_MSTR  // Master mode
-                | SPI_CR1_BR_1 | SPI_CR1_BR_2  // SPI clock
-                | SPI_CR1_SPE;                 // SPI enabled
-
+            getSPIAddr(N)->CR1=SPI_CR1_SSM  //No HW cs
+                            | SPI_CR1_SSI
+                            | SPI_CR1_SPE  //SPI enabled
+                            | SPI_CR1_BR_1
+                            | SPI_CR1_BR_2
+                            | SPI_CR1_MSTR; 
+            
             if (getSPIAddr(N) == SPI1)
             {
                 SPIDriver::instance();
@@ -254,6 +275,18 @@ public:
         GpioCS::high();
     }
 
+    static void read16(uint16_t reg, uint8_t* buf, int size)
+    {   
+        uint8_t msb = (uint8_t) (reg >> 8);
+        uint8_t lsb = (uint8_t) reg;
+
+        GpioCS::low();
+        Bus::write(&msb, sizeof(msb));
+        Bus::write(&lsb, sizeof(lsb));        
+        Bus::read(buf, size);
+        GpioCS::high();
+    }
+
     static void write(uint8_t reg, uint8_t val)
     {
         GpioCS::low();
@@ -283,6 +316,12 @@ public:
     {
         read_low(reg, buf, size);
     }
+
+    static inline void setPolarity(uint8_t cpol, uint8_t cpha)
+    {
+        Bus::setPolarity(cpol,cpha);
+    }
+
 
 private:
     ProtocolSPI()                     = delete;

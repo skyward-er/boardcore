@@ -23,67 +23,49 @@
 #include <Common.h>
 #include <drivers/BusTemplate.h>
 #include <interfaces-impl/hwmapping.h>
-#include <sensors/ADIS16405/ADIS16405.h>
-#include <sensors/SensorSampling.h>
-#include <math/Stats.h>
-#include <diagnostic/CpuMeter.h>
+#include <sensors/MPU9250/MPU9250.h>
+
 #include <drivers/spi/SensorSpi.h>
+#include <sensors/SensorSampling.h>
 
 using namespace miosix;
 using namespace miosix::interfaces;
 
-// Reset pin
-typedef Gpio<GPIOD_BASE, 5> rstPin; // PD5 for the HomeoneBoard
-
-// SPI1 binding to the sensor
-typedef BusSPI<1,spi1::mosi,spi1::miso,spi1::sck> busSPI1; //Create SPI1
-typedef ProtocolSPI<busSPI1,miosix::sensors::adis16405::cs> spiADIS16405; //La lego al Chip Select 1 per la IMU 1
-typedef ADIS16405<spiADIS16405,rstPin> adis_t; //Passo il bus creato al sensore
+typedef BusSPI<1,spi1::mosi,spi1::miso,spi1::sck> busSPI1;
+typedef ProtocolSPI<busSPI1,sensors::mpu9250::cs> spiMPU9250_a;
+typedef MPU9250<spiMPU9250_a> mpu_t;
 
 int main()
 {   
-    spiADIS16405::init();
-
-    Thread::sleep(1000);
-    adis_t adis(adis_t::GYRO_FS_300);
-
-    if(adis.init())
-        printf("[ADIS16405] Init succeeded\n" );
-    else
-        printf("[ADIS16405] Init failed\n");
-    
-    if(adis.selfTest())
-        printf("[ADIS16405] Self test succeeded\n" );
-    else
-        printf("[ADIS16405] Self test failed\n");
-
-
     SimpleSensorSampler sampler;
-    sampler.AddSensor(&adis);
 
-    // DMASensorSampler sampler;
-    // sampler.AddSensor(&adis);
+    spiMPU9250_a::init();
+    mpu_t* mpu = new mpu_t(1, 1);
 
-    StatsResult statResult;
-    Stats stats;
+    Thread::sleep(100);
+    
+    if(mpu->init()){
+        printf("MPU9250 Init succeeded\n" );
+        sampler.AddSensor(mpu);
+    }
+    else {
+        printf("MPU9250 Init failed\n");
 
-    int counter = 0;
+        while(!mpu->init()) {
+            printf("MPU9250 Init failed\n");
+            Thread::sleep(1000);
+        }
+    }
 
-    while(true) {
+    Thread::sleep(100);
+
+    while(true)
+    {
         sampler.Update();
 
-        stats.add(averageCpuUtilization());
-
-        if(counter == 2500) {
-            statResult = stats.getStats();
-            printf("CPU usage: %f\n", statResult.mean);
-            counter = 0;
-
-            const Vec3* last_data = adis.accelDataPtr();
-            printf("%f %f %f\n", last_data->getX(), last_data->getY(),
-                   last_data->getZ());
-        }
-        counter++;    
+        const Vec3* last_data = mpu->accelDataPtr();
+        printf("%f %f %f\n", last_data->getX(), last_data->getY(),
+               last_data->getZ());
 
         Thread::sleep(100);
     }
