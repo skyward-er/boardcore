@@ -330,18 +330,22 @@ for i in mainfiles:
     with open('build/%s' % i, 'w') as f:
         f.write(build_makefile(make_template, mainfiles[i], i))
 
-    p = subprocess.Popen(['make', '-j', str(options.JOBS), '-f', 'build/%s' % i]
-                            + cleanparam,
-                            universal_newlines=True,
-                            stdout=subprocess.PIPE, 
-                            stderr=subprocess.PIPE,
-                            bufsize=1)
-
     # stdout printed only in verbose
-    with p.stdout:
-        for line in iter(p.stdout.readline, ''):
-            if options.log == True:
-                print_make_output(line)
+    if options.log == True:
+        p = subprocess.Popen(['make', '-j', str(options.JOBS), '-f', 'build/%s' % i]
+                                + cleanparam,
+                                universal_newlines=True,
+                                #stdout=subprocess.PIPE, 
+                                stderr=subprocess.PIPE,
+                                bufsize=1)
+    else:
+        p = subprocess.Popen(['make', '-j', str(options.JOBS), '-f', 'build/%s' % i]
+                                + cleanparam,
+                                universal_newlines=True,
+                                stdout=subprocess.PIPE,
+                                stderr=subprocess.PIPE,
+                                bufsize=1)
+
     #stderr always printed
     with p.stderr:
         for line in iter(p.stderr.readline, ''):
