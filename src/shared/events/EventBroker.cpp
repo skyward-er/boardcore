@@ -29,7 +29,7 @@ EventBroker::EventBroker()
 
 void EventBroker::post(const Event& ev, uint8_t topic)
 {
-    //TRACE("[EventBroker] Event: %d, Topic: %d\n", ev.sig, topic);
+    TRACE("[EventBroker] Event: %d, Topic: %d\n", ev.sig, topic);
 
     Lock<FastMutex> lock(mtx_subscribers);
 

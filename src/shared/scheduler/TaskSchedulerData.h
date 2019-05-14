@@ -24,7 +24,6 @@
 #include <math/Stats.h>
 #include <cstdint>
 #include <ostream>
-#include <string>
 
 #ifndef BOARDCORE_SRC_SHARED_SCHEDULER_SCHEDULERDATA_H
 #define BOARDCORE_SRC_SHARED_SCHEDULER_SCHEDULERDATA_H
@@ -38,24 +37,24 @@ struct TaskStatResult
     StatsResult activationStats;  ///< Task activation stats
     StatsResult periodStats;      ///< Task period stats
     StatsResult workloadStats;    ///< Task workload stats
+
     static std::string header()
     {
-        return "id,activationStats.minValue,activationStats.maxValue,"
-               "activationStats.mean,activationStats.stdev,activationStats."
-               "nSamples,periodStats.minValue,periodStats.maxValue,periodStats."
-               "mean,periodStats.stdev,periodStats.nSamples,workloadStats."
-               "minValue,workloadStats.maxValue,workloadStats.mean,"
-               "workloadStats.stdev,workloadStats.nSamples\n";
+        return "id,act_min,act_max,act_mean,act_stddev,act_nsamples,"
+               "period_min,period_max,period_mean,period_stddev,period_"
+               "nsamples,"
+               "workload_min,act_max,workload_mean,workload_stddev,workload_"
+               "nsamples\n";
     }
 
     void print(std::ostream& os) const
     {
         os << (int)id << "," << activationStats.minValue << ","
            << activationStats.maxValue << "," << activationStats.mean << ","
-           << activationStats.stdev << "," << activationStats.nSamples << ","
+           << activationStats.stdev << "," << activationStats.nSamples
            << periodStats.minValue << "," << periodStats.maxValue << ","
            << periodStats.mean << "," << periodStats.stdev << ","
-           << periodStats.nSamples << "," << workloadStats.minValue << ","
+           << periodStats.nSamples << workloadStats.minValue << ","
            << workloadStats.maxValue << "," << workloadStats.mean << ","
            << workloadStats.stdev << "," << workloadStats.nSamples << "\n";
     }

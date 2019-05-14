@@ -46,17 +46,22 @@ public:
 
     void Update()
     {
+        TRACE("Update\n");
         auto& driver = SPIDriver::instance();
         bool ret     = driver.transaction(mRequests);
 
         if (ret)
             for (size_t i = 0; i < mSensors.size(); i++)
                 mSensors[i]->onDMAUpdate(mRequests[i]);
+        
+        TRACE("Update end\n");
+
     }
 
     void UpdateAndCallback(std::function<void()> onSampleUpdateCallback)
     {
         Update();
+        TRACE("Update callback\n");
 
         onSampleUpdateCallback();
     }
