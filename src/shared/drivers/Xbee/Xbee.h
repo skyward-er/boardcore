@@ -30,6 +30,7 @@
 
 #include "ActiveObject.h"
 #include "XbeeStatus.h"
+#include <miosix.h>
 
 using miosix::FastInterruptDisableLock;
 using miosix::FastInterruptEnableLock;
@@ -64,10 +65,10 @@ static constexpr uint8_t TRANSMIT_OPTIONS = 0x43;
 // Frame Sizes
 static constexpr uint8_t API_HEADER_SIZE = 3;
 
-static constexpr uint8_t TX_FRAME_HEADER_SIZE = 14;
-static constexpr uint8_t RX_FRAME_HEADER_SIZE = 12;
-static constexpr uint8_t CHECKSUM_SIZE        = 1;
-static constexpr uint8_t TX_STATUS_FRAME_SIZE = 7;
+static constexpr uint8_t TX_FRAME_HEADER_SIZE    = 14;
+static constexpr uint8_t RX_FRAME_HEADER_SIZE    = 12;
+static constexpr uint8_t CHECKSUM_SIZE           = 1;
+static constexpr uint8_t TX_STATUS_FRAME_SIZE    = 7;
 static constexpr uint8_t MODEM_STATUS_FRAME_SIZE = 2;
 
 // Bit definitions for status frame
@@ -102,11 +103,20 @@ static void __attribute__((used)) handleInterrupt()
  * WARNING: An IRQ linked with the ATTN pin of the Xbee module must be enabled
  * before using this class. See test/misc/xbee-bitrate for an example.
  */
-template <typename Bus, class CS, class ATTN>
+template <typename Bus, class CS, class ATTN, class RST>
 class Xbee : public Transceiver, public ActiveObject
 {
 public:
-    Xbee(unsigned int send_timeout) : send_timeout(send_timeout) {}
+    Xbee(unsigned int send_timeout) : send_timeout(send_timeout)
+    {
+        reset();
+        miosix::Thread::sleep(10);
+
+        CS::low();
+        miosix::Thread::sleep(1);
+        CS::high();
+        miosix::Thread::sleep(1);
+    }
 
     Xbee() : Xbee(1000) {}
     /*
@@ -120,7 +130,6 @@ public:
      */
     bool send(uint8_t* msg, size_t msg_len) override
     {
-        TRACE("Sending..\n");
         if (msg == nullptr || msg_len == 0)
         {
             return false;
@@ -132,7 +141,6 @@ public:
 
         // Send the packet
         setTxBuf(tx_pkt.data(), tx_pkt.size());
-        TRACE("TX Buf set.\n");
 
         // Wake the runner thread in order to send the data
         wakeThread();
@@ -144,7 +152,7 @@ public:
             if (timeout > send_timeout)
             {
                 // Timeout. Return error
-                TRACE("Timeout!\n");
+                TRACE("[Xbee] Send Timeout!\n");
                 ++status.tx_timeout_count;
                 return false;
             }
@@ -155,7 +163,7 @@ public:
         received_tx_status = false;
         if (status.tx_delivery_status != TX_STATUS_DELIVERY_SUCCESS)
         {
-            TRACE("Error: %02X\n", status.tx_delivery_status);
+            TRACE("[Xbee] Error: %02X\n", status.tx_delivery_status);
         }
         return status.tx_delivery_status == TX_STATUS_DELIVERY_SUCCESS;
     }
@@ -271,6 +279,14 @@ private:
         FRAMETYPE_NODE_IDENTIFICATION_INDICATOR = 0x95,
         FRAMETYPE_REMOTE_COMMAND_RESPONSE       = 0x97
     };
+
+    void reset()
+    {
+        RST::mode(miosix::Mode::OPEN_DRAIN);
+        RST::low();
+        miosix::delayUs(500);
+        RST::high();
+    }
 
     /**
      * Wake the AO thread from another thread.

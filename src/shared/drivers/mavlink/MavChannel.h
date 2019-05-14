@@ -160,6 +160,13 @@ public:
 
         while (!stop_flag)
         {
+            mavlink_message_t msgTemp = message_queue.pop();
+            int msgLen                = mavlink_msg_to_send_buffer(
+                out_buffer + out_buffer_size, &msgTemp);
+            out_buffer_size += msgLen;
+            sendBuffer();
+
+            /*
             while (!message_queue.isEmpty())
             {
                 mavlink_message_t msgTemp = message_queue.pop();
@@ -182,6 +189,7 @@ public:
 
                 out_buffer_age += sleep_after_send;
             }
+            */
 
             miosix::Thread::sleep(sleep_after_send);
         }
