@@ -1,17 +1,17 @@
-/* 
+/*
  * Copyright (c) 2019 Skyward Experimental Rocketry
  * Authors: Nuno Barcellos
- * 
+ *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
  * in the Software without restriction, including without limitation the rights
  * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
  * copies of the Software, and to permit persons to whom the Software is
  * furnished to do so, subject to the following conditions:
- * 
+ *
  * The above copyright notice and this permission notice shall be included in
  * all copies or substantial portions of the Software.
- * 
+ *
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
  * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.  IN NO EVENT SHALL THE
@@ -25,6 +25,8 @@
 #define ADIS16405DATA_H
 
 #include <cstdint>
+#include <ostream>
+#include <string>
 
 /*
  * Burst data collection. This establishes right datatype for 
@@ -46,6 +48,20 @@ struct ADIS16405Data
     int16_t zmagn_out;    //  Z-axis magnetometer measurement
     int16_t temp_out;     //  Temperature output
     uint16_t aux_adc;     //  Auxiliary ADC measurement
+
+    static std::string header()
+    {
+        return "supply_out,xgyro_out,ygyro_out,zgyro_out,xaccl_out,yaccl_out,"
+               "zaccl_out,xmagn_out,ymagn_out,zmagn_out,temp_out,aux_adc\n";
+    }
+
+    void print(std::ostream& os) const
+    {
+        os << supply_out << "," << xgyro_out << "," << ygyro_out << ","
+           << zgyro_out << "," << xaccl_out << "," << yaccl_out << ","
+           << zaccl_out << "," << xmagn_out << "," << ymagn_out << ","
+           << zmagn_out << "," << temp_out << "," << aux_adc << "\n";
+    }
 };
 #pragma pack()
 

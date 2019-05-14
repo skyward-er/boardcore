@@ -49,7 +49,7 @@ typedef BusSPI<2, spi2::mosi, spi2::miso, spi2::sck> busSPI2;  // Creo la SPI2
 using ATTN = Gpio<GPIOF_BASE, 10>;
 using cs   = Gpio<GPIOF_BASE, 9>;
 
-typedef Xbee::Xbee<busSPI2, cs, ATTN> Xbee_t;
+typedef Xbee::Xbee<busSPI2, cs, ATTN, xbee::reset> Xbee_t;
 Xbee_t xbee_transceiver;
 void __attribute__((used)) EXTI10_IRQHandlerImpl() { Xbee::handleInterrupt(); }
 
@@ -82,7 +82,6 @@ void enableXbeeInterrupt()
     NVIC_EnableIRQ(EXTI15_10_IRQn);
     NVIC_SetPriority(EXTI15_10_IRQn, 15);
 }
-
 
 void send()
 {
@@ -150,31 +149,24 @@ void resetx()
     xbee::reset::low();
     delayUs(500);
     xbee::reset::high();
-    //xbee::reset::mode(Mode::INPUT);
+    // xbee::reset::mode(Mode::INPUT);
 }
 
 int main()
 {
-    resetx();
+    enableXbeeInterrupt();
+    // resetx();
 
-    //xbee::sleep_req::mode(Mode::OUTPUT);
-    //xbee::sleep_req::low();
+    // xbee::sleep_req::mode(Mode::OUTPUT);
+    // xbee::sleep_req::low();
 
-    //reset();
-    
+    // reset();
 
-    
     HwTimer& t = HwTimer::instance();
     t.setPrescaler(1024);
 
-    enableXbeeInterrupt();
     busSPI2::init();
 
-    // Enable SPI
-    cs::low();
-    Thread::sleep(10);
-    cs::high();
-    Thread::sleep(10);
 
     xbee_transceiver.start();
 
@@ -182,6 +174,6 @@ int main()
     Thread::create(receive, 2048);
     /*for(;;)*
         Thread::sleep(1000);*/
-        
+
     send();
 }

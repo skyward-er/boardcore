@@ -41,6 +41,8 @@ class MPU9250 : public GyroSensor,
 {
 
 #pragma pack(1)
+    // __extension__ is needed to prevent compiler warnings for anonymous
+    // structs.
     typedef union {
         __extension__ struct
         {
@@ -147,18 +149,30 @@ public:
         };
         // clang-format on
 
-        for (size_t i = 0; i < sizeof(init_data) / sizeof(init_data[0]); i++){
+        for (size_t i = 0; i < sizeof(init_data) / sizeof(init_data[0]); i++)
+        {
             Bus::write(init_data[i][0], init_data[i][1]);
             usleep(100);
 
             /* Read back */
             uint8_t c;
             Bus::read(init_data[i][0], &c, 1);
-            if(c!= init_data[i][1]){
+            if (c != init_data[i][1])
+            {
                 TRACE("[MPU9250] Error setting init reg %d\n", i);
                 return false;
             }
         }
+        //  MAGNETOMETER NOT WORKING
+        /*
+        uint8_t ak_wia = akReadReg(AK8963_WIA);
+
+        if (ak_wia != 0x48)
+        {
+            last_error = ERR_CANT_TALK_TO_CHILD;  // TODO
+            return false;
+
+        }*/
 
         return true;
     }
@@ -320,7 +334,7 @@ private:
     }
 
     // clang-format off
-    enum magnetoMap 
+    enum magnetoMap
     {
         AK8963_I2C_ADDR     = 0x0c,
 
@@ -342,7 +356,7 @@ private:
         REG_ACCEL_CONFIG    = 0x1C,
         REG_ACCEL_CONFIG2   = 0x1D,
 
-        REG_I2C_MST_CTRL    = 0x24, 
+        REG_I2C_MST_CTRL    = 0x24,
         REG_I2C_SLV0_ADDR   = 0x25,
         REG_I2C_SLV0_REG    = 0x26,
         REG_I2C_SLV0_CTRL   = 0x27,
@@ -376,7 +390,7 @@ private:
                   sizeof(out.buf));
 
         // BigEndian -> CPUArch (LittleEndian as usual)
-        for (size_t i  = 0; i < (sizeof(out.buf) / sizeof(out.buf[0])); i++)
+        for (size_t i = 0; i < (sizeof(out.buf) / sizeof(out.buf[0])); i++)
             out.buf[i] = fromBigEndian16(out.buf[i]);
     }
 };

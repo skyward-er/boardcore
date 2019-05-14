@@ -41,7 +41,7 @@ using namespace tscpp;
 // class Logger
 //
 
-typedef Gpio<GPIOG_BASE, 13> green_led;  // STM32F429ZI green led
+//typedef Gpio<GPIOG_BASE, 13> green_led;  // STM32F429ZI green led
 
 Logger& Logger::instance()
 {
@@ -269,7 +269,7 @@ void Logger::writeThread()
             // Write data to disk
             Timer timer;
             timer.start();
-            green_led::high();
+            //green_led::high();
 
             size_t result = fwrite(buffer->data, 1, buffer->size, file);
             if (result != buffer->size)
@@ -283,7 +283,7 @@ void Logger::writeThread()
             else
                 s.statBufferWritten++;
 
-            green_led::low();
+            //green_led::low();
             timer.stop();
             s.statWriteTime    = timer.interval();
             s.statMaxWriteTime = max(s.statMaxWriteTime, s.statWriteTime);
