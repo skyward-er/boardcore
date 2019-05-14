@@ -26,6 +26,8 @@
 #define CANUTILS_H
 
 #include <Common.h>
+#include <string>
+#include <ostream>
 
 #define CAN_MAX_PAYLOAD 8
 #define CAN_MAX_LEN     16

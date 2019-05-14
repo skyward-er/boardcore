@@ -23,27 +23,35 @@
 #pragma once
 
 #include <mavlink_skyward_lib/mavlink_lib/mavlink_types.h>
+#include <ostream>
+#include <string>
 
 struct MavStatus
 {
     uint64_t timestamp;
-    uint16_t n_send_queue;   // current len of the occupied portion of the queue
+    uint16_t n_send_queue;  // current len of the occupied portion of the queue
     uint16_t max_send_queue;  // max occupied len of the queue
     uint16_t n_send_errors;   // number of packet drops
     mavlink_status_t mav_stats;
-     static std::string header()
+    static std::string header()
     {
-        return "timestamp,n_send_queue,max_send_queue,n_send_errors,mav_stats.buffer_overrun,mav_stats.msg_received,mav_stats.parse_error,
-                mav_stats.parse_state, mav_stats.packet_idx,mav_stats.current_rx_seq,
-                mav_stats.current_tx_seq,mav_stats.packet_rx_success_count,mav_stats.packet_rx_drop_count\n";
+        return "timestamp,n_send_queue,max_send_queue,n_send_errors,mav_stats."
+               "buffer_overrun,mav_stats.msg_received,mav_stats.parse_error,"
+               "mav_stats.parse_state, "
+               "mav_stats.packet_idx,mav_stats.current_rx_seq,mav_stats."
+               "current_tx_seq,mav_stats.packet_rx_success_count,mav_stats."
+               "packet_rx_drop_count\n";
     }
 
     void print(std::ostream& os) const
     {
         os << timestamp << "," << n_send_queue << "," << max_send_queue << ","
-           << n_send_errors << "," << (int)mav_stats.msg_received << ","<< (int)mav_stats.buffer_overrun << ","
-         << (int)mav_stats.parse_error << "," << (int)mav_stats.parse_state << "," << (int)mav_stats.packet_idx << ","
-           << (int)mav_stats.current_rx_seq << "," << (int)mav_stats.current_tx_seq <<"," << mav_stats.packet_rx_success_count <<
-           "," << mav_stats.packet_rx_drop_count << "\n";
+           << n_send_errors << "," << (int)mav_stats.msg_received << ","
+           << (int)mav_stats.buffer_overrun << "," << (int)mav_stats.parse_error
+           << "," << (int)mav_stats.parse_state << ","
+           << (int)mav_stats.packet_idx << "," << (int)mav_stats.current_rx_seq
+           << "," << (int)mav_stats.current_tx_seq << ","
+           << mav_stats.packet_rx_success_count << ","
+           << mav_stats.packet_rx_drop_count << "\n";
     }
 };
