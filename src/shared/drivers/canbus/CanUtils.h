@@ -110,6 +110,16 @@ struct CanStatus {
     uint8_t last_rcv;
     uint64_t last_sent_ts;
     uint64_t last_rcv_ts;
+    static std::string header()
+    {
+        return "n_sent,n_rcv,last_sent,last_rcv,last_sent_ts,last_rcv_ts\n";
+    }
+
+    void print(std::ostream& os) const
+    {
+        os << n_sent << "," << n_rcv << "," << (int)last_sent << ","
+           << (int)last_rcv << "," << last_sent_ts <<"," << last_rcv_ts << "\n";
+    }
 };
 
 #endif /* CANUTILS_H */

@@ -47,6 +47,18 @@
         int16_t zmagn_out;    //  Z-axis magnetometer measurement
         int16_t temp_out;     //  Temperature output
         uint16_t aux_adc;     //  Auxiliary ADC measurement
+        static std::string header()
+    {
+        return "supply_out,xgyro_out,ygyro_out,zgyro_out,xaccl_out,yaccl_out,zaccl_out,xmagn_out,
+                ymagn_out,zmagn_out,temp_out,aux_adc\n";
+    }
+
+    void print(std::ostream& os) const
+    {
+        os << supply_out << "," << xgyro_out << "," << ygyro_out << ","
+           << zgyro_out << "," << xaccl_out <<"," << yaccl_out <<"," << zaccl_out <<"," 
+           << xmagn_out <<"," << ymagn_out << "," << zmagn_out <<"," << temp_out <<"," << aux_adc <<"\n";
+    }
     };
 
 #pragma pack()
