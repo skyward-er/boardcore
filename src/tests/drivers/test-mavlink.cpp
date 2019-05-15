@@ -36,25 +36,24 @@ MavChannel* channel;
 // Receive function: sends an ACK back
 static void onReceive(MavChannel* channel, const mavlink_message_t& msg) 
 {
-    if (msg.msgid != MAVLINK_MSG_ID_ACK_TM) 
-    {
-        TRACE("[TmtcTest] Sending ack\n");
+    TRACE("[TmtcTest] Received message, id: %d! Sending ack\n", msg.msgid);
 
-        mavlink_message_t ackMsg;
-        mavlink_msg_ack_tm_pack(1, 1, &ackMsg, msg.msgid, msg.seq);
+    mavlink_message_t ackMsg;
+    mavlink_msg_ack_tm_pack(1, 1, &ackMsg, msg.msgid, msg.seq);
 
-        /* Send the message back to the sender */
-        bool ackSent = channel->enqueueMsg(ackMsg);
+    /* Send the message back to the sender */
+    bool ackSent = channel->enqueueMsg(ackMsg);
 
-        if(!ackSent)
-            TRACE("[Receiver] Could not enqueue ack\n");
-    }
+    if(!ackSent)
+        TRACE("[Receiver] Could not enqueue ack\n");
 }
 
 int main()
 {
     gamma868 = new Gamma868("/dev/radio");
     channel = new MavChannel(gamma868, &onReceive, 250);
+
+    channel->start();
 
     // Send function: enqueue a ping every second
     while(1)
@@ -71,9 +70,9 @@ int main()
         if(!ackSent)
             TRACE("[TmtcTest] Could not enqueue ping\n");
 
-        // ledOn();
-        // miosix::delayMs(200);
-        // ledOff();
+        ledOn();
+        miosix::delayMs(200);
+        ledOff();
 
         miosix::Thread::sleep(1000);
     }
