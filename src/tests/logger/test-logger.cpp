@@ -72,4 +72,6 @@ int main()
     
     puts("stopped");
     for(;;) { Thread::sleep(1000); }
+
+    return 0;
 }
