@@ -37,11 +37,11 @@
 
 using std::vector;
 
-static constexpr int MAV_OUT_QUEUE_LEN   = 10;
-static constexpr int MAV_OUT_BUFFER_SIZE = 256;
-static constexpr int MAV_IN_BUFFER_SIZE  = 256;
+static constexpr size_t MAV_OUT_QUEUE_LEN   = 10;
+static constexpr size_t MAV_OUT_BUFFER_SIZE = 256;
+static constexpr size_t MAV_IN_BUFFER_SIZE  = 256;
 
-static constexpr long long MAV_OUT_BUFFER_MAX_AGE = 5000;
+static constexpr long long MAV_OUT_BUFFER_MAX_AGE = 1000;
 
 /**
  * Class to parse mavlink messages through a Transceiver. Lets you
@@ -90,7 +90,7 @@ public:
             if (sndThread != nullptr)
                 sndStarted = true;
             else
-                TRACE("[MAVCHAN]Could not start sender!\n");
+                TRACE("[MAV] Could not start sender!\n");
         }
 
         // Start receiver
@@ -103,10 +103,12 @@ public:
             if (rcvThread != nullptr)
                 rcvStarted = true;
             else
-                TRACE("[MAVCHAN]Could not start receiver!\n");
+                TRACE("[MAV] Could not start receiver!\n");
         }
 
-        TRACE("[MAVCHAN]Start ok!\n");
+        if(sndStarted && rcvStarted)
+            TRACE("[MAV] Start ok (sender and receiver)\n");
+
         return (sndStarted && rcvStarted);
     }
 
@@ -126,17 +128,12 @@ public:
      */
     void runReceiver()
     {
-        TRACE("Receiver running..\n");
-
-        uint8_t rcv_buffer[MAV_IN_BUFFER_SIZE];
         mavlink_message_t msg;
 
         while (!stop_flag)
         {
             // receive blocks until something is received
             ssize_t rcv_size = device->receive(rcv_buffer, MAV_IN_BUFFER_SIZE);
-
-            TRACE("[MAV] Received something\n");
 
             uint8_t parse_result = 0;
             {
@@ -333,4 +330,6 @@ private:
 
     miosix::Thread* sndThread = nullptr;
     miosix::Thread* rcvThread = nullptr;
+
+    uint8_t rcv_buffer[MAV_IN_BUFFER_SIZE];
 };

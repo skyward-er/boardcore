@@ -74,7 +74,10 @@ bool Gamma868::send(uint8_t* pkt, size_t pkt_len)
  */
 ssize_t Gamma868::receive(uint8_t* pkt, size_t pkt_len)
 {
-    return read(fd, pkt, pkt_len);
+    if(pkt_len > 0)
+        return read(fd, pkt, 1);
+    else
+        return 0;
 }
 
 /*
