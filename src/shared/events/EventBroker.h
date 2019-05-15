@@ -88,7 +88,7 @@ public:
      * @param subscriber
      * @param topic
      */
-    void subscribe(EventHandler* subscriber, uint8_t topic);
+    void subscribe(EventHandlerBase* subscriber, uint8_t topic);
 
     /**
      * @brief Unsubscribe an EventHandler from a specific topic
@@ -96,14 +96,14 @@ public:
      * @param subscriber
      * @param topic
      */
-    void unsubscribe(EventHandler* subscriber, uint8_t topic);
+    void unsubscribe(EventHandlerBase* subscriber, uint8_t topic);
 
     /**
      * @brief Unsubribe an EventHandler from all the topics it is subscribed to.
      * This function should be used only for testing purposes
      * @param subscriber
      */
-    void unsubscribe(EventHandler* subscriber);
+    void unsubscribe(EventHandlerBase* subscriber);
 
     /**
      * @brief Unschedules all pending events.
@@ -138,13 +138,13 @@ private:
      */
     void run() override;
 
-    void deleteSubscriber(vector<EventHandler*>& sub_vector,
-                          EventHandler* subscriber);
+    void deleteSubscriber(vector<EventHandlerBase*>& sub_vector,
+                          EventHandlerBase* subscriber);
 
     vector<DelayedEvent> delayed_events;
     FastMutex mtx_delayed_events;
 
-    map<uint8_t, vector<EventHandler*>> subscribers;
+    map<uint8_t, vector<EventHandlerBase*>> subscribers;
     FastMutex mtx_subscribers;
 
     uint16_t eventCounter = 0;
