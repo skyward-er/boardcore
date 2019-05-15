@@ -55,7 +55,7 @@ public:
         : broker(broker), event_name_fun(event_name_fun),
           topic_name_fun(topic_name_fun)
     {
-        for (uint8_t t = 0; t < 256; t++)
+        for (uint8_t t = 0; t < 255; t++)
         {
             sniffers.push_back(new Sniffer(*this, t));
         }
