@@ -31,14 +31,24 @@
 
 #include "Debug.h"
 
-class EventHandler : public ActiveObject
+class EventHandlerBase
+{
+public:
+    EventHandlerBase() {}
+
+    virtual ~EventHandlerBase(){};
+
+    virtual void postEvent(const Event& ev) = 0;
+};
+
+class EventHandler : public EventHandlerBase, public ActiveObject
 {
 public:
     EventHandler() {}
 
     virtual ~EventHandler(){};
 
-    virtual void postEvent(const Event& ev) { eventList.put(ev); }
+    virtual void postEvent(const Event& ev) override { eventList.put(ev); }
 
     virtual void stop() override
     {
