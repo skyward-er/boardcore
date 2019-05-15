@@ -37,7 +37,7 @@ void EventBroker::post(const Event& ev, uint8_t topic)
 
     if (subscribers.count(topic) > 0)
     {
-        vector<EventHandler*>& subs = subscribers.at(topic);
+        vector<EventHandlerBase*>& subs = subscribers.at(topic);
         auto begin                  = subs.begin();
         auto end                    = subs.end();
 
@@ -137,20 +137,20 @@ void EventBroker::run()
     }
 }
 
-void EventBroker::subscribe(EventHandler* subscriber, uint8_t topic)
+void EventBroker::subscribe(EventHandlerBase* subscriber, uint8_t topic)
 {
     Lock<FastMutex> lock(mtx_subscribers);
     subscribers[topic].push_back(subscriber);
 }
 
-void EventBroker::unsubscribe(EventHandler* subscriber, uint8_t topic)
+void EventBroker::unsubscribe(EventHandlerBase* subscriber, uint8_t topic)
 {
     Lock<FastMutex> lock(mtx_subscribers);
 
     deleteSubscriber(subscribers.at(topic), subscriber);
 }
 
-void EventBroker::unsubscribe(EventHandler* subscriber)
+void EventBroker::unsubscribe(EventHandlerBase* subscriber)
 {
     Lock<FastMutex> lock(mtx_subscribers);
     for (auto it = subscribers.begin(); it != subscribers.end(); it++)
@@ -159,8 +159,8 @@ void EventBroker::unsubscribe(EventHandler* subscriber)
     }
 }
 
-void EventBroker::deleteSubscriber(vector<EventHandler*>& subs,
-                                   EventHandler* subscriber)
+void EventBroker::deleteSubscriber(vector<EventHandlerBase*>& subs,
+                                   EventHandlerBase* subscriber)
 {
     auto it = subs.begin();
 
