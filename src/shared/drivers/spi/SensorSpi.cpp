@@ -67,7 +67,7 @@ void __attribute__((used)) SPI1rxDmaHandlerImpl()
     DMA2->HIFCR |= DMA_HIFCR_CTCIF5 | DMA_HIFCR_CTEIF5 | DMA_HIFCR_CDMEIF5 |
                    DMA_HIFCR_CFEIF5;
 
-    if (requestVector == nullptr)
+    if (requestVector == nullptr || waiting== nullptr)
         return;
     (*requestVector)[requestIndex].IRQendTransaction();
 
