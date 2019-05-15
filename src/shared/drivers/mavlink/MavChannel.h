@@ -38,10 +38,7 @@
 using std::vector;
 
 static constexpr size_t MAV_OUT_QUEUE_LEN   = 10;
-static constexpr size_t MAV_OUT_BUFFER_SIZE = 256;
-static constexpr size_t MAV_IN_BUFFER_SIZE  = 256;
-
-static constexpr long long MAV_OUT_BUFFER_MAX_AGE = 1000;
+static constexpr size_t MAV_IN_BUFFER_SIZE = 256;
 
 /**
  * Class to parse mavlink messages through a Transceiver. Lets you
@@ -60,13 +57,17 @@ public:
      * @param onRcv      function to be executed on message rcv
      * @param sleepTime  min sleep after send
      */
-    MavChannel(Transceiver* device, MavHandler onRcv, uint16_t sleepTime = 0)
-        : device(device), handleMavlinkMessage(onRcv),
-          sleep_after_send(sleepTime)
+    MavChannel(Transceiver* device, MavHandler onRcv, uint16_t sleepTime = 0,
+                    size_t out_buffer_size = 256, size_t out_buf_max_age = 1000)
+        : device(device),
+          handleMavlinkMessage(onRcv),
+          sleep_after_send(sleepTime),
+          out_buffer_size(out_buffer_size),
+          out_buf_max_age(out_buf_max_age)
     {
         memset(&status, 0, sizeof(MavStatus));
 
-        out_buffer.reserve(MAV_OUT_BUFFER_SIZE);
+        out_buffer.reserve(out_buffer_size);
     }
 
     ~MavChannel() {}
@@ -184,7 +185,7 @@ public:
                 int msgLen = mavlink_msg_to_send_buffer(msgtemp_buf, &msgtemp);
 
                 // Check if the new message fits the buffer
-                if (out_buffer.size() + msgLen < MAV_OUT_BUFFER_SIZE)
+                if (out_buffer.size() + msgLen < out_buffer_size)
                 {
                     // If the new message fits in the out buffer, append it.
                     out_buffer.insert(out_buffer.end(), msgtemp_buf,
@@ -203,9 +204,9 @@ public:
             if (out_buffer.size() > 0)
             {
                 // If the buffer is full, or the buffer is too old, send it
-                if (out_buffer_age >= MAV_OUT_BUFFER_MAX_AGE || out_buf_full)
+                if (out_buffer_age >= out_buf_max_age || out_buf_full)
                 {
-                    if (out_buffer_age >= MAV_OUT_BUFFER_MAX_AGE)
+                    if (out_buffer_age >= out_buf_max_age)
                     {
                         TRACE("[MAV] Sent data (Max age reached)\n");
                     }
@@ -308,16 +309,21 @@ private:
         reinterpret_cast<MavChannel*>(arg)->runSender();
     }
 
-    // Sender and receiver
     Transceiver* device;
-    MavHandler
-        handleMavlinkMessage;  // function to be executed when a message is rcv
-    uint16_t sleep_after_send;
+    MavHandler handleMavlinkMessage;  // function executed on message rcv
 
+    // Tweakable params
+    uint16_t sleep_after_send;
+    size_t out_buffer_size;
+    size_t out_buf_max_age;
+
+    // Buffers
     SyncedCircularBuffer<mavlink_message_t, MAV_OUT_QUEUE_LEN> message_queue;
 
     vector<uint8_t> out_buffer;
     long long out_buffer_age = 0;
+
+    uint8_t rcv_buffer[MAV_IN_BUFFER_SIZE];
 
     // Status
     MavStatus status;
@@ -330,6 +336,4 @@ private:
 
     miosix::Thread* sndThread = nullptr;
     miosix::Thread* rcvThread = nullptr;
-
-    uint8_t rcv_buffer[MAV_IN_BUFFER_SIZE];
 };
