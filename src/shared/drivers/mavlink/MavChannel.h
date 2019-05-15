@@ -89,6 +89,8 @@ public:
 
             if (sndThread != nullptr)
                 sndStarted = true;
+            else
+                TRACE("[MAVCHAN]Could not start sender!\n");
         }
 
         // Start receiver
@@ -100,8 +102,11 @@ public:
 
             if (rcvThread != nullptr)
                 rcvStarted = true;
+            else
+                TRACE("[MAVCHAN]Could not start receiver!\n");
         }
 
+        TRACE("[MAVCHAN]Start ok!\n");
         return (sndStarted && rcvStarted);
     }
 
@@ -132,7 +137,7 @@ public:
             ssize_t rcv_size = device->receive(rcv_buffer, MAV_IN_BUFFER_SIZE);
 
             TRACE("[MAV] Received something\n");
-            
+
             uint8_t parse_result = 0;
             {
                 miosix::Lock<miosix::FastMutex> l(mtx_status);
