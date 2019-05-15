@@ -28,9 +28,9 @@
 #include <algorithm>
 #include <vector>
 
+#include <miosix.h>
 #include "ActiveObject.h"
 #include "XbeeStatus.h"
-#include <miosix.h>
 
 using miosix::FastInterruptDisableLock;
 using miosix::FastInterruptEnableLock;
@@ -77,7 +77,8 @@ static constexpr uint8_t BIT_STATUS_DELIVERY    = 5;
 static constexpr uint8_t BIT_STATUS_DISCOVERY   = 6;
 
 // Waiting thread to be woken
-static miosix::Thread* waiting = nullptr;
+// Defined extern so it can be accessed from multiple translation units
+extern miosix::Thread* waiting;
 
 /**
  * Handle ATTN interrupt, waking up the thread.
@@ -294,8 +295,6 @@ private:
      */
     void wakeThread()
     {
-        TRACE("Waking.\n");
-
         FastInterruptDisableLock dLock;
 
         if (waiting)
@@ -464,11 +463,13 @@ private:
 
                 if (payload_size > 0)
                 {
-                    Lock<FastMutex> l(rx_mutex);
-                    rx_frame.clear();
-                    rx_frame.insert(rx_frame.end(),
-                                    frame.begin() + RX_FRAME_HEADER_SIZE,
-                                    frame.end());
+                    {
+                        Lock<FastMutex> l(rx_mutex);
+                        rx_frame.clear();
+                        rx_frame.insert(rx_frame.end(),
+                                        frame.begin() + RX_FRAME_HEADER_SIZE,
+                                        frame.end());
+                    }
                     rx_cond.signal();
                 }
                 break;
