@@ -31,14 +31,17 @@
 
 #include <Common.h>
 #include <drivers/Transceiver.h>
+#include <vector>
 #include "MavStatus.h"
 #include "utils/SyncedCircularBuffer.h"
 
-static constexpr int MAV_OUT_QUEUE_LEN             = 10;
-static constexpr int MAV_OUT_BUFFER_SIZE           = 512;
-static constexpr int MAV_IN_BUFFER_SIZE            = 512;
-static constexpr unsigned int MAV_OUT_SEND_BUFFER_THRESHOLD = 230;
-static constexpr long long MAV_OUT_BUFFER_MAX_AGE  = 1500;
+using std::vector;
+
+static constexpr int MAV_OUT_QUEUE_LEN   = 10;
+static constexpr int MAV_OUT_BUFFER_SIZE = 256;
+static constexpr int MAV_IN_BUFFER_SIZE  = 256;
+
+static constexpr long long MAV_OUT_BUFFER_MAX_AGE = 5000;
 
 /**
  * Class to parse mavlink messages through a Transceiver. Lets you
@@ -62,7 +65,8 @@ public:
           sleep_after_send(sleepTime)
     {
         memset(&status, 0, sizeof(MavStatus));
-        memset(out_buffer, 0, MAV_OUT_BUFFER_SIZE);
+
+        out_buffer.reserve(MAV_OUT_BUFFER_SIZE);
     }
 
     ~MavChannel() {}
@@ -117,33 +121,40 @@ public:
      */
     void runReceiver()
     {
-        mavlink_message_t msg;
+        TRACE("Receiver running..\n");
+
         uint8_t rcv_buffer[MAV_IN_BUFFER_SIZE];
+        mavlink_message_t msg;
 
         while (!stop_flag)
         {
-            ssize_t rcv_size =
-                device->receive(rcv_buffer,
-                                MAV_IN_BUFFER_SIZE);  // Blocking function
+            // receive blocks until something is received
+            ssize_t rcv_size = device->receive(rcv_buffer, MAV_IN_BUFFER_SIZE);
+
+            TRACE("[MAV] Received something\n");
+            
             uint8_t parse_result = 0;
-
-            miosix::Lock<miosix::FastMutex> l(mtx_status);
-            for (ssize_t i = 0; i < rcv_size; i++)
             {
-                // Parse received bytes
-                parse_result = mavlink_parse_char(MAVLINK_COMM_0, rcv_buffer[i],
-                                                  &msg, &(status.mav_stats));
-                if (parse_result == 1)
+                miosix::Lock<miosix::FastMutex> l(mtx_status);
+                for (ssize_t i = 0; i < rcv_size; i++)
                 {
-                    miosix::Unlock<miosix::FastMutex> unlock(l);
+                    // Parse received bytes
+                    parse_result =
+                        mavlink_parse_char(MAVLINK_COMM_0, rcv_buffer[i], &msg,
+                                           &(status.mav_stats));
+                    if (parse_result == 1)
+                    {
+                        miosix::Unlock<miosix::FastMutex> unlock(l);
 
-                    TRACE(
-                        "[MAV] Received message with ID %d, sequence: %d from "
-                        "component %d of system %d\n",
-                        msg.msgid, msg.seq, msg.compid, msg.sysid);
+                        TRACE(
+                            "[MAV] Received message with ID %d, sequence: %d "
+                            "from "
+                            "component %d of system %d\n",
+                            msg.msgid, msg.seq, msg.compid, msg.sysid);
 
-                    /* Handle the command */
-                    handleMavlinkMessage(this, msg);
+                        /* Handle the command */
+                        handleMavlinkMessage(this, msg);
+                    }
                 }
             }
         }
@@ -156,28 +167,55 @@ public:
      */
     void runSender()
     {
+        uint8_t msgtemp_buf[256];
+
         TRACE("[MAV] Sender is running\n");
 
         while (!stop_flag)
         {
+            bool out_buf_full = false;
+
             while (!message_queue.isEmpty())
             {
-                mavlink_message_t msgTemp = message_queue.pop();
-                int msgLen                = mavlink_msg_to_send_buffer(
-                    out_buffer + out_buffer_size, &msgTemp);
-                out_buffer_size += msgLen;
 
-                if (out_buffer_size >= MAV_OUT_SEND_BUFFER_THRESHOLD)
+                mavlink_message_t msgtemp = message_queue.get();
+                int msgLen = mavlink_msg_to_send_buffer(msgtemp_buf, &msgtemp);
+
+                // Check if the new message fits the buffer
+                if (out_buffer.size() + msgLen < MAV_OUT_BUFFER_SIZE)
                 {
+                    // If the new message fits in the out buffer, append it.
+                    out_buffer.insert(out_buffer.end(), msgtemp_buf,
+                                      msgtemp_buf + msgLen);
+                    message_queue.pop();
+                }
+                else
+                {
+                    // The new message doesn't fit in the buffer, send the
+                    // buffer before processing it
+                    out_buf_full = true;
                     break;
                 }
             }
-            if (out_buffer_size > 0)
+
+            if (out_buffer.size() > 0)
             {
-                if (out_buffer_size >= MAV_OUT_SEND_BUFFER_THRESHOLD ||
-                    out_buffer_age >= MAV_OUT_BUFFER_MAX_AGE)
+                // If the buffer is full, or the buffer is too old, send it
+                if (out_buffer_age >= MAV_OUT_BUFFER_MAX_AGE || out_buf_full)
                 {
+                    if (out_buffer_age >= MAV_OUT_BUFFER_MAX_AGE)
+                    {
+                        TRACE("[MAV] Sent data (Max age reached)\n");
+                    }
+                    else
+                    {
+                        TRACE("[MAV] Sent data (Buffer full)\n");
+                    }
                     sendBuffer();
+
+                    out_buffer_age = 0;
+                    out_buf_full   = false;
+                    out_buffer.clear();
                 }
 
                 out_buffer_age += sleep_after_send;
@@ -189,12 +227,9 @@ public:
 
     void sendBuffer()
     {
-        bool sent = device->send(out_buffer, out_buffer_size);
+        bool sent = device->send(out_buffer.data(), out_buffer.size());
 
-        TRACE("[MAV] Sending %d bytes\n", out_buffer_size);
-
-        out_buffer_age  = 0;
-        out_buffer_size = 0;
+        TRACE("[MAV] Sending %d bytes\n", out_buffer.size());
 
         if (!sent)
             TRACE("[MAV] Error: could not send message\n");
@@ -223,6 +258,7 @@ public:
 
             if (message_queue.isFull())
             {
+                TRACE("[MAV] Buffer full. Discarding message.\n");
                 status.n_dropped_packets++;
             }
             else
@@ -278,9 +314,8 @@ private:
 
     SyncedCircularBuffer<mavlink_message_t, MAV_OUT_QUEUE_LEN> message_queue;
 
-    uint8_t out_buffer[MAV_OUT_BUFFER_SIZE];
-    unsigned int out_buffer_size = 0;
-    long long out_buffer_age     = 0;
+    vector<uint8_t> out_buffer;
+    long long out_buffer_age = 0;
 
     // Status
     MavStatus status;
