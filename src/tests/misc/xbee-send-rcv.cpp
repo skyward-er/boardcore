@@ -38,25 +38,21 @@ using std::cout;
 using std::string;
 
 using HwTimer                = HardwareTimer<uint32_t, 2>;
-static unsigned int PKT_SIZE = 128;
+static unsigned int PKT_SIZE = 256;
 
 using namespace miosix;
 using namespace interfaces;
 
 // SPI1 binding al sensore
 typedef BusSPI<2, spi2::mosi, spi2::miso, spi2::sck> busSPI2;  // Creo la SPI2
+typedef Xbee::Xbee<busSPI2, xbee::cs, xbee::attn, xbee::reset> Xbee_t;
 
-using ATTN = Gpio<GPIOF_BASE, 10>;
-using cs   = Gpio<GPIOF_BASE, 9>;
-
-typedef Xbee::Xbee<busSPI2, cs, ATTN, xbee::reset> Xbee_t;
 Xbee_t xbee_transceiver;
+
 void __attribute__((used)) EXTI10_IRQHandlerImpl() { Xbee::handleInterrupt(); }
 
 void enableXbeeInterrupt()
 {
-    ATTN::mode(Mode::INPUT_PULL_UP);
-
     {
         FastInterruptDisableLock l;
         RCC->APB2ENR |= RCC_APB2ENR_SYSCFGEN;
@@ -82,6 +78,7 @@ void enableXbeeInterrupt()
     NVIC_EnableIRQ(EXTI15_10_IRQn);
     NVIC_SetPriority(EXTI15_10_IRQn, 15);
 }
+
 
 void send()
 {
@@ -110,6 +107,8 @@ void send()
                 printf("Send ok.\n");
             }
         }
+
+        Thread::sleep(1000);
     }
 }
 
@@ -152,6 +151,8 @@ void resetx()
     // xbee::reset::mode(Mode::INPUT);
 }
 
+
+
 int main()
 {
     enableXbeeInterrupt();
@@ -170,10 +171,9 @@ int main()
 
     xbee_transceiver.start();
 
-    // Send & receive
+    //Send & receive
     Thread::create(receive, 2048);
-    /*for(;;)*
-        Thread::sleep(1000);*/
-
+    // for(;;)
+    //     Thread::sleep(1000);
     send();
 }
