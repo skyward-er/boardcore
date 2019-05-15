@@ -92,6 +92,9 @@ class LM75B: public TemperatureSensor
             }
 
             //TEST 3: standard deviation of temperature value
+
+            // TODO: check actual MAX_VALUE of temp std dev
+            /*
             float stdev;
             Stats calc_stats;
 
@@ -113,8 +116,7 @@ class LM75B: public TemperatureSensor
             }
 
             // Calculate standard dev
-            // TODO: check actual MAX_VALUE of temp std dev
-            /*stdev = calc_stats.getStats().stdev;
+            stdev = calc_stats.getStats().stdev;
             if(stdev < MAX_STDEV_VALUE)
             {
                 TRACE("[LM75B] Error: Standard deviation of temparature is out of range in LM75B");

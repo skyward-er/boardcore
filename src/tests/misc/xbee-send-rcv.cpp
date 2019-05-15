@@ -176,4 +176,6 @@ int main()
     // for(;;)
     //     Thread::sleep(1000);
     send();
+
+    return 0;
 }
