@@ -232,7 +232,7 @@ public:
     {
         bool sent = device->send(out_buffer.data(), out_buffer.size());
 
-        TRACE("[MAV] Sending %d bytes\n", out_buffer.size());
+        // TRACE("[MAV] Sending %d bytes\n", out_buffer.size());
 
         if (!sent)
             TRACE("[MAV] Error: could not send message\n");
@@ -273,7 +273,7 @@ public:
         }
 
         message_queue.put(msg);
-        TRACE("[MAV] Enqueueing %d bytes\n", msg.len);
+        // TRACE("[MAV] Enqueueing %d bytes\n", msg.len);
         return true;
     }
 
