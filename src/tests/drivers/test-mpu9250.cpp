@@ -62,8 +62,9 @@ int main()
     while(true)
     {
         sampler.Update();
+        // mpu->updateMagneto();
 
-        const Vec3* last_data = mpu->accelDataPtr();
+        const Vec3* last_data = mpu->compassDataPtr();
         printf("%f %f %f\n", last_data->getX(), last_data->getY(),
                last_data->getZ());
 
