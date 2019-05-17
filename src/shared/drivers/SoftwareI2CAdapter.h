@@ -59,7 +59,7 @@ public:
     {
         SwI2CType::sendStart();
 
-        SwI2CType::send(address << 1);  // Send 7-bit address + write bit (0)
+        SwI2CType::send(address);  // Send 7-bit address + write bit (0)
         for (int i = 0; i < len; i++)
         {
             SwI2CType::send(data[i]);  // Send data
@@ -77,12 +77,12 @@ public:
     {
         // First write the address of the register we want to read
         SwI2CType::sendStart();
-        SwI2CType::send(address << 1);
+        SwI2CType::send(address);
         SwI2CType::send(regAddr);
 
         // Now we can read
         SwI2CType::sendRepeatedStart();
-        SwI2CType::send((address << 1) | 0x01);  // Read request: last bit is 1
+        SwI2CType::send((address) | 0x01);  // Read request: last bit is 1
 
         for (int i = 0; i < len - 1; i++)
         {
@@ -103,7 +103,7 @@ public:
     {
         // Now we can read
         SwI2CType::sendStart();
-        SwI2CType::send((address << 1) | 0x01);  // Read request: last bit is 1
+        SwI2CType::send((address) | 0x01);  // Read request: last bit is 1
 
         for (int i = 0; i < len - 1; i++)
         {
