@@ -1,7 +1,7 @@
-/* MAX9250 Driver
+/* MPU9250 Driver
  *
- * Copyright (c) 2016 Skyward Experimental Rocketry
- * Authors: Alain Carlucci
+ * Copyright (c) 2016,2019 Skyward Experimental Rocketry
+ * Authors: Alain Carlucci, Nuno Barcellos(Magnetometer)
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -22,14 +22,10 @@
  * THE SOFTWARE.
  */
 
-#ifndef MAX9250_H
-#define MAX9250_H
+#ifndef MPU9250_H
+#define MPU9250_H
 #include <drivers/BusTemplate.h>
 #include "../Sensor.h"
-
-/* THIS FILE INCLUDES THE DRIVER FOR THE MAGNETOMETER PART, WHICH IS CURRENTLY
- * NOT WORKING. :(
- */
 
 // TODO: fix normalizeTemp() (is /512.0f correct?)
 // TODO: Self-Test
@@ -46,11 +42,9 @@ class MPU9250 : public GyroSensor,
     typedef union {
         __extension__ struct
         {
-            uint8_t status1;
             int16_t mag[3];
-            uint8_t status2;
         };
-        uint8_t raw[9];
+        uint8_t raw[6];
     } akdata_t;
 
     typedef union {
@@ -119,60 +113,63 @@ public:
 
     bool init() override
     {
-        uint8_t whoami = Bus::read(REG_WHO_AM_I);
-        // printf("WHOAMI: %d\n", whoami);
-        if (whoami != who_am_i_value)
-        {
-            last_error = ERR_NOT_ME;
-            return false;
-        }
-
-        // Warning: do not reset this sensor at startup, otherwise
-        // its magnetometer could randomly stop working.
-
         // clang-format off
         uint8_t init_data[][2] = 
         {
-            {REG_PWR_MGMT_1,     0x01},
+            {REG_PWR_MGMT_1,     0x80}, // Reset Device
+            {REG_PWR_MGMT_1,     0x01}, // Clock Source
             {REG_PWR_MGMT_2,     0x00}, // Enable all sensors
             {REG_CONFIG,         0x00}, // DLPF_CFG = xxxxx000
             {REG_SMPLRT_DIV,     0x00}, // Do not divide
             {REG_GYRO_CONFIG,    (uint8_t) (0x03 | ((gyroFS  & 3) << 3))},
             {REG_ACCEL_CONFIG,   (uint8_t) (0x00 | ((accelFS & 3) << 3))},
             {REG_ACCEL_CONFIG2,  0x08}, // FCHOICE = 1, A_DLPF_CFG = 000
-            {REG_INT_PIN_CFG,    0x30},
-            {REG_INT_ENABLE,     0x00}, // No interrupts
+
+            {REG_INT_PIN_CFG,    0x16}, // TODO: CHECK THIS
 
             // I2C (MPU9250 <-> AK8963)
-            {REG_USER_CTRL,      0x20}, // Master mode TODO: I2C_IF_DIS???
-            {REG_I2C_MST_CTRL,   0x00}, // I2C @ 348khz(400 seems giving issues)
+            // TODO: change this? 0x30 seems to work well
+            {REG_USER_CTRL,      0x20}, // I2C Master mode
+
+            // TODO: check this!! 0x0D doesn't work always
+            {REG_I2C_MST_CTRL,   0x40}, // I2C configuration multi-master  IIC 400KHz
+            
+            {REG_I2C_SLV0_ADDR,  AK8963_I2C_ADDR}, // Set the I2C slave addres of AK8963 and set for write.
+            {REG_I2C_SLV0_REG,   AK8963_CNTL2}, // I2C slave 0 register address from where to begin data transfer
+            {REG_I2C_SLV0_DO,    0x01}, // Reset AK8963
+            {REG_I2C_SLV0_CTRL,  0x81}, // Enable I2C and set 1 byte
+
+            {REG_I2C_SLV0_REG,   AK8963_CNTL1}, // I2C slave 0 register address from where to begin data transfer
+            // {REG_I2C_SLV0_DO,    0x16}, // Register value to 100Hz continuous measurement in 16bit
+            {REG_I2C_SLV0_DO,    0x12}, // Register value to 8Hz continuous measurement in 16bit
+            {REG_I2C_SLV0_CTRL,  0x81}, //Enable I2C and set 1 byte
         };
         // clang-format on
 
         for (size_t i = 0; i < sizeof(init_data) / sizeof(init_data[0]); i++)
         {
             Bus::write(init_data[i][0], init_data[i][1]);
-            usleep(100);
-
-            /* Read back */
-            uint8_t c;
-            Bus::read(init_data[i][0], &c, 1);
-            if (c != init_data[i][1])
-            {
-                TRACE("[MPU9250] Error setting init reg %d\n", i);
-                return false;
-            }
+            miosix::Thread::sleep(5); // It won't work without this delay
         }
-        //  MAGNETOMETER NOT WORKING
-        /*
-        uint8_t ak_wia = akReadReg(AK8963_WIA);
 
-        if (ak_wia != 0x48)
+        uint8_t whoami = Bus::read(REG_WHO_AM_I);
+        printf("MPU whoami: expected %x actual %x\n", who_am_i_value_mpu, whoami);
+        if (whoami != who_am_i_value_mpu)
+        {
+            last_error = ERR_NOT_ME;
+            return false;
+        }
+
+        uint8_t ak_wia = akReadWhoAmI();
+        printf("AK whoami: expected %x actual %x\n", who_am_i_value_ak, ak_wia);
+        if (ak_wia != who_am_i_value_ak)
         {
             last_error = ERR_CANT_TALK_TO_CHILD;  // TODO
             return false;
 
-        }*/
+        }
+
+        magnetoFSMState = 1;
 
         return true;
     }
@@ -205,6 +202,32 @@ public:
         return true;
     }
 
+    bool updateMagneto()
+    {
+        /* Magnetometer FSM ( Board <-SPI-> MPU9250 <-I2C-> Magneto )
+         *              ______________
+         *   __________/            __v________
+         *  / State 1  \           /  State 2  \
+         * |  ReadI2C  |          |  CopyToMem |
+         * \__________/           \___________/
+         *         ^_______________/
+         *
+         */
+        switch (magnetoFSMState)
+        {
+            case 1:  // ReadI2C
+                akReadData1();
+                magnetoFSMState = 2;
+                break;
+            case 2:  // CopyToMem
+                akReadData2();
+                magnetoFSMState = 1;
+                break;
+            default:
+                return false;
+        }
+        return true;
+    }
 
     bool selfTest() override
     {
@@ -230,7 +253,8 @@ public:
     // clang-format on
 
 private:
-    constexpr static uint8_t who_am_i_value = 0x71;
+    constexpr static uint8_t who_am_i_value_mpu = 0x71;
+    constexpr static uint8_t who_am_i_value_ak = 0x48;
     constexpr static float accelFSMAP[]     = {2.0, 4.0, 8.0, 16.0};
     constexpr static float gyroFSMAP[]      = {250, 500, 1000, 2000};
 
@@ -262,75 +286,86 @@ private:
         return static_cast<float>(val) / 512.0f + 21.0f;
     }
 
-    uint8_t akReadReg(uint8_t reg)
+
+    uint8_t akReadWhoAmI()
     {
-        // clang-format off
-        uint8_t regs[][2] =
-        {
-            { REG_I2C_SLV4_ADDR,    (uint8_t)(AK8963_I2C_ADDR | 0x80)},
-            { REG_I2C_SLV4_REG,     reg },
-            { REG_I2C_SLV4_CTRL,    0x80 },
-        };
-        // clang-format on
-
-        for (size_t i = 0; i < sizeof(regs) / sizeof(regs[0]); i++)
-            Bus::write(regs[i][0], regs[i][1]);
-
-        int timeout = 20;
-        while (--timeout >= 0)
-        {
-            if (Bus::read(REG_I2C_MST_STATUS) & 0x40)
-                break;
-            miosix::Thread::sleep(1);
-        }
-
-        if (timeout < 0)
-            return -1;
-
-        uint8_t ret = Bus::read(REG_I2C_SLV4_DI);
-        return ret;
-    }
-
-    // This is an optimized version of the common (i2c) burst-read:
-    // _1 tells to the i2c master to begin reading and.. (See _2)
-    void akReadReg_1(uint8_t addr, uint8_t len)
-    {
-        assert(len < 16 && len > 0);
         // clang-format off
         uint8_t regs[][2] =
         {
             { REG_I2C_SLV0_ADDR,    (uint8_t)(AK8963_I2C_ADDR | 0x80)},
-            { REG_I2C_SLV0_REG,     addr },
-            { REG_I2C_SLV0_CTRL,    (uint8_t)(0x80 + len)},
+            { REG_I2C_SLV0_REG,     AK8963_WIA},
+            { REG_I2C_SLV0_CTRL,    0x81 }, //Read 1 byte from the magnetometer
         };
         // clang-format on
 
         for (size_t i = 0; i < sizeof(regs) / sizeof(regs[0]); i++)
             Bus::write(regs[i][0], regs[i][1]);
+
+        miosix::Thread::sleep(2);
+
+        uint8_t ret = Bus::read(REG_EXT_SENS_DATA_00|0x80);
+        return ret;
     }
 
-    // _2 this one moves the data from spi to the local processor
-    void akReadReg_2(uint8_t *buf, uint8_t len)
-    {
-        Bus::read(REG_EXT_SENS_DATA_00, buf, len);
-    }
-
-    void akWriteReg(uint8_t reg, uint8_t data)
+    void akReadData()
     {
         // clang-format off
         uint8_t regs[][2] =
         {
-            { REG_I2C_SLV4_ADDR,    AK8963_I2C_ADDR},
-            { REG_I2C_SLV4_REG,     reg},
-            { REG_I2C_SLV4_DO,      data},
-            { REG_I2C_SLV4_CTRL,    0x80},
+            { REG_I2C_SLV0_ADDR,    (uint8_t)(AK8963_I2C_ADDR | 0x80)},
+            { REG_I2C_SLV0_REG,     AK8963_HXL},
+            { REG_I2C_SLV0_CTRL,    0x87}, // Read 6 bytes from the magnetometer
         };
         // clang-format on
 
         for (size_t i = 0; i < sizeof(regs) / sizeof(regs[0]); i++)
             Bus::write(regs[i][0], regs[i][1]);
 
-        miosix::Thread::sleep(1);
+        miosix::Thread::sleep(2);
+
+        akdata_t ak;
+
+        Bus::read(REG_EXT_SENS_DATA_00, ak.raw, sizeof(ak.raw));
+
+        ak.mag[0] = (ak.raw[1] << 8) | ak.raw[0];
+        ak.mag[1] = (ak.raw[3] << 8) | ak.raw[2];
+        ak.mag[2] = (ak.raw[5] << 8) | ak.raw[4];
+
+        mLastCompass.setX(normalizeMagneto(ak.mag[0]));
+        mLastCompass.setY(normalizeMagneto(ak.mag[1]));
+        mLastCompass.setZ(normalizeMagneto(ak.mag[2]));
+    }
+
+    // akReadData11 tells to the i2c master to begin reading and.. (akReadData2)
+    void akReadData1()
+    {
+        // clang-format off
+        uint8_t regs[][2] =
+        {
+            { REG_I2C_SLV0_ADDR,    (uint8_t)(AK8963_I2C_ADDR | 0x80)},
+            { REG_I2C_SLV0_REG,     AK8963_HXL},
+            { REG_I2C_SLV0_CTRL,    0x87}, // Read 6 bytes from the magnetometer
+        };
+        // clang-format on
+
+        for (size_t i = 0; i < sizeof(regs) / sizeof(regs[0]); i++)
+            Bus::write(regs[i][0], regs[i][1]);
+    }
+
+    // akReadData2 this one moves the data from spi to the local processor   
+    void akReadData2()
+    {
+        akdata_t ak;
+
+        Bus::read(REG_EXT_SENS_DATA_00, ak.raw, sizeof(ak.raw));
+
+        ak.mag[0] = (ak.raw[1] << 8) | ak.raw[0];
+        ak.mag[1] = (ak.raw[3] << 8) | ak.raw[2];
+        ak.mag[2] = (ak.raw[5] << 8) | ak.raw[4];
+
+        mLastCompass.setX(normalizeMagneto(ak.mag[0]));
+        mLastCompass.setY(normalizeMagneto(ak.mag[1]));
+        mLastCompass.setZ(normalizeMagneto(ak.mag[2]));
     }
 
     // clang-format off
@@ -341,8 +376,8 @@ private:
         AK8963_WIA          = 0x00,
         AK8963_STATUS1      = 0x02,
         AK8963_HXL          = 0x03,
-        AK8963_CNTL1        = 0x0a,
-        AK8963_CNTL2        = 0x0b,
+        AK8963_CNTL1        = 0x0A,
+        AK8963_CNTL2        = 0x0B,
     };
 
     enum regMap
@@ -401,4 +436,4 @@ constexpr float MPU9250<Bus>::accelFSMAP[];
 template <typename Bus>
 constexpr float MPU9250<Bus>::gyroFSMAP[];
 
-#endif /* ifndef MAX9250_H */
+#endif /* ifndef MPU9250 */
