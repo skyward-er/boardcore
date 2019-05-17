@@ -150,16 +150,15 @@ public:
             if(enabled_channels[i]){
                 // Trigger a conversion
                 CONVST::high();
-                miosix::delayUs(1);
+                miosix::delayUs(3);
                 CONVST::low();
-
                 // Wait for the conversion to complete
                 miosix::delayUs(2);
 
                 BusI2C::directRead(i2c_address, data, 2);
 
-                samples[i] = decodeConversion(data);
                 samples[i].timestamp = miosix::getTick();
+                samples[i]           = decodeConversion(data);
             }
         }
 
