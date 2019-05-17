@@ -23,6 +23,8 @@
 
 #include <util/software_i2c.h>
 
+
+
 /**
  * @brief Adapter for the SoftwareI2C class, in order to have a compatible
  * interface with the ProtocolI2C class in BusTemplate.h
@@ -31,8 +33,7 @@ template <typename SDA, typename SCL, unsigned stretchTimeout = 50,
           bool fast = false>
 class SoftwareI2CAdapter
 {
-    using SwI2CType = SoftwareI2C<SDA, SCL, stretchTimeout, fast>;
-
+    typedef miosix::SoftwareI2C<SDA, SCL, stretchTimeout, fast> SwI2CType;
 public:
     static void init() { SwI2CType::init(); }
 
