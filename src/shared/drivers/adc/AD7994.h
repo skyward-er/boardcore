@@ -23,9 +23,9 @@
 #ifndef SRC_SHARED_DRIVERS_ADC_AD7994_H
 #define SRC_SHARED_DRIVERS_ADC_AD7994_H
 
+#include <Debug.h>
 #include <miosix.h>
 #include <stdint.h>
-#include <Debug.h>
 
 #include "AD7994Data.h"
 #include "sensors/Sensor.h"
@@ -56,7 +56,10 @@ public:
      *
      * @param i2c_address I2C address of the AD7994
      */
-    AD7994(uint8_t i2c_address) : i2c_address(i2c_address), enabled_channels{0,0,0,0}{}
+    AD7994(uint8_t i2c_address)
+        : i2c_address(i2c_address), enabled_channels{0, 0, 0, 0}
+    {
+    }
 
     ~AD7994() {}
 
@@ -69,7 +72,7 @@ public:
      */
     bool init() override
     {
-        uint8_t config_reg_value = 0x0A;  //0b00001010
+        uint8_t config_reg_value = 0x0A;  // 0b00001010
 
         // Write the configuration register
         BusI2C::write(i2c_address, REG_CONFIG, &config_reg_value, 1);
@@ -78,7 +81,7 @@ public:
 
         // Read back the value
         BusI2C::directRead(i2c_address, &read_config_reg_value, 1);
-        //BusI2C::read(i2c_address, REG_CONFIG, &read_config_reg_value, 1);
+        // BusI2C::read(i2c_address, REG_CONFIG, &read_config_reg_value, 1);
 
         pointToConversionResult();
 
@@ -87,17 +90,17 @@ public:
 
     void enableChannel(Channel channel)
     {
-        uint8_t ch = static_cast<uint8_t>(channel);
-        enabled_channels[ch-1] = true;
+        uint8_t ch               = static_cast<uint8_t>(channel);
+        enabled_channels[ch - 1] = true;
 
         uint8_t config_reg_value;
         BusI2C::read(i2c_address, REG_CONFIG, &config_reg_value, 1);
 
         // Update the config register value
         uint8_t channel_reg = 0;
-        for(int i = 0; i < 4; i++)
+        for (int i = 0; i < 4; i++)
         {
-            if(enabled_channels[i])
+            if (enabled_channels[i])
                 channel_reg |= 1 << i;
         }
         config_reg_value = (config_reg_value & 0x0F) | channel_reg << 4;
@@ -113,16 +116,16 @@ public:
 
     void disableChannel(Channel channel)
     {
-        uint8_t ch = static_cast<uint8_t>(channel);
-        enabled_channels[ch-1] = false;
+        uint8_t ch               = static_cast<uint8_t>(channel);
+        enabled_channels[ch - 1] = false;
 
         uint8_t channel_reg = 0;
-        for(int i = 0; i < 4; i++)
+        for (int i = 0; i < 4; i++)
         {
-            if(enabled_channels[i])
+            if (enabled_channels[i])
                 channel_reg |= 1 << i;
         }
-        
+
         uint8_t config_reg_value;
         BusI2C::read(i2c_address, REG_CONFIG, &config_reg_value, 1);
 
@@ -142,12 +145,12 @@ public:
      */
     bool onSimpleUpdate() override
     {
-
         uint8_t data[2];
 
-        for(int i = 0; i < 4; i++)
+        for (int i = 0; i < 4; i++)
         {
-            if(enabled_channels[i]){
+            if (enabled_channels[i])
+            {
                 // Trigger a conversion
                 CONVST::high();
                 miosix::delayUs(3);
@@ -198,11 +201,13 @@ private:
      * register
      * @return AD7994Sample
      */
-    AD7994Sample decodeConversion(uint8_t* data_ptr) {
-        uint16_t conv_reg = static_cast<uint16_t>((data_ptr[0]) << 8) + data_ptr[1];
+    AD7994Sample decodeConversion(uint8_t* data_ptr)
+    {
+        uint16_t conv_reg =
+            static_cast<uint16_t>((data_ptr[0]) << 8) + data_ptr[1];
 
         AD7994Sample out;
-        out.value = conv_reg & 0x0FFF;
+        out.value      = conv_reg & 0x0FFF;
         out.channel_id = (static_cast<uint8_t>(conv_reg >> 12) & 0x03) + 1;
         out.alert_flag = static_cast<bool>(conv_reg >> 15);
 
