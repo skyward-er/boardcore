@@ -281,6 +281,12 @@ void PWM::start()
 
         timer.TIM->CR1 |= TIM_CR1_CEN;
 
+        // Advanced-control timers need Main Output Enable bit to 1 to output pwm
+        if(timer.TIM == TIM1 || timer.TIM == TIM8)
+        {
+            timer.TIM->BDTR |= TIM_BDTR_MOE;
+        }
+
         started = true;
     }
 }
@@ -290,6 +296,11 @@ void PWM::stop()
     if (started)
     {
         timer.TIM->CR1 &= ~TIM_CR1_CEN;
+
+        if(timer.TIM == TIM1 || timer.TIM == TIM8)
+        {
+            timer.TIM->BDTR &= ~TIM_BDTR_MOE;
+        }
 
         started = false;
     }
