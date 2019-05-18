@@ -262,7 +262,7 @@ void PWM::hardwareDisableChannel(PWMChannel channel)
 void PWM::hardwareUpdateRegisters()
 {
     uint32_t psc =
-        (timer.input_clock_freq / (duty_cycle_resolution * frequency)) - 1;
+        (timer.input_clock_freq / (duty_cycle_resolution * frequency));
     if (psc > 0xFFFF)
     {
         psc = 0xFFFF;
