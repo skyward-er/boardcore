@@ -151,7 +151,7 @@ public:
         }
 
         uint8_t whoami = Bus::read(REG_WHO_AM_I);
-        printf("MPU whoami: expected %x actual %x\n", who_am_i_value_mpu, whoami);
+        // printf("MPU whoami: expected %x actual %x\n", who_am_i_value_mpu, whoami);
         if (whoami != who_am_i_value_mpu)
         {
             last_error = ERR_NOT_ME;
@@ -163,15 +163,13 @@ public:
 
     bool initMagneto()
     {
-        for(int i = 0; i < 10; i++){
-            uint8_t ak_wia = akReadWhoAmI();
-            printf("AK whoami: expected %x actual %x\n", who_am_i_value_ak, ak_wia);
-            if (ak_wia != who_am_i_value_ak)
-            {
-                last_error = ERR_CANT_TALK_TO_CHILD;  // TODO
-                return false;
+        uint8_t ak_wia = akReadWhoAmI();
+        // printf("AK whoami: expected %x actual %x\n", who_am_i_value_ak, ak_wia);
+        if (ak_wia != who_am_i_value_ak)
+        {
+            last_error = ERR_CANT_TALK_TO_CHILD;  // TODO
+            return false;
 
-            }
         }
 
         magnetoFSMState = 1;
