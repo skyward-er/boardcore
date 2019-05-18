@@ -125,14 +125,12 @@ public:
             {REG_ACCEL_CONFIG,   (uint8_t) (0x00 | ((accelFS & 3) << 3))},
             {REG_ACCEL_CONFIG2,  0x08}, // FCHOICE = 1, A_DLPF_CFG = 000
 
-            {REG_INT_PIN_CFG,    0x16}, // TODO: CHECK THIS
+            {REG_INT_PIN_CFG,    0x16},
 
             // I2C (MPU9250 <-> AK8963)
-            // TODO: change this? 0x30 seems to work well
             {REG_USER_CTRL,      0x20}, // I2C Master mode
 
-            // TODO: check this!! 0x0D doesn't work always
-            {REG_I2C_MST_CTRL,   0x40}, // I2C configuration multi-master  IIC 400KHz
+            {REG_I2C_MST_CTRL,   0x48}, // I2C configuration multi-master  IIC 258
             
             {REG_I2C_SLV0_ADDR,  AK8963_I2C_ADDR}, // Set the I2C slave addres of AK8963 and set for write.
             {REG_I2C_SLV0_REG,   AK8963_CNTL2}, // I2C slave 0 register address from where to begin data transfer
@@ -149,7 +147,7 @@ public:
         for (size_t i = 0; i < sizeof(init_data) / sizeof(init_data[0]); i++)
         {
             Bus::write(init_data[i][0], init_data[i][1]);
-            miosix::Thread::sleep(5); // It won't work without this delay
+            miosix::Thread::sleep(2); // It won't work without this delay
         }
 
         uint8_t whoami = Bus::read(REG_WHO_AM_I);
@@ -160,17 +158,23 @@ public:
             return false;
         }
 
-        uint8_t ak_wia = akReadWhoAmI();
-        printf("AK whoami: expected %x actual %x\n", who_am_i_value_ak, ak_wia);
-        if (ak_wia != who_am_i_value_ak)
-        {
-            last_error = ERR_CANT_TALK_TO_CHILD;  // TODO
-            return false;
+        return true;
+    }
 
+    bool initMagneto()
+    {
+        for(int i = 0; i < 10; i++){
+            uint8_t ak_wia = akReadWhoAmI();
+            printf("AK whoami: expected %x actual %x\n", who_am_i_value_ak, ak_wia);
+            if (ak_wia != who_am_i_value_ak)
+            {
+                last_error = ERR_CANT_TALK_TO_CHILD;  // TODO
+                return false;
+
+            }
         }
 
         magnetoFSMState = 1;
-
         return true;
     }
 
