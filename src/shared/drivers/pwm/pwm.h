@@ -33,6 +33,20 @@
 class PWM
 {
 public:
+    /**
+     * Struct defining a timer, its clock enable register & bit, and its clock
+     * input frequency
+     * Example:
+     *
+     *  PWM::Timer t {
+     *   TIM4,  // TIM4
+     *   &(RCC->APB1ENR),  // APB1 Enable register
+     *   RCC_APB1ENR_TIM4EN, // TIM4 enable bit on the APB1 enable register
+     *
+     *   // APB1 Clock speed
+     *   TimerUtils::getPrescalerInputFrequency(TimerUtils::InputClock::APB1)
+     *   };
+     */
     struct Timer
     {
         TIM_TypeDef* TIM;  // The timer we want to use
@@ -107,14 +121,11 @@ public:
      * @brief Stops PWM generation
      */
     void stop();
-    
+
     /**
      * @brief Returns true if the pwm generator is active
      */
-    bool isStarted()
-    {
-        return started;
-    }
+    bool isStarted() { return started; }
 
     PWMChannelConfig getChannelConfig(PWMChannel channel)
     {
