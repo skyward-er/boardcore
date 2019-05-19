@@ -156,8 +156,8 @@ public:
 
                 BusI2C::directRead(i2c_address, data, 2);
 
-                samples[i].timestamp = miosix::getTick();
                 samples[i]           = decodeConversion(data);
+                samples[i].timestamp = miosix::getTick();
             }
         }
 
