@@ -129,17 +129,14 @@ private:
         if (adc == ADC1)
         {
             RCC->APB2ENR |= RCC_APB2ENR_ADC1EN;
-            TRACE("[Internal ADC] Using ADC1\n");
         }
         else if (adc == ADC2)
         {
             RCC->APB2ENR |= RCC_APB2ENR_ADC2EN;
-            TRACE("[Internal ADC] Using ADC2\n");
         }
         else if (adc == ADC3)
         {
             RCC->APB2ENR |= RCC_APB2ENR_ADC3EN;
-            TRACE("[Internal ADC] Using ADC3\n");
         }
 
         RCC_SYNC();
