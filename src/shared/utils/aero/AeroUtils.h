@@ -58,7 +58,7 @@ constexpr float n_inv = (R * a) / g;
  * reference is, in fact, the sea level.
  *
  * @param pressure Current pressure [Pascal]
- * @param pressure_ref Pressure at reference altitude [Pascal]
+ * @param pressure_ref Pressure at reference altitude (must be > 0) [Pascal]
  * @param temperature_ref Temperature at reference altitude [Kelvin]
  * @return Current altitude with respect to the reference altitude [meters]
  */
@@ -73,7 +73,7 @@ float relAltitude(float pressure, float pressure_ref, float temperature_ref);
  * level
  *
  * @param pressure_ref Pressure at reference altitude [Pascal]
- * @param temperature_ref Temperature at reference altitude [Kelvin]
+ * @param temperature_ref Temperature at reference altitude. Must be > 0 [Kelvin]
  * @param altitude_ref Reference altitude [meters]
  * @return Pressure at mean sea level [pascal]
  */
@@ -100,9 +100,9 @@ float mslTemperature(float temperature_ref, float altitude_ref);
  * @warning This function is valid for altitudes below 11000 meters above sea
  * level
  * 
- * @param p Current pressure [Pa]
+ * @param p Current pressure (must be > 0) [Pa]
  * @param dp_dt [Rate of change of pressure [Pa/s]]
- * @param p_ref Reference pressure [Pa]
+ * @param p_ref Reference pressure (must be > 0) [Pa]
  * @param t_ref Reference temperature [K]
  * @return Vertical speed, positive upwards [m/s]
  */
