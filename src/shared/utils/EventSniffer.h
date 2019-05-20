@@ -35,29 +35,41 @@ using std::string;
 using std::vector;
 
 /**
- * Class that subscribe to every possible topic and pretty prints every event it
- * receives
+ * Class that subscribe to many topics and calls a callback when an event is
+ * received.
  */
 class EventSniffer
 {
-    using NameFunction = function<string(uint8_t)>;
+    using OnEventReceived = function<void(uint8_t, uint8_t)>;
 
 public:
     /**
+     * EventSniffer that sniffs only the specified topics
      * @param broker Event broker to subscribe to
-     * @param event_name_fun Function that takes the event sig and returns the
-     * event name
-     * @param topic_name_fun Function that takes a topic id and returns the
-     * topic name
+     * @param topics Which topics to sniff
+     * @param on_event_received Callback to call upon receiving an event
      */
-    EventSniffer(EventBroker& broker, NameFunction event_name_fun,
-                 NameFunction topic_name_fun)
-        : broker(broker), event_name_fun(event_name_fun),
-          topic_name_fun(topic_name_fun)
+    EventSniffer(EventBroker& broker, vector<uint8_t> topics,
+                 OnEventReceived on_event_received)
+        : broker(broker), on_event_received(on_event_received)
     {
-        for (uint8_t t = 0; t < 255; t++)
+        for (uint8_t t : topics)
         {
             sniffers.push_back(new Sniffer(*this, t));
+        }
+    }
+
+    /**
+     * EventSniffer that sniffs all the possible topics (0-255)
+     * @param broker Event broker to subscribe to
+     * @param on_event_received Callback to call upon receiving an event
+     */
+    EventSniffer(EventBroker& broker, OnEventReceived on_event_received)
+        : broker(broker), on_event_received(on_event_received)
+    {
+        for (int t = 0; t <= 255; t++)
+        {
+            sniffers.push_back(new Sniffer(*this, (uint8_t)t));
         }
     }
 
@@ -73,28 +85,26 @@ private:
     class Sniffer : public EventHandlerBase
     {
     public:
-        Sniffer(EventSniffer& parent, uint8_t topic) : parent(parent)
+        Sniffer(EventSniffer& parent, uint8_t topic)
+            : parent(parent), topic(topic)
         {
             parent.broker.subscribe(this, topic);
-            topic_name = parent.topic_name_fun(topic);
         }
 
         void postEvent(const Event& ev)
         {
-            string ev_name = parent.event_name_fun(ev.sig);
-            cout << "[EVENT] " << ev_name << " on " << topic_name << ".\n";
+            parent.on_event_received(ev.sig, topic);
         }
 
         ~Sniffer() { parent.broker.unsubscribe(this); }
 
     private:
         EventSniffer& parent;
-        string topic_name;
+        uint8_t topic;
     };
 
     vector<Sniffer*> sniffers;
 
     EventBroker& broker;
-    NameFunction event_name_fun;
-    NameFunction topic_name_fun;
+    OnEventReceived on_event_received;
 };
