@@ -113,41 +113,28 @@ public:
 
     bool init() override
     {
-        // clang-format off
-        uint8_t init_data[][2] = 
+        if(initMagneto()==false)
         {
-            {REG_PWR_MGMT_1,     0x80}, // Reset Device
-            {REG_PWR_MGMT_1,     0x01}, // Clock Source
-            {REG_PWR_MGMT_2,     0x00}, // Enable all sensors
-            {REG_CONFIG,         0x00}, // DLPF_CFG = xxxxx000
-            {REG_SMPLRT_DIV,     0x00}, // Do not divide
-            {REG_GYRO_CONFIG,    (uint8_t) (0x03 | ((gyroFS  & 3) << 3))},
-            {REG_ACCEL_CONFIG,   (uint8_t) (0x00 | ((accelFS & 3) << 3))},
-            {REG_ACCEL_CONFIG2,  0x08}, // FCHOICE = 1, A_DLPF_CFG = 000
+            // Initialize only MPU9250
+            // clang-format off
+            uint8_t init_data[][2] = 
+            {
+                {REG_PWR_MGMT_1,     0x80}, // Reset Device
+                {REG_PWR_MGMT_1,     0x01}, // Clock Source
+                {REG_PWR_MGMT_2,     0x00}, // Enable all sensors
+                {REG_CONFIG,         0x00}, // DLPF_CFG = xxxxx000
+                {REG_SMPLRT_DIV,     0x00}, // Do not divide
+                {REG_GYRO_CONFIG,    (uint8_t) (0x03 | ((gyroFS  & 3) << 3))},
+                {REG_ACCEL_CONFIG,   (uint8_t) (0x00 | ((accelFS & 3) << 3))},
+                {REG_ACCEL_CONFIG2,  0x08}, // FCHOICE = 1, A_DLPF_CFG = 000
+            };
+            // clang-format on
 
-            {REG_INT_PIN_CFG,    0x16},
-
-            // I2C (MPU9250 <-> AK8963)
-            {REG_USER_CTRL,      0x20}, // I2C Master mode
-
-            {REG_I2C_MST_CTRL,   0x48}, // I2C configuration multi-master  IIC 258
-            
-            {REG_I2C_SLV0_ADDR,  AK8963_I2C_ADDR}, // Set the I2C slave addres of AK8963 and set for write.
-            {REG_I2C_SLV0_REG,   AK8963_CNTL2}, // I2C slave 0 register address from where to begin data transfer
-            {REG_I2C_SLV0_DO,    0x01}, // Reset AK8963
-            {REG_I2C_SLV0_CTRL,  0x81}, // Enable I2C and set 1 byte
-
-            {REG_I2C_SLV0_REG,   AK8963_CNTL1}, // I2C slave 0 register address from where to begin data transfer
-            // {REG_I2C_SLV0_DO,    0x16}, // Register value to 100Hz continuous measurement in 16bit
-            {REG_I2C_SLV0_DO,    0x12}, // Register value to 8Hz continuous measurement in 16bit
-            {REG_I2C_SLV0_CTRL,  0x81}, //Enable I2C and set 1 byte
-        };
-        // clang-format on
-
-        for (size_t i = 0; i < sizeof(init_data) / sizeof(init_data[0]); i++)
-        {
-            Bus::write(init_data[i][0], init_data[i][1]);
-            miosix::Thread::sleep(2); // It won't work without this delay
+            for (size_t i = 0; i < sizeof(init_data) / sizeof(init_data[0]); i++)
+            {
+                Bus::write(init_data[i][0], init_data[i][1]);
+                miosix::Thread::sleep(10);
+            }
         }
 
         uint8_t whoami = Bus::read(REG_WHO_AM_I);
@@ -162,18 +149,47 @@ public:
     }
 
     bool initMagneto()
-    {
-        uint8_t ak_wia = akReadWhoAmI();
-        // printf("AK whoami: expected %x actual %x\n", who_am_i_value_ak, ak_wia);
-        if (ak_wia != who_am_i_value_ak)
+    { 
+        for (size_t i = 0; i < 10; i++)
         {
-            last_error = ERR_CANT_TALK_TO_CHILD;  // TODO
-            return false;
+            // clang-format off
+            uint8_t init_data[][2] = 
+            {
+                {REG_PWR_MGMT_1,     0x80}, // Reset Device
+                {REG_INT_PIN_CFG,    0x16},
 
+                // I2C (MPU9250 <-> AK8963)
+                {REG_USER_CTRL,      0x20}, // I2C Master mode
+
+                {REG_I2C_MST_CTRL,   0x48}, // I2C configuration multi-master  IIC at 258hz
+                
+                {REG_I2C_SLV0_ADDR,  AK8963_I2C_ADDR}, // Set the I2C slave addres of AK8963 and set for write.
+                {REG_I2C_SLV0_REG,   AK8963_CNTL2}, // I2C slave 0 register address from where to begin data transfer
+                {REG_I2C_SLV0_DO,    0x01}, // Reset AK8963
+                {REG_I2C_SLV0_CTRL,  0x81}, // Enable I2C and set 1 byte
+
+                {REG_I2C_SLV0_REG,   AK8963_CNTL1}, // I2C slave 0 register address from where to begin data transfer
+                {REG_I2C_SLV0_DO,    0x16}, // Register value to 100Hz continuous measurement in 16bit
+                // {REG_I2C_SLV0_DO,    0x12}, // Register value to 8Hz continuous measurement in 16bit
+                {REG_I2C_SLV0_CTRL,  0x81}, //Enable I2C and set 1 byte
+            };
+            // clang-format on
+
+            for (size_t i = 0; i < sizeof(init_data) / sizeof(init_data[0]); i++)
+            {
+                Bus::write(init_data[i][0], init_data[i][1]);
+                miosix::Thread::sleep(10); // It won't work without this delay
+            }
+
+            uint8_t ak_wia = akReadWhoAmI();
+            // printf("AK whoami: expected %x actual %x\n", who_am_i_value_ak, ak_wia);
+            if (ak_wia != who_am_i_value_ak)
+            {
+                magnetoFSMState = 1;
+                return true;
+            }
         }
-
-        magnetoFSMState = 1;
-        return true;
+        return false;
     }
 
     bool onSimpleUpdate() override
