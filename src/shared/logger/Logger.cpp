@@ -112,6 +112,8 @@ int Logger::start()
         throw runtime_error("Error creating stats thread");
     }
     started = true;
+
+    s.logNumber = fileNumber;
     return fileNumber;
 }
 
