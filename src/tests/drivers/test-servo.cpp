@@ -32,6 +32,7 @@ using ps3 = Gpio<GPIOC_BASE, 7>;
 
 PWMChannel s1_ch = PWMChannel::CH1;
 PWMChannel s2_ch = PWMChannel::CH2;
+
 PWMChannel s3_ch = PWMChannel::CH2;
 
 int main()
@@ -57,7 +58,7 @@ int main()
         TimerUtils::getPrescalerInputFrequency(TimerUtils::InputClock::APB2)};
 
     Servo s12{tim4};
-    Servo s3{tim4};
+    Servo s3{tim8};
 
     s12.start();
     s3.start();
@@ -68,13 +69,18 @@ int main()
 
     float pos[] = {0, 0.5f, 1.0f};
 
+    s12.setPosition(s1_ch, pos[0]);
+    s12.setPosition(s2_ch, pos[1]);
+    s3.setPosition(s3_ch, pos[2]);
+    for (;;)
+        Thread::sleep(1000);
     int i = 0;
     for (;;)
     {
         // Cycle each servo between the 3 predefined positions
         s12.setPosition(s1_ch, pos[i % 3]);
-        s12.setPosition(s1_ch, pos[(i + 1) % 3]);
-        s12.setPosition(s1_ch, pos[(i + 2) % 3]);
+        s12.setPosition(s2_ch, pos[(i + 1) % 3]);
+        s3.setPosition(s3_ch, pos[(i + 2) % 3]);
 
         ++i;
 
