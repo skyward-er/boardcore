@@ -105,11 +105,7 @@ public:
         }
         config_reg_value = (config_reg_value & 0x0F) | channel_reg << 4;
 
-        TRACE("channel_reg: %d\n", channel_reg);
-
         BusI2C::write(i2c_address, REG_CONFIG, &config_reg_value, 1);
-
-        TRACE("REG_CONFIG: %d\n", config_reg_value);
 
         pointToConversionResult();
     }
@@ -160,8 +156,8 @@ public:
 
                 BusI2C::directRead(i2c_address, data, 2);
 
-                samples[i].timestamp = miosix::getTick();
                 samples[i]           = decodeConversion(data);
+                samples[i].timestamp = miosix::getTick();
             }
         }
 

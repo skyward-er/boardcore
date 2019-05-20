@@ -40,7 +40,7 @@ public:
      *
      *  PWM::Timer t {
      *   TIM4,  // TIM4
-     *   &(RCC->APB1ENR),  // APB1 Enable register
+     *   &(RCC->APB1ENR),  // APB1 Enable register (TIM4 is on APB1 bus)
      *   RCC_APB1ENR_TIM4EN, // TIM4 enable bit on the APB1 enable register
      *
      *   // APB1 Clock speed
@@ -49,9 +49,9 @@ public:
      */
     struct Timer
     {
-        TIM_TypeDef* TIM;  // The timer we want to use
-        volatile uint32_t*
-            bus_en_reg;   // APB1 or APB2 Peripheral clock enable register
+        TIM_TypeDef* TIM;               // The timer we want to use
+        volatile uint32_t* bus_en_reg;  // Pointer to APB1 or APB2 Peripheral
+                                        // clock enable register
         uint32_t TIM_EN;  // Enable bit for the clock enable register
 
         unsigned int input_clock_freq;  // Timer input clock frequency [Hz]
