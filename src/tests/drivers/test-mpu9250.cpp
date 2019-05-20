@@ -57,13 +57,6 @@ int main()
         }
     }
 
-    if(mpu->initMagneto()){
-        printf("AK8963 Init succeeded\n" );
-    }
-    else {
-        printf("AK8963 Init failed\n");
-    }
-
     Thread::sleep(100);
 
     while(true)
