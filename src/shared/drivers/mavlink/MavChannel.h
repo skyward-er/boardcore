@@ -37,7 +37,7 @@
 
 using std::vector;
 
-static constexpr size_t MAV_OUT_QUEUE_LEN   = 10;
+static constexpr size_t MAV_OUT_QUEUE_LEN  = 10;
 static constexpr size_t MAV_IN_BUFFER_SIZE = 256;
 
 /**
@@ -58,11 +58,9 @@ public:
      * @param sleepTime  min sleep after send
      */
     MavChannel(Transceiver* device, MavHandler onRcv, uint16_t sleepTime = 0,
-                    size_t out_buffer_size = 256, size_t out_buf_max_age = 1000)
-        : device(device),
-          handleMavlinkMessage(onRcv),
-          sleep_after_send(sleepTime),
-          out_buffer_size(out_buffer_size),
+               size_t out_buffer_size = 256, size_t out_buf_max_age = 1000)
+        : device(device), handleMavlinkMessage(onRcv),
+          sleep_after_send(sleepTime), out_buffer_size(out_buffer_size),
           out_buf_max_age(out_buf_max_age)
     {
         memset(&status, 0, sizeof(MavStatus));
@@ -97,9 +95,9 @@ public:
         // Start receiver
         if (!rcvStarted)
         {
-            rcvThread = miosix::Thread::create(
-                rcvLauncher, miosix::STACK_DEFAULT_FOR_PTHREAD,
-                miosix::MAIN_PRIORITY, reinterpret_cast<void*>(this));
+            rcvThread =
+                miosix::Thread::create(rcvLauncher, 4096, miosix::MAIN_PRIORITY,
+                                       reinterpret_cast<void*>(this));
 
             if (rcvThread != nullptr)
                 rcvStarted = true;
@@ -107,7 +105,7 @@ public:
                 TRACE("[MAV] Could not start receiver!\n");
         }
 
-        if(sndStarted && rcvStarted)
+        if (sndStarted && rcvStarted)
             TRACE("[MAV] Start ok (sender and receiver)\n");
 
         return (sndStarted && rcvStarted);
@@ -206,14 +204,6 @@ public:
                 // If the buffer is full, or the buffer is too old, send it
                 if (out_buffer_age >= out_buf_max_age || out_buf_full)
                 {
-                    if (out_buffer_age >= out_buf_max_age)
-                    {
-                        TRACE("[MAV] Sent data (Max age reached)\n");
-                    }
-                    else
-                    {
-                        TRACE("[MAV] Sent data (Buffer full)\n");
-                    }
                     sendBuffer();
 
                     out_buffer_age = 0;
