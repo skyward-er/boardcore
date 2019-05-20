@@ -68,6 +68,8 @@ public:
     }
 
     long long timestamp;  ///< Timestamp
+
+    int logNumber = 0;
     int statTooLargeSamples =
         0;  ///< Number of dropped samples because too large
     int statDroppedSamples = 0;  ///< Number of dropped samples due to fifo full
