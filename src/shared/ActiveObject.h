@@ -42,30 +42,25 @@ public:
      * stacksize the stack of the thread that will be spawned \param priority
      * priority of the thread that will be spawned
      */
-    ActiveObject()
-    {
-    }
+    ActiveObject() {}
 
     virtual ~ActiveObject(){};
 
     /**
      * @brief Start the thread associated with this activeobject.
      * Call stop() to terminate execution of the thread.
-     * @return true 
-     * @return false 
+     * @return true
+     * @return false
      */
-    virtual bool start()
-    {
-        return start(miosix::STACK_DEFAULT_FOR_PTHREAD, miosix::MAIN_PRIORITY);
-    }
-
-    virtual bool start(unsigned int stacksize, miosix::Priority priority)
+    virtual bool start(
+        unsigned int stacksize    = miosix::STACK_DEFAULT_FOR_PTHREAD,
+        miosix::Priority priority = miosix::MAIN_PRIORITY)
     {
         if (!started && !stopped)
         {
-            thread = miosix::Thread::create(
-                threadLauncher, stacksize, priority,
-                reinterpret_cast<void*>(this), miosix::Thread::JOINABLE);
+            thread = miosix::Thread::create(threadLauncher, stacksize, priority,
+                                            reinterpret_cast<void*>(this),
+                                            miosix::Thread::JOINABLE);
 
             if (thread != nullptr)
                 started = true;
