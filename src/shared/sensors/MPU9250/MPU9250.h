@@ -100,9 +100,9 @@ public:
         }
         raw_data.temp = fromBigEndian16(raw_data.temp);
 
-        mLastAccel.setX(normalizeAccel(raw_data.accel[0]));
-        mLastAccel.setY(normalizeAccel(raw_data.accel[1]));
-        mLastAccel.setZ(normalizeAccel(raw_data.accel[2]));
+        mLastAccel.setX((normalizeAccel(raw_data.accel[0])-_axb));
+        mLastAccel.setY((normalizeAccel(raw_data.accel[1])-_ayb));
+        mLastAccel.setZ((normalizeAccel(raw_data.accel[2])-_azb));
 
         mLastGyro.setX(normalizeGyro(raw_data.gyro[0]));
         mLastGyro.setY(normalizeGyro(raw_data.gyro[1]));
@@ -183,7 +183,7 @@ public:
 
             uint8_t ak_wia = akReadWhoAmI();
             // printf("AK whoami: expected %x actual %x\n", who_am_i_value_ak, ak_wia);
-            if (ak_wia != who_am_i_value_ak)
+            if (ak_wia == who_am_i_value_ak)
             {
                 magnetoFSMState = 1;
                 return true;
@@ -207,9 +207,9 @@ public:
         }
         raw_data.temp = fromBigEndian16(raw_data.temp);
 
-        mLastAccel.setX(normalizeAccel(raw_data.accel[0]));
-        mLastAccel.setY(normalizeAccel(raw_data.accel[1]));
-        mLastAccel.setZ(normalizeAccel(raw_data.accel[2]));
+        mLastAccel.setX((normalizeAccel(raw_data.accel[0])-_axb));
+        mLastAccel.setY((normalizeAccel(raw_data.accel[1])-_ayb));
+        mLastAccel.setZ((normalizeAccel(raw_data.accel[2])-_azb));
 
         mLastGyro.setX(normalizeGyro(raw_data.gyro[0]));
         mLastGyro.setY(normalizeGyro(raw_data.gyro[1]));
@@ -247,6 +247,47 @@ public:
         return true;
     }
 
+    /* Finds offset bias for the accelerometer*/
+    void calibrateAccel()
+    {
+        accelFS = 0;
+        Bus::write(REG_ACCEL_CONFIG, accelFS);  // setting the accel range to 2G
+        Bus::write(REG_ACCEL_CONFIG2, 0x04);    // setting accel bandwidth to 20Hz
+        Bus::write(REG_SMPLRT_DIV,19);          // setting the sample rate divider to 19
+        
+        // accel bias and scale factor estimation
+        double _axbD = 0;
+        double _aybD = 0;
+        double _azbD = 0;
+
+        for (size_t i = 0; i < _numSamples; i++)
+        {
+            onSimpleUpdate();
+            _axbD += (mLastAccel.getX() + _axb)/((double)_numSamples);
+            _aybD += (mLastAccel.getY() + _ayb)/((double)_numSamples);
+            _azbD += (mLastAccel.getZ() + _azb)/((double)_numSamples);
+            miosix::Thread::sleep(10);
+        }
+
+        _axb = _axbD;
+        _ayb = _aybD;
+        _azb = _azbD + EARTH_GRAVITY;
+    }
+
+    void getAccelCalibParams(float* bias)
+    {
+        bias[0] = _axb;
+        bias[1] = _ayb;
+        bias[2] = _azb;
+    }
+
+    void setAccelCalibParams(float* bias)
+    {
+        _axb = bias[0];
+        _ayb = bias[1];
+        _azb = bias[2];
+    }
+
     bool selfTest() override
     {
         return true;
@@ -279,6 +320,12 @@ private:
     uint8_t gyroFS;
     uint8_t accelFS;
     uint8_t magnetoFSMState;
+
+    // accel bias and scale factor estimation
+    size_t _numSamples = 1000;
+    float _axb = 0.0f; // offset bias
+    float _ayb = 0.0f;
+    float _azb = 0.0f;
 
     inline float normalizeAccel(int16_t val)
     {
