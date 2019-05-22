@@ -67,6 +67,9 @@ static unsigned short crc16piksi(const void *message, unsigned int length)
 
 Piksi::Piksi(const char *serialPath)
 {
+    memset(&data, 0, sizeof(data));
+    memset(&partialData, 0, sizeof(partialData));
+
     fd = open(serialPath, O_RDWR);
     if (fd < 0)
         throw runtime_error(string("Cannot open ") + serialPath);
