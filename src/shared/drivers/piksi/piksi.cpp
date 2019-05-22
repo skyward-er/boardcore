@@ -67,8 +67,8 @@ static unsigned short crc16piksi(const void *message, unsigned int length)
 
 Piksi::Piksi(const char *serialPath)
 {
-    memset(&data, 0, sizeof(data));
-    memset(&partialData, 0, sizeof(partialData));
+    memset(&data, 0, sizeof(GPSData));
+    memset(&partialData, 0, sizeof(GPSData));
 
     fd = open(serialPath, O_RDWR);
     if (fd < 0)
