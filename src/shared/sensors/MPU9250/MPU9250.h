@@ -114,27 +114,26 @@ public:
     bool init() override
     {
         if(initMagneto()==false)
-        {
-            // Initialize only MPU9250
-            // clang-format off
-            uint8_t init_data[][2] = 
-            {
-                {REG_PWR_MGMT_1,     0x80}, // Reset Device
-                {REG_PWR_MGMT_1,     0x01}, // Clock Source
-                {REG_PWR_MGMT_2,     0x00}, // Enable all sensors
-                {REG_CONFIG,         0x00}, // DLPF_CFG = xxxxx000
-                {REG_SMPLRT_DIV,     0x00}, // Do not divide
-                {REG_GYRO_CONFIG,    (uint8_t) (0x03 | ((gyroFS  & 3) << 3))},
-                {REG_ACCEL_CONFIG,   (uint8_t) (0x00 | ((accelFS & 3) << 3))},
-                {REG_ACCEL_CONFIG2,  0x08}, // FCHOICE = 1, A_DLPF_CFG = 000
-            };
-            // clang-format on
+            printf("[AK8963] Failed to initialize\n");
 
-            for (size_t i = 0; i < sizeof(init_data) / sizeof(init_data[0]); i++)
-            {
-                Bus::write(init_data[i][0], init_data[i][1]);
-                miosix::Thread::sleep(10);
-            }
+        // Initialize MPU9250
+        // clang-format off
+        uint8_t init_data[][2] = 
+        {
+            {REG_PWR_MGMT_1,     0x01}, // Clock Source
+            {REG_PWR_MGMT_2,     0x00}, // Enable all sensors
+            {REG_CONFIG,         0x00}, // DLPF_CFG = xxxxx000
+            {REG_SMPLRT_DIV,     0x00}, // Do not divide
+            {REG_GYRO_CONFIG,    (uint8_t) (0x03 | ((gyroFS  & 3) << 3))},
+            {REG_ACCEL_CONFIG,   (uint8_t) (0x00 | ((accelFS & 3) << 3))},
+            {REG_ACCEL_CONFIG2,  0x08}, // FCHOICE = 1, A_DLPF_CFG = 000
+        };
+        // clang-format on
+
+        for (size_t i = 0; i < sizeof(init_data) / sizeof(init_data[0]); i++)
+        {
+            Bus::write(init_data[i][0], init_data[i][1]);
+            miosix::Thread::sleep(10);
         }
 
         uint8_t whoami = Bus::read(REG_WHO_AM_I);
@@ -148,6 +147,7 @@ public:
         return true;
     }
 
+    /* Try to initialize AK8963 for 10 times because it doesn't always works */
     bool initMagneto()
     { 
         for (size_t i = 0; i < 10; i++)
@@ -189,6 +189,10 @@ public:
                 return true;
             }
         }
+
+        Bus::write(REG_PWR_MGMT_1,0x80); // Reset Device
+        miosix::Thread::sleep(10);
+
         return false;
     }
 
