@@ -25,6 +25,8 @@
 #include <drivers/HardwareTimer.h>
 #include <drivers/pwm/pwm.h>
 
+#pragma once
+
 /**
  * Class used to control servomotors. This impementation differs from the
  * one in miosix (in servo_stm32.h)  as it can control servos connected to any
