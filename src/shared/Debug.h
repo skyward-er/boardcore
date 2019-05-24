@@ -22,11 +22,12 @@
 #ifndef SRC_SHARED_DEBUG_H
 #define SRC_SHARED_DEBUG_H
 
+#include <string>
+
 // clang-format off
 #ifdef DEBUG
 
 #define D(x) x
-#include <cstdio>
 #define TRACE(...) printf(__VA_ARGS__)
 
 #else
@@ -36,5 +37,19 @@
 
 #endif
 
+#ifdef LOG_THREAD_STACK
+    #define LOG_STACK(...) logStack(__VA_ARGS__)
+
+    static inline void logStack(std::string thread_name)
+    {
+        using namespace miosix;
+        printf("[STACK %s] Abs: %d, Curr: %d, Size: %d\n", thread_name.c_str(), 
+                    MemoryProfiling::getAbsoluteFreeHeap(), 
+                    MemoryProfiling::getCurrentFreeStack(), 
+                    MemoryProfiling::getStackSize());
+    }
+#else
+    #define LOG_STACK(...) (void)0
+#endif
 // clang-format on
 #endif /* SRC_SHARED_DEBUG_H */
