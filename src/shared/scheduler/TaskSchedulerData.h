@@ -43,7 +43,8 @@ struct TaskStatResult
         return "id,act_min,act_max,act_mean,act_stddev,act_nsamples,"
                "period_min,period_max,period_mean,period_stddev,period_"
                "nsamples,"
-               "workload_min,act_max,workload_mean,workload_stddev,workload_"
+               "workload_min,workload_max,workload_mean,workload_stddev,"
+               "workload_"
                "nsamples\n";
     }
 
@@ -51,10 +52,10 @@ struct TaskStatResult
     {
         os << (int)id << "," << activationStats.minValue << ","
            << activationStats.maxValue << "," << activationStats.mean << ","
-           << activationStats.stdev << "," << activationStats.nSamples
+           << activationStats.stdev << "," << activationStats.nSamples << ","
            << periodStats.minValue << "," << periodStats.maxValue << ","
            << periodStats.mean << "," << periodStats.stdev << ","
-           << periodStats.nSamples << workloadStats.minValue << ","
+           << periodStats.nSamples << "," << workloadStats.minValue << ","
            << workloadStats.maxValue << "," << workloadStats.mean << ","
            << workloadStats.stdev << "," << workloadStats.nSamples << "\n";
     }
