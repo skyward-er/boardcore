@@ -23,6 +23,7 @@
 #define SRC_SHARED_DEBUG_H
 
 #include <string>
+#include <miosix.h>
 
 // clang-format off
 #ifdef DEBUG
@@ -44,9 +45,9 @@
     {
         using namespace miosix;
         printf("[STACK %s] Abs: %d, Curr: %d, Size: %d\n", thread_name.c_str(), 
-                    MemoryProfiling::getAbsoluteFreeHeap(), 
-                    MemoryProfiling::getCurrentFreeStack(), 
-                    MemoryProfiling::getStackSize());
+                    (int)MemoryProfiling::getAbsoluteFreeStack(), 
+                    (int)MemoryProfiling::getCurrentFreeStack(), 
+                    (int)MemoryProfiling::getStackSize());
     }
 #else
     #define LOG_STACK(...) (void)0

@@ -22,6 +22,7 @@
 
 #include "CpuMeter.h"
 #include <Common.h>
+#include "diagnostic/SkywardStack.h"
 
 using namespace miosix;
 
@@ -49,6 +50,8 @@ static void cpuMeterThread(void*)
         utilization = 100.f * (1.f - static_cast<float>(period) / delta);
 
         Thread::sleep(gap);
+
+        LOG_STACK("CpuMeter");
     }
 }
 
@@ -59,6 +62,8 @@ static void watchdogThread(void*)
         Thread::sleep(watchdogPeriod);
         if (previous == update)
             utilization = 100.f;
+
+        LOG_STACK("CpuWatchdog");
     }
 }
 
