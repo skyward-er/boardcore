@@ -35,7 +35,10 @@ class FSM : public EventHandler
 {
 
 public:
-    FSM(void (T::*initialState)(const Event&))
+    FSM(void (T::*initialState)(const Event&),
+        unsigned int stacksize    = miosix::STACK_DEFAULT_FOR_PTHREAD,
+        miosix::Priority priority = miosix::MAIN_PRIORITY)
+        : EventHandler(stacksize, priority)
     {
         state            = initialState;
         specialEvent.sig = EV_ENTRY;
@@ -43,6 +46,7 @@ public:
     }
 
     virtual ~FSM(){};
+    
     void transition(void (T::*nextState)(const Event&))
     {
         specialEvent.sig = EV_EXIT;

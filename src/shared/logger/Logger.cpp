@@ -32,6 +32,8 @@
 #include <sys/types.h>
 #include <tscpp/buffer.h>
 #include <stdexcept>
+#include "diagnostic/SkywardStack.h"
+#include "Debug.h"
 
 using namespace std;
 using namespace miosix;
@@ -41,7 +43,7 @@ using namespace tscpp;
 // class Logger
 //
 
-//typedef Gpio<GPIOG_BASE, 13> green_led;  // STM32F429ZI green led
+// typedef Gpio<GPIOG_BASE, 13> green_led;  // STM32F429ZI green led
 
 Logger& Logger::instance()
 {
@@ -77,15 +79,16 @@ int Logger::start()
     // Perhaps excessive defensive programming as thread creation failure is
     // highly unlikely (only if ram is full)
 
-    packT = Thread::create(packThreadLauncher, 4096, 1, this, Thread::JOINABLE);
+    packT = Thread::create(packThreadLauncher, skywardStack(16 * 1024), 1, this,
+                           Thread::JOINABLE);
     if (!packT)
     {
         fclose(file);
         throw runtime_error("Error creating pack thread");
     }
 
-    writeT =
-        Thread::create(writeThreadLauncher, 4096, 1, this, Thread::JOINABLE);
+    writeT = Thread::create(writeThreadLauncher, skywardStack(16 * 1024), 1,
+                            this, Thread::JOINABLE);
     if (!writeT)
     {
         fullQueue.put(nullptr);  // Signal packThread to stop
@@ -101,16 +104,16 @@ int Logger::start()
         fclose(file);
         throw runtime_error("Error creating write thread");
     }
-    statsT =
-        Thread::create(statsThreadLauncher, 4096, 1, this, Thread::JOINABLE);
-    if (!statsT)
+    /*statsT =
+        Thread::create(statsThreadLauncher, skywardStack(16 * 1024), 1, this,
+    Thread::JOINABLE); if (!statsT)
     {
         fullQueue.put(nullptr);  // Signal packThread to stop
         packT->join();
         writeT->join();
         fclose(file);
         throw runtime_error("Error creating stats thread");
-    }
+    }*/
     started = true;
 
     s.logNumber = fileNumber;
@@ -126,7 +129,7 @@ void Logger::stop()
     fullQueue.put(nullptr);  // Signal packThread to stop
     packT->join();
     writeT->join();
-    statsT->join();
+    // statsT->join();
     fclose(file);
 }
 
@@ -201,6 +204,8 @@ void Logger::packThread()
     {
         for (;;)
         {
+            LOG_STACK("Logger-PACK");
+
             Buffer* buffer = nullptr;
             {
                 Lock<FastMutex> l(mutex);
@@ -254,6 +259,8 @@ void Logger::writeThread()
     {
         for (;;)
         {
+            LOG_STACK("Logger-WRITE");
+
             Buffer* buffer = nullptr;
             {
                 Lock<FastMutex> l(mutex);
@@ -271,7 +278,7 @@ void Logger::writeThread()
             // Write data to disk
             Timer timer;
             timer.start();
-            //green_led::high();
+            // green_led::high();
 
             size_t result = fwrite(buffer->data, 1, buffer->size, file);
             if (result != buffer->size)
@@ -285,7 +292,7 @@ void Logger::writeThread()
             else
                 s.statBufferWritten++;
 
-            //green_led::low();
+            // green_led::low();
             timer.stop();
             s.statWriteTime    = timer.interval();
             s.statMaxWriteTime = max(s.statMaxWriteTime, s.statWriteTime);

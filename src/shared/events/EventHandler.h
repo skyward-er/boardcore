@@ -44,7 +44,11 @@ public:
 class EventHandler : public EventHandlerBase, public ActiveObject
 {
 public:
-    EventHandler() {}
+    EventHandler(unsigned int stacksize    = miosix::STACK_DEFAULT_FOR_PTHREAD,
+                 miosix::Priority priority = miosix::MAIN_PRIORITY)
+        : ActiveObject(stacksize, priority)
+    {
+    }
 
     virtual ~EventHandler(){};
 

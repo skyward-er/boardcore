@@ -26,6 +26,7 @@
 #define SRC_SHARED_ACTIVEOBJECT_H
 
 #include <Common.h>
+#include "diagnostic/SkywardStack.h"
 
 /**
  * Utility class implementing the Active Object pattern
@@ -44,7 +45,7 @@ public:
      */
     ActiveObject(unsigned int stacksize    = miosix::STACK_DEFAULT_FOR_PTHREAD,
                  miosix::Priority priority = miosix::MAIN_PRIORITY)
-        : stack_size(stacksize), priority(priority)
+        : stack_size(skywardStack(stacksize)), priority(priority)
     {
     }
 
@@ -117,10 +118,10 @@ protected:
     bool should_stop       = false;
     bool stopped           = false;
 
-    unsigned int stack_size;
-    miosix::Priority priority = miosix::MAIN_PRIORITY;
-
 private:
+    unsigned int stack_size;
+    miosix::Priority priority;
+
     /**
      * Calls the run member function
      * \param arg the object pointer cast to void*

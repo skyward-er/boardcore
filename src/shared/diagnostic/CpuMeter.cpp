@@ -68,8 +68,9 @@ public:
     CpuMeterLauncher()
     {
         // Create the cpu meter thread with minimum priority
-        Thread::create(cpuMeterThread, STACK_MIN, 0, nullptr);
-        Thread::create(watchdogThread, STACK_MIN, MAIN_PRIORITY, nullptr);
+        Thread::create(cpuMeterThread, skywardStack(STACK_MIN), 0, nullptr);
+        Thread::create(watchdogThread, skywardStack(STACK_MIN), MAIN_PRIORITY,
+                       nullptr);
     }
 };
 
