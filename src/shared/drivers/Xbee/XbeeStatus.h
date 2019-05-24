@@ -38,14 +38,14 @@ namespace Xbee
         unsigned int rx_dropped_buffers = 0;
         unsigned int rx_wrong_checksum = 0;
 
-        // void print()
-        // {
-        //     printf("+++XBEE STATUS+++");
-        //     printf("TX: Timeouts: %d\n", tx_timeout_count);
-        //     printf("TXSTATUS: Retries: %d, Delivery: %02X, Discovery: %02X\n",
-        //            tx_retry_count, tx_delivery_status, tx_discovery_status);
-        //     printf("RX: Dropped: %d, Checksum: %d\n", rx_dropped_buffers, rx_wrong_checksum);
+        void print()
+        {
+            TRACE("+++XBEE STATUS+++");
+            TRACE("TX: Timeouts: %d\n", tx_timeout_count);
+            TRACE("TXSTATUS: Retries: %d, Delivery: %02X, Discovery: %02X\n",
+                   tx_retry_count, tx_delivery_status, tx_discovery_status);
+            TRACE("RX: Dropped: %d, Checksum: %d\n", rx_dropped_buffers, rx_wrong_checksum);
                 
-        // }
+        }
     };
 }
