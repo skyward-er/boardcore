@@ -34,6 +34,7 @@
 #include <vector>
 #include "MavStatus.h"
 #include "utils/SyncedCircularBuffer.h"
+#include "diagnostic/SkywardStack.h"
 
 using std::vector;
 
@@ -228,8 +229,8 @@ public:
 
         // TRACE("[MAV] Sending %d bytes\n", out_buffer.size());
 
-        // if (!sent)
-        //     TRACE("[MAV] Error: could not send message\n");
+        if (!sent)
+            TRACE("[MAV] Error: could not send message\n");
 
         /* Update status */
         {
