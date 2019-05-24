@@ -153,7 +153,7 @@ public:
             if (timeout > send_timeout)
             {
                 // Timeout. Return error
-                TRACE("[Xbee] Send Timeout!\n");
+                // TRACE("[Xbee] Send Timeout!\n");
                 ++status.tx_timeout_count;
                 return false;
             }
@@ -238,6 +238,8 @@ protected:
                         }
                     }
                 }
+
+                LOG_STACK("Xbee");
             }
             // Transfer any data on the tx buffer and receive any incoming data
             transferData();

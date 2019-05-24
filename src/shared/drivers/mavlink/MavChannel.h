@@ -82,7 +82,7 @@ public:
         if (!sndStarted)
         {
             sndThread = miosix::Thread::create(
-                sndLauncher, miosix::STACK_DEFAULT_FOR_PTHREAD,
+                sndLauncher, 4096,
                 miosix::MAIN_PRIORITY, reinterpret_cast<void*>(this),
                 miosix::Thread::JOINABLE);
 
@@ -155,6 +155,8 @@ public:
 
                         /* Handle the command */
                         handleMavlinkMessage(this, msg);
+
+                        LOG_STACK("MavReceiver");
                     }
                 }
             }
@@ -209,6 +211,8 @@ public:
                     out_buffer_age = 0;
                     out_buf_full   = false;
                     out_buffer.clear();
+
+                    LOG_STACK("MavSender");
                 }
 
                 out_buffer_age += sleep_after_send;
@@ -224,8 +228,8 @@ public:
 
         // TRACE("[MAV] Sending %d bytes\n", out_buffer.size());
 
-        if (!sent)
-            TRACE("[MAV] Error: could not send message\n");
+        // if (!sent)
+        //     TRACE("[MAV] Error: could not send message\n");
 
         /* Update status */
         {

@@ -132,6 +132,7 @@ void EventBroker::run()
         {
             // Unlock the mutex while sleeping
             Unlock<FastMutex> unlock(lock);
+            LOG_STACK("EventBroker");
             Thread::sleepUntil(sleep_until);
         }
     }
