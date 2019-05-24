@@ -220,7 +220,7 @@ private:
 
     miosix::Thread *packT;   ///< Thread packing logged data
     miosix::Thread *writeT;  ///< Thread writing data to disk
-    miosix::Thread *statsT;  ///< Thred printing stats
+    // miosix::Thread *statsT;  ///< Thred printing stats
 
     volatile bool started = false;  ///< Logger is started and accepting data
 

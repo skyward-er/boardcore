@@ -55,7 +55,10 @@ public:
      * Constructor
      * @param initialState func ptr of initial state in the state machine
      */
-    HSM(State (T::*initialState)(const Event&)) : EventHandler()
+    HSM(State (T::*initialState)(const Event&),
+        unsigned int stacksize    = miosix::STACK_DEFAULT_FOR_PTHREAD,
+        miosix::Priority priority = miosix::MAIN_PRIORITY)
+        : EventHandler(stacksize, priority)
     {
         state = &T::Hsm_top;
         temp  = initialState;
@@ -379,7 +382,7 @@ private:
         State retState;
 
         State s = (static_cast<T*>(this)->*temp)({EV_EMPTY});
-        UNUSED(s); // Avoid warning when not compiling for DEBUG
+        UNUSED(s);  // Avoid warning when not compiling for DEBUG
         D(assert(s == TRAN));
 
         do

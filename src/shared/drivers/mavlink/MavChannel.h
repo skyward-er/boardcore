@@ -82,7 +82,7 @@ public:
         if (!sndStarted)
         {
             sndThread = miosix::Thread::create(
-                sndLauncher, 4096,
+                sndLauncher, skywardStack(4 * 1024),
                 miosix::MAIN_PRIORITY, reinterpret_cast<void*>(this),
                 miosix::Thread::JOINABLE);
 
@@ -96,7 +96,7 @@ public:
         if (!rcvStarted)
         {
             rcvThread =
-                miosix::Thread::create(rcvLauncher, 4096, miosix::MAIN_PRIORITY,
+                miosix::Thread::create(rcvLauncher, skywardStack(4 * 1024), miosix::MAIN_PRIORITY,
                                        reinterpret_cast<void*>(this));
 
             if (rcvThread != nullptr)

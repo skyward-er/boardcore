@@ -29,6 +29,8 @@
 #include <unistd.h>
 #include <algorithm>
 #include <cmath>
+#include "diagnostic/SkywardStack.h"
+#include "Debug.h"
 
 using namespace std;
 
@@ -84,7 +86,14 @@ Piksi::Piksi(const char *serialPath)
 #endif  //_MIOSIX
         tcsetattr(fd, TCSANOW, &t);
     }
-    pthread_create(&thread, NULL, &threadLauncher, this);
+    pthread_attr_t attr;
+    pthread_attr_init(&attr);
+    pthread_attr_setstacksize(&attr, skywardStack(STACK_DEFAULT_FOR_PTHREAD));
+
+    pthread_create(&thread, &attr, &threadLauncher, this);
+
+    pthread_attr_destroy(&attr);
+    
     pthread_mutex_init(&mutex, NULL);
     pthread_cond_init(&cond, NULL);
 }
@@ -137,6 +146,9 @@ void Piksi::run()
         bytes.added(readData(bytes.addEnd(), bytes.availableToAdd()));
         bytes.removed(
             lookForMessages(bytes.removeEnd(), bytes.availableToRemove()));
+
+        LOG_STACK("Piksi");
+        
     } while (quit == false);
 }
 
