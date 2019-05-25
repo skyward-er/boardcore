@@ -82,8 +82,8 @@ void handleMavlinkMessage(const mavlink_message_t* msg)
     switch (msg->msgid)
     {
         case MAVLINK_MSG_ID_HR_TM:
-            fprintf(stdout, "%d,%f\n", (int)mavlink_msg_hr_tm_get_timestamp(msg),
-                    (float)mavlink_msg_hr_tm_get_pressure(msg));
+            fprintf(stdout, "%d,%d,%f\n", (int)mavlink_msg_hr_tm_get_timestamp(msg),
+                    mavlink_msg_hr_tm_get_bitfield_1(msg), mavlink_msg_hr_tm_get_pressure(msg));
             fflush(stdout);
             break;
         default:

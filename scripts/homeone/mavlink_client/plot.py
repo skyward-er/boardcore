@@ -26,7 +26,7 @@ SAMPLES = 1000
 def animate(i, xs, ys):
     line = sys.stdin.readline()
     line = line[0:-2]
-    x, y= line.split(',')
+    x, b, y= line.split(',')
     x = float(x)
     y = float(y)
     global last
@@ -35,7 +35,7 @@ def animate(i, xs, ys):
         xs.append(x)
         ys.append(y)
 
-    print(x, y)
+    print(x, y, b)
 
     if(len(xs) > SAMPLES):
         xs = xs[-SAMPLES:]
