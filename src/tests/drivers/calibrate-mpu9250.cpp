@@ -1,4 +1,4 @@
-/* Copyright (c) 2018 Skyward Experimental Rocketry
+/* Copyright (c) 2019 Skyward Experimental Rocketry
  * Authors: Nuno Barcellos
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -37,6 +37,8 @@ typedef MPU9250<spiMPU9250_a> mpu_t;
 
 int main()
 {   
+    float bias[3];
+
     SimpleSensorSampler sampler;
 
     spiMPU9250_a::init();
@@ -59,12 +61,29 @@ int main()
 
     Thread::sleep(100);
 
+    printf("This script calculates the accelerometer's offsets, follow the instructions:\n");
+    printf("Leave the MPU9250 pointing up (aligned with the gravity vector) and steady, then press ENTER ");
+    getchar();
+    mpu->calibrateAccel();
+
+    printf("Calibration succeeded\n");
+    printf("Copy the following parameters into the MPU9250 class constructor: \n\n");
+
+    mpu->getAccelCalibParams(bias);
+    printf("_axb = %f;\n",bias[0]);
+    printf("_ayb = %f;\n",bias[1]);
+    printf("_azb = %f;\n",bias[2]);
+
+    printf("Press ENTER to read the accelerometer data and to check if the calibration is good\n");
+    getchar();
+    
+    mpu->setAccelCalibParams(bias);
+
     while(true)
     {
         sampler.Update();
-        mpu->updateMagneto();
 
-        const Vec3* last_data = mpu->compassDataPtr();
+        const Vec3* last_data = mpu->accelDataPtr();
         printf("%f %f %f\n", last_data->getX(), last_data->getY(),
                last_data->getZ());
 
