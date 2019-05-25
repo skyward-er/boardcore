@@ -30,6 +30,7 @@
 #include <algorithm>
 #include <cmath>
 #include "diagnostic/SkywardStack.h"
+#include "diagnostic/StackLogger.h"
 #include "Debug.h"
 
 using namespace std;
@@ -147,7 +148,7 @@ void Piksi::run()
         bytes.removed(
             lookForMessages(bytes.removeEnd(), bytes.availableToRemove()));
 
-        LOG_STACK("Piksi");
+        StackLogger::getInstance()->updateStack(THID_PIKSI);
         
     } while (quit == false);
 }

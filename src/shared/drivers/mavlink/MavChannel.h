@@ -33,8 +33,9 @@
 #include <drivers/Transceiver.h>
 #include <vector>
 #include "MavStatus.h"
-#include "utils/SyncedCircularBuffer.h"
 #include "diagnostic/SkywardStack.h"
+#include "diagnostic/StackLogger.h"
+#include "utils/SyncedCircularBuffer.h"
 
 using std::vector;
 
@@ -83,9 +84,8 @@ public:
         if (!sndStarted)
         {
             sndThread = miosix::Thread::create(
-                sndLauncher, skywardStack(4 * 1024),
-                miosix::MAIN_PRIORITY, reinterpret_cast<void*>(this),
-                miosix::Thread::JOINABLE);
+                sndLauncher, skywardStack(4 * 1024), miosix::MAIN_PRIORITY,
+                reinterpret_cast<void*>(this), miosix::Thread::JOINABLE);
 
             if (sndThread != nullptr)
                 sndStarted = true;
@@ -96,9 +96,9 @@ public:
         // Start receiver
         if (!rcvStarted)
         {
-            rcvThread =
-                miosix::Thread::create(rcvLauncher, skywardStack(4 * 1024), miosix::MAIN_PRIORITY,
-                                       reinterpret_cast<void*>(this));
+            rcvThread = miosix::Thread::create(
+                rcvLauncher, skywardStack(4 * 1024), miosix::MAIN_PRIORITY,
+                reinterpret_cast<void*>(this));
 
             if (rcvThread != nullptr)
                 rcvStarted = true;
@@ -157,7 +157,8 @@ public:
                         /* Handle the command */
                         handleMavlinkMessage(this, msg);
 
-                        LOG_STACK("MavReceiver");
+                        StackLogger::getInstance()->updateStack(
+                            THID_MAV_RECEIVER);
                     }
                 }
             }
@@ -213,7 +214,7 @@ public:
                     out_buf_full   = false;
                     out_buffer.clear();
 
-                    LOG_STACK("MavSender");
+                    StackLogger::getInstance()->updateStack(THID_MAV_SENDER);
                 }
 
                 out_buffer_age += sleep_after_send;

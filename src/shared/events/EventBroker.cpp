@@ -22,24 +22,23 @@
 
 #include "EventBroker.h"
 #include "Debug.h"
+#include "diagnostic/StackLogger.h"
 
-EventBroker::EventBroker()
-{
-}
+EventBroker::EventBroker() {}
 
 void EventBroker::post(const Event& ev, uint8_t topic)
 {
-    #ifdef TRACE_EVENTS
-        TRACE("[EventBroker] Event: %d, Topic: %d\n", ev.sig, topic);
-    #endif
+#ifdef TRACE_EVENTS
+    TRACE("[EventBroker] Event: %d, Topic: %d\n", ev.sig, topic);
+#endif
 
     Lock<FastMutex> lock(mtx_subscribers);
 
     if (subscribers.count(topic) > 0)
     {
         vector<EventHandlerBase*>& subs = subscribers.at(topic);
-        auto begin                  = subs.begin();
-        auto end                    = subs.end();
+        auto begin                      = subs.begin();
+        auto end                        = subs.end();
 
         for (auto it = begin; it != end; it++)
         {
@@ -132,7 +131,8 @@ void EventBroker::run()
         {
             // Unlock the mutex while sleeping
             Unlock<FastMutex> unlock(lock);
-            LOG_STACK("EventBroker");
+            StackLogger::getInstance()->updateStack(THID_EVT_BROKER);
+
             Thread::sleepUntil(sleep_until);
         }
     }
