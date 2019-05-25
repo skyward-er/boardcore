@@ -190,6 +190,7 @@ public:
             }
         }
 
+        // Reset the device if magnetometer initialization was unsuccessfull.
         Bus::write(REG_PWR_MGMT_1,0x80); // Reset Device
         miosix::Thread::sleep(10);
 
