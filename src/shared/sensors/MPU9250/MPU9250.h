@@ -113,6 +113,14 @@ public:
 
     bool init() override
     {
+        uint8_t whoami = Bus::read(REG_WHO_AM_I);
+        // printf("MPU whoami: expected %x actual %x\n", who_am_i_value_mpu, whoami);
+        if (whoami != who_am_i_value_mpu)
+        {
+            last_error = ERR_NOT_ME;
+            return false;
+        }
+
         if(initMagneto()==false)
             printf("[AK8963] Failed to initialize\n");
 
@@ -134,14 +142,6 @@ public:
         {
             Bus::write(init_data[i][0], init_data[i][1]);
             miosix::Thread::sleep(10);
-        }
-
-        uint8_t whoami = Bus::read(REG_WHO_AM_I);
-        // printf("MPU whoami: expected %x actual %x\n", who_am_i_value_mpu, whoami);
-        if (whoami != who_am_i_value_mpu)
-        {
-            last_error = ERR_NOT_ME;
-            return false;
         }
 
         return true;
