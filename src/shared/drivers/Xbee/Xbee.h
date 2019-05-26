@@ -28,6 +28,7 @@
 #include <algorithm>
 #include <vector>
 
+#include "diagnostic/StackLogger.h"
 #include <miosix.h>
 #include "ActiveObject.h"
 #include "XbeeStatus.h"
@@ -239,7 +240,7 @@ protected:
                     }
                 }
 
-                LOG_STACK("Xbee");
+                StackLogger::getInstance()->updateStack(THID_XBEE);
             }
             // Transfer any data on the tx buffer and receive any incoming data
             transferData();

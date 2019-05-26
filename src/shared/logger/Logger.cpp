@@ -32,8 +32,9 @@
 #include <sys/types.h>
 #include <tscpp/buffer.h>
 #include <stdexcept>
-#include "diagnostic/SkywardStack.h"
 #include "Debug.h"
+#include "diagnostic/SkywardStack.h"
+#include "diagnostic/StackLogger.h"
 
 using namespace std;
 using namespace miosix;
@@ -204,7 +205,7 @@ void Logger::packThread()
     {
         for (;;)
         {
-            LOG_STACK("Logger-PACK");
+            StackLogger::getInstance()->updateStack(THID_LOGGER_PACK);
 
             Buffer* buffer = nullptr;
             {
@@ -259,7 +260,7 @@ void Logger::writeThread()
     {
         for (;;)
         {
-            LOG_STACK("Logger-WRITE");
+            StackLogger::getInstance()->updateStack(THID_LOGGER_WRITE);
 
             Buffer* buffer = nullptr;
             {

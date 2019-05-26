@@ -23,11 +23,12 @@
  */
 
 #include "TaskScheduler.h"
+#include "diagnostic/SkywardStack.h"
 
 using namespace std;
 using namespace miosix;
 
-TaskScheduler::TaskScheduler() : permanentTasks(0) {}
+TaskScheduler::TaskScheduler() : ActiveObject(STACK_MIN_FOR_SKYWARD, miosix::PRIORITY_MAX - 1), permanentTasks(0) {}
 
 void TaskScheduler::stop()
 {
