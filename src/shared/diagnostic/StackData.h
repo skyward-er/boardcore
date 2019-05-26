@@ -54,6 +54,6 @@ struct StackData
 
     void print(std::ostream& os)
     {
-        os << timestamp << "," << thread_id << "," << min_stack << "\n";
+        os << timestamp << "," << (int)thread_id << "," << min_stack << "\n";
     }
 };
