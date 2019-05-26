@@ -25,9 +25,12 @@
 
 struct MS5803Data
 {
-    float pressure;
-    float temp;
     long long int timestamp;
+
+    uint32_t raw_press;
+    float pressure;
+    uint32_t raw_temp;
+    float temp;
 
     static std::string header()
     {

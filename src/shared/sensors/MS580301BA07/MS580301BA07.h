@@ -176,7 +176,9 @@ private:
         int32_t pres  = ((ttemp >> 21) - offs) >> 15;
         mLastPressure = pres / 100.0f;
 
+        dataStruct.raw_temp = temperature;
         dataStruct.temp = mLastTemp;
+        dataStruct.raw_press = pressure;
         dataStruct.pressure = mLastPressure;
         dataStruct.timestamp = miosix::getTick();
     }
