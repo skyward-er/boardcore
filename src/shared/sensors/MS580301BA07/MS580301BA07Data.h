@@ -34,11 +34,12 @@ struct MS5803Data
 
     static std::string header()
     {
-        return "timestamp,temp,pressure\n";
+        return "timestamp,raw_temp,raw_press,temp,pressure\n";
     }
 
     void print(std::ostream& os) const
     {
-        os << timestamp << "," << temp << "," << pressure << "\n";
+        os << timestamp << "," << raw_temp << "," << raw_press << "," << temp
+           << "," << pressure << "\n";
     }
 };
