@@ -28,6 +28,7 @@
 #include <utility>
 
 #include "ActiveObject.h"
+#include "diagnostic/StackLogger.h"
 
 using miosix::FastMutex;
 using miosix::GpioPin;
@@ -181,6 +182,9 @@ protected:
                     }
                 }
             }
+
+            StackLogger::getInstance()->updateStack(THID_PIN_OBS);
+
             Thread::sleep(poll_interval);
         }
     }
