@@ -23,7 +23,7 @@
 #include <Common.h>
 #include <drivers/BusTemplate.h>
 #include <interfaces-impl/hwmapping.h>
-#include <sensors/MS580301BA07.h>
+#include "sensors/MS580301BA07/MS580301BA07.h"
 
 #include <drivers/spi/SensorSpi.h>
 #include <sensors/SensorSampling.h>
