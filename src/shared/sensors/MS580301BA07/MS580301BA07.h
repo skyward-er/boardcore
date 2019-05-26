@@ -22,11 +22,11 @@
  * THE SOFTWARE.
  */
 
-#ifndef MS580301BA07_H
-#define MS580301BA07_H
+#pragma once
 
 #include <drivers/BusTemplate.h>
-#include "Sensor.h"
+#include "../Sensor.h"
+#include "MS580301BA07Data.h"
 
 // TODO second order temperature compensation
 template <class Bus>
@@ -79,14 +79,6 @@ public:
 
     void setLocalPressure(float mBarPressure) { mLocalPressure = mBarPressure; }
 
-    // TODO move this code away
-    /*
-    float getAltitude() {
-        return 44330.769 *
-            (1.0f - pow(mLastPressure/mLocalPressure,0.19019f));
-    }
-    */
-
     bool onSimpleUpdate()
     {
         uint8_t rcvbuf[3];
@@ -106,9 +98,9 @@ public:
                 if (mInternalPressure != 0)
                 {
                     Bus::write(CONVERT_D2_4096);  // Begin temperature sampling
-                    miosix::Thread::sleep(9);
                     mStatus  = STATE_SAMPLED_TEMPERATURE;
                     mTimeout = TIMEOUT;
+                    miosix::Thread::sleep(9);
                 }
                 else
                 {
@@ -149,6 +141,11 @@ public:
         return true;
     }
 
+    MS5803Data getData()
+    {
+        return dataStruct;
+    }
+
 private:
     static constexpr uint8_t TIMEOUT = 5;
     enum FSM_State
@@ -161,8 +158,9 @@ private:
     uint8_t mStatus;
     uint8_t mTimeout;
     uint32_t mInternalPressure;
-
     float mLocalPressure;
+
+    MS5803Data dataStruct;
 
     void updateData(uint32_t pressure, uint32_t temperature)
     {
@@ -177,6 +175,10 @@ private:
         int64_t ttemp = pressure * senst;
         int32_t pres  = ((ttemp >> 21) - offs) >> 15;
         mLastPressure = pres / 100.0f;
+
+        dataStruct.temp = mLastTemp;
+        dataStruct.pressure = mLastPressure;
+        dataStruct.timestamp = miosix::getTick();
     }
 
     typedef struct
@@ -228,5 +230,3 @@ private:
     };
     // clang-format on
 };
-
-#endif
