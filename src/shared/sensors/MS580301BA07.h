@@ -49,6 +49,9 @@ public:
         do
         {
             Bus::read(RESET_DEV);
+
+            miosix::Thread::sleep(3);
+
             cd.sens = readReg(PROM_READ_MASK | PROM_SENS_MASK);
             if (cd.sens == 0)
                 miosix::Thread::sleep(1);
@@ -95,6 +98,7 @@ public:
                 Bus::write(CONVERT_D1_4096);
                 mTimeout = TIMEOUT;
                 mStatus  = STATE_SAMPLED_PRESSURE;
+                miosix::Thread::sleep(9);
             case STATE_SAMPLED_PRESSURE:
                 Bus::read_low(ADC_READ, rcvbuf, 3);
                 mInternalPressure = rcvbuf[2] | ((uint32_t)rcvbuf[1] << 8) |
@@ -102,6 +106,7 @@ public:
                 if (mInternalPressure != 0)
                 {
                     Bus::write(CONVERT_D2_4096);  // Begin temperature sampling
+                    miosix::Thread::sleep(9);
                     mStatus  = STATE_SAMPLED_TEMPERATURE;
                     mTimeout = TIMEOUT;
                 }
