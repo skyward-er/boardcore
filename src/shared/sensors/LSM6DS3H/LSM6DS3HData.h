@@ -25,7 +25,7 @@
 #include <ostream>
 #include "math/Vec3.h"
 
-struct LSM6DS3H0Data
+struct LSM6DS3HData
 {
     long long timestamp;
     Vec3 accel;
