@@ -27,7 +27,7 @@
 
 #include <drivers/BusTemplate.h>
 #include "Common.h"
-#include "Sensor.h"
+#include "../Sensor.h"
 #include "miosix.h"
 
 

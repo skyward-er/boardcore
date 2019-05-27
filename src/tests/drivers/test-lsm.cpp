@@ -23,7 +23,7 @@
 #include <Common.h>
 #include <drivers/BusTemplate.h>
 #include <interfaces-impl/hwmapping.h>
-#include <sensors/LSM6DS3H.h>
+#include <sensors/LSM6DS3H/LSM6DS3H.h>
 
 #include <drivers/spi/SensorSpi.h>
 #include <sensors/SensorSampling.h>
