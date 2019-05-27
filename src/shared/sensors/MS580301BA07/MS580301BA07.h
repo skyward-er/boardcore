@@ -136,7 +136,7 @@ public:
 
     uint8_t getState()
     {
-        return mState;
+        return mStatus;
     }
 
 private:
