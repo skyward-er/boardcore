@@ -91,9 +91,9 @@ NORMAL, BOLD, DIM, NONE1, UNDERLINED, BLINK, NONE2, REVERSE, HIDDEN = range(9)
 def printout(text, colour=WHITE,style=NORMAL):
     if colors:
         seq = "\x1b[%d;%dm" % (style,30+colour) + text + "\x1b[0m"
-        print(seq.replace('\n','',1))
+        print(seq.replace('\n','',1), flush=True)
     else:
-        print(text.replace('\n','',1))
+        print(text.replace('\n','',1), flush=True)
 
 def print_make_output(text):
     if "error" in text:
@@ -103,7 +103,7 @@ def print_make_output(text):
     elif "note" in text:
         printout(text, BLUE)
     else:
-        print(text.replace('\n','',1))
+        print(text.replace('\n','',1), flush=True)
 
 #
 # Define all command line options
