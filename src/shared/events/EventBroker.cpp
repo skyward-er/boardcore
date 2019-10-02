@@ -49,38 +49,6 @@ void EventBroker::post(const Event& ev, uint8_t topic)
     }
 }
 
-uint16_t EventBroker::postDelayed(const Event& ev, uint8_t topic,
-                                  unsigned int delay_ms)
-{
-    Lock<FastMutex> lock(mtx_delayed_events);
-
-    // Delay in system ticks
-    long long delay_ticks =
-        static_cast<long long>(delay_ms * miosix::TICK_FREQ / 1000);
-
-    DelayedEvent dev{eventCounter++, ev, topic, getTick() + delay_ticks};
-    bool added = false;
-
-    // Add the new event in the list, ordered by deadline (first = nearest
-    // deadline)
-    for (auto it = delayed_events.begin(); it != delayed_events.end(); it++)
-    {
-        if (dev.deadline < (*it).deadline)
-        {
-            delayed_events.insert(it, dev);
-            added = true;
-            break;
-        }
-    }
-
-    if (!added)  // In case this is the last/only event in the list
-    {
-        delayed_events.push_back(dev);
-    }
-
-    return dev.sched_id;
-}
-
 void EventBroker::removeDelayed(uint16_t id)
 {
     Lock<FastMutex> lock(mtx_delayed_events);
