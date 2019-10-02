@@ -66,15 +66,50 @@ public:
     void post(const Event& ev, uint8_t topic);
 
     /**
-     * Posts an event after the specified delay
+     * Posts an event after the specified delay.
+     * @warning Events cannot be posted with a delay shorter than
+     * EVENT_BROKER_MIN_DELAY
+     *
      * @param event
      * @param topic
-     * @param delay_ms Delay in milliseconds. Events with delay shorter than
-     * EVENT_BROKER_MIN_DELAY are not guaranteed to be posted in time.
-     * @return Unique id representing the event in the delayed events list.
+     * @param delay_ms Delay in milliseconds.
+     * @return Unique id of the delayed event.
      */
-    uint16_t postDelayed(const Event& event, uint8_t topic,
-                         unsigned int delay_ms);
+    template <unsigned int delay_ms>
+    uint16_t postDelayed(const Event& ev, uint8_t topic)
+    {
+        static_assert(
+            delay_ms >= EVENT_BROKER_MIN_DELAY,
+            "delay_ms must be longer or equal to EVENT_BROKER_MIN_DELAY");
+
+        Lock<FastMutex> lock(mtx_delayed_events);
+
+        // Delay in system ticks
+        long long delay_ticks =
+            static_cast<long long>(delay_ms * miosix::TICK_FREQ / 1000);
+
+        DelayedEvent dev{eventCounter++, ev, topic, getTick() + delay_ticks};
+        bool added = false;
+
+        // Add the new event in the list, ordered by deadline (first = nearest
+        // deadline)
+        for (auto it = delayed_events.begin(); it != delayed_events.end(); it++)
+        {
+            if (dev.deadline < (*it).deadline)
+            {
+                delayed_events.insert(it, dev);
+                added = true;
+                break;
+            }
+        }
+
+        if (!added)  // In case this is the last/only event in the list
+        {
+            delayed_events.push_back(dev);
+        }
+
+        return dev.sched_id;
+    }
 
     /**
      * Removes a delayed event before it is posted.
@@ -118,7 +153,7 @@ public:
      *
      */
     EventBroker();
-    
+
     virtual ~EventBroker(){};
 
 private:
