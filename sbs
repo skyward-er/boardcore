@@ -4,17 +4,17 @@
 #
 # Copyright (c) 2015-2019 Skyward Experimental Rocketry
 # Authors: Alain Carlucci, Alvise de'Faveri Tron
-# 
+#
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
 # in the Software without restriction, including without limitation the rights
 # to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
 # copies of the Software, and to permit persons to whom the Software is
 # furnished to do so, subject to the following conditions:
-# 
+#
 # The above copyright notice and this permission notice shall be included in
 # all copies or substantial portions of the Software.
-# 
+#
 # THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
 # IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
 # FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.  IN NO EVENT SHALL THE
@@ -82,7 +82,7 @@ def printBanner():
     print("+----------------------------------|___/-------------------v2.0-+")
 
 #
-# Colorized output helper functions 
+# Colorized output helper functions
 # NOTE: I don't know why but an extra \n is added at the end of each line,
 # so we have to use replace
 #
@@ -110,23 +110,25 @@ def print_make_output(text):
 #
 def configCmdParser():
     parser = OptionParser()
-    parser.add_option("-c", "--clean", help="Run a 'make clean'", dest="clean", 
+    parser.add_option("-c", "--clean", help="Run a 'make clean'", dest="clean",
         action="store_true")
     parser.add_option("-b", "--build", help="Build a specific entrypoint or test", dest="board")
     parser.add_option("-l", "--list", help="List all possible configurations", dest="list",
         default=False, action='store_true')
-    parser.add_option("-t", "--all-test", help="Build all tests", dest="all_tests", 
+    parser.add_option("-t", "--all-test", help="Build all tests", dest="all_tests",
         default=False, action='store_true')
-    parser.add_option("-e", "--all-entrypoint", help="Build all entrypoints", dest="all_entry", 
+    parser.add_option("-e", "--all-entrypoint", help="Build all entrypoints", dest="all_entry",
         default=False, action='store_true')
-    parser.add_option("-g", "--gen-faults", help="Generate fault list header files and exit", 
-        dest="genhdr", default=False, action='store_true')
-    parser.add_option("-v", "--verbose", help="Print a verbose output", dest="log", 
+#    parser.add_option("-g", "--gen-faults", help="Generate fault list header files and exit",
+#        dest="genhdr", default=False, action='store_true')
+    parser.add_option("-v", "--verbose", help="Print a verbose output", dest="log",
         action="store_true")
-    parser.add_option("-j", "--jobs", 
-        help="Specifies the number of jobs (commands) to run simultaneously.", 
+    parser.add_option("", "--lint", help="Run the linter", dest="lint",
+        action="store_true")
+    parser.add_option("-j", "--jobs",
+        help="Specifies the number of jobs (commands) to run simultaneously.",
         type="int", dest="JOBS", default=8)
-    parser.add_option("-n", "--no-colors", help="Don't print colors in the output", dest="colors", 
+    parser.add_option("-n", "--no-colors", help="Don't print colors in the output", dest="colors",
         default=True,  action="store_false")
     return parser
 
@@ -153,14 +155,14 @@ def parseConf(path):
         elif stype == 'srcfiles':
             srcfiles[i] = [x.strip() for x in conf.get(i, 'Files').split("\n")]
         elif stype == 'board':
-            entrypoints[i] = {   'id': conf.get(i, 'BoardId'), 
+            entrypoints[i] = {   'id': conf.get(i, 'BoardId'),
                             'bin': conf.get(i, 'BinName'),
                             'defines': conf.get(i, 'Defines'),
                             'files': [entrypoint_mask % conf.get(i, 'Main').strip()] +
                              [x.strip() for x in conf.get(i, 'Include').split(' ')]
-                        }    
+                        }
         elif stype == 'test':
-            tests[i] = {   'id': conf.get(i, 'BoardId'), 
+            tests[i] = {   'id': conf.get(i, 'BoardId'),
                             'bin': conf.get(i, 'BinName'),
                             'defines': conf.get(i, 'Defines') + " -I" + projconf['TESTS_PATH'],
                             'files': [test_mask % conf.get(i, 'Main').strip()] +
@@ -215,10 +217,10 @@ def build_makefile(template, board, bname):
 
     for incl in incllist:
         rmap["PROJECT_INCLUDES"] += incl.strip() + " "
-    
+
     for lib in liblist:
         rmap["PROJECT_LIBS"] += lib.strip() + " "
-    
+
     for sd in subdirs:
         rmap["PROJECT_SUBDIRS"] += sd.strip() + " "
 
@@ -232,10 +234,10 @@ def build_makefile(template, board, bname):
 #
 # Generate fault counter headers
 #
-def genFaultCounters():
-    d1 = "data/fault_list.csv"
-    d2 = SBS_BASE + "/src/shared/diagnostic/FaultCounterData.h"
-    os.system("python %s/scripts/gen_fault_headers.py %s %s" %(SBS_BASE,d1,d2))
+#def genFaultCounters():
+#    d1 = "data/fault_list.csv"
+#    d2 = SBS_BASE + "/src/shared/diagnostic/FaultCounterData.h"
+#    os.system("python %s/scripts/gen_fault_headers.py %s %s" %(SBS_BASE,d1,d2))
 
 #
 # Import srcfiles groups from another .conf file.
@@ -282,9 +284,15 @@ if len(make_template) == 0:
 #
 
 # Fault headers generation
-if options.genhdr == True:
-    genFaultCounters()
-    exit(0)
+# if options.genhdr == True:
+#     genFaultCounters()
+#     exit(0)
+
+# Linter
+if options.lint == True:
+    print("[SBS] Executing linter.sh", flush=True)
+    os.system("%s/scripts/linter.sh %s" % (projconf['SBS_BASE'], projconf['SRC_PATH']) )
+    sys.exit(0)
 
 # List
 if options.list == True:
@@ -326,16 +334,16 @@ os.mkdir('build')
 
 for i in mainfiles:
     printout('[SBS] %s %s' % (action[1],i), WHITE, BOLD)
-    
+
     with open('build/%s' % i, 'w') as f:
         f.write(build_makefile(make_template, mainfiles[i], i))
 
     # stdout printed only in verbose
     if options.log == True:
-        p = subprocess.Popen(['make', '-j', str(options.JOBS), '-f', 'build/%s' % i]
+        p = subprocess.Popen(['make','-j', str(options.JOBS), '-f', 'build/%s' % i]
                                 + cleanparam,
                                 universal_newlines=True,
-                                #stdout=subprocess.PIPE, 
+                                #stdout=subprocess.PIPE,
                                 stderr=subprocess.PIPE,
                                 bufsize=1)
     else:
