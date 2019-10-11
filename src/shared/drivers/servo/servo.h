@@ -110,6 +110,9 @@ private:
 
     void updateParameters();
 
+    // Deleted copy constructor
+    Servo(const Servo& s) = delete;
+    
     PWM pwm;
 
     float positions[4];
