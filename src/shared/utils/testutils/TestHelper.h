@@ -44,7 +44,6 @@ using std::map;
  */
 static const int EVENT_TIMING_UNCERTAINTY = 1;
 
-
 /**
  * @brief Helper function used convert system ticks to milliseconds
  */
@@ -184,3 +183,17 @@ bool testHSMAsyncTransition(HSM_type& hsm, const Event& ev, uint8_t topic,
 bool expectEvent(uint8_t event_id, uint8_t topic, long long when,
                  long long uncertainty = EVENT_TIMING_UNCERTAINTY,
                  EventBroker& broker   = *sEventBroker);
+
+/**
+ * @brief Waits until the specified event is received or a timeout expires
+ *
+ * @param event_    id The event to be checked
+ * @param topic     The topic the event will be posted on
+ * @param timeout   How long to wait for the event before returning. 0 for
+ *                  infinite timeout.
+ * @param broker
+ * @return true     if the event is received before expiration
+ *         false    if the timeout has expired
+ */
+bool waitForEvent(uint8_t event, uint8_t topic, long long timeout = 0,
+                  EventBroker& broker = *sEventBroker);
