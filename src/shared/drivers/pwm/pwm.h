@@ -52,7 +52,7 @@ public:
         TIM_TypeDef* TIM;               // The timer we want to use
         volatile uint32_t* bus_en_reg;  // Pointer to APB1 or APB2 Peripheral
                                         // clock enable register
-        uint32_t TIM_EN;  // Enable bit for the clock enable register
+        uint32_t TIM_EN;  // Enable bit mask for the clock enable register
 
         unsigned int input_clock_freq;  // Timer input clock frequency [Hz]
     };
