@@ -38,7 +38,7 @@ using std::cout;
 using std::string;
 
 using HwTimer                = HardwareTimer<uint32_t, 2>;
-static unsigned int PKT_SIZE = 256;
+static const unsigned int PKT_SIZE = 256;
 
 using namespace miosix;
 using namespace interfaces;

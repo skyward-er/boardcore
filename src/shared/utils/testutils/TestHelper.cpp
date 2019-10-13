@@ -72,3 +72,19 @@ bool expectEvent(uint8_t event_id, uint8_t topic, long long when,
         event_id, topic);
     return false;
 }
+
+bool waitForEvent(uint8_t event, uint8_t topic, long long timeout,
+                  EventBroker& broker)
+{
+    EventCounter c{broker};
+    c.subscribe(topic);
+    long long end = getTick() + timeout;
+    while (timeout == 0 || getTick() < end)
+    {
+        if (c.getCount(event) > 0)
+            return true;
+        Thread::sleep(5);
+    }
+    // Timeout expired
+    return false;
+}

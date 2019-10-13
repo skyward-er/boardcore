@@ -60,14 +60,14 @@ void Servo::setFrequency(unsigned int freq)
 
 void Servo::setMinPulseWidth(float min_pulse)
 {
-    this->min_pulse = fmax(500.0f, fmax(1300.0f, min_pulse));
+    this->min_pulse = fmax(500.0f, fmin(1300.0f, min_pulse));
 
     updateParameters();
 }
 
 void Servo::setMaxPulseWidth(float max_pulse)
 {
-    this->max_pulse = fmax(1700.0f, fmax(2500.0f, max_pulse));
+    this->max_pulse = fmax(1700.0f, fmin(2500.0f, max_pulse));
     
     updateParameters();
 }

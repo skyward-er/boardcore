@@ -22,11 +22,11 @@
  * THE SOFTWARE.
  */
 
-#ifndef MS580301BA07_H
-#define MS580301BA07_H
+#pragma once
 
 #include <drivers/BusTemplate.h>
-#include "Sensor.h"
+#include "../Sensor.h"
+#include "MS580301BA07Data.h"
 
 // TODO second order temperature compensation
 template <class Bus>
@@ -35,8 +35,9 @@ class MS580301BA07 : public PressureSensor, public TemperatureSensor
 
 public:
     /* Class constructor. Reset lastPressure and lastTemperature */
-    MS580301BA07() : mLocalPressure(1013.25)
+    MS580301BA07()
     {
+        memset(&cd, 0, sizeof(calibration_data));
         mLastTemp     = 0;
         mLastPressure = 0;
     }
@@ -49,6 +50,9 @@ public:
         do
         {
             Bus::read(RESET_DEV);
+
+            miosix::Thread::sleep(3);
+
             cd.sens = readReg(PROM_READ_MASK | PROM_SENS_MASK);
             if (cd.sens == 0)
                 miosix::Thread::sleep(1);
@@ -66,24 +70,25 @@ public:
         cd.tref     = readReg(PROM_READ_MASK | PROM_TREF_MASK);
         cd.tempsens = readReg(PROM_READ_MASK | PROM_TEMPSENS_MASK);
 
-        mStatus  = 0;
-        mTimeout = 10;
+        mStatus = 0;
 
         return true;
     }
 
     bool selfTest() { return false; }
 
-    void setLocalPressure(float mBarPressure) { mLocalPressure = mBarPressure; }
-
-    // TODO move this code away
-    /*
-    float getAltitude() {
-        return 44330.769 *
-            (1.0f - pow(mLastPressure/mLocalPressure,0.19019f));
-    }
-    */
-
+    /**
+     * Implements a state machines composed of 3 states:
+     * 1. Command pressure sample
+     * 2. Read Pressure sample & command temperature sample
+     * 3. Read temperature sample & command pressure sample
+     *
+     * After the first call to onSimpleUpdate() (state 1), the machine
+     * transitions between states 2 and 3: The effectoive sampling rate is half
+     * the rate at which this function is called.
+     * Example: call onSimpleUpdate() at 100 Hz -> Pressure & Temperature sample
+     * Rate = 50 Hz
+     */
     bool onSimpleUpdate()
     {
         uint8_t rcvbuf[3];
@@ -93,26 +98,15 @@ public:
         {
             case STATE_INIT:
                 Bus::write(CONVERT_D1_4096);
-                mTimeout = TIMEOUT;
-                mStatus  = STATE_SAMPLED_PRESSURE;
+                mStatus = STATE_SAMPLED_PRESSURE;
             case STATE_SAMPLED_PRESSURE:
                 Bus::read_low(ADC_READ, rcvbuf, 3);
                 mInternalPressure = rcvbuf[2] | ((uint32_t)rcvbuf[1] << 8) |
                                     ((uint32_t)rcvbuf[0] << 16);
-                if (mInternalPressure != 0)
-                {
-                    Bus::write(CONVERT_D2_4096);  // Begin temperature sampling
-                    mStatus  = STATE_SAMPLED_TEMPERATURE;
-                    mTimeout = TIMEOUT;
-                }
-                else
-                {
-                    if (--mTimeout == 0)
-                    {
-                        last_error = ERR_RESET_TIMEOUT;
-                        mStatus    = STATE_ERROR;
-                    }
-                }
+
+                Bus::write(CONVERT_D2_4096);  // Begin temperature sampling
+                mStatus = STATE_SAMPLED_TEMPERATURE;
+
                 break;
             case STATE_SAMPLED_TEMPERATURE:
                 Bus::read_low(ADC_READ, rcvbuf, 3);
@@ -120,44 +114,37 @@ public:
                 // TODO use swapBytes
                 temperature = (uint32_t)rcvbuf[2] | ((uint32_t)rcvbuf[1] << 8) |
                               ((uint32_t)rcvbuf[0] << 16);
-                if (temperature != 0)
-                {
-                    updateData(mInternalPressure, temperature);
-                    Bus::write(CONVERT_D1_4096);  // Begin pressure sampling
-                    mTimeout = TIMEOUT;
-                    mStatus  = STATE_SAMPLED_PRESSURE;
-                }
-                else
-                {
-                    if (--mTimeout == 0)
-                    {
-                        last_error = ERR_RESET_TIMEOUT;
-                        mStatus    = STATE_ERROR;
-                    }
-                }
-                break;
-            case STATE_ERROR:
-                return false;
+
+                updateData(mInternalPressure, temperature);
+                Bus::write(CONVERT_D1_4096);  // Begin pressure sampling
+                mStatus = STATE_SAMPLED_PRESSURE;
+
                 break;
         }
 
         return true;
     }
 
-private:
-    static constexpr uint8_t TIMEOUT = 5;
+    MS5803Data getData() { return dataStruct; }
+
     enum FSM_State
     {
         STATE_INIT                = 0,
         STATE_SAMPLED_PRESSURE    = 1,
-        STATE_SAMPLED_TEMPERATURE = 2,
-        STATE_ERROR               = 30,
+        STATE_SAMPLED_TEMPERATURE = 2
     };
+
+    uint8_t getState()
+    {
+        return mStatus;
+    }
+
+private:
+    static constexpr uint8_t TIMEOUT = 5;
     uint8_t mStatus;
-    uint8_t mTimeout;
     uint32_t mInternalPressure;
 
-    float mLocalPressure;
+    MS5803Data dataStruct;
 
     void updateData(uint32_t pressure, uint32_t temperature)
     {
@@ -171,7 +158,13 @@ private:
 
         int64_t ttemp = pressure * senst;
         int32_t pres  = ((ttemp >> 21) - offs) >> 15;
-        mLastPressure = pres / 100.0f;
+        mLastPressure = pres;
+
+        dataStruct.raw_temp  = temperature;
+        dataStruct.temp      = mLastTemp;
+        dataStruct.raw_press = pressure;
+        dataStruct.pressure  = mLastPressure;
+        dataStruct.timestamp = miosix::getTick();
     }
 
     typedef struct
@@ -184,7 +177,7 @@ private:
         uint16_t tempsens;
     } calibration_data;
 
-    calibration_data cd = {0};
+    calibration_data cd;
 
     uint16_t readReg(uint8_t reg)
     {
@@ -223,5 +216,3 @@ private:
     };
     // clang-format on
 };
-
-#endif

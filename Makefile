@@ -1,9 +1,9 @@
 all:
 	@echo "MAKEFILE WRAPPER. PLEASE USE ./sbs FOR A BETTER EXPERIENCE :)"
-	@./sbs -v
+	@python3 sbs -v
 
 .PHONY: clean
 
 clean:
 	@echo "MAKEFILE WRAPPER. PLEASE USE ./sbs FOR A BETTER EXPERIENCE :)"
-	@./sbs -c
+	@python3 sbs -c

@@ -51,16 +51,16 @@ public:
     void stop();
 
     /**
-     * Enable the servo. The driver will start to output the PWM waveform to
-     * drive the motor.
+     * Enable the specified channel. The driver will start to output the PWM
+     * waveform to the specified channel once start() is called;
      *
      * @param channel Which servo to enable
      */
     void enable(PWMChannel channel);
 
     /**
-     * Disable the servo. No output PWM waveform is generated until the servo is
-     * enabled again.
+     * Disable the channel. No output PWM waveform is generated until the
+     * channel is enabled again.
      *
      * @param channel Which servo to disable
      */
@@ -100,7 +100,7 @@ public:
     /**
      * Sets the mmaximum duration of the PWM pulse.
      * That is, how long the PWM waveform stays high when the position is 1.
-     * Must be between 1700 and 2500. Default value is 1000.
+     * Must be between 1700 and 2500. Default value is 2000.
      * @param min_pulse Pulse width in microseconds.
      */
     void setMaxPulseWidth(float max_pulse);
@@ -109,6 +109,9 @@ private:
     float calculateDutyCycle(float position);
 
     void updateParameters();
+
+    // Deleted copy constructor
+    Servo(const Servo& s) = delete;
 
     PWM pwm;
 
