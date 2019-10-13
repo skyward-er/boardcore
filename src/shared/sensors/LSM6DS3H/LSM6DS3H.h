@@ -61,7 +61,7 @@ public:
         // The device is compatible with SPI modes 0 and 3
 
         uint8_t whoami = Bus::read(RegMap::WHO_AM_I);
-        printf("expected: %x actual: %x\n", whoami_value,whoami);
+        printf("[LSM] expected: %x actual: %x\n", whoami_value,whoami);
         if (whoami != whoami_value)
         {
             last_error = ERR_NOT_ME;
