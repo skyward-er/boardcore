@@ -44,12 +44,16 @@ public:
     static inline void write(uint8_t address, uint8_t regAddr, uint8_t* data,
                              uint8_t len)
     {
-        uint8_t buf[len + 1];  // pack register address and payload
-        buf[0] = regAddr;
+        SwI2CType::sendStart();
 
-        memcpy(buf + 1, data, len);
+        SwI2CType::send(address);  // Send 7-bit address + write bit (0)
+        SwI2CType::send(regAddr);  // Send register address
+        for (int i = 0; i < len; i++)
+        {
+            SwI2CType::send(data[i]);  // Send data
+        }
 
-        directWrite(address, buf, len + 1);
+        SwI2CType::sendStop();
     }
 
     /**
