@@ -37,8 +37,9 @@ using std::cin;
 using std::cout;
 using std::string;
 
-using HwTimer                      = HardwareTimer<uint32_t, 2>;
-static const unsigned int PKT_SIZE = 128;
+static constexpr int PKT_SIZE         = 108;
+static constexpr int WITH_LR_PKT_SIZE = PKT_SIZE + 45;
+static constexpr int PKTS_PER_SECOND  = 4;
 
 using namespace miosix;
 using namespace interfaces;
@@ -87,99 +88,93 @@ void enableXbeeInterrupt()
     NVIC_SetPriority(EXTI15_10_IRQn, 15);
 }
 
-void send()
+uint8_t snd_buf[255];
+int snd_cntr = 0;
+
+bool sendPacket(uint8_t size)
 {
-    uint8_t buf[PKT_SIZE];
-    buf[0]            = '/';
-    buf[PKT_SIZE - 1] = '\\';
+    snd_buf[0]        = '{';
+    snd_buf[size - 1] = '}';
 
-    int fail = 0;
-    char c   = 48;
-    for (;;)
+    for (int i = 0; i < size - 2; i++)
     {
-        memset(buf + 1, c++, PKT_SIZE - 2);
-        if (c > 122)
-        {
-            c = 48;
-        }
-
-        if (!xbee_transceiver.send(buf, PKT_SIZE))
-        {
-            printf("[%d] Send error %d\n", (int)getTick(), ++fail);
-        }
-        else
-        {
-            if (c % 5 == 0)
-            {
-                printf("Send ok.\n");
-            }
-        }
-
-        Thread::sleep(1000);
+        snd_buf[i + 1] = ((snd_cntr + i) % 75) + 48;  // ASCII char from 0 to z
     }
+    ++snd_cntr;
+
+    if (!xbee_transceiver.send(snd_buf, size))
+    {
+        return false;
+    }
+    return true;
 }
 
-void receive(void*)
+void resetXBee()
 {
-    uint8_t buf[512];
-    for (;;)
-    {
-        ssize_t len = xbee_transceiver.receive(buf, 512);
-        if (len <= 0)
-        {
-            printf("Receive failed.\n");
-        }
-        else
-        {
-            for (ssize_t i = 0; i < len; i++)
-            {
-                // Only print displayable ascii chars
-                if (buf[i] >= 32 && buf[i] <= 126)
-                {
-                    printf("%c", buf[i]);
-                }
-            }
-            printf("\n");
-            for (ssize_t i = 0; i < len; i++)
-            {
-                printf("%02X ", buf[0]);
-            }
-            printf("\n\n");
-        }
-    }
-}
-
-void resetx()
-{
-    xbee::reset::mode(Mode::OPEN_DRAIN);
     xbee::reset::low();
     delayUs(500);
     xbee::reset::high();
-    // xbee::reset::mode(Mode::INPUT);
 }
 
 int main()
 {
     enableXbeeInterrupt();
-    resetx();
-
-    // xbee::sleep_req::mode(Mode::OUTPUT);
-    // xbee::sleep_req::low();
-
-    // reset();
-
-    HwTimer& t = HwTimer::instance();
-    t.setPrescaler(1024);
-
     busSPI2::init();
-
     xbee_transceiver.start();
+    resetXBee();
 
-    // Send & receive
-    Thread::create(receive, 2048);
-    // for(;;)
-    //     Thread::sleep(1000);
-    send();
+    printf("XBee time-to-send-measurement\n");
+    printf(
+        "Send N packets per second with the specified size. See if it is "
+        "possible to send them in a timely manner. (must not take more than 1 "
+        "sec to send)\n");
+    printf("Press enter to start\n");
+    string s;
+    std::getline(cin, s);
 
+    for (;;)
+    {
+        long long cycle_start   = getTick();
+        long long cycle_silence = 0;
+
+        for (int i = 0; i < PKTS_PER_SECOND; i++)
+        {
+            printf("T: %d\n", (int)(getTick() - cycle_start));
+            if (i == PKTS_PER_SECOND - 1)
+            {
+                // One every PKTS_PER_SECOND packets is bigger (for example if
+                // LR_TM is added to the packet)
+                if (!sendPacket(WITH_LR_PKT_SIZE))
+                {
+                    printf("Error sending packet(size: %d)\n", PKT_SIZE);
+                    goto end;
+                }
+            }
+            else
+            {
+                if (!sendPacket(PKT_SIZE))
+                {
+                    printf("Error sending packet(size: %d)\n", PKT_SIZE);
+                    goto end;
+                }
+            }
+
+            long long silence_start = getTick();
+            Thread::sleepUntil(cycle_start +
+                               (i + 1) * (1000 / PKTS_PER_SECOND));
+            cycle_silence += (getTick() - silence_start);
+        }
+
+        long long cycle_time = getTick() - cycle_start;
+
+        printf("Cycle time: %d, Silence: %d, Duty: %.2f\n", (int)cycle_time,
+               (int)cycle_silence,
+               (1.0f - (cycle_silence * 1.0f / cycle_time)) * 100);
+    }
+
+end:
+    printf("End\n");
+    for (;;)
+        Thread::sleep(1000);
     return 0;
 }

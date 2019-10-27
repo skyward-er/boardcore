@@ -28,10 +28,10 @@
 #include <algorithm>
 #include <vector>
 
-#include "diagnostic/StackLogger.h"
 #include <miosix.h>
 #include "ActiveObject.h"
 #include "XbeeStatus.h"
+#include "diagnostic/StackLogger.h"
 
 using miosix::FastInterruptDisableLock;
 using miosix::FastInterruptEnableLock;
@@ -49,7 +49,7 @@ namespace Xbee
 // Constants
 
 // How often should we check if we received a transmit status response.
-static constexpr unsigned int SEND_STATUS_POLL_INTERVAL = 50;  // ms
+static constexpr unsigned int SEND_STATUS_POLL_INTERVAL = 10;  // ms
 
 static constexpr uint16_t MAX_PAYLOAD_LEN = 0xFFFF;
 
@@ -148,6 +148,8 @@ public:
         wakeThread();
 
         // Wait until the XBee sends the message or a timeout expires
+        // It would be cool to have condition variables with timeout to avoid
+        // polling...
         unsigned int timeout = 0;
         while (!received_tx_status)
         {
