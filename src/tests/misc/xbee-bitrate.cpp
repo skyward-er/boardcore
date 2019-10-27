@@ -37,34 +37,30 @@ using std::cin;
 using std::cout;
 using std::string;
 
-using HwTimer                         = HardwareTimer<uint32_t, 2>;
-static const unsigned int NUM_PACKETS = 250;
-static unsigned int PKT_SIZE          = 128;
+static constexpr int MAX_PKT_SIZE = 255;
+static constexpr int PKT_NUM = 100;
 
 using namespace miosix;
 using namespace interfaces;
 
 // SPI1 binding al sensore
-typedef BusSPI<2, spi2::mosi, spi2::miso, spi2::sck> busSPI2;  // Creo la SPI2
 
-using ATTN = Gpio<GPIOF_BASE, 10>;
-using cs   = Gpio<GPIOF_BASE, 9>;
+// WARNING: If flashing on stm32f49 discovery board (with screen removed) use
+// SPI1 as the 2nd isnt working.
+typedef BusSPI<1, spi1::mosi, spi1::miso, spi1::sck> busSPI2;  // Creo la SPI2
 
-typedef Xbee::Xbee<busSPI2, cs, ATTN, xbee::reset> Xbee_t;
+// typedef BusSPI<1, spi2::mosi, spi2::miso, spi2::sck> busSPI2;  // Creo la
+// SPI2
+
+// WARNING: Don't use xbee::cs on discovery board as it isn't working
+typedef Xbee::Xbee<busSPI2, sensors::lsm6ds3h::cs, xbee::attn, xbee::reset>
+    Xbee_t;
+
 Xbee_t xbee_transceiver;
-
-void printStat(const char* title, StatsResult r)
-{
-    printf("%s:\nMin: %.3f\nMax: %.3f\nMean: %.3f\nStddev:  %.3f\n\n", title,
-           r.minValue, r.maxValue, r.mean, r.stdev);
-}
-
 void __attribute__((used)) EXTI10_IRQHandlerImpl() { Xbee::handleInterrupt(); }
 
 void enableXbeeInterrupt()
 {
-    ATTN::mode(Mode::INPUT_PULL_UP);
-
     {
         FastInterruptDisableLock l;
         RCC->APB2ENR |= RCC_APB2ENR_SYSCFGEN;
@@ -91,285 +87,77 @@ void enableXbeeInterrupt()
     NVIC_SetPriority(EXTI15_10_IRQn, 15);
 }
 
-void reset();
+uint8_t snd_buf[MAX_PKT_SIZE];
+int snd_cntr = 0;
 
-void send2()
+bool sendPacket(uint8_t size)
 {
-    uint8_t buf[PKT_SIZE];
-    buf[0]            = '/';
-    buf[PKT_SIZE - 1] = '\\';
+    snd_buf[0] = '{';
+    snd_buf[size-1] = '}';
 
-    int fail = 0;
-    char c   = 48;
-    for (;;)
+    
+    for(int i = 0; i < size - 2; i++)
     {
-        memset(buf + 1, c++, PKT_SIZE - 2);
-        if (c > 122)
-        {
-            c = 48;
-        }
-
-        if (!xbee_transceiver.send(buf, PKT_SIZE))
-        {
-            printf("[%d] Send error %d\n", (int)getTick(), ++fail);
-            reset();
-        }
-        else
-        {
-            if (c % 5 == 0)
-            {
-                printf("Send ok.\n");
-            }
-        }
+        snd_buf[i+1] = ((snd_cntr + i) % 75 ) + 48; //ASCII char from 0 to z
     }
+    ++snd_cntr;
+
+    if (!xbee_transceiver.send(snd_buf, size))
+    {
+        return false;
+    }
+    return true;
 }
 
-void send()
+void resetXBee()
 {
-    printf("Packet size: %d\n", PKT_SIZE);
-    Stats times_stat{};
-    Stats rates_stat{};
-
-    HwTimer& t = HwTimer::instance();
-    t.start();
-
-    uint32_t send_tick_acc = 0;
-
-    int send_fail_cnt = 0;
-    uint8_t buf[PKT_SIZE];
-    vector<Xbee::XbeeStatus> fail_status;
-
-    for (unsigned int i = 0; i < NUM_PACKETS; i++)
-    {
-        // Fill the buffer
-        memset(buf, (uint8_t)i, PKT_SIZE);
-
-        uint32_t send_tick = t.tick();
-        // Send message
-        if (!xbee_transceiver.send(buf, PKT_SIZE))
-        {
-            fail_status.push_back(xbee_transceiver.getStatus());
-            if ((*fail_status.end()).tx_timeout_count > 0)
-            {
-                break;
-            }
-        }
-        // Time to send
-        send_tick = t.tick() - send_tick;
-
-        float byterate = PKT_SIZE * 1000 / t.toMilliSeconds(send_tick);
-        // Stat
-        times_stat.add(t.toMilliSeconds(send_tick));
-        rates_stat.add(byterate);
-
-        // Total time to send
-        send_tick_acc += send_tick;
-    }
-
-    if (fail_status.size() > 0)
-    {
-        for (auto s : fail_status)
-        {
-            s.print();
-        }
-    }
-
-    printStat("Times", times_stat.getStats());
-    printStat("Rates", rates_stat.getStats());
-
-    const int bytes_sent = PKT_SIZE * NUM_PACKETS;
-
-    float total_ms_send = t.toMilliSeconds(send_tick_acc);
-
-    float byterate = bytes_sent * 1000 / total_ms_send;
-    printf("Mean:\nByterate: %.3f.\tBitrate: %.3f\n\n", byterate, byterate * 8);
-
-    printf("Fail cnt: %d\n", send_fail_cnt);
-}
-
-void receive()
-{
-    printf("Packet size: %d\n", PKT_SIZE);
-    uint8_t last_pkt_id = 0;
-
-    Stats times_stat{};
-    Stats rates_stat{};
-
-    HwTimer& t = HwTimer::instance();
-    t.start();
-
-    uint32_t rcv_tick_acc = 0;
-
-    int pkt_lost = 0;
-    uint8_t buf[PKT_SIZE];
-
-    for (unsigned int i = 0; i < NUM_PACKETS; i++)
-    {
-        uint32_t tick = t.tick();
-        xbee_transceiver.receive(buf, PKT_SIZE);
-        tick = t.tick() - tick;
-        rcv_tick_acc += tick;
-        float byterate = PKT_SIZE * 1000 / t.toMilliSeconds(tick);
-        times_stat.add(t.toMilliSeconds(tick));
-        rates_stat.add(byterate);
-
-        // printf("%c\n", d);
-
-        pkt_lost += buf[0] - last_pkt_id;
-        last_pkt_id = buf[0] + 1;
-    }
-
-    printStat("Times", times_stat.getStats());
-    printStat("Rates", rates_stat.getStats());
-
-    const int bytes_sent = PKT_SIZE * NUM_PACKETS;
-
-    float total_ms_send = t.toMilliSeconds(rcv_tick_acc);
-
-    float byterate = bytes_sent * 1000 / total_ms_send;
-    printf("Mean:\nByterate: %.3f.\tBitrate: %.3f\n\n", byterate, byterate * 8);
-
-    printf("Packet loss: %d\n", pkt_lost);
-}
-
-// void receive()
-// {
-//     for (;;)
-//     {
-//         uint8_t buf[PKT_SIZE];
-//         if (xbee_transceiver.receive(buf, PKT_SIZE))
-//         {
-//             printf("recv ok\n");
-//         }
-//         else
-//         {
-//             printf("recv failed\n");
-//         }
-//     }
-// }
-
-void rcv(void*)
-{
-    uint8_t buf[PKT_SIZE];
-    for (;;)
-    {
-        ssize_t len = xbee_transceiver.receive(buf, PKT_SIZE);
-        for (ssize_t i = 0; i < len; i++)
-        {
-            printf("%02X\n", buf[0]);
-        }
-        if (len == 0)
-        {
-            printf("Receive failed.\n");
-        }
-    }
-}
-
-void reset()
-{
-    xbee::reset::mode(Mode::OUTPUT);
     xbee::reset::low();
-    delayUs(100);
-    xbee::reset::mode(Mode::OPEN_DRAIN);
+    delayUs(500);
+    xbee::reset::high();
 }
 
 int main()
 {
-  //  xbee::sleep_req::mode(Mode::OUTPUT);
-    //xbee::sleep_req::low();
-
-   // xbee::reset::mode(Mode::OPEN_DRAIN);
-
-    HwTimer& t = HwTimer::instance();
-    t.setPrescaler(1024);
-
     enableXbeeInterrupt();
     busSPI2::init();
-
-    // Enable SPI
-    cs::low();
-    Thread::sleep(10);
-    cs::high();
-    Thread::sleep(10);
-    
-
     xbee_transceiver.start();
+    resetXBee();
 
-    send2();
+    printf("XBee bitrate measurement\n");
+    printf("Send 100 packets of a certain size (from 16 to 256, step 16) and reporting send time.\n");
+    printf("Press enter to start\n");
+    string s;
+    std::getline(cin, s);
 
-    /* while(true)
-     {
-         std::string s;
-         cin >> s;
-
-         vector<uint8_t> buf(s.begin(), s.end());
-
-
-         xbee_transceiver.send(buf.data(), buf.size());
-     }*/
-    /*uint8_t snd[PKT_SIZE];
-
-    uint8_t i = 'a';
-    printf("Sending...\n");
-    for (;;)
+    int pkt_size = 16;
+    while(pkt_size <= MAX_PKT_SIZE)
     {
+        printf("Testing %d byte packets:\n", pkt_size);
+        long long results[PKT_NUM];
 
-        memset(snd, i++, PKT_SIZE);
-        if (i > 'z')
-            i = 'a';
-        if (!xbee_transceiver.send(snd, PKT_SIZE))
+        for(int i = 0; i < PKT_NUM; i++)
         {
-            // printf("Send error.\n");
+            long long start = getTick();
+            if(!sendPacket(pkt_size))
+            {
+                printf("Error sending packet %d (size: %d)\n", i, pkt_size);
+                goto end;
+            }
+            results[i] = getTick() - start;
         }
-    }*/
-
-    /*uint8_t buf[PKT_SIZE];
-    for (;;)
-    {
-        ssize_t len = xbee_transceiver.receive(buf, PKT_SIZE);
-        if (len > 0)
+        printf("Results for %d byte packet size:\n");
+        for(int i = 0; i < PKT_NUM; i++)
         {
-            printf("%c (%d)\n", buf[0], len);
+            printf("%d\n", (int)results[i]);
         }
-        else
-        {
-            printf("Receive failed.\n");
-        }
-    }*/
-
-    cout << "(S)end or (R)eceive?\n";
-    char c;
-    cin >> &c;
-
-    if (c == 'S' || c == 's')
-    {
-        PKT_SIZE = 16;
-        send();
-        PKT_SIZE = 32;
-        send();
-        PKT_SIZE = 64;
-        send();
-        PKT_SIZE = 128;
-        send();
-        PKT_SIZE = 256;
-        send();
-    }
-    else if (c == 'R' || c == 'r')
-    {
-        PKT_SIZE = 16;
-        receive();
-        PKT_SIZE = 32;
-        receive();
-        PKT_SIZE = 64;
-        receive();
-        PKT_SIZE = 128;
-        receive();
-        PKT_SIZE = 256;
-        receive();
+        pkt_size += 16;
+        if(pkt_size == 256)
+            pkt_size = 255; // Max we can send is 255
     }
 
-    cout << "End \n";
-
-    for (;;)
-        ;
+end:
+    printf("End\n");
+    for(;;)
+        Thread::sleep(1000);
+    return 0;
 }
