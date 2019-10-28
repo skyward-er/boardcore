@@ -109,19 +109,12 @@ bool sendPacket(uint8_t size)
     return true;
 }
 
-void resetXBee()
-{
-    xbee::reset::low();
-    delayUs(500);
-    xbee::reset::high();
-}
 
 int main()
 {
     enableXbeeInterrupt();
     busSPI2::init();
     xbee_transceiver.start();
-    resetXBee();
 
     printf("XBee time-to-send-measurement\n");
     printf(
