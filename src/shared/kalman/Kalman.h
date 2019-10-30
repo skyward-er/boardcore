@@ -23,6 +23,7 @@
 #ifndef Kalman_h
 #define Kalman_h
 #include <../libs/simple-template-matrix/matrix.h>
+#include <math.h>
 
 /*!
  * \class Kalman
