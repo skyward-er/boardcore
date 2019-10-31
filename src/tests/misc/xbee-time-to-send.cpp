@@ -48,13 +48,12 @@ using namespace interfaces;
 
 // WARNING: If flashing on stm32f49 discovery board (with screen removed) use
 // SPI1 as the 2nd isnt working.
-typedef BusSPI<1, spi1::mosi, spi1::miso, spi1::sck> busSPI2;  // Creo la SPI2
+// typedef BusSPI<1, spi1::mosi, spi1::miso, spi1::sck> busSPI2;  // Creo la SPI2
 
-// typedef BusSPI<1, spi2::mosi, spi2::miso, spi2::sck> busSPI2;  // Creo la
-// SPI2
+typedef BusSPI<2, spi2::mosi, spi2::miso, spi2::sck> busSPI2; 
 
 // WARNING: Don't use xbee::cs on discovery board as it isn't working
-typedef Xbee::Xbee<busSPI2, sensors::lsm6ds3h::cs, xbee::attn, xbee::reset>
+typedef Xbee::Xbee<busSPI2, xbee::cs, xbee::attn, xbee::reset>
     Xbee_t;
 
 Xbee_t xbee_transceiver;
