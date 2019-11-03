@@ -31,7 +31,7 @@
 #include "events/FSM.h"
 #include "events/HSM.h"
 
-#include "utils/EventCounter.h"
+#include "events/utils/EventCounter.h"
 
 using miosix::FastMutex;
 using miosix::getTick;

@@ -77,14 +77,18 @@ static constexpr uint8_t BIT_STATUS_RETRY_COUNT = 4;
 static constexpr uint8_t BIT_STATUS_DELIVERY    = 5;
 static constexpr uint8_t BIT_STATUS_DISCOVERY   = 6;
 
-// Waiting thread to be woken
+// Waiting thread to be woken when something has been received or must be sent.
 // Defined extern so it can be accessed from multiple translation units
 extern miosix::Thread* waiting;
 
 /**
- * Handle ATTN interrupt, waking up the thread.
+ * @brief Handler for the ATTN interrupt: wakes up the thread.
+ * The ATTN (ATTention Needed) pin is raised when the transceiver has
+ * received something.
+ * Call this function from inside an IRQHandler, after you have
+ * enabled the corresponding interrupt in the NVIC vector.
  */
-static void __attribute__((used)) handleInterrupt()
+static void __attribute__((used)) handleATTNInterrupt()
 {
     if (waiting)
     {

@@ -39,7 +39,7 @@ int main()
     TIM8->EGR |= TIM_EGR_UG;
     TIM8->CR1 = TIM_CR1_CEN;
 
-    printf("%d\n", TIM8->CNT);
+    printf("%lu\n", TIM8->CNT);
     /*PWM::Timer t{
         TIM8, &(RCC->APB2ENR), RCC_APB2ENR_TIM8EN,
         TimerUtils::getPrescalerInputFrequency(TimerUtils::InputClock::APB2)};
