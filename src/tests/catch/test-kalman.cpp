@@ -24,7 +24,7 @@
 #include "catch-tests-entry.cpp"
 #endif
 
-#include <utils/catch.hpp>
+#include <utils/testutils/catch.hpp>
 #include <iostream>
 #include <src/tests/kalman/test-kalman-data.h>
 #include "kalman/Kalman.h"

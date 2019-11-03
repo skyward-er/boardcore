@@ -24,34 +24,50 @@
 
 #include <Common.h>
 #include <drivers/gamma868/Gamma868.h>
-#include <drivers/mavlink/MavChannel.h>
-
+#include <drivers/mavlink/MavlinkDriver.h>
 
 using namespace miosix;
 
+static const unsigned int queue_len = 10;
+static const unsigned int packet_size = 256;
+static const unsigned int silence_after_send = 250;
+static const unsigned int max_pkt_age = 1000;
+static const unsigned int ping_period = 1000;
+
+// Mavlink out buffer with 10 packets, 256 bytes each.
+using Mav = MavlinkDriver<queue_len, packet_size>;
+
 Gamma868* gamma868;
-MavChannel* channel;
+Mav* channel;
 
 
-// Receive function: sends an ACK back
-static void onReceive(MavChannel* channel, const mavlink_message_t& msg) 
+/**
+ * @brief Receive function: print the received message id and send an ACK.
+ */
+static void onReceive(Mav* channel, const mavlink_message_t& msg)
 {
     TRACE("[TmtcTest] Received message, id: %d! Sending ack\n", msg.msgid);
 
+    // Prepare ack messages
     mavlink_message_t ackMsg;
     mavlink_msg_ack_tm_pack(1, 1, &ackMsg, msg.msgid, msg.seq);
 
-    /* Send the message back to the sender */
+    // Send the ack back to the sender
     bool ackSent = channel->enqueueMsg(ackMsg);
 
     if(!ackSent)
         TRACE("[Receiver] Could not enqueue ack\n");
 }
 
+
+/**
+ * @brief This test enqueues a ping message every second and replies to every
+ * received message with an ACK.
+ */
 int main()
 {
     gamma868 = new Gamma868("/dev/radio");
-    channel = new MavChannel(gamma868, &onReceive, 250);
+    channel = new Mav(gamma868, &onReceive, silence_after_send, max_pkt_age);
 
     channel->start();
 
@@ -70,11 +86,12 @@ int main()
         if(!ackSent)
             TRACE("[TmtcTest] Could not enqueue ping\n");
 
+        // LED blink
         ledOn();
         miosix::delayMs(200);
         ledOff();
 
-        miosix::Thread::sleep(1000);
+        miosix::Thread::sleep(ping_period);
     }
 
     return 0;

@@ -23,7 +23,7 @@
 
 #include <miosix.h>
 
-#include "PinObserver.h"
+#include "utils/PinObserver.h"
 
 using namespace miosix;
 

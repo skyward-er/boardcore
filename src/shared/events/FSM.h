@@ -28,7 +28,7 @@
 #include "ActiveObject.h"
 #include "events/Event.h"
 #include "events/EventHandler.h"
-#include "events/SyncQueue.h"
+#include "utils/collections/SyncQueue.h"
 
 template <class T>
 class FSM : public EventHandler

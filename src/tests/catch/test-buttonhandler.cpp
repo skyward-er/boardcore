@@ -29,7 +29,7 @@
 
 #include <Singleton.h>
 #include <miosix.h>
-#include <utils/catch.hpp>
+#include <utils/testutils/catch.hpp>
 
 #include "utils/ButtonHandler.h"
 
