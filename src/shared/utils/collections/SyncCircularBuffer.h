@@ -22,40 +22,31 @@
 
 #pragma once
 
-#include <cstring>
-#include <stdexcept>
-#include <type_traits>
+#include <miosix.h>
 
-using std::range_error;
+#include "CircularBuffer.h"
+
+using miosix::FastMutex;
+using miosix::Lock;
 
 /**
- * Implementation of an non-synchronized circular buffer
+ * Implementation of a synchronized circular buffer
  */
 template <typename T, unsigned int Size>
-class CircularBuffer
+class SyncCircularBuffer : public CircularBuffer<T, Size>
 {
-    static_assert(Size > 0, "Circular buffer size must be greater than 0!");
+
+    using Super = CircularBuffer<T, Size>;
 
 public:
-    CircularBuffer() {}
-    virtual ~CircularBuffer() { }
-
     /**
      * Puts a copy of the element in the buffer
      * @param elem element
      */
-    virtual CircularBuffer<T, Size>& put(const T& elem)
+    T& put(const T& elem) override
     {
-        buffer[write_ptr] = elem;
-
-        if (!empty && write_ptr == read_ptr)
-        {
-            read_ptr = (read_ptr + 1) % Size;
-        }
-        write_ptr = (write_ptr + 1) % Size;
-
-        empty = false;
-        return *this;
+        Lock<FastMutex> l(mutex);
+        return Super::put(elem);
     }
 
     /**
@@ -64,14 +55,25 @@ public:
      * @return the element
      * @throws range_error if buffer is empty
      */
-    virtual const T& get() const
+    T& get() override
     {
-        if (!empty)
-        {
-            return buffer[read_ptr];
-        }
-        else
-            throw range_error("CircularBuffer is empty!");
+        Lock<FastMutex> l(mutex);
+        return Super::get();
+    }
+
+    /**
+     * Gets an element from the buffer, without removing it
+     * Index starts at the element returned by get() or pop(): get(0) is
+     * the same as get()
+     *
+     * @warning Remember to catch the exception!
+     * @return the element
+     * @throws range_error if buffer is empty
+     */
+    T& get(unsigned int i) override
+    {
+        Lock<FastMutex> l(mutex);
+        return Super::get(i);
     }
 
     /**
@@ -80,52 +82,34 @@ public:
      * @return the element that has been popped
      * @throws range_error if buffer is empty
      */
-    virtual const T& pop()
+    const T& pop() override
     {
-        if (!empty)
-        {
-            size_t ptr = read_ptr;
-            read_ptr   = (read_ptr + 1) % Size;
-
-            empty = read_ptr == write_ptr;
-
-            return buffer[ptr];
-        }
-        else
-            throw range_error("CircularBuffer is empty!");
+        Lock<FastMutex> l(mutex);
+        return Super::pop();
     }
 
     /**
      * Counts the elements in the buffer
      * @return number of elements in the buffer
      */
-    virtual size_t count() const
+    size_t count() const override
     {
-        if (empty)
-            return 0;
-        if (write_ptr > read_ptr)
-        {
-            return write_ptr - read_ptr;
-        }
-        else
-        {
-            return Size - read_ptr + write_ptr;
-        }
+        Lock<FastMutex> l(mutex);
+        return Super::count();
     }
 
-    virtual bool isEmpty() const { return empty; }
+    bool isEmpty() const override
+    {
+        Lock<FastMutex> l(mutex);
+        return Super::isEmpty();
+    }
 
-    virtual bool isFull() const { return count() == Size; }
-    /**
-     * Returns the maximum number of elements that can be stored in the buffer
-     * @return buffer size
-     */
-    size_t getSize() const { return Size; }
+    bool isFull() const override
+    {
+        Lock<FastMutex> l(mutex);
+        return Super::isFull();
+    }
 
 private:
-    T buffer[Size];
-    
-    size_t write_ptr = 0, read_ptr = 0;
-    bool empty = true;
+    mutable FastMutex mutex;
 };
-

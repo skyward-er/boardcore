@@ -26,7 +26,7 @@
 #include <ostream>
 #include <string>
 
-struct MavStatus
+struct MavlinkStatus
 {
     uint64_t timestamp;
     uint16_t n_send_queue;  // current len of the occupied portion of the queue
