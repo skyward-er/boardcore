@@ -31,7 +31,7 @@
 #include "Debug.h"
 #include "events/Event.h"
 #include "events/EventHandler.h"
-#include "events/SyncQueue.h"
+#include "utils/collections/SyncQueue.h"
 
 #include <assert.h>
 

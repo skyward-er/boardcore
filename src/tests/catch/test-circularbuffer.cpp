@@ -25,10 +25,10 @@
 #include "catch-tests-entry.cpp"
 #endif
 
-#include <utils/CircularBuffer.h>
-#include <utils/SyncedCircularBuffer.h>
+#include <utils/collections/CircularBuffer.h>
+#include <utils/collections/SyncCircularBuffer.h>
 
-#include <utils/catch.hpp>
+#include <utils/testutils/catch.hpp>
 
 TEST_CASE("CircularBuffer - Initialization tests")
 {
@@ -63,7 +63,10 @@ TEST_CASE("CircularBuffer - Fill tests")
     REQUIRE(b1.count() == 1);
 
     // Filling the buffer...
-    b1.put(2).put(3).put(4).put(5);
+    b1.put(2);
+    b1.put(3);
+    b1.put(4);
+    b1.put(5);
 
     REQUIRE_FALSE(b1.isEmpty());
     REQUIRE(b1.isFull());
@@ -78,7 +81,11 @@ TEST_CASE("CircularBuffer - Fill tests")
     REQUIRE(b1.count() == 5);  // Count still 5
 
     // Go around another time
-    b1.put(7).put(8).put(9).put(10).put(11);
+    b1.put(7);
+    b1.put(8);
+    b1.put(9);
+    b1.put(10);
+    b1.put(11);
     REQUIRE_FALSE(b1.isEmpty());
     REQUIRE(b1.isFull());
     REQUIRE(b1.count() == 5);  // Count still 5
@@ -88,7 +95,11 @@ TEST_CASE("CircularBuffer - Get and pop")
 {
     CircularBuffer<int, 5> b1;
 
-    b1.put(1).put(2).put(3).put(4).put(5);
+    b1.put(1);
+    b1.put(2);
+    b1.put(3);
+    b1.put(4);
+    b1.put(5);
 
     SECTION("Get")
     {
@@ -109,6 +120,32 @@ TEST_CASE("CircularBuffer - Get and pop")
         // Nothing has been removed
         REQUIRE(b1.isFull());
         REQUIRE(b1.count() == 5);
+    }
+
+    SECTION("Indexed get")
+    {
+        REQUIRE(b1.get(0) == 1);
+        REQUIRE(b1.get(1) == 2);
+        REQUIRE(b1.get(2) == 3);
+        REQUIRE(b1.get(3) == 4);
+        REQUIRE(b1.get(4) == 5);
+
+        REQUIRE_THROWS(b1.get(5));
+        REQUIRE_THROWS(b1.get(-1));
+
+        b1.pop();
+        b1.pop();
+        REQUIRE(b1.get(0) == 3);
+        REQUIRE(b1.get(1) == 4);
+        REQUIRE(b1.get(2) == 5);
+        REQUIRE_THROWS(b1.get(3) == 4);
+        REQUIRE_THROWS(b1.get(4) == 5);
+
+        b1.pop();
+        b1.pop();
+        b1.pop();
+
+        REQUIRE_THROWS(b1.get(0));
     }
 
     SECTION("Pop")
@@ -154,7 +191,12 @@ TEST_CASE("CircularBuffer - Get and pop")
 
     SECTION("Tail go-around")
     {
-        b1.put(6).put(7).put(8).put(9).put(10).put(11);
+        b1.put(6);
+        b1.put(7);
+        b1.put(8);
+        b1.put(9);
+        b1.put(10);
+        b1.put(11);
 
         // Nothing has been removed
         REQUIRE(b1.isFull());
@@ -168,9 +210,9 @@ TEST_CASE("CircularBuffer - Get and pop")
  * 
  */
 
-TEST_CASE("SyncedCircularBuffer - Initialization tests")
+TEST_CASE("SyncCircularBuffer - Initialization tests")
 {
-    SyncedCircularBuffer<int, 5> b1;
+    SyncCircularBuffer<int, 5> b1;
 
     REQUIRE(b1.getSize() == 5);
 
@@ -186,9 +228,9 @@ TEST_CASE("SyncedCircularBuffer - Initialization tests")
     REQUIRE_THROWS(b1.get());
 }
 
-TEST_CASE("SyncedCircularBuffer - Fill tests")
+TEST_CASE("SyncCircularBuffer - Fill tests")
 {
-    SyncedCircularBuffer<int, 5> b1;
+    SyncCircularBuffer<int, 5> b1;
 
     b1.put(1);
 
@@ -197,7 +239,10 @@ TEST_CASE("SyncedCircularBuffer - Fill tests")
     REQUIRE(b1.count() == 1);
 
     // Filling the buffer...
-    b1.put(2).put(3).put(4).put(5);
+    b1.put(2);
+    b1.put(3);
+    b1.put(4);
+    b1.put(5);
 
     REQUIRE_FALSE(b1.isEmpty());
     REQUIRE(b1.isFull());
@@ -212,17 +257,25 @@ TEST_CASE("SyncedCircularBuffer - Fill tests")
     REQUIRE(b1.count() == 5);  // Count still 5
 
     // Go around another time
-    b1.put(7).put(8).put(9).put(10).put(11);
+    b1.put(7);
+    b1.put(8);
+    b1.put(9);
+    b1.put(10);
+    b1.put(11);
     REQUIRE_FALSE(b1.isEmpty());
     REQUIRE(b1.isFull());
     REQUIRE(b1.count() == 5);  // Count still 5
 }
 
-TEST_CASE("SyncedCircularBuffer - Get and pop")
+TEST_CASE("SyncCircularBuffer - Get and pop")
 {
-    SyncedCircularBuffer<int, 5> b1;
+    SyncCircularBuffer<int, 5> b1;
 
-    b1.put(1).put(2).put(3).put(4).put(5);
+    b1.put(1);
+    b1.put(2);
+    b1.put(3);
+    b1.put(4);
+    b1.put(5);
 
     SECTION("Get")
     {
@@ -243,6 +296,32 @@ TEST_CASE("SyncedCircularBuffer - Get and pop")
         // Nothing has been removed
         REQUIRE(b1.isFull());
         REQUIRE(b1.count() == 5);
+    }
+
+    SECTION("Indexed get")
+    {
+        REQUIRE(b1.get(0) == 1);
+        REQUIRE(b1.get(1) == 2);
+        REQUIRE(b1.get(2) == 3);
+        REQUIRE(b1.get(3) == 4);
+        REQUIRE(b1.get(4) == 5);
+
+        REQUIRE_THROWS(b1.get(5));
+        REQUIRE_THROWS(b1.get(-1));
+
+        b1.pop();
+        b1.pop();
+        REQUIRE(b1.get(0) == 3);
+        REQUIRE(b1.get(1) == 4);
+        REQUIRE(b1.get(2) == 5);
+        REQUIRE_THROWS(b1.get(3) == 4);
+        REQUIRE_THROWS(b1.get(4) == 5);
+
+        b1.pop();
+        b1.pop();
+        b1.pop();
+
+        REQUIRE_THROWS(b1.get(0));
     }
 
     SECTION("Pop")
@@ -288,7 +367,12 @@ TEST_CASE("SyncedCircularBuffer - Get and pop")
 
     SECTION("Tail go-around")
     {
-        b1.put(6).put(7).put(8).put(9).put(10).put(11);
+        b1.put(6);
+        b1.put(7);
+        b1.put(8);
+        b1.put(9);
+        b1.put(10);
+        b1.put(11);
 
         // Nothing has been removed
         REQUIRE(b1.isFull());

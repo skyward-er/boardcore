@@ -24,7 +24,7 @@
 #include  "catch-tests-entry.cpp"
 #endif
 
-#include  <utils/catch.hpp>
+#include  <utils/testutils/catch.hpp>
 #include <libs/simple-template-matrix/matrix.h>
 
 

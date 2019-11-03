@@ -27,7 +27,7 @@
 
 #include "ActiveObject.h"
 #include "events/Event.h"
-#include "events/SyncQueue.h"
+#include "utils/collections/SyncQueue.h"
 
 #include "Debug.h"
 

@@ -57,7 +57,7 @@ typedef Xbee::Xbee<busSPI2, sensors::lsm6ds3h::cs, xbee::attn, xbee::reset>
     Xbee_t;
 
 Xbee_t xbee_transceiver;
-void __attribute__((used)) EXTI10_IRQHandlerImpl() { Xbee::handleInterrupt(); }
+void __attribute__((used)) EXTI10_IRQHandlerImpl() { Xbee::handleATTNInterrupt(); }
 
 void enableXbeeInterrupt()
 {
