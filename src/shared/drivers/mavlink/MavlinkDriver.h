@@ -346,16 +346,24 @@ void MavlinkDriver<pkt_len, out_queue_size>::runSender()
             // Get the first packet in the queue, without removing it
             pkt = out_queue.get();
 
+            uint64_t age = (uint64_t)miosix::getTick() - pkt.timestamp();
             // If the packet is ready or too old, send it
-            if (pkt.isReady() || ((uint64_t)miosix::getTick() -
-                                  pkt.timestamp()) > out_buf_max_age)
+            if (pkt.isReady() || age >= out_buf_max_age)
             {
                 out_queue.pop();  // remove from queue
+
+                // TRACE("[MAV] Sending packet. Size: %d (age: %d)\n", pkt.size(),
+                //       (int)age);
 
                 bool sent = device->send(pkt.content.data(), pkt.size());
                 updateSenderStats(pkt.msgCount(), sent);
 
                 miosix::Thread::sleep(sleep_after_send);
+            }
+            else
+            {
+                // Wait before sending something else
+                miosix::Thread::sleep(50);
             }
         }
     }
