@@ -22,21 +22,41 @@
 #ifndef SRC_SHARED_DEBUG_H
 #define SRC_SHARED_DEBUG_H
 
-#include <string>
 #include <miosix.h>
+#include <string>
+#include <cstdio>
 
 // clang-format off
 #ifdef DEBUG
 
-#define D(x) x
-#define TRACE(...) printf(__VA_ARGS__)
+    #include <cstdarg>
+    extern miosix::FastMutex m;
+
+    #define D(x) x
+
+    inline void TRACE(const char* format, ...)
+    {
+        miosix::Lock<miosix::FastMutex> lock(m);
+        // Sincronize TRACEs
+        
+        va_list argptr;
+        va_start(argptr, format);
+
+        
+        printf("%.2f> ", miosix::getTick()/1000.0f);
+        vprintf(format, argptr);
+
+        va_end(argptr);
+    }
+
+    // #define TRACE(...) printf("%.2f> ", miosix::getTick()/1000.0f); printf(__VA_ARGS__)
 
 #else
 
-#define D(x)
-#define TRACE(...) (void)0
+    #define D(x)
+    #define TRACE(...) (void)0
 
-#endif
+#endif //DEBUG
 
 #ifdef LOG_THREAD_STACK
     #define LOG_STACK(...) logStack(__VA_ARGS__)
@@ -53,4 +73,5 @@
     #define LOG_STACK(...) (void)0
 #endif
 // clang-format on
+
 #endif /* SRC_SHARED_DEBUG_H */
