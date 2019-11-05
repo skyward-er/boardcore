@@ -265,7 +265,12 @@ public:
 
                 // Add a new packet and fill that instead
                 Pkt& newpkt = buffer.put(Pkt{});
-                added       = newpkt.tryAppend(msg, msg_len);
+                
+                if(!newpkt.tryAppend(msg, msg_len))
+                {
+                    TRACE("Packet is too big!\n");
+                    return false;
+                }
             }
 
             // Mark as ready if the packet is full
