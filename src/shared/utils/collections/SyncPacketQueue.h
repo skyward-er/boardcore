@@ -32,6 +32,7 @@
 #include <vector>
 
 #include "CircularBuffer.h"
+#include "Debug.h"
 
 
 // This header can be compiled to run on a PC, for easier testing.
