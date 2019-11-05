@@ -30,43 +30,48 @@
 
 using namespace miosix;
 using namespace miosix::interfaces;
-typedef Gpio<GPIOD_BASE,7> cs_ms58;
+typedef Gpio<GPIOD_BASE, 7> cs_ms58;
 
-typedef BusSPI<1,spi1::mosi,spi1::miso,spi1::sck> busSPI1;
-typedef ProtocolSPI<busSPI1,cs_ms58> spiMS58;
+typedef BusSPI<1, spi1::mosi, spi1::miso, spi1::sck> busSPI1;
+typedef ProtocolSPI<busSPI1, cs_ms58> spiMS58;
 typedef MS580301BA07<spiMS58> ms58_t;
 
 int main()
-{   
+{
     SimpleSensorSampler sampler;
 
     spiMS58::init();
     ms58_t* ms58 = new ms58_t();
 
     Thread::sleep(100);
-    
-    if(ms58->init()){
-        printf("MS58 Init succeeded\n" );
+
+    if (ms58->init())
+    {
+        printf("MS58 Init succeeded\n");
         sampler.AddSensor(ms58);
     }
-    else {
+    else
+    {
         printf("MS58 Init failed\n");
 
-        while(!ms58->init()) {
+        while (!ms58->init())
+        {
             printf("MS58 Init failed\n");
             Thread::sleep(1000);
         }
     }
 
     Thread::sleep(100);
-
-    while(true)
+    printf("raw_p,p,raw_t,t\n");
+    while (true)
     {
         sampler.Update();
 
         const float* last_pressure = ms58->pressureDataPtr();
-        const float* last_temp = ms58->tempDataPtr();
-        printf("P: %f T: %f\n", *last_pressure, *last_temp);
+        const float* last_temp     = ms58->tempDataPtr();
+        MS5803Data md              = ms58->getData();
+        printf("%d,%f,%d,%f\n", (int)md.raw_press,
+               *last_pressure, (int)md.raw_temp, *last_temp);
 
         Thread::sleep(100);
     }

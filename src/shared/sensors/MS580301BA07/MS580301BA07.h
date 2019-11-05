@@ -70,6 +70,9 @@ public:
         cd.tref     = readReg(PROM_READ_MASK | PROM_TREF_MASK);
         cd.tempsens = readReg(PROM_READ_MASK | PROM_TEMPSENS_MASK);
 
+        printf("off: %d, tcs: %d, tco: %d, tref: %d, tsens: %d\n", (int)cd.off,
+               (int)cd.tcs, (int)cd.tco, (int)cd.tref, (int)cd.tempsens);
+
         mStatus = 0;
 
         return true;
@@ -118,7 +121,7 @@ public:
                 updateData(mInternalPressure, temperature);
                 Bus::write(CONVERT_D1_4096);  // Begin pressure sampling
                 mStatus = STATE_SAMPLED_PRESSURE;
-
+            
                 break;
         }
 
@@ -134,10 +137,7 @@ public:
         STATE_SAMPLED_TEMPERATURE = 2
     };
 
-    uint8_t getState()
-    {
-        return mStatus;
-    }
+    uint8_t getState() { return mStatus; }
 
 private:
     static constexpr uint8_t TIMEOUT = 5;
@@ -148,16 +148,39 @@ private:
 
     void updateData(uint32_t pressure, uint32_t temperature)
     {
-        int32_t dt   = temperature - (cd.tref << 8);
-        int32_t temp = 2000 + ((dt * cd.tempsens) >> 23);
-        mLastTemp    = temp / 100.0f;
+        int32_t dt   = temperature - (((uint32_t)cd.tref) << 8);
+        int32_t temp = 2000 + (((uint64_t)dt * cd.tempsens) >> 23);
 
         int64_t offs = ((int64_t)cd.off << 16) + (((int64_t)cd.tco * dt) >> 7);
-        int64_t senst =
-            ((int64_t)cd.sens << 15) + (((int64_t)cd.tcs * dt) >> 8);
+        int64_t sens = ((int64_t)cd.sens << 15) + (((int64_t)cd.tcs * dt) >> 8);
 
-        int64_t ttemp = pressure * senst;
+        int64_t t2 = 0, off2 = 0, sens2 = 0;
+
+        // Second order temperature compensation
+        if (temp < 2000)
+        {
+            t2    = (((int64_t)dt) * dt) >> 31;
+            off2  = 3 * (temp - 2000) * (temp - 2000);
+            sens2 = (7 * (temp - 2000) * (temp - 2000)) >> 3;
+
+            if (temp < -1500)
+            {
+                sens2 = sens2 + 2 * (temp + 1500) * (temp + 1500);
+            }
+        }
+        else if (temp >= 4500)
+        {
+            sens2 = sens2 - (((temp - 4500) * (temp - 4500)) >> 3);
+        }
+
+        temp = temp - t2;
+        offs = offs - off2;
+        sens = sens - sens2;
+
+        int64_t ttemp = ((int64_t)pressure) * sens;
         int32_t pres  = ((ttemp >> 21) - offs) >> 15;
+
+        mLastTemp     = temp / 100.0f;
         mLastPressure = pres;
 
         dataStruct.raw_temp  = temperature;
