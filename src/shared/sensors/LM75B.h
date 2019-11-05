@@ -75,13 +75,13 @@ public:
         float stdev;
         Stats calc_stats;
 
-        for (int i = 0; i < SELF_TEST_NUM_SAMPLES = ; i++)
+        for (int i = 0; i < SELF_TEST_NUM_SAMPLES; i++)
         {
             onSimpleUpdate();
             sample[i] = mLastTemp;
         }
 
-        for (int i = 0; i < SELF_TEST_NUM_SAMPLES = ; i++)
+        for (int i = 0; i < SELF_TEST_NUM_SAMPLES; i++)
         {
             // temperature can't be out of range of sensor
             if (sample[i] < -125.0 && sample[i] > 125.0)
@@ -90,7 +90,7 @@ public:
             }
         }
 
-        for (int i = 0; i < SELF_TEST_NUM_SAMPLES = ; i++)
+        for (int i = 0; i < SELF_TEST_NUM_SAMPLES; i++)
         {
             calc_stats.add(sample[i]);
         }
@@ -146,7 +146,7 @@ public:
     };
 
 private:
-    static constexpr SELF_TEST_NUM_SAMPLES = 10;
+    static constexpr int SELF_TEST_NUM_SAMPLES = 10;
     const uint8_t slave_addr;
     uint8_t temp_array[2] = {0, 0};
 
@@ -168,7 +168,7 @@ private:
     const uint8_t default_value_tos   = 80;
     const float MAX_STDEV_VALUE =
         100;  // max Standard deviation value accepted for temperature samples
-    float sample[SELF_TEST_NUM_SAMPLES = ];
+    float sample[SELF_TEST_NUM_SAMPLES];
 
     float updateTemp()
     {
