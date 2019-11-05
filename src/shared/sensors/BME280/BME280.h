@@ -26,7 +26,7 @@
 
 #include "BME280Data.h"
 #include "sensors/Sensor.h"
-#include "debug.h"
+#include "Debug.h"
 
 template <class Bus>
 class BME280 : public TemperatureSensor, public PressureSensor
