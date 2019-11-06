@@ -251,7 +251,8 @@ bool MavlinkDriver<pkt_len, out_queue_size>::enqueueMsg(
     // Update stats
     updateQueueStats(dropped);
 
-    return ok;
+    // return ok even if a packet was discarded
+    return dropped != -1;
 }
 
 template <unsigned int pkt_len, unsigned int out_queue_size>
