@@ -136,16 +136,8 @@ private:
         reinterpret_cast<MavlinkDriver*>(arg)->runSender();
     }
 
-    /**
-     * @brief Calls the run member function
-     * @param arg the object pointer cast to void*
-     */
-    void updateQueueStats(bool ok);
+    void updateQueueStats(int dropped);
 
-    /**
-     * @brief Calls the run member function
-     * @param arg the object pointer cast to void*
-     */
     void updateSenderStats(size_t msgCount, bool sent);
 
     Transceiver* device;  // transceiver used to send and receive
@@ -254,20 +246,20 @@ bool MavlinkDriver<pkt_len, out_queue_size>::enqueueMsg(
     int msgLen = mavlink_msg_to_send_buffer(msgtemp_buf, &msg);
 
     // Append message to the queue
-    bool ok = out_queue.put(msgtemp_buf, msgLen);
+    int dropped = out_queue.put(msgtemp_buf, msgLen);
 
     // Update stats
-    updateQueueStats(ok);
+    updateQueueStats(dropped);
 
     return ok;
 }
 
 template <unsigned int pkt_len, unsigned int out_queue_size>
-void MavlinkDriver<pkt_len, out_queue_size>::updateQueueStats(bool ok)
+void MavlinkDriver<pkt_len, out_queue_size>::updateQueueStats(int dropped)
 {
     miosix::Lock<miosix::FastMutex> l(mtx_status);
 
-    if (!ok)
+    if (dropped != 0)
     {
         TRACE("[MAV] Buffer full. The oldest message has been discarded.\n");
         status.n_dropped_packets++;

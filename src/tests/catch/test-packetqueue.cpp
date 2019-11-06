@@ -186,8 +186,8 @@ TEST_CASE("PacketQueue tests")
     SECTION("Normal operation")
     {
         INFO("Adding two elements to first packet");
-        REQUIRE(pq.put(message_base, 4));
-        REQUIRE(pq.put(message_base, 4));
+        REQUIRE(pq.put(message_base, 4) == 0);
+        REQUIRE(pq.put(message_base, 4) == 0);
 
         REQUIRE(pq.countReady() == 0);
         REQUIRE(pq.countNotEmpty() == 1);
@@ -195,7 +195,7 @@ TEST_CASE("PacketQueue tests")
         REQUIRE_FALSE(pq.isFull());
 
         INFO("Adding third element and filling first packet");
-        REQUIRE(pq.put(message_base, 2));
+        REQUIRE(pq.put(message_base, 2) == 0);
 
         REQUIRE(pq.countReady() == 1);
         REQUIRE(pq.countNotEmpty() == 1);
@@ -209,7 +209,7 @@ TEST_CASE("PacketQueue tests")
         COMPARE(p, "0123012301");
 
         INFO("Adding element to second packet");
-        REQUIRE(pq.put(message_base + 10, 4));
+        REQUIRE(pq.put(message_base + 10, 4) == 0);
 
         REQUIRE(pq.countReady() == 1);
         REQUIRE(pq.countNotEmpty() == 2);
@@ -223,7 +223,7 @@ TEST_CASE("PacketQueue tests")
         REQUIRE(p.msgCount() == 3);
 
         INFO("Adding element not fitting the second packet, added to the third");
-        REQUIRE(pq.put(message_base + 10, 7));
+        REQUIRE(pq.put(message_base + 10, 7) == 0);
         p = pq.get();  // Should still return first packet
         REQUIRE(p.msgCount() == 3);
 
@@ -258,7 +258,7 @@ TEST_CASE("PacketQueue tests")
         REQUIRE_FALSE(pq.isFull());
 
         INFO("Adding a msg back to the first packet and filling it");
-        REQUIRE(pq.put(message_base, 10));
+        REQUIRE(pq.put(message_base, 10) == 0);
         REQUIRE(pq.countReady() == 3);
         REQUIRE(pq.countNotEmpty() == 3);
         REQUIRE_FALSE(pq.isEmpty());
@@ -293,19 +293,19 @@ TEST_CASE("PacketQueue tests")
     SECTION("Edge cases")
     {
         INFO("Adding too big msg")
-        REQUIRE_FALSE(pq.put(message_base, PKT_LEN + 1));
+        REQUIRE(pq.put(message_base, PKT_LEN + 1) == -1);
         REQUIRE_FALSE(pq.isFull());
         REQUIRE(pq.isEmpty());
         REQUIRE(pq.countNotEmpty() == 0);
         REQUIRE(pq.countReady() == 0);
         
         INFO("Adding empty message")
-        REQUIRE_FALSE(pq.put(message_base, 0));
+        REQUIRE(pq.put(message_base, 0) == -1);
 
         INFO("Adding something to full queue")
-        REQUIRE(pq.put(message_base, PKT_LEN));
-        REQUIRE(pq.put(message_base + 5, PKT_LEN));
-        REQUIRE(pq.put(message_base + 10, PKT_LEN));
+        REQUIRE(pq.put(message_base, PKT_LEN) == 0);
+        REQUIRE(pq.put(message_base + 5, PKT_LEN) == 0);
+        REQUIRE(pq.put(message_base + 10, PKT_LEN) == 0);
 
         REQUIRE(pq.buffer.count() == 3);
         for(int i = 0; i < 3; i++)
@@ -315,7 +315,7 @@ TEST_CASE("PacketQueue tests")
         }
         REQUIRE(pq.isFull());
 
-        REQUIRE(pq.put(message_base, PKT_LEN));
+        REQUIRE(pq.put(message_base, PKT_LEN) == 1);
         REQUIRE(pq.buffer.last().isReady());
         REQUIRE(pq.isFull());
 

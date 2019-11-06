@@ -32,16 +32,17 @@
 #include <vector>
 
 #include "CircularBuffer.h"
-#include "Debug.h"
 
 
 // This header can be compiled to run on a PC, for easier testing.
 #ifdef COMPILE_FOR_X86
 #warning The flag COMPILE_FOR_X86 is active! If this is flight code, shame on you
+#define TRACE(x) printf(x)
 #define MIOSIX_ONLY(x)
 #else
 #define MIOSIX_ONLY(x) x
 #include "miosix.h"
+#include "Debug.h"
 
 using miosix::ConditionVariable;
 using std::range_error;
@@ -233,11 +234,13 @@ public:
      * @return true    if the message was appended correctly
      * @return false   if there isn't enough space for the message
      */
-    bool put(uint8_t* msg, size_t msg_len)
+    int put(uint8_t* msg, size_t msg_len)
     {
+        int dropped = 0;
+
         if (msg_len == 0 || msg_len > pkt_len)
         {
-            return false;
+            return -1;
         }
 
         {
@@ -263,14 +266,19 @@ public:
             {
                 // Mark the packet as ready (in the case it wasn't already)
                 last.markAsReady();
-
+                
+                if(buffer.isFull())
+                {
+                    // We have dropped a packet
+                    ++dropped;
+                }
                 // Add a new packet and fill that instead
                 Pkt& newpkt = buffer.put(Pkt{});
                 
                 if(!newpkt.tryAppend(msg, msg_len))
                 {
                     TRACE("Packet is too big!\n");
-                    return false;
+                    return -1;
                 }
             }
 
@@ -281,7 +289,7 @@ public:
             }
 
             MIOSIX_ONLY(cv_notempty.broadcast();)
-            return true;
+            return dropped;
         }
     }
 
