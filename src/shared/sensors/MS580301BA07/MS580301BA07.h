@@ -27,6 +27,7 @@
 #include <drivers/BusTemplate.h>
 #include "../Sensor.h"
 #include "MS580301BA07Data.h"
+#include "Debug.h"
 
 // TODO second order temperature compensation
 template <class Bus>
@@ -46,7 +47,7 @@ public:
 
     bool init()
     {
-        int timeout = 30;
+        int timeout = 10;
         do
         {
             Bus::read(RESET_DEV);
@@ -54,8 +55,10 @@ public:
             miosix::Thread::sleep(3);
 
             cd.sens = readReg(PROM_READ_MASK | PROM_SENS_MASK);
-            if (cd.sens == 0)
+            if (cd.sens == 0){
                 miosix::Thread::sleep(1);
+                TRACE("Could not read cd.sens\n");
+            }
         } while (cd.sens == 0 && --timeout > 0);
 
         if (timeout <= 0)
@@ -70,7 +73,7 @@ public:
         cd.tref     = readReg(PROM_READ_MASK | PROM_TREF_MASK);
         cd.tempsens = readReg(PROM_READ_MASK | PROM_TEMPSENS_MASK);
 
-        printf("off: %d, tcs: %d, tco: %d, tref: %d, tsens: %d\n", (int)cd.off,
+        TRACE("off: %d, tcs: %d, tco: %d, tref: %d, tsens: %d\n", (int)cd.off,
                (int)cd.tcs, (int)cd.tco, (int)cd.tref, (int)cd.tempsens);
 
         mStatus = 0;
