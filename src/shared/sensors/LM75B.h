@@ -201,7 +201,7 @@ private:
         int16_t temp;
 
         // TRACE("After swap: %x %x\n", temp_array[0], temp_array[1]);
-        memcpy(&temp, temp_array, sizeof(uint16_t));
+        memcpy(&temp, temp_array, sizeof(int16_t));
         // TRACE("UINT16: %x\n", temp);
 
         if (isNegative)
