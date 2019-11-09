@@ -120,9 +120,12 @@ public:
             last_error = ERR_NOT_ME;
             return false;
         }
-
-        if(initMagneto()==false)
-            printf("[AK8963] Failed to initialize\n");
+        int i = 0;
+        while(!initMagneto() && i < 10)
+        {
+            ++i;
+            Thread::sleep(5);
+        }
 
         // Initialize MPU9250
         // clang-format off
