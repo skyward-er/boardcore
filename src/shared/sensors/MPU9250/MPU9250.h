@@ -26,6 +26,7 @@
 #define MPU9250_H
 #include <drivers/BusTemplate.h>
 #include "../Sensor.h"
+#include <miosix.h>
 
 // TODO: fix normalizeTemp() (is /512.0f correct?)
 // TODO: Self-Test
@@ -124,7 +125,7 @@ public:
         while(!initMagneto() && i < 10)
         {
             ++i;
-            Thread::sleep(5);
+            miosix::Thread::sleep(5);
         }
 
         // Initialize MPU9250
