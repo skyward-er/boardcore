@@ -116,7 +116,9 @@ public:
     {
         uint8_t whoami = Bus::read(REG_WHO_AM_I);
         // printf("MPU whoami: expected %x actual %x\n", who_am_i_value_mpu, whoami);
-        if (whoami != who_am_i_value_mpu)
+        // printf("Who am I: %d\n", whoami);
+
+        if (whoami != who_am_i_value_mpu && whoami != 112)
         {
             last_error = ERR_NOT_ME;
             return false;
