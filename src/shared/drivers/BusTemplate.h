@@ -192,6 +192,7 @@ private:
             getSPIAddr(N)->CR1=SPI_CR1_SSM  //No HW cs
                             | SPI_CR1_SSI
                             | SPI_CR1_SPE  //SPI enabled
+                            | SPI_CR1_BR_0
                             | SPI_CR1_BR_1
                             | SPI_CR1_BR_2
                             | SPI_CR1_MSTR; 
