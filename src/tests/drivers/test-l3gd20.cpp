@@ -1,0 +1,66 @@
+/**
+ * Copyright (c) 2019 Skyward Experimental Rocketry
+ * Authors: Luca Erbetta
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in
+ * all copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.  IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+ * THE SOFTWARE.
+ */
+
+#include "drivers/spi/SPIDriver.h"
+#include "sensors/L3GD20.h"
+
+using namespace miosix;
+typedef Gpio<GPIOF_BASE, 7> GpioSck;
+typedef Gpio<GPIOF_BASE, 8> GpioMiso;
+typedef Gpio<GPIOF_BASE, 9> GpioMosi;
+
+int main()
+{
+    GpioPin cs(GPIOC_BASE, 1);
+
+    {
+        FastInterruptDisableLock dLock;
+
+        RCC->APB2ENR |= RCC_APB2ENR_SPI5EN;
+
+        GpioSck::mode(Mode::ALTERNATE);
+        GpioMiso::mode(Mode::ALTERNATE);
+        GpioMosi::mode(Mode::ALTERNATE);
+
+        GpioSck::alternateFunction(5);
+        GpioMiso::alternateFunction(5);
+        GpioMosi::alternateFunction(5);
+        cs.mode(Mode::OUTPUT);
+    }
+    cs.high();
+
+    SPIBus bus(SPI5);
+    L3GD20 gyro(bus, cs, L3GD20::FullScaleRange::FS_500);
+
+    gyro.init();
+
+    for (;;)
+    {
+        gyro.onSimpleUpdate();
+        Vec3 data = *(gyro.gyroDataPtr());
+
+        printf("X: %.2f  \tY: %.2f  \tZ: %.2f\n", data.getX(), data.getY(),
+               data.getZ());
+        Thread::sleep(100);
+    }
+}
