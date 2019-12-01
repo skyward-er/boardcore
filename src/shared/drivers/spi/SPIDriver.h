@@ -24,91 +24,283 @@
 #pragma once
 
 #include <miosix.h>
+
 #include <cstdint>
+#include <cstdio>
 
 using miosix::delayUs;
 using miosix::GpioPin;
 
-struct SPIBusConfig
+/**
+ * @brief SPI baud rate selection parameter.
+ * SPI clock frequency will be equal to the SPI peripheral bus clock speed
+ * divided by the value specified in this enum.
+ *
+ * Eg: DIV_2 --> spi clock freq = f_PCLK / 2
+ *
+ * See SPI->CR1 on the datasheet for further information.
+ */
+enum class SPIBaudRate
 {
-    uint8_t clock_division = 0;
-    bool cpol              = 0;
-    bool cpha              = 0;
-    bool lsb_first         = false;
-
-    // How long to wait after cs is asserted before starting a transmission
-    // (microsecodns)
-    unsigned int cs_setup_time_us = 0;
-
-    // How long to hold the cs low after the end of the transmission
-    // (microseconds)
-    unsigned int cs_hold_time_us = 0;
+    DIV_2   = 0,
+    DIV_4   = 1,
+    DIV_8   = 2,
+    DIV_16  = 3,
+    DIV_32  = 4,
+    DIV_64  = 5,
+    DIV_128 = 6,
+    DIV_256 = 7,
 };
 
+/**
+ * @brief SPI Bus configuration for a specific slave.
+ * See datasheet for further information
+ */
+struct SPIBusConfig
+{
+    SPIBaudRate br = SPIBaudRate::DIV_2;  ///> Peripheral clock division
+    uint8_t cpol   = 0;                   ///> Clock polarity
+    uint8_t cpha   = 0;                   ///> Clock phase
+    bool lsb_first = false;               ///> MSB or LSB first
+
+    unsigned int cs_setup_time_us = 0;  ///> How long to wait before starting a
+                                        ///> a trasmission after CS is set (us)
+    unsigned int cs_hold_time_us = 0;   ///> How long to hold cs after the end
+                                        ///> of a trasmission (us)
+};
+
+/**
+ * @brief Interface for low level access of a SPI bus
+ */
 class SPIBusInterface
 {
 public:
+    /**
+     * @brief Writes \p data to the bus.
+     *
+     * @param    data Buffer containing data to write
+     * @param    size Number of bytes to write
+     */
     virtual void write(uint8_t* data, size_t size) = 0;
-    virtual void read(uint8_t* data, size_t size)  = 0;
 
-    virtual void select(GpioPin cs)   = 0;
-    virtual void deselect(GpioPin cs) = 0;
+    /**
+     * @brief Reads \p size bytes from the SPI bus, putting them in \p data.
+     *
+     * @param    data Buffer to be filled with received data
+     * @param    size Number of bytes to receive
+     */
+    virtual void read(uint8_t* data, size_t size) = 0;
 
+    /**
+     * @brief Full duplex transmission on the SPI bus.
+     * \p data is written on the bus and its contents are then replaced with the
+     * received bytes.
+     *
+     * @param    data Buffer containing data to transfer
+     * @param    size Number of bytes to transfer
+     */
+    virtual void transfer(uint8_t* data, size_t size) = 0;
+
+    /**
+     * @brief Selects the slave
+     *
+     * @param    cs Chip select pin for the slave
+     */
+    virtual void select(GpioPin& cs) = 0;
+
+    /**
+     * @brief Deselects the slave
+     *
+     * @param    cs Chip select pin for the slave
+     * @return
+     */
+    virtual void deselect(GpioPin& cs) = 0;
+
+    /**
+     * @brief Configures the bus with the provided configuration parameters.
+     *
+     * @param    config    Configuration parameters
+     * @return
+     */
     virtual void configure(SPIBusConfig config) = 0;
 };
 
+/**
+ * @brief Low level driver for communicating on a SPI Bus, provides
+ *        SPIBusInterface.
+ */
 class SPIBus : public SPIBusInterface
 {
 public:
-    SPIBus(SPI_TypeDef* spi, uint32_t* rcc_en_reg, uint32_t rcc_spi_en_bit);
+    /**
+     * @brief Instantiates a new SPIBus
+     *
+     * @param    spi       Pointer to the SPI peripheral to be used
+     */
+    SPIBus(SPI_TypeDef* spi);
 
+    /**
+     * @brief See SPIBusInterface::write()
+     */
     void write(uint8_t* data, size_t size) override;
+
+    /**
+     * @brief See SPIBusInterface::read()
+     */
     void read(uint8_t* data, size_t sizes) override;
 
-    void select(GpioPin cs) override;
-    void deselect(GpioPin cs) override;
+    /**
+     * @brief See SPIBusInterface::transfer()
+     */
+    void transfer(uint8_t* data, size_t size) override;
 
+    /**
+     * @brief See SPIBusInterface::select()
+     */
+    void select(GpioPin& cs) override;
+
+    /**
+     * @brief See SPIBusInterface::deselect()
+     */
+    void deselect(GpioPin& cs) override;
+
+    /**
+     * @brief See SPIBusInterface::configure()
+     */
     void configure(SPIBusConfig config) override;
 
 private:
-    void enablePeripheral();
+    /**
+     * Writes a single byte on the SPI bus.
+     *
+     * @param    byte Pointer to the byte to be written
+     */
+    void write(uint8_t* byte);
 
-    void transfer(uint8_t* byte);
+    /**
+     * Reads a single byte from the SPI bus.
+     *
+     * @param    byte Pointer to the byte where the read data will be stored
+     */
     void read(uint8_t* byte);
 
+    /**
+     * Full duplex transfer. Writes a single byte on the SPI bus and replaces
+     * its content with the received data
+     *
+     * @param    byte Pointer to the byte to be transfered
+     */
+    void transfer(uint8_t* byte);
+
     SPI_TypeDef* spi;
-    uint32_t* rcc_en_reg;
-    uint32_t rcc_spi_en_bit;
 
     SPIBusConfig last_config;
 };
 
+/**
+ * @brief Contains information about a single SPI slave device.
+ */
 struct SPISlave
 {
-    SPIBusInterface& bus;
+    SPIBusInterface& bus;  ///> Bus on which the slave is connected
 
-    SPIBusConfig config;
-    GpioPin cs;
+    SPIBusConfig config;  ///> How the bus should be configured to communicate
+                          ///> with the slave.
+    GpioPin cs;           ///> Chip select pin
 
-    SPISlave(SPIBusInterface& bus, SPIBusConfig config, GpioPin cs)
+    SPISlave(SPIBusInterface& bus, GpioPin cs) : bus(bus), cs(cs) {}
+
+    SPISlave(SPIBusInterface& bus, GpioPin cs, SPIBusConfig config)
         : bus(bus), config(config), cs(cs)
     {
     }
 };
 
+/**
+ * @brief Provides high-level access to the SPI Bus for a single transaction.
+ * To make sure the bus is properly configured for the provided slave, you have
+ * to create a new instance of this class for every transaction, as the bus is
+ * configured upon instantiation.
+ *
+ * @warning DO NOT store an instance of this class for later use, as the bus may
+ * be incorrectly configured by then.
+ */
 class SPITransaction
 {
 public:
-    SPITransaction(SPIBusInterface& bus, SPIBusConfig config, GpioPin cs);
+    /**
+     * @brief Instatiates a new SPITransaction
+     * 
+     * @param    slave     Slave to communicate with
+     */
     SPITransaction(SPISlave slave);
 
+    /**
+     * @brief Instatiates a new SPITransaction
+     * 
+     * @param    bus       Bus to communicate on
+     * @param    cs        Chip select of the slave to communicate to
+     * @param    config    Configuration of the bus for the selected slave
+     */
+    SPITransaction(SPIBusInterface& bus, GpioPin cs, SPIBusConfig config);
+
+    /**
+     * @brief Writes \p val into the \p reg register
+     *
+     * @param    reg     Slave device register
+     * @param    val     Value to be written in the register
+     */
     void write(uint8_t reg, uint8_t val);
+
+    /**
+     * @brief Writes \p size bytes into the \p reg register
+     *
+     * @param    reg       Slave device register
+     * @param    data      Data to be written
+     * @param    size      Number of bytes to be written
+     */
     void write(uint8_t reg, uint8_t* data, size_t size);
+
+    /**
+     * @brief Writes \p bytes on the bus
+     *
+     * @param    data      Bytes to be written
+     * @param    size      Number of bytes to be written
+     */
     void write(uint8_t* data, size_t size);
 
+    /**
+     * @brief Read the contents of the \p reg register
+     *
+     * @param    reg       Slave device register
+     */
     uint8_t read(uint8_t reg);
+
+    /**
+     * @brief Reads \p size bytes from the \p reg register
+     *
+     * @param    reg    Slave device register
+     * @param    data   Buffer where read bytes will be stored
+     * @param    size   Number of bytes to read
+     */
     void read(uint8_t reg, uint8_t* data, size_t size);
+
+    /**
+     * @brief Reads \p size bytes from the bus
+     *
+     * @param    data   Buffer where read bytes will be stored
+     * @param    size   Number of bytes to read
+     */
     void read(uint8_t* data, size_t size);
+
+    /**
+     * @brief Full duplex transfer: \p data is written on the bus and its
+     *        contents are replaced with the received bytes.
+     *
+     * @param    data      Buffer containign data to be transfered
+     * @param    size      Number of bytes to be transfer
+     */
+    void transfer(uint8_t* data, size_t size);
 
 private:
     SPIBusInterface& bus;
@@ -135,7 +327,15 @@ inline void SPIBus::read(uint8_t* data, size_t size)
     }
 }
 
-inline void SPIBus::select(GpioPin cs)
+inline void SPIBus::transfer(uint8_t* data, size_t size)
+{
+    for (size_t i = 0; i < size; i++)
+    {
+        transfer(data + i);
+    }
+}
+
+inline void SPIBus::select(GpioPin& cs)
 {
     cs.low();
     if (last_config.cs_setup_time_us > 0)
@@ -144,7 +344,7 @@ inline void SPIBus::select(GpioPin cs)
     }
 }
 
-inline void SPIBus::deselect(GpioPin cs)
+inline void SPIBus::deselect(GpioPin& cs)
 {
     if (last_config.cs_hold_time_us > 0)
     {
@@ -153,16 +353,32 @@ inline void SPIBus::deselect(GpioPin cs)
     cs.high();
 }
 
-inline void SPIBus::transfer(uint8_t* byte)
+inline void SPIBus::write(uint8_t* byte)
 {
     // Wait until the peripheral is ready to transmit
-    while (!(spi->SR | SPI_SR_TXE))
+    while ((spi->SR & SPI_SR_TXE) == 0)
         ;
     // Write the byte in the transmit buffer
     spi->DR = *byte;
 
     // Wait until byte is transmitted
-    while (!(spi->SR | SPI_SR_RXNE))
+    while ((spi->SR & SPI_SR_RXNE) == 0)
+        ;
+
+    // Clear the RX buffer by accessing the DR register
+    spi->DR;
+}
+
+inline void SPIBus::transfer(uint8_t* byte)
+{
+    // Wait until the peripheral is ready to transmit
+    while ((spi->SR & SPI_SR_TXE) == 0)
+        ;
+    // Write the byte in the transmit buffer
+    spi->DR = *byte;
+
+    // Wait until byte is transmitted
+    while ((spi->SR & SPI_SR_RXNE) == 0)
         ;
 
     // Store the received data in the byte
@@ -172,13 +388,13 @@ inline void SPIBus::transfer(uint8_t* byte)
 inline void SPIBus::read(uint8_t* byte)
 {
     // Wait until the peripheral is ready to transmit
-    while (!(spi->SR | SPI_SR_TXE))
+    while ((spi->SR & SPI_SR_TXE) == 0)
         ;
-    // Write 0 in the transmit buffer
+    // Write the byte in the transmit buffer
     spi->DR = 0;
 
-    // Wait until byte is received
-    while (!(spi->SR | SPI_SR_RXNE))
+    // Wait until byte is transmitted
+    while ((spi->SR & SPI_SR_RXNE) == 0)
         ;
 
     // Store the received data in the byte

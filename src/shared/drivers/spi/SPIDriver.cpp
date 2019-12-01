@@ -23,10 +23,9 @@
 
 #include "SPIDriver.h"
 
-SPIBus::SPIBus(SPI_TypeDef* spi, uint32_t* rcc_en_reg, uint32_t rcc_spi_en_bit)
-    : spi(spi), rcc_en_reg(rcc_en_reg), rcc_spi_en_bit(rcc_spi_en_bit)
+SPIBus::SPIBus(SPI_TypeDef* spi) : spi(spi)
 {
-    enablePeripheral();
+  
 }
 
 void SPIBus::configure(SPIBusConfig config)
@@ -37,8 +36,7 @@ void SPIBus::configure(SPIBusConfig config)
     spi->CR1 = 0;
 
     // Configure clock division (BR bits)
-    spi->CR1 |= (uint16_t)(config.clock_division & 0x03) << 3;
-
+    spi->CR1 |= (static_cast<uint16_t>(config.br) & 0x0003) << 3;
     // Configure CPOL & CPHA bits
     spi->CR1 |= (uint16_t)config.cpol << 1 | (uint16_t)config.cpha;
 
@@ -51,22 +49,16 @@ void SPIBus::configure(SPIBusConfig config)
                 | SPI_CR1_SPE;             // Enable SPI
 }
 
-void SPIBus::enablePeripheral()
-{
-    // Enable clock on SPI peripheral
-    miosix::FastInterruptDisableLock int_lock;
-    *rcc_en_reg |= rcc_spi_en_bit;
-}
 
-SPITransaction::SPITransaction(SPIBusInterface& bus, SPIBusConfig config,
-                               GpioPin cs)
+SPITransaction::SPITransaction(SPIBusInterface& bus, 
+                               GpioPin cs, SPIBusConfig config)
     : bus(bus), cs(cs)
 {
     bus.configure(config);
 }
 
 SPITransaction::SPITransaction(SPISlave slave)
-    : SPITransaction(slave.bus, slave.config, slave.cs)
+    : SPITransaction(slave.bus,  slave.cs, slave.config)
 {
 }
 
@@ -90,6 +82,13 @@ void SPITransaction::write(uint8_t* data, size_t size)
 {
     bus.select(cs);
     bus.write(data, size);
+    bus.deselect(cs);
+}
+
+void SPITransaction::transfer(uint8_t* data, size_t size)
+{
+    bus.select(cs);
+    bus.transfer(data, size);
     bus.deselect(cs);
 }
 
