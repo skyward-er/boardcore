@@ -224,20 +224,37 @@ struct SPISlave
  *
  * @warning DO NOT store an instance of this class for later use, as the bus may
  * be incorrectly configured by then.
+ *
+ * Example transaction:
+ *
+ * {
+ *     // Transaction begin:
+ *     SPITransaction spi(bus, cs, config); // Configures the bus with the
+ *                                          // provided parameters
+ *
+ *     spi.write(REG_EX, 0x56); // writes data to REG_EX
+ *     uint8_t reg2 = spi.read(REG_EX_2); // reads from REG_EX_2
+ *
+ *     // ...
+ *
+ *     // transaction end:
+ * }
  */
 class SPITransaction
 {
 public:
     /**
-     * @brief Instatiates a new SPITransaction
-     * 
+     * @brief Instatiates a new SPITransaction, configuring the bus with the
+     * provided parameters
+     *
      * @param    slave     Slave to communicate with
      */
     SPITransaction(SPISlave slave);
 
     /**
-     * @brief Instatiates a new SPITransaction
-     * 
+     * @brief Instatiates a new SPITransaction, configuring the bus with the
+     * provided parameters
+     *
      * @param    bus       Bus to communicate on
      * @param    cs        Chip select of the slave to communicate to
      * @param    config    Configuration of the bus for the selected slave
@@ -301,6 +318,13 @@ public:
      * @param    size      Number of bytes to be transfer
      */
     void transfer(uint8_t* data, size_t size);
+
+    /**
+     * @brief Returns the underlying bus for low level access
+     *
+     * @return  SPIBusInterface associated with this transaction
+     */
+    SPIBusInterface& getBus() { return bus; }
 
 private:
     SPIBusInterface& bus;
