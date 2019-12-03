@@ -1,0 +1,30 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "cwd": "${workspaceRoot}",
+            "executable": "${workspaceFolder}/bin/${fileBasenameNoExtension}/${fileBasenameNoExtension}.elf",
+            "name": "ST-LINK V2 (current entrypoint)",
+            "request": "attach",
+            "type": "cortex-debug",
+            "servertype": "openocd",
+            "device": "STM32F429ZI",
+            "svdFile": "/home/luca/drive/Skyward/STM32F429.svd",
+            "configFiles": [
+                "/home/luca/test.cfg"
+            ]
+        },
+        {
+            "cwd": "${workspaceRoot}",
+            "executable": "${workspaceFolder}/bin/${fileBasenameNoExtension}/${fileBasenameNoExtension}.elf",
+            "name": "ST-LINK V1 (current entrypoint)",
+            "request": "attach",
+            "type": "cortex-debug",
+            "servertype": "openocd",
+            "device": "STM32F429ZI",
+            "configFiles": [
+                "${workspaceFolder}/libs/miosix-kernel/miosix/arch/cortexM4_stm32f4/stm32f429zi_skyward_death_stack/death_stack.cfg"
+            ]
+        }
+    ]
+}
