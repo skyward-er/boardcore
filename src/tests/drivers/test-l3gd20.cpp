@@ -21,9 +21,9 @@
  * THE SOFTWARE.
  */
 
+#include "diagnostic/CpuMeter.h"
 #include "drivers/spi/SPIDriver.h"
 #include "sensors/L3GD20.h"
-#include "diagnostic/CpuMeter.h"
 
 using namespace miosix;
 typedef Gpio<GPIOF_BASE, 7> GpioSck;
@@ -70,9 +70,8 @@ int main()
     L3GD20 gyro(bus, cs, L3GD20::FullScaleRange::FS_500,
                 L3GD20::OutPutDataRate::ODR_760, 0x03, FIFO_ENABLED);
 
-    while(!gyro.init())
+    while (!gyro.init())
     {
-
     }
 
     Thread::sleep(500);
@@ -106,9 +105,10 @@ int main()
         {
             // Sample sensor @ 500 Hz
             gyro.onSimpleUpdate();
-            
+
             data[data_counter++] = {(last_tick - first_tick) / 1000.0f,
-                                    *(gyro.gyroDataPtr()), 0, averageCpuUtilization()};
+                                    *(gyro.gyroDataPtr()), 0,
+                                    averageCpuUtilization()};
             Thread::sleepUntil(last_tick + 2);
         }
     }
@@ -116,7 +116,8 @@ int main()
     for (int i = 0; i < data_counter; i++)
     {
         printf("%f,%f,%f,%f,%d,%.2f\n", data[i].timestamp, data[i].data.getX(),
-               data[i].data.getY(), data[i].data.getZ(),data[i].level, data[i].cpu);
+               data[i].data.getY(), data[i].data.getZ(), data[i].level,
+               data[i].cpu);
     }
 
     printf("\n\n\nend.\n");
