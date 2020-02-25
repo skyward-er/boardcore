@@ -28,13 +28,22 @@ In the main folder you will find **sbs.conf** which is used to configure the bui
 
 ### Getting Started
 
-Install Python, Git and Miosix toolchain. Also, openocd and clang-format are recommended for a better experience.
+#### Dependencies
+
+* Python3
+* Git
+* Miosix toolchain
+
+Also, openocd, cppcheck and clang-format are recommended for a better experience.
+
+#### Cloning the repo
+
 
 Clone this repo with the `--recursive` option and build everything.
 ```
 git clone --recursive https://git.skywarder.eu/scs/skyward-boardcore.git
 cd skyward-boardcore
-python sbs -v
+python3 sbs -v
 ```
 
 SBS will start building all the entrypoints. Depending on how many entrypoints there are, this operation can take several minutes.
