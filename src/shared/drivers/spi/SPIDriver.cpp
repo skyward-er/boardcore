@@ -24,7 +24,7 @@
 #include "SPIDriver.h"
 
 SPIBus::SPIBus(SPI_TypeDef* spi) : spi(spi) {}
-  
+
 void SPIBus::configure(SPIBusConfig new_config)
 {
     config = new_config;
@@ -56,7 +56,12 @@ SPITransaction::SPITransaction(SPISlave slave)
     : SPITransaction(slave.bus, slave.cs, slave.config)
 {
 }
+
+void SPITransaction::write(uint8_t cmd)
 {
+    bus.select(cs);
+    bus.write(&cmd, 1);
+    bus.deselect(cs);
 }
 
 void SPITransaction::write(uint8_t reg, uint8_t val)
@@ -89,9 +94,11 @@ void SPITransaction::transfer(uint8_t* data, size_t size)
     bus.deselect(cs);
 }
 
-uint8_t SPITransaction::read(uint8_t reg)
+uint8_t SPITransaction::read(uint8_t reg, bool set_read_bit)
 {
-    reg = reg | 0x80;
+    if (set_read_bit)
+        reg = reg | 0x80;
+
     uint8_t out;
     bus.select(cs);
     bus.write(&reg, 1);
@@ -100,14 +107,18 @@ uint8_t SPITransaction::read(uint8_t reg)
     return out;
 }
 
-void SPITransaction::read(uint8_t reg, uint8_t* data, size_t size)
+void SPITransaction::read(uint8_t reg, uint8_t* data, size_t size,
+                          bool set_read_bit)
 {
-    reg = reg | 0x80;
+    if (set_read_bit)
+        reg = reg | 0x80;
+
     bus.select(cs);
     bus.write(&reg, 1);
     bus.read(data, size);
     bus.deselect(cs);
 }
+
 void SPITransaction::read(uint8_t* data, size_t size)
 {
     bus.select(cs);

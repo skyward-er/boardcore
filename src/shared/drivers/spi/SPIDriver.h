@@ -281,6 +281,13 @@ public:
     SPITransaction& operator=(SPITransaction&&) = delete;
 
     /**
+     * @brief Writes a command \p cmd to the bus
+     *
+     * @param    cmd     Command to write on the bus
+     */
+    void write(uint8_t cmd);
+
+    /**
      * @brief Writes \p val into the \p reg register
      *
      * @param    reg     Slave device register
@@ -309,8 +316,10 @@ public:
      * @brief Read the contents of the \p reg register
      *
      * @param    reg       Slave device register
+     * @param    set_read_bit Wether to set the read bit to 1 (MSB of reg)
+     *                        (default = true).
      */
-    uint8_t read(uint8_t reg);
+    uint8_t read(uint8_t reg, bool set_read_bit = true);
 
     /**
      * @brief Reads \p size bytes from the \p reg register
@@ -318,8 +327,11 @@ public:
      * @param    reg    Slave device register
      * @param    data   Buffer where read bytes will be stored
      * @param    size   Number of bytes to read
+     * @param    set_read_bit Wether to set the read bit to 1 (MSB of reg)
+     *                        (default = true).
      */
-    void read(uint8_t reg, uint8_t* data, size_t size);
+    void read(uint8_t reg, uint8_t* data, size_t size,
+              bool set_read_bit = true);
 
     /**
      * @brief Reads \p size bytes from the bus
@@ -348,9 +360,6 @@ public:
 private:
     SPIBusInterface& bus;
     GpioPin cs;
-    // No public copy constructor or operator =
-    SPITransaction(const SPITransaction& l);
-    SPITransaction& operator=(const SPITransaction& l);
 };
 
 // Defined here and not in the .cpp to make them inline
