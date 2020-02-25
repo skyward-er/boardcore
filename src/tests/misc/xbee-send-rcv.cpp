@@ -21,8 +21,10 @@
  * THE SOFTWARE.
  */
 
+#include <drivers/BusTemplate.h>
 #include <interfaces-impl/hwmapping.h>
 #include <miosix.h>
+
 #include <cstdio>
 #include <iostream>
 #include <string>
@@ -31,13 +33,10 @@
 #include "drivers/Xbee/Xbee.h"
 #include "math/Stats.h"
 
-#include <drivers/BusTemplate.h>
-
 using std::cin;
 using std::cout;
 using std::string;
 
-using HwTimer                      = HardwareTimer<uint32_t, 2>;
 static const unsigned int PKT_SIZE = 128;
 
 using namespace miosix;
@@ -47,17 +46,20 @@ using namespace interfaces;
 
 // WARNING: If flashing on stm32f49 discovery board (with screen removed) use
 // SPI1 as the 2nd isnt working.
-// typedef BusSPI<1, spi1::mosi, spi1::miso, spi1::sck> busSPI2;  // Creo la SPI2
+// typedef BusSPI<1, spi1::mosi, spi1::miso, spi1::sck> busSPI2;  // Creo la
+// SPI2
 
 typedef BusSPI<2, spi2::mosi, spi2::miso, spi2::sck> busSPI2;  // Creo la
 // SPI2
 
 // WARNING: Don't use xbee::cs on discovery board as it isn't working
-typedef Xbee::Xbee<busSPI2, xbee::cs, xbee::attn, xbee::reset>
-    Xbee_t;
+typedef Xbee::Xbee<busSPI2, xbee::cs, xbee::attn, xbee::reset> Xbee_t;
 
 Xbee_t xbee_transceiver;
-void __attribute__((used)) EXTI10_IRQHandlerImpl() { Xbee::handleATTNInterrupt(); }
+void __attribute__((used)) EXTI10_IRQHandlerImpl()
+{
+    Xbee::handleATTNInterrupt();
+}
 
 void enableXbeeInterrupt()
 {
@@ -167,9 +169,6 @@ int main()
     // xbee::sleep_req::low();
 
     // reset();
-
-    HwTimer& t = HwTimer::instance();
-    t.setPrescaler(1024);
 
     busSPI2::init();
 
