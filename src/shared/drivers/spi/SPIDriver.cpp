@@ -23,14 +23,11 @@
 
 #include "SPIDriver.h"
 
-SPIBus::SPIBus(SPI_TypeDef* spi) : spi(spi)
-{
+SPIBus::SPIBus(SPI_TypeDef* spi) : spi(spi) {}
   
-}
-
-void SPIBus::configure(SPIBusConfig config)
+void SPIBus::configure(SPIBusConfig new_config)
 {
-    last_config = config;
+    config = new_config;
 
     // Clean CR1
     spi->CR1 = 0;
@@ -43,22 +40,22 @@ void SPIBus::configure(SPIBusConfig config)
     // Configure LSBFIRST bit
     spi->CR1 |= (uint16_t)config.lsb_first << 7;
 
-    //
     spi->CR1 |= SPI_CR1_SSI | SPI_CR1_SSM  // Use software chip-select
                 | SPI_CR1_MSTR             // Master mode
                 | SPI_CR1_SPE;             // Enable SPI
 }
 
-
-SPITransaction::SPITransaction(SPIBusInterface& bus, 
-                               GpioPin cs, SPIBusConfig config)
+SPITransaction::SPITransaction(SPIBusInterface& bus, GpioPin cs,
+                               SPIBusConfig config)
     : bus(bus), cs(cs)
 {
     bus.configure(config);
 }
 
 SPITransaction::SPITransaction(SPISlave slave)
-    : SPITransaction(slave.bus,  slave.cs, slave.config)
+    : SPITransaction(slave.bus, slave.cs, slave.config)
+{
+}
 {
 }
 

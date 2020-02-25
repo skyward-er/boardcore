@@ -54,19 +54,31 @@ enum class SPIBaudRate
 
 /**
  * @brief SPI Bus configuration for a specific slave.
- * See datasheet for further information
+ * See slave datasheet for information on how to populate this struct
  */
 struct SPIBusConfig
 {
     SPIBaudRate br = SPIBaudRate::DIV_2;  ///> Peripheral clock division
-    uint8_t cpol   = 0;                   ///> Clock polarity
-    uint8_t cpha   = 0;                   ///> Clock phase
+    uint8_t cpol   = 0;                   ///> Clock polarity (0 - 1)
+    uint8_t cpha   = 0;                   ///> Clock phase (0 - 1)
     bool lsb_first = false;               ///> MSB or LSB first
 
     unsigned int cs_setup_time_us = 0;  ///> How long to wait before starting a
                                         ///> a trasmission after CS is set (us)
     unsigned int cs_hold_time_us = 0;   ///> How long to hold cs after the end
                                         ///> of a trasmission (us)
+
+    // Custom comparison operator
+    bool operator==(const SPIBusConfig& other) const
+    {
+        // Valid if the struct does not contain pointers!
+        return memcmp(this, &other, sizeof(SPIBusConfig)) == 0;
+    }
+
+    bool operator!=(const SPIBusConfig& other) const
+    {
+        return !(*this == other);
+    }
 };
 
 /**
@@ -147,7 +159,7 @@ public:
     /**
      * @brief See SPIBusInterface::read()
      */
-    void read(uint8_t* data, size_t sizes) override;
+    void read(uint8_t* data, size_t size) override;
 
     /**
      * @brief See SPIBusInterface::transfer()
@@ -194,7 +206,7 @@ private:
 
     SPI_TypeDef* spi;
 
-    SPIBusConfig last_config;
+    SPIBusConfig config;
 };
 
 /**
@@ -235,9 +247,9 @@ struct SPISlave
  *     spi.write(REG_EX, 0x56); // writes data to REG_EX
  *     uint8_t reg2 = spi.read(REG_EX_2); // reads from REG_EX_2
  *
- *     // ...
+ *     // ...As many read/writes as you wish...
  *
- *     // transaction end:
+ *     // transaction end. SPITransaction object is destructed
  * }
  */
 class SPITransaction
@@ -260,6 +272,13 @@ public:
      * @param    config    Configuration of the bus for the selected slave
      */
     SPITransaction(SPIBusInterface& bus, GpioPin cs, SPIBusConfig config);
+
+    // Delete copy/move contructors/operators
+    SPITransaction(const SPITransaction&) = delete;
+    SPITransaction& operator=(const SPITransaction&) = delete;
+
+    SPITransaction(SPITransaction&&) = delete;
+    SPITransaction& operator=(SPITransaction&&) = delete;
 
     /**
      * @brief Writes \p val into the \p reg register
@@ -362,17 +381,17 @@ inline void SPIBus::transfer(uint8_t* data, size_t size)
 inline void SPIBus::select(GpioPin& cs)
 {
     cs.low();
-    if (last_config.cs_setup_time_us > 0)
+    if (config.cs_setup_time_us > 0)
     {
-        delayUs(last_config.cs_setup_time_us);
+        delayUs(config.cs_setup_time_us);
     }
 }
 
 inline void SPIBus::deselect(GpioPin& cs)
 {
-    if (last_config.cs_hold_time_us > 0)
+    if (config.cs_hold_time_us > 0)
     {
-        delayUs(last_config.cs_hold_time_us);
+        delayUs(config.cs_hold_time_us);
     }
     cs.high();
 }
