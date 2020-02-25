@@ -66,8 +66,8 @@ public:
            OutPutDataRate odr   = OutPutDataRate::ODR_95,
            uint8_t cutoff_freq = 0x03, bool fifo_enabled = false,
            unsigned int fifo_watermark = 24)
-        : fifo_enabled(fifo_enabled), spislave(bus, cs), fs(range), odr(odr),
-          cutoff_freq(cutoff_freq), fifo_watermark(fifo_watermark)
+        : fifo_enabled(fifo_enabled), fifo_watermark(fifo_watermark),
+          spislave(bus, cs), fs(range), odr(odr), cutoff_freq(cutoff_freq)
     {
         // Configure SPI
         spislave.config.br = SPIBaudRate::DIV_64;
@@ -87,7 +87,7 @@ public:
             return false;
         }
 
-        uint8_t ctrl4 = spi.read(REG_CTRL4);
+        // uint8_t ctrl4 = spi.read(REG_CTRL4);
 
         switch (fs)
         {
