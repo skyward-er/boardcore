@@ -24,10 +24,13 @@
 #pragma once
 #include <miosix.h>
 
+#include <array>
+
 #include "Sensor.h"
 #include "drivers/spi/SPIDriver.h"
 
 using miosix::GpioPin;
+using std::array;
 
 class L3GD20 : public GyroSensor
 {
@@ -46,15 +49,28 @@ public:
         ODR_380 = 0x02,
         ODR_760 = 0x03
     };
-
+    /**
+     * @brief Creates an instance of an L3GD20 sensor
+     *
+     * @param    bus SPI bus the sensor is connected to
+     * @param    cs Chip Select GPIO
+     * @param    range Full Scale Range (See datasheet)
+     * @param    odr Output Data Rate (See datasheet)
+     * @param    cutoff_freq Low pass filter cutoff frequency (See datasheet)
+     * @param    fifo_enabled Fifo enabled
+     * @param    fifo_watermark FIFO watermark level in range [1,32] (used for
+     * interrupt generation, see datasheet).
+     */
     L3GD20(SPIBusInterface& bus, GpioPin cs,
            FullScaleRange range = FullScaleRange::FS_250,
            OutPutDataRate odr   = OutPutDataRate::ODR_95,
-           uint8_t cutoff_freq = 0x03, bool fifo_enabled = false)
+           uint8_t cutoff_freq = 0x03, bool fifo_enabled = false,
+           unsigned int fifo_watermark = 24)
         : fifo_enabled(fifo_enabled), spislave(bus, cs), fs(range), odr(odr),
-          cutoff_freq(cutoff_freq)
+          cutoff_freq(cutoff_freq), fifo_watermark(fifo_watermark)
     {
-        spislave.config.br = SPIBaudRate::DIV_128;
+        // Configure SPI
+        spislave.config.br = SPIBaudRate::DIV_64;
         // memset(last_fifo, 0, sizeof(Vec3) * 32);
     }
 
@@ -75,11 +91,14 @@ public:
 
         switch (fs)
         {
+            case FullScaleRange::FS_250:
+                spi.write(REG_CTRL4, 0);
+                break;
             case FullScaleRange::FS_500:
-                spi.write(REG_CTRL4, ctrl4 | (uint8_t)(1 << 4));
+                spi.write(REG_CTRL4, (uint8_t)(1 << 4));
                 break;
             case FullScaleRange::FS_2000:
-                spi.write(REG_CTRL4, ctrl4 | (uint8_t)(2 << 4));
+                spi.write(REG_CTRL4, (uint8_t)(2 << 4));
                 break;
             default:
                 break;
@@ -89,23 +108,25 @@ public:
             // Enable fifo
             spi.write(REG_CTRL5, 1 << 6);
 
-            // Set watermark level to 24 samples
-            uint8_t fifo_ctrl = 24;
+            // Set watermark level to fifo_watermark samples
+            uint8_t fifo_ctrl = fifo_watermark;
 
-            // Set fifo to stream mode
+            // Set fifo to FIFO mode
             fifo_ctrl |= 0x02 << 5;
 
             spi.write(REG_FIFO_CTRL, fifo_ctrl);
-        }
 
+            // Enable FIFO watermark interrupt
+            spi.write(REG_CTRL3, 0x04);
+        }
         // Enter normal mode, enable output
         uint8_t ctrl1 = 0x0F;
 
-        // // Configure ODR
+        // Configure ODR
         ctrl1 |= static_cast<uint8_t>(odr) << 6;
 
         // Configure cutoff frequency
-        ctrl1 |= (cutoff_freq & 0x02) << 4;
+        ctrl1 |= (cutoff_freq & 0x03) << 4;
 
         spi.write(REG_CTRL1, ctrl1);
 
@@ -121,7 +142,7 @@ public:
         if (!fifo_enabled)
         {
             uint8_t data[6];
-            // High level access to the bus
+            // Read output data registers (X, Y, Z)
             {
                 SPITransaction spi(spislave);
                 spi.read(REG_OUT_X_L | 0x40, data, 6);
@@ -144,15 +165,17 @@ public:
             uint8_t fifo_src = spi.read(REG_FIFO_SRC);
             uint8_t ovr      = (fifo_src & 0x40);
             last_fifo_level  = fifo_src & 0x1F;
-            if (ovr > 0)
+
+            // if ovr --> fifo is full --> level = level + 1
+            if (ovr)
             {
                 ++last_fifo_level;
             }
 
-            // Read last fifo level
-            spi.read(REG_OUT_X_L | 0x40, buf, 32 * 6);
+            // Read fifo
+            spi.read(REG_OUT_X_L | 0x40, buf, last_fifo_level * 6);
 
-            // Read samples from the FIFO
+            // Convert units & store the FIFO content
             for (uint8_t i = 0; i < last_fifo_level; i++)
             {
                 int16_t x = buf[i * 6] | buf[i * 6 + 1] << 8;
@@ -169,13 +192,14 @@ public:
         return true;
     }
 
-    Vec3* getLastFifo() { return last_fifo; }
-    uint8_t getLastFifoSize() { return last_fifo_level; }
+    const array<Vec3, 32>& getLastFifo() const { return last_fifo; }
+    uint8_t getLastFifoSize() const { return last_fifo_level; }
 
 private:
     bool fifo_enabled = false;
+    unsigned int fifo_watermark;
 
-    Vec3 last_fifo[32];
+    array<Vec3, 32> last_fifo;
     uint8_t last_fifo_level = 0;
 
     SPISlave spislave;
