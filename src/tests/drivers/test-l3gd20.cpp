@@ -53,6 +53,7 @@ struct GyroSample
     float timestamp;
     Vec3 data;
     int level;
+    float wtm_delta;
     float cpu;
 };
 
@@ -146,6 +147,7 @@ int main()
         {
             // Precise timestamp of the last sample in the FIFO
             float wtm_timestamp = hrclock.toSeconds(last_watermark_tick);
+            float wtm_delta     = hrclock.toMilliSeconds(watermark_delta);
 
             // Read the fifo
             gyro.onSimpleUpdate();
@@ -164,8 +166,9 @@ int main()
                 float ts = wtm_timestamp +
                            (i - (int)FIFO_WATERMARK) / SAMPLE_FREQUENCY;
 
-                data[data_counter++] = {fifo_num, ts, fifo[i], level,
-                                        averageCpuUtilization()};
+                data[data_counter++] = {fifo_num,  ts,
+                                        fifo[i],   level,
+                                        wtm_delta, averageCpuUtilization()};
                 if (data_counter >= NUM_SAMPLES)
                 {
                     break;
@@ -181,8 +184,11 @@ int main()
             // Sample sensor @ 500 Hz
             gyro.onSimpleUpdate();
 
-            data[data_counter++] = {0, (last_tick - first_tick) / 1000.0f,
-                                    *(gyro.gyroDataPtr()), 0,
+            data[data_counter++] = {0,
+                                    (last_tick - first_tick) / 1000.0f,
+                                    *(gyro.gyroDataPtr()),
+                                    0,
+                                    0,
                                     averageCpuUtilization()};
             Thread::sleepUntil(last_tick + 2);
         }
@@ -192,8 +198,7 @@ int main()
     for (int i = 1; i < data_counter; i++)
     {
         printf("%d,%.3f,%.3f,%.3f,%f,%f,%f,%d,%.2f\n", data[i].fifo_num,
-               data[i].timestamp * 1000,
-               hrclock.toMilliSeconds(watermark_delta),
+               data[i].timestamp * 1000, data[i].wtm_delta,
                (data[i].timestamp - data[i - 1].timestamp) * 1000,
                data[i].data.getX(), data[i].data.getY(), data[i].data.getZ(),
                data[i].level, data[i].cpu);
