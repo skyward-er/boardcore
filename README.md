@@ -1,14 +1,14 @@
 ![alt text](https://avatars2.githubusercontent.com/u/8077370?s=200&v=4)
 
-Skyward Boardcore  
-[![pipeline status](https://git.skywarder.eu/r2a/skyward-boardcore/badges/master/pipeline.svg)](https://git.skywarder.eu/r2a/skyward-boardcore/commits/master)
+Skyward Boardcore
+[![pipeline status](https://git.skywarder.eu/scs/skyward-boardcore/badges/master/pipeline.svg)](https://git.skywarder.eu/scs/skyward-boardcore/commits/master)
 -------------
 
 Boardcore is a framework for developing and building missile software for custom boards with Miosix .
 
 [Miosix](https://miosix.org/) is a lightweigth OS for embedded developing which provides support for basic things such as Threads, GPIO, Time and many other. You can find our fork of the kernel here: [skyward/miosix-kernel](https://git.skywarder.eu/elc/miosix-kernel)
 
-Building is made with [SBS](https://git.skywarder.eu/r2a/skyward-boardcore/wikis/Skyward-Build-Systems-(SBS)), which was created to easily compile and reuse code for different boards. 
+Building is made with [SBS](https://git.skywarder.eu/scs/skyward-boardcore/wikis/Skyward-Build-Systems-(SBS)), which was created to easily compile and reuse code for different boards.
 
 ### Content
 
@@ -32,7 +32,7 @@ Install Python, Git and Miosix toolchain. Also, openocd and clang-format are rec
 
 Clone this repo with the `--recursive` option and build everything.
 ```
-git clone --recursive https://git.skywarder.eu/r2a/skyward-boardcore.git
+git clone --recursive https://git.skywarder.eu/scs/skyward-boardcore.git
 cd skyward-boardcore
 python sbs -v
 ```
@@ -43,16 +43,8 @@ Once SBS finished, check the resulting message: if every build displays an *OK* 
 
 ### What's next?
 
-In the [Wiki](https://git.skywarder.eu/r2a/skyward-boardcore/wikis/home) you will find some first-steps **guides** (configuring the IDE, building a firmware etc) as well as the **coding guidelines** and some **best practices** we adopt.
+In the [Wiki](https://git.skywarder.eu/scs/skyward-boardcore/wikis/home) you will find some first-steps **guides** (configuring the IDE, building a firmware etc) as well as the **coding guidelines** and some **best practices** we adopt.
 
-If you want to contribute to this repository, please read [Git Workflow](https://git.skywarder.eu/r2a/skyward-boardcore/wikis/Git-Workflow).
+If you want to contribute to this repository, please read [Git Workflow](https://git.skywarder.eu/scs/skyward-boardcore/wikis/Git-Workflow).
 
-If you just want to start messing around, try [this](https://git.skywarder.eu/r2a/skyward-boardcore/wikis/Boardcore-Quick-Start).
-
-
-Useful links
------------
-
-* [Miosix Wiki](https://miosix.org/wiki/index.php?title=Main_Page) for the installation.
-* [Miosix Doxygen](https://miosix.org/doxygen/doxygen_k2.01/index.html) for the full documentation (classes, constants ecc).
-* [ELC Handbooks](https://git.skywarder.eu/docs/elc-internal-reports/tree/master) 
+If you just want to start messing around, try [this](https://git.skywarder.eu/scs/skyward-boardcore/wikis/Boardcore-Quick-Start).
