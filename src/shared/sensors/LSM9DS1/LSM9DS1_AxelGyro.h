@@ -81,7 +81,7 @@ class LSM9DS1_XLG : public GyroSensor, public AccelSensor
         };
 
          /**
-         * @brief Creates an instance of an LSM9DS1 sensor
+         * @brief Creates an instance of an LSM9DS1 accelerometer + gyroscope sensor
          *
          * @param    bus SPI bus the sensor is connected to
          * @param    cs Chip Select GPIO
@@ -102,13 +102,42 @@ class LSM9DS1_XLG : public GyroSensor, public AccelSensor
            bool fifo_enabled            = false,
            unsigned int fifo_watermark  = 24
            ):fifo_enabled(fifo_enabled), fifo_watermark(fifo_watermark),
-          spislave(bus, cs), axelFSR(axelRange), gyroFSR(gyroRange), odr(odr)
-        {
+          spislave(bus, cs), axelFSR(axelRange), gyroFSR(gyroRange), odr(odr){
             //SPI config
             spislave.config.br = SPIBaudRate::DIV_64; //baud = fclk/64
+            switch(axelFSR){
+                case AxelFSR::FS_2:
+                    axelFSRval = 2.0f;
+                    break;
+                case AxelFSR::FS_4:
+                    axelFSRval = 4.0f;
+                    break;
+                case AxelFSR::FS_8:
+                    axelFSRval = 8.0f;
+                    break;
+                case AxelFSR::FS_16:
+                    axelFSRval = 16.0f;
+                    break;
+                default:
+                    axelFSRval = 2.0f;
+                    break;
+            }
+            switch (gyroFSR){
+                case GyroFSR::FS_245:
+                    gyroFSRval = 245.0f;
+                    break;
+                case GyroFSR::FS_500:
+                    gyroFSRval = 500.0f;
+                    break;
+                case GyroFSR::FS_2000:
+                    gyroFSRval = 2000.0f;
+                    break;
+                default:
+                    gyroFSRval = 245.0f;
+                    break;
+            }
         }
-        bool init()
-        {
+        bool init(){
             SPITransaction spi(spislave);
 
             //Who Am I check:
@@ -135,7 +164,7 @@ class LSM9DS1_XLG : public GyroSensor, public AccelSensor
             
             //Axel Setup
             spi.write(regMapXLG::CTRL_REG6_XL, (int)odr << 5 | (int)axelFSR << 3); //ODR, FSR, auto BW (max) function of ODR
-            //CTRL_REG7_XL //High resolution mode enable / LPF2&HPF enable -> default: disable 
+            //CTRL_REG7_XL //High resolution mode enable / LPF2&HPF enable -> default: disabled
             //CTRL_REG5_XL //axel enable -> default:enable
             
             //Gyro Setup
@@ -148,7 +177,50 @@ class LSM9DS1_XLG : public GyroSensor, public AccelSensor
             return selfTest(); 
         }
 
-        bool selfTest(){return true;}
+        bool selfTest(){
+            /*if(fifo_enabled){ //trash first n samples
+
+            }*/
+                
+            return true;
+        }
+        
+        bool onSimpleUpdate(){
+            
+            if(!fifo_enabled){ //if FIFO disabled
+                uint8_t axelData[6], gyroData[6];
+                // Read output axel+gyro data X,Y,Z
+                {
+                    SPITransaction spi(spislave);
+                    spi.read(OUT_X_L_XL, axelData, 6);
+                    spi.read(OUT_X_L_G,  gyroData, 6);
+                }
+
+                int16_t x_xl = axelData[0] | axelData[1] << 8;
+                int16_t y_xl = axelData[2] | axelData[3] << 8;
+                int16_t z_xl = axelData[4] | axelData[5] << 8;
+
+                int16_t x_gy = gyroData[0] | gyroData[1] << 8;
+                int16_t y_gy = gyroData[2] | gyroData[3] << 8;
+                int16_t z_gy = gyroData[4] | gyroData[5] << 8;
+
+                // printf("LSM9DS1 axel: %02X,%02X,%02X\n", x_xl, y_xl, z_xl);
+                // printf("LSM9DS1 gyro: %02X,%02X,%02X\n", x_gy, y_gy, z_gy);
+                
+                mLastAccel = 
+                    Vec3(x_xl * axelFSRval / 65535,
+                         y_xl * axelFSRval / 65535,
+                         z_xl * axelFSRval / 65535);
+                
+                mLastGyro =
+                    Vec3(x_gy * gyroFSRval / 65535,
+                         y_gy * gyroFSRval / 65535,
+                         z_gy * gyroFSRval / 65535);
+            }
+            else{ //if FIFO enabled
+
+            }
+        }
 
     private:
 
@@ -161,6 +233,9 @@ class LSM9DS1_XLG : public GyroSensor, public AccelSensor
         GyroFSR gyroFSR;
         ODR odr;
         
+        float axelFSRval;
+        float gyroFSRval;
+
         static const uint8_t WHO_AM_I_XLG_VAL = 0x68;
         enum regMapXLG
         {
@@ -205,7 +280,7 @@ class LSM9DS1_XLG : public GyroSensor, public AccelSensor
             OUT_Z_L_XL          =   0x2C,
             OUT_Z_H_XL          =   0x2D,
             FIFO_CTRL           =   0x2E,
-            FIFO_SRC            =   0x2F, //FIFO status register
+            FIFO_SRC            =   0x2F //FIFO status register
             //INT_GEN_CFG_G       =   0x30,
             //INT_GEN_THS_XH_G    =   0x31,
             //INT_GEN_THS_XL_G    =   0x32,
