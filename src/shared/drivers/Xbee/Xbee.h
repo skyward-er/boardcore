@@ -23,12 +23,13 @@
 #pragma once
 
 #include <Common.h>
-#include <drivers/BusTemplate.h>
 #include <drivers/Transceiver.h>
+#include <drivers/spi/SPIDriver.h>
+#include <miosix.h>
+
 #include <algorithm>
 #include <vector>
 
-#include <miosix.h>
 #include "ActiveObject.h"
 #include "XbeeStatus.h"
 #include "diagnostic/StackLogger.h"
@@ -106,25 +107,51 @@ static void __attribute__((used)) handleATTNInterrupt()
 }
 
 /**
- * WARNING: An IRQ linked with the ATTN pin of the Xbee module must be enabled
+ * @warning: An IRQ linked with the ATTN pin of the Xbee module must be enabled
  * before using this class. See test/misc/xbee-bitrate for an example.
+ * @warning: Due to the way this driver is written, the SPI bus must be reserved
+ * only for the XBee device. No other devices can communicate on the same bus.
  */
-template <typename Bus, class CS, class ATTN, class RST>
 class Xbee : public Transceiver, public ActiveObject
 {
 public:
-    Xbee(unsigned int send_timeout) : send_timeout(send_timeout)
+    Xbee(SPIBusInterface& bus, GpioPin cs, GpioPin attn, GpioPin rst,
+         unsigned int send_timeout = 1000)
+        : send_timeout(send_timeout), spi_xbee(bus, cs), attn(attn), rst(rst)
     {
+        spi_xbee.config.br = SPIBaudRate::DIV_128;
+
+        // No need to configure before each transaction, we are the only device
+        // on the bus.
+        spi_xbee.bus.configure(spi_xbee.config);
+
         reset();
         miosix::Thread::sleep(10);
 
-        CS::low();
+        spi_xbee.cs.low();
         miosix::Thread::sleep(1);
-        CS::high();
+        spi_xbee.cs.high();
         miosix::Thread::sleep(1);
     }
 
-    Xbee() : Xbee(1000) {}
+    Xbee(SPIBusInterface& bus, GpioPin cs, GpioPin attn, GpioPin rst,
+         SPIBusConfig spi_config, unsigned int send_timeout = 1000)
+        : send_timeout(send_timeout), spi_xbee(bus, cs, spi_config), attn(attn),
+          rst(rst)
+    {
+        // No need to configure before each transaction, we are the only device
+        // on the bus.
+        spi_xbee.bus.configure(spi_xbee.config);
+
+        reset();
+        miosix::Thread::sleep(10);
+
+        spi_xbee.cs.low();
+        miosix::Thread::sleep(1);
+        spi_xbee.cs.high();
+        miosix::Thread::sleep(1);
+    }
+
     /*
      * Send a message through the XBee
      * Blocks until the message is sent (successfully or not)
@@ -231,7 +258,7 @@ protected:
 
                 // Check if we have data to send (tx_buf.size > 0) or receive
                 // (attn == 0) with disabled interrupts to avoid race conditions
-                if (ATTN::value() != 0 && tx_buf.size() == 0)
+                if (attn.value() != 0 && tx_buf.size() == 0)
                 {
                     // If we have nothing to receive or send, wait.
                     waiting = miosix::Thread::getCurrentThread();
@@ -292,10 +319,10 @@ private:
 
     void reset()
     {
-        RST::mode(miosix::Mode::OPEN_DRAIN);
-        RST::low();
+        rst.mode(miosix::Mode::OPEN_DRAIN);
+        rst.low();
         miosix::delayUs(500);
-        RST::high();
+        rst.high();
     }
 
     /**
@@ -319,9 +346,12 @@ private:
      */
     void transferData()
     {
+        SPIBusInterface& bus = spi_xbee.bus;
+
         ParseResult result = ParseResult::IDLE;
 
-        CS::low();
+        bus.select(spi_xbee.cs);
+
         vector<uint8_t> data;
 
         {
@@ -338,7 +368,7 @@ private:
         {
             // Full duplex transfer, the data vector is replaced with received
             // data, if any.
-            Bus::transfer(data.data(), data.size());
+            bus.transfer(data.data(), data.size());
 
             // Parse the received data
             for (uint8_t rx : data)
@@ -355,7 +385,7 @@ private:
             // If there's nothing more to parse, return
             if (result != ParseResult::PARSING)
             {
-                CS::high();
+                bus.deselect(spi_xbee.cs);
                 return;
             }
 
@@ -365,7 +395,7 @@ private:
         // Read until we have received a packet (or no packet is found)
         do
         {
-            result = parse(Bus::read());
+            result = parse(bus.read());
         } while (result == ParseResult::PARSING);
 
         if (result == ParseResult::SUCCESS)
@@ -377,7 +407,7 @@ private:
             TRACE("[Xbee] Read failed. Parser result: %d\n", (int)result);
         }
 
-        CS::high();
+        bus.deselect(spi_xbee.cs);
     }
 
     /**
@@ -610,6 +640,10 @@ private:
     vector<uint8_t> parser_buf;
 
     XbeeStatus status;
+
+    SPISlave spi_xbee;
+    GpioPin attn;
+    GpioPin rst;
 };  // namespace Xbee
 
 }  // namespace Xbee
