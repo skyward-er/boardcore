@@ -35,9 +35,17 @@ public:
     /**
      * @brief Instantiates a new SPIBus
      *
-     * @param    spi       Pointer to the SPI peripheral to be used
+     * @param spi Pointer to the SPI peripheral to be used
      */
     SPIBus(SPI_TypeDef* spi);
+    ~SPIBus() {}
+
+    // Delete copy/move contructors/operators
+    SPIBus(const SPIBus&) = delete;
+    SPIBus& operator=(const SPIBus&) = delete;
+
+    SPIBus(SPIBus&&) = delete;
+    SPIBus& operator=(SPIBus&&) = delete;
 
     /**
      * @brief See SPIBusInterface::write()
