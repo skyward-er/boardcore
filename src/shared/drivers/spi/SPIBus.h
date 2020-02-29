@@ -103,6 +103,7 @@ private:
     SPI_TypeDef* spi;
 
     SPIBusConfig config;
+    bool first_config_applied = false;
 };
 
 // Defined here and not in the .cpp to make them inline
