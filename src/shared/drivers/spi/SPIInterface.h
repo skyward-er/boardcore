@@ -105,12 +105,25 @@ public:
     SPIBusInterface& operator=(SPIBusInterface&&) = delete;
 
     /**
+     * @brief Writes a single \p byte to the bus.
+     *
+     * @param    byte Byte to write
+     */
+    virtual void write(uint8_t byte) = 0;
+
+    /**
      * @brief Writes \p data to the bus.
      *
      * @param    data Buffer containing data to write
      * @param    size Number of bytes to write
      */
     virtual void write(uint8_t* data, size_t size) = 0;
+
+    /**
+     * @brief Reads a single byte from the bus.
+     * @return Byte read from the bus
+     */
+    virtual uint8_t read() = 0;
 
     /**
      * @brief Reads \p size bytes from the SPI bus, putting them in \p data.
@@ -120,6 +133,15 @@ public:
      */
     virtual void read(uint8_t* data, size_t size) = 0;
 
+    /**
+     * @brief Full duplex transmission on the SPI bus.
+     * A \p byte is written on the bus and a byte is read and returned
+     *
+     * @param    byte Byte to write
+     * @return Data read from the bus
+     */
+    virtual uint8_t transfer(uint8_t byte) = 0;
+    
     /**
      * @brief Full duplex transmission on the SPI bus.
      * \p data is written on the bus and its contents are then replaced with the

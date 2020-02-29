@@ -50,12 +50,27 @@ public:
     /**
      * @brief See SPIBusInterface::write()
      */
+    void write(uint8_t byte) override;
+
+    /**
+     * @brief See SPIBusInterface::write()
+     */
     void write(uint8_t* data, size_t size) override;
 
     /**
      * @brief See SPIBusInterface::read()
      */
+    uint8_t read() override;
+
+    /**
+     * @brief See SPIBusInterface::read()
+     */
     void read(uint8_t* data, size_t size) override;
+
+    /**
+     * @brief See SPIBusInterface::transfer()
+     */
+    uint8_t transfer(uint8_t data) override;
 
     /**
      * @brief See SPIBusInterface::transfer()
@@ -107,6 +122,12 @@ private:
 };
 
 // Defined here and not in the .cpp to make them inline
+
+inline void SPIBus::write(uint8_t data)
+{
+    write(&data);
+}
+
 inline void SPIBus::write(uint8_t* data, size_t size)
 {
     for (size_t i = 0; i < size; i++)
@@ -115,12 +136,26 @@ inline void SPIBus::write(uint8_t* data, size_t size)
     }
 }
 
+inline uint8_t SPIBus::read()
+{
+    uint8_t data;
+    read(&data);
+
+    return data; 
+}
+
 inline void SPIBus::read(uint8_t* data, size_t size)
 {
     for (size_t i = 0; i < size; i++)
     {
         read(data + i);
     }
+}
+
+inline uint8_t SPIBus::transfer(uint8_t data)
+{
+    transfer(&data);
+    return data;
 }
 
 inline void SPIBus::transfer(uint8_t* data, size_t size)
