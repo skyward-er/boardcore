@@ -1,4 +1,4 @@
-#include <sensors/LSM6DS3H.h>
+#include <sensors/LSM6DS3H/LSM6DS3H.h>
 
 // SPI1
 typedef miosix::Gpio<GPIOA_BASE, 5> GpioSck;
