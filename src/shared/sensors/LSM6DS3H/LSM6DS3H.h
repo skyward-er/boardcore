@@ -26,16 +26,26 @@
 #define LSM6DS3H_H
 
 #include <drivers/BusTemplate.h>
-#include "Common.h"
+
 #include "../Sensor.h"
+#include "Common.h"
 #include "miosix.h"
 
+/** ********ATTENTION***********
+ * @warning Once upon a time, this driver was working, but due to hardware
+ * problems we were unable to confirm it and test it properly. If you need this,
+ * you should test it a bit before using it in production code.
+ */
 
 template <typename Bus>
-class LSM6DS3H : public GyroSensor, public AccelSensor, public CompassSensor, public TemperatureSensor
+class LSM6DS3H : public GyroSensor,
+                 public AccelSensor,
+                 public CompassSensor,
+                 public TemperatureSensor
 {
 #pragma pack(1)
-    // __extension__ is needed to prevent compiler warnings for anonymous structs
+    // __extension__ is needed to prevent compiler warnings for anonymous
+    // structs
     typedef union {
         __extension__ struct
         {
@@ -61,7 +71,7 @@ public:
         // The device is compatible with SPI modes 0 and 3
 
         uint8_t whoami = Bus::read(RegMap::WHO_AM_I);
-        printf("[LSM] expected: %x actual: %x\n", whoami_value,whoami);
+        printf("[LSM] expected: %x actual: %x\n", whoami_value, whoami);
         if (whoami != whoami_value)
         {
             last_error = ERR_NOT_ME;
@@ -94,12 +104,10 @@ public:
         return true;
     }
 
-    bool selfTest() override
-    {
-        return true;
-    }
+    bool selfTest() override { return true; }
 
-    bool onSimpleUpdate() { 
+    bool onSimpleUpdate()
+    {
         lsmData_t raw_data;
         uint8_t buf[20];
 
@@ -140,29 +148,30 @@ public:
 
 private:
     constexpr static uint8_t whoami_value = 0x69;
-    constexpr static float accelFSMAP[4] = {0.061, 0.488, 0.122, 0.244};
-    constexpr static float gyroFSMAP[4]  = {8.75, 17.50, 35.0, 70.0};
+    constexpr static float accelFSMAP[4]  = {0.061, 0.488, 0.122, 0.244};
+    constexpr static float gyroFSMAP[4]   = {8.75, 17.50, 35.0, 70.0};
     uint8_t accelFS;
     uint16_t gyroFS;
 
     inline float normalizeAccel(int16_t val)
     {
-        return static_cast<float>(val) / 1000.0f * accelFSMAP[accelFS]
-            * EARTH_GRAVITY; // [m/ss]
+        return static_cast<float>(val) / 1000.0f * accelFSMAP[accelFS] *
+               EARTH_GRAVITY;  // [m/ss]
     }
 
     inline float normalizeGyro(int16_t val)
     {
-        return static_cast<float>(val) / 1000.0f * gyroFSMAP[gyroFS]
-            * DEGREES_TO_RADIANS; // [rad/s]
+        return static_cast<float>(val) / 1000.0f * gyroFSMAP[gyroFS] *
+               DEGREES_TO_RADIANS;  // [rad/s]
     }
 
     inline float normalizeTemp(int16_t val)
     {
-        return static_cast<float>(val) / 16.0f + 25.0f; // [deg C]
+        return static_cast<float>(val) / 16.0f + 25.0f;  // [deg C]
     }
 
-    enum RegMap {
+    enum RegMap
+    {
         WHO_AM_I = 0x0F,  // default value
 
         // Accelerometer and gyroscope control registers
@@ -170,11 +179,11 @@ private:
         CTRL2_G  = 0x11,
         CTRL3_C  = 0x12,
         CTRL4_C  = 0x13,
-        CTRL5_C  = 0x14, 
-        CTRL6_C  = 0x15, 
-        CTRL7_G  = 0x16, 
-        CTRL8_XL = 0x17, 
-        CTRL9_XL = 0x18, 
+        CTRL5_C  = 0x14,
+        CTRL6_C  = 0x15,
+        CTRL7_G  = 0x16,
+        CTRL8_XL = 0x17,
+        CTRL9_XL = 0x18,
         CTRL10_C = 0x19,
 
         // Temperature output registers
@@ -198,7 +207,7 @@ private:
         OUT_Z_H_XL = 0x2D,
 
         // STATUS register
-        STATUS_REG  = 0X1E
+        STATUS_REG = 0X1E
     };
 };
 
