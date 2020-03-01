@@ -34,8 +34,127 @@ using miosix::GpioPin;
 class LSM9DS1_M : public CompassSensor
 {
     public:
+        
+        enum class MagFSR
+        {
+            FS_4 = 0x00,
+            FS_8,
+            FS_12,
+            FS_16 
+        };
+
+        enum class ODR
+        {
+            ODR_0_625  =   0X00,
+            ODR_1_25,
+            ODR_2_5,
+            ODR_5,
+            ODR_10,
+            ODR_20,
+            ODR_40,
+            ODR_80
+        };
+
+        /**
+         * @brief Creates an instance of an LSM9DS1 accelerometer + gyroscope sensor
+         *
+         * @param    bus SPI bus the sensor is connected to
+         * @param    cs Chip Select GPIO
+         * @param    config (OPTIONAL) custom SPIBusConfig 
+         * @param    magRange magnetometer Full Scale Range (See datasheet)
+         * @param    odr Output Data Rate (See datasheet)
+         */
+
+        LSM9DS1_M(
+           SPIBusInterface& bus, 
+           GpioPin          cs,
+           MagFSR           magRange            = MagFSR::FS_8,
+           ODR              odr                 = ODR::ODR_0_625
+           ): spislave(bus, cs), magFSR(magRange), odr(odr){
+            //SPI config
+            spislave.config.br = SPIBaudRate::DIV_64; //baud = fclk/64
+        }
+
+        LSM9DS1_M(
+           SPIBusInterface& bus, 
+           GpioPin          cs,
+           SPIBusConfig     config,
+           MagFSR           magRange            = MagFSR::FS_8,
+           ODR              odr                 = ODR::ODR_0_625
+           ): spislave(bus, cs, config), magFSR(magRange), odr(odr){
+
+        }
+
+        bool init() override
+        {
+            //Set FSR
+            switch(magFSR)
+            {
+                case MagFSR::FS_4:
+                    magFSRval = 4.0f;
+                    break;
+                case MagFSR::FS_8:
+                    magFSRval = 8.0f;
+                    break;
+                case MagFSR::FS_12:
+                    magFSRval = 12.0f;
+                    break;
+                case MagFSR::FS_16:
+                    magFSRval = 16.0f;
+                    break;
+                default:
+                    magFSRval = 4.0f;
+                    break;
+            }
+
+            SPITransaction spi(spislave);
+
+            //Who Am I check:
+            uint8_t whoami = spi.read(regMapM::WHO_AM_I_M);
+            if(whoami != WHO_AM_I_M_VAL){
+                printf("LSM9DS1 WAMI: %d\n", whoami);
+                last_error = ERR_NOT_ME;
+                return false;
+            }
+
+            //setup
+
+        }
+
+        bool selfTest() override
+        {
+            return true; 
+        }
+
+        bool onSimpleUpdate() override
+        {
+            uint8_t magData[6];
+            //read output data X,Y,Z
+            {
+                SPITransaction spi(spislave);
+                spi.read(regMapM::OUT_X_L_M, magData, 6);
+            }
+
+            int16_t x = magData[0] | magData[1] << 8;
+            int16_t y = magData[2] | magData[3] << 8;
+            int16_t z = magData[4] | magData[5] << 8;
+
+            mLastCompass =
+                    Vec3(x * magFSRval / 65535,
+                         y * magFSRval / 65535,
+                         z * magFSRval / 65535);
+        } 
+        
     private:
-        static uint8_t WHO_AM_I_XLG_VAL = 0x3D;
+
+        SPISlave spislave;
+
+        MagFSR magFSR;
+        ODR odr;
+
+        float magFSRval;
+
+        static const uint8_t WHO_AM_I_M_VAL = 0x3D;
         enum regMapM
         {
             OFFSET_X_REG_L_M    =   0x05,

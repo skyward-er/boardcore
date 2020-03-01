@@ -85,6 +85,7 @@ class LSM9DS1_XLG : public GyroSensor, public AccelSensor
          *
          * @param    bus SPI bus the sensor is connected to
          * @param    cs Chip Select GPIO
+         * @param    config (OPTIONAL) custom SPIBusConfig 
          * @param    axelRange accelerometer Full Scale Range (See datasheet)
          * @param    gyroRange gyroscope Full Scale Range (See datasheet)
          * @param    odr Output Data Rate (See datasheet)
@@ -95,17 +96,39 @@ class LSM9DS1_XLG : public GyroSensor, public AccelSensor
 
         LSM9DS1_XLG(
            SPIBusInterface& bus, 
-           GpioPin cs,
-           AxelFSR axelRange            = AxelFSR::FS_2,
-           GyroFSR gyroRange            = GyroFSR::FS_245,
-           ODR odr                      = ODR::ODR_10,
-           bool fifo_enabled            = false,
-           unsigned int fifo_watermark  = 24
+           GpioPin          cs,
+           AxelFSR          axelRange           = AxelFSR::FS_2,
+           GyroFSR          gyroRange           = GyroFSR::FS_245,
+           ODR              odr                 = ODR::ODR_10,
+           bool             fifo_enabled        = false,
+           unsigned int     fifo_watermark      = 24
            ):fifo_enabled(fifo_enabled), fifo_watermark(fifo_watermark),
           spislave(bus, cs), axelFSR(axelRange), gyroFSR(gyroRange), odr(odr){
             //SPI config
             spislave.config.br = SPIBaudRate::DIV_64; //baud = fclk/64
-            switch(axelFSR){
+        }
+
+        LSM9DS1_XLG(
+           SPIBusInterface& bus, 
+           GpioPin          cs,
+           SPIBusConfig     config,
+           AxelFSR          axelRange           = AxelFSR::FS_2,
+           GyroFSR          gyroRange           = GyroFSR::FS_245,
+           ODR              odr                 = ODR::ODR_10,
+           bool             fifo_enabled        = false,
+           unsigned int     fifo_watermark      = 24
+           ):fifo_enabled(fifo_enabled), fifo_watermark(fifo_watermark),
+          spislave(bus, cs, config), axelFSR(axelRange), gyroFSR(gyroRange), odr(odr){
+            
+        }
+
+
+
+        bool init() override
+        {
+            //Set FSR
+            switch(axelFSR)
+            {
                 case AxelFSR::FS_2:
                     axelFSRval = 2.0f;
                     break;
@@ -122,7 +145,8 @@ class LSM9DS1_XLG : public GyroSensor, public AccelSensor
                     axelFSRval = 2.0f;
                     break;
             }
-            switch (gyroFSR){
+            switch (gyroFSR)
+            {
                 case GyroFSR::FS_245:
                     gyroFSRval = 245.0f;
                     break;
@@ -136,8 +160,7 @@ class LSM9DS1_XLG : public GyroSensor, public AccelSensor
                     gyroFSRval = 245.0f;
                     break;
             }
-        }
-        bool init(){
+
             SPITransaction spi(spislave);
 
             //Who Am I check:
@@ -177,23 +200,34 @@ class LSM9DS1_XLG : public GyroSensor, public AccelSensor
             return selfTest(); 
         }
 
-        bool selfTest(){
-            /*if(fifo_enabled){ //trash first n samples
-
-            }*/
-                
+        bool selfTest() override
+        {   
+            //@ startup, some samples have to be discarded (datasheet)
+            uint16_t toWait_ms = samplesToDiscard * 1000 / (int)odr;
+            miosix::Thread::sleep(toWait_ms); //if FIFO is disabled, just wait 
+            if(fifo_enabled)
+            {
+                //if FIFO is enabled, read first <samplesToDiscard> samples and discard them
+                SPITransaction spi(spislave);
+                for(int i=0; i < samplesToDiscard; i++)
+                {
+                    spi.read(regMapXLG::OUT_X_L_XL, 6);
+                    spi.read(regMapXLG::OUT_X_L_G,  6);
+                }
+            }
             return true;
         }
         
-        bool onSimpleUpdate(){
+        bool onSimpleUpdate() override //SE NELLO STATUS REGISTER IL DATO NON E' PRONTO?????
+        {
             
             if(!fifo_enabled){ //if FIFO disabled
                 uint8_t axelData[6], gyroData[6];
                 // Read output axel+gyro data X,Y,Z
                 {
                     SPITransaction spi(spislave);
-                    spi.read(OUT_X_L_XL, axelData, 6);
-                    spi.read(OUT_X_L_G,  gyroData, 6);
+                    spi.read(regMapXLG::OUT_X_L_XL, axelData, 6);
+                    spi.read(regMapXLG::OUT_X_L_G,  gyroData, 6);
                 }
 
                 int16_t x_xl = axelData[0] | axelData[1] << 8;
@@ -220,6 +254,7 @@ class LSM9DS1_XLG : public GyroSensor, public AccelSensor
             else{ //if FIFO enabled
 
             }
+            return true; 
         }
 
     private:
@@ -235,6 +270,7 @@ class LSM9DS1_XLG : public GyroSensor, public AccelSensor
         
         float axelFSRval;
         float gyroFSRval;
+        uint8_t samplesToDiscard = 8; //max possible val
 
         static const uint8_t WHO_AM_I_XLG_VAL = 0x68;
         enum regMapXLG
@@ -257,7 +293,7 @@ class LSM9DS1_XLG : public GyroSensor, public AccelSensor
             //INT_GEN_SRC_G       =   0x14,
             //OUT_TEMP_L          =   0x15,
             //OUT_TEMP_H          =   0x16,
-            STATUS_REG          =   0x17,  // per check stato
+            STATUS_REG_G        =   0x17,  // per check stato
             OUT_X_L_G           =   0x18,
             OUT_X_H_G           =   0x19,
             OUT_Y_L_G           =   0x1A,
@@ -272,7 +308,7 @@ class LSM9DS1_XLG : public GyroSensor, public AccelSensor
             CTRL_REG9           =   0x23,
             //CTRL_REG10          =   0x24, //per self-test ma n.u.
             //INT_GEN_SRC_XL      =   0x26,
-            //STATUS_REG          =   0x27,   // per check stato (uguale a 0x17)
+            STATUS_REG_XL       =   0x27,   // per check stato
             OUT_X_L_XL          =   0x28,
             OUT_X_H_XL          =   0x29,
             OUT_Y_L_XL          =   0x2A,
