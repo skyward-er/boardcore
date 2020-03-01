@@ -37,8 +37,9 @@ using std::cin;
 using std::cout;
 using std::string;
 
-static constexpr int MAX_PKT_SIZE = 255;
-static constexpr int PKT_NUM = 100;
+static constexpr int PKT_SIZE         = 108;
+static constexpr int WITH_LR_PKT_SIZE = PKT_SIZE + 45;
+static constexpr int PKTS_PER_SECOND  = 4;
 
 using namespace miosix;
 using namespace interfaces;
@@ -47,13 +48,12 @@ using namespace interfaces;
 
 // WARNING: If flashing on stm32f49 discovery board (with screen removed) use
 // SPI1 as the 2nd isnt working.
-typedef BusSPI<1, spi1::mosi, spi1::miso, spi1::sck> busSPI2;  // Creo la SPI2
+// typedef BusSPI<1, spi1::mosi, spi1::miso, spi1::sck> busSPI2;  // Creo la SPI2
 
-// typedef BusSPI<1, spi2::mosi, spi2::miso, spi2::sck> busSPI2;  // Creo la
-// SPI2
+typedef BusSPI<2, spi2::mosi, spi2::miso, spi2::sck> busSPI2; 
 
 // WARNING: Don't use xbee::cs on discovery board as it isn't working
-typedef Xbee::Xbee<busSPI2, sensors::lsm6ds3h::cs, xbee::attn, xbee::reset>
+typedef Xbee::Xbee<busSPI2, xbee::cs, xbee::attn, xbee::reset>
     Xbee_t;
 
 Xbee_t xbee_transceiver;
@@ -87,18 +87,17 @@ void enableXbeeInterrupt()
     NVIC_SetPriority(EXTI15_10_IRQn, 15);
 }
 
-uint8_t snd_buf[MAX_PKT_SIZE];
+uint8_t snd_buf[255];
 int snd_cntr = 0;
 
 bool sendPacket(uint8_t size)
 {
-    snd_buf[0] = '{';
-    snd_buf[size-1] = '}';
+    snd_buf[0]        = '{';
+    snd_buf[size - 1] = '}';
 
-
-    for(int i = 0; i < size - 2; i++)
+    for (int i = 0; i < size - 2; i++)
     {
-        snd_buf[i+1] = ((snd_cntr + i) % 75 ) + 48; //ASCII char from 0 to z
+        snd_buf[i + 1] = ((snd_cntr + i) % 75) + 48;  // ASCII char from 0 to z
     }
     ++snd_cntr;
 
@@ -109,55 +108,65 @@ bool sendPacket(uint8_t size)
     return true;
 }
 
-void resetXBee()
-{
-    xbee::reset::low();
-    delayUs(500);
-    xbee::reset::high();
-}
 
 int main()
 {
     enableXbeeInterrupt();
     busSPI2::init();
     xbee_transceiver.start();
-    resetXBee();
 
-    printf("XBee bitrate measurement\n");
-    printf("Send 100 packets of a certain size (from 16 to 256, step 16) and reporting send time.\n");
+    printf("XBee time-to-send-measurement\n");
+    printf(
+        "Send N packets per second with the specified size. See if it is "
+        "possible to send them in a timely manner. (must not take more than 1 "
+        "sec to send)\n");
     printf("Press enter to start\n");
     string s;
     std::getline(cin, s);
 
-    int pkt_size = 16;
-    while(pkt_size <= MAX_PKT_SIZE)
+    for (;;)
     {
-        printf("Testing %d byte packets:\n", pkt_size);
-        long long results[PKT_NUM];
+        long long cycle_start   = getTick();
+        long long cycle_silence = 0;
 
-        for(int i = 0; i < PKT_NUM; i++)
+        for (int i = 0; i < PKTS_PER_SECOND; i++)
         {
-            long long start = getTick();
-            if(!sendPacket(pkt_size))
+            printf("T: %d\n", (int)(getTick() - cycle_start));
+            if (i == PKTS_PER_SECOND - 1)
             {
-                printf("Error sending packet %d (size: %d)\n", i, pkt_size);
-                goto end;
+                // One every PKTS_PER_SECOND packets is bigger (for example if
+                // LR_TM is added to the packet)
+                if (!sendPacket(WITH_LR_PKT_SIZE))
+                {
+                    printf("Error sending packet(size: %d)\n", PKT_SIZE);
+                    goto end;
+                }
             }
-            results[i] = getTick() - start;
+            else
+            {
+                if (!sendPacket(PKT_SIZE))
+                {
+                    printf("Error sending packet(size: %d)\n", PKT_SIZE);
+                    goto end;
+                }
+            }
+
+            long long silence_start = getTick();
+            Thread::sleepUntil(cycle_start +
+                               (i + 1) * (1000 / PKTS_PER_SECOND));
+            cycle_silence += (getTick() - silence_start);
         }
-        printf("Results for %d byte packet size:\n", pkt_size);
-        for(int i = 0; i < PKT_NUM; i++)
-        {
-            printf("%d\n", (int)results[i]);
-        }
-        pkt_size += 16;
-        if(pkt_size == 256)
-            pkt_size = 255; // Max we can send is 255
+
+        long long cycle_time = getTick() - cycle_start;
+
+        printf("Cycle time: %d, Silence: %d, Duty: %.2f\n", (int)cycle_time,
+               (int)cycle_silence,
+               (1.0f - (cycle_silence * 1.0f / cycle_time)) * 100);
     }
 
 end:
     printf("End\n");
-    for(;;)
+    for (;;)
         Thread::sleep(1000);
     return 0;
 }

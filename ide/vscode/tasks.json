@@ -1,0 +1,111 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Show Workspace Folder",
+      "type": "shell",
+      "windows": {
+        "command": "echo ${workspaceFolder}"
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "CLEAN",
+      "type": "shell",
+      "windows": {
+        "command": "python sbs -c"
+      },
+      "linux": {
+        "command": "./sbs -c"
+      },
+      "problemMatcher": "$gcc"
+    },
+    {
+      "label": "BUILD all",
+      "type": "shell",
+      "windows": {
+        "command": "python sbs"
+      },
+      "linux": {
+        "command": "./sbs"
+      },
+      "problemMatcher": "$gcc"
+    },
+    {
+      "label": "BUILD current-entrypoint",
+      "type": "shell",
+      "windows": {
+        "command": "python sbs -v -n -b ${fileBasenameNoExtension}"
+      },
+      "linux": {
+        "command": "./sbs -v -b ${fileBasenameNoExtension}"
+      },
+      "problemMatcher": "$gcc"
+    },
+    {
+      "label": "RUN current-entrypoint",
+      "type": "shell",
+      "windows": {
+        "command": "ST-LINK_CLI.exe -P bin/${fileBasenameNoExtension}/${fileBasenameNoExtension}.bin 0x8000000 -V -Rst"
+      },
+      "linux": {
+        "command": "st-flash write bin/${fileBasenameNoExtension}/${fileBasenameNoExtension}.bin 0x8000000"
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "BUILD+RUN current-entrypoint",
+      "type": "shell",
+      "windows": {
+        "command": "ST-LINK_CLI.exe -P bin/${fileBasenameNoExtension}/${fileBasenameNoExtension}.bin 0x8000000 -V -Rst"
+      },
+      "linux": {
+        "command": "sleep 1;st-flash write bin/${fileBasenameNoExtension}/${fileBasenameNoExtension}.bin 0x8000000"
+      },
+      "problemMatcher": [],
+      "dependsOn": [
+        "BUILD current-entrypoint"
+      ],
+      "group": {
+        "kind": "build",
+        "isDefault": true
+      }
+    },
+    {
+      "label": "BUILD tests-catch",
+      "type": "shell",
+      "windows": {
+        "command": "python sbs -v -n -b tests-catch"
+      },
+      "linux": {
+        "command": "./sbs -v -b tests-catch"
+      },
+      "problemMatcher": "$gcc"
+    },
+    {
+      "label": "RUN tests-catch",
+      "type": "shell",
+      "windows": {
+        "command": "ST-LINK_CLI.exe -P bin/tests-catch/tests-catch.bin 0x8000000 -V"
+      },
+      "linux": {
+        "command": "st-flash write bin/tests-catch/tests-catch.bin 0x8000000"
+      },
+      "problemMatcher": []
+    },
+    {
+      "type": "shell",
+      "label": "arm-miosix-eabi-g++ build active file",
+      "command": "/opt/arm-miosix-eabi/bin/arm-miosix-eabi-g++",
+      "args": [
+        "-g",
+        "${file}",
+        "-o",
+        "${fileDirname}/${fileBasenameNoExtension}"
+      ],
+      "options": {
+        "cwd": "/opt/arm-miosix-eabi/bin"
+      }
+    }
+  ]
+}

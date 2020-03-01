@@ -53,14 +53,16 @@
 
 #define CATCH_CONFIG_RUNNER
 #define CATCH_CONFIG_NO_POSIX_SIGNALS
-
-#include <miosix.h>
-#include <utils/catch.hpp>
 #include <cstring>
 #include <string>
+#include <utils/testutils/catch.hpp>
 #include <vector>
 
+#ifndef COMPILE_FOR_X86
+#include <miosix.h>
 using miosix::Thread;
+#endif
+
 using std::string;
 using std::vector;
 
@@ -78,10 +80,13 @@ using std::vector;
  */
 vector<string> splitSpaces(string str)
 {
+    
     unsigned int p = 0, p2;
     bool end       = false;
     vector<string> out;
-
+    if(str.length() == 0)
+        return out;
+        
     do
     {
         p2 = str.find(" ", p);
@@ -147,9 +152,11 @@ int main()
     delete[] argv;
 
     printf("End.\n");
+#ifndef COMPILE_FOR_X86
     // Infinite loop to avoid board reset each time we return
     for (;;)
     {
         Thread::sleep(10000);
     }
+#endif
 }

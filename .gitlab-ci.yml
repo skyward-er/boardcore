@@ -20,9 +20,10 @@ build1:
   stage: build
   only:
     - master
+    - testing
   script:
     - echo "Do your build here"
-    - python sbs
+    - python3 sbs
    
 test1:
   stage: test

@@ -37,19 +37,27 @@ using std::cin;
 using std::cout;
 using std::string;
 
-using HwTimer                = HardwareTimer<uint32_t, 2>;
-static const unsigned int PKT_SIZE = 256;
+using HwTimer                      = HardwareTimer<uint32_t, 2>;
+static const unsigned int PKT_SIZE = 128;
 
 using namespace miosix;
 using namespace interfaces;
 
 // SPI1 binding al sensore
-typedef BusSPI<2, spi2::mosi, spi2::miso, spi2::sck> busSPI2;  // Creo la SPI2
-typedef Xbee::Xbee<busSPI2, xbee::cs, xbee::attn, xbee::reset> Xbee_t;
+
+// WARNING: If flashing on stm32f49 discovery board (with screen removed) use
+// SPI1 as the 2nd isnt working.
+// typedef BusSPI<1, spi1::mosi, spi1::miso, spi1::sck> busSPI2;  // Creo la SPI2
+
+typedef BusSPI<2, spi2::mosi, spi2::miso, spi2::sck> busSPI2;  // Creo la
+// SPI2
+
+// WARNING: Don't use xbee::cs on discovery board as it isn't working
+typedef Xbee::Xbee<busSPI2, xbee::cs, xbee::attn, xbee::reset>
+    Xbee_t;
 
 Xbee_t xbee_transceiver;
-
-void __attribute__((used)) EXTI10_IRQHandlerImpl() { Xbee::handleInterrupt(); }
+void __attribute__((used)) EXTI10_IRQHandlerImpl() { Xbee::handleATTNInterrupt(); }
 
 void enableXbeeInterrupt()
 {
@@ -78,7 +86,6 @@ void enableXbeeInterrupt()
     NVIC_EnableIRQ(EXTI15_10_IRQn);
     NVIC_SetPriority(EXTI15_10_IRQn, 15);
 }
-
 
 void send()
 {
@@ -151,12 +158,10 @@ void resetx()
     // xbee::reset::mode(Mode::INPUT);
 }
 
-
-
 int main()
 {
     enableXbeeInterrupt();
-    // resetx();
+    resetx();
 
     // xbee::sleep_req::mode(Mode::OUTPUT);
     // xbee::sleep_req::low();
@@ -168,10 +173,9 @@ int main()
 
     busSPI2::init();
 
-
     xbee_transceiver.start();
 
-    //Send & receive
+    // Send & receive
     Thread::create(receive, 2048);
     // for(;;)
     //     Thread::sleep(1000);

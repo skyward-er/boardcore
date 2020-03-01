@@ -35,6 +35,7 @@
 #include "Debug.h"
 #include "diagnostic/SkywardStack.h"
 #include "diagnostic/StackLogger.h"
+#include <errno.h>
 
 using namespace std;
 using namespace miosix;
@@ -161,7 +162,14 @@ void Logger::statsThreadLauncher(void* argv)
 LogResult Logger::logImpl(const char* name, const void* data, unsigned int size)
 {
     if (started == false)
+    {
+        ++s.statDroppedSamples;
+
+        // Signal that we are trying to write to a closed log
+        s.statWriteError = EIO;
+
         return LogResult::Ignored;
+    }
 
     Record* record = nullptr;
     {

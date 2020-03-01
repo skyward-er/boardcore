@@ -26,6 +26,7 @@
 #define MPU9250_H
 #include <drivers/BusTemplate.h>
 #include "../Sensor.h"
+#include <miosix.h>
 
 // TODO: fix normalizeTemp() (is /512.0f correct?)
 // TODO: Self-Test
@@ -112,17 +113,21 @@ public:
     }
 
     bool init() override
-    {
+    {       
+        miosix::Thread::sleep(100);
         uint8_t whoami = Bus::read(REG_WHO_AM_I);
-        // printf("MPU whoami: expected %x actual %x\n", who_am_i_value_mpu, whoami);
-        if (whoami != who_am_i_value_mpu)
+        TRACE("MPU whoami: expected %x actual %x\n", who_am_i_value_mpu, whoami);
+
+        if (whoami != who_am_i_value_mpu && whoami != 0x70)
         {
             last_error = ERR_NOT_ME;
             return false;
         }
 
-        if(initMagneto()==false)
-            printf("[AK8963] Failed to initialize\n");
+        if(!initMagneto())
+        {
+            TRACE("MPU9250 Magnetometer init failed\n");
+        }
 
         // Initialize MPU9250
         // clang-format off

@@ -45,7 +45,7 @@ using miosix::Thread;
 using miosix::Unlock;
 
 // Minimum guaranteed delay for an event posted with postDelayed(...) in ms
-static constexpr unsigned int EVENT_BROKER_MIN_DELAY = 100;
+static constexpr unsigned int EVENT_BROKER_MIN_DELAY = 50;
 
 /**
  * The EventBroker class implements the pub-sub paradigm to dispatch events to
