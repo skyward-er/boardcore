@@ -187,7 +187,7 @@ private:
     TIM_TypeDef* tim;
     unsigned prescaler_freq;
 
-    bool ticking;
+    bool ticking = false;
     uint16_t prescaler = 0;
     Type auto_reload =
         static_cast<Type>(-1);  // Max value of Type (Type is unsigned)
