@@ -261,29 +261,24 @@ TEST_CASE("SPIBus - Multi byte operations")
 
 TEST_CASE("SPITransaction - writes")
 {
-    MockSPIBus bus;
-    SPIBusConfig config1;
-    SPIBusConfig config2;
+    MockSPIBus bus{};
+    SPIBusConfig config1{};
 
     config1.cpha = 1;
     config1.br   = SPIBaudRate::DIV_32;
 
-    config2.lsb_first = true;
-    config2.cpol      = 1;
-
     bus.expected_config = config1;
 
-    SECTION("Correct config")
+    SECTION("Transaction")
     {
-        SPISlave slave{bus, GpioPin(GPIOA_BASE, 1), config1};
-
-        SPITransaction spi{slave};
+        SPITransaction spi(bus, GpioPin(GPIOA_BASE, 1), config1);
 
         REQUIRE(bus.out_buf.size() == 0);
 
         SECTION("cmd write")
         {
             spi.write(9);
+            REQUIRE_FALSE(bus.isSelected());
             REQUIRE(bus.out_buf.size() == 1);
             REQUIRE(bus.out_buf.back() == 9);
         }
@@ -291,6 +286,8 @@ TEST_CASE("SPITransaction - writes")
         SECTION("1 byte reg write")
         {
             spi.write(10, 77);
+            REQUIRE_FALSE(bus.isSelected());
+
             REQUIRE(bus.out_buf.size() == 2);
             REQUIRE(bus.out_buf[0] == 10);
             REQUIRE(bus.out_buf[1] == 77);
@@ -303,6 +300,8 @@ TEST_CASE("SPITransaction - writes")
             SECTION("0 size write")
             {
                 spi.write(10, buf, 0);
+                REQUIRE_FALSE(bus.isSelected());
+
                 REQUIRE(bus.out_buf.size() == 1);
                 REQUIRE(bus.out_buf[0] == 10);
             }
@@ -310,12 +309,16 @@ TEST_CASE("SPITransaction - writes")
             SECTION("2 writes")
             {
                 spi.write(10, buf, 4);
+                REQUIRE_FALSE(bus.isSelected());
+
                 REQUIRE(bus.out_buf.size() == 5);
 
                 REQUIRE(bus.out_buf[0] == 10);
                 REQUIRE(bufcmp(buf, bus.out_buf.data() + 1, 4));
 
                 spi.write(99, buf, 6);
+                REQUIRE_FALSE(bus.isSelected());
+
                 REQUIRE(bus.out_buf.size() == 12);
 
                 REQUIRE(bus.out_buf[5] == 99);
@@ -328,19 +331,147 @@ TEST_CASE("SPITransaction - writes")
             uint8_t buf[] = {1, 2, 3, 4, 5, 6};
 
             spi.write(buf, 0);
+            REQUIRE_FALSE(bus.isSelected());
+
             REQUIRE(bus.out_buf.size() == 0);
 
             spi.write(buf, 4);
-            REQUIRE(bus.out_buf.size() == 4);
+            REQUIRE_FALSE(bus.isSelected());
 
-            CAPTURE(bus.out_buf.data());
+            REQUIRE(bus.out_buf.size() == 4);
 
             REQUIRE(bufcmp(buf, bus.out_buf.data(), 4));
 
             spi.write(buf, 6);
+            REQUIRE_FALSE(bus.isSelected());
+
             REQUIRE(bus.out_buf.size() == 10);
 
             REQUIRE(bufcmp(buf, bus.out_buf.data() + 4, 6));
         }
+    }
+}
+
+TEST_CASE("SPITransaction - reads")
+{
+    MockSPIBus bus;
+
+    bus.in_buf = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10};
+
+    SPIBusConfig config1;
+
+    config1.cpha = 1;
+    config1.br   = SPIBaudRate::DIV_32;
+
+    bus.expected_config = config1;
+
+    SECTION("Transaction")
+    {
+        SPISlave slave(bus, GpioPin(GPIOA_BASE, 1), config1);
+        SPITransaction spi(slave);
+
+        REQUIRE(bus.out_buf.size() == 0);
+
+        SECTION("1 byte reg read")
+        {
+
+            REQUIRE(spi.read(0x05) == 1);
+            REQUIRE_FALSE(bus.isSelected());
+
+            REQUIRE(bus.out_buf.size() == 1);
+            REQUIRE(bus.out_buf.back() == 0x85);
+
+            REQUIRE(spi.read(0x05, true) == 2);
+            REQUIRE_FALSE(bus.isSelected());
+
+            REQUIRE(bus.out_buf.size() == 2);
+            REQUIRE(bus.out_buf.back() == 0x85);
+
+            REQUIRE(spi.read(0x05, false) == 3);
+            REQUIRE_FALSE(bus.isSelected());
+
+            REQUIRE(bus.out_buf.size() == 3);
+            REQUIRE(bus.out_buf.back() == 0x05);
+        }
+
+        SECTION("multi byte reg read")
+        {
+            uint8_t read[4] = {0, 0, 0, 0};
+            uint8_t zero[4] = {0, 0, 0, 0};
+
+            spi.read(0x05, read, 0);
+            REQUIRE_FALSE(bus.isSelected());
+            REQUIRE(bus.out_buf.size() == 1);
+            REQUIRE(bus.out_buf.back() == 0x85);
+            REQUIRE(bufcmp(read, zero, 4));
+
+            spi.read(0x05, read, 3);
+            REQUIRE_FALSE(bus.isSelected());
+            REQUIRE(bus.out_buf.size() == 2);
+            REQUIRE(bus.out_buf.back() == 0x85);
+            REQUIRE(bufcmp(read, bus.in_buf.data(), 3));
+
+            spi.read(0x05, read, 3, true);
+            REQUIRE_FALSE(bus.isSelected());
+            REQUIRE(bus.out_buf.size() == 3);
+            REQUIRE(bus.out_buf.back() == 0x85);
+            REQUIRE(bufcmp(read, bus.in_buf.data() + 3, 3));
+
+            spi.read(0x05, read, 4, false);
+            REQUIRE_FALSE(bus.isSelected());
+            REQUIRE(bus.out_buf.size() == 4);
+            REQUIRE(bus.out_buf.back() == 0x05);
+            REQUIRE(bufcmp(read, bus.in_buf.data() + 6, 4));
+        }
+
+        SECTION("multi byte raw read")
+        {
+            uint8_t read[4] = {0, 0, 0, 0};
+            uint8_t zero[4] = {0, 0, 0, 0};
+
+            spi.read(read, 0);
+            REQUIRE_FALSE(bus.isSelected());
+            REQUIRE(bus.out_buf.size() == 0);
+            REQUIRE(bufcmp(read, zero, 4));
+
+            spi.read(read, 3);
+            REQUIRE_FALSE(bus.isSelected());
+            REQUIRE(bus.out_buf.size() == 0);
+            REQUIRE(bufcmp(read, bus.in_buf.data(), 3));
+        }
+    }
+}
+
+TEST_CASE("SPITransaction - transfer")
+{
+    MockSPIBus bus;
+
+    bus.in_buf = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10};
+
+    SPIBusConfig config1;
+
+    config1.cpha = 1;
+    config1.br   = SPIBaudRate::DIV_32;
+
+    bus.expected_config = config1;
+
+    SECTION("Transaction")
+    {
+        SPISlave slave(bus, GpioPin(GPIOA_BASE, 1), config1);
+        SPITransaction spi(slave);
+
+        uint8_t buf[4]  = {4, 3, 2, 1};
+        uint8_t cmp[4] = {4, 3, 2, 1};
+
+        spi.transfer(buf, 0);
+        REQUIRE_FALSE(bus.isSelected());
+        REQUIRE(bus.out_buf.size() == 0);
+        REQUIRE(bufcmp(buf, cmp, 4));
+
+        spi.transfer(buf, 4);
+        REQUIRE_FALSE(bus.isSelected());
+        REQUIRE(bus.out_buf.size() == 4);
+        REQUIRE(bufcmp(buf, bus.in_buf.data(), 4));
+        REQUIRE(bufcmp(cmp, bus.out_buf.data(), 4));
     }
 }
