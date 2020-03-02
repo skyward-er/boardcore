@@ -133,7 +133,8 @@ class LSM9DS1_M : public CompassSensor
             //read output data X,Y,Z
             {
                 SPITransaction spi(spislave);
-                spi.read(regMapM::OUT_X_L_M, magData, 6);
+                //bit 1 of SPI transaction = 1 means "auto-increment address" (see DS).
+                spi.read(regMapM::OUT_X_L_M | 0x40, magData, 6);//so bit 6 of the address = 1
             }
 
             int16_t x = magData[0] | magData[1] << 8;
