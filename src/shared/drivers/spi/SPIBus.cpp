@@ -29,19 +29,19 @@ void SPIBus::configure(SPIBusConfig new_config)
 {
     // Reconfigure the bus only if config enabled. Do not reconfigure if already
     // in the correct configuration.
-    if (config.config_enabled &&
-        (!first_config_applied || new_config != config))
+    if (config_enabled && (!first_config_applied || new_config != config))
     {
         first_config_applied = true;
-        config = new_config;
+        config               = new_config;
 
         // Clean CR1
         spi->CR1 = 0;
 
         // Configure clock division (BR bits)
-        spi->CR1 |= (static_cast<uint16_t>(config.br) & 0x0003) << 3;
+        spi->CR1 |= (static_cast<uint16_t>(config.br) & 0x0007) << 3;
         // Configure CPOL & CPHA bits
-        spi->CR1 |= (uint16_t)config.cpol << 1 | (uint16_t)config.cpha;
+        spi->CR1 |= ((uint16_t)config.cpol & 0x0001) << 1 |
+                    ((uint16_t)config.cpha & 0x0001);
 
         // Configure LSBFIRST bit
         spi->CR1 |= (uint16_t)config.lsb_first << 7;

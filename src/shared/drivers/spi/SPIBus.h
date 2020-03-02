@@ -1,17 +1,17 @@
 /**
  * Copyright (c) 2020 Skyward Experimental Rocketry
  * Authors: Luca Erbetta (luca.erbetta@skywarder.eu)
- * 
+ *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
  * in the Software without restriction, including without limitation the rights
  * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
  * copies of the Software, and to permit persons to whom the Software is
  * furnished to do so, subject to the following conditions:
- * 
+ *
  * The above copyright notice and this permission notice shall be included in
  * all copies or substantial portions of the Software.
- * 
+ *
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
  * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.  IN NO EVENT SHALL THE
@@ -46,6 +46,19 @@ public:
 
     SPIBus(SPIBus&&) = delete;
     SPIBus& operator=(SPIBus&&) = delete;
+
+    /**
+     * @brief Wether to apply slave-specific bus configuration before each
+     * transaction (BusTemplate compatibility mode).
+     * Only set to false to use SPIDriver alongside BusTemplate.h.
+     * Default value is true.
+     *
+     * @param value True: The slave configuration is applied to the SPI
+     * peripheral before each transaction. False: No configuration is ever
+     * applied to the SPI peripheral. The SPI peripheral retains the
+     * configuration set by BusTemplate.h
+     */
+    void enableSlaveConfiguration(bool value) { config_enabled = value; }
 
     /**
      * @brief See SPIBusInterface::write()
@@ -118,15 +131,13 @@ private:
     SPI_TypeDef* spi;
 
     SPIBusConfig config;
+    bool config_enabled       = true;
     bool first_config_applied = false;
 };
 
 // Defined here and not in the .cpp to make them inline
 
-inline void SPIBus::write(uint8_t data)
-{
-    write(&data);
-}
+inline void SPIBus::write(uint8_t data) { write(&data); }
 
 inline void SPIBus::write(uint8_t* data, size_t size)
 {
@@ -141,7 +152,7 @@ inline uint8_t SPIBus::read()
     uint8_t data;
     read(&data);
 
-    return data; 
+    return data;
 }
 
 inline void SPIBus::read(uint8_t* data, size_t size)

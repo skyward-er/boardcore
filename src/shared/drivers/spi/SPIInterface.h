@@ -58,12 +58,6 @@ enum class SPIBaudRate
  */
 struct SPIBusConfig
 {
-    bool config_enabled = true; ///> Legacy compatibility mode: set to false if 
-                                ///> using SPIDriver alongside BusTemplate: 
-                                ///> The bus WILL NOT be reconfigured using this
-                                ///> struct, but the configuration applied by 
-                                ///> BusTemplate will be kept.
-
     SPIBaudRate br = SPIBaudRate::DIV_2;  ///> Peripheral clock division
     uint8_t cpol   = 0;                   ///> Clock polarity (0 - 1)
     uint8_t cpha   = 0;                   ///> Clock phase (0 - 1)
