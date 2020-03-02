@@ -42,7 +42,7 @@ uint8_t buf[BUF_LEN];
 
 inline bool COMPARE(uint8_t* buf, size_t len, const char* expected)
 {
-    int i = 0;
+    size_t i = 0;
     while (expected[i] != '\0' && i < len)
     {
         CAPTURE(i);
@@ -240,7 +240,7 @@ TEST_CASE("PacketQueue tests")
         COMPARE(pq.buffer.get(1), "abcd");
         COMPARE(pq.buffer.get(2), "abcdefg");
 
-        
+
         INFO("Popping first element");
         p = pq.pop();  // Should still return first packet
         REQUIRE(p.msgCount() == 3);
@@ -263,7 +263,7 @@ TEST_CASE("PacketQueue tests")
         REQUIRE(pq.countNotEmpty() == 3);
         REQUIRE_FALSE(pq.isEmpty());
         REQUIRE(pq.isFull());
-        
+
         COMPARE(pq.buffer.get(0), "abcd");
         COMPARE(pq.buffer.get(1), "abcdefg");
         COMPARE(pq.buffer.get(2), "0123456789");
@@ -298,7 +298,7 @@ TEST_CASE("PacketQueue tests")
         REQUIRE(pq.isEmpty());
         REQUIRE(pq.countNotEmpty() == 0);
         REQUIRE(pq.countReady() == 0);
-        
+
         INFO("Adding empty message")
         REQUIRE(pq.put(message_base, 0) == -1);
 
