@@ -71,8 +71,15 @@ struct SPIBusConfig
     // Custom comparison operator
     bool operator==(const SPIBusConfig& other) const
     {
-        // Valid if the struct does not contain pointers!
-        return memcmp(this, &other, sizeof(SPIBusConfig)) == 0;
+        // Compare member-by-member
+        // clang-format off
+        return  br == other.br 
+             && cpol == other.cpol 
+             && cpha == other.cpha 
+             && lsb_first == other.lsb_first 
+             && cs_setup_time_us == other.cs_setup_time_us 
+             && cs_setup_time_us == other.cs_hold_time_us;
+        // clang-format on
     }
 
     bool operator!=(const SPIBusConfig& other) const
@@ -135,7 +142,7 @@ public:
      * @return Data read from the bus
      */
     virtual uint8_t transfer(uint8_t byte) = 0;
-    
+
     /**
      * @brief Full duplex transmission on the SPI bus.
      * \p data is written on the bus and its contents are then replaced with the
