@@ -148,7 +148,10 @@ public:
 
     virtual bool isEmpty() const { return empty; }
 
-    virtual bool isFull() const { return count() == Size; }
+    virtual bool isFull() const
+    {
+        return CircularBuffer<T, Size>::count() == Size;
+    }
     /**
      * Returns the maximum number of elements that can be stored in the buffer
      * @return buffer size
