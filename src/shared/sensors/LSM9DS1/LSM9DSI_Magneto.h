@@ -24,12 +24,13 @@
 
 #pragma once
 #include <miosix.h>
+#include <vector>
 
 #include "drivers/spi/SPIDriver.h"
 #include "Sensor.h"
 
 using miosix::GpioPin;
-
+using std::vector;
 
 class LSM9DS1_M : public CompassSensor
 {
@@ -118,7 +119,7 @@ class LSM9DS1_M : public CompassSensor
             }
 
             //setup
-
+            
         }
 
         bool selfTest() override
@@ -143,7 +144,22 @@ class LSM9DS1_M : public CompassSensor
                     Vec3(x * magFSRval / 65535,
                          y * magFSRval / 65535,
                          z * magFSRval / 65535);
-        } 
+        }
+
+        void setOffset(vector<uint16_t>& offVect) //X,Y,Z
+        {
+            if(offVect.size < 3) return;
+            uint8_t toStore[6];
+            for(int i=6; i > 0 ; i=i-2){
+                toStore[i-1] = offVect.back() & 0x00FF; //LSB
+                toStore[i-2] = offVect.back() >> 8; //MSB
+    	        offVect.pop_back(); 
+            }
+
+            SPITransaction spi(spislave);
+            //bit 1 of SPI transaction = 1 means "auto-increment address".
+            spi.write(OFFSET_X_REG_L_M | 0x40, toStore, 6); //so bit 6 of the address = 1
+        }
         
     private:
 
