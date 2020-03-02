@@ -241,7 +241,7 @@ inline void FakeSPIBus::write(uint8_t* byte)
         ;
 
     // Clear the RX buffer by accessing the DR register
-    spi->DR;
+    (void)spi->DR;
 }
 
 inline void FakeSPIBus::transfer(uint8_t* byte)
