@@ -31,8 +31,10 @@
 using std::vector;
 
 /**
- * @brief Mock SPI Bus to be used for testing: data are read and written to two
- * buffers on the memory can then be checked.
+ * @brief Mock SPI Bus to be used for testing communication to a single slave:
+ * data are read and written to two buffers on the memory that can then be
+ * checked. Operations on the mock bus will not be successfull if the
+ * configuration is not correct or the "slave" is not selected.
  *
  * Usage:
  * 1. Set the expected config (data wont be written / read if the bus current
@@ -48,7 +50,7 @@ using std::vector;
 class MockSPIBus : public SPIBusInterface
 {
 public:
-    MockSPIBus(){}
+    MockSPIBus() {}
     ~MockSPIBus() {}
 
     // Delete copy/move contructors/operators
@@ -90,11 +92,15 @@ public:
 
     /**
      * @brief See SPIBusInterface::select()
+     *
+     * @param cs Not used, pass any GpioPin
      */
     void select(GpioPin& cs) override;
 
     /**
      * @brief See SPIBusInterface::deselect()
+     *
+     * @param cs Not used, pass any GpioPin
      */
     void deselect(GpioPin& cs) override;
 
@@ -102,6 +108,11 @@ public:
      * @brief See SPIBusInterface::configure()
      */
     void configure(SPIBusConfig config) override;
+
+    /**
+     * @brief Wether the chip select is asserted or not
+     */
+    bool isSelected() { return selected; }
 
     vector<uint8_t> out_buf;  // Data written on the bus are stored here
     vector<uint8_t> in_buf;   // Store here data to be read from the bus
@@ -213,8 +224,16 @@ void MockSPIBus::transfer(uint8_t* data, size_t size)
     }
 }
 
-void MockSPIBus::select(GpioPin& cs) { selected = true; }
+void MockSPIBus::select(GpioPin& cs)
+{
+    (void)cs;
+    selected = true;
+}
 
-void MockSPIBus::deselect(GpioPin& cs) { selected = false; }
+void MockSPIBus::deselect(GpioPin& cs)
+{
+    (void)cs;
+    selected = false;
+}
 
 void MockSPIBus::configure(SPIBusConfig config) { current_config = config; }
