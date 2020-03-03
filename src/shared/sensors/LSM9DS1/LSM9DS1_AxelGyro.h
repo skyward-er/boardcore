@@ -23,25 +23,6 @@
  */
 
 
-//il sensore ha due CS e due MISO (rispettivamente per AXEL+GYRO e MAGNETOMETRO)
-//verrà trattato come due sensori separati
-
-/*
-TODO:
-- lettura con interrupt: ci sarà un timer hardware che gira. Quando arriva
-  interrupt di data ready, salvo il valore del timer (bisogna capire quando questo va in overflow, cosa faccio?)
-- formato dati: std::vector con X,Y,Z,timestamp per ogni grandezza fisica
-
-SELFTEST: cosa sono i registri di self test??
-
-POI:
-- FIFO: ho due opzioni
-    1-faccio una FIFO sw in parallelo a quella HW con solo i timestamp e ogni x timestamp mi prelevo tutta la FIFO
-    2-metto nella FIFO hw i timestamp (la LSM6DS3 lo faceva)
-*/
-
-
-
 #pragma once
 #include <miosix.h>
 
@@ -54,30 +35,30 @@ class LSM9DS1_XLG : public GyroSensor, public AccelSensor
 {
     public:
 
-        enum class AxelFSR
+        enum AxelFSR
         {
-            FS_2 = 0x00,
-            FS_16,
-            FS_4,
-            FS_8 
+            FS_2    = 0x00,
+            FS_16   = 0x01,
+            FS_4    = 0x02,
+            FS_8    = 0x03
         };
 
-        enum class GyroFSR
+        enum GyroFSR
         {
-            FS_245 = 0x00,
-            FS_500,
-            FS_2000 = 0x03
+            FS_245  = 0x00,
+            FS_500  = 0x01,
+            FS_2000 = 0x03      //1 -> 3 jump is ok 
         };
 
-        enum class ODR
+        enum ODR
         {
-            PWR_DW  =   0X00,
-            ODR_10,
-            ODR_50,
-            ODR_119,
-            ODR_238,
-            ODR_476,
-            ODR_952,
+            PWR_DW      =   0X00,
+            ODR_10      =   0X01,
+            ODR_50      =   0X02,
+            ODR_119     =   0X03,
+            ODR_238     =   0X04,
+            ODR_476     =   0X05,
+            ODR_952     =   0X06
         };
 
          /**
@@ -166,7 +147,7 @@ class LSM9DS1_XLG : public GyroSensor, public AccelSensor
             //Who Am I check:
             uint8_t whoami = spi.read(regMapXLG::WHO_AM_I);
             if(whoami != WHO_AM_I_XLG_VAL){
-                printf("LSM9DS1 WAMI: %d\n", whoami);
+                TRACE("LSM9DS1 WAMI: %d\n", whoami);
                 last_error = ERR_NOT_ME;
                 return false;
             }
@@ -197,7 +178,7 @@ class LSM9DS1_XLG : public GyroSensor, public AccelSensor
             //ORIENT_CFG_G //angular rate sign and orientation Setup <--- BOARD DEPENDENT
             //CTRL_REG4 //gyro enable -> enabled by default
 
-            return selfTest(); 
+            return true;  
         }
 
         bool selfTest() override
@@ -238,18 +219,18 @@ class LSM9DS1_XLG : public GyroSensor, public AccelSensor
                 int16_t y_gy = gyroData[2] | gyroData[3] << 8;
                 int16_t z_gy = gyroData[4] | gyroData[5] << 8;
 
-                // printf("LSM9DS1 axel: %02X,%02X,%02X\n", x_xl, y_xl, z_xl);
-                // printf("LSM9DS1 gyro: %02X,%02X,%02X\n", x_gy, y_gy, z_gy);
+                // TRACE("LSM9DS1 axel: %02X,%02X,%02X\n", x_xl, y_xl, z_xl);
+                // TRACE("LSM9DS1 gyro: %02X,%02X,%02X\n", x_gy, y_gy, z_gy);
                 
                 mLastAccel = 
-                    Vec3(x_xl * axelFSRval / 65535,
-                         y_xl * axelFSRval / 65535,
-                         z_xl * axelFSRval / 65535);
+                    Vec3(x_xl * axelFSRval / 0xFFFF,
+                         y_xl * axelFSRval / 0xFFFF,
+                         z_xl * axelFSRval / 0xFFFF);
                 
                 mLastGyro =
-                    Vec3(x_gy * gyroFSRval / 65535,
-                         y_gy * gyroFSRval / 65535,
-                         z_gy * gyroFSRval / 65535);
+                    Vec3(x_gy * gyroFSRval / 0xFFFF,
+                         y_gy * gyroFSRval / 0xFFFF,
+                         z_gy * gyroFSRval / 0xFFFF);
             }
             else{ //if FIFO enabled
 
@@ -270,7 +251,7 @@ class LSM9DS1_XLG : public GyroSensor, public AccelSensor
         
         float axelFSRval;
         float gyroFSRval;
-        uint8_t samplesToDiscard = 8; //max possible val
+        static const uint8_t samplesToDiscard = 8; //max possible val
 
         static const uint8_t WHO_AM_I_XLG_VAL = 0x68;
         enum regMapXLG
@@ -327,3 +308,14 @@ class LSM9DS1_XLG : public GyroSensor, public AccelSensor
             //INT_GEN_DUR_G       =   0x37
         };
 };
+
+
+/*
+FIFO EN - REG9
+NO SELF TEST IN INIT 
+RI-LEGGO REGISTRI 
+METTO PARTE SELFTEST NELL'INIT
+
+
+
+*/

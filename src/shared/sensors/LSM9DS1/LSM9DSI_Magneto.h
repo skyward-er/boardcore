@@ -36,24 +36,24 @@ class LSM9DS1_M : public CompassSensor
 {
     public:
         
-        enum class MagFSR
+        enum MagFSR
         {
-            FS_4 = 0x00,
-            FS_8,
-            FS_12,
-            FS_16 
+            FS_4    = 0x00,
+            FS_8    = 0x01,
+            FS_12   = 0x02,
+            FS_16   = 0x03
         };
 
-        enum class ODR
+        enum ODR
         {
-            ODR_0_625  =   0X00,
-            ODR_1_25,
-            ODR_2_5,
-            ODR_5,
-            ODR_10,
-            ODR_20,
-            ODR_40,
-            ODR_80
+            ODR_0_625   = 0X00,
+            ODR_1_25    = 0x01,
+            ODR_2_5     = 0x02,
+            ODR_5       = 0x03,
+            ODR_10      = 0x04,
+            ODR_20      = 0x05,
+            ODR_40      = 0x06,
+            ODR_80      = 0x07
         };
 
         /**
@@ -113,13 +113,14 @@ class LSM9DS1_M : public CompassSensor
             //Who Am I check:
             uint8_t whoami = spi.read(regMapM::WHO_AM_I_M);
             if(whoami != WHO_AM_I_M_VAL){
-                printf("LSM9DS1 WAMI: %d\n", whoami);
+                TRACE("LSM9DS1 WAMI: %d\n", whoami);
                 last_error = ERR_NOT_ME;
                 return false;
             }
 
             //setup
             
+            return true;
         }
 
         bool selfTest() override
@@ -141,10 +142,12 @@ class LSM9DS1_M : public CompassSensor
             int16_t y = magData[2] | magData[3] << 8;
             int16_t z = magData[4] | magData[5] << 8;
 
+            // TRACE("LSM9DS1 mageto: %02X,%02X,%02X\n", x, y, z);
+
             mLastCompass =
-                    Vec3(x * magFSRval / 65535,
-                         y * magFSRval / 65535,
-                         z * magFSRval / 65535);
+                    Vec3(x * magFSRval / 0xFFFF,
+                         y * magFSRval / 0xFFFF,
+                         z * magFSRval / 0xFFFF);
         }
 
         void setOffset(vector<uint16_t>& offVect) //X,Y,Z
