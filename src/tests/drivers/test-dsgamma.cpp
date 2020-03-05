@@ -16,7 +16,6 @@ using miosix::Gpio;
 
 /* DISCOVERY F429I*/
 typedef Gpio<GPIOA_BASE, 0> button;
-typedef HardwareTimer<uint32_t, 4> Clock;
 // RTT calculation
 // long long sendTime = 0;
 enum State

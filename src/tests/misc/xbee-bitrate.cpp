@@ -31,7 +31,7 @@
 #include "drivers/Xbee/Xbee.h"
 #include "math/Stats.h"
 
-#include <drivers/BusTemplate.h>
+#include <drivers/spi/SPIDriver.h>
 
 using std::cin;
 using std::cout;
@@ -43,20 +43,24 @@ static constexpr int PKT_NUM = 100;
 using namespace miosix;
 using namespace interfaces;
 
-// SPI1 binding al sensore
-
 // WARNING: If flashing on stm32f49 discovery board (with screen removed) use
 // SPI1 as the 2nd isnt working.
-typedef BusSPI<1, spi1::mosi, spi1::miso, spi1::sck> busSPI2;  // Creo la SPI2
 
-// typedef BusSPI<1, spi2::mosi, spi2::miso, spi2::sck> busSPI2;  // Creo la
-// SPI2
+// Discovery
+SPIBus bus{SPI1};
+GpioPin cs = sensors::lsm6ds3h::cs::getPin();
+GpioPin attn = xbee::attn::getPin();
+GpioPin rst = xbee::reset::getPin();
 
-// WARNING: Don't use xbee::cs on discovery board as it isn't working
-typedef Xbee::Xbee<busSPI2, sensors::lsm6ds3h::cs, xbee::attn, xbee::reset>
-    Xbee_t;
+// Death stack
+// SPIBus bus{SPI2};
+// GpioPin cs = xbee::cs::getPin();
+// GpioPin attn = xbee::attn::getPin();
+// GpioPin rst = xbee::reset::getPin();
 
-Xbee_t xbee_transceiver;
+
+Xbee::Xbee* xbee_transceiver;
+
 void __attribute__((used)) EXTI10_IRQHandlerImpl() { Xbee::handleATTNInterrupt(); }
 
 void enableXbeeInterrupt()
@@ -102,7 +106,7 @@ bool sendPacket(uint8_t size)
     }
     ++snd_cntr;
 
-    if (!xbee_transceiver.send(snd_buf, size))
+    if (!xbee_transceiver->send(snd_buf, size))
     {
         return false;
     }
@@ -119,8 +123,9 @@ void resetXBee()
 int main()
 {
     enableXbeeInterrupt();
-    busSPI2::init();
-    xbee_transceiver.start();
+    xbee_transceiver = new Xbee::Xbee(bus, cs, attn, rst);
+
+    xbee_transceiver->start();
     resetXBee();
 
     printf("XBee bitrate measurement\n");
