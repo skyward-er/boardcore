@@ -95,7 +95,7 @@ bool sendPacket(uint8_t size)
     snd_buf[0] = '{';
     snd_buf[size-1] = '}';
 
-    
+
     for(int i = 0; i < size - 2; i++)
     {
         snd_buf[i+1] = ((snd_cntr + i) % 75 ) + 48; //ASCII char from 0 to z
@@ -145,7 +145,7 @@ int main()
             }
             results[i] = getTick() - start;
         }
-        printf("Results for %d byte packet size:\n");
+        printf("Results for %d byte packet size:\n", pkt_size);
         for(int i = 0; i < PKT_NUM; i++)
         {
             printf("%d\n", (int)results[i]);

@@ -113,19 +113,20 @@ public:
     }
 
     bool init() override
-    {
+    {       
+        miosix::Thread::sleep(100);
         uint8_t whoami = Bus::read(REG_WHO_AM_I);
-        // printf("MPU whoami: expected %x actual %x\n", who_am_i_value_mpu, whoami);
-        if (whoami != who_am_i_value_mpu)
+        TRACE("MPU whoami: expected %x actual %x\n", who_am_i_value_mpu, whoami);
+
+        if (whoami != who_am_i_value_mpu && whoami != 0x70)
         {
             last_error = ERR_NOT_ME;
             return false;
         }
-        int i = 0;
-        while(!initMagneto() && i < 10)
+
+        if(!initMagneto())
         {
-            ++i;
-            miosix::Thread::sleep(5);
+            TRACE("MPU9250 Magnetometer init failed\n");
         }
 
         // Initialize MPU9250
