@@ -31,7 +31,7 @@
 
 using miosix::GpioPin;
 
-class LSM9DS1_XLG : public GyroSensor, public AccelSensor
+class LSM9DS1_XLG : public GyroSensor, public AccelSensor, public TemperatureSensor
 {
     public:
 
@@ -153,36 +153,45 @@ class LSM9DS1_XLG : public GyroSensor, public AccelSensor
             }
 
             //common setup
-            spi.write(regMapXLG::CTRL_REG8, 0x04); //addr auto-increment while reading/writing
-            spi.write(regMapXLG::CTRL_REG9, 0x0C); //DRDY_mask_bit ON(????), I2C OFF, FIFO OFF
+            spi.write(regMapXLG::CTRL_REG8, CTRL_REG8_VAL); //addr auto-increment while reading/writing
 
-            //FIFO setup
+            //FIFO setup: FIFO enabled in continous mode, decimation OFF, temperature on FIFO ON.
             if(fifo_enabled)
             {
-                //spi.write(regMapXLG::CTRL_REG5_XL, 0x38); //FIFO decimation -> no decimation, axel out enable -> ON. Di default è OK
-                spi.write(regMapXLG::FIFO_CTRL, 0xC0 | fifo_watermark); //FIFO continous mode + fifo watermark threshold setup
-                //interrupt setup
-                spi.write(regMapXLG::INT1_CTRL, 0x08); //interrupt on FIFO treshold
-                //CTRL_REG4 //latched interrupt?
+                spi.write(regMapXLG::FIFO_CTRL, FIFO_CTRL_VAL | fifo_watermark); //FIFO continous mode + fifo watermark threshold setup
+                spi.write(regMapXLG::INT1_CTRL, INT1_CTRL_VAL); //interrupt on FIFO treshold
+                spi.write(regMapXLG::CTRL_REG9, CTRL_REG9_VAL | 0x02); //DRDY_mask_bit ON, I2C OFF, FIFO ON
             }
+            else
+                spi.write(regMapXLG::CTRL_REG9, CTRL_REG9_VAL); //DRDY_mask_bit ON, I2C OFF, FIFO OFF
             
-            //Axel Setup
-            spi.write(regMapXLG::CTRL_REG6_XL, (int)odr << 5 | (int)axelFSR << 3); //ODR, FSR, auto BW (max) function of ODR
-            //CTRL_REG7_XL //High resolution mode enable / LPF2&HPF enable -> default: disabled
-            //CTRL_REG5_XL //axel enable -> default:enable
             
-            //Gyro Setup
-            spi.write(regMapXLG::CTRL_REG1_G, (int)odr<<5 | (int)gyroFSR<<3); //ORD,FSR
-            //CTRL_REG2_G //LPF2, HPF bypassed by default
-            //CTRL_REG3_G //HPF enable, HPF cutoff 
-            //ORIENT_CFG_G //angular rate sign and orientation Setup <--- BOARD DEPENDENT
-            //CTRL_REG4 //gyro enable -> enabled by default
+            
+            //Axel Setup: ODR, FSR defined by constructor, auto anti-aliasing BW (max), LPF2/HPF bypassed and disabled, axel output enabled by default @ startup
+            uint8_t CTRL_REG6_XL_VAL = (int)odr << 5 | (int)axelFSR << 3;
+            spi.write(regMapXLG::CTRL_REG6_XL, CTRL_REG6_XL_VAL); //ODR, FSR, auto BW (max) function of ODR
+            
 
-            return true;  
-        }
 
-        bool selfTest() override
-        {   
+            //Gyro Setup : ODR, FSR defined by constructor, LPF2/HPF bypassed and disabled, gyro output enabled by default @ startup
+            uint8_t CTRL_REG1_G_VAL = (int)odr<<5 | (int)gyroFSR<<3;
+            spi.write(regMapXLG::CTRL_REG1_G, CTRL_REG1_G_VAL); //ODR,FSR
+            //spi.write(regMapXLG::ORIENT_CFG_G, ORIENT_CFG_VAL); //angular rate sign and orientation Setup <--- BOARD DEPENDENT           
+            
+            //Check all the registers have been written correctly
+            if(spi.read(regMapXLG::CTRL_REG8)!=CTRL_REG8_VAL)                          return false;
+            if(fifo_enabled)
+            {
+                if(spi.read(regMapXLG::FIFO_CTRL) != FIFO_CTRL_VAL | fifo_watermark)   return false;
+                if(spi.read(regMapXLG::INT1_CTRL) != INT1_CTRL_VAL)                    return false;
+                if(spi.read(regMapXLG::CTRL_REG9) != (CTRL_REG9_VAL| 0x02))            return false;
+            }
+            else
+                if(spi.read(regMapXLG::CTRL_REG9) != CTRL_REG9_VAL)                    return false;
+            if(spi.read(regMapXLG::CTRL_REG6_XL) != CTRL_REG6_XL_VAL)                  return false;
+            if(spi.read(regMapXLG::CTRL_REG1_G) != CTRL_REG1_G_VAL)                    return false;
+            
+            
             //@ startup, some samples have to be discarded (datasheet)
             uint16_t toWait_ms = samplesToDiscard * 1000 / (int)odr;
             miosix::Thread::sleep(toWait_ms); //if FIFO is disabled, just wait 
@@ -196,19 +205,26 @@ class LSM9DS1_XLG : public GyroSensor, public AccelSensor
                     spi.read(regMapXLG::OUT_X_L_G,  6);
                 }
             }
+
+            return true;  
+        }
+
+        bool selfTest() override
+        {   
             return true;
         }
         
-        bool onSimpleUpdate() override //SE NELLO STATUS REGISTER IL DATO NON E' PRONTO?????
+        bool onSimpleUpdate() override 
         {
             
             if(!fifo_enabled){ //if FIFO disabled
-                uint8_t axelData[6], gyroData[6];
+                uint8_t axelData[6], gyroData[6], tempData[2];
                 // Read output axel+gyro data X,Y,Z
                 {
                     SPITransaction spi(spislave);
                     spi.read(regMapXLG::OUT_X_L_XL, axelData, 6);
                     spi.read(regMapXLG::OUT_X_L_G,  gyroData, 6);
+                    spi.read(regMapXLG::OUT_TEMP_L, tempData, 2); 
                 }
 
                 int16_t x_xl = axelData[0] | axelData[1] << 8;
@@ -219,8 +235,11 @@ class LSM9DS1_XLG : public GyroSensor, public AccelSensor
                 int16_t y_gy = gyroData[2] | gyroData[3] << 8;
                 int16_t z_gy = gyroData[4] | gyroData[5] << 8;
 
+                int16_t temp = tempData[0] | tempData[1] << 8;
+
                 // TRACE("LSM9DS1 axel: %02X,%02X,%02X\n", x_xl, y_xl, z_xl);
                 // TRACE("LSM9DS1 gyro: %02X,%02X,%02X\n", x_gy, y_gy, z_gy);
+                // TRACE("LSM9DS1 temp: %02X\n, temp");
                 
                 mLastAccel = 
                     Vec3(x_xl * axelFSRval / 0xFFFF,
@@ -231,16 +250,30 @@ class LSM9DS1_XLG : public GyroSensor, public AccelSensor
                     Vec3(x_gy * gyroFSRval / 0xFFFF,
                          y_gy * gyroFSRval / 0xFFFF,
                          z_gy * gyroFSRval / 0xFFFF);
+
+                mLastTemp =  tempZero + temp / tempSensistivity; //25°C + TEMP/S devo castare a float "temp"?
             }
-            else{ //if FIFO enabled
+            else{ //if FIFO enabled: do not store temperature, it can be read using "temperatureUpdate()" function at low sampling frequency
 
             }
             return true; 
         }
 
+        bool temperatureUpdate()
+        {
+            uint8_t tempData[2];
+            {
+                SPITransaction spi(spislave);
+                spi.read(regMapXLG::OUT_TEMP_L, tempData, 2);
+            }
+
+            int16_t temp = tempData[0] | tempData[1] << 8;
+            mLastTemp = tempZero + temp / tempSensistivity; //25°C + TEMP/S devo castare a float "temp"?
+        }
+
     private:
 
-        bool fifo_enabled = false;
+        bool fifo_enabled;
         uint8_t fifo_watermark;
 
         SPISlave spislave; 
@@ -251,29 +284,30 @@ class LSM9DS1_XLG : public GyroSensor, public AccelSensor
         
         float axelFSRval;
         float gyroFSRval;
+        float tempZero = 25.0f;
+        float tempSensistivity = 16.0f;
         static const uint8_t samplesToDiscard = 8; //max possible val
 
-        static const uint8_t WHO_AM_I_XLG_VAL = 0x68;
         enum regMapXLG
         {
-            //ACT_THS             =   0x04,
-            //ACT_DUR             =   0x05,    
-            //INT_GEN_CFG_XL      =   0x06,
-            //INT_GEN_THS_X_XL    =   0x07,
-            //INT_GEN_THS_Y_XL    =   0x08,
-            //INT_GEN_THS_Z_XL    =   0x09,
-            //INT_GEN_DUR_XL      =   0x0A,
-            //REFERENCE_G         =   0x0B,
+            ACT_THS             =   0x04,
+            ACT_DUR             =   0x05,    
+            INT_GEN_CFG_XL      =   0x06,
+            INT_GEN_THS_X_XL    =   0x07,
+            INT_GEN_THS_Y_XL    =   0x08,
+            INT_GEN_THS_Z_XL    =   0x09,
+            INT_GEN_DUR_XL      =   0x0A,
+            REFERENCE_G         =   0x0B,
             INT1_CTRL           =   0x0C,
-            //INT2_CTRL           =   0x0D,
+            INT2_CTRL           =   0x0D,
             WHO_AM_I            =   0x0F,
             CTRL_REG1_G         =   0x10,
             CTRL_REG2_G         =   0x11,
             CTRL_REG3_G         =   0x12,
             ORIENT_CFG_G        =   0x13,
-            //INT_GEN_SRC_G       =   0x14,
-            //OUT_TEMP_L          =   0x15,
-            //OUT_TEMP_H          =   0x16,
+            INT_GEN_SRC_G       =   0x14,
+            OUT_TEMP_L          =   0x15,
+            OUT_TEMP_H          =   0x16,
             STATUS_REG_G        =   0x17,  // per check stato
             OUT_X_L_G           =   0x18,
             OUT_X_H_G           =   0x19,
@@ -287,8 +321,8 @@ class LSM9DS1_XLG : public GyroSensor, public AccelSensor
             CTRL_REG7_XL        =   0x21,
             CTRL_REG8           =   0x22,
             CTRL_REG9           =   0x23,
-            //CTRL_REG10          =   0x24, //per self-test ma n.u.
-            //INT_GEN_SRC_XL      =   0x26,
+            CTRL_REG10          =   0x24, //per self-test ma n.u.
+            INT_GEN_SRC_XL      =   0x26,
             STATUS_REG_XL       =   0x27,   // per check stato
             OUT_X_L_XL          =   0x28,
             OUT_X_H_XL          =   0x29,
@@ -297,25 +331,23 @@ class LSM9DS1_XLG : public GyroSensor, public AccelSensor
             OUT_Z_L_XL          =   0x2C,
             OUT_Z_H_XL          =   0x2D,
             FIFO_CTRL           =   0x2E,
-            FIFO_SRC            =   0x2F //FIFO status register
-            //INT_GEN_CFG_G       =   0x30,
-            //INT_GEN_THS_XH_G    =   0x31,
-            //INT_GEN_THS_XL_G    =   0x32,
-            //INT_GEN_THS_YH_G    =   0x33,
-            //INT_GEN_THS_YL_G    =   0x34,
-            //INT_GEN_THS_ZH_G    =   0x35,
-            //INT_GEN_THS_ZL_G    =   0x36,
-            //INT_GEN_DUR_G       =   0x37
+            FIFO_SRC            =   0x2F, //FIFO status register
+            INT_GEN_CFG_G       =   0x30,
+            INT_GEN_THS_XH_G    =   0x31,
+            INT_GEN_THS_XL_G    =   0x32,
+            INT_GEN_THS_YH_G    =   0x33,
+            INT_GEN_THS_YL_G    =   0x34,
+            INT_GEN_THS_ZH_G    =   0x35,
+            INT_GEN_THS_ZL_G    =   0x36,
+            INT_GEN_DUR_G       =   0x37
         };
+
+        static const uint8_t INT1_CTRL_VAL      = 0x08;
+        static const uint8_t WHO_AM_I_XLG_VAL   = 0x68;
+        static const uint8_t CTRL_REG8_VAL      = 0x04;
+        static const uint8_t CTRL_REG9_VAL      = 0x04;
+        static const uint8_t FIFO_CTRL_VAL      = 0xC0;
+
+
 };
 
-
-/*
-FIFO EN - REG9
-NO SELF TEST IN INIT 
-RI-LEGGO REGISTRI 
-METTO PARTE SELFTEST NELL'INIT
-
-
-
-*/
