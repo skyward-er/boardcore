@@ -27,7 +27,7 @@
 #include <miosix.h>
 
 #include "drivers/spi/SPIDriver.h"
-#include "Sensor.h"
+#include "../Sensor.h"
 
 using miosix::GpioPin;
 
@@ -158,9 +158,9 @@ class LSM9DS1_XLG : public GyroSensor, public AccelSensor, public TemperatureSen
             //FIFO setup: FIFO enabled in continous mode, decimation OFF, temperature on FIFO ON.
             if(fifo_enabled)
             {
-                spi.write(regMapXLG::FIFO_CTRL, FIFO_CTRL_VAL | fifo_watermark); //FIFO continous mode + fifo watermark threshold setup
+                spi.write(regMapXLG::FIFO_CTRL, (FIFO_CTRL_VAL|fifo_watermark)); //FIFO continous mode + fifo watermark threshold setup
                 spi.write(regMapXLG::INT1_CTRL, INT1_CTRL_VAL); //interrupt on FIFO treshold
-                spi.write(regMapXLG::CTRL_REG9, CTRL_REG9_VAL | 0x02); //DRDY_mask_bit ON, I2C OFF, FIFO ON
+                spi.write(regMapXLG::CTRL_REG9, (CTRL_REG9_VAL|0x02)); //DRDY_mask_bit ON, I2C OFF, FIFO ON
             }
             else
                 spi.write(regMapXLG::CTRL_REG9, CTRL_REG9_VAL); //DRDY_mask_bit ON, I2C OFF, FIFO OFF
@@ -182,7 +182,7 @@ class LSM9DS1_XLG : public GyroSensor, public AccelSensor, public TemperatureSen
             if(spi.read(regMapXLG::CTRL_REG8)!=CTRL_REG8_VAL)                          return false;
             if(fifo_enabled)
             {
-                if(spi.read(regMapXLG::FIFO_CTRL) != FIFO_CTRL_VAL | fifo_watermark)   return false;
+                if(spi.read(regMapXLG::FIFO_CTRL) != (FIFO_CTRL_VAL|fifo_watermark))   return false;
                 if(spi.read(regMapXLG::INT1_CTRL) != INT1_CTRL_VAL)                    return false;
                 if(spi.read(regMapXLG::CTRL_REG9) != (CTRL_REG9_VAL| 0x02))            return false;
             }
@@ -269,6 +269,7 @@ class LSM9DS1_XLG : public GyroSensor, public AccelSensor, public TemperatureSen
 
             int16_t temp = tempData[0] | tempData[1] << 8;
             mLastTemp = tempZero + temp / tempSensistivity; //25°C + TEMP/S devo castare a float "temp"?
+            return true;
         }
 
     private:
