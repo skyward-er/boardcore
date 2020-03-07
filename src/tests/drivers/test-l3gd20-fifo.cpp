@@ -26,7 +26,7 @@
 #include "diagnostic/CpuMeter.h"
 #include "drivers/HardwareTimer.h"
 #include "drivers/spi/SPIDriver.h"
-#include "sensors/L3GD20.h"
+#include "sensors/L3GD20-newt.h"
 
 using namespace miosix;
 using std::array;
@@ -37,19 +37,29 @@ typedef Gpio<GPIOF_BASE, 9> GpioMosi;
 
 typedef Gpio<GPIOA_BASE, 2> GpioINT2;
 
-static constexpr int NUM_SAMPLES = 500 * 5;  // 120 seconds of data
+static constexpr unsigned int FIFO_WATERMARK = 12;
 
+// Expected frequency from the datasheet is 760 Hz, but due to clock
+// misalignment / temperature errors and other factors, the observed clock (and
+// output data rate) is the following:
+static constexpr float SAMPLE_FREQUENCY = 782.3f;
+static constexpr int NUM_SAMPLES        = SAMPLE_FREQUENCY * 120;
+
+// FD
 void enableInterrupt();
 void configure();
 
 struct GyroSample
 {
-    uint64_t timestamp;
-    uint64_t sample_delta;
-    Vec3 data;
+    int fifo_num;
+    L3GD20Data gyro;
+    int level;
+    uint64_t wtm_delta;
     float cpu;
+    uint64_t update;
 };
 
+// GyroSample data[NUM_SAMPLES];
 GyroSample data[NUM_SAMPLES];
 int data_counter = 0;
 
@@ -58,17 +68,16 @@ HardwareTimer<uint32_t> hrclock{
     TIM5, TimerUtils::getPrescalerInputFrequency(TimerUtils::InputClock::APB1)};
 
 // Last interrupt received timer tick
-volatile uint32_t last_sample_tick;  // Stores the high-res tick of the last
-                                     // interrupt (L3GD20 watermark event)
-volatile uint32_t sample_delta;      // Tick delta between the last 2 watermark
-                                     // events
+volatile uint32_t last_watermark_tick;  // Stores the high-res tick of the last
+                                        // interrupt (L3GD20 watermark event)
+volatile uint32_t watermark_delta;  // Tick delta between the last 2 watermark
+                                    // events
 
 // L3GD20 SPI
 SPIBus bus(SPI5);
 GpioPin cs(GPIOC_BASE, 1);
-SPIBusConfig cfg;
 
-L3GD20* gyro;
+L3GD20* gyro = nullptr;
 
 // Interrupt handlers
 void __attribute__((naked)) EXTI2_IRQHandler()
@@ -81,12 +90,11 @@ void __attribute__((naked)) EXTI2_IRQHandler()
 void __attribute__((used)) EXTI2_IRQHandlerImpl()
 {
     // Current high resolution tick
-    uint32_t tick    = hrclock.tick();
-    sample_delta     = tick - last_sample_tick;
-    last_sample_tick = tick;
-
-    // Pass tick microseconds to sensor for timestamp estimation
-    if (gyro != nullptr)
+    uint32_t tick       = hrclock.tick();
+    watermark_delta     = tick - last_watermark_tick;
+    last_watermark_tick = tick;
+    // Pass tick microseconds to sensor
+    if(gyro != nullptr)
         gyro->IRQupdateTimestamp(hrclock.toIntMicroSeconds(tick));
 
     EXTI->PR |= EXTI_PR_PR2;  // Reset pending register
@@ -98,46 +106,73 @@ int main()
 
     configure();
 
-    cfg.br = SPIBaudRate::DIV_64;
-
+    // Setup sensor
     gyro = new L3GD20(bus, cs, L3GD20::FullScaleRange::FS_250,
                       L3GD20::OutPutDataRate::ODR_760, 0x03);
 
-    // gyro->setRealSampleInterval(
-    //     static_cast<uint64_t>(1000000 / SAMPLE_FREQUENCY));
+    gyro->enableFifo(FIFO_WATERMARK);
 
+    // Init
     while (!gyro->init())
     {
     }
 
-    Thread::sleep(500);
-
+    // Sample NUM_SAMPLES data
+    int fifo_num = 0;
     while (data_counter < NUM_SAMPLES)
     {
         long last_tick = miosix::getTick();
 
-        // Sample sensor @ 500 Hz
+        // Read the fifo
+        uint32_t update = hrclock.tick();
         gyro->onSimpleUpdate();
-        L3GD20Data d = gyro->getLastSample();
+        update = hrclock.tick() - update;
 
-        data[data_counter++] = {d.timestamp, sample_delta, d.gyro,
-                                averageCpuUtilization()};
+        uint8_t level =
+            gyro->getLastFifoSize();  // Number of samples in the FIFO
 
-        Thread::sleepUntil(last_tick + 1);
+        // Get the FIFO
+        const array<L3GD20Data, 32>& fifo = gyro->getLastFifo();
+
+        // Store everything in the data buffer
+        for (int i = 0; i < level; i++)
+        {
+            // data[data_counter++] = fifo[i];
+            data[data_counter++] = {fifo_num,
+                                    fifo[i],
+                                    level,
+                                    hrclock.toIntMicroSeconds(watermark_delta),
+                                    averageCpuUtilization(), 
+                                    hrclock.toIntMicroSeconds(update)};
+
+            // Stop if we have enough data
+            if (data_counter >= NUM_SAMPLES)
+            {
+                break;
+            }
+        }
+        ++fifo_num;
+
+        // Wait until fifo has about 25 samples
+        Thread::sleepUntil(last_tick + 25.5 * 1000 / SAMPLE_FREQUENCY);
     }
+
     // Dump buffer content as CSV on the serial (might take a while)
-    printf("FIFO_num,timestamp,int_delta,sample_delta,x,y,z,cpu\n");
+    // printf("t,x,y,z\n");
+    printf("FIFO_num,timestamp,int_delta,read_time,sample_delta,x,y,z,cpu\n");
+
     for (int i = 1; i < data_counter; i++)
     {
         // clang-format off
-         printf("%d,%llu,%llu,%llu,%f,%f,%f,%.2f\n", 
-                0,
-                data[i].timestamp, 
-                hrclock.toIntMicroSeconds(data[i].sample_delta),
-                (data[i].timestamp - data[i - 1].timestamp),
-                data[i].data.getX(), 
-                data[i].data.getY(), 
-                data[i].data.getZ(),
+        printf("%d,%llu,%llu,%llu,%llu,%f,%f,%f,%.2f\n", 
+                data[i].fifo_num,
+                data[i].gyro.timestamp, 
+                data[i].wtm_delta,
+                data[i].update,
+                (data[i].gyro.timestamp - data[i - 1].gyro.timestamp),
+                data[i].gyro.gyro.getX(), 
+                data[i].gyro.gyro.getY(), 
+                data[i].gyro.gyro.getZ(),
                 data[i].cpu);
         // clang-format on
     }
@@ -176,8 +211,7 @@ void configure()
     enableInterrupt();
 
     // High resolution clock configuration
-    // 1.8 hours run time, 1.5 us resolution
-    hrclock.setPrescaler(127);
+    hrclock.setPrescaler(382);
     hrclock.start();
 }
 
