@@ -25,11 +25,13 @@
 
 #pragma once
 #include <miosix.h>
+#include <array>
 
 #include "drivers/spi/SPIDriver.h"
 #include "../Sensor.h"
 
 using miosix::GpioPin;
+using std::array;
 
 class LSM9DS1_XLG : public GyroSensor, public AccelSensor, public TemperatureSensor
 {
@@ -254,7 +256,35 @@ class LSM9DS1_XLG : public GyroSensor, public AccelSensor, public TemperatureSen
                 mLastTemp =  tempZero + temp / tempSensistivity; //25°C + TEMP/S devo castare a float "temp"?
             }
             else{ //if FIFO enabled: do not store temperature, it can be read using "temperatureUpdate()" function at low sampling frequency
+                uint8_t buf[384];
+                {
+                    SPITransaction spi(spislave);
+                    //read FIFO status and dump all the samples inside the FIFO
+                    uint8_t fifo_src = spi.read(FIFO_SRC);
+                    fifo_samples = fifo_src & 0x3F;
 
+                    spi.read(OUT_X_L_G, buf, fifo_samples*12); //format: gxl,gxh,gyl,gyh,gzl,gzh,axl,axh,ayl,ayh,azl,azh for each sample
+                }
+                //convert & store
+                for(int i=0; i<fifo_samples; i++ )
+                {
+                    uint16_t x_gy = buf[i*12]      | buf[i*6 + 1]  << 8;
+                    uint16_t y_gy = buf[i*12 + 2]  | buf[i*6 + 3]  << 8;
+                    uint16_t z_gy = buf[i*12 + 4]  | buf[i*6 + 5]  << 8;
+                    
+                    uint16_t x_xl = buf[i*12 + 6]  | buf[i*6 + 7]  << 8;
+                    uint16_t y_xl = buf[i*12 + 8]  | buf[i*6 + 9]  << 8;
+                    uint16_t z_xl = buf[i*12 + 10] | buf[i*6 + 11] << 8;
+
+                    gyro_fifo[i] = 
+                                Vec3(x_gy * axelFSRval / 0xFFFF,
+                                     y_gy * axelFSRval / 0xFFFF,
+                                     z_gy * axelFSRval / 0xFFFF);
+                    axel_fifo[i] = 
+                                Vec3(x_xl * axelFSRval / 0xFFFF,
+                                     y_xl * axelFSRval / 0xFFFF,
+                                     z_xl * axelFSRval / 0xFFFF);
+                }
             }
             return true; 
         }
@@ -272,10 +302,16 @@ class LSM9DS1_XLG : public GyroSensor, public AccelSensor, public TemperatureSen
             return true;
         }
 
+        const array<Vec3, 32>& getGyroFIFO() const { return gyro_fifo; }
+        const array<Vec3, 32>& getAxelFIFO() const { return axel_fifo; }
+        uint8_t getFIFOSamples() const { return fifo_samples;} //fifo_samples is the same for both axel & gyro FIFOs
+
     private:
 
         bool fifo_enabled;
         uint8_t fifo_watermark;
+        uint8_t fifo_samples = 0;
+        array<Vec3, 32> gyro_fifo, axel_fifo; 
 
         SPISlave spislave; 
 

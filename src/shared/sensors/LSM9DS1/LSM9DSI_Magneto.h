@@ -27,7 +27,7 @@
 #include <vector>
 
 #include "drivers/spi/SPIDriver.h"
-#include "Sensor.h"
+#include "../Sensor.h"
 
 using miosix::GpioPin;
 using std::vector;
