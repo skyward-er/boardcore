@@ -137,6 +137,8 @@ public:
      */
     float toMicroSeconds(Type ticks);
 
+    uint64_t toIntMicroSeconds(Type ticks);
+
     /**
      * @brief Converts from ticks to milliseconds, using the current prescaler
      * setting
@@ -185,9 +187,9 @@ public:
 
 private:
     TIM_TypeDef* tim;
-    unsigned prescaler_freq;
+    unsigned int prescaler_freq;
 
-    bool ticking = false;
+    bool ticking       = false;
     uint16_t prescaler = 0;
     Type auto_reload =
         static_cast<Type>(-1);  // Max value of Type (Type is unsigned)
@@ -251,6 +253,13 @@ template <typename Type>
 float HardwareTimer<Type>::toMicroSeconds(Type ticks)
 {
     return (1.0f * ticks * 1000000 * (1 + prescaler)) / prescaler_freq;
+}
+
+template <typename Type>
+uint64_t HardwareTimer<Type>::toIntMicroSeconds(Type ticks)
+{
+    return ((uint64_t)ticks * 1000000 * (uint64_t)(1 + prescaler)) /
+           (uint64_t)prescaler_freq;
 }
 
 template <typename Type>
