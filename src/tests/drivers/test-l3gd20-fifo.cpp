@@ -26,7 +26,7 @@
 #include "diagnostic/CpuMeter.h"
 #include "drivers/HardwareTimer.h"
 #include "drivers/spi/SPIDriver.h"
-#include "sensors/L3GD20-newt.h"
+#include "sensors/L3GD20.h"
 
 using namespace miosix;
 using std::array;
