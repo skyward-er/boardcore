@@ -149,7 +149,7 @@ class LSM9DS1_XLG : public GyroSensor, public AccelSensor, public TemperatureSen
             //Who Am I check:
             uint8_t whoami = spi.read(regMapXLG::WHO_AM_I);
             if(whoami != WHO_AM_I_XLG_VAL){
-                TRACE("LSM9DS1 WAMI: %d\n", whoami);
+                TRACE("LSM9DS1 WAMI: %02X\n", whoami);
                 last_error = ERR_NOT_ME;
                 return false;
             }
@@ -207,7 +207,6 @@ class LSM9DS1_XLG : public GyroSensor, public AccelSensor, public TemperatureSen
                     spi.read(regMapXLG::OUT_X_L_G,  6);
                 }
             }
-
             return true;  
         }
 

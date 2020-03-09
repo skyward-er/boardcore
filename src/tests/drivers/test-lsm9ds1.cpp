@@ -43,7 +43,10 @@ GpioPin cs(GPIOE_BASE, 7);
 
 
 int main(){
-    cfg.br = SPIBaudRate::DIV_64; //max 10MHz
+
+    cfg.br = SPIBaudRate::DIV_256; //max 10MHz
+    cfg.cpol = 1;
+    cfg.cpha = 1;
     {
         FastInterruptDisableLock dLock;
 
@@ -67,18 +70,17 @@ int main(){
                     LSM9DS1_XLG::GyroFSR::FS_245,
                     LSM9DS1_XLG::ODR::ODR_952
                     );
-    
+
     while(!lsm9ds1.init()){}
     Thread::sleep(500);
     long long first_tick = miosix::getTick();
-    
     for(;;)
     {
         long long tick = miosix::getTick();
         lsm9ds1.onSimpleUpdate();
         adata = *(lsm9ds1.accelDataPtr());
         gdata = *(lsm9ds1.gyroDataPtr());
-        printf("TIMESTAMP:%.3f\taxel:%.3f,%.3f,%.3f\tgyro:%.3f,%.3f,%.3f", 
+        TRACE("TIMESTAMP:%.3f\taxel:%.3f,%.3f,%.3f\tgyro:%.3f,%.3f,%.3f\n", 
                 tick-first_tick, 
                 adata.getX(), adata.getY(), adata.getZ(),
                 gdata.getX(), gdata.getY(), gdata.getZ());
