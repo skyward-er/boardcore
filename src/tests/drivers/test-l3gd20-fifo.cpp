@@ -94,8 +94,10 @@ void __attribute__((used)) EXTI2_IRQHandlerImpl()
     watermark_delta     = tick - last_watermark_tick;
     last_watermark_tick = tick;
     // Pass tick microseconds to sensor
-    if(gyro != nullptr)
+    if (gyro != nullptr)
+    {
         gyro->IRQupdateTimestamp(hrclock.toIntMicroSeconds(tick));
+    }
 
     EXTI->PR |= EXTI_PR_PR2;  // Reset pending register
 }
@@ -142,7 +144,7 @@ int main()
                                     fifo[i],
                                     level,
                                     hrclock.toIntMicroSeconds(watermark_delta),
-                                    averageCpuUtilization(), 
+                                    averageCpuUtilization(),
                                     hrclock.toIntMicroSeconds(update)};
 
             // Stop if we have enough data
