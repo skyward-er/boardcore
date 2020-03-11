@@ -1,6 +1,6 @@
 
 /**************************************************
-Ssimple demo that receives mavlink
+Simple demo that receives mavlink
 messages on the serial port and prints them on the screen.
 
 **************************************************/
