@@ -33,8 +33,6 @@ typedef Gpio<GPIOA_BASE, 6> GpioMiso;
 typedef Gpio<GPIOA_BASE, 7> GpioMosi;
 
 static const bool FIFO_ENABLED = false;
-Vec3 adata, gdata;
-float tdata; 
 
 //SPI
 SPIBus bus(SPI1);
@@ -66,7 +64,8 @@ int main(){
     }
 
     cs.high();
-    LSM9DS1_XLG lsm9ds1(
+    
+    LSM9DS1_XLG sensor1(
                     bus,
                     cs,
                     cfg,
@@ -75,21 +74,12 @@ int main(){
                     LSM9DS1_XLG::ODR::ODR_952
                     );
 
-    while(!lsm9ds1.init()){}
-    Thread::sleep(500);
-    long long first_tick = miosix::getTick();
-    for(;;)
+
+
+    sensor1.getWhoami(); 
+
+    while(1)
     {
-        long long tick = miosix::getTick();
-        lsm9ds1.onSimpleUpdate();
-        adata = *(lsm9ds1.accelDataPtr());
-        gdata = *(lsm9ds1.gyroDataPtr());
-        tdata = *(lsm9ds1.tempDataPtr());
-        TRACE("TIMESTAMP:%lld\t\taxel: %.3f,%.3f,%.3f\t\tgyro: %.3f,%.3f,%.3f\t\ttemp: %.3f\n", 
-                tick-first_tick, 
-                adata.getX(), adata.getY(), adata.getZ(),
-                gdata.getX(), gdata.getY(), gdata.getZ(),
-                tdata);
         Thread::sleep(500);
     }
     
