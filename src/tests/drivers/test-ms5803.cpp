@@ -21,27 +21,32 @@
  */
 
 #include <Common.h>
-#include <drivers/BusTemplate.h>
-#include <interfaces-impl/hwmapping.h>
-#include "sensors/MS580301BA07/MS580301BA07.h"
-
+#include <drivers/spi/SPIDriver.h>
 #include <drivers/spi/SensorSpi.h>
+#include <interfaces-impl/hwmapping.h>
 #include <sensors/SensorSampling.h>
+
+#include "sensors/MS580301BA07/MS580301BA07.h"
 
 using namespace miosix;
 using namespace miosix::interfaces;
-typedef Gpio<GPIOD_BASE, 7> cs_ms58;
 
-typedef BusSPI<1, spi1::mosi, spi1::miso, spi1::sck> busSPI1;
-typedef ProtocolSPI<busSPI1, cs_ms58> spiMS58;
-typedef MS580301BA07<spiMS58> ms58_t;
+SPIBus bus{SPI1};
+GpioPin chip_select{GPIOD_BASE, 7};
 
 int main()
 {
+    // Activate the SPI bus
+    {
+        FastInterruptDisableLock dLock;
+        RCC->APB2ENR |= RCC_APB2ENR_SPI1EN;
+
+        // SCK, MISO, MOSI already initialized in the bsp
+    }
+
     SimpleSensorSampler sampler;
 
-    spiMS58::init();
-    ms58_t* ms58 = new ms58_t();
+    MS580301BA07* ms58 = new MS580301BA07(bus, chip_select);
 
     Thread::sleep(100);
 
@@ -70,8 +75,8 @@ int main()
         const float* last_pressure = ms58->pressureDataPtr();
         const float* last_temp     = ms58->tempDataPtr();
         MS5803Data md              = ms58->getData();
-        printf("%d,%f,%d,%f\n", (int)md.raw_press,
-               *last_pressure, (int)md.raw_temp, *last_temp);
+        printf("%d,%f,%d,%f\n", (int)md.raw_press, *last_pressure,
+               (int)md.raw_temp, *last_temp);
 
         Thread::sleep(100);
     }

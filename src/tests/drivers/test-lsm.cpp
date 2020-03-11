@@ -1,4 +1,4 @@
-/* Copyright (c) 2018 Skyward Experimental Rocketry
+/* Copyright (c) 2019 Skyward Experimental Rocketry
  * Authors: Nuno Barcellos
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -21,62 +21,61 @@
  */
 
 #include <Common.h>
-#include <drivers/spi/SPIDriver.h>
-#include <drivers/spi/SensorSpi.h>
+#include <drivers/BusTemplate.h>
 #include <interfaces-impl/hwmapping.h>
-#include <sensors/SensorSampling.h>
+#include <sensors/LSM6DS3H/LSM6DS3H.h>
 
-#include "sensors/MS580301BA07/MS580301BA07_2.h"
+#include <drivers/spi/SensorSpi.h>
+#include <sensors/SensorSampling.h>
+#include <math/Stats.h>
+#include <diagnostic/CpuMeter.h>
 
 using namespace miosix;
 using namespace miosix::interfaces;
 
-SPIBus bus{SPI1};
-GpioPin chip_select{GPIOD_BASE, 7};
+/* SPI1 binding to the sensor */
+typedef BusSPI<1,spi1::mosi,spi1::miso,spi1::sck> busSPI1;
+typedef ProtocolSPI<busSPI1,sensors::lsm6ds3h::cs> spiLSM6DS3H0_a;
+typedef LSM6DS3H<spiLSM6DS3H0_a> lsm6ds3h_t;
 
 int main()
-{
-    // Activate the SPI bus
-    {
-        FastInterruptDisableLock dLock;
-        RCC->APB2ENR |= RCC_APB2ENR_SPI1EN;
-
-        // SCK, MISO, MOSI already initialized in the bsp
-    }
-
+{   
     SimpleSensorSampler sampler;
+    spiLSM6DS3H0_a::init();
 
-    MS580301BA07* ms58 = new MS580301BA07(bus, chip_select);
-
-    Thread::sleep(100);
-
-    if (ms58->init())
+    lsm6ds3h_t* lsm6ds3h = new lsm6ds3h_t(3,3);
+    
+    if(lsm6ds3h->init())
     {
-        printf("MS58 Init succeeded\n");
-        sampler.AddSensor(ms58);
+        printf("[LSM6DS3H] Init succeeded\n" );
+        sampler.AddSensor(lsm6ds3h);
     }
     else
     {
-        printf("MS58 Init failed\n");
+        printf("[LSM6DS3H] Init failed\n");
 
-        while (!ms58->init())
-        {
-            printf("MS58 Init failed\n");
+        while(!lsm6ds3h->init()) {
+            printf("[LSM6DS3H] Init failed\n");
             Thread::sleep(1000);
         }
-    }
 
-    Thread::sleep(100);
-    printf("raw_p,p,raw_t,t\n");
-    while (true)
+    }
+    
+
+    while(true)
     {
         sampler.Update();
 
-        const float* last_pressure = ms58->pressureDataPtr();
-        const float* last_temp     = ms58->tempDataPtr();
-        MS5803Data md              = ms58->getData();
-        printf("%d,%f,%d,%f\n", (int)md.raw_press, *last_pressure,
-               (int)md.raw_temp, *last_temp);
+        // const Vec3* last_data = lsm6ds3h->gyroDataPtr();
+        // printf("%f %f %f\n", last_data->getX(), last_data->getY(),
+        //        last_data->getZ());
+
+        const Vec3* last_data = lsm6ds3h->accelDataPtr();
+        printf("%f %f %f\n", last_data->getX(), last_data->getY(),
+               last_data->getZ());
+        
+        // const float* last_temp = lsm6ds3h->tempDataPtr();
+        // printf("temp: %f\n", *last_temp);
 
         Thread::sleep(100);
     }

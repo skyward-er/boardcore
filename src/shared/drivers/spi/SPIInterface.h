@@ -71,8 +71,15 @@ struct SPIBusConfig
     // Custom comparison operator
     bool operator==(const SPIBusConfig& other) const
     {
-        // Valid if the struct does not contain pointers!
-        return memcmp(this, &other, sizeof(SPIBusConfig)) == 0;
+        // Compare member-by-member
+        // clang-format off
+        return  br == other.br 
+             && cpol == other.cpol 
+             && cpha == other.cpha 
+             && lsb_first == other.lsb_first 
+             && cs_setup_time_us == other.cs_setup_time_us 
+             && cs_setup_time_us == other.cs_hold_time_us;
+        // clang-format on
     }
 
     bool operator!=(const SPIBusConfig& other) const
@@ -99,6 +106,13 @@ public:
     SPIBusInterface& operator=(SPIBusInterface&&) = delete;
 
     /**
+     * @brief Writes a single \p byte to the bus.
+     *
+     * @param    byte Byte to write
+     */
+    virtual void write(uint8_t byte) = 0;
+
+    /**
      * @brief Writes \p data to the bus.
      *
      * @param    data Buffer containing data to write
@@ -107,12 +121,27 @@ public:
     virtual void write(uint8_t* data, size_t size) = 0;
 
     /**
+     * @brief Reads a single byte from the bus.
+     * @return Byte read from the bus
+     */
+    virtual uint8_t read() = 0;
+
+    /**
      * @brief Reads \p size bytes from the SPI bus, putting them in \p data.
      *
      * @param    data Buffer to be filled with received data
      * @param    size Number of bytes to receive
      */
     virtual void read(uint8_t* data, size_t size) = 0;
+
+    /**
+     * @brief Full duplex transmission on the SPI bus.
+     * A \p byte is written on the bus and a byte is read and returned
+     *
+     * @param    byte Byte to write
+     * @return Data read from the bus
+     */
+    virtual uint8_t transfer(uint8_t byte) = 0;
 
     /**
      * @brief Full duplex transmission on the SPI bus.

@@ -24,19 +24,24 @@
 
 #pragma once
 
-#include <drivers/BusTemplate.h>
 #include "../Sensor.h"
-#include "MS580301BA07Data.h"
 #include "Debug.h"
+#include "MS580301BA07Data.h"
+#include "drivers/spi/SPIDriver.h"
 
-// TODO second order temperature compensation
-template <class Bus>
 class MS580301BA07 : public PressureSensor, public TemperatureSensor
 {
 
 public:
     /* Class constructor. Reset lastPressure and lastTemperature */
-    MS580301BA07()
+    MS580301BA07(SPIBusInterface& bus, GpioPin cs)
+        : MS580301BA07(bus, cs, SPIBusConfig{})
+    {
+        spi_ms5803.config.br = SPIBaudRate::DIV_128;
+    }
+
+    MS580301BA07(SPIBusInterface& bus, GpioPin cs, SPIBusConfig config)
+        : spi_ms5803(bus, cs, config)
     {
         memset(&cd, 0, sizeof(calibration_data));
         mLastTemp     = 0;
@@ -47,15 +52,18 @@ public:
 
     bool init()
     {
+        SPITransaction spi{spi_ms5803};
+
         int timeout = 10;
         do
         {
-            Bus::read(RESET_DEV);
+            spi.read(RESET_DEV);
 
             miosix::Thread::sleep(3);
 
-            cd.sens = readReg(PROM_READ_MASK | PROM_SENS_MASK);
-            if (cd.sens == 0){
+            cd.sens = readReg(spi, PROM_READ_MASK | PROM_SENS_MASK);
+            if (cd.sens == 0)
+            {
                 miosix::Thread::sleep(1);
                 TRACE("Could not read cd.sens\n");
             }
@@ -67,14 +75,14 @@ public:
             return false;
         }
 
-        cd.off      = readReg(PROM_READ_MASK | PROM_OFF_MASK);
-        cd.tcs      = readReg(PROM_READ_MASK | PROM_TCS_MASK);
-        cd.tco      = readReg(PROM_READ_MASK | PROM_TCO_MASK);
-        cd.tref     = readReg(PROM_READ_MASK | PROM_TREF_MASK);
-        cd.tempsens = readReg(PROM_READ_MASK | PROM_TEMPSENS_MASK);
+        cd.off      = readReg(spi, PROM_READ_MASK | PROM_OFF_MASK);
+        cd.tcs      = readReg(spi, PROM_READ_MASK | PROM_TCS_MASK);
+        cd.tco      = readReg(spi, PROM_READ_MASK | PROM_TCO_MASK);
+        cd.tref     = readReg(spi, PROM_READ_MASK | PROM_TREF_MASK);
+        cd.tempsens = readReg(spi, PROM_READ_MASK | PROM_TEMPSENS_MASK);
 
         TRACE("off: %d, tcs: %d, tco: %d, tref: %d, tsens: %d\n", (int)cd.off,
-               (int)cd.tcs, (int)cd.tco, (int)cd.tref, (int)cd.tempsens);
+              (int)cd.tcs, (int)cd.tco, (int)cd.tref, (int)cd.tempsens);
 
         mStatus = 0;
 
@@ -97,34 +105,36 @@ public:
      */
     bool onSimpleUpdate()
     {
+        SPITransaction spi{spi_ms5803}; // Begin an SPI transaction
+
         uint8_t rcvbuf[3];
         uint32_t temperature = 0;
 
         switch (mStatus)
         {
             case STATE_INIT:
-                Bus::write(CONVERT_D1_4096);
+                spi.write(CONVERT_D1_4096);
                 mStatus = STATE_SAMPLED_PRESSURE;
             case STATE_SAMPLED_PRESSURE:
-                Bus::read_low(ADC_READ, rcvbuf, 3);
+                spi.read(ADC_READ, rcvbuf, 3, false);
                 mInternalPressure = rcvbuf[2] | ((uint32_t)rcvbuf[1] << 8) |
                                     ((uint32_t)rcvbuf[0] << 16);
 
-                Bus::write(CONVERT_D2_4096);  // Begin temperature sampling
+                spi.write(CONVERT_D2_4096);  // Begin temperature sampling
                 mStatus = STATE_SAMPLED_TEMPERATURE;
 
                 break;
             case STATE_SAMPLED_TEMPERATURE:
-                Bus::read_low(ADC_READ, rcvbuf, 3);
+                spi.read(ADC_READ, rcvbuf, 3, false);
 
                 // TODO use swapBytes
                 temperature = (uint32_t)rcvbuf[2] | ((uint32_t)rcvbuf[1] << 8) |
                               ((uint32_t)rcvbuf[0] << 16);
 
                 updateData(mInternalPressure, temperature);
-                Bus::write(CONVERT_D1_4096);  // Begin pressure sampling
+                spi.write(CONVERT_D1_4096);  // Begin pressure sampling
                 mStatus = STATE_SAMPLED_PRESSURE;
-            
+
                 break;
         }
 
@@ -143,6 +153,8 @@ public:
     uint8_t getState() { return mStatus; }
 
 private:
+    SPISlave spi_ms5803;
+
     static constexpr uint8_t TIMEOUT = 5;
     uint8_t mStatus;
     uint32_t mInternalPressure;
@@ -205,10 +217,10 @@ private:
 
     calibration_data cd;
 
-    uint16_t readReg(uint8_t reg)
+    uint16_t readReg(SPITransaction& spi, uint8_t reg)
     {
         uint8_t rcv[2];
-        Bus::read(reg, rcv, 2);
+        spi.read(reg, rcv, 2);
         uint16_t data = (rcv[0] << 8) | rcv[1];
         return data;
     }

@@ -21,31 +21,33 @@
  * THE SOFTWARE.
  */
 
-#include "SPIInterface.h"
+#include "FakeSpiTypedef.h"
+#include "drivers/spi/SPIInterface.h"
 
 #pragma once
 
 /**
- * @brief Low level driver for communicating on a SPI Bus, provides
- *        SPIBusInterface.
+ * @brief SPIBus modified to accept a fake Chip select & spi peripheral struct.
+ * Not ideal as modifications to SPIBus have to be manually applied here too,
+ * but that's the only way I found to test it effectively
  */
-class SPIBus : public SPIBusInterface
+class FakeSPIBus : public SPIBusInterface
 {
 public:
     /**
-     * @brief Instantiates a new SPIBus
+     * @brief Instantiates a new FakeSPIBus
      *
      * @param spi Pointer to the SPI peripheral to be used
      */
-    SPIBus(SPI_TypeDef* spi);
-    ~SPIBus() {}
+    FakeSPIBus(FakeSpiTypedef* spi);
+    ~FakeSPIBus() {}
 
     // Delete copy/move contructors/operators
-    SPIBus(const SPIBus&) = delete;
-    SPIBus& operator=(const SPIBus&) = delete;
+    FakeSPIBus(const FakeSPIBus&) = delete;
+    FakeSPIBus& operator=(const FakeSPIBus&) = delete;
 
-    SPIBus(SPIBus&&) = delete;
-    SPIBus& operator=(SPIBus&&) = delete;
+    FakeSPIBus(FakeSPIBus&&) = delete;
+    FakeSPIBus& operator=(FakeSPIBus&&) = delete;
 
     /**
      * @brief Wether to apply slave-specific bus configuration before each
@@ -128,18 +130,45 @@ private:
      */
     void transfer(uint8_t* byte);
 
-    SPI_TypeDef* spi;
+    FakeSpiTypedef* spi;
 
     SPIBusConfig config;
     bool config_enabled       = true;
     bool first_config_applied = false;
 };
 
-// Defined here and not in the .cpp to make them inline
+FakeSPIBus::FakeSPIBus(FakeSpiTypedef* spi) : spi(spi) {}
 
-inline void SPIBus::write(uint8_t data) { write(&data); }
+void FakeSPIBus::configure(SPIBusConfig new_config)
+{
+    // Reconfigure the bus only if config enabled. Do not reconfigure if already
+    // in the correct configuration.
+    if (config_enabled && (!first_config_applied || new_config != config))
+    {
+        first_config_applied = true;
+        config               = new_config;
 
-inline void SPIBus::write(uint8_t* data, size_t size)
+        // Clean CR1
+        spi->CR1 = 0;
+
+        // Configure clock division (BR bits)
+        spi->CR1 |= (static_cast<uint16_t>(config.br) & 0x0007) << 3;
+        // Configure CPOL & CPHA bits
+        spi->CR1 |= ((uint16_t)config.cpol & 0x0001) << 1 |
+                    ((uint16_t)config.cpha & 0x0001);
+
+        // Configure LSBFIRST bit
+        spi->CR1 |= (uint16_t)config.lsb_first << 7;
+
+        spi->CR1 |= SPI_CR1_SSI | SPI_CR1_SSM  // Use software chip-select
+                    | SPI_CR1_MSTR             // Master mode
+                    | SPI_CR1_SPE;             // Enable SPI
+    }
+}
+
+inline void FakeSPIBus::write(uint8_t data) { write(&data); }
+
+inline void FakeSPIBus::write(uint8_t* data, size_t size)
 {
     for (size_t i = 0; i < size; i++)
     {
@@ -147,7 +176,7 @@ inline void SPIBus::write(uint8_t* data, size_t size)
     }
 }
 
-inline uint8_t SPIBus::read()
+inline uint8_t FakeSPIBus::read()
 {
     uint8_t data;
     read(&data);
@@ -155,7 +184,7 @@ inline uint8_t SPIBus::read()
     return data;
 }
 
-inline void SPIBus::read(uint8_t* data, size_t size)
+inline void FakeSPIBus::read(uint8_t* data, size_t size)
 {
     for (size_t i = 0; i < size; i++)
     {
@@ -163,13 +192,13 @@ inline void SPIBus::read(uint8_t* data, size_t size)
     }
 }
 
-inline uint8_t SPIBus::transfer(uint8_t data)
+inline uint8_t FakeSPIBus::transfer(uint8_t data)
 {
     transfer(&data);
     return data;
 }
 
-inline void SPIBus::transfer(uint8_t* data, size_t size)
+inline void FakeSPIBus::transfer(uint8_t* data, size_t size)
 {
     for (size_t i = 0; i < size; i++)
     {
@@ -177,8 +206,10 @@ inline void SPIBus::transfer(uint8_t* data, size_t size)
     }
 }
 
-inline void SPIBus::select(GpioPin& cs)
+inline void FakeSPIBus::select(GpioPin& rcs)
 {
+    FakeGpioPin& cs = static_cast<FakeGpioPin&>(rcs);
+
     cs.low();
     if (config.cs_setup_time_us > 0)
     {
@@ -186,8 +217,10 @@ inline void SPIBus::select(GpioPin& cs)
     }
 }
 
-inline void SPIBus::deselect(GpioPin& cs)
+inline void FakeSPIBus::deselect(GpioPin& rcs)
 {
+    FakeGpioPin& cs = static_cast<FakeGpioPin&>(rcs);
+
     if (config.cs_hold_time_us > 0)
     {
         delayUs(config.cs_hold_time_us);
@@ -195,7 +228,7 @@ inline void SPIBus::deselect(GpioPin& cs)
     cs.high();
 }
 
-inline void SPIBus::write(uint8_t* byte)
+inline void FakeSPIBus::write(uint8_t* byte)
 {
     // Wait until the peripheral is ready to transmit
     while ((spi->SR & SPI_SR_TXE) == 0)
@@ -208,10 +241,10 @@ inline void SPIBus::write(uint8_t* byte)
         ;
 
     // Clear the RX buffer by accessing the DR register
-    spi->DR;
+    (void)spi->DR;
 }
 
-inline void SPIBus::transfer(uint8_t* byte)
+inline void FakeSPIBus::transfer(uint8_t* byte)
 {
     // Wait until the peripheral is ready to transmit
     while ((spi->SR & SPI_SR_TXE) == 0)
@@ -227,7 +260,7 @@ inline void SPIBus::transfer(uint8_t* byte)
     *byte = (uint8_t)spi->DR;
 }
 
-inline void SPIBus::read(uint8_t* byte)
+inline void FakeSPIBus::read(uint8_t* byte)
 {
     // Wait until the peripheral is ready to transmit
     while ((spi->SR & SPI_SR_TXE) == 0)

@@ -57,7 +57,7 @@ int main()
                  << " lon: " << gps.longitude << " h: " << gps.height
                  << " vn: " << gps.velocityNorth << " ve: " << gps.velocityEast
                  << " vd: " << gps.velocityDown << " ns: " << gps.numSatellites
-                 << endl;
+                 << " now: " << now;
         }
         catch (...)
         {
