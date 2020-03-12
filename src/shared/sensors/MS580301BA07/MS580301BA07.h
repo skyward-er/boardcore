@@ -37,7 +37,7 @@ public:
     MS580301BA07(SPIBusInterface& bus, GpioPin cs)
         : MS580301BA07(bus, cs, SPIBusConfig{})
     {
-        spi_ms5803.config.br = SPIBaudRate::DIV_128;
+        spi_ms5803.config.clock_div = SPIClockDivider::DIV128;
     }
 
     MS580301BA07(SPIBusInterface& bus, GpioPin cs, SPIBusConfig config)
