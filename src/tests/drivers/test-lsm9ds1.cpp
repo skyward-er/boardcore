@@ -45,7 +45,7 @@ GpioPin cs(GPIOE_BASE, 7);
 
 int main(){
 
-    cfg.br = SPIBaudRate::DIV_64; //max 10MHz
+    cfg.clock_div=SPIClockDivider::DIV64;
 
     {
         FastInterruptDisableLock dLock;
@@ -69,7 +69,6 @@ int main(){
     LSM9DS1_XLG lsm9ds1(
                     bus,
                     cs,
-                    cfg,
                     LSM9DS1_XLG::AxelFSR::FS_8, 
                     LSM9DS1_XLG::GyroFSR::FS_245,
                     LSM9DS1_XLG::ODR::ODR_952
@@ -85,7 +84,7 @@ int main(){
         adata = *(lsm9ds1.accelDataPtr());
         gdata = *(lsm9ds1.gyroDataPtr());
         tdata = *(lsm9ds1.tempDataPtr());
-        TRACE("TIMESTAMP:%lld\t\taxel: %.3f,%.3f,%.3f\t\tgyro: %.3f,%.3f,%.3f\t\ttemp: %.3f\n", 
+        TRACE("TIMESTAMP:%lld\taxel: %.3f,%.3f,%.3f\tgyro: %.3f,%.3f,%.3f\ttemp: %.3f\n", 
                 tick-first_tick, 
                 adata.getX(), adata.getY(), adata.getZ(),
                 gdata.getX(), gdata.getY(), gdata.getZ(),

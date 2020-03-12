@@ -88,7 +88,7 @@ class LSM9DS1_XLG : public GyroSensor, public AccelSensor, public TemperatureSen
            ):fifo_enabled(fifo_enabled), fifo_watermark(fifo_watermark),
           spislave(bus, cs), axelFSR(axelRange), gyroFSR(gyroRange), odr(odr){
             //SPI config
-            spislave.config.br = SPIBaudRate::DIV_64; //baud = fclk/64
+            spislave.config.clock_div = SPIClockDivider::DIV64; 
         }
 
         LSM9DS1_XLG(
