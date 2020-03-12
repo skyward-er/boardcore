@@ -73,7 +73,7 @@ public:
         : L3GD20(bus, cs, {}, range, odr, cutoff_freq)
     {
         // Configure SPI
-        spislave.config.br = SPIBaudRate::DIV_32;
+        spislave.config.clock_div = SPIClockDivider::DIV32;
     }
 
     /**

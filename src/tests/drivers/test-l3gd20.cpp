@@ -66,7 +66,6 @@ volatile uint32_t sample_delta;      // Tick delta between the last 2 watermark
 // L3GD20 SPI
 SPIBus bus(SPI5);
 GpioPin cs(GPIOC_BASE, 1);
-SPIBusConfig cfg;
 
 L3GD20* gyro;
 
@@ -97,8 +96,6 @@ int main()
     Thread::sleep(5000);
 
     configure();
-
-    cfg.br = SPIBaudRate::DIV_64;
 
     gyro = new L3GD20(bus, cs, L3GD20::FullScaleRange::FS_250,
                       L3GD20::OutPutDataRate::ODR_760, 0x03);

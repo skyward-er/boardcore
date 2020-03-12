@@ -34,17 +34,22 @@ void SPIBus::configure(SPIBusConfig new_config)
         first_config_applied = true;
         config               = new_config;
 
-        // Clean CR1
+        // Wait until the peripheral is done before changing configuration
+        while ((spi->SR & SPI_SR_TXE) == 0)
+            ;
+        while ((spi->SR & SPI_SR_BSY) == 1)
+            ;
+        
         spi->CR1 = 0;
 
-        // Configure clock division (BR bits)
-        spi->CR1 |= (static_cast<uint16_t>(config.br) & 0x0007) << 3;
         // Configure CPOL & CPHA bits
-        spi->CR1 |= ((uint16_t)config.cpol & 0x0001) << 1 |
-                    ((uint16_t)config.cpha & 0x0001);
+        spi->CR1 |= static_cast<uint32_t>(config.mode);
+
+        // Configure clock division (BR bits)
+        spi->CR1 |= static_cast<uint32_t>(config.clock_div);
 
         // Configure LSBFIRST bit
-        spi->CR1 |= (uint16_t)config.lsb_first << 7;
+        spi->CR1 |= static_cast<uint32_t>(config.bit_order);
 
         spi->CR1 |= SPI_CR1_SSI | SPI_CR1_SSM  // Use software chip-select
                     | SPI_CR1_MSTR             // Master mode
