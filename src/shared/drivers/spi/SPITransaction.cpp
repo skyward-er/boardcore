@@ -77,12 +77,11 @@ uint8_t SPITransaction::read(uint8_t reg, bool set_read_bit)
     if (set_read_bit)
         reg = reg | 0x80;
 
-    uint8_t out;
     bus.select(cs);
     bus.write(&reg, 1);
-    bus.read(&out, 1);
+    bus.read(&reg, 1);
     bus.deselect(cs);
-    return out;
+    return reg;
 }
 
 void SPITransaction::read(uint8_t reg, uint8_t* data, size_t size,

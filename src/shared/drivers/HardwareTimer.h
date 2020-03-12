@@ -40,22 +40,22 @@ public:
      * @brief returns the timer clock frequency before the prescaler.
      * Function borrowed from the SyncronizedServo class in Miosix.
      *
-     * @return unsigned int Prescaler input frequency
+     * @return Prescaler input frequency
      */
-    static unsigned int getPrescalerInputFrequency(InputClock input_clock)
+    static uint32_t getPrescalerInputFrequency(InputClock input_clock)
     {
         // The global variable SystemCoreClock from ARM's CMSIS allows to
         // know
         // the CPU frequency.
-        unsigned int freq = SystemCoreClock;
+        uint32_t freq = SystemCoreClock;
 
 // The position of the PPRE1 bit in RCC->CFGR is different in some stm32
 #ifdef _ARCH_CORTEXM3_STM32
-        const unsigned int ppre1 = 8;
+        const uint32_t ppre1 = 8;
 #error "Architecture not currently supported"
 #else  // stm32f2 and f4
-        const unsigned int ppre1 = 10;
-        const unsigned int ppre2 = 13;
+        const uint32_t ppre1 = 10;
+        const uint32_t ppre2 = 13;
 #endif
         // The timer frequency may however be a submultiple of the CPU
         // frequency,
@@ -104,7 +104,7 @@ public:
      * @param    psc_input_freq Input frequency of the timer's prescaler, see
      *                          TimerUtils::getPrescalerInputFrequency()
      */
-    HardwareTimer(TIM_TypeDef* timer, unsigned int psc_input_freq)
+    HardwareTimer(TIM_TypeDef* timer, uint32_t psc_input_freq)
         : tim(timer), prescaler_freq(psc_input_freq)
     {
     }
@@ -136,6 +136,8 @@ public:
      * @return float
      */
     float toMicroSeconds(Type ticks);
+
+    uint64_t toIntMicroSeconds(Type ticks);
 
     /**
      * @brief Converts from ticks to milliseconds, using the current prescaler
@@ -185,9 +187,9 @@ public:
 
 private:
     TIM_TypeDef* tim;
-    unsigned prescaler_freq;
+    uint32_t prescaler_freq;
 
-    bool ticking = false;
+    bool ticking       = false;
     uint16_t prescaler = 0;
     Type auto_reload =
         static_cast<Type>(-1);  // Max value of Type (Type is unsigned)
@@ -251,6 +253,13 @@ template <typename Type>
 float HardwareTimer<Type>::toMicroSeconds(Type ticks)
 {
     return (1.0f * ticks * 1000000 * (1 + prescaler)) / prescaler_freq;
+}
+
+template <typename Type>
+uint64_t HardwareTimer<Type>::toIntMicroSeconds(Type ticks)
+{
+    return ((uint64_t)ticks * 1000000 * (uint64_t)(1 + prescaler)) /
+           (uint64_t)prescaler_freq;
 }
 
 template <typename Type>

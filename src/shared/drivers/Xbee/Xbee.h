@@ -119,7 +119,7 @@ public:
          unsigned int send_timeout = 1000)
         : send_timeout(send_timeout), spi_xbee(bus, cs), attn(attn), rst(rst)
     {
-        spi_xbee.config.br = SPIBaudRate::DIV_128;
+        spi_xbee.config.clock_div = SPIClockDivider::DIV128;
 
         // No need to configure before each transaction, we are the only device
         // on the bus.

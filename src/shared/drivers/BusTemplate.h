@@ -110,6 +110,9 @@ private:
 
     inline void _write(uint8_t byte) const
     {
+        // Wait until the peripheral is ready to transmit
+        while ((getSPIAddr(N)->SR & SPI_SR_TXE) == 0)
+            ;
         getSPIAddr(N)->DR = byte;
         while ((getSPIAddr(N)->SR & SPI_SR_RXNE) == 0)
             ;
@@ -127,6 +130,9 @@ private:
 
     inline uint8_t _read() const
     {
+        // Wait until the peripheral is ready to transmit
+        while ((getSPIAddr(N)->SR & SPI_SR_TXE) == 0)
+            ;
         getSPIAddr(N)->DR = 0;
         while ((getSPIAddr(N)->SR & SPI_SR_RXNE) == 0)
             ;
@@ -157,6 +163,9 @@ private:
      */
     inline uint8_t _transfer(uint8_t* byte)
     {
+        // Wait until the peripheral is ready to transmit
+        while ((getSPIAddr(N)->SR & SPI_SR_TXE) == 0)
+            ;
         getSPIAddr(N)->DR = *byte;
         while ((getSPIAddr(N)->SR & SPI_SR_RXNE) == 0)
             ;

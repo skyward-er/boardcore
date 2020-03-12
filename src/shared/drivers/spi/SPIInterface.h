@@ -32,24 +32,48 @@ using miosix::delayUs;
 using miosix::GpioPin;
 
 /**
- * @brief SPI baud rate selection parameter.
- * SPI clock frequency will be equal to the SPI peripheral bus clock speed
- * divided by the value specified in this enum.
+ * @brief SPI Clock divider.
+ * SPI clock frequency will be equal to the SPI peripheral bus clock speed (see
+ * datasheet) divided by the value specified in this enum.
  *
  * Eg: DIV_2 --> spi clock freq = f_PCLK / 2
  *
- * See SPI->CR1 on the datasheet for further information.
+ * See register CR1  of the SPI peripheral on the reference manual for further
+ * information.
  */
-enum class SPIBaudRate
+enum class SPIClockDivider : uint8_t
 {
-    DIV_2   = 0,
-    DIV_4   = 1,
-    DIV_8   = 2,
-    DIV_16  = 3,
-    DIV_32  = 4,
-    DIV_64  = 5,
-    DIV_128 = 6,
-    DIV_256 = 7,
+    DIV2   = 0x00,
+    DIV4   = 0x08,
+    DIV8   = 0x10,
+    DIV16  = 0x18,
+    DIV32  = 0x20,
+    DIV64  = 0x28,
+    DIV128 = 0x30,
+    DIV256 = 0x38,
+};
+
+/**
+ * @brief SPI Mode.
+ * See slave device datasheet for information on which one to use.
+ */
+enum class SPIMode : uint8_t
+{
+    MODE0 = 0,  ///> CPOL = 0, CPHA = 0
+    MODE1 = 1,  ///> CPOL = 0, CPHA = 1
+    MODE2 = 2,  ///> CPOL = 1, CPHA = 0
+    MODE3 = 3   ///> CPOL = 1, CPHA = 1
+};
+
+/**
+ * @brief SPI Bit Order
+ * See register CR1  of the SPI peripheral on the reference manual for further
+ * information.
+ */
+enum class SPIBitOrder : uint8_t
+{
+    MSB_FIRST = 0,
+    LSB_FIRST = 0x80
 };
 
 /**
@@ -58,10 +82,10 @@ enum class SPIBaudRate
  */
 struct SPIBusConfig
 {
-    SPIBaudRate br = SPIBaudRate::DIV_2;  ///> Peripheral clock division
-    uint8_t cpol   = 0;                   ///> Clock polarity (0 - 1)
-    uint8_t cpha   = 0;                   ///> Clock phase (0 - 1)
-    bool lsb_first = false;               ///> MSB or LSB first
+    SPIClockDivider clock_div =
+        SPIClockDivider::DIV2;               ///> Peripheral clock division
+    SPIMode mode          = SPIMode::MODE0;  ///> Clock polarity (0 - 1)
+    SPIBitOrder bit_order = SPIBitOrder::MSB_FIRST;  ///> MSB or LSB first
 
     unsigned int cs_setup_time_us = 0;  ///> How long to wait before starting a
                                         ///> a trasmission after CS is set (us)
@@ -73,10 +97,9 @@ struct SPIBusConfig
     {
         // Compare member-by-member
         // clang-format off
-        return  br == other.br 
-             && cpol == other.cpol 
-             && cpha == other.cpha 
-             && lsb_first == other.lsb_first 
+        return  clock_div == other.clock_div 
+             && mode == other.mode
+             && bit_order == other.bit_order
              && cs_setup_time_us == other.cs_setup_time_us 
              && cs_setup_time_us == other.cs_hold_time_us;
         // clang-format on

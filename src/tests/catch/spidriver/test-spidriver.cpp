@@ -56,79 +56,101 @@ TEST_CASE("SPIBus - Bus Configuration")
     SECTION("Configure & check CR1")
     {
         SPIBusConfig config;
-        config.br = SPIBaudRate::DIV_16;
+        REQUIRE(spi.CR1 == 0);
 
-        config.cpha      = 1;
-        config.cpol      = 1;
-        config.lsb_first = true;
+        SECTION("Mode")
+        {
+            config.mode = SPIMode::MODE0;
+            uint32_t expected_CR1 = 0x0344;   
+            bus.configure(config);
+            REQUIRE(spi.CR1 == expected_CR1);
 
-        uint32_t expected_CR1 = 0x03DF;
+            config.mode = SPIMode::MODE1;
+            expected_CR1 = 0x0345;   
+            bus.configure(config);
+            REQUIRE(spi.CR1 == expected_CR1);
 
-        bus.configure(config);
-        REQUIRE(spi.CR1 == expected_CR1);
+            config.mode = SPIMode::MODE2;
+            expected_CR1 = 0x0346;   
+            bus.configure(config);
+            REQUIRE(spi.CR1 == expected_CR1);
 
-        // Change config
-        config.br = SPIBaudRate::DIV_256;
+            config.mode = SPIMode::MODE3;
+            expected_CR1 = 0x0347;   
+            bus.configure(config);
+            REQUIRE(spi.CR1 == expected_CR1);
 
-        config.cpha      = 0;
-        config.cpol      = 0;
-        config.lsb_first = false;
+        }
 
-        expected_CR1 = 0x037C;
+        SECTION("Clock Divider")
+        {
+            config.clock_div = SPIClockDivider::DIV2;
+            uint32_t expected_CR1 = 0x0344;   
+            bus.configure(config);
+            REQUIRE(spi.CR1 == expected_CR1);
 
-        bus.configure(config);
-        REQUIRE(spi.CR1 == expected_CR1);
+            config.clock_div = SPIClockDivider::DIV4;
+            expected_CR1 = 0x034C;   
+            bus.configure(config);
+            REQUIRE(spi.CR1 == expected_CR1);
 
-        config.cpha      = 0;
-        config.cpol      = 1;
-        config.lsb_first = false;
+            config.clock_div = SPIClockDivider::DIV8;
+            expected_CR1 = 0x0354;   
+            bus.configure(config);
+            REQUIRE(spi.CR1 == expected_CR1);
 
-        expected_CR1 = 0x037E;
+            config.clock_div = SPIClockDivider::DIV16;
+            expected_CR1 = 0x035C;   
+            bus.configure(config);
+            REQUIRE(spi.CR1 == expected_CR1);
 
-        bus.configure(config);
-        REQUIRE(spi.CR1 == expected_CR1);
+            config.clock_div = SPIClockDivider::DIV32;
+            expected_CR1 = 0x0364;   
+            bus.configure(config);
+            REQUIRE(spi.CR1 == expected_CR1);
+            
+            config.clock_div = SPIClockDivider::DIV64;
+            expected_CR1 = 0x036C;   
+            bus.configure(config);
+            REQUIRE(spi.CR1 == expected_CR1);
 
-        config.cpha      = 1;
-        config.cpol      = 0;
-        config.lsb_first = false;
+            config.clock_div = SPIClockDivider::DIV128;
+            expected_CR1 = 0x0374;   
+            bus.configure(config);
+            REQUIRE(spi.CR1 == expected_CR1);
 
-        expected_CR1 = 0x037D;
+            config.clock_div = SPIClockDivider::DIV256;
+            expected_CR1 = 0x037C;   
+            bus.configure(config);
+            REQUIRE(spi.CR1 == expected_CR1);
+        }
 
-        bus.configure(config);
-        REQUIRE(spi.CR1 == expected_CR1);
+        SECTION("Bit order")
+        {
+            config.bit_order = SPIBitOrder::MSB_FIRST;
+            uint32_t expected_CR1 = 0x0344;   
+            bus.configure(config);
+            REQUIRE(spi.CR1 == expected_CR1);
 
-        // Reapply same config
-        bus.configure(config);
-        REQUIRE(spi.CR1 == expected_CR1);
+            config.bit_order = SPIBitOrder::LSB_FIRST;
+            expected_CR1 = 0x03C4;   
+            bus.configure(config);
+            REQUIRE(spi.CR1 == expected_CR1);
+        }
+      
     }
 
     SECTION("Disable configuration")
     {
         SPIBusConfig config;
-        config.br = SPIBaudRate::DIV_16;
+        config.clock_div = SPIClockDivider::DIV16;
 
-        config.cpha      = 1;
-        config.cpol      = 1;
-        config.lsb_first = true;
+        config.mode      = SPIMode::MODE3;
+        config.bit_order = SPIBitOrder::LSB_FIRST;
 
         bus.enableSlaveConfiguration(false);
         bus.configure(config);
         REQUIRE(spi.CR1 == 0);
-    }
-
-    SECTION("Wrong parameters")
-    {
-        SPIBusConfig config;
-        config.br = SPIBaudRate::DIV_16;
-
-        config.cpha      = 8;
-        config.cpol      = 9;
-        config.lsb_first = true;
-
-        uint32_t expected_CR1 = 0x03DE;
-
-        bus.configure(config);
-        REQUIRE(spi.CR1 == expected_CR1);
     }
 }
 
@@ -157,11 +179,10 @@ TEST_CASE("SPIBus - One byte operations")
     FakeSPIBus bus{&spi};
 
     SPIBusConfig config;
-    config.br = SPIBaudRate::DIV_16;
+    config.clock_div = SPIClockDivider::DIV16;
 
-    config.cpha      = 1;
-    config.cpol      = 1;
-    config.lsb_first = true;
+    config.mode      = SPIMode::MODE3;
+    config.bit_order = SPIBitOrder::LSB_FIRST;
 
     bus.configure(config);
     bus.select(spi.cs);
@@ -209,11 +230,10 @@ TEST_CASE("SPIBus - Multi byte operations")
     FakeSPIBus bus{&spi};
 
     SPIBusConfig config;
-    config.br = SPIBaudRate::DIV_16;
+    config.clock_div = SPIClockDivider::DIV16;
 
-    config.cpha      = 1;
-    config.cpol      = 1;
-    config.lsb_first = true;
+    config.mode      = SPIMode::MODE3;
+    config.bit_order = SPIBitOrder::LSB_FIRST;
 
     bus.configure(config);
     bus.select(spi.cs);
@@ -264,8 +284,8 @@ TEST_CASE("SPITransaction - writes")
     MockSPIBus bus{};
     SPIBusConfig config1{};
 
-    config1.cpha = 1;
-    config1.br   = SPIBaudRate::DIV_32;
+    config1.mode = SPIMode::MODE1;
+    config1.clock_div  = SPIClockDivider::DIV32;
 
     bus.expected_config = config1;
 
@@ -360,8 +380,8 @@ TEST_CASE("SPITransaction - reads")
 
     SPIBusConfig config1;
 
-    config1.cpha = 1;
-    config1.br   = SPIBaudRate::DIV_32;
+    config1.mode = SPIMode::MODE1;
+    config1.clock_div  = SPIClockDivider::DIV32;
 
     bus.expected_config = config1;
 
@@ -450,8 +470,8 @@ TEST_CASE("SPITransaction - transfer")
 
     SPIBusConfig config1;
 
-    config1.cpha = 1;
-    config1.br   = SPIBaudRate::DIV_32;
+    config1.mode = SPIMode::MODE1;
+    config1.clock_div  = SPIClockDivider::DIV32;
 
     bus.expected_config = config1;
 
@@ -460,7 +480,7 @@ TEST_CASE("SPITransaction - transfer")
         SPISlave slave(bus, GpioPin(GPIOA_BASE, 1), config1);
         SPITransaction spi(slave);
 
-        uint8_t buf[4]  = {4, 3, 2, 1};
+        uint8_t buf[4] = {4, 3, 2, 1};
         uint8_t cmp[4] = {4, 3, 2, 1};
 
         spi.transfer(buf, 0);
