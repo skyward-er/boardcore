@@ -211,8 +211,6 @@ struct SPISlave
                           ///> with the slave.
     GpioPin cs;           ///> Chip select pin
 
-    SPISlave(SPIBusInterface& bus, GpioPin cs) : bus(bus), cs(cs) {}
-
     SPISlave(SPIBusInterface& bus, GpioPin cs, SPIBusConfig config)
         : bus(bus), config(config), cs(cs)
     {

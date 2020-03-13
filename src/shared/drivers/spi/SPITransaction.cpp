@@ -38,22 +38,22 @@ SPITransaction::SPITransaction(SPISlave slave)
 void SPITransaction::write(uint8_t cmd)
 {
     bus.select(cs);
-    bus.write(&cmd, 1);
+    bus.write(cmd);
     bus.deselect(cs);
 }
 
 void SPITransaction::write(uint8_t reg, uint8_t val)
 {
     bus.select(cs);
-    bus.write(&reg, 1);
-    bus.write(&val, 1);
+    bus.write(reg);
+    bus.write(val);
     bus.deselect(cs);
 }
 
 void SPITransaction::write(uint8_t reg, uint8_t* data, size_t size)
 {
     bus.select(cs);
-    bus.write(&reg, 1);
+    bus.write(reg);
     bus.write(data, size);
     bus.deselect(cs);
 }
@@ -75,11 +75,13 @@ void SPITransaction::transfer(uint8_t* data, size_t size)
 uint8_t SPITransaction::read(uint8_t reg, bool set_read_bit)
 {
     if (set_read_bit)
+    {
         reg = reg | 0x80;
+    }
 
     bus.select(cs);
-    bus.write(&reg, 1);
-    bus.read(&reg, 1);
+    bus.write(reg);
+    reg = bus.read();
     bus.deselect(cs);
     return reg;
 }
@@ -88,10 +90,12 @@ void SPITransaction::read(uint8_t reg, uint8_t* data, size_t size,
                           bool set_read_bit)
 {
     if (set_read_bit)
+    {
         reg = reg | 0x80;
+    }
 
     bus.select(cs);
-    bus.write(&reg, 1);
+    bus.write(reg);
     bus.read(data, size);
     bus.deselect(cs);
 }
