@@ -33,6 +33,7 @@
 #include "Topics.h"
 
 #include <map>
+using std::map;
 
 string getEventString(uint8_t event)
 {{

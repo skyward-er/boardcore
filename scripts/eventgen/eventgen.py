@@ -94,6 +94,7 @@ def parse_scxml(files):
 def generate_events(events, date):
     enum_str = ""
     event_map_str = ""
+    event_list_str = ""
 
     # generate string
     for e in events:
@@ -102,14 +103,14 @@ def generate_events(events, date):
             (" = EV_FIRST_SIGNAL" if e == events[0] else "") + endl
         event_map_str += "        {{ {event}, {string} }}{endl}".format(
             event=e, string='"' + e + '"', endl=endl)
+        event_list_str += e + (", " if e != events[-1] else "")
 
     # read template
     with open('Events.h.template', 'r') as template_file:
         template = template_file.read()
 
     # write template
-    template = template.format(date=date, enum_data=enum_str)
-
+    template = template.format(date=date, enum_data=enum_str, event_list=event_list_str)
     with open(join(OUTPUT_FOLDER, 'Events.h'), 'w') as header_file:
         header_file.write(template)
 
@@ -121,17 +122,19 @@ def generate_events(events, date):
 def generate_topics(topics, date):
     enum_str = ""
     topic_map_str = ""
+    topic_list_str = ""
 
     for t in topics:
         endl = ",\n" if t != topics[-1] else ""
         enum_str += "    " + t + endl
         topic_map_str += "        {{ {topics}, {string} }}{endl}".format(
             topics=t, string='"' + t + '"', endl=endl)
+        topic_list_str += t + (", " if t != topics[-1] else "")
 
     with open('Topics.h.template', 'r') as template_file:
         template = template_file.read()
 
-    template = template.format(date=date, enum_data=enum_str)
+    template = template.format(date=date, enum_data=enum_str, topic_list=topic_list_str)
 
     with open(join(OUTPUT_FOLDER, 'Topics.h'), 'w') as header_file:
         header_file.write(template)
@@ -142,12 +145,12 @@ def generate_topics(topics, date):
 # Generate EventFunctions.cpp
 #
 def generate_functions(event_map_str, topic_map_str, date):
-    with open('EventFunctions.cpp.template', 'r') as cpp_template_file:
+    with open('EventStrings.cpp.template', 'r') as cpp_template_file:
         cpp = cpp_template_file.read()
 
     cpp = cpp.format(date=date, event_map_data=event_map_str, topic_map_data=topic_map_str)
 
-    with open(join(OUTPUT_FOLDER, 'EventFunctions.cpp'), 'w') as cpp_file:
+    with open(join(OUTPUT_FOLDER, 'EventStrings.cpp'), 'w') as cpp_file:
         cpp_file.write(cpp)
 
 #
