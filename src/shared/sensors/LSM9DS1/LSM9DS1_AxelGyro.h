@@ -105,35 +105,28 @@ class LSM9DS1_XLG : public GyroSensor, public AccelSensor, public TemperatureSen
             
         }
 
-        void getWhoami()
-        {
-            SPITransaction spi(spislave);
-            uint8_t whoami = spi.read(regMapXLG::WHO_AM_I);
-            TRACE("whoami: 0x%02X\n", whoami); 
-        }
-
-
         bool init() override
         {
             //Set FSR
-            switch(axelFSR)
+            switch(axelFSR)             //DA RIGUARDARE I COEFFICIENTI: SU DS C'E' SENSITIVITY IN mg/LSB
             {
                 case AxelFSR::FS_2:
-                    axelSensitivity = 0.061f;
+                    axelSensitivity = 0.598f;
                     break;
                 case AxelFSR::FS_4:
-                    axelSensitivity = 0.122f;
+                    axelSensitivity = 1.196f;
                     break;
                 case AxelFSR::FS_8:
-                    axelSensitivity = 0.244f;
+                    axelSensitivity = 2.393f;
                     break;
                 case AxelFSR::FS_16:
-                    axelSensitivity = 0.732f;
+                    axelSensitivity = 7.178f;
                     break;
                 default:
-                    axelSensitivity = 0.061f;
+                    axelSensitivity = 0.598f;
                     break;
             }
+
             switch (gyroFSR)
             {
                 case GyroFSR::FS_245:
@@ -252,16 +245,16 @@ class LSM9DS1_XLG : public GyroSensor, public AccelSensor, public TemperatureSen
                 // TRACE("LSM9DS1 temp: %02X\n, temp");
                 
                 mLastAccel = 
-                    Vec3(x_xl  / axelSensitivity,
-                         y_xl  / axelSensitivity,
-                         z_xl  / axelSensitivity);
+                    Vec3(x_xl  * axelSensitivity / 1000,
+                         y_xl  * axelSensitivity / 1000,
+                         z_xl  * axelSensitivity / 1000);
                 
                 mLastGyro =
-                    Vec3(x_gy  / gyroSensitivity,
-                         y_gy  / gyroSensitivity,
-                         z_gy  / gyroSensitivity);
+                    Vec3(x_gy  * gyroSensitivity / 1000,
+                         y_gy  * gyroSensitivity / 1000,
+                         z_gy  * gyroSensitivity / 1000);
 
-                mLastTemp =  tempZero + temp / tempSensistivity; //25°C + TEMP/S devo castare a float "temp"?
+                mLastTemp =  tempZero + (temp / tempSensistivity); //25°C + TEMP*S devo castare a float "temp"?
             }
             else{ //if FIFO enabled: do not store temperature, it can be read using "temperatureUpdate()" function at low sampling frequency
                 uint8_t buf[384];

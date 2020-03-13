@@ -76,20 +76,20 @@ int main(){
 
     while(!lsm9ds1.init()){}
     Thread::sleep(500);
-    long long first_tick = miosix::getTick();
+    printf("ax,ay,az,gx,gy,gz,t\n");
+    long long first_tick = getTick();  
     for(;;)
-    {
-        long long tick = miosix::getTick();
+    {   
+        long long last_tick = getTick(); 
         lsm9ds1.onSimpleUpdate();
         adata = *(lsm9ds1.accelDataPtr());
         gdata = *(lsm9ds1.gyroDataPtr());
         tdata = *(lsm9ds1.tempDataPtr());
-        TRACE("TIMESTAMP:%lld\taxel: %.3f,%.3f,%.3f\tgyro: %.3f,%.3f,%.3f\ttemp: %.3f\n", 
-                tick-first_tick, 
+        printf("%d;%.3f;%.3f;%.3f;%.3f;%.3f;%.3f;%.1f\n",
+                (last_tick - first_tick), 
                 adata.getX(), adata.getY(), adata.getZ(),
                 gdata.getX(), gdata.getY(), gdata.getZ(),
                 tdata);
-        Thread::sleep(500);
     }
     
     
