@@ -26,7 +26,7 @@
 #include <sensors/LSM6DS3H/LSM6DS3H.h>
 
 #include <drivers/spi/SensorSpi.h>
-#include <sensors/SensorSampling.h>
+#include <sensors/SensorSampler.h>
 #include <math/Stats.h>
 #include <diagnostic/CpuMeter.h>
 
@@ -36,19 +36,18 @@ using namespace miosix::interfaces;
 /* SPI1 binding to the sensor */
 typedef BusSPI<1,spi1::mosi,spi1::miso,spi1::sck> busSPI1;
 typedef ProtocolSPI<busSPI1,sensors::lsm6ds3h::cs> spiLSM6DS3H0_a;
-typedef LSM6DS3H<spiLSM6DS3H0_a> lsm6ds3h_t;
 
 int main()
 {   
-    SimpleSensorSampler sampler;
+    SimpleSensorSampler sampler(250, 1);
     spiLSM6DS3H0_a::init();
 
-    lsm6ds3h_t* lsm6ds3h = new lsm6ds3h_t(3,3);
+    LSM6DS3H<spiLSM6DS3H0_a>* lsm6ds3h = new LSM6DS3H<spiLSM6DS3H0_a>(3,3);
     
     if(lsm6ds3h->init())
     {
         printf("[LSM6DS3H] Init succeeded\n" );
-        sampler.AddSensor(lsm6ds3h);
+        sampler.addSensor(lsm6ds3h, std::bind([&]() {}));
     }
     else
     {
@@ -64,7 +63,7 @@ int main()
 
     while(true)
     {
-        sampler.Update();
+        sampler.sampleAndCallback();
 
         // const Vec3* last_data = lsm6ds3h->gyroDataPtr();
         // printf("%f %f %f\n", last_data->getX(), last_data->getY(),

@@ -26,27 +26,26 @@
 #include <sensors/MPU9250/MPU9250.h>
 
 #include <drivers/spi/SensorSpi.h>
-#include <sensors/SensorSampling.h>
+#include <sensors/SensorSampler.h>
 
 using namespace miosix;
 using namespace miosix::interfaces;
 
 typedef BusSPI<1,spi1::mosi,spi1::miso,spi1::sck> busSPI1;
 typedef ProtocolSPI<busSPI1,sensors::mpu9250::cs> spiMPU9250_a;
-typedef MPU9250<spiMPU9250_a> mpu_t;
 
 int main()
 {   
-    SimpleSensorSampler sampler;
+    SimpleSensorSampler sampler(250, 1);
 
     spiMPU9250_a::init();
-    mpu_t* mpu = new mpu_t(1, 1);
+    MPU9250<spiMPU9250_a>* mpu = new MPU9250<spiMPU9250_a>(1, 1);
 
     Thread::sleep(100);
     
     if(mpu->init()){
         printf("MPU9250 Init succeeded\n" );
-        sampler.AddSensor(mpu);
+        sampler.addSensor(mpu, std::bind([&]() {}));
     }
     else {
         printf("MPU9250 Init failed\n");
@@ -61,7 +60,7 @@ int main()
 
     while(true)
     {
-        sampler.Update();
+        sampler.sampleAndCallback();
         mpu->updateMagneto();
 
         const Vec3* last_data = mpu->compassDataPtr();
