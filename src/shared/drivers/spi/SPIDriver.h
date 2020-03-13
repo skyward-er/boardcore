@@ -23,6 +23,6 @@
 
 #pragma once
 
-#include "SPIInterface.h"
+#include "SPIBusInterface.h"
 #include "SPITransaction.h"
 #include "SPIBus.h"

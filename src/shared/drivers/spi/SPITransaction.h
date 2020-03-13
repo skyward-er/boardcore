@@ -25,7 +25,7 @@
 
 #pragma once
 
-#include "SPIInterface.h"
+#include "SPIBusInterface.h"
 
 /**
  * @brief Provides high-level access to the SPI Bus for a single transaction.
