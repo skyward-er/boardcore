@@ -24,7 +24,7 @@
 #include <drivers/spi/SPIDriver.h>
 #include <drivers/spi/SensorSpi.h>
 #include <interfaces-impl/hwmapping.h>
-#include <sensors/SensorSampling.h>
+#include <sensors/SensorSampler.h>
 
 #include "sensors/MS580301BA07/MS580301BA07.h"
 
@@ -44,7 +44,7 @@ int main()
         // SCK, MISO, MOSI already initialized in the bsp
     }
 
-    SimpleSensorSampler sampler;
+    SimpleSensorSampler sampler(50, 1);
 
     MS580301BA07* ms58 = new MS580301BA07(bus, chip_select);
 
@@ -53,7 +53,7 @@ int main()
     if (ms58->init())
     {
         printf("MS58 Init succeeded\n");
-        sampler.AddSensor(ms58);
+        sampler.addSensor(ms58, std::bind([&]() {}));
     }
     else
     {
@@ -70,7 +70,7 @@ int main()
     printf("raw_p,p,raw_t,t\n");
     while (true)
     {
-        sampler.Update();
+        sampler.sampleAndCallback();
 
         const float* last_pressure = ms58->pressureDataPtr();
         const float* last_temp     = ms58->tempDataPtr();
