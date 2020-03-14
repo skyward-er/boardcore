@@ -31,6 +31,8 @@
 using miosix::delayUs;
 using miosix::GpioPin;
 
+class SPITransaction;
+
 /**
  * @brief SPI Clock divider.
  * SPI clock frequency will be equal to the SPI peripheral bus clock speed (see
@@ -116,6 +118,7 @@ struct SPIBusConfig
  */
 class SPIBusInterface
 {
+    friend class SPITransaction;
 public:
     SPIBusInterface() {}
 
@@ -198,6 +201,9 @@ public:
      * @return
      */
     virtual void configure(SPIBusConfig config) = 0;
+
+private:
+    bool locked = false; // For use by SPITransaction
 };
 
 /**

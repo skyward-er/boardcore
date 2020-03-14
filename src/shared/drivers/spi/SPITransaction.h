@@ -1,19 +1,19 @@
 /**
- * 
- * 
+ *
+ *
  * Copyright (c) 2020 Skyward Experimental Rocketry
  * Authors: Luca Erbetta (luca.erbetta@skywarder.eu)
- * 
+ *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
  * in the Software without restriction, including without limitation the rights
  * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
  * copies of the Software, and to permit persons to whom the Software is
  * furnished to do so, subject to the following conditions:
- * 
+ *
  * The above copyright notice and this permission notice shall be included in
  * all copies or substantial portions of the Software.
- * 
+ *
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
  * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.  IN NO EVENT SHALL THE
@@ -41,14 +41,15 @@
  * {
  *     // Transaction begin:
  *     SPITransaction spi(bus, cs, config); // Configures the bus with the
- *                                          // provided parameters
+ *                                          // provided parameters.
  *
  *     spi.write(REG_EX, 0x56); // writes data to REG_EX
  *     uint8_t reg2 = spi.read(REG_EX_2); // reads from REG_EX_2
  *
  *     // ...As many read/writes as you wish...
  *
- *     // transaction end. SPITransaction object is destructed
+ *     // transaction end. SPITransaction object is destructed and the bus is
+ *     // freed for use by someone else
  * }
  */
 class SPITransaction
@@ -71,6 +72,8 @@ public:
      * @param    config    Configuration of the bus for the selected slave
      */
     SPITransaction(SPIBusInterface& bus, GpioPin cs, SPIBusConfig config);
+
+    ~SPITransaction();
 
     // Delete copy/move contructors/operators
     SPITransaction(const SPITransaction&) = delete;

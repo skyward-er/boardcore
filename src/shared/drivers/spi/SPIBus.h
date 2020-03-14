@@ -99,7 +99,7 @@ public:
      */
     void configure(SPIBusConfig config) override;
 
-private:
+protected:
     /**
      * Writes a single byte on the SPI bus.
      *
@@ -124,7 +124,7 @@ private:
 
     SPI_TypeDef* spi;
 
-    SPIBusConfig config;
+    SPIBusConfig config{};
     bool config_enabled       = true;
     bool first_config_applied = false;
 };
