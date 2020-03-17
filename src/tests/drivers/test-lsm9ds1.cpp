@@ -39,7 +39,7 @@ float tdata;
 //SPI
 SPIBus bus(SPI1);
 SPIBusConfig cfg;
-GpioPin cs(GPIOE_BASE, 7);
+GpioPin cs_XLG(GPIOE_BASE, 7);
 
 
 
@@ -55,7 +55,8 @@ int main(){
         GpioSck::mode(Mode::ALTERNATE);
         GpioMiso::mode(Mode::ALTERNATE);
         GpioMosi::mode(Mode::ALTERNATE);
-        cs.mode(Mode::OUTPUT);
+        
+        cs_XLG.mode(Mode::OUTPUT);
 
         GpioSck::alternateFunction(5);
         GpioMiso::alternateFunction(5);
@@ -65,16 +66,33 @@ int main(){
 
     }
 
-    cs.high();
+    cs_XLG.high();
+
+//dump regiters
+/*
+    for(int reg=0; reg<=0x38; reg++)
+    {
+        SPISlave spislave(bus, cs_XLG, cfg);
+        SPITransaction spi(spislave);
+        uint8_t data = spi.read(reg);
+        printf("0x%02X-->0x%02X\n", reg,data);
+    }
+}*/
+    
+    
+  
     LSM9DS1_XLG lsm9ds1(
                     bus,
-                    cs,
+                    cs_XLG,
+                    cfg,
                     LSM9DS1_XLG::AxelFSR::FS_8, 
                     LSM9DS1_XLG::GyroFSR::FS_245,
                     LSM9DS1_XLG::ODR::ODR_952
                     );
 
+
     while(!lsm9ds1.init()){}
+
     Thread::sleep(500);
     printf("ax,ay,az,gx,gy,gz,t\n");
     long long first_tick = getTick();  
@@ -86,7 +104,7 @@ int main(){
         gdata = *(lsm9ds1.gyroDataPtr());
         tdata = *(lsm9ds1.tempDataPtr());
         printf("%d;%.3f;%.3f;%.3f;%.3f;%.3f;%.3f;%.1f\n",
-                (last_tick - first_tick), 
+                (int)(last_tick - first_tick), 
                 adata.getX(), adata.getY(), adata.getZ(),
                 gdata.getX(), gdata.getY(), gdata.getZ(),
                 tdata);

@@ -73,7 +73,7 @@ class LSM9DS1_M : public CompassSensor
            ODR              odr                 = ODR::ODR_0_625
            ): spislave(bus, cs), magFSR(magRange), odr(odr){
             //SPI config
-            spislave.config.br = SPIBaudRate::DIV_64; //baud = fclk/64
+            spislave.config.clock_div=SPIClockDivider::DIV64; 
         }
 
         LSM9DS1_M(
@@ -92,49 +92,53 @@ class LSM9DS1_M : public CompassSensor
             switch(magFSR)
             {
                 case MagFSR::FS_4:
-                    magFSRval = 4.0f;
+                    magSensitivity = 0.14f;
                     break;
                 case MagFSR::FS_8:
-                    magFSRval = 8.0f;
+                    magSensitivity = 0.29f;
                     break;
                 case MagFSR::FS_12:
-                    magFSRval = 12.0f;
+                    magSensitivity = 0.43f;
                     break;
                 case MagFSR::FS_16:
-                    magFSRval = 16.0f;
+                    magSensitivity = 0.58f;
                     break;
                 default:
-                    magFSRval = 4.0f;
+                    magSensitivity = 0.14f;
                     break;
             }
 
             SPITransaction spi(spislave);
 
             //Who Am I check:
-            uint8_t whoami = spi.read(regMapM::WHO_AM_I_M);
+            uint8_t whoami = spi.read(WHO_AM_I_M);//regMapM::WHO_AM_I_M);
+
             if(whoami != WHO_AM_I_M_VAL){
-                TRACE("LSM9DS1 WAMI: %d\n", whoami);
+                TRACE("LSM9DS1 MAG WAMI: 0x%02X\n", whoami);
                 last_error = ERR_NOT_ME;
                 return false;
             }
-
+            
             //setup     
             uint8_t CTRL_REG1_M_VAL = 0x60 | (int)odr<<2;
             spi.write(regMapM::CTRL_REG1_M, CTRL_REG1_M_VAL); //X,Y axes in ultra-high performance mode, NO auto-temp compensation and ODR defined by constructor
-
+            
             uint8_t CTRL_REG2_M_VAL = (int)magFSR<<5;
             spi.write(regMapM::CTRL_REG2_M, CTRL_REG2_M_VAL); //FSR defined by constructor
 
             spi.write(regMapM::CTRL_REG4_M, CTRL_REG4_M_VAL); //Z axis in ultra-high performance mode
             spi.write(regMapM::CTRL_REG3_M, CTRL_REG3_M_VAL); //I2C disabled, SPI mode: read/write
+            
+            spi.write(regMapM::INT_CFG_M, INT_CFG_M_VAL); //disable all interrupts
 
 
             //check that all registers have been written correctly 
 
-            if(spi.read(regMapM::CTRL_REG1_M) != CTRL_REG1_M_VAL) return false;
-            if(spi.read(regMapM::CTRL_REG2_M) != CTRL_REG2_M_VAL) return false;
-            if(spi.read(regMapM::CTRL_REG3_M) != CTRL_REG3_M_VAL) return false;
-            if(spi.read(regMapM::CTRL_REG4_M) != CTRL_REG4_M_VAL) return false;
+            if(spi.read(regMapM::CTRL_REG1_M) != CTRL_REG1_M_VAL) {return false;}
+            if(spi.read(regMapM::CTRL_REG2_M) != CTRL_REG2_M_VAL) {return false;}
+            if(spi.read(regMapM::CTRL_REG3_M) != CTRL_REG3_M_VAL) {return false;}
+            if(spi.read(regMapM::CTRL_REG4_M) != CTRL_REG4_M_VAL) {return false;}
+            if(spi.read(regMapM::INT_CFG_M)   != INT_CFG_M_VAL)   {return false;}
 
             return true;
         }
@@ -161,14 +165,15 @@ class LSM9DS1_M : public CompassSensor
             // TRACE("LSM9DS1 mageto: %02X,%02X,%02X\n", x, y, z);
 
             mLastCompass =
-                    Vec3(x * magFSRval / 0xFFFF,
-                         y * magFSRval / 0xFFFF,
-                         z * magFSRval / 0xFFFF);
+                    Vec3(x * magSensitivity / 1000,
+                         y * magSensitivity / 1000,
+                         z * magSensitivity / 1000);
+            return true; 
         }
 
         void setOffset(vector<uint16_t>& offVect) //X,Y,Z
         {
-            if(offVect.size < 3) return;
+            if(offVect.size() < 3) return;
             uint8_t toStore[6];
             for(int i=6; i > 0 ; i=i-2){
                 toStore[i-1] = offVect.back() & 0x00FF; //LSB
@@ -188,7 +193,7 @@ class LSM9DS1_M : public CompassSensor
         MagFSR magFSR;
         ODR odr;
 
-        float magFSRval;
+        float magSensitivity;
 
         enum regMapM
         {
@@ -218,8 +223,9 @@ class LSM9DS1_M : public CompassSensor
         };
 
         static const uint8_t WHO_AM_I_M_VAL    = 0x3D;
-        static const uint8_t CTRL_REG3_M_VAL   = 0x84;
+        static const uint8_t CTRL_REG3_M_VAL   = 0x80;
         static const uint8_t CTRL_REG4_M_VAL   = 0x0C;
+        static const uint8_t INT_CFG_M_VAL     = 0x00;
 
 
 };
