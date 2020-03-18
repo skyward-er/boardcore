@@ -25,6 +25,7 @@
 
 #include "drivers/spi/SPIDriver.h"
 #include "sensors/LSM9DS1/LSM9DS1_AxelGyro.h"
+#include "sensors/LSM9DS1/LSM9DSI_Magneto.h"
 
 using namespace miosix;
 
@@ -33,13 +34,18 @@ typedef Gpio<GPIOA_BASE, 6> GpioMiso;
 typedef Gpio<GPIOA_BASE, 7> GpioMosi;
 
 static const bool FIFO_ENABLED = false;
-Vec3 adata, gdata;
+Vec3 adata, gdata, mdata;
 float tdata; 
 
 //SPI
 SPIBus bus(SPI1);
 SPIBusConfig cfg;
 GpioPin cs_XLG(GPIOE_BASE, 7);
+GpioPin cs_M(GPIOE_BASE, 8);
+
+//LEDs
+GpioPin LED1(GPIOD_BASE, 15);
+GpioPin LED2(GPIOD_BASE, 13);
 
 
 
@@ -57,6 +63,7 @@ int main(){
         GpioMosi::mode(Mode::ALTERNATE);
         
         cs_XLG.mode(Mode::OUTPUT);
+        cs_M.mode(Mode::OUTPUT); 
 
         GpioSck::alternateFunction(5);
         GpioMiso::alternateFunction(5);
@@ -64,9 +71,13 @@ int main(){
 
         GpioSck::speed(Speed::_25MHz); 
 
+        LED1.mode(Mode::OUTPUT);
+        LED2.mode(Mode::OUTPUT);
+
     }
 
     cs_XLG.high();
+    cs_M.high(); 
 
 //dump regiters
 /*
@@ -81,7 +92,7 @@ int main(){
     
     
   
-    LSM9DS1_XLG lsm9ds1(
+    LSM9DS1_XLG lsm9ds1X(
                     bus,
                     cs_XLG,
                     cfg,
@@ -90,23 +101,37 @@ int main(){
                     LSM9DS1_XLG::ODR::ODR_952
                     );
 
+    LSM9DS1_M lsm9ds1M(
+                    bus,
+                    cs_M,
+                    LSM9DS1_M::MagFSR::FS_8,
+                    LSM9DS1_M::ODR::ODR_20
+                    );
 
-    while(!lsm9ds1.init()){}
+    while(!lsm9ds1X.init()){}
+    LED1.high();
+
+    while(!lsm9ds1M.init()){}
+    LED2.high();
 
     Thread::sleep(500);
-    printf("ax,ay,az,gx,gy,gz,t\n");
+    
+    printf("time,ax,ay,az,gx,gy,gz,mx,my,mz,t\n");
     long long first_tick = getTick();  
     for(;;)
     {   
         long long last_tick = getTick(); 
-        lsm9ds1.onSimpleUpdate();
-        adata = *(lsm9ds1.accelDataPtr());
-        gdata = *(lsm9ds1.gyroDataPtr());
-        tdata = *(lsm9ds1.tempDataPtr());
-        printf("%d;%.3f;%.3f;%.3f;%.3f;%.3f;%.3f;%.1f\n",
+        lsm9ds1X.onSimpleUpdate();
+        adata = *(lsm9ds1X.accelDataPtr());
+        gdata = *(lsm9ds1X.gyroDataPtr());
+        tdata = *(lsm9ds1X.tempDataPtr());
+        lsm9ds1M.onSimpleUpdate(); 
+        mdata = *(lsm9ds1M.compassDataPtr());
+        printf("%d,%.3f,%.3f,%.3f,%.3f,%.3f,%.3f,%.3f,%.3f,%.3f,%.1f\n",
                 (int)(last_tick - first_tick), 
                 adata.getX(), adata.getY(), adata.getZ(),
                 gdata.getX(), gdata.getY(), gdata.getZ(),
+                mdata.getX(), mdata.getY(), mdata.getZ(),
                 tdata);
     }
     
