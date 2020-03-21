@@ -189,11 +189,11 @@ class LSM9DS1_XLG : public GyroSensor, public AccelSensor, public TemperatureSen
             {
                 spi.write(regMapXLG::FIFO_CTRL, (FIFO_CTRL_VAL|fifo_watermark)); //FIFO continous mode + fifo watermark threshold setup
                 spi.write(regMapXLG::INT1_CTRL, INT1_CTRL_VAL); //interrupt on FIFO treshold
-                spi.write(regMapXLG::CTRL_REG9, (CTRL_REG9_VAL|0x02)); //DRDY_mask_bit ON, I2C OFF, FIFO ON
+                spi.write(regMapXLG::CTRL_REG9, (CTRL_REG9_VAL|0x02)); //DRDY_mask_bit OFF, I2C OFF, FIFO ON
             }
             else
             {
-                spi.write(regMapXLG::CTRL_REG9, CTRL_REG9_VAL); //DRDY_mask_bit ON, I2C OFF, FIFO OFF
+                spi.write(regMapXLG::CTRL_REG9, CTRL_REG9_VAL); //DRDY_mask_bit OFF, I2C OFF, FIFO OFF
             }
             
             
@@ -223,24 +223,8 @@ class LSM9DS1_XLG : public GyroSensor, public AccelSensor, public TemperatureSen
             if(spi.read(regMapXLG::CTRL_REG6_XL) != CTRL_REG6_XL_VAL)                  {return false;}
             if(spi.read(regMapXLG::CTRL_REG1_G) != CTRL_REG1_G_VAL)                    {return false;}
             
-            
-            //@ startup, some samples have to be discarded (datasheet)
-            if(odr != ODR::PWR_DW)
-            {   
-                uint16_t toWait_ms = samplesToDiscard * 1000 / odrHz;
-                //TRACE("toWait_ms: %d", toWait_ms); 
-                miosix::Thread::sleep(toWait_ms); //if FIFO is disabled, just wait 
-                if(fifo_enabled)
-                {
-                    //if FIFO is enabled, read first <samplesToDiscard> samples and discard them
-                    SPITransaction spi(spislave);
-                    for(int i=0; i < samplesToDiscard; i++)
-                    {
-                        spi.read(regMapXLG::OUT_X_L_XL, 6);
-                        spi.read(regMapXLG::OUT_X_L_G,  6);
-                    }
-                }
-            }
+            discardSamples();
+
             return true;  
         }
 
@@ -253,28 +237,23 @@ class LSM9DS1_XLG : public GyroSensor, public AccelSensor, public TemperatureSen
         {
             
             if(!fifo_enabled){ //if FIFO disabled
-                uint8_t axelData[6], gyroData[6], tempData[2];
+               uint8_t data[12], tempData[2];
                 // Read output axel+gyro data X,Y,Z
                 {
                     SPITransaction spi(spislave);
-                    spi.read(regMapXLG::OUT_X_L_XL, axelData, 6);
-                    spi.read(regMapXLG::OUT_X_L_G,  gyroData, 6);
+                    spi.read(regMapXLG::OUT_X_L_G, data, 12);
                     spi.read(regMapXLG::OUT_TEMP_L, tempData, 2); 
                 }
 
-                int16_t x_xl = axelData[0] | axelData[1] << 8;
-                int16_t y_xl = axelData[2] | axelData[3] << 8;
-                int16_t z_xl = axelData[4] | axelData[5] << 8;
+                int16_t x_gy = data[0]  |  data[1] << 8;
+                int16_t y_gy = data[2]  |  data[3] << 8;
+                int16_t z_gy = data[4]  |  data[5] << 8;
 
-                int16_t x_gy = gyroData[0] | gyroData[1] << 8;
-                int16_t y_gy = gyroData[2] | gyroData[3] << 8;
-                int16_t z_gy = gyroData[4] | gyroData[5] << 8;
+                int16_t x_xl = data[6]  |  data[7] << 8;
+                int16_t y_xl = data[8]  |  data[9] << 8;
+                int16_t z_xl = data[10] |  data[11] << 8;
 
                 int16_t temp = tempData[0] | tempData[1] << 8;
-
-                // TRACE("LSM9DS1 axel: %02X,%02X,%02X\n", x_xl, y_xl, z_xl);
-                // TRACE("LSM9DS1 gyro: %02X,%02X,%02X\n", x_gy, y_gy, z_gy);
-                // TRACE("LSM9DS1 temp: %02X\n, temp");
                 
                 mLastAccel = 
                     Vec3(x_xl  * axelSensitivity / 1000,
@@ -289,7 +268,7 @@ class LSM9DS1_XLG : public GyroSensor, public AccelSensor, public TemperatureSen
                 mLastTemp =  tempZero + (temp / tempSensistivity); //25°C + TEMP*S devo castare a float "temp"?
             }
             else{ //if FIFO enabled: do not store temperature, it can be read using "temperatureUpdate()" function at low sampling frequency
-                uint8_t buf[384];
+                uint8_t buf[384]; //2 bytes per data * 3 axes * 2 (axel+gyro) * 32(FIFO DEPTH) = 384 samples 
                 {
                     SPITransaction spi(spislave);
                     //read FIFO status and dump all the samples inside the FIFO
@@ -314,13 +293,13 @@ class LSM9DS1_XLG : public GyroSensor, public AccelSensor, public TemperatureSen
                     uint16_t z_xl = buf[i*12 + 10] | buf[i*12 + 11] << 8;
 
                     gyro_fifo[i] = 
-                                Vec3(x_gy  / gyroSensitivity,
-                                     y_gy  / gyroSensitivity,
-                                     z_gy  / gyroSensitivity);
+                                Vec3(x_gy * gyroSensitivity / 1000,
+                                     y_gy * gyroSensitivity / 1000,
+                                     z_gy * gyroSensitivity / 1000);
                     axel_fifo[i] = 
-                                Vec3(x_xl  / axelSensitivity,
-                                     y_xl  / axelSensitivity,
-                                     z_xl  / axelSensitivity);
+                                Vec3(x_xl * axelSensitivity / 1000,
+                                     y_xl * axelSensitivity / 1000,
+                                     z_xl * axelSensitivity / 1000);
                 }
             }
             return true; 
@@ -339,10 +318,20 @@ class LSM9DS1_XLG : public GyroSensor, public AccelSensor, public TemperatureSen
             return true;
         }
 
+        void clearFIFO() //FIFO clearing routine (see datasheet)
+        {
+            SPITransaction spi(spislave);
+            spi.write(FIFO_CTRL, 0); //Bypass Mode
+            miosix::Thread::sleep(20); //Wait
+            spi.write(FIFO_CTRL, FIFO_CTRL_VAL | fifo_watermark); //re-enable FIFO
+            discardSamples();
+
+        }
+
         const array<Vec3, 32>& getGyroFIFO() const { return gyro_fifo; }
         const array<Vec3, 32>& getAxelFIFO() const { return axel_fifo; }
         uint8_t getFIFOSamples() const { return fifo_samples;} //fifo_samples is the same for both axel & gyro FIFOs
-
+        
     private:
 
         bool fifo_enabled;
@@ -362,6 +351,29 @@ class LSM9DS1_XLG : public GyroSensor, public AccelSensor, public TemperatureSen
         float tempZero = 25.0f;
         float tempSensistivity = 16.0f;
         static const uint8_t samplesToDiscard = 8; //max possible val
+
+        void discardSamples()
+        {
+                        
+            //@ startup, some samples have to be discarded (datasheet)
+            if(odr != ODR::PWR_DW)
+            {   
+                uint16_t toWait_ms = samplesToDiscard * 1000 / odrHz;
+                //TRACE("toWait_ms: %d", toWait_ms); 
+                miosix::Thread::sleep(toWait_ms); //if FIFO is disabled, just wait 
+                if(fifo_enabled)
+                {
+                    //if FIFO is enabled, read first <samplesToDiscard> samples and discard them
+                    SPITransaction spi(spislave);
+                    for(int i=0; i < samplesToDiscard; i++)
+                    {
+                        spi.read(regMapXLG::OUT_X_L_XL, 6);
+                        spi.read(regMapXLG::OUT_X_L_G,  6);
+                    }
+                }
+            }
+
+        }
 
         enum regMapXLG
         {

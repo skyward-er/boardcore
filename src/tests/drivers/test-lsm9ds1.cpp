@@ -34,8 +34,6 @@ typedef Gpio<GPIOA_BASE, 6> GpioMiso;
 typedef Gpio<GPIOA_BASE, 7> GpioMosi;
 
 static const bool FIFO_ENABLED = false;
-Vec3 adata, gdata, mdata;
-float tdata; 
 
 //SPI
 SPIBus bus(SPI1);
@@ -50,6 +48,10 @@ GpioPin LED2(GPIOD_BASE, 13);
 
 
 int main(){
+
+    Vec3 adata, gdata, mdata;
+    float tdata; 
+
 
     cfg.clock_div=SPIClockDivider::DIV64;
 
