@@ -72,7 +72,7 @@ void __attribute__((used)) EXTI1_IRQHandlerImpl()
     delta = tick - last_tick;
     last_tick = tick; 
 
-    //IRQ routine func here
+    //Set read flag
     flagSPIReadRequest = true;
 
     //Clear pending interrupt register
@@ -104,24 +104,24 @@ int main(){
 
     while(!lsm9ds1.init());
     
-    long long last_tick = getTick();
+    long long reset_tick = getTick();
 
     while(1)
     {
-        /*if(flagSPIReadRequest)
+        if(flagSPIReadRequest)
         {
             flagSPIReadRequest = false; 
             Thread::sleep(500);
             LED1.low();
             Thread::sleep(500);
-            lsm9ds1.clearFIFO();
+            lsm9ds1.clearFIFO(); //to reset interrupt 
             printf("interrupt occured...\n");
-        }*/
+        }
 
-        if(getTick()- last_tick> 10000) //every 10 sec Clear FIFO
+        if(getTick() - reset_tick > 10000) //every 10 sec Clear FIFO
         {   
             printf("Resetting ... \n");
-            last_tick = getTick();
+            reset_tick = getTick();
             lsm9ds1.clearFIFO();
         }
     }
