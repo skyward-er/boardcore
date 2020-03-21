@@ -23,7 +23,7 @@
 #
 import re
 import datetime
-from os.path import join
+from os.path import join, dirname
 import os
 
 import xml.etree.ElementTree as ET
@@ -31,6 +31,10 @@ import sys
 from collections import OrderedDict
 
 OUTPUT_FOLDER = "generated"
+
+EVENTS_TEMPLATE_FILE = os.path.dirname(sys.argv[0]) + '/Events.h.template'
+TOPICS_TEMPLATE_FILE = os.path.dirname(sys.argv[0]) + '/Topics.h.template'
+STRINGS_TEMPLATE_FILE = os.path.dirname(sys.argv[0]) + '/EventStrings.cpp.template'
 
 #
 # ASCII art banner
@@ -106,7 +110,7 @@ def generate_events(events, date):
         event_list_str += e + (", " if e != events[-1] else "")
 
     # read template
-    with open('Events.h.template', 'r') as template_file:
+    with open( EVENTS_TEMPLATE_FILE, 'r') as template_file:
         template = template_file.read()
 
     # write template
@@ -131,7 +135,7 @@ def generate_topics(topics, date):
             topics=t, string='"' + t + '"', endl=endl)
         topic_list_str += t + (", " if t != topics[-1] else "")
 
-    with open('Topics.h.template', 'r') as template_file:
+    with open( TOPICS_TEMPLATE_FILE, 'r') as template_file:
         template = template_file.read()
 
     template = template.format(date=date, enum_data=enum_str, topic_list=topic_list_str)
@@ -145,7 +149,7 @@ def generate_topics(topics, date):
 # Generate EventFunctions.cpp
 #
 def generate_functions(event_map_str, topic_map_str, date):
-    with open('EventStrings.cpp.template', 'r') as cpp_template_file:
+    with open( STRINGS_TEMPLATE_FILE, 'r') as cpp_template_file:
         cpp = cpp_template_file.read()
 
     cpp = cpp.format(date=date, event_map_data=event_map_str, topic_map_data=topic_map_str)
