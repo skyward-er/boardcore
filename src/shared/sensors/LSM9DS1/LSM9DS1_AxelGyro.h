@@ -268,18 +268,18 @@ class LSM9DS1_XLG : public GyroSensor, public AccelSensor, public TemperatureSen
                 mLastTemp =  tempZero + (temp / tempSensistivity); //25°C + TEMP*S devo castare a float "temp"?
             }
             else{ //if FIFO enabled: do not store temperature, it can be read using "temperatureUpdate()" function at low sampling frequency
-                uint8_t buf[384]; //2 bytes per data * 3 axes * 2 (axel+gyro) * 32(FIFO DEPTH) = 384 samples 
+                uint8_t buf[384]; //2 bytes per data * 3 axes * 2 (axel+gyro) * 32(FIFO DEPTH MAX) = 384 samples 
                 {
                     SPITransaction spi(spislave);
                     //read FIFO status and dump all the samples inside the FIFO
-                    uint8_t fifo_src = spi.read(FIFO_SRC);
-                    fifo_samples = fifo_src & 0x3F;
+                    //uint8_t fifo_src = spi.read(FIFO_SRC);
+                    //fifo_samples = fifo_src & 0x3F;
                     //sanity check
-                    if(fifo_samples > 32)
+                    /*if(fifo_samples > 32)
                     {
                         fifo_samples = 32;
-                    }
-                    spi.read(OUT_X_L_G, buf, fifo_samples*12); //format: gxl,gxh,gyl,gyh,gzl,gzh,axl,axh,ayl,ayh,azl,azh for each sample
+                    }*/
+                    spi.read(OUT_X_L_G, buf, fifo_watermark*12); //format: gxl,gxh,gyl,gyh,gzl,gzh,axl,axh,ayl,ayh,azl,azh for each sample
                 }
                 //convert & store
                 for(int i=0; i<fifo_samples; i++ )
