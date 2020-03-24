@@ -135,6 +135,7 @@ int main(){
                 gdata.getX(), gdata.getY(), gdata.getZ(),
                 mdata.getX(), mdata.getY(), mdata.getZ(),
                 tdata);
+        //printf("%.3f,%.3f,%.3f\n", mdata.getX(), mdata.getY(), mdata.getZ());
     }
     
     

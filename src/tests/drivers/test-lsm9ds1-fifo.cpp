@@ -39,7 +39,7 @@ typedef Gpio<GPIOA_BASE, 7> GpioMosi;
 typedef Gpio<GPIOA_BASE, 1> GpioINT1;
 
 static const bool FIFO_ENABLED      = true;
-static const uint8_t FIFO_WATERMARK = 12;
+static const uint8_t FIFO_WATERMARK = 20;
 static const uint8_t FIFO_SAMPLES   = 5;
 
 // SPI
@@ -53,15 +53,18 @@ GpioPin LED1(GPIOD_BASE, 15);
 volatile bool flagSPIReadRequest = false;
 
 // High Resolution hardware timer using TIM5
-HardwareTimer<uint32_t> hrclock{
-    TIM5, TimerUtils::getPrescalerInputFrequency(TimerUtils::InputClock::APB1)};
+HardwareTimer<uint32_t> hrclock(
+    TIM5, TimerUtils::getPrescalerInputFrequency(TimerUtils::InputClock::APB1));
 
 // Last interrupt tick & delta
 volatile uint32_t last_tick;
 volatile uint32_t delta;
 
-//LSM9DS1 obj
-LSM9DS1_XLG* lsm9ds1 = nullptr; 
+// Arrays for samples
+array<Vec3, 32> axelData[FIFO_SAMPLES], gyroData[FIFO_SAMPLES];
+
+// LSM9DS1 obj
+LSM9DS1_XLG* lsm9ds1 = nullptr;
 
 // Interrupt handlers
 void __attribute__((naked)) EXTI1_IRQHandler()
@@ -97,26 +100,21 @@ int main()
 
     uint8_t fifo_counter = 0;
     uint32_t dt[FIFO_SAMPLES];
-    //array<Vec3, 32> axelData[FIFO_SAMPLES], gyroData[FIFO_SAMPLES];
 
     gpioConfig();
 
-    
-    Thread::sleep(4000);
+    Thread::sleep(1000);
     LED1.low();
 
     timer5Config();
     EXTI1Config();
 
-    std::cout << "Before allocation" << std::endl; //FA ANCORA STACK OVERFLOW DOPO QUI GRRRR
-    
-    lsm9ds1 = new LSM9DS1_XLG(bus, cs_XLG, LSM9DS1_XLG::AxelFSR::FS_8,
-                        LSM9DS1_XLG::GyroFSR::FS_245, LSM9DS1_XLG::ODR::ODR_15,
-                        FIFO_ENABLED, FIFO_WATERMARK);
+    lsm9ds1 = new LSM9DS1_XLG(
+        bus, cs_XLG, LSM9DS1_XLG::AxelFSR::FS_8, LSM9DS1_XLG::GyroFSR::FS_245,
+        LSM9DS1_XLG::ODR::ODR_952, FIFO_ENABLED, FIFO_WATERMARK);
 
-    std::cout << "After allocation" << std::endl;
-
-    while (!lsm9ds1->init());
+    while (!lsm9ds1->init())
+        ;
 
     lsm9ds1->clearFIFO();
 
@@ -125,10 +123,10 @@ int main()
         if (flagSPIReadRequest && fifo_counter < FIFO_SAMPLES)
         {
             flagSPIReadRequest = false;
-            dt[fifo_counter]   = delta;
+            dt[fifo_counter]   = hrclock.toMicroSeconds(delta);
             lsm9ds1->onSimpleUpdate();
-            //axelData[fifo_counter] = lsm9ds1->getAxelFIFO();
-            //gyroData[fifo_counter] = lsm9ds1->getGyroFIFO();
+            axelData[fifo_counter] = lsm9ds1->getAxelFIFO();
+            gyroData[fifo_counter] = lsm9ds1->getGyroFIFO();
             LED1.low();
             fifo_counter++;
         }
@@ -139,9 +137,20 @@ int main()
         }
     }
 
+    // print data
+    uint32_t timestamp = 0;
+
     for (uint8_t i = 0; i < FIFO_SAMPLES; i++)
     {
-        std::cout << dt[i] << std::endl;
+        std::cout << "FIFO " << (int)i + 1 << std::endl;
+        for (uint8_t j = 0; j < FIFO_WATERMARK; j++)
+        {
+            timestamp += dt[i] / FIFO_WATERMARK;
+            printf("%d>>%ld>>%.3f,%.3f,%.3f,%.3f,%.3f,%.3f\n", j,timestamp,
+                   axelData[i][j].getX(), axelData[i][j].getY(),
+                   axelData[i][j].getZ(), gyroData[i][j].getX(),
+                   gyroData[i][j].getY(), gyroData[i][j].getZ());
+        }
     }
 
     return 0;
@@ -188,9 +197,11 @@ void timer5Config()
         // Enable high resolution TIM5
         RCC->APB1ENR |= RCC_APB1ENR_TIM5EN;
     }
+    hrclock.setPrescaler(382);
+    hrclock.start();
 }
 
-void EXTI1Config() //PC13
+void EXTI1Config()  // PC13
 {
     // Enable SYSCFG for setting interrupts
     {
