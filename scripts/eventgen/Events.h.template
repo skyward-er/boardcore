@@ -32,21 +32,24 @@
 
 #include <cstdint>
 #include <string>
+#include <vector>
 
 #include "events/Event.h"
 #include "events/EventBroker.h"
-#include "EventClasses.h"
 #include "Topics.h"
 
 using std::string;
-using std::map;
 
 /**
- * Definition of all events signals.
+ * Definition of all events in the Homeone Board software
+ * Refer to section 5.1.1 of the Software Design Document.
+ */
 enum Events : uint8_t
 {{
 {enum_data}
 }};
+
+const std::vector<uint8_t> EVENT_LIST {{{event_list}}};
 
 /**
  * @brief Returns the name of the provided event

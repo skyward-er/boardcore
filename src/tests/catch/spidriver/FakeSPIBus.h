@@ -22,7 +22,7 @@
  */
 
 #include "FakeSpiTypedef.h"
-#include "drivers/spi/SPIInterface.h"
+#include "drivers/spi/SPIBusInterface.h"
 
 #pragma once
 
@@ -49,18 +49,7 @@ public:
     FakeSPIBus(FakeSPIBus&&) = delete;
     FakeSPIBus& operator=(FakeSPIBus&&) = delete;
 
-    /**
-     * @brief Wether to apply slave-specific bus configuration before each
-     * transaction (BusTemplate compatibility mode).
-     * Only set to false to use SPIDriver alongside BusTemplate.h.
-     * Default value is true.
-     *
-     * @param value True: The slave configuration is applied to the SPI
-     * peripheral before each transaction. False: No configuration is ever
-     * applied to the SPI peripheral. The SPI peripheral retains the
-     * configuration set by BusTemplate.h
-     */
-    void enableSlaveConfiguration(bool value) { config_enabled = value; }
+    void disableBusConfiguration() { config_enabled = false; }
 
     /**
      * @brief See SPIBusInterface::write()

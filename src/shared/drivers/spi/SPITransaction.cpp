@@ -23,37 +23,49 @@
 
 #include "SPITransaction.h"
 
-SPITransaction::SPITransaction(SPIBusInterface& bus, GpioPin cs,
-                               SPIBusConfig config)
-    : bus(bus), cs(cs)
-{
-    bus.configure(config);
-}
+#include <cassert>
 
 SPITransaction::SPITransaction(SPISlave slave)
     : SPITransaction(slave.bus, slave.cs, slave.config)
 {
 }
 
+SPITransaction::SPITransaction(SPIBusInterface& bus, GpioPin cs,
+                               SPIBusConfig config)
+    : bus(bus), cs(cs)
+{
+    // Only one SPITransaction may be active at any given time.
+    // Do not store an instance of SPITransaction for a long time! Create one,
+    // use it, and destroy it as soon as you are done operating on the bus!
+    // (just like mutexes)
+#ifdef DEBUG
+    assert(bus.locked == false);
+#endif
+    bus.locked = true;
+    bus.configure(config);
+}
+
+SPITransaction::~SPITransaction() { bus.locked = false; }
+
 void SPITransaction::write(uint8_t cmd)
 {
     bus.select(cs);
-    bus.write(&cmd, 1);
+    bus.write(cmd);
     bus.deselect(cs);
 }
 
 void SPITransaction::write(uint8_t reg, uint8_t val)
 {
     bus.select(cs);
-    bus.write(&reg, 1);
-    bus.write(&val, 1);
+    bus.write(reg);
+    bus.write(val);
     bus.deselect(cs);
 }
 
 void SPITransaction::write(uint8_t reg, uint8_t* data, size_t size)
 {
     bus.select(cs);
-    bus.write(&reg, 1);
+    bus.write(reg);
     bus.write(data, size);
     bus.deselect(cs);
 }
@@ -75,11 +87,13 @@ void SPITransaction::transfer(uint8_t* data, size_t size)
 uint8_t SPITransaction::read(uint8_t reg, bool set_read_bit)
 {
     if (set_read_bit)
+    {
         reg = reg | 0x80;
+    }
 
     bus.select(cs);
-    bus.write(&reg, 1);
-    bus.read(&reg, 1);
+    bus.write(reg);
+    reg = bus.read();
     bus.deselect(cs);
     return reg;
 }
@@ -88,10 +102,12 @@ void SPITransaction::read(uint8_t reg, uint8_t* data, size_t size,
                           bool set_read_bit)
 {
     if (set_read_bit)
+    {
         reg = reg | 0x80;
+    }
 
     bus.select(cs);
-    bus.write(&reg, 1);
+    bus.write(reg);
     bus.read(data, size);
     bus.deselect(cs);
 }

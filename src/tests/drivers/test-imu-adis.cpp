@@ -24,7 +24,7 @@
 #include <drivers/BusTemplate.h>
 #include <interfaces-impl/hwmapping.h>
 #include <sensors/ADIS16405/ADIS16405.h>
-#include <sensors/SensorSampling.h>
+#include <sensors/SensorSampler.h>
 #include <math/Stats.h>
 #include <diagnostic/CpuMeter.h>
 #include <drivers/spi/SensorSpi.h>
@@ -38,31 +38,27 @@ typedef Gpio<GPIOD_BASE, 5> rstPin; // PD5 for the HomeoneBoard
 // SPI1 binding to the sensor
 typedef BusSPI<1,spi1::mosi,spi1::miso,spi1::sck> busSPI1; //Create SPI1
 typedef ProtocolSPI<busSPI1,miosix::sensors::adis16405::cs> spiADIS16405; //La lego al Chip Select 1 per la IMU 1
-typedef ADIS16405<spiADIS16405,rstPin> adis_t; //Passo il bus creato al sensore
 
 int main()
 {   
     spiADIS16405::init();
 
     Thread::sleep(1000);
-    adis_t adis(adis_t::GYRO_FS_300);
+    ADIS16405<spiADIS16405,rstPin>* adis = new ADIS16405<spiADIS16405,rstPin>(adis->GYRO_FS_300);
 
-    if(adis.init())
+    if(adis->init())
         printf("[ADIS16405] Init succeeded\n" );
     else
         printf("[ADIS16405] Init failed\n");
     
-    if(adis.selfTest())
+    if(adis->selfTest())
         printf("[ADIS16405] Self test succeeded\n" );
     else
         printf("[ADIS16405] Self test failed\n");
 
 
-    SimpleSensorSampler sampler;
-    sampler.AddSensor(&adis);
-
-    // DMASensorSampler sampler;
-    // sampler.AddSensor(&adis);
+    SimpleSensorSampler sampler(250, 1);
+    sampler.addSensor(adis, std::bind([&]() {}));
 
     StatsResult statResult;
     Stats stats;
@@ -70,7 +66,7 @@ int main()
     int counter = 0;
 
     while(true) {
-        sampler.Update();
+        sampler.sampleAndCallback();
 
         stats.add(averageCpuUtilization());
 
@@ -79,7 +75,7 @@ int main()
             printf("CPU usage: %f\n", statResult.mean);
             counter = 0;
 
-            const Vec3* last_data = adis.accelDataPtr();
+            const Vec3* last_data = adis->accelDataPtr();
             printf("%f %f %f\n", last_data->getX(), last_data->getY(),
                    last_data->getZ());
         }

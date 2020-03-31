@@ -26,7 +26,7 @@
 #include <cstdint>
 #include <vector>
 
-#include "SPIInterface.h"
+#include "SPIBusInterface.h"
 
 using std::vector;
 

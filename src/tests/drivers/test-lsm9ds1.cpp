@@ -37,9 +37,9 @@ static const bool FIFO_ENABLED = false;
 
 //SPI
 SPIBus bus(SPI1);
-SPIBusConfig cfg;
+//SPIBusConfig cfg;
 GpioPin cs_XLG(GPIOE_BASE, 7);
-GpioPin cs_M(GPIOE_BASE, 8);
+GpioPin cs_M(GPIOE_BASE, 9);
 
 //LEDs
 GpioPin LED1(GPIOD_BASE, 15);
@@ -51,9 +51,6 @@ int main(){
 
     Vec3 adata, gdata, mdata;
     float tdata; 
-
-
-    cfg.clock_div=SPIClockDivider::DIV64;
 
     {
         FastInterruptDisableLock dLock;
@@ -97,7 +94,7 @@ int main(){
     LSM9DS1_XLG lsm9ds1X(
                     bus,
                     cs_XLG,
-                    cfg,
+                    //cfg,
                     LSM9DS1_XLG::AxelFSR::FS_8, 
                     LSM9DS1_XLG::GyroFSR::FS_245,
                     LSM9DS1_XLG::ODR::ODR_952

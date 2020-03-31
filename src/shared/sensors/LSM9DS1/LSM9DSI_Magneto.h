@@ -71,7 +71,7 @@ class LSM9DS1_M : public CompassSensor
            GpioPin          cs,
            MagFSR           magRange            = MagFSR::FS_8,
            ODR              odr                 = ODR::ODR_0_625
-           ): spislave(bus, cs), magFSR(magRange), odr(odr){
+           ): spislave(bus, cs, {}), magFSR(magRange), odr(odr){
             //SPI config
             spislave.config.clock_div=SPIClockDivider::DIV64; 
         }

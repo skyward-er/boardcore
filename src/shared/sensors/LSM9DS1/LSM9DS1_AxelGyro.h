@@ -32,6 +32,14 @@
 using miosix::GpioPin;
 using std::array;
 
+// data Structs
+struct lsm9ds1XLGSample
+{
+    uint64_t timestamp;
+    Vec3 axelData;
+    Vec3 gyroData;
+};
+
 class LSM9DS1_XLG : public GyroSensor,
                     public AccelSensor,
                     public TemperatureSensor
@@ -82,7 +90,7 @@ public:
                 GyroFSR gyroRange = GyroFSR::FS_245, ODR odr = ODR::ODR_15,
                 bool fifo_enabled = false, unsigned int fifo_watermark = 24)
         : fifo_enabled(fifo_enabled), fifo_watermark(fifo_watermark),
-          spislave(bus, cs), axelFSR(axelRange), gyroFSR(gyroRange), odr(odr)
+          spislave(bus, cs, {}), axelFSR(axelRange), gyroFSR(gyroRange), odr(odr)
     {
         // SPI config
         spislave.config.clock_div = SPIClockDivider::DIV64;
@@ -177,35 +185,27 @@ public:
         }
 
         // common setup
-        spi.write(regMapXLG::CTRL_REG8,
-                  CTRL_REG8_VAL);  // addr auto-increment while reading/writing
+        spi.write(regMapXLG::CTRL_REG8, CTRL_REG8_VAL);  // addr auto-increment while reading/writing
 
         // FIFO setup: FIFO enabled in continous mode, decimation OFF,
         // temperature on FIFO ON.
         if (fifo_enabled)
         {
-            spi.write(regMapXLG::FIFO_CTRL,
-                      (FIFO_CTRL_VAL |
-                       fifo_watermark));  // FIFO continous mode + fifo
-                                          // watermark threshold setup
-            spi.write(regMapXLG::INT1_CTRL,
-                      INT1_CTRL_VAL);  // interrupt on FIFO treshold
-            spi.write(
-                regMapXLG::CTRL_REG9,
-                (CTRL_REG9_VAL | 0x02));  // DRDY_mask_bit OFF, I2C OFF, FIFO ON
+
+            spi.write(regMapXLG::FIFO_CTRL,(FIFO_CTRL_VAL | fifo_watermark));  // FIFO continous mode + fifo watermark threshold setup            
+            spi.write(regMapXLG::INT1_CTRL,INT1_CTRL_VAL);  // interrupt on FIFO treshold
+            spi.write(regMapXLG::CTRL_REG9,(CTRL_REG9_VAL | 0x02));  // DRDY_mask_bit OFF, I2C OFF, FIFO ON
         }
         else
         {
-            spi.write(regMapXLG::CTRL_REG9,
-                      CTRL_REG9_VAL);  // DRDY_mask_bit OFF, I2C OFF, FIFO OFF
+            spi.write(regMapXLG::CTRL_REG9,CTRL_REG9_VAL);  // DRDY_mask_bit OFF, I2C OFF, FIFO OFF
         }
 
         // Axel Setup: ODR, FSR defined by constructor, auto anti-aliasing BW
         // (max), LPF2/HPF bypassed and disabled, axel output enabled by default
         // @ startup
         uint8_t CTRL_REG6_XL_VAL = (int)odr << 5 | (int)axelFSR << 3;
-        spi.write(regMapXLG::CTRL_REG6_XL,
-                  CTRL_REG6_XL_VAL);  // ODR, FSR, auto BW (max) function of ODR
+        spi.write(regMapXLG::CTRL_REG6_XL, CTRL_REG6_XL_VAL);  // ODR, FSR, auto BW (max) function of ODR
 
         // Gyro Setup : ODR, FSR defined by constructor, LPF2/HPF bypassed and
         // disabled, gyro output enabled by default @ startup
@@ -215,43 +215,21 @@ public:
         // sign and orientation Setup <--- BOARD DEPENDENT
 
         // Check all the registers have been written correctly
-        if (spi.read(regMapXLG::CTRL_REG8) != CTRL_REG8_VAL)
-        {
-            return false;
-        }
+        if (spi.read(regMapXLG::CTRL_REG8) != CTRL_REG8_VAL) { return false; }
         if (fifo_enabled)
-        {
-            if (spi.read(regMapXLG::FIFO_CTRL) !=
-                (FIFO_CTRL_VAL | fifo_watermark))
-            {
-                return false;
-            }
-            if (spi.read(regMapXLG::INT1_CTRL) != INT1_CTRL_VAL)
-            {
-                return false;
-            }
-            if (spi.read(regMapXLG::CTRL_REG9) != (CTRL_REG9_VAL | 0x02))
-            {
-                return false;
-            }
+        {   
+            if (spi.read(regMapXLG::FIFO_CTRL) != (FIFO_CTRL_VAL | fifo_watermark)) { return false; }
+            if (spi.read(regMapXLG::INT1_CTRL) != INT1_CTRL_VAL)                    { return false; }
+            if (spi.read(regMapXLG::CTRL_REG9) != (CTRL_REG9_VAL | 0x02))           { return false; }
         }
         else
         {
-            if (spi.read(regMapXLG::CTRL_REG9) != CTRL_REG9_VAL)
-            {
-                return false;
-            }
+            if (spi.read(regMapXLG::CTRL_REG9) != CTRL_REG9_VAL)                    { return false; }
         }
-        if (spi.read(regMapXLG::CTRL_REG6_XL) != CTRL_REG6_XL_VAL)
-        {
-            return false;
-        }
-        if (spi.read(regMapXLG::CTRL_REG1_G) != CTRL_REG1_G_VAL)
-        {
-            return false;
-        }
-
-        discardSamples();
+        if (spi.read(regMapXLG::CTRL_REG6_XL) != CTRL_REG6_XL_VAL)                  { return false; }
+        if (spi.read(regMapXLG::CTRL_REG1_G) != CTRL_REG1_G_VAL)                    { return false; }
+        
+        discardSamples(spi); //LUCA SCS MERDA (x2) <3
 
         return true;
     }
@@ -289,9 +267,9 @@ public:
                              y_gy * gyroSensitivity / 1000,
                              z_gy * gyroSensitivity / 1000);
 
-            mLastTemp =
-                tempZero + (temp / tempSensistivity);  // 25°C + TEMP*S devo
-                                                       // castare a float "temp"?
+            mLastTemp = tempZero +
+                        (temp / tempSensistivity);  // 25°C + TEMP*S devo
+                                                    // castare a float "temp"?
         }
         else
         {  // if FIFO enabled: do not store temperature, it can be read using
@@ -301,10 +279,12 @@ public:
             {
                 SPITransaction spi(spislave);
 
-                spi.read(OUT_X_L_G, buf,
-                         fifo_watermark * 12);  // format:
-                                                // gxl,gxh,gyl,gyh,gzl,gzh,axl,axh,ayl,ayh,azl,azh
-                                                // for each sample
+                spi.read(
+                    OUT_X_L_G, buf,
+                    fifo_watermark *
+                        12);  // format:
+                              // gxl,gxh,gyl,gyh,gzl,gzh,axl,axh,ayl,ayh,azl,azh
+                              // for each sample
             }
             // convert & store
             for (int i = 0; i < fifo_watermark; i++)
@@ -317,12 +297,12 @@ public:
                 int16_t y_xl = buf[i * 12 + 8] | buf[i * 12 + 9] << 8;
                 int16_t z_xl = buf[i * 12 + 10] | buf[i * 12 + 11] << 8;
 
-                gyro_fifo[i] = Vec3(x_gy * gyroSensitivity / 1000,
-                                    y_gy * gyroSensitivity / 1000,
-                                    z_gy * gyroSensitivity / 1000);
-                axel_fifo[i] = Vec3(x_xl * axelSensitivity / 1000,
-                                    y_xl * axelSensitivity / 1000,
-                                    z_xl * axelSensitivity / 1000);
+                fifo[i].gyroData = Vec3(x_gy * gyroSensitivity / 1000,
+                                        y_gy * gyroSensitivity / 1000,
+                                        z_gy * gyroSensitivity / 1000);
+                fifo[i].axelData = Vec3(x_xl * axelSensitivity / 1000,
+                                        y_xl * axelSensitivity / 1000,
+                                        z_xl * axelSensitivity / 1000);
             }
         }
         return true;
@@ -350,16 +330,15 @@ public:
         spi.write(FIFO_CTRL, 0);                               // Bypass Mode
         miosix::Thread::sleep(20);                             // Wait
         spi.write(FIFO_CTRL, FIFO_CTRL_VAL | fifo_watermark);  // re-enable FIFO
-        discardSamples();
+        discardSamples(spi);
     }
 
-    const array<Vec3, 32>& getGyroFIFO() const { return gyro_fifo; }
-    const array<Vec3, 32>& getAxelFIFO() const { return axel_fifo; }
+    const array<lsm9ds1XLGSample, 32>& getLsm9ds1FIFO() const { return fifo; }
 
 private:
     bool fifo_enabled;
     uint8_t fifo_watermark;
-    array<Vec3, 32> gyro_fifo, axel_fifo;
+    array<lsm9ds1XLGSample, 32> fifo;
 
     SPISlave spislave;
 
@@ -374,7 +353,7 @@ private:
     float tempSensistivity                = 16.0f;
     static const uint8_t samplesToDiscard = 8;  // max possible val
 
-    void discardSamples()
+    void discardSamples(SPITransaction& spi)
     {
 
         //@ startup, some samples have to be discarded (datasheet)
@@ -387,7 +366,6 @@ private:
             {
                 // if FIFO is enabled, read first <samplesToDiscard> samples and
                 // discard them
-                SPITransaction spi(spislave);
                 for (int i = 0; i < samplesToDiscard; i++)
                 {
                     spi.read(regMapXLG::OUT_X_L_XL, 6);

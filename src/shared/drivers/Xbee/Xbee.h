@@ -117,7 +117,7 @@ class Xbee : public Transceiver, public ActiveObject
 public:
     Xbee(SPIBusInterface& bus, GpioPin cs, GpioPin attn, GpioPin rst,
          unsigned int send_timeout = 1000)
-        : send_timeout(send_timeout), spi_xbee(bus, cs), attn(attn), rst(rst)
+        : send_timeout(send_timeout), spi_xbee(bus, cs, {}), attn(attn), rst(rst)
     {
         spi_xbee.config.clock_div = SPIClockDivider::DIV128;
 

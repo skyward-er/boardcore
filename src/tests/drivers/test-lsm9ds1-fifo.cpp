@@ -23,24 +23,19 @@
  */
 
 #include <array>
-#include <iostream>
 #include "drivers/HardwareTimer.h"
 #include "drivers/spi/SPIDriver.h"
 #include "sensors/LSM9DS1/LSM9DS1_AxelGyro.h"
+#include "logger/Logger.h"
 
 using namespace miosix;
 using namespace std;
 
-typedef Gpio<GPIOA_BASE, 5> GpioSck;  // questi sono i pin SPI per
-                                      // f407_discovery
+typedef Gpio<GPIOA_BASE, 5> GpioSck;  //SPI1 f407
 typedef Gpio<GPIOA_BASE, 6> GpioMiso;
 typedef Gpio<GPIOA_BASE, 7> GpioMosi;
 
-typedef Gpio<GPIOA_BASE, 1> GpioINT1;
-
-static const bool FIFO_ENABLED      = true;
-static const uint8_t FIFO_WATERMARK = 20;
-static const uint8_t FIFO_SAMPLES   = 5;
+typedef Gpio<GPIOC_BASE, 13> GpioINT1; //INT1 A/G
 
 // SPI
 SPIBus bus(SPI1);
@@ -48,9 +43,15 @@ GpioPin cs_XLG(GPIOE_BASE, 7);
 
 // LED just for init
 GpioPin LED1(GPIOD_BASE, 15);
+GpioPin LED2(GPIOD_BASE, 13);
 
 // SPI read flag
 volatile bool flagSPIReadRequest = false;
+
+//IMU obj data
+static const bool FIFO_ENABLED      = true;
+static const uint8_t FIFO_WATERMARK = 20;
+static const uint8_t FIFO_SAMPLES   = 5;
 
 // High Resolution hardware timer using TIM5
 HardwareTimer<uint32_t> hrclock(
@@ -60,21 +61,18 @@ HardwareTimer<uint32_t> hrclock(
 volatile uint32_t last_tick;
 volatile uint32_t delta;
 
-// Arrays for samples
-array<Vec3, 32> axelData[FIFO_SAMPLES], gyroData[FIFO_SAMPLES];
-
 // LSM9DS1 obj
 LSM9DS1_XLG* lsm9ds1 = nullptr;
 
 // Interrupt handlers
-void __attribute__((naked)) EXTI1_IRQHandler()
+void __attribute__((naked)) EXTI13_IRQHandler()
 {
     saveContext();
-    asm volatile("bl _Z20EXTI1_IRQHandlerImplv");
+    asm volatile("bl _Z20EXTI13_IRQHandlerImplv");
     restoreContext();
 }
 
-void __attribute__((used)) EXTI1_IRQHandlerImpl()
+void __attribute__((used)) EXTI13_IRQHandlerImpl()
 {
     // Computing delta beetween interrupts
     uint32_t tick = hrclock.tick();
@@ -94,39 +92,47 @@ void __attribute__((used)) EXTI1_IRQHandlerImpl()
 void gpioConfig();
 void timer5Config();
 void EXTI1Config();
+void fakeLogger(lsm9ds1XLGSample sample); 
+void printLogger();
 
 int main()
 {
 
     uint8_t fifo_counter = 0;
-    uint32_t dt[FIFO_SAMPLES];
+    uint32_t dt;
+    uint64_t timestamp = 0;
 
     gpioConfig();
-
-    Thread::sleep(1000);
-    LED1.low();
-
+    Thread::sleep(5000);
+    return 0;
     timer5Config();
     EXTI1Config();
 
     lsm9ds1 = new LSM9DS1_XLG(
         bus, cs_XLG, LSM9DS1_XLG::AxelFSR::FS_8, LSM9DS1_XLG::GyroFSR::FS_245,
-        LSM9DS1_XLG::ODR::ODR_952, FIFO_ENABLED, FIFO_WATERMARK);
+        LSM9DS1_XLG::ODR::ODR_238, FIFO_ENABLED, FIFO_WATERMARK);
 
-    while (!lsm9ds1->init())
-        ;
+    while (!lsm9ds1->init());
+    LED2.high(); //init OK
+    
+    lsm9ds1->clearFIFO();  //just to be sure to intercept the first interrupt
 
-    lsm9ds1->clearFIFO();
-
+    //start sampling
     for (;;)
     {
+        //printf("%d\n", GpioINT1::value());
         if (flagSPIReadRequest && fifo_counter < FIFO_SAMPLES)
         {
             flagSPIReadRequest = false;
-            dt[fifo_counter]   = hrclock.toMicroSeconds(delta);
+            dt = hrclock.toMicroSeconds(delta)/FIFO_WATERMARK; //delta of each sample
             lsm9ds1->onSimpleUpdate();
-            axelData[fifo_counter] = lsm9ds1->getAxelFIFO();
-            gyroData[fifo_counter] = lsm9ds1->getGyroFIFO();
+            for(int i=0 ; i < FIFO_WATERMARK; i++)
+            {
+                lsm9ds1XLGSample sample = lsm9ds1->getLsm9ds1FIFO()[i];
+                timestamp += dt; 
+                sample.timestamp = timestamp; 
+                fakeLogger(sample);
+            }
             LED1.low();
             fifo_counter++;
         }
@@ -137,22 +143,11 @@ int main()
         }
     }
 
-    // print data
-    uint32_t timestamp = 0;
+    printLogger();
+    LED1.low();
+    LED2.low();
 
-    for (uint8_t i = 0; i < FIFO_SAMPLES; i++)
-    {
-        std::cout << "FIFO " << (int)i + 1 << std::endl;
-        for (uint8_t j = 0; j < FIFO_WATERMARK; j++)
-        {
-            timestamp += dt[i] / FIFO_WATERMARK;
-            printf("%d>>%ld>>%.3f,%.3f,%.3f,%.3f,%.3f,%.3f\n", j,timestamp,
-                   axelData[i][j].getX(), axelData[i][j].getY(),
-                   axelData[i][j].getZ(), gyroData[i][j].getX(),
-                   gyroData[i][j].getY(), gyroData[i][j].getZ());
-        }
-    }
-
+    while(1);
     return 0;
 }
 
@@ -185,6 +180,8 @@ void gpioConfig()
 
         // Select LED built in GPIO mode
         LED1.mode(Mode::OUTPUT);
+        LED2.mode(Mode::OUTPUT);
+
     }
 
     cs_XLG.high();
@@ -210,18 +207,51 @@ void EXTI1Config()  // PC13
     }
 
     // Configure mask bit of 1st interrupt line
-    EXTI->IMR |= EXTI_IMR_MR1;
+    EXTI->IMR |= EXTI_IMR_MR13;
 
     // Configure trigger selection bit (rising edge)
-    EXTI->RTSR |= EXTI_RTSR_TR1;
+    EXTI->RTSR |= EXTI_RTSR_TR13;
 
     // Clear pending interrupt register before enable
-    EXTI->PR |= EXTI_PR_PR1;
+    EXTI->PR |= EXTI_PR_PR13;
 
-    // Select PB1 as interrupt source in line 1
-    SYSCFG->EXTICR[0] &= 0xFFFFFF0F;
+    // Select PC13 as interrupt source in line 13 (EXTICR4)
+    SYSCFG->EXTICR[3] &= 0xFFFFFF0F;
+    SYSCFG->EXTICR[3] |= 0xFFFFFF2F;
 
     // Enable the interrupt in the interrupt controller
-    NVIC_EnableIRQ(EXTI1_IRQn);
-    NVIC_SetPriority(EXTI1_IRQn, 14);
+    NVIC_EnableIRQ(IRQn_Type::EXTI15_10_IRQn);
+    NVIC_SetPriority(IRQn_Type::EXTI15_10_IRQn, 47);
+}
+
+uint16_t counter = 0;
+float   ax[FIFO_WATERMARK*FIFO_SAMPLES],
+        ay[FIFO_WATERMARK*FIFO_SAMPLES],
+        az[FIFO_WATERMARK*FIFO_SAMPLES],
+        gx[FIFO_WATERMARK*FIFO_SAMPLES],
+        gy[FIFO_WATERMARK*FIFO_SAMPLES],
+        gz[FIFO_WATERMARK*FIFO_SAMPLES];
+
+uint64_t t[FIFO_WATERMARK*FIFO_SAMPLES];
+
+void fakeLogger(lsm9ds1XLGSample sample)
+{
+    ax[counter] = sample.axelData.getX();
+    ay[counter] = sample.axelData.getY();
+    az[counter] = sample.axelData.getZ();
+    gx[counter] = sample.gyroData.getX();
+    gy[counter] = sample.gyroData.getY();
+    gz[counter] = sample.gyroData.getZ();
+    t[counter]  = sample.timestamp;
+    counter++;    
+}
+
+void printLogger()
+{
+    for(int i = 0; i < counter; i++)
+    {
+        printf("%lld>>%.3f,%.3f,%.3f,%.3f,%.3f,%.3f\n", t[i],ax[i],ay[i],az[i],
+                                                            gx[i],gy[i],gz[i]);
+                                                    
+    }
 }

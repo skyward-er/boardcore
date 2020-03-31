@@ -21,7 +21,7 @@
  * THE SOFTWARE.
  */
 
-#include "SPIInterface.h"
+#include "SPIBusInterface.h"
 
 #pragma once
 
@@ -48,17 +48,11 @@ public:
     SPIBus& operator=(SPIBus&&) = delete;
 
     /**
-     * @brief Wether to apply slave-specific bus configuration before each
-     * transaction (BusTemplate compatibility mode).
-     * Only set to false to use SPIDriver alongside BusTemplate.h.
-     * Default value is true.
-     *
-     * @param value True: The slave configuration is applied to the SPI
-     * peripheral before each transaction. False: No configuration is ever
-     * applied to the SPI peripheral. The SPI peripheral retains the
-     * configuration set by BusTemplate.h
+     * @brief Disable bus configuration: calls to configure() will have no
+     * effect after calling this & the SPI peripheral will need to be configured
+     * manually.
      */
-    void enableSlaveConfiguration(bool value) { config_enabled = value; }
+    void disableBusConfiguration() { config_enabled = false; }
 
     /**
      * @brief See SPIBusInterface::write()
@@ -105,7 +99,7 @@ public:
      */
     void configure(SPIBusConfig config) override;
 
-private:
+protected:
     /**
      * Writes a single byte on the SPI bus.
      *
@@ -130,7 +124,7 @@ private:
 
     SPI_TypeDef* spi;
 
-    SPIBusConfig config;
+    SPIBusConfig config{};
     bool config_enabled       = true;
     bool first_config_applied = false;
 };
@@ -141,7 +135,7 @@ inline void SPIBus::write(uint8_t data) { write(&data); }
 
 inline void SPIBus::write(uint8_t* data, size_t size)
 {
-    for (size_t i = 0; i < size; i++)
+    for (size_t i = 0; i < size; ++i)
     {
         write(data + i);
     }
@@ -157,7 +151,7 @@ inline uint8_t SPIBus::read()
 
 inline void SPIBus::read(uint8_t* data, size_t size)
 {
-    for (size_t i = 0; i < size; i++)
+    for (size_t i = 0; i < size; ++i)
     {
         read(data + i);
     }
@@ -171,7 +165,7 @@ inline uint8_t SPIBus::transfer(uint8_t data)
 
 inline void SPIBus::transfer(uint8_t* data, size_t size)
 {
-    for (size_t i = 0; i < size; i++)
+    for (size_t i = 0; i < size; ++i)
     {
         transfer(data + i);
     }
@@ -232,7 +226,7 @@ inline void SPIBus::read(uint8_t* byte)
     // Wait until the peripheral is ready to transmit
     while ((spi->SR & SPI_SR_TXE) == 0)
         ;
-    // Write the byte in the transmit buffer
+    // Write 0 in the transmit buffer
     spi->DR = 0;
 
     // Wait until byte is transmitted
