@@ -25,7 +25,7 @@
 
 #include <algorithm>
 
-static const unsigned int STACK_MIN_FOR_SKYWARD = 16*1024;
+static const unsigned int STACK_MIN_FOR_SKYWARD = 4*1024;
 
 inline unsigned int skywardStack(unsigned int stack)
 {

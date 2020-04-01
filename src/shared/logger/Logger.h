@@ -174,12 +174,11 @@ private:
         log(s);
     }
 
-    static const unsigned int filenameMaxRetry =
-        100;                                         ///< Limit on new filename
-    static const unsigned int maxRecordSize = 256;   ///< Limit on logged data
-    static const unsigned int numRecords    = 1024;  ///< Size of record queues
-    static const unsigned int bufferSize = 64 * 1024;  ///< Size of each buffer
-    static const unsigned int numBuffers = 8;          ///< Number of buffers
+    static const unsigned int filenameMaxRetry = 100; ///< Limit on new filename
+    static const unsigned int maxRecordSize = 64;   ///< Limit on logged data
+    static const unsigned int numRecords    = 256;  ///< Size of record queues
+    static const unsigned int bufferSize = 16 * 256;  ///< Size of each buffer
+    static const unsigned int numBuffers = 4;          ///< Number of buffers
 
     /**
      * A record is a single serialized logged class. Records are used to

@@ -26,6 +26,7 @@
 #include "drivers/HardwareTimer.h"
 #include "drivers/spi/SPIDriver.h"
 #include "sensors/LSM9DS1/LSM9DS1_AxelGyro.h"
+#include "diagnostic/CpuMeter.h"
 #include "logger/Logger.h"
 
 using namespace miosix;
@@ -64,6 +65,13 @@ volatile uint32_t delta;
 // LSM9DS1 obj
 LSM9DS1_XLG* lsm9ds1 = nullptr;
 
+//struct for the logger
+struct IMUSample
+{
+    lsm9ds1XLGSample sample;
+    int avgCPU;
+};
+
 // Interrupt handlers
 void __attribute__((naked)) EXTI13_IRQHandler()
 {
@@ -92,8 +100,6 @@ void __attribute__((used)) EXTI13_IRQHandlerImpl()
 void gpioConfig();
 void timer5Config();
 void EXTI1Config();
-void fakeLogger(lsm9ds1XLGSample sample); 
-void printLogger();
 
 int main()
 {
@@ -102,9 +108,10 @@ int main()
     uint32_t dt;
     uint64_t timestamp = 0;
 
+    Logger& logger = Logger::instance();
+    logger.start();
+
     gpioConfig();
-    Thread::sleep(5000);
-    return 0;
     timer5Config();
     EXTI1Config();
 
@@ -120,7 +127,6 @@ int main()
     //start sampling
     for (;;)
     {
-        //printf("%d\n", GpioINT1::value());
         if (flagSPIReadRequest && fifo_counter < FIFO_SAMPLES)
         {
             flagSPIReadRequest = false;
@@ -128,10 +134,12 @@ int main()
             lsm9ds1->onSimpleUpdate();
             for(int i=0 ; i < FIFO_WATERMARK; i++)
             {
-                lsm9ds1XLGSample sample = lsm9ds1->getLsm9ds1FIFO()[i];
+                IMUSample s; 
+                s.sample = lsm9ds1->getLsm9ds1FIFO()[i];
                 timestamp += dt; 
-                sample.timestamp = timestamp; 
-                fakeLogger(sample);
+                s.sample.timestamp = timestamp; 
+                s.avgCPU = averageCpuUtilization();
+                logger.log(s);
             }
             LED1.low();
             fifo_counter++;
@@ -143,7 +151,8 @@ int main()
         }
     }
 
-    printLogger();
+    logger.stop();
+
     LED1.low();
     LED2.low();
 
@@ -222,36 +231,4 @@ void EXTI1Config()  // PC13
     // Enable the interrupt in the interrupt controller
     NVIC_EnableIRQ(IRQn_Type::EXTI15_10_IRQn);
     NVIC_SetPriority(IRQn_Type::EXTI15_10_IRQn, 47);
-}
-
-uint16_t counter = 0;
-float   ax[FIFO_WATERMARK*FIFO_SAMPLES],
-        ay[FIFO_WATERMARK*FIFO_SAMPLES],
-        az[FIFO_WATERMARK*FIFO_SAMPLES],
-        gx[FIFO_WATERMARK*FIFO_SAMPLES],
-        gy[FIFO_WATERMARK*FIFO_SAMPLES],
-        gz[FIFO_WATERMARK*FIFO_SAMPLES];
-
-uint64_t t[FIFO_WATERMARK*FIFO_SAMPLES];
-
-void fakeLogger(lsm9ds1XLGSample sample)
-{
-    ax[counter] = sample.axelData.getX();
-    ay[counter] = sample.axelData.getY();
-    az[counter] = sample.axelData.getZ();
-    gx[counter] = sample.gyroData.getX();
-    gy[counter] = sample.gyroData.getY();
-    gz[counter] = sample.gyroData.getZ();
-    t[counter]  = sample.timestamp;
-    counter++;    
-}
-
-void printLogger()
-{
-    for(int i = 0; i < counter; i++)
-    {
-        printf("%lld>>%.3f,%.3f,%.3f,%.3f,%.3f,%.3f\n", t[i],ax[i],ay[i],az[i],
-                                                            gx[i],gy[i],gz[i]);
-                                                    
-    }
 }
