@@ -45,6 +45,11 @@ GpioPin cs_XLG(GPIOE_BASE, 7);
 // LED just for init
 GpioPin LED1(GPIOD_BASE, 15);
 GpioPin LED2(GPIOD_BASE, 13);
+GpioPin LED3(GPIOD_BASE, 14);
+
+//USR pushbutton
+GpioPin PUSHBUTTON(GPIOA_BASE, 0);
+
 
 // SPI read flag
 volatile bool flagSPIReadRequest = false;
@@ -52,7 +57,7 @@ volatile bool flagSPIReadRequest = false;
 //IMU obj data
 static const bool FIFO_ENABLED      = true;
 static const uint8_t FIFO_WATERMARK = 20;
-static const uint8_t FIFO_SAMPLES   = 5;
+static const uint16_t FIFO_SAMPLES   = 1000;
 
 // High Resolution hardware timer using TIM5
 HardwareTimer<uint32_t> hrclock(
@@ -69,7 +74,7 @@ LSM9DS1_XLG* lsm9ds1 = nullptr;
 struct IMUSample
 {
     lsm9ds1XLGSample sample;
-    int avgCPU;
+    float avgCPU;
 };
 
 // Interrupt handlers
@@ -100,13 +105,22 @@ void __attribute__((used)) EXTI13_IRQHandlerImpl()
 void gpioConfig();
 void timer5Config();
 void EXTI1Config();
+void printStats(void*);
+
+uint16_t fifo_counter = 0;
 
 int main()
 {
 
-    uint8_t fifo_counter = 0;
+    
     uint32_t dt;
     uint64_t timestamp = 0;
+
+    printf("stat_toolarge,stat_dropped,stat_queued,stat_buf_filled,"
+           "stat_buf_written,stat_w_failed,stat_w_time,stat_max_time,"
+           "stat_last_error\n");
+
+    Thread::create(printStats,4096);
 
     Logger& logger = Logger::instance();
     logger.start();
@@ -125,9 +139,9 @@ int main()
     lsm9ds1->clearFIFO();  //just to be sure to intercept the first interrupt
 
     //start sampling
-    for (;;)
+    while(!PUSHBUTTON.value())
     {
-        if (flagSPIReadRequest && fifo_counter < FIFO_SAMPLES)
+        if (flagSPIReadRequest)
         {
             flagSPIReadRequest = false;
             dt = hrclock.toMicroSeconds(delta)/FIFO_WATERMARK; //delta of each sample
@@ -144,17 +158,15 @@ int main()
             LED1.low();
             fifo_counter++;
         }
-
-        if (fifo_counter == FIFO_SAMPLES)
-        {
-            break;
-        }
     }
 
     logger.stop();
 
     LED1.low();
     LED2.low();
+
+    Thread::sleep(10000);
+    reboot();
 
     while(1);
     return 0;
@@ -190,6 +202,10 @@ void gpioConfig()
         // Select LED built in GPIO mode
         LED1.mode(Mode::OUTPUT);
         LED2.mode(Mode::OUTPUT);
+        LED3.mode(Mode::OUTPUT);
+
+        //Select USR pushbutton 
+        PUSHBUTTON.mode(Mode::INPUT);
 
     }
 
@@ -232,3 +248,30 @@ void EXTI1Config()  // PC13
     NVIC_EnableIRQ(IRQn_Type::EXTI15_10_IRQn);
     NVIC_SetPriority(IRQn_Type::EXTI15_10_IRQn, 47);
 }
+
+void printStats(void*)
+{   
+    Logger& log=Logger::instance();
+    printf("Thread spawned\n");
+    while(!log.isStarted());
+    while(log.isStarted())
+    {
+        LogStats stats = log.getLogStats();
+
+        stats.setTimestamp(miosix::getTick());
+        log.log(stats);
+
+        printf("stats logged\n");
+
+        if(stats.statWriteError)
+        {
+            LED3.high();
+        }
+        else
+        {
+            LED3.low();
+        }
+        
+        Thread::sleep(1000);
+    }
+} 
