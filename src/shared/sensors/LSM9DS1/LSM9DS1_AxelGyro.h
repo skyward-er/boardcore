@@ -40,6 +40,12 @@ struct lsm9ds1XLGSample
     Vec3 gyroData;
 };
 
+struct lsm9ds1TSample
+{
+    uint64_t timestamp;
+    float tempData;
+};
+
 class LSM9DS1_XLG : public GyroSensor,
                     public AccelSensor,
                     public TemperatureSensor
@@ -317,10 +323,7 @@ public:
         }
 
         int16_t temp = tempData[0] | tempData[1] << 8;
-        mLastTemp =
-            tempZero +
-            temp /
-                tempSensistivity;  // 25°C + TEMP/S devo castare a float "temp"?
+        mLastTemp = tempZero + temp / tempSensistivity;  // 25°C + TEMP/S devo castare a float "temp"?
         return true;
     }
 

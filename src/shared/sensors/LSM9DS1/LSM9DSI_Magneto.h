@@ -32,6 +32,13 @@
 using miosix::GpioPin;
 using std::vector;
 
+// data Structs
+struct lsm9ds1MSample
+{
+    uint64_t timestamp;
+    Vec3 magData;
+};
+
 class LSM9DS1_M : public CompassSensor
 {
     public:
