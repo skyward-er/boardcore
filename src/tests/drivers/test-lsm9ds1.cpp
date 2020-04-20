@@ -25,7 +25,7 @@
 
 #include "drivers/spi/SPIDriver.h"
 #include "sensors/LSM9DS1/LSM9DS1_AxelGyro.h"
-#include "sensors/LSM9DS1/LSM9DSI_Magneto.h"
+#include "sensors/LSM9DS1/LSM9DS1_Magneto.h"
 
 using namespace miosix;
 

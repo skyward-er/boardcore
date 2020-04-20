@@ -24,215 +24,132 @@
 
 #pragma once
 #include <miosix.h>
+
 #include <vector>
 
+#include "LSM9DS1_Data.h"
 #include "drivers/spi/SPIDriver.h"
-#include "../Sensor.h"
 
 using miosix::GpioPin;
 using std::vector;
 
-// data Structs
-struct lsm9ds1MSample
-{
-    uint64_t timestamp;
-    Vec3 magData;
-};
+/**
+ * @brief descrizione classe
+ */
 
 class LSM9DS1_M : public CompassSensor
 {
-    public:
-        
-        enum MagFSR
-        {
-            FS_4    = 0x00,
-            FS_8    = 0x01,
-            FS_12   = 0x02,
-            FS_16   = 0x03
-        };
+public:
+    enum MagFSR
+    {
+        FS_4  = 0x00,
+        FS_8  = 0x01,
+        FS_12 = 0x02,
+        FS_16 = 0x03
+    };
 
-        enum ODR
-        {
-            ODR_0_625   = 0X00,
-            ODR_1_25    = 0x01,
-            ODR_2_5     = 0x02,
-            ODR_5       = 0x03,
-            ODR_10      = 0x04,
-            ODR_20      = 0x05,
-            ODR_40      = 0x06,
-            ODR_80      = 0x07
-        };
+    enum ODR
+    {
+        ODR_0_625 = 0X00,
+        ODR_1_25  = 0x01,
+        ODR_2_5   = 0x02,
+        ODR_5     = 0x03,
+        ODR_10    = 0x04,
+        ODR_20    = 0x05,
+        ODR_40    = 0x06,
+        ODR_80    = 0x07
+    };
 
-        /**
-         * @brief Creates an instance of an LSM9DS1 accelerometer + gyroscope sensor
-         *
-         * @param    bus SPI bus the sensor is connected to
-         * @param    cs Chip Select GPIO
-         * @param    config (OPTIONAL) custom SPIBusConfig 
-         * @param    magRange magnetometer Full Scale Range (See datasheet)
-         * @param    odr Output Data Rate (See datasheet)
-         */
+    /**
+     * @brief Creates an instance of an LSM9DS1 magnetometer sensor.
+     *
+     * @param    bus SPI bus the sensor is connected to
+     * @param    cs Chip Select GPIO
+     * @param    magRange magnetometer Full Scale Range (See datasheet)
+     * @param    odr Output Data Rate (See datasheet)
+     */
 
-        LSM9DS1_M(
-           SPIBusInterface& bus, 
-           GpioPin          cs,
-           MagFSR           magRange            = MagFSR::FS_8,
-           ODR              odr                 = ODR::ODR_0_625
-           ): spislave(bus, cs, {}), magFSR(magRange), odr(odr){
-            //SPI config
-            spislave.config.clock_div=SPIClockDivider::DIV64; 
-        }
+    LSM9DS1_M(SPIBusInterface& bus, GpioPin cs, MagFSR magRange, ODR odr);
 
-        LSM9DS1_M(
-           SPIBusInterface& bus, 
-           GpioPin          cs,
-           SPIBusConfig     config,
-           MagFSR           magRange            = MagFSR::FS_8,
-           ODR              odr                 = ODR::ODR_0_625
-           ): spislave(bus, cs, config), magFSR(magRange), odr(odr){
+    /**
+     * @brief Creates an instance of an LSM9DS1 magnetometer sensor.
+     *
+     * @param    bus SPI bus the sensor is connected to
+     * @param    cs Chip Select GPIO
+     * @param    config custom SPIBusConfig
+     * @param    magRange magnetometer Full Scale Range (See datasheet)
+     * @param    odr Output Data Rate (See datasheet)
+     */
 
-        }
+    LSM9DS1_M(SPIBusInterface& bus, GpioPin cs, SPIBusConfig config,
+              MagFSR magRange, ODR odr);
+    
+    /**
+     * @brief initializes the LSM9DS1 Sensor (Magnetometer).
+     * @return true if all setup registers of the sensor have been written
+     * correctly
+     */
+    
+    bool init() override;
 
-        bool init() override
-        {
-            //Set FSR
-            switch(magFSR)
-            {
-                case MagFSR::FS_4:
-                    magSensitivity = 0.14f;
-                    break;
-                case MagFSR::FS_8:
-                    magSensitivity = 0.29f;
-                    break;
-                case MagFSR::FS_12:
-                    magSensitivity = 0.43f;
-                    break;
-                case MagFSR::FS_16:
-                    magSensitivity = 0.58f;
-                    break;
-                default:
-                    magSensitivity = 0.14f;
-                    break;
-            }
+    /**
+     * @brief Run a self-test of the Sensor.
+     * @return true if sensor behave correclty
+     */
 
-            SPITransaction spi(spislave);
+    bool selfTest() override;
 
-            //Who Am I check:
-            uint8_t whoami = spi.read(WHO_AM_I_M);//regMapM::WHO_AM_I_M);
+    /**
+     * @brief Dump single reading of Magneto from the sensor through SPI.
+     * @return true if sensor sends data
+     */
 
-            if(whoami != WHO_AM_I_M_VAL){
-                TRACE("LSM9DS1 MAG WAMI: 0x%02X\n", whoami);
-                last_error = ERR_NOT_ME;
-                return false;
-            }
-            
-            //setup     
-            uint8_t CTRL_REG1_M_VAL = 0x60 | (int)odr<<2;
-            spi.write(regMapM::CTRL_REG1_M, CTRL_REG1_M_VAL); //X,Y axes in ultra-high performance mode, NO auto-temp compensation and ODR defined by constructor
-            
-            uint8_t CTRL_REG2_M_VAL = (int)magFSR<<5;
-            spi.write(regMapM::CTRL_REG2_M, CTRL_REG2_M_VAL); //FSR defined by constructor
+    bool onSimpleUpdate() override;
 
-            spi.write(regMapM::CTRL_REG4_M, CTRL_REG4_M_VAL); //Z axis in ultra-high performance mode
-            spi.write(regMapM::CTRL_REG3_M, CTRL_REG3_M_VAL); //I2C disabled, SPI mode: read/write
-            
-            spi.write(regMapM::INT_CFG_M, INT_CFG_M_VAL); //disable all interrupts
+    /**
+     * @brief set offset of the compass sensor in case of offset errors.
+     * @param offVect offset values (X,Y,Z)
+     */
 
+    void setOffset(vector<uint16_t>& offVect);
 
-            //check that all registers have been written correctly 
+private:
+    SPISlave spislave;
 
-            if(spi.read(regMapM::CTRL_REG1_M) != CTRL_REG1_M_VAL) {return false;}
-            if(spi.read(regMapM::CTRL_REG2_M) != CTRL_REG2_M_VAL) {return false;}
-            if(spi.read(regMapM::CTRL_REG3_M) != CTRL_REG3_M_VAL) {return false;}
-            if(spi.read(regMapM::CTRL_REG4_M) != CTRL_REG4_M_VAL) {return false;}
-            if(spi.read(regMapM::INT_CFG_M)   != INT_CFG_M_VAL)   {return false;}
+    MagFSR magFSR;
+    ODR odr;
 
-            return true;
-        }
+    float magSensitivity;
 
-        bool selfTest() override
-        {
-            return true; 
-        }
+    enum regMapM
+    {
+        OFFSET_X_REG_L_M = 0x05,
+        OFFSET_X_REG_H_M = 0x06,
+        OFFSET_Y_REG_L_M = 0x07,
+        OFFSET_Y_REG_H_M = 0x08,
+        OFFSET_Z_REG_L_M = 0x09,
+        OFFSET_Z_REG_H_M = 0x0A,
+        WHO_AM_I_M       = 0x0F,
+        CTRL_REG1_M      = 0x20,
+        CTRL_REG2_M      = 0x21,
+        CTRL_REG3_M      = 0x22,
+        CTRL_REG4_M      = 0x23,
+        CTRL_REG5_M      = 0x24,
+        STATUS_REG_M     = 0x27,
+        OUT_X_L_M        = 0x28,
+        OUT_X_H_M        = 0x29,
+        OUT_Y_L_M        = 0x2A,
+        OUT_Y_H_M        = 0x2B,
+        OUT_Z_L_M        = 0x2C,
+        OUT_Z_H_M        = 0x2D,
+        INT_CFG_M        = 0x30,
+        INT_SRC_M        = 0x31,
+        INT_THS_L_M      = 0x32,
+        INT_THS_H_M      = 0x33
+    };
 
-        bool onSimpleUpdate() override
-        {
-            uint8_t magData[6];
-            //read output data X,Y,Z
-            {
-                SPITransaction spi(spislave);
-                //bit 1 of SPI transaction = 1 means "auto-increment address" (see DS).
-                spi.read(regMapM::OUT_X_L_M | 0x40, magData, 6);//so bit 6 of the address = 1
-            }
-
-            int16_t x = magData[0] | magData[1] << 8;
-            int16_t y = magData[2] | magData[3] << 8;
-            int16_t z = magData[4] | magData[5] << 8;
-
-            // TRACE("LSM9DS1 mageto: %02X,%02X,%02X\n", x, y, z);
-
-            mLastCompass =
-                    Vec3(x * magSensitivity / 1000,
-                         y * magSensitivity / 1000,
-                         z * magSensitivity / 1000);
-            return true; 
-        }
-
-        void setOffset(vector<uint16_t>& offVect) //X,Y,Z
-        {
-            if(offVect.size() < 3) return;
-            uint8_t toStore[6];
-            for(int i=6; i > 0 ; i=i-2){
-                toStore[i-1] = offVect.back() & 0x00FF; //LSB
-                toStore[i-2] = offVect.back() >> 8; //MSB
-    	        offVect.pop_back(); 
-            }
-
-            SPITransaction spi(spislave);
-            //bit 1 of SPI transaction = 1 means "auto-increment address".
-            spi.write(OFFSET_X_REG_L_M | 0x40, toStore, 6); //so bit 6 of the address = 1
-        }
-        
-    private:
-
-        SPISlave spislave;
-
-        MagFSR magFSR;
-        ODR odr;
-
-        float magSensitivity;
-
-        enum regMapM
-        {
-            OFFSET_X_REG_L_M    =   0x05,
-            OFFSET_X_REG_H_M    =   0x06,
-            OFFSET_Y_REG_L_M    =   0x07,
-            OFFSET_Y_REG_H_M    =   0x08,
-            OFFSET_Z_REG_L_M    =   0x09,
-            OFFSET_Z_REG_H_M    =   0x0A,
-            WHO_AM_I_M          =   0x0F,
-            CTRL_REG1_M         =   0x20,
-            CTRL_REG2_M         =   0x21,
-            CTRL_REG3_M         =   0x22,
-            CTRL_REG4_M         =   0x23,
-            CTRL_REG5_M         =   0x24,
-            STATUS_REG_M        =   0x27,
-            OUT_X_L_M           =   0x28,
-            OUT_X_H_M           =   0x29,
-            OUT_Y_L_M           =   0x2A,
-            OUT_Y_H_M           =   0x2B,
-            OUT_Z_L_M           =   0x2C,
-            OUT_Z_H_M           =   0x2D,
-            INT_CFG_M           =   0x30,
-            INT_SRC_M           =   0x31,
-            INT_THS_L_M         =   0x32,
-            INT_THS_H_M         =   0x33
-        };
-
-        static const uint8_t WHO_AM_I_M_VAL    = 0x3D;
-        static const uint8_t CTRL_REG3_M_VAL   = 0x80;
-        static const uint8_t CTRL_REG4_M_VAL   = 0x0C;
-        static const uint8_t INT_CFG_M_VAL     = 0x00;
-
-
+    static const uint8_t WHO_AM_I_M_VAL  = 0x3D;
+    static const uint8_t CTRL_REG3_M_VAL = 0x80;
+    static const uint8_t CTRL_REG4_M_VAL = 0x0C;
+    static const uint8_t INT_CFG_M_VAL   = 0x00;
 };
