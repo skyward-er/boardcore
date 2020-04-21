@@ -25,11 +25,16 @@
 #pragma once
 
 #include <miosix.h>
+
+#include <fstream>
+
 #include "../Sensor.h"
+
+using std::ofstream;
 
 // data Structs
 
-//ACCELEROMETER + GYROSCOPE 
+// ACCELEROMETER + GYROSCOPE
 struct lsm9ds1XLGSample
 {
     uint64_t timestamp;
@@ -43,22 +48,19 @@ struct lsm9ds1XLGSample
 
     void print(std::ostream& os) const
     {
-        os << timestamp << "," << 
-              axelData.getX() << "," << axelData.getY() << "," << axelData.getZ() << "," << 
-              gyroData.getX() << "," << gyroData.getY() << "," << gyroData.getZ() << "\n";
+        os << timestamp << "," << axelData.getX() << "," << axelData.getY()
+           << "," << axelData.getZ() << "," << gyroData.getX() << ","
+           << gyroData.getY() << "," << gyroData.getZ() << "\n";
     }
 };
 
-//TEMPERATURE
+// TEMPERATURE
 struct lsm9ds1TSample
 {
     uint64_t timestamp;
     float tempData;
 
-    static std::string header()
-    {
-        return "timestamp,temp\n";
-    }
+    static std::string header() { return "timestamp,temp\n"; }
 
     void print(std::ostream& os) const
     {
@@ -66,20 +68,17 @@ struct lsm9ds1TSample
     }
 };
 
-//MAGNETOMETER
+// MAGNETOMETER
 struct lsm9ds1MSample
 {
     uint64_t timestamp;
     Vec3 magData;
 
-    static std::string header()
-    {
-        return "timestamp,mag_x,mag_y,mag_z\n";
-    }
+    static std::string header() { return "timestamp,mag_x,mag_y,mag_z\n"; }
 
     void print(std::ostream& os) const
     {
-        os << timestamp << "," << 
-              magData.getX() << "," << magData.getY() << "," << magData.getZ() << "\n";
+        os << timestamp << "," << magData.getX() << "," << magData.getY() << ","
+           << magData.getZ() << "\n";
     }
 };

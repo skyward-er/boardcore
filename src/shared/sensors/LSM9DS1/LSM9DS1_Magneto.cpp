@@ -27,8 +27,7 @@
 using miosix::GpioPin;
 using std::vector;
 
-LSM9DS1_M::LSM9DS1_M(SPIBusInterface& bus, GpioPin cs,
-                     MagFSR magRange = MagFSR::FS_8, ODR odr = ODR::ODR_0_625)
+LSM9DS1_M::LSM9DS1_M(SPIBusInterface& bus, GpioPin cs, MagFSR magRange, ODR odr)
     : spislave(bus, cs, {}), magFSR(magRange), odr(odr)
 {
     // SPI config
@@ -36,62 +35,47 @@ LSM9DS1_M::LSM9DS1_M(SPIBusInterface& bus, GpioPin cs,
 }
 
 LSM9DS1_M::LSM9DS1_M(SPIBusInterface& bus, GpioPin cs, SPIBusConfig config,
-                     MagFSR magRange = MagFSR::FS_8, ODR odr = ODR::ODR_0_625)
+                     MagFSR magRange, ODR odr)
     : spislave(bus, cs, config), magFSR(magRange), odr(odr)
 {
 }
 
 bool LSM9DS1_M::init()
 {
-    // Set FSR
-    switch (magFSR)
+    if (sensor_initialized)
     {
-        case MagFSR::FS_4:
-            magSensitivity = 0.14f;
-            break;
-        case MagFSR::FS_8:
-            magSensitivity = 0.29f;
-            break;
-        case MagFSR::FS_12:
-            magSensitivity = 0.43f;
-            break;
-        case MagFSR::FS_16:
-            magSensitivity = 0.58f;
-            break;
-        default:
-            magSensitivity = 0.14f;
-            break;
+        TRACE("[LSM9DS1 MAG] init() : already initialized\n");
+        return false;
     }
 
     SPITransaction spi(spislave);
 
     // Who Am I check:
-    uint8_t whoami = spi.read(WHO_AM_I_M);  // regMapM::WHO_AM_I_M);
+    uint8_t whoami = spi.read(regMapM::WHO_AM_I_M);
 
     if (whoami != WHO_AM_I_M_VAL)
     {
-        TRACE("LSM9DS1 MAG WAMI: 0x%02X\n", whoami);
+        TRACE("[LSM9DS1 MAG] init() : unexpected WAMI -> %02X\n", whoami);
         last_error = ERR_NOT_ME;
         return false;
     }
 
-    // setup
+    // X,Y axes in ultra-high performance mode, ODR defined by constructor
     uint8_t CTRL_REG1_M_VAL = 0x60 | (int)odr << 2;
-    spi.write(regMapM::CTRL_REG1_M,
-              CTRL_REG1_M_VAL);  // X,Y axes in ultra-high performance mode,
-                                 // NO auto-temp compensation and ODR
-                                 // defined by constructor
+    spi.write(regMapM::CTRL_REG1_M, CTRL_REG1_M_VAL);
 
+    // FSR defined by constructor
     uint8_t CTRL_REG2_M_VAL = (int)magFSR << 5;
-    spi.write(regMapM::CTRL_REG2_M,
-              CTRL_REG2_M_VAL);  // FSR defined by constructor
+    spi.write(regMapM::CTRL_REG2_M, CTRL_REG2_M_VAL);
 
-    spi.write(regMapM::CTRL_REG4_M,
-              CTRL_REG4_M_VAL);  // Z axis in ultra-high performance mode
-    spi.write(regMapM::CTRL_REG3_M,
-              CTRL_REG3_M_VAL);  // I2C disabled, SPI mode: read/write
+    // Z axis in ultra-high performance mode
+    spi.write(regMapM::CTRL_REG4_M, CTRL_REG4_M_VAL);
 
-    spi.write(regMapM::INT_CFG_M, INT_CFG_M_VAL);  // disable all interrupts
+    // I2C disabled, SPI mode: read/write
+    spi.write(regMapM::CTRL_REG3_M, CTRL_REG3_M_VAL);
+
+    // disable all interrupts
+    spi.write(regMapM::INT_CFG_M, INT_CFG_M_VAL);
 
     // check that all registers have been written correctly
 
@@ -116,6 +100,30 @@ bool LSM9DS1_M::init()
         return false;
     }
 
+    // select Sensitivity
+    switch (magFSR)
+    {
+        case MagFSR::FS_4:
+            magSensitivity = 0.14f;
+            break;
+        case MagFSR::FS_8:
+            magSensitivity = 0.29f;
+            break;
+        case MagFSR::FS_12:
+            magSensitivity = 0.43f;
+            break;
+        case MagFSR::FS_16:
+            magSensitivity = 0.58f;
+            break;
+        default:
+            magSensitivity = 0.14f;
+            break;
+    }
+
+    TRACE("[LSM9DS1 XLG] init() : done\n");
+
+    sensor_initialized = true;
+
     return true;
 }
 
@@ -125,31 +133,37 @@ bool LSM9DS1_M::onSimpleUpdate()
 {
 
     uint8_t magData[6];
-    // read output data X,Y,Z
+
+    // read output magneto raw data X,Y,Z
     {
         SPITransaction spi(spislave);
-        // bit 1 of SPI transaction = 1 means "auto-increment address" (see
-        // DS).
-        spi.read(regMapM::OUT_X_L_M | 0x40, magData,
-                 6);  // so bit 6 of the address = 1
+        // bit 1 of SPI transaction = 1 means "auto-increment address"
+        spi.read(regMapM::OUT_X_L_M | 0x40, magData, 6);
     }
 
+    // compose signed 16-bit raw data as 2 bytes from the sensor
+    // clang-format off
     int16_t x = magData[0] | magData[1] << 8;
     int16_t y = magData[2] | magData[3] << 8;
     int16_t z = magData[4] | magData[5] << 8;
 
-    // TRACE("LSM9DS1 mageto: %02X,%02X,%02X\n", x, y, z);
-
-    mLastCompass = Vec3(x * magSensitivity / 1000, y * magSensitivity / 1000,
+    //convert raw data
+    mLastCompass = Vec3(x * magSensitivity / 1000, 
+                        y * magSensitivity / 1000,
                         z * magSensitivity / 1000);
+    // clang-format on
+
     return true;
 }
 
-void LSM9DS1_M::setOffset(vector<uint16_t>& offVect)
+bool LSM9DS1_M::setOffset(vector<uint16_t>& offVect)
 {
-    if (offVect.size() < 3)
-        return;
+    if (offVect.size() != 3)
+        return false;
+
     uint8_t toStore[6];
+    
+    //separate each byte (MSB first)
     for (int i = 6; i > 0; i = i - 2)
     {
         toStore[i - 1] = offVect.back() & 0x00FF;  // LSB
@@ -159,6 +173,5 @@ void LSM9DS1_M::setOffset(vector<uint16_t>& offVect)
 
     SPITransaction spi(spislave);
     // bit 1 of SPI transaction = 1 means "auto-increment address".
-    spi.write(regMapM::OFFSET_X_REG_L_M | 0x40, toStore,
-              6);  // so bit 6 of the address = 1
+    spi.write(regMapM::OFFSET_X_REG_L_M | 0x40, toStore, 6);
 }
