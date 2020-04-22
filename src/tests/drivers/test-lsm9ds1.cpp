@@ -28,8 +28,8 @@
 
 using namespace miosix;
 
-typedef Gpio<GPIOA_BASE, 5> GpioSck;  // questi sono i pin SPI per
-                                      // f407_discovery
+// pin f407 discovery SPI1
+typedef Gpio<GPIOA_BASE, 5> GpioSck;
 typedef Gpio<GPIOA_BASE, 6> GpioMiso;
 typedef Gpio<GPIOA_BASE, 7> GpioMosi;
 
@@ -37,7 +37,6 @@ static const bool FIFO_ENABLED = false;
 
 // SPI
 SPIBus bus(SPI1);
-// SPIBusConfig cfg;
 GpioPin cs_XLG(GPIOE_BASE, 7);
 GpioPin cs_M(GPIOE_BASE, 9);
 
@@ -54,7 +53,8 @@ int main()
     {
         FastInterruptDisableLock dLock;
 
-        RCC->APB2ENR |= RCC_APB2ENR_SPI1EN;  // SPI1 ENABLE
+        // SPI1 ENABLE
+        RCC->APB2ENR |= RCC_APB2ENR_SPI1EN;
 
         GpioSck::mode(Mode::ALTERNATE);
         GpioMiso::mode(Mode::ALTERNATE);
@@ -73,19 +73,9 @@ int main()
         LED2.mode(Mode::OUTPUT);
     }
 
+    // chip select high
     cs_XLG.high();
     cs_M.high();
-
-    // dump regiters
-    /*
-        for(int reg=0; reg<=0x38; reg++)
-        {
-            SPISlave spislave(bus, cs_XLG, cfg);
-            SPITransaction spi(spislave);
-            uint8_t data = spi.read(reg);
-            printf("0x%02X-->0x%02X\n", reg,data);
-        }
-    }*/
 
     LSM9DS1_XLG lsm9ds1X(bus, cs_XLG, LSM9DS1_XLG::AxelFSR::FS_8,
                          LSM9DS1_XLG::GyroFSR::FS_245,
@@ -110,18 +100,30 @@ int main()
     long long first_tick = getTick();
     for (;;)
     {
+        //get timestamp
         long long last_tick = getTick();
+
+        //get axel+gyro+temp data
         lsm9ds1X.onSimpleUpdate();
         adata = *(lsm9ds1X.accelDataPtr());
         gdata = *(lsm9ds1X.gyroDataPtr());
         tdata = *(lsm9ds1X.tempDataPtr());
+
+        //get magneto data
         lsm9ds1M.onSimpleUpdate();
         mdata = *(lsm9ds1M.compassDataPtr());
+
+        // clang-format off
+               
         printf("%d,%.3f,%.3f,%.3f,%.3f,%.3f,%.3f,%.3f,%.3f,%.3f,%.1f\n",
-               (int)(last_tick - first_tick), adata.getX(), adata.getY(),
-               adata.getZ(), gdata.getX(), gdata.getY(), gdata.getZ(),
-               mdata.getX(), mdata.getY(), mdata.getZ(), tdata);
-        // printf("%.3f,%.3f,%.3f\n", mdata.getX(), mdata.getY(), mdata.getZ());
+               (int)(last_tick - first_tick), 
+               adata.getX(), adata.getY(), adata.getZ(), 
+               gdata.getX(), gdata.getY(), gdata.getZ(),
+               mdata.getX(), mdata.getY(), mdata.getZ(), 
+               tdata);
+        
+        // clang-format on        
+
     }
 
     return 0;
