@@ -29,6 +29,7 @@
 
 #include "LSM9DS1_Data.h"
 #include "drivers/spi/SPIDriver.h"
+#include "math/Stats.h"
 
 using miosix::GpioPin;
 using std::vector;
@@ -41,7 +42,7 @@ using std::vector;
 class LSM9DS1_M : public CompassSensor
 {
 public:
-    enum MagFSR
+    enum MagFSR : uint8_t
     {
         FS_4  = 0x00,  // +/- 4Gauss
         FS_8  = 0x01,  // +/- 8Gauss
@@ -49,7 +50,7 @@ public:
         FS_16 = 0x03   // +/- 16Gauss
     };
 
-    enum ODR
+    enum ODR : uint8_t
     {
         ODR_0_625 = 0X00,  // 0.625Hz
         ODR_1_25  = 0x01,  // 1.25Hz
@@ -61,6 +62,12 @@ public:
         ODR_80    = 0x07   // 80Hz
     };
 
+    // Sesitivity Map (axelFSR)
+    const std::map<MagFSR, float> magFSR_SMap{{FS_4, 0.00014f},
+                                              {FS_8, 0.00029f},
+                                              {FS_12, 0.00043f},
+                                              {FS_16, 0.00058f}};
+
     /**
      * @brief Creates an instance of an LSM9DS1 magnetometer sensor.
      *
@@ -70,8 +77,8 @@ public:
      * @param    odr Output Data Rate (See datasheet)
      */
 
-    LSM9DS1_M(SPIBusInterface& bus, GpioPin cs, MagFSR magRange = MagFSR::FS_8,
-              ODR odr = ODR::ODR_0_625);
+    LSM9DS1_M(SPIBusInterface& bus, GpioPin cs, MagFSR magRange = MagFSR::FS_16,
+              ODR odr = ODR::ODR_80);
 
     /**
      * @brief Creates an instance of an LSM9DS1 magnetometer sensor.
@@ -84,7 +91,7 @@ public:
      */
 
     LSM9DS1_M(SPIBusInterface& bus, GpioPin cs, SPIBusConfig config,
-              MagFSR magRange = MagFSR::FS_8, ODR odr = ODR::ODR_0_625);
+              MagFSR magRange = MagFSR::FS_16, ODR odr = ODR::ODR_80);
 
     /**
      * @brief initializes the LSM9DS1 Sensor (Magnetometer).
@@ -109,23 +116,18 @@ public:
 
     bool onSimpleUpdate() override;
 
-    /**
-     * @brief set offset of the compass sensor in case of offset errors.
-     * @param offVect offset values (X,Y,Z)
-     * @return true if register has been set
-     */
-
-    bool setOffset(vector<uint16_t>& offVect);
-
 private:
+    void getSelfTestData(Stats& outx, Stats& outy, Stats& outz);
+
     bool sensor_initialized = false;
+    bool selfTest_mode = false;
 
     SPISlave spislave;
 
     MagFSR magFSR;
     ODR odr;
 
-    float magSensitivity;
+    lsm9ds1MSample lastMagneto; 
 
     /**
      * @brief Registers' addresses definition.
@@ -161,4 +163,18 @@ private:
     static const uint8_t CTRL_REG3_M_VAL = 0x80;
     static const uint8_t CTRL_REG4_M_VAL = 0x0C;
     static const uint8_t INT_CFG_M_VAL   = 0x00;
+
+    static const uint8_t AUTO_INCREMENT_ADDR = 0x40;
+    static const uint8_t SOFT_RESET          = 0x08;
+
+    // For selfTEST - limit for FS = +/-12Gauss
+    // LIS3MDL limits - seems to be same magnetometer as LSM9DS1
+    static constexpr float ST_XY_MIN = 1.0f;
+    static constexpr float ST_XY_MAX = 3.0f;
+    static constexpr float ST_Z_MIN  = 0.1f;
+    static constexpr float ST_Z_MAX  = 1.0f;
+
+    static const uint8_t DRDY_MASK            = 0x04;
+    static const uint8_t SELFTEST_MAX_SAMPLES = 10;
+    static const uint8_t SELFTEST_ENABLE      = 0x01;
 };

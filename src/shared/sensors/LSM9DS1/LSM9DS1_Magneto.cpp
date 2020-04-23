@@ -24,6 +24,12 @@
 
 #include "LSM9DS1_Magneto.h"
 
+#include <math.h>
+
+#include <iostream>
+
+#include "math/Stats.h"
+
 using miosix::GpioPin;
 using std::vector;
 
@@ -42,11 +48,10 @@ LSM9DS1_M::LSM9DS1_M(SPIBusInterface& bus, GpioPin cs, SPIBusConfig config,
 
 bool LSM9DS1_M::init()
 {
-    if (sensor_initialized)
-    {
-        TRACE("[LSM9DS1 MAG] init() : already initialized\n");
-        return false;
-    }
+
+#ifdef DEBUG
+    assert(sensor_initialized == false);
+#endif
 
     SPITransaction spi(spislave);
 
@@ -61,11 +66,11 @@ bool LSM9DS1_M::init()
     }
 
     // X,Y axes in ultra-high performance mode, ODR defined by constructor
-    uint8_t CTRL_REG1_M_VAL = 0x60 | (int)odr << 2;
+    uint8_t CTRL_REG1_M_VAL = 0x60 | odr << 2;
     spi.write(regMapM::CTRL_REG1_M, CTRL_REG1_M_VAL);
 
     // FSR defined by constructor
-    uint8_t CTRL_REG2_M_VAL = (int)magFSR << 5;
+    uint8_t CTRL_REG2_M_VAL = magFSR << 5;
     spi.write(regMapM::CTRL_REG2_M, CTRL_REG2_M_VAL);
 
     // Z axis in ultra-high performance mode
@@ -81,64 +86,184 @@ bool LSM9DS1_M::init()
 
     if (spi.read(regMapM::CTRL_REG1_M) != CTRL_REG1_M_VAL)
     {
+        TRACE("[LSM9DS1 MAG] init() : CTRL_REG1_M readback failed\n");
         return false;
     }
     if (spi.read(regMapM::CTRL_REG2_M) != CTRL_REG2_M_VAL)
     {
+        TRACE("[LSM9DS1 MAG] init() : CTRL_REG2_M readback failed\n");
         return false;
     }
     if (spi.read(regMapM::CTRL_REG3_M) != CTRL_REG3_M_VAL)
     {
+        TRACE("[LSM9DS1 MAG] init() : CTRL_REG3_M readback failed\n");
         return false;
     }
     if (spi.read(regMapM::CTRL_REG4_M) != CTRL_REG4_M_VAL)
     {
+        TRACE("[LSM9DS1 MAG] init() : CTRL_REG4_M readback failed\n");
         return false;
     }
     if (spi.read(regMapM::INT_CFG_M) != INT_CFG_M_VAL)
     {
+        TRACE("[LSM9DS1 MAG] init() : INT_CFG_M readback failed\n");
         return false;
     }
 
-    // select Sensitivity
-    switch (magFSR)
-    {
-        case MagFSR::FS_4:
-            magSensitivity = 0.14f;
-            break;
-        case MagFSR::FS_8:
-            magSensitivity = 0.29f;
-            break;
-        case MagFSR::FS_12:
-            magSensitivity = 0.43f;
-            break;
-        case MagFSR::FS_16:
-            magSensitivity = 0.58f;
-            break;
-        default:
-            magSensitivity = 0.14f;
-            break;
-    }
+    // wait 20ms for stable output
+    miosix::Thread::sleep(20);
 
-    TRACE("[LSM9DS1 XLG] init() : done\n");
+    TRACE("[LSM9DS1 MAG] init() : done\n");
 
     sensor_initialized = true;
 
     return true;
 }
 
-bool LSM9DS1_M::selfTest() { return true; }
+bool LSM9DS1_M::selfTest()
+{
+    TRACE("[LSM9DS1 MAG] selfTest() : starting self-test\n");
+
+    Stats nostX, nostY, nostZ;
+    Stats stX, stY, stZ;
+    bool selfTestResult = false;
+
+    selfTest_mode = true;
+
+    {
+        SPITransaction spi(spislave);
+
+        // Reset all registers (if called after init())
+        spi.write(regMapM::CTRL_REG2_M, SOFT_RESET);
+        miosix::Thread::sleep(20);
+
+        // self-test ROUTINE of LIS3MDL - seems to be same magnetometer as
+        // LSM9DS1 init sensor for self-test: FSR = +/-12 Gauss, ODR = 80Hz
+        uint8_t CTRL_REG1_M_VAL = (ODR::ODR_80 << 2);
+        spi.write(regMapM::CTRL_REG1_M, CTRL_REG1_M_VAL);
+
+        uint8_t CTRL_REG2_M_VAL = MagFSR::FS_12 << 5;
+        spi.write(regMapM::CTRL_REG2_M, CTRL_REG2_M_VAL);
+
+        // wait 20ms for stable output
+        miosix::Thread::sleep(20);
+
+        // out enable - continuous mode
+        spi.write(regMapM::CTRL_REG3_M, 0x00);
+
+        // wait data-ready bit on STATUS REG - read first sample and discard
+        while ((spi.read(regMapM::STATUS_REG_M) & DRDY_MASK) == 0)
+        {
+        }
+
+        spi.read(regMapM::OUT_X_L_M | AUTO_INCREMENT_ADDR, 6);
+    }
+
+    // wait data-ready bit on STATUS REG - read NOST sample at least 5 times
+    LSM9DS1_M::getSelfTestData(nostX, nostY, nostZ);
+
+    // enable self-test mode and wait 60ms
+    {
+        SPITransaction spi(spislave);
+
+        uint8_t CTRL_REG1_M_VAL = (ODR::ODR_80 << 2) | SELFTEST_ENABLE;
+        spi.write(regMapM::CTRL_REG1_M, CTRL_REG1_M_VAL);
+
+        miosix::Thread::sleep(60);
+
+        // wait data-ready bit on STATUS REG - read first sample and discard
+        while ((spi.read(regMapM::STATUS_REG_M) & DRDY_MASK) == 0)
+        {
+        }
+
+        spi.read(regMapM::OUT_X_L_M | AUTO_INCREMENT_ADDR, 6);
+    }
+
+    LSM9DS1_M::getSelfTestData(stX, stY, stZ);
+
+    float deltaX = fabsf(stX.getStats().mean - nostX.getStats().mean);
+    float deltaY = fabsf(stY.getStats().mean - nostY.getStats().mean);
+    float deltaZ = fabsf(stZ.getStats().mean - nostZ.getStats().mean);
+
+// verify if sensor is inside parameters
+
+// print stats
+#ifdef DEBUG
+    std::cout << "[LSM9DS1 MAG] selfTest() :" << std::endl
+              << "X-AXIS stats : " << nostX.getStats() << std::endl
+              << "Y-AXIS stats : " << nostY.getStats() << std::endl
+              << "Z-AXIS stats : " << nostZ.getStats() << std::endl
+              << "deltaX : " << deltaX << std::endl
+              << "deltaY : " << deltaY << std::endl
+              << "deltaZ : " << deltaZ << std::endl;
+#endif
+
+    // clang-format off
+
+    if(ST_XY_MIN < deltaX && deltaX < ST_XY_MAX &&
+       ST_XY_MIN < deltaY && deltaY < ST_XY_MAX &&
+       ST_Z_MIN  < deltaZ && deltaZ < ST_Z_MAX)
+    {
+        TRACE("[LSM9DS1 MAG] selfTest() : self-test passed\n");
+        selfTestResult = true;
+    }
+    else
+    {
+        TRACE("[LSM9DS1 MAG] selfTest() : self-test failed\n");    
+        selfTestResult = false;
+    }
+
+    // clang-format on 
+
+    // re-init if necessary 
+    if(sensor_initialized == true)
+    {
+        sensor_initialized = false;
+        LSM9DS1_M::init(); 
+    }
+
+    selfTest_mode = true;    
+    
+    return selfTestResult;
+}
+
+void LSM9DS1_M::getSelfTestData(Stats& outxStats, Stats& outyStats,
+                                Stats& outzStats)
+{
+    for (int i = 0; i < SELFTEST_MAX_SAMPLES; i++)
+    {
+        {
+            SPITransaction spi(spislave);
+            while ((spi.read(regMapM::STATUS_REG_M) & DRDY_MASK) == 0)
+            {
+            }
+        }
+        LSM9DS1_M::onSimpleUpdate();
+
+        printf("%.3f,%.3f,%.3f\n", lastMagneto.magData.getX(), 
+                                   lastMagneto.magData.getY(), 
+                                   lastMagneto.magData.getZ());
+        // compute statistics
+        outxStats.add(lastMagneto.magData.getX());
+        outyStats.add(lastMagneto.magData.getY());
+        outzStats.add(lastMagneto.magData.getZ());
+    }
+    printf("\n\n\n");
+}
 
 bool LSM9DS1_M::onSimpleUpdate()
 {
+#ifdef DEBUG
+    assert(sensor_initialized == true || selfTest_mode == true);
+#endif
 
     uint8_t magData[6];
 
-    // read output magneto raw data X,Y,Z
+    // read output magneto raw data X,Y,Z and timestamp
     {
         SPITransaction spi(spislave);
-        // bit 1 of SPI transaction = 1 means "auto-increment address"
-        spi.read(regMapM::OUT_X_L_M | 0x40, magData, 6);
+        spi.read(regMapM::OUT_X_L_M | AUTO_INCREMENT_ADDR, magData, 6);
+        lastMagneto.timestamp = miosix::getTick();
     }
 
     // compose signed 16-bit raw data as 2 bytes from the sensor
@@ -148,30 +273,10 @@ bool LSM9DS1_M::onSimpleUpdate()
     int16_t z = magData[4] | magData[5] << 8;
 
     //convert raw data
-    mLastCompass = Vec3(x * magSensitivity / 1000, 
-                        y * magSensitivity / 1000,
-                        z * magSensitivity / 1000);
+    lastMagneto.magData = Vec3(x * magFSR_SMap.at(magFSR), 
+                               y * magFSR_SMap.at(magFSR),
+                               z * magFSR_SMap.at(magFSR));
     // clang-format on
 
     return true;
-}
-
-bool LSM9DS1_M::setOffset(vector<uint16_t>& offVect)
-{
-    if (offVect.size() != 3)
-        return false;
-
-    uint8_t toStore[6];
-    
-    //separate each byte (MSB first)
-    for (int i = 6; i > 0; i = i - 2)
-    {
-        toStore[i - 1] = offVect.back() & 0x00FF;  // LSB
-        toStore[i - 2] = offVect.back() >> 8;      // MSB
-        offVect.pop_back();
-    }
-
-    SPITransaction spi(spislave);
-    // bit 1 of SPI transaction = 1 means "auto-increment address".
-    spi.write(regMapM::OFFSET_X_REG_L_M | 0x40, toStore, 6);
 }
