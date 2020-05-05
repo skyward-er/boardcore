@@ -128,17 +128,31 @@ bool LSM9DS1_M::selfTest()
     Stats stX, stY, stZ;
     bool selfTestResult = false;
 
+    nostX.reset();
+    nostY.reset();
+    nostZ.reset();
+
     selfTest_mode = true;
+
+    // if already initialized
+    if (sensor_initialized == true)
+    {
+        TRACE("[LSM9DS1 MAG] selfTest() : sensor already initialized!\n");
+#ifdef DEBUG
+        assert(sensor_initialized == false);
+#endif
+        return false;
+    }
 
     {
         SPITransaction spi(spislave);
 
-        // Reset all registers (if called after init())
+        // Reset all registers
         spi.write(regMapM::CTRL_REG2_M, SOFT_RESET);
         miosix::Thread::sleep(20);
 
         // self-test ROUTINE of LIS3MDL - seems to be same magnetometer as
-        // LSM9DS1 init sensor for self-test: FSR = +/-12 Gauss, ODR = 80Hz
+        // LSM9DS1. init sensor for self-test: FSR = +/-12 Gauss, ODR = 80Hz
         uint8_t CTRL_REG1_M_VAL = (ODR::ODR_80 << 2);
         spi.write(regMapM::CTRL_REG1_M, CTRL_REG1_M_VAL);
 
@@ -156,7 +170,9 @@ bool LSM9DS1_M::selfTest()
         {
         }
 
-        spi.read(regMapM::OUT_X_L_M | AUTO_INCREMENT_ADDR, 6);
+        uint8_t data[6];
+        spi.read(regMapM::OUT_X_L_M | AUTO_INCREMENT_ADDR, data, 6);
+        UNUSED(data);
     }
 
     // wait data-ready bit on STATUS REG - read NOST sample at least 5 times
@@ -176,7 +192,9 @@ bool LSM9DS1_M::selfTest()
         {
         }
 
+        uint8_t data[6];
         spi.read(regMapM::OUT_X_L_M | AUTO_INCREMENT_ADDR, 6);
+        UNUSED(data);
     }
 
     LSM9DS1_M::getSelfTestData(stX, stY, stZ);
@@ -185,17 +203,18 @@ bool LSM9DS1_M::selfTest()
     float deltaY = fabsf(stY.getStats().mean - nostY.getStats().mean);
     float deltaZ = fabsf(stZ.getStats().mean - nostZ.getStats().mean);
 
-// verify if sensor is inside parameters
+    // verify if sensor is inside parameters
 
-// print stats
+    // print stats
 #ifdef DEBUG
-    std::cout << "[LSM9DS1 MAG] selfTest() :" << std::endl
-              << "X-AXIS stats : " << nostX.getStats() << std::endl
-              << "Y-AXIS stats : " << nostY.getStats() << std::endl
-              << "Z-AXIS stats : " << nostZ.getStats() << std::endl
-              << "deltaX : " << deltaX << std::endl
-              << "deltaY : " << deltaY << std::endl
-              << "deltaZ : " << deltaZ << std::endl;
+    std::cout << "[LSM9DS1 MAG] selfTest() : statistics"
+              << "\n"
+              << "X-AXIS stats : " << nostX.getStats() << "\n"
+              << "Y-AXIS stats : " << nostY.getStats() << "\n"
+              << "Z-AXIS stats : " << nostZ.getStats() << "\n"
+              << "deltaX : " << deltaX << "\n"
+              << "deltaY : " << deltaY << "\n"
+              << "deltaZ : " << deltaZ << "\n";
 #endif
 
     // clang-format off
@@ -214,15 +233,12 @@ bool LSM9DS1_M::selfTest()
     }
 
     // clang-format on 
-
-    // re-init if necessary 
-    if(sensor_initialized == true)
     {
-        sensor_initialized = false;
-        LSM9DS1_M::init(); 
+        SPITransaction spi(spislave);
+        spi.write(regMapM::CTRL_REG2_M, SOFT_RESET);
+        miosix::Thread::sleep(20);
     }
-
-    selfTest_mode = true;    
+    selfTest_mode = false;    
     
     return selfTestResult;
 }
@@ -240,15 +256,11 @@ void LSM9DS1_M::getSelfTestData(Stats& outxStats, Stats& outyStats,
         }
         LSM9DS1_M::onSimpleUpdate();
 
-        printf("%.3f,%.3f,%.3f\n", lastMagneto.magData.getX(), 
-                                   lastMagneto.magData.getY(), 
-                                   lastMagneto.magData.getZ());
         // compute statistics
         outxStats.add(lastMagneto.magData.getX());
         outyStats.add(lastMagneto.magData.getY());
         outzStats.add(lastMagneto.magData.getZ());
     }
-    printf("\n\n\n");
 }
 
 bool LSM9DS1_M::onSimpleUpdate()
@@ -263,8 +275,9 @@ bool LSM9DS1_M::onSimpleUpdate()
     {
         SPITransaction spi(spislave);
         spi.read(regMapM::OUT_X_L_M | AUTO_INCREMENT_ADDR, magData, 6);
-        lastMagneto.timestamp = miosix::getTick();
     }
+
+    lastMagneto.timestamp = miosix::getTick();
 
     // compose signed 16-bit raw data as 2 bytes from the sensor
     // clang-format off
@@ -280,3 +293,5 @@ bool LSM9DS1_M::onSimpleUpdate()
 
     return true;
 }
+
+const lsm9ds1MSample& LSM9DS1_M::getSample() const { return lastMagneto; }

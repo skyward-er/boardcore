@@ -40,16 +40,21 @@ struct lsm9ds1XLGSample
     uint64_t timestamp;
     Vec3 axelData;
     Vec3 gyroData;
+    uint16_t unread;
+    uint16_t fifo_num;
+    bool overrun;
 
     static std::string header()
     {
-        return "timestamp,acc_x,acc_y,acc_z,gyro_x,gyro_y,gyro_z\n";
+        return "timestamp,unread,overrun,acc_x,acc_y,acc_z,gyro_x,gyro_y,gyro_"
+               "z\n";
     }
 
     void print(std::ostream& os) const
     {
-        os << timestamp << "," << axelData.getX() << "," << axelData.getY()
-           << "," << axelData.getZ() << "," << gyroData.getX() << ","
+        os << timestamp << "," << unread << "," << overrun << "," << fifo_num
+           << "," << axelData.getX() << "," << axelData.getY() << ","
+           << axelData.getZ() << "," << gyroData.getX() << ","
            << gyroData.getY() << "," << gyroData.getZ() << "\n";
     }
 };

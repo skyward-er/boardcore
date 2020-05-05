@@ -55,14 +55,14 @@ GpioPin LED3(GPIOD_BASE, 14);
 GpioPin PUSHBUTTON(GPIOA_BASE, 0);
 
 // SPI read flag
-volatile bool flagSPIReadRequest = false;
+//volatile bool flagSPIReadRequest = false;
 
 // IMU obj variables
-static const bool FIFO_ENABLED             = true;
-static const uint8_t FIFO_WATERMARK        = 20;
-static const uint16_t FIFO_SAMPLES         = 1000;
-static const uint16_t MAG_SAMPLING_PERIOD  = 10;   // 100Hz
-static const uint16_t TEMP_SAMPLING_PERIOD = 100;  // 10Hz
+static const uint8_t FIFO_WATERMARK       = 12;
+static const uint16_t FIFO_SAMPLES        = 1000;
+static const uint8_t TEMP_DIV_FREQ        = 20;
+static const uint16_t MAG_SAMPLING_PERIOD = 10;  // 100Hz
+static const uint16_t FIFO_SAMPLING_PERIOD = 25.5 * 1000 / 476.0f;
 
 // High Resolution hardware timer using TIM5
 HardwareTimer<uint32_t> hrclock(
@@ -86,13 +86,11 @@ void __attribute__((naked)) EXTI13_IRQHandler()
 
 void __attribute__((used)) EXTI13_IRQHandlerImpl()
 {
-    // Computing delta beetween interrupts
-    uint32_t tick = hrclock.tick();
-    delta         = tick - last_tick;
-    last_tick     = tick;
+    // Update timestamp
+    lsm9ds1_xlg->updateTimestamp(hrclock.toMicroSeconds(hrclock.tick()));
 
     // Set read flag
-    flagSPIReadRequest = true;
+    //flagSPIReadRequest = true;
 
     // Built-in LED on
     LED1.high();
@@ -109,10 +107,9 @@ void printStats(void*);
 int main()
 {
 
-    uint32_t dt;
-    uint64_t XLGtimestamp = 0;
-    uint64_t lastMagtick  = 0;
-    uint64_t lastTemptick = 0;
+    uint64_t lastMagtick   = 0;
+    uint64_t lastFifotick  = 0;
+    uint16_t lastTempcount = 0;
 
     // Spawn thread for loggings logger stats
     Thread::create(printStats, 4096);
@@ -125,88 +122,84 @@ int main()
     timer5Config();
     EXTI1Config();
 
-    lsm9ds1_xlg = new LSM9DS1_XLG(
-        bus, cs_XLG, LSM9DS1_XLG::AxelFSR::FS_8, LSM9DS1_XLG::GyroFSR::FS_245,
-        LSM9DS1_XLG::ODR::ODR_238, FIFO_ENABLED, FIFO_WATERMARK);
+    lsm9ds1_xlg = new LSM9DS1_XLG(bus, cs_XLG, LSM9DS1_XLG::AxelFSR::FS_8,
+                                  LSM9DS1_XLG::GyroFSR::FS_245,
+                                  LSM9DS1_XLG::ODR::ODR_476, TEMP_DIV_FREQ);
 
     lsm9ds1_m = new LSM9DS1_M(bus, cs_M, LSM9DS1_M::MagFSR::FS_8,
-                              LSM9DS1_M::ODR::ODR_40);
+                              LSM9DS1_M::ODR::ODR_80);
 
+    // enable FIFO
+    lsm9ds1_xlg->enable_fifo(FIFO_WATERMARK);
+
+    // perform self-tests
+    lsm9ds1_xlg->selfTest();
+    lsm9ds1_m->selfTest();
+
+    // initialize sensor
     while (!lsm9ds1_xlg->init())
         ;
     while (!lsm9ds1_m->init())
         ;
     LED2.high();  // init OK
 
-    // just to be sure to intercept the first interrupt rising edge
-    lsm9ds1_xlg->clearFIFO();
-
     // sampling until you push the button
     while (!PUSHBUTTON.value())
     {
-        //ACCELEROMETER + GYROSCOPE UPDATE (FIFO)
-        //an interrupt is set: time to dump the FIFO
-        if (flagSPIReadRequest)
+        // ACCELEROMETER + GYROSCOPE + UPDATE (FIFO)
+        // TEMPERATURE UPDATE
+        // an interrupt is set: time to dump the FIFO
+        //if (flagSPIReadRequest)
+        if (miosix::getTick() - lastFifotick >= FIFO_SAMPLING_PERIOD)
         {
-            flagSPIReadRequest = false;
-
-            // delta of each sample = delta beetween interrupts / #samples 
-            dt = hrclock.toMicroSeconds(delta) / FIFO_WATERMARK;
-            
-            //dump the fifo 
+            //flagSPIReadRequest = false;
+            lastFifotick = miosix::getTick();
+            // dump the fifo
             lsm9ds1_xlg->onSimpleUpdate();
 
-            //update each timestamp and log the sample (da integrare su driver?)
-            for (int i = 0; i < FIFO_WATERMARK; i++)
+            // log each sample
+            for (int i = 0; i < lsm9ds1_xlg->getFIFOdepth() ; i++)
             {
-                lsm9ds1XLGSample XLGsample = lsm9ds1_xlg->getLsm9ds1FIFO()[i];
-                XLGtimestamp += dt;
-                XLGsample.timestamp = XLGtimestamp;
+                lsm9ds1XLGSample XLGsample = lsm9ds1_xlg->getFIFO()[i];
                 logger.log(XLGsample);
             }
+
+            if (lastTempcount == TEMP_DIV_FREQ)
+            {
+                lastTempcount          = 0;
+                lsm9ds1TSample Tsample = lsm9ds1_xlg->getTSample();
+                logger.log(Tsample);
+            }
+            lastTempcount++;
 
             LED1.low();
         }
 
-        //MAGNETOMETER UPDATE (SIMPLE)
+        // MAGNETOMETER UPDATE (SIMPLE)
         if (miosix::getTick() - lastMagtick >= MAG_SAMPLING_PERIOD)
-        {   
+        {
             lastMagtick = miosix::getTick();
-            
-            //get sample from the sensor
+
+            // get sample from the sensor
             lsm9ds1_m->onSimpleUpdate();
-            
-            //update timestamp and log the sample
-            lsm9ds1MSample MAGsample;
-            MAGsample.magData   = *(lsm9ds1_m->compassDataPtr());
-            MAGsample.timestamp = lastMagtick;
+
+            // log the sample
+            lsm9ds1MSample MAGsample = lsm9ds1_m->getSample();
             logger.log(MAGsample);
         }
 
-        //TEMPERATURE UPDATE (SIMPLE)
-        if (miosix::getTick() - lastTemptick >= TEMP_SAMPLING_PERIOD)
-        {
-            lastTemptick = miosix::getTick();
+        Thread::sleep(FIFO_SAMPLING_PERIOD);
 
-            //get sample from the sensor
-            lsm9ds1_xlg->temperatureUpdate();
-            
-            //update timestamp and log the sample
-            lsm9ds1TSample Tsample;
-            Tsample.tempData  = *(lsm9ds1_xlg->tempDataPtr());
-            Tsample.timestamp = lastTemptick;
-            logger.log(Tsample);
-        }
     }
 
-    //stop log
+    // stop log
     logger.stop();
 
     LED1.low();
     LED2.low();
 
     Thread::sleep(10000);
-    reboot();
+    miosix::reboot();
 
     while (1)
         ;

@@ -33,7 +33,8 @@ typedef Gpio<GPIOA_BASE, 5> GpioSck;
 typedef Gpio<GPIOA_BASE, 6> GpioMiso;
 typedef Gpio<GPIOA_BASE, 7> GpioMosi;
 
-static const bool FIFO_ENABLED = false;
+static const bool FIFO_ENABLED     = false;
+static const uint8_t TEMP_DIV_FREQ = 20;
 
 // SPI
 SPIBus bus(SPI1);
@@ -46,9 +47,9 @@ GpioPin LED2(GPIOD_BASE, 13);
 
 int main()
 {
-
-    Vec3 adata, gdata, mdata;
-    float tdata;
+    lsm9ds1XLGSample agdata;
+    lsm9ds1MSample mdata;
+    lsm9ds1TSample tdata;
 
     {
         FastInterruptDisableLock dLock;
@@ -79,11 +80,13 @@ int main()
 
     LSM9DS1_XLG lsm9ds1X(bus, cs_XLG, LSM9DS1_XLG::AxelFSR::FS_8,
                          LSM9DS1_XLG::GyroFSR::FS_245,
-                         LSM9DS1_XLG::ODR::ODR_952);
+                         LSM9DS1_XLG::ODR::ODR_952, TEMP_DIV_FREQ);
 
-    LSM9DS1_M lsm9ds1M(bus, cs_M, LSM9DS1_M::MagFSR::FS_8,
-                       LSM9DS1_M::ODR::ODR_20);
+    LSM9DS1_M lsm9ds1M(bus, cs_M, LSM9DS1_M::MagFSR::FS_12,
+                       LSM9DS1_M::ODR::ODR_80);
 
+    lsm9ds1M.selfTest();
+    
     while (!lsm9ds1X.init())
     {
     }
@@ -94,33 +97,32 @@ int main()
     }
     LED2.high();
 
-    Thread::sleep(500);
+    Thread::sleep(5000);
 
     printf("time,ax,ay,az,gx,gy,gz,mx,my,mz,t\n");
-    long long first_tick = getTick();
     for (;;)
     {
-        //get timestamp
-        long long last_tick = getTick();
 
-        //get axel+gyro+temp data
+        // get axel+gyro+temp data
         lsm9ds1X.onSimpleUpdate();
-        adata = *(lsm9ds1X.accelDataPtr());
-        gdata = *(lsm9ds1X.gyroDataPtr());
-        tdata = *(lsm9ds1X.tempDataPtr());
+        agdata = lsm9ds1X.getXLGSample();
+        tdata  = lsm9ds1X.getTSample();
+        lsm9ds1X.updateTimestamp(miosix::getTick());
 
-        //get magneto data
+        // get magneto data
         lsm9ds1M.onSimpleUpdate();
-        mdata = *(lsm9ds1M.compassDataPtr());
+        mdata = lsm9ds1M.getSample();
 
         // clang-format off
                
-        printf("%d,%.3f,%.3f,%.3f,%.3f,%.3f,%.3f,%.3f,%.3f,%.3f,%.1f\n",
-               (int)(last_tick - first_tick), 
-               adata.getX(), adata.getY(), adata.getZ(), 
-               gdata.getX(), gdata.getY(), gdata.getZ(),
-               mdata.getX(), mdata.getY(), mdata.getZ(), 
-               tdata);
+        printf("%d,%.3f,%.3f,%.3f,%.3f,%.3f,%.3f,%d,%.3f,%.3f,%.3f,%d,%.1f\n",
+               (int)agdata.timestamp,
+               agdata.axelData.getX(), agdata.axelData.getY(), agdata.axelData.getZ(),
+               agdata.gyroData.getX(), agdata.gyroData.getY(), agdata.gyroData.getZ(),
+               (int)mdata.timestamp,
+               mdata.magData.getX(), mdata.magData.getY(), mdata.magData.getZ(),
+               (int)tdata.timestamp, 
+               tdata.tempData);
         
         // clang-format on        
 

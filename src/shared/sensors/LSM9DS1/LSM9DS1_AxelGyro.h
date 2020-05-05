@@ -45,7 +45,7 @@ class LSM9DS1_XLG : public GyroSensor,
                     public TemperatureSensor
 {
 public:
-    enum AxelFSR
+    enum AxelFSR : uint8_t
     {
         FS_2  = 0x00,  // +/- 2g
         FS_16 = 0x01,  // +/- 16g
@@ -53,14 +53,14 @@ public:
         FS_8  = 0x03   // +/- 8g
     };
 
-    enum GyroFSR
+    enum GyroFSR : uint8_t
     {
         FS_245  = 0x00,  // +/- 245dps
         FS_500  = 0x01,  // +/- 500dps
         FS_2000 = 0x03   // +/- 2000dps
     };
 
-    enum ODR
+    enum ODR : uint8_t
     {
         PWR_DW  = 0X00,  // power down
         ODR_15  = 0X01,  // 15Hz
@@ -71,6 +71,30 @@ public:
         ODR_952 = 0X06   // 952Hz
     };
 
+    // clang-format off
+
+    //Sesitivity Map (axelFSR)
+    const std::map<AxelFSR, float> axelFSR_SMap{{FS_2,  0.000598f},
+                                                {FS_4,  0.001196f},
+                                                {FS_8,  0.002393f},
+                                                {FS_16, 0.007178f}};
+    
+    //Sesitivity Map (gyroFSR)
+    const std::map<GyroFSR, float> gyroFSR_SMap{{FS_245,  0.0001527f},
+                                                {FS_500,  0.0003054f},
+                                                {FS_2000, 0.0012217f}};
+    
+    //ODR Map
+    const std::map<ODR, float> odr_Map{{PWR_DW,  0.0f  },
+                                       {ODR_15,  14.9f },
+                                       {ODR_60,  59.5f },
+                                       {ODR_119, 119.0f},
+                                       {ODR_238, 238.0f},
+                                       {ODR_476, 476.0f},
+                                       {ODR_952, 952.0f}};
+
+    // clang-format on
+
     /**
      * @brief Creates an instance of an LSM9DS1 accelerometer + gyroscope
      * sensor.
@@ -80,15 +104,13 @@ public:
      * @param    axelRange accelerometer Full Scale Range (See datasheet)
      * @param    gyroRange gyroscope Full Scale Range (See datasheet)
      * @param    odr Output Data Rate (See datasheet)
-     * @param    fifo_enabled Fifo enabled
-     * @param    fifo_watermark FIFO watermark level in range [1,32] (used for
-     * interrupt generation, see datasheet).
+     * @param    temp_div_freq Temperature update frequency division
      */
 
     LSM9DS1_XLG(SPIBusInterface& bus, GpioPin cs,
-                AxelFSR axelRange = AxelFSR::FS_2,
-                GyroFSR gyroRange = GyroFSR::FS_245, ODR odr = ODR::ODR_15,
-                bool fifo_enabled = false, unsigned int fifo_watermark = 24);
+                AxelFSR axelRange = AxelFSR::FS_16,
+                GyroFSR gyroRange = GyroFSR::FS_2000, ODR odr = ODR::ODR_952,
+                uint8_t temp_div_freq = 10);
 
     /**
      * @brief Creates an instance of an LSM9DS1 accelerometer + gyroscope
@@ -100,15 +122,22 @@ public:
      * @param    axelRange accelerometer Full Scale Range (See datasheet)
      * @param    gyroRange gyroscope Full Scale Range (See datasheet)
      * @param    odr Output Data Rate (See datasheet)
-     * @param    fifo_enabled Fifo enabled
-     * @param    fifo_watermark FIFO watermark level in range [1,32] (used for
-     * interrupt generation, see datasheet).
+     * @param    temp_div_freq Temperature update frequency division
      */
 
     LSM9DS1_XLG(SPIBusInterface& bus, GpioPin cs, SPIBusConfig config,
-                AxelFSR axelRange = AxelFSR::FS_2,
-                GyroFSR gyroRange = GyroFSR::FS_245, ODR odr = ODR::ODR_15,
-                bool fifo_enabled = false, unsigned int fifo_watermark = 24);
+                AxelFSR axelRange = AxelFSR::FS_16,
+                GyroFSR gyroRange = GyroFSR::FS_2000, ODR odr = ODR::ODR_952,
+                uint8_t temp_div_freq = 10);
+
+    /**
+     * @brief enables LSM9DS1 embedded FIFO.
+     * @param fifo_watermark FIFO watermark level in range [1,32] (used for
+     * interrupt generation, see datasheet).
+     * @warning call before init() member
+     */
+
+    void enable_fifo(uint8_t watermark);
 
     /**
      * @brief initializes the LSM9DS1 Sensor (Accelerometer + Gyroscope).
@@ -127,7 +156,9 @@ public:
     bool selfTest() override;
 
     /**
-     * @brief Dump single reading of Axel+Gyro+Temp from the sensor through SPI.
+     * @brief Dump single reading of Axel+Gyro+Temp from the sensor
+     * (if FIFO disabled) or dump fifo_watermark samples from the FIFO (if FIFO
+     * enabled) through SPI.
      * @return true if sensor sends data
      * @warning if FIFO is enabled, call only after interrupt flag from the
      * sensor has been set
@@ -135,6 +166,43 @@ public:
 
     bool onSimpleUpdate() override;
 
+    /**
+     * @brief set timestamp on last FIFO
+     * @warning remember to update FIFO data calling onSimpleUpdate
+     */
+
+    void updateTimestamp(uint64_t timestamp);
+
+    /**
+     * @brief get last valid sample
+     * @return sample
+     */
+
+    const lsm9ds1XLGSample& getXLGSample() const;
+
+    /**
+     * @brief get last valid sample
+     * @return sample
+     */
+
+    const lsm9ds1TSample& getTSample() const;
+
+    /**
+     * @brief get FIFO dumped after calling onSimpleUpdate() - Just on FIFO
+     * mode.
+     * @return array containing the whole FIFO
+     */
+
+    const array<lsm9ds1XLGSample, 32>& getFIFO() const;
+
+    /**
+     * @brief get number of samples inside the last FIFO
+     * @return number of samples
+     */
+
+    const uint8_t& getFIFOdepth() const; 
+
+private:
     /**
      * @brief Dump single read of Temperature from the sensor through SPI.
      * @return true if sensor sends data
@@ -148,17 +216,7 @@ public:
      * re-enabled; after that some samples are discarded according to datasheet.
      */
 
-    void clearFIFO();
-
-    /**
-     * @brief get FIFO dumped after calling onSimpleUpdate() - Just on FIFO
-     * mode.
-     * @return array containing the whole FIFO
-     */
-
-    const array<lsm9ds1XLGSample, 32>& getLsm9ds1FIFO() const;
-
-private:
+    void clearFIFO(SPITransaction& spi);
     /**
      * @brief discard some samples from the sensor. Must be used when switching.
      * from FIFO mode to CONTINUOUS mode (or viceversa) and during power on
@@ -167,9 +225,18 @@ private:
     void discardSamples(SPITransaction& spi);
 
     bool sensor_initialized = false;
-    bool fifo_enabled;
+
+    bool fifo_enabled = false;
     uint8_t fifo_watermark;
+    uint8_t fifo_samples;
+    uint8_t last_fifo_level = 20;
+
+    //
+    uint64_t IRQ_timestamp = 0;
+    uint32_t delta         = 0;
+
     array<lsm9ds1XLGSample, 32> fifo;
+    lsm9ds1TSample lastTemp;
 
     SPISlave spislave;
 
@@ -177,12 +244,10 @@ private:
     GyroFSR gyroFSR;
     ODR odr;
 
-    float axelSensitivity;
-    float gyroSensitivity;
-    float odrHz;
-    float tempZero                        = 25.0f;
-    float tempSensistivity                = 16.0f;
-    static const uint8_t samplesToDiscard = 8;  // max possible val
+    float tempZero         = 25.0f;
+    float tempSensistivity = 16.0f;
+    uint8_t temp_div_freq;
+    uint8_t temp_count = 0;
 
     /**
      * @brief Registers' addresses definition.
@@ -241,9 +306,14 @@ private:
         INT_GEN_DUR_G    = 0x37
     };
 
-    static const uint8_t INT1_CTRL_VAL    = 0x08;
-    static const uint8_t WHO_AM_I_XLG_VAL = 0x68;
-    static const uint8_t CTRL_REG8_VAL    = 0x04;
-    static const uint8_t CTRL_REG9_VAL    = 0x04;
-    static const uint8_t FIFO_CTRL_VAL    = 0xC0;
+    static const uint8_t INT1_CTRL_VAL      = 0x08;
+    static const uint8_t WHO_AM_I_XLG_VAL   = 0x68;
+    static const uint8_t CTRL_REG8_VAL      = 0x04;
+    static const uint8_t CTRL_REG9_VAL      = 0x04;
+    static const uint8_t FIFO_CTRL_VAL      = 0xC0;
+    static const uint8_t FIFO_UNREAD_MASK   = 0x3F;
+    static const uint8_t FIFO_OVERRUN_MASK  = 0x40;
+    static const uint8_t SAMPLES_TO_DISCARD = 8;
+
+    uint16_t fifo_num = 0;
 };

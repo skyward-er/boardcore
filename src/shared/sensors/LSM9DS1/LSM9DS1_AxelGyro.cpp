@@ -28,10 +28,9 @@ using miosix::GpioPin;
 using std::array;
 
 LSM9DS1_XLG::LSM9DS1_XLG(SPIBusInterface& bus, GpioPin cs, AxelFSR axelRange,
-                         GyroFSR gyroRange, ODR odr, bool fifo_enabled,
-                         unsigned int fifo_watermark)
-    : fifo_enabled(fifo_enabled), fifo_watermark(fifo_watermark),
-      spislave(bus, cs, {}), axelFSR(axelRange), gyroFSR(gyroRange), odr(odr)
+                         GyroFSR gyroRange, ODR odr, uint8_t temp_div_freq)
+    : spislave(bus, cs, {}), axelFSR(axelRange), gyroFSR(gyroRange), odr(odr),
+      temp_div_freq(temp_div_freq)
 {
     // SPI config
     spislave.config.clock_div = SPIClockDivider::DIV64;
@@ -39,20 +38,23 @@ LSM9DS1_XLG::LSM9DS1_XLG(SPIBusInterface& bus, GpioPin cs, AxelFSR axelRange,
 
 LSM9DS1_XLG::LSM9DS1_XLG(SPIBusInterface& bus, GpioPin cs, SPIBusConfig config,
                          AxelFSR axelRange, GyroFSR gyroRange, ODR odr,
-                         bool fifo_enabled, unsigned int fifo_watermark)
-    : fifo_enabled(fifo_enabled), fifo_watermark(fifo_watermark),
-      spislave(bus, cs, config), axelFSR(axelRange), gyroFSR(gyroRange),
-      odr(odr)
+                         uint8_t temp_div_freq)
+    : spislave(bus, cs, config), axelFSR(axelRange), gyroFSR(gyroRange),
+      odr(odr), temp_div_freq(temp_div_freq)
 {
+}
+
+void LSM9DS1_XLG::enable_fifo(uint8_t watermark)
+{
+    fifo_enabled   = true;
+    fifo_watermark = watermark;
 }
 
 bool LSM9DS1_XLG::init()
 {
-    if (sensor_initialized)
-    {
-        TRACE("[LSM9DS1 XLG] init() : already initialized\n");
-        return false;
-    }
+#ifdef DEBUG
+    assert(sensor_initialized == false);
+#endif
 
     SPITransaction spi(spislave);
 
@@ -71,6 +73,13 @@ bool LSM9DS1_XLG::init()
     // FIFO setup:
     if (fifo_enabled)
     {
+        // check fifo-watermark <= 32
+        if (fifo_watermark > 32)
+        {
+            TRACE("[LSM9DS1 XLG] init() : fifo watermark > 32, set to 32\n");
+            fifo_watermark = 32;
+        }
+
         // FIFO continous mode + fifo watermark threshold setup
         spi.write(regMapXLG::FIFO_CTRL, (FIFO_CTRL_VAL | fifo_watermark));
 
@@ -91,13 +100,13 @@ bool LSM9DS1_XLG::init()
      * (max), LPF2/HPF bypassed and disabled, axel output enabled by default
      * @ startup
      */
-    uint8_t CTRL_REG6_XL_VAL = (int)odr << 5 | (int)axelFSR << 3;
+    uint8_t CTRL_REG6_XL_VAL = odr << 5 | axelFSR << 3;
     spi.write(regMapXLG::CTRL_REG6_XL, CTRL_REG6_XL_VAL);
 
     /** Gyro Setup : ODR, FSR defined by constructor, LPF2/HPF bypassed and
      * disabled, gyro output enabled by default @ startup
      */
-    uint8_t CTRL_REG1_G_VAL = (int)odr << 5 | (int)gyroFSR << 3;
+    uint8_t CTRL_REG1_G_VAL = odr << 5 | gyroFSR << 3;
     spi.write(regMapXLG::CTRL_REG1_G, CTRL_REG1_G_VAL);
 
     // sign and orientation Setup <--- BOARD DEPENDENT
@@ -106,20 +115,24 @@ bool LSM9DS1_XLG::init()
     // Check all the registers have been written correctly
     if (spi.read(regMapXLG::CTRL_REG8) != CTRL_REG8_VAL)
     {
+        TRACE("[LSM9DS1 XLG] init() : CTRL_REG8 readback failed\n");
         return false;
     }
     if (fifo_enabled)
     {
         if (spi.read(regMapXLG::FIFO_CTRL) != (FIFO_CTRL_VAL | fifo_watermark))
         {
+            TRACE("[LSM9DS1 XLG] init() : FIFO_CTRL readback failed\n");
             return false;
         }
         if (spi.read(regMapXLG::INT1_CTRL) != INT1_CTRL_VAL)
         {
+            TRACE("[LSM9DS1 XLG] init() : INT1_CTRL readback failed\n");
             return false;
         }
         if (spi.read(regMapXLG::CTRL_REG9) != (CTRL_REG9_VAL | 0x02))
         {
+            TRACE("[LSM9DS1 XLG] init() : CTRL_REG9 readback failed\n");
             return false;
         }
     }
@@ -127,85 +140,23 @@ bool LSM9DS1_XLG::init()
     {
         if (spi.read(regMapXLG::CTRL_REG9) != CTRL_REG9_VAL)
         {
+            TRACE("[LSM9DS1 XLG] init() : CTRL_REG9 readback failed\n");
             return false;
         }
     }
     if (spi.read(regMapXLG::CTRL_REG6_XL) != CTRL_REG6_XL_VAL)
     {
+        TRACE("[LSM9DS1 XLG] init() : CTRL_REG6_XL readback failed\n");
         return false;
     }
     if (spi.read(regMapXLG::CTRL_REG1_G) != CTRL_REG1_G_VAL)
     {
+        TRACE("[LSM9DS1 XLG] init() : CTRL_REG1_G readback failed\n");
         return false;
     }
 
-    // select Sensitivity and ODR
-    switch (axelFSR)
-
-    {
-        case AxelFSR::FS_2:
-            axelSensitivity = 0.598f;
-            break;
-        case AxelFSR::FS_4:
-            axelSensitivity = 1.196f;
-            break;
-        case AxelFSR::FS_8:
-            axelSensitivity = 2.393f;
-            break;
-        case AxelFSR::FS_16:
-            axelSensitivity = 7.178f;
-            break;
-        default:
-            axelSensitivity = 0.598f;
-            break;
-    }
-
-    switch (gyroFSR)
-    {
-        case GyroFSR::FS_245:
-            gyroSensitivity = 8.75f;
-            break;
-        case GyroFSR::FS_500:
-            gyroSensitivity = 17.50f;
-            break;
-        case GyroFSR::FS_2000:
-            gyroSensitivity = 70.0f;
-            break;
-        default:
-            gyroSensitivity = 8.75f;
-            break;
-    }
-
-    switch (odr)
-    {
-        case ODR::PWR_DW:
-            odrHz = 0.0f;
-            break;
-        case ODR::ODR_15:
-            odrHz = 14.9f;
-            break;
-        case ODR::ODR_60:
-            odrHz = 59.5f;
-            break;
-        case ODR::ODR_119:
-            odrHz = 119.0f;
-            break;
-        case ODR::ODR_238:
-            odrHz = 238.0f;
-            break;
-        case ODR::ODR_476:
-            odrHz = 476.0f;
-            break;
-        case ODR::ODR_952:
-            odrHz = 952.0f;
-            break;
-        default:
-            odrHz = 14.9f;
-            break;
-    }
-
-    // discard first samples (see datasheet)
-    LSM9DS1_XLG::discardSamples(spi);
+    // clear FIFO and discard first samples
+    LSM9DS1_XLG::clearFIFO(spi);
 
     TRACE("[LSM9DS1 XLG] init() : done\n");
 
@@ -218,16 +169,20 @@ bool LSM9DS1_XLG::selfTest() { return true; }
 
 bool LSM9DS1_XLG::onSimpleUpdate()
 {
+// you have to call init() before
+#ifdef DEBUG
+    assert(sensor_initialized == true);
+#endif
+
     // if FIFO disabled
     if (!fifo_enabled)
     {
-        uint8_t data[12], tempData[2];
+        uint8_t data[12];
 
         // Read output axel+gyro raw data X,Y,Z and temp raw data
         {
             SPITransaction spi(spislave);
             spi.read(regMapXLG::OUT_X_L_G, data, 12);
-            spi.read(regMapXLG::OUT_TEMP_L, tempData, 2);
         }
 
         // compose signed 16-bit raw data as 2 bytes from the sensor
@@ -240,41 +195,49 @@ bool LSM9DS1_XLG::onSimpleUpdate()
         int16_t y_xl = data[8]  | data[9]  << 8;
         int16_t z_xl = data[10] | data[11] << 8;
 
-        int16_t temp = tempData[0] | tempData[1] << 8;
-
         //convert raw data
-        mLastAccel = Vec3(x_xl * axelSensitivity / 1000, 
-                          y_xl * axelSensitivity / 1000,
-                          z_xl * axelSensitivity / 1000);
+        fifo[0].axelData = Vec3(x_xl * axelFSR_SMap.at(axelFSR), 
+                                y_xl * axelFSR_SMap.at(axelFSR),
+                                z_xl * axelFSR_SMap.at(axelFSR));
 
-        mLastGyro =  Vec3(x_gy * gyroSensitivity / 1000, 
-                          y_gy * gyroSensitivity / 1000,
-                          z_gy * gyroSensitivity / 1000);
-
-        mLastTemp = tempZero + (temp / tempSensistivity);
-
+        fifo[0].gyroData = Vec3(x_gy * gyroFSR_SMap.at(gyroFSR), 
+                                y_gy * gyroFSR_SMap.at(gyroFSR),
+                                z_gy * gyroFSR_SMap.at(gyroFSR));
+        
+        fifo[0].timestamp = IRQ_timestamp;
         // clang-format on
     }
 
     /** if FIFO enabled:
      * dump fifo_watermark samples (axel+gyro only) from the sensor at one
-     * time. Temperature data can be read using temperatureUpdate() function
-     * at a lower frequency
+     * time.
      */
     else
     {
         // 2 bytes per data * 3 axes per type * 2 types(axel+gyro) *
         // 32(FIFO DEPTH MAX) = 384 samples
         uint8_t buf[384];
+        uint8_t overrun     = 0;
 
         // Read output axel+gyro FIFO raw data X,Y,Z
         {
             SPITransaction spi(spislave);
-            spi.read(OUT_X_L_G, buf, fifo_watermark * 12);
+
+            uint8_t fifo_src_reg;
+            spi.read(FIFO_SRC, &fifo_src_reg, 1);
+
+            fifo_samples = fifo_src_reg & FIFO_UNREAD_MASK;
+            overrun     = (fifo_src_reg & FIFO_OVERRUN_MASK) >> 6;
+
+            spi.read(OUT_X_L_G, buf, fifo_samples * 12);
         }
 
+        // compute delta time for each sample
+        uint64_t dt = delta / last_fifo_level;
+        fifo_num++;
+
         // convert & store
-        for (int i = 0; i < fifo_watermark; i++)
+        for (uint8_t i = 0; i < fifo_samples; ++i)
         {
             // compose signed 16-bit raw data as 2 bytes from the sensor
             // clang-format off
@@ -287,16 +250,37 @@ bool LSM9DS1_XLG::onSimpleUpdate()
             int16_t z_xl = buf[i * 12 + 10] | buf[i * 12 + 11] << 8;
 
             //convert raw data
-            fifo[i].gyroData = Vec3(x_gy * gyroSensitivity / 1000,
-                                    y_gy * gyroSensitivity / 1000,
-                                    z_gy * gyroSensitivity / 1000);
-            fifo[i].axelData = Vec3(x_xl * axelSensitivity / 1000,
-                                    y_xl * axelSensitivity / 1000,
-                                    z_xl * axelSensitivity / 1000);
+            fifo[i].gyroData = Vec3(x_gy * gyroFSR_SMap.at(gyroFSR),
+                                    y_gy * gyroFSR_SMap.at(gyroFSR),
+                                    z_gy * gyroFSR_SMap.at(gyroFSR));
+            fifo[i].axelData = Vec3(x_xl * axelFSR_SMap.at(axelFSR),
+                                    y_xl * axelFSR_SMap.at(axelFSR),
+                                    z_xl * axelFSR_SMap.at(axelFSR));
             // clang-format on
+
+            fifo[i].timestamp = IRQ_timestamp - ((int)fifo_watermark - (int)i - 1) * dt;
+            fifo[i].unread    = fifo_samples;
+            fifo[i].overrun   = (bool)overrun;
+            fifo[i].fifo_num  = (uint16_t)i;
         }
+        last_fifo_level = fifo_samples;
     }
+
+    // temperature update if temp_count = temp_div_freq
+    temp_count++;
+    if (temp_count == temp_div_freq)
+    {
+        temp_count = 0;
+        LSM9DS1_XLG::temperatureUpdate();
+    }
+
     return true;
+}
+
+void LSM9DS1_XLG::updateTimestamp(uint64_t timestamp)
+{
+    delta         = timestamp - IRQ_timestamp;
+    IRQ_timestamp = timestamp;
 }
 
 bool LSM9DS1_XLG::temperatureUpdate()
@@ -310,22 +294,28 @@ bool LSM9DS1_XLG::temperatureUpdate()
     // compose signed 16-bit raw data as 2 bytes from the sensor
     int16_t temp = tempData[0] | tempData[1] << 8;
     // convert raw data
-    mLastTemp = tempZero + temp / tempSensistivity;
+    lastTemp.tempData  = tempZero + temp / tempSensistivity;
+    lastTemp.timestamp = IRQ_timestamp;
     return true;
 }
 
-void LSM9DS1_XLG::clearFIFO()
-{
-    SPITransaction spi(spislave);
-    spi.write(FIFO_CTRL, 0);                               // Bypass Mode
-    miosix::Thread::sleep(20);                             // Wait
-    spi.write(FIFO_CTRL, FIFO_CTRL_VAL | fifo_watermark);  // re-enable FIFO
-    LSM9DS1_XLG::discardSamples(spi);
-}
+const array<lsm9ds1XLGSample, 32>& LSM9DS1_XLG::getFIFO() const { return fifo; }
 
-const array<lsm9ds1XLGSample, 32>& LSM9DS1_XLG::getLsm9ds1FIFO() const
+const uint8_t& LSM9DS1_XLG::getFIFOdepth() const { return fifo_samples; }
+
+const lsm9ds1XLGSample& LSM9DS1_XLG::getXLGSample() const { return fifo[0]; }
+
+const lsm9ds1TSample& LSM9DS1_XLG::getTSample() const { return lastTemp; }
+
+void LSM9DS1_XLG::clearFIFO(SPITransaction& spi)
 {
-    return fifo;
+    spi.write(FIFO_CTRL, 0);                               // Bypass Mode
+    spi.write(FIFO_CTRL, FIFO_CTRL_VAL | fifo_watermark);  // re-enable FIFO
+
+    // sleep 20ms for stable output
+    miosix::Thread::sleep(20);
+
+    LSM9DS1_XLG::discardSamples(spi);
 }
 
 void LSM9DS1_XLG::discardSamples(SPITransaction& spi)
@@ -334,14 +324,14 @@ void LSM9DS1_XLG::discardSamples(SPITransaction& spi)
     if (odr != ODR::PWR_DW)
     {
         // wait samples to be overwritten or stored (FIFO on)
-        uint16_t toWait_ms = samplesToDiscard * 1000 / odrHz;
+        uint16_t toWait_ms = SAMPLES_TO_DISCARD * 1000 / odr_Map.at(odr);
         miosix::Thread::sleep(toWait_ms);
 
-        // if FIFO is enabled, read first "samplesToDiscard" samples and
+        // if FIFO is enabled, read first "SAMPLES_TO_DISCARD" samples and
         // discard them.
         if (fifo_enabled)
         {
-            spi.read(OUT_X_L_G, samplesToDiscard * 12);
+            spi.read(OUT_X_L_G, SAMPLES_TO_DISCARD * 12);
         }
     }
 }

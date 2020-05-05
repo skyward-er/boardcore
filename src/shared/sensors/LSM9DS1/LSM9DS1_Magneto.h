@@ -105,6 +105,7 @@ public:
     /**
      * @brief Run a self-test of the Sensor.
      * @return true if sensor behave correclty
+     * @warning blocking.
      */
 
     bool selfTest() override;
@@ -115,8 +116,20 @@ public:
      */
 
     bool onSimpleUpdate() override;
+    
+    /**
+     * @brief get last valid sample
+     * @return sample
+     */
+    
+    const lsm9ds1MSample& getSample() const; 
 
 private:
+
+    /**
+     * @brief get data from sensor and compute stats.
+     */
+
     void getSelfTestData(Stats& outx, Stats& outy, Stats& outz);
 
     bool sensor_initialized = false;
