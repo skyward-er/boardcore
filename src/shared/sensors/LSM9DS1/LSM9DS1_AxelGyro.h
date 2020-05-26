@@ -195,6 +195,14 @@ public:
 
     const array<lsm9ds1XLGSample, 32>& getFIFO() const;
 
+      /**
+     * @brief get FIFO stats after calling onSimpleUpdate() - Just on FIFO
+     * mode.
+     * @return stats
+     */
+
+    const lsm9ds1debug& getFIFOStats() const;
+
     /**
      * @brief get number of samples inside the last FIFO
      * @return number of samples
@@ -236,6 +244,8 @@ private:
     uint32_t delta         = 0;
 
     array<lsm9ds1XLGSample, 32> fifo;
+    lsm9ds1debug fifodebug;  
+
     lsm9ds1TSample lastTemp;
 
     SPISlave spislave;

@@ -196,7 +196,7 @@ bool LSM9DS1_XLG::onSimpleUpdate()
         int16_t z_xl = data[10] | data[11] << 8;
 
         //convert raw data
-        fifo[0].axelData = Vec3(x_xl * axelFSR_SMap.at(axelFSR), 
+        /*fifo[0].axelData = Vec3(x_xl * axelFSR_SMap.at(axelFSR), 
                                 y_xl * axelFSR_SMap.at(axelFSR),
                                 z_xl * axelFSR_SMap.at(axelFSR));
 
@@ -204,7 +204,7 @@ bool LSM9DS1_XLG::onSimpleUpdate()
                                 y_gy * gyroFSR_SMap.at(gyroFSR),
                                 z_gy * gyroFSR_SMap.at(gyroFSR));
         
-        fifo[0].timestamp = IRQ_timestamp;
+        fifo[0].timestamp = IRQ_timestamp;*/
         // clang-format on
     }
 
@@ -217,23 +217,26 @@ bool LSM9DS1_XLG::onSimpleUpdate()
         // 2 bytes per data * 3 axes per type * 2 types(axel+gyro) *
         // 32(FIFO DEPTH MAX) = 384 samples
         uint8_t buf[384];
-        uint8_t overrun     = 0;
+        uint8_t overrun            = 0;
+        uint32_t delta_transaction = 0;
 
         // Read output axel+gyro FIFO raw data X,Y,Z
         {
+            delta_transaction = miosix::getTick();
             SPITransaction spi(spislave);
 
             uint8_t fifo_src_reg;
             spi.read(FIFO_SRC, &fifo_src_reg, 1);
 
             fifo_samples = fifo_src_reg & FIFO_UNREAD_MASK;
-            overrun     = (fifo_src_reg & FIFO_OVERRUN_MASK) >> 6;
+            overrun      = (fifo_src_reg & FIFO_OVERRUN_MASK) >> 6;
 
             spi.read(OUT_X_L_G, buf, fifo_samples * 12);
+            delta_transaction = miosix::getTick() - delta_transaction;
         }
 
         // compute delta time for each sample
-        uint64_t dt = delta / last_fifo_level;
+        uint64_t dt = delta / fifo_watermark;
         fifo_num++;
 
         // convert & store
@@ -250,20 +253,25 @@ bool LSM9DS1_XLG::onSimpleUpdate()
             int16_t z_xl = buf[i * 12 + 10] | buf[i * 12 + 11] << 8;
 
             //convert raw data
-            fifo[i].gyroData = Vec3(x_gy * gyroFSR_SMap.at(gyroFSR),
+            /*fifo[i].gyroData = Vec3(x_gy * gyroFSR_SMap.at(gyroFSR),
                                     y_gy * gyroFSR_SMap.at(gyroFSR),
                                     z_gy * gyroFSR_SMap.at(gyroFSR));
             fifo[i].axelData = Vec3(x_xl * axelFSR_SMap.at(axelFSR),
                                     y_xl * axelFSR_SMap.at(axelFSR),
-                                    z_xl * axelFSR_SMap.at(axelFSR));
+                                    z_xl * axelFSR_SMap.at(axelFSR));*/
             // clang-format on
 
-            fifo[i].timestamp = IRQ_timestamp - ((int)fifo_watermark - (int)i - 1) * dt;
-            fifo[i].unread    = fifo_samples;
-            fifo[i].overrun   = (bool)overrun;
-            fifo[i].fifo_num  = (uint16_t)i;
+            fifo[i].timestamp =
+                IRQ_timestamp - ((int)fifo_watermark - (int)i - 1) * dt;
+            //fifo[i].fifo_num = fifo_num;
         }
-        last_fifo_level = fifo_samples;
+
+        fifodebug.fifo_num         = fifo_num;
+        fifodebug.overrun          = (bool)overrun;
+        fifodebug.unread           = fifo_samples;
+        fifodebug.transaction_time = delta_transaction;
+
+        last_fifo_level = fifo_samples;  // unused
     }
 
     // temperature update if temp_count = temp_div_freq
@@ -306,6 +314,8 @@ const uint8_t& LSM9DS1_XLG::getFIFOdepth() const { return fifo_samples; }
 const lsm9ds1XLGSample& LSM9DS1_XLG::getXLGSample() const { return fifo[0]; }
 
 const lsm9ds1TSample& LSM9DS1_XLG::getTSample() const { return lastTemp; }
+
+const lsm9ds1debug& LSM9DS1_XLG::getFIFOStats() const { return fifodebug; }
 
 void LSM9DS1_XLG::clearFIFO(SPITransaction& spi)
 {

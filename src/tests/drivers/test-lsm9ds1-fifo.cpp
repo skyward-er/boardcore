@@ -55,7 +55,7 @@ GpioPin LED3(GPIOD_BASE, 14);
 GpioPin PUSHBUTTON(GPIOA_BASE, 0);
 
 // SPI read flag
-//volatile bool flagSPIReadRequest = false;
+volatile bool flagSPIReadRequest = false;
 
 // IMU obj variables
 static const uint8_t FIFO_WATERMARK       = 12;
@@ -90,7 +90,7 @@ void __attribute__((used)) EXTI13_IRQHandlerImpl()
     lsm9ds1_xlg->updateTimestamp(hrclock.toMicroSeconds(hrclock.tick()));
 
     // Set read flag
-    //flagSPIReadRequest = true;
+    flagSPIReadRequest = true;
 
     // Built-in LED on
     LED1.high();
@@ -124,7 +124,7 @@ int main()
 
     lsm9ds1_xlg = new LSM9DS1_XLG(bus, cs_XLG, LSM9DS1_XLG::AxelFSR::FS_8,
                                   LSM9DS1_XLG::GyroFSR::FS_245,
-                                  LSM9DS1_XLG::ODR::ODR_476, TEMP_DIV_FREQ);
+                                  LSM9DS1_XLG::ODR::ODR_952, TEMP_DIV_FREQ);
 
     lsm9ds1_m = new LSM9DS1_M(bus, cs_M, LSM9DS1_M::MagFSR::FS_8,
                               LSM9DS1_M::ODR::ODR_80);
@@ -141,7 +141,6 @@ int main()
         ;
     while (!lsm9ds1_m->init())
         ;
-    LED2.high();  // init OK
 
     // sampling until you push the button
     while (!PUSHBUTTON.value())
@@ -149,11 +148,12 @@ int main()
         // ACCELEROMETER + GYROSCOPE + UPDATE (FIFO)
         // TEMPERATURE UPDATE
         // an interrupt is set: time to dump the FIFO
-        //if (flagSPIReadRequest)
-        if (miosix::getTick() - lastFifotick >= FIFO_SAMPLING_PERIOD)
+        
+        //if (miosix::getTick() - lastFifotick >= FIFO_SAMPLING_PERIOD)
+        if (flagSPIReadRequest)
         {
-            //flagSPIReadRequest = false;
-            lastFifotick = miosix::getTick();
+            flagSPIReadRequest = false;
+            //lastFifotick = miosix::getTick();
             // dump the fifo
             lsm9ds1_xlg->onSimpleUpdate();
 
@@ -161,14 +161,18 @@ int main()
             for (int i = 0; i < lsm9ds1_xlg->getFIFOdepth() ; i++)
             {
                 lsm9ds1XLGSample XLGsample = lsm9ds1_xlg->getFIFO()[i];
+                LED2.high();
                 logger.log(XLGsample);
+                LED2.low();
             }
+                //lsm9ds1debug debugstats = lsm9ds1_xlg->getFIFOStats();
+                //logger.log(debugstats);
 
             if (lastTempcount == TEMP_DIV_FREQ)
             {
                 lastTempcount          = 0;
                 lsm9ds1TSample Tsample = lsm9ds1_xlg->getTSample();
-                logger.log(Tsample);
+                //logger.log(Tsample);
             }
             lastTempcount++;
 
@@ -185,10 +189,10 @@ int main()
 
             // log the sample
             lsm9ds1MSample MAGsample = lsm9ds1_m->getSample();
-            logger.log(MAGsample);
+            //logger.log(MAGsample);
         }
 
-        Thread::sleep(FIFO_SAMPLING_PERIOD);
+        //Thread::sleep(FIFO_SAMPLING_PERIOD);
 
     }
 
