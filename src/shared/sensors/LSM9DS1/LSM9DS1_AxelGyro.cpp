@@ -236,7 +236,7 @@ bool LSM9DS1_XLG::onSimpleUpdate()
         }
 
         // compute delta time for each sample
-        uint64_t dt = delta / fifo_watermark;
+        uint64_t dt = delta / last_fifo_level;
         fifo_num++;
 
         // convert & store

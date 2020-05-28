@@ -62,7 +62,7 @@ static const uint8_t FIFO_WATERMARK       = 12;
 static const uint16_t FIFO_SAMPLES        = 1000;
 static const uint8_t TEMP_DIV_FREQ        = 20;
 static const uint16_t MAG_SAMPLING_PERIOD = 10;  // 100Hz
-static const uint16_t FIFO_SAMPLING_PERIOD = 25.5 * 1000 / 476.0f;
+static const uint16_t FIFO_SAMPLING_PERIOD = 84;
 
 // High Resolution hardware timer using TIM5
 HardwareTimer<uint32_t> hrclock(
@@ -124,7 +124,7 @@ int main()
 
     lsm9ds1_xlg = new LSM9DS1_XLG(bus, cs_XLG, LSM9DS1_XLG::AxelFSR::FS_8,
                                   LSM9DS1_XLG::GyroFSR::FS_245,
-                                  LSM9DS1_XLG::ODR::ODR_952, TEMP_DIV_FREQ);
+                                  LSM9DS1_XLG::ODR::ODR_238, TEMP_DIV_FREQ);
 
     lsm9ds1_m = new LSM9DS1_M(bus, cs_M, LSM9DS1_M::MagFSR::FS_8,
                               LSM9DS1_M::ODR::ODR_80);
@@ -150,10 +150,11 @@ int main()
         // an interrupt is set: time to dump the FIFO
         
         //if (miosix::getTick() - lastFifotick >= FIFO_SAMPLING_PERIOD)
-        if (flagSPIReadRequest)
+        //if (flagSPIReadRequest)
+        if ((miosix::getTick() - lastFifotick >= FIFO_SAMPLING_PERIOD) && flagSPIReadRequest == true)
         {
             flagSPIReadRequest = false;
-            //lastFifotick = miosix::getTick();
+            lastFifotick = miosix::getTick();
             // dump the fifo
             lsm9ds1_xlg->onSimpleUpdate();
 
@@ -165,8 +166,8 @@ int main()
                 logger.log(XLGsample);
                 LED2.low();
             }
-                //lsm9ds1debug debugstats = lsm9ds1_xlg->getFIFOStats();
-                //logger.log(debugstats);
+                lsm9ds1debug debugstats = lsm9ds1_xlg->getFIFOStats();
+                logger.log(debugstats);
 
             if (lastTempcount == TEMP_DIV_FREQ)
             {
