@@ -37,41 +37,39 @@ using std::ofstream;
 // ACCELEROMETER + GYROSCOPE
 struct lsm9ds1XLGSample
 {
-
-    //uint16_t fifo_num;
+    uint16_t fifo_num;
     uint64_t timestamp;
-    //Vec3 axelData;
-    //Vec3 gyroData;
+    Vec3 axelData;
+    Vec3 gyroData;
 
-    /*static std::string header()
+    static std::string header()
     {
         return "fifo_num,timestamp,acc_x,acc_y,acc_z,gyro_x,gyro_y,gyro_z\n";
-    }*/
+    }
 
-    /*void print(std::ostream& os) const
+    void print(std::ostream& os) const
     {
         os << fifo_num << "," << timestamp << "," << axelData.getX() << "," << axelData.getY()
            << "," << axelData.getZ() << "," << gyroData.getX() << ","
            << gyroData.getY() << "," << gyroData.getZ() << "\n";
-    }*/
+    }
 };
 
-// XLG debug
+// FIFO debug
 struct lsm9ds1debug
 {
     uint16_t fifo_num;
     uint16_t unread;
     bool overrun;
-    uint64_t transaction_time;
 
     static std::string header()
     {
-        return "fifo_num,unread,overrun,transaction_time\n";
+        return "fifo_num,unread,overrun\n";
     }
 
     void print(std::ostream& os) const
     {
-        os << fifo_num << "," << unread << "," << overrun << "," << transaction_time << "\n";
+        os << fifo_num << "," << unread << "," << overrun << "," << "\n";
     }
 };
 

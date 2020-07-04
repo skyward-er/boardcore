@@ -277,7 +277,7 @@ bool LSM9DS1_M::onSimpleUpdate()
         spi.read(regMapM::OUT_X_L_M | AUTO_INCREMENT_ADDR, magData, 6);
     }
 
-    lastMagneto.timestamp = miosix::getTick();
+    lastMagneto.timestamp = lastTimestamp; 
 
     // compose signed 16-bit raw data as 2 bytes from the sensor
     // clang-format off
@@ -292,6 +292,11 @@ bool LSM9DS1_M::onSimpleUpdate()
     // clang-format on
 
     return true;
+}
+
+void LSM9DS1_M::updateTimestamp(uint64_t timestamp)
+{
+    lastTimestamp = timestamp;
 }
 
 const lsm9ds1MSample& LSM9DS1_M::getSample() const { return lastMagneto; }

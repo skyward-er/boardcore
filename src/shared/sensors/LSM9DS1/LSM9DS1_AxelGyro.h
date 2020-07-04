@@ -167,7 +167,8 @@ public:
     bool onSimpleUpdate() override;
 
     /**
-     * @brief set timestamp on last FIFO
+     * @brief set timestamp on last FIFO (if FIFO enabled) or set timestamp for
+     * sample
      * @warning remember to update FIFO data calling onSimpleUpdate
      */
 
@@ -195,7 +196,7 @@ public:
 
     const array<lsm9ds1XLGSample, 32>& getFIFO() const;
 
-      /**
+    /**
      * @brief get FIFO stats after calling onSimpleUpdate() - Just on FIFO
      * mode.
      * @return stats
@@ -208,7 +209,7 @@ public:
      * @return number of samples
      */
 
-    const uint8_t& getFIFOdepth() const; 
+    const uint8_t& getFIFOdepth() const;
 
 private:
     /**
@@ -244,7 +245,7 @@ private:
     uint32_t delta         = 0;
 
     array<lsm9ds1XLGSample, 32> fifo;
-    lsm9ds1debug fifodebug;  
+    lsm9ds1debug fifodebug;
 
     lsm9ds1TSample lastTemp;
 

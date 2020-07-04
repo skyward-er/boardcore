@@ -104,12 +104,13 @@ int main()
     {
 
         // get axel+gyro+temp data
+        lsm9ds1X.updateTimestamp(miosix::getTick());
         lsm9ds1X.onSimpleUpdate();
         agdata = lsm9ds1X.getXLGSample();
         tdata  = lsm9ds1X.getTSample();
-        lsm9ds1X.updateTimestamp(miosix::getTick());
 
         // get magneto data
+        lsm9ds1M.updateTimestamp(miosix::getTick());
         lsm9ds1M.onSimpleUpdate();
         mdata = lsm9ds1M.getSample();
 

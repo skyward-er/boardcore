@@ -116,16 +116,22 @@ public:
      */
 
     bool onSimpleUpdate() override;
-    
+
+    /**
+     * @brief set timestamp for sample
+     * @warning remember to update FIFO data calling onSimpleUpdate
+     */
+
+    void updateTimestamp(uint64_t timestamp);
+
     /**
      * @brief get last valid sample
      * @return sample
      */
-    
-    const lsm9ds1MSample& getSample() const; 
+
+    const lsm9ds1MSample& getSample() const;
 
 private:
-
     /**
      * @brief get data from sensor and compute stats.
      */
@@ -133,15 +139,15 @@ private:
     void getSelfTestData(Stats& outx, Stats& outy, Stats& outz);
 
     bool sensor_initialized = false;
-    bool selfTest_mode = false;
+    bool selfTest_mode      = false;
 
     SPISlave spislave;
 
     MagFSR magFSR;
     ODR odr;
 
-    lsm9ds1MSample lastMagneto; 
-
+    lsm9ds1MSample lastMagneto;
+    uint64_t lastTimestamp = 0; 
     /**
      * @brief Registers' addresses definition.
      */
