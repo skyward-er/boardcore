@@ -1,13 +1,13 @@
 [submodule "libs/miosix-kernel"]
 	path = libs/miosix-kernel
-	url = ../../elc/miosix-kernel.git
+	url = ../../scs/miosix-kernel.git
 	branch = master
 [submodule "libs/tscpp"]
 	path = libs/tscpp
 	url = https://github.com/fedetft/tscpp.git
 [submodule "libs/mavlink_skyward_lib"]
 	path = libs/mavlink_skyward_lib
-	url = ../mavlink_skyward_lib.git
+	url = ../../scs/mavlink_skyward_lib.git
 [submodule "libs/simple-template-matrix"]
 	path = libs/simple-template-matrix
 	url = https://github.com/fedetft/simple-template-matrix.git
