@@ -11,3 +11,6 @@
 [submodule "libs/simple-template-matrix"]
 	path = libs/simple-template-matrix
 	url = https://github.com/fedetft/simple-template-matrix.git
+[submodule "libs/eigen"]
+	path = libs/eigen
+	url = https://gitlab.com/libeigen/eigen.git
