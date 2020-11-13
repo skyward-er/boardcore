@@ -8,6 +8,7 @@
                 "${workspaceFolder}/libs/miosix-kernel/miosix/arch/cortexM4_stm32f4/common",
                 "${workspaceFolder}/libs/miosix-kernel/miosix/arch/common",
                 "${workspaceFolder}/libs/miosix-kernel/miosix",
+                "${workspaceFolder}/libs/eigen",
                 "${workspaceFolder}/libs",
                 "${workspaceFolder}/src/shared",
                 "${workspaceFolder}/src/tests",
@@ -46,9 +47,9 @@
                     "${workspaceFolder}/libs/miosix-kernel/miosix/*",
                     "${workspaceFolder}/libs/mavlink_skyward_lib",               
                     "${workspaceFolder}/libs/tscpp",
+                    "${workspaceFolder}/libs/eigen",
                     "${workspaceFolder}/src/shared",
                     "${workspaceFolder}/src/tests",
-                    "${workspaceFolder}/*",
                     "${workspaceFolder}/src",
                     "${workspaceFolder}/*"
                 ],
@@ -63,6 +64,7 @@
                 "${workspaceFolder}/libs/miosix-kernel/miosix/arch/cortexM4_stm32f4/common",
                 "${workspaceFolder}/libs/miosix-kernel/miosix/arch/common",
                 "${workspaceFolder}/libs/miosix-kernel/miosix",
+                "${workspaceFolder}/libs/eigen",
                 "${workspaceFolder}/libs",
                 "${workspaceFolder}/src/shared",
                 "${workspaceFolder}/src/tests",
@@ -101,10 +103,11 @@
                     "${workspaceFolder}/libs/miosix-kernel/miosix/*",
                     "${workspaceFolder}/libs/mavlink_skyward_lib",               
                     "${workspaceFolder}/libs/tscpp",
+                    "${workspaceFolder}/libs/eigen",
                     "${workspaceFolder}/src/shared",
                     "${workspaceFolder}/src/tests",
-                    "${workspaceFolder}/*",
-                    "${workspaceFolder}/src"
+                    "${workspaceFolder}/src",
+                    "${workspaceFolder}/*"
                 ],
                 "limitSymbolsToIncludedHeaders": true
             }
@@ -117,6 +120,7 @@
                 "${workspaceFolder}/libs/miosix-kernel/miosix/arch/cortexM4_stm32f4/common",
                 "${workspaceFolder}/libs/miosix-kernel/miosix/arch/common",
                 "${workspaceFolder}/libs/miosix-kernel/miosix",
+                "${workspaceFolder}/libs/eigen",
                 "${workspaceFolder}/libs",
                 "${workspaceFolder}/src/shared",
                 "${workspaceFolder}/src/tests",
@@ -156,17 +160,72 @@
                     "${workspaceFolder}/libs/mavlink_skyward_lib",   
                     "${workspaceFolder}/libs/mxgui",                   
                     "${workspaceFolder}/libs/tscpp",
+                    "${workspaceFolder}/libs/eigen",
                     "${workspaceFolder}/libs/*",     
                     "${workspaceFolder}/src/shared",
                     "${workspaceFolder}/src/tests",
-                    "${workspaceFolder}/*",
                     "${workspaceFolder}/src",
                     "${workspaceFolder}/*"
                 ],
                 "limitSymbolsToIncludedHeaders": true
             }
-        }
+        },
+        {
+            "name": "stm32f407vg_skyward_tortellino",
+            "includePath": [
+                "${workspaceFolder}/libs/miosix-kernel/miosix/config/arch/cortexM4_stm32f4/stm32f407vg_skyward_tortellino",
+                "${workspaceFolder}/libs/miosix-kernel/miosix/arch/cortexM4_stm32f4/stm32f407vg_skyward_tortellino",
+                "${workspaceFolder}/libs/miosix-kernel/miosix/arch/cortexM4_stm32f4/common",
+                "${workspaceFolder}/libs/miosix-kernel/miosix/arch/common",
+                "${workspaceFolder}/libs/miosix-kernel/miosix",
+                "${workspaceFolder}/libs/eigen",
+                "${workspaceFolder}/libs",
+                "${workspaceFolder}/src/shared",
+                "${workspaceFolder}/src/tests",
+                "${workspaceFolder}"
+            ],
+            "compilerPath": "/opt/arm-miosix-eabi/bin/arm-miosix-eabi-g++",
         
+            "defines": [
+                "DEBUG",
+                "_ARCH_CORTEXM4_STM32F4",
+                "_BOARD_STM32F407VG_SKYWARD_TORTELLINO",
+                "_MIOSIX_BOARDNAME=stm32f407vg_skyward_tortellino",
+                "HSE_VALUE=8000000",
+                "SYSCLK_FREQ_168MHz=168000000",
+                "_MIOSIX",
+                "__cplusplus=201103L"
+            ],
+        
+            "cStandard": "c11",
+            "cppStandard": "c++11",
+        
+            "browse": {
+                "path" : [
+                    "${workspaceFolder}/libs/miosix-kernel/miosix/arch/cortexM4_stm32f4/stm32f407vg_skyward_tortellino/interfaces-impl",
+                    "${workspaceFolder}/libs/miosix-kernel/miosix/arch/cortexM4_stm32f4/stm32f407vg_skyward_tortellino",
+                    "${workspaceFolder}/libs/miosix-kernel/miosix/config/arch/cortexM4_stm32f4/stm32f407vg_skyward_tortellino",
+                    "${workspaceFolder}/libs/miosix-kernel/miosix/arch/cortexM4_stm32f4/stm32f407vg_skyward_tortellino",
+                    "${workspaceFolder}/libs/miosix-kernel/miosix/arch/cortexM4_stm32f4/common",
+                    "${workspaceFolder}/libs/miosix-kernel/miosix/arch/common",
+                    "${workspaceFolder}/libs/miosix-kernel/miosix/interfaces",
+                    "${workspaceFolder}/libs/miosix-kernel/miosix/kernel",
+                    "${workspaceFolder}/libs/miosix-kernel/miosix/util",
+                    "${workspaceFolder}/libs/miosix-kernel/miosix/e20",
+                    "${workspaceFolder}/libs/miosix-kernel/miosix/filesystem",
+                    "${workspaceFolder}/libs/miosix-kernel/miosix/stdlib_integration",
+                    "${workspaceFolder}/libs/miosix-kernel/miosix/*",
+                    "${workspaceFolder}/libs/mavlink_skyward_lib",               
+                    "${workspaceFolder}/libs/tscpp",
+                    "${workspaceFolder}/libs/eigen",
+                    "${workspaceFolder}/src/shared",
+                    "${workspaceFolder}/src/tests",
+                    "${workspaceFolder}/src",
+                    "${workspaceFolder}/*"
+                ],
+                "limitSymbolsToIncludedHeaders": true
+            }
+        } 
     ],
     "version": 4
 }
