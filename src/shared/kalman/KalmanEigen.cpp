@@ -72,6 +72,8 @@ bool KalmanEigen::correct(const VectorXf& y)
 
     x = x + K * (y - H * x);
 
+    res = y - H * x;
+
     return true;
 }
 
@@ -83,12 +85,14 @@ const VectorXf& KalmanEigen::getOutput()
     return y_hat;
 }
 
+const VectorXf& KalmanEigen::getResidual() { return res; }
+
 const VectorXf KalmanEigen::predictOutput(uint32_t k)
 {
     return H * predictState(k);
 }
 
-// only without u
+// only with u = 0
 const VectorXf KalmanEigen::predictState(uint32_t k)
 {
     VectorXf x_hat(n);

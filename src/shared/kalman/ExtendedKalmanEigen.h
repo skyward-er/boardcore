@@ -45,13 +45,15 @@ public:
 
     const VectorXf& getOutput();
 
+    const VectorXf& getResidual();
+
 private:
     uint8_t n, m, p; /**< system dimensions */
 
     MatrixXf F, H, Q, R, P, S, K;
 
     MatrixXf I; /**< (n x n) identity matrix */
-    VectorXf x, y_hat;
+    VectorXf x, y_hat, res;
 
     function_2v f;
     function_2v dfdx;

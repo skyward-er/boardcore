@@ -46,6 +46,8 @@ public:
 
     const VectorXf& getOutput();
 
+    const VectorXf& getResidual();
+
     const VectorXf predictOutput(uint32_t k);
 
     const VectorXf predictState(uint32_t k);
@@ -55,6 +57,6 @@ private:
 
     MatrixXf F, G, H, Q, R, P, S, K;
 
-    MatrixXf I;      /**< (n x n) identity matrix */
-    VectorXf x, y_hat;
+    MatrixXf I; /**< (n x n) identity matrix */
+    VectorXf x, y_hat, res;
 };

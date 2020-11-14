@@ -26,7 +26,7 @@ ExtendedKalmanEigen::ExtendedKalmanEigen(const ExtendedKalmanConfig& config)
     : n(config.n), m(config.m), p(config.p), F(config.F), H(config.H),
       Q(config.Q), R(config.R), P(config.P), S(config.n, config.n),
       K(config.p, config.n), I(config.n, config.n), x(config.n),
-      y_hat(config.p), f(config.f), dfdx(config.dfdx), h(config.h),
+      y_hat(config.p), res(config.p), f(config.f), dfdx(config.dfdx), h(config.h),
       dhdx(config.dhdx)
 {
     x.setZero();
@@ -70,6 +70,8 @@ bool ExtendedKalmanEigen::correct(const VectorXf& y, const function_v& h,
 
     x = x + K * (y - h(x));
 
+    res = y - h(x);
+
     return true;
 }
 
@@ -80,3 +82,5 @@ const VectorXf& ExtendedKalmanEigen::getOutput()
     y_hat = h(x);
     return y_hat;
 }
+
+const VectorXf& ExtendedKalmanEigen::getResidual() { return res; }
