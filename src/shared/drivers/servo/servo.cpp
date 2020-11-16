@@ -23,6 +23,7 @@
 
 #include "servo.h"
 #include <cmath>
+#include <cstring>
 
 // Initialize the pwm with 50 Hz frequency and 65535 levels of duty cycle
 Servo::Servo(PWM::Timer t) : pwm(t, 50, 65535) { memset(&positions, 0, 4); }
