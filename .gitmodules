@@ -1,7 +1,7 @@
 [submodule "libs/miosix-kernel"]
 	path = libs/miosix-kernel
 	url = ../../scs/miosix-kernel.git
-	branch = master
+	branch = gcc-9.2.0
 [submodule "libs/tscpp"]
 	path = libs/tscpp
 	url = https://github.com/fedetft/tscpp.git
