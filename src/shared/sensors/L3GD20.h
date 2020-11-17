@@ -201,10 +201,21 @@ public:
     {
         if (!fifo_enabled)  // FIFO not enabled
         {
+            // Timestamp of the last sample
+            uint64_t last_sample_ts;
+
             // Read output data registers (X, Y, Z)
             {
                 SPITransaction spi(spislave);
                 spi.read(REG_OUT_X_L | 0x40, buf, 6);
+            }
+
+            {
+                // Disable interrupts and copy the last sample locally, as a new
+                // interrupt may come just as we are reading it and causing a
+                // race condition.
+                miosix::FastInterruptDisableLock dLock;
+                last_sample_ts = interrupt_us;
             }
 
             int16_t x = buf[0] | buf[1] << 8;
@@ -212,7 +223,7 @@ public:
             int16_t z = buf[4] | buf[5] << 8;
             // printf("%02X,%02X,%02X\n", x, y, z);
 
-            last_fifo[0] = {interrupt_us, toRadiansPerSecond(x, y, z)};
+            last_fifo[0] = {last_sample_ts, toRadiansPerSecond(x, y, z)};
         }
 
         else  // FIFO is enabled
@@ -259,9 +270,13 @@ public:
                     continue;
                 }
 
-                // Assign a timestamp to each sample in the FIFO
-                // Samples before the watermark are older, after the
-                // watermark are younger.
+                // Assign a timestamp to each sample in the FIFO based of the
+                // timestamp of the FIFO_WATERMARKth sample and the delta
+                // between the watermark interrupts (evenly distribute the
+                // timestamp between the two times)
+                // Ignoring possible duplicates, the timestamp of the ith sample
+                // in the fifo is:
+                // ts(i) = ts(fifo_watermark) + (i - fifo_watermark)*dt;
                 last_fifo[i - duplicates].timestamp =
                     interrupt_us +
                     ((int)i - (int)fifo_watermark - (int)duplicates) * dt;
@@ -279,6 +294,13 @@ public:
 
     L3GD20Data getLastSample() { return last_fifo[last_fifo_level - 1]; }
 
+    /**
+     * Called by the INT2 interrupt handling routine: provides the timestamp of
+     * the last DataReady interrupt (if FIFO is disabled) or the last watermark
+     * interrupt (if FIFO enabled)
+     *
+     * @param ts Timestamp of the lasts interrupt, in microseconds
+     */
     void IRQupdateTimestamp(uint64_t ts)
     {
         dt_interrupt = ts - interrupt_us;
