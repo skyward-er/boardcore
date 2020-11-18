@@ -34,11 +34,15 @@ class KalmanEigen
 public:
     KalmanEigen(const KalmanConfig& config);
 
-    void init(const VectorXf& x0);  // const VectorXf& u0);
+    void init(const VectorXf& x0);
 
     void predict();
 
+    void predict(const MatrixXf& F_new);
+
     void predict(const VectorXf& u);
+
+    void predict(const VectorXf& u, const MatrixXf& F_new);
 
     bool correct(const VectorXf& y);
 

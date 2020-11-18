@@ -26,20 +26,21 @@
 
 using namespace Eigen;
 
-// function with 2 vectors as parameters
-typedef std::function<MatrixXf(VectorXf, VectorXf)> function_2v; 
-// function with 1 vector as parameter
-typedef std::function<MatrixXf(VectorXf)> function_v; 
-
 struct KalmanConfig
 {
-    MatrixXf& F;
-    MatrixXf& G;
-    MatrixXf& H;
-    MatrixXf& Q;
-    MatrixXf& R;
-    MatrixXf& P;
+    MatrixXf F;
+    MatrixXf G;
+    MatrixXf H;
+    MatrixXf Q;
+    MatrixXf R;
+    MatrixXf P;
+    bool with_ex_input = false; // Set to true is G is assigned (an exogenous input is present)
 };
+
+// function with 2 vectors as parameters
+typedef std::function<MatrixXf(VectorXf, VectorXf)> function_2v;
+// function with 1 vector as parameter
+typedef std::function<MatrixXf(VectorXf)> function_v;
 
 struct ExtendedKalmanConfig
 {
@@ -47,11 +48,11 @@ struct ExtendedKalmanConfig
     uint8_t m;
     uint8_t p;
 
-    MatrixXf& F;
-    MatrixXf& H;
-    MatrixXf& Q;
-    MatrixXf& R;
-    MatrixXf& P;
+    MatrixXf F;
+    MatrixXf H;
+    MatrixXf Q;
+    MatrixXf R;
+    MatrixXf P;
 
     function_2v f;
     function_v h;

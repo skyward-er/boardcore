@@ -23,24 +23,27 @@
 #include "KalmanEigen.h"
 
 KalmanEigen::KalmanEigen(const KalmanConfig& config)
-    : n(config.F.rows()), m(config.G.cols()), p(config.H.rows()), F(config.F),
+    : n(config.F.rows()), p(config.H.rows()), F(config.F),
       G(config.G), H(config.H), Q(config.Q), R(config.R), P(config.P), S(n, n),
-      K(p, n), I(n, n), x(n), y_hat(p)  // , u(m)
+      K(p, n), I(n, n), x(n), y_hat(p)
 {
     x.setZero();
-    // u.setZero();
     I.setIdentity();
+
+    assert(F.rows() == F.cols()); // Matrix F must be a square matrix
+    assert(F.cols() == H.cols()); // Matrix H must have the same number of columns as F
+
+    // G exists only if with_ex_input is set to true
+    if (config.with_ex_input)
+    {
+        m = config.G.cols();
+        assert(G.rows() == F.rows()); // F and G must have the same number of rows
+    }
 }
 
-void KalmanEigen::init(const VectorXf& x0)  // const VectorXf& u0
+void KalmanEigen::init(const VectorXf& x0)
 {
-    // static_assert(A.rows() == A.cols(), "Matrix A must be a square matrix.");
-    // static_assert(B.rows() == A.rows(), " ");
-    // static_assert(A.cols() == C.cols(),
-    //              "Matrix C must have the same number of columns as A.");
-
     x = x0;
-    // u = u0; // useless if u is passed at each step to predict()
 }
 
 void KalmanEigen::predict()
@@ -49,10 +52,22 @@ void KalmanEigen::predict()
     x = F * x;
 }
 
+void KalmanEigen::predict(const MatrixXf& F_new)
+{
+    this->F = F_new;
+    this->predict();
+}
+
 void KalmanEigen::predict(const VectorXf& u)
 {
     P = F * P * F.transpose() + Q;
     x = F * x + G * u;
+}
+
+void KalmanEigen::predict(const VectorXf& u, const MatrixXf& F_new)
+{
+    this->F = F_new;
+    this->predict(u);
 }
 
 bool KalmanEigen::correct(const VectorXf& y)
