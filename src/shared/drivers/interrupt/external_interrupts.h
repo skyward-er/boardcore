@@ -1,6 +1,6 @@
-/*
- * Copyright (c) 2018 Skyward Experimental Rocketry
- * Authors: Luca Erbetta
+/**
+ * Copyright (c) 2020 Skyward Experimental Rocketry
+ * Authors: Luca Erbetta (luca.erbetta@skywarder.eu)
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -21,38 +21,21 @@
  * THE SOFTWARE.
  */
 
-#include <miosix.h>
-#include <stdio.h>
-#include "drivers/interrupt/external_interrupts.h"
-
-using namespace miosix;
-
-bool itr = false;
-
-// The compiler may remove this function since it doesn't know that it is onlt
-// called from an assembly instruction. Use attribute used to avoid this.
-void __attribute__((used)) EXTI0_IRQHandlerImpl()
+enum class InterruptTrigger
 {
-    itr = true;
-}
+    RISING_EDGE,
+    FALLING_EDGE,
+    RISING_FALLING_EDGE
+};
 
-typedef Gpio<GPIOA_BASE, 0> user_button;
-
-int main()
-{
-    user_button::mode(Mode::INPUT);
-    
-    enableExternalInterrupt(GPIOA_BASE, 0, InterruptTrigger::RISING_EDGE, 15);
-
-    unsigned int counter = 0;
-    while (true)
-    {
-        if (itr)
-        {
-            ++counter;
-            printf("%d Interrupt received!\n", counter);
-            itr = false;
-        }
-        Thread::sleep(50);
-    }
-}
+/**
+ * @brief Enables external interrupts on the provided pin.
+ * Remember to set the GPIO to input mode!
+ * 
+ * @param gpio_port Port of the pin (eg:  GPIOC_BASE)
+ * @param gpio_num Pin number (eg: 4 for PC4)
+ * @param trigger Interrupt detection trigger (rising edge, falling or both)
+ * @param priority Interrupt priority [0-15], 0 = Highest priority
+ */
+void enableExternalInterrupt(unsigned int gpio_port, unsigned int gpio_num,
+                     InterruptTrigger trigger, unsigned int priority = 15);

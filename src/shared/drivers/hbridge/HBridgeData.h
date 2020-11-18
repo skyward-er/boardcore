@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2018 Skyward Experimental Rocketry
- * Authors: Luca Erbetta
+ * Copyright (c) 2020 Skyward Experimental Rocketry
+ * Authors: Luca Erbetta, Luca Conterio
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -21,38 +21,26 @@
  * THE SOFTWARE.
  */
 
-#include <miosix.h>
-#include <stdio.h>
-#include "drivers/interrupt/external_interrupts.h"
+#pragma once
 
-using namespace miosix;
+#include <ostream>
+#include <string>
 
-bool itr = false;
-
-// The compiler may remove this function since it doesn't know that it is onlt
-// called from an assembly instruction. Use attribute used to avoid this.
-void __attribute__((used)) EXTI0_IRQHandlerImpl()
+enum class HBridgeState : uint8_t
 {
-    itr = true;
-}
+    DISABLED = 0,
+    ENABLED  = 1
+};
 
-typedef Gpio<GPIOA_BASE, 0> user_button;
-
-int main()
+struct HBridgeStatus
 {
-    user_button::mode(Mode::INPUT);
-    
-    enableExternalInterrupt(GPIOA_BASE, 0, InterruptTrigger::RISING_EDGE, 15);
+    uint64_t timestamp;
+    HBridgeState state = HBridgeState::DISABLED;
 
-    unsigned int counter = 0;
-    while (true)
+    static std::string header() { return "timestamp,state\n"; }
+
+    void print(std::ostream& os) const
     {
-        if (itr)
-        {
-            ++counter;
-            printf("%d Interrupt received!\n", counter);
-            itr = false;
-        }
-        Thread::sleep(50);
+        os << timestamp << "," << (uint8_t)state << "\n";
     }
-}
+};
