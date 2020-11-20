@@ -23,28 +23,27 @@
 #include "KalmanEigen.h"
 
 KalmanEigen::KalmanEigen(const KalmanConfig& config)
-    : n(config.F.rows()), p(config.H.rows()), F(config.F),
-      G(config.G), H(config.H), Q(config.Q), R(config.R), P(config.P), S(n, n),
-      K(p, n), I(n, n), x(n), y_hat(p)
+    : n(config.F.rows()), p(config.H.rows()), F(config.F), G(config.G),
+      H(config.H), Q(config.Q), R(config.R), P(config.P), S(n, n), K(p, n),
+      I(n, n), x(n), y_hat(p)
 {
     x.setZero();
     I.setIdentity();
 
-    assert(F.rows() == F.cols()); // Matrix F must be a square matrix
-    assert(F.cols() == H.cols()); // Matrix H must have the same number of columns as F
+    assert(F.rows() == F.cols());  // Matrix F must be a square matrix
+    assert(F.cols() ==
+           H.cols());  // Matrix H must have the same number of columns as F
 
     // G exists only if with_ex_input is set to true
     if (config.with_ex_input)
     {
         m = config.G.cols();
-        assert(G.rows() == F.rows()); // F and G must have the same number of rows
+        assert(G.rows() ==
+               F.rows());  // F and G must have the same number of rows
     }
 }
 
-void KalmanEigen::init(const VectorXf& x0)
-{
-    x = x0;
-}
+void KalmanEigen::init(const VectorXf& x0) { x = x0; }
 
 void KalmanEigen::predict()
 {
@@ -60,8 +59,8 @@ void KalmanEigen::predict(const MatrixXf& F_new)
 
 void KalmanEigen::predict(const VectorXf& u)
 {
-    P = F * P * F.transpose() + Q;
-    x = F * x + G * u;
+    this->predict();
+    x = x + G * u;  // after predicting, add the ex. input contribution
 }
 
 void KalmanEigen::predict(const VectorXf& u, const MatrixXf& F_new)
