@@ -26,19 +26,14 @@ ExtendedKalmanEigen::ExtendedKalmanEigen(const ExtendedKalmanConfig& config)
     : n(config.n), m(config.m), p(config.p), F(config.F), H(config.H),
       Q(config.Q), R(config.R), P(config.P), S(config.n, config.n),
       K(config.p, config.n), I(config.n, config.n), x(config.n),
-      y_hat(config.p), res(config.p), f(config.f), dfdx(config.dfdx), h(config.h),
-      dhdx(config.dhdx)
+      y_hat(config.p), res(config.p), f(config.f), dfdx(config.dfdx),
+      h(config.h), dhdx(config.dhdx)
 {
     x.setZero();
-    // u.setZero();
     I.setIdentity();
 }
 
-void ExtendedKalmanEigen::init(const VectorXf& x0)  //, const VectorXf& u0)
-{
-    x = x0;
-    // u = u0; useless if u is passed at each step to predict()
-}
+void ExtendedKalmanEigen::init(const VectorXf& x0) { x = x0; }
 
 void ExtendedKalmanEigen::predict(const VectorXf& u)
 {
@@ -48,11 +43,14 @@ void ExtendedKalmanEigen::predict(const VectorXf& u)
     x = f(x, u);
 }
 
+bool ExtendedKalmanEigen::correct(const VectorXf& y)
+{
+    return correct(y, this->h, this->dhdx);
+}
+
 bool ExtendedKalmanEigen::correct(const VectorXf& y, const function_v& h,
                                   const function_v& dhdx)
 {
-    this->h = h;
-
     H = dhdx(x);  // update jacobian
 
     S = H * P * H.transpose() + R;
@@ -84,3 +82,24 @@ const VectorXf& ExtendedKalmanEigen::getOutput()
 }
 
 const VectorXf& ExtendedKalmanEigen::getResidual() { return res; }
+
+void ExtendedKalmanEigen::setF(const MatrixXf& F) { this->F = F; }
+
+void ExtendedKalmanEigen::setH(const MatrixXf& H) { this->H = H; }
+
+void ExtendedKalmanEigen::setQ(const MatrixXf& Q) { this->Q = Q; }
+
+void ExtendedKalmanEigen::setR(const MatrixXf& R) { this->R = R; }
+
+void ExtendedKalmanEigen::setP(const MatrixXf& P) { this->P = P; }
+
+void ExtendedKalmanEigen::setf(const function_2v& f) { this->f = f; }
+
+void ExtendedKalmanEigen::setdfdx(const function_2v& dfdx)
+{
+    this->dfdx = dfdx;
+}
+
+void ExtendedKalmanEigen::seth(const function_v& h) { this->h = h; }
+
+void ExtendedKalmanEigen::setdhdx(const function_v& dhdx) { this->dhdx = dhdx; }

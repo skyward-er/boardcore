@@ -34,10 +34,19 @@ class ExtendedKalmanEigen
 public:
     ExtendedKalmanEigen(const ExtendedKalmanConfig& config);
 
-    void init(const VectorXf& x0);  //, const VectorXf& u0);
+    void init(const VectorXf& x0);
 
     void predict(const VectorXf& u);
 
+    /**
+     * @brief Correct using the default h and dhdx
+     *        (those contained in config)
+     */
+    bool correct(const VectorXf& y);
+
+    /**
+     * @brief Correct using the specified h and dhdx parameters
+     */
     bool correct(const VectorXf& y, const function_v& h,
                  const function_v& dhdx);
 
@@ -46,6 +55,24 @@ public:
     const VectorXf& getOutput();
 
     const VectorXf& getResidual();
+
+    void setF(const MatrixXf& F);
+
+    void setH(const MatrixXf& H);
+
+    void setQ(const MatrixXf& Q);
+
+    void setR(const MatrixXf& R);
+
+    void setP(const MatrixXf& P);
+
+    void setf(const function_2v& f);
+
+    void setdfdx(const function_2v& dfdx);
+
+    void seth(const function_v& h);
+
+    void setdhdx(const function_v& dhdx);
 
 private:
     uint8_t n, m, p; /**< system dimensions */
