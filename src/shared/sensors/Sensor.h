@@ -26,7 +26,7 @@
 #define SENSORS_H
 #include <Common.h>
 #include <drivers/spi/SensorSpi.h>
-#include <math/Quaternion.h>
+#include <math/SkyQuaternion.h>
 #include <math/Vec3.h>
 
 /** Sensors class diagram

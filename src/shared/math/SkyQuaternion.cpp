@@ -1,0 +1,95 @@
+/* Quaternion
+ *
+ * Copyright (c) 2020 Skyward Experimental Rocketry
+ * Authors: Marco Cella
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in
+ * all copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.  IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+ * THE SOFTWARE.
+ */
+
+#include "SkyQuaternion.h"
+
+SkyQuaternion::SkyQuaternion() {}
+
+Vector4f SkyQuaternion::eul2quat(Vector3f radeul) // Convention used: if rad = 0 ->
+                                               // q0 = 1, q1 = 0, q2 = 0, q3 = 0
+{
+    float eulx = radeul(0);
+    float euly = radeul(1);
+    float eulz = radeul(2);
+
+    float cx = cosf(eulx * 0.5F);
+    float sx = sinf(eulx * 0.5F);
+    float cy = cosf(euly * 0.5F);
+    float sy = sinf(euly * 0.5F);
+    float cz = cosf(eulz * 0.5F);
+    float sz = sinf(eulz * 0.5F);
+
+    float q0 = cx * cy * cz + sx * sy * sz;
+    float q1 = sx * cy * cz - cx * sy * sz;
+    float q2 = cx * sy * cz + sx * cy * sz;
+    float q3 = cx * cy * sz - sx * sy * cz;
+
+    Vector4f quat(q0, q1, q2, q3);
+
+    return quat;
+}
+
+Vector3f SkyQuaternion::quat2eul(Vector4f quat)
+{
+    float q0 = quat(0);
+    float q1 = quat(1);
+    float q2 = quat(2);
+    float q3 = quat(3);
+
+    float eulx =
+        atan2f(2 * (q0 * q1 + q2 * q3), 1 - 2 * (pow(q1, 2) + pow(q2, 2)));
+    float euly = asinf(2 * (q0 * q2 - q3 * q1));
+    float eulz =
+        atan2f(2 * (q0 * q3 + q1 * q2), 1 - 2 * (pow(q2, 2) + pow(q3, 2)));
+
+    Vector3f eul(eulx, euly, eulz);
+
+    return eul;
+}
+
+void SkyQuaternion::quatnormalize(Vector4f& quat)
+{
+    float den = sqrt(pow(quat(0), 2) + pow(quat(1), 2) + pow(quat(2), 2) +
+                     pow(quat(3), 2));
+    if (den == 0)
+        den = pow(10, -10);
+    else
+        quat = quat / den;
+}
+
+void SkyQuaternion::quatnormalizeEKF(VectorXf& x)
+{
+    Vector4f xq(x(0), x(1), x(2), x(3));
+    Vector3f xp(x(4), x(5), x(6));
+    Vector3f xv(x(7), x(8), x(9));
+
+    float den =
+        sqrt(pow(xq(0), 2) + pow(xq(1), 2) + pow(xq(2), 2) + pow(xq(3), 2));
+    if (den == 0)
+        den = pow(10, -10);
+    else
+        xq = xq / den;
+
+    x << xq, xp, xv;
+}
