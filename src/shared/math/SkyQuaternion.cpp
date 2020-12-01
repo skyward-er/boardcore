@@ -27,7 +27,7 @@
 SkyQuaternion::SkyQuaternion() {}
 
 Vector4f SkyQuaternion::eul2quat(Vector3f radeul) // Convention used: if rad = 0 ->
-                                               // q0 = 1, q1 = 0, q2 = 0, q3 = 0
+                                               // q4 = 1, q1 = 0, q2 = 0, q3 = 0
 {
     float eulx = radeul(0);
     float euly = radeul(1);
@@ -40,28 +40,28 @@ Vector4f SkyQuaternion::eul2quat(Vector3f radeul) // Convention used: if rad = 0
     float cz = cosf(eulz * 0.5F);
     float sz = sinf(eulz * 0.5F);
 
-    float q0 = cx * cy * cz + sx * sy * sz;
+    float q4 = cx * cy * cz + sx * sy * sz;
     float q1 = sx * cy * cz - cx * sy * sz;
     float q2 = cx * sy * cz + sx * cy * sz;
     float q3 = cx * cy * sz - sx * sy * cz;
 
-    Vector4f quat(q0, q1, q2, q3);
+    Vector4f quat(q1, q2, q3, q4);
 
     return quat;
 }
 
 Vector3f SkyQuaternion::quat2eul(Vector4f quat)
 {
-    float q0 = quat(0);
-    float q1 = quat(1);
-    float q2 = quat(2);
-    float q3 = quat(3);
+    float q4 = quat(3);
+    float q1 = quat(0);
+    float q2 = quat(1);
+    float q3 = quat(2);
 
     float eulx =
-        atan2f(2 * (q0 * q1 + q2 * q3), 1 - 2 * (pow(q1, 2) + pow(q2, 2)));
-    float euly = asinf(2 * (q0 * q2 - q3 * q1));
+        atan2f(2.0 * (q4 * q1 + q2 * q3), 1.0 - 2.0 * (pow(q1, 2) + pow(q2, 2)));
+    float euly = asinf(2.0 * (q4 * q2 - q3 * q1));
     float eulz =
-        atan2f(2 * (q0 * q3 + q1 * q2), 1 - 2 * (pow(q2, 2) + pow(q3, 2)));
+        atan2f(2.0 * (q4 * q3 + q1 * q2), 1.0 - 2.0 * (pow(q2, 2) + pow(q3, 2)));
 
     Vector3f eul(eulx, euly, eulz);
 
