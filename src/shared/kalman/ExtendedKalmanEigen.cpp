@@ -24,8 +24,7 @@
 
 ExtendedKalmanEigen::ExtendedKalmanEigen(const ExtendedKalmanConfig& config)
     : n(config.n), m(config.m), p(config.p), F(config.F), H(config.H),
-      Q(config.Q), R(config.R), P(config.P), S(config.n, config.n),
-      K(config.p, config.n), I(config.n, config.n), x(config.n),
+      Q(config.Q), R(config.R), P(config.P), I(config.n, config.n), x(config.n),
       y_hat(config.p), res(config.p), f(config.f), dfdx(config.dfdx),
       h(config.h), dhdx(config.dhdx)
 {
@@ -51,6 +50,10 @@ bool ExtendedKalmanEigen::correct(const VectorXf& y)
 bool ExtendedKalmanEigen::correct(const VectorXf& y, const function_v& h,
                                   const function_v& dhdx)
 {
+    p = y.rows();
+    S.resize(p, p);
+    K.resize(n, p);
+
     H = dhdx(x);  // update jacobian
 
     S = H * P * H.transpose() + R;
