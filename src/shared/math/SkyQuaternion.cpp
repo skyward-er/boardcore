@@ -73,7 +73,7 @@ void SkyQuaternion::quatnormalize(Vector4f& quat)
 {
     float den = sqrt(powf(quat(0), 2) + powf(quat(1), 2) + powf(quat(2), 2) +
                      powf(quat(3), 2));
-    if (den < powf(10, -6)
+    if (den < powf(10, -6))
     {
         den = powf(10, -5);
         quat = quat / den;
@@ -91,7 +91,7 @@ void SkyQuaternion::quatnormalizeEKF(VectorXf& x)
 
     float den =
         sqrt(powf(xq(0), 2) + powf(xq(1), 2) + powf(xq(2), 2) + powf(xq(3), 2));
-    if (den < powf(10, -6)
+    if (den < powf(10, -6))
     {
         den = powf(10, -5);
         xq = xq / den;
