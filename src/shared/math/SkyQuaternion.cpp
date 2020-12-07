@@ -22,12 +22,13 @@
  * THE SOFTWARE.
  */
 
+ // Convention used: if rad = 0 -> q4 = 1, q1 = 0, q2 = 0, q3 = 0
+
 #include "SkyQuaternion.h"
 
 SkyQuaternion::SkyQuaternion() {}
 
-Vector4f SkyQuaternion::eul2quat(Vector3f radeul) // Convention used: if rad = 0 ->
-                                               // q4 = 1, q1 = 0, q2 = 0, q3 = 0
+Vector4f SkyQuaternion::eul2quat(Vector3f radeul) // ZYX rotation
 {
     float eulx = radeul(0);
     float euly = radeul(1);
@@ -58,10 +59,10 @@ Vector3f SkyQuaternion::quat2eul(Vector4f quat)
     float q3 = quat(2);
 
     float eulx =
-        atan2f(2.0 * (q4 * q1 + q2 * q3), 1.0 - 2.0 * (pow(q1, 2) + pow(q2, 2)));
+        atan2f(2.0 * (q4 * q1 + q2 * q3), 1.0 - 2.0 * (powf(q1, 2) + powf(q2, 2)));
     float euly = asinf(2.0 * (q4 * q2 - q3 * q1));
     float eulz =
-        atan2f(2.0 * (q4 * q3 + q1 * q2), 1.0 - 2.0 * (pow(q2, 2) + pow(q3, 2)));
+        atan2f(2.0 * (q4 * q3 + q1 * q2), 1.0 - 2.0 * (powf(q2, 2) + powf(q3, 2)));
 
     Vector3f eul(eulx, euly, eulz);
 
@@ -70,10 +71,13 @@ Vector3f SkyQuaternion::quat2eul(Vector4f quat)
 
 void SkyQuaternion::quatnormalize(Vector4f& quat)
 {
-    float den = sqrt(pow(quat(0), 2) + pow(quat(1), 2) + pow(quat(2), 2) +
-                     pow(quat(3), 2));
-    if (den == 0)
-        den = pow(10, -10);
+    float den = sqrt(powf(quat(0), 2) + powf(quat(1), 2) + powf(quat(2), 2) +
+                     powf(quat(3), 2));
+    if (den < powf(10, -6)
+    {
+        den = powf(10, -5);
+        quat = quat / den;
+    }
     else
         quat = quat / den;
 }
@@ -83,13 +87,17 @@ void SkyQuaternion::quatnormalizeEKF(VectorXf& x)
     Vector4f xq(x(0), x(1), x(2), x(3));
     Vector3f xp(x(4), x(5), x(6));
     Vector3f xv(x(7), x(8), x(9));
+    float cd = x(10);
 
     float den =
-        sqrt(pow(xq(0), 2) + pow(xq(1), 2) + pow(xq(2), 2) + pow(xq(3), 2));
-    if (den == 0)
-        den = pow(10, -10);
+        sqrt(powf(xq(0), 2) + powf(xq(1), 2) + powf(xq(2), 2) + powf(xq(3), 2));
+    if (den < powf(10, -6)
+    {
+        den = powf(10, -5);
+        xq = xq / den;
+    }
     else
         xq = xq / den;
 
-    x << xq, xp, xv;
+    x << xq, xp, xv, cd;
 }
