@@ -33,7 +33,15 @@ int main(){
 
     cs.high();
 
-    ASM330LHH sensor(bus, cs);
+    asm330lhh_params params;
+
+    params.accel_odr = ASM330LHH::ODR::_26HZ;
+    params.gyro_odr = ASM330LHH::ODR::_26HZ;
+    params.bdu = ASM330LHH::BDU::UPDATE_AFTER_READ;
+    params.accel_fs = ASM330LHH::ACCEL_FS::_8G;
+    params.gyro_fs = ASM330LHH::GYRO_FS::_250DPS;
+
+    ASM330LHH sensor(bus, cs, params);
     bool success = sensor.init();
 
     if(success){
