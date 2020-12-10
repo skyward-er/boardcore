@@ -26,6 +26,7 @@
 #include "Common.h"
 #include "drivers/spi/SPIDriver.h"
 #include "ASM330LHHData.h"
+#include <cmath>
 
 using miosix::getTick;
 using miosix::TICK_FREQ;
@@ -131,22 +132,22 @@ class ASM330LHH : public virtual Sensor
             new_data.temperature = ((float) val)/TSen + Toff;
 
             val = buffer[2] | buffer[3]<<8;
-            new_data.gyro_x = ((float) val)*G_So[params.gyro_fs];
+            new_data.gyro_x = ((float) val)*gyro_sensityvity;
 
             val = buffer[4] | buffer[5]<<8;
-            new_data.gyro_y = ((float) val)*G_So[params.gyro_fs];
+            new_data.gyro_y = ((float) val)*gyro_sensityvity;
 
             val = buffer[6] | buffer[7]<<8;
-            new_data.gyro_z = ((float) val)*G_So[params.gyro_fs];
+            new_data.gyro_z = ((float) val)*gyro_sensityvity;
 
             val = buffer[8] | buffer[9]<<8;
-            new_data.accel_x = ((float) val)*LA_So[params.accel_fs];
+            new_data.accel_x = ((float) val)*accel_sensitivity;
 
             val = buffer[10] | buffer[11]<<8;
-            new_data.accel_y = ((float) val)*LA_So[params.accel_fs];
+            new_data.accel_y = ((float) val)*accel_sensitivity;
 
             val = buffer[12] | buffer[13]<<8;
-            new_data.accel_x = ((float) val)*LA_So[params.accel_fs];
+            new_data.accel_x = ((float) val)*accel_sensitivity;
 
             data = new_data;
             return true;
@@ -158,11 +159,108 @@ class ASM330LHH : public virtual Sensor
         * @return boolean indicating whether the sensor is correctly working or not
         */
         bool selfTest() override 
-        {  
-            // check that the sensor is properly working
-            // e.g. check values tolerance over a set of samples
-            //      or what the datasheet suggests
-            return true; 
+        {   
+            // Number of samples collected
+            int samples = 10;
+
+            // Average values collected with st disabled
+            float gyro_before[3] = {0, 0, 0};
+            float accel_before[3] = {0, 0, 0};
+            // Average values collected with st enabled
+            float gyro_after[3] = {0, 0, 0};
+            float accel_after[3] = {0, 0, 0};
+
+            // Set gyroscope sensitivity to +-250
+            setup_gyro(params.gyro_odr, _250DPS);
+
+            // Read selftest disabled data
+            for(int i=0; i<samples; i++){
+                miosix::Thread::sleep(10);
+                onSimpleUpdate();
+                asm330lhh_data data = getData();
+
+                gyro_before[0] += data.gyro_x;
+                gyro_before[1] += data.gyro_y;
+                gyro_before[2] += data.gyro_z;
+
+                accel_before[0] += data.accel_x;
+                accel_before[1] += data.accel_y;
+                accel_before[2] += data.accel_z;
+            }
+
+            gyro_before[0] /= samples;
+            gyro_before[1] /= samples;
+            gyro_before[2] /= samples;
+
+            accel_before[0] /= samples;
+            accel_before[1] /= samples;
+            accel_before[2] /= samples;
+
+            // Enable selftest
+            {
+                SPITransaction spi(spi_slave);
+
+                uint8_t gyro_positive_st = 0x1;     // 0b01
+                uint8_t accel_positive_st = 0x1;    // 0b01
+
+                uint8_t ctrl5_c_value = spi.read(CTRL5_C_REG);
+                ctrl5_c_value |= accel_positive_st;
+                ctrl5_c_value |= gyro_positive_st << 2;
+                spi.write(CTRL5_C_REG, ctrl5_c_value);
+            }
+
+            // Read selftest enabled data
+            for(int i=0; i<samples; i++){
+                miosix::Thread::sleep(10);
+                onSimpleUpdate();
+                asm330lhh_data data = getData();
+
+                gyro_after[0] += data.gyro_x;
+                gyro_after[1] += data.gyro_y;
+                gyro_after[2] += data.gyro_z;
+
+                accel_after[0] += data.accel_x;
+                accel_after[1] += data.accel_y;
+                accel_after[2] += data.accel_z;
+            }
+
+            gyro_after[0] /= samples;
+            gyro_after[1] /= samples;
+            gyro_after[2] /= samples;
+
+            accel_after[0] /= samples;
+            accel_after[1] /= samples;
+            accel_after[2] /= samples;
+
+            // Disable selftest
+            {
+                SPITransaction spi(spi_slave);
+
+                uint8_t ctrl5_c_value = spi.read(CTRL5_C_REG);
+                ctrl5_c_value &= 0xf0;                          // 0b11110000
+                spi.write(CTRL5_C_REG, ctrl5_c_value);
+            }
+
+            // Reset gyroscope sensitivity
+            setup_gyro(params.gyro_odr, params.gyro_fs);
+
+            // Check deltas
+            bool selftest_ok = true;
+
+            for(int i=0; i<3 && selftest_ok; i++){
+                float delta = abs(gyro_after[i] - gyro_before[i]);
+                if(delta<gyro_selftest_min || delta>gyro_selftest_max){
+                    selftest_ok = false;
+                    last_error = ERR_GYRO_SELFTEST;
+                }
+                delta =  abs(accel_after[i] - accel_before[i]);
+                if(delta<accel_selftest_min || delta > accel_selftest_max){
+                    selftest_ok = false;
+                    last_error = ERR_ACCEL_SELFTEST;
+                }
+            }
+
+            return selftest_ok; 
         }
         
         // not a Sensor class method: you should 
@@ -221,6 +319,8 @@ class ASM330LHH : public virtual Sensor
             assert(odr>=0 && odr<=10);
             assert(fs>=0 && fs <=3);
 
+            accel_sensitivity = LA_So[fs];
+
             odr = odr & 15;     // 0b1111
             odr = odr << 4;
 
@@ -239,6 +339,8 @@ class ASM330LHH : public virtual Sensor
 
             assert(odr>=0 && odr<=10);      //0b1010
             assert(fs>=0 && fs<=5);
+
+            gyro_sensityvity = G_So[fs];
 
             odr = odr & 15;                 // 0b1111
             odr = odr << 4;
@@ -335,6 +437,10 @@ class ASM330LHH : public virtual Sensor
         const float G_So[6] = {4.37, 8.75, 17.5, 35.0, 70.0, 140.0};
         const float TSen = 256;
         const float Toff = 25;
+        const float accel_selftest_min = 40;
+        const float accel_selftest_max = 1700;
+        const float gyro_selftest_min = 20;
+        const float gyro_selftest_max = 80;
 
     private:
 
@@ -347,6 +453,7 @@ class ASM330LHH : public virtual Sensor
             CTRL2_G_REG = 0x11,
             CTRL3_C_REG = 0x12,
             CTRL4_C_REG = 0x13,
+            CTRL5_C_REG = 0x14,
             CTRL9_XL_REG = 0x18,
             OUT_TEMP_L_REG = 0x20,
             OUT_TEMP_H_REG = 0X21,
@@ -368,5 +475,7 @@ class ASM330LHH : public virtual Sensor
         const asm330lhh_params params;
         SPISlave spi_slave;
         asm330lhh_data data;
+        float gyro_sensityvity;
+        float accel_sensitivity;
 
 };
