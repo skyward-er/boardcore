@@ -31,27 +31,32 @@
 using miosix::getTick;
 using miosix::TICK_FREQ;
  
+namespace asm330lhh{
+    /**
+    * @brief IMU parameters:
+    *           gyroscope odr (from power down up to 6667Hz)
+    *           gyroscope full scale (from +-125dps up to +-4000dps)
+    *           accelerometer odr (from power down up do 6667hz)
+    *           accelerometer full scale (from +-2g up to +-16g)
+    *           bdu (continuous update or update after read)
+    *           temperatuse sampling divider (after how many calls of method "onSimpleUpdate"
+    *               temperature must be sampled)
+    */
+    struct config
+    {
+        uint8_t gyro_odr = 0;
+        uint8_t gyro_fs = 0;
+        uint8_t accel_odr = 0;
+        uint8_t accel_fs = 0;
+        uint8_t bdu = 0;
+        uint16_t temperature_divider = 100;
+    };
 
-        
-/**
-* @brief IMU parameters:
-*           gyroscope odr (from power down up to 6667Hz)
-*           gyroscope full scale (from +-125dps up to +-4000dps)
-*           accelerometer odr (from power down up do 6667hz)
-*           accelerometer full scale (from +-2g up to +-16g)
-*           bdu (continuous update or update after read)
-*           temperatuse sampling divider (after how many calls of method "onSimpleUpdate"
-*               temperature must be sampled)
-*/
-struct asm330lhh_params
-{
-    uint8_t gyro_odr = 0;
-    uint8_t gyro_fs = 0;
-    uint8_t accel_odr = 0;
-    uint8_t accel_fs = 0;
-    uint8_t bdu = 0;
-    uint16_t temperature_divider = 100;
+    struct fifo_config{};
+
 };
+        
+
 
 class ASM330LHH : public virtual Sensor
 {
@@ -62,12 +67,12 @@ class ASM330LHH : public virtual Sensor
         * 
         * @param bus            the SPI bus
         * @param chip_select    CS pin
-        * @param params         Sensor params (bdu, accelerometer and gyroscope odr and sensitivity)
+        * @param config         Sensor params (bdu, accelerometer and gyroscope odr and sensitivity)
         * 
         **/
         ASM330LHH(SPIBusInterface& bus,
-                    GpioPin chip_select, asm330lhh_params params) : 
-                spi_slave(bus, chip_select, {}), params(params) 
+                    GpioPin chip_select, asm330lhh::config config) : 
+                spi_slave(bus, chip_select, {}), config(config) 
         {
             spi_slave.config.clock_div = SPIClockDivider::DIV64;  // used to set the spi baud rate (maximum is 10 Mhz)
         }
@@ -77,15 +82,15 @@ class ASM330LHH : public virtual Sensor
         * 
         * @param bus            the SPI bus
         * @param chip_select    CS pin
-        * @param config         SPI bus configuration
-        * @param params         Sensor parameters (bdu, accelerometer and gyroscope odr and sensitivity)
+        * @param spi_config     SPI bus configuration
+        * @param config         Sensor parameters (bdu, accelerometer and gyroscope odr and sensitivity)
         * 
         **/
         ASM330LHH(SPIBusInterface& bus,
                     GpioPin chip_select,
-                    SPIBusConfig config,
-                    asm330lhh_params params) :
-                spi_slave(bus, chip_select, config), params(params) {}
+                    SPIBusConfig spi_config,
+                    asm330lhh::config config) :
+                spi_slave(bus, chip_select, spi_config), config(config) {}
 
         ~ASM330LHH() {}
 
@@ -99,7 +104,7 @@ class ASM330LHH : public virtual Sensor
 
             miosix::Thread::sleep(100);
 
-            assert(params.temperature_divider > 0);
+            assert(config.temperature_divider > 0);
 
             setup_device();
 
@@ -109,9 +114,9 @@ class ASM330LHH : public virtual Sensor
                 return false;
             }
 
-            setup_accel(params.accel_odr, params.accel_odr);
-            setup_gyro(params.gyro_odr, params.gyro_fs);
-            set_bdu(params.bdu);
+            setup_accel(config.accel_odr, config.accel_odr);
+            setup_gyro(config.gyro_odr, config.gyro_fs);
+            set_bdu(config.bdu);
 
             return true; 
         }
@@ -156,7 +161,7 @@ class ASM330LHH : public virtual Sensor
             new_data.accel_x = ((float) val)*accel_sensitivity;
 
             // Read temperature data or put 0 as default value according to temperature_divider
-            if (sample == params.temperature_divider){
+            if (sample == config.temperature_divider){
                 spi.read(OUT_TEMP_L_REG, (uint8_t*) buffer, 2);
                 val = buffer[0] | buffer[1]<<8;
                 new_data.temperature = val/TSen + Toff;
@@ -187,7 +192,7 @@ class ASM330LHH : public virtual Sensor
             float accel_after[3] = {0, 0, 0};
 
             // Set gyroscope sensitivity to +-250
-            setup_gyro(params.gyro_odr, _250DPS);
+            setup_gyro(config.gyro_odr, _250DPS);
 
             // Read selftest disabled data
             for(int i=0; i<samples; i++){
@@ -260,7 +265,7 @@ class ASM330LHH : public virtual Sensor
             }
 
             // Reset gyroscope sensitivity
-            setup_gyro(params.gyro_odr, params.gyro_fs);
+            setup_gyro(config.gyro_odr, config.gyro_fs);
 
             // Check deltas
             bool selftest_ok = true;
@@ -490,7 +495,7 @@ class ASM330LHH : public virtual Sensor
         };
 
     private:
-        const asm330lhh_params params;
+        const asm330lhh::config config;
         SPISlave spi_slave;
         asm330lhh_data data;
         float gyro_sensityvity;

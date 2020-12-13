@@ -33,7 +33,7 @@ int main(){
 
     cs.high();
 
-    asm330lhh_params params;
+    asm330lhh::config params;
 
     params.accel_odr = ASM330LHH::ODR::_26HZ;
     params.gyro_odr = ASM330LHH::ODR::_26HZ;
