@@ -40,6 +40,7 @@ int main(){
     params.bdu = ASM330LHH::BDU::UPDATE_AFTER_READ;
     params.accel_fs = ASM330LHH::ACCEL_FS::_8G;
     params.gyro_fs = ASM330LHH::GYRO_FS::_250DPS;
+    params.temperature_divider = 256;
 
     ASM330LHH sensor(bus, cs, params);
     bool success = sensor.init();

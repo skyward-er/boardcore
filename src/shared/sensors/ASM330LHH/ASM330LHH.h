@@ -40,6 +40,8 @@ using miosix::TICK_FREQ;
 *           accelerometer odr (from power down up do 6667hz)
 *           accelerometer full scale (from +-2g up to +-16g)
 *           bdu (continuous update or update after read)
+*           temperatuse sampling divider (after how many calls of method "onSimpleUpdate"
+*               temperature must be sampled)
 */
 struct asm330lhh_params
 {
@@ -48,6 +50,7 @@ struct asm330lhh_params
     uint8_t accel_odr = 0;
     uint8_t accel_fs = 0;
     uint8_t bdu = 0;
+    uint16_t temperature_divider = 100;
 };
 
 class ASM330LHH : public virtual Sensor
@@ -96,6 +99,8 @@ class ASM330LHH : public virtual Sensor
 
             miosix::Thread::sleep(100);
 
+            assert(params.temperature_divider > 0);
+
             setup_device();
 
             if(!check_whoami()){
@@ -122,32 +127,43 @@ class ASM330LHH : public virtual Sensor
          */
         bool onSimpleUpdate() override
         {
-            uint16_t buffer[14];
+            // Increase sampling counter
+            sample++;
+
+            uint16_t buffer[12];
             asm330lhh_data new_data;
 
+            // Read all accelerometer and gyroscope output registers
             SPITransaction spi(spi_slave);
-            spi.read(OUT_TEMP_L_REG, (uint8_t*) buffer, 14);
+            spi.read(OUTX_L_G_REG, (uint8_t*) buffer, 12);
 
             int16_t val = buffer[0] | buffer[1]<<8;
-            new_data.temperature = ((float) val)/TSen + Toff;
-
-            val = buffer[2] | buffer[3]<<8;
             new_data.gyro_x = ((float) val)*gyro_sensityvity;
 
-            val = buffer[4] | buffer[5]<<8;
+            val = buffer[2] | buffer[3]<<8;
             new_data.gyro_y = ((float) val)*gyro_sensityvity;
 
-            val = buffer[6] | buffer[7]<<8;
+            val = buffer[4] | buffer[5]<<8;
             new_data.gyro_z = ((float) val)*gyro_sensityvity;
 
-            val = buffer[8] | buffer[9]<<8;
+            val = buffer[6] | buffer[7]<<8;
             new_data.accel_x = ((float) val)*accel_sensitivity;
 
-            val = buffer[10] | buffer[11]<<8;
+            val = buffer[8] | buffer[9]<<8;
             new_data.accel_y = ((float) val)*accel_sensitivity;
 
-            val = buffer[12] | buffer[13]<<8;
+            val = buffer[10] | buffer[11]<<8;
             new_data.accel_x = ((float) val)*accel_sensitivity;
+
+            // Read temperature data or put 0 as default value according to temperature_divider
+            if (sample == params.temperature_divider){
+                spi.read(OUT_TEMP_L_REG, (uint8_t*) buffer, 2);
+                val = buffer[0] | buffer[1]<<8;
+                new_data.temperature = val/TSen + Toff;
+                sample = 0;
+            } else {
+                new_data.temperature = 0;
+            }
 
             data = new_data;
             return true;
@@ -176,6 +192,7 @@ class ASM330LHH : public virtual Sensor
             // Read selftest disabled data
             for(int i=0; i<samples; i++){
                 miosix::Thread::sleep(10);
+                sample = 0;                     // Be sure to never read temperature data
                 onSimpleUpdate();
                 asm330lhh_data data = getData();
 
@@ -212,6 +229,7 @@ class ASM330LHH : public virtual Sensor
             // Read selftest enabled data
             for(int i=0; i<samples; i++){
                 miosix::Thread::sleep(10);
+                sample = 0;                     // Be sure to never read temperature data
                 onSimpleUpdate();
                 asm330lhh_data data = getData();
 
@@ -477,5 +495,6 @@ class ASM330LHH : public virtual Sensor
         asm330lhh_data data;
         float gyro_sensityvity;
         float accel_sensitivity;
+        uint16_t sample = 0;
 
 };
