@@ -20,52 +20,62 @@
  * THE SOFTWARE.
  */
 
-#include <miosix.h>
 #include <drivers/spi/SPIDriver.h>
+#include <miosix.h>
+
 #include "sensors/LIS3DSH/LIS3DSH.h"
-#include "sensors/LIS3DSH/LIS3DSHData.h"
 
 using namespace std;
 using namespace miosix;
 
 SPIBus bus(SPI1);
+
+GpioPin spi_sck(GPIOA_BASE, 5);
+GpioPin spi_miso(GPIOA_BASE, 6);
+GpioPin spi_mosi(GPIOA_BASE, 7);
 GpioPin cs(GPIOE_BASE, 3);
 
-int main() {
-
+int main()
+{
     {
-        FastInterruptDisableLock dLock;
+        miosix::FastInterruptDisableLock dLock;
 
-        RCC->APB2ENR |= RCC_APB2ENR_SPI1EN; // SPI1 ENABLE
+        RCC->APB2ENR |= RCC_APB2ENR_SPI1EN;  // Enable SPI1 bus
 
-        cs.mode(Mode::OUTPUT);
+        spi_sck.mode(miosix::Mode::ALTERNATE);
+        spi_sck.alternateFunction(5);
+        spi_miso.mode(miosix::Mode::ALTERNATE);
+        spi_miso.alternateFunction(5);
+        spi_mosi.mode(miosix::Mode::ALTERNATE);
+        spi_mosi.alternateFunction(5);
+
+        cs.mode(miosix::Mode::OUTPUT);
     }
     cs.high();
-    
-    LIS3DSH sensor(
-            bus,
-            cs,
-            sensor.ODR_100_HZ, 
-            sensor.UPDATE_AFTER_READ_MODE, 
-            sensor.FULL_SCALE_4G
-    );
 
-    Vec3 acc;
-    int8_t temp;
+    LIS3DSH sensor(bus, cs, sensor.ODR_100_HZ, sensor.UPDATE_AFTER_READ_MODE,
+                   sensor.FULL_SCALE_4G);
 
-    // sensor not initialized, should return false
-    if (sensor.onSimpleUpdate() || sensor.updateTemperature()) {
+    LIS3DSHData data;
+
+    // sensor not initialized, should give the error
+    sensor.sample();
+    if (sensor.getLastError() != SensorErrors::ERR_NOT_INIT)
+    {
         printf("\nTest failed: sensor not initialized \n");
         return -1;
     }
 
     bool initialized = false;
     // initialize imu
-    if (!sensor.init()) {
-        if (sensor.getLastError() == sensor.ERR_NOT_ME) {
+    if (!sensor.init())
+    {
+        if (sensor.getLastError() == SensorErrors::ERR_INVALID_WHOAMI)
+        {
             printf("Test failed: invalid WHO_AM_I value, init failed \n");
         }
-        else {
+        else
+        {
             printf("Test failed: init failed \n");
         }
         return -1;
@@ -73,35 +83,42 @@ int main() {
     initialized = true;
 
     // check if the sensor is properly working
-    if (!sensor.selfTest()) {
+    if (!sensor.selfTest())
+    {
         printf("\nTest failed: self-test failed \n");
         return -1;
     }
 
     // if sensor already inizialized, init() should return false
-    if (initialized) {
-        if (sensor.init()) {
+    if (initialized)
+    {
+        if (sensor.init())
+        {
             printf("\nTest failed: sensor is already initialized \n");
             return -1;
         }
     }
 
     Thread::sleep(500);
-    
+
     // sample some data from the sensor
-    for(int i = 0; i < 5; i++) {
-        sensor.updateTemperature();
-        // sensor intitialized, should return true (false if no new data exist)
-        if (!sensor.onSimpleUpdate()) {
+    for (int i = 0; i < 5; i++)
+    {
+        // sensor intitialized, should return error if no new data exist
+        sensor.sample();
+
+        if (sensor.getLastError() == SensorErrors::ERR_NO_NEW_DATA)
+        {
             printf("\nWarning: no new data to be read \n");
         }
 
-        acc = *(sensor.accelDataPtr());
-        temp = (int8_t) *(sensor.tempDataPtr());
+        data = sensor.getData();
 
-        printf("\nAccel: x: %.2f | y: %.2f | z: %.2f \n", acc.getX(), acc.getY(), acc.getZ());
-        printf("Temp: %d C \n", temp);
-        
+        printf("\nTimestamp: %llu \n", data.timestamp);
+        printf("Accel: x: %f | y: %f | z: %f \n", data.accel_x, data.accel_y,
+               data.accel_z);
+        printf("Temp: %.2f C \n", data.temperature);
+
         Thread::sleep(200);
     }
 

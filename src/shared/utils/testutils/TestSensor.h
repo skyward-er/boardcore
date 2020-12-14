@@ -1,5 +1,5 @@
-/* Copyright (c) 2015-2018 Skyward Experimental Rocketry
- * Authors: Luca Erbetta
+/* Copyright (c) 2015-2020 Skyward Experimental Rocketry
+ * Authors: Luca Erbetta, Luca Conterio
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -19,44 +19,40 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
-#ifndef SRC_SHARED_BOARDS_HOMEONE_SENSORMANAGER_TESTSENSOR_H
-#define SRC_SHARED_BOARDS_HOMEONE_SENSORMANAGER_TESTSENSOR_H
+
+#pragma once
 
 #include <cmath>
+
 #include "Common.h"
 #include "sensors/Sensor.h"
 
 using miosix::getTick;
 using miosix::TICK_FREQ;
 
-class TestSensor : public virtual Sensor
+struct TestData : public TimestampData
 {
-public:
-    TestSensor() : mLastSample(0) {}
-    ~TestSensor() {}
+    float value;
 
-    bool init() override
-    { 
-        return true; 
-    }
+    TestData(float v) : TimestampData{getTick()}, value(v) {}
 
-    bool onSimpleUpdate() override
-    {
-        // printf("onSimpleUpdate\n");
-        mLastSample = 10 * sin(PI * static_cast<float>(getTick()) /
-                               static_cast<float>(TICK_FREQ));
-        return true;
-    }
-
-    bool selfTest() override 
-    { 
-        return true; 
-    }
-
-    float* testDataPtr() { return &mLastSample; }
-
-private:
-    float mLastSample;
+    TestData() : TimestampData{getTick()}, value(0.0) {}
 };
 
-#endif /* SRC_SHARED_BOARDS_HOMEONE_SENSORMANAGER_TESTSENSOR_H */
+class TestSensor : public Sensor<TestData>
+{
+public:
+    TestSensor() {}
+    ~TestSensor() {}
+
+    bool init() override { return true; }
+
+    bool selfTest() override { return true; }
+
+    TestData sampleImpl() override
+    {
+        TRACE("[TestSensor] sampleImpl() \n");
+        return TestData(10 * sin(PI * static_cast<float>(getTick()) /
+                                    static_cast<float>(TICK_FREQ)));
+    }
+};
