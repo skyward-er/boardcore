@@ -22,37 +22,27 @@
 
 #pragma once
 
-#include <scheduler/TaskScheduler.h>
-#include <sensors/SensorSampler.h>
+#include "SensorInfo.h"
+#include "SensorSampler.h"
+#include "scheduler/TaskScheduler.h"
 
-using std::vector;
+using namespace std;
 
 /**
- * The SensorManager class manages all the sensors connected to the Board.
+ * @brief The SensorManager class manages all the sensors connected to the
+ * Board.
  *
- * Sensors are grouped by "type" (Simple or DMA) and "sample frequency" and
- * grouped in various SensorSampler objects. These objects are then added to the
- * scheduler that manages the timings for the sampling.
- * After a SensorSampler has finished sampling its sensors, it will call a
- * callback, where these samples can be processed and dispatched.
+ * Sensors are grouped in various SensorSampler objects by "type" (if they use
+ * DMA or not) and "sampling frequency". These SensorSampler objects are then
+ * added to the scheduler that manages the timings for the sampling.
  */
 class SensorManager
 {
 public:
-    
-    typedef std::function<void()> function_t;
+    using function_t  = function<void()>;
+    using SensorMap_t = map<AbstractSensor*, SensorInfo>;
 
-    /**
-     * @brief Structure used to keep track of already existing
-     *        SimplerSensorSampler, their frequency and the function 
-     *        to be passed to the scheduler.
-     */
-    struct Sampler_t {
-        SensorSampler* sampler;   // the sensor sampler
-        function_t sampler_update_function;  // function periodically called by the scheduler
-    };
-
-    SensorManager();
+    SensorManager(const SensorMap_t& sensors_map);
 
     ~SensorManager();
 
@@ -67,61 +57,69 @@ public:
     void stop();
 
     /**
-     * @brief Add a sensor to be sampled with a SensorSampler 
-     *        and the corresponding callback to be called at the given frequency.
-     * 
-     * @param sensor        the sensor to be added
-     * @param freq          the frequency at which the sensor must be sampled
-     * @param callback      the function to be called after the sensor has been sampled
-     * @param sampler_type  the type of the sampler, SIMPLE_SAMPLER or DMA_SAMPLER
-     * @return boolen value indicating whether the operation complete successfully or not
+     * @brief Enable sampling for the passed sensor.
+     *
+     * @param sensor    the sensor to be enabled
      */
-    bool addSensor(Sensor* sensor, uint32_t freq, 
-                                        function_t callback, 
-                                        SamplerType sampler_type=SIMPLE_SAMPLER);
+    void enableSensor(AbstractSensor* sensor);
 
     /**
-     * @brief Add a callback to be called at the given frequency.
-     * 
-     * @param freq      the frequency at which the function must be called
-     * @param callback  the function to be called periodically
-     * @param id        the identifier for the task in the scheduler
+     * @brief Disable sampling for the passed sensor.
+     *
+     * @param sensor    the sensor to be disabled
      */
-    void addCallback(uint32_t freq, function_t callback, uint8_t id);
+    void disableSensor(AbstractSensor* sensor);
 
     /**
-     * @return refernece to the samplers vector
+     * @return the information related to the given sensor
      */
-    vector<Sampler_t>& getSamplers();
+    const SensorInfo& getSensorInfo(AbstractSensor* sensor);
 
     /**
-     * @return  reference to the sensors sampling task scheduler
+     * @return vector of statistics, one for each sampler, taken from the
+     * scheduler
      */
-    TaskScheduler& getScheduler();
-
-    //SensorManagerStatus getStatus() { return status; }
+    const vector<TaskStatResult> getSamplersStats();
 
 private:
     /**
-     * @brief Initialize a sensor and run the self-test.
-     * 
-     * @param sensor  the sensor to be initialized
+     * @brief Initializes samplers vector and sensors_map with the given sensors
+     * map.
+     *
+     * @param sensors_map    map containing sensors and their respective
+     * information for the sampling
      */
-    bool initSensor(Sensor* sensor);
+    bool init(const SensorMap_t& sensors_map);
 
     /**
-     * @brief Add all the SensorSamplers to the scheduler and begins sampling.
+     * @brief Initialize a sensor and run its self-test.
+     *
+     * @param sensor  the sensor to be initialized
+     */
+    bool initSensor(AbstractSensor* sensor);
+
+    /**
+     * @brief Initialize scheduler by adding all the SensorSamplers tasks.
      */
     void initScheduler();
 
+    /**
+     * @brief Create a sampler object according to the fact that it needs to use
+     * DMA or not.
+     *
+     * @param is_dma    indicate if the sampler manages sensors that use DMA
+     * @param freq      sampling frequency of the new sampler
+     * @param id        new sampler's identifier
+     *
+     * @return pointer to the newly created sampler
+     */
+    SensorSampler* createSampler(uint32_t id, uint32_t freq, bool is_dma);
 
-    TaskScheduler scheduler;
+    TaskScheduler scheduler; /**< scheduler to update the samplers at the
+                                correct frequency */
 
-    // vectors containing samplers
-    vector<Sampler_t> samplers;
+    vector<SensorSampler*> samplers; /**< vector of all the samplers (unique) */
 
-    //SensorManagerStatus status;
-    //SensorStatus sensor_status;
-
-    uint32_t current_id = 0;  // incrementally assign IDs to scheduler tasks
+    map<AbstractSensor*, SensorSampler*>
+        samplers_map; /**< map each sensor to the corresponding sampler */
 };

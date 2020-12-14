@@ -1,7 +1,7 @@
 /* Sensors Base Classes
  *
- * Copyright (c) 2016 Skyward Experimental Rocketry
- * Authors: Alain Carlucci
+ * Copyright (c) 2016-2020 Skyward Experimental Rocketry
+ * Authors: Alain Carlucci, Luca Conterio
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -22,153 +22,95 @@
  * THE SOFTWARE.
  */
 
-#ifndef SENSORS_H
-#define SENSORS_H
-#include <Common.h>
-#include <drivers/spi/SensorSpi.h>
-#include <math/Quaternion.h>
-#include <math/Vec3.h>
+#pragma once
 
-/** Sensors class diagram
- *               ________
- *              | Sensor |                      <- Sensor parent
- *      _______/ -------- \________
- * ____/_______   _|__________   __\_______
- *| GyroSensor | | ...Sensor  | | AnySensor|    <- Virtual childs
- * ------------   ------------   ----------
- *    |     _______/       \       /
- *  __|____/_             __\_____/_
- * | ABC1234 |           | LOL12345 |           <- You write these
- *  ---------             ----------
+#include <type_traits>
+
+#include "SensorData.h"
+
+/**
+ * @brief Check that a given type has a method called `getData()` and that the
+ * return type of this method is a subclass of the expected data type.
  */
+template <class T, class ExpectedDataType>
+struct checkIfProduces
+    : std::is_base_of<ExpectedDataType, decltype(std::declval<T>().getData())>
+{
+};
 
-class Sensor
+/**
+ * @brief Generic error codes that a sensor can generate.
+ *
+ * Sensors can extend this enum by defining a new set of errors,
+ * starting from END_OF_BASE_ERRORS.
+ */
+enum SensorErrors : uint8_t
+{
+    ERR_INVALID_WHOAMI = 0,
+    ERR_INIT_FAIL      = 1,
+    ERR_NOT_INIT       = 2,  // if some method called before init()
+    ERR_ALREADY_INIT   = 3,  // if init() called multiple times
+    ERR_SELF_TEST_FAIL = 4,
+    ERR_BUS_FAULT      = 5,
+    ERR_NO_NEW_DATA    = 6,  // no new data available from the sensor
+    END_OF_BASE_ERRORS = 7   // used to extend this enum
+};
+
+/**
+ * @brief Base abstract class for sensor drivers.
+ */
+class AbstractSensor
 {
 public:
-    /** Here the code to initialize this sensor */
-    virtual bool init() { return true; };
+    /**
+     * @brief Initialize the sensor.
+     * @return boolean value indicating whether the operation succeded or not
+     */
+    virtual bool init() = 0;
 
-    /** Self test code
-     * It should return a boolean:
-     *    True  = sensor ok
-     *    False = sensor ko, write into last_error the error code.
-     * Anyone should be able to call getLastError() and read the error.
+    /**
+     * @brief Check if the sensor is working.
+     * @return boolean indicating whether the sensor is correctly working or not
      */
     virtual bool selfTest() = 0;
 
-    virtual std::vector<SPIRequest> buildDMARequest()
-    {
-        // printf("** SENSOR::buildDMARequest **\n");
-        return std::vector<SPIRequest>();
-    }
+    /**
+     * @brief Sample the sensor.
+     */
+    virtual void sample() = 0;
+};
 
-    virtual void onDMAUpdate(const SPIRequest& req)
-    {
-        (void)req;
-        // printf("** SENSOR::onDMAUpdate **\n");
-    }
+/**
+ * @brief Base sensor class with has to be extended by any sensor driver.
+ *
+ * A sensor driver can define a custom data structure extending TimestampData
+ * and any other combination of base sensors data structures.
+ */
+template <typename T>
+class Sensor : public virtual AbstractSensor
+{
+    using Data = T; /**< Which data is being produced by this sensor */
+
+protected:
+    Data data;
+    SensorErrors last_error;
 
     /**
-     * This method is called once every N msec, read new values and
-     * store them in local variables.
-     *
-     * You should check getLastError() if this function returns false.
+     * @brief Read a data sample from the sensor.
+     * @return sensor data sample
      */
-    virtual bool onSimpleUpdate() = 0;
+    virtual Data sampleImpl() = 0;
 
-    /** Return last error code */
-    uint8_t getLastError() const { return last_error; }
-
-    /** Errors (for each subsensor) */
-    // clang-format off
-        enum eErrors
-        {
-            ERR_NOT_ME              = 0x01,
-            ERR_RESET_TIMEOUT       = 0x02,
-            ERR_BUS_FAULT           = 0x03, // A bus op has encountered an error
-            ERR_X_SELFTEST_FAIL     = 0x04,
-            ERR_Y_SELFTEST_FAIL     = 0x05,
-            ERR_Z_SELFTEST_FAIL     = 0x06,
-            ERR_ACCEL_SELFTEST      = 0x07,
-            ERR_GYRO_SELFTEST       = 0x08,
-            ERR_CANT_TALK_TO_CHILD  = 0x09, // MPU9250 can't talk to AK8963
-        };
-    // clang-format on
-
-protected:
-    uint8_t last_error = 0;
-};
-
-class GyroSensor : public virtual Sensor
-{
 public:
-    const Vec3* gyroDataPtr() const { return &mLastGyro; }
+    void sample() override { data = sampleImpl(); }
 
-protected:
-    Vec3 mLastGyro;
+    /**
+     * @return last available sample from this sensor
+     */
+    virtual Data getData() { return data; }
+
+    /**
+     * @return last error recorded by the sensor driver
+     */
+    SensorErrors getLastError() const { return last_error; }
 };
-
-class AccelSensor : public virtual Sensor
-{
-public:
-    const Vec3* accelDataPtr() const { return &mLastAccel; }
-
-protected:
-    Vec3 mLastAccel;
-};
-
-class CompassSensor : public virtual Sensor
-{
-public:
-    const Vec3* compassDataPtr() const { return &mLastCompass; }
-
-protected:
-    Vec3 mLastCompass;
-};
-
-class TemperatureSensor : public virtual Sensor
-{
-public:
-    const float* tempDataPtr() const { return &mLastTemp; }
-
-protected:
-    float mLastTemp;
-};
-
-class HumiditySensor : public virtual Sensor
-{
-public:
-    const float* humidityDataPtr() const { return &mLastHumidity; }
-
-protected:
-    float mLastHumidity;
-};
-
-class PressureSensor : public virtual Sensor
-{
-public:
-    const float* pressureDataPtr() const { return &mLastPressure; }
-
-protected:
-    float mLastPressure;
-};
-
-class AltitudeSensor : public virtual Sensor
-{
-public:
-    const float* altitudeDataPtr() const { return &mLastAltitude; }
-
-protected:
-    float mLastAltitude;
-};
-
-class DebugIntSensor : public virtual Sensor
-{
-public:
-    const int* debugIntPtr() const { return &mDebugInt; }
-
-protected:
-    int mDebugInt;
-};
-
-#endif /* ifndef SENSORS_H */

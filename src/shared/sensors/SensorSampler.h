@@ -19,122 +19,122 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
-#ifndef SENSOR_SAMPLING_H
-#define SENSOR_SAMPLING_H
+
+#pragma once
 
 #include <Common.h>
+
 #include "Sensor.h"
+#include "SensorInfo.h"
 
 using namespace std;
 
 /**
- * Enum to distinguish the sensor sampler type,
- * if it a simple one or if it uses DMA.
+ * @brief Virtual sensor sampler class.
+ *
+ * When requested, a SensorSampler samples all the enabled sensors it manages.
+ * After sampling a sensor, the SensorSampler calls the callback associated
+ * with that sensor, where these samples can be processed.
  */
-enum SamplerType {
-    SIMPLE_SAMPLER = 0,
-    DMA_SAMPLER    = 1
-};
-
-
-/**
- * Virtual sensor sampler class.
- */
-class SensorSampler 
+class SensorSampler
 {
-    public: 
+public:
+    /**
+     * @param id      sampler identifier
+     * @param freq    frequency at which the sampler performs sensors update
+     * @param is_dma  indicate if the sampler manages DMA sensors or not
+     */
+    SensorSampler(uint32_t id, uint32_t freq, bool is_dma);
 
-        typedef function<void()> function_t;
+    virtual ~SensorSampler();
 
-        /**
-         * @brief Constructor.
-         * 
-         * @param type  sampler type, SIMPLER_SAMPLER or DMA_SAMPLER
-         * @param freq  frequency at which the sampler performs sensors update
-         */
-        SensorSampler(SamplerType type, uint32_t freq, uint32_t id);
+    /**
+     * @brief Add a sensor to the sensors map.
+     *
+     * @param sensor  the sensor to be added
+     */
+    virtual void addSensor(AbstractSensor* sensor, SensorInfo sensor_info) = 0;
 
-        /**
-         * @brief Add a sensor to the sensors vector.
-         * 
-         * @param sensor  the sensor to be added
-         */
-        virtual void addSensor(Sensor* sensor, function_t callback) = 0;
+    /**
+     * @brief Enabled or disable a sensor.
+     *
+     * @param sensor    the sensor to be toggled (enabled/disabled)
+     * @param is_en     bool value to be set in the sensor info to indicate if
+     *                  the sensor will be enabled or disabled
+     */
+    void toggleSensor(AbstractSensor* sensor, bool is_en);
 
-        /**
-         * @brief For each sensor, sample it and call the corresponding callback.
-         */
-        void sampleAndCallback();
+    /**
+     * @brief For each sensor, sample it and call the corresponding callback.
+     */
+    void sampleAndCallback();
 
-        /**
-         * @return  the sampler's type
-         */
-        SamplerType getType();
+    /**
+     * @return  the sampler's type
+     */
+    bool isDMA();
 
-        /**
-         * @return  the sampler's ID
-         */
-        uint32_t getId();
+    /**
+     * @return  the sampler's ID
+     */
+    uint32_t getID();
 
-        /**
-         * @return  the sampler's activation frequency
-         */
-        uint32_t getFrequency();
+    /**
+     * @return  the sampler's activation frequency
+     */
+    uint32_t getFrequency();
 
-        /**
-         * @return  the number of sensors assigned to this sampler
-         */
-        uint32_t getNumSensors();
-    
-    private:
-        /**
-         * @brief Perform the update of all the sensors in the sampler.
-         */
-        virtual void sampleSensor(Sensor* s) = 0;
+    /**
+     * @return  the number of sensors assigned to this sampler
+     */
+    uint32_t getNumSensors();
 
-        SamplerType type;  // the sampler's type
-        uint32_t freq; // frequency at which the sampler performs sensors update
-        uint32_t id;   // id used for scheduler task
+    /**
+     * @return  the information related to the given sensor
+     */
+    const SensorInfo& getSensorInfo(AbstractSensor* sensor);
 
-    protected:
-        map<Sensor*, function_t> sensors_map;  // for each sensor a callback
+private:
+    /**
+     * @brief Perform the update of all the sensors in the sampler.
+     */
+    virtual void sampleSensor(AbstractSensor* s) = 0;
 
+    uint32_t id;   /**< sampler id used in the task scheduler */
+    uint32_t freq; /**< sampler update/activation frequency */
+    bool is_dma;   /**< the sampler's type (if it uses DMA or not */
+
+protected:
+    map<AbstractSensor*, SensorInfo> sensors_map;
 };
-
 
 /**
  * @brief Sampler for simple sensors, those that are simply
- *        sampled by calling the onSimpleUpdate() method.
+ *        sampled by calling the sample() method.
  */
-class SimpleSensorSampler : public SensorSampler
-    {
-    public:
-        SimpleSensorSampler(uint32_t freq, uint32_t id);
+class SimpleSensorSampler : public virtual SensorSampler
+{
+public:
+    SimpleSensorSampler(uint32_t id, uint32_t freq);
 
-        ~SimpleSensorSampler();
+    ~SimpleSensorSampler();
 
-        void addSensor(Sensor* sensor, function_t sensor_callback) override;
+    void addSensor(AbstractSensor* sensor, SensorInfo sensor_info) override;
 
-        void sampleSensor(Sensor* s) override;
+    void sampleSensor(AbstractSensor* s) override;
 };
-
 
 /**
- * @brief Sampler for sensors that DMA for updates.
+ * @brief Sampler for sensors that use DMA for updates.
  */
-class DMASensorSampler : public SensorSampler
+class DMASensorSampler : public virtual SensorSampler
 {
-    public:
-        DMASensorSampler(uint32_t freq, uint32_t id);
+public:
+    DMASensorSampler(uint32_t id, uint32_t freq);
 
-        ~DMASensorSampler();
+    ~DMASensorSampler();
 
-        void addSensor(Sensor* sensor, function_t sensor_callback) override;
+    void addSensor(AbstractSensor* sensor, SensorInfo sensor_info) override;
 
-        void sampleSensor(Sensor* s) override;
-        
-    private: 
-        map<Sensor*, vector<SPIRequest>> requests_map;  // SPI requests needed to perform DMA updates
+    void sampleSensor(AbstractSensor* s) override;
 };
-
-#endif /* ifndef SENSOR_SAMPLING_H */
