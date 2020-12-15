@@ -21,10 +21,39 @@
  * THE SOFTWARE.
  */
 
+/**
+ * Reads data at the highest possible rate from the sensor (~760 Hz) using the
+ * FIFO on the sensor as a buffer to avoid polling too frequently.
+ * We perform polling to maintain compatibility with the SensorManager and
+ * simplify sampling multiple sensors on the same thread.
+ *
+ * We read the FIFO at an interval such that it fills up to about 25 samples, to
+ * leave us a bit of wiggle room (fifo size is 32 samples). A watermark
+ * interrupt is set at about half the samples we plan to read (12 samples), in
+ * order to estimate the timestamp of the samples as precisely as possible. The
+ * watermark is intentionally set in the "middle" of the fifo as to minimize
+ * the possibility of desyncronizations between the sensor and the polling loop:
+ * If the watermark is set too close to the end of the fifo, the watermark
+ * interrupt may arrive *after* we start emptying the fifo, causing the driver
+ * to use an incorrect timestamp for the data. A similar case happens if the
+ * timestamp is too close to the beginning of the FIFO.
+ *
+ * The timestamp for each sample in the fifo is calculated as follows (inside
+ * the sensor driver): Knowing the timestamp of the 12th sample (thanks to the
+ * watermark interrup) we can estimate the timestamp of every other (previous or
+ * subsequent) sample in the FIFO, by doing
+ *
+ * timestamp(i) = timestamp(12) + SAMPLE_PERIOD*(i-12)
+ *
+ * After we have collected enough samples, dump them on the serial in CSV format
+ * togheter with other useful data.
+ */
+
 #include <array>
 
 #include "diagnostic/CpuMeter.h"
 #include "drivers/HardwareTimer.h"
+#include "drivers/interrupt/external_interrupts.h"
 #include "drivers/spi/SPIDriver.h"
 #include "sensors/L3GD20.h"
 
@@ -34,20 +63,21 @@ using std::array;
 typedef Gpio<GPIOF_BASE, 7> GpioSck;
 typedef Gpio<GPIOF_BASE, 8> GpioMiso;
 typedef Gpio<GPIOF_BASE, 9> GpioMosi;
-
 typedef Gpio<GPIOA_BASE, 2> GpioINT2;
 
+// L3GD20 SPI
+SPIBus bus(SPI5);
+GpioPin cs(GPIOC_BASE, 1);
+
+L3GD20* gyro = nullptr;
+
+// Send the watermark interrupt when the FIFO contains FIFO_WATERMARK samples.
 static constexpr unsigned int FIFO_WATERMARK = 12;
 
 // Expected frequency from the datasheet is 760 Hz, but due to clock
 // misalignment / temperature errors and other factors, the observed clock (and
 // output data rate) is the following:
 static constexpr float SAMPLE_FREQUENCY = 782.3f;
-static constexpr int NUM_SAMPLES        = SAMPLE_FREQUENCY * 120;
-
-// FD
-void enableInterrupt();
-void configure();
 
 struct GyroSample
 {
@@ -59,7 +89,9 @@ struct GyroSample
     uint64_t update;
 };
 
-// GyroSample data[NUM_SAMPLES];
+// How many samples to collect
+static constexpr int NUM_SAMPLES = SAMPLE_FREQUENCY * 20;
+
 GyroSample data[NUM_SAMPLES];
 int data_counter = 0;
 
@@ -73,50 +105,75 @@ volatile uint32_t last_watermark_tick;  // Stores the high-res tick of the last
 volatile uint32_t watermark_delta;  // Tick delta between the last 2 watermark
                                     // events
 
-// L3GD20 SPI
-SPIBus bus(SPI5);
-GpioPin cs(GPIOC_BASE, 1);
-
-L3GD20* gyro = nullptr;
-
-// Interrupt handlers
-void __attribute__((naked)) EXTI2_IRQHandler()
-{
-    saveContext();
-    asm volatile("bl _Z20EXTI2_IRQHandlerImplv");
-    restoreContext();
-}
-
+/**
+ * Interrupt handling routine. Called each time the fifo is filled with
+ * FIFO_WATERMARK samples. Stores the timestamp of the interrupt, representing
+ * the time the 12th sample was collected. From this, knowing the sample rate,
+ * we can obtain the timestamp of all previous and subsequent samples in the
+ * FIFO. Also calculates the time delta from the previous watermark, then
+ * provides the timestamp (in microseconds) to the sensor.
+ */
 void __attribute__((used)) EXTI2_IRQHandlerImpl()
 {
     // Current high resolution tick
     uint32_t tick       = hrclock.tick();
     watermark_delta     = tick - last_watermark_tick;
     last_watermark_tick = tick;
-    // Pass tick microseconds to sensor
+
+    // Pass timestamp to the sensor
     if (gyro != nullptr)
     {
         gyro->IRQupdateTimestamp(hrclock.toIntMicroSeconds(tick));
     }
+}
 
-    EXTI->PR |= EXTI_PR_PR2;  // Reset pending register
+void configure()
+{
+    {
+        FastInterruptDisableLock dLock;
+
+        RCC->APB1ENR |= RCC_APB1ENR_TIM5EN;
+        RCC->APB2ENR |= RCC_APB2ENR_SPI5EN;
+
+        GpioSck::mode(Mode::ALTERNATE);
+        GpioMiso::mode(Mode::ALTERNATE);
+        GpioMosi::mode(Mode::ALTERNATE);
+
+        GpioSck::alternateFunction(5);
+        GpioMiso::alternateFunction(5);
+        GpioMosi::alternateFunction(5);
+
+        // Interrupt
+        GpioINT2::mode(Mode::INPUT_PULL_DOWN);
+
+        cs.mode(Mode::OUTPUT);
+    }
+
+    cs.high();
+
+    enableExternalInterrupt(GPIOA_BASE, 2, InterruptTrigger::RISING_EDGE);
+
+    // High resolution clock configuration
+    hrclock.setPrescaler(382);
+    hrclock.start();
 }
 
 int main()
 {
-    Thread::sleep(5000);
-
     configure();
 
     // Setup sensor
     gyro = new L3GD20(bus, cs, L3GD20::FullScaleRange::FS_250,
                       L3GD20::OutPutDataRate::ODR_760, 0x03);
 
+    // Enable fifo with the specified watermark before calling init()
     gyro->enableFifo(FIFO_WATERMARK);
 
-    // Init
+    // Init the gyro
     while (!gyro->init())
     {
+        printf("Gyro initialization failure!\n");
+        Thread::sleep(100);
     }
 
     // Sample NUM_SAMPLES data
@@ -128,12 +185,14 @@ int main()
         // Read the fifo
         uint32_t update = hrclock.tick();
         gyro->onSimpleUpdate();
+
+        // Measure how long we take to read the fifo
         update = hrclock.tick() - update;
 
         uint8_t level =
-            gyro->getLastFifoSize();  // Number of samples in the FIFO
+            gyro->getLastFifoSize();  // Current number of samples in the FIFO
 
-        // Get the FIFO
+        // Obtain the FIFO
         const array<L3GD20Data, 32>& fifo = gyro->getLastFifo();
 
         // Store everything in the data buffer
@@ -155,7 +214,10 @@ int main()
         }
         ++fifo_num;
 
-        // Wait until fifo has about 25 samples
+        // Wait until fifo has about 25 samples. The fifo size is 32 samples, so
+        // we have 7 samples (~ 9 ms) of wiggle room before we start losing
+        // data, in case we sleep a bit too much (may happen if an higher
+        // priority thread has a long task to perform)
         Thread::sleepUntil(last_tick + 25.5 * 1000 / SAMPLE_FREQUENCY);
     }
 
@@ -184,63 +246,4 @@ int main()
     {
         Thread::sleep(1000);
     }
-}
-
-void configure()
-{
-    {
-        FastInterruptDisableLock dLock;
-
-        RCC->APB1ENR |= RCC_APB1ENR_TIM5EN;
-        RCC->APB2ENR |= RCC_APB2ENR_SPI5EN;
-
-        GpioSck::mode(Mode::ALTERNATE);
-        GpioMiso::mode(Mode::ALTERNATE);
-        GpioMosi::mode(Mode::ALTERNATE);
-
-        GpioSck::alternateFunction(5);
-        GpioMiso::alternateFunction(5);
-        GpioMosi::alternateFunction(5);
-
-        // Interrupt
-        GpioINT2::mode(Mode::INPUT_PULL_DOWN);
-
-        cs.mode(Mode::OUTPUT);
-    }
-
-    cs.high();
-
-    enableInterrupt();
-
-    // High resolution clock configuration
-    hrclock.setPrescaler(382);
-    hrclock.start();
-}
-
-void enableInterrupt()
-{
-    {
-        FastInterruptDisableLock l;
-        RCC->APB2ENR |= RCC_APB2ENR_SYSCFGEN;
-    }
-    // Refer to the datasheet for a detailed description on the procedure and
-    // interrupt registers
-
-    // Clear the mask on the wanted line
-    EXTI->IMR |= EXTI_IMR_MR2;
-
-    // Trigger the interrupt on a falling edge
-    // EXTI->FTSR |= EXTI_FTSR_TR2;
-
-    // Trigger the interrupt on a rising edge
-    EXTI->RTSR |= EXTI_RTSR_TR2;
-
-    EXTI->PR |= EXTI_PR_PR2;  // Reset pending register
-
-    // Enable interrupt on PA2 in SYSCFG
-    SYSCFG->EXTICR[0] &= 0xFFFFF0FF;
-
-    // // Enable the interrput in the interrupt controller
-    NVIC_EnableIRQ(EXTI2_IRQn);
-    NVIC_SetPriority(EXTI2_IRQn, 15);
 }

@@ -1,13 +1,7 @@
 #include <assert.h>
-#include <stdint.h>
-#include <stdlib.h>
-#include <string.h>
-#include <time.h>
 
 #include <functional>
 #include <iostream>
-#include <map>
-#include <thread>
 #include <type_traits>
 
 #include "miosix.h"

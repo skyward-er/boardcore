@@ -70,6 +70,13 @@ public:
         z *= value;
     }
 
+    void operator/=(float value)
+    {
+        x /= value;
+        y /= value;
+        z /= value;
+    }
+
     void operator+=(const Vec3 &v)
     {
         x += v.getX();
@@ -84,7 +91,9 @@ public:
         z -= v.getZ();
     }
 
-    Vec3 operator*(float v) const { return Vec3(x * v, y * v, z * v); }
+    Vec3 operator*(float t) const { return Vec3(x * t, y * t, z * t); }
+
+    Vec3 operator/(float t) const { return Vec3(x / t, y / t, z / t); }
 
     Vec3 operator+(const Vec3 &v) const
     {
