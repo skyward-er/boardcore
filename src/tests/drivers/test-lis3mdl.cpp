@@ -81,12 +81,9 @@ int main()
     TRACE("Now printing some sensor data:\n");
     while (true)
     {
-        sensor.onSimpleUpdate();
-        const Vec3* vec3 = sensor.compassDataPtr();
-        const float* fl  = sensor.tempDataPtr();
-        TRACE("%f C | x: %f | y: %f | z %f\n", *fl, vec3->getX(), vec3->getY(),
-              vec3->getZ());
+        sensor.sample();
+        LIS3MDLData data = sensor.getData();
+        TRACE("%f C | x: %f | y: %f | z %f\n", data.temperature, data.mag_x, data.mag_y, data.mag_z);
         miosix::Thread::sleep(2000);
     }
 }
-
