@@ -32,6 +32,17 @@ using miosix::getTick;
 using miosix::TICK_FREQ;
  
 namespace asm330lhh{
+
+    struct fifo_config{
+        uint16_t watermark_len = 0;
+        uint8_t gyro_bdr = 0;
+        uint8_t accel_bdr = 0;
+        uint8_t fifo_mode = 0;
+        bool fifo_full_interr = false;
+        bool fifo_overrun_interr = false;
+        bool fifo_threshold_interr = false;
+    };
+
     /**
     * @brief IMU parameters:
     *           gyroscope odr (from power down up to 6667Hz)
@@ -50,9 +61,8 @@ namespace asm330lhh{
         uint8_t accel_fs = 0;
         uint8_t bdu = 0;
         uint16_t temperature_divider = 100;
+        asm330lhh::fifo_config fifo;
     };
-
-    struct fifo_config{};
 
 };
         
@@ -336,6 +346,12 @@ class ASM330LHH : public virtual Sensor
 
         }
 
+        /**
+         * @brief Writes accelerator related configurations into proper registers
+         * 
+         * @param odr       Accelerator ODR
+         * @param fs        Accelerator full scale value 
+         * */
         void setup_accel(uint8_t odr, uint8_t fs) {
             SPITransaction spi(spi_slave);
 
@@ -357,6 +373,12 @@ class ASM330LHH : public virtual Sensor
             spi.write(CTRL1_XL_REG, ctrl1_xl_value);
         }
 
+        /**
+         * @brief Writes gyroscope related configurations into proper registers
+         * 
+         * @param odr       Gyroscope ODR
+         * @param fs        Gyroscope full scale value 
+         * */
         void setup_gyro(uint8_t odr, uint8_t fs) {
             SPITransaction spi(spi_slave);
 
@@ -391,6 +413,11 @@ class ASM330LHH : public virtual Sensor
             spi.write(CTRL2_G_REG, ctrl2_g_value);
         }
 
+        /**
+         * @brief Writes BDU value into related register
+         * 
+         * @param bdu       BDU value
+         * */
         void set_bdu(uint8_t bdu){
             assert(bdu==1 || bdu==0);
 
@@ -402,6 +429,48 @@ class ASM330LHH : public virtual Sensor
             bdu = bdu << 6;
             ctrl3_c_value |= bdu;
             spi.write(CTRL3_C_REG, ctrl3_c_value);
+        }
+
+        void setup_fifo(asm330lhh::fifo_config cfg){
+
+            assert(cfg.accel_bdr>=0 && cfg.accel_bdr<=10);
+            assert(cfg.fifo_mode>=0 && cfg.fifo_mode<=7 && cfg.fifo_mode!=2 && cfg.fifo_mode!=5);
+            assert(cfg.gyro_bdr>=0 && cfg.accel_bdr<=11);
+            assert(cfg.watermark_len < 1<<8);
+
+            SPITransaction spi(spi_slave);
+
+            // Set watermark value
+            uint8_t watermark_07 = cfg.watermark_len & 0xff;
+            uint8_t watermark_8 = (cfg.watermark_len >> 8) & 0x1;
+            spi.write(FIFO_CTRL1_REG, watermark_07);
+            uint8_t fifo_ctrl2_val = spi.read(FIFO_CTRL2_REG);
+            fifo_ctrl2_val &= 0xfe;         // 0b11111110
+            fifo_ctrl2_val |= watermark_8;
+            spi.write(FIFO_CTRL2_REG, fifo_ctrl2_val);
+
+            // Set gyroscope and accelerometer BDR values
+            uint8_t fifo_ctrl3_val = cfg.gyro_bdr << 4 | cfg.accel_bdr;
+            spi.write(FIFO_CTRL3_REG, fifo_ctrl3_val);
+
+            // Set FIFO mode
+            uint8_t fifo_ctrl4_val = spi.read(FIFO_CTRL4_REG);
+            fifo_ctrl4_val &= 0x7;      //0b00000111
+            fifo_ctrl4_val |= (cfg.fifo_mode & 0x7);
+            spi.write(FIFO_CTRL4_REG, fifo_ctrl4_val);
+
+            // Enables FIFO interrupts on INT2 pin
+            uint8_t interr_flags = 0;
+            if(cfg.fifo_full_interr)
+                interr_flags |= 1<<5;
+            if(cfg.fifo_overrun_interr)
+                interr_flags |= 1<<4;
+            if(cfg.fifo_threshold_interr)
+                interr_flags |= 1<<3;
+            uint8_t int2_ctrl_val = spi.read(INT2_CTRL_REG);
+            int2_ctrl_val &= 0x38;          // 0b00111000
+            int2_ctrl_val |= interr_flags;
+            spi.write(INT2_CTRL_REG, int2_ctrl_val);
         }
 
     public:
@@ -429,10 +498,11 @@ class ASM330LHH : public virtual Sensor
         };
         
         /**
-         * @brief ODR possible values for both Accelerometer and Gyroscope
+         * @brief ODR and BDR values for both Accelerometer and Gyroscope
         */
         enum ODR {
             _POWER_DOWN = 0,
+            _6_5 = 11,              // Only for Gyroscope BDR
             _12_5HZ = 1,
             _26HZ = 2,
             _52HZ = 3,
@@ -446,11 +516,34 @@ class ASM330LHH : public virtual Sensor
         };
 
         /**
-         * BDU options: continuous update or update after read
+         * @brief   BDU options: continuous update or update after read
         */
         enum BDU {
             CONTINUOUS_UPDATE = 0,
             UPDATE_AFTER_READ = 1,
+        };
+        
+        /**
+         * @brief FIFO operating modes 
+         * */
+        enum FIFO_MODE {
+            BYPASS = 0,                 // FIFO disabled
+            FIFO = 1,                   // Stop collecting when FIFO is full
+            CONTINUOUS_TO_FIFO = 3,     // Continuous mode until trigger deasserted, then FIFO
+            BYPASS_TO_CONTINUOUS = 4,   // Bypass until trigger deasserted, then continuous
+            CONTINUOUS = 6,             // When FIFO is full new data override older ones
+            BYPASS_TO_FIFO = 7,         // Bypass until trigger deasserted, then FIFO
+        };
+
+        /**
+         * @brief FIFO data tag
+         * */
+        enum FIFO_TAG {
+            GYROSCOPE = 0x01,
+            ACCELEROMETER = 0x02,
+            TEMPERATURE = 0x03,
+            TIMESTAMP = 0x04,
+            CFG_CHANGE = 0x05,
         };
     
     // Constant values
@@ -471,6 +564,11 @@ class ASM330LHH : public virtual Sensor
          * @brief Registers' addresses definition.
          */
         enum REG {
+            FIFO_CTRL1_REG = 0x7,
+            FIFO_CTRL2_REG = 0x8,
+            FIFO_CTRL3_REG = 0x9,
+            FIFO_CTRL4_REG = 0xa,
+            INT2_CTRL_REG = 0xe,
             WHO_AM_I_REG = 0x0f,
             CTRL1_XL_REG = 0x10,
             CTRL2_G_REG = 0x11,
