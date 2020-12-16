@@ -46,14 +46,15 @@ struct checkIfProduces
  */
 enum SensorErrors : uint8_t
 {
-    ERR_INVALID_WHOAMI = 0,
-    ERR_INIT_FAIL      = 1,
-    ERR_NOT_INIT       = 2,  // if some method called before init()
-    ERR_ALREADY_INIT   = 3,  // if init() called multiple times
-    ERR_SELF_TEST_FAIL = 4,
-    ERR_BUS_FAULT      = 5,
-    ERR_NO_NEW_DATA    = 6,  // no new data available from the sensor
-    END_OF_BASE_ERRORS = 7   // used to extend this enum
+    NO_ERRORS          = 0,
+    INVALID_WHOAMI     = 1,
+    INIT_FAIL          = 2,
+    NOT_INIT           = 3,  // if some method called before init()
+    ALREADY_INIT       = 4,  // if init() called multiple times
+    SELF_TEST_FAIL     = 5,
+    BUS_FAULT          = 6,
+    NO_NEW_DATA        = 7,  // no new data available from the sensor
+    END_OF_BASE_ERRORS = 8   // used to extend this enum
 };
 
 /**
@@ -93,10 +94,12 @@ class Sensor : public virtual AbstractSensor
 
 protected:
     Data data;
-    SensorErrors last_error;
+    SensorErrors last_error = SensorErrors::NO_ERRORS;
 
     /**
      * @brief Read a data sample from the sensor.
+     *        In case of errors, the method should return the last
+     *        available correct sample.
      * @return sensor data sample
      */
     virtual Data sampleImpl() = 0;
