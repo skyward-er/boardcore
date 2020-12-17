@@ -25,70 +25,69 @@
 #include "sensors/SensorData.h"
 
 /**
- * This is the dumbest type of calibration possible: it stores a 3d vector 
+ * This is the dumbest type of calibration possible: it stores a 3d vector
  * (called "bias") that will be added to every measurement.
- * During the calibration phase it will use a given reference vector (for example the gravitational
- * acceleration for the accelerometer), and every time you'll feed the model with a new
- * value, you have to give it the orientation of the sensor, so it can guess the bias.
-*/
+ * During the calibration phase it will use a given reference vector (for
+ * example the gravitational acceleration for the accelerometer), and every time
+ * you'll feed the model with a new value, you have to give it the orientation
+ * of the sensor, so it can guess the bias.
+ */
 template <typename SensorData>
-class BiasCalibration : public AbstractCalibrationModel<Vec3, SensorData, Vec3, AxisOrthoOrientation>
+class BiasCalibration : public AbstractCalibrationModel<Vec3, SensorData, Vec3,
+                                                        AxisOrthoOrientation>
 {
 public:
-    BiasCalibration()
-       : bias(0.f, 0.f, 0.f), ref(0.f, 0.f, 1.f) {} 
-        
-    void setReferenceVector(Vec3 vec){
-        ref = vec;
-    }
+    BiasCalibration() : bias(0.f, 0.f, 0.f), ref(0.f, 0.f, 1.f) {}
 
-    void store(Vec3& out) const override {
-        out = bias;
-    }
+    void setReferenceVector(Vec3 vec) { ref = vec; }
 
-    void load(const Vec3& in) override {
-        bias = in;
-    }
+    void store(Vec3& out) const override { out = bias; }
 
-    void resetToIdentity() override{
-        bias.clear();
-    }
+    void load(const Vec3& in) override { bias = in; }
 
-    void startCalibrationStage() override{
+    void resetToIdentity() override { bias.clear(); }
+
+    void startCalibrationStage() override
+    {
         specificInit();
         sum.clear();
         numSamples = 0;
     }
 
-    void feed(const Vec3& measured, const AxisOrthoOrientation& ortho) override {
+    void feed(const Vec3& measured, const AxisOrthoOrientation& ortho) override
+    {
         Mat3 mat;
         ortho.getMatrix().setTranspose(mat);
         sum += (mat * ref) - measured;
         numSamples++;
     }
 
-    void endCalibrationStage() override {
-        bias = sum / numSamples;
-    }
+    void endCalibrationStage() override { bias = sum / numSamples; }
 
-    SensorData correct(const SensorData& data) const override {
-        static_assert(sizeof(SensorData) != sizeof(SensorData), "BiasCalibration still doesn't support the given SensorData data type.");
+    SensorData correct(const SensorData& data) const override
+    {
+        static_assert(sizeof(SensorData) != sizeof(SensorData),
+                      "BiasCalibration still doesn't support the given "
+                      "SensorData data type.");
     }
 
 private:
     Vec3 bias, sum, ref;
     unsigned numSamples;
 
-    void specificInit(){}
+    void specificInit() {}
 };
 
 template <>
-void BiasCalibration<AccelerometerData>::specificInit(){
-    setReferenceVector({ 0.f, 0.f, -1.f });
+void BiasCalibration<AccelerometerData>::specificInit()
+{
+    setReferenceVector({0.f, 0.f, -1.f});
 }
 
 template <>
-AccelerometerData BiasCalibration<AccelerometerData>::correct(const AccelerometerData& input) const {
+AccelerometerData BiasCalibration<AccelerometerData>::correct(
+    const AccelerometerData& input) const
+{
     AccelerometerData output;
     output.accel_x = bias.getX() + input.accel_x;
     output.accel_y = bias.getY() + input.accel_y;

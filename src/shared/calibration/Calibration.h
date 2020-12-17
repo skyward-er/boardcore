@@ -22,8 +22,8 @@
 
 #pragma once
 
-#include "math/Vec3.h"
 #include "math/Matrix.h"
+#include "math/Vec3.h"
 
 /**
  * This class generalizes all the Calibration classes used to
@@ -76,8 +76,10 @@ enum class Orientation
     SOUTH
 };
 
-Vec3 orientationToVector(Orientation val){
-    switch(val){
+Vec3 orientationToVector(Orientation val)
+{
+    switch (val)
+    {
         case Orientation::UP:
             return Vec3(0.f, 0.f, 1.f);
         case Orientation::DOWN:
@@ -100,15 +102,16 @@ struct AxisOrthoOrientation
 {
     Orientation x = Orientation::SOUTH, z = Orientation::UP;
 
-    Mat3 getMatrix() const {
+    Mat3 getMatrix() const
+    {
         Vec3 vx, vy, vz;
-        
+
         vx = orientationToVector(x);
         vz = orientationToVector(z);
         vy = vz.cross(vx);
-        
+
         Mat3 mat;
-        mat.setVertComponents(vx, vy, vz); 
+        mat.setVertComponents(vx, vy, vz);
         return mat;
     }
 };
