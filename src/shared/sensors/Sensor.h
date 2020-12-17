@@ -100,6 +100,7 @@ protected:
      * @brief Read a data sample from the sensor.
      *        In case of errors, the method should return the last
      *        available correct sample.
+     *
      * @return sensor data sample
      */
     virtual Data sampleImpl() = 0;

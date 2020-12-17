@@ -64,9 +64,9 @@ public:
      *  @param chip_select  the chip_select for the sensor.
      *  @param _odr         output data rate for the accelerometer.
      *                      Default value is 100 Hz.
-     *  @param _bdu         BDU value, continuous or non-continuous update mode.
-     *                      Default value is to update after data has been read
-     * (BDU=1).
+     *  @param _bdu         BlockDataUpdate value, continuous or non-continuous
+     *                      update mode. Default value is to update after data 
+     *                      has been read (BDU=1).
      *  @param _full_scale  full scale range (from +/-2g up to +/-16g).
      *                      Default value is +/-2g.
      */
@@ -90,9 +90,9 @@ public:
      *  @param config       the spi bus configurations.
      *  @param _odr         output data rate for the accelerometer.
      *                      Default value is 100 Hz.
-     *  @param _bdu         BDU value, continuous or non-continuous update mode.
-     *                      Default value is to update after data has been read
-     * (BDU=1).
+     *  @param _bdu         BlockDataUpdate value, continuous or non-continuous
+     *                      update mode. Default value is to update after data 
+     *                      has been read (BDU=1).
      *  @param _full_scale  full scale range (from +/-2g up to +/-16g).
      *                      Default value is +/-2g.
      */
@@ -164,16 +164,21 @@ public:
                 "[LIS3DSH] sampleImpl() : not initialized, unable to "
                 "sample data \n");
             last_error = SensorErrors::NOT_INIT;
-            return LIS3DSHData{};
+            return data;
         }
 
         AccelerometerData acc_data = readAccelData();
         TemperatureData temp_data  = readTemperature();
 
-        last_error = SensorErrors::NO_ERRORS;
-
-        return LIS3DSHData{acc_data.accel_x, acc_data.accel_y, acc_data.accel_z,
-                           temp_data.temperature};
+        if (last_error != SensorErrors::NO_ERRORS)
+        {
+            return data;
+        }
+        else 
+        {
+            return LIS3DSHData{acc_data.accel_x, acc_data.accel_y, acc_data.accel_z, 
+                                temp_data.temperature};
+        }
     }
 
     /**
@@ -205,10 +210,20 @@ public:
         // vectors containing avg values for each axis
         float AVG_ST[3]    = {0};  // one element per axis
         float AVG_NO_ST[3] = {0};  // one element per axis
+        
+        // set output data rate to 50 hz
+        uint8_t ctrl_reg4_value = (OutputDataRate::ODR_100_HZ << 4) 
+                        | (BlockDataUpdate::UPDATE_AFTER_READ_MODE << 3) 
+                        | (7 << 0);
+
+        {
+            SPITransaction spi(spi_slave);
+            spi.write(CTRL_REG4, ctrl_reg4_value);
+        }
 
         // set full scale to default value +/-2g
         // enable the self-test mode with positive sign
-        uint8_t ctrl_reg5_value = (FULL_SCALE_2G << 3) | (1 << 1);
+        uint8_t ctrl_reg5_value = (FullScale::FULL_SCALE_2G << 3) | (1 << 1);
 
         {
             SPITransaction spi(spi_slave);
@@ -222,7 +237,7 @@ public:
             X_ST[i]                    = acc_data.accel_x;
             Y_ST[i]                    = acc_data.accel_y;
             Z_ST[i]                    = acc_data.accel_z;
-            miosix::Thread::sleep(15);
+            miosix::Thread::sleep(10);
         }
         // reset the self-test bits
         ctrl_reg5_value &= ~(3 << 1);
@@ -241,7 +256,7 @@ public:
             X_NO_ST[i]                 = acc_data.accel_x;
             Y_NO_ST[i]                 = acc_data.accel_y;
             Z_NO_ST[i]                 = acc_data.accel_z;
-            miosix::Thread::sleep(15);
+            miosix::Thread::sleep(10);
         }
         // compute averages vectors:
         // they contain one element for each axis
@@ -265,6 +280,13 @@ public:
 
         // Reset registers values with the ones
         // specified in the constructor:
+        // set the output data rate value in CTRL_REG4
+        ctrl_reg4_value = (odr << 4) | (bdu << 3) | (7 << 0);
+
+        {
+            SPITransaction spi(spi_slave);
+            spi.write(CTRL_REG4, ctrl_reg4_value);
+        }
         // set the full scale value in CTRL_REG5
         ctrl_reg5_value = (full_scale << 3);  // normal mode
 
@@ -377,6 +399,8 @@ private:
                 acc_H = spi.read(OUT_Z_H);
                 acc_data.accel_z =
                     static_cast<float>(combine(acc_H, acc_L)) * sensitivity;
+
+                last_error = SensorErrors::NO_ERRORS;
             }
         }
         else
