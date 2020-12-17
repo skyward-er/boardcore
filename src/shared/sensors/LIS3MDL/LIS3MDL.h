@@ -247,7 +247,7 @@ public:
         if (isInitialized)
         {
             TRACE("Error: attempted to initialized sensor twice [LIS3MDL].\n");
-            last_error = ERR_ALREADY_INIT;
+            last_error = ALREADY_INIT;
             return false;
         }
 
@@ -261,7 +261,7 @@ public:
                     "Error: WHO_AM_I value differs from expectation: read 0x%x "
                     "but expected 0x%x [LIS3MDL].\n",
                     res, WHO_AM_I_VALUE);
-                last_error = ERR_INVALID_WHOAMI;
+                last_error = INVALID_WHOAMI;
                 return false;
             }
         }
@@ -284,7 +284,7 @@ public:
             TRACE(
                 "Error: invoked selfTest() but sensor was unitialized "
                 "[LIS3MDL].\n");
-            last_error = ERR_NOT_INIT;
+            last_error = NOT_INIT;
             return false;
         }
 
@@ -374,7 +374,7 @@ public:
                 // reset configuration, then return
                 applyConfig(mConfig);
 
-                last_error = ERR_SELF_TEST_FAIL;
+                last_error = SELF_TEST_FAIL;
                 return false;
             }
             else
@@ -409,7 +409,7 @@ public:
             TRACE(
                 "Error: invoked sampleImpl() but sensor was unitialized "
                 "[LIS3MDL].\n");
-            last_error = ERR_NOT_INIT;
+            last_error = NOT_INIT;
             return data;
         }
 
@@ -418,7 +418,7 @@ public:
         if (!spi.read(STATUS_REG))
         {
             TRACE("New data not available, keeping old values [LIS32MDL]\n");
-            last_error = ERR_NO_NEW_DATA;
+            last_error = NO_NEW_DATA;
             return data;
         }
 
@@ -546,7 +546,7 @@ public:
         if (err)
         {
             TRACE("Spi error [LIS3MDL].\n");
-            last_error = ERR_BUS_FAULT;
+            last_error = BUS_FAULT;
             return false;
         }
 
