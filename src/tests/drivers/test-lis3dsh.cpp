@@ -22,7 +22,7 @@
 
 #include <drivers/spi/SPIDriver.h>
 #include <miosix.h>
-
+#include "Common.h"
 #include "sensors/LIS3DSH/LIS3DSH.h"
 
 using namespace std;
@@ -60,7 +60,7 @@ int main()
 
     // sensor not initialized, should give the error
     sensor.sample();
-    if (sensor.getLastError() != SensorErrors::ERR_NOT_INIT)
+    if (sensor.getLastError() != SensorErrors::NOT_INIT)
     {
         printf("\nTest failed: sensor not initialized \n");
         return -1;
@@ -70,7 +70,7 @@ int main()
     // initialize imu
     if (!sensor.init())
     {
-        if (sensor.getLastError() == SensorErrors::ERR_INVALID_WHOAMI)
+        if (sensor.getLastError() == SensorErrors::INVALID_WHOAMI)
         {
             printf("Test failed: invalid WHO_AM_I value, init failed \n");
         }
@@ -107,7 +107,7 @@ int main()
         // sensor intitialized, should return error if no new data exist
         sensor.sample();
 
-        if (sensor.getLastError() == SensorErrors::ERR_NO_NEW_DATA)
+        if (sensor.getLastError() == SensorErrors::NO_NEW_DATA)
         {
             printf("\nWarning: no new data to be read \n");
         }
