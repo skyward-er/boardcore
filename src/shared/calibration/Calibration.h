@@ -23,6 +23,7 @@
 #pragma once
 
 #include <Eigen/Core>
+#include "calibration/SensorDataExtra.h"
 
 using namespace Eigen;
 

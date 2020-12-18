@@ -95,14 +95,3 @@ void BiasCalibration<AccelerometerData>::specificInit()
 {
     setReferenceVector({0.f, 0.f, -1.f});
 }
-
-template <>
-AccelerometerData BiasCalibration<AccelerometerData>::correct(
-    const AccelerometerData& input) const
-{
-    AccelerometerData output;
-    output.accel_x = bias.x() + input.accel_x;
-    output.accel_y = bias.y() + input.accel_y;
-    output.accel_z = bias.z() + input.accel_z;
-    return output;
-}
