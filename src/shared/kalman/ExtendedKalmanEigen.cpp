@@ -24,15 +24,12 @@
 
 ExtendedKalmanEigen::ExtendedKalmanEigen(const ExtendedKalmanConfig& config)
     : n(config.n), m(config.m), p(config.p), F(config.F), H(config.H),
-      Q(config.Q), R(config.R), P(config.P), I(config.n, config.n), x(config.n),
+      Q(config.Q), R(config.R), P(config.P), I(config.n, config.n), x(config.x),
       y_hat(config.p), res(config.p), f(config.f), dfdx(config.dfdx),
       h(config.h), dhdx(config.dhdx)
 {
-    x.setZero();
     I.setIdentity();
 }
-
-void ExtendedKalmanEigen::init(const VectorXf& x0) { x = x0; }
 
 void ExtendedKalmanEigen::predict(const VectorXf& u)
 {
@@ -51,8 +48,10 @@ bool ExtendedKalmanEigen::correct(const VectorXf& y, const function_v& h,
                                   const function_v& dhdx)
 {
     p = y.rows();
-    S.resize(p, p);
-    K.resize(n, p);
+    MatrixXf S(p, p);
+    MatrixXf K(n, p);
+    //Matrix<float, p, p> S;
+    //Matrix<float, n, p> K;
 
     H = dhdx(x);  // update jacobian
 
@@ -61,7 +60,7 @@ bool ExtendedKalmanEigen::correct(const VectorXf& y, const function_v& h,
     // here the determinant is computed and
     // then the inverse recomputes it,
     // this passage could be optimized
-    if (S.determinant() < 1e-3)
+    if (S.determinant() < 1e-5)
     {
         return false;
     }

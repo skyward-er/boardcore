@@ -34,6 +34,7 @@ struct KalmanConfig
     MatrixXf Q;
     MatrixXf R;
     MatrixXf P;
+    VectorXf x;
     bool with_ex_input = false; // Set to true is G is assigned (an exogenous input is present)
 };
 
@@ -53,6 +54,7 @@ struct ExtendedKalmanConfig
     MatrixXf Q;
     MatrixXf R;
     MatrixXf P;
+    VectorXf x;
 
     function_2v f;
     function_v h;

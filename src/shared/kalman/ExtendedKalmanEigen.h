@@ -34,8 +34,6 @@ class ExtendedKalmanEigen
 public:
     ExtendedKalmanEigen(const ExtendedKalmanConfig& config);
 
-    void init(const VectorXf& x0);
-
     void predict(const VectorXf& u);
 
     /**
@@ -77,7 +75,7 @@ public:
 private:
     uint8_t n, m, p; /**< system dimensions */
 
-    MatrixXf F, H, Q, R, P, S, K;
+    MatrixXf F, H, Q, R, P;
 
     MatrixXf I; /**< (n x n) identity matrix */
     VectorXf x, y_hat, res;
