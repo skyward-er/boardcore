@@ -22,8 +22,9 @@
 
 #pragma once
 
-#include "math/Matrix.h"
-#include "math/Vec3.h"
+#include <Eigen/Core>
+
+using namespace Eigen;
 
 /**
  * This class generalizes all the Calibration classes used to
@@ -38,7 +39,7 @@
  * GyroscopeData, MagnetometerData). This is needed because certain models could
  * work slightly differently depending on it
  */
-template <typename PackedModel, typename SensorData, typename... FeedParams>
+template <typename PackedModel, typename SensorData, typename... AdditionalFeedParams>
 class AbstractCalibrationModel
 {
 public:
@@ -50,7 +51,7 @@ public:
 
     virtual void startCalibrationStage() = 0;
 
-    virtual void feed(const FeedParams&... p) = 0;
+    virtual void feed(const SensorData& data, const AdditionalFeedParams&... p) = 0;
 
     virtual void endCalibrationStage() = 0;
 
@@ -63,55 +64,74 @@ public:
  * Y is the second finger
  * Z is the thumb
  *
- * In the base position, we call "up" the direction of the Z axis, and
- * the four cardinal directions lay on the XY plane (X is "south", Y is "east")
  */
 enum class Orientation
 {
-    UP,
-    DOWN,
-    NORTH,
-    WEST,
-    EAST,
-    SOUTH
+    POSITIVE_X, NEGATIVE_X,
+    POSITIVE_Y, NEGATIVE_Y,
+    POSITIVE_Z, NEGATIVE_Z,
 };
 
-Vec3 orientationToVector(Orientation val)
+inline Vector3f orientationToVector(Orientation val)
 {
     switch (val)
     {
-        case Orientation::UP:
-            return Vec3(0.f, 0.f, 1.f);
-        case Orientation::DOWN:
-            return Vec3(0.f, 0.f, -1.f);
-        case Orientation::NORTH:
-            return Vec3(-1.f, 0.f, 0.f);
-        case Orientation::WEST:
-            return Vec3(0.f, -1.f, 0.f);
-        case Orientation::EAST:
-            return Vec3(0.f, 1.f, 0.f);
-        case Orientation::SOUTH:
-            return Vec3(1.f, 0.f, 0.f);
+        case Orientation::POSITIVE_X:
+            return { 1.f, 0.f, 0.f };
+        case Orientation::NEGATIVE_X:
+            return { -1.f, 0.f, 0.f };
+        case Orientation::POSITIVE_Y:
+            return { 0.f, 1.f, 0.f };
+        case Orientation::NEGATIVE_Y:
+            return { 0.f, -1.f, 0.f };
+        case Orientation::POSITIVE_Z:
+            return { 0.f, 0.f, 1.f };
+        case Orientation::NEGATIVE_Z:
+            return { 0.f, 0.f, -1.f };
     }
 }
+
 /*
- * If we know the orientation of the X and Z axis, using the right hand rule
- * we can infer the Y axis
+ * This struct represents the orientation of the reference system relative
+ * to X, Y, Z in the start orientation.
+ * If we know the orientation of the X and Y axis, using the right hand rule
+ * we can infer the Z axis.
+ *
+ * For example, if the base reference is:
+ *
+ *        z
+ *        ^
+ *        |
+ *        |
+ *        /----> y
+ *       /
+ *      x
+ *
+ * Then if we set x = NEGATIVE_Y, y = POSITIVE_Z, we get:
+ *
+ *          y   z
+ *          ^   ^
+ *          |  /
+ *          | /
+ *   x <----/
+ *
  */
 struct AxisOrthoOrientation
 {
-    Orientation x = Orientation::SOUTH, z = Orientation::UP;
+    Orientation xAxis = Orientation::POSITIVE_X, yAxis = Orientation::POSITIVE_Y;
 
-    Mat3 getMatrix() const
+    Matrix3f getMatrix() const
     {
-        Vec3 vx, vy, vz;
+        Vector3f vx, vy, vz;
 
-        vx = orientationToVector(x);
-        vz = orientationToVector(z);
-        vy = vz.cross(vx);
+        vx = orientationToVector(xAxis);
+        vy = orientationToVector(yAxis);
+        vz = vx.cross(vy);
 
-        Mat3 mat;
-        mat.setVertComponents(vx, vy, vz);
+        Matrix3f mat;
+        mat.col(0) << vx;
+        mat.col(1) << vy;
+        mat.col(2) << vz;
         return mat;
     }
 };
