@@ -20,9 +20,13 @@
  * THE SOFTWARE.
  */
 
+#pragma once
+
+#include <Eigen/Core>
 #include "Calibration.h"
-#include "math/Vec3.h"
 #include "sensors/SensorData.h"
+
+using namespace Eigen;
 
 /**
  * This is the dumbest type of calibration possible: it stores a 3d vector
@@ -33,32 +37,32 @@
  * of the sensor, so it can guess the bias.
  */
 template <typename SensorData>
-class BiasCalibration : public AbstractCalibrationModel<Vec3, SensorData, Vec3,
-                                                        AxisOrthoOrientation>
+class BiasCalibration : public AbstractCalibrationModel<Vector3f, SensorData, AxisOrthoOrientation>
 {
 public:
     BiasCalibration() : bias(0.f, 0.f, 0.f), ref(0.f, 0.f, 1.f) {}
 
-    void setReferenceVector(Vec3 vec) { ref = vec; }
+    void setReferenceVector(Vector3f vec) { ref = vec; }
 
-    void store(Vec3& out) const override { out = bias; }
+    void store(Vector3f& out) const override { out = bias; }
 
-    void load(const Vec3& in) override { bias = in; }
+    void load(const Vector3f& in) override { bias = in; }
 
-    void resetToIdentity() override { bias.clear(); }
+    void resetToIdentity() override {
+        bias = { 0.f, 0.f, 0.f };
+    }
 
     void startCalibrationStage() override
     {
         specificInit();
-        sum.clear();
+        
+        sum = {0.f, 0.f, 0.f};
         numSamples = 0;
     }
 
-    void feed(const Vec3& measured, const AxisOrthoOrientation& ortho) override
+    void feed(const Vector3f& measured, const AxisOrthoOrientation& ortho) override
     {
-        Mat3 mat;
-        ortho.getMatrix().setTranspose(mat);
-        sum += (mat * ref) - measured;
+        sum += (ortho.getMatrix().transpose() * ref) - measured;
         numSamples++;
     }
 
@@ -72,7 +76,7 @@ public:
     }
 
 private:
-    Vec3 bias, sum, ref;
+    Vector3f bias, sum, ref;
     unsigned numSamples;
 
     void specificInit() {}
@@ -89,8 +93,8 @@ AccelerometerData BiasCalibration<AccelerometerData>::correct(
     const AccelerometerData& input) const
 {
     AccelerometerData output;
-    output.accel_x = bias.getX() + input.accel_x;
-    output.accel_y = bias.getY() + input.accel_y;
-    output.accel_z = bias.getZ() + input.accel_z;
+    output.accel_x = bias.x() + input.accel_x;
+    output.accel_y = bias.y() + input.accel_y;
+    output.accel_z = bias.z() + input.accel_z;
     return output;
 }
