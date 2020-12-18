@@ -60,19 +60,27 @@ public:
         numSamples = 0;
     }
 
-    void feed(const Vector3f& measured, const AxisOrthoOrientation& ortho) override
+    void feed(const SensorData& measured, const AxisOrthoOrientation& ortho) override
     {
-        sum += (ortho.getMatrix().transpose() * ref) - measured;
+        Vector3f vec;
+        measured >> vec;
+
+        sum += (ortho.getMatrix().transpose() * ref) - vec;
         numSamples++;
     }
 
     void endCalibrationStage() override { bias = sum / numSamples; }
 
-    SensorData correct(const SensorData& data) const override
+    SensorData correct(const SensorData& input) const override
     {
-        static_assert(sizeof(SensorData) != sizeof(SensorData),
-                      "BiasCalibration still doesn't support the given "
-                      "SensorData data type.");
+        SensorData output;
+        Vector3f vec;
+
+        input >> vec;
+        vec += bias;
+        output << vec;
+
+        return output;
     }
 
 private:
