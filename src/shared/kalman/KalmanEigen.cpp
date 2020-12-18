@@ -25,9 +25,8 @@
 KalmanEigen::KalmanEigen(const KalmanConfig& config)
     : n(config.F.rows()), p(config.H.rows()), F(config.F), G(config.G),
       H(config.H), Q(config.Q), R(config.R), P(config.P), S(n, n), K(p, n),
-      I(n, n), x(n), y_hat(p)
+      I(n, n), x(config.x), y_hat(p)
 {
-    x.setZero();
     I.setIdentity();
 
     assert(F.rows() == F.cols());  // Matrix F must be a square matrix
@@ -42,8 +41,6 @@ KalmanEigen::KalmanEigen(const KalmanConfig& config)
                F.rows());  // F and G must have the same number of rows
     }
 }
-
-void KalmanEigen::init(const VectorXf& x0) { x = x0; }
 
 void KalmanEigen::predict()
 {

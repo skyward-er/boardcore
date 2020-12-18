@@ -34,8 +34,6 @@ class KalmanEigen
 public:
     KalmanEigen(const KalmanConfig& config);
 
-    void init(const VectorXf& x0);
-
     void predict();
 
     void predict(const MatrixXf& F_new);

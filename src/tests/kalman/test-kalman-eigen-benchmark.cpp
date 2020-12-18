@@ -82,6 +82,7 @@ int main()
     config.Q = Q;
     config.R = R;
     config.P = P;
+    config.x = x;
     // G not assigned since we don't have exogenous input for the ADA
 
     KalmanEigen filter(config);
@@ -99,7 +100,6 @@ int main()
         if (i == 0)
         {
             x(0) = INPUT[0];
-            filter.init(x);
 
             continue;
         }

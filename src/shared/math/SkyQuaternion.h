@@ -38,6 +38,8 @@ public:
 
     Vector3f quat2eul(Vector4f quat); // Returns rad
 
+    Vector4f rotm2quat(Matrix3f R); // From rotation matrix to quaternion
+
     void quatnormalize(Vector4f& quat);  
 
     void quatnormalizeEKF(VectorXf& x); // For the EKF application
