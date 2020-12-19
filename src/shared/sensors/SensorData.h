@@ -22,6 +22,8 @@
 
 #pragma once
 
+#include <cstdint>
+
 /**
  * @brief Structure to handle sensor data timestamp.
  */

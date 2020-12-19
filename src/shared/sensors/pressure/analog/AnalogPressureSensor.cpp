@@ -23,37 +23,39 @@
 #include "AnalogPressureSensor.h"
 
 AnalogPressureSensor::AnalogPressureSensor(
-    std::function<float()> getSensorVoltage_)
+    std::function<ADCData()> getSensorVoltage_)
     : getSensorVoltage(getSensorVoltage_)
 {
 }
 
 AnalogPressureSensor::AnalogPressureSensor(
-    std::function<float()> getSensorVoltage_, const float V_SUPPLY_)
+    std::function<ADCData()> getSensorVoltage_, const float V_SUPPLY_)
     : getSensorVoltage(getSensorVoltage_), V_SUPPLY(V_SUPPLY_)
 {
 }
 
-bool AnalogPressureSensor::onSimpleUpdate()
+PressureData AnalogPressureSensor::sampleImpl()
 {
+    PressureData pressure = PressureData();
+
     // Retrieve the voltage
-    float voltage = getSensorVoltage();
+    ADCData voltage = getSensorVoltage();
+
+    // Save the timestamp
+    pressure.press_timestamp = voltage.adc_timestamp;
 
     // Convert the value
-    float pressure = voltageToPressure(voltage);
+    pressure.press = voltageToPressure(voltage.voltage);
 
     // Check if the pressure is in range
-    if (pressure < minPressure)
+    if (pressure.press < minPressure)
     {
-        pressure = minPressure;
+        pressure.press = minPressure;
     }
-    else if (pressure > maxPressure)
+    else if (pressure.press > maxPressure)
     {
-        pressure = maxPressure;
+        pressure.press = maxPressure;
     }
 
-    // Save the pressure
-    mLastPressure = pressure;
-
-    return true;
+    return pressure;
 }

@@ -22,6 +22,8 @@
 
 #include "ADS1118.h"
 
+#include <interfaces/endianness.h>
+
 ADS1118::ADS1118(SPISlave spiSlave_)
     : ADS1118(spiSlave_, ADS1118_DEFAULT_CONFIG)
 {
@@ -95,9 +97,9 @@ float ADS1118::readInputAndWait(ADS1118Mux mux) { return readChannel(mux); }
 
 float ADS1118::readTemperatureAndWait() { return readChannel(TEMP_CHANNEL); }
 
-float ADS1118::getVoltage(ADS1118Mux mux) { return values[mux]; }
+float ADS1118::getVoltage(ADS1118Mux mux) { return values[mux].voltage; }
 
-float ADS1118::getTemperature() { return values[8]; }
+float ADS1118::getTemperature() { return values[TEMP_CHANNEL].voltage; }
 
 bool ADS1118::selfTest()
 {
@@ -133,7 +135,7 @@ bool ADS1118::selfTest()
  * The first configuration is written and then, at the next call, read back the
  * result while transmitting the next configuration
  */
-bool ADS1118::onSimpleUpdate()
+ADCData ADS1118::sampleImpl()
 {
     int8_t i = findNextEnabledChannel(lastConfigIndex + 1);
 
@@ -141,20 +143,14 @@ bool ADS1118::onSimpleUpdate()
     sampleCounter++;
 
     // Write the next config and read the value (only if lastConfig is valid)
-    bool ret = readChannel(
-        i, lastConfig.word != 0 ? lastConfigIndex : INVALID_CHANNEL);
-
-    // If readChannel ended unsuccessfully return false
-    if (!ret)
-    {
-        return false;
-    }
+    readChannel(i, lastConfig.word != 0 ? lastConfigIndex : INVALID_CHANNEL);
 
     // Save index and config for the next read
     lastConfig.word = channelsConfig[i].word;
     lastConfigIndex = i;
 
-    return true;
+    // Regardless of the readChannel result, return the value stored
+    return values[lastConfigIndex];
 }
 
 bool ADS1118::readChannel(int8_t nextChannel, int8_t prevChannel)
@@ -190,7 +186,7 @@ bool ADS1118::readChannel(int8_t nextChannel, int8_t prevChannel)
             (transferData >> 16 & CONFIG_MASK))
         {
             // Save the error
-            last_error = ERR_BUS_FAULT;
+            last_error = BUS_FAULT;
 
             // Disable next value conversion
             lastConfig.word = 0;
@@ -205,12 +201,12 @@ bool ADS1118::readChannel(int8_t nextChannel, int8_t prevChannel)
         rawValue = swapBytes16(transferData);
         if (prevChannel != 8)  // Voltage value
         {
-            values[prevChannel] =
+            values[prevChannel].voltage =
                 rawValue * PGA_LSB_SIZE[channelsConfig[prevChannel].bits.pga];
         }
         else  // Temperature value
         {
-            values[TEMP_CHANNEL] = (rawValue / 4) * TEMP_LSB_SIZE;
+            values[TEMP_CHANNEL].voltage = (rawValue / 4) * TEMP_LSB_SIZE;
         }
     }
 
@@ -226,7 +222,7 @@ float ADS1118::readChannel(int8_t channel)
 
     readChannel(INVALID_CHANNEL, channel);
 
-    return values[channel];
+    return values[channel].voltage;
 }
 
 /**

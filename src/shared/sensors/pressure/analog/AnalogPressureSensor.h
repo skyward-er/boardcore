@@ -32,16 +32,16 @@
  * All analog pressure sensors have a transfer function to convert the read
  * voltage into pressure and a range within which they operate.
  */
-class AnalogPressureSensor : public virtual PressureSensor
+class AnalogPressureSensor : public Sensor<PressureData>
 {
 public:
-    AnalogPressureSensor(std::function<float()> getSensorVoltage_);
+    AnalogPressureSensor(std::function<ADCData()> getSensorVoltage_);
 
-    AnalogPressureSensor(std::function<float()> getSensorVoltage_,
+    AnalogPressureSensor(std::function<ADCData()> getSensorVoltage_,
                          const float V_SUPPLY_);
 
     ///< Converts the voltage value to pressure
-    bool onSimpleUpdate() override;
+    PressureData sampleImpl() override;
 
     bool selfTest() override { return 0; };
 
@@ -54,7 +54,7 @@ protected:
     const float minPressure = 0;
 
     ///< Function that returns the sensor voltage
-    std::function<float()> getSensorVoltage;
+    std::function<ADCData()> getSensorVoltage;
 
     const float V_SUPPLY = 5.0;  ///< Suppply voltage
 };

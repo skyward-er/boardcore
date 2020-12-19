@@ -65,7 +65,7 @@
  *
  * This class allows to mange the device configuration.
  */
-class ADS1118 : public Sensor
+class ADS1118 : public Sensor<ADCData>
 {
 public:
     enum ADS1118Mux
@@ -307,7 +307,7 @@ public:
      *
      * Multiple calls are needed to read all the enabled channels.
      */
-    bool onSimpleUpdate() override;
+    ADCData sampleImpl() override;
 
 private:
     /**
@@ -335,7 +335,7 @@ private:
     bool configCheck = false;
 
     ADS1118Config channelsConfig[NUM_OF_CHANNELS];  ///< Channels configuration
-    float values[NUM_OF_CHANNELS];                  ///< Voltage values in mV
+    ADCData values[NUM_OF_CHANNELS];                ///< Voltage values in mV
 
     ADS1118Config lastConfig;     ///< Last written configuration
     uint8_t lastConfigIndex = 0;  ///< Last written configuration's index
