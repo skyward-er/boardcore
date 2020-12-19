@@ -113,11 +113,11 @@ inline Vector3f orientationToVector(Orientation val)
  * AxisOrthoOrientation ortho  ( Orientation::NEGATIVE_X,
  * Orientation::POSITIVE_Z );
  *
- * AxisOrientation converted1 = angles; // The implicit cast is supported and
- * recommended AxisOrientation converted2 = ortho;
+ * // The implicit cast is supported and recommended
+ * AxisOrientation converted1 = angles; 
+ * AxisOrientation converted2 = ortho;
  *
  * // Now we can use the generated matrix:
- *
  * Vector3f zeta = convertedX.getMatrix() * Vector3f { 0, 0, 1 }
  *
  */
