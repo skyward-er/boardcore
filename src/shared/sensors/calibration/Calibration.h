@@ -23,7 +23,7 @@
 #pragma once
 
 #include <Eigen/Core>
-#include "calibration/SensorDataExtra.h"
+#include "SensorDataExtra.h"
 
 using namespace Eigen;
 
@@ -59,7 +59,7 @@ public:
     virtual SensorData correct(const SensorData& input) const = 0;
 };
 
-/*
+/**
  * X, Y and Z always set according to the right hand rule, so that:
  * X is the index
  * Y is the second finger
@@ -90,9 +90,9 @@ inline Vector3f orientationToVector(Orientation val)
         case Orientation::NEGATIVE_Z:
             return { 0.f, 0.f, -1.f };
     }
-}
+};
 
-/*
+/**
  * This struct represents the orientation of the reference system relative
  * to X, Y, Z in the start orientation.
  * If we know the orientation of the X and Y axis, using the right hand rule
