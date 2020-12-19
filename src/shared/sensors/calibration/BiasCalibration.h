@@ -23,6 +23,7 @@
 #pragma once
 
 #include <Eigen/Core>
+
 #include "Calibration.h"
 #include "sensors/SensorData.h"
 
@@ -37,7 +38,8 @@ using namespace Eigen;
  * of the sensor, so it can guess the bias.
  */
 template <typename SensorData>
-class BiasCalibration : public AbstractCalibrationModel<Vector3f, SensorData, AxisOrthoOrientation>
+class BiasCalibration
+    : public AbstractCalibrationModel<Vector3f, SensorData, AxisOrientation>
 {
 public:
     BiasCalibration() : bias(0.f, 0.f, 0.f), ref(0.f, 0.f, 1.f) {}
@@ -48,24 +50,23 @@ public:
 
     void load(const Vector3f& in) override { bias = in; }
 
-    void resetToIdentity() override {
-        bias = { 0.f, 0.f, 0.f };
-    }
+    void resetToIdentity() override { bias = {0.f, 0.f, 0.f}; }
 
     void startCalibrationStage() override
     {
         specificInit();
-        
-        sum = {0.f, 0.f, 0.f};
+
+        sum        = {0.f, 0.f, 0.f};
         numSamples = 0;
     }
 
-    void feed(const SensorData& measured, const AxisOrthoOrientation& ortho) override
+    void feed(const SensorData& measured,
+              const AxisOrientation& transform) override
     {
         Vector3f vec;
         measured >> vec;
 
-        sum += (ortho.getMatrix().transpose() * ref) - vec;
+        sum += (transform.getMatrix().transpose() * ref) - vec;
         numSamples++;
     }
 

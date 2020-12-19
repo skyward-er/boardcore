@@ -23,6 +23,8 @@
 #pragma once
 
 #include <Eigen/Core>
+#include <Eigen/Geometry>
+
 #include "SensorDataExtra.h"
 
 using namespace Eigen;
@@ -40,7 +42,8 @@ using namespace Eigen;
  * GyroscopeData, MagnetometerData). This is needed because certain models could
  * work slightly differently depending on it
  */
-template <typename PackedModel, typename SensorData, typename... AdditionalFeedParams>
+template <typename PackedModel, typename SensorData,
+          typename... AdditionalFeedParams>
 class AbstractCalibrationModel
 {
 public:
@@ -52,7 +55,8 @@ public:
 
     virtual void startCalibrationStage() = 0;
 
-    virtual void feed(const SensorData& data, const AdditionalFeedParams&... p) = 0;
+    virtual void feed(const SensorData& data,
+                      const AdditionalFeedParams&... p) = 0;
 
     virtual void endCalibrationStage() = 0;
 
@@ -68,9 +72,12 @@ public:
  */
 enum class Orientation
 {
-    POSITIVE_X, NEGATIVE_X,
-    POSITIVE_Y, NEGATIVE_Y,
-    POSITIVE_Z, NEGATIVE_Z,
+    POSITIVE_X,
+    NEGATIVE_X,
+    POSITIVE_Y,
+    NEGATIVE_Y,
+    POSITIVE_Z,
+    NEGATIVE_Z,
 };
 
 inline Vector3f orientationToVector(Orientation val)
@@ -78,22 +85,97 @@ inline Vector3f orientationToVector(Orientation val)
     switch (val)
     {
         case Orientation::POSITIVE_X:
-            return { 1.f, 0.f, 0.f };
+            return {1, 0, 0};
         case Orientation::NEGATIVE_X:
-            return { -1.f, 0.f, 0.f };
+            return {-1, 0, 0};
         case Orientation::POSITIVE_Y:
-            return { 0.f, 1.f, 0.f };
+            return {0, 1, 0};
         case Orientation::NEGATIVE_Y:
-            return { 0.f, -1.f, 0.f };
+            return {0, -1, 0};
         case Orientation::POSITIVE_Z:
-            return { 0.f, 0.f, 1.f };
+            return {0, 0, 1};
         case Orientation::NEGATIVE_Z:
-            return { 0.f, 0.f, -1.f };
+            return {0, 0, -1};
     }
 };
 
 /**
- * This struct represents the orientation of the reference system relative
+ * This struct represents in the most general way any kind of transformation of
+ * the reference frame (axis X, Y and Z).
+ * This data type is intended to simplify the code, so you shouldn't instantiate
+ * this struct directly, but rather use the structures AxisAngleOrientation or
+ * AxisOrthoOrientation that will be automatically corrected to this one, thanks
+ * to the implicit cast in favor of AxisOrientation.
+ *
+ * For example:
+ *
+ * AxisAngleOrientation angles ( PI/2, PI, 0);
+ * AxisOrthoOrientation ortho  ( Orientation::NEGATIVE_X,
+ * Orientation::POSITIVE_Z );
+ *
+ * AxisOrientation converted1 = angles; // The implicit cast is supported and
+ * recommended AxisOrientation converted2 = ortho;
+ *
+ * // Now we can use the generated matrix:
+ *
+ * Vector3f zeta = convertedX.getMatrix() * Vector3f { 0, 0, 1 }
+ *
+ */
+struct AxisOrientation
+{
+    Matrix3f mat;
+
+    AxisOrientation() : mat(Matrix3f::Identity()) {}
+
+    AxisOrientation(Matrix3f _mat) : mat(_mat) {}
+
+    void setMatrix(Matrix3f _mat) { mat = _mat; }
+
+    Matrix3f getMatrix() const { return mat; }
+};
+
+/**
+ * This struct uses the three angles yaw, pitch and roll to define the
+ * transformation of the reference frame, so according to N.E.D standard we get:
+ *
+ *         X (north)
+ *        /
+ *       /
+ *      .----> Y (east)
+ *      |
+ *      |
+ *      v
+ *     Z (down)
+ *
+ * Where:
+ * Yaw is rotation of Z axis
+ * Pitch is rotation of Y axis
+ * Roll is rotation of X axis
+ */
+struct AxisAngleOrientation
+{
+    float yaw, pitch, roll;
+
+    AxisAngleOrientation() : yaw(0), pitch(0), roll(0) {}
+
+    AxisAngleOrientation(float _yaw, float _pitch, float _roll)
+        : yaw(_yaw), pitch(_pitch), roll(_roll)
+    {
+    }
+
+    operator AxisOrientation() const { return AxisOrientation(getMatrix()); }
+
+    Matrix3f getMatrix() const
+    {
+        return (AngleAxisf(yaw, Vector3f{0, 0, 1}) *
+                AngleAxisf(pitch, Vector3f{0, 1, 0}) *
+                AngleAxisf(roll, Vector3f{1, 0, 0}))
+            .toRotationMatrix();
+    }
+};
+
+/**
+ * This struct represents the orientation of the reference frame relative
  * to X, Y, Z in the start orientation.
  * If we know the orientation of the X and Y axis, using the right hand rule
  * we can infer the Z axis.
@@ -119,7 +201,19 @@ inline Vector3f orientationToVector(Orientation val)
  */
 struct AxisOrthoOrientation
 {
-    Orientation xAxis = Orientation::POSITIVE_X, yAxis = Orientation::POSITIVE_Y;
+    Orientation xAxis, yAxis;
+
+    AxisOrthoOrientation()
+        : xAxis(Orientation::POSITIVE_X), yAxis(Orientation::POSITIVE_Y)
+    {
+    }
+
+    AxisOrthoOrientation(Orientation _xAxis, Orientation _yAxis)
+        : xAxis(_xAxis), yAxis(_yAxis)
+    {
+    }
+
+    operator AxisOrientation() const { return AxisOrientation(getMatrix()); }
 
     Matrix3f getMatrix() const
     {
