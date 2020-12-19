@@ -24,11 +24,10 @@
 
 /**
  * @brief Structure to handle sensor data timestamp.
- * All custom sensor data structures must inherit from this.
  */
 struct TimestampData
 {
-    long long timestamp;
+    uint64_t timestamp;
 };
 
 /**
@@ -36,7 +35,8 @@ struct TimestampData
  */
 struct TemperatureData
 {
-    float temperature;
+    uint64_t temp_timestamp;
+    float temp;
 };
 
 /**
@@ -44,7 +44,8 @@ struct TemperatureData
  */
 struct PressureData
 {
-    float pressure;
+    uint64_t press_timestamp;
+    float press;
 };
 
 /**
@@ -52,6 +53,7 @@ struct PressureData
  */
 struct AccelerometerData
 {
+    uint64_t accel_timestamp;
     float accel_x;
     float accel_y;
     float accel_z;
@@ -62,6 +64,7 @@ struct AccelerometerData
  */
 struct GyroscopeData
 {
+    uint64_t gyro_timestamp;
     float gyro_x;
     float gyro_y;
     float gyro_z;
@@ -72,6 +75,7 @@ struct GyroscopeData
  */
 struct MagnetometerData
 {
+    uint64_t mag_timestamp;
     float mag_x;
     float mag_y;
     float mag_z;
@@ -82,6 +86,7 @@ struct MagnetometerData
  */
 struct GPSData
 {
+    uint64_t gps_timestamp;
     float latitude;         /**< [deg] */
     float longitude;        /**< [deg] */
     float height;           /**< [m]   */
@@ -91,4 +96,13 @@ struct GPSData
     float speed;            /**< [m/s] */
     uint8_t num_satellites; /**< [1]   */
     bool fix;
+};
+
+/**
+ * @brief Structure to handle ADC data.
+ */
+struct ADCData
+{
+    uint64_t adc_timestamp;
+    float voltage;
 };
