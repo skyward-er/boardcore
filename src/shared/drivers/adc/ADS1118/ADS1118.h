@@ -151,16 +151,9 @@ public:
     static constexpr uint8_t VALID_OPERATION =
         0x1;  ///< Indicates a valid configuration
 
-    const ADS1118Config ADS1118_DEFAULT_CONFIG = {SINGLE_SHOT_MODE,
-                                                  FSR_2_048,
-                                                  MUX_AIN0_AIN1,
-                                                  0,
-                                                  0,
-                                                  VALID_OPERATION,
-                                                  PULL_UP_EN,
-                                                  ADC_MODE,
-                                                  DR_128};  ///< Default
-                                                            ///< configuration
+    const ADS1118Config ADS1118_DEFAULT_CONFIG = {
+        {SINGLE_SHOT_MODE, FSR_2_048, MUX_AIN0_AIN1, 0, 0, VALID_OPERATION,
+         PULL_UP_EN, ADC_MODE, DR_128}};  ///< Default configuration
 
     static constexpr int8_t NUM_OF_CHANNELS = 9;
 
