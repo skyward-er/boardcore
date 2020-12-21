@@ -54,7 +54,8 @@ enum SensorErrors : uint8_t
     SELF_TEST_FAIL     = 5,
     BUS_FAULT          = 6,
     NO_NEW_DATA        = 7,  // no new data available from the sensor
-    END_OF_BASE_ERRORS = 8   // used to extend this enum
+    INVALID_FIFO_INDEX = 8,
+    END_OF_BASE_ERRORS = 9  // used to extend this enum
 };
 
 /**
@@ -84,37 +85,80 @@ public:
 /**
  * @brief Base sensor class with has to be extended by any sensor driver.
  *
- * A sensor driver can define a custom data structure extending TimestampData
- * and any other combination of base sensors data structures.
+ * A sensor driver can define a custom data structure extending any
+ * combination of base sensors data structures, defined in `SensorData.h`.
  */
-template <typename T>
+template <typename Data>
 class Sensor : public virtual AbstractSensor
 {
-    using Data = T; /**< Which data is being produced by this sensor */
-
 protected:
-    Data data;
+    Data last_sample;
     SensorErrors last_error = SensorErrors::NO_ERRORS;
 
     /**
      * @brief Read a data sample from the sensor.
      *        In case of errors, the method should return the last
      *        available correct sample.
-     *
      * @return sensor data sample
      */
     virtual Data sampleImpl() = 0;
 
 public:
-    void sample() override { data = sampleImpl(); }
+    void sample() override { last_sample = sampleImpl(); }
 
     /**
      * @return last available sample from this sensor
      */
-    virtual Data getData() { return data; }
+    virtual Data getLastSample() { return last_sample; }
 
     /**
      * @return last error recorded by the sensor driver
      */
     SensorErrors getLastError() const { return last_error; }
+};
+
+/**
+ * @brief Interface for sensor that implement a FIFO.
+ */
+template <typename Data, uint32_t FifoSize>
+class SensorFIFO : public Sensor<Data>
+{
+protected:
+    std::array<Data, FifoSize> last_fifo;
+    uint8_t last_fifo_level = 1; /**< number of samples in last_fifo */
+
+    uint64_t last_interrupt_us = 0; /**< last interrupt timestamp */
+    uint64_t dt_interrupt = 0; /**< delta between previous interrupt timestamp
+                                  and the last received one */
+
+public:
+    /**
+     * @return last FIFO sampled from the sensor
+     */
+    const std::array<Data, FifoSize> getLastFifo() { return last_fifo; }
+
+    /**
+     * @param i   index of the requested item inside the FIFO
+     *
+     * @return the i-th element of the FIFO
+     */
+    Data getFifoElement(uint32_t i) const { return last_fifo[i]; }
+
+    /**
+     * @return number of elements in the last FIFO sampled from the sensor
+     */
+    uint8_t getLastFifoSize() const { return last_fifo_level; }
+
+    /**
+     * @brief Called by the interrupt handling routine: provides the timestamp
+     *        of the last interrupt (if FIFO is disabled) or the last watermark
+     *        interrupt (if FIFO enabled)
+     *
+     * @param ts Timestamp of the lasts interrupt, in microseconds
+     */
+    inline void IRQupdateTimestamp(uint64_t ts)
+    {
+        dt_interrupt      = ts - last_interrupt_us;
+        last_interrupt_us = ts;
+    }
 };
