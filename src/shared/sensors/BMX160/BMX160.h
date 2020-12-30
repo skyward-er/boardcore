@@ -25,17 +25,42 @@
 
 #include <drivers/spi/SPIDriver.h>
 #include <sensors/Sensor.h>
+#include <sensors/SensorData.h>
 
 #include <cassert>
 
 #include "BMX160Config.h"
-#include "BMX160Data.h"
 #include "BMX160Defs.h"
 
+/// @brief BMX160 Data struct.
+struct BMX160Data : public AccelerometerData, GyroscopeData, MagnetometerData
+{
+    /// @brief Default constructor.
+    BMX160Data()
+        : AccelerometerData{0, 0, 0, 0}, GyroscopeData{0, 0, 0, 0},
+          MagnetometerData{0, 0, 0, 0}
+    {
+    }
+
+    /// @brief Comodity constructor.
+    BMX160Data(AccelerometerData acc, GyroscopeData gyr, MagnetometerData mag)
+        : AccelerometerData(acc), GyroscopeData(gyr), MagnetometerData(mag)
+    {
+    }
+};
+
 /// @brief BMX160 Driver.
-class BMX160 : public Sensor
+class BMX160 : public SensorFIFO<BMX160Data, 200>
 {
 public:
+    /// @brief BMX160 Custom errors.
+    enum BMX160Errors : uint8_t
+    {
+        INVALID_FIFO_DATA =
+            SensorErrors::END_OF_BASE_ERRORS  ///< The fifo contained invalid
+                                              ///< data.
+    };
+
     /// @brief BMX160 Constructor.
     /// @param bus SPI bus
     /// @param cs SPI Chip Select pin
@@ -67,7 +92,7 @@ public:
         if (!checkChipid())
         {
             TRACE("[BMX160] Got bad CHIPID\n");
-            last_error = Sensor::ERR_NOT_ME;
+            last_error = SensorErrors::INVALID_WHOAMI;
             return false;
         }
 
@@ -77,7 +102,7 @@ public:
         {
 
             TRACE("[BMX160] Not all interfaces are up and running!\n");
-            // FIXME: Set correct error value
+            last_error = SensorErrors::INIT_FAIL;
             return false;
         }
 
@@ -112,7 +137,7 @@ public:
 
         if (!testAcc() || !testGyr() || !testMag())
         {
-            // FIXME: Set correct error value
+            last_error = SensorErrors::SELF_TEST_FAIL;
             return false;
         }
         else
@@ -123,11 +148,14 @@ public:
     }
 
     /// @brief Gather data from FIFO/data registers and temperature sensor.
-    bool onSimpleUpdate() override
+    BMX160Data sampleImpl() override
     {
 #ifdef DEBUG
         assert(is_init && "init() was not called");
 #endif
+        // Reset any errors.
+        last_error = SensorErrors::NO_ERRORS;
+
         // Read temperature
         if (config.temp_divider != 0 && temp_counter % config.temp_divider == 0)
             readTemp();
@@ -135,42 +163,39 @@ public:
         temp_counter++;
 
         // Delete old samples
-        gyr_fifo.clear();
-        acc_fifo.clear();
-        mag_fifo.clear();
+        last_fifo_level = 0;
 
         switch (config.fifo_mode)
         {
             case BMX160Config::FifoMode::DISABLED:
                 // Just push one sample
                 readData();
-                return true;
+                break;
 
             case BMX160Config::FifoMode::HEADERLESS:
                 // Read whole FIFO (headerless)
-                return readFifo(true);
+                readFifo(true);
+                break;
 
             case BMX160Config::FifoMode::HEADER:
                 // Read whole FIFO (header)
-                return readFifo(false);
+                readFifo(false);
+                break;
         }
 
-        return false;
+        if (last_error != SensorErrors::NO_ERRORS || last_fifo_level == 0)
+        {
+            // Something went wront, return dummy data
+            return BMX160Data{};
+        }
+        else
+        {
+            return last_fifo[last_fifo_level - 1];
+        }
     }
-
-    /// @brief Update the timestamp from an IRQ.
-    /// @param timestamp Timestamp in microseconds
-    void updateIRQTimestamp(uint32_t timestamp) { irq_timestamp = timestamp; }
 
     /// @brief Get last read temperature
     float getTemperature() { return temperature; }
-
-    /// @brief Exported internal magnetometer fifo.
-    BMX160Fifo<BMX160Mag, 200> mag_fifo;
-    /// @brief Exported internal accelerometer fifo.
-    BMX160Fifo<BMX160Acc, 200> acc_fifo;
-    /// @brief Exported internal gyroscope fifo.
-    BMX160Fifo<BMX160Gyr, 200> gyr_fifo;
 
 private:
     float temperature = 0.0f;
@@ -178,7 +203,6 @@ private:
     bool is_init = false;
     SPISlave spi_slave;
 
-    uint32_t irq_timestamp = 0;
     BMX160Defs::TrimData trim_data;
     BMX160Config config;
 
@@ -218,6 +242,14 @@ private:
     {
         spi.write(BMX160Defs::REG_CMD,
                   static_cast<uint8_t>(cmd) | static_cast<uint8_t>(pmu));
+    }
+
+    /// @brief Push a sample into the FIFO.
+    ///
+    /// @param sample Sample to be pushed.
+    void pushSample(BMX160Data sample)
+    {
+        last_fifo[last_fifo_level++] = sample;
     }
 
     /// @brief Convenience function to configure magnetometer.
@@ -636,7 +668,7 @@ private:
     ///
     /// @param data Raw input data.
     /// @param timestamp Timestamp associated with the data.
-    BMX160Mag buildMagData(BMX160Defs::MagRaw data, uint32_t timestamp = 0)
+    MagnetometerData buildMagData(BMX160Defs::MagRaw data, uint64_t timestamp)
     {
         // Strip the lower 3 bits
         data.x >>= 3;
@@ -645,16 +677,21 @@ private:
 
         if (config.enable_compensation)
         {
-            return BMX160Mag{Vec3(boschMagCompensateX(data.x, data.rhall),
-                                  boschMagCompensateY(data.y, data.rhall),
-                                  boschMagCompensateZ(data.z, data.rhall)),
-                             timestamp};
+            return MagnetometerData{
+                timestamp,
+                boschMagCompensateX(data.x, data.rhall),
+                boschMagCompensateY(data.y, data.rhall),
+                boschMagCompensateZ(data.z, data.rhall),
+            };
         }
         else
         {
-            return BMX160Mag{
-                Vec3(data.x, data.y, data.z) * BMX160Defs::MAG_SENSIBILITY,
-                timestamp};
+            return MagnetometerData{
+                timestamp,
+                data.x * BMX160Defs::MAG_SENSIBILITY,
+                data.y * BMX160Defs::MAG_SENSIBILITY,
+                data.z * BMX160Defs::MAG_SENSIBILITY,
+            };
         }
     }
 
@@ -662,20 +699,28 @@ private:
     ///
     /// @param data Raw input data.
     /// @param timestamp Timestamp associated with the data.
-    BMX160Acc buildAccData(BMX160Defs::AccRaw data, uint32_t timestamp = 0)
+    AccelerometerData buildAccData(BMX160Defs::AccRaw data, uint64_t timestamp)
     {
-        return BMX160Acc{Vec3(data.x, data.y, data.z) * acc_sensibility,
-                         timestamp};
+        return AccelerometerData{
+            timestamp,
+            data.x * acc_sensibility,
+            data.y * acc_sensibility,
+            data.z * acc_sensibility,
+        };
     }
 
     /// @brief Build accelerometer data.
     ///
     /// @param data Raw input data.
     /// @param timestamp Timestamp associated with the data.
-    BMX160Gyr buildGyrData(BMX160Defs::GyrRaw data, uint32_t timestamp = 0)
+    GyroscopeData buildGyrData(BMX160Defs::GyrRaw data, uint64_t timestamp)
     {
-        return BMX160Gyr{Vec3(data.x, data.y, data.z) * gyr_sensibility,
-                         timestamp};
+        return GyroscopeData{
+            timestamp,
+            data.x * gyr_sensibility,
+            data.y * gyr_sensibility,
+            data.z * gyr_sensibility,
+        };
     }
 
     /// @brief Debug function used to print the current error state
@@ -756,21 +801,35 @@ private:
         uint8_t buf[20];
         spi.read(BMX160Defs::REG_DATA, buf, sizeof(buf));
 
-        int idx = 0;
-        mag_fifo.push(buildMagData(parseStruct<BMX160Defs::MagRaw>(buf, idx)));
-        gyr_fifo.push(buildGyrData(parseStruct<BMX160Defs::GyrRaw>(buf, idx)));
-        acc_fifo.push(buildAccData(parseStruct<BMX160Defs::AccRaw>(buf, idx)));
+        int idx      = 0;
+        auto mag_raw = parseStruct<BMX160Defs::MagRaw>(buf, idx);
+        auto gyr_raw = parseStruct<BMX160Defs::GyrRaw>(buf, idx);
+        auto acc_raw = parseStruct<BMX160Defs::AccRaw>(buf, idx);
+
+        // Push a new sample into the fifo
+        pushSample(BMX160Data{
+            buildAccData(acc_raw, last_interrupt_us),
+            buildGyrData(gyr_raw, last_interrupt_us),
+            buildMagData(mag_raw, last_interrupt_us),
+        });
     }
 
     /// @brief Read the contents of the fifo into buf.
     ///
     /// @return Returns false on failure.
-    bool readFifo(bool headerless)
+    void readFifo(bool headerless)
     {
         SPITransaction spi(spi_slave);
 
         int len = spi.read(BMX160Defs::REG_FIFO_LENGTH_0) |
                   ((spi.read(BMX160Defs::REG_FIFO_LENGTH_1) & 7) << 8);
+
+        if (len == 0)
+        {
+            // The buffer is empty, return early
+            last_error = SensorErrors::NO_NEW_DATA;
+            return;
+        }
 
         // Sometimes the buffer gets over 1000
         uint8_t buf[1100];
@@ -786,6 +845,10 @@ private:
             odrToTimeOffset(config.acc_odr, config.fifo_acc_downs),
         });
 
+        MagnetometerData mag;
+        GyroscopeData gyr;
+        AccelerometerData acc;
+
         spi.read(BMX160Defs::REG_FIFO_DATA, buf, len);
         uint32_t timestamp = 0;
 
@@ -795,12 +858,16 @@ private:
 
             if (headerless)
             {
-                mag_fifo.push(buildMagData(
-                    parseStruct<BMX160Defs::MagRaw>(buf, idx), timestamp));
-                gyr_fifo.push(buildGyrData(
-                    parseStruct<BMX160Defs::GyrRaw>(buf, idx), timestamp));
-                acc_fifo.push(buildAccData(
-                    parseStruct<BMX160Defs::AccRaw>(buf, idx), timestamp));
+                auto mag_raw = parseStruct<BMX160Defs::MagRaw>(buf, idx);
+                auto gyr_raw = parseStruct<BMX160Defs::GyrRaw>(buf, idx);
+                auto acc_raw = parseStruct<BMX160Defs::AccRaw>(buf, idx);
+
+                mag = buildMagData(mag_raw, timestamp);
+                gyr = buildGyrData(gyr_raw, timestamp);
+                acc = buildAccData(acc_raw, timestamp);
+
+                // Push a new sample into the fifo
+                pushSample(BMX160Data{acc, gyr, mag});
 
                 timestamp += time_offset;
             }
@@ -818,21 +885,30 @@ private:
 
                     // This contains magnet data
                     if (header & BMX160Defs::FIFO_HEADER_PARM_MAG_DATA)
-                        mag_fifo.push(buildMagData(
-                            parseStruct<BMX160Defs::MagRaw>(buf, idx),
-                            timestamp));
+                    {
+                        auto mag_raw =
+                            parseStruct<BMX160Defs::MagRaw>(buf, idx);
+                        mag = buildMagData(mag_raw, timestamp);
+                    }
 
                     // This contains gyro data
                     if (header & BMX160Defs::FIFO_HEADER_PARM_GYR_DATA)
-                        gyr_fifo.push(buildGyrData(
-                            parseStruct<BMX160Defs::GyrRaw>(buf, idx),
-                            timestamp));
+                    {
+                        auto gyr_raw =
+                            parseStruct<BMX160Defs::GyrRaw>(buf, idx);
+                        gyr = buildGyrData(gyr_raw, timestamp);
+                    }
 
                     // This contains accel data
                     if (header & BMX160Defs::FIFO_HEADER_PARM_ACC_DATA)
-                        acc_fifo.push(buildAccData(
-                            parseStruct<BMX160Defs::AccRaw>(buf, idx),
-                            timestamp));
+                    {
+                        auto acc_raw =
+                            parseStruct<BMX160Defs::AccRaw>(buf, idx);
+                        acc = buildAccData(acc_raw, timestamp);
+                    }
+
+                    // Push a new sample into the fifo
+                    pushSample(BMX160Data{acc, gyr, mag});
 
                     timestamp += time_offset;
                 }
@@ -865,24 +941,21 @@ private:
                     TRACE(
                         "[BMX160] Malformed packet! Aborting fifo "
                         "transfer...\n");
+
+                    last_error = static_cast<SensorErrors>(
+                        BMX160Errors::INVALID_FIFO_DATA);
                     break;
                 }
             }
         }
 
         // Adjust timestamps
-        for (int i = 0; i < mag_fifo.count(); i++)
-            mag_fifo.data[i].timestamp += irq_timestamp - timestamp;
-
-        for (int i = 0; i < acc_fifo.count(); i++)
-            acc_fifo.data[i].timestamp += irq_timestamp - timestamp;
-
-        for (int i = 0; i < gyr_fifo.count(); i++)
-            gyr_fifo.data[i].timestamp += irq_timestamp - timestamp;
-
-        // At the end index should be _exactly_ length, otherwise an error
-        // occurred
-        return idx == len;
+        for (int i = 0; i < last_fifo_level; i++)
+        {
+            last_fifo[i].accel_timestamp += last_interrupt_us - timestamp;
+            last_fifo[i].gyro_timestamp += last_interrupt_us - timestamp;
+            last_fifo[i].mag_timestamp += last_interrupt_us - timestamp;
+        }
     }
 
     /// @brief Parses T out of a buffer.

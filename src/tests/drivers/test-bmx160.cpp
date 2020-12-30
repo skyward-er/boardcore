@@ -55,7 +55,7 @@ void __attribute__((used)) EXTI8_IRQHandlerImpl()
     tick = hrclock.toIntMicroSeconds(hrclock.tick());
     if (sensor)
     {
-        sensor->updateIRQTimestamp(tick);
+        sensor->IRQupdateTimestamp(tick);
     }
 }
 
@@ -117,31 +117,39 @@ int main()
         miosix::Thread::sleep(5000);
 
         printf("----------------------------\n");
-        
+
         uint32_t now = hrclock.toIntMicroSeconds(hrclock.tick());
-        if (!sensor->onSimpleUpdate())
+
+        sensor->sample();
+        if (sensor->getLastError() != SensorErrors::NO_ERRORS)
         {
             TRACE("Failed to read data!\n");
             continue;
         }
 
-        printf("Tick: %.4f s, Now: %.4f s\n", tick / 100000.0f, now / 100000.0f);
+        printf("Tick: %.4f s, Now: %.4f s\n", tick / 1000000.0f,
+               now / 1000000.0f);
         printf("Temp: %.2f deg\n", sensor->getTemperature());
-        printf("Fill mag: %d\n", sensor->mag_fifo.count());
-        printf("Fill acc: %d\n", sensor->acc_fifo.count());
-        printf("Fill gyr: %d\n", sensor->gyr_fifo.count());
+        printf("Fill: %d\n", sensor->getLastFifoSize());
 
         printf("----------------------------\n");
-        for (int i = 0; i < std::min(sensor->mag_fifo.count(), 5); i++)
-            sensor->mag_fifo.pop().print();
+        uint8_t len = std::min(sensor->getLastFifoSize(), (uint8_t)5);
 
-        printf("----------------------------\n");
-        for (int i = 0; i < std::min(sensor->acc_fifo.count(), 5); i++)
-            sensor->acc_fifo.pop().print();
+        for (uint8_t i = 0; i < len; i++)
+        {
+            BMX160Data data = sensor->getFifoElement(i);
+            printf("Mag [%.4f s]:\t%.2f\t%.2f\t%.2f\n",
+                   data.mag_timestamp / 1000000.0f, data.mag_x, data.mag_y,
+                   data.mag_z);
 
-        printf("----------------------------\n");
-        for (int i = 0; i < std::min(sensor->gyr_fifo.count(), 5); i++)
-            sensor->gyr_fifo.pop().print();
+            printf("Gyr [%.4f s]:\t%.2f\t%.2f\t%.2f\n",
+                   data.gyro_timestamp / 1000000.0f, data.gyro_x, data.gyro_y,
+                   data.gyro_z);
+
+            printf("Acc [%.4f s]:\t%.2f\t%.2f\t%.2f\n",
+                   data.accel_timestamp / 1000000.0f, data.accel_x, data.accel_y,
+                   data.accel_z);
+        }
     }
 
     return 0;
