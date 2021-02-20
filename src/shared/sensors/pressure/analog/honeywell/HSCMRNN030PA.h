@@ -22,15 +22,15 @@
 
 #pragma once
 
-#include "HSC.h"
+#include "HoneywellPressureSensor.h"
 
 /**
  * @brief Absolute pressure sensor with a 0-103kPa range (0-15psi)
  */
-class HSCMRNN030PA final : public HSC
+class HSCMRNN030PA final : public HoneywellPressureSensor
 {
 public:
-    using HSC::HSC;
+    using HoneywellPressureSensor::HoneywellPressureSensor;
 
 private:
     const float maxPressure = 206842.7188;

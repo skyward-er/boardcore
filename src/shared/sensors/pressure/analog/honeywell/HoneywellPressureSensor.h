@@ -32,13 +32,15 @@
  * All of which shares the same transfer function which varies only by the
  * range.
  */
-class HSC : public virtual AnalogPressureSensor
+class HoneywellPressureSensor : public virtual AnalogPressureSensor
 {
 public:
     using AnalogPressureSensor::AnalogPressureSensor;
 
 protected:
-    ///< Common transfer function from volts to pascals (from datasheet pag 11)
+    /**
+     * @brief Common transfer function from volts to pascals (from datasheet pag 11)
+    */
     inline float voltageToPressure(float voltage)
     {
         float tmp;
