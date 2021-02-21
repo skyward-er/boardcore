@@ -25,7 +25,7 @@
 #include "HoneywellPressureSensor.h"
 
 /**
- * @brief Absolute pressure sensor with a 0-103kPa range (0-15psi)
+ * @brief Differential pressure sensor with a ±103kPa range (±15psi)
  */
 class SSCDRRN015PDA final : public HoneywellPressureSensor
 {
@@ -34,4 +34,6 @@ public:
 
 private:
     const float maxPressure = 103421.3594;
+    
+    const float maxPressure = -103421.3594;
 };

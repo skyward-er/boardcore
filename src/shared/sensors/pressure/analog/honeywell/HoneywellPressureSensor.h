@@ -25,12 +25,9 @@
 #include "../AnalogPressureSensor.h"
 
 /**
- * @brief Driver for Honeywell's TruStability® High Accuracy Silicon Ceramic
- * (HSC) Series
+ * @brief Driver for Honeywell's pressure sensors (absolute and differential)
  *
- * This family includes both absolute and differential pressure sensors.
- * All of which shares the same transfer function which varies only by the
- * range.
+ * All this sensors shares the same transfer function which varies only by few parameters: voltage supply and the sensor pressure range
  */
 class HoneywellPressureSensor : public virtual AnalogPressureSensor
 {
@@ -38,9 +35,7 @@ public:
     using AnalogPressureSensor::AnalogPressureSensor;
 
 protected:
-    /**
-     * @brief Common transfer function from volts to pascals (from datasheet pag 11)
-    */
+    ///< Common transfer function from volts to pascals (from datasheet pag 11)
     inline float voltageToPressure(float voltage)
     {
         float tmp;

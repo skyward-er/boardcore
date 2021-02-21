@@ -25,7 +25,7 @@
 #include "HoneywellPressureSensor.h"
 
 /**
- * @brief Absolute pressure sensor with a 0-103kPa range (0-15psi)
+ * @brief Absolute pressure sensor with a 0-206kPa range (0-30psi)
  */
 class SSCDANN030PAA final : public HoneywellPressureSensor
 {
