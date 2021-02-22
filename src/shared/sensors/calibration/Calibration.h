@@ -26,13 +26,14 @@
 #include <Eigen/Geometry>
 
 #include "SensorDataExtra.h"
+#include "sensors/Sensor.h"
 
 using namespace Eigen;
 
 /**
- * This class generalizes all the Calibration classes used to
- * adjust the values read from sensors. It provides a standard interface
- * that tries to integrate well with the new Sensor and SensorData structures.
+ * This class is used to adjust the values given by sensors during the flight.
+ * An object can be obtained only via deserialization or if produced by an
+ * instance of the "CalibrationModel" class.
  *
  * PackedModel is a datatype that could encapsulate all parameters of the model
  * (e.g. Mat4, a std::array of bytes or a custom struct). Choose it carefully
@@ -42,25 +43,42 @@ using namespace Eigen;
  * GyroscopeData, MagnetometerData). This is needed because certain models could
  * work slightly differently depending on it
  */
-template <typename PackedModel, typename SensorData,
-          typename... AdditionalFeedParams>
-class AbstractCalibrationModel
+template <typename SensorData>
+class ValuesCorrector
 {
 public:
-    virtual void store(PackedModel& output) const = 0;
-
-    virtual void load(const PackedModel& input) = 0;
+    /*
+     *  operator << (const T& t);
+     *  operator >> (T& t);
+     */
 
     virtual void resetToIdentity() = 0;
 
-    virtual void startCalibrationStage() = 0;
-
-    virtual void feed(const SensorData& data,
-                      const AdditionalFeedParams&... p) = 0;
-
-    virtual void endCalibrationStage() = 0;
-
     virtual SensorData correct(const SensorData& input) const = 0;
+};
+
+template <typename SensorData>
+class SensorWrapper : public Sensor<SensorData>
+{
+    using S = Sensor<SensorData>;
+    using C = ValuesCorrector<SensorData>;
+
+public:
+    SensorWrapper(S* _sensor, C* _calib) : sensor(_sensor), calib(_calib) {}
+
+    S* getSensor() { return sensor; }
+    void setSensor(S* s){ sensor = s; }
+
+    C* getValuesCorrector() { return calib; }
+    void setValuesCorrector(C* c) { calib = c; }
+
+    void init() override { sensor->init(); }
+
+    // TODO
+
+private:
+    S* sensor;
+    C* calib;
 };
 
 /**
@@ -114,7 +132,7 @@ inline Vector3f orientationToVector(Orientation val)
  * Orientation::POSITIVE_Z );
  *
  * // The implicit cast is supported and recommended
- * AxisOrientation converted1 = angles; 
+ * AxisOrientation converted1 = angles;
  * AxisOrientation converted2 = ortho;
  *
  * // Now we can use the generated matrix:
