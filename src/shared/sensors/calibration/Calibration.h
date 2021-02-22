@@ -221,7 +221,7 @@ struct AxisOrthoOrientation
 
         vx = orientationToVector(xAxis);
         vy = orientationToVector(yAxis);
-        vz = vx.cross(vy);
+        vz = vx.cross(vy).normalized();
 
         Matrix3f mat;
         mat.col(0) << vx;
