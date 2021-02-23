@@ -27,5 +27,6 @@ static constexpr const float PI                 = 3.14159265f;
 static constexpr const float EARTH_GRAVITY      = 9.80665f;
 static constexpr const float DEGREES_TO_RADIANS = PI / 180.0f;
 static constexpr const float RADIANS_TO_DEGREES = 180.0f / PI;
+static constexpr const float KNOTS_TO_MPS       = 0.514444;
 
 #endif
