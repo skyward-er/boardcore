@@ -21,7 +21,9 @@
  */
 
 #include <drivers/gps/Gps.h>
-#include <drivers/nmea/nmea.c>
+#include <drivers/nmea/nmea.h>
+#include <cmath>
+
 #include "drivers/serial.h"
 #include "filesystem/file_access.h"
 
@@ -40,20 +42,15 @@ Gps::Gps(int baudrate, int sampleRate, int serialPortNum,
     Gps::serialPortNum  = serialPortNum;
     Gps::serialPortName = serialPortName;
 
-    if (sampleRate > 10)
-        Gps::betweenReadings = 100;
-    else
-        Gps::betweenReadings = 1000 / sampleRate;
+    sampleRate           = std::max(sampleRate, MAX_SAMPLERATE);
+    Gps::betweenReadings = 1000 / sampleRate;
 
-    data.timestamp = 0;
-    data.fix       = false;
+    data.gps_timestamp = 0;
+    data.velocity_down = 0;
+    data.fix           = false;
 }
 
-bool Gps::init()
-{
-    return serialComSetup();
-}
-
+bool Gps::init() { return serialComSetup(); }
 
 void Gps::run()
 {
@@ -72,9 +69,10 @@ void Gps::run()
             selfTestFlag   = false;
         }
 
-        int i=0;
+        int i = 0;
         read(fd, msg, 1);
-        while(msg[i]!='\n'){
+        while (msg[i] != '\n')
+        {
             i++;
             read(fd, &msg[i], 1);
         }
@@ -87,6 +85,8 @@ void Gps::run()
         MINMEA_SENTENCE_RMC,
         MINMEA_SENTENCE_GGA
         */
+
+        Lock<FastMutex> l(mutex);  // update struct
         switch (sentence_id)
         {
             case MINMEA_SENTENCE_RMC:
@@ -98,10 +98,9 @@ void Gps::run()
                     else
                     {
                         {
-                            Lock<FastMutex> l(mutex);  // update struct
-                            data.fix       = true;
-                            data.timestamp = getTick();
-                            deg            = frame_rmc.latitude.value /
+                            data.fix           = true;
+                            data.gps_timestamp = getTick();
+                            deg                = frame_rmc.latitude.value /
                                   frame_rmc.latitude.scale / 100;
                             data.latitude =
                                 deg + ((float)frame_rmc.latitude.value /
@@ -125,18 +124,19 @@ void Gps::run()
                             if (frame_rmc.course.scale == 0 &&
                                 frame_rmc.course.value == 0)
                             {
-                                data.track         = 0;
-                                data.velocityNorth = 0;
-                                data.velocityEast  = 0;
+                                data.track          = 0;
+                                data.velocity_north = 0;
+                                data.velocity_east  = 0;
                             }
                             else
                             {
                                 data.track = (float)frame_rmc.course.value /
                                              frame_rmc.course.scale;
+
                                 trackDegrees = data.track * DEGREES_TO_RADIANS;
-                                data.velocityNorth =
+                                data.velocity_north =
                                     cos(trackDegrees) * data.speed;
-                                data.velocityEast =
+                                data.velocity_east =
                                     sin(trackDegrees) * data.speed;
                             }
                         }
@@ -151,9 +151,10 @@ void Gps::run()
                     {
                         {
                             Lock<FastMutex> l(mutex);  // update struct
-                            data.altitude = (float)frame_gga.altitude.value /
-                                            frame_gga.altitude.scale;
-                            data.numSatellites = frame_gga.satellites_tracked;
+                            data.height = (float)frame_gga.altitude.value /
+                                          frame_gga.altitude.scale;
+
+                            data.num_satellites = frame_gga.satellites_tracked;
                         }
                     }
                 }
@@ -168,10 +169,10 @@ void Gps::run()
 
 bool Gps::serialComSetup()
 {
-    uint8_t setBaudRateMsg[SET_BAUDRATE_MSG_LEN] = {0Xb5, 0x62, 0x06, 0x00, 0x14, 0x00, 0x01,
-                                  0x00, 0x00, 0x00, 0xD0, 0x08, 0x00, 0x00,
-                                  0xff, 0xff, 0xff, 0xff, 0x07, 0x00, 0x03,
-                                  0x00, 0x00, 0x00, 0x00, 0x00, 0xff, 0xff};
+    uint8_t setBaudRateMsg[SET_BAUDRATE_MSG_LEN] = {
+        0Xb5, 0x62, 0x06, 0x00, 0x14, 0x00, 0x01, 0x00, 0x00, 0x00,
+        0xD0, 0x08, 0x00, 0x00, 0xff, 0xff, 0xff, 0xff, 0x07, 0x00,
+        0x03, 0x00, 0x00, 0x00, 0x00, 0x00, 0xff, 0xff};
 
     uint8_t msg[SET_RATE_MSG_LEN];
 
@@ -261,33 +262,38 @@ bool Gps::selfTestInThread()
 
     for (int attempts = 0; attempts < 4; attempts++)
     {
-        int i=0;
+        int i = 0;
         read(fd, msg, 1);
-        while(msg[i]!='\n'){
+        while (msg[i] != '\n')
+        {
             i++;
             read(fd, &msg[i], 1);
         }
         msg[++i] = '\0';
 
         sentence_id = minmea_sentence_id(msg, 0);
-        if (sentence_id != MINMEA_INVALID && sentence_id != MINMEA_UNKNOWN) {
+        if (sentence_id != MINMEA_INVALID && sentence_id != MINMEA_UNKNOWN)
+        {
             return true;
         }
     }
-    
+
     return false;
 }
 
-struct GPSData Gps::getGpsData()
+struct GPSData Gps::sampleImpl()
 {
     Lock<FastMutex> l(mutex);
     return data;
 }
 
-void Gps::packSBASMessge(uint8_t* msg, int mode,int usage, int maxChannelNum, int PRNs[3]){
+void Gps::packSBASMessge(uint8_t* msg, int mode, int usage, int maxChannelNum,
+                         int PRNs[3])
+{
     int egnosPRNs[3] = {123, 126, 136};
-    
-    if(PRNs == NULL){
+
+    if (PRNs == NULL)
+    {
         PRNs = egnosPRNs;
     }
 
@@ -302,26 +308,31 @@ void Gps::packSBASMessge(uint8_t* msg, int mode,int usage, int maxChannelNum, in
     msg[7] = usage;
     msg[8] = maxChannelNum;
 
-    for(int i=0; i<5; i++){
-        msg[9+i] = 0x00;
+    for (int i = 0; i < 5; i++)
+    {
+        msg[9 + i] = 0x00;
     }
-    for(int i=0; i<3; i++){
-        int bit = PRNs[i] - 120;       //120 is the first valid PNR for SBAS satellites
+    for (int i = 0; i < 3; i++)
+    {
+        int bit =
+            PRNs[i] - 120;  // 120 is the first valid PNR for SBAS satellites
         int byte = bit / 8;
-        bit = bit % 8;
-        if(byte < 4){
-            msg[10+byte] |= 1 << bit; 
+        bit      = bit % 8;
+        if (byte < 4)
+        {
+            msg[10 + byte] |= 1 << bit;
         }
-        else{
-            msg[9] |= 1 << bit; 
+        else
+        {
+            msg[9] |= 1 << bit;
         }
     }
 
     ubxChecksum(msg, SET_SBAS_MSG_LEN);
-
 }
 
-void Gps::packRateMessage(uint8_t* msg, int inbetweenReadings, int timeRef){
+void Gps::packRateMessage(uint8_t* msg, int inbetweenReadings, int timeRef)
+{
     // To avoid GCC warning
     (void)timeRef;
 
@@ -352,16 +363,16 @@ void Gps::ubxChecksum(uint8_t* msg, int len)
     msg[len - 1] = ck_b;
 }
 
-void Gps::sendSBASMessage(int mode, int usage, int maxChannelNum, int PRNs[3]){
+void Gps::sendSBASMessage(int mode, int usage, int maxChannelNum, int PRNs[3])
+{
     uint8_t msg[SET_SBAS_MSG_LEN];
     packSBASMessge(msg, mode, usage, maxChannelNum, PRNs);
     write(fd, msg, SET_SBAS_MSG_LEN);
 }
 
-void Gps::sendRateMessage(int inbetweenReadings, int timeRef){
+void Gps::sendRateMessage(int inbetweenReadings, int timeRef)
+{
     uint8_t msg[SET_RATE_MSG_LEN];
     packRateMessage(msg, inbetweenReadings, timeRef);
     write(fd, msg, SET_RATE_MSG_LEN);
 }
-
-bool Gps::onSimpleUpdate() { return true; }

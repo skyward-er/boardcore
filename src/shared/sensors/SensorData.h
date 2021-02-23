@@ -96,6 +96,7 @@ struct GPSData
     float velocity_east;    /**< [m/s] */
     float velocity_down;    /**< [m/s] */
     float speed;            /**< [m/s] */
+    float track;            /**< [deg] */
     uint8_t num_satellites; /**< [1]   */
     bool fix;
 };
