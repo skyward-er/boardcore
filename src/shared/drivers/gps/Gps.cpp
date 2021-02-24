@@ -42,7 +42,7 @@ Gps::Gps(int baudrate, int sampleRate, int serialPortNum,
     Gps::serialPortNum  = serialPortNum;
     Gps::serialPortName = serialPortName;
 
-    sampleRate           = std::max(sampleRate, MAX_SAMPLERATE);
+    sampleRate           = std::min(sampleRate, Gps::MAX_SAMPLERATE);
     Gps::betweenReadings = 1000 / sampleRate;
 
     data.gps_timestamp = 0;
@@ -150,7 +150,6 @@ void Gps::run()
                     if (data.fix)
                     {
                         {
-                            Lock<FastMutex> l(mutex);  // update struct
                             data.height = (float)frame_gga.altitude.value /
                                           frame_gga.altitude.scale;
 
@@ -161,7 +160,7 @@ void Gps::run()
                 break;
 
             default:
-                TRACE("Unrecognized NMEA message: %s\n", msg);
+                TRACE("Unrecognized NMEA message: %s", msg);
                 break;
         }
     }
