@@ -26,7 +26,7 @@ int main()
 
     while (1)
     {
-        Thread::sleep(1000);
+        Thread::sleep(2000);
         gps.sample();
 
         dataGPS = gps.getLastSample();

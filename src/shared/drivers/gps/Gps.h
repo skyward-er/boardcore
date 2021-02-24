@@ -32,26 +32,21 @@
 using miosix::FastMutex;
 using miosix::Thread;
 
-struct GPSData_old
-{
-    /// timestamp in ms (anakin time, not GPS time). getTick()-timestamp tells
-    /// you how "old" the data is.
-    long long timestamp;
-
-    double latitude;      ///< [deg] //TODO: cast to float??
-    double longitude;     ///< [deg] //TODO: cast to float??
-    double altitude;      ///< [m]   //TODO: cast to float??
-    float velocityNorth;  ///< [m/s]
-    float velocityEast;   ///< [m/s]
-    float speed;          ///< [m/s]
-    int numSatellites;    ///< [1]
-    float track;          ///< [deg]
-    bool fix;
-};
-
 class Gps : public Sensor<GPSData>, public ActiveObject
 {
 public:
+    /*
+     * Which time reference to use
+     */
+    enum class TimeRef
+    {
+        UTC     = 0,
+        GPS     = 1,
+        GLONASS = 2,
+        BEIDOU  = 3,
+        GALILEO = 4
+    };
+
     Gps(int baudrate = 460800, int sampleRate = 10, int serialPortNum = 2,
         const char *portName = "gps");
 
@@ -81,10 +76,10 @@ public:
 
     /*
      * Packs and sends a UBX configuration message to the GPS module to set the
-     * rate. By default it samples the gps every 100 ms and uses GPS time (1, to
-     * use UTC time set 0)
+     * rate. By default it samples the gps every 100 ms and uses GPS time
      */
-    void sendRateMessage(int inbetweenReadings = 100, int timeRef = 1);
+    void sendRateMessage(int inbetweenReadings = 100, int navRate = 1,
+                         TimeRef timeRef = TimeRef::GPS);
 
 private:
     /*
@@ -129,11 +124,11 @@ private:
      * Length: 14 bytes
      * bytes 0-5 as UBX standard (header x2, class x1, id x1, length x2)
      * bytes 6-7 measurement rate, time between readings, default 100
-     * bytes 8-9 navRate, must be set to 1
-     * bytes timeRef, Alignment to reference time: 0 = UTC time, 1 = GPS time
+     * bytes 8-9 navRate, measurements taken before creating a solution, default
+     * 1 bytes timeRef, Alignment to reference time, default GPS
      */
     void packRateMessage(uint8_t *msg, int inbetweenReadings = 100,
-                         int timeRef = 1);
+                         int navRate = 1, TimeRef timeRef = TimeRef::GPS);
 
     struct GPSData data;
     mutable FastMutex mutex;

@@ -22,6 +22,7 @@
 
 #include <drivers/gps/Gps.h>
 #include <drivers/nmea/nmea.h>
+
 #include <cmath>
 
 #include "drivers/serial.h"
@@ -173,8 +174,6 @@ bool Gps::serialComSetup()
         0xD0, 0x08, 0x00, 0x00, 0xff, 0xff, 0xff, 0xff, 0x07, 0x00,
         0x03, 0x00, 0x00, 0x00, 0x00, 0x00, 0xff, 0xff};
 
-    uint8_t msg[SET_RATE_MSG_LEN];
-
     intrusive_ref_ptr<DevFs> devFs = FilesystemManager::instance().getDevFs();
     if (!devFs->remove(serialPortName))
         return false;
@@ -207,7 +206,8 @@ bool Gps::serialComSetup()
     bytes 6 and 7 for rate
     last 2 bytes for checksum
     */
-    packRateMessage(msg, betweenReadings, 1);
+    uint8_t msg[SET_RATE_MSG_LEN];
+    packRateMessage(msg, betweenReadings);
     write(fd, msg, SET_RATE_MSG_LEN);
 
     /*
@@ -311,6 +311,7 @@ void Gps::packSBASMessge(uint8_t* msg, int mode, int usage, int maxChannelNum,
     {
         msg[9 + i] = 0x00;
     }
+
     for (int i = 0; i < 3; i++)
     {
         int bit =
@@ -330,10 +331,10 @@ void Gps::packSBASMessge(uint8_t* msg, int mode, int usage, int maxChannelNum,
     ubxChecksum(msg, SET_SBAS_MSG_LEN);
 }
 
-void Gps::packRateMessage(uint8_t* msg, int inbetweenReadings, int timeRef)
+void Gps::packRateMessage(uint8_t* msg, int inbetweenReadings, int navRate,
+                          TimeRef timeRef)
 {
-    // To avoid GCC warning
-    (void)timeRef;
+    uint16_t timeRefIdx = static_cast<uint16_t>(timeRef);
 
     msg[0] = UbxHeader[0];
     msg[1] = UbxHeader[1];
@@ -344,6 +345,12 @@ void Gps::packRateMessage(uint8_t* msg, int inbetweenReadings, int timeRef)
 
     msg[6] = inbetweenReadings & 0x00ff;
     msg[7] = (inbetweenReadings & 0xff00) >> 8;
+
+    msg[8] = navRate & 0x00ff;
+    msg[9] = (navRate & 0xff00) >> 8;
+
+    msg[10] = timeRefIdx & 0x00ff;
+    msg[11] = (timeRefIdx & 0xff00) >> 8;
 
     ubxChecksum(msg, SET_RATE_MSG_LEN);
 }
@@ -369,9 +376,9 @@ void Gps::sendSBASMessage(int mode, int usage, int maxChannelNum, int PRNs[3])
     write(fd, msg, SET_SBAS_MSG_LEN);
 }
 
-void Gps::sendRateMessage(int inbetweenReadings, int timeRef)
+void Gps::sendRateMessage(int inbetweenReadings, int navRate, TimeRef timeRef)
 {
     uint8_t msg[SET_RATE_MSG_LEN];
-    packRateMessage(msg, inbetweenReadings, timeRef);
+    packRateMessage(msg, inbetweenReadings, navRate, timeRef);
     write(fd, msg, SET_RATE_MSG_LEN);
 }
