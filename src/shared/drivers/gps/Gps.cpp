@@ -20,6 +20,7 @@
  * THE SOFTWARE.
  */
 
+#include <TimestampTimer.h>
 #include <drivers/gps/Gps.h>
 #include <drivers/nmea/nmea.h>
 
@@ -70,14 +71,9 @@ void Gps::run()
             selfTestFlag   = false;
         }
 
-        int i = 0;
-        read(fd, msg, 1);
-        while (msg[i] != '\n')
-        {
-            i++;
-            read(fd, &msg[i], 1);
-        }
-        msg[++i] = '\0';
+        // If the message was truncated don't even bother with parsing...
+        if (!readMessageIn(msg, sizeof(msg)))
+            continue;
 
         sentence_id = minmea_sentence_id(msg, 0);
 
@@ -100,7 +96,7 @@ void Gps::run()
                     {
                         {
                             data.fix           = true;
-                            data.gps_timestamp = getTick();
+                            data.gps_timestamp = TimestampTimer::getTimestamp();
                             deg                = frame_rmc.latitude.value /
                                   frame_rmc.latitude.scale / 100;
                             data.latitude =
@@ -160,8 +156,13 @@ void Gps::run()
                 }
                 break;
 
-            default:
+            case MINMEA_INVALID:
+            case MINMEA_UNKNOWN:
                 TRACE("Unrecognized NMEA message: %s", msg);
+                break;
+
+            default:
+                TRACE("Unexpected NMEA message\n");
                 break;
         }
     }
@@ -261,14 +262,8 @@ bool Gps::selfTestInThread()
 
     for (int attempts = 0; attempts < 4; attempts++)
     {
-        int i = 0;
-        read(fd, msg, 1);
-        while (msg[i] != '\n')
-        {
-            i++;
-            read(fd, &msg[i], 1);
-        }
-        msg[++i] = '\0';
+        if (!readMessageIn(msg, sizeof(msg)))
+            continue;
 
         sentence_id = minmea_sentence_id(msg, 0);
         if (sentence_id != MINMEA_INVALID && sentence_id != MINMEA_UNKNOWN)
@@ -367,6 +362,28 @@ void Gps::ubxChecksum(uint8_t* msg, int len)
     }
     msg[len - 2] = ck_a;
     msg[len - 1] = ck_b;
+}
+
+bool Gps::readMessageIn(char* msg, int len)
+{
+    int i = 0;
+    char c;
+
+    // We need to read a whole message, even if there is a buffer overflow.
+    do
+    {
+        read(fd, &c, 1);
+
+        // Prevent buffer overflows
+        if (i < len)
+            msg[i] = c;
+
+        i++;
+    } while (c != '\n');
+
+    msg[i++] = '\0';
+
+    return i < len;
 }
 
 void Gps::sendSBASMessage(int mode, int usage, int maxChannelNum, int PRNs[3])

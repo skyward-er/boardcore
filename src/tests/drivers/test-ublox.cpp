@@ -1,4 +1,5 @@
 #include <Common.h>
+#include <TimestampTimer.h>
 #include <drivers/gps/Gps.h>
 #include <drivers/serial.h>
 #include <fcntl.h>
@@ -13,8 +14,10 @@ int main()
     devFs->addDevice("gps",
                      intrusive_ref_ptr<Device>(new STM32Serial(2, 38400)));
 
+    TimestampTimer::enableTimestampTimer();
+
     // Keep GPS baud rate at default for easier testing
-    Gps gps(38400);
+    Gps gps(38400, 25);
     struct GPSData dataGPS;
 
     printf("init gps: %d\n", gps.init());
@@ -31,12 +34,13 @@ int main()
 
         dataGPS = gps.getLastSample();
         printf(
-            "fix: %d t: %lld lat: %f lon: %f height: %f nsat: %d speed: %f "
+            "timestamp: %.3f, fix: %d t: %lld lat: %f lon: %f height: %f nsat: "
+            "%d speed: %f "
             "velN: %f velE: "
             "%f track %f\n",
-            dataGPS.fix, dataGPS.gps_timestamp, dataGPS.latitude,
-            dataGPS.longitude, dataGPS.height, dataGPS.num_satellites,
-            dataGPS.speed, dataGPS.velocity_north, dataGPS.velocity_east,
-            dataGPS.track);
+            (float)dataGPS.gps_timestamp / 1000000, dataGPS.fix,
+            dataGPS.gps_timestamp, dataGPS.latitude, dataGPS.longitude,
+            dataGPS.height, dataGPS.num_satellites, dataGPS.speed,
+            dataGPS.velocity_north, dataGPS.velocity_east, dataGPS.track);
     }
 }

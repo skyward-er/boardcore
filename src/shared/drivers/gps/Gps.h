@@ -104,6 +104,12 @@ private:
     void ubxChecksum(uint8_t *msg, int len);
 
     /*
+     * Reads a message with proper bound checks.
+     * Returns false in case of buffer overflow.
+     */
+    bool readMessageIn(char *msg, int len);
+
+    /*
      * Packs SBAS message:
      *
      * Length: 16 bytes
