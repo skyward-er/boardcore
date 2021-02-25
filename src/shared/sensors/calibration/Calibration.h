@@ -48,13 +48,33 @@ class ValuesCorrector
 {
 public:
     /*
+     *  Note: derived classes of ValuesCorrector<XX> must support the following
+     *  operators:
+     *
      *  operator << (const T& t);
      *  operator >> (T& t);
+     *
+     *  where T is a datatype that can fully contain all the coefficients used
+     *  by the function correct(input)
      */
 
     virtual void resetToIdentity() = 0;
 
     virtual SensorData correct(const SensorData& input) const = 0;
+};
+
+/*
+ * This class represents a "factory" of ValueCorrector instances, and it's necessary
+ * to create one. You will always use one of its derived classes, of course.
+ *
+ * Values given to the feed() function are needed for the training of the model.
+*/
+template <typename SensorData, typename... FeedParams>
+class AbstractCalibrationModel
+{
+public:
+    void feed(FeedParams&&... params);
+    ValuesCorrector<SensorData>* outputModel();
 };
 
 template <typename SensorData>
@@ -67,14 +87,21 @@ public:
     SensorWrapper(S* _sensor, C* _calib) : sensor(_sensor), calib(_calib) {}
 
     S* getSensor() { return sensor; }
-    void setSensor(S* s){ sensor = s; }
+    void setSensor(S* s) { sensor = s; }
 
     C* getValuesCorrector() { return calib; }
     void setValuesCorrector(C* c) { calib = c; }
 
     void init() override { sensor->init(); }
 
-    // TODO
+    bool test() override { return sensor->test(); }
+
+    SensorData sampleImpl() override
+    {
+        return calib->correct(sensor->sampleImpl());
+    }
+
+    SensorErrors getWrappedSensorError() { return sensor->getLastError(); }
 
 private:
     S* sensor;
