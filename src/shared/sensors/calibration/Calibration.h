@@ -64,17 +64,18 @@ public:
 };
 
 /*
- * This class represents a "factory" of ValueCorrector instances, and it's necessary
- * to create one. You will always use one of its derived classes, of course.
+ * This class represents a "factory" of ValueCorrector instances, and it's
+ * necessary to create one. You will always use one of its derived classes, of
+ * course.
  *
  * Values given to the feed() function are needed for the training of the model.
-*/
+ */
 template <typename SensorData, typename... FeedParams>
 class AbstractCalibrationModel
 {
 public:
     virtual void feed(const FeedParams&... params);
-    ValuesCorrector<SensorData>* outputModel();
+    ValuesCorrector<SensorData>* computeResult();
 };
 
 template <typename SensorData>
@@ -141,8 +142,11 @@ inline Vector3f orientationToVector(Orientation val)
             return {0, 0, 1};
         case Orientation::NEGATIVE_Z:
             return {0, 0, -1};
+        default:
+            /* never happens, added just to shut up the warnings */
+            return {0, 0, 0};
     }
-};
+}
 
 /**
  * This struct represents in the most general way any kind of transformation of

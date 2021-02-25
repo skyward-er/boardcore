@@ -29,7 +29,6 @@
 
 using namespace Eigen;
 
-
 /**
  * This is the dumbest type of calibration possible: it stores a 3d vector
  * (called "bias") that will be added to every measurement.
@@ -39,25 +38,21 @@ using namespace Eigen;
  * of the sensor, so it can guess the bias.
  */
 template <typename SensorData>
-class BiasCorrector : public ValuesCorrector<SensorData> {
+class BiasCorrector : public ValuesCorrector<SensorData>
+{
 
 public:
     BiasCorrector() : bias(0, 0, 0) {}
-    BiasCorrector(const Vector3f& _bias) : bias(_bias) { }
+    BiasCorrector(const Vector3f& _bias) : bias(_bias) {}
 
-    void operator>> (Vector3f& rhs) {
-        rhs = bias;
-    }
+    void operator>>(Vector3f& rhs) { rhs = bias; }
 
-    void operator<< (const Vector3f& rhs){
-        bias = rhs;
-    }
+    void operator<<(const Vector3f& rhs) { bias = rhs; }
 
-    void resetToIdentity() override {
-        bias = {0, 0, 0};
-    }
+    void resetToIdentity() override { bias = {0, 0, 0}; }
 
-    SensorData correct(const SensorData& data) override {
+    SensorData correct(const SensorData& data) const override
+    {
         SensorData out;
         Vector3f tmp;
 
@@ -66,19 +61,17 @@ public:
         out << tmp;
         return out;
     }
+
 private:
     Vector3f bias;
 };
-
 
 template <typename SensorData>
 class BiasCalibration
     : public AbstractCalibrationModel<SensorData, SensorData, AxisOrientation>
 {
 public:
-
-    BiasCalibration() 
-        : bias(0, 0, 0), ref(0, 0, 0)
+    BiasCalibration() : bias(0, 0, 0), ref(0, 0, 0)
     {
         specificInit();
 
@@ -97,6 +90,11 @@ public:
 
         sum += (transform.getMatrix().transpose() * ref) - vec;
         numSamples++;
+    }
+
+    ValuesCorrector<SensorData>* computeResult()
+    {
+        return new BiasCorrector<SensorData>(bias);
     }
 
 private:
