@@ -29,6 +29,7 @@
 
 using namespace Eigen;
 
+
 /**
  * This is the dumbest type of calibration possible: it stores a 3d vector
  * (called "bias") that will be added to every measurement.
@@ -38,27 +39,55 @@ using namespace Eigen;
  * of the sensor, so it can guess the bias.
  */
 template <typename SensorData>
+class BiasCorrector : public ValuesCorrector<SensorData> {
+
+public:
+    BiasCorrector() : bias(0, 0, 0) {}
+    BiasCorrector(const Vector3f& _bias) : bias(_bias) { }
+
+    void operator>> (Vector3f& rhs) {
+        rhs = bias;
+    }
+
+    void operator<< (const Vector3f& rhs){
+        bias = rhs;
+    }
+
+    void resetToIdentity() override {
+        bias = {0, 0, 0};
+    }
+
+    SensorData correct(const SensorData& data) override {
+        SensorData out;
+        Vector3f tmp;
+
+        data >> tmp;
+        tmp += bias;
+        out << tmp;
+        return out;
+    }
+private:
+    Vector3f bias;
+};
+
+
+template <typename SensorData>
 class BiasCalibration
-    : public AbstractCalibrationModel<Vector3f, SensorData, AxisOrientation>
+    : public AbstractCalibrationModel<SensorData, SensorData, AxisOrientation>
 {
 public:
-    BiasCalibration() : bias(0.f, 0.f, 0.f), ref(0.f, 0.f, 1.f) {}
 
-    void setReferenceVector(Vector3f vec) { ref = vec; }
-
-    void store(Vector3f& out) const override { out = bias; }
-
-    void load(const Vector3f& in) override { bias = in; }
-
-    void resetToIdentity() override { bias = {0.f, 0.f, 0.f}; }
-
-    void startCalibrationStage() override
+    BiasCalibration() 
+        : bias(0, 0, 0), ref(0, 0, 0)
     {
         specificInit();
 
         sum        = {0.f, 0.f, 0.f};
         numSamples = 0;
     }
+
+    void setReferenceVector(Vector3f vec) { ref = vec; }
+    Vector3f getReferenceVector() { return ref; }
 
     void feed(const SensorData& measured,
               const AxisOrientation& transform) override
@@ -68,20 +97,6 @@ public:
 
         sum += (transform.getMatrix().transpose() * ref) - vec;
         numSamples++;
-    }
-
-    void endCalibrationStage() override { bias = sum / numSamples; }
-
-    SensorData correct(const SensorData& input) const override
-    {
-        SensorData output;
-        Vector3f vec;
-
-        input >> vec;
-        vec += bias;
-        output << vec;
-
-        return output;
     }
 
 private:
@@ -94,5 +109,5 @@ private:
 template <>
 void BiasCalibration<AccelerometerData>::specificInit()
 {
-    setReferenceVector({0.f, 0.f, -1.f});
+    setReferenceVector({0.f, 0.f, 1.f});
 }

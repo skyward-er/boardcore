@@ -73,7 +73,7 @@ template <typename SensorData, typename... FeedParams>
 class AbstractCalibrationModel
 {
 public:
-    void feed(FeedParams&&... params);
+    virtual void feed(const FeedParams&... params);
     ValuesCorrector<SensorData>* outputModel();
 };
 
