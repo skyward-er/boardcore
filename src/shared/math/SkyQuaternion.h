@@ -40,8 +40,10 @@ public:
 
     Vector4f rotm2quat(Matrix3f R); // From rotation matrix to quaternion
 
-    void quatnormalize(Vector4f& quat);  
+    bool quatnormalize(Vector4f& quat);  
 
-    void quatnormalizeEKF(VectorXf& x); // For the EKF application
+    bool quatnormalizeEKF(VectorXf& x); // For the EKF application
+
+    Vector4f quatProd(const Vector4f q1, const Vector4f q2);
 };
 
