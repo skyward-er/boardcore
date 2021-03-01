@@ -71,18 +71,12 @@ class BiasCalibration
     : public AbstractCalibrationModel<SensorData, SensorData, AxisOrientation>
 {
 public:
-    BiasCalibration() : bias(0, 0, 0), ref(0, 0, 0)
-    {
-        specificInit();
-
-        sum        = {0.f, 0.f, 0.f};
-        numSamples = 0;
-    }
+    BiasCalibration() : ref(1, 0, 0), sum(0, 0, 0), numSamples(0) {}
 
     void setReferenceVector(Vector3f vec) { ref = vec; }
     Vector3f getReferenceVector() { return ref; }
 
-    void feed(const SensorData& measured,
+    bool feed(const SensorData& measured,
               const AxisOrientation& transform) override
     {
         Vector3f vec;
@@ -90,22 +84,18 @@ public:
 
         sum += (transform.getMatrix().transpose() * ref) - vec;
         numSamples++;
+
+        return true;
     }
 
     ValuesCorrector<SensorData>* computeResult()
     {
-        return new BiasCorrector<SensorData>(bias);
+        if (numSamples == 0)
+            return new BiasCorrector<SensorData>({0, 0, 0});
+        return new BiasCorrector<SensorData>(sum / numSamples);
     }
 
 private:
-    Vector3f bias, sum, ref;
+    Vector3f sum, ref;
     unsigned numSamples;
-
-    void specificInit() {}
 };
-
-template <>
-void BiasCalibration<AccelerometerData>::specificInit()
-{
-    setReferenceVector({0.f, 0.f, 1.f});
-}
