@@ -28,45 +28,38 @@
 #include "sensors/SensorData.h"
 
 /*
- * Six-Parameter Calibration uses, for each axis, a coefficient to be multiplied 
+ * Six-Parameter Calibration uses, for each axis, a coefficient to be multiplied
  * and a constant to be added, so that is verified the formula:
  *    x' = p1*x + q1;
  *    y' = p2*y + q2;
  *    z' = p3*z + q3;
  * Where (x, y, z) is the input and (x', y', z') the output.
-*/
-template <typename SensorData, size_t MaxSamples>
-class SixParameterCalibration
-    : public AbstractCalibrationModel<Vector3f, SensorData, AxisOrientation>
+ */
+template <typename SensorData>
+class SixParameterCorrector : public ValuesCorrector<SensorData>
 {
 public:
-    SixParameterCalibration() : p(0.f, 0.f, 0.f), q(0.f, 0.f, 1.f) {}
-
-    void store(Vector3f& out) const override { out = bias; }
-
-    void load(const Vector3f& in) override { bias = in; }
-
-    void resetToIdentity() override { bias = {0.f, 0.f, 0.f}; }
-
-    void startCalibrationStage() override
+    SixParameterCorrector(const Vector3f& _p, const Vector3f& _q) : p(_p), q(_q)
     {
-        specificInit();
-
-        sum        = {0.f, 0.f, 0.f};
-        numSamples = 0;
     }
 
-    void feed(const SensorData& measured,
-              const AxisOrientation& transform) override
+    void resetToIdentity() override
     {
-        Vector3f vec;
-        measured >> vec;
-
-        sum += (transform.getMatrix().transpose() * ref) - vec;
-        numSamples++;
+        p = {1, 1, 1};
+        q = {0, 0, 0};
     }
 
-    void endCalibrationStage() override { bias = sum / numSamples; }
+    void operator>>(Matrix<float, 3, 2>& out)
+    {
+        out.col(0) = p;
+        out.col(1) = q;
+    }
+
+    void operator<<(const Matrix<float, 3, 2>& in)
+    {
+        p = in.col(0);
+        q = in.col(1);
+    }
 
     SensorData correct(const SensorData& input) const override
     {
@@ -74,21 +67,63 @@ public:
         Vector3f vec;
 
         input >> vec;
-        vec += bias;
+        vec = p.cwiseProduct(vec) + q;
         output << vec;
 
         return output;
     }
 
 private:
-    Vector3f bias, sum, ref;
-    unsigned numSamples;
-
-    void specificInit() {}
+    Vector3f p, q;
 };
 
-template <>
-void SixParameterCalibration<AccelerometerData>::specificInit()
+template <typename SensorData, unsigned MaxSamples>
+class SixParameterCalibration
+    : public AbstractCalibrationModel<SensorData, SensorData, AxisOrientation>
 {
-    setReferenceVector({0.f, 0.f, -1.f});
-}
+public:
+    SixParameterCalibration() : ref(1, 0, 0), numSamples(0) {}
+
+    void setReferenceVector(Vector3f vec) { ref = vec; }
+    Vector3f getReferenceVector() { return ref; }
+
+    bool feed(const SensorData& measured,
+              const AxisOrientation& transform) override
+    {
+        if (numSamples == MaxSamples)
+            return false;
+
+        Vector3f expected       = transform.getMatrix().transpose() * ref;
+        samples.row(numSamples) = measured, expected;
+        numSamples++;
+    }
+
+    ValuesCorrector<SensorData>* computeResult() override
+    {
+        Vector3f p, q;
+
+        for (int i = 0; i < 3; ++i)
+        {
+            MatrixXf coeffs(numSamples, 2);
+            Vector2f solution;
+
+            coeffs << samples.block(0, i, numSamples, 1), 1;
+            solution = coeffs.colPivHouseholderQr().solve(
+                samples.block(0, i + 3, numSamples, 1));
+
+            p[i] = solution[0];
+            q[i] = solution[1];
+        }
+
+        return new SixParameterCorrector<SensorData>(p, q);
+    }
+
+private:
+    /*
+     * The matrix contains x, y, z measured and x', y', z' expected for each
+     * sample
+     */
+    Matrix<float, MaxSamples, 6> samples;
+    Vector3f ref;
+    unsigned numSamples;
+};
