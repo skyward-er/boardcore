@@ -24,6 +24,7 @@
 
 #pragma once
 
+#include <array>
 #include <type_traits>
 
 #include "SensorData.h"
@@ -55,7 +56,8 @@ enum SensorErrors : uint8_t
     BUS_FAULT          = 6,
     NO_NEW_DATA        = 7,  // no new data available from the sensor
     INVALID_FIFO_INDEX = 8,
-    END_OF_BASE_ERRORS = 9  // used to extend this enum
+    DMA_ERROR          = 9,
+    END_OF_BASE_ERRORS = 10  // used to extend this enum
 };
 
 /**
