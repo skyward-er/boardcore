@@ -35,7 +35,7 @@
  */
 template <class T, class ExpectedDataType>
 struct checkIfProduces
-    : std::is_base_of<ExpectedDataType, decltype(std::declval<T>().getData())>
+    : std::is_base_of<ExpectedDataType, decltype(std::declval<T>().getLastSample())>
 {
 };
 
