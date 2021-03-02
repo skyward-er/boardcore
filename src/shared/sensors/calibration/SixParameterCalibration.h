@@ -39,17 +39,19 @@ template <typename SensorData>
 class SixParameterCorrector : public ValuesCorrector<SensorData>
 {
 public:
+    SixParameterCorrector() : SixParameterCorrector({1, 1, 1}, {0, 0, 0}) {}
+
     SixParameterCorrector(const Vector3f& _p, const Vector3f& _q) : p(_p), q(_q)
     {
     }
 
-    void resetToIdentity() override
+    void setIdentity() override
     {
         p = {1, 1, 1};
         q = {0, 0, 0};
     }
 
-    void operator>>(Matrix<float, 3, 2>& out)
+    void operator>>(Matrix<float, 3, 2>& out) const
     {
         out.col(0) = p;
         out.col(1) = q;
