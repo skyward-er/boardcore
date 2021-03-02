@@ -49,7 +49,7 @@ public:
 
     void operator<<(const Vector3f& rhs) { bias = rhs; }
 
-    void resetToIdentity() override { bias = {0, 0, 0}; }
+    void setIdentity() override { bias = {0, 0, 0}; }
 
     SensorData correct(const SensorData& data) const override
     {
