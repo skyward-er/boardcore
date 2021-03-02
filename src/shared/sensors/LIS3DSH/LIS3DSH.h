@@ -24,25 +24,9 @@
 
 #include <math.h>
 
+#include "LIS3DSHData.h"
 #include "drivers/spi/SPIDriver.h"
 #include "sensors/Sensor.h"
-
-struct LIS3DSHData : public TimestampData,
-                     public AccelerometerData,
-                     public TemperatureData
-{
-    LIS3DSHData()
-        : TimestampData{miosix::getTick()}, AccelerometerData{0.0, 0.0, 0.0},
-          TemperatureData{0.0}
-    {
-    }
-
-    LIS3DSHData(float x, float y, float z, float temp)
-        : TimestampData{miosix::getTick()}, AccelerometerData{x, y, z},
-          TemperatureData{temp}
-    {
-    }
-};
 
 /**
  * Driver for stm32f407vg discovery on-board 3-axis
@@ -65,7 +49,7 @@ public:
      *  @param _odr         output data rate for the accelerometer.
      *                      Default value is 100 Hz.
      *  @param _bdu         BlockDataUpdate value, continuous or non-continuous
-     *                      update mode. Default value is to update after data 
+     *                      update mode. Default value is to update after data
      *                      has been read (BDU=1).
      *  @param _full_scale  full scale range (from +/-2g up to +/-16g).
      *                      Default value is +/-2g.
@@ -91,7 +75,7 @@ public:
      *  @param _odr         output data rate for the accelerometer.
      *                      Default value is 100 Hz.
      *  @param _bdu         BlockDataUpdate value, continuous or non-continuous
-     *                      update mode. Default value is to update after data 
+     *                      update mode. Default value is to update after data
      *                      has been read (BDU=1).
      *  @param _full_scale  full scale range (from +/-2g up to +/-16g).
      *                      Default value is +/-2g.
@@ -150,38 +134,6 @@ public:
     }
 
     /**
-     * @brief Read new data from the accelerometer.
-     *        Acceleretions are returned in g.
-     *
-     * @return boolean value indicating whether the operation succeded or not
-     */
-    LIS3DSHData sampleImpl() override
-    {
-        // check if the sensor is initialized
-        if (!initialized)
-        {
-            TRACE(
-                "[LIS3DSH] sampleImpl() : not initialized, unable to "
-                "sample data \n");
-            last_error = SensorErrors::NOT_INIT;
-            return data;
-        }
-
-        AccelerometerData acc_data = readAccelData();
-        TemperatureData temp_data  = readTemperature();
-
-        if (last_error != SensorErrors::NO_ERRORS)
-        {
-            return data;
-        }
-        else 
-        {
-            return LIS3DSHData{acc_data.accel_x, acc_data.accel_y, acc_data.accel_z, 
-                                temp_data.temperature};
-        }
-    }
-
-    /**
      * @brief Check if the sensor is working.
      *
      * @return boolean indicating whether the sensor is correctly working or not
@@ -210,11 +162,11 @@ public:
         // vectors containing avg values for each axis
         float AVG_ST[3]    = {0};  // one element per axis
         float AVG_NO_ST[3] = {0};  // one element per axis
-        
+
         // set output data rate to 50 hz
-        uint8_t ctrl_reg4_value = (OutputDataRate::ODR_100_HZ << 4) 
-                        | (BlockDataUpdate::UPDATE_AFTER_READ_MODE << 3) 
-                        | (7 << 0);
+        uint8_t ctrl_reg4_value =
+            (OutputDataRate::ODR_100_HZ << 4) |
+            (BlockDataUpdate::UPDATE_AFTER_READ_MODE << 3) | (7 << 0);
 
         {
             SPITransaction spi(spi_slave);
@@ -233,10 +185,10 @@ public:
         // read samples in self-test positive sign mode
         for (uint8_t i = 0; i < num_samples; i++)
         {
-            AccelerometerData acc_data = readAccelData();
-            X_ST[i]                    = acc_data.accel_x;
-            Y_ST[i]                    = acc_data.accel_y;
-            Z_ST[i]                    = acc_data.accel_z;
+            AccelerometerData accel_data = readAccelData();
+            X_ST[i]                    = accel_data.accel_x;
+            Y_ST[i]                    = accel_data.accel_y;
+            Z_ST[i]                    = accel_data.accel_z;
             miosix::Thread::sleep(10);
         }
         // reset the self-test bits
@@ -252,10 +204,10 @@ public:
         // read samples in normal mode
         for (uint8_t i = 0; i < num_samples; i++)
         {
-            AccelerometerData acc_data = readAccelData();
-            X_NO_ST[i]                 = acc_data.accel_x;
-            Y_NO_ST[i]                 = acc_data.accel_y;
-            Z_NO_ST[i]                 = acc_data.accel_z;
+            AccelerometerData accel_data = readAccelData();
+            X_NO_ST[i]                 = accel_data.accel_x;
+            Y_NO_ST[i]                 = accel_data.accel_y;
+            Z_NO_ST[i]                 = accel_data.accel_z;
             miosix::Thread::sleep(10);
         }
         // compute averages vectors:
@@ -364,13 +316,44 @@ public:
 
 private:
     /**
+     * @brief Read new data from the accelerometer.
+     *        Acceleretions are returned in g.
+     *
+     * @return boolean value indicating whether the operation succeded or not
+     */
+    LIS3DSHData sampleImpl() override
+    {
+        // check if the sensor is initialized
+        if (!initialized)
+        {
+            TRACE(
+                "[LIS3DSH] sampleImpl() : not initialized, unable to "
+                "sample data \n");
+            last_error = SensorErrors::NOT_INIT;
+            return last_sample;
+        }
+
+        AccelerometerData accel_data = readAccelData();
+        TemperatureData temp_data  = readTemperature();
+
+        if (last_error != SensorErrors::NO_ERRORS)
+        {
+            return last_sample;
+        }
+        else
+        {
+            return LIS3DSHData(accel_data, temp_data);
+        }
+    }
+
+    /**
      * @brief Read accelrometer data.
      *
      * @return the read accelrometer sample
      */
     AccelerometerData readAccelData()
     {
-        AccelerometerData acc_data;
+        AccelerometerData accel_data;
 
         SPITransaction spi(spi_slave);
 
@@ -382,23 +365,26 @@ private:
             if (status & 0x80)
             {  // bit 7 of status set to 1 (some data overwritten)
 
+                accel_data.accel_timestamp =
+                    TimestampTimer::getTimestamp();
+
                 // read acceleration on X
-                int8_t acc_L = spi.read(OUT_X_L);
-                int8_t acc_H = spi.read(OUT_X_H);
-                acc_data.accel_x =
-                    static_cast<float>(combine(acc_H, acc_L)) * sensitivity;
+                int8_t accel_L = spi.read(OUT_X_L);
+                int8_t accel_H = spi.read(OUT_X_H);
+                accel_data.accel_x =
+                    static_cast<float>(combine(accel_H, accel_L)) * sensitivity;
 
                 // read acceleration on Y
-                acc_L = spi.read(OUT_Y_L);
-                acc_H = spi.read(OUT_Y_H);
-                acc_data.accel_y =
-                    static_cast<float>(combine(acc_H, acc_L)) * sensitivity;
+                accel_L = spi.read(OUT_Y_L);
+                accel_H = spi.read(OUT_Y_H);
+                accel_data.accel_y =
+                    static_cast<float>(combine(accel_H, accel_L)) * sensitivity;
 
                 // read acceleration on Z
-                acc_L = spi.read(OUT_Z_L);
-                acc_H = spi.read(OUT_Z_H);
-                acc_data.accel_z =
-                    static_cast<float>(combine(acc_H, acc_L)) * sensitivity;
+                accel_L = spi.read(OUT_Z_L);
+                accel_H = spi.read(OUT_Z_H);
+                accel_data.accel_z =
+                    static_cast<float>(combine(accel_H, accel_L)) * sensitivity;
 
                 last_error = SensorErrors::NO_ERRORS;
             }
@@ -408,7 +394,7 @@ private:
             last_error = SensorErrors::NO_NEW_DATA;
         }
 
-        return acc_data;
+        return accel_data;
     }
 
     /**
@@ -422,8 +408,9 @@ private:
 
         // the temperature is given as a 8-bits integer (in 2-complement)
         return TemperatureData{
+            TimestampTimer::getTimestamp(),
             spi.read(OUT_T) +
-            TEMPERATURE_REF};  // add the 'zero' of the temperature sensor
+                TEMPERATURE_REF};  // add the 'zero' of the temperature sensor
     }
 
     /**

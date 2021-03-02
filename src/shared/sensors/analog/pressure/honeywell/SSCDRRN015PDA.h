@@ -22,39 +22,31 @@
 
 #pragma once
 
-#include <sensors/Sensor.h>
+#include "HoneywellPressureSensor.h"
 
-#include <functional>
+struct SSCDRRN015PDAData : public PressureData
+{
+    static std::string header()
+    {
+        return "press_timestamp,pressure\n";
+    }
+
+    void print(std::ostream& os) const
+    {
+        os << press_timestamp << "," << press << "\n";
+    }
+};
 
 /**
- * @brief Common class for all analog pressure sensors
- *
- * All analog pressure sensors have a transfer function to convert the read
- * voltage into pressure and a range within which they operate.
+ * @brief Differential pressure sensor with a ±103kPa range (±15psi)
  */
-class AnalogPressureSensor : public Sensor<PressureData>
+class SSCDRRN015PDA final : public HoneywellPressureSensor<SSCDRRN015PDAData>
 {
 public:
-    AnalogPressureSensor(std::function<ADCData()> getSensorVoltage_);
+    using HoneywellPressureSensor<SSCDRRN015PDA>::HoneywellPressureSensor;
 
-    AnalogPressureSensor(std::function<ADCData()> getSensorVoltage_,
-                         const float V_SUPPLY_);
-
-    ///< Converts the voltage value to pressure
-    PressureData sampleImpl() override;
-
-    bool selfTest() override { return 0; };
-
-protected:
-    ///< Transfer function from volts to pascals (from datasheet pag 11)
-    virtual float voltageToPressure(float voltage) = 0;
-
-    const float maxPressure = 0;
-
-    const float minPressure = 0;
-
-    ///< Function that returns the sensor voltage
-    std::function<ADCData()> getSensorVoltage;
-
-    const float V_SUPPLY = 5.0;  ///< Suppply voltage
+private:
+    const float maxPressure = 103421.3594;
+    
+    const float maxPressure = -103421.3594;
 };

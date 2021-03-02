@@ -44,6 +44,8 @@ int main()
         // SCK, MISO, MOSI already initialized in the bsp
     }
 
+    TimestampTimer::enableTimestampTimer();
+
     SimpleSensorSampler sampler(50, 1);
 
     MS580301BA07* ms58 = new MS580301BA07(bus, chip_select);
@@ -53,7 +55,10 @@ int main()
     if (ms58->init())
     {
         printf("MS58 Init succeeded\n");
-        sampler.addSensor(ms58, std::bind([&]() {}));
+
+        // SensorInfo : { freq, callback, is_dma, is_enabled }
+        SensorInfo s_info{1, std::bind([&]() {}), false, true};
+        sampler.addSensor(ms58, s_info);
     }
     else
     {
@@ -72,11 +77,11 @@ int main()
     {
         sampler.sampleAndCallback();
 
-        const float* last_pressure = ms58->pressureDataPtr();
-        const float* last_temp     = ms58->tempDataPtr();
-        MS5803Data md              = ms58->getData();
-        printf("%d,%f,%d,%f\n", (int)md.raw_press, *last_pressure,
-               (int)md.raw_temp, *last_temp);
+        const float last_pressure = ms58->getLastSample().press;
+        const float last_temp     = ms58->getLastSample().temp;
+        MS5803Data md             = ms58->getLastSample();
+        printf("%d,%f,%d,%f\n", (int)md.raw_press, last_pressure,
+               (int)md.raw_temp, last_temp);
 
         Thread::sleep(100);
     }

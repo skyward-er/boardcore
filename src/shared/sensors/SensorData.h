@@ -22,7 +22,7 @@
 
 #pragma once
 
-#include <cstdint>
+#include <ostream>
 
 /**
  * @brief Structure to handle sensor data timestamp.
@@ -107,5 +107,26 @@ struct GPSData
 struct ADCData
 {
     uint64_t adc_timestamp;
+    uint8_t channel_id;
     float voltage;
+};
+
+/**
+ * @brief Structure to handle battery voltage data.
+ */
+struct BatteryVoltageData
+{
+    uint64_t vbat_timestamp;
+    float raw_voltage;
+    float voltage;
+};
+
+/**
+ * @brief Structure to handle current sense data.
+ */
+struct CurrentSenseData
+{
+    uint64_t current_timestamp;
+    float raw_current;
+    float current;
 };

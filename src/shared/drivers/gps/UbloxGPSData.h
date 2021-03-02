@@ -1,5 +1,5 @@
 /* Copyright (c) 2020 Skyward Experimental Rocketry
- * Authors: Alberto Nidasio
+ * Authors: Davide Bonomini
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -22,25 +22,21 @@
 
 #pragma once
 
-#include "../AnalogPressureSensor.h"
+#include "sensors/SensorData.h"
 
-/**
- * @brief Driver for NXP's MPXHZ6130A pressure sensor
- */
-class MPXHZ6130A final : public AnalogPressureSensor
+struct UbloxGPSData : public GPSData
 {
-public:
-    using AnalogPressureSensor::AnalogPressureSensor;
-
-private:
-    float voltageToPressure(float voltage) override
+    static std::string header()
     {
-        return (((voltage / V_SUPPLY) + CONST_B) / CONST_A) * 1000;
+        return "gps_timestamp,latitude,longitude,height,velocity_north,"
+               "velocity_east,velocity_down,speed,track,num_satellites,fix\n";
     }
 
-    const float maxPressure = 130000;
-
-    // Constants from datasheet
-    static constexpr float CONST_A = 0.007826;
-    static constexpr float CONST_B = 0.07739;
+    void print(std::ostream &os) const
+    {
+        os << gps_timestamp << "," << latitude << "," << longitude << ","
+           << height << "," << velocity_north << "," << velocity_east << ","
+           << velocity_down << "," << speed << "," << track << ","
+           << num_satellites << "," << fix << "\n";
+    }
 };

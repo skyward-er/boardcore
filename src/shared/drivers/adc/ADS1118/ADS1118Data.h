@@ -20,42 +20,24 @@
  * THE SOFTWARE.
  */
 
-#include "AnalogPressureSensor.h"
+#pragma once
 
-AnalogPressureSensor::AnalogPressureSensor(
-    std::function<ADCData()> getSensorVoltage_)
-    : getSensorVoltage(getSensorVoltage_)
+#include "sensors/SensorData.h"
+#include "TimestampTimer.h"
+
+struct ADS1118Data : public ADCData
 {
-}
+    ADS1118Data() : ADCData{0, 0, 0.0} {}
 
-AnalogPressureSensor::AnalogPressureSensor(
-    std::function<ADCData()> getSensorVoltage_, const float V_SUPPLY_)
-    : getSensorVoltage(getSensorVoltage_), V_SUPPLY(V_SUPPLY_)
-{
-}
+    ADS1118Data(uint8_t channel_id, float voltage)
+        : ADCData{TimestampTimer::getTimestamp(), channel_id, voltage}
 
-PressureData AnalogPressureSensor::sampleImpl()
-{
-    PressureData pressure = PressureData();
-
-    // Retrieve the voltage
-    ADCData voltage = getSensorVoltage();
-
-    // Save the timestamp
-    pressure.press_timestamp = voltage.adc_timestamp;
-
-    // Convert the value
-    pressure.press = voltageToPressure(voltage.voltage);
-
-    // Check if the pressure is in range
-    if (pressure.press < minPressure)
     {
-        pressure.press = minPressure;
     }
-    else if (pressure.press > maxPressure)
-    {
-        pressure.press = maxPressure;
-    }
+    static std::string header() { return "adc_timestamp,channel_id,voltage\n"; }
 
-    return pressure;
-}
+    void print(std::ostream& os) const
+    {
+        os << adc_timestamp << "," << channel_id << "," << voltage << "\n";
+    }
+};

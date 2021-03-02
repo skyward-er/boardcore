@@ -30,6 +30,8 @@ using namespace miosix;
 
 int main()
 {
+    TimestampTimer::enableTimestampTimer();
+    
     GpioPin cs(GPIOB_BASE, 1), miso(GPIOB_BASE, 4), mosi(GPIOB_BASE, 5),
         clk(GPIOB_BASE, 3);
 
@@ -51,6 +53,7 @@ int main()
         mosi.mode(Mode::ALTERNATE);
         mosi.alternateFunction(5);
     }
+    
 
     SPIBus bus(SPI1);
 
@@ -82,8 +85,9 @@ int main()
     while (true)
     {
         sensor.sample();
-        LIS3MDLData data = sensor.getData();
-        TRACE("%f C | x: %f | y: %f | z %f\n", data.temperature, data.mag_x, data.mag_y, data.mag_z);
+        LIS3MDLData data = sensor.getLastSample();
+        TRACE("%f C | x: %f | y: %f | z %f\n", data.temp, data.mag_x,
+              data.mag_y, data.mag_z);
         miosix::Thread::sleep(2000);
     }
 }

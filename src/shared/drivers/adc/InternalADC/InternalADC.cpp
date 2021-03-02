@@ -157,7 +157,7 @@ ADCData InternalADC::getVoltage(Channel channel)
         voltage = values[indexMap[channel]] * V_SUPPLY / RESOLUTION;
     }
 
-    return ADCData{timestamp, voltage};
+    return ADCData{timestamp, (uint8_t)channel, voltage};
 }
 
 bool InternalADC::selfTest()

@@ -6,7 +6,7 @@
  * published by Sam Hocevar. See the COPYING file for more details.
  */
 
-#include <drivers/nmea/nmea.h>
+#include <drivers/gps/nmea/nmea.h>
 
 #include <stdlib.h>
 #include <string.h>

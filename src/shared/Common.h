@@ -42,6 +42,8 @@
 
 #include "Constants.h"
 
+#include "TimestampTimer.h"
+
 #include "Debug.h"
 
 #define UNUSED(x) (void)(x)

@@ -22,29 +22,38 @@
 
 #pragma once
 
-#include "../AnalogPressureSensor.h"
+#include "sensors/analog/pressure/AnalogPressureSensor.h"
+
+struct MPXHZ6130AData : public PressureData
+{
+    static std::string header()
+    {
+        return "press_timestamp,pressure\n";
+    }
+
+    void print(std::ostream& os) const
+    {
+        os << press_timestamp << "," << press << "\n";
+    }
+};
 
 /**
- * @brief Driver for Honeywell's pressure sensors (absolute and differential)
- *
- * All this sensors shares the same transfer function which varies only by few parameters: voltage supply and the sensor pressure range
+ * @brief Driver for NXP's MPXHZ6130A pressure sensor
  */
-class HoneywellPressureSensor : public virtual AnalogPressureSensor
+class MPXHZ6130A final : public AnalogPressureSensor<MPXHZ6130AData>
 {
 public:
-    using AnalogPressureSensor::AnalogPressureSensor;
+    using AnalogPressureSensor<MPXHZ6130AData>::AnalogPressureSensor;
 
-protected:
-    ///< Common transfer function from volts to pascals (from datasheet pag 11)
-    inline float voltageToPressure(float voltage)
+private:
+    float voltageToPressure(float voltage) override
     {
-        float tmp;
-
-        tmp = voltage - 0.1 * V_SUPPLY;
-        tmp *= maxPressure - minPressure;
-        tmp /= 0.8 * V_SUPPLY;
-        tmp += minPressure;
-
-        return tmp;
+        return (((voltage / V_SUPPLY) + CONST_B) / CONST_A) * 1000;
     }
+
+    const float maxPressure = 130000;
+
+    // Constants from datasheet
+    static constexpr float CONST_A = 0.007826;
+    static constexpr float CONST_B = 0.07739;
 };

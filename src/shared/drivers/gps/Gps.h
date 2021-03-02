@@ -23,16 +23,17 @@
 #ifndef GPS_H
 #define GPS_H
 
-#include <ActiveObject.h>
-#include <Common.h>
 #include <fcntl.h>
-#include <sensors/Sensor.h>
-#include <sensors/SensorData.h>
+
+#include "ActiveObject.h"
+#include "Common.h"
+#include "UbloxGPSData.h"
+#include "sensors/Sensor.h"
 
 using miosix::FastMutex;
 using miosix::Thread;
 
-class Gps : public Sensor<GPSData>, public ActiveObject
+class Gps : public Sensor<UbloxGPSData>, public ActiveObject
 {
 public:
     /*
@@ -65,7 +66,7 @@ public:
      */
     bool init() override;
 
-    GPSData sampleImpl() override;
+    UbloxGPSData sampleImpl() override;
 
     /*
      * Packs and sends a UBX configuration message to the GPS module to set up
@@ -104,12 +105,6 @@ private:
     void ubxChecksum(uint8_t *msg, int len);
 
     /*
-     * Reads a message with proper bound checks.
-     * Returns false in case of buffer overflow.
-     */
-    bool readMessageIn(char *msg, int len);
-
-    /*
      * Packs SBAS message:
      *
      * Length: 16 bytes
@@ -136,7 +131,7 @@ private:
     void packRateMessage(uint8_t *msg, int inbetweenReadings = 100,
                          int navRate = 1, TimeRef timeRef = TimeRef::GPS);
 
-    struct GPSData data;
+    struct UbloxGPSData data;
     mutable FastMutex mutex;
     int fd, baudrate, serialPortNum, betweenReadings;
     volatile bool selfTestResult, selfTestFlag = false;

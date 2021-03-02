@@ -184,7 +184,7 @@ int main()
 
         // Read the fifo
         uint32_t update = hrclock.tick();
-        gyro->onSimpleUpdate();
+        gyro->sample();
 
         // Measure how long we take to read the fifo
         update = hrclock.tick() - update;
@@ -193,7 +193,8 @@ int main()
             gyro->getLastFifoSize();  // Current number of samples in the FIFO
 
         // Obtain the FIFO
-        const array<L3GD20Data, 32>& fifo = gyro->getLastFifo();
+        const array<L3GD20Data, L3GD20_FIFO_SIZE>& fifo =
+            gyro->getLastFifo();
 
         // Store everything in the data buffer
         for (int i = 0; i < level; i++)
@@ -230,13 +231,13 @@ int main()
         // clang-format off
         printf("%d,%llu,%llu,%llu,%llu,%f,%f,%f,%.2f\n", 
                 data[i].fifo_num,
-                data[i].gyro.timestamp, 
+                data[i].gyro.gyro_timestamp, 
                 data[i].wtm_delta,
                 data[i].update,
-                (data[i].gyro.timestamp - data[i - 1].gyro.timestamp),
-                data[i].gyro.gyro.getX(), 
-                data[i].gyro.gyro.getY(), 
-                data[i].gyro.gyro.getZ(),
+                (data[i].gyro.gyro_timestamp - data[i - 1].gyro.gyro_timestamp),
+                data[i].gyro.gyro_x, 
+                data[i].gyro.gyro_y, 
+                data[i].gyro.gyro_z,
                 data[i].cpu);
         // clang-format on
     }

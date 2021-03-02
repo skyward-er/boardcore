@@ -24,13 +24,26 @@
 
 #include "HoneywellPressureSensor.h"
 
+struct SSCDANN030PAAData : public PressureData
+{
+    static std::string header()
+    {
+        return "press_timestamp,pressure\n";
+    }
+
+    void print(std::ostream& os) const
+    {
+        os << press_timestamp << "," << press << "\n";
+    }
+};
+
 /**
  * @brief Absolute pressure sensor with a 0-206kPa range (0-30psi)
  */
-class SSCDANN030PAA final : public HoneywellPressureSensor
+class SSCDANN030PAA final : public HoneywellPressureSensor<SSCDANN030PAAData>
 {
 public:
-    using HoneywellPressureSensor::HoneywellPressureSensor;
+    using HoneywellPressureSensor<SSCDANN030PAAData>::HoneywellPressureSensor;
 
 private:
     const float maxPressure = 206842.7188;

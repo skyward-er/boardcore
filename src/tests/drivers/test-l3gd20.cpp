@@ -60,7 +60,7 @@ struct GyroSample
 {
     uint64_t timestamp;
     uint64_t sample_delta;
-    Vec3 data;
+    L3GD20Data data;
     float cpu;
 };
 
@@ -156,13 +156,13 @@ int main()
         long last_tick = miosix::getTick();
 
         // Read data from the sensor
-        gyro->onSimpleUpdate();
+        gyro->sample();
 
         // Obtain the data
         L3GD20Data d = gyro->getLastSample();
 
         // Store the sample in the array, togheter with other useful data
-        data[data_counter++] = {d.timestamp, sample_delta, d.gyro,
+        data[data_counter++] = {d.gyro_timestamp, sample_delta, d,
                                 averageCpuUtilization()};
 
         // Wait until SAMPLE_PERIOD milliseconds from the start of this
@@ -180,9 +180,9 @@ int main()
                 data[i].timestamp, 
                 hrclock.toIntMicroSeconds(data[i].sample_delta),
                 (data[i].timestamp - data[i - 1].timestamp),
-                data[i].data.getX(), 
-                data[i].data.getY(), 
-                data[i].data.getZ(),
+                data[i].data.gyro_x, 
+                data[i].data.gyro_y, 
+                data[i].data.gyro_z,
                 data[i].cpu);
         // clang-format on
     }

@@ -57,15 +57,17 @@
 
 #pragma once
 
-#include <drivers/spi/SPIDriver.h>
-#include <sensors/Sensor.h>
+#include "ADS1118Data.h"
+#include "drivers/spi/SPIDriver.h"
+#include "sensors/Sensor.h"
+#include "TimestampTimer.h"
 
 /**
  * @brief Driver class for ADS1118 adc
  *
  * This class allows to mange the device configuration.
  */
-class ADS1118 : public Sensor<ADCData>
+class ADS1118 : public Sensor<ADS1118Data>
 {
 public:
     enum ADS1118Mux
@@ -263,24 +265,24 @@ public:
      * @param mux Mux configuration to read
      * @return Voltage value sampled from the channel in mV
      */
-    float readInputAndWait(ADS1118Mux mux);
+    ADS1118Data readInputAndWait(ADS1118Mux mux);
 
     /**
      * @brief Reads on the fly the temperature
      *
      * @return Temperature in degree
      */
-    float readTemperatureAndWait();
+    TemperatureData readTemperatureAndWait();
 
     /**
      * @brief Returns the last read voltage value for the specified channel
      */
-    float getVoltage(ADS1118Mux mux);
+    ADS1118Data getVoltage(ADS1118Mux mux);
 
     /**
      * @brief Returns the last temperature value
      */
-    float getTemperature();
+    TemperatureData getTemperature();
 
     /**
      * @brief Disables all the inputs
@@ -294,15 +296,15 @@ public:
      */
     bool selfTest() override;
 
+private:
     /**
      * @brief Reads the previously configured channel while writing the next
      * enabled configuration.
      *
      * Multiple calls are needed to read all the enabled channels.
      */
-    ADCData sampleImpl() override;
+    ADS1118Data sampleImpl() override;
 
-private:
     /**
      * @brief Writes the configuration specified, reads the previous written
      * configuration's value and stores it. If enabled checks also that the
@@ -328,7 +330,7 @@ private:
     bool configCheck = false;
 
     ADS1118Config channelsConfig[NUM_OF_CHANNELS];  ///< Channels configuration
-    ADCData values[NUM_OF_CHANNELS];                ///< Voltage values in mV
+    ADS1118Data values[NUM_OF_CHANNELS];                ///< Voltage values in mV
 
     ADS1118Config lastConfig;     ///< Last written configuration
     uint8_t lastConfigIndex = 0;  ///< Last written configuration's index

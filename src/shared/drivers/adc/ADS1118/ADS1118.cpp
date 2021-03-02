@@ -44,16 +44,25 @@ ADS1118::ADS1118(SPISlave spiSlave_, ADS1118Config config_,
                  int16_t tempDivider_)
     : spiSlave(spiSlave_), baseConfig(config_), tempDivider(tempDivider_)
 {
+}
+
+bool ADS1118::init()
+{
     // Initialize to 0 all the channels
     for (auto i = 0; i < NUM_OF_CHANNELS; i++)
+    {
         channelsConfig[i].word = 0;
+
+        // Set channel id for each ADS1118Data object in values array
+        values[i].channel_id = i;
+    }
 
     // Reset the last written config value
     lastConfig.word = 0;
     lastConfigIndex = 0;
-}
 
-bool ADS1118::init() { return true; }
+    return true;
+}
 
 void ADS1118::enableInput(ADS1118Mux mux)
 {
@@ -93,13 +102,24 @@ void ADS1118::disableConfigCheck() { configCheck = false; }
  * To read an input we'll first write the appropriate configuration, wait for
  * the sample accordingly to the channel data rate and then read back the result
  */
-float ADS1118::readInputAndWait(ADS1118Mux mux) { return readChannel(mux); }
+ADS1118Data ADS1118::readInputAndWait(ADS1118Mux mux)
+{
+    return ADS1118Data(mux, readChannel(mux));
+}
 
-float ADS1118::readTemperatureAndWait() { return readChannel(TEMP_CHANNEL); }
+TemperatureData ADS1118::readTemperatureAndWait()
+{
+    return TemperatureData{TimestampTimer::getTimestamp(),
+                           readChannel(TEMP_CHANNEL)};
+}
 
-float ADS1118::getVoltage(ADS1118Mux mux) { return values[mux].voltage; }
+ADS1118Data ADS1118::getVoltage(ADS1118Mux mux) { return values[mux]; }
 
-float ADS1118::getTemperature() { return values[TEMP_CHANNEL].voltage; }
+TemperatureData ADS1118::getTemperature()
+{
+    return TemperatureData{TimestampTimer::getTimestamp(),
+                           values[TEMP_CHANNEL].voltage};
+}
 
 bool ADS1118::selfTest()
 {
@@ -135,7 +155,7 @@ bool ADS1118::selfTest()
  * The first configuration is written and then, at the next call, read back the
  * result while transmitting the next configuration
  */
-ADCData ADS1118::sampleImpl()
+ADS1118Data ADS1118::sampleImpl()
 {
     int8_t i = findNextEnabledChannel(lastConfigIndex + 1);
 

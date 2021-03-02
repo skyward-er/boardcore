@@ -1,5 +1,5 @@
-/* Copyright (c) 2015-2018 Skyward Experimental Rocketry
- * Authors: Luca Erbetta
+/* Copyright (c) 2020 Skyward Experimental Rocketry
+ * Authors: Alberto Nidasio
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -22,36 +22,29 @@
 
 #pragma once
 
-#include "sensors/SensorData.h"
+#include "HoneywellPressureSensor.h"
 
-enum MS5803Errors : uint8_t
+struct HSCMRNN160KAData : public PressureData
 {
-    RESET_TIMEOUT = SensorErrors::END_OF_BASE_ERRORS
-};
-
-struct MS5803Data : public PressureData, TemperatureData
-{
-    uint32_t raw_press;
-    uint32_t raw_temp;
-
-    MS5803Data() : PressureData{0, 0.0}, TemperatureData{0, 0.0} {}
-
-    MS5803Data(uint32_t raw_press, float press, uint32_t raw_temp, float temp)
-        : PressureData{TimestampTimer::getTimestamp(), press},
-          TemperatureData{TimestampTimer::getTimestamp(), temp},
-          raw_press(raw_press), raw_temp(raw_temp)
-    {
-    }
-
     static std::string header()
     {
-        return "press_timestamp,raw_press,press,temp_timestamp,raw_temp,"
-               "temp\n";
+        return "press_timestamp,pressure\n";
     }
 
     void print(std::ostream& os) const
     {
-        os << press_timestamp << "," << raw_press << "," << press << ","
-           << temp_timestamp << "," << raw_temp << "," << temp << "\n";
+        os << press_timestamp << "," << press << "\n";
     }
+};
+
+/**
+ * @brief Absolute pressure sensor with a 0-160kPa range
+ */
+class HSCMRNN160KA final : public HoneywellPressureSensor<HSCMRNN160KAData>
+{
+public:
+    using HoneywellPressureSensor<HSCMRNN160KAData>::HoneywellPressureSensor;
+
+private:
+    const float maxPressure = 160000;
 };

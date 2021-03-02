@@ -37,8 +37,9 @@ struct BMX160Data : public AccelerometerData, GyroscopeData, MagnetometerData
 {
     /// @brief Default constructor.
     BMX160Data()
-        : AccelerometerData{0, 0, 0, 0}, GyroscopeData{0, 0, 0, 0},
-          MagnetometerData{0, 0, 0, 0}
+        : AccelerometerData{0, 0.0, 0.0, 0.0},
+          GyroscopeData{0, 0.0, 0.0, 0.0},
+          MagnetometerData{0, 0.0, 0.0, 0.0}
     {
     }
 
@@ -46,6 +47,20 @@ struct BMX160Data : public AccelerometerData, GyroscopeData, MagnetometerData
     BMX160Data(AccelerometerData acc, GyroscopeData gyr, MagnetometerData mag)
         : AccelerometerData(acc), GyroscopeData(gyr), MagnetometerData(mag)
     {
+    }
+
+    static std::string header()
+    {
+        return "accel_timestamp,accel_x,accel_y,accel_z,gyro_timestamp,gyro_x,gyro_y,"
+               "gyro_z,mag_timestamp,mag_x,mag_y,mag_z\n";
+    }
+
+    void print(std::ostream& os) const
+    {
+        os << accel_timestamp << "," << accel_x << "," << accel_y << "," << accel_z
+           << "," << gyro_timestamp << "," << gyro_x << "," << gyro_y << ","
+           << gyro_z << "," << mag_timestamp << "," << mag_x << "," << mag_y
+           << "," << mag_z << "\n";
     }
 };
 
@@ -952,7 +967,7 @@ private:
         // Adjust timestamps
         for (int i = 0; i < last_fifo_level; i++)
         {
-            last_fifo[i].accel_timestamp += last_interrupt_us - timestamp;
+            last_fifo[i].acc_timestamp += last_interrupt_us - timestamp;
             last_fifo[i].gyro_timestamp += last_interrupt_us - timestamp;
             last_fifo[i].mag_timestamp += last_interrupt_us - timestamp;
         }

@@ -1,5 +1,5 @@
 /* Copyright (c) 2020 Skyward Experimental Rocketry
- * Authors: Alberto Nidasio
+ * Authors: Riccardo Musso
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -22,18 +22,35 @@
 
 #pragma once
 
-#include "HoneywellPressureSensor.h"
+#include "sensors/SensorData.h"
 
-/**
- * @brief Differential pressure sensor with a ±103kPa range (±15psi)
- */
-class SSCDRRN015PDA final : public HoneywellPressureSensor
+struct LIS3MDLData : public MagnetometerData, public TemperatureData
 {
-public:
-    using HoneywellPressureSensor::HoneywellPressureSensor;
+    LIS3MDLData() : MagnetometerData{0, 0.0, 0.0, 0.0}, TemperatureData{0, 0.0}
+    {
+    }
 
-private:
-    const float maxPressure = 103421.3594;
-    
-    const float maxPressure = -103421.3594;
+    LIS3MDLData(float mx, float my, float mz, float deg)
+        : MagnetometerData{TimestampTimer::getTimestamp(), mx, my, mz},
+          TemperatureData{TimestampTimer::getTimestamp(), deg}
+
+    {
+    }
+
+    LIS3MDLData(MagnetometerData mag_data, TemperatureData temp_data)
+        : MagnetometerData(mag_data), TemperatureData(temp_data)
+
+    {
+    }
+
+    static std::string header()
+    {
+        return "mag_timestamp,mag_x,mag_y,mag_z,temp_timestamp,temp\n";
+    }
+
+    void print(std::ostream& os) const
+    {
+        os << mag_timestamp << "," << mag_x << "," << mag_y << "," << mag_z
+           << "," << temp_timestamp << "," << temp << "\n";
+    }
 };

@@ -22,16 +22,36 @@
 
 #pragma once
 
-#include "HoneywellPressureSensor.h"
+#include "../AnalogPressureSensor.h"
 
 /**
- * @brief Absolute pressure sensor with a 0-103kPa range (0-15psi)
+ * @brief Driver for Honeywell's pressure sensors (absolute and differential)
+ *
+ * All this sensors shares the same transfer function which varies only by few
+ * parameters: voltage supply and the sensor pressure range
  */
-class HSCMAND015PA final : public HoneywellPressureSensor
+template <typename HoneywellPressureData>
+class HoneywellPressureSensor
+    : public virtual AnalogPressureSensor<HoneywellPressureData>
 {
 public:
-    using HoneywellPressureSensor::HoneywellPressureSensor;
+    using AnalogPressureSensor<HoneywellPressureData>::AnalogPressureSensor;
 
-private:
-    const float maxPressure = 103421.3594;
+protected:
+    ///< Common transfer function from volts to pascals (from datasheet pag 11)
+    inline float voltageToPressure(float voltage)
+    {
+        float tmp;
+
+        tmp = voltage - 0.1 * vSupply;
+        tmp *= maxPressure - minPressure;
+        tmp /= 0.8 * vSupply;
+        tmp += minPressure;
+
+        return tmp;
+    }
+
+    float vSupply = AnalogPressureSensor<HoneywellPressureData>::V_SUPPLY;
+    float minPressure = AnalogPressureSensor<HoneywellPressureData>::minPressure;
+    float maxPressure = AnalogPressureSensor<HoneywellPressureData>::maxPressure;
 };

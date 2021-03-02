@@ -22,6 +22,7 @@
 
 #include <drivers/spi/SPIDriver.h>
 #include <miosix.h>
+
 #include "Common.h"
 #include "sensors/LIS3DSH/LIS3DSH.h"
 
@@ -52,6 +53,8 @@ int main()
         cs.mode(miosix::Mode::OUTPUT);
     }
     cs.high();
+
+    TimestampTimer::enableTimestampTimer();
 
     LIS3DSH sensor(bus, cs, sensor.ODR_100_HZ, sensor.UPDATE_AFTER_READ_MODE,
                    sensor.FULL_SCALE_4G);
@@ -112,12 +115,12 @@ int main()
             printf("\nWarning: no new data to be read \n");
         }
 
-        data = sensor.getData();
+        data = sensor.getLastSample();
 
-        printf("\nTimestamp: %llu \n", data.timestamp);
-        printf("Accel: x: %f | y: %f | z: %f \n", data.accel_x, data.accel_y,
+        printf("\nTimestamp: %llu \n", data.accel_timestamp);
+        printf("Acc: x: %f | y: %f | z: %f \n", data.accel_x, data.accel_y,
                data.accel_z);
-        printf("Temp: %.2f C \n", data.temperature);
+        printf("Temp: %.2f C \n", data.temp);
 
         Thread::sleep(200);
     }

@@ -1,5 +1,5 @@
 /* Copyright (c) 2020 Skyward Experimental Rocketry
- * Authors: Alberto Nidasio
+ * Authors: Luca Conterio
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -22,16 +22,34 @@
 
 #pragma once
 
-#include "HoneywellPressureSensor.h"
+#include "sensors/SensorData.h"
 
-/**
- * @brief Absolute pressure sensor with a 0-206kPa range (0-30psi)
- */
-class HSCMRNN030PA final : public HoneywellPressureSensor
+struct LIS3DSHData : public AccelerometerData, public TemperatureData
 {
-public:
-    using HoneywellPressureSensor::HoneywellPressureSensor;
+    LIS3DSHData() : AccelerometerData{0, 0.0, 0.0, 0.0}, TemperatureData{0, 0.0}
+    {
+    }
 
-private:
-    const float maxPressure = 206842.7188;
+    LIS3DSHData(float x, float y, float z, float temp)
+        : AccelerometerData{TimestampTimer::getTimestamp(), x, y, z},
+          TemperatureData{TimestampTimer::getTimestamp(), temp}
+    {
+    }
+
+    LIS3DSHData(AccelerometerData acc, TemperatureData temp)
+        : AccelerometerData{acc.accel_timestamp, acc.accel_x, acc.accel_y, acc.accel_z},
+          TemperatureData{temp.temp_timestamp, temp.temp}
+    {
+    }
+
+    static std::string header()
+    {
+        return "accel_timestamp,accel_x,accel_y,accel_z,temp_timestamp,temp\n";
+    }
+
+    void print(std::ostream& os) const
+    {
+        os << accel_timestamp << "," << accel_x << "," << accel_y << "," << accel_z
+           << "," << temp_timestamp << "," << temp << "\n";
+    }
 };

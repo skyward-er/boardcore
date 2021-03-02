@@ -29,17 +29,44 @@
 
 #include "Sensor.h"
 #include "drivers/spi/SPIDriver.h"
+#include "math/Vec3.h"
+#include "TimestampTimer.h"
 
 using miosix::GpioPin;
 using std::array;
 
-struct L3GD20Data
+static constexpr uint32_t L3GD20_FIFO_SIZE = 32;
+
+struct L3GD20Data : public GyroscopeData
 {
-    uint64_t timestamp;
-    Vec3 gyro;
+    L3GD20Data() : GyroscopeData{0, 0.0, 0.0, 0.0} {}
+
+    L3GD20Data(uint64_t timestamp, float x, float y, float z)
+        : GyroscopeData{timestamp, x, y, z}
+    {
+    }
+
+    L3GD20Data(float x, float y, float z)
+        : GyroscopeData{TimestampTimer::getTimestamp(), x, y, z}
+    {
+    }
+
+
+    L3GD20Data(GyroscopeData gyr) : GyroscopeData(gyr) {}
+
+    static std::string header()
+    {
+        return "gyro_timestamp,gyro_x,gyro_y,gyro_z\n";
+    }
+
+    void print(std::ostream& os) const
+    {
+        os << gyro_timestamp << "," << gyro_x << "," << gyro_y << "," << gyro_z
+           << "\n";
+    }
 };
 
-class L3GD20 : public GyroSensor
+class L3GD20 : public SensorFIFO<L3GD20Data, L3GD20_FIFO_SIZE>
 {
 public:
     enum class FullScaleRange
@@ -127,7 +154,7 @@ public:
         if (whoami != WHO_AM_I_VAL)
         {
             printf("WAMI: %d\n", whoami);
-            last_error = ERR_NOT_ME;
+            last_error = SensorErrors::INVALID_WHOAMI;
             return false;
         }
 
@@ -197,7 +224,7 @@ public:
 
     bool selfTest() { return true; }
 
-    bool onSimpleUpdate()
+    L3GD20Data sampleImpl()
     {
         if (!fifo_enabled)  // FIFO not enabled
         {
@@ -215,7 +242,7 @@ public:
                 // interrupt may come just as we are reading it and causing a
                 // race condition.
                 miosix::FastInterruptDisableLock dLock;
-                last_sample_ts = interrupt_us;
+                last_sample_ts = last_interrupt_us;
             }
 
             int16_t x = buf[0] | buf[1] << 8;
@@ -223,7 +250,9 @@ public:
             int16_t z = buf[4] | buf[5] << 8;
             // printf("%02X,%02X,%02X\n", x, y, z);
 
-            last_fifo[0] = {last_sample_ts, toRadiansPerSecond(x, y, z)};
+            Vec3 rads    = toRadiansPerSecond(x, y, z);
+            last_fifo[0] = {last_sample_ts, rads.getX(), rads.getY(),
+                            rads.getZ()};
         }
 
         else  // FIFO is enabled
@@ -277,38 +306,22 @@ public:
                 // Ignoring possible duplicates, the timestamp of the ith sample
                 // in the fifo is:
                 // ts(i) = ts(fifo_watermark) + (i - fifo_watermark)*dt;
-                last_fifo[i - duplicates].timestamp =
-                    interrupt_us +
-                    ((int)i - (int)fifo_watermark - (int)duplicates) * dt;
-                last_fifo[i - duplicates].gyro =
+                Vec3 rads =
                     toRadiansPerSecond(buf[i * 6] | buf[i * 6 + 1] << 8,
                                        buf[i * 6 + 2] | buf[i * 6 + 3] << 8,
                                        buf[i * 6 + 4] | buf[i * 6 + 5] << 8);
+
+                last_fifo[i - duplicates] = L3GD20Data{
+                    last_interrupt_us +
+                        ((int)i - (int)fifo_watermark - (int)duplicates) * dt,
+                    rads.getX(), rads.getY(), rads.getZ()};
             }
 
             last_fifo_level = fifo_level - duplicates;
         }
 
-        return true;
+        return last_fifo[last_fifo_level - 1];
     }
-
-    L3GD20Data getLastSample() { return last_fifo[last_fifo_level - 1]; }
-
-    /**
-     * Called by the INT2 interrupt handling routine: provides the timestamp of
-     * the last DataReady interrupt (if FIFO is disabled) or the last watermark
-     * interrupt (if FIFO enabled)
-     *
-     * @param ts Timestamp of the lasts interrupt, in microseconds
-     */
-    void IRQupdateTimestamp(uint64_t ts)
-    {
-        dt_interrupt = ts - interrupt_us;
-        interrupt_us = ts;
-    }
-
-    const array<L3GD20Data, 32>& getLastFifo() const { return last_fifo; }
-    uint8_t getLastFifoSize() const { return last_fifo_level; }
 
 private:
     Vec3 toRadiansPerSecond(int16_t x, int16_t y, int16_t z)
@@ -330,12 +343,6 @@ private:
     unsigned int fifo_watermark = 24;
 
     float sensitivity = SENSITIVITY_250;
-
-    uint64_t interrupt_us = 0;
-    uint64_t dt_interrupt = 0;
-
-    array<L3GD20Data, 32> last_fifo;
-    uint8_t last_fifo_level = 1;
 
     uint8_t buf[192];
 

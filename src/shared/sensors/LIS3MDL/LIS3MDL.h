@@ -24,27 +24,11 @@
 #define SRC_SHARED_SENSORS_LIS3MDL_LIS3MDL_H
 
 #include <Common.h>
-#include "miosix.h"
 
 #include "drivers/spi/SPIDriver.h"
+#include "miosix.h"
 #include "sensors/Sensor.h"
-
-struct LIS3MDLData : public TimestampData,
-                     public MagnetometerData,
-                     public TemperatureData
-{
-    LIS3MDLData()
-        : TimestampData{miosix::getTick()}, MagnetometerData{0, 0, 0},
-          TemperatureData{0}
-    {
-    }
-
-    LIS3MDLData(float mx, float my, float mz, float deg)
-        : TimestampData{miosix::getTick()}, MagnetometerData{mx, my, mz},
-          TemperatureData{deg}
-    {
-    }
-};
+#include "LIS3MDLData.h"
 
 /**
  * Driver for LIS3MDL, a three-axis magnetic sensor.
@@ -356,9 +340,9 @@ public:
             miosix::Thread::sleep(SLEEP_TIME);
 
             LIS3MDLData lastData = sampleImpl();
-            d[0] = std::abs(lastData.mag_x - avg_x);
-            d[1] = std::abs(lastData.mag_y - avg_y);
-            d[2] = std::abs(lastData.mag_z - avg_z);
+            d[0]                 = std::abs(lastData.mag_x - avg_x);
+            d[1]                 = std::abs(lastData.mag_y - avg_y);
+            d[2]                 = std::abs(lastData.mag_z - avg_z);
 
             bool passed = true;
             for (int j = 0; j < 3; ++j)
@@ -388,75 +372,6 @@ public:
          * selfTest()
          */
         return applyConfig(mConfig);
-    }
-
-    /**
-     * @brief Reads data from the sensor
-     *
-     * The init method must have been called before.
-     * Output data can be fetched with the methods
-     * compassDataPtr() and tempDataPtr inherited respectevely
-     * from CompassSensor and TemperatureSensor classes.
-     * Important: the temperature will be taken only once in a while
-     * according to the value of `temperatureDivider`
-     *
-     * @returns false if the sensor was unitialized, true otherwise.
-     */
-    LIS3MDLData sampleImpl() override
-    {
-        if (!isInitialized)
-        {
-            TRACE(
-                "Error: invoked sampleImpl() but sensor was unitialized "
-                "[LIS3MDL].\n");
-            last_error = NOT_INIT;
-            return data;
-        }
-
-        SPITransaction spi(mSlave);
-
-        if (!spi.read(STATUS_REG))
-        {
-            TRACE("New data not available, keeping old values [LIS32MDL]\n");
-            last_error = NO_NEW_DATA;
-            return data;
-        }
-
-        uint16_t val;
-        LIS3MDLData newData{};
-
-        if (mConfig.enableTemperature)
-        {
-            if (currDiv == 0)
-            {
-                val = spi.read(TEMP_OUT_L);
-                val |= spi.read(TEMP_OUT_H) << 8;
-
-                newData.temperature =
-                    static_cast<float>(val) / LSB_PER_CELSIUS +
-                    REFERENCE_TEMPERATURE;
-                TRACE("read temperature: %d\n", val);
-            } else {
-                // Keep old value
-                newData.temperature = data.temperature;
-            }
-
-            currDiv = (currDiv + 1) % mConfig.temperatureDivider;
-        }
-
-        val = spi.read(OUT_X_L);
-        val |= spi.read(OUT_X_H) << 8;
-        newData.mag_x = mUnit * val;
-
-        val = spi.read(OUT_Y_L);
-        val |= spi.read(OUT_Y_H) << 8;
-        newData.mag_y = mUnit * val;
-
-        val = spi.read(OUT_Z_L);
-        val |= spi.read(OUT_Z_H) << 8;
-        newData.mag_z = mUnit * val;
-
-        return newData;
     }
 
     /**
@@ -554,6 +469,77 @@ public:
     }
 
 private:
+    /**
+     * @brief Reads data from the sensor
+     *
+     * The init method must have been called before.
+     * Output data can be fetched with the methods
+     * compassDataPtr() and tempDataPtr inherited respectevely
+     * from CompassSensor and TemperatureSensor classes.
+     * Important: the temperature will be taken only once in a while
+     * according to the value of `temperatureDivider`
+     *
+     * @returns false if the sensor was unitialized, true otherwise.
+     */
+    LIS3MDLData sampleImpl() override
+    {
+        if (!isInitialized)
+        {
+            TRACE(
+                "Error: invoked sampleImpl() but sensor was unitialized "
+                "[LIS3MDL].\n");
+            last_error = NOT_INIT;
+            return last_sample;
+        }
+
+        SPITransaction spi(mSlave);
+
+        if (!spi.read(STATUS_REG))
+        {
+            TRACE("New data not available, keeping old values [LIS32MDL]\n");
+            last_error = NO_NEW_DATA;
+            return last_sample;
+        }
+
+        uint16_t val;
+        LIS3MDLData newData{};
+
+        if (mConfig.enableTemperature)
+        {
+            if (currDiv == 0)
+            {
+                val = spi.read(TEMP_OUT_L);
+                val |= spi.read(TEMP_OUT_H) << 8;
+
+                newData.temp =
+                    static_cast<float>(val) / LSB_PER_CELSIUS +
+                    REFERENCE_TEMPERATURE;
+                TRACE("read temperature: %d\n", val);
+            }
+            else
+            {
+                // Keep old value
+                newData.temp = last_sample.temp;
+            }
+
+            currDiv = (currDiv + 1) % mConfig.temperatureDivider;
+        }
+
+        val = spi.read(OUT_X_L);
+        val |= spi.read(OUT_X_H) << 8;
+        newData.mag_x = mUnit * val;
+
+        val = spi.read(OUT_Y_L);
+        val |= spi.read(OUT_Y_H) << 8;
+        newData.mag_y = mUnit * val;
+
+        val = spi.read(OUT_Z_L);
+        val |= spi.read(OUT_Z_H) << 8;
+        newData.mag_z = mUnit * val;
+
+        return newData;
+    }
+
     SPISlave mSlave;
     Config mConfig;
 
@@ -641,4 +627,3 @@ private:
 };
 
 #endif
-
