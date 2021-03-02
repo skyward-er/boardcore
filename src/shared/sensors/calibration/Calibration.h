@@ -36,37 +36,41 @@ using namespace Eigen;
  * instance of the "CalibrationModel" class.
  *
  * PackedModel is a datatype that could encapsulate all parameters of the model
- * (e.g. Mat4, a std::array of bytes or a custom struct). Choose it carefully
+ * (e.g. Vector3f, Matrix4f or a custom struct). Choose it carefully
  * because it will be used for the serialization/deserialization of the model.
  *
  * SensorData is the type of the objects the model is applied to (e.g.
  * GyroscopeData, MagnetometerData). This is needed because certain models could
  * work slightly differently depending on it
+ *
+ *  Note: derived classes of ValuesCorrector<XX> MUST implement the following
+ *  operators (to make possible to store and load the coefficients):
+ *
+ *  operator << (const T& t);
+ *  operator >> (T& t);
+ *
+ *  where T is a datatype that can fully contain all the coefficients used
+ *  by the function correct(input).
+ *
+ *  Also, an empty constructor must create a neutral instance (identity transformation).
  */
 template <typename SensorData>
 class ValuesCorrector
 {
 public:
-    /*
-     *  Note: derived classes of ValuesCorrector<XX> must support the following
-     *  operators:
-     *
-     *  operator << (const T& t);
-     *  operator >> (T& t);
-     *
-     *  where T is a datatype that can fully contain all the coefficients used
-     *  by the function correct(input)
+    /**
+     * This method will sets the internal coefficients so that the corrected
+     * values are exactly the same of the inputted ones.
      */
-
-    virtual void resetToIdentity() = 0;
+    virtual void setIdentity() = 0;
 
     virtual SensorData correct(const SensorData& input) const = 0;
 };
 
 /*
- * This class represents a "factory" of ValueCorrector instances, and it's
- * necessary to create one. You will always use one of its derived classes, of
- * course.
+ * AbstractCalibrationModel represents a "factory" of ValuesCorrector instances,
+ * and it's necessary to create one. You will always use one of its derived
+ * classes, of course.
  *
  * Values given to the feed() function are needed for the training of the model.
  */
@@ -74,10 +78,26 @@ template <typename SensorData, typename... FeedParams>
 class AbstractCalibrationModel
 {
 public:
+    /**
+     * Gives to the model a single measurement to store and use to produce the
+     * adapted ValueCorrector instance
+     * @returns false if the model can't accept the given data (usually because
+     * the internal buffers are full)
+     */
     virtual bool feed(const FeedParams&... params);
+
+    /**
+     * Creates the best ValuesCorrector instance for the given measurements.
+     * Note: you must feed some data to the model before getting the result!
+     */
     ValuesCorrector<SensorData>* computeResult();
 };
 
+/**
+ * This class acts like a Sensor driver but incorporates both a Sensor<T>
+ * instance and a ValuesCorrector. It can be useful to add a calibration step to
+ * alredy existing code that uses the Sensor API.
+ */
 template <typename SensorData>
 class SensorWrapper : public Sensor<SensorData>
 {
