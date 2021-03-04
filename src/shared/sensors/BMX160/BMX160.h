@@ -84,6 +84,9 @@ public:
         : BMX160(bus, cs, config, SPIBusConfig{})
     {
         spi_slave.config.clock_div = SPIClockDivider::DIV4;
+        old_mag.mag_timestamp = 0.0f;
+        old_gyr.gyro_timestamp = 0.0f;
+        old_acc.accel_timestamp = 0.0f;
     }
 
     /// @brief BMX160 Constructor.
@@ -125,6 +128,7 @@ public:
             SPITransaction spi(spi_slave);
 
             // Enable both interrupt pins, otherwise they'll just float.
+            // We configure both of them as push-pull and active-low
             spi.write(BMX160Defs::REG_INT_OUT_CTRL,
                       BMX160Defs::INT_OUT_CTRL_INT2_OUT |
                           BMX160Defs::INT_OUT_CTRL_INT1_OUT);
@@ -214,6 +218,9 @@ public:
 
 private:
     float temperature = 0.0f;
+    MagnetometerData old_mag;
+    GyroscopeData old_gyr;
+    AccelerometerData old_acc;
 
     bool is_init = false;
     SPISlave spi_slave;
@@ -853,16 +860,17 @@ private:
         assert(len <= static_cast<int>(sizeof(buf)) && "Buffer overflow!");
 #endif
 
+        // Shift the old timestamps, this allows to use old timestamps with the current frame.
+        old_mag.mag_timestamp -= dt_interrupt;
+        old_gyr.gyro_timestamp -= dt_interrupt;
+        old_acc.accel_timestamp -= dt_interrupt;
+
         // Calculate time offset
         uint32_t time_offset = std::min({
             odrToTimeOffset(config.mag_odr, 0),
             odrToTimeOffset(config.gyr_odr, config.fifo_gyr_downs),
             odrToTimeOffset(config.acc_odr, config.fifo_acc_downs),
         });
-
-        MagnetometerData mag;
-        GyroscopeData gyr;
-        AccelerometerData acc;
 
         spi.read(BMX160Defs::REG_FIFO_DATA, buf, len);
         uint32_t timestamp = 0;
@@ -877,12 +885,12 @@ private:
                 auto gyr_raw = parseStruct<BMX160Defs::GyrRaw>(buf, idx);
                 auto acc_raw = parseStruct<BMX160Defs::AccRaw>(buf, idx);
 
-                mag = buildMagData(mag_raw, timestamp);
-                gyr = buildGyrData(gyr_raw, timestamp);
-                acc = buildAccData(acc_raw, timestamp);
+                old_mag = buildMagData(mag_raw, timestamp);
+                old_gyr = buildGyrData(gyr_raw, timestamp);
+                old_acc = buildAccData(acc_raw, timestamp);
 
                 // Push a new sample into the fifo
-                pushSample(BMX160Data{acc, gyr, mag});
+                pushSample(BMX160Data{old_acc, old_gyr, old_mag});
 
                 timestamp += time_offset;
             }
@@ -903,7 +911,7 @@ private:
                     {
                         auto mag_raw =
                             parseStruct<BMX160Defs::MagRaw>(buf, idx);
-                        mag = buildMagData(mag_raw, timestamp);
+                        old_mag = buildMagData(mag_raw, timestamp);
                     }
 
                     // This contains gyro data
@@ -911,7 +919,7 @@ private:
                     {
                         auto gyr_raw =
                             parseStruct<BMX160Defs::GyrRaw>(buf, idx);
-                        gyr = buildGyrData(gyr_raw, timestamp);
+                        old_gyr = buildGyrData(gyr_raw, timestamp);
                     }
 
                     // This contains accel data
@@ -919,11 +927,11 @@ private:
                     {
                         auto acc_raw =
                             parseStruct<BMX160Defs::AccRaw>(buf, idx);
-                        acc = buildAccData(acc_raw, timestamp);
+                        old_acc = buildAccData(acc_raw, timestamp);
                     }
 
                     // Push a new sample into the fifo
-                    pushSample(BMX160Data{acc, gyr, mag});
+                    pushSample(BMX160Data{old_acc, old_gyr, old_mag});
 
                     timestamp += time_offset;
                 }
