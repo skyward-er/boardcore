@@ -34,9 +34,9 @@ struct TestData : public TimestampData
 {
     float value;
 
-    TestData(float v) : TimestampData{getTick()}, value(v) {}
+    TestData(float v) : TimestampData{static_cast<uint64_t>(getTick())}, value(v) {}
 
-    TestData() : TimestampData{getTick()}, value(0.0) {}
+    TestData() : TimestampData{static_cast<uint64_t>(getTick())}, value(0.0) {}
 };
 
 class TestSensor : public Sensor<TestData>

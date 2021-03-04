@@ -112,6 +112,10 @@ void DMASensorSampler::addSensor(AbstractSensor* sensor, SensorInfo sensor_info)
           sensors_map.at(sensor).is_enabled.load());
 }
 
+/*
+    TBD
+    Handle sensors that use DMA
+*/
 void DMASensorSampler::sampleSensor(AbstractSensor* sensor)
 {
     sensor->sample();

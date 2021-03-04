@@ -4,25 +4,22 @@
 #include <iostream>
 #include <type_traits>
 
+#include "TimestampTimer.h"
 #include "miosix.h"
 #include "sensors/Sensor.h"
 #include "sensors/SensorManager.h"
 
 using namespace miosix;
+using namespace TimestampTimer;
 
 // Data produced by the MySensor sensor.
-struct MySensorData : public TimestampData,
-                      public PressureData,
-                      public TemperatureData
+struct MySensorData : public PressureData, public TemperatureData
 {
 
-    MySensorData()
-        : TimestampData{getTick()}, PressureData{0}, TemperatureData{0}
-    {
-    }
+    MySensorData() : PressureData{0, 0.0}, TemperatureData{0, 0.0} {}
 
-    MySensorData(float press, float temp)
-        : TimestampData{getTick()}, PressureData{press}, TemperatureData{temp}
+    MySensorData(float p, float t)
+        : PressureData{getTimestamp(), p}, TemperatureData{getTimestamp(), t}
     {
     }
 };
@@ -33,7 +30,7 @@ class MySensor : public Sensor<MySensorData>
 public:
     virtual MySensorData sampleImpl() override
     {
-        return MySensorData(rand() % 100, /*temp=*/rand() % 100);
+        return MySensorData(rand() % 100, rand() % 100);
     }
 
     bool init() override { return true; };
@@ -58,11 +55,11 @@ public:
 
     SensorData sampleImpl() { return SensorData(); }
 
-    SensorData getData() override
+    SensorData getLastSample() override
     {
-        this->data = original_sensor->getData();
-        this->data.pressure += offset;
-        return this->data;
+        this->last_sample = original_sensor->getLastSample();
+        this->last_sample.press += offset;
+        return this->last_sample;
     }
 
 private:
@@ -70,9 +67,95 @@ private:
     float offset;
 };
 
+struct MySensorDataFIFO : public AccelerometerData, public GyroscopeData
+{
+
+    MySensorDataFIFO()
+        : AccelerometerData{getTimestamp(), 0.0, 0.0, 0.0}, GyroscopeData{
+                                                                getTimestamp(),
+                                                                0.0, 0.0, 0.0}
+    {
+    }
+
+    MySensorDataFIFO(AccelerometerData acc, GyroscopeData gyro)
+        : AccelerometerData{getTimestamp(), acc.accel_x, acc.accel_y,
+                            acc.accel_z},
+          GyroscopeData{getTimestamp(), gyro.gyro_x, gyro.gyro_y, gyro.gyro_z}
+    {
+    }
+};
+
+class MySensorFIFO : public SensorFIFO<MySensorDataFIFO, 20>
+{
+    uint32_t fifo_size = 20;
+
+public:
+    MySensorFIFO() {}
+
+    // return last sample
+    virtual MySensorDataFIFO sampleImpl() override
+    {
+        for (uint32_t i = 0; i < fifo_size; i++)
+        {
+            AccelerometerData acc{getTimestamp(), 0.5, 0.5, 0.5};
+            GyroscopeData gyro{getTimestamp(), 0.5, 0.5, 0.5};
+
+            last_fifo[i] = MySensorDataFIFO{acc, gyro};
+
+            TRACE("Accel : %llu %f %f %f \n", acc.accel_timestamp, acc.accel_x,
+                  acc.accel_y, acc.accel_z);
+            TRACE("Gyro : %llu %f %f %f \n", gyro.gyro_timestamp, gyro.gyro_x,
+                  gyro.gyro_y, gyro.gyro_z);
+
+            Thread::sleep(5);
+        }
+
+        last_fifo_level = fifo_size;
+
+        return last_fifo[last_fifo_level - 1];
+    }
+
+    bool init() override { return true; };
+    bool selfTest() override { return true; };
+};
+
+template <typename FIFOData, uint32_t FifoSize>
+class FIFOProxy : public SensorFIFO<FIFOData, FifoSize>
+{
+public:
+    FIFOProxy(SensorFIFO<FIFOData, FifoSize>* sensor) : sensor(sensor) {}
+
+    bool init() override { return true; };
+    bool selfTest() override { return true; };
+
+    FIFOData sampleImpl()
+    {
+        index = 0;
+        return sensor->getFifoElement(index);
+    }
+
+    FIFOData getLastSample() override
+    {
+        if (index < FifoSize - 1)
+        {
+            index++;
+        }
+
+        TRACE("Index : %d \n", index);
+
+        return sensor->getFifoElement(index);
+    }
+
+private:
+    SensorFIFO<FIFOData, FifoSize>* sensor;
+    uint32_t index = 0;
+};
+
 int main()
 {
     srand(time(NULL));
+
+    enableTimestampTimer();
 
     MySensor s1;
     MySensor s2;
@@ -101,18 +184,43 @@ int main()
 
     Thread::sleep(1000);
 
+    // TEST NORMAL SENSORS
+
     SM.disableSensor(&s1);
 
     Thread::sleep(1000);
 
     SM.enableSensor(&s1);
 
-    while (1)
+    for (int i = 0; i < 15; i++)
     {
-        TRACE("S1 : %llu %f %f \n", s1.getData().timestamp,
-              s1.getData().pressure, s1.getData().temperature);
-        TRACE("Filter : %llu %f \n", filter.getData().timestamp,
-              filter.getData().pressure);
+        TRACE("S1 : %llu %f %llu %f \n", s1.getLastSample().press_timestamp,
+              s1.getLastSample().press, s1.getLastSample().temp_timestamp,
+              s1.getLastSample().temp);
+        TRACE("Filter : %llu %f \n", filter.getLastSample().press_timestamp,
+              filter.getLastSample().press);
+
+        Thread::sleep(1000);
+    }
+
+    // TEST SENSORS WITH FIFO
+
+    const uint32_t fifo_size = 20;
+
+    MySensorFIFO s;
+
+    FIFOProxy<MySensorDataFIFO, fifo_size> fifo_proxy(&s);
+
+    for (int i = 0; i < 15; i++)
+    {
+        s.sample();
+
+        MySensorDataFIFO data = fifo_proxy.getLastSample();
+
+        TRACE("AccelProxy : %llu %f %f %f \n", data.accel_timestamp,
+              data.accel_x, data.accel_y, data.accel_z);
+        TRACE("GyroProxy : %llu %f %f %f \n", data.gyro_timestamp, data.gyro_x,
+              data.gyro_y, data.gyro_z);
 
         Thread::sleep(1000);
     }

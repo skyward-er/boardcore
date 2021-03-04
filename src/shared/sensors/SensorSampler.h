@@ -122,6 +122,9 @@ public:
     void addSensor(AbstractSensor* sensor, SensorInfo sensor_info) override;
 
     void sampleSensor(AbstractSensor* s) override;
+
+private:
+    SimpleSensorSampler(const SimpleSensorSampler&) = delete;
 };
 
 /**
@@ -137,4 +140,7 @@ public:
     void addSensor(AbstractSensor* sensor, SensorInfo sensor_info) override;
 
     void sampleSensor(AbstractSensor* s) override;
+
+private:
+    DMASensorSampler(const DMASensorSampler&) = delete;
 };

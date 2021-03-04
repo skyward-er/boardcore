@@ -42,8 +42,19 @@ public:
     using function_t  = function<void()>;
     using SensorMap_t = map<AbstractSensor*, SensorInfo>;
 
+    /**
+     * @brief Constructor.
+     *
+     * @param sensors_map map containing references to the sensors as keys,
+     *                    and objects of type SensorInfo as values.
+     */
     SensorManager(const SensorMap_t& sensors_map);
 
+    /**
+     * @brief Destructor.
+     * 
+     * Deallocates samplers (through the samplers vector).
+     */
     ~SensorManager();
 
     /**
@@ -82,6 +93,11 @@ public:
     const vector<TaskStatResult> getSamplersStats();
 
 private:
+    /**
+     * @brief Copy constructor. Deleted.
+     */
+    SensorManager(const SensorManager&) = delete;
+
     /**
      * @brief Initializes samplers vector and sensors_map with the given sensors
      * map.
