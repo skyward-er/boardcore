@@ -84,13 +84,13 @@ public:
      * @returns false if the model can't accept the given data (usually because
      * the internal buffers are full)
      */
-    virtual bool feed(const FeedParams&... params);
+    virtual bool feed(const FeedParams&... params) = 0;
 
     /**
      * Creates the best ValuesCorrector instance for the given measurements.
      * Note: you must feed some data to the model before getting the result!
      */
-    ValuesCorrector<SensorData>* computeResult();
+    virtual ValuesCorrector<SensorData>* computeResult() = 0;
 };
 
 /**
