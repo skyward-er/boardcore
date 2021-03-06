@@ -71,7 +71,7 @@ class BiasCalibration
     : public AbstractCalibrationModel<SensorData, SensorData, AxisOrientation>
 {
 public:
-    BiasCalibration() : ref(1, 0, 0), sum(0, 0, 0), numSamples(0) {}
+    BiasCalibration() : sum(0, 0, 0), ref(1, 0, 0), numSamples(0) {}
 
     void setReferenceVector(Vector3f vec) { ref = vec; }
     Vector3f getReferenceVector() { return ref; }
