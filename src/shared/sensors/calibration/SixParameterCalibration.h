@@ -84,24 +84,34 @@ class SixParameterCalibration
     : public AbstractCalibrationModel<SensorData, SensorData, AxisOrientation>
 {
 public:
-    SixParameterCalibration() : ref(1, 0, 0), numSamples(0) {}
+    SixParameterCalibration() : samples(MaxSamples, 6), ref(1, 0, 0), numSamples(0) {}
 
     void setReferenceVector(Vector3f vec) { ref = vec; }
     Vector3f getReferenceVector() { return ref; }
 
-    bool feed(const SensorData& measured,
+    bool feed(const SensorData& data,
               const AxisOrientation& transform) override
     {
         if (numSamples == MaxSamples)
             return false;
 
-        Vector3f expected       = transform.getMatrix().transpose() * ref;
-        samples.row(numSamples) = measured, expected;
+
+        Vector3f measured, expected;
+        data >> measured;
+        expected = transform.getMatrix().transpose() * ref;
+
+        samples.block<1, 3>(numSamples, 0) = measured.transpose();
+        samples.block<1, 3>(numSamples, 3) = expected.transpose();
+
         numSamples++;
+        return true;
     }
 
     ValuesCorrector<SensorData>* computeResult() override
     {
+        for(int i = 0; i < numSamples; ++i){
+            // TODO!!!
+        }
         Vector3f p, q;
 
         for (int i = 0; i < 3; ++i)
@@ -109,7 +119,9 @@ public:
             MatrixXf coeffs(numSamples, 2);
             Vector2f solution;
 
-            coeffs << samples.block(0, i, numSamples, 1), 1;
+            coeffs.fill(1);
+            coeffs.block(0, 0, numSamples, 1) = samples.block(0, i, numSamples, 1);
+
             solution = coeffs.colPivHouseholderQr().solve(
                 samples.block(0, i + 3, numSamples, 1));
 
@@ -125,7 +137,8 @@ private:
      * The matrix contains x, y, z measured and x', y', z' expected for each
      * sample
      */
-    Matrix<float, MaxSamples, 6> samples;
+    //Matrix<float, MaxSamples, 6> samples;
+    MatrixXf samples;
     Vector3f ref;
     unsigned numSamples;
 };
