@@ -20,83 +20,91 @@
  * THE SOFTWARE.
  */
 
-#define BIAS_CALIBRATION_TEST 1
+#define TEST_ACCELEROMETER_DATA 1
+
+#define BIAS_CALIBRATION_TEST 0
+#define SIX_PARAMETER_CALIBRATION_TEST 1
 
 #include <Common.h>
 #include <drivers/spi/SPIDriver.h>
 #include <miosix.h>
 
 #include "sensors/LIS3DSH/LIS3DSH.h"
+
 #include "sensors/calibration/BiasCalibration.h"
+#include "sensors/calibration/SixParameterCalibration.h"
+#include "sensors/calibration/TwelveParameterCalibration.h"
+
+#if TEST_ACCELEROMETER_DATA
+#include "calibration/accelerometer-data.h"
+#endif
 
 using namespace miosix;
 
 int main()
 {
-    GpioPin cs(GPIOE_BASE, 3), miso(GPIOA_BASE, 6), mosi(GPIOA_BASE, 7),
-        clk(GPIOA_BASE, 5);
-    SPIBus bus(SPI1);
-
-    {
-        FastInterruptDisableLock dLock;
-
-        /* Enable SPI1 */
-        RCC->APB2ENR |= RCC_APB2ENR_SPI1EN;
-
-        cs.mode(Mode::OUTPUT);
-        cs.high();
-
-        clk.mode(Mode::ALTERNATE);
-        clk.alternateFunction(5);
-
-        miso.mode(Mode::ALTERNATE);
-        miso.alternateFunction(5);
-
-        mosi.mode(Mode::ALTERNATE);
-        mosi.alternateFunction(5);
-    }
-
-    LIS3DSH sensor(bus, cs, sensor.ODR_100_HZ, sensor.UPDATE_AFTER_READ_MODE,
-                   sensor.FULL_SCALE_4G);
-    LIS3DSHData data;
-
-    if (!sensor.init())
-    {
-        TRACE("Sensor error!");
-        return -1;
-    }
-
-#ifdef BIAS_CALIBRATION_TEST
+#if BIAS_CALIBRATION_TEST
     BiasCalibration<AccelerometerData> model;
-
-    for (int i = 0; i < 5; i++)
-    {
-        sensor.sample();
-        data = sensor.getData();
-        model.feed(data, AxisOrthoOrientation(Orientation::POSITIVE_X,
-                                              Orientation::POSITIVE_Y));
-    }
-
 #endif
+
+#if SIX_PARAMETER_CALIBRATION_TEST
+    SixParameterCalibration<AccelerometerData, accData::nOrientations*accData::nSamples> model;
+#endif
+
+#if TEST_ACCELEROMETER_DATA
+    TRACE("Feeding accelerometer data to the calibration model ... \n");
+
+    for (unsigned i = 0; i < accData::nOrientations; i++)
+        for(unsigned j = 0; j < accData::nSamples; j++)
+            model.feed(accData::samples[i][j], accData::orientations[i]);
+
+    TRACE("Computing the result ... \n");
 
     ValuesCorrector<AccelerometerData>* corrector = model.computeResult();
 
-    while (1)
-    {
+    TRACE("Now testing with the same data: \n");
+    
+    float err0 = 0.f, err1 = 0.f;
+    Vector3f vec0 = {0, 0, 0}, vec1 = {0, 0, 0};
 
-        TRACE("Sampling..\n");
+    for (unsigned i = 0; i < accData::nOrientations; i++){
+        TRACE("----------- orientation: %d -------------------\n", i);
+        for(unsigned j = 0; j < accData::nSamples; j++){
+            AccelerometerData out;
+            Vector3f exact, before, after, d0, d1;
 
-        data = sensor.getData();
-        TRACE("UNCORRECTED values:\t\tx: %f\ty: %f\tz: %f\n", data.accel_x,
-              data.accel_y, data.accel_z);
+            exact = accData::orientations[i].getMatrix().transpose() * Vector3f {0, 0, 1};
+            out = corrector->correct(accData::samples[i][j]);
+            out >> after;
+            accData::samples[i][j] >> before;
 
-        AccelerometerData data2 = corrector->correct(data);
+            TRACE("exact: %f %f %f\n", exact[0], exact[1], exact[2]);
+            TRACE("before: %f %f %f\n", before[0], before[1], before[2]);
+            TRACE("after: %f %f %f\n", after[0], after[1], after[2]);
 
-        TRACE("CORRECTED values:\t\tx: %f\ty: %f\tz: %f\n", data2.accel_x,
-              data2.accel_y, data2.accel_z);
+            d0 = exact - before;
+            d1 = exact - after;
 
-        Thread::sleep(500);
+            err0 += d0.norm();
+            err1 += d1.norm();
+
+            vec0 += Vector3f { abs(d0[0]), abs(d0[1]), abs(d0[2]) };
+            vec1 += Vector3f { abs(d1[0]), abs(d1[1]), abs(d1[2]) };
+        }
     }
-    return 0;
+
+    const unsigned n = accData::nOrientations * accData::nSamples;
+    
+    err0 /= n;
+    err1 /= n;
+    vec0 /= n;
+    vec1 /= n;
+
+    TRACE("Average norm of displacement vector on accelerometer data: %.3f (before it was %.3f)\n", err1, err0); 
+    TRACE("Here is the average error per axis (in percentage):\n");
+    TRACE("Before calibration:\t\tx: %3.3f%%\ty: %3.3f%%\tz: %3.3f%%\n", vec0[0]*100, vec0[1]*100, vec0[2]*100);
+    TRACE("After calibration:\t\tx: %3.3f%%\ty: %3.3f%%\tz: %3.3f%%\n", vec1[0]*100, vec1[1]*100, vec1[2]*100);
+
+#endif
 }
 
