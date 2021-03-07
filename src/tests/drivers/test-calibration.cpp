@@ -22,8 +22,8 @@
 
 #define TEST_ACCELEROMETER_DATA 1
 
-#define BIAS_CALIBRATION_TEST 0
-#define SIX_PARAMETER_CALIBRATION_TEST 1
+#define BIAS_CALIBRATION_TEST 1
+#define SIX_PARAMETER_CALIBRATION_TEST 0
 #define TWELVE_PARAMETER_CALIBRATION_TEST 0
 
 #include <Common.h>
@@ -116,6 +116,45 @@ int main()
     TRACE("Before calibration:\t\tx: %3.3f%%\ty: %3.3f%%\tz: %3.3f%%\n", vec0[0]*100, vec0[1]*100, vec0[2]*100);
     TRACE("After calibration:\t\tx: %3.3f%%\ty: %3.3f%%\tz: %3.3f%%\n", vec1[0]*100, vec1[1]*100, vec1[2]*100);
 
+    TRACE("The parameters are:\n\n");
+
+#if BIAS_CALIBRATION_TEST
+    Vector3f bias;
+    *((BiasCorrector<AccelerometerData>*) corrector) >> bias;
+
+    TRACE("b: the bias vector\n");
+    TRACE("b = [    % 2.5f    % 2.5f    % 2.5f    ]\n\n", bias[0], bias[1], bias[2]);
 #endif
+
+#if SIX_PARAMETER_CALIBRATION_TEST
+    Matrix<float, 3, 2> m;
+    *((SixParameterCorrector<AccelerometerData>*) corrector) >> m;
+
+    TRACE("b: the bias vector\n");
+    TRACE("b = [    % 2.5f    % 2.5f    % 2.5f    ]\n\n", m(0, 1), m(1, 1), m(2, 1));
+
+    TRACE("M: the matrix to be multiplied to the input vector\n");
+    
+    TRACE("    |    % 2.5f    % 2.5f    % 2.5f    |\n", m(0, 0), 0.f, 0.f);
+    TRACE("M = |    % 2.5f    % 2.5f    % 2.5f    |\n", 0.f, m(1, 0), 0.f);
+    TRACE("    |    % 2.5f    % 2.5f    % 2.5f    |\n", 0.f, 0.f, m(2, 0));
+#endif
+
+#if TWELVE_PARAMETER_CALIBRATION_TEST
+    Matrix<float, 3, 4> m;
+    *((TwelveParameterCorrector<AccelerometerData>*) corrector) >> m;
+
+    TRACE("b: the bias vector\n");
+    TRACE("b = [    % 2.5f    % 2.5f    % 2.5f    ]\n\n", m(0, 1), m(1, 1), m(2, 1));
+
+    TRACE("M: the matrix to be multiplied to the input vector\n");
+    
+    TRACE("    |    % 2.5f    % 2.5f    % 2.5f    |\n", m(0, 0), m(0, 1), m(0, 2));
+    TRACE("M = |    % 2.5f    % 2.5f    % 2.5f    |\n", m(1, 0), m(1, 1), m(1, 2));
+    TRACE("    |    % 2.5f    % 2.5f    % 2.5f    |\n", m(2, 0), m(2, 1), m(2, 2));
+#endif
+
+#endif
+
 }
 
