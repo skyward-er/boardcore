@@ -79,12 +79,12 @@ private:
     Vector3f p, q;
 };
 
-template <typename SensorData, unsigned MaxSamples>
+template <typename SensorData>
 class SixParameterCalibration
     : public AbstractCalibrationModel<SensorData, SensorData, AxisOrientation>
 {
 public:
-    SixParameterCalibration() : samples(MaxSamples, 6), ref(1, 0, 0), numSamples(0) {}
+    SixParameterCalibration(unsigned _maxSamples) : samples(_maxSamples, 6), ref(1, 0, 0), numSamples(0), maxSamples(_maxSamples) {}
 
     void setReferenceVector(Vector3f vec) { ref = vec; }
     Vector3f getReferenceVector() { return ref; }
@@ -92,11 +92,11 @@ public:
     bool feed(const SensorData& data,
               const AxisOrientation& transform) override
     {
-        if (numSamples == MaxSamples)
+        if (numSamples >= maxSamples)
             return false;
 
-
         Vector3f measured, expected;
+
         data >> measured;
         expected = transform.getMatrix().transpose() * ref;
 
@@ -109,9 +109,6 @@ public:
 
     ValuesCorrector<SensorData>* computeResult() override
     {
-        for(int i = 0; i < numSamples; ++i){
-            // TODO!!!
-        }
         Vector3f p, q;
 
         for (int i = 0; i < 3; ++i)
@@ -135,10 +132,9 @@ public:
 private:
     /*
      * The matrix contains x, y, z measured and x', y', z' expected for each
-     * sample
+     * row. Its shape is (N x 6)
      */
-    //Matrix<float, MaxSamples, 6> samples;
     MatrixXf samples;
     Vector3f ref;
-    unsigned numSamples;
+    unsigned numSamples, maxSamples;
 };
