@@ -38,9 +38,6 @@ void SensorSampler::sampleAndCallback()
 {
     for (auto it = sensors_map.begin(); it != sensors_map.end(); it++)
     {
-        TRACE("[Sampler %d] Sensor %p, Sensor info %p ---> enabled = %d \n",
-              getID(), it->first, &(it->second), it->second.is_enabled.load());
-
         // sample only if that sensor is enabled
         if (it->second.is_enabled)
         {
