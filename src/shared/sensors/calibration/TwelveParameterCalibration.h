@@ -40,33 +40,33 @@ using namespace Eigen;
  * Where (x, y, z) is the input and (x', y', z') the output.
  */
 template <typename SensorData>
-class TwelveParameterValuesCorrector : public ValuesCorrector<SensorData>
+class TwelveParameterCorrector : public ValuesCorrector<SensorData>
 {
 public:
-    TwelveParameterValuesCorrector()
-        : TwelveParameterValuesCorrector(Matrix3f::Identity(), {0, 0, 0})
+    TwelveParameterCorrector()
+        : TwelveParameterCorrector(Matrix3f::Identity(), {0, 0, 0})
     {
     }
 
-    TwelveParameterValuesCorrector(const Matrix3f& _w, const Vector3f& _b)
+    TwelveParameterCorrector(const Matrix3f& _w, const Vector3f& _b)
         : w(_w), b(_b)
     {
     }
 
-    TwelveParameterValuesCorrector(const Matrix<float, 3, 4>& mat){
+    TwelveParameterCorrector(const Matrix<float, 3, 4>& mat){
         operator<<(mat);
     }
 
     void operator<<(const Matrix<float, 3, 4>& rhs)
     {
         w = rhs.block<3, 3>(0, 0);
-        b = rhs.col(3);
+        b = rhs.col(3).transpose();
     }
 
     void operator>>(Matrix<float, 3, 4>& rhs) const
     {
         rhs.block<3, 3>(0, 0) = w;
-        rhs.col(3)            = b;
+        rhs.col(3)            = b.transpose();
     }
 
     void setIdentity() override
@@ -128,7 +128,7 @@ public:
             solutions(i, 3) = sol[3];
         }
 
-        return new TwelveParameterValuesCorrector<SensorData>(solutions);
+        return new TwelveParameterCorrector<SensorData>(solutions);
     }
 
 private:

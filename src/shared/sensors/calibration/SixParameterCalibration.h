@@ -53,14 +53,14 @@ public:
 
     void operator>>(Matrix<float, 3, 2>& out) const
     {
-        out.col(0) = p;
-        out.col(1) = q;
+        out.col(0) = p.transpose();
+        out.col(1) = q.transpose();
     }
 
     void operator<<(const Matrix<float, 3, 2>& in)
     {
-        p = in.col(0);
-        q = in.col(1);
+        p = in.col(0).transpose();
+        q = in.col(1).transpose();
     }
 
     SensorData correct(const SensorData& input) const override
