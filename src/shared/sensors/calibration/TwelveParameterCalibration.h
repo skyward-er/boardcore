@@ -91,25 +91,30 @@ private:
     Vector3f b;
 };
 
-template <typename SensorData, unsigned MaxSamples>
+template <typename SensorData>
 class TwelveParameterCalibration
     : public AbstractCalibrationModel<SensorData, SensorData, AxisOrientation>
 {
 public:
-    TwelveParameterCalibration() : ref(1, 0, 0), numSamples(0) {}
+    TwelveParameterCalibration(unsigned _maxSamples) : samples(_maxSamples, 7), ref(1, 0, 0), numSamples(0), maxSamples(_maxSamples){}
 
     void setReferenceVector(Vector3f vec) { ref = vec; }
     Vector3f getReferenceVector() { return ref; }
 
-    bool feed(const SensorData& measured,
+    bool feed(const SensorData& data,
               const AxisOrientation& transform) override
     {
-        if (numSamples == MaxSamples)
+        if (numSamples == maxSamples)
             return false;
 
-        Vector3f expected       = transform.getMatrix().transpose() * ref;
-        samples.row(numSamples) = measured, 1, expected;
+        Vector3f expected, measured;
+        data >> measured;
+        expected = transform.getMatrix().transpose() * ref;
+
+        samples.row(numSamples) << measured.transpose(), 1, expected.transpose();
         numSamples++;
+
+        return true;
     }
 
     ValuesCorrector<SensorData>* computeResult() override
@@ -117,8 +122,11 @@ public:
         Matrix<float, 3, 4> solutions;
         auto qr = samples.block(0, 0, numSamples, 4).colPivHouseholderQr();
 
-        for (int i = 0; i < 3; ++i)
-            solutions.row(i) = qr.solve(samples.block(0, 6, numSamples, 1));
+        for (int i = 0; i < 3; ++i){
+            Vector4f sol = qr.solve(samples.block(0, 4+i, numSamples, 1)); 
+            solutions.col(i) = sol.head<3>();
+            solutions(i, 3) = sol[3];
+        }
 
         return new TwelveParameterValuesCorrector<SensorData>(solutions);
     }
@@ -128,7 +136,7 @@ private:
      * The matrix contains x, y, z measured and x', y', z' expected for each
      * sample. Between (x, y, z) and (x', y', z') there is a column of 1s
      */
-    Matrix<float, MaxSamples, 7> samples;
+    MatrixXf samples;
     Vector3f ref;
-    unsigned numSamples;
+    unsigned numSamples, maxSamples;
 };
