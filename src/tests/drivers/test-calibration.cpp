@@ -24,6 +24,7 @@
 
 #define BIAS_CALIBRATION_TEST 0
 #define SIX_PARAMETER_CALIBRATION_TEST 1
+#define TWELVE_PARAMETER_CALIBRATION_TEST 0
 
 #include <Common.h>
 #include <drivers/spi/SPIDriver.h>
@@ -48,7 +49,13 @@ int main()
 #endif
 
 #if SIX_PARAMETER_CALIBRATION_TEST
-    SixParameterCalibration<AccelerometerData, accData::nOrientations*accData::nSamples> model;
+    SixParameterCalibration<AccelerometerData> model(accData::nOrientations * accData::nSamples);
+    model.setReferenceVector({0, 0, 1});
+#endif
+
+#if TWELVE_PARAMETER_CALIBRATION_TEST
+    TwelveParameterCalibration<AccelerometerData> model(accData::nOrientations * accData::nSamples);
+    model.setReferenceVector({0, 0, 1});
 #endif
 
 #if TEST_ACCELEROMETER_DATA
@@ -68,7 +75,8 @@ int main()
     Vector3f vec0 = {0, 0, 0}, vec1 = {0, 0, 0};
 
     for (unsigned i = 0; i < accData::nOrientations; i++){
-        TRACE("----------- orientation: %d -------------------\n", i);
+        TRACE("  --- Orientation n. %d --- \n", i);
+
         for(unsigned j = 0; j < accData::nSamples; j++){
             AccelerometerData out;
             Vector3f exact, before, after, d0, d1;
@@ -78,9 +86,12 @@ int main()
             out >> after;
             accData::samples[i][j] >> before;
 
-            TRACE("exact: %f %f %f\n", exact[0], exact[1], exact[2]);
-            TRACE("before: %f %f %f\n", before[0], before[1], before[2]);
-            TRACE("after: %f %f %f\n", after[0], after[1], after[2]);
+            
+            /* Every five samples, print one */
+            if(j % 5 == 0){
+                TRACE("%f %f %f -> ", before[0], before[1], before[2]);
+                TRACE("%f %f %f\n", after[0], after[1], after[2]);
+            }
 
             d0 = exact - before;
             d1 = exact - after;
