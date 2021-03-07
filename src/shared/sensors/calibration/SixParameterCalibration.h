@@ -84,13 +84,16 @@ class SixParameterCalibration
     : public AbstractCalibrationModel<SensorData, SensorData, AxisOrientation>
 {
 public:
-    SixParameterCalibration(unsigned _maxSamples) : samples(_maxSamples, 6), ref(1, 0, 0), numSamples(0), maxSamples(_maxSamples) {}
+    SixParameterCalibration(unsigned _maxSamples)
+        : samples(_maxSamples, 6), ref(1, 0, 0), numSamples(0),
+          maxSamples(_maxSamples)
+    {
+    }
 
     void setReferenceVector(Vector3f vec) { ref = vec; }
     Vector3f getReferenceVector() { return ref; }
 
-    bool feed(const SensorData& data,
-              const AxisOrientation& transform) override
+    bool feed(const SensorData& data, const AxisOrientation& transform) override
     {
         if (numSamples >= maxSamples)
             return false;
@@ -117,7 +120,8 @@ public:
             Vector2f solution;
 
             coeffs.fill(1);
-            coeffs.block(0, 0, numSamples, 1) = samples.block(0, i, numSamples, 1);
+            coeffs.block(0, 0, numSamples, 1) =
+                samples.block(0, i, numSamples, 1);
 
             solution = coeffs.colPivHouseholderQr().solve(
                 samples.block(0, i + 3, numSamples, 1));
