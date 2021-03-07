@@ -22,16 +22,15 @@
 
 #define TEST_ACCELEROMETER_DATA 1
 
-#define BIAS_CALIBRATION_TEST 1
+#define BIAS_CALIBRATION_TEST 0
 #define SIX_PARAMETER_CALIBRATION_TEST 0
-#define TWELVE_PARAMETER_CALIBRATION_TEST 0
+#define TWELVE_PARAMETER_CALIBRATION_TEST 1
 
 #include <Common.h>
 #include <drivers/spi/SPIDriver.h>
 #include <miosix.h>
 
 #include "sensors/LIS3DSH/LIS3DSH.h"
-
 #include "sensors/calibration/BiasCalibration.h"
 #include "sensors/calibration/SixParameterCalibration.h"
 #include "sensors/calibration/TwelveParameterCalibration.h"
@@ -46,23 +45,31 @@ int main()
 {
 #if BIAS_CALIBRATION_TEST
     BiasCalibration<AccelerometerData> model;
+
+    TRACE("Using BIAS calibration model.\n");
 #endif
 
 #if SIX_PARAMETER_CALIBRATION_TEST
-    SixParameterCalibration<AccelerometerData> model(accData::nOrientations * accData::nSamples);
+    SixParameterCalibration<AccelerometerData> model(accData::nOrientations *
+                                                     accData::nSamples);
     model.setReferenceVector({0, 0, 1});
+
+    TRACE("Using SIX-PARAMETER calibration model.\n");
 #endif
 
 #if TWELVE_PARAMETER_CALIBRATION_TEST
-    TwelveParameterCalibration<AccelerometerData> model(accData::nOrientations * accData::nSamples);
+    TwelveParameterCalibration<AccelerometerData> model(accData::nOrientations *
+                                                        accData::nSamples);
     model.setReferenceVector({0, 0, 1});
+
+    TRACE("Using TWELVE-PARAMETER calibration model.\n");
 #endif
 
 #if TEST_ACCELEROMETER_DATA
     TRACE("Feeding accelerometer data to the calibration model ... \n");
 
     for (unsigned i = 0; i < accData::nOrientations; i++)
-        for(unsigned j = 0; j < accData::nSamples; j++)
+        for (unsigned j = 0; j < accData::nSamples; j++)
             model.feed(accData::samples[i][j], accData::orientations[i]);
 
     TRACE("Computing the result ... \n");
@@ -70,27 +77,37 @@ int main()
     ValuesCorrector<AccelerometerData>* corrector = model.computeResult();
 
     TRACE("Now testing with the same data: \n");
-    
+
     float err0 = 0.f, err1 = 0.f;
     Vector3f vec0 = {0, 0, 0}, vec1 = {0, 0, 0};
 
-    for (unsigned i = 0; i < accData::nOrientations; i++){
-        TRACE("  --- Orientation n. %d --- \n", i);
+    for (unsigned i = 0; i < accData::nOrientations; i++)
+    {
+        TRACE(
+            "  --- Orientation n. %d: X axis oriented toward %s, Y axis "
+            "oriented toward %s\n",
+            i,
+            humanFriendlyOrientation[static_cast<uint8_t>(
+                accData::orientations[i].xAxis)],
+            humanFriendlyOrientation[static_cast<uint8_t>(
+                accData::orientations[i].yAxis)]);
 
-        for(unsigned j = 0; j < accData::nSamples; j++){
+        for (unsigned j = 0; j < accData::nSamples; j++)
+        {
             AccelerometerData out;
             Vector3f exact, before, after, d0, d1;
 
-            exact = accData::orientations[i].getMatrix().transpose() * Vector3f {0, 0, 1};
+            exact = accData::orientations[i].getMatrix().transpose() *
+                    Vector3f{0, 0, 1};
             out = corrector->correct(accData::samples[i][j]);
             out >> after;
             accData::samples[i][j] >> before;
 
-            
             /* Every five samples, print one */
-            if(j % 5 == 0){
-                TRACE("%f %f %f -> ", before[0], before[1], before[2]);
-                TRACE("%f %f %f\n", after[0], after[1], after[2]);
+            if (j % 5 == 0)
+            {
+                TRACE("%f %f %f -> %f %f %f\n", before[0], before[1], before[2],
+                      after[0], after[1], after[2]);
             }
 
             d0 = exact - before;
@@ -99,42 +116,49 @@ int main()
             err0 += d0.norm();
             err1 += d1.norm();
 
-            vec0 += Vector3f { abs(d0[0]), abs(d0[1]), abs(d0[2]) };
-            vec1 += Vector3f { abs(d1[0]), abs(d1[1]), abs(d1[2]) };
+            vec0 += Vector3f{abs(d0[0]), abs(d0[1]), abs(d0[2])};
+            vec1 += Vector3f{abs(d1[0]), abs(d1[1]), abs(d1[2])};
         }
     }
 
     const unsigned n = accData::nOrientations * accData::nSamples;
-    
+
     err0 /= n;
     err1 /= n;
     vec0 /= n;
     vec1 /= n;
 
-    TRACE("Average norm of displacement vector on accelerometer data: %.3f (before it was %.3f)\n", err1, err0); 
+    TRACE(
+        "Average norm of displacement vector on accelerometer data: %.3f "
+        "(before it was %.3f)\n",
+        err1, err0);
     TRACE("Here is the average error per axis (in percentage):\n");
-    TRACE("Before calibration:\t\tx: %3.3f%%\ty: %3.3f%%\tz: %3.3f%%\n", vec0[0]*100, vec0[1]*100, vec0[2]*100);
-    TRACE("After calibration:\t\tx: %3.3f%%\ty: %3.3f%%\tz: %3.3f%%\n", vec1[0]*100, vec1[1]*100, vec1[2]*100);
+    TRACE("Before calibration:\t\tx: %3.3f%%\ty: %3.3f%%\tz: %3.3f%%\n",
+          vec0[0] * 100, vec0[1] * 100, vec0[2] * 100);
+    TRACE("After calibration:\t\tx: %3.3f%%\ty: %3.3f%%\tz: %3.3f%%\n",
+          vec1[0] * 100, vec1[1] * 100, vec1[2] * 100);
 
     TRACE("The parameters are:\n\n");
 
 #if BIAS_CALIBRATION_TEST
     Vector3f bias;
-    *((BiasCorrector<AccelerometerData>*) corrector) >> bias;
+    *((BiasCorrector<AccelerometerData>*)corrector) >> bias;
 
     TRACE("b: the bias vector\n");
-    TRACE("b = [    % 2.5f    % 2.5f    % 2.5f    ]\n\n", bias[0], bias[1], bias[2]);
+    TRACE("b = [    % 2.5f    % 2.5f    % 2.5f    ]\n\n", bias[0], bias[1],
+          bias[2]);
 #endif
 
 #if SIX_PARAMETER_CALIBRATION_TEST
     Matrix<float, 3, 2> m;
-    *((SixParameterCorrector<AccelerometerData>*) corrector) >> m;
+    *((SixParameterCorrector<AccelerometerData>*)corrector) >> m;
 
     TRACE("b: the bias vector\n");
-    TRACE("b = [    % 2.5f    % 2.5f    % 2.5f    ]\n\n", m(0, 1), m(1, 1), m(2, 1));
+    TRACE("b = [    % 2.5f    % 2.5f    % 2.5f    ]\n\n", m(0, 1), m(1, 1),
+          m(2, 1));
 
     TRACE("M: the matrix to be multiplied to the input vector\n");
-    
+
     TRACE("    |    % 2.5f    % 2.5f    % 2.5f    |\n", m(0, 0), 0.f, 0.f);
     TRACE("M = |    % 2.5f    % 2.5f    % 2.5f    |\n", 0.f, m(1, 0), 0.f);
     TRACE("    |    % 2.5f    % 2.5f    % 2.5f    |\n", 0.f, 0.f, m(2, 0));
@@ -142,19 +166,22 @@ int main()
 
 #if TWELVE_PARAMETER_CALIBRATION_TEST
     Matrix<float, 3, 4> m;
-    *((TwelveParameterCorrector<AccelerometerData>*) corrector) >> m;
+    *((TwelveParameterCorrector<AccelerometerData>*)corrector) >> m;
 
     TRACE("b: the bias vector\n");
-    TRACE("b = [    % 2.5f    % 2.5f    % 2.5f    ]\n\n", m(0, 1), m(1, 1), m(2, 1));
+    TRACE("b = [    % 2.5f    % 2.5f    % 2.5f    ]\n\n", m(0, 1), m(1, 1),
+          m(2, 1));
 
     TRACE("M: the matrix to be multiplied to the input vector\n");
-    
-    TRACE("    |    % 2.5f    % 2.5f    % 2.5f    |\n", m(0, 0), m(0, 1), m(0, 2));
-    TRACE("M = |    % 2.5f    % 2.5f    % 2.5f    |\n", m(1, 0), m(1, 1), m(1, 2));
-    TRACE("    |    % 2.5f    % 2.5f    % 2.5f    |\n", m(2, 0), m(2, 1), m(2, 2));
+
+    TRACE("    |    % 2.5f    % 2.5f    % 2.5f    |\n", m(0, 0), m(0, 1),
+          m(0, 2));
+    TRACE("M = |    % 2.5f    % 2.5f    % 2.5f    |\n", m(1, 0), m(1, 1),
+          m(1, 2));
+    TRACE("    |    % 2.5f    % 2.5f    % 2.5f    |\n", m(2, 0), m(2, 1),
+          m(2, 2));
 #endif
 
 #endif
-
 }
 
