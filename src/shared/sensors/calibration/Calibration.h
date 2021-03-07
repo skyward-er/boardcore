@@ -52,7 +52,8 @@ using namespace Eigen;
  *  where T is a datatype that can fully contain all the coefficients used
  *  by the function correct(input).
  *
- *  Also, an empty constructor must create a neutral instance (identity transformation).
+ *  Also, an empty constructor must create a neutral instance (identity
+ * transformation).
  */
 template <typename SensorData>
 class ValuesCorrector
@@ -136,14 +137,18 @@ private:
  * Z is the thumb
  *
  */
-enum class Orientation
+enum class Orientation : uint8_t
 {
-    POSITIVE_X,
+    POSITIVE_X = 0,
     NEGATIVE_X,
     POSITIVE_Y,
     NEGATIVE_Y,
     POSITIVE_Z,
     NEGATIVE_Z,
+};
+
+constexpr const char* humanFriendlyOrientation[]{
+    "North", "South", "East", "West", "Down", "Up",
 };
 
 inline Vector3f orientationToVector(Orientation val)
