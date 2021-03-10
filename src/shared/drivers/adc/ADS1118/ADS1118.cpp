@@ -29,7 +29,8 @@ ADS1118::ADS1118(SPISlave spiSlave_)
 {
 }
 
-ADS1118::ADS1118(SPIBusInterface &bus, GpioPin cs, SPIBusConfig spiConfig,
+ADS1118::ADS1118(SPIBusInterface &bus, GpioPin cs,
+                 SPIBusConfig spiConfig = getDefaultSPIConfig(),
                  ADS1118Config config_)
     : ADS1118(SPISlave(bus, cs, spiConfig), config_)
 {
@@ -44,6 +45,14 @@ ADS1118::ADS1118(SPISlave spiSlave_, ADS1118Config config_,
                  int16_t tempDivider_)
     : spiSlave(spiSlave_), baseConfig(config_), tempDivider(tempDivider_)
 {
+}
+
+static SPIBusConfig getDefaultSPIConfig()
+{
+    SPIBusConfig spiConfig{};
+    spiConfig.clock_div = SPIClockDivider::DIV32;
+    spiConfig.mode      = SPIMode::MODE1;
+    return spiConfig;
 }
 
 bool ADS1118::init()

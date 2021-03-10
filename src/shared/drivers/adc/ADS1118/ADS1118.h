@@ -58,9 +58,9 @@
 #pragma once
 
 #include "ADS1118Data.h"
+#include "TimestampTimer.h"
 #include "drivers/spi/SPIDriver.h"
 #include "sensors/Sensor.h"
-#include "TimestampTimer.h"
 
 /**
  * @brief Driver class for ADS1118 adc
@@ -201,6 +201,13 @@ public:
     ADS1118(SPISlave spiSlave_, ADS1118Config config_, int16_t tempDivider_);
 
     /**
+     * Constructs the default config for SPI Bus.
+     *
+     * @returns the default SPIBusConfig
+     */
+    static SPIBusConfig getDefaultSPIConfig();
+
+    /**
      * @brief Initialize the configuration
      */
     bool init() override;
@@ -330,7 +337,7 @@ private:
     bool configCheck = false;
 
     ADS1118Config channelsConfig[NUM_OF_CHANNELS];  ///< Channels configuration
-    ADS1118Data values[NUM_OF_CHANNELS];                ///< Voltage values in mV
+    ADS1118Data values[NUM_OF_CHANNELS];            ///< Voltage values in mV
 
     ADS1118Config lastConfig;     ///< Last written configuration
     uint8_t lastConfigIndex = 0;  ///< Last written configuration's index
