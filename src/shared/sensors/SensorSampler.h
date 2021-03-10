@@ -44,7 +44,7 @@ public:
      * @param freq    frequency at which the sampler performs sensors update
      * @param is_dma  indicate if the sampler manages DMA sensors or not
      */
-    SensorSampler(uint32_t id, uint32_t freq, bool is_dma);
+    SensorSampler(uint8_t id, uint32_t freq, bool is_dma);
 
     virtual ~SensorSampler();
 
@@ -77,7 +77,7 @@ public:
     /**
      * @return  the sampler's ID
      */
-    uint32_t getID();
+    uint8_t getID();
 
     /**
      * @return  the sampler's activation frequency
@@ -100,7 +100,7 @@ private:
      */
     virtual void sampleSensor(AbstractSensor* s) = 0;
 
-    uint32_t id;   /**< sampler id used in the task scheduler */
+    uint8_t id;   /**< sampler id used in the task scheduler */
     uint32_t freq; /**< sampler update/activation frequency */
     bool is_dma;   /**< the sampler's type (if it uses DMA or not */
 
@@ -115,7 +115,7 @@ protected:
 class SimpleSensorSampler : public virtual SensorSampler
 {
 public:
-    SimpleSensorSampler(uint32_t id, uint32_t freq);
+    SimpleSensorSampler(uint8_t id, uint32_t freq);
 
     ~SimpleSensorSampler();
 
@@ -133,7 +133,7 @@ private:
 class DMASensorSampler : public virtual SensorSampler
 {
 public:
-    DMASensorSampler(uint32_t id, uint32_t freq);
+    DMASensorSampler(uint8_t id, uint32_t freq);
 
     ~DMASensorSampler();
 

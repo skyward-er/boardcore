@@ -51,8 +51,16 @@ public:
     SensorManager(const SensorMap_t& sensors_map);
 
     /**
+     * @brief Constructor taking an external TaskScheduler object.
+     *
+     * @param sensors_map map containing references to the sensors as keys,
+     *                    and objects of type SensorInfo as values.
+     */
+    SensorManager(TaskScheduler* scheduler, const SensorMap_t& sensors_map);
+
+    /**
      * @brief Destructor.
-     * 
+     *
      * Deallocates samplers (through the samplers vector).
      */
     ~SensorManager();
@@ -100,7 +108,11 @@ private:
 
     /**
      * @brief Initializes samplers vector and sensors_map with the given sensors
-     * map.
+     *        map, giving incremental IDs to SensorSampler objects.
+     *        In case a TaskScheduler was passed in the costructor,
+     *        the SensorManager will assign to SensorSamplers incremental IDs
+     *        starting from the maximum among the tasks already existing
+     *        in the TaskScheduler.
      *
      * @param sensors_map    map containing sensors and their respective
      * information for the sampling
@@ -120,6 +132,14 @@ private:
     void initScheduler();
 
     /**
+     * @brief Avoid creating duplicate IDs for tasks in case the scheduler
+     *        is received from outside.
+     *
+     * @return maximum ID among those assigned to tasks in the scheduler.
+     */
+    uint8_t getFirstTaskID();
+
+    /**
      * @brief Create a sampler object according to the fact that it needs to use
      * DMA or not.
      *
@@ -129,9 +149,11 @@ private:
      *
      * @return pointer to the newly created sampler
      */
-    SensorSampler* createSampler(uint32_t id, uint32_t freq, bool is_dma);
+    SensorSampler* createSampler(uint8_t id, uint32_t freq, bool is_dma);
 
-    TaskScheduler scheduler; /**< scheduler to update the samplers at the
+    const uint8_t MAX_TASK_ID = 255; /**< max id for tasks in the scheduler */
+
+    TaskScheduler* scheduler; /**< scheduler to update the samplers at the
                                 correct frequency */
 
     vector<SensorSampler*> samplers; /**< vector of all the samplers (unique) */

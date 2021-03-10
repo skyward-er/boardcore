@@ -32,12 +32,20 @@
 #include "utils/testutils/TestSensor.h"
 #include "utils/testutils/catch.hpp"
 
+static const uint8_t FIRST_TASK_ID = 7;  // used to test IDs assignment to tasks
+
 class SensorManagerFixture
 {
 public:
     SensorManagerFixture()
     {
+        scheduler = new TaskScheduler();
+        scheduler->add([]() { std::cout << "Task Callback!" << endl; },
+                       2000,  // inserst a test function in the scheduler
+                       FIRST_TASK_ID);
+
         sensor_manager = new SensorManager(
+            scheduler,
             {{&s1, s1_info}, {&s2, s2_info}, {&s3, s3_info}, {&s4, s4_info}});
 
         sampler1 = sensor_manager->samplers_map[&s1];
@@ -54,6 +62,8 @@ public:
     }
 
 private:
+    TaskScheduler* scheduler;
+
     SensorManager* sensor_manager;
 
     SensorSampler* sampler1;
@@ -107,6 +117,27 @@ bool operator==(const SensorSampler& lhs, const SensorSampler& rhs)
 }
 
 TEST_CASE_METHOD(SensorManagerFixture,
+                 "Samplers IDs should incrementally start from FIRST_TASK_ID")
+{
+    sensor_manager->start();
+
+    std::vector<TaskStatResult> tasks_stats = scheduler->getTaskStats();
+
+    std::cout << "Tasks number : " << tasks_stats.size() << endl;
+
+    std::cout << "Task IDs : " << endl;
+    for (auto stats : tasks_stats)
+    {
+        printf("%d \n", stats.id);
+    }
+
+    REQUIRE(tasks_stats[0].id == FIRST_TASK_ID);
+    REQUIRE(tasks_stats[1].id == static_cast<uint8_t>(FIRST_TASK_ID + 1));
+    REQUIRE(tasks_stats[2].id == static_cast<uint8_t>(FIRST_TASK_ID + 2));
+    REQUIRE(tasks_stats[3].id == static_cast<uint8_t>(FIRST_TASK_ID + 3));
+}
+
+TEST_CASE_METHOD(SensorManagerFixture,
                  "Sensors are correctly added to the samplers")
 {
     // check that 3 samplers exist (1 hz, 2 hz and 1 hz with DMA)
@@ -148,7 +179,7 @@ TEST_CASE_METHOD(SensorManagerFixture,
     // sampler at 1 Hz with DMA has 1 sensor
     for (auto s : sensor_manager->samplers)
     {
-        if (s->getFrequency() == 1 and s->isDMA() == false)
+        if (s->getFrequency() == 1 && s->isDMA() == false)
         {
             REQUIRE(s->getNumSensors() == 2);
         }
@@ -156,7 +187,7 @@ TEST_CASE_METHOD(SensorManagerFixture,
         {
             REQUIRE(s->getNumSensors() == 1);
         }
-        else if (s->getFrequency() == 1 and s->isDMA() == true)
+        else if (s->getFrequency() == 1 && s->isDMA() == true)
         {
             REQUIRE(s->getNumSensors() == 1);
         }

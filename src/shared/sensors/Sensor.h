@@ -65,6 +65,9 @@ enum SensorErrors : uint8_t
  */
 class AbstractSensor
 {
+protected:
+    SensorErrors last_error = SensorErrors::NO_ERRORS;
+
 public:
     /**
      * @brief Initialize the sensor.
@@ -82,6 +85,12 @@ public:
      * @brief Sample the sensor.
      */
     virtual void sample() = 0;
+
+    /**
+     * @brief Get last error for debugging purposes. Avoid silent fails.
+     * @return the last error recorded by this sensor
+     */
+    SensorErrors getLastError() {return last_error; };
 };
 
 /**
@@ -95,7 +104,6 @@ class Sensor : public virtual AbstractSensor
 {
 protected:
     Data last_sample;
-    SensorErrors last_error = SensorErrors::NO_ERRORS;
 
     /**
      * @brief Read a data sample from the sensor.
@@ -112,11 +120,6 @@ public:
      * @return last available sample from this sensor
      */
     virtual Data getLastSample() { return last_sample; }
-
-    /**
-     * @return last error recorded by the sensor driver
-     */
-    SensorErrors getLastError() const { return last_error; }
 };
 
 /**

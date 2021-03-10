@@ -23,6 +23,17 @@
 #include "SensorManager.h"
 
 SensorManager::SensorManager(const SensorMap_t& sensors_map)
+    : scheduler(new TaskScheduler())
+{
+    if (!init(sensors_map))
+    {
+        TRACE("[SM] Initialization failed \n");
+    }
+}
+
+SensorManager::SensorManager(TaskScheduler* scheduler,
+                             const SensorMap_t& sensors_map)
+    : scheduler(scheduler)
 {
     if (!init(sensors_map))
     {
@@ -38,19 +49,17 @@ SensorManager::~SensorManager()
     }
 }
 
-bool SensorManager::start() { return scheduler.start(); }
+bool SensorManager::start() { return scheduler->start(); }
 
-void SensorManager::stop() { scheduler.stop(); }
+void SensorManager::stop() { scheduler->stop(); }
 
 void SensorManager::enableSensor(AbstractSensor* sensor)
 {
-    TRACE("[SM] Enable Sensor %p \n", sensor);
     samplers_map[sensor]->toggleSensor(sensor, true);
 }
 
 void SensorManager::disableSensor(AbstractSensor* sensor)
 {
-    TRACE("[SM] Disable Sensor %p \n", sensor);
     samplers_map[sensor]->toggleSensor(sensor, false);
 }
 
@@ -61,13 +70,19 @@ const SensorInfo& SensorManager::getSensorInfo(AbstractSensor* sensor)
 
 const vector<TaskStatResult> SensorManager::getSamplersStats()
 {
-    return scheduler.getTaskStats();
+    return scheduler->getTaskStats();
 }
 
 bool SensorManager::init(const SensorMap_t& sensors_map)
 {
     bool init_result           = true;
-    uint8_t current_sampler_id = 0;
+    uint8_t current_sampler_id = getFirstTaskID();
+
+    if (current_sampler_id != 0)
+    {
+        TRACE("[SM] Task scheduler not empty : starting from task ID %u \n",
+              current_sampler_id);
+    }
 
     for (auto it = sensors_map.begin(); it != sensors_map.end(); it++)
     {
@@ -81,7 +96,8 @@ bool SensorManager::init(const SensorMap_t& sensors_map)
         if (!initSensor(sensor))
         {
             init_result = false;
-            TRACE("[SM] Failed to initialize sensor \n");
+            TRACE("[SM] Failed to initialize sensor ---> Error : %u \n",
+                  sensor->getLastError());
         }
         else
         {
@@ -106,12 +122,19 @@ bool SensorManager::init(const SensorMap_t& sensors_map)
             {
                 // a sampler with the required frequency does not exist yet
                 SensorSampler* new_sampler = createSampler(
-                    sensor_info.is_dma, sensor_info.freq, current_sampler_id);
+                    current_sampler_id, sensor_info.freq, sensor_info.is_dma);
 
                 new_sampler->addSensor(sensor, sensor_info);
 
                 samplers.push_back(new_sampler);
                 samplers_map[sensor] = new_sampler;
+
+                if (current_sampler_id == MAX_TASK_ID)
+                {
+                    TRACE(
+                        "[SM] WARNING : Max task ID (255) reached in task "
+                        "scheduler, IDs will start again from 0 \n");
+                }
 
                 current_sampler_id++;
             }
@@ -140,25 +163,42 @@ void SensorManager::initScheduler()
         function_t sampler_update_function =
             bind(&SensorSampler::sampleAndCallback, s);
         // use the frequency as the ID of the task in the scheduler
-        scheduler.add(sampler_update_function, period, s->getID(), start_time);
+        scheduler->add(sampler_update_function, period, s->getID(), start_time);
     }
 }
 
-SensorSampler* SensorManager::createSampler(uint32_t id, uint32_t freq,
+uint8_t SensorManager::getFirstTaskID()
+{
+    std::vector<TaskStatResult> tasks_stats = scheduler->getTaskStats();
+
+    if (tasks_stats.empty())
+    {
+        return 0;
+    }
+
+    uint8_t max_id = 0;
+    for (auto& stats : tasks_stats)
+    {
+        if (stats.id > max_id)
+        {
+            max_id = stats.id;
+        }
+    }
+
+    return max_id + 1;
+}
+
+SensorSampler* SensorManager::createSampler(uint8_t id, uint32_t freq,
                                             bool is_dma)
 {
-    SensorSampler* new_sampler;
-
-    TRACE("[SM] Creating Sampler %d \n", id);
+    TRACE("[SM] Creating Sampler %u with frequency %u Hz \n", id, freq);
 
     if (is_dma)
     {
-        new_sampler = new DMASensorSampler(id, freq);
+        return new DMASensorSampler(id, freq);
     }
     else
     {
-        new_sampler = new SimpleSensorSampler(id, freq);
+        return new SimpleSensorSampler(id, freq);
     }
-
-    return new_sampler;
 }

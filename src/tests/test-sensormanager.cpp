@@ -174,7 +174,7 @@ int main()
            /*DMA=*/false,
            /*Enabled=*/true}},
          {/*Sensor=*/&filter,
-          {/*Freq=*/1,
+          {/*Freq=*/2,
            /*Callback=*/
            []() { std::cout << "Callback filter: Hi filter!" << endl; },
            /*DMA=*/false,
@@ -192,7 +192,7 @@ int main()
 
     SM.enableSensor(&s1);
 
-    for (int i = 0; i < 15; i++)
+    for (int i = 0; i < 5; i++)
     {
         TRACE("S1 : %llu %f %llu %f \n", s1.getLastSample().press_timestamp,
               s1.getLastSample().press, s1.getLastSample().temp_timestamp,
