@@ -149,8 +149,8 @@ int main()
                    data.gyro_z);
 
             printf("Acc [%.4f s]:\t%.2f\t%.2f\t%.2f\n",
-                   data.acc_timestamp / 1000000.0f, data.acc_x, data.acc_y,
-                   data.acc_z);
+                   data.accel_timestamp / 1000000.0f, data.accel_x, data.accel_y,
+                   data.accel_z);
         }
     }
 

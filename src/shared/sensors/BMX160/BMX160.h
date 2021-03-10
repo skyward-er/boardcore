@@ -975,7 +975,7 @@ private:
         // Adjust timestamps
         for (int i = 0; i < last_fifo_level; i++)
         {
-            last_fifo[i].acc_timestamp += last_interrupt_us - timestamp;
+            last_fifo[i].accel_timestamp += last_interrupt_us - timestamp;
             last_fifo[i].gyro_timestamp += last_interrupt_us - timestamp;
             last_fifo[i].mag_timestamp += last_interrupt_us - timestamp;
         }
