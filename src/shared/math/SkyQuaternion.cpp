@@ -112,7 +112,7 @@ Vector4f SkyQuaternion::rotm2quat(Matrix3f R)
 
     Vector4f quat(q1, q2, q3, q4);
 
-    return quat;
+    return quat / quat.norm();
 }
 
 bool SkyQuaternion::quatnormalize(Vector4f& quat)
