@@ -25,8 +25,6 @@
  // Convention used: qx, qy, qz, qw
 
 #include "SkyQuaternion.h"
-#include <kalman/ExtendedKalmanEigen.h>
-#include <Eigen/Dense>
 #include "iostream"
 using namespace std;
 
@@ -123,25 +121,6 @@ bool SkyQuaternion::quatnormalize(Vector4f& quat)
         return false;
  
     quat = quat / den;
-
-    return true;
-}
-
-bool SkyQuaternion::quatnormalizeEKF(VectorXf& x)
-{
-    Vector4f xq(x(0), x(1), x(2), x(3));
-    Vector3f xp(x(4), x(5), x(6));
-    Vector3f xv(x(7), x(8), x(9));
-    float cd = x(10);
-
-    float den =
-        sqrtf(powf(xq(0), 2) + powf(xq(1), 2) + powf(xq(2), 2) + powf(xq(3), 2));
-    if (den < 1e-8)
-        return false;
-    
-    xq = xq / den;
-
-    x << xq, xp, xv, cd;
 
     return true;
 }

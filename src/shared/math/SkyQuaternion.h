@@ -27,23 +27,58 @@
 #include <Eigen/Dense>
 using namespace Eigen;
 
+/**
+ * @brief Class for managing quaternions.
+ */
 class SkyQuaternion
 {
 
 public:
-
     SkyQuaternion();
 
-    Vector4f eul2quat(Vector3f radeul); // Euler angles in rad
+    /**
+     * @brief Transform a vector of euler angles to quaternion.
+     *
+     * @param radeul the vector of euler angles in radians to be transformed
+     *
+     * @return transformed quaternion
+     */
+    Vector4f eul2quat(Vector3f radeul);
 
-    Vector3f quat2eul(Vector4f quat); // Returns rad
+    /**
+     * @brief Transform a quaternion to a vector of euler angles.
+     *
+     * @param quat the quaternion to be transformed
+     *
+     * @return transformed vector of euler angles
+     */
+    Vector3f quat2eul(Vector4f quat);
 
-    Vector4f rotm2quat(Matrix3f R); // From rotation matrix to quaternion
+    /**
+     * @brief Transform a rotation matrix to a quaternion.
+     *
+     * @param R the rotation matrix to be transformed (3x3)
+     *
+     * @return transformed quaternion
+     */
+    Vector4f rotm2quat(Matrix3f R);
 
-    bool quatnormalize(Vector4f& quat);  
+    /**
+     * @brief Normalize a quaternion.
+     *
+     * @param quat the quaternion to be normalized
+     *
+     * @return boolean indicating if the operation succeded or not
+     */
+    bool quatnormalize(Vector4f& quat);
 
-    bool quatnormalizeEKF(VectorXf& x); // For the EKF application
-
+    /**
+     * @brief Compute the product of two quaternions.
+     *
+     * @param q1 the first factor
+     * @param q2 the second factor
+     *
+     * @return the resulting quaternions product
+     */
     Vector4f quatProd(const Vector4f q1, const Vector4f q2);
 };
-
