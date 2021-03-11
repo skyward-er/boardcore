@@ -37,20 +37,20 @@ public:
     SkyQuaternion();
 
     /**
-     * @brief Transform a vector of euler angles to quaternion.
+     * @brief Transform a vector of euler angles ZYX to quaternion.
      *
-     * @param radeul the vector of euler angles in radians to be transformed
+     * @param degeul the vector of euler angles to be transformed [deg]
      *
      * @return transformed quaternion
      */
-    Vector4f eul2quat(Vector3f radeul);
+    Vector4f eul2quat(Vector3f degeul);
 
     /**
      * @brief Transform a quaternion to a vector of euler angles.
      *
      * @param quat the quaternion to be transformed
      *
-     * @return transformed vector of euler angles
+     * @return transformed vector of euler angles [deg]
      */
     Vector3f quat2eul(Vector4f quat);
 

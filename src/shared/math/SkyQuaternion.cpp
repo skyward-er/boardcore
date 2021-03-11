@@ -30,11 +30,11 @@ using namespace std;
 
 SkyQuaternion::SkyQuaternion() {}
 
-Vector4f SkyQuaternion::eul2quat(Vector3f radeul) // ZYX rotation
+Vector4f SkyQuaternion::eul2quat(Vector3f degeul) // ZYX rotation
 {
-    float eulx = radeul(0);
-    float euly = radeul(1);
-    float eulz = radeul(2);
+    float eulx = degeul(0) * 3.14F / 180.0F;  
+    float euly = degeul(1) * 3.14F / 180.0F;
+    float eulz = degeul(2) * 3.14F / 180.0F;
 
     float cx = cosf(eulx * 0.5F);
     float sx = sinf(eulx * 0.5F);
