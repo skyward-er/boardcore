@@ -29,8 +29,6 @@
 #include <src/tests/kalman/test-kalman-data.h>
 #include "kalman/Kalman.h"
 
-
-
 static MatrixBase<float, 3, 3>
         A{1, 0.2, 0.02, 0, 1, 0.2, 0, 0, 1};
 static MatrixBase<float, 1, 3> C{1, 0, 0};

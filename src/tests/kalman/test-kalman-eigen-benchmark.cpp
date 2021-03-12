@@ -30,14 +30,13 @@
 #include <Eigen/Dense>
 #include <iostream>
 
-#include "test-kalman-data.h"
+#include <src/tests/kalman/test-kalman-data.h>
 #include "util/util.h"
+
+#include "math/SkyQuaternion.h"
 
 using namespace Eigen;
 using namespace miosix;
-
-typedef Gpio<GPIOD_BASE, 15> blueLed;
-typedef Gpio<GPIOD_BASE, 14> redLed;
 
 int main()
 {
@@ -45,9 +44,11 @@ int main()
     // Setting pin mode for signaling ADA status
     {
         FastInterruptDisableLock dLock;
-        blueLed::mode(Mode::OUTPUT);
-        redLed::mode(Mode::OUTPUT);
+
+        RCC->APB1ENR |= RCC_APB1ENR_TIM5EN;
     }
+
+    printf("RUNNING...\n");
 
     // Timer for benchmarking purposes
     HardwareTimer<uint32_t> timer{TIM5, TimerUtils::getPrescalerInputFrequency(
@@ -72,7 +73,7 @@ int main()
     R << 10;
 
     VectorXf x(n);  // vector of n elements
-    x << 0.0, 0.0, 0.0;
+    x << INPUT[0], 0.0, 0.0;
 
     VectorXf y(p);  // vector with p elements (only one)
 
@@ -82,7 +83,8 @@ int main()
     config.Q = Q;
     config.R = R;
     config.P = P;
-    // G not assigned since we don't have exogenous input for the ADA
+    config.x = x;
+    // G not assigned since we don't have exogenous input for the apogee detection
 
     KalmanEigen filter(config);
 
@@ -94,16 +96,10 @@ int main()
     uint32_t tick1;
     uint32_t tick2;
 
-    for (unsigned i = 0; i < TIME.size(); i++)
+    printf("%d %d \n", TIME.size(), INPUT.size());
+
+    for (unsigned i = 1; i < TIME.size(); i++)
     {
-        if (i == 0)
-        {
-            x(0) = INPUT[0];
-            filter.init(x);
-
-            continue;
-        }
-
         time = TIME[i];
         T    = time - last_time;
 
@@ -114,35 +110,30 @@ int main()
         y(0) = INPUT[i];
 
         tick1 = timer.tick();
+
         filter.predict(F);
         filter.correct(y);
+
         tick2 = timer.tick();
 
-        TRACE("%f \n", timer.toMilliSeconds(tick2 - tick1));
+        printf("%d : %f \n", i, timer.toMilliSeconds(tick2 - tick1));
 
-        // TRACE("%f, %f, %f;\n", filter.getState()(0), filter.getState()(1),
+        // printf("%f, %f, %f;\n", filter.getState()(0), filter.getState()(1),
         //      filter.getState()(2));
 
-        // TRACE("%u \n", MemoryProfiling::getCurrentFreeStack());
+        // printf("%u \n", MemoryProfiling::getCurrentFreeStack());
 
         last_time = time;
 
         if (filter.getState()(1) < 0)
         {
-            TRACE("APOGEE DETECTED at iteration %d ! \n", i);
-            blueLed::high();
-            redLed::low();
-        }
-        else
-        {
-            blueLed::low();
-            redLed::high();
+            printf("APOGEE DETECTED at iteration %d ! \n", i);
         }
     }
 
     timer.stop();
 
-    // TRACE("Total time %d \n", timer.interval());
+    // printf("Total time %d \n", timer.interval());
 
     return 0;
 }

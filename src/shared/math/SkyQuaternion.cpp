@@ -22,17 +22,19 @@
  * THE SOFTWARE.
  */
 
- // Convention used: if rad = 0 -> q4 = 1, q1 = 0, q2 = 0, q3 = 0
+ // Convention used: qx, qy, qz, qw
 
 #include "SkyQuaternion.h"
+#include "iostream"
+using namespace std;
 
 SkyQuaternion::SkyQuaternion() {}
 
-Vector4f SkyQuaternion::eul2quat(Vector3f radeul) // ZYX rotation
+Vector4f SkyQuaternion::eul2quat(Vector3f degeul) // ZYX rotation
 {
-    float eulx = radeul(0);
-    float euly = radeul(1);
-    float eulz = radeul(2);
+    float eulx = degeul(0) * 3.14F / 180.0F;  
+    float euly = degeul(1) * 3.14F / 180.0F;
+    float eulz = degeul(2) * 3.14F / 180.0F;
 
     float cx = cosf(eulx * 0.5F);
     float sx = sinf(eulx * 0.5F);
@@ -41,63 +43,107 @@ Vector4f SkyQuaternion::eul2quat(Vector3f radeul) // ZYX rotation
     float cz = cosf(eulz * 0.5F);
     float sz = sinf(eulz * 0.5F);
 
-    float q4 = cx * cy * cz + sx * sy * sz;
     float q1 = sx * cy * cz - cx * sy * sz;
     float q2 = cx * sy * cz + sx * cy * sz;
     float q3 = cx * cy * sz - sx * sy * cz;
+    float q4 = cx * cy * cz + sx * sy * sz;
 
     Vector4f quat(q1, q2, q3, q4);
 
     return quat;
 }
 
-Vector3f SkyQuaternion::quat2eul(Vector4f quat)
+Vector3f SkyQuaternion::quat2eul(Vector4f quater)
 {
-    float q4 = quat(3);
-    float q1 = quat(0);
-    float q2 = quat(1);
-    float q3 = quat(2);
+    float q1 = quater(0);
+    float q2 = quater(1);
+    float q3 = quater(2);
+    float q4 = quater(3);
 
     float eulx =
-        atan2f(2.0 * (q4 * q1 + q2 * q3), 1.0 - 2.0 * (powf(q1, 2) + powf(q2, 2)));
-    float euly = asinf(2.0 * (q4 * q2 - q3 * q1));
+        atan2f(2.0F * (q4 * q1 + q2 * q3), 1.0F - 2.0F * (powf(q1, 2) + powf(q2, 2)));
+    float euly = asinf(2.0F * (q4 * q2 - q3 * q1));
     float eulz =
-        atan2f(2.0 * (q4 * q3 + q1 * q2), 1.0 - 2.0 * (powf(q2, 2) + powf(q3, 2)));
+        atan2f(2.0F * (q4 * q3 + q1 * q2), 1.0F - 2.0F * (powf(q2, 2) + powf(q3, 2)));
 
     Vector3f eul(eulx, euly, eulz);
 
-    return eul;
+    return eul * 180.0F / 3.14F;
 }
 
-void SkyQuaternion::quatnormalize(Vector4f& quat)
+Vector4f SkyQuaternion::rotm2quat(Matrix3f R)
+{
+    float r11 = R(0, 0);
+    float r12 = R(0, 1);
+    float r13 = R(0, 2);
+    float r21 = R(1, 0);
+    float r22 = R(1, 1);
+    float r23 = R(1, 2);
+    float r31 = R(2, 0);
+    float r32 = R(2, 1);
+    float r33 = R(2, 2);
+    
+    float q1;
+    float q2;
+    float q3;
+    float q4;
+        
+    if (r11-r22-r33 > 0)
+        q1 = 0.5 * sqrt(1+r11-r22-r33);
+    else
+        q1 = 0.5 * sqrt(((r32-r23)*(r32-r23) + (r12+r21)*(r12+r21) + (r31+r13)*(r31+r13)) / (3-r11+r22+r33));
+        
+    if (-r11+r22-r33 > 0)
+        q2 = 0.5 * sqrt(1-r11+r22-r33);
+    else
+        q2 = 0.5 * sqrt(((r13-r31)*(r13-r31) + (r12+r21)*(r12+r21) + (r23+r32)*(r23+r32)) / (3+r11-r22+r33));
+        
+    if (-r11-r22+r33 > 0)
+        q3 = 0.5 * sqrt(1-r11-r22+r33);
+    else
+        q3 = 0.5 * sqrt(((r21-r12)*(r21-r12) + (r31+r13)*(r31+r13) + (r32+r23)*(r32+r23)) / (3+r11+r22-r33));
+
+    if (r11+r22+r33 > 0)
+        q4 = 0.5 * sqrt(1+r11+r22+r33);
+    else
+        q4 = 0.5 * sqrt(((r32-r23)*(r32-r23) + (r13-r31)*(r13-r31) + (r21-r12)*(r21-r12)) / (3-r11-r22-r33));
+
+    Vector4f quat(q1, q2, q3, q4);
+
+    return quat / quat.norm();
+}
+
+bool SkyQuaternion::quatnormalize(Vector4f& quat)
 {
     float den = sqrt(powf(quat(0), 2) + powf(quat(1), 2) + powf(quat(2), 2) +
                      powf(quat(3), 2));
-    if (den < powf(10, -6))
-    {
-        den = powf(10, -5);
-        quat = quat / den;
-    }
-    else
-        quat = quat / den;
+    if (den < 1e-8)
+        return false;
+ 
+    quat = quat / den;
+
+    return true;
 }
 
-void SkyQuaternion::quatnormalizeEKF(VectorXf& x)
+Vector4f SkyQuaternion::quatProd(const Vector4f q1, const Vector4f q2)
 {
-    Vector4f xq(x(0), x(1), x(2), x(3));
-    Vector3f xp(x(4), x(5), x(6));
-    Vector3f xv(x(7), x(8), x(9));
-    float cd = x(10);
+    float q1x = q1(0);
+    float q1y = q1(1);
+    float q1z = q1(2);
+    Vector3f qv1(q1x, q1y, q1z);
+    float q1w = q1(3);
 
-    float den =
-        sqrt(powf(xq(0), 2) + powf(xq(1), 2) + powf(xq(2), 2) + powf(xq(3), 2));
-    if (den < powf(10, -6))
-    {
-        den = powf(10, -5);
-        xq = xq / den;
-    }
-    else
-        xq = xq / den;
+    float q2x = q2(0);
+    float q2y = q2(1);
+    float q2z = q2(2);
+    Vector3f qv2(q2x, q2y, q2z);
+    float q2w = q2(3);
 
-    x << xq, xp, xv, cd;
+    Vector4f quater;
+    quater << q1w * qv2 + q2w * qv1 - qv1.cross(qv2), q1w * q2w - qv1.dot(qv2);
+    float quater_norm = sqrt(quater(0) * quater(0) + quater(1) * quater(1) +
+                             quater(2) * quater(2) + quater(3) * quater(3));
+    quater            = quater / quater_norm;
+
+    return quater;
 }
