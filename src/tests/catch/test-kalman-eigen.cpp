@@ -45,6 +45,8 @@ static const Matrix3f Q =
     (Matrix3f(3, 3) << 0.01, 0, 0, 0, 0.01, 0, 0, 0, 0.01).finished();
 // Measurement variance
 static const Matrix<float, 1, 1> R{10};
+// State vector 
+Vector3f x{INPUT[0], 0.0, 0.0};
 
 static const KalmanConfig getKalmanConfig()
 {
@@ -54,6 +56,7 @@ static const KalmanConfig getKalmanConfig()
     config.Q = Q;
     config.R = R;
     config.P = P0;
+    config.x = x; 
 
     return config;
 }
@@ -66,13 +69,9 @@ TEST_CASE("Update test")
     float T;
     float last_time = TIME[0];
 
-    Vector3f x0{INPUT[0], 0.0, 0.0};
-
-    filter.init(x0);
-
-    for (unsigned i = 1; i < 50; i++)
+    for (unsigned i = 1; i < 101; i++)
     {
-        printf("i = %d \n", i);
+        //printf("i = %d \n", i);
 
         y(0, 0)        = INPUT[i];
         T              = TIME[i] - last_time;

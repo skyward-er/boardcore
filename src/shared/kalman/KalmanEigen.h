@@ -24,36 +24,77 @@
 
 #include <Eigen/Dense>
 
-#include "KalmanConfig.h"
-
 using namespace Eigen;
 
+/**
+ * @brief Configuration struct for the KalmanEigen class.
+ */
+struct KalmanConfig
+{
+    MatrixXf F;
+    MatrixXf H;
+    MatrixXf Q;
+    MatrixXf R;
+    MatrixXf P;
+    VectorXf x;
+};
+
+/**
+ * @brief Class representing a Kalman filter using the Eigen library for
+ *        matrix computations
+ */
 class KalmanEigen
 {
 
 public:
+    /**
+     * @param config configuration object containing all the initialized
+     *               matrices
+     */
     KalmanEigen(const KalmanConfig& config);
 
-    void init(const VectorXf& x0);
-
+    /**
+     * @brief Prediction step.
+     */
     void predict();
 
+    /**
+     * @brief Prediction step.
+     *
+     * @param F_new updated F matrix
+     */
     void predict(const MatrixXf& F_new);
 
-    void predict(const VectorXf& u);
-
-    void predict(const VectorXf& u, const MatrixXf& F_new);
-
+    /**
+     * @brief Correction step (correct the estimate).
+     *
+     * @param y The measurement vector
+     */
     bool correct(const VectorXf& y);
 
+    /**
+     * @return state vector
+     */
     const VectorXf& getState();
 
+    /**
+     * @return output vector
+     */
     const VectorXf& getOutput();
 
+    /**
+     * @return residual vector
+     */
     const VectorXf& getResidual();
 
+    /**
+     * @brief Predicts k steps ahead the output
+     */
     const VectorXf predictOutput(uint32_t k);
 
+    /**
+     * @brief Predicts k steps ahead the state
+     */
     const VectorXf predictState(uint32_t k);
 
 private:
