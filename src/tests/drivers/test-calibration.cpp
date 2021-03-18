@@ -31,6 +31,7 @@
 
 /*  MAGNETOMETER calibration: please set the chosen one to 1 */
 #define HARD_IRON_CALIBRATION_TEST 1
+#define SOFT_IRON_CALIBRATION_TEST 0
 
 #include <Common.h>
 #include <drivers/spi/SPIDriver.h>
@@ -41,6 +42,7 @@
 #include "sensors/calibration/SixParameterCalibration.h"
 #include "sensors/calibration/TwelveParameterCalibration.h"
 #include "sensors/calibration/HardIronCalibration.h"
+#include "sensors/calibration/SoftIronCalibration.h"
 
 #if TEST_ACCELEROMETER_DATA
 #include "calibration/accelerometer-data.h"
@@ -203,6 +205,12 @@ int main()
     TRACE("Using Hard-iron correction model.\n");
 #endif
 
+#if SOFT_IRON_CALIBRATION_TEST
+    SoftIronCalibration model(magnetoData::nSamples);
+
+    TRACE("Using Soft-iron correction model.\n");
+#endif
+
     TRACE("Feeding magnetometer data to the calibration model ... \n");
 
     for (unsigned i = 0; i < magnetoData::nSamples; i++)
@@ -237,6 +245,21 @@ int main()
     TRACE("v: the hard iron correction\n");
     TRACE("v = [    % 2.5f    % 2.5f    % 2.5f    ]\n\n", bias[0], bias[1],
           bias[2]);
+#endif
+
+#if SOFT_IRON_CALIBRATION_TEST
+    Matrix<float, 3, 2> m;
+    *((SoftIronCorrector*) corrector) >> m;
+
+    TRACE("v: the hard iron correction\n");
+    TRACE("v = [    % 2.5f    % 2.5f    % 2.5f    ]\n\n", m(0, 1), m(1, 1),
+          m(2, 1));
+
+    TRACE("W: the soft iron correction\n");
+
+    TRACE("    |    % 2.5f    % 2.5f    % 2.5f    |\n", m(0, 0), 0.f, 0.f);
+    TRACE("W = |    % 2.5f    % 2.5f    % 2.5f    |\n", 0.f, m(1, 0), 0.f);
+    TRACE("    |    % 2.5f    % 2.5f    % 2.5f    |\n", 0.f, 0.f, m(2, 0));
 #endif
 
 #endif /* #if TEST_MAGNETOMETER_DATA */
