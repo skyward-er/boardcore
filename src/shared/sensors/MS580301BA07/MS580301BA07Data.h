@@ -23,6 +23,7 @@
 #pragma once
 
 #include "sensors/SensorData.h"
+#include "sensors/Sensor.h"
 
 enum MS5803Errors : uint8_t
 {
