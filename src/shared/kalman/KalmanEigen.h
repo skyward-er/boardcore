@@ -27,81 +27,146 @@
 using namespace Eigen;
 
 /**
- * @brief Configuration struct for the KalmanEigen class.
- */
-struct KalmanConfig
-{
-    MatrixXf F;
-    MatrixXf H;
-    MatrixXf Q;
-    MatrixXf R;
-    MatrixXf P;
-    VectorXf x;
-};
-
-/**
  * @brief Class representing a Kalman filter using the Eigen library for
  *        matrix computations
+ *
+ * WARNING : This class uses templates in order to know the size of each matrix
+ *           at compile-time. This way we avoid Eigen to allocate memory
+ *           dynamically.
  */
+template <typename t, uint8_t n, uint8_t p>
 class KalmanEigen
 {
+    using MatrixNN = Matrix<t, n, n>;
+    using MatrixPN = Matrix<t, p, n>;
+    using MatrixNP = Matrix<t, n, p>;
+    using MatrixPP = Matrix<t, p, p>;
+    using CVectorN = Matrix<t, n, 1>;
+    using CVectorP = Matrix<t, p, 1>;
 
 public:
+    /**
+     * @brief Configuration struct for the KalmanEigen class.
+     */
+    struct KalmanConfig
+    {
+        MatrixNN F;
+        MatrixPN H;
+        MatrixNN Q;
+        MatrixPP R;
+        MatrixNN P;
+        CVectorN x;
+    };
+
     /**
      * @param config configuration object containing all the initialized
      *               matrices
      */
-    KalmanEigen(const KalmanConfig& config);
+    KalmanEigen(const KalmanConfig& config)
+        : F(config.F), H(config.H), Q(config.Q), R(config.R), P(config.P),
+          S(MatrixPP::Zero(p, p)), K(MatrixNP::Zero(n, p)), x(config.x)
+    {
+        I.setIdentity();
+    }
 
     /**
      * @brief Prediction step.
      */
-    void predict();
+    void predict()
+    {
+        P = F * P * F.transpose() + Q;
+        x = F * x;
+    }
 
     /**
      * @brief Prediction step.
      *
      * @param F_new updated F matrix
      */
-    void predict(const MatrixXf& F_new);
+    void predict(const MatrixNN& F_new)
+    {
+        this->F = F_new;
+        this->predict();
+    }
 
     /**
      * @brief Correction step (correct the estimate).
      *
      * @param y The measurement vector
      */
-    bool correct(const VectorXf& y);
+    bool correct(const CVectorP& y)
+    {
+        S = H * P * H.transpose() + R;
+
+        // here the determinant is computed and
+        // then the inverse recomputes it,
+        // this passage could be optimized
+        if (S.determinant() < 1e-3)
+        {
+            return false;
+        }
+
+        K = P * H.transpose() * S.inverse();
+        P = (I - K * H) * P;
+
+        x = x + K * (y - H * x);
+
+        res = y - H * x;
+
+        return true;
+    }
 
     /**
      * @return state vector
      */
-    const VectorXf& getState();
+    const CVectorN getState() { return x; }
 
     /**
      * @return output vector
      */
-    const VectorXf& getOutput();
+    const CVectorP getOutput()
+    {
+        y_hat = H * x;
+        return y_hat;
+    }
 
     /**
-     * @return residual vector
+     * @return residual error vector
      */
-    const VectorXf& getResidual();
+    const CVectorP getResidual() { return res; }
 
     /**
      * @brief Predicts k steps ahead the output
      */
-    const VectorXf predictOutput(uint32_t k);
+    const CVectorP predictOutput(uint32_t k) { return H * predictState(k); }
 
     /**
      * @brief Predicts k steps ahead the state
      */
-    const VectorXf predictState(uint32_t k);
+    const CVectorN predictState(uint32_t k)
+    {
+        CVectorN x_hat = x;
+
+        for (uint32_t i = 0; i < k; i++)
+        {
+            x_hat = F * x_hat;
+        }
+        return x_hat;
+    }
 
 private:
-    uint8_t n, m, p; /**< system dimensions */
+    MatrixNN F; /**< State propagation matrix (n x n) */
+    MatrixPN H; /**< Output matrix (p x n) */
+    MatrixNN Q; /**< Model variance matrix (n x n) */
+    MatrixPP R; /**< Measurement variance (p x p) */
+    MatrixNN P; /**< Error covariance matrix (n x n) */
 
-    MatrixXf F, G, H, Q, R, P, S, K;
+    MatrixPP S;
+    MatrixNP K; /**< kalman gain */
 
-    MatrixXf I; /**< (n x n) identity matrix */
-    VectorXf x, y_hat, res;
+    MatrixNN I; /**< identity matrix (n x n) */
+
+    CVectorN x;     /**< state vector (n x 1) */
+    CVectorP y_hat; /**< output vector (p x 1) */
+    CVectorP res;   /**< residual error vector (p x 1) */
 };
