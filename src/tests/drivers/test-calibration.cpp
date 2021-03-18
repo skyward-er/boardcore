@@ -1,4 +1,4 @@
-/* Copyright (c) 2020 Skyward Experimental Rocketry
+/* Copyright (c) 2021 Skyward Experimental Rocketry
  * Authors: Riccardo Musso
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -20,11 +20,17 @@
  * THE SOFTWARE.
  */
 
-#define TEST_ACCELEROMETER_DATA 1
+/*  Please choose one between accelerometer or magnetometer */
+#define TEST_ACCELEROMETER_DATA 0
+#define TEST_MAGNETOMETER_DATA 1
 
+/*  ACCELEROMETER calibration: please set the chosen one to 1  */
 #define BIAS_CALIBRATION_TEST 0
 #define SIX_PARAMETER_CALIBRATION_TEST 0
 #define TWELVE_PARAMETER_CALIBRATION_TEST 1
+
+/*  MAGNETOMETER calibration: please set the chosen one to 1 */
+#define HARD_IRON_CALIBRATION_TEST 1
 
 #include <Common.h>
 #include <drivers/spi/SPIDriver.h>
@@ -34,15 +40,20 @@
 #include "sensors/calibration/BiasCalibration.h"
 #include "sensors/calibration/SixParameterCalibration.h"
 #include "sensors/calibration/TwelveParameterCalibration.h"
+#include "sensors/calibration/HardIronCalibration.h"
 
 #if TEST_ACCELEROMETER_DATA
 #include "calibration/accelerometer-data.h"
+#elif TEST_MAGNETOMETER_DATA
+#include "calibration/magnetometer-data.h"
 #endif
 
 using namespace miosix;
 
 int main()
 {
+#if TEST_ACCELEROMETER_DATA
+
 #if BIAS_CALIBRATION_TEST
     BiasCalibration<AccelerometerData> model;
 
@@ -65,7 +76,6 @@ int main()
     TRACE("Using TWELVE-PARAMETER calibration model.\n");
 #endif
 
-#if TEST_ACCELEROMETER_DATA
     TRACE("Feeding accelerometer data to the calibration model ... \n");
 
     for (unsigned i = 0; i < accData::nOrientations; i++)
@@ -182,6 +192,54 @@ int main()
           m(2, 2));
 #endif
 
+#endif /* #if TEST_ACCELEROMETER_DATA */
+
+
+#if TEST_MAGNETOMETER_DATA
+
+#if HARD_IRON_CALIBRATION_TEST
+    HardIronCalibration model(magnetoData::nSamples);
+
+    TRACE("Using Hard-iron correction model.\n");
 #endif
+
+    TRACE("Feeding magnetometer data to the calibration model ... \n");
+
+    for (unsigned i = 0; i < magnetoData::nSamples; i++)
+        model.feed(magnetoData::samples[i]);
+
+    TRACE("Computing the result ... \n");
+
+    ValuesCorrector<MagnetometerData>* corrector = model.computeResult();
+    
+    TRACE("Done.\n");
+
+    /* Prints only 1/10 of samples */
+    for (unsigned i = 0; i < magnetoData::nSamples; i+=10)
+    {
+        MagnetometerData out;
+        Vector3f before, after;
+
+        out = corrector->correct(magnetoData::samples[i]);
+        out >> after;
+        magnetoData::samples[i] >> before;
+
+        TRACE("%f %f %f -> %f %f %f\n", before[0], before[1], before[2],
+              after[0], after[1], after[2]);
+    }
+
+    TRACE("The parameters are:\n\n");
+
+#if HARD_IRON_CALIBRATION_TEST
+    Vector3f bias;
+    *((HardIronCorrector*) corrector) >> bias;
+
+    TRACE("v: the hard iron correction\n");
+    TRACE("v = [    % 2.5f    % 2.5f    % 2.5f    ]\n\n", bias[0], bias[1],
+          bias[2]);
+#endif
+
+#endif /* #if TEST_MAGNETOMETER_DATA */
+
 }
 
