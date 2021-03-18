@@ -23,23 +23,23 @@
 // This prgram runs through a simulated flight and reports the apogee detection,
 // while measuring the time elapsed
 
+#define EIGEN_RUNTIME_NO_MALLOC
+
 #include <Common.h>
 #include <drivers/HardwareTimer.h>
 #include <kalman/KalmanEigen.h>
-
-#include <Eigen/Dense>
-#include <iostream>
-
 #include <src/tests/kalman/test-kalman-data.h>
-#include "util/util.h"
 
-#include "math/SkyQuaternion.h"
+#include <iostream>
+#include "util/util.h"
 
 using namespace Eigen;
 using namespace miosix;
 
 int main()
 {
+    internal::set_is_malloc_allowed(
+        false);  // raise exception if eigen uses malloc
 
     // Setting pin mode for signaling ADA status
     {
@@ -57,36 +57,40 @@ int main()
     const int n = 3;
     const int p = 1;
 
-    MatrixXf P(n, n);
-    P << 0.1, 0.0, 0.0, 0.0, 0.1, 0.0, 0.0, 0.0, 0.1;
+    Matrix<float, n, n> F =
+        (Matrix<float, n, n>(n, n) << 1,
+         0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0)
+            .finished();
+    // Output matrix
+    Matrix<float, p, n> H{1, 0, 0};
 
-    MatrixXf F(n, n);
-    F << 1, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0;
+    // Initial error covariance matrix
+    Matrix<float, n, n> P =
+        (Matrix<float, n, n>(n, n) << 0.1,
+         0.0, 0.0, 0.0, 0.1, 0.0, 0.0, 0.0, 0.1)
+            .finished();
+    // Model variance matrix
+    Matrix<float, n, n> Q =
+        (Matrix<float, n, n>(n, n) << 0.01,
+         0.0, 0.0, 0.0, 0.01, 0.0, 0.0, 0.0, 0.01)
+            .finished();
+    // Measurement variance
+    Matrix<float, p, p> R{10};
 
-    MatrixXf H(1, n);
-    H << 1.0, 0.0, 0.0;
+    Matrix<float, n, 1> x0(INPUT[0], 0.0, 0.0);
 
-    MatrixXf Q(n, n);
-    Q << 0.01, 0.0, 0.0, 0.0, 0.01, 0.0, 0.0, 0.0, 0.01;
+    Matrix<float, p, 1> y(
+        p);  // vector with p elements (only one in this case)
 
-    MatrixXf R(p, p); // R is scalar, but matrix object needed for matrix operations
-    R << 10;
-
-    VectorXf x(n);  // vector of n elements
-    x << INPUT[0], 0.0, 0.0;
-
-    VectorXf y(p);  // vector with p elements (only one)
-
-    KalmanConfig config;
+    KalmanEigen<float, n, p>::KalmanConfig config;
     config.F = F;
     config.H = H;
     config.Q = Q;
     config.R = R;
     config.P = P;
-    config.x = x;
-    // G not assigned since we don't have exogenous input for the apogee detection
+    config.x = x0;
 
-    KalmanEigen filter(config);
+    KalmanEigen<float, n, p> filter(config);
 
     float last_time = 0.0;  // Variable to save the time of the last sample
     float time;             // Current time as read from csv file
@@ -112,14 +116,18 @@ int main()
         tick1 = timer.tick();
 
         filter.predict(F);
-        filter.correct(y);
+        
+        if (!filter.correct(y))
+        {
+            printf("Correction failed at iteration : %d \n", i);
+        }
 
         tick2 = timer.tick();
 
         printf("%d : %f \n", i, timer.toMilliSeconds(tick2 - tick1));
 
         // printf("%f, %f, %f;\n", filter.getState()(0), filter.getState()(1),
-        //      filter.getState()(2));
+        //       filter.getState()(2));
 
         // printf("%u \n", MemoryProfiling::getCurrentFreeStack());
 
