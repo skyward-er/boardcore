@@ -24,6 +24,8 @@
 #include "catch-tests-entry.cpp"
 #endif
 
+#define EIGEN_RUNTIME_NO_MALLOC
+
 #include <src/tests/kalman/test-kalman-data.h>
 
 #include <iostream>
@@ -33,50 +35,64 @@
 
 using namespace Eigen;
 
-static const Matrix3f F =
-    (Matrix3f(3, 3) << 1, 0.2, 0.02, 0, 1, 0.2, 0, 0, 1).finished();
-// Output matrix
-static const Matrix<float, 1, 3> H{1, 0, 0};
-// Initial error covariance matrix
-static const Matrix3f P0 =
-    (Matrix3f(3, 3) << 0.1, 0, 0, 0, 0.1, 0, 0, 0, 0.1).finished();
-// Model variance matrix
-static const Matrix3f Q =
-    (Matrix3f(3, 3) << 0.01, 0, 0, 0, 0.01, 0, 0, 0, 0.01).finished();
-// Measurement variance
-static const Matrix<float, 1, 1> R{10};
-// State vector 
-Vector3f x{INPUT[0], 0.0, 0.0};
+static const uint8_t STATES_DIM  = 3;
+static const uint8_t OUTPUTS_DIM = 1;
 
-static const KalmanConfig getKalmanConfig()
+static const Matrix<float, STATES_DIM, STATES_DIM> F =
+    (Matrix<float, STATES_DIM, STATES_DIM>(STATES_DIM, STATES_DIM) << 1, 0.2,
+     0.02, 0, 1, 0.2, 0, 0, 1)
+        .finished();
+// Output matrix
+static const Matrix<float, OUTPUTS_DIM, STATES_DIM> H{1, 0, 0};
+
+// Initial error covariance matrix
+static const Matrix<float, STATES_DIM, STATES_DIM> P =
+    (Matrix<float, STATES_DIM, STATES_DIM>(STATES_DIM, STATES_DIM) << 0.1, 0, 0,
+     0, 0.1, 0, 0, 0, 0.1)
+        .finished();
+// Model variance matrix
+static const Matrix<float, STATES_DIM, STATES_DIM> Q =
+    (Matrix<float, STATES_DIM, STATES_DIM>(STATES_DIM, STATES_DIM) << 0.01, 0,
+     0, 0, 0.01, 0, 0, 0, 0.01)
+        .finished();
+// Measurement variance
+static const Matrix<float, OUTPUTS_DIM, OUTPUTS_DIM> R{10};
+// State vector
+static const Matrix<float, STATES_DIM, 1> x0(INPUT[0], 0.0, 0.0);
+
+static const KalmanEigen<float, STATES_DIM, OUTPUTS_DIM>::KalmanConfig
+getKalmanConfig()
 {
-    KalmanConfig config;
+    KalmanEigen<float, STATES_DIM, OUTPUTS_DIM>::KalmanConfig config;
     config.F = F;
     config.H = H;
     config.Q = Q;
     config.R = R;
-    config.P = P0;
-    config.x = x; 
+    config.P = P;
+    config.x = x0;
 
     return config;
 }
 
 TEST_CASE("Update test")
 {
-    KalmanEigen filter(getKalmanConfig());
+    internal::set_is_malloc_allowed(
+        false);  // raise exception if eigen uses malloc
 
-    Matrix<float, 1, 1> y{};
+    KalmanEigen<float, STATES_DIM, OUTPUTS_DIM> filter(getKalmanConfig());
+
+    Matrix<float, OUTPUTS_DIM, 1> y{};
     float T;
     float last_time = TIME[0];
 
     for (unsigned i = 1; i < 101; i++)
     {
-        //printf("i = %d \n", i);
+        // printf("i = %d \n", i);
 
-        y(0, 0)        = INPUT[i];
-        T              = TIME[i] - last_time;
+        y(0, 0) = INPUT[i];
+        T       = TIME[i] - last_time;
 
-        MatrixXf F_new(3, 3);
+        Matrix<float, STATES_DIM, STATES_DIM> F_new;
         F_new << F;
         F_new(0, 1) = T;
         F_new(0, 2) = 0.5 * T * T;
@@ -84,14 +100,15 @@ TEST_CASE("Update test")
 
         filter.predict(F_new);
 
-        if(!filter.correct(y))
+        if (!filter.correct(y))
         {
             FAIL("Correction failed at iteration : %d \n", i);
         }
 
         if (filter.getState()(0, 0) != Approx(STATE_1[i]).epsilon(0.01))
         {
-            FAIL("FAILED X(0,0) " << filter.getState()(0, 0) << " != " << STATE_1[i]);
+            FAIL("FAILED X(0,0) " << filter.getState()(0, 0)
+                                  << " != " << STATE_1[i]);
         }
         else
         {
@@ -99,7 +116,8 @@ TEST_CASE("Update test")
         }
         if (filter.getState()(1, 0) != Approx(STATE_2[i]).epsilon(0.01))
         {
-            FAIL("FAILED X(1,0) " << filter.getState()(1, 0) << " != " << STATE_2[i]);
+            FAIL("FAILED X(1,0) " << filter.getState()(1, 0)
+                                  << " != " << STATE_2[i]);
         }
         else
         {
@@ -107,7 +125,8 @@ TEST_CASE("Update test")
         }
         if (filter.getState()(2, 0) != Approx(STATE_3[i]).epsilon(0.01))
         {
-            FAIL("FAILED X(2,0) " << filter.getState()(2, 0) << " != " << STATE_3[i]);
+            FAIL("FAILED X(2,0) " << filter.getState()(2, 0)
+                                  << " != " << STATE_3[i]);
         }
         else
         {
