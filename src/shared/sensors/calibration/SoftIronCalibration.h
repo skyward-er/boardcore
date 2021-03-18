@@ -23,6 +23,8 @@
 #pragma once
 
 #include <Eigen/Core>
+#include <Eigen/Eigenvalues>
+#include <Common.h>
 
 #include "Calibration.h"
 #include "sensors/SensorData.h"
@@ -33,7 +35,7 @@
 class SoftIronCorrector : public ValuesCorrector<MagnetometerData>
 {
 public:
-    SoftIronCorrector() : SoftIronCorrector({ 1, 1, 1 }, { 0, 0, 0 }): {}
+    SoftIronCorrector() : SoftIronCorrector({ 1, 1, 1 }, { 0, 0, 0 }) {}
 
     SoftIronCorrector(const Vector3f& _p, const Vector3f& _q) : p(_p), q(_q)
     {
@@ -103,8 +105,72 @@ public:
 
     ValuesCorrector<MagnetometerData>* computeResult() override
     {
-        // TODO!
-        return NULL;
+        using Mx = Matrix<float, 7, 7>;
+        using Vec7 = Matrix<float, 7, 1>;
+
+        float minValue, det;
+        int minIdx;
+
+        MatrixXf tmp1, tmp2;
+        Vector3f p, q;
+        Vec7 vec;
+        Mx mat;
+
+        tmp1 = samples.block(0, 0, numSamples, 7);
+        tmp2 = tmp1.transpose();
+
+        // mat = tmp2 * tmp1;
+
+        /*
+         * tmp1: N x 7
+         * tmp2: 7 x N
+         *
+         * Big matrices multiplication: if done with Eigen, the program crashes (bus fault),
+         * so we'll do that with good old for's
+        */
+        for(unsigned i = 0; i < 7; ++i){
+            for(unsigned j = 0; j < 7; ++j){
+                mat(i, j) = 0;
+
+                for(unsigned k = 0; k < numSamples; ++k){
+                    mat(i, j) += tmp2(i, k) * tmp1(k, j);
+                }
+            }
+        }
+
+        SelfAdjointEigenSolver<Mx> solver(mat);
+        auto eigenvalues = solver.eigenvalues();
+
+        minValue = eigenvalues[0];
+        minIdx = 0;
+
+        for(int i = 1; i < eigenvalues.rows(); ++i){
+            if(minValue > eigenvalues[i]){
+                minValue = eigenvalues[i];
+                minIdx = i;
+            }
+        }
+
+        vec = solver.eigenvectors().col(minIdx);
+        det = vec[0] * vec[1] * vec[2];
+
+        if(det < 0){
+            vec *= -1;
+            det *= -1;
+        }
+
+        p = vec.block(0, 0, 3, 1) / cbrt(det);
+        q = {
+            vec[3] / vec[0] / 2,
+            vec[4] / vec[1] / 2,
+            vec[5] / vec[2] / 2
+        };
+
+        p[0] = sqrt(p[0]);
+        p[1] = sqrt(p[1]);
+        p[2] = sqrt(p[2]);
+
+        return new SoftIronCorrector(p, q);
     }
 
 private:
@@ -116,5 +182,7 @@ private:
     Vector3f ref;
     unsigned numSamples, maxSamples;
 };
+
+
 
 
