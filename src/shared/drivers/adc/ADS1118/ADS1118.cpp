@@ -30,8 +30,8 @@ ADS1118::ADS1118(SPISlave spiSlave_)
 }
 
 ADS1118::ADS1118(SPIBusInterface &bus, GpioPin cs,
-                 SPIBusConfig spiConfig = getDefaultSPIConfig(),
-                 ADS1118Config config_)
+                 ADS1118Config config_, 
+                 SPIBusConfig spiConfig = getDefaultSPIConfig())
     : ADS1118(SPISlave(bus, cs, spiConfig), config_)
 {
 }

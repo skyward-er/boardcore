@@ -20,7 +20,7 @@
  * THE SOFTWARE.
  */
 
-#include <drivers/piksi/piksi.h>
+#include <drivers/gps/piksi/piksi.h>
 #include <time.h>
 #include <iostream>
 using namespace std;

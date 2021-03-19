@@ -1,5 +1,5 @@
 #include <Common.h>
-#include <drivers/gps/Gps.h>
+#include <drivers/gps/ublox/Gps.h>
 #include <drivers/serial.h>
 #include <fcntl.h>
 #include <filesystem/file_access.h>

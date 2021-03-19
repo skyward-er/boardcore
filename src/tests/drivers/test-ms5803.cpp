@@ -46,7 +46,7 @@ int main()
 
     TimestampTimer::enableTimestampTimer();
 
-    SimpleSensorSampler sampler(50, 1);
+    SimpleSensorSampler sampler(1, 50);
 
     MS580301BA07* ms58 = new MS580301BA07(bus, chip_select);
 

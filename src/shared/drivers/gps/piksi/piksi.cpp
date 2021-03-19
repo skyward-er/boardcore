@@ -70,8 +70,8 @@ static unsigned short crc16piksi(const void *message, unsigned int length)
 
 Piksi::Piksi(const char *serialPath)
 {
-    memset(&data, 0, sizeof(GPSData));
-    memset(&partialData, 0, sizeof(GPSData));
+    memset(&data, 0, sizeof(PiksiGPSData));
+    memset(&partialData, 0, sizeof(PiksiGPSData));
 
     fd = open(serialPath, O_RDWR);
     if (fd < 0)
@@ -99,9 +99,9 @@ Piksi::Piksi(const char *serialPath)
     pthread_cond_init(&cond, NULL);
 }
 
-GPSData Piksi::getGpsData()
+PiksiGPSData Piksi::getGpsData()
 {
-    GPSData result;
+    PiksiGPSData result;
     pthread_mutex_lock(&mutex);
     result = data;
     
@@ -115,9 +115,9 @@ GPSData Piksi::getGpsData()
     return result;
 }
 
-GPSData Piksi::waitForGpsData()
+PiksiGPSData Piksi::waitForGpsData()
 {
-    GPSData result;
+    PiksiGPSData result;
     pthread_mutex_lock(&mutex);
     pthread_cond_wait(&cond, &mutex);
     result = data;

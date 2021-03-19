@@ -20,7 +20,7 @@
  * THE SOFTWARE.
  */
 
-#include <drivers/gps/Gps.h>
+#include "Gps.h"
 #include <drivers/gps/nmea/nmea.h>
 
 #include <cmath>

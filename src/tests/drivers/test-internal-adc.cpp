@@ -1,5 +1,6 @@
 #include <drivers/adc/InternalADC/InternalADC.h>
 #include <miosix.h>
+#include "TimestampTimer.h"
 
 ADC_TypeDef& ADCx = *ADC3;
 
@@ -18,6 +19,8 @@ int main()
     // In this case I've set the maximum value, check the datasheet for the
     // maximum frequency the analog circuitry supports and compare it with the
     // parent clock
+
+    TimestampTimer::enableTimestampTimer();
 
     InternalADC adc(ADCx, 3.0);
     adc.enableChannel(InternalADC::CH0);

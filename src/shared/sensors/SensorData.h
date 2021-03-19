@@ -114,19 +114,15 @@ struct ADCData
 /**
  * @brief Structure to handle battery voltage data.
  */
-struct BatteryVoltageData
+struct BatteryVoltageData : public ADCData
 {
-    uint64_t vbat_timestamp;
-    float raw_voltage;
-    float voltage;
+    float bat_voltage;
 };
 
 /**
  * @brief Structure to handle current sense data.
  */
-struct CurrentSenseData
+struct CurrentSenseData : public ADCData
 {
-    uint64_t current_timestamp;
-    float raw_current;
     float current;
 };

@@ -1,0 +1,70 @@
+/* Copyright (c) 2021 Skyward Experimental Rocketry
+ * Authors: Luca Conterio
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in
+ * all copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.  IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+ * THE SOFTWARE.
+ */
+
+#pragma once
+
+#include <sensors/Sensor.h>
+
+#include <functional>
+
+/**
+ * @brief Common class for current sense sensors
+ *
+ * It needs a transfer function to convert the read voltage into current.
+ */
+class CurrentSensor : public Sensor<CurrentSenseData>
+{
+public:
+    CurrentSensor(std::function<ADCData()> getADCVoltage_,
+                  std::function<float(float)> adcToCurrent_)
+        : getADCVoltage(getADCVoltage_), adcToCurrent(adcToCurrent_)
+    {
+    }
+
+    bool init() override { return true; };
+
+    bool selfTest() override { return true; };
+
+    ///< Converts the voltage value to pressure
+    CurrentSenseData sampleImpl() override
+    {
+        ADCData adc_data = getADCVoltage();
+
+        printf("%llu %u %f \n", adc_data.adc_timestamp, adc_data.channel_id,
+                   adc_data.voltage);
+
+        CurrentSenseData current_data;
+        current_data.adc_timestamp = adc_data.adc_timestamp;
+        current_data.channel_id    = adc_data.channel_id;
+        current_data.voltage       = adc_data.voltage;
+        current_data.current       = adcToCurrent(adc_data.voltage);
+
+        return current_data;
+    };
+
+private:
+    ///< Function that returns the adc voltage
+    std::function<ADCData()> getADCVoltage;
+
+    ///< Function that converts adc voltage to current
+    std::function<float(float)> adcToCurrent;
+};

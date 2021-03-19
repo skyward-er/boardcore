@@ -25,7 +25,7 @@
 /**
  * The GPS information
  */
-struct GPSData
+struct PiksiGPSData
 {
     /// timestamp in ms (anakin time, not GPS time). getTick()-timestamp tells
     /// you how "old" the data is.

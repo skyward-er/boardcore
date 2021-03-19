@@ -22,6 +22,8 @@
 
 #include "InternalADC.h"
 
+#include "TimestampTimer.h"
+
 InternalADC::InternalADC(ADC_TypeDef& ADCx_) : ADCx(ADCx_) { resetRegisters(); }
 
 InternalADC::InternalADC(ADC_TypeDef& ADCx_, const float V_SUPPLY_)
@@ -162,7 +164,7 @@ ADCData InternalADC::getVoltage(Channel channel)
 
 bool InternalADC::selfTest()
 {
-    // Try a single sample anche check for error
+    // Try a single sample and check for error
     sample();
 
     if (last_error != NO_ERRORS)
@@ -219,7 +221,7 @@ ADCData InternalADC::sampleImpl()
         }
     }
 
-    timestamp = miosix::getTick();
+    timestamp = TimestampTimer::getTimestamp();
 
     return last_sample;
 }

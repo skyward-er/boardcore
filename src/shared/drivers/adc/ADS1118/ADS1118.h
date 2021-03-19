@@ -175,8 +175,8 @@ public:
      * @brief Construct a new ADS1118 object specifing spi bus, spi config and
      * cs pin as well as device configuration
      */
-    ADS1118(SPIBusInterface &bus, GpioPin cs, SPIBusConfig spiConfig,
-            ADS1118Config config_);
+    ADS1118(SPIBusInterface &bus, GpioPin cs,
+            ADS1118Config config_, SPIBusConfig spiConfig);
 
     /**
      * @brief Construct a new ADS1118 object

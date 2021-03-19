@@ -24,7 +24,7 @@
 #define PIKSI_H
 
 #include <pthread.h>
-#include "contiguous_queue.h"
+#include "utils/collections/contiguous_queue.h"
 #include "piksi_data.h"
 
 /**
@@ -52,13 +52,13 @@ public:
      * use the timestamp field of the GPSData struct to know this.
      * \throws runtime_error is no data is available
      */
-    GPSData getGpsData();
+    PiksiGPSData getGpsData();
 
     /**
      * \return the latest GPS data. If the GPS has yet got a fix or has lost
      * the fix, this function will block until the fix is regained
      */
-    GPSData waitForGpsData();
+    PiksiGPSData waitForGpsData();
 
     /**
      * Destructor
@@ -165,7 +165,7 @@ private:
     pthread_t thread;
     pthread_mutex_t mutex;
     pthread_cond_t cond;
-    GPSData data, partialData;
+    PiksiGPSData data, partialData;
     uint32_t gpsTimestamp = 0;
     bool pos              = false;
     bool vel              = false;
