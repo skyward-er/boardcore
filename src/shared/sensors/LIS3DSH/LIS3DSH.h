@@ -186,9 +186,9 @@ public:
         for (uint8_t i = 0; i < num_samples; i++)
         {
             AccelerometerData accel_data = readAccelData();
-            X_ST[i]                    = accel_data.accel_x;
-            Y_ST[i]                    = accel_data.accel_y;
-            Z_ST[i]                    = accel_data.accel_z;
+            X_ST[i]                      = accel_data.accel_x;
+            Y_ST[i]                      = accel_data.accel_y;
+            Z_ST[i]                      = accel_data.accel_z;
             miosix::Thread::sleep(10);
         }
         // reset the self-test bits
@@ -205,9 +205,9 @@ public:
         for (uint8_t i = 0; i < num_samples; i++)
         {
             AccelerometerData accel_data = readAccelData();
-            X_NO_ST[i]                 = accel_data.accel_x;
-            Y_NO_ST[i]                 = accel_data.accel_y;
-            Z_NO_ST[i]                 = accel_data.accel_z;
+            X_NO_ST[i]                   = accel_data.accel_x;
+            Y_NO_ST[i]                   = accel_data.accel_y;
+            Z_NO_ST[i]                   = accel_data.accel_z;
             miosix::Thread::sleep(10);
         }
         // compute averages vectors:
@@ -334,7 +334,7 @@ private:
         }
 
         AccelerometerData accel_data = readAccelData();
-        TemperatureData temp_data  = readTemperature();
+        TemperatureData temp_data    = readTemperature();
 
         if (last_error != SensorErrors::NO_ERRORS)
         {
@@ -365,8 +365,7 @@ private:
             if (status & 0x80)
             {  // bit 7 of status set to 1 (some data overwritten)
 
-                accel_data.accel_timestamp =
-                    TimestampTimer::getTimestamp();
+                accel_data.accel_timestamp = TimestampTimer::getTimestamp();
 
                 // read acceleration on X
                 int8_t accel_L = spi.read(OUT_X_L);
@@ -407,10 +406,11 @@ private:
         SPITransaction spi(spi_slave);
 
         // the temperature is given as a 8-bits integer (in 2-complement)
+        int8_t t = spi.read(OUT_T);
+
         return TemperatureData{
             TimestampTimer::getTimestamp(),
-            spi.read(OUT_T) +
-                TEMPERATURE_REF};  // add the 'zero' of the temperature sensor
+            t + TEMPERATURE_REF};  // add the 'zero' of the temperature sensor
     }
 
     /**
@@ -550,5 +550,5 @@ private:
 
     const float SELF_TEST_DIFF_X_Y  = 140.0f;  // 140 mg
     const float SELF_TEST_DIFF_Z    = 590.0f;  // 590 mg
-    const float SELF_TEST_TOLERANCE = 0.3f;    // 10%
+    const float SELF_TEST_TOLERANCE = 0.3f;
 };

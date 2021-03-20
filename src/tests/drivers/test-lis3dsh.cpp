@@ -65,7 +65,7 @@ int main()
     sensor.sample();
     if (sensor.getLastError() != SensorErrors::NOT_INIT)
     {
-        printf("\nTest failed: sensor not initialized \n");
+        printf("\nTEST FAILED: sensor not initialized \n");
         return -1;
     }
 
@@ -75,11 +75,11 @@ int main()
     {
         if (sensor.getLastError() == SensorErrors::INVALID_WHOAMI)
         {
-            printf("Test failed: invalid WHO_AM_I value, init failed \n");
+            printf("TEST FAILED: invalid WHO_AM_I value, init failed \n");
         }
         else
         {
-            printf("Test failed: init failed \n");
+            printf("TEST FAILED: init failed \n");
         }
         return -1;
     }
@@ -88,7 +88,7 @@ int main()
     // check if the sensor is properly working
     if (!sensor.selfTest())
     {
-        printf("\nTest failed: self-test failed \n");
+        printf("\nTEST FAILED: self-test failed \n");
         return -1;
     }
 
@@ -97,7 +97,7 @@ int main()
     {
         if (sensor.init())
         {
-            printf("\nTest failed: sensor is already initialized \n");
+            printf("\nTEST FAILED: sensor is already initialized \n");
             return -1;
         }
     }
@@ -125,7 +125,7 @@ int main()
         Thread::sleep(200);
     }
 
-    printf("\nTest ok \n");
+    printf("\nLIS3DSH TEST OK ! \n");
 
     return 0;
 }
