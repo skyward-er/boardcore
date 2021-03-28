@@ -35,27 +35,23 @@ using namespace Eigen;
  * An object can be obtained only via deserialization or if produced by an
  * instance of the "CalibrationModel" class.
  *
- * PackedModel is a datatype that could encapsulate all parameters of the model
- * (e.g. Vector3f, Matrix4f or a custom struct). Choose it carefully
- * because it will be used for the serialization/deserialization of the model.
- *
- * SensorData is the type of the objects the model is applied to (e.g.
+ * T is the type of sensor data the model is applied to (e.g.
  * GyroscopeData, MagnetometerData). This is needed because certain models could
  * work slightly differently depending on it
  *
  *  Note: derived classes of ValuesCorrector<XX> MUST implement the following
  *  operators (to make possible to store and load the coefficients):
  *
- *  operator << (const T& t);
- *  operator >> (T& t);
+ *  operator << (const XX& t);
+ *  operator >> (XX& t);
  *
- *  where T is a datatype that can fully contain all the coefficients used
+ *  where XX is a datatype that can fully contain all the coefficients used
  *  by the function correct(input).
  *
  *  Also, an empty constructor must create a neutral instance (identity
  * transformation).
  */
-template <typename SensorData>
+template <typename T>
 class ValuesCorrector
 {
 public:
@@ -65,33 +61,37 @@ public:
      */
     virtual void setIdentity() = 0;
 
-    virtual SensorData correct(const SensorData& input) const = 0;
+    virtual T correct(const T& input) const = 0;
 };
 
-/*
+/**
  * AbstractCalibrationModel represents a "factory" of ValuesCorrector instances,
  * and it's necessary to create one. You will always use one of its derived
  * classes, of course.
  *
  * Values given to the feed() function are needed for the training of the model.
+ *
+ * T is the sensor data type
+ * C is a class that extends ValuesCorrector<T>
  */
-template <typename SensorData, typename... FeedParams>
+template <typename T, typename C, typename... AdditionalFeedParams>
 class AbstractCalibrationModel
 {
 public:
     /**
      * Gives to the model a single measurement to store and use to produce the
      * adapted ValueCorrector instance
+     *
      * @returns false if the model can't accept the given data (usually because
      * the internal buffers are full)
      */
-    virtual bool feed(const FeedParams&... params) = 0;
+    virtual bool feed(const T& measurement, const AdditionalFeedParams&... params) = 0;
 
     /**
      * Creates the best ValuesCorrector instance for the given measurements.
      * Note: you must feed some data to the model before getting the result!
      */
-    virtual ValuesCorrector<SensorData>* computeResult() = 0;
+    virtual C computeResult() = 0;
 };
 
 /**
@@ -131,13 +131,15 @@ private:
 };
 
 /**
+ * This enum act like versors towards the chosen axis.
+ *
  * X, Y and Z always set according to the right hand rule, so that:
  * X is the index
  * Y is the second finger
  * Z is the thumb
  *
  */
-enum class Orientation : uint8_t
+enum class Direction : uint8_t
 {
     POSITIVE_X = 0,
     NEGATIVE_X,
@@ -147,25 +149,25 @@ enum class Orientation : uint8_t
     NEGATIVE_Z,
 };
 
-constexpr const char* humanFriendlyOrientation[]{
+constexpr const char* humanFriendlyDirection[]{
     "North", "South", "East", "West", "Down", "Up",
 };
 
-inline Vector3f orientationToVector(Orientation val)
+inline Vector3f orientationToVector(Direction val)
 {
     switch (val)
     {
-        case Orientation::POSITIVE_X:
+        case Direction::POSITIVE_X:
             return {1, 0, 0};
-        case Orientation::NEGATIVE_X:
+        case Direction::NEGATIVE_X:
             return {-1, 0, 0};
-        case Orientation::POSITIVE_Y:
+        case Direction::POSITIVE_Y:
             return {0, 1, 0};
-        case Orientation::NEGATIVE_Y:
+        case Direction::NEGATIVE_Y:
             return {0, -1, 0};
-        case Orientation::POSITIVE_Z:
+        case Direction::POSITIVE_Z:
             return {0, 0, 1};
-        case Orientation::NEGATIVE_Z:
+        case Direction::NEGATIVE_Z:
             return {0, 0, -1};
         default:
             /* never happens, added just to shut up the warnings */
@@ -184,8 +186,8 @@ inline Vector3f orientationToVector(Orientation val)
  * For example:
  *
  * AxisAngleOrientation angles ( PI/2, PI, 0);
- * AxisOrthoOrientation ortho  ( Orientation::NEGATIVE_X,
- * Orientation::POSITIVE_Z );
+ * AxisOrthoOrientation ortho  ( Direction::NEGATIVE_X,
+ * Direction::POSITIVE_Z );
  *
  * // The implicit cast is supported and recommended
  * AxisOrientation converted1 = angles;
@@ -275,14 +277,14 @@ struct AxisAngleOrientation
  */
 struct AxisOrthoOrientation
 {
-    Orientation xAxis, yAxis;
+    Direction xAxis, yAxis;
 
     AxisOrthoOrientation()
-        : xAxis(Orientation::POSITIVE_X), yAxis(Orientation::POSITIVE_Y)
+        : xAxis(Direction::POSITIVE_X), yAxis(Direction::POSITIVE_Y)
     {
     }
 
-    AxisOrthoOrientation(Orientation _xAxis, Orientation _yAxis)
+    AxisOrthoOrientation(Direction _xAxis, Direction _yAxis)
         : xAxis(_xAxis), yAxis(_yAxis)
     {
     }
