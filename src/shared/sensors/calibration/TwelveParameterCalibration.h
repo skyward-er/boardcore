@@ -99,7 +99,7 @@ class TwelveParameterCalibration
                                       AxisOrientation>
 {
 public:
-    TwelveParameterCalibration() : samples(), ref(1, 0, 0), numSamples(0) {}
+    TwelveParameterCalibration() : samples(), numSamples(0), ref({1, 0, 0})  {}
 
     void setReferenceVector(Vector3f vec) { ref = vec; }
     Vector3f getReferenceVector() { return ref; }
@@ -123,11 +123,13 @@ public:
     TwelveParameterCorrector<T> computeResult() override
     {
         Matrix<float, 3, 4> solutions;
-        auto qr = samples.block(0, 0, numSamples, 4).colPivHouseholderQr();
+        MatrixXf coeffs = samples.block(0, 0, numSamples, 4);
+        auto qr = coeffs.colPivHouseholderQr();
 
         for (int i = 0; i < 3; ++i)
         {
-            Vector4f sol     = qr.solve(samples.block(0, 4 + i, numSamples, 1));
+            VectorXf terms = samples.block(0, 4 + i, numSamples, 1);
+            Vector4f sol     = qr.solve(terms);
             solutions.col(i) = sol.head<3>();
             solutions(i, 3)  = sol[3];
         }
@@ -144,4 +146,7 @@ private:
     Matrix<float, MaxSamples, 7> samples;
     unsigned numSamples;
     Vector3f ref;
+
+public:
+    EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 };

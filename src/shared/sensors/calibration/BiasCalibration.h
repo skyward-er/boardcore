@@ -95,7 +95,7 @@ public:
     BiasCorrector<T> computeResult()
     {
         if (numSamples == 0)
-            return {0, 0, 0};
+            return { Vector3f{0, 0, 0} };
         return {sum / numSamples};
     }
 

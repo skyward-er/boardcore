@@ -23,6 +23,7 @@
 #pragma once
 
 #include <Eigen/Core>
+#include <Common.h>
 
 #include "Calibration.h"
 #include "sensors/SensorData.h"
@@ -41,6 +42,7 @@ template <typename T>
 class SixParameterCorrector : public ValuesCorrector<T>
 {
 public:
+
     SixParameterCorrector() : SixParameterCorrector({1, 1, 1}, {0, 0, 0}) {}
 
     SixParameterCorrector(const Vector3f& _p, const Vector3f& _q) : p(_p), q(_q)
@@ -120,14 +122,15 @@ public:
         for (int i = 0; i < 3; ++i)
         {
             MatrixXf coeffs(numSamples, 2);
-            Vector2f solution;
+            VectorXf terms = samples.block(0, i+3, numSamples, 1);
 
+            Vector2f solution;
             coeffs.fill(1);
             coeffs.block(0, 0, numSamples, 1) =
                 samples.block(0, i, numSamples, 1);
 
-            solution = coeffs.colPivHouseholderQr().solve(
-                samples.block(0, i + 3, numSamples, 1));
+            auto solver = coeffs.colPivHouseholderQr();
+            solution = solver.solve(terms);
 
             p[i] = solution[0];
             q[i] = solution[1];
@@ -142,6 +145,13 @@ private:
      * row. Its shape is (N x 6)
      */
     Matrix<float, MaxSamples, 6> samples;
-    unsigned numSamples;
     Vector3f ref;
+    unsigned numSamples;
+
+public:
+    /*
+     * Only needed for test-calibration.cpp entry point
+    */
+    EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 };
+

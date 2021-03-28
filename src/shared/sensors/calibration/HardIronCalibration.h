@@ -91,8 +91,11 @@ public:
         Vector4f sol;
         Vector3f bias;
 
-        auto colPiv = samples.block(0, 0, numSamples, 4).colPivHouseholderQr();
-        sol         = colPiv.solve(samples.block(0, 4, numSamples, 1));
+        MatrixXf coeffs = samples.block(0, 0, numSamples, 4);
+        VectorXf terms = samples.block(0, 4, numSamples, 1);
+
+        auto colPiv = coeffs.colPivHouseholderQr();
+        sol         = colPiv.solve(terms);
 
         bias[0] = -sol[0] / 2;
         bias[1] = -sol[1] / 2;
