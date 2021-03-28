@@ -14,12 +14,12 @@ constexpr unsigned nOrientations = 6;
 constexpr unsigned nSamples      = 60;
 
 AxisOrthoOrientation orientations[nOrientations]{
-    {Orientation::POSITIVE_X, Orientation::POSITIVE_Y},
-    {Orientation::POSITIVE_Y, Orientation::POSITIVE_Z},
-    {Orientation::POSITIVE_Z, Orientation::POSITIVE_X},
-    {Orientation::POSITIVE_Y, Orientation::POSITIVE_X},
-    {Orientation::POSITIVE_Z, Orientation::POSITIVE_Y},
-    {Orientation::POSITIVE_X, Orientation::POSITIVE_Z},
+    {Direction::POSITIVE_X, Direction::POSITIVE_Y},
+    {Direction::POSITIVE_Y, Direction::POSITIVE_Z},
+    {Direction::POSITIVE_Z, Direction::POSITIVE_X},
+    {Direction::POSITIVE_Y, Direction::POSITIVE_X},
+    {Direction::POSITIVE_Z, Direction::POSITIVE_Y},
+    {Direction::POSITIVE_X, Direction::POSITIVE_Z},
 };
 
 AccelerometerData samples[nOrientations][nSamples] = {
