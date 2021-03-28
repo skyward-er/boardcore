@@ -21,8 +21,8 @@
  */
 
 /*  Please choose one between accelerometer or magnetometer */
-#define TEST_ACCELEROMETER_DATA 0
-#define TEST_MAGNETOMETER_DATA 1
+#define TEST_ACCELEROMETER_DATA 1
+#define TEST_MAGNETOMETER_DATA 0
 
 /*  ACCELEROMETER calibration: please set the chosen one to 1  */
 #define BIAS_CALIBRATION_TEST 0
@@ -39,10 +39,10 @@
 
 #include "sensors/LIS3DSH/LIS3DSH.h"
 #include "sensors/calibration/BiasCalibration.h"
-#include "sensors/calibration/SixParameterCalibration.h"
-#include "sensors/calibration/TwelveParameterCalibration.h"
 #include "sensors/calibration/HardIronCalibration.h"
+#include "sensors/calibration/SixParameterCalibration.h"
 #include "sensors/calibration/SoftIronCalibration.h"
+#include "sensors/calibration/TwelveParameterCalibration.h"
 
 #if TEST_ACCELEROMETER_DATA
 #include "calibration/accelerometer-data.h"
@@ -56,24 +56,24 @@ int main()
 {
 #if TEST_ACCELEROMETER_DATA
 
+    constexpr unsigned NumSamples = accData::nOrientations * accData::nSamples;
+
 #if BIAS_CALIBRATION_TEST
-    BiasCalibration<AccelerometerData> model;
+    auto* model = new BiasCalibration <AccelerometerData>;
 
     TRACE("Using BIAS calibration model.\n");
 #endif
 
 #if SIX_PARAMETER_CALIBRATION_TEST
-    SixParameterCalibration<AccelerometerData> model(accData::nOrientations *
-                                                     accData::nSamples);
-    model.setReferenceVector({0, 0, 1});
+    auto* model = new SixParameterCalibration<AccelerometerData, NumSamples>;
+    model->setReferenceVector({0, 0, 1});
 
     TRACE("Using SIX-PARAMETER calibration model.\n");
 #endif
 
 #if TWELVE_PARAMETER_CALIBRATION_TEST
-    TwelveParameterCalibration<AccelerometerData> model(accData::nOrientations *
-                                                        accData::nSamples);
-    model.setReferenceVector({0, 0, 1});
+    auto* model = new TwelveParameterCalibration<AccelerometerData, NumSamples>;
+    model->setReferenceVector({0, 0, 1});
 
     TRACE("Using TWELVE-PARAMETER calibration model.\n");
 #endif
@@ -82,11 +82,11 @@ int main()
 
     for (unsigned i = 0; i < accData::nOrientations; i++)
         for (unsigned j = 0; j < accData::nSamples; j++)
-            model.feed(accData::samples[i][j], accData::orientations[i]);
+            model->feed(accData::samples[i][j], accData::orientations[i]);
 
     TRACE("Computing the result ... \n");
 
-    ValuesCorrector<AccelerometerData>* corrector = model.computeResult();
+    auto corrector = model->computeResult();
 
     TRACE("Now testing with the same data: \n");
 
@@ -99,9 +99,9 @@ int main()
             "  --- Orientation n. %d: X axis oriented toward %s, Y axis "
             "oriented toward %s\n",
             i,
-            humanFriendlyOrientation[static_cast<uint8_t>(
+            humanFriendlyDirection[static_cast<uint8_t>(
                 accData::orientations[i].xAxis)],
-            humanFriendlyOrientation[static_cast<uint8_t>(
+            humanFriendlyDirection[static_cast<uint8_t>(
                 accData::orientations[i].yAxis)]);
 
         for (unsigned j = 0; j < accData::nSamples; j++)
@@ -111,7 +111,7 @@ int main()
 
             exact = accData::orientations[i].getMatrix().transpose() *
                     Vector3f{0, 0, 1};
-            out = corrector->correct(accData::samples[i][j]);
+            out = corrector.correct(accData::samples[i][j]);
             out >> after;
             accData::samples[i][j] >> before;
 
@@ -154,7 +154,7 @@ int main()
 
 #if BIAS_CALIBRATION_TEST
     Vector3f bias;
-    *((BiasCorrector<AccelerometerData>*)corrector) >> bias;
+    corrector >> bias;
 
     TRACE("b: the bias vector\n");
     TRACE("b = [    % 2.5f    % 2.5f    % 2.5f    ]\n\n", bias[0], bias[1],
@@ -163,7 +163,7 @@ int main()
 
 #if SIX_PARAMETER_CALIBRATION_TEST
     Matrix<float, 3, 2> m;
-    *((SixParameterCorrector<AccelerometerData>*)corrector) >> m;
+    corrector >> m;
 
     TRACE("b: the bias vector\n");
     TRACE("b = [    % 2.5f    % 2.5f    % 2.5f    ]\n\n", m(0, 1), m(1, 1),
@@ -178,7 +178,7 @@ int main()
 
 #if TWELVE_PARAMETER_CALIBRATION_TEST
     Matrix<float, 3, 4> m;
-    *((TwelveParameterCorrector<AccelerometerData>*)corrector) >> m;
+    corrector >> m;
 
     TRACE("b: the bias vector\n");
     TRACE("b = [    % 2.5f    % 2.5f    % 2.5f    ]\n\n", m(0, 1), m(1, 1),
@@ -196,17 +196,18 @@ int main()
 
 #endif /* #if TEST_ACCELEROMETER_DATA */
 
-
 #if TEST_MAGNETOMETER_DATA
 
+    constexpr unsigned NumSamples = magnetoData::nSamples;
+
 #if HARD_IRON_CALIBRATION_TEST
-    HardIronCalibration model(magnetoData::nSamples);
+    auto* model = new HardIronCalibration<NumSamples>;
 
     TRACE("Using Hard-iron correction model.\n");
 #endif
 
 #if SOFT_IRON_CALIBRATION_TEST
-    SoftIronCalibration model(magnetoData::nSamples);
+    auto* model = new SoftIronCalibration<NumSamples>;
 
     TRACE("Using Soft-iron correction model.\n");
 #endif
@@ -214,21 +215,21 @@ int main()
     TRACE("Feeding magnetometer data to the calibration model ... \n");
 
     for (unsigned i = 0; i < magnetoData::nSamples; i++)
-        model.feed(magnetoData::samples[i]);
+        model->feed(magnetoData::samples[i]);
 
     TRACE("Computing the result ... \n");
 
-    ValuesCorrector<MagnetometerData>* corrector = model.computeResult();
-    
+    auto corrector = model->computeResult();
+
     TRACE("Done.\n");
 
     /* Prints only 1/10 of samples */
-    for (unsigned i = 0; i < magnetoData::nSamples; i+=10)
+    for (unsigned i = 0; i < magnetoData::nSamples; i += 10)
     {
         MagnetometerData out;
         Vector3f before, after;
 
-        out = corrector->correct(magnetoData::samples[i]);
+        out = corrector.correct(magnetoData::samples[i]);
         out >> after;
         magnetoData::samples[i] >> before;
 
@@ -240,7 +241,7 @@ int main()
 
 #if HARD_IRON_CALIBRATION_TEST
     Vector3f bias;
-    *((HardIronCorrector*) corrector) >> bias;
+    corrector >> bias;
 
     TRACE("v: the hard iron correction\n");
     TRACE("v = [    % 2.5f    % 2.5f    % 2.5f    ]\n\n", bias[0], bias[1],
@@ -249,7 +250,7 @@ int main()
 
 #if SOFT_IRON_CALIBRATION_TEST
     Matrix<float, 3, 2> m;
-    *((SoftIronCorrector*) corrector) >> m;
+    corrector >> m;
 
     TRACE("v: the hard iron correction\n");
     TRACE("v = [    % 2.5f    % 2.5f    % 2.5f    ]\n\n", m(0, 1), m(1, 1),
@@ -263,6 +264,5 @@ int main()
 #endif
 
 #endif /* #if TEST_MAGNETOMETER_DATA */
-
 }
 
