@@ -39,8 +39,8 @@ using namespace Eigen;
  *
  * Where (x, y, z) is the input and (x', y', z') the output.
  */
-template <typename SensorData>
-class TwelveParameterCorrector : public ValuesCorrector<SensorData>
+template <typename T>
+class TwelveParameterCorrector : public ValuesCorrector<T>
 {
 public:
     TwelveParameterCorrector()
@@ -53,7 +53,8 @@ public:
     {
     }
 
-    TwelveParameterCorrector(const Matrix<float, 3, 4>& mat){
+    TwelveParameterCorrector(const Matrix<float, 3, 4>& mat)
+    {
         operator<<(mat);
     }
 
@@ -75,14 +76,15 @@ public:
         b.setZero();
     }
 
-    SensorData correct(const SensorData& input) const
+    T correct(const T& input) const
     {
-        SensorData output;
+        T output;
         Vector3f vec;
 
         input >> vec;
         vec = w * vec + b;
         output << vec;
+
         return output;
     }
 
@@ -91,52 +93,55 @@ private:
     Vector3f b;
 };
 
-template <typename SensorData>
+template <typename T, unsigned MaxSamples>
 class TwelveParameterCalibration
-    : public AbstractCalibrationModel<SensorData, SensorData, AxisOrientation>
+    : public AbstractCalibrationModel<T, TwelveParameterCorrector<T>,
+                                      AxisOrientation>
 {
 public:
-    TwelveParameterCalibration(unsigned _maxSamples) : samples(_maxSamples, 7), ref(1, 0, 0), numSamples(0), maxSamples(_maxSamples){}
+    TwelveParameterCalibration() : samples(), ref(1, 0, 0), numSamples(0) {}
 
     void setReferenceVector(Vector3f vec) { ref = vec; }
     Vector3f getReferenceVector() { return ref; }
 
-    bool feed(const SensorData& data,
-              const AxisOrientation& transform) override
+    bool feed(const T& data, const AxisOrientation& transform) override
     {
-        if (numSamples == maxSamples)
+        if (numSamples == MaxSamples)
             return false;
 
         Vector3f expected, measured;
         data >> measured;
         expected = transform.getMatrix().transpose() * ref;
 
-        samples.row(numSamples) << measured.transpose(), 1, expected.transpose();
+        samples.row(numSamples) << measured.transpose(), 1,
+            expected.transpose();
         numSamples++;
 
         return true;
     }
 
-    ValuesCorrector<SensorData>* computeResult() override
+    TwelveParameterCorrector<T> computeResult() override
     {
         Matrix<float, 3, 4> solutions;
         auto qr = samples.block(0, 0, numSamples, 4).colPivHouseholderQr();
 
-        for (int i = 0; i < 3; ++i){
-            Vector4f sol = qr.solve(samples.block(0, 4+i, numSamples, 1)); 
+        for (int i = 0; i < 3; ++i)
+        {
+            Vector4f sol     = qr.solve(samples.block(0, 4 + i, numSamples, 1));
             solutions.col(i) = sol.head<3>();
-            solutions(i, 3) = sol[3];
+            solutions(i, 3)  = sol[3];
         }
 
-        return new TwelveParameterCorrector<SensorData>(solutions);
+        return {solutions};
     }
 
 private:
     /*
      * The matrix contains x, y, z measured and x', y', z' expected for each
      * sample. Between (x, y, z) and (x', y', z') there is a column of 1s
+     * Its shape is (N x 7)
      */
-    MatrixXf samples;
+    Matrix<float, MaxSamples, 7> samples;
+    unsigned numSamples;
     Vector3f ref;
-    unsigned numSamples, maxSamples;
 };

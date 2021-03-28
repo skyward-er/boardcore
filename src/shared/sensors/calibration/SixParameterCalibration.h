@@ -30,13 +30,15 @@
 /*
  * Six-Parameter Calibration uses, for each axis, a coefficient to be multiplied
  * and a constant to be added, so that is verified the formula:
+ *
  *    x' = p1*x + q1;
  *    y' = p2*y + q2;
  *    z' = p3*z + q3;
+ *
  * Where (x, y, z) is the input and (x', y', z') the output.
  */
-template <typename SensorData>
-class SixParameterCorrector : public ValuesCorrector<SensorData>
+template <typename T>
+class SixParameterCorrector : public ValuesCorrector<T>
 {
 public:
     SixParameterCorrector() : SixParameterCorrector({1, 1, 1}, {0, 0, 0}) {}
@@ -63,9 +65,9 @@ public:
         q = in.col(1).transpose();
     }
 
-    SensorData correct(const SensorData& input) const override
+    T correct(const T& input) const override
     {
-        SensorData output;
+        T output;
         Vector3f vec;
 
         input >> vec;
@@ -79,23 +81,20 @@ private:
     Vector3f p, q;
 };
 
-template <typename SensorData>
+template <typename T, unsigned MaxSamples>
 class SixParameterCalibration
-    : public AbstractCalibrationModel<SensorData, SensorData, AxisOrientation>
+    : public AbstractCalibrationModel<T, SixParameterCorrector<T>,
+                                      AxisOrientation>
 {
 public:
-    SixParameterCalibration(unsigned _maxSamples)
-        : samples(_maxSamples, 6), ref(1, 0, 0), numSamples(0),
-          maxSamples(_maxSamples)
-    {
-    }
+    SixParameterCalibration() : samples(), ref(1, 0, 0), numSamples(0) {}
 
     void setReferenceVector(Vector3f vec) { ref = vec; }
     Vector3f getReferenceVector() { return ref; }
 
-    bool feed(const SensorData& data, const AxisOrientation& transform) override
+    bool feed(const T& data, const AxisOrientation& transform) override
     {
-        if (numSamples >= maxSamples)
+        if (numSamples >= MaxSamples)
             return false;
 
         Vector3f measured, expected;
@@ -103,14 +102,18 @@ public:
         data >> measured;
         expected = transform.getMatrix().transpose() * ref;
 
-        samples.block<1, 3>(numSamples, 0) = measured.transpose();
-        samples.block<1, 3>(numSamples, 3) = expected.transpose();
+        /*
+         * measered, expected are column vectors, we need to traspose them to be
+         * row vectors
+         */
+        samples.block(numSamples, 0, 1, 3) = measured.transpose();
+        samples.block(numSamples, 3, 1, 3) = expected.transpose();
 
         numSamples++;
         return true;
     }
 
-    ValuesCorrector<SensorData>* computeResult() override
+    SixParameterCorrector<T> computeResult() override
     {
         Vector3f p, q;
 
@@ -130,7 +133,7 @@ public:
             q[i] = solution[1];
         }
 
-        return new SixParameterCorrector<SensorData>(p, q);
+        return {p, q};
     }
 
 private:
@@ -138,7 +141,7 @@ private:
      * The matrix contains x, y, z measured and x', y', z' expected for each
      * row. Its shape is (N x 6)
      */
-    MatrixXf samples;
+    Matrix<float, MaxSamples, 6> samples;
+    unsigned numSamples;
     Vector3f ref;
-    unsigned numSamples, maxSamples;
 };

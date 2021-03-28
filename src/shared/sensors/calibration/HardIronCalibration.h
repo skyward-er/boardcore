@@ -28,33 +28,23 @@
 #include "sensors/SensorData.h"
 
 /*
- * The Hard-iron calibration removes the bias due to the so named Hard-Iron distortion of the magnetic field.
- * Unlike bias calibration, 6-parameter calibration, etc., hard-iron calibration can be applied only to magnetometer
+ * The Hard-iron calibration removes the bias due to the so named Hard-Iron
+ * distortion of the magnetic field. Unlike bias calibration, 6-parameter
+ * calibration, etc., hard-iron calibration can be applied only to magnetometer
  * samples.
  */
 class HardIronCorrector : public ValuesCorrector<MagnetometerData>
 {
 public:
-    HardIronCorrector() : HardIronCorrector({ 0, 0, 0 }) {}
+    HardIronCorrector() : HardIronCorrector({0, 0, 0}) {}
 
-    HardIronCorrector(const Vector3f& _bias) : bias(_bias)
-    {
-    }
+    HardIronCorrector(const Vector3f& _bias) : bias(_bias) {}
 
-    void setIdentity() override
-    {
-        bias = {0, 0, 0};
-    }
+    void setIdentity() override { bias = {0, 0, 0}; }
 
-    void operator>>(Vector3f& rhs)
-    {
-        rhs = bias;
-    }
+    void operator>>(Vector3f& rhs) { rhs = bias; }
 
-    void operator<<(const Vector3f& rhs)
-    {
-        bias = rhs;
-    }
+    void operator<<(const Vector3f& rhs) { bias = rhs; }
 
     MagnetometerData correct(const MagnetometerData& input) const override
     {
@@ -72,45 +62,43 @@ private:
     Vector3f bias;
 };
 
+template <unsigned MaxSamples>
 class HardIronCalibration
-    : public AbstractCalibrationModel<MagnetometerData, MagnetometerData>
+    : public AbstractCalibrationModel<MagnetometerData, HardIronCorrector>
 {
 public:
-    HardIronCalibration(unsigned _maxSamples)
-        : samples(_maxSamples, 5), numSamples(0),
-          maxSamples(_maxSamples)
-    {
-    }
+    HardIronCalibration() : samples(), numSamples(0) {}
 
     bool feed(const MagnetometerData& data) override
     {
-        if (numSamples >= maxSamples)
+        if (numSamples >= MaxSamples)
             return false;
 
         Vector3f vec;
         data >> vec;
 
-        samples.block<1, 3>(numSamples, 0) = vec.transpose();
-        samples(numSamples, 3) = 1;
-        samples(numSamples, 4) = vec[0]*vec[0] + vec[1]*vec[1] + vec[2]*vec[2];
+        samples.block(numSamples, 0, 1, 3) = vec.transpose();
+        samples(numSamples, 3)             = 1;
+        samples(numSamples, 4) =
+            vec[0] * vec[0] + vec[1] * vec[1] + vec[2] * vec[2];
 
         numSamples++;
         return true;
     }
 
-    ValuesCorrector<MagnetometerData>* computeResult() override
+    HardIronCorrector computeResult() override
     {
         Vector4f sol;
         Vector3f bias;
 
         auto colPiv = samples.block(0, 0, numSamples, 4).colPivHouseholderQr();
-        sol = colPiv.solve(samples.block(0, 4, numSamples, 1));
+        sol         = colPiv.solve(samples.block(0, 4, numSamples, 1));
 
         bias[0] = -sol[0] / 2;
         bias[1] = -sol[1] / 2;
         bias[2] = -sol[2] / 2;
 
-        return new HardIronCorrector(bias);
+        return {bias};
     }
 
 private:
@@ -118,8 +106,7 @@ private:
      * The matrix contains x, y, z measured, a column of 1s and x^2+y^2+z^2
      * row. Its shape is (N x 5)
      */
-    MatrixXf samples;
-    Vector3f ref;
-    unsigned numSamples, maxSamples;
+    Matrix<float, MaxSamples, 5> samples;
+    unsigned numSamples;
 };
 

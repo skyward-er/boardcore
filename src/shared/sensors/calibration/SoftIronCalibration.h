@@ -75,19 +75,19 @@ private:
     Vector3f p, q;
 };
 
+template <unsigned MaxSamples>
 class SoftIronCalibration
-    : public AbstractCalibrationModel<MagnetometerData, MagnetometerData>
+    : public AbstractCalibrationModel<MagnetometerData, SoftIronCorrector>
 {
 public:
-    SoftIronCalibration(unsigned _maxSamples)
-        : samples(_maxSamples, 7), numSamples(0),
-          maxSamples(_maxSamples)
+    SoftIronCalibration()
+        : samples(), numSamples(0)
     {
     }
 
     bool feed(const MagnetometerData& data) override
     {
-        if (numSamples >= maxSamples)
+        if (numSamples >= MaxSamples)
             return false;
 
         Vector3f vec;
@@ -103,7 +103,7 @@ public:
         return true;
     }
 
-    ValuesCorrector<MagnetometerData>* computeResult() override
+    SoftIronCorrector computeResult() override
     {
         using Mx = Matrix<float, 7, 7>;
         using Vec7 = Matrix<float, 7, 1>;
@@ -170,7 +170,9 @@ public:
         p[1] = sqrt(p[1]);
         p[2] = sqrt(p[2]);
 
-        return new SoftIronCorrector(p, q);
+        q = q.cwiseProduct(p);
+
+        return {p, q};
     }
 
 private:
@@ -178,9 +180,8 @@ private:
      * The matrix contains x, y, z, x^2, y^2, z^2 and a column of 1s
      * row. Its shape is (N x 7)
      */
-    MatrixXf samples;
-    Vector3f ref;
-    unsigned numSamples, maxSamples;
+    Matrix<float, MaxSamples, 7> samples;
+    unsigned numSamples;
 };
 
 

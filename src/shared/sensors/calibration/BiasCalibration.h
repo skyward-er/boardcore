@@ -37,8 +37,8 @@ using namespace Eigen;
  * you'll feed the model with a new value, you have to give it the orientation
  * of the sensor, so it can guess the bias.
  */
-template <typename SensorData>
-class BiasCorrector : public ValuesCorrector<SensorData>
+template <typename T>
+class BiasCorrector : public ValuesCorrector<T>
 {
 
 public:
@@ -51,14 +51,15 @@ public:
 
     void setIdentity() override { bias = {0, 0, 0}; }
 
-    SensorData correct(const SensorData& data) const override
+    T correct(const T& data) const override
     {
-        SensorData out;
         Vector3f tmp;
+        T out;
 
         data >> tmp;
         tmp += bias;
         out << tmp;
+
         return out;
     }
 
@@ -66,9 +67,9 @@ private:
     Vector3f bias;
 };
 
-template <typename SensorData>
+template <typename T>
 class BiasCalibration
-    : public AbstractCalibrationModel<SensorData, SensorData, AxisOrientation>
+    : public AbstractCalibrationModel<T, BiasCorrector<T>, AxisOrientation>
 {
 public:
     BiasCalibration() : sum(0, 0, 0), ref(1, 0, 0), numSamples(0) {}
@@ -76,8 +77,11 @@ public:
     void setReferenceVector(Vector3f vec) { ref = vec; }
     Vector3f getReferenceVector() { return ref; }
 
-    bool feed(const SensorData& measured,
-              const AxisOrientation& transform) override
+    /**
+     * BiasCalibration accepts an indefinite number of samples,
+     * so feed(...) never returns false.
+     */
+    bool feed(const T& measured, const AxisOrientation& transform) override
     {
         Vector3f vec;
         measured >> vec;
@@ -88,11 +92,11 @@ public:
         return true;
     }
 
-    ValuesCorrector<SensorData>* computeResult()
+    BiasCorrector<T> computeResult()
     {
         if (numSamples == 0)
-            return new BiasCorrector<SensorData>({0, 0, 0});
-        return new BiasCorrector<SensorData>(sum / numSamples);
+            return {0, 0, 0};
+        return {sum / numSamples};
     }
 
 private:
