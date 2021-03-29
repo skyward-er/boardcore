@@ -25,25 +25,26 @@
 #include <interfaces/endianness.h>
 
 ADS1118::ADS1118(SPISlave spiSlave_)
-    : ADS1118(spiSlave_, ADS1118_DEFAULT_CONFIG)
+    : ADS1118(spiSlave_, ADS1118_DEFAULT_CONFIG, false)
 {
 }
 
 ADS1118::ADS1118(SPIBusInterface &bus, GpioPin cs,
                  ADS1118Config config_, 
                  SPIBusConfig spiConfig = getDefaultSPIConfig())
-    : ADS1118(SPISlave(bus, cs, spiConfig), config_)
+    : ADS1118(SPISlave(bus, cs, spiConfig), config_, false)
 {
 }
 
-ADS1118::ADS1118(SPISlave spiSlave_, ADS1118Config config_)
-    : ADS1118(spiSlave_, config_, 100)
+ADS1118::ADS1118(SPISlave spiSlave_, ADS1118Config config_, bool busyWait_)
+    : ADS1118(spiSlave_, config_, 100, busyWait_)
 {
 }
 
 ADS1118::ADS1118(SPISlave spiSlave_, ADS1118Config config_,
-                 int16_t tempDivider_)
-    : spiSlave(spiSlave_), baseConfig(config_), tempDivider(tempDivider_)
+                 int16_t tempDivider_, bool busyWait_)
+    : spiSlave(spiSlave_), baseConfig(config_), tempDivider(tempDivider_),
+      busyWait(busyWait_)
 {
 }
 
@@ -246,8 +247,17 @@ float ADS1118::readChannel(int8_t channel)
 {
     readChannel(channel, INVALID_CHANNEL);
 
-    miosix::Thread::sleep(CONV_TIME[channelsConfig[channel].bits.rate] / 1000 +
-                          1);  // Converto to milliseconds and increment by one
+    if (busyWait)
+    {
+        // Use a busy wait loop to be as precise as possible
+        miosix::delayUs(CONV_TIME[channelsConfig[channel].bits.rate]);
+    }
+    else
+    {
+        miosix::Thread::sleep(
+            CONV_TIME[channelsConfig[channel].bits.rate] / 1000 +
+            1);  // Converto to milliseconds and increment by one
+    }
 
     readChannel(INVALID_CHANNEL, channel);
 
