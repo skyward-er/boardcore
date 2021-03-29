@@ -90,6 +90,16 @@ public:
     void disableSensor(AbstractSensor* sensor);
 
     /**
+     * @brief Enable sampling for all the sensors.
+     */
+    void enableAllSensors();
+
+    /**
+     * @brief Disable sampling for all the sensors.
+     */
+    void disableAllSensors();
+
+    /**
      * @return the information related to the given sensor
      */
     const SensorInfo& getSensorInfo(AbstractSensor* sensor);

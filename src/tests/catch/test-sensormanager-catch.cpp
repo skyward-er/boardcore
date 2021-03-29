@@ -201,7 +201,7 @@ TEST_CASE_METHOD(SensorManagerFixture,
 }
 
 TEST_CASE_METHOD(SensorManagerFixture,
-                 "Sensors can be enabled/disabled at runtime")
+                 "Enable/disable sensors at runtime")
 {
     sensor_manager->start();
 
@@ -224,4 +224,39 @@ TEST_CASE_METHOD(SensorManagerFixture,
     REQUIRE(sensor_manager->getSensorInfo(&s4).is_enabled == true);
 
     Thread::sleep(1000);
+}
+
+TEST_CASE_METHOD(SensorManagerFixture,
+                 "Enable/disable all sensors at runtime")
+{
+    sensor_manager->start();
+
+    Thread::sleep(100);
+
+    sensor_manager->enableAllSensors();
+
+    Thread::sleep(10);
+
+    REQUIRE(sensor_manager->getSensorInfo(&s1).is_enabled == true);
+    REQUIRE(sensor_manager->getSensorInfo(&s2).is_enabled == true);
+    REQUIRE(sensor_manager->getSensorInfo(&s3).is_enabled == true);
+    REQUIRE(sensor_manager->getSensorInfo(&s4).is_enabled == true);
+
+    sensor_manager->disableAllSensors();
+
+    Thread::sleep(10);
+
+    REQUIRE(sensor_manager->getSensorInfo(&s1).is_enabled == false);
+    REQUIRE(sensor_manager->getSensorInfo(&s2).is_enabled == false);
+    REQUIRE(sensor_manager->getSensorInfo(&s3).is_enabled == false);
+    REQUIRE(sensor_manager->getSensorInfo(&s4).is_enabled == false);
+
+    sensor_manager->enableAllSensors();
+
+    Thread::sleep(10);
+
+    REQUIRE(sensor_manager->getSensorInfo(&s1).is_enabled == true);
+    REQUIRE(sensor_manager->getSensorInfo(&s2).is_enabled == true);
+    REQUIRE(sensor_manager->getSensorInfo(&s3).is_enabled == true);
+    REQUIRE(sensor_manager->getSensorInfo(&s4).is_enabled == true);
 }

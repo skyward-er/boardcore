@@ -63,6 +63,22 @@ void SensorManager::disableSensor(AbstractSensor* sensor)
     samplers_map[sensor]->toggleSensor(sensor, false);
 }
 
+void SensorManager::enableAllSensors()
+{
+    for (auto s : samplers)
+    {
+        s->enableAllSensors();
+    }
+}
+
+void SensorManager::disableAllSensors()
+{
+    for (auto s : samplers)
+    {
+        s->disableAllSensors();
+    }
+}
+
 const SensorInfo& SensorManager::getSensorInfo(AbstractSensor* sensor)
 {
     return samplers_map[sensor]->getSensorInfo(sensor);

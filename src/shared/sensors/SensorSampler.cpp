@@ -29,10 +29,7 @@ SensorSampler::SensorSampler(uint8_t id, uint32_t freq, bool is_dma)
 {
 }
 
-SensorSampler::~SensorSampler()
-{
-    sensors_map.clear();
-}
+SensorSampler::~SensorSampler() { sensors_map.clear(); }
 
 void SensorSampler::sampleAndCallback()
 {
@@ -54,6 +51,28 @@ void SensorSampler::toggleSensor(AbstractSensor* sensor, bool is_en)
     TRACE("[Sampler %d] Toggle Sensor %p, Sensor info %p ---> enabled = %d \n",
           getID(), sensor, sensors_map.at(sensor),
           sensors_map.at(sensor).is_enabled.load());
+}
+
+void SensorSampler::enableAllSensors()
+{
+    // don't use toggleSensor() to avoid searching the map for each sensor
+    for (std::map<AbstractSensor*, SensorInfo>::iterator it =
+             sensors_map.begin();
+         it != sensors_map.end(); ++it)
+    {
+        it->second.is_enabled = true;
+    }
+}
+
+void SensorSampler::disableAllSensors()
+{
+    // don't use toggleSensor() to avoid searching the map for each sensor
+    for (std::map<AbstractSensor*, SensorInfo>::iterator it =
+             sensors_map.begin();
+         it != sensors_map.end(); ++it)
+    {
+        it->second.is_enabled = false;
+    }
 }
 
 bool SensorSampler::isDMA() { return is_dma; }

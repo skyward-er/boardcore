@@ -65,6 +65,16 @@ public:
     void toggleSensor(AbstractSensor* sensor, bool is_en);
 
     /**
+     * @brief Enable sampling for all the sensors.
+     */
+    void enableAllSensors();
+
+    /**
+     * @brief Disable sampling for all the sensors.
+     */
+    void disableAllSensors();
+
+    /**
      * @brief For each sensor, sample it and call the corresponding callback.
      */
     void sampleAndCallback();
