@@ -45,9 +45,9 @@
 #include "sensors/calibration/TwelveParameterCalibration.h"
 
 #if TEST_ACCELEROMETER_DATA
-#include "calibration/accelerometer-data.h"
+#include "accelerometer-data.h"
 #elif TEST_MAGNETOMETER_DATA
-#include "calibration/magnetometer-data.h"
+#include "magnetometer-data.h"
 #endif
 
 using namespace miosix;
