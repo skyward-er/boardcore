@@ -36,6 +36,7 @@
 #include "drivers/interrupt/external_interrupts.h"
 #include "drivers/spi/SPIDriver.h"
 #include "sensors/L3GD20.h"
+#include "TimestampTimer.h"
 
 using namespace miosix;
 using std::array;
@@ -137,6 +138,7 @@ void configure()
 int main()
 {
     configure();
+    TimestampTimer::enableTimestampTimer();
 
     gyro = new L3GD20(bus, cs, L3GD20::FullScaleRange::FS_250,
                       L3GD20::OutPutDataRate::ODR_760, 0x03);
