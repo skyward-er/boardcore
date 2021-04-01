@@ -30,9 +30,9 @@ struct LIS3MDLData : public MagnetometerData, public TemperatureData
     {
     }
 
-    LIS3MDLData(float mx, float my, float mz, float deg)
-        : MagnetometerData{TimestampTimer::getTimestamp(), mx, my, mz},
-          TemperatureData{TimestampTimer::getTimestamp(), deg}
+    LIS3MDLData(uint64_t t, float mx, float my, float mz, float deg)
+        : MagnetometerData{t, mx, my, mz},
+          TemperatureData{t, deg}
 
     {
     }

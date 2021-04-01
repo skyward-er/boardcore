@@ -27,7 +27,8 @@
 
 #include <array>
 
-#include "Sensor.h"
+#include "sensors/Sensor.h"
+#include "L3GD20Data.h"
 #include "drivers/spi/SPIDriver.h"
 #include "math/Vec3.h"
 #include "TimestampTimer.h"
@@ -36,35 +37,6 @@ using miosix::GpioPin;
 using std::array;
 
 static constexpr uint32_t L3GD20_FIFO_SIZE = 32;
-
-struct L3GD20Data : public GyroscopeData
-{
-    L3GD20Data() : GyroscopeData{0, 0.0, 0.0, 0.0} {}
-
-    L3GD20Data(uint64_t timestamp, float x, float y, float z)
-        : GyroscopeData{timestamp, x, y, z}
-    {
-    }
-
-    L3GD20Data(float x, float y, float z)
-        : GyroscopeData{TimestampTimer::getTimestamp(), x, y, z}
-    {
-    }
-
-
-    L3GD20Data(GyroscopeData gyr) : GyroscopeData(gyr) {}
-
-    static std::string header()
-    {
-        return "gyro_timestamp,gyro_x,gyro_y,gyro_z\n";
-    }
-
-    void print(std::ostream& os) const
-    {
-        os << gyro_timestamp << "," << gyro_x << "," << gyro_y << "," << gyro_z
-           << "\n";
-    }
-};
 
 class L3GD20 : public SensorFIFO<L3GD20Data, L3GD20_FIFO_SIZE>
 {

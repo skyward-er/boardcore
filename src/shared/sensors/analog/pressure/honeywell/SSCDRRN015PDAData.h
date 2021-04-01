@@ -24,19 +24,15 @@
 
 #include "sensors/SensorData.h"
 
-struct ADS1118Data : public ADCData
+struct SSCDRRN015PDAData : public PressureData
 {
-    ADS1118Data() : ADCData{0, 0, 0.0} {}
-
-    ADS1118Data(uint64_t t, uint8_t channel_id, float voltage)
-        : ADCData{t, channel_id, voltage}
-
+    static std::string header()
     {
+        return "press_timestamp,pressure\n";
     }
-    static std::string header() { return "adc_timestamp,channel_id,voltage\n"; }
 
     void print(std::ostream& os) const
     {
-        os << adc_timestamp << "," << channel_id << "," << voltage << "\n";
+        os << press_timestamp << "," << press << "\n";
     }
 };

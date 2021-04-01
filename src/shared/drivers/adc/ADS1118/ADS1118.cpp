@@ -113,7 +113,7 @@ void ADS1118::disableConfigCheck() { configCheck = false; }
  */
 ADS1118Data ADS1118::readInputAndWait(ADS1118Mux mux)
 {
-    return ADS1118Data(mux, readChannel(mux));
+    return ADS1118Data(TimestampTimer::getTimestamp(), mux, readChannel(mux));
 }
 
 TemperatureData ADS1118::readTemperatureAndWait()

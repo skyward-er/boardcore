@@ -27,7 +27,13 @@
 #include "../Sensor.h"
 #include "Debug.h"
 #include "MS580301BA07Data.h"
+#include "TimestampTimer.h"
 #include "drivers/spi/SPIDriver.h"
+
+enum MS5803Errors : uint8_t
+{
+    RESET_TIMEOUT = SensorErrors::END_OF_BASE_ERRORS
+};
 
 class MS580301BA07 : public Sensor<MS5803Data>
 {
@@ -209,7 +215,8 @@ private:
         dataStruct.press  = mLastPressure;
         dataStruct.timestamp = miosix::getTick();*/
 
-        return MS5803Data(pressure, mLastPressure, temperature, mLastTemp);
+        return MS5803Data(TimestampTimer::getTimestamp(), pressure,
+                          mLastPressure, temperature, mLastTemp);
     }
 
     typedef struct

@@ -1,5 +1,7 @@
-/* Copyright (c) 2020 Skyward Experimental Rocketry
- * Authors: Alberto Nidasio
+
+/**
+ * Copyright (c) 2019 Skyward Experimental Rocketry
+ * Authors: Luca Erbetta
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -24,19 +26,25 @@
 
 #include "sensors/SensorData.h"
 
-struct ADS1118Data : public ADCData
+struct L3GD20Data : public GyroscopeData
 {
-    ADS1118Data() : ADCData{0, 0, 0.0} {}
+    L3GD20Data() : GyroscopeData{0, 0.0, 0.0, 0.0} {}
 
-    ADS1118Data(uint64_t t, uint8_t channel_id, float voltage)
-        : ADCData{t, channel_id, voltage}
-
+    L3GD20Data(uint64_t t, float x, float y, float z)
+        : GyroscopeData{t, x, y, z}
     {
     }
-    static std::string header() { return "adc_timestamp,channel_id,voltage\n"; }
+
+    L3GD20Data(GyroscopeData gyr) : GyroscopeData(gyr) {}
+
+    static std::string header()
+    {
+        return "gyro_timestamp,gyro_x,gyro_y,gyro_z\n";
+    }
 
     void print(std::ostream& os) const
     {
-        os << adc_timestamp << "," << channel_id << "," << voltage << "\n";
+        os << gyro_timestamp << "," << gyro_x << "," << gyro_y << "," << gyro_z
+           << "\n";
     }
 };
