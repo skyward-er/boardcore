@@ -55,8 +55,8 @@
 #include "drivers/HardwareTimer.h"
 #include "drivers/interrupt/external_interrupts.h"
 #include "drivers/spi/SPIDriver.h"
-#include "sensors/L3GD20.h"
 #include "TimestampTimer.h"
+#include "sensors/L3GD20/L3GD20.h"
 
 using namespace miosix;
 using std::array;
@@ -153,6 +153,8 @@ void configure()
     cs.high();
 
     enableExternalInterrupt(GPIOA_BASE, 2, InterruptTrigger::RISING_EDGE);
+
+    TimestampTimer::enableTimestampTimer();
 
     // High resolution clock configuration
     hrclock.setPrescaler(382);

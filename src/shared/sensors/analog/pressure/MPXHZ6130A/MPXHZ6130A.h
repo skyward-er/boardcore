@@ -22,20 +22,8 @@
 
 #pragma once
 
-#include "sensors/analog/pressure/AnalogPressureSensor.h"
-
-struct MPXHZ6130AData : public PressureData
-{
-    static std::string header()
-    {
-        return "press_timestamp,pressure\n";
-    }
-
-    void print(std::ostream& os) const
-    {
-        os << press_timestamp << "," << press << "\n";
-    }
-};
+#include "../AnalogPressureSensor.h"
+#include "MPXHZ6130AData.h"
 
 /**
  * @brief Driver for NXP's MPXHZ6130A pressure sensor

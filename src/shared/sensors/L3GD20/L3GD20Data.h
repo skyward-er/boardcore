@@ -1,6 +1,7 @@
-/*
- * Copyright (c) 2021 Skyward Experimental Rocketry
- * Authors: Alberto Nidasio
+
+/**
+ * Copyright (c) 2019 Skyward Experimental Rocketry
+ * Authors: Luca Erbetta
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -21,41 +22,29 @@
  * THE SOFTWARE.
  */
 
-#include <drivers/adc/InternalADC/InternalADC.h>
-#include <miosix.h>
+#pragma once
 
-#include "TimestampTimer.h"
+#include "sensors/SensorData.h"
 
-ADC_TypeDef& ADCx = *ADC3;
-
-int main()
+struct L3GD20Data : public GyroscopeData
 {
-    // Set pins PA0 PA1 PA2 PA3 as analog input
-    RCC->AHB1ENR |= RCC_AHB1ENR_GPIOAEN;
-    GPIOA->MODER = 0xFF;
+    L3GD20Data() : GyroscopeData{0, 0.0, 0.0, 0.0} {}
 
-    // Set the clock divider for the analog circuitry (/8)
-    ADC->CCR |= ADC_CCR_ADCPRE_0 | ADC_CCR_ADCPRE_1;
-    // In this case I've set the maximum value, check the datasheet for the
-    // maximum frequency the analog circuitry supports and compare it with the
-    // parent clock
-
-    TimestampTimer::enableTimestampTimer();
-
-    InternalADC adc(ADCx, 3.0);
-    adc.enableChannel(InternalADC::CH0);
-    adc.enableChannel(InternalADC::CH2);
-    adc.init();
-
-    printf("Configuration completed\n");
-
-    while (1)
+    L3GD20Data(uint64_t t, float x, float y, float z)
+        : GyroscopeData{t, x, y, z}
     {
-        adc.sample();
-
-        printf("%f\t%f\n", adc.getVoltage(InternalADC::CH0).voltage,
-               adc.getVoltage(InternalADC::CH2).voltage);
-
-        miosix::delayMs(1000);
     }
-}
+
+    L3GD20Data(GyroscopeData gyr) : GyroscopeData(gyr) {}
+
+    static std::string header()
+    {
+        return "gyro_timestamp,gyro_x,gyro_y,gyro_z\n";
+    }
+
+    void print(std::ostream& os) const
+    {
+        os << gyro_timestamp << "," << gyro_x << "," << gyro_y << "," << gyro_z
+           << "\n";
+    }
+};

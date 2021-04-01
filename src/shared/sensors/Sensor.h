@@ -35,7 +35,8 @@
  */
 template <class T, class ExpectedDataType>
 struct checkIfProduces
-    : std::is_base_of<ExpectedDataType, decltype(std::declval<T>().getLastSample())>
+    : std::is_base_of<ExpectedDataType,
+                      decltype(std::declval<T>().getLastSample())>
 {
 };
 
@@ -90,7 +91,7 @@ public:
      * @brief Get last error for debugging purposes. Avoid silent fails.
      * @return the last error recorded by this sensor
      */
-    SensorErrors getLastError() {return last_error; };
+    SensorErrors getLastError() { return last_error; };
 };
 
 /**

@@ -23,19 +23,7 @@
 #pragma once
 
 #include "HoneywellPressureSensor.h"
-
-struct HSCMAND015PAData : public PressureData
-{
-    static std::string header()
-    {
-        return "press_timestamp,pressure\n";
-    }
-
-    void print(std::ostream& os) const
-    {
-        os << press_timestamp << "," << press << "\n";
-    }
-};
+#include "HSCMAND015PAData.h"
 
 /**
  * @brief Absolute pressure sensor with a 0-103kPa range (0-15psi)

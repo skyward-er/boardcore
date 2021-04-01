@@ -1,5 +1,6 @@
-/* Copyright (c) 2020 Skyward Experimental Rocketry
- * Authors: Alberto Nidasio
+/**
+ * Copyright (c) 2020 Skyward Experimental Rocketry
+ * Authors: Davide Mor
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -24,19 +25,34 @@
 
 #include "sensors/SensorData.h"
 
-struct ADS1118Data : public ADCData
+/// @brief BMX160 Data struct.
+struct BMX160Data : public AccelerometerData, GyroscopeData, MagnetometerData
 {
-    ADS1118Data() : ADCData{0, 0, 0.0} {}
-
-    ADS1118Data(uint64_t t, uint8_t channel_id, float voltage)
-        : ADCData{t, channel_id, voltage}
-
+    /// @brief Default constructor.
+    BMX160Data()
+        : AccelerometerData{0, 0.0, 0.0, 0.0},
+          GyroscopeData{0, 0.0, 0.0, 0.0},
+          MagnetometerData{0, 0.0, 0.0, 0.0}
     {
     }
-    static std::string header() { return "adc_timestamp,channel_id,voltage\n"; }
+
+    /// @brief Comodity constructor.
+    BMX160Data(AccelerometerData acc, GyroscopeData gyr, MagnetometerData mag)
+        : AccelerometerData(acc), GyroscopeData(gyr), MagnetometerData(mag)
+    {
+    }
+
+    static std::string header()
+    {
+        return "accel_timestamp,accel_x,accel_y,accel_z,gyro_timestamp,gyro_x,gyro_y,"
+               "gyro_z,mag_timestamp,mag_x,mag_y,mag_z\n";
+    }
 
     void print(std::ostream& os) const
     {
-        os << adc_timestamp << "," << channel_id << "," << voltage << "\n";
+        os << accel_timestamp << "," << accel_x << "," << accel_y << "," << accel_z
+           << "," << gyro_timestamp << "," << gyro_x << "," << gyro_y << ","
+           << gyro_z << "," << mag_timestamp << "," << mag_x << "," << mag_y
+           << "," << mag_z << "\n";
     }
 };

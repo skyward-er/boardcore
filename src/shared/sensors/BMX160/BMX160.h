@@ -25,44 +25,12 @@
 
 #include <drivers/spi/SPIDriver.h>
 #include <sensors/Sensor.h>
-#include <sensors/SensorData.h>
 
 #include <cassert>
 
 #include "BMX160Config.h"
+#include "BMX160Data.h"
 #include "BMX160Defs.h"
-
-/// @brief BMX160 Data struct.
-struct BMX160Data : public AccelerometerData, GyroscopeData, MagnetometerData
-{
-    /// @brief Default constructor.
-    BMX160Data()
-        : AccelerometerData{0, 0.0, 0.0, 0.0},
-          GyroscopeData{0, 0.0, 0.0, 0.0},
-          MagnetometerData{0, 0.0, 0.0, 0.0}
-    {
-    }
-
-    /// @brief Comodity constructor.
-    BMX160Data(AccelerometerData acc, GyroscopeData gyr, MagnetometerData mag)
-        : AccelerometerData(acc), GyroscopeData(gyr), MagnetometerData(mag)
-    {
-    }
-
-    static std::string header()
-    {
-        return "accel_timestamp,accel_x,accel_y,accel_z,gyro_timestamp,gyro_x,gyro_y,"
-               "gyro_z,mag_timestamp,mag_x,mag_y,mag_z\n";
-    }
-
-    void print(std::ostream& os) const
-    {
-        os << accel_timestamp << "," << accel_x << "," << accel_y << "," << accel_z
-           << "," << gyro_timestamp << "," << gyro_x << "," << gyro_y << ","
-           << gyro_z << "," << mag_timestamp << "," << mag_x << "," << mag_y
-           << "," << mag_z << "\n";
-    }
-};
 
 /// @brief BMX160 Driver.
 class BMX160 : public SensorFIFO<BMX160Data, 200>
@@ -84,9 +52,9 @@ public:
         : BMX160(bus, cs, config, SPIBusConfig{})
     {
         spi_slave.config.clock_div = SPIClockDivider::DIV4;
-        old_mag.mag_timestamp = 0.0f;
-        old_gyr.gyro_timestamp = 0.0f;
-        old_acc.accel_timestamp = 0.0f;
+        old_mag.mag_timestamp      = 0.0f;
+        old_gyr.gyro_timestamp     = 0.0f;
+        old_acc.accel_timestamp    = 0.0f;
     }
 
     /// @brief BMX160 Constructor.
@@ -860,7 +828,8 @@ private:
         assert(len <= static_cast<int>(sizeof(buf)) && "Buffer overflow!");
 #endif
 
-        // Shift the old timestamps, this allows to use old timestamps with the current frame.
+        // Shift the old timestamps, this allows to use old timestamps with the
+        // current frame.
         old_mag.mag_timestamp -= dt_interrupt;
         old_gyr.gyro_timestamp -= dt_interrupt;
         old_acc.accel_timestamp -= dt_interrupt;

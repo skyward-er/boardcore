@@ -24,31 +24,24 @@
 
 #include <interfaces/endianness.h>
 
-ADS1118::ADS1118(SPISlave spiSlave_)
-    : ADS1118(spiSlave_, ADS1118_DEFAULT_CONFIG, false)
-{
-}
+const ADS1118::ADS1118Config ADS1118::ADS1118_DEFAULT_CONFIG = {
+    SINGLE_SHOT_MODE, FSR_2_048,  MUX_AIN0_AIN1, 0,     0,
+    VALID_OPERATION,  PULL_UP_EN, ADC_MODE,      DR_128};
 
-ADS1118::ADS1118(SPIBusInterface &bus, GpioPin cs,
-                 ADS1118Config config_, 
-                 SPIBusConfig spiConfig = getDefaultSPIConfig())
+ADS1118::ADS1118(SPIBusInterface &bus, GpioPin cs, ADS1118Config config_,
+                 SPIBusConfig spiConfig)
     : ADS1118(SPISlave(bus, cs, spiConfig), config_, false)
 {
 }
 
-ADS1118::ADS1118(SPISlave spiSlave_, ADS1118Config config_, bool busyWait_)
-    : ADS1118(spiSlave_, config_, 100, busyWait_)
-{
-}
-
-ADS1118::ADS1118(SPISlave spiSlave_, ADS1118Config config_,
-                 int16_t tempDivider_, bool busyWait_)
+ADS1118::ADS1118(SPISlave spiSlave_, ADS1118Config config_, bool busyWait_,
+                 int16_t tempDivider_)
     : spiSlave(spiSlave_), baseConfig(config_), tempDivider(tempDivider_),
       busyWait(busyWait_)
 {
 }
 
-static SPIBusConfig getDefaultSPIConfig()
+SPIBusConfig getDefaultSPIConfig()
 {
     SPIBusConfig spiConfig{};
     spiConfig.clock_div = SPIClockDivider::DIV32;
@@ -114,7 +107,7 @@ void ADS1118::disableConfigCheck() { configCheck = false; }
  */
 ADS1118Data ADS1118::readInputAndWait(ADS1118Mux mux)
 {
-    return ADS1118Data(mux, readChannel(mux));
+    return ADS1118Data(TimestampTimer::getTimestamp(), mux, readChannel(mux));
 }
 
 TemperatureData ADS1118::readTemperatureAndWait()
@@ -191,7 +184,7 @@ bool ADS1118::readChannel(int8_t nextChannel, int8_t prevChannel)
     // Prepare the next configuration data
     if (nextChannel >= 0 && nextChannel < NUM_OF_CHANNELS)
     {
-        // A valid configuration will alwais be not iqual to 0 since the valid
+        // A valid configuration will always be not iqual to 0 since the valid
         // operation bits mus be 0b01
         writeData = channelsConfig[nextChannel].word;
     }

@@ -23,19 +23,7 @@
 #pragma once
 
 #include "HoneywellPressureSensor.h"
-
-struct SSCDRRN015PDAData : public PressureData
-{
-    static std::string header()
-    {
-        return "press_timestamp,pressure\n";
-    }
-
-    void print(std::ostream& os) const
-    {
-        os << press_timestamp << "," << press << "\n";
-    }
-};
+#include "SSCDRRN015PDAData.h"
 
 /**
  * @brief Differential pressure sensor with a ±103kPa range (±15psi)

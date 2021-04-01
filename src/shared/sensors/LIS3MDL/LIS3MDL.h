@@ -25,10 +25,10 @@
 
 #include <Common.h>
 
+#include "LIS3MDLData.h"
 #include "drivers/spi/SPIDriver.h"
 #include "miosix.h"
 #include "sensors/Sensor.h"
-#include "LIS3MDLData.h"
 
 /**
  * Driver for LIS3MDL, a three-axis magnetic sensor.
@@ -230,7 +230,7 @@ public:
     {
         if (isInitialized)
         {
-            TRACE("Error: attempted to initialized sensor twice [LIS3MDL].\n");
+            TRACE("[LIS3MDL] Error: attempted to initialized sensor twice\n");
             last_error = ALREADY_INIT;
             return false;
         }
@@ -242,8 +242,9 @@ public:
             if (res != WHO_AM_I_VALUE)
             {
                 TRACE(
-                    "Error: WHO_AM_I value differs from expectation: read 0x%x "
-                    "but expected 0x%x [LIS3MDL].\n",
+                    "[LIS3MDL] Error: WHO_AM_I value differs from expectation: "
+                    "read 0x%x "
+                    "but expected 0x%x\n",
                     res, WHO_AM_I_VALUE);
                 last_error = INVALID_WHOAMI;
                 return false;
@@ -266,8 +267,8 @@ public:
         if (!isInitialized)
         {
             TRACE(
-                "Error: invoked selfTest() but sensor was unitialized "
-                "[LIS3MDL].\n");
+                "[LIS3MDL] Error: invoked selfTest() but sensor was "
+                "unitialized\n");
             last_error = NOT_INIT;
             return false;
         }
@@ -313,7 +314,7 @@ public:
         avg_y /= NUM_SAMPLES;
         avg_z /= NUM_SAMPLES;
 
-        TRACE("Starting %d tests [LIS3MDL].\n", NUM_TESTS);
+        TRACE("[LIS3MDL] Starting %d tests\n", NUM_TESTS);
 
         /*
          * Setting up the sensor settings for
@@ -353,7 +354,7 @@ public:
 
             if (!passed)
             {
-                TRACE("Test n. %d failed [LIS3MDL].\n", (i + 1));
+                TRACE("[LIS3MDL] Test n. %d failed\n", (i + 1));
 
                 // reset configuration, then return
                 applyConfig(mConfig);
@@ -363,7 +364,7 @@ public:
             }
             else
             {
-                TRACE("Test n. %d passed [LIS3MDL].\n", (i + 1));
+                TRACE("[LIS3MDL] Test n. %d passed\n", (i + 1));
             }
         }
 
@@ -400,7 +401,10 @@ public:
         currDiv = 0;
 
         /*  -- CTRL_REG1 --  */
-        reg = config.enableTemperature ? ENABLE_TEMPERATURE : 0;
+        if (config.enableTemperature)
+        {
+            reg = ENABLE_TEMPERATURE;
+        }
         reg |= config.odr;
 
         // odr <= 80Hz
@@ -430,13 +434,28 @@ public:
         err |= spi.read(CTRL_REG5) != reg;
 
         /* -- INT_CFG -- */
-        reg = config.enableInterrupt[0] ? ENABLE_INT_X : 0;
-        reg |= config.enableInterrupt[1] ? ENABLE_INT_Y : 0;
-        reg |= config.enableInterrupt[2] ? ENABLE_INT_Z : 0;
+        if (config.enableInterrupt[0])
+        {
+            reg = ENABLE_INT_X;
+        }
+        else
+        {
+            reg = 0;
+        }
+        if (config.enableInterrupt[1])
+        {
+            reg |= ENABLE_INT_Y;
+        }
+        if (config.enableInterrupt[2])
+        {
+            reg |= ENABLE_INT_Z;
+        }
 
         // the interrupt of at least one axis is enabled
         if (reg)
+        {
             reg |= ENABLE_INT_PIN;
+        }
 
         reg |= 0x08;
         spi.write(INT_CFG, reg);
@@ -460,7 +479,7 @@ public:
 
         if (err)
         {
-            TRACE("Spi error [LIS3MDL].\n");
+            TRACE("[LIS3MDL] Spi error\n");
             last_error = BUS_FAULT;
             return false;
         }
@@ -486,8 +505,8 @@ private:
         if (!isInitialized)
         {
             TRACE(
-                "Error: invoked sampleImpl() but sensor was unitialized "
-                "[LIS3MDL].\n");
+                "[LIS3MDL] Error: invoked sampleImpl() but sensor was "
+                "unitialized \n");
             last_error = NOT_INIT;
             return last_sample;
         }
@@ -496,10 +515,13 @@ private:
 
         if (!spi.read(STATUS_REG))
         {
-            TRACE("New data not available, keeping old values [LIS32MDL]\n");
+            TRACE("[LIS3MDL] New data not available, keeping old values\n");
             last_error = NO_NEW_DATA;
             return last_sample;
         }
+
+        // Reset any error
+        last_error = SensorErrors::NO_ERRORS;
 
         uint16_t val;
         LIS3MDLData newData{};
@@ -511,10 +533,9 @@ private:
                 val = spi.read(TEMP_OUT_L);
                 val |= spi.read(TEMP_OUT_H) << 8;
 
-                newData.temp =
-                    static_cast<float>(val) / LSB_PER_CELSIUS +
-                    REFERENCE_TEMPERATURE;
-                TRACE("read temperature: %d\n", val);
+                newData.temp_timestamp = TimestampTimer::getTimestamp();
+                newData.temp = static_cast<float>(val) / LSB_PER_CELSIUS +
+                               REFERENCE_TEMPERATURE;
             }
             else
             {
@@ -524,6 +545,8 @@ private:
 
             currDiv = (currDiv + 1) % mConfig.temperatureDivider;
         }
+
+        newData.mag_timestamp = TimestampTimer::getTimestamp();
 
         val = spi.read(OUT_X_L);
         val |= spi.read(OUT_X_H) << 8;

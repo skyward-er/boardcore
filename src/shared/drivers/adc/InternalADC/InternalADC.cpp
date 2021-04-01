@@ -24,23 +24,20 @@
 
 #include "TimestampTimer.h"
 
-InternalADC::InternalADC(ADC_TypeDef& ADCx_) : ADCx(ADCx_) { resetRegisters(); }
-
-InternalADC::InternalADC(ADC_TypeDef& ADCx_, const float V_SUPPLY_)
-    : ADCx(ADCx_), V_SUPPLY(V_SUPPLY_)
-{
-    resetRegisters();
-}
-
 InternalADC::InternalADC(ADC_TypeDef& ADCx_, const float V_SUPPLY_,
-                         DMA_Stream_TypeDef& DMAx_Streamx_)
+                         DMA_Stream_TypeDef* DMAx_Streamx_)
     : ADCx(ADCx_), V_SUPPLY(V_SUPPLY_), DMAx_Streamx(DMAx_Streamx_),
       isUsingDMA(true)
 {
     resetRegisters();
+    enableADCClock();
 }
 
-InternalADC::~InternalADC() { resetRegisters(); }
+InternalADC::~InternalADC()
+{
+    resetRegisters();
+    disableADCClock();
+}
 
 bool InternalADC::init()
 {
@@ -59,16 +56,16 @@ bool InternalADC::init()
     if (isUsingDMA)
     {
         // Set the DMA peripheral address
-        DMAx_Streamx.PAR = (uint32_t) & (ADCx.DR);
+        DMAx_Streamx->PAR = (uint32_t) & (ADCx.DR);
 
         // Set the DMA memory address
-        DMAx_Streamx.M0AR = (uint32_t)values;
+        DMAx_Streamx->M0AR = (uint32_t)values;
 
         // Enable DMA on ADC
         ADCx.CR2 |= ADC_CR2_DMA;
 
         // Enable DMA stream
-        DMAx_Streamx.CR |= DMA_SxCR_EN;
+        DMAx_Streamx->CR |= DMA_SxCR_EN;
 
         // Check if we are using the DMA2 controller, otherwise it's DMA1
         if (((uint32_t)&DMAx_Streamx & ~0xFF) == (uint32_t)DMA2_BASE)
@@ -141,7 +138,7 @@ bool InternalADC::enableChannel(Channel channel, SampleTime sampleTime)
         addRegularChannel(channel);
 
         // Update the DMA number of data
-        DMAx_Streamx.NDTR = activeChannels;
+        DMAx_Streamx->NDTR = activeChannels;
     }
 
     // Set channel's sample time
@@ -335,4 +332,42 @@ inline void InternalADC::setChannelSampleTime(Channel channel,
         smprPtr = &(ADCx.SMPR1);
     }
     *smprPtr = sampleTime << (channel * 3);
+}
+
+inline void InternalADC::enableADCClock()
+{
+    miosix::FastInterruptDisableLock dLock;
+
+    if (&ADCx == ADC1)
+    {
+        RCC->APB2ENR |= RCC_APB2ENR_ADC1EN;
+    }
+    else if (&ADCx == ADC2)
+    {
+        RCC->APB2ENR |= RCC_APB2ENR_ADC2EN;
+    }
+    else if (&ADCx == ADC3)
+    {
+        RCC->APB2ENR |= RCC_APB2ENR_ADC3EN;
+    }
+
+    RCC_SYNC();
+}
+
+inline void InternalADC::disableADCClock()
+{
+    miosix::FastInterruptDisableLock dLock;
+
+    if (&ADCx == ADC1)
+    {
+        RCC->APB2ENR &= ~RCC_APB2ENR_ADC1EN;
+    }
+    else if (&ADCx == ADC2)
+    {
+        RCC->APB2ENR &= ~RCC_APB2ENR_ADC2EN;
+    }
+    else if (&ADCx == ADC3)
+    {
+        RCC->APB2ENR &= ~RCC_APB2ENR_ADC3EN;
+    }
 }

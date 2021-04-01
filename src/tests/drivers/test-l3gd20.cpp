@@ -35,8 +35,8 @@
 #include "drivers/HardwareTimer.h"
 #include "drivers/interrupt/external_interrupts.h"
 #include "drivers/spi/SPIDriver.h"
-#include "sensors/L3GD20.h"
 #include "TimestampTimer.h"
+#include "sensors/L3GD20/L3GD20.h"
 
 using namespace miosix;
 using std::array;
@@ -128,6 +128,8 @@ void configure()
 
     // Enable rising-edge interrupt detection on PA2
     enableExternalInterrupt(GPIOA_BASE, 2, InterruptTrigger::RISING_EDGE);
+
+    TimestampTimer::enableTimestampTimer();
 
     // High resolution clock configuration: Sets the prescaler as to obtain
     // 1.8 hours run time and 1.5 microseconds of resolution

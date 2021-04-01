@@ -153,9 +153,8 @@ public:
     static constexpr uint8_t VALID_OPERATION =
         0x1;  ///< Indicates a valid configuration
 
-    const ADS1118Config ADS1118_DEFAULT_CONFIG = {
-        {SINGLE_SHOT_MODE, FSR_2_048, MUX_AIN0_AIN1, 0, 0, VALID_OPERATION,
-         PULL_UP_EN, ADC_MODE, DR_128}};  ///< Default configuration
+    static const ADS1118Config
+        ADS1118_DEFAULT_CONFIG;  ///< Default configuration
 
     static constexpr int8_t NUM_OF_CHANNELS = 9;
 
@@ -164,19 +163,11 @@ public:
     static constexpr int8_t TEMP_CHANNEL = 8;  ///< Temeprature channel number
 
     /**
-     * @brief Construct a new ADS1118 object with default configuration
-     *
-     * @param spiSlave_ Spi slave configured with spi interface, spi config and
-     * cs pin
-     */
-    ADS1118(SPISlave spiSlave_);
-
-    /**
      * @brief Construct a new ADS1118 object specifing spi bus, spi config and
      * cs pin as well as device configuration
      */
-    ADS1118(SPIBusInterface &bus, GpioPin cs,
-            ADS1118Config config_, SPIBusConfig spiConfig);
+    ADS1118(SPIBusInterface &bus, GpioPin cs, ADS1118Config config_,
+            SPIBusConfig spiConfig = getDefaultSPIConfig());
 
     /**
      * @brief Construct a new ADS1118 object
@@ -188,24 +179,11 @@ public:
      * @param busyWait_ Enable busy wait instead normal wait (uses `delayUs`
      * instead of `sleep`), only useful when sampling at close to the maximum
      * frequency!
-     */
-    ADS1118(SPISlave spiSlave_, ADS1118Config config_, bool busyWait_ = false);
-
-    /**
-     * @brief Construct a new ADS1118 object
-     *
-     * @param spiSlave_ Spi slave configured with spi interface, spi config and
-     * ss pin
-     * @param config_ Device main configuration used as default while enabling
-     * channels
      * @param tempDivider_ Specify how many onSimpleUpdate calls between each
      * temperature reading
-     * @param busyWait_ Enable busy wait instead normal wait (uses `delayUs`
-     * instead of `sleep`), only useful when sampling at close to the maximum
-     * frequency!
      */
-    ADS1118(SPISlave spiSlave_, ADS1118Config config_, int16_t tempDivider_,
-            bool busyWait_ = false);
+    ADS1118(SPISlave spiSlave_, ADS1118Config config_ = ADS1118_DEFAULT_CONFIG,
+            bool busyWait_ = false, int16_t tempDivider_ = 100);
 
     /**
      * Constructs the default config for SPI Bus.

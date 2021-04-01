@@ -1,5 +1,4 @@
-/*
- * Copyright (c) 2021 Skyward Experimental Rocketry
+/* Copyright (c) 2020 Skyward Experimental Rocketry
  * Authors: Alberto Nidasio
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -21,41 +20,19 @@
  * THE SOFTWARE.
  */
 
-#include <drivers/adc/InternalADC/InternalADC.h>
-#include <miosix.h>
+#pragma once
 
-#include "TimestampTimer.h"
+#include "sensors/SensorData.h"
 
-ADC_TypeDef& ADCx = *ADC3;
-
-int main()
+struct SSCDANN030PAAData : public PressureData
 {
-    // Set pins PA0 PA1 PA2 PA3 as analog input
-    RCC->AHB1ENR |= RCC_AHB1ENR_GPIOAEN;
-    GPIOA->MODER = 0xFF;
-
-    // Set the clock divider for the analog circuitry (/8)
-    ADC->CCR |= ADC_CCR_ADCPRE_0 | ADC_CCR_ADCPRE_1;
-    // In this case I've set the maximum value, check the datasheet for the
-    // maximum frequency the analog circuitry supports and compare it with the
-    // parent clock
-
-    TimestampTimer::enableTimestampTimer();
-
-    InternalADC adc(ADCx, 3.0);
-    adc.enableChannel(InternalADC::CH0);
-    adc.enableChannel(InternalADC::CH2);
-    adc.init();
-
-    printf("Configuration completed\n");
-
-    while (1)
+    static std::string header()
     {
-        adc.sample();
-
-        printf("%f\t%f\n", adc.getVoltage(InternalADC::CH0).voltage,
-               adc.getVoltage(InternalADC::CH2).voltage);
-
-        miosix::delayMs(1000);
+        return "press_timestamp,pressure\n";
     }
-}
+
+    void print(std::ostream& os) const
+    {
+        os << press_timestamp << "," << press << "\n";
+    }
+};

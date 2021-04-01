@@ -32,7 +32,7 @@
  *
  * Allows for conversion on multiple channels with per-channel sample time.
  *
- * The driver configures the ADC by itself.
+ * The driver configures the ADC by itself, including the clock.
  *
  * This driver implements the following ADC's features:
  * - injected channels: a list of up to 4 channels that can be converted
@@ -102,12 +102,8 @@ public:
         CYCLES_480 = 0x7
     };
 
-    InternalADC(ADC_TypeDef& ADCx_);
-
-    InternalADC(ADC_TypeDef& ADCx_, const float V_SUPPLY_);
-
-    InternalADC(ADC_TypeDef& ADCx_, const float V_SUPPLY_,
-                DMA_Stream_TypeDef& DMAx_);
+    InternalADC(ADC_TypeDef& ADCx_, const float V_SUPPLY_ = 5.0,
+                DMA_Stream_TypeDef* DMAx_ = DMA1_Stream0);
 
     ~InternalADC();
 
@@ -143,9 +139,13 @@ private:
 
     inline void setChannelSampleTime(Channel channel, SampleTime sampleTime);
 
+    inline void enableADCClock();
+
+    inline void disableADCClock();
+
     ADC_TypeDef& ADCx;
-    const float V_SUPPLY             = 5.0;
-    DMA_Stream_TypeDef& DMAx_Streamx = *DMA1_Stream0;
+    const float V_SUPPLY = 5.0;
+    DMA_Stream_TypeDef* DMAx_Streamx;
 
     DMA_TypeDef* DMAx = DMA1;
     uint8_t streamNum = 0;

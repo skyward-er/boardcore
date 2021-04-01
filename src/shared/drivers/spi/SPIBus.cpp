@@ -35,11 +35,11 @@ void SPIBus::configure(SPIBusConfig new_config)
         config               = new_config;
 
         // Wait until the peripheral is done before changing configuration
-        while ((spi->SR & SPI_SR_TXE) == 0)
+        while (!(spi->SR & SPI_SR_TXE))
             ;
-        while ((spi->SR & SPI_SR_BSY) == 1)
+        while ((spi->SR & SPI_SR_BSY))
             ;
-        
+
         spi->CR1 = 0;
 
         // Configure CPOL & CPHA bits

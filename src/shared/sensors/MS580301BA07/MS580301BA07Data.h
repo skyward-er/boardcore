@@ -23,12 +23,6 @@
 #pragma once
 
 #include "sensors/SensorData.h"
-#include "sensors/Sensor.h"
-
-enum MS5803Errors : uint8_t
-{
-    RESET_TIMEOUT = SensorErrors::END_OF_BASE_ERRORS
-};
 
 struct MS5803Data : public PressureData, TemperatureData
 {
@@ -37,9 +31,9 @@ struct MS5803Data : public PressureData, TemperatureData
 
     MS5803Data() : PressureData{0, 0.0}, TemperatureData{0, 0.0} {}
 
-    MS5803Data(uint32_t raw_press, float press, uint32_t raw_temp, float temp)
-        : PressureData{TimestampTimer::getTimestamp(), press},
-          TemperatureData{TimestampTimer::getTimestamp(), temp},
+    MS5803Data(uint64_t t, uint32_t raw_press, float press, uint32_t raw_temp,
+               float temp)
+        : PressureData{t, press}, TemperatureData{t, temp},
           raw_press(raw_press), raw_temp(raw_temp)
     {
     }

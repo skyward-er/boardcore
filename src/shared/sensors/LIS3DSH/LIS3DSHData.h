@@ -30,9 +30,9 @@ struct LIS3DSHData : public AccelerometerData, public TemperatureData
     {
     }
 
-    LIS3DSHData(float x, float y, float z, float temp)
-        : AccelerometerData{TimestampTimer::getTimestamp(), x, y, z},
-          TemperatureData{TimestampTimer::getTimestamp(), temp}
+    LIS3DSHData(uint64_t t, float x, float y, float z, float temp)
+        : AccelerometerData{t, x, y, z},
+          TemperatureData{t, temp}
     {
     }
 
