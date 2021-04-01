@@ -297,7 +297,7 @@ struct AxisOrthoOrientation
 
         vx = orientationToVector(xAxis);
         vy = orientationToVector(yAxis);
-        vz = vx.cross(vy).normalized();
+        vz = vx.cross(vy);
 
         Matrix3f mat;
         mat.col(0) << vx;
@@ -307,3 +307,22 @@ struct AxisOrthoOrientation
     }
 };
 
+/**
+ * This struct represents axis orientation relative to a reference system. Operatively
+ * it simply combines two transformations.
+ * It is particularly useful to obtain an AxisOrientation from a reference system generally not N.E.D.
+*/
+struct AxisRelativeOrientation {
+    AxisOrientation systemOrientation, orientation;
+
+    AxisRelativeOrientation(const AxisOrientation& _systemOrientation, const AxisOrientation& _orientation)
+        : systemOrientation(_systemOrientation), orientation(_orientation) { }
+
+    operator AxisOrientation() const {
+        return { getMatrix() };
+    }
+
+    Matrix3f getMatrix() const {
+        return systemOrientation.getMatrix() * orientation.getMatrix();
+    }
+};
