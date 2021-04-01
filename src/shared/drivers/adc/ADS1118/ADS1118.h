@@ -185,8 +185,11 @@ public:
      * ss pin
      * @param config_ Device main configuration used as default while enabling
      * channels
+     * @param busyWait_ Enable busy wait instead normal wait (uses `delayUs`
+     * instead of `sleep`), only useful when sampling at close to the maximum
+     * frequency!
      */
-    ADS1118(SPISlave spiSlave_, ADS1118Config config_);
+    ADS1118(SPISlave spiSlave_, ADS1118Config config_, bool busyWait_ = false);
 
     /**
      * @brief Construct a new ADS1118 object
@@ -197,8 +200,12 @@ public:
      * channels
      * @param tempDivider_ Specify how many onSimpleUpdate calls between each
      * temperature reading
+     * @param busyWait_ Enable busy wait instead normal wait (uses `delayUs`
+     * instead of `sleep`), only useful when sampling at close to the maximum
+     * frequency!
      */
-    ADS1118(SPISlave spiSlave_, ADS1118Config config_, int16_t tempDivider_);
+    ADS1118(SPISlave spiSlave_, ADS1118Config config_, int16_t tempDivider_,
+            bool busyWait_ = false);
 
     /**
      * Constructs the default config for SPI Bus.
@@ -344,6 +351,8 @@ private:
 
     ///< Rate of onSimpleUpdate call on which the temperature is sampled
     const uint16_t tempDivider = 100;
+    ///< Use `delayUs` instead of `sleep`
+    const bool busyWait = false;
 
     uint16_t sampleCounter = 0;  ///< Counts the number of samples made
 
@@ -352,8 +361,8 @@ private:
                                    0.03125, 0.015625, 0.0078125};
 
     ///< Conversion times in us + 100us
-    const int CONV_TIME[8] = {12600, 62600, 31350, 15725,
-                              7913,  4100,  2206,  1263};
+    const int CONV_TIME[8] = {125100, 62600, 31350, 15725,
+                              7913,   4100,  2206,  1263};
 
     static constexpr float TEMP_LSB_SIZE  = 0.03125;
     static constexpr uint16_t TEMP_CONFIG = 0xF281;
