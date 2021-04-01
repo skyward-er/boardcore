@@ -25,26 +25,24 @@
 #include <miosix.h>
 
 ADC_TypeDef& ADCx                = *ADC3;
-DMA_Stream_TypeDef& DMAx_Streamx = *DMA2_Stream1;
+DMA_Stream_TypeDef* DMAx_Streamx = DMA2_Stream1;
 
 int main()
 {
-    // Enable DMA clock
-    RCC->AHB1ENR |= RCC_AHB1ENR_DMA2EN;  // <- CHANGE THIS!
 
     // DMA INIT ---------------------------------------------------------------
     {
         // 1: Disable the stream
 
         // Disable stream
-        DMAx_Streamx.CR &= ~DMA_SxCR_EN;
+        DMAx_Streamx->CR &= ~DMA_SxCR_EN;
 
         // Wait for the stream to be disabled
-        while (DMAx_Streamx.CR & DMA_SxCR_EN)
+        while (DMAx_Streamx->CR & DMA_SxCR_EN)
             ;
 
         // Reset DMA configuration
-        DMAx_Streamx.CR = 0;
+        DMAx_Streamx->CR = 0;
 
         // Ensures all the status bits are cleared by explicitly clearing them
         DMA2->LIFCR = 0x0F7D0F7D;  // Mask excluding reserved bits
@@ -54,40 +52,40 @@ int main()
         // items will be set by the driver
 
         // 5: Select the DMA channel
-        DMAx_Streamx.CR |= DMA_SxCR_CHSEL_1;  // <- CHANGE THIS!
+        DMAx_Streamx->CR |= DMA_SxCR_CHSEL_1;  // <- CHANGE THIS!
 
         // 6: The peripheral is not intended to be the flow controller
         // (it will function only as a trigger)
-        DMAx_Streamx.CR &= ~DMA_SxCR_PFCTRL;
+        DMAx_Streamx->CR &= ~DMA_SxCR_PFCTRL;
 
         // 7: Configure the stream priority to very high
-        DMAx_Streamx.CR |= DMA_SxCR_PL;
+        DMAx_Streamx->CR |= DMA_SxCR_PL;
 
         // 8: Configure fifo usage (disable => direct mode)
-        DMAx_Streamx.FCR &= ~DMA_SxFCR_DMDIS;
+        DMAx_Streamx->FCR &= ~DMA_SxFCR_DMDIS;
 
         // 9: Other configuration
 
         // Data transfer peripheral-to-memory
-        DMAx_Streamx.CR &= ~DMA_SxCR_DIR;
+        DMAx_Streamx->CR &= ~DMA_SxCR_DIR;
 
         // Address increment mode
-        DMAx_Streamx.CR &= ~DMA_SxCR_PINC;  // Fixed
-        DMAx_Streamx.CR |= DMA_SxCR_MINC;   // Incremented
+        DMAx_Streamx->CR &= ~DMA_SxCR_PINC;  // Fixed
+        DMAx_Streamx->CR |= DMA_SxCR_MINC;   // Incremented
 
         // Single or burst transaction (single)
-        DMAx_Streamx.CR &= ~DMA_SxCR_MBURST;
+        DMAx_Streamx->CR &= ~DMA_SxCR_MBURST;
 
         // Data width (16 bit)
-        DMAx_Streamx.CR |= DMA_SxCR_PSIZE_0;
-        DMAx_Streamx.CR |= DMA_SxCR_MSIZE_0;
+        DMAx_Streamx->CR |= DMA_SxCR_PSIZE_0;
+        DMAx_Streamx->CR |= DMA_SxCR_MSIZE_0;
 
         // Circular mode (on)
 
-        DMAx_Streamx.CR |= DMA_SxCR_CIRC;
+        DMAx_Streamx->CR |= DMA_SxCR_CIRC;
 
         // Double buffer mode (off)
-        DMAx_Streamx.CR &= ~DMA_SxCR_DBM;
+        DMAx_Streamx->CR &= ~DMA_SxCR_DBM;
 
         // Interrupt not used
 
