@@ -1,6 +1,6 @@
 /**
  * Copyright (c) 2020 Skyward Experimental Rocketry
- * Authors: Luca Conterio
+ * Authors: Luca Conterio, Davide Mor
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -25,22 +25,32 @@
 
 #include <math.h>
 
+#include <Debug.h>
 #include "drivers/HardwareTimer.h"
 
 namespace TimestampTimer
 {
 
-static const uint8_t TIMER_BITS      = 32;
+/**
+ * For timer resolution and duration refer to :
+ * https://docs.google.com/spreadsheets/d/1B44bN6m2vnldQx9XVxZaBP8bDHqoLPREyHoaLh8s0UA/edit#gid=0
+ *
+ */
 static const uint8_t PRESCALER_VALUE = 127;
-static const uint32_t RELOAD_VALUE   = pow(2, TIMER_BITS) - 1;  // 4294967295
 
-extern HardwareTimer<uint32_t> timestamp_timer;
+#if (defined(STM32F429xx) || defined(STM32F407xx))
+extern HardwareTimer<uint32_t, TimerMode::Single> timestamp_timer;
+#elif (defined(STM32F10X_MD) || defined(STM32F10X_MD_VL))
+extern HardwareTimer<uint32_t, TimerMode::Chain> timestamp_timer;
+#else
+#error "TimestampTimer is not yet supported on your board!"
+#endif
 
 /**
- * @brief Enables and starts the 32-bits TIM2 timer peripheral, which can be
- * accessed via the timerstamp_timer pointer.
+ * @brief Enables and starts the timer peripheral, which can be
+ * accessed via the timestamp_timer object.
  */
-void enableTimestampTimer();
+void enableTimestampTimer(uint8_t prescaler = PRESCALER_VALUE);
 
 /**
  * @return the current timestamp in microseconds
