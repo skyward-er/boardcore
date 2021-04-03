@@ -27,6 +27,7 @@
 
 #include "HBridgeData.h"
 #include "drivers/pwm/pwm.h"
+#include "TimestampTimer.h"
 
 using miosix::GpioPin;
 using miosix::Thread;
