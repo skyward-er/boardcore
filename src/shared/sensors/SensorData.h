@@ -51,6 +51,15 @@ struct PressureData
 };
 
 /**
+ * @brief Structure to handle humidity data.
+ */
+struct HumidityData
+{
+    uint64_t humid_timestamp;
+    float humid;
+};
+
+/**
  * @brief Structure to handle accelerometer data.
  */
 struct AccelerometerData
