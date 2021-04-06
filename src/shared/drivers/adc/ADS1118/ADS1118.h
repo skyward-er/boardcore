@@ -50,8 +50,10 @@
  * - SINGLE_SHOT_MODE: A single conversion is performed when the configuration
  * is written
  *
- * sample() cycle through the enabled channels one at a time writing a
- * configuration while reading the voltage of the previous written one.
+ * The ADS1118 is a simple device, it has a single data register where it can
+ * store the reading, therefore it can sample a single input at a time. sample()
+ * cylces through the enabled channels one at a time and writes it's
+ * configuration while reading the value of the previous written one.
  *
  * As an example if you need to read 4 inputs at 50Hz you should set all the
  * data rates at 250Hz (50Hz x * 4 = 200Hz) and call sample() at a rate of
@@ -199,6 +201,9 @@ public:
 
     /**
      * @brief Initialize the configuration
+     *
+     * It resets all the channels thus you must call init() before enabling any
+     * channel
      */
     bool init() override;
 
@@ -287,7 +292,8 @@ public:
     TemperatureData getTemperature();
 
     /**
-     * @brief Writes a configuration and check if it is read back correctly
+     * @brief Writes the temperature configuration and check if it is read back
+     * correctly
      *
      * @return True if everything ok
      */
@@ -329,7 +335,7 @@ private:
     bool configCheck = false;
 
     ///< Use `delayUs` instead of `sleep`
-    const bool busyWait = false;
+    const bool busyWait;
 
     ADS1118Config channelsConfig[NUM_OF_CHANNELS];  ///< Channels configuration
     ADS1118Data values[NUM_OF_CHANNELS];            ///< Voltage values in mV
@@ -338,7 +344,7 @@ private:
     uint8_t lastConfigIndex = 0;  ///< Last written configuration's index
 
     ///< Rate of sample calls on which the temperature read
-    const uint16_t tempDivider = 100;
+    const uint16_t tempDivider;
 
     uint16_t sampleCounter = 0;  ///< Counts the number of samples made
 

@@ -95,15 +95,15 @@ int main()
     // Device initialization
     ADS1118 ads1118(spiSlave);
 
+    // Initialize the device
+    ads1118.init();
+
     // Enable the two channels and the temperature
     ads1118.enableInput(channel1, ADS1118::ADS1118DataRate::DR_250,
                         ADS1118::ADS1118Pga::FSR_4_096);
     ads1118.enableInput(channel2, ADS1118::ADS1118DataRate::DR_250,
                         ADS1118::ADS1118Pga::FSR_4_096);
     ads1118.enableTemperature();
-
-    // Initialize the device
-    ads1118.init();
 
     // Self test
     if (ads1118.selfTest())
@@ -122,7 +122,7 @@ int main()
 
     // Read samples with sample()
     TRACE("\nNow reading the two channels with 'sample()'\n");
-    for (auto i = 0; i < 1000; i++)
+    for (auto i = 0; i < 500; i++)
     {
         // Call 3 times sample() to read the 3 enabled channels
         ads1118.sample();
@@ -134,10 +134,6 @@ int main()
         printf("%.2f\t%.2f\t%.2f\n", ads1118.getTemperature().temp,
                ads1118.getVoltage(channel1).voltage,
                ads1118.getVoltage(channel2).voltage);
-
-        ADS1118Data adc_data = ads1118.getLastSample();
-        printf("%llu\t%hu\t%.2f\n", adc_data.adc_timestamp, adc_data.channel_id,
-               adc_data.voltage);
     }
 
     // Read a few times the first channel and then switch to the second one
@@ -150,7 +146,7 @@ int main()
                         ADS1118::ADS1118Pga::FSR_4_096);
 
     TRACE("First channel:\n");
-    for (auto i = 0; i < 1000; i++)
+    for (auto i = 0; i < 500; i++)
     {
         ads1118.sample();
         miosix::Thread::sleep(5);
@@ -163,11 +159,11 @@ int main()
                         ADS1118::ADS1118Pga::FSR_4_096);
 
     TRACE("Second channel:\n");
-    for (auto i = 0; i < 1000; i++)
+    for (auto i = 0; i < 500; i++)
     {
         ads1118.sample();
         miosix::Thread::sleep(5);
 
-        printf("%.2f\t%.2f\t%.2f\n", ads1118.getVoltage(channel2).voltage);
+        printf("%.2f\n", ads1118.getVoltage(channel2).voltage);
     }
 }

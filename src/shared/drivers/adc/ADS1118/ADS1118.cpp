@@ -84,6 +84,9 @@ void ADS1118::enableInput(ADS1118Mux mux, ADS1118DataRate rate, ADS1118Pga pga)
     channelsConfig[mux].bits.pullUp     = baseConfig.bits.pullUp;
     channelsConfig[mux].bits.tempMode   = ADC_MODE;
     channelsConfig[mux].bits.rate       = rate;
+
+    // Decrement the sample counter in order to read the temperature earlier on
+    sampleCounter--;
 }
 
 void ADS1118::disableInput(ADS1118Mux mux) { channelsConfig[mux].word = 0; }
@@ -144,11 +147,8 @@ bool ADS1118::selfTest()
     // Enable configuration check
     configCheck = true;
 
-    // Check the communication by reading  all channels
-    for (auto i = 0; i < NUM_OF_CHANNELS; i++)
-    {
-        readChannel(i);
-    }
+    // Check the communication by reading the temperature channel
+    readChannel(TEMP_CHANNEL, INVALID_CHANNEL);
 
     // Restore the configuration
     configCheck                       = prevConfigCheck;
@@ -169,15 +169,15 @@ ADS1118Data ADS1118::sampleImpl()
 {
     int8_t i = findNextEnabledChannel(lastConfigIndex + 1);
 
-    // Increment the sample counter
-    sampleCounter++;
-
     // Write the next config and read the value (only if lastConfig is valid)
     readChannel(i, lastConfig.word != 0 ? lastConfigIndex : INVALID_CHANNEL);
 
     // Save index and config for the next read
     lastConfig.word = channelsConfig[i].word;
     lastConfigIndex = i;
+
+    // Increment the sample counter
+    sampleCounter++;
 
     // Regardless of the readChannel result, return the value stored
     return values[lastConfigIndex];
@@ -274,12 +274,11 @@ void ADS1118::readChannel(int8_t channel)
  */
 int8_t ADS1118::findNextEnabledChannel(int8_t startChannel)
 {
-    int8_t &channel = startChannel;
+    int8_t &channel = startChannel;  // Just a change of name
 
     for (auto i = 0; i < 2; i++)
     {
-
-        // Go to first channel if channel is too big
+        // Go to the first channel if channel is too big
         if (channel >= NUM_OF_CHANNELS)
         {
             channel = 0;
