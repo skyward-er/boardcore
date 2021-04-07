@@ -38,12 +38,13 @@ ADS1118::ADS1118(SPIBusInterface &bus, GpioPin cs, ADS1118Config config_,
 
 ADS1118::ADS1118(SPISlave spiSlave_, ADS1118Config config_, bool busyWait_,
                  int16_t tempDivider_)
-    : spiSlave(spiSlave_), baseConfig(config_), tempDivider(tempDivider_),
-      busyWait(busyWait_)
+    : spiSlave(spiSlave_), baseConfig(config_), busyWait(busyWait_),
+      tempDivider(tempDivider_)
+
 {
 }
 
-SPIBusConfig getDefaultSPIConfig()
+SPIBusConfig ADS1118::getDefaultSPIConfig()
 {
     SPIBusConfig spiConfig{};
     spiConfig.clock_div = SPIClockDivider::DIV32;

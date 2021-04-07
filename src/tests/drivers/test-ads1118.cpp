@@ -86,9 +86,7 @@ int main()
     TimestampTimer::enableTimestampTimer();
 
     // SPI configuration setup
-    SPIBusConfig spiConfig;
-    spiConfig.clock_div = SPIClockDivider::DIV32;
-    spiConfig.mode      = SPIMode::MODE1;
+    SPIBusConfig spiConfig = ADS1118::getDefaultSPIConfig();
     SPIBus spiBus(SPI2);
     SPISlave spiSlave(spiBus, csPin, spiConfig);
 
