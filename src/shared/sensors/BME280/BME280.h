@@ -90,7 +90,7 @@ public:
             FilterCoeff filter : 3;   ///< Time constant of the IIR filter
             uint8_t : 1;
             unsigned spi3w_en : 1;  ///< Enables 3-wire SPI interface
-        } bits;
+        } __attribute__((packed)) bits;
 
         struct
         {
@@ -98,7 +98,7 @@ public:
             uint8_t status;     ///< Device status
             uint8_t ctrl_meas;  ///< Pressure and temperature options
             uint8_t config;     ///< Rate, filter and interface options
-        } bytes;
+        } __attribute__((packed)) bytes;
 
         uint8_t bytes_array[4];
     };
@@ -110,7 +110,7 @@ public:
             uint32_t pressure : 24;
             uint32_t temperature : 24;
             uint16_t humidity;
-        } bits;
+        } __attribute__((packed)) bits;
 
         struct
         {
@@ -125,26 +125,31 @@ public:
         } bytes;
     };
 
-    struct BME280Comp
+    union BME280Comp
     {
-        uint16_t dig_T1;
-        int16_t dig_T2;
-        int16_t dig_T3;
-        uint16_t dig_P1;
-        int16_t dig_P2;
-        int16_t dig_P3;
-        int16_t dig_P4;
-        int16_t dig_P5;
-        int16_t dig_P6;
-        int16_t dig_P7;
-        int16_t dig_P8;
-        int16_t dig_P9;
-        uint8_t dig_H1;
-        int16_t dig_H2;
-        int8_t dig_H3;
-        int16_t dig_H4 : 12;
-        int16_t dig_H5 : 12;
-        int8_t dig_H6;
+        struct
+        {
+            uint16_t dig_T1;
+            int16_t dig_T2;
+            int16_t dig_T3;
+            uint16_t dig_P1;
+            int16_t dig_P2;
+            int16_t dig_P3;
+            int16_t dig_P4;
+            int16_t dig_P5;
+            int16_t dig_P6;
+            int16_t dig_P7;
+            int16_t dig_P8;
+            int16_t dig_P9;
+            uint8_t dig_H1;
+            int16_t dig_H2;
+            uint8_t dig_H3;
+            int16_t dig_H4 : 12;
+            int16_t dig_H5 : 12;
+            int8_t dig_H6;
+        } __attribute__((packed)) bits;
+
+        uint8_t bytes_array[32];
     };
 
     enum BME280Registers : uint8_t
@@ -219,5 +224,5 @@ private:
     BME280Comp compParams;
     int32_t t_fine;  // Used in compensation algorithm
 
-    bool initialized;  // Whether the sensor has been initialized
+    bool initialized = false;  // Whether the sensor has been initialized
 };
