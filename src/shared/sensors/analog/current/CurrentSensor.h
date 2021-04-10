@@ -49,9 +49,6 @@ public:
     {
         ADCData adc_data = getADCVoltage();
 
-        printf("%llu %u %f \n", adc_data.adc_timestamp, adc_data.channel_id,
-                   adc_data.voltage);
-
         CurrentSenseData current_data;
         current_data.adc_timestamp = adc_data.adc_timestamp;
         current_data.channel_id    = adc_data.channel_id;
