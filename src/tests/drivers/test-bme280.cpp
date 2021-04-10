@@ -84,12 +84,18 @@ int main()
     SPISlave spiSlave(spiBus, csPin, spiConfig);
 
     // Device initialization
-    BME280 bme280(spiSlave);
+    BME280 bme280(spiSlave, BME280::BME280_CONFIG_ALL_ENABLED);
 
-    bool ret = bme280.init();
+    bme280.init();
 
-    TRACE("size of BME280Comp: %d\n", sizeof(BME280::BME280Config));
+    while (true)
+    {
+        bme280.sample();
 
-    TRACE("ret: %d\n", ret);
-    TRACE("error: %d\n", bme280.getLastError());
+        TRACE("temp: %.2f DegC\tpress: %.2f hPa\thumid: %.2f %%RH\n",
+              bme280.getLastSample().temp, bme280.getLastSample().press,
+              bme280.getLastSample().humid);
+
+        miosix::Thread::sleep(40);  // 25Hz
+    }
 }

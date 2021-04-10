@@ -44,15 +44,6 @@ public:
         NORMAL_MODE = 0x3   ///< Normal mode
     };
 
-    enum FilterCoeff
-    {
-        FILTER_OFF      = 0x0,  ///< Filter off
-        FILTER_COEFF_2  = 0x1,  ///< Filter coefficient = 2
-        FILTER_COEFF_4  = 0x2,  ///< Filter coefficient = 4
-        FILTER_COEFF_8  = 0x3,  ///< Filter coefficient = 8
-        FILTER_COEFF_16 = 0x4   ///< Filter coefficient = 16
-    };
-
     enum StandbyTime
     {
         STB_TIME_0_5  = 0x0,  ///< 0.5 ms
@@ -65,32 +56,48 @@ public:
         STB_TIME_20   = 0x7   ///< 20 ms
     };
 
+    enum FilterCoeff
+    {
+        FILTER_OFF      = 0x0,  ///< Filter off
+        FILTER_COEFF_2  = 0x1,  ///< Filter coefficient = 2
+        FILTER_COEFF_4  = 0x2,  ///< Filter coefficient = 4
+        FILTER_COEFF_8  = 0x3,  ///< Filter coefficient = 8
+        FILTER_COEFF_16 = 0x4   ///< Filter coefficient = 16
+    };
+
     union BME280Config
     {
-        struct
+        struct __attribute__((packed)) BME280ConfigBits
         {
-            uint8_t : 5;
+            // ctrl_hum
             Oversampling osrs_h : 3;  ///< Oversampling of humidity
-            uint8_t : 4;
-            /**
-             * '1' whenever a conversion is running, '0' when the result have
-             * been transferred to the data registers
-             */
-            unsigned measuring : 1;
-            uint8_t : 2;
+            uint8_t : 5;
+
+            // status
             /**
              * '1' when the NVM data are being copied to image registers, '0'
              * when the copying is done
              */
-            unsigned im_update : 1;
-            Oversampling osrs_t : 3;  ///< Oversampling of temperature
-            Oversampling osrs_p : 3;  ///< Oversampling of pressure
+            uint8_t im_update : 1;
+            uint8_t : 2;
+            /**
+             * '1' whenever a conversion is running, '0' when the result have
+             * been transferred to the data registers
+             */
+            uint8_t measuring : 1;
+            uint8_t : 4;
+
+            // ctrl_meas
             Mode mode : 2;            ///< Device modes
-            StandbyTime t_sb : 3;     ///< Inactive duration in normal mode
-            FilterCoeff filter : 3;   ///< Time constant of the IIR filter
+            Oversampling osrs_p : 3;  ///< Oversampling of pressure
+            Oversampling osrs_t : 3;  ///< Oversampling of temperature
+
+            // config
+            uint8_t spi3w_en : 1;  ///< Enables 3-wire SPI interface
             uint8_t : 1;
-            unsigned spi3w_en : 1;  ///< Enables 3-wire SPI interface
-        } __attribute__((packed)) bits;
+            FilterCoeff filter : 3;  ///< Time constant of the IIR filter
+            StandbyTime t_sb : 3;    ///< Inactive duration in normal mode
+        } bits;
 
         struct
         {
@@ -98,36 +105,14 @@ public:
             uint8_t status;     ///< Device status
             uint8_t ctrl_meas;  ///< Pressure and temperature options
             uint8_t config;     ///< Rate, filter and interface options
-        } __attribute__((packed)) bytes;
+        } bytes;
 
         uint8_t bytes_array[4];
     };
 
-    union BME280RawData
-    {
-        struct
-        {
-            uint32_t pressure : 24;
-            uint32_t temperature : 24;
-            uint16_t humidity;
-        } __attribute__((packed)) bits;
-
-        struct
-        {
-            uint8_t press_msb;
-            uint8_t press_lsb;
-            uint8_t press_xlsb;
-            uint8_t temp_msb;
-            uint8_t temp_lsb;
-            uint8_t temp_xlsb;
-            uint8_t hum_msb;
-            uint8_t hum_lsb;
-        } bytes;
-    };
-
     union BME280Comp
     {
-        struct
+        struct __attribute__((packed))
         {
             uint16_t dig_T1;
             int16_t dig_T2;
@@ -147,7 +132,7 @@ public:
             int16_t dig_H4 : 12;
             int16_t dig_H5 : 12;
             int8_t dig_H6;
-        } __attribute__((packed)) bits;
+        } bits;
 
         uint8_t bytes_array[32];
     };
@@ -178,10 +163,13 @@ public:
         REG_HUM_LSB    = 0xFE,
     };
 
-    static constexpr uint8_t WHO_AM_I_REG = 0xD0;
-    static constexpr uint8_t WHO_AM_I_VAL = 0x60;
+    static constexpr uint8_t REG_ID_VAL = 0x60;  ///< Who am I value
 
-    BME280(SPISlave spiSlave_);
+    static const BME280Config BME280_DEFAULT_CONFIG;
+    static const BME280Config
+        BME280_CONFIG_ALL_ENABLED;  ///< Datasheet values for indoor navigation
+
+    BME280(SPISlave spiSlave_, BME280Config config_ = BME280_DEFAULT_CONFIG);
 
     /**
      * @brief Initialize the device with the specified configuration
@@ -200,11 +188,13 @@ private:
 
     void setConfiguration();
 
+    BME280Config readConfiguration();
+
     void loadCompensationParameters();
 
     // Compensation algorithm rev.1.1 from Bosh datasheet
 
-    int32_t getFineTemperature(int32_t adc_T);
+    int32_t computeFineTemperature(int32_t adc_T);
 
     int32_t compensateTemperature(int32_t t_fine);
 

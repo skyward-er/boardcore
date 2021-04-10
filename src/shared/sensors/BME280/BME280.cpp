@@ -25,7 +25,23 @@
 #include "Debug.h"
 #include "TimestampTimer.h"
 
-BME280::BME280(SPISlave spiSlave_) : spiSlave(spiSlave_) {}
+const BME280::BME280Config BME280::BME280_DEFAULT_CONFIG = {
+    SKIPPED, 0, 0, SLEEP_MODE, SKIPPED, SKIPPED, 0, FILTER_OFF, STB_TIME_0_5};
+
+const BME280::BME280Config BME280::BME280_CONFIG_ALL_ENABLED = {OVERSAMPLING_1,
+                                                                0,
+                                                                0,
+                                                                NORMAL_MODE,
+                                                                OVERSAMPLING_16,
+                                                                OVERSAMPLING_2,
+                                                                0,
+                                                                FILTER_COEFF_16,
+                                                                STB_TIME_0_5};
+
+BME280::BME280(SPISlave spiSlave_, BME280Config config_)
+    : spiSlave(spiSlave_), config(config_)
+{
+}
 
 bool BME280::init()
 {
@@ -42,6 +58,8 @@ bool BME280::init()
     // Check WHO AM I
     if (!checkWhoAmI())
     {
+        TRACE("[BME280] Invalid WHO AM I\n");
+
         last_error = SensorErrors::INVALID_WHOAMI;
 
         return false;
@@ -50,29 +68,23 @@ bool BME280::init()
     // Load compensation parameters
     loadCompensationParameters();
 
-    TRACE("dig_T1: %d\t%X\n", compParams.bits.dig_T1, compParams.bits.dig_T1);
-    TRACE("dig_T2: %d\t%X\n", compParams.bits.dig_T2, compParams.bits.dig_T2);
-    TRACE("dig_T3: %d\t%X\n", compParams.bits.dig_T3, compParams.bits.dig_T3);
-    TRACE("dig_P1: %d\t%X\n", compParams.bits.dig_P1, compParams.bits.dig_P1);
-    TRACE("dig_P2: %d\t%X\n", compParams.bits.dig_P2, compParams.bits.dig_P2);
-    TRACE("dig_P3: %d\t%X\n", compParams.bits.dig_P3, compParams.bits.dig_P3);
-    TRACE("dig_P4: %d\t%X\n", compParams.bits.dig_P4, compParams.bits.dig_P4);
-    TRACE("dig_P5: %d\t%X\n", compParams.bits.dig_P5, compParams.bits.dig_P5);
-    TRACE("dig_P6: %d\t%X\n", compParams.bits.dig_P6, compParams.bits.dig_P6);
-    TRACE("dig_P7: %d\t%X\n", compParams.bits.dig_P7, compParams.bits.dig_P7);
-    TRACE("dig_P8: %d\t%X\n", compParams.bits.dig_P8, compParams.bits.dig_P8);
-    TRACE("dig_P9: %d\t%X\n", compParams.bits.dig_P9, compParams.bits.dig_P9);
-    TRACE("dig_H1: %d\t%X\n", compParams.bits.dig_H1, compParams.bits.dig_H1);
-    TRACE("dig_H2: %d\t%X\n", compParams.bits.dig_H2, compParams.bits.dig_H2);
-    TRACE("dig_H3: %d\t%X\n", compParams.bits.dig_H3, compParams.bits.dig_H3);
-    TRACE("dig_H4: %d\t%X\n", compParams.bits.dig_H4, compParams.bits.dig_H4);
-    TRACE("dig_H5: %d\t%X\n", compParams.bits.dig_H5, compParams.bits.dig_H5);
-    TRACE("dig_H6: %d\t%X\n", compParams.bits.dig_H6, compParams.bits.dig_H6);
-
     // TODO: Read at least once the temperature for t_fine
 
-    // Set the configuration
     setConfiguration();
+
+    BME280Config readBackConfig = readConfiguration();
+
+    // Check if the configration on the device matches ours
+    if (config.bytes.ctrl_hum != readBackConfig.bytes.ctrl_hum ||
+        config.bytes.ctrl_meas != readBackConfig.bytes.ctrl_meas ||
+        config.bytes.config != readBackConfig.bytes.config)
+    {
+        TRACE("[BME280] Device configuration incorrect\n");
+
+        last_error = SensorErrors::NOT_INIT;
+
+        return false;
+    }
 
     initialized = true;
     return true;
@@ -82,7 +94,10 @@ bool BME280::selfTest() { return checkWhoAmI(); }
 
 BME280Data BME280::sampleImpl()
 {
-    BME280RawData rawData;
+    uint8_t buffer[8];
+    int32_t adc_T = 0;
+    int32_t adc_P = 0;
+    int32_t adc_H = 0;
     BME280Data data;
 
     // TODO: implement selective read!
@@ -91,40 +106,62 @@ BME280Data BME280::sampleImpl()
     {
         SPITransaction transaction(spiSlave);
 
-        transaction.read(REG_CALIB_0, (uint8_t *)&rawData, 25);
+        transaction.read(REG_PRESS_MSB, buffer, 8);
     }
 
+    adc_T |= ((uint32_t)buffer[3]) << 12;
+    adc_T |= ((uint32_t)buffer[4]) << 4;
+    adc_T |= (buffer[5] >> 4) & 0x0F;
+
+    adc_P |= ((uint32_t)buffer[0]) << 12;
+    adc_P |= ((uint32_t)buffer[1]) << 4;
+    adc_P |= (buffer[2] >> 4) & 0x0F;
+
+    adc_H |= ((uint32_t)buffer[6] << 8);
+    adc_H |= buffer[7];
+
     // Compensate temperature
-    t_fine              = getFineTemperature(rawData.bits.temperature);
+    t_fine              = computeFineTemperature(adc_T);
     data.temp_timestamp = TimestampTimer::getTimestamp();
-    data.temp           = compensateTemperature(t_fine);
+    data.temp = (float)compensateTemperature(t_fine) / 100;  // Converto to DegC
 
     // Compensate pressure
     data.press_timestamp = TimestampTimer::getTimestamp();
-    data.press           = compensatePressure(rawData.bits.pressure);
+    data.press = (float)compensatePressure(adc_P) / 256;  // Convert to Pa
 
     // Compensate humidity
     data.humid_timestamp = TimestampTimer::getTimestamp();
-    data.humid           = compensateHumidity(rawData.bits.pressure);
+    data.humid = (float)compensateHumidity(adc_H) / 1024;  // Converto to %RH
+
+    return data;
 }
 
 bool BME280::checkWhoAmI()
 {
     SPITransaction transaction(spiSlave);
 
-    uint8_t who_am_i_value = transaction.read(WHO_AM_I_REG);
+    uint8_t who_am_i_value = transaction.read(REG_ID);
 
-    return who_am_i_value == WHO_AM_I_VAL;
+    return who_am_i_value == REG_ID_VAL;
 }
 
 void BME280::setConfiguration()
 {
     SPITransaction transaction(spiSlave);
 
-    for (uint8_t i = 0; i < 4; i++)
-    {
-        transaction.write(REG_CTRL_HUM + i, config.bytes_array[i]);
-    }
+    transaction.write(REG_CONFIG & 0x7F, config.bytes.config);
+    transaction.write(REG_CTRL_HUM & 0x7F, config.bytes.ctrl_hum);
+    transaction.write(REG_CTRL_MEAS & 0x7F, config.bytes.ctrl_meas);
+}
+
+BME280::BME280Config BME280::readConfiguration()
+{
+    BME280Config tmp;
+    SPITransaction transaction(spiSlave);
+
+    transaction.read(REG_CTRL_HUM, (uint8_t *)&tmp, 4);
+
+    return tmp;
 }
 
 void BME280::loadCompensationParameters()
@@ -150,7 +187,7 @@ void BME280::loadCompensationParameters()
         (compParams.bits.dig_H4 << 4) | (compParams.bits.dig_H4 >> 8);
 }
 
-int32_t BME280::getFineTemperature(int32_t adc_T)
+int32_t BME280::computeFineTemperature(int32_t adc_T)
 {
     int32_t var1, var2;
     var1 = ((((adc_T >> 3) - ((int32_t)compParams.bits.dig_T1 << 1))) *
