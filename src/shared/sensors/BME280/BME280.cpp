@@ -38,6 +38,10 @@ const BME280::BME280Config BME280::BME280_CONFIG_ALL_ENABLED = {OVERSAMPLING_1,
                                                                 FILTER_COEFF_16,
                                                                 STB_TIME_0_5};
 
+const BME280::BME280Config BME280::BME280_CONFIG_TEMP_SINGLE = {
+    SKIPPED,        0, 0,          FORCED_MODE, SKIPPED,
+    OVERSAMPLING_1, 0, FILTER_OFF, STB_TIME_0_5};
+
 BME280::BME280(SPISlave spiSlave_, BME280Config config_)
     : spiSlave(spiSlave_), config(config_)
 {
@@ -65,10 +69,13 @@ bool BME280::init()
         return false;
     }
 
-    // Load compensation parameters
     loadCompensationParameters();
 
-    // TODO: Read at least once the temperature for t_fine
+    // Read once the temperature to compute t_fine
+    setConfiguration(BME280_CONFIG_TEMP_SINGLE);
+    miosix::Thread::sleep(
+        calculateMaxMeasurementTime(BME280_CONFIG_TEMP_SINGLE));
+    readTemperature();
 
     setConfiguration();
 
@@ -88,6 +95,130 @@ bool BME280::init()
 
     initialized = true;
     return true;
+}
+
+void BME280::setHumidityOversampling(Oversampling oversampling)
+{
+    config.bits.osrs_h = oversampling;
+
+    setConfiguration();
+}
+
+void BME280::setSensorMode(Mode mode)
+{
+    config.bits.mode = mode;
+
+    setConfiguration();
+}
+
+void BME280::setPressureOversampling(Oversampling oversampling)
+{
+    config.bits.osrs_p = oversampling;
+
+    setConfiguration();
+}
+
+void BME280::setTemperatureOversampling(Oversampling oversampling)
+{
+    config.bits.osrs_t = oversampling;
+
+    setConfiguration();
+}
+
+void BME280::setFilterCoeff(FilterCoeff filterCoeff)
+{
+    config.bits.filter = filterCoeff;
+
+    setConfiguration();
+}
+
+void BME280::setStandbyTime(StandbyTime standbyTime)
+{
+    config.bits.t_sb = standbyTime;
+
+    setConfiguration();
+}
+
+HumidityData BME280::readHumidity()
+{
+    uint8_t buffer[2];
+    int32_t adc_H = 0;
+
+    {
+        SPITransaction transaction(spiSlave);
+
+        transaction.read(REG_HUM_MSB, buffer, 2);
+    }
+
+    adc_H |= ((uint32_t)buffer[0] << 8);
+    adc_H |= buffer[1];
+
+    // Compensate humidity
+    last_sample.humid_timestamp = TimestampTimer::getTimestamp();
+    last_sample.humid =
+        (float)compensateHumidity(adc_H) / 1024;  // Converto to %RH
+
+    return last_sample;
+}
+
+PressureData BME280::readPressure()
+{
+    uint8_t buffer[3];
+    int32_t adc_P = 0;
+
+    {
+        SPITransaction transaction(spiSlave);
+
+        transaction.read(REG_PRESS_MSB, buffer, 3);
+    }
+
+    adc_P |= ((uint32_t)buffer[0]) << 12;
+    adc_P |= ((uint32_t)buffer[1]) << 4;
+    adc_P |= (buffer[2] >> 4) & 0x0F;
+
+    // Compensate pressure
+    last_sample.press_timestamp = TimestampTimer::getTimestamp();
+    last_sample.press =
+        (float)compensatePressure(adc_P) / 256;  // Convert to Pa
+
+    return last_sample;
+}
+
+TemperatureData BME280::readTemperature()
+{
+    uint8_t buffer[3];
+    int32_t adc_T = 0;
+
+    {
+        SPITransaction transaction(spiSlave);
+
+        transaction.read(REG_TEMP_MSB, buffer, 3);
+    }
+
+    adc_T |= ((uint32_t)buffer[0]) << 12;
+    adc_T |= ((uint32_t)buffer[1]) << 4;
+    adc_T |= (buffer[2] >> 4) & 0x0F;
+
+    // Compensate temperature
+    t_fine                     = computeFineTemperature(adc_T);
+    last_sample.temp_timestamp = TimestampTimer::getTimestamp();
+    last_sample.temp =
+        (float)compensateTemperature(t_fine) / 100;  // Converto to DegC
+
+    return last_sample;
+}
+
+HumidityData BME280::getHumidity() { return last_sample; }
+
+PressureData BME280::getPressure() { return last_sample; }
+
+TemperatureData BME280::getTemerature() { return last_sample; }
+
+unsigned int BME280::calculateMaxMeasurementTime(BME280Config config_)
+{
+    return ceil(1.25 + (2.3 * config_.bits.osrs_t) +
+                (2.3 * config_.bits.osrs_p + 0.575) +
+                (2.3 * config_.bits.osrs_h + 0.575));
 }
 
 bool BME280::selfTest() { return checkWhoAmI(); }
@@ -145,13 +276,15 @@ bool BME280::checkWhoAmI()
     return who_am_i_value == REG_ID_VAL;
 }
 
-void BME280::setConfiguration()
+void BME280::setConfiguration() { setConfiguration(config); }
+
+void BME280::setConfiguration(BME280Config config_)
 {
     SPITransaction transaction(spiSlave);
 
-    transaction.write(REG_CONFIG & 0x7F, config.bytes.config);
-    transaction.write(REG_CTRL_HUM & 0x7F, config.bytes.ctrl_hum);
-    transaction.write(REG_CTRL_MEAS & 0x7F, config.bytes.ctrl_meas);
+    transaction.write(REG_CONFIG & 0x7F, config_.bytes.config);
+    transaction.write(REG_CTRL_HUM & 0x7F, config_.bytes.ctrl_hum);
+    transaction.write(REG_CTRL_MEAS & 0x7F, config_.bytes.ctrl_meas);
 }
 
 BME280::BME280Config BME280::readConfiguration()

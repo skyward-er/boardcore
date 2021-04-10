@@ -168,6 +168,8 @@ public:
     static const BME280Config BME280_DEFAULT_CONFIG;
     static const BME280Config
         BME280_CONFIG_ALL_ENABLED;  ///< Datasheet values for indoor navigation
+    static const BME280Config
+        BME280_CONFIG_TEMP_SINGLE;  ///< Temperature enabled in forced mode
 
     BME280(SPISlave spiSlave_, BME280Config config_ = BME280_DEFAULT_CONFIG);
 
@@ -175,6 +177,76 @@ public:
      * @brief Initialize the device with the specified configuration
      */
     bool init() override;
+
+    /**
+     * @brief Sets the oversampling for humidity readings, use SKIPPED to
+     * disable humidity sampling
+     */
+    void setHumidityOversampling(Oversampling oversampling);
+
+    /**
+     * @brief Sets the sensor mode
+     *
+     * Values:
+     * - SLEEP_MODE: No measurements are performed
+     * - FORCED_MODE: A single measurement is performed when this function
+     * writes the configuration, after the measurement the sensor return to
+     * sleep mode
+     * - NORMAL_MODE: Automated cycling between measurements, standby time can
+     * be set using setStandbyTime()
+     */
+    void setSensorMode(Mode mode);
+
+    /**
+     * @brief Sets the oversampling for pressure readings, use SKIPPED to
+     * disable pressure sampling
+     */
+    void setPressureOversampling(Oversampling oversampling);
+
+    /**
+     * @brief Sets the oversampling for temperature readings, use SKIPPED to
+     * disable temperature sampling
+     */
+    void setTemperatureOversampling(Oversampling oversampling);
+
+    /**
+     * @brief Sets the coefficient for the IIR filter (applied to temperature
+     * and pressure)
+     */
+    void setFilterCoeff(FilterCoeff filterCoeff);
+
+    /**
+     * @brief Sets the standby time between readings in normal mode
+     */
+    void setStandbyTime(StandbyTime standbyTime);
+
+    /**
+     * @brief Reads only the humidity, does not set the configuration
+     */
+    HumidityData readHumidity();
+
+    /**
+     * @brief Reads only the pressure, does not set the configuration
+     */
+    PressureData readPressure();
+
+    /**
+     * @brief Reads only the temperature, does not set the configuration
+     */
+    TemperatureData readTemperature();
+
+    HumidityData getHumidity();
+
+    PressureData getPressure();
+
+    TemperatureData getTemerature();
+
+    /**
+     * @brief Maximum measurement time formula from datasheet page 51
+     *
+     * @return Time in milliseconds
+     */
+    unsigned int calculateMaxMeasurementTime(BME280Config config_);
 
     /**
      * @brief Reads the WHO AM I register
@@ -187,6 +259,8 @@ private:
     BME280Data sampleImpl() override;
 
     void setConfiguration();
+
+    void setConfiguration(BME280Config config_);
 
     BME280Config readConfiguration();
 
