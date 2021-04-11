@@ -221,6 +221,11 @@ unsigned int BME280::calculateMaxMeasurementTime(BME280Config config_)
                 (2.3 * config_.bits.osrs_h + 0.575));
 }
 
+unsigned int BME280::getMaxMeasurementTime()
+{
+    return calculateMaxMeasurementTime(config);
+}
+
 bool BME280::selfTest() { return checkWhoAmI(); }
 
 BME280Data BME280::sampleImpl()

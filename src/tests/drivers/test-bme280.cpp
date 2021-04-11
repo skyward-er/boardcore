@@ -25,16 +25,14 @@
  *
  * SPI pheripheral 2 (SPI2) with /32 divider
  *
- * Pins (STM32F407 - ADS1118):
- *  PB12 (NSS)  - NC (we use pin C1 as chip select)
+ * Pins (STM32F407 - BME280):
+ *  PB12 (NSS)  - not connected (we use pin C1 as chip select)
  *  PB13 (SCK)  - SCK
- *  PB14 (MISO) - DOUT
- *  PB15 (MOSI) - DIN
- *  PC1         - CS
+ *  PB14 (MISO) - SDO
+ *  PB15 (MOSI) - SDA
+ *  PC1         - CBS
  *
- * The ADS1118's input channels can be connected as follow:
- *  AIN2 - GND
- *  AIN3 - VCC (3V)
+ * The BME280 is powered by 3.3V
  *
  * In the developing test a function generator was used as variable source
  */
@@ -84,10 +82,38 @@ int main()
     SPISlave spiSlave(spiBus, csPin, spiConfig);
 
     // Device initialization
-    BME280 bme280(spiSlave, BME280::BME280_CONFIG_ALL_ENABLED);
+    BME280 bme280(spiSlave);
 
     bme280.init();
 
+    // In practice the self test reads the who am i reagister, this is already
+    // done in init()
+    if (!bme280.selfTest())
+    {
+        TRACE("Self test failed!\n");
+
+        return -1;
+    }
+
+    // Try forced mode
+    TRACE("Forced mode\n");
+    for (int i = 0; i < 10; i++)
+    {
+        bme280.setSensorMode(BME280::FORCED_MODE);
+
+        miosix::Thread::sleep(bme280.getMaxMeasurementTime());
+
+        bme280.sample();
+
+        TRACE("temp: %.2f DegC\tpress: %.2f hPa\thumid: %.2f %%RH\n",
+              bme280.getLastSample().temp, bme280.getLastSample().press,
+              bme280.getLastSample().humid);
+
+        miosix::Thread::sleep(1000);
+    }
+
+    TRACE("Normal mode\n");
+    bme280.setSensorMode(BME280::NORMAL_MODE);
     while (true)
     {
         bme280.sample();

@@ -165,13 +165,15 @@ public:
 
     static constexpr uint8_t REG_ID_VAL = 0x60;  ///< Who am I value
 
-    static const BME280Config BME280_DEFAULT_CONFIG;
+    static const BME280Config
+        BME280_DEFAULT_CONFIG;  ///< Default register values
     static const BME280Config
         BME280_CONFIG_ALL_ENABLED;  ///< Datasheet values for indoor navigation
     static const BME280Config
         BME280_CONFIG_TEMP_SINGLE;  ///< Temperature enabled in forced mode
 
-    BME280(SPISlave spiSlave_, BME280Config config_ = BME280_DEFAULT_CONFIG);
+    BME280(SPISlave spiSlave_,
+           BME280Config config_ = BME280_CONFIG_ALL_ENABLED);
 
     /**
      * @brief Initialize the device with the specified configuration
@@ -246,7 +248,9 @@ public:
      *
      * @return Time in milliseconds
      */
-    unsigned int calculateMaxMeasurementTime(BME280Config config_);
+    static unsigned int calculateMaxMeasurementTime(BME280Config config_);
+
+    unsigned int getMaxMeasurementTime();
 
     /**
      * @brief Reads the WHO AM I register
