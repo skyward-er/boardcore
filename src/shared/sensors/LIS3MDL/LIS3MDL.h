@@ -429,7 +429,15 @@ public:
         err |= spi.read(CTRL_REG4) != reg;
 
         /* -- CTRL_REG5 -- */
-        reg = config.doBlockDataUpdate ? ENABLE_BDU : 0;
+        if (config.doBlockDataUpdate)
+        {
+            reg = ENABLE_BDU;
+        }
+        else
+        {
+            0;
+        }
+        
         spi.write(CTRL_REG5, reg);
         err |= spi.read(CTRL_REG5) != reg;
 
