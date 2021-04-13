@@ -7,35 +7,28 @@
 variables:
   GIT_SUBMODULE_STRATEGY: recursive
 
-before_script:
-  - echo "Before script section"
-  - echo "For example you might run an update here or install a build dependency"
-  - echo "Or perhaps you might print out some debugging details"
+# before_script:
+#   - echo "Before script section"
+#   - echo "For example you might run an update here or install a build dependency"
+#   - echo "Or perhaps you might print out some debugging details"
    
-after_script:
-  - echo "After script section"
-  - echo "For example you might do some cleanup here"
+# after_script:
+#   - echo "After script section"
+#   - echo "For example you might do some cleanup here"
    
-build1:
+build:
   stage: build
   only:
     - master
     - testing
   script:
-    - echo "Do your build here"
+    - echo "Running complete build"
     - python3 sbs
    
-test1:
+linter:
   stage: test
   script: 
-    - echo "Do a test here"
-    - echo "For example run a test suite"
-   
-test2:
-  stage: test
-  script: 
-    - echo "Do another parallel test here"
-    - echo "For example run a lint test"
+    - echo "Running linter"
     - ./scripts/linter.sh
 
 documentation:
@@ -48,7 +41,7 @@ documentation:
     - mkdir -p /srv/code_documentation/${CI_PROJECT_NAME}/
     - mv doc/output/html /srv/code_documentation/${CI_PROJECT_NAME}/${CI_COMMIT_REF_NAME}
 
-deploy1:
-  stage: deploy
-  script:
-    - echo "Do your deploy here"
+# deploy1:
+#   stage: deploy
+#   script:
+#     - echo "Do your deploy here"
