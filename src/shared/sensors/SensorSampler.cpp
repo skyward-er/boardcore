@@ -24,69 +24,115 @@
 
 using namespace std;
 
-SensorSampler::SensorSampler(SamplerType type, uint32_t freq, uint32_t id) : 
-                        type(type), freq(freq), id(id) {}
+SensorSampler::SensorSampler(uint8_t id, uint32_t freq, bool is_dma)
+    : id(id), freq(freq), is_dma(is_dma)
+{
+}
 
-void SensorSampler::sampleAndCallback() {   
-    for (auto it = sensors_map.begin(); it != sensors_map.end(); it++) {
-        sampleSensor(it->first);
-        it->second();  // callback
+SensorSampler::~SensorSampler() { sensors_map.clear(); }
+
+void SensorSampler::sampleAndCallback()
+{
+    for (auto it = sensors_map.begin(); it != sensors_map.end(); it++)
+    {
+        // sample only if that sensor is enabled
+        if (it->second.is_enabled)
+        {
+            sampleSensor(it->first);
+            it->second.callback();
+        }
     }
 }
 
-SamplerType SensorSampler::getType() {
-    return type;
+void SensorSampler::toggleSensor(AbstractSensor* sensor, bool is_en)
+{
+    sensors_map.at(sensor).is_enabled = is_en;
+
+    TRACE("[Sampler %d] Toggle Sensor %p, Sensor info %p ---> enabled = %d \n",
+          getID(), sensor, sensors_map.at(sensor),
+          sensors_map.at(sensor).is_enabled.load());
 }
 
-uint32_t SensorSampler::getId() {
-    return id;
+void SensorSampler::enableAllSensors()
+{
+    // don't use toggleSensor() to avoid searching the map for each sensor
+    for (std::map<AbstractSensor*, SensorInfo>::iterator it =
+             sensors_map.begin();
+         it != sensors_map.end(); ++it)
+    {
+        it->second.is_enabled = true;
+    }
 }
 
-uint32_t SensorSampler::getFrequency() {
-    return freq;
+void SensorSampler::disableAllSensors()
+{
+    // don't use toggleSensor() to avoid searching the map for each sensor
+    for (std::map<AbstractSensor*, SensorInfo>::iterator it =
+             sensors_map.begin();
+         it != sensors_map.end(); ++it)
+    {
+        it->second.is_enabled = false;
+    }
 }
 
-uint32_t SensorSampler::getNumSensors() {
-    return sensors_map.size();
+bool SensorSampler::isDMA() { return is_dma; }
+
+uint8_t SensorSampler::getID() { return id; }
+
+uint32_t SensorSampler::getFrequency() { return freq; }
+
+uint32_t SensorSampler::getNumSensors() { return sensors_map.size(); }
+
+const SensorInfo& SensorSampler::getSensorInfo(AbstractSensor* sensor)
+{
+    return sensors_map.at(sensor);
 }
 
 // simple sampler
-
-SimpleSensorSampler::SimpleSensorSampler(uint32_t freq, uint32_t id) : 
-                        SensorSampler(SIMPLE_SAMPLER, freq, id) {}
+SimpleSensorSampler::SimpleSensorSampler(uint8_t id, uint32_t freq)
+    : SensorSampler(id, freq, false)
+{
+}
 
 SimpleSensorSampler::~SimpleSensorSampler() {}
 
-void SimpleSensorSampler::addSensor(Sensor* sensor, function_t sensor_callback) {
-    sensors_map[sensor] = sensor_callback; 
+void SimpleSensorSampler::addSensor(AbstractSensor* sensor,
+                                    SensorInfo sensor_info)
+{
+    sensors_map.emplace(sensor, sensor_info);
+
+    TRACE("[Sampler %d] Added : Sensor %p, Sensor info %p ---> enabled = %d\n",
+          getID(), sensor, &sensors_map.at(sensor),
+          sensors_map.at(sensor).is_enabled.load());
 }
 
-void SimpleSensorSampler::sampleSensor(Sensor* s) {
-    s->onSimpleUpdate();
+void SimpleSensorSampler::sampleSensor(AbstractSensor* sensor)
+{
+    sensor->sample();
 }
 
 // DMA sampler
-DMASensorSampler::DMASensorSampler(uint32_t freq, uint32_t id) : 
-                    SensorSampler(DMA_SAMPLER, freq, id) {}
-
+DMASensorSampler::DMASensorSampler(uint8_t id, uint32_t freq)
+    : SensorSampler(id, freq, true)
+{
+}
 
 DMASensorSampler::~DMASensorSampler() {}
 
-void DMASensorSampler::addSensor(Sensor* sensor, function_t sensor_callback) {
-    vector<SPIRequest> requests = sensor->buildDMARequest();
-    
-    sensors_map[sensor] = sensor_callback;
-    requests_map.insert(pair<Sensor*, vector<SPIRequest>>(sensor, requests)); // can't use standard operator=
+void DMASensorSampler::addSensor(AbstractSensor* sensor, SensorInfo sensor_info)
+{
+    sensors_map.emplace(sensor, sensor_info);
+
+    TRACE("[Sampler %d] Added : Sensor %p, Sensor info %p ---> enabled = %d\n",
+          this->getID(), sensor, &sensors_map.at(sensor),
+          sensors_map.at(sensor).is_enabled.load());
 }
 
-void DMASensorSampler::sampleSensor(Sensor* s) {
-    auto& driver = SPIDriver::instance();
-    
-    vector<SPIRequest> requests = requests_map[s];
-
-    if (driver.transaction(requests)) {
-        for (auto r : requests) {
-            s->onDMAUpdate(r);
-        }
-    }
+/*
+    TBD
+    Handle sensors that use DMA
+*/
+void DMASensorSampler::sampleSensor(AbstractSensor* sensor)
+{
+    sensor->sample();
 }

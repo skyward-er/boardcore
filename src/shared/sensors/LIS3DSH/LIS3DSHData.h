@@ -22,23 +22,34 @@
 
 #pragma once
 
-#include <ostream>
-#include "math/Vec3.h"
+#include "sensors/SensorData.h"
 
-struct LIS3DSHData
+struct LIS3DSHData : public AccelerometerData, public TemperatureData
 {
-    long long timestamp;
-    Vec3 accel;
-    int8_t temperature;
+    LIS3DSHData() : AccelerometerData{0, 0.0, 0.0, 0.0}, TemperatureData{0, 0.0}
+    {
+    }
+
+    LIS3DSHData(uint64_t t, float x, float y, float z, float temp)
+        : AccelerometerData{t, x, y, z},
+          TemperatureData{t, temp}
+    {
+    }
+
+    LIS3DSHData(AccelerometerData acc, TemperatureData temp)
+        : AccelerometerData{acc.accel_timestamp, acc.accel_x, acc.accel_y, acc.accel_z},
+          TemperatureData{temp.temp_timestamp, temp.temp}
+    {
+    }
 
     static std::string header()
     {
-        return "timestamp,acc_x,acc_y,acc_z,temperature\n";
+        return "accel_timestamp,accel_x,accel_y,accel_z,temp_timestamp,temp\n";
     }
 
     void print(std::ostream& os) const
     {
-        os << timestamp << "," << accel.getX() << "," << accel.getY() << ","
-           << accel.getZ() << temperature << "\n";
+        os << accel_timestamp << "," << accel_x << "," << accel_y << "," << accel_z
+           << "," << temp_timestamp << "," << temp << "\n";
     }
 };

@@ -1,17 +1,16 @@
-/**
- * Copyright (c) 2019 Skyward Experimental Rocketry
- * Authors: Luca Erbetta
- * 
+/* Copyright (c) 2021 Skyward Experimental Rocketry
+ * Authors: Alberto Nidasio
+ *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
  * in the Software without restriction, including without limitation the rights
  * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
  * copies of the Software, and to permit persons to whom the Software is
  * furnished to do so, subject to the following conditions:
- * 
+ *
  * The above copyright notice and this permission notice shall be included in
  * all copies or substantial portions of the Software.
- * 
+ *
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
  * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.  IN NO EVENT SHALL THE
@@ -21,32 +20,108 @@
  * THE SOFTWARE.
  */
 
-#include <sensors/BME280/BME280.h>
+/**
+ * This test has been setup for the following configuration:
+ *
+ * SPI pheripheral 2 (SPI2) with /32 divider
+ *
+ * Pins (STM32F407 - BME280):
+ *  PB12 (NSS)  - not connected (we use pin C1 as chip select)
+ *  PB13 (SCK)  - SCK
+ *  PB14 (MISO) - SDO
+ *  PB15 (MOSI) - SDA
+ *  PC1         - CBS
+ *
+ * The BME280 is powered by 3.3V
+ *
+ * In the developing test a function generator was used as variable source
+ */
+
+#include <Debug.h>
+#include <drivers/spi/SPIDriver.h>
 #include <miosix.h>
-#include <drivers/BusTemplate.h>
+#include <sensors/BME280/BME280.h>
 
-// SPI1
-typedef miosix::Gpio<GPIOA_BASE, 5> GpioSck;
-typedef miosix::Gpio<GPIOB_BASE, 4> GpioMiso;
-typedef miosix::Gpio<GPIOA_BASE, 7> GpioMosi;
-typedef miosix::Gpio<GPIOC_BASE, 1> CS;
+#include "TimestampTimer.h"
 
-// SPI1 binding al sensore
-typedef BusSPI<1, GpioMosi, GpioMiso, GpioSck> busSPI1;  // Creo la SPI1
-typedef ProtocolSPI<busSPI1, CS> spiProt;   // La lego al Chip Select 1 per la IMU 1
+GpioPin sckPin  = GpioPin(GPIOB_BASE, 13);
+GpioPin misoPin = GpioPin(GPIOB_BASE, 14);
+GpioPin mosiPin = GpioPin(GPIOB_BASE, 15);
+GpioPin csPin   = GpioPin(GPIOC_BASE, 1);
 
-//typedef BME280<spiProt> bme_t;  // Passo il bus creato al sensore
-
-int main ()
+void initBoard()
 {
-    BME280<spiProt> bme;
-    bme.init();
-    
-    while(1)
-    {
-        bme.onSimpleUpdate();
-        printf("%d,%f,%f\n", bme.getDataPtr()->timestamp, bme.getDataPtr()->temperature, bme.getDataPtr()->pressure);
+    // Enable SPI clock for SPI2 interface
+    RCC->APB1ENR |= RCC_APB1ENR_SPI2EN;
 
-        miosix::Thread::sleep(500);
+    // Alternate function configuration for SPI pins
+    sckPin.mode(miosix::Mode::ALTERNATE);
+    sckPin.alternateFunction(5);  // SPI function
+    mosiPin.mode(miosix::Mode::ALTERNATE);
+    mosiPin.alternateFunction(5);  // SPI function
+    misoPin.mode(miosix::Mode::ALTERNATE);
+    misoPin.alternateFunction(5);  // SPI function
+
+    // Chip select pin as output starting high
+    csPin.mode(miosix::Mode::OUTPUT);
+    csPin.high();
+}
+
+int main()
+{
+    // Enable SPI clock and set gpios
+    initBoard();
+
+    TimestampTimer::enableTimestampTimer();
+
+    // SPI configuration setup
+    SPIBusConfig spiConfig;
+    spiConfig.clock_div = SPIClockDivider::DIV32;
+    spiConfig.mode      = SPIMode::MODE0;
+    SPIBus spiBus(SPI2);
+    SPISlave spiSlave(spiBus, csPin, spiConfig);
+
+    // Device initialization
+    BME280 bme280(spiSlave);
+
+    bme280.init();
+
+    // In practice the self test reads the who am i reagister, this is already
+    // done in init()
+    if (!bme280.selfTest())
+    {
+        TRACE("Self test failed!\n");
+
+        return -1;
+    }
+
+    // Try forced mode
+    TRACE("Forced mode\n");
+    for (int i = 0; i < 10; i++)
+    {
+        bme280.setSensorMode(BME280::FORCED_MODE);
+
+        miosix::Thread::sleep(bme280.getMaxMeasurementTime());
+
+        bme280.sample();
+
+        TRACE("temp: %.2f DegC\tpress: %.2f hPa\thumid: %.2f %%RH\n",
+              bme280.getLastSample().temp, bme280.getLastSample().press,
+              bme280.getLastSample().humid);
+
+        miosix::Thread::sleep(1000);
+    }
+
+    TRACE("Normal mode\n");
+    bme280.setSensorMode(BME280::NORMAL_MODE);
+    while (true)
+    {
+        bme280.sample();
+
+        TRACE("temp: %.2f DegC\tpress: %.2f hPa\thumid: %.2f %%RH\n",
+              bme280.getLastSample().temp, bme280.getLastSample().press,
+              bme280.getLastSample().humid);
+
+        miosix::Thread::sleep(40);  // 25Hz
     }
 }

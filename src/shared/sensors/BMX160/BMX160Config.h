@@ -39,6 +39,7 @@ struct BMX160Config
 
     /// @brief Fifo interrupt mode.
     /// Uses fifo full/watermark as triggers.
+    /// We configure the pin as push-pull and active-low.
     enum class FifoInt
     {
 

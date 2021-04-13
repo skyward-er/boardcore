@@ -50,6 +50,8 @@
 #include <drivers/spi/SPIDriver.h>
 #include <miosix.h>
 
+#include "TimestampTimer.h"
+
 GpioPin sckPin  = GpioPin(GPIOB_BASE, 13);
 GpioPin misoPin = GpioPin(GPIOB_BASE, 14);
 GpioPin mosiPin = GpioPin(GPIOB_BASE, 15);
@@ -81,25 +83,25 @@ int main()
     // Enable SPI clock and set gpios
     initBoard();
 
+    TimestampTimer::enableTimestampTimer();
+
     // SPI configuration setup
-    SPIBusConfig spiConfig;
-    spiConfig.clock_div = SPIClockDivider::DIV32;
-    spiConfig.mode      = SPIMode::MODE1;
+    SPIBusConfig spiConfig = ADS1118::getDefaultSPIConfig();
     SPIBus spiBus(SPI2);
     SPISlave spiSlave(spiBus, csPin, spiConfig);
 
     // Device initialization
     ADS1118 ads1118(spiSlave);
 
-    // Enable channels and temperature
+    // Initialize the device
+    ads1118.init();
+
+    // Enable the two channels and the temperature
     ads1118.enableInput(channel1, ADS1118::ADS1118DataRate::DR_250,
                         ADS1118::ADS1118Pga::FSR_4_096);
     ads1118.enableInput(channel2, ADS1118::ADS1118DataRate::DR_250,
                         ADS1118::ADS1118Pga::FSR_4_096);
     ads1118.enableTemperature();
-
-    // Initialize the device
-    ads1118.init();
 
     // Self test
     if (ads1118.selfTest())
@@ -112,20 +114,54 @@ int main()
     }
 
     // Read the two channels indipendently
-    TRACE("Channel 1: %f\n", ads1118.readInputAndWait(channel1));
-    TRACE("Channel 2: %f\n", ads1118.readInputAndWait(channel2));
+    TRACE("\nNow reading the two channels with 'readInputAndWait()'\n");
+    TRACE("Channel 1: %f\n", ads1118.readInputAndWait(channel1).voltage);
+    TRACE("Channel 2: %f\n", ads1118.readInputAndWait(channel2).voltage);
 
-    // Read samples with onSimpleUpdate
-    while (1)
+    // Read samples with sample()
+    TRACE("\nNow reading the two channels with 'sample()'\n");
+    for (auto i = 0; i < 500; i++)
     {
-        // Call 3 times onSimpleUpdate to read the 3 enabled channels
-        ads1118.onSimpleUpdate();
+        // Call 3 times sample() to read the 3 enabled channels
+        ads1118.sample();
         miosix::Thread::sleep(5);
-        ads1118.onSimpleUpdate();
+        ads1118.sample();
         miosix::Thread::sleep(5);
-        ads1118.onSimpleUpdate();
+        ads1118.sample();
 
-        printf("%.2f\t%.2f\t%.2f\n", ads1118.getTemperature(),
-               ads1118.getVoltage(channel1), ads1118.getVoltage(channel2));
+        printf("%.2f\t%.2f\t%.2f\n", ads1118.getTemperature().temp,
+               ads1118.getVoltage(channel1).voltage,
+               ads1118.getVoltage(channel2).voltage);
+    }
+
+    // Read a few times the first channel and then switch to the second one
+    TRACE(
+        "\nNow reading the first channel and then the second one with "
+        "'sample()'\n");
+
+    ads1118.disableAllInputs();
+    ads1118.enableInput(channel1, ADS1118::ADS1118DataRate::DR_250,
+                        ADS1118::ADS1118Pga::FSR_4_096);
+
+    TRACE("First channel:\n");
+    for (auto i = 0; i < 500; i++)
+    {
+        ads1118.sample();
+        miosix::Thread::sleep(5);
+
+        printf("%.2f\n", ads1118.getVoltage(channel1).voltage);
+    }
+
+    ads1118.disableAllInputs();
+    ads1118.enableInput(channel2, ADS1118::ADS1118DataRate::DR_250,
+                        ADS1118::ADS1118Pga::FSR_4_096);
+
+    TRACE("Second channel:\n");
+    for (auto i = 0; i < 500; i++)
+    {
+        ads1118.sample();
+        miosix::Thread::sleep(5);
+
+        printf("%.2f\n", ads1118.getVoltage(channel2).voltage);
     }
 }

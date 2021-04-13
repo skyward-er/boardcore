@@ -22,36 +22,53 @@
 
 #include "ADS1118.h"
 
-ADS1118::ADS1118(SPISlave spiSlave_)
-    : ADS1118(spiSlave_, ADS1118_DEFAULT_CONFIG)
+#include <interfaces/endianness.h>
+
+#include "TimestampTimer.h"
+
+const ADS1118::ADS1118Config ADS1118::ADS1118_DEFAULT_CONFIG = {
+    SINGLE_SHOT_MODE, FSR_2_048,  MUX_AIN0_AIN1, 0,     0,
+    VALID_OPERATION,  PULL_UP_EN, ADC_MODE,      DR_128};
+
+ADS1118::ADS1118(SPIBusInterface &bus, GpioPin cs, ADS1118Config config_,
+                 SPIBusConfig spiConfig)
+    : ADS1118(SPISlave(bus, cs, spiConfig), config_, false)
 {
 }
 
-ADS1118::ADS1118(SPIBusInterface &bus, GpioPin cs, SPIBusConfig spiConfig,
-                 ADS1118Config config_)
-    : ADS1118(SPISlave(bus, cs, spiConfig), config_)
-{
-}
-
-ADS1118::ADS1118(SPISlave spiSlave_, ADS1118Config config_)
-    : ADS1118(spiSlave_, config_, 100)
-{
-}
-
-ADS1118::ADS1118(SPISlave spiSlave_, ADS1118Config config_,
+ADS1118::ADS1118(SPISlave spiSlave_, ADS1118Config config_, bool busyWait_,
                  int16_t tempDivider_)
-    : spiSlave(spiSlave_), baseConfig(config_), tempDivider(tempDivider_)
+    : spiSlave(spiSlave_), baseConfig(config_), busyWait(busyWait_),
+      tempDivider(tempDivider_)
+
+{
+}
+
+SPIBusConfig ADS1118::getDefaultSPIConfig()
+{
+    SPIBusConfig spiConfig{};
+    spiConfig.clock_div = SPIClockDivider::DIV32;
+    spiConfig.mode      = SPIMode::MODE1;
+    return spiConfig;
+}
+
+bool ADS1118::init()
 {
     // Initialize to 0 all the channels
     for (auto i = 0; i < NUM_OF_CHANNELS; i++)
+    {
         channelsConfig[i].word = 0;
+
+        // Set channel id for each ADS1118Data object in values array
+        values[i].channel_id = i;
+    }
 
     // Reset the last written config value
     lastConfig.word = 0;
     lastConfigIndex = 0;
-}
 
-bool ADS1118::init() { return true; }
+    return true;
+}
 
 void ADS1118::enableInput(ADS1118Mux mux)
 {
@@ -60,7 +77,7 @@ void ADS1118::enableInput(ADS1118Mux mux)
 
 void ADS1118::enableInput(ADS1118Mux mux, ADS1118DataRate rate, ADS1118Pga pga)
 {
-    channelsConfig[mux].bits.mode       = SINGLE_SHOT_MODE;
+    channelsConfig[mux].bits.mode       = baseConfig.bits.mode;
     channelsConfig[mux].bits.pga        = pga;
     channelsConfig[mux].bits.mux        = mux;
     channelsConfig[mux].bits.singleShot = 1;
@@ -68,9 +85,20 @@ void ADS1118::enableInput(ADS1118Mux mux, ADS1118DataRate rate, ADS1118Pga pga)
     channelsConfig[mux].bits.pullUp     = baseConfig.bits.pullUp;
     channelsConfig[mux].bits.tempMode   = ADC_MODE;
     channelsConfig[mux].bits.rate       = rate;
+
+    // Decrement the sample counter in order to read the temperature earlier on
+    sampleCounter--;
 }
 
 void ADS1118::disableInput(ADS1118Mux mux) { channelsConfig[mux].word = 0; }
+
+void ADS1118::disableAllInputs()
+{
+    for (auto i = 0; i < NUM_OF_CHANNELS; i++)
+    {
+        channelsConfig[i].word = 0;
+    }
+}
 
 void ADS1118::enableTemperature()
 {
@@ -87,17 +115,25 @@ void ADS1118::enableConfigCheck() { configCheck = true; }
 
 void ADS1118::disableConfigCheck() { configCheck = false; }
 
-/**
- * To read an input we'll first write the appropriate configuration, wait for
- * the sample accordingly to the channel data rate and then read back the result
- */
-float ADS1118::readInputAndWait(ADS1118Mux mux) { return readChannel(mux); }
+ADS1118Data ADS1118::readInputAndWait(ADS1118Mux mux)
+{
+    readChannel(mux);
+    return getVoltage(mux);
+}
 
-float ADS1118::readTemperatureAndWait() { return readChannel(TEMP_CHANNEL); }
+TemperatureData ADS1118::readTemperatureAndWait()
+{
+    readChannel(TEMP_CHANNEL);
+    return getTemperature();
+}
 
-float ADS1118::getVoltage(ADS1118Mux mux) { return values[mux]; }
+ADS1118Data ADS1118::getVoltage(ADS1118Mux mux) { return values[mux]; }
 
-float ADS1118::getTemperature() { return values[8]; }
+TemperatureData ADS1118::getTemperature()
+{
+    return TemperatureData{values[TEMP_CHANNEL].adc_timestamp,
+                           values[TEMP_CHANNEL].voltage};
+}
 
 bool ADS1118::selfTest()
 {
@@ -109,14 +145,11 @@ bool ADS1118::selfTest()
     // configuration is enabled
     channelsConfig[TEMP_CHANNEL].word = TEMP_CONFIG;
 
-    // Enable configuraiton check
+    // Enable configuration check
     configCheck = true;
 
-    // Check the communication by reading  all channels
-    for (auto i = 0; i < NUM_OF_CHANNELS; i++)
-    {
-        readChannel(i);
-    }
+    // Check the communication by reading the temperature channel
+    readChannel(TEMP_CHANNEL, INVALID_CHANNEL);
 
     // Restore the configuration
     configCheck                       = prevConfigCheck;
@@ -133,44 +166,38 @@ bool ADS1118::selfTest()
  * The first configuration is written and then, at the next call, read back the
  * result while transmitting the next configuration
  */
-bool ADS1118::onSimpleUpdate()
+ADS1118Data ADS1118::sampleImpl()
 {
     int8_t i = findNextEnabledChannel(lastConfigIndex + 1);
 
-    // Increment the temperature counter
-    sampleCounter++;
-
     // Write the next config and read the value (only if lastConfig is valid)
-    bool ret = readChannel(
-        i, lastConfig.word != 0 ? lastConfigIndex : INVALID_CHANNEL);
-
-    // If readChannel ended unsuccessfully return false
-    if (!ret)
-    {
-        return false;
-    }
+    readChannel(i, lastConfig.word != 0 ? lastConfigIndex : INVALID_CHANNEL);
 
     // Save index and config for the next read
     lastConfig.word = channelsConfig[i].word;
     lastConfigIndex = i;
 
-    return true;
+    // Increment the sample counter
+    sampleCounter++;
+
+    // Regardless of the readChannel result, return the value stored
+    return values[lastConfigIndex];
 }
 
-bool ADS1118::readChannel(int8_t nextChannel, int8_t prevChannel)
+void ADS1118::readChannel(int8_t nextChannel, int8_t prevChannel)
 {
     int16_t rawValue;
     uint32_t writeData, transferData;
 
     // Prepare the next configuration data
-    if (nextChannel >= 0 && nextChannel < NUM_OF_CHANNELS)
+    if (nextChannel > INVALID_CHANNEL && nextChannel < NUM_OF_CHANNELS)
     {
-        // A valid configuration will alwais be not iqual to 0 since the valid
-        // operation bits mus be 0b01
         writeData = channelsConfig[nextChannel].word;
     }
     else
     {
+        // A valid configuration will always be not equal to 0 since the valid
+        // operation bits must be 0b01
         writeData = 0x0;
     }
 
@@ -190,12 +217,10 @@ bool ADS1118::readChannel(int8_t nextChannel, int8_t prevChannel)
             (transferData >> 16 & CONFIG_MASK))
         {
             // Save the error
-            last_error = ERR_BUS_FAULT;
+            last_error = BUS_FAULT;
 
             // Disable next value conversion
             lastConfig.word = 0;
-
-            return false;
         }
     }
 
@@ -203,30 +228,45 @@ bool ADS1118::readChannel(int8_t nextChannel, int8_t prevChannel)
     if (prevChannel >= 0)
     {
         rawValue = swapBytes16(transferData);
+
+        // TODO: the timestamp should be taken when the configuration is
+        // written, now we could be reading the value after some time!
+        values[prevChannel].adc_timestamp = TimestampTimer::getTimestamp();
+
         if (prevChannel != 8)  // Voltage value
         {
-            values[prevChannel] =
+            values[prevChannel].voltage =
                 rawValue * PGA_LSB_SIZE[channelsConfig[prevChannel].bits.pga];
         }
         else  // Temperature value
         {
-            values[TEMP_CHANNEL] = (rawValue / 4) * TEMP_LSB_SIZE;
+            values[TEMP_CHANNEL].voltage = (rawValue / 4) * TEMP_LSB_SIZE;
         }
     }
-
-    return true;
 }
 
-float ADS1118::readChannel(int8_t channel)
+/**
+ * To read an input we'll first write the appropriate configuration, wait for
+ * the sample accordingly to the channel data rate and then read back the result
+ */
+void ADS1118::readChannel(int8_t channel)
 {
     readChannel(channel, INVALID_CHANNEL);
 
-    miosix::Thread::sleep(CONV_TIME[channelsConfig[channel].bits.rate] / 1000 +
-                          1);  // Converto to milliseconds and increment by one
+    if (busyWait)
+    {
+        // Use a busy wait loop to be as precise as possible
+        miosix::delayUs(CONV_TIME[channelsConfig[channel].bits.rate]);
+    }
+    else
+    {
+        // Converto to milliseconds and increment by one to prevent premature
+        // readings
+        miosix::Thread::sleep(
+            CONV_TIME[channelsConfig[channel].bits.rate] / 1000 + 1);
+    }
 
     readChannel(INVALID_CHANNEL, channel);
-
-    return values[channel];
 }
 
 /**
@@ -235,14 +275,15 @@ float ADS1118::readChannel(int8_t channel)
  */
 int8_t ADS1118::findNextEnabledChannel(int8_t startChannel)
 {
-    int8_t &channel = startChannel;
+    int8_t &channel = startChannel;  // Just a change of name
 
     for (auto i = 0; i < 2; i++)
     {
-
-        // Go to first channel if channel is too big
+        // Go to the first channel if channel is too big
         if (channel >= NUM_OF_CHANNELS)
+        {
             channel = 0;
+        }
 
         // Find next enabled mux config
         for (; channelsConfig[channel].word == 0 && channel < NUM_OF_CHANNELS;
@@ -253,9 +294,13 @@ int8_t ADS1118::findNextEnabledChannel(int8_t startChannel)
         // have to read it based on sampleCounter and tempDivider
         // If invalid try to search again starting from the first channel
         if (channel == TEMP_CHANNEL && sampleCounter % tempDivider != 0)
+        {
             continue;
+        }
         if (channel < NUM_OF_CHANNELS)
+        {
             return channel;
+        }
     }
 
     // If no valid channel has been fount return an invalid channel

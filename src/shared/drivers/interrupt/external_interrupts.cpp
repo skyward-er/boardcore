@@ -295,7 +295,7 @@ constexpr unsigned GetEXTI_IRQn(unsigned N)
            EXTI15_10_IRQn;
         
     // clang-format on
-};
+}
 
 constexpr unsigned GetEXTICR_register_value(unsigned P, unsigned N)
 {

@@ -39,17 +39,25 @@
  *
  * Data rate between 8Hz and 860Hz can be programmed and an internal
  * programmable gain aplifier can be set with a sensitivity range from ±0.256V
- * to ±6.144V (note that the inputs must never exceed VCC or GND).
+ * to ±6.144V (note that the inputs must remain between VCC or GND).
  *
  * The data rate should be choosen as low as possible to allow the delta-sigma
- * adc to average the input voltage (this allowa a less noisy reading).
+ * adc to average the input voltage (this allows a less noisy reading).
  *
- * onSimpleUpdate() cycle through the enabled channels one at a time writing a
- * configuration while reading the previous written one.
+ * The device can work in two modes:
+ * - CONTIN_CONV_MODE: Continuosly read the last configured channel, when you
+ * make a read you'll obtain the lates reading
+ * - SINGLE_SHOT_MODE: A single conversion is performed when the configuration
+ * is written
+ *
+ * The ADS1118 is a simple device, it has a single data register where it can
+ * store the reading, therefore it can sample a single input at a time. sample()
+ * cylces through the enabled channels one at a time and writes it's
+ * configuration while reading the value of the previous written one.
  *
  * As an example if you need to read 4 inputs at 50Hz you should set all the
- * data rates at 250Hz (50Hz x * 4 = 200Hz) and call onSimpleUpdate() at a rate
- * of 200Hz.
+ * data rates at 250Hz (50Hz x * 4 = 200Hz) and call sample() at a rate of
+ * 200Hz.
  *
  * An example for how to use the driver can be found in the test code
  * (src/tests/drivers/test-ads1118.cpp)
@@ -57,15 +65,16 @@
 
 #pragma once
 
-#include <drivers/spi/SPIDriver.h>
-#include <sensors/Sensor.h>
+#include "ADS1118Data.h"
+#include "drivers/spi/SPIDriver.h"
+#include "sensors/Sensor.h"
 
 /**
  * @brief Driver class for ADS1118 adc
  *
  * This class allows to mange the device configuration.
  */
-class ADS1118 : public Sensor
+class ADS1118 : public Sensor<ADS1118Data>
 {
 public:
     enum ADS1118Mux
@@ -151,37 +160,21 @@ public:
     static constexpr uint8_t VALID_OPERATION =
         0x1;  ///< Indicates a valid configuration
 
-    const ADS1118Config ADS1118_DEFAULT_CONFIG = {SINGLE_SHOT_MODE,
-                                                  FSR_2_048,
-                                                  MUX_AIN0_AIN1,
-                                                  0,
-                                                  0,
-                                                  VALID_OPERATION,
-                                                  PULL_UP_EN,
-                                                  ADC_MODE,
-                                                  DR_128};  ///< Default
-                                                            ///< configuration
+    static const ADS1118Config
+        ADS1118_DEFAULT_CONFIG;  ///< Default configuration
+
+    static constexpr int8_t TEMP_CHANNEL = 8;  ///< Temperature channel number
 
     static constexpr int8_t NUM_OF_CHANNELS = 9;
 
     static constexpr int8_t INVALID_CHANNEL = -1;
 
-    static constexpr int8_t TEMP_CHANNEL = 8;  ///< Temeprature channel number
-
-    /**
-     * @brief Construct a new ADS1118 object with default configuration
-     *
-     * @param spiSlave_ Spi slave configured with spi interface, spi config and
-     * cs pin
-     */
-    ADS1118(SPISlave spiSlave_);
-
     /**
      * @brief Construct a new ADS1118 object specifing spi bus, spi config and
      * cs pin as well as device configuration
      */
-    ADS1118(SPIBusInterface &bus, GpioPin cs, SPIBusConfig spiConfig,
-            ADS1118Config config_);
+    ADS1118(SPIBusInterface &bus, GpioPin cs, ADS1118Config config_,
+            SPIBusConfig spiConfig = getDefaultSPIConfig());
 
     /**
      * @brief Construct a new ADS1118 object
@@ -190,23 +183,27 @@ public:
      * ss pin
      * @param config_ Device main configuration used as default while enabling
      * channels
-     */
-    ADS1118(SPISlave spiSlave_, ADS1118Config config_);
-
-    /**
-     * @brief Construct a new ADS1118 object
-     *
-     * @param spiSlave_ Spi slave configured with spi interface, spi config and
-     * ss pin
-     * @param config_ Device main configuration used as default while enabling
-     * channels
+     * @param busyWait_ Enable busy wait instead normal wait (uses `delayUs`
+     * instead of `sleep`), only useful when sampling at close to the maximum
+     * frequency!
      * @param tempDivider_ Specify how many onSimpleUpdate calls between each
      * temperature reading
      */
-    ADS1118(SPISlave spiSlave_, ADS1118Config config_, int16_t tempDivider_);
+    ADS1118(SPISlave spiSlave_, ADS1118Config config_ = ADS1118_DEFAULT_CONFIG,
+            bool busyWait_ = false, int16_t tempDivider_ = 100);
+
+    /**
+     * Constructs the default config for SPI Bus.
+     *
+     * @returns the default SPIBusConfig
+     */
+    static SPIBusConfig getDefaultSPIConfig();
 
     /**
      * @brief Initialize the configuration
+     *
+     * It resets all the channels thus you must call init() before enabling any
+     * channel
      */
     bool init() override;
 
@@ -233,6 +230,11 @@ public:
      * @param mux Mux configuration to disable
      */
     void disableInput(ADS1118Mux mux);
+
+    /**
+     * @brief Disables all the inputs
+     */
+    void disableAllInputs();
 
     /**
      * @brief Enables temperature readings
@@ -270,46 +272,42 @@ public:
      * @param mux Mux configuration to read
      * @return Voltage value sampled from the channel in mV
      */
-    float readInputAndWait(ADS1118Mux mux);
+    ADS1118Data readInputAndWait(ADS1118Mux mux);
 
     /**
      * @brief Reads on the fly the temperature
      *
      * @return Temperature in degree
      */
-    float readTemperatureAndWait();
+    TemperatureData readTemperatureAndWait();
 
     /**
      * @brief Returns the last read voltage value for the specified channel
      */
-    float getVoltage(ADS1118Mux mux);
+    ADS1118Data getVoltage(ADS1118Mux mux);
 
     /**
      * @brief Returns the last temperature value
      */
-    float getTemperature();
+    TemperatureData getTemperature();
 
     /**
-     * @brief Disables all the inputs
-     */
-    void disableAllInputs();
-
-    /**
-     * @brief Writes a configuration and check if it is read back correctly
+     * @brief Writes the temperature configuration and check if it is read back
+     * correctly
      *
      * @return True if everything ok
      */
     bool selfTest() override;
 
+private:
     /**
      * @brief Reads the previously configured channel while writing the next
      * enabled configuration.
      *
      * Multiple calls are needed to read all the enabled channels.
      */
-    bool onSimpleUpdate() override;
+    ADS1118Data sampleImpl() override;
 
-private:
     /**
      * @brief Writes the configuration specified, reads the previous written
      * configuration's value and stores it. If enabled checks also that the
@@ -319,29 +317,34 @@ private:
      * @param prevChannel Channel number to read the configuration of
      * @return True if everything ok
      */
-    bool readChannel(int8_t nextChannel, int8_t prevChannel);
+    void readChannel(int8_t nextChannel, int8_t prevChannel);
 
     /**
      * @brief Reads on the fly the speficied channel
      *
      * @param channel
      */
-    float readChannel(int8_t channel);
+    void readChannel(int8_t channel);
 
     int8_t findNextEnabledChannel(int8_t startChannel);
 
     const SPISlave spiSlave;
     ADS1118Config baseConfig;
+
+    ///< Read the written configuration on each transaction and checks it
     bool configCheck = false;
 
+    ///< Use `delayUs` instead of `sleep`
+    const bool busyWait;
+
     ADS1118Config channelsConfig[NUM_OF_CHANNELS];  ///< Channels configuration
-    float values[NUM_OF_CHANNELS];                  ///< Voltage values in mV
+    ADS1118Data values[NUM_OF_CHANNELS];            ///< Voltage values in mV
 
     ADS1118Config lastConfig;     ///< Last written configuration
     uint8_t lastConfigIndex = 0;  ///< Last written configuration's index
 
-    ///< Rate of onSimpleUpdate call on which the temperature is sampled
-    const uint16_t tempDivider = 100;
+    ///< Rate of sample calls on which the temperature read
+    const uint16_t tempDivider;
 
     uint16_t sampleCounter = 0;  ///< Counts the number of samples made
 
@@ -350,8 +353,8 @@ private:
                                    0.03125, 0.015625, 0.0078125};
 
     ///< Conversion times in us + 100us
-    const int CONV_TIME[8] = {12600, 62600, 31350, 15725,
-                              7913,  4100,  2206,  1263};
+    const int CONV_TIME[8] = {125000, 62500, 31250, 15625,
+                              7813,   4000,  2106,  1163};
 
     static constexpr float TEMP_LSB_SIZE  = 0.03125;
     static constexpr uint16_t TEMP_CONFIG = 0xF281;

@@ -19,27 +19,34 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
+
 #pragma once
 
-#include <ostream>
+#include "sensors/SensorData.h"
 
-struct MS5803Data
+struct MS5803Data : public PressureData, TemperatureData
 {
-    long long int timestamp;
-
     uint32_t raw_press;
-    float pressure;
     uint32_t raw_temp;
-    float temp;
+
+    MS5803Data() : PressureData{0, 0.0}, TemperatureData{0, 0.0} {}
+
+    MS5803Data(uint64_t t, uint32_t raw_press, float press, uint32_t raw_temp,
+               float temp)
+        : PressureData{t, press}, TemperatureData{t, temp},
+          raw_press(raw_press), raw_temp(raw_temp)
+    {
+    }
 
     static std::string header()
     {
-        return "timestamp,raw_temp,raw_press,temp,pressure\n";
+        return "press_timestamp,raw_press,press,temp_timestamp,raw_temp,"
+               "temp\n";
     }
 
     void print(std::ostream& os) const
     {
-        os << timestamp << "," << raw_temp << "," << raw_press << "," << temp
-           << "," << pressure << "\n";
+        os << press_timestamp << "," << raw_press << "," << press << ","
+           << temp_timestamp << "," << raw_temp << "," << temp << "\n";
     }
 };

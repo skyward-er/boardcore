@@ -27,9 +27,15 @@
 #include "../Sensor.h"
 #include "Debug.h"
 #include "MS580301BA07Data.h"
+#include "TimestampTimer.h"
 #include "drivers/spi/SPIDriver.h"
 
-class MS580301BA07 : public PressureSensor, public TemperatureSensor
+enum MS5803Errors : uint8_t
+{
+    RESET_TIMEOUT = SensorErrors::END_OF_BASE_ERRORS
+};
+
+class MS580301BA07 : public Sensor<MS5803Data>
 {
 
 public:
@@ -50,7 +56,7 @@ public:
 
     ~MS580301BA07() {}
 
-    bool init()
+    bool init() override
     {
         SPITransaction spi{spi_ms5803};
 
@@ -71,7 +77,7 @@ public:
 
         if (timeout <= 0)
         {
-            last_error = ERR_RESET_TIMEOUT;
+            last_error = MS5803Errors::RESET_TIMEOUT;
             return false;
         }
 
@@ -89,7 +95,7 @@ public:
         return true;
     }
 
-    bool selfTest() { return false; }
+    bool selfTest() override { return true; }
 
     /**
      * Implements a state machines composed of 3 states:
@@ -97,24 +103,27 @@ public:
      * 2. Read Pressure sample & command temperature sample
      * 3. Read temperature sample & command pressure sample
      *
-     * After the first call to onSimpleUpdate() (state 1), the machine
+     * After the first call to sample() (state 1), the machine
      * transitions between states 2 and 3: The effectoive sampling rate is half
      * the rate at which this function is called.
-     * Example: call onSimpleUpdate() at 100 Hz -> Pressure & Temperature sample
+     * Example: call sample() at 100 Hz -> Pressure & Temperature sample
      * Rate = 50 Hz
      */
-    bool onSimpleUpdate()
+    MS5803Data sampleImpl() override
     {
-        SPITransaction spi{spi_ms5803}; // Begin an SPI transaction
+        SPITransaction spi{spi_ms5803};  // Begin an SPI transaction
 
         uint8_t rcvbuf[3];
         uint32_t temperature = 0;
+
+        MS5803Data ms5803_data;
 
         switch (mStatus)
         {
             case STATE_INIT:
                 spi.write(CONVERT_D1_4096);
                 mStatus = STATE_SAMPLED_PRESSURE;
+
             case STATE_SAMPLED_PRESSURE:
                 spi.read(ADC_READ, rcvbuf, 3, false);
                 mInternalPressure = rcvbuf[2] | ((uint32_t)rcvbuf[1] << 8) |
@@ -122,8 +131,8 @@ public:
 
                 spi.write(CONVERT_D2_4096);  // Begin temperature sampling
                 mStatus = STATE_SAMPLED_TEMPERATURE;
-
                 break;
+
             case STATE_SAMPLED_TEMPERATURE:
                 spi.read(ADC_READ, rcvbuf, 3, false);
 
@@ -131,17 +140,17 @@ public:
                 temperature = (uint32_t)rcvbuf[2] | ((uint32_t)rcvbuf[1] << 8) |
                               ((uint32_t)rcvbuf[0] << 16);
 
-                updateData(mInternalPressure, temperature);
+                ms5803_data = updateData(mInternalPressure, temperature);
                 spi.write(CONVERT_D1_4096);  // Begin pressure sampling
                 mStatus = STATE_SAMPLED_PRESSURE;
-
                 break;
+
+            default:
+                ms5803_data = last_sample;
         }
 
-        return true;
+        return ms5803_data;
     }
-
-    MS5803Data getData() { return dataStruct; }
 
     enum FSM_State
     {
@@ -158,10 +167,12 @@ private:
     static constexpr uint8_t TIMEOUT = 5;
     uint8_t mStatus;
     uint32_t mInternalPressure;
+    float mLastTemp;
+    float mLastPressure;
 
-    MS5803Data dataStruct;
+    MS5803Errors last_error;
 
-    void updateData(uint32_t pressure, uint32_t temperature)
+    MS5803Data updateData(uint32_t pressure, uint32_t temperature)
     {
         int32_t dt   = temperature - (((uint32_t)cd.tref) << 8);
         int32_t temp = 2000 + (((uint64_t)dt * cd.tempsens) >> 23);
@@ -198,11 +209,14 @@ private:
         mLastTemp     = temp / 100.0f;
         mLastPressure = pres;
 
-        dataStruct.raw_temp  = temperature;
+        /*dataStruct.raw_temp  = temperature;
         dataStruct.temp      = mLastTemp;
         dataStruct.raw_press = pressure;
-        dataStruct.pressure  = mLastPressure;
-        dataStruct.timestamp = miosix::getTick();
+        dataStruct.press  = mLastPressure;
+        dataStruct.timestamp = miosix::getTick();*/
+
+        return MS5803Data(TimestampTimer::getTimestamp(), pressure,
+                          mLastPressure, temperature, mLastTemp);
     }
 
     typedef struct

@@ -1,7 +1,7 @@
 /* Sensors Base Classes
  *
- * Copyright (c) 2016 Skyward Experimental Rocketry
- * Authors: Alain Carlucci
+ * Copyright (c) 2016-2020 Skyward Experimental Rocketry
+ * Authors: Alain Carlucci, Luca Conterio
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -22,153 +22,149 @@
  * THE SOFTWARE.
  */
 
-#ifndef SENSORS_H
-#define SENSORS_H
-#include <Common.h>
-#include <drivers/spi/SensorSpi.h>
-#include <math/SkyQuaternion.h>
-#include <math/Vec3.h>
+#pragma once
 
-/** Sensors class diagram
- *               ________
- *              | Sensor |                      <- Sensor parent
- *      _______/ -------- \________
- * ____/_______   _|__________   __\_______
- *| GyroSensor | | ...Sensor  | | AnySensor|    <- Virtual childs
- * ------------   ------------   ----------
- *    |     _______/       \       /
- *  __|____/_             __\_____/_
- * | ABC1234 |           | LOL12345 |           <- You write these
- *  ---------             ----------
+#include <array>
+#include <type_traits>
+
+#include "SensorData.h"
+
+/**
+ * @brief Check that a given type has a method called `getData()` and that the
+ * return type of this method is a subclass of the expected data type.
  */
-
-class Sensor
+template <class T, class ExpectedDataType>
+struct checkIfProduces
+    : std::is_base_of<ExpectedDataType,
+                      decltype(std::declval<T>().getLastSample())>
 {
-public:
-    /** Here the code to initialize this sensor */
-    virtual bool init() { return true; };
+};
 
-    /** Self test code
-     * It should return a boolean:
-     *    True  = sensor ok
-     *    False = sensor ko, write into last_error the error code.
-     * Anyone should be able to call getLastError() and read the error.
+/**
+ * @brief Generic error codes that a sensor can generate.
+ *
+ * Sensors can extend this enum by defining a new set of errors,
+ * starting from END_OF_BASE_ERRORS.
+ */
+enum SensorErrors : uint8_t
+{
+    NO_ERRORS          = 0,
+    INVALID_WHOAMI     = 1,
+    INIT_FAIL          = 2,
+    NOT_INIT           = 3,  // if some method called before init()
+    ALREADY_INIT       = 4,  // if init() called multiple times
+    SELF_TEST_FAIL     = 5,
+    BUS_FAULT          = 6,
+    NO_NEW_DATA        = 7,  // no new data available from the sensor
+    INVALID_FIFO_INDEX = 8,
+    DMA_ERROR          = 9,
+    END_OF_BASE_ERRORS = 10  // used to extend this enum
+};
+
+/**
+ * @brief Base abstract class for sensor drivers.
+ */
+class AbstractSensor
+{
+protected:
+    SensorErrors last_error = SensorErrors::NO_ERRORS;
+
+public:
+    /**
+     * @brief Initialize the sensor.
+     * @return boolean value indicating whether the operation succeded or not
+     */
+    virtual bool init() = 0;
+
+    /**
+     * @brief Check if the sensor is working.
+     * @return boolean indicating whether the sensor is correctly working or not
      */
     virtual bool selfTest() = 0;
 
-    virtual std::vector<SPIRequest> buildDMARequest()
-    {
-        // printf("** SENSOR::buildDMARequest **\n");
-        return std::vector<SPIRequest>();
-    }
-
-    virtual void onDMAUpdate(const SPIRequest& req)
-    {
-        (void)req;
-        // printf("** SENSOR::onDMAUpdate **\n");
-    }
+    /**
+     * @brief Sample the sensor.
+     */
+    virtual void sample() = 0;
 
     /**
-     * This method is called once every N msec, read new values and
-     * store them in local variables.
-     *
-     * You should check getLastError() if this function returns false.
+     * @brief Get last error for debugging purposes. Avoid silent fails.
+     * @return the last error recorded by this sensor
      */
-    virtual bool onSimpleUpdate() = 0;
-
-    /** Return last error code */
-    uint8_t getLastError() const { return last_error; }
-
-    /** Errors (for each subsensor) */
-    // clang-format off
-        enum eErrors
-        {
-            ERR_NOT_ME              = 0x01,
-            ERR_RESET_TIMEOUT       = 0x02,
-            ERR_BUS_FAULT           = 0x03, // A bus op has encountered an error
-            ERR_X_SELFTEST_FAIL     = 0x04,
-            ERR_Y_SELFTEST_FAIL     = 0x05,
-            ERR_Z_SELFTEST_FAIL     = 0x06,
-            ERR_ACCEL_SELFTEST      = 0x07,
-            ERR_GYRO_SELFTEST       = 0x08,
-            ERR_CANT_TALK_TO_CHILD  = 0x09, // MPU9250 can't talk to AK8963
-        };
-    // clang-format on
-
-protected:
-    uint8_t last_error = 0;
+    SensorErrors getLastError() { return last_error; };
 };
 
-class GyroSensor : public virtual Sensor
+/**
+ * @brief Base sensor class with has to be extended by any sensor driver.
+ *
+ * A sensor driver can define a custom data structure extending any
+ * combination of base sensors data structures, defined in `SensorData.h`.
+ */
+template <typename Data>
+class Sensor : public virtual AbstractSensor
 {
-public:
-    const Vec3* gyroDataPtr() const { return &mLastGyro; }
-
 protected:
-    Vec3 mLastGyro;
+    Data last_sample;
+
+    /**
+     * @brief Read a data sample from the sensor.
+     *        In case of errors, the method should return the last
+     *        available correct sample.
+     * @return sensor data sample
+     */
+    virtual Data sampleImpl() = 0;
+
+public:
+    void sample() override { last_sample = sampleImpl(); }
+
+    /**
+     * @return last available sample from this sensor
+     */
+    virtual Data getLastSample() { return last_sample; }
 };
 
-class AccelSensor : public virtual Sensor
+/**
+ * @brief Interface for sensor that implement a FIFO.
+ */
+template <typename Data, uint32_t FifoSize>
+class SensorFIFO : public Sensor<Data>
 {
-public:
-    const Vec3* accelDataPtr() const { return &mLastAccel; }
-
 protected:
-    Vec3 mLastAccel;
-};
+    std::array<Data, FifoSize> last_fifo;
+    uint8_t last_fifo_level = 1; /**< number of samples in last_fifo */
 
-class CompassSensor : public virtual Sensor
-{
+    uint64_t last_interrupt_us = 0; /**< last interrupt timestamp */
+    uint64_t dt_interrupt = 0; /**< delta between previous interrupt timestamp
+                                  and the last received one */
+
 public:
-    const Vec3* compassDataPtr() const { return &mLastCompass; }
+    /**
+     * @return last FIFO sampled from the sensor
+     */
+    const std::array<Data, FifoSize> getLastFifo() { return last_fifo; }
 
-protected:
-    Vec3 mLastCompass;
+    /**
+     * @param i   index of the requested item inside the FIFO
+     *
+     * @return the i-th element of the FIFO
+     */
+    Data getFifoElement(uint32_t i) const { return last_fifo[i]; }
+
+    /**
+     * @return number of elements in the last FIFO sampled from the sensor
+     */
+    uint8_t getLastFifoSize() const { return last_fifo_level; }
+
+    /**
+     * @brief Called by the interrupt handling routine: provides the timestamp
+     *        of the last interrupt (if FIFO is disabled) or the last watermark
+     *        interrupt (if FIFO enabled)
+     *
+     * @param ts Timestamp of the lasts interrupt, in microseconds
+     */
+    inline void IRQupdateTimestamp(uint64_t ts)
+    {
+        dt_interrupt      = ts - last_interrupt_us;
+        last_interrupt_us = ts;
+    }
 };
-
-class TemperatureSensor : public virtual Sensor
-{
-public:
-    const float* tempDataPtr() const { return &mLastTemp; }
-
-protected:
-    float mLastTemp;
-};
-
-class HumiditySensor : public virtual Sensor
-{
-public:
-    const float* humidityDataPtr() const { return &mLastHumidity; }
-
-protected:
-    float mLastHumidity;
-};
-
-class PressureSensor : public virtual Sensor
-{
-public:
-    const float* pressureDataPtr() const { return &mLastPressure; }
-
-protected:
-    float mLastPressure;
-};
-
-class AltitudeSensor : public virtual Sensor
-{
-public:
-    const float* altitudeDataPtr() const { return &mLastAltitude; }
-
-protected:
-    float mLastAltitude;
-};
-
-class DebugIntSensor : public virtual Sensor
-{
-public:
-    const int* debugIntPtr() const { return &mDebugInt; }
-
-protected:
-    int mDebugInt;
-};
-
-#endif /* ifndef SENSORS_H */

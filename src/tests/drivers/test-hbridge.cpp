@@ -27,7 +27,7 @@
 #include <iostream>
 #include <sstream>
 
-#include "Debug.h"
+#include "Common.h"
 #include "drivers/hbridge/HBridge.h"
 
 using namespace miosix;
@@ -44,15 +44,19 @@ static const PWMChannel HBRIDGE_PWM_CHANNEL = PWMChannel::CH2;
 GpioPin hbridge_in(GPIOB_BASE, 5);       // pwm pin
 GpioPin hbridge_inhibit(GPIOB_BASE, 7);  // inhibit pin for the hbridge
 
-bool print = false;  // print the elapsed time or not
+bool print = true;  // print the elapsed time or not
 
 long long measured_time = 0;
 void wait()
 {
-    long long t0 = getTick();
-    for (long long t = t0; t < t0 + PWM_DURATION; t += 50)
+    long long t = getTick();
+    long long t0 = t;
+
+    while(t < t0 + PWM_DURATION)
     {
         Thread::sleep(50);
+
+        t = getTick();
 
         if (print)
         {
@@ -60,7 +64,7 @@ void wait()
         }
     }
 
-    measured_time = getTick() - t0;
+    measured_time = t - t0;
 }
 
 int main()
@@ -72,6 +76,8 @@ int main()
         hbridge_inhibit.mode(Mode::OUTPUT);
         hbridge_inhibit.low();
     }
+
+    TimestampTimer::enableTimestampTimer();
 
     for (;;)
     {
@@ -105,18 +111,20 @@ int main()
         HBridge hbridge(hbridge_inhibit, HBRIDGE_TIM, HBRIDGE_PWM_CHANNEL, freq,
                         duty / 100);
 
-        hbridge.enable();  // enableTest(duty / 100);
-        TRACE("Hbridge status : timestamp = %llu - state = %d \n", hbridge.getStatus().timestamp, hbridge.getStatus().state);
+        hbridge.enable();
+        TRACE("Hbridge status : timestamp = %llu - state = %d \n",
+              hbridge.getStatus().timestamp, hbridge.getStatus().state);
 
         wait();
 
         hbridge.disable();
-        TRACE("Hbridge status : timestamp = %llu - state = %d \n", hbridge.getStatus().timestamp, hbridge.getStatus().state);
+        TRACE("Hbridge status : timestamp = %llu - state = %d \n",
+              hbridge.getStatus().timestamp, hbridge.getStatus().state);
 
         Thread::sleep(500);
 
         TRACE("Elapsed time: %.2f s\n", (measured_time) / 1000.0f);
-        TRACE("Done!\n");
+        TRACE("Done!\n\n");
     }
 
     return 0;

@@ -23,13 +23,17 @@
 #ifndef SRC_SHARED_SENSORS_LIS3MDL_LIS3MDL_H
 #define SRC_SHARED_SENSORS_LIS3MDL_LIS3MDL_H
 
+#include <Common.h>
+
+#include "LIS3MDLData.h"
 #include "drivers/spi/SPIDriver.h"
+#include "miosix.h"
 #include "sensors/Sensor.h"
 
 /**
  * Driver for LIS3MDL, a three-axis magnetic sensor.
  */
-class LIS3MDL : public CompassSensor, public TemperatureSensor
+class LIS3MDL : public Sensor<LIS3MDLData>
 {
 public:
     /**
@@ -152,7 +156,7 @@ public:
          * With the given value you can instruct the driver to update
          * the temperature according to a different rate.
          * The temperature will be updated only once in `tempDivider` calls
-         * to onSimpleUpdate(), so for example:
+         * to sampleImpl(), so for example:
          * 2 -> updated half the times,
          * 1 -> updated every time.
          * By default the divider is set to 1
@@ -226,7 +230,8 @@ public:
     {
         if (isInitialized)
         {
-            TRACE("Error: attempted to initialized sensor twice [LIS3MDL].\n");
+            TRACE("[LIS3MDL] Error: attempted to initialized sensor twice\n");
+            last_error = ALREADY_INIT;
             return false;
         }
 
@@ -237,10 +242,11 @@ public:
             if (res != WHO_AM_I_VALUE)
             {
                 TRACE(
-                    "Error: WHO_AM_I value differs from expectation: read 0x%x "
-                    "but expected 0x%x [LIS3MDL].\n",
+                    "[LIS3MDL] Error: WHO_AM_I value differs from expectation: "
+                    "read 0x%x "
+                    "but expected 0x%x\n",
                     res, WHO_AM_I_VALUE);
-                last_error = ERR_NOT_ME;
+                last_error = INVALID_WHOAMI;
                 return false;
             }
         }
@@ -261,8 +267,9 @@ public:
         if (!isInitialized)
         {
             TRACE(
-                "Error: invoked selfTest() but sensor was unitialized "
-                "[LIS3MDL].\n");
+                "[LIS3MDL] Error: invoked selfTest() but sensor was "
+                "unitialized\n");
+            last_error = NOT_INIT;
             return false;
         }
 
@@ -285,7 +292,7 @@ public:
          */
         constexpr float r[3][2] = {{1.f, 3.f}, {1.f, 3.f}, {0.1f, 1.f}};
 
-        Vec3 avg(0.f, 0.f, 0.f);
+        float avg_x = 0.f, avg_y = 0.f, avg_z = 0.f;
 
         {
             SPITransaction spi(mSlave);
@@ -296,12 +303,18 @@ public:
         for (int i = 0; i < NUM_SAMPLES; ++i)
         {
             miosix::Thread::sleep(SLEEP_TIME);
-            onSimpleUpdate();
-            avg += mLastCompass;
-        }
-        avg /= NUM_SAMPLES;
 
-        TRACE("Starting %d tests [LIS3MDL].\n", NUM_TESTS);
+            LIS3MDLData lastData = sampleImpl();
+            avg_x += lastData.mag_x;
+            avg_y += lastData.mag_y;
+            avg_z += lastData.mag_z;
+        }
+
+        avg_x /= NUM_SAMPLES;
+        avg_y /= NUM_SAMPLES;
+        avg_z /= NUM_SAMPLES;
+
+        TRACE("[LIS3MDL] Starting %d tests\n", NUM_TESTS);
 
         /*
          * Setting up the sensor settings for
@@ -327,10 +340,10 @@ public:
         {
             miosix::Thread::sleep(SLEEP_TIME);
 
-            onSimpleUpdate();
-            d[0] = std::abs(mLastCompass.getX() - avg.getX());
-            d[1] = std::abs(mLastCompass.getY() - avg.getY());
-            d[2] = std::abs(mLastCompass.getZ() - avg.getZ());
+            LIS3MDLData lastData = sampleImpl();
+            d[0]                 = std::abs(lastData.mag_x - avg_x);
+            d[1]                 = std::abs(lastData.mag_y - avg_y);
+            d[2]                 = std::abs(lastData.mag_z - avg_z);
 
             bool passed = true;
             for (int j = 0; j < 3; ++j)
@@ -341,15 +354,17 @@ public:
 
             if (!passed)
             {
-                TRACE("Test n. %d failed [LIS3MDL].\n", (i + 1));
+                TRACE("[LIS3MDL] Test n. %d failed\n", (i + 1));
 
                 // reset configuration, then return
                 applyConfig(mConfig);
+
+                last_error = SELF_TEST_FAIL;
                 return false;
             }
             else
             {
-                TRACE("Test n. %d passed [LIS3MDL].\n", (i + 1));
+                TRACE("[LIS3MDL] Test n. %d passed\n", (i + 1));
             }
         }
 
@@ -358,71 +373,6 @@ public:
          * selfTest()
          */
         return applyConfig(mConfig);
-    }
-
-    /**
-     * @brief Reads data from the sensor
-     *
-     * The init method must have been called before.
-     * Output data can be fetched with the methods
-     * compassDataPtr() and tempDataPtr inherited respectevely
-     * from CompassSensor and TemperatureSensor classes.
-     * Important: the temperature will be taken only once in a while
-     * according to the value of `temperatureDivider`
-     *
-     * @returns false if the sensor was unitialized, true otherwise.
-     */
-    bool onSimpleUpdate() override
-    {
-        if (!isInitialized)
-        {
-            TRACE(
-                "Error: invoked onSimpleUpdate() but sensor was unitialized "
-                "[LIS3MDL].\n");
-            return false;
-        }
-
-        SPITransaction spi(mSlave);
-
-        int16_t val;
-        val = spi.read(STATUS_REG);
-
-        if (!val)
-        {
-            TRACE("New data not available, keeping old values [LIS32MDL]\n");
-            return true;
-        }
-
-        if (mConfig.enableTemperature)
-        {
-            if (currDiv == 0)
-            {
-                val = spi.read(TEMP_OUT_L);
-                val |= spi.read(TEMP_OUT_H) << 8;
-
-                float temp = static_cast<float>(val);
-                temp /= LSB_PER_CELSIUS;
-                temp += REFERENCE_TEMPERATURE;
-
-                mLastTemp = temp;
-            }
-
-            currDiv = (currDiv + 1) % mConfig.temperatureDivider;
-        }
-
-        val = spi.read(OUT_X_L);
-        val |= spi.read(OUT_X_H) << 8;
-        mLastCompass.setX(mUnit * val);
-
-        val = spi.read(OUT_Y_L);
-        val |= spi.read(OUT_Y_H) << 8;
-        mLastCompass.setY(mUnit * val);
-
-        val = spi.read(OUT_Z_L);
-        val |= spi.read(OUT_Z_H) << 8;
-        mLastCompass.setZ(mUnit * val);
-
-        return true;
     }
 
     /**
@@ -451,7 +401,10 @@ public:
         currDiv = 0;
 
         /*  -- CTRL_REG1 --  */
-        reg = config.enableTemperature ? ENABLE_TEMPERATURE : 0;
+        if (config.enableTemperature)
+        {
+            reg = ENABLE_TEMPERATURE;
+        }
         reg |= config.odr;
 
         // odr <= 80Hz
@@ -481,13 +434,28 @@ public:
         err |= spi.read(CTRL_REG5) != reg;
 
         /* -- INT_CFG -- */
-        reg = config.enableInterrupt[0] ? ENABLE_INT_X : 0;
-        reg |= config.enableInterrupt[1] ? ENABLE_INT_Y : 0;
-        reg |= config.enableInterrupt[2] ? ENABLE_INT_Z : 0;
+        if (config.enableInterrupt[0])
+        {
+            reg = ENABLE_INT_X;
+        }
+        else
+        {
+            reg = 0;
+        }
+        if (config.enableInterrupt[1])
+        {
+            reg |= ENABLE_INT_Y;
+        }
+        if (config.enableInterrupt[2])
+        {
+            reg |= ENABLE_INT_Z;
+        }
 
         // the interrupt of at least one axis is enabled
         if (reg)
+        {
             reg |= ENABLE_INT_PIN;
+        }
 
         reg |= 0x08;
         spi.write(INT_CFG, reg);
@@ -511,7 +479,8 @@ public:
 
         if (err)
         {
-            TRACE("Spi error [LIS3MDL].\n");
+            TRACE("[LIS3MDL] Spi error\n");
+            last_error = BUS_FAULT;
             return false;
         }
 
@@ -519,8 +488,84 @@ public:
     }
 
 private:
+    /**
+     * @brief Reads data from the sensor
+     *
+     * The init method must have been called before.
+     * Output data can be fetched with the methods
+     * compassDataPtr() and tempDataPtr inherited respectevely
+     * from CompassSensor and TemperatureSensor classes.
+     * Important: the temperature will be taken only once in a while
+     * according to the value of `temperatureDivider`
+     *
+     * @returns false if the sensor was unitialized, true otherwise.
+     */
+    LIS3MDLData sampleImpl() override
+    {
+        if (!isInitialized)
+        {
+            TRACE(
+                "[LIS3MDL] Error: invoked sampleImpl() but sensor was "
+                "unitialized \n");
+            last_error = NOT_INIT;
+            return last_sample;
+        }
+
+        SPITransaction spi(mSlave);
+
+        if (!spi.read(STATUS_REG))
+        {
+            TRACE("[LIS3MDL] New data not available, keeping old values\n");
+            last_error = NO_NEW_DATA;
+            return last_sample;
+        }
+
+        // Reset any error
+        last_error = SensorErrors::NO_ERRORS;
+
+        uint16_t val;
+        LIS3MDLData newData{};
+
+        if (mConfig.enableTemperature)
+        {
+            if (currDiv == 0)
+            {
+                val = spi.read(TEMP_OUT_L);
+                val |= spi.read(TEMP_OUT_H) << 8;
+
+                newData.temp_timestamp = TimestampTimer::getTimestamp();
+                newData.temp = static_cast<float>(val) / LSB_PER_CELSIUS +
+                               REFERENCE_TEMPERATURE;
+            }
+            else
+            {
+                // Keep old value
+                newData.temp = last_sample.temp;
+            }
+
+            currDiv = (currDiv + 1) % mConfig.temperatureDivider;
+        }
+
+        newData.mag_timestamp = TimestampTimer::getTimestamp();
+
+        val = spi.read(OUT_X_L);
+        val |= spi.read(OUT_X_H) << 8;
+        newData.mag_x = mUnit * val;
+
+        val = spi.read(OUT_Y_L);
+        val |= spi.read(OUT_Y_H) << 8;
+        newData.mag_y = mUnit * val;
+
+        val = spi.read(OUT_Z_L);
+        val |= spi.read(OUT_Z_H) << 8;
+        newData.mag_z = mUnit * val;
+
+        return newData;
+    }
+
     SPISlave mSlave;
     Config mConfig;
+
     unsigned currDiv;
     bool isInitialized;
     float mUnit;
@@ -605,4 +650,3 @@ private:
 };
 
 #endif
-
