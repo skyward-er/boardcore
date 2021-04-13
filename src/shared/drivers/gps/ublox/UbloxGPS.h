@@ -33,7 +33,7 @@
 using miosix::FastMutex;
 using miosix::Thread;
 
-class Gps : public Sensor<UbloxGPSData>, public ActiveObject
+class UbloxGPS : public Sensor<UbloxGPSData>, public ActiveObject
 {
 public:
     /*
@@ -48,7 +48,7 @@ public:
         GALILEO = 4
     };
 
-    Gps(int baudrate = 460800, int sampleRate = 10, int serialPortNum = 2,
+    UbloxGPS(int baudrate = 460800, int sampleRate = 10, int serialPortNum = 2,
         const char *portName = "gps");
 
     /*

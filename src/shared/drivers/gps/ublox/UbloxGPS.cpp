@@ -20,7 +20,7 @@
  * THE SOFTWARE.
  */
 
-#include "Gps.h"
+#include "UbloxGPS.h"
 #include <drivers/gps/nmea/nmea.h>
 
 #include <cmath>
@@ -30,37 +30,37 @@
 
 using namespace miosix;
 
-constexpr uint8_t Gps::DISABLEGSA[];
-constexpr uint8_t Gps::DISABLEGSV[];
-constexpr uint8_t Gps::DISABLEVTG[];
-constexpr uint8_t Gps::DISABLEGLL[];
-constexpr uint8_t Gps::SETGNSS[];
+constexpr uint8_t UbloxGPS::DISABLEGSA[];
+constexpr uint8_t UbloxGPS::DISABLEGSV[];
+constexpr uint8_t UbloxGPS::DISABLEVTG[];
+constexpr uint8_t UbloxGPS::DISABLEGLL[];
+constexpr uint8_t UbloxGPS::SETGNSS[];
 
-Gps::Gps(int baudrate, int sampleRate, int serialPortNum,
+UbloxGPS::UbloxGPS(int baudrate, int sampleRate, int serialPortNum,
          const char* serialPortName)
 {
-    Gps::baudrate       = baudrate;
-    Gps::serialPortNum  = serialPortNum;
-    Gps::serialPortName = serialPortName;
+    UbloxGPS::baudrate       = baudrate;
+    UbloxGPS::serialPortNum  = serialPortNum;
+    UbloxGPS::serialPortName = serialPortName;
 
-    sampleRate           = std::min(sampleRate, Gps::MAX_SAMPLERATE);
-    Gps::betweenReadings = 1000 / sampleRate;
+    sampleRate           = std::min(sampleRate, UbloxGPS::MAX_SAMPLERATE);
+    UbloxGPS::betweenReadings = 1000 / sampleRate;
 
     data.gps_timestamp = 0;
     data.velocity_down = 0;
     data.fix           = false;
 }
 
-bool Gps::init() { return serialComSetup(); }
+bool UbloxGPS::init() { return serialComSetup(); }
 
-void Gps::run()
+void UbloxGPS::run()
 {
     int deg;
     enum minmea_sentence_id sentence_id;
     struct minmea_sentence_gga frame_gga;
     struct minmea_sentence_rmc frame_rmc;
     char msg[NMEA_MAX_LENGTH + 1];
-    float trackDegrees;
+    float trackRadians;
 
     while (!shouldStop())
     {
@@ -100,8 +100,9 @@ void Gps::run()
                     {
                         {
                             data.fix           = true;
-                            data.gps_timestamp = getTick();
-                            deg                = frame_rmc.latitude.value /
+                            data.gps_timestamp = TimestampTimer::getTimestamp();
+                            
+                            deg = frame_rmc.latitude.value /
                                   frame_rmc.latitude.scale / 100;
                             data.latitude =
                                 deg + ((float)frame_rmc.latitude.value /
@@ -131,14 +132,16 @@ void Gps::run()
                             }
                             else
                             {
+                                // NMEA already defines it in degrees
                                 data.track = (float)frame_rmc.course.value /
                                              frame_rmc.course.scale;
 
-                                trackDegrees = data.track * DEGREES_TO_RADIANS;
+                                // sin and cos require the angle in radians
+                                trackRadians = data.track * DEGREES_TO_RADIANS;
                                 data.velocity_north =
-                                    cos(trackDegrees) * data.speed;
+                                    cos(trackRadians) * data.speed;
                                 data.velocity_east =
-                                    sin(trackDegrees) * data.speed;
+                                    sin(trackRadians) * data.speed;
                             }
                         }
                     }
@@ -167,7 +170,7 @@ void Gps::run()
     }
 }
 
-bool Gps::serialComSetup()
+bool UbloxGPS::serialComSetup()
 {
     uint8_t setBaudRateMsg[SET_BAUDRATE_MSG_LEN] = {
         0Xb5, 0x62, 0x06, 0x00, 0x14, 0x00, 0x01, 0x00, 0x00, 0x00,
@@ -238,23 +241,25 @@ bool Gps::serialComSetup()
     return true;
 }
 
-bool Gps::selfTest()
+bool UbloxGPS::selfTest()
 {
-    int start;
     selfTestFlag = true;
-    start        = getTick();
+    auto start        = TimestampTimer::getTimestamp();
+    
     Thread::sleep(20);
     while (selfTestFlag)
     {
-        if (getTick() - start > SELFTEST_TIMEOUT)
+        if (TimestampTimer::getTimestamp() - start > SELFTEST_TIMEOUT)
+        {
             return false;
+        }
         Thread::sleep(20);
     }
 
     return selfTestResult;
 }
 
-bool Gps::selfTestInThread()
+bool UbloxGPS::selfTestInThread()
 {
     enum minmea_sentence_id sentence_id;
     char msg[NMEA_MAX_LENGTH + 1];
@@ -280,13 +285,13 @@ bool Gps::selfTestInThread()
     return false;
 }
 
-struct UbloxGPSData Gps::sampleImpl()
+struct UbloxGPSData UbloxGPS::sampleImpl()
 {
     Lock<FastMutex> l(mutex);
     return data;
 }
 
-void Gps::packSBASMessge(uint8_t* msg, int mode, int usage, int maxChannelNum,
+void UbloxGPS::packSBASMessge(uint8_t* msg, int mode, int usage, int maxChannelNum,
                          int PRNs[3])
 {
     int egnosPRNs[3] = {123, 126, 136};
@@ -331,7 +336,7 @@ void Gps::packSBASMessge(uint8_t* msg, int mode, int usage, int maxChannelNum,
     ubxChecksum(msg, SET_SBAS_MSG_LEN);
 }
 
-void Gps::packRateMessage(uint8_t* msg, int inbetweenReadings, int navRate,
+void UbloxGPS::packRateMessage(uint8_t* msg, int inbetweenReadings, int navRate,
                           TimeRef timeRef)
 {
     uint16_t timeRefIdx = static_cast<uint16_t>(timeRef);
@@ -355,7 +360,7 @@ void Gps::packRateMessage(uint8_t* msg, int inbetweenReadings, int navRate,
     ubxChecksum(msg, SET_RATE_MSG_LEN);
 }
 
-void Gps::ubxChecksum(uint8_t* msg, int len)
+void UbloxGPS::ubxChecksum(uint8_t* msg, int len)
 {
     uint8_t ck_a = 0, ck_b = 0;
 
@@ -369,14 +374,14 @@ void Gps::ubxChecksum(uint8_t* msg, int len)
     msg[len - 1] = ck_b;
 }
 
-void Gps::sendSBASMessage(int mode, int usage, int maxChannelNum, int PRNs[3])
+void UbloxGPS::sendSBASMessage(int mode, int usage, int maxChannelNum, int PRNs[3])
 {
     uint8_t msg[SET_SBAS_MSG_LEN];
     packSBASMessge(msg, mode, usage, maxChannelNum, PRNs);
     write(fd, msg, SET_SBAS_MSG_LEN);
 }
 
-void Gps::sendRateMessage(int inbetweenReadings, int navRate, TimeRef timeRef)
+void UbloxGPS::sendRateMessage(int inbetweenReadings, int navRate, TimeRef timeRef)
 {
     uint8_t msg[SET_RATE_MSG_LEN];
     packRateMessage(msg, inbetweenReadings, navRate, timeRef);

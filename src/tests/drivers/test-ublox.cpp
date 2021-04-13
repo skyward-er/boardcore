@@ -1,5 +1,5 @@
 #include <Common.h>
-#include <drivers/gps/ublox/Gps.h>
+#include <drivers/gps/ublox/UbloxGPS.h>
 #include <drivers/serial.h>
 #include <fcntl.h>
 #include <filesystem/file_access.h>
@@ -16,8 +16,8 @@ int main()
     TimestampTimer::enableTimestampTimer();
 
     // Keep GPS baud rate at default for easier testing
-    Gps gps(38400);
-    struct UbloxGPSData dataGPS;
+    UbloxGPS gps(38400);
+    UbloxGPSData dataGPS;
 
     printf("init gps: %d\n", gps.init());
     Thread::sleep(200);
