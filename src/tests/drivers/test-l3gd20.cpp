@@ -140,7 +140,6 @@ void configure()
 int main()
 {
     configure();
-    TimestampTimer::enableTimestampTimer();
 
     gyro = new L3GD20(bus, cs, L3GD20::FullScaleRange::FS_250,
                       L3GD20::OutPutDataRate::ODR_760, 0x03);

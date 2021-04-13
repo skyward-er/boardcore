@@ -164,7 +164,6 @@ void configure()
 int main()
 {
     configure();
-    TimestampTimer::enableTimestampTimer();
 
     // Setup sensor
     gyro = new L3GD20(bus, cs, L3GD20::FullScaleRange::FS_250,

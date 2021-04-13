@@ -20,34 +20,9 @@
  * THE SOFTWARE.
  */
 
-/**
- * @file test-ads1118.cpp
- * @author Alberto Nidasio (alberto.nidasio@skywarder.eu)
- * @brief Tests the ads1118 adc
- * @version 1.0
- * @date 2020-11-19
- *
- * This test has been setup for the following configuration:
- *
- * SPI pheripheral 2 (SPI2) with /32 divider
- *
- * Pins (STM32F407 - ADS1118):
- *  PB12 (NSS)  - NC (we use pin C1 as chip select)
- *  PB13 (SCK)  - SCK
- *  PB14 (MISO) - DOUT
- *  PB15 (MOSI) - DIN
- *  PC1         - CS
- *
- * The ADS1118's input channels can be connected as follow:
- *  AIN2 - GND
- *  AIN3 - VCC (3V)
- *
- * In the developing test a function generator was used as variable source
- */
-
 #include <miosix.h>
 
-#include "Debug.h"
+#include "Common.h"
 #include "drivers/adc/ADS1118/ADS1118.h"
 #include "drivers/spi/SPIDriver.h"
 #include "sensors/analog/pressure/AnalogPressureSensor.h"
