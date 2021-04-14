@@ -188,7 +188,7 @@ int main()
                 for (int i = 0; i < n; ++i)
                 {
                     sensor.sample();
-                    auto data = sensor.getData();
+                    auto data = sensor.getLastSample();
 
                     xAxis[selected].add(data.accel_x);
                     yAxis[selected].add(data.accel_y);

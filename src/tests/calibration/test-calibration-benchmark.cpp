@@ -98,7 +98,7 @@ int main()
         elapsed += sleepMillis;
         sensor.sample();
 
-        AccelerometerData tmp = corrector.correct(sensor.getData());
+        AccelerometerData tmp = corrector.correct(sensor.getLastSample());
 
         testData.accel_x = tmp.accel_x;
         testData.accel_y = tmp.accel_y;

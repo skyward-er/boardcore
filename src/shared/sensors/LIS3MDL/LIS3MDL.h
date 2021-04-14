@@ -435,7 +435,7 @@ public:
         }
         else
         {
-            0;
+            reg = 0;
         }
         
         spi.write(CTRL_REG5, reg);
