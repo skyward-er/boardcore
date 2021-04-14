@@ -34,6 +34,13 @@ class Vec3
 public:
     Vec3() { clear(); }
 
+    Vec3(const Vec3& rhs)
+    {
+        x = rhs.x;
+        y = rhs.y;
+        z = rhs.z;
+    }
+
     Vec3(float x, float y, float z)
     {
         this->x = x;
@@ -61,6 +68,12 @@ public:
 
         (*this) *= 1.0f / l;
         return true;
+    }
+
+    void operator=(const Vec3& rhs){
+        x = rhs.x;
+        y = rhs.y;
+        z = rhs.z;
     }
 
     void operator*=(float value)
@@ -103,6 +116,10 @@ public:
     Vec3 operator-(const Vec3 &v) const
     {
         return Vec3(x - v.getX(), y - v.getY(), z - v.getZ());
+    }
+
+    Vec3 operator-() const {
+        return Vec3(-x, -y, -z);
     }
 
     float dot(const Vec3 &v) const
