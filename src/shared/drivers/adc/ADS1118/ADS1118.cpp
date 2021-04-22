@@ -236,7 +236,8 @@ void ADS1118::readChannel(int8_t nextChannel, int8_t prevChannel)
         if (prevChannel != 8)  // Voltage value
         {
             values[prevChannel].voltage =
-                rawValue * PGA_LSB_SIZE[channelsConfig[prevChannel].bits.pga];
+                rawValue * PGA_LSB_SIZE[channelsConfig[prevChannel].bits.pga] /
+                1000;
         }
         else  // Temperature value
         {
