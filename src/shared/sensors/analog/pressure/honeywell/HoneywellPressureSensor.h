@@ -32,7 +32,7 @@
  */
 template <typename HoneywellPressureData>
 class HoneywellPressureSensor
-    : public virtual AnalogPressureSensor<HoneywellPressureData>
+    : public AnalogPressureSensor<HoneywellPressureData>
 {
 public:
     using AnalogPressureSensor<HoneywellPressureData>::AnalogPressureSensor;
@@ -43,15 +43,13 @@ protected:
     {
         float tmp;
 
-        tmp = voltage - 0.1 * vSupply;
-        tmp *= maxPressure - minPressure;
-        tmp /= 0.8 * vSupply;
-        tmp += minPressure;
+        tmp = voltage -
+              0.1 * AnalogPressureSensor<HoneywellPressureData>::V_SUPPLY;
+        tmp *= AnalogPressureSensor<HoneywellPressureData>::maxPressure -
+               AnalogPressureSensor<HoneywellPressureData>::minPressure;
+        tmp /= 0.8 * AnalogPressureSensor<HoneywellPressureData>::V_SUPPLY;
+        tmp += AnalogPressureSensor<HoneywellPressureData>::minPressure;
 
         return tmp;
     }
-
-    float vSupply = AnalogPressureSensor<HoneywellPressureData>::V_SUPPLY;
-    float minPressure = AnalogPressureSensor<HoneywellPressureData>::minPressure;
-    float maxPressure = AnalogPressureSensor<HoneywellPressureData>::maxPressure;
 };

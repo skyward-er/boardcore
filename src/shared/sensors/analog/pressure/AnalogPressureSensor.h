@@ -36,14 +36,12 @@ template <typename AnalogPressureData>
 class AnalogPressureSensor : public Sensor<AnalogPressureData>
 {
 public:
-    AnalogPressureSensor(std::function<ADCData()> getSensorVoltage_)
-        : getSensorVoltage(getSensorVoltage_)
-    {
-    }
-
     AnalogPressureSensor(std::function<ADCData()> getSensorVoltage_,
-                         const float V_SUPPLY_)
-        : getSensorVoltage(getSensorVoltage_), V_SUPPLY(V_SUPPLY_)
+                         const float V_SUPPLY_    = 5.0,
+                         const float maxPressure_ = 0,
+                         const float minPressure_ = 0)
+        : getSensorVoltage(getSensorVoltage_), V_SUPPLY(V_SUPPLY_),
+          maxPressure(maxPressure_), minPressure(minPressure_)
     {
     }
 
@@ -82,12 +80,12 @@ protected:
     ///< Conversion function from volts to pascals
     virtual float voltageToPressure(float voltage) = 0;
 
-    const float maxPressure = 0;
-
-    const float minPressure = 0;
-
     ///< Function that returns the sensor voltage
     std::function<ADCData()> getSensorVoltage;
 
-    const float V_SUPPLY = 5.0;  ///< Suppply voltage
+    const float V_SUPPLY;  ///< Suppply voltage
+
+    const float maxPressure;
+
+    const float minPressure;
 };

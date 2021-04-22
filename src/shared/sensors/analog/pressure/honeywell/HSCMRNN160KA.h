@@ -22,8 +22,8 @@
 
 #pragma once
 
-#include "HoneywellPressureSensor.h"
 #include "HSCMRNN160KAData.h"
+#include "HoneywellPressureSensor.h"
 
 /**
  * @brief Absolute pressure sensor with a 0-160kPa range
@@ -31,8 +31,9 @@
 class HSCMRNN160KA final : public HoneywellPressureSensor<HSCMRNN160KAData>
 {
 public:
-    using HoneywellPressureSensor<HSCMRNN160KAData>::HoneywellPressureSensor;
-
-private:
-    const float maxPressure = 160000;
+    HSCMRNN160KA(std::function<ADCData()> getSensorVoltage_,
+                 const float V_SUPPLY_ = 5.0)
+        : HoneywellPressureSensor(getSensorVoltage_, V_SUPPLY_, 160000)
+    {
+    }
 };

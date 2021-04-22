@@ -36,8 +36,8 @@ class BatteryVoltageSensor : public Sensor<BatteryVoltageData>
 {
 public:
     BatteryVoltageSensor(std::function<ADCData()> getADCVoltage_,
-                         float conversion_ratio)
-        : getADCVoltage(getADCVoltage_), conversion_ratio(conversion_ratio)
+                         float conversionRatio_)
+        : getADCVoltage(getADCVoltage_), conversionRatio(conversionRatio_)
     {
     }
 
@@ -63,11 +63,11 @@ private:
     ///< Conversion function from adc volts to battery volts
     float adcToBatteryVoltage(float voltage)
     {
-        return voltage / conversion_ratio;
+        return voltage / conversionRatio;
     }
 
     ///< Function that returns the adc voltage
     std::function<ADCData()> getADCVoltage;
 
-    float conversion_ratio;
+    float conversionRatio;
 };
