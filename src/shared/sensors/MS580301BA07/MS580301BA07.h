@@ -87,8 +87,9 @@ public:
         cd.tref     = readReg(spi, PROM_READ_MASK | PROM_TREF_MASK);
         cd.tempsens = readReg(spi, PROM_READ_MASK | PROM_TEMPSENS_MASK);
 
-        TRACE("off: %d, tcs: %d, tco: %d, tref: %d, tsens: %d\n", (int)cd.off,
-              (int)cd.tcs, (int)cd.tco, (int)cd.tref, (int)cd.tempsens);
+        TRACE("[MS5803] Init : off=%d, tcs=%d, tco=%d, tref=%d, tsens=%d\n",
+              (int)cd.off, (int)cd.tcs, (int)cd.tco, (int)cd.tref,
+              (int)cd.tempsens);
 
         mStatus = 0;
 
@@ -116,7 +117,7 @@ public:
         uint8_t rcvbuf[3];
         uint32_t temperature = 0;
 
-        MS5803Data ms5803_data;
+        MS5803Data ms5803_data = last_sample;
 
         switch (mStatus)
         {
@@ -209,14 +210,8 @@ private:
         mLastTemp     = temp / 100.0f;
         mLastPressure = pres;
 
-        /*dataStruct.raw_temp  = temperature;
-        dataStruct.temp      = mLastTemp;
-        dataStruct.raw_press = pressure;
-        dataStruct.press  = mLastPressure;
-        dataStruct.timestamp = miosix::getTick();*/
-
-        return MS5803Data(TimestampTimer::getTimestamp(), pressure,
-                          mLastPressure, temperature, mLastTemp);
+        return MS5803Data(TimestampTimer::getTimestamp(), mLastPressure,
+                          mLastTemp);
     }
 
     typedef struct

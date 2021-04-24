@@ -26,27 +26,22 @@
 
 struct MS5803Data : public PressureData, TemperatureData
 {
-    uint32_t raw_press;
-    uint32_t raw_temp;
 
     MS5803Data() : PressureData{0, 0.0}, TemperatureData{0, 0.0} {}
 
-    MS5803Data(uint64_t t, uint32_t raw_press, float press, uint32_t raw_temp,
-               float temp)
-        : PressureData{t, press}, TemperatureData{t, temp},
-          raw_press(raw_press), raw_temp(raw_temp)
+    MS5803Data(uint64_t t, float press, float temp)
+        : PressureData{t, press}, TemperatureData{t, temp}
     {
     }
 
     static std::string header()
     {
-        return "press_timestamp,raw_press,press,temp_timestamp,raw_temp,"
-               "temp\n";
+        return "press_timestamp,press,temp_timestamp,temp\n";
     }
 
     void print(std::ostream& os) const
     {
-        os << press_timestamp << "," << raw_press << "," << press << ","
-           << temp_timestamp << "," << raw_temp << "," << temp << "\n";
+        os << press_timestamp << "," << press << "," << temp_timestamp << ","
+           << temp << "\n";
     }
 };
