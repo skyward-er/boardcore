@@ -26,6 +26,7 @@
 #define SRC_SHARED_ACTIVEOBJECT_H
 
 #include <Common.h>
+
 #include "diagnostic/SkywardStack.h"
 
 /**
@@ -84,9 +85,12 @@ public:
      */
     virtual void stop()
     {
-        should_stop = true;
-        thread->join();
-        stopped = true;
+        if (isRunning())
+        {
+            should_stop = true;
+            thread->join();
+            stopped = true;
+        }
     }
 
     bool isStarted() { return started; }

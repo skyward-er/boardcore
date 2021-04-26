@@ -42,7 +42,7 @@ ostream& operator<<(ostream& os, const StatsResult& sr)
 
 Stats::Stats()
     : minValue(numeric_limits<float>::max()),
-      maxValue(numeric_limits<float>::min()), mean(0.f), m2(0.f), n(0)
+      maxValue(numeric_limits<float>::lowest()), mean(0.f), m2(0.f), n(0)
 {
 }
 
@@ -64,7 +64,7 @@ void Stats::add(float data)
 void Stats::reset()
 {
     minValue = numeric_limits<float>::max();
-    maxValue = numeric_limits<float>::min();
+    maxValue = numeric_limits<float>::lowest();
     mean     = 0.f;
     m2       = 0.f;
     n        = 0;

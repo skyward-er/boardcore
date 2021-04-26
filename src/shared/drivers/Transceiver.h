@@ -23,8 +23,6 @@
 #ifndef TRANSCEIVER_H
 #define TRANSCEIVER_H
 
-#include <Common.h>
-
 class Transceiver
 {
 public:

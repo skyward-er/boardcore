@@ -32,7 +32,7 @@ using namespace miosix;
 
 #define TOPIC_TEST  1
 
-#define CHECK_INIT() bool test_value = false
+#define CHECK_INIT() bool test_value = false; (void)test_value
 
 #define CHECK_STATE(HSM, SIGNAL, STATE) do{ \
 cout << "------------------------------" << endl; \

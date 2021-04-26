@@ -23,29 +23,19 @@
 
 #include "SPITransaction.h"
 
-#include <cassert>
-
 SPITransaction::SPITransaction(SPISlave slave)
     : SPITransaction(slave.bus, slave.cs, slave.config)
 {
 }
 
-SPITransaction::SPITransaction(SPIBusInterface& bus, GpioPin cs,
+SPITransaction::SPITransaction(SPIBusInterface& bus, GpioType cs,
                                SPIBusConfig config)
     : bus(bus), cs(cs)
 {
-    // Only one SPITransaction may be active at any given time.
-    // Do not store an instance of SPITransaction for a long time! Create one,
-    // use it, and destroy it as soon as you are done operating on the bus!
-    // (just like mutexes)
-#ifdef DEBUG
-    assert(bus.locked == false);
-#endif
-    bus.locked = true;
-    bus.configure(config);
+    bus.acquire(config);
 }
 
-SPITransaction::~SPITransaction() { bus.locked = false; }
+SPITransaction::~SPITransaction() { bus.release(); }
 
 void SPITransaction::write(uint8_t cmd)
 {

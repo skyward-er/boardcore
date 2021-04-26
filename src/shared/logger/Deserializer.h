@@ -83,7 +83,7 @@ public:
             return false;
         }
 
-        char c_filename[64];
+        char c_filename[128];
         sprintf(c_filename, "%s%s_%s.csv", prefix.c_str(), logFile.c_str(),
                 typeid(T).name());
 

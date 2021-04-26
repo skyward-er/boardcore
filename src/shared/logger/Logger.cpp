@@ -26,16 +26,19 @@
  ***************************************************************************/
 
 #include "Logger.h"
+
+#include <errno.h>
 #include <fcntl.h>
 #include <interfaces/atomic_ops.h>
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <tscpp/buffer.h>
+
 #include <stdexcept>
+
 #include "Debug.h"
 #include "diagnostic/SkywardStack.h"
 #include "diagnostic/StackLogger.h"
-#include <errno.h>
 
 using namespace std;
 using namespace miosix;
@@ -74,7 +77,10 @@ int Logger::start()
 
     file = fopen(filename.c_str(), "ab");
     if (file == NULL)
+    {
+        fileNumber = -1;
         throw runtime_error("Error opening log file");
+    }
     setbuf(file, NULL);
 
     // The boring part, start threads one by one and if they fail, undo
