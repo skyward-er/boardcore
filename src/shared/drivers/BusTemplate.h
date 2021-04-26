@@ -219,7 +219,7 @@ private:
         return n_spi == 1 || n_spi == 2 ? 5 : 6;
     }
 
-    constexpr SPI_TypeDef* getSPIAddr(unsigned n)
+    constexpr SPI_TypeDef* getSPIAddr(unsigned n) const
     {
         return n == 1 ? SPI1 : n == 2 ? SPI2 : SPI3;
     }

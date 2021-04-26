@@ -26,23 +26,9 @@
 
 #include <cstdint>
 #include <vector>
+#include "utils/testutils/MockGpioPin.h"
 
 using std::vector;
-
-class FakeGpioPin : public miosix::GpioPin
-{
-public:
-    FakeGpioPin() : GpioPin(GPIOA_BASE,1) {}
-
-    void high() { val = 1; }
-
-    void low() { val = 0; }
-
-    int value() { return val; }
-
-private:
-    int val = 1;
-};
 
 /**
  * @brief Mock STM32F4 SPI peripheral: intercepts register value changes to
@@ -93,7 +79,7 @@ struct FakeSpiTypedef
     uint32_t CR2_expected = 0;
 
     RegDR DR;
-    FakeGpioPin cs;
+    MockGpioPin cs;
 
-    FakeSpiTypedef() : DR(*this) {}
+    FakeSpiTypedef() : DR(*this) {cs.high();}
 };

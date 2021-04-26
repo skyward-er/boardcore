@@ -25,11 +25,16 @@
 #include "../catch-tests-entry.cpp"
 #endif
 
+#ifndef USE_MOCK_PERIPHERALS
+#error "This test requires SpiBusInterface built with MockGpioPin (-DUSE_MOCK_PERIPHERALS)"
+#endif
+
 #include <utils/testutils/catch.hpp>
 
-#include "FakeSPIBus.h"
-#include "drivers/spi/MockSPIBus.h"
+#include "drivers/spi/SPIBus.h"
 #include "drivers/spi/SPIDriver.h"
+#include "drivers/spi/test/FakeSpiTypedef.h"
+#include "drivers/spi/test/MockSPIBus.h"
 
 template <typename T1, typename T2>
 bool bufcmp(T1* buf1, T2* buf2, size_t size)
@@ -49,7 +54,7 @@ TEST_CASE("SPIBus - Bus Configuration")
 {
     FakeSpiTypedef spi;
 
-    FakeSPIBus bus{&spi};
+    SPIBus bus{&spi};
 
     REQUIRE(spi.CR1 == 0);
 
@@ -62,79 +67,93 @@ TEST_CASE("SPIBus - Bus Configuration")
         {
             config.mode           = SPIMode::MODE0;
             uint32_t expected_CR1 = 0x0344;
-            bus.configure(config);
+            bus.acquire(config);
             REQUIRE(spi.CR1 == expected_CR1);
+            bus.release();
 
             config.mode  = SPIMode::MODE1;
             expected_CR1 = 0x0345;
-            bus.configure(config);
+            bus.acquire(config);
             REQUIRE(spi.CR1 == expected_CR1);
+            bus.release();
 
             config.mode  = SPIMode::MODE2;
             expected_CR1 = 0x0346;
-            bus.configure(config);
+            bus.acquire(config);
             REQUIRE(spi.CR1 == expected_CR1);
+            bus.release();
 
             config.mode  = SPIMode::MODE3;
             expected_CR1 = 0x0347;
-            bus.configure(config);
+            bus.acquire(config);
             REQUIRE(spi.CR1 == expected_CR1);
+            bus.release();
         }
 
         SECTION("Clock Divider")
         {
             config.clock_div      = SPIClockDivider::DIV2;
             uint32_t expected_CR1 = 0x0344;
-            bus.configure(config);
+            bus.acquire(config);
             REQUIRE(spi.CR1 == expected_CR1);
+            bus.release();
 
             config.clock_div = SPIClockDivider::DIV4;
             expected_CR1     = 0x034C;
-            bus.configure(config);
+            bus.acquire(config);
             REQUIRE(spi.CR1 == expected_CR1);
+            bus.release();
 
             config.clock_div = SPIClockDivider::DIV8;
             expected_CR1     = 0x0354;
-            bus.configure(config);
+            bus.acquire(config);
             REQUIRE(spi.CR1 == expected_CR1);
+            bus.release();
 
             config.clock_div = SPIClockDivider::DIV16;
             expected_CR1     = 0x035C;
-            bus.configure(config);
+            bus.acquire(config);
             REQUIRE(spi.CR1 == expected_CR1);
+            bus.release();
 
             config.clock_div = SPIClockDivider::DIV32;
             expected_CR1     = 0x0364;
-            bus.configure(config);
+            bus.acquire(config);
             REQUIRE(spi.CR1 == expected_CR1);
+            bus.release();
 
             config.clock_div = SPIClockDivider::DIV64;
             expected_CR1     = 0x036C;
-            bus.configure(config);
+            bus.acquire(config);
             REQUIRE(spi.CR1 == expected_CR1);
+            bus.release();
 
             config.clock_div = SPIClockDivider::DIV128;
             expected_CR1     = 0x0374;
-            bus.configure(config);
+            bus.acquire(config);
             REQUIRE(spi.CR1 == expected_CR1);
+            bus.release();
 
             config.clock_div = SPIClockDivider::DIV256;
             expected_CR1     = 0x037C;
-            bus.configure(config);
+            bus.acquire(config);
             REQUIRE(spi.CR1 == expected_CR1);
+            bus.release();
         }
 
         SECTION("Bit order")
         {
             config.bit_order      = SPIBitOrder::MSB_FIRST;
             uint32_t expected_CR1 = 0x0344;
-            bus.configure(config);
+            bus.acquire(config);
             REQUIRE(spi.CR1 == expected_CR1);
+            bus.release();
 
             config.bit_order = SPIBitOrder::LSB_FIRST;
             expected_CR1     = 0x03C4;
-            bus.configure(config);
+            bus.acquire(config);
             REQUIRE(spi.CR1 == expected_CR1);
+            bus.release();
         }
     }
 
@@ -147,8 +166,9 @@ TEST_CASE("SPIBus - Bus Configuration")
         config.bit_order = SPIBitOrder::LSB_FIRST;
 
         bus.disableBusConfiguration();
-        bus.configure(config);
+        bus.acquire(config);
         REQUIRE(spi.CR1 == 0);
+        bus.release();
     }
 }
 
@@ -156,7 +176,7 @@ TEST_CASE("SPIBus - Chip select")
 {
     FakeSpiTypedef spi;
 
-    FakeSPIBus bus{&spi};
+    SPIBus bus{&spi};
 
     REQUIRE(spi.cs.value() == 1);
 
@@ -174,7 +194,7 @@ TEST_CASE("SPIBus - One byte operations")
     spi.DR.in_buf    = {1, 2, 3, 4, 5, 6, 7, 8, 9};
     spi.CR1_expected = 0x03DF;
 
-    FakeSPIBus bus{&spi};
+    SPIBus bus{&spi};
 
     SPIBusConfig config;
     config.clock_div = SPIClockDivider::DIV16;
@@ -182,7 +202,7 @@ TEST_CASE("SPIBus - One byte operations")
     config.mode      = SPIMode::MODE3;
     config.bit_order = SPIBitOrder::LSB_FIRST;
 
-    bus.configure(config);
+    bus.acquire(config);
     bus.select(spi.cs);
 
     SECTION("Write")
@@ -216,6 +236,9 @@ TEST_CASE("SPIBus - One byte operations")
         REQUIRE(spi.DR.out_buf.back() == 255);
         REQUIRE(spi.DR.out_buf.size() == 2);
     }
+
+    bus.deselect(spi.cs);
+    bus.release();
 }
 
 TEST_CASE("SPIBus - Multi byte operations")
@@ -225,7 +248,7 @@ TEST_CASE("SPIBus - Multi byte operations")
     spi.DR.in_buf    = {100, 101, 102, 103, 104, 105, 106, 107, 108};
     spi.CR1_expected = 0x03DF;
 
-    FakeSPIBus bus{&spi};
+    SPIBus bus{&spi};
 
     SPIBusConfig config;
     config.clock_div = SPIClockDivider::DIV16;
@@ -233,7 +256,7 @@ TEST_CASE("SPIBus - Multi byte operations")
     config.mode      = SPIMode::MODE3;
     config.bit_order = SPIBitOrder::LSB_FIRST;
 
-    bus.configure(config);
+    bus.acquire(config);
     bus.select(spi.cs);
 
     // 2 identical buffers
@@ -293,30 +316,33 @@ TEST_CASE("SPIBus - Multi byte operations")
         // No overflows
         REQUIRE(bufcmp(bufc + 4, buf + 4, 1));
     }
+
+    bus.deselect(spi.cs);
+    bus.release();
 }
 
 TEST_CASE("SPITransaction - writes")
 {
-    MockSPIBus bus{};
     SPIBusConfig config1{};
 
     config1.mode      = SPIMode::MODE1;
     config1.clock_div = SPIClockDivider::DIV32;
 
-    bus.expected_config = config1;
+    MockSPIBus bus(config1);
+    MockGpioPin cs;
 
     SECTION("Transaction")
     {
-        SPITransaction spi(bus, GpioPin(GPIOA_BASE, 1), config1);
+        SPITransaction spi(bus, cs, config1);
 
-        REQUIRE(bus.out_buf.size() == 0);
+        REQUIRE(bus.getOutBuf().size() == 0);
 
         SECTION("cmd write")
         {
             spi.write(9);
             REQUIRE_FALSE(bus.isSelected());
-            REQUIRE(bus.out_buf.size() == 1);
-            REQUIRE(bus.out_buf.back() == 9);
+            REQUIRE(bus.getOutBuf().size() == 1);
+            REQUIRE(bus.getOutBuf().back() == 9);
         }
 
         SECTION("1 byte reg write")
@@ -324,9 +350,9 @@ TEST_CASE("SPITransaction - writes")
             spi.write(10, 77);
             REQUIRE_FALSE(bus.isSelected());
 
-            REQUIRE(bus.out_buf.size() == 2);
-            REQUIRE(bus.out_buf[0] == 10);
-            REQUIRE(bus.out_buf[1] == 77);
+            REQUIRE(bus.getOutBuf().size() == 2);
+            REQUIRE(bus.getOutBuf()[0] == 10);
+            REQUIRE(bus.getOutBuf()[1] == 77);
         }
 
         SECTION("multi byte reg write")
@@ -338,8 +364,8 @@ TEST_CASE("SPITransaction - writes")
                 spi.write(10, buf, 0);
                 REQUIRE_FALSE(bus.isSelected());
 
-                REQUIRE(bus.out_buf.size() == 1);
-                REQUIRE(bus.out_buf[0] == 10);
+                REQUIRE(bus.getOutBuf().size() == 1);
+                REQUIRE(bus.getOutBuf()[0] == 10);
             }
 
             SECTION("2 writes")
@@ -347,18 +373,18 @@ TEST_CASE("SPITransaction - writes")
                 spi.write(10, buf, 4);
                 REQUIRE_FALSE(bus.isSelected());
 
-                REQUIRE(bus.out_buf.size() == 5);
+                REQUIRE(bus.getOutBuf().size() == 5);
 
-                REQUIRE(bus.out_buf[0] == 10);
-                REQUIRE(bufcmp(buf, bus.out_buf.data() + 1, 4));
+                REQUIRE(bus.getOutBuf()[0] == 10);
+                REQUIRE(bufcmp(buf, bus.getOutBuf().data() + 1, 4));
 
                 spi.write(99, buf, 6);
                 REQUIRE_FALSE(bus.isSelected());
 
-                REQUIRE(bus.out_buf.size() == 12);
+                REQUIRE(bus.getOutBuf().size() == 12);
 
-                REQUIRE(bus.out_buf[5] == 99);
-                REQUIRE(bufcmp(buf, bus.out_buf.data() + 6, 6));
+                REQUIRE(bus.getOutBuf()[5] == 99);
+                REQUIRE(bufcmp(buf, bus.getOutBuf().data() + 6, 6));
             }
         }
 
@@ -369,65 +395,65 @@ TEST_CASE("SPITransaction - writes")
             spi.write(buf, 0);
             REQUIRE_FALSE(bus.isSelected());
 
-            REQUIRE(bus.out_buf.size() == 0);
+            REQUIRE(bus.getOutBuf().size() == 0);
 
             spi.write(buf, 4);
             REQUIRE_FALSE(bus.isSelected());
 
-            REQUIRE(bus.out_buf.size() == 4);
+            REQUIRE(bus.getOutBuf().size() == 4);
 
-            REQUIRE(bufcmp(buf, bus.out_buf.data(), 4));
+            REQUIRE(bufcmp(buf, bus.getOutBuf().data(), 4));
 
             spi.write(buf, 6);
             REQUIRE_FALSE(bus.isSelected());
 
-            REQUIRE(bus.out_buf.size() == 10);
+            REQUIRE(bus.getOutBuf().size() == 10);
 
-            REQUIRE(bufcmp(buf, bus.out_buf.data() + 4, 6));
+            REQUIRE(bufcmp(buf, bus.getOutBuf().data() + 4, 6));
         }
     }
 }
 
 TEST_CASE("SPITransaction - reads")
 {
-    MockSPIBus bus;
-
-    bus.in_buf = {100, 101, 102, 103, 104, 105, 106, 107, 108, 109};
-
     SPIBusConfig config1;
 
     config1.mode      = SPIMode::MODE1;
     config1.clock_div = SPIClockDivider::DIV32;
 
-    bus.expected_config = config1;
+    MockSPIBus bus(config1);
+    MockGpioPin cs;
+
+    uint8_t in_data[10] = {100, 101, 102, 103, 104, 105, 106, 107, 108, 109};
+    bus.push(in_data, 10);
 
     SECTION("Transaction")
     {
-        SPISlave slave(bus, GpioPin(GPIOA_BASE, 1), config1);
+        SPISlave slave(bus, cs, config1);
         SPITransaction spi(slave);
 
-        REQUIRE(bus.out_buf.size() == 0);
+        REQUIRE(bus.getOutBuf().size() == 0);
 
         SECTION("1 byte reg read")
         {
 
-            REQUIRE(spi.read(0x05) == bus.in_buf[0]);
+            REQUIRE(spi.read(0x05) == in_data[0]);
             REQUIRE_FALSE(bus.isSelected());
 
-            REQUIRE(bus.out_buf.size() == 1);
-            REQUIRE(bus.out_buf.back() == 0x85);
+            REQUIRE(bus.getOutBuf().size() == 1);
+            REQUIRE(bus.getOutBuf().back() == 0x85);
 
-            REQUIRE(spi.read(0x05, true) == bus.in_buf[1]);
+            REQUIRE(spi.read(0x05, true) == in_data[1]);
             REQUIRE_FALSE(bus.isSelected());
 
-            REQUIRE(bus.out_buf.size() == 2);
-            REQUIRE(bus.out_buf.back() == 0x85);
+            REQUIRE(bus.getOutBuf().size() == 2);
+            REQUIRE(bus.getOutBuf().back() == 0x85);
 
-            REQUIRE(spi.read(0x05, false) == bus.in_buf[2]);
+            REQUIRE(spi.read(0x05, false) == in_data[2]);
             REQUIRE_FALSE(bus.isSelected());
 
-            REQUIRE(bus.out_buf.size() == 3);
-            REQUIRE(bus.out_buf.back() == 0x05);
+            REQUIRE(bus.getOutBuf().size() == 3);
+            REQUIRE(bus.getOutBuf().back() == 0x05);
         }
 
         SECTION("multi byte reg read")
@@ -438,29 +464,29 @@ TEST_CASE("SPITransaction - reads")
 
             spi.read(0x05, buf, 0);
             REQUIRE_FALSE(bus.isSelected());
-            REQUIRE(bus.out_buf.size() == 1);
-            REQUIRE(bus.out_buf.back() == 0x85);
+            REQUIRE(bus.getOutBuf().size() == 1);
+            REQUIRE(bus.getOutBuf().back() == 0x85);
             REQUIRE(bufcmp(buf, cmp, buf_size));
 
             spi.read(0x05, buf, 3);
             REQUIRE_FALSE(bus.isSelected());
-            REQUIRE(bus.out_buf.size() == 2);
-            REQUIRE(bus.out_buf.back() == 0x85);
-            REQUIRE(bufcmp(buf, bus.in_buf.data(), 3));
+            REQUIRE(bus.getOutBuf().size() == 2);
+            REQUIRE(bus.getOutBuf().back() == 0x85);
+            REQUIRE(bufcmp(buf, &in_data[0], 3));
             REQUIRE(bufcmp(buf + 3, cmp + 3, buf_size - 3));
 
             spi.read(0x05, buf, 3, true);
             REQUIRE_FALSE(bus.isSelected());
-            REQUIRE(bus.out_buf.size() == 3);
-            REQUIRE(bus.out_buf.back() == 0x85);
-            REQUIRE(bufcmp(buf, bus.in_buf.data() + 3, 3));
+            REQUIRE(bus.getOutBuf().size() == 3);
+            REQUIRE(bus.getOutBuf().back() == 0x85);
+            REQUIRE(bufcmp(buf, &in_data[3], 3));
             REQUIRE(bufcmp(buf + 3, cmp + 3, buf_size - 3));
 
             spi.read(0x05, buf, 4, false);
             REQUIRE_FALSE(bus.isSelected());
-            REQUIRE(bus.out_buf.size() == 4);
-            REQUIRE(bus.out_buf.back() == 0x05);
-            REQUIRE(bufcmp(buf, bus.in_buf.data() + 6, 4));
+            REQUIRE(bus.getOutBuf().size() == 4);
+            REQUIRE(bus.getOutBuf().back() == 0x05);
+            REQUIRE(bufcmp(buf,&in_data[6], 4));
             REQUIRE(bufcmp(buf + 4, cmp + 4, buf_size - 4));
         }
 
@@ -472,13 +498,13 @@ TEST_CASE("SPITransaction - reads")
 
             spi.read(buf, 0);
             REQUIRE_FALSE(bus.isSelected());
-            REQUIRE(bus.out_buf.size() == 0);
+            REQUIRE(bus.getOutBuf().size() == 0);
             REQUIRE(bufcmp(buf, cmp, buf_size));
 
             spi.read(buf, 3);
             REQUIRE_FALSE(bus.isSelected());
-            REQUIRE(bus.out_buf.size() == 0);
-            REQUIRE(bufcmp(buf, bus.in_buf.data(), 3));
+            REQUIRE(bus.getOutBuf().size() == 0);
+            REQUIRE(bufcmp(buf, &in_data[0], 3));
             REQUIRE(bufcmp(buf + 3, cmp + 3, buf_size - 3));
         }
     }
@@ -486,20 +512,21 @@ TEST_CASE("SPITransaction - reads")
 
 TEST_CASE("SPITransaction - transfer")
 {
-    MockSPIBus bus;
-
-    bus.in_buf = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10};
-
     SPIBusConfig config1;
 
     config1.mode      = SPIMode::MODE1;
     config1.clock_div = SPIClockDivider::DIV32;
 
-    bus.expected_config = config1;
+    MockSPIBus bus(config1);
+    MockGpioPin cs;
+
+    uint8_t data[10] = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10};
+    
+    bus.push(data, 10);
 
     SECTION("Transaction")
     {
-        SPISlave slave(bus, GpioPin(GPIOA_BASE, 1), config1);
+        SPISlave slave(bus, cs, config1);
         SPITransaction spi(slave);
 
         const int buf_size = 7;
@@ -508,14 +535,14 @@ TEST_CASE("SPITransaction - transfer")
 
         spi.transfer(buf, 0);
         REQUIRE_FALSE(bus.isSelected());
-        REQUIRE(bus.out_buf.size() == 0);
+        REQUIRE(bus.getOutBuf().size() == 0);
         REQUIRE(bufcmp(buf, cmp, buf_size));
 
         spi.transfer(buf, 4);
         REQUIRE_FALSE(bus.isSelected());
-        REQUIRE(bus.out_buf.size() == 4);
-        REQUIRE(bufcmp(buf, bus.in_buf.data(), 4));
-        REQUIRE(bufcmp(cmp, bus.out_buf.data(), 4));
+        REQUIRE(bus.getOutBuf().size() == 4);
+        REQUIRE(bufcmp(buf, &data[0], 4));
+        REQUIRE(bufcmp(cmp, bus.getOutBuf().data(), 4));
         REQUIRE(bufcmp(buf + 4, cmp + 4, buf_size - 4));
     }
 }

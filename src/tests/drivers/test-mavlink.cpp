@@ -20,7 +20,13 @@
  * THE SOFTWARE.
  */
 
+// Ignore warnings, as we don't want to change third party generated files to 
+// fix them
+#pragma GCC diagnostic push 
+#pragma GCC diagnostic ignored "-Wcast-align"
+#pragma GCC diagnostic ignored "-Waddress-of-packed-member"
 #include <libs/mavlink_skyward_lib/mavlink_lib/r2a/mavlink.h>
+#pragma GCC diagnostic pop 
 
 #include <Common.h>
 #include <drivers/gamma868/Gamma868.h>

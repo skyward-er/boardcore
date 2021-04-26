@@ -188,8 +188,9 @@ unsigned int Piksi::lookForMessages(uint8_t *buffer, unsigned int size)
         if (messageSize > size)
             return consumed;  // We don't have the entire message
 
-        uint16_t crc =
-            *reinterpret_cast<uint16_t *>(buffer + messageSize - crcSize);
+        uint16_t crc;
+        memcpy(&crc, buffer + messageSize - crcSize, sizeof(crc));
+
         if (crc16piksi(buffer + 1, messageSize - crcSize - 1) == crc)
         {
             processValidMessage(buffer, messageSize);

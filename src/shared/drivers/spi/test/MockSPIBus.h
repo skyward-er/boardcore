@@ -24,9 +24,10 @@
 #pragma once
 
 #include <cstdint>
+#include <cstdio>
 #include <vector>
 
-#include "SPIBusInterface.h"
+#include "../SPIBusInterface.h"
 
 using std::vector;
 
@@ -47,10 +48,23 @@ using std::vector;
  * 5. ???
  * 6. Profit.
  */
+
+#ifndef USE_MOCK_PERIPHERALS
+#error \
+    "SpiBusInterface must be built using MockGpioPin (-DUSE_MOCK_PERIPHERALS)"
+#endif
+
+#include "utils/testutils/MockGpioPin.h"
+
+using miosix::FastMutex;
+using miosix::Lock;
 class MockSPIBus : public SPIBusInterface
 {
 public:
-    MockSPIBus() {}
+    MockSPIBus(SPIBusConfig expected_config) : expected_config(expected_config)
+    {
+    }
+
     ~MockSPIBus() {}
 
     // Delete copy/move contructors/operators
@@ -63,17 +77,17 @@ public:
     /**
      * @brief See SPIBusInterface::write()
      */
-    void write(uint8_t byte) override;
+    virtual void write(uint8_t byte) override;
 
     /**
      * @brief See SPIBusInterface::write()
      */
-    void write(uint8_t* data, size_t size) override;
+    virtual void write(uint8_t* data, size_t size) override;
 
     /**
      * @brief See SPIBusInterface::read()
      */
-    uint8_t read() override;
+    virtual uint8_t read() override;
 
     /**
      * @brief See SPIBusInterface::read()
@@ -83,57 +97,100 @@ public:
     /**
      * @brief See SPIBusInterface::transfer()
      */
-    uint8_t transfer(uint8_t data) override;
+    virtual uint8_t transfer(uint8_t data) override;
 
     /**
      * @brief See SPIBusInterface::transfer()
      */
-    void transfer(uint8_t* data, size_t size) override;
+    virtual void transfer(uint8_t* data, size_t size) override;
 
     /**
      * @brief See SPIBusInterface::select()
      *
-     * @param cs Not used, pass any GpioPin
      */
-    void select(GpioPin& cs) override;
+    virtual void select(GpioType& cs) override;
 
     /**
      * @brief See SPIBusInterface::deselect()
      *
-     * @param cs Not used, pass any GpioPin
      */
-    void deselect(GpioPin& cs) override;
+    virtual void deselect(GpioType& cs) override;
 
     /**
-     * @brief See SPIBusInterface::configure()
+     * @brief See SPIBusInterface::acquire()
      */
-    void configure(SPIBusConfig config) override;
+    virtual void acquire(SPIBusConfig config) override;
 
     /**
      * @brief Wether the chip select is asserted or not
      */
-    bool isSelected() { return selected; }
+    virtual bool isSelected()
+    {
+
+        Lock<FastMutex> l(mutex);
+        return selected;
+    }
+
+    virtual vector<uint8_t> getOutBuf()
+    {
+        Lock<FastMutex> l(mutex);
+        return out_buf;
+    }
+
+    virtual vector<uint8_t> getInBuf()
+    {
+        Lock<FastMutex> l(mutex);
+        return in_buf;
+    }
+
+    virtual void push(uint8_t* data, size_t len);
+
+    virtual void clearBuffers()
+    {
+        out_buf.clear();
+        in_buf.clear();
+        in_buf_pos_cntr = 0;
+    }
+
+protected:
+    FastMutex mutex;
 
     vector<uint8_t> out_buf;  // Data written on the bus are stored here
     vector<uint8_t> in_buf;   // Store here data to be read from the bus
-
-    unsigned int in_buf_pos = 0;  // Read data iterator
+    size_t in_buf_pos_cntr = 0;
 
     SPIBusConfig expected_config;  // Expected configuration of the bus
 
-private:
+    virtual uint8_t _read();
+    virtual void _write(uint8_t);
+
+    virtual void _push(uint8_t* data, size_t len);
+
     bool canCommunicate();
 
     SPIBusConfig current_config;
     bool selected = false;
 };
 
-bool MockSPIBus::canCommunicate()
+inline bool MockSPIBus::canCommunicate()
 {
-    return selected && current_config == expected_config;
+    bool result = selected && current_config == expected_config;
+    if (!result)
+    {
+        printf("Error, cannot communicato on MockSPIBus: ");
+        if (!selected)
+        {
+            printf("Chip select not asserted\n");
+        }
+        else
+        {
+            printf("Incorrect configuration\n");
+        }
+    }
+    return result;
 }
 
-void MockSPIBus::write(uint8_t byte)
+inline void MockSPIBus::_write(uint8_t byte)
 {
     if (canCommunicate())
     {
@@ -145,95 +202,97 @@ void MockSPIBus::write(uint8_t byte)
     }
 }
 
-void MockSPIBus::write(uint8_t* data, size_t size)
+inline void MockSPIBus::write(uint8_t byte)
 {
-    if (canCommunicate())
+    Lock<FastMutex> l(mutex);
+    _write(byte);
+}
+
+inline void MockSPIBus::write(uint8_t* data, size_t size)
+{
+    Lock<FastMutex> l(mutex);
+
+    for (size_t i = 0; i < size; i++)
     {
-        out_buf.insert(out_buf.end(), data, data + size);
-    }
-    else
-    {
-        out_buf.insert(out_buf.end(), size, 0);
+        _write(data[i]);
     }
 }
 
-uint8_t MockSPIBus::read()
+inline uint8_t MockSPIBus::read()
+{
+    Lock<FastMutex> l(mutex);
+    return _read();
+}
+
+inline void MockSPIBus::read(uint8_t* data, size_t size)
+{
+    Lock<FastMutex> l(mutex);
+    for (size_t i = 0; i < size; i++)
+    {
+        *data = _read();
+        data++;
+    }
+}
+
+inline uint8_t MockSPIBus::_read()
 {
     if (canCommunicate())
     {
-        return in_buf[in_buf_pos++];
+        if (in_buf_pos_cntr < in_buf.size())
+        {
+            return in_buf[in_buf_pos_cntr++];
+        }
     }
     return 0;
 }
 
-void MockSPIBus::read(uint8_t* data, size_t size)
+inline uint8_t MockSPIBus::transfer(uint8_t data)
 {
-    if (canCommunicate())
+    Lock<FastMutex> l(mutex);
+    _write(data);
+    return _read();
+}
+
+inline void MockSPIBus::transfer(uint8_t* data, size_t size)
+{
+    Lock<FastMutex> l(mutex);
+    for (size_t i = 0; i < size; i++)
     {
-        for (size_t i = 0; i < size; i++)
-        {
-            *data = in_buf[in_buf_pos++];
-            data++;
-        }
-    }
-    else
-    {
-        for (size_t i = 0; i < size; i++)
-        {
-            *data = 0;
-            data++;
-        }
+        _write(data[i]);
+        data[i] = _read();
     }
 }
 
-uint8_t MockSPIBus::transfer(uint8_t data)
+inline void MockSPIBus::select(GpioType& cs)
 {
-    if (canCommunicate())
-    {
-
-        out_buf.push_back(data);
-        return in_buf[in_buf_pos++];
-    }
-    else
-    {
-
-        out_buf.push_back(0);
-        return 0;
-    }
-}
-
-void MockSPIBus::transfer(uint8_t* data, size_t size)
-{
-    if (canCommunicate())
-    {
-        for (size_t i = 0; i < size; i++)
-        {
-            out_buf.push_back(*data);
-            *data = in_buf[in_buf_pos++];
-            data++;
-        }
-    }
-    else
-    {
-        for (size_t i = 0; i < size; i++)
-        {
-            out_buf.push_back(0);
-            *data = 0;
-            data++;
-        }
-    }
-}
-
-void MockSPIBus::select(GpioPin& cs)
-{
-    (void)cs;
+    Lock<FastMutex> l(mutex);
+    cs.low();
     selected = true;
 }
 
-void MockSPIBus::deselect(GpioPin& cs)
+inline void MockSPIBus::deselect(GpioType& cs)
 {
-    (void)cs;
+    Lock<FastMutex> l(mutex);
+    cs.high();
     selected = false;
 }
 
-void MockSPIBus::configure(SPIBusConfig config) { current_config = config; }
+inline void MockSPIBus::acquire(SPIBusConfig config)
+{
+    Lock<FastMutex> l(mutex);
+
+    SPIBusInterface::acquire(config);
+
+    current_config = config;
+}
+
+inline void MockSPIBus::push(uint8_t* data, size_t len)
+{
+    Lock<FastMutex> l(mutex);
+    _push(data, len);
+}
+
+inline void MockSPIBus::_push(uint8_t* data, size_t len)
+{
+    in_buf.insert(in_buf.end(), data, data + len);
+}

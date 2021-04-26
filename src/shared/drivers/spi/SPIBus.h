@@ -21,9 +21,19 @@
  * THE SOFTWARE.
  */
 
+#pragma once
+
+#include <cassert>
+
 #include "SPIBusInterface.h"
 
-#pragma once
+
+#ifndef USE_MOCK_PERIPHERALS
+using SPIType = SPI_TypeDef;
+#else
+#include "test/FakeSpiTypedef.h"
+using SPIType = FakeSpiTypedef;
+#endif
 
 /**
  * @brief Low level driver for communicating on a SPI Bus, provides
@@ -37,7 +47,7 @@ public:
      *
      * @param spi Pointer to the SPI peripheral to be used
      */
-    SPIBus(SPI_TypeDef* spi);
+    SPIBus(SPIType* spi) : spi(spi) {}
     ~SPIBus() {}
 
     // Delete copy/move contructors/operators
@@ -87,17 +97,23 @@ public:
     /**
      * @brief See SPIBusInterface::select()
      */
-    void select(GpioPin& cs) override;
+    void select(GpioType& cs) override;
 
     /**
      * @brief See SPIBusInterface::deselect()
      */
-    void deselect(GpioPin& cs) override;
+    void deselect(GpioType& cs) override;
 
     /**
-     * @brief See SPIBusInterface::configure()
+     * @brief Obtains ownership of the bus, configuring it with the provided
+     * config. Since this implementation is not syncronized, if acquire() is
+     * called on an already locked bus, it will:
+     * - FAIL in DEBUG mode
+     * - Do nothing when NOT in DEBUG mode
+     *
+     * Use SyncedSPIBus if you need to synchronize access to the bus.
      */
-    void configure(SPIBusConfig config) override;
+    void acquire(SPIBusConfig config) override;
 
 protected:
     /**
@@ -122,7 +138,9 @@ protected:
      */
     void transfer(uint8_t* byte);
 
-    SPI_TypeDef* spi;
+    void configure(SPIBusConfig new_config);
+
+    SPIType* spi;
 
     SPIBusConfig config{};
     bool config_enabled       = true;
@@ -171,7 +189,7 @@ inline void SPIBus::transfer(uint8_t* data, size_t size)
     }
 }
 
-inline void SPIBus::select(GpioPin& cs)
+inline void SPIBus::select(GpioType& cs)
 {
     cs.low();
     if (config.cs_setup_time_us > 0)
@@ -180,7 +198,7 @@ inline void SPIBus::select(GpioPin& cs)
     }
 }
 
-inline void SPIBus::deselect(GpioPin& cs)
+inline void SPIBus::deselect(GpioType& cs)
 {
     if (config.cs_hold_time_us > 0)
     {
@@ -202,7 +220,7 @@ inline void SPIBus::write(uint8_t* byte)
         ;
 
     // Clear the RX buffer by accessing the DR register
-    spi->DR;
+    (void)spi->DR;
 }
 
 inline void SPIBus::transfer(uint8_t* byte)
@@ -235,4 +253,51 @@ inline void SPIBus::read(uint8_t* byte)
 
     // Store the received data in the byte
     *byte = (uint8_t)spi->DR;
+}
+
+inline void SPIBus::acquire(SPIBusConfig new_config)
+{
+    // Assert that the bus is not already acquired.
+    // This bus is not syncronized: fail if someone tries to take ownership when
+    // the bus is already being used. Use SyncedSPIBus if you need to
+    // synchronize access to the bus
+#ifdef DEBUG
+    assert(isBusy() == false);
+#endif
+
+    SPIBusInterface::acquire(new_config);
+
+    configure(new_config);
+}
+
+inline void SPIBus::configure(SPIBusConfig new_config)
+{
+    // Reconfigure the bus only if config enabled. Do not reconfigure if already
+    // in the correct configuration.
+    if (config_enabled && (!first_config_applied || new_config != config))
+    {
+        first_config_applied = true;
+        config               = new_config;
+
+        // Wait until the peripheral is done before changing configuration
+        while ((spi->SR & SPI_SR_TXE) == 0)
+            ;
+        while ((spi->SR & SPI_SR_BSY) > 0)
+            ;
+
+        spi->CR1 = 0;
+
+        // Configure CPOL & CPHA bits
+        spi->CR1 |= static_cast<uint32_t>(config.mode);
+
+        // Configure clock division (BR bits)
+        spi->CR1 |= static_cast<uint32_t>(config.clock_div);
+
+        // Configure LSBFIRST bit
+        spi->CR1 |= static_cast<uint32_t>(config.bit_order);
+
+        spi->CR1 |= SPI_CR1_SSI | SPI_CR1_SSM  // Use software chip-select
+                    | SPI_CR1_MSTR             // Master mode
+                    | SPI_CR1_SPE;             // Enable SPI
+    }
 }
