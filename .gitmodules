@@ -16,4 +16,4 @@
 	url = https://gitlab.com/libeigen/eigen.git
 [submodule "libs/mxgui"]
 	path = libs/mxgui
-	url = git@git.skywarder.eu:scs/mxgui.git
+	url = ../../scs/mxgui.git
