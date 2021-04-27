@@ -71,7 +71,7 @@ public:
      * @param    cs        Chip select of the slave to communicate to
      * @param    config    Configuration of the bus for the selected slave
      */
-    SPITransaction(SPIBusInterface& bus, GpioPin cs, SPIBusConfig config);
+    SPITransaction(SPIBusInterface& bus, GpioType cs, SPIBusConfig config);
 
     ~SPITransaction();
 
@@ -161,5 +161,5 @@ public:
 
 private:
     SPIBusInterface& bus;
-    GpioPin cs;
+    GpioType cs;
 };

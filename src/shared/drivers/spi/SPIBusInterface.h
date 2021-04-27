@@ -31,7 +31,12 @@
 using miosix::delayUs;
 using miosix::GpioPin;
 
-class SPITransaction;
+#ifndef USE_MOCK_PERIPHERALS
+using GpioType = GpioPin;
+#else
+#include "utils/testutils/MockGpioPin.h"
+using GpioType = MockGpioPin;
+#endif
 
 /**
  * @brief SPI Clock divider.
@@ -118,11 +123,10 @@ struct SPIBusConfig
  */
 class SPIBusInterface
 {
-    friend class SPITransaction;
 public:
     SPIBusInterface() {}
 
-    ~SPIBusInterface() {}
+    virtual ~SPIBusInterface() {}
 
     // Delete copy/move contructors/operators
     SPIBusInterface(const SPIBusInterface&) = delete;
@@ -184,7 +188,7 @@ public:
      *
      * @param    cs Chip select pin for the slave
      */
-    virtual void select(GpioPin& cs) = 0;
+    virtual void select(GpioType& cs) = 0;
 
     /**
      * @brief Deselects the slave
@@ -192,18 +196,34 @@ public:
      * @param    cs Chip select pin for the slave
      * @return
      */
-    virtual void deselect(GpioPin& cs) = 0;
+    virtual void deselect(GpioType& cs) = 0;
 
     /**
      * @brief Configures the bus with the provided configuration parameters.
+     * Call this before every transaction, after the call to lock() and before
+     * select(..)
      *
      * @param    config    Configuration parameters
      * @return
      */
-    virtual void configure(SPIBusConfig config) = 0;
+    virtual void acquire(SPIBusConfig config)
+    {
+        (void)config;
+        busy = true;
+    }
+
+    /**
+     * @brief Releases ownership of the bus
+     */
+    virtual void release() { busy = false; }
+
+    /**
+     * @brief Checks wether the bus is currently being used
+     */
+    virtual bool isBusy() { return busy; }
 
 private:
-    bool locked = false; // For use by SPITransaction
+    bool busy = false;  // For use by SPITransaction
 };
 
 /**
@@ -215,10 +235,51 @@ struct SPISlave
 
     SPIBusConfig config;  ///> How the bus should be configured to communicate
                           ///> with the slave.
-    GpioPin cs;           ///> Chip select pin
+    GpioType cs;          ///> Chip select pin
 
-    SPISlave(SPIBusInterface& bus, GpioPin cs, SPIBusConfig config)
+    SPISlave(SPIBusInterface& bus, GpioType cs, SPIBusConfig config)
         : bus(bus), config(config), cs(cs)
     {
     }
+};
+
+/**
+ * @brief RAII Interface for SPI bus acquisition
+ *
+ */
+class SPIAcquireLock
+{
+public:
+    SPIAcquireLock(SPISlave slave) : SPIAcquireLock(slave.bus, slave.config) {}
+
+    SPIAcquireLock(SPIBusInterface& bus, SPIBusConfig cfg) : bus(bus)
+    {
+        bus.acquire(cfg);
+    }
+
+    ~SPIAcquireLock() { bus.release(); }
+
+private:
+    SPIBusInterface& bus;
+};
+
+/**
+ * @brief RAII Interface for SPI chip selection
+ *
+ */
+class SPISelectLock
+{
+public:
+    SPISelectLock(SPISlave slave) : SPISelectLock(slave.bus, slave.cs) {}
+
+    SPISelectLock(SPIBusInterface& bus, GpioType cs) : bus(bus), cs(cs)
+    {
+        bus.select(cs);
+    }
+
+    ~SPISelectLock() { bus.deselect(cs); }
+
+private:
+    SPIBusInterface& bus;
+    GpioType& cs;
 };

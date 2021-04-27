@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2020 Skyward Experimental Rocketry
+ * Copyright (c) 2021 Skyward Experimental Rocketry
  * Authors: Luca Erbetta (luca.erbetta@skywarder.eu)
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -21,38 +21,38 @@
  * THE SOFTWARE.
  */
 
-#include "SPIBus.h"
+#pragma once
 
-SPIBus::SPIBus(SPI_TypeDef* spi) : spi(spi) {}
+#include <mxgui/image.h>
 
-void SPIBus::configure(SPIBusConfig new_config)
+#include "View.h"
+
+/**
+ * @brief Simple view that displays an image
+ */
+class ImageView : public View
 {
-    // Reconfigure the bus only if config enabled. Do not reconfigure if already
-    // in the correct configuration.
-    if (config_enabled && (!first_config_applied || new_config != config))
+public:
+    ImageView(const mxgui::Image* image) : image(image) {}
+
+    void setImage(mxgui::Image* image)
     {
-        first_config_applied = true;
-        config               = new_config;
-
-        // Wait until the peripheral is done before changing configuration
-        while (!(spi->SR & SPI_SR_TXE))
-            ;
-        while ((spi->SR & SPI_SR_BSY))
-            ;
-
-        spi->CR1 = 0;
-
-        // Configure CPOL & CPHA bits
-        spi->CR1 |= static_cast<uint32_t>(config.mode);
-
-        // Configure clock division (BR bits)
-        spi->CR1 |= static_cast<uint32_t>(config.clock_div);
-
-        // Configure LSBFIRST bit
-        spi->CR1 |= static_cast<uint32_t>(config.bit_order);
-
-        spi->CR1 |= SPI_CR1_SSI | SPI_CR1_SSM  // Use software chip-select
-                    | SPI_CR1_MSTR             // Master mode
-                    | SPI_CR1_SPE;             // Enable SPI
+        this->image = image;
+        invalidate();
     }
-}
+
+    const mxgui::Image* getImage() { return image; }
+
+    void draw(mxgui::DrawingContext& dc) override
+    {
+        if (isInvalidated())
+        {
+            View::draw(dc);
+
+            dc.clippedDrawImage(getBounds().topLeft(), getBounds().topLeft(),
+                                getBounds().bottomRight(), *image);
+        }
+    }
+private:
+    const mxgui::Image* image;
+};

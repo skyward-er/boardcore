@@ -190,6 +190,7 @@ int main()
         }
         //For testing mpu
         unsigned int *m;
+        (void)m; // Disable unused warning
         switch(c)
         {
             case 't':
@@ -347,6 +348,7 @@ int main()
             case 's':
                 iprintf("Shutting down\n");
                 shutdown();
+                break;
             default:
                 iprintf("Unrecognized option\n");
         }
@@ -609,6 +611,7 @@ static volatile bool t1_v1;
 
 static void t1_p1(void *argv)
 {
+    (void)argv;
     for(;;)
     {
         if(Thread::testTerminate()) break;
@@ -701,6 +704,8 @@ static Thread *t2_p_v1;
 
 static void t2_p1(void *argv)
 {
+    (void)argv;
+
     //This is to fix a race condition: the immediately after the thread
     //creation a yield occurs, t2_p_v1 is not yet assigned so the check fails
     Thread::sleep(5);
@@ -718,6 +723,7 @@ static void t2_p1(void *argv)
 
 static void t2_p2(void *argv)
 {
+    (void)argv;
     while(Thread::testTerminate()==false) t2_v1=true;
 }
 
@@ -782,6 +788,7 @@ also tests creation of multiple instances of the same thread
 
 static void t3_p1(void *argv)
 {
+    (void)argv;
     const int SLEEP_TIME=100;
     for(;;)
     {
@@ -799,6 +806,7 @@ static volatile bool t3_deleted;//Set when an instance of t3_p2 is deleted
 
 static void t3_p2(void *argv)
 {
+    (void)argv;
     const int SLEEP_TIME=15;
     for(;;)
     {
@@ -893,6 +901,7 @@ static volatile bool t4_v1;
 
 static void t4_p1(void *argv)
 {
+    (void)argv;
     for(;;)
     {
         if(Thread::testTerminate()) break;
@@ -1035,6 +1044,7 @@ static volatile bool t5_v2;//False=testing Thread::wait() else Thread::IRQwait()
 
 static void t5_p1(void *argv)
 {
+    (void)argv;
     for(;;)
     {
         if(Thread::testTerminate()) break;
@@ -1153,6 +1163,7 @@ static FastMutex t6_m1a;
 
 static void t6_p1(void *argv)
 {
+    (void)argv;
     t6_m1.lock();
     seq.add('1');
     Thread::sleep(100);
@@ -1165,6 +1176,7 @@ static void t6_p1(void *argv)
 
 static void t6_p2(void *argv)
 {
+    (void)argv;
     t6_m1.lock();
     seq.add('2');
     Thread::sleep(100);
@@ -1176,6 +1188,7 @@ static void t6_p2(void *argv)
 
 static void t6_p3(void *argv)
 {
+    (void)argv;
     t6_m1.lock();
     seq.add('3');
     Thread::sleep(100);
@@ -1187,6 +1200,7 @@ static void t6_p3(void *argv)
 
 static void t6_p4(void *argv)
 {
+    (void)argv;
     t6_m1.lock();
     for(;;)
     {
@@ -1205,6 +1219,7 @@ static void t6_p4(void *argv)
 
 static void t6_p1a(void *argv)
 {
+    (void)argv;
     t6_m1a.lock();
     seq.add('1');
     Thread::sleep(100);
@@ -1213,6 +1228,7 @@ static void t6_p1a(void *argv)
 
 static void t6_p2a(void *argv)
 {
+    (void)argv;
     t6_m1a.lock();
     seq.add('2');
     Thread::sleep(100);
@@ -1221,6 +1237,7 @@ static void t6_p2a(void *argv)
 
 static void t6_p3a(void *argv)
 {
+    (void)argv;
     t6_m1a.lock();
     seq.add('3');
     Thread::sleep(100);
@@ -1229,6 +1246,7 @@ static void t6_p3a(void *argv)
 
 static void t6_p4a(void *argv)
 {
+    (void)argv;
     t6_m1a.lock();
     for(;;)
     {
@@ -1251,6 +1269,7 @@ static FastMutex t6_m2a;
 
 static void t6_p5(void *argv)
 {
+    (void)argv;
     for(;;)
     {
         if(Thread::testTerminate()) break;
@@ -1266,6 +1285,7 @@ static void t6_p5(void *argv)
 
 static void t6_p5a(void *argv)
 {
+    (void)argv;
     for(;;)
     {
         if(Thread::testTerminate()) break;
@@ -1305,6 +1325,7 @@ static FastMutex t6_m5a(FastMutex::RECURSIVE);
 
 static void *t6_p7(void *argv)
 {
+    (void)argv;
     if(t6_m5.tryLock()==false) return reinterpret_cast<void*>(1); // 1 = locked
     t6_m5.unlock();
     return reinterpret_cast<void*>(0); // 0 = unlocked
@@ -1320,6 +1341,7 @@ bool checkIft6_m5IsLocked()
 
 static void *t6_p7a(void *argv)
 {
+    (void)argv;
     if(t6_m5a.tryLock()==false) return reinterpret_cast<void*>(1); // 1 = locked
     t6_m5a.unlock();
     return reinterpret_cast<void*>(0); // 0 = unlocked
@@ -1741,6 +1763,7 @@ static Queue<char,4> t8_q2;
 
 static void t8_p1(void *argv)
 {
+    (void)argv;
     for(;;)
     {
         if(Thread::testTerminate()) break;
@@ -1985,6 +2008,7 @@ void t10_f2()
 
 void t10_p1(void *argv)
 {
+    (void)argv;
     t10_f2();
     fail("Exception not thrown");
 }
@@ -2011,6 +2035,7 @@ static volatile unsigned int t11_v1;//Free heap after spawning thread
 
 void t11_p1(void *argv)
 {
+    (void)argv;
     if(MemoryProfiling::getStackSize()!=STACK_SMALL) fail("getStackSize (2)");
     //Check that getCurrentFreeHeap returns the same value from different
     //threads if no heap allocation happened in between
@@ -2032,7 +2057,8 @@ void test_11()
         fail("getAbsoluteFreeStack (1)");
     if(MemoryProfiling::getAbsoluteFreeStack()>curFreeStack-4)
         fail("getAbsoluteFreeStack (2)");
-        unsigned int heapSize=MemoryProfiling::getHeapSize();
+    
+    unsigned int heapSize=MemoryProfiling::getHeapSize();
     if(MemoryProfiling::getCurrentFreeHeap()>heapSize)
         fail("getCurrentFreeHeap");
     if(MemoryProfiling::getAbsoluteFreeHeap()>heapSize)
@@ -2057,12 +2083,14 @@ Mutex t12_m2;
 
 void t12_p1(void *argv)
 {
+    (void)argv;
     Lock<Mutex> l1(t12_m1);
     Lock<Mutex> l2(t12_m2);
 }
 
 void t12_p2(void *argv)
 {
+    (void)argv;
     Lock<Mutex> l(t12_m1);
 }
 
@@ -2265,6 +2293,7 @@ static Mutex t15_m1;
 
 void t15_p1(void *argv)
 {
+    (void)argv;
     for(int i=0;i<10;i++)
     {
         Lock<Mutex> l(t15_m1);
@@ -2276,6 +2305,7 @@ void t15_p1(void *argv)
 
 void t15_p2(void *argv)
 {
+    (void)argv;
     for(int i=0;i<10;i++)
     {
         Lock<Mutex> l(t15_m1);
@@ -2395,6 +2425,7 @@ pthread_cond_t t16_c1=PTHREAD_COND_INITIALIZER;
 
 void *t16_p3(void *argv)
 {
+    (void)argv;
     Thread::sleep(30);
     if(pthread_mutex_trylock(&t16_m1)!=0)
         fail("cond_wait did not release mutex"); //<---
@@ -2408,6 +2439,7 @@ pthread_cond_t t16_c2;
 
 void *t16_p4(void *argv)
 {
+    (void)argv;
     Thread::sleep(30);
     if(pthread_mutex_trylock(&t16_m1)!=0)
         fail("cond_wait did not release mutex (2)"); //<---
@@ -2791,6 +2823,7 @@ static void be()
 
 static void t19_p1(void *argv)
 {
+    (void)argv;
     Thread::sleep(50);
     {
         FastInterruptDisableLock dLock;
@@ -3232,6 +3265,7 @@ struct t22_s1
 
 static void t22_t2(void *argv)
 {
+    (void)argv;
     while(Thread::testTerminate()==false)
     {
         t22_v5=true;
@@ -3958,6 +3992,7 @@ static volatile bool fs_1_error;
 
 static void fs_t1_p1(void *argv)
 {
+    (void)argv;
     FILE *f;
     if((f=fopen("/sd/testdir/file_1.txt","w"))==NULL)
     {
@@ -3990,6 +4025,7 @@ static void fs_t1_p1(void *argv)
 
 static void fs_t1_p2(void *argv)
 {
+    (void)argv;
     FILE *f;
     if((f=fopen("/sd/testdir/file_2.txt","w"))==NULL)
     {
@@ -4022,6 +4058,7 @@ static void fs_t1_p2(void *argv)
 
 static void fs_t1_p3(void *argv)
 {
+    (void)argv;
     FILE *f;
     if((f=fopen("/sd/testdir/file_3.txt","w"))==NULL)
     {
@@ -4558,6 +4595,7 @@ context switch speed
 
 static void b2_p1(void *argv)
 {
+    (void)argv;
     for(;;)
     {
         if(Thread::testTerminate()) break;

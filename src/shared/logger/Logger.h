@@ -28,11 +28,13 @@
 #pragma once
 
 #include <miosix.h>
+
 #include <cstdio>
 #include <list>
 #include <queue>
 #include <string>
 #include <type_traits>
+
 #include "LogStats.h"
 
 using std::string;
@@ -101,9 +103,9 @@ public:
     }
 
     /**
-    * Returns current log filename
-    * @return
-    */
+     * Returns current log filename
+     * @return
+     */
     string getFileName() { return getFileName(fileNumber); }
 
     LogStats getLogStats() { return s; }
@@ -129,7 +131,10 @@ public:
     template <typename T>
     LogResult log(const T &t)
     {
-        // static_assert(std::is_trivially_copyable<T>::value,"");
+        static_assert(
+            std::is_trivially_copyable<T>::value,
+            "A type T must be trivially copyable in order to be logged!");
+
         return logImpl(typeid(t).name(), &t, sizeof(t));
     }
 
@@ -176,8 +181,8 @@ private:
 
     static const unsigned int filenameMaxRetry =
         100;                                         ///< Limit on new filename
-    static const unsigned int maxRecordSize = 256;   ///< Limit on logged data
-    static const unsigned int numRecords    = 1024;  ///< Size of record queues
+    static const unsigned int maxRecordSize = 512;   ///< Limit on logged data
+    static const unsigned int numRecords    = 512;  ///< Size of record queues
     static const unsigned int bufferSize = 64 * 1024;  ///< Size of each buffer
     static const unsigned int numBuffers = 8;          ///< Number of buffers
 

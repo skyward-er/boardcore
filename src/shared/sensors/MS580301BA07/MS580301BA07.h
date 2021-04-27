@@ -124,7 +124,7 @@ public:
             case STATE_INIT:
                 spi.write(CONVERT_D1_4096);
                 mStatus = STATE_SAMPLED_PRESSURE;
-
+                break;
             case STATE_SAMPLED_PRESSURE:
                 spi.read(ADC_READ, rcvbuf, 3, false);
                 mInternalPressure = rcvbuf[2] | ((uint32_t)rcvbuf[1] << 8) |
