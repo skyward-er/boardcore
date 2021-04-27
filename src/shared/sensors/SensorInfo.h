@@ -35,21 +35,14 @@
  */
 struct SensorInfo
 {
-    const uint32_t freq;
-    const std::function<void()> callback;
-    const bool is_dma;
-    std::atomic<bool> is_enabled;
+    uint32_t freq;
+    std::function<void()> callback;
+    bool is_dma;
+    bool is_enabled;
 
     SensorInfo(uint32_t freq, std::function<void()> callback, bool is_dma,
-               std::atomic<bool> is_enabled)
-        : freq(freq), callback(callback), is_dma(is_dma),
-          is_enabled(is_enabled.load())
-    {
-    }
-
-    SensorInfo(const SensorInfo& other)
-        : freq(other.freq), callback(other.callback), is_dma(other.is_dma),
-          is_enabled(other.is_enabled.load())
+               bool is_enabled)
+        : freq(freq), callback(callback), is_dma(is_dma), is_enabled(is_enabled)
     {
     }
 };
