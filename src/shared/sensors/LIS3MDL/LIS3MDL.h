@@ -395,7 +395,7 @@ public:
     {
 
         SPITransaction spi(mSlave);
-        uint8_t reg, err = 0;
+        uint8_t reg = 0, err = 0;
 
         mConfig = config;
         currDiv = 0;
@@ -437,7 +437,7 @@ public:
         {
             reg = 0;
         }
-        
+
         spi.write(CTRL_REG5, reg);
         err |= spi.read(CTRL_REG5) != reg;
 
@@ -531,7 +531,7 @@ private:
         // Reset any error
         last_error = SensorErrors::NO_ERRORS;
 
-        uint16_t val;
+        int16_t val;
         LIS3MDLData newData{};
 
         if (mConfig.enableTemperature)
