@@ -51,7 +51,7 @@ public:
     BMX160(SPIBusInterface& bus, GpioPin cs, BMX160Config config = {})
         : BMX160(bus, cs, config, SPIBusConfig{})
     {
-        spi_slave.config.clock_div = SPIClockDivider::DIV4;
+        spi_slave.config.clock_div = SPIClockDivider::DIV32;
         old_mag.mag_timestamp      = 0.0f;
         old_gyr.gyro_timestamp     = 0.0f;
         old_acc.accel_timestamp    = 0.0f;
@@ -333,8 +333,10 @@ private:
     bool checkChipid()
     {
         SPITransaction spi(spi_slave);
+        auto chip_id = spi.read(BMX160Defs::REG_CHIPID);
+        TRACE("[BMX160] Chipid: %d\n", chip_id);
 
-        return spi.read(BMX160Defs::REG_CHIPID) == BMX160Defs::CHIPID;
+        return chip_id == BMX160Defs::CHIPID;
     }
 
     /// @brief Perform a soft-reset.
@@ -821,8 +823,14 @@ private:
             return;
         }
 
+        TRACE("Fifo len: %d\n", len);
+
         // Sometimes the buffer gets over 1000
         uint8_t buf[1100];
+
+        for(int i = 0; i < 10; i++) {
+            TRACE("[%d]: %x\n", i, buf[i]);
+        }
 
 #ifdef DEBUG
         assert(len <= static_cast<int>(sizeof(buf)) && "Buffer overflow!");
