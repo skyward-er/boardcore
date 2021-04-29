@@ -106,7 +106,7 @@ bool SensorManager::init(const SensorMap_t& sensors_map)
         SensorInfo sensor_info = it->second;
 
         TRACE("[SM] Sensor %p, Sensor info %p ---> enabled = %d \n", sensor,
-              sensor_info, sensor_info.is_enabled.load());
+              sensor_info, sensor_info.is_enabled);
 
         // avoid adding sensors that fail to be initalized
         if (!initSensor(sensor))
