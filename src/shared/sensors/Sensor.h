@@ -49,6 +49,11 @@ protected:
     SensorErrors last_error = SensorErrors::NO_ERRORS;
 
 public:
+    virtual ~AbstractSensor()
+    {
+
+    }
+    
     /**
      * @brief Initialize the sensor.
      * @return boolean value indicating whether the operation succeded or not
@@ -94,6 +99,11 @@ protected:
     virtual Data sampleImpl() = 0;
 
 public:
+    virtual ~Sensor()
+    {
+
+    }
+
     void sample() override { last_sample = sampleImpl(); }
 
     /**
