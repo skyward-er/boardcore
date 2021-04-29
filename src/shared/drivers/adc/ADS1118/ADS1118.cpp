@@ -189,6 +189,8 @@ void ADS1118::readChannel(int8_t nextChannel, int8_t prevChannel)
     int16_t rawValue;
     uint32_t writeData, transferData;
 
+     last_error = NO_ERRORS;
+
     // Prepare the next configuration data
     if (nextChannel > INVALID_CHANNEL && nextChannel < NUM_OF_CHANNELS)
     {
@@ -236,7 +238,8 @@ void ADS1118::readChannel(int8_t nextChannel, int8_t prevChannel)
         if (prevChannel != 8)  // Voltage value
         {
             values[prevChannel].voltage =
-                rawValue * PGA_LSB_SIZE[channelsConfig[prevChannel].bits.pga];
+                rawValue * PGA_LSB_SIZE[channelsConfig[prevChannel].bits.pga] /
+                1000;
         }
         else  // Temperature value
         {

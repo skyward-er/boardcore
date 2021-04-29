@@ -31,10 +31,10 @@
 class SSCDRRN015PDA final : public HoneywellPressureSensor<SSCDRRN015PDAData>
 {
 public:
-    using HoneywellPressureSensor<SSCDRRN015PDA>::HoneywellPressureSensor;
-
-private:
-    const float maxPressure = 103421.3594;
-    
-    const float maxPressure = -103421.3594;
+    SSCDRRN015PDA(std::function<ADCData()> getSensorVoltage_,
+                  const float V_SUPPLY_ = 5.0)
+        : HoneywellPressureSensor(getSensorVoltage_, V_SUPPLY_, 103421.3594,
+                                  -103421.3594)
+    {
+    }
 };

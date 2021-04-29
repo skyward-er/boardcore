@@ -31,8 +31,9 @@
 class SSCDANN030PAA final : public HoneywellPressureSensor<SSCDANN030PAAData>
 {
 public:
-    using HoneywellPressureSensor<SSCDANN030PAAData>::HoneywellPressureSensor;
-
-private:
-    const float maxPressure = 206842.7188;
+    SSCDANN030PAA(std::function<ADCData()> getSensorVoltage_,
+                  const float V_SUPPLY_ = 5.0)
+        : HoneywellPressureSensor(getSensorVoltage_, V_SUPPLY_, 206842.7188)
+    {
+    }
 };

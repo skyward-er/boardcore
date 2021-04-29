@@ -25,9 +25,10 @@
 #include "TimestampTimer.h"
 
 InternalADC::InternalADC(ADC_TypeDef& ADCx_, const float V_SUPPLY_,
+                         const bool isUsingDMA_,
                          DMA_Stream_TypeDef* DMAx_Streamx_)
-    : ADCx(ADCx_), V_SUPPLY(V_SUPPLY_), DMAx_Streamx(DMAx_Streamx_),
-      isUsingDMA(true)
+    : ADCx(ADCx_), V_SUPPLY(V_SUPPLY_), isUsingDMA(isUsingDMA_),
+      DMAx_Streamx(DMAx_Streamx_)
 {
     resetRegisters();
     enableADCClock();
@@ -122,8 +123,7 @@ bool InternalADC::enableChannel(Channel channel)
 bool InternalADC::enableChannel(Channel channel, SampleTime sampleTime)
 {
     // Check channel number
-    if (channel < CH0 || (channel >= INJECTED_CHANNEL_N && !isUsingDMA) ||
-        (channel >= CH_NUM && isUsingDMA))
+    if (channel < CH0 || channel >= CH_NUM)
     {
         return false;
     }
@@ -131,11 +131,17 @@ bool InternalADC::enableChannel(Channel channel, SampleTime sampleTime)
     // Add channel to the sequence
     if (!isUsingDMA)
     {
-        addInjectedChannel(channel);
+        if (!addInjectedChannel(channel))
+        {
+            return false;
+        }
     }
     else
     {
-        addRegularChannel(channel);
+        if (!addRegularChannel(channel))
+        {
+            return false;
+        }
 
         // Update the DMA number of data
         DMAx_Streamx->NDTR = activeChannels;
@@ -254,6 +260,8 @@ inline void InternalADC::startRegularConversion()
 
 inline bool InternalADC::addInjectedChannel(Channel channel)
 {
+    TRACE("[internal-adc] Enabling injected channel %d\n", channel);
+
     // Check active channels number
     if (activeChannels >= 4)
     {

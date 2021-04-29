@@ -55,6 +55,7 @@ flags = [
     '-Ilibs/miosix-kernel/miosix/arch/common',
     '-Ilibs/miosix-kernel/miosix/arch/cortexM4_stm32f4/common',
     '-Ilibs/miosix-kernel/miosix/arch/cortexM4_stm32f4/stm32f429zi_stm32f4discovery',
+    '-Ilibs/eigen',
     '-Imiosix',
     '-Imiosix-kernel',
     '-Isrc/shared',

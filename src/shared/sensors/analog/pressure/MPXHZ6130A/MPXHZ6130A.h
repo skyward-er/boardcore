@@ -31,15 +31,17 @@
 class MPXHZ6130A final : public AnalogPressureSensor<MPXHZ6130AData>
 {
 public:
-    using AnalogPressureSensor<MPXHZ6130AData>::AnalogPressureSensor;
+    MPXHZ6130A(std::function<ADCData()> getSensorVoltage_,
+               const float V_SUPPLY_ = 5.0)
+        : AnalogPressureSensor(getSensorVoltage_, V_SUPPLY_, 130000)
+    {
+    }
 
 private:
     float voltageToPressure(float voltage) override
     {
         return (((voltage / V_SUPPLY) + CONST_B) / CONST_A) * 1000;
     }
-
-    const float maxPressure = 130000;
 
     // Constants from datasheet
     static constexpr float CONST_A = 0.007826;

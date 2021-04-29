@@ -103,6 +103,7 @@ public:
     };
 
     InternalADC(ADC_TypeDef& ADCx_, const float V_SUPPLY_ = 5.0,
+                const bool isUsingDMA_    = false,
                 DMA_Stream_TypeDef* DMAx_ = DMA1_Stream0);
 
     ~InternalADC();
@@ -145,14 +146,6 @@ private:
 
     ADC_TypeDef& ADCx;
     const float V_SUPPLY = 5.0;
-    DMA_Stream_TypeDef* DMAx_Streamx;
-
-    DMA_TypeDef* DMAx = DMA1;
-    uint8_t streamNum = 0;
-    uint32_t transferCompleteMask;
-    uint32_t transferErrorMask;
-    volatile uint32_t* statusReg;
-    volatile uint32_t* clearFlagReg;
 
     uint8_t activeChannels = 0;
     uint64_t timestamp;
@@ -174,7 +167,14 @@ private:
      * would need to handle each channel's end of conversion interrupt or go
      * through
      */
-    const bool isUsingDMA = false;
+    const bool isUsingDMA;
+    DMA_Stream_TypeDef* DMAx_Streamx;
+    DMA_TypeDef* DMAx = DMA1;
+    uint8_t streamNum = 0;
+    uint32_t transferCompleteMask;
+    uint32_t transferErrorMask;
+    volatile uint32_t* statusReg;
+    volatile uint32_t* clearFlagReg;
 
     static constexpr int INJECTED_CHANNEL_N = 4;
     static constexpr int RESOLUTION         = 4096;  ///< 12 bits

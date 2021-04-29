@@ -46,25 +46,19 @@ int main()
 
     TimestampTimer::enableTimestampTimer();
 
-    SimpleSensorSampler sampler(1, 50);
-
-    MS580301BA07* ms58 = new MS580301BA07(bus, chip_select);
+    MS580301BA07 sensor(bus, chip_select);
 
     Thread::sleep(100);
 
-    if (ms58->init())
+    if (sensor.init())
     {
         printf("MS58 Init succeeded\n");
-
-        // SensorInfo : { freq, callback, is_dma, is_enabled }
-        SensorInfo s_info{1, std::bind([&]() {}), false, true};
-        sampler.addSensor(ms58, s_info);
     }
     else
     {
         printf("MS58 Init failed\n");
 
-        while (!ms58->init())
+        while (!sensor.init())
         {
             printf("MS58 Init failed\n");
             Thread::sleep(1000);
@@ -72,16 +66,19 @@ int main()
     }
 
     Thread::sleep(100);
-    printf("raw_p,p,raw_t,t\n");
+    printf("press_timestamp,press,temp_timestamp,temp\n");
+
     while (true)
     {
-        sampler.sampleAndCallback();
+        sensor.sample();
+        Thread::sleep(10);
+        sensor.sample();
 
-        const float last_pressure = ms58->getLastSample().press;
-        const float last_temp     = ms58->getLastSample().temp;
-        MS5803Data md             = ms58->getLastSample();
-        printf("%d,%f,%d,%f\n", (int)md.raw_press, last_pressure,
-               (int)md.raw_temp, last_temp);
+        const float last_pressure = sensor.getLastSample().press;
+        const float last_temp     = sensor.getLastSample().temp;
+        MS5803Data md             = sensor.getLastSample();
+        printf("%llu,%f,%llu,%f\n", md.press_timestamp, last_pressure,
+               md.temp_timestamp, last_temp);
 
         Thread::sleep(100);
     }

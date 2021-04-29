@@ -22,8 +22,8 @@
 
 #pragma once
 
-#include "HoneywellPressureSensor.h"
 #include "HSCMAND015PAData.h"
+#include "HoneywellPressureSensor.h"
 
 /**
  * @brief Absolute pressure sensor with a 0-103kPa range (0-15psi)
@@ -31,8 +31,9 @@
 class HSCMAND015PA final : public HoneywellPressureSensor<HSCMAND015PAData>
 {
 public:
-    using HoneywellPressureSensor<HSCMAND015PAData>::HoneywellPressureSensor;
-
-private:
-    const float maxPressure = 103421.3594;
+    HSCMAND015PA(std::function<ADCData()> getSensorVoltage_,
+                 const float V_SUPPLY_ = 5.0)
+        : HoneywellPressureSensor(getSensorVoltage_, V_SUPPLY_, 103421.3594)
+    {
+    }
 };
