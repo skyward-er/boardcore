@@ -50,7 +50,7 @@ void SensorSampler::toggleSensor(AbstractSensor* sensor, bool is_en)
 
     TRACE("[Sampler %d] Toggle Sensor %p, Sensor info %p ---> enabled = %d \n",
           getID(), sensor, sensors_map.at(sensor),
-          sensors_map.at(sensor).is_enabled.load());
+          sensors_map.at(sensor).is_enabled);
 }
 
 void SensorSampler::enableAllSensors()
@@ -103,7 +103,7 @@ void SimpleSensorSampler::addSensor(AbstractSensor* sensor,
 
     TRACE("[Sampler %d] Added : Sensor %p, Sensor info %p ---> enabled = %d\n",
           getID(), sensor, &sensors_map.at(sensor),
-          sensors_map.at(sensor).is_enabled.load());
+          sensors_map.at(sensor).is_enabled);
 }
 
 void SimpleSensorSampler::sampleSensor(AbstractSensor* sensor)
@@ -125,7 +125,7 @@ void DMASensorSampler::addSensor(AbstractSensor* sensor, SensorInfo sensor_info)
 
     TRACE("[Sampler %d] Added : Sensor %p, Sensor info %p ---> enabled = %d\n",
           this->getID(), sensor, &sensors_map.at(sensor),
-          sensors_map.at(sensor).is_enabled.load());
+          sensors_map.at(sensor).is_enabled);
 }
 
 /*
