@@ -123,7 +123,7 @@ int Logger::start()
         throw runtime_error("Error creating stats thread");
     }*/
     started = true;
-
+    s.opened = true;
     s.logNumber = fileNumber;
     return fileNumber;
 }
@@ -139,6 +139,8 @@ void Logger::stop()
     writeT->join();
     // statsT->join();
     fclose(file);
+
+    s.opened = false;
 }
 
 Logger::Logger()
