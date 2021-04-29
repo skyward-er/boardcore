@@ -35,9 +35,11 @@
 class BatteryVoltageSensor : public Sensor<BatteryVoltageData>
 {
 public:
+    static constexpr int MOVING_AVAERAGE_N = 10;
+
     BatteryVoltageSensor(std::function<ADCData()> getADCVoltage_,
-                         float conversionRatio_)
-        : getADCVoltage(getADCVoltage_), conversionRatio(conversionRatio_)
+                         float conversionCoeff_)
+        : getADCVoltage(getADCVoltage_), conversionCoeff(conversionCoeff_)
     {
     }
 
@@ -54,7 +56,11 @@ public:
         bat_data.adc_timestamp = adc_data.adc_timestamp;
         bat_data.channel_id    = adc_data.channel_id;
         bat_data.voltage       = adc_data.voltage;
-        bat_data.bat_voltage   = adcToBatteryVoltage(adc_data.voltage);
+
+        // Moving average
+        bat_data.bat_voltage *= MOVING_AVAERAGE_COMP_COEFF;
+        bat_data.bat_voltage =
+            adcToBatteryVoltage(adc_data.voltage) * MOVING_AVAERAGE_COEFF;
 
         return bat_data;
     }
@@ -63,11 +69,15 @@ private:
     ///< Conversion function from adc volts to battery volts
     float adcToBatteryVoltage(float voltage)
     {
-        return voltage / conversionRatio;
+        return voltage * conversionCoeff;
     }
 
     ///< Function that returns the adc voltage
     std::function<ADCData()> getADCVoltage;
 
-    float conversionRatio;
+    float conversionCoeff;
+
+    static constexpr float MOVING_AVAERAGE_COEFF = 1 / MOVING_AVAERAGE_N;
+    static constexpr float MOVING_AVAERAGE_COMP_COEFF =
+        1 - MOVING_AVAERAGE_COEFF;
 };
