@@ -21,17 +21,6 @@
  * THE SOFTWARE.
  */
 
-/*
-Wiring on STM32F407VG Discovery:
-| BMX Shuttle | Discovery       |
-| ----------- | --------------- |
-| MISO (4)    | SPI3_MISO (PB4) |
-| MOSI (5)    | SPI3_MOSI (PB5) |
-| SCK  (6)    | SPI3_SCK  (PB3) |
-| CS   (7)    | GPIO      (PB7) |
-| INT1 (20)   | GPIO      (PB8) |
-*/
-
 #include <Common.h>
 #include <drivers/HardwareTimer.h>
 #include <drivers/interrupt/external_interrupts.h>
@@ -60,28 +49,7 @@ int main()
 {
     TimestampTimer::enableTimestampTimer();
 
-    /*{
-        miosix::FastInterruptDisableLock _lock;
-
-        // Enable TIM5 and SPI1 bus
-        RCC->APB1ENR |= RCC_APB1ENR_SPI1EN | RCC_APB1ENR_TIM5EN;
-
-        // Setup correct alternate functions for SPI3 bus
-        spi_sck.mode(miosix::Mode::ALTERNATE);
-        spi_miso.mode(miosix::Mode::ALTERNATE);
-        spi_mosi.mode(miosix::Mode::ALTERNATE);
-
-        spi_sck.alternateFunction(6);
-        spi_miso.alternateFunction(6);
-        spi_mosi.alternateFunction(6);
-
-        // Setup CS
-        cs.mode(miosix::Mode::OUTPUT);
-    };*/
-
     cs.high();
-
-    TRACE("Bruh\n");
 
     enableExternalInterrupt(GPIOE_BASE, 5, InterruptTrigger::FALLING_EDGE);
 

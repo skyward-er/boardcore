@@ -828,10 +828,6 @@ private:
         // Sometimes the buffer gets over 1000
         uint8_t buf[1100];
 
-        for(int i = 0; i < 10; i++) {
-            TRACE("[%d]: %x\n", i, buf[i]);
-        }
-
 #ifdef DEBUG
         assert(len <= static_cast<int>(sizeof(buf)) && "Buffer overflow!");
 #endif
