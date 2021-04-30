@@ -59,7 +59,6 @@ int main()
 
     SPIBusConfig busConfig;
     busConfig.clock_div = SPIClockDivider::DIV32;
-    busConfig.mode      = SPIMode::MODE1;
 
     LIS3MDL::Config config;
     config.odr                = LIS3MDL::ODR_560_HZ;
@@ -82,6 +81,8 @@ int main()
     }
 
     TRACE("Now printing some sensor data:\n");
+    Thread::sleep(100);
+
     while (true)
     {
         sensor.sample();
