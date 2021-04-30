@@ -135,6 +135,18 @@ TemperatureData ADS1118::getTemperature()
                            values[TEMP_CHANNEL].voltage};
 }
 
+int ADS1118::getConversionTime(int8_t channel)
+{
+    if (channel >= 0 && channel <= TEMP_CHANNEL)
+    {
+        return CONV_TIME[channelsConfig[channel].bits.rate];
+    }
+    else
+    {
+        return 0;
+    }
+}
+
 bool ADS1118::selfTest()
 {
     // Save the current configuration
@@ -259,14 +271,13 @@ void ADS1118::readChannel(int8_t channel)
     if (busyWait)
     {
         // Use a busy wait loop to be as precise as possible
-        miosix::delayUs(CONV_TIME[channelsConfig[channel].bits.rate]);
+        miosix::delayUs(getConversionTime(channel));
     }
     else
     {
         // Converto to milliseconds and increment by one to prevent premature
         // readings
-        miosix::Thread::sleep(
-            CONV_TIME[channelsConfig[channel].bits.rate] / 1000 + 1);
+        miosix::Thread::sleep(getConversionTime(channel) / 1000 + 1);
     }
 
     readChannel(INVALID_CHANNEL, channel);

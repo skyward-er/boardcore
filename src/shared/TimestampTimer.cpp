@@ -28,23 +28,7 @@
 namespace TimestampTimer
 {
 
-#if (defined(STM32F429xx) || defined(STM32F407xx))
-HardwareTimer<uint32_t, TimerMode::Single> initHardwareTimer()
-{
-    {
-        miosix::FastInterruptDisableLock dLock;
-        // Enable TIM2 peripheral clock
-        RCC->APB1ENR |= RCC_APB1ENR_TIM2EN;
-    }
-
-    return HardwareTimer<uint32_t, TimerMode::Single>(
-        TIM2,
-        TimerUtils::getPrescalerInputFrequency(TimerUtils::InputClock::APB1));
-}
-
-HardwareTimer<uint32_t, TimerMode::Single> timestamp_timer = initHardwareTimer();
-
-#elif (defined(STM32F10X_MD) || defined(STM32F10X_MD_VL))
+#ifdef _ARCH_CORTEXM3_STM32
 HardwareTimer<uint32_t, TimerMode::Chain> initHardwareTimer()
 {
     // VERY IMPORTANT! ALWAYS ENABLE CLOCKS BEFORE CONFIGURING THE TIMERS!!
@@ -61,9 +45,21 @@ HardwareTimer<uint32_t, TimerMode::Chain> initHardwareTimer()
 }
 
 HardwareTimer<uint32_t, TimerMode::Chain> timestamp_timer = initHardwareTimer();
-
 #else
-#error "TimestampTimer is not yet supported on your board!"
+HardwareTimer<uint32_t, TimerMode::Single> initHardwareTimer()
+{
+    {
+        miosix::FastInterruptDisableLock dLock;
+        // Enable TIM2 peripheral clock
+        RCC->APB1ENR |= RCC_APB1ENR_TIM2EN;
+    }
+
+    return HardwareTimer<uint32_t, TimerMode::Single>(
+        TIM2,
+        TimerUtils::getPrescalerInputFrequency(TimerUtils::InputClock::APB1));
+}
+
+HardwareTimer<uint32_t, TimerMode::Single> timestamp_timer = initHardwareTimer();
 #endif
 
 void enableTimestampTimer(uint8_t prescaler)

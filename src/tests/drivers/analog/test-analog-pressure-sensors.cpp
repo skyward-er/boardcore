@@ -29,6 +29,8 @@
 #include "sensors/analog/pressure/honeywell/HSCMAND015PA.h"
 #include "sensors/analog/pressure/honeywell/HSCMRNN030PA.h"
 
+#include "TimestampTimer.h"
+
 GpioPin sckPin  = GpioPin(GPIOB_BASE, 13);
 GpioPin misoPin = GpioPin(GPIOB_BASE, 14);
 GpioPin mosiPin = GpioPin(GPIOB_BASE, 15);
