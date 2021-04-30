@@ -56,7 +56,7 @@ int main()
     BMX160Config config;
     config.fifo_mode    = BMX160Config::FifoMode::HEADER;
     config.fifo_int     = BMX160Config::FifoInt::PIN_INT1;
-    config.fifo_watermark = 600;
+    config.fifo_watermark = 100;
     config.temp_divider = 1;
 
     sensor = new BMX160(bus, cs, config);
