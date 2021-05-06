@@ -37,6 +37,6 @@ struct ADS1118Data : public ADCData
 
     void print(std::ostream& os) const
     {
-        os << adc_timestamp << "," << channel_id << "," << voltage << "\n";
+        os << adc_timestamp << "," << (int)channel_id << "," << voltage << "\n";
     }
 };
