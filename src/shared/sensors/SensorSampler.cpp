@@ -24,8 +24,8 @@
 
 using namespace std;
 
-SensorSampler::SensorSampler(uint8_t id, uint32_t freq, bool is_dma)
-    : id(id), freq(freq), is_dma(is_dma)
+SensorSampler::SensorSampler(uint8_t id, uint32_t period, bool is_dma)
+    : id(id), period(period), is_dma(is_dma)
 {
 }
 
@@ -79,7 +79,7 @@ bool SensorSampler::isDMA() { return is_dma; }
 
 uint8_t SensorSampler::getID() { return id; }
 
-uint32_t SensorSampler::getFrequency() { return freq; }
+uint32_t SensorSampler::getSamplingPeriod() { return period; }
 
 uint32_t SensorSampler::getNumSensors() { return sensors_map.size(); }
 
@@ -89,8 +89,8 @@ const SensorInfo& SensorSampler::getSensorInfo(AbstractSensor* sensor)
 }
 
 // simple sampler
-SimpleSensorSampler::SimpleSensorSampler(uint8_t id, uint32_t freq)
-    : SensorSampler(id, freq, false)
+SimpleSensorSampler::SimpleSensorSampler(uint8_t id, uint32_t period)
+    : SensorSampler(id, period, false)
 {
 }
 
@@ -112,8 +112,8 @@ void SimpleSensorSampler::sampleSensor(AbstractSensor* sensor)
 }
 
 // DMA sampler
-DMASensorSampler::DMASensorSampler(uint8_t id, uint32_t freq)
-    : SensorSampler(id, freq, true)
+DMASensorSampler::DMASensorSampler(uint8_t id, uint32_t period)
+    : SensorSampler(id, period, true)
 {
 }
 
