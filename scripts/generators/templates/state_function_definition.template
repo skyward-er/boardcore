@@ -1,0 +1,27 @@
+void {state_machine_name}Controller::state_{state_name}(const Event& ev)
+{{
+    switch (ev.sig)
+    {{
+        case EV_ENTRY:
+        {{
+{onentry_actions}
+
+            logStatus({current_state});
+
+            TRACE("[{state_machine_name}] entering state {state_name}\n");
+            break;
+        }}
+        case EV_EXIT:
+        {{
+{onexit_actions}
+
+            TRACE("[{state_machine_name}] exiting state {state_name}\n");
+            break;
+        }}
+{event_cases}
+        default:
+        {{
+            break;
+        }}  
+    }}
+}}
