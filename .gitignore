@@ -27,5 +27,9 @@ build
 .vscode/*
 
 store.json
-*/generated/
+**/generated/
 core
+
+__pycache__
+/scripts/generators/generated
+/scripts/generators/scxmls
