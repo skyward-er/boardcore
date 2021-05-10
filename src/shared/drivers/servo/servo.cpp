@@ -22,11 +22,15 @@
  */
 
 #include "servo.h"
+
 #include <cmath>
 #include <cstring>
 
 // Initialize the pwm with 50 Hz frequency and 65535 levels of duty cycle
-Servo::Servo(PWM::Timer t) : pwm(t, 50, 65535) { memset(&positions, 0, 4*sizeof(float)); }
+Servo::Servo(PWM::Timer t) : pwm(t, 50, 65535)
+{
+    memset(&positions, 0, 4 * sizeof(float));
+}
 
 Servo::~Servo() {}
 
@@ -69,7 +73,7 @@ void Servo::setMinPulseWidth(float min_pulse)
 void Servo::setMaxPulseWidth(float max_pulse)
 {
     this->max_pulse = fmax(1700.0f, fmin(2500.0f, max_pulse));
-    
+
     updateParameters();
 }
 
