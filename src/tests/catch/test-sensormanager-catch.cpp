@@ -27,10 +27,16 @@
 #define private public
 #define protected public
 
+
+#include <iostream>
+#include <miosix.h>
+
 #include "sensors/SensorInfo.h"
 #include "sensors/SensorManager.h"
 #include "utils/testutils/TestSensor.h"
 #include "utils/testutils/catch.hpp"
+
+using namespace miosix;
 
 static const uint8_t FIRST_TASK_ID = 7;  // used to test IDs assignment to tasks
 
@@ -73,21 +79,21 @@ private:
 
     TestSensor s1;
     SensorInfo s1_info{
-        /*Freq=*/1,
+        /*Freq=*/1000,
         /*Callback=*/[]() { std::cout << "Callback 1!" << endl; },
         /*DMA=*/false,
         /*Enabled=*/true};
 
     TestSensor s2;
     SensorInfo s2_info{
-        /*Freq=*/1,
+        /*Freq=*/1000,
         /*Callback=*/[]() { std::cout << "Callback 2!" << endl; },
         /*DMA=*/false,
         /*Enabled=*/false};
 
     TestSensor s3;
     SensorInfo s3_info{
-        /*Freq=*/2,
+        /*Freq=*/2000,
         /*Callback=*/[]() { std::cout << "Callback 3!" << endl; },
         /*DMA=*/false,
         /*Enabled=*/true};
@@ -95,7 +101,7 @@ private:
     // same freq as s1 and s2 but uses DMA
     TestSensor s4;
     SensorInfo s4_info{
-        /*Freq=*/1,
+        /*Freq=*/1000,
         /*Callback=*/[]() { std::cout << "Callback 4!" << endl; },
         /*DMA=*/true,
         /*Enabled=*/true};
@@ -103,7 +109,7 @@ private:
 
 bool operator==(const SensorInfo& lhs, const SensorInfo& rhs)
 {
-    return lhs.freq == rhs.freq &&
+    return lhs.period == rhs.period &&
            lhs.callback.target_type() == rhs.callback.target_type() &&
            lhs.callback.target<void()>() == rhs.callback.target<void()>() &&
            lhs.is_dma == rhs.is_dma && lhs.is_enabled == rhs.is_enabled;
@@ -111,7 +117,7 @@ bool operator==(const SensorInfo& lhs, const SensorInfo& rhs)
 
 bool operator==(const SensorSampler& lhs, const SensorSampler& rhs)
 {
-    return lhs.id == rhs.id && lhs.freq == rhs.freq &&
+    return lhs.id == rhs.id && lhs.period == rhs.period &&
            lhs.is_dma == rhs.is_dma &&
            lhs.sensors_map.size() == rhs.sensors_map.size();
 }
@@ -179,15 +185,15 @@ TEST_CASE_METHOD(SensorManagerFixture,
     // sampler at 1 Hz with DMA has 1 sensor
     for (auto s : sensor_manager->samplers)
     {
-        if (s->getFrequency() == 1 && s->isDMA() == false)
+        if (s->getSamplingPeriod() == 1000 && s->isDMA() == false)
         {
             REQUIRE(s->getNumSensors() == 2);
         }
-        else if (s->getFrequency() == 2)
+        else if (s->getSamplingPeriod() == 2000)
         {
             REQUIRE(s->getNumSensors() == 1);
         }
-        else if (s->getFrequency() == 1 && s->isDMA() == true)
+        else if (s->getSamplingPeriod() == 1000 && s->isDMA() == true)
         {
             REQUIRE(s->getNumSensors() == 1);
         }

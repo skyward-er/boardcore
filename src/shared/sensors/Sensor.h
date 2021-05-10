@@ -41,27 +41,6 @@ struct checkIfProduces
 };
 
 /**
- * @brief Generic error codes that a sensor can generate.
- *
- * Sensors can extend this enum by defining a new set of errors,
- * starting from END_OF_BASE_ERRORS.
- */
-enum SensorErrors : uint8_t
-{
-    NO_ERRORS          = 0,
-    INVALID_WHOAMI     = 1,
-    INIT_FAIL          = 2,
-    NOT_INIT           = 3,  // if some method called before init()
-    ALREADY_INIT       = 4,  // if init() called multiple times
-    SELF_TEST_FAIL     = 5,
-    BUS_FAULT          = 6,
-    NO_NEW_DATA        = 7,  // no new data available from the sensor
-    INVALID_FIFO_INDEX = 8,
-    DMA_ERROR          = 9,
-    END_OF_BASE_ERRORS = 10  // used to extend this enum
-};
-
-/**
  * @brief Base abstract class for sensor drivers.
  */
 class AbstractSensor
@@ -70,6 +49,11 @@ protected:
     SensorErrors last_error = SensorErrors::NO_ERRORS;
 
 public:
+    virtual ~AbstractSensor()
+    {
+
+    }
+    
     /**
      * @brief Initialize the sensor.
      * @return boolean value indicating whether the operation succeded or not
@@ -115,6 +99,11 @@ protected:
     virtual Data sampleImpl() = 0;
 
 public:
+    virtual ~Sensor()
+    {
+
+    }
+
     void sample() override { last_sample = sampleImpl(); }
 
     /**
