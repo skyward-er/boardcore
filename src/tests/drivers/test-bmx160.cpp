@@ -21,38 +21,24 @@
  * THE SOFTWARE.
  */
 
-/*
-Wiring on STM32F407VG Discovery:
-| BMX Shuttle | Discovery       |
-| ----------- | --------------- |
-| MISO (4)    | SPI3_MISO (PB4) |
-| MOSI (5)    | SPI3_MOSI (PB5) |
-| SCK  (6)    | SPI3_SCK  (PB3) |
-| CS   (7)    | GPIO      (PB7) |
-| INT1 (20)   | GPIO      (PB8) |
-*/
-
 #include <Common.h>
 #include <drivers/HardwareTimer.h>
 #include <drivers/interrupt/external_interrupts.h>
 #include <sensors/BMX160/BMX160.h>
 
-SPIBus bus(SPI3);
-GpioPin cs(GPIOB_BASE, 7);
+SPIBus bus(SPI1);
+GpioPin cs(GPIOA_BASE, 8);
 
-GpioPin spi_sck(GPIOB_BASE, 3);
-GpioPin spi_miso(GPIOB_BASE, 4);
-GpioPin spi_mosi(GPIOB_BASE, 5);
+GpioPin spi_sck(GPIOA_BASE, 5);
+GpioPin spi_miso(GPIOA_BASE, 6);
+GpioPin spi_mosi(GPIOA_BASE, 7);
 
 BMX160 *sensor = nullptr;
 uint32_t tick  = 0;
 
-HardwareTimer<uint32_t> hrclock{
-    TIM5, TimerUtils::getPrescalerInputFrequency(TimerUtils::InputClock::APB1)};
-
-void __attribute__((used)) EXTI8_IRQHandlerImpl()
+void __attribute__((used)) EXTI5_IRQHandlerImpl()
 {
-    tick = hrclock.toIntMicroSeconds(hrclock.tick());
+    tick = TimestampTimer::getTimestamp();
     if (sensor)
     {
         sensor->IRQupdateTimestamp(tick);
@@ -63,35 +49,14 @@ int main()
 {
     TimestampTimer::enableTimestampTimer();
 
-    {
-        miosix::FastInterruptDisableLock _lock;
-
-        // Enable TIM5 and SPI3 bus
-        RCC->APB1ENR |= RCC_APB1ENR_SPI3EN | RCC_APB1ENR_TIM5EN;
-
-        // Setup correct alternate functions for SPI3 bus
-        spi_sck.mode(miosix::Mode::ALTERNATE);
-        spi_miso.mode(miosix::Mode::ALTERNATE);
-        spi_mosi.mode(miosix::Mode::ALTERNATE);
-
-        spi_sck.alternateFunction(6);
-        spi_miso.alternateFunction(6);
-        spi_mosi.alternateFunction(6);
-
-        // Setup CS
-        cs.mode(miosix::Mode::OUTPUT);
-    };
-
     cs.high();
 
-    hrclock.setPrescaler(382);
-    hrclock.start();
-
-    enableExternalInterrupt(GPIOB_BASE, 8, InterruptTrigger::FALLING_EDGE);
+    enableExternalInterrupt(GPIOE_BASE, 5, InterruptTrigger::FALLING_EDGE);
 
     BMX160Config config;
     config.fifo_mode    = BMX160Config::FifoMode::HEADER;
     config.fifo_int     = BMX160Config::FifoInt::PIN_INT1;
+    config.fifo_watermark = 100;
     config.temp_divider = 1;
 
     sensor = new BMX160(bus, cs, config);
@@ -101,6 +66,7 @@ int main()
     if (!sensor->init())
     {
         TRACE("Init failed! (code: %d)\n", sensor->getLastError());
+        while(1) {}
         return -1;
     }
 
@@ -116,11 +82,9 @@ int main()
 
     while (1)
     {
-        miosix::Thread::sleep(5000);
+        miosix::delayUs(250 * 1000);
 
         printf("----------------------------\n");
-
-        uint32_t now = hrclock.toIntMicroSeconds(hrclock.tick());
 
         sensor->sample();
         if (sensor->getLastError() != SensorErrors::NO_ERRORS)
@@ -128,6 +92,8 @@ int main()
             TRACE("Failed to read data!\n");
             continue;
         }
+
+        uint64_t now = TimestampTimer::getTimestamp();
 
         printf("Tick: %.4f s, Now: %.4f s\n", tick / 1000000.0f,
                now / 1000000.0f);

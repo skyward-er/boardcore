@@ -1,5 +1,5 @@
-/* Copyright (c) 2015-2018 Skyward Experimental Rocketry
- * Authors: Luca Erbetta
+/* Copyright (c) 2021 Skyward Experimental Rocketry
+ * Authors: Alberto Nidasio
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -19,33 +19,35 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
-#ifndef SRC_SHARED_SENSORS_MPU9250_MPU9250DATA_H
-#define SRC_SHARED_SENSORS_MPU9250_MPU9250DATA_H
 
-#include <ostream>
-#include "math/Vec3.h"
+#pragma once
 
-struct MPU9250Data
+#include "sensors/SensorData.h"
+
+struct MPU9250Data : public AccelerometerData,
+                     public GyroscopeData,
+                     public MagnetometerData,
+                     public TemperatureData
 {
-    long long timestamp;
-    Vec3 accel;
-    Vec3 gyro;
-    Vec3 compass;
-    float temp;
+    MPU9250Data()
+        : AccelerometerData{0, 0.0, 0.0, 0.0}, GyroscopeData{0, 0.0, 0.0, 0.0},
+          MagnetometerData{0, 0.0, 0.0, 0.0}, TemperatureData{0, 0.0}
+    {
+    }
 
     static std::string header()
     {
-        return "timestamp,acc_x,acc_y,acc_z,gyro_x,gyro_y,gyro_z,compass_x,"
-               "compass_y,compass_z\n";
+        return "accel_timestamp,accel_x,accel_y,accel_z,gyro_timestamp,gyro_x,"
+               "gyro_y,gyro_z,mag_timestamp,mag_x,mag_y,mag_z,temp_timestamp,"
+               "temp\n";
     }
 
     void print(std::ostream& os) const
     {
-        os << timestamp << "," << accel.getX() << "," << accel.getY() << ","
-           << accel.getZ() << "," << gyro.getX() << "," << gyro.getY() << ","
-           << gyro.getZ() << "," << compass.getX() << "," << compass.getY()
-           << "," << compass.getZ() << "\n";
+        os << accel_timestamp << "," << accel_x << "," << accel_y << ","
+           << accel_z << "," << gyro_timestamp << "," << gyro_x << "," << gyro_y
+           << "," << gyro_z << "," << mag_timestamp << "," << mag_x << ","
+           << mag_y << "," << mag_z << "," << temp_timestamp << "," << temp
+           << "\n";
     }
 };
-
-#endif /* SRC_SHARED_SENSORS_MPU9250_MPU9250DATA_H */

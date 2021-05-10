@@ -27,16 +27,10 @@
 #define private public
 #define protected public
 
-
-#include <iostream>
-#include <miosix.h>
-
 #include "sensors/SensorInfo.h"
 #include "sensors/SensorManager.h"
 #include "utils/testutils/TestSensor.h"
 #include "utils/testutils/catch.hpp"
-
-using namespace miosix;
 
 static const uint8_t FIRST_TASK_ID = 7;  // used to test IDs assignment to tasks
 
@@ -79,29 +73,29 @@ private:
 
     TestSensor s1;
     SensorInfo s1_info{
-        /*Freq=*/1000,
+        /*Period=*/1000,
         /*Callback=*/[]() { std::cout << "Callback 1!" << endl; },
         /*DMA=*/false,
         /*Enabled=*/true};
 
     TestSensor s2;
     SensorInfo s2_info{
-        /*Freq=*/1000,
+        /*Period=*/1000,
         /*Callback=*/[]() { std::cout << "Callback 2!" << endl; },
         /*DMA=*/false,
         /*Enabled=*/false};
 
     TestSensor s3;
     SensorInfo s3_info{
-        /*Freq=*/2000,
+        /*Period=*/500,
         /*Callback=*/[]() { std::cout << "Callback 3!" << endl; },
         /*DMA=*/false,
         /*Enabled=*/true};
 
-    // same freq as s1 and s2 but uses DMA
+    // same period as s1 and s2 but uses DMA
     TestSensor s4;
     SensorInfo s4_info{
-        /*Freq=*/1000,
+        /*Period=*/1000,
         /*Callback=*/[]() { std::cout << "Callback 4!" << endl; },
         /*DMA=*/true,
         /*Enabled=*/true};
@@ -118,8 +112,7 @@ bool operator==(const SensorInfo& lhs, const SensorInfo& rhs)
 bool operator==(const SensorSampler& lhs, const SensorSampler& rhs)
 {
     return lhs.id == rhs.id && lhs.period == rhs.period &&
-           lhs.is_dma == rhs.is_dma &&
-           lhs.sensors_map.size() == rhs.sensors_map.size();
+           lhs.is_dma == rhs.is_dma && lhs.sensors.size() == rhs.sensors.size();
 }
 
 TEST_CASE_METHOD(SensorManagerFixture,
@@ -131,15 +124,16 @@ TEST_CASE_METHOD(SensorManagerFixture,
 
     std::cout << "Tasks number : " << tasks_stats.size() << endl;
 
-    std::cout << "Task IDs : " << endl;
-    for (auto stats : tasks_stats)
-    {
-        printf("%d \n", stats.id);
-    }
-
+    // Sampler with lower period are inserted in the TaskScheduler
+    // before higher period ones
+    // =>
+    //    Task id 8  : sampler at 1000 ms (1 Hz), not DMA
+    //    Task id 9  : sampler at 500 ms  (2 Hz), not DMA ---> first to be added
+    //                                                         to the scheduler
+    //    Task id 10 : sampler at 1000 ms (1 Hz), with DMA
     REQUIRE(tasks_stats[0].id == FIRST_TASK_ID);
-    REQUIRE(tasks_stats[1].id == static_cast<uint8_t>(FIRST_TASK_ID + 1));
-    REQUIRE(tasks_stats[2].id == static_cast<uint8_t>(FIRST_TASK_ID + 2));
+    REQUIRE(tasks_stats[1].id == static_cast<uint8_t>(FIRST_TASK_ID + 2));
+    REQUIRE(tasks_stats[2].id == static_cast<uint8_t>(FIRST_TASK_ID + 1));
     REQUIRE(tasks_stats[3].id == static_cast<uint8_t>(FIRST_TASK_ID + 3));
 }
 
@@ -149,15 +143,17 @@ TEST_CASE_METHOD(SensorManagerFixture,
     // check that 3 samplers exist (1 hz, 2 hz and 1 hz with DMA)
     REQUIRE(sensor_manager->samplers.size() == 3);
 
+    // samplers are sorted by period, in decreasing order!
+
     // check that s1, s2 and s3 are assigned to correct samplers
-    REQUIRE(sampler1 == sensor_manager->samplers[0]);
-    REQUIRE(*sampler1 == *(sensor_manager->samplers[0]));
+    REQUIRE(sampler1 == sensor_manager->samplers[1]);
+    REQUIRE(*sampler1 == *(sensor_manager->samplers[1]));
     // s1 and s2 are assigned to same sampler
     REQUIRE(sampler1 == sampler2);
     REQUIRE(*sampler1 == *sampler2);
     // s3 assigned to the other sampler
-    REQUIRE(sampler3 == sensor_manager->samplers[1]);
-    REQUIRE(*sampler3 == *(sensor_manager->samplers[1]));
+    REQUIRE(sampler3 == sensor_manager->samplers[0]);
+    REQUIRE(*sampler3 == *(sensor_manager->samplers[0]));
     // s4 assigned to the last sampler
     REQUIRE(sampler4 == sensor_manager->samplers[2]);
     REQUIRE(*sampler4 == *(sensor_manager->samplers[2]));
@@ -180,16 +176,16 @@ TEST_CASE_METHOD(SensorManagerFixture,
 TEST_CASE_METHOD(SensorManagerFixture,
                  "Samplers have the correct number of sensors")
 {
-    // check that sampler at 1 Hz has 2 sensors
-    // sampler at 2 Hz has 1 sensor
-    // sampler at 1 Hz with DMA has 1 sensor
+    // check that sampler at 1000 ms (1 Hz) has 2 sensors
+    // sampler at 500 ms (2 Hz) has 1 sensor
+    // sampler at 1000 ms (1 Hz) with DMA has 1 sensor
     for (auto s : sensor_manager->samplers)
     {
         if (s->getSamplingPeriod() == 1000 && s->isDMA() == false)
         {
             REQUIRE(s->getNumSensors() == 2);
         }
-        else if (s->getSamplingPeriod() == 2000)
+        else if (s->getSamplingPeriod() == 500)
         {
             REQUIRE(s->getNumSensors() == 1);
         }
@@ -200,48 +196,34 @@ TEST_CASE_METHOD(SensorManagerFixture,
         else
         {
             FAIL(
-                "Can't exist a sampler with frequency different from 1 or 2 "
-                "Hz");  // no sampler with a different frequency exist
+                "Can't exist a sampler with period different from 1000 or 500 "
+                "ms");  // no sampler with a different period exist
         }
     }
 }
 
-TEST_CASE_METHOD(SensorManagerFixture,
-                 "Enable/disable sensors at runtime")
+TEST_CASE_METHOD(SensorManagerFixture, "Enable/disable sensors at runtime")
 {
     sensor_manager->start();
-
-    Thread::sleep(2000);
 
     sensor_manager->enableSensor(&s2);
     sensor_manager->disableSensor(&s4);
-
-    // Thread::sleep(300);
+    
     REQUIRE(sensor_manager->getSensorInfo(&s2).is_enabled == true);
     REQUIRE(sensor_manager->getSensorInfo(&s4).is_enabled == false);
 
-    Thread::sleep(2000);
-
     sensor_manager->disableSensor(&s2);
     sensor_manager->enableSensor(&s4);
-
-    // Thread::sleep(300);
+    
     REQUIRE(sensor_manager->getSensorInfo(&s2).is_enabled == false);
     REQUIRE(sensor_manager->getSensorInfo(&s4).is_enabled == true);
-
-    Thread::sleep(1000);
 }
 
-TEST_CASE_METHOD(SensorManagerFixture,
-                 "Enable/disable all sensors at runtime")
+TEST_CASE_METHOD(SensorManagerFixture, "Enable/disable all sensors at runtime")
 {
     sensor_manager->start();
 
-    Thread::sleep(100);
-
     sensor_manager->enableAllSensors();
-
-    Thread::sleep(10);
 
     REQUIRE(sensor_manager->getSensorInfo(&s1).is_enabled == true);
     REQUIRE(sensor_manager->getSensorInfo(&s2).is_enabled == true);
@@ -250,8 +232,6 @@ TEST_CASE_METHOD(SensorManagerFixture,
 
     sensor_manager->disableAllSensors();
 
-    Thread::sleep(10);
-
     REQUIRE(sensor_manager->getSensorInfo(&s1).is_enabled == false);
     REQUIRE(sensor_manager->getSensorInfo(&s2).is_enabled == false);
     REQUIRE(sensor_manager->getSensorInfo(&s3).is_enabled == false);
@@ -259,10 +239,18 @@ TEST_CASE_METHOD(SensorManagerFixture,
 
     sensor_manager->enableAllSensors();
 
-    Thread::sleep(10);
-
     REQUIRE(sensor_manager->getSensorInfo(&s1).is_enabled == true);
     REQUIRE(sensor_manager->getSensorInfo(&s2).is_enabled == true);
     REQUIRE(sensor_manager->getSensorInfo(&s3).is_enabled == true);
     REQUIRE(sensor_manager->getSensorInfo(&s4).is_enabled == true);
+}
+
+TEST_CASE_METHOD(SensorManagerFixture, "Try to get info about a non-existing sensor")
+{
+    TestSensor invalid_sensor;
+    SensorInfo invalid_info = sensor_manager->getSensorInfo(&invalid_sensor);
+    REQUIRE(invalid_info == SensorInfo{});
+
+    SensorInfo valid_info = sensor_manager->getSensorInfo(&s2);
+    REQUIRE(valid_info == s2_info);
 }

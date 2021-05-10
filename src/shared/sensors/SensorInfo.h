@@ -46,4 +46,9 @@ struct SensorInfo
           is_enabled(is_enabled)
     {
     }
+
+    SensorInfo()
+        : period(0), callback([](){}), is_dma(false), is_enabled(false)
+    {
+    }
 };

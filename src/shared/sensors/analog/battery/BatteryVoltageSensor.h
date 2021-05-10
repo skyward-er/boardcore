@@ -58,7 +58,8 @@ public:
         bat_data.voltage       = adc_data.voltage;
 
         // Moving average
-        bat_data.bat_voltage *= MOVING_AVAERAGE_COMP_COEFF;
+        bat_data.bat_voltage =
+            last_sample.bat_voltage * MOVING_AVAERAGE_COMP_COEFF;
         bat_data.bat_voltage =
             adcToBatteryVoltage(adc_data.voltage) * MOVING_AVAERAGE_COEFF;
 

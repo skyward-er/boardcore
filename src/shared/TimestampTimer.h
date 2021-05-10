@@ -38,12 +38,10 @@ namespace TimestampTimer
  */
 static const uint8_t PRESCALER_VALUE = 127;
 
-#if (defined(STM32F429xx) || defined(STM32F407xx))
-extern HardwareTimer<uint32_t, TimerMode::Single> timestamp_timer;
-#elif (defined(STM32F10X_MD) || defined(STM32F10X_MD_VL))
+#ifdef _ARCH_CORTEXM3_STM32
 extern HardwareTimer<uint32_t, TimerMode::Chain> timestamp_timer;
 #else
-#error "TimestampTimer is not yet supported on your board!"
+extern HardwareTimer<uint32_t, TimerMode::Single> timestamp_timer;
 #endif
 
 /**
