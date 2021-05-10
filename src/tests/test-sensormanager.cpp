@@ -164,17 +164,17 @@ int main()
 
     SensorManager SM(
         {{/*Sensor=*/&s1,
-          {/*Freq=*/1,
+          {/*Freq=*/1000,
            /*Callback=*/[]() { std::cout << "Callback s1: Hi 1!" << endl; },
            /*DMA=*/false,
            /*Enabled=*/true}},
          {/*Sensor=*/&s2,
-          {/*Freq=*/1,
+          {/*Freq=*/1000,
            /*Callback=*/[]() { std::cout << "Callback s2: Hi 2!" << endl; },
            /*DMA=*/false,
            /*Enabled=*/true}},
          {/*Sensor=*/&filter,
-          {/*Freq=*/2,
+          {/*Freq=*/2000,
            /*Callback=*/
            []() { std::cout << "Callback filter: Hi filter!" << endl; },
            /*DMA=*/false,
