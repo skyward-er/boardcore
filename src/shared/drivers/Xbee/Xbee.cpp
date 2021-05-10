@@ -91,7 +91,7 @@ bool Xbee::send(uint8_t* pkt, size_t pkt_len)
         }
 
         // Ak for total transmitted byte count for logging  purposes
-        sendATCommandInternal("BC");
+        // sendATCommandInternal("BC");
     }
 
     // If there is more data to receive, wake the receive() thread

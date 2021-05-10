@@ -28,28 +28,22 @@
 /**
  * @brief Sensors information struct needed by the SensorManager.
  *
- * This structure contains the sampling frequency of a sensor,
+ * This structure contains the sampling period of a sensor,
  * the function to be called after the sampling (callback) and
  * two boolean values indicating if the sensor uses DMA and if
  * the sensor has to be sampled (is enabled).
  */
 struct SensorInfo
 {
-    const uint32_t freq;
-    const std::function<void()> callback;
-    const bool is_dma;
-    std::atomic<bool> is_enabled;
+    uint32_t period; // Period in ms
+    std::function<void()> callback;
+    bool is_dma;
+    bool is_enabled;
 
-    SensorInfo(uint32_t freq, std::function<void()> callback, bool is_dma,
-               std::atomic<bool> is_enabled)
-        : freq(freq), callback(callback), is_dma(is_dma),
-          is_enabled(is_enabled.load())
-    {
-    }
-
-    SensorInfo(const SensorInfo& other)
-        : freq(other.freq), callback(other.callback), is_dma(other.is_dma),
-          is_enabled(other.is_enabled.load())
+    SensorInfo(uint32_t period, std::function<void()> callback, bool is_dma,
+               bool is_enabled)
+        : period(period), callback(callback), is_dma(is_dma),
+          is_enabled(is_enabled)
     {
     }
 };

@@ -106,7 +106,7 @@ bool SensorManager::init(const SensorMap_t& sensors_map)
         SensorInfo sensor_info = it->second;
 
         TRACE("[SM] Sensor %p, Sensor info %p ---> enabled = %d \n", sensor,
-              sensor_info, sensor_info.is_enabled.load());
+              sensor_info, sensor_info.is_enabled);
 
         // avoid adding sensors that fail to be initalized
         if (!initSensor(sensor))
@@ -117,15 +117,15 @@ bool SensorManager::init(const SensorMap_t& sensors_map)
         }
         else
         {
-            TRACE("[SM] Adding sensor with frequency %u Hz \n",
-                  sensor_info.freq);
+            TRACE("[SM] Adding sensor with sampling period %u ms \n",
+                  sensor_info.period);
 
-            // check if a sampler with the same frequency and the same type
-            // exists
+            // check if a sampler with the same sampling period and the same
+            // type exists
             bool found = false;
             for (auto s : samplers)
             {
-                if (sensor_info.freq == s->getFrequency() &&
+                if (sensor_info.period == s->getSamplingPeriod() &&
                     sensor_info.is_dma == s->isDMA())
                 {
                     s->addSensor(sensor, sensor_info);
@@ -138,7 +138,7 @@ bool SensorManager::init(const SensorMap_t& sensors_map)
             {
                 // a sampler with the required frequency does not exist yet
                 SensorSampler* new_sampler = createSampler(
-                    current_sampler_id, sensor_info.freq, sensor_info.is_dma);
+                    current_sampler_id, sensor_info.period, sensor_info.is_dma);
 
                 new_sampler->addSensor(sensor, sensor_info);
 
@@ -174,12 +174,11 @@ void SensorManager::initScheduler()
     // add all the samplers to the scheduler
     for (auto& s : samplers)
     {
-        period = 1000 / s->getFrequency();  // in milliseconds
-
         function_t sampler_update_function =
             bind(&SensorSampler::sampleAndCallback, s);
-        // use the frequency as the ID of the task in the scheduler
-        scheduler->add(sampler_update_function, period, s->getID(), start_time);
+
+        scheduler->add(sampler_update_function, s->getSamplingPeriod(),
+                       s->getID(), start_time);
     }
 }
 
@@ -204,17 +203,17 @@ uint8_t SensorManager::getFirstTaskID()
     return max_id + 1;
 }
 
-SensorSampler* SensorManager::createSampler(uint8_t id, uint32_t freq,
+SensorSampler* SensorManager::createSampler(uint8_t id, uint32_t period,
                                             bool is_dma)
 {
-    TRACE("[SM] Creating Sampler %u with frequency %u Hz \n", id, freq);
+    TRACE("[SM] Creating Sampler %u with sampling period %u ms \n", id, period);
 
     if (is_dma)
     {
-        return new DMASensorSampler(id, freq);
+        return new DMASensorSampler(id, period);
     }
     else
     {
-        return new SimpleSensorSampler(id, freq);
+        return new SimpleSensorSampler(id, period);
     }
 }

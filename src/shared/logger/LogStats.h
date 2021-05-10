@@ -49,7 +49,7 @@ public:
 
     static std::string header()
     {
-        return "timestamp,stat_toolarge,stat_dropped,stat_queued,stat_buf_"
+        return "timestamp,logNumber,stat_toolarge,stat_dropped,stat_queued,stat_buf_"
                "filled,stat_buf_written,stat_w_failed,stat_w_time,stat_max_"
                "time,stat_last_error\n";
     }
@@ -60,7 +60,7 @@ public:
      */
     void print(std::ostream& os) const
     {
-        os << timestamp << "," << statTooLargeSamples << ","
+        os << timestamp << "," << logNumber << "," << statTooLargeSamples << ","
            << statDroppedSamples << "," << statQueuedSamples << ","
            << statBufferFilled << "," << statBufferWritten << ","
            << statWriteFailed << "," << statWriteTime << "," << statMaxWriteTime
@@ -69,6 +69,7 @@ public:
 
     long long timestamp;  ///< Timestamp
 
+    bool opened = false;
     int logNumber = 0;
     int statTooLargeSamples =
         0;  ///< Number of dropped samples because too large

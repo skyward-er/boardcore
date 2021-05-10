@@ -90,7 +90,7 @@ enum class SPIBitOrder : uint8_t
 struct SPIBusConfig
 {
     SPIClockDivider clock_div =
-        SPIClockDivider::DIV2;               ///> Peripheral clock division
+        SPIClockDivider::DIV256;             ///> Peripheral clock division
     SPIMode mode          = SPIMode::MODE0;  ///> Clock polarity (0 - 1)
     SPIBitOrder bit_order = SPIBitOrder::MSB_FIRST;  ///> MSB or LSB first
 
