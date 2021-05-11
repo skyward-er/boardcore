@@ -42,18 +42,6 @@ ADS1118::ADS1118(SPISlave spiSlave_, ADS1118Config config_, bool busyWait_,
       tempDivider(tempDivider_)
 
 {
-}
-
-SPIBusConfig ADS1118::getDefaultSPIConfig()
-{
-    SPIBusConfig spiConfig{};
-    spiConfig.clock_div = SPIClockDivider::DIV32;
-    spiConfig.mode      = SPIMode::MODE1;
-    return spiConfig;
-}
-
-bool ADS1118::init()
-{
     // Initialize to 0 all the channels
     for (auto i = 0; i < NUM_OF_CHANNELS; i++)
     {
@@ -66,9 +54,17 @@ bool ADS1118::init()
     // Reset the last written config value
     lastConfig.word = 0;
     lastConfigIndex = 0;
-
-    return true;
 }
+
+SPIBusConfig ADS1118::getDefaultSPIConfig()
+{
+    SPIBusConfig spiConfig{};
+    spiConfig.clock_div = SPIClockDivider::DIV32;
+    spiConfig.mode      = SPIMode::MODE1;
+    return spiConfig;
+}
+
+bool ADS1118::init() { return true; }
 
 void ADS1118::enableInput(ADS1118Mux mux)
 {
@@ -135,6 +131,18 @@ TemperatureData ADS1118::getTemperature()
                            values[TEMP_CHANNEL].voltage};
 }
 
+int ADS1118::getConversionTime(int8_t channel)
+{
+    if (channel >= 0 && channel <= TEMP_CHANNEL)
+    {
+        return CONV_TIME[channelsConfig[channel].bits.rate];
+    }
+    else
+    {
+        return 0;
+    }
+}
+
 bool ADS1118::selfTest()
 {
     // Save the current configuration
@@ -189,7 +197,7 @@ void ADS1118::readChannel(int8_t nextChannel, int8_t prevChannel)
     int16_t rawValue;
     uint32_t writeData, transferData;
 
-     last_error = NO_ERRORS;
+    last_error = NO_ERRORS;
 
     // Prepare the next configuration data
     if (nextChannel > INVALID_CHANNEL && nextChannel < NUM_OF_CHANNELS)
@@ -259,14 +267,13 @@ void ADS1118::readChannel(int8_t channel)
     if (busyWait)
     {
         // Use a busy wait loop to be as precise as possible
-        miosix::delayUs(CONV_TIME[channelsConfig[channel].bits.rate]);
+        miosix::delayUs(getConversionTime(channel));
     }
     else
     {
         // Converto to milliseconds and increment by one to prevent premature
         // readings
-        miosix::Thread::sleep(
-            CONV_TIME[channelsConfig[channel].bits.rate] / 1000 + 1);
+        miosix::Thread::sleep(getConversionTime(channel) / 1000 + 1);
     }
 
     readChannel(INVALID_CHANNEL, channel);

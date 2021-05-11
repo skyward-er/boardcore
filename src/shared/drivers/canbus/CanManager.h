@@ -125,10 +125,18 @@ public:
     {
         // Disable interrupts
         // TODO: Only disable the interrupts that we enabled
+#ifdef CAN1_RX0_IRQn
         NVIC_DisableIRQ(CAN1_RX0_IRQn);
+#endif
+#ifdef CAN1_RX1_IRQn
         NVIC_DisableIRQ(CAN1_RX1_IRQn);
+#endif
+#ifdef CAN2_RX0_IRQn
         NVIC_DisableIRQ(CAN2_RX0_IRQn);
+#endif
+#ifdef CAN2_RX1_IRQn
         NVIC_DisableIRQ(CAN2_RX1_IRQn);
+#endif
 
         global_bus_ptr[0] = NULL;
         global_bus_ptr[1] = NULL;

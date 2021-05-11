@@ -23,12 +23,8 @@
 #include "SensorManager.h"
 
 SensorManager::SensorManager(const SensorMap_t& sensors_map)
-    : scheduler(new TaskScheduler())
+    : SensorManager(new TaskScheduler(), sensors_map)
 {
-    if (!init(sensors_map))
-    {
-        TRACE("[SM] Initialization failed \n");
-    }
 }
 
 SensorManager::SensorManager(TaskScheduler* scheduler,
@@ -55,12 +51,26 @@ void SensorManager::stop() { scheduler->stop(); }
 
 void SensorManager::enableSensor(AbstractSensor* sensor)
 {
-    samplers_map[sensor]->toggleSensor(sensor, true);
+    if (samplers_map.find(sensor) != samplers_map.end())
+    {
+        samplers_map[sensor]->toggleSensor(sensor, true);
+    }
+    else
+    {
+        TRACE("[SM] Can't enable sensor %p, it does not exist \n", sensor);
+    }
 }
 
 void SensorManager::disableSensor(AbstractSensor* sensor)
 {
-    samplers_map[sensor]->toggleSensor(sensor, false);
+    if (samplers_map.find(sensor) != samplers_map.end())
+    {
+        samplers_map[sensor]->toggleSensor(sensor, false);
+    }
+    else
+    {
+        TRACE("[SM] Can't disable sensor %p, it does not exist \n", sensor);
+    }
 }
 
 void SensorManager::enableAllSensors()
@@ -79,9 +89,16 @@ void SensorManager::disableAllSensors()
     }
 }
 
-const SensorInfo& SensorManager::getSensorInfo(AbstractSensor* sensor)
+const SensorInfo SensorManager::getSensorInfo(AbstractSensor* sensor)
 {
-    return samplers_map[sensor]->getSensorInfo(sensor);
+    if (samplers_map.find(sensor) != samplers_map.end())
+    {
+        return samplers_map[sensor]->getSensorInfo(sensor);
+    }
+
+    TRACE("[SM] Sensor %p not found, can't return SensorInfo \n", sensor);
+
+    return SensorInfo{};
 }
 
 const vector<TaskStatResult> SensorManager::getSamplersStats()
@@ -105,9 +122,6 @@ bool SensorManager::init(const SensorMap_t& sensors_map)
         AbstractSensor* sensor = it->first;
         SensorInfo sensor_info = it->second;
 
-        TRACE("[SM] Sensor %p, Sensor info %p ---> enabled = %d \n", sensor,
-              sensor_info, sensor_info.is_enabled.load());
-
         // avoid adding sensors that fail to be initalized
         if (!initSensor(sensor))
         {
@@ -117,15 +131,19 @@ bool SensorManager::init(const SensorMap_t& sensors_map)
         }
         else
         {
-            TRACE("[SM] Adding sensor with frequency %u Hz \n",
-                  sensor_info.freq);
+            TRACE(
+                "[SM] Adding Sensor %p, Sensor info %p ---> period = %u ms, "
+                "enabled "
+                "= %d \n",
+                sensor, sensor_info, sensor_info.period,
+                sensor_info.is_enabled);
 
-            // check if a sampler with the same frequency and the same type
-            // exists
+            // check if a sampler with the same sampling period and the same
+            // type exists
             bool found = false;
             for (auto s : samplers)
             {
-                if (sensor_info.freq == s->getFrequency() &&
+                if (sensor_info.period == s->getSamplingPeriod() &&
                     sensor_info.is_dma == s->isDMA())
                 {
                     s->addSensor(sensor, sensor_info);
@@ -136,9 +154,9 @@ bool SensorManager::init(const SensorMap_t& sensors_map)
 
             if (!found)
             {
-                // a sampler with the required frequency does not exist yet
+                // a sampler with the required period does not exist yet
                 SensorSampler* new_sampler = createSampler(
-                    current_sampler_id, sensor_info.freq, sensor_info.is_dma);
+                    current_sampler_id, sensor_info.period, sensor_info.is_dma);
 
                 new_sampler->addSensor(sensor, sensor_info);
 
@@ -169,17 +187,23 @@ bool SensorManager::initSensor(AbstractSensor* sensor)
 
 void SensorManager::initScheduler()
 {
+    // sort the vector to have lower period samplers
+    // (higher frequency) inserted before
+    // higher period ones into the TaskScheduler
+    std::sort(samplers.begin(), samplers.end(), [](auto& left, auto& right) {
+        return left->getSamplingPeriod() < right->getSamplingPeriod();
+    });
+
     uint64_t start_time = miosix::getTick() + 10;
-    uint32_t period     = 0;
+
     // add all the samplers to the scheduler
     for (auto& s : samplers)
     {
-        period = 1000 / s->getFrequency();  // in milliseconds
-
         function_t sampler_update_function =
             bind(&SensorSampler::sampleAndCallback, s);
-        // use the frequency as the ID of the task in the scheduler
-        scheduler->add(sampler_update_function, period, s->getID(), start_time);
+
+        scheduler->add(sampler_update_function, s->getSamplingPeriod(),
+                       s->getID(), start_time);
     }
 }
 
@@ -204,17 +228,17 @@ uint8_t SensorManager::getFirstTaskID()
     return max_id + 1;
 }
 
-SensorSampler* SensorManager::createSampler(uint8_t id, uint32_t freq,
+SensorSampler* SensorManager::createSampler(uint8_t id, uint32_t period,
                                             bool is_dma)
 {
-    TRACE("[SM] Creating Sampler %u with frequency %u Hz \n", id, freq);
+    TRACE("[SM] Creating Sampler %u with sampling period %u ms \n", id, period);
 
     if (is_dma)
     {
-        return new DMASensorSampler(id, freq);
+        return new DMASensorSampler(id, period);
     }
     else
     {
-        return new SimpleSensorSampler(id, freq);
+        return new SimpleSensorSampler(id, period);
     }
 }

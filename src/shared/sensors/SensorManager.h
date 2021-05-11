@@ -33,7 +33,7 @@ using namespace std;
  * Board.
  *
  * Sensors are grouped in various SensorSampler objects by "type" (if they use
- * DMA or not) and "sampling frequency". These SensorSampler objects are then
+ * DMA or not) and "sampling period". These SensorSampler objects are then
  * added to the scheduler that manages the timings for the sampling.
  */
 class SensorManager
@@ -102,7 +102,7 @@ public:
     /**
      * @return the information related to the given sensor
      */
-    const SensorInfo& getSensorInfo(AbstractSensor* sensor);
+    const SensorInfo getSensorInfo(AbstractSensor* sensor);
 
     /**
      * @return vector of statistics, one for each sampler, taken from the
@@ -153,18 +153,18 @@ private:
      * @brief Create a sampler object according to the fact that it needs to use
      * DMA or not.
      *
-     * @param is_dma    indicate if the sampler manages sensors that use DMA
-     * @param freq      sampling frequency of the new sampler
      * @param id        new sampler's identifier
+     * @param period      sampling period of the new sampler
+     * @param is_dma    indicate if the sampler manages sensors that use DMA
      *
      * @return pointer to the newly created sampler
      */
-    SensorSampler* createSampler(uint8_t id, uint32_t freq, bool is_dma);
+    SensorSampler* createSampler(uint8_t id, uint32_t period, bool is_dma);
 
     const uint8_t MAX_TASK_ID = 255; /**< max id for tasks in the scheduler */
 
     TaskScheduler* scheduler; /**< scheduler to update the samplers at the
-                                correct frequency */
+                                correct period */
 
     vector<SensorSampler*> samplers; /**< vector of all the samplers (unique) */
 

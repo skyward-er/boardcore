@@ -1,4 +1,4 @@
-/* Copyright (c) 2020 Skyward Experimental Rocketry
+/* Copyright (c) 2021 Skyward Experimental Rocketry
  * Authors: Alberto Nidasio
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -20,14 +20,10 @@
  * THE SOFTWARE.
  */
 
+#include <Debug.h>
+#include <drivers/spi/SPIDriver.h>
 #include <miosix.h>
-
-#include "Common.h"
-#include "drivers/adc/ADS1118/ADS1118.h"
-#include "drivers/spi/SPIDriver.h"
-#include "sensors/analog/pressure/AnalogPressureSensor.h"
-#include "sensors/analog/pressure/honeywell/HSCMAND015PA.h"
-#include "sensors/analog/pressure/honeywell/HSCMRNN030PA.h"
+#include <sensors/MPU9250/MPU9250.h>
 
 #include "TimestampTimer.h"
 
@@ -35,9 +31,6 @@ GpioPin sckPin  = GpioPin(GPIOB_BASE, 13);
 GpioPin misoPin = GpioPin(GPIOB_BASE, 14);
 GpioPin mosiPin = GpioPin(GPIOB_BASE, 15);
 GpioPin csPin   = GpioPin(GPIOC_BASE, 1);
-
-constexpr ADS1118::ADS1118Mux channel1 = ADS1118::ADS1118Mux::MUX_AIN2_GND;
-constexpr ADS1118::ADS1118Mux channel2 = ADS1118::ADS1118Mux::MUX_AIN3_GND;
 
 void initBoard()
 {
@@ -65,55 +58,33 @@ int main()
     TimestampTimer::enableTimestampTimer();
 
     // SPI configuration setup
+
     SPIBusConfig spiConfig;
-    spiConfig.clock_div = SPIClockDivider::DIV32;
-    spiConfig.mode      = SPIMode::MODE1;
+    spiConfig.clock_div = SPIClockDivider::DIV64;
+    spiConfig.mode      = SPIMode::MODE3;
     SPIBus spiBus(SPI2);
     SPISlave spiSlave(spiBus, csPin, spiConfig);
 
     // Device initialization
-    ADS1118 ads1118(spiSlave);
-
-    std::function<ADCData()> get_voltage_function =
-        std::bind(&ADS1118::getVoltage, ads1118, channel1);
-    HSCMAND015PA analog_sensor(get_voltage_function);
-
-    analog_sensor.init();
-    analog_sensor.selfTest();
-
-    std::function<ADCData()> get_voltage_function2 =
-        std::bind(&ADS1118::getVoltage, ads1118, channel2);
-    HSCMRNN030PA analog_sensor2(get_voltage_function2);
-
-    analog_sensor2.init();
-    analog_sensor2.selfTest();
-
-    // Enable channels
-    ads1118.enableInput(channel1, ADS1118::ADS1118DataRate::DR_250,
-                        ADS1118::ADS1118Pga::FSR_4_096);
-    ads1118.enableInput(channel2, ADS1118::ADS1118DataRate::DR_250,
-                        ADS1118::ADS1118Pga::FSR_4_096);
+    MPU9250 mpu9250(spiSlave);
 
     // Initialize the device
-    ads1118.init();
+    mpu9250.init();
 
-    // Self test
-    if (ads1118.selfTest())
+    while (true)
     {
-        TRACE("Self test successful!\n");
-    }
-    else
-    {
-        TRACE("Self test failed :( error: %d\n", ads1118.getLastError());
+        mpu9250.sample();
+        MPU9250Data data = mpu9250.getLastSample();
+        printf("%lld,%f,%f,%f;", data.accel_timestamp, data.accel_x,
+               data.accel_y, data.accel_z);
+        printf("%lld,%f,%f,%f;", data.gyro_timestamp, data.gyro_x, data.gyro_y,
+               data.gyro_z);
+        printf("%lld,%f,%f,%f\n", data.mag_timestamp, data.mag_x, data.mag_y,
+               data.mag_z);
+
+        // Serial communicaion at 115200 baud takes aprx. 10ms
+        // miosix::delayMs(10);
     }
 
-    // Read samples with sample()
-    while (1)
-    {
-        ads1118.sample();
-        miosix::Thread::sleep(5);
-
-        printf("%.2f\t%.2f\n", ads1118.getVoltage(channel1).voltage,
-               ads1118.getVoltage(channel2).voltage);
-    }
+    TRACE("Test completed\n");
 }

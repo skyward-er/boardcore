@@ -122,8 +122,8 @@ int Logger::start()
         fclose(file);
         throw runtime_error("Error creating stats thread");
     }*/
-    started = true;
-
+    started     = true;
+    s.opened    = true;
     s.logNumber = fileNumber;
     return fileNumber;
 }
@@ -139,6 +139,8 @@ void Logger::stop()
     writeT->join();
     // statsT->join();
     fclose(file);
+
+    s.opened = false;
 }
 
 Logger::Logger()
@@ -169,6 +171,7 @@ LogResult Logger::logImpl(const char* name, const void* data, unsigned int size)
 {
     if (started == false)
     {
+        TRACE("[Logger] Logger not started!\n");
         ++s.statDroppedSamples;
 
         // Signal that we are trying to write to a closed log

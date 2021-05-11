@@ -24,54 +24,53 @@
 
 using namespace std;
 
-SensorSampler::SensorSampler(uint8_t id, uint32_t freq, bool is_dma)
-    : id(id), freq(freq), is_dma(is_dma)
+SensorSampler::SensorSampler(uint8_t id, uint32_t period, bool is_dma)
+    : id(id), period(period), is_dma(is_dma)
 {
 }
 
-SensorSampler::~SensorSampler() { sensors_map.clear(); }
+SensorSampler::~SensorSampler() { sensors.clear(); }
 
 void SensorSampler::sampleAndCallback()
 {
-    for (auto it = sensors_map.begin(); it != sensors_map.end(); it++)
+    for (auto& s : sensors)
     {
         // sample only if that sensor is enabled
-        if (it->second.is_enabled)
+        if (s.second.is_enabled)
         {
-            sampleSensor(it->first);
-            it->second.callback();
+            sampleSensor(s.first);
+            s.second.callback();
         }
     }
 }
 
 void SensorSampler::toggleSensor(AbstractSensor* sensor, bool is_en)
 {
-    sensors_map.at(sensor).is_enabled = is_en;
-
-    TRACE("[Sampler %d] Toggle Sensor %p, Sensor info %p ---> enabled = %d \n",
-          getID(), sensor, sensors_map.at(sensor),
-          sensors_map.at(sensor).is_enabled.load());
+    for (auto& s : sensors)
+    {
+        if (s.first == sensor)
+        {
+            s.second.is_enabled = is_en;
+            TRACE("[Sampler %d] Toggle Sensor %p ---> enabled = %d \n", getID(),
+                  sensor, s.second.is_enabled);
+            break;
+        }
+    }
 }
 
 void SensorSampler::enableAllSensors()
 {
-    // don't use toggleSensor() to avoid searching the map for each sensor
-    for (std::map<AbstractSensor*, SensorInfo>::iterator it =
-             sensors_map.begin();
-         it != sensors_map.end(); ++it)
+    for (auto& s : sensors)
     {
-        it->second.is_enabled = true;
+        s.second.is_enabled = true;
     }
 }
 
 void SensorSampler::disableAllSensors()
 {
-    // don't use toggleSensor() to avoid searching the map for each sensor
-    for (std::map<AbstractSensor*, SensorInfo>::iterator it =
-             sensors_map.begin();
-         it != sensors_map.end(); ++it)
+    for (auto& s : sensors)
     {
-        it->second.is_enabled = false;
+        s.second.is_enabled = false;
     }
 }
 
@@ -79,18 +78,28 @@ bool SensorSampler::isDMA() { return is_dma; }
 
 uint8_t SensorSampler::getID() { return id; }
 
-uint32_t SensorSampler::getFrequency() { return freq; }
+uint32_t SensorSampler::getSamplingPeriod() { return period; }
 
-uint32_t SensorSampler::getNumSensors() { return sensors_map.size(); }
+unsigned int SensorSampler::getNumSensors() { return sensors.size(); }
 
-const SensorInfo& SensorSampler::getSensorInfo(AbstractSensor* sensor)
+const SensorInfo SensorSampler::getSensorInfo(AbstractSensor* sensor)
 {
-    return sensors_map.at(sensor);
+    for (auto it = sensors.begin(); it != sensors.end(); ++it)
+    {
+        if (it->first == sensor)
+        {
+            return it->second;
+        }
+    }
+
+    TRACE("[SM] Sampler %d : sensor %p not found \n", this->id, sensor);
+    
+    return SensorInfo{};
 }
 
 // simple sampler
-SimpleSensorSampler::SimpleSensorSampler(uint8_t id, uint32_t freq)
-    : SensorSampler(id, freq, false)
+SimpleSensorSampler::SimpleSensorSampler(uint8_t id, uint32_t period)
+    : SensorSampler(id, period, false)
 {
 }
 
@@ -99,11 +108,7 @@ SimpleSensorSampler::~SimpleSensorSampler() {}
 void SimpleSensorSampler::addSensor(AbstractSensor* sensor,
                                     SensorInfo sensor_info)
 {
-    sensors_map.emplace(sensor, sensor_info);
-
-    TRACE("[Sampler %d] Added : Sensor %p, Sensor info %p ---> enabled = %d\n",
-          getID(), sensor, &sensors_map.at(sensor),
-          sensors_map.at(sensor).is_enabled.load());
+    sensors.push_back(make_pair(sensor, sensor_info));
 }
 
 void SimpleSensorSampler::sampleSensor(AbstractSensor* sensor)
@@ -112,8 +117,8 @@ void SimpleSensorSampler::sampleSensor(AbstractSensor* sensor)
 }
 
 // DMA sampler
-DMASensorSampler::DMASensorSampler(uint8_t id, uint32_t freq)
-    : SensorSampler(id, freq, true)
+DMASensorSampler::DMASensorSampler(uint8_t id, uint32_t period)
+    : SensorSampler(id, period, true)
 {
 }
 
@@ -121,16 +126,11 @@ DMASensorSampler::~DMASensorSampler() {}
 
 void DMASensorSampler::addSensor(AbstractSensor* sensor, SensorInfo sensor_info)
 {
-    sensors_map.emplace(sensor, sensor_info);
-
-    TRACE("[Sampler %d] Added : Sensor %p, Sensor info %p ---> enabled = %d\n",
-          this->getID(), sensor, &sensors_map.at(sensor),
-          sensors_map.at(sensor).is_enabled.load());
+    sensors.push_back(make_pair(sensor, sensor_info));
 }
 
 /*
-    TBD
-    Handle sensors that use DMA
+    TODO : Handle sensors that use DMA
 */
 void DMASensorSampler::sampleSensor(AbstractSensor* sensor)
 {

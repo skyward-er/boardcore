@@ -292,6 +292,11 @@ public:
     TemperatureData getTemperature();
 
     /**
+     * @brief Returns the conversion time in us for the specified channel
+     */
+    int getConversionTime(int8_t channel);
+
+    /**
      * @brief Writes the temperature configuration and check if it is read back
      * correctly
      *

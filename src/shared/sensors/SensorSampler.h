@@ -41,10 +41,10 @@ class SensorSampler
 public:
     /**
      * @param id      sampler identifier
-     * @param freq    frequency at which the sampler performs sensors update
+     * @param period  period at which the sampler performs sensors update
      * @param is_dma  indicate if the sampler manages DMA sensors or not
      */
-    SensorSampler(uint8_t id, uint32_t freq, bool is_dma);
+    SensorSampler(uint8_t id, uint32_t period, bool is_dma);
 
     virtual ~SensorSampler();
 
@@ -90,19 +90,19 @@ public:
     uint8_t getID();
 
     /**
-     * @return  the sampler's activation frequency
+     * @return  the sampler's activation period
      */
-    uint32_t getFrequency();
+    uint32_t getSamplingPeriod();
 
     /**
      * @return  the number of sensors assigned to this sampler
      */
-    uint32_t getNumSensors();
+    unsigned int getNumSensors();
 
     /**
      * @return  the information related to the given sensor
      */
-    const SensorInfo& getSensorInfo(AbstractSensor* sensor);
+    const SensorInfo getSensorInfo(AbstractSensor* sensor);
 
 private:
     /**
@@ -111,11 +111,11 @@ private:
     virtual void sampleSensor(AbstractSensor* s) = 0;
 
     uint8_t id;   /**< sampler id used in the task scheduler */
-    uint32_t freq; /**< sampler update/activation frequency */
-    bool is_dma;   /**< the sampler's type (if it uses DMA or not */
+    uint32_t period; /**< sampler update/activation period */
+    bool is_dma;   /**< the sampler's type (if it uses DMA or not) */
 
 protected:
-    map<AbstractSensor*, SensorInfo> sensors_map;
+    vector<pair<AbstractSensor*, SensorInfo>> sensors;
 };
 
 /**
@@ -125,7 +125,7 @@ protected:
 class SimpleSensorSampler : public virtual SensorSampler
 {
 public:
-    SimpleSensorSampler(uint8_t id, uint32_t freq);
+    SimpleSensorSampler(uint8_t id, uint32_t period);
 
     ~SimpleSensorSampler();
 
@@ -143,7 +143,7 @@ private:
 class DMASensorSampler : public virtual SensorSampler
 {
 public:
-    DMASensorSampler(uint8_t id, uint32_t freq);
+    DMASensorSampler(uint8_t id, uint32_t period);
 
     ~DMASensorSampler();
 
