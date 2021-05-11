@@ -32,6 +32,5 @@ CTestTestfile.cmake
 CMakeCache.txt
 CMakeFiles
 FMT.build
-Makefile
 run-msbuild.bat
 fmt.pc
