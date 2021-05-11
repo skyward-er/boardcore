@@ -156,6 +156,7 @@ def parseConf(path):
         elif stype == 'library':
             extlibs[i] = {'subdir': conf.get(i, 'Subdir'),
                           'libs': [x.strip() for x in conf.get(i, 'Libs').split()],
+                          'defines':  conf.get(i, 'Defines').strip(),
                           'includes': [x.strip() for x in conf.get(i, 'Includes').split()]}
         elif stype == 'board' or stype == 'test':
             if stype == 'test':
@@ -221,7 +222,8 @@ def build_makefile(template, board, bname):
              "BIN_NAME": board['bin'],
              "LIB_SUBDIR": " ".join([x['subdir'] for _,x in board['libs'].items()]),
              "LIB_LIBS": " ".join([" ".join(x['libs']) for _,x in board['libs'].items()]),
-             "LIB_INCLUDES": " ".join([" ".join([ "-I" + s for s in x['includes']]) for _,x in board['libs'].items()])
+             "LIB_INCLUDES": " ".join([" ".join([ "-I" + s for s in x['includes']]) for _,x in board['libs'].items()]),
+             "LIB_DEFINES": " ".join(x['defines'] for _,x in board['libs'].items())
     }
 
     rmap["PROJECT_INCLUDES"] = "-I" + projconf["SRC_PATH"].strip() + " "

@@ -111,11 +111,11 @@ $(OBJDIR)/%.o: %.s
 
 $(OBJDIR)/%.o : %.c
 	$(ECHO) "[CC]  " $<
-	$(Q) $(CC)  $(DFLAGS) $(CFLAGS) {SBS_CUSTOM_DEFINES} $< -o $@
+	$(Q) $(CC)  $(DFLAGS) $(CFLAGS) {SBS_CUSTOM_DEFINES} {SBS_LIB_DEFINES} $< -o $@
 
 $(OBJDIR)/%.o : %.cpp
 	$(ECHO) "[CXX] " $<
-	$(Q) $(CXX) $(DFLAGS) $(CXXFLAGS) {SBS_CUSTOM_DEFINES} $< -o $@
+	$(Q) $(CXX) $(DFLAGS) $(CXXFLAGS) {SBS_CUSTOM_DEFINES} {SBS_LIB_DEFINES} $< -o $@
 
 folders:
 	$(Q) mkdir -pv $(dir $(OBJ)) $(BINDIR)
