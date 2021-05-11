@@ -29,11 +29,14 @@
 
 int main()
 {
-     Logging::getInstance()->startAsyncLogger();
-    PrintLogger logger = Logging::getInstance()->getLogger("root");
+    Logging::startAsyncLogger();
+
+    PrintLogger logger = Logging::getLogger("root");
     PrintLogger log2   = logger.getChild("b.c");
     PrintLogger log3   = logger.getChild("a");
-    PrintLogger log4   = Logging::getInstance()->getLogger("async");
+    PrintLogger log4   = Logging::getLogger("async");
+
+    // Logging::getStdOutLogSink().setFormatString("{ts} [{name}] {msg}\n");
 
     int async_ctr = 0;
     for (;;)

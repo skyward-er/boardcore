@@ -47,7 +47,6 @@ using miosix::FastMutex;
 
 static constexpr unsigned int ASYNC_LOG_BUFFER_SIZE = 100;
 
-
 class Logging;
 
 struct LogRecord
@@ -123,7 +122,7 @@ public:
              string format, Args&&... args)
     {
         vlog(level, function, file, line, format,
-                           fmt::make_args_checked<Args...>(format, args...));        
+             fmt::make_args_checked<Args...>(format, args...));
     }
 
     template <typename... Args>
@@ -131,16 +130,14 @@ public:
                   string format, Args&&... args)
     {
         vlogAsync(level, function, file, line, format,
-                           fmt::make_args_checked<Args...>(format, args...));  
+                  fmt::make_args_checked<Args...>(format, args...));
     }
 
 private:
-    void vlog(uint8_t level, string function, string file,
-                             int line, fmt::string_view format,
-                             fmt::format_args args);
-    void vlogAsync(uint8_t level, string function, string file,
-                             int line, fmt::string_view format,
-                             fmt::format_args args);
+    void vlog(uint8_t level, string function, string file, int line,
+              fmt::string_view format, fmt::format_args args);
+    void vlogAsync(uint8_t level, string function, string file, int line,
+                   fmt::string_view format, fmt::format_args args);
 
     LogRecord buildLogRecord(uint8_t level, string function, string file,
                              int line, fmt::string_view format,
@@ -156,24 +153,24 @@ class Logging : public Singleton<Logging>
     friend class PrintLogger;
 
 public:
-    PrintLogger getLogger(string name) { return PrintLogger(*this, name); }
-
-    void addLogSink(unique_ptr<LogSink>& sink)
+    static PrintLogger getLogger(string name)
     {
-        sinks.push_back(std::move(sink));
+        return PrintLogger(*getInstance(), name);
     }
 
-    LogSink& getSerialLogSink() { return *sinks.at(0); }
-
-    void startAsyncLogger()
+    static void addLogSink(unique_ptr<LogSink>& sink)
     {
-        async_log.start();
+        getInstance()->sinks.push_back(std::move(sink));
     }
 
+    static LogSink& getStdOutLogSink() { return *getInstance()->sinks.at(0); }
+
+    static void startAsyncLogger() { getInstance()->async_log.start(); }
+
+private:
     void log(const LogRecord& record);
     void logAsync(const LogRecord& record);
 
-private:
     class AsyncLogger : public ActiveObject
     {
     public:
@@ -204,37 +201,26 @@ private:
 #define LOG(logger, level, ...) \
     logger.log(level, __FUNCTION__, __FILE__, __LINE__, __VA_ARGS__)
 
-#define LOG_DEBUG(logger, ...) \
-    LOG(logger, LOGL_DEBUG, __VA_ARGS__)
+#define LOG_DEBUG(logger, ...) LOG(logger, LOGL_DEBUG, __VA_ARGS__)
 
-#define LOG_INFO(logger, ...) \
-    LOG(logger, LOGL_INFO, __VA_ARGS__)
+#define LOG_INFO(logger, ...) LOG(logger, LOGL_INFO, __VA_ARGS__)
 
-#define LOG_WARN(logger, ...) \
-    LOG(logger, LOGL_WARNING, __VA_ARGS__)
+#define LOG_WARN(logger, ...) LOG(logger, LOGL_WARNING, __VA_ARGS__)
 
-#define LOG_ERR(logger, ...) \
-    LOG(logger, LOGL_ERROR, __VA_ARGS__)
+#define LOG_ERR(logger, ...) LOG(logger, LOGL_ERROR, __VA_ARGS__)
 
-#define LOG_CRIT(logger, ...) \
-    LOG(logger, LOGL_CRITICAL, __VA_ARGS__)
-
-
+#define LOG_CRIT(logger, ...) LOG(logger, LOGL_CRITICAL, __VA_ARGS__)
 
 #define LOG_ASYNC(logger, level, ...) \
     logger.logAsync(level, __FUNCTION__, __FILE__, __LINE__, __VA_ARGS__)
 
-#define LOG_DEBUG_ASYNC(logger, ...) \
-    LOG_ASYNC(logger, LOGL_DEBUG, __VA_ARGS__)
+#define LOG_DEBUG_ASYNC(logger, ...) LOG_ASYNC(logger, LOGL_DEBUG, __VA_ARGS__)
 
-#define LOG_INFO_ASYNC(logger, ...) \
-    LOG_ASYNC(logger, LOGL_INFO, __VA_ARGS__)
+#define LOG_INFO_ASYNC(logger, ...) LOG_ASYNC(logger, LOGL_INFO, __VA_ARGS__)
 
-#define LOG_WARN_ASYNC(logger, ...) \
-    LOG_ASYNC(logger, LOGL_WARNING, __VA_ARGS__)
+#define LOG_WARN_ASYNC(logger, ...) LOG_ASYNC(logger, LOGL_WARNING, __VA_ARGS__)
 
-#define LOG_ERR_ASYNC(logger, ...) \
-    LOG_ASYNC(logger, LOGL_ERROR, __VA_ARGS__)
+#define LOG_ERR_ASYNC(logger, ...) LOG_ASYNC(logger, LOGL_ERROR, __VA_ARGS__)
 
 #define LOG_CRIT_ASYNC(logger, ...) \
     LOG_ASYNC(logger, LOGL_CRITICAL, __VA_ARGS__)
