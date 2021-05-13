@@ -25,6 +25,7 @@
 #include "SensorInfo.h"
 #include "SensorSampler.h"
 #include "scheduler/TaskScheduler.h"
+#include "diagnostic/PrintLogger.h"
 
 using namespace std;
 
@@ -170,4 +171,6 @@ private:
 
     map<AbstractSensor*, SensorSampler*>
         samplers_map; /**< map each sensor to the corresponding sampler */
+    
+    PrintLogger log = Logging::getLogger("sensormanager");
 };
