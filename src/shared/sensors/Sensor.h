@@ -130,7 +130,7 @@ public:
     /**
      * @return last FIFO sampled from the sensor
      */
-    const std::array<Data, FifoSize> getLastFifo() { return last_fifo; }
+    const std::array<Data, FifoSize>& getLastFifo() { return last_fifo; }
 
     /**
      * @param i   index of the requested item inside the FIFO
