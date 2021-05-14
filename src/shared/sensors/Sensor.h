@@ -109,7 +109,7 @@ public:
     /**
      * @return last available sample from this sensor
      */
-    virtual Data getLastSample() { return last_sample; }
+    virtual const Data& getLastSample() { return last_sample; }
 };
 
 /**
