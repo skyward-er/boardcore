@@ -31,6 +31,7 @@
 #include "BMX160Config.h"
 #include "BMX160Data.h"
 #include "BMX160Defs.h"
+#include "TimestampTimer.h"
 
 /// @brief BMX160 Driver.
 class BMX160 : public SensorFIFO<BMX160Data, 200>
@@ -182,7 +183,13 @@ public:
     }
 
     /// @brief Get last read temperature
-    float getTemperature() { return temperature; }
+    BMX160Temerature getTemperature()
+    {
+        BMX160Temerature t;
+        t.temp_timestamp = TimestampTimer::getTimestamp();
+        t.temp           = temperature;
+        return t;
+    }
 
 private:
     float temperature = 0.0f;

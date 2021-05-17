@@ -30,8 +30,7 @@ struct BMX160Data : public AccelerometerData, GyroscopeData, MagnetometerData
 {
     /// @brief Default constructor.
     BMX160Data()
-        : AccelerometerData{0, 0.0, 0.0, 0.0},
-          GyroscopeData{0, 0.0, 0.0, 0.0},
+        : AccelerometerData{0, 0.0, 0.0, 0.0}, GyroscopeData{0, 0.0, 0.0, 0.0},
           MagnetometerData{0, 0.0, 0.0, 0.0}
     {
     }
@@ -44,15 +43,26 @@ struct BMX160Data : public AccelerometerData, GyroscopeData, MagnetometerData
 
     static std::string header()
     {
-        return "accel_timestamp,accel_x,accel_y,accel_z,gyro_timestamp,gyro_x,gyro_y,"
+        return "accel_timestamp,accel_x,accel_y,accel_z,gyro_timestamp,gyro_x,"
+               "gyro_y,"
                "gyro_z,mag_timestamp,mag_x,mag_y,mag_z\n";
     }
 
     void print(std::ostream& os) const
     {
-        os << accel_timestamp << "," << accel_x << "," << accel_y << "," << accel_z
-           << "," << gyro_timestamp << "," << gyro_x << "," << gyro_y << ","
-           << gyro_z << "," << mag_timestamp << "," << mag_x << "," << mag_y
-           << "," << mag_z << "\n";
+        os << accel_timestamp << "," << accel_x << "," << accel_y << ","
+           << accel_z << "," << gyro_timestamp << "," << gyro_x << "," << gyro_y
+           << "," << gyro_z << "," << mag_timestamp << "," << mag_x << ","
+           << mag_y << "," << mag_z << "\n";
+    }
+};
+
+struct BMX160Temerature : public TemperatureData
+{
+    static std::string header() { return "temp_timestamp,temperature\n"; }
+
+    void print(std::ostream& os) const
+    {
+        os << temp_timestamp << "," << temp << "\n";
     }
 };
