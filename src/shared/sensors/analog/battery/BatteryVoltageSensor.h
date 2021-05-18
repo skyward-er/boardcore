@@ -60,7 +60,7 @@ public:
         // Moving average
         bat_data.bat_voltage =
             last_sample.bat_voltage * MOVING_AVAERAGE_COMP_COEFF;
-        bat_data.bat_voltage =
+        bat_data.bat_voltage +=
             adcToBatteryVoltage(adc_data.voltage) * MOVING_AVAERAGE_COEFF;
 
         return bat_data;
@@ -78,7 +78,7 @@ private:
 
     float conversionCoeff;
 
-    static constexpr float MOVING_AVAERAGE_COEFF = 1 / MOVING_AVAERAGE_N;
+    static constexpr float MOVING_AVAERAGE_COEFF = 1 / (float)MOVING_AVAERAGE_N;
     static constexpr float MOVING_AVAERAGE_COMP_COEFF =
         1 - MOVING_AVAERAGE_COEFF;
 };
