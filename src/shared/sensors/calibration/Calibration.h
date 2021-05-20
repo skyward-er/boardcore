@@ -92,6 +92,8 @@ public:
      * Note: you must feed some data to the model before getting the result!
      */
     virtual C computeResult() = 0;
+
+    virtual ~AbstractCalibrationModel(){};
 };
 
 /**
