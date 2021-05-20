@@ -34,10 +34,13 @@
 class CurrentSensor : public Sensor<CurrentSenseData>
 {
 public:
+    static constexpr int MOVING_AVAERAGE_N = 10;
+
     CurrentSensor(std::function<ADCData()> getADCVoltage_,
                   std::function<float(float)> adcToCurrent_)
         : getADCVoltage(getADCVoltage_), adcToCurrent(adcToCurrent_)
     {
+        last_sample.current = 0;
     }
 
     bool init() override { return true; };
@@ -49,11 +52,22 @@ public:
     {
         ADCData adc_data = getADCVoltage();
 
+        if (last_sample.current == 0)
+        {
+            last_sample.current = adcToCurrent(adc_data.voltage);
+        }
+
         CurrentSenseData current_data;
         current_data.adc_timestamp = adc_data.adc_timestamp;
         current_data.channel_id    = adc_data.channel_id;
         current_data.voltage       = adc_data.voltage;
-        current_data.current       = adcToCurrent(adc_data.voltage);
+        // current_data.current       = adcToCurrent(adc_data.voltage);
+
+        // Moving average
+        current_data.current = last_sample.current * MOVING_AVAERAGE_COMP_COEFF;
+        current_data.current +=
+            adcToCurrent(adc_data.voltage) * MOVING_AVAERAGE_COEFF;
+        printf("%f %f\n", adc_data.voltage, adcToCurrent(adc_data.voltage));
 
         return current_data;
     };
@@ -64,4 +78,8 @@ private:
 
     ///< Function that converts adc voltage to current
     std::function<float(float)> adcToCurrent;
+
+    static constexpr float MOVING_AVAERAGE_COEFF = 1 / (float)MOVING_AVAERAGE_N;
+    static constexpr float MOVING_AVAERAGE_COMP_COEFF =
+        1 - MOVING_AVAERAGE_COEFF;
 };
