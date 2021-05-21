@@ -523,7 +523,7 @@ private:
 
         if (!spi.read(STATUS_REG))
         {
-            TRACE("[LIS3MDL] New data not available, keeping old values\n");
+            // TRACE("[LIS3MDL] New data not available, keeping old values\n");
             last_error = NO_NEW_DATA;
             return last_sample;
         }
