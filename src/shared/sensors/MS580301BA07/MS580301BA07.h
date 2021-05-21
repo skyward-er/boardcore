@@ -29,6 +29,7 @@
 #include "MS580301BA07Data.h"
 #include "TimestampTimer.h"
 #include "drivers/spi/SPIDriver.h"
+#include <cstring>
 
 enum MS5803Errors : uint8_t
 {
