@@ -21,6 +21,7 @@
  */
 
 #include "SensorSampler.h"
+// #include <diagnostic/PrintLogger.h>
 
 using namespace std;
 
@@ -38,6 +39,8 @@ void SensorSampler::sampleAndCallback()
         // sample only if that sensor is enabled
         if (s.second.is_enabled)
         {
+            // PrintLogger log = Logging::getLogger("ssampler");
+            
             sampleSensor(s.first);
             s.second.callback();
         }

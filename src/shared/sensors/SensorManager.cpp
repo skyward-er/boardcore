@@ -22,6 +22,8 @@
 
 #include "SensorManager.h"
 
+#include <Debug.h>
+
 SensorManager::SensorManager(const SensorMap_t& sensors_map)
     : SensorManager(new TaskScheduler(), sensors_map)
 {
@@ -33,7 +35,7 @@ SensorManager::SensorManager(TaskScheduler* scheduler,
 {
     if (!init(sensors_map))
     {
-        LOG_ERR(log, "Initialization failed");
+        TRACE("Initialization failed\n");
     }
 }
 
@@ -57,7 +59,7 @@ void SensorManager::enableSensor(AbstractSensor* sensor)
     }
     else
     {
-        LOG_ERR(log, "Can't enable sensor {:p} it does not exist", fmt::ptr(sensor));
+        TRACE("Can't enable sensor %d it does not exist\n", sensor);
     }
 }
 
@@ -69,7 +71,7 @@ void SensorManager::disableSensor(AbstractSensor* sensor)
     }
     else
     {
-        LOG_ERR(log, "Can't disable sensor {:p}, it does not exist", fmt::ptr(sensor));
+        TRACE("Can't disable sensor %d, it does not exist", sensor);
     }
 }
 
@@ -96,7 +98,7 @@ const SensorInfo SensorManager::getSensorInfo(AbstractSensor* sensor)
         return samplers_map[sensor]->getSensorInfo(sensor);
     }
 
-    LOG_ERR(log, "Sensor {:p} not found, can't return SensorInfo", fmt::ptr(sensor));
+    TRACE("Sensor %s not found, can't return SensorInfo\n", sensor);
 
     return SensorInfo{};
 }
@@ -113,8 +115,8 @@ bool SensorManager::init(const SensorMap_t& sensors_map)
 
     if (current_sampler_id != 0)
     {
-        LOG_INFO(log, "Task scheduler not empty : starting from task ID {:d}",
-                 current_sampler_id);
+        TRACE("Task scheduler not empty : starting from task ID %d\n",
+              current_sampler_id);
     }
 
     for (auto it = sensors_map.begin(); it != sensors_map.end(); it++)
@@ -126,17 +128,16 @@ bool SensorManager::init(const SensorMap_t& sensors_map)
         if (!initSensor(sensor))
         {
             init_result = false;
-            LOG_ERR(log, "Failed to initialize sensor ---> Error : {:d} (period: {:d} ms)",
-                    sensor->getLastError(), sensor_info.period);
+            TRACE(
+                "Failed to initialize sensor ---> Error : %d (period: %d "
+                "ms)\n",
+                sensor->getLastError(), sensor_info.period);
         }
         else
         {
-            LOG_INFO(
-                log,
-                "Adding Sensor {:p}, Sensor info {:p} ---> period = {:d} ms, "
-                "enabled "
-                "= {}",
-                fmt::ptr(sensor), fmt::ptr(&sensor_info), sensor_info.period,
+            TRACE(
+                "Adding Sensor %p, Sensor info %p ---> period = %d ms, enabled = %d\n",
+                sensor, &sensor_info, sensor_info.period,
                 sensor_info.is_enabled);
 
             // check if a sampler with the same sampling period and the same
@@ -166,9 +167,9 @@ bool SensorManager::init(const SensorMap_t& sensors_map)
 
                 if (current_sampler_id == MAX_TASK_ID)
                 {
-                    LOG_WARN(log,
-                             "Max task ID (255) reached in task scheduler, IDs "
-                             "will start again from 0");
+                    TRACE(
+                        "Max task ID (255) reached in task scheduler, IDs "
+                        "will start again from 0");
                 }
 
                 current_sampler_id++;
@@ -232,7 +233,7 @@ uint8_t SensorManager::getFirstTaskID()
 SensorSampler* SensorManager::createSampler(uint8_t id, uint32_t period,
                                             bool is_dma)
 {
-    LOG_INFO(log, "Creating Sampler {:d} with sampling period {:d} ms", id, period);
+    TRACE("Creating Sampler %d with sampling period %u ms\n", (int)id, period);
 
     if (is_dma)
     {
