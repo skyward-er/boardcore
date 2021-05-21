@@ -53,9 +53,6 @@ public:
         : BMX160(bus, cs, config, SPIBusConfig{})
     {
         spi_slave.config.clock_div = SPIClockDivider::DIV32;
-        old_mag.mag_timestamp      = 0.0f;
-        old_gyr.gyro_timestamp     = 0.0f;
-        old_acc.accel_timestamp    = 0.0f;
     }
 
     /// @brief BMX160 Constructor.
@@ -67,6 +64,9 @@ public:
            SPIBusConfig bus_config)
         : spi_slave(bus, cs, bus_config), config(config)
     {
+        old_mag.mag_timestamp   = 0.0f;
+        old_gyr.gyro_timestamp  = 0.0f;
+        old_acc.accel_timestamp = 0.0f;
     }
 
     /// @brief Initialize the driver.
