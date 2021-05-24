@@ -55,7 +55,7 @@ public:
 
     SensorData sampleImpl() { return SensorData(); }
 
-    SensorData getLastSample() override
+    const SensorData& getLastSample() override
     {
         this->last_sample = original_sensor->getLastSample();
         this->last_sample.press += offset;
@@ -134,7 +134,7 @@ public:
         return sensor->getFifoElement(index);
     }
 
-    FIFOData getLastSample() override
+    const FIFOData& getLastSample() override
     {
         if (index < FifoSize - 1)
         {

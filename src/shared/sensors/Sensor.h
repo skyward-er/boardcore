@@ -36,7 +36,8 @@
 template <class T, class ExpectedDataType>
 struct checkIfProduces
     : std::is_base_of<ExpectedDataType,
-                      decltype(std::declval<T>().getLastSample())>
+                      typename std::remove_reference<decltype(
+                          std::declval<T>().getLastSample())>::type>
 {
 };
 
@@ -49,11 +50,8 @@ protected:
     SensorErrors last_error = SensorErrors::NO_ERRORS;
 
 public:
-    virtual ~AbstractSensor()
-    {
+    virtual ~AbstractSensor() {}
 
-    }
-    
     /**
      * @brief Initialize the sensor.
      * @return boolean value indicating whether the operation succeded or not
@@ -99,10 +97,7 @@ protected:
     virtual Data sampleImpl() = 0;
 
 public:
-    virtual ~Sensor()
-    {
-
-    }
+    virtual ~Sensor() {}
 
     void sample() override { last_sample = sampleImpl(); }
 
@@ -137,7 +132,7 @@ public:
      *
      * @return the i-th element of the FIFO
      */
-    Data getFifoElement(uint32_t i) const { return last_fifo[i]; }
+    const Data& getFifoElement(uint32_t i) const { return last_fifo[i]; }
 
     /**
      * @return number of elements in the last FIFO sampled from the sensor

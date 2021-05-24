@@ -40,9 +40,6 @@ using namespace miosix;
 
 int main()
 {
-    internal::set_is_malloc_allowed(
-        false);  // raise exception if eigen uses malloc
-
     // Setting pin mode for signaling ADA status
     {
         FastInterruptDisableLock dLock;

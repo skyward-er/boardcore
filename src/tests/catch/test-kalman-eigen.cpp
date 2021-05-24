@@ -76,9 +76,6 @@ getKalmanConfig()
 
 TEST_CASE("Update test")
 {
-    internal::set_is_malloc_allowed(
-        false);  // raise exception if eigen uses malloc
-
     KalmanEigen<float, STATES_DIM, OUTPUTS_DIM> filter(getKalmanConfig());
 
     Matrix<float, OUTPUTS_DIM, 1> y{};
