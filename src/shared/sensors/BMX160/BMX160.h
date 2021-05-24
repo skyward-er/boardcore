@@ -25,6 +25,7 @@
 
 #include <drivers/spi/SPIDriver.h>
 #include <sensors/Sensor.h>
+#include <algorithm>
 
 #include <cassert>
 
@@ -341,7 +342,7 @@ private:
     {
         SPITransaction spi(spi_slave);
         auto chip_id = spi.read(BMX160Defs::REG_CHIPID);
-        TRACE("[BMX160] Chipid: %d\n", chip_id);
+        TRACE("[BMX160] Chipid: %d\n", (int)chip_id);
 
         return chip_id == BMX160Defs::CHIPID;
     }
@@ -997,13 +998,13 @@ private:
 
         TRACE("-------- DUMP OF TRIM REGS --------\n");
         for (int i = 0; i < 2; i++)
-            TRACE("trim_x1y1[%d]: %d\n", i, trim_x1y1[i]);
+            TRACE("trim_x1y1[%d]: %d\n", i, (int)trim_x1y1[i]);
 
         for (int i = 0; i < 4; i++)
-            TRACE("trim_xyz_data[%d]: %d\n", i, trim_xyz_data[i]);
+            TRACE("trim_xyz_data[%d]: %d\n", i, (int)trim_xyz_data[i]);
 
         for (int i = 0; i < 10; i++)
-            TRACE("trim_xy1xy2[%d]: %d\n", i, trim_xy1xy2[i]);
+            TRACE("trim_xy1xy2[%d]: %d\n", i, (int)trim_xy1xy2[i]);
         TRACE("--------    END OF DUMP    --------\n");
 
         // Read trim registers
