@@ -38,7 +38,7 @@ void LogSink::log(const LogRecord& record)
 void FileLogSink::logImpl(string l)
 {
     Lock<FastMutex> lock(mutex);
-    fputs(l.c_str(), f);
+    fwrite(l.c_str(), sizeof(char), l.length(), f);
 }
 
 PrintLogger PrintLogger::getChild(string name)
