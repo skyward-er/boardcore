@@ -282,7 +282,7 @@ def importLibs(path):
         stype = conf.get(i, 'Type')
         if stype == 'library':
             if i not in extlibs:
-                extlibs[i] =  {'subdir': projconf['SBS_BASE'] + "/" +  conf.get(i, 'Subdir'),
+                extlibs[i] =  {'subdir': '' if conf.get(i, 'Subdir') == '' else projconf['SBS_BASE'] + "/" +  conf.get(i, 'Subdir'),
                             'libs': [projconf['SBS_BASE'] + "/" + x.strip() for x in conf.get(i, 'Libs').split()],
                             'defines':  conf.get(i, 'Defines').strip(),
                             'includes': [projconf['SBS_BASE'] + "/" + x.strip() for x in conf.get(i, 'Includes').split()]}
