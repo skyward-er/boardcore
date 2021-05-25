@@ -32,9 +32,12 @@
 #include "BMX160Data.h"
 #include "BMX160Defs.h"
 
+class BMX160Corrector;
+
 /// @brief BMX160 Driver.
 class BMX160 : public SensorFIFO<BMX160Data, 200>
 {
+    friend BMX160Corrector;
 public:
     /// @brief BMX160 Custom errors.
     enum BMX160Errors : uint8_t

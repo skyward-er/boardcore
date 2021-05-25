@@ -92,6 +92,11 @@ public:
         return true;
     }
 
+    bool feed(const T& measured) 
+    {
+        return feed(measured, AxisOrthoOrientation());
+    }
+
     BiasCorrector<T> computeResult()
     {
         if (numSamples == 0)
