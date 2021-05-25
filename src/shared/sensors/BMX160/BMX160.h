@@ -665,10 +665,11 @@ private:
     /// @param timestamp Timestamp associated with the data.
     MagnetometerData buildMagData(BMX160Defs::MagRaw data, uint64_t timestamp)
     {
-        // Strip the lower 3 bits
+        // Strip the lower 3 bits for xy
         data.x >>= 3;
         data.y >>= 3;
-        data.z >>= 3;
+        // Strip the lower 1 bit for z
+        data.z >>= 1;
 
         if (config.enable_compensation)
         {
