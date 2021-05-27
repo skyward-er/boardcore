@@ -67,7 +67,6 @@ public:
         current_data.current = last_sample.current * MOVING_AVAERAGE_COMP_COEFF;
         current_data.current +=
             adcToCurrent(adc_data.voltage) * MOVING_AVAERAGE_COEFF;
-        printf("%f %f\n", adc_data.voltage, adcToCurrent(adc_data.voltage));
 
         return current_data;
     };
