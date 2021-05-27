@@ -34,6 +34,8 @@
 #include "BMX160Defs.h"
 #include "TimestampTimer.h"
 
+#include "Constants.h"
+
 /// @brief BMX160 Driver.
 class BMX160 : public SensorFIFO<BMX160Data, 200>
 {
@@ -342,7 +344,7 @@ private:
     {
         SPITransaction spi(spi_slave);
         auto chip_id = spi.read(BMX160Defs::REG_CHIPID);
-        TRACE("[BMX160] Chipid: %d\n", (int)chip_id);
+        // TRACE("[BMX160] Chipid: %d\n", (int)chip_id);
 
         return chip_id == BMX160Defs::CHIPID;
     }
@@ -682,7 +684,7 @@ private:
                 timestamp,
                 boschMagCompensateX(data.x, data.rhall),
                 boschMagCompensateY(data.y, data.rhall),
-                boschMagCompensateZ(data.z, data.rhall),
+                boschMagCompensateZ(data.z, data.rhall)
             };
         }
         else
@@ -691,7 +693,7 @@ private:
                 timestamp,
                 data.x * BMX160Defs::MAG_SENSIBILITY,
                 data.y * BMX160Defs::MAG_SENSIBILITY,
-                data.z * BMX160Defs::MAG_SENSIBILITY,
+                data.z * BMX160Defs::MAG_SENSIBILITY
             };
         }
     }
@@ -704,9 +706,9 @@ private:
     {
         return AccelerometerData{
             timestamp,
-            data.x * acc_sensibility,
-            data.y * acc_sensibility,
-            data.z * acc_sensibility,
+            data.x * acc_sensibility * EARTH_GRAVITY,
+            data.y * acc_sensibility * EARTH_GRAVITY,
+            data.z * acc_sensibility * EARTH_GRAVITY
         };
     }
 
@@ -716,12 +718,24 @@ private:
     /// @param timestamp Timestamp associated with the data.
     GyroscopeData buildGyrData(BMX160Defs::GyrRaw data, uint64_t timestamp)
     {
-        return GyroscopeData{
-            timestamp,
-            data.x * gyr_sensibility,
-            data.y * gyr_sensibility,
-            data.z * gyr_sensibility,
-        };
+        if (config.gyr_unit == BMX160Config::GyrMeasureUnit::DEG)
+        {
+            return GyroscopeData{
+                timestamp,
+                data.x * gyr_sensibility,
+                data.y * gyr_sensibility,
+                data.z * gyr_sensibility
+            };
+        }
+        else 
+        {
+            return GyroscopeData{
+                timestamp,
+                data.x * gyr_sensibility * DEGREES_TO_RADIANS,
+                data.y * gyr_sensibility * DEGREES_TO_RADIANS,
+                data.z * gyr_sensibility * DEGREES_TO_RADIANS
+            };
+        }
     }
 
     /// @brief Debug function used to print the current error state
@@ -832,7 +846,7 @@ private:
             return;
         }
 
-        TRACE("Fifo len: %d\n", len);
+        // TRACE("Fifo len: %d\n", len);
 
         // Sometimes the buffer gets over 1000
         uint8_t buf[1100];
@@ -996,7 +1010,7 @@ private:
         readMag(spi, BMX160Defs::MAG_REG_DIG_Z2_0, trim_xy1xy2,
                 sizeof(trim_xy1xy2));
 
-        TRACE("-------- DUMP OF TRIM REGS --------\n");
+        /*TRACE("-------- DUMP OF TRIM REGS --------\n");
         for (int i = 0; i < 2; i++)
             TRACE("trim_x1y1[%d]: %d\n", i, (int)trim_x1y1[i]);
 
@@ -1005,7 +1019,7 @@ private:
 
         for (int i = 0; i < 10; i++)
             TRACE("trim_xy1xy2[%d]: %d\n", i, (int)trim_xy1xy2[i]);
-        TRACE("--------    END OF DUMP    --------\n");
+        TRACE("--------    END OF DUMP    --------\n");*/
 
         // Read trim registers
         trim_data.dig_x1   = trim_x1y1[0];

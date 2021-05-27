@@ -67,6 +67,13 @@ struct BMX160Config
         DEG_125  = 0x4
     };
 
+    /// @brief Gyroscope measure unit (deg or rad)
+    enum class GyrMeasureUnit
+    {
+        DEG,
+        RAD
+    };
+
     /// @brief ODR expressed in Hz.
     ///
     /// Limits are as follows (wrong values will error the device):
@@ -179,9 +186,10 @@ struct BMX160Config
     Bwp acc_bwp        = Bwp::NORMAL;
     AccRange acc_range = AccRange::G_2;
 
-    Odr gyr_odr        = Odr::HZ_100;
-    Bwp gyr_bwp        = Bwp::NORMAL;
-    GyrRange gyr_range = GyrRange::DEG_2000;
+    Odr gyr_odr             = Odr::HZ_100;
+    Bwp gyr_bwp             = Bwp::NORMAL;
+    GyrRange gyr_range      = GyrRange::DEG_2000;
+    GyrMeasureUnit gyr_unit = GyrMeasureUnit::DEG;
 
     Odr mag_odr = Odr::HZ_100;
 };

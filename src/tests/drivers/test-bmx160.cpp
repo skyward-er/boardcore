@@ -97,7 +97,7 @@ int main()
 
         printf("Tick: %.4f s, Now: %.4f s\n", tick / 1000000.0f,
                now / 1000000.0f);
-        printf("Temp: %.2f deg\n", sensor->getTemperature());
+        printf("Temp: %.2f deg\n", sensor->getTemperature().temp);
         printf("Fill: %d\n", sensor->getLastFifoSize());
 
         printf("----------------------------\n");
