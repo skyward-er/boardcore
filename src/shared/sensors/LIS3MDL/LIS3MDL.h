@@ -279,7 +279,7 @@ public:
          * NUM_TESTS: number of actual tests.
          * SLEEP_TIME: millis between samples/tests
          */
-        constexpr int NUM_SAMPLES = 5, NUM_TESTS = 10, SLEEP_TIME = 500;
+        constexpr int NUM_SAMPLES = 5, NUM_TESTS = 5, SLEEP_TIME = 50;
 
         /*
          * Absolute value of extra tolerance
@@ -314,7 +314,7 @@ public:
         avg_y /= NUM_SAMPLES;
         avg_z /= NUM_SAMPLES;
 
-        TRACE("[LIS3MDL] Starting %d tests\n", NUM_TESTS);
+        //TRACE("[LIS3MDL] Starting %d tests\n", NUM_TESTS);
 
         /*
          * Setting up the sensor settings for
@@ -354,7 +354,7 @@ public:
 
             if (!passed)
             {
-                TRACE("[LIS3MDL] Test n. %d failed\n", (i + 1));
+                //TRACE("[LIS3MDL] Test n. %d failed\n", (i + 1));
 
                 // reset configuration, then return
                 applyConfig(mConfig);
@@ -362,10 +362,10 @@ public:
                 last_error = SELF_TEST_FAIL;
                 return false;
             }
-            else
+            /*else
             {
                 TRACE("[LIS3MDL] Test n. %d passed\n", (i + 1));
-            }
+            }*/
         }
 
         /*
