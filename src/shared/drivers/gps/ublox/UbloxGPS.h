@@ -1,5 +1,5 @@
-/* Copyright (c) 2020 Skyward Experimental Rocketry
- * Authors: Davide Bonomini
+/* Copyright (c) 2021 Skyward Experimental Rocketry
+ * Authors: Davide Bonomini, Davide Mor, Alberto Nidasio
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -20,165 +20,78 @@
  * THE SOFTWARE.
  */
 
-#ifndef GPS_H
-#define GPS_H
+#pragma once
 
-#include <fcntl.h>
+#include <miosix.h>
 
 #include "ActiveObject.h"
-#include "Common.h"
 #include "UbloxGPSData.h"
 #include "sensors/Sensor.h"
-
-using miosix::FastMutex;
-using miosix::Thread;
 
 class UbloxGPS : public Sensor<UbloxGPSData>, public ActiveObject
 {
 public:
-    /*
-     * Which time reference to use
-     */
-    enum class TimeRef
-    {
-        UTC     = 0,
-        GPS     = 1,
-        GLONASS = 2,
-        BEIDOU  = 3,
-        GALILEO = 4
-    };
+    UbloxGPS(int boudrate_ = 921600, uint8_t sampleRate_ = 10,
+             int serialPortNumber_ = 2, const char *serialPortName_ = "gps",
+             int defaultBaudrate_ = 38400);
 
-    UbloxGPS(int baudrate = 460800, int sampleRate = 10, int serialPortNum = 2,
-        const char *portName = "gps");
-
-    /*
-     * @brief Read from the GPS serial port and try to parse the NMEA messages
-     * @return 1 true if at least one NMEA message was correctly parsed, 0 if no
-     * valid NMEA messages were received
-     */
-    bool selfTest() override;
-
-    /*
-     * @brief Sets up the serial port and sends the UBX configuration messages
-     * to the GPS module
-     * @return True if the serial port was opened correctly and false if some
-     * error occured
-     */
     bool init() override;
 
-    UbloxGPSData sampleImpl() override;
-
-    /*
-     * Packs and sends a UBX configuration message to the GPS module to set up
-     * SBAS. By default it sets up EGNOS.
-     */
-    void sendSBASMessage(int mode = 1, int usage = 3, int maxChannelNum = 3,
-                         int PRNs[3] = NULL);
-
-    /*
-     * Packs and sends a UBX configuration message to the GPS module to set the
-     * rate. By default it samples the gps every 100 ms and uses GPS time
-     */
-    void sendRateMessage(int inbetweenReadings = 100, int navRate = 1,
-                         TimeRef timeRef = TimeRef::GPS);
+    bool selfTest() override;
 
 private:
-    /*
-     * Active object run
-     */
+    UbloxGPSData sampleImpl() override;
+
     void run() override;
 
-    /*
-     * Sets up the serial port and sends UBX configuration messages to the GPS
-     * module
-     */
-    bool serialComSetup();
-
-    /*
-     * Gets called when selfTest() gets called and selfTestFlag is set to true
-     */
     bool selfTestInThread();
 
-    /*
-     * Writes the UBX checksum in the last 2 bytes of msg
-     */
     void ubxChecksum(uint8_t *msg, int len);
 
-    /*
-     * Packs SBAS message:
-     *
-     * Length: 16 bytes
-     * Supported on UBX protocol versions  15, 15.01, 16, 17, 18,
-     * 19, 19.1, 19.2, 20, 20.01, 20.1, 20.2, 20.3, 22, 23 and 23.01 bytes 0-5
-     * as UBX standard (header x2, class x1, id x1, length x2) byte 6 mode,
-     * default 1 (deprecated -> has no effect), mode 2 (test mode) ignores SBAS
-     * data byte 7 usage, default 3 (correction and ranging) byte 8 max
-     * channels, default 3 (valid range: 0-3) byte 9-13 PRNs, default for EGNOS:
-     * 136, 123, 126 (as of March 2020) btye 14-15 checksum
+    /**
+     * Also compute the checksum
      */
-    void packSBASMessge(uint8_t *msg, int mode = 1, int usage = 3,
-                        int maxChannelNum = 3, int PRNs[3] = NULL);
+    bool writeUBXMessage(uint8_t *message, int length);
 
-    /*
-     * Packs Rate message:
-     *
-     * Length: 14 bytes
-     * bytes 0-5 as UBX standard (header x2, class x1, id x1, length x2)
-     * bytes 6-7 measurement rate, time between readings, default 100
-     * bytes 8-9 navRate, measurements taken before creating a solution, default
-     * 1 bytes timeRef, Alignment to reference time, default GPS
-     */
-    void packRateMessage(uint8_t *msg, int inbetweenReadings = 100,
-                         int navRate = 1, TimeRef timeRef = TimeRef::GPS);
+    bool serialCommuinicationSetup();
 
-    struct UbloxGPSData data;
-    mutable FastMutex mutex;
-    int fd, baudrate, serialPortNum, betweenReadings;
-    volatile bool selfTestResult, selfTestFlag = false;
+    bool setBaudrate();
+
+    bool disableNMEAMessages();
+
+    bool setGNSSConfiguration();
+
+    bool enableUBXMessages();
+
+    bool setRate();
+
+    bool readUBXMessage(uint8_t *message, uint16_t &payloadLength);
+
+    bool parseUBXMessage(uint8_t *message);
+
+    bool parseUBXNAVMessage(uint8_t *message);
+
+    bool parseUBXACKMessage(uint8_t *message);
+
+    const int baudrate;        // [baud]
+    const uint8_t sampleRate;  // [Hz]
+    const int serialPortNumber;
     const char *serialPortName;
+    const int defaultBaudrate;  // [baud]
 
-    static const int MAXPORTNAMELEN       = 5;
-    static const int DEFAULT_GPS_BAUDRATE = 38400;
-    static const int MAX_SAMPLERATE       = 25;
-    static const int NMEA_MAX_LENGTH      = 82;
-    static const int SELFTEST_TIMEOUT     = 2000;
-    static const int SET_BAUDRATE_MSG_LEN = 28;
-    static const int SET_RATE_MSG_LEN     = 14;
-    static const int SET_SBAS_MSG_LEN     = 16;
+    char gpsFilePath[16];  ///< Allows for a filename of up to 10 characters
+    int gpsFile;
 
-    static constexpr uint8_t UbxHeader[2] = {0xb5, 0x62};
-    static const uint8_t UbxCfgClass      = 0x06;
-    static const uint8_t UbxCfgId_SBAS    = 0x16;
-    static const int UbxCfgLen_SBAS       = 8;
-    static const uint8_t UbxCfgId_Rate    = 0x08;
-    static const int UbxCfgLen_Rate       = 6;
+    mutable miosix::FastMutex mutex;
+    UbloxGPSData threadSample{};
 
-    static constexpr uint8_t SETGNSS[44] = {
-        0xb5, 0x62, 0x06, 0x24, 0x24, 0x00, 0xff, 0xff, 0x08, 0x03, 0x00, 0x00,
-        0x00, 0x00, 0x10, 0x27, 0x00, 0x00, 0x05, 0x00, 0xfa, 0x00, 0xfa, 0x00,
-        0x64, 0x00, 0x2c, 0x01, 0x00, 0x3c, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x54, 0x2c};  // set GNSS options
-                                                          // (GPS channels,
-                                                          // GLONASS channels,
-                                                          // EGNOS chanels and
-                                                          // navigation mode to
-                                                          // airborne <4g)
+    static constexpr int SET_BAUDRATE_MSG_LEN          = 20;
+    static constexpr int DISABLE_NMEA_MESSAGES_MSG_LEN = 42;
+    static constexpr int SET_GNSS_CONF_LEN             = 17;
+    static constexpr int ENABLE_UBX_MESSAGES_MSG_LEN   = 17;
+    static constexpr int SET_RATE_MSG_LEN              = 18;
 
-    static constexpr uint8_t DISABLEGSA[16] = {
-        0xb5, 0x62, 0x06, 0x01, 0x08, 0x00, 0xf0, 0x02,
-        0x00, 0x00, 0x00, 0x00, 0x00, 0x01, 0x02, 0x32};
+    static constexpr uint8_t PREAMBLE[] = {0xb5, 0x62};
 
-    static constexpr uint8_t DISABLEGLL[16] = {
-        0xb5, 0x62, 0x06, 0x01, 0x08, 0x00, 0xf0, 0x01,
-        0x00, 0x00, 0x00, 0x00, 0x00, 0x01, 0x01, 0x2b};
-
-    static constexpr uint8_t DISABLEGSV[16] = {
-        0xb5, 0x62, 0x06, 0x01, 0x08, 0x00, 0xf0, 0x03,
-        0x00, 0x00, 0x00, 0x00, 0x00, 0x01, 0x03, 0x39};
-
-    static constexpr uint8_t DISABLEVTG[16] = {
-        0xb5, 0x62, 0x06, 0x01, 0x08, 0x00, 0xf0, 0x05,
-        0x00, 0x00, 0x00, 0x00, 0x00, 0x01, 0x05, 0x47};
+    static constexpr int UBX_MAX_PAYLOAD_LENGTH = 92;
 };
-
-#endif /* GPS_H */

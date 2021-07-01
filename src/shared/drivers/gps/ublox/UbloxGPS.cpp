@@ -1,5 +1,5 @@
-/* Copyright (c) 2020 Skyward Experimental Rocketry
- * Authors: Davide Bonomini
+/* Copyright (c) 2021 Skyward Experimental Rocketry
+ * Authors: Davide Bonomini, Davide Mor, Alberto Nidasio
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -21,369 +21,486 @@
  */
 
 #include "UbloxGPS.h"
-#include <drivers/gps/nmea/nmea.h>
 
-#include <cmath>
+#include <fcntl.h>
 
 #include "drivers/serial.h"
 #include "filesystem/file_access.h"
 
 using namespace miosix;
 
-constexpr uint8_t UbloxGPS::DISABLEGSA[];
-constexpr uint8_t UbloxGPS::DISABLEGSV[];
-constexpr uint8_t UbloxGPS::DISABLEVTG[];
-constexpr uint8_t UbloxGPS::DISABLEGLL[];
-constexpr uint8_t UbloxGPS::SETGNSS[];
-
-UbloxGPS::UbloxGPS(int baudrate, int sampleRate, int serialPortNum,
-         const char* serialPortName)
+UbloxGPS::UbloxGPS(int baudrate_, uint8_t sampleRate_, int serialPortNum_,
+                   const char* serialPortName_, int defaultBaudrate_)
+    : baudrate(baudrate_), sampleRate(sampleRate_),
+      serialPortNumber(serialPortNum_), serialPortName(serialPortName_),
+      defaultBaudrate(defaultBaudrate_)
 {
-    UbloxGPS::baudrate       = baudrate;
-    UbloxGPS::serialPortNum  = serialPortNum;
-    UbloxGPS::serialPortName = serialPortName;
-
-    sampleRate           = std::min(sampleRate, UbloxGPS::MAX_SAMPLERATE);
-    UbloxGPS::betweenReadings = 1000 / sampleRate;
-
-    data.gps_timestamp = 0;
-    data.velocity_down = 0;
-    data.fix           = false;
+    // Prepare the gps file path with the specified name
+    strcpy(gpsFilePath, "/dev/");
+    strcat(gpsFilePath, serialPortName);
 }
 
-bool UbloxGPS::init() { return serialComSetup(); }
-
-void UbloxGPS::run()
+bool UbloxGPS::init()
 {
-    int deg;
-    enum minmea_sentence_id sentence_id;
-    struct minmea_sentence_gga frame_gga;
-    struct minmea_sentence_rmc frame_rmc;
-    char msg[NMEA_MAX_LENGTH + 1];
-    float trackRadians;
-
-    while (!shouldStop())
+    // Change the baud rate from the default value
+    if (!serialCommuinicationSetup())
     {
-        if (selfTestFlag)
-        {
-            selfTestResult = selfTestInThread();
-            selfTestFlag   = false;
-        }
-
-        int i = 0;
-        read(fd, msg, 1);
-        while (msg[i] != '\n')
-        {
-            i++;
-            read(fd, &msg[i], 1);
-        }
-        msg[++i] = '\0';
-
-        sentence_id = minmea_sentence_id(msg, 0);
-
-        /*
-        nmea messages active on gps module:
-        MINMEA_SENTENCE_RMC,
-        MINMEA_SENTENCE_GGA
-        */
-
-        Lock<FastMutex> l(mutex);  // update struct
-        switch (sentence_id)
-        {
-            case MINMEA_SENTENCE_RMC:
-                if (minmea_parse_rmc(&frame_rmc, msg))
-                {
-                    if (frame_rmc.latitude.value == 0 &&
-                        frame_rmc.longitude.value == 0)
-                        data.fix = false;
-                    else
-                    {
-                        {
-                            data.fix           = true;
-                            data.gps_timestamp = TimestampTimer::getTimestamp();
-                            
-                            deg = frame_rmc.latitude.value /
-                                  frame_rmc.latitude.scale / 100;
-                            data.latitude =
-                                deg + ((float)frame_rmc.latitude.value /
-                                           frame_rmc.latitude.scale / 100 -
-                                       deg) /
-                                          60 *
-                                          100;  // conversion from degrees and
-                                                // minutes to decimal degrees
-                            deg = frame_rmc.longitude.value /
-                                  frame_rmc.longitude.scale / 100;
-                            data.longitude =
-                                deg + ((float)frame_rmc.longitude.value /
-                                           frame_rmc.longitude.scale / 100 -
-                                       deg) /
-                                          60 *
-                                          100;  // conversion from degrees and
-                                                // minutes to decimal degrees
-                            data.speed = ((float)frame_rmc.speed.value /
-                                          frame_rmc.speed.scale) *
-                                         KNOTS_TO_MPS;
-                            if (frame_rmc.course.scale == 0 &&
-                                frame_rmc.course.value == 0)
-                            {
-                                data.track          = 0;
-                                data.velocity_north = 0;
-                                data.velocity_east  = 0;
-                            }
-                            else
-                            {
-                                // NMEA already defines it in degrees
-                                data.track = (float)frame_rmc.course.value /
-                                             frame_rmc.course.scale;
-
-                                // sin and cos require the angle in radians
-                                trackRadians = data.track * DEGREES_TO_RADIANS;
-                                data.velocity_north =
-                                    cos(trackRadians) * data.speed;
-                                data.velocity_east =
-                                    sin(trackRadians) * data.speed;
-                            }
-                        }
-                    }
-                }
-                break;
-
-            case MINMEA_SENTENCE_GGA:
-                if (minmea_parse_gga(&frame_gga, msg))
-                {
-                    if (data.fix)
-                    {
-                        {
-                            data.height = (float)frame_gga.altitude.value /
-                                          frame_gga.altitude.scale;
-
-                            data.num_satellites = frame_gga.satellites_tracked;
-                        }
-                    }
-                }
-                break;
-
-            default:
-                TRACE("Unrecognized NMEA message: %s", msg);
-                break;
-        }
+        return false;
     }
-}
 
-bool UbloxGPS::serialComSetup()
-{
-    uint8_t setBaudRateMsg[SET_BAUDRATE_MSG_LEN] = {
-        0Xb5, 0x62, 0x06, 0x00, 0x14, 0x00, 0x01, 0x00, 0x00, 0x00,
-        0xD0, 0x08, 0x00, 0x00, 0xff, 0xff, 0xff, 0xff, 0x07, 0x00,
-        0x03, 0x00, 0x00, 0x00, 0x00, 0x00, 0xff, 0xff};
+    // TODO: reset configuration to default
 
-    intrusive_ref_ptr<DevFs> devFs = FilesystemManager::instance().getDevFs();
-    if (!devFs->remove(serialPortName))
+    Thread::sleep(10);
+
+    // Disable NMEA messages
+    if (!disableNMEAMessages())
+    {
         return false;
-    if (!devFs->addDevice(serialPortName,
-                          intrusive_ref_ptr<Device>(new STM32Serial(
-                              serialPortNum, DEFAULT_GPS_BAUDRATE))))
+    }
+
+    Thread::sleep(100);
+
+    // Set GNSS configuration
+    if (!setGNSSConfiguration())
+    {
         return false;
+    }
 
-    char serialPortPath[10];
-    strcpy(serialPortPath, "/dev/");
-    strcat(serialPortPath, serialPortName);
-    /* open serial port named gps*/
-    fd = open(serialPortPath, O_RDWR);
-    if (fd < 0)
-        printf("Cannot open %s", serialPortPath);
+    Thread::sleep(100);
 
-    /* send configuration messages */
-    write(fd, DISABLEGSA, 16);
-
-    write(fd, DISABLEGLL, 16);
-
-    write(fd, DISABLEGSV, 16);
-
-    write(fd, DISABLEVTG, 16);
-
-    write(fd, SETGNSS, 44);
-
-    /*
-    construct and send rate messge
-    bytes 6 and 7 for rate
-    last 2 bytes for checksum
-    */
-    uint8_t msg[SET_RATE_MSG_LEN];
-    packRateMessage(msg, betweenReadings);
-    write(fd, msg, SET_RATE_MSG_LEN);
-
-    /*
-    construct and send baudrate message
-    bytes 14 to 17 for baudrate
-    last 2 bytes for checksum
-    */
-    setBaudRateMsg[14] = baudrate & 0x000000ff;
-    setBaudRateMsg[15] = (baudrate & 0x0000ff00) >> 8;
-    setBaudRateMsg[16] = (baudrate & 0x00ff0000) >> 16;
-    setBaudRateMsg[17] = (baudrate & 0xff000000) >> 24;
-    ubxChecksum(setBaudRateMsg, SET_BAUDRATE_MSG_LEN);
-    write(fd, setBaudRateMsg, SET_BAUDRATE_MSG_LEN);
-
-    /* close and reopen serial port with new baudrate */
-    close(fd);
-    if (!devFs->remove(serialPortName))
+    // Enable UBX messages
+    if (!enableUBXMessages())
+    {
         return false;
-    if (!devFs->addDevice(serialPortName,
-                          intrusive_ref_ptr<Device>(
-                              new STM32Serial(serialPortNum, baudrate))))
-        return false;
+    }
 
-    fd = open(serialPortPath, O_RDWR);
-    if (fd < 0)
-        printf("Cannot open %s", serialPortPath);
+    Thread::sleep(100);
+
+    // Set rate
+    if (!setRate())
+    {
+        return false;
+    }
 
     return true;
 }
 
 bool UbloxGPS::selfTest()
 {
-    selfTestFlag = true;
-    auto start        = TimestampTimer::getTimestamp();
-    
-    Thread::sleep(20);
-    while (selfTestFlag)
-    {
-        if (TimestampTimer::getTimestamp() - start > SELFTEST_TIMEOUT)
-        {
-            return false;
-        }
-        Thread::sleep(20);
-    }
+    // Wait for 2 cycles
+    Thread::sleep(2 + 1000 / sampleRate);
 
-    return selfTestResult;
+    // If a sample was taken then the timestamp wont be 0
+    return threadSample.gps_timestamp != 0;
 }
 
-bool UbloxGPS::selfTestInThread()
+UbloxGPSData UbloxGPS::sampleImpl()
 {
-    enum minmea_sentence_id sentence_id;
-    char msg[NMEA_MAX_LENGTH + 1];
 
-    for (int attempts = 0; attempts < 4; attempts++)
-    {
-        int i = 0;
-        read(fd, msg, 1);
-        while (msg[i] != '\n')
-        {
-            i++;
-            read(fd, &msg[i], 1);
-        }
-        msg[++i] = '\0';
-
-        sentence_id = minmea_sentence_id(msg, 0);
-        if (sentence_id != MINMEA_INVALID && sentence_id != MINMEA_UNKNOWN)
-        {
-            return true;
-        }
-    }
-
-    return false;
-}
-
-struct UbloxGPSData UbloxGPS::sampleImpl()
-{
     Lock<FastMutex> l(mutex);
-    return data;
+    return threadSample;
 }
 
-void UbloxGPS::packSBASMessge(uint8_t* msg, int mode, int usage, int maxChannelNum,
-                         int PRNs[3])
+void UbloxGPS::run()
 {
-    int egnosPRNs[3] = {123, 126, 136};
+    /**
+     * UBX message structure:
+     * - 2B: Preamble
+     * - 1B: Message class
+     * - 1B: Message id
+     * - 2B: Payload length
+     * - lB: Payload
+     * - 2B: Checksum
+     */
+    uint8_t message[6 + UBX_MAX_PAYLOAD_LENGTH + 2];
+    uint16_t payloadLength;
 
-    if (PRNs == NULL)
+    while (!shouldStop())
     {
-        PRNs = egnosPRNs;
-    }
-
-    msg[0] = UbxHeader[0];
-    msg[1] = UbxHeader[1];
-    msg[2] = UbxCfgClass;
-    msg[3] = UbxCfgId_SBAS;
-    msg[4] = UbxCfgLen_SBAS & 0x00ff;
-    msg[5] = (UbxCfgLen_SBAS & 0xff00) >> 8;
-
-    msg[6] = mode;
-    msg[7] = usage;
-    msg[8] = maxChannelNum;
-
-    for (int i = 0; i < 5; i++)
-    {
-        msg[9 + i] = 0x00;
-    }
-
-    for (int i = 0; i < 3; i++)
-    {
-        int bit =
-            PRNs[i] - 120;  // 120 is the first valid PNR for SBAS satellites
-        int byte = bit / 8;
-        bit      = bit % 8;
-        if (byte < 4)
+        // Try to read the message
+        if (!readUBXMessage(message, payloadLength))
         {
-            msg[10 + byte] |= 1 << bit;
+            TRACE("[gps] Unable to read a UBX message\n");
+            continue;
         }
-        else
+
+        Lock<FastMutex> l(mutex);
+        if (!parseUBXMessage(message))
         {
-            msg[9] |= 1 << bit;
+            TRACE(
+                "[gps] UBX message not recognized (class:0x%02x, id: 0x%02x)\n",
+                message[2], message[3]);
         }
     }
-
-    ubxChecksum(msg, SET_SBAS_MSG_LEN);
 }
 
-void UbloxGPS::packRateMessage(uint8_t* msg, int inbetweenReadings, int navRate,
-                          TimeRef timeRef)
-{
-    uint16_t timeRefIdx = static_cast<uint16_t>(timeRef);
-
-    msg[0] = UbxHeader[0];
-    msg[1] = UbxHeader[1];
-    msg[2] = UbxCfgClass;
-    msg[3] = UbxCfgId_Rate;
-    msg[4] = UbxCfgLen_Rate & 0x00ff;
-    msg[5] = (UbxCfgLen_Rate & 0xff00) >> 8;
-
-    msg[6] = inbetweenReadings & 0x00ff;
-    msg[7] = (inbetweenReadings & 0xff00) >> 8;
-
-    msg[8] = navRate & 0x00ff;
-    msg[9] = (navRate & 0xff00) >> 8;
-
-    msg[10] = timeRefIdx & 0x00ff;
-    msg[11] = (timeRefIdx & 0xff00) >> 8;
-
-    ubxChecksum(msg, SET_RATE_MSG_LEN);
-}
+bool UbloxGPS::selfTestInThread() { return true; }
 
 void UbloxGPS::ubxChecksum(uint8_t* msg, int len)
 {
     uint8_t ck_a = 0, ck_b = 0;
 
-    for (int i = 2; i < len - 2;
-         i++)  // checksum calculation from byte 2 to end of payload
+    // The length must be valid
+    if (len <= 2)
+    {
+        return;
+    }
+
+    // Checksum calculation from byte 2 to end of payload
+    for (int i = 2; i < len - 2; i++)
     {
         ck_a = ck_a + msg[i];
         ck_b = ck_b + ck_a;
     }
+
     msg[len - 2] = ck_a;
     msg[len - 1] = ck_b;
 }
 
-void UbloxGPS::sendSBASMessage(int mode, int usage, int maxChannelNum, int PRNs[3])
+bool UbloxGPS::writeUBXMessage(uint8_t* message, int length)
 {
-    uint8_t msg[SET_SBAS_MSG_LEN];
-    packSBASMessge(msg, mode, usage, maxChannelNum, PRNs);
-    write(fd, msg, SET_SBAS_MSG_LEN);
+    // Compute the checksum
+    ubxChecksum(message, length);
+
+    // Write configuration
+    if (write(gpsFile, message, length) < 0)
+    {
+        TRACE("[gps] Failed to write ubx message (class:0x%02x, id: 0x%02x)\n",
+              message[2], message[3]);
+        return false;
+    }
+
+    return true;
 }
 
-void UbloxGPS::sendRateMessage(int inbetweenReadings, int navRate, TimeRef timeRef)
+bool UbloxGPS::serialCommuinicationSetup()
 {
-    uint8_t msg[SET_RATE_MSG_LEN];
-    packRateMessage(msg, inbetweenReadings, navRate, timeRef);
-    write(fd, msg, SET_RATE_MSG_LEN);
+    intrusive_ref_ptr<DevFs> devFs = FilesystemManager::instance().getDevFs();
+
+    // Close the gps file if already opened
+    devFs->remove(serialPortName);
+
+    // Open the serial port device with the default boudrate
+    if (!devFs->addDevice(serialPortName,
+                          intrusive_ref_ptr<Device>(new STM32Serial(
+                              serialPortNumber, defaultBaudrate))))
+    {
+        TRACE(
+            "[gps] Faild to open serial port %u with baudrate %lu as file %s\n",
+            serialPortNumber, defaultBaudrate, serialPortName);
+        return false;
+    }
+
+    // Open the gps file
+    if ((gpsFile = open(gpsFilePath, O_RDWR)) < 0)
+    {
+        TRACE("[gps] Failed to open gps file %s\n", gpsFilePath);
+        return false;
+    }
+
+    // Change boudrate
+    if (!setBaudrate())
+    {
+        return false;
+    };
+
+    // Close the gps file
+    if (close(gpsFile) < 0)
+    {
+        TRACE("[gps] Failed to close gps file %s\n", gpsFilePath);
+        return false;
+    }
+
+    // Close and reopen the serial port with the configured boudrate
+    if (!devFs->remove(serialPortName))
+    {
+        TRACE("[gps] Faild to close serial port %u as file %s\n",
+              serialPortNumber, serialPortName);
+        return false;
+    }
+    if (!devFs->addDevice(serialPortName,
+                          intrusive_ref_ptr<Device>(
+                              new STM32Serial(serialPortNumber, baudrate))))
+    {
+        TRACE(
+            "[gps] Faild to open serial port %u with baudrate %lu as file %s\n",
+            serialPortNumber, defaultBaudrate, serialPortName);
+        return false;
+    }
+
+    // Reopen the gps file
+    if ((gpsFile = open(gpsFilePath, O_RDWR)) < 0)
+    {
+        TRACE("[gps] Failed to open gps file %s\n", gpsFilePath);
+        return false;
+    }
+
+    return true;
+}
+
+bool UbloxGPS::setBaudrate()
+{
+    uint8_t ubx_cfg_prt[SET_BAUDRATE_MSG_LEN] = {
+        0Xb5, 0x62,              // Preamble
+        0x06, 0x8a,              // Message UBX-CFG-VALSET
+        0x0c, 0x00,              // Length
+        0x00,                    // Version
+        0xff,                    // All layers
+        0x00, 0x00,              // Reserved
+        0x01, 0x00, 0x52, 0x40,  // Configuration item key ID
+        0xff, 0xff, 0xff, 0xff,  // Value
+        0xff, 0xff};             // Checksum
+
+    // Prepare boud rate
+    ubx_cfg_prt[14] = baudrate;
+    ubx_cfg_prt[15] = baudrate >> 8;
+    ubx_cfg_prt[16] = baudrate >> 16;
+    ubx_cfg_prt[17] = baudrate >> 24;
+
+    return writeUBXMessage(ubx_cfg_prt, SET_BAUDRATE_MSG_LEN);
+}
+
+bool UbloxGPS::disableNMEAMessages()
+{
+    uint8_t ubx_cfg_valset[DISABLE_NMEA_MESSAGES_MSG_LEN] = {
+        0Xb5, 0x62,              // Preamble
+        0x06, 0x8a,              // Message UBX-CFG-VALSET
+        0x22, 0x00,              // Length
+        0x00,                    // Version
+        0xff,                    // All layers
+        0x00, 0x00,              // Reserved
+        0xbb, 0x00, 0x91, 0x20,  // CFG-MSGOUT-NMEA_ID_GGA_UART1 key ID
+        0x00,                    // CFG-MSGOUT-NMEA_ID_GGA_UART1 value
+        0xca, 0x00, 0x91, 0x20,  // CFG-MSGOUT-NMEA_ID_GLL_UART1 key ID
+        0x00,                    // CFG-MSGOUT-NMEA_ID_GLL_UART1 value
+        0xc0, 0x00, 0x91, 0x20,  // CFG-MSGOUT-NMEA_ID_GSA_UART1 key ID
+        0x00,                    // CFG-MSGOUT-NMEA_ID_GSA_UART1 value
+        0xc5, 0x00, 0x91, 0x20,  // CFG-MSGOUT-NMEA_ID_GSV_UART1 key ID
+        0x00,                    // CFG-MSGOUT-NMEA_ID_GSV_UART1 value
+        0xac, 0x00, 0x91, 0x20,  // CFG-MSGOUT-NMEA_ID_RMC_UART1 key ID
+        0x00,                    // CFG-MSGOUT-NMEA_ID_RMC_UART1 value
+        0xb1, 0x00, 0x91, 0x20,  // CFG-MSGOUT-NMEA_ID_VTG_UART1 key ID
+        0x00,                    // CFG-MSGOUT-NMEA_ID_VTG_UART1 value
+        0xff, 0xff};             // Checksum
+
+    return writeUBXMessage(ubx_cfg_valset, DISABLE_NMEA_MESSAGES_MSG_LEN);
+}
+
+bool UbloxGPS::setGNSSConfiguration()
+{
+    uint16_t rate = 1000 / sampleRate;
+    TRACE("[gps] rate: %u\n", rate);
+
+    uint8_t ubx_cfg_valset[SET_GNSS_CONF_LEN] = {
+        0Xb5, 0x62,              // Preamble
+        0x06, 0x8a,              // Message UBX-CFG-VALSET
+        0x09, 0x00,              // Length
+        0x00,                    // Version
+        0x07,                    // All layers
+        0x00, 0x00,              // Reserved
+        0x21, 0x00, 0x11, 0x20,  // CFG-NAVSPG-DYNMODEL key ID
+        0x08,                    // CFG-NAVSPG-DYNMODEL value
+        0xff, 0xff};             // Checksum
+
+    // Prepare rate
+    ubx_cfg_valset[14] = rate;
+    ubx_cfg_valset[15] = rate >> 8;
+
+    return writeUBXMessage(ubx_cfg_valset, SET_GNSS_CONF_LEN);
+}
+
+bool UbloxGPS::enableUBXMessages()
+{
+    uint8_t ubx_cfg_valset[ENABLE_UBX_MESSAGES_MSG_LEN] = {
+        0Xb5, 0x62,              // Preamble
+        0x06, 0x8a,              // Message UBX-CFG-VALSET
+        0x09, 0x00,              // Length
+        0x00,                    // Version
+        0xff,                    // All layers
+        0x00, 0x00,              // Reserved
+        0x07, 0x00, 0x91, 0x20,  // CFG-MSGOUT-UBX_NAV_PVT_UART1 key ID
+        0x01,                    // CFG-MSGOUT-UBX_NAV_PVT_UART1 value
+        0xff, 0xff};             // Checksum
+
+    return writeUBXMessage(ubx_cfg_valset, ENABLE_UBX_MESSAGES_MSG_LEN);
+}
+
+bool UbloxGPS::setRate()
+{
+    uint16_t rate = 1000 / sampleRate;
+    TRACE("[gps] rate: %u\n", rate);
+
+    uint8_t ubx_cfg_valset[SET_RATE_MSG_LEN] = {
+        0Xb5, 0x62,              // Preamble
+        0x06, 0x8a,              // Message UBX-CFG-VALSET
+        0x0a, 0x00,              // Length
+        0x00,                    // Version
+        0x07,                    // All layers
+        0x00, 0x00,              // Reserved
+        0x01, 0x00, 0x21, 0x30,  // CFG-RATE-MEAS key ID
+        0xff, 0xff,              // CFG-RATE-MEAS value
+        0xff, 0xff};             // Checksum
+
+    // Prepare rate
+    ubx_cfg_valset[14] = rate;
+    ubx_cfg_valset[15] = rate >> 8;
+
+    return writeUBXMessage(ubx_cfg_valset, SET_RATE_MSG_LEN);
+}
+
+bool UbloxGPS::readUBXMessage(uint8_t* message, uint16_t& payloadLength)
+{
+    // Read preamble
+    do
+    {
+        // Read util the first byte of the preamble
+        do
+        {
+            if (read(gpsFile, &message[0], 1) <= 0)  // No more data available
+            {
+                return false;
+            }
+        } while (message[0] != PREAMBLE[0]);
+
+        // Read the next byte
+        if (read(gpsFile, &message[1], 1) <= 0)  // No more data available
+        {
+            return false;
+        }
+    } while (message[1] != PREAMBLE[1]);  // Continue
+
+    // Read message class and ID
+    if (read(gpsFile, &message[2], 1) <= 0)
+    {
+        return false;
+    }
+    if (read(gpsFile, &message[3], 1) <= 0)
+    {
+        return false;
+    }
+
+    // Read length
+    if (read(gpsFile, &message[4], 2) <= 0)
+    {
+        return false;
+    }
+    payloadLength = message[4] | (message[5] << 8);
+    if (payloadLength > UBX_MAX_PAYLOAD_LENGTH)
+    {
+        return false;
+    }
+
+    // Read paylaod and checksum
+    for (auto i = 0; i < payloadLength + 2; i++)
+    {
+        if (read(gpsFile, &message[6 + i], 1) <= 0)
+        {
+            return false;
+        }
+    }
+
+    // Verify the checksum
+    uint8_t msgChecksum1 = message[6 + payloadLength];
+    uint8_t msgChecksum2 = message[6 + payloadLength + 1];
+    ubxChecksum(message, 6 + payloadLength + 2);
+    if (msgChecksum1 != message[6 + payloadLength] ||
+        msgChecksum2 != message[6 + payloadLength + 1])
+    {
+        TRACE("[gps] Message checksum verification failed\n");
+        return false;
+    }
+
+    return true;
+}
+
+bool UbloxGPS::parseUBXMessage(uint8_t* message)
+{
+    switch (message[2])  // Message class
+    {
+        case 0x01:  // UBX-NAV
+            return parseUBXNAVMessage(message);
+        case 0x05:  // UBX-ACK
+            return parseUBXACKMessage(message);
+    }
+    return false;
+}
+
+bool UbloxGPS::parseUBXNAVMessage(uint8_t* message)
+{
+    switch (message[3])  // Message id
+    {
+        case 0x07:  // UBX-NAV-PVT
+            // Latitude
+            int32_t rawLatitude = message[6 + 28] | message[6 + 29] << 8 |
+                                  message[6 + 30] << 16 | message[6 + 31] << 24;
+            threadSample.latitude = (float)rawLatitude / 1e7;
+
+            // Longitude
+            int32_t rawLongitude = message[6 + 24] | message[6 + 25] << 8 |
+                                   message[6 + 26] << 16 |
+                                   message[6 + 27] << 24;
+            threadSample.longitude = (float)rawLongitude / 1e7;
+
+            // Height
+            int32_t rawHeight = message[6 + 32] | message[6 + 33] << 8 |
+                                message[6 + 34] << 16 | message[6 + 35] << 24;
+            threadSample.height = (float)rawHeight / 1e3;
+
+            // Velocity north
+            int32_t rawVelocityNorth = message[6 + 48] | message[6 + 49] << 8 |
+                                       message[6 + 50] << 16 |
+                                       message[6 + 51] << 24;
+            threadSample.velocity_north = (float)rawVelocityNorth / 1e3;
+
+            // Velocity east
+            int32_t rawVelocityEast = message[6 + 52] | message[6 + 53] << 8 |
+                                      message[6 + 54] << 16 |
+                                      message[6 + 55] << 24;
+            threadSample.velocity_east = (float)rawVelocityEast / 1e3;
+
+            // Velocity down
+            int32_t rawVelocityDown = message[6 + 56] | message[6 + 57] << 8 |
+                                      message[6 + 58] << 16 |
+                                      message[6 + 59] << 24;
+            threadSample.velocity_down = (float)rawVelocityDown / 1e3;
+
+            // Speed
+            int32_t rawSpeed = message[6 + 60] | message[6 + 61] << 8 |
+                               message[6 + 62] << 16 | message[6 + 63] << 24;
+            threadSample.speed = (float)rawSpeed / 1e3;
+
+            // Track (heading of motion)
+            int32_t rawTrack = message[6 + 64] | message[6 + 65] << 8 |
+                               message[6 + 66] << 16 | message[6 + 67] << 24;
+            threadSample.track = (float)rawTrack / 1e5;
+
+            // Number of satellite
+            threadSample.num_satellites = (uint8_t)message[6 + 23];
+
+            // Fix (every type of fix accepted)
+            threadSample.fix = message[6 + 20] != 0;
+
+            // Timestamp
+            threadSample.gps_timestamp = TimestampTimer::getTimestamp();
+
+            return true;
+    }
+
+    return false;
+}
+
+bool UbloxGPS::parseUBXACKMessage(uint8_t* message)
+{
+    switch (message[3])  // Message id
+    {
+        case 0x00:  // UBX-ACK-NAC
+            TRACE("[gps] Received NAC for message (class:0x%02x, id: 0x%02x)\n",
+                  message[6], message[7]);
+            return true;
+        case 0x01:  // UBX-ACK-ACK
+            TRACE("[gps] Receive ACK for message (class:0x%02x, id: 0x%02x)\n",
+                  message[6], message[7]);
+            return true;
+    }
+    return false;
 }
