@@ -48,9 +48,14 @@ bool UbloxGPS::init()
         return false;
     }
 
-    // TODO: reset configuration to default
-
     Thread::sleep(10);
+
+    // Reset configuration to default
+    // TODO: maybe move this on serial communication setup
+    if (!resetConfiguration())
+    {
+        return false;
+    }
 
     // Disable NMEA messages
     if (!disableNMEAMessages())
@@ -88,15 +93,15 @@ bool UbloxGPS::init()
 bool UbloxGPS::selfTest()
 {
     // Wait for 2 cycles
-    Thread::sleep(2 + 1000 / sampleRate);
+    Thread::sleep(2 * 1000 / sampleRate);
 
     // If a sample was taken then the timestamp wont be 0
+    Lock<FastMutex> l(mutex);
     return threadSample.gps_timestamp != 0;
 }
 
 UbloxGPSData UbloxGPS::sampleImpl()
 {
-
     Lock<FastMutex> l(mutex);
     return threadSample;
 }
@@ -124,7 +129,7 @@ void UbloxGPS::run()
             continue;
         }
 
-        Lock<FastMutex> l(mutex);
+        // Parse the message
         if (!parseUBXMessage(message))
         {
             TRACE(
@@ -134,14 +139,13 @@ void UbloxGPS::run()
     }
 }
 
-bool UbloxGPS::selfTestInThread() { return true; }
-
 void UbloxGPS::ubxChecksum(uint8_t* msg, int len)
 {
     uint8_t ck_a = 0, ck_b = 0;
 
-    // The length must be valid
-    if (len <= 2)
+    // The length must be valid, at least 8 bytes (preamble, msg, length,
+    // checksum)
+    if (len <= 8)
     {
         return;
     }
@@ -177,47 +181,54 @@ bool UbloxGPS::serialCommuinicationSetup()
 {
     intrusive_ref_ptr<DevFs> devFs = FilesystemManager::instance().getDevFs();
 
-    // Close the gps file if already opened
-    devFs->remove(serialPortName);
-
-    // Open the serial port device with the default boudrate
-    if (!devFs->addDevice(serialPortName,
-                          intrusive_ref_ptr<Device>(new STM32Serial(
-                              serialPortNumber, defaultBaudrate))))
+    // Change the baudrate only if it is different than the default
+    if (baudrate != defaultBaudrate)
     {
-        TRACE(
-            "[gps] Faild to open serial port %u with baudrate %lu as file %s\n",
-            serialPortNumber, defaultBaudrate, serialPortName);
-        return false;
+        // Close the gps file if already opened
+        devFs->remove(serialPortName);
+
+        // Open the serial port device with the default boudrate
+        if (!devFs->addDevice(serialPortName,
+                              intrusive_ref_ptr<Device>(new STM32Serial(
+                                  serialPortNumber, defaultBaudrate))))
+        {
+            TRACE(
+                "[gps] Faild to open serial port %u with baudrate %lu as file "
+                "%s\n",
+                serialPortNumber, defaultBaudrate, serialPortName);
+            return false;
+        }
+
+        // Open the gps file
+        if ((gpsFile = open(gpsFilePath, O_RDWR)) < 0)
+        {
+            TRACE("[gps] Failed to open gps file %s\n", gpsFilePath);
+            return false;
+        }
+
+        // Change boudrate
+        if (!setBaudrate())
+        {
+            return false;
+        };
+
+        // Close the gps file
+        if (close(gpsFile) < 0)
+        {
+            TRACE("[gps] Failed to close gps file %s\n", gpsFilePath);
+            return false;
+        }
+
+        // Close the serial port
+        if (!devFs->remove(serialPortName))
+        {
+            TRACE("[gps] Faild to close serial port %u as file %s\n",
+                  serialPortNumber, serialPortName);
+            return false;
+        }
     }
 
-    // Open the gps file
-    if ((gpsFile = open(gpsFilePath, O_RDWR)) < 0)
-    {
-        TRACE("[gps] Failed to open gps file %s\n", gpsFilePath);
-        return false;
-    }
-
-    // Change boudrate
-    if (!setBaudrate())
-    {
-        return false;
-    };
-
-    // Close the gps file
-    if (close(gpsFile) < 0)
-    {
-        TRACE("[gps] Failed to close gps file %s\n", gpsFilePath);
-        return false;
-    }
-
-    // Close and reopen the serial port with the configured boudrate
-    if (!devFs->remove(serialPortName))
-    {
-        TRACE("[gps] Faild to close serial port %u as file %s\n",
-              serialPortNumber, serialPortName);
-        return false;
-    }
+    // Reopen the serial port with the configured boudrate
     if (!devFs->addDevice(serialPortName,
                           intrusive_ref_ptr<Device>(
                               new STM32Serial(serialPortNumber, baudrate))))
@@ -238,6 +249,21 @@ bool UbloxGPS::serialCommuinicationSetup()
     return true;
 }
 
+bool UbloxGPS::resetConfiguration()
+{
+    uint8_t ubx_cfg_prt[RESET_CONFIG_MSG_LEN] = {
+        0Xb5, 0x62,  // Preamble
+        0x06, 0x04,  // Message UBX-CFG-RST
+        0x04, 0x00,  // Length
+        0x00, 0x00,  // navBbrMask (Hot start)
+        0x00,        // Hardware reset immediately
+        0x00,        // Reserved
+        0xff, 0xff   // Checksum
+    };
+
+    return writeUBXMessage(ubx_cfg_prt, RESET_CONFIG_MSG_LEN);
+}
+
 bool UbloxGPS::setBaudrate()
 {
     uint8_t ubx_cfg_prt[SET_BAUDRATE_MSG_LEN] = {
@@ -249,7 +275,8 @@ bool UbloxGPS::setBaudrate()
         0x00, 0x00,              // Reserved
         0x01, 0x00, 0x52, 0x40,  // Configuration item key ID
         0xff, 0xff, 0xff, 0xff,  // Value
-        0xff, 0xff};             // Checksum
+        0xff, 0xff               // Checksum
+    };
 
     // Prepare boud rate
     ubx_cfg_prt[14] = baudrate;
@@ -281,7 +308,8 @@ bool UbloxGPS::disableNMEAMessages()
         0x00,                    // CFG-MSGOUT-NMEA_ID_RMC_UART1 value
         0xb1, 0x00, 0x91, 0x20,  // CFG-MSGOUT-NMEA_ID_VTG_UART1 key ID
         0x00,                    // CFG-MSGOUT-NMEA_ID_VTG_UART1 value
-        0xff, 0xff};             // Checksum
+        0xff, 0xff               // Checksum
+    };
 
     return writeUBXMessage(ubx_cfg_valset, DISABLE_NMEA_MESSAGES_MSG_LEN);
 }
@@ -300,7 +328,8 @@ bool UbloxGPS::setGNSSConfiguration()
         0x00, 0x00,              // Reserved
         0x21, 0x00, 0x11, 0x20,  // CFG-NAVSPG-DYNMODEL key ID
         0x08,                    // CFG-NAVSPG-DYNMODEL value
-        0xff, 0xff};             // Checksum
+        0xff, 0xff               // Checksum
+    };
 
     // Prepare rate
     ubx_cfg_valset[14] = rate;
@@ -320,7 +349,8 @@ bool UbloxGPS::enableUBXMessages()
         0x00, 0x00,              // Reserved
         0x07, 0x00, 0x91, 0x20,  // CFG-MSGOUT-UBX_NAV_PVT_UART1 key ID
         0x01,                    // CFG-MSGOUT-UBX_NAV_PVT_UART1 value
-        0xff, 0xff};             // Checksum
+        0xff, 0xff               // Checksum
+    };
 
     return writeUBXMessage(ubx_cfg_valset, ENABLE_UBX_MESSAGES_MSG_LEN);
 }
@@ -339,7 +369,8 @@ bool UbloxGPS::setRate()
         0x00, 0x00,              // Reserved
         0x01, 0x00, 0x21, 0x30,  // CFG-RATE-MEAS key ID
         0xff, 0xff,              // CFG-RATE-MEAS value
-        0xff, 0xff};             // Checksum
+        0xff, 0xff               // Checksum
+    };
 
     // Prepare rate
     ubx_cfg_valset[14] = rate;
@@ -430,6 +461,9 @@ bool UbloxGPS::parseUBXNAVMessage(uint8_t* message)
     switch (message[3])  // Message id
     {
         case 0x07:  // UBX-NAV-PVT
+            // Lock the threadSample variable
+            Lock<FastMutex> l(mutex);
+
             // Latitude
             int32_t rawLatitude = message[6 + 28] | message[6 + 29] << 8 |
                                   message[6 + 30] << 16 | message[6 + 31] << 24;

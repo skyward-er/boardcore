@@ -30,7 +30,7 @@
 /**
  * @brief Driver for stm32 internal ADC
  *
- * Allows for conversion on multiple channels with per-channel sample time.
+ * Allows conversions on multiple channels with per-channel sample time.
  *
  * The driver configures the ADC by itself, including the clock.
  *

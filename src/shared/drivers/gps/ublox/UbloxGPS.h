@@ -28,15 +28,51 @@
 #include "UbloxGPSData.h"
 #include "sensors/Sensor.h"
 
+/**
+ * @brief Driver for Ublox GPSs
+ *
+ * This driver handles communication and setup with Ublox GPSs. It uses the
+ * binary UBX protocol to retrieve and parse navigation data quicker than using
+ * the string based NMEA.
+ *
+ * At initialization it configures the device with the specified baudrate, reset
+ * the configuration and sets up UBX messages and GNSS parameters.
+ *
+ * Communication with the device is performed through a file, the driver opens
+ * the serial port under the filepath /dev/<serialPortName>.
+ * There is no need for the file to be setted up beforhand.
+ *
+ * This driver was written for a NEO-M9N gps with the latest version of UBX.
+ */
 class UbloxGPS : public Sensor<UbloxGPSData>, public ActiveObject
 {
 public:
+    /**
+     * @brief Construct a new UbloxGPS object
+     *
+     * @param boudrate_ Baudrate to communicate with the device (max: 921600,
+     * min: 4800 for NEO-M9N)
+     * @param sampleRate_ GPS sample rate (max: 25 for NEO-M9N)
+     * @param serialPortName_ Name of the file for the gps device
+     * @param defaultBaudrate_ Startup baudrate (38400 for NEO-M9N)
+     */
     UbloxGPS(int boudrate_ = 921600, uint8_t sampleRate_ = 10,
              int serialPortNumber_ = 2, const char *serialPortName_ = "gps",
              int defaultBaudrate_ = 38400);
 
+    /**
+     * @brief Sets up the serial port baudrate, disables the NMEA messages,
+     * configures GNSS options and enables UBX-PVT message
+     *
+     * @return True if the operation succeeded
+     */
     bool init() override;
 
+    /**
+     * @brief Read a single message form the GPS, waits 2 sample cycle
+     *
+     * @return True if a message was sampled
+     */
     bool selfTest() override;
 
 private:
@@ -44,16 +80,25 @@ private:
 
     void run() override;
 
-    bool selfTestInThread();
-
     void ubxChecksum(uint8_t *msg, int len);
 
     /**
-     * Also compute the checksum
+     * @brief Compute the checksum and write the message to the device
      */
     bool writeUBXMessage(uint8_t *message, int length);
 
+    /**
+     * @brief Sets up the serial port with the correct baudrate
+     *
+     * Opens the serial port with the defaul baudrate and changes it to
+     * the value specified in the constructor, then it reopens the serial port.
+     * If the device is already using the correct baudrate this won't have
+     * effect. However if the gps is using a different baudrate the diver won't
+     * be able to communicate.
+     */
     bool serialCommuinicationSetup();
+
+    bool resetConfiguration();
 
     bool setBaudrate();
 
@@ -86,6 +131,7 @@ private:
     UbloxGPSData threadSample{};
 
     static constexpr int SET_BAUDRATE_MSG_LEN          = 20;
+    static constexpr int RESET_CONFIG_MSG_LEN          = 12;
     static constexpr int DISABLE_NMEA_MESSAGES_MSG_LEN = 42;
     static constexpr int SET_GNSS_CONF_LEN             = 17;
     static constexpr int ENABLE_UBX_MESSAGES_MSG_LEN   = 17;
