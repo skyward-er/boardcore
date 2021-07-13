@@ -28,6 +28,8 @@
 
 using namespace miosix;
 
+#define RATE 4
+
 int main()
 {
     TimestampTimer::enableTimestampTimer();
@@ -35,8 +37,9 @@ int main()
     printf("Welcome to the ublox test\n");
 
     // Keep GPS baud rate at default for easier testing
-    UbloxGPS gps(921600, 4, 2, "gps", 38400);
+    UbloxGPS gps(921600, RATE, 2, "gps", 38400);
     UbloxGPSData dataGPS;
+    printf("Gps allocated\n");
 
     // Init the gps
     if (gps.init())
@@ -50,6 +53,7 @@ int main()
 
     // Start the gps thread
     gps.start();
+    printf("Gps started\n");
 
     // Perform the selftest
     if (gps.selfTest())
@@ -64,7 +68,7 @@ int main()
     while (true)
     {
         // Give time to the thread
-        Thread::sleep(250);
+        Thread::sleep(1000 / RATE);
 
         // Sample
         gps.sample();

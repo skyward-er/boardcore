@@ -93,7 +93,7 @@ bool UbloxGPS::init()
 bool UbloxGPS::selfTest()
 {
     // Wait for 2 cycles
-    Thread::sleep(2 * 1000 / sampleRate);
+    Thread::sleep(4 * (1000 / sampleRate));
 
     // If a sample was taken then the timestamp wont be 0
     Lock<FastMutex> l(mutex);
@@ -316,9 +316,6 @@ bool UbloxGPS::disableNMEAMessages()
 
 bool UbloxGPS::setGNSSConfiguration()
 {
-    uint16_t rate = 1000 / sampleRate;
-    TRACE("[gps] rate: %u\n", rate);
-
     uint8_t ubx_cfg_valset[SET_GNSS_CONF_LEN] = {
         0Xb5, 0x62,              // Preamble
         0x06, 0x8a,              // Message UBX-CFG-VALSET
@@ -330,10 +327,6 @@ bool UbloxGPS::setGNSSConfiguration()
         0x08,                    // CFG-NAVSPG-DYNMODEL value
         0xff, 0xff               // Checksum
     };
-
-    // Prepare rate
-    ubx_cfg_valset[14] = rate;
-    ubx_cfg_valset[15] = rate >> 8;
 
     return writeUBXMessage(ubx_cfg_valset, SET_GNSS_CONF_LEN);
 }
