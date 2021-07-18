@@ -1,5 +1,5 @@
 /* Copyright (c) 2020 Skyward Experimental Rocketry
- * Authors: Alberto Nidasio
+ * Author: Alberto Nidasio
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -13,23 +13,22 @@
  *
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.  IN NO EVENT SHALL THE
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
  * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
  * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
 
+#include <diagnostic/PrintLogger.h>
 #include <miosix.h>
 
-#include "Common.h"
+#include "TimestampTimer.h"
 #include "drivers/adc/ADS1118/ADS1118.h"
 #include "drivers/spi/SPIDriver.h"
 #include "sensors/analog/pressure/AnalogPressureSensor.h"
 #include "sensors/analog/pressure/honeywell/HSCMAND015PA.h"
 #include "sensors/analog/pressure/honeywell/HSCMRNN030PA.h"
-
-#include "TimestampTimer.h"
 
 GpioPin sckPin  = GpioPin(GPIOB_BASE, 13);
 GpioPin misoPin = GpioPin(GPIOB_BASE, 14);
@@ -59,6 +58,8 @@ void initBoard()
 
 int main()
 {
+    PrintLogger log = Logging::getLogger("test-analog-pressure-sensors");
+
     // Enable SPI clock and set gpios
     initBoard();
 

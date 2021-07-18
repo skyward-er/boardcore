@@ -1,5 +1,5 @@
 /* Copyright (c) 2021 Skyward Experimental Rocketry
- * Authors: Alberto Nidasio
+ * Author: Alberto Nidasio
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -13,7 +13,7 @@
  *
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.  IN NO EVENT SHALL THE
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
  * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
  * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
@@ -22,7 +22,8 @@
 
 #include "BME280.h"
 
-#include "Debug.h"
+#include <diagnostic/PrintLogger.h>
+
 #include "TimestampTimer.h"
 
 const BME280::BME280Config BME280::BME280_DEFAULT_CONFIG = {
@@ -52,7 +53,7 @@ bool BME280::init()
     // Check if already initialized
     if (initialized)
     {
-        TRACE("[BME280] Already initialized\n");
+        LOG_ERR(log, "Already initialized\n");
 
         last_error = SensorErrors::ALREADY_INIT;
 
@@ -62,7 +63,7 @@ bool BME280::init()
     // Check WHO AM I
     if (!checkWhoAmI())
     {
-        TRACE("[BME280] Invalid WHO AM I\n");
+        LOG_ERR(log, "Invalid WHO AM I\n");
 
         last_error = SensorErrors::INVALID_WHOAMI;
 
@@ -86,7 +87,7 @@ bool BME280::init()
         config.bytes.ctrl_meas != readBackConfig.bytes.ctrl_meas ||
         config.bytes.config != readBackConfig.bytes.config)
     {
-        TRACE("[BME280] Device configuration incorrect\n");
+        LOG_ERR(log, "Device configuration incorrect, setup failed\n");
 
         last_error = SensorErrors::NOT_INIT;
 

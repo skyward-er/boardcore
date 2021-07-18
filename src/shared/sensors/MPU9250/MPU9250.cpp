@@ -1,5 +1,5 @@
 /* Copyright (c) 2021 Skyward Experimental Rocketry
- * Authors: Alberto Nidasio
+ * Author: Alberto Nidasio
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -13,7 +13,7 @@
  *
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.  IN NO EVENT SHALL THE
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
  * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
  * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
@@ -22,8 +22,9 @@
 
 #include "MPU9250.h"
 
+#include <diagnostic/PrintLogger.h>
+
 #include "Constants.h"
-#include "Debug.h"
 #include "TimestampTimer.h"
 #include "interfaces/endianness.h"
 
@@ -48,7 +49,7 @@ bool MPU9250::init()
     // Check if already initialized
     if (initialized)
     {
-        TRACE("[MPU9250] Already initialized\n");
+        LOG_ERR("Already initialized\n");
 
         last_error = SensorErrors::ALREADY_INIT;
 
@@ -65,7 +66,7 @@ bool MPU9250::init()
     // Check WHO AM I
     if (!checkWhoAmI())
     {
-        TRACE("[MPU9250] Invalid WHO AM I\n");
+        LOG_ERR("Invalid WHO AM I\n");
 
         last_error = SensorErrors::INVALID_WHOAMI;
 
@@ -90,8 +91,8 @@ bool MPU9250::init()
     // Set the sample rate
     setSampleRate(samplingRate);
 
-    TRACE("Magnetometer sensitivity adjustment: %d, %d, %d\n",
-          magSensAdjCoeff[0], magSensAdjCoeff[1], magSensAdjCoeff[2]);
+    LOG_DEBUG("Magnetometer sensitivity adjustment: %d, %d, %d\n",
+              magSensAdjCoeff[0], magSensAdjCoeff[1], magSensAdjCoeff[2]);
 
     initialized = true;
     return true;
@@ -172,8 +173,6 @@ void MPU9250::setSampleRate(unsigned short rate)
 
     uint8_t data = 1000 / rate - 1;
 
-    // TRACE("[MPU9250] Sample rate divider: %d\n", data);
-
     SPITransaction transaction(spiSlave);
 
     writeSPIWithDelay(transaction, REG_SMPLRT_DIV, data);
@@ -228,9 +227,9 @@ void MPU9250::setI2CMasterSlaveRead(uint8_t addr, uint8_t reg, uint8_t nBytes,
             break;
 
         default:
-            TRACE(
-                "[MPU9250] invalid slave parameter in function "
-                "setI2CMasterSlaveRead");
+            LOG_ERR(log,
+                    "invalid slave parameter in function "
+                    "setI2CMasterSlaveRead");
             return;
     }
 
@@ -276,9 +275,9 @@ void MPU9250::setI2CMasterSlaveWrite(uint8_t addr, uint8_t reg, uint8_t data,
             break;
 
         default:
-            TRACE(
-                "[MPU9250] invalid slave parameter in function "
-                "setI2CMasterSlaveRead");
+            LOG_ERR(log,
+                    "invalid slave parameter in function "
+                    "setI2CMasterSlaveRead");
             return;
     }
 
@@ -317,9 +316,9 @@ void MPU9250::disableI2CMasterSlave(uint8_t slave)
             //     break;
 
         default:
-            TRACE(
-                "[MPU9250] invalid slave parameter in function "
-                "setI2CMasterSlaveRead");
+            LOG_ERR(log,
+                    "invalid slave parameter in function "
+                    "setI2CMasterSlaveRead");
             return;
     }
 
@@ -368,7 +367,7 @@ bool MPU9250::initAk()
     // Check AK8963 WHO AM I
     if (!checkAkWhoAmI())
     {
-        TRACE("[MPU9250] Invalid AK8963 WHO AM I\n");
+        LOG_ERR(log, "Invalid AK8963 WHO AM I\n");
 
         last_error = SensorErrors::INVALID_WHOAMI;
 
