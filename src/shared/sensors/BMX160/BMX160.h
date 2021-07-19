@@ -27,6 +27,7 @@
 #include <algorithm>
 
 #include <cassert>
+#include <cstring>
 
 #include "BMX160Config.h"
 #include "BMX160Data.h"
