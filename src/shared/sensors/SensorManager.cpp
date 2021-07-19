@@ -1,5 +1,5 @@
 /* Copyright (c) 2020 Skyward Experimental Rocketry
- * Author: Luca Conterio
+ * Authors: Luca Conterio
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -13,7 +13,7 @@
  *
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.  IN NO EVENT SHALL THE
  * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
  * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
@@ -35,7 +35,7 @@ SensorManager::SensorManager(TaskScheduler* scheduler,
 {
     if (!init(sensors_map))
     {
-        TRACE("Initialization failed\n");
+        TRACE("[SM] Initialization failed\n");
     }
 }
 
@@ -59,7 +59,7 @@ void SensorManager::enableSensor(AbstractSensor* sensor)
     }
     else
     {
-        TRACE("[SM] Can't enable sensor %p, it does not exist \n", sensor);
+        TRACE("[SM] Can't enable sensor %p it does not exist\n", sensor);
     }
 }
 
@@ -71,7 +71,7 @@ void SensorManager::disableSensor(AbstractSensor* sensor)
     }
     else
     {
-        TRACE("[SM] Can't disable sensor %p, it does not exist \n", sensor);
+        TRACE("[SM] Can't disable sensor %p, it does not exist", sensor);
     }
 }
 
@@ -98,7 +98,7 @@ const SensorInfo SensorManager::getSensorInfo(AbstractSensor* sensor)
         return samplers_map[sensor]->getSensorInfo(sensor);
     }
 
-    TRACE("[SM] Sensor %p not found, can't return SensorInfo \n", sensor);
+    TRACE("[SM] Sensor %p not found, can't return SensorInfo\n", sensor);
 
     return SensorInfo{};
 }
@@ -115,7 +115,7 @@ bool SensorManager::init(const SensorMap_t& sensors_map)
 
     if (current_sampler_id != 0)
     {
-        TRACE("Task scheduler not empty : starting from task ID %d\n",
+        TRACE("[SM] Task scheduler not empty : starting from task ID %d\n",
               current_sampler_id);
     }
 
@@ -129,17 +129,15 @@ bool SensorManager::init(const SensorMap_t& sensors_map)
         {
             init_result = false;
             TRACE(
-                "Failed to initialize sensor ---> Error : %d (period: %d "
+                "[SM] Failed to initialize sensor %s ---> Error : %d (period: %d "
                 "ms)\n",
-                sensor->getLastError(), sensor_info.period);
+                sensor_info.id.c_str(), sensor->getLastError(), sensor_info.period);
         }
         else
         {
             TRACE(
-                "[SM] Adding Sensor %p, Sensor info %p ---> period = %u ms, "
-                "enabled "
-                "= %d \n",
-                sensor, sensor_info, sensor_info.period,
+                "[SM] Adding sensor %s (%p) ---> period = %d ms, enabled = %d\n",
+                sensor_info.id.c_str(), sensor, sensor_info.period,
                 sensor_info.is_enabled);
 
             // check if a sampler with the same sampling period and the same
@@ -170,7 +168,7 @@ bool SensorManager::init(const SensorMap_t& sensors_map)
                 if (current_sampler_id == MAX_TASK_ID)
                 {
                     TRACE(
-                        "Max task ID (255) reached in task scheduler, IDs "
+                        "[SM] Max task ID (255) reached in task scheduler, IDs "
                         "will start again from 0");
                 }
 
@@ -235,7 +233,7 @@ uint8_t SensorManager::getFirstTaskID()
 SensorSampler* SensorManager::createSampler(uint8_t id, uint32_t period,
                                             bool is_dma)
 {
-    TRACE("Creating Sampler %d with sampling period %u ms\n", (int)id, period);
+    TRACE("[SM] Creating Sampler %d with sampling period %u ms\n", (int)id, period);
 
     if (is_dma)
     {
