@@ -22,8 +22,6 @@
 
 #include "MPU9250.h"
 
-#include <diagnostic/PrintLogger.h>
-
 #include "Constants.h"
 #include "TimestampTimer.h"
 #include "interfaces/endianness.h"
@@ -49,7 +47,7 @@ bool MPU9250::init()
     // Check if already initialized
     if (initialized)
     {
-        LOG_ERR("Already initialized\n");
+        LOG_ERR(log, "Already initialized\n");
 
         last_error = SensorErrors::ALREADY_INIT;
 
@@ -66,7 +64,7 @@ bool MPU9250::init()
     // Check WHO AM I
     if (!checkWhoAmI())
     {
-        LOG_ERR("Invalid WHO AM I\n");
+        LOG_ERR(log, "Invalid WHO AM I\n");
 
         last_error = SensorErrors::INVALID_WHOAMI;
 
@@ -91,7 +89,7 @@ bool MPU9250::init()
     // Set the sample rate
     setSampleRate(samplingRate);
 
-    LOG_DEBUG("Magnetometer sensitivity adjustment: %d, %d, %d\n",
+    LOG_DEBUG(log, "Magnetometer sensitivity adjustment: %d, %d, %d\n",
               magSensAdjCoeff[0], magSensAdjCoeff[1], magSensAdjCoeff[2]);
 
     initialized = true;

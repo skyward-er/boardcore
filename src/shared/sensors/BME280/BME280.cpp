@@ -22,8 +22,6 @@
 
 #include "BME280.h"
 
-#include <diagnostic/PrintLogger.h>
-
 #include "TimestampTimer.h"
 
 const BME280::BME280Config BME280::BME280_DEFAULT_CONFIG = {

@@ -24,6 +24,8 @@
 #include "drivers/spi/SPIDriver.h"
 #include "sensors/Sensor.h"
 
+#include <diagnostic/PrintLogger.h>
+
 class BME280 : public Sensor<BME280Data>
 {
 public:
