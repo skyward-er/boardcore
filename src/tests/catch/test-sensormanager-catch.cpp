@@ -1,5 +1,5 @@
 /* Copyright (c) 2020 Skyward Experimental Rocketry
- * Author: Luca Conterio
+ * Authors: Luca Conterio
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -13,7 +13,7 @@
  *
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.  IN NO EVENT SHALL THE
  * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
  * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
@@ -73,6 +73,7 @@ private:
 
     TestSensor s1;
     SensorInfo s1_info{
+        /*ID=*/"s1",
         /*Period=*/1000,
         /*Callback=*/[]() { std::cout << "Callback 1!" << endl; },
         /*DMA=*/false,
@@ -80,6 +81,7 @@ private:
 
     TestSensor s2;
     SensorInfo s2_info{
+        /*ID=*/"s2",
         /*Period=*/1000,
         /*Callback=*/[]() { std::cout << "Callback 2!" << endl; },
         /*DMA=*/false,
@@ -87,6 +89,7 @@ private:
 
     TestSensor s3;
     SensorInfo s3_info{
+        /*ID=*/"s3",
         /*Period=*/500,
         /*Callback=*/[]() { std::cout << "Callback 3!" << endl; },
         /*DMA=*/false,
@@ -95,6 +98,7 @@ private:
     // same period as s1 and s2 but uses DMA
     TestSensor s4;
     SensorInfo s4_info{
+        /*ID=*/"s4",
         /*Period=*/1000,
         /*Callback=*/[]() { std::cout << "Callback 4!" << endl; },
         /*DMA=*/true,
@@ -103,7 +107,8 @@ private:
 
 bool operator==(const SensorInfo& lhs, const SensorInfo& rhs)
 {
-    return lhs.period == rhs.period &&
+    return lhs.id == rhs.id &&
+           lhs.period == rhs.period &&
            lhs.callback.target_type() == rhs.callback.target_type() &&
            lhs.callback.target<void()>() == rhs.callback.target<void()>() &&
            lhs.is_dma == rhs.is_dma && lhs.is_enabled == rhs.is_enabled;
