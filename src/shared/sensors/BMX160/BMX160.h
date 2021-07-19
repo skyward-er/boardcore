@@ -35,9 +35,12 @@
 
 #include "Constants.h"
 
+class BMX160Corrector;
+
 /// @brief BMX160 Driver.
 class BMX160 : public SensorFIFO<BMX160Data, 200>
 {
+    friend BMX160Corrector;
 public:
     /// @brief BMX160 Custom errors.
     enum BMX160Errors : uint8_t
@@ -55,6 +58,9 @@ public:
         : BMX160(bus, cs, config, SPIBusConfig{})
     {
         spi_slave.config.clock_div = SPIClockDivider::DIV32;
+        old_mag.mag_timestamp      = 0.0f;
+        old_gyr.gyro_timestamp     = 0.0f;
+        old_acc.accel_timestamp    = 0.0f;
     }
 
     /// @brief BMX160 Constructor.

@@ -21,11 +21,7 @@
  */
 
 /**
- * @file ADS1118.h
- * @author Alberto Nidasio (alberto.nidasio@skywarder.eu)
  * @brief Driver for ADS1118 adc
- * @version 1.0
- * @date 2020-11-17
  *
  * The ADS1118 is a 16-bit delta-sigma analog-to-digital converter.
  * It measures the difference of two inputs configured by a MUX. The device
