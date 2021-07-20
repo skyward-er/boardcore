@@ -292,9 +292,6 @@ inline bool InternalADC::addInjectedChannel(Channel channel)
     // Set this channel index to 0
     indexMap[channel] = 0;
 
-    // // The channel index
-    // indexMap[channel] = 4 - activeChannels - 1;
-
     // Update the counter
     activeChannels++;
 
