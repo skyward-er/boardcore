@@ -32,6 +32,12 @@ InternalADC::InternalADC(ADC_TypeDef& ADCx_, const float V_SUPPLY_,
 {
     resetRegisters();
     enableADCClock();
+
+    // Init indexMap
+    for (auto i = 0; i < CH_NUM; i++)
+    {
+        indexMap[i] = -1;
+    }
 }
 
 InternalADC::~InternalADC()
@@ -270,10 +276,24 @@ inline bool InternalADC::addInjectedChannel(Channel channel)
     ADCx.JSQR |= channel << (15 - activeChannels * 5);
 
     // Update the channels number in the register
+    ADCx.JSQR &= 0x000FFFFF;
     ADCx.JSQR |= activeChannels << 20;
 
-    // The channel index
-    indexMap[channel] = 4 - activeChannels - 1;
+    // Increment the index of all enabled channels
+    for (auto i = 0; i < CH_NUM; i++)
+    {
+        if (indexMap[i] >= 0)
+        {
+            printf("i: %d\n", i);
+            indexMap[i]++;
+        }
+    }
+
+    // Set this channel index to 0
+    indexMap[channel] = 0;
+
+    // // The channel index
+    // indexMap[channel] = 4 - activeChannels - 1;
 
     // Update the counter
     activeChannels++;

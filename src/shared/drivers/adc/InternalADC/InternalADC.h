@@ -151,10 +151,10 @@ private:
     uint64_t timestamp;
 
     // Raw value used by DMA
-    uint16_t values[CH_NUM] = {0};
+    uint16_t values[CH_NUM] = {};
 
     // Maps the channel number with the index in the ADC's regular sequence
-    int8_t indexMap[CH_NUM] = {-1};
+    int8_t indexMap[CH_NUM];
 
     /**
      * @brief Determines whether to use regular channels or injected channels
