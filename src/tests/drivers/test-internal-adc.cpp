@@ -29,10 +29,6 @@ ADC_TypeDef& ADCx = *ADC3;
 
 int main()
 {
-    // Set pins PA0 PA1 PA2 PA3 as analog input
-    RCC->AHB1ENR |= RCC_AHB1ENR_GPIOAEN;
-    GPIOA->MODER = 0xFF;
-
     // Set the clock divider for the analog circuitry (/8)
     ADC->CCR |= ADC_CCR_ADCPRE_0 | ADC_CCR_ADCPRE_1;
     // In this case I've set the maximum value, check the datasheet for the
@@ -41,9 +37,10 @@ int main()
 
     TimestampTimer::enableTimestampTimer();
 
-    InternalADC adc(ADCx, 3.0);
-    adc.enableChannel(InternalADC::CH0);
-    adc.enableChannel(InternalADC::CH2);
+    InternalADC adc(ADCx, 3.3);
+    adc.enableChannel(InternalADC::CH4);  // PF6
+    adc.enableChannel(InternalADC::CH5);  // PF7
+    adc.enableChannel(InternalADC::CH6);  // PF8
     adc.init();
 
     printf("Configuration completed\n");
@@ -52,8 +49,10 @@ int main()
     {
         adc.sample();
 
-        printf("%f\t%f\n", adc.getVoltage(InternalADC::CH0).voltage,
-               adc.getVoltage(InternalADC::CH2).voltage);
+        printf("CH4:%1.3f\tCH5:%1.3f\tCH6:%1.3f\n",
+               adc.getVoltage(InternalADC::CH4).voltage,
+               adc.getVoltage(InternalADC::CH5).voltage,
+               adc.getVoltage(InternalADC::CH6).voltage);
 
         miosix::delayMs(1000);
     }

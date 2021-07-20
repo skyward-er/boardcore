@@ -272,17 +272,8 @@ inline bool InternalADC::addInjectedChannel(Channel channel)
     // Update the channels number in the register
     ADCx.JSQR |= activeChannels << 20;
 
-    // Increment the index of all enabled channels
-    for (auto i = 0; i < CH_NUM; i++)
-    {
-        if (indexMap[i] >= 0)
-        {
-            indexMap[i]++;
-        }
-    }
-
-    // Set this channel index to 0
-    indexMap[channel] = 0;
+    // The channel index
+    indexMap[channel] = 4 - activeChannels - 1;
 
     // Update the counter
     activeChannels++;
