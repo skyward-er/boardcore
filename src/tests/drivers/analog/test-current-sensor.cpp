@@ -64,14 +64,12 @@ int main()
 
     printf("Configuration completed\n");
 
-    std::function<ADCData()> get_voltage_function = []() {
-        return adc.getVoltage(ADC_CHANNEL);
-    };
+    std::function<ADCData()> get_voltage_function = []()
+    { return adc.getVoltage(ADC_CHANNEL); };
     // std::bind(&InternalADC::getVoltage, adc, ADC_CHANNEL);
     // example transfer function
-    std::function<float(float)> adc_to_current = [](float adc_in) {
-        return (adc_in - 107.0f) * 32.4f;
-    };
+    std::function<float(float)> adc_to_current = [](float adc_in)
+    { return (adc_in - 107.0f) * 32.4f; };
     CurrentSensor current_sensor(get_voltage_function, adc_to_current);
 
     if (!adc.init() || !adc.selfTest())
@@ -91,7 +89,7 @@ int main()
 
             current_sensor.sample();
 
-            CurrentSenseData current_data = current_sensor.getLastSample();
+            CurrentSensorData current_data = current_sensor.getLastSample();
             printf("%llu %u %f %f \n", current_data.adc_timestamp,
                    current_data.channel_id, current_data.voltage,
                    current_data.current);

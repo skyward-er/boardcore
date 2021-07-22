@@ -1,5 +1,5 @@
 /* Copyright (c) 2020 Skyward Experimental Rocketry
- * Authors: Luca Conterio
+ * Author: Luca Conterio
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -13,7 +13,7 @@
  *
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.  IN NO EVENT SHALL THE
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
  * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
  * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
@@ -107,8 +107,7 @@ private:
 
 bool operator==(const SensorInfo& lhs, const SensorInfo& rhs)
 {
-    return lhs.id == rhs.id &&
-           lhs.period == rhs.period &&
+    return lhs.id == rhs.id && lhs.period == rhs.period &&
            lhs.callback.target_type() == rhs.callback.target_type() &&
            lhs.callback.target<void()>() == rhs.callback.target<void()>() &&
            lhs.is_dma == rhs.is_dma && lhs.is_enabled == rhs.is_enabled;
@@ -213,13 +212,13 @@ TEST_CASE_METHOD(SensorManagerFixture, "Enable/disable sensors at runtime")
 
     sensor_manager->enableSensor(&s2);
     sensor_manager->disableSensor(&s4);
-    
+
     REQUIRE(sensor_manager->getSensorInfo(&s2).is_enabled == true);
     REQUIRE(sensor_manager->getSensorInfo(&s4).is_enabled == false);
 
     sensor_manager->disableSensor(&s2);
     sensor_manager->enableSensor(&s4);
-    
+
     REQUIRE(sensor_manager->getSensorInfo(&s2).is_enabled == false);
     REQUIRE(sensor_manager->getSensorInfo(&s4).is_enabled == true);
 }
@@ -250,7 +249,8 @@ TEST_CASE_METHOD(SensorManagerFixture, "Enable/disable all sensors at runtime")
     REQUIRE(sensor_manager->getSensorInfo(&s4).is_enabled == true);
 }
 
-TEST_CASE_METHOD(SensorManagerFixture, "Try to get info about a non-existing sensor")
+TEST_CASE_METHOD(SensorManagerFixture,
+                 "Try to get info about a non-existing sensor")
 {
     TestSensor invalid_sensor;
     SensorInfo invalid_info = sensor_manager->getSensorInfo(&invalid_sensor);

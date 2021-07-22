@@ -1,5 +1,5 @@
 /* Copyright (c) 2020 Skyward Experimental Rocketry
- * Authors: Luca Conterio
+ * Author: Luca Conterio
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -13,7 +13,7 @@
  *
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.  IN NO EVENT SHALL THE
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
  * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
  * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
@@ -129,14 +129,17 @@ bool SensorManager::init(const SensorMap_t& sensors_map)
         {
             init_result = false;
             TRACE(
-                "[SM] Failed to initialize sensor %s ---> Error : %d (period: %d "
+                "[SM] Failed to initialize sensor %s ---> Error : %d (period: "
+                "%d "
                 "ms)\n",
-                sensor_info.id.c_str(), sensor->getLastError(), sensor_info.period);
+                sensor_info.id.c_str(), sensor->getLastError(),
+                sensor_info.period);
         }
         else
         {
             TRACE(
-                "[SM] Adding sensor %s (%p) ---> period = %d ms, enabled = %d\n",
+                "[SM] Adding sensor %s (%p) ---> period = %d ms, enabled = "
+                "%d\n",
                 sensor_info.id.c_str(), sensor, sensor_info.period,
                 sensor_info.is_enabled);
 
@@ -192,9 +195,10 @@ void SensorManager::initScheduler()
     // sort the vector to have lower period samplers
     // (higher frequency) inserted before
     // higher period ones into the TaskScheduler
-    std::sort(samplers.begin(), samplers.end(), [](auto& left, auto& right) {
-        return left->getSamplingPeriod() < right->getSamplingPeriod();
-    });
+    std::sort(samplers.begin(), samplers.end(),
+              [](auto& left, auto& right) {
+                  return left->getSamplingPeriod() < right->getSamplingPeriod();
+              });
 
     uint64_t start_time = miosix::getTick() + 10;
 
@@ -233,7 +237,8 @@ uint8_t SensorManager::getFirstTaskID()
 SensorSampler* SensorManager::createSampler(uint8_t id, uint32_t period,
                                             bool is_dma)
 {
-    TRACE("[SM] Creating Sampler %d with sampling period %u ms\n", (int)id, period);
+    TRACE("[SM] Creating Sampler %d with sampling period %u ms\n", (int)id,
+          period);
 
     if (is_dma)
     {

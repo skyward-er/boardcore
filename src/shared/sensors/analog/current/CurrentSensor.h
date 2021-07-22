@@ -26,12 +26,14 @@
 
 #include <functional>
 
+#include "CurrentSensorData.h"
+
 /**
  * @brief Common class for current sense sensors
  *
  * It needs a transfer function to convert the read voltage into current.
  */
-class CurrentSensor : public Sensor<CurrentSenseData>
+class CurrentSensor : public Sensor<CurrentSensorData>
 {
 public:
     static constexpr int MOVING_AVAERAGE_N = 20;
@@ -48,7 +50,7 @@ public:
     bool selfTest() override { return true; };
 
     ///< Converts the voltage value to pressure
-    CurrentSenseData sampleImpl() override
+    CurrentSensorData sampleImpl() override
     {
         ADCData adc_data = getADCVoltage();
 
@@ -57,7 +59,7 @@ public:
             last_sample.current = adcToCurrent(adc_data.voltage);
         }
 
-        CurrentSenseData current_data;
+        CurrentSensorData current_data;
         current_data.adc_timestamp = adc_data.adc_timestamp;
         current_data.channel_id    = adc_data.channel_id;
         current_data.voltage       = adc_data.voltage;

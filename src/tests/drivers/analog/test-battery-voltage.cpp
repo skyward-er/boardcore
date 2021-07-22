@@ -64,9 +64,8 @@ int main()
 
     printf("Configuration completed\n");
 
-    std::function<ADCData()> get_voltage_function = []() {
-        return adc.getVoltage(ADC_CHANNEL);
-    };
+    std::function<ADCData()> get_voltage_function = []()
+    { return adc.getVoltage(ADC_CHANNEL); };
     // std::bind(&InternalADC::getVoltage, adc, ADC_CHANNEL);
 
     BatteryVoltageSensor battery_sensor(get_voltage_function, 0.2063);
@@ -88,7 +87,7 @@ int main()
 
             battery_sensor.sample();
 
-            BatteryVoltageData bat_data = battery_sensor.getLastSample();
+            BatteryVoltageSensorData bat_data = battery_sensor.getLastSample();
             printf("%llu %u %f %f \n", bat_data.adc_timestamp,
                    bat_data.channel_id, bat_data.voltage, bat_data.bat_voltage);
 

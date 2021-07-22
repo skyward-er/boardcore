@@ -23,9 +23,9 @@
 #pragma once
 
 #include <miosix.h>
-#include <sensors/Sensor.h>
 
-#include <type_traits>
+#include "InternalADCData.h"
+#include "sensors/Sensor.h"
 
 /**
  * @brief Driver for stm32 internal ADC

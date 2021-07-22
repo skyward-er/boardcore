@@ -576,7 +576,7 @@ private:
 
     unsigned currDiv;
     bool isInitialized;
-    float mUnit;
+    float mUnit = 0;
 
     void updateUnit(FullScale fs)
     {

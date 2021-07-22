@@ -26,13 +26,15 @@
 
 #include <functional>
 
+#include "BatteryVoltageSensorData.h"
+
 /**
  * @brief Common class for battery voltage sensors
  *
  * It needs the conversion ratio, in order to convert the raw voltage to
  * battery voltage.
  */
-class BatteryVoltageSensor : public Sensor<BatteryVoltageData>
+class BatteryVoltageSensor : public Sensor<BatteryVoltageSensorData>
 {
 public:
     static constexpr int MOVING_AVAERAGE_N = 20;
@@ -49,7 +51,7 @@ public:
     bool selfTest() override { return true; };
 
     ///< Converts the adc voltage value to battery voltage
-    BatteryVoltageData sampleImpl() override
+    BatteryVoltageSensorData sampleImpl() override
     {
         ADCData adc_data = getADCVoltage();
 
@@ -58,7 +60,7 @@ public:
             last_sample.bat_voltage = adcToBatteryVoltage(adc_data.voltage);
         }
 
-        BatteryVoltageData bat_data;
+        BatteryVoltageSensorData bat_data;
         bat_data.adc_timestamp = adc_data.adc_timestamp;
         bat_data.channel_id    = adc_data.channel_id;
         bat_data.voltage       = adc_data.voltage;

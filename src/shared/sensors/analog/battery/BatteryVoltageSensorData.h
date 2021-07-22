@@ -1,5 +1,5 @@
 /* Copyright (c) 2021 Skyward Experimental Rocketry
- * Author: Riccardo Musso
+ * Author: Alberto Nidasio
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -20,48 +20,25 @@
  * THE SOFTWARE.
  */
 
-#include "SensorDataExtra.h"
+#pragma once
 
-using namespace Eigen;
+#include "sensors/SensorData.h"
 
-void operator<<(AccelerometerData& lhs, const Vector3f& rhs)
+/**
+ * @brief Structure to handle battery voltage data.
+ */
+struct BatteryVoltageSensorData : public ADCData
 {
-    lhs.accel_x = rhs[0];
-    lhs.accel_y = rhs[1];
-    lhs.accel_z = rhs[2];
-}
+    float bat_voltage;
 
-void operator<<(GyroscopeData& lhs, const Vector3f& rhs)
-{
-    lhs.gyro_x = rhs[0];
-    lhs.gyro_y = rhs[1];
-    lhs.gyro_z = rhs[2];
-}
+    static std::string header()
+    {
+        return "adc_timestamp,channel_id,voltage,bat_voltage\n";
+    }
 
-void operator<<(MagnetometerData& lhs, const Vector3f& rhs)
-{
-    lhs.mag_x = rhs[0];
-    lhs.mag_y = rhs[1];
-    lhs.mag_z = rhs[2];
-}
-
-void operator>>(const AccelerometerData& lhs, Vector3f& rhs)
-{
-    rhs[0] = lhs.accel_x;
-    rhs[1] = lhs.accel_y;
-    rhs[2] = lhs.accel_z;
-}
-
-void operator>>(const GyroscopeData& lhs, Vector3f& rhs)
-{
-    rhs[0] = lhs.gyro_x;
-    rhs[1] = lhs.gyro_y;
-    rhs[2] = lhs.gyro_z;
-}
-
-void operator>>(const MagnetometerData& lhs, Vector3f& rhs)
-{
-    rhs[0] = lhs.mag_x;
-    rhs[1] = lhs.mag_y;
-    rhs[2] = lhs.mag_z;
-}
+    void print(std::ostream& os) const
+    {
+        os << adc_timestamp << "," << (int)channel_id << "," << voltage << ","
+           << bat_voltage << "\n";
+    }
+};

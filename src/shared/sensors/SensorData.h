@@ -140,19 +140,3 @@ struct ADCData
     uint8_t channel_id;
     float voltage;
 };
-
-/**
- * @brief Structure to handle battery voltage data.
- */
-struct BatteryVoltageData : public ADCData
-{
-    float bat_voltage;
-};
-
-/**
- * @brief Structure to handle current sense data.
- */
-struct CurrentSenseData : public ADCData
-{
-    float current;
-};
