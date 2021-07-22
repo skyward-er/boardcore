@@ -284,7 +284,6 @@ inline bool InternalADC::addInjectedChannel(Channel channel)
     {
         if (indexMap[i] >= 0)
         {
-            printf("i: %d\n", i);
             indexMap[i]++;
         }
     }
