@@ -34,7 +34,7 @@
 class CurrentSensor : public Sensor<CurrentSenseData>
 {
 public:
-    static constexpr int MOVING_AVAERAGE_N = 10;
+    static constexpr int MOVING_AVAERAGE_N = 20;
 
     CurrentSensor(std::function<ADCData()> getADCVoltage_,
                   std::function<float(float)> adcToCurrent_)
@@ -61,7 +61,6 @@ public:
         current_data.adc_timestamp = adc_data.adc_timestamp;
         current_data.channel_id    = adc_data.channel_id;
         current_data.voltage       = adc_data.voltage;
-        // current_data.current       = adcToCurrent(adc_data.voltage);
 
         // Moving average
         current_data.current = last_sample.current * MOVING_AVAERAGE_COMP_COEFF;

@@ -35,12 +35,13 @@
 class BatteryVoltageSensor : public Sensor<BatteryVoltageData>
 {
 public:
-    static constexpr int MOVING_AVAERAGE_N = 10;
+    static constexpr int MOVING_AVAERAGE_N = 20;
 
     BatteryVoltageSensor(std::function<ADCData()> getADCVoltage_,
                          float conversionCoeff_)
         : getADCVoltage(getADCVoltage_), conversionCoeff(conversionCoeff_)
     {
+        last_sample.bat_voltage = 0;
     }
 
     bool init() override { return true; };
@@ -51,6 +52,11 @@ public:
     BatteryVoltageData sampleImpl() override
     {
         ADCData adc_data = getADCVoltage();
+
+        if (last_sample.bat_voltage == 0)
+        {
+            last_sample.bat_voltage = adcToBatteryVoltage(adc_data.voltage);
+        }
 
         BatteryVoltageData bat_data;
         bat_data.adc_timestamp = adc_data.adc_timestamp;
