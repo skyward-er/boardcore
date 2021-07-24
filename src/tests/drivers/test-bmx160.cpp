@@ -53,10 +53,10 @@ int main()
     enableExternalInterrupt(GPIOE_BASE, 5, InterruptTrigger::FALLING_EDGE);
 
     BMX160Config config;
-    config.fifo_mode    = BMX160Config::FifoMode::HEADER;
-    config.fifo_int     = BMX160Config::FifoInt::PIN_INT1;
+    config.fifo_mode      = BMX160Config::FifoMode::HEADER;
+    config.fifo_int       = BMX160Config::FifoInterruptMode::PIN_INT1;
     config.fifo_watermark = 100;
-    config.temp_divider = 1;
+    config.temp_divider   = 1;
 
     sensor = new BMX160(bus, cs, config);
 
@@ -65,7 +65,9 @@ int main()
     if (!sensor->init())
     {
         TRACE("Init failed! (code: %d)\n", sensor->getLastError());
-        while(1) {}
+        while (1)
+        {
+        }
         return -1;
     }
 
@@ -114,8 +116,8 @@ int main()
                    data.gyro_z);
 
             printf("Acc [%.4f s]:\t%.2f\t%.2f\t%.2f\n",
-                   data.accel_timestamp / 1000000.0f, data.accel_x, data.accel_y,
-                   data.accel_z);
+                   data.accel_timestamp / 1000000.0f, data.accel_x,
+                   data.accel_y, data.accel_z);
         }
     }
 

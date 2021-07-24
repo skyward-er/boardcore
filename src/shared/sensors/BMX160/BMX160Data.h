@@ -24,17 +24,16 @@
 
 #include "sensors/SensorData.h"
 
-/// @brief BMX160 Data struct.
-struct BMX160Data : public AccelerometerData, GyroscopeData, MagnetometerData
+struct BMX160Data : public AccelerometerData,
+                    public GyroscopeData,
+                    public MagnetometerData
 {
-    /// @brief Default constructor.
     BMX160Data()
         : AccelerometerData{0, 0.0, 0.0, 0.0}, GyroscopeData{0, 0.0, 0.0, 0.0},
           MagnetometerData{0, 0.0, 0.0, 0.0}
     {
     }
 
-    /// @brief Comodity constructor.
     BMX160Data(AccelerometerData acc, GyroscopeData gyr, MagnetometerData mag)
         : AccelerometerData(acc), GyroscopeData(gyr), MagnetometerData(mag)
     {
