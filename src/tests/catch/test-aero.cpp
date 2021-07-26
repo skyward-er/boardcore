@@ -79,6 +79,22 @@ TEST_CASE("[AeroUtils] relAltitude")
             Approx(-100).epsilon(0.0001));
 }
 
+TEST_CASE("[AeroUtils] relDensity")
+{
+    using namespace aeroutils;
+
+    REQUIRE(relDensity(101325, 101325, 0, 288.15) ==
+            Approx(1.225).epsilon(0.0001));
+    REQUIRE(relDensity(100129.438691069, 101325, 0, 288.15) ==
+            Approx(1.21328277727309).epsilon(0.0001));
+    REQUIRE(relDensity(89874.5715517214, 101325, 0, 288.15) ==
+            Approx(1.11164259066989).epsilon(0.0001));
+    REQUIRE(relDensity(70108.5471843675, 101325, 0, 288.15) ==
+            Approx(0.909122116038058).epsilon(0.0001));
+    REQUIRE_FALSE(relDensity(101325, 101325, 0, 288.15) ==
+            Approx(1.226).epsilon(0.0001));
+}
+
 TEST_CASE("[AeroUtils] verticalSpeed")
 {
     using namespace aeroutils;

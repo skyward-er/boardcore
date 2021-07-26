@@ -33,6 +33,16 @@ float relAltitude(float pressure, float pressure_ref, float temperature_ref)
     return temperature_ref / a * (1 - powf(pressure / pressure_ref, n_inv));
 }
 
+float relDensity(float pressure, float pressure_ref, float altitude_ref,
+                 float temperature_ref)
+{
+    using namespace constants;
+
+    return pressure /
+           (R * a * altitude_ref +
+            R * temperature_ref * powf(pressure / pressure_ref, n_inv));
+}
+
 float mslPressure(float pressure_ref, float temperature_ref, float altitude_ref)
 {
     using namespace constants;
