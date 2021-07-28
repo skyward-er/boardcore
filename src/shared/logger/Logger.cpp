@@ -170,7 +170,7 @@ LogResult Logger::logImpl(const char* name, const void* data, unsigned int size)
         ++s.statDroppedSamples;
 
         // Signal that we are trying to write to a closed log
-        s.statWriteError = EIO;
+        s.statWriteError = -1;
 
         return LogResult::Ignored;
     }
