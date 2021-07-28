@@ -26,6 +26,48 @@
 
 #include <fstream>
 
+void BMX160CorrectionParameters::read(std::istream& inputStream)
+{
+    // Read accelerometer parameters
+    for (int i = 0; i < 2; i++)
+    {
+        for (int j = 0; j < 3; j++)
+        {
+            inputStream >> accelParams(j, i);
+            inputStream.ignore(1, ',');
+        }
+    }
+
+    // Read magnetometer parameters
+    for (int i = 0; i < 2; i++)
+    {
+        for (int j = 0; j < 3; j++)
+        {
+            inputStream >> magnetoParams(j, i);
+            inputStream.ignore(1, ',');
+        }
+    }
+
+    // Read gyroscope correction samples
+    inputStream >> minGyroSamplesForCalibration;
+}
+
+void BMX160CorrectionParameters::print(std::ostream& outputStream) const
+{
+    // Print accelerometer data
+    outputStream << accelParams(0, 0) << "," << accelParams(1, 0) << ","
+                 << accelParams(2, 0) << "," << accelParams(0, 1) << ","
+                 << accelParams(1, 1) << "," << accelParams(2, 1) << ",";
+
+    // Print magnetometer  data
+    outputStream << magnetoParams(0, 0) << "," << magnetoParams(1, 0) << ","
+                 << magnetoParams(2, 0) << "," << magnetoParams(0, 1) << ","
+                 << magnetoParams(1, 1) << "," << magnetoParams(2, 1) << ",";
+
+    // Print gyroscope correction samples
+    outputStream << minGyroSamplesForCalibration << "\n";
+}
+
 BMX160WithCorrection::BMX160WithCorrection(
     BMX160* bmx160_, BMX160CorrectionParameters correctionParameters)
     : bmx160(bmx160_), minGyroSamplesForCalibration(
