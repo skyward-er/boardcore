@@ -34,8 +34,8 @@
 template <class T, class ExpectedDataType>
 struct checkIfProduces
     : std::is_base_of<ExpectedDataType,
-                      typename std::remove_reference<decltype(
-                          std::declval<T>().getLastSample())>::type>
+                      typename std::remove_reference<
+                          decltype(std::declval<T>().getLastSample())>::type>
 {
 };
 
@@ -126,7 +126,7 @@ public:
     const std::array<Data, FifoSize>& getLastFifo() { return last_fifo; }
 
     /**
-     * @param i   index of the requested item inside the FIFO
+     * @param i index of the requested item inside the FIFO
      *
      * @return the i-th element of the FIFO
      */

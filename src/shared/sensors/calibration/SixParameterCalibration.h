@@ -22,8 +22,10 @@
 
 #pragma once
 
-#include <Eigen/Core>
 #include <Common.h>
+
+#include <Eigen/Core>
+#include <iostream>
 
 #include "Calibration.h"
 #include "sensors/SensorData.h"
@@ -42,7 +44,6 @@ template <typename T>
 class SixParameterCorrector : public ValuesCorrector<T>
 {
 public:
-
     SixParameterCorrector() : SixParameterCorrector({1, 1, 1}, {0, 0, 0}) {}
 
     SixParameterCorrector(const Vector3f& _p, const Vector3f& _q) : p(_p), q(_q)
@@ -102,11 +103,13 @@ public:
         Vector3f measured, expected;
 
         data >> measured;
-        expected = transform.getMatrix().transpose() * ref;
+        expected = transform.getMatrix() * ref;
+        // std::cout << "Expected: " << expected.transpose() << "\n";
+        // std::cout << "Got: " << measured.transpose() << "\n";
 
         /*
-         * measered, expected are column vectors, we need to traspose them to be
-         * row vectors
+         * measered and expected are column vectors, we need to traspose them
+         * to be row vectors
          */
         samples.block(numSamples, 0, 1, 3) = measured.transpose();
         samples.block(numSamples, 3, 1, 3) = expected.transpose();
@@ -122,7 +125,7 @@ public:
         for (int i = 0; i < 3; ++i)
         {
             MatrixXf coeffs(numSamples, 2);
-            VectorXf terms = samples.block(0, i+3, numSamples, 1);
+            VectorXf terms = samples.block(0, i + 3, numSamples, 1);
 
             Vector2f solution;
             coeffs.fill(1);
@@ -130,7 +133,7 @@ public:
                 samples.block(0, i, numSamples, 1);
 
             auto solver = coeffs.colPivHouseholderQr();
-            solution = solver.solve(terms);
+            solution    = solver.solve(terms);
 
             p[i] = solution[0];
             q[i] = solution[1];
@@ -151,7 +154,6 @@ private:
 public:
     /*
      * Only needed for test-calibration.cpp entry point
-    */
+     */
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 };
-

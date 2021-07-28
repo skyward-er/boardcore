@@ -150,9 +150,9 @@ BMX160Data BMX160::sampleImpl()
     }
 }
 
-BMX160Temerature BMX160::getTemperature()
+BMX160Temperature BMX160::getTemperature()
 {
-    BMX160Temerature t;
+    BMX160Temperature t;
     t.temp_timestamp = TimestampTimer::getTimestamp();
     t.temp           = temperature;
     return t;

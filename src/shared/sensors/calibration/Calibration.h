@@ -85,7 +85,8 @@ public:
      * @returns false if the model can't accept the given data (usually because
      * the internal buffers are full)
      */
-    virtual bool feed(const T& measurement, const AdditionalFeedParams&... params) = 0;
+    virtual bool feed(const T& measurement,
+                      const AdditionalFeedParams&... params) = 0;
 
     /**
      * Creates the best ValuesCorrector instance for the given measurements.
@@ -310,21 +311,24 @@ struct AxisOrthoOrientation
 };
 
 /**
- * This struct represents axis orientation relative to a reference system. Operatively
- * it simply combines two transformations.
- * It is particularly useful to obtain an AxisOrientation from a reference system generally not N.E.D.
-*/
-struct AxisRelativeOrientation {
+ * This struct represents axis orientation relative to a reference system.
+ * Operatively it simply combines two transformations. It is particularly useful
+ * to obtain an AxisOrientation from a reference system generally not N.E.D.
+ */
+struct AxisRelativeOrientation
+{
     AxisOrientation systemOrientation, orientation;
 
-    AxisRelativeOrientation(const AxisOrientation& _systemOrientation, const AxisOrientation& _orientation)
-        : systemOrientation(_systemOrientation), orientation(_orientation) { }
-
-    operator AxisOrientation() const {
-        return { getMatrix() };
+    AxisRelativeOrientation(const AxisOrientation& _systemOrientation,
+                            const AxisOrientation& _orientation)
+        : systemOrientation(_systemOrientation), orientation(_orientation)
+    {
     }
 
-    Matrix3f getMatrix() const {
+    operator AxisOrientation() const { return {getMatrix()}; }
+
+    Matrix3f getMatrix() const
+    {
         return systemOrientation.getMatrix() * orientation.getMatrix();
     }
 };

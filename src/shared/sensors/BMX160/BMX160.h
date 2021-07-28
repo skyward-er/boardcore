@@ -87,7 +87,7 @@ public:
     /**
      * @brief Get last read temperature.
      */
-    BMX160Temerature getTemperature();
+    BMX160Temperature getTemperature();
 
 private:
     float temperature = 0.0f;
