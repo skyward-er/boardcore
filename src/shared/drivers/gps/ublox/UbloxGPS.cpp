@@ -92,12 +92,14 @@ bool UbloxGPS::init()
 
 bool UbloxGPS::selfTest()
 {
+    uint8_t message[6 + UBX_MAX_PAYLOAD_LENGTH + 2];
+    uint16_t payloadLength;
+
     // Wait for 2 cycles
     Thread::sleep(4 * (1000 / sampleRate));
 
-    // If a sample was taken then the timestamp wont be 0
-    Lock<FastMutex> l(mutex);
-    return threadSample.gps_timestamp != 0;
+    // Try to read one message
+    return readUBXMessage(message, payloadLength);
 }
 
 UbloxGPSData UbloxGPS::sampleImpl()
