@@ -33,11 +33,14 @@
 constexpr const char* CORRECTION_PARAMETER_FILE = "/sd/bmx160_params.csv";
 constexpr const char* MAG_CALIBRATION_DATA_FILE =
     "/sd/bmx160_mag_calibration_data.csv";
-constexpr int CALIBRATION_SLEEP_TIME            = 25;
-constexpr int MAG_CALIBRATION_SLEEP_TIME        = 20;
-constexpr int CALIBRATION_ACCELEROMETER_SAMPLES = 200;
-constexpr int CALIBRATION_MAGNETOMETER_SAMPLES  = 500;
-constexpr int CALIBRATION_N_ORIENTATIONS        = 6;
+constexpr int ACC_CALIBRATION_SAMPLES        = 200;
+constexpr int ACC_CALIBRATION_SLEEP_TIME     = 25;  // [us]
+constexpr int ACC_CALIBRATION_N_ORIENTATIONS = 6;
+
+constexpr int MAG_CALIBRATION_SAMPLES  = 500;
+constexpr int MAG_CALIBRATION_DURAITON = 60;  // [s]
+constexpr int MAG_CALIBRATION_SLEEP_TIME =
+    MAG_CALIBRATION_DURAITON * 1000 / MAG_CALIBRATION_SAMPLES;  // [us]
 
 BMX160* bmx160;
 
@@ -53,7 +56,7 @@ BMX160* bmx160;
  *
  * Each AxisOrthoOrientation values indicates how to change x and y
  */
-AxisOrthoOrientation orientations[CALIBRATION_N_ORIENTATIONS]{
+AxisOrthoOrientation orientations[ACC_CALIBRATION_N_ORIENTATIONS]{
     {Direction::POSITIVE_X, Direction::POSITIVE_Y},  // Z up
     {Direction::POSITIVE_Y, Direction::POSITIVE_Z},  // X up
     {Direction::POSITIVE_Z, Direction::POSITIVE_X},  // Y up
@@ -173,8 +176,8 @@ BMX160CorrectionParameters calibrateAccelerometer(
     Matrix<float, 3, 2> m;
     auto* calibrationModel =
         new SixParameterCalibration<AccelerometerData,
-                                    CALIBRATION_ACCELEROMETER_SAMPLES *
-                                        CALIBRATION_N_ORIENTATIONS>;
+                                    ACC_CALIBRATION_SAMPLES *
+                                        ACC_CALIBRATION_N_ORIENTATIONS>;
 
     SPIBus bus(SPI1);
 
@@ -249,21 +252,22 @@ BMX160CorrectionParameters calibrateAccelerometer(
     printf("         | /\n");
     printf("  y <----/\n");
 
-    for (unsigned i = 0; i < CALIBRATION_N_ORIENTATIONS; i++)
+    for (unsigned i = 0; i < ACC_CALIBRATION_N_ORIENTATIONS; i++)
     {
         printf(
             "Step n.%d/%d, please rotate the death stack x so that the "
             "sensor "
             "is %s\n",
-            i + 1, CALIBRATION_N_ORIENTATIONS, testHumanFriendlyDirection[i]);
+            i + 1, ACC_CALIBRATION_N_ORIENTATIONS,
+            testHumanFriendlyDirection[i]);
 
-        waitForInput();  // TODO: flush the input
+        waitForInput();
 
         printf("Reding data and feeding the model...\n");
 
         // Sample the sensor and feed the data to the calibration model
         int count = 0;
-        while (count < CALIBRATION_ACCELEROMETER_SAMPLES)
+        while (count < ACC_CALIBRATION_SAMPLES)
         {
             bmx160->sample();
             avgAccel = {0, 0, 0};
@@ -271,8 +275,7 @@ BMX160CorrectionParameters calibrateAccelerometer(
             // Read all the data contained in the fifo
             uint8_t size       = bmx160->getLastFifoSize();
             fifoAccSampleCount = 0;
-            for (int i = 0;
-                 i < size && count < CALIBRATION_ACCELEROMETER_SAMPLES; i++)
+            for (int i = 0; i < size && count < ACC_CALIBRATION_SAMPLES; i++)
             {
                 BMX160Data fifoElement = bmx160->getFifoElement(i);
 
@@ -291,12 +294,7 @@ BMX160CorrectionParameters calibrateAccelerometer(
             AccelerometerData data;
             data << avgAccel;
 
-            printf("Current matrix orientation:\n");
-            std::cout << orientations[i].getMatrix() << "\n";
-            printf("Feeding %2.2f %2.2f %2.2f\n", data.accel_x, data.accel_y,
-                   data.accel_z);
-
-            miosix::Thread::sleep(CALIBRATION_SLEEP_TIME);
+            miosix::Thread::sleep(ACC_CALIBRATION_SLEEP_TIME);
 
             calibrationModel->feed(data, orientations[i]);
             count++;
@@ -327,8 +325,7 @@ BMX160CorrectionParameters calibrateMagnetometer(
     BMX160CorrectionParameters correctionParameters)
 {
     Matrix<float, 3, 2> m;
-    auto* calibrationModel =
-        new SoftIronCalibration<CALIBRATION_MAGNETOMETER_SAMPLES>;
+    auto* calibrationModel = new SoftIronCalibration<MAG_CALIBRATION_SAMPLES>;
     Vector3f avgMag{0, 0, 0}, vec;
 
     SPIBus bus(SPI1);
@@ -385,8 +382,9 @@ BMX160CorrectionParameters calibrateMagnetometer(
     printf(
         "Please, after starting the calibration, rotate the gyroscope in "
         "the "
-        "most different directions.");
-    printf("The calibration will run for N seconds\n");
+        "most different directions.\n");
+    printf("The calibration will run for %d seconds\n",
+           MAG_CALIBRATION_DURAITON);
 
     if (!askToContinue())
     {
@@ -395,7 +393,7 @@ BMX160CorrectionParameters calibrateMagnetometer(
 
     // Sample the sensor and feed the data to the calibration model
     int count = 0;
-    while (count < CALIBRATION_MAGNETOMETER_SAMPLES)
+    while (count < MAG_CALIBRATION_SAMPLES)
     {
         bmx160->sample();
 

@@ -26,6 +26,19 @@
 
 #include <fstream>
 
+BMX160CorrectionParameters::BMX160CorrectionParameters()
+{
+    accelParams << 0, 0, 0, 0, 0, 0;
+    magnetoParams << 0, 0, 0, 0, 0, 0;
+}
+
+std::string BMX160CorrectionParameters::header()
+{
+    return "accel_p1,accel_p2,accel_p3,accel_q1,accel_q2,accel_q3,mag_p1,"
+           "mag_p2,mag_p3,mag_q1,mag_q2,mag_q3,"
+           "minGyroSamplesForCalibration";
+}
+
 void BMX160CorrectionParameters::read(std::istream& inputStream)
 {
     // Read accelerometer parameters
@@ -66,6 +79,17 @@ void BMX160CorrectionParameters::print(std::ostream& outputStream) const
 
     // Print gyroscope correction samples
     outputStream << minGyroSamplesForCalibration << "\n";
+}
+
+BMX160WithCorrection::BMX160WithCorrection(
+    BMX160* bmx160_, BMX160CorrectionParameters correctionParameters,
+    AxisOrthoOrientation rotation_)
+    : bmx160(bmx160_), minGyroSamplesForCalibration(
+                           correctionParameters.minGyroSamplesForCalibration),
+      rotation(rotation_)
+{
+    accelerometerCorrector << correctionParameters.accelParams;
+    magnetometerCorrector << correctionParameters.magnetoParams;
 }
 
 BMX160WithCorrection::BMX160WithCorrection(

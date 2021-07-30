@@ -28,23 +28,17 @@
 
 #include "BMX160WithCorrectionData.h"
 
+/**
+ * Holds correction parameters for BMX160.
+ */
 struct BMX160CorrectionParameters
 {
     Matrix<float, 3, 2> accelParams, magnetoParams;
     int minGyroSamplesForCalibration = 0;
 
-    BMX160CorrectionParameters()
-    {
-        accelParams << 0, 0, 0, 0, 0, 0;
-        magnetoParams << 0, 0, 0, 0, 0, 0;
-    }
+    BMX160CorrectionParameters();
 
-    static std::string header()
-    {
-        return "accel_p1,accel_p2,accel_p3,accel_q1,accel_q2,accel_q3,mag_p1,"
-               "mag_p2,mag_p3,mag_q1,mag_q2,mag_q3,"
-               "minGyroSamplesForCalibration";
-    }
+    static std::string header();
 
     void read(std::istream& inputStream);
 
@@ -54,23 +48,33 @@ struct BMX160CorrectionParameters
 /**
  * @brief Driver for BMX160 with calibration.
  *
- * TODO
+ * Gets samples from a BMX160 and applies a specified correction and rotation.
+ * It also calibrates the gyroscope.
  */
 class BMX160WithCorrection : public Sensor<BMX160WithCorrectionData>
 {
 public:
-    // TODO: Add a constructon with the rotation matrix
+    /**
+     * @param bmx160_ already initialized bmx.
+     * @param correctionParameters correction parameter to apply.
+     * @param rotation_ axis rotation.
+     */
+    BMX160WithCorrection(BMX160* bmx160_,
+                         BMX160CorrectionParameters correctionParameters,
+                         AxisOrthoOrientation rotation_);
 
     /**
+     * Constructor without rotation, no rotation will be applied.
+     *
+     * @param bmx160_ already initialized bmx.
      * @param correctionParameters correction parameter to apply.
-     * @param driver_ already initialized bmx.
      */
     BMX160WithCorrection(BMX160* bmx160_,
                          BMX160CorrectionParameters correctionParameters);
 
     /**
-     * @brief Constructor without correction parameters, no correciton will be
-     * applied.
+     * @brief Constructor without correction nor rotation, no correciton and
+     * rotation will be applied.
      *
      * @param bmx160_ correction parameter to apply.
      */
@@ -100,13 +104,16 @@ private:
     BMX160WithCorrectionData sampleImpl() override;
 
     /**
-     * @brief Rotates data axes as specified by the rotation matrix.
+     * @brief Rotates data axes as specified.
      */
     BMX160WithCorrectionData rotateAxis(BMX160WithCorrectionData data);
 
     BMX160* bmx160;
 
     int minGyroSamplesForCalibration = 200;
+
+    AxisOrthoOrientation rotation = {Direction::POSITIVE_X,
+                                     Direction::POSITIVE_Y};
 
     SixParameterCorrector<AccelerometerData> accelerometerCorrector;
     SixParameterCorrector<MagnetometerData> magnetometerCorrector;

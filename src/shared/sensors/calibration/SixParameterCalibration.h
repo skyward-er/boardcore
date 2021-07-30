@@ -103,9 +103,9 @@ public:
         Vector3f measured, expected;
 
         data >> measured;
+        // TODO: understand why the rotation, although it is needed, it does not
+        // work
         expected = transform.getMatrix() * ref;
-        // std::cout << "Expected: " << expected.transpose() << "\n";
-        // std::cout << "Got: " << measured.transpose() << "\n";
 
         /*
          * measered and expected are column vectors, we need to traspose them
