@@ -24,144 +24,198 @@
 
 #include <cstdint>
 
-/// @brief Various BMX160 register/enums definitions.
+/**
+ * @brief Various BMX160 register/enums definitions.
+ */
 namespace BMX160Defs
 {
 
-/// @brief Temperature sensor sensibility.
+/**
+ * @brief Temperature sensor sensibility.
+ */
 const float TEMP_SENSIBILITY = 64.0f / 32768.0f;
-/// @brief Magnetometer fixed sensibility.
+
+/**
+ * @brief Magnetometer fixed sensibility.
+ */
 const float MAG_SENSIBILITY = 0.3f;
 
-/// @brief BMX160 Chip Id.
+/**
+ * @brief BMX160 Chip Id.
+ */
 const uint8_t CHIPID = 0xD8;
 
-/// @brief Default value for FIFO_CONFIG_1.
+/**
+ * @brief Default value for FIFO_CONFIG_1.
+ */
 const uint8_t FIFO_CONFIG_1_DEFAULT = 0x10;
 
-/// @brief Values for SELF_TEST.
+/**
+ * @brief Values for SELF_TEST register.
+ */
 enum SELF_TEST
 {
-    SELF_TEST_GYR         = 1 << 4,
-    SELF_TEST_ACC_AMP     = 1 << 3,
-    SELF_TEST_ACC_SIGN    = 1 << 2,
-    SELF_TEST_ACC_ENABLE  = 0x01,
-    SELF_TEST_ACC_DISABLE = 0x00
+    SELF_TEST_GYR     = 0x10,  ///< Starts selftest of the gyroscope.
+    SELF_TEST_ACC_AMP = 0x08,  ///< Select amplitude of the selftest deflection.
+    SELF_TEST_ACC_SIGN   = 0x04,  ///< Select sign of selftest exitation.
+    SELF_TEST_ACC_ENABLE = 0x01   ///< Starts selftest of the accelerometer.
 };
 
-/// @brief Values for FIFO_CONFIG_1.
-enum FIGO_CONFIG_1
+/**
+ * @brief Values for FIFO_CONFIG_1 register.
+ */
+enum FIFO_CONFIG_1
 {
-    FIFO_CONFIG_1_ACC_EN    = 1 << 7,
-    FIFO_CONFIG_1_GYR_EN    = 1 << 6,
-    FIFO_CONFIG_1_MAG_EN    = 1 << 5,
-    FIFO_CONFIG_1_HEADER_EN = 1 << 4,
+    FIFO_CONFIG_1_ACC_EN    = 0x80,  ///< Store accelerometer data in fifo.
+    FIFO_CONFIG_1_GYR_EN    = 0x40,  ///< Store gyroscope data in fifo.
+    FIFO_CONFIG_1_MAG_EN    = 0x20,  ///< Store magnetometer data in fifo.
+    FIFO_CONFIG_1_HEADER_EN = 0x10,  ///< Stores an header for each frame.
 };
 
-/// @brief Values for FIFO_DOWNS.
-enum FIFO_DOWNS {
-    FIFO_DOWNS_ACC_FILT_DATA = 1 << 7,
-    FIFO_DOWNS_GYR_FILT_DATA = 1 << 3,
+/**
+ * @brief Values for FIFO_DOWNS register.
+ */
+enum FIFO_DOWNS
+{
+    FIFO_DOWNS_ACC_FILT_DATA = 0x80,
+    FIFO_DOWNS_GYR_FILT_DATA = 0x08,
 };
 
-/// @brief Values for INT_OUT_CTRL.
+/**
+ * @brief Values for INT_OUT_CTRL register.
+ */
 enum INT_OUT_CTRL
 {
-    INT_OUT_CTRL_INT2_OUT = 1 << 7,
-    INT_OUT_CTRL_INT1_OUT = 1 << 3,
+    INT_OUT_CTRL_INT2_OUT_EN = 0x80,  ///< Output enable for INT2 pin.
+    INT_OUT_CTRL_INT1_OUT_EN = 0x08,  ///< Output enable for INT1 pin.
 };
 
-/// @brief Values for INT_MAP_1.
+/**
+ * @brief Values for INT_MAP_1 register.
+ */
 enum INT_MAP_1
 {
-    INT_MAP_1_INT_1_FIFO_WATERMARK = 1 << 6,
-    INT_MAP_1_INT_1_FIFO_FULL      = 1 << 5,
-    INT_MAP_1_INT_2_FIFO_WATERMARK = 1 << 2,
-    INT_MAP_1_INT_2_FIFO_FULL      = 1 << 1,
+    INT_MAP_1_INT_1_FIFO_WATERMARK = 0x40,
+    INT_MAP_1_INT_1_FIFO_FULL      = 0x20,
+    INT_MAP_1_INT_2_FIFO_WATERMARK = 0x04,
+    INT_MAP_1_INT_2_FIFO_FULL      = 0x02,
 };
 
-/// @brief Values for INT_EN_1.
+/**
+ * @brief Values for INT_EN_1 register.
+ */
 enum INT_EN_1
 {
-    INT_EN_1_FIFO_WATERMARK = 1 << 6,
-    INT_EN_1_FIFO_FULL      = 1 << 5,
+    INT_EN_1_FIFO_WATERMARK = 0x40,  ///< Enables interrupt for FIFO watermark.
+    INT_EN_1_FIFO_FULL      = 0x20,  ///< Enables interrupt for FIFO full.
 };
 
-/// @brief Values for MAG_IF_0.
+/**
+ * @brief Values for MAG_IF_0 register.
+ */
 enum MAG_IF_0
 {
-    MAG_IF_0_MANUAL  = 1 << 7,
-    MAG_IF_0_BURST_1 = 0x00,
-    MAG_IF_0_BURST_2 = 0x01,
-    MAG_IF_0_BURST_6 = 0x02,
-    MAG_IF_0_BURST_8 = 0x03,
+    MAG_IF_0_MANUAL  = 0x80,
+    MAG_IF_0_BURST_1 = 0x00,  ///< 1 byte of burst operation.
+    MAG_IF_0_BURST_2 = 0x01,  ///< 2 byte of burst operation.
+    MAG_IF_0_BURST_6 = 0x02,  ///< 6 byte of burst operation.
+    MAG_IF_0_BURST_8 = 0x03,  ///< 8 byte of burst operation.
 };
 
-/// @brief Mask for PMU_STATUS.
-const uint8_t PMU_STATUS_ALL_MASK = (3 << 0) | (3 << 2) | (3 << 4);
-/// @brief Value for PMU_STATUS all on normal status.
-const uint8_t PMU_STATUS_ALL_NORMAL = (1 << 0) | (1 << 2) | (1 << 4);
+/**
+ * @brief Mask for PMU_STATUS register (Power Mode Unit).
+ */
+const uint8_t PMU_STATUS_ALL_MASK = 0x03 | 0x0C | 0x30;
 
-/// @brief This value indicates that the data in the FIFO stops prematurely.
+/**
+ * @brief Mask for PMU_STATUS register, normal status for all sensors.
+ */
+const uint8_t PMU_STATUS_ALL_NORMAL = 0x01 | 0x04 | 0x10;
+
+/**
+ * @brief This value indicates that the data in the FIFO stops prematurely.
+ */
 const uint8_t FIFO_STOP_BYTE = 128;
 
-/// @brief Mask for fifo header mode.
-const uint8_t FIFO_HEADER_MODE_MASK = 0x03 << 6;
-/// @brief Mask for fifo header parm.
-const uint8_t FIFO_HEADER_PARM_MASK = 0x0f << 2;
-/// @brief Mask for fifo header ext.
-const uint8_t FIFO_HEADER_EXT_MASK = 0x03 << 0;
+/**
+ * @brief Mask for fifo header mode.
+ */
+const uint8_t FIFO_HEADER_MODE_MASK = 0xC0;
 
-/// @brief Values for fifo header byte.
+/**
+ * @brief Mask for fifo header parm.
+ */
+const uint8_t FIFO_HEADER_PARM_MASK = 0x3C;
+
+/**
+ * @brief Mask for fifo header ext.
+ */
+const uint8_t FIFO_HEADER_EXT_MASK = 0x03;
+
+/**
+ * @brief Values for fifo header byte.
+ */
 enum FIFO_HEADER
 {
-    FIFO_HEADER_MODE_REGULAR = 0x02 << 6,
-    FIFO_HEADER_MODE_CONTROL = 0x01 << 6,
+    FIFO_HEADER_MODE_REGULAR = 0x80,
+    FIFO_HEADER_MODE_CONTROL = 0x40,
 
-    FIFO_HEADER_PARM_ACC_DATA = 1 << 2,
-    FIFO_HEADER_PARM_GYR_DATA = 1 << 3,
-    FIFO_HEADER_PARM_MAG_DATA = 1 << 4,
+    FIFO_HEADER_PARM_ACC_DATA = 0x04,
+    FIFO_HEADER_PARM_GYR_DATA = 0x08,
+    FIFO_HEADER_PARM_MAG_DATA = 0x10,
 
-    FIFO_HEADER_PARM_SKIP       = 0 << 2,
-    FIFO_HEADER_PARM_SENSORTIME = 1 << 2,
-    FIFO_HEADER_PARM_CONFIG     = 2 << 2,
+    FIFO_HEADER_PARM_SKIP       = 0x00,
+    FIFO_HEADER_PARM_SENSORTIME = 0x04,
+    FIFO_HEADER_PARM_CONFIG     = 0x08,
 };
 
-/// @brief Values for mag RESET.
+/**
+ * @brief Values for mag RESET.
+ */
 enum MAG_RESET
 {
     MAG_RESET_POWER_CONTROL = 0x01
 };
 
-/// @brief Values for mag CONTROL.
+/**
+ * @brief Values for mag CONTROL.
+ */
 enum MAG_CONTROL
 {
     MAG_CONTROL_SELF_TEST = 0x01,
-    MAG_CONTROL_NORMAL    = 0x00 << 1,
-    MAG_CONTROL_FORCED    = 0x01 << 1,
-    MAG_CONTROL_SLEEP     = 0x03 << 1,
+    MAG_CONTROL_NORMAL    = 0x00,
+    MAG_CONTROL_FORCED    = 0x02,
+    MAG_CONTROL_SLEEP     = 0x06,
 };
 
-/// @brief Raw struct, read directly from device.
+/**
+ * @brief Raw struct, read directly from device.
+ */
 struct MagRaw
 {
     int16_t x, y, z;
     uint16_t rhall;
 };
 
-/// @brief Raw struct, read directly from device.
+/**
+ * @brief Raw struct, read directly from device.
+ */
 struct GyrRaw
 {
     int16_t x, y, z;
 };
 
-/// @brief Raw struct, read directly from device.
+/**
+ * @brief Raw struct, read directly from device.
+ */
 struct AccRaw
 {
     int16_t x, y, z;
 };
 
-/// @brief Struct holding trim data used for magnetomer compensation
+/**
+ * @brief Struct holding trim data used for magnetomer compensation.
+ */
 struct TrimData
 {
     int8_t dig_x1;
@@ -177,8 +231,37 @@ struct TrimData
     uint16_t dig_xyz1;
 };
 
-/// @brief Internal register definitions
-enum Reg
+/**
+ * BMX160 Commands.
+ */
+enum class Cmd
+{
+    START_FOC = 0x03,  ///< Starts Fast Offset Calibration for acc and gyro.
+    ACC_SET_PMU_MODE    = 0x10,  ///< Sets the PMU mode for the accelerometer.
+    GYR_SET_PMU_MODE    = 0x14,  ///< Sets the PMU mode for the gyroscope.
+    MAG_IF_SET_PMU_MODE = 0x18,  ///< Sets the PMU mode for the magnetometer.
+    PROG_NVM            = 0xA0,  ///< Writes the NVM backed registers into NVM.
+    FIFO_FLUSH          = 0xB0,  ///< Clears all data in the fifo.
+    INT_RESET = 0xB1,  ///< Resets interrupt engine, INT_STATUS reg and int pin.
+    SOFTRESET = 0xB6,  ///< Triggers a reset including a reboot.
+    STEP_CNT_CLR = 0xB2,  ///< Triggers a reset of the step counter.
+};
+
+/**
+ * BMX160 power modes.
+ */
+enum class PowerMode
+{
+    SUSPEND       = 0x00,
+    NORMAL        = 0x01,
+    LOW_POWER     = 0x02,
+    FAST_START_UP = 0x03
+};
+
+/**
+ * @brief Internal register definitions.
+ */
+enum Registers
 {
     REG_CHIPID     = 0x00,
     REG_ERR        = 0x02,
@@ -230,32 +313,34 @@ enum Reg
     REG_INT_MAP_1 = 0x56,
     REG_INT_MAP_2 = 0x57,
 
-    /* INT_DATA_[0-1] not needed */
-    /* INT_LOWHIGH_[0-5] not needed */
-    /* INT_MOTION_[0-3] not needed */
-    /* INT_TAP_[0-1] not needed */
-    /* INT_ORIENT_[0-1] not needed */
-    /* INT_FLAT_[0-1] not needed */
+    // INT_DATA_[0-1] not needed
+    // INT_LOWHIGH_[0-5] not needed
+    // INT_MOTION_[0-3] not needed
+    // INT_TAP_[0-1] not needed
+    // INT_ORIENT_[0-1] not needed
+    // INT_FLAT_[0-1] not needed
 
     REG_FOC_CONF = 0x69,
     REG_CONF     = 0x6A,
     REG_IF_CONF  = 0x6B,
 
-    /* PMU_TRIGGER not needed */
+    // PMU_TRIGGER not needed
 
     REG_SELF_TEST = 0x6D,
 
-    /* NV_CONF not needed */
-    /* OFFSET_[0-6] not needed */
-    /* STEP_CNT_[0-1] not needed */
-    /* STEP_CONF_[0-1] not needed */
+    // NV_CONF not needed
+    // OFFSET_[0-6] not needed
+    // STEP_CNT_[0-1] not needed
+    // STEP_CONF_[0-1] not needed
 
     REG_CMD       = 0x7E,
     REG_COMM_TEST = 0x7F,
 };
 
-/// @brief Internal magnetometer definitions
-enum MagReg
+/**
+ * @brief Internal magnetometer definitions.
+ */
+enum MagnetometerRegisters
 {
     MAG_REG_DATA    = 0x42,
     MAG_REG_RESET   = 0x4B,
@@ -264,9 +349,8 @@ enum MagReg
     MAG_REG_REPXY = 0x51,
     MAG_REG_REPZ  = 0x52,
 
-    // Factory calibrated trim registers.
-    // This is all undocumented territory (the datasheet mentions this as
-    // "reserved")
+    // Factory calibrated trim registers. This is all undocumented territory
+    // (the datasheet mentions this as "reserved").
 
     MAG_REG_DIG_X1     = 0x5D,
     MAG_REG_DIG_Y1     = 0x5E,

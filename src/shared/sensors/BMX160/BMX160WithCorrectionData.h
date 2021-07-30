@@ -1,5 +1,5 @@
-/* Copyright (c) 2020 Skyward Experimental Rocketry
- * Author: Davide Mor
+/* Copyright (c) 2021 Skyward Experimental Rocketry
+ * Authors: Luca Conterio, Alberto Nidasio
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -22,21 +22,45 @@
 
 #pragma once
 
-#include "sensors/SensorData.h"
+#include "sensors/BMX160/BMX160Data.h"
 
-struct BMX160Data : public AccelerometerData,
-                    public GyroscopeData,
-                    public MagnetometerData
+struct BMX160WithCorrectionData : public BMX160Data
 {
-    BMX160Data()
-        : AccelerometerData{0, 0.0, 0.0, 0.0}, GyroscopeData{0, 0.0, 0.0, 0.0},
-          MagnetometerData{0, 0.0, 0.0, 0.0}
+    BMX160WithCorrectionData() : BMX160Data() {}
+
+    BMX160WithCorrectionData(const BMX160Data& data)
+        : BMX160WithCorrectionData(data, data, data)
     {
     }
 
-    BMX160Data(AccelerometerData acc, GyroscopeData gyr, MagnetometerData mag)
-        : AccelerometerData(acc), GyroscopeData(gyr), MagnetometerData(mag)
+    BMX160WithCorrectionData(AccelerometerData acc, GyroscopeData gyr,
+                             MagnetometerData mag)
+        : BMX160Data(acc, gyr, mag)
     {
+    }
+
+    BMX160WithCorrectionData& operator=(AccelerometerData acc)
+    {
+        accel_x = acc.accel_x;
+        accel_y = acc.accel_y;
+        accel_z = acc.accel_z;
+        return *this;
+    }
+
+    BMX160WithCorrectionData& operator=(GyroscopeData gyr)
+    {
+        gyro_x = gyr.gyro_x;
+        gyro_y = gyr.gyro_y;
+        gyro_z = gyr.gyro_z;
+        return *this;
+    }
+
+    BMX160WithCorrectionData& operator=(MagnetometerData mag)
+    {
+        mag_x = mag.mag_x;
+        mag_y = mag.mag_y;
+        mag_z = mag.mag_z;
+        return *this;
     }
 
     static std::string header()
@@ -52,15 +76,5 @@ struct BMX160Data : public AccelerometerData,
            << accel_z << "," << gyro_timestamp << "," << gyro_x << "," << gyro_y
            << "," << gyro_z << "," << mag_timestamp << "," << mag_x << ","
            << mag_y << "," << mag_z << "\n";
-    }
-};
-
-struct BMX160Temperature : public TemperatureData
-{
-    static std::string header() { return "temp_timestamp,temperature\n"; }
-
-    void print(std::ostream& os) const
-    {
-        os << temp_timestamp << "," << temp << "\n";
     }
 };

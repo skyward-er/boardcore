@@ -72,7 +72,7 @@ class BiasCalibration
     : public AbstractCalibrationModel<T, BiasCorrector<T>, AxisOrientation>
 {
 public:
-    BiasCalibration() : sum(0, 0, 0), ref(1, 0, 0), numSamples(0) {}
+    BiasCalibration() : sum(0, 0, 0), ref(0, 0, 0), numSamples(0) {}
 
     void setReferenceVector(Vector3f vec) { ref = vec; }
     Vector3f getReferenceVector() { return ref; }
@@ -92,7 +92,7 @@ public:
         return true;
     }
 
-    bool feed(const T& measured) 
+    bool feed(const T& measured)
     {
         return feed(measured, AxisOrthoOrientation());
     }
@@ -100,7 +100,7 @@ public:
     BiasCorrector<T> computeResult()
     {
         if (numSamples == 0)
-            return { Vector3f{0, 0, 0} };
+            return {Vector3f{0, 0, 0}};
         return {sum / numSamples};
     }
 

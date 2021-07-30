@@ -59,7 +59,7 @@ int main()
     constexpr unsigned NumSamples = accData::nOrientations * accData::nSamples;
 
 #if BIAS_CALIBRATION_TEST
-    auto* model = new BiasCalibration <AccelerometerData>;
+    auto* model = new BiasCalibration<AccelerometerData>;
 
     TRACE("Using BIAS calibration model.\n");
 #endif
@@ -265,4 +265,3 @@ int main()
 
 #endif /* #if TEST_MAGNETOMETER_DATA */
 }
-
