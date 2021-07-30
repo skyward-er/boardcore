@@ -90,17 +90,7 @@ bool UbloxGPS::init()
     return true;
 }
 
-bool UbloxGPS::selfTest()
-{
-    uint8_t message[6 + UBX_MAX_PAYLOAD_LENGTH + 2];
-    uint16_t payloadLength;
-
-    // Wait for 2 cycles
-    Thread::sleep(4 * (1000 / sampleRate));
-
-    // Try to read one message
-    return readUBXMessage(message, payloadLength);
-}
+bool UbloxGPS::selfTest() { return true; }
 
 UbloxGPSData UbloxGPS::sampleImpl()
 {
