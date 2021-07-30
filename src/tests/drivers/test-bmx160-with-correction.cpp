@@ -90,8 +90,9 @@ int main()
     printf("    |    % 2.5f    % 2.5f    % 2.5f    |\n", 0.f, 0.f,
            correctionParameters.accelParams(2, 0));
 
-    BMX160WithCorrection bmx160WithCorrection(bmx160, correctionParameters);
-    // BMX160WithCorrection bmx160WithCorrection(bmx160);
+    BMX160WithCorrection bmx160WithCorrection(
+        bmx160, correctionParameters,
+        {Direction::NEGATIVE_Z, Direction::NEGATIVE_Y});
 
     TRACE("Initializing BMX160...\n");
 

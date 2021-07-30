@@ -186,8 +186,6 @@ BMX160WithCorrection::readCorrectionParametersFromFile(const char* fileName)
 
 BMX160WithCorrectionData BMX160WithCorrection::sampleImpl()
 {
-    // TODO: pausekernellock
-
     if (!bmx160)
     {
         TRACE("Error: driver doesn't point to valid sensor.");
@@ -283,28 +281,32 @@ BMX160WithCorrectionData BMX160WithCorrection::sampleImpl()
 BMX160WithCorrectionData BMX160WithCorrection::rotateAxis(
     BMX160WithCorrectionData data)
 {
-    // TODO: Use rotaton matrix
+    // Rotate the axes according to the given rotation
 
-    // Copy timestamps
-    BMX160WithCorrectionData temp;
-    temp.accel_timestamp = data.accel_timestamp;
-    temp.gyro_timestamp  = data.gyro_timestamp;
-    temp.mag_timestamp   = data.mag_timestamp;
+    // Accelerometer
+    AccelerometerData accData = data;
+    Vector3f accDataVector;
+    accData >> accDataVector;
+    accDataVector = rotation.getMatrix() * accDataVector;
+    accData << accDataVector;
 
-    // Sensor's Z is X in body frame
-    temp.accel_z = data.accel_x;
-    temp.gyro_z  = data.gyro_x;
-    temp.mag_z   = data.mag_x;
+    // Gyroscope
+    GyroscopeData gyrData = data;
+    Vector3f gyrDataVector;
+    gyrData >> gyrDataVector;
+    gyrDataVector = rotation.getMatrix() * gyrDataVector;
+    gyrData << gyrDataVector;
 
-    // Sensor's X is -Z in body frame
-    temp.accel_x = -data.accel_z;
-    temp.gyro_x  = -data.gyro_z;
-    temp.mag_x   = -data.mag_z;
+    // Magnetometer
+    MagnetometerData magData = data;
+    Vector3f magDataVector;
+    magData >> magDataVector;
+    magDataVector = rotation.getMatrix() * magDataVector;
+    magData << magDataVector;
 
-    // Sensor's Y is -Y in body frame
-    temp.accel_y = -data.accel_y;
-    temp.gyro_y  = -data.gyro_y;
-    temp.mag_y   = -data.mag_y;
+    data = accData;
+    data = gyrData;
+    data = magData;
 
-    return temp;
+    return data;
 }
