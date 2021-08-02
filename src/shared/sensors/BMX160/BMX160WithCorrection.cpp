@@ -165,7 +165,19 @@ bool BMX160WithCorrection::calibrate()
     }
 
     // Compute and save the calibration results
-    gyroscopeCorrector = gyroscopeCalibrator.computeResult();
+    {
+        miosix::PauseKernelLock lock;
+        gyroscopeCorrector = gyroscopeCalibrator.computeResult();
+    }
+
+    // Print the calibraton data
+
+    Vector3f gyroscopeCorrectionParameters;
+    gyroscopeCorrector >> gyroscopeCorrectionParameters;
+    TRACE("[BMX160WithCorrection] Gyroscope bias vector from calibration\n");
+    TRACE("b = [    % 2.5f    % 2.5f    % 2.5f    ]\n\n",
+          gyroscopeCorrectionParameters(0), gyroscopeCorrectionParameters(1),
+          gyroscopeCorrectionParameters(2));
 
     return true;
 }
@@ -262,10 +274,7 @@ BMX160WithCorrectionData BMX160WithCorrection::sampleImpl()
     MagnetometerData mag  = magnetometerCorrector.correct(result);
     result                = mag;
     GyroscopeData gyro;
-    {
-        miosix::PauseKernelLock lock;
-        gyro = gyroscopeCorrector.correct(result);
-    }
+    gyro   = gyroscopeCorrector.correct(result);
     result = gyro;
 
     // Get the timestamp of the newest value in fifo
