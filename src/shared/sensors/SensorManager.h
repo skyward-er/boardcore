@@ -173,7 +173,7 @@ private:
         samplers_map; /**< map each sensor to the corresponding sampler */
 
     bool sensors_init_result =
-        false; /**< true if all the sensors are initialized correctly */
+        true; /**< true if all the sensors are initialized correctly */
 
     // PrintLogger log = Logging::getLogger("sensormanager");
 };

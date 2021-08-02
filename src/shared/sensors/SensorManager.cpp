@@ -113,7 +113,6 @@ const vector<TaskStatResult> SensorManager::getSamplersStats()
 
 bool SensorManager::init(const SensorMap_t& sensors_map)
 {
-    bool sensors_init_result   = true;
     uint8_t current_sampler_id = getFirstTaskID();
 
     if (current_sampler_id != 0)
@@ -131,6 +130,7 @@ bool SensorManager::init(const SensorMap_t& sensors_map)
         if (!initSensor(sensor))
         {
             sensors_init_result = false;
+            
             TRACE(
                 "[SM] Failed to initialize sensor %s ---> Error : %d (period: "
                 "%d "
