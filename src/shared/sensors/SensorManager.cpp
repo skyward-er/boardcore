@@ -47,7 +47,10 @@ SensorManager::~SensorManager()
     }
 }
 
-bool SensorManager::start() { return scheduler->start(); }
+bool SensorManager::start()
+{
+    return scheduler->start() && sensors_init_result;
+}
 
 void SensorManager::stop() { scheduler->stop(); }
 
@@ -110,7 +113,7 @@ const vector<TaskStatResult> SensorManager::getSamplersStats()
 
 bool SensorManager::init(const SensorMap_t& sensors_map)
 {
-    bool init_result           = true;
+    bool sensors_init_result   = true;
     uint8_t current_sampler_id = getFirstTaskID();
 
     if (current_sampler_id != 0)
@@ -127,7 +130,7 @@ bool SensorManager::init(const SensorMap_t& sensors_map)
         // avoid adding sensors that fail to be initalized
         if (!initSensor(sensor))
         {
-            init_result = false;
+            sensors_init_result = false;
             TRACE(
                 "[SM] Failed to initialize sensor %s ---> Error : %d (period: "
                 "%d "
@@ -137,6 +140,8 @@ bool SensorManager::init(const SensorMap_t& sensors_map)
         }
         else
         {
+            sensor_info.initialized = true;
+
             TRACE(
                 "[SM] Adding sensor %s (%p) ---> period = %d ms, enabled = "
                 "%d\n",
@@ -182,7 +187,7 @@ bool SensorManager::init(const SensorMap_t& sensors_map)
 
     initScheduler();
 
-    return init_result;
+    return sensors_init_result;
 }
 
 bool SensorManager::initSensor(AbstractSensor* sensor)
@@ -195,10 +200,9 @@ void SensorManager::initScheduler()
     // sort the vector to have lower period samplers
     // (higher frequency) inserted before
     // higher period ones into the TaskScheduler
-    std::sort(samplers.begin(), samplers.end(),
-              [](auto& left, auto& right) {
-                  return left->getSamplingPeriod() < right->getSamplingPeriod();
-              });
+    std::sort(samplers.begin(), samplers.end(), [](auto& left, auto& right) {
+        return left->getSamplingPeriod() < right->getSamplingPeriod();
+    });
 
     uint64_t start_time = miosix::getTick() + 10;
 

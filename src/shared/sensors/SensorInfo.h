@@ -40,16 +40,18 @@ struct SensorInfo
     std::function<void()> callback;
     bool is_dma;
     bool is_enabled;
+    bool initialized;
 
     SensorInfo(std::string id, uint32_t period, std::function<void()> callback,
                bool is_dma, bool is_enabled)
         : id(id), period(period), callback(callback), is_dma(is_dma),
-          is_enabled(is_enabled)
+          is_enabled(is_enabled), initialized(false)
     {
     }
 
     SensorInfo()
-        : id(""), period(0), callback([]() {}), is_dma(false), is_enabled(false)
+        : id(""), period(0), callback([]() {}), is_dma(false),
+          is_enabled(false), initialized(false)
     {
     }
 };
