@@ -39,18 +39,16 @@ class MS580301BA07 : public Sensor<MS5803Data>
 
 public:
     /* Class constructor. Reset lastPressure and lastTemperature */
-    MS580301BA07(SPIBusInterface& bus, GpioPin cs)
-        : MS580301BA07(bus, cs, SPIBusConfig{})
+    MS580301BA07(SPIBusInterface& bus, GpioPin cs, uint16_t temp_div = 1)
+        : MS580301BA07(bus, cs, SPIBusConfig{}, temp_div)
     {
         spi_ms5803.config.clock_div = SPIClockDivider::DIV128;
     }
 
-    MS580301BA07(SPIBusInterface& bus, GpioPin cs, SPIBusConfig config)
-        : spi_ms5803(bus, cs, config)
+    MS580301BA07(SPIBusInterface& bus, GpioPin cs, SPIBusConfig config, uint16_t temp_div = 1)
+        : spi_ms5803(bus, cs, config), mLastTemp(0.0), mLastPressure(0.0), temp_divider(temp_div)
     {
         memset(&cd, 0, sizeof(calibration_data));
-        mLastTemp     = 0;
-        mLastPressure = 0;
     }
 
     ~MS580301BA07() {}
@@ -130,7 +128,14 @@ public:
                                     ((uint32_t)rcvbuf[0] << 16);
 
                 spi.write(CONVERT_D2_4096);  // Begin temperature sampling
-                mStatus = STATE_SAMPLED_TEMPERATURE;
+
+                temp_counter++;
+                // move to temperature sampling every temp_divider iterations
+                if (temp_counter == temp_divider)
+                {
+                    temp_counter = 0;
+                    mStatus = STATE_SAMPLED_TEMPERATURE;
+                }
                 break;
 
             case STATE_SAMPLED_TEMPERATURE:
@@ -169,6 +174,8 @@ private:
     uint32_t mInternalPressure;
     float mLastTemp;
     float mLastPressure;
+    uint16_t temp_divider;
+    uint16_t temp_counter = 0;
 
     MS5803Errors last_error;
 
