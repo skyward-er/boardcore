@@ -22,12 +22,15 @@
 
 #pragma once
 
+#include <diagnostic/PrintLogger.h>
+
+#include <cstring>
+
 #include "../Sensor.h"
 #include "Debug.h"
 #include "MS580301BA07Data.h"
 #include "TimestampTimer.h"
 #include "drivers/spi/SPIDriver.h"
-#include <cstring>
 
 enum MS5803Errors : uint8_t
 {
@@ -45,8 +48,10 @@ public:
         spi_ms5803.config.clock_div = SPIClockDivider::DIV128;
     }
 
-    MS580301BA07(SPIBusInterface& bus, GpioPin cs, SPIBusConfig config, uint16_t temp_div = 1)
-        : spi_ms5803(bus, cs, config), mLastTemp(0.0), mLastPressure(0.0), temp_divider(temp_div)
+    MS580301BA07(SPIBusInterface& bus, GpioPin cs, SPIBusConfig config,
+                 uint16_t temp_div = 1)
+        : spi_ms5803(bus, cs, config), mLastTemp(0.0), mLastPressure(0.0),
+          temp_divider(temp_div)
     {
         memset(&cd, 0, sizeof(calibration_data));
     }
@@ -68,7 +73,7 @@ public:
             if (cd.sens == 0)
             {
                 miosix::Thread::sleep(1);
-                TRACE("Could not read cd.sens\n");
+                LOG_ERR(logger, "Could not read cd.sens");
             }
         } while (cd.sens == 0 && --timeout > 0);
 
@@ -84,9 +89,8 @@ public:
         cd.tref     = readReg(spi, PROM_READ_MASK | PROM_TREF_MASK);
         cd.tempsens = readReg(spi, PROM_READ_MASK | PROM_TEMPSENS_MASK);
 
-        TRACE("[MS5803] Init : off=%d, tcs=%d, tco=%d, tref=%d, tsens=%d\n",
-              (int)cd.off, (int)cd.tcs, (int)cd.tco, (int)cd.tref,
-              (int)cd.tempsens);
+        LOG_INFO(logger, "Init: off={}, tcs={}, tco={}, tref={}, tsens={}",
+                 cd.off, cd.tcs, cd.tco, cd.tref, cd.tempsens);
 
         mStatus = 0;
 
@@ -134,7 +138,7 @@ public:
                 if (temp_counter == temp_divider)
                 {
                     temp_counter = 0;
-                    mStatus = STATE_SAMPLED_TEMPERATURE;
+                    mStatus      = STATE_SAMPLED_TEMPERATURE;
                 }
                 break;
 
@@ -240,32 +244,32 @@ private:
         return data;
     }
 
-    // clang-format off
     enum eRegisters
     {
-        RESET_DEV                 = 0x1E,
+        RESET_DEV = 0x1E,
 
-        CONVERT_D1_256            = 0x40,
-        CONVERT_D1_512            = 0x42,
-        CONVERT_D1_1024           = 0x44,
-        CONVERT_D1_2048           = 0x46,
-        CONVERT_D1_4096           = 0x48,
+        CONVERT_D1_256  = 0x40,
+        CONVERT_D1_512  = 0x42,
+        CONVERT_D1_1024 = 0x44,
+        CONVERT_D1_2048 = 0x46,
+        CONVERT_D1_4096 = 0x48,
 
-        CONVERT_D2_256            = 0x50,
-        CONVERT_D2_512            = 0x52,
-        CONVERT_D2_1024           = 0x54,
-        CONVERT_D2_2048           = 0x56,
-        CONVERT_D2_4096           = 0x58,
+        CONVERT_D2_256  = 0x50,
+        CONVERT_D2_512  = 0x52,
+        CONVERT_D2_1024 = 0x54,
+        CONVERT_D2_2048 = 0x56,
+        CONVERT_D2_4096 = 0x58,
 
-        ADC_READ                  = 0x00,
+        ADC_READ = 0x00,
 
-        PROM_READ_MASK            = 0xA0,
-        PROM_SENS_MASK            = 0x02,
-        PROM_OFF_MASK             = 0x04,
-        PROM_TCS_MASK             = 0x06,
-        PROM_TCO_MASK             = 0x08,
-        PROM_TREF_MASK            = 0x0A,
-        PROM_TEMPSENS_MASK        = 0x0C,
+        PROM_READ_MASK     = 0xA0,
+        PROM_SENS_MASK     = 0x02,
+        PROM_OFF_MASK      = 0x04,
+        PROM_TCS_MASK      = 0x06,
+        PROM_TCO_MASK      = 0x08,
+        PROM_TREF_MASK     = 0x0A,
+        PROM_TEMPSENS_MASK = 0x0C,
     };
-    // clang-format on
+
+    PrintLogger logger = Logging::getLogger("ms580301ba07");
 };

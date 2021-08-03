@@ -22,6 +22,7 @@
 
 #pragma once
 
+#include <diagnostic/PrintLogger.h>
 #include <math.h>
 
 #include "LIS3DSHData.h"
@@ -99,7 +100,7 @@ public:
         // check if the sensor is already initialized
         if (initialized)
         {
-            TRACE("[LIS3DSH] init() : already initialized \n");
+            LOG_WARN(logger, "Already initialized");
             last_error = SensorErrors::ALREADY_INIT;
             return false;
         }
@@ -126,8 +127,6 @@ public:
             (odr << 4) | (bdu << 3) | (7 << 0);  // 7 = 111 -> enable the 3 axis
         spi.write(CTRL_REG4, ctrl_reg4_value);
 
-        TRACE("[LIS3DSH] init() : ok \n");
-
         initialized = true;
 
         return true;
@@ -143,9 +142,8 @@ public:
         // check if the sensor is initialized
         if (!initialized)
         {
-            TRACE(
-                "[LIS3DSH] selfTest() : not initialized, unable to self-test "
-                "\n");
+            LOG_WARN(logger,
+                     "Unable to perform selftest, sensor not initialized");
             last_error = SensorErrors::NOT_INIT;
             return false;
         }
@@ -253,9 +251,9 @@ public:
             delta[i] = fabs(AVG_NO_ST[i] - AVG_ST[i]);
         }
 
-        TRACE("[LIS3DSH] selfTest() : delta[x] = %f \n", delta[0]);
-        TRACE("[LIS3DSH] selfTest() : delta[y] = %f \n", delta[1]);
-        TRACE("[LIS3DSH] selfTest() : delta[z] = %f \n", delta[2]);
+        LOG_INFO(logger,
+                 "Selftest: delta[x] = {}, delta[y] = {}, delta[z] = {}",
+                 delta[0], delta[1], delta[2]);
 
         // check that the averages differences
         // do not exceed maximum tolerance
@@ -266,12 +264,11 @@ public:
             (delta[2] >
              SELF_TEST_DIFF_Z + SELF_TEST_DIFF_Z * SELF_TEST_TOLERANCE))
         {
-            TRACE("[LIS3DSH] selfTest() : failed \n");
+            LOG_ERR(logger, "Selftest failed");
             last_error = SensorErrors::SELF_TEST_FAIL;
             return false;
         }
 
-        TRACE("[LIS3DSH] selfTest() : ok \n");
         return true;
     }
 
@@ -326,9 +323,7 @@ private:
         // check if the sensor is initialized
         if (!initialized)
         {
-            TRACE(
-                "[LIS3DSH] sampleImpl() : not initialized, unable to "
-                "sample data \n");
+            LOG_WARN(logger, "Unable to sample, sensor not initialized");
             last_error = SensorErrors::NOT_INIT;
             return last_sample;
         }
@@ -427,14 +422,14 @@ private:
         // check the WHO_AM_I_REG register
         uint8_t who_am_i_value = spi.read(WHO_AM_I_REG);
         if (who_am_i_value == WHO_AM_I_DEFAULT_VALUE)
-        {  // whoami default value
-            TRACE("[LIS3DSH] WHO_AM_I : ok \n");
+        {
+            LOG_DEBUG(logger, "Correct WHO_AM_I value");
             return true;
         }
         else
         {
-            TRACE("[LIS3DSH] WHO_AM_I : wrong value, %d instead of %d \n",
-                  who_am_i_value, WHO_AM_I_DEFAULT_VALUE);
+            LOG_ERR(logger, "Wrong WHO_AM_I value, got {} instead of {}",
+                    who_am_i_value, WHO_AM_I_DEFAULT_VALUE);
             last_error = SensorErrors::INVALID_WHOAMI;
         }
 
@@ -478,8 +473,7 @@ private:
                 s = sensitivity_values[FullScale::FULL_SCALE_16G];
                 break;
             default:
-                TRACE(
-                    "[LIS3DSH] Invalid full scale range given, using +/-2g \n");
+                LOG_ERR(logger, "Invalid full scale range given, using +/-2g");
                 this->full_scale = FullScale::FULL_SCALE_2G;
                 s                = sensitivity_values[FullScale::FULL_SCALE_2G];
                 break;
@@ -551,4 +545,6 @@ private:
     const float SELF_TEST_DIFF_X_Y  = 140.0f;  // 140 mg
     const float SELF_TEST_DIFF_Z    = 590.0f;  // 590 mg
     const float SELF_TEST_TOLERANCE = 0.3f;
+
+    PrintLogger logger = Logging::getLogger("lis3dsh");
 };

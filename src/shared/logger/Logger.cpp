@@ -166,7 +166,7 @@ LogResult Logger::logImpl(const char* name, const void* data, unsigned int size)
 {
     if (started == false)
     {
-        // TRACE("[Logger] Logger not started!\n");
+        LOG_ERR(logger, "Logger not started!");
         ++s.statDroppedSamples;
 
         // Signal that we are trying to write to a closed log

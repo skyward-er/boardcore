@@ -23,6 +23,8 @@
 #pragma once
 
 #include <Common.h>
+#include <diagnostic/PrintLogger.h>
+
 #include <vector>
 
 /**
@@ -37,10 +39,10 @@
 implementation before including MavlinkDriver.h"
 #endif
 
-#include <mavlink_skyward_lib/mavlink_lib/mavlink_types.h>
-
 #include <drivers/Transceiver.h>
+#include <mavlink_skyward_lib/mavlink_lib/mavlink_types.h>
 #include <utils/collections/SyncPacketQueue.h>
+
 #include "MavlinkStatus.h"
 #include "diagnostic/SkywardStack.h"
 #include "diagnostic/StackLogger.h"
@@ -164,6 +166,8 @@ private:
 
     miosix::Thread* sndThread = nullptr;
     miosix::Thread* rcvThread = nullptr;
+
+    PrintLogger logger = Logging::getLogger("mavlinkdriver");
 };
 
 /**********************************************************************
@@ -198,7 +202,7 @@ bool MavlinkDriver<pkt_len, out_queue_size>::start()
         }
         else
         {
-            TRACE("[MAV] Could not start sender!\n");
+            LOG_ERR(logger, "Could not start sender!");
         }
     }
 
@@ -215,13 +219,13 @@ bool MavlinkDriver<pkt_len, out_queue_size>::start()
         }
         else
         {
-            TRACE("[MAV] Could not start receiver!\n");
+            LOG_ERR(logger, "Could not start receiver!");
         }
     }
 
     if (sndStarted && rcvStarted)
     {
-        TRACE("[MAV] Start ok (sender and receiver)\n");
+        LOG_DEBUG(logger, "Start ok (sender and receiver)\n");
     }
 
     return (sndStarted && rcvStarted);
@@ -261,7 +265,7 @@ void MavlinkDriver<pkt_len, out_queue_size>::updateQueueStats(int dropped)
 
     if (dropped != 0)
     {
-        TRACE("[MAV] Buffer full. The oldest message has been discarded.\n");
+        LOG_ERR(logger, "Buffer full, the oldest message has been discarded");
         status.n_dropped_packets++;
     }
 
@@ -307,11 +311,10 @@ void MavlinkDriver<pkt_len, out_queue_size>::runReceiver()
                     // what could happen.
                     miosix::Unlock<miosix::FastMutex> unlock(l);
 
-                    TRACE(
-                        "[MAV] Received message with ID %d, sequence: %d "
-                        "from "
-                        "component %d of system %d\n",
-                        msg.msgid, msg.seq, msg.compid, msg.sysid);
+                    LOG_DEBUG(logger,
+                              "Received message with ID {}, sequence: {} from "
+                              "component {} of system {}",
+                              msg.msgid, msg.seq, msg.compid, msg.sysid);
 
                     // ... handle the command
                     onRcv(this, msg);
@@ -326,7 +329,7 @@ void MavlinkDriver<pkt_len, out_queue_size>::runReceiver()
 template <unsigned int pkt_len, unsigned int out_queue_size>
 void MavlinkDriver<pkt_len, out_queue_size>::runSender()
 {
-    TRACE("[MAV] Sender is running\n");
+    LOG_DEBUG(logger, "Sender is running");
     Packet<pkt_len> pkt;
 
     while (!stop_flag)
@@ -344,8 +347,8 @@ void MavlinkDriver<pkt_len, out_queue_size>::runSender()
             {
                 out_queue.pop();  // remove from queue
 
-                // TRACE("[MAV] Sending packet. Size: %d (age: %d)\n", pkt.size(),
-                //       (int)age);
+                // LOG_DEBUG(logger, "Sending packet. Size: {} (age: {})",
+                //           pkt.size(), age);
 
                 bool sent = device->send(pkt.content.data(), pkt.size());
                 updateSenderStats(pkt.msgCount(), sent);
@@ -372,7 +375,7 @@ void MavlinkDriver<pkt_len, out_queue_size>::updateSenderStats(size_t msgCount,
         if (!sent)
         {
             status.n_send_errors++;
-            TRACE("[MAV] Error: could not send message\n");
+            LOG_ERR(logger, "Could not send message");
         }
     }
 

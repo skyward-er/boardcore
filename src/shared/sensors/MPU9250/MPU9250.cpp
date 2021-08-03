@@ -47,7 +47,7 @@ bool MPU9250::init()
     // Check if already initialized
     if (initialized)
     {
-        LOG_ERR(log, "Already initialized\n");
+        LOG_ERR(logger, "Already initialized\n");
 
         last_error = SensorErrors::ALREADY_INIT;
 
@@ -64,7 +64,7 @@ bool MPU9250::init()
     // Check WHO AM I
     if (!checkWhoAmI())
     {
-        LOG_ERR(log, "Invalid WHO AM I\n");
+        LOG_ERR(logger, "Invalid WHO AM I\n");
 
         last_error = SensorErrors::INVALID_WHOAMI;
 
@@ -89,7 +89,7 @@ bool MPU9250::init()
     // Set the sample rate
     setSampleRate(samplingRate);
 
-    LOG_DEBUG(log, "Magnetometer sensitivity adjustment: %d, %d, %d\n",
+    LOG_DEBUG(logger, "Magnetometer sensitivity adjustment: %d, %d, %d\n",
               magSensAdjCoeff[0], magSensAdjCoeff[1], magSensAdjCoeff[2]);
 
     initialized = true;
@@ -225,7 +225,7 @@ void MPU9250::setI2CMasterSlaveRead(uint8_t addr, uint8_t reg, uint8_t nBytes,
             break;
 
         default:
-            LOG_ERR(log,
+            LOG_ERR(logger,
                     "invalid slave parameter in function "
                     "setI2CMasterSlaveRead");
             return;
@@ -273,7 +273,7 @@ void MPU9250::setI2CMasterSlaveWrite(uint8_t addr, uint8_t reg, uint8_t data,
             break;
 
         default:
-            LOG_ERR(log,
+            LOG_ERR(logger,
                     "invalid slave parameter in function "
                     "setI2CMasterSlaveRead");
             return;
@@ -314,7 +314,7 @@ void MPU9250::disableI2CMasterSlave(uint8_t slave)
             //     break;
 
         default:
-            LOG_ERR(log,
+            LOG_ERR(logger,
                     "invalid slave parameter in function "
                     "setI2CMasterSlaveRead");
             return;
@@ -365,7 +365,7 @@ bool MPU9250::initAk()
     // Check AK8963 WHO AM I
     if (!checkAkWhoAmI())
     {
-        LOG_ERR(log, "Invalid AK8963 WHO AM I\n");
+        LOG_ERR(logger, "Invalid AK8963 WHO AM I\n");
 
         last_error = SensorErrors::INVALID_WHOAMI;
 

@@ -22,6 +22,7 @@
 
 #pragma once
 
+#include <diagnostic/PrintLogger.h>
 #include <sensors/BMX160/BMX160.h>
 #include <sensors/calibration/BiasCalibration.h>
 #include <sensors/calibration/SixParameterCalibration.h>
@@ -118,4 +119,6 @@ private:
     SixParameterCorrector<AccelerometerData> accelerometerCorrector;
     SixParameterCorrector<MagnetometerData> magnetometerCorrector;
     BiasCorrector<GyroscopeData> gyroscopeCorrector{};
+
+    PrintLogger logger = Logging::getLogger("bmx160withcorrection");
 };

@@ -22,6 +22,8 @@
 
 #pragma once
 
+#include <diagnostic/PrintLogger.h>
+
 #include <cstdint>
 
 #include "APIFrames.h"
@@ -77,9 +79,12 @@ public:
      * @brief Returns the current state of the parser
      */
     ParserState getParserState() { return parser_state; }
+
 private:
     ParserState parser_state          = ParserState::FIND_START;
     uint16_t current_frame_data_index = 0;
+
+    PrintLogger logger = Logging::getLogger("apiframeparser");
 };
 
 }  // namespace Xbee

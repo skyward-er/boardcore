@@ -22,6 +22,7 @@
 
 #pragma once
 
+#include <diagnostic/PrintLogger.h>
 #include <miosix.h>
 
 #include <cstdio>
@@ -175,8 +176,8 @@ private:
     }
 
     static const unsigned int filenameMaxRetry =
-        100;                                         ///< Limit on new filename
-    static const unsigned int maxRecordSize = 512;   ///< Limit on logged data
+        100;                                        ///< Limit on new filename
+    static const unsigned int maxRecordSize = 512;  ///< Limit on logged data
     static const unsigned int numRecords    = 512;  ///< Size of record queues
     static const unsigned int bufferSize = 64 * 1024;  ///< Size of each buffer
     static const unsigned int numBuffers = 8;          ///< Number of buffers
@@ -226,4 +227,6 @@ private:
 
     FILE *file;  ///< Log file
     LogStats s;  ///< Logger stats
+
+    PrintLogger logger = Logging::getLogger("logger");
 };

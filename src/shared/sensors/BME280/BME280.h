@@ -20,11 +20,11 @@
  * THE SOFTWARE.
  */
 
+#include <diagnostic/PrintLogger.h>
+
 #include "BME280Data.h"
 #include "drivers/spi/SPIDriver.h"
 #include "sensors/Sensor.h"
-
-#include <diagnostic/PrintLogger.h>
 
 class BME280 : public Sensor<BME280Data>
 {
@@ -174,8 +174,6 @@ public:
     static const BME280Config
         BME280_CONFIG_TEMP_SINGLE;  ///< Temperature enabled in forced mode
 
-    PrintLogger log = Logging::getLogger("bme280");
-
     BME280(SPISlave spiSlave_,
            BME280Config config_ = BME280_CONFIG_ALL_ENABLED);
 
@@ -297,4 +295,6 @@ private:
     int32_t t_fine;  // Used in compensation algorithm
 
     bool initialized = false;  // Whether the sensor has been initialized
+
+    PrintLogger logger = Logging::getLogger("bme280");
 };

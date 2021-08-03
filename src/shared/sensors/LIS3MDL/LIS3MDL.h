@@ -24,6 +24,7 @@
 #define SRC_SHARED_SENSORS_LIS3MDL_LIS3MDL_H
 
 #include <Common.h>
+#include <diagnostic/PrintLogger.h>
 
 #include "LIS3MDLData.h"
 #include "drivers/spi/SPIDriver.h"
@@ -230,7 +231,7 @@ public:
     {
         if (isInitialized)
         {
-            TRACE("[LIS3MDL] Error: attempted to initialized sensor twice\n");
+            LOG_ERR(logger, "Attempted to initialized sensor twice but failed");
             last_error = ALREADY_INIT;
             return false;
         }
@@ -241,11 +242,10 @@ public:
 
             if (res != WHO_AM_I_VALUE)
             {
-                TRACE(
-                    "[LIS3MDL] Error: WHO_AM_I value differs from expectation: "
-                    "read 0x%x "
-                    "but expected 0x%x\n",
-                    res, WHO_AM_I_VALUE);
+                LOG_ERR(logger,
+                        "WHO_AM_I value differs from expectation: read 0x{02x} "
+                        "but expected 0x{02x}",
+                        res, WHO_AM_I_VALUE);
                 last_error = INVALID_WHOAMI;
                 return false;
             }
@@ -266,9 +266,7 @@ public:
     {
         if (!isInitialized)
         {
-            TRACE(
-                "[LIS3MDL] Error: invoked selfTest() but sensor was "
-                "unitialized\n");
+            LOG_ERR(logger, "Invoked selfTest() but sensor was unitialized");
             last_error = NOT_INIT;
             return false;
         }
@@ -314,8 +312,6 @@ public:
         avg_y /= NUM_SAMPLES;
         avg_z /= NUM_SAMPLES;
 
-        //TRACE("[LIS3MDL] Starting %d tests\n", NUM_TESTS);
-
         /*
          * Setting up the sensor settings for
          * proper usage of the self test mode.
@@ -354,24 +350,14 @@ public:
 
             if (!passed)
             {
-                //TRACE("[LIS3MDL] Test n. %d failed\n", (i + 1));
-
                 // reset configuration, then return
                 applyConfig(mConfig);
 
                 last_error = SELF_TEST_FAIL;
                 return false;
             }
-            /*else
-            {
-                TRACE("[LIS3MDL] Test n. %d passed\n", (i + 1));
-            }*/
         }
 
-        /*
-         * Resets the configuration as it was before calling
-         * selfTest()
-         */
         return applyConfig(mConfig);
     }
 
@@ -487,7 +473,7 @@ public:
 
         if (err)
         {
-            TRACE("[LIS3MDL] Spi error\n");
+            LOG_ERR(logger, "Spi error");
             last_error = BUS_FAULT;
             return false;
         }
@@ -512,9 +498,9 @@ private:
     {
         if (!isInitialized)
         {
-            TRACE(
-                "[LIS3MDL] Error: invoked sampleImpl() but sensor was "
-                "unitialized \n");
+            LOG_ERR(logger,
+                    "Invoked sampleImpl() but sensor was "
+                    "unitialized");
             last_error = NOT_INIT;
             return last_sample;
         }
@@ -523,7 +509,6 @@ private:
 
         if (!spi.read(STATUS_REG))
         {
-            // TRACE("[LIS3MDL] New data not available, keeping old values\n");
             last_error = NO_NEW_DATA;
             return last_sample;
         }
@@ -655,6 +640,8 @@ private:
         ENABLE_INT_Y   = 0x40,
         ENABLE_INT_Z   = 0x20,
     };
+
+    PrintLogger logger = Logging::getLogger("lis3mdl");
 };
 
 #endif

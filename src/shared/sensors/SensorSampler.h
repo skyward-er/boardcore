@@ -23,6 +23,7 @@
 #pragma once
 
 #include <Common.h>
+#include <diagnostic/PrintLogger.h>
 
 #include "Sensor.h"
 #include "SensorInfo.h"
@@ -110,12 +111,14 @@ private:
      */
     virtual void sampleSensor(AbstractSensor* s) = 0;
 
-    uint8_t id;   /**< sampler id used in the task scheduler */
+    uint8_t id;      /**< sampler id used in the task scheduler */
     uint32_t period; /**< sampler update/activation period */
-    bool is_dma;   /**< the sampler's type (if it uses DMA or not) */
+    bool is_dma;     /**< the sampler's type (if it uses DMA or not) */
 
 protected:
     vector<pair<AbstractSensor*, SensorInfo>> sensors;
+
+    PrintLogger logger = Logging::getLogger("sensorsampler");
 };
 
 /**

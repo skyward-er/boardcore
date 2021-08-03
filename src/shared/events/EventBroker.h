@@ -23,17 +23,17 @@
 #ifndef SRC_SHARED_EVENTS_EVENT_BROKER_H
 #define SRC_SHARED_EVENTS_EVENT_BROKER_H
 
-#include "ActiveObject.h"
-#include "Singleton.h"
-
-#include "events/Event.h"
-#include "events/FSM.h"
-
+#include <diagnostic/PrintLogger.h>
 #include <miosix.h>
 #include <stdint.h>
 
 #include <map>
 #include <vector>
+
+#include "ActiveObject.h"
+#include "Singleton.h"
+#include "events/Event.h"
+#include "events/FSM.h"
 
 using std::map;
 using std::vector;
@@ -183,6 +183,8 @@ private:
     FastMutex mtx_subscribers;
 
     uint16_t eventCounter = 0;
+
+    PrintLogger logger = Logging::getLogger("eventbroker");
 };
 
 #define sEventBroker Singleton<EventBroker>::getInstance()

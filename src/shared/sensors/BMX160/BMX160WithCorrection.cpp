@@ -111,9 +111,7 @@ bool BMX160WithCorrection::calibrate()
 {
     if (!bmx160)
     {
-        TRACE(
-            "[BMX160WithCorrection] Error: driver doesn't point to valid "
-            "sensor.");
+        LOG_ERR(logger, "Driver doesn't point to valid sensor");
         return false;
     }
 
@@ -174,10 +172,10 @@ bool BMX160WithCorrection::calibrate()
 
     Vector3f gyroscopeCorrectionParameters;
     gyroscopeCorrector >> gyroscopeCorrectionParameters;
-    TRACE("[BMX160WithCorrection] Gyroscope bias vector from calibration\n");
-    TRACE("b = [    % 2.5f    % 2.5f    % 2.5f    ]\n\n",
-          gyroscopeCorrectionParameters(0), gyroscopeCorrectionParameters(1),
-          gyroscopeCorrectionParameters(2));
+    LOG_INFO(logger, "Gyroscope bias vector from calibration\n");
+    LOG_INFO(logger, "b = [    {: >2.5f}    {: >2.5f}    {: >2.5f}    ]\n\n",
+             gyroscopeCorrectionParameters(0), gyroscopeCorrectionParameters(1),
+             gyroscopeCorrectionParameters(2));
 
     return true;
 }
@@ -200,7 +198,7 @@ BMX160WithCorrectionData BMX160WithCorrection::sampleImpl()
 {
     if (!bmx160)
     {
-        TRACE("Error: driver doesn't point to valid sensor.");
+        LOG_ERR(logger, "Driver doesn't point to valid sensor");
         return BMX160WithCorrectionData{};
     }
 

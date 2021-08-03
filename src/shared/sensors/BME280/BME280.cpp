@@ -51,7 +51,7 @@ bool BME280::init()
     // Check if already initialized
     if (initialized)
     {
-        LOG_ERR(log, "Already initialized\n");
+        LOG_ERR(logger, "Already initialized");
 
         last_error = SensorErrors::ALREADY_INIT;
 
@@ -61,7 +61,7 @@ bool BME280::init()
     // Check WHO AM I
     if (!checkWhoAmI())
     {
-        LOG_ERR(log, "Invalid WHO AM I\n");
+        LOG_ERR(logger, "Invalid WHO AM I");
 
         last_error = SensorErrors::INVALID_WHOAMI;
 
@@ -85,7 +85,7 @@ bool BME280::init()
         config.bytes.ctrl_meas != readBackConfig.bytes.ctrl_meas ||
         config.bytes.config != readBackConfig.bytes.config)
     {
-        LOG_ERR(log, "Device configuration incorrect, setup failed\n");
+        LOG_ERR(logger, "Device configuration incorrect, setup failed");
 
         last_error = SensorErrors::NOT_INIT;
 

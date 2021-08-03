@@ -31,7 +31,6 @@
 
 #include "CircularBuffer.h"
 
-
 // This header can be compiled to run on a PC, for easier testing.
 #ifdef COMPILE_FOR_X86
 #warning The flag COMPILE_FOR_X86 is active! If this is flight code, shame on you
@@ -39,13 +38,13 @@
 #define MIOSIX_ONLY(x)
 #else
 #define MIOSIX_ONLY(x) x
-#include "miosix.h"
 #include "Debug.h"
+#include "miosix.h"
 
 using miosix::ConditionVariable;
-using std::range_error;
 using miosix::FastMutex;
 using miosix::Lock;
+using std::range_error;
 #endif
 
 /*******************************************************************************
@@ -264,16 +263,16 @@ public:
             {
                 // Mark the packet as ready (in the case it wasn't already)
                 last.markAsReady();
-                
-                if(buffer.isFull())
+
+                if (buffer.isFull())
                 {
                     // We have dropped a packet
                     ++dropped;
                 }
                 // Add a new packet and fill that instead
                 Pkt& newpkt = buffer.put(Pkt{});
-                
-                if(!newpkt.tryAppend(msg, msg_len))
+
+                if (!newpkt.tryAppend(msg, msg_len))
                 {
                     TRACE("Packet is too big!\n");
                     return -1;
