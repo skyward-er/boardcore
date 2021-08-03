@@ -129,8 +129,10 @@ bool SensorManager::init(const SensorMap_t& sensors_map)
         // avoid adding sensors that fail to be initalized
         if (!initSensor(sensor))
         {
-            sensors_init_result = false;
-            
+            sensors_init_result = false;  // overall sensor manager init result
+
+            sensor_info.is_enabled = false;  // disable the failing sensor
+
             TRACE(
                 "[SM] Failed to initialize sensor %s ---> Error : %d (period: "
                 "%d "
@@ -140,48 +142,50 @@ bool SensorManager::init(const SensorMap_t& sensors_map)
         }
         else
         {
-            sensor_info.initialized = true;
+            sensor_info.is_initialized = true;
+        }
 
-            TRACE(
-                "[SM] Adding sensor %s (%p) ---> period = %d ms, enabled = "
-                "%d\n",
-                sensor_info.id.c_str(), sensor, sensor_info.period,
-                sensor_info.is_enabled);
+        // add sensor even if not initialized correctly, its is_initialized info
+        // field will be false
+        TRACE(
+            "[SM] Adding sensor %s (%p) ---> period = %d ms, enabled = %d, "
+            "initialized = %d\n",
+            sensor_info.id.c_str(), sensor, sensor_info.period,
+            sensor_info.is_enabled, sensor_info.is_initialized);
 
-            // check if a sampler with the same sampling period and the same
-            // type exists
-            bool found = false;
-            for (auto s : samplers)
+        // check if a sampler with the same sampling period and the same
+        // type exists
+        bool found = false;
+        for (auto s : samplers)
+        {
+            if (sensor_info.period == s->getSamplingPeriod() &&
+                sensor_info.is_dma == s->isDMA())
             {
-                if (sensor_info.period == s->getSamplingPeriod() &&
-                    sensor_info.is_dma == s->isDMA())
-                {
-                    s->addSensor(sensor, sensor_info);
-                    samplers_map[sensor] = s;
-                    found                = true;
-                }
+                s->addSensor(sensor, sensor_info);
+                samplers_map[sensor] = s;
+                found                = true;
+            }
+        }
+
+        if (!found)
+        {
+            // a sampler with the required period does not exist yet
+            SensorSampler* new_sampler = createSampler(
+                current_sampler_id, sensor_info.period, sensor_info.is_dma);
+
+            new_sampler->addSensor(sensor, sensor_info);
+
+            samplers.push_back(new_sampler);
+            samplers_map[sensor] = new_sampler;
+
+            if (current_sampler_id == MAX_TASK_ID)
+            {
+                TRACE(
+                    "[SM] Max task ID (255) reached in task scheduler, IDs "
+                    "will start again from 0");
             }
 
-            if (!found)
-            {
-                // a sampler with the required period does not exist yet
-                SensorSampler* new_sampler = createSampler(
-                    current_sampler_id, sensor_info.period, sensor_info.is_dma);
-
-                new_sampler->addSensor(sensor, sensor_info);
-
-                samplers.push_back(new_sampler);
-                samplers_map[sensor] = new_sampler;
-
-                if (current_sampler_id == MAX_TASK_ID)
-                {
-                    TRACE(
-                        "[SM] Max task ID (255) reached in task scheduler, IDs "
-                        "will start again from 0");
-                }
-
-                current_sampler_id++;
-            }
+            current_sampler_id++;
         }
     }
 

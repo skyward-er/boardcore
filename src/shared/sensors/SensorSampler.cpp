@@ -37,10 +37,8 @@ void SensorSampler::sampleAndCallback()
     for (auto& s : sensors)
     {
         // sample only if that sensor is enabled
-        if (s.second.is_enabled)
-        {
-            // PrintLogger log = Logging::getLogger("ssampler");
-            
+        if (s.second.is_enabled && s.second.is_initialized)
+        {            
             sampleSensor(s.first);
             s.second.callback();
         }

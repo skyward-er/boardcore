@@ -30,6 +30,7 @@
 #include "miosix.h"
 #include "sensors/Sensor.h"
 #include "sensors/SensorManager.h"
+#include "utils/testutils/TestSensor.h"
 
 using namespace miosix;
 using namespace TimestampTimer;
@@ -173,6 +174,19 @@ private:
     uint32_t index = 0;
 };
 
+class FailingSensor : public Sensor<TestData>
+{
+    bool init() { return true; }
+
+    bool selfTest()  // always fail self-test
+    {
+        TRACE("Failed to init sensor FailingSensor!\n");
+        return false;
+    }
+
+    TestData sampleImpl() { return TestData{}; }
+};
+
 int main()
 {
     srand(time(NULL));
@@ -184,40 +198,49 @@ int main()
 
     MyPressureFilter<MySensorData> filter(&s1, 2.578f);
 
-    SensorManager SM(
+    FailingSensor failig_s;  // must not be initialized and not sampled
+
+    SensorManager sm(
         {{/*Sensor=*/&s1,
           {/*ID=*/"s1",
            /*Freq=*/1000,
-           /*Callback=*/[]() { std::cout << "Callback s1: Hi 1!" << endl; },
+           /*Callback=*/[]() { std::cout << "Callback s1!" << endl; },
            /*DMA=*/false,
            /*Enabled=*/true}},
          {/*Sensor=*/&s2,
           {/*ID=*/"s2",
            /*Freq=*/1000,
-           /*Callback=*/[]() { std::cout << "Callback s2: Hi 2!" << endl; },
+           /*Callback=*/[]() { std::cout << "Callback s2!" << endl; },
            /*DMA=*/false,
            /*Enabled=*/true}},
          {/*Sensor=*/&filter,
           {/*ID=*/"filter",
            /*Freq=*/2000,
            /*Callback=*/
-           []() { std::cout << "Callback filter: Hi filter!" << endl; },
+           []() { std::cout << "Callback filter!" << endl; },
+           /*DMA=*/false,
+           /*Enabled=*/true}},
+         {/*Sensor=*/&failig_s,
+          {/*ID=*/"failing",
+           /*Freq=*/3000,
+           /*Callback=*/
+           []() { std::cout << "Callback failing sensor!" << endl; },
            /*DMA=*/false,
            /*Enabled=*/true}}});
 
-    SM.start();
+    sm.start();
 
     Thread::sleep(1000);
 
     // TEST NORMAL SENSORS
 
-    SM.disableSensor(&s1);
+    sm.disableSensor(&s1);
 
     Thread::sleep(1000);
 
-    SM.enableSensor(&s1);
+    sm.enableSensor(&s1);
 
-    for (int i = 0; i < 5; i++)
+    for (int i = 0; i < 3; i++)
     {
         TRACE("S1 : %llu %f %llu %f \n", s1.getLastSample().press_timestamp,
               s1.getLastSample().press, s1.getLastSample().temp_timestamp,
@@ -236,7 +259,7 @@ int main()
 
     FIFOProxy<MySensorDataFIFO, fifo_size> fifo_proxy(&s);
 
-    for (int i = 0; i < 15; i++)
+    for (int i = 0; i < 3; i++)
     {
         s.sample();
 
@@ -249,6 +272,9 @@ int main()
 
         Thread::sleep(1000);
     }
+
+    for (;;)
+        ;
 
     return 0;
 }
