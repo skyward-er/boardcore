@@ -22,11 +22,11 @@
 
 #pragma once
 
+#include <diagnostic/PrintLogger.h>
+
 #include "MPU9250Data.h"
 #include "drivers/spi/SPIDriver.h"
 #include "sensors/Sensor.h"
-
-#include <diagnostic/PrintLogger.h>
 
 /**
  * @brief Driver class for MPU9250
@@ -183,8 +183,6 @@ public:
     const float ACCELERATION_FS_MAP[4] = {2.0, 4.0, 8.0, 16.0};
     const float GYROSCOPE_FS_MAP[4]    = {250, 500, 1000, 2000};
 
-    PrintLogger log = Logging::getLogger("mpu9250");
-
     /**
      * @brief Instantiates the driver
      *
@@ -328,4 +326,6 @@ private:
     const SPIClockDivider highSpeedSpiClockDivider;
 
     bool initialized = false;  // Whether the sensor has been initialized
+
+    PrintLogger logger = Logging::getLogger("mpu9250");
 };

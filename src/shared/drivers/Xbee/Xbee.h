@@ -22,6 +22,7 @@
 
 #pragma once
 
+#include <diagnostic/PrintLogger.h>
 #include <miosix.h>
 
 #include <functional>
@@ -275,6 +276,8 @@ private:
 
     // Waiting thread to be woken when something has been received.
     miosix::Thread* receive_thread = 0;
+
+    PrintLogger logger = Logging::getLogger("xbee");
 };
 
 }  // namespace Xbee

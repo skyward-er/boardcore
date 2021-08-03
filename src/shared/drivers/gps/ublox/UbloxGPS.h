@@ -22,6 +22,7 @@
 
 #pragma once
 
+#include <diagnostic/PrintLogger.h>
 #include <miosix.h>
 
 #include "ActiveObject.h"
@@ -140,4 +141,6 @@ private:
     static constexpr uint8_t PREAMBLE[] = {0xb5, 0x62};
 
     static constexpr int UBX_MAX_PAYLOAD_LENGTH = 92;
+
+    PrintLogger logger = Logging::getLogger("ubloxgps");
 };

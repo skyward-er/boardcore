@@ -117,16 +117,16 @@ void UbloxGPS::run()
         // Try to read the message
         if (!readUBXMessage(message, payloadLength))
         {
-            TRACE("[gps] Unable to read a UBX message\n");
+            LOG_ERR(logger, "Unable to read a UBX message");
             continue;
         }
 
         // Parse the message
         if (!parseUBXMessage(message))
         {
-            TRACE(
-                "[gps] UBX message not recognized (class:0x%02x, id: 0x%02x)\n",
-                message[2], message[3]);
+            LOG_ERR(logger,
+                    "UBX message not recognized (class:0x{02x}, id: 0x{02x})",
+                    message[2], message[3]);
         }
     }
 }
@@ -161,8 +161,9 @@ bool UbloxGPS::writeUBXMessage(uint8_t* message, int length)
     // Write configuration
     if (write(gpsFile, message, length) < 0)
     {
-        TRACE("[gps] Failed to write ubx message (class:0x%02x, id: 0x%02x)\n",
-              message[2], message[3]);
+        LOG_ERR(logger,
+                "Failed to write ubx message (class:0x{02x}, id: 0x{02x})",
+                message[2], message[3]);
         return false;
     }
 
@@ -184,17 +185,17 @@ bool UbloxGPS::serialCommuinicationSetup()
                               intrusive_ref_ptr<Device>(new STM32Serial(
                                   serialPortNumber, defaultBaudrate))))
         {
-            TRACE(
-                "[gps] Faild to open serial port %u with baudrate %lu as file "
-                "%s\n",
-                serialPortNumber, defaultBaudrate, serialPortName);
+            LOG_ERR(logger,
+                    "[gps] Faild to open serial port {0} with baudrate {1} as "
+                    "file {2}",
+                    serialPortNumber, defaultBaudrate, serialPortName);
             return false;
         }
 
         // Open the gps file
         if ((gpsFile = open(gpsFilePath, O_RDWR)) < 0)
         {
-            TRACE("[gps] Failed to open gps file %s\n", gpsFilePath);
+            LOG_ERR(logger, "Failed to open gps file {}", gpsFilePath);
             return false;
         }
 
@@ -207,15 +208,15 @@ bool UbloxGPS::serialCommuinicationSetup()
         // Close the gps file
         if (close(gpsFile) < 0)
         {
-            TRACE("[gps] Failed to close gps file %s\n", gpsFilePath);
+            LOG_ERR(logger, "Failed to close gps file {}", gpsFilePath);
             return false;
         }
 
         // Close the serial port
         if (!devFs->remove(serialPortName))
         {
-            TRACE("[gps] Faild to close serial port %u as file %s\n",
-                  serialPortNumber, serialPortName);
+            LOG_ERR(logger, "Failed to close serial port {} as file {}",
+                    serialPortNumber, serialPortName);
             return false;
         }
     }
@@ -225,16 +226,16 @@ bool UbloxGPS::serialCommuinicationSetup()
                           intrusive_ref_ptr<Device>(
                               new STM32Serial(serialPortNumber, baudrate))))
     {
-        TRACE(
-            "[gps] Faild to open serial port %u with baudrate %lu as file %s\n",
-            serialPortNumber, defaultBaudrate, serialPortName);
+        LOG_ERR(logger,
+                "Faild to open serial port {} with baudrate {} as file {}\n",
+                serialPortNumber, defaultBaudrate, serialPortName);
         return false;
     }
 
     // Reopen the gps file
     if ((gpsFile = open(gpsFilePath, O_RDWR)) < 0)
     {
-        TRACE("[gps] Failed to open gps file %s\n", gpsFilePath);
+        LOG_ERR(logger, "Failed to open gps file {}", gpsFilePath);
         return false;
     }
 
@@ -343,7 +344,7 @@ bool UbloxGPS::enableUBXMessages()
 bool UbloxGPS::setRate()
 {
     uint16_t rate = 1000 / sampleRate;
-    TRACE("[gps] rate: %u\n", rate);
+    LOG_DEBUG(logger, "Rate: {}", rate);
 
     uint8_t ubx_cfg_valset[SET_RATE_MSG_LEN] = {
         0Xb5, 0x62,              // Preamble
@@ -422,7 +423,7 @@ bool UbloxGPS::readUBXMessage(uint8_t* message, uint16_t& payloadLength)
     if (msgChecksum1 != message[6 + payloadLength] ||
         msgChecksum2 != message[6 + payloadLength + 1])
     {
-        TRACE("[gps] Message checksum verification failed\n");
+        LOG_ERR(logger, "Message checksum verification failed");
         return false;
     }
 
@@ -513,12 +514,14 @@ bool UbloxGPS::parseUBXACKMessage(uint8_t* message)
     switch (message[3])  // Message id
     {
         case 0x00:  // UBX-ACK-NAC
-            TRACE("[gps] Received NAC for message (class:0x%02x, id: 0x%02x)\n",
-                  message[6], message[7]);
+            LOG_DEBUG(logger,
+                      "Received NAC for message (class:0x{02x}, id: 0x{02x})",
+                      message[6], message[7]);
             return true;
         case 0x01:  // UBX-ACK-ACK
-            TRACE("[gps] Receive ACK for message (class:0x%02x, id: 0x%02x)\n",
-                  message[6], message[7]);
+            LOG_DEBUG(logger,
+                      "Received ACK for message (class:0x{02x}, id: 0x{02x})",
+                      message[6], message[7]);
             return true;
     }
     return false;

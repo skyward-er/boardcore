@@ -48,7 +48,7 @@ bool BMX160::init()
 
     if (!checkChipid())
     {
-        TRACE("[BMX160] Got bad CHIPID\n");
+        LOG_ERR(logger, "Got bad CHIPID");
         last_error = SensorErrors::INVALID_WHOAMI;
         return false;
     }
@@ -58,7 +58,7 @@ bool BMX160::init()
     if (!setPowerMode())
     {
 
-        TRACE("[BMX160] Not all interfaces are up and running!\n");
+        LOG_ERR(logger, "Not all interfaces are up and running!");
         last_error = SensorErrors::INIT_FAIL;
         return false;
     }
@@ -241,7 +241,6 @@ bool BMX160::checkChipid()
 {
     SPITransaction spi(spi_slave);
     auto chip_id = spi.read(BMX160Defs::REG_CHIPID);
-    // TRACE("[BMX160] Chipid: %d\n", (int)chip_id);
 
     return chip_id == BMX160Defs::CHIPID;
 }
@@ -472,9 +471,11 @@ bool BMX160::testAcc()
         (neg_acc[1] - pos_acc[1]) < SELF_TEST_LIMIT ||
         (neg_acc[2] - pos_acc[2]) < SELF_TEST_LIMIT)
     {
-        TRACE("[BMX160] Accelerometer self-test failed!\n");
-        TRACE("pos_acc: %d %d %d\n", pos_acc[0], pos_acc[1], pos_acc[2]);
-        TRACE("neg_acc: %d %d %d\n", neg_acc[0], neg_acc[1], neg_acc[2]);
+        LOG_ERR(logger, "Accelerometer self-test failed!");
+        LOG_ERR(logger, "pos_acc: {} {} {}", pos_acc[0], pos_acc[1],
+                pos_acc[2]);
+        LOG_ERR(logger, "neg_acc: {} {} {}", neg_acc[0], neg_acc[1],
+                neg_acc[2]);
 
         return false;
     }
@@ -496,7 +497,7 @@ bool BMX160::testGyr()
     // Read back the results
     if (!(spi.read(BMX160Defs::REG_STATUS) & 2))
     {
-        TRACE("[BMX160] Gyroscope self-test failed!\n");
+        LOG_ERR(logger, "Gyroscope self-test failed!");
         return false;
     }
     else
@@ -521,7 +522,7 @@ bool BMX160::testMag()
     if (readMag(spi, BMX160Defs::MAG_REG_CONTROL) &
         BMX160Defs::MAG_CONTROL_SELF_TEST)
     {
-        TRACE("[BMX160] Magnetometer didn't finish self-test!\n");
+        LOG_ERR(logger, "Magnetometer didn't finish self-test!");
         return false;
     }
 
@@ -533,8 +534,9 @@ bool BMX160::testMag()
     // Test results are stored in the lower bit of the 3 axis
     if (!(mag[0] & 1) || !(mag[1] & 1) || !(mag[2] & 1))
     {
-        TRACE("[BMX160] Magnetometer self-test failed!\n");
-        TRACE("result: %d %d %d %d\n", mag[0], mag[1], mag[2], mag[3]);
+        LOG_ERR(logger, "Magnetometer self-test failed!");
+        LOG_ERR(logger, "result: %d %d %d %d\n", mag[0], mag[1], mag[2],
+                mag[3]);
         return false;
     }
     else
@@ -686,8 +688,6 @@ void BMX160::readFifo(bool headerless)
         return;
     }
 
-    // TRACE("Fifo len: %d\n", len);
-
     // Sometimes the buffer gets over 1000
     uint8_t buf[1100];
 
@@ -794,9 +794,7 @@ void BMX160::readFifo(bool headerless)
             }
             else
             {
-                TRACE(
-                    "[BMX160] Malformed packet! Aborting fifo "
-                    "transfer...\n");
+                LOG_ERR(logger, "Malformed packet! Aborting fifo transfer...");
 
                 last_error =
                     static_cast<SensorErrors>(BMX160Errors::INVALID_FIFO_DATA);
@@ -842,17 +840,6 @@ void BMX160::boschReadTrim(SPITransaction& spi)
             sizeof(trim_xyz_data));
     readMag(spi, BMX160Defs::MAG_REG_DIG_Z2_0, trim_xy1xy2,
             sizeof(trim_xy1xy2));
-
-    /*TRACE("-------- DUMP OF TRIM REGS --------\n");
-    for (int i = 0; i < 2; i++)
-        TRACE("trim_x1y1[%d]: %d\n", i, (int)trim_x1y1[i]);
-
-    for (int i = 0; i < 4; i++)
-        TRACE("trim_xyz_data[%d]: %d\n", i, (int)trim_xyz_data[i]);
-
-    for (int i = 0; i < 10; i++)
-        TRACE("trim_xy1xy2[%d]: %d\n", i, (int)trim_xy1xy2[i]);
-    TRACE("--------    END OF DUMP    --------\n");*/
 
     // Read trim registers
     trim_data.dig_x1   = trim_x1y1[0];

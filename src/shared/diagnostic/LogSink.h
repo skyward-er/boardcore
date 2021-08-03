@@ -22,9 +22,8 @@
 
 #pragma once
 
+#include <logger/Logger.h>
 #include <miosix.h>
-
-#include "logger/Logger.h"
 
 #include "PrintLoggerData.h"
 
@@ -49,15 +48,15 @@ public:
 
     int getLevel() { return min_level; }
 
-    void setFormatString(string format) { this->format = format; }
+    void setFormatString(std::string format) { this->format = format; }
 
 protected:
-    virtual void logImpl(string l) = 0;
+    virtual void logImpl(std::string l) = 0;
 
 private:
-    bool enabled      = true;  // enabled by the default when created
-    uint8_t min_level = LOGL_NOTSET;
-    string format     = "{ts} {file}:{line} {fun} {lvl} [{name}] {msg}\n";
+    bool enabled       = true;  // enabled by the default when created
+    uint8_t min_level  = LOGL_NOTSET;
+    std::string format = "{ts} {file}:{line} {fun} {lvl} [{name}] {msg}\n";
 };
 
 /**
@@ -73,8 +72,8 @@ public:
     void setFile(FILE* f_) { f = f_; }
 
 protected:
-    void logImpl(string l);
-    
+    void logImpl(std::string l);
+
     FILE* f;
     FastMutex mutex;
 };
@@ -87,13 +86,10 @@ protected:
 class FileLogSinkBuffered : public FileLogSink
 {
 public:
-    FileLogSinkBuffered()
-        : logger(Logger::instance())
-    {
-    }
+    FileLogSinkBuffered() : logger(Logger::instance()) {}
 
 protected:
-    void logImpl(string l);
+    void logImpl(std::string l);
 
 private:
     Logger& logger;

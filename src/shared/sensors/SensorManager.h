@@ -22,6 +22,8 @@
 
 #pragma once
 
+#include <diagnostic/PrintLogger.h>
+
 #include "SensorInfo.h"
 #include "SensorSampler.h"
 #include "scheduler/TaskScheduler.h"
@@ -175,5 +177,5 @@ private:
     bool sensors_init_result =
         true; /**< true if all the sensors are initialized correctly */
 
-    // PrintLogger log = Logging::getLogger("sensormanager");
+    PrintLogger logger = Logging::getLogger("sensormanager");
 };

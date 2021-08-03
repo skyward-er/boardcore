@@ -21,6 +21,7 @@
  */
 
 #include "EventBroker.h"
+
 #include "Debug.h"
 #include "diagnostic/StackLogger.h"
 
@@ -29,7 +30,7 @@ EventBroker::EventBroker() {}
 void EventBroker::post(const Event& ev, uint8_t topic)
 {
 #ifdef TRACE_EVENTS
-    TRACE("[EventBroker] Event: %d, Topic: %d\n", ev.sig, topic);
+    LOG_DEBUG(logger, "Event: {}, Topic: {}", ev.sig, topic);
 #endif
 
     Lock<FastMutex> lock(mtx_subscribers);

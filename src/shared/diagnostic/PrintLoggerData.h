@@ -22,17 +22,19 @@
 
 #pragma once
 
+#include <string>
+
 static constexpr unsigned int MAX_LOG_STRING_SIZE =
     250; /**< Max length of messages to be logged through the buffered logger */
 
 struct LogRecord
 {
     int level;
-    string function;
-    string file;
+    std::string function;
+    std::string file;
     int line;
-    string name;
-    string message;
+    std::string name;
+    std::string message;
 };
 
 enum LogLevel : uint8_t

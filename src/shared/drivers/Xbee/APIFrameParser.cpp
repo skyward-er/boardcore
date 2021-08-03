@@ -21,6 +21,7 @@
  */
 
 #include "APIFrameParser.h"
+
 #include "Debug.h"
 
 namespace Xbee
@@ -43,14 +44,14 @@ APIFrameParser::ParseResult APIFrameParser::parse(uint8_t byte, APIFrame* frame)
         // Read most significant byte of the length
         case ParserState::READ_LENGTH_1:
             frame->length = byte;
-            parser_state         = ParserState::READ_LENGTH_2;
+            parser_state  = ParserState::READ_LENGTH_2;
 
             break;
         // Read least significant byte of the length
         case ParserState::READ_LENGTH_2:
             frame->length |= ((uint16_t)byte << 8) & 0xFF00;
             // At least two frame data bytes (frame_type and a payload)
-            if(swapBytes16(frame->length) < 2)
+            if (swapBytes16(frame->length) < 2)
             {
                 parser_state = ParserState::FIND_START;
                 return ParseResult::FAIL;
@@ -67,7 +68,7 @@ APIFrameParser::ParseResult APIFrameParser::parse(uint8_t byte, APIFrame* frame)
         // Read frame type
         case ParserState::READ_FRAME_TYPE:
             frame->frame_type = byte;
-            parser_state             = ParserState::READ_FRAME_DATA;
+            parser_state      = ParserState::READ_FRAME_DATA;
             break;
         // Read the data frame
         case ParserState::READ_FRAME_DATA:
@@ -82,7 +83,7 @@ APIFrameParser::ParseResult APIFrameParser::parse(uint8_t byte, APIFrame* frame)
         // Read & verify checksum
         case ParserState::READ_CHECKSUM:
             frame->checksum = byte;
-            parser_state           = ParserState::FIND_START;
+            parser_state    = ParserState::FIND_START;
 
             if (frame->verifyChecksum())
             {
@@ -90,7 +91,7 @@ APIFrameParser::ParseResult APIFrameParser::parse(uint8_t byte, APIFrame* frame)
             }
             else
             {
-                TRACE("[XbeeParser] Wrong packet checksum!\n");
+                LOG_ERR(logger, "Wrong packet checksum!");
                 return ParseResult::FAIL;
             }
             break;

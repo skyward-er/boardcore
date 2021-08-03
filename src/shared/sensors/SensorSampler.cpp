@@ -38,7 +38,7 @@ void SensorSampler::sampleAndCallback()
     {
         // sample only if that sensor is enabled
         if (s.second.is_enabled && s.second.is_initialized)
-        {            
+        {
             sampleSensor(s.first);
             s.second.callback();
         }
@@ -52,8 +52,8 @@ void SensorSampler::toggleSensor(AbstractSensor* sensor, bool is_en)
         if (s.first == sensor)
         {
             s.second.is_enabled = is_en;
-            TRACE("[Sampler %d] Toggle Sensor %p ---> enabled = %d \n", getID(),
-                  sensor, s.second.is_enabled);
+            LOG_DEBUG(logger, "Sampler {}, toggle Sensor {} ---> enabled = {}",
+                      getID(), static_cast<void*>(sensor), s.second.is_enabled);
             break;
         }
     }
@@ -93,8 +93,9 @@ const SensorInfo SensorSampler::getSensorInfo(AbstractSensor* sensor)
         }
     }
 
-    TRACE("[SM] Sampler %d : sensor %p not found \n", this->id, sensor);
-    
+    LOG_ERR(logger, "Sampler {}: sensor {} not found", this->id,
+            static_cast<void*>(sensor));
+
     return SensorInfo{};
 }
 

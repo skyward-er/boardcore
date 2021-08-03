@@ -30,12 +30,11 @@
 #include <vector>
 
 #include "ActiveObject.h"
-#include "Singleton.h"
-#include "utils/collections/CircularBuffer.h"
-#include "logger/Logger.h"
-
-#include "PrintLoggerData.h"
 #include "LogSink.h"
+#include "PrintLoggerData.h"
+#include "Singleton.h"
+#include "logger/Logger.h"
+#include "utils/collections/CircularBuffer.h"
 
 using std::string;
 using std::unique_ptr;
@@ -133,7 +132,7 @@ private:
     {
         unique_ptr<FileLogSink> serial = std::make_unique<FileLogSink>(stdout);
         serial->setLevel(DEFAULT_STDOUT_LOG_LEVEL);
-#ifndef DEBUG // do not output to serial if not in DEBUG mode
+#ifndef DEBUG  // do not output to serial if not in DEBUG mode
         serial->disable();
 #endif
         sinks.push_back(std::move(serial));

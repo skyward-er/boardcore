@@ -22,6 +22,8 @@
 
 #pragma once
 
+#include <diagnostic/PrintLogger.h>
+
 #include <functional>
 
 #include "ActiveObject.h"
@@ -83,20 +85,21 @@ protected:
             {
                 if (pressed_ticks >= VERY_LONG_PRESS_TICKS)
                 {
-                    TRACE("Button pressed (very long) (%d ticks).\n",
-                          pressed_ticks);
+                    LOG_DEBUG(logger, "Button pressed (very long) (%d ticks)",
+                              pressed_ticks);
 
                     callback(btn_id, ButtonPress::VERY_LONG);
                 }
                 else if (pressed_ticks >= LONG_PRESS_TICKS)
                 {
-                    TRACE("Button pressed (long) (%d ticks).\n", pressed_ticks);
+                    LOG_DEBUG(logger, "Button pressed (long) (%d ticks)",
+                              pressed_ticks);
                     callback(btn_id, ButtonPress::LONG);
                 }
                 else
                 {
-                    TRACE("Button pressed (short) (%d ticks).\n",
-                          pressed_ticks);
+                    LOG_DEBUG(logger, "Button pressed (short) (%d ticks)",
+                              pressed_ticks);
                     callback(btn_id, ButtonPress::SHORT);
                 }
 
@@ -116,4 +119,6 @@ private:
     int pressed_ticks = 0;
 
     ButtonCallback callback;
+
+    PrintLogger logger = Logging::getLogger("buttonhandler");
 };

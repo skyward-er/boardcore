@@ -56,8 +56,8 @@ bool Xbee::send(uint8_t* pkt, size_t pkt_len)
 {
     if (pkt_len > MAX_PACKET_PAYLOAD_LENGTH || pkt_len == 0)
     {
-        TRACE("[Xbee] Invalid packet length (0< %u <= %u)\n", pkt_len,
-              MAX_PACKET_PAYLOAD_LENGTH);
+        LOG_ERR(logger, "Invalid packet length (0< {} <= {})", pkt_len,
+                MAX_PACKET_PAYLOAD_LENGTH);
         return false;
     }
     long long start_tick = miosix::getTick();
@@ -85,7 +85,7 @@ bool Xbee::send(uint8_t* pkt, size_t pkt_len)
             }
             else
             {
-                TRACE("[Xbee] Wrong tx_status ID\n");
+                LOG_ERR(logger, "Wrong tx_status ID");
             }
         }
 
@@ -101,7 +101,7 @@ bool Xbee::send(uint8_t* pkt, size_t pkt_len)
     if (status_timeout)
     {
         ++status.tx_timeout_count;
-        TRACE("[Xbee] TX_STATUS timeout\n");
+        LOG_ERR(logger, "TX_STATUS timeout");
     }
     time_to_send_stats.add(miosix::getTick() - start_tick);
     return success;
@@ -256,7 +256,6 @@ size_t Xbee::fillReceiveBuf(uint8_t* buf, size_t buf_max_size)
 
         return len_to_copy;
     }
-    
 
     return 0;
 }
@@ -424,9 +423,7 @@ uint8_t Xbee::sendATCommandInternal(uint8_t tx_frame_id, const char* cmd,
     {
         if (params_len > MAX_AT_COMMAND_PARAMS_LENGTH)
         {
-            TRACE(
-                "[Xbee] ERROR! AT Command payload too large. It was "
-                "truncated.\n");
+            LOG_ERR(logger, "AT Command payload too large, it was truncated");
             params_len = MAX_AT_COMMAND_PARAMS_LENGTH;
         }
         at.setParameterSize(params_len);
@@ -474,10 +471,10 @@ void Xbee::handleFrame(APIFrame& frame)
             switch (ms->getStatus())
             {
                 case MS_HARDWARE_RESET:
-                    TRACE("[Xbee] Modem status: Hardware reset\n");
+                    LOG_DEBUG(logger, "Modem status: Hardware reset");
                     break;
                 case MS_WATCHDOG_TIMER_RESET:
-                    TRACE("[Xbee] Modem status: Watchdog timer reset\n");
+                    LOG_DEBUG(logger, "Modem status: Watchdog timer reset");
                     break;
             }
             break;
@@ -495,8 +492,8 @@ void Xbee::handleFrame(APIFrame& frame)
                 case DELS_SUCCESS:
                     break;
                 default:
-                    TRACE(
-                        "TX Status Error: %d (retries: %d, RD: %s)\n",
+                    LOG_ERR(
+                        logger, "TX Status Error: {} (retries: {}, RD: {})",
                         status.last_tx_status, ts->getTransmitRetryCount(),
                         ts->getDiscoveryStatus() == 2 ? "Enabled" : "Disabled");
                     break;

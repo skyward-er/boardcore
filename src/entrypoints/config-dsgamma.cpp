@@ -22,6 +22,7 @@
 
 #include <stdio.h>
 #include <string.h>
+
 #include "miosix.h"
 
 using namespace std;
@@ -61,10 +62,10 @@ int main()
         newConf.dest_addr[0]  = 126;
         newConf.dest_addr[1]  = 126;
         newConf.dest_addr[2]  = 126;
-        newConf.lora_sf     = SF6;   // SF6
-        newConf.lora_power      = dbm20;  //+20dbm
+        newConf.lora_sf       = SF6;     // SF6
+        newConf.lora_power    = dbm20;   //+20dbm
         newConf.handshake     = false;   // No handshake
-        newConf.baudrate      = B_9600;   // 9600 baud
+        newConf.baudrate      = B_9600;  // 9600 baud
 
         // printf("LOCAL ADDRESS (3 bytes, 0-127 each):\n");
         // scanf("%d %d %d", &newConf.local_addr[0], &newConf.local_addr[1],
@@ -82,10 +83,12 @@ int main()
         // scanf("%d", &newConf.baudrate);
 
         bool configStatus = gamma.configure(newConf);
-        if(configStatus == true){
+        if (configStatus == true)
+        {
             printf("New configuration set!\n");
         }
-        else{
+        else
+        {
             printf("Failed to set new configuration!\n");
         }
         Thread::sleep(500);
@@ -93,7 +96,6 @@ int main()
 
     return 0;
 }
-
 
 /*
  * Waits for the discovery user button to be pressed (blocking).

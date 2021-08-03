@@ -28,15 +28,15 @@ using namespace miosix;
  * to be passed to the object in order to communicate with the device.
  *
  */
-Gamma868::Gamma868(const char *serialPath, const uint16_t multiplier)
-                            : send_timeout_multiplier(multiplier), conf{}, gammaSwitch{}
+Gamma868::Gamma868(const char* serialPath, const uint16_t multiplier)
+    : send_timeout_multiplier(multiplier), conf{}, gammaSwitch{}
 {
     conf_enabled = false;
-    fd = open(serialPath, O_RDWR);
+    fd           = open(serialPath, O_RDWR);
 
     if (fd < 0)
-        TRACE("[Gamma868] Cannot open %s\n", serialPath);
-        // TODO: Signal an error if we fail here?
+        LOG_ERR(logger, "Cannot open {}", serialPath);
+    // TODO: Signal an error if we fail here?
 }
 
 /*
@@ -44,20 +44,18 @@ Gamma868::Gamma868(const char *serialPath, const uint16_t multiplier)
  * to be passed to the object in order to communicate with the device.
  *
  */
-Gamma868::Gamma868(const char *serialPath, GpioPin* lrn_pin, const uint16_t multiplier) 
-                                                : Gamma868(serialPath, multiplier)
+Gamma868::Gamma868(const char* serialPath, GpioPin* lrn_pin,
+                   const uint16_t multiplier)
+    : Gamma868(serialPath, multiplier)
 {
-    gammaSwitch = lrn_pin;
+    gammaSwitch  = lrn_pin;
     conf_enabled = true;
 
     gammaSwitch->mode(Mode::OUTPUT);
     gammaSwitch->high();
 }
 
-Gamma868::~Gamma868()
-{
-    close(fd);
-}
+Gamma868::~Gamma868() { close(fd); }
 
 /*
  * Immediately sends command (blocking).
@@ -74,7 +72,7 @@ bool Gamma868::send(uint8_t* pkt, size_t pkt_len)
  */
 ssize_t Gamma868::receive(uint8_t* pkt, size_t pkt_len)
 {
-    if(pkt_len > 0)
+    if (pkt_len > 0)
         return read(fd, pkt, 1);
     else
         return 0;
@@ -85,13 +83,16 @@ ssize_t Gamma868::receive(uint8_t* pkt, size_t pkt_len)
  */
 GammaConf Gamma868::readConfig()
 {
-    if(!conf_enabled) {
+    if (!conf_enabled)
+    {
         conf.is_valid = false;
-    } else {
+    }
+    else
+    {
         enterLearnMode();
 
         bool ok = updateConfig();
-        if(!ok)
+        if (!ok)
             conf.is_valid = false;
 
         exitLearnMode();
@@ -108,7 +109,7 @@ bool Gamma868::configure(const GammaConf& newConf)
 {
     bool retValue;
 
-    if(!conf_enabled)
+    if (!conf_enabled)
         return false;
 
     enterLearnMode();
@@ -117,19 +118,21 @@ bool Gamma868::configure(const GammaConf& newConf)
     memcpy(&oldConf, &conf, sizeof(GammaConf));
 
     // Write the new configuration
-    TRACE("[Gamma868] Writing new configuration.. \n");
+    LOG_DEBUG(logger, "Writing new configuration...");
     writeConfig(newConf);
 
     // Check the current configuration
     bool ok = updateConfig();
 
-    if(ok && conf == newConf){
-        TRACE("[Gamma868] Config Ok\n");
+    if (ok && conf == newConf)
+    {
+        LOG_DEBUG(logger, "Config ok");
         retValue = true;
     }
-    else{
-        TRACE("[Gamma868] Config error\n");
-        memcpy(&conf, &oldConf, sizeof(GammaConf)); // rollback
+    else
+    {
+        LOG_ERR(logger, "Config error");
+        memcpy(&conf, &oldConf, sizeof(GammaConf));  // rollback
         retValue = false;
     }
 
@@ -146,7 +149,7 @@ void Gamma868::enterLearnMode()
     // TODO: switch baudrate to 9600
 
     // Enter learn mode
-    TRACE("[Gamma868] Entering learn mode ... \n");
+    LOG_DEBUG(logger, "Entering learn mode...");
     gammaSwitch->low();
 
     // Wait 5 seconds
@@ -162,7 +165,7 @@ void Gamma868::exitLearnMode()
 {
     // TODO: switch baudrate according to configuration
 
-    TRACE("[Gamma868] Exiting learn mode. \n");
+    LOG_DEBUG(logger, "Exiting learn mode");
     write(fd, "#Q", 2);
 }
 
@@ -203,7 +206,7 @@ void Gamma868::writeConfig(const GammaConf& newConf)
  */
 bool Gamma868::updateConfig()
 {
-    if(!conf_enabled)
+    if (!conf_enabled)
         return false;
 
     gamma_msg msg;
@@ -213,9 +216,8 @@ bool Gamma868::updateConfig()
     read(fd, &(msg.buf), sizeof(gamma_msg));
 
     // Check values validity
-    if( msg.conf.lora_mode >= LAST_SF
-        || msg.conf.lora_power >= LAST_POWER
-        || msg.conf.baudrate >= LAST_BAUDRATE ) 
+    if (msg.conf.lora_mode >= LAST_SF || msg.conf.lora_power >= LAST_POWER ||
+        msg.conf.baudrate >= LAST_BAUDRATE)
     {
         return false;
     }
@@ -225,7 +227,7 @@ bool Gamma868::updateConfig()
 
     // Addresses
     memcpy(&conf.local_addr, msg.conf.local_addr, 3);
-    memcpy(&conf.dest_addr,  msg.conf.dest_addr,  3);
+    memcpy(&conf.dest_addr, msg.conf.dest_addr, 3);
 
     // LoRa values
     conf.lora_sf    = static_cast<GammaSF>(msg.conf.lora_mode);
@@ -244,6 +246,6 @@ void Gamma868::waitForOk()
 {
     char reply[3];
     read(fd, reply, 3);
-    TRACE("[Gamma868] device replied: %s\n", reply);
+    LOG_DEBUG(logger, "Device replied: {}", reply);
     Thread::sleep(100);
 }

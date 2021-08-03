@@ -22,6 +22,7 @@
 
 #pragma once
 
+#include <diagnostic/PrintLogger.h>
 #include <drivers/spi/SPIDriver.h>
 #include <sensors/Sensor.h>
 
@@ -90,22 +91,6 @@ public:
     BMX160Temperature getTemperature();
 
 private:
-    float temperature = 0.0f;
-    MagnetometerData old_mag;
-    GyroscopeData old_gyr;
-    AccelerometerData old_acc;
-
-    bool is_init = false;
-    SPISlave spi_slave;
-
-    BMX160Defs::TrimData trim_data;
-    BMX160Config config;
-
-    float gyr_sensibility = 0.0f;
-    float acc_sensibility = 0.0f;
-
-    int temp_counter = 0;
-
     /**
      * @brief Execute CMD.
      *
@@ -321,4 +306,22 @@ private:
      * @brief Bosch black-box algorithm
      */
     float boschMagCompensateZ(int16_t z, uint16_t rhall);
+
+    float temperature = 0.0f;
+    MagnetometerData old_mag;
+    GyroscopeData old_gyr;
+    AccelerometerData old_acc;
+
+    bool is_init = false;
+    SPISlave spi_slave;
+
+    BMX160Defs::TrimData trim_data;
+    BMX160Config config;
+
+    float gyr_sensibility = 0.0f;
+    float acc_sensibility = 0.0f;
+
+    int temp_counter = 0;
+
+    PrintLogger logger = Logging::getLogger("bmx160");
 };

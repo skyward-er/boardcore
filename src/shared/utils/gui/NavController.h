@@ -22,6 +22,8 @@
 
 #pragma once
 
+#include <diagnostic/PrintLogger.h>
+
 #include <vector>
 
 #include "Debug.h"
@@ -124,7 +126,7 @@ private:
 
             if (text)
             {
-                TRACE("[NavController] %s\n", text->getText().c_str());
+                LOG_DEBUG(logger, "{}", text->getText().c_str());
             }
         }
     }
@@ -144,4 +146,6 @@ private:
 
     unsigned int selected_index = 0;
     std::vector<View*> vec_selectable;
+
+    PrintLogger logger = Logging::getLogger("navcontroller");
 };
