@@ -46,7 +46,8 @@ int main()
 
     TimestampTimer::enableTimestampTimer();
 
-    MS580301BA07 sensor(bus, chip_select);
+    MS580301BA07 sensor(bus, chip_select,
+                        5);  // sample temperature every 5 pressure samples
 
     Thread::sleep(100);
 
@@ -71,8 +72,7 @@ int main()
     while (true)
     {
         sensor.sample();
-        Thread::sleep(10);
-        sensor.sample();
+        Thread::sleep(100);
 
         const float last_pressure = sensor.getLastSample().press;
         const float last_temp     = sensor.getLastSample().temp;

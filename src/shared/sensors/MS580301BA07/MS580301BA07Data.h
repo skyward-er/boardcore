@@ -34,6 +34,11 @@ struct MS5803Data : public PressureData, TemperatureData
     {
     }
 
+    MS5803Data(uint64_t t, float press, uint64_t t2, float temp)
+        : PressureData{t, press}, TemperatureData{t2, temp}
+    {
+    }
+
     static std::string header()
     {
         return "press_timestamp,press,temp_timestamp,temp\n";

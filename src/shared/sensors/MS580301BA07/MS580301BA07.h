@@ -22,12 +22,12 @@
 
 #pragma once
 
+#include <cstring>
 #include "../Sensor.h"
 #include "Debug.h"
 #include "MS580301BA07Data.h"
 #include "TimestampTimer.h"
 #include "drivers/spi/SPIDriver.h"
-#include <cstring>
 
 enum MS5803Errors : uint8_t
 {
@@ -45,8 +45,10 @@ public:
         spi_ms5803.config.clock_div = SPIClockDivider::DIV128;
     }
 
-    MS580301BA07(SPIBusInterface& bus, GpioPin cs, SPIBusConfig config, uint16_t temp_div = 1)
-        : spi_ms5803(bus, cs, config), mLastTemp(0.0), mLastPressure(0.0), temp_divider(temp_div)
+    MS580301BA07(SPIBusInterface& bus, GpioPin cs, SPIBusConfig config,
+                 uint16_t temp_div = 1)
+        : spi_ms5803(bus, cs, config), raw_temp(0), last_temp(0.0),
+          last_press(0.0), temp_divider(temp_div)
     {
         memset(&cd, 0, sizeof(calibration_data));
     }
@@ -88,7 +90,7 @@ public:
               (int)cd.off, (int)cd.tcs, (int)cd.tco, (int)cd.tref,
               (int)cd.tempsens);
 
-        mStatus = 0;
+        state = 0;
 
         return true;
     }
@@ -112,46 +114,57 @@ public:
         SPITransaction spi{spi_ms5803};  // Begin an SPI transaction
 
         uint8_t rcvbuf[3];
-        uint32_t temperature = 0;
 
         MS5803Data ms5803_data = last_sample;
 
-        switch (mStatus)
+        switch (state)
         {
             case STATE_INIT:
-                spi.write(CONVERT_D1_4096);
-                mStatus = STATE_SAMPLED_PRESSURE;
+            {
+                spi.write(CONVERT_D2_4096); // Begin temperature sampling
+                state = STATE_SAMPLED_TEMPERATURE;
                 break;
-            case STATE_SAMPLED_PRESSURE:
+            }
+            case STATE_SAMPLED_TEMPERATURE:
+            {
                 spi.read(ADC_READ, rcvbuf, 3, false);
-                mInternalPressure = rcvbuf[2] | ((uint32_t)rcvbuf[1] << 8) |
-                                    ((uint32_t)rcvbuf[0] << 16);
+                
+                last_temp_timestamp = TimestampTimer::getTimestamp();
 
-                spi.write(CONVERT_D2_4096);  // Begin temperature sampling
+                // TODO use swapBytes
+                raw_temp = (uint32_t)rcvbuf[2] | ((uint32_t)rcvbuf[1] << 8) |
+                           ((uint32_t)rcvbuf[0] << 16);
+
+                spi.write(CONVERT_D1_4096);  // Begin pressure sampling
+
+                state = STATE_SAMPLED_PRESSURE;
+                break;
+            }
+            case STATE_SAMPLED_PRESSURE:
+            {
+                spi.read(ADC_READ, rcvbuf, 3, false);
+                raw_press = rcvbuf[2] | ((uint32_t)rcvbuf[1] << 8) |
+                            ((uint32_t)rcvbuf[0] << 16);
+
+                ms5803_data = updateData(raw_press, raw_temp);
 
                 temp_counter++;
                 // move to temperature sampling every temp_divider iterations
-                if (temp_counter == temp_divider)
+                if (temp_counter == temp_divider - 1)
                 {
+                    spi.write(CONVERT_D2_4096);  // Begin temperature sampling
                     temp_counter = 0;
-                    mStatus = STATE_SAMPLED_TEMPERATURE;
+                    state        = STATE_SAMPLED_TEMPERATURE;
+                }
+                else {
+                    spi.write(CONVERT_D1_4096);  // Begin pressure sampling again
                 }
                 break;
-
-            case STATE_SAMPLED_TEMPERATURE:
-                spi.read(ADC_READ, rcvbuf, 3, false);
-
-                // TODO use swapBytes
-                temperature = (uint32_t)rcvbuf[2] | ((uint32_t)rcvbuf[1] << 8) |
-                              ((uint32_t)rcvbuf[0] << 16);
-
-                ms5803_data = updateData(mInternalPressure, temperature);
-                spi.write(CONVERT_D1_4096);  // Begin pressure sampling
-                mStatus = STATE_SAMPLED_PRESSURE;
-                break;
-
+            }
             default:
+            {
                 ms5803_data = last_sample;
+            }
         }
 
         return ms5803_data;
@@ -160,20 +173,22 @@ public:
     enum FSM_State
     {
         STATE_INIT                = 0,
-        STATE_SAMPLED_PRESSURE    = 1,
-        STATE_SAMPLED_TEMPERATURE = 2
+        STATE_SAMPLED_TEMPERATURE = 1,
+        STATE_SAMPLED_PRESSURE    = 2
     };
 
-    uint8_t getState() { return mStatus; }
+    uint8_t getState() { return state; }
 
 private:
     SPISlave spi_ms5803;
 
     static constexpr uint8_t TIMEOUT = 5;
-    uint8_t mStatus;
-    uint32_t mInternalPressure;
-    float mLastTemp;
-    float mLastPressure;
+    uint8_t state;
+    uint32_t raw_press;
+    uint32_t raw_temp;
+    float last_temp;
+    float last_press;
+    uint64_t last_temp_timestamp = 0;
     uint16_t temp_divider;
     uint16_t temp_counter = 0;
 
@@ -213,11 +228,11 @@ private:
         int64_t ttemp = ((int64_t)pressure) * sens;
         int32_t pres  = ((ttemp >> 21) - offs) >> 15;
 
-        mLastTemp     = temp / 100.0f;
-        mLastPressure = pres;
+        last_temp  = temp / 100.0f;
+        last_press = pres;
 
-        return MS5803Data(TimestampTimer::getTimestamp(), mLastPressure,
-                          mLastTemp);
+        return MS5803Data(TimestampTimer::getTimestamp(), last_press,
+                          last_temp_timestamp, last_temp);
     }
 
     typedef struct
