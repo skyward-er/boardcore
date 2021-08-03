@@ -34,6 +34,11 @@ int main()
     PrintLogger log4   = Logging::getLogger("async");
 
     // Logging::getStdOutLogSink().setFormatString("{ts} [{name}] {msg}\n");
+    
+    PrintLogger logfile = Logging::getLogger("logfile");
+    unique_ptr<LogSink> logfile_sink = std::make_unique<FileLogSinkBuffered>();
+    logfile_sink->setLevel(LOGL_INFO);
+    Logging::addLogSink(logfile_sink);
 
     int async_ctr = 0;
     for (;;)
@@ -42,7 +47,7 @@ int main()
         LOG_INFO(log2, "Ops, there was an {}!", "error");
         for (int i = 0; i < 4; i++)
         {
-            LOG_INFO_ASYNC(log4, "This is an async log! {:d}", async_ctr++);
+            LOG_INFO(log4, "This is an async log! {:d}", async_ctr++);
         }
         LOG_DEBUG(log3, "This is a verbose debug message {:.3f}", 1.234f);
         LOG_CRIT(log3, "Float {:.1f} {:05.2f} {:f}", 1.234f, 1234.1234,

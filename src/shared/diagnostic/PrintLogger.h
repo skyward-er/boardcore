@@ -20,7 +20,6 @@
  * THE SOFTWARE.
  */
 
-
 #pragma once
 
 #include <fmt/format.h>
@@ -33,6 +32,10 @@
 #include "ActiveObject.h"
 #include "Singleton.h"
 #include "utils/collections/CircularBuffer.h"
+#include "logger/Logger.h"
+
+#include "PrintLoggerData.h"
+#include "LogSink.h"
 
 using std::string;
 using std::unique_ptr;
@@ -48,67 +51,6 @@ using miosix::FastMutex;
 static constexpr unsigned int ASYNC_LOG_BUFFER_SIZE = 100;
 
 class Logging;
-
-struct LogRecord
-{
-    int level;
-    string function;
-    string file;
-    int line;
-    string name;
-    string message;
-};
-
-enum LogLevel : uint8_t
-{
-    LOGL_NOTSET   = 0,
-    LOGL_DEBUG    = 10,
-    LOGL_INFO     = 20,
-    LOGL_WARNING  = 30,
-    LOGL_ERROR    = 40,
-    LOGL_CRITICAL = 50
-};
-
-class LogSink
-{
-public:
-    LogSink() {}
-    LogSink(const LogSink&) = delete;
-    LogSink& operator=(const LogSink&) = delete;
-
-    void log(const LogRecord& record);
-
-    void enable() { enabled = false; }
-
-    void disable() { enabled = false; }
-
-    void setLevel(uint8_t level) { min_level = level; }
-
-    int getLevel() { return min_level; }
-
-    void setFormatString(string format) { this->format = format; }
-
-protected:
-    virtual void logImpl(string l) = 0;
-
-private:
-    bool enabled      = true;
-    uint8_t min_level = LOGL_NOTSET;
-    string format     = "{ts} {file}:{line} {fun} {lvl} [{name}] {msg}\n";
-};
-
-class FileLogSink : public LogSink
-{
-public:
-    FileLogSink(FILE* f) : f(f) {}
-
-protected:
-    void logImpl(string l);
-
-private:
-    FILE* f;
-    FastMutex mutex;
-};
 
 class PrintLogger
 {
@@ -191,6 +133,9 @@ private:
     {
         unique_ptr<FileLogSink> serial = std::make_unique<FileLogSink>(stdout);
         serial->setLevel(DEFAULT_STDOUT_LOG_LEVEL);
+#ifndef DEBUG // do not output to serial if not in DEBUG mode
+        serial->disable();
+#endif
         sinks.push_back(std::move(serial));
     }
 

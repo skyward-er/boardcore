@@ -63,6 +63,14 @@ void FileLogSink::logImpl(string l)
     fwrite(l.c_str(), sizeof(char), l.length(), f);
 }
 
+void FileLogSinkBuffered::logImpl(string l)
+{
+    Lock<FastMutex> lock(mutex);
+    LoggingString s;
+    strncpy(s.log_string, l.c_str(), MAX_LOG_STRING_SIZE-1);
+    logger.log(s);
+}
+
 PrintLogger PrintLogger::getChild(string name)
 {
     return PrintLogger(parent, this->name + "." + name);
@@ -98,8 +106,9 @@ void PrintLogger::vlog(uint8_t level, string function, string file, int line,
     parent.log(buildLogRecord(level, function, file, line, format, args));
 }
 
-void PrintLogger::vlogAsync(uint8_t level, string function, string file, int line,
-                       fmt::string_view format, fmt::format_args args)
+void PrintLogger::vlogAsync(uint8_t level, string function, string file,
+                            int line, fmt::string_view format,
+                            fmt::format_args args)
 {
     parent.logAsync(buildLogRecord(level, function, file, line, format, args));
 }
@@ -108,7 +117,10 @@ void Logging::log(const LogRecord& record)
 {
     for (auto& s : sinks)
     {
-        s->log(record);
+        if (s->isEnabled())
+        {
+            s->log(record);
+        }
     }
 }
 
