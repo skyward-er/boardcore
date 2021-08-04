@@ -89,9 +89,16 @@ public:
      */
     BMX160Temperature getTemperature();
 
+    /**
+     * @brief Retrieve last fifo stats.
+     */
+    BMX160FifoStats getFifoStats();
+
     void IRQupdateTimestamp(uint64_t ts) override;
 
 private:
+    BMX160FifoStats stats = {};
+
     float temperature = 0.0f;
     MagnetometerData old_mag;
     GyroscopeData old_gyr;

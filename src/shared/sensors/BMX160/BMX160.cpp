@@ -175,6 +175,10 @@ BMX160Temperature BMX160::getTemperature()
     return t;
 }
 
+BMX160FifoStats BMX160::getFifoStats() {
+    return stats;
+}
+
 void BMX160::sendCmd(SPITransaction& spi, BMX160Defs::Cmd cmd,
                      BMX160Defs::PowerMode pmu)
 {
@@ -834,6 +838,12 @@ void BMX160::readFifo(bool headerless)
             }
         }
     }    
+
+    // Update fifo statistics
+    stats.wts = watermark_ts;
+    stats.ts = timestamp;
+    stats.dt = dt_interrupt;
+    stats.len = len;
 
     // Adjust timestamps
     for (int i = 0; i < last_fifo_level; i++)
