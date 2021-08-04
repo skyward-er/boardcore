@@ -22,6 +22,8 @@
 
 #pragma once
 
+#include "math/Stats.h"
+
 #include "HoneywellPressureSensor.h"
 #include "SSCDRRN015PDAData.h"
 
@@ -32,9 +34,48 @@ class SSCDRRN015PDA final : public HoneywellPressureSensor<SSCDRRN015PDAData>
 {
 public:
     SSCDRRN015PDA(std::function<ADCData()> getSensorVoltage_,
-                  const float V_SUPPLY_ = 5.0)
+                  const float V_SUPPLY_                 = 5.0,
+                  const unsigned int num_calib_samples_ = 200)
         : HoneywellPressureSensor(getSensorVoltage_, V_SUPPLY_, 103421.3594,
-                                  -103421.3594)
+                                  -103421.3594),
+          offset(0.0), num_calib_samples(num_calib_samples_)
     {
     }
+
+    SSCDRRN015PDAData sampleImpl() override
+    {
+        last_sample = HoneywellPressureSensor<SSCDRRN015PDAData>::sampleImpl();
+
+        if (calibrating)
+        {
+            press_stats.add(last_sample.press);
+
+            if (press_stats.getStats().nSamples >= num_calib_samples)
+            {
+                calibrating = false;
+                offset      = press_stats.getStats().mean;
+
+                TRACE("Differential barometer offset : %.2f \n", offset);
+            }
+        }
+
+        last_sample.press = last_sample.press - offset;
+
+        return last_sample;
+    }
+
+    void calibrate()
+    {
+        press_stats.reset();
+        offset = 0.0f;
+        calibrating = true;
+    }
+
+    bool isCalibrating() { return calibrating; }
+
+private:
+    bool calibrating = false;
+    float offset;
+    Stats press_stats;
+    unsigned int num_calib_samples;
 };
