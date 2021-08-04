@@ -89,6 +89,8 @@ public:
      */
     BMX160Temperature getTemperature();
 
+    void IRQupdateTimestamp(uint64_t ts) override;
+
 private:
     float temperature = 0.0f;
     MagnetometerData old_mag;
@@ -105,6 +107,12 @@ private:
     float acc_sensibility = 0.0f;
 
     int temp_counter = 0;
+
+    /**
+     * Sometimes the sensor pulls down the interrupt pin while reading data.
+     * We use this variable to ignore incoming interrupts while reading the fifo.
+     */
+    bool irq_enable = true;
 
     /**
      * @brief Execute CMD.
@@ -267,7 +275,7 @@ private:
      * @param downs downsampling of the input.
      * @return Time between samples.
      */
-    uint32_t odrToTimeOffset(BMX160Config::OutputDataRate odr, uint8_t downs);
+    uint64_t odrToTimeOffset(BMX160Config::OutputDataRate odr, uint8_t downs);
 
     /**
      * @brief Read the value of the temperature sensor

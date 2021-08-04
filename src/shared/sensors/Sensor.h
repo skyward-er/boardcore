@@ -144,7 +144,7 @@ public:
      *
      * @param ts Timestamp of the lasts interrupt, in microseconds
      */
-    inline void IRQupdateTimestamp(uint64_t ts)
+    inline virtual void IRQupdateTimestamp(uint64_t ts)
     {
         dt_interrupt      = ts - last_interrupt_us;
         last_interrupt_us = ts;

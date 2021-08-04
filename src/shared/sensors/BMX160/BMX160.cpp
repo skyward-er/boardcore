@@ -104,6 +104,14 @@ bool BMX160::selfTest()
     }
 }
 
+void BMX160::IRQupdateTimestamp(uint64_t ts) 
+{
+    // Prevent interrupts while reading fifo
+    if(irq_enable) {
+        SensorFIFO::IRQupdateTimestamp(ts);
+    }
+}
+
 BMX160Data BMX160::sampleImpl()
 {
 #ifdef DEBUG
@@ -416,7 +424,7 @@ void BMX160::initInt()
 
         // Enable FIFO full interrupt and fifo watermark
         spi.write(BMX160Defs::REG_INT_EN_1,
-                  BMX160Defs::INT_EN_1_FIFO_FULL |
+                  // BMX160Defs::INT_EN_1_FIFO_FULL |
                       BMX160Defs::INT_EN_1_FIFO_WATERMARK);
 
         // Enable interrupt pin map
@@ -424,7 +432,7 @@ void BMX160::initInt()
         {
             // Configure to use INT1
             spi.write(BMX160Defs::REG_INT_MAP_1,
-                      BMX160Defs::INT_MAP_1_INT_1_FIFO_FULL |
+                      // BMX160Defs::INT_MAP_1_INT_1_FIFO_FULL |
                           BMX160Defs::INT_MAP_1_INT_1_FIFO_WATERMARK);
         }
         else
@@ -628,11 +636,11 @@ const char* BMX160::debugErr(SPITransaction& spi)
     }
 }
 
-uint32_t BMX160::odrToTimeOffset(BMX160Config::OutputDataRate odr,
+uint64_t BMX160::odrToTimeOffset(BMX160Config::OutputDataRate odr,
                                  uint8_t downs)
 {
     // Adjust ODR for downsampling
-    uint8_t real_odr = static_cast<uint32_t>(odr) - (downs & 3);
+    uint8_t real_odr = static_cast<uint64_t>(odr) - (downs & 3);
 
     // Hz = 100 / 2^(8-odr)
     // Sec = 2^(13-odr) / 3200
@@ -674,6 +682,10 @@ void BMX160::readData()
 
 void BMX160::readFifo(bool headerless)
 {
+    miosix::actuators::nosecone::thCut1::ena::getPin().low();
+    
+    irq_enable = false;
+
     SPITransaction spi(spi_slave);
 
     int len = spi.read(BMX160Defs::REG_FIFO_LENGTH_0) |
@@ -702,14 +714,15 @@ void BMX160::readFifo(bool headerless)
     old_acc.accel_timestamp -= dt_interrupt;
 
     // Calculate time offset
-    uint32_t time_offset = std::min({
+    uint64_t time_offset = std::min({
         odrToTimeOffset(config.mag_odr, 0),
         odrToTimeOffset(config.gyr_odr, config.fifo_gyr_downs),
         odrToTimeOffset(config.acc_odr, config.fifo_acc_downs),
     });
 
     spi.read(BMX160Defs::REG_FIFO_DATA, buf, len);
-    uint32_t timestamp = 0;
+    uint64_t timestamp = 0;
+    uint64_t watermark_ts = 0;
 
     int idx = 0;
     while (idx < len && buf[idx] != BMX160Defs::FIFO_STOP_BYTE)
@@ -727,6 +740,10 @@ void BMX160::readFifo(bool headerless)
 
             // Push a new sample into the fifo
             pushSample(BMX160Data{old_acc, old_gyr, old_mag});
+
+            if(watermark_ts == 0 && idx >= (config.fifo_watermark * 4)) {
+                watermark_ts = timestamp;
+            }
 
             timestamp += time_offset;
         }
@@ -766,6 +783,10 @@ void BMX160::readFifo(bool headerless)
                 // Push a new sample into the fifo
                 pushSample(BMX160Data{old_acc, old_gyr, old_mag});
 
+                if(watermark_ts == 0 && idx >= (config.fifo_watermark * 4)) {
+                    watermark_ts = timestamp;
+                }
+
                 timestamp += time_offset;
             }
             else if ((header & BMX160Defs::FIFO_HEADER_MODE_MASK) ==
@@ -803,15 +824,17 @@ void BMX160::readFifo(bool headerless)
                 break;
             }
         }
-    }
+    }    
 
     // Adjust timestamps
     for (int i = 0; i < last_fifo_level; i++)
     {
-        last_fifo[i].accel_timestamp += last_interrupt_us - timestamp;
-        last_fifo[i].gyro_timestamp += last_interrupt_us - timestamp;
-        last_fifo[i].mag_timestamp += last_interrupt_us - timestamp;
+        last_fifo[i].accel_timestamp += last_interrupt_us - watermark_ts;
+        last_fifo[i].gyro_timestamp += last_interrupt_us - watermark_ts;
+        last_fifo[i].mag_timestamp += last_interrupt_us - watermark_ts;
     }
+
+    irq_enable = true;
 }
 
 template <typename T>
