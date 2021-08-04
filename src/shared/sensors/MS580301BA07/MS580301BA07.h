@@ -200,6 +200,15 @@ private:
 
     MS5803Data updateData(uint32_t pressure, uint32_t temperature)
     {
+        // If the ADC has not finished the conversion, the read value is
+        // not valid. Ignore it if either the raw pressure or the raw
+        // temperature are zero and return the last valid sample without
+        // updating it
+        if (pressure == 0 || temperature == 0)
+        {
+            return last_sample;
+        }
+
         int32_t dt   = temperature - (((uint32_t)cd.tref) << 8);
         int32_t temp = 2000 + (((uint64_t)dt * cd.tempsens) >> 23);
 
