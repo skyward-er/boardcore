@@ -66,11 +66,20 @@ bool BMX160::init()
     {
         SPITransaction spi(spi_slave);
 
+        uint8_t out_ctrl = 0;
+        out_ctrl |= BMX160Defs::INT_OUT_CTRL_INT2_OUT_EN |
+                        BMX160Defs::INT_OUT_CTRL_INT1_OUT_EN;
+
+        if(config.int1_mode == BMX160Config::IntMode::OPEN_DRAIN) {
+            out_ctrl |= BMX160Defs::INT_OUT_CTRL_INT1_OD;
+        }
+        if(config.int2_mode == BMX160Config::IntMode::OPEN_DRAIN) {
+            out_ctrl |= BMX160Defs::INT_OUT_CTRL_INT2_OD;
+        }
+
         // Enable both interrupt pins, otherwise they'll just float.
         // We configure both of them as push-pull and active-low
-        spi.write(BMX160Defs::REG_INT_OUT_CTRL,
-                  BMX160Defs::INT_OUT_CTRL_INT2_OUT_EN |
-                      BMX160Defs::INT_OUT_CTRL_INT1_OUT_EN);
+        spi.write(BMX160Defs::REG_INT_OUT_CTRL, out_ctrl);
     }
 
     initAcc();

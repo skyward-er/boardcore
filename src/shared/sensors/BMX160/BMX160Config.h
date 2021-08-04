@@ -124,6 +124,17 @@ struct BMX160Config
     };
 
     /**
+     * @brief Interrupt pin mode.
+     * 
+     * Configuration for interrupt pin behaviour.
+     */
+    enum class IntMode
+    {
+        PUSH_PULL,  //< Push-pull behaviour.
+        OPEN_DRAIN, //< Open drain behaviour.
+    };
+
+    /**
      * @brief Fifo watermark to use, in multiples of 4.
      *
      * Only values between [0-250] make sense to use.
@@ -223,6 +234,9 @@ struct BMX160Config
     GyroscopeMeasureUnit gyr_unit = GyroscopeMeasureUnit::DEG;
 
     OutputDataRate mag_odr = OutputDataRate::HZ_100;
+
+    IntMode int1_mode = IntMode::PUSH_PULL;
+    IntMode int2_mode = IntMode::PUSH_PULL;
 
     BMX160Config() {}
 };
