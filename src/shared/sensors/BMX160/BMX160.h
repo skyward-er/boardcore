@@ -90,6 +90,18 @@ public:
      */
     BMX160Temperature getTemperature();
 
+    /**
+     * @brief Retrieve last fifo stats.
+     */
+    BMX160FifoStats getFifoStats();
+
+    /**
+     * @brief Sometimes the sensor pulls down the interrupt pin while reading
+     * data. We override this method and update the timestamps only if we are
+     * not still reading the fifo (see irq_enabled).
+     */
+    void IRQupdateTimestamp(uint64_t ts) override;
+
 private:
     /**
      * @brief Execute CMD.
@@ -252,7 +264,7 @@ private:
      * @param downs downsampling of the input.
      * @return Time between samples.
      */
-    uint32_t odrToTimeOffset(BMX160Config::OutputDataRate odr, uint8_t downs);
+    uint64_t odrToTimeOffset(BMX160Config::OutputDataRate odr, uint8_t downs);
 
     /**
      * @brief Read the value of the temperature sensor
@@ -318,10 +330,19 @@ private:
     BMX160Defs::TrimData trim_data;
     BMX160Config config;
 
+    BMX160FifoStats stats;
+
     float gyr_sensibility = 0.0f;
     float acc_sensibility = 0.0f;
 
     int temp_counter = 0;
+
+    /**
+     * Sometimes the sensor pulls down the interrupt pin while reading data.
+     * We use this variable to ignore incoming interrupts while reading the
+     * fifo.
+     */
+    bool irq_enabled = true;
 
     PrintLogger logger = Logging::getLogger("bmx160");
 };

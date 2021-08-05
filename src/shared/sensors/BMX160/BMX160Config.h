@@ -43,7 +43,7 @@ struct BMX160Config
      * Uses fifo full/watermark as triggers.
      * We configure the pin as push-pull and active-low.
      */
-    enum class FifoInterruptMode
+    enum class FifoInterruptPin
     {
 
         DISABLED,  ///< The interrupts are completely disabled.
@@ -121,6 +121,17 @@ struct BMX160Config
         NORMAL = 0x20,  ///< Normal filter operation.
         OSR2   = 0x10,  ///< Oversampling rate of 2.
         OSR4   = 0x00,  ///< Oversampling rate of 4.
+    };
+
+    /**
+     * @brief Interrupt pin mode.
+     *
+     * Configuration for interrupt pin behaviour.
+     */
+    enum class IntMode
+    {
+        PUSH_PULL,   //< Push-pull behaviour.
+        OPEN_DRAIN,  //< Open drain behaviour.
     };
 
     /**
@@ -210,8 +221,8 @@ struct BMX160Config
      */
     uint8_t fifo_gyr_downs = 0;
 
-    FifoMode fifo_mode         = FifoMode::DISABLED;
-    FifoInterruptMode fifo_int = FifoInterruptMode::DISABLED;
+    FifoMode fifo_mode        = FifoMode::DISABLED;
+    FifoInterruptPin fifo_int = FifoInterruptPin::DISABLED;
 
     OutputDataRate acc_odr       = OutputDataRate::HZ_100;
     BandwidthParameter acc_bwp   = BandwidthParameter::NORMAL;
@@ -220,9 +231,12 @@ struct BMX160Config
     OutputDataRate gyr_odr        = OutputDataRate::HZ_100;
     BandwidthParameter gyr_bwp    = BandwidthParameter::NORMAL;
     GyroscopeRange gyr_range      = GyroscopeRange::DEG_2000;
-    GyroscopeMeasureUnit gyr_unit = GyroscopeMeasureUnit::DEG;
+    GyroscopeMeasureUnit gyr_unit = GyroscopeMeasureUnit::RAD;
 
     OutputDataRate mag_odr = OutputDataRate::HZ_100;
+
+    IntMode int1_mode = IntMode::PUSH_PULL;
+    IntMode int2_mode = IntMode::PUSH_PULL;
 
     BMX160Config() {}
 };

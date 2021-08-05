@@ -56,7 +56,7 @@ int main()
     BMX160Config bmx_config;
     bmx_config.fifo_mode      = BMX160Config::FifoMode::HEADER;
     bmx_config.fifo_watermark = 500 / 4;
-    bmx_config.fifo_int       = BMX160Config::FifoInterruptMode::PIN_INT1;
+    bmx_config.fifo_int       = BMX160Config::FifoInterruptPin::PIN_INT1;
 
     bmx_config.temp_divider = 0;
 
@@ -159,6 +159,8 @@ int main()
 
 void bmx160Sample(void *args)
 {
+    UNUSED(args);
+    
     while (!stopSamplingThread)
     {
         // Sample the bmx160

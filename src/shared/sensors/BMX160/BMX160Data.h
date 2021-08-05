@@ -64,3 +64,21 @@ struct BMX160Temperature : public TemperatureData
         os << temp_timestamp << "," << temp << "\n";
     }
 };
+
+/**
+ * @brief BMX160 fifo statistics.
+ */
+struct BMX160FifoStats
+{
+    uint64_t wts; //< Watermark timestamp (from the start of the fifo).
+    uint64_t ts;  //< Total timestamp (from the start of the fifo).
+    uint64_t dt;  //< Reported delta time.
+    int len; //< Fifo length in bytes.
+
+    static std::string header() { return "watermark_ts,ts,interrupt_dt,fifo_len\n"; }
+
+    void print(std::ostream& os) const
+    {
+        os << wts << "," << ts << "," << dt << "," << len << "\n";
+    }
+};

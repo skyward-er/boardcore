@@ -87,7 +87,9 @@ enum FIFO_DOWNS
 enum INT_OUT_CTRL
 {
     INT_OUT_CTRL_INT2_OUT_EN = 0x80,  ///< Output enable for INT2 pin.
+    INT_OUT_CTRL_INT2_OD     = 0x40,  ///< Open drain enable for INT2 pin.
     INT_OUT_CTRL_INT1_OUT_EN = 0x08,  ///< Output enable for INT1 pin.
+    INT_OUT_CTRL_INT1_OD     = 0x04,  ///< Open drain enable for INT1 pin.
 };
 
 /**

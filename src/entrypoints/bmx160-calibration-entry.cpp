@@ -184,7 +184,7 @@ BMX160CorrectionParameters calibrateAccelerometer(
     BMX160Config bmx_config;
     bmx_config.fifo_mode      = BMX160Config::FifoMode::HEADER;
     bmx_config.fifo_watermark = 100;
-    bmx_config.fifo_int       = BMX160Config::FifoInterruptMode::PIN_INT1;
+    bmx_config.fifo_int       = BMX160Config::FifoInterruptPin::PIN_INT1;
 
     bmx_config.temp_divider = 0;
 
