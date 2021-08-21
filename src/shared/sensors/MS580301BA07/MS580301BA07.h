@@ -204,7 +204,7 @@ private:
         // not valid. Ignore it if either the raw pressure or the raw
         // temperature are zero and return the last valid sample without
         // updating it
-        if (pressure == 0 || temperature == 0)
+        if (pressure <= 0 || temperature == 0)
         {
             return last_sample;
         }
