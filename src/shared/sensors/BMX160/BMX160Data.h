@@ -70,15 +70,21 @@ struct BMX160Temperature : public TemperatureData
  */
 struct BMX160FifoStats
 {
-    uint64_t wts; //< Watermark timestamp (from the start of the fifo).
-    uint64_t ts;  //< Total timestamp (from the start of the fifo).
-    uint64_t dt;  //< Reported delta time.
-    int len; //< Fifo length in bytes.
+    uint64_t watermark_ts;   //< Watermark timestamp (from the start of
+                             // the fifo)
+    uint64_t fifo_duration;  //< Total fifo duration
+    uint64_t interrupt_dt;   //< Reported delta time between the previous
+                             // interrupt and the current one.
+    int len;                 //< Fifo length in bytes.
 
-    static std::string header() { return "watermark_ts,ts,interrupt_dt,fifo_len\n"; }
+    static std::string header()
+    {
+        return "watermark_ts,fifo_duration,interrupt_dt,fifo_len\n";
+    }
 
     void print(std::ostream& os) const
     {
-        os << wts << "," << ts << "," << dt << "," << len << "\n";
+        os << watermark_ts << "," << fifo_duration << "," << interrupt_dt << ","
+           << len << "\n";
     }
 };

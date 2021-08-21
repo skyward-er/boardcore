@@ -98,7 +98,7 @@ public:
     /**
      * @brief Sometimes the sensor pulls down the interrupt pin while reading
      * data. We override this method and update the timestamps only if we are
-     * not still reading the fifo (see irq_enabled).
+     * not still reading the fifo ( @see{irq_enabled} ).
      */
     void IRQupdateTimestamp(uint64_t ts) override;
 
