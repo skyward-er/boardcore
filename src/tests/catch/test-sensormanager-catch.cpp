@@ -24,13 +24,16 @@
 #include "catch-tests-entry.cpp"
 #endif
 
+#include <iostream>
+
+#include "utils/testutils/TestSensor.h"
+#include "utils/testutils/catch.hpp"
+
 #define private public
 #define protected public
 
 #include "sensors/SensorInfo.h"
 #include "sensors/SensorManager.h"
-#include "utils/testutils/TestSensor.h"
-#include "utils/testutils/catch.hpp"
 
 static const uint8_t FIRST_TASK_ID = 7;  // used to test IDs assignment to tasks
 
