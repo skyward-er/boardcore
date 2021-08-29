@@ -337,6 +337,9 @@ private:
 
     int temp_counter = 0;
 
+    // Sometimes the buffer gets over 1000
+    static constexpr unsigned int FIFO_BUF_SIZE = 1100;
+
     /**
      * Sometimes the sensor pulls down the interrupt pin while reading data.
      * We use this variable to ignore incoming interrupts while reading the

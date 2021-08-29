@@ -140,7 +140,7 @@ BMX160Data BMX160::sampleImpl()
 
     if (last_error != SensorErrors::NO_ERRORS || last_fifo_level == 0)
     {
-        // Something went wront, return dummy data
+        // Something went wrong, return dummy data
         return BMX160Data{};
     }
     else
@@ -709,8 +709,7 @@ void BMX160::readFifo(bool headerless)
         return;
     }
 
-    // Sometimes the buffer gets over 1000
-    uint8_t buf[1100];
+    uint8_t buf[FIFO_BUF_SIZE];
 
 #ifdef DEBUG
     assert(len <= static_cast<int>(sizeof(buf)) && "Buffer overflow!");
@@ -718,9 +717,12 @@ void BMX160::readFifo(bool headerless)
 
     // Shift the old timestamps, this allows to use old timestamps with the
     // current frame.
-    old_mag.mag_timestamp -= dt_interrupt;
-    old_gyr.gyro_timestamp -= dt_interrupt;
-    old_acc.accel_timestamp -= dt_interrupt;
+    if (old_mag.mag_timestamp != 0)
+        old_mag.mag_timestamp -= dt_interrupt;
+    if (old_gyr.gyro_timestamp != 0)
+        old_gyr.gyro_timestamp -= dt_interrupt;
+    if (old_acc.accel_timestamp != 0)
+        old_acc.accel_timestamp -= dt_interrupt;
 
     // Calculate time offset
     uint64_t time_offset = std::min({
@@ -836,10 +838,10 @@ void BMX160::readFifo(bool headerless)
     }
 
     // Update fifo statistics
-    stats.watermark_ts = watermark_ts;
-    stats.fifo_duration  = timestamp;
+    stats.watermark_ts  = watermark_ts;
+    stats.fifo_duration = timestamp;
     stats.interrupt_dt  = dt_interrupt;
-    stats.len = len;
+    stats.len           = len;
 
     // Adjust timestamps
     for (int i = 0; i < last_fifo_level; i++)
