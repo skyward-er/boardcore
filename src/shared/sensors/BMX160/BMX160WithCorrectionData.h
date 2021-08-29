@@ -78,3 +78,27 @@ struct BMX160WithCorrectionData : public BMX160Data
            << mag_y << "," << mag_z << "\n";
     }
 };
+
+struct BMX160GyroscopeCalibrationBiases
+{
+    float bx;
+    float by;
+    float bz;
+
+    BMX160GyroscopeCalibrationBiases() {}
+
+    BMX160GyroscopeCalibrationBiases(float x, float y, float z)
+        : bx(x), by(y), bz(z)
+    {
+    }
+
+    static std::string header()
+    {
+        return "bias_x,bias_y,bias_z\n";
+    }
+
+    void print(std::ostream& os) const
+    {
+        os << bx << "," << by << "," << bz << "\n";
+    }
+};

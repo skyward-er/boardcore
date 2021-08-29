@@ -101,6 +101,11 @@ public:
     static BMX160CorrectionParameters readCorrectionParametersFromFile(
         const char* fileName);
 
+    /**
+     * @return Gyroscope calibration biases.
+     */
+    BMX160GyroscopeCalibrationBiases getGyroscopeBiases();
+
 private:
     BMX160WithCorrectionData sampleImpl() override;
 
@@ -119,6 +124,8 @@ private:
     SixParameterCorrector<AccelerometerData> accelerometerCorrector;
     SixParameterCorrector<MagnetometerData> magnetometerCorrector;
     BiasCorrector<GyroscopeData> gyroscopeCorrector{};
+
+    Vector3f gyroscopeCorrectionParameters;
 
     PrintLogger logger = Logging::getLogger("bmx160withcorrection");
 };

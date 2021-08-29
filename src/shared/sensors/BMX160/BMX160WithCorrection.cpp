@@ -169,8 +169,6 @@ bool BMX160WithCorrection::calibrate()
     }
 
     // Print the calibraton data
-
-    Vector3f gyroscopeCorrectionParameters;
     gyroscopeCorrector >> gyroscopeCorrectionParameters;
     LOG_INFO(logger, "Gyroscope bias vector from calibration\n");
     LOG_INFO(logger, "b = [    {: >2.5f}    {: >2.5f}    {: >2.5f}    ]\n\n",
@@ -178,6 +176,13 @@ bool BMX160WithCorrection::calibrate()
              gyroscopeCorrectionParameters(2));
 
     return true;
+}
+
+BMX160GyroscopeCalibrationBiases BMX160WithCorrection::getGyroscopeBiases()
+{
+    return BMX160GyroscopeCalibrationBiases{gyroscopeCorrectionParameters(0),
+                                            gyroscopeCorrectionParameters(1),
+                                            gyroscopeCorrectionParameters(2)};
 }
 
 BMX160CorrectionParameters
