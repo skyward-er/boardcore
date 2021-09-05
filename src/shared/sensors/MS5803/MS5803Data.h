@@ -1,5 +1,5 @@
-/* Copyright (c) 2015-2018 Skyward Experimental Rocketry
- * Author: Luca Erbetta
+/* Copyright (c) 2015-2021 Skyward Experimental Rocketry
+ * Author: Luca Erbetta, Alberto Nidasio
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -24,18 +24,29 @@
 
 #include "sensors/SensorData.h"
 
+/**
+ * @brief MS5803 calibration data. See page 13 of datasheet for more details.
+ */
+struct MS5803CalibrationData
+{
+    uint16_t sens     = 0;
+    uint16_t off      = 0;
+    uint16_t tcs      = 0;
+    uint16_t tco      = 0;
+    uint16_t tref     = 0;
+    uint16_t tempsens = 0;
+};
+
 struct MS5803Data : public PressureData, TemperatureData
 {
 
     MS5803Data() : PressureData{0, 0.0}, TemperatureData{0, 0.0} {}
 
-    MS5803Data(uint64_t t, float press, float temp)
-        : PressureData{t, press}, TemperatureData{t, temp}
-    {
-    }
-
-    MS5803Data(uint64_t t, float press, uint64_t t2, float temp)
-        : PressureData{t, press}, TemperatureData{t2, temp}
+    MS5803Data(uint64_t pressureTimestamp, float pressure,
+               uint64_t temperatureTimestamp, float temperature)
+        : PressureData{pressureTimestamp, pressure}, TemperatureData{
+                                                         temperatureTimestamp,
+                                                         temperature}
     {
     }
 

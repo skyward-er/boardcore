@@ -24,44 +24,39 @@
 #include <drivers/spi/SPIDriver.h>
 #include <drivers/spi/SensorSpi.h>
 #include <interfaces-impl/hwmapping.h>
+#include <sensors/MS5803/MS5803.h>
 #include <sensors/SensorSampler.h>
 
-#include "sensors/MS580301BA07/MS580301BA07.h"
-
 using namespace miosix;
-using namespace miosix::interfaces;
 
-SPIBus bus{SPI1};
-GpioPin chip_select{GPIOD_BASE, 7};
+/**
+ * This test is intended to be run on the Death Stack X
+ */
 
 int main()
 {
-    // Activate the SPI bus
-    {
-        FastInterruptDisableLock dLock;
-        RCC->APB2ENR |= RCC_APB2ENR_SPI1EN;
-
-        // SCK, MISO, MOSI already initialized in the bsp
-    }
-
     TimestampTimer::enableTimestampTimer();
 
-    MS580301BA07 sensor(bus, chip_select,
-                        5);  // sample temperature every 5 pressure samples
+    SPIBusConfig spiConfig;
+    SPIBus spiBus(SPI1);
+    SPISlave spiSlave(spiBus, miosix::sensors::ms5803::cs::getPin(), spiConfig);
+
+    // Sample temperature every 5 pressure samples
+    MS5803 sensor(spiSlave, 5);
 
     Thread::sleep(100);
 
     if (sensor.init())
     {
-        printf("MS58 Init succeeded\n");
+        printf("MS5803 Init succeeded\n");
     }
     else
     {
-        printf("MS58 Init failed\n");
+        printf("MS5803 Init failed\n");
 
         while (!sensor.init())
         {
-            printf("MS58 Init failed\n");
+            printf("MS5803 Init failed\n");
             Thread::sleep(1000);
         }
     }
