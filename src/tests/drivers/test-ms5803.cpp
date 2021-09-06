@@ -42,23 +42,13 @@ int main()
     SPISlave spiSlave(spiBus, miosix::sensors::ms5803::cs::getPin(), spiConfig);
 
     // Sample temperature every 5 pressure samples
-    MS5803 sensor(spiSlave, 5);
+    MS5803 sensor(spiSlave, 10);
 
     Thread::sleep(100);
 
-    if (sensor.init())
-    {
-        printf("MS5803 Init succeeded\n");
-    }
-    else
+    if (!sensor.init())
     {
         printf("MS5803 Init failed\n");
-
-        while (!sensor.init())
-        {
-            printf("MS5803 Init failed\n");
-            Thread::sleep(1000);
-        }
     }
 
     Thread::sleep(100);
@@ -67,14 +57,11 @@ int main()
     while (true)
     {
         sensor.sample();
-        Thread::sleep(100);
 
-        const float last_pressure = sensor.getLastSample().press;
-        const float last_temp     = sensor.getLastSample().temp;
-        MS5803Data md             = sensor.getLastSample();
-        printf("%llu,%f,%llu,%f\n", md.press_timestamp, last_pressure,
-               md.temp_timestamp, last_temp);
+        MS5803Data data = sensor.getLastSample();
+        printf("%llu,%f,%llu,%f\n", data.press_timestamp, data.press,
+               data.temp_timestamp, data.temp);
 
-        Thread::sleep(100);
+        Thread::sleep(10);
     }
 }

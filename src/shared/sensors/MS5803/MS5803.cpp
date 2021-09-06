@@ -174,13 +174,14 @@ MS5803Data MS5803::updateData()
     offs = offs - off2;
     sens = sens - sens2;
 
-    float pressure = (((((int64_t)rawPressure) * sens) >> 21) - offs) >> 15;
+    float pressure =
+        (((((int64_t)rawPressure) * sens) / 2097152.0) - offs) / 32786.0;
 
     // Pressure in Pascal
-    temp = temp / 100.0f;
+    float temp_ = temp / 100.0f;
 
     return MS5803Data(TimestampTimer::getTimestamp(), pressure,
-                      lastTemperatureTimestamp, temp);
+                      lastTemperatureTimestamp, temp_);
 }
 
 uint16_t MS5803::readReg(SPITransaction& transaction, uint8_t reg)
