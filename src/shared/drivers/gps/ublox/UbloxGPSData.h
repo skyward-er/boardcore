@@ -37,6 +37,6 @@ struct UbloxGPSData : public GPSData
         os << gps_timestamp << "," << latitude << "," << longitude << ","
            << height << "," << velocity_north << "," << velocity_east << ","
            << velocity_down << "," << speed << "," << track << ","
-           << num_satellites << "," << fix << "\n";
+           << (int)num_satellites << "," << (int)fix << "\n";
     }
 };
