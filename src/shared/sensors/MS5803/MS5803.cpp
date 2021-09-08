@@ -30,6 +30,13 @@ MS5803::MS5803(SPISlave spiSlave_, uint16_t temperatureDivider_)
 {
 }
 
+MS5803::MS5803(SPIBusInterface& spiBus_, miosix::GpioPin cs_,
+               SPIBusConfig spiConfig_, uint16_t temperatureDivider_)
+    : spiSlave(spiBus_, cs_, spiConfig_),
+      temperatureDivider(temperatureDivider_)
+{
+}
+
 bool MS5803::init()
 {
     SPITransaction transaction{spiSlave};
