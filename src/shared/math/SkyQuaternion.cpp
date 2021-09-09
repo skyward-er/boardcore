@@ -20,53 +20,65 @@
  * THE SOFTWARE.
  */
 
- // Convention used: qx, qy, qz, qw
-
 #include "SkyQuaternion.h"
+#include "Constants.h"
 #include "iostream"
+
 using namespace std;
 
 SkyQuaternion::SkyQuaternion() {}
 
-Vector4f SkyQuaternion::eul2quat(Vector3f degeul) // ZYX rotation
+Vector4f SkyQuaternion::eul2quat(Vector3f degeul)  // ZYX rotation
 {
-    float eulx = degeul(0) * 3.14F / 180.0F;  
-    float euly = degeul(1) * 3.14F / 180.0F;
-    float eulz = degeul(2) * 3.14F / 180.0F;
+    float yaw = degeul(0) * DEGREES_TO_RADIANS;
+    float pitch = degeul(1) * DEGREES_TO_RADIANS;
+    float roll = degeul(2) * DEGREES_TO_RADIANS;
 
-    float cx = cosf(eulx * 0.5F);
-    float sx = sinf(eulx * 0.5F);
-    float cy = cosf(euly * 0.5F);
-    float sy = sinf(euly * 0.5F);
-    float cz = cosf(eulz * 0.5F);
-    float sz = sinf(eulz * 0.5F);
+    float cyaw = cosf(yaw * 0.5F);
+    float syaw = sinf(yaw * 0.5F);
+    float cpitch = cosf(pitch * 0.5F);
+    float spitch = sinf(pitch * 0.5F);
+    float croll = cosf(roll * 0.5F);
+    float sroll = sinf(roll * 0.5F);
 
-    float q1 = sx * cy * cz - cx * sy * sz;
-    float q2 = cx * sy * cz + sx * cy * sz;
-    float q3 = cx * cy * sz - sx * sy * cz;
-    float q4 = cx * cy * cz + sx * sy * sz;
+    float qx = cyaw * cpitch * sroll - syaw * spitch * croll;
+    float qy = cyaw * spitch * croll + syaw * cpitch * sroll;
+    float qz = syaw * cpitch * croll - cyaw * spitch * sroll;
+    float qw = cyaw * cpitch * croll + syaw * spitch * sroll;
 
-    Vector4f quat(q1, q2, q3, q4);
+    Vector4f quat(qx, qy, qz, qw);
 
     return quat;
 }
 
 Vector3f SkyQuaternion::quat2eul(Vector4f quater)
 {
-    float q1 = quater(0);
-    float q2 = quater(1);
-    float q3 = quater(2);
-    float q4 = quater(3);
+    float qx = quater(0);
+    float qy = quater(1);
+    float qz = quater(2);
+    float qw = quater(3);
 
-    float eulx =
-        atan2f(2.0F * (q4 * q1 + q2 * q3), 1.0F - 2.0F * (powf(q1, 2) + powf(q2, 2)));
-    float euly = asinf(2.0F * (q4 * q2 - q3 * q1));
-    float eulz =
-        atan2f(2.0F * (q4 * q3 + q1 * q2), 1.0F - 2.0F * (powf(q2, 2) + powf(q3, 2)));
+    float yaw = atan2f(2.0F * (qx * qy + qw * qz),
+                        powf(qw, 2) + powf(qx, 2) - powf(qy, 2) - powf(qz, 2));
 
-    Vector3f eul(eulx, euly, eulz);
+    float a    = -2.0F * (qx * qz - qw * qy);
+    if (a > 1.0F)
+    {
+        a = 1.0F;
+    }
+    else if (a < -1.0F)
+    {
+        a = -1.0F;
+    }
 
-    return eul * 180.0F / 3.14F;
+    float pitch = asinf(a);
+
+    float roll = atan2f(2.0F * (qy * qz + qw * qx),
+                        powf(qw, 2) - powf(qx, 2) - powf(qy, 2) + powf(qz, 2));
+
+    Vector3f eul(roll, pitch, yaw);
+
+    return eul * 180.0F / PI;
 }
 
 Vector4f SkyQuaternion::rotm2quat(Matrix3f R)
@@ -80,33 +92,65 @@ Vector4f SkyQuaternion::rotm2quat(Matrix3f R)
     float r31 = R(2, 0);
     float r32 = R(2, 1);
     float r33 = R(2, 2);
-    
-    float q1;
-    float q2;
-    float q3;
-    float q4;
-        
-    if (r11-r22-r33 > 0)
-        q1 = 0.5 * sqrt(1+r11-r22-r33);
-    else
-        q1 = 0.5 * sqrt(((r32-r23)*(r32-r23) + (r12+r21)*(r12+r21) + (r31+r13)*(r31+r13)) / (3-r11+r22+r33));
-        
-    if (-r11+r22-r33 > 0)
-        q2 = 0.5 * sqrt(1-r11+r22-r33);
-    else
-        q2 = 0.5 * sqrt(((r13-r31)*(r13-r31) + (r12+r21)*(r12+r21) + (r23+r32)*(r23+r32)) / (3+r11-r22+r33));
-        
-    if (-r11-r22+r33 > 0)
-        q3 = 0.5 * sqrt(1-r11-r22+r33);
-    else
-        q3 = 0.5 * sqrt(((r21-r12)*(r21-r12) + (r31+r13)*(r31+r13) + (r32+r23)*(r32+r23)) / (3+r11+r22-r33));
 
-    if (r11+r22+r33 > 0)
-        q4 = 0.5 * sqrt(1+r11+r22+r33);
-    else
-        q4 = 0.5 * sqrt(((r32-r23)*(r32-r23) + (r13-r31)*(r13-r31) + (r21-r12)*(r21-r12)) / (3-r11-r22-r33));
+    float qx;
+    float qy;
+    float qz;
+    float qw;
 
-    Vector4f quat(q1, q2, q3, q4);
+    float tr = r11 + r22 + r33;
+    float r = sqrt(1 + tr);
+
+    if (r32 - r23 > 0)
+    {
+        qx = 0.5 * sqrt(1 + r11 - r22 - r33);
+    }
+    else if (r32 - r23 < 0) 
+    {
+        qx = -0.5 * sqrt(1 + r11 - r22 - r33);
+    }
+    else
+    {
+        qx = 0;
+    }
+
+    if (r13 - r31 > 0)
+    {
+        qy = 0.5 * sqrt(1 - r11 + r22 - r33);
+    }
+    else if (r13 - r31 < 0) 
+    {
+        qy = -0.5 * sqrt(1 - r11 + r22 - r33);
+    }
+    else
+    {
+        qy = 0;
+    }
+
+    if (r21 - r12 > 0)
+    {
+        qz = 0.5 * sqrt(1 - r11 - r22 + r33);
+    }
+    else if (r21 - r12 < 0) 
+    {
+        qz = -0.5 * sqrt(1 - r11 - r22 + r33);
+    }
+    else
+    {
+        qz = 0;
+    }
+
+    qw = 0.5 * r;
+
+    if (qw < 0)
+    {
+        qx = -qx;
+        qy = -qy;
+        qz = -qz;
+        qw = -qw;
+    }
+
+    Vector4f quat(qx, qy, qz, qw);
 
     return quat / quat.norm();
 }
@@ -117,7 +161,7 @@ bool SkyQuaternion::quatnormalize(Vector4f& quat)
                      powf(quat(3), 2));
     if (den < 1e-8)
         return false;
- 
+
     quat = quat / den;
 
     return true;

@@ -27,6 +27,7 @@ using namespace Eigen;
 
 /**
  * @brief Class for managing quaternions.
+ *        Convention used: qx, qy, qz, qw (scalar element as last element)
  */
 class SkyQuaternion
 {
