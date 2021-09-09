@@ -35,7 +35,7 @@ namespace TimestampTimer
  * https://docs.google.com/spreadsheets/d/1B44bN6m2vnldQx9XVxZaBP8bDHqoLPREyHoaLh8s0UA/edit#gid=0
  *
  */
-static const uint8_t PRESCALER_VALUE = 127;
+static const uint8_t PRESCALER_VALUE = 255;
 
 #ifdef _ARCH_CORTEXM3_STM32
 extern HardwareTimer<uint32_t, TimerMode::Chain> timestamp_timer;
