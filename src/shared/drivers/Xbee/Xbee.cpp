@@ -25,7 +25,7 @@
 #include <Debug.h>
 #include <kernel/scheduler/scheduler.h>
 #include <miosix.h>
-
+#include <diagnostic/StackLogger.h>
 #include <algorithm>
 
 using miosix::FastMutex;
@@ -104,6 +104,9 @@ bool Xbee::send(uint8_t* pkt, size_t pkt_len)
         LOG_ERR(logger, "TX_STATUS timeout");
     }
     time_to_send_stats.add(miosix::getTick() - start_tick);
+
+    StackLogger::getInstance()->updateStack(THID_XBEE);
+
     return success;
 }
 

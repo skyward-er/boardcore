@@ -386,6 +386,7 @@ template <unsigned int pkt_len, unsigned int out_queue_size>
 MavlinkStatus MavlinkDriver<pkt_len, out_queue_size>::getStatus()
 {
     miosix::Lock<miosix::FastMutex> l(mtx_status);
+    status.timestamp = miosix::getTick();
     return status;
 }
 
