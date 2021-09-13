@@ -27,6 +27,8 @@
 #include "drivers/serial.h"
 #include "filesystem/file_access.h"
 
+#include "diagnostic/StackLogger.h"
+
 using namespace miosix;
 
 UbloxGPS::UbloxGPS(int baudrate_, uint8_t sampleRate_, int serialPortNum_,
@@ -114,6 +116,8 @@ void UbloxGPS::run()
 
     while (!shouldStop())
     {
+        StackLogger::getInstance()->updateStack(THID_GPS);
+
         // Try to read the message
         if (!readUBXMessage(message, payloadLength))
         {
