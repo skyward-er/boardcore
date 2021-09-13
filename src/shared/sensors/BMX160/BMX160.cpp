@@ -838,6 +838,7 @@ void BMX160::readFifo(bool headerless)
     }
 
     // Update fifo statistics
+    stats.timestamp     = TimestampTimer::getTimestamp();
     stats.watermark_ts  = watermark_ts;
     stats.fifo_duration = timestamp;
     stats.interrupt_dt  = dt_interrupt;

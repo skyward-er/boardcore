@@ -70,6 +70,8 @@ struct BMX160Temperature : public TemperatureData
  */
 struct BMX160FifoStats
 {
+    uint64_t timestamp;
+
     uint64_t watermark_ts;   //< Watermark timestamp (from the start of
                              // the fifo)
     uint64_t fifo_duration;  //< Total fifo duration
@@ -79,12 +81,12 @@ struct BMX160FifoStats
 
     static std::string header()
     {
-        return "watermark_ts,fifo_duration,interrupt_dt,fifo_len\n";
+        return "timestamp,watermark_ts,fifo_duration,interrupt_dt,fifo_len\n";
     }
 
     void print(std::ostream& os) const
     {
-        os << watermark_ts << "," << fifo_duration << "," << interrupt_dt << ","
-           << len << "\n";
+        os << timestamp << "," << watermark_ts << "," << fifo_duration << ","
+           << interrupt_dt << "," << len << "\n";
     }
 };
