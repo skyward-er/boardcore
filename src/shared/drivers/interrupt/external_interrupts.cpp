@@ -20,8 +20,8 @@
  * THE SOFTWARE.
  */
 
-#include <miosix.h>
 #include "external_interrupts.h"
+#include <miosix.h>
 using namespace miosix;
 
 /**
@@ -109,7 +109,7 @@ void __attribute__((weak)) EXTI15_IRQHandlerImpl();
 void __attribute__((naked)) EXTI0_IRQHandler()
 {
     saveContext();
-    EXTI->PR |= EXTI_PR_PR0;
+    EXTI->PR = EXTI_PR_PR0;
     asm volatile("bl _Z20EXTI0_IRQHandlerImplv");
     restoreContext();
 }
@@ -121,7 +121,7 @@ void __attribute__((naked)) EXTI0_IRQHandler()
 void __attribute__((naked)) EXTI1_IRQHandler()
 {
     saveContext();
-    EXTI->PR |= EXTI_PR_PR1;
+    EXTI->PR = EXTI_PR_PR1;
     asm volatile("bl _Z20EXTI1_IRQHandlerImplv");
     restoreContext();
 }
@@ -133,7 +133,7 @@ void __attribute__((naked)) EXTI1_IRQHandler()
 void __attribute__((naked)) EXTI2_IRQHandler()
 {
     saveContext();
-    EXTI->PR |= EXTI_PR_PR2;
+    EXTI->PR = EXTI_PR_PR2;
     asm volatile("bl _Z20EXTI2_IRQHandlerImplv");
     restoreContext();
 }
@@ -145,7 +145,7 @@ void __attribute__((naked)) EXTI2_IRQHandler()
 void __attribute__((naked)) EXTI3_IRQHandler()
 {
     saveContext();
-    EXTI->PR |= EXTI_PR_PR3;
+    EXTI->PR = EXTI_PR_PR3;
     asm volatile("bl _Z20EXTI3_IRQHandlerImplv");
     restoreContext();
 }
@@ -157,7 +157,7 @@ void __attribute__((naked)) EXTI3_IRQHandler()
 void __attribute__((naked)) EXTI4_IRQHandler()
 {
     saveContext();
-    EXTI->PR |= EXTI_PR_PR4;
+    EXTI->PR = EXTI_PR_PR4;
     asm volatile("bl _Z20EXTI4_IRQHandlerImplv");
     restoreContext();
 }
@@ -194,32 +194,34 @@ void __attribute__((used)) EXTI9_5_IRQHandlerImpl()
 {
     if (EXTI->PR & EXTI_PR_PR5)
     {
-        EXTI->PR |= EXTI_PR_PR5;  // Clear pending flag
+        EXTI->PR = EXTI_PR_PR5;  // Clear pending flag
         EXTI5_IRQHandlerImpl();
     }
     else if (EXTI->PR & EXTI_PR_PR6)
     {
-        EXTI->PR |= EXTI_PR_PR6;
+        EXTI->PR = EXTI_PR_PR6;
         EXTI6_IRQHandlerImpl();
     }
     else if (EXTI->PR & EXTI_PR_PR7)
     {
-        EXTI->PR |= EXTI_PR_PR7;
+        EXTI->PR = EXTI_PR_PR7;
         EXTI7_IRQHandlerImpl();
     }
     else if (EXTI->PR & EXTI_PR_PR8)
     {
-        EXTI->PR |= EXTI_PR_PR8;
+        EXTI->PR = EXTI_PR_PR8;
         EXTI8_IRQHandlerImpl();
     }
     else if (EXTI->PR & EXTI_PR_PR9)
     {
-        EXTI->PR |= EXTI_PR_PR9;
+        EXTI->PR = EXTI_PR_PR9;
         EXTI9_IRQHandlerImpl();
     }
     else
     {
+#ifndef FLIGHT
         Default_EXTI_Handler();
+#endif
     }
 }
 
@@ -227,37 +229,39 @@ void __attribute__((used)) EXTI15_10_IRQHandlerImpl()
 {
     if (EXTI->PR & EXTI_PR_PR10)
     {
-        EXTI->PR |= EXTI_PR_PR10;  // Clear pending flag
+        EXTI->PR = EXTI_PR_PR10;  // Clear pending flag
         EXTI10_IRQHandlerImpl();
     }
     else if (EXTI->PR & EXTI_PR_PR11)
     {
-        EXTI->PR |= EXTI_PR_PR11;
+        EXTI->PR = EXTI_PR_PR11;
         EXTI11_IRQHandlerImpl();
     }
     else if (EXTI->PR & EXTI_PR_PR12)
     {
-        EXTI->PR |= EXTI_PR_PR12;
+        EXTI->PR = EXTI_PR_PR12;
         EXTI12_IRQHandlerImpl();
     }
     else if (EXTI->PR & EXTI_PR_PR13)
     {
-        EXTI->PR |= EXTI_PR_PR13;
+        EXTI->PR = EXTI_PR_PR13;
         EXTI13_IRQHandlerImpl();
     }
     else if (EXTI->PR & EXTI_PR_PR14)
     {
-        EXTI->PR |= EXTI_PR_PR14;
+        EXTI->PR = EXTI_PR_PR14;
         EXTI14_IRQHandlerImpl();
     }
     else if (EXTI->PR & EXTI_PR_PR15)
     {
-        EXTI->PR |= EXTI_PR_PR15;
+        EXTI->PR = EXTI_PR_PR15;
         EXTI15_IRQHandlerImpl();
     }
     else
     {
+#ifndef FLIGHT
         Default_EXTI_Handler();
+#endif
     }
 }
 
@@ -292,7 +296,7 @@ constexpr unsigned GetEXTI_IRQn(unsigned N)
            N==4? EXTI4_IRQn :
            (N>=5&&N<=9)? EXTI9_5_IRQn :
            EXTI15_10_IRQn;
-        
+
     // clang-format on
 }
 
@@ -302,14 +306,14 @@ constexpr unsigned GetEXTICR_register_value(unsigned P, unsigned N)
 }
 
 void enableExternalInterrupt(unsigned int gpio_port, unsigned int gpio_num,
-                     InterruptTrigger trigger, unsigned int priority)
+                             InterruptTrigger trigger, unsigned int priority)
 {
     auto exitcr_reg_value = GetEXTICR_register_value(gpio_port, gpio_num);
-    
+
     {
         FastInterruptDisableLock dLock;
 
-        RCC->APB2ENR |= RCC_APB2ENR_SYSCFGEN;       
+        RCC->APB2ENR |= RCC_APB2ENR_SYSCFGEN;
         SYSCFG->EXTICR[int(gpio_num / 4)] |= exitcr_reg_value;
     }
 
