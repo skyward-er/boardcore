@@ -120,7 +120,7 @@ bool SensorManager::init(const SensorMap_t& sensors_map)
 
     if (current_sampler_id != 0)
     {
-        LOG_ERR(logger, "Task scheduler not empty: starting from task ID {}",
+        LOG_INFO(logger, "Task scheduler not empty: starting from task ID {}",
                 current_sampler_id);
     }
 
@@ -246,7 +246,7 @@ uint8_t SensorManager::getFirstTaskID()
 SensorSampler* SensorManager::createSampler(uint8_t id, uint32_t period,
                                             bool is_dma)
 {
-    LOG_DEBUG(logger, "Creating Sampler {} with sampling period {} ms\n", id,
+    LOG_DEBUG(logger, "Creating Sampler {} with sampling period {} ms", id,
               period);
 
     if (is_dma)
