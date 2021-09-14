@@ -11,9 +11,11 @@ bin/*
 .*.sw?
 .*.pyc
 
-.project 
-.cproject 
-.settings 
+.project
+.cproject
+.settings
+
+compile_flags.txt
 STM32F429zi_Discovery.xml
 
 ._*
@@ -25,4 +27,9 @@ build
 .vscode/*
 
 store.json
-scripts/homeone/event_header_generator/generated/
+**/generated/
+core
+
+__pycache__
+/scripts/generators/generated
+/scripts/generators/scxmls

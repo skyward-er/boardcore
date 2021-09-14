@@ -1,8 +1,5 @@
-/* Bus base class
- *
- * Copyright (c) 2015-2016 Skyward Experimental Rocketry
- * Authors: Illya Dudchenko, Matteo Michele Piazzolla, Silvano Seva,
- *          Alain Carlucci
+/* Copyright (c) 2015-2016 Skyward Experimental Rocketry
+ * Authors: Illya Dudchenko, Matteo Piazzolla, Silvano Seva, Alain Carlucci
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -16,7 +13,7 @@
  *
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.  IN NO EVENT SHALL THE
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
  * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
  * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
@@ -110,6 +107,9 @@ private:
 
     inline void _write(uint8_t byte) const
     {
+        // Wait until the peripheral is ready to transmit
+        while ((getSPIAddr(N)->SR & SPI_SR_TXE) == 0)
+            ;
         getSPIAddr(N)->DR = byte;
         while ((getSPIAddr(N)->SR & SPI_SR_RXNE) == 0)
             ;
@@ -127,6 +127,9 @@ private:
 
     inline uint8_t _read() const
     {
+        // Wait until the peripheral is ready to transmit
+        while ((getSPIAddr(N)->SR & SPI_SR_TXE) == 0)
+            ;
         getSPIAddr(N)->DR = 0;
         while ((getSPIAddr(N)->SR & SPI_SR_RXNE) == 0)
             ;
@@ -157,6 +160,9 @@ private:
      */
     inline uint8_t _transfer(uint8_t* byte)
     {
+        // Wait until the peripheral is ready to transmit
+        while ((getSPIAddr(N)->SR & SPI_SR_TXE) == 0)
+            ;
         getSPIAddr(N)->DR = *byte;
         while ((getSPIAddr(N)->SR & SPI_SR_RXNE) == 0)
             ;
@@ -210,7 +216,7 @@ private:
         return n_spi == 1 || n_spi == 2 ? 5 : 6;
     }
 
-    constexpr SPI_TypeDef* getSPIAddr(unsigned n)
+    constexpr SPI_TypeDef* getSPIAddr(unsigned n) const
     {
         return n == 1 ? SPI1 : n == 2 ? SPI2 : SPI3;
     }

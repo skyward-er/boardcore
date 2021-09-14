@@ -3,7 +3,7 @@ SBS_BASE = {SBS_BASE_PATH}
 ##
 ## Makefile for Miosix embedded OS
 ##
-MAKEFILE_VERSION := 1.07S
+MAKEFILE_VERSION := 1.09S
 ## Path to kernel directory (edited by init_project_out_of_git_repo.pl)
 KPATH := $(SBS_BASE)/libs/miosix-kernel/miosix
 ## Path to config directory (edited by init_project_out_of_git_repo.pl)
@@ -15,7 +15,7 @@ include $(CONFPATH)/config/Makefile.inc
 ##
 ## List here subdirectories which contains makefiles
 ##
-SUBDIRS := $(KPATH) {SBS_PROJECT_SUBDIRS}
+SUBDIRS := $(KPATH) {SBS_PROJECT_SUBDIRS} {SBS_LIB_SUBDIR}
 
 ##
 ## List here your source files (both .s, .c and .cpp)
@@ -25,13 +25,13 @@ SRC := {SBS_SOURCE_FILES}
 ##
 ## List here additional static libraries with relative path
 ##
-LIBS := {SBS_PROJECT_LIBS}
+LIBS := {SBS_PROJECT_LIBS} {SBS_LIB_LIBS}
 
 ##
 ## List here additional include directories (in the form -Iinclude_dir)
 ##
 INCLUDE_DIRS := -I$(SBS_BASE)/libs -I$(SBS_BASE)/libs/miosix-kernel/miosix \
-                {SBS_PROJECT_INCLUDES}
+                {SBS_PROJECT_INCLUDES} {SBS_LIB_INCLUDES}
 
 ##############################################################################
 ## You should not need to modify anything below                             ##
@@ -54,10 +54,12 @@ OBJ := $(addprefix $(OBJDIR)/, $(addsuffix .o, $(basename $(SRC))))
 ## Always include CONFPATH first, as it overrides the config file location
 CXXFLAGS := $(CXXFLAGS_BASE) -I$(CONFPATH) -I$(CONFPATH)/config/$(BOARD_INC)  \
             -I. -I$(KPATH) -I$(KPATH)/arch/common -I$(KPATH)/$(ARCH_INC)      \
-            -I$(KPATH)/$(BOARD_INC) $(INCLUDE_DIRS) -Wall -Wextra -pedantic
+            -I$(KPATH)/$(BOARD_INC) $(INCLUDE_DIRS) -Wall -Wextra -Wcast-align \
+			-pedantic
 CFLAGS   := $(CFLAGS_BASE)   -I$(CONFPATH) -I$(CONFPATH)/config/$(BOARD_INC)  \
             -I. -I$(KPATH) -I$(KPATH)/arch/common -I$(KPATH)/$(ARCH_INC)      \
-            -I$(KPATH)/$(BOARD_INC) $(INCLUDE_DIRS) -Wall -Wextra -pedantic
+            -I$(KPATH)/$(BOARD_INC) $(INCLUDE_DIRS) -Wall -Wextra -Wcast-align \
+			-pedantic
 AFLAGS   := $(AFLAGS_BASE)
 LFLAGS   := $(LFLAGS_BASE) -Wl,--gc-sections,-Map,$(BINDIR)/${SBS_BIN_NAME}.map
 DFLAGS   := -MMD -MP
@@ -109,11 +111,11 @@ $(OBJDIR)/%.o: %.s
 
 $(OBJDIR)/%.o : %.c
 	$(ECHO) "[CC]  " $<
-	$(Q) $(CC)  $(DFLAGS) $(CFLAGS) {SBS_CUSTOM_DEFINES} $< -o $@
+	$(Q) $(CC)  $(DFLAGS) $(CFLAGS) {SBS_CUSTOM_DEFINES} {SBS_LIB_DEFINES} $< -o $@
 
 $(OBJDIR)/%.o : %.cpp
 	$(ECHO) "[CXX] " $<
-	$(Q) $(CXX) $(DFLAGS) $(CXXFLAGS) {SBS_CUSTOM_DEFINES} $< -o $@
+	$(Q) $(CXX) $(DFLAGS) $(CXXFLAGS) {SBS_CUSTOM_DEFINES} {SBS_LIB_DEFINES} $< -o $@
 
 folders:
 	$(Q) mkdir -pv $(dir $(OBJ)) $(BINDIR)

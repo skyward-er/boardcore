@@ -17,7 +17,7 @@
 #
 # THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
 # IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.  IN NO EVENT SHALL THE
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
 # AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
@@ -48,9 +48,8 @@ except ImportError:
 # Global variables
 #
 srcfiles={}
+extlibs={}
 mainfiles={}
-tests={}
-entrypoints={}
 colors=False
 
 # Map for the project configuration, filled in when parsing sbs.conf
@@ -154,27 +153,31 @@ def parseConf(path):
                 projconf[i] = conf.get('SBS_PROJECT', i)
         elif stype == 'srcfiles':
             srcfiles[i] = [x.strip() for x in conf.get(i, 'Files').split("\n")]
-        elif stype == 'board':
-            entrypoints[i] = {   'id': conf.get(i, 'BoardId'),
+        elif stype == 'library':
+            extlibs[i] = {'subdir': conf.get(i, 'Subdir'),
+                          'libs': [x.strip() for x in conf.get(i, 'Libs').split()],
+                          'defines':  conf.get(i, 'Defines').strip(),
+                          'includes': [x.strip() for x in conf.get(i, 'Includes').split()]}
+        elif stype == 'board' or stype == 'test':
+            if stype == 'test':
+                mask = test_mask
+                add_def = " -I" + projconf['TESTS_PATH']
+            else:
+                mask = entrypoint_mask
+                add_def = ""
+            
+            mainfiles[i] = {'type': stype,
+                            'id': conf.get(i, 'BoardId').strip(),
                             'bin': conf.get(i, 'BinName'),
-                            'defines': conf.get(i, 'Defines'),
-                            'files': [entrypoint_mask % conf.get(i, 'Main').strip()] +
-                             [x.strip() for x in conf.get(i, 'Include').split(' ')]
-                        }
-        elif stype == 'test':
-            tests[i] = {   'id': conf.get(i, 'BoardId'),
-                            'bin': conf.get(i, 'BinName'),
-                            'defines': conf.get(i, 'Defines') + " -I" + projconf['TESTS_PATH'],
-                            'files': [test_mask % conf.get(i, 'Main').strip()] +
+                            'defines': conf.get(i, 'Defines') + add_def,
+                            'libs': [x.strip() for x in conf.get(i, 'Libs', fallback="").split()],
+                            'files': [mask % conf.get(i, 'Main').strip()] +
                              [x.strip() for x in conf.get(i, 'Include').split(' ')]
                         }
         else:
             print('[SBS] Syntax error in %s: type %s not implemented' % (path, stype))
             exit(1)
 
-    # Join tests and entrypoints in mainfiles
-    mainfiles.update(entrypoints)
-    mainfiles.update(tests)
 
     # Exit if nothing was found
     if (len(mainfiles) == 0 ):
@@ -184,6 +187,7 @@ def parseConf(path):
     # Import also srcfiles from boardcore if executing from another folders
     if projconf['SBS_BASE'] != '.':
         importSrcFiles(projconf['SBS_BASE'] + "/sbs.conf")
+        importLibs(projconf['SBS_BASE'] + "/sbs.conf")
 
     # Substitute includes
     for i in mainfiles:
@@ -194,6 +198,13 @@ def parseConf(path):
             else:
                 files += [j]
         mainfiles[i]['files'] = files
+    
+    # Substitute libs
+    for i in mainfiles:
+        lib_dicts = {}
+        for j in mainfiles[i]['libs']:
+            lib_dicts[j] = extlibs[j]
+        mainfiles[i]['libs'] = lib_dicts
 
 #
 # Create a Makefile for a specific board starting from Makefile.template
@@ -208,7 +219,11 @@ def build_makefile(template, board, bname):
              "MAP_FILE": "export MAIN_MAP_FILE := bin/%s.map\n" % board['bin'],
              "SOURCE_FILES": "%s\n" % (" ".join(board['files'])),
              "CUSTOM_DEFINES": board['defines'],
-             "BIN_NAME": board['bin']
+             "BIN_NAME": board['bin'],
+             "LIB_SUBDIR": " ".join([x['subdir'] for _,x in board['libs'].items()]),
+             "LIB_LIBS": " ".join([" ".join(x['libs']) for _,x in board['libs'].items()]),
+             "LIB_INCLUDES": " ".join([" ".join([ "-I" + s for s in x['includes']]) for _,x in board['libs'].items()]),
+             "LIB_DEFINES": " ".join(x['defines'] for _,x in board['libs'].items())
     }
 
     rmap["PROJECT_INCLUDES"] = "-I" + projconf["SRC_PATH"].strip() + " "
@@ -255,7 +270,25 @@ def importSrcFiles(path):
             else:
                 print('[SBS] Syntax error in %s: a srcfiles group named %s is already defined. Terminating' % (path, i))
                 exit(1)
+#
+# Import libraries groups from another .conf file.
+# Libraries are added only if there's not a group already with the same name.
+#
+def importLibs(path):
+    conf = cp.RawConfigParser()
+    conf.read(path)
 
+    for i in conf.sections():
+        stype = conf.get(i, 'Type')
+        if stype == 'library':
+            if i not in extlibs:
+                extlibs[i] =  {'subdir': '' if conf.get(i, 'Subdir') == '' else projconf['SBS_BASE'] + "/" +  conf.get(i, 'Subdir'),
+                            'libs': [projconf['SBS_BASE'] + "/" + x.strip() for x in conf.get(i, 'Libs').split()],
+                            'defines':  conf.get(i, 'Defines').strip(),
+                            'includes': [projconf['SBS_BASE'] + "/" + x.strip() for x in conf.get(i, 'Includes').split()]}
+            else:
+                print('[SBS] Syntax error in %s: a library group named %s is already defined. Terminating' % (path, i))
+                exit(1)
 
 ##-------------------------------------------------------------
 ##                       MAIN
@@ -297,14 +330,17 @@ if options.lint == True:
 # List
 if options.list == True:
     print('[SBS] List of available entrypoints:')
-    for entrypoint in entrypoints:
-        print(entrypoint)
+    for main in mainfiles:
+        if(mainfiles[main]['type'] == 'board'):
+            print(main)
     print('\n[SBS] List of available tests:')
-    for test in tests:
-        print(test)
+    for main in mainfiles:
+        if(mainfiles[main]['type'] == 'test'):
+            print(main)
     exit(0)
 
 # Set how many main files to build:
+files = list(mainfiles.keys()).copy()
 if options.board != None:       # just one
     try:
         good = mainfiles[options.board]
@@ -313,9 +349,13 @@ if options.board != None:       # just one
         print('[SBS] No entrypoint or test named %s. Terminating.' % (options.board))
         sys.exit(2)
 elif options.all_entry == True:  # all entrypoints
-    mainfiles = entrypoints
+     for main in files:
+        if(mainfiles[main]['type'] == 'test'):
+            del mainfiles[main]
 elif options.all_tests == True:  # all tests
-    mainfiles = tests
+    for main in files:
+        if(mainfiles[main]['type'] == 'board'):
+            del mainfiles[main]
 
 
 # Set action

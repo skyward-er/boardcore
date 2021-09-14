@@ -1,5 +1,5 @@
 /* Copyright (c) 2015-2018 Skyward Experimental Rocketry
- * Authors: Luca Erbetta, Matteo Michele Piazzolla
+ * Authors: Luca Erbetta, Matteo Piazzolla
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -13,7 +13,7 @@
  *
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.  IN NO EVENT SHALL THE
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
  * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
  * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
@@ -23,17 +23,17 @@
 #ifndef SRC_SHARED_EVENTS_EVENT_BROKER_H
 #define SRC_SHARED_EVENTS_EVENT_BROKER_H
 
-#include "ActiveObject.h"
-#include "Singleton.h"
-
-#include "events/Event.h"
-#include "events/FSM.h"
-
+#include <diagnostic/PrintLogger.h>
 #include <miosix.h>
 #include <stdint.h>
 
 #include <map>
 #include <vector>
+
+#include "ActiveObject.h"
+#include "Singleton.h"
+#include "events/Event.h"
+#include "events/FSM.h"
 
 using std::map;
 using std::vector;
@@ -183,6 +183,8 @@ private:
     FastMutex mtx_subscribers;
 
     uint16_t eventCounter = 0;
+
+    PrintLogger logger = Logging::getLogger("eventbroker");
 };
 
 #define sEventBroker Singleton<EventBroker>::getInstance()

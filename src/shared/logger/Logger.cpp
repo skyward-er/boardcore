@@ -1,41 +1,39 @@
-/***************************************************************************
- *   Copyright (C) 2018 by Terraneo Federico                               *
- *                                                                         *
- *   This program is free software; you can redistribute it and/or modify  *
- *   it under the terms of the GNU General Public License as published by  *
- *   the Free Software Foundation; either version 2 of the License, or     *
- *   (at your option) any later version.                                   *
- *                                                                         *
- *   This program is distributed in the hope that it will be useful,       *
- *   but WITHOUT ANY WARRANTY; without even the implied warranty of        *
- *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the         *
- *   GNU General Public License for more details.                          *
- *                                                                         *
- *   As a special exception, if other files instantiate templates or use   *
- *   macros or inline functions from this file, or you compile this file   *
- *   and link it with other works to produce a work based on this file,    *
- *   this file does not by itself cause the resulting work to be covered   *
- *   by the GNU General Public License. However the source code for this   *
- *   file must still be made available in accordance with the GNU General  *
- *   Public License. This exception does not invalidate any other reasons  *
- *   why a work based on this file might be covered by the GNU General     *
- *   Public License.                                                       *
- *                                                                         *
- *   You should have received a copy of the GNU General Public License     *
- *   along with this program; if not, see <http://www.gnu.org/licenses/>   *
- ***************************************************************************/
+/* Copyright (c) 2018 Skyward Experimental Rocketry
+ * Author: Federico Terraneo
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in
+ * all copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+ * THE SOFTWARE.
+ */
 
 #include "Logger.h"
+
+#include <errno.h>
 #include <fcntl.h>
 #include <interfaces/atomic_ops.h>
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <tscpp/buffer.h>
+
 #include <stdexcept>
+
 #include "Debug.h"
 #include "diagnostic/SkywardStack.h"
 #include "diagnostic/StackLogger.h"
-#include <errno.h>
 
 using namespace std;
 using namespace miosix;
@@ -74,7 +72,10 @@ int Logger::start()
 
     file = fopen(filename.c_str(), "ab");
     if (file == NULL)
+    {
+        fileNumber = -1;
         throw runtime_error("Error opening log file");
+    }
     setbuf(file, NULL);
 
     // The boring part, start threads one by one and if they fail, undo
@@ -116,8 +117,8 @@ int Logger::start()
         fclose(file);
         throw runtime_error("Error creating stats thread");
     }*/
-    started = true;
-
+    started     = true;
+    s.opened    = true;
     s.logNumber = fileNumber;
     return fileNumber;
 }
@@ -133,6 +134,8 @@ void Logger::stop()
     writeT->join();
     // statsT->join();
     fclose(file);
+
+    s.opened = false;
 }
 
 Logger::Logger()
@@ -163,10 +166,11 @@ LogResult Logger::logImpl(const char* name, const void* data, unsigned int size)
 {
     if (started == false)
     {
+        //TRACE("Logger not started!");
         ++s.statDroppedSamples;
 
         // Signal that we are trying to write to a closed log
-        s.statWriteError = EIO;
+        s.statWriteError = -1;
 
         return LogResult::Ignored;
     }

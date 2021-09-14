@@ -1,7 +1,5 @@
-/* CAN-Bus Driver
- *
- * Copyright (c) 2015-2016 Skyward Experimental Rocketry
- * Authors: Matteo Michele Piazzolla, Alain Carlucci
+/* Copyright (c) 2015-2016 Skyward Experimental Rocketry
+ * Authors: Matteo Piazzolla, Alain Carlucci
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -15,7 +13,7 @@
  *
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.  IN NO EVENT SHALL THE
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
  * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
  * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
@@ -32,6 +30,7 @@ TODO:
 */
 
 #include "CanBus.h"
+
 #include "CanManager.h"
 #include "CanUtils.h"
 
@@ -41,7 +40,8 @@ using std::set;
 // Transmit mailbox request
 #define TMIDxR_TXRQ ((uint32_t)0x00000001)
 
-CanBus::CanBus(CAN_TypeDef *bus, CanManager *manager, const int can_id, CanDispatcher dispatcher)
+CanBus::CanBus(CAN_TypeDef *bus, CanManager *manager, const int can_id,
+               CanDispatcher dispatcher)
     : CANx(bus), manager(manager), id(can_id), dispatchMessage(dispatcher)
 {
     this->canSetup();
@@ -49,8 +49,8 @@ CanBus::CanBus(CAN_TypeDef *bus, CanManager *manager, const int can_id, CanDispa
 }
 
 /**
-* Funzione eseguita dall'ActiveObject per ricevere messaggi
-*/
+ * Funzione eseguita dall'ActiveObject per ricevere messaggi
+ */
 void CanBus::rcvFunction()
 {
     while (!should_stop)
@@ -60,7 +60,7 @@ void CanBus::rcvFunction()
         rcvQueue.waitUntilNotEmpty();  // blocks
 
         rcvQueue.get(message);
-        TRACE("[CanBus] message received\n");
+        LOG_DEBUG(logger, "Message received");
 
         /* Check message */
         uint32_t filter_id;
@@ -72,7 +72,7 @@ void CanBus::rcvFunction()
 
         if (filter_id >= (uint32_t)CanManager::filter_max_id)
         {
-            TRACE("[CanBus] Unsupported message\n");
+            LOG_ERR(logger, "Unsupported message");
             continue;
         }
 
@@ -84,7 +84,7 @@ void CanBus::rcvFunction()
             // Update status
             Lock<FastMutex> l(statusMutex);
             status.n_rcv++;
-            status.last_rcv = (uint8_t)filter_id;
+            status.last_rcv    = (uint8_t)filter_id;
             status.last_rcv_ts = miosix::getTick();
         }
 
@@ -92,7 +92,7 @@ void CanBus::rcvFunction()
         dispatchMessage(message, status);
     }
 
-    TRACE("Canbus thread exit\n");
+    LOG_DEBUG(logger, "Thread exit");
 }
 
 /*
@@ -169,7 +169,7 @@ bool CanBus::send(uint16_t id, const uint8_t *message, uint8_t len)
         // Update status
         Lock<FastMutex> l(statusMutex);
         status.n_sent++;
-        status.last_sent = (uint8_t)id;
+        status.last_sent    = (uint8_t)id;
         status.last_sent_ts = miosix::getTick();
     }
 
@@ -231,8 +231,8 @@ void CanBus::canSetup()
      *       =>   42M / (14 * 6) = 500kBit/s
      */
     // Synchronization with jump (CAN_BRT SJW)
-    uint8_t CAN_SJW = CAN_SJW_1tq;  
-    // Bit Segment 1 = sample point (CAN_BRT TS1)   
+    uint8_t CAN_SJW = CAN_SJW_1tq;
+    // Bit Segment 1 = sample point (CAN_BRT TS1)
     uint32_t CAN_BS1 = CAN_BS1_6tq;
     // Bit Segment 2 = transmit point (CAN_BRT TS2)
     uint32_t CAN_BS2 = CAN_BS2_7tq;

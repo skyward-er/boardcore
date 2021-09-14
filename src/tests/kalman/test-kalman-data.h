@@ -1,3 +1,25 @@
+/* Copyright (c) 2019 Skyward Experimental Rocketry
+ * Author: Luca Mozzarelli
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in
+ * all copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+ * THE SOFTWARE.
+ */
+
 #pragma once
 #include <vector>
 
@@ -86,7 +108,7 @@ static const std::vector<float> TIME = {
     44,    44.05, 44.1,  44.15, 44.2,  44.25, 44.3,  44.35, 44.4,  44.45, 44.5,
     44.55, 44.6,  44.65, 44.7,  44.75, 44.8,  44.85, 44.9,  44.95, 45,    45.05,
     45.1,  45.15, 45.2,  45.25, 45.3,  45.35, 45.4,  45.45, 45.5,  45.55, 45.6,
-    45.65, 45.7,  45.75, 45.8,  45.85, 45.9,  45.95, 46,    46.05, 46.1,  46.15,
+ 45.65, 45.7,  45.75, 45.8,  45.85, 45.9,  45.95, 46,    46.05, 46.1,  46.15,
     46.2,  46.25, 46.3,  46.35, 46.4,  46.45, 46.5,  46.55, 46.6,  46.65, 46.7,
     46.75, 46.8,  46.85, 46.9,  46.95, 47,    47.05, 47.1,  47.15, 47.2,  47.25,
     47.3,  47.35, 47.4,  47.45, 47.5,  47.55, 47.6,  47.65, 47.7,  47.75, 47.8,
@@ -178,7 +200,7 @@ static const std::vector<float> TIME = {
     94.6,  94.65, 94.7,  94.75, 94.8,  94.85, 94.9,  94.95, 95,    95.05, 95.1,
     95.15, 95.2,  95.25, 95.3,  95.35, 95.4,  95.45, 95.5,  95.55, 95.6,  95.65,
     95.7,  95.75, 95.8,  95.85, 95.9,  95.95, 96,    96.05, 96.1,  96.15, 96.2,
-    96.25, 96.3};
+    96.25, 96.3  };
 
 // ------------------------ INPUT ------------------------
 static const std::vector<float> INPUT = {
@@ -294,7 +316,7 @@ static const std::vector<float> INPUT = {
     10314.9,  10298.9,  10323,   10331,    10323,   10331,   10323,   10331,
     10339,    10314.9,  10347.1, 10323,    10323,   10314.9, 10355.1, 10323,
     10314.9,  10331,    10331,   10339,    10347.1, 10347.1, 10355.1, 10323,
-    10347.1,  10314.9,  10347.1, 10363.2,  10347.1, 10339,   10355.1, 10363.2,
+ 10347.1,  10314.9,  10347.1, 10363.2,  10347.1, 10339,   10355.1, 10363.2,
     10355.1,  10371.2,  10339,   10347.1,  10331,   10355.1, 10331,   10331,
     10363.2,  10355.1,  10379.3, 10379.3,  10387.4, 10355.1, 10339,   10371.2,
     10371.2,  10347.1,  10379.3, 10371.2,  10371.2, 10363.2, 10371.2, 10347.1,
@@ -422,7 +444,7 @@ static const std::vector<float> INPUT = {
     494.489,  478.164,  461.865, 453.725,  429.344, 423.934, 394.229, 375.369,
     367.298,  348.488,  332.392, 310.97,   289.592, 284.255, 257.608, 246.969,
     231.03,   212.466,  193.936, 186.004,  164.882, 146.436, 133.281, 114.89,
-    104.396,  80.8236,  59.9147, 49.476,   31.2335, 10.424,  -5.15584};
+    104.396,  80.8236,  59.9147, 49.476,   31.2335, 10.424,  -5.15584  };
 
 // ------------------------ STATE ------------------------
 static const std::vector<float> STATE_1 = {

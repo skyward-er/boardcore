@@ -1,5 +1,5 @@
 /* Copyright (c) 2018 Skyward Experimental Rocketry
- * Authors: Luca Mozzarelli
+ * Author: Luca Mozzarelli
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -13,7 +13,7 @@
  *
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.  IN NO EVENT SHALL THE
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
  * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
  * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
@@ -34,6 +34,8 @@ TEST_CASE("Multiply test")
     MatrixBase<float, 3, 1> B{1.0f, 2.0f, 3.7f};
     MatrixBase<float, 3, 1> C{};
 
+    C = A * B;
+
     REQUIRE( C(0,0) == Approx( 8.1f)  );
     REQUIRE( C(1,0) == Approx(-7.7f)  );
     REQUIRE( C(2,0) == Approx(-10.3f) );
@@ -45,6 +47,8 @@ TEST_CASE("Sum test")
     MatrixBase<float, 3, 3> B{ 1.0f, 2.0f, 3.0f, 5.0f, 7.0f, 9.0f, 11.0f, 13.7f, 15.0f};
 
     MatrixBase<float, 3, 3> C{};
+
+    C = A + B;
 
     REQUIRE( C(0,0) == Approx(2.0f ));
     REQUIRE( C(0,1) == Approx(0.0f ));
@@ -64,6 +68,8 @@ TEST_CASE("Subtract test")
 
     MatrixBase<float, 3, 3> C{};
 
+    C = A - B;
+    
     REQUIRE( C(0,0) == Approx(0.0f  ));
     REQUIRE( C(0,1) == Approx(-4.0f ));
     REQUIRE( C(0,2) == Approx(0.0f  ));

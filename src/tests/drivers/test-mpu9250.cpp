@@ -1,5 +1,5 @@
-/* Copyright (c) 2018 Skyward Experimental Rocketry
- * Authors: Nuno Barcellos
+/* Copyright (c) 2021 Skyward Experimental Rocketry
+ * Author: Alberto Nidasio
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -13,61 +13,78 @@
  *
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.  IN NO EVENT SHALL THE
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
  * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
  * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
 
-#include <Common.h>
-#include <drivers/BusTemplate.h>
-#include <interfaces-impl/hwmapping.h>
+#include <Debug.h>
+#include <drivers/spi/SPIDriver.h>
+#include <miosix.h>
 #include <sensors/MPU9250/MPU9250.h>
 
-#include <drivers/spi/SensorSpi.h>
-#include <sensors/SensorSampling.h>
+#include "TimestampTimer.h"
 
-using namespace miosix;
-using namespace miosix::interfaces;
+GpioPin sckPin  = GpioPin(GPIOB_BASE, 13);
+GpioPin misoPin = GpioPin(GPIOB_BASE, 14);
+GpioPin mosiPin = GpioPin(GPIOB_BASE, 15);
+GpioPin csPin   = GpioPin(GPIOC_BASE, 1);
 
-typedef BusSPI<1,spi1::mosi,spi1::miso,spi1::sck> busSPI1;
-typedef ProtocolSPI<busSPI1,sensors::mpu9250::cs> spiMPU9250_a;
-typedef MPU9250<spiMPU9250_a> mpu_t;
+void initBoard()
+{
+    // Enable SPI clock for SPI2 interface
+    RCC->APB1ENR |= RCC_APB1ENR_SPI2EN;
+
+    // Alternate function configuration for SPI pins
+    sckPin.mode(miosix::Mode::ALTERNATE);
+    sckPin.alternateFunction(5);  // SPI function
+    mosiPin.mode(miosix::Mode::ALTERNATE);
+    mosiPin.alternateFunction(5);  // SPI function
+    misoPin.mode(miosix::Mode::ALTERNATE);
+    misoPin.alternateFunction(5);  // SPI function
+
+    // Chip select pin as output starting high
+    csPin.mode(miosix::Mode::OUTPUT);
+    csPin.high();
+}
 
 int main()
-{   
-    SimpleSensorSampler sampler;
+{
+    // Enable SPI clock and set gpios
+    initBoard();
 
-    spiMPU9250_a::init();
-    mpu_t* mpu = new mpu_t(1, 1);
+    TimestampTimer::enableTimestampTimer();
 
-    Thread::sleep(100);
-    
-    if(mpu->init()){
-        printf("MPU9250 Init succeeded\n" );
-        sampler.AddSensor(mpu);
-    }
-    else {
-        printf("MPU9250 Init failed\n");
+    // SPI configuration setup
 
-        while(!mpu->init()) {
-            printf("MPU9250 Init failed\n");
-            Thread::sleep(1000);
-        }
-    }
+    SPIBusConfig spiConfig;
+    spiConfig.clock_div = SPIClockDivider::DIV64;
+    spiConfig.mode      = SPIMode::MODE3;
+    SPIBus spiBus(SPI2);
+    SPISlave spiSlave(spiBus, csPin, spiConfig);
 
-    Thread::sleep(100);
+    // Device initialization
+    MPU9250 mpu9250(spiSlave);
 
-    while(true)
+    // Initialize the device
+    mpu9250.init();
+
+    while (true)
     {
-        sampler.Update();
-        mpu->updateMagneto();
+        mpu9250.sample();
+        MPU9250Data data = mpu9250.getLastSample();
+        printf("%lld,%f,%f,%f;", data.accel_timestamp, data.accel_x,
+               data.accel_y, data.accel_z);
+        printf("%lld,%f,%f,%f;", data.gyro_timestamp, data.gyro_x, data.gyro_y,
+               data.gyro_z);
+        printf("%lld,%f,%f,%f\n", data.mag_timestamp, data.mag_x, data.mag_y,
+               data.mag_z);
 
-        const Vec3* last_data = mpu->compassDataPtr();
-        printf("%f %f %f\n", last_data->getX(), last_data->getY(),
-               last_data->getZ());
-
-        Thread::sleep(100);
+        // Serial communicaion at 115200 baud takes aprx. 10ms
+        // miosix::delayMs(10);
     }
+
+    TRACE("Test completed\n");
 }

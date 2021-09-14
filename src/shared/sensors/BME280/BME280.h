@@ -1,5 +1,5 @@
-/* Copyright (c) 2015-2018 Skyward Experimental Rocketry
- * Authors: Luca Erbetta
+/* Copyright (c) 2021 Skyward Experimental Rocketry
+ * Author: Alberto Nidasio
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -13,261 +13,143 @@
  *
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.  IN NO EVENT SHALL THE
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
  * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
  * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
 
-#pragma once
-
-#include <stdio.h>
+#include <diagnostic/PrintLogger.h>
 
 #include "BME280Data.h"
+#include "drivers/spi/SPIDriver.h"
 #include "sensors/Sensor.h"
-#include "Debug.h"
 
-template <class Bus>
-class BME280 : public TemperatureSensor, public PressureSensor
+class BME280 : public Sensor<BME280Data>
 {
 public:
-    BME280() {}
-    virtual ~BME280() {}
-
-    std::string printData() { return ""; }
-
-    bool init() override
+    enum Oversampling
     {
-        if (!initialized)
+        SKIPPED         = 0x0,  ///< Skipped (output set to 0x8000)
+        OVERSAMPLING_1  = 0x1,  ///< Oversampling x1
+        OVERSAMPLING_2  = 0x2,  ///< Oversampling x2
+        OVERSAMPLING_4  = 0x3,  ///< Oversampling x4
+        OVERSAMPLING_8  = 0x4,  ///< Oversampling x8
+        OVERSAMPLING_16 = 0x5,  ///< Oversampling x16
+    };
+
+    enum Mode
+    {
+        SLEEP_MODE  = 0x0,  ///< Sleep mode
+        FORCED_MODE = 0x1,  ///< Forced mode
+        NORMAL_MODE = 0x3   ///< Normal mode
+    };
+
+    enum StandbyTime
+    {
+        STB_TIME_0_5  = 0x0,  ///< 0.5 ms
+        STB_TIME_62_5 = 0x1,  ///< 62.5 ms
+        STB_TIME_125  = 0x2,  ///< 125 ms
+        STB_TIME_250  = 0x3,  ///< 250 ms
+        STB_TIME_500  = 0x4,  ///< 500 ms
+        STB_TIME_1000 = 0x5,  ///< 1000 ms
+        STB_TIME_10   = 0x6,  ///< 10 ms
+        STB_TIME_20   = 0x7   ///< 20 ms
+    };
+
+    enum FilterCoeff
+    {
+        FILTER_OFF      = 0x0,  ///< Filter off
+        FILTER_COEFF_2  = 0x1,  ///< Filter coefficient = 2
+        FILTER_COEFF_4  = 0x2,  ///< Filter coefficient = 4
+        FILTER_COEFF_8  = 0x3,  ///< Filter coefficient = 8
+        FILTER_COEFF_16 = 0x4   ///< Filter coefficient = 16
+    };
+
+    union BME280Config
+    {
+        struct __attribute__((packed)) BME280ConfigBits
         {
-            Bus::init();
+            // ctrl_hum
+            Oversampling osrs_h : 3;  ///< Oversampling of humidity
+            uint8_t : 5;
 
-            uint8_t who_am_i = Bus::read(REG_WHO_AM_I);
-            if (who_am_i != ID)
-            {
-                last_error = ERR_NOT_ME;
-                TRACE("BME280 not found: who am i read 0x%02X\n", who_am_i);
-                return false;
-            }
+            // status
+            /**
+             * '1' when the NVM data are being copied to image registers, '0'
+             * when the copying is done
+             */
+            uint8_t im_update : 1;
+            uint8_t : 2;
+            /**
+             * '1' whenever a conversion is running, '0' when the result have
+             * been transferred to the data registers
+             */
+            uint8_t measuring : 1;
+            uint8_t : 4;
 
-            // T standby = 0.5 ms, Filter: 8x ("& 0x7F" to set bit 7 to 0)
-            Bus::write(REG_CONFIG & 0x7F, 0x0C);
+            // ctrl_meas
+            Mode mode : 2;            ///< Device modes
+            Oversampling osrs_p : 3;  ///< Oversampling of pressure
+            Oversampling osrs_t : 3;  ///< Oversampling of temperature
 
-            uint8_t config_val = Bus::read(REG_CONFIG);
-            if (config_val != 0x0C)
-            {
-                TRACE("Wrong value in config register: 0x%02X\n", config_val);
-                return false;
-            }
+            // config
+            uint8_t spi3w_en : 1;  ///< Enables 3-wire SPI interface
+            uint8_t : 1;
+            FilterCoeff filter : 3;  ///< Time constant of the IIR filter
+            StandbyTime t_sb : 3;    ///< Inactive duration in normal mode
+        } bits;
 
-            // Disable humidity reading
-            Bus::write(REG_CTRL_HUM & 0x7F, 0x00);
-
-            uint8_t hum_val = Bus::read(REG_CTRL_HUM);
-            if (hum_val != 0x00)
-            {
-                TRACE("Wrong value in hum register: 0x%02X\n", hum_val);
-                last_error = ERR_BUS_FAULT;
-                return false;
-            }
-
-            // Pressure oversampling x4, temp oversampling x1, normal mode.
-            Bus::write(REG_CTRL_MEAS & 0x7F, (uint8_t)0x2F);
-
-            uint8_t meas_val = Bus::read(REG_CTRL_MEAS);
-            if (meas_val != 0x2F)
-            {
-                TRACE("Wrong value in meas register: 0x%02X\n", meas_val);
-                last_error = ERR_BUS_FAULT;
-                return false;
-            }
-
-            loadCompensationParams();
-
-            initialized = true;
-            return true;
-        }
-        else
+        struct
         {
-            return false;
-        }
-    }
+            uint8_t ctrl_hum;   ///< Humidity options
+            uint8_t status;     ///< Device status
+            uint8_t ctrl_meas;  ///< Pressure and temperature options
+            uint8_t config;     ///< Rate, filter and interface options
+        } bytes;
 
-    bool selfTest() override { return true; }
+        uint8_t bytes_array[4];
+    };
 
-    void printCompensationParams()
+    union BME280Comp
     {
-        if (initialized)
+        struct __attribute__((packed))
         {
-            printf("Compensation parameters: \n");
+            uint16_t dig_T1;
+            int16_t dig_T2;
+            int16_t dig_T3;
+            uint16_t dig_P1;
+            int16_t dig_P2;
+            int16_t dig_P3;
+            int16_t dig_P4;
+            int16_t dig_P5;
+            int16_t dig_P6;
+            int16_t dig_P7;
+            int16_t dig_P8;
+            int16_t dig_P9;
+            uint8_t dig_H1;
+            int16_t dig_H2;
+            uint8_t dig_H3;
+            int16_t dig_H4 : 12;
+            int16_t dig_H5 : 12;
+            int8_t dig_H6;
+        } bits;
 
-            printf("dig_T1: 0x%04X\n", comp_params.dig_T1);
-            printf("dig_T2: 0x%04X\n", comp_params.dig_T2);
-            printf("dig_T3: 0x%04X\n", comp_params.dig_T3);
+        uint8_t bytes_array[32];
+    };
 
-            printf("dig_P1: 0x%04X\n", comp_params.dig_P1);
-            printf("dig_P2: 0x%04X\n", comp_params.dig_P2);
-            printf("dig_P3: 0x%04X\n", comp_params.dig_P3);
-            printf("dig_P4: 0x%04X\n", comp_params.dig_P4);
-            printf("dig_P5: 0x%04X\n", comp_params.dig_P5);
-            printf("dig_P6: 0x%04X\n", comp_params.dig_P6);
-            printf("dig_P7: 0x%04X\n", comp_params.dig_P7);
-            printf("dig_P8: 0x%04X\n", comp_params.dig_P8);
-            printf("dig_P9: 0x%04X\n", comp_params.dig_P9);
-        }
-    }
-
-    bool onSimpleUpdate() override
+    enum BME280Registers : uint8_t
     {
-        if (initialized)
-        {
-            // Burst read temperature and pressure registers
-            uint8_t buf[6];
-            Bus::read(REG_PRESS_MSB, buf, 6);
+        REG_CALIB_0 = 0x88,
+        // Calibration register 1-25
 
-            uint32_t press = 0;
-            press |= ((uint32_t)buf[0]) << 12;
-            press |= ((uint32_t)buf[1]) << 4;
-            press |= ((uint32_t)buf[2]) >> 4;
+        REG_ID    = 0xD0,
+        REG_RESET = 0xE0,
 
-            uint32_t temp = 0;
-            temp |= ((uint32_t)buf[3]) << 12;
-            temp |= ((uint32_t)buf[4]) << 4;
-            temp |= ((uint32_t)buf[5]) >> 4;
+        REG_CALIB_26 = 0xE1,
+        // Calibration register 27-41
 
-            data.raw_pressure    = press;
-            data.raw_temperature = temp;
-
-            // Compensate values
-            int32_t t_fine = getFineTemperature(data.raw_temperature);
-
-            data.temperature = compensateTemperature(t_fine) / 100.0f;
-            data.pressure =
-                compensatePressure(data.raw_pressure, t_fine) / 256.0f;
-
-            data.timestamp = miosix::getTick();
-
-            mLastPressure = data.pressure;
-            mLastTemp     = data.temperature;
-
-            /*printf(
-                "Raw P:\t%d,\tRaw T:\t%d\nComp P:\t%d,\tComp T:\t%d,\tFine T: "
-                "%d\n",
-                (int)press, (int)temp, (int)(pressure_value / 256),
-                (int)temp_value, (int)t_fine);*/
-            return true;
-        }
-        return false;
-    }
-
-    const uint32_t* rawPressureDataPtr() { return &data.raw_pressure; }
-
-    const uint32_t* rawTempDataPtr() { return &data.raw_temperature; }
-
-    const BME280Data* getDataPtr() { return &data; }
-
-    BME280Data data;
-
-private:
-    void loadCompensationParams()
-    {
-        uint8_t buf[24];
-        Bus::read(REG_CALIB_T, buf, 24);
-
-        comp_params.dig_T1 = toUInt16(&buf[0]);
-        comp_params.dig_T2 = toInt16(&buf[2]);
-        comp_params.dig_T3 = toInt16(&buf[4]);
-
-        comp_params.dig_P1 = toUInt16(&buf[6]);
-        comp_params.dig_P2 = toInt16(&buf[8]);
-        comp_params.dig_P3 = toInt16(&buf[10]);
-        comp_params.dig_P4 = toInt16(&buf[12]);
-        comp_params.dig_P5 = toInt16(&buf[14]);
-        comp_params.dig_P6 = toInt16(&buf[16]);
-        comp_params.dig_P7 = toInt16(&buf[18]);
-        comp_params.dig_P8 = toInt16(&buf[20]);
-        comp_params.dig_P9 = toInt16(&buf[22]);
-    }
-
-    /**
-     * Returns the temperature in degC.
-     * Refer to the data sheet for a description of this method.
-     */
-    int32_t getFineTemperature(uint32_t raw_T)
-    {
-        int32_t adc_T = static_cast<int32_t>(raw_T);
-        int32_t var1, var2;
-        var1 = ((((adc_T / 8) - ((int32_t)comp_params.dig_T1 * 2))) *
-                ((int32_t)comp_params.dig_T2)) >>
-               11;
-        var2 = (((((adc_T / 16) - ((int32_t)comp_params.dig_T1)) *
-                  ((adc_T / 16) - ((int32_t)comp_params.dig_T1))) /
-                 4096) *
-                ((int32_t)comp_params.dig_T3)) /
-               16384;
-
-        return var1 + var2;
-    }
-
-    int32_t compensateTemperature(int32_t fine_temperature)
-    {
-        return (fine_temperature * 5 + 128) / 256;
-    }
-
-    uint32_t compensatePressure(uint32_t adc_P, int32_t fine_temperature)
-    {
-        int64_t var1, var2, p;
-        var1 = ((int64_t)fine_temperature) - 128000;
-
-        var2 = var1 * var1 * (int64_t)comp_params.dig_P6;
-        var2 = var2 + ((var1 * (int64_t)comp_params.dig_P5) * 131072);
-        var2 = var2 + (((int64_t)comp_params.dig_P4) * 34359738368);
-
-        var1 = ((var1 * var1 * (int64_t)comp_params.dig_P3) / 256) +
-               ((var1 * ((int64_t)comp_params.dig_P2) * 4096));
-
-        var1 = (((int64_t)1) * 140737488355328 + var1) *
-               ((int64_t)comp_params.dig_P1) / 8589934592;
-
-        if (var1 == 0)
-        {
-            return 0;  // avoid exception caused by division by zero
-        }
-
-        p = 1048576 - (int32_t)adc_P;
-        p = (((p * 2147483648) - var2) * 3125) / var1;
-
-        var1 = (((int64_t)comp_params.dig_P9) * (p / 8192) * (p / 8192)) /
-               33554432;
-
-        var2 = (((int64_t)comp_params.dig_P8) * p) / 524288;
-
-        p = ((p + var1 + var2) / 256) + (((int64_t)comp_params.dig_P7) * 16);
-
-        // p = ((var3 / 2) * 100) / 128;
-        return (uint32_t)p;
-    }
-
-    /**
-     * Converts two bytes into an unsigned int 16
-     * @param buf: buffer containing at least two bytes
-     */
-    uint16_t toUInt16(uint8_t* buf) { return buf[0] | buf[1] << 8; }
-
-    /**
-     * Converts two bytes into a signed int 16
-     * @param buf: buffer containing at least two bytes
-     */
-    int16_t toInt16(uint8_t* buf)
-    {
-        return static_cast<int16_t>(buf[0] | buf[1] << 8);
-    }
-
-    enum Registers : uint8_t
-    {
-        REG_WHO_AM_I  = 0xD0,
-        REG_RESET     = 0xE0,
         REG_CTRL_HUM  = 0xF2,
         REG_STATUS    = 0xF3,
         REG_CTRL_MEAS = 0xF4,
@@ -276,43 +158,143 @@ private:
         REG_PRESS_MSB  = 0xF7,
         REG_PRESS_LSB  = 0xF8,
         REG_PRESS_XLSB = 0xF9,
-
-        REG_TEMP_MSB  = 0xFA,
-        REG_TEMP_LSB  = 0xFB,
-        REG_TEMP_XLSB = 0xFC,
-
-        REG_HUM_MSB = 0xFD,
-        REG_HUM_LSB = 0xFE,
-
-        REG_CALIB_T = 0x88,
-        REG_CALUB_P = 0x8E
+        REG_TEMP_MSB   = 0xFA,
+        REG_TEMP_LSB   = 0xFB,
+        REG_TEMP_XLSB  = 0xFC,
+        REG_HUM_MSB    = 0xFD,
+        REG_HUM_LSB    = 0xFE,
     };
+
+    static constexpr uint8_t REG_ID_VAL = 0x60;  ///< Who am I value
+
+    static const BME280Config
+        BME280_DEFAULT_CONFIG;  ///< Default register values
+    static const BME280Config
+        BME280_CONFIG_ALL_ENABLED;  ///< Datasheet values for indoor navigation
+    static const BME280Config
+        BME280_CONFIG_TEMP_SINGLE;  ///< Temperature enabled in forced mode
+
+    BME280(SPISlave spiSlave_,
+           BME280Config config_ = BME280_CONFIG_ALL_ENABLED);
 
     /**
-         * Compensation parameters to convert ADC values to real temperature and
-         * pressure
-         */
-    struct CompensationParams
-    {
-        uint16_t dig_T1;
-        int16_t dig_T2;
-        int16_t dig_T3;
+     * @brief Initialize the device with the specified configuration
+     */
+    bool init() override;
 
-        uint16_t dig_P1;
-        int16_t dig_P2;
-        int16_t dig_P3;
-        int16_t dig_P4;
-        int16_t dig_P5;
-        int16_t dig_P6;
-        int16_t dig_P7;
-        int16_t dig_P8;
-        int16_t dig_P9;
-    };
+    /**
+     * @brief Sets the oversampling for humidity readings, use SKIPPED to
+     * disable humidity sampling
+     */
+    void setHumidityOversampling(Oversampling oversampling);
 
-    bool initialized = false;
+    /**
+     * @brief Sets the sensor mode
+     *
+     * Values:
+     * - SLEEP_MODE: No measurements are performed
+     * - FORCED_MODE: A single measurement is performed when this function
+     * writes the configuration, after the measurement the sensor return to
+     * sleep mode
+     * - NORMAL_MODE: Automated cycling between measurements, standby time can
+     * be set using setStandbyTime()
+     */
+    void setSensorMode(Mode mode);
 
-    const uint8_t ID         = 0x60;
-    const uint8_t RESET_WORD = 0xB6;
+    /**
+     * @brief Sets the oversampling for pressure readings, use SKIPPED to
+     * disable pressure sampling
+     */
+    void setPressureOversampling(Oversampling oversampling);
 
-    CompensationParams comp_params;
+    /**
+     * @brief Sets the oversampling for temperature readings, use SKIPPED to
+     * disable temperature sampling
+     */
+    void setTemperatureOversampling(Oversampling oversampling);
+
+    /**
+     * @brief Sets the coefficient for the IIR filter (applied to temperature
+     * and pressure)
+     */
+    void setFilterCoeff(FilterCoeff filterCoeff);
+
+    /**
+     * @brief Sets the standby time between readings in normal mode
+     */
+    void setStandbyTime(StandbyTime standbyTime);
+
+    /**
+     * @brief Reads only the humidity, does not set the configuration
+     */
+    HumidityData readHumidity();
+
+    /**
+     * @brief Reads only the pressure, does not set the configuration
+     */
+    PressureData readPressure();
+
+    /**
+     * @brief Reads only the temperature, does not set the configuration
+     */
+    TemperatureData readTemperature();
+
+    HumidityData getHumidity();
+
+    PressureData getPressure();
+
+    TemperatureData getTemerature();
+
+    /**
+     * @brief Maximum measurement time formula from datasheet page 51
+     *
+     * @return Time in milliseconds
+     */
+    static unsigned int calculateMaxMeasurementTime(BME280Config config_);
+
+    unsigned int getMaxMeasurementTime();
+
+    /**
+     * @brief Reads the WHO AM I register
+     *
+     * @return True if everything ok
+     */
+    bool selfTest() override;
+
+private:
+    BME280Data sampleImpl() override;
+
+    void setConfiguration();
+
+    void setConfiguration(BME280Config config_);
+
+    BME280Config readConfiguration();
+
+    void loadCompensationParameters();
+
+    // Compensation algorithm rev.1.1 from Bosh datasheet
+
+    int32_t computeFineTemperature(int32_t adc_T);
+
+    int32_t compensateTemperature(int32_t t_fine);
+
+    uint32_t compensatePressure(int32_t adc_P);
+
+    uint32_t compensateHumidity(int32_t adc_H);
+
+    /**
+     * @brief Check the WHO AM I code from the device.
+     *
+     * @return true if the device is recognized
+     */
+    bool checkWhoAmI();
+
+    const SPISlave spiSlave;
+    BME280Config config;
+    BME280Comp compParams;
+    int32_t t_fine;  // Used in compensation algorithm
+
+    bool initialized = false;  // Whether the sensor has been initialized
+
+    PrintLogger logger = Logging::getLogger("bme280");
 };

@@ -1,7 +1,5 @@
-/* MPU9250 Driver
- *
- * Copyright (c) 2016,2019 Skyward Experimental Rocketry
- * Authors: Alain Carlucci, Nuno Barcellos(Magnetometer)
+/* Copyright (c) 2021 Skyward Experimental Rocketry
+ * Author: Alberto Nidasio
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -15,500 +13,319 @@
  *
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.  IN NO EVENT SHALL THE
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
  * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
  * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
 
-#ifndef MPU9250_H
-#define MPU9250_H
-#include <drivers/BusTemplate.h>
-#include "../Sensor.h"
-#include <miosix.h>
+#pragma once
 
-// TODO: fix normalizeTemp() (is /512.0f correct?)
-// TODO: Self-Test
-template <typename Bus>
-class MPU9250 : public GyroSensor,
-                public AccelSensor,
-                public CompassSensor,
-                public TemperatureSensor
+#include <diagnostic/PrintLogger.h>
+
+#include "MPU9250Data.h"
+#include "drivers/spi/SPIDriver.h"
+#include "sensors/Sensor.h"
+
+/**
+ * @brief Driver class for MPU9250
+ */
+class MPU9250 : public Sensor<MPU9250Data>
 {
-
-#pragma pack(1)
-    // __extension__ is needed to prevent compiler warnings for anonymous
-    // structs.
-    typedef union {
-        __extension__ struct
-        {
-            int16_t mag[3];
-        };
-        uint8_t raw[6];
-    } akdata_t;
-
-    typedef union {
-        __extension__ struct
-        {
-            int16_t accel[3];
-            int16_t temp;
-            int16_t gyro[3];
-        };
-        int16_t buf[8];
-    } mpudata_t;
-#pragma pack()
-
 public:
-    MPU9250(uint8_t accelFullScale, uint8_t gyroFullScale)
+    enum MPU9250GyroFSR : uint8_t
     {
-        accelFS         = accelFullScale & 0x03;
-        gyroFS          = gyroFullScale & 0x03;
-        magnetoFSMState = 0;
-        mLastTemp       = 0.0f;
-    }
+        GYRO_FSR_250DPS  = 0x0,
+        GYRO_FSR_500DPS  = 0x08,
+        GYRO_FSR_1000DPS = 0x10,
+        GYRO_FSR_2000DPS = 0x18
+    };
 
-    ~MPU9250() {}
-
-    std::vector<SPIRequest> buildDMARequest() override
+    enum MPU9250AccelFSR : uint8_t
     {
-        // clang-format off
-        std::vector<uint8_t> v = 
-        { 
-            (REG_ACCEL_XOUT_H | 0x80),
-            0,0,0,0,0,0, // accel
-            0,0,         // temp
-            0,0,0,0,0,0, // gyro
-        };
-        // clang-format on
+        ACCEL_FSR_2G  = 0x0,
+        ACCEL_FSR_4G  = 0x08,
+        ACCEL_FSR_8G  = 0x10,
+        ACCEL_FSR_16G = 0x18
+    };
 
-        return {SPIRequest(0, Bus::getCSPin(), v)};
-    }
+    enum MPU9250I2CMasterInterfaceClock : uint8_t
+    {
+        I2C_MST_IF_CLK_348 = 0x0,
+        I2C_MST_IF_CLK_333 = 0x1,
+        I2C_MST_IF_CLK_320 = 0x2,
+        I2C_MST_IF_CLK_308 = 0x3,
+        I2C_MST_IF_CLK_296 = 0x4,
+        I2C_MST_IF_CLK_286 = 0x5,
+        I2C_MST_IF_CLK_276 = 0x6,
+        I2C_MST_IF_CLK_267 = 0x7,
+        I2C_MST_IF_CLK_258 = 0x8,
+        I2C_MST_IF_CLK_500 = 0x9,
+        I2C_MST_IF_CLK_471 = 0xA,
+        I2C_MST_IF_CLK_444 = 0xB,
+        I2C_MST_IF_CLK_421 = 0xC,
+        I2C_MST_IF_CLK_400 = 0xD,
+        I2C_MST_IF_CLK_381 = 0xE,
+        I2C_MST_IF_CLK_364 = 0xF
+    };
 
-    /*
-     * Only reads accelerometer, gyro and temp
+    union MPU9250RawData
+    {
+        struct __attribute__((packed)) MPU9250RawDataBits
+        {
+            int16_t accelX;
+            int16_t accelY;
+            int16_t accelZ;
+            int16_t temp;
+            int16_t gyroX;
+            int16_t gyroY;
+            int16_t gyroZ;
+            uint8_t magSt1;
+            int16_t magX;
+            int16_t magY;
+            int16_t magZ;
+        } bits;
+        int8_t bytes[21];
+    };
+
+    enum MPU9250Registers : uint8_t
+    {
+        REG_SMPLRT_DIV       = 0x19,
+        REG_CONFIG           = 0x1A,
+        REG_GYRO_CONFIG      = 0x1B,
+        REG_ACCEL_CONFIG     = 0x1C,
+        REG_FIFO_EN          = 0x23,
+        REG_I2C_MST_CTRL     = 0x24,
+        REG_I2C_SLV0_ADDR    = 0x25,
+        REG_I2C_SLV0_REG     = 0x26,
+        REG_I2C_SLV0_CTRL    = 0x27,
+        REG_I2C_SLV1_ADDR    = 0x28,
+        REG_I2C_SLV1_REG     = 0x29,
+        REG_I2C_SLV1_CTRL    = 0x2A,
+        REG_I2C_SLV2_ADDR    = 0x2B,
+        REG_I2C_SLV2_REG     = 0x2C,
+        REG_I2C_SLV2_CTRL    = 0x2D,
+        REG_I2C_SLV3_ADDR    = 0x2E,
+        REG_I2C_SLV3_REG     = 0x2F,
+        REG_I2C_SLV3_CTRL    = 0x30,
+        REG_I2C_SLV4_ADDR    = 0x31,
+        REG_I2C_SLV4_REG     = 0x32,
+        REG_I2C_SLV4_DO      = 0x33,
+        REG_I2C_SLV4_CTRL    = 0x34,
+        REG_INT_PIN_CFG      = 0x37,
+        REG_INT_ENABLE       = 0x38,
+        REG_INT_STATUS       = 0x3A,
+        REG_ACCEL_XOUT_H     = 0x3B,
+        REG_ACCEL_XOUT_L     = 0x3C,
+        REG_ACCEL_YOUT_H     = 0x3D,
+        REG_ACCEL_YOUT_L     = 0x3E,
+        REG_ACCEL_ZOUT_H     = 0x3F,
+        REG_ACCEL_ZOUT_L     = 0x40,
+        REG_TEMP_OUT_H       = 0x41,
+        REG_TEMP_OUT_L       = 0x42,
+        REG_GYRO_XOUT_H      = 0x43,
+        REG_GYRO_XOUT_L      = 0x44,
+        REG_GYRO_YOUT_H      = 0x45,
+        REG_GYRO_YOUT_L      = 0x46,
+        REG_GYRO_ZOUT_H      = 0x47,
+        REG_GYRO_ZOUT_L      = 0x48,
+        REG_EXT_SENS_DATA_00 = 0x49,
+        REG_I2C_SLV0_DO      = 0x63,
+        REG_I2C_SLV1_DO      = 0x64,
+        REG_I2C_SLV2_DO      = 0x65,
+        REG_I2C_SLV3_DO      = 0x66,
+        REG_MST_DELAY_CTRL   = 0x67,
+        REG_USER_CTRL        = 0x6A,
+        REG_PWR_MGMT_1       = 0x6B,
+        REG_PWR_MGMT_2       = 0x6C,
+        REG_WHO_AM_I         = 0x75
+    };
+
+    enum AK8963Registers : uint8_t
+    {
+        AK8963_REG_WHO_AM_I = 0x0,
+        AK8963_REG_ST1      = 0x2,
+        AK8963_REG_HXL      = 0x3,
+        AK8963_REG_HXH      = 0x4,
+        AK8963_REG_HYL      = 0x5,
+        AK8963_REG_HYH      = 0x6,
+        AK8963_REG_HZL      = 0x7,
+        AK8963_REG_HZH      = 0x8,
+        AK8963_REG_ST2      = 0x9,
+        AK8963_REG_CNTL1    = 0xA,
+        AK8963_REG_CNTL2    = 0xB,
+        AK8963_REG_ASAX     = 0x10,
+        AK8963_REG_ASAY     = 0x11,
+        AK8963_REG_ASAZ     = 0x12
+    };
+
+    // Registers bits
+    static constexpr uint8_t REG_CONFIG_DLPF_CFG_1      = 0x1;
+    static constexpr uint8_t REG_USER_CTRL_I2C_MST_EN   = 0x20;
+    static constexpr uint8_t REG_I2C_SLV_CTRL_EN        = 0x80;
+    static constexpr uint8_t REG_PWR_MGMT_1_BIT_H_RESET = 0x80;
+    static constexpr uint8_t REG_PWR_MGMT_1_CLKSEL_AUTO = 0x1;
+    static constexpr uint8_t REG_WHO_AM_I_VAL           = 0x71;
+
+    // AK8963 address and bits
+    static constexpr uint8_t AK8963_ADDR                      = 0xC;
+    static constexpr uint8_t AK8963_REG_WHO_AM_I_VAL          = 0x48;
+    static constexpr uint8_t AK8963_REG_CNTL1_POWER_DOWN_MODE = 0x0;
+    static constexpr uint8_t AK8963_REG_CNTL1_SINGLE_MES_MODE = 0x11;  // 16 bit
+    static constexpr uint8_t AK8963_REG_CNTL1_CONT_MES_MODE_1 = 0x12;  // 16 bit
+    static constexpr uint8_t AK8963_REG_CNTL1_CONT_MES_MODE_2 = 0x16;  // 16 bit
+    static constexpr uint8_t AK8963_REG_CNTL1_SELF_TEST_MODE  = 0x8;
+    static constexpr uint8_t AK8963_REG_CNTL1_FUSE_ROM_ACCESS_MODE = 0xF;
+    static constexpr uint8_t AK8963_REG_CNTL1_BIT_16_BIT_OUT       = 0xF;
+    static constexpr uint8_t AK8963_REG_CNTL2_BIT_SRST             = 0x1;
+
+    const float ACCELERATION_FS_MAP[4] = {2.0, 4.0, 8.0, 16.0};
+    const float GYROSCOPE_FS_MAP[4]    = {250, 500, 1000, 2000};
+
+    /**
+     * @brief Instantiates the driver
+     *
+     * @param highSpeedSpiClockDivider_ Clocl diver for 20MHz SPI communication
+     * with the device
      */
-    void onDMAUpdate(const SPIRequest &req) override
-    {
-        const auto &r = req.readResponseFromPeripheral();
-        mpudata_t raw_data;
+    MPU9250(SPISlave spiSlave_, unsigned short samplingRate_ = 100,
+            MPU9250GyroFSR gyroFsr_                   = GYRO_FSR_250DPS,
+            MPU9250AccelFSR accelFsr_                 = ACCEL_FSR_2G,
+            SPIClockDivider highSpeedSpiClockDivider_ = SPIClockDivider::DIV4);
 
-        memcpy(&raw_data.buf, &(r[1]), sizeof(raw_data));
-        for (int i = 0; i < 3; i++)
-        {
-            raw_data.accel[i] = fromBigEndian16(raw_data.accel[i]);
-            raw_data.gyro[i]  = fromBigEndian16(raw_data.gyro[i]);
-        }
-        raw_data.temp = fromBigEndian16(raw_data.temp);
+    /**
+     * @brief Constructs the default config for SPI Bus.
+     *
+     * @returns the default SPIBusConfig
+     */
+    static SPIBusConfig getDefaultSPIConfig();
 
-        mLastAccel.setX((normalizeAccel(raw_data.accel[0])-_axb));
-        mLastAccel.setY((normalizeAccel(raw_data.accel[1])-_ayb));
-        mLastAccel.setZ((normalizeAccel(raw_data.accel[2])-_azb));
+    /**
+     * @brief Initialize the device
+     *
+     * The AK8963 is initialized such ad its data are read by the MPU9250 at
+     * each sample cycle, the host only needs to communicate with the MPU9250
+     */
+    bool init() override;
 
-        mLastGyro.setX(normalizeGyro(raw_data.gyro[0]));
-        mLastGyro.setY(normalizeGyro(raw_data.gyro[1]));
-        mLastGyro.setZ(normalizeGyro(raw_data.gyro[2]));
-
-        mLastTemp = normalizeTemp(raw_data.temp);
-    }
-
-    bool init() override
-    {       
-        miosix::Thread::sleep(100);
-        uint8_t whoami = Bus::read(REG_WHO_AM_I);
-        TRACE("MPU whoami: expected %x actual %x\n", who_am_i_value_mpu, whoami);
-
-        if (whoami != who_am_i_value_mpu && whoami != 0x70)
-        {
-            last_error = ERR_NOT_ME;
-            return false;
-        }
-
-        if(!initMagneto())
-        {
-            TRACE("MPU9250 Magnetometer init failed\n");
-        }
-
-        // Initialize MPU9250
-        // clang-format off
-        uint8_t init_data[][2] = 
-        {
-            {REG_PWR_MGMT_1,     0x01}, // Clock Source
-            {REG_PWR_MGMT_2,     0x00}, // Enable all sensors
-            {REG_CONFIG,         0x00}, // DLPF_CFG = xxxxx000
-            {REG_SMPLRT_DIV,     0x00}, // Do not divide
-            {REG_GYRO_CONFIG,    (uint8_t) (0x03 | ((gyroFS  & 3) << 3))},
-            {REG_ACCEL_CONFIG,   (uint8_t) (0x00 | ((accelFS & 3) << 3))},
-            {REG_ACCEL_CONFIG2,  0x08}, // FCHOICE = 1, A_DLPF_CFG = 000
-        };
-        // clang-format on
-
-        for (size_t i = 0; i < sizeof(init_data) / sizeof(init_data[0]); i++)
-        {
-            Bus::write(init_data[i][0], init_data[i][1]);
-            miosix::Thread::sleep(10);
-        }
-
-        return true;
-    }
-
-    /* Try to initialize AK8963 for 10 times because it doesn't always works */
-    bool initMagneto()
-    { 
-        for (size_t i = 0; i < 10; i++)
-        {
-            // clang-format off
-            uint8_t init_data[][2] = 
-            {
-                {REG_PWR_MGMT_1,     0x80}, // Reset Device
-                {REG_INT_PIN_CFG,    0x16},
-
-                // I2C (MPU9250 <-> AK8963)
-                {REG_USER_CTRL,      0x20}, // I2C Master mode
-
-                {REG_I2C_MST_CTRL,   0x48}, // I2C configuration multi-master  IIC at 258hz
-                
-                {REG_I2C_SLV0_ADDR,  AK8963_I2C_ADDR}, // Set the I2C slave addres of AK8963 and set for write.
-                {REG_I2C_SLV0_REG,   AK8963_CNTL2}, // I2C slave 0 register address from where to begin data transfer
-                {REG_I2C_SLV0_DO,    0x01}, // Reset AK8963
-                {REG_I2C_SLV0_CTRL,  0x81}, // Enable I2C and set 1 byte
-
-                {REG_I2C_SLV0_REG,   AK8963_CNTL1}, // I2C slave 0 register address from where to begin data transfer
-                {REG_I2C_SLV0_DO,    0x16}, // Register value to 100Hz continuous measurement in 16bit
-                // {REG_I2C_SLV0_DO,    0x12}, // Register value to 8Hz continuous measurement in 16bit
-                {REG_I2C_SLV0_CTRL,  0x81}, //Enable I2C and set 1 byte
-            };
-            // clang-format on
-
-            for (size_t i = 0; i < sizeof(init_data) / sizeof(init_data[0]); i++)
-            {
-                Bus::write(init_data[i][0], init_data[i][1]);
-                miosix::Thread::sleep(10); // It won't work without this delay
-            }
-
-            uint8_t ak_wia = akReadWhoAmI();
-            // printf("AK whoami: expected %x actual %x\n", who_am_i_value_ak, ak_wia);
-            if (ak_wia == who_am_i_value_ak)
-            {
-                magnetoFSMState = 1;
-                return true;
-            }
-        }
-
-        // Reset the device if magnetometer initialization was unsuccessfull.
-        Bus::write(REG_PWR_MGMT_1,0x80); // Reset Device
-        miosix::Thread::sleep(10);
-
-        return false;
-    }
-
-    bool onSimpleUpdate() override
-    {
-        uint8_t buf[14];
-        mpudata_t raw_data;
-
-        Bus::read(REG_ACCEL_XOUT_H, buf, 14);
-
-        memcpy(&raw_data.buf, buf, 14);
-        for (int i = 0; i < 3; i++)
-        {
-            raw_data.accel[i] = fromBigEndian16(raw_data.accel[i]);
-            raw_data.gyro[i]  = fromBigEndian16(raw_data.gyro[i]);
-        }
-        raw_data.temp = fromBigEndian16(raw_data.temp);
-
-        mLastAccel.setX((normalizeAccel(raw_data.accel[0])-_axb));
-        mLastAccel.setY((normalizeAccel(raw_data.accel[1])-_ayb));
-        mLastAccel.setZ((normalizeAccel(raw_data.accel[2])-_azb));
-
-        mLastGyro.setX(normalizeGyro(raw_data.gyro[0]));
-        mLastGyro.setY(normalizeGyro(raw_data.gyro[1]));
-        mLastGyro.setZ(normalizeGyro(raw_data.gyro[2]));
-
-        mLastTemp = normalizeTemp(raw_data.temp);
-
-        return true;
-    }
-
-    bool updateMagneto()
-    {
-        /* Magnetometer FSM ( Board <-SPI-> MPU9250 <-I2C-> Magneto )
-         *              ______________
-         *   __________/            __v________
-         *  / State 1  \           /  State 2  \
-         * |  ReadI2C  |          |  CopyToMem |
-         * \__________/           \___________/
-         *         ^_______________/
-         *
-         */
-        switch (magnetoFSMState)
-        {
-            case 1:  // ReadI2C
-                akReadData1();
-                magnetoFSMState = 2;
-                break;
-            case 2:  // CopyToMem
-                akReadData2();
-                magnetoFSMState = 1;
-                break;
-            default:
-                return false;
-        }
-        return true;
-    }
-
-    /* Finds offset bias for the accelerometer*/
-    void calibrateAccel()
-    {
-        accelFS = 0;
-        Bus::write(REG_ACCEL_CONFIG, accelFS);  // setting the accel range to 2G
-        Bus::write(REG_ACCEL_CONFIG2, 0x04);    // setting accel bandwidth to 20Hz
-        Bus::write(REG_SMPLRT_DIV,19);          // setting the sample rate divider to 19
-        
-        // accel bias and scale factor estimation
-        double _axbD = 0;
-        double _aybD = 0;
-        double _azbD = 0;
-
-        for (size_t i = 0; i < _numSamples; i++)
-        {
-            onSimpleUpdate();
-            _axbD += (mLastAccel.getX() + _axb)/((double)_numSamples);
-            _aybD += (mLastAccel.getY() + _ayb)/((double)_numSamples);
-            _azbD += (mLastAccel.getZ() + _azb)/((double)_numSamples);
-            miosix::Thread::sleep(10);
-        }
-
-        _axb = _axbD;
-        _ayb = _aybD;
-        _azb = _azbD + EARTH_GRAVITY;
-    }
-
-    void getAccelCalibParams(float* bias)
-    {
-        bias[0] = _axb;
-        bias[1] = _ayb;
-        bias[2] = _azb;
-    }
-
-    void setAccelCalibParams(float* bias)
-    {
-        _axb = bias[0];
-        _ayb = bias[1];
-        _azb = bias[2];
-    }
-
-    bool selfTest() override
-    {
-        return true;
-    }
-
-    // clang-format off
-    enum gyroFullScale
-    {
-        GYRO_FS_250           = 0,
-        GYRO_FS_500           = 1,
-        GYRO_FS_1000          = 2,
-        GYRO_FS_2000          = 3
-    };
-
-    enum accelFullScale
-    {
-        ACC_FS_2G             = 0,
-        ACC_FS_4G             = 1,
-        ACC_FS_8G             = 2,
-        ACC_FS_16G            = 3
-    };
-    // clang-format on
+    /**
+     * @brief Self test
+     *
+     * @return True if everything ok
+     */
+    bool selfTest() override { return false; };
 
 private:
-    constexpr static uint8_t who_am_i_value_mpu = 0x71;
-    constexpr static uint8_t who_am_i_value_ak = 0x48;
-    constexpr static float accelFSMAP[]     = {2.0, 4.0, 8.0, 16.0};
-    constexpr static float gyroFSMAP[]      = {250, 500, 1000, 2000};
+    MPU9250Data sampleImpl() override;
 
-    uint8_t gyroFS;
-    uint8_t accelFS;
-    uint8_t magnetoFSMState;
+    void resetDevice();
 
-    // accel bias and scale factor estimation
-    size_t _numSamples = 1000;
-    float _axb = 0.0f; // offset bias
-    float _ayb = 0.0f;
-    float _azb = 0.0f;
+    void selectAutoClock();
 
-    inline float normalizeAccel(int16_t val)
-    {
-        return static_cast<float>(val) / 32768.0f * accelFSMAP[accelFS] *
-               EARTH_GRAVITY;
-    }
+    /**
+     * @brief Set the gyro full-scale range.
+     *
+     * @param fsr Desired full-scale range
+     */
+    void setGyroFsr(MPU9250GyroFSR fs);
 
-    inline float normalizeGyro(int16_t val)
-    {
-        return static_cast<float>(val) / 32768.0f * gyroFSMAP[gyroFS] *
-               DEGREES_TO_RADIANS;
-    }
+    /**
+     * @brief Set the accel full-scale range.
+     *
+     * @param fsr Desired full-scale range
+     */
+    void setAccelFsr(MPU9250AccelFSR fs);
 
-    inline float normalizeMagneto(int16_t val)
-    {
-        // Page 50 @ Register Map document
-        return static_cast<float>(val) / 32760.0f * 4912.0f;
-    }
+    /**
+     * @brief Set sampling rate.
+     *
+     * Sampling rate must be between 4Hz and 1kHz.
+     *
+     * @param rate Desired sampling rate (Hz)
+     */
+    void setSampleRate(unsigned short rate);
 
-    inline float normalizeTemp(int16_t val)
-    {
-        // Page 33 @ Register Map Document
-        return static_cast<float>(val) / 512.0f + 21.0f;
-    }
+    void enableMpuI2CMasterInterface();
 
+    void setMpuI2CMasterInterfaceClock(MPU9250I2CMasterInterfaceClock clk);
 
-    uint8_t akReadWhoAmI()
-    {
-        // clang-format off
-        uint8_t regs[][2] =
-        {
-            { REG_I2C_SLV0_ADDR,    (uint8_t)(AK8963_I2C_ADDR | 0x80)},
-            { REG_I2C_SLV0_REG,     AK8963_WIA},
-            { REG_I2C_SLV0_CTRL,    0x81 }, //Read 1 byte from the magnetometer
-        };
-        // clang-format on
+    /**
+     * @brief Setup the I2C slave (0-3) for read operations
+     */
+    void setI2CMasterSlaveRead(uint8_t addr, uint8_t reg, uint8_t nBytes = 1,
+                               uint8_t slave = 0);
 
-        for (size_t i = 0; i < sizeof(regs) / sizeof(regs[0]); i++)
-            Bus::write(regs[i][0], regs[i][1]);
+    /**
+     * @brief Setup the I2C slave (0-3) for write operations
+     */
+    void setI2CMasterSlaveWrite(uint8_t addr, uint8_t reg, uint8_t data,
+                                uint8_t slave = 0);
 
-        miosix::Thread::sleep(2);
+    /**
+     * @brief Disables the I2C slave communication
+     */
+    void disableI2CMasterSlave(uint8_t slave = 0);
 
-        uint8_t ret = Bus::read(REG_EXT_SENS_DATA_00|0x80);
-        return ret;
-    }
+    /**
+     * @brief Read a byte form the AK8963 throug the MPU9250 I2C master
+     * interface.
+     *
+     * Requires that MPU I2C master interface to be enabled.
+     */
+    uint8_t readFromAk(uint8_t reg);
 
-    void akReadData()
-    {
-        // clang-format off
-        uint8_t regs[][2] =
-        {
-            { REG_I2C_SLV0_ADDR,    (uint8_t)(AK8963_I2C_ADDR | 0x80)},
-            { REG_I2C_SLV0_REG,     AK8963_HXL},
-            { REG_I2C_SLV0_CTRL,    0x87}, // Read 6 bytes from the magnetometer
-        };
-        // clang-format on
+    /**
+     * @brief Writes a byte to the AK8963 throug the MPU9250 I2C master
+     * interface.
+     *
+     * Requires that MPU I2C master interface to be enabled.
+     */
+    void writeToAk(uint8_t reg, uint8_t data);
 
-        for (size_t i = 0; i < sizeof(regs) / sizeof(regs[0]); i++)
-            Bus::write(regs[i][0], regs[i][1]);
+    /**
+     * @brief Initialize the AK8963.
+     *
+     * Requires the MPU I2C master interface to be enabled.
+     */
+    bool initAk();
 
-        miosix::Thread::sleep(2);
+    /**
+     * @brief Check the WHO AM I code from the device.
+     *
+     * @return true if the device is recognized
+     */
+    bool checkWhoAmI();
 
-        akdata_t ak;
+    /**
+     * @brief Check the WHO AM I code for the AK8963.
+     *
+     * @return true if the device is recognized
+     */
+    bool checkAkWhoAmI();
 
-        Bus::read(REG_EXT_SENS_DATA_00, ak.raw, sizeof(ak.raw));
+    inline void writeSPIWithDelay(SPITransaction& transaction, uint8_t reg,
+                                  uint8_t data);
 
-        ak.mag[0] = (ak.raw[1] << 8) | ak.raw[0];
-        ak.mag[1] = (ak.raw[3] << 8) | ak.raw[2];
-        ak.mag[2] = (ak.raw[5] << 8) | ak.raw[4];
+    inline float normalizeAcceleration(int16_t rawValue);
 
-        mLastCompass.setX(normalizeMagneto(ak.mag[0]));
-        mLastCompass.setY(normalizeMagneto(ak.mag[1]));
-        mLastCompass.setZ(normalizeMagneto(ak.mag[2]));
-    }
+    inline float normalizeTemperature(int16_t rawValue);
 
-    // akReadData11 tells to the i2c master to begin reading and.. (akReadData2)
-    void akReadData1()
-    {
-        // clang-format off
-        uint8_t regs[][2] =
-        {
-            { REG_I2C_SLV0_ADDR,    (uint8_t)(AK8963_I2C_ADDR | 0x80)},
-            { REG_I2C_SLV0_REG,     AK8963_HXL},
-            { REG_I2C_SLV0_CTRL,    0x87}, // Read 6 bytes from the magnetometer
-        };
-        // clang-format on
+    inline float normalizeGyroscope(int16_t rawValue);
 
-        for (size_t i = 0; i < sizeof(regs) / sizeof(regs[0]); i++)
-            Bus::write(regs[i][0], regs[i][1]);
-    }
+    inline float normalizeMagnetometer(int16_t rawValue, float adjustmentCoeff);
 
-    // akReadData2 this one moves the data from spi to the local processor   
-    void akReadData2()
-    {
-        akdata_t ak;
+    SPISlave spiSlave;
 
-        Bus::read(REG_EXT_SENS_DATA_00, ak.raw, sizeof(ak.raw));
+    const unsigned short samplingRate;
 
-        ak.mag[0] = (ak.raw[1] << 8) | ak.raw[0];
-        ak.mag[1] = (ak.raw[3] << 8) | ak.raw[2];
-        ak.mag[2] = (ak.raw[5] << 8) | ak.raw[4];
+    const MPU9250GyroFSR gyroFsr;
+    const MPU9250AccelFSR accelFsr;
+    float magSensAdjCoeff[3];  // Page 32 on datasheet
 
-        mLastCompass.setX(normalizeMagneto(ak.mag[0]));
-        mLastCompass.setY(normalizeMagneto(ak.mag[1]));
-        mLastCompass.setZ(normalizeMagneto(ak.mag[2]));
-    }
+    const SPIClockDivider highSpeedSpiClockDivider;
 
-    // clang-format off
-    enum magnetoMap
-    {
-        AK8963_I2C_ADDR     = 0x0c,
+    bool initialized = false;  // Whether the sensor has been initialized
 
-        AK8963_WIA          = 0x00,
-        AK8963_STATUS1      = 0x02,
-        AK8963_HXL          = 0x03,
-        AK8963_CNTL1        = 0x0A,
-        AK8963_CNTL2        = 0x0B,
-    };
-
-    enum regMap
-    {
-        REG_ST_GYRO         = 0x00,
-        REG_ST_ACCEL        = 0x0D,
-
-        REG_SMPLRT_DIV      = 0x19,
-        REG_CONFIG          = 0x1A,
-        REG_GYRO_CONFIG     = 0x1B,
-        REG_ACCEL_CONFIG    = 0x1C,
-        REG_ACCEL_CONFIG2   = 0x1D,
-
-        REG_I2C_MST_CTRL    = 0x24,
-        REG_I2C_SLV0_ADDR   = 0x25,
-        REG_I2C_SLV0_REG    = 0x26,
-        REG_I2C_SLV0_CTRL   = 0x27,
-        REG_I2C_SLV0_DO     = 0x63,
-
-        REG_I2C_SLV4_ADDR   = 0x31,
-        REG_I2C_SLV4_REG    = 0x32,
-        REG_I2C_SLV4_DO     = 0x33,
-        REG_I2C_SLV4_CTRL   = 0x34,
-        REG_I2C_SLV4_DI     = 0x35,
-        REG_I2C_MST_STATUS  = 0x36,
-
-        REG_ACCEL_XOUT_H    = 0x3b,
-
-        REG_INT_PIN_CFG     = 0x37,
-        REG_INT_ENABLE      = 0x38,
-        REG_INT_STATUS      = 0x3A,
-
-        REG_EXT_SENS_DATA_00= 0x49,
-
-        REG_USER_CTRL       = 0x6A,
-        REG_PWR_MGMT_1      = 0x6B,
-        REG_PWR_MGMT_2      = 0x6C,
-        REG_WHO_AM_I        = 0x75
-    };
-    // clang-format on
-
-    void readRAWData(mpudata_t &out)
-    {
-        Bus::read(REG_ACCEL_XOUT_H, reinterpret_cast<uint8_t *>(out.buf),
-                  sizeof(out.buf));
-
-        // BigEndian -> CPUArch (LittleEndian as usual)
-        for (size_t i = 0; i < (sizeof(out.buf) / sizeof(out.buf[0])); i++)
-            out.buf[i] = fromBigEndian16(out.buf[i]);
-    }
+    PrintLogger logger = Logging::getLogger("mpu9250");
 };
-
-template <typename Bus>
-constexpr float MPU9250<Bus>::accelFSMAP[];
-
-template <typename Bus>
-constexpr float MPU9250<Bus>::gyroFSMAP[];
-
-#endif /* ifndef MPU9250 */

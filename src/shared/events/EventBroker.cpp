@@ -1,5 +1,5 @@
 /* Copyright (c) 2015-2018 Skyward Experimental Rocketry
- * Authors: Luca Erbetta, Matteo Michele Piazzolla
+ * Authors: Luca Erbetta, Matteo Piazzolla
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -13,7 +13,7 @@
  *
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.  IN NO EVENT SHALL THE
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
  * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
  * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
@@ -21,6 +21,7 @@
  */
 
 #include "EventBroker.h"
+
 #include "Debug.h"
 #include "diagnostic/StackLogger.h"
 
@@ -29,7 +30,7 @@ EventBroker::EventBroker() {}
 void EventBroker::post(const Event& ev, uint8_t topic)
 {
 #ifdef TRACE_EVENTS
-    TRACE("[EventBroker] Event: %d, Topic: %d\n", ev.sig, topic);
+    LOG_DEBUG(logger, "Event: {}, Topic: {}", ev.sig, topic);
 #endif
 
     Lock<FastMutex> lock(mtx_subscribers);

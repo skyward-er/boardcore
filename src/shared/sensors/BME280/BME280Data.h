@@ -1,5 +1,5 @@
-/* Copyright (c) 2015-2018 Skyward Experimental Rocketry
- * Authors: Luca Erbetta
+/* Copyright (c) 2021 Skyward Experimental Rocketry
+ * Author: Alberto Nidasio
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -13,36 +13,43 @@
  *
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.  IN NO EVENT SHALL THE
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
  * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
  * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
-#ifndef SRC_SHARED_SENSORS_BME280DATA_H
-#define SRC_SHARED_SENSORS_BME280DATA_H
 
-#include <ostream>
-#include <string>
+#pragma once
 
-struct BME280Data
+#include "sensors/SensorData.h"
+
+struct BME280Data : public TemperatureData,
+                    public PressureData,
+                    public HumidityData
 {
-    uint32_t timestamp = 0;
-    float pressure = 0;
-    float temperature = 0;
-    uint32_t raw_pressure = 0;
-    uint32_t raw_temperature = 0;
-    
+    BME280Data()
+        : TemperatureData{0, 0.0}, PressureData{0, 0.0}, HumidityData{0, 0.0}
+    {
+    }
+
+    BME280Data(uint64_t timestamp, float temperature, float pressure,
+               float humidity)
+        : TemperatureData{timestamp, temperature},
+          PressureData{timestamp, pressure}, HumidityData{timestamp, humidity}
+
+    {
+    }
+
     static std::string header()
     {
-        return "timestamp,pressure,temperature,raw_pressure,raw_temperature\n";
+        return "temp_timestamp,temp,press_timestamp,press,humid_timestamp,"
+               "humid\n";
     }
 
     void print(std::ostream& os) const
     {
-        os << timestamp << "," << pressure << "," << temperature << ","
-           << raw_pressure << "," << raw_temperature << "\n";
+        os << temp_timestamp << "," << temp << "," << press_timestamp << ","
+           << press << "," << humid_timestamp << "," << humid << "\n";
     }
 };
-
-#endif /* SRC_SHARED_SENSORS_BME280DATA_H */
