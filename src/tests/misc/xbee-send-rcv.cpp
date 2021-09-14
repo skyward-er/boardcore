@@ -1,6 +1,5 @@
-/*
- * Copyright (c) 2019 Skyward Experimental Rocketry
- * Authors: Luca Erbetta
+/* Copyright (c) 2019 Skyward Experimental Rocketry
+ * Author: Luca Erbetta
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -14,15 +13,17 @@
  *
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.  IN NO EVENT SHALL THE
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
  * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
  * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
 
+#include <drivers/spi/SPIDriver.h>
 #include <interfaces-impl/hwmapping.h>
 #include <miosix.h>
+
 #include <cstdio>
 #include <iostream>
 #include <string>
@@ -31,33 +32,36 @@
 #include "drivers/Xbee/Xbee.h"
 #include "math/Stats.h"
 
-#include <drivers/BusTemplate.h>
-
 using std::cin;
 using std::cout;
 using std::string;
 
-using HwTimer                      = HardwareTimer<uint32_t, 2>;
 static const unsigned int PKT_SIZE = 128;
 
 using namespace miosix;
 using namespace interfaces;
 
-// SPI1 binding al sensore
-
 // WARNING: If flashing on stm32f49 discovery board (with screen removed) use
 // SPI1 as the 2nd isnt working.
-// typedef BusSPI<1, spi1::mosi, spi1::miso, spi1::sck> busSPI2;  // Creo la SPI2
 
-typedef BusSPI<2, spi2::mosi, spi2::miso, spi2::sck> busSPI2;  // Creo la
-// SPI2
+// Discovery
+SPIBus bus{SPI1};
+GpioPin cs = sensors::lsm6ds3h::cs::getPin();
+GpioPin attn = xbee::attn::getPin();
+GpioPin rst = xbee::reset::getPin();
 
-// WARNING: Don't use xbee::cs on discovery board as it isn't working
-typedef Xbee::Xbee<busSPI2, xbee::cs, xbee::attn, xbee::reset>
-    Xbee_t;
+// Death stack
+// SPIBus bus{SPI2};
+// GpioPin cs = xbee::cs::getPin();
+// GpioPin attn = xbee::attn::getPin();
+// GpioPin rst = xbee::reset::getPin();
 
-Xbee_t xbee_transceiver;
-void __attribute__((used)) EXTI10_IRQHandlerImpl() { Xbee::handleATTNInterrupt(); }
+Xbee::Xbee* xbee_transceiver;
+
+void __attribute__((used)) EXTI10_IRQHandlerImpl()
+{
+    Xbee::handleATTNInterrupt();
+}
 
 void enableXbeeInterrupt()
 {
@@ -103,7 +107,7 @@ void send()
             c = 48;
         }
 
-        if (!xbee_transceiver.send(buf, PKT_SIZE))
+        if (!xbee_transceiver->send(buf, PKT_SIZE))
         {
             printf("[%d] Send error %d\n", (int)getTick(), ++fail);
         }
@@ -124,7 +128,7 @@ void receive(void*)
     uint8_t buf[512];
     for (;;)
     {
-        ssize_t len = xbee_transceiver.receive(buf, 512);
+        ssize_t len = xbee_transceiver->receive(buf, 512);
         if (len <= 0)
         {
             printf("Receive failed.\n");
@@ -168,12 +172,9 @@ int main()
 
     // reset();
 
-    HwTimer& t = HwTimer::instance();
-    t.setPrescaler(1024);
+    xbee_transceiver = new Xbee::Xbee(bus, cs, attn, rst);
 
-    busSPI2::init();
-
-    xbee_transceiver.start();
+    xbee_transceiver->start();
 
     // Send & receive
     Thread::create(receive, 2048);

@@ -1,7 +1,5 @@
-/* Vector3
- *
- * Copyright (c) 2016 Skyward Experimental Rocketry
- * Authors: Alain Carlucci
+/* Copyright (c) 2016 Skyward Experimental Rocketry
+ * Author: Alain Carlucci
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -15,7 +13,7 @@
  *
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.  IN NO EVENT SHALL THE
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
  * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
  * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
@@ -33,6 +31,13 @@ class Vec3
 
 public:
     Vec3() { clear(); }
+
+    Vec3(const Vec3& rhs)
+    {
+        x = rhs.x;
+        y = rhs.y;
+        z = rhs.z;
+    }
 
     Vec3(float x, float y, float z)
     {
@@ -63,11 +68,24 @@ public:
         return true;
     }
 
+    void operator=(const Vec3& rhs){
+        x = rhs.x;
+        y = rhs.y;
+        z = rhs.z;
+    }
+
     void operator*=(float value)
     {
         x *= value;
         y *= value;
         z *= value;
+    }
+
+    void operator/=(float value)
+    {
+        x /= value;
+        y /= value;
+        z /= value;
     }
 
     void operator+=(const Vec3 &v)
@@ -84,7 +102,9 @@ public:
         z -= v.getZ();
     }
 
-    Vec3 operator*(float v) const { return Vec3(x * v, y * v, z * v); }
+    Vec3 operator*(float t) const { return Vec3(x * t, y * t, z * t); }
+
+    Vec3 operator/(float t) const { return Vec3(x / t, y / t, z / t); }
 
     Vec3 operator+(const Vec3 &v) const
     {
@@ -94,6 +114,10 @@ public:
     Vec3 operator-(const Vec3 &v) const
     {
         return Vec3(x - v.getX(), y - v.getY(), z - v.getZ());
+    }
+
+    Vec3 operator-() const {
+        return Vec3(-x, -y, -z);
     }
 
     float dot(const Vec3 &v) const

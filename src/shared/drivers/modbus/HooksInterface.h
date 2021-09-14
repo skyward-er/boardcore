@@ -1,9 +1,4 @@
-/* Class that provides an interface made by a set of function interface used by
- * Modbus slave engine to handle the server requests.
- * By default the functions will return the error code "function unsupported",
- * user must provide a correct implementation by subclassing this class
- *
- * Copyright (c) 2017 Skyward Experimental Rocketry
+/* Copyright (c) 2017 Skyward Experimental Rocketry
  * Author: Silvano Seva
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -18,11 +13,17 @@
  *
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.  IN NO EVENT SHALL THE
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
  * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
  * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
+ */
+
+/* Class that provides an interface made by a set of function interface used by
+ * Modbus slave engine to handle the server requests.
+ * By default the functions will return the error code "function unsupported",
+ * user must provide a correct implementation by subclassing this class
  */
 
 #ifndef HOOKS_H

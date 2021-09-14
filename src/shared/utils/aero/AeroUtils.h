@@ -1,8 +1,5 @@
-/**
- * Collection of functions for common aerospace calculations
- *
- * Copyright (c) 2019 Skyward Experimental Rocketry
- * Authors: Luca Erbetta
+/* Copyright (c) 2019 Skyward Experimental Rocketry
+ * Author: Luca Erbetta
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -16,7 +13,7 @@
  *
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.  IN NO EVENT SHALL THE
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
  * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
  * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
@@ -63,6 +60,19 @@ constexpr float n_inv = (R * a) / g;
  * @return Current altitude with respect to the reference altitude [meters]
  */
 float relAltitude(float pressure, float pressure_ref, float temperature_ref);
+
+/**
+ * Returns the current air density with respect to a reference density and
+ * temperature, using the Internation Standard Atmosphere model.
+ *
+ * @param pressure Current atmospheric pressure [Pascal]
+ * @param pressure_ref Pressure at reference altitude (must be > 0) [Pascal]
+ * @param altitude_ref Reference altitude [m]
+ * @param temperature_ref Temperature at reference altitude [Kelvin]
+ * @return Current air density  [Kg/m^3]
+ */
+float relDensity(float pressure, float pressure_ref, float altitude_ref,
+                 float temperature_ref);
 
 /**
  * Returns the expected pressure at mean sea level based on temperature and

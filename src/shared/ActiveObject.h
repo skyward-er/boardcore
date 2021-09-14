@@ -1,7 +1,5 @@
-/* Event scheduler
- *
- * Copyright (c) 2015-2016 Skyward Experimental Rocketry
- * Author: Federico Terraneo, Matteo Michele Piazzolla
+/* Copyright (c) 2015-2016 Skyward Experimental Rocketry
+ * Authors: Federico Terraneo, Matteo Piazzolla
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -15,7 +13,7 @@
  *
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.  IN NO EVENT SHALL THE
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
  * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
  * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
@@ -26,6 +24,7 @@
 #define SRC_SHARED_ACTIVEOBJECT_H
 
 #include <Common.h>
+
 #include "diagnostic/SkywardStack.h"
 
 /**
@@ -84,9 +83,12 @@ public:
      */
     virtual void stop()
     {
-        should_stop = true;
-        thread->join();
-        stopped = true;
+        if (isRunning())
+        {
+            should_stop = true;
+            thread->join();
+            stopped = true;
+        }
     }
 
     bool isStarted() { return started; }

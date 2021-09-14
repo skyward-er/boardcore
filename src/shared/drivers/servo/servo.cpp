@@ -1,6 +1,5 @@
-/**
- * Copyright (c) 2019 Skyward Experimental Rocketry
- * Authors: Luca Erbetta
+/* Copyright (c) 2019 Skyward Experimental Rocketry
+ * Author: Luca Erbetta
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -14,7 +13,7 @@
  *
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.  IN NO EVENT SHALL THE
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
  * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
  * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
@@ -22,10 +21,15 @@
  */
 
 #include "servo.h"
+
 #include <cmath>
+#include <cstring>
 
 // Initialize the pwm with 50 Hz frequency and 65535 levels of duty cycle
-Servo::Servo(PWM::Timer t) : pwm(t, 50, 65535) { memset(&positions, 0, 4); }
+Servo::Servo(PWM::Timer t) : pwm(t, 50, 65535)
+{
+    memset(&positions, 0, 4 * sizeof(float));
+}
 
 Servo::~Servo() {}
 
@@ -68,7 +72,7 @@ void Servo::setMinPulseWidth(float min_pulse)
 void Servo::setMaxPulseWidth(float max_pulse)
 {
     this->max_pulse = fmax(1700.0f, fmin(2500.0f, max_pulse));
-    
+
     updateParameters();
 }
 

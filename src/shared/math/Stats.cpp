@@ -1,6 +1,4 @@
-/* Computes statistics (min, max, mean and variance) on a dataset
- *
- * Copyright (c) 2015-2016 Skyward Experimental Rocketry
+/* Copyright (c) 2015-2016 Skyward Experimental Rocketry
  * Author: Federico Terraneo
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -15,7 +13,7 @@
  *
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.  IN NO EVENT SHALL THE
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
  * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
  * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
@@ -42,7 +40,7 @@ ostream& operator<<(ostream& os, const StatsResult& sr)
 
 Stats::Stats()
     : minValue(numeric_limits<float>::max()),
-      maxValue(numeric_limits<float>::min()), mean(0.f), m2(0.f), n(0)
+      maxValue(numeric_limits<float>::lowest()), mean(0.f), m2(0.f), n(0)
 {
 }
 
@@ -64,7 +62,7 @@ void Stats::add(float data)
 void Stats::reset()
 {
     minValue = numeric_limits<float>::max();
-    maxValue = numeric_limits<float>::min();
+    maxValue = numeric_limits<float>::lowest();
     mean     = 0.f;
     m2       = 0.f;
     n        = 0;

@@ -1,6 +1,4 @@
-/* Synchronized Packet Queue
- *
- * Copyright (c) 2019 Skyward Experimental Rocketry
+/* Copyright (c) 2019 Skyward Experimental Rocketry
  * Author: Alvise de'Faveri Tron
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -15,7 +13,7 @@
  *
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.  IN NO EVENT SHALL THE
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
  * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
  * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
@@ -33,7 +31,6 @@
 
 #include "CircularBuffer.h"
 
-
 // This header can be compiled to run on a PC, for easier testing.
 #ifdef COMPILE_FOR_X86
 #warning The flag COMPILE_FOR_X86 is active! If this is flight code, shame on you
@@ -41,13 +38,13 @@
 #define MIOSIX_ONLY(x)
 #else
 #define MIOSIX_ONLY(x) x
-#include "miosix.h"
 #include "Debug.h"
+#include "miosix.h"
 
 using miosix::ConditionVariable;
-using std::range_error;
 using miosix::FastMutex;
 using miosix::Lock;
+using std::range_error;
 #endif
 
 /*******************************************************************************
@@ -266,16 +263,16 @@ public:
             {
                 // Mark the packet as ready (in the case it wasn't already)
                 last.markAsReady();
-                
-                if(buffer.isFull())
+
+                if (buffer.isFull())
                 {
                     // We have dropped a packet
                     ++dropped;
                 }
                 // Add a new packet and fill that instead
                 Pkt& newpkt = buffer.put(Pkt{});
-                
-                if(!newpkt.tryAppend(msg, msg_len))
+
+                if (!newpkt.tryAppend(msg, msg_len))
                 {
                     TRACE("Packet is too big!\n");
                     return -1;

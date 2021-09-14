@@ -1,5 +1,5 @@
 /* Copyright (c) 2018 Skyward Experimental Rocketry
- * Authors: Nuno Barcellos
+ * Author: Nuno Barcellos
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -13,7 +13,7 @@
  *
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.  IN NO EVENT SHALL THE
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
  * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
  * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
@@ -21,58 +21,47 @@
  */
 
 #include <Common.h>
-#include <drivers/BusTemplate.h>
-#include <interfaces-impl/hwmapping.h>
-#include "sensors/MS580301BA07/MS580301BA07.h"
-
+#include <drivers/spi/SPIDriver.h>
 #include <drivers/spi/SensorSpi.h>
-#include <sensors/SensorSampling.h>
+#include <interfaces-impl/hwmapping.h>
+#include <sensors/MS5803/MS5803.h>
+#include <sensors/SensorSampler.h>
 
 using namespace miosix;
-using namespace miosix::interfaces;
-typedef Gpio<GPIOD_BASE, 7> cs_ms58;
 
-typedef BusSPI<1, spi1::mosi, spi1::miso, spi1::sck> busSPI1;
-typedef ProtocolSPI<busSPI1, cs_ms58> spiMS58;
-typedef MS580301BA07<spiMS58> ms58_t;
+/**
+ * This test is intended to be run on the Death Stack X
+ */
 
 int main()
 {
-    SimpleSensorSampler sampler;
+    TimestampTimer::enableTimestampTimer();
 
-    spiMS58::init();
-    ms58_t* ms58 = new ms58_t();
+    SPIBusConfig spiConfig;
+    SPIBus spiBus(SPI1);
+    SPISlave spiSlave(spiBus, miosix::sensors::ms5803::cs::getPin(), spiConfig);
+
+    // Sample temperature every 5 pressure samples
+    MS5803 sensor(spiSlave, 10);
 
     Thread::sleep(100);
 
-    if (ms58->init())
+    if (!sensor.init())
     {
-        printf("MS58 Init succeeded\n");
-        sampler.AddSensor(ms58);
-    }
-    else
-    {
-        printf("MS58 Init failed\n");
-
-        while (!ms58->init())
-        {
-            printf("MS58 Init failed\n");
-            Thread::sleep(1000);
-        }
+        printf("MS5803 Init failed\n");
     }
 
     Thread::sleep(100);
-    printf("raw_p,p,raw_t,t\n");
+    printf("press_timestamp,press,temp_timestamp,temp\n");
+
     while (true)
     {
-        sampler.Update();
+        sensor.sample();
 
-        const float* last_pressure = ms58->pressureDataPtr();
-        const float* last_temp     = ms58->tempDataPtr();
-        MS5803Data md              = ms58->getData();
-        printf("%d,%f,%d,%f\n", (int)md.raw_press,
-               *last_pressure, (int)md.raw_temp, *last_temp);
+        MS5803Data data = sensor.getLastSample();
+        printf("%llu,%f,%llu,%f\n", data.press_timestamp, data.press,
+               data.temp_timestamp, data.temp);
 
-        Thread::sleep(100);
+        Thread::sleep(10);
     }
 }

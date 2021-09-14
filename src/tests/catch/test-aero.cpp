@@ -1,6 +1,5 @@
-/**
- * Copyright (c) 2019 Skyward Experimental Rocketry
- * Authors: Luca Erbetta
+/* Copyright (c) 2019 Skyward Experimental Rocketry
+ * Author: Luca Erbetta
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -14,7 +13,7 @@
  *
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.  IN NO EVENT SHALL THE
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
  * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
  * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
@@ -78,6 +77,22 @@ TEST_CASE("[AeroUtils] relAltitude")
             Approx(11000).epsilon(0.0001));
     REQUIRE(mslAltitude(102532, 102532, 288.800, -100) ==
             Approx(-100).epsilon(0.0001));
+}
+
+TEST_CASE("[AeroUtils] relDensity")
+{
+    using namespace aeroutils;
+
+    REQUIRE(relDensity(101325, 101325, 0, 288.15) ==
+            Approx(1.225).epsilon(0.0001));
+    REQUIRE(relDensity(100129.438691069, 101325, 0, 288.15) ==
+            Approx(1.21328277727309).epsilon(0.0001));
+    REQUIRE(relDensity(89874.5715517214, 101325, 0, 288.15) ==
+            Approx(1.11164259066989).epsilon(0.0001));
+    REQUIRE(relDensity(70108.5471843675, 101325, 0, 288.15) ==
+            Approx(0.909122116038058).epsilon(0.0001));
+    REQUIRE_FALSE(relDensity(101325, 101325, 0, 288.15) ==
+            Approx(1.226).epsilon(0.0001));
 }
 
 TEST_CASE("[AeroUtils] verticalSpeed")

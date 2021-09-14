@@ -1,5 +1,5 @@
 /* Copyright (c) 2018 Skyward Experimental Rocketry
- * Authors: Luca Mozzarelli
+ * Author: Luca Mozzarelli
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -13,7 +13,7 @@
  *
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.  IN NO EVENT SHALL THE
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
  * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
  * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
@@ -23,14 +23,15 @@
 // This prgram runs through a simulated flight and reports the apogee detection,
 // while measuring the time elapsed
 
-
 // RESULT: Update operation 0.0319 on average
 #include <Common.h>
 #include <drivers/HardwareTimer.h>
 #include <kalman/Kalman.h>
+
 #include <iostream>
-#include "util/util.h"
+
 #include "test-kalman-data.h"
+#include "util/util.h"
 
 using namespace miosix;
 
@@ -47,22 +48,25 @@ int main(int argc, char const* argv[])
     // Setting pin mode for signaling ADA status
     {
         FastInterruptDisableLock dLock;
-        greenLed::mode(Mode::OUTPUT);
-        redLed::mode(Mode::OUTPUT);
+        //greenLed::mode(Mode::OUTPUT);
+        //redLed::mode(Mode::OUTPUT);
+
+        RCC->APB1ENR |= RCC_APB1ENR_TIM5EN;
     }
 
     // Timer for benchmarking purposes
-    HardwareTimer<uint32_t, 2>& timer = HardwareTimer<uint32_t, 2>::instance();
+    HardwareTimer<uint32_t> timer{TIM5, TimerUtils::getPrescalerInputFrequency(
+                                            TimerUtils::InputClock::APB1)};
 
     // Instanciate matrices
-    MatrixBase<float,3,3> P{0.1, 0, 0, 0, 0.1, 0, 0, 0, 0.1};
-    MatrixBase<float,1,1> V2{10};
-    MatrixBase<float,3,3> V1{0.01, 0, 0, 0, 0.01, 0, 0, 0, 0.01};
-    MatrixBase<float,1,3> C{1, 0, 0};
-    MatrixBase<float,3,3> A{1, 0, 0, 0, 1, 0, 0, 0, 1};
+    MatrixBase<float, 3, 3> P{0.1, 0, 0, 0, 0.1, 0, 0, 0, 0.1};
+    MatrixBase<float, 1, 1> V2{10};
+    MatrixBase<float, 3, 3> V1{0.01, 0, 0, 0, 0.01, 0, 0, 0, 0.01};
+    MatrixBase<float, 1, 3> C{1, 0, 0};
+    MatrixBase<float, 3, 3> A{1, 0, 0, 0, 1, 0, 0, 0, 1};
 
     // Instanciate filter object
-    Kalman<3,1> filter = Kalman<3,1>(A, C, V1, V2, P);
+    Kalman<3, 1> filter = Kalman<3, 1>(A, C, V1, V2, P);
 
     float last_time = 0.0;  // Variable to save the time of the last sample
     float time;             // Current time as read from csv file
@@ -74,13 +78,16 @@ int main(int argc, char const* argv[])
     uint32_t tick1;
     uint32_t tick2;
 
+    printf("%d %d \n", TIME.size(), INPUT.size());
+
     for (unsigned i = 0; i < TIME.size(); i++)
     {
         if (i == 0)
         {
-            filter.X(0,0) = INPUT[0];
+            filter.X(0, 0) = INPUT[0];
             continue;
         }
+
         time = TIME[i];
         T    = time - last_time;
 
@@ -88,25 +95,30 @@ int main(int argc, char const* argv[])
         filter.A(0, 2) = 0.5 * T * T;
         filter.A(1, 2) = T;
 
-        MatrixBase<float,1,1> y{};
-        y(0,0) = INPUT[i];
+        MatrixBase<float, 1, 1> y{};
+        y(0, 0) = INPUT[i];
 
         tick1 = timer.tick();
+
         filter.update(y);
+        
         tick2 = timer.tick();
-        printf("%f \n", timer.toMilliSeconds(tick2 - tick1));
+
+        printf("%d : %f \n", i, timer.toMilliSeconds(tick2 - tick1));
+
         // printf("%f, %f, %f;\n", filter.X(0,0), filter.X(1,0), filter.X(2,0));
         // std::cout << MemoryProfiling::getCurrentFreeStack() << "\n";
         last_time = time;
-        if (filter.X(1,0) < 0)
+        if (filter.X(1, 0) < 0)
         {
-            greenLed::high();
-            redLed::low();
+            printf("APOGEE DETECTED at iteration %d ! \n", i);
+            //greenLed::high();
+            //redLed::low();
         }
         else
         {
-            greenLed::low();
-            redLed::high();
+            //greenLed::low();
+            //redLed::high();
         }
     }
     timer.stop();

@@ -1,6 +1,5 @@
-/*
- * Copyright (c) 2018 Skyward Experimental Rocketry
- * Authors: Luca Erbetta
+/* Copyright (c) 2018 Skyward Experimental Rocketry
+ * Author: Luca Erbetta
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -14,7 +13,7 @@
  *
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.  IN NO EVENT SHALL THE
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
  * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
  * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
@@ -23,6 +22,7 @@
 
 #include <miosix.h>
 #include <stdio.h>
+#include "drivers/interrupt/external_interrupts.h"
 
 using namespace miosix;
 
@@ -33,16 +33,6 @@ bool itr = false;
 void __attribute__((used)) EXTI0_IRQHandlerImpl()
 {
     itr = true;
-    EXTI->PR |= EXTI_PR_PR0;
-}
-
-// Attribute naked: Containing assembly code
-void __attribute__((naked)) EXTI0_IRQHandler()
-{
-    saveContext();
-    // bl _Z<length of function name><function name>v
-    asm volatile("bl _Z20EXTI0_IRQHandlerImplv");
-    restoreContext();
 }
 
 typedef Gpio<GPIOA_BASE, 0> user_button;
@@ -51,43 +41,17 @@ int main()
 {
     user_button::mode(Mode::INPUT);
     
-    {
-        FastInterruptDisableLock l;
-        RCC->APB2ENR |= RCC_APB2ENR_SYSCFGEN;
-    }
-    // Refer to the datasheet for a detailed description on the procedure and interrupt registers
+    enableExternalInterrupt(GPIOA_BASE, 0, InterruptTrigger::RISING_EDGE, 15);
 
-    // Clear the mask on the wanted line
-    EXTI->IMR |= EXTI_IMR_MR0;
-
-    // Trigger the interrupt on a falling edge
-    EXTI->FTSR |= EXTI_FTSR_TR0;
-
-    // Trigger the interrupt on a rising edge
-    //EXTI->RTSR |= EXTI_RTSR_TR0;
-
-    EXTI->PR |= EXTI_PR_PR0; // Reset pending register
-
-    // Enable interrupt on PA0 in SYSCFG
-    SYSCFG->EXTICR[0] = 0;
-
-    // Enable the interrput in the interrupt controller
-    NVIC_EnableIRQ(EXTI0_IRQn);
-    NVIC_SetPriority(EXTI0_IRQn, 15);
-
+    unsigned int counter = 0;
     while (true)
     {
         if (itr)
         {
-            printf("Interrupt received!\n");
+            ++counter;
+            printf("%d Interrupt received!\n", counter);
             itr = false;
-            ledOn();
-            Thread::sleep(200);
-            ledOff();
-            Thread::sleep(200);
-            ledOn();
-            Thread::sleep(200);
-            ledOff();
         }
+        Thread::sleep(50);
     }
 }

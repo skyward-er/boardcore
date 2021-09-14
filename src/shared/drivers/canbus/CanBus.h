@@ -1,7 +1,5 @@
-/* CAN-Bus Driver
- *
- * Copyright (c) 2015-2016 Skyward Experimental Rocketry
- * Authors: Matteo Michele Piazzolla, Alain Carlucci
+/* Copyright (c) 2015-2016 Skyward Experimental Rocketry
+ * Authors: Matteo Piazzolla, Alain Carlucci
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -15,7 +13,7 @@
  *
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.  IN NO EVENT SHALL THE
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
  * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
  * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
@@ -27,10 +25,12 @@
 
 #include <ActiveObject.h>
 #include <Common.h>
+#include <diagnostic/PrintLogger.h>
+
 #include "CanUtils.h"
 
 /* Alias for the function to be executed on receive */
-using CanDispatcher = std::function<void(CanMsg,CanStatus)>;
+using CanDispatcher = std::function<void(CanMsg, CanStatus)>;
 
 class CanManager;
 
@@ -45,15 +45,16 @@ public:
      * @param bus        the physical pins to be used
      * @param manager    who created this bus object
      * @param can_id     the id of the currently created canbus (CAN1, CAN2...)
-     * @param dispatcher function to be executed on receive 
+     * @param dispatcher function to be executed on receive
      */
-    CanBus(CAN_TypeDef* bus, CanManager* manager, const int can_id, CanDispatcher dispatcher);
+    CanBus(CAN_TypeDef* bus, CanManager* manager, const int can_id,
+           CanDispatcher dispatcher);
     ~CanBus() {}
 
     /* Receiving function executed by the ActiveObject */
     void rcvFunction();
 
-    /* Sender function 
+    /* Sender function
      * @param id       Id of the message (aka topic)
      * @para message   message as byte array
      * @param len      length of the message (max 8 bytes, truncated if grater)
@@ -69,7 +70,7 @@ public:
     {
         should_stop = true;
 
-        //Wake the thread posting an empty can msg
+        // Wake the thread posting an empty can msg
         CanMsg empty_msg;
         empty_msg.StdId = 0xFFFFFFFF;
         empty_msg.ExtId = 0xFFFFFFFF;
@@ -77,8 +78,6 @@ public:
 
         ActiveObject::stop();
     }
-
-
 
     /* Rule of five */
     CanBus(const CanBus&)  = delete;
@@ -90,9 +89,7 @@ public:
 
 protected:
     /* Inherited from ActiveObject: executes the receiving function */
-    void run() override {
-        rcvFunction();
-    }
+    void run() override { rcvFunction(); }
 
 private:
     void canSetup();
@@ -106,6 +103,8 @@ private:
 
     CanDispatcher dispatchMessage;
     CanStatus status;
+
+    PrintLogger logger = Logging::getLogger("canbus");
 };
 
 #endif /* CANBUS_H */

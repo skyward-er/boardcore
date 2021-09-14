@@ -1,5 +1,5 @@
 /* Copyright (c) 2015-2018 Skyward Experimental Rocketry
- * Authors: Luca Erbetta
+ * Author: Luca Erbetta
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -13,7 +13,7 @@
  *
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.  IN NO EVENT SHALL THE
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
  * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
  * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
@@ -47,7 +47,7 @@ public:
     virtual T& put(const T& elem)
     {
         buffer[write_ptr] = elem;
-        T& added = buffer[write_ptr];
+        T& added          = buffer[write_ptr];
 
         if (!empty && write_ptr == read_ptr)
         {
@@ -62,12 +62,15 @@ public:
 
     /**
      * Gets an element from the buffer, without removing it
-     * Index starts at the element returned by get() or pop(): get(0) is
-     * the same as get()
+     * Index starts from the oldest element in the buffer: get(0) returns the
+     * same element as get()
      *
      * @warning Remember to catch the exception!
+     * @throw range_error if index >= count()
+     *
+     * @param i Index of the elemnt to get, starting from the oldest
+     *
      * @return the element
-     * @throws range_error if buffer is empty
      */
     virtual T& get(unsigned int i)
     {
@@ -81,21 +84,19 @@ public:
     }
 
     /**
-     * @brief Returns the last element added in the buffer
+     * @brief Returns the last element added in the buffer.
+     *
+     * @throw range_error if buffer is empty
      * @warning Remember to catch the exception!
      * @return the element
-     * @throws range_error if buffer is empty
      */
-    virtual T& last()
-    {
-        return get(count() - 1);
-    }
+    virtual T& last() { return get(count() - 1); }
 
     /**
      * Gets the first element from the buffer, without removing it
+     * @throw range_error if buffer is empty
      * @warning Remember to catch the exception!
      * @return the element
-     * @throws range_error if buffer is empty
      */
     virtual T& get()
     {
@@ -109,9 +110,9 @@ public:
 
     /**
      * Pops the first element in the buffer.
+     * @throw range_error if buffer is empty
      * @warning Remember to catch the exception!
      * @return the element that has been popped
-     * @throws range_error if buffer is empty
      */
     virtual const T& pop()
     {
@@ -148,7 +149,10 @@ public:
 
     virtual bool isEmpty() const { return empty; }
 
-    virtual bool isFull() const { return count() == Size; }
+    virtual bool isFull() const
+    {
+        return CircularBuffer<T, Size>::count() == Size;
+    }
     /**
      * Returns the maximum number of elements that can be stored in the buffer
      * @return buffer size
