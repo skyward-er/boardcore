@@ -37,8 +37,8 @@ constexpr int ACC_CALIBRATION_SAMPLES        = 200;
 constexpr int ACC_CALIBRATION_SLEEP_TIME     = 25;  // [us]
 constexpr int ACC_CALIBRATION_N_ORIENTATIONS = 6;
 
-constexpr int MAG_CALIBRATION_SAMPLES  = 500;
-constexpr int MAG_CALIBRATION_DURAITON = 60;  // [s]
+constexpr int MAG_CALIBRATION_SAMPLES  = 1000;
+constexpr int MAG_CALIBRATION_DURAITON = 120;  // [s]
 constexpr int MAG_CALIBRATION_SLEEP_TIME =
     MAG_CALIBRATION_DURAITON * 1000 / MAG_CALIBRATION_SAMPLES;  // [us]
 
