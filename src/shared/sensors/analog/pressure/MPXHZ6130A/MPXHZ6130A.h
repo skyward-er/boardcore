@@ -32,10 +32,50 @@ class MPXHZ6130A final : public AnalogPressureSensor<MPXHZ6130AData>
 {
 public:
     MPXHZ6130A(std::function<ADCData()> getSensorVoltage_,
-               const float V_SUPPLY_ = 5.0)
-        : AnalogPressureSensor(getSensorVoltage_, V_SUPPLY_, 130000)
+               const float V_SUPPLY_                 = 5.0,
+               const unsigned int num_calib_samples_ = 200,
+               const float moving_avg_coeff_         = 1.0,
+               const float ref_press_                = 101325.0f)
+        : AnalogPressureSensor(getSensorVoltage_, V_SUPPLY_, 130000),
+          offset(0.0), num_calib_samples(num_calib_samples_),
+          moving_avg_coeff(moving_avg_coeff_), ref_press(ref_press_)
     {
     }
+
+    MPXHZ6130AData sampleImpl()
+    {
+        last_sample = AnalogPressureSensor<MPXHZ6130AData>::sampleImpl();
+
+        if (calibrating)
+        {
+            press_stats.add(last_sample.press);
+
+            if (press_stats.getStats().nSamples >= num_calib_samples)
+            {
+                calibrating = false;
+                offset      = ref_press - press_stats.getStats().mean;
+
+                printf("MPXHZ6130A barometer offset : %.2f \n", offset);
+            }
+        }
+
+        last_sample.press = last_sample.press + offset;
+
+        last_sample.press = movingAverage(last_sample.press);
+
+        return last_sample;
+    }
+
+    void setReferencePressure(float p) { ref_press = p; }
+
+    void calibrate()
+    {
+        press_stats.reset();
+        offset      = 0.0f;
+        calibrating = true;
+    }
+
+    bool isCalibrating() { return calibrating; }
 
 private:
     float voltageToPressure(float voltage) override
@@ -43,7 +83,25 @@ private:
         return (((voltage / V_SUPPLY) + CONST_B) / CONST_A) * 1000;
     }
 
+    float movingAverage(float new_value)
+    {
+        accumulator = (moving_avg_coeff * new_value) +
+                      (1.0 - moving_avg_coeff) * accumulator;
+        return accumulator;
+    }
+
     // Constants from datasheet
     static constexpr float CONST_A = 0.007826;
     static constexpr float CONST_B = 0.07739;
+
+    bool calibrating = false;
+    float offset;
+    Stats press_stats;
+    unsigned int num_calib_samples;
+
+    // moving average
+    const float moving_avg_coeff;
+    float accumulator = 0.0;
+
+    float ref_press;
 };
