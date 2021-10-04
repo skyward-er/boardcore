@@ -13,7 +13,7 @@
 	url = https://github.com/fedetft/simple-template-matrix.git
 [submodule "libs/eigen"]
 	path = libs/eigen
-	url = https://gitlab.com/libeigen/eigen.git
+	url = ../../scs/third-party/eigen.git
 [submodule "libs/mxgui"]
 	path = libs/mxgui
 	url = ../../scs/mxgui.git
