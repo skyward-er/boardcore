@@ -121,14 +121,14 @@ void UbloxGPS::run()
         // Try to read the message
         if (!readUBXMessage(message, payloadLength))
         {
-            LOG_ERR(logger, "Unable to read a UBX message");
+            LOG_DEBUG(logger, "Unable to read a UBX message");
             continue;
         }
 
         // Parse the message
         if (!parseUBXMessage(message))
         {
-            LOG_ERR(logger,
+            LOG_DEBUG(logger,
                     "UBX message not recognized (class:0x{02x}, id: 0x{02x})",
                     message[2], message[3]);
         }
