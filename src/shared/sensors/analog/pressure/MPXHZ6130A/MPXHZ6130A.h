@@ -55,7 +55,7 @@ public:
                 calibrating = false;
                 offset      = ref_press - press_stats.getStats().mean;
 
-                printf("MPXHZ6130A barometer offset : %.2f \n", offset);
+                TRACE("MPXHZ6130A barometer offset : %.2f \n", offset);
             }
         }
 
