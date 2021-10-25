@@ -31,7 +31,7 @@
 */
 
 #include <libs/simple-template-matrix/matrix.h>
-#include <rls/RLS.h>
+#include <math/RLS.h>
 #include <math.h>
 #include <iostream>
 
