@@ -145,7 +145,7 @@ public:
     void setAutoReloadRegister(uint16_t autoReloadValue);
 
     /**
-     * @brief Enabled interrupt generation at UEV.
+     * @brief Enable interrupt generation at UEV.
      */
     void enableUpdateInterrupt();
 
@@ -155,7 +155,7 @@ public:
     void disableUpdateInterrupt();
 
     /**
-     * @brief Enabled DMA request generation at UEV.
+     * @brief Enable DMA request generation at UEV.
      */
     void enableUpdateDMARequest();
 
