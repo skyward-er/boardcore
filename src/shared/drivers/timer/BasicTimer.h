@@ -71,7 +71,7 @@
 class BasicTimer
 {
 public:
-    enum MasterMode : uint16_t
+    enum class MasterMode : uint16_t
     {
         /**
          * @brief Only the updateGeneration() function is used as trigger
@@ -95,11 +95,44 @@ public:
         UPDATE = TIM_CR2_MMS_1
     };
 
+    /**
+     * @brief Initializes the timer to the default state.
+     */
     BasicTimer(TIM_TypeDef *timer);
 
+    /**
+     * @brief Enables the timer.
+     */
     void enable();
 
+    /**
+     * @brief Disables the timer.
+     */
     void disable();
+
+    /**
+     * @brief Resets the timer configuration to the default state.
+     *
+     * This means that:
+     * - Auto reload register is not buffered, thus when you modify its value it
+     * is taken into effect immediately
+     * - One pulse mode disabled
+     * - UEV and UG can trigger interrupt and DMA
+     * - UEV generation (UG) is enabled
+     * - The counter is disabled
+     * - Master mode reset
+     * - Interrupt and DMA request generation disabled
+     * - Counter and prescaler set to 0
+     * - Auto reload register set to 65535 (2^16-1)
+     */
+    void reset();
+
+    /**
+     * @brief Checks whether the timer is enabled or not.
+     *
+     * @return True if the timer is enabled.
+     */
+    bool isEnabled();
 
     /**
      * @brief The auto reload register is buffered.
@@ -132,16 +165,53 @@ public:
 
     /**
      * @brief Re-initializes the timer counter and generate an update of the
-     * registers (the prescaler cleared too).
+     * registers (the prescaler is cleared too).
      */
     void generateUpdate();
 
+    /**
+     * @brief Reads the counter value.
+     *
+     * @return Counter value
+     */
     uint16_t readCounter();
 
+    /**
+     * @brief Sets the timer counter value.
+     *
+     * @param counterValue Counter value to set.
+     */
     void setCounter(uint16_t counterValue);
 
+    /**
+     * @brief Reads the prescaler value.
+     *
+     * @return Timer prescaler value
+     */
+    uint16_t readPrescaler();
+
+    /**
+     * @brief Updated the prescaler value.
+     *
+     * Keep in mind that the new prescaler value is taken into account only at
+     * the next update event. If you need to change it immediately you need to
+     * call generateUpdate() and make sure that UEV generation is enabled (which
+     * is by default).
+     */
+    void setPrescaler(uint16_t prescalerValue);
+
+    /**
+     * @brief Reads the timer auto-reload register.
+     *
+     * @return Tiemr auto-reload register value.
+     */
     uint16_t readAutoReloadRegister();
 
+    /**
+     * @brief Changes the auto-reload register.
+     *
+     * @param autoReloadValue New auto-reload register value.
+     */
     void setAutoReloadRegister(uint16_t autoReloadValue);
 
     /**
@@ -170,8 +240,8 @@ public:
     void enableOnePulseMode();
 
     /**
-     * @brief UEV and generateUpdate() can trigger an update interrupt or a DMA
-     * request if enabled.
+     * @brief UEV and generateUpdate() (UG) can trigger an update interrupt or a
+     * DMA request if enabled.
      */
     void enableUGInterruptAndDMA();
 
@@ -180,20 +250,44 @@ public:
      */
     void disableUGInterruptAndDMA();
 
+    /**
+     * @brief Changes the timer master mode.
+     *
+     * @param masterMode New timer master mode.
+     */
     void setMasterMode(MasterMode masterMode);
 
-    static void clearUpdateInterruptFlag(TIM_TypeDef *timer)
-    {
-        timer->SR &= ~TIM_SR_UIF;
-    }
+    /**
+     * @brief Clears the timer interrupt flags.
+     *
+     * @param timer Timer to use.
+     */
+    static void clearUpdateInterruptFlag(TIM_TypeDef *timer);
 
 private:
     TIM_TypeDef *timer;
 };
 
+inline BasicTimer::BasicTimer(TIM_TypeDef *timer) : timer(timer) { reset(); }
+
 inline void BasicTimer::enable() { timer->CR1 |= TIM_CR1_CEN; }
 
 inline void BasicTimer::disable() { timer->CR1 &= ~TIM_CR1_CEN; }
+
+inline void BasicTimer::reset()
+{
+    timer->CR1  = 0;
+    timer->CR2  = 0;
+    timer->DIER = 0;
+    timer->CNT  = 0;
+    timer->PSC  = 0;
+    timer->ARR  = 0xFFFF;
+}
+
+inline bool BasicTimer::isEnabled()
+{
+    return (timer->CR1 & ~TIM_CR1_CEN) == TIM_CR1_CEN;
+}
 
 inline void BasicTimer::enableAutoReloadPreload()
 {
@@ -223,6 +317,14 @@ inline void BasicTimer::setCounter(uint16_t counterValue)
 {
     timer->CNT = counterValue;
 }
+
+inline uint16_t BasicTimer::readPrescaler() { return timer->PSC; }
+
+inline void BasicTimer::setPrescaler(uint16_t prescalerValue)
+{
+    timer->PSC = prescalerValue;
+}
+
 inline uint16_t BasicTimer::readAutoReloadRegister() { return timer->ARR; }
 
 inline void BasicTimer::setAutoReloadRegister(uint16_t autoReloadValue)
@@ -261,5 +363,10 @@ inline void BasicTimer::disableUGInterruptAndDMA()
 
 inline void BasicTimer::setMasterMode(MasterMode masterMode)
 {
-    timer->CR2 |= masterMode;
+    timer->CR2 |= (uint16_t)masterMode;
+}
+
+inline void BasicTimer::clearUpdateInterruptFlag(TIM_TypeDef *timer)
+{
+    timer->SR &= ~TIM_SR_UIF;
 }
