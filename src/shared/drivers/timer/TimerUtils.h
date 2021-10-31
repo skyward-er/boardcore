@@ -29,93 +29,102 @@
  *
  * All function are static and tested for STM32F4xx family.
  */
-class TimerUtils
+namespace TimerUtils
 {
-public:
-    /**
-     * @brief Timer input clock.
-     */
-    enum class InputClock
-    {
-        APB1,
-        APB2
-    };
 
-    /**
-     * @brief Returns the timer input clock.
-     *
-     * @return Timer input clock, APB1 or ABP2.
-     */
-    static InputClock getTimerInputClock(TIM_TypeDef *timer);
-
-    /**
-     * @brief Returns the timer clock frequency before the prescaler.
-     *
-     * Class borrowed from the SyncronizedServo class in Miosix.
-     *
-     * @param inputClock Timer input clock.
-     * @return Prescaler input frequency.
-     */
-    static uint32_t getPrescalerInputFrequency(InputClock inputClock);
-
-    /**
-     * @brief Returns the timer clock frequency before the prescaler.
-     *
-     * Class borrowed from the SyncronizedServo class in Miosix.
-     *
-     * @param timer Timer to use.
-     * @return Prescaler input frequency.
-     */
-    static uint32_t getPrescalerInputFrequency(TIM_TypeDef *timer);
-
-    /**
-     * @brief Returns the timer counter converted in microseconds based on the
-     * timer clock frequency and prescaler.
-     *
-     * @returns Timer counter in microseconds.
-     */
-    static float toMicroSeconds(TIM_TypeDef *timer);
-
-    /**
-     * @brief Returns the timer counter converted in microseconds based on the
-     * timer clock frequency and prescaler.
-     *
-     * Calculation using integer values.
-     *
-     * @returns Timer counter in microseconds.
-     */
-    static uint64_t toIntMicroSeconds(TIM_TypeDef *timer);
-
-    /**
-     * @brief Returns the timer counter converted in milliseconds based on the
-     * timer clock frequency and prescaler.
-     *
-     * @returns Timer counter in milliseconds.
-     */
-    static float toMilliSeconds(TIM_TypeDef *timer);
-
-    /**
-     * @brief Returns the timer counter converted in seconds based on the timer
-     * clock frequency and prescaler.
-     *
-     * @returns Timer counter in seconds.
-     */
-    static float toSeconds(TIM_TypeDef *timer);
-
-    /**
-     * @brief Computes the timer resolution in microseconds.
-     *
-     * @return Microseconds per timer tick.
-     */
-    static float getResolution(TIM_TypeDef *timer);
-
-    /**
-     * @brief Computes the number of seconds for timer reset.
-     *
-     * @return Timer duration before counter reset.
-     */
-    static float getMaxDuration(TIM_TypeDef *timer);
+/**
+ * @brief Timer input clock.
+ */
+enum class InputClock
+{
+    APB1,
+    APB2
 };
+
+/**
+ * @brief Returns the timer input clock.
+ *
+ * @return Timer input clock, APB1 or ABP2.
+ */
+static InputClock getTimerInputClock(TIM_TypeDef *timer);
+
+/**
+ * @brief Returns the timer clock frequency before the prescaler.
+ *
+ * Class borrowed from the SyncronizedServo class in Miosix.
+ *
+ * @param inputClock Timer input clock.
+ * @return Prescaler input frequency.
+ */
+static uint32_t getPrescalerInputFrequency(InputClock inputClock);
+
+/**
+ * @brief Returns the timer clock frequency before the prescaler.
+ *
+ * Class borrowed from the SyncronizedServo class in Miosix.
+ *
+ * @param timer Timer to use.
+ * @return Prescaler input frequency.
+ */
+static uint32_t getPrescalerInputFrequency(TIM_TypeDef *timer);
+
+/**
+ * @brief Return the timer clock frequency.
+ *
+ * @param timer Timer to use.
+ * @return Timer frequency.
+ */
+static uint32_t getFrequency(TIM_TypeDef *timer);
+
+/**
+ * @brief Returns the timer counter converted in microseconds based on the
+ * timer clock frequency and prescaler.
+ *
+ * @returns Timer counter in microseconds.
+ */
+static float toMicroSeconds(TIM_TypeDef *timer);
+
+/**
+ * @brief Returns the timer counter converted in microseconds based on the
+ * timer clock frequency and prescaler.
+ *
+ * Calculation using integer values.
+ *
+ * @returns Timer counter in microseconds.
+ */
+static uint64_t toIntMicroSeconds(TIM_TypeDef *timer);
+
+/**
+ * @brief Returns the timer counter converted in milliseconds based on the
+ * timer clock frequency and prescaler.
+ *
+ * @returns Timer counter in milliseconds.
+ */
+static float toMilliSeconds(TIM_TypeDef *timer);
+
+/**
+ * @brief Returns the timer counter converted in seconds based on the timer
+ * clock frequency and prescaler.
+ *
+ * @returns Timer counter in seconds.
+ */
+static float toSeconds(TIM_TypeDef *timer);
+
+/**
+ * @brief Computes the timer resolution in microseconds.
+ *
+ * @return Microseconds per timer tick.
+ */
+static float getResolution(TIM_TypeDef *timer);
+
+/**
+ * @brief Computes the number of seconds for timer reset.
+ *
+ * @return Timer duration before counter reset in secondss.
+ */
+static float getMaxDuration(TIM_TypeDef *timer);
+
+}  // namespace TimerUtils
 
 inline TimerUtils::InputClock TimerUtils::getTimerInputClock(TIM_TypeDef *timer)
 {
@@ -149,14 +158,14 @@ inline uint32_t TimerUtils::getPrescalerInputFrequency(InputClock inputClock)
     {
         if (RCC->CFGR & RCC_CFGR_PPRE1_2)
         {
-            inputFrequency /= 1 << ((RCC->CFGR & RCC_CFGR_PPRE1) >> 10);
+            inputFrequency /= 1 << ((RCC->CFGR >> 10) & 0x3);
         }
     }
     else
     {
         if (RCC->CFGR & RCC_CFGR_PPRE2_2)
         {
-            inputFrequency /= 1 << ((RCC->CFGR & RCC_CFGR_PPRE2) >> 13);
+            inputFrequency /= 1 << ((RCC->CFGR >> 13) >> 0x3);
         }
     }
 
@@ -166,6 +175,11 @@ inline uint32_t TimerUtils::getPrescalerInputFrequency(InputClock inputClock)
 inline uint32_t TimerUtils::getPrescalerInputFrequency(TIM_TypeDef *timer)
 {
     return getPrescalerInputFrequency(getTimerInputClock(timer));
+}
+
+inline uint32_t TimerUtils::getFrequency(TIM_TypeDef *timer)
+{
+    return getPrescalerInputFrequency(timer) / (1 + timer->PSC);
 }
 
 inline float TimerUtils::toMicroSeconds(TIM_TypeDef *timer)
