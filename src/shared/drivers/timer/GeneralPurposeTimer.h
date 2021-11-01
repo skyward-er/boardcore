@@ -639,7 +639,9 @@ public:
 };
 
 inline GeneralPurposeTimer::GeneralPurposeTimer(TIM_TypeDef *timer)
-    : BasicTimer(timer){};
+    : BasicTimer(timer)
+{
+}
 
 inline void GeneralPurposeTimer::reset()
 {
@@ -653,7 +655,7 @@ inline void GeneralPurposeTimer::reset()
     timer->CCER  = 0;
     timer->CNT   = 0;
     timer->PSC   = 0;
-    timer->ARR   = 0xFFFF;
+    timer->ARR   = (uint32_t)0xFFFFFFFFF;
     timer->CCR1  = 0;
     timer->CCR2  = 0;
     timer->CCR3  = 0;
@@ -688,11 +690,6 @@ inline void GeneralPurposeTimer::setTriggerSource(TriggerSource triggerSource)
 
     // Set the new value
     timer->SMCR |= (uint16_t)triggerSource;
-}
-
-inline GeneralPurposeTimer::GeneralPurposeTimer(TIM_TypeDef *timer)
-    : BasicTimer(timer)
-{
 }
 
 inline void GeneralPurposeTimer::enableTriggerInterrupt()

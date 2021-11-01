@@ -103,6 +103,11 @@ public:
     BasicTimer(TIM_TypeDef *timer);
 
     /**
+     * @brief Return the timer.
+     */
+    TIM_TypeDef *getTimer();
+
+    /**
      * @brief Enables the timer.
      */
     void enable();
@@ -271,6 +276,8 @@ protected:
 };
 
 inline BasicTimer::BasicTimer(TIM_TypeDef *timer) : timer(timer) {}
+
+inline TIM_TypeDef *BasicTimer::getTimer() { return timer; }
 
 inline void BasicTimer::enable() { timer->CR1 |= TIM_CR1_CEN; }
 

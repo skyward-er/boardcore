@@ -27,7 +27,7 @@
 /**
  * @brief Timer utilities.
  *
- * All function are static and tested for STM32F4xx family.
+ * All are tested for STM32F4xx family.
  */
 namespace TimerUtils
 {
@@ -46,7 +46,7 @@ enum class InputClock
  *
  * @return Timer input clock, APB1 or ABP2.
  */
-static InputClock getTimerInputClock(TIM_TypeDef *timer);
+InputClock getTimerInputClock(TIM_TypeDef *timer);
 
 /**
  * @brief Returns the timer clock frequency before the prescaler.
@@ -56,7 +56,7 @@ static InputClock getTimerInputClock(TIM_TypeDef *timer);
  * @param inputClock Timer input clock.
  * @return Prescaler input frequency.
  */
-static uint32_t getPrescalerInputFrequency(InputClock inputClock);
+uint32_t getPrescalerInputFrequency(InputClock inputClock);
 
 /**
  * @brief Returns the timer clock frequency before the prescaler.
@@ -66,7 +66,7 @@ static uint32_t getPrescalerInputFrequency(InputClock inputClock);
  * @param timer Timer to use.
  * @return Prescaler input frequency.
  */
-static uint32_t getPrescalerInputFrequency(TIM_TypeDef *timer);
+uint32_t getPrescalerInputFrequency(TIM_TypeDef *timer);
 
 /**
  * @brief Return the timer clock frequency.
@@ -74,7 +74,7 @@ static uint32_t getPrescalerInputFrequency(TIM_TypeDef *timer);
  * @param timer Timer to use.
  * @return Timer frequency.
  */
-static uint32_t getFrequency(TIM_TypeDef *timer);
+uint32_t getFrequency(TIM_TypeDef *timer);
 
 /**
  * @brief Returns the timer counter converted in microseconds based on the
@@ -82,7 +82,7 @@ static uint32_t getFrequency(TIM_TypeDef *timer);
  *
  * @returns Timer counter in microseconds.
  */
-static float toMicroSeconds(TIM_TypeDef *timer);
+float toMicroSeconds(TIM_TypeDef *timer);
 
 /**
  * @brief Returns the timer counter converted in microseconds based on the
@@ -92,7 +92,7 @@ static float toMicroSeconds(TIM_TypeDef *timer);
  *
  * @returns Timer counter in microseconds.
  */
-static uint64_t toIntMicroSeconds(TIM_TypeDef *timer);
+uint64_t toIntMicroSeconds(TIM_TypeDef *timer);
 
 /**
  * @brief Returns the timer counter converted in milliseconds based on the
@@ -100,7 +100,7 @@ static uint64_t toIntMicroSeconds(TIM_TypeDef *timer);
  *
  * @returns Timer counter in milliseconds.
  */
-static float toMilliSeconds(TIM_TypeDef *timer);
+float toMilliSeconds(TIM_TypeDef *timer);
 
 /**
  * @brief Returns the timer counter converted in seconds based on the timer
@@ -108,21 +108,21 @@ static float toMilliSeconds(TIM_TypeDef *timer);
  *
  * @returns Timer counter in seconds.
  */
-static float toSeconds(TIM_TypeDef *timer);
+float toSeconds(TIM_TypeDef *timer);
 
 /**
  * @brief Computes the timer resolution in microseconds.
  *
  * @return Microseconds per timer tick.
  */
-static float getResolution(TIM_TypeDef *timer);
+float getResolution(TIM_TypeDef *timer);
 
 /**
  * @brief Computes the number of seconds for timer reset.
  *
  * @return Timer duration before counter reset in secondss.
  */
-static float getMaxDuration(TIM_TypeDef *timer);
+float getMaxDuration(TIM_TypeDef *timer);
 
 }  // namespace TimerUtils
 
@@ -184,19 +184,19 @@ inline uint32_t TimerUtils::getFrequency(TIM_TypeDef *timer)
 
 inline float TimerUtils::toMicroSeconds(TIM_TypeDef *timer)
 {
-    return (1.0f * timer->CNT * 1000000 * (1 + timer->PSC)) /
+    return (1.0f * timer->CNT * 1e6 * (1 + timer->PSC)) /
            getPrescalerInputFrequency(timer);
 }
 
 inline uint64_t TimerUtils::toIntMicroSeconds(TIM_TypeDef *timer)
 {
-    return ((uint64_t)timer->PSC * 1000000 * (uint64_t)(1 + timer->PSC)) /
+    return ((uint64_t)timer->PSC * 1e6 * (uint64_t)(1 + timer->PSC)) /
            getPrescalerInputFrequency(timer);
 }
 
 inline float TimerUtils::toMilliSeconds(TIM_TypeDef *timer)
 {
-    return (1.0f * timer->CNT * 1000 * (1 + timer->PSC)) /
+    return (1.0f * timer->CNT * 1e3 * (1 + timer->PSC)) /
            getPrescalerInputFrequency(timer);
 }
 
@@ -208,11 +208,11 @@ inline float TimerUtils::toSeconds(TIM_TypeDef *timer)
 
 inline float TimerUtils::getResolution(TIM_TypeDef *timer)
 {
-    return (1000000.0f * (1 + timer->PSC)) / getPrescalerInputFrequency(timer);
+    return (1.0e6f * (1 + timer->PSC)) / getPrescalerInputFrequency(timer);
 }
 
 inline float TimerUtils::getMaxDuration(TIM_TypeDef *timer)
 {
-    return (1.0f * timer->ARR * 1000000 * (1 + timer->PSC)) /
+    return (1.0f * timer->ARR * 1e6 * (1 + timer->PSC)) /
            getPrescalerInputFrequency(timer);
 }
