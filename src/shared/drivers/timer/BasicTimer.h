@@ -37,7 +37,8 @@
  *
  * TIM6 and TIM7 are basic timers.
  *
- * You can use any other timer as a basic timer.
+ * You can use any other timer as a basic timer. However TIM9 to TIM 14 can't
+ * generate DMA requests.
  *
  * The main block of the programmable timer is a 16-bit upcounter which is
  * incremented every clock cycle, the clock frequency can be divided by a 16-bit
@@ -65,8 +66,8 @@
  * - The auto-reload shadow register is updated with the preload value (ARR)
  *
  * The clock source is provided by the internal clock source. Specifically:
- * - APB1: TIM2-7,12-15
- * - APB2: TIM1,8-11
+ * - APB1: TIM2-7/12-15
+ * - APB2: TIM1/8-11
  */
 class BasicTimer
 {
@@ -96,7 +97,8 @@ public:
     };
 
     /**
-     * @brief Initializes the timer to the default state.
+     * @brief Create a BasicTimer object. Note that this does not resets the
+     * timer configuration.
      */
     BasicTimer(TIM_TypeDef *timer);
 
@@ -145,7 +147,7 @@ public:
     /**
      * @brief Tha auto reload register is not buffered.
      *
-     * This means that when you change the auto-reload register its value is
+     * This means that when you change the auto-reload register, its value is
      * taken into account immediately.
      */
     void disableAutoReloadPreload();
@@ -258,17 +260,17 @@ public:
     void setMasterMode(MasterMode masterMode);
 
     /**
-     * @brief Clears the timer interrupt flags.
+     * @brief Clears the update interrupt flag.
      *
      * @param timer Timer to use.
      */
     static void clearUpdateInterruptFlag(TIM_TypeDef *timer);
 
-private:
+protected:
     TIM_TypeDef *timer;
 };
 
-inline BasicTimer::BasicTimer(TIM_TypeDef *timer) : timer(timer) { reset(); }
+inline BasicTimer::BasicTimer(TIM_TypeDef *timer) : timer(timer) {}
 
 inline void BasicTimer::enable() { timer->CR1 |= TIM_CR1_CEN; }
 
@@ -353,16 +355,20 @@ inline void BasicTimer::enableOnePulseMode() { timer->CR1 |= TIM_CR1_OPM; }
 
 inline void BasicTimer::enableUGInterruptAndDMA()
 {
-    timer->CR1 &= ~TIM_CR1_UDIS;
+    timer->CR1 &= ~TIM_CR1_URS;
 }
 
 inline void BasicTimer::disableUGInterruptAndDMA()
 {
-    timer->CR1 |= TIM_CR1_UDIS;
+    timer->CR1 |= TIM_CR1_URS;
 }
 
 inline void BasicTimer::setMasterMode(MasterMode masterMode)
 {
+    // First clear the configuration
+    timer->CR2 &= ~TIM_CR2_MMS;
+
+    // Set the new value
     timer->CR2 |= (uint16_t)masterMode;
 }
 
