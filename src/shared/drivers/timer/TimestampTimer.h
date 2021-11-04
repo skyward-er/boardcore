@@ -22,7 +22,7 @@
 
 #pragma once
 
-#include <drivers/timer/GeneralPurpose32BitTimer.h>
+#include <drivers/timer/GeneralPurposeTimer.h>
 #include <drivers/timer/TimerUtils.h>
 #include <miosix.h>
 
@@ -47,7 +47,7 @@ namespace TimestampTimer
 /**
  * @brief TimestampTimer defaults to TIM2.
  */
-GeneralPurpose32BitTimer timestampTimer{TIM2};
+GeneralPurposeTimer<uint32_t> timestampTimer{TIM2};
 
 /**
  * @brief Preferred timer clock frequency.
