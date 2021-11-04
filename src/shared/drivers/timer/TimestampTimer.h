@@ -24,7 +24,10 @@
 
 #include <drivers/timer/GeneralPurposeTimer.h>
 #include <drivers/timer/TimerUtils.h>
-#include <miosix.h>
+#include <kernel/kernel.h>
+
+namespace timer
+{
 
 /**
  * @brief Utility for precise timestamp values.
@@ -76,7 +79,9 @@ uint64_t getTimestamp();
 
 }  // namespace TimestampTimer
 
-inline void TimestampTimer::initTimestampTimer()
+}  // namespace timer
+
+inline void timer::TimestampTimer::initTimestampTimer()
 {
     {
         miosix::FastInterruptDisableLock dLock;
@@ -100,9 +105,12 @@ inline void TimestampTimer::initTimestampTimer()
     timestampTimer.generateUpdate();
 }
 
-inline void TimestampTimer::enableTimestampTimer() { timestampTimer.enable(); }
+inline void timer::TimestampTimer::enableTimestampTimer()
+{
+    timestampTimer.enable();
+}
 
-inline uint64_t TimestampTimer::getTimestamp()
+inline uint64_t timer::TimestampTimer::getTimestamp()
 {
     // With a timer frequency of 250KHz, the conversion from timer ticks to
     // microseconds only take a 2 byte shift (x4)

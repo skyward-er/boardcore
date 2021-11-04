@@ -29,7 +29,8 @@
  */
 
 using namespace miosix;
-using namespace TimerUtils;
+using namespace timer::TimerUtils;
+using namespace timer::TimestampTimer;
 
 void printInputClock(InputClock inputClock);
 
@@ -40,8 +41,8 @@ int main()
     long long prevTick;
     uint64_t timestamp;
 
-    TimestampTimer::initTimestampTimer();
-    TimestampTimer::enableTimestampTimer();
+    initTimestampTimer();
+    enableTimestampTimer();
 
     testTimerUtils(TIM2);
 
@@ -49,7 +50,7 @@ int main()
     {
         prevTick = getTick();
 
-        timestamp = TimestampTimer::getTimestamp();
+        timestamp = getTimestamp();
 
         printf("%10llu us, %7f ms, %4f s \n", timestamp, timestamp / 1e3,
                timestamp / 1e6);
