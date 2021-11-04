@@ -29,8 +29,6 @@ namespace timer
 
 /**
  * @brief Timer utilities.
- *
- * All are tested for STM32F4xx family.
  */
 namespace TimerUtils
 {

@@ -1,4 +1,4 @@
-/* Copyright (c) 2020 Skyward Experimental Rocketry
+/* Copyright (c) 2020-2021 Skyward Experimental Rocketry
  * Authors: Luca Conterio, Davide Mor, Alberto Nidasio
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -44,48 +44,47 @@ namespace timer
  * For timer resolution and duration refer to :
  * https://docs.google.com/spreadsheets/d/1FiNDVU7Rg98yZzz1dZ4GDAq3-nEg994ziezCawJ-OK4/edit?usp=sharing
  */
-namespace TimestampTimer
+class TimestampTimer
 {
+public:
+    /**
+     * @brief TimestampTimer defaults to TIM2.
+     */
+    static GeneralPurposeTimer<uint32_t> timestampTimer;
 
-/**
- * @brief TimestampTimer defaults to TIM2.
- */
-GeneralPurposeTimer<uint32_t> timestampTimer{TIM2};
+    /**
+     * @brief Preferred timer clock frequency.
+     */
+    static constexpr uint32_t TIMER_FREQUENCY = 250000;
 
-/**
- * @brief Preferred timer clock frequency.
- */
-constexpr uint32_t TIMER_FREQUENCY = 250000;
+    /**
+     * @brief Initialize the timer.
+     *
+     * Enables the timer clock, resets the timer registers and sets che correct
+     * timer configuration.
+     */
+    static void initTimestampTimer();
 
-/**
- * @brief Initialize the timer.
- *
- * Enables the timer clock, resets the timer registers and sets che correct
- * timer configuration.
- */
-void initTimestampTimer();
+    /**
+     * @brief Starts the timer peripheral.
+     */
+    static void enableTimestampTimer();
 
-/**
- * @brief Starts the timer peripheral.
- */
-void enableTimestampTimer();
-
-/**
- * @brief Compute the current timer value in microseconds.
- *
- * @return Current timestamp in microseconds.
- */
-uint64_t getTimestamp();
-
-}  // namespace TimestampTimer
+    /**
+     * @brief Compute the current timer value in microseconds.
+     *
+     * @return Current timestamp in microseconds.
+     */
+    static uint64_t getTimestamp();
+};
 
 }  // namespace timer
 
+// TODO: Keep support for CortexM3
 inline void timer::TimestampTimer::initTimestampTimer()
 {
     {
         miosix::FastInterruptDisableLock dLock;
-
         // Enable TIM2 peripheral clock
         RCC->APB1ENR |= RCC_APB1ENR_TIM2EN;
     }
@@ -96,7 +95,7 @@ inline void timer::TimestampTimer::initTimestampTimer()
     // Compute the timer prescaler
     uint16_t timerPrescaler =
         TimerUtils::getPrescalerInputFrequency(timestampTimer.getTimer()) /
-        TIMER_FREQUENCY;
+        TimestampTimer::TIMER_FREQUENCY;
     timerPrescaler--;
 
     timestampTimer.setPrescaler(timerPrescaler);
