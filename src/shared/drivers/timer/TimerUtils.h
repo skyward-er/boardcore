@@ -154,6 +154,8 @@ inline uint32_t TimerUtils::getPrescalerInputFrequency(InputClock inputClock)
     // The following formula takes into account that if the APB1 clock is
     // divided by a factor of two or grater, the timer is clocked at twice the
     // bus interface.
+    // TODO: Check if this and the code are correct
+    // TODO: Keep the Cortex M3 support
     if (inputClock == InputClock::APB1)
     {
         if (RCC->CFGR & RCC_CFGR_PPRE1_2)

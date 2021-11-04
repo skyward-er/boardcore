@@ -89,9 +89,14 @@
  *
  * Other timer functionalities still needs to be implemented.
  */
+template <typename T>
 class GeneralPurposeTimer : public BasicTimer
 {
 public:
+    static_assert(std::is_same<T, uint16_t>::value ||
+                      std::is_same<T, uint32_t>::value,
+                  "Type must be either uint16_t or uint32_t.");
+
     /**
      * @brief Trigger sourcer modes.
      *
@@ -314,6 +319,34 @@ public:
     void reset();
 
     /**
+     * @brief Reads the counter value.
+     *
+     * @return Counter value
+     */
+    T readCounter();
+
+    /**
+     * @brief Sets the timer counter value.
+     *
+     * @param counterValue Counter value to set.
+     */
+    void setCounter(T counterValue);
+
+    /**
+     * @brief Reads the timer auto-reload register.
+     *
+     * @return Tiemr auto-reload register value.
+     */
+    T readAutoReloadRegister();
+
+    /**
+     * @brief Changes the auto-reload register.
+     *
+     * @param autoReloadValue New auto-reload register value.
+     */
+    void setAutoReloadRegister(T autoReloadValue);
+
+    /**
      * @brief Changes the timer master mode.
      *
      * @param masterMode New timer master mode.
@@ -343,84 +376,28 @@ public:
     void disableTriggerInterrupt();
 
     /**
-     * @brief Enable capture/compare 1 interrupt.
+     * @brief Enable capture/compare channel interrupt.
      */
-    void enableCaptureCompare1Interrupt();
+    template <int Channel>
+    void enableCaptureCompareInterrupt();
 
     /**
-     * @brief Disable capture/compare 1 interrupt.
+     * @brief Disable capture/compare channel interrupt.
      */
-    void disableCaptureCompare1Interrupt();
+    template <int Channel>
+    void disableCaptureCompareInterrupt();
 
     /**
-     * @brief Enable capture/compare 1 interrupt.
+     * @brief Enable capture/compare channel interrupt.
      */
-    void enableCaptureCompare1DMARequest();
+    template <int Channel>
+    void enableCaptureCompareDMARequest();
 
     /**
-     * @brief Disable capture/compare 1 interrupt.
+     * @brief Disable capture/compare channel interrupt.
      */
-    void disableCaptureCompare1DMARequest();
-
-    /**
-     * @brief Enable capture/compare 2 interrupt.
-     */
-    void enableCaptureCompare2Interrupt();
-
-    /**
-     * @brief Disable capture/compare 2 interrupt.
-     */
-    void disableCaptureCompare2Interrupt();
-
-    /**
-     * @brief Enable capture/compare 2 interrupt.
-     */
-    void enableCaptureCompare2DMARequest();
-
-    /**
-     * @brief Disable capture/compare 2 interrupt.
-     */
-    void disableCaptureCompare2DMARequest();
-
-    /**
-     * @brief Enable capture/compare 3 interrupt.
-     */
-    void enableCaptureCompare3Interrupt();
-
-    /**
-     * @brief Disable capture/compare 3 interrupt.
-     */
-    void disableCaptureCompare3Interrupt();
-
-    /**
-     * @brief Enable capture/compare 3 interrupt.
-     */
-    void enableCaptureCompare3DMARequest();
-
-    /**
-     * @brief Disable capture/compare 3 interrupt.
-     */
-    void disableCaptureCompare3DMARequest();
-
-    /**
-     * @brief Enable capture/compare 4 interrupt.
-     */
-    void enableCaptureCompare4Interrupt();
-
-    /**
-     * @brief Disable capture/compare 4 interrupt.
-     */
-    void disableCaptureCompare4Interrupt();
-
-    /**
-     * @brief Enable capture/compare 4 interrupt.
-     */
-    void enableCaptureCompare4DMARequest();
-
-    /**
-     * @brief Disable capture/compare 4 interrupt.
-     */
-    void disableCaptureCompare4DMARequest();
+    template <int Channel>
+    void disableCaptureCompareDMARequest();
 
     /**
      * @brief The TIF flag is set in the TIMx_SR register. Related interrupt can
@@ -429,178 +406,58 @@ public:
     void generateTrigger();
 
     /**
-     * @brief A capture/compare event is generated on channel 1.
+     * @brief A capture/compare event is generated on channel.
      */
-    void generateCaptureCompare1Event();
+    template <int Channel>
+    void generateCaptureCompareEvent();
 
     /**
-     * @brief A capture/compare event is generated on channel 2.
-     */
-    void generateCaptureCompare2Event();
-
-    /**
-     * @brief The capture/compare 1 register is buffered.
+     * @brief The capture/compare register is buffered.
      *
-     * This means that the shadow register is used and the capture/compare 1
+     * This means that the shadow register is used and the capture/compare
      * value will became active at the next UEV.
      */
-    void enableCaptureCompare1Preload();
+    template <int Channel>
+    void enableCaptureComparePreload();
 
     /**
-     * @brief Tha capture/compare register 1 is not buffered.
+     * @brief Tha capture/compare register is not buffered.
      *
-     * This means that when you change the capture/compare 1 register, its value
+     * This means that when you change the capture/compare  register, its value
      * is taken into account immediately.
      */
-    void disableCaptureCompare1Preload();
+    template <int Channel>
+    void disableCaptureComparePreload();
 
     /**
-     * @brief The capture/compare 2 register is buffered.
-     *
-     * This means that the shadow register is used and the capture/compare 2
-     * value will became active at the next UEV.
+     * @brief Sets the output/compare mode.
      */
-    void enableCaptureCompare2Preload();
+    template <int Channel>
+    void setOutputCompareMode(OutputCompareMode mode);
 
     /**
-     * @brief The capture/compare register 2 is not buffered.
-     *
-     * This means that when you change the capture/compare 2 register, its value
-     * is taken into account immediately.
+     * @brief Enables capture/compare channel.
      */
-    void disableCaptureCompare2Preload();
+    template <int Channel>
+    void enableCaptureCompareOutput();
 
     /**
-     * @brief The capture/compare 3 register is buffered.
-     *
-     * This means that the shadow register is used and the capture/compare 3
-     * value will became active at the next UEV.
+     * @brief Disables capture/compare channel.
      */
-    void enableCaptureCompare3Preload();
+    template <int Channel>
+    void disableCaptureCompareOutput();
 
     /**
-     * @brief The capture/compare register 3 is not buffered.
-     *
-     * This means that when you change the capture/compare 3 register, its value
-     * is taken into account immediately.
+     * @brief Changes capture/compare polarity.
      */
-    void disableCaptureCompare3Preload();
+    template <int Channel>
+    void setCaptureComparePolarity(OutputComparePolarity polarity);
 
     /**
-     * @brief The capture/compare 4 register is buffered.
-     *
-     * This means that the shadow register is used and the capture/compare 4
-     * value will became active at the next UEV.
+     * @brief Sets the timer capture/compare value.
      */
-    void enableCaptureCompare4Preload();
-
-    /**
-     * @brief The capture/compare register 4 is not buffered.
-     *
-     * This means that when you change the capture/compare 4 register, its value
-     * is taken into account immediately.
-     */
-    void disableCaptureCompare4Preload();
-
-    /**
-     * @brief Sets the output/compare 1 mode.
-     */
-    void setOutputCompare1Mode(OutputCompareMode mode);
-
-    /**
-     * @brief Sets the output/compare 2 mode.
-     */
-    void setOutputCompare2Mode(OutputCompareMode mode);
-
-    /**
-     * @brief Sets the output/compare 3 mode.
-     */
-    void setOutputCompare3Mode(OutputCompareMode mode);
-
-    /**
-     * @brief Sets the output/compare 4 mode.
-     */
-    void setOutputCompare4Mode(OutputCompareMode mode);
-
-    /**
-     * @brief Enables capture/compare 1 channel.
-     */
-    void enableCaptureCompare1Output();
-
-    /**
-     * @brief Disables capture/compare 1 channel.
-     */
-    void disableCaptureCompare1Output();
-
-    /**
-     * @brief Enables capture/compare 2 channel.
-     */
-    void enableCaptureCompare2Output();
-
-    /**
-     * @brief Disables capture/compare 2 channel.
-     */
-    void disableCaptureCompare2Output();
-
-    /**
-     * @brief Enables capture/compare 3 channel.
-     */
-    void enableCaptureCompare3Output();
-
-    /**
-     * @brief Disables capture/compare 3 channel.
-     */
-    void disableCaptureCompare3Output();
-
-    /**
-     * @brief Enables capture/compare 4 channel.
-     */
-    void enableCaptureCompare4Output();
-
-    /**
-     * @brief Disables capture/compare 4 channel.
-     */
-    void disableCaptureCompare4Output();
-
-    /**
-     * @brief Changes capture/compare 1 polarity.
-     */
-    void setCaptureCompare1Polarity(OutputComparePolarity polarity);
-
-    /**
-     * @brief Changes capture/compare 2 polarity.
-     */
-    void setCaptureCompare2Polarity(OutputComparePolarity polarity);
-
-    /**
-     * @brief Changes capture/compare 3 polarity.
-     */
-    void setCaptureCompare3Polarity(OutputComparePolarity polarity);
-
-    /**
-     * @brief Changes capture/compare 4 polarity.
-     */
-    void setCaptureCompare4Polarity(OutputComparePolarity polarity);
-
-    /**
-     * @brief Sets the timer capture/compare 1 value.
-     */
-    void setCaptureCompare1Register(uint16_t value);
-
-    /**
-     * @brief Sets the timer capture/compare 2 value.
-     */
-    void setCaptureCompare2Register(uint16_t value);
-
-    /**
-     * @brief Sets the timer capture/compare 3 value.
-     */
-    void setCaptureCompare3Register(uint16_t value);
-
-    /**
-     * @brief Sets the timer capture/compare 4 value.
-     */
-    void setCaptureCompare4Register(uint16_t value);
+    template <int Channel>
+    void setCaptureCompareRegister(T value);
 
     /**
      * @brief Clears the trigger interrupt flag.
@@ -610,40 +467,22 @@ public:
     static void clearTriggerInterruptFlag(TIM_TypeDef *timer);
 
     /**
-     * @brief Clears capture/compare 1 interrupt flag.
+     * @brief Clears capture/compare interrupt flag.
      *
      * @param timer Timer to use.
      */
-    static void clearCaptureCompare1InterruptFlag(TIM_TypeDef *timer);
-
-    /**
-     * @brief Clears capture/compare 2 interrupt flag.
-     *
-     * @param timer Timer to use.
-     */
-    static void clearCaptureCompare2InterruptFlag(TIM_TypeDef *timer);
-
-    /**
-     * @brief Clears capture/compare 3 interrupt flag.
-     *
-     * @param timer Timer to use.
-     */
-    static void clearCaptureCompare3InterruptFlag(TIM_TypeDef *timer);
-
-    /**
-     * @brief Clears capture/compare 4 interrupt flag.
-     *
-     * @param timer Timer to use.
-     */
-    static void clearCaptureCompare4InterruptFlag(TIM_TypeDef *timer);
+    template <int Channel>
+    static void clearCaptureCompareInterruptFlag(TIM_TypeDef *timer);
 };
 
-inline GeneralPurposeTimer::GeneralPurposeTimer(TIM_TypeDef *timer)
+template <typename T>
+inline GeneralPurposeTimer<T>::GeneralPurposeTimer(TIM_TypeDef *timer)
     : BasicTimer(timer)
 {
 }
 
-inline void GeneralPurposeTimer::reset()
+template <typename T>
+inline void GeneralPurposeTimer<T>::reset()
 {
     timer->CR1   = 0;
     timer->CR2   = 0;
@@ -665,7 +504,32 @@ inline void GeneralPurposeTimer::reset()
     timer->OR    = 0;
 }
 
-inline void GeneralPurposeTimer::setMasterMode(MasterMode masterMode)
+template <typename T>
+inline T GeneralPurposeTimer<T>::readCounter()
+{
+    return timer->CNT;
+}
+
+template <typename T>
+inline void GeneralPurposeTimer<T>::setCounter(T counterValue)
+{
+    timer->CNT = counterValue;
+}
+
+template <typename T>
+inline T GeneralPurposeTimer<T>::readAutoReloadRegister()
+{
+    return timer->ARR;
+}
+
+template <typename T>
+inline void GeneralPurposeTimer<T>::setAutoReloadRegister(T autoReloadValue)
+{
+    timer->ARR = autoReloadValue;
+}
+
+template <typename T>
+inline void GeneralPurposeTimer<T>::setMasterMode(MasterMode masterMode)
 {
     // First clear the configuration
     timer->CR2 &= ~TIM_CR2_MMS;
@@ -674,7 +538,8 @@ inline void GeneralPurposeTimer::setMasterMode(MasterMode masterMode)
     timer->CR2 |= (uint16_t)masterMode;
 }
 
-inline void GeneralPurposeTimer::setSlaveMode(SlaveMode slaveMode)
+template <typename T>
+inline void GeneralPurposeTimer<T>::setSlaveMode(SlaveMode slaveMode)
 {
     // First clear the configuration
     timer->SMCR &= ~TIM_SMCR_SMS;
@@ -683,7 +548,9 @@ inline void GeneralPurposeTimer::setSlaveMode(SlaveMode slaveMode)
     timer->SMCR |= (uint16_t)slaveMode;
 }
 
-inline void GeneralPurposeTimer::setTriggerSource(TriggerSource triggerSource)
+template <typename T>
+inline void GeneralPurposeTimer<T>::setTriggerSource(
+    TriggerSource triggerSource)
 {
     // First clear the configuration
     timer->SMCR &= ~TIM_SMCR_TS;
@@ -692,281 +559,218 @@ inline void GeneralPurposeTimer::setTriggerSource(TriggerSource triggerSource)
     timer->SMCR |= (uint16_t)triggerSource;
 }
 
-inline void GeneralPurposeTimer::enableTriggerInterrupt()
+template <typename T>
+inline void GeneralPurposeTimer<T>::enableTriggerInterrupt()
 {
     timer->DIER |= TIM_DIER_TIE;
 }
 
-inline void GeneralPurposeTimer::disableTriggerInterrupt()
+template <typename T>
+inline void GeneralPurposeTimer<T>::disableTriggerInterrupt()
 {
     timer->DIER &= ~TIM_DIER_TIE;
 }
 
-inline void GeneralPurposeTimer::enableCaptureCompare1Interrupt()
+template <typename T>
+template <int Channel>
+inline void GeneralPurposeTimer<T>::enableCaptureCompareInterrupt()
 {
-    timer->DIER |= TIM_DIER_CC1IE;
+    static_assert(C >= 1 && C <= 4, "Channel must be betwen 1 and 4");
+
+    timer->DIER |= TIM_DIER_CC1IE << (Channel - 1);
 }
 
-inline void GeneralPurposeTimer::disableCaptureCompare1Interrupt()
+template <typename T>
+template <int Channel>
+inline void GeneralPurposeTimer<T>::disableCaptureCompareInterrupt()
 {
-    timer->DIER &= ~TIM_DIER_CC1IE;
+    static_assert(C >= 1 && C <= 4, "Channel must be betwen 1 and 4");
+
+    timer->DIER &= ~(TIM_DIER_CC1IE << (Channel - 1));
 }
 
-inline void GeneralPurposeTimer::enableCaptureCompare1DMARequest()
+template <typename T>
+template <int Channel>
+inline void GeneralPurposeTimer<T>::enableCaptureCompareDMARequest()
 {
-    timer->DIER |= TIM_DIER_CC1DE;
+    static_assert(C >= 1 && C <= 4, "Channel must be betwen 1 and 4");
+
+    timer->DIER |= TIM_DIER_CC1DE << (Channel - 1);
 }
 
-inline void GeneralPurposeTimer::disableCaptureCompare1DMARequest()
+template <typename T>
+template <int Channel>
+inline void GeneralPurposeTimer<T>::disableCaptureCompareDMARequest()
 {
-    timer->DIER &= ~TIM_DIER_CC1DE;
+    static_assert(C >= 1 && C <= 4, "Channel must be betwen 1 and 4");
+
+    timer->DIER &= ~(TIM_DIER_CC1DE << (Channel - 1));
 }
 
-inline void GeneralPurposeTimer::enableCaptureCompare2Interrupt()
+template <typename T>
+inline void GeneralPurposeTimer<T>::generateTrigger()
 {
-    timer->DIER |= TIM_DIER_CC2IE;
+    timer->EGR |= TIM_EGR_TG;
 }
 
-inline void GeneralPurposeTimer::disableCaptureCompare2Interrupt()
+template <typename T>
+template <int Channel>
+inline void GeneralPurposeTimer<T>::generateCaptureCompareEvent()
 {
-    timer->DIER &= ~TIM_DIER_CC2IE;
+    static_assert(C >= 1 && C <= 4, "Channel must be betwen 1 and 4");
+
+    timer->EGR |= TIM_EGR_CC1G << (Channel - 1)
 }
 
-inline void GeneralPurposeTimer::enableCaptureCompare2DMARequest()
+template <typename T>
+template <int Channel>
+inline void GeneralPurposeTimer<T>::enableCaptureComparePreload()
 {
-    timer->DIER |= TIM_DIER_CC2DE;
+    static_assert(C >= 1 && C <= 4, "Channel must be betwen 1 and 4");
+
+    switch (Channel)
+    {
+        case 1:
+            timer->CCMR1 |= TIM_CCMR1_OC1PE;
+            break;
+        case 2:
+            timer->CCMR1 |= TIM_CCMR1_OC2PE;
+            break;
+        case 3:
+            timer->CCMR2 |= TIM_CCMR2_OC3PE;
+            break;
+        case 4:
+            timer->CCMR2 |= TIM_CCMR2_OC4PE;
+            break;
+    }
 }
 
-inline void GeneralPurposeTimer::disableCaptureCompare2DMARequest()
+template <typename T>
+template <int Channel>
+inline void GeneralPurposeTimer<T>::disableCaptureComparePreload()
 {
-    timer->DIER &= ~TIM_DIER_CC2DE;
+    static_assert(C >= 1 && C <= 4, "Channel must be betwen 1 and 4");
+
+    switch (Channel)
+    {
+        case 1:
+            timer->CCMR1 &= ~TIM_CCMR1_OC1PE;
+            break;
+        case 2:
+            timer->CCMR1 &= ~TIM_CCMR1_OC2PE;
+            break;
+        case 3:
+            timer->CCMR2 &= ~TIM_CCMR2_OC3PE;
+            break;
+        case 4:
+            timer->CCMR2 &= ~TIM_CCMR2_OC4PE;
+            break;
+    }
 }
 
-inline void GeneralPurposeTimer::enableCaptureCompare3Interrupt()
+template <typename T>
+template <int Channel>
+inline void GeneralPurposeTimer<T>::setOutputCompareMode(OutputCompareMode mode)
 {
-    timer->DIER |= TIM_DIER_CC3IE;
+    static_assert(C >= 1 && C <= 4, "Channel must be betwen 1 and 4");
+
+    switch (Channel)
+    {
+        case 1:
+            // First clear the configuration
+            timer->CCMR1 &= ~TIM_CCMR1_OC1M;
+
+            // Set the new value
+            timer->CCMR1 |= (uint16_t)mode << 4;
+            break;
+        case 2:
+            // First clear the configuration
+            timer->CCMR1 &= ~TIM_CCMR1_OC2M;
+
+            // Set the new value
+            timer->CCMR1 |= (uint16_t)mode << 12;
+            break;
+        case 3:
+            // First clear the configuration
+            timer->CCMR2 &= ~TIM_CCMR2_OC3M;
+
+            // Set the new value
+            timer->CCMR2 |= (uint16_t)mode << 4;
+            break;
+        case 4:
+            // First clear the configuration
+            timer->CCMR2 &= ~TIM_CCMR2_OC4M;
+
+            // Set the new value
+            timer->CCMR2 |= (uint16_t)mode << 12;
+            break;
+    }
 }
 
-inline void GeneralPurposeTimer::disableCaptureCompare3Interrupt()
+template <typename T>
+template <int Channel>
+inline void GeneralPurposeTimer<T>::enableCaptureCompareOutput()
 {
-    timer->DIER &= ~TIM_DIER_CC3IE;
+    static_assert(C >= 1 && C <= 4, "Channel must be betwen 1 and 4");
+
+    timer->CCER |= TIM_CCER_CC1E << ((Channel - 1) * 4);
 }
 
-inline void GeneralPurposeTimer::enableCaptureCompare3DMARequest()
+template <typename T>
+template <int Channel>
+inline void GeneralPurposeTimer<T>::disableCaptureCompareOutput()
 {
-    timer->DIER |= TIM_DIER_CC3DE;
+    static_assert(C >= 1 && C <= 4, "Channel must be betwen 1 and 4");
+
+    timer->CCER &= ~(TIM_CCER_CC1E << ((Channel - 1) * 4));
 }
 
-inline void GeneralPurposeTimer::disableCaptureCompare3DMARequest()
-{
-    timer->DIER &= ~TIM_DIER_CC3DE;
-}
-
-inline void GeneralPurposeTimer::enableCaptureCompare4Interrupt()
-{
-    timer->DIER |= TIM_DIER_CC4IE;
-}
-
-inline void GeneralPurposeTimer::disableCaptureCompare4Interrupt()
-{
-    timer->DIER &= ~TIM_DIER_CC4IE;
-}
-
-inline void GeneralPurposeTimer::enableCaptureCompare4DMARequest()
-{
-    timer->DIER |= TIM_DIER_CC4DE;
-}
-
-inline void GeneralPurposeTimer::disableCaptureCompare4DMARequest()
-{
-    timer->DIER &= ~TIM_DIER_CC4DE;
-}
-
-inline void GeneralPurposeTimer::enableCaptureCompare1Preload()
-{
-    timer->CCMR1 |= TIM_CCMR1_OC1PE;
-}
-
-inline void GeneralPurposeTimer::disableCaptureCompare1Preload()
-{
-    timer->CCMR1 &= ~TIM_CCMR1_OC1PE;
-}
-
-inline void GeneralPurposeTimer::enableCaptureCompare2Preload()
-{
-    timer->CCMR1 |= TIM_CCMR1_OC2PE;
-}
-
-inline void GeneralPurposeTimer::disableCaptureCompare2Preload()
-{
-    timer->CCMR1 &= ~TIM_CCMR1_OC2PE;
-}
-
-inline void GeneralPurposeTimer::enableCaptureCompare3Preload()
-{
-    timer->CCMR2 |= TIM_CCMR2_OC3PE;
-}
-
-inline void GeneralPurposeTimer::disableCaptureCompare3Preload()
-{
-    timer->CCMR2 &= ~TIM_CCMR2_OC3PE;
-}
-
-inline void GeneralPurposeTimer::enableCaptureCompare4Preload()
-{
-    timer->CCMR2 |= TIM_CCMR2_OC4PE;
-}
-
-inline void GeneralPurposeTimer::disableCaptureCompare4Preload()
-{
-    timer->CCMR2 &= ~TIM_CCMR2_OC4PE;
-}
-
-inline void GeneralPurposeTimer::setOutputCompare1Mode(OutputCompareMode mode)
-{
-    // First clear the configuration
-    timer->CCMR1 &= ~TIM_CCMR1_OC1M;
-
-    // Set the new value
-    timer->CCMR1 |= (uint16_t)mode << 4;
-}
-
-inline void GeneralPurposeTimer::setOutputCompare2Mode(OutputCompareMode mode)
-{
-    // First clear the configuration
-    timer->CCMR1 &= ~TIM_CCMR1_OC2M;
-
-    // Set the new value
-    timer->CCMR1 |= (uint16_t)mode << 12;
-}
-
-inline void GeneralPurposeTimer::setOutputCompare3Mode(OutputCompareMode mode)
-{
-    // First clear the configuration
-    timer->CCMR2 &= ~TIM_CCMR2_OC3M;
-
-    // Set the new value
-    timer->CCMR2 |= (uint16_t)mode << 4;
-}
-
-inline void GeneralPurposeTimer::setOutputCompare4Mode(OutputCompareMode mode)
-{
-    // First clear the configuration
-    timer->CCMR2 &= ~TIM_CCMR2_OC4M;
-
-    // Set the new value
-    timer->CCMR2 |= (uint16_t)mode << 12;
-}
-
-inline void GeneralPurposeTimer::enableCaptureCompare1Output()
-{
-    timer->CCER |= TIM_CCER_CC1E;
-}
-
-inline void GeneralPurposeTimer::disableCaptureCompare1Output()
-{
-    timer->CCER &= ~TIM_CCER_CC1E;
-}
-
-inline void GeneralPurposeTimer::enableCaptureCompare2Output()
-{
-    timer->CCER |= TIM_CCER_CC2E;
-}
-
-inline void GeneralPurposeTimer::disableCaptureCompare2Output()
-{
-    timer->CCER &= ~TIM_CCER_CC2E;
-}
-
-inline void GeneralPurposeTimer::enableCaptureCompare3Output()
-{
-    timer->CCER |= TIM_CCER_CC3E;
-}
-
-inline void GeneralPurposeTimer::disableCaptureCompare3Output()
-{
-    timer->CCER &= ~TIM_CCER_CC3E;
-}
-
-inline void GeneralPurposeTimer::enableCaptureCompare4Output()
-{
-    timer->CCER |= TIM_CCER_CC4E;
-}
-
-inline void GeneralPurposeTimer::disableCaptureCompare4Output()
-{
-    timer->CCER &= ~TIM_CCER_CC4E;
-}
-
-inline void GeneralPurposeTimer::setCaptureCompare1Polarity(
+template <typename T>
+template <int Channel>
+inline void GeneralPurposeTimer<T>::setCaptureComparePolarity(
     OutputComparePolarity polarity)
 {
-    timer->CCER |= (uint16_t)polarity << 1;
+    static_assert(C >= 1 && C <= 4, "Channel must be betwen 1 and 4");
+
+    timer->CCER |= (uint16_t)polarity << (1 + (Channel - 1) * 4);
 }
 
-inline void GeneralPurposeTimer::setCaptureCompare2Polarity(
-    OutputComparePolarity polarity)
+template <typename T>
+template <int Channel>
+inline void GeneralPurposeTimer<T>::setCaptureCompareRegister(T value)
 {
-    timer->CCER |= (uint16_t)polarity << 5;
+    static_assert(C >= 1 && C <= 4, "Channel must be betwen 1 and 4");
+
+    switch (Channel)
+    {
+        case 1:
+            timer->CCR1 = value;
+            break;
+        case 2:
+            timer->CCR2 = value;
+            break;
+        case 3:
+            timer->CCR3 = value;
+            break;
+        case 4:
+            timer->CCR4 = value;
+            break;
+    }
 }
 
-inline void GeneralPurposeTimer::setCaptureCompare3Polarity(
-    OutputComparePolarity polarity)
-{
-    timer->CCER |= (uint16_t)polarity << 9;
-}
-
-inline void GeneralPurposeTimer::setCaptureCompare4Polarity(
-    OutputComparePolarity polarity)
-{
-    timer->CCER |= (uint16_t)polarity << 13;
-}
-
-inline void GeneralPurposeTimer::setCaptureCompare1Register(uint16_t value)
-{
-    timer->CCR1 = value;
-}
-
-inline void GeneralPurposeTimer::setCaptureCompare2Register(uint16_t value)
-{
-    timer->CCR2 = value;
-}
-
-inline void GeneralPurposeTimer::setCaptureCompare3Register(uint16_t value)
-{
-    timer->CCR3 = value;
-}
-
-inline void GeneralPurposeTimer::setCaptureCompare4Register(uint16_t value)
-{
-    timer->CCR4 = value;
-}
-
-inline void GeneralPurposeTimer::clearTriggerInterruptFlag(TIM_TypeDef *timer)
+template <typename T>
+inline void GeneralPurposeTimer<T>::clearTriggerInterruptFlag(
+    TIM_TypeDef *timer)
 {
     timer->SR &= ~TIM_SR_TIF;
 }
 
-inline void GeneralPurposeTimer::clearCaptureCompare1InterruptFlag(
+template <typename T>
+template <int Channel>
+inline void GeneralPurposeTimer<T>::clearCaptureCompareInterruptFlag(
     TIM_TypeDef *timer)
 {
-    timer->SR &= ~TIM_SR_CC1IF;
-}
+    static_assert(C >= 1 && C <= 4, "Channel must be betwen 1 and 4");
 
-inline void GeneralPurposeTimer::clearCaptureCompare2InterruptFlag(
-    TIM_TypeDef *timer)
-{
-    timer->SR &= ~TIM_SR_CC2IF;
-}
-
-inline void GeneralPurposeTimer::clearCaptureCompare3InterruptFlag(
-    TIM_TypeDef *timer)
-{
-    timer->SR &= ~TIM_SR_CC3IF;
-}
-
-inline void GeneralPurposeTimer::clearCaptureCompare4InterruptFlag(
-    TIM_TypeDef *timer)
-{
-    timer->SR &= ~TIM_SR_CC4IF;
+    timer->SR &= ~(TIM_SR_CC1IF << (Channel - 1));
 }

@@ -87,6 +87,7 @@ inline void TimestampTimer::initTimestampTimer()
 
     timestampTimer.reset();
 
+    // TODO: mode this calculation inside TimerUtils
     // Compute the timer prescaler
     uint16_t timerPrescaler =
         TimerUtils::getPrescalerInputFrequency(timestampTimer.getTimer()) /
