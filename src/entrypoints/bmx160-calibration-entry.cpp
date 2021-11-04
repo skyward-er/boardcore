@@ -21,14 +21,16 @@
  */
 
 #include <Common.h>
-#include <drivers/HardwareTimer.h>
 #include <drivers/interrupt/external_interrupts.h>
+#include <drivers/timer/TimestampTimer.h>
 #include <sensors/BMX160/BMX160.h>
 #include <sensors/BMX160/BMX160WithCorrection.h>
 #include <sensors/calibration/SoftIronCalibration.h>
 
 #include <fstream>
 #include <iostream>
+
+using namespace timer;
 
 constexpr const char* CORRECTION_PARAMETER_FILE = "/sd/bmx160_params.csv";
 constexpr const char* MAG_CALIBRATION_DATA_FILE =

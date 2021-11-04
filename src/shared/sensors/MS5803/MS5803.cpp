@@ -23,7 +23,7 @@
 
 #include "MS5803.h"
 
-#include "TimestampTimer.h"
+#include <drivers/timer/TimestampTimer.h>
 
 MS5803::MS5803(SPISlave spiSlave_, uint16_t temperatureDivider_)
     : spiSlave(spiSlave_), temperatureDivider(temperatureDivider_)
@@ -87,7 +87,7 @@ MS5803Data MS5803::sampleImpl()
             uint32_t tmpRawTemperature = (uint32_t)buffer[2] |
                                          ((uint32_t)buffer[1] << 8) |
                                          ((uint32_t)buffer[0] << 16);
-            lastTemperatureTimestamp = TimestampTimer::getTimestamp();
+            lastTemperatureTimestamp = timer::TimestampTimer::getTimestamp();
 
             // Check if the value is valid
             if (tmpRawTemperature != 0)
@@ -187,7 +187,7 @@ MS5803Data MS5803::updateData()
     // Pressure in Pascal
     float temp_ = temp / 100.0f;
 
-    return MS5803Data(TimestampTimer::getTimestamp(), pressure,
+    return MS5803Data(timer::TimestampTimer::getTimestamp(), pressure,
                       lastTemperatureTimestamp, temp_);
 }
 

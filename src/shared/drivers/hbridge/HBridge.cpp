@@ -30,7 +30,7 @@ HBridge::HBridge(miosix::GpioPin inhibit, PWM::Timer timer, PWMChannel channel,
 {
     pin_inh.low();
 
-    status.timestamp = TimestampTimer::getTimestamp();
+    status.timestamp = timer::TimestampTimer::getTimestamp();
     status.state     = HBridgeState::DISABLED;
 
     // Start PWM with 0 duty cycle to keep IN pins low
@@ -57,7 +57,7 @@ void HBridge::disable()
 
         pin_inh.low();  // Disable h-bridge
 
-        status.timestamp = TimestampTimer::getTimestamp();
+        status.timestamp = timer::TimestampTimer::getTimestamp();
         status.state     = HBridgeState::DISABLED;
     }
 }
@@ -80,7 +80,7 @@ void HBridge::enableHBridge(PWMChannel channel, GpioPin& inh, float duty_cycle)
         // enable h-bridge
         inh.high();
 
-        status.timestamp = TimestampTimer::getTimestamp();
+        status.timestamp = timer::TimestampTimer::getTimestamp();
         status.state     = HBridgeState::ENABLED;
     }
 }

@@ -22,10 +22,9 @@
 
 #include <Common.h>
 #include <drivers/gps/ublox/UbloxGPS.h>
+#include <drivers/timer/TimestampTimer.h>
 
 #include <cstdio>
-
-#include "TimestampTimer.h"
 
 using namespace miosix;
 
@@ -33,7 +32,7 @@ using namespace miosix;
 
 int main()
 {
-    TimestampTimer::enableTimestampTimer();
+    timer::TimestampTimer::enableTimestampTimer();
 
     printf("Welcome to the ublox test\n");
 

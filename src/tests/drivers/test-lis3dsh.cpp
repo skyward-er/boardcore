@@ -21,6 +21,7 @@
  */
 
 #include <drivers/spi/SPIDriver.h>
+#include <drivers/timer/TimestampTimer.h>
 #include <miosix.h>
 
 #include "Common.h"
@@ -54,7 +55,7 @@ int main()
     }
     cs.high();
 
-    TimestampTimer::enableTimestampTimer();
+    timer::TimestampTimer::enableTimestampTimer();
 
     LIS3DSH sensor(bus, cs, sensor.ODR_100_HZ, sensor.UPDATE_AFTER_READ_MODE,
                    sensor.FULL_SCALE_4G);

@@ -21,8 +21,8 @@
  */
 
 #include <Common.h>
-#include <drivers/HardwareTimer.h>
 #include <drivers/interrupt/external_interrupts.h>
+#include <drivers/timer/GeneralPurposeTimer.h>
 #include <sensors/BMX160/BMX160.h>
 
 SPIBus bus(SPI1);
@@ -37,7 +37,7 @@ uint32_t tick  = 0;
 
 void __attribute__((used)) EXTI5_IRQHandlerImpl()
 {
-    tick = TimestampTimer::getTimestamp();
+    tick = timer::TimestampTimer::getTimestamp();
     if (sensor)
     {
         sensor->IRQupdateTimestamp(tick);
@@ -46,7 +46,7 @@ void __attribute__((used)) EXTI5_IRQHandlerImpl()
 
 int main()
 {
-    TimestampTimer::enableTimestampTimer();
+    timer::TimestampTimer::enableTimestampTimer();
 
     cs.high();
 
@@ -94,7 +94,7 @@ int main()
             continue;
         }
 
-        uint64_t now = TimestampTimer::getTimestamp();
+        uint64_t now = timer::TimestampTimer::getTimestamp();
 
         printf("Tick: %.4f s, Now: %.4f s\n", tick / 1000000.0f,
                now / 1000000.0f);

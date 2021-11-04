@@ -21,16 +21,14 @@
  */
 
 #include <diagnostic/PrintLogger.h>
+#include <drivers/timer/TimestampTimer.h>
 #include <miosix.h>
 
-#include "TimestampTimer.h"
 #include "drivers/adc/ADS1118/ADS1118.h"
 #include "drivers/spi/SPIDriver.h"
 #include "sensors/analog/pressure/AnalogPressureSensor.h"
 #include "sensors/analog/pressure/honeywell/HSCMAND015PA.h"
 #include "sensors/analog/pressure/honeywell/HSCMRNN030PA.h"
-
-#include "TimestampTimer.h"
 
 GpioPin sckPin  = GpioPin(GPIOB_BASE, 13);
 GpioPin misoPin = GpioPin(GPIOB_BASE, 14);
@@ -65,7 +63,7 @@ int main()
     // Enable SPI clock and set gpios
     initBoard();
 
-    TimestampTimer::enableTimestampTimer();
+    timer::TimestampTimer::enableTimestampTimer();
 
     // SPI configuration setup
     SPIBusConfig spiConfig;

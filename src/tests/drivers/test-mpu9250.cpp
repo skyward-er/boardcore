@@ -22,10 +22,9 @@
 
 #include <Debug.h>
 #include <drivers/spi/SPIDriver.h>
+#include <drivers/timer/TimestampTimer.h>
 #include <miosix.h>
 #include <sensors/MPU9250/MPU9250.h>
-
-#include "TimestampTimer.h"
 
 GpioPin sckPin  = GpioPin(GPIOB_BASE, 13);
 GpioPin misoPin = GpioPin(GPIOB_BASE, 14);
@@ -55,7 +54,7 @@ int main()
     // Enable SPI clock and set gpios
     initBoard();
 
-    TimestampTimer::enableTimestampTimer();
+    timer::TimestampTimer::enableTimestampTimer();
 
     // SPI configuration setup
 

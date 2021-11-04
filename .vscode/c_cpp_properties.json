@@ -19,6 +19,8 @@
                 "${workspaceFolder}/libs/miosix-kernel/miosix/arch/common",
                 "${workspaceFolder}/libs/miosix-kernel/miosix",
                 "${workspaceFolder}/libs/mavlink_skyward_lib",
+                "${workspaceFolder}/libs/fmt/include",
+                "${workspaceFolder}/libs/eigen/Eigen",
                 "${workspaceFolder}/libs",
                 "${workspaceFolder}/src/shared",
                 "${workspaceFolder}/src",
@@ -45,7 +47,8 @@
                     "${workspaceFolder}/libs/eigen",
                     "${workspaceFolder}/libs/tscpp",
                     "${workspaceFolder}/libs/mxgui",
-                    "${workspaceFolder}/libs/fmt",
+                    "${workspaceFolder}/libs/fmt/include",
+                    "${workspaceFolder}/libs/eigen/Eigen",
                     "${workspaceFolder}/src/shared",
                     "${workspaceFolder}/src/tests"
                 ],

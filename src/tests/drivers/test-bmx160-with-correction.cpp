@@ -21,8 +21,8 @@
  */
 
 #include <Common.h>
-#include <drivers/HardwareTimer.h>
 #include <drivers/interrupt/external_interrupts.h>
+#include <drivers/timer/TimestampTimer.h>
 #include <sensors/BMX160/BMX160.h>
 #include <sensors/BMX160/BMX160WithCorrection.h>
 
@@ -38,7 +38,7 @@ void __attribute__((used)) EXTI5_IRQHandlerImpl()
 {
     if (bmx160)
     {
-        bmx160->IRQupdateTimestamp(TimestampTimer::getTimestamp());
+        bmx160->IRQupdateTimestamp(timer::TimestampTimer::getTimestamp());
     }
 }
 
@@ -46,7 +46,7 @@ void bmx160Sample(void *args);
 
 int main()
 {
-    TimestampTimer::enableTimestampTimer();
+    timer::TimestampTimer::enableTimestampTimer();
 
     // Enable interrupt from BMX pin
     enableExternalInterrupt(GPIOE_BASE, 5, InterruptTrigger::FALLING_EDGE);
@@ -160,7 +160,7 @@ int main()
 void bmx160Sample(void *args)
 {
     UNUSED(args);
-    
+
     while (!stopSamplingThread)
     {
         // Sample the bmx160

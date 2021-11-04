@@ -20,11 +20,12 @@
  * THE SOFTWARE.
  */
 
+#include <drivers/timer/TimestampTimer.h>
 #include <miosix.h>
 #include <stdio.h>
-#include "TimestampTimer.h"
 
 using namespace miosix;
+using namespace timer;
 
 int main()
 {

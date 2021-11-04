@@ -124,4 +124,4 @@ folders:
 -include $(OBJ:.o=.d)
 
 .PHONY: clean folders program clean-topdir clean-recursive
-.NOTPARALLEL: clean-topdir clean-recursive folders clean program
+# .NOTPARALLEL: clean-topdir clean-recursive folders clean program

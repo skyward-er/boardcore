@@ -20,7 +20,7 @@
  * THE SOFTWARE.
  */
 
-#include <drivers/HardwareTimer.h>
+#include <drivers/timer/GeneralPurposeTimer.h>
 #include <miosix.h>
 
 #include <iostream>
@@ -36,7 +36,8 @@ static constexpr int PWM_DURATION = 60 * 1000;
 
 static const PWM::Timer HBRIDGE_TIM{
     TIM3, &(RCC->APB1ENR), RCC_APB1ENR_TIM3EN,
-    TimerUtils::getPrescalerInputFrequency(TimerUtils::InputClock::APB2)};
+    timer::TimerUtils::getPrescalerInputFrequency(
+        timer::TimerUtils::InputClock::APB2)};
 
 static const PWMChannel HBRIDGE_PWM_CHANNEL = PWMChannel::CH2;
 
@@ -48,10 +49,10 @@ bool print = true;  // print the elapsed time or not
 long long measured_time = 0;
 void wait()
 {
-    long long t = getTick();
+    long long t  = getTick();
     long long t0 = t;
 
-    while(t < t0 + PWM_DURATION)
+    while (t < t0 + PWM_DURATION)
     {
         Thread::sleep(50);
 
@@ -76,7 +77,7 @@ int main()
         hbridge_inhibit.low();
     }
 
-    TimestampTimer::enableTimestampTimer();
+    timer::TimestampTimer::enableTimestampTimer();
 
     for (;;)
     {

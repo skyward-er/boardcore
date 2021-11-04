@@ -24,10 +24,9 @@
 
 #include <fcntl.h>
 
+#include "diagnostic/StackLogger.h"
 #include "drivers/serial.h"
 #include "filesystem/file_access.h"
-
-#include "diagnostic/StackLogger.h"
 
 using namespace miosix;
 
@@ -129,8 +128,8 @@ void UbloxGPS::run()
         if (!parseUBXMessage(message))
         {
             LOG_DEBUG(logger,
-                    "UBX message not recognized (class:0x{02x}, id: 0x{02x})",
-                    message[2], message[3]);
+                      "UBX message not recognized (class:0x{02x}, id: 0x{02x})",
+                      message[2], message[3]);
         }
     }
 }
@@ -505,7 +504,7 @@ bool UbloxGPS::parseUBXNAVMessage(uint8_t* message)
             threadSample.fix = message[6 + 20] != 0;
 
             // Timestamp
-            threadSample.gps_timestamp = TimestampTimer::getTimestamp();
+            threadSample.gps_timestamp = timer::TimestampTimer::getTimestamp();
 
             return true;
     }
