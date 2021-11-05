@@ -24,6 +24,7 @@
 
 #include <diagnostic/PrintLogger.h>
 #include <drivers/spi/SPIDriver.h>
+#include <drivers/timer/TimestampTimer.h>
 #include <sensors/Sensor.h>
 
 #include <algorithm>
@@ -34,7 +35,6 @@
 #include "BMX160Data.h"
 #include "BMX160Defs.h"
 #include "Constants.h"
-#include "TimestampTimer.h"
 
 /**
  * @brief BMX160 Driver.

@@ -20,10 +20,10 @@
  * THE SOFTWARE.
  */
 
+#include <drivers/timer/TimestampTimer.h>
 #include <miosix.h>
 
 #include "Debug.h"
-#include "TimestampTimer.h"
 #include "drivers/adc/InternalADC/InternalADC.h"
 #include "sensors/analog/current/CurrentSensor.h"
 
@@ -52,7 +52,7 @@ void initBoard()
         ADC->CCR |= ADC_CCR_ADCPRE_0 | ADC_CCR_ADCPRE_1;
     }
 
-    TimestampTimer::enableTimestampTimer();
+    timer::TimestampTimer::enableTimestampTimer();
 }
 
 int main()

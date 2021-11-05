@@ -21,19 +21,19 @@
  */
 
 #include <assert.h>
+#include <drivers/timer/TimestampTimer.h>
 
 #include <functional>
 #include <iostream>
 #include <type_traits>
 
-#include "TimestampTimer.h"
 #include "miosix.h"
 #include "sensors/Sensor.h"
 #include "sensors/SensorManager.h"
 #include "utils/testutils/TestSensor.h"
 
 using namespace miosix;
-using namespace TimestampTimer;
+using namespace timer;
 
 // Data produced by the MySensor sensor.
 struct MySensorData : public PressureData, public TemperatureData
@@ -42,7 +42,8 @@ struct MySensorData : public PressureData, public TemperatureData
     MySensorData() : PressureData{0, 0.0}, TemperatureData{0, 0.0} {}
 
     MySensorData(float p, float t)
-        : PressureData{getTimestamp(), p}, TemperatureData{getTimestamp(), t}
+        : PressureData{TimestampTimer::getTimestamp(), p},
+          TemperatureData{TimestampTimer::getTimestamp(), t}
     {
     }
 };
@@ -94,16 +95,16 @@ struct MySensorDataFIFO : public AccelerometerData, public GyroscopeData
 {
 
     MySensorDataFIFO()
-        : AccelerometerData{getTimestamp(), 0.0, 0.0, 0.0}, GyroscopeData{
-                                                                getTimestamp(),
-                                                                0.0, 0.0, 0.0}
+        : AccelerometerData{TimestampTimer::getTimestamp(), 0.0, 0.0, 0.0},
+          GyroscopeData{TimestampTimer::getTimestamp(), 0.0, 0.0, 0.0}
     {
     }
 
     MySensorDataFIFO(AccelerometerData acc, GyroscopeData gyro)
-        : AccelerometerData{getTimestamp(), acc.accel_x, acc.accel_y,
-                            acc.accel_z},
-          GyroscopeData{getTimestamp(), gyro.gyro_x, gyro.gyro_y, gyro.gyro_z}
+        : AccelerometerData{TimestampTimer::getTimestamp(), acc.accel_x,
+                            acc.accel_y, acc.accel_z},
+          GyroscopeData{TimestampTimer::getTimestamp(), gyro.gyro_x,
+                        gyro.gyro_y, gyro.gyro_z}
     {
     }
 };
@@ -120,8 +121,9 @@ public:
     {
         for (uint32_t i = 0; i < fifo_size; i++)
         {
-            AccelerometerData acc{getTimestamp(), 0.5, 0.5, 0.5};
-            GyroscopeData gyro{getTimestamp(), 0.5, 0.5, 0.5};
+            AccelerometerData acc{TimestampTimer::getTimestamp(), 0.5, 0.5,
+                                  0.5};
+            GyroscopeData gyro{TimestampTimer::getTimestamp(), 0.5, 0.5, 0.5};
 
             last_fifo[i] = MySensorDataFIFO{acc, gyro};
 
@@ -191,7 +193,7 @@ int main()
 {
     srand(time(NULL));
 
-    enableTimestampTimer();
+    TimestampTimer::enableTimestampTimer();
 
     MySensor s1;
     MySensor s2;

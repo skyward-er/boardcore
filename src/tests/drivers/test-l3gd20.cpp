@@ -28,13 +28,14 @@
  * CSV format.
  */
 
+#include <drivers/timer/GeneralPurposeTimer.h>
+#include <drivers/timer/TimestampTimer.h>
+
 #include <array>
 
 #include "diagnostic/CpuMeter.h"
-#include "drivers/HardwareTimer.h"
 #include "drivers/interrupt/external_interrupts.h"
 #include "drivers/spi/SPIDriver.h"
-#include "TimestampTimer.h"
 #include "sensors/L3GD20/L3GD20.h"
 
 using namespace miosix;

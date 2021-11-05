@@ -27,11 +27,12 @@
 #include "sensors/LIS3MDL/LIS3MDL.h"
 
 using namespace miosix;
+using namespace timer;
 
 int main()
 {
     TimestampTimer::enableTimestampTimer();
-    
+
     GpioPin cs(GPIOB_BASE, 1), miso(GPIOB_BASE, 4), mosi(GPIOB_BASE, 5),
         clk(GPIOB_BASE, 3);
 
@@ -53,7 +54,6 @@ int main()
         mosi.mode(Mode::ALTERNATE);
         mosi.alternateFunction(5);
     }
-    
 
     SPIBus bus(SPI1);
 

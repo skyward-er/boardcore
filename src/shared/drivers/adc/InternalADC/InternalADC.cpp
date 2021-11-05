@@ -22,7 +22,7 @@
 
 #include "InternalADC.h"
 
-#include "TimestampTimer.h"
+#include <drivers/timer/TimestampTimer.h>
 
 InternalADC::InternalADC(ADC_TypeDef& ADCx_, const float V_SUPPLY_,
                          const bool isUsingDMA_,
@@ -230,7 +230,7 @@ ADCData InternalADC::sampleImpl()
         }
     }
 
-    timestamp = TimestampTimer::getTimestamp();
+    timestamp = timer::TimestampTimer::getTimestamp();
 
     return last_sample;
 }

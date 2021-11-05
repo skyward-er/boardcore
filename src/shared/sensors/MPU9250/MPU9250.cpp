@@ -22,8 +22,9 @@
 
 #include "MPU9250.h"
 
+#include <drivers/timer/TimestampTimer.h>
+
 #include "Constants.h"
-#include "TimestampTimer.h"
 #include "interfaces/endianness.h"
 
 MPU9250::MPU9250(SPISlave spiSlave_, unsigned short samplingRate_,
@@ -112,7 +113,7 @@ MPU9250Data MPU9250::sampleImpl()
     spiSlave.config.clock_div = clockDivider;
 
     // Save timestamps
-    uint64_t timestamp   = TimestampTimer::getTimestamp();
+    uint64_t timestamp   = timer::TimestampTimer::getTimestamp();
     data.accel_timestamp = timestamp;
     data.temp_timestamp  = timestamp;
     data.gyro_timestamp  = timestamp;

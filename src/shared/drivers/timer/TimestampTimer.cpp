@@ -1,5 +1,5 @@
-/* Copyright (c) 2020 Skyward Experimental Rocketry
- * Authors: Luca Conterio, Davide Mor
+/* Copyright (c) 2020-2021 Skyward Experimental Rocketry
+ * Authors: Luca Conterio, Davide Mor, Alberto Nidasio
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -20,41 +20,7 @@
  * THE SOFTWARE.
  */
 
-#pragma once
+#include <drivers/timer/TimestampTimer.h>
 
-#include <math.h>
-
-#include <Debug.h>
-#include "drivers/HardwareTimer.h"
-
-namespace TimestampTimer
-{
-
-/**
- * For timer resolution and duration refer to :
- * https://docs.google.com/spreadsheets/d/1B44bN6m2vnldQx9XVxZaBP8bDHqoLPREyHoaLh8s0UA/edit#gid=0
- *
- */
-static const uint8_t PRESCALER_VALUE = 255;
-
-#ifdef _ARCH_CORTEXM3_STM32
-extern HardwareTimer<uint32_t, TimerMode::Chain> timestamp_timer;
-#else
-extern HardwareTimer<uint32_t, TimerMode::Single> timestamp_timer;
-#endif
-
-/**
- * @brief Enables and starts the timer peripheral, which can be
- * accessed via the timestamp_timer object.
- */
-void enableTimestampTimer(uint8_t prescaler = PRESCALER_VALUE);
-
-/**
- * @return the current timestamp in microseconds
- */
-inline uint64_t getTimestamp()
-{
-    return timestamp_timer.toIntMicroSeconds(timestamp_timer.tick());
-}
-
-}  // namespace TimestampTimer
+timer::GeneralPurposeTimer<uint32_t> timer::TimestampTimer::timestampTimer =
+    GeneralPurposeTimer<uint32_t>{TIM2};

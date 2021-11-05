@@ -22,9 +22,8 @@
 
 #include "ADS1118.h"
 
+#include <drivers/timer/TimestampTimer.h>
 #include <interfaces/endianness.h>
-
-#include "TimestampTimer.h"
 
 const ADS1118::ADS1118Config ADS1118::ADS1118_DEFAULT_CONFIG = {
     SINGLE_SHOT_MODE, FSR_2_048,  MUX_AIN0_AIN1, 0,     0,
@@ -241,7 +240,8 @@ void ADS1118::readChannel(int8_t nextChannel, int8_t prevChannel)
 
         // TODO: the timestamp should be taken when the configuration is
         // written, now we could be reading the value after some time!
-        values[prevChannel].adc_timestamp = TimestampTimer::getTimestamp();
+        values[prevChannel].adc_timestamp =
+            timer::TimestampTimer::getTimestamp();
 
         if (prevChannel != 8)  // Voltage value
         {

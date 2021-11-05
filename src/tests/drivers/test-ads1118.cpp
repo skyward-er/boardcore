@@ -48,9 +48,8 @@
 #include <Debug.h>
 #include <drivers/adc/ADS1118/ADS1118.h>
 #include <drivers/spi/SPIDriver.h>
+#include <drivers/timer/TimestampTimer.h>
 #include <miosix.h>
-
-#include "TimestampTimer.h"
 
 GpioPin sckPin  = GpioPin(GPIOB_BASE, 13);
 GpioPin misoPin = GpioPin(GPIOB_BASE, 14);
@@ -83,7 +82,7 @@ int main()
     // Enable SPI clock and set gpios
     initBoard();
 
-    TimestampTimer::enableTimestampTimer();
+    timer::TimestampTimer::enableTimestampTimer();
 
     // SPI configuration setup
     SPIBusConfig spiConfig = ADS1118::getDefaultSPIConfig();

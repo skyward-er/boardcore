@@ -22,7 +22,7 @@
 
 #include "BME280.h"
 
-#include "TimestampTimer.h"
+#include <drivers/timer/TimestampTimer.h>
 
 const BME280::BME280Config BME280::BME280_DEFAULT_CONFIG = {
     SKIPPED, 0, 0, SLEEP_MODE, SKIPPED, SKIPPED, 0, FILTER_OFF, STB_TIME_0_5};
@@ -153,7 +153,7 @@ HumidityData BME280::readHumidity()
     adc_H |= buffer[1];
 
     // Compensate humidity
-    last_sample.humid_timestamp = TimestampTimer::getTimestamp();
+    last_sample.humid_timestamp = timer::TimestampTimer::getTimestamp();
     last_sample.humid =
         (float)compensateHumidity(adc_H) / 1024;  // Converto to %RH
 
@@ -176,7 +176,7 @@ PressureData BME280::readPressure()
     adc_P |= (buffer[2] >> 4) & 0x0F;
 
     // Compensate pressure
-    last_sample.press_timestamp = TimestampTimer::getTimestamp();
+    last_sample.press_timestamp = timer::TimestampTimer::getTimestamp();
     last_sample.press =
         (float)compensatePressure(adc_P) / 256;  // Convert to Pa
 
@@ -200,7 +200,7 @@ TemperatureData BME280::readTemperature()
 
     // Compensate temperature
     t_fine                     = computeFineTemperature(adc_T);
-    last_sample.temp_timestamp = TimestampTimer::getTimestamp();
+    last_sample.temp_timestamp = timer::TimestampTimer::getTimestamp();
     last_sample.temp =
         (float)compensateTemperature(t_fine) / 100;  // Converto to DegC
 
@@ -257,15 +257,15 @@ BME280Data BME280::sampleImpl()
 
     // Compensate temperature
     t_fine              = computeFineTemperature(adc_T);
-    data.temp_timestamp = TimestampTimer::getTimestamp();
+    data.temp_timestamp = timer::TimestampTimer::getTimestamp();
     data.temp = (float)compensateTemperature(t_fine) / 100;  // Converto to DegC
 
     // Compensate pressure
-    data.press_timestamp = TimestampTimer::getTimestamp();
+    data.press_timestamp = timer::TimestampTimer::getTimestamp();
     data.press = (float)compensatePressure(adc_P) / 256;  // Convert to Pa
 
     // Compensate humidity
-    data.humid_timestamp = TimestampTimer::getTimestamp();
+    data.humid_timestamp = timer::TimestampTimer::getTimestamp();
     data.humid = (float)compensateHumidity(adc_H) / 1024;  // Converto to %RH
 
     return data;

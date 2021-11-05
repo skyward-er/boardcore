@@ -25,6 +25,7 @@
 
 #include <Common.h>
 #include <diagnostic/PrintLogger.h>
+#include <drivers/timer/TimestampTimer.h>
 
 #include "LIS3MDLData.h"
 #include "drivers/spi/SPIDriver.h"
@@ -526,7 +527,7 @@ private:
                 val = spi.read(TEMP_OUT_L);
                 val |= spi.read(TEMP_OUT_H) << 8;
 
-                newData.temp_timestamp = TimestampTimer::getTimestamp();
+                newData.temp_timestamp = timer::TimestampTimer::getTimestamp();
                 newData.temp = static_cast<float>(val) / LSB_PER_CELSIUS +
                                REFERENCE_TEMPERATURE;
             }
@@ -539,7 +540,7 @@ private:
             currDiv = (currDiv + 1) % mConfig.temperatureDivider;
         }
 
-        newData.mag_timestamp = TimestampTimer::getTimestamp();
+        newData.mag_timestamp = timer::TimestampTimer::getTimestamp();
 
         val = spi.read(OUT_X_L);
         val |= spi.read(OUT_X_H) << 8;

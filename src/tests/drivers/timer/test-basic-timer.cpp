@@ -1,5 +1,5 @@
-/* Copyright (c) 2018 Skyward Experimental Rocketry
- * Author: Luca Erbetta
+/* Copyright (c) 2021 Skyward Experimental Rocketry
+ * Author: Alberto Nidasio
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -19,46 +19,3 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
-
-#ifndef SRC_SHARED_DRIVERS_PWM_PWMDATA_H
-#define SRC_SHARED_DRIVERS_PWM_PWMDATA_H
-
-/**
- * @brief PWM channel output polarity
- *
- */
-enum class PWMPolarity
-{
-    ACTIVE_HIGH,
-    ACTIVE_LOW
-};
-
-/**
- * @brief PWM mode selection. Refer to datasheet
- * MODE_1  Channel high when CNT < CCRx
- * MODE_2  Channel high when CNT > CCRx
- */
-enum class PWMMode
-{
-    MODE_1,  // Channel high when CNT < CCRx
-    MODE_2   // Channel high when CNT > CCRx
-};
-
-enum class PWMChannel : int
-{
-    CH1 = 0,
-    CH2,
-    CH3,
-    CH4
-};
-
-struct PWMChannelConfig
-{
-    PWMChannel channel;
-    bool enabled         = false;
-    float duty_cycle     = 0;
-    PWMMode mode         = PWMMode::MODE_1;
-    PWMPolarity polarity = PWMPolarity::ACTIVE_HIGH;
-};
-
-#endif
