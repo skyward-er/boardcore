@@ -1,10 +1,9 @@
 [submodule "libs/miosix-kernel"]
 	path = libs/miosix-kernel
 	url = ../../scs/miosix-kernel.git
-	branch = master
 [submodule "libs/tscpp"]
 	path = libs/tscpp
-	url = ../../scs/tscpp.git
+	url = ../../scs/third-party/tscpp.git
 [submodule "libs/mavlink_skyward_lib"]
 	path = libs/mavlink_skyward_lib
 	url = ../../scs/mavlink_skyward_lib.git
@@ -13,7 +12,7 @@
 	url = ../../scs/third-party/eigen.git
 [submodule "libs/mxgui"]
 	path = libs/mxgui
-	url = ../../scs/mxgui.git
+	url = ../../scs/third-party/mxgui.git
 [submodule "libs/fmt"]
 	path = libs/fmt
 	url = ../../scs/third-party/fmt.git
