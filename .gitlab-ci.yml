@@ -16,14 +16,14 @@ variables:
 #   - echo "After script section"
 #   - echo "For example you might do some cleanup here"
    
-build:
-  stage: build
-  only:
-    - master
-    - testing
-  script:
-    - echo "Running complete build"
-    - python3 sbs
+# build:
+#   stage: build
+#   only:
+#     - master
+#     - testing
+#   script:
+#     - echo "Running complete build"
+#     - python3 sbs
    
 linter:
   stage: test
