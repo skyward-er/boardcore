@@ -22,14 +22,14 @@
 
 #include "SPITransaction.h"
 
-SPITransaction::SPITransaction(SPISlave slave)
-    : SPITransaction(slave.bus, slave.cs, slave.config)
+SPITransaction::SPITransaction(SPISlave slave, SPIWriteBit wrbit)
+    : SPITransaction(slave.bus, slave.cs, slave.config, wrbit)
 {
 }
 
 SPITransaction::SPITransaction(SPIBusInterface& bus, GpioType cs,
-                               SPIBusConfig config)
-    : bus(bus), cs(cs)
+                               SPIBusConfig config, SPIWriteBit wrbit)
+    : bus(bus), wrbit(wrbit), cs(cs)
 {
     bus.acquire(config);
 }
@@ -45,6 +45,11 @@ void SPITransaction::write(uint8_t cmd)
 
 void SPITransaction::write(uint8_t reg, uint8_t val)
 {
+    if (wrbit == SPIWriteBit::INVERTED)
+    {
+        reg |= 0x80;
+    }
+
     bus.select(cs);
     bus.write(reg);
     bus.write(val);
@@ -53,6 +58,11 @@ void SPITransaction::write(uint8_t reg, uint8_t val)
 
 void SPITransaction::write(uint8_t reg, uint8_t* data, size_t size)
 {
+    if (wrbit == SPIWriteBit::INVERTED)
+    {
+        reg |= 0x80;
+    }
+
     bus.select(cs);
     bus.write(reg);
     bus.write(data, size);
@@ -75,9 +85,9 @@ void SPITransaction::transfer(uint8_t* data, size_t size)
 
 uint8_t SPITransaction::read(uint8_t reg, bool set_read_bit)
 {
-    if (set_read_bit)
+    if (wrbit == SPIWriteBit::NORMAL && set_read_bit)
     {
-        reg = reg | 0x80;
+        reg |= 0x80;
     }
 
     bus.select(cs);
@@ -90,9 +100,9 @@ uint8_t SPITransaction::read(uint8_t reg, bool set_read_bit)
 void SPITransaction::read(uint8_t reg, uint8_t* data, size_t size,
                           bool set_read_bit)
 {
-    if (set_read_bit)
+    if (wrbit == SPIWriteBit::NORMAL && set_read_bit)
     {
-        reg = reg | 0x80;
+        reg |= 0x80;
     }
 
     bus.select(cs);

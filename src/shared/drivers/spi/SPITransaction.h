@@ -25,6 +25,16 @@
 #include "SPIBusInterface.h"
 
 /**
+ * @brief Setting for when to set write bit
+ */
+enum class SPIWriteBit
+{
+    NORMAL,    //< Normal write bit settings (0 for write, 1 for reads)
+    INVERTED,  //< Inverted write bit settings (1 for write, 0 for reads)
+    DISABLED,  //< Do not set write bit in any way
+};
+
+/**
  * @brief Provides high-level access to the SPI Bus for a single transaction.
  * To make sure the bus is properly configured for the provided slave, you have
  * to create a new instance of this class for every transaction, as the bus is
@@ -58,7 +68,7 @@ public:
      *
      * @param    slave     Slave to communicate with
      */
-    SPITransaction(SPISlave slave);
+    SPITransaction(SPISlave slave, SPIWriteBit wrbit = SPIWriteBit::NORMAL);
 
     /**
      * @brief Instatiates a new SPITransaction, configuring the bus with the
@@ -68,7 +78,8 @@ public:
      * @param    cs        Chip select of the slave to communicate to
      * @param    config    Configuration of the bus for the selected slave
      */
-    SPITransaction(SPIBusInterface& bus, GpioType cs, SPIBusConfig config);
+    SPITransaction(SPIBusInterface& bus, GpioType cs, SPIBusConfig config,
+                   SPIWriteBit wrbit = SPIWriteBit::NORMAL);
 
     ~SPITransaction();
 
@@ -115,8 +126,8 @@ public:
      * @brief Read the contents of the \p reg register
      *
      * @param    reg       Slave device register
-     * @param    set_read_bit Wether to set the read bit to 1 (MSB of reg)
-     *                        (default = true).
+     * @param    set_read_bit Soft deprecated, please use \b WriteBit::DISABLED
+     * in the constructor.
      */
     uint8_t read(uint8_t reg, bool set_read_bit = true);
 
@@ -126,8 +137,8 @@ public:
      * @param    reg    Slave device register
      * @param    data   Buffer where read bytes will be stored
      * @param    size   Number of bytes to read
-     * @param    set_read_bit Wether to set the read bit to 1 (MSB of reg)
-     *                        (default = true).
+     * @param    set_read_bit Soft deprecated, please use \b WriteBit::DISABLED
+     * in the constructor.
      */
     void read(uint8_t reg, uint8_t* data, size_t size,
               bool set_read_bit = true);
@@ -158,5 +169,6 @@ public:
 
 private:
     SPIBusInterface& bus;
+    SPIWriteBit wrbit;
     GpioType cs;
 };
