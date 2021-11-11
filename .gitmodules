@@ -17,3 +17,6 @@
 [submodule "libs/mxgui"]
 	path = libs/mxgui
 	url = ../../scs/mxgui.git
+[submodule "libs/fmt"]
+	path = libs/fmt
+	url = ../../scs/third-party/fmt.git
