@@ -21,12 +21,12 @@
  */
 
 #include "PrintLogger.h"
-
 using miosix::Lock;
 
 namespace Boardcore
 {
 
+#if defined(COMPILING_FMT) && !defined(DISABLE_PRINTLOGGER)
 static string getLevelString(uint8_t level)
 {
     switch (level)
@@ -45,8 +45,11 @@ static string getLevelString(uint8_t level)
             return std::to_string(level);
     }
 }
+#endif
+
 void LogSink::log(const LogRecord& record)
 {
+#if defined(COMPILING_FMT) && !defined(DISABLE_PRINTLOGGER)
     using namespace fmt::literals;
     if (record.level >= min_level)
     {
@@ -58,6 +61,9 @@ void LogSink::log(const LogRecord& record)
                             "lvl"_a  = getLevelString(record.level),
                             "name"_a = record.name, "msg"_a = record.message));
     }
+#else
+    (void)record;
+#endif
 }
 
 void FileLogSink::logImpl(string l)
@@ -70,9 +76,12 @@ void FileLogSinkBuffered::logImpl(string l)
 {
     Lock<FastMutex> lock(mutex);
     LoggingString s;
-    strncpy(s.log_string, l.c_str(), MAX_LOG_STRING_SIZE-1);
+    strncpy(s.log_string, l.c_str(), MAX_LOG_STRING_SIZE - 1);
     logger.log(s);
 }
+
+#if defined(COMPILING_FMT) && !defined(DISABLE_PRINTLOGGER)
+
 
 PrintLogger PrintLogger::getChild(string name)
 {
@@ -160,4 +169,5 @@ void Logging::AsyncLogger::run()
     }
 }
 
+#endif
 }  // namespace Boardcore
