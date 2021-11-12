@@ -122,6 +122,13 @@ float getResolution(TIM_TypeDef *timer);
  */
 float getMaxDuration(TIM_TypeDef *timer);
 
+/**
+ * @brief Computer the prescaler value for the specified target frequency.
+ *
+ * @return Prescaler value for the target frequency.
+ */
+uint16_t computePrescalerValue(TIM_TypeDef *timer, int targetFrequency);
+
 }  // namespace TimerUtils
 
 inline TimerUtils::InputClock TimerUtils::getTimerInputClock(TIM_TypeDef *timer)
@@ -215,4 +222,10 @@ inline float TimerUtils::getMaxDuration(TIM_TypeDef *timer)
 {
     return (1.0f * timer->ARR * 1e6 * (1 + timer->PSC)) /
            getPrescalerInputFrequency(timer);
+}
+
+inline uint16_t TimerUtils::computePrescalerValue(TIM_TypeDef *timer,
+                                                  int targetFrequency)
+{
+    return TimerUtils::getPrescalerInputFrequency(timer) / targetFrequency - 1;
 }

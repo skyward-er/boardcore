@@ -443,16 +443,34 @@ public:
     void enableCaptureCompareOutput();
 
     /**
+     * @brief Enables capture/compare complementary channel.
+     */
+    template <int C>
+    void enableCaptureCompareComplementaryOutput();
+
+    /**
      * @brief Disables capture/compare channel.
      */
     template <int C>
     void disableCaptureCompareOutput();
 
     /**
+     * @brief Disables capture/compare complementary channel.
+     */
+    template <int C>
+    void disableCaptureCompareComplementaryOutput();
+
+    /**
      * @brief Changes capture/compare polarity.
      */
     template <int C>
     void setCaptureComparePolarity(OutputComparePolarity polarity);
+
+    /**
+     * @brief Changes capture/compare complementary polarity.
+     */
+    template <int C>
+    void setCaptureCompareComplementaryPolarity(OutputComparePolarity polarity);
 
     /**
      * @brief Sets the timer capture/compare value.
@@ -715,6 +733,29 @@ inline void GeneralPurposeTimer<T>::enableCaptureCompareOutput()
     static_assert(C >= 1 && C <= 4, "Channel must be betwen 1 and 4");
 
     timer->CCER |= TIM_CCER_CC1E << ((C - 1) * 4);
+
+    // On TIM1 and TIM8 the outputs are enabled only if the MOE bit in the BDTR
+    // register is set
+    if (timer == TIM1 || timer == TIM8)
+    {
+        timer->BDTR |= TIM_BDTR_MOE;
+    }
+}
+
+template <typename T>
+template <int C>
+inline void GeneralPurposeTimer<T>::enableCaptureCompareComplementaryOutput()
+{
+    static_assert(C >= 1 && C <= 4, "Channel must be betwen 1 and 4");
+
+    timer->CCER |= TIM_CCER_CC1NE << ((C - 1) * 4);
+
+    // On TIM1 and TIM8 the outputs are enabled only if the MOE bit in the BDTR
+    // register is set
+    if (timer == TIM1 || timer == TIM8)
+    {
+        timer->BDTR |= TIM_BDTR_MOE;
+    }
 }
 
 template <typename T>
@@ -728,12 +769,31 @@ inline void GeneralPurposeTimer<T>::disableCaptureCompareOutput()
 
 template <typename T>
 template <int C>
+inline void GeneralPurposeTimer<T>::disableCaptureCompareComplementaryOutput()
+{
+    static_assert(C >= 1 && C <= 4, "Channel must be betwen 1 and 4");
+
+    timer->CCER &= ~(TIM_CCER_CC1NE << ((C - 1) * 4));
+}
+
+template <typename T>
+template <int C>
 inline void GeneralPurposeTimer<T>::setCaptureComparePolarity(
     OutputComparePolarity polarity)
 {
     static_assert(C >= 1 && C <= 4, "Channel must be betwen 1 and 4");
 
     timer->CCER |= (uint16_t)polarity << (1 + (C - 1) * 4);
+}
+
+template <typename T>
+template <int C>
+inline void GeneralPurposeTimer<T>::setCaptureCompareComplementaryPolarity(
+    OutputComparePolarity polarity)
+{
+    static_assert(C >= 1 && C <= 4, "Channel must be betwen 1 and 4");
+
+    timer->CCER |= (uint16_t)polarity << (3 + (C - 1) * 4);
 }
 
 template <typename T>
