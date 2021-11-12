@@ -312,103 +312,40 @@ public:
      */
     GeneralPurposeTimer(TIM_TypeDef *timer);
 
-    /**
-     * @brief Resets the timer configuration to the default state.
-     *
-     * TODO: write the default state
-     */
     void reset();
 
-    /**
-     * @brief Reads the counter value.
-     *
-     * @return Counter value
-     */
     T readCounter();
 
-    /**
-     * @brief Sets the timer counter value.
-     *
-     * @param counterValue Counter value to set.
-     */
     void setCounter(T counterValue);
 
-    /**
-     * @brief Reads the timer auto-reload register.
-     *
-     * @return Tiemr auto-reload register value.
-     */
     T readAutoReloadRegister();
 
-    /**
-     * @brief Changes the auto-reload register.
-     *
-     * @param autoReloadValue New auto-reload register value.
-     */
     void setAutoReloadRegister(T autoReloadValue);
 
-    /**
-     * @brief Changes the timer master mode.
-     *
-     * @param masterMode New timer master mode.
-     */
     void setMasterMode(MasterMode masterMode);
 
-    /**
-     * @brief Changes the timer slave mode.
-     *
-     * @param slaveMode New timer slave mode.
-     */
     void setSlaveMode(SlaveMode slaveMode);
 
-    /**
-     * @brief Changes the trigger source.
-     */
     void setTriggerSource(TriggerSource triggerSource);
 
-    /**
-     * @brief Enable trigger interrupt.
-     */
     void enableTriggerInterrupt();
 
-    /**
-     * @brief Disable trigger interrupt.
-     */
     void disableTriggerInterrupt();
 
-    /**
-     * @brief Enable capture/compare channel interrupt.
-     */
     template <int C>
     void enableCaptureCompareInterrupt();
 
-    /**
-     * @brief Disable capture/compare channel interrupt.
-     */
     template <int C>
     void disableCaptureCompareInterrupt();
 
-    /**
-     * @brief Enable capture/compare channel interrupt.
-     */
     template <int C>
     void enableCaptureCompareDMARequest();
 
-    /**
-     * @brief Disable capture/compare channel interrupt.
-     */
     template <int C>
     void disableCaptureCompareDMARequest();
 
-    /**
-     * @brief The TIF flag is set in the TIMx_SR register. Related interrupt can
-     * occur if enabled.
-     */
     void generateTrigger();
 
-    /**
-     * @brief A capture/compare event is generated on channel.
-     */
     template <int C>
     void generateCaptureCompareEvent();
 
@@ -430,66 +367,32 @@ public:
     template <int C>
     void disableCaptureComparePreload();
 
-    /**
-     * @brief Sets the output/compare mode.
-     */
     template <int C>
     void setOutputCompareMode(OutputCompareMode mode);
 
-    /**
-     * @brief Enables capture/compare channel.
-     */
     template <int C>
     void enableCaptureCompareOutput();
 
-    /**
-     * @brief Enables capture/compare complementary channel.
-     */
     template <int C>
     void enableCaptureCompareComplementaryOutput();
 
-    /**
-     * @brief Disables capture/compare channel.
-     */
     template <int C>
     void disableCaptureCompareOutput();
 
-    /**
-     * @brief Disables capture/compare complementary channel.
-     */
     template <int C>
     void disableCaptureCompareComplementaryOutput();
 
-    /**
-     * @brief Changes capture/compare polarity.
-     */
     template <int C>
     void setCaptureComparePolarity(OutputComparePolarity polarity);
 
-    /**
-     * @brief Changes capture/compare complementary polarity.
-     */
     template <int C>
     void setCaptureCompareComplementaryPolarity(OutputComparePolarity polarity);
 
-    /**
-     * @brief Sets the timer capture/compare value.
-     */
     template <int C>
     void setCaptureCompareRegister(T value);
 
-    /**
-     * @brief Clears the trigger interrupt flag.
-     *
-     * @param timer Timer to use.
-     */
     static void clearTriggerInterruptFlag(TIM_TypeDef *timer);
 
-    /**
-     * @brief Clears capture/compare interrupt flag.
-     *
-     * @param timer Timer to use.
-     */
     template <int C>
     static void clearCaptureCompareInterruptFlag(TIM_TypeDef *timer);
 };

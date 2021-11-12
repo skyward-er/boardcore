@@ -102,20 +102,7 @@ public:
      */
     BasicTimer(TIM_TypeDef *timer);
 
-    /**
-     * @brief Return the timer.
-     */
     TIM_TypeDef *getTimer();
-
-    /**
-     * @brief Enables the timer.
-     */
-    void enable();
-
-    /**
-     * @brief Disables the timer.
-     */
-    void disable();
 
     /**
      * @brief Resets the timer configuration to the default state.
@@ -134,11 +121,10 @@ public:
      */
     void reset();
 
-    /**
-     * @brief Checks whether the timer is enabled or not.
-     *
-     * @return True if the timer is enabled.
-     */
+    void enable();
+
+    void disable();
+
     bool isEnabled();
 
     /**
@@ -176,25 +162,10 @@ public:
      */
     void generateUpdate();
 
-    /**
-     * @brief Reads the counter value.
-     *
-     * @return Counter value
-     */
     uint16_t readCounter();
 
-    /**
-     * @brief Sets the timer counter value.
-     *
-     * @param counterValue Counter value to set.
-     */
     void setCounter(uint16_t counterValue);
 
-    /**
-     * @brief Reads the prescaler value.
-     *
-     * @return Timer prescaler value
-     */
     uint16_t readPrescaler();
 
     /**
@@ -207,68 +178,26 @@ public:
      */
     void setPrescaler(uint16_t prescalerValue);
 
-    /**
-     * @brief Reads the timer auto-reload register.
-     *
-     * @return Tiemr auto-reload register value.
-     */
     uint16_t readAutoReloadRegister();
 
-    /**
-     * @brief Changes the auto-reload register.
-     *
-     * @param autoReloadValue New auto-reload register value.
-     */
     void setAutoReloadRegister(uint16_t autoReloadValue);
 
-    /**
-     * @brief Enable interrupt generation at UEV.
-     */
     void enableUpdateInterrupt();
 
-    /**
-     * @brief Disable interrupt generation at UEV.
-     */
     void disableUpdateInterrupt();
 
-    /**
-     * @brief Enable DMA request generation at UEV.
-     */
     void enableUpdateDMARequest();
 
-    /**
-     * @brief Disable DMA request generation at UEV.
-     */
     void disableUpdateDMARequest();
 
-    /**
-     * @brief The counter automatically disables at the next UEV.
-     */
     void enableOnePulseMode();
 
-    /**
-     * @brief UEV and generateUpdate() (UG) can trigger an update interrupt or a
-     * DMA request if enabled.
-     */
     void enableUGInterruptAndDMA();
 
-    /**
-     * @brief Only an UEV can generate an interrupt or a DMA request if enabled.
-     */
     void disableUGInterruptAndDMA();
 
-    /**
-     * @brief Changes the timer master mode.
-     *
-     * @param masterMode New timer master mode.
-     */
     void setMasterMode(MasterMode masterMode);
 
-    /**
-     * @brief Clears the update interrupt flag.
-     *
-     * @param timer Timer to use.
-     */
     static void clearUpdateInterruptFlag(TIM_TypeDef *timer);
 
 protected:
@@ -279,10 +208,6 @@ inline BasicTimer::BasicTimer(TIM_TypeDef *timer) : timer(timer) {}
 
 inline TIM_TypeDef *BasicTimer::getTimer() { return timer; }
 
-inline void BasicTimer::enable() { timer->CR1 |= TIM_CR1_CEN; }
-
-inline void BasicTimer::disable() { timer->CR1 &= ~TIM_CR1_CEN; }
-
 inline void BasicTimer::reset()
 {
     timer->CR1  = 0;
@@ -292,6 +217,10 @@ inline void BasicTimer::reset()
     timer->PSC  = 0;
     timer->ARR  = 0xFFFF;
 }
+
+inline void BasicTimer::enable() { timer->CR1 |= TIM_CR1_CEN; }
+
+inline void BasicTimer::disable() { timer->CR1 &= ~TIM_CR1_CEN; }
 
 inline bool BasicTimer::isEnabled()
 {
