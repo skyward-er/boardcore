@@ -22,7 +22,7 @@
 
 #pragma once
 
-#include <miosix.h>
+#include <kernel/sync.h>
 
 #include "SPIBus.h"
 

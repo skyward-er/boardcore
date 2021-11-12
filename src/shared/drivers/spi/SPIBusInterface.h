@@ -22,7 +22,7 @@
 
 #pragma once
 
-#include <miosix.h>
+#include <interfaces-impl/gpio_impl.h>
 
 #include <cstdint>
 #include <cstdio>

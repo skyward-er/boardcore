@@ -24,7 +24,7 @@
 
 #include <drivers/timer/GeneralPurposeTimer.h>
 #include <drivers/timer/TimerUtils.h>
-#include <miosix.h>
+#include <interfaces/arch_registers.h>
 
 #include "SPIBusInterface.h"
 

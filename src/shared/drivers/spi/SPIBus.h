@@ -22,9 +22,11 @@
 
 #pragma once
 
-#include <cassert>
+#include <assert.h>
+#include <interfaces/delays.h>
 
 #include "SPIBusInterface.h"
+
 #ifndef USE_MOCK_PERIPHERALS
 using SPIType = SPI_TypeDef;
 #else
