@@ -25,6 +25,8 @@
 #include <drivers/timer/GeneralPurposeTimer.h>
 #include <sensors/BMX160/BMX160.h>
 
+using namespace miosix;
+
 SPIBus bus(SPI1);
 GpioPin cs(GPIOA_BASE, 8);
 

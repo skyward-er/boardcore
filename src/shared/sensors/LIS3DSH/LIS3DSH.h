@@ -56,7 +56,7 @@ public:
      *  @param _full_scale  full scale range (from +/-2g up to +/-16g).
      *                      Default value is +/-2g.
      */
-    LIS3DSH(SPIBusInterface& bus, GpioPin chip_select,
+    LIS3DSH(SPIBusInterface& bus, miosix::GpioPin chip_select,
             uint8_t _odr        = OutputDataRate::ODR_100_HZ,
             uint8_t _bdu        = BlockDataUpdate::UPDATE_AFTER_READ_MODE,
             uint8_t _full_scale = FullScale::FULL_SCALE_2G)
@@ -82,8 +82,8 @@ public:
      *  @param _full_scale  full scale range (from +/-2g up to +/-16g).
      *                      Default value is +/-2g.
      */
-    LIS3DSH(SPIBusInterface& bus, GpioPin chip_select, SPIBusConfig config,
-            uint8_t _odr        = OutputDataRate::ODR_100_HZ,
+    LIS3DSH(SPIBusInterface& bus, miosix::GpioPin chip_select,
+            SPIBusConfig config, uint8_t _odr = OutputDataRate::ODR_100_HZ,
             uint8_t _bdu        = BlockDataUpdate::UPDATE_AFTER_READ_MODE,
             uint8_t _full_scale = FullScale::FULL_SCALE_2G)
         : spi_slave(bus, chip_select, config), odr(_odr), bdu(_bdu),

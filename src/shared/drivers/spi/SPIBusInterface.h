@@ -27,13 +27,10 @@
 #include <cstdint>
 #include <cstdio>
 
-using miosix::delayUs;
-using miosix::GpioPin;
-
 #ifndef USE_MOCK_PERIPHERALS
-using GpioType = GpioPin;
+using GpioType = miosix::GpioPin;
 #else
-#include "utils/testutils/MockGpioPin.h"
+#include <utils/testutils/MockGpioPin.h>
 using GpioType = MockGpioPin;
 #endif
 
@@ -61,6 +58,7 @@ enum class SPIClockDivider : uint8_t
 
 /**
  * @brief SPI Mode.
+ *
  * See slave device datasheet for information on which one to use.
  */
 enum class SPIMode : uint8_t
@@ -72,7 +70,8 @@ enum class SPIMode : uint8_t
 };
 
 /**
- * @brief SPI Bit Order
+ * @brief SPI Bit Order.
+ *
  * See register CR1  of the SPI peripheral on the reference manual for further
  * information.
  */
@@ -84,31 +83,36 @@ enum class SPIBitOrder : uint8_t
 
 /**
  * @brief SPI Bus configuration for a specific slave.
- * See slave datasheet for information on how to populate this struct
+ *
+ * See slave datasheet for information on how to populate this struct.
  */
 struct SPIBusConfig
 {
-    SPIClockDivider clock_div =
-        SPIClockDivider::DIV256;             ///> Peripheral clock division
-    SPIMode mode          = SPIMode::MODE0;  ///> Clock polarity (0 - 1)
-    SPIBitOrder bit_order = SPIBitOrder::MSB_FIRST;  ///> MSB or LSB first
+    ///> Peripheral clock division
+    SPIClockDivider clock_div = SPIClockDivider::DIV256;
 
-    unsigned int cs_setup_time_us = 0;  ///> How long to wait before starting a
-                                        ///> a trasmission after CS is set (us)
-    unsigned int cs_hold_time_us = 0;   ///> How long to hold cs after the end
-                                        ///> of a trasmission (us)
+    ///> Clock polarity (0 - 1)
+    SPIMode mode = SPIMode::MODE0;
 
-    // Custom comparison operator
+    ///> MSB or LSB first
+    SPIBitOrder bit_order = SPIBitOrder::MSB_FIRST;
+
+    ///> How long to wait before starting a trasmission after CS is set (us)
+    unsigned int cs_setup_time_us = 0;
+
+    ///> How long to hold cs after the end of a trasmission (us)
+    unsigned int cs_hold_time_us = 0;
+
+    /**
+     * @brief Custom comparison operator.
+     */
     bool operator==(const SPIBusConfig& other) const
     {
         // Compare member-by-member
-        // clang-format off
-        return  clock_div == other.clock_div 
-             && mode == other.mode
-             && bit_order == other.bit_order
-             && cs_setup_time_us == other.cs_setup_time_us 
-             && cs_setup_time_us == other.cs_hold_time_us;
-        // clang-format on
+        return clock_div == other.clock_div && mode == other.mode &&
+               bit_order == other.bit_order &&
+               cs_setup_time_us == other.cs_setup_time_us &&
+               cs_setup_time_us == other.cs_hold_time_us;
     }
 
     bool operator!=(const SPIBusConfig& other) const
@@ -118,7 +122,7 @@ struct SPIBusConfig
 };
 
 /**
- * @brief Interface for low level access of a SPI bus
+ * @brief Interface for low level access of a SPI bus.
  */
 class SPIBusInterface
 {
@@ -127,39 +131,39 @@ public:
 
     virtual ~SPIBusInterface() {}
 
-    // Delete copy/move contructors/operators
+    ///> Delete copy/move contructors/operators.
     SPIBusInterface(const SPIBusInterface&) = delete;
     SPIBusInterface& operator=(const SPIBusInterface&) = delete;
-
-    SPIBusInterface(SPIBusInterface&&) = delete;
+    SPIBusInterface(SPIBusInterface&&)                 = delete;
     SPIBusInterface& operator=(SPIBusInterface&&) = delete;
 
     /**
      * @brief Writes a single \p byte to the bus.
      *
-     * @param    byte Byte to write
+     * @param byte Byte to write.
      */
     virtual void write(uint8_t byte) = 0;
 
     /**
      * @brief Writes \p data to the bus.
      *
-     * @param    data Buffer containing data to write
-     * @param    size Number of bytes to write
+     * @param data Buffer containing data to write.
+     * @param size Number of bytes to write.
      */
     virtual void write(uint8_t* data, size_t size) = 0;
 
     /**
      * @brief Reads a single byte from the bus.
-     * @return Byte read from the bus
+     *
+     * @return Byte read from the bus.
      */
     virtual uint8_t read() = 0;
 
     /**
      * @brief Reads \p size bytes from the SPI bus, putting them in \p data.
      *
-     * @param    data Buffer to be filled with received data
-     * @param    size Number of bytes to receive
+     * @param data Buffer to be filled with received data.
+     * @param size Number of bytes to receive.
      */
     virtual void read(uint8_t* data, size_t size) = 0;
 
@@ -167,42 +171,44 @@ public:
      * @brief Full duplex transmission on the SPI bus.
      * A \p byte is written on the bus and a byte is read and returned
      *
-     * @param    byte Byte to write
-     * @return Data read from the bus
+     * @param byte Byte to write.
+     * @return Data read from the bus.
      */
     virtual uint8_t transfer(uint8_t byte) = 0;
 
     /**
      * @brief Full duplex transmission on the SPI bus.
+     *
      * \p data is written on the bus and its contents are then replaced with the
      * received bytes.
      *
-     * @param    data Buffer containing data to transfer
-     * @param    size Number of bytes to transfer
+     * @param data Buffer containing data to transfer.
+     * @param size Number of bytes to transfer.
      */
     virtual void transfer(uint8_t* data, size_t size) = 0;
 
     /**
-     * @brief Selects the slave
+     * @brief Selects the slave.
      *
-     * @param    cs Chip select pin for the slave
+     * @param cs Chip select pin for the slave.
      */
     virtual void select(GpioType& cs) = 0;
 
     /**
-     * @brief Deselects the slave
+     * @brief Deselects the slave.
      *
-     * @param    cs Chip select pin for the slave
+     * @param cs Chip select pin for the slave.
      * @return
      */
     virtual void deselect(GpioType& cs) = 0;
 
     /**
      * @brief Configures the bus with the provided configuration parameters.
+     *
      * Call this before every transaction, after the call to lock() and before
      * select(..)
      *
-     * @param    config    Configuration parameters
+     * @param config Configuration parameters.
      * @return
      */
     virtual void acquire(SPIBusConfig config)
@@ -212,17 +218,17 @@ public:
     }
 
     /**
-     * @brief Releases ownership of the bus
+     * @brief Releases ownership of the bus.
      */
     virtual void release() { busy = false; }
 
     /**
-     * @brief Checks wether the bus is currently being used
+     * @brief Checks wether the bus is currently being used.
      */
     virtual bool isBusy() { return busy; }
 
 private:
-    bool busy = false;  // For use by SPITransaction
+    bool busy = false;  ///> For use by SPITransaction
 };
 
 /**
@@ -230,7 +236,7 @@ private:
  */
 struct SPISlave
 {
-    SPIBusInterface& bus;  ///> Bus on which the slave is connected
+    SPIBusInterface& bus;  ///> Bus on which the slave is connected.
 
     SPIBusConfig config;  ///> How the bus should be configured to communicate
                           ///> with the slave.

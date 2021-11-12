@@ -22,10 +22,9 @@
 
 #pragma once
 
-#include "SPIBus.h"
 #include <miosix.h>
 
-using miosix::FastMutex;
+#include "SPIBus.h"
 
 /**
  * @brief Extension of SPIBus to sync access to the bus between multiple threads
@@ -45,6 +44,7 @@ class SyncedSPIBus : public SPIBus
         SPIBusInterface::release();
         mutex.unlock();
     }
+
 private:
-    FastMutex mutex;
+    miosix::FastMutex mutex;
 };

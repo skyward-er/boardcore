@@ -43,6 +43,8 @@
 #include <miosix.h>
 #include <sensors/BME280/BME280.h>
 
+using namespace miosix;
+
 GpioPin sckPin  = GpioPin(GPIOB_BASE, 13);
 GpioPin misoPin = GpioPin(GPIOB_BASE, 14);
 GpioPin mosiPin = GpioPin(GPIOB_BASE, 15);

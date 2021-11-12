@@ -25,35 +25,32 @@
 #include <cassert>
 
 #include "SPIBusInterface.h"
-
-
 #ifndef USE_MOCK_PERIPHERALS
 using SPIType = SPI_TypeDef;
 #else
-#include "test/FakeSpiTypedef.h"
+#include <utils/testutils/FakeSpiTypedef.h>
 using SPIType = FakeSpiTypedef;
 #endif
 
 /**
  * @brief Low level driver for communicating on a SPI Bus, provides
- *        SPIBusInterface.
+ * SPIBusInterface.
  */
 class SPIBus : public SPIBusInterface
 {
 public:
     /**
-     * @brief Instantiates a new SPIBus
+     * @brief Instantiates a new SPIBus.
      *
-     * @param spi Pointer to the SPI peripheral to be used
+     * @param spi Pointer to the SPI peripheral to be used.
      */
     SPIBus(SPIType* spi) : spi(spi) {}
     ~SPIBus() {}
 
-    // Delete copy/move contructors/operators
+    ///> Delete copy/move contructors/operators.
     SPIBus(const SPIBus&) = delete;
     SPIBus& operator=(const SPIBus&) = delete;
-
-    SPIBus(SPIBus&&) = delete;
+    SPIBus(SPIBus&&)                 = delete;
     SPIBus& operator=(SPIBus&&) = delete;
 
     /**
@@ -64,42 +61,42 @@ public:
     void disableBusConfiguration() { config_enabled = false; }
 
     /**
-     * @brief See SPIBusInterface::write()
+     * @brief See SPIBusInterface::write().
      */
     void write(uint8_t byte) override;
 
     /**
-     * @brief See SPIBusInterface::write()
+     * @brief See SPIBusInterface::write().
      */
     void write(uint8_t* data, size_t size) override;
 
     /**
-     * @brief See SPIBusInterface::read()
+     * @brief See SPIBusInterface::read().
      */
     uint8_t read() override;
 
     /**
-     * @brief See SPIBusInterface::read()
+     * @brief See SPIBusInterface::read().
      */
     void read(uint8_t* data, size_t size) override;
 
     /**
-     * @brief See SPIBusInterface::transfer()
+     * @brief See SPIBusInterface::transfer().
      */
     uint8_t transfer(uint8_t data) override;
 
     /**
-     * @brief See SPIBusInterface::transfer()
+     * @brief See SPIBusInterface::transfer().
      */
     void transfer(uint8_t* data, size_t size) override;
 
     /**
-     * @brief See SPIBusInterface::select()
+     * @brief See SPIBusInterface::select().
      */
     void select(GpioType& cs) override;
 
     /**
-     * @brief See SPIBusInterface::deselect()
+     * @brief See SPIBusInterface::deselect().
      */
     void deselect(GpioType& cs) override;
 
@@ -116,24 +113,24 @@ public:
 
 protected:
     /**
-     * Writes a single byte on the SPI bus.
+     * @brief Writes a single byte on the SPI bus.
      *
-     * @param    byte Pointer to the byte to be written
+     * @param byte Pointer to the byte to be written.
      */
     void write(uint8_t* byte);
 
     /**
-     * Reads a single byte from the SPI bus.
+     * @brief Reads a single byte from the SPI bus.
      *
-     * @param    byte Pointer to the byte where the read data will be stored
+     * @param byte Pointer to the byte where the read data will be stored.
      */
     void read(uint8_t* byte);
 
     /**
-     * Full duplex transfer. Writes a single byte on the SPI bus and replaces
-     * its content with the received data
+     * @brief Full duplex transfer. Writes a single byte on the SPI bus and
+     * replaces its content with the received data.
      *
-     * @param    byte Pointer to the byte to be transfered
+     * @param byte Pointer to the byte to be transfered.
      */
     void transfer(uint8_t* byte);
 
@@ -193,7 +190,7 @@ inline void SPIBus::select(GpioType& cs)
     cs.low();
     if (config.cs_setup_time_us > 0)
     {
-        delayUs(config.cs_setup_time_us);
+        miosix::delayUs(config.cs_setup_time_us);
     }
 }
 
@@ -201,7 +198,7 @@ inline void SPIBus::deselect(GpioType& cs)
 {
     if (config.cs_hold_time_us > 0)
     {
-        delayUs(config.cs_hold_time_us);
+        miosix::delayUs(config.cs_hold_time_us);
     }
     cs.high();
 }

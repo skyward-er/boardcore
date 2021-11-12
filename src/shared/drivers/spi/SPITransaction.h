@@ -54,105 +54,102 @@ class SPITransaction
 public:
     /**
      * @brief Instatiates a new SPITransaction, configuring the bus with the
-     * provided parameters
+     * provided parameters.
      *
-     * @param    slave     Slave to communicate with
+     * @param slave Slave to communicate with.
      */
     SPITransaction(SPISlave slave);
 
     /**
      * @brief Instatiates a new SPITransaction, configuring the bus with the
-     * provided parameters
+     * provided parameters.
      *
-     * @param    bus       Bus to communicate on
-     * @param    cs        Chip select of the slave to communicate to
-     * @param    config    Configuration of the bus for the selected slave
+     * @param bus Bus to communicate on.
+     * @param cs Chip select of the slave to communicate to.
+     * @param config Configuration of the bus for the selected slave.
      */
     SPITransaction(SPIBusInterface& bus, GpioType cs, SPIBusConfig config);
 
     ~SPITransaction();
 
-    // Delete copy/move contructors/operators
+    ///> Delete copy/move contructors/operators.
     SPITransaction(const SPITransaction&) = delete;
     SPITransaction& operator=(const SPITransaction&) = delete;
-
-    SPITransaction(SPITransaction&&) = delete;
+    SPITransaction(SPITransaction&&)                 = delete;
     SPITransaction& operator=(SPITransaction&&) = delete;
 
     /**
-     * @brief Writes a command \p cmd to the bus
+     * @brief Writes a command \p cmd to the bus.
      *
-     * @param    cmd     Command to write on the bus
+     * @param cmd Command to write on the bus.
      */
     void write(uint8_t cmd);
 
     /**
-     * @brief Writes \p val into the \p reg register
+     * @brief Writes \p val into the \p reg register.
      *
-     * @param    reg     Slave device register
-     * @param    val     Value to be written in the register
+     * @param reg Slave device register.
+     * @param val Value to be written in the register.
      */
     void write(uint8_t reg, uint8_t val);
 
     /**
-     * @brief Writes \p size bytes into the \p reg register
+     * @brief Writes \p size bytes into the \p reg register.
      *
-     * @param    reg       Slave device register
-     * @param    data      Data to be written
-     * @param    size      Number of bytes to be written
+     * @param reg Slave device register.
+     * @param data Data to be written.
+     * @param size Number of bytes to be written.
      */
     void write(uint8_t reg, uint8_t* data, size_t size);
 
     /**
-     * @brief Writes \p bytes on the bus
+     * @brief Writes \p bytes on the bus.
      *
-     * @param    data      Bytes to be written
-     * @param    size      Number of bytes to be written
+     * @param data Bytes to be written.
+     * @param size Number of bytes to be written.
      */
     void write(uint8_t* data, size_t size);
 
     /**
      * @brief Read the contents of the \p reg register
      *
-     * @param    reg       Slave device register
-     * @param    set_read_bit Wether to set the read bit to 1 (MSB of reg)
-     *                        (default = true).
+     * @param reg Slave device register.
+     * @param set_read_bit Wether to set the read bit to 1 (MSB of reg).
      */
     uint8_t read(uint8_t reg, bool set_read_bit = true);
 
     /**
-     * @brief Reads \p size bytes from the \p reg register
+     * @brief Reads \p size bytes from the \p reg register.
      *
-     * @param    reg    Slave device register
-     * @param    data   Buffer where read bytes will be stored
-     * @param    size   Number of bytes to read
-     * @param    set_read_bit Wether to set the read bit to 1 (MSB of reg)
-     *                        (default = true).
+     * @param reg Slave device register.
+     * @param data Buffer where read bytes will be stored.
+     * @param size Number of bytes to read.
+     * @param set_read_bit Wether to set the read bit to 1 (MSB of reg).
      */
     void read(uint8_t reg, uint8_t* data, size_t size,
               bool set_read_bit = true);
 
     /**
-     * @brief Reads \p size bytes from the bus
+     * @brief Reads \p size bytes from the bus.
      *
-     * @param    data   Buffer where read bytes will be stored
-     * @param    size   Number of bytes to read
+     * @param data Buffer where read bytes will be stored.
+     * @param size Number of bytes to read.
      */
     void read(uint8_t* data, size_t size);
 
     /**
      * @brief Full duplex transfer: \p data is written on the bus and its
-     *        contents are replaced with the received bytes.
+     * contents are replaced with the received bytes.
      *
-     * @param    data      Buffer containign data to be transfered
-     * @param    size      Number of bytes to be transfer
+     * @param data Buffer containign data to be transfered.
+     * @param size Number of bytes to be transfer.
      */
     void transfer(uint8_t* data, size_t size);
 
     /**
-     * @brief Returns the underlying bus for low level access
+     * @brief Returns the underlying bus for low level access.
      *
-     * @return  SPIBusInterface associated with this transaction
+     * @return SPIBusInterface associated with this transaction.
      */
     SPIBusInterface& getBus() { return bus; }
 

@@ -58,7 +58,7 @@ public:
      * @param cs SPI Chip Select pin
      * @param config BMX160 configuration
      */
-    BMX160(SPIBusInterface& bus, GpioPin cs, BMX160Config config = {});
+    BMX160(SPIBusInterface& bus, miosix::GpioPin cs, BMX160Config config = {});
 
     /**
      * @brief BMX160 Constructor.
@@ -67,7 +67,7 @@ public:
      * @param config BMX160 configuration
      * @param bus_config SPI bus configuration
      */
-    BMX160(SPIBusInterface& bus, GpioPin cs, BMX160Config config,
+    BMX160(SPIBusInterface& bus, miosix::GpioPin cs, BMX160Config config,
            SPIBusConfig bus_config);
 
     /**

@@ -25,15 +25,17 @@
 #endif
 
 #ifndef USE_MOCK_PERIPHERALS
-#error "This test requires SpiBusInterface built with MockGpioPin (-DUSE_MOCK_PERIPHERALS)"
+#error \
+    "This test requires SpiBusInterface built with MockGpioPin (-DUSE_MOCK_PERIPHERALS)"
 #endif
+
+#include <utils/testutils/FakeSpiTypedef.h>
+#include <utils/testutils/MockSPIBus.h>
 
 #include <utils/testutils/catch.hpp>
 
 #include "drivers/spi/SPIBus.h"
 #include "drivers/spi/SPIDriver.h"
-#include "drivers/spi/test/FakeSpiTypedef.h"
-#include "drivers/spi/test/MockSPIBus.h"
 
 template <typename T1, typename T2>
 bool bufcmp(T1* buf1, T2* buf2, size_t size)
@@ -485,7 +487,7 @@ TEST_CASE("SPITransaction - reads")
             REQUIRE_FALSE(bus.isSelected());
             REQUIRE(bus.getOutBuf().size() == 4);
             REQUIRE(bus.getOutBuf().back() == 0x05);
-            REQUIRE(bufcmp(buf,&in_data[6], 4));
+            REQUIRE(bufcmp(buf, &in_data[6], 4));
             REQUIRE(bufcmp(buf + 4, cmp + 4, buf_size - 4));
         }
 
@@ -520,7 +522,7 @@ TEST_CASE("SPITransaction - transfer")
     MockGpioPin cs;
 
     uint8_t data[10] = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10};
-    
+
     bus.push(data, 10);
 
     SECTION("Transaction")

@@ -22,11 +22,11 @@
 
 #pragma once
 
+#include <drivers/spi/SPIBusInterface.h>
+
 #include <cstdint>
 #include <cstdio>
 #include <vector>
-
-#include "../SPIBusInterface.h"
 
 using std::vector;
 

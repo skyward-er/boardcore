@@ -29,8 +29,8 @@ const ADS1118::ADS1118Config ADS1118::ADS1118_DEFAULT_CONFIG = {
     SINGLE_SHOT_MODE, FSR_2_048,  MUX_AIN0_AIN1, 0,     0,
     VALID_OPERATION,  PULL_UP_EN, ADC_MODE,      DR_128};
 
-ADS1118::ADS1118(SPIBusInterface &bus, GpioPin cs, ADS1118Config config_,
-                 SPIBusConfig spiConfig)
+ADS1118::ADS1118(SPIBusInterface &bus, miosix::GpioPin cs,
+                 ADS1118Config config_, SPIBusConfig spiConfig)
     : ADS1118(SPISlave(bus, cs, spiConfig), config_, false)
 {
 }

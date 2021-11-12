@@ -22,7 +22,7 @@
 
 #include "BMX160.h"
 
-BMX160::BMX160(SPIBusInterface& bus, GpioPin cs, BMX160Config config)
+BMX160::BMX160(SPIBusInterface& bus, miosix::GpioPin cs, BMX160Config config)
     : BMX160(bus, cs, config, SPIBusConfig{})
 {
     spi_slave.config.clock_div = SPIClockDivider::DIV32;
@@ -31,7 +31,7 @@ BMX160::BMX160(SPIBusInterface& bus, GpioPin cs, BMX160Config config)
     old_acc.accel_timestamp    = 0.0f;
 }
 
-BMX160::BMX160(SPIBusInterface& bus, GpioPin cs, BMX160Config config,
+BMX160::BMX160(SPIBusInterface& bus, miosix::GpioPin cs, BMX160Config config,
                SPIBusConfig bus_config)
     : spi_slave(bus, cs, bus_config), config(config)
 {
