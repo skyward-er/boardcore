@@ -39,17 +39,23 @@ print_banner() {
 EOF
 }
 
+show_found_deps() {
+    printf "Found Ccache: "; [ $ccache_found ] && echo "yes" || echo "no"
+    printf "Found Ninja: "; [ $ninja_found ] && echo "yes" || echo "no"
+    echo
+}
+
 configure() {
-    mkdir -p "$build_dir" && \
-    cd "$build_dir" && \
+    show_found_deps
+    [ $ccache_found ] && config_ccache="-DCMAKE_C_COMPILER_LAUNCHER=ccache -DCMAKE_CXX_COMPILER_LAUNCHER=ccache"
+    [ $ninja_found ] && config_ninja="-GNinja"
     cmake \
-        -DCMAKE_C_COMPILER_LAUNCHER=ccache \
-        -DCMAKE_CXX_COMPILER_LAUNCHER=ccache \
+        -B "$build_dir" \
+        $config_ccache \
         -DCMAKE_TOOLCHAIN_FILE="$sbs_base/libs/miosix-kernel/miosix/_tools/toolchain.cmake" \
-        -GNinja \
+        $config_ninja \
         $config_verbose \
-        "$source_dir" && \
-    cd "$source_dir"
+        "$source_dir"
 }
 
 clean() { [ -d "$build_dir" ] && cmake --build "$build_dir" $build_jobs --target clean; rm -rf "$build_dir"; }
@@ -92,6 +98,9 @@ source_dir="$PWD"
 build_dir="$source_dir/build"
 config_verbose=
 build_jobs=
+
+ccache_found="$(command -v ccache)"
+ninja_found="$(command -v ninja)"
 
 for arg in "$@"; do
     shift
