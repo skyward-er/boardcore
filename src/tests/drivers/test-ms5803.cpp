@@ -35,7 +35,7 @@ using namespace miosix;
 
 int main()
 {
-    timer::TimestampTimer::enableTimestampTimer();
+    TimestampTimer::enableTimestampTimer();
 
     SPIBusConfig spiConfig;
     SPIBus spiBus(SPI1);

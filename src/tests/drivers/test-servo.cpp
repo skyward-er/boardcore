@@ -49,13 +49,13 @@ int main()
         ps3::alternateFunction(3);
     }
 
-    PWM::Timer tim4{TIM4, &(RCC->APB1ENR), RCC_APB1ENR_TIM4EN,
-                    timer::TimerUtils::getPrescalerInputFrequency(
-                        timer::TimerUtils::InputClock::APB1)};
+    PWM::Timer tim4{
+        TIM4, &(RCC->APB1ENR), RCC_APB1ENR_TIM4EN,
+        TimerUtils::getPrescalerInputFrequency(TimerUtils::InputClock::APB1)};
 
-    PWM::Timer tim8{TIM8, &(RCC->APB2ENR), RCC_APB2ENR_TIM8EN,
-                    timer::TimerUtils::getPrescalerInputFrequency(
-                        timer::TimerUtils::InputClock::APB2)};
+    PWM::Timer tim8{
+        TIM8, &(RCC->APB2ENR), RCC_APB2ENR_TIM8EN,
+        TimerUtils::getPrescalerInputFrequency(TimerUtils::InputClock::APB2)};
 
     Servo s12{tim4};
     Servo s3{tim8};

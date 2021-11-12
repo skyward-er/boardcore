@@ -29,7 +29,7 @@
  */
 
 using namespace miosix;
-using namespace timer;
+
 using namespace TimerUtils;
 
 void printInputClock(InputClock inputClock);

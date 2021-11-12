@@ -38,7 +38,7 @@ void __attribute__((used)) EXTI5_IRQHandlerImpl()
 {
     if (bmx160)
     {
-        bmx160->IRQupdateTimestamp(timer::TimestampTimer::getTimestamp());
+        bmx160->IRQupdateTimestamp(TimestampTimer::getTimestamp());
     }
 }
 
@@ -46,7 +46,7 @@ void bmx160Sample(void *args);
 
 int main()
 {
-    timer::TimestampTimer::enableTimestampTimer();
+    TimestampTimer::enableTimestampTimer();
 
     // Enable interrupt from BMX pin
     enableExternalInterrupt(GPIOE_BASE, 5, InterruptTrigger::FALLING_EDGE);

@@ -30,8 +30,6 @@
 #include <fstream>
 #include <iostream>
 
-using namespace timer;
-
 constexpr const char* CORRECTION_PARAMETER_FILE = "/sd/bmx160_params.csv";
 constexpr const char* MAG_CALIBRATION_DATA_FILE =
     "/sd/bmx160_mag_calibration_data.csv";

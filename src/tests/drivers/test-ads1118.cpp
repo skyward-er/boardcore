@@ -84,7 +84,7 @@ int main()
     // Enable SPI clock and set gpios
     initBoard();
 
-    timer::TimestampTimer::enableTimestampTimer();
+    TimestampTimer::enableTimestampTimer();
 
     // SPI configuration setup
     SPIBusConfig spiConfig = ADS1118::getDefaultSPIConfig();

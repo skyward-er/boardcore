@@ -33,7 +33,6 @@
 #include "utils/testutils/TestSensor.h"
 
 using namespace miosix;
-using namespace timer;
 
 // Data produced by the MySensor sensor.
 struct MySensorData : public PressureData, public TemperatureData

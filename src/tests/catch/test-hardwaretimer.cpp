@@ -30,7 +30,6 @@
 #include <utils/testutils/catch.hpp>
 
 using namespace miosix;
-using namespace timer;
 
 class TimerTestFixture
 {

@@ -32,7 +32,7 @@ using namespace miosix;
 
 int main()
 {
-    timer::TimestampTimer::enableTimestampTimer();
+    TimestampTimer::enableTimestampTimer();
 
     printf("Welcome to the ublox test\n");
 

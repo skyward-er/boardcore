@@ -361,8 +361,7 @@ private:
             if (status & 0x80)
             {  // bit 7 of status set to 1 (some data overwritten)
 
-                accel_data.accel_timestamp =
-                    timer ::TimestampTimer::getTimestamp();
+                accel_data.accel_timestamp = TimestampTimer::getTimestamp();
 
                 // read acceleration on X
                 int8_t accel_L = spi.read(OUT_X_L);
@@ -406,7 +405,7 @@ private:
         int8_t t = spi.read(OUT_T);
 
         return TemperatureData{
-            timer::TimestampTimer::getTimestamp(),
+            TimestampTimer::getTimestamp(),
             t + TEMPERATURE_REF};  // add the 'zero' of the temperature sensor
     }
 

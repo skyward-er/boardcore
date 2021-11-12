@@ -230,7 +230,7 @@ ADCData InternalADC::sampleImpl()
         }
     }
 
-    timestamp = timer::TimestampTimer::getTimestamp();
+    timestamp = TimestampTimer::getTimestamp();
 
     return last_sample;
 }

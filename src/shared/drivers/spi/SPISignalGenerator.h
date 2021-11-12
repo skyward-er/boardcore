@@ -20,39 +20,20 @@
  * THE SOFTWARE.
  */
 
-#include <drivers/adc/InternalADC/InternalADC.h>
-#include <drivers/timer/TimestampTimer.h>
+#pragma once
+
+#include <drivers/timer/GeneralPurposeTimer.h>
 #include <miosix.h>
 
-ADC_TypeDef& ADCx = *ADC3;
-
-int main()
+/**
+ * @brief Generates SPI clock and chip select signal through two timers chained
+ * together.
+ */
+class SPISignalGenerator
 {
-    // Set the clock divider for the analog circuitry (/8)
-    ADC->CCR |= ADC_CCR_ADCPRE_0 | ADC_CCR_ADCPRE_1;
-    // In this case I've set the maximum value, check the datasheet for the
-    // maximum frequency the analog circuitry supports and compare it with the
-    // parent clock
+public:
+    SPISignalGenerator(TIM_TypeDef *masterTimer, TIM_TypeDef *slaveTimer)
+        :
 
-    TimestampTimer::enableTimestampTimer();
-
-    InternalADC adc(ADCx, 3.3);
-    adc.enableChannel(InternalADC::CH4);  // PF6
-    adc.enableChannel(InternalADC::CH5);  // PF7
-    adc.enableChannel(InternalADC::CH6);  // PF8
-    adc.init();
-
-    printf("Configuration completed\n");
-
-    while (1)
-    {
-        adc.sample();
-
-        printf("CH4:%1.3f\tCH5:%1.3f\tCH6:%1.3f\n",
-               adc.getVoltage(InternalADC::CH4).voltage,
-               adc.getVoltage(InternalADC::CH5).voltage,
-               adc.getVoltage(InternalADC::CH6).voltage);
-
-        miosix::delayMs(1000);
-    }
+          private:
 }

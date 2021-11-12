@@ -27,7 +27,6 @@
 #include "sensors/LIS3MDL/LIS3MDL.h"
 
 using namespace miosix;
-using namespace timer;
 
 int main()
 {

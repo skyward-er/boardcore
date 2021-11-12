@@ -240,8 +240,7 @@ void ADS1118::readChannel(int8_t nextChannel, int8_t prevChannel)
 
         // TODO: the timestamp should be taken when the configuration is
         // written, now we could be reading the value after some time!
-        values[prevChannel].adc_timestamp =
-            timer::TimestampTimer::getTimestamp();
+        values[prevChannel].adc_timestamp = TimestampTimer::getTimestamp();
 
         if (prevChannel != 8)  // Voltage value
         {

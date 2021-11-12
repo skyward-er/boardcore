@@ -25,7 +25,6 @@
 #include <stdio.h>
 
 using namespace miosix;
-using namespace timer;
 
 int main()
 {

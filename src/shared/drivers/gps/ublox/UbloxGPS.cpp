@@ -504,7 +504,7 @@ bool UbloxGPS::parseUBXNAVMessage(uint8_t* message)
             threadSample.fix = message[6 + 20] != 0;
 
             // Timestamp
-            threadSample.gps_timestamp = timer::TimestampTimer::getTimestamp();
+            threadSample.gps_timestamp = TimestampTimer::getTimestamp();
 
             return true;
     }

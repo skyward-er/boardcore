@@ -113,7 +113,7 @@ MPU9250Data MPU9250::sampleImpl()
     spiSlave.config.clock_div = clockDivider;
 
     // Save timestamps
-    uint64_t timestamp   = timer::TimestampTimer::getTimestamp();
+    uint64_t timestamp   = TimestampTimer::getTimestamp();
     data.accel_timestamp = timestamp;
     data.temp_timestamp  = timestamp;
     data.gyro_timestamp  = timestamp;

@@ -22,12 +22,9 @@
 
 #pragma once
 
-#include <drivers/timer/BasicTimer.h>
-
 #include <type_traits>
 
-namespace timer
-{
+#include "BasicTimer.h"
 
 /**
  * @brief Driver for STM32 general purpose timers.
@@ -479,16 +476,14 @@ public:
     static void clearCaptureCompareInterruptFlag(TIM_TypeDef *timer);
 };
 
-}  // namespace timer
-
 template <typename T>
-inline timer::GeneralPurposeTimer<T>::GeneralPurposeTimer(TIM_TypeDef *timer)
+inline GeneralPurposeTimer<T>::GeneralPurposeTimer(TIM_TypeDef *timer)
     : BasicTimer(timer)
 {
 }
 
 template <typename T>
-inline void timer::GeneralPurposeTimer<T>::reset()
+inline void GeneralPurposeTimer<T>::reset()
 {
     timer->CR1   = 0;
     timer->CR2   = 0;
@@ -511,32 +506,31 @@ inline void timer::GeneralPurposeTimer<T>::reset()
 }
 
 template <typename T>
-inline T timer::GeneralPurposeTimer<T>::readCounter()
+inline T GeneralPurposeTimer<T>::readCounter()
 {
     return timer->CNT;
 }
 
 template <typename T>
-inline void timer::GeneralPurposeTimer<T>::setCounter(T counterValue)
+inline void GeneralPurposeTimer<T>::setCounter(T counterValue)
 {
     timer->CNT = counterValue;
 }
 
 template <typename T>
-inline T timer::GeneralPurposeTimer<T>::readAutoReloadRegister()
+inline T GeneralPurposeTimer<T>::readAutoReloadRegister()
 {
     return timer->ARR;
 }
 
 template <typename T>
-inline void timer::GeneralPurposeTimer<T>::setAutoReloadRegister(
-    T autoReloadValue)
+inline void GeneralPurposeTimer<T>::setAutoReloadRegister(T autoReloadValue)
 {
     timer->ARR = autoReloadValue;
 }
 
 template <typename T>
-inline void timer::GeneralPurposeTimer<T>::setMasterMode(MasterMode masterMode)
+inline void GeneralPurposeTimer<T>::setMasterMode(MasterMode masterMode)
 {
     // First clear the configuration
     timer->CR2 &= ~TIM_CR2_MMS;
@@ -546,7 +540,7 @@ inline void timer::GeneralPurposeTimer<T>::setMasterMode(MasterMode masterMode)
 }
 
 template <typename T>
-inline void timer::GeneralPurposeTimer<T>::setSlaveMode(SlaveMode slaveMode)
+inline void GeneralPurposeTimer<T>::setSlaveMode(SlaveMode slaveMode)
 {
     // First clear the configuration
     timer->SMCR &= ~TIM_SMCR_SMS;
@@ -556,7 +550,7 @@ inline void timer::GeneralPurposeTimer<T>::setSlaveMode(SlaveMode slaveMode)
 }
 
 template <typename T>
-inline void timer::GeneralPurposeTimer<T>::setTriggerSource(
+inline void GeneralPurposeTimer<T>::setTriggerSource(
     TriggerSource triggerSource)
 {
     // First clear the configuration
@@ -567,20 +561,20 @@ inline void timer::GeneralPurposeTimer<T>::setTriggerSource(
 }
 
 template <typename T>
-inline void timer::GeneralPurposeTimer<T>::enableTriggerInterrupt()
+inline void GeneralPurposeTimer<T>::enableTriggerInterrupt()
 {
     timer->DIER |= TIM_DIER_TIE;
 }
 
 template <typename T>
-inline void timer::GeneralPurposeTimer<T>::disableTriggerInterrupt()
+inline void GeneralPurposeTimer<T>::disableTriggerInterrupt()
 {
     timer->DIER &= ~TIM_DIER_TIE;
 }
 
 template <typename T>
 template <int C>
-inline void timer::GeneralPurposeTimer<T>::enableCaptureCompareInterrupt()
+inline void GeneralPurposeTimer<T>::enableCaptureCompareInterrupt()
 {
     static_assert(C >= 1 && C <= 4, "Channel must be betwen 1 and 4");
 
@@ -589,7 +583,7 @@ inline void timer::GeneralPurposeTimer<T>::enableCaptureCompareInterrupt()
 
 template <typename T>
 template <int C>
-inline void timer::GeneralPurposeTimer<T>::disableCaptureCompareInterrupt()
+inline void GeneralPurposeTimer<T>::disableCaptureCompareInterrupt()
 {
     static_assert(C >= 1 && C <= 4, "Channel must be betwen 1 and 4");
 
@@ -598,7 +592,7 @@ inline void timer::GeneralPurposeTimer<T>::disableCaptureCompareInterrupt()
 
 template <typename T>
 template <int C>
-inline void timer::GeneralPurposeTimer<T>::enableCaptureCompareDMARequest()
+inline void GeneralPurposeTimer<T>::enableCaptureCompareDMARequest()
 {
     static_assert(C >= 1 && C <= 4, "Channel must be betwen 1 and 4");
 
@@ -607,7 +601,7 @@ inline void timer::GeneralPurposeTimer<T>::enableCaptureCompareDMARequest()
 
 template <typename T>
 template <int C>
-inline void timer::GeneralPurposeTimer<T>::disableCaptureCompareDMARequest()
+inline void GeneralPurposeTimer<T>::disableCaptureCompareDMARequest()
 {
     static_assert(C >= 1 && C <= 4, "Channel must be betwen 1 and 4");
 
@@ -615,14 +609,14 @@ inline void timer::GeneralPurposeTimer<T>::disableCaptureCompareDMARequest()
 }
 
 template <typename T>
-inline void timer::GeneralPurposeTimer<T>::generateTrigger()
+inline void GeneralPurposeTimer<T>::generateTrigger()
 {
     timer->EGR |= TIM_EGR_TG;
 }
 
 template <typename T>
 template <int C>
-inline void timer::GeneralPurposeTimer<T>::generateCaptureCompareEvent()
+inline void GeneralPurposeTimer<T>::generateCaptureCompareEvent()
 {
     static_assert(C >= 1 && C <= 4, "Channel must be betwen 1 and 4");
 
@@ -631,7 +625,7 @@ inline void timer::GeneralPurposeTimer<T>::generateCaptureCompareEvent()
 
 template <typename T>
 template <int C>
-inline void timer::GeneralPurposeTimer<T>::enableCaptureComparePreload()
+inline void GeneralPurposeTimer<T>::enableCaptureComparePreload()
 {
     static_assert(C >= 1 && C <= 4, "Channel must be betwen 1 and 4");
 
@@ -654,7 +648,7 @@ inline void timer::GeneralPurposeTimer<T>::enableCaptureComparePreload()
 
 template <typename T>
 template <int C>
-inline void timer::GeneralPurposeTimer<T>::disableCaptureComparePreload()
+inline void GeneralPurposeTimer<T>::disableCaptureComparePreload()
 {
     static_assert(C >= 1 && C <= 4, "Channel must be betwen 1 and 4");
 
@@ -677,8 +671,7 @@ inline void timer::GeneralPurposeTimer<T>::disableCaptureComparePreload()
 
 template <typename T>
 template <int C>
-inline void timer::GeneralPurposeTimer<T>::setOutputCompareMode(
-    OutputCompareMode mode)
+inline void GeneralPurposeTimer<T>::setOutputCompareMode(OutputCompareMode mode)
 {
     static_assert(C >= 1 && C <= 4, "Channel must be betwen 1 and 4");
 
@@ -717,7 +710,7 @@ inline void timer::GeneralPurposeTimer<T>::setOutputCompareMode(
 
 template <typename T>
 template <int C>
-inline void timer::GeneralPurposeTimer<T>::enableCaptureCompareOutput()
+inline void GeneralPurposeTimer<T>::enableCaptureCompareOutput()
 {
     static_assert(C >= 1 && C <= 4, "Channel must be betwen 1 and 4");
 
@@ -726,7 +719,7 @@ inline void timer::GeneralPurposeTimer<T>::enableCaptureCompareOutput()
 
 template <typename T>
 template <int C>
-inline void timer::GeneralPurposeTimer<T>::disableCaptureCompareOutput()
+inline void GeneralPurposeTimer<T>::disableCaptureCompareOutput()
 {
     static_assert(C >= 1 && C <= 4, "Channel must be betwen 1 and 4");
 
@@ -735,7 +728,7 @@ inline void timer::GeneralPurposeTimer<T>::disableCaptureCompareOutput()
 
 template <typename T>
 template <int C>
-inline void timer::GeneralPurposeTimer<T>::setCaptureComparePolarity(
+inline void GeneralPurposeTimer<T>::setCaptureComparePolarity(
     OutputComparePolarity polarity)
 {
     static_assert(C >= 1 && C <= 4, "Channel must be betwen 1 and 4");
@@ -745,7 +738,7 @@ inline void timer::GeneralPurposeTimer<T>::setCaptureComparePolarity(
 
 template <typename T>
 template <int C>
-inline void timer::GeneralPurposeTimer<T>::setCaptureCompareRegister(T value)
+inline void GeneralPurposeTimer<T>::setCaptureCompareRegister(T value)
 {
     static_assert(C >= 1 && C <= 4, "Channel must be betwen 1 and 4");
 
@@ -767,7 +760,7 @@ inline void timer::GeneralPurposeTimer<T>::setCaptureCompareRegister(T value)
 }
 
 template <typename T>
-inline void timer::GeneralPurposeTimer<T>::clearTriggerInterruptFlag(
+inline void GeneralPurposeTimer<T>::clearTriggerInterruptFlag(
     TIM_TypeDef *timer)
 {
     timer->SR &= ~TIM_SR_TIF;
@@ -775,7 +768,7 @@ inline void timer::GeneralPurposeTimer<T>::clearTriggerInterruptFlag(
 
 template <typename T>
 template <int C>
-inline void timer::GeneralPurposeTimer<T>::clearCaptureCompareInterruptFlag(
+inline void GeneralPurposeTimer<T>::clearCaptureCompareInterruptFlag(
     TIM_TypeDef *timer)
 {
     static_assert(C >= 1 && C <= 4, "Channel must be betwen 1 and 4");

@@ -39,7 +39,7 @@ uint32_t tick  = 0;
 
 void __attribute__((used)) EXTI5_IRQHandlerImpl()
 {
-    tick = timer::TimestampTimer::getTimestamp();
+    tick = TimestampTimer::getTimestamp();
     if (sensor)
     {
         sensor->IRQupdateTimestamp(tick);
@@ -48,7 +48,7 @@ void __attribute__((used)) EXTI5_IRQHandlerImpl()
 
 int main()
 {
-    timer::TimestampTimer::enableTimestampTimer();
+    TimestampTimer::enableTimestampTimer();
 
     cs.high();
 
@@ -96,7 +96,7 @@ int main()
             continue;
         }
 
-        uint64_t now = timer::TimestampTimer::getTimestamp();
+        uint64_t now = TimestampTimer::getTimestamp();
 
         printf("Tick: %.4f s, Now: %.4f s\n", tick / 1000000.0f,
                now / 1000000.0f);

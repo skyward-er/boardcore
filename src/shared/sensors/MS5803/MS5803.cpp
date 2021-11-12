@@ -87,7 +87,7 @@ MS5803Data MS5803::sampleImpl()
             uint32_t tmpRawTemperature = (uint32_t)buffer[2] |
                                          ((uint32_t)buffer[1] << 8) |
                                          ((uint32_t)buffer[0] << 16);
-            lastTemperatureTimestamp = timer::TimestampTimer::getTimestamp();
+            lastTemperatureTimestamp = TimestampTimer::getTimestamp();
 
             // Check if the value is valid
             if (tmpRawTemperature != 0)
@@ -187,7 +187,7 @@ MS5803Data MS5803::updateData()
     // Pressure in Pascal
     float temp_ = temp / 100.0f;
 
-    return MS5803Data(timer::TimestampTimer::getTimestamp(), pressure,
+    return MS5803Data(TimestampTimer::getTimestamp(), pressure,
                       lastTemperatureTimestamp, temp_);
 }
 

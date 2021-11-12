@@ -20,7 +20,7 @@
  * THE SOFTWARE.
  */
 
-#include <drivers/timer/TimestampTimer.h>
+#include "TimestampTimer.h"
 
-timer::GeneralPurposeTimer<uint32_t> timer::TimestampTimer::timestampTimer =
+GeneralPurposeTimer<uint32_t> TimestampTimer::timestampTimer =
     GeneralPurposeTimer<uint32_t>{TIM2};

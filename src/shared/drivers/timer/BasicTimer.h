@@ -24,9 +24,6 @@
 
 #include <interfaces/arch_registers.h>
 
-namespace timer
-{
-
 /**
  * @brief Driver for STM32 basic timers.
  *
@@ -278,17 +275,15 @@ protected:
     TIM_TypeDef *timer;
 };
 
-}  // namespace timer
+inline BasicTimer::BasicTimer(TIM_TypeDef *timer) : timer(timer) {}
 
-inline timer::BasicTimer::BasicTimer(TIM_TypeDef *timer) : timer(timer) {}
+inline TIM_TypeDef *BasicTimer::getTimer() { return timer; }
 
-inline TIM_TypeDef *timer::BasicTimer::getTimer() { return timer; }
+inline void BasicTimer::enable() { timer->CR1 |= TIM_CR1_CEN; }
 
-inline void timer::BasicTimer::enable() { timer->CR1 |= TIM_CR1_CEN; }
+inline void BasicTimer::disable() { timer->CR1 &= ~TIM_CR1_CEN; }
 
-inline void timer::BasicTimer::disable() { timer->CR1 &= ~TIM_CR1_CEN; }
-
-inline void timer::BasicTimer::reset()
+inline void BasicTimer::reset()
 {
     timer->CR1  = 0;
     timer->CR2  = 0;
@@ -298,93 +293,84 @@ inline void timer::BasicTimer::reset()
     timer->ARR  = 0xFFFF;
 }
 
-inline bool timer::BasicTimer::isEnabled()
+inline bool BasicTimer::isEnabled()
 {
     return (timer->CR1 & ~TIM_CR1_CEN) == TIM_CR1_CEN;
 }
 
-inline void timer::BasicTimer::enableAutoReloadPreload()
+inline void BasicTimer::enableAutoReloadPreload()
 {
     timer->CR1 |= TIM_CR1_ARPE;
 }
 
-inline void timer::BasicTimer::disableAutoReloadPreload()
+inline void BasicTimer::disableAutoReloadPreload()
 {
     timer->CR1 &= ~TIM_CR1_ARPE;
 }
 
-inline void timer::BasicTimer::enableUpdateEventGeneration()
+inline void BasicTimer::enableUpdateEventGeneration()
 {
     timer->CR1 &= ~TIM_CR1_UDIS;
 }
 
-inline void timer::BasicTimer::disableUpdateEventGeneration()
+inline void BasicTimer::disableUpdateEventGeneration()
 {
     timer->CR1 |= TIM_CR1_UDIS;
 }
 
-inline void timer::BasicTimer::generateUpdate() { timer->EGR |= TIM_EGR_UG; }
+inline void BasicTimer::generateUpdate() { timer->EGR |= TIM_EGR_UG; }
 
-inline uint16_t timer::BasicTimer::readCounter() { return timer->CNT; }
+inline uint16_t BasicTimer::readCounter() { return timer->CNT; }
 
-inline void timer::BasicTimer::setCounter(uint16_t counterValue)
+inline void BasicTimer::setCounter(uint16_t counterValue)
 {
     timer->CNT = counterValue;
 }
 
-inline uint16_t timer::BasicTimer::readPrescaler() { return timer->PSC; }
+inline uint16_t BasicTimer::readPrescaler() { return timer->PSC; }
 
-inline void timer::BasicTimer::setPrescaler(uint16_t prescalerValue)
+inline void BasicTimer::setPrescaler(uint16_t prescalerValue)
 {
     timer->PSC = prescalerValue;
 }
 
-inline uint16_t timer::BasicTimer::readAutoReloadRegister()
-{
-    return timer->ARR;
-}
+inline uint16_t BasicTimer::readAutoReloadRegister() { return timer->ARR; }
 
-inline void timer::BasicTimer::setAutoReloadRegister(uint16_t autoReloadValue)
+inline void BasicTimer::setAutoReloadRegister(uint16_t autoReloadValue)
 {
     timer->ARR = autoReloadValue;
 }
 
-inline void timer::BasicTimer::enableUpdateInterrupt()
-{
-    timer->DIER |= TIM_DIER_UIE;
-}
+inline void BasicTimer::enableUpdateInterrupt() { timer->DIER |= TIM_DIER_UIE; }
 
-inline void timer::BasicTimer::disableUpdateInterrupt()
+inline void BasicTimer::disableUpdateInterrupt()
 {
     timer->DIER &= ~TIM_DIER_UIE;
 }
 
-inline void timer::BasicTimer::enableUpdateDMARequest()
+inline void BasicTimer::enableUpdateDMARequest()
 {
     timer->DIER |= TIM_DIER_UDE;
 }
 
-inline void timer::BasicTimer::disableUpdateDMARequest()
+inline void BasicTimer::disableUpdateDMARequest()
 {
     timer->DIER &= ~TIM_DIER_UDE;
 }
 
-inline void timer::BasicTimer::enableOnePulseMode()
-{
-    timer->CR1 |= TIM_CR1_OPM;
-}
+inline void BasicTimer::enableOnePulseMode() { timer->CR1 |= TIM_CR1_OPM; }
 
-inline void timer::BasicTimer::enableUGInterruptAndDMA()
+inline void BasicTimer::enableUGInterruptAndDMA()
 {
     timer->CR1 &= ~TIM_CR1_URS;
 }
 
-inline void timer::BasicTimer::disableUGInterruptAndDMA()
+inline void BasicTimer::disableUGInterruptAndDMA()
 {
     timer->CR1 |= TIM_CR1_URS;
 }
 
-inline void timer::BasicTimer::setMasterMode(MasterMode masterMode)
+inline void BasicTimer::setMasterMode(MasterMode masterMode)
 {
     // First clear the configuration
     timer->CR2 &= ~TIM_CR2_MMS;
@@ -393,7 +379,7 @@ inline void timer::BasicTimer::setMasterMode(MasterMode masterMode)
     timer->CR2 |= (uint16_t)masterMode;
 }
 
-inline void timer::BasicTimer::clearUpdateInterruptFlag(TIM_TypeDef *timer)
+inline void BasicTimer::clearUpdateInterruptFlag(TIM_TypeDef *timer)
 {
     timer->SR &= ~TIM_SR_UIF;
 }

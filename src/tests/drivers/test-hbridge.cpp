@@ -36,8 +36,7 @@ static constexpr int PWM_DURATION = 60 * 1000;
 
 static const PWM::Timer HBRIDGE_TIM{
     TIM3, &(RCC->APB1ENR), RCC_APB1ENR_TIM3EN,
-    timer::TimerUtils::getPrescalerInputFrequency(
-        timer::TimerUtils::InputClock::APB2)};
+    TimerUtils::getPrescalerInputFrequency(TimerUtils::InputClock::APB2)};
 
 static const PWMChannel HBRIDGE_PWM_CHANNEL = PWMChannel::CH2;
 
@@ -77,7 +76,7 @@ int main()
         hbridge_inhibit.low();
     }
 
-    timer::TimestampTimer::enableTimestampTimer();
+    TimestampTimer::enableTimestampTimer();
 
     for (;;)
     {
