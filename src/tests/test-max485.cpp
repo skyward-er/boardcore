@@ -21,11 +21,53 @@
  * THE SOFTWARE.
  */
 
+/**
+ * OCCURRENT:
+ *  - 2 x Max485 (ttl-RS485 adapter); with small changes this test could be
+ * compatible with other adapters
+ *  - 1 x ttl-USB adapter
+ *
+ * SETUP:
+ *  - connect the ttl-USB adapter to the default serial port and insert in the
+ * computer
+ *  - wire up the first Max485 adapter to the first serial port and connect the
+ * /RE-DE pins to the control pins PC8 and PC9
+ *  - wire up the second Max485 adapter to the second serial port and connect
+ * the /RE-DE pins to the control pins PC1 and PC2
+ *  - connect the two Max485 adapters wiring A to A and B to B
+ *
+ *  WIRINGS:
+ *  Max485 n1   |   stm32f407vg_discovery
+ *      DI      |       PA9
+ *      DE      |       PC9
+ *      RE      |       PC8
+ *      RO      |       PA10
+ *      VCC     |       3.3/5 V
+ *      GND     |       GND
+ *
+ *  Max485 n2   |   stm32f407vg_discovery
+ *      DI      |       PA2
+ *      DE      |       PC1
+ *      RE      |       PC2
+ *      RO      |       PA3
+ *      VCC     |       3.3/5 V
+ *      GND     |       GND
+ *
+ *  Max485 n1   |   Max485 n2
+ *      A       |       A
+ *      B       |       B
+ *
+ * WARNINGS:
+ * - the baudrate has to be extremely low. "guaranteed" at 2400
+ */
+
 #include <Common.h>
 
 #include "sensors/MBLoadCell/SerialInterface.h"
 #include "string.h"
 #include "thread"
+
+#define BAUDRATE 2400
 
 using namespace miosix;
 
@@ -37,68 +79,48 @@ using ctrlPin2_s1 = miosix::Gpio<GPIOC_BASE, 9>;
 using ctrlPin1_s2 = miosix::Gpio<GPIOC_BASE, 1>;
 using ctrlPin2_s2 = miosix::Gpio<GPIOC_BASE, 2>;
 
-
-const char msg[5] = "ciao";
+char msg[64] = "Testing communication :D";
 char rcv[64];
 
-template <typename GPIO1, typename GPIO2>
+// function for the thread that has to read from serial
 void readSer(SerialInterface s)
 {
-    // setting to receiving
-    GPIO1::low();
-    GPIO2::low();
-    s.recvData(rcv);
-    TRACE("*received: '%s'*\n", rcv);
+    s.recvString(rcv, 64);
+    TRACE("%s received: \t'%s'\n", s.getPortName().c_str(), rcv);
 }
 
-// serial1 -> serial2
-void write1_read2(const char *data, SerialInterface s1, SerialInterface s2)
+// Communicatio: src -> dst
+template <typename GPIO1_src, typename GPIO2_src, typename GPIO1_dst,
+          typename GPIO2_dst>
+void testCommunication(char *data, SerialInterface src, SerialInterface dst)
 {
-    function<void(void)> f = bind(readSer<ctrlPin1_s2, ctrlPin2_s2>, s2);
-    thread t(f);
+    // resetting the buffer so precedent tests won't affect this one
+    memset(rcv, 0, strlen(rcv) + 1);
 
-    // serial 1: setting to transmitting
-    ctrlPin1_s1::high();
-    ctrlPin2_s1::high();
+    // src: setting to transmitting
+    GPIO1_src::high();
+    GPIO2_src::high();
 
-    Thread::sleep(1000);
+    // dst: setting to receiving
+    GPIO1_dst::low();
+    GPIO2_dst::low();
 
-    TRACE("Sending: '%s'\n", data);
-    s1.sendData(data);
-    TRACE("Waiting for serial 2 to read\n");
+    // thread that reads from serial
+    thread t(readSer, dst);
+
+    TRACE("%s sending: \t'%s'\n", src.getPortName().c_str(), data);
+    src.sendString(data);
     t.join();
+
     if (strcmp(data, rcv) == 0)
     {
-        TRACE("Serial 1 -> serial 2 WORKING!\n");
+        TRACE("\t*** %s -> %s WORKING!\n", src.getPortName().c_str(),
+              dst.getPortName().c_str());
     }
     else
     {
-        TRACE("ERROR: Serial 1 -> serial 2!\n");
-    }
-}
-
-// serial1 <- serial2
-void read1_write2(const char *data, SerialInterface s1, SerialInterface s2)
-{
-    function<void(void)> f = bind(readSer<ctrlPin1_s1, ctrlPin2_s1>, s1);
-    thread t(f);
-    // serial 1: setting to transmitting
-    ctrlPin1_s2::high();
-    ctrlPin2_s2::high();
-
-    Thread::sleep(1000);
-
-    TRACE("Sending: '%s'\n", data);
-    s2.sendData(data);
-    TRACE("Waiting for serial 1 to read\n");
-    t.join();
-    if (strcmp(data, rcv) == 0)
-    {
-        TRACE("Serial 1 <- serial 2 WORKING!\n");
-    }
-    else
-    {
-        TRACE("ERROR: Serial 1 <- serial 2!\n");
+        TRACE("\t### ERROR: %s -> %s!\n", src.getPortName().c_str(),
+              dst.getPortName().c_str());
     }
 }
 
@@ -112,8 +134,10 @@ int main()
         ctrlPin2_s2::mode(Mode::OUTPUT);
     }
 
-    SerialInterface serial1(2400, 1, "ser1");
-    SerialInterface serial2(2400, 2, "ser2");
+    // Setting the baudrate to 2400, maximum functioning baudrate for the Max485
+    // adapters
+    SerialInterface serial1(BAUDRATE, 1, "ser1");
+    SerialInterface serial2(BAUDRATE, 2, "ser2");
 
     if (!serial1.init())
     {
@@ -129,16 +153,16 @@ int main()
 
     while (true)
     {
-        TRACE("SERIAL 3 WORKING!\n");
-
-        // testing transmission "serial 1 -> serial 2"
-        write1_read2(msg, serial1, serial2);
+        TRACE("\n###########################\n");
+        TRACE("\t*** SERIAL 3 WORKING!\n");
 
         // testing transmission "serial 1 <- serial 2"
-        {
-            read1_write2(msg, serial1, serial2);
-            TRACE("ser1<-ser2: '%s'\n", rcv);
-        }
+        testCommunication<ctrlPin1_s2, ctrlPin2_s2, ctrlPin1_s1, ctrlPin2_s1>(
+            msg, serial2, serial1);
+
+        // testing transmission "serial 1 -> serial 2"
+        testCommunication<ctrlPin1_s1, ctrlPin2_s1, ctrlPin1_s2, ctrlPin2_s2>(
+            msg, serial1, serial2);
 
         Thread::sleep(1000);
     }
