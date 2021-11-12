@@ -37,7 +37,16 @@ endif()
 
 include(dependencies)
 
-function(sbs_get_board TARGET)
+function(sbs_mxgui TARGET)
+    get_target_property(OPT_BOARD ${TARGET} OPT_BOARD)
+    if(NOT OPT_BOARD)
+        message(FATAL_ERROR "No board selected")
+    endif()
+
+    target_link_libraries(${TARGET} mxgui::mxgui-${OPT_BOARD})
+endfunction()
+
+function(sbs_target TARGET)
     get_target_property(OPT_BOARD ${TARGET} OPT_BOARD)
     if(NOT OPT_BOARD)
         message(FATAL_ERROR "No board selected")
@@ -45,7 +54,7 @@ function(sbs_get_board TARGET)
     set(OPT_BOARD ${OPT_BOARD} PARENT_SCOPE)
 endfunction()
 
-function(sbs_mxgui TARGET)
+function(sbs_link_mxgui TARGET)
     sbs_get_board(${TARGET})
     target_link_libraries(${TARGET} PRIVATE mxgui::mxgui-${OPT_BOARD})
 endfunction()

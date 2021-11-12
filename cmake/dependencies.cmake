@@ -19,10 +19,20 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 # THE SOFTWARE.
 
-find_package(EIGEN)
-find_package(FMT)
-find_package(MXGUI)
-find_package(TSCPP)
+add_subdirectory(${KPATH} EXCLUDE_FROM_ALL)
+
+add_subdirectory(${SBS_BASE}/libs/mxgui EXCLUDE_FROM_ALL)
+
+set(CMAKE_BUILD_WITH_INSTALL_RPATH ON)
+set(BUILD_TESTING OFF CACHE BOOL "Enable creation of Eigen tests.")
+set(EIGEN_TEST_NOQT ON CACHE BOOL "Disable Qt support in unit tests")
+set(CMAKE_Fortran_COMPILER NOTFOUND)
+add_subdirectory(${SBS_BASE}/libs/eigen EXCLUDE_FROM_ALL)
+target_compile_definitions(eigen INTERFACE EIGEN_MAX_ALIGN_BYTES=0)
+
+add_subdirectory(${SBS_BASE}/libs/fmt EXCLUDE_FROM_ALL)
+target_compile_definitions(fmt-header-only INTERFACE _GLIBCXX_USE_WCHAR_T FMT_UNICODE=0 FMT_STATIC_THOUSANDS_SEPARATOR=0)
+target_compile_options(fmt-header-only INTERFACE -fno-math-errno)
 
 set(SHARED_SOURCES
     ${SBS_BASE}/src/shared/scheduler/TaskScheduler.cpp
