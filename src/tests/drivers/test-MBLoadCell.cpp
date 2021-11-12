@@ -30,17 +30,17 @@ using namespace miosix;
 
 int main()
 {
-    /* 
-     * use of MOD_TD: 
-     * use of second serial port
-     * 
+    /*
+     * use of CONT_MOD_TD: transmits net and gross weight
+     * use of serial port 2: in stm32f407vg TX=PB10, RX=PB11
      */
-    MBLoadCell loadCell(LoadCellModes::MOD_TD, 2, 115200);
+    MBLoadCell loadCell(LoadCellModes::ASCII_MOD_TD, 2, 115200);
 
     while (true)
     {
         loadCell.sample();
-        printf("%f\n", loadCell.getLastSample());
+        loadCell.getLastSample().print();
+        TRACE("\n");
     }
 
     return 0;

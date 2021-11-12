@@ -45,13 +45,13 @@ class SerialInterface
 public:
     /**
      * Constructor of the serial communication with default parameters
-     * @param baudrate port baudrate (default: 115200)
+     * @param baudrate port baudrate (default: 19200 as miosix)
      * @param serialPortNum number from 1 to 3 in order to set the USART to use
      * (default: 2 [tx_board=PA2  rx_board=PA3 cts=PA0  rts=PA1])
      * @param serialPortName name of the serial port to open (default:
      * "simulation")
      */
-    SerialInterface(int baudrate = 9600, int serialPortNum = 2,
+    SerialInterface(int baudrate = 19200, int serialPortNum = 2,
                     string serialPortName = "load_cell")
     {
         this->baudrate       = baudrate;
@@ -69,12 +69,16 @@ public:
     {
         if (is_init)
         {
-            TRACE("[SerialCommunication] Error : serial communication already initialized!\n");
+            TRACE(
+                "[SerialCommunication] Error : serial communication already "
+                "initialized!\n");
             return false;
         }
         else if (!serialCommSetup())
         {
-            TRACE("[SerialCommunication] Error : can't initialize serial communication!\n");
+            TRACE(
+                "[SerialCommunication] Error : can't initialize serial "
+                "communication!\n");
             return false;
         }
 

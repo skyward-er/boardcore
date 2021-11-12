@@ -26,49 +26,120 @@
 #include "SerialInterface.h"
 #include "stdlib.h"
 
+using ctrlPin1 = miosix::Gpio<GPIOC_BASE, 1>;
+using ctrlPin2 = miosix::Gpio<GPIOC_BASE, 2>;
+
 MBLoadCell::MBLoadCell(LoadCellModes mode, int serialPortNum,
                        int baudrate = 115200)
 {
     this->mode = mode;
-    serial     = new SerialInterface(baudrate, serialPortNum);
+
+    // creating the instance of the serial interface
+    serial = new SerialInterface(baudrate, serialPortNum);
 
     // initializing the serial connection
     if (!serial->init())
     {
         TRACE("[MBLoadCell] Wrong initialization\n");
     }
+
+    {
+        FastInterruptDisableLock dLock;
+        ctrlPin1::mode(Mode::OUTPUT);
+        ctrlPin2::mode(Mode::OUTPUT);
+    }
 }
 
-float MBLoadCell::sampleImpl()
+void MBLoadCell::sample() { sampleImpl(); }
+
+MBLoadCellDataStr MBLoadCell::sampleImpl()
 {
-    DataModTd data;
-    serial->recvData(&data);
-    TRACE("%d, %d\n", atoi(data.weightT), atoi(data.weightP));
-    return atof(data.weightT) / 10.0;
+    switch (mode)
+    {
+        case LoadCellModes::CONT_MOD_T:
+            sampleContModT();
+            break;
+        case LoadCellModes::CONT_MOD_TD:
+            sampleContModTd();
+            break;
+        case LoadCellModes::ASCII_MOD_TD:
+            sampleAsciiModTd();
+            break;
+    }
+    return last_sample;
 }
 
-int MBLoadCell::readBusy()
+void MBLoadCell::sampleContModT()
 {
+    TRACE("CONTINUOUS MOD T\n");
+    DataModT data;
+    receive(&data);
+
+    this->last_sample.gross_weight = {atof(data.weight) / 10.0, true};
+}
+
+void MBLoadCell::sampleContModTd()
+{
+    TRACE("CONTINUOUS MOD TD\n");
     DataModTd data;
-    serial->recvData(&data);
-    TRACE("%d, %d\n", atoi(data.weightT), atoi(data.weightP));
-    return atoi(data.weightT);
+    receive(&data);
+
+    this->last_sample.gross_weight = {atof(data.weightT) / 10.0, true};
+
+    // [REVIEW] What is this really?
+    this->last_sample.net_weight = {atof(data.weightP) / 10.0, true};
+}
+
+void MBLoadCell::sampleAsciiModTd()
+{
+    TRACE("ASCII MOD TD\n");
+
+    char data[2];
+    // sending the request
+    DataAsciiRequest request;
+    //generateRequest(LoadCellValues::GROSS_WEIGHT, request);
+    //TRACE("GROSS_WEIGHT: %s\n", request.to_string().c_str());
+    generateRequest(LoadCellValues::RESET_TARE, request);
+    TRACE("RESET_TARE: %s\n", request.to_string().c_str());
+
+    // char *requestGrossW = "$01t75\r";
+    // char *requestResetW = "$01z7b\r";
+    // TRACE("request: %s\n", requestResetW);
+    transmit(&request);
+    Thread::sleep(1);
+    // waiting for the response
+    receive(&data);
+    TRACE("received: %s\n\n", data);
+
+    //last_sample.gross_weight = {atof(data) / 10.0, true};
+}
+
+void MBLoadCell::generateRequest(LoadCellValues toRequest,
+                                 DataAsciiRequest &req)
+{
+    req.req[0] = (char)toRequest;
+    req.req[1] = '\0';
+
+    req.setChecksum();
+}
+
+template <typename T>
+void MBLoadCell::receive(T *buf)
+{
+    ctrlPin1::low();
+    ctrlPin2::low();
+    serial->recvData(buf);
+}
+
+template <typename T>
+void MBLoadCell::transmit(T *buf)
+{
+    ctrlPin1::high();
+    ctrlPin2::high();
+    serial->sendData(buf);
+    Thread::sleep(10000);
 }
 
 bool MBLoadCell::init() { return true; }
 
 bool MBLoadCell::selfTest() { return true; }
-
-string MBLoadCell::calculateChecksum(char *message)
-{
-    uint8_t ck = 0;
-    for (int i = 0; i < strlen(message); i++)
-    {
-        ck ^= message[i];
-    }
-
-    char hex[3];
-    itoa(ck, hex, 16);
-
-    return string(hex);
-}

@@ -36,26 +36,40 @@
 using namespace std;
 using namespace miosix;
 
-class MBLoadCell : public Sensor<float>
+/**
+ * @brief driver in order to communicate with a TLB digital-analog weight
+ * transmitter attached to a loadcell
+ *
+ * The driver permits to use the TLB transmitter in different modes:
+ * - Continuous-modT: unidirectional protocol that consists in receiving the
+ * gross weight
+ * - Continuous-modTd: unidirectional protocol that consists in receiving the
+ * gross weight
+ * - ASCII-modTd: bidirectional mode that consists in sending a request and
+ * receiving a response with the data requested or an error message
+ */
+class MBLoadCell : public Sensor<MBLoadCellData>
 {
 public:
     /**
      * @brief constructor that initializes the serial communication with the
      * load cell
+     * @param mode the mode in which the load cell is in
      * @param serialPortNum port number to which the load cell is connected
      * @param baudrate baudrate set on the TLB converter
      */
     MBLoadCell(LoadCellModes mode, int serialPortNum, int baudrate);
 
+    bool init() override;
+
+    bool selfTest() override;
+
     /**
-     * @brief reading the output in continuous mode
-     * @return the value of the weight returned from the load cell
+     * @brief sample function overridden because the sampleImpl doesn't return
+     * the last sample but modifies that struct directly. This is useful in the
+     * bidirectional mode when we request data and we don't want to lose it
      */
-    int readBusy();
-
-    bool init();
-
-    bool selfTest();
+    void sample() override;
 
 protected:
     /**
@@ -64,14 +78,35 @@ protected:
      * the mode selected (it's a blocking function)
      * @return the weight measured from the load cell
      */
-    float sampleImpl() override;
+    MBLoadCellDataStr sampleImpl() override;
 
     /**
-     * @brief calculates the checksum as in the manual
-     * @param message the string from which will be calculated the checksum
-     * @return a pair of chars that represents the checksum in hexadecimal
+     * @brief sampling in the "continuous Mod T" mode
      */
-    string calculateChecksum(char *message);
+    void sampleContModT(void);
+
+    /**
+     * @brief sampling in the "continuous Mod Td" mode
+     */
+    void sampleContModTd(void);
+
+    /**
+     * @brief sampling in the "ASCII Mod Td" mode
+     */
+    void sampleAsciiModTd(void);
+
+    /**
+     * @brief forges a request for the ascii mode
+     * @param toRequest the request to forge
+     * @param req reference to the request that will be generated
+     */
+    void generateRequest(LoadCellValues toRequest, DataAsciiRequest &req);
+
+    template <typename T>
+    void receive(T *buf);
+
+    template <typename T>
+    void transmit(T *buf);
 
 private:
     SerialInterface *serial;  ///< pointer to the instance of the serial port
