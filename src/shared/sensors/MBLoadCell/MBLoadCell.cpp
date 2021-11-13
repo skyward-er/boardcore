@@ -30,7 +30,7 @@ using ctrlPin1 = miosix::Gpio<GPIOC_BASE, 1>;
 using ctrlPin2 = miosix::Gpio<GPIOC_BASE, 2>;
 
 MBLoadCell::MBLoadCell(LoadCellModes mode, int serialPortNum,
-                       int baudrate = 115200)
+                       int baudrate = 2400)
 {
     this->mode = mode;
 
@@ -94,24 +94,22 @@ void MBLoadCell::sampleAsciiModTd()
 {
     TRACE("ASCII MOD TD\n");
 
-    char data[2];
+    char data[64];
     // sending the request
     DataAsciiRequest request;
-    //generateRequest(LoadCellValues::GROSS_WEIGHT, request);
-    //TRACE("GROSS_WEIGHT: %s\n", request.to_string().c_str());
-    generateRequest(LoadCellValues::RESET_TARE, request);
-    TRACE("RESET_TARE: %s\n", request.to_string().c_str());
+    generateRequest(LoadCellValues::GROSS_WEIGHT, request);
 
-    // char *requestGrossW = "$01t75\r";
-    // char *requestResetW = "$01z7b\r";
-    // TRACE("request: %s\n", requestResetW);
-    transmit(&request);
-    Thread::sleep(1);
+    char requestStr[64];
+    strcpy(requestStr, request.to_string().c_str());
+    TRACE("GROSS_WEIGHT: '%s'\n", requestStr);
+
+    // transmitting request
+    transmitASCII(requestStr);
+
     // waiting for the response
-    receive(&data);
-    TRACE("received: %s\n\n", data);
+    receiveASCII(data);
 
-    //last_sample.gross_weight = {atof(data) / 10.0, true};
+    // last_sample.gross_weight = {atof(data) / 10.0, true};
 }
 
 void MBLoadCell::generateRequest(LoadCellValues toRequest,
@@ -123,21 +121,28 @@ void MBLoadCell::generateRequest(LoadCellValues toRequest,
     req.setChecksum();
 }
 
+void MBLoadCell::transmitASCII(char *buf)
+{
+    ctrlPin1::high();
+    ctrlPin2::high();
+    serial->sendString(buf);
+    Thread::sleep(10);  // needs some time (>5ms) idk why
+}
+
+void MBLoadCell::receiveASCII(char *buf)
+{
+    ctrlPin1::low();
+    ctrlPin2::low();
+    serial->recvString(buf, 64);
+    TRACE("received: '%s'\n", buf);
+}
+
 template <typename T>
 void MBLoadCell::receive(T *buf)
 {
     ctrlPin1::low();
     ctrlPin2::low();
     serial->recvData(buf);
-}
-
-template <typename T>
-void MBLoadCell::transmit(T *buf)
-{
-    ctrlPin1::high();
-    ctrlPin2::high();
-    serial->sendData(buf);
-    Thread::sleep(10000);
 }
 
 bool MBLoadCell::init() { return true; }

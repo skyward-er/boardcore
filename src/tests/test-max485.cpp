@@ -86,7 +86,7 @@ char rcv[64];
 void readSer(SerialInterface s)
 {
     s.recvString(rcv, 64);
-    TRACE("%s received: \t'%s'\n", s.getPortName().c_str(), rcv);
+    printf("\t<--%s received: \t'%s'\n", s.getPortName().c_str(), rcv);
 }
 
 // Communicatio: src -> dst
@@ -108,19 +108,19 @@ void testCommunication(char *data, SerialInterface src, SerialInterface dst)
     // thread that reads from serial
     thread t(readSer, dst);
 
-    TRACE("%s sending: \t'%s'\n", src.getPortName().c_str(), data);
+    printf("\t-->%s sending: \t'%s'\n", src.getPortName().c_str(), data);
     src.sendString(data);
     t.join();
 
     if (strcmp(data, rcv) == 0)
     {
-        TRACE("\t*** %s -> %s WORKING!\n", src.getPortName().c_str(),
-              dst.getPortName().c_str());
+        printf("*** %s -> %s WORKING!\n", src.getPortName().c_str(),
+               dst.getPortName().c_str());
     }
     else
     {
-        TRACE("\t### ERROR: %s -> %s!\n", src.getPortName().c_str(),
-              dst.getPortName().c_str());
+        printf("### ERROR: %s -> %s!\n", src.getPortName().c_str(),
+               dst.getPortName().c_str());
     }
 }
 
@@ -141,20 +141,20 @@ int main()
 
     if (!serial1.init())
     {
-        TRACE("[Serial1] Wrong initialization\n");
+        printf("[Serial1] Wrong initialization\n");
         return 1;
     }
 
     if (!serial2.init())
     {
-        TRACE("[Serial2] Wrong initialization\n");
+        printf("[Serial2] Wrong initialization\n");
         return 1;
     }
 
     while (true)
     {
-        TRACE("\n###########################\n");
-        TRACE("\t*** SERIAL 3 WORKING!\n");
+        printf("\n###########################\n");
+        printf("*** SERIAL 3 WORKING!\n");
 
         // testing transmission "serial 1 <- serial 2"
         testCommunication<ctrlPin1_s2, ctrlPin2_s2, ctrlPin1_s1, ctrlPin2_s1>(

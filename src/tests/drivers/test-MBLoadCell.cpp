@@ -33,8 +33,9 @@ int main()
     /*
      * use of CONT_MOD_TD: transmits net and gross weight
      * use of serial port 2: in stm32f407vg TX=PB10, RX=PB11
+     * use of serial port 1: in stm32f407vg TX=PA9, RX=PB10
      */
-    MBLoadCell loadCell(LoadCellModes::ASCII_MOD_TD, 2, 115200);
+    MBLoadCell loadCell(LoadCellModes::ASCII_MOD_TD, 2, 2400);
 
     while (true)
     {

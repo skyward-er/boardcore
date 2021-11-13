@@ -95,7 +95,7 @@ public:
     /**
      * @brief Receives a string from the serial
      * @param data pointer to the destination string
-     * @param maxLen pointer to the maximum length of the string to read
+     * @param maxLen maximum length of the string to read
      */
     void recvString(char *data, int maxLen) { read(fd, data, maxLen); }
 

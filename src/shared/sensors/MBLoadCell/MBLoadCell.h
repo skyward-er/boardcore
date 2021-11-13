@@ -102,11 +102,12 @@ protected:
      */
     void generateRequest(LoadCellValues toRequest, DataAsciiRequest &req);
 
-    template <typename T>
-    void receive(T *buf);
+    void transmitASCII(char *buf);
+
+    void receiveASCII(char *buf);
 
     template <typename T>
-    void transmit(T *buf);
+    void receive(T *buf);
 
 private:
     SerialInterface *serial;  ///< pointer to the instance of the serial port
