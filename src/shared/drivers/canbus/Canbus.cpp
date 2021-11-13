@@ -90,9 +90,6 @@ Canbus::Canbus(CAN_TypeDef* can, CanbusConfig config, BitTiming bit_timing)
         can->BTR |= CAN_BTR_LBKM;
     }
 
-    // Enable rx pending interrupts
-    can->IER |= CAN_IER_FMPIE0 | CAN_IER_FMPIE1 | CAN_IER_TMEIE;
-
     // Enter filter initialization mode
     can->FMR |= CAN_FMR_FINIT;
 
@@ -104,15 +101,27 @@ Canbus::Canbus(CAN_TypeDef* can, CanbusConfig config, BitTiming bit_timing)
     {
         can_drivers[1] = this;
     }
+#ifdef STM32F10X_MD
+    // Enable rx pending interrupts
+    can->IER |= CAN_IER_FMPIE1;
+
+    NVIC_EnableIRQ(CAN1_RX1_IRQn);
+    NVIC_SetPriority(CAN1_RX1_IRQn, 14);
+#elif defined(_ARCH_CORTEXM4_STM32F4)
+    // Enable rx pending interrupts
+    can->IER |= CAN_IER_FMPIE0 | CAN_IER_FMPIE1 | CAN_IER_TMEIE;
 
     NVIC_EnableIRQ(CAN1_RX0_IRQn);
     NVIC_SetPriority(CAN1_RX0_IRQn, 14);
 
     NVIC_EnableIRQ(CAN1_RX1_IRQn);
-    NVIC_SetPriority(CAN1_RX0_IRQn, 14);
+    NVIC_SetPriority(CAN1_RX1_IRQn, 14);
 
     NVIC_EnableIRQ(CAN1_TX_IRQn);
     NVIC_SetPriority(CAN1_TX_IRQn, 14);
+#else
+#error "Unsupported architecture"
+#endif
 
     LOG_DEBUG(ls, "BTR = {:#04X}", can->BTR);
     LOG_DEBUG(ls, "IER = {:#04X}", can->IER);
@@ -267,7 +276,7 @@ uint32_t Canbus::send(CanPacket packet)
 {
     PrintLogger ls = l.getChild("send");
     ls.setEnabled(false);
-    
+
     if (!is_init)
     {
         LOG_ERR(ls, "Canbus is not initialized!");
@@ -279,6 +288,15 @@ uint32_t Canbus::send(CanPacket packet)
 
     bool did_wait = false;
 
+#ifdef STM32F10X_MD
+    // Some uCs don't have an interrupt that signals when a mailbox is
+    // available, so we just have to wait and check
+    while ((can->TSR & CAN_TSR_TME) == 0)
+    {
+        did_wait = true;
+        Thread::sleep(1);
+    }
+#elif defined(_ARCH_CORTEXM4_STM32F4)
     {
         miosix::FastInterruptDisableLock d;
         // Wait until there is an empty mailbox available to use
@@ -293,11 +311,15 @@ uint32_t Canbus::send(CanPacket packet)
             }
         }
     }
+
+#else
+#error "Unsupported architecture"
+#endif
+
     if (did_wait)
     {
         LOG_WARN_ASYNC(ls, "Had to wait for an empty mailbox!");
     }
-
     // Index of first empty mailbox
     uint8_t mbx_code = (can->TSR & CAN_TSR_CODE) >> 24;
     LOG_INFO_ASYNC(ls, "TX BOX empty: [{}]. Sending!", mbx_code);
