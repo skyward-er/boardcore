@@ -356,7 +356,7 @@ void Canbus::handleRXInterrupt(int fifo)
     }
 
     status.fifo_overrun = (*RFR & CAN_RF0R_FOVR0) > 0;
-    status.fifo_full = (*RFR & CAN_RF0R_FULL0) > 0;
+    status.fifo_full    = (*RFR & CAN_RF0R_FULL0) > 0;
 
     CanPacket p;
     bool hppw = false;
@@ -364,14 +364,13 @@ void Canbus::handleRXInterrupt(int fifo)
     // Note: Bit position definitions are the same for both FIFOs
     // (CAN_RF0R_FMP0 == CAN_RF1R_FMP1)
 
-    if((*RFR & CAN_RF0R_FMP0) > 0)
-    // while ((*RFR & CAN_RF0R_FMP0) > 0)
+    if ((*RFR & CAN_RF0R_FMP0) > 0)
     {
         p.timestamp = miosix::getTick();
 
-        status.rx_status = *RFR & (CAN_RF0R_FULL0 | CAN_RF0R_FOVR0) >> 3;
-        status.err_code  = (can->ESR | CAN_ESR_LEC) >> 4;
-        status.rx_err_counter  = (can->ESR | CAN_ESR_REC) >> 24;
+        status.rx_status      = *RFR & (CAN_RF0R_FULL0 | CAN_RF0R_FOVR0) >> 3;
+        status.err_code       = (can->ESR | CAN_ESR_LEC) >> 4;
+        status.rx_err_counter = (can->ESR | CAN_ESR_REC) >> 24;
 
         p.ext = (mailbox->RIR & CAN_RI0R_IDE) > 0;
         p.rtr = (mailbox->RIR & CAN_RI0R_RTR) > 0;
@@ -402,10 +401,6 @@ void Canbus::handleRXInterrupt(int fifo)
 
         // Put the message into the queue
         buf_rx_packets.IRQput(CanRXPacket{p, status}, hppw);
-
-        // // Wait until the mailbox is cleared
-        // while ((*RFR & CAN_RF0R_RFOM0) > 0)
-        //     ;
     }
 
     if (hppw)
