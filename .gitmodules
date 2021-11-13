@@ -8,9 +8,6 @@
 [submodule "libs/mavlink_skyward_lib"]
 	path = libs/mavlink_skyward_lib
 	url = ../../scs/mavlink_skyward_lib.git
-[submodule "libs/simple-template-matrix"]
-	path = libs/simple-template-matrix
-	url = https://github.com/fedetft/simple-template-matrix.git
 [submodule "libs/eigen"]
 	path = libs/eigen
 	url = ../../scs/third-party/eigen.git
