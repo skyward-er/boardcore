@@ -1,7 +1,7 @@
 #!/bin/sh
 
 # Copyright (c) 2021 Skyward Experimental Rocketry
-# Authors: Damiano Amatruda
+# Author: Damiano Amatruda
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -64,8 +64,10 @@ build_all() { check_configured && cmake --build "$build_dir" $build_jobs; }
 
 build() { check_configured && cmake --build "$build_dir" $build_jobs --target "$1"; }
 
-list() { check_configured && echo "All SBS targets available:" && \
+list() { check_configured && echo "[1/1] All SBS targets available:" && \
     cmake --build "$build_dir" $build_jobs --target help | grep -o '^[^/]*\.bin' | cut -f 1 -d '.'; }
+
+boards() { check_configured && cmake --build "$build_dir" $build_jobs --target help-boards; }
 
 lint() { "$sbs_base/scripts/linter.sh" "$source_dir/src/shared"; }
 
@@ -84,7 +86,8 @@ OPTIONS:
   -c, --clean           Clean the working tree
   -b TARGET, --build TARGET
                         Build a specific target
-  -l, --list            List all possible configurations
+  -l, --list            List all possible targets
+  -r, --boards          List all possible boards
   -v, --verbose         Print a verbose output
   -n, --lint            Run the linter
   -j JOBS, --jobs JOBS  Build in parallel using the given number of jobs
@@ -109,6 +112,7 @@ for arg in "$@"; do
         --clean)    set -- "$@" "-c";;
         --build)    set -- "$@" "-b";;
         --list)     set -- "$@" "-l";;
+        --boards)   set -- "$@" "-r";;
         --verbose)  set -- "$@" "-v";;
         --lint)     set -- "$@" "-n";;
         --jobs)     set -- "$@" "-j";;
@@ -116,12 +120,13 @@ for arg in "$@"; do
     esac
 done
 
-while getopts hcb:lvnj: opt; do
+while getopts hcb:lrvnj: opt; do
     case "$opt" in
         h)  usage; exit 0;;
         c)  clean; exit 0;;
         b)  build "$OPTARG"; exit 0;;
         l)  list; exit 0;;
+        r)  boards; exit 0;;
         v)  set_verbose;;
         n)  lint; exit 0;;
         j)  set_jobs "$OPTARG";;

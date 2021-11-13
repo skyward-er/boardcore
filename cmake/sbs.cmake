@@ -37,16 +37,17 @@ endif()
 
 include(dependencies)
 
-function(sbs_mxgui TARGET)
-    get_target_property(OPT_BOARD ${TARGET} OPT_BOARD)
-    if(NOT OPT_BOARD)
-        message(FATAL_ERROR "No board selected")
-    endif()
+include(${KPATH}/config/boards.cmake)
 
-    target_link_libraries(${TARGET} mxgui::mxgui-${OPT_BOARD})
-endfunction()
+string(REPLACE ";" "\\n" BOARDS_STR "${BOARDS}")
+add_custom_target(
+    help-boards
+    COMMAND printf ${BOARDS_STR}
+    COMMENT "All boards available:"
+    VERBATIM
+)
 
-function(sbs_target TARGET)
+function(sbs_get_board TARGET)
     get_target_property(OPT_BOARD ${TARGET} OPT_BOARD)
     if(NOT OPT_BOARD)
         message(FATAL_ERROR "No board selected")
