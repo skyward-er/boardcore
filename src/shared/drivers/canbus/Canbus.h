@@ -1,0 +1,135 @@
+/* Copyright (c) 2021 Skyward Experimental Rocketry
+ * Authors: Luca Erbetta
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in
+ * all copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+ * THE SOFTWARE.
+ */
+
+#pragma once
+
+#include <miosix.h>
+
+#include "CanData.h"
+#include "Filters.h"
+#include "utils/collections/IRQCircularBuffer.h"
+
+using miosix::Thread;
+
+namespace Boardcore
+{
+namespace Canbus
+{
+class Canbus
+{
+    static constexpr unsigned int RX_BUF_SIZE     = 10;
+    static constexpr unsigned int STATUS_BUF_SIZE = 10;
+
+    // Weight coefficients for calculating the optimal bit timing
+    static constexpr float BR_ERR_WEIGHT = 10;
+    static constexpr float SP_ERR_WEIGHT = 1;
+    static constexpr float N_ERR_WEIGHT  = 1 / 50;
+
+#ifdef _ARCH_CORTEXM3_STM32
+    static constexpr uint8_t NUM_FILTER_BANKS = 14;
+#else
+    static constexpr uint8_t NUM_FILTER_BANKS = 28;
+#endif
+
+public:
+    struct CanbusConfig
+    {
+        bool loopback = false;
+        bool awum     = true;
+        bool nart     = false;
+        bool abom     = true;
+        bool rflm     = true;
+        bool txfp     = true;
+    };
+
+    /**
+     * @brief Struct defining bit timing requirements
+     */
+    struct AutoBitTiming
+    {
+        /**
+         * @brief Canbus baud rate in bps. CANOpen standard values are preferred
+         * but not mandatory: 1000 kpbs, 500 kbps, 250 kbps, 125 kbps, 100
+         * kbps, 83.333 kbps, 50 kbps, 25 kbps and 10 kbps
+         */
+        uint32_t baud_rate;
+
+        /**
+         * @brief Sample point in percentage of the bit length. Eg: 0.875
+         */
+        float sample_point;
+    };
+
+    /**
+     * @brief Struct specifing exact bit timing registers values
+     */
+    struct BitTiming
+    {
+        uint16_t BRP;
+        uint16_t BS1;
+        uint16_t BS2;
+        uint8_t SJW;
+    };
+
+    Canbus(CAN_TypeDef* can, CanbusConfig config, AutoBitTiming bit_timing);
+    Canbus(CAN_TypeDef* can, CanbusConfig config, BitTiming bit_timing);
+
+    bool addFilter(Filter filter);
+    void init();
+
+    uint32_t send(CanPacket packet);
+
+    void handleRXInterrupt(int fifo);
+    void wakeTXThread();
+
+    uint32_t getLastTXSeq() { return tx_seq; }
+
+    IRQCircularBuffer<CanRXPacket, RX_BUF_SIZE>& getRXBuffer()
+    {
+        return buf_rx_packets;
+    }
+
+    IRQCircularBuffer<CanTXResult, STATUS_BUF_SIZE>& getTXResultBuffer()
+    {
+        return buf_tx_result;
+    }
+
+    CAN_TypeDef* getCAN() { return can; }
+
+private:
+    static BitTiming calcBitTiming(AutoBitTiming config);
+
+    IRQCircularBuffer<CanRXPacket, RX_BUF_SIZE> buf_rx_packets;
+
+    IRQCircularBuffer<CanTXResult, STATUS_BUF_SIZE> buf_tx_result;
+
+    CAN_TypeDef* can;
+
+    uint32_t tx_seq = 1;  // TX packet sequence number
+
+    bool is_init         = false;
+    uint8_t filter_index = 0;
+
+    Thread* waiting = nullptr;
+};
+}  // namespace Canbus
+}  // namespace Boardcore
