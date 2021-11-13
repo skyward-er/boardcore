@@ -69,17 +69,27 @@ public:
     void log(uint8_t level, string function, string file, int line,
              string format, Args&&... args)
     {
-        vlog(level, function, file, line, format,
-             fmt::make_args_checked<Args...>(format, args...));
+        if (enabled)
+        {
+            vlog(level, function, file, line, format,
+                 fmt::make_args_checked<Args...>(format, args...));
+        }
     }
 
     template <typename... Args>
     void logAsync(uint8_t level, string function, string file, int line,
                   string format, Args&&... args)
     {
-        vlogAsync(level, function, file, line, format,
-                  fmt::make_args_checked<Args...>(format, args...));
+        if (enabled)
+        {
+            vlogAsync(level, function, file, line, format,
+                      fmt::make_args_checked<Args...>(format, args...));
+        }
     }
+
+    void setEnabled(bool enabled) { this->enabled = enabled; }
+
+    bool isEnabled() { return enabled; }
 
 private:
     void vlog(uint8_t level, string function, string file, int line,
@@ -91,6 +101,7 @@ private:
                              int line, fmt::string_view format,
                              fmt::format_args args);
 
+    bool enabled = true;
     Logging& parent;
     string name;
 };
@@ -208,6 +219,13 @@ public:
         (void)line;
         (void)format;
     }
+
+    void setEnabled(bool enabled) { this->enabled = enabled; }
+
+    bool isEnabled() { return enabled; }
+
+private:
+    bool enabled = true;
 
     Logging& parent;
 };
