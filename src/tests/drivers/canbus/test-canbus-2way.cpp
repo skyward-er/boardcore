@@ -20,6 +20,11 @@
  * THE SOFTWARE.
  */
 
+// Sends packets on the canbus and waits for a response, measuring the response
+// time. If a response takes more than MSG_LOST_DEADLINE, the packet is
+// considered lost. It may also receive requests from other canbus devices, to
+// which it will respond
+
 #include <string>
 
 #include "ActiveObject.h"
@@ -31,10 +36,10 @@
 #include "math/Stats.h"
 #include "utils/collections/CircularBuffer.h"
 
-constexpr uint32_t BAUD_RATE    = 1000 * 1000;
-constexpr float SAMPLE_POINT    = 87.5f / 100.0f;
-constexpr uint32_t MSG_DEADLINE = 100;  // ms
-constexpr uint32_t MSG_LOST     = 400;  // ms
+constexpr uint32_t BAUD_RATE         = 1000 * 1000;
+constexpr float SAMPLE_POINT         = 87.5f / 100.0f;
+constexpr uint32_t MSG_DEADLINE      = 100;  // ms
+constexpr uint32_t MSG_LOST_DEADLINE = 400;  // ms
 
 using std::string;
 using namespace Canbus;
@@ -132,7 +137,7 @@ public:
                 while (!msgs.isEmpty())
                 {
                     CanMsg msg = msgs.get();
-                    if (msg.id == 0 || tick - msg.ts > MSG_LOST)
+                    if (msg.id == 0 || tick - msg.ts > MSG_LOST_DEADLINE)
                     {
                         msgs.pop();
 
@@ -170,9 +175,11 @@ public:
 
                 Canbus::BusLoadEstimation::BusLoadInfo info =
                     can_mgr->getLoadSensor().getLoadInfo();
-                TRACE("Payload rate: %.2f, Frame rate: %.2f, Load: %.2f %%\n",
-                      info.payload_bit_rate / 1000.0f,
-                      info.total_bit_rate / 1000.0f, info.load_percent);
+                TRACE(
+                    "Payload rate: %.2f kbps, Frame rate: %.2f kbps, Load: "
+                    "%.2f %%\n",
+                    info.payload_bit_rate / 1000.0f,
+                    info.total_bit_rate / 1000.0f, info.load_percent);
             }
             ++c;
             Thread::sleepUntil(tick + MSG_DEADLINE);
@@ -201,9 +208,6 @@ int main()
 #ifdef _ARCH_CORTEXM3_STM32
         CanRX::mode(Mode::ALTERNATE);
         CanTX::mode(Mode::ALTERNATE);
-
-        CanRX::alternateFunction(9);
-        CanTX::alternateFunction(9);
 #else
         CanRX::mode(Mode::ALTERNATE);
         CanTX::mode(Mode::ALTERNATE);
@@ -213,8 +217,7 @@ int main()
 #endif
     }
 
-    Canbus::Canbus::CanbusConfig cfg;
-    cfg.loopback = true;
+    Canbus::Canbus::CanbusConfig cfg{};
     Canbus::Canbus::AutoBitTiming bt;
     bt.baud_rate    = BAUD_RATE;
     bt.sample_point = SAMPLE_POINT;

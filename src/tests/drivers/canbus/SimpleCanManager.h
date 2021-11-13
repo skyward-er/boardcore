@@ -64,7 +64,7 @@ public:
     {
         if (tx_packets.isFull())
         {
-            printf("TX BUFFER FULL! DROPPED PACKET\n");
+            printf("Pkt drop\n");
         }
         tx_packets.put(packet);
     }
