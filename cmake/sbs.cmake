@@ -21,11 +21,6 @@
 
 enable_language(C CXX ASM)
 
-# Fix VSCode warning "cannot find entry symbol arch_paths_first; defaulting to 0000000000000000"
-# Alternative: set(CMAKE_<LANG>_LINK_EXECUTABLE "<CMAKE_<LANG>_COMPILER> <FLAGS> <LINK_FLAGS> <OBJECTS> -o <TARGET> <LINK_LIBRARIES>")
-set(CMAKE_C_LINK_FLAGS "")
-set(CMAKE_CXX_LINK_FLAGS "")
-
 list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_LIST_DIR})
 get_filename_component(SBS_BASE ${CMAKE_CURRENT_LIST_DIR} DIRECTORY)
 file(GLOB KPATH ${SBS_BASE}/libs/miosix-kernel/miosix)

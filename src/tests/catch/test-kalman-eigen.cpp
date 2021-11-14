@@ -29,7 +29,7 @@
 #include <iostream>
 #include <utils/testutils/catch.hpp>
 #include <kalman/KalmanEigen.h>
-#include "kalman/test-kalman-data.h"
+#include "../kalman/test-kalman-data.h"
 
 using namespace Eigen;
 
