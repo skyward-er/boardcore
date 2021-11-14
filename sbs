@@ -47,12 +47,13 @@ show_found_deps() {
 
 configure() {
     show_found_deps
-    [ $ccache_found ] && config_ccache="-DCMAKE_C_COMPILER_LAUNCHER=ccache -DCMAKE_CXX_COMPILER_LAUNCHER=ccache"
-    [ $ninja_found ] && config_ninja="-GNinja"
+    config_ccache= && [ $ccache_found ] && config_ccache="-DCMAKE_C_COMPILER_LAUNCHER=ccache -DCMAKE_CXX_COMPILER_LAUNCHER=ccache"
+    config_toolchain="-DCMAKE_TOOLCHAIN_FILE=$sbs_base/libs/miosix-kernel/miosix/_tools/toolchain.cmake"
+    config_ninja= && [ $ninja_found ] && config_ninja="-GNinja"
     cmake \
-        -B "$build_dir" \
+        -B"$build_dir" \
         $config_ccache \
-        -DCMAKE_TOOLCHAIN_FILE="$sbs_base/libs/miosix-kernel/miosix/_tools/toolchain.cmake" \
+        $config_toolchain \
         $config_ninja \
         $config_verbose \
         "$source_dir"
@@ -64,12 +65,14 @@ build_all() { check_configured && cmake --build "$build_dir" $build_jobs; }
 
 build() { check_configured && cmake --build "$build_dir" $build_jobs --target "$1"; }
 
+flash() { build "$1" && [ -f "$build_dir/$1.bin" ] && echo && st-flash --reset write "$build_dir/$1.bin" 0x08000000; }
+
+lint() { "$sbs_base/scripts/linter.sh" "$source_dir/src/shared"; }
+
 list() { check_configured && echo "[1/1] All SBS targets available:" && \
     cmake --build "$build_dir" $build_jobs --target help | grep -o '^[^/]*\.bin' | cut -f 1 -d '.'; }
 
 boards() { check_configured && cmake --build "$build_dir" $build_jobs --target help-boards; }
-
-lint() { "$sbs_base/scripts/linter.sh" "$source_dir/src/shared"; }
 
 check_configured() { ([ ! -d "$build_dir" ] || [ ! -f "$build_dir/CMakeCache.txt" ] && rm -rf "$build_dir") && configure && echo || true; }
 
@@ -86,10 +89,12 @@ OPTIONS:
   -c, --clean           Clean the working tree
   -b TARGET, --build TARGET
                         Build a specific target
-  -l, --list            List all possible targets
-  -r, --boards          List all possible boards
-  -v, --verbose         Print a verbose output
+  -f TARGET, --flash TARGET
+                        Build and flash a specific target
   -n, --lint            Run the linter
+  -l, --list            List all targets available
+  -r, --boards          List all boards available
+  -v, --verbose         Print a verbose output
   -j JOBS, --jobs JOBS  Build in parallel using the given number of jobs
 EOF
 }
@@ -111,24 +116,26 @@ for arg in "$@"; do
         --help)     set -- "$@" "-h";;
         --clean)    set -- "$@" "-c";;
         --build)    set -- "$@" "-b";;
+        --flash)    set -- "$@" "-f";;
+        --lint)     set -- "$@" "-n";;
         --list)     set -- "$@" "-l";;
         --boards)   set -- "$@" "-r";;
         --verbose)  set -- "$@" "-v";;
-        --lint)     set -- "$@" "-n";;
         --jobs)     set -- "$@" "-j";;
         *)          set -- "$@" "$arg"
     esac
 done
 
-while getopts hcb:lrvnj: opt; do
+while getopts hcb:f:nlrvj: opt; do
     case "$opt" in
         h)  usage; exit 0;;
-        c)  clean; exit 0;;
-        b)  build "$OPTARG"; exit 0;;
-        l)  list; exit 0;;
-        r)  boards; exit 0;;
+        c)  clean; exit $?;;
+        b)  build "$OPTARG"; exit $?;;
+        f)  flash "$OPTARG"; exit $?;;
+        n)  lint; exit $?;;
+        l)  list; exit $?;;
+        r)  boards; exit $?;;
         v)  set_verbose;;
-        n)  lint; exit 0;;
         j)  set_jobs "$OPTARG";;
         ?)  usage; exit 2;;
     esac
