@@ -27,15 +27,17 @@ set(CMAKE_C_LINK_FLAGS "")
 set(CMAKE_CXX_LINK_FLAGS "")
 
 list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_LIST_DIR})
-
-cmake_path(GET CMAKE_CURRENT_LIST_DIR PARENT_PATH SBS_BASE)
-
+get_filename_component(SBS_BASE ${CMAKE_CURRENT_LIST_DIR} DIRECTORY)
 file(GLOB KPATH ${SBS_BASE}/libs/miosix-kernel/miosix)
 if(NOT KPATH)
     message(FATAL_ERROR "Kernel directory not found")
 endif()
-
 include(dependencies)
+
+if(NOT CMAKE_SOURCE_DIR STREQUAL SBS_BASE)
+    list(APPEND CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/cmake)
+    include(${CMAKE_SOURCE_DIR}/cmake/dependencies.cmake OPTIONAL)
+endif()
 
 include(${KPATH}/config/boards.cmake)
 
