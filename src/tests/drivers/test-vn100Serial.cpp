@@ -27,9 +27,7 @@ using namespace miosix;
 
 int main()
 {
-    char prova[] = "Ciaone ci si prova\n";
-
-    printf("%d\n", sizeof(prova));
+    char message[] = "Communication\n";
 
     VN100Serial serial{2, 19200};
 
@@ -43,7 +41,7 @@ int main()
     //Loop to send the data via serial
     while(1)
     {
-        serial.send<char[]>(prova);
+        serial.send<char[]>(message);
         //Sleep
         miosix::Thread::sleep(100);
     }
