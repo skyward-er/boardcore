@@ -26,12 +26,10 @@
 
 #define EIGEN_RUNTIME_NO_MALLOC
 
-#include <src/tests/kalman/test-kalman-data.h>
-
 #include <iostream>
 #include <utils/testutils/catch.hpp>
-
-#include "kalman/KalmanEigen.h"
+#include <kalman/KalmanEigen.h>
+#include "../kalman/test-kalman-data.h"
 
 using namespace Eigen;
 

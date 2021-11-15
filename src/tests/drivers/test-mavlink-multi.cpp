@@ -20,7 +20,7 @@
  * THE SOFTWARE.
  */
 
-#include <libs/mavlink_skyward_lib/mavlink_lib/r2a/mavlink.h>
+#include <mavlink_skyward_lib/mavlink_lib/r2a/mavlink.h>
 
 #include <Common.h>
 #include <drivers/gamma868/Gamma868.h>

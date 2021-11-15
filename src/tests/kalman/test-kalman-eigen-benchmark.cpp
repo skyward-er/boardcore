@@ -28,10 +28,9 @@
 #include <Common.h>
 #include <drivers/HardwareTimer.h>
 #include <kalman/KalmanEigen.h>
-#include <src/tests/kalman/test-kalman-data.h>
-
 #include <iostream>
 
+#include "test-kalman-data.h"
 #include "math/SkyQuaternion.h"
 #include "util/util.h"
 
