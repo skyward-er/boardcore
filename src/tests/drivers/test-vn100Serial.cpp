@@ -21,12 +21,34 @@
  */
 
 #include <Common.h>
-#include <sensors/VN100/VN100.h>
+#include <sensors/VN100/VN100Serial.h>
 
 using namespace miosix;
 
 int main()
 {
+    char prova[] = "Ciaone ci si prova\n";
+
+    printf("%d\n", sizeof(prova));
+
+    VN100Serial serial{2, 19200};
+
+    if(!serial.init())
+    {
+        printf("Init failed\n");
+        return 0;
+    }
+    printf("Success!\n");
+    
+    //Loop to send the data via serial
+    while(1)
+    {
+        serial.send<char[]>(prova);
+        //Sleep
+        miosix::Thread::sleep(100);
+    }
+
+    serial.closeSerial();
 
     return 0;
 }

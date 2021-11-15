@@ -56,7 +56,8 @@ public:
 
     /**
      * @brief Constructor
-     * @param serial port number of the stm32 and baud rate
+     * @param serial port number that references the usart port on the STM32
+     * @param serial port baud rate
      */
     VN100Serial(int serialPortNumber, int serialBaudRate)
     {
@@ -97,6 +98,57 @@ public:
         }
 
         //Success
+        isInit = true;
         return true;
+    }
+
+
+    /**
+     * @brief Writes in Serial data
+     * @param Data to be sent via serial
+     * @return Boolean which communicates the send process result
+     */
+    template <typename DataSend>
+    bool send(DataSend data)
+    {
+        //Check if the serial has been previously initialized
+        if(!isInit)
+        {
+            return false;
+        }
+
+        //Write the file with the data
+        write(serialFileDescriptor, data, sizeof(data));
+
+        return true;
+    }
+
+
+    /**
+     * @brief Reads from serial
+     * @param Pointer to the data structure where we need to store data
+     * @return Boolean which communicates the recive process result
+     */
+    template <typename DataReceive>
+    bool recv(DataReceive *data)
+    {
+        if(!isInit)
+        {
+            return false;
+        }
+
+        //Read the data and store it in memory
+        read(serialFileDescriptor, data, sizeof(DataReceive));
+
+        return true;
+    }
+
+
+    /**
+     * @brief Closes the serial communication
+     */
+    void closeSerial()
+    {
+        close(serialFileDescriptor);
     }
 };
