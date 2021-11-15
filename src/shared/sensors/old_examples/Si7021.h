@@ -20,8 +20,7 @@
  * THE SOFTWARE.
  */
 
-#ifndef SI7021_H
-#define SI7021_H
+#pragma once
 
 #include <drivers/BusTemplate.h>
 #include "Sensor.h"
@@ -169,4 +168,3 @@ private:
     };
     // clang-format on
 };
-#endif

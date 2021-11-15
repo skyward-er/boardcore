@@ -19,8 +19,8 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
-#ifndef TIMER_H
-#define TIMER_H
+
+#pragma once
 
 #include "Common.h"
 #include <algorithm>
@@ -73,5 +73,3 @@ private:
     Timer& operator=(const Timer& other) = delete;
     bool operator==(const Timer& other) = delete;
 };
-
-#endif // TIMER_H

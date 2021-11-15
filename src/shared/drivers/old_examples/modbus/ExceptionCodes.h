@@ -20,8 +20,7 @@
  * THE SOFTWARE.
  */
 
-#ifndef EXC_CODES_H
-#define EXC_CODES_H
+#pragma once
 
 #include "Common.h"
 
@@ -35,5 +34,3 @@ namespace modbus
     static constexpr uint8_t SLAVE_BUSY        = 0x06; ///< Slave busy
     static constexpr uint8_t EXC_MEM_PARITY    = 0x08; ///< Memory parity error
 }
-
-#endif

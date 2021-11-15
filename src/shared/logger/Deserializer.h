@@ -20,8 +20,7 @@
  * THE SOFTWARE.
  */
 
-#ifndef SRC_SHARED_LOGGER_DESERIALIZER_H
-#define SRC_SHARED_LOGGER_DESERIALIZER_H
+#pragma once
 
 #include <sys/stat.h>
 #include <tscpp/stream.h>
@@ -195,5 +194,3 @@ private:
     string logFile;
     string logFileWithExt;
 };
-
-#endif /* SRC_SHARED_LOGGER_UNSERIALIZER_H */

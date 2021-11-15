@@ -23,8 +23,7 @@
 
 // This work is derived from https://www.state-machine.com by Miro Samek.
 
-#ifndef SRC_SHARED_EVENTS_HSM_H
-#define SRC_SHARED_EVENTS_HSM_H
+#pragma once
 
 #include "ActiveObject.h"
 #include "Debug.h"
@@ -416,4 +415,3 @@ private:
         this->temp  = target;
     }
 };
-#endif  // SRC_SHARED_EVENTS_HSM_H

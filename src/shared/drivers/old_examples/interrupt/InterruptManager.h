@@ -20,8 +20,7 @@
  * THE SOFTWARE.
  */
 
-#ifndef INTERRUPTMANAGER_H
-#define INTERRUPTMANAGER_H
+#pragma once
 
 #include "Singleton.h"
 #include "miosix.h"
@@ -169,5 +168,3 @@ public:
     virtual void OnInt(unsigned n) = 0;
 };
 #endif
-
-#endif // INTERRUPTMANAGER_H

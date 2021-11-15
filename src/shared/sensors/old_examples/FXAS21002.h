@@ -20,8 +20,7 @@
  * THE SOFTWARE.
  */
 
-#ifndef FXAS21002_H
-#define FXAS21002_H
+#pragma once
 
 #include <drivers/BusTemplate.h>
 #include "Sensor.h"
@@ -281,5 +280,3 @@ private:
 
 template <typename Bus>
 constexpr float FXAS21002<Bus>::gyroFSMAP[];
-
-#endif

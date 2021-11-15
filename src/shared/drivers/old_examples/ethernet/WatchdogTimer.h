@@ -20,8 +20,7 @@
  * THE SOFTWARE.
  */
 
-#ifndef WATCHDOGTIMER_H
-#define WATCHDOGTIMER_H
+#pragma once
 
 #include <Common.h>
 #include <Singleton.h>
@@ -81,5 +80,3 @@ private:
     WatchdogTimer& operator=(const WatchdogTimer& other);
     bool operator==(const WatchdogTimer& other);
 };
-
-#endif  // WATCHDOGTIMER_H

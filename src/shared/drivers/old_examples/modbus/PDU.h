@@ -20,8 +20,7 @@
  * THE SOFTWARE.
  */
 
-#ifndef PDU_H
-#define PDU_H
+#pragma once
 
 #include "Common.h"
 #include <stddef.h>
@@ -65,5 +64,3 @@ private:
     PDU& operator=(const PDU& other);    
     bool operator==(const PDU& other);
 };
-
-#endif // PDU_H

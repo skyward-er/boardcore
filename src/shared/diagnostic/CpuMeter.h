@@ -20,8 +20,7 @@
  * THE SOFTWARE.
  */
 
-#ifndef CPU_METER_H
-#define CPU_METER_H
+#pragma once
 
 /*
  * This CPU meter works like this.
@@ -49,5 +48,3 @@
  * \return the average CPU utilization
  */
 float averageCpuUtilization();
-
-#endif  // CPU_METER_H

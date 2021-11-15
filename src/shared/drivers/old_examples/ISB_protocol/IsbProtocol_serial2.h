@@ -20,8 +20,7 @@
  * THE SOFTWARE.
  */
 
-#ifndef ISBPROTOCOL_SERIAL2_H
-#define ISBPROTOCOL_SERIAL2_H
+#pragma once
 
 #include <cstdio>
 #include <cstdint>
@@ -150,5 +149,3 @@ private:
     IsbProtocol_serial2& operator=(const IsbProtocol_serial2& other);
     bool operator==(const IsbProtocol_serial2& other);
 };
-
-#endif // ISBPROTOCOL_SERIAL2_H

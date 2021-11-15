@@ -20,10 +20,7 @@
  * THE SOFTWARE.
  */
 
-
-#ifndef SRC_SHARED_DRIVERS_MEMORY_FLASHDRIVERINCLUDE_H_
-#define SRC_SHARED_DRIVERS_MEMORY_FLASHDRIVERINCLUDE_H_
-
+#pragma once
 
 #ifdef FLASH_TEST
 
@@ -34,6 +31,3 @@
 #include <drivers/memory/FlashDriver.h>
 
 #endif /* FLASH_TEST */
-
-
-#endif /* SRC_SHARED_DRIVERS_MEMORY_FLASHDRIVERINCLUDE_H_ */

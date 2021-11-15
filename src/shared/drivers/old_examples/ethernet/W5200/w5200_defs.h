@@ -20,8 +20,7 @@
  * THE SOFTWARE.
  */
 
-#ifndef W5200_DEFS_H
-#define W5200_DEFS_H
+#pragma once
 
 #include <Common.h>
 
@@ -185,5 +184,3 @@ enum eW5200IPProtoValues
     IPPROTO_RAW        = 255,  // Raw IP packet */
 };
 // clang-format on
-
-#endif

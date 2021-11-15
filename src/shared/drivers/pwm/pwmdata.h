@@ -20,8 +20,7 @@
  * THE SOFTWARE.
  */
 
-#ifndef SRC_SHARED_DRIVERS_PWM_PWMDATA_H
-#define SRC_SHARED_DRIVERS_PWM_PWMDATA_H
+#pragma once
 
 /**
  * @brief PWM channel output polarity
@@ -60,5 +59,3 @@ struct PWMChannelConfig
     PWMMode mode = PWMMode::MODE_1;
     PWMPolarity polarity = PWMPolarity::ACTIVE_HIGH;
 };
-
-#endif

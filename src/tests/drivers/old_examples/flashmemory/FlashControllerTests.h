@@ -20,8 +20,7 @@
  * THE SOFTWARE.
  */
 
-#ifndef FLASHCONTROLLERTESTS_H
-#define FLASHCONTROLLERTESTS_H
+#pragma once
 
 #include <Common.h>
 #include <helper/MultiFlashController.h>
@@ -704,5 +703,3 @@ class MultiFlashCTRLTest : public FlashTest<MemorySPI>
 
 }   //namespace flashmemorytests
 }   //namespace testing
-
-#endif /*FLASHCONTROLLERTESTS_H*/

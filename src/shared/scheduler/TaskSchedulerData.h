@@ -24,8 +24,7 @@
 #include <cstdint>
 #include <ostream>
 
-#ifndef BOARDCORE_SRC_SHARED_SCHEDULER_SCHEDULERDATA_H
-#define BOARDCORE_SRC_SHARED_SCHEDULER_SCHEDULERDATA_H
+#pragma once
 
 /**
  * Statistics for a task
@@ -59,5 +58,3 @@ struct TaskStatResult
            << workloadStats.stdev << "," << workloadStats.nSamples << "\n";
     }
 };
-
-#endif

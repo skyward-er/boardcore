@@ -26,8 +26,7 @@
  * user must provide a correct implementation by subclassing this class
  */
 
-#ifndef HOOKS_H
-#define HOOKS_H
+#pragma once
 
 #include "Common.h"
 #include "ExceptionCodes.h"
@@ -71,5 +70,3 @@ private:
     HooksInterface& operator=(const HooksInterface& other) = delete;
     bool operator==(const HooksInterface& other) = delete;
 };
-
-#endif

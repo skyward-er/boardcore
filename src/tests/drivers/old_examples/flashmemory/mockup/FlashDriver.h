@@ -20,8 +20,7 @@
  * THE SOFTWARE.
  */
 
-#ifndef FLASHDRIVER_H
-#define FLASHDRIVER_H
+#pragma once
 
 #include <miosix.h>
 #include <Singleton.h>
@@ -615,6 +614,3 @@ class FlashDriver  : Singleton<FlashDriver<Bus>>
 };
 
 }   //namespace flashmemory
-
-
-#endif /* FLASHDRIVER_H */

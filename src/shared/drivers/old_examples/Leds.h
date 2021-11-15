@@ -20,8 +20,7 @@
  * THE SOFTWARE.
  */
 
-#ifndef LEDS_H
-#define LEDS_H
+#pragma once
 
 #include <Common.h>
 #include <array>
@@ -61,5 +60,3 @@ private:
     Leds(const Leds&) = delete;
     Leds& operator=(const Leds&) = delete;
 };
-
-#endif

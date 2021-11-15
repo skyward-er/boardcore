@@ -20,8 +20,7 @@
  * THE SOFTWARE.
  */
 
-#ifndef SPI_IMPL_H
-#define SPI_IMPL_H
+#pragma once
 
 #include <Common.h>
 
@@ -32,5 +31,3 @@ unsigned char Spi_sendRecv(unsigned char data);
 void Spi_CS_high();
 
 void Spi_CS_low();
-
-#endif  // SPI_IMPL_H

@@ -20,8 +20,7 @@
  * THE SOFTWARE.
  */
 
-#ifndef UDPMANAGER_H
-#define UDPMANAGER_H
+#pragma once
 
 #include <Common.h>
 #include <Singleton.h>
@@ -125,5 +124,3 @@ private:
     UdpManager& operator=(const UdpManager& other);
     ~UdpManager();
 };
-
-#endif  // UDPMANAGER_H

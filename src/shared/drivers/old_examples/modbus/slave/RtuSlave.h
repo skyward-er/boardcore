@@ -20,8 +20,7 @@
  * THE SOFTWARE.
  */
 
-#ifndef RTUSLAVE_H
-#define RTUSLAVE_H
+#pragma once
 
 #include <memory>
 #include "../../Common.h"
@@ -75,5 +74,3 @@ private:
     RtuSlave& operator=(const RtuSlave& other) = delete;
     bool operator==(const RtuSlave& other) = delete;       
 };
-
-#endif // RTUSLAVE_H

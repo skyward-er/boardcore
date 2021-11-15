@@ -20,8 +20,7 @@
  * THE SOFTWARE.
  */
 
-#ifndef SRC_SHARED_EVENTS_EVENT_HANDLER_H
-#define SRC_SHARED_EVENTS_EVENT_HANDLER_H
+#pragma once
 
 #include "ActiveObject.h"
 #include "events/Event.h"
@@ -77,5 +76,3 @@ protected:
 
     SynchronizedQueue<Event> eventList;
 };
-
-#endif /* SRC_SHARED_EVENTS_EVENT_HANDLER_H */

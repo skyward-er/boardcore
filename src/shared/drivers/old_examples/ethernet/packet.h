@@ -19,8 +19,8 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
-#ifndef PACKET_H
-#define PACKET_H
+
+#pragma once
 
 #include <cstdint>
 #include <cstdio>
@@ -32,5 +32,3 @@ typedef struct __attribute__((packed))
     uint16_t port;
     size_t payloadSize;
 } packet_header_t;
-
-#endif

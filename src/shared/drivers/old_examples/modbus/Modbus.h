@@ -20,12 +20,9 @@
  * THE SOFTWARE.
  */
 
-#ifndef MODBUS_H
-#define MODBUS_H
+#pragma once
 
 #include "PDU.h"
 #include "ExceptionCodes.h"
 #include "slave/SlaveInterface.h"
 #include "slave/SlaveEngine.h"
-
-#endif

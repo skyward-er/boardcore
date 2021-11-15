@@ -20,8 +20,7 @@
  * THE SOFTWARE.
  */
 
-#ifndef BOARDCORE_SRC_SHARED_SCHEDULER_TASKSCHEDULER_H
-#define BOARDCORE_SRC_SHARED_SCHEDULER_TASKSCHEDULER_H
+#pragma once
 
 #include <ActiveObject.h>
 #include <Common.h>
@@ -156,5 +155,3 @@ private:
     std::priority_queue<event_t> agenda;  ///< Ordered list of functions
     uint32_t permanentTasks;              ///< Number of non-oneshot tasks
 };
-
-#endif

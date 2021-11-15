@@ -20,9 +20,7 @@
  * THE SOFTWARE.
  */
 
-
-#ifndef FLASHDRIVER_H
-#define FLASHDRIVER_H
+#pragma once
 
 #include <miosix.h>
 #include <Singleton.h>
@@ -612,4 +610,3 @@ private:
 };
 
 }
-#endif /* FLASHDRIVER_H */

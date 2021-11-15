@@ -20,8 +20,7 @@
  * THE SOFTWARE.
  */
 
-#ifndef SLAVEENGINE_H
-#define SLAVEENGINE_H
+#pragma once
 
 #include <memory>
 #include "Common.h"
@@ -69,5 +68,3 @@ private:
     SlaveEngine& operator=(const SlaveEngine& other) = delete;
     bool operator==(const SlaveEngine& other) = delete;
 };
-
-#endif // SLAVEENGINE_H

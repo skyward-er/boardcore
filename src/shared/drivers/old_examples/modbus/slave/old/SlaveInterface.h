@@ -20,8 +20,7 @@
  * THE SOFTWARE.
  */
 
-#ifndef SLAVEINTERFACE_H
-#define SLAVEINTERFACE_H
+#pragma once
 
 #include <memory>
 #include <stdexcept>
@@ -97,5 +96,3 @@ private:
      */
     uint16_t CRC16(uint8_t *data, size_t len);
 };
-
-#endif // SLAVEINTERFACE_H

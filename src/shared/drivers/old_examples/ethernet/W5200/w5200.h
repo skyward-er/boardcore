@@ -20,8 +20,7 @@
  * THE SOFTWARE.
  */
 
-#ifndef W5200_H
-#define W5200_H
+#pragma once
 
 #include "spi_impl.h"
 #include "w5200_defs.h"
@@ -319,5 +318,3 @@ private:
 
     const uint8_t macAddress[6] = {0xde, 0xad, 0x00, 0x00, 0xbe, 0xef};
 };
-
-#endif  // W5200_H

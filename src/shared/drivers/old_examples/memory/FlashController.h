@@ -20,8 +20,7 @@
  * THE SOFTWARE.
  */
 
-#ifndef FLASHCONTROLLER_H
-#define FLASHCONTROLLER_H
+#pragma once
 
 #include <drivers/memory/FlashDriverInclude.h>
 
@@ -666,5 +665,3 @@ class FlashController : Singleton<FlashController<MemoryBus>>
 };
 
 }   //namespace flashmemory
-
-#endif /* FLASHCONTROLLER_H */

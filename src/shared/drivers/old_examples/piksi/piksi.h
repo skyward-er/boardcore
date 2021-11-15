@@ -20,8 +20,7 @@
  * THE SOFTWARE.
  */
 
-#ifndef PIKSI_H
-#define PIKSI_H
+#pragma once
 
 #include <pthread.h>
 #include "utils/collections/contiguous_queue.h"
@@ -172,5 +171,3 @@ private:
     bool firstFixReceived = false;
     volatile bool quit    = false;
 };
-
-#endif  // PIKSI_H

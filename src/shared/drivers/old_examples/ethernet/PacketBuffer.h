@@ -19,8 +19,8 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
-#ifndef PACKETBUFFER_H
-#define PACKETBUFFER_H
+
+#pragma once
 
 #include <Common.h>
 #include "packet.h"
@@ -84,5 +84,3 @@ private:
     PacketBuffer(PacketBuffer& other);
     PacketBuffer& operator=(const PacketBuffer& other);
 };
-
-#endif  // PACKETBUFFER_H

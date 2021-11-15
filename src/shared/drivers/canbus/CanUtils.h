@@ -20,8 +20,7 @@
  * THE SOFTWARE.
  */
 
-#ifndef CANUTILS_H
-#define CANUTILS_H
+#pragma once
 
 #include <Common.h>
 #include <string>
@@ -121,5 +120,3 @@ struct CanStatus {
            << (int)last_rcv << "," << last_sent_ts <<"," << last_rcv_ts << "\n";
     }
 };
-
-#endif /* CANUTILS_H */

@@ -19,8 +19,8 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
-#ifndef MULTIFLASHCONTROLLER_H
-#define MULTIFLASHCONTROLLER_H
+
+#pragma once
 
 #include <Common.h>
 #include <ActiveObject.h>
@@ -84,5 +84,3 @@ class MultiFlashController : public Singleton<MultiFlashController>, ActiveObjec
 };
 
 }  //namespace flashmemory
-
-#endif /* MULTIFLASHCONTROLLER_H */
