@@ -22,6 +22,7 @@
 
 #include <sensors/Sensor.h>
 #include "VN100Data.h"
+#include "VN100Serial.h"
 
 /**
  * @brief Header class for the VN100 IMU
