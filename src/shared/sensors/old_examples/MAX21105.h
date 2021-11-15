@@ -20,6 +20,8 @@
  * THE SOFTWARE.
  */
 
+#pragma once
+
 #include <drivers/BusTemplate.h>
 #include "Sensor.h"
 #include "interfaces/endianness.h"

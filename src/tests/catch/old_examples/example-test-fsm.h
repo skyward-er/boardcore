@@ -29,6 +29,8 @@
  * https://git.skywarder.eu/r2a/skyward-boardcore/wikis/State-Machines-Examples-and-Best-Practices
  */
 
+#pragma once
+
 #include <events/EventBroker.h>
 #include <events/FSM.h>
 

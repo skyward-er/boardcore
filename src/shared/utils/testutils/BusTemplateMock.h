@@ -20,6 +20,8 @@
  * THE SOFTWARE.
  */
 
+#pragma once
+
 #include <Singleton.h>
 #include <cstring>
 #include <vector>
