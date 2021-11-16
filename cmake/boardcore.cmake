@@ -37,31 +37,31 @@ foreach(OPT_BOARD ${BOARDS})
         ${SBS_BASE}/src/shared/drivers/canbus/CanBus.cpp
         ${SBS_BASE}/src/shared/drivers/canbus/CanInterrupt.cpp
         ${SBS_BASE}/src/shared/drivers/canbus/CanManager.cpp
-        #${SBS_BASE}/src/shared/drivers/ethernet/PacketBuffer.cpp
-        #${SBS_BASE}/src/shared/drivers/ethernet/UdpManager.cpp
-        #${SBS_BASE}/src/shared/drivers/ethernet/W5200/spi_impl.cpp
-        #${SBS_BASE}/src/shared/drivers/ethernet/W5200/w5200.cpp
-        #${SBS_BASE}/src/shared/drivers/ethernet/WatchdogTimer.cpp
         ${SBS_BASE}/src/shared/drivers/gamma868/Gamma868.cpp
         ${SBS_BASE}/src/shared/drivers/gps/ublox/UbloxGPS.cpp
         ${SBS_BASE}/src/shared/drivers/hbridge/HBridge.cpp
         ${SBS_BASE}/src/shared/drivers/i2c/stm32f2_f4_i2c.cpp
-        #${SBS_BASE}/src/shared/drivers/ISB_protocol/IsbProtocol_serial2.cpp
-        #${SBS_BASE}/src/shared/drivers/ISB_protocol/IsbProtocol_serial3.cpp
         ${SBS_BASE}/src/shared/drivers/interrupt/external_interrupts.cpp
-        #${SBS_BASE}/src/shared/drivers/interrupt/InterruptManager.cpp
-        #${SBS_BASE}/src/shared/drivers/Leds.cpp
-        #${SBS_BASE}/src/shared/drivers/memory/MultiFlashController.cpp
-        #${SBS_BASE}/src/shared/drivers/modbus/PDU.cpp
-        #${SBS_BASE}/src/shared/drivers/modbus/slave/RtuSlave.cpp
-        #${SBS_BASE}/src/shared/drivers/modbus/slave/SlaveEngine.cpp
-        #${SBS_BASE}/src/shared/drivers/modbus/slave/old/SlaveInterface.cpp
-        #${SBS_BASE}/src/shared/drivers/modbus/slave/old/Timer.cpp
+        #${SBS_BASE}/src/shared/drivers/old_examples/ethernet/PacketBuffer.cpp
+        #${SBS_BASE}/src/shared/drivers/old_examples/ethernet/UdpManager.cpp
+        #${SBS_BASE}/src/shared/drivers/old_examples/ethernet/W5200/spi_impl.cpp
+        #${SBS_BASE}/src/shared/drivers/old_examples/ethernet/W5200/w5200.cpp
+        #${SBS_BASE}/src/shared/drivers/old_examples/ethernet/WatchdogTimer.cpp
+        #${SBS_BASE}/src/shared/drivers/old_examples/ISB_protocol/IsbProtocol_serial2.cpp
+        #${SBS_BASE}/src/shared/drivers/old_examples/ISB_protocol/IsbProtocol_serial3.cpp
+        #${SBS_BASE}/src/shared/drivers/old_examples/interrupt/InterruptManager.cpp
+        #${SBS_BASE}/src/shared/drivers/old_examples/Leds.cpp
+        #${SBS_BASE}/src/shared/drivers/old_examples/memory/MultiFlashController.cpp
+        #${SBS_BASE}/src/shared/drivers/old_examples/modbus/PDU.cpp
+        #${SBS_BASE}/src/shared/drivers/old_examples/modbus/slave/RtuSlave.cpp
+        #${SBS_BASE}/src/shared/drivers/old_examples/modbus/slave/SlaveEngine.cpp
+        #${SBS_BASE}/src/shared/drivers/old_examples/modbus/slave/old/SlaveInterface.cpp
+        #${SBS_BASE}/src/shared/drivers/old_examples/modbus/slave/old/Timer.cpp
         #${SBS_BASE}/src/shared/drivers/old_examples/piksi/piksi.cpp
         ${SBS_BASE}/src/shared/drivers/pwm/pwm.cpp
         ${SBS_BASE}/src/shared/drivers/servo/servo.cpp
         ${SBS_BASE}/src/shared/drivers/spi/SPITransaction.cpp
-        #${SBS_BASE}/src/shared/drivers/spi/SensorSpi.cpp
+        ${SBS_BASE}/src/shared/drivers/spi/SensorSpi.cpp
         ${SBS_BASE}/src/shared/drivers/Xbee/APIFrameParser.cpp
         ${SBS_BASE}/src/shared/drivers/Xbee/Xbee.cpp
 
