@@ -71,6 +71,8 @@ public:
      */
     void sample() override;
 
+    ReturnsStates asciiRequest(LoadCellValues r, int value = 0);
+
 protected:
     /**
      * @brief override of the sample implementation method that requests the
@@ -97,14 +99,16 @@ protected:
 
     /**
      * @brief forges a request for the ascii mode
-     * @param toRequest the request to forge
      * @param req reference to the request that will be generated
+     * @param toRequest the request to forge
+     * @param value the value used in the forging of the "set_setpoint" requests
      */
-    void generateRequest(LoadCellValues toRequest, DataAsciiRequest &req);
+    void generateRequest(DataAsciiRequest &req, LoadCellValues toRequest,
+                         int value);
 
-    void transmitASCII(char *buf);
+    void transmitASCII(string buf);
 
-    void receiveASCII(char *buf);
+    string receiveASCII();
 
     template <typename T>
     void receive(T *buf);

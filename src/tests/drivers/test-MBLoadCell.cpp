@@ -37,6 +37,7 @@ int main()
      */
     MBLoadCell loadCell(LoadCellModes::ASCII_MOD_TD, 2, 2400);
 
+    loadCell.asciiRequest(LoadCellValues::SET_SETPOINT_1, -50);
     while (true)
     {
         loadCell.sample();

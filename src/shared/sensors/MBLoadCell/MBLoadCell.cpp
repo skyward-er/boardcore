@@ -22,6 +22,8 @@
 
 #include "MBLoadCell.h"
 
+#include <cmath>
+
 #include "MBLoadCellData.h"
 #include "SerialInterface.h"
 #include "stdlib.h"
@@ -93,35 +95,110 @@ void MBLoadCell::sampleContModTd()
 void MBLoadCell::sampleAsciiModTd()
 {
     TRACE("ASCII MOD TD\n");
+    ReturnsStates ret;
 
-    char data[64];
-    // sending the request
-    DataAsciiRequest request;
-    generateRequest(LoadCellValues::GROSS_WEIGHT, request);
+    ret = asciiRequest(LoadCellValues::GET_SETPOINT_1);
+    if (ret != ReturnsStates::VALID_RETURN)
+    {
+        TRACE("Setpoint 1 not available: %d\n", ret);
+    }
 
-    char requestStr[64];
-    strcpy(requestStr, request.to_string().c_str());
-    TRACE("GROSS_WEIGHT: '%s'\n", requestStr);
+    ret = asciiRequest(LoadCellValues::GROSS_WEIGHT);
+    if (ret != ReturnsStates::VALID_RETURN)
+    {
+        TRACE("Gross weight not available: %d\n", ret);
+    }
 
-    // transmitting request
-    transmitASCII(requestStr);
+    ret = asciiRequest(LoadCellValues::NET_WEIGHT);
+    if (ret != ReturnsStates::VALID_RETURN)
+    {
+        TRACE("Net weight not available: %d\n", ret);
+    }
 
-    // waiting for the response
-    receiveASCII(data);
-
-    // last_sample.gross_weight = {atof(data) / 10.0, true};
+    ret = asciiRequest(LoadCellValues::PEAK_WEIGHT);
+    if (ret != ReturnsStates::VALID_RETURN)
+    {
+        TRACE("Peak weight not available: %d\n", ret);
+    }
 }
 
-void MBLoadCell::generateRequest(LoadCellValues toRequest,
-                                 DataAsciiRequest &req)
+ReturnsStates MBLoadCell::asciiRequest(LoadCellValues reqType, int value)
+{
+    DataAsciiRequest request;
+
+    // generating the request
+    generateRequest(request, reqType, value);
+
+    // transmitting request
+    transmitASCII(request.to_string());
+
+    // waiting for the response
+    string response = receiveASCII();
+
+    if (response.find('!') != std::string::npos)
+        return ReturnsStates::RECEPTION_ERROR;
+
+    if (response.find('#') != std::string::npos)
+        return ReturnsStates::EXECUTION_ERROR;
+
+    // memorizing the requested data
+    switch (reqType)
+    {
+        case LoadCellValues::SET_SETPOINT_1:
+            asciiRequest(GET_SETPOINT_1);
+            break;
+        case LoadCellValues::SET_SETPOINT_2:
+            asciiRequest(GET_SETPOINT_2);
+            break;
+        case LoadCellValues::SET_SETPOINT_3:
+            asciiRequest(GET_SETPOINT_3);
+            break;
+        case LoadCellValues::GROSS_WEIGHT:
+        case LoadCellValues::NET_WEIGHT:
+        case LoadCellValues::PEAK_WEIGHT:
+        case LoadCellValues::GET_SETPOINT_1:
+        case LoadCellValues::GET_SETPOINT_2:
+        case LoadCellValues::GET_SETPOINT_3:
+        {
+            // taking the value returned
+            float value = stof(response.substr(3, 6)) / 10.0;
+
+            // updating the last_value struct
+            last_sample.updateValue(reqType, value);
+            break;
+        }
+        case LoadCellValues::RESET_TARE:
+            TRACE("TARE RESETTED\n");
+            break;
+    }
+
+    return ReturnsStates::VALID_RETURN;
+}
+
+void MBLoadCell::generateRequest(DataAsciiRequest &req,
+                                 LoadCellValues toRequest, int value)
 {
     req.req[0] = (char)toRequest;
     req.req[1] = '\0';
 
+    if (toRequest == LoadCellValues::SET_SETPOINT_1 ||
+        toRequest == LoadCellValues::SET_SETPOINT_2 ||
+        toRequest == LoadCellValues::SET_SETPOINT_3)
+    {
+        string strVal = fmt::format("{:d}", abs(value));
+        strVal.insert(strVal.begin(), 6 - strVal.length(), '0');
+
+        if (value < 0)
+            strVal[0] = '-';
+
+        strcpy(req.value, strVal.c_str());
+        TRACE("value sent: %s\n", strVal.c_str());
+    }
+
     req.setChecksum();
 }
 
-void MBLoadCell::transmitASCII(char *buf)
+void MBLoadCell::transmitASCII(string buf)
 {
     ctrlPin1::high();
     ctrlPin2::high();
@@ -129,12 +206,16 @@ void MBLoadCell::transmitASCII(char *buf)
     Thread::sleep(10);  // needs some time (>5ms) idk why
 }
 
-void MBLoadCell::receiveASCII(char *buf)
+string MBLoadCell::receiveASCII()
 {
+    char buf[64];
+
     ctrlPin1::low();
     ctrlPin2::low();
-    serial->recvString(buf, 64);
-    TRACE("received: '%s'\n", buf);
+    int len  = serial->recvString(buf, 64);
+    buf[len] = '\0';
+
+    return string(buf);
 }
 
 template <typename T>

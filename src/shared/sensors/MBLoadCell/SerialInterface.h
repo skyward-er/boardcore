@@ -32,13 +32,13 @@
 #include "filesystem/file_access.h"
 #include "miosix.h"
 
-using namespace std;
 using namespace miosix;
 
 /**
  * @brief Creates and opens a serial port on the board and provides templated
  * "sendData" and "recvData" functions in order to send and receive any data
- * structure needed
+ * structure needed, or "sendString" and "recvString" in order to send and
+ * receive strings.
  */
 class SerialInterface
 {
@@ -52,7 +52,7 @@ public:
      * "simulation")
      */
     SerialInterface(int baudrate = 19200, int serialPortNum = 2,
-                    string serialPortName = "load_cell")
+                    std::string serialPortName = "load_cell")
     {
         this->baudrate       = baudrate;
         this->serialPortNum  = serialPortNum;
@@ -89,15 +89,20 @@ public:
     /**
      * @brief Sends a string to the serial
      * @param data pointer to the string '\0' terminated
+     * @return bytes sent through serial
      */
-    void sendString(char *data) { write(fd, data, strlen(data)); }
+    int sendString(std::string data)
+    {
+        return write(fd, data.c_str(), data.length());
+    }
 
     /**
      * @brief Receives a string from the serial
      * @param data pointer to the destination string
      * @param maxLen maximum length of the string to read
+     * @return bytes received from serial
      */
-    void recvString(char *data, int maxLen) { read(fd, data, maxLen); }
+    int recvString(char *data, int maxLen) { return read(fd, data, maxLen); }
 
     /**
      * @brief Receives the data from the simulated sensors and deserializes it
@@ -121,7 +126,7 @@ public:
         write(fd, data, sizeof(U));
     }
 
-    string getPortName() { return serialPortName; }
+    std::string getPortName() { return serialPortName; }
 
 private:
     /* Creates and opens the serial port for communication between OBSW and
@@ -139,7 +144,7 @@ private:
             return false;
 
         // path string "/dev/<name_of_port>" for the port we want to open
-        string serialPortPath = "/dev/" + serialPortName;
+        std::string serialPortPath = "/dev/" + serialPortName;
 
         // open serial port
         fd = open(serialPortPath.c_str(), O_RDWR);
@@ -153,7 +158,7 @@ private:
         return true;
     }
 
-    string serialPortName; /**< Port name of the serial port that has to be
+    std::string serialPortName; /**< Port name of the serial port that has to be
                               created for the communication */
     int fd; /**< Stores the file descriptor of the serial port file opened for
                trasmission */

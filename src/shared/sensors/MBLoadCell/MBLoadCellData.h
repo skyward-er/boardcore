@@ -21,6 +21,7 @@
  */
 
 #pragma once
+#include <fmt/format.h>
 
 /**
  * @brief enumeration of all the modes supported by the driver
@@ -34,13 +35,27 @@ enum LoadCellModes : uint8_t
 
 enum LoadCellValues : char
 {
-    SETPOINT_1   = 'a',
-    SETPOINT_2   = 'b',
-    SETPOINT_3   = 'c',
-    GROSS_WEIGHT = 't',
-    NET_WEIGHT   = 'n',
-    PEAK_WEIGHT  = 'p',
-    RESET_TARE   = 'z'
+    SET_SETPOINT_1   = 'A',
+    SET_SETPOINT_2   = 'B',
+    SET_SETPOINT_3   = 'C',
+    GET_SETPOINT_1   = 'a',
+    GET_SETPOINT_2   = 'b',
+    GET_SETPOINT_3   = 'c',
+    GROSS_WEIGHT     = 't',
+    NET_WEIGHT       = 'n',
+    PEAK_WEIGHT      = 'p',
+    RESET_TARE       = 'z',
+    DECIMALS_READING = 'D'
+};
+
+/**
+ * @brief structure of the errors in the ASCII requests
+ */
+enum ReturnsStates
+{
+    VALID_RETURN,     // min len : 13 (contains '!')
+    RECEPTION_ERROR,  // max len : 8 (contains '?', '#')
+    EXECUTION_ERROR
 };
 
 typedef struct DataStr
@@ -60,26 +75,69 @@ typedef struct MBLoadCellDataStr
     Data setpoint1;
     Data setpoint2;
     Data setpoint3;
+    Data max_weight;
+    Data min_weight;
+
+    void updateValue(LoadCellValues val, float data)
+    {
+        switch (val)
+        {
+            case GET_SETPOINT_1:
+                setpoint1 = {data, true};
+                break;
+            case GET_SETPOINT_2:
+                setpoint2 = {data, true};
+                break;
+            case GET_SETPOINT_3:
+                setpoint3 = {data, true};
+                break;
+            case NET_WEIGHT:
+                net_weight = {data, true};
+                break;
+            case GROSS_WEIGHT:
+                gross_weight = {data, true};
+
+                // memorizing also the maximum gross weight registered
+                if (!max_weight.valid || max_weight.data < data)
+                    max_weight = {data, true};
+
+                // memorizing also the minimum gross weight registered
+                if (!min_weight.valid || min_weight.data > data)
+                    min_weight = {data, true};
+                break;
+            case PEAK_WEIGHT:
+                peak_weight = {data, true};
+                break;
+            default:
+                break;
+        }
+    }
 
     void print() const
     {
         if (net_weight.valid)
-            TRACE("Net Weight   : %f [Kg]\n", net_weight.data);
+            TRACE("Net Weight     : %f [Kg]\n", net_weight.data);
 
         if (gross_weight.valid)
-            TRACE("Gross Weight : %f [Kg]\n", gross_weight.data);
+            TRACE("Gross Weight   : %f [Kg]\n", gross_weight.data);
 
         if (peak_weight.valid)
-            TRACE("Peak Weight  : %f [Kg]\n", peak_weight.data);
+            TRACE("Peak Weight    : %f [Kg]\n", peak_weight.data);
 
         if (setpoint1.valid)
-            TRACE("Setpoint 1   : %f [Kg]\n", setpoint1.data);
+            TRACE("Setpoint 1     : %f [Kg]\n", setpoint1.data);
 
         if (setpoint2.valid)
-            TRACE("Setpoint 2   : %f [Kg]\n", setpoint2.data);
+            TRACE("Setpoint 2     : %f [Kg]\n", setpoint2.data);
 
         if (setpoint3.valid)
-            TRACE("Setpoint 3   : %f [Kg]\n", setpoint3.data);
+            TRACE("Setpoint 3     : %f [Kg]\n", setpoint3.data);
+
+        if (max_weight.valid)
+            TRACE("Maximum weight : %f [Kg]\n", max_weight.data);
+
+        if (min_weight.valid)
+            TRACE("Minimum weight : %f [Kg]\n", min_weight.data);
     }
 } MBLoadCellData;
 
@@ -111,20 +169,19 @@ typedef struct DataAsciiRequestStr
 {
     char beginStr[2] = "$";
     char addr[3]     = "01";
+    char value[7]    = "";
     char req[2];
     char ck[3];
     char CR[2] = "\r";
 
+    /**
+     * @brief in base of the address and the request parameter calculates the
+     * checksum
+     */
     void setChecksum()
     {
-        char data[4];
-        const char *str = this->to_string().c_str();
-        for (int i = 0; i < 3; i++)
-        {
-            data[i] = *(str + 1 + i);
-        }
-        data[3] = '\0';
-        calculateChecksum(data, ck);
+        std::string str = fmt::format("{}{}{}", addr, value, req);
+        calculateChecksum(str, ck);
     }
 
     /**
@@ -132,49 +189,33 @@ typedef struct DataAsciiRequestStr
      * @param message the string from which will be calculated the checksum
      * @return a pair of chars that represents the checksum in hexadecimal
      */
-    void calculateChecksum(char *message, char *checksum)
+    void calculateChecksum(std::string message, char *checksum)
     {
         uint8_t ck = 0;
-        for (unsigned int i = 0; i < strlen(message); i++)
+        for (unsigned int i = 0; i < message.length(); i++)
         {
             ck ^= message[i];
         }
 
-        char hex[3];
-        itoa(ck, hex, 16);
-
-        strcpy(checksum, hex);
+        itoa(ck, checksum, 16);
     }
 
+    /**
+     * @brief transforms the request into a string to be sent over serial
+     * @return the string representing the request to be sent
+     */
     std::string to_string()
     {
         std::string str;
         str.append(beginStr);
         str.append(addr);
+        if (strlen(value) != 0)
+        {
+            str.append(value);
+        }
         str.append(req);
         str.append(ck);
         str.append(CR);
         return str;
     }
 } DataAsciiRequest;
-
-typedef struct DataAsciiCorrectStr
-{
-    char beginStr[1];
-    char addr[2];
-    char data[6];
-    char req[1];
-    char separation[1];
-    char ck[2];
-    char CR[1];
-} DataAsciiCorrect;
-
-typedef struct DataAsciiErrorStr
-{
-    char beginStr[2];
-    char addr[2];
-    char errChar[1];
-    char separation[1];
-    char ck[2];
-    char CR[1];
-} DataAsciiError;
