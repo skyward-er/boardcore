@@ -109,7 +109,7 @@ public:
      * @return Boolean which communicates the send process result
      */
     template <typename DataSend>
-    bool send(DataSend data)
+    bool send(DataSend *data, int length)
     {
         //Check if the serial has been previously initialized
         if(!isInit)
@@ -118,7 +118,10 @@ public:
         }
 
         //Write the file with the data
-        write(serialFileDescriptor, data, sizeof(data));
+        if(!write(serialFileDescriptor, data, length))
+        {
+            return false;
+        }
 
         return true;
     }
@@ -138,7 +141,10 @@ public:
         }
 
         //Read the data and store it in memory
-        read(serialFileDescriptor, data, sizeof(DataReceive));
+        if(!read(serialFileDescriptor, data, sizeof(DataReceive)))
+        {
+            return false;
+        }
 
         return true;
     }

@@ -27,9 +27,9 @@ using namespace miosix;
 
 int main()
 {
-    char message[] = "Communication\n";
+    char message[] = "Communication\n\r";
 
-    VN100Serial serial{2, 19200};
+    VN100Serial serial{2, 115200};
 
     if(!serial.init())
     {
@@ -41,9 +41,9 @@ int main()
     //Loop to send the data via serial
     while(1)
     {
-        serial.send<char[]>(message);
+        serial.send(message, sizeof(message));
         //Sleep
-        miosix::Thread::sleep(100);
+        miosix::Thread::sleep(500);
     }
 
     serial.closeSerial();
