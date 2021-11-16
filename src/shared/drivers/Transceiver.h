@@ -22,6 +22,9 @@
 
 #pragma once
 
+namespace Boardcore
+{
+
 class Transceiver
 {
 public:
@@ -48,3 +51,5 @@ public:
      */
     virtual ssize_t receive(uint8_t* pkt, size_t pkt_len) = 0;
 };
+
+}  // namespace Boardcore

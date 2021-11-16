@@ -26,7 +26,6 @@ TODO:
 - interrupt CAN2
 - gestione automatica filtri a 32 bit
 - gestione automatica filtri con il mascheramento
-
 */
 
 #include "CanBus.h"
@@ -36,6 +35,9 @@ TODO:
 
 using namespace miosix;
 using std::set;
+
+namespace Boardcore
+{
 
 // Transmit mailbox request
 #define TMIDxR_TXRQ ((uint32_t)0x00000001)
@@ -256,3 +258,5 @@ void CanBus::canSetup()
     // pulisco il bit INRQ per uscire dall'inizializzazione
     CANx->MCR &= ~((uint32_t)CAN_MCR_INRQ);
 }
+
+}  // namespace Boardcore

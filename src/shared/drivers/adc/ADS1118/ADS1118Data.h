@@ -24,6 +24,9 @@
 
 #include "sensors/SensorData.h"
 
+namespace Boardcore
+{
+
 struct ADS1118Data : public ADCData
 {
     ADS1118Data() : ADCData{0, 0, 0.0} {}
@@ -41,3 +44,5 @@ struct ADS1118Data : public ADCData
         os << adc_timestamp << "," << (int)channel_id << "," << voltage << "\n";
     }
 };
+
+}  // namespace Boardcore

@@ -26,6 +26,9 @@
 using namespace std;
 using namespace miosix;
 
+namespace Boardcore
+{
+
 TaskScheduler::TaskScheduler() : ActiveObject(STACK_MIN_FOR_SKYWARD, miosix::PRIORITY_MAX - 1), permanentTasks(0) {}
 
 void TaskScheduler::stop()
@@ -166,3 +169,5 @@ void TaskScheduler::updateStats(event_t& e, int64_t startTime, int64_t endTime)
     // Workload stats
     e.task->workloadStats.add(endTime - startTime);
 }
+
+}  // namespace Boardcore

@@ -28,6 +28,9 @@
 
 #include "Debug.h"
 
+namespace Boardcore
+{
+
 class EventHandlerBase
 {
 public:
@@ -76,3 +79,5 @@ protected:
 
     SynchronizedQueue<Event> eventList;
 };
+
+}  // namespace Boardcore

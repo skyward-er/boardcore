@@ -30,6 +30,9 @@
 #include "NavController.h"
 #include "View.h"
 
+namespace Boardcore
+{
+
 /**
  * @brief UI Thread: Manages multiple view trees ("Screen") and draws the active
  * one at the provided refresh rate
@@ -122,3 +125,5 @@ private:
 
     uint8_t active_screen = 0;
 };
+
+}  // namespace Boardcore

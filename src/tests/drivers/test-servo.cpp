@@ -21,6 +21,7 @@
  */
 
 #include <drivers/servo/servo.h>
+using namespace Boardcore;
 
 #include <miosix.h>
 using namespace miosix;

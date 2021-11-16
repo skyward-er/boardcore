@@ -27,6 +27,9 @@
 #include "events/EventHandler.h"
 #include "utils/collections/SyncQueue.h"
 
+namespace Boardcore
+{
+
 template <class T>
 class FSM : public EventHandler
 {
@@ -72,3 +75,5 @@ private:
     void (T::*state)(const Event&);
     Event specialEvent;
 };
+
+}  // namespace Boardcore

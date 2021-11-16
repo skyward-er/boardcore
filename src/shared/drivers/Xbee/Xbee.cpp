@@ -33,6 +33,9 @@ using miosix::Lock;
 using miosix::Unlock;
 using std::min;
 
+namespace Boardcore
+{
+
 namespace Xbee
 {
 
@@ -531,3 +534,5 @@ uint8_t Xbee::getNewFrameID()
 }
 
 }  // namespace Xbee
+
+}  // namespace Boardcore

@@ -37,6 +37,9 @@ using GpioType = GpioPin;
 using GpioType = MockGpioPin;
 #endif
 
+namespace Boardcore
+{
+
 /**
  * @brief SPI Clock divider.
  * SPI clock frequency will be equal to the SPI peripheral bus clock speed (see
@@ -282,3 +285,5 @@ private:
     SPIBusInterface& bus;
     GpioType& cs;
 };
+
+}  // namespace Boardcore

@@ -24,6 +24,9 @@
 
 #include <stdint.h>
 
+namespace Boardcore
+{
+
 enum EventSignal : uint8_t
 {
     EV_ENTRY        = 0,
@@ -57,3 +60,5 @@ struct Event
                 uint32_t custom_member;
         };
 */
+
+}  // namespace Boardcore

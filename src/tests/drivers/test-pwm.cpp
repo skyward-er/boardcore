@@ -25,6 +25,7 @@
 #include "drivers/HardwareTimer.h"
 #include "drivers/pwm/pwm.h"
 
+using namespace Boardcore;
 using namespace miosix;
 
 typedef Gpio<GPIOC_BASE, 8> ch2;      // ch1

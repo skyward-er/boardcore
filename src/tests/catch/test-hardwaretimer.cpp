@@ -29,6 +29,7 @@
 
 #include <catch2/catch.hpp>
 
+using namespace Boardcore;
 using namespace miosix;
 
 class TimerTestFixture

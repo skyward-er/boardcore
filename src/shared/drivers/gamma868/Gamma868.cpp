@@ -23,6 +23,10 @@
 #include "Gamma868.h"
 
 using namespace miosix;
+
+namespace Boardcore
+{
+
 /*
  * A serial port attached to the Gamma868 RX and TX pins is expected
  * to be passed to the object in order to communicate with the device.
@@ -249,3 +253,5 @@ void Gamma868::waitForOk()
     LOG_DEBUG(logger, "Device replied: {}", reply);
     Thread::sleep(100);
 }
+
+}  // namespace Boardcore

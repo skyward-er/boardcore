@@ -29,6 +29,9 @@
 
 #include "BMX160WithCorrectionData.h"
 
+namespace Boardcore
+{
+
 /**
  * Holds correction parameters for BMX160.
  */
@@ -129,3 +132,5 @@ private:
 
     PrintLogger logger = Logging::getLogger("bmx160withcorrection");
 };
+
+}  // namespace Boardcore

@@ -43,6 +43,9 @@
 
 using namespace Eigen;
 
+namespace Boardcore
+{
+
 void operator<<(AccelerometerData& lhs, const Vector3f& rhs);
 
 void operator<<(GyroscopeData& lhs, const Vector3f& rhs);
@@ -54,4 +57,6 @@ void operator>>(const AccelerometerData& lhs, Vector3f& rhs);
 void operator>>(const GyroscopeData& lhs, Vector3f& rhs);
 
 void operator>>(const MagnetometerData& lhs, Vector3f& rhs);
+
+}  // namespace Boardcore
 

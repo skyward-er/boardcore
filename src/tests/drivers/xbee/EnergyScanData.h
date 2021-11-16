@@ -30,6 +30,9 @@ using std::array;
 using std::string;
 using std::to_string;
 
+namespace Boardcore
+{
+
 struct EnergyScanData
 {
     long long timestamp;
@@ -67,3 +70,5 @@ struct EnergyScanData
         os << "\n";
     }
 };
+
+}  // namespace Boardcore

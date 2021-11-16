@@ -26,6 +26,9 @@
 
 #include "sensors/SensorData.h"
 
+namespace Boardcore
+{
+
 namespace magnetoData {
     constexpr unsigned nSamples = 885;
 
@@ -254,3 +257,5 @@ namespace magnetoData {
         { 0, 0.361,0.165,0.001 } 
     };
 }
+
+}  // namespace Boardcore

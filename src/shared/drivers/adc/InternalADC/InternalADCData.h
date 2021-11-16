@@ -24,6 +24,9 @@
 
 #include "sensors/SensorData.h"
 
+namespace Boardcore
+{
+
 struct InternalADCData : public ADCData
 {
     InternalADCData() : ADCData{0, 0, 0.0} {}
@@ -40,3 +43,5 @@ struct InternalADCData : public ADCData
         os << adc_timestamp << "," << (int)channel_id << "," << voltage << "\n";
     }
 };
+
+}  // namespace Boardcore

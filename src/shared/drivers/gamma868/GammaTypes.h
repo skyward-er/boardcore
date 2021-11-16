@@ -26,6 +26,9 @@
 #include <iostream>
 #include <array>
 
+namespace Boardcore
+{
+
 enum GammaBaudrate : uint8_t 
 {
     B_9600   = 0,
@@ -120,3 +123,5 @@ union gamma_msg
 
     uint8_t buf[13];
 };
+
+}  // namespace Boardcore

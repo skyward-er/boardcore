@@ -22,7 +22,8 @@
 
 #include <util/software_i2c.h>
 
-
+namespace Boardcore
+{
 
 /**
  * @brief Adapter for the SoftwareI2C class, in order to have a compatible
@@ -123,3 +124,5 @@ public:
 private:
     SoftwareI2CAdapter();
 };
+
+}  // namespace Boardcore

@@ -25,6 +25,9 @@
 #include <ostream>
 #include <string>
 
+namespace Boardcore
+{
+
 /**
  * Statistics for the logger
  */
@@ -77,3 +80,5 @@ public:
     int statWriteTime      = 0;  ///< Time to perform an fwrite() of a buffer
     int statMaxWriteTime = 0;  ///< Max time to perform an fwrite() of a buffer
 };
+
+}  // namespace Boardcore

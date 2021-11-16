@@ -30,7 +30,8 @@
 #include "utils/gui/VerticalLayout.h"
 #include "utils/gui/OptionView.h"
 
-
+namespace Boardcore
+{
 
 struct EndScreen
 {
@@ -55,3 +56,5 @@ struct EndScreen
 private:
     TextView tv_title{"You killed the program, you maniac!"}; 
 };
+
+}  // namespace Boardcore

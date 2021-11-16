@@ -32,6 +32,9 @@
 using miosix::FastMutex;
 using miosix::Lock;
 
+namespace Boardcore
+{
+
 /**
  * Log the absolute free stack of each thread 1 times per second
  * StackLogger::update(id) must be called periodically from each thread in order
@@ -84,3 +87,5 @@ private:
     FastMutex mutex;
     std::map<uint8_t, StackData> stacks;
 };
+
+}  // namespace Boardcore

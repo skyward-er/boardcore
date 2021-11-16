@@ -43,6 +43,9 @@ using std::vector;
 using miosix::ConditionVariable;
 using miosix::FastMutex;
 
+namespace Boardcore
+{
+
 #ifndef DEFAULT_STDOUT_LOG_LEVEL
 #define DEFAULT_STDOUT_LOG_LEVEL 0
 #endif
@@ -168,3 +171,5 @@ private:
 
 #define LOG_CRIT_ASYNC(logger, ...) \
     LOG_ASYNC(logger, LOGL_CRITICAL, __VA_ARGS__)
+
+}  // namespace Boardcore

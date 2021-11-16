@@ -24,6 +24,9 @@
 
 using miosix::Lock;
 
+namespace Boardcore
+{
+
 static string getLevelString(uint8_t level)
 {
     switch (level)
@@ -156,3 +159,5 @@ void Logging::AsyncLogger::run()
         parent.log(rec);
     }
 }
+
+}  // namespace Boardcore

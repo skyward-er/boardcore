@@ -40,6 +40,9 @@ using std::function;
 using std::map;
 using std::pair;
 
+namespace Boardcore
+{
+
 /**
  * Class used to call a callback after a pin performs a specific transition
  * (RISING or FALLING edge) and stays in the new state for a specific amount of
@@ -221,3 +224,5 @@ private:
     unsigned int poll_interval;
     bool stopped = true;
 };
+
+}  // namespace Boardcore

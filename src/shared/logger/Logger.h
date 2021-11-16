@@ -34,6 +34,9 @@
 
 using std::string;
 
+namespace Boardcore
+{
+
 /**
  * Possible outcomes of Logger::log()
  */
@@ -228,3 +231,5 @@ private:
     FILE *file;  ///< Log file
     LogStats s;  ///< Logger stats
 };
+
+}  // namespace Boardcore

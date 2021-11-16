@@ -26,6 +26,9 @@
 
 using namespace Eigen;
 
+namespace Boardcore
+{
+
 /**
  * @brief Class representing a Kalman filter using the Eigen library for
  *        matrix computations
@@ -170,3 +173,5 @@ private:
     CVectorP y_hat; /**< output vector (p x 1) */
     CVectorP res;   /**< residual error vector (p x 1) */
 };
+
+}  // namespace Boardcore

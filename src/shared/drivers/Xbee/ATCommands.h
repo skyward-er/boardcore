@@ -25,6 +25,9 @@
 #include "APIFrames.h"
 #include "Xbee.h"
 
+namespace Boardcore
+{
+
 namespace Xbee
 {
 
@@ -152,3 +155,5 @@ bool energyDetect(Xbee& xbee, int* energy_detect_data, uint8_t duration,
 }
 
 }  // namespace Xbee
+
+}  // namespace Boardcore

@@ -39,6 +39,7 @@
 #include "logger/Logger.h"
 #include "utils/ButtonHandler.h"
 
+using namespace Boardcore;
 using namespace miosix;
 using namespace mxgui;
 using namespace std::placeholders;

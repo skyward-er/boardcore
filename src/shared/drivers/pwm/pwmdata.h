@@ -22,6 +22,9 @@
 
 #pragma once
 
+namespace Boardcore
+{
+
 /**
  * @brief PWM channel output polarity
  *
@@ -59,3 +62,5 @@ struct PWMChannelConfig
     PWMMode mode = PWMMode::MODE_1;
     PWMPolarity polarity = PWMPolarity::ACTIVE_HIGH;
 };
+
+}  // namespace Boardcore

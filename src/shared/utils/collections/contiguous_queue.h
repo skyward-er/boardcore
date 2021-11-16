@@ -24,6 +24,9 @@
 
 #include <stdexcept>
 
+namespace Boardcore
+{
+
 /**
  * A fixed size FIFO queue whose elements are stored in a contiguous array,
  * which allows direct access to the array in order to add/remove multiple
@@ -131,3 +134,5 @@ private:
     T elements[N] = {0};
     unsigned int size = 0;
 };
+
+}  // namespace Boardcore

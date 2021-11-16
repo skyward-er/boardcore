@@ -30,6 +30,9 @@
 
 using std::vector;
 
+namespace Boardcore
+{
+
 /**
  * @brief Mock SPI Bus to be used for testing communication to a single slave:
  * data are read and written to two buffers on the memory that can then be
@@ -295,3 +298,5 @@ inline void MockSPIBus::_push(uint8_t* data, size_t len)
 {
     in_buf.insert(in_buf.end(), data, data + len);
 }
+
+}  // namespace Boardcore

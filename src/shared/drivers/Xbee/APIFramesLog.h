@@ -32,6 +32,9 @@
 
 using std::min;
 
+namespace Boardcore
+{
+
 /**
  * Classes used if you want to log an APIFrame, but do not want to log the base
  * APIFrame class, which is quite heavy on memory
@@ -391,3 +394,5 @@ struct RXPacketFrameLog
 };
 
 }  // namespace Xbee
+
+}  // namespace Boardcore

@@ -43,6 +43,9 @@ using miosix::Lock;
 using miosix::Thread;
 using miosix::Unlock;
 
+namespace Boardcore
+{
+
 // Minimum guaranteed delay for an event posted with postDelayed(...) in ms
 static constexpr unsigned int EVENT_BROKER_MIN_DELAY = 50;
 
@@ -187,3 +190,5 @@ private:
 };
 
 #define sEventBroker Singleton<EventBroker>::getInstance()
+
+}  // namespace Boardcore

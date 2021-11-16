@@ -26,6 +26,7 @@
 #include <sstream>
 #include "drivers/spi/SPIDriver.h"
 
+using namespace Boardcore;
 using namespace std;
 using namespace miosix;
 

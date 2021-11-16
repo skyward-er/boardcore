@@ -28,6 +28,9 @@
 
 #include "BatteryVoltageSensorData.h"
 
+namespace Boardcore
+{
+
 /**
  * @brief Common class for battery voltage sensors
  *
@@ -90,3 +93,5 @@ private:
     static constexpr float MOVING_AVAERAGE_COMP_COEFF =
         1 - MOVING_AVAERAGE_COEFF;
 };
+
+}  // namespace Boardcore

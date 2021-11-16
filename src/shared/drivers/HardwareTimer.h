@@ -26,6 +26,9 @@
 
 #include <type_traits>
 
+namespace Boardcore
+{
+
 class TimerUtils
 {
 public:
@@ -515,3 +518,5 @@ void HardwareTimer<Type, TimerMode::Chain>::setAutoReload(Type auto_reload)
     slave->EGR = TIM_EGR_UG;  // Send an update event to load the new 
                               // auto-reload
 }
+
+}  // namespace Boardcore

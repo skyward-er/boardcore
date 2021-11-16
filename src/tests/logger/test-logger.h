@@ -28,6 +28,9 @@
 #include <miosix.h>
 #endif //_MIOSIX
 
+namespace Boardcore
+{
+
 class Dummy
 {
 public:
@@ -62,3 +65,5 @@ private:
     static const int num=50;
     int x[num];
 };
+
+}  // namespace Boardcore

@@ -24,6 +24,9 @@
 
 #include "sensors/BMX160/BMX160Data.h"
 
+namespace Boardcore
+{
+
 struct BMX160WithCorrectionData : public BMX160Data
 {
     BMX160WithCorrectionData() : BMX160Data() {}
@@ -102,3 +105,5 @@ struct BMX160GyroscopeCalibrationBiases
         os << bx << "," << by << "," << bz << "\n";
     }
 };
+
+}  // namespace Boardcore

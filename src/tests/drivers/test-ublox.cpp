@@ -27,6 +27,7 @@
 
 #include "TimestampTimer.h"
 
+using namespace Boardcore;
 using namespace miosix;
 
 #define RATE 4

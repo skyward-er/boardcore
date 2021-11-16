@@ -47,6 +47,9 @@ using miosix::Lock;
 using std::range_error;
 #endif
 
+namespace Boardcore
+{
+
 /*******************************************************************************
  * @brief The Packet class is used for packing together messages with variable
  * lengths into a fixed size packet. Useful for telemetry.
@@ -385,3 +388,5 @@ private:
 
     CircularBuffer<Pkt, pkt_num> buffer;
 };
+
+}  // namespace Boardcore

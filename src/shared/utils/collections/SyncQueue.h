@@ -25,6 +25,8 @@
 #include <list>
 #include "miosix.h"
 
+namespace Boardcore
+{
 
 template<typename T>
 class SynchronizedQueue
@@ -71,3 +73,5 @@ int SynchronizedQueue<T>::len()
 {
 	return queue.size();
 }
+
+}  // namespace Boardcore

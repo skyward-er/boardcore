@@ -32,6 +32,7 @@
 #include "events/EventBroker.h"
 #include "utils/testutils/TestHelper.h"
 
+using namespace Boardcore;
 using miosix::getTick;
 using miosix::Thread;
 

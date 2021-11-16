@@ -24,6 +24,9 @@
 
 #include "sensors/SensorData.h"
 
+namespace Boardcore
+{
+
 struct LIS3DSHData : public AccelerometerData, public TemperatureData
 {
     LIS3DSHData() : AccelerometerData{0, 0.0, 0.0, 0.0}, TemperatureData{0, 0.0}
@@ -53,3 +56,5 @@ struct LIS3DSHData : public AccelerometerData, public TemperatureData
            << "," << temp_timestamp << "," << temp << "\n";
     }
 };
+
+}  // namespace Boardcore

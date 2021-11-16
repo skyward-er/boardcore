@@ -27,6 +27,8 @@
 #include <catch2/catch.hpp>
 #include "utils/aero/AeroUtils.h"
 
+using namespace Boardcore;
+
 TEST_CASE("[AeroUtils] mslTemperature")
 {
     using namespace aeroutils;

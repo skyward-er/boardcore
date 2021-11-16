@@ -35,6 +35,9 @@
 // Serialized classes
 using std::ofstream;
 
+namespace Boardcore
+{
+
 template <typename T>
 void print(T& t, ostream& os)
 {
@@ -66,3 +69,5 @@ void registerTypes(Deserializer& ds)
     registerType<XbeeConfig>(ds);
     registerType<EnergyScanData>(ds);
 }
+
+}  // namespace Boardcore

@@ -25,6 +25,9 @@
 
 #pragma once
 
+namespace Boardcore
+{
+
 /**
  * Class used to control servomotors. This impementation differs from the
  * one in miosix (in servo_stm32.h)  as it can control servos connected to any
@@ -119,3 +122,5 @@ private:
     float min_pulse = 1000;
     float max_pulse = 2000;
 };
+
+}  // namespace Boardcore

@@ -38,6 +38,9 @@ using miosix::getTick;
 using std::bind;
 using std::function;
 
+namespace Boardcore
+{
+
 static constexpr size_t RCV_BUF_SIZE       = 256;
 static constexpr uint32_t PACKET_FIRST_INT = 0xF0E1C2B3;
 
@@ -421,3 +424,5 @@ private:
 
     Xbee::Xbee::OnFrameReceivedListener frame_listener;
 };
+
+}  // namespace Boardcore

@@ -27,6 +27,9 @@
 
 #include <memory>
 
+namespace Boardcore
+{
+
 class MockGpioPin
 {
 public:
@@ -49,3 +52,5 @@ public:
     std::shared_ptr<int> val;
     std::shared_ptr<miosix::Mode::Mode_> gpio_mode;
 };
+
+}  // namespace Boardcore

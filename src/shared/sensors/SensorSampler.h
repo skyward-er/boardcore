@@ -30,6 +30,9 @@
 
 using namespace std;
 
+namespace Boardcore
+{
+
 /**
  * @brief Virtual sensor sampler class.
  *
@@ -157,3 +160,5 @@ public:
 private:
     DMASensorSampler(const DMASensorSampler&) = delete;
 };
+
+}  // namespace Boardcore

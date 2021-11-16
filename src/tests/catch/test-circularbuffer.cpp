@@ -29,6 +29,8 @@
 
 #include <catch2/catch.hpp>
 
+using namespace Boardcore;
+
 TEST_CASE("CircularBuffer - Initialization tests")
 {
     CircularBuffer<int, 5> b1;

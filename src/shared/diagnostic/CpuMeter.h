@@ -22,6 +22,9 @@
 
 #pragma once
 
+namespace Boardcore
+{
+
 /*
  * This CPU meter works like this.
  * It creates a thread with the minimum priority that is (almost) always active
@@ -48,3 +51,5 @@
  * \return the average CPU utilization
  */
 float averageCpuUtilization();
+
+}  // namespace Boardcore
