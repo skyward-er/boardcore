@@ -23,18 +23,15 @@ enable_language(C CXX ASM)
 
 list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_LIST_DIR})
 get_filename_component(SBS_BASE ${CMAKE_CURRENT_LIST_DIR} DIRECTORY)
-file(GLOB KPATH ${SBS_BASE}/libs/miosix-kernel/miosix)
-if(NOT KPATH)
-    message(FATAL_ERROR "Kernel directory not found")
-endif()
-include(dependencies)
 
-if(NOT CMAKE_SOURCE_DIR STREQUAL SBS_BASE)
+if(NOT CMAKE_CURRENT_SOURCE_DIR STREQUAL SBS_BASE)
+    add_subdirectory(${SBS_BASE} EXCLUDE_FROM_ALL)
     list(APPEND CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/cmake)
     include(${CMAKE_SOURCE_DIR}/cmake/dependencies.cmake OPTIONAL)
+    return()
 endif()
 
-include(${KPATH}/config/boards.cmake)
+include(boardcore)
 
 string(REPLACE ";" "\\n" BOARDS_STR "${BOARDS}")
 add_custom_target(
@@ -44,26 +41,13 @@ add_custom_target(
     VERBATIM
 )
 
-function(sbs_get_board TARGET)
+function(sbs_target TARGET)
     get_target_property(OPT_BOARD ${TARGET} OPT_BOARD)
     if(NOT OPT_BOARD)
         message(FATAL_ERROR "No board selected")
     endif()
-    set(OPT_BOARD ${OPT_BOARD} PARENT_SCOPE)
-endfunction()
-
-function(sbs_link_mxgui TARGET)
-    sbs_get_board(${TARGET})
-    target_link_libraries(${TARGET} PRIVATE Mxgui::Mxgui-${OPT_BOARD})
-endfunction()
-
-function(sbs_target TARGET)
-    sbs_get_board(${TARGET})
-    target_include_directories(${TARGET} PRIVATE
-        ${SBS_BASE}/src/shared
-        src/shared
-    )
-    target_link_libraries(${TARGET} PRIVATE miosix::miosix-${OPT_BOARD})
+    target_include_directories(${TARGET} PRIVATE src/shared)
+    target_link_libraries(${TARGET} PRIVATE SkywardBoardcore::Boardcore-${OPT_BOARD})
     add_custom_command(
         TARGET ${TARGET} POST_BUILD
         COMMAND ${CMAKE_OBJCOPY} -O ihex ${TARGET} ${TARGET}.hex
