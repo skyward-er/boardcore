@@ -23,7 +23,7 @@
 #ifdef STANDALONE_CATCH1_TEST
 #include "catch-tests-entry.cpp"
 #endif
-#include <utils/testutils/catch.hpp>
+#include <catch.hpp>
 
 
 #define private public

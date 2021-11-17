@@ -24,7 +24,7 @@
 #include "catch-tests-entry.cpp"
 #endif
 
-#include <utils/testutils/catch.hpp>
+#include <catch.hpp>
 #include "utils/aero/AeroUtils.h"
 
 TEST_CASE("[AeroUtils] mslTemperature")

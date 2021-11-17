@@ -54,13 +54,12 @@ endfunction()
 
 function(sbs_link_mxgui TARGET)
     sbs_get_board(${TARGET})
-    target_link_libraries(${TARGET} PRIVATE mxgui::mxgui-${OPT_BOARD})
+    target_link_libraries(${TARGET} PRIVATE Mxgui::Mxgui-${OPT_BOARD})
 endfunction()
 
 function(sbs_target TARGET)
     sbs_get_board(${TARGET})
     target_include_directories(${TARGET} PRIVATE
-        ${SBS_BASE}/libs
         ${SBS_BASE}/src/shared
         src/shared
     )

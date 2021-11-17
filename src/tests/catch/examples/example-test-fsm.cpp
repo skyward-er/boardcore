@@ -34,7 +34,7 @@
 #define protected public
 
 #include <miosix.h>
-#include <utils/catch.hpp>
+#include <catch.hpp>
 
 #include "example-test-fsm.h"
 #include "utils/TestHelper.h"

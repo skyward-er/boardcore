@@ -26,7 +26,7 @@
 #include "catch-tests-entry.cpp"
 #endif
 
-#include <utils/catch.hpp>
+#include <catch.hpp>
 #include <Common.h>
 #include "sensors/LM75B.h"
 #include "drivers/BusTemplate.h"

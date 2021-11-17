@@ -30,7 +30,7 @@
 #include "MockXbeeSPIBus.h"
 #include "drivers/Xbee/Xbee.h"
 #include "drivers/spi/SPIDriver.h"
-#include "utils/testutils/catch.hpp"
+#include <catch.hpp>
 
 using namespace Xbee;
 using std::async;

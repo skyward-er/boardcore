@@ -27,7 +27,7 @@
 #define EIGEN_RUNTIME_NO_MALLOC
 
 #include <iostream>
-#include <utils/testutils/catch.hpp>
+#include <catch.hpp>
 #include <kalman/KalmanEigen.h>
 #include "../kalman/test-kalman-data.h"
 

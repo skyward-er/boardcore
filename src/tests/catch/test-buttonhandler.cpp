@@ -28,7 +28,7 @@
 
 #include <Singleton.h>
 #include <miosix.h>
-#include <utils/testutils/catch.hpp>
+#include <catch.hpp>
 
 #include "utils/ButtonHandler.h"
 

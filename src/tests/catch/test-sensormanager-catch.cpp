@@ -27,7 +27,7 @@
 #include <iostream>
 
 #include "utils/testutils/TestSensor.h"
-#include "utils/testutils/catch.hpp"
+#include <catch.hpp>
 
 #define private public
 #define protected public

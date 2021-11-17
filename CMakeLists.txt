@@ -92,7 +92,7 @@ add_executable(tests-catch
     ${SENSORMANAGER_SOURCES}
     ${XBEE_SOURCES}
 )
-target_link_libraries(tests-catch PRIVATE Eigen3::Eigen fmt::fmt-header-only)
+target_link_libraries(tests-catch PRIVATE Eigen3::Eigen fmt::fmt-header-only Catch2::Catch2)
 target_compile_definitions(tests-catch PRIVATE USE_MOCK_PERIPHERALS)
 set_property(TARGET tests-catch PROPERTY OPT_BOARD stm32f429zi_stm32f4discovery)
 sbs_target(tests-catch)
@@ -103,7 +103,7 @@ add_executable(test-kalman-eigen
     src/tests/catch/test-kalman-eigen.cpp
     ${SHARED_SOURCES}
 )
-target_link_libraries(test-kalman-eigen PRIVATE Eigen3::Eigen fmt::fmt-header-only)
+target_link_libraries(test-kalman-eigen PRIVATE Eigen3::Eigen fmt::fmt-header-only Catch2::Catch2)
 target_compile_definitions(test-kalman-eigen PRIVATE DEBUG STANDALONE_CATCH1_TEST)
 set_property(TARGET test-kalman-eigen PROPERTY OPT_BOARD stm32f429zi_stm32f4discovery)
 sbs_target(test-kalman-eigen)
@@ -114,7 +114,7 @@ add_executable(test-taskscheduler
     src/tests/test-taskscheduler.cpp
     ${SHARED_SOURCES}
 )
-target_link_libraries(test-taskscheduler PRIVATE fmt::fmt-header-only)
+target_link_libraries(test-taskscheduler PRIVATE fmt::fmt-header-only Catch2::Catch2)
 set_property(TARGET test-taskscheduler PROPERTY OPT_BOARD stm32f429zi_skyward_death_stack_x)
 sbs_target(test-taskscheduler)
 
@@ -124,7 +124,7 @@ add_executable(test-serial
     src/tests/test-serial.cpp
     ${SHARED_SOURCES}
 )
-target_link_libraries(test-serial PRIVATE fmt::fmt-header-only)
+target_link_libraries(test-serial PRIVATE fmt::fmt-header-only Catch2::Catch2)
 set_property(TARGET test-serial PROPERTY OPT_BOARD stm32f429zi_skyward_death_stack_x)
 sbs_target(test-serial)
 
@@ -134,7 +134,7 @@ add_executable(test-trace-logger
     src/tests/test-trace-logger.cpp
     ${SHARED_SOURCES}
 )
-target_link_libraries(test-trace-logger PRIVATE fmt::fmt-header-only)
+target_link_libraries(test-trace-logger PRIVATE fmt::fmt-header-only Catch2::Catch2)
 target_compile_definitions(test-trace-logger PRIVATE DEBUG)
 set_property(TARGET test-trace-logger PROPERTY OPT_BOARD stm32f429zi_stm32f4discovery)
 sbs_target(test-trace-logger)
@@ -145,7 +145,7 @@ add_executable(test-hsm
     src/tests/test-hsm.cpp
     ${SHARED_SOURCES}
 )
-target_link_libraries(test-hsm PRIVATE fmt::fmt-header-only)
+target_link_libraries(test-hsm PRIVATE fmt::fmt-header-only Catch2::Catch2)
 target_compile_definitions(test-hsm PRIVATE DEBUG)
 set_property(TARGET test-hsm PROPERTY OPT_BOARD stm32f429zi_stm32f4discovery)
 sbs_target(test-hsm)
@@ -156,7 +156,7 @@ add_executable(test-interrupt
     src/tests/test-interrupt.cpp
     ${SHARED_SOURCES}
 )
-target_link_libraries(test-interrupt PRIVATE fmt::fmt-header-only)
+target_link_libraries(test-interrupt PRIVATE fmt::fmt-header-only Catch2::Catch2)
 target_compile_definitions(test-interrupt PRIVATE DEBUG)
 set_property(TARGET test-interrupt PROPERTY OPT_BOARD stm32f429zi_stm32f4discovery)
 sbs_target(test-interrupt)
@@ -167,7 +167,7 @@ add_executable(test-timestamp-timer
     src/tests/test-timestamp-timer.cpp
     ${SHARED_SOURCES}
 )
-target_link_libraries(test-timestamp-timer PRIVATE fmt::fmt-header-only)
+target_link_libraries(test-timestamp-timer PRIVATE fmt::fmt-header-only Catch2::Catch2)
 target_compile_definitions(test-timestamp-timer PRIVATE DEBUG)
 set_property(TARGET test-timestamp-timer PROPERTY OPT_BOARD stm32f429zi_stm32f4discovery)
 sbs_target(test-timestamp-timer)
@@ -178,7 +178,7 @@ add_executable(test-logger
     src/tests/logger/test-logger.cpp
     ${SHARED_SOURCES}
 )
-target_link_libraries(test-logger PRIVATE fmt::fmt-header-only)
+target_link_libraries(test-logger PRIVATE fmt::fmt-header-only Catch2::Catch2)
 set_property(TARGET test-logger PROPERTY OPT_BOARD stm32f429zi_stm32f4discovery)
 sbs_target(test-logger)
 
@@ -188,7 +188,7 @@ add_executable(test-kalman-eigen-benchmark
     src/tests/kalman/test-kalman-eigen-benchmark.cpp
     ${SHARED_SOURCES}
 )
-target_link_libraries(test-kalman-eigen-benchmark PRIVATE Eigen3::Eigen fmt::fmt-header-only)
+target_link_libraries(test-kalman-eigen-benchmark PRIVATE Eigen3::Eigen fmt::fmt-header-only Catch2::Catch2)
 set_property(TARGET test-kalman-eigen-benchmark PROPERTY OPT_BOARD stm32f429zi_stm32f4discovery)
 sbs_target(test-kalman-eigen-benchmark)
 
@@ -198,7 +198,7 @@ add_executable(test-pinobserver
     src/tests/test-pinobserver.cpp
     ${SHARED_SOURCES}
 )
-target_link_libraries(test-pinobserver PRIVATE fmt::fmt-header-only)
+target_link_libraries(test-pinobserver PRIVATE fmt::fmt-header-only Catch2::Catch2)
 set_property(TARGET test-pinobserver PROPERTY OPT_BOARD stm32f429zi_stm32f4discovery)
 sbs_target(test-pinobserver)
 
@@ -209,7 +209,7 @@ add_executable(test-sensormanager-catch
     ${SHARED_SOURCES}
     ${SENSORMANAGER_SOURCES}
 )
-target_link_libraries(test-sensormanager-catch PRIVATE fmt::fmt-header-only)
+target_link_libraries(test-sensormanager-catch PRIVATE fmt::fmt-header-only Catch2::Catch2)
 target_compile_definitions(test-sensormanager-catch PRIVATE STANDALONE_CATCH1_TEST)
 set_property(TARGET test-sensormanager-catch PROPERTY OPT_BOARD stm32f429zi_skyward_death_stack_x)
 sbs_target(test-sensormanager-catch)
@@ -221,7 +221,7 @@ add_executable(test-sensormanager
     ${SHARED_SOURCES}
     ${SENSORMANAGER_SOURCES}
 )
-target_link_libraries(test-sensormanager PRIVATE fmt::fmt-header-only)
+target_link_libraries(test-sensormanager PRIVATE fmt::fmt-header-only Catch2::Catch2)
 target_compile_definitions(test-sensormanager PRIVATE DEBUG)
 set_property(TARGET test-sensormanager PROPERTY OPT_BOARD stm32f429zi_skyward_death_stack_x)
 sbs_target(test-sensormanager)
@@ -234,7 +234,7 @@ add_executable(test-calibration
     ${SPI_SOURCES}
     ${CALIBRATION_SOURCES}
 )
-target_link_libraries(test-calibration PRIVATE Eigen3::Eigen fmt::fmt-header-only)
+target_link_libraries(test-calibration PRIVATE Eigen3::Eigen fmt::fmt-header-only Catch2::Catch2)
 target_compile_definitions(test-calibration PRIVATE DEBUG)
 set_property(TARGET test-calibration PROPERTY OPT_BOARD stm32f407vg_stm32f4discovery)
 sbs_target(test-calibration)
@@ -247,7 +247,7 @@ add_executable(test-calibration-benchmark
     ${SPI_SOURCES}
     ${CALIBRATION_SOURCES}
 )
-target_link_libraries(test-calibration-benchmark PRIVATE Eigen3::Eigen fmt::fmt-header-only)
+target_link_libraries(test-calibration-benchmark PRIVATE Eigen3::Eigen fmt::fmt-header-only Catch2::Catch2)
 target_compile_definitions(test-calibration-benchmark PRIVATE DEBUG)
 set_property(TARGET test-calibration-benchmark PROPERTY OPT_BOARD stm32f407vg_stm32f4discovery)
 sbs_target(test-calibration-benchmark)
@@ -260,7 +260,7 @@ add_executable(test-calibration-stats
     ${SPI_SOURCES}
     ${CALIBRATION_SOURCES}
 )
-target_link_libraries(test-calibration-stats PRIVATE Eigen3::Eigen fmt::fmt-header-only)
+target_link_libraries(test-calibration-stats PRIVATE Eigen3::Eigen fmt::fmt-header-only Catch2::Catch2)
 target_compile_definitions(test-calibration-stats PRIVATE DEBUG)
 set_property(TARGET test-calibration-stats PROPERTY OPT_BOARD stm32f407vg_stm32f4discovery)
 sbs_target(test-calibration-stats)
@@ -321,7 +321,7 @@ add_executable(test-mavlink
     ${SHARED_SOURCES}
     ${GAMMA868_SOURCES}
 )
-target_link_libraries(test-mavlink PRIVATE fmt::fmt-header-only)
+target_link_libraries(test-mavlink PRIVATE fmt::fmt-header-only Mavlink::Mavlink)
 target_compile_definitions(test-mavlink PRIVATE DEBUG)
 set_property(TARGET test-mavlink PROPERTY OPT_BOARD stm32f429zi_skyward_homeone)
 sbs_target(test-mavlink)
@@ -333,7 +333,7 @@ add_executable(test-circularbuffer
     ${SHARED_SOURCES}
     ${TEST_UTILS_SOURCES}
 )
-target_link_libraries(test-circularbuffer PRIVATE fmt::fmt-header-only)
+target_link_libraries(test-circularbuffer PRIVATE fmt::fmt-header-only Catch2::Catch2)
 target_compile_definitions(test-circularbuffer PRIVATE STANDALONE_CATCH1_TEST)
 set_property(TARGET test-circularbuffer PROPERTY OPT_BOARD stm32f429zi_stm32f4discovery)
 sbs_target(test-circularbuffer)
@@ -345,7 +345,7 @@ add_executable(test-eventbroker
     ${SHARED_SOURCES}
     ${TEST_UTILS_SOURCES}
 )
-target_link_libraries(test-eventbroker PRIVATE fmt::fmt-header-only)
+target_link_libraries(test-eventbroker PRIVATE fmt::fmt-header-only Catch2::Catch2)
 target_compile_definitions(test-eventbroker PRIVATE STANDALONE_CATCH1_TEST)
 set_property(TARGET test-eventbroker PROPERTY OPT_BOARD stm32f429zi_stm32f4discovery)
 sbs_target(test-eventbroker)
