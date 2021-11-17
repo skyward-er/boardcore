@@ -27,7 +27,7 @@
 #include <utils/collections/CircularBuffer.h>
 #include <utils/collections/SyncCircularBuffer.h>
 
-#include <catch.hpp>
+#include <catch2/catch.hpp>
 
 TEST_CASE("CircularBuffer - Initialization tests")
 {

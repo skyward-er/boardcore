@@ -41,8 +41,6 @@ add_subdirectory(${SBS_BASE}/libs/fmt EXCLUDE_FROM_ALL)
 target_compile_definitions(fmt-header-only INTERFACE _GLIBCXX_USE_WCHAR_T FMT_UNICODE=0 FMT_STATIC_THOUSANDS_SEPARATOR=0)
 target_compile_options(fmt-header-only INTERFACE -fno-math-errno)
 
-add_library(Catch2 INTERFACE)
-add_library(Catch2::Catch2 ALIAS Catch2)
-target_include_directories(Catch2 INTERFACE ${SBS_BASE}/libs/Catch2/single_include)
+add_subdirectory(${SBS_BASE}/libs/Catch2 EXCLUDE_FROM_ALL)
 
 add_subdirectory(${SBS_BASE}/libs/mavlink_skyward_lib EXCLUDE_FROM_ALL)

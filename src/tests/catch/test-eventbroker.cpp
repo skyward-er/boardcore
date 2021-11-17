@@ -27,7 +27,7 @@
 
 #include <miosix.h>
 #include <cstdio>
-#include <catch.hpp>
+#include <catch2/catch.hpp>
 
 #include "events/EventBroker.h"
 #include "utils/testutils/TestHelper.h"

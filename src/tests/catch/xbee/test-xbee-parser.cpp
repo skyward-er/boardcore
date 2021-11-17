@@ -33,7 +33,7 @@
 #include <cstring>
 
 #include "drivers/Xbee/APIFrameParser.h"
-#include <catch.hpp>
+#include <catch2/catch.hpp>
 
 using namespace Xbee;
 

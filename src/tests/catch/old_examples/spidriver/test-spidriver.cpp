@@ -28,7 +28,7 @@
 #error "This test requires SpiBusInterface built with MockGpioPin (-DUSE_MOCK_PERIPHERALS)"
 #endif
 
-#include <catch.hpp>
+#include <catch2/catch.hpp>
 
 #include "drivers/spi/SPIBus.h"
 #include "drivers/spi/SPIDriver.h"
