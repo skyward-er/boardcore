@@ -33,94 +33,111 @@ enum LoadCellModes : uint8_t
     CONT_MOD_TD
 };
 
-enum LoadCellValues : char
+enum LoadCellValuesEnum
 {
-    SET_SETPOINT_1   = 'A',
-    SET_SETPOINT_2   = 'B',
-    SET_SETPOINT_3   = 'C',
-    GET_SETPOINT_1   = 'a',
-    GET_SETPOINT_2   = 'b',
-    GET_SETPOINT_3   = 'c',
-    GROSS_WEIGHT     = 't',
-    NET_WEIGHT       = 'n',
-    PEAK_WEIGHT      = 'p',
-    RESET_TARE       = 'z',
-    DECIMALS_READING = 'D'
+    SET_SETPOINT_1,
+    SET_SETPOINT_2,
+    SET_SETPOINT_3,
+    GET_SETPOINT_1,
+    GET_SETPOINT_2,
+    GET_SETPOINT_3,
+    GROSS_WEIGHT,
+    NET_WEIGHT,
+    PEAK_WEIGHT,
+    RESET_TARE,
+    DECIMALS_READING,
+    COMMUTE_TO_NET,
+    COMMUTE_TO_GROSS
 };
+
+/**
+ * #################################################
+ */
+typedef std::map<const LoadCellValuesEnum, std::string> LoadCellValues;
+static LoadCellValues loadCellValues = {
+    {SET_SETPOINT_1, "A"},      {SET_SETPOINT_2, "B"},
+    {SET_SETPOINT_3, "C"},      {GET_SETPOINT_1, "a"},
+    {GET_SETPOINT_2, "b"},      {GET_SETPOINT_3, "c"},
+    {GROSS_WEIGHT, "t"},        {NET_WEIGHT, "n"},
+    {PEAK_WEIGHT, "p"},         {RESET_TARE, "z"},
+    {DECIMALS_READING, "D"},    {COMMUTE_TO_NET, "NET"},
+    {COMMUTE_TO_GROSS, "GROSS"}};
 
 /**
  * @brief structure of the errors in the ASCII requests
  */
 enum ReturnsStates
 {
-    VALID_RETURN,     // min len : 13 (contains '!')
-    RECEPTION_ERROR,  // max len : 8 (contains '?', '#')
-    EXECUTION_ERROR
+    VALID_RETURN,
+    RECEPTION_ERROR,  // contains '?'
+    EXECUTION_ERROR   // contains '#'
 };
 
-typedef struct DataStr
+/**
+ * #########################################
+ */
+struct Data
 {
-    float data = 0.0;
-    bool valid = false;
-} Data;
+    uint64_t timestamp = 0;
+    float data         = 0.0;
+    bool valid         = false;
+
+    Data() : timestamp(0), data(0.0), valid(false) {}
+
+    Data(float data)
+        : timestamp(TimestampTimer::getTimestamp()), data(data), valid(true)
+    {
+    }
+};
 
 /**
  * @brief structure of the output of the load cell in [continuous mode -> ModT]
  */
-typedef struct MBLoadCellDataStr
+typedef struct MBLoadCellSettingsStr
 {
-    Data net_weight;
-    Data gross_weight;
+    LoadCellModes mode;
+    bool gross_mode;
     Data peak_weight;
     Data setpoint1;
     Data setpoint2;
     Data setpoint3;
-    Data max_weight;
-    Data min_weight;
 
-    void updateValue(LoadCellValues val, float data)
+    /**
+     * @brief updates the correct value with the data passed. Also, memorizes
+     * the maximum and minimum value of the gross weight.
+     */
+    void updateValue(LoadCellValuesEnum val, float data)
     {
         switch (val)
         {
+            case PEAK_WEIGHT:
+                peak_weight = Data(data);
+                break;
             case GET_SETPOINT_1:
-                setpoint1 = {data, true};
+                setpoint1 = Data(data);
                 break;
             case GET_SETPOINT_2:
-                setpoint2 = {data, true};
+                setpoint2 = Data(data);
                 break;
             case GET_SETPOINT_3:
-                setpoint3 = {data, true};
-                break;
-            case NET_WEIGHT:
-                net_weight = {data, true};
-                break;
-            case GROSS_WEIGHT:
-                gross_weight = {data, true};
-
-                // memorizing also the maximum gross weight registered
-                if (!max_weight.valid || max_weight.data < data)
-                    max_weight = {data, true};
-
-                // memorizing also the minimum gross weight registered
-                if (!min_weight.valid || min_weight.data > data)
-                    min_weight = {data, true};
-                break;
-            case PEAK_WEIGHT:
-                peak_weight = {data, true};
+                setpoint3 = Data(data);
                 break;
             default:
                 break;
         }
     }
 
+    /**
+     * @brief prints the structure in a nice way
+     */
     void print() const
     {
-        if (net_weight.valid)
+        /*if (net_weight.valid)
             TRACE("Net Weight     : %f [Kg]\n", net_weight.data);
 
         if (gross_weight.valid)
             TRACE("Gross Weight   : %f [Kg]\n", gross_weight.data);
-
+        */
         if (peak_weight.valid)
             TRACE("Peak Weight    : %f [Kg]\n", peak_weight.data);
 
@@ -132,14 +149,8 @@ typedef struct MBLoadCellDataStr
 
         if (setpoint3.valid)
             TRACE("Setpoint 3     : %f [Kg]\n", setpoint3.data);
-
-        if (max_weight.valid)
-            TRACE("Maximum weight : %f [Kg]\n", max_weight.data);
-
-        if (min_weight.valid)
-            TRACE("Minimum weight : %f [Kg]\n", min_weight.data);
     }
-} MBLoadCellData;
+} MBLoadCellSettings;
 
 /**
  * @brief structure of the output of the load cell in [continuous mode -> ModT]
@@ -170,7 +181,7 @@ typedef struct DataAsciiRequestStr
     char beginStr[2] = "$";
     char addr[3]     = "01";
     char value[7]    = "";
-    char req[2];
+    char req[6];
     char ck[3];
     char CR[2] = "\r";
 
@@ -206,16 +217,8 @@ typedef struct DataAsciiRequestStr
      */
     std::string to_string()
     {
-        std::string str;
-        str.append(beginStr);
-        str.append(addr);
-        if (strlen(value) != 0)
-        {
-            str.append(value);
-        }
-        str.append(req);
-        str.append(ck);
-        str.append(CR);
+        std::string str =
+            fmt::format("{}{}{}{}{}{}", beginStr, addr, value, req, ck, CR);
         return str;
     }
 } DataAsciiRequest;

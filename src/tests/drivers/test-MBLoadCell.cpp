@@ -30,6 +30,8 @@ using namespace miosix;
 
 int main()
 {
+    TimestampTimer::enableTimestampTimer();
+
     /*
      * use of CONT_MOD_TD: transmits net and gross weight
      * use of serial port 2: in stm32f407vg TX=PB10, RX=PB11
@@ -37,11 +39,17 @@ int main()
      */
     MBLoadCell loadCell(LoadCellModes::ASCII_MOD_TD, 2, 2400);
 
-    loadCell.asciiRequest(LoadCellValues::SET_SETPOINT_1, -50);
+    if (!loadCell.init())
+    {
+        TRACE("Initialization of the load cell failed\n");
+        return 1;
+    }
+
+    loadCell.asciiRequest(LoadCellValuesEnum::SET_SETPOINT_1, 10);
     while (true)
     {
         loadCell.sample();
-        loadCell.getLastSample().print();
+        loadCell.printData();
         TRACE("\n");
     }
 

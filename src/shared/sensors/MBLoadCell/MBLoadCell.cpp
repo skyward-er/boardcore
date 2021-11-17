@@ -19,110 +19,143 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
-
 #include "MBLoadCell.h"
 
 #include <cmath>
 
-#include "MBLoadCellData.h"
-#include "SerialInterface.h"
 #include "stdlib.h"
 
-using ctrlPin1 = miosix::Gpio<GPIOC_BASE, 1>;
-using ctrlPin2 = miosix::Gpio<GPIOC_BASE, 2>;
+using ctrlPin1 = miosix::Gpio<GPIOC_BASE, 1>;  ///< control R/W pin 1
+using ctrlPin2 = miosix::Gpio<GPIOC_BASE, 2>;  ///< control R/W pin 1
+
+using out1 = miosix::Gpio<GPIOC_BASE, 8>;  ///< out1 for the first setpoint1
 
 MBLoadCell::MBLoadCell(LoadCellModes mode, int serialPortNum,
                        int baudrate = 2400)
 {
-    this->mode = mode;
+    this->settings.mode = mode;
 
     // creating the instance of the serial interface
     serial = new SerialInterface(baudrate, serialPortNum);
+}
 
+bool MBLoadCell::init()
+{
     // initializing the serial connection
     if (!serial->init())
     {
-        TRACE("[MBLoadCell] Wrong initialization\n");
+        TRACE("[MBLoadCell] init of the serial communication failed\n");
+        return false;
     }
 
     {
-        FastInterruptDisableLock dLock;
-        ctrlPin1::mode(Mode::OUTPUT);
-        ctrlPin2::mode(Mode::OUTPUT);
+        miosix::FastInterruptDisableLock dLock;
+        ctrlPin1::mode(miosix::Mode::OUTPUT);
+        ctrlPin2::mode(miosix::Mode::OUTPUT);
+        out1::mode(miosix::Mode::INPUT);
     }
+
+    return true;
 }
 
-void MBLoadCell::sample() { sampleImpl(); }
+bool MBLoadCell::selfTest() { return true; }
 
-MBLoadCellDataStr MBLoadCell::sampleImpl()
+Data MBLoadCell::sampleImpl()
 {
-    switch (mode)
+    switch (settings.mode)
     {
         case LoadCellModes::CONT_MOD_T:
-            sampleContModT();
-            break;
+            return sampleContModT();
         case LoadCellModes::CONT_MOD_TD:
-            sampleContModTd();
-            break;
+            return sampleContModTd();
         case LoadCellModes::ASCII_MOD_TD:
-            sampleAsciiModTd();
-            break;
+            return sampleAsciiModTd();
+        default:
+            return Data();
     }
-    return last_sample;
 }
 
-void MBLoadCell::sampleContModT()
+Data MBLoadCell::sampleContModT()
 {
     TRACE("CONTINUOUS MOD T\n");
     DataModT data;
     receive(&data);
 
-    this->last_sample.gross_weight = {atof(data.weight) / 10.0, true};
+    return Data(atof(data.weight) / 10.0);
 }
 
-void MBLoadCell::sampleContModTd()
+Data MBLoadCell::sampleContModTd()
 {
     TRACE("CONTINUOUS MOD TD\n");
     DataModTd data;
     receive(&data);
 
-    this->last_sample.gross_weight = {atof(data.weightT) / 10.0, true};
-
-    // [REVIEW] What is this really?
-    this->last_sample.net_weight = {atof(data.weightP) / 10.0, true};
+    return Data(atof(data.weightT) / 10.0);
 }
 
-void MBLoadCell::sampleAsciiModTd()
+Data MBLoadCell::sampleAsciiModTd()
 {
     TRACE("ASCII MOD TD\n");
-    ReturnsStates ret;
+    DataAsciiRequest request;
 
-    ret = asciiRequest(LoadCellValues::GET_SETPOINT_1);
-    if (ret != ReturnsStates::VALID_RETURN)
+    // generating the request
+    generateRequest(request, LoadCellValuesEnum::GROSS_WEIGHT);
+
+    // transmitting request
+    transmitASCII(request.to_string());
+
+    // waiting for the response
+    std::string response = receiveASCII();
+
+    // if response invalid returns last_sample, otherwise returns new sample
+    if (response.find('!') != std::string::npos)
     {
-        TRACE("Setpoint 1 not available: %d\n", ret);
+        TRACE("Gross weight reception error\n");
+        return Data();
     }
-
-    ret = asciiRequest(LoadCellValues::GROSS_WEIGHT);
-    if (ret != ReturnsStates::VALID_RETURN)
+    else if (response.find('#') != std::string::npos)
     {
-        TRACE("Gross weight not available: %d\n", ret);
+        TRACE("Gross weight execution error\n");
+        return Data();
     }
-
-    ret = asciiRequest(LoadCellValues::NET_WEIGHT);
-    if (ret != ReturnsStates::VALID_RETURN)
+    else
     {
-        TRACE("Net weight not available: %d\n", ret);
-    }
+        // taking the value returned
+        float value = stof(response.substr(3, 6)) / 10.0;
 
-    ret = asciiRequest(LoadCellValues::PEAK_WEIGHT);
-    if (ret != ReturnsStates::VALID_RETURN)
-    {
-        TRACE("Peak weight not available: %d\n", ret);
+        // memorizing also the maximum gross weight registered
+        if (!max_weight.valid || max_weight.data < value)
+            max_weight = Data(value);
+
+        // memorizing also the minimum gross weight registered
+        if (!min_weight.valid || min_weight.data > value)
+            min_weight = Data(value);
+
+        return Data(value);
     }
 }
 
-ReturnsStates MBLoadCell::asciiRequest(LoadCellValues reqType, int value)
+void MBLoadCell::printData()
+{
+    if (last_sample.valid)
+    {
+        TRACE("Timestamp      : %f [s]\n",
+              (double)last_sample.timestamp / 1000000);
+        TRACE("Weight         : %f [Kg]\n", last_sample.data);
+
+        if (max_weight.valid)
+            TRACE("Maximum weight : %f [Kg]\n", max_weight.data);
+
+        if (min_weight.valid)
+            TRACE("Minimum weight : %f [Kg]\n\n", min_weight.data);
+    }
+    else
+    {
+        TRACE("No valida data has been collected\n");
+    }
+}
+
+ReturnsStates MBLoadCell::asciiRequest(LoadCellValuesEnum reqType, int value)
 {
     DataAsciiRequest request;
 
@@ -133,7 +166,7 @@ ReturnsStates MBLoadCell::asciiRequest(LoadCellValues reqType, int value)
     transmitASCII(request.to_string());
 
     // waiting for the response
-    string response = receiveASCII();
+    std::string response = receiveASCII();
 
     if (response.find('!') != std::string::npos)
         return ReturnsStates::RECEPTION_ERROR;
@@ -144,48 +177,63 @@ ReturnsStates MBLoadCell::asciiRequest(LoadCellValues reqType, int value)
     // memorizing the requested data
     switch (reqType)
     {
-        case LoadCellValues::SET_SETPOINT_1:
+        case LoadCellValuesEnum::SET_SETPOINT_1:
             asciiRequest(GET_SETPOINT_1);
             break;
-        case LoadCellValues::SET_SETPOINT_2:
+        case LoadCellValuesEnum::SET_SETPOINT_2:
             asciiRequest(GET_SETPOINT_2);
             break;
-        case LoadCellValues::SET_SETPOINT_3:
+        case LoadCellValuesEnum::SET_SETPOINT_3:
             asciiRequest(GET_SETPOINT_3);
             break;
-        case LoadCellValues::GROSS_WEIGHT:
-        case LoadCellValues::NET_WEIGHT:
-        case LoadCellValues::PEAK_WEIGHT:
-        case LoadCellValues::GET_SETPOINT_1:
-        case LoadCellValues::GET_SETPOINT_2:
-        case LoadCellValues::GET_SETPOINT_3:
+        case LoadCellValuesEnum::GROSS_WEIGHT:
+        case LoadCellValuesEnum::NET_WEIGHT:
+        case LoadCellValuesEnum::PEAK_WEIGHT:
+        case LoadCellValuesEnum::GET_SETPOINT_1:
+        case LoadCellValuesEnum::GET_SETPOINT_2:
+        case LoadCellValuesEnum::GET_SETPOINT_3:
         {
             // taking the value returned
             float value = stof(response.substr(3, 6)) / 10.0;
 
             // updating the last_value struct
-            last_sample.updateValue(reqType, value);
+            settings.updateValue(reqType, value);
             break;
         }
-        case LoadCellValues::RESET_TARE:
+        case LoadCellValuesEnum::RESET_TARE:
             TRACE("TARE RESETTED\n");
+            break;
+        case LoadCellValuesEnum::COMMUTE_TO_GROSS:
+            settings.gross_mode = true;
+            TRACE("COMMUTED TO GROSS WEIGHT\n");
+            break;
+        case LoadCellValuesEnum::COMMUTE_TO_NET:
+            settings.gross_mode = false;
+            TRACE("COMMUTED TO NET WEIGHT\n");
             break;
     }
 
     return ReturnsStates::VALID_RETURN;
 }
 
-void MBLoadCell::generateRequest(DataAsciiRequest &req,
-                                 LoadCellValues toRequest, int value)
-{
-    req.req[0] = (char)toRequest;
-    req.req[1] = '\0';
+MBLoadCellSettings MBLoadCell::getSettings() { return settings; }
 
-    if (toRequest == LoadCellValues::SET_SETPOINT_1 ||
-        toRequest == LoadCellValues::SET_SETPOINT_2 ||
-        toRequest == LoadCellValues::SET_SETPOINT_3)
+void MBLoadCell::resetMaxMinWeights()
+{
+    max_weight.valid = false;
+    min_weight.valid = false;
+}
+
+void MBLoadCell::generateRequest(DataAsciiRequest &req,
+                                 const LoadCellValuesEnum toRequest, int value)
+{
+    strcpy(req.req, loadCellValues[toRequest].c_str());
+
+    if (toRequest == LoadCellValuesEnum::SET_SETPOINT_1 ||
+        toRequest == LoadCellValuesEnum::SET_SETPOINT_2 ||
+        toRequest == LoadCellValuesEnum::SET_SETPOINT_3)
     {
-        string strVal = fmt::format("{:d}", abs(value));
+        std::string strVal = fmt::format("{:d}", abs(value));
         strVal.insert(strVal.begin(), 6 - strVal.length(), '0');
 
         if (value < 0)
@@ -198,15 +246,15 @@ void MBLoadCell::generateRequest(DataAsciiRequest &req,
     req.setChecksum();
 }
 
-void MBLoadCell::transmitASCII(string buf)
+void MBLoadCell::transmitASCII(std::string buf)
 {
     ctrlPin1::high();
     ctrlPin2::high();
     serial->sendString(buf);
-    Thread::sleep(10);  // needs some time (>5ms) idk why
+    miosix::Thread::sleep(10);  // needs some time (>5ms) idk why
 }
 
-string MBLoadCell::receiveASCII()
+std::string MBLoadCell::receiveASCII()
 {
     char buf[64];
 
@@ -215,7 +263,7 @@ string MBLoadCell::receiveASCII()
     int len  = serial->recvString(buf, 64);
     buf[len] = '\0';
 
-    return string(buf);
+    return std::string(buf);
 }
 
 template <typename T>
@@ -225,7 +273,3 @@ void MBLoadCell::receive(T *buf)
     ctrlPin2::low();
     serial->recvData(buf);
 }
-
-bool MBLoadCell::init() { return true; }
-
-bool MBLoadCell::selfTest() { return true; }

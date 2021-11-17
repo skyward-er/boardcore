@@ -32,8 +32,6 @@
 #include "filesystem/file_access.h"
 #include "miosix.h"
 
-using namespace miosix;
-
 /**
  * @brief Creates and opens a serial port on the board and provides templated
  * "sendData" and "recvData" functions in order to send and receive any data
@@ -134,13 +132,14 @@ private:
     bool serialCommSetup()
     {
         // Takes the file system pointer of the devices
-        intrusive_ref_ptr<DevFs> devFs =
-            FilesystemManager::instance().getDevFs();
+        miosix::intrusive_ref_ptr<miosix::DevFs> devFs =
+            miosix::FilesystemManager::instance().getDevFs();
 
         // Creates and adds the serial port to the devices
-        if (!devFs->addDevice(serialPortName.c_str(),
-                              intrusive_ref_ptr<Device>(
-                                  new STM32Serial(serialPortNum, baudrate))))
+        if (!devFs->addDevice(
+                serialPortName.c_str(),
+                miosix::intrusive_ref_ptr<miosix::Device>(
+                    new miosix::STM32Serial(serialPortNum, baudrate))))
             return false;
 
         // path string "/dev/<name_of_port>" for the port we want to open

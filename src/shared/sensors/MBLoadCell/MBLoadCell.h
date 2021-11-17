@@ -33,9 +33,6 @@
 #include "SerialInterface.h"
 #include "miosix.h"
 
-using namespace std;
-using namespace miosix;
-
 /**
  * @brief driver in order to communicate with a TLB digital-analog weight
  * transmitter attached to a loadcell
@@ -48,7 +45,7 @@ using namespace miosix;
  * - ASCII-modTd: bidirectional mode that consists in sending a request and
  * receiving a response with the data requested or an error message
  */
-class MBLoadCell : public Sensor<MBLoadCellData>
+class MBLoadCell : public Sensor<Data>
 {
 public:
     /**
@@ -65,13 +62,19 @@ public:
     bool selfTest() override;
 
     /**
-     * @brief sample function overridden because the sampleImpl doesn't return
-     * the last sample but modifies that struct directly. This is useful in the
-     * bidirectional mode when we request data and we don't want to lose it
+     * @brief generates and sends a request in ASCII mode, waits for the
+     * response and updates the last_sample structure
      */
-    void sample() override;
+    ReturnsStates asciiRequest(LoadCellValuesEnum r, int value = 0);
 
-    ReturnsStates asciiRequest(LoadCellValues r, int value = 0);
+    /**
+     * @brief permits to reset the peak weight value
+     */
+    void resetMaxMinWeights();
+
+    void printData();
+
+    MBLoadCellSettings getSettings();
 
 protected:
     /**
@@ -80,22 +83,22 @@ protected:
      * the mode selected (it's a blocking function)
      * @return the weight measured from the load cell
      */
-    MBLoadCellDataStr sampleImpl() override;
+    Data sampleImpl() override;
 
     /**
      * @brief sampling in the "continuous Mod T" mode
      */
-    void sampleContModT(void);
+    Data sampleContModT(void);
 
     /**
      * @brief sampling in the "continuous Mod Td" mode
      */
-    void sampleContModTd(void);
+    Data sampleContModTd(void);
 
     /**
      * @brief sampling in the "ASCII Mod Td" mode
      */
-    void sampleAsciiModTd(void);
+    Data sampleAsciiModTd(void);
 
     /**
      * @brief forges a request for the ascii mode
@@ -103,18 +106,21 @@ protected:
      * @param toRequest the request to forge
      * @param value the value used in the forging of the "set_setpoint" requests
      */
-    void generateRequest(DataAsciiRequest &req, LoadCellValues toRequest,
-                         int value);
+    void generateRequest(DataAsciiRequest &req,
+                         const LoadCellValuesEnum toRequest, int value = 0);
 
-    void transmitASCII(string buf);
+    void transmitASCII(std::string buf);
 
-    string receiveASCII();
+    std::string receiveASCII();
 
     template <typename T>
     void receive(T *buf);
 
 private:
+    MBLoadCellSettings
+        settings;  ///< structure that contains all te configuration
+    Data max_weight;
+    Data min_weight;
     SerialInterface *serial;  ///< pointer to the instance of the serial port
                               ///< opened for the connection
-    LoadCellModes mode;       ///< mode in which the load cell will be used
 };
