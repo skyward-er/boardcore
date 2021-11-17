@@ -41,8 +41,7 @@ add_custom_target(
     VERBATIM
 )
 
-function(sbs_target TARGET)
-    get_target_property(OPT_BOARD ${TARGET} OPT_BOARD)
+function(sbs_target TARGET OPT_BOARD)
     if(NOT OPT_BOARD)
         message(FATAL_ERROR "No board selected")
     endif()

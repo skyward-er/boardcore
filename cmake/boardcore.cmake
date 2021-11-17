@@ -103,6 +103,7 @@ foreach(OPT_BOARD ${BOARDS})
     target_include_directories(${BOARDCORE_LIBRARY} PUBLIC ${SBS_BASE}/src/shared)
     target_link_libraries(${BOARDCORE_LIBRARY} PUBLIC
         Miosix::Miosix-${OPT_BOARD}
+        Mxgui::Mxgui-${OPT_BOARD}
         TSCPP::TSCPP
         Eigen3::Eigen
         fmt::fmt-header-only

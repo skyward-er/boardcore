@@ -33,20 +33,16 @@ project(SkywardBoardcore)
 #-----------------------------------------------------------------------------#
 
 add_executable(bmx160-calibration-entry src/entrypoints/bmx160-calibration-entry.cpp)
-set_property(TARGET bmx160-calibration-entry PROPERTY OPT_BOARD stm32f429zi_skyward_death_stack_x)
-sbs_target(bmx160-calibration-entry)
+sbs_target(bmx160-calibration-entry stm32f429zi_skyward_death_stack_x)
 
 add_executable(config-dsgamma src/entrypoints/config-dsgamma.cpp)
-set_property(TARGET config-dsgamma PROPERTY OPT_BOARD stm32f429zi_stm32f4discovery)
-sbs_target(config-dsgamma)
+sbs_target(config-dsgamma stm32f429zi_stm32f4discovery)
 
 add_executable(mxgui-helloworld src/entrypoints/examples/mxgui-helloworld.cpp)
-set_property(TARGET mxgui-helloworld PROPERTY OPT_BOARD stm32f429zi_stm32f4discovery)
-sbs_target(mxgui-helloworld)
+sbs_target(mxgui-helloworld stm32f429zi_stm32f4discovery)
 
 add_executable(kernel-testsuite src/entrypoints/kernel-testsuite.cpp)
-set_property(TARGET kernel-testsuite PROPERTY OPT_BOARD stm32f429zi_stm32f4discovery)
-sbs_target(kernel-testsuite)
+sbs_target(kernel-testsuite stm32f429zi_stm32f4discovery)
 
 #src/entrypoints/old_examples/anakin/anakin-accel.cpp
 #src/entrypoints/old_examples/anakin/anakin-demo-board.cpp
@@ -62,34 +58,28 @@ sbs_target(kernel-testsuite)
 #src/entrypoints/old_examples/example-fsm.cpp
 
 add_executable(sdcard-benchmark src/entrypoints/sdcard-benchmark.cpp)
-set_property(TARGET sdcard-benchmark PROPERTY OPT_BOARD stm32f429zi_stm32f4discovery)
-sbs_target(sdcard-benchmark)
+sbs_target(sdcard-benchmark stm32f429zi_stm32f4discovery)
 
 #-----------------------------------------------------------------------------#
 #                                Tests - Catch                                #
 #-----------------------------------------------------------------------------#
 
 add_executable(test-calibration-benchmark src/tests/calibration/test-calibration-benchmark.cpp)
-set_property(TARGET test-calibration-benchmark PROPERTY OPT_BOARD stm32f407vg_stm32f4discovery)
-sbs_target(test-calibration-benchmark)
+sbs_target(test-calibration-benchmark stm32f407vg_stm32f4discovery)
 
 add_executable(test-calibration-stats src/tests/calibration/test-calibration-stats.cpp)
-set_property(TARGET test-calibration-stats PROPERTY OPT_BOARD stm32f407vg_stm32f4discovery)
-sbs_target(test-calibration-stats)
+sbs_target(test-calibration-stats stm32f407vg_stm32f4discovery)
 
 add_executable(test-calibration src/tests/calibration/test-calibration.cpp)
-set_property(TARGET test-calibration PROPERTY OPT_BOARD stm32f407vg_stm32f4discovery)
-sbs_target(test-calibration)
+sbs_target(test-calibration stm32f407vg_stm32f4discovery)
 
 #add_executable(catch-tests-entry src/tests/catch/catch-tests-entry.cpp)
 #target_compile_definitions(catch-tests-entry PUBLIC USE_MOCK_PERIPHERALS)
-#set_property(TARGET catch-tests-entry PROPERTY OPT_BOARD stm32f429zi_stm32f4discovery)
-#sbs_target(catch-tests-entry)
+#sbs_target(catch-tests-entry stm32f429zi_stm32f4discovery)
 
 add_executable(example-test-factorial src/tests/catch/examples/example-test-factorial.cpp)
 target_compile_definitions(example-test-factorial PRIVATE STANDALONE_CATCH1_TEST)
-set_property(TARGET example-test-factorial PROPERTY OPT_BOARD stm32f429zi_stm32f4discovery)
-sbs_target(example-test-factorial)
+sbs_target(example-test-factorial stm32f429zi_stm32f4discovery)
 
 #src/tests/catch/old_examples/example-test-fsm.cpp
 #src/tests/catch/old_examples/spidriver/test-spidriver.cpp
@@ -98,64 +88,52 @@ sbs_target(example-test-factorial)
 
 add_executable(test-aero src/tests/catch/test-aero.cpp)
 target_compile_definitions(test-aero PRIVATE STANDALONE_CATCH1_TEST)
-set_property(TARGET test-aero PROPERTY OPT_BOARD stm32f429zi_stm32f4discovery)
-sbs_target(test-aero)
+sbs_target(test-aero stm32f429zi_stm32f4discovery)
 
 add_executable(test-buttonhandler src/tests/catch/test-buttonhandler.cpp)
 target_compile_definitions(test-buttonhandler PRIVATE STANDALONE_CATCH1_TEST)
-set_property(TARGET test-buttonhandler PROPERTY OPT_BOARD stm32f429zi_stm32f4discovery)
-sbs_target(test-buttonhandler)
+sbs_target(test-buttonhandler stm32f429zi_stm32f4discovery)
 
 add_executable(test-circularbuffer src/tests/catch/test-circularbuffer.cpp)
 target_compile_definitions(test-circularbuffer PRIVATE STANDALONE_CATCH1_TEST)
-set_property(TARGET test-circularbuffer PROPERTY OPT_BOARD stm32f429zi_stm32f4discovery)
-sbs_target(test-circularbuffer)
+sbs_target(test-circularbuffer stm32f429zi_stm32f4discovery)
 
 add_executable(test-eventbroker src/tests/catch/test-eventbroker.cpp)
 target_compile_definitions(test-eventbroker PRIVATE STANDALONE_CATCH1_TEST)
-set_property(TARGET test-eventbroker PROPERTY OPT_BOARD stm32f429zi_stm32f4discovery)
-sbs_target(test-eventbroker)
+sbs_target(test-eventbroker stm32f429zi_stm32f4discovery)
 
 add_executable(test-hardwaretimer src/tests/catch/test-hardwaretimer.cpp)
 target_compile_definitions(test-hardwaretimer PRIVATE STANDALONE_CATCH1_TEST)
-set_property(TARGET test-hardwaretimer PROPERTY OPT_BOARD stm32f429zi_stm32f4discovery)
-sbs_target(test-hardwaretimer)
+sbs_target(test-hardwaretimer stm32f429zi_stm32f4discovery)
 
 add_executable(test-kalman-eigen src/tests/catch/test-kalman-eigen.cpp)
 target_compile_definitions(test-kalman-eigen PRIVATE STANDALONE_CATCH1_TEST)
-set_property(TARGET test-kalman-eigen PROPERTY OPT_BOARD stm32f429zi_stm32f4discovery)
-sbs_target(test-kalman-eigen)
+sbs_target(test-kalman-eigen stm32f429zi_stm32f4discovery)
 
 add_executable(test-packetqueue src/tests/catch/test-packetqueue.cpp)
 target_compile_definitions(test-packetqueue PRIVATE STANDALONE_CATCH1_TEST)
-set_property(TARGET test-packetqueue PROPERTY OPT_BOARD stm32f429zi_skyward_death_stack_x)
-sbs_target(test-packetqueue)
+sbs_target(test-packetqueue stm32f429zi_skyward_death_stack_x)
 
 add_executable(test-sensormanager-catch src/tests/catch/test-sensormanager-catch.cpp)
 target_compile_definitions(test-sensormanager-catch PRIVATE STANDALONE_CATCH1_TEST)
-set_property(TARGET test-sensormanager-catch PROPERTY OPT_BOARD stm32f429zi_skyward_death_stack_x)
-sbs_target(test-sensormanager-catch)
+sbs_target(test-sensormanager-catch stm32f429zi_skyward_death_stack_x)
 
 add_executable(test-xbee-parser src/tests/catch/xbee/test-xbee-parser.cpp)
 target_compile_definitions(test-xbee-parser PRIVATE STANDALONE_CATCH1_TEST)
-set_property(TARGET test-xbee-parser PROPERTY OPT_BOARD stm32f429zi_stm32f4discovery)
-sbs_target(test-xbee-parser)
+sbs_target(test-xbee-parser stm32f429zi_stm32f4discovery)
 
 #-----------------------------------------------------------------------------#
 #                               Tests - Drivers                               #
 #-----------------------------------------------------------------------------#
 
 add_executable(test-analog-pressure-sensors src/tests/drivers/analog/test-analog-pressure-sensors.cpp)
-set_property(TARGET test-analog-pressure-sensors PROPERTY OPT_BOARD stm32f429zi_stm32f4discovery)
-sbs_target(test-analog-pressure-sensors)
+sbs_target(test-analog-pressure-sensors stm32f429zi_stm32f4discovery)
 
 add_executable(test-battery-voltage src/tests/drivers/analog/test-battery-voltage.cpp)
-set_property(TARGET test-battery-voltage PROPERTY OPT_BOARD stm32f429zi_stm32f4discovery)
-sbs_target(test-battery-voltage)
+sbs_target(test-battery-voltage stm32f429zi_stm32f4discovery)
 
 add_executable(test-current-sensor src/tests/drivers/analog/test-current-sensor.cpp)
-set_property(TARGET test-current-sensor PROPERTY OPT_BOARD stm32f429zi_stm32f4discovery)
-sbs_target(test-current-sensor)
+sbs_target(test-current-sensor stm32f429zi_stm32f4discovery)
 
 #src/tests/drivers/old_examples/test-ad7994-bare.cpp
 #src/tests/drivers/old_examples/test-ad7994.cpp
@@ -169,154 +147,118 @@ sbs_target(test-current-sensor)
 #src/tests/drivers/old_examples/test-unit-LM75B.cpp
 
 add_executable(test-ads1118 src/tests/drivers/test-ads1118.cpp)
-set_property(TARGET test-ads1118 PROPERTY OPT_BOARD stm32f407vg_stm32f4discovery)
-sbs_target(test-ads1118)
+sbs_target(test-ads1118 stm32f407vg_stm32f4discovery)
 
 add_executable(test-bme280 src/tests/drivers/test-bme280.cpp)
-set_property(TARGET test-bme280 PROPERTY OPT_BOARD stm32f407vg_stm32f4discovery)
-sbs_target(test-bme280)
+sbs_target(test-bme280 stm32f407vg_stm32f4discovery)
 
 add_executable(test-bmx160 src/tests/drivers/test-bmx160.cpp)
-set_property(TARGET test-bmx160 PROPERTY OPT_BOARD stm32f429zi_skyward_death_stack_x)
-sbs_target(test-bmx160)
+sbs_target(test-bmx160 stm32f429zi_skyward_death_stack_x)
 
 add_executable(test-bmx160-with-correction src/tests/drivers/test-bmx160-with-correction.cpp)
-set_property(TARGET test-bmx160-with-correction PROPERTY OPT_BOARD stm32f429zi_skyward_death_stack_x)
-sbs_target(test-bmx160-with-correction)
+sbs_target(test-bmx160-with-correction stm32f429zi_skyward_death_stack_x)
 
 add_executable(test-canbus src/tests/drivers/test-canbus.cpp)
-set_property(TARGET test-canbus PROPERTY OPT_BOARD stm32f429zi_skyward_death_stack_x)
-sbs_target(test-canbus)
+sbs_target(test-canbus stm32f429zi_skyward_death_stack_x)
 
 add_executable(test-dsgamma src/tests/drivers/test-dsgamma.cpp)
-set_property(TARGET test-dsgamma PROPERTY OPT_BOARD stm32f429zi_stm32f4discovery)
-sbs_target(test-dsgamma)
+sbs_target(test-dsgamma stm32f429zi_stm32f4discovery)
 
 add_executable(test-hbridge src/tests/drivers/test-hbridge.cpp)
-set_property(TARGET test-hbridge PROPERTY OPT_BOARD stm32f429zi_stm32f4discovery)
-sbs_target(test-hbridge)
+sbs_target(test-hbridge stm32f429zi_stm32f4discovery)
 
 add_executable(test-hwtimer-chain src/tests/drivers/test-hwtimer-chain.cpp)
-set_property(TARGET test-hwtimer-chain PROPERTY OPT_BOARD stm32f407vg_stm32f4discovery)
-sbs_target(test-hwtimer-chain)
+sbs_target(test-hwtimer-chain stm32f407vg_stm32f4discovery)
 
 add_executable(test-internal-adc src/tests/drivers/test-internal-adc.cpp)
-set_property(TARGET test-internal-adc PROPERTY OPT_BOARD stm32f429zi_skyward_death_stack_x)
-sbs_target(test-internal-adc)
+sbs_target(test-internal-adc stm32f429zi_skyward_death_stack_x)
 
 add_executable(test-internal-adc-dma src/tests/drivers/test-internal-adc-dma.cpp)
-set_property(TARGET test-internal-adc-dma PROPERTY OPT_BOARD stm32f429zi_stm32f4discovery)
-sbs_target(test-internal-adc-dma)
+sbs_target(test-internal-adc-dma stm32f429zi_stm32f4discovery)
 
 add_executable(test-l3gd20 src/tests/drivers/test-l3gd20.cpp)
-set_property(TARGET test-l3gd20 PROPERTY OPT_BOARD stm32f429zi_stm32f4discovery)
-sbs_target(test-l3gd20)
+sbs_target(test-l3gd20 stm32f429zi_stm32f4discovery)
 
 add_executable(test-l3gd20-fifo src/tests/drivers/test-l3gd20-fifo.cpp)
-set_property(TARGET test-l3gd20-fifo PROPERTY OPT_BOARD stm32f429zi_stm32f4discovery)
-sbs_target(test-l3gd20-fifo)
+sbs_target(test-l3gd20-fifo stm32f429zi_stm32f4discovery)
 
 add_executable(test-lis3dsh src/tests/drivers/test-lis3dsh.cpp)
-set_property(TARGET test-lis3dsh PROPERTY OPT_BOARD stm32f407vg_stm32f4discovery)
-sbs_target(test-lis3dsh)
+sbs_target(test-lis3dsh stm32f407vg_stm32f4discovery)
 
 add_executable(test-lis3mdl src/tests/drivers/test-lis3mdl.cpp)
-set_property(TARGET test-lis3mdl PROPERTY OPT_BOARD stm32f429zi_skyward_death_stack_x)
-sbs_target(test-lis3mdl)
+sbs_target(test-lis3mdl stm32f429zi_skyward_death_stack_x)
 
 add_executable(test-mavlink src/tests/drivers/test-mavlink.cpp)
-set_property(TARGET test-mavlink PROPERTY OPT_BOARD stm32f429zi_skyward_homeone)
-sbs_target(test-mavlink)
+sbs_target(test-mavlink stm32f429zi_skyward_homeone)
 
 add_executable(test-mpu9250 src/tests/drivers/test-mpu9250.cpp)
-set_property(TARGET test-mpu9250 PROPERTY OPT_BOARD stm32f429zi_skyward_death_stack_x)
-sbs_target(test-mpu9250)
+sbs_target(test-mpu9250 stm32f429zi_skyward_death_stack_x)
 
 add_executable(test-ms5803 src/tests/drivers/test-ms5803.cpp)
-set_property(TARGET test-ms5803 PROPERTY OPT_BOARD stm32f429zi_skyward_death_stack_x)
-sbs_target(test-ms5803)
+sbs_target(test-ms5803 stm32f429zi_skyward_death_stack_x)
 
 add_executable(test-pwm src/tests/drivers/test-pwm.cpp)
-set_property(TARGET test-pwm PROPERTY OPT_BOARD stm32f429zi_stm32f4discovery)
-sbs_target(test-pwm)
+sbs_target(test-pwm stm32f429zi_stm32f4discovery)
 
 add_executable(test-servo src/tests/drivers/test-servo.cpp)
-set_property(TARGET test-servo PROPERTY OPT_BOARD stm32f429zi_skyward_death_stack_x)
-sbs_target(test-servo)
+sbs_target(test-servo stm32f429zi_skyward_death_stack_x)
 
 add_executable(test-spi src/tests/drivers/test-spi.cpp)
-set_property(TARGET test-spi PROPERTY OPT_BOARD stm32f429zi_stm32f4discovery)
-sbs_target(test-spi)
+sbs_target(test-spi stm32f429zi_stm32f4discovery)
 
 add_executable(test-ublox src/tests/drivers/test-ublox.cpp)
-set_property(TARGET test-ublox PROPERTY OPT_BOARD stm32f429zi_skyward_death_stack_x)
-sbs_target(test-ublox)
+sbs_target(test-ublox stm32f429zi_skyward_death_stack_x)
 
 #src/tests/drivers/xbee/logdecoder/logdecoder.cpp
 
 add_executable(test-xbee-bidir src/tests/drivers/xbee/test-xbee-bidir.cpp)
-set_property(TARGET test-xbee-bidir PROPERTY OPT_BOARD stm32f429zi_skyward_death_stack_x)
-sbs_target(test-xbee-bidir)
+sbs_target(test-xbee-bidir stm32f429zi_skyward_death_stack_x)
 
 add_executable(test-xbee-gui
     src/tests/drivers/xbee/test-xbee-gui.cpp
     src/tests/drivers/xbee/gui/res/respect.cpp
 )
-set_property(TARGET test-xbee-gui PROPERTY OPT_BOARD stm32f429zi_stm32f4discovery)
-sbs_target(test-xbee-gui)
+sbs_target(test-xbee-gui stm32f429zi_stm32f4discovery)
 
 add_executable(test-xbee-rcv src/tests/drivers/xbee/test-xbee-rcv.cpp)
-set_property(TARGET test-xbee-rcv PROPERTY OPT_BOARD stm32f429zi_stm32f4discovery)
-sbs_target(test-xbee-rcv)
+sbs_target(test-xbee-rcv stm32f429zi_stm32f4discovery)
 
 add_executable(test-xbee-snd src/tests/drivers/xbee/test-xbee-snd.cpp)
-set_property(TARGET test-xbee-snd PROPERTY OPT_BOARD stm32f429zi_stm32f4discovery)
-sbs_target(test-xbee-snd)
+sbs_target(test-xbee-snd stm32f429zi_stm32f4discovery)
 
 add_executable(test-kalman-eigen-benchmark src/tests/kalman/test-kalman-eigen-benchmark.cpp)
-set_property(TARGET test-kalman-eigen-benchmark PROPERTY OPT_BOARD stm32f429zi_stm32f4discovery)
-sbs_target(test-kalman-eigen-benchmark)
+sbs_target(test-kalman-eigen-benchmark stm32f429zi_stm32f4discovery)
 
 add_executable(test-logger src/tests/logger/test-logger.cpp)
-set_property(TARGET test-logger PROPERTY OPT_BOARD stm32f429zi_stm32f4discovery)
-sbs_target(test-logger)
+sbs_target(test-logger stm32f429zi_stm32f4discovery)
 
 #src/tests/old_examples/misc/xbee-bitrate.cpp
 #src/tests/old_examples/misc/xbee-send-rcv.cpp
 #src/tests/old_examples/misc/xbee-time-to-send.cpp
 
 add_executable(test-eventinjector src/tests/test-eventinjector.cpp)
-set_property(TARGET test-eventinjector PROPERTY OPT_BOARD stm32f429zi_stm32f4discovery)
-sbs_target(test-eventinjector)
+sbs_target(test-eventinjector stm32f429zi_stm32f4discovery)
 
 add_executable(test-hsm src/tests/test-hsm.cpp)
-set_property(TARGET test-hsm PROPERTY OPT_BOARD stm32f429zi_stm32f4discovery)
-sbs_target(test-hsm)
+sbs_target(test-hsm stm32f429zi_stm32f4discovery)
 
 add_executable(test-interrupt src/tests/test-interrupt.cpp)
-set_property(TARGET test-interrupt PROPERTY OPT_BOARD stm32f429zi_stm32f4discovery)
-sbs_target(test-interrupt)
+sbs_target(test-interrupt stm32f429zi_stm32f4discovery)
 
 add_executable(test-pinobserver src/tests/test-pinobserver.cpp)
-set_property(TARGET test-pinobserver PROPERTY OPT_BOARD stm32f429zi_stm32f4discovery)
-sbs_target(test-pinobserver)
+sbs_target(test-pinobserver stm32f429zi_stm32f4discovery)
 
 add_executable(test-sensormanager src/tests/test-sensormanager.cpp)
-set_property(TARGET test-sensormanager PROPERTY OPT_BOARD stm32f429zi_skyward_death_stack_x)
-sbs_target(test-sensormanager)
+sbs_target(test-sensormanager stm32f429zi_skyward_death_stack_x)
 
 add_executable(test-serial src/tests/test-serial.cpp)
-set_property(TARGET test-serial PROPERTY OPT_BOARD stm32f429zi_skyward_death_stack_x)
-sbs_target(test-serial)
+sbs_target(test-serial stm32f429zi_skyward_death_stack_x)
 
 add_executable(test-taskscheduler src/tests/test-taskscheduler.cpp)
-set_property(TARGET test-taskscheduler PROPERTY OPT_BOARD stm32f429zi_skyward_death_stack_x)
-sbs_target(test-taskscheduler)
+sbs_target(test-taskscheduler stm32f429zi_skyward_death_stack_x)
 
 add_executable(test-timestamp-timer src/tests/test-timestamp-timer.cpp)
-set_property(TARGET test-timestamp-timer PROPERTY OPT_BOARD stm32f429zi_stm32f4discovery)
-sbs_target(test-timestamp-timer)
+sbs_target(test-timestamp-timer stm32f429zi_stm32f4discovery)
 
 add_executable(test-trace-logger src/tests/test-trace-logger.cpp)
-set_property(TARGET test-trace-logger PROPERTY OPT_BOARD stm32f429zi_stm32f4discovery)
-sbs_target(test-trace-logger)
+sbs_target(test-trace-logger stm32f429zi_stm32f4discovery)
