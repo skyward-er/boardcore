@@ -26,6 +26,9 @@
 #include "CanBus.h"
 #include "CanUtils.h"
 
+namespace Boardcore
+{
+
 class CanBus;
 
 static const int8_t AF_NONE = -1;
@@ -202,3 +205,5 @@ private:
 };
 
 //#define sCanManager CanManager::getInstance()
+
+}  // namespace Boardcore

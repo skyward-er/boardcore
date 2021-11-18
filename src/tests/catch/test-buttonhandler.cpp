@@ -32,6 +32,7 @@
 
 #include "utils/ButtonHandler.h"
 
+using namespace Boardcore;
 using namespace miosix;
 using std::bind;
 

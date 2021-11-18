@@ -25,6 +25,9 @@
 #include "HoneywellPressureSensor.h"
 #include "SSCDANN030PAAData.h"
 
+namespace Boardcore
+{
+
 /**
  * @brief Absolute pressure sensor with a 0-206kPa range (0-30psi)
  */
@@ -37,3 +40,5 @@ public:
     {
     }
 };
+
+}  // namespace Boardcore

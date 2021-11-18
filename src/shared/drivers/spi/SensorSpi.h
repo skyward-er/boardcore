@@ -24,6 +24,9 @@
 
 #include <Common.h>
 
+namespace Boardcore
+{
+
 class SPIRequest;
 
 enum DMAFIFOStatus
@@ -136,3 +139,5 @@ private:
     std::vector<uint8_t> toPeripheral;
     std::vector<uint8_t> fromPeripheral;
 };
+
+}  // namespace Boardcore

@@ -26,6 +26,9 @@
 #include <ostream>
 #include <string>
 
+namespace Boardcore
+{
+
 struct MavlinkStatus
 {
     uint64_t timestamp;
@@ -59,3 +62,5 @@ struct MavlinkStatus
            << mav_stats.packet_rx_drop_count << "\n";
     }
 };
+
+}  // namespace Boardcore

@@ -33,6 +33,9 @@
 
 #include <assert.h>
 
+namespace Boardcore
+{
+
 #define HSM_MAX_NEST_DEPTH 5
 
 enum State
@@ -415,3 +418,5 @@ private:
         this->temp  = target;
     }
 };
+
+}  // namespace Boardcore

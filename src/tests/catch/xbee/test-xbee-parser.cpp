@@ -35,6 +35,7 @@
 #include "drivers/Xbee/APIFrameParser.h"
 #include <catch2/catch.hpp>
 
+using namespace Boardcore;
 using namespace Xbee;
 
 /**

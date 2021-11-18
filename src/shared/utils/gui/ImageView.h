@@ -26,6 +26,9 @@
 
 #include "View.h"
 
+namespace Boardcore
+{
+
 /**
  * @brief Simple view that displays an image
  */
@@ -55,3 +58,5 @@ public:
 private:
     const mxgui::Image* image;
 };
+
+}  // namespace Boardcore

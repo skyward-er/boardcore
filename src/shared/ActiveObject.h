@@ -26,6 +26,9 @@
 
 #include "diagnostic/SkywardStack.h"
 
+namespace Boardcore
+{
+
 /**
  * Utility class implementing the Active Object pattern
  * Deriving from this class causes a thread to be spawned for each
@@ -134,3 +137,5 @@ private:
 
     bool started = false;
 };
+
+}  // namespace Boardcore

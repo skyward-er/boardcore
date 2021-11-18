@@ -24,6 +24,9 @@
 
 #include "sensors/SensorData.h"
 
+namespace Boardcore
+{
+
 struct MPU9250Data : public AccelerometerData,
                      public GyroscopeData,
                      public MagnetometerData,
@@ -51,3 +54,5 @@ struct MPU9250Data : public AccelerometerData,
            << "\n";
     }
 };
+
+}  // namespace Boardcore

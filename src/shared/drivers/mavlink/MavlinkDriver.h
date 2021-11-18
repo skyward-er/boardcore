@@ -47,6 +47,9 @@ implementation before including MavlinkDriver.h"
 #include "diagnostic/SkywardStack.h"
 #include "diagnostic/StackLogger.h"
 
+namespace Boardcore
+{
+
 /**
  * @brief The **MavChannel** object offers an interface to send and receive from
  * a Transceiver object using an implementation of the Mavlink protocol.
@@ -396,3 +399,5 @@ void MavlinkDriver<pkt_len, out_queue_size>::setSleepAfterSend(
 {
     sleep_after_send = newSleepTime;
 }
+
+}  // namespace Boardcore

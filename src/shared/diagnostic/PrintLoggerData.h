@@ -24,6 +24,9 @@
 
 #include <string>
 
+namespace Boardcore
+{
+
 static constexpr unsigned int MAX_LOG_STRING_SIZE =
     250; /**< Max length of messages to be logged through the buffered logger */
 
@@ -59,3 +62,5 @@ struct LoggingString
 
     void print(std::ostream& os) const { os << log_string << "\n"; }
 };
+
+}  // namespace Boardcore

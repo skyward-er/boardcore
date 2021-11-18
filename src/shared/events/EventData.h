@@ -26,6 +26,9 @@
 #include <ostream>
 #include <string>
 
+namespace Boardcore
+{
+
 /**
  * @brief Loggable struct for each event posted.
  */
@@ -42,3 +45,5 @@ struct EventData
         os << timestamp << "," << (int)event << "," << (int)topic << "\n";
     }
 };
+
+}  // namespace Boardcore

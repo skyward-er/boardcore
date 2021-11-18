@@ -31,6 +31,7 @@
 #include <kalman/KalmanEigen.h>
 #include "../kalman/test-kalman-data.h"
 
+using namespace Boardcore;
 using namespace Eigen;
 
 static const uint8_t STATES_DIM  = 3;

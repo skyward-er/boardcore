@@ -29,6 +29,9 @@
 
 #include "GammaTypes.h"
 
+namespace Boardcore
+{
+
 class Gamma868 : public Transceiver
 {
 public:
@@ -115,3 +118,5 @@ private:
 
     PrintLogger logger = Logging::getLogger("gamma868");
 };
+
+}  // namespace Boardcore

@@ -25,6 +25,9 @@
 #include "Common.h"
 #include "Vec3.h"
 
+namespace Boardcore
+{
+
 /* TODO: double and triple check routines in these classes!!!
  *
  * This class works with matrices having the following pattern:
@@ -73,3 +76,5 @@ public:
 
     float d[9];
 };
+
+}  // namespace Boardcore

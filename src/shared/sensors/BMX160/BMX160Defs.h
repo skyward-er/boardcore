@@ -24,6 +24,9 @@
 
 #include <cstdint>
 
+namespace Boardcore
+{
+
 /**
  * @brief Various BMX160 register/enums definitions.
  */
@@ -373,3 +376,5 @@ enum MagnetometerRegisters
 };
 
 }  // namespace BMX160Defs
+
+}  // namespace Boardcore

@@ -28,6 +28,9 @@
 
 #include "CanUtils.h"
 
+namespace Boardcore
+{
+
 /* Alias for the function to be executed on receive */
 using CanDispatcher = std::function<void(CanMsg, CanStatus)>;
 
@@ -105,3 +108,5 @@ private:
 
     PrintLogger logger = Logging::getLogger("canbus");
 };
+
+}  // namespace Boardcore

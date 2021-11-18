@@ -22,6 +22,9 @@
 
 #pragma once
 
+namespace Boardcore
+{
+
 static constexpr const float PI                 = 3.14159265f;
 static constexpr const float EARTH_GRAVITY      = 9.80665f;
 static constexpr const float EARTH_RADIUS       = 6371.0f * 1000.0f;  // [m]
@@ -30,3 +33,5 @@ static constexpr const float RADIANS_TO_DEGREES = 180.0f / PI;
 static constexpr const float KNOTS_TO_MPS       = 0.514444;
 static constexpr const float MSL_PRESSURE       = 101325.0f;  // [Pa]
 static constexpr const float MSL_TEMPERATURE    = 288.15f;    // [Kelvin]
+
+}  // namespace Boardcore

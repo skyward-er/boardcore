@@ -22,6 +22,9 @@
 
 #include "HBridge.h"
 
+namespace Boardcore
+{
+
 HBridge::HBridge(miosix::GpioPin inhibit, PWM::Timer timer, PWMChannel channel,
                  uint32_t frequency, float duty_cycle,
                  uint16_t disable_delay_ms)
@@ -84,3 +87,5 @@ void HBridge::enableHBridge(PWMChannel channel, GpioPin& inh, float duty_cycle)
         status.state     = HBridgeState::ENABLED;
     }
 }
+
+}  // namespace Boardcore

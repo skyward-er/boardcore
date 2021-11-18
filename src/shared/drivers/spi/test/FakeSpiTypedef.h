@@ -29,6 +29,9 @@
 
 using std::vector;
 
+namespace Boardcore
+{
+
 /**
  * @brief Mock STM32F4 SPI peripheral: intercepts register value changes to
  * emulate a real SPI peripheral / slave.
@@ -82,3 +85,5 @@ struct FakeSpiTypedef
 
     FakeSpiTypedef() : DR(*this) {cs.high();}
 };
+
+}  // namespace Boardcore

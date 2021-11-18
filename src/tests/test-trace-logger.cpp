@@ -20,9 +20,10 @@
  * THE SOFTWARE.
  */
 
-
 #include <diagnostic/PrintLogger.h>
 #include <miosix.h>
+
+using namespace Boardcore;
 
 int main()
 {

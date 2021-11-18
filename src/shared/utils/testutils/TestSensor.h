@@ -30,6 +30,9 @@
 using miosix::getTick;
 using miosix::TICK_FREQ;
 
+namespace Boardcore
+{
+
 struct TestData : public TimestampData
 {
     float value;
@@ -56,3 +59,5 @@ public:
                                     static_cast<float>(TICK_FREQ)));
     }
 };
+
+}  // namespace Boardcore

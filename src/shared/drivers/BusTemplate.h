@@ -33,6 +33,9 @@
 
 using std::vector;
 
+namespace Boardcore
+{
+
 static const int csDelay = 20;
 
 template <unsigned N, class GpioMosi, class GpioMiso, class GpioSclk>
@@ -432,3 +435,5 @@ private:
     ProtocolI2C& operator              =(const ProtocolI2C& other);
     ProtocolI2C& operator              =(const ProtocolI2C&& other);
 };
+
+}  // namespace Boardcore

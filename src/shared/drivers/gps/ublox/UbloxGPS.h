@@ -29,6 +29,9 @@
 #include "UbloxGPSData.h"
 #include "sensors/Sensor.h"
 
+namespace Boardcore
+{
+
 /**
  * @brief Driver for Ublox GPSs
  *
@@ -144,3 +147,5 @@ private:
 
     PrintLogger logger = Logging::getLogger("ubloxgps");
 };
+
+}  // namespace Boardcore

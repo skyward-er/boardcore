@@ -24,6 +24,9 @@
 
 #include "sensors/SensorData.h"
 
+namespace Boardcore
+{
+
 /**
  * @brief Structure to handle battery voltage data.
  */
@@ -42,3 +45,5 @@ struct BatteryVoltageSensorData : public ADCData
            << bat_voltage << "\n";
     }
 };
+
+}  // namespace Boardcore

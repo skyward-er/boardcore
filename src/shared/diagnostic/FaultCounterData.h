@@ -34,6 +34,9 @@
 
 #include <cstdint>
 
+namespace Boardcore
+{
+
 enum class Fault
 {
     F_ANAKIN_TEST_FAULT = 0,
@@ -55,3 +58,5 @@ const uint32_t FaultToCategory[] = {
 }; /* CategoryMapping */
 
 } /* FaultCounterData */
+
+}  // namespace Boardcore

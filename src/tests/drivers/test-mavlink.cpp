@@ -32,6 +32,7 @@
 #include <drivers/gamma868/Gamma868.h>
 #include <drivers/mavlink/MavlinkDriver.h>
 
+using namespace Boardcore;
 using namespace miosix;
 
 static const unsigned int queue_len = 10;

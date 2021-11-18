@@ -26,6 +26,9 @@
 #include <Singleton.h>
 #include "FaultCounterData.h"
 
+namespace Boardcore
+{
+
 class FaultCounterMgr : public Singleton<FaultCounterMgr>
 {
     friend class Singleton<FaultCounterMgr>;
@@ -77,3 +80,5 @@ private:
 };
 
 #define sFaultCounterMgr FaultCounterMgr::getInstance()
+
+}  // namespace Boardcore

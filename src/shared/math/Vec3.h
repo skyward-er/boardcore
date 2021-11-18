@@ -24,6 +24,9 @@
 
 #include <cmath>
 
+namespace Boardcore
+{
+
 class Vec3
 {
     friend class Mat4;
@@ -134,3 +137,5 @@ public:
 private:
     float x, y, z;
 };
+
+}  // namespace Boardcore

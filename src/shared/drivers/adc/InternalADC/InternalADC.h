@@ -27,6 +27,9 @@
 #include "InternalADCData.h"
 #include "sensors/Sensor.h"
 
+namespace Boardcore
+{
+
 /**
  * @brief Driver for stm32 internal ADC
  *
@@ -179,3 +182,5 @@ private:
     static constexpr int INJECTED_CHANNEL_N = 4;
     static constexpr int RESOLUTION         = 4096;  ///< 12 bits
 };
+
+}  // namespace Boardcore

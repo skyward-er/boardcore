@@ -27,6 +27,7 @@
 #include <sensors/MS5803/MS5803.h>
 #include <sensors/SensorSampler.h>
 
+using namespace Boardcore;
 using namespace miosix;
 
 /**

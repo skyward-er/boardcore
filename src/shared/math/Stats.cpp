@@ -27,6 +27,9 @@
 
 using namespace std;
 
+namespace Boardcore
+{
+
 ostream& operator<<(ostream& os, const StatsResult& sr)
 {
     os << "min=" << sr.minValue << " max=" << sr.maxValue << " mean=" << sr.mean
@@ -99,3 +102,5 @@ int main(int argc, char* argv[])
 }
 
 #endif  // STATS_TESTCASE
+
+}  // namespace Boardcore

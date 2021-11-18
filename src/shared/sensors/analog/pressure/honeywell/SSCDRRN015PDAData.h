@@ -24,6 +24,9 @@
 
 #include "sensors/SensorData.h"
 
+namespace Boardcore
+{
+
 struct SSCDRRN015PDAData : public PressureData
 {
     static std::string header()
@@ -36,3 +39,5 @@ struct SSCDRRN015PDAData : public PressureData
         os << press_timestamp << "," << press << "\n";
     }
 };
+
+}  // namespace Boardcore

@@ -25,6 +25,9 @@
 #include <miosix.h>
 #include "pwmdata.h"
 
+namespace Boardcore
+{
+
 /**
  * @brief Class to generate PWM using hardware timers.
  * Class is NOT thread-safe. Every instante must be used by a single thread.
@@ -147,3 +150,5 @@ private:
 
     PWMChannelConfig channels[4]{};
 };
+
+}  // namespace Boardcore

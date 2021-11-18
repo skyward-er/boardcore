@@ -29,6 +29,9 @@
 using miosix::FastMutex;
 using miosix::Lock;
 
+namespace Boardcore
+{
+
 /**
  * Implementation of a synchronized circular buffer
  */
@@ -113,3 +116,5 @@ public:
 private:
     mutable FastMutex mutex;
 };
+
+}  // namespace Boardcore

@@ -22,6 +22,9 @@
 
 #pragma once
 
+namespace Boardcore
+{
+
 /**
  * WARNING: deriving from this class is not enough to make a singleton,
  * you also have to declare the constructor of your class private!
@@ -54,3 +57,5 @@ private:
     Singleton(const Singleton&) = delete;
     Singleton& operator=(const Singleton&) = delete;
 };
+
+}  // namespace Boardcore

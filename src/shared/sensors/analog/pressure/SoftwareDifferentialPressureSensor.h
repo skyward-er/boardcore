@@ -24,6 +24,9 @@
 
 #include <sensors/Sensor.h>
 
+namespace Boardcore
+{
+
 /**
  * @brief Class used to simulate a differential pressure sensor in software.
  *
@@ -71,3 +74,5 @@ private:
     Sensor<FirstPressureData>* first_pressure_sensor;
     Sensor<SecondPressureData>* second_pressure_sensor;
 };
+
+}  // namespace Boardcore

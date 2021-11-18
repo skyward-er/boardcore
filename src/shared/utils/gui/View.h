@@ -29,6 +29,9 @@
 
 #include "Misc.h"
 
+namespace Boardcore
+{
+
 struct Size
 {
     short int width;
@@ -258,3 +261,5 @@ private:
     bool was_selected          = false;
     mxgui::Color last_bg_color = col_bg;
 };
+
+}  // namespace Boardcore

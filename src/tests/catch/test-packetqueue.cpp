@@ -29,6 +29,8 @@
 #define private public
 #include <utils/collections/SyncPacketQueue.h>
 
+using namespace Boardcore;
+
 static constexpr int BUF_LEN   = 20;
 static constexpr int PKT_LEN   = 10;
 static constexpr int QUEUE_LEN = 3;

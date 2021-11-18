@@ -34,8 +34,9 @@
 #include "math/SkyQuaternion.h"
 #include "util/util.h"
 
-using namespace Eigen;
+using namespace Boardcore;
 using namespace miosix;
+using namespace Eigen;
 
 int main()
 {

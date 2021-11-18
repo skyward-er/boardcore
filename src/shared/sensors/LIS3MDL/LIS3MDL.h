@@ -30,6 +30,9 @@
 #include "miosix.h"
 #include "sensors/Sensor.h"
 
+namespace Boardcore
+{
+
 /**
  * Driver for LIS3MDL, a three-axis magnetic sensor.
  */
@@ -642,3 +645,5 @@ private:
 
     PrintLogger logger = Logging::getLogger("lis3mdl");
 };
+
+}  // namespace Boardcore

@@ -26,6 +26,9 @@
 #include <string>
 #include <ostream>
 
+namespace Boardcore
+{
+
 #define CAN_MAX_PAYLOAD 8
 #define CAN_MAX_LEN     16
 
@@ -120,3 +123,5 @@ struct CanStatus {
            << (int)last_rcv << "," << last_sent_ts <<"," << last_rcv_ts << "\n";
     }
 };
+
+}  // namespace Boardcore

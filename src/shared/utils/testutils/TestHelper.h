@@ -37,6 +37,9 @@ using miosix::getTick;
 using miosix::Lock;
 using std::map;
 
+namespace Boardcore
+{
+
 /*
  * How long should we wait for the state machine to handle the event?
  * Value in milliseconds
@@ -196,3 +199,5 @@ bool expectEvent(uint8_t event_id, uint8_t topic, long long when,
  */
 bool waitForEvent(uint8_t event, uint8_t topic, long long timeout = 0,
                   EventBroker& broker = *sEventBroker);
+
+}  // namespace Boardcore

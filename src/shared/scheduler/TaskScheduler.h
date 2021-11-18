@@ -31,6 +31,9 @@
 #include <queue>
 #include "TaskSchedulerData.h"
 
+namespace Boardcore
+{
+
 /**
  * HOW TO USE THE TASK SCHEDULER
  * TaskScheduler.add(nonblocking_std::function_without_sleeps, millisec);
@@ -155,3 +158,5 @@ private:
     std::priority_queue<event_t> agenda;  ///< Ordered list of functions
     uint32_t permanentTasks;              ///< Number of non-oneshot tasks
 };
+
+}  // namespace Boardcore

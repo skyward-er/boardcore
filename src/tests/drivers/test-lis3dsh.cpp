@@ -26,6 +26,7 @@
 #include "Common.h"
 #include "sensors/LIS3DSH/LIS3DSH.h"
 
+using namespace Boardcore;
 using namespace std;
 using namespace miosix;
 

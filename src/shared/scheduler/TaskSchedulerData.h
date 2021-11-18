@@ -26,6 +26,9 @@
 
 #pragma once
 
+namespace Boardcore
+{
+
 /**
  * Statistics for a task
  */
@@ -58,3 +61,5 @@ struct TaskStatResult
            << workloadStats.stdev << "," << workloadStats.nSamples << "\n";
     }
 };
+
+}  // namespace Boardcore

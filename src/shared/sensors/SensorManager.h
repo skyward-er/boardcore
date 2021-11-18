@@ -31,6 +31,9 @@
 
 using namespace std;
 
+namespace Boardcore
+{
+
 /**
  * @brief The SensorManager class manages all the sensors connected to the
  * Board.
@@ -179,3 +182,5 @@ private:
 
     PrintLogger logger = Logging::getLogger("sensormanager");
 };
+
+}  // namespace Boardcore

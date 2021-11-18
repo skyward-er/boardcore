@@ -32,6 +32,9 @@
 using std::string;
 using std::stringstream;
 
+namespace Boardcore
+{
+
 /**
  * @brief Utility class to manually post events to specific topics.
  */
@@ -57,3 +60,5 @@ protected:
         }
     }
 };
+
+}  // namespace Boardcore

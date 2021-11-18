@@ -25,6 +25,9 @@
 #include <Eigen/Dense>
 using namespace Eigen;
 
+namespace Boardcore
+{
+
 /**
  * @brief Class for managing quaternions.
  *        Convention used: qx, qy, qz, qw (scalar element as last element)
@@ -81,3 +84,5 @@ public:
      */
     Vector4f quatProd(const Vector4f q1, const Vector4f q2);
 };
+
+}  // namespace Boardcore

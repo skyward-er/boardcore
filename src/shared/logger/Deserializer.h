@@ -31,8 +31,6 @@
 #include <string>
 #include <vector>
 
-typedef std::numeric_limits<float> flt;
-
 using std::ostream;
 using std::string;
 using std::vector;
@@ -40,6 +38,11 @@ using std::ifstream;
 using std::ofstream;
 using tscpp::TypePoolStream;
 using tscpp::UnknownInputArchive;
+
+namespace Boardcore
+{
+
+typedef std::numeric_limits<float> flt;
 
 /**
  * Class used to deserialize log files created using fedetft's logger.
@@ -194,3 +197,5 @@ private:
     string logFile;
     string logFileWithExt;
 };
+
+}  // namespace Boardcore

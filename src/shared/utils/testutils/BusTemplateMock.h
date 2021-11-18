@@ -29,6 +29,9 @@
 
 using std::vector;
 
+namespace Boardcore
+{
+
 class BusSPIMock : public Singleton<BusSPIMock>
 {
     friend class Singleton<BusSPIMock>;
@@ -156,3 +159,5 @@ private:
 
     mutable vector<uint8_t> MOSI;
 };
+
+}  // namespace Boardcore

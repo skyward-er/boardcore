@@ -25,6 +25,8 @@
 #include <drivers/interrupt/external_interrupts.h>
 #include <sensors/BMX160/BMX160.h>
 
+using namespace Boardcore;
+
 SPIBus bus(SPI1);
 GpioPin cs(GPIOA_BASE, 8);
 
