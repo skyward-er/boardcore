@@ -39,12 +39,17 @@ private:
     /**
      * @brief default vn100 baud rate
      */
-    static const unsigned int defaultBaudRate    = 115200;
+    static const unsigned int defaultBaudRate           = 115200;
 
     /** 
      * @brief default USART port number
      */
-    static const unsigned int defaultPortNumber  = 2;
+    static const unsigned int defaultPortNumber         = 2;
+
+    /**
+     * @brief max received string lengh
+     */
+    static const unsigned int recvStringMaxDimension    = 100;
 
     /**
      * @brief baud rate defined by the user
@@ -65,6 +70,12 @@ private:
      * @brief initialization state
      */
     bool isInit;
+
+    /**
+     * @brief pointer to the received string by the sensor
+     * Allocated 1 time only (100 bytes)
+     */
+    char * recvString;
 
     /**
      * @brief serial interface that is needed to communicate
@@ -155,4 +166,11 @@ public:
      * @return Boolean of the result
      */
     bool selfTest() override;
+
+    /**
+     * @brief Method to reset the sensor to default values and to close
+     * the connection. Used if you need to close and re initialize the sensor
+     * @return Boolean of the result
+     */
+    bool closeAndReset();
 };

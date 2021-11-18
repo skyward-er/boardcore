@@ -61,6 +61,15 @@ bool VN100::init()
         return false;
     }
 
+    //Allocate the receive vector with a malloc
+    //TODO review this operation
+    recvString = (char *) malloc(recvStringMaxDimension * sizeof(char));
+
+    if(recvString == NULL)
+    {
+        return false;
+    }
+
     //Set the isInit flag true
     isInit = true;
 
@@ -77,6 +86,31 @@ bool VN100::selfTest()
 
     //I check the model number
     if(!sendStringCommand("VNRRG,01"))
+    {
+        return false;
+    }
+
+    if(!(serialInterface -> recv(recvString, recvStringMaxDimension)))
+    {
+        return false;
+    }
+
+    printf("%s\n", recvString);
+
+    return true;
+}
+
+
+bool VN100::closeAndReset()
+{
+    //Send the reset command to the vn100
+    if(!sendStringCommand("VNRST"))
+    {
+        return false;
+    }
+
+    //Close the serial
+    if(!(serialInterface -> closeSerial()))
     {
         return false;
     }

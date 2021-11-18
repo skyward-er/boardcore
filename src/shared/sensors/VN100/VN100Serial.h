@@ -134,7 +134,7 @@ public:
      * @return Boolean which communicates the recive process result
      */
     template <typename DataReceive>
-    bool recv(DataReceive *data)
+    bool recv(DataReceive *data, int length)
     {
         if(!isInit)
         {
@@ -142,7 +142,7 @@ public:
         }
 
         //Read the data and store it in memory
-        if(!read(serialFileDescriptor, data, sizeof(DataReceive)))
+        if(!read(serialFileDescriptor, data, length))
         {
             return false;
         }
