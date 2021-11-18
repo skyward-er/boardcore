@@ -69,6 +69,18 @@ bool VN100::init()
 
 bool VN100::selfTest()
 {
+    //Check the init status
+    if(!isInit)
+    {
+        return false;
+    }
+
+    //I check the model number
+    if(!sendStringCommand("VNRRG,01"))
+    {
+        return false;
+    }
+
     return true;
 }
 
