@@ -31,7 +31,7 @@ VN100::VN100()
 {}
 
 VN100::VN100(unsigned int portNumber, unsigned int baudRate)
-    : VN100(portNumber, baudRate, CRC_ENABLE_8);
+    : VN100(portNumber, baudRate, CRC_ENABLE_8)
 {}
 
 VN100::VN100(unsigned int portNumber, unsigned int baudRate, uint8_t crc)
@@ -74,6 +74,11 @@ bool VN100::configSerialPort()
     //In case the set baud rate is different
     if(baudRate != defaultBaudRate)
     {
+        //Variables for the baud rate change
+        uint8_t backup;
+        std::string command;
+
+        //Initial default settings
         serialInterface = new VN100Serial(portNumber, defaultBaudRate);
 
         //In case of failed serial initialization
@@ -82,9 +87,54 @@ bool VN100::configSerialPort()
             return false;
         }
 
-        //Once the default serial communication is open i can set the user defined baudrate
+        //Once the default serial communication is open i can format the command to change baud rate
+        command = fmt::format("{}{}", "$VNWRG,5,", baudRate);
+        command = fmt::format("{}{}", command, "*");
         
+        //I can send the command setting the crc manually to 8bit (sensor's default)
+        backup  = crc;
+        crc     = CRC_ENABLE_8;
+        if(!sendStringCommand(command))
+        {
+            return false;
+        }
+        //After the send command i can restore the crc
+        crc = backup;
     }
+    return true;
+}
+
+bool VN100::sendStringCommand(std::string command)
+{
+    if(crc == CRC_ENABLE_8)
+    {
+        char checksum[3]; //2 hex + \0
+        //I convert the calculated checksum in hex using itoa
+        itoa(calculateChecksum8((uint8_t *)command.c_str(), command.length()), checksum, 16);
+        //I concatenate
+        command = fmt::format("{}{}", command, checksum);
+
+    }
+    else if(crc == CRC_ENABLE_16)
+    {
+        char checksum[5]; //4 hex + \0
+        //I convert the calculated checksum in hex using itoa
+        itoa(calculateChecksum16((uint8_t *)command.c_str(), command.length()), checksum, 16);
+        //I concatenate
+        command = fmt::format("{}{}", command, checksum);
+    }
+    else
+    {
+        //No checksum, i add only 'XX' at the end
+        command = fmt::format("{}{}", command, "XX");
+    }
+
+    //I send the final command
+    if(!(serialInterface -> send(command.c_str(), command.length())))
+    {
+        return false;
+    }
+
     return true;
 }
 
@@ -106,7 +156,7 @@ uint8_t VN100::calculateChecksum8(uint8_t * message, int length)
 uint16_t VN100::calculateChecksum16(uint8_t * message, int length)
 {
     int i;
-    uint16_t result;
+    uint16_t result = 0x0000;
 
     //Apply the datasheet definition of CRC16-CCITT
     for(i = 0; i < length; i++)

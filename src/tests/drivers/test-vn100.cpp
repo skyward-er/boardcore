@@ -27,6 +27,7 @@ using namespace miosix;
 
 int main()
 {
-
+    VN100 sensor {2, 19200};
+    sensor.init();
     return 0;
 }

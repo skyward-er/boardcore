@@ -22,6 +22,7 @@
 #pragma once
 
 #include <string>
+#include <fmt/format.h>
 
 #include <sensors/Sensor.h>
 #include "VN100Data.h"
@@ -77,6 +78,14 @@ private:
     bool configSerialPort();
 
     /**
+     * @brief sends the command to the sensor with the correct checksum added
+     * so '*' symbol is needed at the end of the string
+     * 
+     * @return boolean that confirms or not the success
+     */
+    bool sendStringCommand(std::string command);
+
+    /**
      * @brief method to calculate 8bit vector checksum 8bit
      */
     uint8_t calculateChecksum8(uint8_t * message, int length);
@@ -110,7 +119,7 @@ public:
      * @param USART port number
      * @param baudRate different from the sensor's default
      */
-	VN100(int portNumber, int baudRate);
+	VN100(unsigned int portNumber, unsigned int baudRate);
 
     /**
      * @brief Constructor
@@ -118,7 +127,7 @@ public:
      * @param baudRate different from the sensor's default
      * @param redundancy check option
      */
-    VN100(int portNumber, int baudRate, uint8_t crc);
+    VN100(unsigned int portNumber, unsigned int baudRate, uint8_t crc);
 
     /**
      * @brief Init method to initialize the IMU and to set 
