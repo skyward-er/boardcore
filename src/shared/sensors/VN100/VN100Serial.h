@@ -154,8 +154,20 @@ public:
     /**
      * @brief Closes the serial communication
      */
-    void closeSerial()
+    bool closeSerial()
     {
+        //Retrieve the file system instance
+        intrusive_ref_ptr<DevFs> devFs = FilesystemManager::instance().getDevFs();
+
+        //Close the file descriptor
         close(serialFileDescriptor);
+
+        //Remove the file
+        if(!(devFs -> remove("vn100")))
+        {
+            return false;
+        }
+
+        return true;
     }
 };
