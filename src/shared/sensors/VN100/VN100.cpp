@@ -81,7 +81,7 @@ bool VN100::configSerialPort()
         //Initial default settings
         serialInterface = new VN100Serial(portNumber, defaultBaudRate);
 
-        //In case of failed serial initialization
+        //Check correct serial init
         if(!(serialInterface -> init()))
         {
             return false;
@@ -100,7 +100,25 @@ bool VN100::configSerialPort()
         }
         //After the send command i can restore the crc
         crc = backup;
+
+        //I can close the serial
+        serialInterface -> closeSerial();
+
+        //Destroy the serial object
+        delete(serialInterface);
     }
+
+    //I can open the serial with user's baud rate
+    serialInterface = new VN100Serial(portNumber, baudRate);
+
+    //Check correct serial init
+    if(!(serialInterface -> init()))
+    {
+        return false;
+    }
+
+    serialInterface -> send("prova\n\r", 7);
+
     return true;
 }
 

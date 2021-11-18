@@ -28,7 +28,6 @@
 
 using namespace miosix;
 
-
 /**
  * @brief Class to communicate with the vn100 via serial
  */
