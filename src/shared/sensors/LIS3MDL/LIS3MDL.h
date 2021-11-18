@@ -20,8 +20,7 @@
  * THE SOFTWARE.
  */
 
-#ifndef SRC_SHARED_SENSORS_LIS3MDL_LIS3MDL_H
-#define SRC_SHARED_SENSORS_LIS3MDL_LIS3MDL_H
+#pragma once
 
 #include <Common.h>
 #include <diagnostic/PrintLogger.h>
@@ -643,5 +642,3 @@ private:
 
     PrintLogger logger = Logging::getLogger("lis3mdl");
 };
-
-#endif

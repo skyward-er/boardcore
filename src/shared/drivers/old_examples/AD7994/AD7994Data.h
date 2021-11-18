@@ -20,8 +20,7 @@
  * THE SOFTWARE.
  */
 
-#ifndef SRC_SHARED_DRIVERS_ADC_AD7994DATA_H
-#define SRC_SHARED_DRIVERS_ADC_AD7994DATA_H
+#pragma once
 
 #include <cstdint>
 #include <ostream>
@@ -45,5 +44,3 @@ struct AD7994Sample
            << (int)alert_flag << "\n";
     }
 };
-
-#endif

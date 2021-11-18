@@ -40,7 +40,7 @@ implementation before including MavlinkDriver.h"
 #endif
 
 #include <drivers/Transceiver.h>
-#include <mavlink_skyward_lib/mavlink_lib/mavlink_types.h>
+#include <mavlink_lib/mavlink_types.h>
 #include <utils/collections/SyncPacketQueue.h>
 
 #include "MavlinkStatus.h"

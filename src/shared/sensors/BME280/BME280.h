@@ -20,6 +20,8 @@
  * THE SOFTWARE.
  */
 
+#pragma once
+
 #include <diagnostic/PrintLogger.h>
 
 #include "BME280Data.h"

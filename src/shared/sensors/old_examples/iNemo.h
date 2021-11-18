@@ -20,8 +20,7 @@
  * THE SOFTWARE.
  */
 
-#ifndef INEMO_H
-#define INEMO_H
+#pragma once
 
 #include <drivers/BusTemplate.h>
 #include "Common.h"
@@ -284,5 +283,3 @@ constexpr float iNEMOLSM9DS0<BusG, BusXM>::gyroFSMAP[];
 
 template <typename BusG, typename BusXM>
 constexpr float iNEMOLSM9DS0<BusG, BusXM>::compassFSMAP[];
-
-#endif

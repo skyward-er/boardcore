@@ -54,7 +54,7 @@
 #define CATCH_CONFIG_NO_POSIX_SIGNALS
 #include <cstring>
 #include <string>
-#include <utils/testutils/catch.hpp>
+#include <catch2/catch.hpp>
 #include <vector>
 
 #ifndef COMPILE_FOR_X86

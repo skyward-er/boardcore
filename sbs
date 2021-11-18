@@ -34,7 +34,7 @@ print_banner() {
 |  |  _ \\| | | | | |/ _\` | \\___ \\| | | / __| __/ _ \\ '_ \` _ \\   |
 |  | |_) | |_| | | | (_| |  ___) | |_| \\__ \\ ||  __/ | | | | |  |
 |  |____/ \\__,_|_|_|\\__,_| |____/ \\__, |___/\\__\\___|_| |_| |_|  |
-+----------------------------------|___/-------------------v3.0-+
++----------------------------------|___/-------------------v3.1-+
 
 EOF
 }
@@ -55,6 +55,7 @@ configure() {
         $config_ccache \
         $config_toolchain \
         $config_ninja \
+        $config_buildtype \
         $config_verbose \
         "$source_dir"
 }
@@ -69,14 +70,17 @@ flash() { build "$1" && [ -f "$build_dir/$1.bin" ] && echo && st-flash --reset w
 
 lint() { "$sbs_base/scripts/linter.sh" "$source_dir/src/shared"; }
 
-list() { check_configured && echo "[1/1] All SBS targets available:" && \
-    cmake --build "$build_dir" $build_jobs --target help | grep -o '^[^/]*\.bin' | cut -f 1 -d '.'; }
+list() { check_configured && echo "[1/1] All SBS targets available:" \
+    && cmake --build "$build_dir" $build_jobs --target help | grep -o '^[^/]*\.bin' | cut -f 1 -d '.'; }
 
 boards() { check_configured && cmake --build "$build_dir" $build_jobs --target help-boards; }
 
-check_configured() { ([ ! -d "$build_dir" ] || [ ! -f "$build_dir/CMakeCache.txt" ] && rm -rf "$build_dir") && configure && echo || true; }
+check_configured() { ([ "$to_reconfigure" = true ] || [ ! -d "$build_dir" ] || [ ! -f "$build_dir/CMakeCache.txt" ] && rm -rf "$build_dir") \
+    && configure && echo || true; }
 
-set_verbose() { config_verbose="-DCMAKE_VERBOSE_MAKEFILE:BOOL=ON"; }
+set_debug() { config_buildtype="-DCMAKE_BUILD_TYPE=Debug" && to_reconfigure=true; }
+
+set_verbose() { config_verbose="-DCMAKE_VERBOSE_MAKEFILE:BOOL=ON" && to_reconfigure=true; }
 
 set_jobs() { build_jobs="-j $1"; }
 
@@ -91,11 +95,12 @@ OPTIONS:
                         Build a specific target
   -f TARGET, --flash TARGET
                         Build and flash a specific target
+  -j JOBS, --jobs JOBS  Build in parallel using the given number of jobs
+  -d, --debug           Enable debug
+  -v, --verbose         Print a verbose output
   -n, --lint            Run the linter
   -l, --list            List all targets available
   -r, --boards          List all boards available
-  -v, --verbose         Print a verbose output
-  -j JOBS, --jobs JOBS  Build in parallel using the given number of jobs
 EOF
 }
 
@@ -104,8 +109,10 @@ print_banner
 sbs_base="$(cd -- "$(dirname "$0")" > /dev/null 2>&1; pwd -P)"
 source_dir="$PWD"
 build_dir="$source_dir/build"
+config_buildtype="-DCMAKE_BUILD_TYPE=Release"
 config_verbose=
 build_jobs=
+to_reconfigure=false
 
 ccache_found="$(command -v ccache)"
 ninja_found="$(command -v ninja)"
@@ -117,26 +124,28 @@ for arg in "$@"; do
         --clean)    set -- "$@" "-c";;
         --build)    set -- "$@" "-b";;
         --flash)    set -- "$@" "-f";;
+        --jobs)     set -- "$@" "-j";;
+        --debug)    set -- "$@" "-d";;
+        --verbose)  set -- "$@" "-v";;
         --lint)     set -- "$@" "-n";;
         --list)     set -- "$@" "-l";;
         --boards)   set -- "$@" "-r";;
-        --verbose)  set -- "$@" "-v";;
-        --jobs)     set -- "$@" "-j";;
         *)          set -- "$@" "$arg"
     esac
 done
 
-while getopts hcb:f:nlrvj: opt; do
+while getopts hcb:f:j:dvnlr opt; do
     case "$opt" in
         h)  usage; exit 0;;
         c)  clean; exit $?;;
         b)  build "$OPTARG"; exit $?;;
         f)  flash "$OPTARG"; exit $?;;
+        j)  set_jobs "$OPTARG";;
+        d)  set_debug;;
+        v)  set_verbose;;
         n)  lint; exit $?;;
         l)  list; exit $?;;
         r)  boards; exit $?;;
-        v)  set_verbose;;
-        j)  set_jobs "$OPTARG";;
         ?)  usage; exit 2;;
     esac
 done

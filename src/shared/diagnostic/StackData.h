@@ -20,6 +20,8 @@
  * THE SOFTWARE.
  */
 
+#pragma once
+
 #include <cstdint>
 #include <ostream>
 #include <string>

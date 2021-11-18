@@ -20,8 +20,7 @@
  * THE SOFTWARE.
  */
 
-#ifndef ADIS16405_H
-#define ADIS16405_H
+#pragma once
 
 #include <drivers/BusTemplate.h>
 #include "sensors/Sensor.h"
@@ -353,5 +352,3 @@ private:
 
 template <typename BusSPI, typename rstPin>
 constexpr float ADIS16405<BusSPI,rstPin>::gyroFSMAP[];
-
-#endif

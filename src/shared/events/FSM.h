@@ -20,8 +20,7 @@
  * THE SOFTWARE.
  */
 
-#ifndef SRC_SHARED_EVENTS_FSM_H
-#define SRC_SHARED_EVENTS_FSM_H
+#pragma once
 
 #include "ActiveObject.h"
 #include "events/Event.h"
@@ -73,5 +72,3 @@ private:
     void (T::*state)(const Event&);
     Event specialEvent;
 };
-
-#endif  // SRC_SHARED_EVENTS_FSM_H

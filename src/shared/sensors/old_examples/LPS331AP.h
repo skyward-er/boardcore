@@ -20,8 +20,7 @@
  * THE SOFTWARE.
  */
 
-#ifndef LPS331AP_H
-#define LPS331AP_H
+#pragma once
 
 #include <drivers/BusTemplate.h>
 #include "Sensor.h"
@@ -128,5 +127,3 @@ private:
     };
     // clang-format on
 };
-
-#endif

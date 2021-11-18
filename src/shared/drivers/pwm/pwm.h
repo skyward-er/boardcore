@@ -20,8 +20,7 @@
  * THE SOFTWARE.
  */
 
-#ifndef SRC_SHARED_DRIVERS_PWM_PWM_H_
-#define SRC_SHARED_DRIVERS_PWM_PWM_H_
+#pragma once
 
 #include <miosix.h>
 #include "pwmdata.h"
@@ -148,5 +147,3 @@ private:
 
     PWMChannelConfig channels[4]{};
 };
-
-#endif /* SRC_SHARED_DRIVERS_PWM_PWM_H_ */

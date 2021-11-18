@@ -20,9 +20,7 @@
  * THE SOFTWARE.
  */
 
-
-#ifndef CONTIGUOUS_QUEUE
-#define CONTIGUOUS_QUEUE
+#pragma once
 
 #include <stdexcept>
 
@@ -133,5 +131,3 @@ private:
     T elements[N] = {0};
     unsigned int size = 0;
 };
-
-#endif  // CONTIGUOUS_QUEUE

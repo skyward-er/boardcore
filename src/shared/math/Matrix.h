@@ -20,8 +20,7 @@
  * THE SOFTWARE.
  */
 
-#ifndef MATH_MATRIX_H
-#define MATH_MATRIX_H
+#pragma once
 
 #include "Common.h"
 #include "Vec3.h"
@@ -74,5 +73,3 @@ public:
 
     float d[9];
 };
-
-#endif

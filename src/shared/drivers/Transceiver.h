@@ -20,8 +20,7 @@
  * THE SOFTWARE.
  */
 
-#ifndef TRANSCEIVER_H
-#define TRANSCEIVER_H
+#pragma once
 
 class Transceiver
 {
@@ -49,5 +48,3 @@ public:
      */
     virtual ssize_t receive(uint8_t* pkt, size_t pkt_len) = 0;
 };
-
-#endif

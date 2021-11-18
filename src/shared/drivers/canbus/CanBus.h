@@ -20,8 +20,7 @@
  * THE SOFTWARE.
  */
 
-#ifndef CANBUS_H
-#define CANBUS_H
+#pragma once
 
 #include <ActiveObject.h>
 #include <Common.h>
@@ -106,5 +105,3 @@ private:
 
     PrintLogger logger = Logging::getLogger("canbus");
 };
-
-#endif /* CANBUS_H */

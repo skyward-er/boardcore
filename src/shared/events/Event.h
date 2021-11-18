@@ -20,8 +20,7 @@
  * THE SOFTWARE.
  */
 
-#ifndef SRC_SHARED_EVENTS_EVENT_H
-#define SRC_SHARED_EVENTS_EVENT_H
+#pragma once
 
 #include <stdint.h>
 
@@ -58,5 +57,3 @@ struct Event
                 uint32_t custom_member;
         };
 */
-
-#endif /* SRC_SHARED_EVENTS_EVENT_H */

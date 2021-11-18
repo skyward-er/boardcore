@@ -20,8 +20,7 @@
  * THE SOFTWARE.
  */
 
-#ifndef SRC_SHARED_EVENTS_EVENT_BROKER_H
-#define SRC_SHARED_EVENTS_EVENT_BROKER_H
+#pragma once
 
 #include <diagnostic/PrintLogger.h>
 #include <miosix.h>
@@ -188,5 +187,3 @@ private:
 };
 
 #define sEventBroker Singleton<EventBroker>::getInstance()
-
-#endif  // SRC_SHARED_EVENTS_EVENT_BROKER_H

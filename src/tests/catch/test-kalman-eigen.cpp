@@ -27,7 +27,7 @@
 #define EIGEN_RUNTIME_NO_MALLOC
 
 #include <iostream>
-#include <utils/testutils/catch.hpp>
+#include <catch2/catch.hpp>
 #include <kalman/KalmanEigen.h>
 #include "../kalman/test-kalman-data.h"
 
@@ -97,7 +97,7 @@ TEST_CASE("Update test")
 
         if (!filter.correct(y))
         {
-            FAIL("Correction failed at iteration : %d \n", i);
+            FAIL("Correction failed at iteration : " << i << " \n");
         }
 
         if (filter.getState()(0, 0) != Approx(STATE_1[i]).epsilon(0.01))

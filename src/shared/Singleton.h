@@ -20,8 +20,7 @@
  * THE SOFTWARE.
  */
 
-#ifndef SINGLETON_H
-#define SINGLETON_H
+#pragma once
 
 /**
  * WARNING: deriving from this class is not enough to make a singleton,
@@ -55,5 +54,3 @@ private:
     Singleton(const Singleton&) = delete;
     Singleton& operator=(const Singleton&) = delete;
 };
-
-#endif  // SINGLETON_H

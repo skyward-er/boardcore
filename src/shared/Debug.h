@@ -19,8 +19,8 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
-#ifndef SRC_SHARED_DEBUG_H
-#define SRC_SHARED_DEBUG_H
+
+#pragma once
 
 #include <miosix.h>
 #include <string>
@@ -73,5 +73,3 @@
     #define LOG_STACK(...) (void)0
 #endif
 // clang-format on
-
-#endif /* SRC_SHARED_DEBUG_H */

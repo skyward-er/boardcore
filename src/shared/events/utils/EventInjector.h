@@ -20,6 +20,8 @@
  * THE SOFTWARE.
  */
 
+#pragma once
+
 #include <ActiveObject.h>
 #include <events/EventBroker.h>
 #include <Debug.h>

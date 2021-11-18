@@ -20,8 +20,7 @@
  * THE SOFTWARE.
  */
 
-#ifndef SRC_SHARED_ACTIVEOBJECT_H
-#define SRC_SHARED_ACTIVEOBJECT_H
+#pragma once
 
 #include <Common.h>
 
@@ -135,5 +134,3 @@ private:
 
     bool started = false;
 };
-
-#endif  // SRC_SHARED_ACTIVEOBJECT_H
