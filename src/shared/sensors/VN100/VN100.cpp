@@ -96,8 +96,7 @@ bool VN100::configSerialPort()
         }
 
         //Once the default serial communication is open i can format the command to change baud rate
-        command = fmt::format("{}{}", "$VNWRG,5,", baudRate);
-        command = fmt::format("{}{}", command, "*");
+        command = fmt::format("{}{}", "VNWRG,5,", baudRate);
         
         //I can send the command setting the crc manually to 8bit (sensor's default)
         backup  = crc;
@@ -137,7 +136,7 @@ bool VN100::setCrc()
     if(crc == CRC_ENABLE_16)
     {
         //The 3 inside the command is the 16bit select. The others are default values
-        command = "$VNWRG,0,0,0,0,3,0,1*";
+        command = "VNWRG,0,0,0,0,3,0,1";
 
         //Set the crc to 8 bit for this communication
         crc = CRC_ENABLE_8;
@@ -150,6 +149,8 @@ bool VN100::setCrc()
 
         //Restore the correct crc
         crc = CRC_ENABLE_16;
+
+        printf("success!\n");
     }
     return true;
 }
@@ -162,7 +163,7 @@ bool VN100::sendStringCommand(std::string command)
         //I convert the calculated checksum in hex using itoa
         itoa(calculateChecksum8((uint8_t *)command.c_str(), command.length()), checksum, 16);
         //I concatenate
-        command = fmt::format("{}{}", command, checksum);
+        command = fmt::format("{}{}{}{}", "$", command, "*", checksum);
 
     }
     else if(crc == CRC_ENABLE_16)
@@ -171,12 +172,12 @@ bool VN100::sendStringCommand(std::string command)
         //I convert the calculated checksum in hex using itoa
         itoa(calculateChecksum16((uint8_t *)command.c_str(), command.length()), checksum, 16);
         //I concatenate
-        command = fmt::format("{}{}", command, checksum);
+        command = fmt::format("{}{}{}{}", "$", command, "*", checksum);
     }
     else
     {
         //No checksum, i add only 'XX' at the end
-        command = fmt::format("{}{}", command, "XX");
+        command = fmt::format("{}{}{}", "$", command, "*XX");
     }
 
     //I send the final command
@@ -197,7 +198,7 @@ uint8_t VN100::calculateChecksum8(uint8_t * message, int length)
     for(i = 0; i < length; i++)
     {
         //^ = XOR Operation
-        result = result ^ message[i];
+        result ^= message[i];
     }
 
     return result;

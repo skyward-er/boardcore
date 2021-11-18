@@ -27,7 +27,12 @@ using namespace miosix;
 
 int main()
 {
-    VN100 sensor {2, 19200};
-    sensor.init();
+    VN100 sensor {2, 115200, VN100::CRC_ENABLE_16};
+    
+    if(!sensor.init())
+    {
+        printf("Error initializing the sensor!\n");
+    }
+
     return 0;
 }
