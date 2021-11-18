@@ -34,10 +34,14 @@ int main()
         printf("Error initializing the sensor!\n");
     }
 
+    printf("Sensor init successful!\n");
+
     if(!sensor.selfTest())
     {
         printf("Error self test check!\n");
     }
+
+    printf("Sensor self test successful!\n");
 
     return 0;
 }

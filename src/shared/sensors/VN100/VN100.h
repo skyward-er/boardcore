@@ -49,7 +49,7 @@ private:
     /**
      * @brief max received string lengh
      */
-    static const unsigned int recvStringMaxDimension    = 100;
+    static const unsigned int recvStringMaxDimension    = 200;
 
     /**
      * @brief baud rate defined by the user
@@ -82,6 +82,14 @@ private:
      * with the sensor via ASCII codes
      */
     VN100Serial *serialInterface;
+
+    /**
+     * @brief this method disables the async messages that the vn100
+     * is default configured to send at 40Hz on startup
+     * 
+     * @return boolean that confirms or not the success
+     */ 
+    bool disableAsyncMessages();
 
     /**
      * @brief method to configure the serial communication
