@@ -74,8 +74,17 @@ private:
 
     /**
      * @brief method to configure the serial communication
+     * 
+     * @return boolean that confirms or not the success
      */
     bool configSerialPort();
+
+    /**
+     * @brief method to set the user selected crc method
+     * 
+     * @return boolean that confirms or not the success
+     */
+    bool setCrc();
 
     /**
      * @brief sends the command to the sensor with the correct checksum added
@@ -87,11 +96,15 @@ private:
 
     /**
      * @brief method to calculate 8bit vector checksum 8bit
+     * 
+     * @return the 8 bit checksum
      */
     uint8_t calculateChecksum8(uint8_t * message, int length);
 
     /**
      * @brief method to calculate a 8bit vector checksum 16bit
+     * 
+     * @return the 16 bit CRC16-CCITT error check
      */
     uint16_t calculateChecksum16(uint8_t * message, int length);
 

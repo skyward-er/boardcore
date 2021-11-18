@@ -25,6 +25,7 @@
 
 /**
  * CONSTRUCTORS
+ * ---------------------------------------------------------------------------------------------------------------------------------------
  */
 VN100::VN100()
     : VN100(defaultPortNumber, defaultBaudRate)
@@ -46,10 +47,16 @@ VN100::VN100(unsigned int portNumber, unsigned int baudRate, uint8_t crc)
 
 /**
  * PUBLIC METHODS
+ * ---------------------------------------------------------------------------------------------------------------------------------------
  */
 bool VN100::init()
 {
     if(!configSerialPort())
+    {
+        return false;
+    }
+
+    if(!setCrc())
     {
         return false;
     }
@@ -68,6 +75,7 @@ bool VN100::selfTest()
 
 /**
  * PRIVATE METHODS
+ * ---------------------------------------------------------------------------------------------------------------------------------------
  */
 bool VN100::configSerialPort()
 {
@@ -116,9 +124,33 @@ bool VN100::configSerialPort()
     {
         return false;
     }
+    return true;
+}
 
-    serialInterface -> send("prova\n\r", 7);
+bool VN100::setCrc()
+{
+    //Command for the crc change
+    std::string command;
 
+    //Check what type of crc is selected (only if the selected crc is 16
+    //we need to change the register value)
+    if(crc == CRC_ENABLE_16)
+    {
+        //The 3 inside the command is the 16bit select. The others are default values
+        command = "$VNWRG,0,0,0,0,3,0,1*";
+
+        //Set the crc to 8 bit for this communication
+        crc = CRC_ENABLE_8;
+
+        //Send the command
+        if(!sendStringCommand(command))
+        {
+            return false;
+        }
+
+        //Restore the correct crc
+        crc = CRC_ENABLE_16;
+    }
     return true;
 }
 
