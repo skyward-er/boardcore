@@ -22,21 +22,108 @@
 
 #include "VN100.h"
 
-VN100::VN100(){}
 
-VN100Data VN100::sampleImpl()
+/**
+ * CONSTRUCTORS
+ */
+VN100::VN100()
+    : VN100(defaultPortNumber, defaultBaudRate)
+{}
+
+VN100::VN100(unsigned int portNumber, unsigned int baudRate)
+    : VN100(portNumber, baudRate, CRC_ENABLE_8);
+{}
+
+VN100::VN100(unsigned int portNumber, unsigned int baudRate, uint8_t crc)
 {
-    VN100Data dato{};
-
-    return dato;
+    this -> portNumber  = portNumber;
+    this -> baudRate    = baudRate;
+    this -> crc         = crc;
+    //Zero the isInit
+    isInit = false;
 }
 
+
+/**
+ * PUBLIC METHODS
+ */
 bool VN100::init()
 {
+    if(!configSerialPort())
+    {
+        return false;
+    }
+
+    //Set the isInit flag true
+    isInit = true;
+
     return true;
 }
 
 bool VN100::selfTest()
 {
     return true;
+}
+
+
+/**
+ * PRIVATE METHODS
+ */
+bool VN100::configSerialPort()
+{
+    //In case the set baud rate is different
+    if(baudRate != defaultBaudRate)
+    {
+        serialInterface = new VN100Serial(portNumber, defaultBaudRate);
+
+        //In case of failed serial initialization
+        if(!(serialInterface -> init()))
+        {
+            return false;
+        }
+
+        //Once the default serial communication is open i can set the user defined baudrate
+        
+    }
+    return true;
+}
+
+uint8_t VN100::calculateChecksum8(uint8_t * message, int length)
+{
+    int i;
+    uint8_t result = 0x00;
+
+    //Iterate and XOR all of the elements
+    for(i = 0; i < length; i++)
+    {
+        //^ = XOR Operation
+        result = result ^ message[i];
+    }
+
+    return result;
+}
+
+uint16_t VN100::calculateChecksum16(uint8_t * message, int length)
+{
+    int i;
+    uint16_t result;
+
+    //Apply the datasheet definition of CRC16-CCITT
+    for(i = 0; i < length; i++)
+    {
+        result  = (uint8_t)(result >> 8) | (result << 8);
+        result ^= message[i];
+        result ^= (uint8_t)(result & 0xff) >> 4;
+        result ^= result << 12;
+        result ^= (result & 0x00ff) << 5;
+    }
+
+    return result;
+}
+
+VN100Data VN100::sampleImpl()
+{
+    VN100Data dato{};
+
+    return dato;
 }

@@ -19,6 +19,7 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
+#pragma once
 
 #include <miosix.h>
 #include <fcntl.h>
@@ -105,6 +106,7 @@ public:
 
     /**
      * @brief Writes in Serial data
+     * Note: to send std::string via serial you need to pass use "c_str()" method
      * @param Data to be sent via serial
      * @return Boolean which communicates the send process result
      */

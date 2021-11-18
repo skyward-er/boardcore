@@ -19,6 +19,9 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
+#pragma once
+
+#include <string>
 
 #include <sensors/Sensor.h>
 #include "VN100Data.h"
@@ -33,6 +36,57 @@ class VN100 : public Sensor<VN100Data>
 private:
 	
     /**
+     * @brief default vn100 baud rate
+     */
+    static const unsigned int defaultBaudRate    = 115200;
+
+    /** 
+     * @brief default USART port number
+     */
+    static const unsigned int defaultPortNumber  = 2;
+
+    /**
+     * @brief baud rate defined by the user
+     */
+    unsigned int baudRate;
+
+    /**
+     * @brief USART port number
+     */
+    unsigned int portNumber;
+
+    /**
+     * @brief redundancy check option
+     */
+    uint8_t crc;
+
+    /**
+     * @brief initialization state
+     */
+    bool isInit;
+
+    /**
+     * @brief serial interface that is needed to communicate
+     * with the sensor via ASCII codes
+     */
+    VN100Serial *serialInterface;
+
+    /**
+     * @brief method to configure the serial communication
+     */
+    bool configSerialPort();
+
+    /**
+     * @brief method to calculate 8bit vector checksum 8bit
+     */
+    uint8_t calculateChecksum8(uint8_t * message, int length);
+
+    /**
+     * @brief method to calculate a 8bit vector checksum 16bit
+     */
+    uint16_t calculateChecksum16(uint8_t * message, int length);
+
+    /**
      * @brief sample action implementation
      */
     VN100Data sampleImpl() override;
@@ -40,9 +94,31 @@ private:
 public:
 
     /**
+     * @brief configuration constants for redundancy check
+     */
+    static const uint8_t CRC_NO         = 0x00;
+    static const uint8_t CRC_ENABLE_8   = 0x08;
+    static const uint8_t CRC_ENABLE_16  = 0x10;
+
+    /**
      * @brief Constructor
      */
-	VN100();
+    VN100();
+
+    /**
+     * @brief Constructor
+     * @param USART port number
+     * @param baudRate different from the sensor's default
+     */
+	VN100(int portNumber, int baudRate);
+
+    /**
+     * @brief Constructor
+     * @param USART port number
+     * @param baudRate different from the sensor's default
+     * @param redundancy check option
+     */
+    VN100(int portNumber, int baudRate, uint8_t crc);
 
     /**
      * @brief Init method to initialize the IMU and to set 

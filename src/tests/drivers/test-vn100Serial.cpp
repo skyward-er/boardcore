@@ -21,14 +21,18 @@
  */
 
 #include <Common.h>
+#include <string>
 #include <sensors/VN100/VN100Serial.h>
 
 using namespace miosix;
+using namespace std;
 
 int main()
 {
-    char message[] = "Communication\n\r";
+    //Object string with the message
+    string message ("Communication\n\r");
 
+    //Serial inferface
     VN100Serial serial{2, 115200};
 
     if(!serial.init())
@@ -41,7 +45,7 @@ int main()
     //Loop to send the data via serial
     while(1)
     {
-        serial.send(message, sizeof(message));
+        serial.send(message.c_str(), message.length());
         //Sleep
         miosix::Thread::sleep(500);
     }
