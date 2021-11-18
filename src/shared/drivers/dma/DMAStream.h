@@ -232,7 +232,7 @@ inline void DMAStream::setStreamChannel(Channel channel)
     dmaStream->CR &= ~DMA_SxCR_CHSEL;
 
     // Set the new value
-    dmaStream->CR |= (uint32_t)channel;
+    dmaStream->CR |= static_cast<uint32_t>(channel);
 }
 
 inline void DMAStream::setStreamMemoryBurstConfiguration(
@@ -242,7 +242,7 @@ inline void DMAStream::setStreamMemoryBurstConfiguration(
     dmaStream->CR &= ~DMA_SxCR_MBURST;
 
     // Set the new value
-    dmaStream->CR |= (uint32_t)config;
+    dmaStream->CR |= static_cast<uint32_t>(config);
 }
 
 inline void DMAStream::setStreamPeripheralBurstConfiguration(
@@ -252,7 +252,7 @@ inline void DMAStream::setStreamPeripheralBurstConfiguration(
     dmaStream->CR &= ~DMA_SxCR_PBURST;
 
     // Set the new value
-    dmaStream->CR |= (uint32_t)config;
+    dmaStream->CR |= static_cast<uint32_t>(config);
 }
 
 inline void DMAStream::enableDoubleBufferMode()
@@ -271,7 +271,7 @@ inline void DMAStream::setStreamPriorityLevel(PriorityLevel priorityLevel)
     dmaStream->CR &= ~DMA_SxCR_PL;
 
     // Set the new value
-    dmaStream->CR |= (uint32_t)priorityLevel;
+    dmaStream->CR |= static_cast<uint32_t>(priorityLevel);
 }
 
 inline void DMAStream::setMemoryDataSize(MemoryDataSize size)
@@ -280,7 +280,7 @@ inline void DMAStream::setMemoryDataSize(MemoryDataSize size)
     dmaStream->CR &= ~DMA_SxCR_MSIZE;
 
     // Set the new value
-    dmaStream->CR |= (uint32_t)size;
+    dmaStream->CR |= static_cast<uint32_t>(size);
 }
 
 inline void DMAStream::enableMemoryIncrement()
@@ -313,7 +313,7 @@ inline void DMAStream::setDataTransferDirection(DataTransferDirection direction)
     dmaStream->CR &= ~DMA_SxCR_DIR;
 
     // Set the new value
-    dmaStream->CR |= (uint32_t)direction;
+    dmaStream->CR |= static_cast<uint32_t>(direction);
 }
 
 inline void DMAStream::setPeripheralFlowController()
