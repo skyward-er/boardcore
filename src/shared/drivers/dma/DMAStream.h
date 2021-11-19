@@ -22,6 +22,7 @@
 
 #pragma once
 
+#include <diagnostic/PrintLogger.h>
 #include <interfaces/arch_registers.h>
 
 /**
@@ -129,6 +130,10 @@ public:
 
     DMAStream(DMA_Stream_TypeDef *dmaStream);
 
+    DMA_TypeDef *getController();
+
+    DMA_Stream_TypeDef *getStream();
+
     void reset();
 
     void enable();
@@ -202,27 +207,146 @@ public:
 
     uint16_t readNumberOfDataItems();
 
-    void setPeripheralAddress(uint32_t address);
+    void setPeripheralAddress(uint32_t *address);
 
-    void setMemory0Address(uint32_t address);
+    void setMemory0Address(uint32_t *address);
 
     /**
      * @brief Sets the memory address used only in double buffer mode.
      */
-    void setMemory1Address(uint32_t address);
+    void setMemory1Address(uint32_t *address);
+
+    void clearStatusRegister();
 
 private:
+    DMA_TypeDef *dmaController;
     DMA_Stream_TypeDef *dmaStream;
-}
+
+    // Interrupt status flags
+    volatile uint32_t *IFCR;  ///> Interrupt flags clear register
+    uint32_t IFCR_MASK;       ///> Clear mask for all interrupt flags
+
+    PrintLogger logger = Logging::getLogger("DMAStream");
+};
 
 inline DMAStream::DMAStream(DMA_Stream_TypeDef *dmaStream)
     : dmaStream(dmaStream)
 {
+    // Find the correct DMA controller
+    if (reinterpret_cast<uint32_t *>(dmaStream) < &(DMA2->LISR))
+    {
+        dmaController = DMA1;
+    }
+    else
+    {
+        dmaController = DMA2;
+    }
+
+    // Find the corret interrupt flags clear register
+    if (dmaController == DMA1)
+    {
+        if (dmaStream <= DMA1_Stream3)
+        {
+            IFCR = &(DMA1->LIFCR);
+        }
+        else
+        {
+            IFCR = &(DMA1->HIFCR);
+        }
+    }
+    else
+    {
+        if (dmaStream <= DMA2_Stream3)
+        {
+            IFCR = &(DMA2->LIFCR);
+        }
+        else
+        {
+            IFCR = &(DMA2->HIFCR);
+        }
+    }
+
+    // Find the correct clear mask
+    if (dmaStream == DMA1_Stream0 || dmaStream == DMA2_Stream0)
+    {
+        IFCR_MASK = DMA_LIFCR_CFEIF0 | DMA_LIFCR_CHTIF0 | DMA_LIFCR_CTCIF0 |
+                    DMA_LIFCR_CTEIF0 | DMA_LIFCR_CDMEIF0;
+    }
+    else if (dmaStream == DMA1_Stream1 || dmaStream == DMA2_Stream1)
+    {
+        IFCR_MASK = DMA_LIFCR_CFEIF1 | DMA_LIFCR_CHTIF1 | DMA_LIFCR_CTCIF1 |
+                    DMA_LIFCR_CTEIF1 | DMA_LIFCR_CDMEIF1;
+    }
+    else if (dmaStream == DMA1_Stream2 || dmaStream == DMA2_Stream2)
+    {
+        IFCR_MASK = DMA_LIFCR_CFEIF2 | DMA_LIFCR_CHTIF2 | DMA_LIFCR_CTCIF2 |
+                    DMA_LIFCR_CTEIF2 | DMA_LIFCR_CDMEIF2;
+    }
+    else if (dmaStream == DMA1_Stream3 || dmaStream == DMA2_Stream3)
+    {
+        IFCR_MASK = DMA_LIFCR_CFEIF3 | DMA_LIFCR_CHTIF3 | DMA_LIFCR_CTCIF3 |
+                    DMA_LIFCR_CTEIF3 | DMA_LIFCR_CDMEIF3;
+    }
+    else if (dmaStream == DMA1_Stream4 || dmaStream == DMA2_Stream4)
+    {
+        IFCR_MASK = DMA_HIFCR_CFEIF4 | DMA_HIFCR_CHTIF4 | DMA_HIFCR_CTCIF4 |
+                    DMA_HIFCR_CTEIF4 | DMA_HIFCR_CDMEIF4;
+    }
+    else if (dmaStream == DMA1_Stream5 || dmaStream == DMA2_Stream5)
+    {
+        IFCR_MASK = DMA_HIFCR_CFEIF5 | DMA_HIFCR_CHTIF5 | DMA_HIFCR_CTCIF5 |
+                    DMA_HIFCR_CTEIF5 | DMA_HIFCR_CDMEIF5;
+    }
+    else if (dmaStream == DMA1_Stream6 || dmaStream == DMA2_Stream6)
+    {
+        IFCR_MASK = DMA_HIFCR_CFEIF6 | DMA_HIFCR_CHTIF6 | DMA_HIFCR_CTCIF6 |
+                    DMA_HIFCR_CTEIF6 | DMA_HIFCR_CDMEIF6;
+    }
+    else if (dmaStream == DMA1_Stream7 || dmaStream == DMA2_Stream7)
+    {
+        IFCR_MASK = DMA_HIFCR_CFEIF7 | DMA_HIFCR_CHTIF7 | DMA_HIFCR_CTCIF7 |
+                    DMA_HIFCR_CTEIF7 | DMA_HIFCR_CDMEIF7;
+    }
+    else
+    {
+        IFCR_MASK = 0;
+        LOG_CRIT(logger, "Could not recognize DMA stream");
+    }
+
+    printf("MASK: 0x%lX\n", IFCR_MASK);
 }
 
-inline void DMAStream::reset() { dmaStream->CR = 0; }
+DMA_TypeDef *DMAStream::getController() { return dmaController; }
 
-inline void DMAStream::enable() { dmaStream->CR |= DMA_SxCR_EN; }
+DMA_Stream_TypeDef *DMAStream::getStream() { return dmaStream; }
+
+inline void DMAStream::reset()
+{
+    // Disable stream
+    dmaStream->CR &= ~DMA_SxCR_EN;
+
+    // Wait for the stream to be disabled
+    while (dmaStream->CR & DMA_SxCR_EN)
+        ;
+
+    // Clear the registers
+    dmaStream->CR  = 0;
+    dmaStream->FCR = 0;
+    clearStatusRegister();
+
+    // Wait for the stream to be disabled
+    while (dmaStream->CR & DMA_SxCR_EN)
+        ;
+}
+
+inline void DMAStream::enable()
+{
+    // Before enabling the stream ensures all status flags are cleared
+    clearStatusRegister();
+
+    // Enable the stream
+    dmaStream->CR |= DMA_SxCR_EN;
+}
 
 inline void DMAStream::disable() { dmaStream->CR &= ~DMA_SxCR_EN; }
 
@@ -373,17 +497,19 @@ inline void DMAStream::setNumberOfDataItems(uint16_t numberOfDataItems)
 
 inline uint16_t DMAStream::readNumberOfDataItems() { return dmaStream->NDTR; }
 
-inline void DMAStream::setPeripheralAddress(uint32_t address)
+inline void DMAStream::setPeripheralAddress(uint32_t *address)
 {
-    dmaStream->PAR = address;
+    dmaStream->PAR = reinterpret_cast<uint32_t>(address);
 }
 
-inline void DMAStream::setMemory0Address(uint32_t address)
+inline void DMAStream::setMemory0Address(uint32_t *address)
 {
-    dmaStream->M0AR = address;
+    dmaStream->M0AR = reinterpret_cast<uint32_t>(address);
 }
 
-inline void DMAStream::setMemory1Address(uint32_t address)
+inline void DMAStream::setMemory1Address(uint32_t *address)
 {
-    dmaStream->M1AR = address;
+    dmaStream->M1AR = reinterpret_cast<uint32_t>(address);
 }
+
+inline void DMAStream::clearStatusRegister() { *IFCR |= IFCR_MASK; }
