@@ -28,28 +28,47 @@
 
 using namespace SX1278Defs;
 
-SX1278::SX1278(SPIBusInterface& bus, GpioPin cs, SX1278::Config config)
-    : slave(bus, cs, spiConfig()), config(config), mode(SX1278::Mode::MODE_SLEEP)
+SX1278::SX1278(SPIBusInterface& bus, GpioPin cs)
+    : slave(bus, cs, spiConfig()), mode(SX1278::Mode::MODE_SLEEP)
 {
 }
 
-void SX1278::init()
+SX1278::Error SX1278::init(Config config)
 {
+    if(getVersion() != 0x12) {
+        return Error::BAD_VERSION;
+    }
+
+    // Enter standby mode
+    enterMode(Mode::MODE_STDBY);
+
+    setBitrate(config.bitrate);
+    setFreqDev(config.freq_dev);
+    setFreqRF(config.freq_rf);
+
+    setRxBw(config.rx_bw);
+    setAfcBw(config.afc_bw);
+
+    setOcp(config.ocp);
+
+    uint8_t sync_word[3] = { 0x12, 0xad };
+    setSyncWord(sync_word, sizeof(sync_word));
+    setPreableLen(3);
+
+    // Setup generic parameters
     {
         SPITransaction spi(slave, SPIWriteBit::INVERTED);
 
         // Setup transmitter registers
 
         // Setup receiver registers
-        spi.write(REG_RX_CONFIG, RegRxConfig::RESTART_RX_ON_COLLISION |
-                                    RegRxConfig::AGC_AUTO_ON |
-                                    RegRxConfig::RX_TRIGGER_PREAMBLE_DETECT);
+        spi.write(REG_RX_CONFIG, REG_RX_CONFIG_DEFAULT);
+        
+        // spi.write(REG_RSSI_CONFIG, 2);
 
         // Setup packet registers
-        spi.write(REG_SYNC_CONFIG,
-                RegSyncConfig::AUTO_RESTART_RX_MODE_ON_WITHOUT_PILL_LOCK |
-                    RegSyncConfig::PREAMBLE_POLARITY_AA |
-                    RegSyncConfig::SYNC_ON | 0x03);
+
+        spi.write(REG_PREAMBLE_DETECT, 0x01 << 7 | 0x01 << 5 | 0x0a << 4);
 
         spi.write(REG_PACKET_CONFIG_1,
                 RegPacketConfig1::PACKET_FORMAT_VARIABLE_LENGTH |
@@ -63,8 +82,7 @@ void SX1278::init()
         spi.write(REG_FIFO_THRESH, RegFifoTresh::TX_START_CONDITION_FIFO_EMPTY | 0x0f);
     }
 
-    // Enter standby mode
-    enterMode(Mode::MODE_STDBY);
+    return Error::NONE;
 }
 
 uint8_t SX1278::recv(uint8_t *buf) {
@@ -114,22 +132,14 @@ uint8_t SX1278::getVersion() const
     return spi.read(REG_VERSION);
 }
 
-void SX1278::setBitrate(float bitrate)
+void SX1278::setBitrate(int bitrate)
 {
-    float val = SX1278Defs::FXOSC / bitrate;
-
-    // Split value in integer and fractional
-    float rate = 0.0f;
-    float frac = modff(val, &rate);
-
-    uint16_t ratei = static_cast<uint16_t>(rate);
-    uint8_t fraci  = static_cast<uint8_t>(frac * 16.0f);
+    uint16_t val = SX1278Defs::FXOSC / bitrate;
 
     // Update values
     SPITransaction spi(slave, SPIWriteBit::INVERTED);
-    spi.write(REG_BITRATE_MSB, ratei >> 8);
-    spi.write(REG_BITRATE_LSB, ratei);
-    spi.write(REG_BITRATE_FRAC, fraci & 0x0f);
+    spi.write(REG_BITRATE_MSB, val >> 8);
+    spi.write(REG_BITRATE_LSB, val);
 }
 
 void SX1278::setFreqDev(int freq_dev)
@@ -151,6 +161,44 @@ void SX1278::setFreqRF(int freq_rf)
     spi.write(REG_FRF_MSB, val >> 16);
     spi.write(REG_FRF_MID, val >> 8);
     spi.write(REG_FRF_LSB, val);
+}
+
+void SX1278::setOcp(int ocp) {
+    SPITransaction spi(slave, SPIWriteBit::INVERTED);
+    if(ocp == 0) {
+        spi.write(REG_OCP, 0);
+    } else if(ocp <= 120) {
+        uint8_t raw = (ocp - 45) / 5;
+        spi.write(REG_OCP, RegOcp::REG_OCP_ON | raw);
+    } else {
+        uint8_t raw = (ocp + 30) / 10;
+        spi.write(REG_OCP, RegOcp::REG_OCP_ON | raw);
+    }
+}
+
+void SX1278::setSyncWord(uint8_t value[], int size) {
+    SPITransaction spi(slave, SPIWriteBit::INVERTED);
+    spi.write(REG_SYNC_CONFIG, REG_SYNC_CONFIG_DEFAULT | size);
+
+    for(int i = 0; i < size; i++) {
+        spi.write(REG_SYNC_VALUE_1 + i, value[i]);
+    }
+}
+
+void SX1278::setRxBw(RxBw rx_bw) {
+    SPITransaction spi(slave, SPIWriteBit::INVERTED);
+    spi.write(REG_RX_BW, static_cast<uint8_t>(rx_bw));
+}
+
+void SX1278::setAfcBw(RxBw afc_bw) {
+    SPITransaction spi(slave, SPIWriteBit::INVERTED);
+    spi.write(REG_AFC_BW, static_cast<uint8_t>(afc_bw));
+}
+
+void SX1278::setPreableLen(int len) {
+    SPITransaction spi(slave, SPIWriteBit::INVERTED);
+    spi.write(REG_PREAMBLE_MSB, len >> 8);
+    spi.write(REG_PREAMBLE_LSB, len);
 }
 
 void SX1278::debugDumpRegisters()

@@ -51,11 +51,11 @@ inline SPIBusConfig spiConfig()
     SPIBusConfig config = {};
 
     // FIXME(davide.mor): This depends on the device
-    config.clock_div        = SPIClockDivider::DIV256;
-    config.mode             = SPIMode::MODE0;
-    config.bit_order        = SPIBitOrder::MSB_FIRST;
-    config.cs_setup_time_us = 30;
-    config.cs_hold_time_us  = 100;
+    config.clock_div = SPIClockDivider::DIV256;
+    config.mode      = SPIMode::MODE1;
+    config.bit_order = SPIBitOrder::MSB_FIRST;
+    // config.cs_setup_time_us = 30;
+    // config.cs_hold_time_us  = 100;
 
     return config;
 }
@@ -85,26 +85,24 @@ enum Mode
     MODE_FSRX  = 0b100,
     MODE_RX    = 0b101,
 };
-}  // namespace reg_op_mode
+}  // namespace RegOpMode
 
-/**
- * @brief Default value for REG_OP_MODE
- */
-constexpr uint8_t REG_OP_MODE_DEFAULT = RegOpMode::LONG_RANGE_MODE_FSK |
-                                        RegOpMode::MODULATION_TYPE_FSK |
-                                        RegOpMode::LOW_FREQUENCY_MODE_ON;
+namespace RegOcp
+{
+constexpr uint8_t REG_OCP_ON = 1 << 5;
+}
 
 namespace RegRxConfig
 {
 constexpr uint8_t RESTART_RX_ON_COLLISION      = 1 << 7;
 constexpr uint8_t RESTART_RX_WITHOUT_PILL_LOCK = 1 << 6;
-constexpr uint8_t RESTART_RX_WIT_PILL_LOCK     = 1 << 5;
+constexpr uint8_t RESTART_RX_WITH_PILL_LOCK    = 1 << 5;
 constexpr uint8_t AFC_AUTO_ON                  = 1 << 4;
 constexpr uint8_t AGC_AUTO_ON                  = 1 << 3;
 
 constexpr uint8_t RX_TRIGGER_RSSI_INTERRUPT  = 0b001;
 constexpr uint8_t RX_TRIGGER_PREAMBLE_DETECT = 0b110;
-}  // namespace reg_rx_config
+}  // namespace RegRxConfig
 
 namespace RegSyncConfig
 {
@@ -122,7 +120,7 @@ enum PreamblePolarity
 };
 
 constexpr uint8_t SYNC_ON = 1 << 4;
-}  // namespace reg_sync_config
+}  // namespace RegSyncConfig
 
 namespace RegPacketConfig1
 {
@@ -154,7 +152,7 @@ enum CrcWhiteningType
     CRC_WHITENING_TYPE_CCITT_CRC = 0,
     CRC_WHITENING_TYPE_IBM_CRC   = 1,
 };
-}  // namespace reg_packet_config1
+}  // namespace RegPacketConfig1
 
 namespace RegPacketConfig2
 {
@@ -166,7 +164,7 @@ enum DataMode
 
 constexpr uint8_t IO_HOME_ON = 1 << 5;
 constexpr uint8_t BEACON_ON  = 1 << 4;
-}  // namespace reg_packet_config_2
+}  // namespace RegPacketConfig2
 
 namespace RegFifoTresh
 {
@@ -179,27 +177,41 @@ enum TxStartCondition
 
 namespace RegIrqFlags1
 {
-    constexpr uint8_t MODE_READY = 1 << 7;
-    constexpr uint8_t RX_READY = 1 << 6;
-    constexpr uint8_t TX_READY = 1 << 5;
-    constexpr uint8_t PILL_LOCK = 1 << 4;
-    constexpr uint8_t RSSI = 1 << 3;
-    constexpr uint8_t TIMEOUT = 1 << 2;
-    constexpr uint8_t PREAMBLE_DETECT = 1 << 1;
-    constexpr uint8_t SYNC_ADDRESS_MATCH = 1 << 0;
-}
+constexpr uint8_t MODE_READY         = 1 << 7;
+constexpr uint8_t RX_READY           = 1 << 6;
+constexpr uint8_t TX_READY           = 1 << 5;
+constexpr uint8_t PILL_LOCK          = 1 << 4;
+constexpr uint8_t RSSI               = 1 << 3;
+constexpr uint8_t TIMEOUT            = 1 << 2;
+constexpr uint8_t PREAMBLE_DETECT    = 1 << 1;
+constexpr uint8_t SYNC_ADDRESS_MATCH = 1 << 0;
+}  // namespace RegIrqFlags1
 
 namespace RegIrqFlags2
 {
-    constexpr uint8_t FIFO_FULL = 1 << 7;
-    constexpr uint8_t FIFO_EMPTY = 1 << 6;
-    constexpr uint8_t FIFO_LEVEL = 1 << 5;
-    constexpr uint8_t FIFO_OVERRUN = 1 << 4;
-    constexpr uint8_t PACKET_SENT = 1 << 3;
-    constexpr uint8_t PAYLOAD_READY = 1 << 2;
-    constexpr uint8_t CRC_OK = 1 << 1;
-    constexpr uint8_t LOW_BAT = 1 << 0;
-}
+constexpr uint8_t FIFO_FULL     = 1 << 7;
+constexpr uint8_t FIFO_EMPTY    = 1 << 6;
+constexpr uint8_t FIFO_LEVEL    = 1 << 5;
+constexpr uint8_t FIFO_OVERRUN  = 1 << 4;
+constexpr uint8_t PACKET_SENT   = 1 << 3;
+constexpr uint8_t PAYLOAD_READY = 1 << 2;
+constexpr uint8_t CRC_OK        = 1 << 1;
+constexpr uint8_t LOW_BAT       = 1 << 0;
+}  // namespace RegIrqFlags2
+
+constexpr uint8_t REG_OP_MODE_DEFAULT = RegOpMode::LONG_RANGE_MODE_FSK |
+                                        RegOpMode::MODULATION_TYPE_FSK |
+                                        RegOpMode::LOW_FREQUENCY_MODE_ON;
+
+constexpr uint8_t REG_RX_CONFIG_DEFAULT =
+    RegRxConfig::RESTART_RX_ON_COLLISION | RegRxConfig::AFC_AUTO_ON |
+    RegRxConfig::AGC_AUTO_ON | RegRxConfig::RX_TRIGGER_PREAMBLE_DETECT |
+    RegRxConfig::RX_TRIGGER_RSSI_INTERRUPT;
+
+constexpr uint8_t REG_SYNC_CONFIG_DEFAULT =
+    RegSyncConfig::AUTO_RESTART_RX_MODE_ON_WITHOUT_PILL_LOCK |
+    RegSyncConfig::PREAMBLE_POLARITY_AA | RegSyncConfig::SYNC_ON;
+
 
 enum Registers
 {

@@ -35,18 +35,61 @@ class SX1278
 {
 public:
     /**
+     * @brief Channel filter bandwidth.
+     */
+    enum class RxBw {
+        HZ_2600   = (0b10 << 3) | 7,
+        HZ_3100   = (0b01 << 3) | 7,
+        HZ_3900   = (0b00 << 3) | 7,
+        HZ_5200   = (0b10 << 3) | 6,
+        HZ_6300   = (0b01 << 3) | 6,
+        HZ_7800   = (0b00 << 3) | 6,
+        HZ_10400  = (0b10 << 3) | 5,
+        HZ_12500  = (0b01 << 3) | 5,
+        HZ_15600  = (0b00 << 3) | 5,
+        HZ_20800  = (0b10 << 3) | 4,
+        HZ_25000  = (0b01 << 3) | 4,
+        HZ_31300  = (0b00 << 3) | 4,
+        HZ_41700  = (0b10 << 3) | 3,
+        HZ_50000  = (0b01 << 3) | 3,
+        HZ_62500  = (0b00 << 3) | 3,
+        HZ_83300  = (0b10 << 3) | 2,
+        HZ_100000 = (0b01 << 3) | 2,
+        HZ_125000 = (0b00 << 3) | 2,
+        HZ_166700 = (0b10 << 3) | 1,
+        HZ_200000 = (0b01 << 3) | 1,
+        HZ_250000 = (0b00 << 3) | 1,
+    };
+
+    /**
      * @brief Requested SX1278 configuration.
      */
     struct Config
     {
+        int freq_rf = 434000000; //< RF Frequency in Hz.
+        int freq_dev = 5000; //< Frequency deviation in Hz.
+        int bitrate = 4800; //< Bitrate in b/s.
+        RxBw rx_bw = RxBw::HZ_10400; //< Rx filter bandwidth.
+        RxBw afc_bw = RxBw::HZ_50000; //< Afc filter bandwidth.
+        int ocp = 120; //< Over current protection limit in mA (0 for no limit).
     };
 
-    SX1278(SPIBusInterface& bus, GpioPin cs, Config config = {});
+    /**
+     * @brief Error enum.
+     */
+    enum class Error 
+    {
+        NONE, //< No error encountered.
+        BAD_VALUE, //< A requested value was outside the valid range.
+        BAD_VERSION, //< Chip didn't report the correct version.
+    };
+
+    SX1278(SPIBusInterface& bus, GpioPin cs);
 
     /**
      * @brief Setup the device.
      */
-    void init();
+    Error init(Config config);
 
     /**
      * @brief Read the chip revision.
@@ -71,9 +114,14 @@ public:
      */
     void send(const uint8_t *buf, uint8_t len);
 
-    void setBitrate(float bitrate);
+    void setBitrate(int bitrate);
     void setFreqDev(int freq_dev);
     void setFreqRF(int freq_rf);
+    void setOcp(int ocp);
+    void setSyncWord(uint8_t value[], int size);
+    void setRxBw(RxBw rx_bw);
+    void setAfcBw(RxBw afc_bw);
+    void setPreableLen(int len);
 
     void debugDumpRegisters();
 
@@ -85,6 +133,5 @@ private:
     void waitForIrq2(uint8_t mask);
 
     SPISlave slave;
-    Config config;
     Mode mode;
 };
