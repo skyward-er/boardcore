@@ -57,12 +57,22 @@ bool VN100::init()
         return true;
     }
 
-    if(!configSerialPort())
+    if(!configDefaultSerialPort())
     {
         return false;
     }
 
     if(!setCrc())
+    {
+        return false;
+    }
+
+    if(!disableAsyncMessages())
+    {
+        return false;
+    }
+
+    if(!configUserSerialPort())
     {
         return false;
     }
@@ -76,8 +86,11 @@ bool VN100::init()
         return false;
     }
 
-    //Read the left junk
-    if(!(serialInterface -> recv(recvString, recvStringMaxDimension)))
+    //Read the left junk only if the baud rate is the default
+    //else there is a serial reset as last operation so there is no need
+    //to clean the junk
+    if(baudRate == defaultBaudRate && 
+       !(serialInterface -> recv(recvString, recvStringMaxDimension)))
     {
         return false;
     }
@@ -137,29 +150,19 @@ bool VN100::closeAndReset()
  */
 bool VN100::disableAsyncMessages()
 {
-    //Backup for crc
-    uint8_t backup = crc;
     //Command string
     std::string command = "VNWRG,06,00";  //Put 0 in register number 6 (ASYNC Config)
 
-    //Set the crc to nothing and send the command
-    crc = CRC_NO;
+    //Send the command
     if(!sendStringCommand(command))
     {
         return false;
     }
-    //Restore the crc
-    crc = backup;
     return true;
 }
 
-bool VN100::configSerialPort()
+bool VN100::configDefaultSerialPort()
 {
-    //In case the set baud rate is different
-    //Variables for the baud rate change
-    uint8_t backup = crc;
-    std::string command;
-
     //Initial default settings
     serialInterface = new VN100Serial(portNumber, defaultBaudRate);
 
@@ -169,25 +172,26 @@ bool VN100::configSerialPort()
         return false;
     }
 
-    //Disable the async messages
-    if(!disableAsyncMessages())
+    return true;
+}
+
+bool VN100::configUserSerialPort()
+{
+    std::string command;
+
+    //If the the baud rate is already the default i can avoid the procedure
+    if(baudRate == defaultBaudRate)
     {
-        return false;
+        return true;
     }
 
-    if(baudRate != defaultBaudRate)
+    //I format the command to change baud rate
+    command = fmt::format("{}{}", "VNWRG,5,", baudRate);
+    
+    //I can send the command
+    if(!sendStringCommand(command))
     {
-        //Once the default serial communication is open i can format the command to change baud rate
-        command = fmt::format("{}{}", "VNWRG,5,", baudRate);
-        
-        //I can send the command setting the crc manually to nothing
-        crc = CRC_NO;
-        if(!sendStringCommand(command))
-        {
-            return false;
-        }
-        //After the send command i can restore the crc
-        crc = backup;
+        return false;
     }
 
     //I can close the serial
@@ -204,7 +208,6 @@ bool VN100::configSerialPort()
     {
         return false;
     }
-
     return true;
 }
 
@@ -213,30 +216,30 @@ bool VN100::setCrc()
     //Command for the crc change
     std::string command;
 
-    //Check what type of crc is selected (only if the selected crc is 16
-    //we need to change the register value)
+    //Check what type of crc is selected
     if(crc == CRC_ENABLE_16)
     {
         //The 3 inside the command is the 16bit select. The others are default values
         command = "VNWRG,30,0,0,0,0,3,0,1";
-
-        //Set the crc to nothing for this communication
-        crc = CRC_NO;
 
         //Send the command
         if(!sendStringCommand(command))
         {
             return false;
         }
+    }
+    else
+    {
+        //Even if the CRC is not enabled i put the 8 bit
+        //checksum because i need to know how many 'X' add at the end
+        //of every command sent
+        command = "VNWRG,30,0,0,0,0,1,0,1";
 
-        //Remove junk sent
-        if(!(serialInterface -> recv(recvString, recvStringMaxDimension)))
+        //Send the command
+        if(!sendStringCommand(command))
         {
             return false;
         }
-
-        //Restore the correct crc
-        crc = CRC_ENABLE_16;
     }
     return true;
 }
@@ -262,7 +265,8 @@ bool VN100::sendStringCommand(std::string command)
     }
     else
     {
-        //No checksum, i add only 'XX' at the end
+        //No checksum, i add only 'XX' at the end and not 'XXXX' because
+        //in cas of CRC_NO the enabled crc is 8 bit
         command = fmt::format("{}{}{}", "$", command, "*XX\n");
     }
 

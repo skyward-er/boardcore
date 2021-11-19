@@ -92,11 +92,19 @@ private:
     bool disableAsyncMessages();
 
     /**
-     * @brief method to configure the serial communication
+     * @brief method to configure the default serial communication
      * 
      * @return boolean that confirms or not the success
      */
-    bool configSerialPort();
+    bool configDefaultSerialPort();
+
+    /**
+     * @brief method to configure the user defined serial
+     * communication
+     * 
+     * @return boolean that confirms or not the success
+     */
+    bool configUserSerialPort();
 
     /**
      * @brief method to set the user selected crc method
@@ -107,7 +115,8 @@ private:
 
     /**
      * @brief sends the command to the sensor with the correct checksum added
-     * so '*' symbol is needed at the end of the string
+     * so '*' symbol is not needed at the end of the string as well as the '$'
+     * at the beginning of the command
      * 
      * @return boolean that confirms or not the success
      */
@@ -148,6 +157,7 @@ public:
 
     /**
      * @brief Constructor
+     * 
      * @param USART port number
      * @param baudRate different from the sensor's default
      */
@@ -155,6 +165,7 @@ public:
 
     /**
      * @brief Constructor
+     * 
      * @param USART port number
      * @param baudRate different from the sensor's default
      * @param redundancy check option
@@ -164,6 +175,7 @@ public:
     /**
      * @brief Init method to initialize the IMU and to set 
      * the user defined working conditions
+     * 
      * @return Boolean value indicating the operation success state
      */
     bool init() override;
@@ -171,6 +183,7 @@ public:
     /**
      * @brief Method to implement the verification process to ensure
      * that the sensor is up and running
+     * 
      * @return Boolean of the result
      */
     bool selfTest() override;
@@ -178,6 +191,7 @@ public:
     /**
      * @brief Method to reset the sensor to default values and to close
      * the connection. Used if you need to close and re initialize the sensor
+     * 
      * @return Boolean of the result
      */
     bool closeAndReset();
