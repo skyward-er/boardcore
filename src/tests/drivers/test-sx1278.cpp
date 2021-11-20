@@ -108,6 +108,7 @@ int main()
     }
 
     // miosix::Thread::sleep(5000);
+    const int LOG_INTERVAL = 10;
 
     std::thread recv(
         [&sx1278]()
@@ -121,14 +122,15 @@ int main()
                 uint8_t len = sx1278[0].recv((uint8_t*)&last_recv_message);
                 recv_count++;
 
-                if ((last_recv_message / 100) != last_div)
+                int new_div = last_recv_message / LOG_INTERVAL;
+                if (new_div != last_div)
                 {
                     TRACE("Packet loss: %.2f%% (%d sent, %d recv)\n",
                           (1.0f -
                            ((float)recv_count / (float)last_recv_message)) *
                               100.0f,
                           last_recv_message, recv_count);
-                    last_div = last_recv_message / 100;
+                    last_div = new_div;
                 }
             }
         });
@@ -141,14 +143,14 @@ int main()
         sx1278[1].send((uint8_t*)&last_sent_message, 4);
         last_sent_message++;
 
-        if (last_sent_message % 100 == 0)
+        if (last_sent_message % LOG_INTERVAL == 0)
         {
             TRACE("Sent %d messages!\n", last_sent_message);
         }
 
         // TRACE("Message sent!\n");
 
-        miosix::Thread::sleep(10);
+        miosix::Thread::sleep(500);
     }
 
     return 0;

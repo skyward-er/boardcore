@@ -87,9 +87,25 @@ enum Mode
 };
 }  // namespace RegOpMode
 
+namespace RegPaConfig
+{
+constexpr uint8_t PA_SELECT_BOOST = 1 << 7;
+}
+
+namespace RegPaRamp
+{
+enum ModulationShaping
+{
+    MODULATION_SHAPING_NONE            = 0b00 << 5,
+    MODULATION_SHAPING_GAUSSIAN_BT_1_0 = 0b01 << 5,
+    MODULATION_SHAPING_GAUSSIAN_BT_0_5 = 0b10 << 5,
+    MODULATION_SHAPING_GAUSSIAN_BT_0_3 = 0b11 << 5,
+};
+}
+
 namespace RegOcp
 {
-constexpr uint8_t REG_OCP_ON = 1 << 5;
+constexpr uint8_t OCP_ON = 1 << 5;
 }
 
 namespace RegRxConfig
@@ -103,6 +119,18 @@ constexpr uint8_t AGC_AUTO_ON                  = 1 << 3;
 constexpr uint8_t RX_TRIGGER_RSSI_INTERRUPT  = 0b001;
 constexpr uint8_t RX_TRIGGER_PREAMBLE_DETECT = 0b110;
 }  // namespace RegRxConfig
+
+namespace RegPreambleDetector
+{
+constexpr uint8_t PREAMBLE_DETECTOR_ON = 1 << 7;
+
+enum PreambleDetectorSize
+{
+    PREAMBLE_DETECTOR_SIZE_1_BYTE  = 0b00 << 5,
+    PREAMBLE_DETECTOR_SIZE_2_BYTES = 0b01 << 5,
+    PREAMBLE_DETECTOR_SIZE_3_BYTES = 0b10 << 5,
+};
+}  // namespace RegPreambleDetector
 
 namespace RegSyncConfig
 {
@@ -199,19 +227,37 @@ constexpr uint8_t CRC_OK        = 1 << 1;
 constexpr uint8_t LOW_BAT       = 1 << 0;
 }  // namespace RegIrqFlags2
 
+// Default values for common registers
+
 constexpr uint8_t REG_OP_MODE_DEFAULT = RegOpMode::LONG_RANGE_MODE_FSK |
                                         RegOpMode::MODULATION_TYPE_FSK |
                                         RegOpMode::LOW_FREQUENCY_MODE_ON;
 
+constexpr uint8_t REG_PACKET_CONFIG_1_DEFAULT =
+    RegPacketConfig1::PACKET_FORMAT_VARIABLE_LENGTH |
+    RegPacketConfig1::DC_FREE_NONE | RegPacketConfig1::CRC_ON |
+    RegPacketConfig1::ADDRESS_FILTERING_NONE |
+    RegPacketConfig1::CRC_WHITENING_TYPE_CCITT_CRC;
+
+constexpr uint8_t REG_PACKET_CONFIG_2_DEFAULT =
+    RegPacketConfig2::DATA_MODE_PACKET;
+
 constexpr uint8_t REG_RX_CONFIG_DEFAULT =
-    RegRxConfig::RESTART_RX_ON_COLLISION | RegRxConfig::AFC_AUTO_ON |
-    RegRxConfig::AGC_AUTO_ON | RegRxConfig::RX_TRIGGER_PREAMBLE_DETECT |
+    // RegRxConfig::RESTART_RX_ON_COLLISION |
+    RegRxConfig::AFC_AUTO_ON | RegRxConfig::AGC_AUTO_ON |
+    RegRxConfig::RX_TRIGGER_PREAMBLE_DETECT |
     RegRxConfig::RX_TRIGGER_RSSI_INTERRUPT;
 
-constexpr uint8_t REG_SYNC_CONFIG_DEFAULT =
-    RegSyncConfig::AUTO_RESTART_RX_MODE_ON_WITHOUT_PILL_LOCK |
-    RegSyncConfig::PREAMBLE_POLARITY_AA | RegSyncConfig::SYNC_ON;
+constexpr uint8_t REG_PA_RAMP_DEFAULT =
+    RegPaRamp::MODULATION_SHAPING_NONE | 0x09;
 
+constexpr uint8_t REG_SYNC_CONFIG_DEFAULT =
+    RegSyncConfig::AUTO_RESTART_RX_MODE_OFF |
+    RegSyncConfig::PREAMBLE_POLARITY_55 | RegSyncConfig::SYNC_ON;
+
+constexpr uint8_t REG_PREAMBLE_DETECTOR_DEFAULT =
+    RegPreambleDetector::PREAMBLE_DETECTOR_ON |
+    RegPreambleDetector::PREAMBLE_DETECTOR_SIZE_2_BYTES | 0x0a;
 
 enum Registers
 {

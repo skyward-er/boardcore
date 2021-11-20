@@ -37,7 +37,8 @@ public:
     /**
      * @brief Channel filter bandwidth.
      */
-    enum class RxBw {
+    enum class RxBw
+    {
         HZ_2600   = (0b10 << 3) | 7,
         HZ_3100   = (0b01 << 3) | 7,
         HZ_3900   = (0b00 << 3) | 7,
@@ -66,25 +67,26 @@ public:
      */
     struct Config
     {
-        int freq_rf = 434000000; //< RF Frequency in Hz.
-        int freq_dev = 5000; //< Frequency deviation in Hz.
-        int bitrate = 4800; //< Bitrate in b/s.
-        RxBw rx_bw = RxBw::HZ_10400; //< Rx filter bandwidth.
-        RxBw afc_bw = RxBw::HZ_50000; //< Afc filter bandwidth.
-        int ocp = 120; //< Over current protection limit in mA (0 for no limit).
+        int freq_rf  = 434000000;       //< RF Frequency in Hz.
+        int freq_dev = 5000;            //< Frequency deviation in Hz.
+        int bitrate  = 4800;            //< Bitrate in b/s.
+        RxBw rx_bw   = RxBw::HZ_10400;  //< Rx filter bandwidth.
+        RxBw afc_bw  = RxBw::HZ_50000;  //< Afc filter bandwidth.
+        int ocp =
+            120;  //< Over current protection limit in mA (0 for no limit).
     };
 
     /**
      * @brief Error enum.
      */
-    enum class Error 
+    enum class Error
     {
-        NONE, //< No error encountered.
-        BAD_VALUE, //< A requested value was outside the valid range.
-        BAD_VERSION, //< Chip didn't report the correct version.
+        NONE,         //< No error encountered.
+        BAD_VALUE,    //< A requested value was outside the valid range.
+        BAD_VERSION,  //< Chip didn't report the correct version.
     };
 
-    SX1278(SPIBusInterface& bus, GpioPin cs);
+    SX1278(SPIBusInterface &bus, GpioPin cs);
 
     /**
      * @brief Setup the device.
@@ -93,14 +95,14 @@ public:
 
     /**
      * @brief Read the chip revision.
-     * 
+     *
      * @return It should always return 0x12.
      */
     uint8_t getVersion() const;
 
     /**
      * @brief Receive data.
-     * 
+     *
      * @param buf Buffer to put the received data.
      * @return How many bytes were received.
      */
@@ -108,11 +110,16 @@ public:
 
     /**
      * @brief Send data.
-     * 
+     *
      * @param buf Buffer with the data to send.
      * @param len Length of buffer.
      */
     void send(const uint8_t *buf, uint8_t len);
+
+    void debugDumpRegisters();
+
+private:
+    using Mode = SX1278Defs::RegOpMode::Mode;
 
     void setBitrate(int bitrate);
     void setFreqDev(int freq_dev);
@@ -122,11 +129,6 @@ public:
     void setRxBw(RxBw rx_bw);
     void setAfcBw(RxBw afc_bw);
     void setPreableLen(int len);
-
-    void debugDumpRegisters();
-
-private:
-    using Mode = SX1278Defs::RegOpMode::Mode;
 
     void enterMode(Mode mode);
     void waitForIrq1(uint8_t mask);

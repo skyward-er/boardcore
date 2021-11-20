@@ -28,14 +28,15 @@
 
 using namespace SX1278Defs;
 
-SX1278::SX1278(SPIBusInterface& bus, GpioPin cs)
+SX1278::SX1278(SPIBusInterface &bus, GpioPin cs)
     : slave(bus, cs, spiConfig()), mode(SX1278::Mode::MODE_SLEEP)
 {
 }
 
 SX1278::Error SX1278::init(Config config)
 {
-    if(getVersion() != 0x12) {
+    if (getVersion() != 0x12)
+    {
         return Error::BAD_VERSION;
     }
 
@@ -51,43 +52,34 @@ SX1278::Error SX1278::init(Config config)
 
     setOcp(config.ocp);
 
-    uint8_t sync_word[3] = { 0x12, 0xad };
-    setSyncWord(sync_word, sizeof(sync_word));
-    setPreableLen(3);
+    uint8_t sync_word[2] = {0x12, 0xad};
+    setSyncWord(sync_word, 2);
+    setPreableLen(2);
 
     // Setup generic parameters
     {
         SPITransaction spi(slave, SPIWriteBit::INVERTED);
 
-        // Setup transmitter registers
-
-        // Setup receiver registers
+        spi.write(REG_PA_RAMP, REG_PA_RAMP_DEFAULT);
         spi.write(REG_RX_CONFIG, REG_RX_CONFIG_DEFAULT);
-        
-        // spi.write(REG_RSSI_CONFIG, 2);
-
-        // Setup packet registers
-
-        spi.write(REG_PREAMBLE_DETECT, 0x01 << 7 | 0x01 << 5 | 0x0a << 4);
-
-        spi.write(REG_PACKET_CONFIG_1,
-                RegPacketConfig1::PACKET_FORMAT_VARIABLE_LENGTH |
-                    RegPacketConfig1::DC_FREE_NONE |
-                    RegPacketConfig1::CRC_ON |
-                    RegPacketConfig1::ADDRESS_FILTERING_NONE |
-                    RegPacketConfig1::CRC_WHITENING_TYPE_CCITT_CRC);
-
-        spi.write(REG_PACKET_CONFIG_2, RegPacketConfig2::DATA_MODE_PACKET);
-
-        spi.write(REG_FIFO_THRESH, RegFifoTresh::TX_START_CONDITION_FIFO_EMPTY | 0x0f);
+        spi.write(REG_RSSI_THRESH, 0xff);
+        spi.write(REG_PREAMBLE_DETECT, REG_PREAMBLE_DETECTOR_DEFAULT);
+        spi.write(REG_RX_TIMEOUT_1, 0x00);
+        spi.write(REG_RX_TIMEOUT_2, 0x00);
+        spi.write(REG_RX_TIMEOUT_3, 0x00);
+        spi.write(REG_PACKET_CONFIG_1, REG_PACKET_CONFIG_1_DEFAULT);
+        spi.write(REG_PACKET_CONFIG_2, REG_PACKET_CONFIG_2_DEFAULT);
+        spi.write(REG_NODE_ADRS, 0x00);
+        spi.write(REG_BROADCAST_ADRS, 0x00);
     }
 
     return Error::NONE;
 }
 
-uint8_t SX1278::recv(uint8_t *buf) {
+uint8_t SX1278::recv(uint8_t *buf)
+{
     // Enter RX mode
-    if(mode == Mode::MODE_STDBY)
+    if (mode == Mode::MODE_STDBY)
         enterMode(Mode::MODE_FSRX);
 
     enterMode(Mode::MODE_RX);
@@ -100,13 +92,13 @@ uint8_t SX1278::recv(uint8_t *buf) {
         spi.read(REG_FIFO, buf, len);
     }
 
-
     return len;
 }
 
-void SX1278::send(const uint8_t *buf, uint8_t len) {
+void SX1278::send(const uint8_t *buf, uint8_t len)
+{
     // Enter TX mode
-    if(mode == Mode::MODE_STDBY)
+    if (mode == Mode::MODE_STDBY)
         enterMode(Mode::MODE_FSTX);
 
     enterMode(Mode::MODE_TX);
@@ -118,7 +110,7 @@ void SX1278::send(const uint8_t *buf, uint8_t len) {
         SPITransaction spi(slave, SPIWriteBit::INVERTED);
         spi.write(REG_FIFO, len);
         // FIXME: This needs to be fixed!!
-        spi.write(REG_FIFO, const_cast<uint8_t*>(buf), len);
+        spi.write(REG_FIFO, const_cast<uint8_t *>(buf), len);
     }
 
     // Wait for packet sent
@@ -163,61 +155,59 @@ void SX1278::setFreqRF(int freq_rf)
     spi.write(REG_FRF_LSB, val);
 }
 
-void SX1278::setOcp(int ocp) {
+void SX1278::setOcp(int ocp)
+{
     SPITransaction spi(slave, SPIWriteBit::INVERTED);
-    if(ocp == 0) {
+    if (ocp == 0)
+    {
         spi.write(REG_OCP, 0);
-    } else if(ocp <= 120) {
+    }
+    else if (ocp <= 120)
+    {
         uint8_t raw = (ocp - 45) / 5;
-        spi.write(REG_OCP, RegOcp::REG_OCP_ON | raw);
-    } else {
+        spi.write(REG_OCP, RegOcp::OCP_ON | raw);
+    }
+    else
+    {
         uint8_t raw = (ocp + 30) / 10;
-        spi.write(REG_OCP, RegOcp::REG_OCP_ON | raw);
+        spi.write(REG_OCP, RegOcp::OCP_ON | raw);
     }
 }
 
-void SX1278::setSyncWord(uint8_t value[], int size) {
+void SX1278::setSyncWord(uint8_t value[], int size)
+{
     SPITransaction spi(slave, SPIWriteBit::INVERTED);
     spi.write(REG_SYNC_CONFIG, REG_SYNC_CONFIG_DEFAULT | size);
 
-    for(int i = 0; i < size; i++) {
+    for (int i = 0; i < size; i++)
+    {
         spi.write(REG_SYNC_VALUE_1 + i, value[i]);
     }
 }
 
-void SX1278::setRxBw(RxBw rx_bw) {
+void SX1278::setRxBw(RxBw rx_bw)
+{
     SPITransaction spi(slave, SPIWriteBit::INVERTED);
     spi.write(REG_RX_BW, static_cast<uint8_t>(rx_bw));
 }
 
-void SX1278::setAfcBw(RxBw afc_bw) {
+void SX1278::setAfcBw(RxBw afc_bw)
+{
     SPITransaction spi(slave, SPIWriteBit::INVERTED);
     spi.write(REG_AFC_BW, static_cast<uint8_t>(afc_bw));
 }
 
-void SX1278::setPreableLen(int len) {
+void SX1278::setPreableLen(int len)
+{
     SPITransaction spi(slave, SPIWriteBit::INVERTED);
     spi.write(REG_PREAMBLE_MSB, len >> 8);
     spi.write(REG_PREAMBLE_LSB, len);
 }
 
-void SX1278::debugDumpRegisters()
+void SX1278::enterMode(Mode mode)
 {
-    const char* names[] = {
-        "REG_OP_MODE",  "REG_BITRATE_MSB", "REG_BITRATE_LSB", "REG_FDEV_MSB",
-        "REG_FDEV_LSB", "REG_FRF_MSB",     "REG_FRF_MID",     "REG_FRF_LSB",
-    };
-
-    SPITransaction spi(slave, SPIWriteBit::INVERTED);
-    for (int i = 0x01; i <= 0x08; i++)
-    {
-        TRACE("%s: 0x%x\n", names[i - 1], spi.read(i));
-    }
-}
-
-void SX1278::enterMode(Mode mode) {
     // Only do this if we need to
-    if(mode == this->mode)
+    if (mode == this->mode)
         return;
 
     {
@@ -231,18 +221,99 @@ void SX1278::enterMode(Mode mode) {
     this->mode = mode;
 }
 
-inline void waitForIrq(SPISlave &slave, uint8_t reg, uint8_t mask) {
+inline void waitForIrq(SPISlave &slave, uint8_t reg, uint8_t mask)
+{
     SPITransaction spi(slave, SPIWriteBit::INVERTED);
 
     // Tight loop to wait on device
-    while((spi.read(reg) & mask) == 0)
+    while ((spi.read(reg) & mask) == 0)
         miosix::delayUs(10);
 }
 
-void SX1278::waitForIrq1(uint8_t mask) {
+void SX1278::waitForIrq1(uint8_t mask)
+{
     waitForIrq(slave, REG_IRQ_FLAGS_1, mask);
 }
 
-void SX1278::waitForIrq2(uint8_t mask) {
+void SX1278::waitForIrq2(uint8_t mask)
+{
     waitForIrq(slave, REG_IRQ_FLAGS_2, mask);
+}
+
+void SX1278::debugDumpRegisters()
+{
+    struct RegDef
+    {
+        const char *name;
+        int addr;
+    };
+
+    const RegDef defs[] = {
+        RegDef{"REG_OP_MODE", REG_OP_MODE},
+        RegDef{"REG_BITRATE_MSB", REG_BITRATE_MSB},
+        RegDef{"REG_BITRATE_LSB", REG_BITRATE_LSB},
+        RegDef{"REG_FDEV_MSB", REG_FDEV_MSB},
+        RegDef{"REG_FDEV_LSB", REG_FDEV_LSB},
+        RegDef{"REG_FRF_MSB", REG_FRF_MSB}, RegDef{"REG_FRF_MID", REG_FRF_MID},
+        RegDef{"REG_FRF_LSB", REG_FRF_LSB},
+        RegDef{"REG_PA_CONFIG", REG_PA_CONFIG},
+        RegDef{"REG_PA_RAMP", REG_PA_RAMP}, RegDef{"REG_OCP", REG_OCP},
+        RegDef{"REG_LNA", REG_LNA}, RegDef{"REG_RX_CONFIG", REG_RX_CONFIG},
+        RegDef{"REG_RSSI_CONFIG", REG_RSSI_CONFIG},
+        RegDef{"REG_RSSI_COLLISION", REG_RSSI_COLLISION},
+        RegDef{"REG_RSSI_THRESH", REG_RSSI_THRESH},
+        // RegDef { "REG_RSSI_VALUE", REG_RSSI_VALUE },
+        RegDef{"REG_RX_BW", REG_RX_BW}, RegDef{"REG_AFC_BW", REG_AFC_BW},
+        RegDef{"REG_OOK_PEAK", REG_OOK_PEAK},
+        RegDef{"REG_OOK_FIX", REG_OOK_FIX}, RegDef{"REG_OOK_AVG", REG_OOK_AVG},
+        RegDef{"REG_AFC_FEI", REG_AFC_FEI}, RegDef{"REG_AFC_MSB", REG_AFC_MSB},
+        RegDef{"REG_AFC_LSB", REG_AFC_LSB}, RegDef{"REG_FEI_MSB", REG_FEI_MSB},
+        RegDef{"REG_FEI_LSB", REG_FEI_LSB},
+        RegDef{"REG_PREAMBLE_DETECT", REG_PREAMBLE_DETECT},
+        RegDef{"REG_RX_TIMEOUT_1", REG_RX_TIMEOUT_1},
+        RegDef{"REG_RX_TIMEOUT_2", REG_RX_TIMEOUT_2},
+        RegDef{"REG_RX_TIMEOUT_3", REG_RX_TIMEOUT_3},
+        RegDef{"REG_RX_DELAY", REG_RX_DELAY}, RegDef{"REG_OSC", REG_OSC},
+        RegDef{"REG_PREAMBLE_MSB", REG_PREAMBLE_MSB},
+        RegDef{"REG_PREAMBLE_LSB", REG_PREAMBLE_LSB},
+        RegDef{"REG_SYNC_CONFIG", REG_SYNC_CONFIG},
+        RegDef{"REG_SYNC_VALUE_1", REG_SYNC_VALUE_1},
+        RegDef{"REG_SYNC_VALUE_2", REG_SYNC_VALUE_2},
+        RegDef{"REG_SYNC_VALUE_3", REG_SYNC_VALUE_3},
+        RegDef{"REG_SYNC_VALUE_4", REG_SYNC_VALUE_4},
+        RegDef{"REG_SYNC_VALUE_5", REG_SYNC_VALUE_5},
+        RegDef{"REG_SYNC_VALUE_6", REG_SYNC_VALUE_6},
+        RegDef{"REG_SYNC_VALUE_7", REG_SYNC_VALUE_7},
+        RegDef{"REG_SYNC_VALUE_8", REG_SYNC_VALUE_8},
+        RegDef{"REG_PACKET_CONFIG_1", REG_PACKET_CONFIG_1},
+        RegDef{"REG_PACKET_CONFIG_2", REG_PACKET_CONFIG_2},
+        RegDef{"REG_PACKET_PAYLOAD_LENGTH", REG_PACKET_PAYLOAD_LENGTH},
+        RegDef{"REG_NODE_ADRS", REG_NODE_ADRS},
+        RegDef{"REG_BROADCAST_ADRS", REG_BROADCAST_ADRS},
+        RegDef{"REG_FIFO_THRESH", REG_FIFO_THRESH},
+        RegDef{"REG_SEQ_CONFIG_1", REG_SEQ_CONFIG_1},
+        RegDef{"REG_SEQ_CONFIG_2", REG_SEQ_CONFIG_2},
+        RegDef{"REG_TIMER_RESOL", REG_TIMER_RESOL},
+        RegDef{"REG_TIMER_1_COEF", REG_TIMER_1_COEF},
+        RegDef{"REG_TIMER_2_COEF", REG_TIMER_2_COEF},
+        RegDef{"REG_IMAGE_CAL", REG_IMAGE_CAL},
+        // RegDef { "REG_TEMP", REG_TEMP },
+        RegDef{"REG_LOW_BAT", REG_LOW_BAT},
+        // RegDef { "REG_IRQ_FLAGS_1", REG_IRQ_FLAGS_1 },
+        // RegDef { "REG_IRQ_FLAGS_2", REG_IRQ_FLAGS_2 },
+        RegDef{"REG_DIO_MAPPING_1", REG_DIO_MAPPING_1},
+        RegDef{"REG_DIO_MAPPING_2", REG_DIO_MAPPING_2},
+        RegDef{"REG_VERSION", REG_VERSION}, RegDef{NULL, 0}};
+
+    SPITransaction spi(slave, SPIWriteBit::INVERTED);
+
+    int i = 0;
+    while (defs[i].name)
+    {
+        auto name = defs[i].name;
+        auto addr = defs[i].addr;
+        TRACE("%s: 0x%x\n", name, spi.read(addr));
+
+        i++;
+    }
 }
