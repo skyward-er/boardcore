@@ -27,7 +27,16 @@ using namespace miosix;
 
 int main()
 {
-    VN100 sensor {2, 115200, VN100::CRC_ENABLE_16};
+    GpioPin tx(GPIOB_BASE, 6);
+    GpioPin rx(GPIOB_BASE, 7);
+
+    tx.mode(miosix::Mode::ALTERNATE);
+    rx.mode(miosix::Mode::ALTERNATE);
+
+    tx.alternateFunction(7);
+    rx.alternateFunction(7);
+
+    VN100 sensor {1, 19200, VN100::CRC_ENABLE_8};
     
     if(!sensor.init())
     {

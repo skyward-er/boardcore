@@ -114,6 +114,13 @@ private:
     bool setCrc();
 
     /**
+     * @brief method implementation of self test
+     * 
+     * @return boolean that confirms or not the self test success
+     */
+    bool selfTestImpl();
+
+    /**
      * @brief sends the command to the sensor with the correct checksum added
      * so '*' symbol is not needed at the end of the string as well as the '$'
      * at the beginning of the command
@@ -121,6 +128,16 @@ private:
      * @return boolean that confirms or not the success
      */
     bool sendStringCommand(std::string command);
+
+    /**
+     * @brief receives the vn100 command with serialInterface -> recv() but
+     * swaps the first \n with a \0 to close the message
+     * 
+     * @param the char vector which will be filled with the command
+     * 
+     * @return boolean that confirms or not the success
+     */
+    bool recvStringCommand(char * command, int maxLength);
 
     /**
      * @brief method to calculate 8bit vector checksum 8bit

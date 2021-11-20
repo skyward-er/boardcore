@@ -77,6 +77,24 @@ bool VN100::init()
         return false;
     }
 
+    //I need to repeat this in case of a non default
+    //serial port communication at the beginning
+    if(!setCrc())
+    {
+        return false;
+    }
+
+    if(!disableAsyncMessages())
+    {
+        return false;
+    }
+
+    //Reopen to delete junk values
+    if(!configUserSerialPort())
+    {
+        return false;
+    }
+
     //Allocate the receive vector with a malloc
     //TODO review this operation
     recvString = (char *) malloc(recvStringMaxDimension * sizeof(char));
@@ -86,41 +104,8 @@ bool VN100::init()
         return false;
     }
 
-    //Read the left junk only if the baud rate is the default
-    //else there is a serial reset as last operation so there is no need
-    //to clean the junk
-    if(baudRate == defaultBaudRate && 
-       !(serialInterface -> recv(recvString, recvStringMaxDimension)))
-    {
-        return false;
-    }
-
     //Set the isInit flag true
     isInit = true;
-
-    return true;
-}
-
-bool VN100::selfTest()
-{
-    //Check the init status
-    if(!isInit)
-    {
-        return false;
-    }
-
-    //I check the model number
-    if(!sendStringCommand("VNRRG,01"))
-    {
-        return false;
-    }
-
-    if(!(serialInterface -> recv(recvString, recvStringMaxDimension)))
-    {
-        return false;
-    }
-
-    printf("%s\n", recvString);
 
     return true;
 }
@@ -141,6 +126,19 @@ bool VN100::closeAndReset()
     }
 
     return true;
+}
+
+bool VN100::selfTest()
+{
+    //Void execution for junk prevention
+    selfTestImpl();
+
+    if(selfTestImpl())
+    {
+        printf("%s\n", recvString);
+        return true;
+    }
+    return false;
 }
 
 
@@ -175,15 +173,13 @@ bool VN100::configDefaultSerialPort()
     return true;
 }
 
+/**
+ * EVEN IF THE USER CONFIGURED BAUD RATE IS THE DEFAULT I WANT
+ * TO RESET THE BUFFER TO CLEAN THE JUNK
+ */
 bool VN100::configUserSerialPort()
 {
     std::string command;
-
-    //If the the baud rate is already the default i can avoid the procedure
-    if(baudRate == defaultBaudRate)
-    {
-        return true;
-    }
 
     //I format the command to change baud rate
     command = fmt::format("{}{}", "VNWRG,5,", baudRate);
@@ -215,18 +211,13 @@ bool VN100::setCrc()
 {
     //Command for the crc change
     std::string command;
+    uint8_t backup = crc;
 
     //Check what type of crc is selected
     if(crc == CRC_ENABLE_16)
     {
         //The 3 inside the command is the 16bit select. The others are default values
         command = "VNWRG,30,0,0,0,0,3,0,1";
-
-        //Send the command
-        if(!sendStringCommand(command))
-        {
-            return false;
-        }
     }
     else
     {
@@ -234,13 +225,46 @@ bool VN100::setCrc()
         //checksum because i need to know how many 'X' add at the end
         //of every command sent
         command = "VNWRG,30,0,0,0,0,1,0,1";
-
-        //Send the command
-        if(!sendStringCommand(command))
-        {
-            return false;
-        }
     }
+
+    crc = CRC_ENABLE_8;
+    //Send the command
+    if(!sendStringCommand(command))
+    {
+            return false;
+    }
+
+    crc = CRC_ENABLE_16;
+    //Send the command
+    if(!sendStringCommand(command))
+    {
+        return false;
+    }
+
+    //Restore the crc
+    crc = backup;
+    return true;
+}
+
+bool VN100::selfTestImpl()
+{
+    //Check the init status
+    if(!isInit)
+    {
+        return false;
+    }
+
+    //I check the model number
+    if(!sendStringCommand("VNRRG,01"))
+    {
+        return false;
+    }
+
+    if(!recvStringCommand(recvString, recvStringMaxDimension))
+    {
+        return false;
+    }
+
     return true;
 }
 
@@ -276,6 +300,29 @@ bool VN100::sendStringCommand(std::string command)
         return false;
     }
 
+    return true;
+}
+
+bool VN100::recvStringCommand(char * command, int maxLength)
+{
+    int i = 0;
+    //Read the buffer
+    if(!(serialInterface -> recv(command, maxLength)))
+    {
+        return false;
+    }
+
+    //Iterate until i reach the end or i find \n then i substitute it with a \0
+    while(i < maxLength && command[i] != '\n'){ i++; }
+
+    /*//If there is no \n then the read command failed (or there is only junk)
+    if(i == maxLength)
+    {
+        return false;
+    }*/
+
+    //Terminate the string
+    command[i] = '\0';
     return true;
 }
 
