@@ -97,7 +97,8 @@ bool VN100::init()
 
     //Allocate the receive vector with a malloc
     //TODO review this operation
-    recvString = (char *) malloc(recvStringMaxDimension * sizeof(char));
+    //recvString = (char *) malloc(recvStringMaxDimension * sizeof(char));
+    recvString = new char[recvStringMaxDimension];
 
     if(recvString == NULL)
     {
@@ -125,20 +126,26 @@ bool VN100::closeAndReset()
         return false;
     }
 
+    //Free the recvString memory
+    delete(recvString);
+
+    //Free the serialInterface memory
+    delete(serialInterface);
+
     return true;
 }
 
 bool VN100::selfTest()
 {
+    TRACE("First name should be junk!\n");
     //Void execution for junk prevention
     selfTestImpl();
 
-    if(selfTestImpl())
+    if(!selfTestImpl())
     {
-        printf("%s\n", recvString);
-        return true;
+        return false;
     }
-    return false;
+    return true;
 }
 
 
@@ -227,6 +234,10 @@ bool VN100::setCrc()
         command = "VNWRG,30,0,0,0,0,1,0,1";
     }
 
+    //I need to send the command in both crc because i don't know what type
+    //of crc is previously selected. So in order to get the command accepted
+    //i need to do it two times with different crc.
+
     crc = CRC_ENABLE_8;
     //Send the command
     if(!sendStringCommand(command))
@@ -248,6 +259,9 @@ bool VN100::setCrc()
 
 bool VN100::selfTestImpl()
 {
+    char modelNumber[] = "VN-100";
+    const int modelNumberOffset = 10;
+
     //Check the init status
     if(!isInit)
     {
@@ -262,6 +276,21 @@ bool VN100::selfTestImpl()
 
     if(!recvStringCommand(recvString, recvStringMaxDimension))
     {
+        return false;
+    }
+
+    //Now i check that the model number is VN-100 starting from the 10th position
+    //because of the message structure 
+    if(strncmp(modelNumber, recvString + modelNumberOffset, strlen(modelNumber)) != 0)
+    {
+        TRACE("VN-100 not corresponding: %s != %s\n", recvString, modelNumber);
+        return false;
+    }
+
+    //I check the checksum
+    if(!verifyChecksum(recvString, recvStringLength))
+    {
+        TRACE("Checksum verification failed: %s\n", recvString);
         return false;
     }
 
@@ -315,14 +344,69 @@ bool VN100::recvStringCommand(char * command, int maxLength)
     //Iterate until i reach the end or i find \n then i substitute it with a \0
     while(i < maxLength && command[i] != '\n'){ i++; }
 
-    /*//If there is no \n then the read command failed (or there is only junk)
-    if(i == maxLength)
-    {
-        return false;
-    }*/
-
     //Terminate the string
     command[i] = '\0';
+
+    //Assing the length
+    recvStringLength = i - 1;
+
+    return true;
+}
+
+bool VN100::verifyChecksum(char * command, int length)
+{
+    int checksumPosition = 0;
+
+    //I look for the checksum position
+    while(checksumPosition < length && command[checksumPosition] != '*') { checksumPosition++; }
+
+    if(checksumPosition == length)
+    {
+        //The command doesn't have any checksum
+        TRACE("No checksum in the command!\n");
+        return false;
+    }
+
+    //Check based on the user selected crc type
+    if(crc == CRC_ENABLE_16)
+    {
+        char checksum[5];                                                                        //4 hex + \0
+        if(length != checksumPosition + 5)                                                       //4 hex chars + 1 of position
+        {
+            TRACE("16 bit Checksum wrong length: %d != %d\n", length, checksumPosition + 5);
+            return false;
+        }
+
+        //Calculate the checksum and verify
+        itoa(calculateChecksum16((uint8_t *)(command + 1), checksumPosition - 1), checksum, 16); //The 1s are for the $ at the beginning
+
+        if(strncmp(command + checksumPosition + 1, checksum, 4) != 0)                            //4 is the number of hex for 16 bits
+        {
+            TRACE("Different checksum: %s != %s\n", command + checksumPosition + 1, checksum);
+            return false;
+        }
+
+    }
+    else if(crc == CRC_ENABLE_8)
+    {
+        char checksum[3];                                                                        //2 hex + \0
+
+        if(length != checksumPosition + 3)                                                       //2 hex chars + 1 of position
+        {
+            TRACE("8 bit Checksum wrong length: %d != %d\n", length, checksumPosition + 3);
+            return false;
+        }
+
+        //Calculate the checksum and verify
+        itoa(calculateChecksum8((uint8_t *)(command + 1), checksumPosition - 1), checksum, 16);  //The 1s are for the $ at the beginning
+
+        if(strncmp(command + checksumPosition + 1, checksum, 2) != 0)                            //2 is the number of hex for 8 bits
+        {
+            TRACE("Different checksum: %s != %s\n", command + checksumPosition + 1, checksum);
+            return false;
+        }
+    }
+
     return true;
 }
 

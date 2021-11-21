@@ -48,6 +48,7 @@ int main()
     if(!sensor.selfTest())
     {
         printf("Error self test check!\n");
+        return 0;
     }
 
     printf("Sensor self test successful!\n");

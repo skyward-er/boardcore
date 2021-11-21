@@ -23,6 +23,7 @@
 
 #include <string>
 #include <fmt/format.h>
+#include <Debug.h>
 
 #include <sensors/Sensor.h>
 #include "VN100Data.h"
@@ -76,6 +77,11 @@ private:
      * Allocated 1 time only (100 bytes)
      */
     char * recvString;
+
+    /**
+     * @brief actual strlen() of the recvString
+     */
+    unsigned int recvStringLength;
 
     /**
      * @brief serial interface that is needed to communicate
@@ -138,6 +144,16 @@ private:
      * @return boolean that confirms or not the success
      */
     bool recvStringCommand(char * command, int maxLength);
+
+    /**
+     * @brief method to verify the crc validity of a command
+     * 
+     * @param the char vector which contains the command
+     * @param its length
+     * 
+     * @return boolean that confirms or not the command validity
+     */
+    bool verifyChecksum(char * command, int maxLength);
 
     /**
      * @brief method to calculate 8bit vector checksum 8bit
