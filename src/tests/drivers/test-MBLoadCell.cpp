@@ -25,11 +25,26 @@
 
 #include "sensors/MBLoadCell/MBLoadCell.h"
 #include "string.h"
+#include "utils/ButtonHandler.h"
 
 using namespace miosix;
 
+using button              = miosix::Gpio<GPIOA_BASE, 0>;  ///< user button
+const uint8_t btn_user_id = 1;
+
+/**
+ * @brief callback function that is called when the button is pressed. Resets
+ * the minimum and maximum values of the recorded weights
+ */
+void buttonCallback(uint8_t btn_id, ButtonPress btn_press, MBLoadCell *loadcell)
+{
+    if (btn_id == btn_user_id && btn_press == ButtonPress::DOWN)
+        loadcell->resetMaxMinWeights();
+}
+
 int main()
 {
+    // enabling the timestamps
     TimestampTimer::enableTimestampTimer();
 
     /*
@@ -39,13 +54,23 @@ int main()
      */
     MBLoadCell loadCell(LoadCellModes::ASCII_MOD_TD, 2, 2400);
 
+    // binding the load cell instance to the callback to be called
+    std::function<void(uint8_t, ButtonPress)> callback =
+        std::bind(buttonCallback, std::placeholders::_1, std::placeholders::_2,
+                  &loadCell);
+
+    // instanciating the button
+    ButtonHandler<button> btn_handler(btn_user_id, callback);
+    btn_handler.start();
+
+    // initializing the load cell
     if (!loadCell.init())
     {
         TRACE("Initialization of the load cell failed\n");
         return 1;
     }
 
-    loadCell.asciiRequest(LoadCellValuesEnum::SET_SETPOINT_1, 10);
+    loadCell.asciiRequest(LoadCellValuesEnum::SET_SETPOINT_1, 5);
     while (true)
     {
         loadCell.sample();

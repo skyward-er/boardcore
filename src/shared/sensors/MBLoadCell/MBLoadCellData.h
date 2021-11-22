@@ -33,6 +33,9 @@ enum LoadCellModes : uint8_t
     CONT_MOD_TD
 };
 
+/**
+ * @brief enumeration of all the requests in ASCII mode
+ */
 enum LoadCellValuesEnum
 {
     SET_SETPOINT_1,
@@ -51,7 +54,7 @@ enum LoadCellValuesEnum
 };
 
 /**
- * #################################################
+ * @brief type that maps the different requests to their keyword
  */
 typedef std::map<const LoadCellValuesEnum, std::string> LoadCellValues;
 static LoadCellValues loadCellValues = {
@@ -74,7 +77,8 @@ enum ReturnsStates
 };
 
 /**
- * #########################################
+ * @brief structure that stores a data value, with his timestamp and his
+ * validity
  */
 struct Data
 {
@@ -93,7 +97,7 @@ struct Data
 /**
  * @brief structure of the output of the load cell in [continuous mode -> ModT]
  */
-typedef struct MBLoadCellSettingsStr
+struct MBLoadCellSettings
 {
     LoadCellModes mode;
     bool gross_mode;
@@ -150,21 +154,21 @@ typedef struct MBLoadCellSettingsStr
         if (setpoint3.valid)
             TRACE("Setpoint 3     : %f [Kg]\n", setpoint3.data);
     }
-} MBLoadCellSettings;
+};
 
 /**
  * @brief structure of the output of the load cell in [continuous mode -> ModT]
  */
-typedef struct DataModTStr
+struct DataModT
 {
     char weight[6];
     char CRLF[2];
-} DataModT;
+};
 
 /**
  * @brief structure of the output of the load cell in [continuous mode -> ModTd]
  */
-typedef struct DataModTdStr
+struct DataModTd
 {
     char beginStr[1];
     char T[1];
@@ -174,9 +178,12 @@ typedef struct DataModTdStr
     char endStr[1];
     char ck[2];
     char CR[1];
-} DataModTd;
+};
 
-typedef struct DataAsciiRequestStr
+/**
+ * @brief structure that contains all the parameters for the request to be sent
+ */
+struct DataAsciiRequest
 {
     char beginStr[2] = "$";
     char addr[3]     = "01";
@@ -221,4 +228,4 @@ typedef struct DataAsciiRequestStr
             fmt::format("{}{}{}{}{}{}", beginStr, addr, value, req, ck, CR);
         return str;
     }
-} DataAsciiRequest;
+};

@@ -57,6 +57,11 @@ public:
      */
     MBLoadCell(LoadCellModes mode, int serialPortNum, int baudrate);
 
+    /**
+     * @brief initializes the serial communication with the load cell
+     * @return true if initialization completed with no problems, false
+     * otherwise
+     */
     bool init() override;
 
     bool selfTest() override;
@@ -72,8 +77,14 @@ public:
      */
     void resetMaxMinWeights();
 
+    /**
+     * @brief prints the last sample received
+     */
     void printData();
 
+    /**
+     * @brief returns a copy of the settings
+     */
     MBLoadCellSettings getSettings();
 
 protected:
@@ -109,18 +120,34 @@ protected:
     void generateRequest(DataAsciiRequest &req,
                          const LoadCellValuesEnum toRequest, int value = 0);
 
+    /**
+     * @brief wrapper to the serial sendString method. This also sets the
+     * control pins to enable the transmission mode
+     * @param buf the message to send
+     */
     void transmitASCII(std::string buf);
 
+    /**
+     * @brief wrapper to the serial recvString method. This also sets the
+     * control pins to enable the receiver mode
+     * @return the message received
+     */
     std::string receiveASCII();
 
+    /**
+     * @brief wrapper to the serial receive method. This also sets the control
+     * pins to enable the receiver mode
+     * @param buf the pointer to the buffer in which the data received will be
+     * stored
+     */
     template <typename T>
     void receive(T *buf);
 
 private:
     MBLoadCellSettings
-        settings;  ///< structure that contains all te configuration
-    Data max_weight;
-    Data min_weight;
+        settings;             ///< structure that contains all te configuration
+    Data max_weight;          ///< the maximum weight detected by the load cell
+    Data min_weight;          ///< the minimum weight detected by the load cell
     SerialInterface *serial;  ///< pointer to the instance of the serial port
-                              ///< opened for the connection
+                              ///< used for the connection
 };

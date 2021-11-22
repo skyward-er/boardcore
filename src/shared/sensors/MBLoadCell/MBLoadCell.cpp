@@ -26,9 +26,8 @@
 #include "stdlib.h"
 
 using ctrlPin1 = miosix::Gpio<GPIOC_BASE, 1>;  ///< control R/W pin 1
-using ctrlPin2 = miosix::Gpio<GPIOC_BASE, 2>;  ///< control R/W pin 1
-
-using out1 = miosix::Gpio<GPIOC_BASE, 8>;  ///< out1 for the first setpoint1
+using ctrlPin2 = miosix::Gpio<GPIOC_BASE, 2>;  ///< control R/W pin 2
+using out1     = miosix::Gpio<GPIOC_BASE, 8>;  ///< out1 for the first setpoint1
 
 MBLoadCell::MBLoadCell(LoadCellModes mode, int serialPortNum,
                        int baudrate = 2400)
@@ -41,9 +40,15 @@ MBLoadCell::MBLoadCell(LoadCellModes mode, int serialPortNum,
 
 bool MBLoadCell::init()
 {
+    if (serial->isInit())
+    {
+        last_error = SensorErrors::ALREADY_INIT;
+    }
+
     // initializing the serial connection
     if (!serial->init())
     {
+        last_error = SensorErrors::INIT_FAIL;
         TRACE("[MBLoadCell] init of the serial communication failed\n");
         return false;
     }
@@ -71,7 +76,8 @@ Data MBLoadCell::sampleImpl()
         case LoadCellModes::ASCII_MOD_TD:
             return sampleAsciiModTd();
         default:
-            return Data();
+            last_error = SensorErrors::NO_NEW_DATA;
+            return last_sample;
     }
 }
 
@@ -111,12 +117,14 @@ Data MBLoadCell::sampleAsciiModTd()
     if (response.find('!') != std::string::npos)
     {
         TRACE("Gross weight reception error\n");
-        return Data();
+        last_error = SensorErrors::NO_NEW_DATA;
+        return last_sample;
     }
     else if (response.find('#') != std::string::npos)
     {
         TRACE("Gross weight execution error\n");
-        return Data();
+        last_error = SensorErrors::NO_NEW_DATA;
+        return last_sample;
     }
     else
     {
@@ -141,6 +149,7 @@ void MBLoadCell::printData()
     {
         TRACE("Timestamp      : %f [s]\n",
               (double)last_sample.timestamp / 1000000);
+
         TRACE("Weight         : %f [Kg]\n", last_sample.data);
 
         if (max_weight.valid)
@@ -151,6 +160,7 @@ void MBLoadCell::printData()
     }
     else
     {
+        last_error = SensorErrors::NO_NEW_DATA;
         TRACE("No valida data has been collected\n");
     }
 }
@@ -220,6 +230,10 @@ MBLoadCellSettings MBLoadCell::getSettings() { return settings; }
 
 void MBLoadCell::resetMaxMinWeights()
 {
+    TRACE("TIMESTAMP: %.3f [s], EX MAX: %.2f [Kg], EX MIN: %.2f [Kg]\n",
+          (double)TimestampTimer::getTimestamp() / 1000000, max_weight.data,
+          min_weight.data);
+
     max_weight.valid = false;
     min_weight.valid = false;
 }

@@ -55,7 +55,7 @@ public:
         this->baudrate       = baudrate;
         this->serialPortNum  = serialPortNum;
         this->serialPortName = serialPortName;
-        is_init              = false;
+        initialized          = false;
         fd                   = -1;
     }
 
@@ -65,7 +65,7 @@ public:
      */
     bool init()
     {
-        if (is_init)
+        if (initialized)
         {
             TRACE(
                 "[SerialCommunication] Error : serial communication already "
@@ -80,7 +80,7 @@ public:
             return false;
         }
 
-        is_init = true;
+        initialized = true;
         return true;
     }
 
@@ -126,6 +126,8 @@ public:
 
     std::string getPortName() { return serialPortName; }
 
+    bool isInit() { return initialized; }
+
 private:
     /* Creates and opens the serial port for communication between OBSW and
      * simulation device */
@@ -164,6 +166,6 @@ private:
     int serialPortNum; /**< Stores the USART<serialPortNum> used for the
                           trasmission range[1:3] */
     int baudrate;      /**< Baudrate of the serial port */
-    bool is_init;      /**< True if init() already called successfully, false
-                          otherwise */
+    bool initialized;  /**< True if init() already called successfully, false
+                      otherwise */
 };
