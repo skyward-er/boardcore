@@ -21,11 +21,11 @@
  */
 #pragma once
 
-#include <string>
-#include <fmt/format.h>
 #include <Debug.h>
-
+#include <string.h>
+#include <fmt/format.h>
 #include <sensors/Sensor.h>
+
 #include "VN100Data.h"
 #include "VN100Serial.h"
 
@@ -74,7 +74,7 @@ private:
 
     /**
      * @brief pointer to the received string by the sensor
-     * Allocated 1 time only (100 bytes)
+     * Allocated 1 time only (200 bytes)
      */
     char * recvString;
 
@@ -127,6 +127,53 @@ private:
     bool selfTestImpl();
 
     /**
+     * @brief sample action implementation
+     */
+    VN100Data sampleImpl() override;
+
+    /**
+     * @brief sample only the quaternion
+     * 
+     * @return Quaternion data declared in VN100Data
+     */
+    QuaternionData sampleQuaternion();
+
+    /**
+     * @brief sample only the magnetometer
+     * 
+     * @return Magnetometer data declared in SensorData
+     */
+    MagnetometerData sampleMagnetometer();
+
+    /**
+     * @brief sample only the accelerometer
+     * 
+     * @return Accelerometer data declared in SensorData
+     */
+    AccelerometerData sampleAccelerometer();
+
+    /**
+     * @brief sample only the gyroscope
+     * 
+     * @return Gyroscope data declared in SensorData
+     */
+    GyroscopeData sampleGyroscope();
+
+    /**
+     * @brief sample only the temperature
+     * 
+     * @return Temperature data declared in SensorData
+     */
+    TemperatureData sampleTemperature();
+
+    /**
+     * @brief sample only the pressure
+     * 
+     * @return Pressure data declared in SensorData
+     */
+    PressureData samplePressure();
+
+    /**
      * @brief sends the command to the sensor with the correct checksum added
      * so '*' symbol is not needed at the end of the string as well as the '$'
      * at the beginning of the command
@@ -170,9 +217,11 @@ private:
     uint16_t calculateChecksum16(uint8_t * message, int length);
 
     /**
-     * @brief sample action implementation
+     * @brief method to convert every char in upper case
+     * 
+     * @param the string
      */
-    VN100Data sampleImpl() override;
+    void toUpperCase(char * string);
 
 public:
 

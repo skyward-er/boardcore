@@ -237,7 +237,6 @@ bool VN100::setCrc()
     //I need to send the command in both crc because i don't know what type
     //of crc is previously selected. So in order to get the command accepted
     //i need to do it two times with different crc.
-
     crc = CRC_ENABLE_8;
     //Send the command
     if(!sendStringCommand(command))
@@ -295,6 +294,149 @@ bool VN100::selfTestImpl()
     }
 
     return true;
+}
+
+VN100Data VN100::sampleImpl()
+{
+    if(!isInit)
+    {
+        TRACE("Unable to sample, sensor not initialized!");
+        return last_sample;
+    }
+
+    //Returns Quaternion, Magnetometer, Accelerometer and Gyro
+    if(!sendStringCommand("VNRRG,15"))
+    {
+        //If something goes wrong i return the last sampled data
+        return last_sample;
+    }
+
+    if(!recvStringCommand(recvString, recvStringMaxDimension))
+    {
+        //If something goes wrong i return the last sampled data
+        return last_sample;
+    }
+
+    if(!verifyChecksum(recvString, recvStringLength))
+    {
+        //If something goes wrong i return the last sampled data
+        return last_sample;
+    }
+
+    //Now i have to parse the data
+    QuaternionData quat     = sampleQuaternion();
+    MagnetometerData mag    = sampleMagnetometer();
+    AccelerometerData acc   = sampleAccelerometer();
+    GyroscopeData gyro      = sampleGyroscope();
+    TemperatureData temp    = sampleTemperature();
+    PressureData press      = samplePressure();
+
+    return VN100Data(0, quat, mag, acc, gyro, temp, press);
+}
+
+QuaternionData VN100::sampleQuaternion()
+{
+    unsigned int indexStart = 0;
+    char * nextNumber;
+    //Data result
+    QuaternionData data;
+
+    //Look for the second ',' in the string
+    //I can avoid the string control because it has already been done in sampleImpl
+    for(int i = 0; i < 2; i++)
+    {
+        while(indexStart < recvStringLength && recvString[indexStart] != ',') { indexStart++; }
+        indexStart++;
+    }
+
+    //Parse the data
+    data.quat_x = strtod(recvString + indexStart + 1, &nextNumber);
+    data.quat_y = strtod(nextNumber + 1, &nextNumber);
+    data.quat_z = strtod(nextNumber + 1, &nextNumber);
+    data.quat_w = strtod(nextNumber + 1, NULL);
+
+    return data;
+}
+
+MagnetometerData VN100::sampleMagnetometer()
+{
+    unsigned int indexStart = 0;
+    char * nextNumber;
+    //Data result
+    MagnetometerData data;
+
+    //Look for the sixth ',' in the string
+    //I can avoid the string control because it has already been done in sampleImpl
+    for(int i = 0; i < 6; i++)
+    {
+        while(indexStart < recvStringLength && recvString[indexStart] != ',') { indexStart++; }
+        indexStart++;
+    }
+
+    //Parse the data
+    data.mag_x = strtod(recvString + indexStart + 1, &nextNumber);
+    data.mag_y = strtod(nextNumber + 1, &nextNumber);
+    data.mag_z = strtod(nextNumber + 1, NULL);
+
+    return data;
+}
+
+AccelerometerData VN100::sampleAccelerometer()
+{
+    unsigned int indexStart = 0;
+    char * nextNumber;
+    //Data result
+    AccelerometerData data;
+
+    //Look for the ninth ',' in the string
+    //I can avoid the string control because it has already been done in sampleImpl
+    for(int i = 0; i < 9; i++)
+    {
+        while(indexStart < recvStringLength && recvString[indexStart] != ',') { indexStart++; }
+        indexStart++;
+    }
+
+    //Parse the data
+    data.accel_x = strtod(recvString + indexStart + 1, &nextNumber);
+    data.accel_y = strtod(nextNumber + 1, &nextNumber);
+    data.accel_z = strtod(nextNumber + 1, NULL);
+
+    return data;
+}
+
+GyroscopeData VN100::sampleGyroscope()
+{
+    unsigned int indexStart = 0;
+    char * nextNumber;
+    //Data result
+    GyroscopeData data;
+
+    //Look for the twelfth ',' in the string
+    //I can avoid the string control because it has already been done in sampleImpl
+    for(int i = 0; i < 12; i++)
+    {
+        while(indexStart < recvStringLength && recvString[indexStart] != ',') { indexStart++; }
+        indexStart++;
+    }
+
+    //Parse the data
+    data.gyro_x = strtod(recvString + indexStart + 1, &nextNumber);
+    data.gyro_y = strtod(nextNumber + 1, &nextNumber);
+    data.gyro_z = strtod(nextNumber + 1, NULL);
+
+    return data;
+}
+
+TemperatureData VN100::sampleTemperature()
+{
+    TemperatureData data;
+    return data;
+}
+
+PressureData VN100::samplePressure()
+{
+    PressureData data;
+    return data;
 }
 
 bool VN100::sendStringCommand(std::string command)
@@ -373,12 +515,13 @@ bool VN100::verifyChecksum(char * command, int length)
         char checksum[5];                                                                        //4 hex + \0
         if(length != checksumPosition + 5)                                                       //4 hex chars + 1 of position
         {
-            TRACE("16 bit Checksum wrong length: %d != %d\n", length, checksumPosition + 5);
+            TRACE("16 bit Checksum wrong length: %d != %d --> %s\n", length, checksumPosition + 5, command);
             return false;
         }
 
         //Calculate the checksum and verify
         itoa(calculateChecksum16((uint8_t *)(command + 1), checksumPosition - 1), checksum, 16); //The 1s are for the $ at the beginning
+        toUpperCase(checksum);
 
         if(strncmp(command + checksumPosition + 1, checksum, 4) != 0)                            //4 is the number of hex for 16 bits
         {
@@ -390,15 +533,15 @@ bool VN100::verifyChecksum(char * command, int length)
     else if(crc == CRC_ENABLE_8)
     {
         char checksum[3];                                                                        //2 hex + \0
-
         if(length != checksumPosition + 3)                                                       //2 hex chars + 1 of position
         {
-            TRACE("8 bit Checksum wrong length: %d != %d\n", length, checksumPosition + 3);
+            TRACE("8 bit Checksum wrong length: %d != %d --> %s\n", length, checksumPosition + 3, command);
             return false;
         }
 
         //Calculate the checksum and verify
         itoa(calculateChecksum8((uint8_t *)(command + 1), checksumPosition - 1), checksum, 16);  //The 1s are for the $ at the beginning
+        toUpperCase(checksum);
 
         if(strncmp(command + checksumPosition + 1, checksum, 2) != 0)                            //2 is the number of hex for 8 bits
         {
@@ -443,9 +586,13 @@ uint16_t VN100::calculateChecksum16(uint8_t * message, int length)
     return result;
 }
 
-VN100Data VN100::sampleImpl()
+void VN100::toUpperCase(char * string)
 {
-    VN100Data dato{};
-
-    return dato;
+    for(int i = 0; string[i] != '\0' && i < 10; i++)
+    {
+        if(string[i] >= 'a' && string[i] <= 'z')
+        {
+            string[i] = string[i] - 'a' + 'A';
+        }
+    }
 }

@@ -19,50 +19,71 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
+#pragma once
 
+#include <sensors/SensorData.h>
+
+/**
+ * @brief Structure to handle quaternion data
+ */
+struct QuaternionData
+{
+    uint64_t quat_timestamp;
+    float quat_x;
+    float quat_y;
+    float quat_z;
+    float quat_w;
+};
 
 /**
  * @brief data type class
- * @todo use the standard Data types
  */
-class VN100Data 
+struct VN100Data : public QuaternionData,
+                   public MagnetometerData, 
+                   public AccelerometerData, 
+                   public GyroscopeData, 
+                   public TemperatureData, 
+                   public PressureData
 {
 
-private:
-
-    float accel_x;
-    float accel_y;
-    float accel_z;
-
-public:
-
     /**
-     * @brief Constructor
+     * @brief Void parameters constructor
      */
-    VN100Data() : VN100Data(0, 0, 0){}
+    VN100Data() : QuaternionData    {0, 0.0, 0.0, 0.0, 0.0},
+                  MagnetometerData  {0, 0.0, 0.0, 0.0},
+                  AccelerometerData {0, 0.0, 0.0, 0.0},
+                  GyroscopeData     {0, 0.0, 0.0, 0.0},
+                  TemperatureData   {0, 0.0},
+                  PressureData      {0, 0.0}{}
 
     /**
      * @brief Constructor with parameters
-     */
-    VN100Data(float ax, float ay, float az)
+     * 
+     * @param single data structures for all the data
+     */ 
+    VN100Data(uint64_t timestamp, QuaternionData quat, MagnetometerData magData, AccelerometerData accData, GyroscopeData gyro, TemperatureData temp, PressureData pres)
+                : QuaternionData    {timestamp, quat.quat_x,        quat.quat_y,        quat.quat_z, quat.quat_w},
+                  MagnetometerData  {timestamp, magData.mag_x,      magData.mag_y,      magData.mag_z},
+                  AccelerometerData {timestamp, accData.accel_x,    accData.accel_y,    accData.accel_z},
+                  GyroscopeData     {timestamp, gyro.gyro_x,        gyro.gyro_y,        gyro.gyro_z},
+                  TemperatureData   {timestamp, temp.temp},
+                  PressureData      {timestamp, pres.press}{}
+
+
+    static std::string header()
     {
-        accel_x = ax;
-        accel_y = ay;
-        accel_z = az;
+        return  "quat_timestamp,quat_x,quat_y,quat_z,quat_w,mag_timestamp,mag_x,mag_y,mag_z,"
+                "accel_timestamp,accel_x,accel_y,accel_z,gyro_timestamp,gyro_x,gyro_y,gyro_z"
+                "temp_timestamp,temp,press_timestamp,press\n";
     }
 
-    /**
-     * @brief X acceleration getter
-     */
-    float getAccelX() { return accel_x; }
-
-    /**
-     * @brief Y acceleration getter
-     */
-    float getAccelY() { return accel_y; }
-
-    /**
-     * @brief Z acceleration getter
-     */
-    float getAccelZ() { return accel_z; }
+    void print(std::ostream& os) const
+    {
+        os  << quat_timestamp   << "," << quat_x    << "," << quat_y    << "," << quat_z    << "," << quat_w << ","
+            << mag_timestamp    << "," << mag_x     << "," << mag_y     << "," << mag_z     << ","
+            << accel_timestamp  << "," << accel_x   << "," << accel_y   << "," << accel_z   << ","
+            << gyro_timestamp   << "," << gyro_x    << "," << gyro_y    << "," << gyro_z    << ","
+            << temp_timestamp   << "," << temp      << ","
+            << press_timestamp  << "," << press     << "\n";
+    }
 };

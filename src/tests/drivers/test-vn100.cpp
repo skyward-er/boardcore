@@ -37,6 +37,7 @@ int main()
     rx.alternateFunction(7);
 
     VN100 sensor {1, 19200, VN100::CRC_ENABLE_8};
+    VN100Data sample;
     
     if(!sensor.init())
     {
@@ -52,6 +53,17 @@ int main()
     }
 
     printf("Sensor self test successful!\n");
+
+    //Sample and print 100 samples
+    for(int i = 0; i < 100; i++)
+    {
+        sensor.sample();
+        sample = sensor.getLastSample();
+        printf("%.3f, %.3f, %.3f\n", sample.accel_x, sample.accel_y, sample.accel_z);
+
+        Thread::sleep(100);
+        
+    }
 
     return 0;
 }
