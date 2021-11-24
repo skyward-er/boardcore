@@ -36,9 +36,12 @@ int main()
     tx.alternateFunction(7);
     rx.alternateFunction(7);
 
-    VN100 sensor {1, 19200, VN100::CRC_ENABLE_8};
+    VN100 sensor {1, 921600, VN100::CRC_ENABLE_8};
     VN100Data sample;
     
+    //Let the sensor start up
+    Thread::sleep(1000);
+
     if(!sensor.init())
     {
         printf("Error initializing the sensor!\n");
@@ -55,7 +58,7 @@ int main()
     printf("Sensor self test successful!\n");
 
     //Sample and print 100 samples
-    /*for(int i = 0; i < 100; i++)
+    for(int i = 0; i < 100; i++)
     {
         sensor.sample();
         sample = sensor.getLastSample();
@@ -63,7 +66,7 @@ int main()
 
         Thread::sleep(100);
         
-    }*/
+    }
 
     sensor.closeAndReset();
     printf("Sensor communication closed!\n");
