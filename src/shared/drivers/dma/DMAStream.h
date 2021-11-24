@@ -223,8 +223,8 @@ private:
     DMA_Stream_TypeDef *dmaStream;
 
     // Interrupt status flags
-    volatile uint32_t *IFCR;  ///> Interrupt flags clear register
-    uint32_t IFCR_MASK;       ///> Clear mask for all interrupt flags
+    volatile uint32_t *IFCR;  ///< Interrupt flags clear register
+    uint32_t IFCR_MASK;       ///< Clear mask for all interrupt flags
 
     PrintLogger logger = Logging::getLogger("DMAStream");
 };
