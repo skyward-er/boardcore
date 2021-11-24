@@ -36,7 +36,7 @@ int main()
     tx.alternateFunction(7);
     rx.alternateFunction(7);
 
-    VN100 sensor {1, 115200, VN100::CRC_ENABLE_16};
+    VN100 sensor {1, 19200, VN100::CRC_ENABLE_8};
     VN100Data sample;
     
     if(!sensor.init())

@@ -51,6 +51,12 @@ VN100::VN100(unsigned int portNumber, unsigned int baudRate, uint8_t crc)
  */
 bool VN100::init()
 {
+    //If already initialized
+    if(isInit)
+    {
+        return true;
+    }
+
     //Allocate the receive vector with a malloc
     //TODO review this operation
     //recvString = (char *) malloc(recvStringMaxDimension * sizeof(char));
@@ -61,23 +67,17 @@ bool VN100::init()
         return false;
     }
 
-    //If already initialized
-    if(isInit)
-    {
-        return true;
-    }
-
     if(!configDefaultSerialPort())
     {
         return false;
     }
 
-    if(!setCrc())
+    if(!setCrc(false))
     {
         return false;
     }
 
-    if(!disableAsyncMessages())
+    if(!disableAsyncMessages(false))
     {
         return false;
     }
@@ -89,12 +89,12 @@ bool VN100::init()
 
     //I need to repeat this in case of a non default
     //serial port communication at the beginning
-    if(!setCrc())
+    if(!setCrc(true))
     {
         return false;
     }
 
-    if(!disableAsyncMessages())
+    if(!disableAsyncMessages(true))
     {
         return false;
     }
@@ -139,10 +139,6 @@ bool VN100::closeAndReset()
 
 bool VN100::selfTest()
 {
-    TRACE("First name should be junk!\n");
-    //Void execution for junk prevention
-    selfTestImpl();
-
     if(!selfTestImpl())
     {
         return false;
@@ -155,7 +151,7 @@ bool VN100::selfTest()
  * PRIVATE METHODS
  * ---------------------------------------------------------------------------------------------------------------------------------------
  */
-bool VN100::disableAsyncMessages()
+bool VN100::disableAsyncMessages(bool waitResponse)
 {
     //Command string
     std::string command = "VNWRG,06,00";  //Put 0 in register number 6 (ASYNC Config)
@@ -167,7 +163,10 @@ bool VN100::disableAsyncMessages()
     }
 
     //Read the answer
-    recvStringCommand(recvString, recvStringMaxDimension);
+    if(waitResponse)
+    {
+        recvStringCommand(recvString, recvStringMaxDimension);
+    }
 
     return true;
 }
@@ -203,9 +202,6 @@ bool VN100::configUserSerialPort()
         return false;
     }
 
-    //Read the answer
-    recvStringCommand(recvString, recvStringMaxDimension);
-
     //I can close the serial
     serialInterface -> closeSerial();
 
@@ -223,7 +219,7 @@ bool VN100::configUserSerialPort()
     return true;
 }
 
-bool VN100::setCrc()
+bool VN100::setCrc(bool waitResponse)
 {
     //Command for the crc change
     std::string command;
@@ -250,11 +246,14 @@ bool VN100::setCrc()
     //Send the command
     if(!sendStringCommand(command))
     {
-            return false;
+        return false;
     }
 
     //Read the answer
-    recvStringCommand(recvString, recvStringMaxDimension);
+    if(waitResponse)
+    {
+        recvStringCommand(recvString, recvStringMaxDimension);
+    }
 
     crc = CRC_ENABLE_16;
     //Send the command
@@ -264,7 +263,10 @@ bool VN100::setCrc()
     }
 
     //Read the answer
-    recvStringCommand(recvString, recvStringMaxDimension);
+    if(waitResponse)
+    {
+        recvStringCommand(recvString, recvStringMaxDimension);
+    }
 
     //Restore the crc
     crc = backup;

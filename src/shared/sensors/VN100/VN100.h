@@ -93,9 +93,11 @@ private:
      * @brief this method disables the async messages that the vn100
      * is default configured to send at 40Hz on startup
      * 
+     * @param boolean that asks if it should wait for a serial response
+     * 
      * @return boolean that confirms or not the success
      */ 
-    bool disableAsyncMessages();
+    bool disableAsyncMessages(bool waitResponse);
 
     /**
      * @brief method to configure the default serial communication
@@ -115,9 +117,11 @@ private:
     /**
      * @brief method to set the user selected crc method
      * 
+     * @param boolean that asks if it should wait for a serial response
+     * 
      * @return boolean that confirms or not the success
      */
-    bool setCrc();
+    bool setCrc(bool waitResponse);
 
     /**
      * @brief method implementation of self test
