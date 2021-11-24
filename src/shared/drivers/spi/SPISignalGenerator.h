@@ -81,14 +81,14 @@ public:
     void disable();
 
 private:
-    int nBytes;                ///> SPI Clock pulses.
-    int transactionFrequency;  ///> Frequency of the transactions are generated.
-    int spiFrequency;          ///> SPI Clock frequency.
+    int nBytes;                ///< SPI Clock pulses.
+    int transactionFrequency;  ///< Frequency of the transactions are generated.
+    int spiFrequency;          ///< SPI Clock frequency.
     SPIMode spiMode;
     GeneralPurposeTimer<uint16_t>
-        masterTimer;  ///> Master timer for CS generation.
+        masterTimer;  ///< Master timer for CS generation.
     GeneralPurposeTimer<uint16_t>
-        slaveTimer;  ///> Slave timer for SCK generation.
+        slaveTimer;  ///< Slave timer for SCK generation.
     GeneralPurposeTimer<uint16_t>::TriggerSource slaveTriggerSource;
 };
 

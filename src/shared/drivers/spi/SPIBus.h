@@ -1,5 +1,5 @@
-/* Copyright (c) 2020 Skyward Experimental Rocketry
- * Author: Luca Erbetta
+/* Copyright (c) 2021 Skyward Experimental Rocketry
+ * Author: Luca Erbetta, Alberto Nidasio
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -22,280 +22,221 @@
 
 #pragma once
 
-#include <assert.h>
 #include <interfaces/delays.h>
 
 #include "SPIBusInterface.h"
 
-#ifndef USE_MOCK_PERIPHERALS
-using SPIType = SPI_TypeDef;
-#else
-#include <utils/testutils/FakeSpiTypedef.h>
-using SPIType = FakeSpiTypedef;
-#endif
-
 /**
- * @brief Low level driver for communicating on a SPI Bus, provides
- * SPIBusInterface.
+ * @brief Main implementation of SPIBusInterface used for accessing the SPI
+ * peripheral in master mode
  */
 class SPIBus : public SPIBusInterface
 {
 public:
-    /**
-     * @brief Instantiates a new SPIBus.
-     *
-     * @param spi Pointer to the SPI peripheral to be used.
-     */
-    SPIBus(SPIType* spi) : spi(spi) {}
-    ~SPIBus() {}
+    SPIBus(SPI_TypeDef* spi);
 
-    ///> Delete copy/move contructors/operators.
+    ///< Delete copy/move contructors/operators.
     SPIBus(const SPIBus&) = delete;
     SPIBus& operator=(const SPIBus&) = delete;
     SPIBus(SPIBus&&)                 = delete;
     SPIBus& operator=(SPIBus&&) = delete;
 
     /**
-     * @brief Disable bus configuration: calls to configure() will have no
-     * effect after calling this & the SPI peripheral will need to be configured
-     * manually.
+     * @brief Configures and enables the bus with the provided configuration.
+     *
+     * Since this implementation is not syncronized, if configure() is called on
+     * an already in use bus nothing will be done.
+     *
+     * Use SyncedSPIBus if you need to synchronize access to the bus.
      */
-    void disableBusConfiguration() { config_enabled = false; }
-
-    /**
-     * @brief See SPIBusInterface::write().
-     */
-    void write(uint8_t byte) override;
-
-    /**
-     * @brief See SPIBusInterface::write().
-     */
-    void write(uint8_t* data, size_t size) override;
-
-    /**
-     * @brief See SPIBusInterface::read().
-     */
-    uint8_t read() override;
-
-    /**
-     * @brief See SPIBusInterface::read().
-     */
-    void read(uint8_t* data, size_t size) override;
-
-    /**
-     * @brief See SPIBusInterface::transfer().
-     */
-    uint8_t transfer(uint8_t data) override;
-
-    /**
-     * @brief See SPIBusInterface::transfer().
-     */
-    void transfer(uint8_t* data, size_t size) override;
+    void configure(SPIBusConfig config) override;
 
     /**
      * @brief See SPIBusInterface::select().
      */
-    void select(GpioType& cs) override;
+    void select(miosix::GpioPin& cs) override;
 
     /**
      * @brief See SPIBusInterface::deselect().
      */
-    void deselect(GpioType& cs) override;
+    void deselect(miosix::GpioPin& cs) override;
+
+    // Read, write and transfer operations
 
     /**
-     * @brief Obtains ownership of the bus, configuring it with the provided
-     * config. Since this implementation is not syncronized, if acquire() is
-     * called on an already locked bus, it will:
-     * - FAIL in DEBUG mode
-     * - Do nothing when NOT in DEBUG mode
+     * @brief Reads a single byte from the bus.
      *
-     * Use SyncedSPIBus if you need to synchronize access to the bus.
+     * @return Byte read from the bus.
      */
-    void acquire(SPIBusConfig config) override;
-
-protected:
-    /**
-     * @brief Writes a single byte on the SPI bus.
-     *
-     * @param byte Pointer to the byte to be written.
-     */
-    void write(uint8_t* byte);
+    uint8_t read() override;
 
     /**
-     * @brief Reads a single byte from the SPI bus.
+     * @brief Reads a single half word from the bus.
      *
-     * @param byte Pointer to the byte where the read data will be stored.
+     * @return Half word read from the bus.
      */
-    void read(uint8_t* byte);
+    uint16_t read16() override;
 
     /**
-     * @brief Full duplex transfer. Writes a single byte on the SPI bus and
-     * replaces its content with the received data.
+     * @brief Reads multiple bytes from the bus
      *
-     * @param byte Pointer to the byte to be transfered.
+     * @param data Buffer to be filled with received data.
+     * @param size Size of the buffer.
      */
-    void transfer(uint8_t* byte);
+    void read(uint8_t* data, size_t size) override;
 
-    void configure(SPIBusConfig new_config);
+    /**
+     * @brief Reads multiple half words from the bus
+     *
+     * @param data Buffer to be filled with received data.
+     * @param size Size of the buffer.
+     */
+    void read(uint16_t* data, size_t size) override;
 
-    SPIType* spi;
+    /**
+     * @brief Writes a single byte to the bus.
+     *
+     * @param data Byte to write.
+     */
+    void write(uint8_t data) override;
 
+    /**
+     * @brief Writes a single half word to the bus.
+     *
+     * @param data Half word to write.
+     */
+    void write(uint16_t data) override;
+
+    /**
+     * @brief Writes multiple bytes to the bus.
+     *
+     * @param data Buffer containing data to write.
+     * @param size Size of the buffer.
+     */
+    void write(uint8_t* data, size_t size) override;
+
+    /**
+     * @brief Writes multiple half words to the bus.
+     *
+     * @param data Buffer containing data to write.
+     * @param size Size of the buffer.
+     */
+    void write(uint16_t* data, size_t size) override;
+
+    /**
+     * @brief Full duplex transmission of one byte on the bus.
+     *
+     * @param data Byte to write.
+     * @return Byte read from the bus.
+     */
+    uint8_t transfer(uint8_t data) override;
+
+    /**
+     * @brief Full duplex transmission of one half word on the bus.
+     *
+     * @param data Half word to write.
+     * @return Half word read from the bus.
+     */
+    uint16_t transfer(uint16_t data) override;
+
+    /**
+     * @brief Full duplex transmission of multiple bytes on the bus.
+     *
+     * @param data Buffer containing data to trasfer.
+     * @param size Size of the buffer.
+     */
+    void transfer(uint8_t* data, size_t size) override;
+
+    /**
+     * @brief Full duplex transmission of multiple half words on the bus.
+     *
+     * @param data Buffer containing data to trasfer.
+     * @param size Size of the buffer.
+     */
+    void transfer(uint16_t* data, size_t size) override;
+
+private:
+    SPI spi;
     SPIBusConfig config{};
-    bool config_enabled       = true;
-    bool first_config_applied = false;
 };
 
-// Defined here and not in the .cpp to make them inline
+inline SPIBus::SPIBus(SPI_TypeDef* spi) : spi(spi) {}
 
-inline void SPIBus::write(uint8_t data) { write(&data); }
-
-inline void SPIBus::write(uint8_t* data, size_t size)
+inline void SPIBus::configure(SPIBusConfig config)
 {
-    for (size_t i = 0; i < size; ++i)
-    {
-        write(data + i);
-    }
+    // Wait until the peripheral is done before changing configuration
+    spi.waitPeripheral();
+
+    // Disable the peripheral
+    spi.disable();
+
+    // Configure clock polarity and phase
+    spi.setMode(config.mode);
+
+    // Configure clock frequency
+    spi.setClockDiver(config.clockDivider);
+
+    // Configure bit order
+    spi.setBitOrder(config.bitOrder);
+
+    // Configure chip select and master mode
+    spi.enableSoftwareSlaveManagement();
+    spi.enableInternalSlaveSelection();
+    spi.setMasterConfiguration();
+
+    // Enable the peripheral
+    spi.enable();
 }
 
-inline uint8_t SPIBus::read()
-{
-    uint8_t data;
-    read(&data);
-
-    return data;
-}
-
-inline void SPIBus::read(uint8_t* data, size_t size)
-{
-    for (size_t i = 0; i < size; ++i)
-    {
-        read(data + i);
-    }
-}
-
-inline uint8_t SPIBus::transfer(uint8_t data)
-{
-    transfer(&data);
-    return data;
-}
-
-inline void SPIBus::transfer(uint8_t* data, size_t size)
-{
-    for (size_t i = 0; i < size; ++i)
-    {
-        transfer(data + i);
-    }
-}
-
-inline void SPIBus::select(GpioType& cs)
+inline void SPIBus::select(miosix::GpioPin& cs)
 {
     cs.low();
-    if (config.cs_setup_time_us > 0)
+    if (config.csSetupTimeUs > 0)
     {
-        miosix::delayUs(config.cs_setup_time_us);
+        miosix::delayUs(config.csSetupTimeUs);
     }
 }
 
-inline void SPIBus::deselect(GpioType& cs)
+inline void SPIBus::deselect(miosix::GpioPin& cs)
 {
-    if (config.cs_hold_time_us > 0)
+    if (config.csHoldTimeUs > 0)
     {
-        miosix::delayUs(config.cs_hold_time_us);
+        miosix::delayUs(config.csHoldTimeUs);
     }
     cs.high();
 }
 
-inline void SPIBus::write(uint8_t* byte)
+// Read, write and transfer operations
+
+inline uint8_t SPIBus::read() { return spi.read(); }
+
+inline uint16_t SPIBus::read16() { return spi.read16(); }
+
+inline void SPIBus::read(uint8_t* data, size_t size) { spi.read(data, size); }
+
+inline void SPIBus::read(uint16_t* data, size_t size) { spi.read(data, size); }
+
+inline void SPIBus::write(uint8_t data) { spi.write(data); }
+
+inline void SPIBus::write(uint16_t data) { spi.write(data); }
+
+inline void SPIBus::write(uint8_t* data, size_t size) { spi.write(data, size); }
+
+inline void SPIBus::write(uint16_t* data, size_t size)
 {
-    // Wait until the peripheral is ready to transmit
-    while ((spi->SR & SPI_SR_TXE) == 0)
-        ;
-    // Write the byte in the transmit buffer
-    spi->DR = *byte;
-
-    // Wait until byte is transmitted
-    while ((spi->SR & SPI_SR_RXNE) == 0)
-        ;
-
-    // Clear the RX buffer by accessing the DR register
-    (void)spi->DR;
+    spi.write(data, size);
 }
 
-inline void SPIBus::transfer(uint8_t* byte)
+inline uint8_t SPIBus::transfer(uint8_t data) { return spi.transfer(data); }
+
+inline uint16_t SPIBus::transfer(uint16_t data) { return spi.transfer(data); }
+
+inline void SPIBus::transfer(uint8_t* data, size_t size)
 {
-    // Wait until the peripheral is ready to transmit
-    while ((spi->SR & SPI_SR_TXE) == 0)
-        ;
-    // Write the byte in the transmit buffer
-    spi->DR = *byte;
-
-    // Wait until byte is transmitted
-    while ((spi->SR & SPI_SR_RXNE) == 0)
-        ;
-
-    // Store the received data in the byte
-    *byte = (uint8_t)spi->DR;
+    spi.transfer(data, size);
 }
 
-inline void SPIBus::read(uint8_t* byte)
+inline void SPIBus::transfer(uint16_t* data, size_t size)
 {
-    // Wait until the peripheral is ready to transmit
-    while ((spi->SR & SPI_SR_TXE) == 0)
-        ;
-    // Write 0 in the transmit buffer
-    spi->DR = 0;
-
-    // Wait until byte is transmitted
-    while ((spi->SR & SPI_SR_RXNE) == 0)
-        ;
-
-    // Store the received data in the byte
-    *byte = (uint8_t)spi->DR;
-}
-
-inline void SPIBus::acquire(SPIBusConfig new_config)
-{
-    // Assert that the bus is not already acquired.
-    // This bus is not syncronized: fail if someone tries to take ownership when
-    // the bus is already being used. Use SyncedSPIBus if you need to
-    // synchronize access to the bus
-#ifdef DEBUG
-    assert(isBusy() == false);
-#endif
-
-    SPIBusInterface::acquire(new_config);
-
-    configure(new_config);
-}
-
-inline void SPIBus::configure(SPIBusConfig new_config)
-{
-    // Reconfigure the bus only if config enabled. Do not reconfigure if already
-    // in the correct configuration.
-    if (config_enabled && (!first_config_applied || new_config != config))
-    {
-        first_config_applied = true;
-        config               = new_config;
-
-        // Wait until the peripheral is done before changing configuration
-        while ((spi->SR & SPI_SR_TXE) == 0)
-            ;
-        while ((spi->SR & SPI_SR_BSY) > 0)
-            ;
-
-        spi->CR1 = 0;
-
-        // Configure CPOL & CPHA bits
-        spi->CR1 |= static_cast<uint32_t>(config.mode);
-
-        // Configure clock division (BR bits)
-        spi->CR1 |= static_cast<uint32_t>(config.clock_div);
-
-        // Configure LSBFIRST bit
-        spi->CR1 |= static_cast<uint32_t>(config.bit_order);
-
-        spi->CR1 |= SPI_CR1_SSI | SPI_CR1_SSM  // Use software chip-select
-                    | SPI_CR1_MSTR             // Master mode
-                    | SPI_CR1_SPE;             // Enable SPI
-    }
+    spi.transfer(data, size);
 }

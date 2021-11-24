@@ -21,10 +21,11 @@
  */
 
 #include <Common.h>
+#include <drivers/spi/SPIDriver.h>
+
 #include <cstdio>
 #include <iostream>
 #include <sstream>
-#include "drivers/spi/SPIDriver.h"
 
 using namespace std;
 using namespace miosix;
@@ -38,52 +39,61 @@ GpioPin cs(GPIOE_BASE, 3);
 
 int main()
 {
-    {
-        miosix::FastInterruptDisableLock dLock;
+    RCC->APB2ENR |= RCC_APB2ENR_SPI1EN;  // Enable SPI1 bus
 
-        RCC->APB2ENR |= RCC_APB2ENR_SPI1EN;  // Enable SPI1 bus
-
-        spi_sck.mode(miosix::Mode::ALTERNATE);
-        spi_sck.alternateFunction(5);
-        spi_miso.mode(miosix::Mode::ALTERNATE);
-        spi_miso.alternateFunction(5);
-        spi_mosi.mode(miosix::Mode::ALTERNATE);
-        spi_mosi.alternateFunction(5);
-
-        cs.mode(miosix::Mode::OUTPUT);
-    }
+    spi_sck.mode(miosix::Mode::ALTERNATE);
+    spi_sck.alternateFunction(5);
+    spi_miso.mode(miosix::Mode::ALTERNATE);
+    spi_miso.alternateFunction(5);
+    spi_mosi.mode(miosix::Mode::ALTERNATE);
+    spi_mosi.alternateFunction(5);
+    cs.mode(miosix::Mode::OUTPUT);
     cs.high();
 
-    SPISlave spi_slave(bus, cs, {});
-    spi_slave.config.clock_div = SPIClockDivider::DIV64;
+    SPISlave spiSlave(bus, cs, {});
+    spiSlave.config.clockDivider = SPI::ClockDivider::DIV_64;
+
+    SPITransaction transaction(spiSlave);
+
+    uint8_t buffer8[6];
+    uint16_t buffer16[6];
+
+    transaction.read();
+    delayMs(1);
+    transaction.read16();
+    delayMs(1);
+    transaction.read(buffer8, 6);
+    delayMs(1);
+    transaction.read(buffer16, 6);
+    delayMs(1);
+    transaction.write((uint8_t)0xAB);
+    delayMs(1);
+    transaction.write((uint16_t)0xABCD);
+    delayMs(1);
+    buffer8[0] = 0x01;
+    buffer8[1] = 0x23;
+    buffer8[2] = 0x45;
+    buffer8[3] = 0x67;
+    buffer8[4] = 0x89;
+    buffer8[5] = 0xAB;
+    transaction.write(buffer8, 6);
+    delayMs(1);
+    buffer16[0] = 0x0101;
+    buffer16[1] = 0x2323;
+    buffer16[2] = 0x4545;
+    buffer16[3] = 0x6767;
+    buffer16[4] = 0x8989;
+    buffer16[5] = 0xABAB;
+    transaction.write(buffer16, 6);
+    delayMs(1);
+    transaction.transfer((uint8_t)0xAB);
+    delayMs(1);
+    transaction.transfer((uint16_t)0xABCD);
+    delayMs(1);
+    transaction.transfer(buffer8, 6);
+    delayMs(1);
+    transaction.transfer(buffer16, 6);
 
     while (true)
-    {
-        printf("Insert a number (0-255): \n");
-
-        string temp;
-        int cmd;
-        getline(cin, temp);
-        stringstream(temp) >> cmd;
-
-        {
-            SPITransaction spi(spi_slave);
-
-            // spam over spi in order to easily find
-            // the data with a logic analyzer
-            for (int i = 0; i < 10; i++)
-            {
-                for (int i = 0; i < 10; i++)
-                {
-                    spi.write((uint8_t)cmd);
-                }
-
-                Thread::sleep(10);
-            }
-        }
-
-        Thread::sleep(100);
-    }
-
-    return 0;
+        delayMs(1000);
 }
