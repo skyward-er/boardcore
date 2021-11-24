@@ -20,7 +20,7 @@
  * THE SOFTWARE.
  */
 
-#include <drivers/adc/InternalADC/InternalADC.h>
+#include <drivers/adc/InternalADC.h>
 #include <miosix.h>
 
 ADC_TypeDef& ADCx                = *ADC3;

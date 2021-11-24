@@ -24,7 +24,7 @@
 #include <miosix.h>
 
 #include "Debug.h"
-#include "drivers/adc/InternalADC/InternalADC.h"
+#include "drivers/adc/InternalADC.h"
 #include "sensors/analog/current/CurrentSensor.h"
 
 using namespace miosix;
