@@ -21,14 +21,14 @@
  */
 
 /**
- * @brief Driver for ADS1118 adc
+ * @brief Driver for ADS1118 adc.
  *
  * The ADS1118 is a 16-bit delta-sigma analog-to-digital converter.
  * It measures the difference of two inputs configured by a MUX. The device
  * allows also to read each of the four pins in reference to GND. A temperature
  * sensor is also included.
  *
- * The communication uses the spi protocol and the maximum allowed frequency is
+ * The communication uses the SPI protocol and the maximum allowed frequency is
  * 4MHz. Configuration is applied by writing a 16bit value to the device.
  * Sampled voltages or temperature readings are obtained also by reading a 16bit
  * value while writing the configuration.
@@ -61,14 +61,15 @@
 
 #pragma once
 
+#include <drivers/spi/SPIDriver.h>
+#include <sensors/Sensor.h>
+
 #include "ADS1118Data.h"
-#include "drivers/spi/SPIDriver.h"
-#include "sensors/Sensor.h"
 
 /**
- * @brief Driver class for ADS1118 adc
+ * @brief Driver class for ADS1118 ADC.
  *
- * This class allows to mange the device configuration.
+ * This class allows to mange the device configuration and the data sampling.
  */
 class ADS1118 : public Sensor<ADS1118Data>
 {
@@ -139,13 +140,15 @@ public:
             ADS1118TempMode tempMode : 1;  ///< Temperature sensor mode
             ADS1118DataRate rate : 3;      ///< Data rate
         } bits;  ///< Includes all the configuration bits
+
         struct
         {
             uint8_t msb;  ///< Byte MSB
             uint8_t lsb;  ///< Byte LSB
         } byte;           ///< Includes the msb and lsb bytes
-        uint16_t word;    ///< Representation in word (16-bits) format
-    };                    ///< Structure of configuration word
+
+        uint16_t word;  ///< Representation in word (16-bits) format
+    };                  ///< Structure of configuration word
 
     struct ADS1118InputConfig
     {
