@@ -216,13 +216,6 @@ private:
      */
     uint16_t calculateChecksum16(uint8_t * message, int length);
 
-    /**
-     * @brief method to convert every char in upper case
-     * 
-     * @param the string
-     */
-    void toUpperCase(char * string);
-
 public:
 
     /**

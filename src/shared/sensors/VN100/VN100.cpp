@@ -51,6 +51,16 @@ VN100::VN100(unsigned int portNumber, unsigned int baudRate, uint8_t crc)
  */
 bool VN100::init()
 {
+    //Allocate the receive vector with a malloc
+    //TODO review this operation
+    //recvString = (char *) malloc(recvStringMaxDimension * sizeof(char));
+    recvString = new char[recvStringMaxDimension];
+
+    if(recvString == NULL)
+    {
+        return false;
+    }
+
     //If already initialized
     if(isInit)
     {
@@ -89,21 +99,11 @@ bool VN100::init()
         return false;
     }
 
-    //Reopen to delete junk values
+    /*//Reopen to delete junk values
     if(!configUserSerialPort())
     {
         return false;
-    }
-
-    //Allocate the receive vector with a malloc
-    //TODO review this operation
-    //recvString = (char *) malloc(recvStringMaxDimension * sizeof(char));
-    recvString = new char[recvStringMaxDimension];
-
-    if(recvString == NULL)
-    {
-        return false;
-    }
+    }*/
 
     //Set the isInit flag true
     isInit = true;
@@ -125,6 +125,8 @@ bool VN100::closeAndReset()
     {
         return false;
     }
+
+    isInit = false;
 
     //Free the recvString memory
     delete(recvString);
@@ -163,6 +165,10 @@ bool VN100::disableAsyncMessages()
     {
         return false;
     }
+
+    //Read the answer
+    recvStringCommand(recvString, recvStringMaxDimension);
+
     return true;
 }
 
@@ -196,6 +202,9 @@ bool VN100::configUserSerialPort()
     {
         return false;
     }
+
+    //Read the answer
+    recvStringCommand(recvString, recvStringMaxDimension);
 
     //I can close the serial
     serialInterface -> closeSerial();
@@ -244,12 +253,18 @@ bool VN100::setCrc()
             return false;
     }
 
+    //Read the answer
+    recvStringCommand(recvString, recvStringMaxDimension);
+
     crc = CRC_ENABLE_16;
     //Send the command
     if(!sendStringCommand(command))
     {
         return false;
     }
+
+    //Read the answer
+    recvStringCommand(recvString, recvStringMaxDimension);
 
     //Restore the crc
     crc = backup;
@@ -443,20 +458,24 @@ bool VN100::sendStringCommand(std::string command)
 {
     if(crc == CRC_ENABLE_8)
     {
-        char checksum[3]; //2 hex + \0
+        char checksum[4]; //2 hex + \n + \0
         //I convert the calculated checksum in hex using itoa
         itoa(calculateChecksum8((uint8_t *)command.c_str(), command.length()), checksum, 16);
+        checksum[2] = '\n';
+        checksum[3] = '\0';
         //I concatenate
-        command = fmt::format("{}{}{}{}{}", "$", command, "*", checksum, "\n");
+        command = fmt::format("{}{}{}{}", "$", command, "*", checksum);
 
     }
     else if(crc == CRC_ENABLE_16)
     {
-        char checksum[5]; //4 hex + \0
+        char checksum[6]; //4 hex + \n + \0
         //I convert the calculated checksum in hex using itoa
         itoa(calculateChecksum16((uint8_t *)command.c_str(), command.length()), checksum, 16);
+        checksum[4] = '\n';
+        checksum[5] = '\0';
         //I concatenate
-        command = fmt::format("{}{}{}{}{}", "$", command, "*", checksum, "\n");
+        command = fmt::format("{}{}{}{}", "$", command, "*", checksum);
     }
     else
     {
@@ -466,10 +485,13 @@ bool VN100::sendStringCommand(std::string command)
     }
 
     //I send the final command
-    if(!(serialInterface -> send(command.c_str(), command.length())))
+    if(!(serialInterface -> send(command.c_str(), command.length() + 1)))
     {
         return false;
     }
+
+    //Wait some time
+    miosix::Thread::sleep(10);
 
     return true;
 }
@@ -497,12 +519,12 @@ bool VN100::recvStringCommand(char * command, int maxLength)
 
 bool VN100::verifyChecksum(char * command, int length)
 {
-    int checksumPosition = 0;
+    int checksumOffset = 0;
 
     //I look for the checksum position
-    while(checksumPosition < length && command[checksumPosition] != '*') { checksumPosition++; }
+    while(checksumOffset < length && command[checksumOffset] != '*') { checksumOffset++; }
 
-    if(checksumPosition == length)
+    if(checksumOffset == length)
     {
         //The command doesn't have any checksum
         TRACE("No checksum in the command!\n");
@@ -512,40 +534,31 @@ bool VN100::verifyChecksum(char * command, int length)
     //Check based on the user selected crc type
     if(crc == CRC_ENABLE_16)
     {
-        char checksum[5];                                                                        //4 hex + \0
-        if(length != checksumPosition + 5)                                                       //4 hex chars + 1 of position
+        if(length != checksumOffset + 5) //4 hex chars + 1 of position
         {
-            TRACE("16 bit Checksum wrong length: %d != %d --> %s\n", length, checksumPosition + 5, command);
+            TRACE("16 bit Checksum wrong length: %d != %d --> %s\n", length, checksumOffset + 5, command);
             return false;
         }
 
-        //Calculate the checksum and verify
-        itoa(calculateChecksum16((uint8_t *)(command + 1), checksumPosition - 1), checksum, 16); //The 1s are for the $ at the beginning
-        toUpperCase(checksum);
-
-        if(strncmp(command + checksumPosition + 1, checksum, 4) != 0)                            //4 is the number of hex for 16 bits
+        //Calculate the checksum and verify (comparison between numerical checksum to avoid string bugs e.g 0856 != 865)
+        if(strtol(command + checksumOffset + 1, NULL, 16) != calculateChecksum16((uint8_t *) (command + 1), checksumOffset - 1))
         {
-            TRACE("Different checksum: %s != %s\n", command + checksumPosition + 1, checksum);
+            TRACE("Different checksum: %s\n", command + checksumOffset + 1);
             return false;
         }
-
     }
     else if(crc == CRC_ENABLE_8)
     {
-        char checksum[3];                                                                        //2 hex + \0
-        if(length != checksumPosition + 3)                                                       //2 hex chars + 1 of position
+        if(length != checksumOffset + 3) //2 hex chars + 1 of position
         {
-            TRACE("8 bit Checksum wrong length: %d != %d --> %s\n", length, checksumPosition + 3, command);
+            TRACE("8 bit Checksum wrong length: %d != %d --> %s\n", length, checksumOffset + 3, command);
             return false;
         }
 
-        //Calculate the checksum and verify
-        itoa(calculateChecksum8((uint8_t *)(command + 1), checksumPosition - 1), checksum, 16);  //The 1s are for the $ at the beginning
-        toUpperCase(checksum);
-
-        if(strncmp(command + checksumPosition + 1, checksum, 2) != 0)                            //2 is the number of hex for 8 bits
+        //Calculate the checksum and verify (comparison between numerical checksum to avoid string bugs e.g 0856 != 865)
+        if(strtol(command + checksumOffset + 1, NULL, 16) != calculateChecksum8((uint8_t *) (command + 1), checksumOffset - 1))
         {
-            TRACE("Different checksum: %s != %s\n", command + checksumPosition + 1, checksum);
+            TRACE("Different checksum: %s\n", command + checksumOffset + 1);
             return false;
         }
     }
@@ -584,15 +597,4 @@ uint16_t VN100::calculateChecksum16(uint8_t * message, int length)
     }
 
     return result;
-}
-
-void VN100::toUpperCase(char * string)
-{
-    for(int i = 0; string[i] != '\0' && i < 10; i++)
-    {
-        if(string[i] >= 'a' && string[i] <= 'z')
-        {
-            string[i] = string[i] - 'a' + 'A';
-        }
-    }
 }
