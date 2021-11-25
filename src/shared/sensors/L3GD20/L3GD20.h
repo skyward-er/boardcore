@@ -26,11 +26,11 @@
 
 #include <array>
 
-#include "sensors/Sensor.h"
 #include "L3GD20Data.h"
+#include "TimestampTimer.h"
 #include "drivers/spi/SPIDriver.h"
 #include "math/Vec3.h"
-#include "TimestampTimer.h"
+#include "sensors/Sensor.h"
 
 using miosix::GpioPin;
 using std::array;
@@ -71,7 +71,7 @@ public:
         : L3GD20(bus, cs, {}, range, odr, cutoff_freq)
     {
         // Configure SPI
-        spislave.config.clock_div = SPIClockDivider::DIV32;
+        spislave.config.clockDivider = SPI::ClockDivider::DIV_32;
     }
 
     /**

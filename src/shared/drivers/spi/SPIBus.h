@@ -33,7 +33,7 @@
 class SPIBus : public SPIBusInterface
 {
 public:
-    SPIBus(SPI_TypeDef* spi);
+    SPIBus(SPIType* spi);
 
     ///< Delete copy/move contructors/operators.
     SPIBus(const SPIBus&) = delete;
@@ -54,12 +54,12 @@ public:
     /**
      * @brief See SPIBusInterface::select().
      */
-    void select(miosix::GpioPin& cs) override;
+    void select(GpioType& cs) override;
 
     /**
      * @brief See SPIBusInterface::deselect().
      */
-    void deselect(miosix::GpioPin& cs) override;
+    void deselect(GpioType& cs) override;
 
     // Read, write and transfer operations
 
@@ -160,7 +160,7 @@ private:
     SPIBusConfig config{};
 };
 
-inline SPIBus::SPIBus(SPI_TypeDef* spi) : spi(spi) {}
+inline SPIBus::SPIBus(SPIType* spi) : spi(spi) {}
 
 inline void SPIBus::configure(SPIBusConfig config)
 {
@@ -188,7 +188,7 @@ inline void SPIBus::configure(SPIBusConfig config)
     spi.enable();
 }
 
-inline void SPIBus::select(miosix::GpioPin& cs)
+inline void SPIBus::select(GpioType& cs)
 {
     cs.low();
     if (config.csSetupTimeUs > 0)
@@ -197,7 +197,7 @@ inline void SPIBus::select(miosix::GpioPin& cs)
     }
 }
 
-inline void SPIBus::deselect(miosix::GpioPin& cs)
+inline void SPIBus::deselect(GpioType& cs)
 {
     if (config.csHoldTimeUs > 0)
     {

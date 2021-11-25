@@ -57,7 +57,7 @@ int main()
     SPIBus bus(SPI1);
 
     SPIBusConfig busConfig;
-    busConfig.clock_div = SPIClockDivider::DIV32;
+    busConfig.clockDivider = SPI::ClockDivider::DIV_32;
 
     LIS3MDL::Config config;
     config.odr                = LIS3MDL::ODR_560_HZ;

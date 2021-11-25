@@ -61,8 +61,8 @@ int main()
     // SPI configuration setup
 
     SPIBusConfig spiConfig;
-    spiConfig.clock_div = SPIClockDivider::DIV64;
-    spiConfig.mode      = SPIMode::MODE3;
+    spiConfig.clockDivider = SPI::ClockDivider::DIV_64;
+    spiConfig.mode         = SPI::Mode::MODE_3;
     SPIBus spiBus(SPI2);
     SPISlave spiSlave(spiBus, csPin, spiConfig);
 

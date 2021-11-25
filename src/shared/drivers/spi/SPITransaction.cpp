@@ -27,7 +27,7 @@ SPITransaction::SPITransaction(SPISlave slave, WriteBit writeBit)
 {
 }
 
-SPITransaction::SPITransaction(SPIBusInterface& bus, miosix::GpioPin cs,
+SPITransaction::SPITransaction(SPIBusInterface& bus, GpioType cs,
                                SPIBusConfig config, WriteBit writeBit)
     : bus(bus), writeBit(writeBit), cs(cs)
 {

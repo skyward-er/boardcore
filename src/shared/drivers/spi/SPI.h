@@ -25,6 +25,13 @@
 #include <interfaces/arch_registers.h>
 #include <stddef.h>
 
+#ifndef USE_MOCK_PERIPHERALS
+using SPIType = SPI_TypeDef;
+#else
+#include <utils/testutils/FakeSpiTypedef.h>
+using SPIType = FakeSpiTypedef;
+#endif
+
 /**
  * @brief Driver for STM32 low level SPI peripheral.
  *
@@ -83,7 +90,7 @@ public:
         MODE_3 = 3   ///< CPOL = 1, CPHA = 1
     };
 
-    SPI(SPI_TypeDef *spi);
+    SPI(SPIType *spi);
 
     /**
      * @brief Resets the peripheral configuration.
@@ -227,10 +234,10 @@ private:
 
     void set16BitFrameFormat();
 
-    SPI_TypeDef *spi;
+    SPIType *spi;
 };
 
-inline SPI::SPI(SPI_TypeDef *spi) : spi(spi) {}
+inline SPI::SPI(SPIType *spi) : spi(spi) {}
 
 inline void SPI::reset()
 {
@@ -342,7 +349,7 @@ inline void SPI::write(uint8_t data)
         ;
 
     // Ensures the Rx buffer is empty
-    spi->DR;
+    (void)spi->DR;
 }
 
 inline void SPI::write(uint16_t data)
@@ -363,7 +370,7 @@ inline void SPI::write(uint16_t data)
     set8BitFrameFormat();
 
     // Ensures the Rx buffer is empty
-    spi->DR;
+    (void)spi->DR;
 }
 
 inline void SPI::write(uint8_t *data, size_t size)
@@ -389,7 +396,7 @@ inline void SPI::write(uint8_t *data, size_t size)
         ;
 
     // Ensures the Rx buffer is empty
-    spi->DR;
+    (void)spi->DR;
 }
 
 inline void SPI::write(uint16_t *data, size_t size)
@@ -421,7 +428,7 @@ inline void SPI::write(uint16_t *data, size_t size)
     set8BitFrameFormat();
 
     // Ensures the Rx buffer is empty
-    spi->DR;
+    (void)spi->DR;
 }
 
 inline uint8_t SPI::transfer(uint8_t data)
@@ -439,9 +446,6 @@ inline uint8_t SPI::transfer(uint8_t data)
 
 inline uint16_t SPI::transfer(uint16_t data)
 {
-    // Ensures the Rx buffer is empty
-    spi->DR;
-
     // Set 16 bit frame format
     set16BitFrameFormat();
 

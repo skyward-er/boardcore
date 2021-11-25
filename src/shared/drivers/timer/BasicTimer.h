@@ -305,7 +305,7 @@ inline void BasicTimer::setMasterMode(MasterMode masterMode)
     timer->CR2 &= ~TIM_CR2_MMS;
 
     // Set the new value
-    timer->CR2 |= (uint16_t)masterMode;
+    timer->CR2 |= static_cast<uint32_t>(masterMode);
 }
 
 inline void BasicTimer::clearUpdateInterruptFlag(TIM_TypeDef *timer)

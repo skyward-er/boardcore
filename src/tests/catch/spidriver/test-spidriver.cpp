@@ -66,25 +66,25 @@ TEST_CASE("SPIBus - Bus Configuration")
 
         SECTION("Mode")
         {
-            config.mode           = SPIMode::MODE0;
+            config.mode           = SPI::Mode::MODE_0;
             uint32_t expected_CR1 = 0x0344;
             bus.acquire(config);
             REQUIRE(spi.CR1 == expected_CR1);
             bus.release();
 
-            config.mode  = SPIMode::MODE1;
+            config.mode  = SPI::Mode::MODE_1;
             expected_CR1 = 0x0345;
             bus.acquire(config);
             REQUIRE(spi.CR1 == expected_CR1);
             bus.release();
 
-            config.mode  = SPIMode::MODE2;
+            config.mode  = SPI::Mode::MODE_2;
             expected_CR1 = 0x0346;
             bus.acquire(config);
             REQUIRE(spi.CR1 == expected_CR1);
             bus.release();
 
-            config.mode  = SPIMode::MODE3;
+            config.mode  = SPI::Mode::MODE_3;
             expected_CR1 = 0x0347;
             bus.acquire(config);
             REQUIRE(spi.CR1 == expected_CR1);
@@ -93,50 +93,50 @@ TEST_CASE("SPIBus - Bus Configuration")
 
         SECTION("Clock Divider")
         {
-            config.clock_div      = SPIClockDivider::DIV2;
+            config.clockDivider   = SPI::ClockDivider::DIV_2;
             uint32_t expected_CR1 = 0x0344;
             bus.acquire(config);
             REQUIRE(spi.CR1 == expected_CR1);
             bus.release();
 
-            config.clock_div = SPIClockDivider::DIV4;
-            expected_CR1     = 0x034C;
+            config.clockDivider = SPI::ClockDivider::DIV_4;
+            expected_CR1        = 0x034C;
             bus.acquire(config);
             REQUIRE(spi.CR1 == expected_CR1);
             bus.release();
 
-            config.clock_div = SPIClockDivider::DIV8;
-            expected_CR1     = 0x0354;
+            config.clockDivider = SPI::ClockDivider::DIV_8;
+            expected_CR1        = 0x0354;
             bus.acquire(config);
             REQUIRE(spi.CR1 == expected_CR1);
             bus.release();
 
-            config.clock_div = SPIClockDivider::DIV16;
-            expected_CR1     = 0x035C;
+            config.clockDivider = SPI::ClockDivider::DIV_16;
+            expected_CR1        = 0x035C;
             bus.acquire(config);
             REQUIRE(spi.CR1 == expected_CR1);
             bus.release();
 
-            config.clock_div = SPIClockDivider::DIV32;
-            expected_CR1     = 0x0364;
+            config.clockDivider = SPI::ClockDivider::DIV_32;
+            expected_CR1        = 0x0364;
             bus.acquire(config);
             REQUIRE(spi.CR1 == expected_CR1);
             bus.release();
 
-            config.clock_div = SPIClockDivider::DIV64;
-            expected_CR1     = 0x036C;
+            config.clockDivider = SPI::ClockDivider::DIV_64;
+            expected_CR1        = 0x036C;
             bus.acquire(config);
             REQUIRE(spi.CR1 == expected_CR1);
             bus.release();
 
-            config.clock_div = SPIClockDivider::DIV128;
-            expected_CR1     = 0x0374;
+            config.clockDivider = SPI::ClockDivider::DIV_128;
+            expected_CR1        = 0x0374;
             bus.acquire(config);
             REQUIRE(spi.CR1 == expected_CR1);
             bus.release();
 
-            config.clock_div = SPIClockDivider::DIV256;
-            expected_CR1     = 0x037C;
+            config.clockDivider = SPI::ClockDivider::DIV_256;
+            expected_CR1        = 0x037C;
             bus.acquire(config);
             REQUIRE(spi.CR1 == expected_CR1);
             bus.release();
@@ -161,9 +161,9 @@ TEST_CASE("SPIBus - Bus Configuration")
     SECTION("Disable configuration")
     {
         SPIBusConfig config;
-        config.clock_div = SPIClockDivider::DIV16;
+        config.clockDivider = SPI::ClockDivider::DIV_16;
 
-        config.mode      = SPIMode::MODE3;
+        config.mode      = SPI::Mode::MODE_3;
         config.bit_order = SPIBitOrder::LSB_FIRST;
 
         bus.disableBusConfiguration();
@@ -198,9 +198,9 @@ TEST_CASE("SPIBus - One byte operations")
     SPIBus bus{&spi};
 
     SPIBusConfig config;
-    config.clock_div = SPIClockDivider::DIV16;
+    config.clockDivider = SPI::ClockDivider::DIV_16;
 
-    config.mode      = SPIMode::MODE3;
+    config.mode      = SPI::Mode::MODE_3;
     config.bit_order = SPIBitOrder::LSB_FIRST;
 
     bus.acquire(config);
@@ -252,9 +252,9 @@ TEST_CASE("SPIBus - Multi byte operations")
     SPIBus bus{&spi};
 
     SPIBusConfig config;
-    config.clock_div = SPIClockDivider::DIV16;
+    config.clockDivider = SPI::ClockDivider::DIV_16;
 
-    config.mode      = SPIMode::MODE3;
+    config.mode      = SPI::Mode::MODE_3;
     config.bit_order = SPIBitOrder::LSB_FIRST;
 
     bus.acquire(config);
@@ -326,8 +326,8 @@ TEST_CASE("SPITransaction - writes")
 {
     SPIBusConfig config1{};
 
-    config1.mode      = SPIMode::MODE1;
-    config1.clock_div = SPIClockDivider::DIV32;
+    config1.mode         = SPI::Mode::MODE_1;
+    config1.clockDivider = SPI::ClockDivider::DIV_32;
 
     MockSPIBus bus(config1);
     MockGpioPin cs;
@@ -419,8 +419,8 @@ TEST_CASE("SPITransaction - reads")
 {
     SPIBusConfig config1;
 
-    config1.mode      = SPIMode::MODE1;
-    config1.clock_div = SPIClockDivider::DIV32;
+    config1.mode         = SPI::Mode::MODE_1;
+    config1.clockDivider = SPI::ClockDivider::DIV_32;
 
     MockSPIBus bus(config1);
     MockGpioPin cs;
@@ -515,8 +515,8 @@ TEST_CASE("SPITransaction - transfer")
 {
     SPIBusConfig config1;
 
-    config1.mode      = SPIMode::MODE1;
-    config1.clock_div = SPIClockDivider::DIV32;
+    config1.mode         = SPI::Mode::MODE_1;
+    config1.clockDivider = SPI::ClockDivider::DIV_32;
 
     MockSPIBus bus(config1);
     MockGpioPin cs;

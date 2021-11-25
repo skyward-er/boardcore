@@ -25,6 +25,7 @@
 
 #include <cstdint>
 #include <vector>
+
 #include "utils/testutils/MockGpioPin.h"
 
 using std::vector;
@@ -35,9 +36,11 @@ using std::vector;
  */
 struct FakeSpiTypedef
 {
-    uint32_t CR1 = 0;
-    uint32_t CR2 = 0;
-    uint32_t SR = 3;
+    uint32_t CR1    = 0;
+    uint32_t CR2    = 0;
+    uint32_t SR     = 3;
+    uint32_t RXCRCR = 0;
+    uint32_t TXCRCR = 0;
 
     struct RegDR
     {
@@ -80,5 +83,5 @@ struct FakeSpiTypedef
     RegDR DR;
     MockGpioPin cs;
 
-    FakeSpiTypedef() : DR(*this) {cs.high();}
+    FakeSpiTypedef() : DR(*this) { cs.high(); }
 };

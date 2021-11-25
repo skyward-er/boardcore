@@ -60,7 +60,7 @@ public:
      */
     SPISignalGenerator(
         int nBytes, int transactionFrequency, int spiFrequency = 1e6,
-        SPIMode spiMode = SPIMode::MODE0, TIM_TypeDef *masterTimer = TIM1,
+        SPI::Mode spiMode = SPI::Mode::MODE_0, TIM_TypeDef *masterTimer = TIM1,
         TIM_TypeDef *slaveTimer = TIM3,
         GeneralPurposeTimer<uint16_t>::TriggerSource slaveTriggerSource =
             GeneralPurposeTimer<uint16_t>::TriggerSource::ITR0);
@@ -84,7 +84,7 @@ private:
     int nBytes;                ///< SPI Clock pulses.
     int transactionFrequency;  ///< Frequency of the transactions are generated.
     int spiFrequency;          ///< SPI Clock frequency.
-    SPIMode spiMode;
+    SPI::Mode spiMode;
     GeneralPurposeTimer<uint16_t>
         masterTimer;  ///< Master timer for CS generation.
     GeneralPurposeTimer<uint16_t>
@@ -94,7 +94,7 @@ private:
 
 template <int ChainChannel, int CSChanel, int SCKChannel>
 SPISignalGenerator<ChainChannel, CSChanel, SCKChannel>::SPISignalGenerator(
-    int nBytes, int transactionFrequency, int spiFrequency, SPIMode spiMode,
+    int nBytes, int transactionFrequency, int spiFrequency, SPI::Mode spiMode,
     TIM_TypeDef *masterTimer, TIM_TypeDef *slaveTimer,
     GeneralPurposeTimer<uint16_t>::TriggerSource slaveTriggerSource)
     : nBytes(nBytes), transactionFrequency(transactionFrequency),
@@ -139,7 +139,7 @@ void SPISignalGenerator<ChainChannel, CSChanel, SCKChannel>::configure()
 
         // Set channels capture/compare register
         uint16_t ccRegister = nBytes * 8;
-        if (spiMode >= SPIMode::MODE2)
+        if (spiMode >= SPI::Mode::MODE_2)
         {
             ccRegister += 1;
         }
@@ -196,7 +196,7 @@ void SPISignalGenerator<ChainChannel, CSChanel, SCKChannel>::configure()
         // Set channel 1 to toggle mode
         slaveTimer.setOutputCompareMode<SCKChannel>(
             GeneralPurposeTimer<uint16_t>::OutputCompareMode::TOGGLE);
-        if (spiMode >= SPIMode::MODE2)
+        if (spiMode >= SPI::Mode::MODE_2)
         {
             slaveTimer.setCaptureComparePolarity<SCKChannel>(
                 GeneralPurposeTimer<

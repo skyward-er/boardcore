@@ -133,7 +133,7 @@ int main()
     // XBee
     SPIBus spi_bus(SPI1);
     SPIBusConfig cfg{};
-    cfg.clock_div = SPIClockDivider::DIV16;
+    cfg.clockDivider = SPI::ClockDivider::DIV_16;
 
     GpioPin cs   = GpioCS::getPin();
     GpioPin attn = GpioATTN::getPin();
@@ -158,21 +158,24 @@ int main()
     gui->screen_energy.btn_stop.addOnInteractionListener(onStopButtonClick);
     gui->screen_energy.btn_mark.addOnInteractionListener(onMarkButtonClick);
     gui->screen_energy.btn_reset.addOnInteractionListener(
-        [&](View* d, Interaction action) {
+        [&](View* d, Interaction action)
+        {
             UNUSED(d);
             if (action == Interaction::CLICK)
                 gui->screen_energy.resetStats();
         });
 
     gui->screen_end.tv_f.addOnInteractionListener(
-        [&](View* d, Interaction action) {
+        [&](View* d, Interaction action)
+        {
             UNUSED(d);
             if (action == Interaction::CLICK)
                 gui->screen_manager.showScreen(XbeeGUI::SCREEN_RESPECT);
         });
 
     gui->screen_end.tv_reset.addOnInteractionListener(
-        [&](View* d, Interaction action) {
+        [&](View* d, Interaction action)
+        {
             UNUSED(d);
             if (action == Interaction::CLICK)
                 miosix::reboot();

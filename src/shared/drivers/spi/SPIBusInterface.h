@@ -26,6 +26,13 @@
 
 #include "SPI.h"
 
+#ifndef USE_MOCK_PERIPHERALS
+using GpioType = miosix::GpioPin;
+#else
+#include <utils/testutils/MockGpioPin.h>
+using GpioType = MockGpioPin;
+#endif
+
 /**
  * @brief SPI Bus configuration for a specific slave.
  *
@@ -93,14 +100,14 @@ public:
      *
      * @param cs Chip select pin for the slave.
      */
-    virtual void select(miosix::GpioPin& cs) = 0;
+    virtual void select(GpioType& cs) = 0;
 
     /**
      * @brief Deselects the slave.
      *
      * @param cs Chip select pin for the slave.
      */
-    virtual void deselect(miosix::GpioPin& cs) = 0;
+    virtual void deselect(GpioType& cs) = 0;
 
     // Read, write and transfer operations
 
@@ -205,12 +212,30 @@ struct SPISlave
     SPIBusInterface& bus;  ///< Bus on which the slave is connected.
     SPIBusConfig config;   ///< How the bus should be configured to communicate
                            ///< with the slave.
-    miosix::GpioPin cs;    ///< Chip select pin
+    GpioType cs;           ///< Chip select pin
 
-    SPISlave(SPIBusInterface& bus, miosix::GpioPin cs, SPIBusConfig config)
+    SPISlave(SPIBusInterface& bus, GpioType cs, SPIBusConfig config)
         : bus(bus), config(config), cs(cs)
     {
     }
+};
+
+/**
+ * @brief RAII Interface for SPI bus acquisition
+ *
+ */
+class SPIAcquireLock
+{
+public:
+    SPIAcquireLock(SPISlave slave) : SPIAcquireLock(slave.bus, slave.config) {}
+
+    SPIAcquireLock(SPIBusInterface& bus, SPIBusConfig cfg) : bus(bus)
+    {
+        bus.configure(cfg);
+    }
+
+private:
+    SPIBusInterface& bus;
 };
 
 /**
@@ -221,7 +246,7 @@ class SPISelectLock
 public:
     SPISelectLock(SPISlave slave) : SPISelectLock(slave.bus, slave.cs) {}
 
-    SPISelectLock(SPIBusInterface& bus, miosix::GpioPin cs) : bus(bus), cs(cs)
+    SPISelectLock(SPIBusInterface& bus, GpioType cs) : bus(bus), cs(cs)
     {
         bus.select(cs);
     }
@@ -230,5 +255,5 @@ public:
 
 private:
     SPIBusInterface& bus;
-    miosix::GpioPin& cs;
+    GpioType& cs;
 };

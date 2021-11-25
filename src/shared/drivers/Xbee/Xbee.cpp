@@ -23,9 +23,10 @@
 #include "Xbee.h"
 
 #include <Debug.h>
+#include <diagnostic/StackLogger.h>
 #include <kernel/scheduler/scheduler.h>
 #include <miosix.h>
-#include <diagnostic/StackLogger.h>
+
 #include <algorithm>
 
 using miosix::FastMutex;
@@ -40,7 +41,7 @@ Xbee::Xbee(SPIBusInterface& bus, GpioType cs, GpioType attn, GpioType rst,
            long long tx_timeout)
     : Xbee(bus, {}, cs, attn, rst, tx_timeout)
 {
-    spi_xbee.config.clock_div = SPIClockDivider::DIV128;
+    spi_xbee.config.clockDivider = SPI::ClockDivider::DIV_128;
 }
 
 Xbee::Xbee(SPIBusInterface& bus, SPIBusConfig config, GpioType cs,

@@ -58,8 +58,8 @@ ADS1118::ADS1118(SPISlave spiSlave_, ADS1118Config config_, bool busyWait_,
 SPIBusConfig ADS1118::getDefaultSPIConfig()
 {
     SPIBusConfig spiConfig{};
-    spiConfig.clock_div = SPIClockDivider::DIV32;
-    spiConfig.mode      = SPIMode::MODE1;
+    spiConfig.clockDivider = SPI::ClockDivider::DIV_32;
+    spiConfig.mode         = SPI::Mode::MODE_1;
     return spiConfig;
 }
 

@@ -76,8 +76,8 @@ public:
      * @param cs Chip select of the slave to communicate to.
      * @param config Configuration of the bus for the selected slave.
      */
-    SPITransaction(SPIBusInterface &bus, miosix::GpioPin cs,
-                   SPIBusConfig config, WriteBit writeBit = WriteBit::NORMAL);
+    SPITransaction(SPIBusInterface &bus, GpioType cs, SPIBusConfig config,
+                   WriteBit writeBit = WriteBit::NORMAL);
 
     ///< Delete copy/move contructors/operators.
     SPITransaction(const SPITransaction &) = delete;
@@ -223,5 +223,5 @@ public:
 private:
     SPIBusInterface &bus;
     WriteBit writeBit;
-    miosix::GpioPin cs;
+    GpioType cs;
 };

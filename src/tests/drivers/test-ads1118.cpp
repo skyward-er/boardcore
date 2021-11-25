@@ -46,10 +46,10 @@
  */
 
 #include <Debug.h>
-#include <drivers/adc/ADS1118/ADS1118.h>
 #include <drivers/spi/SPIDriver.h>
 #include <drivers/timer/TimestampTimer.h>
 #include <miosix.h>
+#include <sensors/ADS1118/ADS1118.h>
 
 using namespace miosix;
 

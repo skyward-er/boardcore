@@ -63,9 +63,9 @@ public:
         : spi_slave(bus, chip_select, {}), odr(_odr), bdu(_bdu),
           full_scale(_full_scale)
     {
-        spi_slave.config.clock_div =
-            SPIClockDivider::DIV64;  // used to set the spi baud rate (maximum
-                                     // is 10 Mhz)
+        spi_slave.config.clockDivider =
+            SPI::ClockDivider::DIV_64;  // used to set the spi baud rate
+                                        // (maximum is 10 Mhz)
     }
 
     /**
@@ -116,7 +116,7 @@ public:
 
         // set the full scale value in CTRL_REG5
         uint8_t ctrl_reg5_value = (full_scale << 3);
-        spi.write(CTRL_REG5, ctrl_reg5_value);
+        spi.writeRegister(CTRL_REG5, ctrl_reg5_value);
 
         // select the correct sensitivity
         // for the specified full scale range
@@ -126,7 +126,7 @@ public:
         // the three least significant bits are enable bits for X, Y and Z axis
         uint8_t ctrl_reg4_value =
             (odr << 4) | (bdu << 3) | (7 << 0);  // 7 = 111 -> enable the 3 axis
-        spi.write(CTRL_REG4, ctrl_reg4_value);
+        spi.writeRegister(CTRL_REG4, ctrl_reg4_value);
 
         initialized = true;
 
@@ -169,7 +169,7 @@ public:
 
         {
             SPITransaction spi(spi_slave);
-            spi.write(CTRL_REG4, ctrl_reg4_value);
+            spi.writeRegister(CTRL_REG4, ctrl_reg4_value);
         }
 
         // set full scale to default value +/-2g
@@ -178,7 +178,7 @@ public:
 
         {
             SPITransaction spi(spi_slave);
-            spi.write(CTRL_REG5, ctrl_reg5_value);
+            spi.writeRegister(CTRL_REG5, ctrl_reg5_value);
         }
 
         // read samples in self-test positive sign mode
@@ -197,7 +197,7 @@ public:
 
         {
             SPITransaction spi(spi_slave);
-            spi.write(CTRL_REG5, ctrl_reg5_value);
+            spi.writeRegister(CTRL_REG5, ctrl_reg5_value);
         }
 
         // read samples in normal mode
@@ -236,14 +236,14 @@ public:
 
         {
             SPITransaction spi(spi_slave);
-            spi.write(CTRL_REG4, ctrl_reg4_value);
+            spi.writeRegister(CTRL_REG4, ctrl_reg4_value);
         }
         // set the full scale value in CTRL_REG5
         ctrl_reg5_value = (full_scale << 3);  // normal mode
 
         {
             SPITransaction spi(spi_slave);
-            spi.write(CTRL_REG5, ctrl_reg5_value);
+            spi.writeRegister(CTRL_REG5, ctrl_reg5_value);
         }
 
         float delta[3] = {0};
@@ -354,7 +354,7 @@ private:
         SPITransaction spi(spi_slave);
 
         // read the sensor's status register
-        uint8_t status = spi.read(STATUS);
+        uint8_t status = spi.readRegister(STATUS);
 
         if (status & 0x08)
         {  // bit 3 of status set to 1 (new data available)
@@ -364,20 +364,20 @@ private:
                 accel_data.accel_timestamp = TimestampTimer::getTimestamp();
 
                 // read acceleration on X
-                int8_t accel_L = spi.read(OUT_X_L);
-                int8_t accel_H = spi.read(OUT_X_H);
+                int8_t accel_L = spi.readRegister(OUT_X_L);
+                int8_t accel_H = spi.readRegister(OUT_X_H);
                 accel_data.accel_x =
                     static_cast<float>(combine(accel_H, accel_L)) * sensitivity;
 
                 // read acceleration on Y
-                accel_L = spi.read(OUT_Y_L);
-                accel_H = spi.read(OUT_Y_H);
+                accel_L = spi.readRegister(OUT_Y_L);
+                accel_H = spi.readRegister(OUT_Y_H);
                 accel_data.accel_y =
                     static_cast<float>(combine(accel_H, accel_L)) * sensitivity;
 
                 // read acceleration on Z
-                accel_L = spi.read(OUT_Z_L);
-                accel_H = spi.read(OUT_Z_H);
+                accel_L = spi.readRegister(OUT_Z_L);
+                accel_H = spi.readRegister(OUT_Z_H);
                 accel_data.accel_z =
                     static_cast<float>(combine(accel_H, accel_L)) * sensitivity;
 
@@ -402,7 +402,7 @@ private:
         SPITransaction spi(spi_slave);
 
         // the temperature is given as a 8-bits integer (in 2-complement)
-        int8_t t = spi.read(OUT_T);
+        int8_t t = spi.readRegister(OUT_T);
 
         return TemperatureData{
             TimestampTimer::getTimestamp(),
@@ -421,7 +421,7 @@ private:
         SPITransaction spi(spi_slave);
 
         // check the WHO_AM_I_REG register
-        uint8_t who_am_i_value = spi.read(WHO_AM_I_REG);
+        uint8_t who_am_i_value = spi.readRegister(WHO_AM_I_REG);
         if (who_am_i_value == WHO_AM_I_DEFAULT_VALUE)
         {
             LOG_DEBUG(logger, "Correct WHO_AM_I value");
