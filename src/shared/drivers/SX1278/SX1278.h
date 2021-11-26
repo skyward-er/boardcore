@@ -68,12 +68,13 @@ public:
     struct Config
     {
         int freq_rf  = 434000000;       //< RF Frequency in Hz.
-        int freq_dev = 5000;            //< Frequency deviation in Hz.
-        int bitrate  = 4800;            //< Bitrate in b/s.
-        RxBw rx_bw   = RxBw::HZ_10400;  //< Rx filter bandwidth.
-        RxBw afc_bw  = RxBw::HZ_50000;  //< Afc filter bandwidth.
+        int freq_dev = 50000;            //< Frequency deviation in Hz.
+        int bitrate  = 48000;            //< Bitrate in b/s.
+        RxBw rx_bw   = RxBw::HZ_125000;  //< Rx filter bandwidth.
+        RxBw afc_bw  = RxBw::HZ_125000;  //< Afc filter bandwidth.
         int ocp =
             120;  //< Over current protection limit in mA (0 for no limit).
+        bool enable_int = true; //< Enable interrupt pin.
     };
 
     /**
@@ -86,7 +87,7 @@ public:
         BAD_VERSION,  //< Chip didn't report the correct version.
     };
 
-    SX1278(SPIBusInterface &bus, GpioPin cs);
+    SX1278(SPIBusInterface &bus, GpioPin cs, GpioPin dio);
 
     /**
      * @brief Setup the device.
@@ -129,11 +130,16 @@ private:
     void setRxBw(RxBw rx_bw);
     void setAfcBw(RxBw afc_bw);
     void setPreableLen(int len);
+    void setPa(int power, bool pa_boost);
 
     void enterMode(Mode mode);
+    void waitForIrq(uint8_t reg, uint8_t mask);
     void waitForIrq1(uint8_t mask);
     void waitForIrq2(uint8_t mask);
 
+    bool enable_int = true;
+
     SPISlave slave;
+    GpioPin dio;
     Mode mode;
 };

@@ -194,12 +194,12 @@ constexpr uint8_t IO_HOME_ON = 1 << 5;
 constexpr uint8_t BEACON_ON  = 1 << 4;
 }  // namespace RegPacketConfig2
 
-namespace RegFifoTresh
+namespace RegFifoThresh
 {
 enum TxStartCondition
 {
     TX_START_CONDITION_FIFO_LEVEL = 0 << 7,
-    TX_START_CONDITION_FIFO_EMPTY = 1 << 7,
+    TX_START_CONDITION_FIFO_NOT_EMPTY = 1 << 7,
 };
 }
 
@@ -227,37 +227,14 @@ constexpr uint8_t CRC_OK        = 1 << 1;
 constexpr uint8_t LOW_BAT       = 1 << 0;
 }  // namespace RegIrqFlags2
 
-// Default values for common registers
-
-constexpr uint8_t REG_OP_MODE_DEFAULT = RegOpMode::LONG_RANGE_MODE_FSK |
-                                        RegOpMode::MODULATION_TYPE_FSK |
-                                        RegOpMode::LOW_FREQUENCY_MODE_ON;
-
-constexpr uint8_t REG_PACKET_CONFIG_1_DEFAULT =
-    RegPacketConfig1::PACKET_FORMAT_VARIABLE_LENGTH |
-    RegPacketConfig1::DC_FREE_NONE | RegPacketConfig1::CRC_ON |
-    RegPacketConfig1::ADDRESS_FILTERING_NONE |
-    RegPacketConfig1::CRC_WHITENING_TYPE_CCITT_CRC;
-
-constexpr uint8_t REG_PACKET_CONFIG_2_DEFAULT =
-    RegPacketConfig2::DATA_MODE_PACKET;
-
-constexpr uint8_t REG_RX_CONFIG_DEFAULT =
-    // RegRxConfig::RESTART_RX_ON_COLLISION |
-    RegRxConfig::AFC_AUTO_ON | RegRxConfig::AGC_AUTO_ON |
-    RegRxConfig::RX_TRIGGER_PREAMBLE_DETECT |
-    RegRxConfig::RX_TRIGGER_RSSI_INTERRUPT;
-
-constexpr uint8_t REG_PA_RAMP_DEFAULT =
-    RegPaRamp::MODULATION_SHAPING_NONE | 0x09;
-
-constexpr uint8_t REG_SYNC_CONFIG_DEFAULT =
-    RegSyncConfig::AUTO_RESTART_RX_MODE_OFF |
-    RegSyncConfig::PREAMBLE_POLARITY_55 | RegSyncConfig::SYNC_ON;
-
-constexpr uint8_t REG_PREAMBLE_DETECTOR_DEFAULT =
-    RegPreambleDetector::PREAMBLE_DETECTOR_ON |
-    RegPreambleDetector::PREAMBLE_DETECTOR_SIZE_2_BYTES | 0x0a;
+namespace RegPaDac
+{
+enum PaDac
+{
+    PA_DAC_DEFAULT_VALUE = 0x04,
+    PA_DAC_PA_BOOST = 0x07
+};
+}
 
 enum Registers
 {

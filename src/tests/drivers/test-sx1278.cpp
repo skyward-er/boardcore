@@ -29,11 +29,13 @@
 /*
 Connection diagram:
 sx1278[0]:nss  -> stm32:pa1
+sx1278[0]:dio0 -> stm32:pc15
 sx1278[0]:mosi -> stm32:pc12 (SPI3_MOSI)
 sx1278[0]:miso -> stm32:pc11 (SPI3_MISO)
 sx1278[0]:sck  -> stm32:pc10 (SPI3_SCK)
 
 sx1278[1]:nss  -> stm32:pa2
+sx1278[1]:dio0 -> stm32:pc0
 sx1278[1]:mosi -> stm32:pb15 (SPI2_MOSI)
 sx1278[1]:miso -> stm32:pb14 (SPI2_MISO)
 sx1278[1]:sck  -> stm32:pb13 (SPI2_SCK)
@@ -46,11 +48,13 @@ GpioPin sck1(GPIOC_BASE, 10);
 GpioPin miso1(GPIOC_BASE, 11);
 GpioPin mosi1(GPIOC_BASE, 12);
 GpioPin cs1(GPIOA_BASE, 1);
+GpioPin dio1(GPIOC_BASE, 15);
 
 GpioPin sck2(GPIOB_BASE, 13);
 GpioPin miso2(GPIOB_BASE, 14);
 GpioPin mosi2(GPIOB_BASE, 15);
 GpioPin cs2(GPIOA_BASE, 2);
+GpioPin dio2(GPIOC_BASE, 0);
 
 /// Initialize stm32f407g board
 void initBoard()
@@ -77,7 +81,10 @@ void initBoard()
     mosi2.alternateFunction(5);
 
     cs1.mode(miosix::Mode::OUTPUT);
+    dio1.mode(miosix::Mode::INPUT);
+
     cs2.mode(miosix::Mode::OUTPUT);
+    dio2.mode(miosix::Mode::INPUT);
 }
 
 int main()
@@ -88,8 +95,8 @@ int main()
     cs2.high();
 
     SX1278 sx1278[2] = {
-        SX1278(bus1, cs1),
-        SX1278(bus2, cs2),
+        SX1278(bus2, cs2, dio2),
+        SX1278(bus1, cs1, dio1),
     };
 
     // Run default configuration
@@ -104,11 +111,11 @@ int main()
         auto ver = sx1278[i].getVersion();
         TRACE("Version: %x\n", ver);
 
-        sx1278[i].debugDumpRegisters();
+        // sx1278[i].debugDumpRegisters();
     }
 
     // miosix::Thread::sleep(5000);
-    const int LOG_INTERVAL = 10;
+    const int LOG_INTERVAL = 100;
 
     std::thread recv(
         [&sx1278]()
@@ -138,19 +145,15 @@ int main()
     int last_sent_message = 0;
     while (1)
     {
-        // TRACE("Trying to send message...\n");
-
-        sx1278[1].send((uint8_t*)&last_sent_message, 4);
         last_sent_message++;
+        sx1278[1].send((uint8_t*)&last_sent_message, 4);
 
         if (last_sent_message % LOG_INTERVAL == 0)
         {
             TRACE("Sent %d messages!\n", last_sent_message);
         }
 
-        // TRACE("Message sent!\n");
-
-        miosix::Thread::sleep(500);
+        miosix::Thread::sleep(1);
     }
 
     return 0;

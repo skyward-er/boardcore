@@ -28,8 +28,17 @@
 
 using namespace SX1278Defs;
 
-SX1278::SX1278(SPIBusInterface &bus, GpioPin cs)
-    : slave(bus, cs, spiConfig()), mode(SX1278::Mode::MODE_SLEEP)
+// Default values for registers
+constexpr uint8_t REG_OP_MODE_DEFAULT = RegOpMode::LONG_RANGE_MODE_FSK |
+                                        RegOpMode::MODULATION_TYPE_FSK |
+                                        RegOpMode::LOW_FREQUENCY_MODE_ON;
+
+constexpr uint8_t REG_SYNC_CONFIG_DEFAULT =
+    RegSyncConfig::AUTO_RESTART_RX_MODE_OFF |
+    RegSyncConfig::PREAMBLE_POLARITY_55 | RegSyncConfig::SYNC_ON;
+
+SX1278::SX1278(SPIBusInterface &bus, GpioPin cs, GpioPin dio)
+    : slave(bus, cs, spiConfig()), mode(SX1278::Mode::MODE_SLEEP), dio(dio)
 {
 }
 
@@ -55,22 +64,39 @@ SX1278::Error SX1278::init(Config config)
     uint8_t sync_word[2] = {0x12, 0xad};
     setSyncWord(sync_word, 2);
     setPreableLen(2);
+    setPa(10, true);
 
     // Setup generic parameters
     {
         SPITransaction spi(slave, SPIWriteBit::INVERTED);
 
-        spi.write(REG_PA_RAMP, REG_PA_RAMP_DEFAULT);
-        spi.write(REG_RX_CONFIG, REG_RX_CONFIG_DEFAULT);
+        spi.write(REG_PA_RAMP, RegPaRamp::MODULATION_SHAPING_NONE | 0x09);
+        spi.write(REG_RX_CONFIG, RegRxConfig::AFC_AUTO_ON |
+                                     RegRxConfig::AGC_AUTO_ON |
+                                     RegRxConfig::RX_TRIGGER_PREAMBLE_DETECT |
+                                     RegRxConfig::RX_TRIGGER_RSSI_INTERRUPT);
         spi.write(REG_RSSI_THRESH, 0xff);
-        spi.write(REG_PREAMBLE_DETECT, REG_PREAMBLE_DETECTOR_DEFAULT);
+        spi.write(REG_PREAMBLE_DETECT,
+                  RegPreambleDetector::PREAMBLE_DETECTOR_ON |
+                      RegPreambleDetector::PREAMBLE_DETECTOR_SIZE_2_BYTES |
+                      0x0a);
         spi.write(REG_RX_TIMEOUT_1, 0x00);
         spi.write(REG_RX_TIMEOUT_2, 0x00);
         spi.write(REG_RX_TIMEOUT_3, 0x00);
-        spi.write(REG_PACKET_CONFIG_1, REG_PACKET_CONFIG_1_DEFAULT);
-        spi.write(REG_PACKET_CONFIG_2, REG_PACKET_CONFIG_2_DEFAULT);
+        spi.write(REG_PACKET_CONFIG_1,
+                  RegPacketConfig1::PACKET_FORMAT_VARIABLE_LENGTH |
+                      RegPacketConfig1::DC_FREE_NONE |
+                      RegPacketConfig1::CRC_ON |
+                      RegPacketConfig1::ADDRESS_FILTERING_NONE |
+                      RegPacketConfig1::CRC_WHITENING_TYPE_CCITT_CRC);
+        spi.write(REG_PACKET_CONFIG_2, RegPacketConfig2::DATA_MODE_PACKET);
+        spi.write(REG_FIFO_THRESH,
+                  RegFifoThresh::TX_START_CONDITION_FIFO_NOT_EMPTY | 0x0f);
         spi.write(REG_NODE_ADRS, 0x00);
         spi.write(REG_BROADCAST_ADRS, 0x00);
+
+        // Enable PayloadReady, PacketSent on DIO0
+        spi.write(REG_DIO_MAPPING_1, 0x00);
     }
 
     return Error::NONE;
@@ -108,8 +134,9 @@ void SX1278::send(const uint8_t *buf, uint8_t len)
 
     {
         SPITransaction spi(slave, SPIWriteBit::INVERTED);
+
         spi.write(REG_FIFO, len);
-        // FIXME: This needs to be fixed!!
+        // FIXME(Davide Mor): This needs to be fixed!!
         spi.write(REG_FIFO, const_cast<uint8_t *>(buf), len);
     }
 
@@ -204,15 +231,50 @@ void SX1278::setPreableLen(int len)
     spi.write(REG_PREAMBLE_LSB, len);
 }
 
+void SX1278::setPa(int power, bool pa_boost)
+{
+    // [2, 17] or 20 if PA_BOOST
+    // [0, 15] if !PA_BOOST
+
+    const uint8_t MAX_POWER = 0b111;
+
+    SPITransaction spi(slave, SPIWriteBit::INVERTED);
+
+    if (!pa_boost)
+    {
+        // Don't use power amplifier boost
+        power = power - MAX_POWER + 15;
+        spi.write(REG_PA_CONFIG, MAX_POWER << 4 | power);
+        spi.write(REG_PA_DAC, RegPaDac::PA_DAC_DEFAULT_VALUE | 0x10 << 3);
+    }
+    else if (power != 20)
+    {
+        // Run power amplifier boost but not at full power
+        power = power - 2;
+        spi.write(REG_PA_CONFIG,
+                  MAX_POWER << 4 | power | RegPaConfig::PA_SELECT_BOOST);
+        spi.write(REG_PA_DAC, RegPaDac::PA_DAC_PA_BOOST | 0x10 << 3);
+    }
+    else
+    {
+        // Run power amplifier boost at full power
+        power = 15;
+        spi.write(REG_PA_CONFIG,
+                  MAX_POWER << 4 | power | RegPaConfig::PA_SELECT_BOOST);
+        spi.write(REG_PA_DAC, RegPaDac::PA_DAC_PA_BOOST | 0x10 << 3);
+    }
+}
+
 void SX1278::enterMode(Mode mode)
 {
     // Only do this if we need to
     if (mode == this->mode)
         return;
 
+    uint8_t value = REG_OP_MODE_DEFAULT | mode;
     {
         SPITransaction spi(slave, SPIWriteBit::INVERTED);
-        spi.write(REG_OP_MODE, REG_OP_MODE_DEFAULT | mode);
+        spi.write(REG_OP_MODE, value);
     }
 
     // Wait for mode ready
@@ -221,24 +283,34 @@ void SX1278::enterMode(Mode mode)
     this->mode = mode;
 }
 
-inline void waitForIrq(SPISlave &slave, uint8_t reg, uint8_t mask)
+void SX1278::waitForIrq(uint8_t reg, uint8_t mask)
 {
     SPITransaction spi(slave, SPIWriteBit::INVERTED);
 
-    // Tight loop to wait on device
-    while ((spi.read(reg) & mask) == 0)
-        miosix::delayUs(10);
+    if ((mask == RegIrqFlags2::PACKET_SENT ||
+         mask == RegIrqFlags2::PAYLOAD_READY) &&
+        enable_int)
+    {
+        // Optimized handling using interrupts
+        // TODO(Davide Mor): transform this in a CondVar
+        while (!dio.value())
+        {
+            miosix::delayUs(10);
+        }
+    }
+    else
+    {
+        // Tight loop on IRQ register
+        while (!(spi.read(reg) & mask))
+        {
+            miosix::delayUs(10);
+        }
+    }
 }
 
-void SX1278::waitForIrq1(uint8_t mask)
-{
-    waitForIrq(slave, REG_IRQ_FLAGS_1, mask);
-}
+void SX1278::waitForIrq1(uint8_t mask) { waitForIrq(REG_IRQ_FLAGS_1, mask); }
 
-void SX1278::waitForIrq2(uint8_t mask)
-{
-    waitForIrq(slave, REG_IRQ_FLAGS_2, mask);
-}
+void SX1278::waitForIrq2(uint8_t mask) { waitForIrq(REG_IRQ_FLAGS_2, mask); }
 
 void SX1278::debugDumpRegisters()
 {
