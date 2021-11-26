@@ -25,6 +25,7 @@
 #include <string.h>
 #include <fmt/format.h>
 #include <sensors/Sensor.h>
+#include <diagnostic/PrintLogger.h>
 
 #include "VN100Data.h"
 #include "VN100Serial.h"
@@ -88,6 +89,11 @@ private:
      * with the sensor via ASCII codes
      */
     VN100Serial *serialInterface;
+
+    /**
+     * @brief logger
+     */
+    PrintLogger logger = Logging::getLogger("vn100");
 
     /**
      * @brief this method disables the async messages that the vn100

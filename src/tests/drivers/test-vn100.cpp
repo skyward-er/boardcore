@@ -20,6 +20,7 @@
  * THE SOFTWARE.
  */
 
+#include <inttypes.h>
 #include <Common.h>
 #include <sensors/VN100/VN100.h>
 
@@ -29,15 +30,16 @@ int main()
 {
     GpioPin tx(GPIOB_BASE, 6);
     GpioPin rx(GPIOB_BASE, 7);
+    VN100Data sample;
+    VN100 sensor {1, 115200, VN100::CRC_ENABLE_8};
 
-    tx.mode(miosix::Mode::ALTERNATE);
-    rx.mode(miosix::Mode::ALTERNATE);
+    tx.mode(Mode::ALTERNATE);
+    rx.mode(Mode::ALTERNATE);
 
     tx.alternateFunction(7);
     rx.alternateFunction(7);
 
-    VN100 sensor {1, 921600, VN100::CRC_ENABLE_8};
-    VN100Data sample;
+    TimestampTimer::enableTimestampTimer();
     
     //Let the sensor start up
     Thread::sleep(1000);
@@ -62,10 +64,9 @@ int main()
     {
         sensor.sample();
         sample = sensor.getLastSample();
-        printf("%.3f, %.3f, %.3f\n", sample.accel_x, sample.accel_y, sample.accel_z);
+        printf("%" PRIu64 ", %.3f, %.3f, %.3f\n", sample.accel_timestamp, sample.accel_x, sample.accel_y, sample.accel_z);
 
         Thread::sleep(100);
-        
     }
 
     sensor.closeAndReset();

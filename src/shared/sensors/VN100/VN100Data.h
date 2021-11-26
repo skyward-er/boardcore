@@ -61,13 +61,13 @@ struct VN100Data : public QuaternionData,
      * 
      * @param single data structures for all the data
      */ 
-    VN100Data(uint64_t timestamp, QuaternionData quat, MagnetometerData magData, AccelerometerData accData, GyroscopeData gyro, TemperatureData temp, PressureData pres)
-                : QuaternionData    {timestamp, quat.quat_x,        quat.quat_y,        quat.quat_z, quat.quat_w},
-                  MagnetometerData  {timestamp, magData.mag_x,      magData.mag_y,      magData.mag_z},
-                  AccelerometerData {timestamp, accData.accel_x,    accData.accel_y,    accData.accel_z},
-                  GyroscopeData     {timestamp, gyro.gyro_x,        gyro.gyro_y,        gyro.gyro_z},
-                  TemperatureData   {timestamp, temp.temp},
-                  PressureData      {timestamp, pres.press}{}
+    VN100Data(QuaternionData quat, MagnetometerData magData, AccelerometerData accData, GyroscopeData gyro, TemperatureData temp, PressureData pres)
+                : QuaternionData    {quat.quat_timestamp,       quat.quat_x,        quat.quat_y,        quat.quat_z, quat.quat_w},
+                  MagnetometerData  {magData.mag_timestamp,     magData.mag_x,      magData.mag_y,      magData.mag_z},
+                  AccelerometerData {accData.accel_timestamp,   accData.accel_x,    accData.accel_y,    accData.accel_z},
+                  GyroscopeData     {gyro.gyro_timestamp,       gyro.gyro_x,        gyro.gyro_y,        gyro.gyro_z},
+                  TemperatureData   {temp.temp_timestamp,       temp.temp},
+                  PressureData      {pres.press_timestamp,      pres.press}{}
 
 
     static std::string header()

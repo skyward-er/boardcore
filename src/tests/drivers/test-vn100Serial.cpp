@@ -29,11 +29,21 @@ using namespace std;
 
 int main()
 {
+    char recvString[200];
     //Object string with the message
     string message ("Communication\n\r");
 
+    GpioPin tx(GPIOB_BASE, 6);
+    GpioPin rx(GPIOB_BASE, 7);
+
+    tx.mode(miosix::Mode::ALTERNATE);
+    rx.mode(miosix::Mode::ALTERNATE);
+
+    tx.alternateFunction(7);
+    rx.alternateFunction(7);
+
     //Serial inferface
-    VN100Serial serial{2, 115200};
+    VN100Serial serial{1, 115200};
 
     if(!serial.init())
     {
@@ -47,7 +57,11 @@ int main()
     {
         serial.send(message.c_str(), message.length());
         //Sleep
-        miosix::Thread::sleep(500);
+        miosix::Thread::sleep(100);
+        //Receive the string
+        serial.recv(recvString, 200);
+        //Print it out
+        printf("%s\n", recvString);
     }
 
     serial.closeSerial();

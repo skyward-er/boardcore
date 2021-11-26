@@ -51,39 +51,49 @@ VN100::VN100(unsigned int portNumber, unsigned int baudRate, uint8_t crc)
  */
 bool VN100::init()
 {
+    SensorErrors backup = last_error;
     //If already initialized
     if(isInit)
     {
+        last_error = SensorErrors::ALREADY_INIT;
+        LOG_WARN(logger, "Sensor vn100 already initilized");
         return true;
     }
 
-    //Allocate the receive vector with a malloc
-    //TODO review this operation
-    //recvString = (char *) malloc(recvStringMaxDimension * sizeof(char));
+    //Allocate the receive vector
     recvString = new char[recvStringMaxDimension];
+
+    //Set the error to init fail and if the init process goes without problem
+    //i restore it to the last error
+    last_error = SensorErrors::INIT_FAIL;
 
     if(recvString == NULL)
     {
+        LOG_ERR(logger, "Unable to initialize the receive vn100 string");
         return false;
     }
 
     if(!configDefaultSerialPort())
     {
+        LOG_ERR(logger, "Unable to config the default vn100 serial port");
         return false;
     }
 
     if(!setCrc(false))
     {
+        LOG_ERR(logger, "Unable to set the vn100 user selected CRC");
         return false;
     }
 
     if(!disableAsyncMessages(false))
     {
+        LOG_ERR(logger, "Unable to disable async messages from vn100");
         return false;
     }
 
     if(!configUserSerialPort())
     {
+        LOG_ERR(logger, "Unable to config the user vn100 serial port");
         return false;
     }
 
@@ -91,22 +101,21 @@ bool VN100::init()
     //serial port communication at the beginning
     if(!setCrc(true))
     {
+        LOG_ERR(logger, "Unable to set the vn100 user selected CRC");
         return false;
     }
 
     if(!disableAsyncMessages(true))
     {
+        LOG_ERR(logger, "Unable to disable async messages from vn100");
         return false;
     }
 
-    /*//Reopen to delete junk values
-    if(!configUserSerialPort())
-    {
-        return false;
-    }*/
-
     //Set the isInit flag true
     isInit = true;
+
+    //All good i restore the actual last error
+    last_error = backup;
 
     return true;
 }
@@ -114,15 +123,25 @@ bool VN100::init()
 
 bool VN100::closeAndReset()
 {
+    //Sensor not init
+    if(!isInit)
+    {
+        last_error = SensorErrors::NOT_INIT;
+        LOG_WARN(logger, "Sensor vn100 already not initilized");
+        return true;
+    }
+
     //Send the reset command to the vn100
     if(!sendStringCommand("VNRST"))
     {
+        LOG_WARN(logger, "Impossible to reset the vn100");
         return false;
     }
 
     //Close the serial
     if(!(serialInterface -> closeSerial()))
     {
+        LOG_WARN(logger, "Impossible to close vn100 serial communication");
         return false;
     }
 
@@ -141,6 +160,8 @@ bool VN100::selfTest()
 {
     if(!selfTestImpl())
     {
+        last_error = SensorErrors::SELF_TEST_FAIL;
+        LOG_WARN(logger, "Unable to perform a successful vn100 self test");
         return false;
     }
     return true;
@@ -281,6 +302,8 @@ bool VN100::selfTestImpl()
     //Check the init status
     if(!isInit)
     {
+        last_error = SensorErrors::NOT_INIT;
+        LOG_WARN(logger, "Unable to perform vn100 self test due to not initialized sensor");
         return false;
     }
 
@@ -299,14 +322,14 @@ bool VN100::selfTestImpl()
     //because of the message structure 
     if(strncmp(modelNumber, recvString + modelNumberOffset, strlen(modelNumber)) != 0)
     {
-        TRACE("VN-100 not corresponding: %s != %s\n", recvString, modelNumber);
+        LOG_ERR(logger, "VN-100 not corresponding: {} != {}", recvString, modelNumber);
         return false;
     }
 
     //I check the checksum
     if(!verifyChecksum(recvString, recvStringLength))
     {
-        TRACE("Checksum verification failed: %s\n", recvString);
+        LOG_ERR(logger, "Checksum verification failed: {}", recvString);
         return false;
     }
 
@@ -317,7 +340,14 @@ VN100Data VN100::sampleImpl()
 {
     if(!isInit)
     {
-        TRACE("Unable to sample, sensor not initialized!");
+        last_error = SensorErrors::NOT_INIT;
+        LOG_WARN(logger, "Unable to sample due to not initialized vn100 sensor");
+        return last_sample;
+    }
+
+    //Before sampling i check for errors
+    if(last_error != SensorErrors::NO_ERRORS)
+    {
         return last_sample;
     }
 
@@ -336,6 +366,7 @@ VN100Data VN100::sampleImpl()
 
     if(!verifyChecksum(recvString, recvStringLength))
     {
+        LOG_WARN(logger, "Vn100 sampling message invalid checksum");
         //If something goes wrong i return the last sampled data
         return last_sample;
     }
@@ -345,10 +376,33 @@ VN100Data VN100::sampleImpl()
     MagnetometerData mag    = sampleMagnetometer();
     AccelerometerData acc   = sampleAccelerometer();
     GyroscopeData gyro      = sampleGyroscope();
+
+    //Returns Magnetometer, Accelerometer, Gyroscope, Temperature and Pressure (UNCOMPENSATED)
+    //DO NOT USE THESE MAGNETOMETER, ACCELEROMETER AND GYROSCOPE VALUES
+    if(!sendStringCommand("VNRRG,54"))
+    {
+        //If something goes wrong i return the last sampled data
+        return last_sample;
+    }
+
+    if(!recvStringCommand(recvString, recvStringMaxDimension))
+    {
+        //If something goes wrong i return the last sampled data
+        return last_sample;
+    }
+
+    if(!verifyChecksum(recvString, recvStringLength))
+    {
+        LOG_WARN(logger, "Vn100 sampling message invalid checksum");
+        //If something goes wrong i return the last sampled data
+        return last_sample;
+    }
+
+    //Parse the data
     TemperatureData temp    = sampleTemperature();
     PressureData press      = samplePressure();
 
-    return VN100Data(0, quat, mag, acc, gyro, temp, press);
+    return VN100Data(quat, mag, acc, gyro, temp, press);
 }
 
 QuaternionData VN100::sampleQuaternion()
@@ -367,6 +421,7 @@ QuaternionData VN100::sampleQuaternion()
     }
 
     //Parse the data
+    data.quat_timestamp = TimestampTimer::getTimestamp();
     data.quat_x = strtod(recvString + indexStart + 1, &nextNumber);
     data.quat_y = strtod(nextNumber + 1, &nextNumber);
     data.quat_z = strtod(nextNumber + 1, &nextNumber);
@@ -391,6 +446,7 @@ MagnetometerData VN100::sampleMagnetometer()
     }
 
     //Parse the data
+    data.mag_timestamp = TimestampTimer::getTimestamp();
     data.mag_x = strtod(recvString + indexStart + 1, &nextNumber);
     data.mag_y = strtod(nextNumber + 1, &nextNumber);
     data.mag_z = strtod(nextNumber + 1, NULL);
@@ -414,6 +470,7 @@ AccelerometerData VN100::sampleAccelerometer()
     }
 
     //Parse the data
+    data.accel_timestamp = TimestampTimer::getTimestamp();
     data.accel_x = strtod(recvString + indexStart + 1, &nextNumber);
     data.accel_y = strtod(nextNumber + 1, &nextNumber);
     data.accel_z = strtod(nextNumber + 1, NULL);
@@ -437,6 +494,7 @@ GyroscopeData VN100::sampleGyroscope()
     }
 
     //Parse the data
+    data.gyro_timestamp = TimestampTimer::getTimestamp();
     data.gyro_x = strtod(recvString + indexStart + 1, &nextNumber);
     data.gyro_y = strtod(nextNumber + 1, &nextNumber);
     data.gyro_z = strtod(nextNumber + 1, NULL);
@@ -446,13 +504,43 @@ GyroscopeData VN100::sampleGyroscope()
 
 TemperatureData VN100::sampleTemperature()
 {
+    unsigned int indexStart = 0;
+    //Data result
     TemperatureData data;
+
+    //Look for the eleventh ',' in the string
+    //I can avoid the string control because it has already been done in sampleImpl
+    for(int i = 0; i < 11; i++)
+    {
+        while(indexStart < recvStringLength && recvString[indexStart] != ',') { indexStart++; }
+        indexStart++;
+    }
+
+    //Parse the data
+    data.temp_timestamp = TimestampTimer::getTimestamp();
+    data.temp = strtod(recvString + indexStart + 1, NULL);
+
     return data;
 }
 
 PressureData VN100::samplePressure()
 {
+    unsigned int indexStart = 0;
+    //Data result
     PressureData data;
+
+    //Look for the twelfth ',' in the string
+    //I can avoid the string control because it has already been done in sampleImpl
+    for(int i = 0; i < 12; i++)
+    {
+        while(indexStart < recvStringLength && recvString[indexStart] != ',') { indexStart++; }
+        indexStart++;
+    }
+
+    //Parse the data
+    data.press_timestamp = TimestampTimer::getTimestamp();
+    data.press = strtod(recvString + indexStart + 1, NULL);
+
     return data;
 }
 
@@ -493,7 +581,8 @@ bool VN100::sendStringCommand(std::string command)
     }
 
     //Wait some time
-    miosix::Thread::sleep(10);
+    //TODO dimension the time
+    miosix::Thread::sleep(1);
 
     return true;
 }
@@ -545,7 +634,7 @@ bool VN100::verifyChecksum(char * command, int length)
         //Calculate the checksum and verify (comparison between numerical checksum to avoid string bugs e.g 0856 != 865)
         if(strtol(command + checksumOffset + 1, NULL, 16) != calculateChecksum16((uint8_t *) (command + 1), checksumOffset - 1))
         {
-            TRACE("Different checksum: %s\n", command + checksumOffset + 1);
+            TRACE("Different checksum: %s\n", command);
             return false;
         }
     }
@@ -560,7 +649,7 @@ bool VN100::verifyChecksum(char * command, int length)
         //Calculate the checksum and verify (comparison between numerical checksum to avoid string bugs e.g 0856 != 865)
         if(strtol(command + checksumOffset + 1, NULL, 16) != calculateChecksum8((uint8_t *) (command + 1), checksumOffset - 1))
         {
-            TRACE("Different checksum: %s\n", command + checksumOffset + 1);
+            TRACE("Different checksum: %s\n", command);
             return false;
         }
     }
