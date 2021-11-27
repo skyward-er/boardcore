@@ -79,6 +79,7 @@ BusLoadSensor load(BAUD_RATE);
 int main()
 {
     Logging::startAsyncLogger();
+    
     {
         miosix::FastInterruptDisableLock dLock;
 
@@ -101,15 +102,10 @@ int main()
 
     Canbus::Canbus* c = new Canbus::Canbus(CAN1, cfg, bt);
 
-    Canbus::ID32Filter f1(0);
-    f1.addID(12345 << 3 | 1 << 2);
-    f1.addID(12345789 << 3 | 1 << 2);
 
-    // c->addFilter(f1);
+    Canbus::Mask32Filter f2(0, 0, 0, 0, 0, 0, 0);
 
-    Canbus::Mask32Filter f2(0, 0, 0);
-
-    // c->addFilter(f2);
+    c->addFilter(f2);
     c->init();
     CanPacket p;
     p.id     = 12345;
