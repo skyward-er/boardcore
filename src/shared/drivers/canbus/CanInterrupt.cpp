@@ -111,7 +111,6 @@ void __attribute__((used)) CAN_TXIRQHandlerImpl(int can_dev)
         CAN_TypeDef* can = bus->getCAN();
 
         CanTXResult res;
-        res.seq      = bus->getLastTXSeq();
         res.tme      = can->TSR & CAN_TSR_TME >> 26;
         res.err_code = (can->ESR | CAN_ESR_LEC) >> 4;
 
@@ -139,6 +138,8 @@ void __attribute__((used)) CAN_TXIRQHandlerImpl(int can_dev)
 
             can->TSR |= CAN_TSR_RQCP2;
         }
+
+        res.seq = bus->getTXMailboxSequence(res.mailbox);
 
         bus->getTXResultBuffer().IRQput(res, hppw);
         bus->wakeTXThread();

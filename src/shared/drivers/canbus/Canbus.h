@@ -101,7 +101,7 @@ public:
     void handleRXInterrupt(int fifo);
     void wakeTXThread();
 
-    uint32_t getLastTXSeq() { return tx_seq; }
+    uint32_t getTXMailboxSequence(uint8_t i) { return tx_mailbox_seq[i]; }
 
     IRQCircularBuffer<CanRXPacket, RX_BUF_SIZE>& getRXBuffer()
     {
@@ -124,7 +124,8 @@ private:
 
     CAN_TypeDef* can;
 
-    uint32_t tx_seq = 1;  // TX packet sequence number
+    uint32_t tx_seq = 1; // TX packet sequence number
+    uint32_t tx_mailbox_seq[3]; // Sequence number of the packets in the TX mailbox
 
     bool is_init         = false;
     uint8_t filter_index = 0;
