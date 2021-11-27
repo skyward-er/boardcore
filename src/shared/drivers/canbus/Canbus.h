@@ -43,12 +43,8 @@ class Canbus
     static constexpr float BR_ERR_WEIGHT = 10;
     static constexpr float SP_ERR_WEIGHT = 1;
     static constexpr float N_ERR_WEIGHT  = 1 / 50;
-
-#ifdef _ARCH_CORTEXM3_STM32
-    static constexpr uint8_t NUM_FILTER_BANKS = 14;
-#else
+    
     static constexpr uint8_t NUM_FILTER_BANKS = 28;
-#endif
 
 public:
     struct CanbusConfig

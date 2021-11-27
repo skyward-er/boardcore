@@ -97,13 +97,7 @@ Canbus::Canbus(CAN_TypeDef* can, CanbusConfig config, BitTiming bit_timing)
     {
         can_drivers[1] = this;
     }
-#ifdef STM32F10X_MD
-    // Enable rx pending interrupts
-    can->IER |= CAN_IER_FMPIE1;
 
-    NVIC_EnableIRQ(CAN1_RX1_IRQn);
-    NVIC_SetPriority(CAN1_RX1_IRQn, 14);
-#elif defined(_ARCH_CORTEXM4_STM32F4)
     // Enable rx pending interrupts
     can->IER |= CAN_IER_FMPIE0 | CAN_IER_FMPIE1 | CAN_IER_TMEIE;
 
@@ -115,9 +109,6 @@ Canbus::Canbus(CAN_TypeDef* can, CanbusConfig config, BitTiming bit_timing)
 
     NVIC_EnableIRQ(CAN1_TX_IRQn);
     NVIC_SetPriority(CAN1_TX_IRQn, 14);
-#else
-#error "Unsupported architecture"
-#endif
 }
 
 Canbus::BitTiming Canbus::calcBitTiming(AutoBitTiming auto_bt)
@@ -258,15 +249,6 @@ uint32_t Canbus::send(CanPacket packet)
 
     bool did_wait = false;
 
-#ifdef STM32F10X_MD
-    // Some uCs don't have an interrupt that signals when a mailbox is
-    // available, so we just have to wait and check
-    while ((can->TSR & CAN_TSR_TME) == 0)
-    {
-        did_wait = true;
-        Thread::sleep(1);
-    }
-#elif defined(_ARCH_CORTEXM4_STM32F4)
     {
         miosix::FastInterruptDisableLock d;
         // Wait until there is an empty mailbox available to use
@@ -281,10 +263,6 @@ uint32_t Canbus::send(CanPacket packet)
             }
         }
     }
-
-#else
-#error "Unsupported architecture"
-#endif
 
     if (did_wait)
     {
