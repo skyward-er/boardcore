@@ -320,8 +320,19 @@ uint32_t Canbus::send(CanPacket packet)
     {
         LOG_WARN_ASYNC(ls, "Had to wait for an empty mailbox!");
     }
+
     // Index of first empty mailbox
     uint8_t mbx_code = (can->TSR & CAN_TSR_CODE) >> 24;
+
+    if (mbx_code > 2)
+    {
+        LOG_ERR(ls, "Error! Invalid TSR_CODE!");
+        return 0;
+    }
+
+    uint32_t seq             = tx_seq++;
+    tx_mailbox_seq[mbx_code] = seq;
+
     LOG_INFO_ASYNC(ls, "TX BOX empty: [{}]. Sending!", mbx_code);
 
     CAN_TxMailBox_TypeDef* mailbox = &can->sTxMailBox[mbx_code];
@@ -357,7 +368,7 @@ uint32_t Canbus::send(CanPacket packet)
 
     LOG_INFO_ASYNC(ls, "Packet sent!");
 
-    return tx_seq++;
+    return seq;
 }
 
 void Canbus::handleRXInterrupt(int fifo)
