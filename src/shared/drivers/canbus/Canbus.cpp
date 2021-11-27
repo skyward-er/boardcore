@@ -49,15 +49,11 @@ Canbus::Canbus(CAN_TypeDef* can, CanbusConfig config, BitTiming bit_timing)
     PrintLogger ls = l.getChild("Constructor");
 
     // Enter init mode
-    LOG_INFO(ls, "Setting init mode...");
-
     can->MCR &= (~CAN_MCR_SLEEP);
     can->MCR |= CAN_MCR_INRQ;
 
     while ((can->MSR & CAN_MSR_INAK) == 0)
         ;
-
-    LOG_INFO(l, "Entered init mode.");
 
     if (config.awum)
     {
@@ -122,10 +118,6 @@ Canbus::Canbus(CAN_TypeDef* can, CanbusConfig config, BitTiming bit_timing)
 #else
 #error "Unsupported architecture"
 #endif
-
-    LOG_DEBUG(ls, "BTR = {:#04X}", can->BTR);
-    LOG_DEBUG(ls, "IER = {:#04X}", can->IER);
-    LOG_INFO(ls, "Constructor end.");
 }
 
 Canbus::BitTiming Canbus::calcBitTiming(AutoBitTiming auto_bt)
@@ -209,10 +201,6 @@ void Canbus::init()
     }
 
     PrintLogger ls = l.getChild("init");
-    LOG_INFO(ls, "Init start");
-
-    LOG_DEBUG(ls, "MSR (pre) = {:#04X}", can->MSR);
-    LOG_DEBUG(ls, "ESR (pre) = {:#04X}", can->ESR);
 
     can->FMR &= ~CAN_FMR_FINIT;  // Exit filter init mode
     can->MCR &= ~CAN_MCR_INRQ;   // Enable canbus
@@ -222,10 +210,6 @@ void Canbus::init()
     {
         Thread::sleep(1);
     }
-
-    LOG_DEBUG(ls, "MCR (post) = {:#04X}", can->MCR);
-    LOG_DEBUG(ls, "MSR (post) = {:#04X}", can->MSR);
-    LOG_DEBUG(ls, "ESR (post) = {:#04X}", can->ESR);
 
     LOG_INFO(ls, "Init done!");
 
@@ -259,32 +243,18 @@ bool Canbus::addFilter(Filter filter)
 
     ++filter_index;
 
-    LOG_DEBUG(ls, "Added filter (1/2): mode={}, scale={}, fifo={}",
-              filter.mode == FilterMode::ID ? "id" : "mask",
-              filter.scale == FilterScale::DUAL16 ? "dual16" : "single32",
-              filter.fifo);
-    LOG_DEBUG(ls,
-              "Added filter (2/2): FR1={:#04X}, FR2={:#04X}, FM1R={:#04X}, "
-              "FS1R={:#04X}, FFA1R={:#04X}, FA1R={:#04X}",
-              filter.FR1, filter.FR2, can->FM1R, can->FS1R, can->FFA1R,
-              can->FA1R);
-
     return true;
 }
 
 uint32_t Canbus::send(CanPacket packet)
 {
     PrintLogger ls = l.getChild("send");
-    ls.setEnabled(false);
 
     if (!is_init)
     {
         LOG_ERR(ls, "Canbus is not initialized!");
         return 0;
     }
-
-    LOG_INFO_ASYNC(ls, "Sending packet of len {}", packet.length);
-    LOG_DEBUG_ASYNC(ls, "TSR_TME = {:03b}", (can->TSR & CAN_TSR_TME) >> 26);
 
     bool did_wait = false;
 
@@ -333,14 +303,12 @@ uint32_t Canbus::send(CanPacket packet)
     uint32_t seq             = tx_seq++;
     tx_mailbox_seq[mbx_code] = seq;
 
-    LOG_INFO_ASYNC(ls, "TX BOX empty: [{}]. Sending!", mbx_code);
-
     CAN_TxMailBox_TypeDef* mailbox = &can->sTxMailBox[mbx_code];
 
     can->sTxMailBox[mbx_code].TIR &= CAN_TI0R_TXRQ;
     if (packet.ext)
     {
-    can->sTxMailBox[mbx_code].TIR |= ((packet.id & 0x1FFFFFFF) << 3);
+        can->sTxMailBox[mbx_code].TIR |= ((packet.id & 0x1FFFFFFF) << 3);
         can->sTxMailBox[mbx_code].TIR |= 1 << 2;
     }
     else
@@ -367,14 +335,9 @@ uint32_t Canbus::send(CanPacket packet)
             mailbox->TDHR |= packet.data[i] << (i - 4) * 8;
         }
     }
-    LOG_DEBUG_ASYNC(
-        ls, "Mailbox: TIR={:#04X}, TDTR={:#04X} TDLR={:#04X}, TDHR={:#04X}",
-        mailbox->TIR, mailbox->TDTR, mailbox->TDLR, mailbox->TDHR);
 
     // Finally send the data
     can->sTxMailBox[mbx_code].TIR |= CAN_TI0R_TXRQ;
-
-    LOG_INFO_ASYNC(ls, "Packet sent!");
 
     return seq;
 }
