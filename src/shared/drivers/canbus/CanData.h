@@ -42,6 +42,7 @@ struct CanTXResult
 struct CanRXStatus
 {
     uint8_t rx_status;
+    uint8_t fifo;
     uint8_t rx_err_counter = 0;
     uint8_t err_code;
     bool fifo_overrun;
@@ -52,7 +53,7 @@ struct CanPacket
 {
     uint32_t timestamp = 0;
 
-    uint16_t id;
+    uint32_t id;
     bool ext = false;
 
     bool rtr = false;

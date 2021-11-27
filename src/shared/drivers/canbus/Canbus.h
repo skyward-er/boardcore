@@ -53,12 +53,17 @@ class Canbus
 public:
     struct CanbusConfig
     {
-        bool loopback = false;
-        bool awum     = true;
-        bool nart     = false;
-        bool abom     = true;
-        bool rflm     = true;
-        bool txfp     = true;
+        uint8_t loopback = 0;  // 1: Loopback mode enabled
+        uint8_t awum     = 1;  // Automatic wakeup (1: automatic wakeup upon new
+                               // message received)
+        uint8_t nart =
+            0;  // No auto retransmission (0: packets are retrasmitted until
+                // success, 1: only one transfer attempt)
+        uint8_t abom = 1;  // Automatic bus off management (1: automatically
+                           // recovers from bus-off state)
+        uint8_t rflm = 1;  // Receive fifo locked (0: new messages overwrite
+                           // last ones, 1: new message discarded)
+        uint8_t txfp = 0;  // TX Fifo priority (0: identifier, 1: chronological)
     };
 
     /**
@@ -118,8 +123,10 @@ public:
 private:
     static BitTiming calcBitTiming(AutoBitTiming config);
 
+    // Stores RX packets
     IRQCircularBuffer<CanRXPacket, RX_BUF_SIZE> buf_rx_packets;
 
+    // Store results of a TX request
     IRQCircularBuffer<CanTXResult, STATUS_BUF_SIZE> buf_tx_result;
 
     CAN_TypeDef* can;
@@ -127,10 +134,9 @@ private:
     uint32_t tx_seq = 1; // TX packet sequence number
     uint32_t tx_mailbox_seq[3]; // Sequence number of the packets in the TX mailbox
 
-    bool is_init         = false;
+    uint8_t is_init      = false;
     uint8_t filter_index = 0;
-
-    Thread* waiting = nullptr;
+    Thread* waiting    = nullptr;
 };
 }  // namespace Canbus
 }  // namespace Boardcore

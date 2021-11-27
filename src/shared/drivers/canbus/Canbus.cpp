@@ -338,8 +338,16 @@ uint32_t Canbus::send(CanPacket packet)
     CAN_TxMailBox_TypeDef* mailbox = &can->sTxMailBox[mbx_code];
 
     can->sTxMailBox[mbx_code].TIR &= CAN_TI0R_TXRQ;
+    if (packet.ext)
+    {
     can->sTxMailBox[mbx_code].TIR |= ((packet.id & 0x1FFFFFFF) << 3);
-    can->sTxMailBox[mbx_code].TIR |= (packet.ext ? 1 : 0) << 2;
+        can->sTxMailBox[mbx_code].TIR |= 1 << 2;
+    }
+    else
+    {
+        can->sTxMailBox[mbx_code].TIR |= ((packet.id & 0x7FF) << 21);
+    }
+
     can->sTxMailBox[mbx_code].TIR |= (packet.rtr ? 1 : 0) << 1;
 
     mailbox->TDTR = (packet.length & 0xF);
@@ -374,7 +382,7 @@ uint32_t Canbus::send(CanPacket packet)
 void Canbus::handleRXInterrupt(int fifo)
 {
     CanRXStatus status;
-
+    status.fifo = fifo;
     volatile uint32_t* RFR;
     CAN_FIFOMailBox_TypeDef* mailbox;
 
