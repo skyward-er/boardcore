@@ -126,8 +126,7 @@ Canbus::BitTiming Canbus::calcBitTiming(AutoBitTiming auto_bt)
     // settings
     for (uint8_t N = 3; N <= 25; N++)
     {
-        // Calc optimal baud rate pstatuscaler by minimizing |f_target -
-        // f_real|, where f_real = apbclk / ((BRP + 1)*N)
+        // Calc optimal baud rate prescaler
         cfg_iter.BRP = std::max(
             std::min((int)roundf(apbclk * 1.0f / (auto_bt.baud_rate * N) - 1),
                      1 << 10),
