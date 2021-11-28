@@ -173,4 +173,4 @@ private:
                       otherwise */
 };
 
-// namespace Boardcore
+}  // namespace Boardcore
