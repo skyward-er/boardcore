@@ -228,14 +228,14 @@ private:
     uint8_t id_cnt = 0;
 };
 
-struct ID16Filter : public FilterBank
+struct ID16FilterBank : public FilterBank
 {
     /**
      * @brief Construct a new filter matching exactly 16 bits identifiers
      *
      * @param fifo Where to store the filtered messages (fifo 0 or fifo 1)
      */
-    ID16Filter(uint8_t fifo)
+    ID16FilterBank(uint8_t fifo)
         : FilterBank(FilterScale::DUAL16, FilterMode::ID, fifo)
     {
     }
