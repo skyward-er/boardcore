@@ -1,4 +1,4 @@
-/* Copyright (c) 2021 Skyward Experimental Rocketry
+/* Copyright (c) 2020 Skyward Experimental Rocketry
  * Author: Alberto Nidasio
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -20,36 +20,46 @@
  * THE SOFTWARE.
  */
 
-#pragma once
+#include <drivers/spi/SPI.h>
+#include <miosix.h>
 
-#include <stdint.h>
+using namespace miosix;
 
-struct ADS131M04Data
+GpioPin sckPin  = GpioPin(GPIOE_BASE, 4);
+GpioPin misoPin = GpioPin(GPIOE_BASE, 2);
+GpioPin mosiPin = GpioPin(GPIOE_BASE, 5);
+GpioPin csPin   = GpioPin(GPIOE_BASE, 6);
+
+uint8_t counter = 0;
+
+int main()
 {
-    uint64_t timestamp;
-    float voltage[4];
+    // Enable clock for SPI4 interface
+    RCC->APB2ENR |= RCC_APB2ENR_SPI4EN;
 
-    ADS131M04Data() : ADS131M04Data{0, 0, 0, 0, 0} {}
+    // Setup gpio pins
+    csPin.mode(Mode::ALTERNATE);
+    csPin.alternateFunction(5);
+    sckPin.mode(Mode::ALTERNATE);
+    sckPin.alternateFunction(5);
+    misoPin.mode(Mode::ALTERNATE);
+    misoPin.alternateFunction(5);
+    mosiPin.mode(Mode::ALTERNATE);
+    mosiPin.alternateFunction(5);
 
-    ADS131M04Data(uint64_t timestamp, float voltageCh1, float voltageCh2,
-                  float voltageCh3, float voltageCh4)
-        : timestamp(timestamp)
+    // Setup spi as a slave
+    SPI spi(SPI4);
+    spi.reset();
+    spi.enable();
+
+    printf("Slave started\n");
+
+    while (true)
     {
-        voltage[0] = voltageCh1;
-        voltage[1] = voltageCh2;
-        voltage[2] = voltageCh3;
-        voltage[3] = voltageCh4;
+        spi.getSpi()->DR = counter;
+        counter++;
+        // Wait until Tx buffer is empty and until the peripheral is still busy
+        while ((spi.getSpi()->SR & SPI_SR_TXE) == 0)
+            ;
     }
-
-    static std::string header()
-    {
-        return "timestamp,voltage_channel_1,voltage_channel_2,voltage_channel_"
-               "3,voltage_channel_4";
-    }
-
-    void print(std::ostream& os) const
-    {
-        os << timestamp << "," << voltage[0] << "," << voltage[1] << ","
-           << voltage[2] << "," << voltage[3] << "\n";
-    }
-};
+}

@@ -41,7 +41,7 @@ void ADS131M04::setOversamplingRatio(OversamplingRatio ratio)
                    REG_CLOCK_OSR);
 }
 
-bool ADS131M04::init() {}
+bool ADS131M04::init() { return true; }
 
 template <int C>
 void ADS131M04::setChannelPGA(PGA gain)
@@ -80,8 +80,8 @@ void ADS131M04::setChannelOffset(uint32_t offset)
         regLSB = Registers::REG_CH0_OCAL_LSB;
     }
 
-    writeRegister(regMSB, static_cast<uint16_t>(offset)) >> 16);
-    writeRegister(regLSB, static_cast<uint16_t>(offset)) << 8);
+    writeRegister(regMSB, static_cast<uint16_t>(offset) >> 16);
+    writeRegister(regLSB, static_cast<uint16_t>(offset) << 8);
 }
 
 template <int C>
@@ -139,10 +139,7 @@ void ADS131M04::disableChannel()
     changeRegister(Registers::REG_CLOCK, 0 << (C + 8), 1 << (C + 8));
 }
 
-bool ADS131M04::selfTest()
-{
-    // TODO
-}
+bool ADS131M04::selfTest() { return true; }
 
 ADS131M04Data ADS131M04::sampleImpl()
 {
@@ -218,5 +215,5 @@ void ADS131M04::changeRegister(Registers reg, uint16_t newValue, uint16_t mask)
     regValue |= newValue;
 
     // Write the new value
-    writeRegister(Registers::REG_CLOCK, regValue);
+    writeRegister(reg, regValue);
 }

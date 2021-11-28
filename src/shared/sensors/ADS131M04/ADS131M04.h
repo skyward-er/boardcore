@@ -1,4 +1,4 @@
-/* Copyright (c) 2020 Skyward Experimental Rocketry
+/* Copyright (c) 2021 Skyward Experimental Rocketry
  * Author: Alberto Nidasio
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -200,8 +200,10 @@ private:
                                    17.8814e-9,  8.9407e-9,  4.4703e-9,
                                    2.2352e-9,   1.1176e-9};
 
-    SPISlave spiSlave;
     PGA channelsPGAGain[4];
+
+protected:
+    SPISlave spiSlave;
 };
 
 namespace ADS131M04RegisterBitMasks
@@ -257,4 +259,5 @@ constexpr uint16_t REG_CFG_CD_EN    = 1;
 constexpr uint16_t REG_CHx_CFG_PHASE     = 0x3FF << 6;
 constexpr uint16_t REG_CHx_CFG_DCBLK_DIS = 1 << 2;
 constexpr uint16_t REG_CHx_CFG_MUX       = 3;
-};  // namespace ADS131M04RegisterBitMasks
+
+}  // namespace ADS131M04RegisterBitMasks

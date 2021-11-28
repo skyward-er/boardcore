@@ -92,6 +92,8 @@ public:
 
     SPI(SPIType *spi);
 
+    SPIType *getSpi();
+
     /**
      * @brief Resets the peripheral configuration.
      */
@@ -106,6 +108,10 @@ public:
      * @brief Disables the peripheral.
      */
     void disable();
+
+    void set8BitFrameFormat();
+
+    void set16BitFrameFormat();
 
     void enableSoftwareSlaveManagement();
 
@@ -230,14 +236,12 @@ public:
     void transfer(uint16_t *data, size_t size);
 
 private:
-    void set8BitFrameFormat();
-
-    void set16BitFrameFormat();
-
     SPIType *spi;
 };
 
 inline SPI::SPI(SPIType *spi) : spi(spi) {}
+
+inline SPIType *SPI::getSpi() { return spi; }
 
 inline void SPI::reset()
 {

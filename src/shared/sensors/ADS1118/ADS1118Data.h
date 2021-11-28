@@ -26,7 +26,7 @@
 
 struct ADS1118Data : public ADCData
 {
-    ADS1118Data() : ADCData{0, 0, 0.0} {}
+    ADS1118Data() : ADCData{0, 0, 0} {}
 
     ADS1118Data(uint64_t t, uint8_t channel_id, float voltage)
         : ADCData{t, channel_id, voltage}

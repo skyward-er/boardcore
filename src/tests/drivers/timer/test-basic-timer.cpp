@@ -19,3 +19,35 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
+
+#include <drivers/timer/GeneralPurposeTimer.h>
+#include <drivers/timer/TimerUtils.h>
+#include <miosix.h>
+
+using namespace miosix;
+
+GeneralPurposeTimer<uint16_t> timer(TIM4);
+constexpr int frequency = 123456;
+GpioPin timerPin        = GpioPin(GPIOB_BASE, 7);
+
+int main()
+{
+    RCC->APB2ENR |= RCC_APB2ENR_TIM1EN;
+    timerPin.mode(Mode::ALTERNATE);
+    timerPin.alternateFunction(2);
+
+    timer.reset();
+    timer.setPrescaler(
+        TimerUtils::computePrescalerValue(timer.getTimer(), frequency * 4));
+    timer.setAutoReloadRegister(100);
+    timer.setOutputCompareMode<2>(
+        GeneralPurposeTimer<uint16_t>::OutputCompareMode::TOGGLE);
+    timer.generateUpdate();
+    timer.setCaptureCompareRegister<2>(100);
+    timer.enableCaptureCompareOutput<2>();
+    timer.enableCaptureCompareComplementaryOutput<2>();
+    timer.enable();
+
+    while (true)
+        delayMs(1000);
+}

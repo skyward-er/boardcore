@@ -312,13 +312,11 @@ inline DMAStream::DMAStream(DMA_Stream_TypeDef *dmaStream)
         IFCR_MASK = 0;
         LOG_CRIT(logger, "Could not recognize DMA stream");
     }
-
-    printf("MASK: 0x%lX\n", IFCR_MASK);
 }
 
-DMA_TypeDef *DMAStream::getController() { return dmaController; }
+inline DMA_TypeDef *DMAStream::getController() { return dmaController; }
 
-DMA_Stream_TypeDef *DMAStream::getStream() { return dmaStream; }
+inline DMA_Stream_TypeDef *DMAStream::getStream() { return dmaStream; }
 
 inline void DMAStream::reset()
 {
@@ -407,6 +405,15 @@ inline void DMAStream::setMemoryDataSize(MemoryDataSize size)
     dmaStream->CR |= static_cast<uint32_t>(size);
 }
 
+inline void DMAStream::setPeripheralDataSize(PeripheralDataSize size)
+{
+    // First clear the configuration
+    dmaStream->CR &= ~DMA_SxCR_PSIZE;
+
+    // Set the new value
+    dmaStream->CR |= static_cast<uint32_t>(size);
+}
+
 inline void DMAStream::enableMemoryIncrement()
 {
     dmaStream->CR |= DMA_SxCR_MINC;
@@ -450,12 +457,12 @@ inline void DMAStream::setDMAFlowController()
     dmaStream->CR &= ~DMA_SxCR_PFCTRL;
 }
 
-inline void DMAStream::disableTransferCompleteInterrupt()
+inline void DMAStream::enableTransferCompleteInterrupt()
 {
     dmaStream->CR |= DMA_SxCR_TCIE;
 }
 
-inline void DMAStream::enableTransferCompleteInterrupt()
+inline void DMAStream::disableTransferCompleteInterrupt()
 {
     dmaStream->CR &= ~DMA_SxCR_TCIE;
 }
