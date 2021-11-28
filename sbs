@@ -49,12 +49,12 @@ configure() {
     show_found_deps
     config_ccache= && [ $ccache_found ] && config_ccache="-DCMAKE_C_COMPILER_LAUNCHER=ccache -DCMAKE_CXX_COMPILER_LAUNCHER=ccache"
     config_toolchain="-DCMAKE_TOOLCHAIN_FILE=$sbs_base/libs/miosix-kernel/miosix/_tools/toolchain.cmake"
-    config_ninja= && [ $ninja_found ] && config_ninja="-GNinja"
+    config_generator="-GUnix Makefiles" && [ $ninja_found ] && config_generator="-GNinja"
     cmake \
         -B"$build_dir" \
         $config_ccache \
         $config_toolchain \
-        $config_ninja \
+        $config_generator \
         $config_buildtype \
         $config_verbose \
         "$source_dir"
