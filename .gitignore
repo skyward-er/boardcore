@@ -24,8 +24,6 @@ build
 *.sublime-workspace
 *.sublime-project
 
-.vscode/*
-
 store.json
 **/generated/
 core

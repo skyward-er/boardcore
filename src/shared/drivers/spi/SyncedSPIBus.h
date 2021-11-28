@@ -27,6 +27,9 @@
 
 using miosix::FastMutex;
 
+namespace Boardcore
+{
+
 /**
  * @brief Extension of SPIBus to sync access to the bus between multiple threads
  */
@@ -48,3 +51,5 @@ class SyncedSPIBus : public SPIBus
 private:
     FastMutex mutex;
 };
+
+}  // namespace Boardcore

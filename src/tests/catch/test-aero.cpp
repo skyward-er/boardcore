@@ -24,8 +24,10 @@
 #include "catch-tests-entry.cpp"
 #endif
 
-#include <utils/testutils/catch.hpp>
+#include <catch2/catch.hpp>
 #include "utils/aero/AeroUtils.h"
+
+using namespace Boardcore;
 
 TEST_CASE("[AeroUtils] mslTemperature")
 {

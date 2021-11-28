@@ -20,8 +20,7 @@
  * THE SOFTWARE.
  */
 
-#ifndef SRC_SHARED_DRIVERS_ADC_AD7994_H
-#define SRC_SHARED_DRIVERS_ADC_AD7994_H
+#pragma once
 
 #include <Debug.h>
 #include <miosix.h>
@@ -219,5 +218,3 @@ private:
 
     AD7994Sample samples[4];
 };
-
-#endif /* SRC_SHARED_DRIVERS_ADC_AD7994_H */

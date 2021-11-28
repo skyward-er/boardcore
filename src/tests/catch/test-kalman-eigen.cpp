@@ -26,13 +26,12 @@
 
 #define EIGEN_RUNTIME_NO_MALLOC
 
-#include <src/tests/kalman/test-kalman-data.h>
-
 #include <iostream>
-#include <utils/testutils/catch.hpp>
+#include <catch2/catch.hpp>
+#include <kalman/KalmanEigen.h>
+#include "../kalman/test-kalman-data.h"
 
-#include "kalman/KalmanEigen.h"
-
+using namespace Boardcore;
 using namespace Eigen;
 
 static const uint8_t STATES_DIM  = 3;
@@ -99,7 +98,7 @@ TEST_CASE("Update test")
 
         if (!filter.correct(y))
         {
-            FAIL("Correction failed at iteration : %d \n", i);
+            FAIL("Correction failed at iteration : " << i << " \n");
         }
 
         if (filter.getState()(0, 0) != Approx(STATE_1[i]).epsilon(0.01))

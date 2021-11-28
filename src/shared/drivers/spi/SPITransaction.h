@@ -24,6 +24,9 @@
 
 #include "SPIBusInterface.h"
 
+namespace Boardcore
+{
+
 /**
  * @brief Provides high-level access to the SPI Bus for a single transaction.
  * To make sure the bus is properly configured for the provided slave, you have
@@ -160,3 +163,5 @@ private:
     SPIBusInterface& bus;
     GpioType cs;
 };
+
+}  // namespace Boardcore

@@ -24,6 +24,9 @@
 
 #include "sensors/SensorData.h"
 
+namespace Boardcore
+{
+
 /**
  * @brief Structure to handle current sense data.
  */
@@ -42,3 +45,5 @@ struct CurrentSensorData : public ADCData
            << current << "\n";
     }
 };
+
+}  // namespace Boardcore

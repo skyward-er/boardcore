@@ -50,6 +50,7 @@
 #include "magnetometer-data.h"
 #endif
 
+using namespace Boardcore;
 using namespace miosix;
 
 int main()

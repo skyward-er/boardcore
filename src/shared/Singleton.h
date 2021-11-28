@@ -20,8 +20,10 @@
  * THE SOFTWARE.
  */
 
-#ifndef SINGLETON_H
-#define SINGLETON_H
+#pragma once
+
+namespace Boardcore
+{
 
 /**
  * WARNING: deriving from this class is not enough to make a singleton,
@@ -56,4 +58,4 @@ private:
     Singleton& operator=(const Singleton&) = delete;
 };
 
-#endif  // SINGLETON_H
+}  // namespace Boardcore

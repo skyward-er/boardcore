@@ -23,8 +23,7 @@
 
 // This work is derived from https://www.state-machine.com by Miro Samek.
 
-#ifndef SRC_SHARED_EVENTS_HSM_H
-#define SRC_SHARED_EVENTS_HSM_H
+#pragma once
 
 #include "ActiveObject.h"
 #include "Debug.h"
@@ -33,6 +32,9 @@
 #include "utils/collections/SyncQueue.h"
 
 #include <assert.h>
+
+namespace Boardcore
+{
 
 #define HSM_MAX_NEST_DEPTH 5
 
@@ -416,4 +418,5 @@ private:
         this->temp  = target;
     }
 };
-#endif  // SRC_SHARED_EVENTS_HSM_H
+
+}  // namespace Boardcore

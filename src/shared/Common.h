@@ -20,8 +20,7 @@
  * THE SOFTWARE.
  */
 
-#ifndef COMMON_H
-#define COMMON_H
+#pragma once
 
 #include <cstdint>
 #include <cstdio>
@@ -47,5 +46,3 @@
 #include "Debug.h"
 
 #define UNUSED(x) (void)(x)
-
-#endif

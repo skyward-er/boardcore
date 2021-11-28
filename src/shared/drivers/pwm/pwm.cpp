@@ -26,6 +26,9 @@
 using namespace std;
 using namespace miosix;
 
+namespace Boardcore
+{
+
 PWM::PWM(Timer timer, unsigned int frequency,
          unsigned int duty_cycle_resolution)
     : timer(timer), frequency(frequency),
@@ -309,3 +312,5 @@ void PWM::stop()
         started = false;
     }
 }
+
+}  // namespace Boardcore

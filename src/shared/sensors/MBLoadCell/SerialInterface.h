@@ -32,6 +32,9 @@
 #include "filesystem/file_access.h"
 #include "miosix.h"
 
+namespace Boardcore
+{
+
 /**
  * @brief Creates and opens a serial port on the board and provides templated
  * "sendData" and "recvData" functions in order to send and receive any data
@@ -169,3 +172,5 @@ private:
     bool initialized;  /**< True if init() already called successfully, false
                       otherwise */
 };
+
+// namespace Boardcore

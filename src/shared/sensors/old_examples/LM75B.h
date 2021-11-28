@@ -23,8 +23,7 @@
 // TODO sistemare la codifica di {0x80, 0x00}, che
 // per qualche ragione, diventa positiva
 
-#ifndef LM75B_H
-#define LM75B_H
+#pragma once
 
 #include "Sensor.h"
 #include "math/Stats.h"
@@ -226,5 +225,3 @@ private:
         }
     }
 };
-
-#endif

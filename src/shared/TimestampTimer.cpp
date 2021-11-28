@@ -24,6 +24,9 @@
 
 #include <Debug.h>
 
+namespace Boardcore
+{
+
 namespace TimestampTimer
 {
 
@@ -68,3 +71,5 @@ void enableTimestampTimer(uint8_t prescaler)
 }
 
 }  // namespace TimestampTimer
+
+}  // namespace Boardcore

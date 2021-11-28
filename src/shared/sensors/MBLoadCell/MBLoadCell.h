@@ -33,6 +33,9 @@
 #include "SerialInterface.h"
 #include "miosix.h"
 
+namespace Boardcore
+{
+
 /**
  * @brief driver in order to communicate with a TLB digital-analog weight
  * transmitter attached to a loadcell
@@ -151,3 +154,5 @@ private:
     SerialInterface *serial;  ///< pointer to the instance of the serial port
                               ///< used for the connection
 };
+
+}  // namespace Boardcore

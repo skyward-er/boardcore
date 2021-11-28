@@ -39,6 +39,9 @@
 
 using std::to_string;
 
+namespace Boardcore
+{
+
 /**
  * @brief Converts tick in milliseconds to the HH:MM:SS format
  */
@@ -331,3 +334,5 @@ private:
     TextView tv_rx_txt_pps{"PPS"};
     TextView tv_rx_txt_time_since_last_rx{"No RX dt"};
 };
+
+}  // namespace Boardcore

@@ -29,6 +29,9 @@ using ctrlPin1 = miosix::Gpio<GPIOC_BASE, 1>;  ///< control R/W pin 1
 using ctrlPin2 = miosix::Gpio<GPIOC_BASE, 2>;  ///< control R/W pin 2
 using out1     = miosix::Gpio<GPIOC_BASE, 8>;  ///< out1 for the first setpoint1
 
+namespace Boardcore
+{
+
 MBLoadCell::MBLoadCell(LoadCellModes mode, int serialPortNum,
                        int baudrate = 2400)
 {
@@ -287,3 +290,5 @@ void MBLoadCell::receive(T *buf)
     ctrlPin2::low();
     serial->recvData(buf);
 }
+
+}  // namespace Boardcore

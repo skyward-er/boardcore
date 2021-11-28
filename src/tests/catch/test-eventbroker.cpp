@@ -27,11 +27,12 @@
 
 #include <miosix.h>
 #include <cstdio>
-#include <utils/testutils/catch.hpp>
+#include <catch2/catch.hpp>
 
 #include "events/EventBroker.h"
 #include "utils/testutils/TestHelper.h"
 
+using namespace Boardcore;
 using miosix::getTick;
 using miosix::Thread;
 

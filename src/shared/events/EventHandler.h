@@ -20,14 +20,16 @@
  * THE SOFTWARE.
  */
 
-#ifndef SRC_SHARED_EVENTS_EVENT_HANDLER_H
-#define SRC_SHARED_EVENTS_EVENT_HANDLER_H
+#pragma once
 
 #include "ActiveObject.h"
 #include "events/Event.h"
 #include "utils/collections/SyncQueue.h"
 
 #include "Debug.h"
+
+namespace Boardcore
+{
 
 class EventHandlerBase
 {
@@ -78,4 +80,4 @@ protected:
     SynchronizedQueue<Event> eventList;
 };
 
-#endif /* SRC_SHARED_EVENTS_EVENT_HANDLER_H */
+}  // namespace Boardcore

@@ -32,6 +32,7 @@
 #include "math/Stats.h"
 #include <miosix.h>
 
+using namespace Boardcore;
 using namespace miosix;
 using namespace std;
 

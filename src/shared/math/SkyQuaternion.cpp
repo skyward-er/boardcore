@@ -26,6 +26,9 @@
 
 using namespace std;
 
+namespace Boardcore
+{
+
 SkyQuaternion::SkyQuaternion() {}
 
 Vector4f SkyQuaternion::eul2quat(Vector3f degeul)  // ZYX rotation
@@ -189,3 +192,5 @@ Vector4f SkyQuaternion::quatProd(const Vector4f q1, const Vector4f q2)
 
     return quater;
 }
+
+}  // namespace Boardcore

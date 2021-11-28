@@ -20,12 +20,14 @@
  * THE SOFTWARE.
  */
 
-#ifndef SKYWARD_FAULT_CTRL_H
-#define SKYWARD_FAULT_CTRL_H
+#pragma once
 
 #include <Common.h>
 #include <Singleton.h>
 #include "FaultCounterData.h"
+
+namespace Boardcore
+{
 
 class FaultCounterMgr : public Singleton<FaultCounterMgr>
 {
@@ -79,4 +81,4 @@ private:
 
 #define sFaultCounterMgr FaultCounterMgr::getInstance()
 
-#endif /* ifndef SKYWARD_FAULT_CTRL_H */
+}  // namespace Boardcore

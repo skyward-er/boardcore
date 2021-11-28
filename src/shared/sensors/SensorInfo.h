@@ -25,6 +25,9 @@
 #include <atomic>
 #include <functional>
 
+namespace Boardcore
+{
+
 /**
  * @brief Sensors information struct needed by the SensorManager.
  *
@@ -55,3 +58,5 @@ struct SensorInfo
     {
     }
 };
+
+}  // namespace Boardcore

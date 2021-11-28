@@ -24,6 +24,9 @@
 
 #include "TimestampTimer.h"
 
+namespace Boardcore
+{
+
 const BME280::BME280Config BME280::BME280_DEFAULT_CONFIG = {
     SKIPPED, 0, 0, SLEEP_MODE, SKIPPED, SKIPPED, 0, FILTER_OFF, STB_TIME_0_5};
 
@@ -390,3 +393,5 @@ uint32_t BME280::compensateHumidity(int32_t adc_H)
     v_x1_u32r = (v_x1_u32r > 419430400 ? 419430400 : v_x1_u32r);
     return (uint32_t)(v_x1_u32r >> 12);
 }
+
+}  // namespace Boardcore

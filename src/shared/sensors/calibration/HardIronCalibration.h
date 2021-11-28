@@ -27,6 +27,9 @@
 #include "Calibration.h"
 #include "sensors/SensorData.h"
 
+namespace Boardcore
+{
+
 /*
  * The Hard-iron calibration removes the bias due to the so named Hard-Iron
  * distortion of the magnetic field. Unlike bias calibration, 6-parameter
@@ -113,3 +116,4 @@ private:
     unsigned numSamples;
 };
 
+}  // namespace Boardcore

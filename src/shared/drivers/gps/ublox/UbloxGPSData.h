@@ -24,6 +24,9 @@
 
 #include "sensors/SensorData.h"
 
+namespace Boardcore
+{
+
 struct UbloxGPSData : public GPSData
 {
     static std::string header()
@@ -40,3 +43,5 @@ struct UbloxGPSData : public GPSData
            << (int)num_satellites << "," << (int)fix << "\n";
     }
 };
+
+}  // namespace Boardcore

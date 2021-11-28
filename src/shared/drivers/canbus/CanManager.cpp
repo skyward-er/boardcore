@@ -25,6 +25,9 @@
 using namespace miosix;
 using namespace std;
 
+namespace Boardcore
+{
+
 CanBus *CanManager::getBus(uint32_t id)
 {
     if (id >= bus.size())
@@ -168,3 +171,5 @@ bool CanManager::delHWFilter(uint16_t id, uint32_t can_id)
 
     return true;
 }
+
+}  // namespace Boardcore

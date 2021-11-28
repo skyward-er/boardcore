@@ -19,10 +19,13 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
-#ifndef VEC3_H
-#define VEC3_H
+
+#pragma once
 
 #include <cmath>
+
+namespace Boardcore
+{
 
 class Vec3
 {
@@ -135,4 +138,4 @@ private:
     float x, y, z;
 };
 
-#endif /* ifndef VEC3_H */
+}  // namespace Boardcore

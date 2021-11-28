@@ -70,6 +70,7 @@
 #define BAUDRATE 2400
 
 using namespace miosix;
+using namespace Boardcore;
 
 // control pins for the max485 attached to serial 1
 using ctrlPin1_s1 = miosix::Gpio<GPIOC_BASE, 8>;

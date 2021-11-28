@@ -24,6 +24,7 @@
 #include "scheduler/TaskScheduler.h"
 #include "Common.h"
 
+using namespace Boardcore;
 using namespace miosix;
 
 void task5hz()

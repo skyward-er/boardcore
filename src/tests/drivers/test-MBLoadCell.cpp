@@ -27,6 +27,7 @@
 #include "string.h"
 #include "utils/ButtonHandler.h"
 
+using namespace Boardcore;
 using namespace miosix;
 
 using button              = miosix::Gpio<GPIOA_BASE, 0>;  ///< user button

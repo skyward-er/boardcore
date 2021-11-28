@@ -25,6 +25,7 @@
 #include <drivers/canbus/CanManager.h>
 #include <drivers/canbus/CanUtils.h>
 
+using namespace Boardcore;
 using namespace std;
 using namespace miosix;
 

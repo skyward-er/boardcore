@@ -20,10 +20,12 @@
  * THE SOFTWARE.
  */
 
-#ifndef SENSOR_SPI_H
-#define SENSOR_SPI_H
+#pragma once
 
 #include <Common.h>
+
+namespace Boardcore
+{
 
 class SPIRequest;
 
@@ -138,4 +140,4 @@ private:
     std::vector<uint8_t> fromPeripheral;
 };
 
-#endif  // SENSOR_SPI_H
+}  // namespace Boardcore

@@ -23,6 +23,9 @@
 #pragma once
 #include <fmt/format.h>
 
+namespace Boardcore
+{
+
 /**
  * @brief enumeration of all the modes supported by the driver
  */
@@ -229,3 +232,5 @@ struct DataAsciiRequest
         return str;
     }
 };
+
+} // namespace Boardcore

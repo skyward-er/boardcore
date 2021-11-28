@@ -20,12 +20,14 @@
  * THE SOFTWARE.
  */
 
-#ifndef CANUTILS_H
-#define CANUTILS_H
+#pragma once
 
 #include <Common.h>
 #include <string>
 #include <ostream>
+
+namespace Boardcore
+{
 
 #define CAN_MAX_PAYLOAD 8
 #define CAN_MAX_LEN     16
@@ -122,4 +124,4 @@ struct CanStatus {
     }
 };
 
-#endif /* CANUTILS_H */
+}  // namespace Boardcore

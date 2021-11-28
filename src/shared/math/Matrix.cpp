@@ -22,6 +22,9 @@
 
 #include "Matrix.h"
 
+namespace Boardcore
+{
+
 /** Identity matrix constructor */
 Mat4::Mat4()
 {
@@ -208,3 +211,5 @@ void Mat3::setTranspose(const Mat3 &m)
     d[7] = m.d[5];
     d[8] = m.d[8];
 }
+
+}  // namespace Boardcore

@@ -24,6 +24,9 @@
 
 #include "sensors/SensorData.h"
 
+namespace Boardcore
+{
+
 struct BME280Data : public TemperatureData,
                     public PressureData,
                     public HumidityData
@@ -53,3 +56,5 @@ struct BME280Data : public TemperatureData,
            << press << "," << humid_timestamp << "," << humid << "\n";
     }
 };
+
+}  // namespace Boardcore

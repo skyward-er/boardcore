@@ -28,6 +28,9 @@
 #include "res/respect.h"
 #include "utils/gui/ImageView.h"
 
+namespace Boardcore
+{
+
 struct RespectScreen
 {
     RespectScreen()
@@ -37,3 +40,5 @@ struct RespectScreen
 
     ImageView root{&respect};
 };
+
+}  // namespace Boardcore

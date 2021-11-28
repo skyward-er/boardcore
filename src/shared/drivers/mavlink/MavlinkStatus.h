@@ -22,9 +22,12 @@
 
 #pragma once
 
-#include <mavlink_skyward_lib/mavlink_lib/mavlink_types.h>
+#include <mavlink_lib/mavlink_types.h>
 #include <ostream>
 #include <string>
+
+namespace Boardcore
+{
 
 struct MavlinkStatus
 {
@@ -59,3 +62,5 @@ struct MavlinkStatus
            << mav_stats.packet_rx_drop_count << "\n";
     }
 };
+
+}  // namespace Boardcore

@@ -25,6 +25,9 @@
 #include "events/EventBroker.h"
 #include "events/EventHandler.h"
 
+namespace Boardcore
+{
+
 /**
  * @brief Helper class to count how many events are sent to the topic(s) it is
  * registered to.
@@ -112,3 +115,5 @@ private:
     unsigned int total_count = 0;
     uint8_t last_event;
 };
+
+}  // namespace Boardcore

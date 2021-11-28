@@ -30,6 +30,9 @@
 
 using namespace Eigen;
 
+namespace Boardcore
+{
+
 /**
  * This class is used to adjust the values given by sensors during the flight.
  * An object can be obtained only via deserialization or if produced by an
@@ -332,3 +335,5 @@ struct AxisRelativeOrientation
         return systemOrientation.getMatrix() * orientation.getMatrix();
     }
 };
+
+}  // namespace Boardcore

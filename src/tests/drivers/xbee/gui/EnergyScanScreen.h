@@ -38,6 +38,9 @@
 using std::array;
 using std::to_string;
 
+namespace Boardcore
+{
+
 struct EnergyScanScreen
 {
     static constexpr unsigned int NUM_CHANNELS     = 30;
@@ -229,3 +232,5 @@ private:
 
     array<Stats, NUM_CHANNELS> ch_stats;
 };
+
+}  // namespace Boardcore

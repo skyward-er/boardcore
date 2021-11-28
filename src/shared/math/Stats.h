@@ -24,6 +24,9 @@
 
 #include <ostream>
 
+namespace Boardcore
+{
+
 /**
  * Statisitics computed by the Stats class
  */
@@ -72,3 +75,5 @@ private:
     float minValue, maxValue, mean, m2;
     unsigned int n;
 };
+
+}  // namespace Boardcore

@@ -20,12 +20,14 @@
  * THE SOFTWARE.
  */
 
-#ifndef GAMMA_TYPES_H
-#define GAMMA_TYPES_H
+#pragma once
 
 #include <Common.h>
 #include <iostream>
 #include <array>
+
+namespace Boardcore
+{
 
 enum GammaBaudrate : uint8_t 
 {
@@ -122,4 +124,4 @@ union gamma_msg
     uint8_t buf[13];
 };
 
-#endif /* GAMMA_TYPES_H */
+}  // namespace Boardcore

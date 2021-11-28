@@ -25,6 +25,7 @@
 #include <diagnostic/CpuMeter.h>
 #include "test-logger.h"
 
+using namespace Boardcore;
 using namespace std;
 using namespace miosix;
 

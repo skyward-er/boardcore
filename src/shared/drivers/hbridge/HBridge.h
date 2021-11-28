@@ -31,6 +31,9 @@
 using miosix::GpioPin;
 using miosix::Thread;
 
+namespace Boardcore
+{
+
 /**
  * @brief Interface class to operate an h-bridge.
  *
@@ -104,3 +107,5 @@ private:
 
     HBridgeStatus status;
 };
+
+}  // namespace Boardcore

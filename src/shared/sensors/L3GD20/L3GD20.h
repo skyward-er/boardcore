@@ -35,6 +35,9 @@
 using miosix::GpioPin;
 using std::array;
 
+namespace Boardcore
+{
+
 static constexpr uint32_t L3GD20_FIFO_SIZE = 32;
 
 class L3GD20 : public SensorFIFO<L3GD20Data, L3GD20_FIFO_SIZE>
@@ -346,3 +349,5 @@ private:
         REG_FIFO_SRC  = 0x2F
     };
 };
+
+}  // namespace Boardcore

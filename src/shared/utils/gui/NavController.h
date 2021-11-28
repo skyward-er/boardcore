@@ -31,6 +31,9 @@
 #include "View.h"
 #include "utils/ButtonHandler.h"
 
+namespace Boardcore
+{
+
 /**
  * @brief UI navigation controller: listens for button clicks and dispatches the
  * interactions to the view tree.
@@ -149,3 +152,5 @@ private:
 
     PrintLogger logger = Logging::getLogger("navcontroller");
 };
+
+}  // namespace Boardcore

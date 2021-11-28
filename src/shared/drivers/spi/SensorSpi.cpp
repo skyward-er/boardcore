@@ -26,6 +26,9 @@
 using namespace std;
 using namespace miosix;
 
+namespace Boardcore
+{
+
 static Thread* waiting                   = nullptr;
 static vector<SPIRequest>* requestVector = nullptr;
 static size_t requestIndex               = 0;
@@ -225,3 +228,5 @@ void SPIRequest::IRQendTransaction()
      * From CS low to first clock pulse   : ~3.5us
      */
 }
+
+}  // namespace Boardcore

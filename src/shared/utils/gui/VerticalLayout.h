@@ -24,6 +24,9 @@
 
 #include "View.h"
 
+namespace Boardcore
+{
+
 /**
  * @brief Positions the childs in a vertical grid. The height of each child is
  * dictated by its weight parameter
@@ -121,3 +124,5 @@ private:
     short int spacing;
     std::vector<Child> childs;
 };
+
+}  // namespace Boardcore

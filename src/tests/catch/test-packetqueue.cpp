@@ -23,11 +23,13 @@
 #ifdef STANDALONE_CATCH1_TEST
 #include "catch-tests-entry.cpp"
 #endif
-#include <utils/testutils/catch.hpp>
+#include <catch2/catch.hpp>
 
 
 #define private public
 #include <utils/collections/SyncPacketQueue.h>
+
+using namespace Boardcore;
 
 static constexpr int BUF_LEN   = 20;
 static constexpr int PKT_LEN   = 10;

@@ -39,6 +39,9 @@ using namespace std;
 using namespace miosix;
 using namespace tscpp;
 
+namespace Boardcore
+{
+
 //
 // class Logger
 //
@@ -351,3 +354,5 @@ void Logger::statsThread()
         printf("Error: statsThread failed due to an exception: %s\n", e.what());
     }
 }
+
+}  // namespace Boardcore

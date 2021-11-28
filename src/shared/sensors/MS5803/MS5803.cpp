@@ -25,6 +25,9 @@
 
 #include "TimestampTimer.h"
 
+namespace Boardcore
+{
+
 MS5803::MS5803(SPISlave spiSlave_, uint16_t temperatureDivider_)
     : spiSlave(spiSlave_), temperatureDivider(temperatureDivider_)
 {
@@ -198,3 +201,5 @@ uint16_t MS5803::readReg(SPITransaction& transaction, uint8_t reg)
     uint16_t data = (rcv[0] << 8) | rcv[1];
     return data;
 }
+
+}  // namespace Boardcore

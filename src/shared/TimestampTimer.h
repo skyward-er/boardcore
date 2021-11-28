@@ -27,6 +27,9 @@
 #include <Debug.h>
 #include "drivers/HardwareTimer.h"
 
+namespace Boardcore
+{
+
 namespace TimestampTimer
 {
 
@@ -58,3 +61,5 @@ inline uint64_t getTimestamp()
 }
 
 }  // namespace TimestampTimer
+
+}  // namespace Boardcore

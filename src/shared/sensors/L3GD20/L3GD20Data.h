@@ -25,6 +25,9 @@
 
 #include "sensors/SensorData.h"
 
+namespace Boardcore
+{
+
 struct L3GD20Data : public GyroscopeData
 {
     L3GD20Data() : GyroscopeData{0, 0.0, 0.0, 0.0} {}
@@ -47,3 +50,5 @@ struct L3GD20Data : public GyroscopeData
            << "\n";
     }
 };
+
+}  // namespace Boardcore
