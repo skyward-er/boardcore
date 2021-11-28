@@ -107,7 +107,7 @@ void testCommunication(char *data, SerialInterface src, SerialInterface dst)
     GPIO2_dst::low();
 
     // thread that reads from serial
-    thread t(readSer, dst);
+    std::thread t(readSer, dst);
 
     printf("\t-->%s sending: \t'%s'\n", src.getPortName().c_str(), data);
     src.sendString(data);
