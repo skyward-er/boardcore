@@ -191,6 +191,9 @@ sbs_target(test-lis3mdl stm32f429zi_skyward_death_stack_x)
 add_executable(test-mavlink src/tests/drivers/test-mavlink.cpp)
 sbs_target(test-mavlink stm32f429zi_skyward_homeone)
 
+add_executable(test-MBLoadCell src/tests/drivers/test-MBLoadCell.cpp)
+sbs_target(test-MBLoadCell stm32f407vg_stm32f4discovery)
+
 add_executable(test-mpu9250 src/tests/drivers/test-mpu9250.cpp)
 sbs_target(test-mpu9250 stm32f429zi_skyward_death_stack_x)
 
@@ -245,6 +248,9 @@ sbs_target(test-hsm stm32f429zi_stm32f4discovery)
 add_executable(test-interrupt src/tests/test-interrupt.cpp)
 sbs_target(test-interrupt stm32f429zi_stm32f4discovery)
 
+add_executable(test-max485 src/tests/test-max485.cpp)
+sbs_target(test-max485 stm32f429zi_stm32f4discovery)
+
 add_executable(test-pinobserver src/tests/test-pinobserver.cpp)
 sbs_target(test-pinobserver stm32f429zi_stm32f4discovery)
 
@@ -262,9 +268,3 @@ sbs_target(test-timestamp-timer stm32f429zi_stm32f4discovery)
 
 add_executable(test-trace-logger src/tests/test-trace-logger.cpp)
 sbs_target(test-trace-logger stm32f429zi_stm32f4discovery)
-
-add_executable(test-MBLoadCell src/tests/drivers/test-MBLoadCell.cpp)
-sbs_target(test-MBLoadCell stm32f407vg_stm32f4discovery)
-
-add_executable(test-max485 src/tests/test-max485.cpp)
-sbs_target(test-max485 stm32f429zi_stm32f4discovery)
