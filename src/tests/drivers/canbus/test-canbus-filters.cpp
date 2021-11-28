@@ -37,49 +37,28 @@ using CanTX = Gpio<GPIOA_BASE, 12>;
 PrintLogger l                = Logging::getLogger("main");
 constexpr uint32_t BAUD_RATE = 1000 * 1000;
 
-void printPacket(string name, Canbus::CanPacket p)
+void printPacket(PrintLogger& logger, string name, Canbus::CanPacket p)
 {
-    LOG_INFO(l, "Packet {}: {{id: {} ({}), len: {}, b0: {:#04X} }}", name, p.id,
-             p.ext, p.length, p.data[0]);
+    LOG_INFO(logger, "Packet {}: {{id: {} ({}), len: {}, b0: {:#04X} }}", name,
+             p.id, p.ext, p.length, p.data[0]);
 }
 
-void printRXPacket(string name, Canbus::CanRXPacket p)
+void printRXPacket(PrintLogger& logger, string name, Canbus::CanRXPacket p)
 {
-    printPacket(name, p.packet);
-    LOG_DEBUG(l, "RX result: status={:#04X}, err_cnt:{}, err_code:{:#04X}",
-              p.status.rx_status, p.status.rx_err_counter, p.status.err_code);
+    printPacket(logger, name, p.packet);
+    LOG_DEBUG(
+        logger,
+        "RX result: fifo={}, status={:#04X}, err_cnt:{}, err_code:{:#04X}",
+        p.status.fifo, p.status.rx_status, p.status.rx_err_counter,
+        p.status.err_code);
 }
-
-class BusLoadSensor : public ActiveObject
-{
-public:
-    BusLoadSensor(uint32_t baud_rate) : baud_rate(baud_rate), ble(baud_rate) {}
-
-    void addPacket(Canbus::CanPacket p) { ble.addPacket(p); }
-    void run() override
-    {
-        while (!shouldStop())
-        {
-            long long start                     = miosix::getTick();
-            BusLoadEstimation::BusLoadInfo info = ble.getLoadInfo();
-            LOG_INFO(l, "payload rate: {:.2f} kbps, total rate: {:.2f} kbps, utilization: {:.2f}%",
-                     info.payload_bit_rate/1000.0f, info.total_bit_rate/1000.0f, info.load_percent);
-            Thread::sleepUntil(start + 1000);
-        }
-    }
-
-private:
-    PrintLogger l = Logging::getLogger("bus_load");
-    uint32_t baud_rate;
-    BusLoadEstimation ble;
-};
-
-BusLoadSensor load(BAUD_RATE);
 
 int main()
 {
     Logging::startAsyncLogger();
-    
+
+    PrintLogger lr = l.getChild("rx");
+
     {
         miosix::FastInterruptDisableLock dLock;
 
@@ -91,8 +70,6 @@ int main()
         CanTX::alternateFunction(9);
     }
 
-    load.start();
-
     Canbus::Canbus::CanbusConfig cfg;
     cfg.loopback = true;
 
@@ -102,47 +79,72 @@ int main()
 
     Canbus::Canbus* c = new Canbus::Canbus(CAN1, cfg, bt);
 
+    // Canbus::Mask32Filter f1(365854720, 0xFF000000, 1, 1, 0, 0, 1);
+    // Canbus::Mask32Filter f2(1, 1, 1, 1, 0, 0, 0);
 
-    Canbus::Mask32FilterBank f2(0, 0, 0, 0, 0, 0, 0);
+    // Canbus::ID32Filter f(0);
+    // f.addID(365854720, 1, 0);
+    // f.addID(1, 1, 0);
 
-    c->addFilter(f2);
+    // Canbus::ID32Filter f1(1);
+    // f1.addID(499908608, 1, 0);
+    // f1.addID(0, 1, 0);
+
+    Canbus::ID16FilterBank f1(0);
+    f1.addID32(365854720, 1, 0);
+    f1.addID32(500072448, 1, 0);
+    // f1.addID(368836608, 1, 0);
+
+    // Canbus::Mask16Filter f2(1);
+    // f2.addID(365854720, 163840, 1,1,0,0);
+
+    c->addFilter(f1);
+    // c->addFilter(f2);
+
+
+
     c->init();
+
     CanPacket p;
-    p.id     = 12345;
-    p.ext    = true;
-    p.length = 8;
-    for (int i = 0; i < p.length; ++i)
-        p.data[i] = 1 << i;
+    p.ext     = true;
+    p.length  = 1;
+    p.data[0] = 123;
+
     for (;;)
     {
-
-        // printPacket("TX", p);
         p.timestamp = miosix::getTick();
+
+        p.id = 365854720;
         c->send(p);
-        load.addPacket(p);
-        // Thread::sleep(1);
-        // c->send(p);
-        // c->send(p);
-        // c->send(p);
-        // c->send(p);
+
+        p.id = 500072448;
+        c->send(p);
+
+        p.id = 500085835;
+        c->send(p);
+
+        p.id = 368836608;
+        c->send(p);
+
+        p.id = 9876;
+        c->send(p);
+
+        p.id = 1;
+        c->send(p);
+
+        p.id = 3;
+        c->send(p);
+
+        p.id = 0;
+        c->send(p);
 
         while (!c->getRXBuffer().isEmpty())
         {
-            load.addPacket(c->getRXBuffer().pop().packet);
+            Canbus::CanRXPacket rxp = c->getRXBuffer().pop();
+            printRXPacket(lr, "RX", rxp);
         }
-        // c->getRXBuffer().waitUntilNotEmpty();
-        // Canbus::CanRXPacket prx = c->getRXBuffer().pop();
-        // printRXPacket("RX", prx);
 
-        // c->getTXResultBuffer().waitUntilNotEmpty();
-        // Canbus::CanTXResult res_tx = c->getTXResultBuffer().pop();
-        // LOG_DEBUG(l,
-        //           "TX result: mailbox={}, status={:#04X}, tme={:#04X}, "
-        //           "err_code={:#04X}",
-        //           res_tx.mailbox, res_tx.tx_status, res_tx.tme,
-        //           res_tx.err_code);
-
-        Thread::sleep(1);
+        Thread::sleep(1000);
     }
 
     for (;;)

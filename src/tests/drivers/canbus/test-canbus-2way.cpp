@@ -226,7 +226,7 @@ int main()
     can_mgr           = new SimpleCanManager(*c, BAUD_RATE, handleCanMessage);
 
     // Allow every message
-    Canbus::Mask32Filter f2(0, 0, 0, 0, 0, 0, 0);
+    Canbus::Mask32FilterBank f2(0, 0, 0, 0, 0, 0, 0);
     c->addFilter(f2);
     c->init();
 

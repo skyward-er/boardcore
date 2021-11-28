@@ -119,10 +119,10 @@ private:
         SimpleCanManager& parent;
     };
 
-    RXFunction rx_fun;
     Canbus::Canbus& canbus;
     Canbus::BusLoadEstimation bus_load;
     CanSender sender;
     CanReceiver receiver;
+    RXFunction rx_fun;
     SyncCircularBuffer<Canbus::CanPacket, 10> tx_packets;
 };
