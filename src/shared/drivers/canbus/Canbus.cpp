@@ -98,7 +98,7 @@ Canbus::Canbus(CAN_TypeDef* can, CanbusConfig config, BitTiming bit_timing)
         can_drivers[1] = this;
     }
 
-    // Enable rx pending interrupts
+    // Enable interrupts
     can->IER |= CAN_IER_FMPIE0 | CAN_IER_FMPIE1 | CAN_IER_TMEIE;
 
     NVIC_EnableIRQ(CAN1_RX0_IRQn);
@@ -151,12 +151,11 @@ Canbus::BitTiming Canbus::calcBitTiming(AutoBitTiming auto_bt)
             fabs(sp - auto_bt.sample_point) / auto_bt.sample_point;
 
         // Calculate the cost function over N
-        // cost(N) = baud_rate_err*10 + sample_point_err + |N-10|/(25*50)
         float cost = BR_ERR_WEIGHT * br_err_percent +
                      SP_ERR_WEIGHT * sp_err_percent +
                      N_ERR_WEIGHT * fabs(N - 10) / 25;
 
-        // Find config that minimized the cost function
+        // Find config that minimizes the cost function
         if (cost < cost_opt)
         {
             cfg_opt  = cfg_iter;
@@ -167,7 +166,7 @@ Canbus::BitTiming Canbus::calcBitTiming(AutoBitTiming auto_bt)
 
     cfg_opt.SJW = fminf(ceilf(N_opt * 1.0f / 5), 4);
 
-    LOG_DEBUG(ls, "Optimal Bit Timing: BRP={}, BS1={}, BS2={}, SJW={}",
+    LOG_DEBUG(ls, "Optimal Bit Timing Registers: BRP={}, BS1={}, BS2={}, SJW={}",
               cfg_opt.BRP, cfg_opt.BS1, cfg_opt.BS2, cfg_opt.SJW);
 
     float br_true = apbclk * 1.0f / ((cfg_opt.BRP + 1) * N_opt);
@@ -197,17 +196,19 @@ void Canbus::init()
     can->MCR &= ~CAN_MCR_INRQ;   // Enable canbus
 
     // Wait until the can peripheral synchronizes with the bus
+
+    LOG_DEBUG(ls, "Waiting for canbus synchronization...");
     while ((can->MSR & CAN_MSR_INAK) > 0)
     {
         Thread::sleep(1);
     }
 
-    LOG_INFO(ls, "Init done!");
+    LOG_INFO(ls, "Canbus synchronized! Init done!");
 
     is_init = true;
 }
 
-bool Canbus::addFilter(Filter filter)
+bool Canbus::addFilter(FilterBank filter)
 {
     PrintLogger ls = l.getChild("addfilter");
 
@@ -266,6 +267,7 @@ uint32_t Canbus::send(CanPacket packet)
 
     if (did_wait)
     {
+        // Warn that the function blocked. We are probably transmitting too fast
         LOG_WARN_ASYNC(ls, "Had to wait for an empty mailbox!");
     }
 
@@ -302,6 +304,7 @@ uint32_t Canbus::send(CanPacket packet)
     mailbox->TDLR = 0;
     mailbox->TDHR = 0;
 
+    // Fill data registers
     for (uint8_t i = 0; i < packet.length; ++i)
     {
         if (i < 4)
@@ -314,7 +317,7 @@ uint32_t Canbus::send(CanPacket packet)
         }
     }
 
-    // Finally send the data
+    // Finally send the packet
     can->sTxMailBox[mbx_code].TIR |= CAN_TI0R_TXRQ;
 
     return seq;
@@ -344,7 +347,7 @@ void Canbus::handleRXInterrupt(int fifo)
     bool hppw = false;
 
     // Note: Bit position definitions are the same for both FIFOs
-    // (CAN_RF0R_FMP0 == CAN_RF1R_FMP1)
+    // eg: CAN_RF0R_FMP0 == CAN_RF1R_FMP1
 
     if ((*RFR & CAN_RF0R_FMP0) > 0)
     {

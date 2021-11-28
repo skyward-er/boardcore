@@ -41,7 +41,11 @@ enum class FilterScale
     DUAL16
 };
 
-struct Filter
+/**
+ * @brief Base class for a Canbus filter bank
+ *
+ */
+struct FilterBank
 {
     uint8_t fifo;
     FilterScale scale;
@@ -50,12 +54,14 @@ struct Filter
     uint32_t FR1 = 0xFFFFFFFF;
     uint32_t FR2 = 0xFFFFFFFF;
 
-    Filter(FilterScale scale, FilterMode mode, uint8_t fifo)
+    FilterBank(FilterScale scale, FilterMode mode, uint8_t fifo)
         : fifo(fifo), scale(scale), mode(mode)
     {
     }
+
 protected:
-    static uint32_t packRegister32(uint32_t id, uint8_t ext, uint8_t rtr, bool is_ext)
+    static uint32_t packRegister32(uint32_t id, uint8_t ide, uint8_t rtr,
+                                   bool is_ext)
     {
         uint32_t reg = 0;
         if (is_ext)
@@ -67,11 +73,12 @@ protected:
             reg = ((id & 0x7FF) << 21);
         }
 
-        reg |= ((ext & 0x1) << 2) | ((rtr & 0x1) << 1);
+        reg |= ((ide & 0x1) << 2) | ((rtr & 0x1) << 1);
         return reg;
     }
 
-    static uint16_t packRegister16(uint32_t id, uint8_t ext, uint8_t rtr, bool is_ext)
+    static uint16_t packRegister16(uint32_t id, uint8_t ide, uint8_t rtr,
+                                   bool is_ext)
     {
         uint16_t reg = 0;
         if (is_ext)
@@ -84,40 +91,69 @@ protected:
             reg = ((id & 0x7FF) << 5);
         }
 
-        reg |= ((ext & 0x1) << 3) | ((rtr & 0x1) << 4);
+        reg |= ((ide & 0x1) << 3) | ((rtr & 0x1) << 4);
         return reg;
     }
 };
 
-struct Mask32Filter : public Filter
+/**
+ * @brief 32 Bit mask filter bank
+ *
+ */
+struct Mask32FilterBank : public FilterBank
 {
-    Mask32Filter(uint32_t id, uint32_t id_mask, uint8_t ext, uint8_t ext_mask,
-                 uint8_t rtr, uint8_t rtr_mask, uint8_t fifo)
-        : Filter(FilterScale::SINGLE32, FilterMode::MASK, fifo)
+    /**
+     * @brief Construct a new 32 bit mask filter
+     *
+     * @param id 29 bit frame identifier
+     * @param id_mask 29 bit frame identifier mask
+     * @param ide Value for the IDE bit in the canbus frame
+     * @param ide_mask Mask the ide bit
+     * @param rtr Value for the RTR bit in the canbus frame
+     * @param rtr_mask Mask for RTR bit
+     * @param fifo Where to store the filtered messages (fifo 0 or fifo 1)
+     */
+    Mask32FilterBank(uint32_t id, uint32_t id_mask, uint8_t ide,
+                     uint8_t ide_mask, uint8_t rtr, uint8_t rtr_mask,
+                     uint8_t fifo)
+        : FilterBank(FilterScale::SINGLE32, FilterMode::MASK, fifo)
     {
         scale = FilterScale::SINGLE32;
         mode  = FilterMode::MASK;
 
-        FR1 = packRegister32(id, ext, rtr, ext);
-        FR2 = packRegister32(id_mask, ext_mask, rtr_mask, ext);
+        FR1 = packRegister32(id, ide, rtr, true);
+        FR2 = packRegister32(id_mask, ide_mask, rtr_mask, true);
     }
 };
 
-struct ID32Filter : public Filter
+struct ID32FilterBank : public FilterBank
 {
-    ID32Filter(uint8_t fifo)
-        : Filter(FilterScale::SINGLE32, FilterMode::ID, fifo)
+    /**
+     * @brief Construct a new filter matching exactly 32 bit identifiers
+     *
+     * @param fifo Where to store the filtered messages (fifo 0 or fifo 1)
+     */
+    ID32FilterBank(uint8_t fifo)
+        : FilterBank(FilterScale::SINGLE32, FilterMode::ID, fifo)
     {
     }
 
-    bool addID(uint32_t id, bool ext, uint8_t rtr)
+    /**
+     * @brief Adds a new ID to the filter. Returns false if there is no room for
+     * the ID
+     *
+     * @param id 29 bit message identifier
+     * @param ide Value for the IDE bit in the canbus frame
+     * @param rtr Value for the RTR bit in the canbus frame
+     */
+    bool addID(uint32_t id, bool ide, uint8_t rtr)
     {
         if (id_cnt == 2)
             return false;
 
         uint32_t* reg = id_cnt < 1 ? &FR1 : &FR2;
 
-        *reg = packRegister32(id, ext, rtr, ext);
+        *reg = packRegister32(id, ide, rtr, true);
         ++id_cnt;
         return true;
     }
@@ -126,37 +162,116 @@ private:
     uint8_t id_cnt = 0;
 };
 
-struct Mask16Filter : public Filter
+struct Mask16FilterBank : public FilterBank
 {
-    Mask16Filter(uint8_t fifo)
-        : Filter(FilterScale::DUAL16, FilterMode::MASK, fifo)
+    /**
+     * @brief Construct a new filter matching exactly 16 bit identifiers
+     *
+     * @param fifo Where to store the filtered messages (fifo 0 or fifo 1)
+     */
+    Mask16FilterBank(uint8_t fifo)
+        : FilterBank(FilterScale::DUAL16, FilterMode::MASK, fifo)
     {
     }
 
-    bool addID(uint32_t id, uint32_t id_mask, uint8_t ext, uint8_t ext_mask,
-               uint8_t rtr, uint8_t rtr_mask)
+    /**
+     * @brief Add a 16 bit identifier mask, where the provided identifier is an
+     * extended id (29 bit)
+     * @warning only the first 3 bits of the extended frame identifier are
+     * checked by the filter. See datasheet!
+     *
+     * @param id 29 bit frame identifier
+     * @param id_mask 29 bit frame identifier mask
+     * @param ide Value for the IDE bit in the canbus frame
+     * @param ide_mask Mask the ide bit
+     * @param rtr Set to one if filtering for Remote Transmission Requests
+     * @param rtr_mask Mask for RTR bit
+     */
+    bool addIDExt(uint32_t id, uint32_t id_mask, uint8_t ide, uint8_t ide_mask,
+                  uint8_t rtr, uint8_t rtr_mask)
+    {
+        return addID(id, id_mask, ide, ide_mask, rtr, rtr_mask, true);
+    }
+
+    /**
+     * @brief Add a 16 bit identifier mask, where the provided identifier is a
+     * standard id (11 bit)
+     *
+     * @param id 11 bit frame identifier
+     * @param id_mask 11 bit frame identifier mask
+     * @param ide Value for the IDE bit in the canbus frame
+     * @param ide_mask Mask the ide bit
+     * @param rtr Set to one if filtering for Remote Transmission Requests
+     * @param rtr_mask Mask for RTR bit
+     */
+    bool addIDStd(uint32_t id, uint32_t id_mask, uint8_t ide, uint8_t ide_mask,
+                  uint8_t rtr, uint8_t rtr_mask)
+    {
+        return addID(id, id_mask, ide, ide_mask, rtr, rtr_mask, false);
+    }
+
+private:
+    bool addID(uint32_t id, uint32_t id_mask, uint8_t ide, uint8_t ide_mask,
+               uint8_t rtr, uint8_t rtr_mask, bool extended_id)
     {
         if (id_cnt == 2)
             return false;
 
         uint32_t* reg = id_cnt < 1 ? &FR1 : &FR2;
 
-        *reg = packRegister16(id, ext, rtr, ext) | (packRegister16(id_mask, ext_mask, rtr_mask, ext) << 16);
+        *reg = packRegister16(id, ide, rtr, ide) |
+               (packRegister16(id_mask, ide_mask, rtr_mask, extended_id) << 16);
         ++id_cnt;
         return true;
     }
 
-private:
     uint8_t id_cnt = 0;
 };
 
-struct ID16Filter : public Filter
+struct ID16Filter : public FilterBank
 {
-    ID16Filter(uint8_t fifo) : Filter(FilterScale::DUAL16, FilterMode::ID, fifo)
+    /**
+     * @brief Construct a new filter matching exactly 16 bits identifiers
+     *
+     * @param fifo Where to store the filtered messages (fifo 0 or fifo 1)
+     */
+    ID16Filter(uint8_t fifo)
+        : FilterBank(FilterScale::DUAL16, FilterMode::ID, fifo)
     {
     }
 
-    bool addID(uint32_t id, uint8_t ext, uint8_t rtr)
+    /**
+     * @brief Add a 16 bit identifier match filter, where the provided
+     * identifier is an extended id (29 bit)
+     *
+     * @param id 29 bit Identifier to be filterd
+     * @param ide Value of the IDE field in the canbus frame
+     * @param rtr Value of the RTR field in the canbus frame
+     * @return true if the identifier was added, false if no more space
+     * available in the current bank
+     */
+    bool addID32(uint32_t id, uint8_t ide, uint8_t rtr)
+    {
+        return addID(id, ide, rtr, true);
+    }
+
+    /**
+     * @brief Add a 16 bit identifier match filter, where the provided
+     * identifier is a standard id (11 bit)
+     *
+     * @param id 11 bit Identifier to be filterd
+     * @param ide Value of the IDE field in the canbus frame
+     * @param rtr Value of the RTR field in the canbus frame
+     * @return true if the identifier was added, false if no more space
+     * available in the current bank
+     */
+    bool addID16(uint32_t id, uint8_t ide, uint8_t rtr)
+    {
+        return addID(id, ide, rtr, false);
+    }
+
+private:
+    bool addID(uint32_t id, uint8_t ide, uint8_t rtr, bool extended_id)
     {
         if (id_cnt == 4)
             return false;
@@ -166,12 +281,11 @@ struct ID16Filter : public Filter
         const uint32_t bitmask = 0xFFFF;
 
         *reg &= ~(bitmask << (16 * (id_cnt % 2)));
-        *reg |= packRegister16(id, ext, rtr, ext) << (16 * (id_cnt % 2));
+        *reg |= packRegister16(id, ide, rtr, extended_id)
+                << (16 * (id_cnt % 2));
         ++id_cnt;
         return true;
     }
-
-private:
     uint8_t id_cnt = 0;
 };
 
