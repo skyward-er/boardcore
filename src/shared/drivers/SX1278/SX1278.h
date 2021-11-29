@@ -89,7 +89,13 @@ public:
         BAD_VERSION,  //< Chip didn't report the correct version.
     };
 
-    SX1278(SPIBusInterface &bus, GpioPin cs, GpioPin dio);
+    /**
+     * @brief Construct a new SX1278
+     *
+     * @param bus SPI bus used.
+     * @param cs Chip select pin.
+     */
+    SX1278(SPIBusInterface &bus, GpioPin cs);
 
     /**
      * @brief Setup the device.
@@ -107,9 +113,11 @@ public:
      * @brief Receive data.
      *
      * @param buf Buffer to put the received data.
-     * @return How many bytes were received.
+     * @param max_len How big is the supplied buffer.
+     * @return How many bytes were received (or -1 if the supplied buffer was
+     * too small).
      */
-    uint8_t recv(uint8_t *buf);
+    int recv(uint8_t *buf, size_t max_len);
 
     /**
      * @brief Send data.
@@ -151,6 +159,5 @@ public:
     bool enable_int                 = false;
 
     SPISlave slave;
-    GpioPin dio;
     Mode mode;
 };

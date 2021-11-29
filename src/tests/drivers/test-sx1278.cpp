@@ -62,6 +62,19 @@ SX1278 *sx1278_tx = nullptr;
 
 void __attribute__((used)) EXTI0_IRQHandlerImpl() { sx1278_rx->handleDioIRQ(); }
 
+/// Status informations.
+struct Stats
+{
+    int last_sent_packet = 0;  //< Last sent packet ID.
+    int last_recv_packet = 0;  //< Last received packet ID.
+    int recv_count       = 0;  //< Actual number of packets received.
+
+    float packet_loss() const
+    {
+        return (1.0f - ((float)recv_count / (float)last_recv_packet)) * 100.0f;
+    }
+};
+
 /// Initialize stm32f407g board
 void initBoard()
 {
@@ -118,43 +131,31 @@ int main()
     // miosix::Thread::sleep(5000);
     const int LOG_INTERVAL = 100;
 
+    Stats stats;
     std::thread recv(
-        []()
+        [&stats]()
         {
-            int recv_count        = 0;
-            int last_recv_message = 0;
-            int last_div          = 0;
             while (1)
             {
-
-                uint8_t len = sx1278_rx->recv((uint8_t *)&last_recv_message);
-                recv_count++;
-
-                int new_div = last_recv_message / LOG_INTERVAL;
-                if (new_div != last_div)
-                {
-                    TRACE("Packet loss: %.2f%% (%d sent, %d recv)\n",
-                          (1.0f -
-                           ((float)recv_count / (float)last_recv_message)) *
-                              100.0f,
-                          last_recv_message, recv_count);
-                    last_div = new_div;
-                }
+                uint8_t len =
+                    sx1278_rx->recv((uint8_t *)&stats.last_recv_packet, 4);
+                stats.recv_count++;
             }
         });
 
-    int last_sent_message = 0;
     while (1)
     {
-        last_sent_message++;
-        sx1278_tx->send((uint8_t *)&last_sent_message, 4);
+        stats.last_sent_packet++;
+        sx1278_tx->send((uint8_t *)&stats.last_sent_packet, 4);
 
-        if (last_sent_message % LOG_INTERVAL == 0)
+        if (stats.last_sent_packet % LOG_INTERVAL == 0)
         {
-            TRACE("Sent %d messages!\n", last_sent_message);
+            TRACE("Packet loss: %.2f%% (%d sent, %d recv)\n",
+                  stats.packet_loss(), stats.last_recv_packet,
+                  stats.recv_count);
         }
 
-        miosix::Thread::sleep(5);
+        miosix::Thread::sleep(1);
     }
 
     return 0;

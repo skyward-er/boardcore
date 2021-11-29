@@ -105,7 +105,7 @@ SX1278::Error SX1278::init(Config config)
     return Error::NONE;
 }
 
-uint8_t SX1278::recv(uint8_t *buf)
+int SX1278::recv(uint8_t *buf, size_t max_len)
 {
     // Enter RX mode
     if (mode == Mode::MODE_STDBY)
@@ -118,6 +118,9 @@ uint8_t SX1278::recv(uint8_t *buf)
     {
         SPITransaction spi(slave, SPIWriteBit::INVERTED);
         len = spi.read(REG_FIFO);
+        if (len > max_len)
+            return -1;
+
         spi.read(REG_FIFO, buf, len);
     }
 
@@ -308,16 +311,6 @@ void SX1278::waitForIrq(uint8_t reg, uint8_t mask)
          mask == RegIrqFlags2::PAYLOAD_READY) &&
         enable_int)
     {
-        // // Optimized handling using interrupts
-        // // TODO(Davide Mor): transform this in a CondVar
-        // while (!dio.value())
-        // {
-        //     miosix::delayUs(10);
-        // }
-
-        // TRACE("Wait\n");
-        // TRACE("Wait\n");
-
         miosix::FastInterruptDisableLock dLock;
         irq_wait_thread = miosix::Thread::getCurrentThread();
         // Avoid spurious wakeups
@@ -329,8 +322,6 @@ void SX1278::waitForIrq(uint8_t reg, uint8_t mask)
                 miosix::Thread::yield();
             }
         }
-
-        // TRACE("Wait finished\n");
     }
     else
     {
