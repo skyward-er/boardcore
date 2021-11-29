@@ -38,8 +38,8 @@ constexpr uint8_t REG_SYNC_CONFIG_DEFAULT =
     RegSyncConfig::AUTO_RESTART_RX_MODE_OFF |
     RegSyncConfig::PREAMBLE_POLARITY_55 | RegSyncConfig::SYNC_ON;
 
-SX1278::SX1278(SPIBusInterface &bus, GpioPin cs, GpioPin dio)
-    : slave(bus, cs, spiConfig()), mode(SX1278::Mode::MODE_SLEEP), dio(dio)
+SX1278::SX1278(SPIBusInterface &bus, GpioPin cs)
+    : slave(bus, cs, spiConfig()), mode(SX1278::Mode::MODE_SLEEP)
 {
 }
 

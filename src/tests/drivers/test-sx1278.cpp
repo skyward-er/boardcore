@@ -114,8 +114,8 @@ int main()
     cs2.high();
     enableExternalInterrupt(GPIOC_BASE, 0, InterruptTrigger::RISING_EDGE);
 
-    sx1278_rx = new SX1278(bus2, cs2, dio2);
-    sx1278_tx = new SX1278(bus1, cs1, dio1);
+    sx1278_rx = new SX1278(bus2, cs2);
+    sx1278_tx = new SX1278(bus1, cs1);
 
     // Run default configuration
     SX1278::Config config;
