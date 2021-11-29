@@ -23,6 +23,7 @@
 #include "SX1278.h"
 
 #include <Debug.h>
+#include <kernel/scheduler/scheduler.h>
 
 #include <cmath>
 
@@ -64,7 +65,9 @@ SX1278::Error SX1278::init(Config config)
     uint8_t sync_word[2] = {0x12, 0xad};
     setSyncWord(sync_word, 2);
     setPreableLen(2);
-    setPa(10, true);
+    setPa(config.power, true);
+
+    enable_int = config.enable_int;
 
     // Setup generic parameters
     {
@@ -142,6 +145,20 @@ void SX1278::send(const uint8_t *buf, uint8_t len)
 
     // Wait for packet sent
     waitForIrq2(RegIrqFlags2::PACKET_SENT);
+}
+
+void SX1278::handleDioIRQ()
+{
+    if (irq_wait_thread)
+    {
+        irq_wait_thread->IRQwakeup();
+        if (irq_wait_thread->IRQgetPriority() >
+            miosix::Thread::IRQgetCurrentThread()->IRQgetPriority())
+        {
+            miosix::Scheduler::IRQfindNextThread();
+        }
+        irq_wait_thread = nullptr;
+    }
 }
 
 uint8_t SX1278::getVersion() const
@@ -291,12 +308,29 @@ void SX1278::waitForIrq(uint8_t reg, uint8_t mask)
          mask == RegIrqFlags2::PAYLOAD_READY) &&
         enable_int)
     {
-        // Optimized handling using interrupts
-        // TODO(Davide Mor): transform this in a CondVar
-        while (!dio.value())
+        // // Optimized handling using interrupts
+        // // TODO(Davide Mor): transform this in a CondVar
+        // while (!dio.value())
+        // {
+        //     miosix::delayUs(10);
+        // }
+
+        // TRACE("Wait\n");
+        // TRACE("Wait\n");
+
+        miosix::FastInterruptDisableLock dLock;
+        irq_wait_thread = miosix::Thread::getCurrentThread();
+        // Avoid spurious wakeups
+        while (irq_wait_thread != 0)
         {
-            miosix::delayUs(10);
+            irq_wait_thread->IRQwait();
+            {
+                miosix::FastInterruptEnableLock eLock(dLock);
+                miosix::Thread::yield();
+            }
         }
+
+        // TRACE("Wait finished\n");
     }
     else
     {
@@ -306,6 +340,9 @@ void SX1278::waitForIrq(uint8_t reg, uint8_t mask)
             miosix::delayUs(10);
         }
     }
+
+    // if(mask == RegIrqFlags2::PAYLOAD_READY)
+    //     TRACE("Wait finished\n");
 }
 
 void SX1278::waitForIrq1(uint8_t mask) { waitForIrq(REG_IRQ_FLAGS_1, mask); }

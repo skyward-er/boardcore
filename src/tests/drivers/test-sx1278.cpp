@@ -22,6 +22,7 @@
 
 #include <Debug.h>
 #include <drivers/SX1278/SX1278.h>
+#include <drivers/interrupt/external_interrupts.h>
 
 #include <cstring>
 #include <thread>
@@ -55,6 +56,11 @@ GpioPin miso2(GPIOB_BASE, 14);
 GpioPin mosi2(GPIOB_BASE, 15);
 GpioPin cs2(GPIOA_BASE, 2);
 GpioPin dio2(GPIOC_BASE, 0);
+
+SX1278 *sx1278_rx = nullptr;
+SX1278 *sx1278_tx = nullptr;
+
+void __attribute__((used)) EXTI0_IRQHandlerImpl() { sx1278_rx->handleDioIRQ(); }
 
 /// Initialize stm32f407g board
 void initBoard()
@@ -93,40 +99,35 @@ int main()
     initBoard();
     cs1.high();
     cs2.high();
+    enableExternalInterrupt(GPIOC_BASE, 0, InterruptTrigger::RISING_EDGE);
 
-    SX1278 sx1278[2] = {
-        SX1278(bus2, cs2, dio2),
-        SX1278(bus1, cs1, dio1),
-    };
+    sx1278_rx = new SX1278(bus2, cs2, dio2);
+    sx1278_tx = new SX1278(bus1, cs1, dio1);
 
     // Run default configuration
     SX1278::Config config;
 
-    // Configure both devices
-    for (int i = 0; i < 2; i++)
-    {
-        TRACE("Configuring sx1278[%d]...\n", i);
-        sx1278[i].init(config);
+    TRACE("Configuring sx1278_rx...\n");
+    config.enable_int = true;
+    sx1278_rx->init(config);
 
-        auto ver = sx1278[i].getVersion();
-        TRACE("Version: %x\n", ver);
-
-        // sx1278[i].debugDumpRegisters();
-    }
+    TRACE("Configuring sx1278_tx...\n");
+    config.enable_int = false;
+    sx1278_tx->init(config);
 
     // miosix::Thread::sleep(5000);
     const int LOG_INTERVAL = 100;
 
     std::thread recv(
-        [&sx1278]()
+        []()
         {
-            int last_recv_message = 0;
             int recv_count        = 0;
+            int last_recv_message = 0;
             int last_div          = 0;
             while (1)
             {
 
-                uint8_t len = sx1278[0].recv((uint8_t*)&last_recv_message);
+                uint8_t len = sx1278_rx->recv((uint8_t *)&last_recv_message);
                 recv_count++;
 
                 int new_div = last_recv_message / LOG_INTERVAL;
@@ -146,14 +147,14 @@ int main()
     while (1)
     {
         last_sent_message++;
-        sx1278[1].send((uint8_t*)&last_sent_message, 4);
+        sx1278_tx->send((uint8_t *)&last_sent_message, 4);
 
         if (last_sent_message % LOG_INTERVAL == 0)
         {
             TRACE("Sent %d messages!\n", last_sent_message);
         }
 
-        miosix::Thread::sleep(1);
+        miosix::Thread::sleep(5);
     }
 
     return 0;

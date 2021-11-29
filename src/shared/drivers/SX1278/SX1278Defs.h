@@ -198,7 +198,7 @@ namespace RegFifoThresh
 {
 enum TxStartCondition
 {
-    TX_START_CONDITION_FIFO_LEVEL = 0 << 7,
+    TX_START_CONDITION_FIFO_LEVEL     = 0 << 7,
     TX_START_CONDITION_FIFO_NOT_EMPTY = 1 << 7,
 };
 }
@@ -232,7 +232,7 @@ namespace RegPaDac
 enum PaDac
 {
     PA_DAC_DEFAULT_VALUE = 0x04,
-    PA_DAC_PA_BOOST = 0x07
+    PA_DAC_PA_BOOST      = 0x07
 };
 }
 

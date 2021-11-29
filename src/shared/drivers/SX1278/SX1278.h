@@ -67,14 +67,16 @@ public:
      */
     struct Config
     {
-        int freq_rf  = 434000000;       //< RF Frequency in Hz.
+        int freq_rf  = 434000000;        //< RF Frequency in Hz.
         int freq_dev = 50000;            //< Frequency deviation in Hz.
         int bitrate  = 48000;            //< Bitrate in b/s.
         RxBw rx_bw   = RxBw::HZ_125000;  //< Rx filter bandwidth.
         RxBw afc_bw  = RxBw::HZ_125000;  //< Afc filter bandwidth.
         int ocp =
             120;  //< Over current protection limit in mA (0 for no limit).
-        bool enable_int = true; //< Enable interrupt pin.
+        bool enable_int = false;  //< Enable interrupt pin.
+        int power = 10;  //< Output power in dB (Between +2 and +17, or +20 for
+                         // full power).
     };
 
     /**
@@ -117,9 +119,17 @@ public:
      */
     void send(const uint8_t *buf, uint8_t len);
 
+    /**
+     * @brief Handle an incoming interrupt.
+     */
+    void handleDioIRQ();
+
+    /**
+     * @brief Dump all registers via TRACE.
+     */
     void debugDumpRegisters();
 
-private:
+public:
     using Mode = SX1278Defs::RegOpMode::Mode;
 
     void setBitrate(int bitrate);
@@ -137,7 +147,8 @@ private:
     void waitForIrq1(uint8_t mask);
     void waitForIrq2(uint8_t mask);
 
-    bool enable_int = true;
+    miosix::Thread *irq_wait_thread = nullptr;
+    bool enable_int                 = false;
 
     SPISlave slave;
     GpioPin dio;
