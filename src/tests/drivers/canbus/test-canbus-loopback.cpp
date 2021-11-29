@@ -28,7 +28,8 @@
 #include "drivers/canbus/Canbus.h"
 
 using std::string;
-using namespace Canbus;
+using namespace Boardcore;
+using namespace Boardcore::Canbus;
 using namespace miosix;
 
 using CanRX = Gpio<GPIOA_BASE, 11>;

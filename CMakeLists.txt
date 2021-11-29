@@ -158,9 +158,6 @@ sbs_target(test-bmx160 stm32f429zi_skyward_death_stack_x)
 add_executable(test-bmx160-with-correction src/tests/drivers/test-bmx160-with-correction.cpp)
 sbs_target(test-bmx160-with-correction stm32f429zi_skyward_death_stack_x)
 
-add_executable(test-canbus src/tests/drivers/test-canbus.cpp)
-sbs_target(test-canbus stm32f429zi_skyward_death_stack_x)
-
 add_executable(test-dsgamma src/tests/drivers/test-dsgamma.cpp)
 sbs_target(test-dsgamma stm32f429zi_stm32f4discovery)
 
@@ -262,3 +259,9 @@ sbs_target(test-timestamp-timer stm32f429zi_stm32f4discovery)
 
 add_executable(test-trace-logger src/tests/test-trace-logger.cpp)
 sbs_target(test-trace-logger stm32f429zi_stm32f4discovery)
+
+add_executable(test-canbus-loopback src/tests/drivers/canbus/test-canbus-loopback.cpp)
+sbs_target(test-canbus-loopback stm32f429zi_stm32f4discovery)
+
+add_executable(test-canbus-2way src/tests/drivers/canbus/test-canbus-2way.cpp)
+sbs_target(test-canbus-2way stm32f429zi_stm32f4discovery)

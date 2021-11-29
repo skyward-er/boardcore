@@ -42,7 +42,8 @@ constexpr uint32_t MSG_DEADLINE      = 100;  // ms
 constexpr uint32_t MSG_LOST_DEADLINE = 400;  // ms
 
 using std::string;
-using namespace Canbus;
+using namespace Boardcore;
+using namespace Boardcore::Canbus;
 using namespace miosix;
 
 #ifdef _ARCH_CORTEXM3_STM32

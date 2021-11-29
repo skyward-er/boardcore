@@ -34,12 +34,19 @@
 
 using std::function;
 
+using Boardcore::Canbus::Canbus;
+using Boardcore::Canbus::CanRXPacket;
+using Boardcore::Canbus::CanPacket;
+using Boardcore::Canbus::BusLoadEstimation;
+using Boardcore::SyncCircularBuffer;
+using Boardcore::ActiveObject;
+
 class SimpleCanManager
 {
 public:
-    using RXFunction = function<void(Canbus::CanRXPacket)>;
+    using RXFunction = function<void(CanRXPacket)>;
 
-    SimpleCanManager(Canbus::Canbus& can, uint32_t baud_Rate, RXFunction rx_fun)
+    SimpleCanManager(Canbus& can, uint32_t baud_Rate, RXFunction rx_fun)
         : canbus(can), bus_load(baud_Rate), sender(*this), receiver(*this),
           rx_fun(rx_fun)
     {
@@ -60,7 +67,7 @@ public:
         tx_packets.put({});
     }
 
-    void send(Canbus::CanPacket packet)
+    void send(CanPacket packet)
     {
         if (tx_packets.isFull())
         {
@@ -69,7 +76,7 @@ public:
         tx_packets.put(packet);
     }
 
-    Canbus::BusLoadEstimation& getLoadSensor() { return bus_load; }
+    BusLoadEstimation& getLoadSensor() { return bus_load; }
 
 private:
     class CanSender : public ActiveObject
@@ -86,7 +93,7 @@ private:
                 {
                     return;
                 }
-                Canbus::CanPacket p = parent.tx_packets.pop();
+                CanPacket p = parent.tx_packets.pop();
                 parent.canbus.send(p);
                 p.timestamp = miosix::getTick();
                 parent.bus_load.addPacket(p);
@@ -108,7 +115,7 @@ private:
                 parent.canbus.getRXBuffer().waitUntilNotEmpty();
                 while (!parent.canbus.getRXBuffer().isEmpty())
                 {
-                    Canbus::CanRXPacket p = parent.canbus.getRXBuffer().pop();
+                    CanRXPacket p = parent.canbus.getRXBuffer().pop();
                     parent.bus_load.addPacket(p.packet);
                     parent.rx_fun(p);
                 }
@@ -119,10 +126,10 @@ private:
         SimpleCanManager& parent;
     };
 
-    Canbus::Canbus& canbus;
-    Canbus::BusLoadEstimation bus_load;
+    Canbus& canbus;
+    BusLoadEstimation bus_load;
     CanSender sender;
     CanReceiver receiver;
     RXFunction rx_fun;
-    SyncCircularBuffer<Canbus::CanPacket, 10> tx_packets;
+    SyncCircularBuffer<CanPacket, 10> tx_packets;
 };

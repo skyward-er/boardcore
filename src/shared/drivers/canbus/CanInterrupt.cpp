@@ -88,7 +88,7 @@ void __attribute__((naked)) CAN2_TX_IRQHandler()
 
 void __attribute__((used)) CAN_RXIRQHandlerImpl(int can_dev, int fifo)
 {
-    using namespace Canbus;
+    using namespace Boardcore::Canbus;
     (void)can_dev;
 
     if (can_drivers[can_dev])
@@ -102,9 +102,9 @@ void __attribute__((used)) CAN_TXIRQHandlerImpl(int can_dev)
     (void)can_dev;
     bool hppw = false;
 
-    using namespace Canbus;
+    using namespace Boardcore::Canbus;
 
-    Canbus::Canbus* bus = can_drivers[can_dev];
+    Canbus* bus = can_drivers[can_dev];
 
     if (bus)
     {

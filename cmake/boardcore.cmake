@@ -34,9 +34,8 @@ foreach(OPT_BOARD ${BOARDS})
         # Drivers
         ${SBS_BASE}/src/shared/drivers/adc/ADS1118/ADS1118.cpp
         ${SBS_BASE}/src/shared/drivers/adc/InternalADC/InternalADC.cpp
-        ${SBS_BASE}/src/shared/drivers/canbus/CanBus.cpp
+        ${SBS_BASE}/src/shared/drivers/canbus/Canbus.cpp
         ${SBS_BASE}/src/shared/drivers/canbus/CanInterrupt.cpp
-        ${SBS_BASE}/src/shared/drivers/canbus/CanManager.cpp
         ${SBS_BASE}/src/shared/drivers/gamma868/Gamma868.cpp
         ${SBS_BASE}/src/shared/drivers/gps/ublox/UbloxGPS.cpp
         ${SBS_BASE}/src/shared/drivers/hbridge/HBridge.cpp

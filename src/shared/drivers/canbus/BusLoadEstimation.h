@@ -33,6 +33,8 @@
 using miosix::FastMutex;
 using miosix::Lock;
 
+namespace Boardcore
+{
 namespace Canbus
 {
 
@@ -71,12 +73,12 @@ public:
 
         for (size_t i = 0; i < c.count(); ++i)
         {
-            size_payload += c.get(i).data_length*8;
+            size_payload += c.get(i).data_length * 8;
         }
         size_frames = size_payload + (64 + 8) * c.count();
 
         return BusLoadInfo{(size_payload / dt), (size_frames / dt),
-                           ((size_frames / dt) / baud_rate)*100};
+                           ((size_frames / dt) / baud_rate) * 100};
     }
 
 private:
@@ -92,3 +94,4 @@ private:
 };
 
 }  // namespace Canbus
+}  // namespace Boardcore
