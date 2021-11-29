@@ -24,6 +24,7 @@
 #include <miosix.h>
 
 using namespace miosix;
+using namespace Boardcore;
 
 GpioPin sckPin  = GpioPin(GPIOE_BASE, 4);
 GpioPin misoPin = GpioPin(GPIOE_BASE, 2);

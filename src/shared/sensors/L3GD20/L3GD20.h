@@ -22,18 +22,22 @@
  */
 
 #pragma once
+
+#include <drivers/timer/TimestampTimer.h>
 #include <miosix.h>
 
 #include <array>
 
 #include "L3GD20Data.h"
-#include "TimestampTimer.h"
 #include "drivers/spi/SPIDriver.h"
 #include "math/Vec3.h"
 #include "sensors/Sensor.h"
 
 using miosix::GpioPin;
 using std::array;
+
+namespace Boardcore
+{
 
 static constexpr uint32_t L3GD20_FIFO_SIZE = 32;
 
@@ -346,3 +350,5 @@ private:
         REG_FIFO_SRC  = 0x2F
     };
 };
+
+}  // namespace Boardcore

@@ -24,6 +24,9 @@
 
 #include <interfaces/arch_registers.h>
 
+namespace Boardcore
+{
+
 /**
  * @brief Driver for STM32 basic timers.
  *
@@ -312,3 +315,5 @@ inline void BasicTimer::clearUpdateInterruptFlag(TIM_TypeDef *timer)
 {
     timer->SR &= ~TIM_SR_UIF;
 }
+
+}  // namespace Boardcore

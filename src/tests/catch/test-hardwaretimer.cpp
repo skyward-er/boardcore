@@ -27,8 +27,9 @@
 #include <drivers/timer/TimestampTimer.h>
 #include <miosix.h>
 
-#include <utils/testutils/catch.hpp>
+#include <catch2/catch.hpp>
 
+using namespace Boardcore;
 using namespace miosix;
 
 class TimerTestFixture

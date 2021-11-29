@@ -24,6 +24,9 @@
 
 #include <interfaces/arch_registers.h>
 
+namespace Boardcore
+{
+
 /**
  * @brief Timer utilities.
  */
@@ -229,3 +232,5 @@ inline uint16_t TimerUtils::computePrescalerValue(TIM_TypeDef *timer,
 {
     return TimerUtils::getPrescalerInputFrequency(timer) / targetFrequency - 1;
 }
+
+}  // namespace Boardcore

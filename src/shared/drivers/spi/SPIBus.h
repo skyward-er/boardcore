@@ -26,6 +26,16 @@
 
 #include "SPIBusInterface.h"
 
+#ifndef USE_MOCK_PERIPHERALS
+using SPIType = SPI_TypeDef;
+#else
+#include "test/FakeSpiTypedef.h"
+using SPIType = FakeSpiTypedef;
+#endif
+
+namespace Boardcore
+{
+
 /**
  * @brief Main implementation of SPIBusInterface used for accessing the SPI
  * peripheral in master mode
@@ -240,3 +250,5 @@ inline void SPIBus::transfer(uint16_t* data, size_t size)
 {
     spi.transfer(data, size);
 }
+
+}  // namespace Boardcore

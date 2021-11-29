@@ -28,6 +28,7 @@
  */
 
 using namespace miosix;
+using namespace Boardcore;
 
 GpioPin csPin   = GpioPin(GPIOC_BASE, 1);
 GpioPin sckPin  = GpioPin(GPIOF_BASE, 7);

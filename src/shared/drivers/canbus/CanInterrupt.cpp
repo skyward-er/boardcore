@@ -24,6 +24,9 @@
 
 using namespace miosix;
 
+namespace Boardcore
+{
+
 /* Global array of all the physical CAN buses */
 CanBus *global_bus_ptr[2] = {NULL, NULL};
 uint32_t global_bus_ctr   = 0;
@@ -112,3 +115,5 @@ void __attribute__((used)) CAN_IRQHandlerImpl(int can_dev, int fifo)
     if (hppw)
         Scheduler::IRQfindNextThread();
 }
+
+}  // namespace Boardcore

@@ -25,6 +25,9 @@
 #include <diagnostic/PrintLogger.h>
 #include <interfaces/arch_registers.h>
 
+namespace Boardcore
+{
+
 /**
  * @brief Driver for STM32 DMA streams.
  *
@@ -520,3 +523,5 @@ inline void DMAStream::setMemory1Address(uint32_t *address)
 }
 
 inline void DMAStream::clearStatusRegister() { *IFCR |= IFCR_MASK; }
+
+}  // namespace Boardcore

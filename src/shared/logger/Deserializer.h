@@ -20,8 +20,7 @@
  * THE SOFTWARE.
  */
 
-#ifndef SRC_SHARED_LOGGER_DESERIALIZER_H
-#define SRC_SHARED_LOGGER_DESERIALIZER_H
+#pragma once
 
 #include <sys/stat.h>
 #include <tscpp/stream.h>
@@ -32,8 +31,6 @@
 #include <string>
 #include <vector>
 
-typedef std::numeric_limits<float> flt;
-
 using std::ostream;
 using std::string;
 using std::vector;
@@ -41,6 +38,11 @@ using std::ifstream;
 using std::ofstream;
 using tscpp::TypePoolStream;
 using tscpp::UnknownInputArchive;
+
+namespace Boardcore
+{
+
+typedef std::numeric_limits<float> flt;
 
 /**
  * Class used to deserialize log files created using fedetft's logger.
@@ -196,4 +198,4 @@ private:
     string logFileWithExt;
 };
 
-#endif /* SRC_SHARED_LOGGER_UNSERIALIZER_H */
+}  // namespace Boardcore

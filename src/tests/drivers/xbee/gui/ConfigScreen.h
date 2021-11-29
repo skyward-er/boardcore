@@ -32,6 +32,9 @@
 
 #include "../XbeeTestData.h"
 
+namespace Boardcore
+{
+
 struct ConfigScreen
 {
     XbeeConfig config;
@@ -221,3 +224,5 @@ private:
     TextView title{"Xbee Setup"};
     TextView tv_log_status{"SD ERR!"};
 };
+
+}  // namespace Boardcore

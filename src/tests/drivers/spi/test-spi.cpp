@@ -27,6 +27,7 @@
 #include <iostream>
 #include <sstream>
 
+using namespace Boardcore;
 using namespace std;
 using namespace miosix;
 

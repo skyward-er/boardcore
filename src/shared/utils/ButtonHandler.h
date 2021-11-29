@@ -30,6 +30,9 @@
 
 using miosix::Thread;
 
+namespace Boardcore
+{
+
 static const int TICK_LENGTH           = 100;  // milliseconds
 static const int LONG_PRESS_TICKS      = 10;
 static const int VERY_LONG_PRESS_TICKS = 50;
@@ -122,3 +125,5 @@ private:
 
     PrintLogger logger = Logging::getLogger("buttonhandler");
 };
+
+}  // namespace Boardcore

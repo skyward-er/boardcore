@@ -22,5 +22,10 @@
 
 #include "TimestampTimer.h"
 
+namespace Boardcore
+{
+
 GeneralPurposeTimer<uint32_t> TimestampTimer::timestampTimer =
     GeneralPurposeTimer<uint32_t>{TIM2};
+
+}

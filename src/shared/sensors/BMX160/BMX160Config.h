@@ -22,6 +22,9 @@
 
 #pragma once
 
+namespace Boardcore
+{
+
 /**
  * @brief BMX160 Configuration
  */
@@ -240,3 +243,5 @@ struct BMX160Config
 
     BMX160Config() {}
 };
+
+}  // namespace Boardcore

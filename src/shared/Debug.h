@@ -19,8 +19,8 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
-#ifndef SRC_SHARED_DEBUG_H
-#define SRC_SHARED_DEBUG_H
+
+#pragma once
 
 #include <miosix.h>
 #include <string>
@@ -30,6 +30,10 @@
 #ifdef DEBUG
 
     #include <cstdarg>
+
+    namespace Boardcore
+    {
+
     extern miosix::FastMutex m;
 
     #define D(x) x
@@ -51,6 +55,8 @@
 
     // #define TRACE(...) printf("%.2f> ", miosix::getTick()/1000.0f); printf(__VA_ARGS__)
 
+    }  // namespace Boardcore
+
 #else
 
     #define D(x)
@@ -59,6 +65,9 @@
 #endif //DEBUG
 
 #ifdef LOG_THREAD_STACK
+    namespace Boardcore
+    {
+
     #define LOG_STACK(...) logStack(__VA_ARGS__)
 
     static inline void logStack(std::string thread_name)
@@ -69,9 +78,9 @@
                     (int)MemoryProfiling::getCurrentFreeStack(), 
                     (int)MemoryProfiling::getStackSize());
     }
+
+    }  // namespace Boardcore
 #else
     #define LOG_STACK(...) (void)0
 #endif
 // clang-format on
-
-#endif /* SRC_SHARED_DEBUG_H */

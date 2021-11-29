@@ -46,6 +46,9 @@ static uint16_t swapBytes16(uint16_t x)
 using std::min;
 using std::string;
 
+namespace Boardcore
+{
+
 namespace Xbee
 {
 /// Maximum length for a TX/RX frame payload. User-configurable using the "NP"
@@ -472,3 +475,5 @@ static_assert(sizeof(RXPacketFrame) == sizeof(APIFrame),
               "Size of derived classes must be the same as APIFrame class (no "
               "additional members & no virtual functions)");
 }  // namespace Xbee
+
+}  // namespace Boardcore

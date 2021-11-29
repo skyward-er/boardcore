@@ -29,6 +29,7 @@
 #include "Common.h"
 #include "drivers/hbridge/HBridge.h"
 
+using namespace Boardcore;
 using namespace miosix;
 using namespace std;
 

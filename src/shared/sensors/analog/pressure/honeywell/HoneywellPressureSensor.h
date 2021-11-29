@@ -24,6 +24,9 @@
 
 #include "../AnalogPressureSensor.h"
 
+namespace Boardcore
+{
+
 /**
  * @brief Driver for Honeywell's pressure sensors (absolute and differential)
  *
@@ -53,3 +56,5 @@ protected:
         return tmp;
     }
 };
+
+}  // namespace Boardcore

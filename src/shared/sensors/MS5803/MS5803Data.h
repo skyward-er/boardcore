@@ -24,6 +24,9 @@
 
 #include "sensors/SensorData.h"
 
+namespace Boardcore
+{
+
 /**
  * @brief MS5803 calibration data. See page 13 of datasheet for more details.
  */
@@ -61,3 +64,5 @@ struct MS5803Data : public PressureData, TemperatureData
            << temp << "\n";
     }
 };
+
+}  // namespace Boardcore

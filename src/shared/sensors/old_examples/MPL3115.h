@@ -20,8 +20,7 @@
  * THE SOFTWARE.
  */
 
-#ifndef MPL3115_H
-#define MPL3115_H
+#pragma once
 
 #include <drivers/BusTemplate.h>
 #include "Sensor.h"
@@ -299,5 +298,3 @@ private:
     };
     //clang-format on
 };
-
-#endif

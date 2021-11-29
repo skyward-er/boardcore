@@ -24,6 +24,8 @@
 #include <drivers/timer/TimestampTimer.h>
 #include <miosix.h>
 
+using namespace Boardcore;
+
 ADC_TypeDef& ADCx = *ADC3;
 
 int main()

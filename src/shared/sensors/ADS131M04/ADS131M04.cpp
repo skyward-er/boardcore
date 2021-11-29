@@ -24,7 +24,10 @@
 
 #include <drivers/timer/TimestampTimer.h>
 
-using namespace ADS131M04RegisterBitMasks;
+using namespace Boardcore::ADS131M04RegisterBitMasks;
+
+namespace Boardcore
+{
 
 ADS131M04::ADS131M04(SPISlave spiSlave) : spiSlave(spiSlave)
 {
@@ -217,3 +220,5 @@ void ADS131M04::changeRegister(Registers reg, uint16_t newValue, uint16_t mask)
     // Write the new value
     writeRegister(reg, regValue);
 }
+
+}  // namespace Boardcore

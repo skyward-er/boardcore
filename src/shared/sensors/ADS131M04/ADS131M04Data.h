@@ -24,6 +24,9 @@
 
 #include <stdint.h>
 
+namespace Boardcore
+{
+
 struct ADS131M04Data
 {
     uint64_t timestamp;
@@ -53,3 +56,5 @@ struct ADS131M04Data
            << voltage[2] << "," << voltage[3] << "\n";
     }
 };
+
+}  // namespace Boardcore

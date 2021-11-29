@@ -31,6 +31,9 @@ using miosix::FastMutex;
 using miosix::Lock;
 using std::deque;
 
+namespace Boardcore
+{
+
 struct DataRateResult
 {
     float data_rate;
@@ -173,3 +176,5 @@ private:
 
     FastMutex mutex_pkt;
 };
+
+}  // namespace Boardcore

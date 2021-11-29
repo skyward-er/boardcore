@@ -27,13 +27,16 @@
 #include <iostream>
 
 #include "utils/testutils/TestSensor.h"
-#include "utils/testutils/catch.hpp"
+#include <catch2/catch.hpp>
 
 #define private public
 #define protected public
 
 #include "sensors/SensorInfo.h"
 #include "sensors/SensorManager.h"
+
+namespace Boardcore
+{
 
 static const uint8_t FIRST_TASK_ID = 7;  // used to test IDs assignment to tasks
 
@@ -143,6 +146,10 @@ bool operator==(const SensorSampler& lhs, const SensorSampler& rhs)
     return lhs.id == rhs.id && lhs.period == rhs.period &&
            lhs.is_dma == rhs.is_dma && lhs.sensors.size() == rhs.sensors.size();
 }
+
+}  // namespace Boardcore
+
+using namespace Boardcore;
 
 TEST_CASE_METHOD(SensorManagerFixture,
                  "Samplers IDs should incrementally start from FIRST_TASK_ID")

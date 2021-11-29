@@ -20,14 +20,16 @@
  * THE SOFTWARE.
  */
 
-#ifndef CANBUS_H
-#define CANBUS_H
+#pragma once
 
 #include <ActiveObject.h>
 #include <Common.h>
 #include <diagnostic/PrintLogger.h>
 
 #include "CanUtils.h"
+
+namespace Boardcore
+{
 
 /* Alias for the function to be executed on receive */
 using CanDispatcher = std::function<void(CanMsg, CanStatus)>;
@@ -107,4 +109,4 @@ private:
     PrintLogger logger = Logging::getLogger("canbus");
 };
 
-#endif /* CANBUS_H */
+}  // namespace Boardcore

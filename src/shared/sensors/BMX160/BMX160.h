@@ -36,6 +36,9 @@
 #include "BMX160Defs.h"
 #include "Constants.h"
 
+namespace Boardcore
+{
+
 /**
  * @brief BMX160 Driver.
  */
@@ -349,3 +352,5 @@ private:
 
     PrintLogger logger = Logging::getLogger("bmx160");
 };
+
+}  // namespace Boardcore

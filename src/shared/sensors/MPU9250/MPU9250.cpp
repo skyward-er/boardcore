@@ -27,6 +27,9 @@
 #include "Constants.h"
 #include "interfaces/endianness.h"
 
+namespace Boardcore
+{
+
 MPU9250::MPU9250(SPISlave spiSlave_, unsigned short samplingRate_,
                  MPU9250GyroFSR gyroFsr_, MPU9250AccelFSR accelFsr_,
                  SPI::ClockDivider highSpeedSpiClockDivider_)
@@ -446,3 +449,5 @@ float MPU9250::normalizeMagnetometer(int16_t rawValue, float adjustmentCoeff)
     // Page 50 and 53 of register map document
     return static_cast<float>(rawValue) * adjustmentCoeff;
 }
+
+}  // namespace Boardcore

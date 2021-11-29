@@ -23,6 +23,9 @@
 #pragma once
 #include <mxgui/display.h>
 
+namespace Boardcore
+{
+
 /**
  * @brief Converts a 24bit color to a 16bit color
  * 
@@ -37,3 +40,5 @@ mxgui::Color color24to16(uint32_t rgb)
     b = (rgb & 0xFF) >> 3;
     return ((b << 10) | (g << 5) | (r));
 }
+
+}  // namespace Boardcore

@@ -20,6 +20,8 @@
  * THE SOFTWARE.
  */
 
+#pragma once
+
 #include <ActiveObject.h>
 #include <events/EventBroker.h>
 #include <Debug.h>
@@ -29,6 +31,9 @@
 
 using std::string;
 using std::stringstream;
+
+namespace Boardcore
+{
 
 /**
  * @brief Utility class to manually post events to specific topics.
@@ -55,3 +60,5 @@ protected:
         }
     }
 };
+
+}  // namespace Boardcore

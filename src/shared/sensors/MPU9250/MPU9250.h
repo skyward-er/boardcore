@@ -28,6 +28,9 @@
 #include "drivers/spi/SPIDriver.h"
 #include "sensors/Sensor.h"
 
+namespace Boardcore
+{
+
 /**
  * @brief Driver class for MPU9250
  */
@@ -330,3 +333,5 @@ private:
 
     PrintLogger logger = Logging::getLogger("mpu9250");
 };
+
+}  // namespace Boardcore

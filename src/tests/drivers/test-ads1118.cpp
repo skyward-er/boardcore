@@ -53,6 +53,8 @@
 
 using namespace miosix;
 
+using namespace Boardcore;
+
 GpioPin sckPin  = GpioPin(GPIOB_BASE, 13);
 GpioPin misoPin = GpioPin(GPIOB_BASE, 14);
 GpioPin mosiPin = GpioPin(GPIOB_BASE, 15);

@@ -32,6 +32,9 @@ using SPIType = SPI_TypeDef;
 using SPIType = FakeSpiTypedef;
 #endif
 
+namespace Boardcore
+{
+
 /**
  * @brief Driver for STM32 low level SPI peripheral.
  *
@@ -532,3 +535,5 @@ inline void SPI::transfer(uint16_t *data, size_t size)
     // Go back to 8 bit frame format
     set8BitFrameFormat();
 }
+
+}  // namespace Boardcore

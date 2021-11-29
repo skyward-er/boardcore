@@ -19,8 +19,8 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
-#ifndef MAX31856_H
-#define MAX31856_H
+
+#pragma once
 
 #include <drivers/BusTemplate.h>
 #include "Sensor.h"
@@ -236,5 +236,3 @@ private:
     // by default is enabled
     bool cjEnabled;
 };
-
-#endif

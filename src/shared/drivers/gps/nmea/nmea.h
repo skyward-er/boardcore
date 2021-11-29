@@ -20,8 +20,7 @@
  * THE SOFTWARE.
  */
 
-#ifndef MINMEA_H
-#define MINMEA_H
+#pragma once
 
 #ifdef __cplusplus
 extern "C" {
@@ -257,7 +256,5 @@ static inline float minmea_tocoord(struct minmea_float *f)
 #ifdef __cplusplus
 }
 #endif
-
-#endif /* MINMEA_H */
 
 /* vim: set ts=4 sw=4 et: */

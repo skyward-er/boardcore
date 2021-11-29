@@ -25,6 +25,9 @@
 #include "../AnalogPressureSensor.h"
 #include "MPXHZ6130AData.h"
 
+namespace Boardcore
+{
+
 /**
  * @brief Driver for NXP's MPXHZ6130A pressure sensor
  */
@@ -105,3 +108,5 @@ private:
 
     float ref_press;
 };
+
+}  // namespace Boardcore

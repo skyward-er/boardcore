@@ -20,8 +20,10 @@
  * THE SOFTWARE.
  */
 
-#ifndef CPU_METER_H
-#define CPU_METER_H
+#pragma once
+
+namespace Boardcore
+{
 
 /*
  * This CPU meter works like this.
@@ -50,4 +52,4 @@
  */
 float averageCpuUtilization();
 
-#endif  // CPU_METER_H
+}  // namespace Boardcore

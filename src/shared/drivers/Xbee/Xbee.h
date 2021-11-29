@@ -42,6 +42,9 @@ using GpioType = miosix::GpioPin;
 using GpioType = MockGpioPin;
 #endif
 
+namespace Boardcore
+{
+
 namespace Xbee
 {
 using ParseResult = APIFrameParser::ParseResult;
@@ -281,3 +284,5 @@ private:
 };
 
 }  // namespace Xbee
+
+}  // namespace Boardcore

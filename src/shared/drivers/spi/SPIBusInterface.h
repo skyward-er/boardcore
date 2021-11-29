@@ -33,6 +33,9 @@ using GpioType = miosix::GpioPin;
 using GpioType = MockGpioPin;
 #endif
 
+namespace Boardcore
+{
+
 /**
  * @brief SPI Bus configuration for a specific slave.
  *
@@ -257,3 +260,5 @@ private:
     SPIBusInterface& bus;
     GpioType& cs;
 };
+
+}  // namespace Boardcore

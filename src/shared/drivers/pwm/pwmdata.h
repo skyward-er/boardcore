@@ -20,8 +20,10 @@
  * THE SOFTWARE.
  */
 
-#ifndef SRC_SHARED_DRIVERS_PWM_PWMDATA_H
-#define SRC_SHARED_DRIVERS_PWM_PWMDATA_H
+#pragma once
+
+namespace Boardcore
+{
 
 /**
  * @brief PWM channel output polarity
@@ -61,4 +63,4 @@ struct PWMChannelConfig
     PWMPolarity polarity = PWMPolarity::ACTIVE_HIGH;
 };
 
-#endif
+}  // namespace Boardcore

@@ -40,6 +40,7 @@
 #include "sensors/calibration/SoftIronCalibration.h"
 #include "sensors/calibration/TwelveParameterCalibration.h"
 
+using namespace Boardcore;
 using namespace miosix;
 
 /* using volatile so that the compiler won't optimize out the variable */
@@ -110,4 +111,3 @@ int main()
         }
     }
 }
-

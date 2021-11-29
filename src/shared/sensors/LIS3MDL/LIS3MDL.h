@@ -20,8 +20,7 @@
  * THE SOFTWARE.
  */
 
-#ifndef SRC_SHARED_SENSORS_LIS3MDL_LIS3MDL_H
-#define SRC_SHARED_SENSORS_LIS3MDL_LIS3MDL_H
+#pragma once
 
 #include <Common.h>
 #include <diagnostic/PrintLogger.h>
@@ -31,6 +30,9 @@
 #include "drivers/spi/SPIDriver.h"
 #include "miosix.h"
 #include "sensors/Sensor.h"
+
+namespace Boardcore
+{
 
 /**
  * Driver for LIS3MDL, a three-axis magnetic sensor.
@@ -645,4 +647,4 @@ private:
     PrintLogger logger = Logging::getLogger("lis3mdl");
 };
 
-#endif
+}  // namespace Boardcore

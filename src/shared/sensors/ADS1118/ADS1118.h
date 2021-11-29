@@ -66,6 +66,9 @@
 
 #include "ADS1118Data.h"
 
+namespace Boardcore
+{
+
 /**
  * @brief Driver class for ADS1118 ADC.
  *
@@ -369,3 +372,5 @@ private:
      */
     static constexpr uint16_t CONFIG_MASK = 0xFE7F;
 };
+
+}  // namespace Boardcore

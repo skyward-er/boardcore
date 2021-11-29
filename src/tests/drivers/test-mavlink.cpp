@@ -25,12 +25,13 @@
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wcast-align"
 #pragma GCC diagnostic ignored "-Waddress-of-packed-member"
-#include <libs/mavlink_skyward_lib/mavlink_lib/lynx/mavlink.h>
+#include <mavlink_lib/lynx/mavlink.h>
 #pragma GCC diagnostic pop
 
 #include <Common.h>
 #include <drivers/mavlink/MavlinkDriver.h>
 
+using namespace Boardcore;
 using namespace miosix;
 
 static const unsigned int queue_len          = 10;

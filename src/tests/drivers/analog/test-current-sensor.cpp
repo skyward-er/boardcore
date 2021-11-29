@@ -27,6 +27,7 @@
 #include "drivers/adc/InternalADC.h"
 #include "sensors/analog/current/CurrentSensor.h"
 
+using namespace Boardcore;
 using namespace miosix;
 
 GpioPin battery_pin              = GpioPin(GPIOA_BASE, 3);

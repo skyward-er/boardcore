@@ -25,6 +25,7 @@
 #include "Common.h"
 #include "drivers/pwm/pwm.h"
 
+using namespace Boardcore;
 using namespace miosix;
 
 // TODO: Update this test

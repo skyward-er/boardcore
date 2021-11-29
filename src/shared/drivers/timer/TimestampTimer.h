@@ -27,6 +27,9 @@
 #include "GeneralPurposeTimer.h"
 #include "TimerUtils.h"
 
+namespace Boardcore
+{
+
 /**
  * @brief Utility for precise timestamp values.
  *
@@ -112,3 +115,5 @@ inline uint64_t TimestampTimer::getTimestamp()
     // this way:
     // return TimerUtils::toIntMicroSeconds(timestampTimer.getTimer());
 }
+
+}  // namespace Boardcore

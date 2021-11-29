@@ -28,6 +28,9 @@
 
 #include "SPIBusInterface.h"
 
+namespace Boardcore
+{
+
 /**
  * @brief Generates SPI clock and chip select signal through two timers chained
  * together.
@@ -237,3 +240,5 @@ void SPISignalGenerator<ChainChannel, CSChanel, SCKChannel>::disable()
     masterTimer.disable();
     slaveTimer.disable();
 }
+
+}  // namespace Boardcore

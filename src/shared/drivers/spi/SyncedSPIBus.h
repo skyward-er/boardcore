@@ -26,6 +26,9 @@
 
 #include "SPIBus.h"
 
+namespace Boardcore
+{
+
 /**
  * @brief Extension of SPIBus to sync access to the bus between multiple threads
  */
@@ -48,3 +51,5 @@ class SyncedSPIBus : public SPIBus
 private:
     miosix::FastMutex mutex;
 };
+
+}  // namespace Boardcore

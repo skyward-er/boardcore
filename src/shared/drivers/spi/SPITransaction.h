@@ -24,6 +24,9 @@
 
 #include "SPIBusInterface.h"
 
+namespace Boardcore
+{
+
 /**
  * @brief Provides high-level access to the SPI Bus for a single transaction.
  *
@@ -225,3 +228,5 @@ private:
     WriteBit writeBit;
     GpioType cs;
 };
+
+}  // namespace Boardcore

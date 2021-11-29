@@ -30,6 +30,9 @@
 
 using namespace miosix;
 
+namespace Boardcore
+{
+
 UbloxGPS::UbloxGPS(int baudrate_, uint8_t sampleRate_, int serialPortNum_,
                    const char* serialPortName_, int defaultBaudrate_)
     : baudrate(baudrate_), sampleRate(sampleRate_),
@@ -529,3 +532,5 @@ bool UbloxGPS::parseUBXACKMessage(uint8_t* message)
     }
     return false;
 }
+
+}  // namespace Boardcore

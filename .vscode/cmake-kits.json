@@ -1,0 +1,6 @@
+[
+    {
+        "name": "Miosix",
+        "toolchainFile": "libs/miosix-kernel/miosix/_tools/toolchain.cmake"
+    }
+]

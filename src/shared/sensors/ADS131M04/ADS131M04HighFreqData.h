@@ -25,7 +25,12 @@
 #include <Common.h>
 #include <stdint.h>
 
+namespace Boardcore
+{
+
 struct ADS131M04HighFreqData
 {
     uint8_t rawData[12];
 };
+
+}  // namespace Boardcore

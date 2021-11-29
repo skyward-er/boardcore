@@ -22,6 +22,9 @@
 
 #include "BMX160.h"
 
+namespace Boardcore
+{
+
 BMX160::BMX160(SPIBusInterface& bus, miosix::GpioPin cs, BMX160Config config)
     : BMX160(bus, cs, config, SPIBusConfig{})
 {
@@ -969,3 +972,5 @@ float BMX160::boschMagCompensateZ(int16_t z, uint16_t rhall)
         return retval;
     /* clang-format on */
 }
+
+}  // namespace Boardcore

@@ -19,8 +19,8 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
-#ifndef SRC_SHARED_SENSORS_LSM6DS3H_LSM6DS3HDATA_H
-#define SRC_SHARED_SENSORS_LSM6DS3H_LSM6DS3HDATA_H
+
+#pragma once
 
 #include <ostream>
 #include "math/Vec3.h"
@@ -44,5 +44,3 @@ struct LSM6DS3HData
            << gyro.getZ() << "\n";
     }
 };
-
-#endif /* SRC_SHARED_SENSORS_LSM6DS3H_LSM6DS3HDATA_H */

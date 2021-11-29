@@ -24,6 +24,9 @@
 
 #include <cmath>
 
+namespace Boardcore
+{
+
 namespace aeroutils
 {
 
@@ -119,3 +122,5 @@ float mslTemperature(float temperature_ref, float altitude_ref);
 float verticalSpeed(float p, float dp_dt, float p_ref, float t_ref);
 
 }  // namespace aeroutils
+
+}  // namespace Boardcore

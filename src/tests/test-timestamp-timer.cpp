@@ -24,6 +24,7 @@
 #include <miosix.h>
 #include <stdio.h>
 
+using namespace Boardcore;
 using namespace miosix;
 
 int main()

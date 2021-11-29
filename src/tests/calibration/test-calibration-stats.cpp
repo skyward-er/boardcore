@@ -33,6 +33,7 @@
 
 #include "sensors/calibration/Calibration.h"
 
+using namespace Boardcore;
 using namespace miosix;
 
 /* using volatile so that the compiler won't optimize out the variable */
@@ -309,4 +310,3 @@ int main()
         }
     }
 }
-

@@ -20,8 +20,7 @@
  * THE SOFTWARE.
  */
 
-#ifndef LSM6DS3H_H
-#define LSM6DS3H_H
+#pragma once
 
 #include <drivers/BusTemplate.h>
 
@@ -214,5 +213,3 @@ constexpr float LSM6DS3H<Bus>::accelFSMAP[];
 
 template <typename Bus>
 constexpr float LSM6DS3H<Bus>::gyroFSMAP[];
-
-#endif /* ifndef LSM6DS3H */

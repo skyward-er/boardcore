@@ -26,6 +26,9 @@
 
 #include "BasicTimer.h"
 
+namespace Boardcore
+{
+
 /**
  * @brief Driver for STM32 general purpose timers.
  *
@@ -738,3 +741,5 @@ inline void GeneralPurposeTimer<T>::clearCaptureCompareInterruptFlag(
 
     timer->SR &= ~(TIM_SR_CC1IF << (C - 1));
 }
+
+}  // namespace Boardcore

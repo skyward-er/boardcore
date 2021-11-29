@@ -28,6 +28,9 @@
 #include "ADS131M04.h"
 #include "ADS131M04HighFreqData.h"
 
+namespace Boardcore
+{
+
 /**
  * @brief Driver for ADS131M04 in combination with DMA and timers.
  */
@@ -48,3 +51,5 @@ private:
     DMAStream::Channel dmaChannel;
     bool highFreqSamplingStarted = false;
 };
+
+}  // namespace Boardcore

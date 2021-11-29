@@ -29,6 +29,9 @@
 
 using namespace Eigen;
 
+namespace Boardcore
+{
+
 /**
  * This is the dumbest type of calibration possible: it stores a 3d vector
  * (called "bias") that will be added to every measurement.
@@ -108,3 +111,5 @@ private:
     Vector3f sum, ref;
     unsigned numSamples;
 };
+
+}  // namespace Boardcore

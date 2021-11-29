@@ -27,6 +27,9 @@
 
 using namespace miosix;
 
+namespace Boardcore
+{
+
 const int period         = 100;
 const int gap            = 100;
 const int watchdogPeriod = 20 * period;
@@ -83,3 +86,5 @@ public:
 static CpuMeterLauncher launcher;
 
 #endif  // ENABLE_CPU_METER
+
+}  // namespace Boardcore

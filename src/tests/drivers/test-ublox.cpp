@@ -26,6 +26,7 @@
 
 #include <cstdio>
 
+using namespace Boardcore;
 using namespace miosix;
 
 #define RATE 4

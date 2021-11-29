@@ -26,6 +26,7 @@
 
 #include "sensors/LIS3MDL/LIS3MDL.h"
 
+using namespace Boardcore;
 using namespace miosix;
 
 int main()

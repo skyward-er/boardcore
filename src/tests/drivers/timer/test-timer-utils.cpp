@@ -27,7 +27,7 @@
  * Test developed for the STM32F429 Discovery
  */
 
-using namespace TimerUtils;
+using namespace Boardcore::TimerUtils;
 
 void printInputClock(InputClock inputClock);
 

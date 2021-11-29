@@ -25,6 +25,9 @@
 #include <drivers/timer/TimestampTimer.h>
 #include <interfaces/endianness.h>
 
+namespace Boardcore
+{
+
 const ADS1118::ADS1118Config ADS1118::ADS1118_DEFAULT_CONFIG = {
     SINGLE_SHOT_MODE, FSR_2_048,  MUX_AIN0_AIN1, 0,     0,
     VALID_OPERATION,  PULL_UP_EN, ADC_MODE,      DR_128};
@@ -315,3 +318,5 @@ int8_t ADS1118::findNextEnabledChannel(int8_t startChannel)
     // If no valid channel has been fount return an invalid channel
     return INVALID_CHANNEL;
 }
+
+}  // namespace Boardcore

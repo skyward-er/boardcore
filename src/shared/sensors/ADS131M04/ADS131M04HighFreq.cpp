@@ -22,6 +22,9 @@
 
 #include "ADS131M04HighFreq.h"
 
+namespace Boardcore
+{
+
 ADS131M04HighFreq::ADS131M04HighFreq(SPISlave spiSlave, SPIType *spi,
                                      DMAStream rxStream,
                                      DMAStream::Channel dmaChannel)
@@ -54,3 +57,5 @@ void ADS131M04HighFreq::startHighFreqSampling()
     rxStream.enableDoubleBufferMode();
     rxStream.enable();
 }
+
+}  // namespace Boardcore

@@ -36,6 +36,9 @@ using std::deque;
 using std::function;
 using std::unique_ptr;
 
+namespace Boardcore
+{
+
 class MockXbeeSPIBus : public MockSPIBus
 {
 public:
@@ -170,3 +173,5 @@ private:
     bool respond_with_tx_status       = true;
     uint8_t tx_status_delivery_status = 0;
 };
+
+}  // namespace Boardcore

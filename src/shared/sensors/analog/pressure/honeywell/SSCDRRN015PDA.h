@@ -27,6 +27,9 @@
 #include "HoneywellPressureSensor.h"
 #include "SSCDRRN015PDAData.h"
 
+namespace Boardcore
+{
+
 /**
  * @brief Differential pressure sensor with a ±103kPa range (±15psi)
  */
@@ -79,3 +82,5 @@ private:
     Stats press_stats;
     unsigned int num_calib_samples;
 };
+
+}  // namespace Boardcore

@@ -24,6 +24,9 @@
 
 #include <Debug.h>
 
+namespace Boardcore
+{
+
 SensorManager::SensorManager(const SensorMap_t& sensors_map)
     : SensorManager(new TaskScheduler(), sensors_map)
 {
@@ -258,3 +261,5 @@ SensorSampler* SensorManager::createSampler(uint8_t id, uint32_t period,
         return new SimpleSensorSampler(id, period);
     }
 }
+
+}  // namespace Boardcore

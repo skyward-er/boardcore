@@ -25,6 +25,7 @@
 #include <miosix.h>
 
 using namespace miosix;
+using namespace Boardcore;
 
 GeneralPurposeTimer<uint16_t> timer(TIM4);
 constexpr int frequency = 123456;

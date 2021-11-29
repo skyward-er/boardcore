@@ -20,12 +20,14 @@
  * THE SOFTWARE.
  */
 
-#ifndef CANMANAGER_H
-#define CANMANAGER_H
+#pragma once
 
 #include <Common.h>
 #include "CanBus.h"
 #include "CanUtils.h"
+
+namespace Boardcore
+{
 
 class CanBus;
 
@@ -204,4 +206,4 @@ private:
 
 //#define sCanManager CanManager::getInstance()
 
-#endif /* CANMANAGER_H */
+}  // namespace Boardcore

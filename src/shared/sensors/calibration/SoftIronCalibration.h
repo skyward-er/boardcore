@@ -30,6 +30,9 @@
 #include "Calibration.h"
 #include "sensors/SensorData.h"
 
+namespace Boardcore
+{
+
 /*
  * The Soft-iron calibration removes the measurement error given by both the
  * Hard and Soft Iron distortion of the magnetic field.
@@ -185,3 +188,5 @@ private:
     Matrix<float, MaxSamples, 7> samples;
     unsigned numSamples;
 };
+
+}  // namespace Boardcore

@@ -22,6 +22,9 @@
 
 #include "TestHelper.h"
 
+namespace Boardcore
+{
+
 long long tickToMilliseconds(long long tick)
 {
     return tick * 1000 / miosix::TICK_FREQ;
@@ -87,3 +90,5 @@ bool waitForEvent(uint8_t event, uint8_t topic, long long timeout,
     // Timeout expired
     return false;
 }
+
+}  // namespace Boardcore

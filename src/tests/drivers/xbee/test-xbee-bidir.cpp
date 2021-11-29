@@ -40,6 +40,7 @@
 #include "drivers/interrupt/external_interrupts.h"
 #include "logger/Logger.h"
 
+using namespace Boardcore;
 using namespace miosix;
 
 #ifdef _BOARD_STM32F429ZI_SKYWARD_DEATHST_X

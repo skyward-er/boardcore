@@ -27,6 +27,9 @@
 
 #include "ADS131M04Data.h"
 
+namespace Boardcore
+{
+
 /**
  * @brief Driver for ADS131M04 4 simultaneous channels adc.
  *
@@ -261,3 +264,5 @@ constexpr uint16_t REG_CHx_CFG_DCBLK_DIS = 1 << 2;
 constexpr uint16_t REG_CHx_CFG_MUX       = 3;
 
 }  // namespace ADS131M04RegisterBitMasks
+
+}  // namespace Boardcore

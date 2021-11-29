@@ -20,12 +20,13 @@
  * THE SOFTWARE.
  */
 
-#ifndef SYNC_QUEUE_H_
-#define SYNC_QUEUE_H_
+#pragma once
 
 #include <list>
 #include "miosix.h"
 
+namespace Boardcore
+{
 
 template<typename T>
 class SynchronizedQueue
@@ -73,4 +74,4 @@ int SynchronizedQueue<T>::len()
 	return queue.size();
 }
 
-#endif //SYNC_QUEUE_H_
+}  // namespace Boardcore
