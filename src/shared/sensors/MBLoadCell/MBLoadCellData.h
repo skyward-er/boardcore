@@ -51,7 +51,6 @@ enum LoadCellValuesEnum
     NET_WEIGHT,
     PEAK_WEIGHT,
     RESET_TARE,
-    DECIMALS_READING,
     COMMUTE_TO_NET,
     COMMUTE_TO_GROSS
 };
@@ -61,13 +60,12 @@ enum LoadCellValuesEnum
  */
 typedef std::map<const LoadCellValuesEnum, std::string> LoadCellValues;
 static LoadCellValues loadCellValues = {
-    {SET_SETPOINT_1, "A"},      {SET_SETPOINT_2, "B"},
-    {SET_SETPOINT_3, "C"},      {GET_SETPOINT_1, "a"},
-    {GET_SETPOINT_2, "b"},      {GET_SETPOINT_3, "c"},
-    {GROSS_WEIGHT, "t"},        {NET_WEIGHT, "n"},
-    {PEAK_WEIGHT, "p"},         {RESET_TARE, "z"},
-    {DECIMALS_READING, "D"},    {COMMUTE_TO_NET, "NET"},
-    {COMMUTE_TO_GROSS, "GROSS"}};
+    {SET_SETPOINT_1, "A"},   {SET_SETPOINT_2, "B"},
+    {SET_SETPOINT_3, "C"},   {GET_SETPOINT_1, "a"},
+    {GET_SETPOINT_2, "b"},   {GET_SETPOINT_3, "c"},
+    {GROSS_WEIGHT, "t"},     {NET_WEIGHT, "n"},
+    {PEAK_WEIGHT, "p"},      {RESET_TARE, "z"},
+    {COMMUTE_TO_NET, "NET"}, {COMMUTE_TO_GROSS, "GROSS"}};
 
 /**
  * @brief structure of the errors in the ASCII requests
@@ -233,4 +231,4 @@ struct DataAsciiRequest
     }
 };
 
-} // namespace Boardcore
+}  // namespace Boardcore

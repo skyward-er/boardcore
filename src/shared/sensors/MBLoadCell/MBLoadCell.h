@@ -67,6 +67,11 @@ public:
      */
     bool init() override;
 
+    /**
+     * @brief self test function simply overridden in order to have a concrete
+     * class, simply returns true
+     * @return true
+     */
     bool selfTest() override;
 
     /**

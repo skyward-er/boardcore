@@ -13,7 +13,7 @@
       "label": "CLEAN",
       "type": "shell",
       "windows": {
-        "command": "sh sbs -c"
+        "command": "./sbs -c"
       },
       "linux": {
         "command": "./sbs -c"
@@ -35,7 +35,7 @@
       "label": "BUILD current-entrypoint",
       "type": "shell",
       "windows": {
-        "command": "sh sbs -v -n -b ${fileBasenameNoExtension}"
+        "command": "./sbs -d -b ${fileBasenameNoExtension}"
       },
       "linux": {
         "command": "./sbs -v -b ${fileBasenameNoExtension}"
@@ -46,7 +46,7 @@
       "label": "RUN current-entrypoint",
       "type": "shell",
       "windows": {
-        "command": "ST-LINK_CLI.exe -P bin/${fileBasenameNoExtension}/${fileBasenameNoExtension}.bin 0x8000000 -V -Rst"
+        "command": "ST-LINK_CLI.exe -P build/${fileBasenameNoExtension}.bin 0x8000000 -V -Rst"
       },
       "linux": {
         "command": "st-flash write bin/${fileBasenameNoExtension}/${fileBasenameNoExtension}.bin 0x8000000"
@@ -57,10 +57,10 @@
       "label": "BUILD+RUN current-entrypoint",
       "type": "shell",
       "windows": {
-        "command": "ST-LINK_CLI.exe -P bin/${fileBasenameNoExtension}/${fileBasenameNoExtension}.bin 0x8000000 -V -Rst"
+        "command": "ST-LINK_CLI.exe -P build/${fileBasenameNoExtension}.bin 0x8000000 -V -Rst"
       },
       "linux": {
-        "command": "sleep 1;st-flash write bin/${fileBasenameNoExtension}/${fileBasenameNoExtension}.bin 0x8000000"
+        "command": "sleep 1;st-flash write build/${fileBasenameNoExtension}.bin 0x8000000"
       },
       "problemMatcher": [],
       "dependsOn": [
@@ -106,6 +106,17 @@
       "options": {
         "cwd": "/opt/arm-miosix-eabi/bin"
       }
+    },
+    {
+      "label": "Open PuTTY 'skyward' session",
+      "type": "shell",
+      "windows": {
+        "command": "putty.exe -load skyward &"
+      },
+      "linux": {
+        "command": "putty.exe -load skyward &"
+      },
+      "problemMatcher": []
     }
   ]
 }

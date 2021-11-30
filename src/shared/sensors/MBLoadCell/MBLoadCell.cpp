@@ -27,7 +27,6 @@
 
 using ctrlPin1 = miosix::Gpio<GPIOC_BASE, 1>;  ///< control R/W pin 1
 using ctrlPin2 = miosix::Gpio<GPIOC_BASE, 2>;  ///< control R/W pin 2
-using out1     = miosix::Gpio<GPIOC_BASE, 8>;  ///< out1 for the first setpoint1
 
 namespace Boardcore
 {
@@ -57,10 +56,11 @@ bool MBLoadCell::init()
     }
 
     {
+        // disabling interrupts in order to set with no problems the control
+        // pins
         miosix::FastInterruptDisableLock dLock;
         ctrlPin1::mode(miosix::Mode::OUTPUT);
         ctrlPin2::mode(miosix::Mode::OUTPUT);
-        out1::mode(miosix::Mode::INPUT);
     }
 
     return true;
@@ -233,7 +233,7 @@ MBLoadCellSettings MBLoadCell::getSettings() { return settings; }
 
 void MBLoadCell::resetMaxMinWeights()
 {
-    TRACE("TIMESTAMP: %.3f [s], EX MAX: %.2f [Kg], EX MIN: %.2f [Kg]\n",
+    TRACE("### TIMESTAMP: %.3f [s], EX MAX: %.2f [Kg], EX MIN: %.2f [Kg] ###\n",
           (double)TimestampTimer::getTimestamp() / 1000000, max_weight.data,
           min_weight.data);
 
@@ -265,6 +265,7 @@ void MBLoadCell::generateRequest(DataAsciiRequest &req,
 
 void MBLoadCell::transmitASCII(std::string buf)
 {
+    // setting both the control pins to high in order to transmit
     ctrlPin1::high();
     ctrlPin2::high();
     serial->sendString(buf);
@@ -275,6 +276,7 @@ std::string MBLoadCell::receiveASCII()
 {
     char buf[64];
 
+    // setting both the control pins to low in order to receive
     ctrlPin1::low();
     ctrlPin2::low();
     int len  = serial->recvString(buf, 64);
@@ -286,6 +288,7 @@ std::string MBLoadCell::receiveASCII()
 template <typename T>
 void MBLoadCell::receive(T *buf)
 {
+    // setting both the control pins to low in order to receive
     ctrlPin1::low();
     ctrlPin2::low();
     serial->recvData(buf);
