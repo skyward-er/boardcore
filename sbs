@@ -40,8 +40,10 @@ EOF
 }
 
 find_deps() {
-    command -v ccache &> /dev/null && config_ccache=true
-    command -v ninja  &> /dev/null && config_ninja=true
+    command -v ccache          &> /dev/null && config_ccache=true
+    command -v ninja           &> /dev/null && config_ninja=true
+    command -v st-flash        &> /dev/null && config_stflash=true
+    command -v ST-LINK_CLI.exe &> /dev/null && config_stlink=true
 }
 
 print_found_deps() {
@@ -103,7 +105,16 @@ flash() {
     if build "$1"; then
         echo
         if [ -f "$build_dir/$1.bin" ]; then
-            st-flash --reset write "$build_dir/$1.bin" 0x08000000
+            printf "Flashing software: ";  
+            [ "$config_stflash" = true ] && echo "st-flash" || ([ "$config_stlink" = true ] && echo "st-link" || "no")
+
+            if [ "$config_stflash" = true ]; then
+                st-flash --reset write "$build_dir/$1.bin" 0x08000000
+            elif [ "$config_stlink" = true ]; then
+                ST-LINK_CLI.exe -P "$build_dir/$1.bin" 0x8000000 -V -Rst
+            else
+                echo "Error: No flashing software found!"
+            fi
         else
             echo "Error: target '$1' is not flashable"
         fi
@@ -180,6 +191,8 @@ config_ccache=false
 config_debug=false
 config_verbose=false
 config_ninja=false
+config_stflash=false
+config_stlink=false
 build_jobs=
 
 find_deps

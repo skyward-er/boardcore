@@ -32,13 +32,24 @@
       "problemMatcher": "$gcc"
     },
     {
-      "label": "BUILD current-entrypoint",
+      "label": "BUILD current-entrypoint DEBUG",
       "type": "shell",
       "windows": {
         "command": "./sbs -d -b ${fileBasenameNoExtension}"
       },
       "linux": {
-        "command": "./sbs -v -b ${fileBasenameNoExtension}"
+        "command": "./sbs -d -b ${fileBasenameNoExtension}"
+      },
+      "problemMatcher": "$gcc"
+    },
+    {
+      "label": "BUILD current-entrypoint NO DEBUG",
+      "type": "shell",
+      "windows": {
+        "command": "./sbs -b ${fileBasenameNoExtension}"
+      },
+      "linux": {
+        "command": "./sbs -b ${fileBasenameNoExtension}"
       },
       "problemMatcher": "$gcc"
     },
@@ -54,18 +65,30 @@
       "problemMatcher": []
     },
     {
-      "label": "BUILD+RUN current-entrypoint",
+      "label": "BUILD+RUN current-entrypoint DEBUG",
       "type": "shell",
       "windows": {
-        "command": "ST-LINK_CLI.exe -P build/${fileBasenameNoExtension}.bin 0x8000000 -V -Rst"
+        "command": "./sbs -d -f ${fileBasenameNoExtension}"
       },
       "linux": {
-        "command": "sleep 1;st-flash write build/${fileBasenameNoExtension}.bin 0x8000000"
+        "command": "./sbs -d -f ${fileBasenameNoExtension}"
       },
       "problemMatcher": [],
-      "dependsOn": [
-        "BUILD current-entrypoint"
-      ],
+      "group": {
+        "kind": "build",
+        "isDefault": true
+      }
+    },
+    {
+      "label": "BUILD+RUN current-entrypoint NO DEBUG",
+      "type": "shell",
+      "windows": {
+        "command": "./sbs -f ${fileBasenameNoExtension}"
+      },
+      "linux": {
+        "command": "./sbs -f ${fileBasenameNoExtension}"
+      },
+      "problemMatcher": [],
       "group": {
         "kind": "build",
         "isDefault": true
