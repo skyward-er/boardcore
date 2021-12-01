@@ -19,14 +19,26 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
+
+/** BRIEF INTRODUCTION
+ * This class is used to create a communication easily with UART ports.
+ * In particular it handles the creation and the basic primitives
+ * for standard communication protocols (init, send, recv and close).
+ * The user should pay more attention on the concept behind the use of this class.
+ * The principle under the class is that miosix communicates via USART ports 
+ * using a file based principle (Unix style). Because of that you need to
+ * consider that the receive file works as a LIFO queue, in fact the last message
+ * is returned over the less recent messages, so if you accumulate various messages
+ * of variable length, you might end up with a message which represents the most
+ * recent communication + other previous stuff.
+ */
+
 #pragma once
 
 #include <miosix.h>
 #include <fcntl.h>
 #include <arch/common/drivers/serial.h>
 #include <filesystem/file_access.h>
-
-using namespace miosix;
 
 /**
  * @brief Class to communicate with the vn100 via serial
@@ -80,10 +92,10 @@ public:
         }
 
         //Retrieve the file system instance
-        intrusive_ref_ptr<DevFs> devFs = FilesystemManager::instance().getDevFs();
+        miosix::intrusive_ref_ptr<miosix::DevFs> devFs = miosix::FilesystemManager::instance().getDevFs();
 
         //Create the serial file which we read and write to communicate
-        if(!(devFs -> addDevice("vn100", intrusive_ref_ptr<Device>(new STM32Serial(serialPortNumber, serialBaudRate)))))
+        if(!(devFs -> addDevice("vn100", miosix::intrusive_ref_ptr<miosix::Device>(new miosix::STM32Serial(serialPortNumber, serialBaudRate)))))
         {
             return false;
         }
@@ -157,7 +169,7 @@ public:
     bool closeSerial()
     {
         //Retrieve the file system instance
-        intrusive_ref_ptr<DevFs> devFs = FilesystemManager::instance().getDevFs();
+        miosix::intrusive_ref_ptr<miosix::DevFs> devFs = miosix::FilesystemManager::instance().getDevFs();
 
         //Close the file descriptor
         close(serialFileDescriptor);

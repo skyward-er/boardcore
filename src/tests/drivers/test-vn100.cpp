@@ -31,7 +31,7 @@ int main()
     GpioPin tx(GPIOB_BASE, 6);
     GpioPin rx(GPIOB_BASE, 7);
     VN100Data sample;
-    VN100 sensor {1, 115200, VN100::CRC_ENABLE_8};
+    VN100 sensor {1, VN100::BaudRates::Baud_115200, VN100::CRCOptions::CRC_ENABLE_8};
 
     tx.mode(Mode::ALTERNATE);
     rx.mode(Mode::ALTERNATE);
@@ -47,6 +47,7 @@ int main()
     if(!sensor.init())
     {
         printf("Error initializing the sensor!\n");
+        return 0;
     }
 
     printf("Sensor init successful!\n");
@@ -65,7 +66,6 @@ int main()
         sensor.sample();
         sample = sensor.getLastSample();
         printf("%" PRIu64 ", %.3f, %.3f, %.3f\n", sample.accel_timestamp, sample.accel_x, sample.accel_y, sample.accel_z);
-
         Thread::sleep(100);
     }
 

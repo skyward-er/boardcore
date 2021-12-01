@@ -28,11 +28,11 @@
  * ---------------------------------------------------------------------------------------------------------------------------------------
  */
 VN100::VN100()
-    : VN100(defaultPortNumber, defaultBaudRate)
+    : VN100(defaultPortNumber, BaudRates::Baud_115200)
 {}
 
 VN100::VN100(unsigned int portNumber, unsigned int baudRate)
-    : VN100(portNumber, baudRate, CRC_ENABLE_8)
+    : VN100(portNumber, baudRate, CRCOptions::CRC_ENABLE_8)
 {}
 
 VN100::VN100(unsigned int portNumber, unsigned int baudRate, uint8_t crc)
@@ -62,6 +62,18 @@ bool VN100::init()
 
     //Allocate the receive vector
     recvString = new char[recvStringMaxDimension];
+
+    //Allocate the pre loaded strings based on the user selected crc
+    if(crc == CRCOptions::CRC_ENABLE_16)
+    {
+        preSampleImuString          = new string("$VNRRG,15*92EA\n");
+        preSampleTempPressString    = new string("$VNRRG,54*4E0F\n");
+    }
+    else
+    {
+        preSampleImuString          = new string("$VNRRG,15*77\n");
+        preSampleTempPressString    = new string("$VNRRG,54*72\n");
+    }
 
     //Set the error to init fail and if the init process goes without problem
     //i restore it to the last error
@@ -195,7 +207,7 @@ bool VN100::disableAsyncMessages(bool waitResponse)
 bool VN100::configDefaultSerialPort()
 {
     //Initial default settings
-    serialInterface = new VN100Serial(portNumber, defaultBaudRate);
+    serialInterface = new VN100Serial(portNumber, BaudRates::Baud_115200);
 
     //Check correct serial init
     if(!(serialInterface -> init()))
@@ -247,7 +259,7 @@ bool VN100::setCrc(bool waitResponse)
     uint8_t backup = crc;
 
     //Check what type of crc is selected
-    if(crc == CRC_ENABLE_16)
+    if(crc == CRCOptions::CRC_ENABLE_16)
     {
         //The 3 inside the command is the 16bit select. The others are default values
         command = "VNWRG,30,0,0,0,0,3,0,1";
@@ -263,7 +275,7 @@ bool VN100::setCrc(bool waitResponse)
     //I need to send the command in both crc because i don't know what type
     //of crc is previously selected. So in order to get the command accepted
     //i need to do it two times with different crc.
-    crc = CRC_ENABLE_8;
+    crc = CRCOptions::CRC_ENABLE_8;
     //Send the command
     if(!sendStringCommand(command))
     {
@@ -276,7 +288,7 @@ bool VN100::setCrc(bool waitResponse)
         recvStringCommand(recvString, recvStringMaxDimension);
     }
 
-    crc = CRC_ENABLE_16;
+    crc = CRCOptions::CRC_ENABLE_16;
     //Send the command
     if(!sendStringCommand(command))
     {
@@ -352,7 +364,7 @@ VN100Data VN100::sampleImpl()
     }
 
     //Returns Quaternion, Magnetometer, Accelerometer and Gyro
-    if(!sendStringCommand("VNRRG,15"))
+    if(!(serialInterface -> send(preSampleImuString -> c_str(), preSampleImuString -> length())))
     {
         //If something goes wrong i return the last sampled data
         return last_sample;
@@ -379,7 +391,7 @@ VN100Data VN100::sampleImpl()
 
     //Returns Magnetometer, Accelerometer, Gyroscope, Temperature and Pressure (UNCOMPENSATED)
     //DO NOT USE THESE MAGNETOMETER, ACCELEROMETER AND GYROSCOPE VALUES
-    if(!sendStringCommand("VNRRG,54"))
+    if(!(serialInterface -> send(preSampleTempPressString -> c_str(), preSampleTempPressString -> length())))
     {
         //If something goes wrong i return the last sampled data
         return last_sample;
@@ -546,7 +558,7 @@ PressureData VN100::samplePressure()
 
 bool VN100::sendStringCommand(std::string command)
 {
-    if(crc == CRC_ENABLE_8)
+    if(crc == CRCOptions::CRC_ENABLE_8)
     {
         char checksum[4]; //2 hex + \n + \0
         //I convert the calculated checksum in hex using itoa
@@ -557,7 +569,7 @@ bool VN100::sendStringCommand(std::string command)
         command = fmt::format("{}{}{}{}", "$", command, "*", checksum);
 
     }
-    else if(crc == CRC_ENABLE_16)
+    else if(crc == CRCOptions::CRC_ENABLE_16)
     {
         char checksum[6]; //4 hex + \n + \0
         //I convert the calculated checksum in hex using itoa
@@ -623,7 +635,7 @@ bool VN100::verifyChecksum(char * command, int length)
     }
 
     //Check based on the user selected crc type
-    if(crc == CRC_ENABLE_16)
+    if(crc == CRCOptions::CRC_ENABLE_16)
     {
         if(length != checksumOffset + 5) //4 hex chars + 1 of position
         {
@@ -638,7 +650,7 @@ bool VN100::verifyChecksum(char * command, int length)
             return false;
         }
     }
-    else if(crc == CRC_ENABLE_8)
+    else if(crc == CRCOptions::CRC_ENABLE_8)
     {
         if(length != checksumOffset + 3) //2 hex chars + 1 of position
         {

@@ -19,6 +19,33 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
+
+/** BRIEF INTRODUCTION
+ * The VN100S sensor is a calibrated IMU which has inside various sensors
+ * such as Accelerometer, Magnetometer, Gyroscope, Barometer and Temperature Sensor.
+ * This sensor provides also a calibration matrix and an anti-drift matrix for the 
+ * gyroscope values. The goal of this driver though is to interface the sensor
+ * in its basic use. Things like asynchronous data and anti-drift techniques haven't
+ * been implemented yet. 
+ * The driver is intended to be used with the "Rugged sensor" version (aka only UART communication)
+ * although the actual VN100S chip is capable also of SPI communication.
+ * 
+ * COMMUNICATION PROTOCOL
+ * The VN100S supports both binary and ASCII encoding for communication but via serial 
+ * and with the asynchronous mode disabled only ASCII is used.
+ * The protocol also provides two algorithms to very the integrity of the messages
+ * (8 bit checksum and 16 bit CRC-CCITT) both selectable by the user using the constructor
+ * method. The serial communication also can be established with various baud rates:
+ * - 9600
+ * - 19200
+ * - 38400
+ * - 57600
+ * - 115200
+ * - 128000
+ * - 230400
+ * - 460800
+ * - 921600
+ */
 #pragma once
 
 #include <Debug.h>
@@ -37,24 +64,19 @@ class VN100 : public Sensor<VN100Data>
 {
 
 private:
-	
-    /**
-     * @brief default vn100 baud rate
-     */
-    static const unsigned int defaultBaudRate           = 115200;
 
     /** 
-     * @brief default USART port number
+     * @brief Default USART port number
      */
     static const unsigned int defaultPortNumber         = 2;
 
     /**
-     * @brief max received string lengh
+     * @brief Max received string lengh
      */
     static const unsigned int recvStringMaxDimension    = 200;
 
     /**
-     * @brief baud rate defined by the user
+     * @brief Baud rate defined by the user
      */
     unsigned int baudRate;
 
@@ -64,176 +86,205 @@ private:
     unsigned int portNumber;
 
     /**
-     * @brief redundancy check option
+     * @brief Redundancy check option
      */
     uint8_t crc;
 
     /**
-     * @brief initialization state
+     * @brief Initialization state
      */
     bool isInit;
 
     /**
-     * @brief pointer to the received string by the sensor
+     * @brief IMU pre-elaborated sample string for efficiency reasons
+     */
+    string *preSampleImuString;
+
+    /**
+     * @brief Temperature and Pressure pre-elaborated sample string for efficiency reasons
+     */
+    string *preSampleTempPressString;
+
+    /**
+     * @brief Pointer to the received string by the sensor
      * Allocated 1 time only (200 bytes)
      */
     char * recvString;
 
     /**
-     * @brief actual strlen() of the recvString
+     * @brief Actual strlen() of the recvString
      */
     unsigned int recvStringLength;
 
     /**
-     * @brief serial interface that is needed to communicate
+     * @brief Serial interface that is needed to communicate
      * with the sensor via ASCII codes
      */
     VN100Serial *serialInterface;
 
     /**
-     * @brief logger
+     * @brief Logger
      */
     PrintLogger logger = Logging::getLogger("vn100");
 
     /**
-     * @brief this method disables the async messages that the vn100
+     * @brief This method disables the async messages that the vn100
      * is default configured to send at 40Hz on startup
      * 
-     * @param boolean that asks if it should wait for a serial response
+     * @param Boolean that asks if it should wait for a serial response
      * 
-     * @return boolean that confirms or not the success
+     * @return Boolean that confirms or not the success
      */ 
     bool disableAsyncMessages(bool waitResponse);
 
     /**
-     * @brief method to configure the default serial communication
+     * @brief Method to configure the default serial communication
      * 
-     * @return boolean that confirms or not the success
+     * @return Boolean that confirms or not the success
      */
     bool configDefaultSerialPort();
 
     /**
-     * @brief method to configure the user defined serial
+     * @brief Method to configure the user defined serial
      * communication
      * 
-     * @return boolean that confirms or not the success
+     * @return Boolean that confirms or not the success
      */
     bool configUserSerialPort();
 
     /**
-     * @brief method to set the user selected crc method
+     * @brief Method to set the user selected crc method
      * 
-     * @param boolean that asks if it should wait for a serial response
+     * @param Boolean that asks if it should wait for a serial response
      * 
-     * @return boolean that confirms or not the success
+     * @return Boolean that confirms or not the success
      */
     bool setCrc(bool waitResponse);
 
     /**
-     * @brief method implementation of self test
+     * @brief Method implementation of self test
      * 
-     * @return boolean that confirms or not the self test success
+     * @return Boolean that confirms or not the self test success
      */
     bool selfTestImpl();
 
     /**
-     * @brief sample action implementation
+     * @brief Sample action implementation
      */
     VN100Data sampleImpl() override;
 
     /**
-     * @brief sample only the quaternion
+     * @brief Sample only the quaternion
      * 
      * @return Quaternion data declared in VN100Data
      */
     QuaternionData sampleQuaternion();
 
     /**
-     * @brief sample only the magnetometer
+     * @brief Sample only the magnetometer
      * 
      * @return Magnetometer data declared in SensorData
      */
     MagnetometerData sampleMagnetometer();
 
     /**
-     * @brief sample only the accelerometer
+     * @brief Sample only the accelerometer
      * 
      * @return Accelerometer data declared in SensorData
      */
     AccelerometerData sampleAccelerometer();
 
     /**
-     * @brief sample only the gyroscope
+     * @brief Sample only the gyroscope
      * 
      * @return Gyroscope data declared in SensorData
      */
     GyroscopeData sampleGyroscope();
 
     /**
-     * @brief sample only the temperature
+     * @brief Sample only the temperature
      * 
      * @return Temperature data declared in SensorData
      */
     TemperatureData sampleTemperature();
 
     /**
-     * @brief sample only the pressure
+     * @brief Sample only the pressure
      * 
      * @return Pressure data declared in SensorData
      */
     PressureData samplePressure();
 
     /**
-     * @brief sends the command to the sensor with the correct checksum added
+     * @brief Sends the command to the sensor with the correct checksum added
      * so '*' symbol is not needed at the end of the string as well as the '$'
      * at the beginning of the command
      * 
-     * @return boolean that confirms or not the success
+     * @return Boolean that confirms or not the success
      */
     bool sendStringCommand(std::string command);
 
     /**
-     * @brief receives the vn100 command with serialInterface -> recv() but
+     * @brief Receives the vn100 command with serialInterface -> recv() but
      * swaps the first \n with a \0 to close the message
      * 
-     * @param the char vector which will be filled with the command
+     * @param The char vector which will be filled with the command
      * 
-     * @return boolean that confirms or not the success
+     * @return Boolean that confirms or not the success
      */
     bool recvStringCommand(char * command, int maxLength);
 
     /**
-     * @brief method to verify the crc validity of a command
+     * @brief Method to verify the crc validity of a command
      * 
-     * @param the char vector which contains the command
-     * @param its length
+     * @param The char vector which contains the command
+     * @param Its length
      * 
-     * @return boolean that confirms or not the command validity
+     * @return Boolean that confirms or not the command validity
      */
     bool verifyChecksum(char * command, int maxLength);
 
     /**
-     * @brief method to calculate 8bit vector checksum 8bit
+     * @brief Method to calculate 8bit vector checksum 8bit
      * 
-     * @return the 8 bit checksum
+     * @return The 8 bit checksum
      */
     uint8_t calculateChecksum8(uint8_t * message, int length);
 
     /**
-     * @brief method to calculate a 8bit vector checksum 16bit
+     * @brief Method to calculate a 8bit vector checksum 16bit
      * 
-     * @return the 16 bit CRC16-CCITT error check
+     * @return The 16 bit CRC16-CCITT error check
      */
     uint16_t calculateChecksum16(uint8_t * message, int length);
 
 public:
 
     /**
-     * @brief configuration constants for redundancy check
+     * @brief Configuration enumeration for redundancy check
      */
-    static const uint8_t CRC_NO         = 0x00;
-    static const uint8_t CRC_ENABLE_8   = 0x08;
-    static const uint8_t CRC_ENABLE_16  = 0x10;
+    enum CRCOptions : uint8_t
+    {
+        CRC_NO          = 0x00,
+        CRC_ENABLE_8    = 0x08,
+        CRC_ENABLE_16   = 0x10
+    };
+
+    /**
+     * @brief Configuration enumeration for baud rate
+     */
+    enum BaudRates : unsigned int
+    {
+        Baud_9600       = 9600,
+        Baud_19200      = 19200,
+        Baud_38400      = 38400,
+        Baud_57600      = 57600,
+        Baud_115200     = 115200,
+        Baud_128000     = 128000,
+        Baud_230400     = 230400,
+        Baud_460800     = 460800,
+        Baud_921600     = 921600
+    };
 
     /**
      * @brief Constructor
@@ -244,7 +295,7 @@ public:
      * @brief Constructor
      * 
      * @param USART port number
-     * @param baudRate different from the sensor's default
+     * @param BaudRate different from the sensor's default
      */
 	VN100(unsigned int portNumber, unsigned int baudRate);
 
@@ -252,8 +303,8 @@ public:
      * @brief Constructor
      * 
      * @param USART port number
-     * @param baudRate different from the sensor's default
-     * @param redundancy check option
+     * @param BaudRate different from the sensor's default
+     * @param Redundancy check option
      */
     VN100(unsigned int portNumber, unsigned int baudRate, uint8_t crc);
 
