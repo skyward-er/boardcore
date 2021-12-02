@@ -120,8 +120,11 @@ TemperatureData MAX6675::sampleImpl()
 
     //Result assign
     result.temp_timestamp   = TimestampTimer::getTimestamp();
-    result.temp             = (unsigned int) sample >> 2; //Integer part
-    result.temp            += (float) 1 / (unsigned int)(sample & 0x0003);
+    result.temp             = (unsigned int) sample >> 2;                   //Integer part
+    
+    //Take the floating point part
+    sample = sample & 0x0003;
+    result.temp            += (float)(sample * 0.25);                       //Floating point part
 
     return result;
 }
