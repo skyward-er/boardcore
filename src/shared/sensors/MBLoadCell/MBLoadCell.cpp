@@ -70,23 +70,36 @@ bool MBLoadCell::selfTest() { return true; }
 
 Data MBLoadCell::sampleImpl()
 {
+    Data value;
     switch (settings.mode)
     {
         case LoadCellModes::CONT_MOD_T:
-            return sampleContModT();
+            value = sampleContModT();
+            break;
         case LoadCellModes::CONT_MOD_TD:
-            return sampleContModTd();
+            value = sampleContModTd();
+            break;
         case LoadCellModes::ASCII_MOD_TD:
-            return sampleAsciiModTd();
+            value = sampleAsciiModTd();
+            break;
         default:
             last_error = SensorErrors::NO_NEW_DATA;
             return last_sample;
     }
+
+    // memorizing also the maximum gross weight registered
+    if (!max_weight.valid || max_weight.data < value.data)
+        max_weight = value;
+
+    // memorizing also the minimum gross weight registered
+    if (!min_weight.valid || min_weight.data > value.data)
+        min_weight = value;
+
+    return value;
 }
 
 Data MBLoadCell::sampleContModT()
 {
-    TRACE("CONTINUOUS MOD T\n");
     DataModT data;
     receive(&data);
 
@@ -95,7 +108,6 @@ Data MBLoadCell::sampleContModT()
 
 Data MBLoadCell::sampleContModTd()
 {
-    TRACE("CONTINUOUS MOD TD\n");
     DataModTd data;
     receive(&data);
 
@@ -104,7 +116,6 @@ Data MBLoadCell::sampleContModTd()
 
 Data MBLoadCell::sampleAsciiModTd()
 {
-    TRACE("ASCII MOD TD\n");
     DataAsciiRequest request;
 
     // generating the request
@@ -132,17 +143,7 @@ Data MBLoadCell::sampleAsciiModTd()
     else
     {
         // taking the value returned
-        float value = stof(response.substr(3, 6)) / 10.0;
-
-        // memorizing also the maximum gross weight registered
-        if (!max_weight.valid || max_weight.data < value)
-            max_weight = Data(value);
-
-        // memorizing also the minimum gross weight registered
-        if (!min_weight.valid || min_weight.data > value)
-            min_weight = Data(value);
-
-        return Data(value);
+        return Data(stof(response.substr(3, 6)) / 10.0);
     }
 }
 
@@ -207,10 +208,10 @@ ReturnsStates MBLoadCell::asciiRequest(LoadCellValuesEnum reqType, int value)
         case LoadCellValuesEnum::GET_SETPOINT_3:
         {
             // taking the value returned
-            float value = stof(response.substr(3, 6)) / 10.0;
+            float val = stof(response.substr(3, 6)) / 10.0;
 
             // updating the last_value struct
-            settings.updateValue(reqType, value);
+            settings.updateValue(reqType, val);
             break;
         }
         case LoadCellValuesEnum::RESET_TARE:
@@ -229,14 +230,13 @@ ReturnsStates MBLoadCell::asciiRequest(LoadCellValuesEnum reqType, int value)
     return ReturnsStates::VALID_RETURN;
 }
 
-MBLoadCellSettings MBLoadCell::getSettings() { return settings; }
+Data MBLoadCell::getMaxWeight() { return max_weight; }
+
+Data MBLoadCell::getMinWeight() { return min_weight; }
 
 void MBLoadCell::resetMaxMinWeights()
 {
-    TRACE("### TIMESTAMP: %.3f [s], EX MAX: %.2f [Kg], EX MIN: %.2f [Kg] ###\n",
-          (double)TimestampTimer::getTimestamp() / 1000000, max_weight.data,
-          min_weight.data);
-
+    printf("max and min values erased!\n");
     max_weight.valid = false;
     min_weight.valid = false;
 }
@@ -250,7 +250,7 @@ void MBLoadCell::generateRequest(DataAsciiRequest &req,
         toRequest == LoadCellValuesEnum::SET_SETPOINT_2 ||
         toRequest == LoadCellValuesEnum::SET_SETPOINT_3)
     {
-        std::string strVal = fmt::format("{:d}", abs(value));
+        std::string strVal = std::to_string(abs(value));
         strVal.insert(strVal.begin(), 6 - strVal.length(), '0');
 
         if (value < 0)

@@ -37,7 +37,7 @@
  *  - connect the two Max485 adapters wiring A to A and B to B
  *
  *  WIRINGS:
- *  Max485 n1   |   stm32f407vg_discovery
+ *  Max485 n1   |   stm32f407vg_discovery ser 1
  *      DI      |       PA9
  *      DE      |       PC9
  *      RE      |       PC8
@@ -45,7 +45,7 @@
  *      VCC     |       3.3/5 V
  *      GND     |       GND
  *
- *  Max485 n2   |   stm32f407vg_discovery
+ *  Max485 n2   |   stm32f407vg_discovery ser 2
  *      DI      |       PA2
  *      DE      |       PC1
  *      RE      |       PC2
@@ -67,8 +67,6 @@
 #include "string.h"
 #include "thread"
 
-#define BAUDRATE 2400
-
 using namespace miosix;
 using namespace Boardcore;
 
@@ -82,18 +80,19 @@ using ctrlPin2_s2 = miosix::Gpio<GPIOC_BASE, 2>;
 
 char msg[64] = "Testing communication :D";
 char rcv[64];
+int baudrates[6] = {2400, 3600, 4800, 9600, 19200, 115200};
 
 // function for the thread that has to read from serial
-void readSer(SerialInterface s)
+void readSer(SerialInterface *s)
 {
-    s.recvString(rcv, 64);
-    printf("\t<--%s received: \t'%s'\n", s.getPortName().c_str(), rcv);
+    s->recvString(rcv, 64);
+    printf("\t<--%s received: \t'%s'\n", s->getPortName().c_str(), rcv);
 }
 
 // Communicatio: src -> dst
 template <typename GPIO1_src, typename GPIO2_src, typename GPIO1_dst,
           typename GPIO2_dst>
-void testCommunication(char *data, SerialInterface src, SerialInterface dst)
+void testCommunication(char *data, SerialInterface *src, SerialInterface *dst)
 {
     // resetting the buffer so precedent tests won't affect this one
     memset(rcv, 0, strlen(rcv) + 1);
@@ -109,19 +108,19 @@ void testCommunication(char *data, SerialInterface src, SerialInterface dst)
     // thread that reads from serial
     std::thread t(readSer, dst);
 
-    printf("\t-->%s sending: \t'%s'\n", src.getPortName().c_str(), data);
-    src.sendString(data);
+    printf("\t-->%s sending: \t'%s'\n", src->getPortName().c_str(), data);
+    src->sendString(data);
     t.join();
 
     if (strcmp(data, rcv) == 0)
     {
-        printf("*** %s -> %s WORKING!\n", src.getPortName().c_str(),
-               dst.getPortName().c_str());
+        printf("*** %s -> %s WORKING!\n", src->getPortName().c_str(),
+               dst->getPortName().c_str());
     }
     else
     {
-        printf("### ERROR: %s -> %s!\n", src.getPortName().c_str(),
-               dst.getPortName().c_str());
+        printf("### ERROR: %s -> %s!\n", src->getPortName().c_str(),
+               dst->getPortName().c_str());
     }
 }
 
@@ -135,37 +134,36 @@ int main()
         ctrlPin2_s2::mode(Mode::OUTPUT);
     }
 
-    // Setting the baudrate to 2400, maximum functioning baudrate for the Max485
-    // adapters
-    SerialInterface serial1(BAUDRATE, 1, "ser1");
-    SerialInterface serial2(BAUDRATE, 2, "ser2");
-
-    if (!serial1.init())
+    printf("*** SERIAL 3 WORKING!\n");
+    for (int iBaud = 0; iBaud < 6; iBaud++)
     {
-        printf("[Serial1] Wrong initialization\n");
-        return 1;
-    }
+        Thread::sleep(1000);
 
-    if (!serial2.init())
-    {
-        printf("[Serial2] Wrong initialization\n");
-        return 1;
-    }
+        // Setting the baudrate to 2400, maximum functioning baudrate for the
+        // Max485 adapters
+        SerialInterface serial1(baudrates[iBaud], 1, "ser1");
+        SerialInterface serial2(baudrates[iBaud], 2, "ser2");
 
-    while (true)
-    {
-        printf("\n###########################\n");
-        printf("*** SERIAL 3 WORKING!\n");
+        if (!serial2.init())
+        {
+            printf("[Serial2] Wrong initialization\n");
+            return 1;
+        }
 
-        // testing transmission "serial 1 <- serial 2"
-        testCommunication<ctrlPin1_s2, ctrlPin2_s2, ctrlPin1_s1, ctrlPin2_s1>(
-            msg, serial2, serial1);
+        if (!serial1.init())
+        {
+            printf("[Serial1] Wrong initialization\n");
+            return 1;
+        }
+        printf("\n########################### %d\n", baudrates[iBaud]);
 
         // testing transmission "serial 1 -> serial 2"
         testCommunication<ctrlPin1_s1, ctrlPin2_s1, ctrlPin1_s2, ctrlPin2_s2>(
-            msg, serial1, serial2);
+            msg, &serial1, &serial2);
 
-        Thread::sleep(1000);
+        // testing transmission "serial 1 <- serial 2"
+        testCommunication<ctrlPin1_s2, ctrlPin2_s2, ctrlPin1_s1, ctrlPin2_s1>(
+            msg, &serial2, &serial1);
     }
 
     return 0;

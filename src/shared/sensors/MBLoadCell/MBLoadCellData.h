@@ -21,7 +21,6 @@
  */
 
 #pragma once
-#include <fmt/format.h>
 
 namespace Boardcore
 {
@@ -199,24 +198,18 @@ struct DataAsciiRequest
      */
     void setChecksum()
     {
-        std::string str = fmt::format("{}{}{}", addr, value, req);
-        calculateChecksum(str, ck);
-    }
-
-    /**
-     * @brief calculates the checksum as in the manual of the Load Cell
-     * @param message the string from which will be calculated the checksum
-     * @return a pair of chars that represents the checksum in hexadecimal
-     */
-    void calculateChecksum(std::string message, char *checksum)
-    {
-        uint8_t ck = 0;
-        for (unsigned int i = 0; i < message.length(); i++)
+        uint8_t checksum = 0;
+        std::string str;
+        str.append(addr);
+        str.append(value);
+        str.append(req);
+        
+        for (unsigned int i = 0; i < str.length(); i++)
         {
-            ck ^= message[i];
+            checksum ^= str[i];
         }
 
-        itoa(ck, checksum, 16);
+        itoa(checksum, ck, 16);
     }
 
     /**
@@ -225,8 +218,13 @@ struct DataAsciiRequest
      */
     std::string to_string()
     {
-        std::string str =
-            fmt::format("{}{}{}{}{}{}", beginStr, addr, value, req, ck, CR);
+        std::string str;
+        str.append(beginStr);
+        str.append(addr);
+        str.append(value);
+        str.append(req);
+        str.append(ck);
+        str.append(CR);
         return str;
     }
 };

@@ -249,7 +249,7 @@ add_executable(test-interrupt src/tests/test-interrupt.cpp)
 sbs_target(test-interrupt stm32f429zi_stm32f4discovery)
 
 add_executable(test-max485 src/tests/test-max485.cpp)
-sbs_target(test-max485 stm32f429zi_stm32f4discovery)
+sbs_target(test-max485 stm32f407vg_stm32f4discovery)
 
 add_executable(test-pinobserver src/tests/test-pinobserver.cpp)
 sbs_target(test-pinobserver stm32f429zi_stm32f4discovery)

@@ -34,12 +34,20 @@ using button              = miosix::Gpio<GPIOA_BASE, 0>;  ///< user button
 const uint8_t btn_user_id = 1;
 
 /**
- * @brief callback function that is called when the button is pressed. Resets
- * the minimum and maximum values of the recorded weights
+ * @brief callback function that is called when the button is pressed. When the
+ * button is pressed for a long time, resets the minimum and maximum values of
+ * the recorded weights
  */
 void buttonCallback(uint8_t btn_id, ButtonPress btn_press, MBLoadCell *loadcell)
 {
     if (btn_id == btn_user_id && btn_press == ButtonPress::DOWN)
+        printf(
+            "### TIMESTAMP: %.3f [s], EX MAX: %.2f [Kg], EX MIN: %.2f [Kg] "
+            "###\n",
+            (double)TimestampTimer::getTimestamp() / 1000000,
+            loadcell->getMaxWeight().data, loadcell->getMinWeight().data);
+
+    if (btn_id == btn_user_id && btn_press == ButtonPress::LONG)
         loadcell->resetMaxMinWeights();
 }
 
@@ -50,10 +58,12 @@ int main()
 
     /*
      * use of CONT_MOD_TD: transmits net and gross weight
-     * use of serial port 2: in stm32f407vg TX=PB10, RX=PB11
-     * use of serial port 1: in stm32f407vg TX=PA9, RX=PB10
+     * - use of serial port 3: in stm32f407vg TX=PB10, RX=PB11 (can't be used in
+     * stm32f407vg, is the default serial port)
+     * - use of serial port 2: in stm32f407vg TX=PA2, RX=PA3
+     * - use of serial port 1: in stm32f407vg TX=PA9, RX=PA10
      */
-    MBLoadCell loadCell(LoadCellModes::ASCII_MOD_TD, 2, 2400);
+    MBLoadCell loadCell(LoadCellModes::CONT_MOD_T, 2, 115200);
 
     // binding the load cell instance to the callback to be called
     std::function<void(uint8_t, ButtonPress)> callback =
@@ -76,7 +86,6 @@ int main()
     {
         loadCell.sample();
         loadCell.printData();
-        TRACE("\n");
     }
 
     return 0;

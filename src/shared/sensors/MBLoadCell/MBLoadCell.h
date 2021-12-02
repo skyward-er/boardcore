@@ -30,8 +30,8 @@
 #include <string>
 
 #include "MBLoadCellData.h"
-#include "SerialInterface.h"
 #include "miosix.h"
+#include "utils/SerialInterface.h"
 
 namespace Boardcore
 {
@@ -94,6 +94,16 @@ public:
      * @brief returns a copy of the settings
      */
     MBLoadCellSettings getSettings();
+
+    /**
+     * @brief returns a copy of the max weight detected
+     */
+    Data getMaxWeight();
+
+    /**
+     * @brief returns a copy of the min weight detected
+     */
+    Data getMinWeight();
 
 protected:
     /**

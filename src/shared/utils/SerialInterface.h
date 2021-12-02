@@ -62,6 +62,14 @@ public:
         fd                   = -1;
     }
 
+    ~SerialInterface()
+    {
+        miosix::intrusive_ref_ptr<miosix::DevFs> devFs =
+            miosix::FilesystemManager::instance().getDevFs();
+        close(fd);
+        devFs->remove(serialPortName.c_str());
+    }
+
     /**
      * @brief Initializes the object if it's the first call to this function
      * @return true if initialization is successful, false otherwise
