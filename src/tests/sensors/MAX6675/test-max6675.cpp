@@ -32,8 +32,8 @@ int main()
     //Creation of the GPIO pins
     GpioPin spi_sck(GPIOA_BASE, 5);
     GpioPin spi_miso(GPIOA_BASE, 6);
-    GpioPin cs(GPIOE_BASE, 3);
-    
+    GpioPin cs(GPIOA_BASE, 3);
+
     RCC->APB2ENR |= RCC_APB2ENR_SPI1EN;  // Enable SPI1 bus
 
     //Setting the mode and the alternate function of the pins
