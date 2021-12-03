@@ -50,11 +50,21 @@ bool MAX6675::init()
     //inside every method.
     SPITransaction spi{slave};
 
+    if(isInit)
+    {
+        //Sensor already init
+        last_error = SensorErrors::ALREADY_INIT;
+        LOG_WARN(logger, "Sensor max6675 already initialized");
+        return true;
+    }
+
     //It doesn't matter what i send because the sensor is connected only on miso
     uint16_t sample = spi.read(0x00);
 
     if(sample == 0)
     {
+        last_error = SensorErrors::NOT_INIT;
+        LOG_ERR(logger, "Sensor max6675 not up and running");
         return false;
     }
 
@@ -71,6 +81,8 @@ bool MAX6675::selfTest()
     //In case not initialized the self test fails
     if(!isInit)
     {
+        last_error = SensorErrors::NOT_INIT;
+        LOG_WARN(logger, "Sensor max6675 not initialized");
         return false;
     }
 
@@ -81,12 +93,16 @@ bool MAX6675::selfTest()
     if((sample & 0x8000) != 0x0000)
     {
         //The 16th bit is 1 so failed self test
+        last_error = SensorErrors::SELF_TEST_FAIL;
+        LOG_ERR(logger, "Sensor max6675 selft test fail: 16th bit is 1");
         return false;
     }
 
     if((sample & 0x0002) != 0x0000)
     {
         //The second bit is 1 so failed self test
+        last_error = SensorErrors::SELF_TEST_FAIL;
+        LOG_ERR(logger, "Sensor max6675 selft test fail: 2nd bit is 1");
         return false;
     }
     return true;
@@ -108,6 +124,8 @@ TemperatureData MAX6675::sampleImpl()
     //In case not initialized i return the last sample
     if(!isInit)
     {
+        last_error = SensorErrors::NOT_INIT;
+        LOG_WARN(logger, "Sensor max6675 not initialized");
         return last_sample;
     }
 

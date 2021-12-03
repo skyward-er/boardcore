@@ -38,6 +38,11 @@ private:
     SPISlave slave;
 
     /**
+     * @brief Logger
+     */
+    PrintLogger logger = Logging::getLogger("max6675");
+
+    /**
      * @brief Initialization flag
      */
     bool isInit;
