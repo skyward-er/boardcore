@@ -166,6 +166,10 @@ private:
         settings;             ///< structure that contains all te configuration
     Data max_weight;          ///< the maximum weight detected by the load cell
     Data min_weight;          ///< the minimum weight detected by the load cell
+    bool max_setted;
+    bool max_print;
+    bool min_setted;
+    bool min_print;
     SerialInterface *serial;  ///< pointer to the instance of the serial port
                               ///< used for the connection
 };

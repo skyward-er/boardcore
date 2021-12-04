@@ -63,7 +63,7 @@
 
 #include <Common.h>
 
-#include "sensors/MBLoadCell/SerialInterface.h"
+#include "utils/SerialInterface.h"
 #include "string.h"
 #include "thread"
 
@@ -156,14 +156,14 @@ int main()
             return 1;
         }
         printf("\n########################### %d\n", baudrates[iBaud]);
+        // testing transmission "serial 1 <- serial 2"
+        testCommunication<ctrlPin1_s2, ctrlPin2_s2, ctrlPin1_s1, ctrlPin2_s1>(
+            msg, &serial2, &serial1);
 
         // testing transmission "serial 1 -> serial 2"
         testCommunication<ctrlPin1_s1, ctrlPin2_s1, ctrlPin1_s2, ctrlPin2_s2>(
             msg, &serial1, &serial2);
 
-        // testing transmission "serial 1 <- serial 2"
-        testCommunication<ctrlPin1_s2, ctrlPin2_s2, ctrlPin1_s1, ctrlPin2_s1>(
-            msg, &serial2, &serial1);
     }
 
     return 0;

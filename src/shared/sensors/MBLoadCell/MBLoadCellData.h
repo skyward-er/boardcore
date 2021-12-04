@@ -22,6 +22,8 @@
 
 #pragma once
 
+#include "sensors/SensorData.h"
+
 namespace Boardcore
 {
 
@@ -80,17 +82,23 @@ enum ReturnsStates
  * @brief structure that stores a data value, with his timestamp and his
  * validity
  */
-struct Data
+struct Data : public LoadCellData
 {
-    uint64_t timestamp = 0;
-    float data         = 0.0;
-    bool valid         = false;
+    bool valid = false;
 
-    Data() : timestamp(0), data(0.0), valid(false) {}
+    Data() : LoadCellData{0, 0.0}, valid(false) {}
 
     Data(float data)
-        : timestamp(TimestampTimer::getTimestamp()), data(data), valid(true)
+        : LoadCellData{TimestampTimer::getTimestamp(), data}, valid(true)
     {
+    }
+
+    static std::string header() { return "loadcell_timestamp,weight\n"; }
+
+    void print(std::ostream& os) const
+    {
+        if (valid)
+            os << loadcell_timestamp/1000000.0 << "," << weight << "\n";
     }
 };
 
@@ -143,16 +151,16 @@ struct MBLoadCellSettings
             TRACE("Gross Weight   : %f [Kg]\n", gross_weight.data);
         */
         if (peak_weight.valid)
-            TRACE("Peak Weight    : %f [Kg]\n", peak_weight.data);
+            TRACE("Peak Weight    : %f [Kg]\n", peak_weight.weight);
 
         if (setpoint1.valid)
-            TRACE("Setpoint 1     : %f [Kg]\n", setpoint1.data);
+            TRACE("Setpoint 1     : %f [Kg]\n", setpoint1.weight);
 
         if (setpoint2.valid)
-            TRACE("Setpoint 2     : %f [Kg]\n", setpoint2.data);
+            TRACE("Setpoint 2     : %f [Kg]\n", setpoint2.weight);
 
         if (setpoint3.valid)
-            TRACE("Setpoint 3     : %f [Kg]\n", setpoint3.data);
+            TRACE("Setpoint 3     : %f [Kg]\n", setpoint3.weight);
     }
 };
 
@@ -203,7 +211,7 @@ struct DataAsciiRequest
         str.append(addr);
         str.append(value);
         str.append(req);
-        
+
         for (unsigned int i = 0; i < str.length(); i++)
         {
             checksum ^= str[i];

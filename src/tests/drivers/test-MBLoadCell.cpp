@@ -22,10 +22,13 @@
  */
 
 #include <Common.h>
+#include <diagnostic/PrintLogger.h>
 
 #include "sensors/MBLoadCell/MBLoadCell.h"
 #include "string.h"
 #include "utils/ButtonHandler.h"
+
+//#define PRINT_ALL_SAMPLES // To be defined if we want to print all the samples
 
 using namespace Boardcore;
 using namespace miosix;
@@ -41,11 +44,12 @@ const uint8_t btn_user_id = 1;
 void buttonCallback(uint8_t btn_id, ButtonPress btn_press, MBLoadCell *loadcell)
 {
     if (btn_id == btn_user_id && btn_press == ButtonPress::DOWN)
-        printf(
-            "### TIMESTAMP: %.3f [s], EX MAX: %.2f [Kg], EX MIN: %.2f [Kg] "
-            "###\n",
-            (double)TimestampTimer::getTimestamp() / 1000000,
-            loadcell->getMaxWeight().data, loadcell->getMinWeight().data);
+        TRACE(
+            "## MAX: %.2f [Kg] (ts: %.3f)\t##\tMIN: %.2f [Kg] (ts: %.3f) ##\n",
+            loadcell->getMaxWeight().weight,
+            loadcell->getMaxWeight().loadcell_timestamp / 1000000.0,
+            loadcell->getMinWeight().weight,
+            loadcell->getMinWeight().loadcell_timestamp / 1000000.0);
 
     if (btn_id == btn_user_id && btn_press == ButtonPress::LONG)
         loadcell->resetMaxMinWeights();
@@ -55,6 +59,9 @@ int main()
 {
     // enabling the timestamps
     TimestampTimer::enableTimestampTimer();
+
+    // in order to disable DEBUG prints of the button press events
+    Logging::getStdOutLogSink().setLevel(LOGL_WARNING);
 
     /*
      * use of CONT_MOD_TD: transmits net and gross weight

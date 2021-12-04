@@ -22,6 +22,7 @@
 #include "MBLoadCell.h"
 
 #include <cmath>
+#include <iostream>
 
 #include "stdlib.h"
 
@@ -35,6 +36,7 @@ MBLoadCell::MBLoadCell(LoadCellModes mode, int serialPortNum,
                        int baudrate = 2400)
 {
     this->settings.mode = mode;
+    max_print = max_setted = min_print = min_setted = 0;
 
     // creating the instance of the serial interface
     serial = new SerialInterface(baudrate, serialPortNum);
@@ -56,8 +58,7 @@ bool MBLoadCell::init()
     }
 
     {
-        // disabling interrupts in order to set with no problems the control
-        // pins
+        // disabling interrupts in order to set with no problems the ctrl pins
         miosix::FastInterruptDisableLock dLock;
         ctrlPin1::mode(miosix::Mode::OUTPUT);
         ctrlPin2::mode(miosix::Mode::OUTPUT);
@@ -88,12 +89,28 @@ Data MBLoadCell::sampleImpl()
     }
 
     // memorizing also the maximum gross weight registered
-    if (!max_weight.valid || max_weight.data < value.data)
+    if (!max_weight.valid || max_weight.weight < value.weight)
+    {
         max_weight = value;
+        max_setted = true;
+    }
+    else if (max_setted)
+    {
+        max_setted = false;
+        max_print  = true;
+    }
 
     // memorizing also the minimum gross weight registered
-    if (!min_weight.valid || min_weight.data > value.data)
+    if (!min_weight.valid || min_weight.weight > value.weight)
+    {
         min_weight = value;
+        min_setted = true;
+    }
+    else if (min_setted)
+    {
+        min_setted = false;
+        min_print  = true;
+    }
 
     return value;
 }
@@ -151,21 +168,26 @@ void MBLoadCell::printData()
 {
     if (last_sample.valid)
     {
-        TRACE("Timestamp      : %f [s]\n",
-              (double)last_sample.timestamp / 1000000);
-
-        TRACE("Weight         : %f [Kg]\n", last_sample.data);
-
-        if (max_weight.valid)
-            TRACE("Maximum weight : %f [Kg]\n", max_weight.data);
-
-        if (min_weight.valid)
-            TRACE("Minimum weight : %f [Kg]\n\n", min_weight.data);
+        #ifdef PRINT_ALL_SAMPLES
+        last_sample.print(std::cout);
+        #endif
     }
     else
     {
         last_error = SensorErrors::NO_NEW_DATA;
         TRACE("No valida data has been collected\n");
+    }
+
+    if (max_print)
+    {
+        TRACE("NEW MAX %.2f (ts: %.3f [s])\n", max_weight.weight, max_weight.loadcell_timestamp/1000000.0);
+        max_print = false;
+    }
+
+    if (min_print)
+    {
+        TRACE("NEW MIN %.2f (ts: %.3f [s])\n", min_weight.weight, min_weight.loadcell_timestamp/1000000.0);
+        min_print = false;
     }
 }
 
@@ -236,7 +258,7 @@ Data MBLoadCell::getMinWeight() { return min_weight; }
 
 void MBLoadCell::resetMaxMinWeights()
 {
-    printf("max and min values erased!\n");
+    TRACE("max and min values erased!\n");
     max_weight.valid = false;
     min_weight.valid = false;
 }
