@@ -112,17 +112,23 @@ int SX1278::recv(uint8_t *buf, size_t max_len)
         enterMode(Mode::MODE_FSRX);
 
     enterMode(Mode::MODE_RX);
-    waitForIrq2(RegIrqFlags2::PAYLOAD_READY);
 
     uint8_t len = 0;
+    do
     {
-        SPITransaction spi(slave, SPIWriteBit::INVERTED);
-        len = spi.read(REG_FIFO);
-        if (len > max_len)
-            return -1;
+        waitForIrq2(RegIrqFlags2::PAYLOAD_READY);
 
-        spi.read(REG_FIFO, buf, len);
-    }
+        {
+            SPITransaction spi(slave, SPIWriteBit::INVERTED);
+            len = spi.read(REG_FIFO);
+            if (len > max_len)
+                return -1;
+
+            spi.read(REG_FIFO, buf, len);
+        }
+
+        // For some reason this sometimes happen?
+    } while (len == 0);
 
     return len;
 }
@@ -311,6 +317,14 @@ void SX1278::waitForIrq(uint8_t reg, uint8_t mask)
          mask == RegIrqFlags2::PAYLOAD_READY) &&
         enable_int)
     {
+        // Check before entering irq mode
+        if (spi.read(reg) & mask)
+        {
+            return;
+        }
+
+        // TODO(Davide Mor): Could there be a time of check vs time of use error here?
+
         miosix::FastInterruptDisableLock dLock;
         irq_wait_thread = miosix::Thread::getCurrentThread();
         // Avoid spurious wakeups
@@ -331,9 +345,6 @@ void SX1278::waitForIrq(uint8_t reg, uint8_t mask)
             miosix::delayUs(10);
         }
     }
-
-    // if(mask == RegIrqFlags2::PAYLOAD_READY)
-    //     TRACE("Wait finished\n");
 }
 
 void SX1278::waitForIrq1(uint8_t mask) { waitForIrq(REG_IRQ_FLAGS_1, mask); }

@@ -128,6 +128,14 @@ int main()
     config.enable_int = false;
     sx1278_tx->init(config);
 
+    struct Msg
+    {
+        int idx;
+        unsigned int dummy_1;
+        unsigned int dummy_2;
+        unsigned int dummy_3;
+    };
+
     // miosix::Thread::sleep(5000);
     const int LOG_INTERVAL = 100;
 
@@ -137,8 +145,28 @@ int main()
         {
             while (1)
             {
-                uint8_t len =
-                    sx1278_rx->recv((uint8_t *)&stats.last_recv_packet, 4);
+                // Reset message
+                Msg msg;
+                msg.idx     = 0;
+                msg.dummy_1 = 0;
+                msg.dummy_2 = 0;
+                msg.dummy_3 = 0;
+
+                uint8_t len = sx1278_rx->recv((uint8_t *)&msg, sizeof(msg));
+
+                if (msg.dummy_1 != 0xdeadbeef || msg.dummy_2 != 0xbeefdead ||
+                    msg.dummy_3 != 0x1234abcd)
+                {
+                    TRACE("Corrupted message!\n");
+                    TRACE("len = %d\n", len);
+                    TRACE("msg.idx = %d\n", msg.idx);
+                    TRACE("msg.dummy_1 = %x\n", msg.dummy_1);
+                    TRACE("msg.dummy_2 = %x\n", msg.dummy_2);
+                    TRACE("msg.dummy_3 = %x\n", msg.dummy_3);
+                    continue;
+                }
+
+                stats.last_recv_packet = msg.idx;
                 stats.recv_count++;
             }
         });
@@ -146,7 +174,14 @@ int main()
     while (1)
     {
         stats.last_sent_packet++;
-        sx1278_tx->send((uint8_t *)&stats.last_sent_packet, 4);
+
+        Msg msg;
+        msg.idx     = stats.last_sent_packet;
+        msg.dummy_1 = 0xdeadbeef;
+        msg.dummy_2 = 0xbeefdead;
+        msg.dummy_3 = 0x1234abcd;
+
+        sx1278_tx->send((uint8_t *)&msg, sizeof(msg));
 
         if (stats.last_sent_packet % LOG_INTERVAL == 0)
         {
@@ -155,7 +190,7 @@ int main()
                   stats.recv_count);
         }
 
-        miosix::Thread::sleep(1);
+        miosix::Thread::sleep(2);
     }
 
     return 0;
