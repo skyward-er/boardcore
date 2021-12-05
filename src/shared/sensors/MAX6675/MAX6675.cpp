@@ -22,127 +22,67 @@
 
 #include "MAX6675.h"
 
-/**
- * CONSTRUCTORS
- * ---------------------------------------------------------------------------------------------------------------------------------------
- */
-MAX6675::MAX6675(SPIBusInterface &bus, GpioPin cs)
-        :MAX6675(bus, cs, SPIBusConfig{})
+namespace Boardcore
 {
-    //Setting the SPI baud rate because no config object has been provided
-    slave.config.clock_div = SPIClockDivider::DIV32;
-    slave.config.mode = SPIMode::MODE1;
-}
 
 MAX6675::MAX6675(SPIBusInterface &bus, GpioPin cs, SPIBusConfig config)
-        :slave(bus, cs, config)
+    : slave(bus, cs, config)
 {
-    isInit = false;
 }
 
-/**
- * PUBLIC METHODS
- * ---------------------------------------------------------------------------------------------------------------------------------------
- */
-bool MAX6675::init()
+SPIBusConfig MAX6675::getDefaultSPIConfig()
 {
-    //Initialize the transaction that NEEDS to be initialized
-    //inside every method.
-    SPITransaction spi{slave};
-
-    if(isInit)
-    {
-        //Sensor already init
-        last_error = SensorErrors::ALREADY_INIT;
-        LOG_WARN(logger, "Sensor max6675 already initialized");
-        return true;
-    }
-
-    //It doesn't matter what i send because the sensor is connected only on miso
-    uint16_t sample = spi.read(0x00);
-
-    if(sample == 0)
-    {
-        last_error = SensorErrors::NOT_INIT;
-        LOG_ERR(logger, "Sensor max6675 not up and running");
-        return false;
-    }
-
-    isInit = true;
-    return true;
+    SPIBusConfig spiConfig{};
+    spiConfig.clock_div = SPIClockDivider::DIV32;
+    spiConfig.mode      = SPIMode::MODE1;
+    return spiConfig;
 }
+
+bool MAX6675::init() { return true; }
 
 bool MAX6675::selfTest()
 {
-    //Initialize the transaction that NEEDS to be initialized
-    //inside every method.
-    SPITransaction spi{slave};
+    uint16_t sample;
 
-    //In case not initialized the self test fails
-    if(!isInit)
     {
-        last_error = SensorErrors::NOT_INIT;
-        LOG_WARN(logger, "Sensor max6675 not initialized");
-        return false;
+        SPITransaction spi{slave};
+        sample = spi.read(0x00);
     }
 
-    //I sample the sensor and if the second bit and the 16th (little endian) are 0 
-    //the sensor is up and running (the 16th bit is the dummy sign and the second is device ID)
-    uint16_t sample = spi.read(0x00);
-
-    if((sample & 0x8000) != 0x0000)
+    // The third bit (D2) indicated wheter the termocouple is connected or not.
+    // It is high if open
+    if ((sample % 0x2) != 0)
     {
-        //The 16th bit is 1 so failed self test
         last_error = SensorErrors::SELF_TEST_FAIL;
-        LOG_ERR(logger, "Sensor max6675 selft test fail: 16th bit is 1");
+        LOG_ERR(logger, "Self test failed, the termocouple is not connected");
         return false;
     }
 
-    if((sample & 0x0002) != 0x0000)
-    {
-        //The second bit is 1 so failed self test
-        last_error = SensorErrors::SELF_TEST_FAIL;
-        LOG_ERR(logger, "Sensor max6675 selft test fail: 2nd bit is 1");
-        return false;
-    }
     return true;
 }
 
-/**
- * PRIVATE METHODS
- * ---------------------------------------------------------------------------------------------------------------------------------------
- */
 TemperatureData MAX6675::sampleImpl()
 {
-    //Initialize the transaction that NEEDS to be initialized
-    //inside every method.
-    SPITransaction spi{slave};
+    uint16_t sample;
 
-    //Result variable
-    TemperatureData result{};
-
-    //In case not initialized i return the last sample
-    if(!isInit)
     {
-        last_error = SensorErrors::NOT_INIT;
-        LOG_WARN(logger, "Sensor max6675 not initialized");
-        return last_sample;
+        SPITransaction spi{slave};
+        sample = spi.read(0x00);
     }
 
-    //Sample the sensor and take the bit 14-3 (little endian)
-    uint16_t sample = spi.read(0x00);
-    //I isolate the sampling from other stuff
-    sample = sample & 0x7FF8;
-    //I shift the value
-    sample = sample >> 3;
+    // Extract bits 14-3
+    sample &= 0x7FF8;
+    sample >>= 3;
 
-    //Result assign
-    result.temp_timestamp   = TimestampTimer::getTimestamp();
-    result.temp             = (unsigned int) sample >> 2;                   //Integer part
-    
-    //Take the floating point part
-    sample = sample & 0x0003;
-    result.temp            += (float)(sample * 0.25);                       //Floating point part
+    TemperatureData result{};
+    result.temp_timestamp = TimestampTimer::getTimestamp();
+
+    // Convert the sample value
+    result.temp = static_cast<unsigned int>(sample >> 2);  // Integer part
+    sample &= 0x0003;  // Take the floating point part
+    result.temp += static_cast<float>(sample * 0.25);  // Floating point part
 
     return result;
 }
+
+}  // namespace Boardcore

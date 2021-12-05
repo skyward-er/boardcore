@@ -24,54 +24,44 @@
 #include <sensors/MAX6675/MAX6675.h>
 
 using namespace miosix;
+using namespace Boardcore;
 
 int main()
 {
-    //Creation of SPI bus
     SPIBus bus(SPI1);
-    //Creation of the GPIO pins
     GpioPin spi_sck(GPIOA_BASE, 5);
     GpioPin spi_miso(GPIOA_BASE, 6);
     GpioPin cs(GPIOA_BASE, 3);
 
     RCC->APB2ENR |= RCC_APB2ENR_SPI1EN;  // Enable SPI1 bus
 
-    //Setting the mode and the alternate function of the pins
+    // Setting the mode and the alternate function of the pins
     spi_sck.mode(Mode::ALTERNATE);
     spi_sck.alternateFunction(5);
     spi_miso.mode(Mode::ALTERNATE);
     spi_miso.alternateFunction(5);
-    //Except cs which is the activation pin
     cs.mode(Mode::OUTPUT);
-    //I put on high the cs pin
     cs.high();
 
-    //Enable the timestamp
+    // Enable the timestamp timer
     TimestampTimer::enableTimestampTimer();
 
-    //Sensor creation
     MAX6675 sensor{bus, cs};
 
     printf("Starting process verification!\n");
 
-    if(!sensor.init())
-    {
-        printf("Sensor init failed!\n");
-        return 0;
-    }
-
-    if(!sensor.selfTest())
+    if (!sensor.selfTest())
     {
         printf("Sensor self test failed!\n");
         return 0;
     }
 
-    for(int i = 0; i < 100; i++)
+    while (true)
     {
         sensor.sample();
         TemperatureData sample = sensor.getLastSample();
 
-        printf("%.1f\n", sample.temp);
+        printf("%.2f\n", sample.temp);
 
         Thread::sleep(100);
     }
