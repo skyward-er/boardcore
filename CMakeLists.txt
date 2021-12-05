@@ -88,49 +88,22 @@ sbs_target(test-trace-logger stm32f429zi_stm32f4discovery)
 #                                Tests - Catch                                #
 #-----------------------------------------------------------------------------#
 
-#add_executable(catch-tests-entry src/tests/catch/catch-tests-entry.cpp)
-#target_compile_definitions(catch-tests-entry PUBLIC USE_MOCK_PERIPHERALS)
-#sbs_target(catch-tests-entry stm32f429zi_stm32f4discovery)
-
-add_executable(example-test-factorial src/tests/catch/examples/example-test-factorial.cpp)
-target_compile_definitions(example-test-factorial PRIVATE STANDALONE_CATCH1_TEST)
-sbs_target(example-test-factorial stm32f429zi_stm32f4discovery)
-
-add_executable(test-aero src/tests/catch/test-aero.cpp)
-target_compile_definitions(test-aero PRIVATE STANDALONE_CATCH1_TEST)
-sbs_target(test-aero stm32f429zi_stm32f4discovery)
-
-add_executable(test-buttonhandler src/tests/catch/test-buttonhandler.cpp)
-target_compile_definitions(test-buttonhandler PRIVATE STANDALONE_CATCH1_TEST)
-sbs_target(test-buttonhandler stm32f429zi_stm32f4discovery)
-
-add_executable(test-circularbuffer src/tests/catch/test-circularbuffer.cpp)
-target_compile_definitions(test-circularbuffer PRIVATE STANDALONE_CATCH1_TEST)
-sbs_target(test-circularbuffer stm32f429zi_stm32f4discovery)
-
-add_executable(test-eventbroker src/tests/catch/test-eventbroker.cpp)
-target_compile_definitions(test-eventbroker PRIVATE STANDALONE_CATCH1_TEST)
-sbs_target(test-eventbroker stm32f429zi_stm32f4discovery)
-
-add_executable(test-hardwaretimer src/tests/catch/test-hardwaretimer.cpp)
-target_compile_definitions(test-hardwaretimer PRIVATE STANDALONE_CATCH1_TEST)
-sbs_target(test-hardwaretimer stm32f429zi_stm32f4discovery)
-
-add_executable(test-kalman-eigen src/tests/catch/test-kalman-eigen.cpp)
-target_compile_definitions(test-kalman-eigen PRIVATE STANDALONE_CATCH1_TEST)
-sbs_target(test-kalman-eigen stm32f429zi_stm32f4discovery)
-
-add_executable(test-packetqueue src/tests/catch/test-packetqueue.cpp)
-target_compile_definitions(test-packetqueue PRIVATE STANDALONE_CATCH1_TEST)
-sbs_target(test-packetqueue stm32f429zi_skyward_death_stack_x)
-
-add_executable(test-sensormanager-catch src/tests/catch/test-sensormanager-catch.cpp)
-target_compile_definitions(test-sensormanager-catch PRIVATE STANDALONE_CATCH1_TEST)
-sbs_target(test-sensormanager-catch stm32f429zi_skyward_death_stack_x)
-
-add_executable(test-xbee-parser src/tests/catch/xbee/test-xbee-parser.cpp)
-target_compile_definitions(test-xbee-parser PRIVATE STANDALONE_CATCH1_TEST)
-sbs_target(test-xbee-parser stm32f429zi_stm32f4discovery)
+add_executable(catch-tests-entry
+    src/tests/catch/catch-tests-entry.cpp
+    src/tests/catch/examples/example-test-factorial.cpp
+    src/tests/catch/test-aero.cpp
+    src/tests/catch/test-buttonhandler.cpp
+    src/tests/catch/test-circularbuffer.cpp
+    src/tests/catch/test-eventbroker.cpp
+    src/tests/catch/test-hardwaretimer.cpp
+    src/tests/catch/test-kalman-eigen.cpp
+    src/tests/catch/test-packetqueue.cpp
+    src/tests/catch/test-sensormanager-catch.cpp
+    src/tests/catch/xbee/test-xbee-parser.cpp
+)
+target_compile_definitions(catch-tests-entry PUBLIC USE_MOCK_PERIPHERALS)
+sbs_target(catch-tests-entry stm32f429zi_stm32f4discovery)
+#catch_discover_tests(catch-tests-entry)
 
 #-----------------------------------------------------------------------------#
 #                               Tests - Drivers                               #
