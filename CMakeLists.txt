@@ -44,19 +44,6 @@ sbs_target(mxgui-helloworld stm32f429zi_stm32f4discovery)
 add_executable(kernel-testsuite src/entrypoints/kernel-testsuite.cpp)
 sbs_target(kernel-testsuite stm32f429zi_stm32f4discovery)
 
-#src/entrypoints/old_examples/anakin/anakin-accel.cpp
-#src/entrypoints/old_examples/anakin/anakin-demo-board.cpp
-#src/entrypoints/old_examples/anakin/anakin-test-canbus.cpp
-#src/entrypoints/old_examples/anakin/anakin-test-dma.cpp
-#src/entrypoints/old_examples/anakin/anakin-test-suite.cpp
-#src/entrypoints/old_examples/anakin/canbus-test.cpp
-#src/entrypoints/old_examples/anakin/dma-lowlevel-test.cpp
-#src/entrypoints/old_examples/anakin/test-busfault.cpp
-#src/entrypoints/old_examples/anakin/test-scheduler.cpp
-#src/entrypoints/old_examples/anakin/test_ethernet.cpp
-#src/entrypoints/old_examples/anakin/test_i2c.cpp
-#src/entrypoints/old_examples/example-fsm.cpp
-
 add_executable(sdcard-benchmark src/entrypoints/sdcard-benchmark.cpp)
 sbs_target(sdcard-benchmark stm32f429zi_stm32f4discovery)
 
@@ -80,11 +67,6 @@ sbs_target(test-calibration stm32f407vg_stm32f4discovery)
 add_executable(example-test-factorial src/tests/catch/examples/example-test-factorial.cpp)
 target_compile_definitions(example-test-factorial PRIVATE STANDALONE_CATCH1_TEST)
 sbs_target(example-test-factorial stm32f429zi_stm32f4discovery)
-
-#src/tests/catch/old_examples/example-test-fsm.cpp
-#src/tests/catch/old_examples/spidriver/test-spidriver.cpp
-#src/tests/catch/old_examples/test-xbee.cpp
-#src/tests/catch/old_examples/xbee/test-xbee-driver.cpp
 
 add_executable(test-aero src/tests/catch/test-aero.cpp)
 target_compile_definitions(test-aero PRIVATE STANDALONE_CATCH1_TEST)
@@ -134,17 +116,6 @@ sbs_target(test-battery-voltage stm32f429zi_stm32f4discovery)
 
 add_executable(test-current-sensor src/tests/drivers/analog/test-current-sensor.cpp)
 sbs_target(test-current-sensor stm32f429zi_stm32f4discovery)
-
-#src/tests/drivers/old_examples/test-ad7994-bare.cpp
-#src/tests/drivers/old_examples/test-ad7994.cpp
-#src/tests/drivers/old_examples/test-i2c-mpu9255.cpp
-#src/tests/drivers/old_examples/test-imu-adis.cpp
-#src/tests/drivers/old_examples/test-lsm.cpp
-#src/tests/drivers/old_examples/test-mavlink-multi.cpp
-#src/tests/drivers/old_examples/test-piksi.cpp
-#src/tests/drivers/old_examples/test-spi2.cpp
-#src/tests/drivers/old_examples/test-tempSensor.cpp
-#src/tests/drivers/old_examples/test-unit-LM75B.cpp
 
 add_executable(test-ads1118 src/tests/drivers/test-ads1118.cpp)
 sbs_target(test-ads1118 stm32f407vg_stm32f4discovery)
@@ -231,10 +202,6 @@ sbs_target(test-kalman-eigen-benchmark stm32f429zi_stm32f4discovery)
 
 add_executable(test-logger src/tests/logger/test-logger.cpp)
 sbs_target(test-logger stm32f429zi_stm32f4discovery)
-
-#src/tests/old_examples/misc/xbee-bitrate.cpp
-#src/tests/old_examples/misc/xbee-send-rcv.cpp
-#src/tests/old_examples/misc/xbee-time-to-send.cpp
 
 add_executable(test-eventinjector src/tests/test-eventinjector.cpp)
 sbs_target(test-eventinjector stm32f429zi_stm32f4discovery)
