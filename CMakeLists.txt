@@ -180,8 +180,6 @@ sbs_target(test-spi stm32f429zi_stm32f4discovery)
 add_executable(test-ublox src/tests/drivers/test-ublox.cpp)
 sbs_target(test-ublox stm32f429zi_skyward_death_stack_x)
 
-#src/tests/drivers/xbee/logdecoder/logdecoder.cpp
-
 add_executable(test-xbee-bidir src/tests/drivers/xbee/test-xbee-bidir.cpp)
 sbs_target(test-xbee-bidir stm32f429zi_skyward_death_stack_x)
 

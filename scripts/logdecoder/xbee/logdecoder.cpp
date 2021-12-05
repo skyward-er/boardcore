@@ -40,6 +40,8 @@
 #include <string>
 #include <vector>
 
+#include "LogTypes.h"
+
 using namespace std;
 using namespace tscpp;
 

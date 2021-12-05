@@ -54,7 +54,6 @@ foreach(OPT_BOARD ${BOARDS})
 
         # Logger
         ${SBS_BASE}/src/shared/logger/Logger.cpp
-        #${SBS_BASE}/src/shared/logger/decoder/logdecoder.cpp
 
         # Math
         ${SBS_BASE}/src/shared/math/Matrix.cpp
