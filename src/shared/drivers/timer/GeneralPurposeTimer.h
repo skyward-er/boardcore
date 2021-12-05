@@ -309,6 +309,14 @@ public:
         ACTIVE_LOW  = 0x1
     };
 
+    enum class Channel : int
+    {
+        CHANNEL_1 = 0,
+        CHANNEL_2 = 1,
+        CHANNEL_3 = 2,
+        CHANNEL_4 = 3
+    };
+
     /**
      * @brief Create a GeneralPurposeTimer object. Note that this does not
      * resets the timer configuration.
@@ -335,22 +343,17 @@ public:
 
     void disableTriggerInterrupt();
 
-    template <int C>
-    void enableCaptureCompareInterrupt();
+    void enableCaptureCompareInterrupt(Channel channel);
 
-    template <int C>
-    void disableCaptureCompareInterrupt();
+    void disableCaptureCompareInterrupt(Channel channel);
 
-    template <int C>
-    void enableCaptureCompareDMARequest();
+    void enableCaptureCompareDMARequest(Channel channel);
 
-    template <int C>
-    void disableCaptureCompareDMARequest();
+    void disableCaptureCompareDMARequest(Channel channel);
 
     void generateTrigger();
 
-    template <int C>
-    void generateCaptureCompareEvent();
+    void generateCaptureCompareEvent(Channel channel);
 
     /**
      * @brief The capture/compare register is buffered.
@@ -358,8 +361,7 @@ public:
      * This means that the shadow register is used and the capture/compare
      * value will became active at the next UEV.
      */
-    template <int C>
-    void enableCaptureComparePreload();
+    void enableCaptureComparePreload(Channel channel);
 
     /**
      * @brief Tha capture/compare register is not buffered.
@@ -367,37 +369,34 @@ public:
      * This means that when you change the capture/compare  register, its value
      * is taken into account immediately.
      */
-    template <int C>
-    void disableCaptureComparePreload();
+    void disableCaptureComparePreload(Channel channel);
 
-    template <int C>
-    void setOutputCompareMode(OutputCompareMode mode);
+    void setOutputCompareMode(OutputCompareMode modeChannel, Channel channel);
 
-    template <int C>
-    void enableCaptureCompareOutput();
+    void enableCaptureCompareOutput(Channel channel);
 
-    template <int C>
-    void enableCaptureCompareComplementaryOutput();
+    void enableCaptureCompareComplementaryOutput(Channel channel);
 
-    template <int C>
-    void disableCaptureCompareOutput();
+    void disableCaptureCompareOutput(Channel channel);
 
-    template <int C>
-    void disableCaptureCompareComplementaryOutput();
+    void disableCaptureCompareComplementaryOutput(Channel channel);
 
-    template <int C>
-    void setCaptureComparePolarity(OutputComparePolarity polarity);
+    void setCaptureComparePolarity(OutputComparePolarity polarity,
+                                   Channel channel);
 
-    template <int C>
-    void setCaptureCompareComplementaryPolarity(OutputComparePolarity polarity);
+    void setCaptureCompareComplementaryPolarity(OutputComparePolarity polarity,
+                                                Channel channel);
 
-    template <int C>
-    void setCaptureCompareRegister(T value);
+    void setCaptureCompareRegister(T value, Channel channel);
+
+    void enableOnePulseMode();
+
+    void disableOnePulseMode();
 
     static void clearTriggerInterruptFlag(TIM_TypeDef *timer);
 
-    template <int C>
-    static void clearCaptureCompareInterruptFlag(TIM_TypeDef *timer);
+    static void clearCaptureCompareInterruptFlag(TIM_TypeDef *timer,
+                                                 Channel channel);
 };
 
 template <typename T>
@@ -497,39 +496,31 @@ inline void GeneralPurposeTimer<T>::disableTriggerInterrupt()
 }
 
 template <typename T>
-template <int C>
-inline void GeneralPurposeTimer<T>::enableCaptureCompareInterrupt()
+inline void GeneralPurposeTimer<T>::enableCaptureCompareInterrupt(
+    Channel channel)
 {
-    static_assert(C >= 1 && C <= 4, "Channel must be between 1 and 4");
-
-    timer->DIER |= TIM_DIER_CC1IE << (C - 1);
+    timer->DIER |= TIM_DIER_CC1IE << static_cast<int>(channel);
 }
 
 template <typename T>
-template <int C>
-inline void GeneralPurposeTimer<T>::disableCaptureCompareInterrupt()
+inline void GeneralPurposeTimer<T>::disableCaptureCompareInterrupt(
+    Channel channel)
 {
-    static_assert(C >= 1 && C <= 4, "Channel must be between 1 and 4");
-
-    timer->DIER &= ~(TIM_DIER_CC1IE << (C - 1));
+    timer->DIER &= ~(TIM_DIER_CC1IE << static_cast<int>(channel));
 }
 
 template <typename T>
-template <int C>
-inline void GeneralPurposeTimer<T>::enableCaptureCompareDMARequest()
+inline void GeneralPurposeTimer<T>::enableCaptureCompareDMARequest(
+    Channel channel)
 {
-    static_assert(C >= 1 && C <= 4, "Channel must be between 1 and 4");
-
-    timer->DIER |= TIM_DIER_CC1DE << (C - 1);
+    timer->DIER |= TIM_DIER_CC1DE << static_cast<int>(channel);
 }
 
 template <typename T>
-template <int C>
-inline void GeneralPurposeTimer<T>::disableCaptureCompareDMARequest()
+inline void GeneralPurposeTimer<T>::disableCaptureCompareDMARequest(
+    Channel channel)
 {
-    static_assert(C >= 1 && C <= 4, "Channel must be between 1 and 4");
-
-    timer->DIER &= ~(TIM_DIER_CC1DE << (C - 1));
+    timer->DIER &= ~(TIM_DIER_CC1DE << static_cast<int>(channel));
 }
 
 template <typename T>
@@ -539,90 +530,80 @@ inline void GeneralPurposeTimer<T>::generateTrigger()
 }
 
 template <typename T>
-template <int C>
-inline void GeneralPurposeTimer<T>::generateCaptureCompareEvent()
+inline void GeneralPurposeTimer<T>::generateCaptureCompareEvent(Channel channel)
 {
-    static_assert(C >= 1 && C <= 4, "Channel must be between 1 and 4");
-
-    timer->EGR |= TIM_EGR_CC1G << (C - 1);
+    timer->EGR |= TIM_EGR_CC1G << static_cast<int>(channel);
 }
 
 template <typename T>
-template <int C>
-inline void GeneralPurposeTimer<T>::enableCaptureComparePreload()
+inline void GeneralPurposeTimer<T>::enableCaptureComparePreload(Channel channel)
 {
-    static_assert(C >= 1 && C <= 4, "Channel must be between 1 and 4");
-
-    switch (C)
+    switch (channel)
     {
-        case 1:
+        case Channel::CHANNEL_1:
             timer->CCMR1 |= TIM_CCMR1_OC1PE;
             break;
-        case 2:
+        case Channel::CHANNEL_2:
             timer->CCMR1 |= TIM_CCMR1_OC2PE;
             break;
-        case 3:
+        case Channel::CHANNEL_3:
             timer->CCMR2 |= TIM_CCMR2_OC3PE;
             break;
-        case 4:
+        case Channel::CHANNEL_4:
             timer->CCMR2 |= TIM_CCMR2_OC4PE;
             break;
     }
 }
 
 template <typename T>
-template <int C>
-inline void GeneralPurposeTimer<T>::disableCaptureComparePreload()
+inline void GeneralPurposeTimer<T>::disableCaptureComparePreload(
+    Channel channel)
 {
-    static_assert(C >= 1 && C <= 4, "Channel must be between 1 and 4");
-
-    switch (C)
+    switch (channel)
     {
-        case 1:
+        case Channel::CHANNEL_1:
             timer->CCMR1 &= ~TIM_CCMR1_OC1PE;
             break;
-        case 2:
+        case Channel::CHANNEL_2:
             timer->CCMR1 &= ~TIM_CCMR1_OC2PE;
             break;
-        case 3:
+        case Channel::CHANNEL_3:
             timer->CCMR2 &= ~TIM_CCMR2_OC3PE;
             break;
-        case 4:
+        case Channel::CHANNEL_4:
             timer->CCMR2 &= ~TIM_CCMR2_OC4PE;
             break;
     }
 }
 
 template <typename T>
-template <int C>
-inline void GeneralPurposeTimer<T>::setOutputCompareMode(OutputCompareMode mode)
+inline void GeneralPurposeTimer<T>::setOutputCompareMode(OutputCompareMode mode,
+                                                         Channel channel)
 {
-    static_assert(C >= 1 && C <= 4, "Channel must be between 1 and 4");
-
-    switch (C)
+    switch (channel)
     {
-        case 1:
+        case Channel::CHANNEL_1:
             // First clear the configuration
             timer->CCMR1 &= ~TIM_CCMR1_OC1M;
 
             // Set the new value
             timer->CCMR1 |= (uint16_t)mode << 4;
             break;
-        case 2:
+        case Channel::CHANNEL_2:
             // First clear the configuration
             timer->CCMR1 &= ~TIM_CCMR1_OC2M;
 
             // Set the new value
             timer->CCMR1 |= (uint16_t)mode << 12;
             break;
-        case 3:
+        case Channel::CHANNEL_3:
             // First clear the configuration
             timer->CCMR2 &= ~TIM_CCMR2_OC3M;
 
             // Set the new value
             timer->CCMR2 |= (uint16_t)mode << 4;
             break;
-        case 4:
+        case Channel::CHANNEL_4:
             // First clear the configuration
             timer->CCMR2 &= ~TIM_CCMR2_OC4M;
 
@@ -633,12 +614,9 @@ inline void GeneralPurposeTimer<T>::setOutputCompareMode(OutputCompareMode mode)
 }
 
 template <typename T>
-template <int C>
-inline void GeneralPurposeTimer<T>::enableCaptureCompareOutput()
+inline void GeneralPurposeTimer<T>::enableCaptureCompareOutput(Channel channel)
 {
-    static_assert(C >= 1 && C <= 4, "Channel must be between 1 and 4");
-
-    timer->CCER |= TIM_CCER_CC1E << ((C - 1) * 4);
+    timer->CCER |= TIM_CCER_CC1E << (static_cast<int>(channel) * 4);
 
     // On TIM1 and TIM8 the outputs are enabled only if the MOE bit in the BDTR
     // register is set
@@ -649,12 +627,10 @@ inline void GeneralPurposeTimer<T>::enableCaptureCompareOutput()
 }
 
 template <typename T>
-template <int C>
-inline void GeneralPurposeTimer<T>::enableCaptureCompareComplementaryOutput()
+inline void GeneralPurposeTimer<T>::enableCaptureCompareComplementaryOutput(
+    Channel channel)
 {
-    static_assert(C >= 1 && C <= 4, "Channel must be between 1 and 4");
-
-    timer->CCER |= TIM_CCER_CC1NE << ((C - 1) * 4);
+    timer->CCER |= TIM_CCER_CC1NE << (static_cast<int>(channel) * 4);
 
     // On TIM1 and TIM8 the outputs are enabled only if the MOE bit in the BDTR
     // register is set
@@ -665,64 +641,63 @@ inline void GeneralPurposeTimer<T>::enableCaptureCompareComplementaryOutput()
 }
 
 template <typename T>
-template <int C>
-inline void GeneralPurposeTimer<T>::disableCaptureCompareOutput()
+inline void GeneralPurposeTimer<T>::disableCaptureCompareOutput(Channel channel)
 {
-    static_assert(C >= 1 && C <= 4, "Channel must be between 1 and 4");
-
-    timer->CCER &= ~(TIM_CCER_CC1E << ((C - 1) * 4));
+    timer->CCER &= ~(TIM_CCER_CC1E << (static_cast<int>(channel) * 4));
 }
 
 template <typename T>
-template <int C>
-inline void GeneralPurposeTimer<T>::disableCaptureCompareComplementaryOutput()
+inline void GeneralPurposeTimer<T>::disableCaptureCompareComplementaryOutput(
+    Channel channel)
 {
-    static_assert(C >= 1 && C <= 4, "Channel must be between 1 and 4");
-
-    timer->CCER &= ~(TIM_CCER_CC1NE << ((C - 1) * 4));
+    timer->CCER &= ~(TIM_CCER_CC1NE << (static_cast<int>(channel) * 4));
 }
 
 template <typename T>
-template <int C>
 inline void GeneralPurposeTimer<T>::setCaptureComparePolarity(
-    OutputComparePolarity polarity)
+    OutputComparePolarity polarity, Channel channel)
 {
-    static_assert(C >= 1 && C <= 4, "Channel must be between 1 and 4");
-
-    timer->CCER |= (uint16_t)polarity << (1 + (C - 1) * 4);
+    timer->CCER |= (uint16_t)polarity << (1 + static_cast<int>(channel) * 4);
 }
 
 template <typename T>
-template <int C>
 inline void GeneralPurposeTimer<T>::setCaptureCompareComplementaryPolarity(
-    OutputComparePolarity polarity)
+    OutputComparePolarity polarity, Channel channel)
 {
-    static_assert(C >= 1 && C <= 4, "Channel must be between 1 and 4");
-
-    timer->CCER |= (uint16_t)polarity << (3 + (C - 1) * 4);
+    timer->CCER |= (uint16_t)polarity << (3 + static_cast<int>(channel) * 4);
 }
 
 template <typename T>
-template <int C>
-inline void GeneralPurposeTimer<T>::setCaptureCompareRegister(T value)
+inline void GeneralPurposeTimer<T>::setCaptureCompareRegister(T value,
+                                                              Channel channel)
 {
-    static_assert(C >= 1 && C <= 4, "Channel must be between 1 and 4");
-
-    switch (C)
+    switch (channel)
     {
-        case 1:
+        case Channel::CHANNEL_1:
             timer->CCR1 = value;
             break;
-        case 2:
+        case Channel::CHANNEL_2:
             timer->CCR2 = value;
             break;
-        case 3:
+        case Channel::CHANNEL_3:
             timer->CCR3 = value;
             break;
-        case 4:
+        case Channel::CHANNEL_4:
             timer->CCR4 = value;
             break;
     }
+}
+
+template <typename T>
+inline void GeneralPurposeTimer<T>::enableOnePulseMode()
+{
+    timer->CR1 |= TIM_CR1_OPM;
+}
+
+template <typename T>
+inline void GeneralPurposeTimer<T>::disableOnePulseMode()
+{
+    timer->CR1 &= ~TIM_CR1_OPM;
 }
 
 template <typename T>
@@ -733,13 +708,10 @@ inline void GeneralPurposeTimer<T>::clearTriggerInterruptFlag(
 }
 
 template <typename T>
-template <int C>
 inline void GeneralPurposeTimer<T>::clearCaptureCompareInterruptFlag(
-    TIM_TypeDef *timer)
+    TIM_TypeDef *timer, Channel channel)
 {
-    static_assert(C >= 1 && C <= 4, "Channel must be between 1 and 4");
-
-    timer->SR &= ~(TIM_SR_CC1IF << (C - 1));
+    timer->SR &= ~(TIM_SR_CC1IF << static_cast<int>(channel));
 }
 
 }  // namespace Boardcore
