@@ -22,14 +22,27 @@
 
 #include "ADS131M04HighFreq.h"
 
+#include <fmt/format.h>
+
+#include <thread>
+
 namespace Boardcore
 {
 
 ADS131M04HighFreq::ADS131M04HighFreq(SPISlave spiSlave, SPIType *spi,
                                      DMAStream rxStream,
-                                     DMAStream::Channel dmaChannel)
-    : ADS131M04(spiSlave), spi(spi), rxStream(rxStream), dmaChannel(dmaChannel)
+                                     DMAStream::Channel dmaChannel,
+                                     SPISignalGenerator spiSignalGenerator,
+                                     int bufSize, std::string logFileName)
+    : ADS131M04(spiSlave), spi(spi), rxStream(rxStream), dmaChannel(dmaChannel),
+      spiSignalGenerator(spiSignalGenerator), bufSize(bufSize),
+      logFileName(logFileName)
 {
+    // Allocate the buffers
+    buffer1 = static_cast<ADS131M04HighFreqData *>(
+        malloc(bufSize * sizeof(ADS131M04HighFreqData)));
+    buffer2 = static_cast<ADS131M04HighFreqData *>(
+        malloc(bufSize * sizeof(ADS131M04HighFreqData)));
 }
 
 void ADS131M04HighFreq::startHighFreqSampling()
@@ -48,7 +61,7 @@ void ADS131M04HighFreq::startHighFreqSampling()
     rxStream.setMemory1Address(reinterpret_cast<uint32_t *>(buffer2));
     rxStream.setMemoryDataSize(DMAStream::MemoryDataSize::HALF_WORD);
     rxStream.setPeripheralDataSize(DMAStream::PeripheralDataSize::HALF_WORD);
-    rxStream.setNumberOfDataItems(12);
+    rxStream.setNumberOfDataItems(bufSize * sizeof(ADS131M04HighFreqData) / 2);
     rxStream.setStreamChannel(dmaChannel);
     rxStream.setStreamPriorityLevel(DMAStream::PriorityLevel::VERY_HIGH);
     rxStream.enableMemoryIncrement();
@@ -56,6 +69,85 @@ void ADS131M04HighFreq::startHighFreqSampling()
     rxStream.enableCircularMode();
     rxStream.enableDoubleBufferMode();
     rxStream.enable();
+
+    // Start the clock generator
+    spiSignalGenerator.configure();
+    spiSignalGenerator.enable();
+
+    highFreqSamplingStarted = true;
+}
+
+void ADS131M04HighFreq::stopHighFreqSampling()
+{
+    // Stop the clock generator
+    spiSignalGenerator.disable();
+
+    highFreqSamplingStarted = false;
+}
+
+void ADS131M04HighFreq::resumeHighFreqSampling()
+{
+    // Stop the clock generator
+    spiSignalGenerator.enable();
+
+    highFreqSamplingStarted = true;
+}
+
+void ADS131M04HighFreq::startLogging() { start(); }
+
+void ADS131M04HighFreq::run()
+{
+    std::string filename = fmt::format("/sd/{}.bin", logFileName);
+    remove(filename.c_str());
+    FILE *logFile = fopen(filename.c_str(), "a");
+
+    if (logFile == 0)
+    {
+        printf("Could not open file!\n");
+        return;
+    }
+
+    while (!shouldStop())
+    {
+        miosix::FastInterruptDisableLock dLock;
+        loggerThread = miosix::Thread::getCurrentThread();
+
+        while (loggerThread != 0)
+        {
+            loggerThread->IRQwait();
+            {
+                miosix::FastInterruptEnableLock eLock(dLock);
+                miosix::Thread::yield();
+            }
+        }
+
+        if ((DMA2_Stream0->CR & DMA_SxCR_CT) == 0)
+        {
+            fwrite(buffer2, sizeof(ADS131M04HighFreqData), bufSize, logFile);
+        }
+        else
+        {
+            fwrite(buffer1, sizeof(ADS131M04HighFreqData), bufSize, logFile);
+        }
+        printf("Logged\n");
+    }
+
+    fclose(logFile);
+}
+
+void ADS131M04HighFreq::handleTransferCompleteInterrupt()
+{
+    // Wake up the logger thread
+    if (loggerThread)
+    {
+        loggerThread->IRQwakeup();
+        if (loggerThread->IRQgetPriority() >
+            miosix::Thread::IRQgetCurrentThread()->IRQgetPriority())
+        {
+            miosix::Scheduler::IRQfindNextThread();
+        }
+        loggerThread = nullptr;
+    }
 }
 
 }  // namespace Boardcore

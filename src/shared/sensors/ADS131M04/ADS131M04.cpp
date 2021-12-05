@@ -142,7 +142,11 @@ void ADS131M04::disableChannel()
     changeRegister(Registers::REG_CLOCK, 0 << (C + 8), 1 << (C + 8));
 }
 
-bool ADS131M04::selfTest() { return true; }
+bool ADS131M04::selfTest()
+{
+    // TODO
+    return true;
+}
 
 ADS131M04Data ADS131M04::sampleImpl()
 {
@@ -189,7 +193,7 @@ uint16_t ADS131M04::readRegister(Registers reg)
 
     SPITransaction transaction(spiSlave);
     transaction.write(readCommand);
-    transaction.read(&regValue, 1);
+    transaction.read(&regValue, sizeof(regValue));
 
     return regValue;
 }
@@ -203,7 +207,7 @@ void ADS131M04::writeRegister(Registers reg, uint16_t data)
     writeCommand[1] = data;
 
     SPITransaction transaction(spiSlave);
-    transaction.write(writeCommand, 2);
+    transaction.write(writeCommand, sizeof(writeCommand));
 }
 
 void ADS131M04::changeRegister(Registers reg, uint16_t newValue, uint16_t mask)

@@ -26,15 +26,17 @@
 using namespace miosix;
 using namespace Boardcore;
 
-GpioPin sckPin  = GpioPin(GPIOE_BASE, 4);
-GpioPin misoPin = GpioPin(GPIOE_BASE, 2);
-GpioPin mosiPin = GpioPin(GPIOE_BASE, 5);
-GpioPin csPin   = GpioPin(GPIOE_BASE, 6);
+GpioPin sckPin  = GpioPin(GPIOE_BASE, 2);
+GpioPin misoPin = GpioPin(GPIOE_BASE, 5);
+GpioPin mosiPin = GpioPin(GPIOE_BASE, 6);
+GpioPin csPin   = GpioPin(GPIOE_BASE, 4);
 
 GpioPin timerCsPin  = GpioPin(GPIOA_BASE, 11);
 GpioPin timerSckPin = GpioPin(GPIOB_BASE, 1);
 
 static volatile bool dma_complete = false;
+
+static constexpr int BUFF_SIZE = 64;
 
 int main()
 {
@@ -63,22 +65,22 @@ int main()
     timerSckPin.mode(Mode::ALTERNATE);
     timerSckPin.alternateFunction(2);
 
-    SPISignalGenerator<1, 4, 4> spiSignalGenerator{2, 100, 1000000};
-    SPIBus spiBus(SPI4);
+    SPISignalGenerator spiSignalGenerator(
+        16, BUFF_SIZE, 1000000, SPI::Mode::MODE_0,
+        GeneralPurposeTimer<uint16_t>::Channel::CHANNEL_1,
+        GeneralPurposeTimer<uint16_t>::Channel::CHANNEL_4,
+        GeneralPurposeTimer<uint16_t>::Channel::CHANNEL_4);
+    SPISlaveBus spiBus(SPI4, spiSignalGenerator);
     SPISlave spiSlave(spiBus, csPin, {});
-    DMAStream rxStream(DMA2_Stream0);
-    ADS131M04HighFreq ads131(spiSlave, SPI4, rxStream,
-                             DMAStream::Channel::CHANNEL4);
+    ADS131M04HighFreq ads131(spiSlave, SPI4, (DMA2_Stream0),
+                             DMAStream::Channel::CHANNEL4, spiSignalGenerator,
+                             BUFF_SIZE);
 
     // Setup transfer complete interrupt
     NVIC_EnableIRQ(DMA2_Stream0_IRQn);
     NVIC_SetPriority(DMA2_Stream0_IRQn, 15);
 
     ads131.startHighFreqSampling();
-
-    // Start the clock generator
-    spiSignalGenerator.configure();
-    spiSignalGenerator.enable();
 
     while (true)
     {
@@ -88,17 +90,37 @@ int main()
 
         dma_complete = false;
 
-        printf("Transfer complete!\n");
-        printf("Buffer 1: %2X,%2X,%2X,%2X,%2X,%2X,%2X,%2X,%2X,%2X,%2X,%2X\n",
-               ads131.buffer1[0], ads131.buffer1[1], ads131.buffer1[2],
-               ads131.buffer1[3], ads131.buffer1[4], ads131.buffer1[5],
-               ads131.buffer1[6], ads131.buffer1[7], ads131.buffer1[8],
-               ads131.buffer1[9], ads131.buffer1[10], ads131.buffer1[11]);
-        printf("Buffer 2: %2X,%2X,%2X,%2X,%2X,%2X,%2X,%2X,%2X,%2X,%2X,%2X\n",
-               ads131.buffer2[0], ads131.buffer2[1], ads131.buffer2[2],
-               ads131.buffer2[3], ads131.buffer2[4], ads131.buffer2[5],
-               ads131.buffer2[6], ads131.buffer2[7], ads131.buffer2[8],
-               ads131.buffer2[9], ads131.buffer2[10], ads131.buffer2[11]);
+        ads131.stopHighFreqSampling();
+
+        printf("Transfer complete! %ld\n", DMA2_Stream0->CR & DMA_SxCR_CT);
+
+        // Print the entire buffer
+        printf("\tBuffer 1:\n");
+        for (int i = 0; i < BUFF_SIZE; i++)
+        {
+            printf("%4X %02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X %4X\n",
+                   ads131.buffer1[i].status, ads131.buffer1[i].rawData[0],
+                   ads131.buffer1[i].rawData[1], ads131.buffer1[i].rawData[2],
+                   ads131.buffer1[i].rawData[3], ads131.buffer1[i].rawData[4],
+                   ads131.buffer1[i].rawData[5], ads131.buffer1[i].rawData[6],
+                   ads131.buffer1[i].rawData[7], ads131.buffer1[i].rawData[8],
+                   ads131.buffer1[i].rawData[9], ads131.buffer1[i].rawData[10],
+                   ads131.buffer1[i].rawData[11], ads131.buffer1[i].crc);
+        }
+        printf("\tBuffer 2:\n");
+        for (int i = 0; i < BUFF_SIZE; i++)
+        {
+            printf("%4X %02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X %4X\n",
+                   ads131.buffer2[i].status, ads131.buffer2[i].rawData[0],
+                   ads131.buffer2[i].rawData[1], ads131.buffer2[i].rawData[2],
+                   ads131.buffer2[i].rawData[3], ads131.buffer2[i].rawData[4],
+                   ads131.buffer2[i].rawData[5], ads131.buffer2[i].rawData[6],
+                   ads131.buffer2[i].rawData[7], ads131.buffer2[i].rawData[8],
+                   ads131.buffer2[i].rawData[9], ads131.buffer2[i].rawData[10],
+                   ads131.buffer2[i].rawData[11], ads131.buffer2[i].crc);
+        }
+
+        ads131.resumeHighFreqSampling();
     }
 }
 
@@ -114,7 +136,6 @@ void __attribute__((used)) DMA2_Stream0_IRQHandlerImpl()
     dma_complete = true;
     if (DMA2->LISR & DMA_LISR_TCIF0)
     {
-
         // Clear the interrupt
         SET_BIT(DMA2->LIFCR, DMA_LIFCR_CTCIF0);
     }

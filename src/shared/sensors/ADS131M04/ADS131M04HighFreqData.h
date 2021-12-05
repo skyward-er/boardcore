@@ -30,7 +30,9 @@ namespace Boardcore
 
 struct ADS131M04HighFreqData
 {
+    uint16_t status;
     uint8_t rawData[12];
+    uint16_t crc;
 };
 
 }  // namespace Boardcore

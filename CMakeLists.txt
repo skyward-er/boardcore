@@ -146,7 +146,7 @@ sbs_target(test-current-sensor stm32f429zi_stm32f4discovery)
 #src/tests/drivers/old_examples/test-tempSensor.cpp
 #src/tests/drivers/old_examples/test-unit-LM75B.cpp
 
-add_executable(test-ads1118 src/tests/drivers/test-ads1118.cpp)
+add_executable(test-ads1118 src/tests/sensors/ADS1118/test-ads1118.cpp)
 sbs_target(test-ads1118 stm32f407vg_stm32f4discovery)
 
 add_executable(test-bme280 src/tests/drivers/test-bme280.cpp)
@@ -266,14 +266,23 @@ sbs_target(test-timer-utils stm32f429zi_stm32f4discovery)
 add_executable(test-dma-spi src/tests/drivers/dma/test-dma-spi.cpp)
 sbs_target(test-dma-spi stm32f429zi_stm32f4discovery)
 
-add_executable(test-basic-timer src/tests/drivers/timer/test-basic-timer.cpp)
-sbs_target(test-basic-timer stm32f429zi_stm32f4discovery)
+add_executable(test-general-purpose-timer src/tests/drivers/timer/test-general-purpose-timer.cpp)
+sbs_target(test-general-purpose-timer stm32f429zi_stm32f4discovery)
 
-add_executable(test-ads131m04highfreq src/tests/drivers/test-ads131m04highfreq.cpp)
+add_executable(test-ads131m04 src/tests/sensors/ADS131M04/test-ads131m04.cpp)
+sbs_target(test-ads131m04 stm32f429zi_stm32f4discovery)
+
+add_executable(test-ads131m04highfreq src/tests/sensors/ADS131M04/test-ads131m04highfreq.cpp)
 sbs_target(test-ads131m04highfreq stm32f429zi_stm32f4discovery)
+
+add_executable(test-ads131m04highfreq-with-logger src/tests/sensors/ADS131M04/test-ads131m04highfreq-with-logger.cpp)
+sbs_target(test-ads131m04highfreq-with-logger stm32f429zi_stm32f4discovery)
 
 add_executable(test-spi-as-slave src/tests/drivers/spi/test-spi-as-slave.cpp)
 sbs_target(test-spi-as-slave stm32f429zi_stm32f4discovery)
 
 add_executable(test-spi-signal-generator src/tests/drivers/spi/test-spi-signal-generator.cpp)
 sbs_target(test-spi-signal-generator stm32f429zi_stm32f4discovery)
+
+add_executable(test-spi-slave-bus src/tests/drivers/spi/test-spi-slave-bus.cpp)
+sbs_target(test-spi-slave-bus stm32f429zi_stm32f4discovery)
