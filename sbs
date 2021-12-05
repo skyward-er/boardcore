@@ -54,6 +54,7 @@ configure() {
     print_found_deps
 
     defs="-DCMAKE_TOOLCHAIN_FILE=$sbs_base/libs/miosix-kernel/miosix/_tools/toolchain.cmake"
+    defs="$defs -DCMAKE_C_FLAGS=-fdiagnostics-color=always -DCMAKE_CXX_FLAGS=-fdiagnostics-color=always"
     [ "$config_ccache" = true ]  && defs="$defs -DCMAKE_C_COMPILER_LAUNCHER=ccache -DCMAKE_CXX_COMPILER_LAUNCHER=ccache"
     [ "$config_debug" = true ]   && defs="$defs -DCMAKE_BUILD_TYPE=Debug" || defs="$defs -DCMAKE_BUILD_TYPE=Release"
     [ "$config_verbose" = true ] && defs="$defs -DCMAKE_VERBOSE_MAKEFILE:BOOL=ON"
