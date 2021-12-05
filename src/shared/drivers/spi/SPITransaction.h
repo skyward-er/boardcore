@@ -115,7 +115,7 @@ public:
      * @brief Reads multiple bytes from the bus
      *
      * @param data Buffer to be filled with received data.
-     * @param size Size of the buffer.
+     * @param size Size of the buffer in bytes.
      */
     void read(uint8_t *data, size_t size);
 
@@ -123,7 +123,7 @@ public:
      * @brief Reads multiple half words from the bus
      *
      * @param data Buffer to be filled with received data.
-     * @param size Size of the buffer.
+     * @param size Size of the buffer in bytes.
      */
     void read(uint16_t *data, size_t size);
 
@@ -145,7 +145,7 @@ public:
      * @brief Writes multiple bytes to the bus.
      *
      * @param data Buffer containing data to write.
-     * @param size Size of the buffer.
+     * @param size Size of the buffer in bytes.
      */
     void write(uint8_t *data, size_t size);
 
@@ -153,7 +153,7 @@ public:
      * @brief Writes multiple half words to the bus.
      *
      * @param data Buffer containing data to write.
-     * @param size Size of the buffer.
+     * @param size Size of the buffer in bytes.
      */
     void write(uint16_t *data, size_t size);
 
@@ -177,7 +177,7 @@ public:
      * @brief Full duplex transmission of multiple bytes on the bus.
      *
      * @param data Buffer containing data to trasfer.
-     * @param size Size of the buffer.
+     * @param size Size of the buffer in bytes.
      */
     void transfer(uint8_t *data, size_t size);
 
@@ -185,7 +185,7 @@ public:
      * @brief Full duplex transmission of multiple half words on the bus.
      *
      * @param data Buffer containing data to trasfer.
-     * @param size Size of the buffer.
+     * @param size Size of the buffer in bytes.
      */
     void transfer(uint16_t *data, size_t size);
 
@@ -202,7 +202,7 @@ public:
      * @brief Reads multiple bytes starting from the specified register.
      *
      * @param data Buffer to be filled with received data.
-     * @param size Size of the buffer.
+     * @param size Size of the buffer in bytes.
      */
     void readRegisters(uint8_t reg, uint8_t *data, size_t size);
 
@@ -219,7 +219,7 @@ public:
      *
      * @param reg Register start address.
      * @param data Buffer containing data to write.
-     * @param size Size of the buffer.
+     * @param size Size of the buffer in bytes.
      */
     void writeRegisters(uint8_t reg, uint8_t *data, size_t size);
 

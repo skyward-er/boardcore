@@ -164,17 +164,17 @@ public:
      * @brief Reads multiple bytes from the bus
      *
      * @param data Buffer to be filled with received data.
-     * @param size Size of the buffer.
+     * @param size Size of the buffer in bytes.
      */
-    void read(uint8_t *data, size_t size);
+    void read(uint8_t *data, size_t nBytes);
 
     /**
      * @brief Reads multiple half words from the bus
      *
      * @param data Buffer to be filled with received data.
-     * @param size Size of the buffer.
+     * @param size Size of the buffer in bytes.
      */
-    void read(uint16_t *data, size_t size);
+    void read(uint16_t *data, size_t nBytes);
 
     /**
      * @brief Writes a single byte to the bus.
@@ -194,17 +194,17 @@ public:
      * @brief Writes multiple bytes to the bus.
      *
      * @param data Buffer containing data to write.
-     * @param size Size of the buffer.
+     * @param size Size of the buffer in bytes.
      */
-    void write(uint8_t *data, size_t size);
+    void write(uint8_t *data, size_t nBytes);
 
     /**
      * @brief Writes multiple half words to the bus.
      *
      * @param data Buffer containing data to write.
-     * @param size Size of the buffer.
+     * @param size Size of the buffer in bytes.
      */
-    void write(uint16_t *data, size_t size);
+    void write(uint16_t *data, size_t nBytes);
 
     /**
      * @brief Full duplex transmission of one byte on the bus.
@@ -226,17 +226,17 @@ public:
      * @brief Full duplex transmission of multiple bytes on the bus.
      *
      * @param data Buffer containing data to trasfer.
-     * @param size Size of the buffer.
+     * @param size Size of the buffer in bytes.
      */
-    void transfer(uint8_t *data, size_t size);
+    void transfer(uint8_t *data, size_t nBytes);
 
     /**
      * @brief Full duplex transmission of multiple half words on the bus.
      *
      * @param data Buffer containing data to trasfer.
-     * @param size Size of the buffer.
+     * @param size Size of the buffer in bytes.
      */
-    void transfer(uint16_t *data, size_t size);
+    void transfer(uint16_t *data, size_t nBytes);
 
 private:
     SPIType *spi;
@@ -324,24 +324,24 @@ inline uint8_t SPI::read() { return transfer(static_cast<uint8_t>(0)); }
 
 inline uint16_t SPI::read16() { return transfer(static_cast<uint16_t>(0)); }
 
-inline void SPI::read(uint8_t *data, size_t size)
+inline void SPI::read(uint8_t *data, size_t nBytes)
 {
     // Reset the data
-    for (size_t i = 0; i < size; i++)
+    for (size_t i = 0; i < nBytes / 2; i++)
         data[i] = 0;
 
     // Read the data
-    transfer(data, size);
+    transfer(data, nBytes);
 }
 
-inline void SPI::read(uint16_t *data, size_t size)
+inline void SPI::read(uint16_t *data, size_t nBytes)
 {
     // Reset the data
-    for (size_t i = 0; i < size; i++)
+    for (size_t i = 0; i < nBytes / 2; i++)
         data[i] = 0;
 
     // Read the data
-    transfer(data, size);
+    transfer(data, nBytes);
 }
 
 inline void SPI::write(uint8_t data)
@@ -380,13 +380,13 @@ inline void SPI::write(uint16_t data)
     (void)spi->DR;
 }
 
-inline void SPI::write(uint8_t *data, size_t size)
+inline void SPI::write(uint8_t *data, size_t nBytes)
 {
     // Write the first data item in the Tx buffer
     spi->DR = data[0];
 
     // Wait for TXE=1 and write the next data item
-    for (size_t i = 1; i < size; i++)
+    for (size_t i = 1; i < nBytes; i++)
     {
         // Wait until Tx buffer is empty
         while ((spi->SR & SPI_SR_TXE) == 0)
@@ -406,7 +406,7 @@ inline void SPI::write(uint8_t *data, size_t size)
     (void)spi->DR;
 }
 
-inline void SPI::write(uint16_t *data, size_t size)
+inline void SPI::write(uint16_t *data, size_t nBytes)
 {
     // Set 16 bit frame format
     set16BitFrameFormat();
@@ -415,7 +415,7 @@ inline void SPI::write(uint16_t *data, size_t size)
     spi->DR = data[0];
 
     // Wait for TXE=1 and write the next data item
-    for (size_t i = 1; i < size; i++)
+    for (size_t i = 1; i < nBytes / 2; i++)
     {
         // Wait until Tx buffer is empty
         while ((spi->SR & SPI_SR_TXE) == 0)
@@ -470,12 +470,12 @@ inline uint16_t SPI::transfer(uint16_t data)
     return static_cast<uint8_t>(spi->DR);
 }
 
-inline void SPI::transfer(uint8_t *data, size_t size)
+inline void SPI::transfer(uint8_t *data, size_t nBytes)
 {
     // Write the first data item to transmit
     spi->DR = data[0];
 
-    for (size_t i = 1; i < size; i++)
+    for (size_t i = 1; i < nBytes; i++)
     {
         // Wait until the previous data item has been transmitted
         while ((spi->SR & SPI_SR_TXE) == 0)
@@ -497,10 +497,10 @@ inline void SPI::transfer(uint8_t *data, size_t size)
         ;
 
     // Read the last received data item
-    data[size - 1] = static_cast<uint8_t>(spi->DR);
+    data[nBytes - 1] = static_cast<uint8_t>(spi->DR);
 }
 
-inline void SPI::transfer(uint16_t *data, size_t size)
+inline void SPI::transfer(uint16_t *data, size_t nBytes)
 {
     // Set 16 bit frame format
     set16BitFrameFormat();
@@ -508,7 +508,7 @@ inline void SPI::transfer(uint16_t *data, size_t size)
     // Write the first data item to transmit
     spi->DR = data[0];
 
-    for (size_t i = 1; i < size; i++)
+    for (size_t i = 1; i < nBytes / 2; i++)
     {
         // Wait until the previous data item has been transmitted
         while ((spi->SR & SPI_SR_TXE) == 0)
@@ -530,7 +530,7 @@ inline void SPI::transfer(uint16_t *data, size_t size)
         ;
 
     // Read the last received data item
-    data[size - 1] = static_cast<uint16_t>(spi->DR);
+    data[nBytes / 2 - 1] = static_cast<uint16_t>(spi->DR);
 
     // Go back to 8 bit frame format
     set8BitFrameFormat();

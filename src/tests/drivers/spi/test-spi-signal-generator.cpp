@@ -36,7 +36,7 @@ using namespace TimerUtils;
  * peripheral.
  */
 
-GpioPin csPin  = GpioPin(GPIOB_BASE, 14);
+GpioPin csPin  = GpioPin(GPIOA_BASE, 11);
 GpioPin sckPin = GpioPin(GPIOB_BASE, 1);
 
 void setupGPIOs();
@@ -51,7 +51,21 @@ int main()
 
     setupGPIOs();
 
-    SPISignalGenerator<> spiSignalGenerator{2, 1000};
+    SPISignalGenerator spiSignalGenerator{
+        2,
+        1000,
+        1000000,
+        SPI::Mode::MODE_0,
+        GeneralPurposeTimer<uint16_t>::Channel::CHANNEL_1,
+        GeneralPurposeTimer<uint16_t>::Channel::CHANNEL_4,
+        GeneralPurposeTimer<uint16_t>::Channel::CHANNEL_4};
+    spiSignalGenerator.configure();
+
+    Thread::sleep(1000);
+
+    spiSignalGenerator.generateSingleTransaction(8);
+
+    Thread::sleep(1000);
     spiSignalGenerator.configure();
     spiSignalGenerator.enable();
 

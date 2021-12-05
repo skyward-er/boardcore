@@ -1,5 +1,5 @@
 /* Copyright (c) 2021 Skyward Experimental Rocketry
- * Author: Luca Erbetta, Alberto Nidasio
+ * Author: Alberto Nidasio
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -22,34 +22,26 @@
 
 #pragma once
 
-#include <interfaces/delays.h>
-
 #include "SPIBusInterface.h"
-
-#ifndef USE_MOCK_PERIPHERALS
-using SPIType = SPI_TypeDef;
-#else
-#include "test/FakeSpiTypedef.h"
-using SPIType = FakeSpiTypedef;
-#endif
+#include "SPISignalGenerator.h"
 
 namespace Boardcore
 {
 
 /**
- * @brief Main implementation of SPIBusInterface used for accessing the SPI
- * peripheral in master mode
+ * @brief This implementation of SPIBusInterface uses the spi peripheral in
+ * slave mode and the spi signal generator to act as an spi master.
  */
-class SPIBus : public SPIBusInterface
+class SPISlaveBus : public SPIBusInterface
 {
 public:
-    SPIBus(SPIType* spi);
+    SPISlaveBus(SPIType* spi, SPISignalGenerator signalGenerator);
 
     ///< Delete copy/move contructors/operators.
-    SPIBus(const SPIBus&) = delete;
-    SPIBus& operator=(const SPIBus&) = delete;
-    SPIBus(SPIBus&&)                 = delete;
-    SPIBus& operator=(SPIBus&&) = delete;
+    SPISlaveBus(const SPISlaveBus&) = delete;
+    SPISlaveBus& operator=(const SPISlaveBus&) = delete;
+    SPISlaveBus(SPISlaveBus&&)                 = delete;
+    SPISlaveBus& operator=(SPISlaveBus&&) = delete;
 
     /**
      * @brief Configures and enables the bus with the provided configuration.
@@ -59,7 +51,7 @@ public:
      *
      * Use SyncedSPIBus if you need to synchronize access to the bus.
      */
-    void configure(SPIBusConfig newConfig) override;
+    void configure(SPIBusConfig config) override;
 
     /**
      * @brief See SPIBusInterface::select().
@@ -91,7 +83,7 @@ public:
      * @brief Reads multiple bytes from the bus
      *
      * @param data Buffer to be filled with received data.
-     * @param size Size of the buffer.
+     * @param size Size of the buffer in bytes.
      */
     void read(uint8_t* data, size_t size) override;
 
@@ -99,7 +91,7 @@ public:
      * @brief Reads multiple half words from the bus
      *
      * @param data Buffer to be filled with received data.
-     * @param size Size of the buffer.
+     * @param size Size of the buffer in bytes.
      */
     void read(uint16_t* data, size_t size) override;
 
@@ -121,7 +113,7 @@ public:
      * @brief Writes multiple bytes to the bus.
      *
      * @param data Buffer containing data to write.
-     * @param size Size of the buffer.
+     * @param size Size of the buffer in bytes.
      */
     void write(uint8_t* data, size_t size) override;
 
@@ -129,7 +121,7 @@ public:
      * @brief Writes multiple half words to the bus.
      *
      * @param data Buffer containing data to write.
-     * @param size Size of the buffer.
+     * @param size Size of the buffer in bytes.
      */
     void write(uint16_t* data, size_t size) override;
 
@@ -153,7 +145,7 @@ public:
      * @brief Full duplex transmission of multiple bytes on the bus.
      *
      * @param data Buffer containing data to trasfer.
-     * @param size Size of the buffer.
+     * @param size Size of the buffer in bytes.
      */
     void transfer(uint8_t* data, size_t size) override;
 
@@ -161,18 +153,23 @@ public:
      * @brief Full duplex transmission of multiple half words on the bus.
      *
      * @param data Buffer containing data to trasfer.
-     * @param size Size of the buffer.
+     * @param size Size of the buffer in bytes.
      */
     void transfer(uint16_t* data, size_t size) override;
 
 private:
     SPI spi;
+    SPISignalGenerator signalGenerator;
     SPIBusConfig config{};
 };
 
-inline SPIBus::SPIBus(SPIType* spi) : spi(spi) {}
+inline SPISlaveBus::SPISlaveBus(SPIType* spi,
+                                SPISignalGenerator signalGenerator)
+    : spi(spi), signalGenerator(signalGenerator)
+{
+}
 
-inline void SPIBus::configure(SPIBusConfig newConfig)
+inline void SPISlaveBus::configure(SPIBusConfig newConfig)
 {
     // Save the new configuration
     config = newConfig;
@@ -186,71 +183,88 @@ inline void SPIBus::configure(SPIBusConfig newConfig)
     // Configure clock polarity and phase
     spi.setMode(config.mode);
 
-    // Configure clock frequency
-    spi.setClockDiver(config.clockDivider);
-
     // Configure bit order
     spi.setBitOrder(config.bitOrder);
-
-    // Configure chip select and master mode
-    spi.enableSoftwareSlaveManagement();
-    spi.enableInternalSlaveSelection();
-    spi.setMasterConfiguration();
 
     // Enable the peripheral
     spi.enable();
 }
 
-inline void SPIBus::select(GpioType& cs)
-{
-    cs.low();
-    if (config.csSetupTimeUs > 0)
-    {
-        miosix::delayUs(config.csSetupTimeUs);
-    }
-}
+inline void SPISlaveBus::select(GpioType& cs) {}
 
-inline void SPIBus::deselect(GpioType& cs)
-{
-    if (config.csHoldTimeUs > 0)
-    {
-        miosix::delayUs(config.csHoldTimeUs);
-    }
-    cs.high();
-}
+inline void SPISlaveBus::deselect(GpioType& cs) {}
 
 // Read, write and transfer operations
 
-inline uint8_t SPIBus::read() { return spi.read(); }
-
-inline uint16_t SPIBus::read16() { return spi.read16(); }
-
-inline void SPIBus::read(uint8_t* data, size_t size) { spi.read(data, size); }
-
-inline void SPIBus::read(uint16_t* data, size_t size) { spi.read(data, size); }
-
-inline void SPIBus::write(uint8_t data) { spi.write(data); }
-
-inline void SPIBus::write(uint16_t data) { spi.write(data); }
-
-inline void SPIBus::write(uint8_t* data, size_t size) { spi.write(data, size); }
-
-inline void SPIBus::write(uint16_t* data, size_t size)
+inline uint8_t SPISlaveBus::read()
 {
+    signalGenerator.generateSingleTransaction(1);
+    return spi.read();
+}
+
+inline uint16_t SPISlaveBus::read16()
+{
+    signalGenerator.generateSingleTransaction(2);
+    return spi.read16();
+}
+
+inline void SPISlaveBus::read(uint8_t* data, size_t size)
+{
+    signalGenerator.generateSingleTransaction(size);
+    spi.read(data, size);
+}
+
+inline void SPISlaveBus::read(uint16_t* data, size_t size)
+{
+    signalGenerator.generateSingleTransaction(size);
+    spi.read(data, size);
+}
+
+inline void SPISlaveBus::write(uint8_t data)
+{
+    signalGenerator.generateSingleTransaction(1);
+    spi.write(data);
+}
+
+inline void SPISlaveBus::write(uint16_t data)
+{
+    signalGenerator.generateSingleTransaction(2);
+    spi.write(data);
+}
+
+inline void SPISlaveBus::write(uint8_t* data, size_t size)
+{
+    signalGenerator.generateSingleTransaction(size);
     spi.write(data, size);
 }
 
-inline uint8_t SPIBus::transfer(uint8_t data) { return spi.transfer(data); }
-
-inline uint16_t SPIBus::transfer(uint16_t data) { return spi.transfer(data); }
-
-inline void SPIBus::transfer(uint8_t* data, size_t size)
+inline void SPISlaveBus::write(uint16_t* data, size_t size)
 {
+    signalGenerator.generateSingleTransaction(size);
+    spi.write(data, size);
+}
+
+inline uint8_t SPISlaveBus::transfer(uint8_t data)
+{
+    signalGenerator.generateSingleTransaction(1);
+    return spi.transfer(data);
+}
+
+inline uint16_t SPISlaveBus::transfer(uint16_t data)
+{
+    signalGenerator.generateSingleTransaction(2);
+    return spi.transfer(data);
+}
+
+inline void SPISlaveBus::transfer(uint8_t* data, size_t size)
+{
+    signalGenerator.generateSingleTransaction(size);
     spi.transfer(data, size);
 }
 
-inline void SPIBus::transfer(uint16_t* data, size_t size)
+inline void SPISlaveBus::transfer(uint16_t* data, size_t size)
 {
+    signalGenerator.generateSingleTransaction(size);
     spi.transfer(data, size);
 }
 

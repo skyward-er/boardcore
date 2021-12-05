@@ -31,7 +31,7 @@ GpioPin misoPin = GpioPin(GPIOE_BASE, 2);
 GpioPin mosiPin = GpioPin(GPIOE_BASE, 5);
 GpioPin csPin   = GpioPin(GPIOE_BASE, 6);
 
-uint8_t counter = 0;
+uint16_t counter = 0;
 
 int main()
 {
@@ -52,6 +52,7 @@ int main()
     SPI spi(SPI4);
     spi.reset();
     spi.enable();
+    spi.set16BitFrameFormat();
 
     printf("Slave started\n");
 

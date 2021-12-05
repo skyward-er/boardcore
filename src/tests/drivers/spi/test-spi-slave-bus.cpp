@@ -1,5 +1,5 @@
-/* Copyright (c) 2021 Skyward Experimental Rocketry
- * Author: Luca Conterio
+/* Copyright (c) 2020 Skyward Experimental Rocketry
+ * Author: Alberto Nidasio
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -20,37 +20,54 @@
  * THE SOFTWARE.
  */
 
-#include <Common.h>
 #include <drivers/spi/SPIDriver.h>
+#include <miosix.h>
 
-#include <cstdio>
-#include <iostream>
-#include <sstream>
-
-using namespace Boardcore;
-using namespace std;
 using namespace miosix;
+using namespace Boardcore;
 
-SPIBus bus(SPI1);
+GpioPin sckPin  = GpioPin(GPIOE_BASE, 4);
+GpioPin misoPin = GpioPin(GPIOE_BASE, 2);
+GpioPin mosiPin = GpioPin(GPIOE_BASE, 5);
+GpioPin csPin   = GpioPin(GPIOE_BASE, 6);
 
-GpioPin sckPin(GPIOA_BASE, 5);
-GpioPin misoPin(GPIOA_BASE, 6);
-GpioPin mosiPin(GPIOA_BASE, 7);
-GpioPin csPin(GPIOE_BASE, 3);
+GpioPin timerCsPin  = GpioPin(GPIOA_BASE, 11);
+GpioPin timerSckPin = GpioPin(GPIOB_BASE, 1);
 
 int main()
 {
-    RCC->APB2ENR |= RCC_APB2ENR_SPI1EN;  // Enable SPI1 bus
+    // Enable clock for SPI4 interface
+    RCC->APB2ENR |= RCC_APB2ENR_SPI4EN;
 
+    // Enable clock for timers TIM1 and TIM3
+    RCC->APB2ENR |= RCC_APB2ENR_TIM1EN;
+    RCC->APB1ENR |= RCC_APB1ENR_TIM3EN;
+
+    // Setup gpio pins
+    csPin.mode(Mode::ALTERNATE);
+    csPin.alternateFunction(5);
     sckPin.mode(Mode::ALTERNATE);
     sckPin.alternateFunction(5);
     misoPin.mode(Mode::ALTERNATE);
     misoPin.alternateFunction(5);
     mosiPin.mode(Mode::ALTERNATE);
     mosiPin.alternateFunction(5);
-    csPin.mode(Mode::OUTPUT);
-    csPin.high();
 
+    timerCsPin.mode(Mode::ALTERNATE);
+    timerCsPin.alternateFunction(1);
+    timerSckPin.mode(Mode::ALTERNATE);
+    timerSckPin.alternateFunction(2);
+
+    // Setup spi as a slave
+    SPISignalGenerator spiSignalGenerator{
+        2,
+        100,
+        1000000,
+        SPI::Mode::MODE_0,
+        GeneralPurposeTimer<uint16_t>::Channel::CHANNEL_1,
+        GeneralPurposeTimer<uint16_t>::Channel::CHANNEL_4,
+        GeneralPurposeTimer<uint16_t>::Channel::CHANNEL_4};
+    SPISlaveBus bus(SPI4, spiSignalGenerator);
     SPISlave spiSlave(bus, csPin, {});
     spiSlave.config.clockDivider = SPI::ClockDivider::DIV_64;
 
@@ -63,9 +80,9 @@ int main()
     delayMs(1);
     transaction.read16();
     delayMs(1);
-    transaction.read(buffer8, 6);
+    transaction.read(buffer8, sizeof(buffer8));
     delayMs(1);
-    transaction.read(buffer16, 6);
+    transaction.read(buffer16, sizeof(buffer16));
     delayMs(1);
     transaction.write((uint8_t)0xAB);
     delayMs(1);
@@ -77,7 +94,7 @@ int main()
     buffer8[3] = 0x67;
     buffer8[4] = 0x89;
     buffer8[5] = 0xAB;
-    transaction.write(buffer8, 6);
+    transaction.write(buffer8, sizeof(buffer8));
     delayMs(1);
     buffer16[0] = 0x0101;
     buffer16[1] = 0x2323;
@@ -85,15 +102,15 @@ int main()
     buffer16[3] = 0x6767;
     buffer16[4] = 0x8989;
     buffer16[5] = 0xABAB;
-    transaction.write(buffer16, 6);
+    transaction.write(buffer16, sizeof(buffer16));
     delayMs(1);
     transaction.transfer((uint8_t)0xAB);
     delayMs(1);
     transaction.transfer((uint16_t)0xABCD);
     delayMs(1);
-    transaction.transfer(buffer8, 6);
+    transaction.transfer(buffer8, sizeof(buffer8));
     delayMs(1);
-    transaction.transfer(buffer16, 6);
+    transaction.transfer(buffer16, sizeof(buffer16));
 
     while (true)
         delayMs(1000);
