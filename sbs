@@ -40,10 +40,10 @@ EOF
 }
 
 find_deps() {
-    command -v ccache          &> /dev/null && config_ccache=true
-    command -v ninja           &> /dev/null && config_ninja=true
-    command -v st-flash        &> /dev/null && config_stflash=true
-    command -v ST-LINK_CLI.exe &> /dev/null && config_stlink=true
+    command -v ccache          > /dev/null 2>&1 && config_ccache=true
+    command -v ninja           > /dev/null 2>&1 && config_ninja=true
+    command -v st-flash        > /dev/null 2>&1 && config_stflash=true
+    command -v ST-LINK_CLI.exe > /dev/null 2>&1 && config_stlink=true
 }
 
 print_found_deps() {
@@ -106,11 +106,12 @@ flash() {
     if build "$1"; then
         echo
         if [ -f "$build_dir/$1.bin" ]; then
-            printf "Flashing software: ";  
+            printf "Flashing software: ";
             [ "$config_stflash" = true ] && echo "st-flash" || ([ "$config_stlink" = true ] && echo "st-link" || "no")
+            echo
 
             if [ "$config_stflash" = true ]; then
-                st-flash --reset write "$build_dir/$1.bin" 0x08000000
+                st-flash --reset write "$build_dir/$1.bin" 0x8000000
             elif [ "$config_stlink" = true ]; then
                 ST-LINK_CLI.exe -P "$build_dir/$1.bin" 0x8000000 -V -Rst
             else
@@ -150,7 +151,7 @@ set_jobs() {
 }
 
 get_jobs_opt() {
-    [ ! -z "$build_jobs" ] && echo "-j $build_jobs" || echo
+    [ -n "$build_jobs" ] && echo "-j $build_jobs" || echo
 }
 
 lint() {
@@ -183,11 +184,10 @@ VERBOSE_FILENAME=".sbs_verbose"
 
 print_banner
 
-sbs_base="$(cd -- "$(dirname "$0")" > /dev/null 2>&1; pwd -P)"
+sbs_base="$(cd -- "$(dirname "$0")" > /dev/null 2>&1 && pwd -P)"
 source_dir="$PWD"
 build_dir="$source_dir/build"
 
-to_reconfigure=false
 config_ccache=false
 config_debug=false
 config_verbose=false
@@ -218,15 +218,15 @@ done
 while getopts hcb:f:j:dvlrn opt; do
     case "$opt" in
         h)  usage; exit 0;;
-        c)  clean; exit $?;;
-        b)  build "$OPTARG"; exit $?;;
-        f)  flash "$OPTARG"; exit $?;;
+        c)  clean; exit;;
+        b)  build "$OPTARG"; exit;;
+        f)  flash "$OPTARG"; exit;;
         j)  set_jobs "$OPTARG";;
         d)  set_debug;;
         v)  set_verbose;;
-        l)  list; exit $?;;
-        r)  boards; exit $?;;
-        n)  lint; exit $?;;
+        l)  list; exit;;
+        r)  boards; exit;;
+        n)  lint; exit;;
         ?)  usage; exit 2;;
     esac
 done
