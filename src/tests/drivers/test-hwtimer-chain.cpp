@@ -52,6 +52,9 @@ int main()
         uint32_t tick1 = timer1.tick();
         uint32_t tick2 = timer2.tick();
 
+        UNUSED(tick1);
+        UNUSED(tick2);
+
         TRACE("Timer1: %f\n", timer1.toMilliSeconds(tick1));
         TRACE("Timer2: %f\n", timer2.toMilliSeconds(tick1));
 

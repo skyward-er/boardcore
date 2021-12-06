@@ -141,7 +141,7 @@ int main()
     }
 
     // Run tests with the provided arguments
-    int result = Catch::Session().run(argc, argv);
+    Catch::Session().run(argc, argv);
 
     // Clear memory
     for (size_t i = 0; i < argc; i++)

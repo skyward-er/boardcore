@@ -86,6 +86,7 @@ int main()
     {
         sensor.sample();
         LIS3MDLData data = sensor.getLastSample();
+        UNUSED(data);
         TRACE("%f C | x: %f | y: %f | z %f\n", data.temp, data.mag_x,
               data.mag_y, data.mag_z);
         miosix::Thread::sleep(2000);

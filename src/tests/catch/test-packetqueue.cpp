@@ -84,7 +84,7 @@ TEST_CASE("Packet tests")
     {
 
         REQUIRE(p.tryAppend(message_base, 5));
-        long long ts = p.timestamp();
+        uint64_t ts = p.timestamp();
 #ifndef COMPILE_FOR_X86
         REQUIRE(miosix::getTick() - ts < 5);
 #endif
