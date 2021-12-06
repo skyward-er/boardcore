@@ -24,12 +24,12 @@
 
 #include <Singleton.h>
 #include <drivers/spi/SensorSpi.h>
+#include <i2c/stm32f2_f4_i2c.h>
 #include <miosix.h>
 #include <stdint.h>
 #include <stdio.h>
-#include <vector>
 
-#include "i2c/stm32f2_f4_i2c.h"
+#include <vector>
 
 using std::vector;
 
@@ -54,10 +54,7 @@ public:
         SingletonType::getInstance()->_write(byte);
     }
 
-    inline static void init()
-    {
-        SingletonType::getInstance();
-    }
+    inline static void init() { SingletonType::getInstance(); }
 
     inline static int read(void* buffer, size_t max_len)
     {
@@ -95,7 +92,7 @@ public:
 
     static inline void setPolarity(uint8_t cpol, uint8_t cpha)
     {
-        SingletonType::getInstance()->_setPolarity(cpol,cpha);
+        SingletonType::getInstance()->_setPolarity(cpol, cpha);
     }
 
 private:
@@ -174,15 +171,15 @@ private:
 
     inline void _setPolarity(uint8_t cpol, uint8_t cpha)
     {
-        if(cpol==0)
-             getSPIAddr(N)->CR1 &= ~SPI_CR1_CPOL;
-        if(cpha==0)
-             getSPIAddr(N)->CR1 &= ~SPI_CR1_CPHA;
-        if(cpol==1)
-             getSPIAddr(N)->CR1 |= SPI_CR1_CPOL;
-        if(cpha==1)
-             getSPIAddr(N)->CR1 |= SPI_CR1_CPHA;
-    }   
+        if (cpol == 0)
+            getSPIAddr(N)->CR1 &= ~SPI_CR1_CPOL;
+        if (cpha == 0)
+            getSPIAddr(N)->CR1 &= ~SPI_CR1_CPHA;
+        if (cpol == 1)
+            getSPIAddr(N)->CR1 |= SPI_CR1_CPOL;
+        if (cpha == 1)
+            getSPIAddr(N)->CR1 |= SPI_CR1_CPHA;
+    }
 
     BusSPI()
     {
@@ -197,14 +194,11 @@ private:
             GpioMiso::alternateFunction(GetAlternativeFunctionNumber(N));
             GpioSclk::mode(miosix::Mode::ALTERNATE);
             GpioSclk::alternateFunction(GetAlternativeFunctionNumber(N));
-            getSPIAddr(N)->CR1=SPI_CR1_SSM  //No HW cs
-                            | SPI_CR1_SSI
-                            | SPI_CR1_SPE  //SPI enabled
-                            | SPI_CR1_BR_0
-                            | SPI_CR1_BR_1
-                            | SPI_CR1_BR_2
-                            | SPI_CR1_MSTR; 
-            
+            getSPIAddr(N)->CR1 = SPI_CR1_SSM                  // No HW cs
+                                 | SPI_CR1_SSI | SPI_CR1_SPE  // SPI enabled
+                                 | SPI_CR1_BR_0 | SPI_CR1_BR_1 | SPI_CR1_BR_2 |
+                                 SPI_CR1_MSTR;
+
             if (getSPIAddr(N) == SPI1)
             {
                 SPIDriver::instance();
@@ -284,13 +278,13 @@ public:
     }
 
     static void read16(uint16_t reg, uint8_t* buf, int size)
-    {   
-        uint8_t msb = (uint8_t) (reg >> 8);
-        uint8_t lsb = (uint8_t) reg;
+    {
+        uint8_t msb = (uint8_t)(reg >> 8);
+        uint8_t lsb = (uint8_t)reg;
 
         GpioCS::low();
         Bus::write(&msb, sizeof(msb));
-        Bus::write(&lsb, sizeof(lsb));        
+        Bus::write(&lsb, sizeof(lsb));
         Bus::read(buf, size);
         GpioCS::high();
     }
@@ -327,9 +321,8 @@ public:
 
     static inline void setPolarity(uint8_t cpol, uint8_t cpha)
     {
-        Bus::setPolarity(cpol,cpha);
+        Bus::setPolarity(cpol, cpha);
     }
-
 
 private:
     ProtocolSPI()                     = delete;

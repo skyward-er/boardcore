@@ -70,7 +70,7 @@ void FileLogSinkBuffered::logImpl(string l)
 {
     Lock<FastMutex> lock(mutex);
     LoggingString s;
-    strncpy(s.log_string, l.c_str(), MAX_LOG_STRING_SIZE-1);
+    strncpy(s.log_string, l.c_str(), MAX_LOG_STRING_SIZE - 1);
     logger.log(s);
 }
 

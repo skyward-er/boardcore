@@ -23,6 +23,7 @@
 #pragma once
 
 #include <drivers/BusTemplate.h>
+
 #include "Sensor.h"
 
 /** This is a thermocouple reading chip */
@@ -146,7 +147,6 @@ public:
                 regVal |= 00000100 << 4;
                 break;
             default:
-                assert(false);
                 break;
         }
         bus.write(REG_CR1, regVal);

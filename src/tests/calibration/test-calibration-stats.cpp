@@ -28,10 +28,10 @@
 #include <miosix.h>
 
 #if SENSOR_LIS3DSH_STATS_TEST
-#include "sensors/LIS3DSH/LIS3DSH.h"
+#include <sensors/LIS3DSH/LIS3DSH.h>
 #endif
 
-#include "sensors/calibration/Calibration.h"
+#include <sensors/calibration/Calibration.h>
 
 using namespace Boardcore;
 using namespace miosix;
@@ -258,8 +258,8 @@ int main()
             }
             else
             {
-                printf("\t%f, %f, %f\n",
-                       xRes.maxValue, yRes.maxValue, zRes.maxValue);
+                printf("\t%f, %f, %f\n", xRes.maxValue, yRes.maxValue,
+                       zRes.maxValue);
             }
         }
         else if (!strncmp("mean", input, 3))
@@ -276,8 +276,7 @@ int main()
             }
             else
             {
-                printf("\t%f, %f, %f\n",
-                       xRes.mean, yRes.mean, zRes.mean);
+                printf("\t%f, %f, %f\n", xRes.mean, yRes.mean, zRes.mean);
             }
         }
         else if (!strncmp("stddev", input, 3))
@@ -294,9 +293,7 @@ int main()
             }
             else
             {
-                printf(
-                    "\t%f, %f, %f\n",
-                    xRes.stdev, yRes.stdev, zRes.stdev);
+                printf("\t%f, %f, %f\n", xRes.stdev, yRes.stdev, zRes.stdev);
             }
         }
         else if (!strncmp("samples", input, 7))

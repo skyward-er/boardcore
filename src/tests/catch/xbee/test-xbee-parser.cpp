@@ -29,11 +29,11 @@
 #include "../catch-tests-entry.cpp"
 #endif
 
+#include <drivers/Xbee/APIFrameParser.h>
+
+#include <catch2/catch.hpp>
 #include <cstdio>
 #include <cstring>
-
-#include "drivers/Xbee/APIFrameParser.h"
-#include <catch2/catch.hpp>
 
 using namespace Boardcore;
 using namespace Xbee;

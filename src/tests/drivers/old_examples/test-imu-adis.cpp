@@ -21,41 +21,42 @@
  */
 
 #include <Common.h>
+#include <diagnostic/CpuMeter.h>
 #include <drivers/BusTemplate.h>
+#include <drivers/spi/SensorSpi.h>
 #include <interfaces-impl/hwmapping.h>
+#include <math/Stats.h>
 #include <sensors/ADIS16405/ADIS16405.h>
 #include <sensors/SensorSampler.h>
-#include <math/Stats.h>
-#include <diagnostic/CpuMeter.h>
-#include <drivers/spi/SensorSpi.h>
 
 using namespace miosix;
 using namespace miosix::interfaces;
 
 // Reset pin
-typedef Gpio<GPIOD_BASE, 5> rstPin; // PD5 for the HomeoneBoard
+typedef Gpio<GPIOD_BASE, 5> rstPin;  // PD5 for the HomeoneBoard
 
 // SPI1 binding to the sensor
-typedef BusSPI<1,spi1::mosi,spi1::miso,spi1::sck> busSPI1; //Create SPI1
-typedef ProtocolSPI<busSPI1,miosix::sensors::adis16405::cs> spiADIS16405; //La lego al Chip Select 1 per la IMU 1
+typedef BusSPI<1, spi1::mosi, spi1::miso, spi1::sck> busSPI1;  // Create SPI1
+typedef ProtocolSPI<busSPI1, miosix::sensors::adis16405::cs>
+    spiADIS16405;  // La lego al Chip Select 1 per la IMU 1
 
 int main()
-{   
+{
     spiADIS16405::init();
 
     Thread::sleep(1000);
-    ADIS16405<spiADIS16405,rstPin>* adis = new ADIS16405<spiADIS16405,rstPin>(adis->GYRO_FS_300);
+    ADIS16405<spiADIS16405, rstPin>* adis =
+        new ADIS16405<spiADIS16405, rstPin>(adis->GYRO_FS_300);
 
-    if(adis->init())
-        printf("[ADIS16405] Init succeeded\n" );
+    if (adis->init())
+        printf("[ADIS16405] Init succeeded\n");
     else
         printf("[ADIS16405] Init failed\n");
-    
-    if(adis->selfTest())
-        printf("[ADIS16405] Self test succeeded\n" );
+
+    if (adis->selfTest())
+        printf("[ADIS16405] Self test succeeded\n");
     else
         printf("[ADIS16405] Self test failed\n");
-
 
     SimpleSensorSampler sampler(250, 1);
     sampler.addSensor(adis, std::bind([&]() {}));
@@ -65,12 +66,14 @@ int main()
 
     int counter = 0;
 
-    while(true) {
+    while (true)
+    {
         sampler.sampleAndCallback();
 
         stats.add(averageCpuUtilization());
 
-        if(counter == 2500) {
+        if (counter == 2500)
+        {
             statResult = stats.getStats();
             printf("CPU usage: %f\n", statResult.mean);
             counter = 0;
@@ -79,7 +82,7 @@ int main()
             printf("%f %f %f\n", last_data->getX(), last_data->getY(),
                    last_data->getZ());
         }
-        counter++;    
+        counter++;
 
         Thread::sleep(100);
     }

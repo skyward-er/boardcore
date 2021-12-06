@@ -23,9 +23,10 @@
 #include "Xbee.h"
 
 #include <Debug.h>
+#include <diagnostic/StackLogger.h>
 #include <kernel/scheduler/scheduler.h>
 #include <miosix.h>
-#include <diagnostic/StackLogger.h>
+
 #include <algorithm>
 
 using miosix::FastMutex;

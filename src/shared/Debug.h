@@ -23,8 +23,11 @@
 #pragma once
 
 #include <miosix.h>
-#include <string>
+
 #include <cstdio>
+#include <string>
+
+// linter off
 
 // clang-format off
 #ifdef DEBUG

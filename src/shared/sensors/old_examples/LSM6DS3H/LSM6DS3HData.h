@@ -22,8 +22,9 @@
 
 #pragma once
 
+#include <math/Vec3.h>
+
 #include <ostream>
-#include "math/Vec3.h"
 
 struct LSM6DS3HData
 {

@@ -22,9 +22,10 @@
 
 #include "MPU9250.h"
 
+#include <interfaces/endianness.h>
+
 #include "Constants.h"
 #include "TimestampTimer.h"
-#include "interfaces/endianness.h"
 
 namespace Boardcore
 {

@@ -26,11 +26,11 @@
 
 namespace modbus
 {
-    static constexpr uint8_t EXC_ILLEGAL_FUN   = 0x01; ///< Illegal function    
-    static constexpr uint8_t EXC_ILLEGAL_ADDR  = 0x02; ///< Illegal data address
-    static constexpr uint8_t EXC_ILLEGAL_VAL   = 0x03; ///< Illegal data value
-    static constexpr uint8_t EXC_SLAVE_FAILURE = 0x04; ///< Slave internal failure
-    static constexpr uint8_t ACKNOWLEDGE       = 0x05; ///< Acknowledge
-    static constexpr uint8_t SLAVE_BUSY        = 0x06; ///< Slave busy
-    static constexpr uint8_t EXC_MEM_PARITY    = 0x08; ///< Memory parity error
-}
+static constexpr uint8_t EXC_ILLEGAL_FUN   = 0x01;  ///< Illegal function
+static constexpr uint8_t EXC_ILLEGAL_ADDR  = 0x02;  ///< Illegal data address
+static constexpr uint8_t EXC_ILLEGAL_VAL   = 0x03;  ///< Illegal data value
+static constexpr uint8_t EXC_SLAVE_FAILURE = 0x04;  ///< Slave internal failure
+static constexpr uint8_t ACKNOWLEDGE       = 0x05;  ///< Acknowledge
+static constexpr uint8_t SLAVE_BUSY        = 0x06;  ///< Slave busy
+static constexpr uint8_t EXC_MEM_PARITY    = 0x08;  ///< Memory parity error
+}  // namespace modbus

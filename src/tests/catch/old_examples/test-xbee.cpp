@@ -29,8 +29,8 @@
 
 #define private public
 
-#include "drivers/Xbee/Xbee.h"
-#include "utils/testutils/BusTemplateMock.h"
+#include <drivers/Xbee/Xbee.h>
+#include <utils/testutils/BusTemplateMock.h>
 
 using std::vector;
 
@@ -115,213 +115,213 @@ TEST_CASE_METHOD(XbeeTestFixture, "[Xbee] Receive with transferData()")
         REQUIRE(xbee_payload == payload);
     }
 
-  /*  SECTION("Test single receive with no payload")
-    {
-        vector<uint8_t> packet, payload;
-        buildRxPacket(packet, payload);
+    /*  SECTION("Test single receive with no payload")
+      {
+          vector<uint8_t> packet, payload;
+          buildRxPacket(packet, payload);
 
-        REQUIRE(spi.getMOSI().size() == 0);
+          REQUIRE(spi.getMOSI().size() == 0);
 
-        spi.addMISO(packet);
+          spi.addMISO(packet);
 
-        xbee.transferData();
+          xbee.transferData();
 
-        REQUIRE(spi.getMOSI().size() == packet.size());
+          REQUIRE(spi.getMOSI().size() == packet.size());
 
-        REQUIRE(xbee.rx_frame.size() == 0);
-    }
+          REQUIRE(xbee.rx_frame.size() == 0);
+      }
 
-    SECTION("Test double consecutive receive")
-    {
-        vector<uint8_t> packet, payload;
-        payload.resize(25, 0x55);
-        buildRxPacket(packet, payload);
+      SECTION("Test double consecutive receive")
+      {
+          vector<uint8_t> packet, payload;
+          payload.resize(25, 0x55);
+          buildRxPacket(packet, payload);
 
-        REQUIRE(spi.getMOSI().size() == 0);
+          REQUIRE(spi.getMOSI().size() == 0);
 
-        spi.addMISO(packet);
-        spi.addMISO(packet);
+          spi.addMISO(packet);
+          spi.addMISO(packet);
 
-        xbee.transferData();
-        xbee.transferData();
+          xbee.transferData();
+          xbee.transferData();
 
-        REQUIRE(spi.getMOSI().size() == packet.size() * 2);
+          REQUIRE(spi.getMOSI().size() == packet.size() * 2);
 
-        vector<uint8_t> xbee_payload;
+          vector<uint8_t> xbee_payload;
 
-        xbee_payload.insert(xbee_payload.end(), xbee.rx_frame.begin(),
-                            xbee.rx_frame.end());
+          xbee_payload.insert(xbee_payload.end(), xbee.rx_frame.begin(),
+                              xbee.rx_frame.end());
 
-        REQUIRE(xbee_payload == payload);
-    }
-}
+          REQUIRE(xbee_payload == payload);
+      }
+  }
 
-TEST_CASE_METHOD(XbeeTestFixture, "[Xbee] Full duplex with transferData()")
-{
-    SECTION("Simple transmit")
-    {
-        vector<uint8_t> out(20, 0x55);
-        REQUIRE(xbee.tx_buf.size() == 0);
+  TEST_CASE_METHOD(XbeeTestFixture, "[Xbee] Full duplex with transferData()")
+  {
+      SECTION("Simple transmit")
+      {
+          vector<uint8_t> out(20, 0x55);
+          REQUIRE(xbee.tx_buf.size() == 0);
 
-        xbee.setTxBuf(out.data(), out.size());
-        REQUIRE(xbee.tx_buf.size() == out.size());
+          xbee.setTxBuf(out.data(), out.size());
+          REQUIRE(xbee.tx_buf.size() == out.size());
 
-        xbee.transferData();
-        REQUIRE(xbee.tx_buf.size() == 0);
+          xbee.transferData();
+          REQUIRE(xbee.tx_buf.size() == 0);
 
-        REQUIRE(spi.getMOSI() == out);
-    }
+          REQUIRE(spi.getMOSI() == out);
+      }
 
-    SECTION("Transmit + Smaller receive starting at the same time")
-    {
-        vector<uint8_t> out(40, 0x44);
-        xbee.setTxBuf(out.data(), out.size());
+      SECTION("Transmit + Smaller receive starting at the same time")
+      {
+          vector<uint8_t> out(40, 0x44);
+          xbee.setTxBuf(out.data(), out.size());
 
-        vector<uint8_t> packet, payload;
-        payload.resize(5, 0x55);
-        buildRxPacket(packet, payload);
+          vector<uint8_t> packet, payload;
+          payload.resize(5, 0x55);
+          buildRxPacket(packet, payload);
 
-        spi.addMISO(packet);
+          spi.addMISO(packet);
 
-        xbee.transferData();
+          xbee.transferData();
 
-        REQUIRE(spi.getMOSI() == out);
+          REQUIRE(spi.getMOSI() == out);
 
-        vector<uint8_t> xbee_payload;
+          vector<uint8_t> xbee_payload;
 
-        xbee_payload.insert(xbee_payload.end(), xbee.rx_frame.begin(),
-                            xbee.rx_frame.end());
+          xbee_payload.insert(xbee_payload.end(), xbee.rx_frame.begin(),
+                              xbee.rx_frame.end());
 
-        REQUIRE(xbee_payload == payload);
-    }
+          REQUIRE(xbee_payload == payload);
+      }
 
-    SECTION("Transmit + 2 receives")
-    {
-        vector<uint8_t> out(40, 0x44);
-        xbee.setTxBuf(out.data(), out.size());
+      SECTION("Transmit + 2 receives")
+      {
+          vector<uint8_t> out(40, 0x44);
+          xbee.setTxBuf(out.data(), out.size());
 
-        vector<uint8_t> packet, payload;
-        payload.resize(5, 0x55);
-        buildRxPacket(packet, payload);
+          vector<uint8_t> packet, payload;
+          payload.resize(5, 0x55);
+          buildRxPacket(packet, payload);
 
-        spi.addMISO(packet);
+          spi.addMISO(packet);
 
-        xbee.transferData();
+          xbee.transferData();
 
-        REQUIRE(spi.getMOSI() == out);
+          REQUIRE(spi.getMOSI() == out);
 
-        vector<uint8_t> xbee_payload;
+          vector<uint8_t> xbee_payload;
 
-        xbee_payload.insert(xbee_payload.end(), xbee.rx_frame.begin(),
-                            xbee.rx_frame.end());
+          xbee_payload.insert(xbee_payload.end(), xbee.rx_frame.begin(),
+                              xbee.rx_frame.end());
 
-        REQUIRE(xbee_payload == payload);
+          REQUIRE(xbee_payload == payload);
 
-        // Receive 2
+          // Receive 2
 
-        // Expcted output
-        spi.restoreState();
-        xbee_payload.clear();
+          // Expcted output
+          spi.restoreState();
+          xbee_payload.clear();
 
-        vector<uint8_t> expectedMOSI(packet.size(), 0x00);
+          vector<uint8_t> expectedMOSI(packet.size(), 0x00);
 
-        spi.addMISO(packet);
+          spi.addMISO(packet);
 
-        xbee.transferData();
+          xbee.transferData();
 
-        REQUIRE(spi.getMOSI() == expectedMOSI);
+          REQUIRE(spi.getMOSI() == expectedMOSI);
 
-        xbee_payload.insert(xbee_payload.end(), xbee.rx_frame.begin(),
-                            xbee.rx_frame.end());
+          xbee_payload.insert(xbee_payload.end(), xbee.rx_frame.begin(),
+                              xbee.rx_frame.end());
 
-        REQUIRE(xbee_payload == payload);
-    }
+          REQUIRE(xbee_payload == payload);
+      }
 
-    SECTION("Transmit + Bigger receive starting at the same time")
-    {
-        vector<uint8_t> out(20, 0x44);
-        xbee.setTxBuf(out.data(), out.size());
+      SECTION("Transmit + Bigger receive starting at the same time")
+      {
+          vector<uint8_t> out(20, 0x44);
+          xbee.setTxBuf(out.data(), out.size());
 
-        vector<uint8_t> packet, payload;
-        payload.resize(20, 0x55);
-        buildRxPacket(packet, payload);
+          vector<uint8_t> packet, payload;
+          payload.resize(20, 0x55);
+          buildRxPacket(packet, payload);
 
-        spi.addMISO(packet);
+          spi.addMISO(packet);
 
-        xbee.transferData();
+          xbee.transferData();
 
-        out.resize(packet.size(), 0);
-        REQUIRE(spi.getMOSI() == out);
+          out.resize(packet.size(), 0);
+          REQUIRE(spi.getMOSI() == out);
 
-        vector<uint8_t> xbee_payload;
+          vector<uint8_t> xbee_payload;
 
-        xbee_payload.insert(xbee_payload.end(), xbee.rx_frame.begin(),
-                            xbee.rx_frame.end());
+          xbee_payload.insert(xbee_payload.end(), xbee.rx_frame.begin(),
+                              xbee.rx_frame.end());
 
-        REQUIRE(xbee_payload == payload);
-    }
+          REQUIRE(xbee_payload == payload);
+      }
 
-    SECTION("Transmit + Bigger receive starting later")
-    {
-        vector<uint8_t> out(20, 0x44);
-        xbee.setTxBuf(out.data(), out.size());
+      SECTION("Transmit + Bigger receive starting later")
+      {
+          vector<uint8_t> out(20, 0x44);
+          xbee.setTxBuf(out.data(), out.size());
 
-        vector<uint8_t> packet, payload;
-        payload.resize(20, 0x55);
-        buildRxPacket(packet, payload);
-        packet.insert(packet.begin(), 10, 0x00);
+          vector<uint8_t> packet, payload;
+          payload.resize(20, 0x55);
+          buildRxPacket(packet, payload);
+          packet.insert(packet.begin(), 10, 0x00);
 
-        spi.addMISO(packet);
+          spi.addMISO(packet);
 
-        xbee.transferData();
+          xbee.transferData();
 
-        out.resize(packet.size(), 0);
-        REQUIRE(spi.getMOSI() == out);
+          out.resize(packet.size(), 0);
+          REQUIRE(spi.getMOSI() == out);
 
-        vector<uint8_t> xbee_payload;
+          vector<uint8_t> xbee_payload;
 
-        xbee_payload.insert(xbee_payload.end(), xbee.rx_frame.begin(),
-                            xbee.rx_frame.end());
+          xbee_payload.insert(xbee_payload.end(), xbee.rx_frame.begin(),
+                              xbee.rx_frame.end());
 
-        REQUIRE(xbee_payload == payload);
-    }
+          REQUIRE(xbee_payload == payload);
+      }
 
-    SECTION("Transmit + Receive starting at incrementing bytes later")
-    {
-        for (int i = 0; i <= 20; i++)
-        {
-            vector<uint8_t> out(20, 0x44);
-            xbee.setTxBuf(out.data(), out.size());
+      SECTION("Transmit + Receive starting at incrementing bytes later")
+      {
+          for (int i = 0; i <= 20; i++)
+          {
+              vector<uint8_t> out(20, 0x44);
+              xbee.setTxBuf(out.data(), out.size());
 
-            vector<uint8_t> packet, payload;
-            payload.resize(2, 0x55);
+              vector<uint8_t> packet, payload;
+              payload.resize(2, 0x55);
 
-            buildRxPacket(packet, payload);
+              buildRxPacket(packet, payload);
 
-            packet.insert(packet.begin(), i, 0x00);
-            spi.addMISO(packet);
+              packet.insert(packet.begin(), i, 0x00);
+              spi.addMISO(packet);
 
-            xbee.transferData();
-            if(i == 20)
-            {
-                 xbee.transferData();
-            }
+              xbee.transferData();
+              if(i == 20)
+              {
+                   xbee.transferData();
+              }
 
-            if (out.size() < packet.size())
-            {
-                out.resize(packet.size(), 0x00);
-            }
+              if (out.size() < packet.size())
+              {
+                  out.resize(packet.size(), 0x00);
+              }
 
-            REQUIRE(spi.getMOSI() == out);
+              REQUIRE(spi.getMOSI() == out);
 
-            vector<uint8_t> xbee_payload;
+              vector<uint8_t> xbee_payload;
 
-            xbee_payload.insert(xbee_payload.end(), xbee.rx_frame.begin(),
-                                xbee.rx_frame.end());
+              xbee_payload.insert(xbee_payload.end(), xbee.rx_frame.begin(),
+                                  xbee.rx_frame.end());
 
-            REQUIRE(xbee_payload == payload);
+              REQUIRE(xbee_payload == payload);
 
-            spi.restoreState();
-        }
-    }*/
+              spi.restoreState();
+          }
+      }*/
 }

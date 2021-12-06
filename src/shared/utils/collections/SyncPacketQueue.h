@@ -34,7 +34,7 @@
 // This header can be compiled to run on a PC, for easier testing.
 #ifdef COMPILE_FOR_X86
 #warning The flag COMPILE_FOR_X86 is active! If this is flight code, shame on you
-#define TRACE(x) printf(x)
+#define TRACE(x) printf(x)  // linter off
 #define MIOSIX_ONLY(x)
 #else
 #define MIOSIX_ONLY(x) x

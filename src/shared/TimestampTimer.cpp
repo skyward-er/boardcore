@@ -61,7 +61,8 @@ HardwareTimer<uint32_t, TimerMode::Single> initHardwareTimer()
         TimerUtils::getPrescalerInputFrequency(TimerUtils::InputClock::APB1));
 }
 
-HardwareTimer<uint32_t, TimerMode::Single> timestamp_timer = initHardwareTimer();
+HardwareTimer<uint32_t, TimerMode::Single> timestamp_timer =
+    initHardwareTimer();
 #endif
 
 void enableTimestampTimer(uint8_t prescaler)

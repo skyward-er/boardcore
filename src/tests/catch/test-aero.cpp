@@ -24,8 +24,9 @@
 #include "catch-tests-entry.cpp"
 #endif
 
+#include <utils/aero/AeroUtils.h>
+
 #include <catch2/catch.hpp>
-#include "utils/aero/AeroUtils.h"
 
 using namespace Boardcore;
 
@@ -94,7 +95,7 @@ TEST_CASE("[AeroUtils] relDensity")
     REQUIRE(relDensity(70108.5471843675, 101325, 0, 288.15) ==
             Approx(0.909122116038058).epsilon(0.0001));
     REQUIRE_FALSE(relDensity(101325, 101325, 0, 288.15) ==
-            Approx(1.226).epsilon(0.0001));
+                  Approx(1.226).epsilon(0.0001));
 }
 
 TEST_CASE("[AeroUtils] verticalSpeed")
@@ -110,6 +111,7 @@ TEST_CASE("[AeroUtils] verticalSpeed")
 
     for (int i = 0; i < count; i++)
     {
-        REQUIRE(verticalSpeed(p[i], dp_dt[i], 100129.4, 297.5) == target_v_speed);
+        REQUIRE(verticalSpeed(p[i], dp_dt[i], 100129.4, 297.5) ==
+                target_v_speed);
     }
 }

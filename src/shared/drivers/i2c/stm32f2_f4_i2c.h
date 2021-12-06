@@ -20,10 +20,10 @@
  * THE SOFTWARE.
  */
 
-
 #pragma once
 
 #include <interfaces/arch_registers.h>
+
 #include "board_settings.h"
 
 namespace miosix

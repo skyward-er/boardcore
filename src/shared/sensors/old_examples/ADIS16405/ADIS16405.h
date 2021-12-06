@@ -22,8 +22,10 @@
 
 #pragma once
 
+#include <Debug.h>
 #include <drivers/BusTemplate.h>
-#include "sensors/Sensor.h"
+#include <sensors/Sensor.h>
+
 #include "ADIS16405Data.h"
 
 template <typename BusSPI, typename rstPin>
@@ -33,10 +35,7 @@ class ADIS16405 : public AccelSensor,
                   public TemperatureSensor
 {
 public:
-    ADIS16405(uint8_t gyroFullScale)
-    {
-        gyroFS = gyroFullScale;
-    }
+    ADIS16405(uint8_t gyroFullScale) { gyroFS = gyroFullScale; }
     virtual ~ADIS16405() {}
 
     std::vector<SPIRequest> buildDMARequest() override
@@ -70,9 +69,9 @@ public:
         // Low power mode SPI < 300 kHz
 
         rstPin::mode(miosix::Mode::OUTPUT);
-        rstPin::high(); // Turn on the device
+        rstPin::high();  // Turn on the device
 
-        miosix::delayMs(220); // 220 ms start-up time 
+        miosix::delayMs(220);  // 220 ms start-up time
 
         uint16_t product_id = readReg(ADIS_PRODUCT_ID);
         if (product_id != product_id_value)
@@ -81,32 +80,31 @@ public:
             return false;
         }
 
-        //TODO: test it -- config the dynamic range
+        // TODO: test it -- config the dynamic range
         uint16_t sensorAvg = readReg(ADIS_SENS_AVG);
-        writeReg(ADIS_SENS_AVG, sensorAvg | (1 << (8+gyroFS)));
-
+        writeReg(ADIS_SENS_AVG, sensorAvg | (1 << (8 + gyroFS)));
 
         return true;
     }
 
     void readTest()
-    {   
+    {
         // uint16_t product_id = readReg(ADIS_PRODUCT_ID);
-        // printf("product_id: %d\n", product_id);
+        // TRACE("product_id: %d\n", product_id);
 
-        // float accel = normalizeAccel(signExtend(readReg(ADIS_YACCL_OUT) & 0x3FFF, 14));
-        // printf("temperature: %f\n", accel);
-        
-        // float temperature = normalizeTemp(signExtend(readReg(ADIS_TEMP_OUT) & 0x0FFF, 12));
-        // printf("temperature: %f\n", temperature);
-        
+        // float accel = normalizeAccel(signExtend(readReg(ADIS_YACCL_OUT) &
+        // 0x3FFF, 14)); TRACE("temperature: %f\n", accel);
+
+        // float temperature = normalizeTemp(signExtend(readReg(ADIS_TEMP_OUT) &
+        // 0x0FFF, 12)); TRACE("temperature: %f\n", temperature);
+
         // float voltage = normalizePower(readReg(ADIS_SUPPLY_OUT) & 0x3FFF);
-        // printf("voltage: %f\n", voltage);
+        // TRACE("voltage: %f\n", voltage);
 
         // writewriteReg(ADIS_ZMAGN_SIF,0x0800);
         // miosix::delayMs(1);
         // uint16_t reg_value = readReg(ADIS_ZMAGN_SIF);
-        // printf("reg value: %d\n", reg_value);
+        // TRACE("reg value: %d\n", reg_value);
         // miosix::delayMs(200);
     }
 
@@ -114,19 +112,19 @@ public:
     {
         ADIS16405Data burstData;
         burstDataCollect(&burstData);
-        // printf("%f\t",normalizeSupply(burstData.supply_out));
-        // printf("%f\t",normalizeGyro(burstData.xgyro_out));
-        // printf("%f\t",normalizeGyro(burstData.ygyro_out));
-        printf("%f\t",normalizeGyro(burstData.zgyro_out));
-        // printf("%f\t",normalizeAccel(burstData.xaccl_out));
-        // printf("%f\t",normalizeAccel(burstData.yaccl_out));
-        // printf("%f\t",normalizeAccel(burstData.zaccl_out));
-        // printf("%f\t",normalizeMagneto(burstData.xmagn_out));
-        // printf("%f\t",normalizeMagneto(burstData.ymagn_out));
-        // printf("%f\t",normalizeMagneto(burstData.zmagn_out));
-        // printf("%f\t",normalizeTemp(burstData.temp_out));
-        // printf("%f\t",normalizeADC(burstData.aux_adc));
-        printf("\n");
+        // TRACE("%f\t",normalizeSupply(burstData.supply_out));
+        // TRACE("%f\t",normalizeGyro(burstData.xgyro_out));
+        // TRACE("%f\t",normalizeGyro(burstData.ygyro_out));
+        TRACE("%f\t", normalizeGyro(burstData.zgyro_out));
+        // TRACE("%f\t",normalizeAccel(burstData.xaccl_out));
+        // TRACE("%f\t",normalizeAccel(burstData.yaccl_out));
+        // TRACE("%f\t",normalizeAccel(burstData.zaccl_out));
+        // TRACE("%f\t",normalizeMagneto(burstData.xmagn_out));
+        // TRACE("%f\t",normalizeMagneto(burstData.ymagn_out));
+        // TRACE("%f\t",normalizeMagneto(burstData.zmagn_out));
+        // TRACE("%f\t",normalizeTemp(burstData.temp_out));
+        // TRACE("%f\t",normalizeADC(burstData.aux_adc));
+        TRACE("\n");
     }
 
     // Exercises all inertial sensors, measures each response,
@@ -140,31 +138,33 @@ public:
         uint16_t msc = readReg(ADIS_MSC_CTRL);
         writeReg(ADIS_MSC_CTRL, msc | 1 << 10);
         // msc = readReg(ADIS_MSC_CTRL);
-        
+
         // writeReg(ADIS_MSC_CTRL, 0x3504); // Config and start self test
-        
-        // MSC_CTRL[10] resets itself to 0 after completing the self test routine
+
+        // MSC_CTRL[10] resets itself to 0 after completing the self test
+        // routine
         do
         {
             msc = readReg(ADIS_MSC_CTRL);
         } while (msc & 1 << 10);
 
         diagstat = readReg(ADIS_DIAG_STAT);
-        return (diagstat == 0); // All bits are cleared if the test was successful
+        return (diagstat ==
+                0);  // All bits are cleared if the test was successful
     }
 
     void onDMAUpdate(const SPIRequest& req) override
     {
         const std::vector<uint8_t>& r = req.readResponseFromPeripheral();
 
-        uint8_t raw_data[sizeof(ADIS16405Data)];        
-        memcpy(&raw_data, &(r[2]),sizeof(ADIS16405Data));
+        uint8_t raw_data[sizeof(ADIS16405Data)];
+        memcpy(&raw_data, &(r[2]), sizeof(ADIS16405Data));
 
-        for(uint8_t i = 0; i < sizeof(ADIS16405Data); i++)
+        for (uint8_t i = 0; i < sizeof(ADIS16405Data); i++)
             raw_data[i] = fromBigEndian16(raw_data[i]);
 
         ADIS16405Data data;
-        parseBurstData(raw_data,&data);
+        parseBurstData(raw_data, &data);
 
         mLastGyro.setX(normalizeGyro(data.xgyro_out));
         mLastGyro.setY(normalizeGyro(data.ygyro_out));
@@ -182,7 +182,7 @@ public:
     }
 
     bool onSimpleUpdate() override
-    { 
+    {
         ADIS16405Data data;
         burstDataCollect(&data);
 
@@ -205,9 +205,9 @@ public:
 
     enum gyroFullScale
     {
-        GYRO_FS_75 = 0,  // 75°/sec
-        GYRO_FS_150 = 1, // 150°/sec
-        GYRO_FS_300 = 2  // 300°/sec (default condition)
+        GYRO_FS_75  = 0,  // 75°/sec
+        GYRO_FS_150 = 1,  // 150°/sec
+        GYRO_FS_300 = 2   // 300°/sec (default condition)
     };
 
 private:
@@ -221,7 +221,7 @@ private:
 
     // ADIS Register map
     enum adis_regaddr : uint8_t
-    {   
+    {
         // clang-format off
         // Name           address    default function
         ADIS_FLASH_CNT  = 0x00,  //  N/A     Flash memory write count
@@ -266,27 +266,27 @@ private:
         ADIS_AUX_DAC    = 0x4A,  //  0x0000  Auxiliary DAC data
         //              = 0x4C to 0x55       Reserved
         ADIS_PRODUCT_ID = 0x56   //  0x4015  Product identifier
-        // clang-format on
+                                // clang-format on
     };
 
     uint16_t readReg(adis_regaddr addr)
     {
         uint8_t rxbuf[2];
-        BusSPI::write(addr,0);
-        miosix::delayUs(9); // This delay should be 75 us for low power mode
+        BusSPI::write(addr, 0);
+        miosix::delayUs(9);  // This delay should be 75 us for low power mode
         BusSPI::read(rxbuf, 2);
-        miosix::delayUs(9); // This delay should be 75 us for low power mode
+        miosix::delayUs(9);  // This delay should be 75 us for low power mode
         return rxbuf[0] << 8 | rxbuf[1];
     }
 
     void writeReg(adis_regaddr addr, uint16_t value)
     {
-        BusSPI::write((addr+1) | 0x80, (uint8_t)(value >> 8));
-        BusSPI::write(addr | 0x80, (uint8_t) value);
+        BusSPI::write((addr + 1) | 0x80, (uint8_t)(value >> 8));
+        BusSPI::write(addr | 0x80, (uint8_t)value);
     }
 
     void burstDataCollect(ADIS16405Data* data)
-    {   
+    {
         uint8_t raw_data[sizeof(ADIS16405Data)];
         BusSPI::read16((ADIS_GLOB_CMD) << 8, raw_data, sizeof(ADIS16405Data));
         parseBurstData(raw_data, data);
@@ -320,35 +320,35 @@ private:
 
     inline float normalizeSupply(uint16_t val)
     {
-        return static_cast<float>(val) * 2.418e-3f; // [V]
+        return static_cast<float>(val) * 2.418e-3f;  // [V]
     }
 
     inline float normalizeAccel(int16_t val)
     {
-        return static_cast<float>(val) * 3.33e-3f * EARTH_GRAVITY; // [g]
+        return static_cast<float>(val) * 3.33e-3f * EARTH_GRAVITY;  // [g]
     }
 
     inline float normalizeGyro(int16_t val)
     {
         return static_cast<float>(val) * 0.05f * gyroFSMAP[gyroFS] *
-                DEGREES_TO_RADIANS; // [rad/s]
+               DEGREES_TO_RADIANS;  // [rad/s]
     }
 
     inline float normalizeMagneto(int16_t val)
     {
-        return static_cast<float>(val) * 0.5e-3f; // [gausss]
+        return static_cast<float>(val) * 0.5e-3f;  // [gausss]
     }
 
     inline float normalizeTemp(int16_t val)
     {
-        return static_cast<float>((val) * 0.14f + 25); // [C deg]
+        return static_cast<float>((val)*0.14f + 25);  // [C deg]
     }
 
     inline float normalizeADC(uint16_t val)
     {
-        return static_cast<float>(val) * 0.806e-6f; // [V]
+        return static_cast<float>(val) * 0.806e-6f;  // [V]
     }
 };
 
 template <typename BusSPI, typename rstPin>
-constexpr float ADIS16405<BusSPI,rstPin>::gyroFSMAP[];
+constexpr float ADIS16405<BusSPI, rstPin>::gyroFSMAP[];

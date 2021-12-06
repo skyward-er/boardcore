@@ -23,13 +23,13 @@
 #pragma once
 
 #include <diagnostic/PrintLogger.h>
+#include <utils/ButtonHandler.h>
 
 #include <vector>
 
 #include "Debug.h"
 #include "TextView.h"
 #include "View.h"
-#include "utils/ButtonHandler.h"
 
 namespace Boardcore
 {

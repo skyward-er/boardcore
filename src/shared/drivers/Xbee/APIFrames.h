@@ -161,20 +161,17 @@ struct APIFrame
     uint16_t getFrameDataLength() const
     {
         size_t len = swapBytes16(length) - 1;
-        assert(len <= FRAME_DATA_SIZE);
 
         return min(len, FRAME_DATA_SIZE);
     }
 
     void setFrameDataLength(uint16_t len)
     {
-        assert(len <= FRAME_DATA_SIZE);
         length = swapBytes16(min((size_t)(len + 1), FRAME_DATA_SIZE + 1));
     }
 
     bool verifyChecksum() const
     {
-        assert(getFrameDataLength() <= FRAME_DATA_SIZE);
         // Sum all the bytes including checksum and frame type.
         // The sum can be stored in a uint8_t since we only care about the least
         // significant byte.
@@ -188,7 +185,6 @@ struct APIFrame
 
     void calcChecksum()
     {
-        assert(getFrameDataLength() <= FRAME_DATA_SIZE);
         checksum = frame_type;
         for (uint16_t i = 0; i < getFrameDataLength(); ++i)
         {
@@ -262,7 +258,6 @@ struct ATCommandFrame : public APIFrame
 
     void setParameterSize(uint16_t size)
     {
-        assert(size <= FRAME_DATA_SIZE - MIN_AT_COMMAND_FRAME_SIZE);
         size = min((size_t)size, FRAME_DATA_SIZE - MIN_AT_COMMAND_FRAME_SIZE);
 
         setFrameDataLength(MIN_AT_COMMAND_FRAME_SIZE + size);
@@ -308,7 +303,6 @@ struct ATCommandResponseFrame : public APIFrame
 
     void setCommandDataSize(uint16_t size)
     {
-        assert(size <= FRAME_DATA_SIZE - MIN_AT_RESPONSE_FRAME_SIZE);
         size = min((size_t)size, FRAME_DATA_SIZE - MIN_AT_RESPONSE_FRAME_SIZE);
 
         setFrameDataLength(MIN_AT_RESPONSE_FRAME_SIZE + size);
@@ -365,7 +359,6 @@ struct TXRequestFrame : public APIFrame
 
     void setRFDataLength(uint16_t size)
     {
-        assert(size <= MAX_PACKET_PAYLOAD_LENGTH);
         size = min(size, MAX_PACKET_PAYLOAD_LENGTH);
 
         setFrameDataLength(MIN_TX_REQUEST_FRAME_SIZE + size);
@@ -464,7 +457,6 @@ struct RXPacketFrame : public APIFrame
 
     void setRXDataLength(uint16_t size)
     {
-        assert(size <= MAX_PACKET_PAYLOAD_LENGTH);
         size = min(size, MAX_PACKET_PAYLOAD_LENGTH);
 
         setFrameDataLength(MIN_RX_PACKET_FRAME_SIZE + size);

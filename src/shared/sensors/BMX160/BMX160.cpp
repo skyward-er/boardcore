@@ -79,7 +79,7 @@ bool BMX160::init()
 bool BMX160::selfTest()
 {
 #ifdef DEBUG
-    assert(is_init && "init() was not called");
+    assert(is_init && "init() was not called");  // linter off
 #endif
 
     // The device will enter in an unusable state when testing.

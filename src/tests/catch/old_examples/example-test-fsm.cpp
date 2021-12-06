@@ -34,10 +34,11 @@
 #define protected public
 
 #include <miosix.h>
+#include <utils/testutils/TestHelper.h>
+
 #include <catch2/catch.hpp>
 
 #include "example-test-fsm.h"
-#include "utils/testutils/TestHelper.h"
 
 using miosix::Thread;
 

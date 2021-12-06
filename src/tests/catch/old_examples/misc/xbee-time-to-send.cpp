@@ -20,17 +20,16 @@
  * THE SOFTWARE.
  */
 
+#include <drivers/BusTemplate.h>
+#include <drivers/HardwareTimer.h>
+#include <drivers/Xbee/Xbee.h>
 #include <interfaces-impl/hwmapping.h>
+#include <math/Stats.h>
 #include <miosix.h>
+
 #include <cstdio>
 #include <iostream>
 #include <string>
-
-#include "drivers/HardwareTimer.h"
-#include "drivers/Xbee/Xbee.h"
-#include "math/Stats.h"
-
-#include <drivers/BusTemplate.h>
 
 using std::cin;
 using std::cout;
@@ -48,9 +47,9 @@ using namespace interfaces;
 
 // Discovery
 SPIBus bus{SPI1};
-GpioPin cs = sensors::lsm6ds3h::cs::getPin();
+GpioPin cs   = sensors::lsm6ds3h::cs::getPin();
 GpioPin attn = xbee::attn::getPin();
-GpioPin rst = xbee::reset::getPin();
+GpioPin rst  = xbee::reset::getPin();
 
 // Death stack
 // SPIBus bus{SPI2};
@@ -60,8 +59,10 @@ GpioPin rst = xbee::reset::getPin();
 
 Xbee::Xbee* xbee_transceiver;
 
-
-void __attribute__((used)) EXTI10_IRQHandlerImpl() { Xbee::handleATTNInterrupt(); }
+void __attribute__((used)) EXTI10_IRQHandlerImpl()
+{
+    Xbee::handleATTNInterrupt();
+}
 
 void enableXbeeInterrupt()
 {
@@ -111,7 +112,6 @@ bool sendPacket(uint8_t size)
     }
     return true;
 }
-
 
 int main()
 {

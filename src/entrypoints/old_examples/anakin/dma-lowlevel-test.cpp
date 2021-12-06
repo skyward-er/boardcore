@@ -20,15 +20,14 @@
  * THE SOFTWARE.
  */
 
+#include <drivers/spi/SensorSpi.h>
 #include <sensors/FXAS21002.h>
 #include <sensors/LPS331AP.h>
 #include <sensors/MAX21105.h>
 #include <sensors/MPU9250.h>
 #include <sensors/MS580301BA07.h>
-#include <sensors/iNemo.h>
-
-#include <drivers/spi/SensorSpi.h>
 #include <sensors/SensorSampling.h>
+#include <sensors/iNemo.h>
 
 using namespace miosix;
 
@@ -61,7 +60,8 @@ int main()
     }
 
     auto req    = inemo.buildDMARequest();
-    auto sample = [&]() {
+    auto sample = [&]()
+    {
         if (spi.transaction(req) == false)
             puts("DMA error");
         for (auto& r : req)

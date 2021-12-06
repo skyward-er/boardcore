@@ -23,14 +23,16 @@
 #pragma once
 
 #include <drivers/BusTemplate.h>
+#include <interfaces/endianness.h>
+
 #include "Sensor.h"
-#include "interfaces/endianness.h"
 
 template <class Bus>
 class MAX21105 : public AccelSensor, public GyroSensor, public TemperatureSensor
 {
 #pragma pack(1)
-    union rawdata_t {
+    union rawdata_t
+    {
         __extension__ struct
         {
             int16_t gyro[3];
@@ -62,9 +64,9 @@ public:
 
         // Init this sensor
         uint8_t init_data[][2] = {
-            {MIF_CFG, 0x29},  // SPI 4 wire, I2C OFF (important!)
-            {EXT_STATUS, 0x00},     // Choose the bank 0
-            {SET_PWR, 0x00},        // Power down
+            {MIF_CFG, 0x29},     // SPI 4 wire, I2C OFF (important!)
+            {EXT_STATUS, 0x00},  // Choose the bank 0
+            {SET_PWR, 0x00},     // Power down
 
             // Gyro: 2kHz BW
             {SNS_CFG_1, (uint8_t)(0x20 | gyroFS)},

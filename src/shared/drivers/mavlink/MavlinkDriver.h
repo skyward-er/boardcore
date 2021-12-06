@@ -39,13 +39,13 @@
 implementation before including MavlinkDriver.h"
 #endif
 
+#include <diagnostic/SkywardStack.h>
+#include <diagnostic/StackLogger.h>
 #include <drivers/Transceiver.h>
 #include <mavlink_lib/mavlink_types.h>
 #include <utils/collections/SyncPacketQueue.h>
 
 #include "MavlinkStatus.h"
-#include "diagnostic/SkywardStack.h"
-#include "diagnostic/StackLogger.h"
 
 namespace Boardcore
 {

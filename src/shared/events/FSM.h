@@ -22,10 +22,11 @@
 
 #pragma once
 
+#include <events/Event.h>
+#include <events/EventHandler.h>
+#include <utils/collections/SyncQueue.h>
+
 #include "ActiveObject.h"
-#include "events/Event.h"
-#include "events/EventHandler.h"
-#include "utils/collections/SyncQueue.h"
 
 namespace Boardcore
 {
@@ -46,7 +47,7 @@ public:
     }
 
     virtual ~FSM(){};
-    
+
     void transition(void (T::*nextState)(const Event&))
     {
         specialEvent.sig = EV_EXIT;

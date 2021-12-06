@@ -21,7 +21,9 @@
  */
 
 #include "example-fsm.h"
+
 #include <miosix.h>
+
 #include <cstdio>
 
 using miosix::Thread;
@@ -52,8 +54,8 @@ int main()
     // the FSM transition to S4 instead of S1
     sEventBroker->post(Event{EV_A}, TOPIC_T1);
 
-    //Now the state machine is in state S4
-    
+    // Now the state machine is in state S4
+
     Thread::sleep(1000);
     printf("End\n");
 

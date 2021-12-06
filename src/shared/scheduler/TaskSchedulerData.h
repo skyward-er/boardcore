@@ -21,6 +21,7 @@
  */
 
 #include <math/Stats.h>
+
 #include <cstdint>
 #include <ostream>
 

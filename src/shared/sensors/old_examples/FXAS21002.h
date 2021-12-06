@@ -23,6 +23,7 @@
 #pragma once
 
 #include <drivers/BusTemplate.h>
+
 #include "Sensor.h"
 
 template <typename Bus>

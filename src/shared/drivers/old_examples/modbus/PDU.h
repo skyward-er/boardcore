@@ -22,45 +22,44 @@
 
 #pragma once
 
-#include "Common.h"
 #include <stddef.h>
+
+#include "Common.h"
 
 class PDU
 {
 public:
-    
     /**
      * Create a new PDU structure
      * @param fCode: PDU's function code
      * @param data: pointer to data to be put into PDU's data field
      * @param dataSize: size of PDU's data field
      */
-    PDU(uint8_t fCode, const uint8_t const *data, uint8_t dataSize);
-    
+    PDU(uint8_t fCode, const uint8_t const* data, uint8_t dataSize);
+
     /**
      * Default constructor does nothing
      */
-    PDU();        
-    ~PDU();        
-    
+    PDU();
+    ~PDU();
+
     /**
      * @return PDU's function code
      */
     uint8_t funcCode() const;
-    
+
     /**
      * @return std::pair: first field is data size, the second one is
      * a uint8_t const* to internal data.
      */
-    std::pair< uint8_t, uint8_t const* > data() const;
-    
+    std::pair<uint8_t, uint8_t const*> data() const;
+
 private:
-    
     uint8_t fuCode;
     uint8_t pSize;
-    uint8_t *pData;
-    
-    PDU(const PDU& other);    
-    PDU& operator=(const PDU& other);    
+    uint8_t* pData;
+
+    PDU(const PDU& other);
+    PDU& operator=(const PDU& other);
     bool operator==(const PDU& other);
 };

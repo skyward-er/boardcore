@@ -22,11 +22,13 @@
 
 #pragma once
 
+#include <drivers/serial_stm32.h>
+
 #include <memory>
 #include <stdexcept>
-#include "Common.h"
+
 #include "../PDU.h"
-#include "drivers/serial_stm32.h"
+#include "Common.h"
 
 #if defined SERIAL_2_DMA
 #error Serial 2 has DMA enabled, modbus RTU interface requires it to be disabled
@@ -38,14 +40,13 @@
  * This class provides an interface for Modbus RTU slave devices. The physical
  * interface is handled by using the STM32Serial driver class, so only USART 1
  * USART 2 and USART 3 are supported.
- * NOTE: this interface currently DOESN'T SUPPORT BROADCAST messages; any 
+ * NOTE: this interface currently DOESN'T SUPPORT BROADCAST messages; any
  * message of this type will be ignored.
  */
 
 class SlaveInterface
 {
 public:
-    
     /**
      * Constructor needs these parameters:
      * @param phy pointer to an STM32Serial class instance that manages the
@@ -55,41 +56,41 @@ public:
      * @param addr address assigned to the slave, must be in the range 1 - 247
      * otherwise a std::invalid_argument exception is thrown
      */
-    SlaveInterface(miosix::STM32Serial *phy, miosix::gpioPin *rxEn, 
-                                                                 uint8_t addr);
+    SlaveInterface(miosix::STM32Serial *phy, miosix::gpioPin *rxEn,
+                   uint8_t addr);
     ~SlaveInterface();
-    
+
     /**
      * Send a reply message to a server's request
      * @param reply std::unique_ptr to a PDU class that contains the body of
      * the message
      */
     void sendReply(std::unique_ptr<PDU> reply);
-    
+
     /**
      * Check if new messages for this slave are arrived. User shoul periodically
      * call this function
      */
     void receive();
-    
+
     /**
-     * Get the latest packet received. If there is no new packet a nullptr is 
+     * Get the latest packet received. If there is no new packet a nullptr is
      * returned.
      * @return std::unique_ptr to a PDU class contains the message's body
      */
     std::unique_ptr<PDU> getPacket();
-    
+
     // Unused functions
-    SlaveInterface(const SlaveInterface& other) = delete;
-    SlaveInterface& operator=(const SlaveInterface& other) = delete;
-    bool operator==(const SlaveInterface& other) = delete;
-    
+    SlaveInterface(const SlaveInterface &other) = delete;
+    SlaveInterface &operator=(const SlaveInterface &other) = delete;
+    bool operator==(const SlaveInterface &other)           = delete;
+
 private:
     std::unique_ptr<PDU> received;  ///< last packet received
     uint8_t addr;                   ///< address of this slave
     miosix::STM32Serial *phy;
     miosix::gpioPin *rxEn;
-    
+
     /**
      * This function calculates the CRC accordingly to the Modbus RTU
      * specification.

@@ -22,19 +22,19 @@
 
 #pragma once
 
+#include <ActiveObject.h>
+#include <Singleton.h>
 #include <fmt/format.h>
+#include <logger/Logger.h>
 #include <miosix.h>
+#include <utils/collections/CircularBuffer.h>
 
 #include <memory>
 #include <string>
 #include <vector>
 
-#include "ActiveObject.h"
 #include "LogSink.h"
 #include "PrintLoggerData.h"
-#include "Singleton.h"
-#include "logger/Logger.h"
-#include "utils/collections/CircularBuffer.h"
 
 using std::string;
 using std::unique_ptr;

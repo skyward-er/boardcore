@@ -20,8 +20,8 @@
  * THE SOFTWARE.
  */
 
-
 #include "stm32f2_f4_i2c.h"
+
 #include <kernel/scheduler/scheduler.h>
 #include <miosix.h>
 

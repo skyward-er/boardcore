@@ -22,9 +22,9 @@
 
 #include <drivers/spi/SPIDriver.h>
 #include <miosix.h>
+#include <sensors/LIS3DSH/LIS3DSH.h>
 
 #include "Common.h"
-#include "sensors/LIS3DSH/LIS3DSH.h"
 
 using namespace Boardcore;
 using namespace std;

@@ -35,8 +35,8 @@
 #include <vector>
 
 #include "Topics.h"
-#include "events/Event.h"
-#include "events/EventBroker.h"
+#include <events/Event.h>
+#include <events/EventBroker.h>
 
 using std::string;
 

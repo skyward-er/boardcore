@@ -22,20 +22,19 @@
 
 #pragma once
 
+#include <logger/Logger.h>
 #include <mxgui/display.h>
+#include <utils/gui/GridLayout.h>
+#include <utils/gui/OptionView.h>
+#include <utils/gui/TextView.h>
+#include <utils/gui/VerticalLayout.h>
+#include <utils/testutils/ThroughputCalculator.h>
 
 #include <cstdint>
-#include <string>
 #include <cstring>
+#include <string>
 
-#include "utils/testutils/ThroughputCalculator.h"
 #include "../XbeeTestData.h"
-#include "logger/Logger.h"
-
-#include "utils/gui/GridLayout.h"
-#include "utils/gui/OptionView.h"
-#include "utils/gui/TextView.h"
-#include "utils/gui/VerticalLayout.h"
 
 using std::to_string;
 
@@ -53,7 +52,7 @@ std::string tickToHMS(long long tick)
     tick -= h * (1000 * 3600);
     int m = tick / (1000 * 60);
     tick -= m * (1000 * 60);
-    int s = tick/1000;
+    int s = tick / 1000;
 
     snprintf(buf, 15, "%02d:%02d:%02d", h, m, s);
 
@@ -158,8 +157,7 @@ struct StatusScreen
         grid_data.setCell(&tv_rx_time_since_last_rx, 7, 3);
 
         btn_mark.setSelectable(true);
-        btn_mark.setAlignment(HorizAlignment::CENTER,
-                                     VertAlignment::CENTER);
+        btn_mark.setAlignment(HorizAlignment::CENTER, VertAlignment::CENTER);
         btn_mark.setBackgroundColor(mxgui::darkGrey);
 
         btn_stop.setSelectable(true);
@@ -259,7 +257,8 @@ struct StatusScreen
         snprintf(str_buf, 30, "%.1f pkt/s", res_rcv.packets_per_second);
         tv_rx_pps.setText(str_buf);
 
-        tv_rx_time_since_last_rx.setText(tickToHMS(miosix::getTick() - rxd.last_packet_timestamp));
+        tv_rx_time_since_last_rx.setText(
+            tickToHMS(miosix::getTick() - rxd.last_packet_timestamp));
     }
 
     VerticalLayout root{10};

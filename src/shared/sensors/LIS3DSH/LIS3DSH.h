@@ -23,11 +23,11 @@
 #pragma once
 
 #include <diagnostic/PrintLogger.h>
+#include <drivers/spi/SPIDriver.h>
 #include <math.h>
+#include <sensors/Sensor.h>
 
 #include "LIS3DSHData.h"
-#include "drivers/spi/SPIDriver.h"
-#include "sensors/Sensor.h"
 
 namespace Boardcore
 {

@@ -23,8 +23,9 @@
 #pragma once
 
 #include <ActiveObject.h>
-#include <events/EventBroker.h>
 #include <Debug.h>
+#include <events/EventBroker.h>
+
 #include <iostream>
 #include <sstream>
 #include <string>
@@ -47,7 +48,7 @@ protected:
         using namespace std;
 
         int ev, topic;
-     
+
         for (;;)
         {
             TRACE("[EventInjector] Insert Event & Topic:\n");

@@ -46,7 +46,7 @@ bool expectEvent(uint8_t event_id, uint8_t topic, long long when,
             long long recv_tick = getTick();
             if (recv_tick < window_start)
             {
-                printf(
+                TRACE(
                     "[expectEvent] Event %d on topic %d receveid %d ms before "
                     "the opening of "
                     "the window.\n",
@@ -55,7 +55,7 @@ bool expectEvent(uint8_t event_id, uint8_t topic, long long when,
                         tickToMilliseconds(window_start - recv_tick)));
                 return false;
             }
-            printf(
+            TRACE(
                 "[expectEvent] Event %d on topic %d received inside the "
                 "window, %d ms from "
                 "the target time.\n",
@@ -67,7 +67,7 @@ bool expectEvent(uint8_t event_id, uint8_t topic, long long when,
 
         Thread::sleep(1);
     }
-    printf(
+    TRACE(
         "[expectEvent] The event %d on topic %d was not yet received at the "
         "end of the "
         "window.\n",

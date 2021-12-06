@@ -61,9 +61,10 @@
 
 #pragma once
 
+#include <drivers/spi/SPIDriver.h>
+#include <sensors/Sensor.h>
+
 #include "ADS1118Data.h"
-#include "drivers/spi/SPIDriver.h"
-#include "sensors/Sensor.h"
 
 namespace Boardcore
 {

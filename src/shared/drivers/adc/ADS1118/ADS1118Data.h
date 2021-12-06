@@ -22,7 +22,7 @@
 
 #pragma once
 
-#include "sensors/SensorData.h"
+#include <sensors/SensorData.h>
 
 namespace Boardcore
 {
@@ -36,7 +36,7 @@ struct ADS1118Data : public ADCData
 
     {
     }
-    
+
     static std::string header() { return "adc_timestamp,channel_id,voltage\n"; }
 
     void print(std::ostream& os) const

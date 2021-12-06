@@ -48,14 +48,15 @@
  * togheter with other useful data.
  */
 
+#include <diagnostic/CpuMeter.h>
+#include <drivers/HardwareTimer.h>
+#include <drivers/interrupt/external_interrupts.h>
+#include <drivers/spi/SPIDriver.h>
+#include <sensors/L3GD20/L3GD20.h>
+
 #include <array>
 
-#include "diagnostic/CpuMeter.h"
-#include "drivers/HardwareTimer.h"
-#include "drivers/interrupt/external_interrupts.h"
-#include "drivers/spi/SPIDriver.h"
 #include "TimestampTimer.h"
-#include "sensors/L3GD20/L3GD20.h"
 
 using namespace Boardcore;
 using namespace miosix;
@@ -196,8 +197,7 @@ int main()
             gyro->getLastFifoSize();  // Current number of samples in the FIFO
 
         // Obtain the FIFO
-        const array<L3GD20Data, L3GD20_FIFO_SIZE>& fifo =
-            gyro->getLastFifo();
+        const array<L3GD20Data, L3GD20_FIFO_SIZE>& fifo = gyro->getLastFifo();
 
         // Store everything in the data buffer
         for (int i = 0; i < level; i++)

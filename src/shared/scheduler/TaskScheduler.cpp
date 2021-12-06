@@ -21,7 +21,8 @@
  */
 
 #include "TaskScheduler.h"
-#include "diagnostic/SkywardStack.h"
+
+#include <diagnostic/SkywardStack.h>
 
 using namespace std;
 using namespace miosix;
@@ -29,7 +30,11 @@ using namespace miosix;
 namespace Boardcore
 {
 
-TaskScheduler::TaskScheduler() : ActiveObject(STACK_MIN_FOR_SKYWARD, miosix::PRIORITY_MAX - 1), permanentTasks(0) {}
+TaskScheduler::TaskScheduler()
+    : ActiveObject(STACK_MIN_FOR_SKYWARD, miosix::PRIORITY_MAX - 1),
+      permanentTasks(0)
+{
+}
 
 void TaskScheduler::stop()
 {

@@ -22,11 +22,12 @@
 
 #pragma once
 
+#include <events/EventBroker.h>
+
 #include <functional>
 #include <iostream>
 #include <string>
 #include <vector>
-#include "events/EventBroker.h"
 
 using std::cout;
 using std::function;

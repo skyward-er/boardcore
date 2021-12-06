@@ -22,39 +22,39 @@
 
 #pragma once
 
+#include <interfaces/endianness.h>
+
 #include <memory>
-#include "Common.h"
-#include "../PDU.h"
+
 #include "../HooksInterface.h"
-#include "interfaces/endianness.h"
+#include "../PDU.h"
+#include "Common.h"
 
 class SlaveEngine
 {
 public:
-    
     /**
      * Creates an instance of the engine
      * @param hook pointer to an instance of a HooksInterface class, if not
-     * provided the SlaveEngine will use a default instance of HooksInterface 
+     * provided the SlaveEngine will use a default instance of HooksInterface
      * class.
-     * The instance pointed by @param hook will be deleted when the destructor 
+     * The instance pointed by @param hook will be deleted when the destructor
      * of SlaveEngine is called
      */
-    explicit SlaveEngine(HooksInterface *hook = nullptr);
-    
+    explicit SlaveEngine(HooksInterface* hook = nullptr);
+
     ~SlaveEngine();
-    
+
     /**
      * Process a request received from the master.
      * @param request PDU that contains the master's request
      * @return a PDU with the either the response or the exception message
      */
-    std::unique_ptr< PDU > ProcessRequest(std::unique_ptr< PDU > request);
-    
+    std::unique_ptr<PDU> ProcessRequest(std::unique_ptr<PDU> request);
+
 private:
-    
-    HooksInterface *handlers;    ///< pointer to the handlers' class
-    
+    HooksInterface* handlers;  ///< pointer to the handlers' class
+
     // Helper functions, one for each function code supported
     PDU* DoReadCoils(uint8_t* data);
     PDU* DoWriteCoil(uint8_t* data);
@@ -62,9 +62,9 @@ private:
     PDU* DoReadRegisters(uint8_t* data);
     PDU* DoWriteRegister(uint8_t* data);
     PDU* DoWriteMultipleRegisters(uint8_t* data);
-    
+
     // Unsupported functions
     SlaveEngine(const SlaveEngine& other) = delete;
     SlaveEngine& operator=(const SlaveEngine& other) = delete;
-    bool operator==(const SlaveEngine& other) = delete;
+    bool operator==(const SlaveEngine& other)        = delete;
 };

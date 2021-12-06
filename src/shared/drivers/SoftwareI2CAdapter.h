@@ -34,6 +34,7 @@ template <typename SDA, typename SCL, unsigned stretchTimeout = 50,
 class SoftwareI2CAdapter
 {
     typedef miosix::SoftwareI2C<SDA, SCL, stretchTimeout, fast> SwI2CType;
+
 public:
     static void init() { SwI2CType::init(); }
 

@@ -22,15 +22,14 @@
 
 #pragma once
 
+#include <events/EventBroker.h>
+#include <events/FSM.h>
+#include <events/HSM.h>
+#include <events/utils/EventCounter.h>
 #include <miosix.h>
+
 #include <cmath>
 #include <map>
-
-#include "events/EventBroker.h"
-#include "events/FSM.h"
-#include "events/HSM.h"
-
-#include "events/utils/EventCounter.h"
 
 using miosix::FastMutex;
 using miosix::getTick;

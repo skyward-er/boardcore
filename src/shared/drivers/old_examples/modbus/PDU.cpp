@@ -20,45 +20,44 @@
  * THE SOFTWARE.
  */
 
-
 #include "PDU.h"
 
-PDU::PDU() : fuCode(0), pSize(0), pData(nullptr) {
+PDU::PDU() : fuCode(0), pSize(0), pData(nullptr) {}
 
-}
+PDU::PDU(uint8_t fCode, const uint8_t* data, uint8_t dataSize)
+    : fuCode(fCode), pSize(dataSize)
+{
 
-PDU::PDU(uint8_t fCode, const uint8_t* data, uint8_t dataSize) : fuCode(fCode),
-                                                             pSize(dataSize) {
-    
-    #ifndef __NO_EXCEPTIONS
-    try {
+#ifndef __NO_EXCEPTIONS
+    try
+    {
         pData = new uint8_t[pSize];
-    }catch(std::bad_alloc& exc)
+    }
+    catch (std::bad_alloc& exc)
     {
         std::cout << "bad alloc! " << exc.what() << std::endl;
         pData = nullptr;
     }
-    #else
+#else
     pData = new (std::nothrow) uint8_t[pSize];
-    #endif
-    
-    std::memcpy(pData,data,pSize);
+#endif
+
+    std::memcpy(pData, data, pSize);
 }
 
-PDU::~PDU() {
-    
-    if(pData != nullptr) {
+PDU::~PDU()
+{
+
+    if (pData != nullptr)
+    {
         delete[] pData;
     }
 }
 
-uint8_t PDU::funcCode() const {
-    
-    return fuCode;
-}
+uint8_t PDU::funcCode() const { return fuCode; }
 
-std::pair< uint8_t, uint8_t const* > PDU::data() const {    
-    
-    return std::pair< uint8_t, const uint8_t* >(pSize, pData);    
-}
+std::pair<uint8_t, uint8_t const*> PDU::data() const
+{
 
+    return std::pair<uint8_t, const uint8_t*>(pSize, pData);
+}

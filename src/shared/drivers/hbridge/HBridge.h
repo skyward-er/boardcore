@@ -22,11 +22,11 @@
 
 #pragma once
 
+#include <TimestampTimer.h>
+#include <drivers/pwm/pwm.h>
 #include <miosix.h>
 
 #include "HBridgeData.h"
-#include "drivers/pwm/pwm.h"
-#include "TimestampTimer.h"
 
 using miosix::GpioPin;
 using miosix::Thread;

@@ -23,7 +23,6 @@
 #pragma once
 
 #include <Eigen/Dense>
-using namespace Eigen;
 
 namespace Boardcore
 {
@@ -45,7 +44,7 @@ public:
      *
      * @return transformed quaternion
      */
-    Vector4f eul2quat(Vector3f degeul);
+    Eigen::Vector4f eul2quat(Eigen::Vector3f degeul);
 
     /**
      * @brief Transform a quaternion to a vector of euler angles.
@@ -54,7 +53,7 @@ public:
      *
      * @return transformed vector of euler angles [deg]
      */
-    Vector3f quat2eul(Vector4f quat);
+    Eigen::Vector3f quat2eul(Eigen::Vector4f quat);
 
     /**
      * @brief Transform a rotation matrix to a quaternion.
@@ -63,7 +62,7 @@ public:
      *
      * @return transformed quaternion
      */
-    Vector4f rotm2quat(Matrix3f R);
+    Eigen::Vector4f rotm2quat(Eigen::Matrix3f R);
 
     /**
      * @brief Normalize a quaternion.
@@ -72,7 +71,7 @@ public:
      *
      * @return boolean indicating if the operation succeded or not
      */
-    bool quatnormalize(Vector4f& quat);
+    bool quatnormalize(Eigen::Vector4f& quat);
 
     /**
      * @brief Compute the product of two quaternions.
@@ -82,7 +81,8 @@ public:
      *
      * @return the resulting quaternions product
      */
-    Vector4f quatProd(const Vector4f q1, const Vector4f q2);
+    Eigen::Vector4f quatProd(const Eigen::Vector4f q1,
+                             const Eigen::Vector4f q2);
 };
 
 }  // namespace Boardcore

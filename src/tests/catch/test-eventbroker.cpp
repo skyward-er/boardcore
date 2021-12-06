@@ -20,17 +20,16 @@
  * THE SOFTWARE.
  */
 
-
 #ifdef STANDALONE_CATCH1_TEST
 #include "catch-tests-entry.cpp"
 #endif
 
+#include <events/EventBroker.h>
 #include <miosix.h>
-#include <cstdio>
-#include <catch2/catch.hpp>
+#include <utils/testutils/TestHelper.h>
 
-#include "events/EventBroker.h"
-#include "utils/testutils/TestHelper.h"
+#include <catch2/catch.hpp>
+#include <cstdio>
 
 using namespace Boardcore;
 using miosix::getTick;
@@ -210,7 +209,7 @@ TEST_CASE_METHOD(EventBrokerTestFixture, "EventBroker - Events can be dalayed")
     // Post delayed event by 1000 ms
     broker.postDelayed<1000>(ev, TOPIC_1);
     broker.postDelayed<3000>(ev, TOPIC_2);
-    
+
     REQUIRE(expectEvent(EV_A, TOPIC_1, start + 1000, 2, broker));
     REQUIRE(expectEvent(EV_A, TOPIC_2, start + 3000, 2, broker));
 }

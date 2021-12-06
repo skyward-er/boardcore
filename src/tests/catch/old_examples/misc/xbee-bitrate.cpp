@@ -20,24 +20,23 @@
  * THE SOFTWARE.
  */
 
+#include <drivers/HardwareTimer.h>
+#include <drivers/Xbee/Xbee.h>
+#include <drivers/spi/SPIDriver.h>
 #include <interfaces-impl/hwmapping.h>
+#include <math/Stats.h>
 #include <miosix.h>
+
 #include <cstdio>
 #include <iostream>
 #include <string>
-
-#include "drivers/HardwareTimer.h"
-#include "drivers/Xbee/Xbee.h"
-#include "math/Stats.h"
-
-#include <drivers/spi/SPIDriver.h>
 
 using std::cin;
 using std::cout;
 using std::string;
 
 static constexpr int MAX_PKT_SIZE = 255;
-static constexpr int PKT_NUM = 100;
+static constexpr int PKT_NUM      = 100;
 
 using namespace miosix;
 using namespace interfaces;
@@ -47,9 +46,9 @@ using namespace interfaces;
 
 // Discovery
 SPIBus bus{SPI1};
-GpioPin cs = sensors::lsm6ds3h::cs::getPin();
+GpioPin cs   = sensors::lsm6ds3h::cs::getPin();
 GpioPin attn = xbee::attn::getPin();
-GpioPin rst = xbee::reset::getPin();
+GpioPin rst  = xbee::reset::getPin();
 
 // Death stack
 // SPIBus bus{SPI2};
@@ -57,10 +56,12 @@ GpioPin rst = xbee::reset::getPin();
 // GpioPin attn = xbee::attn::getPin();
 // GpioPin rst = xbee::reset::getPin();
 
-
 Xbee::Xbee* xbee_transceiver;
 
-void __attribute__((used)) EXTI10_IRQHandlerImpl() { Xbee::handleATTNInterrupt(); }
+void __attribute__((used)) EXTI10_IRQHandlerImpl()
+{
+    Xbee::handleATTNInterrupt();
+}
 
 void enableXbeeInterrupt()
 {
@@ -95,13 +96,12 @@ int snd_cntr = 0;
 
 bool sendPacket(uint8_t size)
 {
-    snd_buf[0] = '{';
-    snd_buf[size-1] = '}';
+    snd_buf[0]        = '{';
+    snd_buf[size - 1] = '}';
 
-
-    for(int i = 0; i < size - 2; i++)
+    for (int i = 0; i < size - 2; i++)
     {
-        snd_buf[i+1] = ((snd_cntr + i) % 75 ) + 48; //ASCII char from 0 to z
+        snd_buf[i + 1] = ((snd_cntr + i) % 75) + 48;  // ASCII char from 0 to z
     }
     ++snd_cntr;
 
@@ -128,21 +128,23 @@ int main()
     resetXBee();
 
     printf("XBee bitrate measurement\n");
-    printf("Send 100 packets of a certain size (from 16 to 256, step 16) and reporting send time.\n");
+    printf(
+        "Send 100 packets of a certain size (from 16 to 256, step 16) and "
+        "reporting send time.\n");
     printf("Press enter to start\n");
     string s;
     std::getline(cin, s);
 
     int pkt_size = 16;
-    while(pkt_size <= MAX_PKT_SIZE)
+    while (pkt_size <= MAX_PKT_SIZE)
     {
         printf("Testing %d byte packets:\n", pkt_size);
         long long results[PKT_NUM];
 
-        for(int i = 0; i < PKT_NUM; i++)
+        for (int i = 0; i < PKT_NUM; i++)
         {
             long long start = getTick();
-            if(!sendPacket(pkt_size))
+            if (!sendPacket(pkt_size))
             {
                 printf("Error sending packet %d (size: %d)\n", i, pkt_size);
                 goto end;
@@ -150,18 +152,18 @@ int main()
             results[i] = getTick() - start;
         }
         printf("Results for %d byte packet size:\n", pkt_size);
-        for(int i = 0; i < PKT_NUM; i++)
+        for (int i = 0; i < PKT_NUM; i++)
         {
             printf("%d\n", (int)results[i]);
         }
         pkt_size += 16;
-        if(pkt_size == 256)
-            pkt_size = 255; // Max we can send is 255
+        if (pkt_size == 256)
+            pkt_size = 255;  // Max we can send is 255
     }
 
 end:
     printf("End\n");
-    for(;;)
+    for (;;)
         Thread::sleep(1000);
     return 0;
 }

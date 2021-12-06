@@ -23,7 +23,8 @@
 #pragma once
 
 #include <pthread.h>
-#include "utils/collections/contiguous_queue.h"
+#include <utils/collections/contiguous_queue.h>
+
 #include "piksi_data.h"
 
 /**

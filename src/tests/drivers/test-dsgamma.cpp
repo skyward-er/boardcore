@@ -22,17 +22,18 @@
 
 #include <stdio.h>
 #include <string.h>
+
 #include "Common.h"
 #include "miosix.h"
 
 using namespace Boardcore;
 using namespace std;
-using miosix::Thread;
 using miosix::FastInterruptDisableLock;
 using miosix::Gpio;
+using miosix::Thread;
 
+#include <drivers/HardwareTimer.h>
 #include <drivers/gamma868/Gamma868.h>
-#include "drivers/HardwareTimer.h"
 
 // Protocol config
 //#define DATA_LEN 16384
@@ -61,7 +62,7 @@ int main()
 
     Gamma868 gamma("/dev/radio");  // create gamma object
 
-    //printf("Press the button to start receiving \n");
+    // printf("Press the button to start receiving \n");
     // Wait for button
     Thread::sleep(1000);
     // while (1)
@@ -101,7 +102,7 @@ int main()
                         // printf("%c", c);
                         //  inputBuf[index] = c;
                         ++index;
-                        state   = ST_WAIT_END_FRAME;
+                        state = ST_WAIT_END_FRAME;
                         end_t = miosix::getTick();
                     }
                     break;

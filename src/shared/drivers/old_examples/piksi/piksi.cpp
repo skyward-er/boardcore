@@ -21,16 +21,19 @@
  */
 
 #include "piksi.h"
+
+#include <diagnostic/SkywardStack.h>
+#include <diagnostic/StackLogger.h>
 #include <fcntl.h>
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <termios.h>
 #include <time.h>
 #include <unistd.h>
+
 #include <algorithm>
 #include <cmath>
-#include "diagnostic/SkywardStack.h"
-#include "diagnostic/StackLogger.h"
+
 #include "Debug.h"
 
 using namespace std;
@@ -94,7 +97,7 @@ Piksi::Piksi(const char *serialPath)
     pthread_create(&thread, &attr, &threadLauncher, this);
 
     pthread_attr_destroy(&attr);
-    
+
     pthread_mutex_init(&mutex, NULL);
     pthread_cond_init(&cond, NULL);
 }
@@ -104,7 +107,7 @@ PiksiGPSData Piksi::getGpsData()
     PiksiGPSData result;
     pthread_mutex_lock(&mutex);
     result = data;
-    
+
     if (!firstFixReceived)
     {
         pthread_mutex_unlock(&mutex);
@@ -149,7 +152,7 @@ void Piksi::run()
             lookForMessages(bytes.removeEnd(), bytes.availableToRemove()));
 
         StackLogger::getInstance()->updateStack(THID_PIKSI);
-        
+
     } while (quit == false);
 }
 
@@ -164,13 +167,10 @@ unsigned int Piksi::readData(unsigned char *buffer, unsigned int size)
 
 unsigned int Piksi::lookForMessages(uint8_t *buffer, unsigned int size)
 {
-    //     puts("###");
-    //     for(unsigned int i=0;i<size;i++) printf("%02x ",buffer[i]);
-    //     puts("");
-
     const uint8_t preamble = 0x55;
     unsigned int consumed  = 0;
-    auto consume           = [&](unsigned int n) {
+    auto consume           = [&](unsigned int n)
+    {
         consumed += n;
         buffer += n;
         size -= n;
@@ -262,8 +262,8 @@ void Piksi::processVelNed(Piksi::MsgVelNed *msg)
     partialData.velocityEast  = static_cast<float>(msg->e) / 1000.f;
     partialData.velocityDown  = static_cast<float>(msg->d) / 1000.f;
 
-    partialData.speed = sqrtf(powf(partialData.velocityNorth, 2) + 
-                              powf(partialData.velocityEast, 2) + 
+    partialData.speed = sqrtf(powf(partialData.velocityNorth, 2) +
+                              powf(partialData.velocityEast, 2) +
                               powf(partialData.velocityDown, 2));
 
     if (pos && gpsTimestamp == msg->ms)

@@ -20,11 +20,12 @@
  * THE SOFTWARE.
  */
 
+#include <drivers/BusTemplate.h>
 #include <miosix.h>
+#include <util/software_i2c.h>
+
 #include <cstdint>
 #include <cstdio>
-#include <util/software_i2c.h>
-#include "drivers/BusTemplate.h"
 
 using namespace miosix;
 
@@ -39,9 +40,8 @@ typedef Gpio<GPIOB_BASE, 9> sda;
 
 using soft_i2c = SoftwareI2C<sda, scl>;
 
-
-void masterRead(uint8_t bit7_address, uint8_t reg_address,
-                         uint8_t *data, int len)
+void masterRead(uint8_t bit7_address, uint8_t reg_address, uint8_t *data,
+                int len)
 {
     int i = 0;
     soft_i2c::sendStart();
@@ -50,7 +50,7 @@ void masterRead(uint8_t bit7_address, uint8_t reg_address,
     soft_i2c::sendRepeatedStart();
     soft_i2c::send((bit7_address) + 1);
 
-    for (i      = 0; i < (len - 1); i++)
+    for (i = 0; i < (len - 1); i++)
         data[i] = soft_i2c::recvWithAck();
 
     data[len - 1] = soft_i2c::recvWithNack();
@@ -60,8 +60,8 @@ void masterRead(uint8_t bit7_address, uint8_t reg_address,
 
 int main()
 {
-   // soft_i2c::init();
-   
+    // soft_i2c::init();
+
     my_i2c1::init();
 
     uint8_t who_am_i;
@@ -70,7 +70,7 @@ int main()
         long long s = miosix::getTick();
         my_i2c1::read(ADDRESS, REG_WHO_AM_I, &who_am_i, 1);
         long long d = miosix::getTick() - s;
-        
+
         if (who_am_i == WHO_AM_I)
         {
             printf("Read ok. (%d)\n", (int)d);
