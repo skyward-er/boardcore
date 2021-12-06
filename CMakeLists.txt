@@ -48,17 +48,45 @@ add_executable(sdcard-benchmark src/entrypoints/sdcard-benchmark.cpp)
 sbs_target(sdcard-benchmark stm32f429zi_stm32f4discovery)
 
 #-----------------------------------------------------------------------------#
-#                                Tests - Catch                                #
+#                                    Tests                                    #
 #-----------------------------------------------------------------------------#
 
-add_executable(test-calibration-benchmark src/tests/calibration/test-calibration-benchmark.cpp)
-sbs_target(test-calibration-benchmark stm32f407vg_stm32f4discovery)
+add_executable(test-kalman-eigen-benchmark src/tests/kalman/test-kalman-eigen-benchmark.cpp)
+sbs_target(test-kalman-eigen-benchmark stm32f429zi_stm32f4discovery)
 
-add_executable(test-calibration-stats src/tests/calibration/test-calibration-stats.cpp)
-sbs_target(test-calibration-stats stm32f407vg_stm32f4discovery)
+add_executable(test-logger src/tests/logger/test-logger.cpp)
+sbs_target(test-logger stm32f429zi_stm32f4discovery)
 
-add_executable(test-calibration src/tests/calibration/test-calibration.cpp)
-sbs_target(test-calibration stm32f407vg_stm32f4discovery)
+add_executable(test-eventinjector src/tests/test-eventinjector.cpp)
+sbs_target(test-eventinjector stm32f429zi_stm32f4discovery)
+
+add_executable(test-hsm src/tests/test-hsm.cpp)
+sbs_target(test-hsm stm32f429zi_stm32f4discovery)
+
+add_executable(test-interrupt src/tests/test-interrupt.cpp)
+sbs_target(test-interrupt stm32f429zi_stm32f4discovery)
+
+add_executable(test-pinobserver src/tests/test-pinobserver.cpp)
+sbs_target(test-pinobserver stm32f429zi_stm32f4discovery)
+
+add_executable(test-sensormanager src/tests/test-sensormanager.cpp)
+sbs_target(test-sensormanager stm32f429zi_skyward_death_stack_x)
+
+add_executable(test-serial src/tests/test-serial.cpp)
+sbs_target(test-serial stm32f429zi_skyward_death_stack_x)
+
+add_executable(test-taskscheduler src/tests/test-taskscheduler.cpp)
+sbs_target(test-taskscheduler stm32f429zi_skyward_death_stack_x)
+
+add_executable(test-timestamp-timer src/tests/test-timestamp-timer.cpp)
+sbs_target(test-timestamp-timer stm32f429zi_stm32f4discovery)
+
+add_executable(test-trace-logger src/tests/test-trace-logger.cpp)
+sbs_target(test-trace-logger stm32f429zi_stm32f4discovery)
+
+#-----------------------------------------------------------------------------#
+#                                Tests - Catch                                #
+#-----------------------------------------------------------------------------#
 
 #add_executable(catch-tests-entry src/tests/catch/catch-tests-entry.cpp)
 #target_compile_definitions(catch-tests-entry PUBLIC USE_MOCK_PERIPHERALS)
@@ -108,26 +136,8 @@ sbs_target(test-xbee-parser stm32f429zi_stm32f4discovery)
 #                               Tests - Drivers                               #
 #-----------------------------------------------------------------------------#
 
-add_executable(test-analog-pressure-sensors src/tests/drivers/analog/test-analog-pressure-sensors.cpp)
-sbs_target(test-analog-pressure-sensors stm32f429zi_stm32f4discovery)
-
-add_executable(test-battery-voltage src/tests/drivers/analog/test-battery-voltage.cpp)
-sbs_target(test-battery-voltage stm32f429zi_stm32f4discovery)
-
-add_executable(test-current-sensor src/tests/drivers/analog/test-current-sensor.cpp)
-sbs_target(test-current-sensor stm32f429zi_stm32f4discovery)
-
 add_executable(test-ads1118 src/tests/drivers/test-ads1118.cpp)
 sbs_target(test-ads1118 stm32f407vg_stm32f4discovery)
-
-add_executable(test-bme280 src/tests/drivers/test-bme280.cpp)
-sbs_target(test-bme280 stm32f407vg_stm32f4discovery)
-
-add_executable(test-bmx160 src/tests/drivers/test-bmx160.cpp)
-sbs_target(test-bmx160 stm32f429zi_skyward_death_stack_x)
-
-add_executable(test-bmx160-with-correction src/tests/drivers/test-bmx160-with-correction.cpp)
-sbs_target(test-bmx160-with-correction stm32f429zi_skyward_death_stack_x)
 
 add_executable(test-canbus src/tests/drivers/test-canbus.cpp)
 sbs_target(test-canbus stm32f429zi_skyward_death_stack_x)
@@ -147,26 +157,8 @@ sbs_target(test-internal-adc stm32f429zi_skyward_death_stack_x)
 add_executable(test-internal-adc-dma src/tests/drivers/test-internal-adc-dma.cpp)
 sbs_target(test-internal-adc-dma stm32f429zi_stm32f4discovery)
 
-add_executable(test-l3gd20 src/tests/drivers/test-l3gd20.cpp)
-sbs_target(test-l3gd20 stm32f429zi_stm32f4discovery)
-
-add_executable(test-l3gd20-fifo src/tests/drivers/test-l3gd20-fifo.cpp)
-sbs_target(test-l3gd20-fifo stm32f429zi_stm32f4discovery)
-
-add_executable(test-lis3dsh src/tests/drivers/test-lis3dsh.cpp)
-sbs_target(test-lis3dsh stm32f407vg_stm32f4discovery)
-
-add_executable(test-lis3mdl src/tests/drivers/test-lis3mdl.cpp)
-sbs_target(test-lis3mdl stm32f429zi_skyward_death_stack_x)
-
 add_executable(test-mavlink src/tests/drivers/test-mavlink.cpp)
 sbs_target(test-mavlink stm32f429zi_skyward_homeone)
-
-add_executable(test-mpu9250 src/tests/drivers/test-mpu9250.cpp)
-sbs_target(test-mpu9250 stm32f429zi_skyward_death_stack_x)
-
-add_executable(test-ms5803 src/tests/drivers/test-ms5803.cpp)
-sbs_target(test-ms5803 stm32f429zi_skyward_death_stack_x)
 
 add_executable(test-pwm src/tests/drivers/test-pwm.cpp)
 sbs_target(test-pwm stm32f429zi_stm32f4discovery)
@@ -195,38 +187,54 @@ sbs_target(test-xbee-rcv stm32f429zi_stm32f4discovery)
 add_executable(test-xbee-snd src/tests/drivers/xbee/test-xbee-snd.cpp)
 sbs_target(test-xbee-snd stm32f429zi_stm32f4discovery)
 
-add_executable(test-kalman-eigen-benchmark src/tests/kalman/test-kalman-eigen-benchmark.cpp)
-sbs_target(test-kalman-eigen-benchmark stm32f429zi_stm32f4discovery)
+#-----------------------------------------------------------------------------#
+#                               Tests - Sensors                               #
+#-----------------------------------------------------------------------------#
 
-add_executable(test-logger src/tests/logger/test-logger.cpp)
-sbs_target(test-logger stm32f429zi_stm32f4discovery)
+add_executable(test-analog-pressure-sensors src/tests/sensors/analog/test-analog-pressure-sensors.cpp)
+sbs_target(test-analog-pressure-sensors stm32f429zi_stm32f4discovery)
 
-add_executable(test-eventinjector src/tests/test-eventinjector.cpp)
-sbs_target(test-eventinjector stm32f429zi_stm32f4discovery)
+add_executable(test-battery-voltage src/tests/sensors/analog/test-battery-voltage.cpp)
+sbs_target(test-battery-voltage stm32f429zi_stm32f4discovery)
 
-add_executable(test-hsm src/tests/test-hsm.cpp)
-sbs_target(test-hsm stm32f429zi_stm32f4discovery)
+add_executable(test-current-sensor src/tests/sensors/analog/test-current-sensor.cpp)
+sbs_target(test-current-sensor stm32f429zi_stm32f4discovery)
 
-add_executable(test-interrupt src/tests/test-interrupt.cpp)
-sbs_target(test-interrupt stm32f429zi_stm32f4discovery)
+add_executable(test-calibration-benchmark src/tests/sensors/calibration/test-calibration-benchmark.cpp)
+sbs_target(test-calibration-benchmark stm32f407vg_stm32f4discovery)
 
-add_executable(test-pinobserver src/tests/test-pinobserver.cpp)
-sbs_target(test-pinobserver stm32f429zi_stm32f4discovery)
+add_executable(test-calibration-stats src/tests/sensors/calibration/test-calibration-stats.cpp)
+sbs_target(test-calibration-stats stm32f407vg_stm32f4discovery)
 
-add_executable(test-sensormanager src/tests/test-sensormanager.cpp)
-sbs_target(test-sensormanager stm32f429zi_skyward_death_stack_x)
+add_executable(test-calibration src/tests/sensors/calibration/test-calibration.cpp)
+sbs_target(test-calibration stm32f407vg_stm32f4discovery)
 
-add_executable(test-serial src/tests/test-serial.cpp)
-sbs_target(test-serial stm32f429zi_skyward_death_stack_x)
+add_executable(test-bme280 src/tests/sensors/test-bme280.cpp)
+sbs_target(test-bme280 stm32f407vg_stm32f4discovery)
 
-add_executable(test-taskscheduler src/tests/test-taskscheduler.cpp)
-sbs_target(test-taskscheduler stm32f429zi_skyward_death_stack_x)
+add_executable(test-bmx160 src/tests/sensors/test-bmx160.cpp)
+sbs_target(test-bmx160 stm32f429zi_skyward_death_stack_x)
 
-add_executable(test-timestamp-timer src/tests/test-timestamp-timer.cpp)
-sbs_target(test-timestamp-timer stm32f429zi_stm32f4discovery)
+add_executable(test-bmx160-with-correction src/tests/sensors/test-bmx160-with-correction.cpp)
+sbs_target(test-bmx160-with-correction stm32f429zi_skyward_death_stack_x)
 
-add_executable(test-trace-logger src/tests/test-trace-logger.cpp)
-sbs_target(test-trace-logger stm32f429zi_stm32f4discovery)
+add_executable(test-l3gd20 src/tests/sensors/test-l3gd20.cpp)
+sbs_target(test-l3gd20 stm32f429zi_stm32f4discovery)
 
-add_executable(test-max6675 src/tests/sensors/MAX6675/test-max6675.cpp)
+add_executable(test-l3gd20-fifo src/tests/sensors/test-l3gd20-fifo.cpp)
+sbs_target(test-l3gd20-fifo stm32f429zi_stm32f4discovery)
+
+add_executable(test-lis3dsh src/tests/sensors/test-lis3dsh.cpp)
+sbs_target(test-lis3dsh stm32f407vg_stm32f4discovery)
+
+add_executable(test-lis3mdl src/tests/sensors/test-lis3mdl.cpp)
+sbs_target(test-lis3mdl stm32f429zi_skyward_death_stack_x)
+
+add_executable(test-max6675 src/tests/sensors/test-max6675.cpp)
 sbs_target(test-max6675 stm32f407vg_stm32f4discovery)
+
+add_executable(test-mpu9250 src/tests/sensors/test-mpu9250.cpp)
+sbs_target(test-mpu9250 stm32f429zi_skyward_death_stack_x)
+
+add_executable(test-ms5803 src/tests/sensors/test-ms5803.cpp)
+sbs_target(test-ms5803 stm32f429zi_skyward_death_stack_x)
