@@ -24,9 +24,9 @@
 
 #include <miosix.h>
 
-#include "configs/{state_machine_name}Config.h"
-#include "events/EventBroker.h"
-#include "events/Events.h"
+#include <configs/{state_machine_name}Config.h>
+#include <events/EventBroker.h>
+#include <events/Events.h>
 
 namespace {main_namespace}
 {{

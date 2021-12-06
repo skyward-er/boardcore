@@ -25,7 +25,6 @@
 #endif
 #include <catch2/catch.hpp>
 
-
 #define private public
 #include <utils/collections/SyncPacketQueue.h>
 
@@ -223,7 +222,8 @@ TEST_CASE("PacketQueue tests")
         p = pq.get();  // Should still return first packet
         REQUIRE(p.msgCount() == 3);
 
-        INFO("Adding element not fitting the second packet, added to the third");
+        INFO(
+            "Adding element not fitting the second packet, added to the third");
         REQUIRE(pq.put(message_base + 10, 7) == 0);
         p = pq.get();  // Should still return first packet
         REQUIRE(p.msgCount() == 3);
@@ -240,7 +240,6 @@ TEST_CASE("PacketQueue tests")
         COMPARE(pq.buffer.get(0), "0123012301");
         COMPARE(pq.buffer.get(1), "abcd");
         COMPARE(pq.buffer.get(2), "abcdefg");
-
 
         INFO("Popping first element");
         p = pq.pop();  // Should still return first packet
@@ -309,7 +308,7 @@ TEST_CASE("PacketQueue tests")
         REQUIRE(pq.put(message_base + 10, PKT_LEN) == 0);
 
         REQUIRE(pq.buffer.count() == 3);
-        for(int i = 0; i < 3; i++)
+        for (int i = 0; i < 3; i++)
         {
             CAPTURE(i);
             REQUIRE(pq.buffer.get(i).isReady());
@@ -329,12 +328,10 @@ TEST_CASE("PacketQueue tests")
         REQUIRE_NOTHROW(pq.pop());
         REQUIRE_NOTHROW(pq.pop());
 
-
         REQUIRE_THROWS(pq.get());
         REQUIRE_THROWS(pq.pop());
 
         REQUIRE(pq.isEmpty());
         REQUIRE_FALSE(pq.isFull());
     }
-
 }

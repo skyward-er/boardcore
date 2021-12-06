@@ -22,11 +22,11 @@
 
 #pragma once
 
-#include <ostream>
-#include <array>
-#include <string>
+#include <math/Stats.h>
 
-#include "math/Stats.h"
+#include <array>
+#include <ostream>
+#include <string>
 
 using std::array;
 using std::string;
@@ -102,14 +102,15 @@ struct RxData
 
     static string header()
     {
-        return "timestamp,packet_size,last_packet_timestamp,RSSI,rcv_cnt,rcv_errors,"
+        return "timestamp,packet_size,last_packet_timestamp,RSSI,rcv_cnt,rcv_"
+               "errors,"
                "rcv_wrong\n";
     }
 
     void print(std::ostream& os) const
     {
-        os << timestamp << "," << pkt_size << "," << last_packet_timestamp << ","
-           << RSSI << "," << rcv_count << "," << rcv_errors << ","
+        os << timestamp << "," << pkt_size << "," << last_packet_timestamp
+           << "," << RSSI << "," << rcv_count << "," << rcv_errors << ","
            << rcv_wrong_payload << "\n";
     }
 };
@@ -123,7 +124,7 @@ struct EnergyScanData
 
     EnergyScanData(long long ts, array<int, 30> scan)
     {
-        for(int i = 0; i < 30; i++)
+        for (int i = 0; i < 30; i++)
         {
             channel_data[i] = scan[i];
         }
@@ -134,7 +135,7 @@ struct EnergyScanData
     static string header()
     {
         string out = "timestamp";
-        for(int i = 0; i < 30; i++)
+        for (int i = 0; i < 30; i++)
         {
             out += ",channel_" + to_string(i);
         }
@@ -145,7 +146,7 @@ struct EnergyScanData
     {
         os << timestamp;
 
-        for(int i = 0; i < 30; i++)
+        for (int i = 0; i < 30; i++)
         {
             os << "," << channel_data[i];
         }

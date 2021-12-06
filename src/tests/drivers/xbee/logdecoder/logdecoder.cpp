@@ -49,7 +49,8 @@ void showHelp(string cmdName)
               << " {-a [logs_diretory] | <log_file_path> | -h}"
               << "Options:\n"
               << "\t-h,--help\t\tShow help message\n"
-              << "\t-a,--all [dir=\".\"] Deserialize all logs in the provided directory\n"
+              << "\t-a,--all [dir=\".\"] Deserialize all logs in the provided "
+                 "directory\n"
               << std::endl;
 }
 

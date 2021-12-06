@@ -28,11 +28,12 @@
 #include <Common.h>
 #include <drivers/HardwareTimer.h>
 #include <kalman/KalmanEigen.h>
+#include <math/SkyQuaternion.h>
+#include <util/util.h>
+
 #include <iostream>
 
 #include "test-kalman-data.h"
-#include "math/SkyQuaternion.h"
-#include "util/util.h"
 
 using namespace Boardcore;
 using namespace miosix;

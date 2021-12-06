@@ -20,7 +20,6 @@
  * THE SOFTWARE.
  */
 
-
 #pragma once
 
 #include <miosix.h>

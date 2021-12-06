@@ -33,7 +33,7 @@ using miosix::GpioPin;
 #ifndef USE_MOCK_PERIPHERALS
 using GpioType = GpioPin;
 #else
-#include "utils/testutils/MockGpioPin.h"
+#include <utils/testutils/MockGpioPin.h>
 using GpioType = MockGpioPin;
 #endif
 

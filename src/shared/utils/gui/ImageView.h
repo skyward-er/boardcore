@@ -55,6 +55,7 @@ public:
                                 getBounds().bottomRight(), *image);
         }
     }
+
 private:
     const mxgui::Image* image;
 };

@@ -20,18 +20,17 @@
  * THE SOFTWARE.
  */
 
-
 // This work is derived from https://www.state-machine.com by Miro Samek.
 
 #pragma once
 
+#include <assert.h>
+#include <events/Event.h>
+#include <events/EventHandler.h>
+#include <utils/collections/SyncQueue.h>
+
 #include "ActiveObject.h"
 #include "Debug.h"
-#include "events/Event.h"
-#include "events/EventHandler.h"
-#include "utils/collections/SyncQueue.h"
-
-#include <assert.h>
 
 namespace Boardcore
 {

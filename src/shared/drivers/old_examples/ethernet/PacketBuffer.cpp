@@ -19,7 +19,10 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
+
 #include "PacketBuffer.h"
+
+#include <Debug.h>
 
 using namespace std;
 using namespace miosix;
@@ -35,7 +38,7 @@ PacketBuffer::PacketBuffer(size_t storageSize)
     }
     catch (std::bad_alloc& exc)
     {
-        printf("bad alloc!\n");
+        TRACE("bad alloc!\n");
         valid = false;
     }
 #else

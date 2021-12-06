@@ -22,17 +22,14 @@
 
 #pragma once
 
-#include "sensors/SensorData.h"
+#include <sensors/SensorData.h>
 
 namespace Boardcore
 {
 
 struct SSCDANN030PAAData : public PressureData
 {
-    static std::string header()
-    {
-        return "press_timestamp,pressure\n";
-    }
+    static std::string header() { return "press_timestamp,pressure\n"; }
 
     void print(std::ostream& os) const
     {

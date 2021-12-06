@@ -89,7 +89,7 @@ int main()
     canbus_init_t st0 = {
         CAN1, Mode::ALTERNATE, 9, {CAN1_RX0_IRQn, CAN1_RX1_IRQn}};
     c.addBus<GPIOA_BASE, 11, 12>(st0);
-    
+
     canbus_init_t st1 = {
         CAN2, Mode::ALTERNATE, 9, {CAN2_RX0_IRQn, CAN2_RX1_IRQn}};
     c.addBus<GPIOB_BASE, 12, 13>(st1);

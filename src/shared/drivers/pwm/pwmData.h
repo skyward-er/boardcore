@@ -57,9 +57,9 @@ enum class PWMChannel : int
 struct PWMChannelConfig
 {
     PWMChannel channel;
-    bool enabled = false;
-    float duty_cycle = 0;
-    PWMMode mode = PWMMode::MODE_1;
+    bool enabled         = false;
+    float duty_cycle     = 0;
+    PWMMode mode         = PWMMode::MODE_1;
     PWMPolarity polarity = PWMPolarity::ACTIVE_HIGH;
 };
 

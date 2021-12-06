@@ -22,7 +22,7 @@
 
 #pragma once
 
-#include "sensors/SensorData.h"
+#include <sensors/SensorData.h>
 
 namespace Boardcore
 {
@@ -34,13 +34,13 @@ struct LIS3DSHData : public AccelerometerData, public TemperatureData
     }
 
     LIS3DSHData(uint64_t t, float x, float y, float z, float temp)
-        : AccelerometerData{t, x, y, z},
-          TemperatureData{t, temp}
+        : AccelerometerData{t, x, y, z}, TemperatureData{t, temp}
     {
     }
 
     LIS3DSHData(AccelerometerData acc, TemperatureData temp)
-        : AccelerometerData{acc.accel_timestamp, acc.accel_x, acc.accel_y, acc.accel_z},
+        : AccelerometerData{acc.accel_timestamp, acc.accel_x, acc.accel_y,
+                            acc.accel_z},
           TemperatureData{temp.temp_timestamp, temp.temp}
     {
     }
@@ -52,8 +52,8 @@ struct LIS3DSHData : public AccelerometerData, public TemperatureData
 
     void print(std::ostream& os) const
     {
-        os << accel_timestamp << "," << accel_x << "," << accel_y << "," << accel_z
-           << "," << temp_timestamp << "," << temp << "\n";
+        os << accel_timestamp << "," << accel_x << "," << accel_y << ","
+           << accel_z << "," << temp_timestamp << "," << temp << "\n";
     }
 };
 

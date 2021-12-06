@@ -27,6 +27,11 @@
 #define RUN_RECEIVER true
 #endif
 
+#include <drivers/Xbee/APIFramesLog.h>
+#include <drivers/Xbee/ATCommands.h>
+#include <drivers/Xbee/Xbee.h>
+#include <drivers/interrupt/external_interrupts.h>
+#include <logger/Logger.h>
 #include <miosix.h>
 
 #include <cstdio>
@@ -34,11 +39,6 @@
 
 #include "ActiveObject.h"
 #include "XbeeTransceiver.h"
-#include "drivers/Xbee/APIFramesLog.h"
-#include "drivers/Xbee/ATCommands.h"
-#include "drivers/Xbee/Xbee.h"
-#include "drivers/interrupt/external_interrupts.h"
-#include "logger/Logger.h"
 
 using namespace Boardcore;
 using namespace miosix;

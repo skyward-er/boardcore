@@ -28,14 +28,15 @@
  * CSV format.
  */
 
+#include <diagnostic/CpuMeter.h>
+#include <drivers/HardwareTimer.h>
+#include <drivers/interrupt/external_interrupts.h>
+#include <drivers/spi/SPIDriver.h>
+#include <sensors/L3GD20/L3GD20.h>
+
 #include <array>
 
-#include "diagnostic/CpuMeter.h"
-#include "drivers/HardwareTimer.h"
-#include "drivers/interrupt/external_interrupts.h"
-#include "drivers/spi/SPIDriver.h"
 #include "TimestampTimer.h"
-#include "sensors/L3GD20/L3GD20.h"
 
 using namespace Boardcore;
 using namespace miosix;

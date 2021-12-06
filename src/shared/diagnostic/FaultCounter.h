@@ -24,7 +24,7 @@
 
 #include <Common.h>
 #include <Singleton.h>
-#include "FaultCounterData.h"
+#include <diagnostic/FaultCounterData.h>
 
 namespace Boardcore
 {

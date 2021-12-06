@@ -21,6 +21,7 @@
  */
 
 #include "external_interrupts.h"
+
 #include <miosix.h>
 using namespace miosix;
 

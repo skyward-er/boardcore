@@ -23,6 +23,7 @@
 #pragma once
 
 #include <drivers/BusTemplate.h>
+
 #include "Common.h"
 #include "Sensor.h"
 
@@ -127,9 +128,6 @@ public:
 
         int16_t data[3] = {0};
         memcpy(data, &r[1], r.size() - 1);
-        // printf("ID: %d  --> %+05d,%+05d,%+05d -> ",
-        //  req.id(),data[0],data[1],data[2]);
-        // memDump(r.data(),r.size());
 
         switch (req.id())
         {

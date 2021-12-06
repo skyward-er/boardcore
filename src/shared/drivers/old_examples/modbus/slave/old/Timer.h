@@ -22,54 +22,56 @@
 
 #pragma once
 
-#include "Common.h"
 #include <algorithm>
 
-class Timer : public Singleton< Timer >
+#include "Common.h"
+
+class Timer : public Singleton<Timer>
 {
-    
-friend class Singleton< Timer >;
+
+    friend class Singleton<Timer>;
+
 public:
     ~Timer();
-    
+
     /**
-     * Initialize the timer prescaler in order to have a counter tick equals, 
-     * in time terms, to the time needed to send 1.5 11 bit long characters at 
+     * Initialize the timer prescaler in order to have a counter tick equals,
+     * in time terms, to the time needed to send 1.5 11 bit long characters at
      * the speed specified by @param refBaud
      */
     void init(uint32_t refBaud);
-    
+
     /**
      * Start the timer
      */
     void start();
-    
+
     /**
      * Stop the timer
      */
     void stop();
-    
+
     /**
      * Set a new expiring setpoint @param ticks ahead from now for channel
      * specified by @param channel
      */
     void newSetpoint(uint8_t channel, uint8_t ticks);
-    
+
     /**
-     * @return true if the timer's @param channel expired, calling this 
+     * @return true if the timer's @param channel expired, calling this
      * function will reset to fals the internal flag.
      */
     bool expired(uint8_t channel);
-    
+
 private:
     Timer();
-    
-    friend void IRQHandler();   ///< timer IRQ handler
-    
+
+    friend void IRQHandler();  ///< timer IRQ handler
+
     bool expFlags[2] = {false};
-    float k;        ///< conversion factor internally used, see implementation
-    
+    float k;  ///< conversion factor internally used, see implementation
+
     Timer(const Timer& other) = delete;
     Timer& operator=(const Timer& other) = delete;
-    bool operator==(const Timer& other) = delete;
+    bool operator==(const Timer& other)  = delete;
 };

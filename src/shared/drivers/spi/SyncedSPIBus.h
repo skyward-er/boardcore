@@ -22,8 +22,9 @@
 
 #pragma once
 
-#include "SPIBus.h"
 #include <miosix.h>
+
+#include "SPIBus.h"
 
 using miosix::FastMutex;
 
@@ -48,6 +49,7 @@ class SyncedSPIBus : public SPIBus
         SPIBusInterface::release();
         mutex.unlock();
     }
+
 private:
     FastMutex mutex;
 };

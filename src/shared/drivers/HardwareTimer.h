@@ -515,7 +515,7 @@ void HardwareTimer<Type, TimerMode::Chain>::setAutoReload(Type auto_reload)
     this->auto_reload = auto_reload;
     // We only care about the higher bits
     slave->ARR = auto_reload >> (sizeof(Type) * 8 / 2);
-    slave->EGR = TIM_EGR_UG;  // Send an update event to load the new 
+    slave->EGR = TIM_EGR_UG;  // Send an update event to load the new
                               // auto-reload
 }
 

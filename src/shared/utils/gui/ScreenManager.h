@@ -24,8 +24,8 @@
 
 #include <miosix.h>
 
-#include <map>
 #include <deque>
+#include <map>
 
 #include "NavController.h"
 #include "View.h"
@@ -89,10 +89,11 @@ protected:
             Thread::sleepUntil(start + refresh_interval);
         }
     }
+
 private:
     /**
      * @brief Draws the provided view tree on screen
-     * 
+     *
      * @param root Root of the view tree
      * @param dc Drawing context
      */
@@ -102,14 +103,14 @@ private:
         std::deque<View*> views_dc;
         views_dc.push_back(root);
 
-        while(views_dc.size() != 0)
+        while (views_dc.size() != 0)
         {
             View* view = views_dc.front();
             views_dc.pop_front();
 
             view->draw(dc);
 
-            for(View* c : view->getChilds())
+            for (View* c : view->getChilds())
             {
                 views_dc.push_back(c);
             }

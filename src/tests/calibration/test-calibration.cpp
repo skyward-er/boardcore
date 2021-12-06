@@ -36,13 +36,12 @@
 #include <Common.h>
 #include <drivers/spi/SPIDriver.h>
 #include <miosix.h>
-
-#include "sensors/LIS3DSH/LIS3DSH.h"
-#include "sensors/calibration/BiasCalibration.h"
-#include "sensors/calibration/HardIronCalibration.h"
-#include "sensors/calibration/SixParameterCalibration.h"
-#include "sensors/calibration/SoftIronCalibration.h"
-#include "sensors/calibration/TwelveParameterCalibration.h"
+#include <sensors/LIS3DSH/LIS3DSH.h>
+#include <sensors/calibration/BiasCalibration.h>
+#include <sensors/calibration/HardIronCalibration.h>
+#include <sensors/calibration/SixParameterCalibration.h>
+#include <sensors/calibration/SoftIronCalibration.h>
+#include <sensors/calibration/TwelveParameterCalibration.h>
 
 #if TEST_ACCELEROMETER_DATA
 #include "accelerometer-data.h"
@@ -52,6 +51,7 @@
 
 using namespace Boardcore;
 using namespace miosix;
+using namespace Eigen;
 
 int main()
 {

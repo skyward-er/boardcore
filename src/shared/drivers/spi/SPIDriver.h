@@ -20,9 +20,8 @@
  * THE SOFTWARE.
  */
 
-
 #pragma once
 
+#include "SPIBus.h"
 #include "SPIBusInterface.h"
 #include "SPITransaction.h"
-#include "SPIBus.h"

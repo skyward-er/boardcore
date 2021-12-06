@@ -26,9 +26,11 @@
 #include <Common.h>
 #include <Singleton.h>
 #include <math/Stats.h>
+
 #include <cstdint>
 #include <list>
 #include <queue>
+
 #include "TaskSchedulerData.h"
 
 namespace Boardcore

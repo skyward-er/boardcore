@@ -162,7 +162,7 @@ int main()
 void bmx160Sample(void *args)
 {
     UNUSED(args);
-    
+
     while (!stopSamplingThread)
     {
         // Sample the bmx160

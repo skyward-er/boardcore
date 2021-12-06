@@ -20,8 +20,14 @@
  * THE SOFTWARE.
  */
 
+#include <drivers/Xbee/APIFramesLog.h>
+#include <drivers/Xbee/ATCommands.h>
+#include <drivers/Xbee/Xbee.h>
+#include <drivers/interrupt/external_interrupts.h>
+#include <logger/Logger.h>
 #include <miosix.h>
 #include <mxgui/display.h>
+#include <utils/ButtonHandler.h>
 
 #include <array>
 #include <cstdio>
@@ -31,13 +37,7 @@
 #include "ActiveObject.h"
 #include "Mark.h"
 #include "XbeeTransceiver.h"
-#include "drivers/Xbee/APIFramesLog.h"
-#include "drivers/Xbee/ATCommands.h"
-#include "drivers/Xbee/Xbee.h"
-#include "drivers/interrupt/external_interrupts.h"
 #include "gui/XbeeGui.h"
-#include "logger/Logger.h"
-#include "utils/ButtonHandler.h"
 
 using namespace Boardcore;
 using namespace miosix;
@@ -159,21 +159,24 @@ int main()
     gui->screen_energy.btn_stop.addOnInteractionListener(onStopButtonClick);
     gui->screen_energy.btn_mark.addOnInteractionListener(onMarkButtonClick);
     gui->screen_energy.btn_reset.addOnInteractionListener(
-        [&](View* d, Interaction action) {
+        [&](View* d, Interaction action)
+        {
             UNUSED(d);
             if (action == Interaction::CLICK)
                 gui->screen_energy.resetStats();
         });
 
     gui->screen_end.tv_f.addOnInteractionListener(
-        [&](View* d, Interaction action) {
+        [&](View* d, Interaction action)
+        {
             UNUSED(d);
             if (action == Interaction::CLICK)
                 gui->screen_manager.showScreen(XbeeGUI::SCREEN_RESPECT);
         });
 
     gui->screen_end.tv_reset.addOnInteractionListener(
-        [&](View* d, Interaction action) {
+        [&](View* d, Interaction action)
+        {
             UNUSED(d);
             if (action == Interaction::CLICK)
                 miosix::reboot();

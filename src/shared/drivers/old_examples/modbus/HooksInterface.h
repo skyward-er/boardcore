@@ -34,39 +34,32 @@
 class HooksInterface
 {
 public:
-    
-    HooksInterface()
-    {
-        
-    }
-    
-    ~HooksInterface()
-    {
-        
-    }
-    
+    HooksInterface() {}
+
+    ~HooksInterface() {}
+
     virtual uint8_t ReadCoil(bool& value, uint16_t addr)
     {
         return modbus::EXC_ILLEGAL_FUN;
     }
-    
+
     virtual uint8_t WriteCoil(bool value, uint16_t addr)
     {
         return modbus::EXC_ILLEGAL_FUN;
     }
-    
+
     virtual uint8_t ReadRegister(uint16_t& value, uint16_t addr)
     {
         return modbus::EXC_ILLEGAL_FUN;
     }
-    
+
     virtual uint8_t WriteRegister(uint16_t value, uint16_t addr)
     {
         return modbus::EXC_ILLEGAL_FUN;
     }
-    
+
 private:
     HooksInterface(const HooksInterface& other) = delete;
     HooksInterface& operator=(const HooksInterface& other) = delete;
-    bool operator==(const HooksInterface& other) = delete;
+    bool operator==(const HooksInterface& other)           = delete;
 };

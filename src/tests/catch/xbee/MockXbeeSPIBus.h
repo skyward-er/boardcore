@@ -22,14 +22,14 @@
 
 #pragma once
 
+#include <drivers/Xbee/APIFrameParser.h>
+#include <drivers/Xbee/APIFrames.h>
+#include <drivers/spi/test/MockSPIBus.h>
+#include <utils/testutils/MockGpioPin.h>
+
 #include <deque>
 #include <functional>
 #include <memory>
-
-#include "drivers/Xbee/APIFrameParser.h"
-#include "drivers/Xbee/APIFrames.h"
-#include "drivers/spi/test/MockSPIBus.h"
-#include "utils/testutils/MockGpioPin.h"
 
 using std::deque;
 using std::function;
@@ -121,7 +121,7 @@ protected:
                 tx_stat.setDiscoveryStatus(0);
                 tx_stat.setTransmitRetryCount(0);
                 tx_stat.calcChecksum();
-                
+
                 _pushApiFrame(tx_stat);
             }
         }

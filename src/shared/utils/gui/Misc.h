@@ -28,7 +28,7 @@ namespace Boardcore
 
 /**
  * @brief Converts a 24bit color to a 16bit color
- * 
+ *
  * @param rgb 24 bit color
  * @return Color Closest 16 bit color
  */

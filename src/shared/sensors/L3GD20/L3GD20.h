@@ -22,14 +22,14 @@
  */
 
 #pragma once
+#include <drivers/spi/SPIDriver.h>
+#include <math/Vec3.h>
 #include <miosix.h>
+#include <sensors/Sensor.h>
 
 #include <array>
 
-#include "sensors/Sensor.h"
 #include "L3GD20Data.h"
-#include "drivers/spi/SPIDriver.h"
-#include "math/Vec3.h"
 #include "TimestampTimer.h"
 
 using miosix::GpioPin;
@@ -127,7 +127,6 @@ public:
 
         if (whoami != WHO_AM_I_VAL)
         {
-            printf("WAMI: %d\n", whoami);
             last_error = SensorErrors::INVALID_WHOAMI;
             return false;
         }
@@ -222,7 +221,6 @@ public:
             int16_t x = buf[0] | buf[1] << 8;
             int16_t y = buf[2] | buf[3] << 8;
             int16_t z = buf[4] | buf[5] << 8;
-            // printf("%02X,%02X,%02X\n", x, y, z);
 
             Vec3 rads    = toRadiansPerSecond(x, y, z);
             last_fifo[0] = {last_sample_ts, rads.getX(), rads.getY(),

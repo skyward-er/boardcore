@@ -68,7 +68,8 @@ void __attribute__((naked)) CAN2_RX1_IRQHandler()
 }
 
 /*
- * @brief This function populates the rcvQueue of the corresponding Canbus object.
+ * @brief This function populates the rcvQueue of the corresponding Canbus
+ * object.
  */
 void __attribute__((used)) CAN_IRQHandlerImpl(int can_dev, int fifo)
 {

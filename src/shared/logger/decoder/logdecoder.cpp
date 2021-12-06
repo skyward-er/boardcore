@@ -24,7 +24,7 @@
  * This is a stub program for the program that will decode the logged data.
  * You must first define a function
  *  "void registerTypes(Deserializer& ds);"
- * 
+ *
  * that registers all the required log data types in the deserializer and then
  * INCLUDE this cpp file in your source. finally compile and run
  */
@@ -51,7 +51,8 @@ void showHelp(string cmdName)
               << " {-a [logs_diretory] | <log_file_path> | -h}"
               << "Options:\n"
               << "\t-h,--help\t\tShow help message\n"
-              << "\t-a,--all [dir=\".\"] Deserialize all logs in the provided directory\n"
+              << "\t-a,--all [dir=\".\"] Deserialize all logs in the provided "
+                 "directory\n"
               << std::endl;
 }
 

@@ -23,9 +23,10 @@
 #pragma once
 
 #include <Singleton.h>
+
+#include <cstdint>
 #include <cstring>
 #include <vector>
-#include <cstdint>
 
 using std::vector;
 
@@ -35,6 +36,7 @@ namespace Boardcore
 class BusSPIMock : public Singleton<BusSPIMock>
 {
     friend class Singleton<BusSPIMock>;
+
 public:
     inline static void write(const void* buffer, size_t len)
     {
@@ -95,7 +97,7 @@ private:
 
     inline int _read(void* buffer, size_t max_len) const
     {
-        uint8_t* buf_ptr = ( uint8_t*)buffer;
+        uint8_t* buf_ptr = (uint8_t*)buffer;
         for (size_t i = 0; i < max_len; i++)
         {
             if (miso_index < MISO.size())

@@ -20,8 +20,8 @@
  * THE SOFTWARE.
  */
 #include <Common.h>
-#include "sensors/LM75B.h"
-#include "drivers/BusTemplate.h"
+#include <drivers/BusTemplate.h>
+#include <sensors/LM75B.h>
 
 using namespace miosix;
 
