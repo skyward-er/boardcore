@@ -23,16 +23,18 @@ build:
     - testing
   script:
     - echo "Running complete build"
-    - python3 sbs
+    - ./sbs
    
 linter:
   stage: test
   script: 
     - echo "Running linter"
-    - ./scripts/linter.sh
+    - ./sbs --lint
 
 documentation:
   stage: deploy
+  only:
+    - master
   script:
     - echo "Generate documentation to https://documentation.skywarder.eu/${CI_PROJECT_NAME}/${CI_COMMIT_REF_NAME}"
     - rm -rf doc/output

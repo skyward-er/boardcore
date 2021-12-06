@@ -20,8 +20,7 @@
  * THE SOFTWARE.
  */
 
-#ifndef SRC_SHARED_EVENTS_EVENT_BROKER_H
-#define SRC_SHARED_EVENTS_EVENT_BROKER_H
+#pragma once
 
 #include <diagnostic/PrintLogger.h>
 #include <miosix.h>
@@ -43,6 +42,9 @@ using miosix::getTick;
 using miosix::Lock;
 using miosix::Thread;
 using miosix::Unlock;
+
+namespace Boardcore
+{
 
 // Minimum guaranteed delay for an event posted with postDelayed(...) in ms
 static constexpr unsigned int EVENT_BROKER_MIN_DELAY = 50;
@@ -189,4 +191,4 @@ private:
 
 #define sEventBroker Singleton<EventBroker>::getInstance()
 
-#endif  // SRC_SHARED_EVENTS_EVENT_BROKER_H
+}  // namespace Boardcore

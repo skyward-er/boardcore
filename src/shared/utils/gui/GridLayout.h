@@ -28,6 +28,9 @@
 
 #include "View.h"
 
+namespace Boardcore
+{
+
 /**
  * @brief Displays childs in a num_rows*num_cols grid
  */
@@ -206,3 +209,5 @@ private:
     std::map<GridPosition, View*> map_childs;
     std::map<GridPosition, Bounds> map_child_bounds;
 };
+
+}  // namespace Boardcore

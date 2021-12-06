@@ -22,6 +22,9 @@
 
 #include "SPITransaction.h"
 
+namespace Boardcore
+{
+
 SPITransaction::SPITransaction(SPISlave slave)
     : SPITransaction(slave.bus, slave.cs, slave.config)
 {
@@ -107,3 +110,5 @@ void SPITransaction::read(uint8_t* data, size_t size)
     bus.read(data, size);
     bus.deselect(cs);
 }
+
+}  // namespace Boardcore

@@ -13,7 +13,7 @@
       "label": "CLEAN",
       "type": "shell",
       "windows": {
-        "command": "python sbs -c"
+        "command": "sh sbs -c"
       },
       "linux": {
         "command": "./sbs -c"
@@ -24,7 +24,7 @@
       "label": "BUILD all",
       "type": "shell",
       "windows": {
-        "command": "python sbs"
+        "command": "sh sbs"
       },
       "linux": {
         "command": "./sbs"
@@ -35,7 +35,7 @@
       "label": "BUILD current-entrypoint",
       "type": "shell",
       "windows": {
-        "command": "python sbs -v -n -b ${fileBasenameNoExtension}"
+        "command": "sh sbs -v -n -b ${fileBasenameNoExtension}"
       },
       "linux": {
         "command": "./sbs -v -b ${fileBasenameNoExtension}"
@@ -75,7 +75,7 @@
       "label": "BUILD tests-catch",
       "type": "shell",
       "windows": {
-        "command": "python sbs -v -n -b tests-catch"
+        "command": "sh sbs -v -n -b tests-catch"
       },
       "linux": {
         "command": "./sbs -v -b tests-catch"

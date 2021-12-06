@@ -29,6 +29,9 @@
 #include "drivers/spi/SPIDriver.h"
 #include "sensors/Sensor.h"
 
+namespace Boardcore
+{
+
 /**
  * Driver for stm32f407vg discovery on-board 3-axis
  * accelerometer + temperature sensor.
@@ -548,3 +551,5 @@ private:
 
     PrintLogger logger = Logging::getLogger("lis3dsh");
 };
+
+}  // namespace Boardcore

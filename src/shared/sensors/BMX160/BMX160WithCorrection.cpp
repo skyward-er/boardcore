@@ -26,6 +26,9 @@
 
 #include <fstream>
 
+namespace Boardcore
+{
+
 BMX160CorrectionParameters::BMX160CorrectionParameters()
 {
     accelParams << 0, 0, 0, 0, 0, 0;
@@ -322,3 +325,5 @@ BMX160WithCorrectionData BMX160WithCorrection::rotateAxis(
 
     return data;
 }
+
+}  // namespace Boardcore

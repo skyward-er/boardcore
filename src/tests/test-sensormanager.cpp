@@ -32,6 +32,7 @@
 #include "sensors/SensorManager.h"
 #include "utils/testutils/TestSensor.h"
 
+using namespace Boardcore;
 using namespace miosix;
 using namespace TimestampTimer;
 

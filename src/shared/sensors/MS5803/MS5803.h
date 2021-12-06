@@ -28,6 +28,9 @@
 #include <sensors/MS5803/MS5803Data.h>
 #include <sensors/Sensor.h>
 
+namespace Boardcore
+{
+
 class MS5803 : public Sensor<MS5803Data>
 {
 public:
@@ -110,3 +113,5 @@ private:
 
     PrintLogger logger = Logging::getLogger("ms5803");
 };
+
+}  // namespace Boardcore

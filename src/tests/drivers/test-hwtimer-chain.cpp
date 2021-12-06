@@ -23,6 +23,8 @@
 #include <drivers/HardwareTimer.h>
 #include <Common.h>
 
+using namespace Boardcore;
+
 int main()
 {
     {

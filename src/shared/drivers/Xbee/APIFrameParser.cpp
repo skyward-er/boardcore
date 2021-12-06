@@ -24,6 +24,9 @@
 
 #include "Debug.h"
 
+namespace Boardcore
+{
+
 namespace Xbee
 {
 
@@ -108,3 +111,5 @@ APIFrameParser::ParseResult APIFrameParser::parse(uint8_t byte, APIFrame* frame)
 }
 
 }  // namespace Xbee
+
+}  // namespace Boardcore

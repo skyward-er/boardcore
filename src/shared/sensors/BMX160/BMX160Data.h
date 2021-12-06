@@ -24,6 +24,9 @@
 
 #include "sensors/SensorData.h"
 
+namespace Boardcore
+{
+
 struct BMX160Data : public AccelerometerData,
                     public GyroscopeData,
                     public MagnetometerData
@@ -90,3 +93,5 @@ struct BMX160FifoStats
            << interrupt_dt << "," << len << "\n";
     }
 };
+
+}  // namespace Boardcore

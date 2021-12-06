@@ -26,6 +26,8 @@
 #include <sensors/BMX160/BMX160.h>
 #include <sensors/BMX160/BMX160WithCorrection.h>
 
+using namespace Boardcore;
+
 constexpr const char *CORRECTION_PARAMETER_FILE = "/sd/bmx160_params.csv";
 
 constexpr int UPDATE_RATE = 5;  // Hz

@@ -27,6 +27,7 @@
 #include "events/Event.h"
 #include "events/HSM.h"
 
+using namespace Boardcore;
 using namespace std;
 using namespace miosix;
 

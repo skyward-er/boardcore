@@ -34,6 +34,9 @@
 #include "RespectScreen.h"
 #include "utils/gui/ScreenManager.h"
 
+namespace Boardcore
+{
+
 class XbeeGUI
 {
 public:
@@ -71,3 +74,5 @@ public:
     EndScreen screen_end{};
     RespectScreen screen_respect{};
 };
+
+}  // namespace Boardcore

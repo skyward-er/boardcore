@@ -57,6 +57,7 @@
 #include "TimestampTimer.h"
 #include "sensors/L3GD20/L3GD20.h"
 
+using namespace Boardcore;
 using namespace miosix;
 using std::array;
 

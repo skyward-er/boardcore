@@ -25,6 +25,9 @@
 
 using namespace std;
 
+namespace Boardcore
+{
+
 SensorSampler::SensorSampler(uint8_t id, uint32_t period, bool is_dma)
     : id(id), period(period), is_dma(is_dma)
 {
@@ -138,3 +141,5 @@ void DMASensorSampler::sampleSensor(AbstractSensor* sensor)
 {
     sensor->sample();
 }
+
+}  // namespace Boardcore

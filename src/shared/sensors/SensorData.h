@@ -24,6 +24,9 @@
 
 #include <ostream>
 
+namespace Boardcore
+{
+
 /**
  * @brief Generic error codes that a sensor can generate.
  *
@@ -140,3 +143,5 @@ struct ADCData
     uint8_t channel_id;
     float voltage;
 };
+
+}  // namespace Boardcore

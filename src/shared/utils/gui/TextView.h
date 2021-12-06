@@ -26,6 +26,9 @@
 
 #include "View.h"
 
+namespace Boardcore
+{
+
 /**
  * @brief Simple view to display text on screen.
  *
@@ -178,3 +181,5 @@ private:
     mxgui::Color col_text = mxgui::white;
     uint8_t padding;
 };
+
+}  // namespace Boardcore

@@ -25,6 +25,7 @@
 #include "Common.h"
 #include "miosix.h"
 
+using namespace Boardcore;
 using namespace std;
 using miosix::Thread;
 using miosix::FastInterruptDisableLock;

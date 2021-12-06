@@ -20,6 +20,8 @@
  * THE SOFTWARE.
  */
 
+#pragma once
+
 enum class InterruptTrigger
 {
     RISING_EDGE,

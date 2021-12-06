@@ -20,8 +20,7 @@
  * THE SOFTWARE.
  */
 
-#ifndef BUSTEMPLATE_H
-#define BUSTEMPLATE_H
+#pragma once
 
 #include <Singleton.h>
 #include <drivers/spi/SensorSpi.h>
@@ -33,6 +32,9 @@
 #include "i2c/stm32f2_f4_i2c.h"
 
 using std::vector;
+
+namespace Boardcore
+{
 
 static const int csDelay = 20;
 
@@ -434,4 +436,4 @@ private:
     ProtocolI2C& operator              =(const ProtocolI2C&& other);
 };
 
-#endif  // BUSTEMPLATE_H
+}  // namespace Boardcore

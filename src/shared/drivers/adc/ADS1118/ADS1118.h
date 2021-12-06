@@ -65,6 +65,9 @@
 #include "drivers/spi/SPIDriver.h"
 #include "sensors/Sensor.h"
 
+namespace Boardcore
+{
+
 /**
  * @brief Driver class for ADS1118 adc
  *
@@ -366,3 +369,5 @@ private:
      */
     static constexpr uint16_t CONFIG_MASK = 0xFE7F;
 };
+
+}  // namespace Boardcore

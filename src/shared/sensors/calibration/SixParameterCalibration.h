@@ -30,6 +30,9 @@
 #include "Calibration.h"
 #include "sensors/SensorData.h"
 
+namespace Boardcore
+{
+
 /*
  * Six-Parameter Calibration uses, for each axis, a coefficient to be multiplied
  * and a constant to be added, so that is verified the formula:
@@ -157,3 +160,5 @@ public:
      */
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 };
+
+}  // namespace Boardcore

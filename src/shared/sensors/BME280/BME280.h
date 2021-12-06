@@ -20,11 +20,16 @@
  * THE SOFTWARE.
  */
 
+#pragma once
+
 #include <diagnostic/PrintLogger.h>
 
 #include "BME280Data.h"
 #include "drivers/spi/SPIDriver.h"
 #include "sensors/Sensor.h"
+
+namespace Boardcore
+{
 
 class BME280 : public Sensor<BME280Data>
 {
@@ -298,3 +303,5 @@ private:
 
     PrintLogger logger = Logging::getLogger("bme280");
 };
+
+}  // namespace Boardcore

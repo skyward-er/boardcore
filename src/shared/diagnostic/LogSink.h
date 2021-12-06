@@ -29,6 +29,9 @@
 
 using miosix::FastMutex;
 
+namespace Boardcore
+{
+
 class LogSink
 {
 public:
@@ -95,3 +98,5 @@ private:
     Logger& logger;
     FastMutex mutex;
 };
+
+}  // namespace Boardcore

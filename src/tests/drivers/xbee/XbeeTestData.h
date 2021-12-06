@@ -32,6 +32,9 @@ using std::array;
 using std::string;
 using std::to_string;
 
+namespace Boardcore
+{
+
 struct XbeeConfig
 {
     long long timestamp;
@@ -150,3 +153,5 @@ struct EnergyScanData
         os << "\n";
     }
 };
+
+}  // namespace Boardcore

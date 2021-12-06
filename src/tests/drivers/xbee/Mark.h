@@ -26,6 +26,10 @@
 #include <ostream>
 
 using std::string;
+
+namespace Boardcore
+{
+
 /**
  * @brief Used to mark a specific instant in the log
  */
@@ -44,3 +48,5 @@ struct Mark
         os << timestamp << "," << seq << "\n";
     }
 };
+
+}  // namespace Boardcore

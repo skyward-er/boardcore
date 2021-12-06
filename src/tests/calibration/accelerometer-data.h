@@ -30,6 +30,9 @@
 #include "sensors/SensorData.h"
 #include "sensors/calibration/Calibration.h"
 
+namespace Boardcore
+{
+
 namespace accData
 {
 constexpr unsigned nOrientations = 6;
@@ -287,3 +290,5 @@ AccelerometerData samples[nOrientations][nSamples] = {
     },
 };
 }  // namespace accData
+
+}  // namespace Boardcore

@@ -20,8 +20,7 @@
  * THE SOFTWARE.
  */
 
-#ifndef ADIS16405DATA_H
-#define ADIS16405DATA_H
+#pragma once
 
 #include <cstdint>
 #include <ostream>
@@ -63,6 +62,3 @@ struct ADIS16405Data
     }
 };
 #pragma pack()
-
-
-#endif

@@ -25,6 +25,8 @@
 
 #include "TimestampTimer.h"
 
+using namespace Boardcore;
+
 ADC_TypeDef& ADCx = *ADC3;
 
 int main()

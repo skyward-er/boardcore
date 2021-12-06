@@ -29,6 +29,9 @@
 
 using namespace Eigen;
 
+namespace Boardcore
+{
+
 /**
  * This type of correction uses a 3x3 matrix multiplied by the input
  * data and adds a 3d vector bias, so that:
@@ -150,3 +153,5 @@ private:
 public:
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 };
+
+}  // namespace Boardcore

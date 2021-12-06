@@ -28,6 +28,9 @@
 #include "GridLayout.h"
 #include "TextView.h"
 
+namespace Boardcore
+{
+
 /**
  * @brief View used to display an option list, so the user can select one by
  * clicking on it.
@@ -167,3 +170,5 @@ private:
 
     TextView* selected_option = nullptr;
 };
+
+}  // namespace Boardcore

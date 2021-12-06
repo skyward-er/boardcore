@@ -33,6 +33,9 @@ using std::function;
 using std::string;
 using std::vector;
 
+namespace Boardcore
+{
+
 /**
  * Class that subscribe to many topics and calls a callback when an event is
  * received.
@@ -107,3 +110,5 @@ private:
     EventBroker& broker;
     OnEventReceived on_event_received;
 };
+
+}  // namespace Boardcore

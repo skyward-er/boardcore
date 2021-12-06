@@ -21,7 +21,11 @@
  */
 
 #pragma once
+
 #include <vector>
+
+namespace Boardcore
+{
 
 // ------------------------ TIME ------------------------
 static const std::vector<float> TIME = {
@@ -2651,3 +2655,5 @@ static const std::vector<float> PRED_STATE_1 = {
 };
 
 static const std::vector<float> PRED_OUT = PRED_STATE_3;
+
+}  // namespace Boardcore

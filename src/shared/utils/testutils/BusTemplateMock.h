@@ -20,12 +20,17 @@
  * THE SOFTWARE.
  */
 
+#pragma once
+
 #include <Singleton.h>
 #include <cstring>
 #include <vector>
 #include <cstdint>
 
 using std::vector;
+
+namespace Boardcore
+{
 
 class BusSPIMock : public Singleton<BusSPIMock>
 {
@@ -154,3 +159,5 @@ private:
 
     mutable vector<uint8_t> MOSI;
 };
+
+}  // namespace Boardcore

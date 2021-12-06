@@ -25,6 +25,9 @@
 #include <cmath>
 #include <cstring>
 
+namespace Boardcore
+{
+
 // Initialize the pwm with 50 Hz frequency and 65535 levels of duty cycle
 Servo::Servo(PWM::Timer t) : pwm(t, 50, 65535)
 {
@@ -91,3 +94,5 @@ float Servo::calculateDutyCycle(float position)
 
     return pulse * frequency / 1000000.0f;
 }
+
+}  // namespace Boardcore

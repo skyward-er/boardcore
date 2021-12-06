@@ -28,6 +28,9 @@
 
 using std::range_error;
 
+namespace Boardcore
+{
+
 /**
  * Implementation of an non-synchronized circular buffer
  */
@@ -165,3 +168,5 @@ protected:
     size_t write_ptr = 0, read_ptr = 0;
     bool empty = true;
 };
+
+}  // namespace Boardcore

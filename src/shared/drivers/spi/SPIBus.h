@@ -34,6 +34,9 @@ using SPIType = SPI_TypeDef;
 using SPIType = FakeSpiTypedef;
 #endif
 
+namespace Boardcore
+{
+
 /**
  * @brief Low level driver for communicating on a SPI Bus, provides
  *        SPIBusInterface.
@@ -300,3 +303,5 @@ inline void SPIBus::configure(SPIBusConfig new_config)
                     | SPI_CR1_SPE;             // Enable SPI
     }
 }
+
+}  // namespace Boardcore

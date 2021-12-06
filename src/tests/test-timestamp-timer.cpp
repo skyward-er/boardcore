@@ -24,6 +24,7 @@
 #include <stdio.h>
 #include "TimestampTimer.h"
 
+using namespace Boardcore;
 using namespace miosix;
 
 int main()

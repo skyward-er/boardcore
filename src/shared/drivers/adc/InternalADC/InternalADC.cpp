@@ -24,6 +24,9 @@
 
 #include "TimestampTimer.h"
 
+namespace Boardcore
+{
+
 InternalADC::InternalADC(ADC_TypeDef& ADCx_, const float V_SUPPLY_,
                          const bool isUsingDMA_,
                          DMA_Stream_TypeDef* DMAx_Streamx_)
@@ -384,3 +387,5 @@ inline void InternalADC::disableADCClock()
         RCC->APB2ENR &= ~RCC_APB2ENR_ADC3EN;
     }
 }
+
+}  // namespace Boardcore

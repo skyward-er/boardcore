@@ -24,6 +24,9 @@
 
 using namespace Eigen;
 
+namespace Boardcore
+{
+
 void operator<<(AccelerometerData& lhs, const Vector3f& rhs)
 {
     lhs.accel_x = rhs[0];
@@ -65,3 +68,5 @@ void operator>>(const MagnetometerData& lhs, Vector3f& rhs)
     rhs[1] = lhs.mag_y;
     rhs[2] = lhs.mag_z;
 }
+
+}  // namespace Boardcore
