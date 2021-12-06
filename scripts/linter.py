@@ -272,8 +272,9 @@ def check_cppcheck(directory):
     linter_print(Colors.GREEN + 'cppcheck' + Colors.RESET)
     # Run cppcheck on the directory
     try:
-        result = check_output(['cppcheck', '-q', '--language=c++', '--template=gcc', '--std=c++11', '--enable=all', '--suppress=unusedFunction',
-                               '--suppress=missingInclude', '--suppress=noExplicitConstructor', directory], stderr=STDOUT)
+        result = check_output(['cppcheck', '-q', '--language=c++', '--template=gcc', '--std=c++11', '--enable=all', '--inline-suppr',
+                               '--suppress=unusedFunction', '--suppress=missingInclude', '--suppress=noExplicitConstructor',
+                               directory], stderr=STDOUT)
 
         # Parse results and count errors
         errors = re.findall(r'\[(\w+)\]', result.decode('utf-8'))
