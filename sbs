@@ -39,28 +39,53 @@ print_banner() {
 EOF
 }
 
-find_deps() {
-    command -v ccache          > /dev/null 2>&1 && config_ccache=true
-    command -v ninja           > /dev/null 2>&1 && config_ninja=true
-    command -v st-flash        > /dev/null 2>&1 && config_stflash=true
-    command -v ST-LINK_CLI.exe > /dev/null 2>&1 && config_stlink=true
+ohai() {
+    printf "${TTY_BLUE}==>${TTY_RESET}${TTY_BOLD} %s${TTY_RESET}\n" "$@";
 }
 
-print_found_deps() {
-    printf "Found Ccache: "; [ "$config_ccache" = true ] && echo "yes" || echo "no"
-    printf "Found Ninja: ";  [ "$config_ninja" = true ]  && echo "yes" || echo "no"
+init_dirs() {
+    sbs_base="$(cd -- "$(dirname "$0")" > /dev/null 2>&1 && pwd -P)"
+    source_dir="$PWD"
+    build_dir="$source_dir/build"
+}
+
+find_deps() {
+    ohai "Find dependencies"
+
+    command -v cmake           > /dev/null 2>&1 && found_cmake=true
+    command -v ccache          > /dev/null 2>&1 && found_ccache=true
+    command -v ninja           > /dev/null 2>&1 && found_ninja=true
+    command -v cppcheck        > /dev/null 2>&1 && found_cppcheck=true
+    command -v clang-format    > /dev/null 2>&1 && found_clangformat=true
+    command -v python          > /dev/null 2>&1 && found_python=true
+    command -v st-flash        > /dev/null 2>&1 && found_stflash=true
+    command -v ST-LINK_CLI.exe > /dev/null 2>&1 && found_stlink=true
+
+    printf "Found CMake: ";        [ "$found_cmake" = true ]       && echo "yes" || echo "no"
+    printf "Found Ccache: ";       [ "$found_ccache" = true ]      && echo "yes" || echo "no"
+    printf "Found Ninja: ";        [ "$found_ninja" = true ]       && echo "yes" || echo "no"
+    printf "Found Cppcheck: ";     [ "$found_cppcheck" = true ]    && echo "yes" || echo "no"
+    printf "Found clang-format: "; [ "$found_clangformat" = true ] && echo "yes" || echo "no"
+    printf "Found Python: ";       [ "$found_python" = true ]      && echo "yes" || echo "no"
+    printf "Found flasher: ";      [ "$found_stflash" = true ]     && echo "st-flash" \
+                                    || ([ "$found_stlink" = true ] && echo "st-link" || echo "no")
     echo
+
+    if [ "$found_cmake" = false ]; then
+        echo "Error: CMake must be installed"
+        exit 1
+    fi
 }
 
 configure() {
-    print_found_deps
-
+    ohai "Configure"
+    
     defs="-DCMAKE_TOOLCHAIN_FILE=$sbs_base/libs/miosix-kernel/miosix/_tools/toolchain.cmake"
     defs="$defs -DCMAKE_C_FLAGS=-fdiagnostics-color=always -DCMAKE_CXX_FLAGS=-fdiagnostics-color=always"
-    [ "$config_ccache" = true ]  && defs="$defs -DCMAKE_C_COMPILER_LAUNCHER=ccache -DCMAKE_CXX_COMPILER_LAUNCHER=ccache"
+    [ "$found_ccache" = true ]   && defs="$defs -DCMAKE_C_COMPILER_LAUNCHER=ccache -DCMAKE_CXX_COMPILER_LAUNCHER=ccache"
     [ "$config_debug" = true ]   && defs="$defs -DCMAKE_BUILD_TYPE=Debug" || defs="$defs -DCMAKE_BUILD_TYPE=Release"
     [ "$config_verbose" = true ] && defs="$defs -DCMAKE_VERBOSE_MAKEFILE:BOOL=ON"
-    [ "$config_ninja" = true ]   && gen="-GNinja" || gen="-GUnix Makefiles"
+    [ "$found_ninja" = true ]    && gen="-GNinja" || gen="-GUnix Makefiles"
 
     if cmake -B"$build_dir" $defs "$gen" "$source_dir"; then
         [ "$config_debug" = true ]   && touch "$build_dir/$DEBUG_FILENAME"   || rm -f "$build_dir/$DEBUG_FILENAME"
@@ -70,7 +95,7 @@ configure() {
 
 check_configured() {
     to_reconfigure=false
-    
+
     if [ ! -d "$build_dir" ]; then
         to_reconfigure=true
     elif [ ! -f "$build_dir/$CMAKE_FILENAME" ]; then
@@ -85,19 +110,74 @@ check_configured() {
         fi
     fi
 
-    [ "$to_reconfigure" = true ] && configure && echo || true
+    if [ "$to_reconfigure" = true ]; then
+        configure
+        echo
+    fi
+    
+    true
 }
 
 build() {
     if check_configured; then
+        ohai "Build"
+        
         cmake --build "$build_dir" $(get_jobs_opt) --target "$1"
     fi
 }
 
+lint_cppcheck() {
+    ohai "Lint (Cppcheck)"
+
+    # Real-time colored output of Cppcheck
+    cppcheck --quiet --language=c++ --enable=all --inline-suppr --suppress=unusedFunction --suppress=missingInclude --error-exitcode=1 "$source_dir/src"
+    echo
+}
+
+lint_clangformat() {
+    ohai "Lint (clang-format)"
+
+    # Real-time colored output of clang-format
+    find "$source_dir/src" -type f \( -iname \*.cpp -o -iname \*.h -o -iname \*.c \) -exec clang-format --dry-run --Werror {} \;
+    echo
+}
+
+lint_copyright() {
+    ohai "Lint (Copyright)"
+
+    "$sbs_base/scripts/linter.py" --copyright "$source_dir/src"
+    echo
+}
+
+lint_find() {
+    ohai "Lint (Find)"
+
+    "$sbs_base/scripts/linter.py" --find "$source_dir/src"
+    echo
+}
+
+lint() {
+    if [ "$found_cppcheck" = true ]; then
+        lint_cppcheck
+    fi
+
+    if [ "$found_clangformat" = true ]; then
+        lint_clangformat
+    fi
+
+    if [ "$found_python" = true ]; then
+        lint_copyright
+        lint_find
+    fi
+}
+
 clean() {
+    ohai "Clean"
+
     if [ -f "$build_dir/$CMAKE_FILENAME" ]; then
         cmake --build "$build_dir" $(get_jobs_opt) --target clean && echo
     fi
+
     echo "Removing build folder..."
     rm -rf "$build_dir"
 }
@@ -105,33 +185,38 @@ clean() {
 flash() {
     if build "$1"; then
         echo
-        if [ -f "$build_dir/$1.bin" ]; then
-            printf "Flashing software: ";
-            [ "$config_stflash" = true ] && echo "st-flash" || ([ "$config_stlink" = true ] && echo "st-link" || "no")
-            echo
+        ohai "Flash"
 
-            if [ "$config_stflash" = true ]; then
-                st-flash --reset write "$build_dir/$1.bin" 0x8000000
-            elif [ "$config_stlink" = true ]; then
-                ST-LINK_CLI.exe -P "$build_dir/$1.bin" 0x8000000 -V -Rst
-            else
-                echo "Error: No flashing software found!"
-            fi
-        else
+        if [ ! -f "$build_dir/$1.bin" ]; then
             echo "Error: target '$1' is not flashable"
+            return 1
+        fi
+
+        if [ "$found_stflash" = true ]; then
+            st-flash --reset write "$build_dir/$1.bin" 0x8000000
+        elif [ "$found_stlink" = true ]; then
+            ST-LINK_CLI.exe -P "$build_dir/$1.bin" 0x8000000 -V -Rst
+        else
+            echo "Error: No flashing software found!"
         fi
     fi
 }
 
 list() {
     if check_configured; then
+        ohai "List targets"
+
         echo "[1/1] All SBS targets available:"
         cmake --build "$build_dir" $(get_jobs_opt) --target help | grep -o '^[^/]*\.bin' | cut -f 1 -d '.'
     fi
 }
 
 boards() {
-    build help-boards
+    if check_configured; then
+        ohai "List boards"
+
+        cmake --build "$build_dir" $(get_jobs_opt) --target help-boards
+    fi
 }
 
 build_all() {
@@ -154,10 +239,6 @@ get_jobs_opt() {
     [ -n "$build_jobs" ] && echo "-j $build_jobs" || echo
 }
 
-lint() {
-    "$sbs_base/scripts/linter.sh" "$source_dir/src/shared"
-}
-
 usage() {
     cat <<EOF
 Usage: $(basename "$0") [OPTIONS]
@@ -174,29 +255,34 @@ OPTIONS:
   -v, --verbose         Print a verbose output
   -l, --list            List all targets available
   -r, --boards          List all boards available
-  -n, --lint            Run the linter
+  -n, --lint            Lint the code
 EOF
 }
 
 CMAKE_FILENAME="CMakeCache.txt"
 DEBUG_FILENAME=".sbs_debug"
 VERBOSE_FILENAME=".sbs_verbose"
+TTY_BLUE="\033[34m"
+TTY_BOLD="\033[1m"
+TTY_RESET="\033[0m"
 
-print_banner
-
-sbs_base="$(cd -- "$(dirname "$0")" > /dev/null 2>&1 && pwd -P)"
-source_dir="$PWD"
-build_dir="$source_dir/build"
-
-config_ccache=false
+sbs_base=
+source_dir=
+build_dir=
+found_cmake=false
+found_ccache=false
+found_ninja=false
+found_cppcheck=false
+found_clangformat=false
+found_python=false
+found_stflash=false
+found_stlink=false
 config_debug=false
 config_verbose=false
-config_ninja=false
-config_stflash=false
-config_stlink=false
 build_jobs=
 
-find_deps
+print_banner
+init_dirs
 
 for arg in "$@"; do
     shift
@@ -218,18 +304,19 @@ done
 while getopts hcb:f:j:dvlrn opt; do
     case "$opt" in
         h)  usage; exit 0;;
-        c)  clean; exit;;
-        b)  build "$OPTARG"; exit;;
-        f)  flash "$OPTARG"; exit;;
+        c)  find_deps; clean; exit;;
+        b)  find_deps; build "$OPTARG"; exit;;
+        f)  find_deps; flash "$OPTARG"; exit;;
         j)  set_jobs "$OPTARG";;
         d)  set_debug;;
         v)  set_verbose;;
-        l)  list; exit;;
-        r)  boards; exit;;
-        n)  lint; exit;;
+        l)  find_deps; list; exit;;
+        r)  find_deps; boards; exit;;
+        n)  find_deps; lint; exit;;
         ?)  usage; exit 2;;
     esac
 done
 shift $((OPTIND - 1))
 
+find_deps
 build_all
