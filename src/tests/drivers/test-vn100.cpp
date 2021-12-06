@@ -25,6 +25,7 @@
 #include <sensors/VN100/VN100.h>
 
 using namespace miosix;
+using namespace Boardcore;
 
 int main()
 {
