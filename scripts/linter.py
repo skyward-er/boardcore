@@ -186,7 +186,7 @@ def check_format(directory):
 
     # Walk throgh the directory and check each file
     for dirpath, dirnames, filenames in walk(directory):
-        for filename in [f for f in filenames if f.endswith(('.cpp', '.h'))]:
+        for filename in [f for f in filenames if f.endswith(('.cpp', '.h', 'c'))]:
             totalCheckdFilesCounter += 1
 
             # Prepare the complete filepath
