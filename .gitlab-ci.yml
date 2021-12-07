@@ -29,35 +29,43 @@ stages:
 
 # Stage build
 
-build:
+build-release:
   stage: build
   tags:
     - miosix
   script:
     - ./sbs
 
+build-debug:
+  stage: build
+  tags:
+    - miosix
+  script:
+    - ./sbs --debug
+
 # Stage lint
-
-copyright:
-  stage: lint
-  script:
-    - ./scripts/linter.py --copyright src
-
-format:
-  stage: lint
-  script:
-    - ./scripts/linter.py --format src
-
-find:
-  stage: lint
-  script:
-    - ./scripts/linter.py --find src
 
 cppcheck:
   stage: lint
   script:
     - ./scripts/linter.py --cppcheck src
   allow_failure: true
+
+format:
+  stage: lint
+  script:
+    - ./scripts/linter.py --format src
+  allow_failure: true
+
+copyright:
+  stage: lint
+  script:
+    - ./scripts/linter.py --copyright src
+
+find:
+  stage: lint
+  script:
+    - ./scripts/linter.py --find src
 
 # Stage documentation
 

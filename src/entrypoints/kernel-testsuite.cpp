@@ -815,7 +815,7 @@ static void test_2()
         // test will pass only if tickSkew works
         if (t2_v1 == false)
             fail("tickSkew in restartKernel");
-        if (failed)
+        if (failed)  // cppcheck-suppress knownConditionTrueFalse
             fail("pauseKernel");
     }
     t2_p_v1->terminate();
@@ -1140,10 +1140,9 @@ static void test_5()
     Thread::sleep(5);
     if (t5_v1 == false)
         fail("variable not updated");
-    int i;
     // Since the other thread is waiting, must not update t5_v1
     t5_v1 = false;
-    for (i = 0; i < 4; i++)
+    for (int i = 0; i < 4; i++)
     {
         Thread::sleep(100);
         if (t5_v1 == true)
@@ -1158,7 +1157,7 @@ static void test_5()
         fail("Thread::wakeup");
     // Since the other thread is waiting, must not update t5_v1
     t5_v1 = false;
-    for (i = 0; i < 4; i++)
+    for (int i = 0; i < 4; i++)
     {
         Thread::sleep(100);
         if (t5_v1 == true)
@@ -1579,11 +1578,11 @@ static void test_6()
     // Testing recursive mutexes
     //
     {
-        Lock<Mutex> l(t6_m5);
+        Lock<Mutex> l1(t6_m5);
         {
-            Lock<Mutex> l(t6_m5);
+            Lock<Mutex> l2(t6_m5);
             {
-                Lock<Mutex> l(t6_m5);
+                Lock<Mutex> l3(t6_m5);
                 t = Thread::create(t6_p6, STACK_SMALL, 0,
                                    reinterpret_cast<void *>(&t6_m5));
                 Thread::sleep(10);
@@ -1710,11 +1709,11 @@ static void test_6()
     // Testing recursive mutexes
     //
     {
-        Lock<FastMutex> l(t6_m5a);
+        Lock<FastMutex> l1(t6_m5a);
         {
-            Lock<FastMutex> l(t6_m5a);
+            Lock<FastMutex> l2(t6_m5a);
             {
-                Lock<FastMutex> l(t6_m5a);
+                Lock<FastMutex> l3(t6_m5a);
                 t = Thread::create(t6_p6a, STACK_SMALL, 0,
                                    reinterpret_cast<void *>(&t6_m5a));
                 Thread::sleep(10);
@@ -1978,21 +1977,20 @@ static void test_8()
     // Test queue between threads
     t8_q1.reset();
     t8_q2.reset();
-    Thread *p = Thread::create(t8_p1, STACK_SMALL, 0, NULL);
-    int i, j;
+    Thread *p  = Thread::create(t8_p1, STACK_SMALL, 0, NULL);
     char write = 'A', read = 'A';
-    for (i = 1; i <= 8; i++)
+    for (int i = 1; i <= 8; i++)
     {
-        for (j = 0; j < i; j++)
+        for (int j = 0; j < i; j++)
         {
             t8_q1.put(write);
             write++;  // Advance to next char, to check order
         }
-        for (j = 0; j < i; j++)
+        for (int j = 0; j < i; j++)
         {
-            char c;
-            t8_q2.get(c);
-            if (c != read)
+            char d;
+            t8_q2.get(d);
+            if (d != read)
                 fail("put or get (1)");
             read++;
         }
@@ -2003,7 +2001,7 @@ static void test_8()
     write = 'A';
     read  = 'A';
     disableInterrupts();  //
-    for (j = 0; j < 8; j++)
+    for (int j = 0; j < 8; j++)
     {
         if (t8_q1.isFull())
         {
@@ -2018,11 +2016,11 @@ static void test_8()
         write++;  // Advance to next char, to check order
     }
     enableInterrupts();  //
-    for (j = 0; j < 8; j++)
+    for (int j = 0; j < 8; j++)
     {
-        char c;
-        t8_q2.get(c);
-        if (c != read)
+        char d;
+        t8_q2.get(d);
+        if (d != read)
             fail("IRQput (2)");
         read++;
     }
@@ -2031,7 +2029,7 @@ static void test_8()
     t8_q2.reset();
     write = 'A';
     read  = 'A';
-    for (j = 0; j < 8; j++)
+    for (int j = 0; j < 8; j++)
     {
         disableInterrupts();  //
         t8_q1.IRQput(write);
@@ -2043,10 +2041,10 @@ static void test_8()
         disableInterrupts();  //
         if (t8_q2.isEmpty() == true)
             fail("waitUntilNotEmpty()");
-        char c = '\0';
-        if (t8_q2.IRQget(c) == false)
+        char d = '\0';
+        if (t8_q2.IRQget(d) == false)
             fail("IRQget (1)");
-        if (c != read)
+        if (d != read)
             fail("IRQget (2)");
         read++;
         enableInterrupts();  //
@@ -2404,7 +2402,7 @@ void test_14()
     // Test 1: join on joinable, not already deleted
     void *result = 0;
     t            = Thread::create(t14_p2, STACK_SMALL, 0, (void *)0xdeadbeef,
-                       Thread::JOINABLE);
+                                  Thread::JOINABLE);
     Thread::yield();
     if (t->join(&result) == false)
         fail("Thread::join (1)");
@@ -2444,7 +2442,7 @@ void test_14()
     // Test 6: join on already deleted
     result = 0;
     t      = Thread::create(t14_p1, STACK_SMALL, 0, (void *)0xdeadbeef,
-                       Thread::JOINABLE);
+                            Thread::JOINABLE);
     t->terminate();
     Thread::sleep(10);
     if (Thread::exists(t) == false)
@@ -3002,9 +3000,9 @@ static void test_18()
     {
         short a;
         unsigned char b[2];
-    } test;
-    test.a = 0x1234;
-    if (test.b[0] == 0x12)
+    } test_union;
+    test_union.a = 0x1234;
+    if (test_union.b[0] == 0x12)
     {
         // Runtime check says our CPU is big endian
         if (toBigEndian16(0x0123) != 0x0123 ||
@@ -3698,20 +3696,20 @@ static void test_22()
     if (x != 13)
         fail("atomicCompareAndSwap 4");
 
-    t22_s1 data;
-    t22_s1 *dataPtr = &data;
-    void *const volatile *ptr =
-        reinterpret_cast<void *const volatile *>(&dataPtr);
-    data.a = 0;
-    data.b = 10;
+    t22_s1 data1;
+    t22_s1 *dataPtr1 = &data1;
+    void *const volatile *ptr1 =
+        reinterpret_cast<void *const volatile *>(&dataPtr1);
+    data1.a = 0;
+    data1.b = 10;
 
-    if (atomicFetchAndIncrement(ptr, 0, 2) != dataPtr)
+    if (atomicFetchAndIncrement(ptr1, 0, 2) != dataPtr1)
         fail("atomicFetchAndIncrement 1");
-    if (data.a != 2)
+    if (data1.a != 2)
         fail("atomicFetchAndIncrement 2");
-    if (atomicFetchAndIncrement(ptr, 1, -2) != dataPtr)
+    if (atomicFetchAndIncrement(ptr1, 1, -2) != dataPtr1)
         fail("atomicFetchAndIncrement 3");
-    if (data.b != 8)
+    if (data1.b != 8)  // cppcheck-suppress knownConditionTrueFalse
         fail("atomicFetchAndIncrement 4");
 
     // Check that the implementation works with interrupts disabled too
@@ -3721,61 +3719,61 @@ static void test_22()
         FastInterruptDisableLock dLock;
         t22_v5 = false;
 
-        int x = 10;
-        if (atomicSwap(&x, 20) != 10)
+        int y = 10;
+        if (atomicSwap(&y, 20) != 10)
             error = true;
-        if (x != 20)
+        if (y != 20)
             error = true;
 
         delayMs(5);  // Wait to check that interrupts are disabled
 
-        x = 10;
+        y = 10;
         atomicAdd(&x, -5);
-        if (x != 5)
+        if (y != 5)
             error = true;
 
         delayMs(5);  // Wait to check that interrupts are disabled
 
-        x = 10;
+        y = 10;
         if (atomicAddExchange(&x, 5) != 10)
             error = true;
-        if (x != 15)
+        if (y != 15)
             error = true;
 
         delayMs(5);  // Wait to check that interrupts are disabled
 
-        x = 10;
-        if (atomicCompareAndSwap(&x, 11, 12) != 10)
+        y = 10;
+        if (atomicCompareAndSwap(&y, 11, 12) != 10)
             error = true;
-        if (x != 10)
+        if (y != 10)
             error = true;
-        if (atomicCompareAndSwap(&x, 10, 13) != 10)
+        if (atomicCompareAndSwap(&y, 10, 13) != 10)
             error = true;
-        if (x != 13)
+        if (y != 13)
             error = true;
 
         delayMs(5);  // Wait to check that interrupts are disabled
 
-        t22_s1 data;
-        t22_s1 *dataPtr = &data;
-        void *const volatile *ptr =
-            reinterpret_cast<void *const volatile *>(&dataPtr);
-        data.a = 0;
-        data.b = 10;
-        if (atomicFetchAndIncrement(ptr, 0, 2) != dataPtr)
+        t22_s1 data2;
+        t22_s1 *dataPtr2 = &data2;
+        void *const volatile *ptr2 =
+            reinterpret_cast<void *const volatile *>(&dataPtr2);
+        data2.a = 0;
+        data2.b = 10;
+        if (atomicFetchAndIncrement(ptr2, 0, 2) != dataPtr2)
             error = true;
-        if (data.a != 2)
+        if (data2.a != 2)
             error = true;
-        if (atomicFetchAndIncrement(ptr, 1, -2) != dataPtr)
+        if (atomicFetchAndIncrement(ptr2, 1, -2) != dataPtr2)
             error = true;
-        if (data.b != 8)
+        if (data2.b != 8)  // cppcheck-suppress knownConditionTrueFalse
             error = true;
 
         delayMs(5);  // Wait to check that interrupts are disabled
         if (t22_v5)
             error = true;
     }
-    if (error)
+    if (error)  // cppcheck-suppress knownConditionTrueFalse
         fail("Interrupt test not passed");
 
     t2->terminate();
@@ -3881,7 +3879,7 @@ class Middle1 : public Base1, public IntrusiveRefCounted
 {
 public:
     Middle1() : b(0) {}
-    virtual void check()
+    virtual void check() override
     {
         Base1::check();
         assert(b == 0);
@@ -3907,7 +3905,7 @@ class Derived1 : public Middle1, public Other
 {
 public:
     Derived1() : d(0) {}
-    virtual void check()
+    virtual void check() override
     {
         Middle1::check();
         Other::check();
@@ -3923,7 +3921,7 @@ class Derived2 : public Other, public Middle1
 {
 public:
     Derived2() : e(0) {}
-    virtual void check()
+    virtual void check() override
     {
         Other::check();
         Middle1::check();
@@ -3954,7 +3952,7 @@ class Derived0 : public Base0
 {
 public:
     Derived0() : g(0) {}
-    virtual void check()
+    virtual void check() override
     {
         Base0::check();
         assert(g == 0);
@@ -4440,10 +4438,9 @@ static void fs_t1_p1(void *argv)
     setbuf(f, NULL);
     char *buf = new char[512];
     memset(buf, '1', 512);
-    int i, j;
-    for (i = 0; i < 512; i++)
+    for (int i = 0; i < 512; i++)
     {
-        j = fwrite(buf, 1, 512, f);
+        int j = fwrite(buf, 1, 512, f);
         if (j != 512)
         {
             iprintf("Written %d bytes instead of 512\n", j);
@@ -4473,10 +4470,9 @@ static void fs_t1_p2(void *argv)
     setbuf(f, NULL);
     char *buf = new char[512];
     memset(buf, '2', 512);
-    int i, j;
-    for (i = 0; i < 512; i++)
+    for (int i = 0; i < 512; i++)
     {
-        j = fwrite(buf, 1, 512, f);
+        int j = fwrite(buf, 1, 512, f);
         if (j != 512)
         {
             iprintf("Written %d bytes instead of 512\n", j);
@@ -4506,10 +4502,9 @@ static void fs_t1_p3(void *argv)
     setbuf(f, NULL);
     char *buf = new char[512];
     memset(buf, '3', 512);
-    int i, j;
-    for (i = 0; i < 512; i++)
+    for (int i = 0; i < 512; i++)
     {
-        j = fwrite(buf, 1, 512, f);
+        int j = fwrite(buf, 1, 512, f);
         if (j != 512)
         {
             iprintf("Written %d bytes instead of 512\n", j);
@@ -4569,10 +4564,11 @@ static void fs_test_1()
     // file_1.txt
     if ((f = fopen("/sd/testdir/file_1.txt", "r")) == NULL)
         fail("can't open file_1.txt");
-    setbuf(f, NULL);
+    setbuf(f, NULL);  // cppcheck-suppress nullPointerRedundantCheck
     i = 0;
     for (;;)
     {
+        // cppcheck-suppress nullPointerRedundantCheck
         j = fread(buf, 1, 1024, f);
         if (j == 0)
             break;
@@ -4588,10 +4584,11 @@ static void fs_test_1()
     // file_2.txt
     if ((f = fopen("/sd/testdir/file_2.txt", "r")) == NULL)
         fail("can't open file_2.txt");
-    setbuf(f, NULL);
+    setbuf(f, NULL);  // cppcheck-suppress nullPointerRedundantCheck
     i = 0;
     for (;;)
     {
+        // cppcheck-suppress nullPointerRedundantCheck
         j = fread(buf, 1, 1024, f);
         if (j == 0)
             break;
@@ -4607,10 +4604,11 @@ static void fs_test_1()
     // file_3.txt
     if ((f = fopen("/sd/testdir/file_3.txt", "r")) == NULL)
         fail("can't open file_3.txt");
-    setbuf(f, NULL);
+    setbuf(f, NULL);  // cppcheck-suppress nullPointerRedundantCheck
     i = 0;
     for (;;)
     {
+        // cppcheck-suppress nullPointerRedundantCheck
         j = fread(buf, 1, 1024, f);
         if (j == 0)
             break;
@@ -4627,20 +4625,25 @@ static void fs_test_1()
     // Testing fprintf
     if ((f = fopen("/sd/testdir/file_4.txt", "w")) == NULL)
         fail("can't open w file_4.txt");
+    // cppcheck-suppress nullPointerRedundantCheck
     fprintf(f, "Hello world line 001\n");
-    if (fclose(f) != 0)
+    if (fclose(f) != 0)  // cppcheck-suppress nullPointerRedundantCheck
         fail("Can't close w file_4.txt");
     // Testing append
     if ((f = fopen("/sd/testdir/file_4.txt", "a")) == NULL)
         fail("can't open a file_4.txt");
     for (i = 2; i <= 128; i++)
+    {
+        // cppcheck-suppress nullPointerRedundantCheck
         fprintf(f, "Hello world line %03d\n", i);
-    if (fclose(f) != 0)
+    }
+    if (fclose(f) != 0)  // cppcheck-suppress nullPointerRedundantCheck
         fail("Can't close a file_4.txt");
     // Reading to check (only first 2 lines)
     if ((f = fopen("/sd/testdir/file_4.txt", "r")) == NULL)
         fail("can't open r file_4.txt");
     char line[80];
+    // cppcheck-suppress nullPointerRedundantCheck
     fgets(line, sizeof(line), f);
     if (strcmp(line, "Hello world line 001\n"))
         fail("file_4.txt line 1 error");
@@ -4656,7 +4659,7 @@ static void fs_test_1()
     // Hello world line 128\n
     if ((f = fopen("/sd/testdir/file_4.txt", "r")) == NULL)
         fail("can't open r2 file_4.txt");
-    if (ftell(f) != 0)
+    if (ftell(f) != 0)  // cppcheck-suppress nullPointerRedundantCheck
         fail("File opend but cursor not @ address 0");
     fseek(f, -4, SEEK_END);  // Seek to 128\n
     if ((fgetc(f) != '1') | (fgetc(f) != '2') | (fgetc(f) != '8'))
@@ -4689,7 +4692,7 @@ static void fs_test_1()
     // Testing remove()
     if ((f = fopen("/sd/testdir/deleteme.txt", "w")) == NULL)
         fail("can't open deleteme.txt");
-    if (fclose(f) != 0)
+    if (fclose(f) != 0)  // cppcheck-suppress nullPointerRedundantCheck
         fail("Can't close deleteme.txt");
     remove("/sd/testdir/deleteme.txt");
     if ((f = fopen("/sd/testdir/deleteme.txt", "r")) != NULL)
@@ -4760,7 +4763,9 @@ static void checkInDir(const std::string &d, bool createFile)
     if ((f = fopen((d + filename1).c_str(), "w")) == NULL)
         fail("fopen");
     const char teststr[] = "Testing\n";
+    // cppcheck-suppress nullPointerRedundantCheck
     fputs(teststr, f);
+    // cppcheck-suppress nullPointerRedundantCheck
     fclose(f);
     if (checkDirContent(d, filename1, 0) == false)
         fail("fopen 2");
@@ -4772,7 +4777,7 @@ static void checkInDir(const std::string &d, bool createFile)
     if ((f = fopen((d + filename2).c_str(), "r")) == NULL)
         fail("fopen");
     char s[32];
-    fgets(s, sizeof(s), f);
+    fgets(s, sizeof(s), f);  // cppcheck-suppress nullPointerRedundantCheck
     if (strcmp(s, teststr))
         fail("file content after rename");
     fclose(f);
@@ -4816,7 +4821,7 @@ static void fs_test_3()
     FILE *f;
     if ((f = fopen(name, "w")) == NULL)
         fail("open 1");
-    setbuf(f, NULL);
+    setbuf(f, NULL);  // cppcheck-suppress nullPointerRedundantCheck
     char *buf               = new char[size];
     unsigned short checksum = 0;
     for (unsigned int i = 0; i < numBlocks; i++)
@@ -4824,6 +4829,7 @@ static void fs_test_3()
         for (unsigned int j = 0; j < size; j++)
             buf[j] = rand() & 0xff;
         checksum ^= crc16(buf, size);
+        // cppcheck-suppress nullPointerRedundantCheck
         if (fwrite(buf, 1, size, f) != size)
             fail("write");
     }
@@ -4832,11 +4838,12 @@ static void fs_test_3()
 
     if ((f = fopen(name, "r")) == NULL)
         fail("open 2");
-    setbuf(f, NULL);
+    setbuf(f, NULL);  // cppcheck-suppress nullPointerRedundantCheck
     unsigned short outChecksum = 0;
     for (unsigned int i = 0; i < numBlocks; i++)
     {
         memset(buf, 0, size);
+        // cppcheck-suppress nullPointerRedundantCheck
         if (fread(buf, 1, size, f) != size)
             fail("read");
         outChecksum ^= crc16(buf, size);
@@ -4955,7 +4962,9 @@ unsigned int checkInodes(const char *dir, unsigned int curInode,
 static void fs_test_4()
 {
     test_name("Directory listing");
+    // cppcheck-suppress unreadVariable
     unsigned int curInode = 0, parentInode = 0, devFsInode = 0, sdInode = 0;
+    // cppcheck-suppress unreadVariable
     short curDevice = 0, devDevice = 0, sdDevice = 0;
     DIR *d = opendir("/");
     if (d == NULL)
@@ -4999,8 +5008,8 @@ static void fs_test_4()
         {
             if (de->d_type != DT_DIR)
                 fail("d_type");
-            devFsInode = st.st_ino;
-            devDevice  = st.st_dev;
+            devFsInode = st.st_ino;  // cppcheck-suppress unreadVariable
+            devDevice  = st.st_dev;  // cppcheck-suppress unreadVariable
         }
         else if (!strcmp(de->d_name, "sd"))
         {

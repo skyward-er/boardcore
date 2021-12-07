@@ -186,7 +186,7 @@ def check_format(directory):
 
     # Walk throgh the directory and check each file
     for dirpath, dirnames, filenames in walk(directory):
-        for filename in [f for f in filenames if f.endswith(('.cpp', '.h'))]:
+        for filename in [f for f in filenames if f.endswith(('.cpp', '.h', 'c'))]:
             totalCheckdFilesCounter += 1
 
             # Prepare the complete filepath
@@ -272,8 +272,9 @@ def check_cppcheck(directory):
     linter_print(Colors.GREEN + 'cppcheck' + Colors.RESET)
     # Run cppcheck on the directory
     try:
-        result = check_output(['cppcheck', '-q', '--language=c++', '--template=gcc', '--std=c++11', '--enable=all', '--suppress=unusedFunction',
-                               '--suppress=missingInclude', '--suppress=noExplicitConstructor', directory], stderr=STDOUT)
+        result = check_output(['cppcheck', '-q', '--language=c++', '--template=gcc', '--std=c++11', '--enable=all', '--inline-suppr',
+                               '--suppress=unusedFunction', '--suppress=missingInclude', '--suppress=noExplicitConstructor',
+                               directory], stderr=STDOUT)
 
         # Parse results and count errors
         errors = re.findall(r'\[(\w+)\]', result.decode('utf-8'))

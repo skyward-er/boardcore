@@ -42,22 +42,6 @@ foreach(OPT_BOARD ${BOARDS})
         ${SBS_BASE}/src/shared/drivers/hbridge/HBridge.cpp
         ${SBS_BASE}/src/shared/drivers/i2c/stm32f2_f4_i2c.cpp
         ${SBS_BASE}/src/shared/drivers/interrupt/external_interrupts.cpp
-        #${SBS_BASE}/src/shared/drivers/old_examples/ethernet/PacketBuffer.cpp
-        #${SBS_BASE}/src/shared/drivers/old_examples/ethernet/UdpManager.cpp
-        #${SBS_BASE}/src/shared/drivers/old_examples/ethernet/W5200/spi_impl.cpp
-        #${SBS_BASE}/src/shared/drivers/old_examples/ethernet/W5200/w5200.cpp
-        #${SBS_BASE}/src/shared/drivers/old_examples/ethernet/WatchdogTimer.cpp
-        #${SBS_BASE}/src/shared/drivers/old_examples/ISB_protocol/IsbProtocol_serial2.cpp
-        #${SBS_BASE}/src/shared/drivers/old_examples/ISB_protocol/IsbProtocol_serial3.cpp
-        #${SBS_BASE}/src/shared/drivers/old_examples/interrupt/InterruptManager.cpp
-        #${SBS_BASE}/src/shared/drivers/old_examples/Leds.cpp
-        #${SBS_BASE}/src/shared/drivers/old_examples/memory/MultiFlashController.cpp
-        #${SBS_BASE}/src/shared/drivers/old_examples/modbus/PDU.cpp
-        #${SBS_BASE}/src/shared/drivers/old_examples/modbus/slave/RtuSlave.cpp
-        #${SBS_BASE}/src/shared/drivers/old_examples/modbus/slave/SlaveEngine.cpp
-        #${SBS_BASE}/src/shared/drivers/old_examples/modbus/slave/old/SlaveInterface.cpp
-        #${SBS_BASE}/src/shared/drivers/old_examples/modbus/slave/old/Timer.cpp
-        #${SBS_BASE}/src/shared/drivers/old_examples/piksi/piksi.cpp
         ${SBS_BASE}/src/shared/drivers/pwm/pwm.cpp
         ${SBS_BASE}/src/shared/drivers/servo/servo.cpp
         ${SBS_BASE}/src/shared/drivers/spi/SPITransaction.cpp
@@ -70,7 +54,6 @@ foreach(OPT_BOARD ${BOARDS})
 
         # Logger
         ${SBS_BASE}/src/shared/logger/Logger.cpp
-        #${SBS_BASE}/src/shared/logger/decoder/logdecoder.cpp
 
         # Math
         ${SBS_BASE}/src/shared/math/Matrix.cpp

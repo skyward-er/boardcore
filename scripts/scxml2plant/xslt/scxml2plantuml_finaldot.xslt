@@ -35,7 +35,7 @@
 
     <xsl:apply-templates select="@initial"/>
     <xsl:apply-templates select="*"/>
-    
+
     <xsl:text>}&#xa;</xsl:text>
   </xsl:template>
 
@@ -43,7 +43,7 @@
     <xsl:text>state </xsl:text>
     <xsl:apply-templates select="." mode="id"/>
     <xsl:text> {&#xa;</xsl:text>
-    
+
     <xsl:apply-templates select="*"/>
 
     <xsl:apply-templates select="." mode="id"/>
