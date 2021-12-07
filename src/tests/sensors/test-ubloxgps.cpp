@@ -21,7 +21,7 @@
  */
 
 #include <Common.h>
-#include <drivers/gps/ublox/UbloxGPS.h>
+#include <sensors/UbloxGPS/UbloxGPS.h>
 #include <drivers/timer/TimestampTimer.h>
 
 #include <cstdio>
