@@ -235,7 +235,7 @@ public:
     enum sensMode
     {
         MODE_BAROMETER = 0x01,
-        MODE_ALTIMETER = 0x02        
+        MODE_ALTIMETER = 0x02
     };
     // clang-format on
 

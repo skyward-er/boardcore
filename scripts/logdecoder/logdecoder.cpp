@@ -23,11 +23,11 @@
  *                                                                         *
  *   You should have received a copy of the GNU General Public License     *
  *   along with this program; if not, see <http://www.gnu.org/licenses/>   *
- ***************************************************************************/ 
+ ***************************************************************************/
 
 /*
  * This is a stub program for the program that will decode the logged data.
- * Fill in the TODO to make it work. 
+ * Fill in the TODO to make it work.
  */
 
 #include <iostream>

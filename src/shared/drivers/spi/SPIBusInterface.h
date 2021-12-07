@@ -106,10 +106,10 @@ struct SPIBusConfig
     {
         // Compare member-by-member
         // clang-format off
-        return  clock_div == other.clock_div 
+        return  clock_div == other.clock_div
              && mode == other.mode
              && bit_order == other.bit_order
-             && cs_setup_time_us == other.cs_setup_time_us 
+             && cs_setup_time_us == other.cs_setup_time_us
              && cs_setup_time_us == other.cs_hold_time_us;
         // clang-format on
     }

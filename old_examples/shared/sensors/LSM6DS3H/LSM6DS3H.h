@@ -84,9 +84,9 @@ public:
         miosix::Thread::sleep(100);
 
         // clang-format off
-        uint8_t init_data[][2] = 
+        uint8_t init_data[][2] =
         {
-            {RegMap::CTRL3_C, 0x44}, // Register address automatically incremented during a multiple 
+            {RegMap::CTRL3_C, 0x44}, // Register address automatically incremented during a multiple
                                      // byte access with a serial interface; LSB @ lower address;
                                      // SPI 4 wire; Output registers not updated until MSB and LSB
                                      // have been read

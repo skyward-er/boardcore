@@ -145,7 +145,7 @@ public:
         ACC_FS_4G      = 2,
         ACC_FS_2G      = 3,
     };
-    
+
     enum gyroFullScale
     {
         GYRO_FS_2000   = 0,
@@ -193,7 +193,7 @@ private:
         MIF_CFG        = 0x16,
         OTP_STS_CFG    = 0x1C,
 
-        WHO_AM_I       = 0x20, 
+        WHO_AM_I       = 0x20,
         EXT_STATUS     = 0x22,
 
         GYRO_X_H       = 0x24,

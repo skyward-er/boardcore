@@ -220,17 +220,17 @@ public:
         DR_100HZ  = 3,
         DR_50HZ   = 4,
         DR_25HZ   = 5,
-        DR_12_5HZ = 6            
+        DR_12_5HZ = 6
     };
-    
-    enum opModes 
+
+    enum opModes
     {
         STANDBY = 0x00,
         READY   = 0x01,
         ACTIVE  = 0x02
     };
-    
-    enum gyroFullScale 
+
+    enum gyroFullScale
     {
         DPS2000 = 0x00,
         DPS1000 = 0x01,
@@ -246,7 +246,7 @@ private:
 
     // clang-format off
     enum regMap
-    { 
+    {
         REG_STATUS          = 0x00,
         REG_OUT_X_MSB       = 0x01,
         REG_OUT_X_LSB       = 0x02,
@@ -266,9 +266,9 @@ private:
         REG_RT_THF          = 0x10,
         REG_RT_CNT          = 0x11,
         REG_TEMP            = 0x12,
-        REG_CTRL1           = 0x13, 
+        REG_CTRL1           = 0x13,
         REG_CTRL2           = 0x14,
-        REG_CTRL3           = 0x15            
+        REG_CTRL3           = 0x15
     };
     // clang-format on
 

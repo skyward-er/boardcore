@@ -45,11 +45,11 @@
     {
         miosix::Lock<miosix::FastMutex> lock(m);
         // Sincronize TRACEs
-        
+
         va_list argptr;
         va_start(argptr, format);
 
-        
+
         printf("%.2f> ", miosix::getTick()/1000.0f);
         vprintf(format, argptr);
 
@@ -76,9 +76,9 @@
     static inline void logStack(std::string thread_name)
     {
         using namespace miosix;
-        printf("[STACK %s] Abs: %d, Curr: %d, Size: %d\n", thread_name.c_str(), 
-                    (int)MemoryProfiling::getAbsoluteFreeStack(), 
-                    (int)MemoryProfiling::getCurrentFreeStack(), 
+        printf("[STACK %s] Abs: %d, Curr: %d, Size: %d\n", thread_name.c_str(),
+                    (int)MemoryProfiling::getAbsoluteFreeStack(),
+                    (int)MemoryProfiling::getCurrentFreeStack(),
                     (int)MemoryProfiling::getStackSize());
     }
 

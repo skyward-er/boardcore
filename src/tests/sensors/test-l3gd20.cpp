@@ -179,13 +179,13 @@ int main()
     for (int i = 1; i < data_counter; i++)
     {
         // clang-format off
-         printf("%d,%llu,%llu,%llu,%f,%f,%f,%.2f\n", 
+         printf("%d,%llu,%llu,%llu,%f,%f,%f,%.2f\n",
                 0,
-                data[i].timestamp, 
+                data[i].timestamp,
                 hrclock.toIntMicroSeconds(data[i].sample_delta),
                 (data[i].timestamp - data[i - 1].timestamp),
-                data[i].data.gyro_x, 
-                data[i].data.gyro_y, 
+                data[i].data.gyro_x,
+                data[i].data.gyro_y,
                 data[i].data.gyro_z,
                 data[i].cpu);
         // clang-format on

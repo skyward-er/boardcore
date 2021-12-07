@@ -41,8 +41,8 @@ public:
     std::vector<SPIRequest> buildDMARequest() override
     {
         // clang-format off
-        std::vector<uint8_t> v = 
-        { 
+        std::vector<uint8_t> v =
+        {
             ADIS_GLOB_CMD, 0, // System command
             0,0,  //  Power supply measurement
             0,0,  //  X-axis gyroscope output

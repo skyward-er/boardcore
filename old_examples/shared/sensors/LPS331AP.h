@@ -113,13 +113,13 @@ private:
 
     // clang-format off
     enum regMap {
-        REG_WHO_AM_I        = 0x0f, 
-        REG_RES_CONF        = 0x10, 
+        REG_WHO_AM_I        = 0x0f,
+        REG_RES_CONF        = 0x10,
 
-        REG_CTRL1           = 0x20, 
-        REG_CTRL2           = 0x21, 
-        REG_CTRL3           = 0x22, 
-        REG_INT_CFG         = 0x23, 
+        REG_CTRL1           = 0x20,
+        REG_CTRL2           = 0x21,
+        REG_CTRL3           = 0x22,
+        REG_INT_CFG         = 0x23,
 
         REG_STATUS          = 0x27,
 

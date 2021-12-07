@@ -41,7 +41,7 @@ function(sbs_target TARGET)
     if(NOT OPT_BOARD)
         message(FATAL_ERROR "No board selected")
     endif()
-    
+
     set(MIOSIX_LIBRARY miosix-${OPT_BOARD})
 
     set(DFLAGS -MMD -MP)

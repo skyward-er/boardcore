@@ -154,7 +154,7 @@ private:
     {
         CMD_MEAS_HUM            = 0xE5,
         CMD_MEAS_TEMP           = 0xE3,
-        CMD_MEAS_TEMP_PREV_HUM  = 0xE0,  // Read temperature value from 
+        CMD_MEAS_TEMP_PREV_HUM  = 0xE0,  // Read temperature value from
                                          // previous RH measurement
         CMR_RESET               = 0xFE,
         CMD_WRITE_USR1          = 0xE6,

@@ -92,22 +92,22 @@ enum eW5200SockNRegisters
     SOCKn_DIPR0      = SR_BASE + 0x000C, // Destination IP address register
     SOCKn_DPORT0     = SR_BASE + 0x0010, // Destination port register
     SOCKn_IMR        = SR_BASE + 0x002C, // Interrupt mask register
-    
+
     SOCKn_MSSR0      = SR_BASE + 0x0012, // MSS in TCP mode
-    
+
     SOCKn_PROTO      = SR_BASE + 0x0014, // Protocol number in IPRAW mode
-    
+
     SOCKn_TOS        = SR_BASE + 0x0015, // IP header ToS field value
     SOCKn_TTL        = SR_BASE + 0x0016, // IP header TTL field value
-    SOCKn_FRAG0      = SR_BASE + 0x002D, // IP header Fragment field value 
-    
+    SOCKn_FRAG0      = SR_BASE + 0x002D, // IP header Fragment field value
+
     SOCKn_RXMEM_SIZE = SR_BASE + 0x001E, // RX buffer size register
     SOCKn_TXMEM_SIZE = SR_BASE + 0x001F, // TX buffer size register
-    
+
     SOCKn_TX_FSR0    = SR_BASE + 0x0020, // TX buffer free size register
     SOCKn_TX_RD0     = SR_BASE + 0x0022, // TX buffer read pointer address
     SOCKn_TX_WR0     = SR_BASE + 0x0024, // TX buffer write pointer address
-    
+
     SOCKn_RX_RSR0    = SR_BASE + 0x0026, // Received data size register
     SOCKn_RX_RD0     = SR_BASE + 0x0028, // RX buffer read pointer address
     SOCKn_RX_WR0     = SR_BASE + 0x002A, // RX buffer write pointer address

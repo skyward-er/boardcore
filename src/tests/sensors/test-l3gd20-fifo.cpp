@@ -232,14 +232,14 @@ int main()
     for (int i = 1; i < data_counter; i++)
     {
         // clang-format off
-        printf("%d,%llu,%llu,%llu,%llu,%f,%f,%f,%.2f\n", 
+        printf("%d,%llu,%llu,%llu,%llu,%f,%f,%f,%.2f\n",
                 data[i].fifo_num,
-                data[i].gyro.gyro_timestamp, 
+                data[i].gyro.gyro_timestamp,
                 data[i].wtm_delta,
                 data[i].update,
                 (data[i].gyro.gyro_timestamp - data[i - 1].gyro.gyro_timestamp),
-                data[i].gyro.gyro_x, 
-                data[i].gyro.gyro_y, 
+                data[i].gyro.gyro_x,
+                data[i].gyro.gyro_y,
                 data[i].gyro.gyro_z,
                 data[i].cpu);
         // clang-format on
