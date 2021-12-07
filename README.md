@@ -32,7 +32,7 @@ In the main folder you will find **CMakeLists.txt** which is used to configure t
 * Git
 * Miosix Toolchain
 
-Also, Ccache, Ninja, OpenOCD, Cppcheck and clang-format are recommended for a better experience.
+Also, Ccache, Ninja, OpenOCD, Cppcheck, clang-format and pre-commit are recommended for a better experience.
 
 #### Cloning the repo
 
@@ -53,11 +53,19 @@ cmake --build .
 ```
 
 Or using the SBS wrapper script:
-```
+```sh
 ./sbs
 ```
 
 The build system will start building all the targets (entrypoints and tests). Depending on how many targets there are, this operation may take several minutes.
+
+### Contributing
+
+You can install a pre-commit hook to ensure changes to the code will pass CI:
+
+```sh
+pre-commit install
+```
 
 ### What's next?
 
