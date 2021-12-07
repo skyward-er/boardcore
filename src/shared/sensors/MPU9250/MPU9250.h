@@ -192,7 +192,7 @@ public:
      * @param highSpeedSpiClockDivider_ Clocl diver for 20MHz SPI communication
      * with the device
      */
-    MPU9250(
+    explicit MPU9250(
         SPISlave spiSlave_, unsigned short samplingRate_ = 100,
         MPU9250GyroFSR gyroFsr_                     = GYRO_FSR_250DPS,
         MPU9250AccelFSR accelFsr_                   = ACCEL_FSR_2G,
