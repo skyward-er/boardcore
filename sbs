@@ -47,6 +47,7 @@ init_dirs() {
     sbs_base="$(cd -- "$(dirname "$0")" > /dev/null 2>&1 && pwd -P)"
     source_dir="$PWD"
     build_dir="$source_dir/build"
+    toolchain_file="$sbs_base/libs/miosix-kernel/miosix/_tools/toolchain.cmake"
 }
 
 find_deps() {
@@ -71,16 +72,15 @@ find_deps() {
                                     || ([ "$found_stlink" = true ] && echo "st-link" || echo "no")
     echo
 
-    if [ "$found_cmake" = false ]; then
-        echo "Error: CMake must be installed"
-        exit 1
-    fi
+    [ "$found_cmake" = true ] || { echo "Error: CMake must be installed"; exit 1; }
 }
 
 configure() {
     ohai "Configure"
 
-    defs="-DCMAKE_TOOLCHAIN_FILE=$sbs_base/libs/miosix-kernel/miosix/_tools/toolchain.cmake"
+    [ -f "$toolchain_file" ] || { echo "Error: CMake Toolchain File for Miosix was not found"; exit 1; }
+
+    defs="-DCMAKE_TOOLCHAIN_FILE=$toolchain_file"
     defs="$defs -DCMAKE_C_FLAGS=-fdiagnostics-color=always -DCMAKE_CXX_FLAGS=-fdiagnostics-color=always"
     [ "$found_ccache" = true ]   && defs="$defs -DCMAKE_C_COMPILER_LAUNCHER=ccache -DCMAKE_CXX_COMPILER_LAUNCHER=ccache"
     [ "$config_debug" = true ]   && defs="$defs -DCMAKE_BUILD_TYPE=Debug" || defs="$defs -DCMAKE_BUILD_TYPE=Release"
@@ -269,6 +269,7 @@ TTY_RESET="\033[0m"
 sbs_base=
 source_dir=
 build_dir=
+toolchain_file=
 found_cmake=false
 found_ccache=false
 found_ninja=false
