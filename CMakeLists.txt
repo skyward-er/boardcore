@@ -57,6 +57,9 @@ sbs_target(kernel-testsuite stm32f429zi_stm32f4discovery)
 #src/entrypoints/old_examples/anakin/test_i2c.cpp
 #src/entrypoints/old_examples/example-fsm.cpp
 
+add_executable(runcam-settings src/entrypoints/runcam-settings.cpp)
+sbs_target(runcam-settings stm32f407vg_stm32f4discovery)
+
 add_executable(sdcard-benchmark src/entrypoints/sdcard-benchmark.cpp)
 sbs_target(sdcard-benchmark stm32f429zi_stm32f4discovery)
 
