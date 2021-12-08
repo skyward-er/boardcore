@@ -57,6 +57,6 @@ const uint32_t FaultToCategory[] = {
     0,
 }; /* CategoryMapping */
 
-} /* FaultCounterData */
+}  // namespace FaultCounterData
 
 }  // namespace Boardcore

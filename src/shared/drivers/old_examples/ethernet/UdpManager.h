@@ -24,9 +24,10 @@
 
 #include <Common.h>
 #include <Singleton.h>
+#include <W5200/w5200.h>
 #include <e20/e20.h>
+
 #include "PacketBuffer.h"
-#include "W5200/w5200.h"
 #include "WatchdogTimer.h"
 
 class UdpManager : Singleton<UdpManager>

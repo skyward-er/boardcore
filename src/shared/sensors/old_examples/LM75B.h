@@ -25,8 +25,9 @@
 
 #pragma once
 
+#include <math/Stats.h>
+
 #include "Sensor.h"
-#include "math/Stats.h"
 
 template <typename BusType>
 class LM75B : public TemperatureSensor

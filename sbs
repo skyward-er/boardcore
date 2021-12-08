@@ -39,50 +39,111 @@ print_banner() {
 EOF
 }
 
-show_found_deps() {
-    printf "Found Ccache: "; [ $ccache_found ] && echo "yes" || echo "no"
-    printf "Found Ninja: "; [ $ninja_found ] && echo "yes" || echo "no"
+find_deps() {
+    command -v ccache &> /dev/null && config_ccache=true
+    command -v ninja  &> /dev/null && config_ninja=true
+}
+
+print_found_deps() {
+    printf "Found Ccache: "; [ "$config_ccache" = true ] && echo "yes" || echo "no"
+    printf "Found Ninja: ";  [ "$config_ninja" = true ]  && echo "yes" || echo "no"
     echo
 }
 
 configure() {
-    show_found_deps
-    config_ccache= && [ $ccache_found ] && config_ccache="-DCMAKE_C_COMPILER_LAUNCHER=ccache -DCMAKE_CXX_COMPILER_LAUNCHER=ccache"
-    config_toolchain="-DCMAKE_TOOLCHAIN_FILE=$sbs_base/libs/miosix-kernel/miosix/_tools/toolchain.cmake"
-    config_ninja= && [ $ninja_found ] && config_ninja="-GNinja"
-    cmake \
-        -B"$build_dir" \
-        $config_ccache \
-        $config_toolchain \
-        $config_ninja \
-        $config_buildtype \
-        $config_verbose \
-        "$source_dir"
+    print_found_deps
+
+    defs="-DCMAKE_TOOLCHAIN_FILE=$sbs_base/libs/miosix-kernel/miosix/_tools/toolchain.cmake"
+    [ "$config_ccache" = true ]  && defs="$defs -DCMAKE_C_COMPILER_LAUNCHER=ccache -DCMAKE_CXX_COMPILER_LAUNCHER=ccache"
+    [ "$config_debug" = true ]   && defs="$defs -DCMAKE_BUILD_TYPE=Debug" || defs="$defs -DCMAKE_BUILD_TYPE=Release"
+    [ "$config_verbose" = true ] && defs="$defs -DCMAKE_VERBOSE_MAKEFILE:BOOL=ON"
+    [ "$config_ninja" = true ]   && gen="-GNinja" || gen="-GUnix Makefiles"
+
+    if cmake -B"$build_dir" $defs "$gen" "$source_dir"; then
+        [ "$config_debug" = true ]   && touch "$build_dir/$DEBUG_FILENAME"   || rm -f "$build_dir/$DEBUG_FILENAME"
+        [ "$config_verbose" = true ] && touch "$build_dir/$VERBOSE_FILENAME" || rm -f "$build_dir/$VERBOSE_FILENAME"
+    fi
 }
 
-clean() { [ -d "$build_dir" ] && cmake --build "$build_dir" $build_jobs --target clean; rm -rf "$build_dir"; }
+check_configured() {
+    to_reconfigure=false
+    
+    if [ ! -d "$build_dir" ]; then
+        to_reconfigure=true
+    elif [ ! -f "$build_dir/$CMAKE_FILENAME" ]; then
+        rm -rf "$build_dir"
+        to_reconfigure=true
+    else
+        [ -f "$build_dir/$DEBUG_FILENAME" ]   && found_debug=true   || found_debug=false
+        [ -f "$build_dir/$VERBOSE_FILENAME" ] && found_verbose=true || found_verbose=false
+        if [ "$config_debug" != "$found_debug" ] \
+                || [ "$config_verbose" != "$found_verbose" ]; then
+            to_reconfigure=true
+        fi
+    fi
 
-build_all() { check_configured && cmake --build "$build_dir" $build_jobs; }
+    [ "$to_reconfigure" = true ] && configure && echo || true
+}
 
-build() { check_configured && cmake --build "$build_dir" $build_jobs --target "$1"; }
+build() {
+    if check_configured; then
+        cmake --build "$build_dir" $(get_jobs_opt) --target "$1"
+    fi
+}
 
-flash() { build "$1" && [ -f "$build_dir/$1.bin" ] && echo && st-flash --reset write "$build_dir/$1.bin" 0x08000000; }
+clean() {
+    if [ -f "$build_dir/$CMAKE_FILENAME" ]; then
+        cmake --build "$build_dir" $(get_jobs_opt) --target clean && echo
+    fi
+    echo "Removing build folder..."
+    rm -rf "$build_dir"
+}
 
-lint() { "$sbs_base/scripts/linter.sh" "$source_dir/src/shared"; }
+flash() {
+    if build "$1"; then
+        echo
+        if [ -f "$build_dir/$1.bin" ]; then
+            st-flash --reset write "$build_dir/$1.bin" 0x08000000
+        else
+            echo "Error: target '$1' is not flashable"
+        fi
+    fi
+}
 
-list() { check_configured && echo "[1/1] All SBS targets available:" \
-    && cmake --build "$build_dir" $build_jobs --target help | grep -o '^[^/]*\.bin' | cut -f 1 -d '.'; }
+list() {
+    if check_configured; then
+        echo "[1/1] All SBS targets available:"
+        cmake --build "$build_dir" $(get_jobs_opt) --target help | grep -o '^[^/]*\.bin' | cut -f 1 -d '.'
+    fi
+}
 
-boards() { check_configured && cmake --build "$build_dir" $build_jobs --target help-boards; }
+boards() {
+    build help-boards
+}
 
-check_configured() { ([ "$to_reconfigure" = true ] || [ ! -d "$build_dir" ] || [ ! -f "$build_dir/CMakeCache.txt" ] && rm -rf "$build_dir") \
-    && configure && echo || true; }
+build_all() {
+    build all
+}
 
-set_debug() { config_buildtype="-DCMAKE_BUILD_TYPE=Debug" && to_reconfigure=true; }
+set_debug() {
+    config_debug=true
+}
 
-set_verbose() { config_verbose="-DCMAKE_VERBOSE_MAKEFILE:BOOL=ON" && to_reconfigure=true; }
+set_verbose() {
+    config_verbose=true
+}
 
-set_jobs() { build_jobs="-j $1"; }
+set_jobs() {
+    build_jobs="$1"
+}
+
+get_jobs_opt() {
+    [ ! -z "$build_jobs" ] && echo "-j $build_jobs" || echo
+}
+
+lint() {
+    "$sbs_base/scripts/linter.sh" "$source_dir/src/shared"
+}
 
 usage() {
     cat <<EOF
@@ -98,24 +159,30 @@ OPTIONS:
   -j JOBS, --jobs JOBS  Build in parallel using the given number of jobs
   -d, --debug           Enable debug
   -v, --verbose         Print a verbose output
-  -n, --lint            Run the linter
   -l, --list            List all targets available
   -r, --boards          List all boards available
+  -n, --lint            Run the linter
 EOF
 }
+
+CMAKE_FILENAME="CMakeCache.txt"
+DEBUG_FILENAME=".sbs_debug"
+VERBOSE_FILENAME=".sbs_verbose"
 
 print_banner
 
 sbs_base="$(cd -- "$(dirname "$0")" > /dev/null 2>&1; pwd -P)"
 source_dir="$PWD"
 build_dir="$source_dir/build"
-config_buildtype="-DCMAKE_BUILD_TYPE=Release"
-config_verbose=
-build_jobs=
-to_reconfigure=false
 
-ccache_found="$(command -v ccache)"
-ninja_found="$(command -v ninja)"
+to_reconfigure=false
+config_ccache=false
+config_debug=false
+config_verbose=false
+config_ninja=false
+build_jobs=
+
+find_deps
 
 for arg in "$@"; do
     shift
@@ -127,14 +194,14 @@ for arg in "$@"; do
         --jobs)     set -- "$@" "-j";;
         --debug)    set -- "$@" "-d";;
         --verbose)  set -- "$@" "-v";;
-        --lint)     set -- "$@" "-n";;
         --list)     set -- "$@" "-l";;
         --boards)   set -- "$@" "-r";;
+        --lint)     set -- "$@" "-n";;
         *)          set -- "$@" "$arg"
     esac
 done
 
-while getopts hcb:f:j:dvnlr opt; do
+while getopts hcb:f:j:dvlrn opt; do
     case "$opt" in
         h)  usage; exit 0;;
         c)  clean; exit $?;;
@@ -143,9 +210,9 @@ while getopts hcb:f:j:dvnlr opt; do
         j)  set_jobs "$OPTARG";;
         d)  set_debug;;
         v)  set_verbose;;
-        n)  lint; exit $?;;
         l)  list; exit $?;;
         r)  boards; exit $?;;
+        n)  lint; exit $?;;
         ?)  usage; exit 2;;
     esac
 done

@@ -23,13 +23,14 @@
 #pragma once
 
 #include <Common.h>
-#include <iostream>
+
 #include <array>
+#include <iostream>
 
 namespace Boardcore
 {
 
-enum GammaBaudrate : uint8_t 
+enum GammaBaudrate : uint8_t
 {
     B_9600   = 0,
     B_192000 = 1,
@@ -41,13 +42,13 @@ enum GammaBaudrate : uint8_t
 
 enum GammaSF : uint8_t
 {
-    SF6     = 0, 
-    SF7     = 1,
-    SF8     = 2,
-    SF9     = 3,
-    SF10    = 4,
-    SF11    = 5,
-    SF12    = 6,
+    SF6  = 0,
+    SF7  = 1,
+    SF8  = 2,
+    SF9  = 3,
+    SF10 = 4,
+    SF11 = 5,
+    SF12 = 6,
     LAST_SF
 };
 
@@ -72,42 +73,40 @@ enum GammaPower : uint8_t
     LAST_POWER
 };
 
-
 /* Device configuration */
 struct GammaConf
 {
-    bool is_valid  = false; // True if the configuration has been read from the device
-    bool handshake = false;
-    std::array<uint8_t, 3> local_addr = {{ 125 }};
-    std::array<uint8_t, 3> dest_addr  = {{ 125 }};
-    GammaSF         lora_sf     = SF6;  
-    GammaPower      lora_power  = dbm15;   
-    GammaBaudrate   baudrate    = B_57600;
+    bool is_valid =
+        false;  // True if the configuration has been read from the device
+    bool handshake                    = false;
+    std::array<uint8_t, 3> local_addr = {{125}};
+    std::array<uint8_t, 3> dest_addr  = {{125}};
+    GammaSF lora_sf                   = SF6;
+    GammaPower lora_power             = dbm15;
+    GammaBaudrate baudrate            = B_57600;
 };
 
 /* Comparison operator */
 inline bool operator==(const GammaConf& lhs, const GammaConf& rhs)
 {
-    return lhs.handshake == rhs.handshake &&
-           lhs.local_addr == rhs.local_addr &&
-           lhs.dest_addr == rhs.dest_addr &&
-           lhs.lora_sf == rhs.lora_sf &&
-           lhs.lora_power == rhs.lora_power &&
-           lhs.baudrate == rhs.baudrate;
+    return lhs.handshake == rhs.handshake && lhs.local_addr == rhs.local_addr &&
+           lhs.dest_addr == rhs.dest_addr && lhs.lora_sf == rhs.lora_sf &&
+           lhs.lora_power == rhs.lora_power && lhs.baudrate == rhs.baudrate;
 }
 
 /* Stream operator */
 inline std::ostream& operator<<(std::ostream& o, const GammaConf& conf)
 {
-    return o << "local_addr: " << conf.local_addr[0] << "\tdest_addr: " << 
-     conf.dest_addr[0] << "spreading factor: " << (uint8_t)conf.lora_sf << 
-     "\toutput power: " << (uint8_t)conf.lora_power << "handshake: " << 
-     (uint8_t)conf.handshake << "\tbaudrate: " << (uint8_t)conf.baudrate << 
-     std::endl;
+    return o << "local_addr: " << conf.local_addr[0]
+             << "\tdest_addr: " << conf.dest_addr[0]
+             << "spreading factor: " << (uint8_t)conf.lora_sf
+             << "\toutput power: " << (uint8_t)conf.lora_power
+             << "handshake: " << (uint8_t)conf.handshake
+             << "\tbaudrate: " << (uint8_t)conf.baudrate << std::endl;
 }
 
 /* Message received from the Gamma, as per datasheet */
-union gamma_msg 
+union gamma_msg
 {
     struct gamma_msg_t
     {

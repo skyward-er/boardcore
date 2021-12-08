@@ -1,40 +1,72 @@
-# This file is a template, and might need editing before it works on your project.
-# see https://docs.gitlab.com/ce/ci/yaml/README.html for all available options
-
-# you can delete this line if you're not using Docker
-#image: busybox:latest
+# Copyright (c) 2021 Skyward Experimental Rocketry
+# Authors: Luca Erbetta, Luca Conterio, Alberto Nidasio
+#
+# Permission is hereby granted, free of charge, to any person obtaining a copy
+# of this software and associated documentation files (the "Software"), to deal
+# in the Software without restriction, including without limitation the rights
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+# copies of the Software, and to permit persons to whom the Software is
+# furnished to do so, subject to the following conditions:
+#
+# The above copyright notice and this permission notice shall be included in
+# all copies or substantial portions of the Software.
+#
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+# THE SOFTWARE.
 
 variables:
   GIT_SUBMODULE_STRATEGY: recursive
 
-# before_script:
-#   - echo "Before script section"
-#   - echo "For example you might run an update here or install a build dependency"
-#   - echo "Or perhaps you might print out some debugging details"
-   
-# after_script:
-#   - echo "After script section"
-#   - echo "For example you might do some cleanup here"
-   
+stages:
+  - build
+  - lint
+  - documentation
+
+# Stage build
+
 build:
   stage: build
-  only:
-    - master
-    - testing
+  tags:
+    - miosix
   script:
-    - echo "Running complete build"
     - ./sbs
-   
-linter:
-  stage: test
-  script: 
-    - echo "Running linter"
-    - ./sbs --lint
+
+# Stage lint
+
+copyright:
+  stage: lint
+  script:
+    - ./scripts/linter.py --copyright src
+
+format:
+  stage: lint
+  script:
+    - ./scripts/linter.py --format src
+
+find:
+  stage: lint
+  script:
+    - ./scripts/linter.py --find src
+
+cppcheck:
+  stage: lint
+  script:
+    - ./scripts/linter.py --cppcheck src
+  allow_failure: true
+
+# Stage documentation
 
 documentation:
-  stage: deploy
+  stage: documentation
   only:
     - master
+  tags:
+    - copyright
   script:
     - echo "Generate documentation to https://documentation.skywarder.eu/${CI_PROJECT_NAME}/${CI_COMMIT_REF_NAME}"
     - rm -rf doc/output
@@ -42,8 +74,3 @@ documentation:
     - rm -rf /srv/code_documentation/${CI_PROJECT_NAME}/${CI_COMMIT_REF_NAME}
     - mkdir -p /srv/code_documentation/${CI_PROJECT_NAME}/
     - mv doc/output/html /srv/code_documentation/${CI_PROJECT_NAME}/${CI_COMMIT_REF_NAME}
-
-# deploy1:
-#   stage: deploy
-#   script:
-#     - echo "Do your deploy here"

@@ -20,12 +20,12 @@
  * THE SOFTWARE.
  */
 
+#include <drivers/adc/InternalADC/InternalADC.h>
 #include <miosix.h>
+#include <sensors/analog/current/CurrentSensor.h>
 
 #include "Debug.h"
 #include "TimestampTimer.h"
-#include "drivers/adc/InternalADC/InternalADC.h"
-#include "sensors/analog/current/CurrentSensor.h"
 
 using namespace Boardcore;
 using namespace miosix;

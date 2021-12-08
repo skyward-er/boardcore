@@ -23,6 +23,7 @@
 #pragma once
 
 #include <mavlink_lib/mavlink_types.h>
+
 #include <ostream>
 #include <string>
 

@@ -22,13 +22,14 @@
 
 #pragma once
 
+#include <diagnostic/StackLogger.h>
 #include <miosix.h>
+
 #include <functional>
 #include <map>
 #include <utility>
 
 #include "ActiveObject.h"
-#include "diagnostic/StackLogger.h"
 
 using miosix::FastMutex;
 using miosix::GpioPin;

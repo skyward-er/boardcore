@@ -22,6 +22,7 @@
 
 #pragma once
 
+#include <Debug.h>
 #include <drivers/BusTemplate.h>
 
 #include "../Sensor.h"
@@ -43,7 +44,8 @@ class LSM6DS3H : public GyroSensor,
 #pragma pack(1)
     // __extension__ is needed to prevent compiler warnings for anonymous
     // structs
-    typedef union {
+    typedef union
+    {
         __extension__ struct
         {
             int16_t temp;
@@ -68,7 +70,7 @@ public:
         // The device is compatible with SPI modes 0 and 3
 
         uint8_t whoami = Bus::read(RegMap::WHO_AM_I);
-        printf("[LSM] expected: %x actual: %x\n", whoami_value, whoami);
+        TRACE("[LSM] expected: %x actual: %x\n", whoami_value, whoami);
         if (whoami != whoami_value)
         {
             last_error = ERR_NOT_ME;

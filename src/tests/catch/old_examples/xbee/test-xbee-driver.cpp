@@ -23,14 +23,15 @@
 #ifdef STANDALONE_CATCH1_TEST
 #include "../catch-tests-entry.cpp"
 #endif
+#include <drivers/Xbee/Xbee.h>
+#include <drivers/spi/SPIDriver.h>
+
+#include <catch2/catch.hpp>
 #include <ctime>
 #include <future>
 #include <memory>
 
 #include "MockXbeeSPIBus.h"
-#include "drivers/Xbee/Xbee.h"
-#include "drivers/spi/SPIDriver.h"
-#include <catch2/catch.hpp>
 
 using namespace Xbee;
 using std::async;
@@ -219,10 +220,12 @@ TEST_CASE("[Xbee] Test xbee.receive(...) by itself")
         // Only receive one of the two frames
         REQUIRE(wrap.xbee->receive(rx_buf.get(), 50) == 20);
 
-        auto dont_care = async(std::launch::async, [&]() {
-            miosix::Thread::sleep(1000);
-            wrap.xbee->wakeReceiver(true);
-        });
+        auto dont_care = async(std::launch::async,
+                               [&]()
+                               {
+                                   miosix::Thread::sleep(1000);
+                                   wrap.xbee->wakeReceiver(true);
+                               });
 
         // This should block until we force it to return
         REQUIRE(wrap.xbee->receive(rx_buf.get(), 50) == -1);
@@ -234,11 +237,13 @@ TEST_CASE("[Xbee] Test xbee.receive(...) by itself")
         rx.calcChecksum();
 
         // Send an rx frame in one second
-        auto dont_care = async(std::launch::async, [&]() {
-            miosix::Thread::sleep(1000);
-            wrap.bus->pushApiFrame(rx);
-            wrap.xbee->wakeReceiver();
-        });
+        auto dont_care = async(std::launch::async,
+                               [&]()
+                               {
+                                   miosix::Thread::sleep(1000);
+                                   wrap.bus->pushApiFrame(rx);
+                                   wrap.xbee->wakeReceiver();
+                               });
 
         long long start = miosix::getTick();
         REQUIRE(wrap.xbee->receive(rx_buf.get(), 50) == 20);
@@ -266,12 +271,14 @@ TEST_CASE("[Xbee] Receive while sending")
 
     int num_rx_while_tx = 0;
 
-    wrap.xbee->setOnFrameReceivedListener([&](APIFrame& api) {
-        if (api.frame_type == FTYPE_RX_PACKET_FRAME)
+    wrap.xbee->setOnFrameReceivedListener(
+        [&](APIFrame& api)
         {
-            ++num_rx_while_tx;
-        }
-    });
+            if (api.frame_type == FTYPE_RX_PACKET_FRAME)
+            {
+                ++num_rx_while_tx;
+            }
+        });
 
     SECTION("2 RX packet smaller than one TX packet")
     {

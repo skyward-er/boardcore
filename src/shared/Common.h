@@ -22,27 +22,23 @@
 
 #pragma once
 
+#include <array>
+#include <cassert>
 #include <cstdint>
 #include <cstdio>
 #include <cstring>
-
-#include <array>
-#include <cassert>
 #include <map>
 #include <memory>
 #include <set>
 #include <vector>
 
 /* Miosix */
+#include <Constants.h>
+#include <Debug.h>
+#include <TimestampTimer.h>
 #include <interfaces/endianness.h>
 #include <kernel/scheduler/scheduler.h>
 #include <miosix.h>
 #include <pthread.h>
-
-#include "Constants.h"
-
-#include "TimestampTimer.h"
-
-#include "Debug.h"
 
 #define UNUSED(x) (void)(x)

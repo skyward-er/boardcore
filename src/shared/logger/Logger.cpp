@@ -22,6 +22,9 @@
 
 #include "Logger.h"
 
+#include <Debug.h>
+#include <diagnostic/SkywardStack.h>
+#include <diagnostic/StackLogger.h>
 #include <errno.h>
 #include <fcntl.h>
 #include <interfaces/atomic_ops.h>
@@ -32,8 +35,6 @@
 #include <stdexcept>
 
 #include "Debug.h"
-#include "diagnostic/SkywardStack.h"
-#include "diagnostic/StackLogger.h"
 
 using namespace std;
 using namespace miosix;
@@ -169,7 +170,7 @@ LogResult Logger::logImpl(const char* name, const void* data, unsigned int size)
 {
     if (started == false)
     {
-        //TRACE("Logger not started!");
+        // TRACE("Logger not started!");
         ++s.statDroppedSamples;
 
         // Signal that we are trying to write to a closed log
@@ -265,7 +266,7 @@ void Logger::packThread()
     }
     catch (exception& e)
     {
-        printf("Error: packThread failed due to an exception: %s\n", e.what());
+        TRACE("Error: packThread failed due to an exception: %s\n", e.what());
     }
 }
 
@@ -323,7 +324,7 @@ void Logger::writeThread()
     }
     catch (exception& e)
     {
-        printf("Error: writeThread failed due to an exception: %s\n", e.what());
+        TRACE("Error: writeThread failed due to an exception: %s\n", e.what());
     }
 }
 
@@ -340,7 +341,7 @@ void Logger::statsThread()
             if (started == false)
                 return;
             logStats();
-            //             printf("ls:%d ds:%d qs:%d bf:%d bw:%d wf:%d wt:%d
+            //             TRACE("ls:%d ds:%d qs:%d bf:%d bw:%d wf:%d wt:%d
             //             mwt:%d\n",
             //                    s.statTooLargeSamples, s.statDroppedSamples,
             //                    s.statQueuedSamples, s.statBufferFilled,
@@ -351,7 +352,7 @@ void Logger::statsThread()
     }
     catch (exception& e)
     {
-        printf("Error: statsThread failed due to an exception: %s\n", e.what());
+        TRACE("Error: statsThread failed due to an exception: %s\n", e.what());
     }
 }
 

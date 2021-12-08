@@ -23,8 +23,8 @@
 #pragma once
 
 #include "{state_machine_name}Data.h"
-#include "events/FSM.h"
-#include "LoggerService/LoggerService.h"
+#include <events/FSM.h>
+#include <LoggerService/LoggerService.h>
 
 namespace {main_namespace}
 {{

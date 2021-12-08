@@ -21,6 +21,7 @@
  */
 
 #include "w5200.h"
+
 #include "spi_impl.h"
 #include "w5200_defs.h"
 

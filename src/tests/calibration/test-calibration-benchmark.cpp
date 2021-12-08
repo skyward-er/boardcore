@@ -29,16 +29,15 @@
 #define SAMPLE_FREQUENCY_LOAD_TEST 1000
 
 #include <Common.h>
-#include <drivers/spi/SPIDriver.h>
 #include <diagnostic/CpuMeter.h>
+#include <drivers/spi/SPIDriver.h>
 #include <miosix.h>
-
-#include "sensors/LIS3DSH/LIS3DSH.h"
-#include "sensors/calibration/BiasCalibration.h"
-#include "sensors/calibration/HardIronCalibration.h"
-#include "sensors/calibration/SixParameterCalibration.h"
-#include "sensors/calibration/SoftIronCalibration.h"
-#include "sensors/calibration/TwelveParameterCalibration.h"
+#include <sensors/LIS3DSH/LIS3DSH.h>
+#include <sensors/calibration/BiasCalibration.h>
+#include <sensors/calibration/HardIronCalibration.h>
+#include <sensors/calibration/SixParameterCalibration.h>
+#include <sensors/calibration/SoftIronCalibration.h>
+#include <sensors/calibration/TwelveParameterCalibration.h>
 
 using namespace Boardcore;
 using namespace miosix;
@@ -91,9 +90,10 @@ int main()
     sensor.init();
 
     constexpr unsigned sleepMillis = 1000 / SAMPLE_FREQUENCY_LOAD_TEST;
-    unsigned elapsed = 0;
-     
-    while(1){
+    unsigned elapsed               = 0;
+
+    while (1)
+    {
         Thread::sleep(sleepMillis);
 
         elapsed += sleepMillis;
@@ -105,7 +105,8 @@ int main()
         testData.accel_y = tmp.accel_y;
         testData.accel_z = tmp.accel_z;
 
-        if(elapsed > 500){
+        if (elapsed > 500)
+        {
             elapsed = 0;
             TRACE("Average CPU usage: %f %%\n", averageCpuUtilization());
         }

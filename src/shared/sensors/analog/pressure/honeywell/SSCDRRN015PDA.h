@@ -22,7 +22,7 @@
 
 #pragma once
 
-#include "math/Stats.h"
+#include <math/Stats.h>
 
 #include "HoneywellPressureSensor.h"
 #include "SSCDRRN015PDAData.h"
@@ -70,7 +70,7 @@ public:
     void calibrate()
     {
         press_stats.reset();
-        offset = 0.0f;
+        offset      = 0.0f;
         calibrating = true;
     }
 

@@ -21,10 +21,12 @@
  */
 
 #include "SkyQuaternion.h"
+
 #include "Constants.h"
 #include "iostream"
 
 using namespace std;
+using namespace Eigen;
 
 namespace Boardcore
 {
@@ -33,16 +35,16 @@ SkyQuaternion::SkyQuaternion() {}
 
 Vector4f SkyQuaternion::eul2quat(Vector3f degeul)  // ZYX rotation
 {
-    float yaw = degeul(0) * DEGREES_TO_RADIANS;
+    float yaw   = degeul(0) * DEGREES_TO_RADIANS;
     float pitch = degeul(1) * DEGREES_TO_RADIANS;
-    float roll = degeul(2) * DEGREES_TO_RADIANS;
+    float roll  = degeul(2) * DEGREES_TO_RADIANS;
 
-    float cyaw = cosf(yaw * 0.5F);
-    float syaw = sinf(yaw * 0.5F);
+    float cyaw   = cosf(yaw * 0.5F);
+    float syaw   = sinf(yaw * 0.5F);
     float cpitch = cosf(pitch * 0.5F);
     float spitch = sinf(pitch * 0.5F);
-    float croll = cosf(roll * 0.5F);
-    float sroll = sinf(roll * 0.5F);
+    float croll  = cosf(roll * 0.5F);
+    float sroll  = sinf(roll * 0.5F);
 
     float qx = cyaw * cpitch * sroll - syaw * spitch * croll;
     float qy = cyaw * spitch * croll + syaw * cpitch * sroll;
@@ -62,9 +64,9 @@ Vector3f SkyQuaternion::quat2eul(Vector4f quater)
     float qw = quater(3);
 
     float yaw = atan2f(2.0F * (qx * qy + qw * qz),
-                        powf(qw, 2) + powf(qx, 2) - powf(qy, 2) - powf(qz, 2));
+                       powf(qw, 2) + powf(qx, 2) - powf(qy, 2) - powf(qz, 2));
 
-    float a    = -2.0F * (qx * qz - qw * qy);
+    float a = -2.0F * (qx * qz - qw * qy);
     if (a > 1.0F)
     {
         a = 1.0F;
@@ -102,13 +104,13 @@ Vector4f SkyQuaternion::rotm2quat(Matrix3f R)
     float qw;
 
     float tr = r11 + r22 + r33;
-    float r = sqrt(1 + tr);
+    float r  = sqrt(1 + tr);
 
     if (r32 - r23 > 0)
     {
         qx = 0.5 * sqrt(1 + r11 - r22 - r33);
     }
-    else if (r32 - r23 < 0) 
+    else if (r32 - r23 < 0)
     {
         qx = -0.5 * sqrt(1 + r11 - r22 - r33);
     }
@@ -121,7 +123,7 @@ Vector4f SkyQuaternion::rotm2quat(Matrix3f R)
     {
         qy = 0.5 * sqrt(1 - r11 + r22 - r33);
     }
-    else if (r13 - r31 < 0) 
+    else if (r13 - r31 < 0)
     {
         qy = -0.5 * sqrt(1 - r11 + r22 - r33);
     }
@@ -134,7 +136,7 @@ Vector4f SkyQuaternion::rotm2quat(Matrix3f R)
     {
         qz = 0.5 * sqrt(1 - r11 - r22 + r33);
     }
-    else if (r21 - r12 < 0) 
+    else if (r21 - r12 < 0)
     {
         qz = -0.5 * sqrt(1 - r11 - r22 + r33);
     }

@@ -23,7 +23,8 @@
 #pragma once
 
 #include <miosix.h>
-#include "pwmdata.h"
+
+#include "pwmData.h"
 
 namespace Boardcore
 {

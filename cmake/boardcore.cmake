@@ -90,6 +90,7 @@ foreach(OPT_BOARD ${BOARDS})
         ${SBS_BASE}/src/shared/drivers/runcam/Runcam.cpp
         ${SBS_BASE}/src/shared/sensors/SensorManager.cpp
         ${SBS_BASE}/src/shared/sensors/SensorSampler.cpp
+        ${SBS_BASE}/src/shared/sensors/MAX6675/MAX6675.cpp
 
         # Timer
         ${SBS_BASE}/src/shared/TimestampTimer.cpp

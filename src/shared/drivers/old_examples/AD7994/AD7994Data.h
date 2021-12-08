@@ -30,7 +30,7 @@ struct AD7994Sample
 {
     long long timestamp;
 
-    uint8_t channel_id; // [1-4]
+    uint8_t channel_id;  // [1-4]
     bool alert_flag;
     uint16_t value;
 

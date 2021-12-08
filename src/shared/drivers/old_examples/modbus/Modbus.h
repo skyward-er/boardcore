@@ -22,7 +22,8 @@
 
 #pragma once
 
-#include "PDU.h"
+#include <slave/SlaveEngine.h>
+#include <slave/SlaveInterface.h>
+
 #include "ExceptionCodes.h"
-#include "slave/SlaveInterface.h"
-#include "slave/SlaveEngine.h"
+#include "PDU.h"

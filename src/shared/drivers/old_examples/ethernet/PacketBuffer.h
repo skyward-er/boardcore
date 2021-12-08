@@ -23,6 +23,7 @@
 #pragma once
 
 #include <Common.h>
+
 #include "packet.h"
 
 /**

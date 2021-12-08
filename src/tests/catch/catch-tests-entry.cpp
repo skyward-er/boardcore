@@ -52,9 +52,9 @@
 
 #define CATCH_CONFIG_RUNNER
 #define CATCH_CONFIG_NO_POSIX_SIGNALS
+#include <catch2/catch.hpp>
 #include <cstring>
 #include <string>
-#include <catch2/catch.hpp>
 #include <vector>
 
 #ifndef COMPILE_FOR_X86
@@ -79,13 +79,13 @@ using std::vector;
  */
 vector<string> splitSpaces(string str)
 {
-    
+
     unsigned int p = 0, p2;
     bool end       = false;
     vector<string> out;
-    if(str.length() == 0)
+    if (str.length() == 0)
         return out;
-        
+
     do
     {
         p2 = str.find(" ", p);

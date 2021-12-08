@@ -20,9 +20,9 @@
  * THE SOFTWARE.
  */
 
+#include <drivers/interrupt/external_interrupts.h>
 #include <miosix.h>
 #include <stdio.h>
-#include "drivers/interrupt/external_interrupts.h"
 
 using namespace miosix;
 
@@ -30,17 +30,14 @@ bool itr = false;
 
 // The compiler may remove this function since it doesn't know that it is onlt
 // called from an assembly instruction. Use attribute used to avoid this.
-void __attribute__((used)) EXTI0_IRQHandlerImpl()
-{
-    itr = true;
-}
+void __attribute__((used)) EXTI0_IRQHandlerImpl() { itr = true; }
 
 typedef Gpio<GPIOA_BASE, 0> user_button;
 
 int main()
 {
     user_button::mode(Mode::INPUT);
-    
+
     enableExternalInterrupt(GPIOA_BASE, 0, InterruptTrigger::RISING_EDGE, 15);
 
     unsigned int counter = 0;

@@ -23,14 +23,15 @@
 #pragma once
 
 #include <Common.h>
-#include <string>
+
 #include <ostream>
+#include <string>
 
 namespace Boardcore
 {
 
 #define CAN_MAX_PAYLOAD 8
-#define CAN_MAX_LEN     16
+#define CAN_MAX_LEN 16
 
 enum CanMode
 {
@@ -105,7 +106,8 @@ struct CanMsg
 };
 #pragma pack()
 
-struct CanStatus {
+struct CanStatus
+{
     uint16_t n_sent;
     uint16_t n_rcv;
     uint8_t last_sent;
@@ -120,7 +122,8 @@ struct CanStatus {
     void print(std::ostream& os) const
     {
         os << n_sent << "," << n_rcv << "," << (int)last_sent << ","
-           << (int)last_rcv << "," << last_sent_ts <<"," << last_rcv_ts << "\n";
+           << (int)last_rcv << "," << last_sent_ts << "," << last_rcv_ts
+           << "\n";
     }
 };
 

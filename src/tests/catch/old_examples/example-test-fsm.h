@@ -23,9 +23,9 @@
 /**
  * Basic State Machine example. Explaination of this example and a graphical
  * representation of the state machine can be found on the Skyward Boardcore
- * Wiki on Gitlab: 
+ * Wiki on Gitlab:
  * https://git.skywarder.eu/r2a/skyward-boardcore/blob/master/src/entrypoints/examples/state-machines-examples.md
- * 
+ *
  * https://git.skywarder.eu/r2a/skyward-boardcore/wikis/State-Machines-Examples-and-Best-Practices
  */
 
@@ -64,24 +64,24 @@ enum ExampleTopics : uint8_t
 void traceState(uint8_t state, const Event& ev)
 {
     // Do not output anything for this test
-   /* switch (ev.sig)
-    {
-        case EV_ENTRY:
-        {
-            printf("(S%d) Entering state\n", state);
-            break;
-        }
-        case EV_EXIT:
-        {
-            printf("(S%d) Exiting state\n", state);
-            break;
-        }
-        default:
-        {
-            printf("(S%d) Received event %d\n", state, ev.sig);
-            break;
-        }
-    }*/
+    /* switch (ev.sig)
+     {
+         case EV_ENTRY:
+         {
+             printf("(S%d) Entering state\n", state);
+             break;
+         }
+         case EV_EXIT:
+         {
+             printf("(S%d) Exiting state\n", state);
+             break;
+         }
+         default:
+         {
+             printf("(S%d) Received event %d\n", state, ev.sig);
+             break;
+         }
+     }*/
 }
 
 /*
@@ -113,10 +113,7 @@ public:
         sEventBroker->subscribe(this, TOPIC_T1);
     }
 
-    ~FSMExample() 
-    {
-        sEventBroker->unsubscribe(this);
-    }
+    ~FSMExample() { sEventBroker->unsubscribe(this); }
 
     /*
      * State function definitions.
@@ -270,7 +267,7 @@ public:
             }
         }
     }
-    
+
 public:
     uint16_t delayed_ev_id;
     int v;

@@ -22,6 +22,7 @@
 
 #pragma once
 
+#include <Debug.h>
 #include <mxgui/display.h>
 #include <mxgui/misc_inst.h>
 
@@ -67,7 +68,7 @@ struct Position
         y -= other.y;
     }
 
-    void print() { printf("pos: %d %d\n", x, y); }
+    void print() { TRACE("pos: %d %d\n", x, y); }
 };
 
 struct Bounds
@@ -90,8 +91,8 @@ struct Bounds
 
     void print()
     {
-        printf("Bounds: p:{%d %d} s:{%d %d}\n", pos.x, pos.y, size.width,
-               size.height);
+        TRACE("Bounds: p:{%d %d} s:{%d %d}\n", pos.x, pos.y, size.width,
+              size.height);
     }
 };
 

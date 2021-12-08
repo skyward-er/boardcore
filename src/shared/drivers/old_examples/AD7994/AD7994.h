@@ -24,10 +24,10 @@
 
 #include <Debug.h>
 #include <miosix.h>
+#include <sensors/Sensor.h>
 #include <stdint.h>
 
 #include "AD7994Data.h"
-#include "sensors/Sensor.h"
 
 /**
  * Driver for the AD7994 Analog Digital Converter

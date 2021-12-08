@@ -1,5 +1,5 @@
-/* Copyright (c) 2018 Skyward Experimental Rocketry
- * Author: Luca Erbetta
+/* Copyright (c) 2021 Skyward Experimental Rocketry
+ * Author: Matteo Pignataro
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -22,45 +22,52 @@
 
 #pragma once
 
+#include <diagnostic/PrintLogger.h>
+#include <drivers/spi/SPIDriver.h>
+#include <sensors/Sensor.h>
+#include <sensors/SensorData.h>
+
 namespace Boardcore
 {
 
 /**
- * @brief PWM channel output polarity
- *
+ * @brief MAX6675 termocouple sensor driver.
  */
-enum class PWMPolarity
+class MAX6675 : public Sensor<TemperatureData>
 {
-    ACTIVE_HIGH,
-    ACTIVE_LOW
-};
+public:
+    /**
+     * @brief Constructor.
+     *
+     * @param bus The Spi bus.
+     * @param cs The CS pin to lower when we need to sample.
+     * @param config The SPI configuration.
+     */
+    MAX6675(SPIBusInterface &bus, GpioPin cs,
+            SPIBusConfig config = getDefaultSPIConfig());
 
-/**
- * @brief PWM mode selection. Refer to datasheet
- * MODE_1  Channel high when CNT < CCRx
- * MODE_2  Channel high when CNT > CCRx
- */
-enum class PWMMode
-{
-    MODE_1,  // Channel high when CNT < CCRx
-    MODE_2   // Channel high when CNT > CCRx
-};
+    /**
+     * Constructs the default config for SPI Bus.
+     *
+     * @returns The default SPIBusConfig.
+     */
+    static SPIBusConfig getDefaultSPIConfig();
 
-enum class PWMChannel : int
-{
-    CH1 = 0,
-    CH2,
-    CH3,
-    CH4
-};
+    bool init();
 
-struct PWMChannelConfig
-{
-    PWMChannel channel;
-    bool enabled = false;
-    float duty_cycle = 0;
-    PWMMode mode = PWMMode::MODE_1;
-    PWMPolarity polarity = PWMPolarity::ACTIVE_HIGH;
+    /**
+     * @brief Checks wheter the termocouple is open.
+     *
+     * @return True if the termocouple is connected.
+     */
+    bool selfTest();
+
+private:
+    TemperatureData sampleImpl() override;
+
+    SPISlave slave;
+
+    PrintLogger logger = Logging::getLogger("max6675");
 };
 
 }  // namespace Boardcore

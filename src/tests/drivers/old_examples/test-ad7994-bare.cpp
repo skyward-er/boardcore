@@ -20,15 +20,16 @@
  * THE SOFTWARE.
  */
 
+#include <drivers/BusTemplate.h>
 #include <miosix.h>
+
 #include <cstdint>
 #include <cstdio>
-#include "drivers/BusTemplate.h"
 
 using namespace miosix;
 
-const uint8_t ADDRESS    = 0x22 << 1;
-const uint8_t REG_CONFIG = 0x02;
+const uint8_t ADDRESS        = 0x22 << 1;
+const uint8_t REG_CONFIG     = 0x02;
 const uint8_t DEFAULT_CONFIG = 0x08;
 
 typedef ProtocolI2C<I2C1Driver> my_i2c1;

@@ -23,10 +23,10 @@
 #pragma once
 
 #include <diagnostic/PrintLogger.h>
+#include <drivers/spi/SPIDriver.h>
+#include <sensors/Sensor.h>
 
 #include "MPU9250Data.h"
-#include "drivers/spi/SPIDriver.h"
-#include "sensors/Sensor.h"
 
 namespace Boardcore
 {

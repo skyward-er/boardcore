@@ -26,11 +26,10 @@
 
 #include "SPIBusInterface.h"
 
-
 #ifndef USE_MOCK_PERIPHERALS
 using SPIType = SPI_TypeDef;
 #else
-#include "test/FakeSpiTypedef.h"
+#include <test/FakeSpiTypedef.h>
 using SPIType = FakeSpiTypedef;
 #endif
 
@@ -264,7 +263,7 @@ inline void SPIBus::acquire(SPIBusConfig new_config)
     // the bus is already being used. Use SyncedSPIBus if you need to
     // synchronize access to the bus
 #ifdef DEBUG
-    assert(isBusy() == false);
+    assert(isBusy() == false);  // linter off
 #endif
 
     SPIBusInterface::acquire(new_config);

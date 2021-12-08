@@ -24,8 +24,6 @@
 
 #include <Eigen/Dense>
 
-using namespace Eigen;
-
 namespace Boardcore
 {
 
@@ -40,12 +38,12 @@ namespace Boardcore
 template <typename t, uint8_t n, uint8_t p>
 class KalmanEigen
 {
-    using MatrixNN = Matrix<t, n, n>;
-    using MatrixPN = Matrix<t, p, n>;
-    using MatrixNP = Matrix<t, n, p>;
-    using MatrixPP = Matrix<t, p, p>;
-    using CVectorN = Matrix<t, n, 1>;
-    using CVectorP = Matrix<t, p, 1>;
+    using MatrixNN = Eigen::Matrix<t, n, n>;
+    using MatrixPN = Eigen::Matrix<t, p, n>;
+    using MatrixNP = Eigen::Matrix<t, n, p>;
+    using MatrixPP = Eigen::Matrix<t, p, p>;
+    using CVectorN = Eigen::Matrix<t, n, 1>;
+    using CVectorP = Eigen::Matrix<t, p, 1>;
 
 public:
     /**

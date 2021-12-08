@@ -124,7 +124,7 @@ bool SensorManager::init(const SensorMap_t& sensors_map)
     if (current_sampler_id != 0)
     {
         LOG_INFO(logger, "Task scheduler not empty: starting from task ID {}",
-                current_sampler_id);
+                 current_sampler_id);
     }
 
     for (auto it = sensors_map.begin(); it != sensors_map.end(); it++)
@@ -218,7 +218,7 @@ void SensorManager::initScheduler()
     for (auto& s : samplers)
     {
         function_t sampler_update_function =
-            bind(&SensorSampler::sampleAndCallback, s);
+            std::bind(&SensorSampler::sampleAndCallback, s);
 
         scheduler->add(sampler_update_function, s->getSamplingPeriod(),
                        s->getID(), start_time);

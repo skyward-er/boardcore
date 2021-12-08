@@ -22,10 +22,9 @@
 
 #pragma once
 
-#include <math.h>
-
 #include <Debug.h>
-#include "drivers/HardwareTimer.h"
+#include <drivers/HardwareTimer.h>
+#include <math.h>
 
 namespace Boardcore
 {

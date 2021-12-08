@@ -22,10 +22,10 @@
 
 #pragma once
 
-#include "ActiveObject.h"
-#include "events/Event.h"
-#include "utils/collections/SyncQueue.h"
+#include <events/Event.h>
+#include <utils/collections/SyncQueue.h>
 
+#include "ActiveObject.h"
 #include "Debug.h"
 
 namespace Boardcore

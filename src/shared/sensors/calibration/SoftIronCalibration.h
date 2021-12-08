@@ -23,12 +23,12 @@
 #pragma once
 
 #include <Common.h>
+#include <sensors/SensorData.h>
 
 #include <Eigen/Core>
 #include <Eigen/Eigenvalues>
 
 #include "Calibration.h"
-#include "sensors/SensorData.h"
 
 namespace Boardcore
 {
@@ -42,7 +42,10 @@ class SoftIronCorrector : public ValuesCorrector<MagnetometerData>
 public:
     SoftIronCorrector() : SoftIronCorrector({1, 1, 1}, {0, 0, 0}) {}
 
-    SoftIronCorrector(const Vector3f& _p, const Vector3f& _q) : p(_p), q(_q) {}
+    SoftIronCorrector(const Eigen::Vector3f& _p, const Eigen::Vector3f& _q)
+        : p(_p), q(_q)
+    {
+    }
 
     void setIdentity() override
     {
@@ -50,13 +53,13 @@ public:
         q = {0, 0, 0};
     }
 
-    void operator>>(Matrix<float, 3, 2>& rhs)
+    void operator>>(Eigen::Matrix<float, 3, 2>& rhs)
     {
         rhs.col(0) = p.transpose();
         rhs.col(1) = q.transpose();
     }
 
-    void operator<<(const Matrix<float, 3, 2>& rhs)
+    void operator<<(const Eigen::Matrix<float, 3, 2>& rhs)
     {
         p = rhs.col(0).transpose();
         q = rhs.col(1).transpose();
@@ -65,7 +68,7 @@ public:
     MagnetometerData correct(const MagnetometerData& input) const override
     {
         MagnetometerData output;
-        Vector3f vec;
+        Eigen::Vector3f vec;
 
         input >> vec;
         vec = vec.cwiseProduct(p) + q;
@@ -75,7 +78,7 @@ public:
     }
 
 private:
-    Vector3f p, q;
+    Eigen::Vector3f p, q;
 };
 
 template <unsigned MaxSamples>
@@ -90,7 +93,7 @@ public:
         if (numSamples >= MaxSamples)
             return false;
 
-        Vector3f vec;
+        Eigen::Vector3f vec;
         data >> vec;
 
         for (int i = 0; i < 3; ++i)
@@ -106,14 +109,14 @@ public:
 
     SoftIronCorrector computeResult() override
     {
-        using Mx   = Matrix<float, 7, 7>;
-        using Vec7 = Matrix<float, 7, 1>;
+        using Mx   = Eigen::Matrix<float, 7, 7>;
+        using Vec7 = Eigen::Matrix<float, 7, 1>;
 
         float minValue, det;
         int minIdx;
 
-        MatrixXf tmp1, tmp2;
-        Vector3f p, q;
+        Eigen::MatrixXf tmp1, tmp2;
+        Eigen::Vector3f p, q;
         Vec7 vec;
         Mx mat;
 
@@ -142,7 +145,7 @@ public:
             }
         }
 
-        SelfAdjointEigenSolver<Mx> solver(mat);
+        Eigen::SelfAdjointEigenSolver<Mx> solver(mat);
         auto eigenvalues = solver.eigenvalues();
 
         minValue = eigenvalues[0];
@@ -178,14 +181,14 @@ public:
         return {p, q};
     }
 
-    Matrix<float, MaxSamples, 7> getSamples() { return samples; }
+    Eigen::Matrix<float, MaxSamples, 7> getSamples() { return samples; }
 
 private:
     /*
      * The matrix contains x, y, z, x^2, y^2, z^2 and a column of 1s
      * row. Its shape is (N x 7)
      */
-    Matrix<float, MaxSamples, 7> samples;
+    Eigen::Matrix<float, MaxSamples, 7> samples;
     unsigned numSamples;
 };
 

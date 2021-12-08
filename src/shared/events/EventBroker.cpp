@@ -22,8 +22,9 @@
 
 #include "EventBroker.h"
 
+#include <diagnostic/StackLogger.h>
+
 #include "Debug.h"
-#include "diagnostic/StackLogger.h"
 
 namespace Boardcore
 {

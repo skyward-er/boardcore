@@ -115,8 +115,7 @@ TEST_CASE("CircularBuffer - Get and pop")
         REQUIRE(b1.get() == 2);  // return the first element
 
         // Two consecutive calls return the same element
-        REQUIRE(b1.get() == 2); 
-
+        REQUIRE(b1.get() == 2);
 
         // Nothing has been removed
         REQUIRE(b1.isFull());
@@ -208,7 +207,7 @@ TEST_CASE("CircularBuffer - Get and pop")
 
 /**
  * Same identical tests, but for SynchedCircularBuffer
- * 
+ *
  */
 
 TEST_CASE("SyncCircularBuffer - Initialization tests")
@@ -291,8 +290,7 @@ TEST_CASE("SyncCircularBuffer - Get and pop")
         REQUIRE(b1.get() == 2);  // return the first element
 
         // Two consecutive calls return the same element
-        REQUIRE(b1.get() == 2); 
-
+        REQUIRE(b1.get() == 2);
 
         // Nothing has been removed
         REQUIRE(b1.isFull());

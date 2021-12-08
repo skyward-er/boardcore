@@ -33,7 +33,7 @@ int main()
 {
     pspi2::init();
     Thread::sleep(200);
-    for(;;)
+    for (;;)
     {
         pspi2::write(0x45);
         uint8_t r = pspi2::read(0xF6);

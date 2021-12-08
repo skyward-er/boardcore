@@ -20,17 +20,17 @@
  * THE SOFTWARE.
  */
 
-
-// #include "drivers/HardwareTimer.h"
+// #include <drivers/HardwareTimer.h>
 #include <array>
 // #include <chrono>
 #include <cstdio>
 #include <ctime>
 #include <iostream>
 // #include <thread>
-#include <vector>
-#include "math/Stats.h"
+#include <math/Stats.h>
 #include <miosix.h>
+
+#include <vector>
 
 using namespace Boardcore;
 using namespace miosix;
@@ -38,8 +38,7 @@ using namespace std;
 
 const unsigned int NUM_WRITES = 5000;
 
-vector<unsigned int> BUF_SIZES{128,  256,      512,       1024,      2048,
-                               4096, 1024 * 8};
+vector<unsigned int> BUF_SIZES{128, 256, 512, 1024, 2048, 4096, 1024 * 8};
 
 // Fills a buffer with random bytes
 void rndFill(uint8_t* buf, unsigned int size)
@@ -70,7 +69,7 @@ bool benchmark(unsigned int buf_size, array<float, NUM_WRITES>& results)
         rndFill(buf, buf_size);
         long long t = getTick();
         int w       = fwrite(buf, 1, buf_size, f);
-        t = getTick() - t;
+        t           = getTick() - t;
 
         if (w != (int)buf_size)
         {
@@ -81,7 +80,7 @@ bool benchmark(unsigned int buf_size, array<float, NUM_WRITES>& results)
     }
 
     success = true;
-    
+
 clean:
     // Cleanup
     fclose(f);
@@ -132,7 +131,7 @@ int main()
             cout << "Error (buf_size: " << s << ").\nAborting.\n";
         }
     }
-    for(;;)
+    for (;;)
     {
         Thread::sleep(60000);
         cout << "Aborted!\n";

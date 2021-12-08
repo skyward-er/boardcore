@@ -22,15 +22,15 @@
 
 #pragma once
 
+#include <drivers/Xbee/APIFramesLog.h>
+#include <drivers/Xbee/XbeeStatus.h>
+#include <drivers/xbee/Mark.h>
+#include <drivers/xbee/XbeeTestData.h>
+#include <logger/Deserializer.h>
+#include <logger/LogStats.h>
+
 #include <fstream>
 #include <iostream>
-
-#include "drivers/Xbee/APIFramesLog.h"
-#include "drivers/Xbee/XbeeStatus.h"
-#include "drivers/xbee/Mark.h"
-#include "drivers/xbee/XbeeTestData.h"
-#include "logger/Deserializer.h"
-#include "logger/LogStats.h"
 
 // Serialized classes
 using std::ofstream;

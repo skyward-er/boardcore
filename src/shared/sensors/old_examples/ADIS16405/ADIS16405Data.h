@@ -27,7 +27,7 @@
 #include <string>
 
 /*
- * Burst data collection. This establishes right datatype for 
+ * Burst data collection. This establishes right datatype for
  * the registers because trying to work with 12 or 14 bit twos
  * complement that doesn't sign extend to 16 bits is unpleasant.
  */

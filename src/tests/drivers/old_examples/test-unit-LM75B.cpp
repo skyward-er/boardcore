@@ -26,10 +26,10 @@
 #include "catch-tests-entry.cpp"
 #endif
 
-#include <catch2/catch.hpp>
 #include <Common.h>
-#include "sensors/LM75B.h"
-#include "drivers/BusTemplate.h"
+#include <sensors/LM75B.h>
+
+#include <catch2/catch.hpp>
 
 using namespace miosix;
 
@@ -37,40 +37,43 @@ using namespace miosix;
 using I2CProtocol = ProtocolI2C<miosix::I2C1Driver>;
 typedef LM75B<I2CProtocol> LM75BType;
 
-//TODO sistemare la codifica di {0x80, 0x00}, che
-//per qualche ragione, diventa positiva
+// TODO sistemare la codifica di {0x80, 0x00}, che
+// per qualche ragione, diventa positiva
 TEST_CASE("[LM75B] temperature")
 {
     uint8_t addr1 = 0x48 << 1;
     LM75BType temp1{addr1};
 
-    SECTION("[LM75B] positive temperature"){
+    SECTION("[LM75B] positive temperature")
+    {
         uint8_t temp_array[2] = {0x10, 0x10};
-        REQUIRE(temp1.computeTemp(temp_array) 
-                == Approx(16.0).epsilon(0.001));
+        REQUIRE(temp1.computeTemp(temp_array) == Approx(16.0).epsilon(0.001));
     }
 
-    SECTION("[LM75B] negative temperature"){
+    SECTION("[LM75B] negative temperature")
+    {
         uint8_t temp_array[2] = {0x80, 0x10};
-        REQUIRE(temp1.computeTemp(temp_array) 
-                == Approx(-127.875).epsilon(0.001));
+        REQUIRE(temp1.computeTemp(temp_array) ==
+                Approx(-127.875).epsilon(0.001));
     }
 
-    SECTION("[LM75B] zero temperature"){
+    SECTION("[LM75B] zero temperature")
+    {
         uint8_t temp_array[2] = {0x00, 0x00};
-        REQUIRE(temp1.computeTemp(temp_array) 
-                == Approx(0).epsilon(0.001));
+        REQUIRE(temp1.computeTemp(temp_array) == Approx(0).epsilon(0.001));
     }
 
-    SECTION("[LM75B] max temperature"){
+    SECTION("[LM75B] max temperature")
+    {
         uint8_t temp_array[2] = {0x7F, 0xFF};
-        REQUIRE(temp1.computeTemp(temp_array) 
-                == Approx(127.875).epsilon(0.001));
+        REQUIRE(temp1.computeTemp(temp_array) ==
+                Approx(127.875).epsilon(0.001));
     }
 
-    SECTION("[LM75B] min temperature"){
+    SECTION("[LM75B] min temperature")
+    {
         uint8_t temp_array[2] = {0x80, 0x01};
-        REQUIRE(temp1.computeTemp(temp_array) 
-                == Approx(-127.875).epsilon(0.001));
+        REQUIRE(temp1.computeTemp(temp_array) ==
+                Approx(-127.875).epsilon(0.001));
     }
 }

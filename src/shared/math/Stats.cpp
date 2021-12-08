@@ -21,6 +21,7 @@
  */
 
 #include "Stats.h"
+
 #include <algorithm>
 #include <cmath>
 #include <limits>
