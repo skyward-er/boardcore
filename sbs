@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/usr/bin/env bash
 
 # Copyright (c) 2021 Skyward Experimental Rocketry
 # Author: Damiano Amatruda
@@ -80,21 +80,23 @@ configure() {
 
     [ -f "$toolchain_file" ] || { echo "Error: CMake Toolchain File for Miosix was not found"; exit 1; }
 
-    defs="-DCMAKE_TOOLCHAIN_FILE=$toolchain_file"
-    defs="$defs -DCMAKE_C_FLAGS=-fdiagnostics-color=always -DCMAKE_CXX_FLAGS=-fdiagnostics-color=always"
-    [ "$found_ccache" = true ]   && defs="$defs -DCMAKE_C_COMPILER_LAUNCHER=ccache -DCMAKE_CXX_COMPILER_LAUNCHER=ccache"
-    [ "$config_debug" = true ]   && defs="$defs -DCMAKE_BUILD_TYPE=Debug" || defs="$defs -DCMAKE_BUILD_TYPE=Release"
-    [ "$config_verbose" = true ] && defs="$defs -DCMAKE_VERBOSE_MAKEFILE:BOOL=ON"
-    [ "$found_ninja" = true ]    && gen="-GNinja" || gen="-GUnix Makefiles"
+    local defs=(-DCMAKE_TOOLCHAIN_FILE="$toolchain_file")
+    defs+=(-DCMAKE_C_FLAGS=-fdiagnostics-color=always -DCMAKE_CXX_FLAGS=-fdiagnostics-color=always)
+    [ "$found_ccache" = true ]   && defs+=(-DCMAKE_C_COMPILER_LAUNCHER=ccache -DCMAKE_CXX_COMPILER_LAUNCHER=ccache)
+    [ "$config_debug" = true ]   && defs+=(-DCMAKE_BUILD_TYPE=Debug) || defs+=( -DCMAKE_BUILD_TYPE=Release )
+    [ "$config_verbose" = true ] && defs+=(-DCMAKE_VERBOSE_MAKEFILE=ON)
 
-    if cmake -B"$build_dir" $defs "$gen" "$source_dir"; then
+    local gen
+    [ "$found_ninja" = true ] && gen=-GNinja || gen=-G"Unix Makefiles"
+
+    if cmake -B"$build_dir" "${defs[@]}" "$gen" "$source_dir"; then
         [ "$config_debug" = true ]   && touch "$build_dir/$DEBUG_FILENAME"   || rm -f "$build_dir/$DEBUG_FILENAME"
         [ "$config_verbose" = true ] && touch "$build_dir/$VERBOSE_FILENAME" || rm -f "$build_dir/$VERBOSE_FILENAME"
     fi
 }
 
 check_configured() {
-    to_reconfigure=false
+    local to_reconfigure=false
 
     if [ ! -d "$build_dir" ]; then
         to_reconfigure=true
@@ -111,33 +113,36 @@ check_configured() {
     fi
 
     if [ "$to_reconfigure" = true ]; then
-        configure
-        echo
+        configure && echo
+    else
+        true
     fi
-
-    true
 }
 
 build() {
     if check_configured; then
         ohai "Build"
 
-        cmake --build "$build_dir" $(get_jobs_opt) --target "$1"
+        local opts
+        get_build_opts opts
+
+        cmake --build "$build_dir" "${opts[@]}" --target "$1"
     fi
 }
 
 lint_cppcheck() {
     ohai "Lint (Cppcheck)"
 
-    # Real-time colored output of Cppcheck
-    cppcheck --quiet --language=c++ --enable=all --inline-suppr --suppress=unusedFunction --suppress=missingInclude --error-exitcode=1 "$source_dir/src"
+    local opts
+    get_cppcheck_opts opts
+
+    cppcheck --quiet --language=c++ --enable=all --inline-suppr --suppress=unusedFunction --suppress=missingInclude --error-exitcode=1 "${opts[@]}" "$source_dir/src"
     echo
 }
 
 lint_clangformat() {
     ohai "Lint (clang-format)"
 
-    # Real-time colored output of clang-format
     find "$source_dir/src" -type f \( -iname \*.cpp -o -iname \*.h -o -iname \*.c \) -exec clang-format -style=file --dry-run --Werror {} \;
     echo
 }
@@ -175,7 +180,10 @@ clean() {
     ohai "Clean"
 
     if [ -f "$build_dir/$CMAKE_FILENAME" ]; then
-        cmake --build "$build_dir" $(get_jobs_opt) --target clean && echo
+        local opts
+        get_build_opts opts
+
+        cmake --build "$build_dir" "${opts[@]}" --target clean && echo
     fi
 
     echo "Removing build folder..."
@@ -206,8 +214,12 @@ list() {
     if check_configured; then
         ohai "List targets"
 
+        local opts
+        get_build_opts opts
+
         echo "[1/1] All SBS targets available:"
-        cmake --build "$build_dir" $(get_jobs_opt) --target help | grep -o '^[^/]*\.bin' | cut -f 1 -d '.'
+        cmake --build "$build_dir" "${opts[@]}" --target help \
+            | grep -o '^[^/]*\.bin' | cut -f 1 -d '.'
     fi
 }
 
@@ -215,7 +227,10 @@ boards() {
     if check_configured; then
         ohai "List boards"
 
-        cmake --build "$build_dir" $(get_jobs_opt) --target help-boards
+        local opts
+        get_build_opts opts
+
+        cmake --build "$build_dir" "${opts[@]}" --target help-boards
     fi
 }
 
@@ -232,11 +247,17 @@ set_verbose() {
 }
 
 set_jobs() {
-    build_jobs="$1"
+    jobs="$1"
 }
 
-get_jobs_opt() {
-    [ -n "$build_jobs" ] && echo "-j $build_jobs" || echo
+get_build_opts() {
+    local -n build_opts=$1
+    [ -n "$jobs" ] && build_opts=("--parallel $jobs")
+}
+
+get_cppcheck_opts() {
+    local -n cppcheck_opts=$1
+    [ -n "$jobs" ] && cppcheck_opts=("-j $jobs")
 }
 
 usage() {
@@ -250,7 +271,7 @@ OPTIONS:
                         Build a specific target
   -f TARGET, --flash TARGET
                         Build and flash a specific target
-  -j JOBS, --jobs JOBS  Build in parallel using the given number of jobs
+  -j JOBS, --jobs JOBS  Build or lint in parallel using a specific number of jobs
   -d, --debug           Enable debug
   -v, --verbose         Print a verbose output
   -l, --list            List all targets available
@@ -280,7 +301,7 @@ found_stflash=false
 found_stlink=false
 config_debug=false
 config_verbose=false
-build_jobs=
+jobs=
 
 print_banner
 init_dirs
