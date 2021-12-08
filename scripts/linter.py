@@ -194,7 +194,7 @@ def check_format(directory):
 
             # Dry run clang-format and check if we have an error
             returnCode = call(
-                ['clang-format', '--dry-run', '--Werror', '--ferror-limit=1', currentFilepath], stderr=DEVNULL)
+                ['clang-format', '-style=file', '--dry-run', '--Werror', '--ferror-limit=1', currentFilepath], stderr=DEVNULL)
 
             # If and error occurs warn the user
             if(returnCode != 0):

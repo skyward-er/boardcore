@@ -55,7 +55,6 @@ format:
   stage: lint
   script:
     - ./scripts/linter.py --format src
-  allow_failure: true
 
 copyright:
   stage: lint

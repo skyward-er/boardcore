@@ -79,7 +79,7 @@ find_deps() {
 
 configure() {
     ohai "Configure"
-    
+
     defs="-DCMAKE_TOOLCHAIN_FILE=$sbs_base/libs/miosix-kernel/miosix/_tools/toolchain.cmake"
     defs="$defs -DCMAKE_C_FLAGS=-fdiagnostics-color=always -DCMAKE_CXX_FLAGS=-fdiagnostics-color=always"
     [ "$found_ccache" = true ]   && defs="$defs -DCMAKE_C_COMPILER_LAUNCHER=ccache -DCMAKE_CXX_COMPILER_LAUNCHER=ccache"
@@ -114,14 +114,14 @@ check_configured() {
         configure
         echo
     fi
-    
+
     true
 }
 
 build() {
     if check_configured; then
         ohai "Build"
-        
+
         cmake --build "$build_dir" $(get_jobs_opt) --target "$1"
     fi
 }
@@ -138,7 +138,7 @@ lint_clangformat() {
     ohai "Lint (clang-format)"
 
     # Real-time colored output of clang-format
-    find "$source_dir/src" -type f \( -iname \*.cpp -o -iname \*.h -o -iname \*.c \) -exec clang-format --dry-run --Werror {} \;
+    find "$source_dir/src" -type f \( -iname \*.cpp -o -iname \*.h -o -iname \*.c \) -exec clang-format -style=file --dry-run --Werror {} \;
     echo
 }
 
