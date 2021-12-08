@@ -53,26 +53,31 @@ init_dirs() {
 find_deps() {
     ohai "Find dependencies"
 
-    command -v cmake           > /dev/null 2>&1 && found_cmake=true
-    command -v ccache          > /dev/null 2>&1 && found_ccache=true
-    command -v ninja           > /dev/null 2>&1 && found_ninja=true
-    command -v cppcheck        > /dev/null 2>&1 && found_cppcheck=true
-    command -v clang-format    > /dev/null 2>&1 && found_clangformat=true
-    command -v python          > /dev/null 2>&1 && found_python=true
-    command -v st-flash        > /dev/null 2>&1 && found_stflash=true
-    command -v ST-LINK_CLI.exe > /dev/null 2>&1 && found_stlink=true
+    command -v cmake               > /dev/null 2>&1 && found_cmake=true
+    command -v arm-miosix-eabi-g++ > /dev/null 2>&1 && found_miosixgpp=true
+    command -v ccache              > /dev/null 2>&1 && found_ccache=true
+    command -v ninja               > /dev/null 2>&1 && found_ninja=true
+    command -v python              > /dev/null 2>&1 && found_python=true
+    command -v cppcheck            > /dev/null 2>&1 && found_cppcheck=true
+    command -v clang-tidy          > /dev/null 2>&1 && found_clangtidy=true
+    command -v clang-format        > /dev/null 2>&1 && found_clangformat=true
+    command -v st-flash            > /dev/null 2>&1 && found_stflash=true
+    command -v ST-LINK_CLI.exe     > /dev/null 2>&1 && found_stlink=true
 
-    printf "Found CMake: ";        [ "$found_cmake" = true ]       && echo "yes" || echo "no"
-    printf "Found Ccache: ";       [ "$found_ccache" = true ]      && echo "yes" || echo "no"
-    printf "Found Ninja: ";        [ "$found_ninja" = true ]       && echo "yes" || echo "no"
-    printf "Found Cppcheck: ";     [ "$found_cppcheck" = true ]    && echo "yes" || echo "no"
-    printf "Found clang-format: "; [ "$found_clangformat" = true ] && echo "yes" || echo "no"
-    printf "Found Python: ";       [ "$found_python" = true ]      && echo "yes" || echo "no"
-    printf "Found flasher: ";      [ "$found_stflash" = true ]     && echo "st-flash" \
-                                    || ([ "$found_stlink" = true ] && echo "st-link" || echo "no")
+    printf "Found CMake: ";               [ "$found_cmake" = true ]       && echo "yes" || echo "no"
+    printf "Found arm-miosix-eabi-g++: "; [ "$found_miosixgpp" = true ]   && echo "yes" || echo "no"
+    printf "Found Ccache: ";              [ "$found_ccache" = true ]      && echo "yes" || echo "no"
+    printf "Found Ninja: ";               [ "$found_ninja" = true ]       && echo "yes" || echo "no"
+    printf "Found Python: ";              [ "$found_python" = true ]      && echo "yes" || echo "no"
+    printf "Found Cppcheck: ";            [ "$found_cppcheck" = true ]    && echo "yes" || echo "no"
+    printf "Found clang-tidy: ";          [ "$found_clangtidy" = true ]   && echo "yes" || echo "no"
+    printf "Found clang-format: ";        [ "$found_clangformat" = true ] && echo "yes" || echo "no"
+    printf "Found flasher: ";             [ "$found_stflash" = true ]     && echo "st-flash" \
+                                            || { [ "$found_stlink" = true ] && echo "st-link" || echo "no"; }
     echo
 
-    [ "$found_cmake" = true ] || { echo "Error: CMake must be installed"; exit 1; }
+    [ "$found_cmake" = true ]     || { echo "Error: CMake must be installed"; exit 1; }
+    [ "$found_miosixgpp" = true ] || { echo "Error: arm-miosix-eabi-g++ must be installed"; exit 1; }
 }
 
 configure() {
@@ -80,8 +85,9 @@ configure() {
 
     [ -f "$toolchain_file" ] || { echo "Error: CMake Toolchain File for Miosix was not found"; exit 1; }
 
-    local defs=(-DCMAKE_TOOLCHAIN_FILE="$toolchain_file")
+    local defs=(-DCMAKE_EXPORT_COMPILE_COMMANDS=ON)
     defs+=(-DCMAKE_C_FLAGS=-fdiagnostics-color=always -DCMAKE_CXX_FLAGS=-fdiagnostics-color=always)
+    defs+=(-DCMAKE_TOOLCHAIN_FILE="$toolchain_file")
     [ "$found_ccache" = true ]   && defs+=(-DCMAKE_C_COMPILER_LAUNCHER=ccache -DCMAKE_CXX_COMPILER_LAUNCHER=ccache)
     [ "$config_debug" = true ]   && defs+=(-DCMAKE_BUILD_TYPE=Debug) || defs+=( -DCMAKE_BUILD_TYPE=Release )
     [ "$config_verbose" = true ] && defs+=(-DCMAKE_VERBOSE_MAKEFILE=ON)
@@ -127,52 +133,6 @@ build() {
         get_build_opts opts
 
         cmake --build "$build_dir" "${opts[@]}" --target "$1"
-    fi
-}
-
-lint_cppcheck() {
-    ohai "Lint (Cppcheck)"
-
-    local opts
-    get_cppcheck_opts opts
-
-    cppcheck --quiet --language=c++ --enable=all --inline-suppr --suppress=unusedFunction --suppress=missingInclude --error-exitcode=1 "${opts[@]}" "$source_dir/src"
-    echo
-}
-
-lint_clangformat() {
-    ohai "Lint (clang-format)"
-
-    find "$source_dir/src" -type f \( -iname \*.cpp -o -iname \*.h -o -iname \*.c \) -exec clang-format -style=file --dry-run --Werror {} \;
-    echo
-}
-
-lint_copyright() {
-    ohai "Lint (Copyright)"
-
-    "$sbs_base/scripts/linter.py" --copyright "$source_dir/src"
-    echo
-}
-
-lint_find() {
-    ohai "Lint (Find)"
-
-    "$sbs_base/scripts/linter.py" --find "$source_dir/src"
-    echo
-}
-
-lint() {
-    if [ "$found_cppcheck" = true ]; then
-        lint_cppcheck
-    fi
-
-    if [ "$found_clangformat" = true ]; then
-        lint_clangformat
-    fi
-
-    if [ "$found_python" = true ]; then
-        lint_copyright
-        lint_find
     fi
 }
 
@@ -234,6 +194,85 @@ boards() {
     fi
 }
 
+lint_copyright() {
+    ohai "Lint (Copyright)"
+
+    "$sbs_base/scripts/linter.py" --copyright "$source_dir/src"
+    echo
+}
+
+lint_find() {
+    ohai "Lint (Find)"
+
+    "$sbs_base/scripts/linter.py" --find "$source_dir/src"
+    echo
+}
+
+lint_clangtidy() {
+    if check_configured; then
+        ohai "Lint (clang-tidy)"
+
+        defs=(--extra-arg=-D_MIOSIX=1 --extra-arg=-D_MIOSIX_GCC_PATCH_MINOR=1 --extra-arg=-D_MIOSIX_GCC_PATCH_MAJOR=3 --extra-arg=-D__LINT__)
+        IFS=$'\n' read -rd '' -a incs < <(arm-miosix-eabi-g++ -E -Wp,-v -xc++ /dev/null 2>&1 | sed -n "s/^ /--extra-arg=-isystem/p")
+
+        local opts=()
+        [ "$lint_edit" = true ] && opts+=(--fix-notes --fix-errors)
+
+        find "$source_dir/src" \
+            -type f \( -iname "*.cpp" -o -iname "*.h" -o -iname "*.c" \) \
+            -exec clang-tidy --header-filter=".*" -p="$build_dir" "${defs[@]}" "${incs[@]}" "${opts[@]}" {} \;
+        echo
+    fi
+}
+
+lint_cppcheck() {
+    ohai "Lint (Cppcheck)"
+
+    local opts
+    get_cppcheck_opts opts
+
+    cppcheck --language=c++ --std=c++11 --enable=all --inline-suppr \
+        --suppress=unusedFunction --suppress=missingInclude \
+        --error-exitcode=1 "${opts[@]}" "$source_dir/src"
+    echo
+}
+
+lint_clangformat() {
+    ohai "Lint (clang-format)"
+
+    local opts=(--style=file --Werror)
+    [ "$lint_edit" = true ] && opts+=(-i) || opts+=(--dry-run)
+
+    find "$source_dir/src" \
+        -type f \( -iname "*.cpp" -o -iname "*.h" -o -iname "*.c" \) \
+        -exec clang-format "${opts[@]}" {} \;
+    echo
+}
+
+lint() {
+    if [ "$found_python" = true ]; then
+        lint_copyright
+        lint_find
+    fi
+
+    if [ "$found_clangtidy" = true ] && [ "$lint_clangtidy" = true ]; then
+        lint_clangtidy
+    fi
+
+    if [ "$found_cppcheck" = true ]; then
+        lint_cppcheck
+    fi
+
+    if [ "$found_clangformat" = true ]; then
+        lint_clangformat
+    fi
+}
+
+edit() {
+    lint_edit=true
+    lint
+}
+
 build_all() {
     build all
 }
@@ -260,23 +299,34 @@ get_cppcheck_opts() {
     [ -n "$jobs" ] && cppcheck_opts=("-j $jobs")
 }
 
+set_clangtidy() {
+    lint_clangtidy=true
+}
+
 usage() {
     cat <<EOF
 Usage: $(basename "$0") [OPTIONS]
 
 OPTIONS:
-  -h, --help            Show this help message and exit
-  -c, --clean           Clean the working tree
-  -b TARGET, --build TARGET
-                        Build a specific target
-  -f TARGET, --flash TARGET
-                        Build and flash a specific target
-  -j JOBS, --jobs JOBS  Build or lint in parallel using a specific number of jobs
-  -d, --debug           Enable debug
-  -v, --verbose         Print a verbose output
-  -l, --list            List all targets available
-  -r, --boards          List all boards available
-  -n, --lint            Lint the code
+  General Options:
+    -h, --help            Show this help message and exit
+    -j JOBS, --jobs JOBS  Build or lint in parallel using the given number of jobs
+    -l, --list            List all targets available
+    -r, --boards          List all boards available
+
+  Build Options:
+    -b TARGET, --build TARGET
+                          Build a specific target
+    -f TARGET, --flash TARGET
+                          Build and flash a specific target
+    -c, --clean           Clean the working tree
+    -d, --debug           Enable debug
+    -v, --verbose         Print a verbose output
+
+  Lint Options:
+    -n, --lint            Lint the code
+    -e, --edit            Lint and edit the code
+    --clang-tidy          Lint using also clang-tidy
 EOF
 }
 
@@ -292,16 +342,20 @@ source_dir=
 build_dir=
 toolchain_file=
 found_cmake=false
+found_miosixgpp=false
 found_ccache=false
 found_ninja=false
-found_cppcheck=false
-found_clangformat=false
 found_python=false
+found_cppcheck=false
+found_clangtidy=false
+found_clangformat=false
 found_stflash=false
 found_stlink=false
 config_debug=false
 config_verbose=false
 jobs=
+lint_edit=false
+lint_clangtidy=false
 
 print_banner
 init_dirs
@@ -309,33 +363,36 @@ init_dirs
 for arg in "$@"; do
     shift
     case "$arg" in
-        --help)     set -- "$@" "-h";;
-        --clean)    set -- "$@" "-c";;
-        --build)    set -- "$@" "-b";;
-        --flash)    set -- "$@" "-f";;
-        --jobs)     set -- "$@" "-j";;
-        --debug)    set -- "$@" "-d";;
-        --verbose)  set -- "$@" "-v";;
-        --list)     set -- "$@" "-l";;
-        --boards)   set -- "$@" "-r";;
-        --lint)     set -- "$@" "-n";;
-        *)          set -- "$@" "$arg"
+        --boards)     set -- "$@" "-r";;
+        --build)      set -- "$@" "-b";;
+        --clang-tidy) set_clangtidy;;
+        --clean)      set -- "$@" "-c";;
+        --debug)      set -- "$@" "-d";;
+        --edit)       set -- "$@" "-e";;
+        --flash)      set -- "$@" "-f";;
+        --help)       set -- "$@" "-h";;
+        --jobs)       set -- "$@" "-j";;
+        --lint)       set -- "$@" "-n";;
+        --list)       set -- "$@" "-l";;
+        --verbose)    set -- "$@" "-v";;
+        *)            set -- "$@" "$arg"
     esac
 done
 
-while getopts hcb:f:j:dvlrn opt; do
+while getopts b:cdef:hj:lnrv opt; do
     case "$opt" in
-        h)  usage; exit 0;;
-        c)  find_deps; clean; exit;;
-        b)  find_deps; build "$OPTARG"; exit;;
-        f)  find_deps; flash "$OPTARG"; exit;;
-        j)  set_jobs "$OPTARG";;
-        d)  set_debug;;
-        v)  set_verbose;;
-        l)  find_deps; list; exit;;
-        r)  find_deps; boards; exit;;
-        n)  find_deps; lint; exit;;
-        ?)  usage; exit 2;;
+        b) find_deps; build "$OPTARG"; exit;;
+        c) find_deps; clean; exit;;
+        d) set_debug;;
+        e) find_deps; edit; exit;;
+        f) find_deps; flash "$OPTARG"; exit;;
+        h) usage; exit 0;;
+        j) set_jobs "$OPTARG";;
+        l) find_deps; list; exit;;
+        n) find_deps; lint; exit;;
+        r) find_deps; boards; exit;;
+        v) set_verbose;;
+        ?) usage; exit 2;;
     esac
 done
 shift $((OPTIND - 1))
