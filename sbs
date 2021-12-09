@@ -291,7 +291,7 @@ set_jobs() {
 
 get_build_opts() {
     local -n build_opts=$1
-    [ -n "$jobs" ] && build_opts=("--parallel $jobs")
+    [ -n "$jobs" ] && build_opts=("-j $jobs")
 }
 
 get_cppcheck_opts() {
@@ -310,7 +310,7 @@ Usage: $(basename "$0") [OPTIONS]
 OPTIONS:
   General Options:
     -h, --help            Show this help message and exit
-    -j JOBS, --jobs JOBS  Build or lint in parallel using the given number of jobs
+    -j JOBS, --jobs JOBS  Build or lint in parallel using a specific number of jobs
     -l, --list            List all targets available
     -r, --boards          List all boards available
 
@@ -320,6 +320,7 @@ OPTIONS:
     -f TARGET, --flash TARGET
                           Build and flash a specific target
     -c, --clean           Clean the working tree
+    -u, --configure       Force configure and do not build
     -d, --debug           Enable debug
     -v, --verbose         Print a verbose output
 
@@ -367,6 +368,7 @@ for arg in "$@"; do
         --build)      set -- "$@" "-b";;
         --clang-tidy) set_clangtidy;;
         --clean)      set -- "$@" "-c";;
+        --configure)  set -- "$@" "-u";;
         --debug)      set -- "$@" "-d";;
         --edit)       set -- "$@" "-e";;
         --flash)      set -- "$@" "-f";;
@@ -379,7 +381,7 @@ for arg in "$@"; do
     esac
 done
 
-while getopts b:cdef:hj:lnrv opt; do
+while getopts b:cdef:hj:lnruv opt; do
     case "$opt" in
         b) find_deps; build "$OPTARG"; exit;;
         c) find_deps; clean; exit;;
@@ -391,6 +393,7 @@ while getopts b:cdef:hj:lnrv opt; do
         l) find_deps; list; exit;;
         n) find_deps; lint; exit;;
         r) find_deps; boards; exit;;
+        u) find_deps; configure; exit;;
         v) set_verbose;;
         ?) usage; exit 2;;
     esac
