@@ -448,15 +448,15 @@ namespace Boardcore
             return last_sample;
         }
 
+        //Wait some time
+        //TODO dimension the time
+        miosix::Thread::sleep(1);
+
         if(!recvStringCommand(recvString, recvStringMaxDimension))
         {
             //If something goes wrong i return the last sampled data
             return last_sample;
         }
-
-        //Wait some time
-        //TODO dimension the time
-        miosix::Thread::sleep(1);
 
         if(!verifyChecksum(recvString, recvStringLength))
         {
