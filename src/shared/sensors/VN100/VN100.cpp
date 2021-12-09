@@ -133,6 +133,47 @@ namespace Boardcore
         return true;
     }
 
+    bool VN100::sampleRaw()
+    {
+        //Sensor not init
+        if(!isInit)
+        {
+            last_error = SensorErrors::NOT_INIT;
+            LOG_WARN(logger, "Unable to sample due to not initialized vn100 sensor");
+            return false;
+        }
+
+        //Send the IMU sampling command
+        if(!(serialInterface -> send(preSampleImuString -> c_str(), preSampleImuString -> length())))
+        {
+            LOG_WARN(logger, "Unable to sample due to serial communication error");
+            return false;
+        }
+
+        //Wait some time
+        //TODO dimension the time
+        miosix::Thread::sleep(1);
+
+        //Receive the string
+        if(!recvStringCommand(recvString, recvStringMaxDimension))
+        {
+            LOG_WARN(logger, "Unable to sample due to serial communication error");
+            return false;
+        }
+
+        return true;
+    }
+
+    string VN100::getLastRawSample()
+    {
+        //If not init i return the void string
+        if(!isInit)
+        {
+            return string("");
+        }
+
+        return string(recvString, recvStringLength);
+    }
 
     bool VN100::closeAndReset()
     {
@@ -320,7 +361,12 @@ namespace Boardcore
             return false;
         }
 
-        //I check the model number
+        //I check the model number (I perform the procedure twice to delete junk problems)
+        sendStringCommand("VNRRG,01");
+        miosix::Thread::sleep(100); //These sleep are important at very high baud rates
+        recvStringCommand(recvString, recvStringMaxDimension);
+        miosix::Thread::sleep(100);
+
         if(!sendStringCommand("VNRRG,01"))
         {
             return false;
@@ -371,6 +417,10 @@ namespace Boardcore
             return last_sample;
         }
 
+        //Wait some time
+        //TODO dimension the time
+        miosix::Thread::sleep(1);
+
         if(!recvStringCommand(recvString, recvStringMaxDimension))
         {
             //If something goes wrong i return the last sampled data
@@ -403,6 +453,10 @@ namespace Boardcore
             //If something goes wrong i return the last sampled data
             return last_sample;
         }
+
+        //Wait some time
+        //TODO dimension the time
+        miosix::Thread::sleep(1);
 
         if(!verifyChecksum(recvString, recvStringLength))
         {

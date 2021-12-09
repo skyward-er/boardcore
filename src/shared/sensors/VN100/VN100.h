@@ -64,6 +64,93 @@ namespace Boardcore
      */
     class VN100 : public Sensor<VN100Data>
     {
+    public:
+
+        /**
+         * @brief Configuration enumeration for redundancy check
+         */
+        enum CRCOptions : uint8_t
+        {
+            CRC_NO          = 0x00,
+            CRC_ENABLE_8    = 0x08,
+            CRC_ENABLE_16   = 0x10
+        };
+
+        /**
+         * @brief Configuration enumeration for baud rate
+         */
+        enum BaudRates : unsigned int
+        {
+            Baud_9600       = 9600,
+            Baud_19200      = 19200,
+            Baud_38400      = 38400,
+            Baud_57600      = 57600,
+            Baud_115200     = 115200,
+            Baud_128000     = 128000,
+            Baud_230400     = 230400,
+            Baud_460800     = 460800,
+            Baud_921600     = 921600
+        };
+
+        /**
+         * @brief Constructor
+         */
+        VN100();
+
+        /**
+         * @brief Constructor
+         * 
+         * @param USART port number
+         * @param BaudRate different from the sensor's default
+         */
+	    VN100(unsigned int portNumber, unsigned int baudRate);
+
+        /**
+         * @brief Constructor
+         * 
+         * @param USART port number
+         * @param BaudRate different from the sensor's default
+         * @param Redundancy check option
+         */
+        VN100(unsigned int portNumber, unsigned int baudRate, uint8_t crc);
+
+        /**
+         * @brief Init method to initialize the IMU and to set 
+         * the user defined working conditions
+         * 
+         * @return Boolean value indicating the operation success state
+         */
+        bool init() override;
+
+        /**
+         * @brief Method to implement the verification process to ensure
+         * that the sensor is up and running
+         * 
+         * @return Boolean of the result
+         */
+        bool selfTest() override;
+
+        /**
+         * @brief Mathod to sample the raw data without parsing
+         * 
+         * @return Boolean value indicating the operation success rate
+         */
+        bool sampleRaw();
+
+        /**
+         * @brief Method to get the raw sample
+         * 
+         * @return String that represents the sample
+         */
+        string getLastRawSample();
+
+        /**
+         * @brief Method to reset the sensor to default values and to close
+         * the connection. Used if you need to close and re initialize the sensor
+         * 
+         * @return Boolean of the result
+         */
+        bool closeAndReset();
 
     private:
 
@@ -259,79 +346,5 @@ namespace Boardcore
          * @return The 16 bit CRC16-CCITT error check
          */
         uint16_t calculateChecksum16(uint8_t * message, int length);
-
-    public:
-
-        /**
-         * @brief Configuration enumeration for redundancy check
-         */
-        enum CRCOptions : uint8_t
-        {
-            CRC_NO          = 0x00,
-            CRC_ENABLE_8    = 0x08,
-            CRC_ENABLE_16   = 0x10
-        };
-
-        /**
-         * @brief Configuration enumeration for baud rate
-         */
-        enum BaudRates : unsigned int
-        {
-            Baud_9600       = 9600,
-            Baud_19200      = 19200,
-            Baud_38400      = 38400,
-            Baud_57600      = 57600,
-            Baud_115200     = 115200,
-            Baud_128000     = 128000,
-            Baud_230400     = 230400,
-            Baud_460800     = 460800,
-            Baud_921600     = 921600
-        };
-
-        /**
-         * @brief Constructor
-         */
-        VN100();
-
-        /**
-         * @brief Constructor
-         * 
-         * @param USART port number
-         * @param BaudRate different from the sensor's default
-         */
-	    VN100(unsigned int portNumber, unsigned int baudRate);
-
-        /**
-         * @brief Constructor
-         * 
-         * @param USART port number
-         * @param BaudRate different from the sensor's default
-         * @param Redundancy check option
-         */
-        VN100(unsigned int portNumber, unsigned int baudRate, uint8_t crc);
-
-        /**
-         * @brief Init method to initialize the IMU and to set 
-         * the user defined working conditions
-         * 
-         * @return Boolean value indicating the operation success state
-         */
-        bool init() override;
-
-        /**
-         * @brief Method to implement the verification process to ensure
-         * that the sensor is up and running
-         * 
-         * @return Boolean of the result
-         */
-        bool selfTest() override;
-
-        /**
-         * @brief Method to reset the sensor to default values and to close
-         * the connection. Used if you need to close and re initialize the sensor
-         * 
-         * @return Boolean of the result
-         */
-        bool closeAndReset();
     };
 }
