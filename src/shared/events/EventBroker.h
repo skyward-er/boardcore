@@ -26,8 +26,8 @@
 #include <events/Event.h>
 #include <events/FSM.h>
 #include <miosix.h>
-#include <stdint.h>
 
+#include <cstdint>
 #include <map>
 #include <vector>
 

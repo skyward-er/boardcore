@@ -30,6 +30,8 @@ namespace Boardcore
 namespace TimestampTimer
 {
 
+#ifndef COMPILE_FOR_HOST
+
 #ifdef _ARCH_CORTEXM3_STM32
 HardwareTimer<uint32_t, TimerMode::Chain> initHardwareTimer()
 {
@@ -65,10 +67,14 @@ HardwareTimer<uint32_t, TimerMode::Single> timestamp_timer =
     initHardwareTimer();
 #endif
 
+#endif  // COMPILE_FOR_HOST
+
 void enableTimestampTimer(uint8_t prescaler)
 {
+#ifndef COMPILE_FOR_HOST
     timestamp_timer.setPrescaler(prescaler);
     timestamp_timer.start();
+#endif
 }
 
 }  // namespace TimestampTimer

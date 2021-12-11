@@ -22,6 +22,8 @@
 
 #pragma once
 
+#include <interfaces/endianness.h>
+
 #include <algorithm>
 #include <cassert>
 #include <cstdint>
@@ -30,18 +32,6 @@
 #include <string>
 #include <type_traits>
 #include <utility>
-
-#ifndef COMPILE_FOR_X86
-#include <interfaces/endianness.h>
-#elif defined(__GNUC__)
-
-#define swapBytes64 __builtin_bswap64
-
-static uint16_t swapBytes16(uint16_t x)
-{
-    return (x & 0xFF00) >> 8 | (x & 0x00FF) << 8;
-}
-#endif
 
 using std::min;
 using std::string;

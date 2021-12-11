@@ -22,9 +22,14 @@
 
 #pragma once
 
+#include <Common.h>
 #include <Debug.h>
+
+#include <cmath>
+
+#ifndef COMPILE_FOR_HOST
 #include <drivers/HardwareTimer.h>
-#include <math.h>
+#endif
 
 namespace Boardcore
 {
@@ -39,11 +44,15 @@ namespace TimestampTimer
  */
 static const uint8_t PRESCALER_VALUE = 255;
 
+#ifndef COMPILE_FOR_HOST
+
 #ifdef _ARCH_CORTEXM3_STM32
 extern HardwareTimer<uint32_t, TimerMode::Chain> timestamp_timer;
 #else
 extern HardwareTimer<uint32_t, TimerMode::Single> timestamp_timer;
 #endif
+
+#endif  // COMPILE_FOR_HOST
 
 /**
  * @brief Enables and starts the timer peripheral, which can be
@@ -56,7 +65,11 @@ void enableTimestampTimer(uint8_t prescaler = PRESCALER_VALUE);
  */
 inline uint64_t getTimestamp()
 {
+#ifdef COMPILE_FOR_HOST
+    return 0;
+#else
     return timestamp_timer.toIntMicroSeconds(timestamp_timer.tick());
+#endif
 }
 
 }  // namespace TimestampTimer
