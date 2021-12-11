@@ -23,33 +23,36 @@ variables:
   GIT_SUBMODULE_STRATEGY: recursive
 
 stages:
-  - build
+  - build-release
+  - build-debug
   - test
   - lint
   - documentation
 
-# Stage build
+# Stage build-release
 
 build-release:
-  stage: build
+  stage: build-release
   tags:
     - miosix
   script:
-    - ./sbs
+    - ./sbs --jobs 2
+
+# Stage build-debug
 
 build-debug:
-  stage: build
+  stage: build-debug
   tags:
     - miosix
   script:
-    - ./sbs --debug
+    - ./sbs --jobs 2 --debug
 
 # Stage test
 
 test:
   stage: test
   script:
-    - ./sbs --test catch-tests-entry
+    - ./sbs --jobs 2 --test catch-tests-entry
   allow_failure: true
 
 # Stage lint
