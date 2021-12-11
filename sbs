@@ -232,8 +232,9 @@ lint_cppcheck() {
     get_cppcheck_opts opts
 
     cppcheck --language=c++ --std=c++11 --enable=all --inline-suppr \
-        --suppress=unusedFunction --suppress=missingInclude \
-        --error-exitcode=1 "${opts[@]}" "$source_dir/src"
+        --suppress=unmatchedSuppression --suppress=unusedFunction \
+        --suppress=missingInclude --error-exitcode=1 "${opts[@]}" \
+        "$source_dir/src"
     echo
 }
 
