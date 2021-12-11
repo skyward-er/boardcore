@@ -26,6 +26,8 @@ endif()
 add_subdirectory(${KPATH} EXCLUDE_FROM_ALL)
 include(${KPATH}/config/boards.cmake)
 
+add_subdirectory(${SBS_BASE}/libs/miosix-host EXCLUDE_FROM_ALL)
+
 add_subdirectory(${SBS_BASE}/libs/mxgui EXCLUDE_FROM_ALL)
 
 add_subdirectory(${SBS_BASE}/libs/tscpp EXCLUDE_FROM_ALL)
