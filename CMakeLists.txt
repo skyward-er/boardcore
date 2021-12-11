@@ -20,6 +20,7 @@
 # THE SOFTWARE.
 
 cmake_minimum_required(VERSION 3.16)
+enable_testing()
 include(cmake/sbs.cmake)
 
 #-----------------------------------------------------------------------------#
@@ -103,7 +104,7 @@ add_executable(catch-tests-entry
 )
 target_compile_definitions(catch-tests-entry PUBLIC USE_MOCK_PERIPHERALS)
 sbs_target(catch-tests-entry stm32f429zi_stm32f4discovery)
-#catch_discover_tests(catch-tests-entry)
+sbs_catch_test(catch-tests-entry)
 
 #-----------------------------------------------------------------------------#
 #                               Tests - Drivers                               #
