@@ -168,7 +168,7 @@ add_executable(test-timer-utils src/tests/drivers/timer/test-timer-utils.cpp)
 sbs_target(test-timer-utils stm32f429zi_stm32f4discovery)
 
 add_executable(test-ublox src/tests/drivers/test-ublox.cpp)
-sbs_target(test-ublox stm32f429zi_skyward_death_stack_x)
+sbs_target(test-ublox stm32f407vg_stm32f4discovery)
 
 add_executable(test-vn100serial src/tests/drivers/test-vn100serial.cpp)
 sbs_target(test-vn100serial stm32f407vg_stm32f4discovery)

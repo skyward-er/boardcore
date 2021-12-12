@@ -38,7 +38,20 @@ int main()
     printf("Welcome to the ublox test\n");
 
     // Keep GPS baud rate at default for easier testing
+#ifdef _BOARD_STM32F429ZI_SKYWARD_DEATHST_X
     UbloxGPS gps(921600, RATE, 2, "gps", 38400);
+#else
+    GpioPin tx(GPIOB_BASE, 6);
+    GpioPin rx(GPIOB_BASE, 7);
+
+    tx.mode(miosix::Mode::ALTERNATE);
+    rx.mode(miosix::Mode::ALTERNATE);
+
+    tx.alternateFunction(7);
+    rx.alternateFunction(7);
+
+    UbloxGPS gps(921600, RATE, 1, "gps", 38400);
+#endif
     UbloxGPSData dataGPS;
     printf("Gps allocated\n");
 
