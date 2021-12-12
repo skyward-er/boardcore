@@ -22,7 +22,8 @@
 
 #pragma once
 
-#include "Common.h"
+#include <cstring>
+
 #include "Vec3.h"
 
 namespace Boardcore

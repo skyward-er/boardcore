@@ -46,12 +46,22 @@ function(sbs_target TARGET OPT_BOARD)
         message(FATAL_ERROR "No board selected")
     endif()
     target_include_directories(${TARGET} PRIVATE src/shared)
-    target_link_libraries(${TARGET} PRIVATE SkywardBoardcore::Boardcore-${OPT_BOARD})
-    add_custom_command(
-        TARGET ${TARGET} POST_BUILD
-        COMMAND ${CMAKE_OBJCOPY} -O ihex ${TARGET} ${TARGET}.hex
-        COMMAND ${CMAKE_OBJCOPY} -O binary ${TARGET} ${TARGET}.bin
-        BYPRODUCTS ${TARGET}.hex ${TARGET}.bin
-        VERBATIM
-    )
+    if(CMAKE_CROSSCOMPILING)
+        target_link_libraries(${TARGET} PRIVATE SkywardBoardcore::Boardcore-${OPT_BOARD})
+        add_custom_command(
+            TARGET ${TARGET} POST_BUILD
+            COMMAND ${CMAKE_OBJCOPY} -O ihex ${TARGET} ${TARGET}.hex
+            COMMAND ${CMAKE_OBJCOPY} -O binary ${TARGET} ${TARGET}.bin
+            BYPRODUCTS ${TARGET}.hex ${TARGET}.bin
+            VERBATIM
+        )
+    else()
+        target_link_libraries(${TARGET} PRIVATE SkywardBoardcore::Boardcore-host)
+    endif()
+endfunction()
+
+function(sbs_catch_test TARGET)
+    if(NOT CMAKE_CROSSCOMPILING)
+        catch_discover_tests(${TARGET})
+    endif()
 endfunction()

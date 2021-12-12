@@ -22,6 +22,9 @@
 
 #pragma once
 
+#include <Debug.h>
+#include <miosix.h>
+
 #include <cstdint>
 #include <list>
 #include <ostream>
@@ -31,21 +34,10 @@
 
 #include "CircularBuffer.h"
 
-// This header can be compiled to run on a PC, for easier testing.
-#ifdef COMPILE_FOR_X86
-#warning The flag COMPILE_FOR_X86 is active! If this is flight code, shame on you
-#define TRACE(x) printf(x)  // linter off
-#define MIOSIX_ONLY(x)
-#else
-#define MIOSIX_ONLY(x) x
-#include "Debug.h"
-#include "miosix.h"
-
 using miosix::ConditionVariable;
 using miosix::FastMutex;
 using miosix::Lock;
 using std::range_error;
-#endif
 
 namespace Boardcore
 {
@@ -164,11 +156,7 @@ bool Packet<len>::tryAppend(const uint8_t* msg, const size_t msg_len)
         // Set the packet's timestamp when the first message is inserted
         if (content.size() == 0)
         {
-#ifdef COMPILE_FOR_X86
-            ts = time(NULL);
-#else
             ts = miosix::getTick();
-#endif
         }
 
         // Append the message to the packet
@@ -244,7 +232,7 @@ public:
         }
 
         {
-            MIOSIX_ONLY(Lock<FastMutex> l(mutex);)
+            Lock<FastMutex> l(mutex);
             // Add an element if there isn't any
             if (buffer.count() == 0)
             {
@@ -288,7 +276,7 @@ public:
                 buffer.last().markAsReady();
             }
 
-            MIOSIX_ONLY(cv_notempty.broadcast();)
+            cv_notempty.broadcast();
             return dropped;
         }
     }
@@ -298,7 +286,7 @@ public:
      */
     const Pkt& get()
     {
-        MIOSIX_ONLY(Lock<FastMutex> l(mutex);)
+        Lock<FastMutex> l(mutex);
         return buffer.get();
     }
 
@@ -307,7 +295,7 @@ public:
      */
     const Pkt& pop()
     {
-        MIOSIX_ONLY(Lock<FastMutex> l(mutex);)
+        Lock<FastMutex> l(mutex);
         return buffer.pop();
     }
 
@@ -316,7 +304,7 @@ public:
      */
     bool isFull()
     {
-        MIOSIX_ONLY(Lock<FastMutex> l(mutex);)
+        Lock<FastMutex> l(mutex);
 
         if (buffer.count() > 0)
         {
@@ -333,7 +321,7 @@ public:
      */
     bool isEmpty()
     {
-        MIOSIX_ONLY(Lock<FastMutex> l(mutex);)
+        Lock<FastMutex> l(mutex);
 
         return buffer.isEmpty();
     }
@@ -344,13 +332,11 @@ public:
      */
     void waitUntilNotEmpty()
     {
-#ifndef COMPILE_FOR_X86
         Lock<FastMutex> l(mutex);
         if (buffer.isEmpty())
         {
             cv_notempty.wait(mutex);
         }
-#endif
     }
 
     /**
@@ -358,7 +344,7 @@ public:
      */
     size_t countReady()
     {
-        MIOSIX_ONLY(Lock<FastMutex> l(mutex);)
+        Lock<FastMutex> l(mutex);
 
         if (!buffer.isEmpty())
         {
@@ -377,14 +363,14 @@ public:
      */
     size_t countNotEmpty()
     {
-        MIOSIX_ONLY(Lock<FastMutex> l(mutex);)
+        Lock<FastMutex> l(mutex);
 
         return buffer.count();
     }
 
 private:
-    MIOSIX_ONLY(FastMutex mutex;)
-    MIOSIX_ONLY(ConditionVariable cv_notempty;)
+    FastMutex mutex;
+    ConditionVariable cv_notempty;
 
     CircularBuffer<Pkt, pkt_num> buffer;
 };

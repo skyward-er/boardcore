@@ -273,7 +273,7 @@ def check_cppcheck(directory):
     # Run cppcheck on the directory
     try:
         result = check_output(['cppcheck', '-q', '--language=c++', '--template=gcc', '--std=c++11', '--enable=all', '--inline-suppr',
-                               '--suppress=unusedFunction', '--suppress=missingInclude', '--suppress=noExplicitConstructor',
+                               '--suppress=unmatchedSuppression', '--suppress=unusedFunction', '--suppress=missingInclude',
                                directory], stderr=STDOUT)
 
         # Parse results and count errors

@@ -20,6 +20,9 @@
  * THE SOFTWARE.
  */
 
+// FIXME: This Catch2 test hangs when compiled for host
+#ifndef COMPILE_FOR_HOST
+
 #ifdef STANDALONE_CATCH1_TEST
 #include "catch-tests-entry.cpp"
 #endif
@@ -31,9 +34,10 @@
 #include <catch2/catch.hpp>
 #include <cstdio>
 
-using namespace Boardcore;
 using miosix::getTick;
 using miosix::Thread;
+
+using namespace Boardcore;
 
 // Uncertainty on the time of delivery of a delayed event, in ms
 static const unsigned int EVENT_DELAY_UNCERTAINTY = 1;
@@ -242,3 +246,5 @@ TEST_CASE_METHOD(EventBrokerTestFixture,
         REQUIRE_FALSE(expectEvent(EV_A, TOPIC_2, start + 3000, 2, broker));
     }
 }
+
+#endif  // COMPILE_FOR_HOST

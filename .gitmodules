@@ -19,3 +19,6 @@
 [submodule "libs/Catch2"]
 	path = libs/Catch2
 	url = ../third-party/Catch2.git
+[submodule "libs/miosix-host"]
+	path = libs/miosix-host
+	url = ../miosix-host.git

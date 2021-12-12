@@ -1,5 +1,5 @@
 # Copyright (c) 2021 Skyward Experimental Rocketry
-# Authors: Luca Erbetta, Luca Conterio, Alberto Nidasio
+# Authors: Luca Erbetta, Luca Conterio, Alberto Nidasio, Damiano Amatruda
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -23,25 +23,37 @@ variables:
   GIT_SUBMODULE_STRATEGY: recursive
 
 stages:
-  - build
+  - build-release
+  - build-debug
+  - test
   - lint
   - documentation
 
-# Stage build
+# Stage build-release
 
 build-release:
-  stage: build
+  stage: build-release
   tags:
     - miosix
   script:
-    - ./sbs
+    - ./sbs --jobs 2
+
+# Stage build-debug
 
 build-debug:
-  stage: build
+  stage: build-debug
   tags:
     - miosix
   script:
-    - ./sbs --debug
+    - ./sbs --jobs 2 --debug
+
+# Stage test
+
+test:
+  stage: test
+  script:
+    - ./sbs --jobs 2 --test catch-tests-entry
+  allow_failure: true
 
 # Stage lint
 

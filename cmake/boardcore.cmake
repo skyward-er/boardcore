@@ -21,7 +21,7 @@
 
 include(dependencies)
 
-add_custom_target(boardcore)
+include(boardcore-host)
 
 foreach(OPT_BOARD ${BOARDS})
     set(BOARDCORE_LIBRARY boardcore-${OPT_BOARD})
@@ -94,5 +94,4 @@ foreach(OPT_BOARD ${BOARDS})
         Catch2::Catch2
         Mavlink::Mavlink
     )
-    add_dependencies(boardcore boardcore-${OPT_BOARD})
 endforeach()

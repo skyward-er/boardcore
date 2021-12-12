@@ -23,9 +23,11 @@
 #ifdef STANDALONE_CATCH1_TEST
 #include "catch-tests-entry.cpp"
 #endif
+
 #include <catch2/catch.hpp>
 
 #define private public
+
 #include <utils/collections/SyncPacketQueue.h>
 
 using namespace Boardcore;
@@ -40,14 +42,12 @@ uint8_t message_base[BUF_LEN] = {'0', '1', '2', '3', '4', '5', '6',
 
 uint8_t buf[BUF_LEN];
 
-inline bool COMPARE(uint8_t* buf, size_t len, const char* expected)
+inline bool COMPARE(const uint8_t* buf, size_t len, const char* expected)
 {
-    size_t i = 0;
-    while (expected[i] != '\0' && i < len)
+    for (size_t i = 0; i < len && expected[i] != '\0'; ++i)
     {
         CAPTURE(i);
         REQUIRE(buf[i] == expected[i]);
-        ++i;
     }
 
     return true;
@@ -85,9 +85,7 @@ TEST_CASE("Packet tests")
 
         REQUIRE(p.tryAppend(message_base, 5));
         uint64_t ts = p.timestamp();
-#ifndef COMPILE_FOR_X86
         REQUIRE(miosix::getTick() - ts < 5);
-#endif
         REQUIRE(p.dump(buf) == 5);
         COMPARE(buf, BUF_LEN, "01234");
 
@@ -116,9 +114,7 @@ TEST_CASE("Packet tests")
         REQUIRE(p.size() == 10);
         REQUIRE(p.msgCount() == 3);
 
-#ifndef COMPILE_FOR_X86
         REQUIRE(p.timestamp() == ts);
-#endif
 
         p.clear();
         REQUIRE(p.isEmpty());

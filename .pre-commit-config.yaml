@@ -14,6 +14,7 @@ repos:
           --language=c++,
           --enable=all,
           --inline-suppr,
+          --suppress=unmatchedSuppression,
           --suppress=unusedFunction,
           --suppress=missingInclude
         ]
