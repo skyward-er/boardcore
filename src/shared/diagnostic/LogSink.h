@@ -1,5 +1,5 @@
 /* Copyright (c) 2021 Skyward Experimental Rocketry
- * Author: Luca Erbetta, Luca Conterio
+ * Authors: Luca Erbetta, Luca Conterio
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -39,6 +39,8 @@ public:
     LogSink(const LogSink&) = delete;
     LogSink& operator=(const LogSink&) = delete;
 
+    virtual ~LogSink() {}
+
     void log(const LogRecord& record);
 
     void enable() { enabled = true; }
@@ -51,7 +53,7 @@ public:
 
     int getLevel() { return min_level; }
 
-    void setFormatString(std::string format) { this->format = format; }
+    void setFormatString(const std::string& format) { this->format = format; }
 
 protected:
     virtual void logImpl(std::string l) = 0;
@@ -68,14 +70,14 @@ private:
 class FileLogSink : public LogSink
 {
 public:
-    FileLogSink(FILE* f) : f(f) {}
-
     FileLogSink() {}
+
+    explicit FileLogSink(FILE* f) : f(f) {}
 
     void setFile(FILE* f_) { f = f_; }
 
 protected:
-    void logImpl(std::string l);
+    void logImpl(std::string l) override;
 
     FILE* f;
     FastMutex mutex;
@@ -92,11 +94,10 @@ public:
     FileLogSinkBuffered() : logger(Logger::instance()) {}
 
 protected:
-    void logImpl(std::string l);
+    void logImpl(std::string l) override;
 
 private:
     Logger& logger;
-    FastMutex mutex;
 };
 
 }  // namespace Boardcore

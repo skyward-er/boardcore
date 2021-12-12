@@ -807,14 +807,3 @@ int RS232_GetPortnr(const char *devname)
 
   return -1;  /* device not found */
 }
-
-
-
-
-
-
-
-
-
-
-

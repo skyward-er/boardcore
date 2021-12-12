@@ -20,8 +20,14 @@
  * THE SOFTWARE.
  */
 
+#include <drivers/Xbee/APIFramesLog.h>
+#include <drivers/Xbee/ATCommands.h>
+#include <drivers/Xbee/Xbee.h>
+#include <drivers/interrupt/external_interrupts.h>
+#include <logger/Logger.h>
 #include <miosix.h>
 #include <mxgui/display.h>
+#include <utils/ButtonHandler.h>
 
 #include <array>
 #include <cstdio>
@@ -31,13 +37,7 @@
 #include "ActiveObject.h"
 #include "Mark.h"
 #include "XbeeTransceiver.h"
-#include "drivers/Xbee/APIFramesLog.h"
-#include "drivers/Xbee/ATCommands.h"
-#include "drivers/Xbee/Xbee.h"
-#include "drivers/interrupt/external_interrupts.h"
 #include "gui/XbeeGui.h"
-#include "logger/Logger.h"
-#include "utils/ButtonHandler.h"
 
 using namespace Boardcore;
 using namespace miosix;

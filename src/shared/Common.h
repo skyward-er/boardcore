@@ -22,6 +22,12 @@
 
 #pragma once
 
+#include <drivers/timer/TimestampTimer.h>
+#include <interfaces/endianness.h>
+#include <kernel/scheduler/scheduler.h>
+#include <miosix.h>
+#include <pthread.h>
+
 #include <array>
 #include <cassert>
 #include <cstdint>
@@ -31,13 +37,6 @@
 #include <memory>
 #include <set>
 #include <vector>
-
-/* Miosix */
-#include <drivers/timer/TimestampTimer.h>
-#include <interfaces/endianness.h>
-#include <kernel/scheduler/scheduler.h>
-#include <miosix.h>
-#include <pthread.h>
 
 #include "Constants.h"
 #include "Debug.h"

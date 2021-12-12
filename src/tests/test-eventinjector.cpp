@@ -20,9 +20,10 @@
  * THE SOFTWARE.
  */
 
+#include <events/utils/EventCounter.h>
+#include <events/utils/EventInjector.h>
+
 #include "Common.h"
-#include "events/utils/EventCounter.h"
-#include "events/utils/EventInjector.h"
 
 using namespace Boardcore;
 using namespace miosix;

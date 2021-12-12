@@ -26,9 +26,11 @@
 
 #define EIGEN_RUNTIME_NO_MALLOC
 
-#include <iostream>
-#include <catch2/catch.hpp>
 #include <kalman/KalmanEigen.h>
+
+#include <catch2/catch.hpp>
+#include <iostream>
+
 #include "../kalman/test-kalman-data.h"
 
 using namespace Boardcore;

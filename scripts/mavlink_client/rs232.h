@@ -83,5 +83,3 @@ int RS232_GetPortnr(const char *);
 #endif
 
 #endif
-
-

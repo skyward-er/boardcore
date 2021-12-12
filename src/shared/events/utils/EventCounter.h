@@ -22,8 +22,8 @@
 
 #pragma once
 
-#include "events/EventBroker.h"
-#include "events/EventHandler.h"
+#include <events/EventBroker.h>
+#include <events/EventHandler.h>
 
 namespace Boardcore
 {

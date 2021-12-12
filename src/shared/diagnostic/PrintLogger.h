@@ -22,19 +22,19 @@
 
 #pragma once
 
+#include <ActiveObject.h>
+#include <Singleton.h>
 #include <fmt/format.h>
+#include <logger/Logger.h>
 #include <miosix.h>
+#include <utils/collections/CircularBuffer.h>
 
 #include <memory>
 #include <string>
 #include <vector>
 
-#include "ActiveObject.h"
 #include "LogSink.h"
 #include "PrintLoggerData.h"
-#include "Singleton.h"
-#include "logger/Logger.h"
-#include "utils/collections/CircularBuffer.h"
 
 using std::string;
 using std::unique_ptr;
@@ -57,35 +57,38 @@ class Logging;
 class PrintLogger
 {
 public:
-    PrintLogger(Logging& logging, string name) : parent(logging), name(name) {}
+    PrintLogger(Logging& logging, const string& name)
+        : parent(logging), name(name)
+    {
+    }
 
-    PrintLogger getChild(string name);
+    PrintLogger getChild(const string& name);
 
     template <typename... Args>
-    void log(uint8_t level, string function, string file, int line,
-             string format, Args&&... args)
+    void log(uint8_t level, const string& function, const string& file,
+             int line, string format, Args&&... args)
     {
         vlog(level, function, file, line, format,
              fmt::make_args_checked<Args...>(format, args...));
     }
 
     template <typename... Args>
-    void logAsync(uint8_t level, string function, string file, int line,
-                  string format, Args&&... args)
+    void logAsync(uint8_t level, const string& function, const string& file,
+                  int line, string format, Args&&... args)
     {
         vlogAsync(level, function, file, line, format,
                   fmt::make_args_checked<Args...>(format, args...));
     }
 
 private:
-    void vlog(uint8_t level, string function, string file, int line,
-              fmt::string_view format, fmt::format_args args);
-    void vlogAsync(uint8_t level, string function, string file, int line,
-                   fmt::string_view format, fmt::format_args args);
+    void vlog(uint8_t level, const string& function, const string& file,
+              int line, fmt::string_view format, fmt::format_args args);
+    void vlogAsync(uint8_t level, const string& function, const string& file,
+                   int line, fmt::string_view format, fmt::format_args args);
 
-    LogRecord buildLogRecord(uint8_t level, string function, string file,
-                             int line, fmt::string_view format,
-                             fmt::format_args args);
+    LogRecord buildLogRecord(uint8_t level, const string& function,
+                             const string& file, int line,
+                             fmt::string_view format, fmt::format_args args);
 
     Logging& parent;
     string name;
@@ -118,7 +121,7 @@ private:
     class AsyncLogger : public ActiveObject
     {
     public:
-        AsyncLogger(Logging& parent);
+        explicit AsyncLogger(Logging& parent);
         void log(const LogRecord& record);
 
     protected:

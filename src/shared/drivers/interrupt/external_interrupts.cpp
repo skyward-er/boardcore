@@ -21,6 +21,7 @@
  */
 
 #include "external_interrupts.h"
+
 #include <miosix.h>
 using namespace miosix;
 
@@ -280,7 +281,7 @@ constexpr unsigned ConvertGPIO_BASEtoUnsiged(unsigned P)
 #if (defined (STM32F427xx) || defined (STM32F437xx) || defined (STM32F429xx) || defined (STM32F439xx))
             P == GPIOJ_BASE? 9 :
             P == GPIOK_BASE? 10 :
-#endif                
+#endif
             0;
     // clang-format on
 }

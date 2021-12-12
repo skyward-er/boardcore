@@ -21,7 +21,9 @@
  */
 
 // Disable asserts
+#ifndef NDEBUG
 #define NDEBUG
+#endif  // NDEBUG
 
 #include <cstdio>
 
@@ -29,11 +31,11 @@
 #include "../catch-tests-entry.cpp"
 #endif
 
+#include <drivers/Xbee/APIFrameParser.h>
+
+#include <catch2/catch.hpp>
 #include <cstdio>
 #include <cstring>
-
-#include "drivers/Xbee/APIFrameParser.h"
-#include <catch2/catch.hpp>
 
 using namespace Boardcore;
 using namespace Xbee;
@@ -329,6 +331,7 @@ TEST_CASE("Frame serialization")
         REQUIRE(tx_orig.getTrasmitOptions() == 0x40);
 
         uint8_t* rf_data = tx_orig.getRFDataPointer();
+        UNUSED(rf_data);  // TODO: Check rf_data
 
         REQUIRE(tx_orig.getRFDataLength() == 0);
         REQUIRE(tx_orig.getFrameDataLength() == 13);
@@ -371,7 +374,7 @@ TEST_CASE("Frame serialization")
 
     SECTION("TX Status frame")
     {
-        constexpr size_t frame_size = 11;
+        // constexpr size_t frame_size = 11;
         TXStatusFrame tx_orig{};
 
         tx_orig.setFrameID(0x47);

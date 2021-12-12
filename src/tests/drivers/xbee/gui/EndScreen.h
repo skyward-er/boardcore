@@ -22,13 +22,13 @@
 
 #pragma once
 
-#include <cstdint>
 #include <mxgui/display.h>
+#include <utils/gui/GridLayout.h>
+#include <utils/gui/OptionView.h>
+#include <utils/gui/TextView.h>
+#include <utils/gui/VerticalLayout.h>
 
-#include "utils/gui/GridLayout.h"
-#include "utils/gui/TextView.h"
-#include "utils/gui/VerticalLayout.h"
-#include "utils/gui/OptionView.h"
+#include <cstdint>
 
 namespace Boardcore
 {
@@ -53,8 +53,9 @@ struct EndScreen
 
     TextView tv_f{"Press F to pay respects"};
     TextView tv_reset{"Or RESET to start again"};
+
 private:
-    TextView tv_title{"You killed the program, you maniac!"}; 
+    TextView tv_title{"You killed the program, you maniac!"};
 };
 
 }  // namespace Boardcore

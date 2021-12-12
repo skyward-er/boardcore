@@ -131,7 +131,7 @@ private:
     ContiguousQueue(const ContiguousQueue&) = delete;
     ContiguousQueue& operator=(const ContiguousQueue&) = delete;
 
-    T elements[N] = {0};
+    T elements[N]     = {0};
     unsigned int size = 0;
 };
 

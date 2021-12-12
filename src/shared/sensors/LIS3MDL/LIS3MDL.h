@@ -24,12 +24,12 @@
 
 #include <Common.h>
 #include <diagnostic/PrintLogger.h>
+#include <drivers/spi/SPIDriver.h>
 #include <drivers/timer/TimestampTimer.h>
+#include <sensors/Sensor.h>
 
 #include "LIS3MDLData.h"
-#include "drivers/spi/SPIDriver.h"
 #include "miosix.h"
-#include "sensors/Sensor.h"
 
 namespace Boardcore
 {

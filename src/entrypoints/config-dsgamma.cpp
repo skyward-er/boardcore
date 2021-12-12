@@ -20,12 +20,11 @@
  * THE SOFTWARE.
  */
 
+#include <drivers/gamma868/Gamma868.h>
 #include <stdio.h>
 #include <string.h>
 
 #include "miosix.h"
-
-#include <drivers/gamma868/Gamma868.h>
 
 using namespace Boardcore;
 using namespace std;

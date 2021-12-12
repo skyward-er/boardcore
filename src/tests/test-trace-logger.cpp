@@ -35,8 +35,8 @@ int main()
     PrintLogger log4   = Logging::getLogger("async");
 
     // Logging::getStdOutLogSink().setFormatString("{ts} [{name}] {msg}\n");
-    
-    PrintLogger logfile = Logging::getLogger("logfile");
+
+    PrintLogger logfile              = Logging::getLogger("logfile");
     unique_ptr<LogSink> logfile_sink = std::make_unique<FileLogSinkBuffered>();
     logfile_sink->setLevel(LOGL_INFO);
     Logging::addLogSink(logfile_sink);

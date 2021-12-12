@@ -22,18 +22,19 @@
 
 #include <assert.h>
 #include <drivers/timer/TimestampTimer.h>
+#include <sensors/Sensor.h>
+#include <sensors/SensorManager.h>
+#include <utils/testutils/TestSensor.h>
 
 #include <functional>
 #include <iostream>
 #include <type_traits>
 
 #include "miosix.h"
-#include "sensors/Sensor.h"
-#include "sensors/SensorManager.h"
-#include "utils/testutils/TestSensor.h"
 
 using namespace Boardcore;
 using namespace miosix;
+using namespace std;
 
 // Data produced by the MySensor sensor.
 struct MySensorData : public PressureData, public TemperatureData
@@ -202,33 +203,32 @@ int main()
 
     FailingSensor failig_s;  // must not be initialized and not sampled
 
-    SensorManager sm(
-        {{/*Sensor=*/&s1,
-          {/*ID=*/"s1",
-           /*Freq=*/1000,
-           /*Callback=*/[]() { std::cout << "Callback s1!" << endl; },
-           /*DMA=*/false,
-           /*Enabled=*/true}},
-         {/*Sensor=*/&s2,
-          {/*ID=*/"s2",
-           /*Freq=*/1000,
-           /*Callback=*/[]() { std::cout << "Callback s2!" << endl; },
-           /*DMA=*/false,
-           /*Enabled=*/true}},
-         {/*Sensor=*/&filter,
-          {/*ID=*/"filter",
-           /*Freq=*/2000,
-           /*Callback=*/
-           []() { std::cout << "Callback filter!" << endl; },
-           /*DMA=*/false,
-           /*Enabled=*/true}},
-         {/*Sensor=*/&failig_s,
-          {/*ID=*/"failing",
-           /*Freq=*/3000,
-           /*Callback=*/
-           []() { std::cout << "Callback failing sensor!" << endl; },
-           /*DMA=*/false,
-           /*Enabled=*/true}}});
+    SensorManager sm({{/*Sensor=*/&s1,
+                       {/*ID=*/"s1",
+                        /*Freq=*/1000,
+                        /*Callback=*/[]() { cout << "Callback s1!" << endl; },
+                        /*DMA=*/false,
+                        /*Enabled=*/true}},
+                      {/*Sensor=*/&s2,
+                       {/*ID=*/"s2",
+                        /*Freq=*/1000,
+                        /*Callback=*/[]() { cout << "Callback s2!" << endl; },
+                        /*DMA=*/false,
+                        /*Enabled=*/true}},
+                      {/*Sensor=*/&filter,
+                       {/*ID=*/"filter",
+                        /*Freq=*/2000,
+                        /*Callback=*/
+                        []() { cout << "Callback filter!" << endl; },
+                        /*DMA=*/false,
+                        /*Enabled=*/true}},
+                      {/*Sensor=*/&failig_s,
+                       {/*ID=*/"failing",
+                        /*Freq=*/3000,
+                        /*Callback=*/
+                        []() { cout << "Callback failing sensor!" << endl; },
+                        /*DMA=*/false,
+                        /*Enabled=*/true}}});
 
     sm.start();
 
@@ -266,6 +266,8 @@ int main()
         s.sample();
 
         MySensorDataFIFO data = fifo_proxy.getLastSample();
+
+        UNUSED(data);
 
         TRACE("AccelProxy : %llu %f %f %f \n", data.accel_timestamp,
               data.accel_x, data.accel_y, data.accel_z);

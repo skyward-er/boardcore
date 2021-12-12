@@ -23,13 +23,10 @@
 #pragma once
 
 #include <diagnostic/PrintLogger.h>
+#include <scheduler/TaskScheduler.h>
 
 #include "SensorInfo.h"
 #include "SensorSampler.h"
-#include "scheduler/TaskScheduler.h"
-// #include "diagnostic/PrintLogger.h"
-
-using namespace std;
 
 namespace Boardcore
 {
@@ -45,8 +42,8 @@ namespace Boardcore
 class SensorManager
 {
 public:
-    using function_t  = function<void()>;
-    using SensorMap_t = map<AbstractSensor*, SensorInfo>;
+    using function_t  = std::function<void()>;
+    using SensorMap_t = std::map<AbstractSensor*, SensorInfo>;
 
     /**
      * @brief Constructor.
@@ -172,9 +169,10 @@ private:
     TaskScheduler* scheduler; /**< scheduler to update the samplers at the
                                 correct period */
 
-    vector<SensorSampler*> samplers; /**< vector of all the samplers (unique) */
+    std::vector<SensorSampler*>
+        samplers; /**< vector of all the samplers (unique) */
 
-    map<AbstractSensor*, SensorSampler*>
+    std::map<AbstractSensor*, SensorSampler*>
         samplers_map; /**< map each sensor to the corresponding sampler */
 
     bool sensors_init_result =

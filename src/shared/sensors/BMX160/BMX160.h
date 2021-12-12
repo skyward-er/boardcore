@@ -28,7 +28,6 @@
 #include <sensors/Sensor.h>
 
 #include <algorithm>
-#include <cassert>
 #include <cstring>
 
 #include "BMX160Config.h"

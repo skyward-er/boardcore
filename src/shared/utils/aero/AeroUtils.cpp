@@ -20,7 +20,6 @@
  * THE SOFTWARE.
  */
 
-
 #include "AeroUtils.h"
 
 namespace Boardcore

@@ -23,16 +23,16 @@
 #pragma once
 
 #include <diagnostic/PrintLogger.h>
+#include <events/Event.h>
+#include <events/FSM.h>
 #include <miosix.h>
-#include <stdint.h>
 
+#include <cstdint>
 #include <map>
 #include <vector>
 
 #include "ActiveObject.h"
 #include "Singleton.h"
-#include "events/Event.h"
-#include "events/FSM.h"
 
 using std::map;
 using std::vector;

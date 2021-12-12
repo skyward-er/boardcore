@@ -22,13 +22,13 @@
 
 #pragma once
 
-#include <cstdint>
 #include <mxgui/display.h>
+#include <utils/gui/GridLayout.h>
+#include <utils/gui/OptionView.h>
+#include <utils/gui/TextView.h>
+#include <utils/gui/VerticalLayout.h>
 
-#include "utils/gui/GridLayout.h"
-#include "utils/gui/TextView.h"
-#include "utils/gui/VerticalLayout.h"
-#include "utils/gui/OptionView.h"
+#include <cstdint>
 
 #include "../XbeeTestData.h"
 
@@ -84,7 +84,8 @@ struct ConfigScreen
         tv_log_status.setFont(mxgui::miscFixedBold);
         tv_log_status.setTextColor(mxgui::white);
         tv_log_status.setBackgroundColor(mxgui::red);
-        tv_log_status.setAlignment(HorizAlignment::CENTER, VertAlignment::CENTER);
+        tv_log_status.setAlignment(HorizAlignment::CENTER,
+                                   VertAlignment::CENTER);
 
         grid_title.setCell(&title, 0, 0);
         grid_title.setCell(&tv_log_status, 0, 1);
@@ -96,7 +97,7 @@ struct ConfigScreen
         btn_start.setSelectable(true);
         btn_start.setAlignment(HorizAlignment::CENTER, VertAlignment::CENTER);
         btn_start.setBackgroundColor(mxgui::darkGrey);
-        
+
         btn_energy.setSelectable(true);
         btn_energy.setAlignment(HorizAlignment::CENTER, VertAlignment::CENTER);
         btn_energy.setBackgroundColor(mxgui::darkGrey);
@@ -143,44 +144,48 @@ private:
         opt_send_enable.addOnOptionChosenListener(
             [&](unsigned int id) { config.tx_enabled = id == TX_ENABLED; });
 
-        opt_send_interval.addOnOptionChosenListener([&](unsigned int id) {
-            switch (id)
+        opt_send_interval.addOnOptionChosenListener(
+            [&](unsigned int id)
             {
-                case TXINT_CONTINUOUS:
-                    config.send_interval = 0;
-                    break;
-                case TXINT_200MS:
-                    config.send_interval = 200;
-                    break;
-                case TXINT_250MS:
-                    config.send_interval = 250;
-                    break;
-                case TXINT_333MS:
-                    config.send_interval = 333;
-                    break;
-                case TXINT_500MS:
-                    config.send_interval = 500;
-                    break;
-                case TXINT_1000MS:
-                    config.send_interval = 1000;
-                    break;
-            }
-        });
+                switch (id)
+                {
+                    case TXINT_CONTINUOUS:
+                        config.send_interval = 0;
+                        break;
+                    case TXINT_200MS:
+                        config.send_interval = 200;
+                        break;
+                    case TXINT_250MS:
+                        config.send_interval = 250;
+                        break;
+                    case TXINT_333MS:
+                        config.send_interval = 333;
+                        break;
+                    case TXINT_500MS:
+                        config.send_interval = 500;
+                        break;
+                    case TXINT_1000MS:
+                        config.send_interval = 1000;
+                        break;
+                }
+            });
 
-        opt_packet_size.addOnOptionChosenListener([&](unsigned int id) {
-            switch (id)
+        opt_packet_size.addOnOptionChosenListener(
+            [&](unsigned int id)
             {
-                case PKTSIZE_64:
-                    config.packet_size = 64;
-                    break;
-                case PKTSIZE_128:
-                    config.packet_size = 128;
-                    break;
-                case PKTSIZE_256:
-                    config.packet_size = 256;
-                    break;
-            }
-        });
+                switch (id)
+                {
+                    case PKTSIZE_64:
+                        config.packet_size = 64;
+                        break;
+                    case PKTSIZE_128:
+                        config.packet_size = 128;
+                        break;
+                    case PKTSIZE_256:
+                        config.packet_size = 256;
+                        break;
+                }
+            });
 
         opt_freq_hop.addOnOptionChosenListener(
             [&](unsigned int id) { config.freq_hop = id == FH_ENABLED; });
@@ -220,7 +225,7 @@ private:
         "Xbee datarate", {{DR_10K, "10 kbps"}, {DR_80K, "80 kbps"}}, DR_10K, 2};
 
     GridLayout grid{1, 2};
-    GridLayout grid_title{1,2};
+    GridLayout grid_title{1, 2};
     TextView title{"Xbee Setup"};
     TextView tv_log_status{"SD ERR!"};
 };

@@ -1,5 +1,5 @@
-/* Copyright (c) 2019 Skyward Experimental Rocketry
- * Author: Luca Erbetta
+/* Copyright (c) 2019-2021 Skyward Experimental Rocketry
+ * Author: Luca Erbetta, Damiano Amatruda
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -21,14 +21,14 @@
  */
 
 /*
- * Entrypoint for all Catch1-based tests. You should not need to modify this
+ * Entrypoint for all Catch2-based tests. You should not need to modify this
  * file.
  *
  * To add a test, just create a new source file and include <catch.hpp>, then
  * add test cases as you wish. Do not add a main() function in your test
  * sources.
  * Once the test is written, compile the test source file(s) + this entrypoint
- * in sbs.conf. Run it and all your test will be automatically executed.
+ * in CMakeLists.txt. Run it and all your test will be automatically executed.
  *
  * You can also include this file in your test source if you want to run it as a
  * standalone test, and not togheter with all the others. See the
@@ -41,34 +41,40 @@
  * https://github.com/catchorg/Catch2/blob/Catch1.x/docs/command-line.md
  *
  * To specify the command line options, add, in the definition of the entrypoint
- * in sbs.conf, add the CATCH1_CL_OPTIONS define.
- * Example: -DCATCH1_CL_OPTIONS="\"[tag1][tag2] -s\""
+ * in CMakeLists.txt, add the CATCH_CL_OPTIONS define.
+ * Example: -DCATCH_CL_OPTIONS="\"[tag1][tag2] -s\""
  * Remember to correctly escape the quotation marks, as shown
  * above.
  *
  * Further information at:
- * https://git.skywarder.eu/r2a/skyward-boardcore/wikis/Testing
+ * https://git.skywarder.eu/scs/skyward-boardcore/wikis/Testing
  */
 
 #define CATCH_CONFIG_RUNNER
 #define CATCH_CONFIG_NO_POSIX_SIGNALS
-#include <cstring>
-#include <string>
+
 #include <catch2/catch.hpp>
-#include <vector>
-
-#ifndef COMPILE_FOR_X86
-#include <miosix.h>
-using miosix::Thread;
-#endif
-
-using std::string;
-using std::vector;
 
 // No tags or command line options as default.
-#ifndef CATCH1_CL_OPTIONS
-#define CATCH1_CL_OPTIONS ""
+#ifndef CATCH_CL_OPTIONS
+#define CATCH_CL_OPTIONS ""
 #endif
+
+#ifdef COMPILE_FOR_HOST
+
+int main(int argc, char* argv[]) { return Catch::Session().run(argc, argv); }
+
+#else
+
+#include <miosix.h>
+
+#include <cstring>
+#include <string>
+#include <vector>
+
+using miosix::Thread;
+using std::string;
+using std::vector;
 
 /**
  * @brief Splits a string around spaces
@@ -77,18 +83,18 @@ using std::vector;
  * @param str String to split
  * @return vector<string>
  */
-vector<string> splitSpaces(string str)
+static vector<string> splitSpaces(const string& str)
 {
-    
-    unsigned int p = 0, p2;
-    bool end       = false;
+    size_t p = 0;
+    bool end = false;
     vector<string> out;
-    if(str.length() == 0)
+
+    if (str.length() == 0)
         return out;
-        
+
     do
     {
-        p2 = str.find(" ", p);
+        size_t p2 = str.find(" ", p);
 
         if (p2 == string::npos)  // No match
         {
@@ -102,6 +108,7 @@ vector<string> splitSpaces(string str)
         {
             out.push_back(str.substr(p, len));
         }
+
         p = p2 + 1;
     } while (!end);
 
@@ -110,16 +117,16 @@ vector<string> splitSpaces(string str)
 
 /**
  * @brief Entrypoint for the tests. Parses the options and tags
- * provided in sbs.conf and runs a Catch1 session.
+ * provided in CMakeLists.txt and runs a Catch2 session.
  */
 int main()
 {
-    // Parse command line arguments from #defines in sbs.conf
+    // Parse command line arguments from #defines in CMakeLists.txt
 
     string skw{"Skyward-tests"};
 
-    // CATCH1_CL_OPTIONS defined in sbs.conf
-    string options_str{CATCH1_CL_OPTIONS};
+    // CATCH_CL_OPTIONS defined in CMakeLists.txt
+    string options_str{CATCH_CL_OPTIONS};
 
     vector<string> options = splitSpaces(options_str);
     vector<string> args{skw};
@@ -130,8 +137,8 @@ int main()
     // Convert vector of strings to array of c-strings
     size_t argc = args.size();
 
-    char** argv =
-        new char*[argc];  // Array of c strings, aka array of char pointers
+    // Array of c strings, aka array of char pointers
+    char** argv = new char*[argc];
     for (size_t i = 0; i < argc; i++)
     {
         string s    = args.at(i);
@@ -141,7 +148,7 @@ int main()
     }
 
     // Run tests with the provided arguments
-    int result = Catch::Session().run(argc, argv);
+    Catch::Session().run(argc, argv);
 
     // Clear memory
     for (size_t i = 0; i < argc; i++)
@@ -151,11 +158,12 @@ int main()
     delete[] argv;
 
     printf("End.\n");
-#ifndef COMPILE_FOR_X86
+
     // Infinite loop to avoid board reset each time we return
-    for (;;)
+    while (true)
     {
         Thread::sleep(10000);
     }
-#endif
 }
+
+#endif  // COMPILE_FOR_HOST

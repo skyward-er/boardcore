@@ -20,6 +20,8 @@
  * THE SOFTWARE.
  */
 
+#include <drivers/hbridge/HBridge.h>
+#include <drivers/pwm/pwm.h>
 #include <drivers/timer/GeneralPurposeTimer.h>
 #include <miosix.h>
 
@@ -27,7 +29,6 @@
 #include <sstream>
 
 #include "Common.h"
-#include "drivers/hbridge/HBridge.h"
 
 using namespace Boardcore;
 using namespace miosix;

@@ -22,11 +22,10 @@
 
 #include "UbloxGPS.h"
 
+#include <diagnostic/StackLogger.h>
+#include <drivers/serial.h>
 #include <fcntl.h>
-
-#include "diagnostic/StackLogger.h"
-#include "drivers/serial.h"
-#include "filesystem/file_access.h"
+#include <filesystem/file_access.h>
 
 using namespace miosix;
 

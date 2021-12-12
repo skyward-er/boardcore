@@ -20,11 +20,11 @@
  * THE SOFTWARE.
  */
 
-#include <cstdio>
 #include <miosix.h>
-
-#include <mxgui/entry.h>
 #include <mxgui/display.h>
+#include <mxgui/entry.h>
+
+#include <cstdio>
 
 using namespace mxgui;
 using namespace miosix;
@@ -32,10 +32,10 @@ using namespace miosix;
 int main()
 {
     {
-		DrawingContext dc(DisplayManager::instance().getDisplay());
-		dc.write(Point(0,0),"Hello world");
-	}
-    for(;;)
+        DrawingContext dc(DisplayManager::instance().getDisplay());
+        dc.write(Point(0, 0), "Hello world");
+    }
+    for (;;)
     {
         printf("Hello world! Look at the screen!\n");
         Thread::sleep(1000);

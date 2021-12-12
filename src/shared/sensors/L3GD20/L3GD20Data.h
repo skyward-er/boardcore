@@ -23,7 +23,7 @@
 
 #pragma once
 
-#include "sensors/SensorData.h"
+#include <sensors/SensorData.h>
 
 namespace Boardcore
 {

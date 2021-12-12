@@ -23,22 +23,22 @@
 #pragma once
 
 #include <diagnostic/PrintLogger.h>
+#include <drivers/Transceiver.h>
+#include <drivers/Xbee/APIFrameParser.h>
+#include <drivers/spi/SPIDriver.h>
 #include <miosix.h>
+#include <utils/collections/CircularBuffer.h>
 
 #include <functional>
 
 #include "XbeeStatus.h"
-#include "drivers/Transceiver.h"
-#include "drivers/Xbee/APIFrameParser.h"
-#include "drivers/spi/SPIDriver.h"
-#include "utils/collections/CircularBuffer.h"
 
 using miosix::FastMutex;
 
 #ifndef USE_MOCK_PERIPHERALS
 using GpioType = miosix::GpioPin;
 #else
-#include "utils/testutils/MockGpioPin.h"
+#include <utils/testutils/MockGpioPin.h>
 using GpioType = MockGpioPin;
 #endif
 

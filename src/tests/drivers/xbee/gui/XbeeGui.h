@@ -23,16 +23,16 @@
 #pragma once
 
 #include <mxgui/display.h>
+#include <utils/gui/ScreenManager.h>
 
 #include <cstdint>
 #include <functional>
 
 #include "ConfigScreen.h"
-#include "StatusScreen.h"
-#include "EnergyScanScreen.h"
 #include "EndScreen.h"
+#include "EnergyScanScreen.h"
 #include "RespectScreen.h"
-#include "utils/gui/ScreenManager.h"
+#include "StatusScreen.h"
 
 namespace Boardcore
 {
@@ -49,8 +49,7 @@ public:
         SCREEN_RESPECT
     };
 
-    XbeeGUI()
-        : screen_manager(mxgui::DisplayManager::instance(), 4)
+    XbeeGUI() : screen_manager(mxgui::DisplayManager::instance(), 4)
     {
         screen_manager.addScreen(SCREEN_CONFIG, &screen_config.root);
         screen_manager.addScreen(SCREEN_STATUS, &screen_status.root);
@@ -61,10 +60,7 @@ public:
         screen_manager.start();
     }
 
-    ~XbeeGUI()
-    {
-        screen_manager.stop();
-    }
+    ~XbeeGUI() { screen_manager.stop(); }
 
     ScreenManager screen_manager;
 

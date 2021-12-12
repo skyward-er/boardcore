@@ -39,7 +39,6 @@ int main()
     timerPin.mode(Mode::ALTERNATE);
     timerPin.alternateFunction(2);
 
-    timer.reset();
     timer.setPrescaler(
         TimerUtils::computePrescalerValue(timer.getTimer(), frequency * 4));
     timer.setAutoReloadRegister(100);

@@ -22,12 +22,12 @@
 
 #pragma once
 
+#include <math/Stats.h>
+
 #include <cstdint>
 #include <cstdio>
 #include <ostream>
 #include <string>
-
-#include "math/Stats.h"
 
 namespace Boardcore
 {

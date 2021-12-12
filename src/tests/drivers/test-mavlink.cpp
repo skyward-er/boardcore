@@ -29,6 +29,7 @@
 #pragma GCC diagnostic pop
 
 #include <Common.h>
+#include <drivers/gamma868/Gamma868.h>
 #include <drivers/mavlink/MavlinkDriver.h>
 
 using namespace Boardcore;
@@ -43,6 +44,7 @@ static const unsigned int ping_period        = 1000;
 // Mavlink out buffer with 10 packets, 256 bytes each.
 using Mav = MavlinkDriver<queue_len, packet_size>;
 
+Gamma868* gamma868;
 Mav* channel;
 
 /**

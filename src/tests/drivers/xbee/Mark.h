@@ -22,8 +22,8 @@
 
 #pragma once
 
-#include <string>
 #include <ostream>
+#include <string>
 
 using std::string;
 
@@ -38,10 +38,7 @@ struct Mark
     long long timestamp;
     unsigned int seq;
 
-    static string header()
-    {
-        return "timestamp,seq\n";
-    }
+    static string header() { return "timestamp,seq\n"; }
 
     void print(std::ostream& os) const
     {

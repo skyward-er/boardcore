@@ -23,8 +23,7 @@
 #pragma once
 
 #include <Common.h>
-
-#include "diagnostic/SkywardStack.h"
+#include <diagnostic/SkywardStack.h>
 
 namespace Boardcore
 {

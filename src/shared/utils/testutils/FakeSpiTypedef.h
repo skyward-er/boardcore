@@ -22,11 +22,10 @@
 
 #pragma once
 #include <miosix.h>
+#include <utils/testutils/MockGpioPin.h>
 
 #include <cstdint>
 #include <vector>
-
-#include "utils/testutils/MockGpioPin.h"
 
 using std::vector;
 

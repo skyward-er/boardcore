@@ -27,13 +27,14 @@
 
 #include <Common.h>
 #include <drivers/timer/GeneralPurposeTimer.h>
+#include <drivers/timer/TimerUtils.h>
 #include <kalman/KalmanEigen.h>
+#include <math/SkyQuaternion.h>
+#include <util/util.h>
 
 #include <iostream>
 
-#include "math/SkyQuaternion.h"
 #include "test-kalman-data.h"
-#include "util/util.h"
 
 using namespace Boardcore;
 using namespace miosix;
@@ -120,7 +121,8 @@ int main()
 
         tick2 = timer.readCounter();
 
-        printf("%d : %f \n", i, timer.toMilliSeconds(tick2 - tick1));
+        printf("%d : %f \n", i,
+               TimerUtils::toMilliSeconds(timer.getTimer(), tick2 - tick1));
 
         // printf("%f, %f, %f;\n", filter.getState()(0), filter.getState()(1),
         //       filter.getState()(2));
@@ -134,8 +136,6 @@ int main()
             printf("APOGEE DETECTED at iteration %d ! \n", i);
         }
     }
-
-    timer.stop();
 
     // printf("Total time %d \n", timer.interval());
 

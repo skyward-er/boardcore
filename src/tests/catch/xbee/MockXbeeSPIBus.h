@@ -22,19 +22,14 @@
 
 #pragma once
 
-#include <utils/testutils/MockSPIBus.h>
+#include <drivers/Xbee/APIFrameParser.h>
+#include <drivers/Xbee/APIFrames.h>
+#include <drivers/spi/test/MockSPIBus.h>
+#include <utils/testutils/MockGpioPin.h>
 
 #include <deque>
 #include <functional>
 #include <memory>
-
-#include "drivers/Xbee/APIFrameParser.h"
-#include "drivers/Xbee/APIFrames.h"
-#include "utils/testutils/MockGpioPin.h"
-
-using std::deque;
-using std::function;
-using std::unique_ptr;
 
 namespace Boardcore
 {

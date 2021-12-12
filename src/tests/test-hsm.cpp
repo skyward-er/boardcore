@@ -20,36 +20,43 @@
  * THE SOFTWARE.
  */
 
-#include <iostream>
-#include "events/EventBroker.h"
 #include <assert.h>
+#include <events/Event.h>
+#include <events/EventBroker.h>
+#include <events/HSM.h>
+
+#include <iostream>
+
 #include "Singleton.h"
-#include "events/Event.h"
-#include "events/HSM.h"
 
 using namespace Boardcore;
 using namespace std;
 using namespace miosix;
 
-#define TOPIC_TEST  1
+// linter off
 
-#define CHECK_INIT() bool test_value = false; (void)test_value
+#define TOPIC_TEST 1
 
-#define CHECK_STATE(HSM, SIGNAL, STATE) do{ \
-cout << "------------------------------" << endl; \
-cout << "Triggering signal " << #SIGNAL << endl; \
-sEventBroker->post({SIGNAL}, TOPIC_TEST);\
-Thread::sleep(400); \
-test_value = HSM->testState(STATE); \
-cout << "Check State " << #STATE << " " << (HSM->testState(STATE)?"TRUE":"FALSE") << endl; \
-assert(HSM->testState(STATE)); \
-}while(0)
+#define CHECK_INIT()         \
+    bool test_value = false; \
+    (void)test_value
 
-
+#define CHECK_STATE(HSM, SIGNAL, STATE)                             \
+    do                                                              \
+    {                                                               \
+        cout << "------------------------------" << endl;           \
+        cout << "Triggering signal " << #SIGNAL << endl;            \
+        sEventBroker->post({SIGNAL}, TOPIC_TEST);                   \
+        Thread::sleep(400);                                         \
+        test_value = HSM->testState(STATE);                         \
+        cout << "Check State " << #STATE << " "                     \
+             << (HSM->testState(STATE) ? "TRUE" : "FALSE") << endl; \
+        assert(HSM->testState(STATE));                              \
+    } while (0)
 
 enum TestEvents : uint8_t
 {
-    EV_A           = EV_FIRST_SIGNAL,
+    EV_A = EV_FIRST_SIGNAL,
     EV_B,
     EV_C,
     EV_D,
@@ -60,16 +67,14 @@ enum TestEvents : uint8_t
     EV_I
 };
 
-
-class HSMUTTest : public HSM<HSMUTTest>,
-public Singleton<HSMUTTest>
+class HSMUTTest : public HSM<HSMUTTest>, public Singleton<HSMUTTest>
 {
     friend class Singleton<HSMUTTest>;
-    
+
 public:
     HSMUTTest();
     ~HSMUTTest() {}
-    
+
     State state_initialization(const Event& e);
     State state_S(const Event& e);
     State state_S1(const Event& e);
@@ -81,10 +86,8 @@ public:
     bool foo;
 };
 
-
-
-#define DEBUG_PRINT  cout <<  __func__  << ": event received:" << (int)e.sig<< endl
-
+#define DEBUG_PRINT \
+    cout << __func__ << ": event received:" << (int)e.sig << endl
 
 using namespace std;
 
@@ -93,13 +96,15 @@ HSMUTTest::HSMUTTest() : HSM(&HSMUTTest::state_initialization)
     sEventBroker->subscribe(this, TOPIC_TEST);
 }
 
-State HSMUTTest::state_initialization(const Event& e){
+State HSMUTTest::state_initialization(const Event& e)
+{
     DEBUG_PRINT;
     this->foo = false;
     return transition(&HSMUTTest::state_S2);
 }
 
-State HSMUTTest::state_S(const Event& e){
+State HSMUTTest::state_S(const Event& e)
+{
     State retState = HANDLED;
     DEBUG_PRINT;
     switch (e.sig)
@@ -112,9 +117,12 @@ State HSMUTTest::state_S(const Event& e){
         case EV_EXIT:
             break;
         case EV_I:
-            if(this->foo == false){
+            if (this->foo == false)
+            {
                 this->foo = true;
-            }else{
+            }
+            else
+            {
                 retState = UNHANDLED;
             }
             break;
@@ -128,7 +136,8 @@ State HSMUTTest::state_S(const Event& e){
     return retState;
 }
 
-State HSMUTTest::state_S1(const Event& e){
+State HSMUTTest::state_S1(const Event& e)
+{
     State retState = HANDLED;
     DEBUG_PRINT;
     switch (e.sig)
@@ -141,11 +150,13 @@ State HSMUTTest::state_S1(const Event& e){
         case EV_EXIT:
             break;
         case EV_D:
-            if(this->foo == false){
+            if (this->foo == false)
+            {
                 this->foo = true;
-                retState = transition(&HSMUTTest::state_S);
+                retState  = transition(&HSMUTTest::state_S);
             }
-            else{
+            else
+            {
                 retState = UNHANDLED;
             }
             break;
@@ -171,7 +182,8 @@ State HSMUTTest::state_S1(const Event& e){
     return retState;
 }
 
-State HSMUTTest::state_S11(const Event& e){
+State HSMUTTest::state_S11(const Event& e)
+{
     State retState = HANDLED;
     DEBUG_PRINT;
     switch (e.sig)
@@ -183,11 +195,13 @@ State HSMUTTest::state_S11(const Event& e){
         case EV_EXIT:
             break;
         case EV_D:
-            if(this->foo == true){
+            if (this->foo == true)
+            {
                 this->foo = false;
-                retState = transition(&HSMUTTest::state_S1);
+                retState  = transition(&HSMUTTest::state_S1);
             }
-            else{
+            else
+            {
                 retState = UNHANDLED;
             }
             break;
@@ -204,7 +218,8 @@ State HSMUTTest::state_S11(const Event& e){
     return retState;
 }
 
-State HSMUTTest::state_S2(const Event& e){
+State HSMUTTest::state_S2(const Event& e)
+{
     State retState = HANDLED;
     DEBUG_PRINT;
     switch (e.sig)
@@ -223,9 +238,12 @@ State HSMUTTest::state_S2(const Event& e){
             retState = transition(&HSMUTTest::state_S11);
             break;
         case EV_I:
-            if(this->foo == false){
+            if (this->foo == false)
+            {
                 this->foo = true;
-            }else{
+            }
+            else
+            {
                 retState = UNHANDLED;
             }
             break;
@@ -236,7 +254,8 @@ State HSMUTTest::state_S2(const Event& e){
     return retState;
 }
 
-State HSMUTTest::state_S21(const Event& e){
+State HSMUTTest::state_S21(const Event& e)
+{
     State retState = HANDLED;
     DEBUG_PRINT;
     switch (e.sig)
@@ -260,7 +279,8 @@ State HSMUTTest::state_S21(const Event& e){
     }
     return retState;
 }
-State HSMUTTest::state_S211(const Event& e){
+State HSMUTTest::state_S211(const Event& e)
+{
     State retState = HANDLED;
     DEBUG_PRINT;
     switch (e.sig)
@@ -286,18 +306,16 @@ State HSMUTTest::state_S211(const Event& e){
 
 /*
  * ************ END STATE MACHINE ************
-**/
+ **/
 
+int main()
+{
 
+    sEventBroker->start();
 
-int main() {
-
-sEventBroker->start();
-
-    
-    HSMUTTest* hsm =HSMUTTest::getInstance();
+    HSMUTTest* hsm = HSMUTTest::getInstance();
     hsm->start();
-    
+
     CHECK_INIT();
     CHECK_STATE(hsm, EV_G, &HSMUTTest::state_S11);
     CHECK_STATE(hsm, EV_I, &HSMUTTest::state_S11);
@@ -314,8 +332,8 @@ sEventBroker->start();
     CHECK_STATE(hsm, EV_I, &HSMUTTest::state_S211);
 
     cout << "Test Passed!" << endl;
-    while(1){
-        
+    while (1)
+    {
     };
     return 0;
 }

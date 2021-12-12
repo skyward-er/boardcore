@@ -175,7 +175,7 @@ void waitForInput()
 BMX160CorrectionParameters calibrateAccelerometer(
     BMX160CorrectionParameters correctionParameters)
 {
-    Matrix<float, 3, 2> m;
+    Eigen::Matrix<float, 3, 2> m;
     auto* calibrationModel =
         new SixParameterCalibration<AccelerometerData,
                                     ACC_CALIBRATION_SAMPLES *
@@ -219,7 +219,7 @@ BMX160CorrectionParameters calibrateAccelerometer(
 
     TRACE("Initialization and self-test completed!\n");
 
-    Vector3f avgAccel, vec;
+    Eigen::Vector3f avgAccel, vec;
     int fifoAccSampleCount;
     uint64_t accelTimestamp = 0;
 
@@ -326,9 +326,9 @@ BMX160CorrectionParameters calibrateAccelerometer(
 BMX160CorrectionParameters calibrateMagnetometer(
     BMX160CorrectionParameters correctionParameters)
 {
-    Matrix<float, 3, 2> m;
+    Eigen::Matrix<float, 3, 2> m;
     auto* calibrationModel = new SoftIronCalibration<MAG_CALIBRATION_SAMPLES>;
-    Vector3f avgMag{0, 0, 0}, vec;
+    Eigen::Vector3f avgMag{0, 0, 0}, vec;
 
     SPIBus bus(SPI1);
 

@@ -23,9 +23,9 @@
 #pragma once
 
 #include <miosix.h>
+#include <sensors/Sensor.h>
 
 #include "InternalADCData.h"
-#include "sensors/Sensor.h"
 
 namespace Boardcore
 {

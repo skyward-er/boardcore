@@ -22,6 +22,7 @@
 
 #pragma once
 
+#include <Debug.h>
 #include <drivers/spi/SPIBusInterface.h>
 
 #include <cstdint>
@@ -56,7 +57,7 @@ namespace Boardcore
     "SpiBusInterface must be built using MockGpioPin (-DUSE_MOCK_PERIPHERALS)"
 #endif
 
-#include "utils/testutils/MockGpioPin.h"
+#include <utils/testutils/MockGpioPin.h>
 
 using miosix::FastMutex;
 using miosix::Lock;
@@ -210,14 +211,14 @@ inline bool MockSPIBus::canCommunicate()
     bool result = selected && current_config == expected_config;
     if (!result)
     {
-        printf("Error, cannot communicato on MockSPIBus: ");
+        TRACE("Error, cannot communicato on MockSPIBus: ");
         if (!selected)
         {
-            printf("Chip select not asserted\n");
+            TRACE("Chip select not asserted\n");
         }
         else
         {
-            printf("Incorrect configuration\n");
+            TRACE("Incorrect configuration\n");
         }
     }
     return result;
