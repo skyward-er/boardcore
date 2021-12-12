@@ -129,9 +129,10 @@ void UbloxGPS::run()
         // Parse the message
         if (!parseUBXMessage(message))
         {
-            LOG_DEBUG(logger,
-                      "UBX message not recognized (class:0x{02x}, id: 0x{02x})",
-                      message[2], message[3]);
+            LOG_DEBUG(
+                logger,
+                "UBX message not recognized (class: {:#02x}, id: {:#02x})",
+                message[2], message[3]);
         }
     }
 }
@@ -167,7 +168,7 @@ bool UbloxGPS::writeUBXMessage(uint8_t* message, int length)
     if (write(gpsFile, message, length) < 0)
     {
         LOG_ERR(logger,
-                "Failed to write ubx message (class:0x{02x}, id: 0x{02x})",
+                "Failed to write ubx message (class: {:#02x}, id: {:#02x})",
                 message[2], message[3]);
         return false;
     }
@@ -191,8 +192,8 @@ bool UbloxGPS::serialCommuinicationSetup()
                                   serialPortNumber, defaultBaudrate))))
         {
             LOG_ERR(logger,
-                    "[gps] Faild to open serial port {0} with baudrate {1} as "
-                    "file {2}",
+                    "[gps] Faild to open serial port {} with baudrate {} as "
+                    "file {}",
                     serialPortNumber, defaultBaudrate, serialPortName);
             return false;
         }
@@ -520,12 +521,12 @@ bool UbloxGPS::parseUBXACKMessage(uint8_t* message)
     {
         case 0x00:  // UBX-ACK-NAC
             LOG_DEBUG(logger,
-                      "Received NAC for message (class:0x{02x}, id: 0x{02x})",
+                      "Received NAC for message (class: {:#02x}, id: {:#02x})",
                       message[6], message[7]);
             return true;
         case 0x01:  // UBX-ACK-ACK
             LOG_DEBUG(logger,
-                      "Received ACK for message (class:0x{02x}, id: 0x{02x})",
+                      "Received ACK for message (class: {:#02x}, id: {:#02x})",
                       message[6], message[7]);
             return true;
     }
