@@ -26,7 +26,8 @@ using miosix::Lock;
 namespace Boardcore
 {
 
-#if defined(COMPILING_FMT) && !defined(DISABLE_PRINTLOGGER)
+#ifndef DISABLE_PRINTLOGGER
+
 static string getLevelString(uint8_t level)
 {
     switch (level)
@@ -64,13 +65,13 @@ void LogSink::log(const LogRecord& record)
     }
 }
 
-void FileLogSink::logImpl(string l)
+void FileLogSink::logImpl(const string& l)
 {
     Lock<FastMutex> lock(mutex);
     fwrite(l.c_str(), sizeof(char), l.length(), f);
 }
 
-void FileLogSinkBuffered::logImpl(string l)
+void FileLogSinkBuffered::logImpl(const string& l)
 {
     Lock<FastMutex> lock(mutex);
     LoggingString s;
@@ -164,6 +165,7 @@ void Logging::AsyncLogger::run()
         parent.log(rec);
     }
 }
-#endif
+
+#endif  // DISABLE_PRINTLOGGER
 
 }  // namespace Boardcore
