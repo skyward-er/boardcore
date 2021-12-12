@@ -20,97 +20,69 @@
  * THE SOFTWARE.
  */
 #include "Runcam.h"
+
 #include <miosix.h>
 
+Runcam::Runcam() : Runcam(defaultPortNumber) {}
 
-
- Runcam::Runcam()
-        : Runcam(defaultPortNumber)
- {}
-
-
-Runcam::Runcam( unsigned int portNumber)
-{
-    this->portNumber=portNumber;
-    isInit=false;
+Runcam::Runcam(unsigned int portNumber) {
+  this->portNumber = portNumber;
+  isInit = false;
 }
 
+bool Runcam::configureSerialCommunication() {
+  serialInterface = new RuncamSerial(portNumber, defaultBaudRate);
 
+  // Check correct serial init
+  if (!(serialInterface->init())) {
+    return false;
+  }
 
+  return true;
+}
 
-bool Runcam::configureSerialCommunication(){
-    serialInterface = new RuncamSerial(portNumber, defaultBaudRate);
-
-    //Check correct serial init
-    if(!(serialInterface -> init()))
-    {
-        return false;
-    }
-
+bool Runcam::close() {
+  // Sensor not init
+  if (!isInit) {
+    printf("Runcam not initilized");
     return true;
+  }
+
+  // Close the serial
+  if (!(serialInterface->closeSerial())) {
+    printf("Unable to close serial communication");
+    return false;
+  }
+
+  isInit = false;
+
+  // Free the serialInterface memory
+  delete (serialInterface);
+
+  return true;
 }
 
+void Runcam::openMenu() { serialInterface->send(&OPEN_MENU, 4); }
+void Runcam::selectSetting() { serialInterface->send(&SELECT_SETTING, 4); }
+void Runcam::moveDown() { serialInterface->send(&MOVE_DOWN, 4); }
 
-bool Runcam::close()
-{
-    //Sensor not init
-    if(!isInit)
-    {
-        LOG_WARN(logger, "Sensor vn100 already not initilized");
-        return true;
-    }
-
-    //Close the serial
-    if(!(serialInterface -> closeSerial()))
-    {
-        LOG_WARN(logger, "Impossible to close vn100 serial communication");
-        return false;
-    }
-
-    isInit = false;
-
-    //Free the serialInterface memory
-    delete(serialInterface);
-
+bool Runcam::init() {
+  // If already initialized
+  if (isInit) {
+    printf("Connection with the camera already initialized");
     return true;
+  }
+
+  if (!configureSerialCommunication()) {
+    printf("Unable to config camera port");
+    return false;
+  }
+
+  // Set the isInit flag true
+  isInit = true;
+
+  Runcam::moveDown();
+  Runcam::openMenu();
+
+  return true;
 }
-
-
-void Runcam::openMenu(){
-    serialInterface->send(&OPEN_MENU,4);
-}
-void Runcam::selectSetting(){
-    serialInterface->send(&SELECT_SETTING,4);
-}
-void Runcam::moveDown(){
-    serialInterface->send(&MOVE_DOWN,4);
-}
-
-
-
-bool Runcam::init()
-{
-    //If already initialized
-    if(isInit)
-    {
-        LOG_WARN(logger, "Connection with the camera already initialized");
-        return true;
-    }
-
-    if(!configureSerialCommunication())
-    {
-        LOG_ERR(logger, "Unable to config the camera port");
-        return false;
-    }
-  
-    //Set the isInit flag true
-    isInit = true;
-
-    Runcam::moveDown();
-    Runcam::openMenu();
-
-    return true;
-
-
-}
-
