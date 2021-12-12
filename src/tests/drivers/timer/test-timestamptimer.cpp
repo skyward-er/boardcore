@@ -1,5 +1,5 @@
 /* Copyright (c) 2021 Skyward Experimental Rocketry
- * Author: Luca Conterio, Alberto Nidasio
+ * Authors: Luca Conterio, Alberto Nidasio
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -38,9 +38,6 @@ void testTimerUtils(TIM_TypeDef *timer);
 
 int main()
 {
-    long long prevTick;
-    uint64_t timestamp;
-
     TimestampTimer::initTimestampTimer();
     TimestampTimer::enableTimestampTimer();
 
@@ -48,11 +45,11 @@ int main()
 
     while (true)
     {
-        prevTick = getTick();
+        long long prevTick = getTick();
 
-        timestamp = TimestampTimer::getTimestamp();
+        uint64_t timestamp = TimestampTimer::getTimestamp();
 
-        printf("%10llu us, %7f ms, %4f s \n", timestamp, timestamp / 1e3,
+        printf("%10lu us, %7f ms, %4f s \n", timestamp, timestamp / 1e3,
                timestamp / 1e6);
 
         Thread::sleepUntil(prevTick + 1000);

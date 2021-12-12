@@ -96,7 +96,7 @@ public:
         PGA_128 = 0x7   ///< Full scale resolution is ±9.375mV
     };
 
-    ADS131M04(SPISlave spiSlave);
+    explicit ADS131M04(SPISlave spiSlave);
 
     bool init() override;
 

@@ -33,7 +33,7 @@ ADS131M04HighFreq::ADS131M04HighFreq(SPISlave spiSlave, SPIType *spi,
                                      DMAStream rxStream,
                                      DMAStream::Channel dmaChannel,
                                      SPISignalGenerator spiSignalGenerator,
-                                     int bufSize, std::string logFileName)
+                                     int bufSize, const std::string logFileName)
     : ADS131M04(spiSlave), spi(spi), rxStream(rxStream), dmaChannel(dmaChannel),
       spiSignalGenerator(spiSignalGenerator), bufSize(bufSize),
       logFileName(logFileName)
@@ -103,7 +103,7 @@ void ADS131M04HighFreq::run()
 
     if (logFile == 0)
     {
-        printf("Could not open file!\n");
+        LOG_ERR(logger, "Could not open file!");
         return;
     }
 
@@ -129,7 +129,6 @@ void ADS131M04HighFreq::run()
         {
             fwrite(buffer1, sizeof(ADS131M04HighFreqData), bufSize, logFile);
         }
-        printf("Logged\n");
     }
 
     fclose(logFile);
