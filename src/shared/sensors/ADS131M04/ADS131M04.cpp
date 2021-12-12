@@ -126,12 +126,12 @@ void ADS131M04::setChannelGainCalibration(double gain)
     writeRegister(regLSB, rawGain << 8);
 }
 
-template <int C>
-void ADS131M04::enableChannel()
+void ADS131M04::enableChannel(int channel)
 {
-    static_assert(C >= 0 && C <= 3, "Channel must be between 0 and 3");
+    // static_assert(C >= 0 && C <= 3, "Channel must be between 0 and 3");
 
-    changeRegister(Registers::REG_CLOCK, 1 << (C + 8), 1 << (C + 8));
+    changeRegister(Registers::REG_CLOCK, 1 << (channel + 8),
+                   1 << (channel + 8));
 }
 
 template <int C>

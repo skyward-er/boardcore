@@ -29,10 +29,10 @@
 using namespace miosix;
 using namespace Boardcore;
 
-GpioPin sckPin  = GpioPin(GPIOE_BASE, 4);
-GpioPin misoPin = GpioPin(GPIOE_BASE, 2);
-GpioPin mosiPin = GpioPin(GPIOE_BASE, 5);
-GpioPin csPin   = GpioPin(GPIOE_BASE, 6);
+GpioPin sckPin  = GpioPin(GPIOE_BASE, 2);
+GpioPin misoPin = GpioPin(GPIOE_BASE, 5);
+GpioPin mosiPin = GpioPin(GPIOE_BASE, 6);
+GpioPin csPin   = GpioPin(GPIOE_BASE, 4);
 
 void initBoard()
 {
@@ -59,13 +59,16 @@ int main()
 
     // SPI configuration setup
     SPIBus spiBus(SPI4);
-    SPISlave spiSlave(spiBus, csPin, {});
+    SPIBusConfig spiConfig = {};
+    spiConfig.mode         = SPI::Mode::MODE_1;
+    SPISlave spiSlave(spiBus, csPin, spiConfig);
 
     // Device initialization
     ADS131M04 ads131(spiSlave);
 
     // Initialize the device
     ads131.init();
+    ads131.enableChannel(0);
 
     delayMs(1000);
 
@@ -82,7 +85,7 @@ int main()
     while (true)
     {
         ads131.sample();
-        miosix::Thread::sleep(5);
+        delayMs(100);
 
         ADS131M04Data data = ads131.getLastSample();
 

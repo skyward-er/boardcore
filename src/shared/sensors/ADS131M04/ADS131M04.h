@@ -129,8 +129,7 @@ public:
     template <int C>
     void setChannelGainCalibration(double gain);
 
-    template <int C>
-    void enableChannel();
+    void enableChannel(int channel);
 
     template <int C>
     void disableChannel();

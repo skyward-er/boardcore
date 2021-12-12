@@ -74,7 +74,7 @@ int main()
     SPISlave spiSlave(spiBus, csPin, {});
     ADS131M04HighFreq ads131(spiSlave, SPI4, (DMA2_Stream0),
                              DMAStream::Channel::CHANNEL4, spiSignalGenerator,
-                             BUFF_SIZE);
+                             BUFF_SIZE, "ADC1");
 
     // Setup transfer complete interrupt
     NVIC_EnableIRQ(DMA2_Stream0_IRQn);
