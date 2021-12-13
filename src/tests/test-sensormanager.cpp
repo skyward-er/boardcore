@@ -266,6 +266,8 @@ int main()
 
         MySensorDataFIFO data = fifo_proxy.getLastSample();
 
+        UNUSED(data);
+
         TRACE("AccelProxy : %llu %f %f %f \n", data.accel_timestamp,
               data.accel_x, data.accel_y, data.accel_z);
         TRACE("GyroProxy : %llu %f %f %f \n", data.gyro_timestamp, data.gyro_x,

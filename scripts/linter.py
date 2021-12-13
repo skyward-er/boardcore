@@ -186,7 +186,7 @@ def check_format(directory):
 
     # Walk throgh the directory and check each file
     for dirpath, dirnames, filenames in walk(directory):
-        for filename in [f for f in filenames if f.endswith(('.cpp', '.h'))]:
+        for filename in [f for f in filenames if f.endswith(('.cpp', '.h', 'c'))]:
             totalCheckdFilesCounter += 1
 
             # Prepare the complete filepath
@@ -194,7 +194,7 @@ def check_format(directory):
 
             # Dry run clang-format and check if we have an error
             returnCode = call(
-                ['clang-format', '--dry-run', '--Werror', '--ferror-limit=1', currentFilepath], stderr=DEVNULL)
+                ['clang-format', '-style=file', '--dry-run', '--Werror', '--ferror-limit=1', currentFilepath], stderr=DEVNULL)
 
             # If and error occurs warn the user
             if(returnCode != 0):
@@ -272,8 +272,9 @@ def check_cppcheck(directory):
     linter_print(Colors.GREEN + 'cppcheck' + Colors.RESET)
     # Run cppcheck on the directory
     try:
-        result = check_output(['cppcheck', '-q', '--language=c++', '--template=gcc', '--std=c++11', '--enable=all', '--suppress=unusedFunction',
-                               '--suppress=missingInclude', '--suppress=noExplicitConstructor', directory], stderr=STDOUT)
+        result = check_output(['cppcheck', '-q', '--language=c++', '--template=gcc', '--std=c++11', '--enable=all', '--inline-suppr',
+                               '--suppress=unmatchedSuppression', '--suppress=unusedFunction', '--suppress=missingInclude',
+                               directory], stderr=STDOUT)
 
         # Parse results and count errors
         errors = re.findall(r'\[(\w+)\]', result.decode('utf-8'))

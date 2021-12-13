@@ -26,12 +26,13 @@ endif()
 add_subdirectory(${KPATH} EXCLUDE_FROM_ALL)
 include(${KPATH}/config/boards.cmake)
 
+add_subdirectory(${SBS_BASE}/libs/miosix-host EXCLUDE_FROM_ALL)
+
 add_subdirectory(${SBS_BASE}/libs/mxgui EXCLUDE_FROM_ALL)
 
 add_subdirectory(${SBS_BASE}/libs/tscpp EXCLUDE_FROM_ALL)
 
 set(CMAKE_BUILD_WITH_INSTALL_RPATH ON)
-set(BUILD_TESTING OFF CACHE BOOL "Enable creation of Eigen tests.")
 set(EIGEN_TEST_NOQT ON CACHE BOOL "Disable Qt support in unit tests")
 set(CMAKE_Fortran_COMPILER NOTFOUND)
 add_subdirectory(${SBS_BASE}/libs/eigen EXCLUDE_FROM_ALL)
@@ -42,5 +43,7 @@ target_compile_definitions(fmt-header-only INTERFACE _GLIBCXX_USE_WCHAR_T FMT_UN
 target_compile_options(fmt-header-only INTERFACE -fno-math-errno)
 
 add_subdirectory(${SBS_BASE}/libs/Catch2 EXCLUDE_FROM_ALL)
+list(APPEND CMAKE_MODULE_PATH ${SBS_BASE}/libs/Catch2/contrib)
+include(Catch)
 
 add_subdirectory(${SBS_BASE}/libs/mavlink_skyward_lib EXCLUDE_FROM_ALL)

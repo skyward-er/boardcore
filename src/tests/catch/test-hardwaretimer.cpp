@@ -20,6 +20,9 @@
  * THE SOFTWARE.
  */
 
+// Host is unsupported
+#ifndef COMPILE_FOR_HOST
+
 #ifdef STANDALONE_CATCH1_TEST
 #include "catch-tests-entry.cpp"
 #endif
@@ -115,8 +118,8 @@ TEST_CASE_METHOD(TimerTestFixture, "Test long term precision")
 
     Thread::sleep(24000);
 
-    uint32_t tick32 = timer32.tick();
-    uint32_t tick16 = timer16.tick();
+    timer32.tick();
+    timer16.tick();
 
     REQUIRE(timer32.toMilliSeconds(timer32.tick()) == Approx(24000).margin(1));
     REQUIRE(timer16.toMilliSeconds(timer16.tick()) == Approx(24000).margin(1));
@@ -125,3 +128,5 @@ TEST_CASE_METHOD(TimerTestFixture, "Test long term precision")
 
     REQUIRE(timer32.toMilliSeconds(timer32.tick()) == Approx(60000).margin(1));
 }
+
+#endif  // COMPILE_FOR_HOST

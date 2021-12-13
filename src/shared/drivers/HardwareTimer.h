@@ -438,9 +438,10 @@ private:
 };
 
 template <typename Type>
-inline HardwareTimer<Type, TimerMode::Chain>::HardwareTimer(
-    TIM_TypeDef *tim, TIM_TypeDef *slave, TimerTrigger trigger,
-    uint32_t prescaler_freq)
+inline HardwareTimer<Type, TimerMode::Chain>::  // NOLINT
+    HardwareTimer(  // cppcheck-suppress uninitMemberVar
+        TIM_TypeDef *tim, TIM_TypeDef *slave, TimerTrigger trigger,
+        uint32_t prescaler_freq)
     : tim(tim), slave(slave), prescaler_freq(prescaler_freq)
 {
     // Trigger selection from parameter

@@ -22,6 +22,6 @@ void {state_machine_name}Controller::state_{state_name}(const Event& ev)
         default:
         {{
             break;
-        }}  
+        }}
     }}
 }}

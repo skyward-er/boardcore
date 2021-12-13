@@ -22,9 +22,9 @@
 
 #pragma once
 
-#include <list>
+#include <miosix.h>
 
-#include "miosix.h"
+#include <list>
 
 namespace Boardcore
 {

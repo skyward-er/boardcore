@@ -40,7 +40,7 @@ def animate(i, xs, ys):
     if(len(xs) > SAMPLES):
         xs = xs[-SAMPLES:]
         ys = ys[-SAMPLES:]
-    
+
 
     # Draw x and y lists
     ax.clear()

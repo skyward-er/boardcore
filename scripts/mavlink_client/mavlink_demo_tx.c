@@ -61,7 +61,7 @@ int main(int argc, char *argv[])
       return -1;
     }
 
-    int i=0, bdrate = atoi(argv[2]);  
+    int i=0, bdrate = atoi(argv[2]);
     cport_nr = atoi(argv[1]);
 
     char mode[]={'8','N','1',0};
@@ -85,4 +85,3 @@ int main(int argc, char *argv[])
 
     return(0);
 }
-
