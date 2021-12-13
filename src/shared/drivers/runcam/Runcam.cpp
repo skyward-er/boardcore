@@ -44,13 +44,13 @@ bool Runcam::configureSerialCommunication() {
 bool Runcam::close() {
   // Sensor not init
   if (!isInit) {
-    printf("Runcam not initilized");
+    TRACE("Runcam not initilized");
     return true;
   }
 
   // Close the serial
   if (!(serialInterface->closeSerial())) {
-    printf("Unable to close serial communication");
+    TRACE("Unable to close serial communication");
     return false;
   }
 
@@ -69,12 +69,12 @@ void Runcam::moveDown() { serialInterface->send(&MOVE_DOWN, 4); }
 bool Runcam::init() {
   // If already initialized
   if (isInit) {
-    printf("Connection with the camera already initialized");
+    TRACE("Connection with the camera already initialized");
     return true;
   }
 
   if (!configureSerialCommunication()) {
-    printf("Unable to config camera port");
+    TRACE("Unable to config camera port");
     return false;
   }
 

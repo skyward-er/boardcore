@@ -21,153 +21,138 @@
  */
 #pragma once
 
-#include <miosix.h>
-#include <fcntl.h>
 #include <arch/common/drivers/serial.h>
+#include <fcntl.h>
 #include <filesystem/file_access.h>
+#include <miosix.h>
 
-using namespace miosix;
-
+namespace Boardcore {
 /**
  * @brief Class to communicate with the vn100 via serial
  */
-class RuncamSerial
-{
+class VN100Serial {
+ private:
+  /**
+   * @brief Serial settings
+   */
+  int serialBaudRate;
+  int serialPortNumber;
 
-private:
+  /**
+   * @brief Serial file descriptor
+   */
+  int serialFileDescriptor;
 
-    /**
-     * @brief Serial settings
-     */
-    int serialBaudRate;
-    int serialPortNumber;
-    
-    /**
-     * @brief Serial file descriptor
-     */
-    int serialFileDescriptor;
+  /**
+   * @brief Boolean that indicates the init status of the serial communication
+   */
+  bool isInit;
 
-    /**
-     * @brief Boolean that indicates the init status of the serial communication
-     */
-    bool isInit;
+ public:
+  /**
+   * @brief Constructor
+   * @param serial port number that references the usart port on the STM32
+   * @param serial port baud rate
+   */
+  VN100Serial(int serialPortNumber, int serialBaudRate) {
+    this->serialPortNumber = serialPortNumber;
+    this->serialBaudRate = serialBaudRate;
 
-public:
+    isInit = false;
+  }
 
-    /**
-     * @brief Constructor
-     * @param serial port number that references the usart port on the STM32
-     * @param serial port baud rate
-     */
-    RuncamSerial(int serialPortNumber, int serialBaudRate)
-    {
-        this -> serialPortNumber    = serialPortNumber;
-        this -> serialBaudRate      = serialBaudRate;
-
-        isInit = false;
+  /**
+   * @brief Initialization method
+   * @return Boolean which communicates the init process result
+   */
+  bool init() {
+    // If already initialized i avoid the procedure
+    if (isInit) {
+      return true;
     }
 
-    /**
-     * @brief Initialization method
-     * @return Boolean which communicates the init process result
-     */
-    bool init()
-    {
-        //If already initialized i avoid the procedure
-        if(isInit)
-        {
-            return true;
-        }
+    // Retrieve the file system instance
+    miosix::intrusive_ref_ptr<miosix::DevFs> devFs =
+        miosix::FilesystemManager::instance().getDevFs();
 
-        //Retrieve the file system instance
-        intrusive_ref_ptr<DevFs> devFs = FilesystemManager::instance().getDevFs();
-
-        //Create the serial file which we read and write to communicate
-        if(!(devFs -> addDevice("vn100", intrusive_ref_ptr<Device>(new STM32Serial(serialPortNumber, serialBaudRate)))))
-        {
-            return false;
-        }
-
-        //Open the file
-        serialFileDescriptor = open("/dev/vn100", O_RDWR);
-
-        //Check the descriptor
-        if(serialFileDescriptor <= 0)
-        {
-            return false;
-        }
-
-        //Success
-        isInit = true;
-        return true;
+    // Create the serial file which we read and write to communicate
+    if (!(devFs->addDevice(
+            "vn100",
+            miosix::intrusive_ref_ptr<miosix::Device>(
+                new miosix::STM32Serial(serialPortNumber, serialBaudRate))))) {
+      return false;
     }
 
+    // Open the file
+    serialFileDescriptor = open("/dev/vn100", O_RDWR);
 
-    /**
-     * @brief Writes in Serial data
-     * Note: to send std::string via serial you need to pass use "c_str()" method
-     * @param Data to be sent via serial
-     * @return Boolean which communicates the send process result
-     */
-    template <typename DataSend>
-    bool send(DataSend *data, int length)
-    {
-        //Check if the serial has been previously initialized
-        if(!isInit)
-        {
-            return false;
-        }
-
-        //Write the file with the data
-        if(!write(serialFileDescriptor, data, length))
-        {
-            return false;
-        }
-
-        return true;
+    // Check the descriptor
+    if (serialFileDescriptor <= 0) {
+      return false;
     }
 
+    // Success
+    isInit = true;
+    return true;
+  }
 
-    /**
-     * @brief Reads from serial
-     * @param Pointer to the data structure where we need to store data
-     * @return Boolean which communicates the recive process result
-     */
-    template <typename DataReceive>
-    bool recv(DataReceive *data, int length)
-    {
-        if(!isInit)
-        {
-            return false;
-        }
-
-        //Read the data and store it in memory
-        if(!read(serialFileDescriptor, data, length))
-        {
-            return false;
-        }
-
-        return true;
+  /**
+   * @brief Writes in Serial data
+   * Note: to send std::string via serial you need to pass use "c_str()" method
+   * @param Data to be sent via serial
+   * @return Boolean which communicates the send process result
+   */
+  template <typename DataSend>
+  bool send(DataSend *data, int length) {
+    // Check if the serial has been previously initialized
+    if (!isInit) {
+      return false;
     }
 
-
-    /**
-     * @brief Closes the serial communication
-     */
-    bool closeSerial()
-    {
-        //Retrieve the file system instance
-        intrusive_ref_ptr<DevFs> devFs = FilesystemManager::instance().getDevFs();
-
-        //Close the file descriptor
-        close(serialFileDescriptor);
-
-        //Remove the file
-        if(!(devFs -> remove("vn100")))
-        {
-            return false;
-        }
-
-        return true;
+    // Write the file with the data
+    if (!write(serialFileDescriptor, data, length)) {
+      return false;
     }
+
+    return true;
+  }
+
+  /**
+   * @brief Reads from serial
+   * @param Pointer to the data structure where we need to store data
+   * @return Boolean which communicates the recive process result
+   */
+  template <typename DataReceive>
+  bool recv(DataReceive *data, int length) {
+    if (!isInit) {
+      return false;
+    }
+
+    // Read the data and store it in memory
+    if (!read(serialFileDescriptor, data, length)) {
+      return false;
+    }
+
+    return true;
+  }
+
+  /**
+   * @brief Closes the serial communication
+   */
+  bool closeSerial() {
+    // Retrieve the file system instance
+    miosix::intrusive_ref_ptr<miosix::DevFs> devFs =
+        miosix::FilesystemManager::instance().getDevFs();
+
+    // Close the file descriptor
+    close(serialFileDescriptor);
+
+    // Remove the file
+    if (!(devFs->remove("vn100"))) {
+      return false;
+    }
+
+    return true;
+  }
 };
+}  // namespace Boardcore
