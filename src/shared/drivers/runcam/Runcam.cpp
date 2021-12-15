@@ -49,14 +49,14 @@ bool Runcam::close()
     // Sensor not init
     if (!isInit)
     {
-        TRACE("Runcam not initilized");
+        Boardcore::TRACE("Runcam not initilized");
         return true;
     }
 
     // Close the serial
     if (!(serialInterface->closeSerial()))
     {
-        TRACE("Unable to close serial communication");
+        Boardcore::TRACE("Unable to close serial communication");
         return false;
     }
 
@@ -77,13 +77,13 @@ bool Runcam::init()
     // If already initialized
     if (isInit)
     {
-        TRACE("Connection with the camera already initialized");
+        Boardcore::TRACE("Connection with the camera already initialized");
         return true;
     }
 
     if (!configureSerialCommunication())
     {
-        TRACE("Unable to config camera port");
+        Boardcore::TRACE("Unable to config camera port");
         return false;
     }
 
