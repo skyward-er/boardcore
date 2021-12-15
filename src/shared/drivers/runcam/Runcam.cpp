@@ -21,6 +21,7 @@
  */
 #include "Runcam.h"
 
+#include <Common.h>
 #include <miosix.h>
 
 Runcam::Runcam() : Runcam(defaultPortNumber) {}
@@ -49,14 +50,14 @@ bool Runcam::close()
     // Sensor not init
     if (!isInit)
     {
-        Boardcore::TRACE("Runcam not initilized");
+        // Boardcore::TRACE("Runcam not initilized");
         return true;
     }
 
     // Close the serial
     if (!(serialInterface->closeSerial()))
     {
-        Boardcore::TRACE("Unable to close serial communication");
+        // Boardcore::TRACE("Unable to close serial communication");
         return false;
     }
 
@@ -77,13 +78,13 @@ bool Runcam::init()
     // If already initialized
     if (isInit)
     {
-        Boardcore::TRACE("Connection with the camera already initialized");
+        // Boardcore::TRACE("Connection with the camera already initialized");
         return true;
     }
 
     if (!configureSerialCommunication())
     {
-        Boardcore::TRACE("Unable to config camera port");
+        // Boardcore::TRACE("Unable to config camera port");
         return false;
     }
 
