@@ -96,5 +96,7 @@
         "unordered_set": "cpp",
         "hash_map": "cpp",
         "valarray": "cpp"
-    }
+    },
+    "clang-format.executable": "${workspaceRoot}/.clang-format",
+    "clang-format.fallbackStyle": "file"
 }

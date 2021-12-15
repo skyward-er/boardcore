@@ -25,64 +25,73 @@
 
 Runcam::Runcam() : Runcam(defaultPortNumber) {}
 
-Runcam::Runcam(unsigned int portNumber) {
-  this->portNumber = portNumber;
-  isInit = false;
+Runcam::Runcam(unsigned int portNumber)
+{
+    this->portNumber = portNumber;
+    isInit           = false;
 }
 
-bool Runcam::configureSerialCommunication() {
-  serialInterface = new RuncamSerial(portNumber, defaultBaudRate);
+bool Runcam::configureSerialCommunication()
+{
+    serialInterface = new RuncamSerial(portNumber, defaultBaudRate);
 
-  // Check correct serial init
-  if (!(serialInterface->init())) {
-    return false;
-  }
+    // Check correct serial init
+    if (!(serialInterface->init()))
+    {
+        return false;
+    }
 
-  return true;
-}
-
-bool Runcam::close() {
-  // Sensor not init
-  if (!isInit) {
-    TRACE("Runcam not initilized");
     return true;
-  }
+}
 
-  // Close the serial
-  if (!(serialInterface->closeSerial())) {
-    TRACE("Unable to close serial communication");
-    return false;
-  }
+bool Runcam::close()
+{
+    // Sensor not init
+    if (!isInit)
+    {
+        TRACE("Runcam not initilized");
+        return true;
+    }
 
-  isInit = false;
+    // Close the serial
+    if (!(serialInterface->closeSerial()))
+    {
+        TRACE("Unable to close serial communication");
+        return false;
+    }
 
-  // Free the serialInterface memory
-  delete (serialInterface);
+    isInit = false;
 
-  return true;
+    // Free the serialInterface memory
+    delete (serialInterface);
+
+    return true;
 }
 
 void Runcam::openMenu() { serialInterface->send(&OPEN_MENU, 4); }
 void Runcam::selectSetting() { serialInterface->send(&SELECT_SETTING, 4); }
 void Runcam::moveDown() { serialInterface->send(&MOVE_DOWN, 4); }
 
-bool Runcam::init() {
-  // If already initialized
-  if (isInit) {
-    TRACE("Connection with the camera already initialized");
+bool Runcam::init()
+{
+    // If already initialized
+    if (isInit)
+    {
+        TRACE("Connection with the camera already initialized");
+        return true;
+    }
+
+    if (!configureSerialCommunication())
+    {
+        TRACE("Unable to config camera port");
+        return false;
+    }
+
+    // Set the isInit flag true
+    isInit = true;
+
+    Runcam::moveDown();
+    Runcam::openMenu();
+
     return true;
-  }
-
-  if (!configureSerialCommunication()) {
-    TRACE("Unable to config camera port");
-    return false;
-  }
-
-  // Set the isInit flag true
-  isInit = true;
-
-  Runcam::moveDown();
-  Runcam::openMenu();
-
-  return true;
 }

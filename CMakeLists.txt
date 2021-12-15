@@ -45,6 +45,9 @@ sbs_target(mxgui-helloworld stm32f429zi_stm32f4discovery)
 add_executable(kernel-testsuite src/entrypoints/kernel-testsuite.cpp)
 sbs_target(kernel-testsuite stm32f429zi_stm32f4discovery)
 
+add_executable(runcam-settings src/entrypoints/runcam-settings.cpp)
+sbs_target(runcam-settings stm32f407vg_stm32f4discovery)
+
 add_executable(sdcard-benchmark src/entrypoints/sdcard-benchmark.cpp)
 sbs_target(sdcard-benchmark stm32f429zi_stm32f4discovery)
 

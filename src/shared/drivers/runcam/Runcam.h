@@ -112,88 +112,89 @@ through the two modes: Video/OSD settings(Long press wifi button);
 /**
  * @brief Header class for controlling the Runcam via serial
  */
-class Runcam {
- public:
-  /**
-   * @brief default constructor
-   */
-  Runcam();
+class Runcam
+{
+public:
+    /**
+     * @brief default constructor
+     */
+    Runcam();
 
-  /**
-   * @brief default constructor
-   * @param portNumber to use as the serial connection
-   */
-  Runcam(unsigned int portNumber);
+    /**
+     * @brief default constructor
+     * @param portNumber to use as the serial connection
+     */
+    Runcam(unsigned int portNumber);
 
-  /**
-   * @brief initiate the connection
-   */
-  bool init();
+    /**
+     * @brief initiate the connection
+     */
+    bool init();
 
-  /**
-   * @brief close the connection
-   */
-  bool close();
+    /**
+     * @brief close the connection
+     */
+    bool close();
 
-  /**
-   * @brief send the message to open the menu
-   */
-  void openMenu();
-  /**
-   * @brief send the message to select a settign
-   */
-  void selectSetting();
-  /**
-   * @brief send the message to move down
-   */
-  void moveDown();
+    /**
+     * @brief send the message to open the menu
+     */
+    void openMenu();
+    /**
+     * @brief send the message to select a settign
+     */
+    void selectSetting();
+    /**
+     * @brief send the message to move down
+     */
+    void moveDown();
 
- private:
-  /**
-   * @brief Simulate Click of the Wi-Fi button
-   */
-  uint32_t SELECT_SETTING = 0xCC010032;
+private:
+    /**
+     * @brief Simulate Click of the Wi-Fi button
+     */
+    uint32_t SELECT_SETTING = 0xCC010032;
 
-  /**
-   * @brief Simulate Click of the Power button
-   */
-  uint32_t MOVE_DOWN = 0xCC0101E7;
+    /**
+     * @brief Simulate Click of the Power button
+     */
+    uint32_t MOVE_DOWN = 0xCC0101E7;
 
-  /**
-   * @brief In Standby Mode, long press the Mode Switch button to cycle through
-   * the two modes: Video/OSD settings.
-   */
-  uint32_t OPEN_MENU = 0xCC01024D;
+    /**
+     * @brief In Standby Mode, long press the Mode Switch button to cycle
+     * through the two modes: Video/OSD settings.
+     */
+    uint32_t OPEN_MENU = 0xCC01024D;
 
-  /**
-   * @brief Confiugre Serial Communication
-   */
-  bool configureSerialCommunication();
+    /**
+     * @brief Confiugre Serial Communication
+     */
+    bool configureSerialCommunication();
 
-  /**
-   * @brief default Runcam baud rate
-   */
-  static const unsigned int defaultBaudRate = 115200;
+    /**
+     * @brief default Runcam baud rate
+     */
+    static const unsigned int defaultBaudRate = 115200;
 
-  /**
-   * @brief default USART port number
-   */
-  static const unsigned int defaultPortNumber = 1;
+    /**
+     * @brief default USART port number
+     */
+    static const unsigned int defaultPortNumber = 1;
 
-  /**
-   * @brief Check if the connection is already initialized
-   */
-  bool isInit;
+    /**
+     * @brief Check if the connection is already initialized
+     */
+    bool isInit;
 
-  /**
-   * @brief USART port number
-   */
-  unsigned int portNumber;
+    /**
+     * @brief USART port number
+     */
+    unsigned int portNumber;
 
-  /**
-   * @brief serial interface that is needed to communicate
-   * with the sensor via ASCII codes
-   */
-  RuncamSerial *serialInterface;
+    /**
+     * @brief serial interface that is needed to communicate
+     * with the sensor via ASCII codes
+     */
+    RuncamSerial *serialInterface;
 };
 #endif
