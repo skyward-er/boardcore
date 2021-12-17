@@ -22,6 +22,7 @@
 
 #pragma once
 
+#include <diagnostic/PrintLogger.h>
 #include <drivers/spi/SPIDriver.h>
 #include <sensors/Sensor.h>
 
@@ -72,16 +73,26 @@ namespace Boardcore
 class ADS131M04 : public Sensor<ADS131M04Data>
 {
 public:
+    /**
+     * @brief ADC's oversampling ratio configurations.
+     *
+     * The OSR determins the output data rate, depending on the master clock
+     * frequency.
+     *
+     * ODR = f_CLK / 2 / OSR
+     *
+     * On Skyward's boards an 8.192MHz clock is used.
+     */
     enum class OversamplingRatio : uint16_t
     {
-        OSR_128   = 0,
-        OSR_256   = 0x1 << 2,
-        OSR_512   = 0x2 << 2,
-        OSR_1024  = 0x3 << 2,
-        OSR_2048  = 0x4 << 2,
-        OSR_4096  = 0x5 << 2,
-        OSR_8192  = 0x6 << 2,
-        OSR_16256 = 0x7 << 2
+        OSR_128   = 0,         // ODR is 32KHz
+        OSR_256   = 0x1 << 2,  // ODR is 16KHz
+        OSR_512   = 0x2 << 2,  // ODR is 8KHz
+        OSR_1024  = 0x3 << 2,  // ODR is 4KHz
+        OSR_2048  = 0x4 << 2,  // ODR is 2KHz
+        OSR_4096  = 0x5 << 2,  // ODR is 1KHz
+        OSR_8192  = 0x6 << 2,  // ODR is 500Hz
+        OSR_16256 = 0x7 << 2   // ODR is 250Hz
     };
 
     enum class PGA : uint16_t
@@ -96,22 +107,36 @@ public:
         PGA_128 = 0x7   ///< Full scale resolution is ±9.375mV
     };
 
+    enum class Channel : int
+    {
+        CHANNEL_0 = 0,
+        CHANNEL_1 = 1,
+        CHANNEL_2 = 2,
+        CHANNEL_3 = 3
+    };
+
     explicit ADS131M04(SPISlave spiSlave);
 
     bool init() override;
 
+    bool reset();
+
+    /**
+     * @brief Samples each channel, averages the samples and applies sets up
+     * offset compensation in the device.
+     */
+    void calibrateOffset();
+
     void setOversamplingRatio(OversamplingRatio ratio);
 
-    template <int C>
-    void setChannelPGA(PGA gain);
+    void setChannelPGA(Channel channel, PGA gain);
 
     /**
      * @brief Sets the channel offset.
      *
      * Note that the device offset is a 24bit two complement.
      */
-    template <int C>
-    void setChannelOffset(uint32_t offset);
+    void setChannelOffset(Channel channel, uint32_t offset);
 
     /**
      * @brief Sets the channel gain calibration.
@@ -126,13 +151,15 @@ public:
      *
      * @param gain Must be between 0 and 2.
      */
-    template <int C>
-    void setChannelGainCalibration(double gain);
+    void setChannelGainCalibration(Channel channel, double gain);
 
-    void enableChannel(int channel);
+    void enableChannel(Channel channel);
 
-    template <int C>
-    void disableChannel();
+    void disableChannel(Channel channel);
+
+    void enableGlobalChopMode();
+
+    void disableGlobalChopMode();
 
     bool selfTest() override;
 
@@ -202,10 +229,12 @@ private:
                                    17.8814e-9,  8.9407e-9,  4.4703e-9,
                                    2.2352e-9,   1.1176e-9};
 
-    PGA channelsPGAGain[4];
+    PGA channelsPGAGain[4] = {PGA::PGA_1};
 
 protected:
     SPISlave spiSlave;
+
+    PrintLogger logger = Logging::getLogger("ads131m04");
 };
 
 namespace ADS131M04RegisterBitMasks

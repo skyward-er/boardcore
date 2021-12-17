@@ -1,4 +1,4 @@
-/* Copyright (c) 2020 Skyward Experimental Rocketry
+/* Copyright (c) 2021 Skyward Experimental Rocketry
  * Author: Alberto Nidasio
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -61,6 +61,7 @@ int main()
     SPIBus spiBus(SPI4);
     SPIBusConfig spiConfig = {};
     spiConfig.mode         = SPI::Mode::MODE_1;
+    spiConfig.clockDivider = SPI::ClockDivider::DIV_64;
     SPISlave spiSlave(spiBus, csPin, spiConfig);
 
     // Device initialization
@@ -68,28 +69,17 @@ int main()
 
     // Initialize the device
     ads131.init();
-    ads131.enableChannel(0);
+    // ads131.enableGlobalChopMode();
 
-    delayMs(1000);
-
-    // Self test
-    if (ads131.selfTest())
-    {
-        TRACE("Self test successful!\n");
-    }
-    else
-    {
-        TRACE("Self test failed :( error: %d\n", ads131.getLastError());
-    }
+    ads131.calibrateOffset();
 
     while (true)
     {
         ads131.sample();
-        delayMs(100);
 
         ADS131M04Data data = ads131.getLastSample();
 
-        printf("%.2f\t%.2f\t%.2f\t%.2f\n", data.voltage[0], data.voltage[1],
+        printf("%2.4f\t%2.4f\t%2.4f\t%2.4f\n", data.voltage[0], data.voltage[1],
                data.voltage[2], data.voltage[3]);
     }
 }

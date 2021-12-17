@@ -23,7 +23,6 @@
 #pragma once
 
 #include <ActiveObject.h>
-#include <diagnostic/PrintLogger.h>
 #include <drivers/dma/DMAStream.h>
 #include <drivers/spi/SPISignalGenerator.h>
 
@@ -90,8 +89,6 @@ private:
     bool highFreqSamplingStarted = false;
 
     miosix::Thread* loggerThread = nullptr;
-
-    PrintLogger logger = Logging::getLogger("ads131m04");
 };
 
 }  // namespace Boardcore
