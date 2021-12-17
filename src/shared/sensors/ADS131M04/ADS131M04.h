@@ -40,17 +40,17 @@ namespace Boardcore
  * low-noise, programmable gain amplifier (PGA) provides gains ranging from 1
  * to 128 to amplify low-level signals.
  *
- * The ADC can work on 3 different power configurations depending on the clock
- * frequency:
- * - High-resulution: 250-32KSPS
- * - Low-power: 125-16KSPS
- * - Very-low-power: 62.5-8KSPS
- * You will probably have the ADC in high resolution mode.
- *
  * Each channel on the ADS131M04 contains a digital decimation filter that
  * demodulates the output of the ΔΣ modulators. Offset and gain calibration
  * registers can be programmed to automatically adjust output samples for
  * measured offset and gain errors.
+ *
+ * The device features a "global-chop mode" to reduce offset error and offset
+ * drift inherent to the device due to mismatch in the internal circuitry to
+ * very low levels. When global-chop mode is enabled by setting the GC_EN bit in
+ * the GLOBAL_CHOP_CFG register, the device uses the conversion results from two
+ * consecutive internal conversions taken with opposite input polarity to cancel
+ * the device offset voltage.
  *
  * Each channel has a dedicated input multiplexer that controls which signals
  * are routed to the ADC channels:
@@ -63,6 +63,13 @@ namespace Boardcore
  * that provides gains of 1 to 128. Each channel has an independent PGA.
  *
  * The device communicates via SPI, the maximum allowed frequency is 25MHz.
+ *
+ * The ADC can work on 3 different power configurations depending on the clock
+ * frequency:
+ * - High-resulution: 250-32KSPS
+ * - Low-power: 125-16KSPS
+ * - Very-low-power: 62.5-8KSPS
+ * You will probably have the ADC in high resolution mode.
  */
 
 /**

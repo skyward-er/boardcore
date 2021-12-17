@@ -69,8 +69,8 @@ int main()
 
     // Initialize the device
     ads131.init();
-    // ads131.enableGlobalChopMode();
-
+    ads131.enableGlobalChopMode();
+    ads131.setOversamplingRatio(ADS131M04::OversamplingRatio::OSR_16256);
     ads131.calibrateOffset();
 
     while (true)
@@ -79,7 +79,9 @@ int main()
 
         ADS131M04Data data = ads131.getLastSample();
 
-        printf("%2.4f\t%2.4f\t%2.4f\t%2.4f\n", data.voltage[0], data.voltage[1],
-               data.voltage[2], data.voltage[3]);
+        printf("% 2.5f\t% 2.5f\t% 2.5f\t% 2.5f\n", data.voltage[0],
+               data.voltage[1], data.voltage[2], data.voltage[3]);
+
+        delayMs(50);
     }
 }
