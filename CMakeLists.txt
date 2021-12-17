@@ -212,3 +212,9 @@ sbs_target(test-mpu9250 stm32f429zi_skyward_death_stack_x)
 
 add_executable(test-ms5803 src/tests/sensors/test-ms5803.cpp)
 sbs_target(test-ms5803 stm32f429zi_skyward_death_stack_x)
+
+add_executable(test-vn100serial src/tests/drivers/test-vn100serial.cpp)
+sbs_target(test-vn100serial stm32f407vg_stm32f4discovery)
+
+add_executable(test-vn100 src/tests/sensors/test-vn100.cpp)
+sbs_target(test-vn100 stm32f407vg_stm32f4discovery)
