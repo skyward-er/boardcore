@@ -20,10 +20,9 @@
  * THE SOFTWARE.
  */
 
+#include <drivers/timer/TimestampTimer.h>
 #include <miosix.h>
 #include <stdio.h>
-
-#include "TimestampTimer.h"
 
 using namespace Boardcore;
 using namespace miosix;

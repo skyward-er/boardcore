@@ -23,12 +23,11 @@
 #pragma once
 
 #include <Debug.h>
+#include <drivers/spi/SPIBusInterface.h>
 
 #include <cstdint>
 #include <cstdio>
 #include <vector>
-
-#include "../SPIBusInterface.h"
 
 using std::vector;
 
@@ -86,7 +85,17 @@ public:
     /**
      * @brief See SPIBusInterface::write()
      */
+    virtual void write(uint16_t data) override;
+
+    /**
+     * @brief See SPIBusInterface::write()
+     */
     virtual void write(uint8_t* data, size_t size) override;
+
+    /**
+     * @brief See SPIBusInterface::write()
+     */
+    virtual void write(uint16_t* data, size_t size) override;
 
     /**
      * @brief See SPIBusInterface::read()
@@ -96,7 +105,17 @@ public:
     /**
      * @brief See SPIBusInterface::read()
      */
-    void read(uint8_t* data, size_t size) override;
+    virtual uint16_t read16() override;
+
+    /**
+     * @brief See SPIBusInterface::read()
+     */
+    virtual void read(uint8_t* data, size_t size) override;
+
+    /**
+     * @brief See SPIBusInterface::read()
+     */
+    virtual void read(uint16_t* data, size_t size) override;
 
     /**
      * @brief See SPIBusInterface::transfer()
@@ -106,7 +125,17 @@ public:
     /**
      * @brief See SPIBusInterface::transfer()
      */
+    virtual uint16_t transfer(uint16_t data) override;
+
+    /**
+     * @brief See SPIBusInterface::transfer()
+     */
     virtual void transfer(uint8_t* data, size_t size) override;
+
+    /**
+     * @brief See SPIBusInterface::transfer()
+     */
+    virtual void transfer(uint16_t* data, size_t size) override;
 
     /**
      * @brief See SPIBusInterface::select()
@@ -123,7 +152,7 @@ public:
     /**
      * @brief See SPIBusInterface::acquire()
      */
-    virtual void acquire(SPIBusConfig config) override;
+    virtual void configure(SPIBusConfig config) override;
 
     /**
      * @brief Wether the chip select is asserted or not
@@ -166,6 +195,7 @@ protected:
     SPIBusConfig expected_config;  // Expected configuration of the bus
 
     virtual uint8_t _read();
+
     virtual void _write(uint8_t);
 
     virtual void _push(uint8_t* data, size_t len);
@@ -212,6 +242,13 @@ inline void MockSPIBus::write(uint8_t byte)
     _write(byte);
 }
 
+inline void MockSPIBus::write(uint16_t data)
+{
+    Lock<FastMutex> l(mutex);
+    _write(data >> 8);
+    _write(data);
+}
+
 inline void MockSPIBus::write(uint8_t* data, size_t size)
 {
     Lock<FastMutex> l(mutex);
@@ -222,19 +259,13 @@ inline void MockSPIBus::write(uint8_t* data, size_t size)
     }
 }
 
-inline uint8_t MockSPIBus::read()
+inline void MockSPIBus::write(uint16_t* data, size_t size)
 {
     Lock<FastMutex> l(mutex);
-    return _read();
-}
 
-inline void MockSPIBus::read(uint8_t* data, size_t size)
-{
-    Lock<FastMutex> l(mutex);
-    for (size_t i = 0; i < size; i++)
+    for (size_t i = 0; i < size * 2; i++)
     {
-        *data = _read();
-        data++;
+        _write(((uint8_t*)data)[i]);
     }
 }
 
@@ -250,6 +281,37 @@ inline uint8_t MockSPIBus::_read()
     return 0;
 }
 
+inline uint8_t MockSPIBus::read()
+{
+    Lock<FastMutex> l(mutex);
+    return _read();
+}
+
+inline uint16_t MockSPIBus::read16()
+{
+    Lock<FastMutex> l(mutex);
+    return _read() << 16 | _read();
+}
+
+inline void MockSPIBus::read(uint8_t* data, size_t size)
+{
+    Lock<FastMutex> l(mutex);
+    for (size_t i = 0; i < size; i++)
+    {
+        data[i] = _read();
+    }
+}
+
+inline void MockSPIBus::read(uint16_t* data, size_t size)
+{
+
+    Lock<FastMutex> l(mutex);
+    for (size_t i = 0; i < size * 2; i++)
+    {
+        data[i] = _read();
+    }
+}
+
 inline uint8_t MockSPIBus::transfer(uint8_t data)
 {
     Lock<FastMutex> l(mutex);
@@ -257,10 +319,29 @@ inline uint8_t MockSPIBus::transfer(uint8_t data)
     return _read();
 }
 
+inline uint16_t MockSPIBus::transfer(uint16_t data)
+{
+
+    Lock<FastMutex> l(mutex);
+    _write(data >> 8);
+    _write(data);
+    return _read() << 8 | _read();
+}
+
 inline void MockSPIBus::transfer(uint8_t* data, size_t size)
 {
     Lock<FastMutex> l(mutex);
     for (size_t i = 0; i < size; i++)
+    {
+        _write(data[i]);
+        data[i] = _read();
+    }
+}
+
+inline void MockSPIBus::transfer(uint16_t* data, size_t size)
+{
+    Lock<FastMutex> l(mutex);
+    for (size_t i = 0; i < size * 2; i++)
     {
         _write(data[i]);
         data[i] = _read();
@@ -281,11 +362,11 @@ inline void MockSPIBus::deselect(GpioType& cs)
     selected = false;
 }
 
-inline void MockSPIBus::acquire(SPIBusConfig config)
+inline void MockSPIBus::configure(SPIBusConfig config)
 {
     Lock<FastMutex> l(mutex);
 
-    SPIBusInterface::acquire(config);
+    this->configure(config);
 
     current_config = config;
 }

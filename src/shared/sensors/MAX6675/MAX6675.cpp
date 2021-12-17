@@ -25,7 +25,7 @@
 namespace Boardcore
 {
 
-MAX6675::MAX6675(SPIBusInterface &bus, GpioPin cs, SPIBusConfig config)
+MAX6675::MAX6675(SPIBusInterface &bus, miosix::GpioPin cs, SPIBusConfig config)
     : slave(bus, cs, config)
 {
 }
@@ -33,8 +33,8 @@ MAX6675::MAX6675(SPIBusInterface &bus, GpioPin cs, SPIBusConfig config)
 SPIBusConfig MAX6675::getDefaultSPIConfig()
 {
     SPIBusConfig spiConfig{};
-    spiConfig.clock_div = SPIClockDivider::DIV32;
-    spiConfig.mode      = SPIMode::MODE1;
+    spiConfig.clockDivider = SPI::ClockDivider::DIV_32;
+    spiConfig.mode         = SPI::Mode::MODE_1;
     return spiConfig;
 }
 
@@ -46,7 +46,7 @@ bool MAX6675::selfTest()
 
     {
         SPITransaction spi{slave};
-        sample = spi.read(0x00);
+        sample = spi.readRegister(0x00);
     }
 
     // The third bit (D2) indicated wheter the termocouple is connected or not.
@@ -67,7 +67,7 @@ TemperatureData MAX6675::sampleImpl()
 
     {
         SPITransaction spi{slave};
-        sample = spi.read(0x00);
+        sample = spi.readRegister(0x00);
     }
 
     // Extract bits 14-3

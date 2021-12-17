@@ -20,7 +20,6 @@
  * THE SOFTWARE.
  */
 
-#include <drivers/HardwareTimer.h>
 #include <drivers/Xbee/Xbee.h>
 #include <drivers/spi/SPIDriver.h>
 #include <interfaces-impl/hwmapping.h>

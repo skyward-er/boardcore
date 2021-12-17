@@ -21,8 +21,8 @@
  */
 
 #include <Common.h>
-#include <drivers/HardwareTimer.h>
 #include <drivers/interrupt/external_interrupts.h>
+#include <drivers/timer/TimestampTimer.h>
 #include <sensors/BMX160/BMX160.h>
 #include <sensors/BMX160/BMX160WithCorrection.h>
 

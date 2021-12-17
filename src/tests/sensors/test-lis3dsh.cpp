@@ -21,6 +21,7 @@
  */
 
 #include <drivers/spi/SPIDriver.h>
+#include <drivers/timer/TimestampTimer.h>
 #include <miosix.h>
 #include <sensors/LIS3DSH/LIS3DSH.h>
 

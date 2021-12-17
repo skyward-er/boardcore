@@ -29,14 +29,12 @@
  */
 
 #include <diagnostic/CpuMeter.h>
-#include <drivers/HardwareTimer.h>
 #include <drivers/interrupt/external_interrupts.h>
 #include <drivers/spi/SPIDriver.h>
+#include <drivers/timer/TimestampTimer.h>
 #include <sensors/L3GD20/L3GD20.h>
 
 #include <array>
-
-#include "TimestampTimer.h"
 
 using namespace Boardcore;
 using namespace miosix;
@@ -69,15 +67,11 @@ struct GyroSample
 GyroSample data[NUM_SAMPLES];
 int data_counter = 0;
 
-// High resolution hardware timer using TIM5
-HardwareTimer<uint32_t> hrclock{
-    TIM5, TimerUtils::getPrescalerInputFrequency(TimerUtils::InputClock::APB1)};
-
 // Last interrupt received timer tick
-uint32_t last_sample_tick;  // Stores the high-res tick of the last
-                            // interrupt (L3GD20 watermark event)
-uint32_t sample_delta;      // Tick delta between the last 2 watermark
-                            // events
+uint32_t lastSampleTick;  // Stores the high-res tick of the last
+                          // interrupt (L3GD20 watermark event)
+uint32_t sampleDelta;     // Tick delta between the last 2 watermark
+                          // events
 
 /**
  * Interrupt handling routine. Called each time a new sample is available from
@@ -89,13 +83,15 @@ uint32_t sample_delta;      // Tick delta between the last 2 watermark
 void __attribute__((used)) EXTI2_IRQHandlerImpl()
 {
     // Current high resolution tick
-    uint32_t tick    = hrclock.tick();
-    sample_delta     = tick - last_sample_tick;
-    last_sample_tick = tick;
+    uint64_t currentTimestamp = TimestampTimer::getTimestamp();
+    sampleDelta               = currentTimestamp - lastSampleTick;
+    lastSampleTick            = currentTimestamp;
 
     // Pass timestamp to sensor
     if (gyro != nullptr)
-        gyro->IRQupdateTimestamp(hrclock.toIntMicroSeconds(tick));
+    {
+        gyro->IRQupdateTimestamp(currentTimestamp);
+    }
 }
 
 void configure()
@@ -131,11 +127,6 @@ void configure()
     enableExternalInterrupt(GPIOA_BASE, 2, InterruptTrigger::RISING_EDGE);
 
     TimestampTimer::enableTimestampTimer();
-
-    // High resolution clock configuration: Sets the prescaler as to obtain
-    // 1.8 hours run time and 1.5 microseconds of resolution
-    hrclock.setPrescaler(127);
-    hrclock.start();
 }
 
 int main()
@@ -166,7 +157,7 @@ int main()
         L3GD20Data d = gyro->getLastSample();
 
         // Store the sample in the array, togheter with other useful data
-        data[data_counter++] = {d.gyro_timestamp, sample_delta, d,
+        data[data_counter++] = {d.gyro_timestamp, sampleDelta, d,
                                 averageCpuUtilization()};
 
         // Wait until SAMPLE_PERIOD milliseconds from the start of this
@@ -182,7 +173,8 @@ int main()
          printf("%d,%llu,%llu,%llu,%f,%f,%f,%.2f\n",
                 0,
                 data[i].timestamp,
-                hrclock.toIntMicroSeconds(data[i].sample_delta),
+                TimerUtils::toIntMicroSeconds(
+                    TimestampTimer::timestampTimer.getTimer(), data[i].sample_delta),
                 (data[i].timestamp - data[i - 1].timestamp),
                 data[i].data.gyro_x,
                 data[i].data.gyro_y,

@@ -22,17 +22,17 @@
 
 #include "MPU9250.h"
 
+#include <drivers/timer/TimestampTimer.h>
 #include <interfaces/endianness.h>
 
 #include "Constants.h"
-#include "TimestampTimer.h"
 
 namespace Boardcore
 {
 
 MPU9250::MPU9250(SPISlave spiSlave_, unsigned short samplingRate_,
                  MPU9250GyroFSR gyroFsr_, MPU9250AccelFSR accelFsr_,
-                 SPIClockDivider highSpeedSpiClockDivider_)
+                 SPI::ClockDivider highSpeedSpiClockDivider_)
     : spiSlave(spiSlave_), samplingRate(samplingRate_), gyroFsr(gyroFsr_),
       accelFsr(accelFsr_), highSpeedSpiClockDivider(highSpeedSpiClockDivider_)
 {
@@ -41,8 +41,8 @@ MPU9250::MPU9250(SPISlave spiSlave_, unsigned short samplingRate_,
 SPIBusConfig getDefaultSPIConfig()
 {
     SPIBusConfig spiConfig{};
-    spiConfig.clock_div = SPIClockDivider::DIV64;
-    spiConfig.mode      = SPIMode::MODE3;
+    spiConfig.clockDivider = SPI::ClockDivider::DIV_64;
+    spiConfig.mode         = SPI::Mode::MODE_3;
     return spiConfig;
 }
 
@@ -104,16 +104,16 @@ MPU9250Data MPU9250::sampleImpl()
 {
     MPU9250RawData rawData;
     MPU9250Data data;
-    SPIClockDivider clockDivider = spiSlave.config.clock_div;
+    SPI::ClockDivider clockDivider = spiSlave.config.clockDivider;
 
     // Read the data registers at high speed (up to 20MHz)
-    spiSlave.config.clock_div = highSpeedSpiClockDivider;
+    spiSlave.config.clockDivider = highSpeedSpiClockDivider;
     {
         SPITransaction transaction(spiSlave);
-        transaction.read(REG_ACCEL_XOUT_H, (uint8_t*)rawData.bytes,
-                         sizeof(MPU9250RawData));
+        transaction.readRegisters(REG_ACCEL_XOUT_H, (uint8_t*)rawData.bytes,
+                                  sizeof(MPU9250RawData));
     }
-    spiSlave.config.clock_div = clockDivider;
+    spiSlave.config.clockDivider = clockDivider;
 
     // Save timestamps
     uint64_t timestamp   = TimestampTimer::getTimestamp();
@@ -141,7 +141,7 @@ void MPU9250::resetDevice()
 {
     SPITransaction transaction(spiSlave);
 
-    transaction.write(REG_PWR_MGMT_1, REG_PWR_MGMT_1_BIT_H_RESET);
+    transaction.writeRegister(REG_PWR_MGMT_1, REG_PWR_MGMT_1_BIT_H_RESET);
 }
 
 void MPU9250::selectAutoClock()
@@ -340,7 +340,7 @@ uint8_t MPU9250::readFromAk(uint8_t reg)
 
     SPITransaction transaction(spiSlave);
 
-    return transaction.read(REG_EXT_SENS_DATA_00);
+    return transaction.readRegister(REG_EXT_SENS_DATA_00);
 }
 
 void MPU9250::writeToAk(uint8_t reg, uint8_t data)
@@ -405,7 +405,7 @@ bool MPU9250::checkWhoAmI()
 {
     SPITransaction transaction(spiSlave);
 
-    uint8_t who_am_i_value = transaction.read(REG_WHO_AM_I);
+    uint8_t who_am_i_value = transaction.readRegister(REG_WHO_AM_I);
 
     return who_am_i_value == REG_WHO_AM_I_VAL;
 }
@@ -420,9 +420,9 @@ bool MPU9250::checkAkWhoAmI()
 void MPU9250::writeSPIWithDelay(SPITransaction& transaction, uint8_t reg,
                                 uint8_t data)
 {
-    transaction.write(reg, data);
+    transaction.writeRegister(reg, data);
     miosix::delayUs(1);
-    /*transaction.read(reg);
+    /*transaction.readRegister(reg);
     miosix::delayUs(1);*/
 }
 

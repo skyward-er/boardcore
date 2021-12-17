@@ -1,5 +1,5 @@
 /* Copyright (c) 2020 Skyward Experimental Rocketry
- * Authors: Luca Conterio, Davide Mor
+ * Author: Alberto Nidasio
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -22,56 +22,27 @@
 
 #pragma once
 
-#include <Common.h>
-#include <Debug.h>
-
-#include <cmath>
-
-#ifndef COMPILE_FOR_HOST
-#include <drivers/HardwareTimer.h>
-#endif
+#include <sensors/SensorData.h>
 
 namespace Boardcore
 {
 
-namespace TimestampTimer
+struct ADS1118Data : public ADCData
 {
+    ADS1118Data() : ADCData{0, 0, 0} {}
 
-/**
- * For timer resolution and duration refer to :
- * https://docs.google.com/spreadsheets/d/1B44bN6m2vnldQx9XVxZaBP8bDHqoLPREyHoaLh8s0UA/edit#gid=0
- *
- */
-static const uint8_t PRESCALER_VALUE = 255;
+    ADS1118Data(uint64_t t, uint8_t channel_id, float voltage)
+        : ADCData{t, channel_id, voltage}
 
-#ifndef COMPILE_FOR_HOST
+    {
+    }
 
-#ifdef _ARCH_CORTEXM3_STM32
-extern HardwareTimer<uint32_t, TimerMode::Chain> timestamp_timer;
-#else
-extern HardwareTimer<uint32_t, TimerMode::Single> timestamp_timer;
-#endif
+    static std::string header() { return "adc_timestamp,channel_id,voltage\n"; }
 
-#endif  // COMPILE_FOR_HOST
-
-/**
- * @brief Enables and starts the timer peripheral, which can be
- * accessed via the timestamp_timer object.
- */
-void enableTimestampTimer(uint8_t prescaler = PRESCALER_VALUE);
-
-/**
- * @return the current timestamp in microseconds
- */
-inline uint64_t getTimestamp()
-{
-#ifdef COMPILE_FOR_HOST
-    return 0;
-#else
-    return timestamp_timer.toIntMicroSeconds(timestamp_timer.tick());
-#endif
-}
-
-}  // namespace TimestampTimer
+    void print(std::ostream& os) const
+    {
+        os << adc_timestamp << "," << (int)channel_id << "," << voltage << "\n";
+    }
+};
 
 }  // namespace Boardcore

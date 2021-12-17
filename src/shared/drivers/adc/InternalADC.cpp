@@ -22,7 +22,7 @@
 
 #include "InternalADC.h"
 
-#include "TimestampTimer.h"
+#include <drivers/timer/TimestampTimer.h>
 
 namespace Boardcore
 {

@@ -113,7 +113,7 @@ sbs_catch_test(catch-tests-entry)
 #                               Tests - Drivers                               #
 #-----------------------------------------------------------------------------#
 
-add_executable(test-ads1118 src/tests/drivers/test-ads1118.cpp)
+add_executable(test-ads1118 src/tests/sensors/ADS1118/test-ads1118.cpp)
 sbs_target(test-ads1118 stm32f407vg_stm32f4discovery)
 
 add_executable(test-dsgamma src/tests/drivers/test-dsgamma.cpp)
@@ -121,9 +121,6 @@ sbs_target(test-dsgamma stm32f429zi_stm32f4discovery)
 
 add_executable(test-hbridge src/tests/drivers/test-hbridge.cpp)
 sbs_target(test-hbridge stm32f429zi_stm32f4discovery)
-
-add_executable(test-hwtimer-chain src/tests/drivers/test-hwtimer-chain.cpp)
-sbs_target(test-hwtimer-chain stm32f407vg_stm32f4discovery)
 
 add_executable(test-internal-adc src/tests/drivers/test-internal-adc.cpp)
 sbs_target(test-internal-adc stm32f429zi_skyward_death_stack_x)
@@ -140,7 +137,7 @@ sbs_target(test-pwm stm32f429zi_stm32f4discovery)
 add_executable(test-servo src/tests/drivers/test-servo.cpp)
 sbs_target(test-servo stm32f429zi_skyward_death_stack_x)
 
-add_executable(test-spi src/tests/drivers/test-spi.cpp)
+add_executable(test-spi src/tests/drivers/spi/test-spi.cpp)
 sbs_target(test-spi stm32f429zi_stm32f4discovery)
 
 add_executable(test-ublox src/tests/drivers/test-ublox.cpp)
@@ -230,3 +227,30 @@ sbs_target(test-canbus-loopback stm32f429zi_stm32f4discovery)
 
 add_executable(test-canbus-2way src/tests/drivers/canbus/test-canbus-2way.cpp)
 sbs_target(test-canbus-2way stm32f429zi_stm32f4discovery)
+
+add_executable(test-timer-utils src/tests/drivers/timer/test-timer-utils.cpp)
+sbs_target(test-timer-utils stm32f429zi_stm32f4discovery)
+
+add_executable(test-dma-spi src/tests/drivers/dma/test-dma-spi.cpp)
+sbs_target(test-dma-spi stm32f429zi_stm32f4discovery)
+
+add_executable(test-general-purpose-timer src/tests/drivers/timer/test-general-purpose-timer.cpp)
+sbs_target(test-general-purpose-timer stm32f429zi_stm32f4discovery)
+
+add_executable(test-ads131m04 src/tests/sensors/ADS131M04/test-ads131m04.cpp)
+sbs_target(test-ads131m04 stm32f429zi_stm32f4discovery)
+
+add_executable(test-ads131m04highfreq src/tests/sensors/ADS131M04/test-ads131m04highfreq.cpp)
+sbs_target(test-ads131m04highfreq stm32f429zi_stm32f4discovery)
+
+add_executable(test-ads131m04highfreq-with-logger src/tests/sensors/ADS131M04/test-ads131m04highfreq-with-logger.cpp)
+sbs_target(test-ads131m04highfreq-with-logger stm32f429zi_stm32f4discovery)
+
+add_executable(test-spi-as-slave src/tests/drivers/spi/test-spi-as-slave.cpp)
+sbs_target(test-spi-as-slave stm32f429zi_stm32f4discovery)
+
+add_executable(test-spi-signal-generator src/tests/drivers/spi/test-spi-signal-generator.cpp)
+sbs_target(test-spi-signal-generator stm32f429zi_stm32f4discovery)
+
+add_executable(test-spi-slave-bus src/tests/drivers/spi/test-spi-slave-bus.cpp)
+sbs_target(test-spi-slave-bus stm32f429zi_stm32f4discovery)

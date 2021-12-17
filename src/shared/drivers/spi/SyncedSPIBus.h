@@ -22,11 +22,9 @@
 
 #pragma once
 
-#include <miosix.h>
+#include <kernel/sync.h>
 
 #include "SPIBus.h"
-
-using miosix::FastMutex;
 
 namespace Boardcore
 {
@@ -51,7 +49,7 @@ class SyncedSPIBus : public SPIBus
     }
 
 private:
-    FastMutex mutex;
+    miosix::FastMutex mutex;
 };
 
 }  // namespace Boardcore

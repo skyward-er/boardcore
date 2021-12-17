@@ -20,13 +20,15 @@
  * THE SOFTWARE.
  */
 
-#include <drivers/HardwareTimer.h>
-#include <drivers/pwm/pwm.h>
+#include <drivers/timer/GeneralPurposeTimer.h>
 
 #include "Common.h"
+#include "drivers/pwm/pwm.h"
 
 using namespace Boardcore;
 using namespace miosix;
+
+// TODO: Update this test
 
 typedef Gpio<GPIOC_BASE, 8> ch2;  // ch1
 // typedef Gpio<GPIOD_BASE, 13> ch2;      // ch2

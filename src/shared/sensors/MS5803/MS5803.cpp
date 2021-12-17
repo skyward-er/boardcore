@@ -23,7 +23,7 @@
 
 #include "MS5803.h"
 
-#include "TimestampTimer.h"
+#include <drivers/timer/TimestampTimer.h>
 
 namespace Boardcore
 {
@@ -78,14 +78,14 @@ MS5803Data MS5803::sampleImpl()
         case STATE_INIT:
         {
             // Begin temperature sampling
-            transaction.write(REG_CONVERT_D2_4096);
+            transaction.write(static_cast<uint8_t>(REG_CONVERT_D2_4096));
             deviceState = STATE_SAMPLED_TEMP;
             break;
         }
         case STATE_SAMPLED_TEMP:
         {
             // Read back the sampled temperature
-            transaction.read(REG_ADC_READ, buffer, 3, false);
+            transaction.writeRegisters(REG_ADC_READ, buffer, 3);
 
             uint32_t tmpRawTemperature = (uint32_t)buffer[2] |
                                          ((uint32_t)buffer[1] << 8) |
@@ -103,14 +103,14 @@ MS5803Data MS5803::sampleImpl()
             }
 
             // Begin pressure sampling
-            transaction.write(REG_CONVERT_D1_4096);
+            transaction.write(static_cast<uint8_t>(REG_CONVERT_D1_4096));
             deviceState = STATE_SAMPLED_PRESS;
             break;
         }
         case STATE_SAMPLED_PRESS:
         {
             // Read back the sampled pressure
-            transaction.read(REG_ADC_READ, buffer, 3, false);
+            transaction.readRegisters(REG_ADC_READ, buffer, 3);
 
             uint32_t tmpRawPressure = (uint32_t)buffer[2] |
                                       ((uint32_t)buffer[1] << 8) |
@@ -133,13 +133,13 @@ MS5803Data MS5803::sampleImpl()
             if (tempCounter % temperatureDivider == 0)
             {
                 // Begin temperature sampling
-                transaction.write(REG_CONVERT_D2_4096);
+                transaction.write(static_cast<uint8_t>(REG_CONVERT_D2_4096));
                 deviceState = STATE_SAMPLED_TEMP;
             }
             else
             {
                 // Begin pressure sampling again
-                transaction.write(REG_CONVERT_D1_4096);
+                transaction.write(static_cast<uint8_t>(REG_CONVERT_D1_4096));
             }
             break;
         }
@@ -197,7 +197,7 @@ MS5803Data MS5803::updateData()
 uint16_t MS5803::readReg(SPITransaction& transaction, uint8_t reg)
 {
     uint8_t rcv[2];
-    transaction.read(reg, rcv, 2);
+    transaction.readRegisters(reg, rcv, 2);
     uint16_t data = (rcv[0] << 8) | rcv[1];
     return data;
 }

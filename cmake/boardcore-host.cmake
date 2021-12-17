@@ -47,7 +47,7 @@ add_library(boardcore-host STATIC EXCLUDE_FROM_ALL
     ${SBS_BASE}/src/shared/sensors/SensorSampler.cpp
 
     # Timer
-    ${SBS_BASE}/src/shared/TimestampTimer.cpp
+    ${SBS_BASE}/src/shared/drivers/timer/TimestampTimer.cpp
 
     # AeroUtils
     ${SBS_BASE}/src/shared/utils/aero/AeroUtils.cpp

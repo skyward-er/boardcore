@@ -31,10 +31,6 @@
 #include <functional>
 #include <memory>
 
-using std::deque;
-using std::function;
-using std::unique_ptr;
-
 namespace Boardcore
 {
 

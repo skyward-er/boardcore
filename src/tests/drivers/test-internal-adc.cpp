@@ -20,10 +20,9 @@
  * THE SOFTWARE.
  */
 
-#include <drivers/adc/InternalADC/InternalADC.h>
+#include <drivers/adc/InternalADC.h>
+#include <drivers/timer/TimestampTimer.h>
 #include <miosix.h>
-
-#include "TimestampTimer.h"
 
 using namespace Boardcore;
 

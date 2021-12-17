@@ -20,8 +20,8 @@
  * THE SOFTWARE.
  */
 
-#include <drivers/HardwareTimer.h>
 #include <drivers/pwm/pwm.h>
+// #include <drivers/timer/GeneralPurposeTimer.h>
 
 #pragma once
 

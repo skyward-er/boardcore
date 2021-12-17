@@ -134,7 +134,7 @@ int main()
     // XBee
     SPIBus spi_bus(SPI1);
     SPIBusConfig cfg{};
-    cfg.clock_div = SPIClockDivider::DIV16;
+    cfg.clockDivider = SPI::ClockDivider::DIV_16;
 
     GpioPin cs   = GpioCS::getPin();
     GpioPin attn = GpioATTN::getPin();

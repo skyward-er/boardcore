@@ -20,15 +20,16 @@
  * THE SOFTWARE.
  */
 
-#include <drivers/adc/InternalADC/InternalADC.h>
+#include <drivers/adc/InternalADC.h>
+#include <drivers/timer/TimestampTimer.h>
+#include <interfaces-impl/gpio_impl.h>
 #include <miosix.h>
 #include <sensors/analog/current/CurrentSensor.h>
 
 #include "Debug.h"
-#include "TimestampTimer.h"
 
-using namespace Boardcore;
 using namespace miosix;
+using namespace Boardcore;
 
 GpioPin battery_pin              = GpioPin(GPIOA_BASE, 3);
 InternalADC::Channel ADC_CHANNEL = InternalADC::Channel::CH3;

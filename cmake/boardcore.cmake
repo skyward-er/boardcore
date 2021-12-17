@@ -32,8 +32,7 @@ foreach(OPT_BOARD ${BOARDS})
         ${SBS_BASE}/src/shared/diagnostic/PrintLogger.cpp
 
         # Drivers
-        ${SBS_BASE}/src/shared/drivers/adc/ADS1118/ADS1118.cpp
-        ${SBS_BASE}/src/shared/drivers/adc/InternalADC/InternalADC.cpp
+        ${SBS_BASE}/src/shared/drivers/adc/InternalADC.cpp
         ${SBS_BASE}/src/shared/drivers/canbus/Canbus.cpp
         ${SBS_BASE}/src/shared/drivers/canbus/CanInterrupt.cpp
         ${SBS_BASE}/src/shared/drivers/gamma868/Gamma868.cpp
@@ -44,7 +43,6 @@ foreach(OPT_BOARD ${BOARDS})
         ${SBS_BASE}/src/shared/drivers/pwm/pwm.cpp
         ${SBS_BASE}/src/shared/drivers/servo/servo.cpp
         ${SBS_BASE}/src/shared/drivers/spi/SPITransaction.cpp
-        ${SBS_BASE}/src/shared/drivers/spi/SensorSpi.cpp
         ${SBS_BASE}/src/shared/drivers/Xbee/APIFrameParser.cpp
         ${SBS_BASE}/src/shared/drivers/Xbee/Xbee.cpp
 
@@ -75,9 +73,12 @@ foreach(OPT_BOARD ${BOARDS})
         ${SBS_BASE}/src/shared/sensors/SensorSampler.cpp
         ${SBS_BASE}/src/shared/sensors/MAX6675/MAX6675.cpp
         ${SBS_BASE}/src/shared/sensors/VN100/VN100.cpp
+        ${SBS_BASE}/src/shared/sensors/ADS1118/ADS1118.cpp
+        ${SBS_BASE}/src/shared/sensors/ADS131M04/ADS131M04.cpp
+        ${SBS_BASE}/src/shared/sensors/ADS131M04/ADS131M04HighFreq.cpp
 
         # Timer
-        ${SBS_BASE}/src/shared/TimestampTimer.cpp
+        ${SBS_BASE}/src/shared/drivers/timer/TimestampTimer.cpp
 
         # AeroUtils
         ${SBS_BASE}/src/shared/utils/aero/AeroUtils.cpp

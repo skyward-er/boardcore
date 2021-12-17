@@ -22,6 +22,7 @@
 
 #pragma once
 
+#include <drivers/timer/TimestampTimer.h>
 #include <interfaces/endianness.h>
 #include <kernel/scheduler/scheduler.h>
 #include <miosix.h>
@@ -39,6 +40,5 @@
 
 #include "Constants.h"
 #include "Debug.h"
-#include "TimestampTimer.h"
 
 #define UNUSED(x) (void)(x)

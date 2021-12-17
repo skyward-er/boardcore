@@ -49,14 +49,13 @@
  */
 
 #include <diagnostic/CpuMeter.h>
-#include <drivers/HardwareTimer.h>
 #include <drivers/interrupt/external_interrupts.h>
 #include <drivers/spi/SPIDriver.h>
+#include <drivers/timer/GeneralPurposeTimer.h>
+#include <drivers/timer/TimestampTimer.h>
 #include <sensors/L3GD20/L3GD20.h>
 
 #include <array>
-
-#include "TimestampTimer.h"
 
 using namespace Boardcore;
 using namespace miosix;
@@ -97,15 +96,11 @@ static constexpr int NUM_SAMPLES = SAMPLE_FREQUENCY * 20;
 GyroSample data[NUM_SAMPLES];
 int data_counter = 0;
 
-// High resolution hardware timer using TIM5
-HardwareTimer<uint32_t> hrclock{
-    TIM5, TimerUtils::getPrescalerInputFrequency(TimerUtils::InputClock::APB1)};
-
 // Last interrupt received timer tick
-volatile uint32_t last_watermark_tick;  // Stores the high-res tick of the last
-                                        // interrupt (L3GD20 watermark event)
-volatile uint32_t watermark_delta;  // Tick delta between the last 2 watermark
-                                    // events
+volatile uint64_t lastWatermarkTick;  // Stores the high-res tick of the last
+                                      // interrupt (L3GD20 watermark event)
+volatile uint64_t watermarkDelta;     // Tick delta between the last 2 watermark
+                                      // events
 
 /**
  * Interrupt handling routine. Called each time the fifo is filled with
@@ -118,14 +113,14 @@ volatile uint32_t watermark_delta;  // Tick delta between the last 2 watermark
 void __attribute__((used)) EXTI2_IRQHandlerImpl()
 {
     // Current high resolution tick
-    uint32_t tick       = hrclock.tick();
-    watermark_delta     = tick - last_watermark_tick;
-    last_watermark_tick = tick;
+    uint64_t currentTimestamp = TimestampTimer::getTimestamp();
+    watermarkDelta            = currentTimestamp - lastWatermarkTick;
+    lastWatermarkTick         = currentTimestamp;
 
     // Pass timestamp to the sensor
     if (gyro != nullptr)
     {
-        gyro->IRQupdateTimestamp(hrclock.toIntMicroSeconds(tick));
+        gyro->IRQupdateTimestamp(currentTimestamp);
     }
 }
 
@@ -134,7 +129,6 @@ void configure()
     {
         FastInterruptDisableLock dLock;
 
-        RCC->APB1ENR |= RCC_APB1ENR_TIM5EN;
         RCC->APB2ENR |= RCC_APB2ENR_SPI5EN;
 
         GpioSck::mode(Mode::ALTERNATE);
@@ -156,10 +150,6 @@ void configure()
     enableExternalInterrupt(GPIOA_BASE, 2, InterruptTrigger::RISING_EDGE);
 
     TimestampTimer::enableTimestampTimer();
-
-    // High resolution clock configuration
-    hrclock.setPrescaler(382);
-    hrclock.start();
 }
 
 int main()
@@ -187,11 +177,11 @@ int main()
         long last_tick = miosix::getTick();
 
         // Read the fifo
-        uint32_t update = hrclock.tick();
+        uint64_t update = TimestampTimer::getTimestamp();
         gyro->sample();
 
         // Measure how long we take to read the fifo
-        update = hrclock.tick() - update;
+        update = TimestampTimer::getTimestamp() - update;
 
         uint8_t level =
             gyro->getLastFifoSize();  // Current number of samples in the FIFO
@@ -203,12 +193,15 @@ int main()
         for (int i = 0; i < level; i++)
         {
             // data[data_counter++] = fifo[i];
-            data[data_counter++] = {fifo_num,
-                                    fifo[i],
-                                    level,
-                                    hrclock.toIntMicroSeconds(watermark_delta),
-                                    averageCpuUtilization(),
-                                    hrclock.toIntMicroSeconds(update)};
+            data[data_counter++] = {
+                fifo_num,
+                fifo[i],
+                level,
+                TimerUtils::toIntMicroSeconds(
+                    TimestampTimer::timestampTimer.getTimer(), watermarkDelta),
+                averageCpuUtilization(),
+                TimerUtils::toIntMicroSeconds(
+                    TimestampTimer::timestampTimer.getTimer(), update)};
 
             // Stop if we have enough data
             if (data_counter >= NUM_SAMPLES)

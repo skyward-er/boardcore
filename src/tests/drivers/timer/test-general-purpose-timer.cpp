@@ -1,4 +1,4 @@
-/* Copyright (c) 2020 Skyward Experimental Rocketry
+/* Copyright (c) 2021 Skyward Experimental Rocketry
  * Author: Alberto Nidasio
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -20,29 +20,36 @@
  * THE SOFTWARE.
  */
 
-#pragma once
+#include <drivers/timer/GeneralPurposeTimer.h>
+#include <drivers/timer/TimerUtils.h>
+#include <miosix.h>
 
-#include <sensors/SensorData.h>
+using namespace miosix;
+using namespace Boardcore;
 
-namespace Boardcore
+GeneralPurposeTimer<uint16_t> timer(TIM4);
+GeneralPurposeTimer<uint16_t>::Channel channel =
+    GeneralPurposeTimer<uint16_t>::Channel::CHANNEL_1;
+constexpr int frequency = 123456;
+GpioPin timerPin        = GpioPin(GPIOB_BASE, 7);
+
+int main()
 {
+    RCC->APB2ENR |= RCC_APB2ENR_TIM1EN;
+    timerPin.mode(Mode::ALTERNATE);
+    timerPin.alternateFunction(2);
 
-struct ADS1118Data : public ADCData
-{
-    ADS1118Data() : ADCData{0, 0, 0.0} {}
+    timer.setPrescaler(
+        TimerUtils::computePrescalerValue(timer.getTimer(), frequency * 4));
+    timer.setAutoReloadRegister(100);
+    timer.setOutputCompareMode(
+        GeneralPurposeTimer<uint16_t>::OutputCompareMode::TOGGLE, channel);
+    timer.generateUpdate();
+    timer.setCaptureCompareRegister(100, channel);
+    timer.enableCaptureCompareOutput(channel);
+    timer.enableCaptureCompareComplementaryOutput(channel);
+    timer.enable();
 
-    ADS1118Data(uint64_t t, uint8_t channel_id, float voltage)
-        : ADCData{t, channel_id, voltage}
-
-    {
-    }
-
-    static std::string header() { return "adc_timestamp,channel_id,voltage\n"; }
-
-    void print(std::ostream& os) const
-    {
-        os << adc_timestamp << "," << (int)channel_id << "," << voltage << "\n";
-    }
-};
-
-}  // namespace Boardcore
+    while (true)
+        delayMs(1000);
+}

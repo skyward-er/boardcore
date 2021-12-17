@@ -21,9 +21,10 @@
  */
 
 #include <drivers/servo/servo.h>
-using namespace Boardcore;
-
+#include <drivers/timer/TimerUtils.h>
 #include <miosix.h>
+
+using namespace Boardcore;
 using namespace miosix;
 
 using ps1 = Gpio<GPIOD_BASE, 12>;

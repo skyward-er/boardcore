@@ -21,14 +21,14 @@
  */
 
 /**
- * @brief Driver for ADS1118 adc
+ * @brief Driver for ADS1118 adc.
  *
  * The ADS1118 is a 16-bit delta-sigma analog-to-digital converter.
  * It measures the difference of two inputs configured by a MUX. The device
  * allows also to read each of the four pins in reference to GND. A temperature
  * sensor is also included.
  *
- * The communication uses the spi protocol and the maximum allowed frequency is
+ * The communication uses the SPI protocol and the maximum allowed frequency is
  * 4MHz. Configuration is applied by writing a 16bit value to the device.
  * Sampled voltages or temperature readings are obtained also by reading a 16bit
  * value while writing the configuration.
@@ -70,9 +70,9 @@ namespace Boardcore
 {
 
 /**
- * @brief Driver class for ADS1118 adc
+ * @brief Driver class for ADS1118 ADC.
  *
- * This class allows to mange the device configuration.
+ * This class allows to mange the device configuration and the data sampling.
  */
 class ADS1118 : public Sensor<ADS1118Data>
 {
@@ -143,13 +143,15 @@ public:
             ADS1118TempMode tempMode : 1;  ///< Temperature sensor mode
             ADS1118DataRate rate : 3;      ///< Data rate
         } bits;  ///< Includes all the configuration bits
+
         struct
         {
             uint8_t msb;  ///< Byte MSB
             uint8_t lsb;  ///< Byte LSB
         } byte;           ///< Includes the msb and lsb bytes
-        uint16_t word;    ///< Representation in word (16-bits) format
-    };                    ///< Structure of configuration word
+
+        uint16_t word;  ///< Representation in word (16-bits) format
+    };                  ///< Structure of configuration word
 
     struct ADS1118InputConfig
     {
@@ -171,23 +173,23 @@ public:
 
     /**
      * @brief Construct a new ADS1118 object specifing spi bus, spi config and
-     * cs pin as well as device configuration
+     * cs pin as well as device configuration.
      */
-    ADS1118(SPIBusInterface &bus, GpioPin cs, ADS1118Config config_,
+    ADS1118(SPIBusInterface &bus, miosix::GpioPin cs, ADS1118Config config_,
             SPIBusConfig spiConfig = getDefaultSPIConfig());
 
     /**
-     * @brief Construct a new ADS1118 object
+     * @brief Construct a new ADS1118 object.
      *
      * @param spiSlave_ Spi slave configured with spi interface, spi config and
-     * ss pin
+     * ss pin.
      * @param config_ Device main configuration used as default while enabling
-     * channels
+     * channels.
      * @param busyWait_ Enable busy wait instead normal wait (uses `delayUs`
      * instead of `sleep`), only useful when sampling at close to the maximum
-     * frequency!
+     * frequency!.
      * @param tempDivider_ Specify how many onSimpleUpdate calls between each
-     * temperature reading
+     * temperature reading.
      */
     ADS1118(SPISlave spiSlave_, ADS1118Config config_ = ADS1118_DEFAULT_CONFIG,
             bool busyWait_ = false, int16_t tempDivider_ = 100);
@@ -195,112 +197,92 @@ public:
     /**
      * Constructs the default config for SPI Bus.
      *
-     * @returns the default SPIBusConfig
+     * @returns the default SPIBusConfig.
      */
     static SPIBusConfig getDefaultSPIConfig();
 
     /**
-     * @brief Initialize the configuration
+     * @brief Initialize the configuration.
      *
      * It resets all the channels thus you must call init() before enabling any
-     * channel
+     * channel.
      */
     bool init() override;
 
     /**
      * @brief Enables the sapling of a specific mux configuration with the main
-     * configuration specified in the constructor
+     * configuration specified in the constructor.
      *
-     * @param mux Mux configuration to enable
+     * @param mux Mux configuration to enable.
      */
     void enableInput(ADS1118Mux mux);
 
     /**
-     * @brief Enables the sapling of a specific mux configuration
+     * @brief Enables the sampling of a specific mux configuration.
      *
-     * @param mux Mux configuration to enable
-     * @param rate Data rate for this specific channel
-     * @param pga Gain for this specific channel
+     * @param mux Mux configuration to enable.
+     * @param rate Data rate for this specific channel.
+     * @param pga Gain for this specific channel.
      */
     void enableInput(ADS1118Mux mux, ADS1118DataRate rate, ADS1118Pga pga);
 
-    /**
-     * @brief Disables the specified mux configuration
-     *
-     * @param mux Mux configuration to disable
-     */
     void disableInput(ADS1118Mux mux);
 
-    /**
-     * @brief Disables all the inputs
-     */
     void disableAllInputs();
 
-    /**
-     * @brief Enables temperature readings
-     */
     void enableTemperature();
 
-    /**
-     * @brief Disables temperature readings
-     */
     void disableTemperature();
 
-    /**
-     * @brief Enables the pull up resistor on dout/miso
-     */
     void enablePullUpResistor();
 
-    /**
-     * @brief Disables the pull up resistor on dout/miso
-     */
     void disablePullUpResistor();
 
     /**
-     * @brief Enables the configuration check after it's writing to the device
+     * @brief Enables the configuration check after it's writing to the device.
      */
     void enableConfigCheck();
 
     /**
-     * @brief Disables the configuration check after it's writing to the device
+     * @brief Disables the configuration check after it's writing to the device.
      */
     void disableConfigCheck();
 
     /**
-     * @brief Reads on the fly the specified input
+     * @brief Reads on the fly the specified input.
      *
-     * @param mux Mux configuration to read
-     * @return Voltage value sampled from the channel in mV
+     * @param mux Mux configuration to read.
+     * @return Voltage value sampled from the channel in mV.
      */
     ADS1118Data readInputAndWait(ADS1118Mux mux);
 
     /**
-     * @brief Reads on the fly the temperature
+     * @brief Reads on the fly the temperature.
      *
-     * @return Temperature in degree
+     * @return Temperature in degree.
      */
     TemperatureData readTemperatureAndWait();
 
     /**
-     * @brief Returns the last read voltage value for the specified channel
+     * @brief Returns the last read voltage value for the specified channel.
      */
     ADS1118Data getVoltage(ADS1118Mux mux);
 
     /**
-     * @brief Returns the last temperature value
+     * @brief Returns the last temperature value.
      */
     TemperatureData getTemperature();
 
     /**
-     * @brief Returns the conversion time in us for the specified channel
+     * @brief Returns the conversion time in us for the specified channel.
      */
     int getConversionTime(int8_t channel);
 
     /**
      * @brief Writes the temperature configuration and check if it is read back
-     * correctly
+     * correctly.
      *
-     * @return True if everything ok
+     * @return True if everything ok.
      */
     bool selfTest() override;
 
@@ -316,18 +298,16 @@ private:
     /**
      * @brief Writes the configuration specified, reads the previous written
      * configuration's value and stores it. If enabled checks also that the
-     * configuration has been written correctly
+     * configuration has been written correctly.
      *
-     * @param nextChannel Channel number to write the configuration of
-     * @param prevChannel Channel number to read the configuration of
-     * @return True if everything ok
+     * @param nextChannel Channel number to write the configuration of.
+     * @param prevChannel Channel number to read the configuration of.
+     * @return True if everything ok.
      */
     void readChannel(int8_t nextChannel, int8_t prevChannel);
 
     /**
-     * @brief Reads on the fly the speficied channel
-     *
-     * @param channel
+     * @brief Reads on the fly the speficied channel.
      */
     void readChannel(int8_t channel);
 

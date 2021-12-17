@@ -20,7 +20,6 @@
  * THE SOFTWARE.
  */
 
-// #include <drivers/HardwareTimer.h>
 #include <array>
 // #include <chrono>
 #include <cstdio>

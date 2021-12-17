@@ -22,10 +22,9 @@
 
 #include <Common.h>
 #include <drivers/gps/ublox/UbloxGPS.h>
+#include <drivers/timer/TimestampTimer.h>
 
 #include <cstdio>
-
-#include "TimestampTimer.h"
 
 using namespace Boardcore;
 using namespace miosix;

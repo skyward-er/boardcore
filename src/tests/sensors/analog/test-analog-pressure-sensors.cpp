@@ -21,14 +21,14 @@
  */
 
 #include <diagnostic/PrintLogger.h>
-#include <drivers/adc/ADS1118/ADS1118.h>
 #include <drivers/spi/SPIDriver.h>
 #include <miosix.h>
+#include <sensors/ADS1118/ADS1118.h>
 #include <sensors/analog/pressure/AnalogPressureSensor.h>
 #include <sensors/analog/pressure/honeywell/HSCMAND015PA.h>
 #include <sensors/analog/pressure/honeywell/HSCMRNN030PA.h>
 
-#include "TimestampTimer.h"
+using namespace miosix;
 
 using namespace Boardcore;
 
@@ -69,8 +69,8 @@ int main()
 
     // SPI configuration setup
     SPIBusConfig spiConfig;
-    spiConfig.clock_div = SPIClockDivider::DIV32;
-    spiConfig.mode      = SPIMode::MODE1;
+    spiConfig.clockDivider = SPI::ClockDivider::DIV_32;
+    spiConfig.mode         = SPI::Mode::MODE_1;
     SPIBus spiBus(SPI2);
     SPISlave spiSlave(spiBus, csPin, spiConfig);
 

@@ -1,5 +1,5 @@
 /* Copyright (c) 2021 Skyward Experimental Rocketry
- * Author: Davide Mor
+ * Author: Alberto Nidasio
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -20,47 +20,41 @@
  * THE SOFTWARE.
  */
 
-#include <Common.h>
-#include <drivers/HardwareTimer.h>
+#pragma once
 
-using namespace Boardcore;
+#include <stdint.h>
 
-int main()
+namespace Boardcore
 {
+
+struct ADS131M04Data
+{
+    uint64_t timestamp;
+    float voltage[4];
+
+    ADS131M04Data() : ADS131M04Data{0, 0, 0, 0, 0} {}
+
+    ADS131M04Data(uint64_t timestamp, float voltageCh1, float voltageCh2,
+                  float voltageCh3, float voltageCh4)
+        : timestamp(timestamp)
     {
-        miosix::FastInterruptDisableLock dLock;
-        // Enable TIM2 + TIM3 + TIM4 peripheral clock
-        RCC->APB1ENR |= RCC_APB1ENR_TIM3EN | RCC_APB1ENR_TIM4EN;
+        voltage[0] = voltageCh1;
+        voltage[1] = voltageCh2;
+        voltage[2] = voltageCh3;
+        voltage[3] = voltageCh4;
     }
 
-    uint32_t prescaler =
-        TimerUtils::getPrescalerInputFrequency(TimerUtils::InputClock::APB1);
-    TRACE("Prescaler: %d\n", prescaler);
-
-    HardwareTimer<uint32_t, TimerMode::Chain> timer1(
-        TIM3, TIM4, TimerTrigger::ITR2, prescaler);
-
-    HardwareTimer<uint32_t, TimerMode::Single> timer2(TIM2, prescaler);
-
-    timer1.start();
-    timer2.start();
-
-    while (true)
+    static std::string header()
     {
-        miosix::Thread::sleep(1000);
-
-        uint32_t tick1 = timer1.tick();
-        uint32_t tick2 = timer2.tick();
-
-        UNUSED(tick1);
-        UNUSED(tick2);
-
-        TRACE("Timer1: %f\n", timer1.toMilliSeconds(tick1));
-        TRACE("Timer2: %f\n", timer2.toMilliSeconds(tick1));
-
-        // Delta should remain constant
-        TRACE("Delta: %d\n", tick1 - tick2);
+        return "timestamp,voltage_channel_1,voltage_channel_2,voltage_channel_"
+               "3,voltage_channel_4";
     }
 
-    return 0;
-}
+    void print(std::ostream& os) const
+    {
+        os << timestamp << "," << voltage[0] << "," << voltage[1] << ","
+           << voltage[2] << "," << voltage[3] << "\n";
+    }
+};
+
+}  // namespace Boardcore

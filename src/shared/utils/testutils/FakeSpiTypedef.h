@@ -38,9 +38,11 @@ namespace Boardcore
  */
 struct FakeSpiTypedef
 {
-    uint32_t CR1 = 0;
-    uint32_t CR2 = 0;
-    uint32_t SR  = 3;
+    uint32_t CR1    = 0;
+    uint32_t CR2    = 0;
+    uint32_t SR     = 3;
+    uint32_t RXCRCR = 0;
+    uint32_t TXCRCR = 0;
 
     struct RegDR
     {

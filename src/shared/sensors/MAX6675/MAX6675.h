@@ -43,7 +43,7 @@ public:
      * @param cs The CS pin to lower when we need to sample.
      * @param config The SPI configuration.
      */
-    MAX6675(SPIBusInterface &bus, GpioPin cs,
+    MAX6675(SPIBusInterface &bus, miosix::GpioPin cs,
             SPIBusConfig config = getDefaultSPIConfig());
 
     /**

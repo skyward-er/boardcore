@@ -45,7 +45,8 @@ enum SensorErrors : uint8_t
     NO_NEW_DATA        = 7,  // no new data available from the sensor
     INVALID_FIFO_INDEX = 8,
     DMA_ERROR          = 9,
-    END_OF_BASE_ERRORS = 10  // used to extend this enum
+    COMMAND_FAILED     = 10,
+    END_OF_BASE_ERRORS = 11  // used to extend this enum
 };
 
 /**

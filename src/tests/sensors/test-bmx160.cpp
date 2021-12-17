@@ -21,10 +21,11 @@
  */
 
 #include <Common.h>
-#include <drivers/HardwareTimer.h>
 #include <drivers/interrupt/external_interrupts.h>
+#include <drivers/timer/GeneralPurposeTimer.h>
 #include <sensors/BMX160/BMX160.h>
 
+using namespace miosix;
 using namespace Boardcore;
 
 SPIBus bus(SPI1);

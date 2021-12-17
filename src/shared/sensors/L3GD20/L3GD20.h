@@ -22,7 +22,9 @@
  */
 
 #pragma once
+
 #include <drivers/spi/SPIDriver.h>
+#include <drivers/timer/TimestampTimer.h>
 #include <math/Vec3.h>
 #include <miosix.h>
 #include <sensors/Sensor.h>
@@ -30,10 +32,6 @@
 #include <array>
 
 #include "L3GD20Data.h"
-#include "TimestampTimer.h"
-
-using miosix::GpioPin;
-using std::array;
 
 namespace Boardcore
 {
@@ -67,14 +65,14 @@ public:
      * @param    odr Output Data Rate (See datasheet)
      * @param    cutoff_freq Low pass filter cutoff frequency (See datasheet)
      */
-    L3GD20(SPIBusInterface& bus, GpioPin cs,
+    L3GD20(SPIBusInterface& bus, miosix::GpioPin cs,
            FullScaleRange range = FullScaleRange::FS_250,
            OutPutDataRate odr   = OutPutDataRate::ODR_95,
            uint8_t cutoff_freq  = 0x03)
         : L3GD20(bus, cs, {}, range, odr, cutoff_freq)
     {
         // Configure SPI
-        spislave.config.clock_div = SPIClockDivider::DIV32;
+        spislave.config.clockDivider = SPI::ClockDivider::DIV_32;
     }
 
     /**
@@ -87,7 +85,7 @@ public:
      * @param    odr Output Data Rate (See datasheet)
      * @param    cutoff_freq Low pass filter cutoff selector (See datasheet)
      */
-    L3GD20(SPIBusInterface& bus, GpioPin cs, SPIBusConfig cfg,
+    L3GD20(SPIBusInterface& bus, miosix::GpioPin cs, SPIBusConfig cfg,
            FullScaleRange range = FullScaleRange::FS_250,
            OutPutDataRate odr   = OutPutDataRate::ODR_95,
            uint8_t cutoff_freq  = 0x03)
@@ -123,7 +121,7 @@ public:
     {
         SPITransaction spi(spislave);
 
-        uint8_t whoami = spi.read(REG_WHO_AM_I);
+        uint8_t whoami = spi.readRegister(REG_WHO_AM_I);
 
         if (whoami != WHO_AM_I_VAL)
         {
@@ -134,13 +132,13 @@ public:
         switch (fs)
         {
             case FullScaleRange::FS_250:
-                spi.write(REG_CTRL4, 0);
+                spi.writeRegister(REG_CTRL4, 0);
                 break;
             case FullScaleRange::FS_500:
-                spi.write(REG_CTRL4, (uint8_t)(1 << 4));
+                spi.writeRegister(REG_CTRL4, (uint8_t)(1 << 4));
                 break;
             case FullScaleRange::FS_2000:
-                spi.write(REG_CTRL4, (uint8_t)(2 << 4));
+                spi.writeRegister(REG_CTRL4, (uint8_t)(2 << 4));
                 break;
             default:
                 break;
@@ -149,7 +147,7 @@ public:
         if (fifo_enabled)
         {
             // Enable fifo
-            spi.write(REG_CTRL5, 1 << 6);
+            spi.writeRegister(REG_CTRL5, 1 << 6);
 
             // Set watermark level to fifo_watermark samples
             uint8_t fifo_ctrl = fifo_watermark;
@@ -157,15 +155,15 @@ public:
             // Set fifo to STREAM mode
             fifo_ctrl |= 0x02 << 5;
 
-            spi.write(REG_FIFO_CTRL, fifo_ctrl);
+            spi.writeRegister(REG_FIFO_CTRL, fifo_ctrl);
 
             // Enable FIFO watermark interrupt on INT2
-            spi.write(REG_CTRL3, 0x04);
+            spi.writeRegister(REG_CTRL3, 0x04);
         }
         else
         {
             // Enable DRDY interrupt on INT2
-            spi.write(REG_CTRL3, 0x08);
+            spi.writeRegister(REG_CTRL3, 0x08);
         }
 
         // Enter normal mode, enable output
@@ -190,7 +188,7 @@ public:
                 break;
         }
 
-        spi.write(REG_CTRL1, ctrl1);
+        spi.writeRegister(REG_CTRL1, ctrl1);
 
         return true;
     }
@@ -207,7 +205,7 @@ public:
             // Read output data registers (X, Y, Z)
             {
                 SPITransaction spi(spislave);
-                spi.read(REG_OUT_X_L | 0x40, buf, 6);
+                spi.readRegisters(REG_OUT_X_L | 0x40, buf, 6);
             }
 
             {
@@ -231,12 +229,12 @@ public:
         {
             SPITransaction spi(spislave);
             // Read last fifo level
-            uint8_t fifo_src   = spi.read(REG_FIFO_SRC);
+            uint8_t fifo_src   = spi.readRegister(REG_FIFO_SRC);
             uint8_t ovr        = (fifo_src & 0x40) >> 7;  // Overrun bit
             uint8_t fifo_level = (fifo_src & 0x1F) + ovr;
 
             // Read fifo
-            spi.read(REG_OUT_X_L | 0x40, buf, fifo_level * 6);
+            spi.readRegisters(REG_OUT_X_L | 0x40, buf, fifo_level * 6);
 
             uint64_t dt = dt_interrupt / last_fifo_level;
 

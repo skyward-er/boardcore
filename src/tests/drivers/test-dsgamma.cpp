@@ -32,7 +32,6 @@ using miosix::FastInterruptDisableLock;
 using miosix::Gpio;
 using miosix::Thread;
 
-#include <drivers/HardwareTimer.h>
 #include <drivers/gamma868/Gamma868.h>
 
 // Protocol config

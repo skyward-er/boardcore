@@ -22,8 +22,8 @@
 
 #pragma once
 
-#include <TimestampTimer.h>
 #include <drivers/pwm/pwm.h>
+#include <drivers/timer/TimestampTimer.h>
 #include <miosix.h>
 
 #include "HBridgeData.h"

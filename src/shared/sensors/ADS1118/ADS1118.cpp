@@ -22,9 +22,8 @@
 
 #include "ADS1118.h"
 
+#include <drivers/timer/TimestampTimer.h>
 #include <interfaces/endianness.h>
-
-#include "TimestampTimer.h"
 
 namespace Boardcore
 {
@@ -33,8 +32,8 @@ const ADS1118::ADS1118Config ADS1118::ADS1118_DEFAULT_CONFIG = {
     SINGLE_SHOT_MODE, FSR_2_048,  MUX_AIN0_AIN1, 0,     0,
     VALID_OPERATION,  PULL_UP_EN, ADC_MODE,      DR_128};
 
-ADS1118::ADS1118(SPIBusInterface &bus, GpioPin cs, ADS1118Config config_,
-                 SPIBusConfig spiConfig)
+ADS1118::ADS1118(SPIBusInterface &bus, miosix::GpioPin cs,
+                 ADS1118Config config_, SPIBusConfig spiConfig)
     : ADS1118(SPISlave(bus, cs, spiConfig), config_, false)
 {
 }
@@ -62,8 +61,8 @@ ADS1118::ADS1118(SPISlave spiSlave_, ADS1118Config config_, bool busyWait_,
 SPIBusConfig ADS1118::getDefaultSPIConfig()
 {
     SPIBusConfig spiConfig{};
-    spiConfig.clock_div = SPIClockDivider::DIV32;
-    spiConfig.mode      = SPIMode::MODE1;
+    spiConfig.clockDivider = SPI::ClockDivider::DIV_32;
+    spiConfig.mode         = SPI::Mode::MODE_1;
     return spiConfig;
 }
 
