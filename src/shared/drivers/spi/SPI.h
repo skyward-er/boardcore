@@ -467,7 +467,7 @@ inline uint16_t SPI::transfer(uint16_t data)
     set8BitFrameFormat();
 
     // Read the received data item
-    return static_cast<uint8_t>(spi->DR);
+    return static_cast<uint16_t>(spi->DR);
 }
 
 inline void SPI::transfer(uint8_t *data, size_t nBytes)
@@ -493,7 +493,9 @@ inline void SPI::transfer(uint8_t *data, size_t nBytes)
     }
 
     // Wait until data is received
-    while ((spi->SR & SPI_SR_RXNE) == 0)
+    // while ((spi->SR & SPI_SR_RXNE) == 0)
+    //     ;
+    while (spi->SR & SPI_SR_BSY)
         ;
 
     // Read the last received data item
@@ -526,7 +528,9 @@ inline void SPI::transfer(uint16_t *data, size_t nBytes)
     }
 
     // Wait until data is received
-    while ((spi->SR & SPI_SR_RXNE) == 0)
+    // while ((spi->SR & SPI_SR_RXNE) == 0)
+    //     ;
+    while (spi->SR & SPI_SR_BSY)
         ;
 
     // Read the last received data item
