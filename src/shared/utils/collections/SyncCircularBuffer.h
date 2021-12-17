@@ -26,9 +26,9 @@
 
 #include "CircularBuffer.h"
 
+using miosix::ConditionVariable;
 using miosix::FastMutex;
 using miosix::Lock;
-using miosix::ConditionVariable;
 
 namespace Boardcore
 {
@@ -122,7 +122,7 @@ public:
     {
         Lock<FastMutex> l(mutex);
         while (Super::isEmpty())
-        { 
+        {
             cv.wait(l);
         }
     }
