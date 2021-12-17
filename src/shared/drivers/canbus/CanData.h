@@ -1,5 +1,5 @@
 /* Copyright (c) 2018 Skyward Experimental Rocketry
- * Author: Alvise de'Faveri Tron
+ * Author: Luca Erbetta
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -20,51 +20,55 @@
  * THE SOFTWARE.
  */
 
-#include <Common.h>
-#include <drivers/canbus/CanManager.h>
-#include <drivers/canbus/CanUtils.h>
+#pragma once
 
-using namespace Boardcore;
-using namespace std;
-using namespace miosix;
+#include <cstdint>
 
-#define CAN_PACKETID 0x49
-
-void handleCan(CanMsg message, CanStatus status)
+namespace Boardcore
 {
-    unsigned char buf[65] = {0};
-    memcpy(buf, message.Data, message.DLC);
-    printf("Received %s\n", buf);
 
-    UNUSED(status);
-}
-
-int main()
+namespace Canbus
 {
-    CanManager c(CAN1);
 
-    canbus_init_t st = {
-        CAN1, Mode::ALTERNATE, 9, {CAN1_RX0_IRQn, CAN1_RX1_IRQn}};
+struct CanTXResult
+{
+    uint32_t seq;
+    uint8_t mailbox;
+    uint8_t tx_status;
+    uint8_t tme;
+    uint8_t err_code;
+};
 
-    c.addBus<GPIOA_BASE, 11, 12>(st, handleCan);
-    // canbus_init_t st2= {
-    //    CAN2, Mode::ALTERNATE,  9, {CAN2_RX0_IRQn,CAN2_RX1_IRQn}
-    //};
-    // c.addBus<GPIOB_BASE, 5, 6>(st2);
+struct CanRXStatus
+{
+    uint8_t rx_status;
+    uint8_t fifo;
+    uint8_t rx_err_counter = 0;
+    uint8_t err_code;
+    bool fifo_overrun;
+    bool fifo_full;
+};
 
-    CanBus *bus = c.getBus(0);
-    c.addHWFilter(CAN_PACKETID, 0);
+struct CanPacket
+{
+    uint32_t timestamp = 0;
 
-    printf("*** Ready ***\n");
+    uint32_t id;
+    bool ext = false;
 
-    while (1)
-    {
-        ledOn();
-        const char *pkt = "TestMSG";
-        bus->send(CAN_PACKETID, (const uint8_t *)pkt, strlen(pkt));
-        // socket.receive(buf, 64);
-        Thread::sleep(250);
-        ledOff();
-        Thread::sleep(150);
-    }
-}
+    bool rtr = false;
+
+    uint8_t length = 0;
+
+    uint8_t data[8];
+};
+
+struct CanRXPacket
+{
+    CanPacket packet;
+    CanRXStatus status;
+};
+
+}  // namespace Canbus
+
+}  // namespace Boardcore

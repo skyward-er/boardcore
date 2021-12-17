@@ -95,6 +95,7 @@
         "filesystem": "cpp",
         "unordered_set": "cpp",
         "hash_map": "cpp",
-        "valarray": "cpp"
+        "valarray": "cpp",
+        "ranges": "cpp"
     }
 }

@@ -41,8 +41,11 @@ public:
 
     virtual ~LogSink() {}
 
+#if defined(COMPILING_FMT) && !defined(DISABLE_PRINTLOGGER)
     void log(const LogRecord& record);
-
+#else
+    void log(const LogRecord& record) { (void)record; }
+#endif
     void enable() { enabled = true; }
 
     void disable() { enabled = false; }
@@ -77,8 +80,11 @@ public:
     void setFile(FILE* f_) { f = f_; }
 
 protected:
+#if defined(COMPILING_FMT) && !defined(DISABLE_PRINTLOGGER)
     void logImpl(std::string l) override;
-
+#else
+    void logImpl(std::string l) override { (void)l; }
+#endif
     FILE* f;
     FastMutex mutex;
 };
@@ -94,7 +100,11 @@ public:
     FileLogSinkBuffered() : logger(Logger::instance()) {}
 
 protected:
+#if defined(COMPILING_FMT) && !defined(DISABLE_PRINTLOGGER)
     void logImpl(std::string l) override;
+#else
+    void logImpl(std::string l) override { (void)l; }
+#endif
 
 private:
     Logger& logger;
