@@ -63,8 +63,11 @@ public:
         {
             long long start                     = miosix::getTick();
             BusLoadEstimation::BusLoadInfo info = ble.getLoadInfo();
-            LOG_INFO(l, "payload rate: {:.2f} kbps, total rate: {:.2f} kbps, utilization: {:.2f}%",
-                     info.payload_bit_rate/1000.0f, info.total_bit_rate/1000.0f, info.load_percent);
+            LOG_INFO(l,
+                     "payload rate: {:.2f} kbps, total rate: {:.2f} kbps, "
+                     "utilization: {:.2f}%",
+                     info.payload_bit_rate / 1000.0f,
+                     info.total_bit_rate / 1000.0f, info.load_percent);
             Thread::sleepUntil(start + 1000);
         }
     }
@@ -80,7 +83,7 @@ BusLoadSensor load(BAUD_RATE);
 int main()
 {
     Logging::startAsyncLogger();
-    
+
     {
         miosix::FastInterruptDisableLock dLock;
 
@@ -102,7 +105,6 @@ int main()
     bt.sample_point = 87.5f / 100.0f;
 
     Canbus::Canbus* c = new Canbus::Canbus(CAN1, cfg, bt);
-
 
     Canbus::Mask32FilterBank f2(0, 0, 0, 0, 0, 0, 0);
 

@@ -22,16 +22,22 @@
 
 #include "CanInterrupt.h"
 
+#include <interfaces-impl/arch_registers_impl.h>
 #include <kernel/scheduler/scheduler.h>
 #include <miosix.h>
+
 #include "Canbus.h"
 
 namespace Boardcore
 {
+
 namespace Canbus
 {
+
 Canbus* can_drivers[2];
+
 }
+
 }  // namespace Boardcore
 
 void __attribute__((naked)) CAN1_RX0_IRQHandler()
@@ -148,4 +154,3 @@ void __attribute__((used)) CAN_TXIRQHandlerImpl(int can_dev)
     if (hppw)
         miosix::Scheduler::IRQfindNextThread();
 }
-

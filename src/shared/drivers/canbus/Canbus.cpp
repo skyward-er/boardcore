@@ -33,6 +33,7 @@
 
 namespace Boardcore
 {
+
 namespace Canbus
 {
 
@@ -165,7 +166,8 @@ Canbus::BitTiming Canbus::calcBitTiming(AutoBitTiming auto_bt)
 
     cfg_opt.SJW = fminf(ceilf(N_opt * 1.0f / 5), 4);
 
-    LOG_DEBUG(ls, "Optimal Bit Timing Registers: BRP={}, BS1={}, BS2={}, SJW={}",
+    LOG_DEBUG(ls,
+              "Optimal Bit Timing Registers: BRP={}, BS1={}, BS2={}, SJW={}",
               cfg_opt.BRP, cfg_opt.BS1, cfg_opt.BS2, cfg_opt.SJW);
 
     float br_true = apbclk * 1.0f / ((cfg_opt.BRP + 1) * N_opt);
@@ -401,4 +403,5 @@ void Canbus::wakeTXThread()
 }
 
 }  // namespace Canbus
-}
+
+}  // namespace Boardcore

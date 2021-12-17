@@ -24,9 +24,13 @@
 
 namespace Boardcore
 {
+
 namespace Canbus
 {
+
 class Canbus;
 extern Canbus* can_drivers[2];
+
 }  // namespace Canbus
+
 }  // namespace Boardcore

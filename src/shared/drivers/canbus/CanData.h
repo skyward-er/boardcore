@@ -27,6 +27,7 @@
 
 namespace Boardcore
 {
+
 namespace Canbus
 {
 
@@ -70,4 +71,5 @@ struct CanRXPacket
 };
 
 }  // namespace Canbus
+
 }  // namespace Boardcore

@@ -42,8 +42,7 @@ enum class FilterScale
 };
 
 /**
- * @brief Base class for a Canbus filter bank
- *
+ * @brief Base class for a Canbus filter bank.
  */
 struct FilterBank
 {
@@ -97,21 +96,20 @@ protected:
 };
 
 /**
- * @brief 32 Bit mask filter bank
- *
+ * @brief 32 Bit mask filter bank.
  */
 struct Mask32FilterBank : public FilterBank
 {
     /**
-     * @brief Construct a new 32 bit mask filter
+     * @brief Construct a new 32 bit mask filter.
      *
-     * @param id 29 bit frame identifier
-     * @param id_mask 29 bit frame identifier mask
-     * @param ide Value for the IDE bit in the canbus frame
-     * @param ide_mask Mask the ide bit
-     * @param rtr Value for the RTR bit in the canbus frame
-     * @param rtr_mask Mask for RTR bit
-     * @param fifo Where to store the filtered messages (fifo 0 or fifo 1)
+     * @param id 29 bit frame identifier.
+     * @param id_mask 29 bit frame identifier mask.
+     * @param ide Value for the IDE bit in the canbus frame.
+     * @param ide_mask Mask the ide bit.
+     * @param rtr Value for the RTR bit in the canbus frame.
+     * @param rtr_mask Mask for RTR bit.
+     * @param fifo Where to store the filtered messages (fifo 0 or fifo 1).
      */
     Mask32FilterBank(uint32_t id, uint32_t id_mask, uint8_t ide,
                      uint8_t ide_mask, uint8_t rtr, uint8_t rtr_mask,
@@ -129,9 +127,9 @@ struct Mask32FilterBank : public FilterBank
 struct ID32FilterBank : public FilterBank
 {
     /**
-     * @brief Construct a new filter matching exactly 32 bit identifiers
+     * @brief Construct a new filter matching exactly 32 bit identifiers.
      *
-     * @param fifo Where to store the filtered messages (fifo 0 or fifo 1)
+     * @param fifo Where to store the filtered messages (fifo 0 or fifo 1).
      */
     ID32FilterBank(uint8_t fifo)
         : FilterBank(FilterScale::SINGLE32, FilterMode::ID, fifo)
@@ -140,11 +138,11 @@ struct ID32FilterBank : public FilterBank
 
     /**
      * @brief Adds a new ID to the filter. Returns false if there is no room for
-     * the ID
+     * the ID.
      *
-     * @param id 29 bit message identifier
-     * @param ide Value for the IDE bit in the canbus frame
-     * @param rtr Value for the RTR bit in the canbus frame
+     * @param id 29 bit message identifier.
+     * @param ide Value for the IDE bit in the canbus frame.
+     * @param rtr Value for the RTR bit in the canbus frame.
      */
     bool addID(uint32_t id, bool ide, uint8_t rtr)
     {
@@ -165,9 +163,9 @@ private:
 struct Mask16FilterBank : public FilterBank
 {
     /**
-     * @brief Construct a new filter matching exactly 16 bit identifiers
+     * @brief Construct a new filter matching exactly 16 bit identifiers.
      *
-     * @param fifo Where to store the filtered messages (fifo 0 or fifo 1)
+     * @param fifo Where to store the filtered messages (fifo 0 or fifo 1).
      */
     Mask16FilterBank(uint8_t fifo)
         : FilterBank(FilterScale::DUAL16, FilterMode::MASK, fifo)
@@ -176,16 +174,16 @@ struct Mask16FilterBank : public FilterBank
 
     /**
      * @brief Add a 16 bit identifier mask, where the provided identifier is an
-     * extended id (29 bit)
+     * extended id (29 bit).
      * @warning only the first 3 bits of the extended frame identifier are
      * checked by the filter. See datasheet!
      *
-     * @param id 29 bit frame identifier
-     * @param id_mask 29 bit frame identifier mask
-     * @param ide Value for the IDE bit in the canbus frame
-     * @param ide_mask Mask the ide bit
-     * @param rtr Set to one if filtering for Remote Transmission Requests
-     * @param rtr_mask Mask for RTR bit
+     * @param id 29 bit frame identifier.
+     * @param id_mask 29 bit frame identifier mask.
+     * @param ide Value for the IDE bit in the canbus frame.
+     * @param ide_mask Mask the ide bit.
+     * @param rtr Set to one if filtering for Remote Transmission Requests.
+     * @param rtr_mask Mask for RTR bit.
      */
     bool addIDExt(uint32_t id, uint32_t id_mask, uint8_t ide, uint8_t ide_mask,
                   uint8_t rtr, uint8_t rtr_mask)
@@ -195,14 +193,14 @@ struct Mask16FilterBank : public FilterBank
 
     /**
      * @brief Add a 16 bit identifier mask, where the provided identifier is a
-     * standard id (11 bit)
+     * standard id (11 bit).
      *
-     * @param id 11 bit frame identifier
-     * @param id_mask 11 bit frame identifier mask
-     * @param ide Value for the IDE bit in the canbus frame
-     * @param ide_mask Mask the ide bit
-     * @param rtr Set to one if filtering for Remote Transmission Requests
-     * @param rtr_mask Mask for RTR bit
+     * @param id 11 bit frame identifier.
+     * @param id_mask 11 bit frame identifier mask.
+     * @param ide Value for the IDE bit in the canbus frame.
+     * @param ide_mask Mask the ide bit.
+     * @param rtr Set to one if filtering for Remote Transmission Requests.
+     * @param rtr_mask Mask for RTR bit.
      */
     bool addIDStd(uint32_t id, uint32_t id_mask, uint8_t ide, uint8_t ide_mask,
                   uint8_t rtr, uint8_t rtr_mask)
@@ -231,9 +229,9 @@ private:
 struct ID16FilterBank : public FilterBank
 {
     /**
-     * @brief Construct a new filter matching exactly 16 bits identifiers
+     * @brief Construct a new filter matching exactly 16 bits identifiers.
      *
-     * @param fifo Where to store the filtered messages (fifo 0 or fifo 1)
+     * @param fifo Where to store the filtered messages (fifo 0 or fifo 1).
      */
     ID16FilterBank(uint8_t fifo)
         : FilterBank(FilterScale::DUAL16, FilterMode::ID, fifo)
@@ -242,13 +240,13 @@ struct ID16FilterBank : public FilterBank
 
     /**
      * @brief Add a 16 bit identifier match filter, where the provided
-     * identifier is an extended id (29 bit)
+     * identifier is an extended id (29 bit).
      *
-     * @param id 29 bit Identifier to be filterd
-     * @param ide Value of the IDE field in the canbus frame
-     * @param rtr Value of the RTR field in the canbus frame
-     * @return true if the identifier was added, false if no more space
-     * available in the current bank
+     * @param id 29 bit Identifier to be filterd.
+     * @param ide Value of the IDE field in the canbus frame.
+     * @param rtr Value of the RTR field in the canbus frame.
+     * @return True if the identifier was added, false if no more space
+     * available in the current bank.
      */
     bool addID32(uint32_t id, uint8_t ide, uint8_t rtr)
     {
@@ -257,13 +255,13 @@ struct ID16FilterBank : public FilterBank
 
     /**
      * @brief Add a 16 bit identifier match filter, where the provided
-     * identifier is a standard id (11 bit)
+     * identifier is a standard id (11 bit).
      *
-     * @param id 11 bit Identifier to be filterd
-     * @param ide Value of the IDE field in the canbus frame
-     * @param rtr Value of the RTR field in the canbus frame
-     * @return true if the identifier was added, false if no more space
-     * available in the current bank
+     * @param id 11 bit Identifier to be filterd.
+     * @param ide Value of the IDE field in the canbus frame.
+     * @param rtr Value of the RTR field in the canbus frame.
+     * @return true if the identifier was added, false if no more space.
+     * available in the current bank.
      */
     bool addID16(uint32_t id, uint8_t ide, uint8_t rtr)
     {
@@ -290,4 +288,5 @@ private:
 };
 
 }  // namespace Canbus
+
 }  // namespace Boardcore

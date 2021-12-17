@@ -22,23 +22,24 @@
 
 #pragma once
 
+#include <interfaces-impl/arch_registers_impl.h>
 #include <miosix.h>
+#include <utils/collections/IRQCircularBuffer.h>
 
 #include "CanData.h"
 #include "Filters.h"
-#include "utils/collections/IRQCircularBuffer.h"
 
 using miosix::Thread;
 
 namespace Boardcore
 {
+
 namespace Canbus
 {
 
 /**
  * @brief Low level canbus driver, with support for both peripherals (CAN1 and
- * CAN2) on stm32f4 micros
- *
+ * CAN2) on stm32f4 micros.
  */
 class Canbus
 {
@@ -55,8 +56,7 @@ class Canbus
 
 public:
     /**
-     * @brief Configuration struct for basic canbus operation
-     *
+     * @brief Configuration struct for basic canbus operation.
      */
     struct CanbusConfig
     {
@@ -75,25 +75,25 @@ public:
 
     /**
      * @brief Struct defining high level bit timing requirements. Register
-     * values will then be calculated automatically
+     * values will then be calculated automatically.
      */
     struct AutoBitTiming
     {
         /**
          * @brief Canbus baud rate in bps (BITS PER SECOND). CANOpen standard
          * values are preferred but not mandatory: 1000 kpbs, 500 kbps, 250
-         * kbps, 125 kbps, 100 kbps, 83.333 kbps, 50 kbps, 25 kbps and 10 kbps
+         * kbps, 125 kbps, 100 kbps, 83.333 kbps, 50 kbps, 25 kbps and 10 kbps.
          */
         uint32_t baud_rate;
 
         /**
-         * @brief Sample point in percentage of the bit length. Eg: 0.875
+         * @brief Sample point in percentage of the bit length. Eg: 0.875.
          */
         float sample_point;
     };
 
     /**
-     * @brief Struct specifing exact bit timing registers values
+     * @brief Struct specifing exact bit timing registers values.
      */
     struct BitTiming
     {
@@ -106,34 +106,33 @@ public:
     /**
      * @brief Construct a new Canbus object, automatically calculating timing
      * register values from high level requirements (baud rate and sample point
-     * position)
+     * position).
      *
-     * @param can Canbus peripheral pointer (CAN1 or CAN2)
-     * @param config Bus configuration
-     * @param bit_timing Bit timing requirements
+     * @param can Canbus peripheral pointer (CAN1 or CAN2).
+     * @param config Bus configuration.
+     * @param bit_timing Bit timing requirements.
      */
     Canbus(CAN_TypeDef* can, CanbusConfig config, AutoBitTiming bit_timing);
 
     /**
      * @brief Construct a new Canbus object, manually assigning each bit timing
-     * register value
+     * register value.
      *
-     * @param can Canbus peripheral pointer (CAN1 or CAN2)
-     * @param config Bus configuration
-     * @param bit_timing Bit timing register values
+     * @param can Canbus peripheral pointer (CAN1 or CAN2).
+     * @param config Bus configuration.
+     * @param bit_timing Bit timing register values.
      */
     Canbus(CAN_TypeDef* can, CanbusConfig config, BitTiming bit_timing);
 
     /**
-     * @brief Exits initialization mode and starts canbus operation
-     *
+     * @brief Exits initialization mode and starts canbus operation.
      */
     void init();
 
     /**
      * @brief Adds a new filter to the bus, or returns false if there are no
      * more filter banks available.
-     * @warning Can only be called before init()
+     * @warning Can only be called before init().
      *
      * @param filter Filter to be added
      */
@@ -141,15 +140,15 @@ public:
 
     /**
      * @brief Sends a packet on the bus. This function blocks until the message
-     * has been successfully put into a TX mailbox
+     * has been successfully put into a TX mailbox.
      *
-     * @param packet packet to be send
-     * @return uint32_t Packet sequence number
+     * @param packet packet to be send.
+     * @return uint32_t Packet sequence number.
      */
     uint32_t send(CanPacket packet);
 
     /**
-     * @brief Returns a reference to the buffer containing received packets
+     * @brief Returns a reference to the buffer containing received packets.
      */
     IRQCircularBuffer<CanRXPacket, RX_BUF_SIZE>& getRXBuffer()
     {
@@ -158,7 +157,7 @@ public:
 
     /**
      * @brief Returns a reference to the buffer containing transfer results and
-     * statistics
+     * statistics.
      */
     IRQCircularBuffer<CanTXResult, TX_STATUS_BUF_SIZE>& getTXResultBuffer()
     {
@@ -166,27 +165,24 @@ public:
     }
 
     /**
-     * @brief Returns the canbus peripheral assigned to this instance
+     * @brief Returns the canbus peripheral assigned to this instance.
      */
     CAN_TypeDef* getCAN() { return can; }
 
     /**
-     * @brief Gets the sequence number of the message in the ith tx mailbox
+     * @brief Gets the sequence number of the message in the ith tx mailbox.
      */
     uint32_t getTXMailboxSequence(uint8_t i) { return tx_mailbox_seq[i]; }
 
     /**
      * @brief Wakes the transmission thread. ONLY to be called from the Canbus
-     * TX interrupt handler routine
-     *
+     * TX interrupt handler routine.
      */
     void wakeTXThread();
 
     /**
      * @brief Handles an incoming RX interrupt. ONLY to be called from the
-     * Canbus RX interrupt handler routine
-     *
-     * @param fifo
+     * Canbus RX interrupt handler routine.
      */
     void handleRXInterrupt(int fifo);
 
@@ -195,7 +191,7 @@ private:
      * Automatically calculates values for the bit timing register
      * starting from the required baud rate and sample point position, using a
      * simple optimization algorithm to find the closest possible values,
-     * prioritizing the minimization of the error in the baud rate
+     * prioritizing the minimization of the error in the baud rate.
      */
     static BitTiming calcBitTiming(AutoBitTiming config);
 
@@ -215,5 +211,7 @@ private:
     uint8_t filter_index = 0;
     Thread* waiting      = nullptr;
 };
+
 }  // namespace Canbus
+
 }  // namespace Boardcore

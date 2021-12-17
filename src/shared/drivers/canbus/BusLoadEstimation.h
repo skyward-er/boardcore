@@ -24,17 +24,18 @@
 #pragma once
 
 #include <miosix.h>
+#include <utils/collections/CircularBuffer.h>
 
 #include <cstdint>
 
 #include "CanData.h"
-#include "utils/collections/CircularBuffer.h"
 
 using miosix::FastMutex;
 using miosix::Lock;
 
 namespace Boardcore
 {
+
 namespace Canbus
 {
 
@@ -94,4 +95,5 @@ private:
 };
 
 }  // namespace Canbus
+
 }  // namespace Boardcore
