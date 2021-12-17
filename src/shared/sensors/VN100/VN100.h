@@ -267,7 +267,7 @@ private:
      * @brief Serial interface that is needed to communicate
      * with the sensor via ASCII codes.
      */
-    VN100Serial *serialInterface;
+    VN100Serial *serialInterface = nullptr;
 
     PrintLogger logger = Logging::getLogger("vn100");
 

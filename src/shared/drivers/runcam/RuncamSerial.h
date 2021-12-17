@@ -19,82 +19,66 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
-
-/** BRIEF INTRODUCTION
- * This class is used to create a communication easily with UART ports.
- * In particular it handles the creation and the basic primitives
- * for standard communication protocols (init, send, recv and close).
- * The user should pay more attention on the concept behind the use of this
- * class. The principle under the class is that miosix communicates via USART
- * ports using a file based principle (Unix style). Because of that you need to
- * consider that the receive file works as a LIFO queue, in fact the last
- * message is returned over the less recent messages, so if you accumulate
- * various messages of variable length, you might end up with a message which
- * represents the most recent communication + other previous stuff.
- */
-
 #pragma once
 
 #include <arch/common/drivers/serial.h>
 #include <fcntl.h>
 #include <filesystem/file_access.h>
 #include <miosix.h>
+
 namespace Boardcore
 {
 
 /**
- * @brief Class to communicate with the vn100 via the UART interface.
+ * @brief Class to communicate with the Runcam via serial.
  */
-class VN100Serial
+class RuncamSerial
 {
 public:
-    VN100Serial(unsigned int serialPortNumber, unsigned int serialBaudRate);
+    RuncamSerial(int serialPortNumber, int serialBaudRate);
 
+    /**
+     * @brief Initialization method
+     * @return Boolean which communicates the init process result
+     */
     bool init();
 
     /**
-     * @brief Writes in Serial data.
-     *
+     * @brief Writes in Serial data
      * Note: to send std::string via serial you need to pass use "c_str()"
-     * method.
-     *
-     * @param data Data to be sent via serial.
-     * @param length Array length.
-     *
-     * @return True if operation succeeded.
+     * method
+     * @param Data to be sent via serial
+     * @return Boolean which communicates the send process result
      */
     template <typename DataSend>
     bool send(DataSend *data, int length);
 
     /**
-     * @brief Reads from serial.
-     *
-     * @param data Array where to store data.
-     * @param length Array length.
-     *
-     * @return True if operation succeeded.
+     * @brief Reads from serial
+     * @param Pointer to the data structure where we need to store data
+     * @return Boolean which communicates the recive process result
      */
     template <typename DataReceive>
     bool recv(DataReceive *data, int length);
 
+    /**
+     * @brief Closes the serial communication
+     */
     bool closeSerial();
 
 private:
-    unsigned int serialPortNumber;
-    unsigned int serialBaudRate;
-
+    int serialPortNumber;
+    int serialBaudRate;
     int serialFileDescriptor = 0;
-
-    bool isInit = false;
+    bool isInit              = false;
 };
 
-inline VN100Serial::VN100Serial(unsigned int serialPortNumber,
-                                unsigned int serialBaudRate)
+inline RuncamSerial::RuncamSerial(int serialPortNumber, int serialBaudRate)
     : serialPortNumber(serialPortNumber), serialBaudRate(serialBaudRate)
 {
 }
 
-inline bool VN100Serial::init()
+inline bool RuncamSerial::init()
 {
     // If already initialized i avoid the procedure
     if (isInit)
@@ -108,7 +92,7 @@ inline bool VN100Serial::init()
 
     // Create the serial file which we read and write to communicate
     if (!(devFs->addDevice(
-            "vn100",
+            "Runcam",
             miosix::intrusive_ref_ptr<miosix::Device>(
                 new miosix::STM32Serial(serialPortNumber, serialBaudRate)))))
     {
@@ -116,7 +100,7 @@ inline bool VN100Serial::init()
     }
 
     // Open the file
-    serialFileDescriptor = open("/dev/vn100", O_RDWR);
+    serialFileDescriptor = open("/dev/Runcam", O_RDWR);
 
     // Check the descriptor
     if (serialFileDescriptor <= 0)
@@ -130,7 +114,7 @@ inline bool VN100Serial::init()
 }
 
 template <typename DataSend>
-inline bool VN100Serial::send(DataSend *data, int length)
+inline bool RuncamSerial::send(DataSend *data, int length)
 {
     // Check if the serial has been previously initialized
     if (!isInit)
@@ -148,7 +132,7 @@ inline bool VN100Serial::send(DataSend *data, int length)
 }
 
 template <typename DataReceive>
-inline bool VN100Serial::recv(DataReceive *data, int length)
+inline bool RuncamSerial::recv(DataReceive *data, int length)
 {
     if (!isInit)
     {
@@ -164,7 +148,7 @@ inline bool VN100Serial::recv(DataReceive *data, int length)
     return true;
 }
 
-inline bool VN100Serial::closeSerial()
+inline bool RuncamSerial::closeSerial()
 {
     // Retrieve the file system instance
     miosix::intrusive_ref_ptr<miosix::DevFs> devFs =
@@ -174,7 +158,7 @@ inline bool VN100Serial::closeSerial()
     close(serialFileDescriptor);
 
     // Remove the file
-    if (!(devFs->remove("vn100")))
+    if (!(devFs->remove("Runcam")))
     {
         return false;
     }
