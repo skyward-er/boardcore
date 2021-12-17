@@ -19,11 +19,13 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
+
 #include <drivers/runcam/Runcam.h>
 
 #include "miosix.h"
 
 using namespace miosix;
+using namespace Boardcore;
 
 int main()
 {

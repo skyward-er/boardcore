@@ -116,9 +116,6 @@ sbs_catch_test(catch-tests-entry)
 add_executable(test-ads1118 src/tests/drivers/test-ads1118.cpp)
 sbs_target(test-ads1118 stm32f407vg_stm32f4discovery)
 
-add_executable(test-canbus src/tests/drivers/test-canbus.cpp)
-sbs_target(test-canbus stm32f429zi_skyward_death_stack_x)
-
 add_executable(test-dsgamma src/tests/drivers/test-dsgamma.cpp)
 sbs_target(test-dsgamma stm32f429zi_stm32f4discovery)
 
@@ -215,3 +212,21 @@ sbs_target(test-mpu9250 stm32f429zi_skyward_death_stack_x)
 
 add_executable(test-ms5803 src/tests/sensors/test-ms5803.cpp)
 sbs_target(test-ms5803 stm32f429zi_skyward_death_stack_x)
+
+add_executable(test-vn100serial src/tests/drivers/test-vn100serial.cpp)
+sbs_target(test-vn100serial stm32f407vg_stm32f4discovery)
+
+add_executable(test-vn100 src/tests/sensors/test-vn100.cpp)
+sbs_target(test-vn100 stm32f407vg_stm32f4discovery)
+
+add_executable(test-max485 src/tests/test-max485.cpp)
+sbs_target(test-max485 stm32f407vg_stm32f4discovery)
+
+add_executable(test-MBLoadCell src/tests/drivers/test-MBLoadCell.cpp)
+sbs_target(test-MBLoadCell stm32f407vg_stm32f4discovery)
+
+add_executable(test-canbus-loopback src/tests/drivers/canbus/test-canbus-loopback.cpp)
+sbs_target(test-canbus-loopback stm32f429zi_stm32f4discovery)
+
+add_executable(test-canbus-2way src/tests/drivers/canbus/test-canbus-2way.cpp)
+sbs_target(test-canbus-2way stm32f429zi_stm32f4discovery)

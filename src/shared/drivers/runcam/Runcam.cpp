@@ -19,30 +19,36 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
+
 #include "Runcam.h"
 
 #include <Common.h>
 #include <miosix.h>
 
-using namespace Boardcore;
-
-Runcam::Runcam() : Runcam(defaultPortNumber) {}
-
-Runcam::Runcam(unsigned int portNumber)
+namespace Boardcore
 {
-    this->portNumber = portNumber;
-    isInit           = false;
-}
 
-bool Runcam::configureSerialCommunication()
+Runcam::Runcam(unsigned int portNumber) : portNumber(portNumber) {}
+
+bool Runcam::init()
 {
-    serialInterface = new RuncamSerial(portNumber, defaultBaudRate);
-
-    // Check correct serial init
-    if (!(serialInterface->init()))
+    // If already initialized
+    if (isInit)
     {
+        LOG_ERR(logger, "Connection with the camera already initialized");
+        return true;
+    }
+
+    if (!configureSerialCommunication())
+    {
+        LOG_ERR(logger, "Unable to config camera port");
         return false;
     }
+
+    isInit = true;
+
+    Runcam::moveDown();
+    Runcam::openMenu();
 
     return true;
 }
@@ -52,49 +58,45 @@ bool Runcam::close()
     // Sensor not init
     if (!isInit)
     {
-        TRACE("Runcam not initilized");
+        LOG_ERR(logger,
+                "Runcam not initilized while attempting to close the serial "
+                "connection");
         return true;
     }
 
     // Close the serial
-    if (!(serialInterface->closeSerial()))
+    if (!serialInterface->closeSerial())
     {
-        TRACE("Unable to close serial communication");
+        LOG_ERR(logger, "Unable to close serial communication");
         return false;
     }
 
     isInit = false;
 
     // Free the serialInterface memory
-    delete (serialInterface);
+    delete serialInterface;
 
     return true;
 }
 
 void Runcam::openMenu() { serialInterface->send(&OPEN_MENU, 4); }
+
 void Runcam::selectSetting() { serialInterface->send(&SELECT_SETTING, 4); }
+
 void Runcam::moveDown() { serialInterface->send(&MOVE_DOWN, 4); }
 
-bool Runcam::init()
+bool Runcam::configureSerialCommunication()
 {
-    // If already initialized
-    if (isInit)
-    {
-        TRACE("Connection with the camera already initialized");
-        return true;
-    }
+    serialInterface = new RuncamSerial(portNumber, defaultBaudRate);
 
-    if (!configureSerialCommunication())
+    // Check correct serial init
+    if (!serialInterface->init())
     {
-        TRACE("Unable to config camera port");
+        LOG_ERR(logger, "Unable to config the default serial port");
         return false;
     }
 
-    // Set the isInit flag true
-    isInit = true;
-
-    Runcam::moveDown();
-    Runcam::openMenu();
-
     return true;
 }
+
+}  // namespace Boardcore

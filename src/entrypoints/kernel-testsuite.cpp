@@ -2402,7 +2402,7 @@ void test_14()
     // Test 1: join on joinable, not already deleted
     void *result = 0;
     t            = Thread::create(t14_p2, STACK_SMALL, 0, (void *)0xdeadbeef,
-                       Thread::JOINABLE);
+                                  Thread::JOINABLE);
     Thread::yield();
     if (t->join(&result) == false)
         fail("Thread::join (1)");
@@ -2442,7 +2442,7 @@ void test_14()
     // Test 6: join on already deleted
     result = 0;
     t      = Thread::create(t14_p1, STACK_SMALL, 0, (void *)0xdeadbeef,
-                       Thread::JOINABLE);
+                            Thread::JOINABLE);
     t->terminate();
     Thread::sleep(10);
     if (Thread::exists(t) == false)

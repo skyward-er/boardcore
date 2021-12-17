@@ -100,56 +100,43 @@ of the Wi-Fi button RCDEVICE_PROTOCOL_SIMULATE_POWER_BTN = 0xCC0101E7,
 through the two modes: Video/OSD settings(Long press wifi button);
 */
 
-#ifndef RUNCAM_H
-#define RUNCAM_H
+#pragma once
 
 #include <Debug.h>
 #include <diagnostic/PrintLogger.h>
-#include <fmt/format.h>
 
 #include "RuncamSerial.h"
 
+namespace Boardcore
+{
+
 /**
- * @brief Header class for controlling the Runcam via serial
+ * @brief Class for controlling the Runcam via uart.
  */
 class Runcam
 {
 public:
-    /**
-     * @brief default constructor
-     */
-    Runcam();
+    Runcam(unsigned int portNumber = defaultPortNumber);
 
-    /**
-     * @brief default constructor
-     * @param portNumber to use as the serial connection
-     */
-    Runcam(unsigned int portNumber);
-
-    /**
-     * @brief initiate the connection
-     */
     bool init();
 
-    /**
-     * @brief close the connection
-     */
     bool close();
 
-    /**
-     * @brief send the message to open the menu
-     */
     void openMenu();
-    /**
-     * @brief send the message to select a settign
-     */
+
     void selectSetting();
-    /**
-     * @brief send the message to move down
-     */
+
     void moveDown();
 
 private:
+    /**
+     * @brief Confiugre Serial Communication
+     */
+    bool configureSerialCommunication();
+
+    unsigned int portNumber;
+    bool isInit = false;
+
     /**
      * @brief Simulate Click of the Wi-Fi button
      */
@@ -166,35 +153,12 @@ private:
      */
     uint32_t OPEN_MENU = 0xCC01024D;
 
-    /**
-     * @brief Confiugre Serial Communication
-     */
-    bool configureSerialCommunication();
+    RuncamSerial *serialInterface = nullptr;
 
-    /**
-     * @brief default Runcam baud rate
-     */
-    static const unsigned int defaultBaudRate = 115200;
+    PrintLogger logger = Logging::getLogger("runcam");
 
-    /**
-     * @brief default USART port number
-     */
+    static const unsigned int defaultBaudRate   = 115200;
     static const unsigned int defaultPortNumber = 1;
-
-    /**
-     * @brief Check if the connection is already initialized
-     */
-    bool isInit;
-
-    /**
-     * @brief USART port number
-     */
-    unsigned int portNumber;
-
-    /**
-     * @brief serial interface that is needed to communicate
-     * with the sensor via ASCII codes
-     */
-    RuncamSerial *serialInterface;
 };
-#endif
+
+}  // namespace Boardcore
