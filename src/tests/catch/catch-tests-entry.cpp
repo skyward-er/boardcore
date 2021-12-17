@@ -1,5 +1,5 @@
 /* Copyright (c) 2019-2021 Skyward Experimental Rocketry
- * Author: Luca Erbetta, Damiano Amatruda
+ * Authors: Luca Erbetta, Damiano Amatruda
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal

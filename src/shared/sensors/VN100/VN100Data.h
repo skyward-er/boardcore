@@ -25,68 +25,80 @@
 
 namespace Boardcore
 {
-    /**
-     * @brief Structure to handle quaternion data
-     */
-    struct QuaternionData
-    {
-        uint64_t quat_timestamp;
-        float quat_x;
-        float quat_y;
-        float quat_z;
-        float quat_w;
-    };
+
+/**
+ * @brief Structure to handle quaternion data
+ */
+struct QuaternionData
+{
+    uint64_t quat_timestamp;
+    float quat_x;
+    float quat_y;
+    float quat_z;
+    float quat_w;
+};
+
+/**
+ * @brief data type class
+ */
+struct VN100Data : public QuaternionData,
+                   public MagnetometerData,
+                   public AccelerometerData,
+                   public GyroscopeData,
+                   public TemperatureData,
+                   public PressureData
+{
 
     /**
-     * @brief data type class
+     * @brief Void parameters constructor
      */
-    struct VN100Data : public QuaternionData,
-                       public MagnetometerData, 
-                       public AccelerometerData, 
-                       public GyroscopeData, 
-                       public TemperatureData, 
-                       public PressureData
+    VN100Data()
+        : QuaternionData{0, 0.0, 0.0, 0.0, 0.0}, MagnetometerData{0, 0.0, 0.0,
+                                                                  0.0},
+          AccelerometerData{0, 0.0, 0.0, 0.0}, GyroscopeData{0, 0.0, 0.0, 0.0},
+          TemperatureData{0, 0.0}, PressureData{0, 0.0}
     {
+    }
 
-        /**
-         * @brief Void parameters constructor
-         */
-        VN100Data() : QuaternionData    {0, 0.0, 0.0, 0.0, 0.0},
-                      MagnetometerData  {0, 0.0, 0.0, 0.0},
-                      AccelerometerData {0, 0.0, 0.0, 0.0},
-                      GyroscopeData     {0, 0.0, 0.0, 0.0},
-                      TemperatureData   {0, 0.0},
-                      PressureData      {0, 0.0}{}
+    /**
+     * @brief Constructor with parameters
+     *
+     * @param single data structures for all the data
+     */
+    VN100Data(QuaternionData quat, MagnetometerData magData,
+              AccelerometerData accData, GyroscopeData gyro,
+              TemperatureData temp, PressureData pres)
+        : QuaternionData{quat.quat_timestamp, quat.quat_x, quat.quat_y,
+                         quat.quat_z, quat.quat_w},
+          MagnetometerData{magData.mag_timestamp, magData.mag_x, magData.mag_y,
+                           magData.mag_z},
+          AccelerometerData{accData.accel_timestamp, accData.accel_x,
+                            accData.accel_y, accData.accel_z},
+          GyroscopeData{gyro.gyro_timestamp, gyro.gyro_x, gyro.gyro_y,
+                        gyro.gyro_z},
+          TemperatureData{temp.temp_timestamp, temp.temp},
+          PressureData{pres.press_timestamp, pres.press}
+    {
+    }
 
-        /**
-         * @brief Constructor with parameters
-         * 
-         * @param single data structures for all the data
-         */ 
-        VN100Data(QuaternionData quat, MagnetometerData magData, AccelerometerData accData, GyroscopeData gyro, TemperatureData temp, PressureData pres)
-                    : QuaternionData    {quat.quat_timestamp,       quat.quat_x,        quat.quat_y,        quat.quat_z, quat.quat_w},
-                      MagnetometerData  {magData.mag_timestamp,     magData.mag_x,      magData.mag_y,      magData.mag_z},
-                      AccelerometerData {accData.accel_timestamp,   accData.accel_x,    accData.accel_y,    accData.accel_z},
-                      GyroscopeData     {gyro.gyro_timestamp,       gyro.gyro_x,        gyro.gyro_y,        gyro.gyro_z},
-                      TemperatureData   {temp.temp_timestamp,       temp.temp},
-                      PressureData      {pres.press_timestamp,      pres.press}{}
+    static std::string header()
+    {
+        return "quat_timestamp,quat_x,quat_y,quat_z,quat_w,mag_timestamp,mag_x,"
+               "mag_y,mag_z,"
+               "accel_timestamp,accel_x,accel_y,accel_z,gyro_timestamp,gyro_x,"
+               "gyro_y,gyro_z"
+               "temp_timestamp,temp,press_timestamp,press\n";
+    }
 
+    void print(std::ostream& os) const
+    {
+        os << quat_timestamp << "," << quat_x << "," << quat_y << "," << quat_z
+           << "," << quat_w << "," << mag_timestamp << "," << mag_x << ","
+           << mag_y << "," << mag_z << "," << accel_timestamp << "," << accel_x
+           << "," << accel_y << "," << accel_z << "," << gyro_timestamp << ","
+           << gyro_x << "," << gyro_y << "," << gyro_z << "," << temp_timestamp
+           << "," << temp << "," << press_timestamp << "," << press << "\n";
+    }
+};
 
-        static std::string header()
-        {
-            return  "quat_timestamp,quat_x,quat_y,quat_z,quat_w,mag_timestamp,mag_x,mag_y,mag_z,"
-                    "accel_timestamp,accel_x,accel_y,accel_z,gyro_timestamp,gyro_x,gyro_y,gyro_z"
-                    "temp_timestamp,temp,press_timestamp,press\n";
-        }
-
-        void print(std::ostream& os) const
-        {
-            os  << quat_timestamp   << "," << quat_x    << "," << quat_y    << "," << quat_z    << "," << quat_w << ","
-                << mag_timestamp    << "," << mag_x     << "," << mag_y     << "," << mag_z     << ","
-                << accel_timestamp  << "," << accel_x   << "," << accel_y   << "," << accel_z   << ","
-                << gyro_timestamp   << "," << gyro_x    << "," << gyro_y    << "," << gyro_z    << ","
-                << temp_timestamp   << "," << temp      << ","
-                << press_timestamp  << "," << press     << "\n";
-        }
-    };
-}
+}  // namespace Boardcore
