@@ -58,6 +58,15 @@ struct TimestampData
 };
 
 /**
+ * @brief Structure to handle force data.
+ */
+struct LoadCellData
+{
+    uint64_t loadcell_timestamp;
+    float weight;
+};
+
+/**
  * @brief Structure to handle temperature data.
  */
 struct TemperatureData

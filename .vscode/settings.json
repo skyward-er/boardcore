@@ -96,7 +96,6 @@
         "unordered_set": "cpp",
         "hash_map": "cpp",
         "valarray": "cpp",
-        "ranges": "cpp",
-        "alignedvector3": "cpp"
+        "ranges": "cpp"
     }
 }
