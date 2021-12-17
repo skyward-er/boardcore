@@ -165,15 +165,11 @@ int main()
         DMA2_Stream3->CR |= DMA_SxCR_MINC;
     }
 
-    printf("DMA2_Stream4->CR: 0x%lX\n", DMA2_Stream4->CR);
-    printf("DMA2_Stream3->CR: 0x%lX\n", DMA2_Stream3->CR);
-
     // Transaction 1
     while (true)
     {
         DMA2->LIFCR = 0x0F7D0F7D;
         DMA2->HIFCR = 0x0F7D0F7D;
-        printf("LISR: 0x%lX\nHIST: 0x%lX\n", DMA2->LISR, DMA2->HISR);
 
         csPin.low();
 

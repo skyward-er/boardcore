@@ -21,6 +21,7 @@
  */
 
 #include <drivers/dma/DMAStream.h>
+#include <drivers/spi/SPI.h>
 #include <miosix.h>
 
 /**
@@ -34,6 +35,8 @@ GpioPin csPin   = GpioPin(GPIOC_BASE, 1);
 GpioPin sckPin  = GpioPin(GPIOF_BASE, 7);
 GpioPin misoPin = GpioPin(GPIOF_BASE, 8);
 GpioPin mosiPin = GpioPin(GPIOF_BASE, 9);
+
+SPI spi5 = SPI(SPI5);
 
 DMAStream txStream = DMAStream(DMA2_Stream4);
 DMAStream rxStream = DMAStream(DMA2_Stream3);
@@ -62,10 +65,7 @@ int main()
         delayUs(1);
 
         // Wait for completion
-        while ((SPI5->SR & SPI_SR_TXE) == 0)
-            ;
-        while (SPI5->SR & SPI_SR_BSY)
-            ;
+        spi5.waitPeripheral();
 
         csPin.high();
 
@@ -94,27 +94,15 @@ void initSPI()
     // Enable SPI clock for SPI5 interface
     RCC->APB2ENR |= RCC_APB2ENR_SPI5EN;
 
-    // Clear configuration for SPI interface
-    SPI5->CR1 = 0;
-    SPI5->CR2 = 0;
-
-    // 1: Set BR[2:0] bits to define the baud rate
-    SPI5->CR1 |= SPI_CR1_BR;
-
-    // 2: Setup clock phase and polarity (MODE1: CPOL = 1, CPHA = 1)
-    SPI5->CR1 |= SPI_CR1_CPOL | SPI_CR1_CPHA;
-
-    // 7: Set MSTR to set master mode
-    SPI5->CR1 |= SPI_CR1_SSI | SPI_CR1_SSM | SPI_CR1_MSTR;
-
-    // 8: Enable DMA for tx
-    SPI5->CR2 |= SPI_CR2_TXDMAEN;
-    SPI5->CR2 |= SPI_CR2_RXDMAEN;
-
-    // Enable SPI
-    SPI5->CR1 |= SPI_CR1_SPE;
-
-    printf("SPI interface setup completed...\n");
+    spi5.reset();
+    spi5.setClockDiver(SPI::ClockDivider::DIV_256);
+    spi5.setMode(SPI::Mode::MODE_3);
+    spi5.enableInternalSlaveSelection();
+    spi5.enableSoftwareSlaveManagement();
+    spi5.setMasterConfiguration();
+    spi5.enableTxDMARequest();
+    spi5.enableRxDMARequest();
+    spi5.enable();
 }
 
 void initDMA()
