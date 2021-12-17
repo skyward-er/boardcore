@@ -33,11 +33,11 @@
 using namespace Boardcore;
 using namespace miosix;
 
-using button              = miosix::Gpio<GPIOA_BASE, 0>;  ///< user button
+using button              = miosix::Gpio<GPIOA_BASE, 0>;  ///< User button
 const uint8_t btn_user_id = 1;
 
 /**
- * @brief callback function that is called when the button is pressed. When the
+ * @brief Callback function that is called when the button is pressed. When the
  * button is pressed for a long time, resets the minimum and maximum values of
  * the recorded weights
  */
@@ -57,14 +57,14 @@ void buttonCallback(uint8_t btn_id, ButtonPress btn_press, MBLoadCell *loadcell)
 
 int main()
 {
-    // enabling the timestamps
+    // Enabling the timestamps
     TimestampTimer::enableTimestampTimer();
 
-    // in order to disable DEBUG prints of the button press events
+    // In order to disable DEBUG prints of the button press events
     Logging::getStdOutLogSink().setLevel(LOGL_WARNING);
 
-    /*
-     * use of CONT_MOD_TD: transmits net and gross weight
+    /**
+     * Use of CONT_MOD_TD: transmits net and gross weight
      * - use of serial port 3: in stm32f407vg TX=PB10, RX=PB11 (can't be used in
      * stm32f407vg, is the default serial port)
      * - use of serial port 2: in stm32f407vg TX=PA2, RX=PA3
@@ -72,16 +72,16 @@ int main()
      */
     MBLoadCell loadCell(LoadCellModes::CONT_MOD_T, 2, 115200);
 
-    // binding the load cell instance to the callback to be called
+    // Binding the load cell instance to the callback to be called
     std::function<void(uint8_t, ButtonPress)> callback =
         std::bind(buttonCallback, std::placeholders::_1, std::placeholders::_2,
                   &loadCell);
 
-    // instanciating the button
+    // Instanciating the button
     ButtonHandler<button> btn_handler(btn_user_id, callback);
     btn_handler.start();
 
-    // initializing the load cell
+    // Initializing the load cell
     if (!loadCell.init())
     {
         TRACE("Initialization of the load cell failed\n");

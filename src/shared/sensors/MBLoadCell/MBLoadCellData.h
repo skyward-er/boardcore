@@ -28,7 +28,7 @@ namespace Boardcore
 {
 
 /**
- * @brief enumeration of all the modes supported by the driver
+ * @brief Enumeration of all the modes supported by the driver.
  */
 enum LoadCellModes : uint8_t
 {
@@ -38,7 +38,7 @@ enum LoadCellModes : uint8_t
 };
 
 /**
- * @brief enumeration of all the requests in ASCII mode
+ * @brief Enumeration of all the requests in ASCII mode.
  */
 enum LoadCellValuesEnum
 {
@@ -57,7 +57,7 @@ enum LoadCellValuesEnum
 };
 
 /**
- * @brief type that maps the different requests to their keyword
+ * @brief Type that maps the different requests to their keyword.
  */
 typedef std::map<const LoadCellValuesEnum, std::string> LoadCellValues;
 static LoadCellValues loadCellValues = {
@@ -69,7 +69,7 @@ static LoadCellValues loadCellValues = {
     {COMMUTE_TO_NET, "NET"}, {COMMUTE_TO_GROSS, "GROSS"}};
 
 /**
- * @brief structure of the errors in the ASCII requests
+ * @brief Structure of the errors in the ASCII requests.
  */
 enum ReturnsStates
 {
@@ -79,8 +79,8 @@ enum ReturnsStates
 };
 
 /**
- * @brief structure that stores a data value, with his timestamp and his
- * validity
+ * @brief Structure that stores a data value, with his timestamp and his
+ * validity.
  */
 struct Data : public LoadCellData
 {
@@ -98,12 +98,12 @@ struct Data : public LoadCellData
     void print(std::ostream& os) const
     {
         if (valid)
-            os << loadcell_timestamp/1000000.0 << "," << weight << "\n";
+            os << loadcell_timestamp / 1000000.0 << "," << weight << "\n";
     }
 };
 
 /**
- * @brief structure of the output of the load cell in [continuous mode -> ModT]
+ * @brief Structure of the output of the load cell in [continuous mode -> ModT]
  */
 struct MBLoadCellSettings
 {
@@ -115,7 +115,7 @@ struct MBLoadCellSettings
     Data setpoint3;
 
     /**
-     * @brief updates the correct value with the data passed. Also, memorizes
+     * @brief Updates the correct value with the data passed. Also, memorizes
      * the maximum and minimum value of the gross weight.
      */
     void updateValue(LoadCellValuesEnum val, float data)
@@ -140,7 +140,7 @@ struct MBLoadCellSettings
     }
 
     /**
-     * @brief prints the structure in a nice way
+     * @brief Prints the structure in a nice way.
      */
     void print() const
     {
@@ -165,7 +165,7 @@ struct MBLoadCellSettings
 };
 
 /**
- * @brief structure of the output of the load cell in [continuous mode -> ModT]
+ * @brief Structure of the output of the load cell in [continuous mode -> ModT]
  */
 struct DataModT
 {
@@ -174,7 +174,7 @@ struct DataModT
 };
 
 /**
- * @brief structure of the output of the load cell in [continuous mode -> ModTd]
+ * @brief Structure of the output of the load cell in [continuous mode -> ModTd]
  */
 struct DataModTd
 {
@@ -189,7 +189,7 @@ struct DataModTd
 };
 
 /**
- * @brief structure that contains all the parameters for the request to be sent
+ * @brief Structure that contains all the parameters for the request to be sent.
  */
 struct DataAsciiRequest
 {
@@ -201,8 +201,8 @@ struct DataAsciiRequest
     char CR[2] = "\r";
 
     /**
-     * @brief in base of the address and the request parameter calculates the
-     * checksum
+     * @brief In base of the address and the request parameter calculates the
+     * checksum.
      */
     void setChecksum()
     {
@@ -221,8 +221,9 @@ struct DataAsciiRequest
     }
 
     /**
-     * @brief transforms the request into a string to be sent over serial
-     * @return the string representing the request to be sent
+     * @brief Transforms the request into a string to be sent over serial.
+     *
+     * @return The string representing the request to be sent.
      */
     std::string to_string()
     {

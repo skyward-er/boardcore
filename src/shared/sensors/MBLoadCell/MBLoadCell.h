@@ -37,10 +37,10 @@ namespace Boardcore
 {
 
 /**
- * @brief driver in order to communicate with a TLB digital-analog weight
- * transmitter attached to a loadcell
+ * @brief Driver to communicate with a TLB digital-analog weight transmitter
+ * attached to a loadcell.
  *
- * The driver permits to use the TLB transmitter in different modes:
+ * The driver allows to use the TLB transmitter in different modes:
  * - Continuous-modT: unidirectional protocol that consists in receiving the
  * gross weight
  * - Continuous-modTd: unidirectional protocol that consists in receiving the
@@ -61,117 +61,113 @@ public:
     MBLoadCell(LoadCellModes mode, int serialPortNum, int baudrate);
 
     /**
-     * @brief initializes the serial communication with the load cell
-     * @return true if initialization completed with no problems, false
-     * otherwise
+     * @brief Initializes the serial communication with the load cell.
+     *
+     * @return True if initialization completed with no problems, false
+     * otherwise.
      */
     bool init() override;
 
     /**
-     * @brief self test function simply overridden in order to have a concrete
-     * class, simply returns true
-     * @return true
-     */
-    bool selfTest() override;
-
-    /**
-     * @brief generates and sends a request in ASCII mode, waits for the
-     * response and updates the last_sample structure
+     * @brief Generates and sends a request in ASCII mode, waits for the
+     * response and updates the last_sample structure.
      */
     ReturnsStates asciiRequest(LoadCellValuesEnum r, int value = 0);
 
     /**
-     * @brief permits to reset the peak weight value
+     * @brief Permits to reset the peak weight value.
      */
     void resetMaxMinWeights();
 
     /**
-     * @brief prints the last sample received
+     * @brief Prints the last sample received.
      */
     void printData();
 
     /**
-     * @brief returns a copy of the settings
-     */
-    MBLoadCellSettings getSettings();
-
-    /**
-     * @brief returns a copy of the max weight detected
+     * @brief Returns a copy of the max weight detected.
      */
     Data getMaxWeight();
 
     /**
-     * @brief returns a copy of the min weight detected
+     * @brief Returns a copy of the min weight detected.
      */
     Data getMinWeight();
 
+    bool selfTest() override;
+
 protected:
     /**
-     * @brief override of the sample implementation method that requests the
-     * weight sampled from the load cell or waits for a sample depending on
-     * the mode selected (it's a blocking function)
-     * @return the weight measured from the load cell
+     * @brief Requests the weight sampled from the load cell or waits for a
+     * sample depending on the mode selected (it's a blocking function).
+     *
+     * @return The weight measured from the load cell.
      */
     Data sampleImpl() override;
 
     /**
-     * @brief sampling in the "continuous Mod T" mode
+     * @brief Sampling in the "continuous Mod T" mode.
      */
     Data sampleContModT(void);
 
     /**
-     * @brief sampling in the "continuous Mod Td" mode
+     * @brief Sampling in the "continuous Mod Td" mode.
      */
     Data sampleContModTd(void);
 
     /**
-     * @brief sampling in the "ASCII Mod Td" mode
+     * @brief Sampling in the "ASCII Mod Td" mode.
      */
     Data sampleAsciiModTd(void);
 
     /**
-     * @brief forges a request for the ascii mode
-     * @param req reference to the request that will be generated
-     * @param toRequest the request to forge
-     * @param value the value used in the forging of the "set_setpoint" requests
+     * @brief Forges a request for the ascii mode.
+     *
+     * @param req Reference to the request that will be generated.
+     * @param toRequest The request to forge.
+     * @param value The value used in the forging of the "set_setpoint"
+     * requests.
      */
     void generateRequest(DataAsciiRequest &req,
                          const LoadCellValuesEnum toRequest, int value = 0);
 
     /**
-     * @brief wrapper to the serial sendString method. This also sets the
-     * control pins to enable the transmission mode
-     * @param buf the message to send
+     * @brief Wrapper to the serial sendString method. This also sets the
+     * control pins to enable the transmission mode.
+     *
+     * @param buf The message to send.
      */
     void transmitASCII(std::string buf);
 
     /**
-     * @brief wrapper to the serial recvString method. This also sets the
-     * control pins to enable the receiver mode
-     * @return the message received
+     * @brief Wrapper to the serial recvString method. This also sets the
+     * control pins to enable the receiver mode.
+     *
+     * @return The message received.
      */
     std::string receiveASCII();
 
     /**
-     * @brief wrapper to the serial receive method. This also sets the control
-     * pins to enable the receiver mode
-     * @param buf the pointer to the buffer in which the data received will be
-     * stored
+     * @brief Wrapper to the serial receive method. This also sets the control
+     * pins to enable the receiver mode.
+     *
+     * @param buf The pointer to the buffer in which the data received will be
+     * stored.
      */
     template <typename T>
     void receive(T *buf);
 
 private:
-    MBLoadCellSettings
-        settings;             ///< structure that contains all te configuration
-    Data max_weight;          ///< the maximum weight detected by the load cell
-    Data min_weight;          ///< the minimum weight detected by the load cell
+    MBLoadCellSettings settings;  ///< Contains all the configuration
+    Data max_weight;              ///< Maximum weight detected by the load cell
+    Data min_weight;              ///< Minimum weight detected by the load cell
     bool max_setted;
     bool max_print;
     bool min_setted;
     bool min_print;
-    SerialInterface *serial;  ///< pointer to the instance of the serial port
-                              ///< used for the connection
+
+    ///< Pointer to the instance of the serial port used for the connection
+    SerialInterface *serial;
 };
 
 }  // namespace Boardcore
