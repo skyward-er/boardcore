@@ -25,6 +25,9 @@
 #include <ostream>
 #include <string>
 
+namespace Boardcore
+{
+
 /**
  * Statistics for the logger
  */
@@ -44,7 +47,8 @@ public:
 
     static std::string header()
     {
-        return "timestamp,logNumber,stat_toolarge,stat_dropped,stat_queued,stat_buf_"
+        return "timestamp,logNumber,stat_toolarge,stat_dropped,stat_queued,"
+               "stat_buf_"
                "filled,stat_buf_written,stat_w_failed,stat_w_time,stat_max_"
                "time,stat_last_error\n";
     }
@@ -64,7 +68,7 @@ public:
 
     long long timestamp;  ///< Timestamp
 
-    bool opened = false;
+    bool opened   = false;
     int logNumber = 0;
     int statTooLargeSamples =
         0;  ///< Number of dropped samples because too large
@@ -77,3 +81,5 @@ public:
     int statWriteTime      = 0;  ///< Time to perform an fwrite() of a buffer
     int statMaxWriteTime = 0;  ///< Max time to perform an fwrite() of a buffer
 };
+
+}  // namespace Boardcore

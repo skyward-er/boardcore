@@ -20,8 +20,10 @@
  * THE SOFTWARE.
  */
 
-#include <drivers/adc/InternalADC/InternalADC.h>
+#include <drivers/adc/InternalADC.h>
 #include <miosix.h>
+
+using namespace Boardcore;
 
 ADC_TypeDef& ADCx                = *ADC3;
 DMA_Stream_TypeDef* DMAx_Streamx = DMA2_Stream1;

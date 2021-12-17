@@ -21,9 +21,9 @@
  */
 
 #include <miosix.h>
+#include <utils/PinObserver.h>
 
-#include "utils/PinObserver.h"
-
+using namespace Boardcore;
 using namespace miosix;
 
 static constexpr unsigned int POLL_INTERVAL = 20;

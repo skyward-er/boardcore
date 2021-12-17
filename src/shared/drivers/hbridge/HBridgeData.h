@@ -25,6 +25,9 @@
 #include <ostream>
 #include <string>
 
+namespace Boardcore
+{
+
 enum class HBridgeState : uint8_t
 {
     DISABLED = 0,
@@ -43,3 +46,5 @@ struct HBridgeStatus
         os << timestamp << "," << (uint8_t)state << "\n";
     }
 };
+
+}  // namespace Boardcore

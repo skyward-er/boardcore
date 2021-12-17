@@ -28,7 +28,8 @@
 #include "Sensor.h"
 #include "SensorInfo.h"
 
-using namespace std;
+namespace Boardcore
+{
 
 /**
  * @brief Virtual sensor sampler class.
@@ -116,7 +117,7 @@ private:
     bool is_dma;     /**< the sampler's type (if it uses DMA or not) */
 
 protected:
-    vector<pair<AbstractSensor*, SensorInfo>> sensors;
+    std::vector<std::pair<AbstractSensor*, SensorInfo>> sensors;
 
     PrintLogger logger = Logging::getLogger("sensorsampler");
 };
@@ -157,3 +158,5 @@ public:
 private:
     DMASensorSampler(const DMASensorSampler&) = delete;
 };
+
+}  // namespace Boardcore

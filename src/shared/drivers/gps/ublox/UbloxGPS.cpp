@@ -22,14 +22,15 @@
 
 #include "UbloxGPS.h"
 
+#include <diagnostic/StackLogger.h>
+#include <drivers/serial.h>
 #include <fcntl.h>
-
-#include "drivers/serial.h"
-#include "filesystem/file_access.h"
-
-#include "diagnostic/StackLogger.h"
+#include <filesystem/file_access.h>
 
 using namespace miosix;
+
+namespace Boardcore
+{
 
 UbloxGPS::UbloxGPS(int baudrate_, uint8_t sampleRate_, int serialPortNum_,
                    const char* serialPortName_, int defaultBaudrate_)
@@ -129,8 +130,8 @@ void UbloxGPS::run()
         if (!parseUBXMessage(message))
         {
             LOG_DEBUG(logger,
-                    "UBX message not recognized (class:0x{02x}, id: 0x{02x})",
-                    message[2], message[3]);
+                      "UBX message not recognized (class:0x{02x}, id: 0x{02x})",
+                      message[2], message[3]);
         }
     }
 }
@@ -530,3 +531,5 @@ bool UbloxGPS::parseUBXACKMessage(uint8_t* message)
     }
     return false;
 }
+
+}  // namespace Boardcore

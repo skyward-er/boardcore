@@ -20,12 +20,13 @@
  * THE SOFTWARE.
  */
 
-#ifndef SRC_SHARED_ACTIVEOBJECT_H
-#define SRC_SHARED_ACTIVEOBJECT_H
+#pragma once
 
 #include <Common.h>
+#include <diagnostic/SkywardStack.h>
 
-#include "diagnostic/SkywardStack.h"
+namespace Boardcore
+{
 
 /**
  * Utility class implementing the Active Object pattern
@@ -136,4 +137,4 @@ private:
     bool started = false;
 };
 
-#endif  // SRC_SHARED_ACTIVEOBJECT_H
+}  // namespace Boardcore

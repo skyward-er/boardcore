@@ -20,11 +20,14 @@
  * THE SOFTWARE.
  */
 
-#ifndef SRC_SHARED_DRIVERS_PWM_PWM_H_
-#define SRC_SHARED_DRIVERS_PWM_PWM_H_
+#pragma once
 
 #include <miosix.h>
-#include "pwmdata.h"
+
+#include "pwmData.h"
+
+namespace Boardcore
+{
 
 /**
  * @brief Class to generate PWM using hardware timers.
@@ -149,4 +152,4 @@ private:
     PWMChannelConfig channels[4]{};
 };
 
-#endif /* SRC_SHARED_DRIVERS_PWM_PWM_H_ */
+}  // namespace Boardcore

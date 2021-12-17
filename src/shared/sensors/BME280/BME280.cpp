@@ -22,7 +22,10 @@
 
 #include "BME280.h"
 
-#include "TimestampTimer.h"
+#include <drivers/timer/TimestampTimer.h>
+
+namespace Boardcore
+{
 
 const BME280::BME280Config BME280::BME280_DEFAULT_CONFIG = {
     SKIPPED, 0, 0, SLEEP_MODE, SKIPPED, SKIPPED, 0, FILTER_OFF, STB_TIME_0_5};
@@ -146,7 +149,7 @@ HumidityData BME280::readHumidity()
     {
         SPITransaction transaction(spiSlave);
 
-        transaction.read(REG_HUM_MSB, buffer, 2);
+        transaction.readRegisters(REG_HUM_MSB, buffer, 2);
     }
 
     adc_H |= ((uint32_t)buffer[0] << 8);
@@ -168,7 +171,7 @@ PressureData BME280::readPressure()
     {
         SPITransaction transaction(spiSlave);
 
-        transaction.read(REG_PRESS_MSB, buffer, 3);
+        transaction.readRegisters(REG_PRESS_MSB, buffer, 3);
     }
 
     adc_P |= ((uint32_t)buffer[0]) << 12;
@@ -191,7 +194,7 @@ TemperatureData BME280::readTemperature()
     {
         SPITransaction transaction(spiSlave);
 
-        transaction.read(REG_TEMP_MSB, buffer, 3);
+        transaction.readRegisters(REG_TEMP_MSB, buffer, 3);
     }
 
     adc_T |= ((uint32_t)buffer[0]) << 12;
@@ -241,7 +244,7 @@ BME280Data BME280::sampleImpl()
     {
         SPITransaction transaction(spiSlave);
 
-        transaction.read(REG_PRESS_MSB, buffer, 8);
+        transaction.readRegisters(REG_PRESS_MSB, buffer, 8);
     }
 
     adc_T |= ((uint32_t)buffer[3]) << 12;
@@ -275,7 +278,7 @@ bool BME280::checkWhoAmI()
 {
     SPITransaction transaction(spiSlave);
 
-    uint8_t who_am_i_value = transaction.read(REG_ID);
+    uint8_t who_am_i_value = transaction.readRegister(REG_ID);
 
     return who_am_i_value == REG_ID_VAL;
 }
@@ -286,9 +289,9 @@ void BME280::setConfiguration(BME280Config config_)
 {
     SPITransaction transaction(spiSlave);
 
-    transaction.write(REG_CONFIG & 0x7F, config_.bytes.config);
-    transaction.write(REG_CTRL_HUM & 0x7F, config_.bytes.ctrl_hum);
-    transaction.write(REG_CTRL_MEAS & 0x7F, config_.bytes.ctrl_meas);
+    transaction.writeRegister(REG_CONFIG & 0x7F, config_.bytes.config);
+    transaction.writeRegister(REG_CTRL_HUM & 0x7F, config_.bytes.ctrl_hum);
+    transaction.writeRegister(REG_CTRL_MEAS & 0x7F, config_.bytes.ctrl_meas);
 }
 
 BME280::BME280Config BME280::readConfiguration()
@@ -296,7 +299,7 @@ BME280::BME280Config BME280::readConfiguration()
     BME280Config tmp;
     SPITransaction transaction(spiSlave);
 
-    transaction.read(REG_CTRL_HUM, (uint8_t *)&tmp, 4);
+    transaction.readRegisters(REG_CTRL_HUM, (uint8_t *)&tmp, 4);
 
     return tmp;
 }
@@ -307,14 +310,15 @@ void BME280::loadCompensationParameters()
     {
         SPITransaction transaction(spiSlave);
 
-        transaction.read(REG_CALIB_0, (uint8_t *)&compParams, 25);
+        transaction.readRegisters(REG_CALIB_0, (uint8_t *)&compParams, 25);
     }
 
     // Reat second batch of compensation parameters
     {
         SPITransaction transaction(spiSlave);
 
-        transaction.read(REG_CALIB_26, (uint8_t *)&compParams.bits.dig_H2, 7);
+        transaction.readRegisters(REG_CALIB_26,
+                                  (uint8_t *)&compParams.bits.dig_H2, 7);
     }
 
     // Adjust unaligned data
@@ -390,3 +394,5 @@ uint32_t BME280::compensateHumidity(int32_t adc_H)
     v_x1_u32r = (v_x1_u32r > 419430400 ? 419430400 : v_x1_u32r);
     return (uint32_t)(v_x1_u32r >> 12);
 }
+
+}  // namespace Boardcore

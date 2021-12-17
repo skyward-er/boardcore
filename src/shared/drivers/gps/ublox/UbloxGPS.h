@@ -22,12 +22,15 @@
 
 #pragma once
 
+#include <ActiveObject.h>
 #include <diagnostic/PrintLogger.h>
 #include <miosix.h>
+#include <sensors/Sensor.h>
 
-#include "ActiveObject.h"
 #include "UbloxGPSData.h"
-#include "sensors/Sensor.h"
+
+namespace Boardcore
+{
 
 /**
  * @brief Driver for Ublox GPSs
@@ -144,3 +147,5 @@ private:
 
     PrintLogger logger = Logging::getLogger("ubloxgps");
 };
+
+}  // namespace Boardcore

@@ -23,13 +23,16 @@
 #pragma once
 
 #include <diagnostic/PrintLogger.h>
+#include <utils/ButtonHandler.h>
 
 #include <vector>
 
 #include "Debug.h"
 #include "TextView.h"
 #include "View.h"
-#include "utils/ButtonHandler.h"
+
+namespace Boardcore
+{
 
 /**
  * @brief UI navigation controller: listens for button clicks and dispatches the
@@ -149,3 +152,5 @@ private:
 
     PrintLogger logger = Logging::getLogger("navcontroller");
 };
+
+}  // namespace Boardcore

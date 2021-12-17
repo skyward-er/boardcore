@@ -31,6 +31,9 @@ using miosix::FastMutex;
 using miosix::Lock;
 using std::deque;
 
+namespace Boardcore
+{
+
 struct DataRateResult
 {
     float data_rate;
@@ -104,8 +107,8 @@ public:
     }
 
     /**
-     * @brief Returns the packet loss percentage ([0-1]) based on the expected packet
-     * delivery interval 
+     * @brief Returns the packet loss percentage ([0-1]) based on the expected
+     * packet delivery interval
      */
     float getPacketLoss()
     {
@@ -173,3 +176,5 @@ private:
 
     FastMutex mutex_pkt;
 };
+
+}  // namespace Boardcore

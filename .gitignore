@@ -21,10 +21,9 @@ STM32F429zi_Discovery.xml
 ._*
 .DS_Store
 build
+cmake-build-*
 *.sublime-workspace
 *.sublime-project
-
-.vscode/*
 
 store.json
 **/generated/

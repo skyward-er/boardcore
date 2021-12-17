@@ -24,16 +24,19 @@
 #include "catch-tests-entry.cpp"
 #endif
 
-#include <iostream>
+#include <utils/testutils/TestSensor.h>
 
-#include "utils/testutils/TestSensor.h"
-#include "utils/testutils/catch.hpp"
+#include <catch2/catch.hpp>
+#include <iostream>
 
 #define private public
 #define protected public
 
-#include "sensors/SensorInfo.h"
-#include "sensors/SensorManager.h"
+#include <sensors/SensorInfo.h>
+#include <sensors/SensorManager.h>
+
+namespace Boardcore
+{
 
 static const uint8_t FIRST_TASK_ID = 7;  // used to test IDs assignment to tasks
 
@@ -52,7 +55,7 @@ public:
     SensorManagerFixture()
     {
         scheduler = new TaskScheduler();
-        scheduler->add([]() { std::cout << "Task Callback!" << endl; },
+        scheduler->add([]() { std::cout << "Task Callback!" << std::endl; },
                        2000,  // inserst a test function in the scheduler
                        FIRST_TASK_ID);
 
@@ -91,7 +94,7 @@ private:
     SensorInfo s1_info{
         /*ID=*/"s1",
         /*Period=*/1000,
-        /*Callback=*/[]() { std::cout << "Callback 1!" << endl; },
+        /*Callback=*/[]() { std::cout << "Callback 1!" << std::endl; },
         /*DMA=*/false,
         /*Enabled=*/true};
 
@@ -99,7 +102,7 @@ private:
     SensorInfo s2_info{
         /*ID=*/"s2",
         /*Period=*/1000,
-        /*Callback=*/[]() { std::cout << "Callback 2!" << endl; },
+        /*Callback=*/[]() { std::cout << "Callback 2!" << std::endl; },
         /*DMA=*/false,
         /*Enabled=*/false};
 
@@ -107,7 +110,7 @@ private:
     SensorInfo s3_info{
         /*ID=*/"s3",
         /*Period=*/500,
-        /*Callback=*/[]() { std::cout << "Callback 3!" << endl; },
+        /*Callback=*/[]() { std::cout << "Callback 3!" << std::endl; },
         /*DMA=*/false,
         /*Enabled=*/true};
 
@@ -116,7 +119,7 @@ private:
     SensorInfo s4_info{
         /*ID=*/"s4",
         /*Period=*/1000,
-        /*Callback=*/[]() { std::cout << "Callback 4!" << endl; },
+        /*Callback=*/[]() { std::cout << "Callback 4!" << std::endl; },
         /*DMA=*/true,
         /*Enabled=*/true};
 
@@ -125,7 +128,7 @@ private:
     SensorInfo s5_info{
         /*ID=*/"s5",
         /*Period=*/2000,
-        /*Callback=*/[]() { std::cout << "Callback 5!" << endl; },
+        /*Callback=*/[]() { std::cout << "Callback 5!" << std::endl; },
         /*DMA=*/false,
         /*Enabled=*/true};
 };
@@ -144,14 +147,18 @@ bool operator==(const SensorSampler& lhs, const SensorSampler& rhs)
            lhs.is_dma == rhs.is_dma && lhs.sensors.size() == rhs.sensors.size();
 }
 
+}  // namespace Boardcore
+
+using namespace Boardcore;
+
 TEST_CASE_METHOD(SensorManagerFixture,
                  "Samplers IDs should incrementally start from FIRST_TASK_ID")
 {
     sensor_manager->start();
 
-    std::vector<TaskStatResult> tasks_stats = scheduler->getTaskStats();
+    vector<TaskStatResult> tasks_stats = scheduler->getTaskStats();
 
-    std::cout << "Tasks number : " << tasks_stats.size() << endl;
+    std::cout << "Tasks number : " << tasks_stats.size() << std::endl;
 
     // Sampler with lower period are inserted in the TaskScheduler
     // before higher period ones
@@ -193,7 +200,8 @@ TEST_CASE_METHOD(SensorManagerFixture,
 }
 
 TEST_CASE_METHOD(SensorManagerFixture,
-                 "Sensors are correctly coupled with their info and failing sensors are automatically disabled")
+                 "Sensors are correctly coupled with their info and failing "
+                 "sensors are automatically disabled")
 {
     SensorInfo info1 = sampler1->getSensorInfo(&s1);
     SensorInfo info2 = sampler2->getSensorInfo(&s2);
@@ -207,12 +215,15 @@ TEST_CASE_METHOD(SensorManagerFixture,
     REQUIRE(s3_info == info3);
     REQUIRE(s4_info == info4);
 
-    REQUIRE(!(s5_info == info5)); // it fails, so is_enabled is set to false instead of true
+    REQUIRE(
+        !(s5_info ==
+          info5));  // it fails, so is_enabled is set to false instead of true
     REQUIRE(s5_info.id == info5.id);
     REQUIRE(s5_info.period == info5.period);
     REQUIRE(s5_info.is_dma == info5.is_dma);
-    REQUIRE(info5.is_enabled == false); // disabled even if it was created as enabled
-    REQUIRE(info5.is_initialized == false); // always fails the initialization
+    REQUIRE(info5.is_enabled ==
+            false);  // disabled even if it was created as enabled
+    REQUIRE(info5.is_initialized == false);  // always fails the initialization
 }
 
 TEST_CASE_METHOD(SensorManagerFixture,

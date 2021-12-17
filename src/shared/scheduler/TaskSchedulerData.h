@@ -21,11 +21,14 @@
  */
 
 #include <math/Stats.h>
+
 #include <cstdint>
 #include <ostream>
 
-#ifndef BOARDCORE_SRC_SHARED_SCHEDULER_SCHEDULERDATA_H
-#define BOARDCORE_SRC_SHARED_SCHEDULER_SCHEDULERDATA_H
+#pragma once
+
+namespace Boardcore
+{
 
 /**
  * Statistics for a task
@@ -60,4 +63,4 @@ struct TaskStatResult
     }
 };
 
-#endif
+}  // namespace Boardcore

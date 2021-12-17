@@ -19,59 +19,70 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
-#ifndef SRC_SHARED_DEBUG_H
-#define SRC_SHARED_DEBUG_H
 
-#include <miosix.h>
-#include <string>
-#include <cstdio>
+#pragma once
 
+// linter off
 // clang-format off
+
 #ifdef DEBUG
 
-    #include <cstdarg>
-    extern miosix::FastMutex m;
+#include <cstdio>
+#include <string>
+#include <cstdarg>
+#include <miosix.h>
 
-    #define D(x) x
+namespace Boardcore
+{
 
-    inline void TRACE(const char* format, ...)
-    {
-        miosix::Lock<miosix::FastMutex> lock(m);
-        // Sincronize TRACEs
-        
-        va_list argptr;
-        va_start(argptr, format);
+extern miosix::FastMutex trace_mutex;
 
-        
-        printf("%.2f> ", miosix::getTick()/1000.0f);
-        vprintf(format, argptr);
+#define D(x) x
 
-        va_end(argptr);
-    }
+inline void TRACE(const char* format, ...)
+{
+    miosix::Lock<miosix::FastMutex> lock(trace_mutex);  // Synchronize TRACEs
 
-    // #define TRACE(...) printf("%.2f> ", miosix::getTick()/1000.0f); printf(__VA_ARGS__)
+    va_list argptr;
+    va_start(argptr, format);
+
+    printf("%.2f> ", miosix::getTick()/1000.0f);
+    vprintf(format, argptr);
+
+    va_end(argptr);
+}
+
+// #define TRACE(...) printf("%.2f> ", miosix::getTick()/1000.0f); printf(__VA_ARGS__)
+
+}  // namespace Boardcore
 
 #else
 
-    #define D(x)
-    #define TRACE(...) (void)0
+#define D(x)
+#define TRACE(...) (void)0
 
-#endif //DEBUG
+#endif  // DEBUG
 
 #ifdef LOG_THREAD_STACK
-    #define LOG_STACK(...) logStack(__VA_ARGS__)
 
-    static inline void logStack(std::string thread_name)
-    {
-        using namespace miosix;
-        printf("[STACK %s] Abs: %d, Curr: %d, Size: %d\n", thread_name.c_str(), 
-                    (int)MemoryProfiling::getAbsoluteFreeStack(), 
-                    (int)MemoryProfiling::getCurrentFreeStack(), 
-                    (int)MemoryProfiling::getStackSize());
-    }
+namespace Boardcore
+{
+
+inline void LOG_STACK(std::string thread_name)
+{
+    using namespace miosix;
+    printf("[STACK %s] Abs: %d, Curr: %d, Size: %d\n", thread_name.c_str(),
+                (int)MemoryProfiling::getAbsoluteFreeStack(),
+                (int)MemoryProfiling::getCurrentFreeStack(),
+                (int)MemoryProfiling::getStackSize());
+}
+
+}  // namespace Boardcore
+
 #else
-    #define LOG_STACK(...) (void)0
-#endif
-// clang-format on
 
-#endif /* SRC_SHARED_DEBUG_H */
+#define LOG_STACK(...) (void)0
+
+#endif  // LOG_THREAD_STACK
+
+// clang-format on

@@ -20,11 +20,10 @@
  * THE SOFTWARE.
  */
 
-
-#ifndef STM32F2_I2C_H
-#define STM32F2_I2C_H
+#pragma once
 
 #include <interfaces/arch_registers.h>
+
 #include "board_settings.h"
 
 namespace miosix
@@ -106,5 +105,3 @@ private:
 };
 
 }  // namespace miosix
-
-#endif  // STM32F2_I2C_H

@@ -26,29 +26,29 @@
  * https://github.com/catchorg/Catch2/blob/Catch1.x/docs/tutorial.md
  */
 
-// Define STANDALONE_CATCH1_TEST in sbs.conf if you want to run this test alone
-// Otherwise, include this file in the sources and compile the
-// catch1-tests-entry.cpp entrypoint. This test will be run automatically
-// togheter with all the others. Learn more on the skyward-boardcore wiki at:
-// https://git.skywarder.eu/r2a/skyward-boardcore/wikis/Testing
+// Define STANDALONE_CATCH1_TEST in CMakeLists.txt if you want to run this test
+// alone. Otherwise, include this file in the sources and compile the
+// catch-tests-entry.cpp entrypoint. This test will be run automatically
+// together with all the others. Learn more on the skyward-boardcore wiki at:
+// https://git.skywarder.eu/scs/skyward-boardcore/wikis/Testing
 #ifdef STANDALONE_CATCH1_TEST
-#include "catch-tests-entry.cpp"
+#include "../catch-tests-entry.cpp"
 #endif
 
-#include <utils/catch.hpp>
+#include <catch2/catch.hpp>
 
 int Factorial(int number)
 {
-    return number <= 1 ? number : Factorial(number - 1) * number;  // fail
-    // return number <= 1 ? 1      : Factorial( number - 1 ) * number;  // pass
+    // return number <= 1 ? number : Factorial(number - 1) * number;  // fail
+    return number <= 1 ? 1 : Factorial(number - 1) * number;  // pass
 }
 
-TEST_CASE("Factorial of 0 is 1 (fail)", "[single-file]")
+TEST_CASE("Factorial of 0 is 1", "[single-file]")
 {
     REQUIRE(Factorial(0) == 1);
 }
 
-TEST_CASE("Factorials of 1 and higher are computed (pass)", "[single-file]")
+TEST_CASE("Factorials of 1 and higher are computed", "[single-file]")
 {
     REQUIRE(Factorial(1) == 1);
     REQUIRE(Factorial(2) == 2);

@@ -20,8 +20,10 @@
  * THE SOFTWARE.
  */
 
-
 #include "AeroUtils.h"
+
+namespace Boardcore
+{
 
 namespace aeroutils
 {
@@ -64,3 +66,5 @@ float verticalSpeed(float p, float dp_dt, float p_ref, float t_ref)
 }
 
 }  // namespace aeroutils
+
+}  // namespace Boardcore

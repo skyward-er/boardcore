@@ -24,6 +24,9 @@
 
 #include <drivers/spi/SPIDriver.h>
 
+namespace Boardcore
+{
+
 /**
  * @brief Various SX1278 register/enums definitions.
  */
@@ -51,9 +54,9 @@ inline SPIBusConfig spiConfig()
     SPIBusConfig config = {};
 
     // FIXME(davide.mor): This depends on the device
-    config.clock_div = SPIClockDivider::DIV256;
-    config.mode      = SPIMode::MODE1;
-    config.bit_order = SPIBitOrder::MSB_FIRST;
+    config.clockDivider = SPI::ClockDivider::DIV_256;
+    config.mode         = SPI::Mode::MODE_1;
+    config.bitOrder     = SPI::BitOrder::MSB_FIRST;
     // config.cs_setup_time_us = 30;
     // config.cs_hold_time_us  = 100;
 
@@ -62,6 +65,7 @@ inline SPIBusConfig spiConfig()
 
 namespace RegOpMode
 {
+
 enum LongRangeMode
 {
     LONG_RANGE_MODE_FSK  = 0 << 7,
@@ -351,3 +355,5 @@ enum Registers
 };
 
 }  // namespace SX1278Defs
+
+}  // namespace Boardcore

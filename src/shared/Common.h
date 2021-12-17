@@ -20,32 +20,25 @@
  * THE SOFTWARE.
  */
 
-#ifndef COMMON_H
-#define COMMON_H
+#pragma once
 
-#include <cstdint>
-#include <cstdio>
-#include <cstring>
-
-#include <array>
-#include <cassert>
-#include <map>
-#include <memory>
-#include <set>
-#include <vector>
-
-/* Miosix */
+#include <drivers/timer/TimestampTimer.h>
 #include <interfaces/endianness.h>
 #include <kernel/scheduler/scheduler.h>
 #include <miosix.h>
 #include <pthread.h>
 
+#include <array>
+#include <cassert>
+#include <cstdint>
+#include <cstdio>
+#include <cstring>
+#include <map>
+#include <memory>
+#include <set>
+#include <vector>
+
 #include "Constants.h"
-
-#include "TimestampTimer.h"
-
 #include "Debug.h"
 
 #define UNUSED(x) (void)(x)
-
-#endif

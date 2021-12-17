@@ -24,17 +24,19 @@
 
 #include <diagnostic/PrintLogger.h>
 #include <drivers/spi/SPIDriver.h>
+#include <drivers/timer/TimestampTimer.h>
 #include <sensors/Sensor.h>
 
 #include <algorithm>
-#include <cassert>
 #include <cstring>
 
 #include "BMX160Config.h"
 #include "BMX160Data.h"
 #include "BMX160Defs.h"
 #include "Constants.h"
-#include "TimestampTimer.h"
+
+namespace Boardcore
+{
 
 /**
  * @brief BMX160 Driver.
@@ -58,7 +60,7 @@ public:
      * @param cs SPI Chip Select pin
      * @param config BMX160 configuration
      */
-    BMX160(SPIBusInterface& bus, GpioPin cs, BMX160Config config = {});
+    BMX160(SPIBusInterface& bus, miosix::GpioPin cs, BMX160Config config = {});
 
     /**
      * @brief BMX160 Constructor.
@@ -67,7 +69,7 @@ public:
      * @param config BMX160 configuration
      * @param bus_config SPI bus configuration
      */
-    BMX160(SPIBusInterface& bus, GpioPin cs, BMX160Config config,
+    BMX160(SPIBusInterface& bus, miosix::GpioPin cs, BMX160Config config,
            SPIBusConfig bus_config);
 
     /**
@@ -349,3 +351,5 @@ private:
 
     PrintLogger logger = Logging::getLogger("bmx160");
 };
+
+}  // namespace Boardcore

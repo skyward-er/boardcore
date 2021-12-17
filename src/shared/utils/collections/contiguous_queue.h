@@ -20,11 +20,12 @@
  * THE SOFTWARE.
  */
 
-
-#ifndef CONTIGUOUS_QUEUE
-#define CONTIGUOUS_QUEUE
+#pragma once
 
 #include <stdexcept>
+
+namespace Boardcore
+{
 
 /**
  * A fixed size FIFO queue whose elements are stored in a contiguous array,
@@ -130,8 +131,8 @@ private:
     ContiguousQueue(const ContiguousQueue&) = delete;
     ContiguousQueue& operator=(const ContiguousQueue&) = delete;
 
-    T elements[N] = {0};
+    T elements[N]     = {0};
     unsigned int size = 0;
 };
 
-#endif  // CONTIGUOUS_QUEUE
+}  // namespace Boardcore

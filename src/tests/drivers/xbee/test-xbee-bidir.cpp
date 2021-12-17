@@ -27,6 +27,11 @@
 #define RUN_RECEIVER true
 #endif
 
+#include <drivers/Xbee/APIFramesLog.h>
+#include <drivers/Xbee/ATCommands.h>
+#include <drivers/Xbee/Xbee.h>
+#include <drivers/interrupt/external_interrupts.h>
+#include <logger/Logger.h>
 #include <miosix.h>
 
 #include <cstdio>
@@ -34,12 +39,8 @@
 
 #include "ActiveObject.h"
 #include "XbeeTransceiver.h"
-#include "drivers/Xbee/APIFramesLog.h"
-#include "drivers/Xbee/ATCommands.h"
-#include "drivers/Xbee/Xbee.h"
-#include "drivers/interrupt/external_interrupts.h"
-#include "logger/Logger.h"
 
+using namespace Boardcore;
 using namespace miosix;
 
 #ifdef _BOARD_STM32F429ZI_SKYWARD_DEATHST_X
@@ -184,7 +185,7 @@ int main()
 
     SPIBus spi_bus(XBEE_SPI);
     SPIBusConfig cfg{};
-    cfg.clock_div = SPIClockDivider::DIV16;
+    cfg.clockDivider = SPI::ClockDivider::DIV_16;
 
     GpioPin cs   = GpioCS::getPin();
     GpioPin attn = GpioATTN::getPin();

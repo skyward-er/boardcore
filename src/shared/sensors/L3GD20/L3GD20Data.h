@@ -23,7 +23,10 @@
 
 #pragma once
 
-#include "sensors/SensorData.h"
+#include <sensors/SensorData.h>
+
+namespace Boardcore
+{
 
 struct L3GD20Data : public GyroscopeData
 {
@@ -47,3 +50,5 @@ struct L3GD20Data : public GyroscopeData
            << "\n";
     }
 };
+
+}  // namespace Boardcore

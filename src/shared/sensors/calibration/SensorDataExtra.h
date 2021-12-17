@@ -37,21 +37,25 @@
 
 #pragma once
 
+#include <sensors/SensorData.h>
+
 #include <Eigen/Core>
 
-#include "sensors/SensorData.h"
+namespace Boardcore
+{
 
-using namespace Eigen;
+void operator<<(AccelerometerData& lhs, const Eigen::Vector3f& rhs);
 
-void operator<<(AccelerometerData& lhs, const Vector3f& rhs);
+void operator<<(GyroscopeData& lhs, const Eigen::Vector3f& rhs);
 
-void operator<<(GyroscopeData& lhs, const Vector3f& rhs);
+void operator<<(MagnetometerData& lhs, const Eigen::Vector3f& rhs);
 
-void operator<<(MagnetometerData& lhs, const Vector3f& rhs);
+void operator>>(const AccelerometerData& lhs, Eigen::Vector3f& rhs);
 
-void operator>>(const AccelerometerData& lhs, Vector3f& rhs);
+void operator>>(const GyroscopeData& lhs, Eigen::Vector3f& rhs);
 
-void operator>>(const GyroscopeData& lhs, Vector3f& rhs);
+void operator>>(const MagnetometerData& lhs, Eigen::Vector3f& rhs);
 
-void operator>>(const MagnetometerData& lhs, Vector3f& rhs);
+void operator>>(const MagnetometerData& lhs, Eigen::Vector3f& rhs);
 
+}  // namespace Boardcore

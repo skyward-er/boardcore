@@ -27,6 +27,9 @@
 
 #include <cmath>
 
+namespace Boardcore
+{
+
 using namespace SX1278Defs;
 
 // Default values for registers
@@ -38,7 +41,7 @@ constexpr uint8_t REG_SYNC_CONFIG_DEFAULT =
     RegSyncConfig::AUTO_RESTART_RX_MODE_OFF |
     RegSyncConfig::PREAMBLE_POLARITY_55 | RegSyncConfig::SYNC_ON;
 
-SX1278::SX1278(SPIBusInterface &bus, GpioPin cs)
+SX1278::SX1278(SPIBusInterface &bus, miosix::GpioPin cs)
     : slave(bus, cs, spiConfig()), mode(SX1278::Mode::MODE_SLEEP)
 {
 }
@@ -71,35 +74,38 @@ SX1278::Error SX1278::init(Config config)
 
     // Setup generic parameters
     {
-        SPITransaction spi(slave, SPIWriteBit::INVERTED);
+        SPITransaction spi(slave, SPITransaction::WriteBit::INVERTED);
 
-        spi.write(REG_PA_RAMP, RegPaRamp::MODULATION_SHAPING_NONE | 0x09);
-        spi.write(REG_RX_CONFIG, RegRxConfig::AFC_AUTO_ON |
-                                     RegRxConfig::AGC_AUTO_ON |
-                                     RegRxConfig::RX_TRIGGER_PREAMBLE_DETECT |
-                                     RegRxConfig::RX_TRIGGER_RSSI_INTERRUPT);
-        spi.write(REG_RSSI_THRESH, 0xff);
-        spi.write(REG_PREAMBLE_DETECT,
-                  RegPreambleDetector::PREAMBLE_DETECTOR_ON |
-                      RegPreambleDetector::PREAMBLE_DETECTOR_SIZE_2_BYTES |
-                      0x0a);
-        spi.write(REG_RX_TIMEOUT_1, 0x00);
-        spi.write(REG_RX_TIMEOUT_2, 0x00);
-        spi.write(REG_RX_TIMEOUT_3, 0x00);
-        spi.write(REG_PACKET_CONFIG_1,
-                  RegPacketConfig1::PACKET_FORMAT_VARIABLE_LENGTH |
-                      RegPacketConfig1::DC_FREE_NONE |
-                      RegPacketConfig1::CRC_ON |
-                      RegPacketConfig1::ADDRESS_FILTERING_NONE |
-                      RegPacketConfig1::CRC_WHITENING_TYPE_CCITT_CRC);
-        spi.write(REG_PACKET_CONFIG_2, RegPacketConfig2::DATA_MODE_PACKET);
-        spi.write(REG_FIFO_THRESH,
-                  RegFifoThresh::TX_START_CONDITION_FIFO_NOT_EMPTY | 0x0f);
-        spi.write(REG_NODE_ADRS, 0x00);
-        spi.write(REG_BROADCAST_ADRS, 0x00);
+        spi.writeRegister(REG_PA_RAMP,
+                          RegPaRamp::MODULATION_SHAPING_NONE | 0x09);
+        spi.writeRegister(REG_RX_CONFIG,
+                          RegRxConfig::AFC_AUTO_ON | RegRxConfig::AGC_AUTO_ON |
+                              RegRxConfig::RX_TRIGGER_PREAMBLE_DETECT |
+                              RegRxConfig::RX_TRIGGER_RSSI_INTERRUPT);
+        spi.writeRegister(REG_RSSI_THRESH, 0xff);
+        spi.writeRegister(
+            REG_PREAMBLE_DETECT,
+            RegPreambleDetector::PREAMBLE_DETECTOR_ON |
+                RegPreambleDetector::PREAMBLE_DETECTOR_SIZE_2_BYTES | 0x0a);
+        spi.writeRegister(REG_RX_TIMEOUT_1, 0x00);
+        spi.writeRegister(REG_RX_TIMEOUT_2, 0x00);
+        spi.writeRegister(REG_RX_TIMEOUT_3, 0x00);
+        spi.writeRegister(REG_PACKET_CONFIG_1,
+                          RegPacketConfig1::PACKET_FORMAT_VARIABLE_LENGTH |
+                              RegPacketConfig1::DC_FREE_NONE |
+                              RegPacketConfig1::CRC_ON |
+                              RegPacketConfig1::ADDRESS_FILTERING_NONE |
+                              RegPacketConfig1::CRC_WHITENING_TYPE_CCITT_CRC);
+        spi.writeRegister(REG_PACKET_CONFIG_2,
+                          RegPacketConfig2::DATA_MODE_PACKET);
+        spi.writeRegister(
+            REG_FIFO_THRESH,
+            RegFifoThresh::TX_START_CONDITION_FIFO_NOT_EMPTY | 0x0f);
+        spi.writeRegister(REG_NODE_ADRS, 0x00);
+        spi.writeRegister(REG_BROADCAST_ADRS, 0x00);
 
         // Enable PayloadReady, PacketSent on DIO0
-        spi.write(REG_DIO_MAPPING_1, 0x00);
+        spi.writeRegister(REG_DIO_MAPPING_1, 0x00);
     }
 
     return Error::NONE;
@@ -119,12 +125,12 @@ int SX1278::recv(uint8_t *buf, size_t max_len)
         waitForIrq2(RegIrqFlags2::PAYLOAD_READY);
 
         {
-            SPITransaction spi(slave, SPIWriteBit::INVERTED);
-            len = spi.read(REG_FIFO);
+            SPITransaction spi(slave, SPITransaction::WriteBit::INVERTED);
+            len = spi.readRegister(REG_FIFO);
             if (len > max_len)
                 return -1;
 
-            spi.read(REG_FIFO, buf, len);
+            spi.readRegisters(REG_FIFO, buf, len);
         }
 
         // For some reason this sometimes happen?
@@ -145,11 +151,11 @@ void SX1278::send(const uint8_t *buf, uint8_t len)
     waitForIrq1(RegIrqFlags1::TX_READY);
 
     {
-        SPITransaction spi(slave, SPIWriteBit::INVERTED);
+        SPITransaction spi(slave, SPITransaction::WriteBit::INVERTED);
 
-        spi.write(REG_FIFO, len);
+        spi.writeRegister(REG_FIFO, len);
         // FIXME(Davide Mor): This needs to be fixed!!
-        spi.write(REG_FIFO, const_cast<uint8_t *>(buf), len);
+        spi.writeRegisters(REG_FIFO, const_cast<uint8_t *>(buf), len);
     }
 
     // Wait for packet sent
@@ -172,9 +178,9 @@ void SX1278::handleDioIRQ()
 
 uint8_t SX1278::getVersion() const
 {
-    SPITransaction spi(slave, SPIWriteBit::INVERTED);
+    SPITransaction spi(slave, SPITransaction::WriteBit::INVERTED);
 
-    return spi.read(REG_VERSION);
+    return spi.readRegister(REG_VERSION);
 }
 
 void SX1278::setBitrate(int bitrate)
@@ -182,9 +188,9 @@ void SX1278::setBitrate(int bitrate)
     uint16_t val = SX1278Defs::FXOSC / bitrate;
 
     // Update values
-    SPITransaction spi(slave, SPIWriteBit::INVERTED);
-    spi.write(REG_BITRATE_MSB, val >> 8);
-    spi.write(REG_BITRATE_LSB, val);
+    SPITransaction spi(slave, SPITransaction::WriteBit::INVERTED);
+    spi.writeRegister(REG_BITRATE_MSB, val >> 8);
+    spi.writeRegister(REG_BITRATE_LSB, val);
 }
 
 void SX1278::setFreqDev(int freq_dev)
@@ -192,9 +198,9 @@ void SX1278::setFreqDev(int freq_dev)
     uint16_t val = freq_dev / FSTEP;
 
     // Update values
-    SPITransaction spi(slave, SPIWriteBit::INVERTED);
-    spi.write(REG_FDEV_MSB, (val >> 8) & 0x3f);
-    spi.write(REG_FDEV_LSB, val);
+    SPITransaction spi(slave, SPITransaction::WriteBit::INVERTED);
+    spi.writeRegister(REG_FDEV_MSB, (val >> 8) & 0x3f);
+    spi.writeRegister(REG_FDEV_LSB, val);
 }
 
 void SX1278::setFreqRF(int freq_rf)
@@ -202,59 +208,59 @@ void SX1278::setFreqRF(int freq_rf)
     uint32_t val = freq_rf / FSTEP;
 
     // Update values
-    SPITransaction spi(slave, SPIWriteBit::INVERTED);
-    spi.write(REG_FRF_MSB, val >> 16);
-    spi.write(REG_FRF_MID, val >> 8);
-    spi.write(REG_FRF_LSB, val);
+    SPITransaction spi(slave, SPITransaction::WriteBit::INVERTED);
+    spi.writeRegister(REG_FRF_MSB, val >> 16);
+    spi.writeRegister(REG_FRF_MID, val >> 8);
+    spi.writeRegister(REG_FRF_LSB, val);
 }
 
 void SX1278::setOcp(int ocp)
 {
-    SPITransaction spi(slave, SPIWriteBit::INVERTED);
+    SPITransaction spi(slave, SPITransaction::WriteBit::INVERTED);
     if (ocp == 0)
     {
-        spi.write(REG_OCP, 0);
+        spi.writeRegister(REG_OCP, 0);
     }
     else if (ocp <= 120)
     {
         uint8_t raw = (ocp - 45) / 5;
-        spi.write(REG_OCP, RegOcp::OCP_ON | raw);
+        spi.writeRegister(REG_OCP, RegOcp::OCP_ON | raw);
     }
     else
     {
         uint8_t raw = (ocp + 30) / 10;
-        spi.write(REG_OCP, RegOcp::OCP_ON | raw);
+        spi.writeRegister(REG_OCP, RegOcp::OCP_ON | raw);
     }
 }
 
 void SX1278::setSyncWord(uint8_t value[], int size)
 {
-    SPITransaction spi(slave, SPIWriteBit::INVERTED);
-    spi.write(REG_SYNC_CONFIG, REG_SYNC_CONFIG_DEFAULT | size);
+    SPITransaction spi(slave, SPITransaction::WriteBit::INVERTED);
+    spi.writeRegister(REG_SYNC_CONFIG, REG_SYNC_CONFIG_DEFAULT | size);
 
     for (int i = 0; i < size; i++)
     {
-        spi.write(REG_SYNC_VALUE_1 + i, value[i]);
+        spi.writeRegister(REG_SYNC_VALUE_1 + i, value[i]);
     }
 }
 
 void SX1278::setRxBw(RxBw rx_bw)
 {
-    SPITransaction spi(slave, SPIWriteBit::INVERTED);
-    spi.write(REG_RX_BW, static_cast<uint8_t>(rx_bw));
+    SPITransaction spi(slave, SPITransaction::WriteBit::INVERTED);
+    spi.writeRegister(REG_RX_BW, static_cast<uint8_t>(rx_bw));
 }
 
 void SX1278::setAfcBw(RxBw afc_bw)
 {
-    SPITransaction spi(slave, SPIWriteBit::INVERTED);
-    spi.write(REG_AFC_BW, static_cast<uint8_t>(afc_bw));
+    SPITransaction spi(slave, SPITransaction::WriteBit::INVERTED);
+    spi.writeRegister(REG_AFC_BW, static_cast<uint8_t>(afc_bw));
 }
 
 void SX1278::setPreableLen(int len)
 {
-    SPITransaction spi(slave, SPIWriteBit::INVERTED);
-    spi.write(REG_PREAMBLE_MSB, len >> 8);
-    spi.write(REG_PREAMBLE_LSB, len);
+    SPITransaction spi(slave, SPITransaction::WriteBit::INVERTED);
+    spi.writeRegister(REG_PREAMBLE_MSB, len >> 8);
+    spi.writeRegister(REG_PREAMBLE_LSB, len);
 }
 
 void SX1278::setPa(int power, bool pa_boost)
@@ -264,30 +270,31 @@ void SX1278::setPa(int power, bool pa_boost)
 
     const uint8_t MAX_POWER = 0b111;
 
-    SPITransaction spi(slave, SPIWriteBit::INVERTED);
+    SPITransaction spi(slave, SPITransaction::WriteBit::INVERTED);
 
     if (!pa_boost)
     {
         // Don't use power amplifier boost
         power = power - MAX_POWER + 15;
-        spi.write(REG_PA_CONFIG, MAX_POWER << 4 | power);
-        spi.write(REG_PA_DAC, RegPaDac::PA_DAC_DEFAULT_VALUE | 0x10 << 3);
+        spi.writeRegister(REG_PA_CONFIG, MAX_POWER << 4 | power);
+        spi.writeRegister(REG_PA_DAC,
+                          RegPaDac::PA_DAC_DEFAULT_VALUE | 0x10 << 3);
     }
     else if (power != 20)
     {
         // Run power amplifier boost but not at full power
         power = power - 2;
-        spi.write(REG_PA_CONFIG,
-                  MAX_POWER << 4 | power | RegPaConfig::PA_SELECT_BOOST);
-        spi.write(REG_PA_DAC, RegPaDac::PA_DAC_PA_BOOST | 0x10 << 3);
+        spi.writeRegister(REG_PA_CONFIG, MAX_POWER << 4 | power |
+                                             RegPaConfig::PA_SELECT_BOOST);
+        spi.writeRegister(REG_PA_DAC, RegPaDac::PA_DAC_PA_BOOST | 0x10 << 3);
     }
     else
     {
         // Run power amplifier boost at full power
         power = 15;
-        spi.write(REG_PA_CONFIG,
-                  MAX_POWER << 4 | power | RegPaConfig::PA_SELECT_BOOST);
-        spi.write(REG_PA_DAC, RegPaDac::PA_DAC_PA_BOOST | 0x10 << 3);
+        spi.writeRegister(REG_PA_CONFIG, MAX_POWER << 4 | power |
+                                             RegPaConfig::PA_SELECT_BOOST);
+        spi.writeRegister(REG_PA_DAC, RegPaDac::PA_DAC_PA_BOOST | 0x10 << 3);
     }
 }
 
@@ -299,8 +306,8 @@ void SX1278::enterMode(Mode mode)
 
     uint8_t value = REG_OP_MODE_DEFAULT | mode;
     {
-        SPITransaction spi(slave, SPIWriteBit::INVERTED);
-        spi.write(REG_OP_MODE, value);
+        SPITransaction spi(slave, SPITransaction::WriteBit::INVERTED);
+        spi.writeRegister(REG_OP_MODE, value);
     }
 
     // Wait for mode ready
@@ -311,19 +318,20 @@ void SX1278::enterMode(Mode mode)
 
 void SX1278::waitForIrq(uint8_t reg, uint8_t mask)
 {
-    SPITransaction spi(slave, SPIWriteBit::INVERTED);
+    SPITransaction spi(slave, SPITransaction::WriteBit::INVERTED);
 
     if ((mask == RegIrqFlags2::PACKET_SENT ||
          mask == RegIrqFlags2::PAYLOAD_READY) &&
         enable_int)
     {
         // Check before entering irq mode
-        if (spi.read(reg) & mask)
+        if (spi.readRegister(reg) & mask)
         {
             return;
         }
 
-        // TODO(Davide Mor): Could there be a time of check vs time of use error here?
+        // TODO(Davide Mor): Could there be a time of check vs time of use error
+        // here?
 
         miosix::FastInterruptDisableLock dLock;
         irq_wait_thread = miosix::Thread::getCurrentThread();
@@ -340,7 +348,7 @@ void SX1278::waitForIrq(uint8_t reg, uint8_t mask)
     else
     {
         // Tight loop on IRQ register
-        while (!(spi.read(reg) & mask))
+        while (!(spi.readRegister(reg) & mask))
         {
             miosix::delayUs(10);
         }
@@ -416,15 +424,17 @@ void SX1278::debugDumpRegisters()
         RegDef{"REG_DIO_MAPPING_2", REG_DIO_MAPPING_2},
         RegDef{"REG_VERSION", REG_VERSION}, RegDef{NULL, 0}};
 
-    SPITransaction spi(slave, SPIWriteBit::INVERTED);
+    SPITransaction spi(slave, SPITransaction::WriteBit::INVERTED);
 
     int i = 0;
     while (defs[i].name)
     {
         auto name = defs[i].name;
         auto addr = defs[i].addr;
-        TRACE("%s: 0x%x\n", name, spi.read(addr));
+        TRACE("%s: 0x%x\n", name, spi.readRegister(addr));
 
         i++;
     }
 }
+
+}  // namespace Boardcore

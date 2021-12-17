@@ -22,16 +22,20 @@
 
 #pragma once
 
+#include <events/EventBroker.h>
+
 #include <functional>
 #include <iostream>
 #include <string>
 #include <vector>
-#include "events/EventBroker.h"
 
 using std::cout;
 using std::function;
 using std::string;
 using std::vector;
+
+namespace Boardcore
+{
 
 /**
  * Class that subscribe to many topics and calls a callback when an event is
@@ -107,3 +111,5 @@ private:
     EventBroker& broker;
     OnEventReceived on_event_received;
 };
+
+}  // namespace Boardcore

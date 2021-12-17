@@ -20,17 +20,21 @@
  * THE SOFTWARE.
  */
 
-#ifndef BOARDCORE_SRC_SHARED_SCHEDULER_TASKSCHEDULER_H
-#define BOARDCORE_SRC_SHARED_SCHEDULER_TASKSCHEDULER_H
+#pragma once
 
 #include <ActiveObject.h>
 #include <Common.h>
 #include <Singleton.h>
 #include <math/Stats.h>
+
 #include <cstdint>
 #include <list>
 #include <queue>
+
 #include "TaskSchedulerData.h"
+
+namespace Boardcore
+{
 
 /**
  * HOW TO USE THE TASK SCHEDULER
@@ -157,4 +161,4 @@ private:
     uint32_t permanentTasks;              ///< Number of non-oneshot tasks
 };
 
-#endif
+}  // namespace Boardcore

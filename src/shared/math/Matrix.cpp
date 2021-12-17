@@ -22,6 +22,9 @@
 
 #include "Matrix.h"
 
+namespace Boardcore
+{
+
 /** Identity matrix constructor */
 Mat4::Mat4()
 {
@@ -97,7 +100,6 @@ float Mat4::determinant() const
 
 void Mat4::setInverse(const Mat4 &m)
 {
-    assert(&m != this);
     float det = m.determinant();
     if (det == 0)
         return;
@@ -168,7 +170,6 @@ Vec3 Mat3::transform(const Vec3 &vec) const { return (*this) * vec; }
 
 void Mat3::setInverse(const Mat3 &m)
 {
-    assert(&m != this);
     float t4  = m.d[0] * m.d[4];
     float t6  = m.d[0] * m.d[5];
     float t8  = m.d[1] * m.d[3];
@@ -208,3 +209,5 @@ void Mat3::setTranspose(const Mat3 &m)
     d[7] = m.d[5];
     d[8] = m.d[8];
 }
+
+}  // namespace Boardcore

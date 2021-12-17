@@ -22,13 +22,14 @@
 
 #pragma once
 
+#include <diagnostic/StackLogger.h>
 #include <miosix.h>
+
 #include <functional>
 #include <map>
 #include <utility>
 
 #include "ActiveObject.h"
-#include "diagnostic/StackLogger.h"
 
 using miosix::FastMutex;
 using miosix::GpioPin;
@@ -39,6 +40,9 @@ using miosix::Unlock;
 using std::function;
 using std::map;
 using std::pair;
+
+namespace Boardcore
+{
 
 /**
  * Class used to call a callback after a pin performs a specific transition
@@ -221,3 +225,5 @@ private:
     unsigned int poll_interval;
     bool stopped = true;
 };
+
+}  // namespace Boardcore

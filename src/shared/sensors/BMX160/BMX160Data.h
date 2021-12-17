@@ -22,7 +22,10 @@
 
 #pragma once
 
-#include "sensors/SensorData.h"
+#include <sensors/SensorData.h>
+
+namespace Boardcore
+{
 
 struct BMX160Data : public AccelerometerData,
                     public GyroscopeData,
@@ -90,3 +93,5 @@ struct BMX160FifoStats
            << interrupt_dt << "," << len << "\n";
     }
 };
+
+}  // namespace Boardcore

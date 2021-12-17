@@ -29,12 +29,15 @@
 
 #include "BMX160WithCorrectionData.h"
 
+namespace Boardcore
+{
+
 /**
  * Holds correction parameters for BMX160.
  */
 struct BMX160CorrectionParameters
 {
-    Matrix<float, 3, 2> accelParams, magnetoParams;
+    Eigen::Matrix<float, 3, 2> accelParams, magnetoParams;
     int minGyroSamplesForCalibration = 0;
 
     BMX160CorrectionParameters();
@@ -125,7 +128,9 @@ private:
     SixParameterCorrector<MagnetometerData> magnetometerCorrector;
     BiasCorrector<GyroscopeData> gyroscopeCorrector{};
 
-    Vector3f gyroscopeCorrectionParameters;
+    Eigen::Vector3f gyroscopeCorrectionParameters;
 
     PrintLogger logger = Logging::getLogger("bmx160withcorrection");
 };
+
+}  // namespace Boardcore

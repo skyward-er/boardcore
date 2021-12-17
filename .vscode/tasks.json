@@ -13,7 +13,7 @@
       "label": "CLEAN",
       "type": "shell",
       "windows": {
-        "command": "python sbs -c"
+        "command": "./sbs -c"
       },
       "linux": {
         "command": "./sbs -c"
@@ -24,7 +24,7 @@
       "label": "BUILD all",
       "type": "shell",
       "windows": {
-        "command": "python sbs"
+        "command": "sh sbs"
       },
       "linux": {
         "command": "./sbs"
@@ -32,13 +32,24 @@
       "problemMatcher": "$gcc"
     },
     {
-      "label": "BUILD current-entrypoint",
+      "label": "BUILD current-entrypoint DEBUG",
       "type": "shell",
       "windows": {
-        "command": "python sbs -v -n -b ${fileBasenameNoExtension}"
+        "command": "./sbs -d -b ${fileBasenameNoExtension}"
       },
       "linux": {
-        "command": "./sbs -v -b ${fileBasenameNoExtension}"
+        "command": "./sbs -d -b ${fileBasenameNoExtension}"
+      },
+      "problemMatcher": "$gcc"
+    },
+    {
+      "label": "BUILD current-entrypoint NO DEBUG",
+      "type": "shell",
+      "windows": {
+        "command": "./sbs -b ${fileBasenameNoExtension}"
+      },
+      "linux": {
+        "command": "./sbs -b ${fileBasenameNoExtension}"
       },
       "problemMatcher": "$gcc"
     },
@@ -46,7 +57,7 @@
       "label": "RUN current-entrypoint",
       "type": "shell",
       "windows": {
-        "command": "ST-LINK_CLI.exe -P bin/${fileBasenameNoExtension}/${fileBasenameNoExtension}.bin 0x8000000 -V -Rst"
+        "command": "ST-LINK_CLI.exe -P build/${fileBasenameNoExtension}.bin 0x8000000 -V -Rst"
       },
       "linux": {
         "command": "st-flash write bin/${fileBasenameNoExtension}/${fileBasenameNoExtension}.bin 0x8000000"
@@ -54,18 +65,30 @@
       "problemMatcher": []
     },
     {
-      "label": "BUILD+RUN current-entrypoint",
+      "label": "BUILD+RUN current-entrypoint DEBUG",
       "type": "shell",
       "windows": {
-        "command": "ST-LINK_CLI.exe -P bin/${fileBasenameNoExtension}/${fileBasenameNoExtension}.bin 0x8000000 -V -Rst"
+        "command": "./sbs -d -f ${fileBasenameNoExtension}"
       },
       "linux": {
-        "command": "sleep 1;st-flash write bin/${fileBasenameNoExtension}/${fileBasenameNoExtension}.bin 0x8000000"
+        "command": "./sbs -d -f ${fileBasenameNoExtension}"
       },
       "problemMatcher": [],
-      "dependsOn": [
-        "BUILD current-entrypoint"
-      ],
+      "group": {
+        "kind": "build",
+        "isDefault": true
+      }
+    },
+    {
+      "label": "BUILD+RUN current-entrypoint NO DEBUG",
+      "type": "shell",
+      "windows": {
+        "command": "./sbs -f ${fileBasenameNoExtension}"
+      },
+      "linux": {
+        "command": "./sbs -f ${fileBasenameNoExtension}"
+      },
+      "problemMatcher": [],
       "group": {
         "kind": "build",
         "isDefault": true
@@ -75,7 +98,7 @@
       "label": "BUILD tests-catch",
       "type": "shell",
       "windows": {
-        "command": "python sbs -v -n -b tests-catch"
+        "command": "sh sbs -v -n -b tests-catch"
       },
       "linux": {
         "command": "./sbs -v -b tests-catch"
@@ -106,6 +129,17 @@
       "options": {
         "cwd": "/opt/arm-miosix-eabi/bin"
       }
+    },
+    {
+      "label": "Open PuTTY 'skyward' session",
+      "type": "shell",
+      "windows": {
+        "command": "putty.exe -load skyward &"
+      },
+      "linux": {
+        "command": "putty.exe -load skyward &"
+      },
+      "problemMatcher": []
     }
   ]
 }

@@ -22,7 +22,10 @@
 
 #pragma once
 
-#include "sensors/SensorData.h"
+#include <sensors/SensorData.h>
+
+namespace Boardcore
+{
 
 struct BME280Data : public TemperatureData,
                     public PressureData,
@@ -53,3 +56,5 @@ struct BME280Data : public TemperatureData,
            << press << "," << humid_timestamp << "," << humid << "\n";
     }
 };
+
+}  // namespace Boardcore

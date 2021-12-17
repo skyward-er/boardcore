@@ -20,10 +20,12 @@
  * THE SOFTWARE.
  */
 
-#ifndef SRC_SHARED_EVENTS_EVENT_H
-#define SRC_SHARED_EVENTS_EVENT_H
+#pragma once
 
 #include <stdint.h>
+
+namespace Boardcore
+{
 
 enum EventSignal : uint8_t
 {
@@ -59,4 +61,4 @@ struct Event
         };
 */
 
-#endif /* SRC_SHARED_EVENTS_EVENT_H */
+}  // namespace Boardcore

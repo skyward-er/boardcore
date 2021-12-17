@@ -20,10 +20,13 @@
  * THE SOFTWARE.
  */
 
-#include <drivers/HardwareTimer.h>
 #include <drivers/pwm/pwm.h>
+// #include <drivers/timer/GeneralPurposeTimer.h>
 
 #pragma once
+
+namespace Boardcore
+{
 
 /**
  * Class used to control servomotors. This impementation differs from the
@@ -119,3 +122,5 @@ private:
     float min_pulse = 1000;
     float max_pulse = 2000;
 };
+
+}  // namespace Boardcore

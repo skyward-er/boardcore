@@ -22,10 +22,14 @@
 
 #pragma once
 
+#include <sensors/SensorData.h>
+
 #include <Eigen/Core>
 
 #include "Calibration.h"
-#include "sensors/SensorData.h"
+
+namespace Boardcore
+{
 
 /*
  * The Hard-iron calibration removes the bias due to the so named Hard-Iron
@@ -38,18 +42,18 @@ class HardIronCorrector : public ValuesCorrector<MagnetometerData>
 public:
     HardIronCorrector() : HardIronCorrector({0, 0, 0}) {}
 
-    HardIronCorrector(const Vector3f& _bias) : bias(_bias) {}
+    HardIronCorrector(const Eigen::Vector3f& _bias) : bias(_bias) {}
 
     void setIdentity() override { bias = {0, 0, 0}; }
 
-    void operator>>(Vector3f& rhs) { rhs = bias; }
+    void operator>>(Eigen::Vector3f& rhs) { rhs = bias; }
 
-    void operator<<(const Vector3f& rhs) { bias = rhs; }
+    void operator<<(const Eigen::Vector3f& rhs) { bias = rhs; }
 
     MagnetometerData correct(const MagnetometerData& input) const override
     {
         MagnetometerData output;
-        Vector3f vec;
+        Eigen::Vector3f vec;
 
         input >> vec;
         vec += bias;
@@ -59,7 +63,7 @@ public:
     }
 
 private:
-    Vector3f bias;
+    Eigen::Vector3f bias;
 };
 
 template <unsigned MaxSamples>
@@ -74,7 +78,7 @@ public:
         if (numSamples >= MaxSamples)
             return false;
 
-        Vector3f vec;
+        Eigen::Vector3f vec;
         data >> vec;
 
         samples.block(numSamples, 0, 1, 3) = vec.transpose();
@@ -88,11 +92,11 @@ public:
 
     HardIronCorrector computeResult() override
     {
-        Vector4f sol;
-        Vector3f bias;
+        Eigen::Vector4f sol;
+        Eigen::Vector3f bias;
 
-        MatrixXf coeffs = samples.block(0, 0, numSamples, 4);
-        VectorXf terms = samples.block(0, 4, numSamples, 1);
+        Eigen::MatrixXf coeffs = samples.block(0, 0, numSamples, 4);
+        Eigen::VectorXf terms  = samples.block(0, 4, numSamples, 1);
 
         auto colPiv = coeffs.colPivHouseholderQr();
         sol         = colPiv.solve(terms);
@@ -106,10 +110,11 @@ public:
 
 private:
     /*
-     * The matrix contains x, y, z measured, a column of 1s and x^2+y^2+z^2
-     * row. Its shape is (N x 5)
+     * The matrix contains x, y, z measured, a column of 1s and
+     * x^2+y^2+z^2 row. Its shape is (N x 5)
      */
-    Matrix<float, MaxSamples, 5> samples;
+    Eigen::Matrix<float, MaxSamples, 5> samples;
     unsigned numSamples;
 };
 
+}  // namespace Boardcore

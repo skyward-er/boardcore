@@ -20,11 +20,11 @@
  * THE SOFTWARE.
  */
 
-#ifndef SRC_SHARED_LOGGER_DESERIALIZER_H
-#define SRC_SHARED_LOGGER_DESERIALIZER_H
+#pragma once
 
 #include <sys/stat.h>
 #include <tscpp/stream.h>
+
 #include <cstdio>
 #include <fstream>
 #include <limits>
@@ -32,15 +32,18 @@
 #include <string>
 #include <vector>
 
-typedef std::numeric_limits<float> flt;
-
 using std::ostream;
 using std::string;
 using std::vector;
-using std::ifstream;
-using std::ofstream;
 using tscpp::TypePoolStream;
 using tscpp::UnknownInputArchive;
+
+namespace Boardcore
+{
+
+typedef std::numeric_limits<float> flt;
+
+// linter off
 
 /**
  * Class used to deserialize log files created using fedetft's logger.
@@ -48,7 +51,7 @@ using tscpp::UnknownInputArchive;
 class Deserializer
 {
 public:
-    Deserializer(string logfile, string prefix = "")
+    Deserializer(std::string logfile, std::string prefix = "")
         : prefix(prefix), logFile(logfile),
           logFileWithExt(prefix + logFile + ".dat")
     {
@@ -74,8 +77,8 @@ public:
      * provided output stream.
      */
     template <typename T>
-    bool registerType(std::function<void(T& t, ostream& os)> fnc_print,
-                      string header = "")
+    bool registerType(std::function<void(T& t, std::ostream& os)> fnc_print,
+                      std::string header = "")
     {
         if (closed)
         {
@@ -87,9 +90,9 @@ public:
         sprintf(c_filename, "%s%s_%s.csv", prefix.c_str(), logFile.c_str(),
                 typeid(T).name());
 
-        string filename(c_filename);
+        std::string filename(c_filename);
 
-        ofstream* stream = new ofstream();
+        std::ofstream* stream = new std::ofstream();
         stream->open(filename);
 
         if (!stream->is_open())
@@ -132,7 +135,7 @@ public:
         }
 
         bool success = true;
-        string unknown_type_name;
+        std::string unknown_type_name;
 
         struct stat st;
         if (stat(logFileWithExt.c_str(), &st) != 0)
@@ -141,9 +144,9 @@ public:
             return false;
         }
 
-        ifstream file(logFileWithExt);
+        std::std::ifstream file(logFileWithExt);
         // file.open;
-        UnknownInputArchive ia(file, tps);
+        tscpp::UnknownInputArchive ia(file, tps);
         int i = 0;
         while (success)
         {
@@ -188,12 +191,12 @@ public:
 private:
     bool closed = false;
 
-    vector<ofstream*> fileStreams;
-    TypePoolStream tps;
+    std::vector<std::ofstream*> fileStreams;
+    tscpp::TypePoolStream tps;
 
-    string prefix;
-    string logFile;
-    string logFileWithExt;
+    std::string prefix;
+    std::string logFile;
+    std::string logFileWithExt;
 };
 
-#endif /* SRC_SHARED_LOGGER_UNSERIALIZER_H */
+}  // namespace Boardcore

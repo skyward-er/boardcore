@@ -22,7 +22,10 @@
 
 #pragma once
 
-#include "sensors/SensorData.h"
+#include <sensors/SensorData.h>
+
+namespace Boardcore
+{
 
 struct LIS3MDLData : public MagnetometerData, public TemperatureData
 {
@@ -31,8 +34,7 @@ struct LIS3MDLData : public MagnetometerData, public TemperatureData
     }
 
     LIS3MDLData(uint64_t t, float mx, float my, float mz, float deg)
-        : MagnetometerData{t, mx, my, mz},
-          TemperatureData{t, deg}
+        : MagnetometerData{t, mx, my, mz}, TemperatureData{t, deg}
 
     {
     }
@@ -54,3 +56,5 @@ struct LIS3MDLData : public MagnetometerData, public TemperatureData
            << "," << temp_timestamp << "," << temp << "\n";
     }
 };
+
+}  // namespace Boardcore

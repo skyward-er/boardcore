@@ -22,13 +22,13 @@
 
 #pragma once
 
+#include <sensors/Sensor.h>
+
 #include <Eigen/Core>
 #include <Eigen/Geometry>
 
-#include "SensorDataExtra.h"
-#include "sensors/Sensor.h"
-
-using namespace Eigen;
+namespace Boardcore
+{
 
 /**
  * This class is used to adjust the values given by sensors during the flight.
@@ -156,7 +156,7 @@ constexpr const char* humanFriendlyDirection[]{
     "North", "South", "East", "West", "Down", "Up",
 };
 
-inline Vector3f orientationToVector(Direction val)
+inline Eigen::Vector3f orientationToVector(Direction val)
 {
     switch (val)
     {
@@ -197,20 +197,20 @@ inline Vector3f orientationToVector(Direction val)
  * AxisOrientation converted2 = ortho;
  *
  * // Now we can use the generated matrix:
- * Vector3f zeta = convertedX.getMatrix() * Vector3f { 0, 0, 1 }
+ * Eigen::Vector3f zeta = convertedX.getMatrix() * Eigen::Vector3f { 0, 0, 1 }
  *
  */
 struct AxisOrientation
 {
-    Matrix3f mat;
+    Eigen::Matrix3f mat;
 
-    AxisOrientation() : mat(Matrix3f::Identity()) {}
+    AxisOrientation() : mat(Eigen::Matrix3f::Identity()) {}
 
-    AxisOrientation(Matrix3f _mat) : mat(_mat) {}
+    AxisOrientation(Eigen::Matrix3f _mat) : mat(_mat) {}
 
-    void setMatrix(Matrix3f _mat) { mat = _mat; }
+    void setMatrix(Eigen::Matrix3f _mat) { mat = _mat; }
 
-    Matrix3f getMatrix() const { return mat; }
+    Eigen::Matrix3f getMatrix() const { return mat; }
 };
 
 /**
@@ -244,11 +244,11 @@ struct AxisAngleOrientation
 
     operator AxisOrientation() const { return AxisOrientation(getMatrix()); }
 
-    Matrix3f getMatrix() const
+    Eigen::Matrix3f getMatrix() const
     {
-        return (AngleAxisf(yaw, Vector3f{0, 0, 1}) *
-                AngleAxisf(pitch, Vector3f{0, 1, 0}) *
-                AngleAxisf(roll, Vector3f{1, 0, 0}))
+        return (Eigen::AngleAxisf(yaw, Eigen::Vector3f{0, 0, 1}) *
+                Eigen::AngleAxisf(pitch, Eigen::Vector3f{0, 1, 0}) *
+                Eigen::AngleAxisf(roll, Eigen::Vector3f{1, 0, 0}))
             .toRotationMatrix();
     }
 };
@@ -294,15 +294,15 @@ struct AxisOrthoOrientation
 
     operator AxisOrientation() const { return AxisOrientation(getMatrix()); }
 
-    Matrix3f getMatrix() const
+    Eigen::Matrix3f getMatrix() const
     {
-        Vector3f vx, vy, vz;
+        Eigen::Vector3f vx, vy, vz;
 
         vx = orientationToVector(xAxis);
         vy = orientationToVector(yAxis);
         vz = vx.cross(vy);
 
-        Matrix3f mat;
+        Eigen::Matrix3f mat;
         mat.col(0) << vx;
         mat.col(1) << vy;
         mat.col(2) << vz;
@@ -327,8 +327,10 @@ struct AxisRelativeOrientation
 
     operator AxisOrientation() const { return {getMatrix()}; }
 
-    Matrix3f getMatrix() const
+    Eigen::Matrix3f getMatrix() const
     {
         return systemOrientation.getMatrix() * orientation.getMatrix();
     }
 };
+
+}  // namespace Boardcore

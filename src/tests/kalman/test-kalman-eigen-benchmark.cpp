@@ -26,17 +26,19 @@
 #define EIGEN_RUNTIME_NO_MALLOC
 
 #include <Common.h>
-#include <drivers/HardwareTimer.h>
+#include <drivers/timer/GeneralPurposeTimer.h>
+#include <drivers/timer/TimerUtils.h>
 #include <kalman/KalmanEigen.h>
-#include <src/tests/kalman/test-kalman-data.h>
+#include <math/SkyQuaternion.h>
+#include <util/util.h>
 
 #include <iostream>
 
-#include "math/SkyQuaternion.h"
-#include "util/util.h"
+#include "test-kalman-data.h"
 
-using namespace Eigen;
+using namespace Boardcore;
 using namespace miosix;
+using namespace Eigen;
 
 int main()
 {
@@ -50,8 +52,7 @@ int main()
     printf("RUNNING...\n");
 
     // Timer for benchmarking purposes
-    HardwareTimer<uint32_t> timer{TIM5, TimerUtils::getPrescalerInputFrequency(
-                                            TimerUtils::InputClock::APB1)};
+    GeneralPurposeTimer<uint32_t> timer{TIM5};
 
     const int n = 3;
     const int p = 1;
@@ -91,7 +92,8 @@ int main()
     float time;             // Current time as read from csv file
     float T;                // Time elapsed between last sample and current one
 
-    timer.start();
+    timer.reset();
+    timer.enable();
     uint32_t tick1;
     uint32_t tick2;
 
@@ -108,7 +110,7 @@ int main()
 
         y(0) = INPUT[i];
 
-        tick1 = timer.tick();
+        tick1 = timer.readCounter();
 
         filter.predict(F);
 
@@ -117,9 +119,10 @@ int main()
             printf("Correction failed at iteration : %d \n", i);
         }
 
-        tick2 = timer.tick();
+        tick2 = timer.readCounter();
 
-        printf("%d : %f \n", i, timer.toMilliSeconds(tick2 - tick1));
+        printf("%d : %f \n", i,
+               TimerUtils::toMilliSeconds(timer.getTimer(), tick2 - tick1));
 
         // printf("%f, %f, %f;\n", filter.getState()(0), filter.getState()(1),
         //       filter.getState()(2));
@@ -133,8 +136,6 @@ int main()
             printf("APOGEE DETECTED at iteration %d ! \n", i);
         }
     }
-
-    timer.stop();
 
     // printf("Total time %d \n", timer.interval());
 

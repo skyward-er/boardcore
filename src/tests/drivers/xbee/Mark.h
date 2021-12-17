@@ -22,10 +22,14 @@
 
 #pragma once
 
-#include <string>
 #include <ostream>
+#include <string>
 
 using std::string;
+
+namespace Boardcore
+{
+
 /**
  * @brief Used to mark a specific instant in the log
  */
@@ -34,13 +38,12 @@ struct Mark
     long long timestamp;
     unsigned int seq;
 
-    static string header()
-    {
-        return "timestamp,seq\n";
-    }
+    static string header() { return "timestamp,seq\n"; }
 
     void print(std::ostream& os) const
     {
         os << timestamp << "," << seq << "\n";
     }
 };
+
+}  // namespace Boardcore

@@ -1,5 +1,5 @@
-/* Copyright (c) 2015-2016 Skyward Experimental Rocketry
- * Authors: Matteo Piazzolla, Alain Carlucci
+/* Copyright (c) 2015-2021 Skyward Experimental Rocketry
+ * Authors: Luca Erbetta, Matteo Piazzolla, Alain Carlucci
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -20,20 +20,32 @@
  * THE SOFTWARE.
  */
 
-#include "CanBus.h"
+#include "CanInterrupt.h"
 
-using namespace miosix;
+#include <interfaces-impl/arch_registers_impl.h>
+#include <kernel/scheduler/scheduler.h>
+#include <miosix.h>
 
-/* Global array of all the physical CAN buses */
-CanBus *global_bus_ptr[2] = {NULL, NULL};
-uint32_t global_bus_ctr   = 0;
+#include "Canbus.h"
+
+namespace Boardcore
+{
+
+namespace Canbus
+{
+
+Canbus* can_drivers[2];
+
+}
+
+}  // namespace Boardcore
 
 void __attribute__((naked)) CAN1_RX0_IRQHandler()
 {
     saveContext();
     asm volatile("mov r0, #0");
     asm volatile("mov r1, #0");
-    asm volatile("bl _Z18CAN_IRQHandlerImplii");
+    asm volatile("bl _Z20CAN_RXIRQHandlerImplii");
     restoreContext();
 }
 
@@ -42,7 +54,7 @@ void __attribute__((naked)) CAN1_RX1_IRQHandler()
     saveContext();
     asm volatile("mov r0, #0");
     asm volatile("mov r1, #1");
-    asm volatile("bl _Z18CAN_IRQHandlerImplii");
+    asm volatile("bl _Z20CAN_RXIRQHandlerImplii");
     restoreContext();
 }
 
@@ -51,7 +63,7 @@ void __attribute__((naked)) CAN2_RX0_IRQHandler()
     saveContext();
     asm volatile("mov r0, #1");
     asm volatile("mov r1, #0");
-    asm volatile("bl _Z18CAN_IRQHandlerImplii");
+    asm volatile("bl _Z20CAN_RXIRQHandlerImplii");
     restoreContext();
 }
 
@@ -60,55 +72,85 @@ void __attribute__((naked)) CAN2_RX1_IRQHandler()
     saveContext();
     asm volatile("mov r0, #1");
     asm volatile("mov r1, #1");
-    asm volatile("bl _Z18CAN_IRQHandlerImplii");
+    asm volatile("bl _Z20CAN_RXIRQHandlerImplii");
     restoreContext();
 }
 
-/*
- * @brief This function populates the rcvQueue of the corresponding Canbus object.
- */
-void __attribute__((used)) CAN_IRQHandlerImpl(int can_dev, int fifo)
+void __attribute__((naked)) CAN1_TX_IRQHandler()
 {
-    CanBus *hlbus;
-    CanMsg RxMessage;
-    volatile CAN_TypeDef *can;
+    saveContext();
+    asm volatile("mov r0, #0");
+    asm volatile("bl _Z20CAN_TXIRQHandlerImpli");
+    restoreContext();
+}
 
-    // per prima cosa "resetto" l'interrupt altrimenti entro in un ciclo
-    //  CAN1->RF0R |= CAN_RF0R_RFOM0; non è lui xD
-    can_dev &= 0x01;
+void __attribute__((naked)) CAN2_TX_IRQHandler()
+{
+    saveContext();
+    asm volatile("mov r0, #1");
+    asm volatile("bl _Z20CAN_TXIRQHandlerImpli");
+    restoreContext();
+}
 
-    // TODO: check if this 'return' is allowed
-    if (can_dev >= (int)global_bus_ctr)
-        return;
+void __attribute__((used)) CAN_RXIRQHandlerImpl(int can_dev, int fifo)
+{
+    using namespace Boardcore::Canbus;
+    (void)can_dev;
 
-    hlbus = global_bus_ptr[can_dev];
-    can   = hlbus->getBus();
+    if (can_drivers[can_dev])
+    {
+        can_drivers[can_dev]->handleRXInterrupt(fifo);
+    }
+}
 
-    RxMessage.IDE = (uint8_t)0x04 & can->sFIFOMailBox[fifo].RIR;
-    if (RxMessage.IDE == CAN_ID_STD)
-        RxMessage.StdId =
-            (uint32_t)0x000007FF & (can->sFIFOMailBox[fifo].RIR >> 21);
-    else
-        RxMessage.ExtId =
-            (uint32_t)0x1FFFFFFF & (can->sFIFOMailBox[fifo].RIR >> 3);
-
-    RxMessage.RTR = (uint8_t)0x02 & can->sFIFOMailBox[fifo].RIR;
-    RxMessage.DLC = (uint8_t)0x0F & can->sFIFOMailBox[fifo].RDTR;
-    RxMessage.FMI = (uint8_t)0xFF & (can->sFIFOMailBox[fifo].RDTR >> 8);
-
-    /* Get the data field */
-    uint32_t DataLR = can->sFIFOMailBox[fifo].RDLR;
-    uint32_t DataHR = can->sFIFOMailBox[fifo].RDHR;
-    memcpy(RxMessage.Data, &DataLR, sizeof(uint32_t));
-    memcpy(RxMessage.Data + sizeof(uint32_t), &DataHR, sizeof(uint32_t));
-
-    /* Release FIFO0 */
-    can->RF0R |= CAN_RF0R_RFOM0;
-
+void __attribute__((used)) CAN_TXIRQHandlerImpl(int can_dev)
+{
+    (void)can_dev;
     bool hppw = false;
 
-    hlbus->rcvQueue.IRQput(RxMessage, hppw);
+    using namespace Boardcore::Canbus;
+
+    Canbus* bus = can_drivers[can_dev];
+
+    if (bus)
+    {
+        CAN_TypeDef* can = bus->getCAN();
+
+        CanTXResult res;
+        res.tme      = can->TSR & CAN_TSR_TME >> 26;
+        res.err_code = (can->ESR | CAN_ESR_LEC) >> 4;
+
+        if ((can->TSR & CAN_TSR_RQCP0) > 0)
+        {
+            res.mailbox = 0;
+            res.tx_status =
+                can->TSR & (CAN_TSR_TXOK0 | CAN_TSR_ALST0 | CAN_TSR_TERR0) >> 1;
+
+            can->TSR |= CAN_TSR_RQCP0;
+        }
+        if ((can->TSR & CAN_TSR_RQCP1) > 0)
+        {
+            res.mailbox = 1;
+            res.tx_status =
+                can->TSR & (CAN_TSR_TXOK1 | CAN_TSR_ALST1 | CAN_TSR_TERR1) >> 9;
+
+            can->TSR |= CAN_TSR_RQCP1;
+        }
+        if ((can->TSR & CAN_TSR_RQCP2) > 0)
+        {
+            res.mailbox = 2;
+            res.tx_status =
+                can->TSR & (CAN_TSR_TXOK2 | 2 | CAN_TSR_TERR2) >> 17;
+
+            can->TSR |= CAN_TSR_RQCP2;
+        }
+
+        res.seq = bus->getTXMailboxSequence(res.mailbox);
+
+        bus->getTXResultBuffer().IRQput(res, hppw);
+        bus->wakeTXThread();
+    }
 
     if (hppw)
-        Scheduler::IRQfindNextThread();
+        miosix::Scheduler::IRQfindNextThread();
 }

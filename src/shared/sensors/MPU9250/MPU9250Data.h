@@ -22,7 +22,10 @@
 
 #pragma once
 
-#include "sensors/SensorData.h"
+#include <sensors/SensorData.h>
+
+namespace Boardcore
+{
 
 struct MPU9250Data : public AccelerometerData,
                      public GyroscopeData,
@@ -51,3 +54,5 @@ struct MPU9250Data : public AccelerometerData,
            << "\n";
     }
 };
+
+}  // namespace Boardcore

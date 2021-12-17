@@ -21,11 +21,15 @@
  */
 
 #include "CpuMeter.h"
+
 #include <Common.h>
-#include "diagnostic/SkywardStack.h"
-#include "diagnostic/StackLogger.h"
+#include <diagnostic/SkywardStack.h>
+#include <diagnostic/StackLogger.h>
 
 using namespace miosix;
+
+namespace Boardcore
+{
 
 const int period         = 100;
 const int gap            = 100;
@@ -83,3 +87,5 @@ public:
 static CpuMeterLauncher launcher;
 
 #endif  // ENABLE_CPU_METER
+
+}  // namespace Boardcore

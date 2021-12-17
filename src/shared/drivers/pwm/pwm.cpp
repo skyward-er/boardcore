@@ -21,10 +21,14 @@
  */
 
 #include "pwm.h"
+
 #include "Common.h"
 
 using namespace std;
 using namespace miosix;
+
+namespace Boardcore
+{
 
 PWM::PWM(Timer timer, unsigned int frequency,
          unsigned int duty_cycle_resolution)
@@ -309,3 +313,5 @@ void PWM::stop()
         started = false;
     }
 }
+
+}  // namespace Boardcore

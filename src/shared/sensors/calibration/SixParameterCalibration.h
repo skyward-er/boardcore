@@ -23,12 +23,15 @@
 #pragma once
 
 #include <Common.h>
+#include <sensors/SensorData.h>
 
 #include <Eigen/Core>
 #include <iostream>
 
 #include "Calibration.h"
-#include "sensors/SensorData.h"
+
+namespace Boardcore
+{
 
 /*
  * Six-Parameter Calibration uses, for each axis, a coefficient to be multiplied
@@ -46,7 +49,8 @@ class SixParameterCorrector : public ValuesCorrector<T>
 public:
     SixParameterCorrector() : SixParameterCorrector({1, 1, 1}, {0, 0, 0}) {}
 
-    SixParameterCorrector(const Vector3f& _p, const Vector3f& _q) : p(_p), q(_q)
+    SixParameterCorrector(const Eigen::Vector3f& _p, const Eigen::Vector3f& _q)
+        : p(_p), q(_q)
     {
     }
 
@@ -56,13 +60,13 @@ public:
         q = {0, 0, 0};
     }
 
-    void operator>>(Matrix<float, 3, 2>& out) const
+    void operator>>(Eigen::Matrix<float, 3, 2>& out) const
     {
         out.col(0) = p.transpose();
         out.col(1) = q.transpose();
     }
 
-    void operator<<(const Matrix<float, 3, 2>& in)
+    void operator<<(const Eigen::Matrix<float, 3, 2>& in)
     {
         p = in.col(0).transpose();
         q = in.col(1).transpose();
@@ -71,7 +75,7 @@ public:
     T correct(const T& input) const override
     {
         T output;
-        Vector3f vec;
+        Eigen::Vector3f vec;
 
         input >> vec;
         vec = p.cwiseProduct(vec) + q;
@@ -81,7 +85,7 @@ public:
     }
 
 private:
-    Vector3f p, q;
+    Eigen::Vector3f p, q;
 };
 
 template <typename T, unsigned MaxSamples>
@@ -92,15 +96,15 @@ class SixParameterCalibration
 public:
     SixParameterCalibration() : samples(), ref(1, 0, 0), numSamples(0) {}
 
-    void setReferenceVector(Vector3f vec) { ref = vec; }
-    Vector3f getReferenceVector() { return ref; }
+    void setReferenceVector(Eigen::Vector3f vec) { ref = vec; }
+    Eigen::Vector3f getReferenceVector() { return ref; }
 
     bool feed(const T& data, const AxisOrientation& transform) override
     {
         if (numSamples >= MaxSamples)
             return false;
 
-        Vector3f measured, expected;
+        Eigen::Vector3f measured, expected;
 
         data >> measured;
         // TODO: understand why the rotation, although it is needed, it does not
@@ -120,14 +124,14 @@ public:
 
     SixParameterCorrector<T> computeResult() override
     {
-        Vector3f p, q;
+        Eigen::Vector3f p, q;
 
         for (int i = 0; i < 3; ++i)
         {
-            MatrixXf coeffs(numSamples, 2);
-            VectorXf terms = samples.block(0, i + 3, numSamples, 1);
+            Eigen::MatrixXf coeffs(numSamples, 2);
+            Eigen::VectorXf terms = samples.block(0, i + 3, numSamples, 1);
 
-            Vector2f solution;
+            Eigen::Vector2f solution;
             coeffs.fill(1);
             coeffs.block(0, 0, numSamples, 1) =
                 samples.block(0, i, numSamples, 1);
@@ -144,11 +148,11 @@ public:
 
 private:
     /*
-     * The matrix contains x, y, z measured and x', y', z' expected for each
-     * row. Its shape is (N x 6)
+     * The matrix contains x, y, z measured and x', y', z' expected for
+     * each row. Its shape is (N x 6)
      */
-    Matrix<float, MaxSamples, 6> samples;
-    Vector3f ref;
+    Eigen::Matrix<float, MaxSamples, 6> samples;
+    Eigen::Vector3f ref;
     unsigned numSamples;
 
 public:
@@ -157,3 +161,5 @@ public:
      */
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 };
+
+}  // namespace Boardcore

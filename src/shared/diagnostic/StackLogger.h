@@ -22,15 +22,19 @@
 
 #pragma once
 
-#include "ActiveObject.h"
-#include "Singleton.h"
-#include "StackData.h"
-#include "logger/Logger.h"
+#include <ActiveObject.h>
+#include <Singleton.h>
+#include <logger/Logger.h>
 
 #include <map>
 
+#include "StackData.h"
+
 using miosix::FastMutex;
 using miosix::Lock;
+
+namespace Boardcore
+{
 
 /**
  * Log the absolute free stack of each thread 1 times per second
@@ -42,7 +46,6 @@ class StackLogger : public Singleton<StackLogger>
     friend class Singleton<StackLogger>;
 
 public:
-
     /**
      * Update the stored absolute free stack associated to the calling thread.
      * This function must be called by the thread to be logged.
@@ -63,7 +66,7 @@ public:
 
     /**
      * Logs the most up-to-date stack data
-     * Call this function periodically 
+     * Call this function periodically
      */
     void log()
     {
@@ -77,10 +80,11 @@ public:
     }
 
 private:
-
     StackLogger() {}
     ~StackLogger() {}
 
     FastMutex mutex;
     std::map<uint8_t, StackData> stacks;
 };
+
+}  // namespace Boardcore

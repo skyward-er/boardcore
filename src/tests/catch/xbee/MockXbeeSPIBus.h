@@ -22,18 +22,17 @@
 
 #pragma once
 
+#include <drivers/Xbee/APIFrameParser.h>
+#include <drivers/Xbee/APIFrames.h>
+#include <drivers/spi/test/MockSPIBus.h>
+#include <utils/testutils/MockGpioPin.h>
+
 #include <deque>
 #include <functional>
 #include <memory>
 
-#include "drivers/Xbee/APIFrameParser.h"
-#include "drivers/Xbee/APIFrames.h"
-#include "drivers/spi/test/MockSPIBus.h"
-#include "utils/testutils/MockGpioPin.h"
-
-using std::deque;
-using std::function;
-using std::unique_ptr;
+namespace Boardcore
+{
 
 class MockXbeeSPIBus : public MockSPIBus
 {
@@ -118,7 +117,7 @@ protected:
                 tx_stat.setDiscoveryStatus(0);
                 tx_stat.setTransmitRetryCount(0);
                 tx_stat.calcChecksum();
-                
+
                 _pushApiFrame(tx_stat);
             }
         }
@@ -169,3 +168,5 @@ private:
     bool respond_with_tx_status       = true;
     uint8_t tx_status_delivery_status = 0;
 };
+
+}  // namespace Boardcore

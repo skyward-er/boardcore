@@ -20,16 +20,19 @@
  * THE SOFTWARE.
  */
 
-#ifndef SRC_SHARED_SENSORS_LIS3MDL_LIS3MDL_H
-#define SRC_SHARED_SENSORS_LIS3MDL_LIS3MDL_H
+#pragma once
 
 #include <Common.h>
 #include <diagnostic/PrintLogger.h>
+#include <drivers/spi/SPIDriver.h>
+#include <drivers/timer/TimestampTimer.h>
+#include <sensors/Sensor.h>
 
 #include "LIS3MDLData.h"
-#include "drivers/spi/SPIDriver.h"
 #include "miosix.h"
-#include "sensors/Sensor.h"
+
+namespace Boardcore
+{
 
 /**
  * Driver for LIS3MDL, a three-axis magnetic sensor.
@@ -202,7 +205,7 @@ public:
     static SPIBusConfig getDefaultSPIConfig()
     {
         SPIBusConfig config{};
-        config.clock_div = SPIClockDivider::DIV32;
+        config.clockDivider = SPI::ClockDivider::DIV_32;
         return config;
     }
 
@@ -238,7 +241,7 @@ public:
 
         {
             SPITransaction spi(mSlave);
-            uint8_t res = spi.read(WHO_AM_I);
+            uint8_t res = spi.readRegister(WHO_AM_I);
 
             if (res != WHO_AM_I_VALUE)
             {
@@ -294,7 +297,7 @@ public:
 
         {
             SPITransaction spi(mSlave);
-            spi.write(CTRL_REG2, FS_12_GAUSS);
+            spi.writeRegister(CTRL_REG2, FS_12_GAUSS);
         }
         updateUnit(FS_12_GAUSS);
 
@@ -319,10 +322,10 @@ public:
         {
             SPITransaction spi(mSlave);
 
-            spi.write(CTRL_REG1, ODR_20_HZ | ENABLE_SELF_TEST |
-                                     (OM_ULTRA_HIGH_POWER << 4));
-            spi.write(CTRL_REG2, FS_12_GAUSS);
-            spi.write(CTRL_REG4, OM_ULTRA_HIGH_POWER << 2);
+            spi.writeRegister(CTRL_REG1, ODR_20_HZ | ENABLE_SELF_TEST |
+                                             (OM_ULTRA_HIGH_POWER << 4));
+            spi.writeRegister(CTRL_REG2, FS_12_GAUSS);
+            spi.writeRegister(CTRL_REG4, OM_ULTRA_HIGH_POWER << 2);
         }
 
         /*
@@ -396,23 +399,23 @@ public:
         // odr <= 80Hz
         if (!(config.odr & FAST_ODR_BIT))
             reg |= config.xyMode << 4;
-        spi.write(CTRL_REG1, reg);
-        err |= spi.read(CTRL_REG1) != reg;
+        spi.writeRegister(CTRL_REG1, reg);
+        err |= spi.readRegister(CTRL_REG1) != reg;
 
         /* -- CTRL_REG2 -- */
         reg = config.scale;
-        spi.write(CTRL_REG2, reg);
-        err |= spi.read(CTRL_REG2) != reg;
+        spi.writeRegister(CTRL_REG2, reg);
+        err |= spi.readRegister(CTRL_REG2) != reg;
 
         /* -- CTRL_REG3 -- */
         reg = CONTINOUS_CONVERSION;
-        spi.write(CTRL_REG3, reg);
-        err |= spi.read(CTRL_REG3) != reg;
+        spi.writeRegister(CTRL_REG3, reg);
+        err |= spi.readRegister(CTRL_REG3) != reg;
 
         /* -- CTRL_REG4 -- */
         reg = config.zMode << 2;
-        spi.write(CTRL_REG4, reg);
-        err |= spi.read(CTRL_REG4) != reg;
+        spi.writeRegister(CTRL_REG4, reg);
+        err |= spi.readRegister(CTRL_REG4) != reg;
 
         /* -- CTRL_REG5 -- */
         if (config.doBlockDataUpdate)
@@ -424,8 +427,8 @@ public:
             reg = 0;
         }
 
-        spi.write(CTRL_REG5, reg);
-        err |= spi.read(CTRL_REG5) != reg;
+        spi.writeRegister(CTRL_REG5, reg);
+        err |= spi.readRegister(CTRL_REG5) != reg;
 
         /* -- INT_CFG -- */
         if (config.enableInterrupt[0])
@@ -452,21 +455,21 @@ public:
         }
 
         reg |= 0x08;
-        spi.write(INT_CFG, reg);
-        err |= spi.read(INT_CFG) != reg;
+        spi.writeRegister(INT_CFG, reg);
+        err |= spi.readRegister(INT_CFG) != reg;
 
         /** INT_THS */
         uint16_t val =
             static_cast<uint16_t>(std::abs(config.threshold / mUnit));
         reg = static_cast<uint8_t>(0xff & val);
-        spi.write(INT_THS_L, reg);
-        err |= spi.read(INT_THS_L) != reg;
+        spi.writeRegister(INT_THS_L, reg);
+        err |= spi.readRegister(INT_THS_L) != reg;
 
         reg = static_cast<uint8_t>(val >> 8);
         reg &=
             0x7f;  // remove MSB (according to the datasheet, it must be zero)
-        spi.write(INT_THS_H, reg);
-        err |= spi.read(INT_THS_H) != reg;
+        spi.writeRegister(INT_THS_H, reg);
+        err |= spi.readRegister(INT_THS_H) != reg;
 
         /* Set mUnit according to scale */
         updateUnit(config.scale);
@@ -507,7 +510,7 @@ private:
 
         SPITransaction spi(mSlave);
 
-        if (!spi.read(STATUS_REG))
+        if (!spi.readRegister(STATUS_REG))
         {
             last_error = NO_NEW_DATA;
             return last_sample;
@@ -523,8 +526,8 @@ private:
         {
             if (currDiv == 0)
             {
-                val = spi.read(TEMP_OUT_L);
-                val |= spi.read(TEMP_OUT_H) << 8;
+                val = spi.readRegister(TEMP_OUT_L);
+                val |= spi.readRegister(TEMP_OUT_H) << 8;
 
                 newData.temp_timestamp = TimestampTimer::getTimestamp();
                 newData.temp = static_cast<float>(val) / LSB_PER_CELSIUS +
@@ -541,16 +544,16 @@ private:
 
         newData.mag_timestamp = TimestampTimer::getTimestamp();
 
-        val = spi.read(OUT_X_L);
-        val |= spi.read(OUT_X_H) << 8;
+        val = spi.readRegister(OUT_X_L);
+        val |= spi.readRegister(OUT_X_H) << 8;
         newData.mag_x = mUnit * val;
 
-        val = spi.read(OUT_Y_L);
-        val |= spi.read(OUT_Y_H) << 8;
+        val = spi.readRegister(OUT_Y_L);
+        val |= spi.readRegister(OUT_Y_H) << 8;
         newData.mag_y = mUnit * val;
 
-        val = spi.read(OUT_Z_L);
-        val |= spi.read(OUT_Z_H) << 8;
+        val = spi.readRegister(OUT_Z_L);
+        val |= spi.readRegister(OUT_Z_H) << 8;
         newData.mag_z = mUnit * val;
 
         return newData;
@@ -644,4 +647,4 @@ private:
     PrintLogger logger = Logging::getLogger("lis3mdl");
 };
 
-#endif
+}  // namespace Boardcore

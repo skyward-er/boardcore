@@ -27,7 +27,8 @@
 
 #include "Calibration.h"
 
-using namespace Eigen;
+namespace Boardcore
+{
 
 /**
  * This type of correction uses a 3x3 matrix multiplied by the input
@@ -44,27 +45,28 @@ class TwelveParameterCorrector : public ValuesCorrector<T>
 {
 public:
     TwelveParameterCorrector()
-        : TwelveParameterCorrector(Matrix3f::Identity(), {0, 0, 0})
+        : TwelveParameterCorrector(Eigen::Matrix3f::Identity(), {0, 0, 0})
     {
     }
 
-    TwelveParameterCorrector(const Matrix3f& _w, const Vector3f& _b)
+    TwelveParameterCorrector(const Eigen::Matrix3f& _w,
+                             const Eigen::Vector3f& _b)
         : w(_w), b(_b)
     {
     }
 
-    TwelveParameterCorrector(const Matrix<float, 3, 4>& mat)
+    TwelveParameterCorrector(const Eigen::Matrix<float, 3, 4>& mat)
     {
         operator<<(mat);
     }
 
-    void operator<<(const Matrix<float, 3, 4>& rhs)
+    void operator<<(const Eigen::Matrix<float, 3, 4>& rhs)
     {
         w = rhs.block<3, 3>(0, 0);
         b = rhs.col(3).transpose();
     }
 
-    void operator>>(Matrix<float, 3, 4>& rhs) const
+    void operator>>(Eigen::Matrix<float, 3, 4>& rhs) const
     {
         rhs.block<3, 3>(0, 0) = w;
         rhs.col(3)            = b.transpose();
@@ -79,7 +81,7 @@ public:
     T correct(const T& input) const
     {
         T output;
-        Vector3f vec;
+        Eigen::Vector3f vec;
 
         input >> vec;
         vec = w * vec + b;
@@ -89,8 +91,8 @@ public:
     }
 
 private:
-    Matrix3f w;
-    Vector3f b;
+    Eigen::Matrix3f w;
+    Eigen::Vector3f b;
 };
 
 template <typename T, unsigned MaxSamples>
@@ -99,17 +101,17 @@ class TwelveParameterCalibration
                                       AxisOrientation>
 {
 public:
-    TwelveParameterCalibration() : samples(), numSamples(0), ref({1, 0, 0})  {}
+    TwelveParameterCalibration() : samples(), numSamples(0), ref({1, 0, 0}) {}
 
-    void setReferenceVector(Vector3f vec) { ref = vec; }
-    Vector3f getReferenceVector() { return ref; }
+    void setReferenceVector(Eigen::Vector3f vec) { ref = vec; }
+    Eigen::Vector3f getReferenceVector() { return ref; }
 
     bool feed(const T& data, const AxisOrientation& transform) override
     {
         if (numSamples == MaxSamples)
             return false;
 
-        Vector3f expected, measured;
+        Eigen::Vector3f expected, measured;
         data >> measured;
         expected = transform.getMatrix().transpose() * ref;
 
@@ -122,16 +124,16 @@ public:
 
     TwelveParameterCorrector<T> computeResult() override
     {
-        Matrix<float, 3, 4> solutions;
-        MatrixXf coeffs = samples.block(0, 0, numSamples, 4);
-        auto qr = coeffs.colPivHouseholderQr();
+        Eigen::Matrix<float, 3, 4> solutions;
+        Eigen::MatrixXf coeffs = samples.block(0, 0, numSamples, 4);
+        auto qr                = coeffs.colPivHouseholderQr();
 
         for (int i = 0; i < 3; ++i)
         {
-            VectorXf terms = samples.block(0, 4 + i, numSamples, 1);
-            Vector4f sol     = qr.solve(terms);
-            solutions.col(i) = sol.head<3>();
-            solutions(i, 3)  = sol[3];
+            Eigen::VectorXf terms = samples.block(0, 4 + i, numSamples, 1);
+            Eigen::Vector4f sol   = qr.solve(terms);
+            solutions.col(i)      = sol.head<3>();
+            solutions(i, 3)       = sol[3];
         }
 
         return {solutions};
@@ -139,14 +141,16 @@ public:
 
 private:
     /*
-     * The matrix contains x, y, z measured and x', y', z' expected for each
-     * sample. Between (x, y, z) and (x', y', z') there is a column of 1s
+     * The matrix contains x, y, z measured and x', y', z' expected for
+     * each sample. Between (x, y, z) and (x', y', z') there is a column of 1s
      * Its shape is (N x 7)
      */
-    Matrix<float, MaxSamples, 7> samples;
+    Eigen::Matrix<float, MaxSamples, 7> samples;
     unsigned numSamples;
-    Vector3f ref;
+    Eigen::Vector3f ref;
 
 public:
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 };
+
+}  // namespace Boardcore

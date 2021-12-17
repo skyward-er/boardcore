@@ -20,11 +20,16 @@
  * THE SOFTWARE.
  */
 
+#pragma once
+
 #include <diagnostic/PrintLogger.h>
+#include <drivers/spi/SPIDriver.h>
+#include <sensors/Sensor.h>
 
 #include "BME280Data.h"
-#include "drivers/spi/SPIDriver.h"
-#include "sensors/Sensor.h"
+
+namespace Boardcore
+{
 
 class BME280 : public Sensor<BME280Data>
 {
@@ -137,32 +142,6 @@ public:
         } bits;
 
         uint8_t bytes_array[32];
-    };
-
-    enum BME280Registers : uint8_t
-    {
-        REG_CALIB_0 = 0x88,
-        // Calibration register 1-25
-
-        REG_ID    = 0xD0,
-        REG_RESET = 0xE0,
-
-        REG_CALIB_26 = 0xE1,
-        // Calibration register 27-41
-
-        REG_CTRL_HUM  = 0xF2,
-        REG_STATUS    = 0xF3,
-        REG_CTRL_MEAS = 0xF4,
-        REG_CONFIG    = 0xF5,
-
-        REG_PRESS_MSB  = 0xF7,
-        REG_PRESS_LSB  = 0xF8,
-        REG_PRESS_XLSB = 0xF9,
-        REG_TEMP_MSB   = 0xFA,
-        REG_TEMP_LSB   = 0xFB,
-        REG_TEMP_XLSB  = 0xFC,
-        REG_HUM_MSB    = 0xFD,
-        REG_HUM_LSB    = 0xFE,
     };
 
     static constexpr uint8_t REG_ID_VAL = 0x60;  ///< Who am I value
@@ -289,6 +268,32 @@ private:
      */
     bool checkWhoAmI();
 
+    enum BME280Registers : uint8_t
+    {
+        REG_CALIB_0 = 0x88,
+        // Calibration register 1-25
+
+        REG_ID    = 0xD0,
+        REG_RESET = 0xE0,
+
+        REG_CALIB_26 = 0xE1,
+        // Calibration register 27-41
+
+        REG_CTRL_HUM  = 0xF2,
+        REG_STATUS    = 0xF3,
+        REG_CTRL_MEAS = 0xF4,
+        REG_CONFIG    = 0xF5,
+
+        REG_PRESS_MSB  = 0xF7,
+        REG_PRESS_LSB  = 0xF8,
+        REG_PRESS_XLSB = 0xF9,
+        REG_TEMP_MSB   = 0xFA,
+        REG_TEMP_LSB   = 0xFB,
+        REG_TEMP_XLSB  = 0xFC,
+        REG_HUM_MSB    = 0xFD,
+        REG_HUM_LSB    = 0xFE,
+    };
+
     const SPISlave spiSlave;
     BME280Config config;
     BME280Comp compParams;
@@ -298,3 +303,5 @@ private:
 
     PrintLogger logger = Logging::getLogger("bme280");
 };
+
+}  // namespace Boardcore

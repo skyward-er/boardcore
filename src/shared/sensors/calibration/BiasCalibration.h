@@ -22,12 +22,15 @@
 
 #pragma once
 
+#include <sensors/SensorData.h>
+
 #include <Eigen/Core>
 
 #include "Calibration.h"
-#include "sensors/SensorData.h"
+#include "SensorDataExtra.h"
 
-using namespace Eigen;
+namespace Boardcore
+{
 
 /**
  * This is the dumbest type of calibration possible: it stores a 3d vector
@@ -43,17 +46,17 @@ class BiasCorrector : public ValuesCorrector<T>
 
 public:
     BiasCorrector() : bias(0, 0, 0) {}
-    BiasCorrector(const Vector3f& _bias) : bias(_bias) {}
+    BiasCorrector(const Eigen::Vector3f& _bias) : bias(_bias) {}
 
-    void operator>>(Vector3f& rhs) { rhs = bias; }
+    void operator>>(Eigen::Vector3f& rhs) { rhs = bias; }
 
-    void operator<<(const Vector3f& rhs) { bias = rhs; }
+    void operator<<(const Eigen::Vector3f& rhs) { bias = rhs; }
 
     void setIdentity() override { bias = {0, 0, 0}; }
 
     T correct(const T& data) const override
     {
-        Vector3f tmp;
+        Eigen::Vector3f tmp;
         T out;
 
         data >> tmp;
@@ -64,7 +67,7 @@ public:
     }
 
 private:
-    Vector3f bias;
+    Eigen::Vector3f bias;
 };
 
 template <typename T>
@@ -74,8 +77,8 @@ class BiasCalibration
 public:
     BiasCalibration() : sum(0, 0, 0), ref(0, 0, 0), numSamples(0) {}
 
-    void setReferenceVector(Vector3f vec) { ref = vec; }
-    Vector3f getReferenceVector() { return ref; }
+    void setReferenceVector(Eigen::Vector3f vec) { ref = vec; }
+    Eigen::Vector3f getReferenceVector() { return ref; }
 
     /**
      * BiasCalibration accepts an indefinite number of samples,
@@ -83,7 +86,7 @@ public:
      */
     bool feed(const T& measured, const AxisOrientation& transform) override
     {
-        Vector3f vec;
+        Eigen::Vector3f vec;
         measured >> vec;
 
         sum += (transform.getMatrix().transpose() * ref) - vec;
@@ -100,11 +103,13 @@ public:
     BiasCorrector<T> computeResult()
     {
         if (numSamples == 0)
-            return {Vector3f{0, 0, 0}};
+            return {Eigen::Vector3f{0, 0, 0}};
         return {sum / numSamples};
     }
 
 private:
-    Vector3f sum, ref;
+    Eigen::Vector3f sum, ref;
     unsigned numSamples;
 };
+
+}  // namespace Boardcore

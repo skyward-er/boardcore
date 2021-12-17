@@ -1,5 +1,5 @@
 /* Copyright (c) 2021 Skyward Experimental Rocketry
- * Author: Luca Erbetta, Luca Conterio
+ * Authors: Luca Erbetta, Luca Conterio
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -23,6 +23,9 @@
 #pragma once
 
 #include <string>
+
+namespace Boardcore
+{
 
 static constexpr unsigned int MAX_LOG_STRING_SIZE =
     250; /**< Max length of messages to be logged through the buffered logger */
@@ -59,3 +62,5 @@ struct LoggingString
 
     void print(std::ostream& os) const { os << log_string << "\n"; }
 };
+
+}  // namespace Boardcore

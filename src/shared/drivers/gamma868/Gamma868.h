@@ -20,8 +20,7 @@
  * THE SOFTWARE.
  */
 
-#ifndef GAMMA868_H
-#define GAMMA868_H
+#pragma once
 
 #include <Common.h>
 #include <diagnostic/PrintLogger.h>
@@ -29,6 +28,9 @@
 #include <fcntl.h>
 
 #include "GammaTypes.h"
+
+namespace Boardcore
+{
 
 class Gamma868 : public Transceiver
 {
@@ -117,4 +119,4 @@ private:
     PrintLogger logger = Logging::getLogger("gamma868");
 };
 
-#endif /* GAMMA868_H */
+}  // namespace Boardcore

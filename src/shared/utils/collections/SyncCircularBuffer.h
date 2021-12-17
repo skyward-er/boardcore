@@ -26,8 +26,12 @@
 
 #include "CircularBuffer.h"
 
+using miosix::ConditionVariable;
 using miosix::FastMutex;
 using miosix::Lock;
+
+namespace Boardcore
+{
 
 /**
  * Implementation of a synchronized circular buffer
@@ -46,6 +50,7 @@ public:
     T& put(const T& elem) override
     {
         Lock<FastMutex> l(mutex);
+        cv.broadcast();
         return Super::put(elem);
     }
 
@@ -110,6 +115,21 @@ public:
         return Super::isFull();
     }
 
+    /**
+     * @brief Waits until the buffer contains at least one element
+     */
+    void waitUntilNotEmpty()
+    {
+        Lock<FastMutex> l(mutex);
+        while (Super::isEmpty())
+        {
+            cv.wait(l);
+        }
+    }
+
 private:
     mutable FastMutex mutex;
+    mutable ConditionVariable cv;
 };
+
+}  // namespace Boardcore

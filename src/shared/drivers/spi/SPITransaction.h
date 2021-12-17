@@ -24,18 +24,12 @@
 
 #include "SPIBusInterface.h"
 
-/**
- * @brief Setting for when to set write bit
- */
-enum class SPIWriteBit
+namespace Boardcore
 {
-    NORMAL,    //< Normal write bit settings (0 for write, 1 for reads)
-    INVERTED,  //< Inverted write bit settings (1 for write, 0 for reads)
-    DISABLED,  //< Do not set write bit in any way
-};
 
 /**
  * @brief Provides high-level access to the SPI Bus for a single transaction.
+ *
  * To make sure the bus is properly configured for the provided slave, you have
  * to create a new instance of this class for every transaction, as the bus is
  * configured upon instantiation.
@@ -62,113 +56,178 @@ enum class SPIWriteBit
 class SPITransaction
 {
 public:
-    /**
-     * @brief Instatiates a new SPITransaction, configuring the bus with the
-     * provided parameters
-     *
-     * @param    slave     Slave to communicate with
-     */
-    SPITransaction(SPISlave slave, SPIWriteBit wrbit = SPIWriteBit::NORMAL);
+    enum class WriteBit
+    {
+        NORMAL,    //< Normal write bit settings (0 for write, 1 for reads)
+        INVERTED,  //< Inverted write bit settings (1 for write, 0 for reads)
+        DISABLED,  //< Do not set write bit in any way
+    };
 
     /**
      * @brief Instatiates a new SPITransaction, configuring the bus with the
-     * provided parameters
+     * provided parameters.
      *
-     * @param    bus       Bus to communicate on
-     * @param    cs        Chip select of the slave to communicate to
-     * @param    config    Configuration of the bus for the selected slave
+     * @param slave Slave to communicate with.
      */
-    SPITransaction(SPIBusInterface& bus, GpioType cs, SPIBusConfig config,
-                   SPIWriteBit wrbit = SPIWriteBit::NORMAL);
-
-    ~SPITransaction();
-
-    // Delete copy/move contructors/operators
-    SPITransaction(const SPITransaction&) = delete;
-    SPITransaction& operator=(const SPITransaction&) = delete;
-
-    SPITransaction(SPITransaction&&) = delete;
-    SPITransaction& operator=(SPITransaction&&) = delete;
+    explicit SPITransaction(SPISlave slave,
+                            WriteBit writeBit = WriteBit::NORMAL);
 
     /**
-     * @brief Writes a command \p cmd to the bus
+     * @brief Instatiates a new SPITransaction, configuring the bus with the
+     * provided parameters.
      *
-     * @param    cmd     Command to write on the bus
+     * @param bus Bus to communicate on.
+     * @param cs Chip select of the slave to communicate to.
+     * @param config Configuration of the bus for the selected slave.
      */
-    void write(uint8_t cmd);
+    SPITransaction(SPIBusInterface &bus, GpioType cs, SPIBusConfig config,
+                   WriteBit writeBit = WriteBit::NORMAL);
+
+    ///< Delete copy/move contructors/operators.
+    SPITransaction(const SPITransaction &) = delete;
+    SPITransaction &operator=(const SPITransaction &) = delete;
+    SPITransaction(SPITransaction &&)                 = delete;
+    SPITransaction &operator=(SPITransaction &&) = delete;
 
     /**
-     * @brief Writes \p val into the \p reg register
+     * @brief Returns the underlying bus for low level access.
      *
-     * @param    reg     Slave device register
-     * @param    val     Value to be written in the register
+     * @return SPIBusInterface associated with this transaction.
      */
-    void write(uint8_t reg, uint8_t val);
+    SPIBusInterface &getBus();
+
+    // Read, write and transfer operations
 
     /**
-     * @brief Writes \p size bytes into the \p reg register
+     * @brief Reads a single byte from the bus.
      *
-     * @param    reg       Slave device register
-     * @param    data      Data to be written
-     * @param    size      Number of bytes to be written
+     * @return Byte read from the bus.
      */
-    void write(uint8_t reg, uint8_t* data, size_t size);
+    uint8_t read();
 
     /**
-     * @brief Writes \p bytes on the bus
+     * @brief Reads a single half word from the bus.
      *
-     * @param    data      Bytes to be written
-     * @param    size      Number of bytes to be written
+     * @return Half word read from the bus.
      */
-    void write(uint8_t* data, size_t size);
+    uint16_t read16();
 
     /**
-     * @brief Read the contents of the \p reg register
+     * @brief Reads multiple bytes from the bus
      *
-     * @param    reg       Slave device register
-     * @param    set_read_bit Soft deprecated, please use \b WriteBit::DISABLED
-     * in the constructor.
+     * @param data Buffer to be filled with received data.
+     * @param size Size of the buffer in bytes.
      */
-    uint8_t read(uint8_t reg, bool set_read_bit = true);
+    void read(uint8_t *data, size_t size);
 
     /**
-     * @brief Reads \p size bytes from the \p reg register
+     * @brief Reads multiple half words from the bus
      *
-     * @param    reg    Slave device register
-     * @param    data   Buffer where read bytes will be stored
-     * @param    size   Number of bytes to read
-     * @param    set_read_bit Soft deprecated, please use \b WriteBit::DISABLED
-     * in the constructor.
+     * @param data Buffer to be filled with received data.
+     * @param size Size of the buffer in bytes.
      */
-    void read(uint8_t reg, uint8_t* data, size_t size,
-              bool set_read_bit = true);
+    void read(uint16_t *data, size_t size);
 
     /**
-     * @brief Reads \p size bytes from the bus
+     * @brief Writes a single byte to the bus.
      *
-     * @param    data   Buffer where read bytes will be stored
-     * @param    size   Number of bytes to read
+     * @param data Byte to write.
      */
-    void read(uint8_t* data, size_t size);
+    void write(uint8_t data);
 
     /**
-     * @brief Full duplex transfer: \p data is written on the bus and its
-     *        contents are replaced with the received bytes.
+     * @brief Writes a single half word to the bus.
      *
-     * @param    data      Buffer containign data to be transfered
-     * @param    size      Number of bytes to be transfer
+     * @param data Half word to write.
      */
-    void transfer(uint8_t* data, size_t size);
+    void write(uint16_t data);
 
     /**
-     * @brief Returns the underlying bus for low level access
+     * @brief Writes multiple bytes to the bus.
      *
-     * @return  SPIBusInterface associated with this transaction
+     * @param data Buffer containing data to write.
+     * @param size Size of the buffer in bytes.
      */
-    SPIBusInterface& getBus() { return bus; }
+    void write(uint8_t *data, size_t size);
+
+    /**
+     * @brief Writes multiple half words to the bus.
+     *
+     * @param data Buffer containing data to write.
+     * @param size Size of the buffer in bytes.
+     */
+    void write(uint16_t *data, size_t size);
+
+    /**
+     * @brief Full duplex transmission of one byte on the bus.
+     *
+     * @param data Byte to write.
+     * @return Byte read from the bus.
+     */
+    uint8_t transfer(uint8_t data);
+
+    /**
+     * @brief Full duplex transmission of one half word on the bus.
+     *
+     * @param data Half word to write.
+     * @return Half word read from the bus.
+     */
+    uint16_t transfer(uint16_t data);
+
+    /**
+     * @brief Full duplex transmission of multiple bytes on the bus.
+     *
+     * @param data Buffer containing data to trasfer.
+     * @param size Size of the buffer in bytes.
+     */
+    void transfer(uint8_t *data, size_t size);
+
+    /**
+     * @brief Full duplex transmission of multiple half words on the bus.
+     *
+     * @param data Buffer containing data to trasfer.
+     * @param size Size of the buffer in bytes.
+     */
+    void transfer(uint16_t *data, size_t size);
+
+    // Read, write and transfer operations with registers
+
+    /**
+     * @brief Reads the specified register.
+     *
+     * @return Byte read from the register.
+     */
+    uint8_t readRegister(uint8_t reg);
+
+    /**
+     * @brief Reads multiple bytes starting from the specified register.
+     *
+     * @param data Buffer to be filled with received data.
+     * @param size Size of the buffer in bytes.
+     */
+    void readRegisters(uint8_t reg, uint8_t *data, size_t size);
+
+    /**
+     * @brief Writes a single byte register.
+     *
+     * @param reg Register address.
+     * @param data Byte to write.
+     */
+    void writeRegister(uint8_t reg, uint8_t data);
+
+    /**
+     * @brief Writes multiple bytes starting from the specified register.
+     *
+     * @param reg Register start address.
+     * @param data Buffer containing data to write.
+     * @param size Size of the buffer in bytes.
+     */
+    void writeRegisters(uint8_t reg, uint8_t *data, size_t size);
 
 private:
-    SPIBusInterface& bus;
-    SPIWriteBit wrbit;
+    SPIBusInterface &bus;
+    WriteBit writeBit;
     GpioType cs;
 };
+
+}  // namespace Boardcore

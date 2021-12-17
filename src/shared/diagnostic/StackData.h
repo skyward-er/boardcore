@@ -20,9 +20,14 @@
  * THE SOFTWARE.
  */
 
+#pragma once
+
 #include <cstdint>
 #include <ostream>
 #include <string>
+
+namespace Boardcore
+{
 
 // Add here unique identifiers for threads in skyward-boardcore
 enum ThreadId : uint8_t
@@ -37,7 +42,7 @@ enum ThreadId : uint8_t
     THID_CPU_METER,
     THID_CPU_WD,
     THID_PIN_OBS,
-    
+
     // First available id to be used by repos that include boardcore as a
     // library
     THID_FIRST_AVAILABLE_ID
@@ -56,3 +61,5 @@ struct StackData
         os << timestamp << "," << (int)thread_id << "," << min_stack << "\n";
     }
 };
+
+}  // namespace Boardcore

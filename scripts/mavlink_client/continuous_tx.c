@@ -38,12 +38,12 @@
 #define END_FRAME_DELIMITER 0xff
 #define MAX_REP 254
 
-// #define WAIT_FOR_ACK 
+// #define WAIT_FOR_ACK
 // #define DEBUG
 
 /*
 Sends a certain number of messages of a fixed length over serial
-port, with increasing ids. 
+port, with increasing ids.
 
 Used for benchmarking LoRa modules (RF solutions Gamma868).
 */
@@ -126,4 +126,3 @@ int main(int argc, char *argv[])
 
     return(0);
 }
-

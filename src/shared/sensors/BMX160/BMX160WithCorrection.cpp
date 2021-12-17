@@ -26,6 +26,9 @@
 
 #include <fstream>
 
+namespace Boardcore
+{
+
 BMX160CorrectionParameters::BMX160CorrectionParameters()
 {
     accelParams << 0, 0, 0, 0, 0, 0;
@@ -207,7 +210,7 @@ BMX160WithCorrectionData BMX160WithCorrection::sampleImpl()
         return BMX160WithCorrectionData{};
     }
 
-    Vector3f avgAccel{0, 0, 0}, avgMag{0, 0, 0}, avgGyro{0, 0, 0}, vec;
+    Eigen::Vector3f avgAccel{0, 0, 0}, avgMag{0, 0, 0}, avgGyro{0, 0, 0}, vec;
     uint64_t accelTimestamp = 0, magTimestamp = 0, gyroTimestamp = 0;
     uint8_t fifoSize, numAccel = 0, numMag = 0, numGyro = 0;
     BMX160Data fifoElement;
@@ -297,21 +300,21 @@ BMX160WithCorrectionData BMX160WithCorrection::rotateAxis(
 
     // Accelerometer
     AccelerometerData accData = data;
-    Vector3f accDataVector;
+    Eigen::Vector3f accDataVector;
     accData >> accDataVector;
     accDataVector = rotation.getMatrix() * accDataVector;
     accData << accDataVector;
 
     // Gyroscope
     GyroscopeData gyrData = data;
-    Vector3f gyrDataVector;
+    Eigen::Vector3f gyrDataVector;
     gyrData >> gyrDataVector;
     gyrDataVector = rotation.getMatrix() * gyrDataVector;
     gyrData << gyrDataVector;
 
     // Magnetometer
     MagnetometerData magData = data;
-    Vector3f magDataVector;
+    Eigen::Vector3f magDataVector;
     magData >> magDataVector;
     magDataVector = rotation.getMatrix() * magDataVector;
     magData << magDataVector;
@@ -322,3 +325,5 @@ BMX160WithCorrectionData BMX160WithCorrection::rotateAxis(
 
     return data;
 }
+
+}  // namespace Boardcore

@@ -20,25 +20,25 @@
  * THE SOFTWARE.
  */
 
+// Host is unsupported
+#ifndef COMPILE_FOR_HOST
+
 #ifdef STANDALONE_CATCH1_TEST
 #include "catch-tests-entry.cpp"
 #endif
 
-#include <drivers/HardwareTimer.h>
+#include <drivers/timer/TimestampTimer.h>
 #include <miosix.h>
 
-#include <utils/testutils/catch.hpp>
+#include <catch2/catch.hpp>
 
+using namespace Boardcore;
 using namespace miosix;
 
 class TimerTestFixture
 {
 public:
-    TimerTestFixture()
-        : timer32(TIM5, TimerUtils::getPrescalerInputFrequency(
-                            TimerUtils::InputClock::APB1)),
-          timer16(TIM10, TimerUtils::getPrescalerInputFrequency(
-                             TimerUtils::InputClock::APB2))
+    TimerTestFixture() : timer32(TIM5), timer16(TIM10)
     {
         RCC->APB1ENR |= RCC_APB1ENR_TIM5EN;
         RCC->APB2ENR |= RCC_APB2ENR_TIM10EN;
@@ -46,15 +46,15 @@ public:
 
     ~TimerTestFixture()
     {
-        timer16.stop();
-        timer32.stop();
+        timer16.disable();
+        timer32.disable();
 
         RCC->APB1ENR &= ~RCC_APB1ENR_TIM5EN;
         RCC->APB2ENR &= ~RCC_APB2ENR_TIM10EN;
     }
 
-    HardwareTimer<uint32_t> timer32;
-    HardwareTimer<uint16_t> timer16;
+    GeneralPurposeTimer<uint32_t> timer32;
+    GeneralPurposeTimer<uint16_t> timer16;
 };
 
 TEST_CASE_METHOD(TimerTestFixture, "Test basic functionality")
@@ -62,40 +62,47 @@ TEST_CASE_METHOD(TimerTestFixture, "Test basic functionality")
     timer32.setPrescaler(63);
     timer16.setPrescaler(127);
 
-    REQUIRE(timer32.getMaxDuration() == Approx(3272.356).margin(0.001));
-    REQUIRE(timer16.getMaxDuration() == Approx(0.049).margin(0.001));
+    REQUIRE(TimerUtils::getMaxDuration(timer32.getTimer()) ==
+            Approx(3272.356).margin(0.001));
+    REQUIRE(TimerUtils::getMaxDuration(timer16.getTimer()) ==
+            Approx(0.049).margin(0.001));
 
-    REQUIRE(timer32.getResolution() == Approx(0.761).margin(0.001));
-    REQUIRE(timer16.getResolution() == Approx(0.761).margin(0.001));
+    REQUIRE(TimerUtils::getResolution(timer32.getTimer()) ==
+            Approx(0.761).margin(0.001));
+    REQUIRE(TimerUtils::getResolution(timer16.getTimer()) ==
+            Approx(0.761).margin(0.001));
 
-    REQUIRE(timer32.tick() == 0);
-    REQUIRE(timer16.tick() == 0);
+    REQUIRE(timer32.readCounter() == 0);
+    REQUIRE(timer16.readCounter() == 0);
 
-    REQUIRE(timer32.start() == 0);
-    REQUIRE(timer16.start() == 0);
+    timer32.enable();
+    timer16.enable();
 
     Thread::sleep(10);
 
-    uint32_t tick32 = timer32.tick();
-    uint32_t tick16 = timer16.tick();
+    float timer32timestamp = TimerUtils::toMilliSeconds(timer32.getTimer());
+    float timer16timestamp = TimerUtils::toMilliSeconds(timer16.getTimer());
 
-    REQUIRE(timer32.toMilliSeconds(tick32) == Approx(10).margin(1));
-    REQUIRE(timer16.toMilliSeconds(tick16) == Approx(10).margin(1));
+    REQUIRE(timer32timestamp == Approx(10).margin(1));
+    REQUIRE(timer16timestamp == Approx(10).margin(1));
 
     Thread::sleep(30);
 
-    REQUIRE(timer32.toMilliSeconds(timer32.tick() - tick32) ==
+    REQUIRE(TimerUtils::toMilliSeconds(timer32.getTimer()) - timer32timestamp ==
             Approx(30).margin(1));
-    REQUIRE(timer16.toMilliSeconds(timer16.tick() - tick16) ==
+    REQUIRE(TimerUtils::toMilliSeconds(timer16.getTimer()) - timer16timestamp ==
             Approx(30).margin(1));
 
-    tick32 = timer32.stop();
-    tick16 = timer16.stop();
+    timer32.disable();
+    timer16.disable();
+
+    timer32timestamp = TimerUtils::toMilliSeconds(timer32.getTimer());
+    timer16timestamp = TimerUtils::toMilliSeconds(timer16.getTimer());
 
     Thread::sleep(20);
 
-    REQUIRE(timer32.tick() == tick32);
-    REQUIRE(timer16.tick() == tick16);
+    REQUIRE(TimerUtils::toMilliSeconds(timer32.getTimer()) == timer32timestamp);
+    REQUIRE(TimerUtils::toMilliSeconds(timer16.getTimer()) == timer16timestamp);
 }
 
 TEST_CASE_METHOD(TimerTestFixture, "Test long term precision")
@@ -103,24 +110,30 @@ TEST_CASE_METHOD(TimerTestFixture, "Test long term precision")
     timer32.setPrescaler(63);
     timer16.setPrescaler(65535);  // Max prescaler
 
-    REQUIRE(timer32.getMaxDuration() == Approx(3272.356).margin(0.001));
-    REQUIRE(timer16.getMaxDuration() == Approx(25.565).margin(0.001));
+    REQUIRE(TimerUtils::getMaxDuration(timer32.getTimer()) ==
+            Approx(3272.356).margin(0.001));
+    REQUIRE(TimerUtils::getMaxDuration(timer16.getTimer()) ==
+            Approx(25.565).margin(0.001));
 
-    REQUIRE(timer32.getResolution() == Approx(0.761).margin(0.001));
-    REQUIRE(timer16.getResolution() == Approx(390.095).margin(0.001));
+    REQUIRE(TimerUtils::getResolution(timer32.getTimer()) ==
+            Approx(0.761).margin(0.001));
+    REQUIRE(TimerUtils::getResolution(timer16.getTimer()) ==
+            Approx(390.095).margin(0.001));
 
-    REQUIRE(timer32.start() == 0);
-    REQUIRE(timer16.start() == 0);
+    timer32.enable();
+    timer16.enable();
 
     Thread::sleep(24000);
 
-    uint32_t tick32 = timer32.tick();
-    uint32_t tick16 = timer16.tick();
-
-    REQUIRE(timer32.toMilliSeconds(timer32.tick()) == Approx(24000).margin(1));
-    REQUIRE(timer16.toMilliSeconds(timer16.tick()) == Approx(24000).margin(1));
+    REQUIRE(TimerUtils::toMilliSeconds(timer32.getTimer()) ==
+            Approx(24000).margin(1));
+    REQUIRE(TimerUtils::toMilliSeconds(timer16.getTimer()) ==
+            Approx(24000).margin(1));
 
     Thread::sleep(36000);
 
-    REQUIRE(timer32.toMilliSeconds(timer32.tick()) == Approx(60000).margin(1));
+    REQUIRE(TimerUtils::toMilliSeconds(timer32.getTimer()) ==
+            Approx(60000).margin(1));
 }
+
+#endif  // COMPILE_FOR_HOST

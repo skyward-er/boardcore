@@ -30,10 +30,12 @@
 // SHA1 of CSV File: e9a518af53ac91c2e57142fda140689918338c66
 // Autogen date:     2017-09-16 21:53:44.208079
 
+#pragma once
+
 #include <cstdint>
 
-#ifndef SKYWARD_FAULT_CTRL_LIST_H
-#define SKYWARD_FAULT_CTRL_LIST_H
+namespace Boardcore
+{
 
 enum class Fault
 {
@@ -55,6 +57,6 @@ const uint32_t FaultToCategory[] = {
     0,
 }; /* CategoryMapping */
 
-} /* FaultCounterData */
+}  // namespace FaultCounterData
 
-#endif /* SKYWARD_FAULT_CTRL_LIST_H */
+}  // namespace Boardcore

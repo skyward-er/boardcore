@@ -21,14 +21,16 @@
  */
 
 #include <Common.h>
-#include <drivers/HardwareTimer.h>
 #include <drivers/interrupt/external_interrupts.h>
+#include <drivers/timer/TimestampTimer.h>
 #include <sensors/BMX160/BMX160.h>
 #include <sensors/BMX160/BMX160WithCorrection.h>
 #include <sensors/calibration/SoftIronCalibration.h>
 
 #include <fstream>
 #include <iostream>
+
+using namespace Boardcore;
 
 constexpr const char* CORRECTION_PARAMETER_FILE = "/sd/bmx160_params.csv";
 constexpr const char* MAG_CALIBRATION_DATA_FILE =
@@ -173,7 +175,7 @@ void waitForInput()
 BMX160CorrectionParameters calibrateAccelerometer(
     BMX160CorrectionParameters correctionParameters)
 {
-    Matrix<float, 3, 2> m;
+    Eigen::Matrix<float, 3, 2> m;
     auto* calibrationModel =
         new SixParameterCalibration<AccelerometerData,
                                     ACC_CALIBRATION_SAMPLES *
@@ -217,7 +219,7 @@ BMX160CorrectionParameters calibrateAccelerometer(
 
     TRACE("Initialization and self-test completed!\n");
 
-    Vector3f avgAccel, vec;
+    Eigen::Vector3f avgAccel, vec;
     int fifoAccSampleCount;
     uint64_t accelTimestamp = 0;
 
@@ -324,9 +326,9 @@ BMX160CorrectionParameters calibrateAccelerometer(
 BMX160CorrectionParameters calibrateMagnetometer(
     BMX160CorrectionParameters correctionParameters)
 {
-    Matrix<float, 3, 2> m;
+    Eigen::Matrix<float, 3, 2> m;
     auto* calibrationModel = new SoftIronCalibration<MAG_CALIBRATION_SAMPLES>;
-    Vector3f avgMag{0, 0, 0}, vec;
+    Eigen::Vector3f avgMag{0, 0, 0}, vec;
 
     SPIBus bus(SPI1);
 

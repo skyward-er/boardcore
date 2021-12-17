@@ -28,6 +28,9 @@
 
 #include "APIFrames.h"
 
+namespace Boardcore
+{
+
 namespace Xbee
 {
 
@@ -88,3 +91,5 @@ private:
 };
 
 }  // namespace Xbee
+
+}  // namespace Boardcore

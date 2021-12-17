@@ -20,10 +20,11 @@
  * THE SOFTWARE.
  */
 
+#include <scheduler/TaskScheduler.h>
 
-#include "scheduler/TaskScheduler.h"
 #include "Common.h"
 
+using namespace Boardcore;
 using namespace miosix;
 
 void task5hz()
@@ -46,8 +47,8 @@ int main()
 
     TaskScheduler::function_t f5hz{&task5hz};
     TaskScheduler::function_t f2hz{&task2hz};
-    scheduler.add(f5hz, 1000/5, 1);
-    scheduler.add(f2hz, 1000/2, 1);
+    scheduler.add(f5hz, 1000 / 5, 1);
+    scheduler.add(f2hz, 1000 / 2, 1);
 
     scheduler.start();
 
@@ -55,7 +56,7 @@ int main()
 
     scheduler.stop();
 
-    for(;;)
+    for (;;)
     {
         printf("end\n");
         Thread::sleep(5000);

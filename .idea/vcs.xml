@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="VcsDirectoryMappings">
+    <mapping directory="$PROJECT_DIR$" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/libs/Catch2" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/libs/eigen" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/libs/fmt" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/libs/mavlink_skyward_lib" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/libs/miosix-kernel" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/libs/miosix-kernel/miosix/_examples/datalogger/tscpp" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/libs/mxgui" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/libs/tscpp" vcs="Git" />
+  </component>
+</project>

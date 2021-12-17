@@ -20,15 +20,17 @@
  * THE SOFTWARE.
  */
 
-#include <drivers/HardwareTimer.h>
+#include <drivers/hbridge/HBridge.h>
+#include <drivers/pwm/pwm.h>
+#include <drivers/timer/GeneralPurposeTimer.h>
 #include <miosix.h>
 
 #include <iostream>
 #include <sstream>
 
 #include "Common.h"
-#include "drivers/hbridge/HBridge.h"
 
+using namespace Boardcore;
 using namespace miosix;
 using namespace std;
 
@@ -48,10 +50,10 @@ bool print = true;  // print the elapsed time or not
 long long measured_time = 0;
 void wait()
 {
-    long long t = getTick();
+    long long t  = getTick();
     long long t0 = t;
 
-    while(t < t0 + PWM_DURATION)
+    while (t < t0 + PWM_DURATION)
     {
         Thread::sleep(50);
 

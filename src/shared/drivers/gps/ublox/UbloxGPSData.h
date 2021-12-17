@@ -22,7 +22,10 @@
 
 #pragma once
 
-#include "sensors/SensorData.h"
+#include <sensors/SensorData.h>
+
+namespace Boardcore
+{
 
 struct UbloxGPSData : public GPSData
 {
@@ -40,3 +43,5 @@ struct UbloxGPSData : public GPSData
            << (int)num_satellites << "," << (int)fix << "\n";
     }
 };
+
+}  // namespace Boardcore

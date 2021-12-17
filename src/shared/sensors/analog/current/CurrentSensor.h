@@ -28,6 +28,9 @@
 
 #include "CurrentSensorData.h"
 
+namespace Boardcore
+{
+
 /**
  * @brief Common class for current sense sensors
  *
@@ -83,3 +86,5 @@ private:
     static constexpr float MOVING_AVAERAGE_COMP_COEFF =
         1 - MOVING_AVAERAGE_COEFF;
 };
+
+}  // namespace Boardcore

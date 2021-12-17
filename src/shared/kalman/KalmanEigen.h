@@ -24,7 +24,8 @@
 
 #include <Eigen/Dense>
 
-using namespace Eigen;
+namespace Boardcore
+{
 
 /**
  * @brief Class representing a Kalman filter using the Eigen library for
@@ -37,12 +38,12 @@ using namespace Eigen;
 template <typename t, uint8_t n, uint8_t p>
 class KalmanEigen
 {
-    using MatrixNN = Matrix<t, n, n>;
-    using MatrixPN = Matrix<t, p, n>;
-    using MatrixNP = Matrix<t, n, p>;
-    using MatrixPP = Matrix<t, p, p>;
-    using CVectorN = Matrix<t, n, 1>;
-    using CVectorP = Matrix<t, p, 1>;
+    using MatrixNN = Eigen::Matrix<t, n, n>;
+    using MatrixPN = Eigen::Matrix<t, p, n>;
+    using MatrixNP = Eigen::Matrix<t, n, p>;
+    using MatrixPP = Eigen::Matrix<t, p, p>;
+    using CVectorN = Eigen::Matrix<t, n, 1>;
+    using CVectorP = Eigen::Matrix<t, p, 1>;
 
 public:
     /**
@@ -170,3 +171,5 @@ private:
     CVectorP y_hat; /**< output vector (p x 1) */
     CVectorP res;   /**< residual error vector (p x 1) */
 };
+
+}  // namespace Boardcore

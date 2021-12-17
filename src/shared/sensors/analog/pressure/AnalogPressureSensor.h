@@ -26,6 +26,9 @@
 
 #include <functional>
 
+namespace Boardcore
+{
+
 /**
  * @brief Common class for all analog pressure sensors
  *
@@ -89,3 +92,5 @@ protected:
 
     const float minPressure;
 };
+
+}  // namespace Boardcore

@@ -20,13 +20,16 @@
  * THE SOFTWARE.
  */
 
-#ifndef SRC_SHARED_EVENTS_FSM_H
-#define SRC_SHARED_EVENTS_FSM_H
+#pragma once
+
+#include <events/Event.h>
+#include <events/EventHandler.h>
+#include <utils/collections/SyncQueue.h>
 
 #include "ActiveObject.h"
-#include "events/Event.h"
-#include "events/EventHandler.h"
-#include "utils/collections/SyncQueue.h"
+
+namespace Boardcore
+{
 
 template <class T>
 class FSM : public EventHandler
@@ -44,7 +47,7 @@ public:
     }
 
     virtual ~FSM(){};
-    
+
     void transition(void (T::*nextState)(const Event&))
     {
         specialEvent.sig = EV_EXIT;
@@ -74,4 +77,4 @@ private:
     Event specialEvent;
 };
 
-#endif  // SRC_SHARED_EVENTS_FSM_H
+}  // namespace Boardcore

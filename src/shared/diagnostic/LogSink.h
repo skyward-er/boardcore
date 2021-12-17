@@ -1,5 +1,5 @@
 /* Copyright (c) 2021 Skyward Experimental Rocketry
- * Author: Luca Erbetta, Luca Conterio
+ * Authors: Luca Erbetta, Luca Conterio
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -29,6 +29,9 @@
 
 using miosix::FastMutex;
 
+namespace Boardcore
+{
+
 class LogSink
 {
 public:
@@ -36,8 +39,13 @@ public:
     LogSink(const LogSink&) = delete;
     LogSink& operator=(const LogSink&) = delete;
 
-    void log(const LogRecord& record);
+    virtual ~LogSink() {}
 
+#if defined(COMPILING_FMT) && !defined(DISABLE_PRINTLOGGER)
+    void log(const LogRecord& record);
+#else
+    void log(const LogRecord& record) { (void)record; }
+#endif
     void enable() { enabled = true; }
 
     void disable() { enabled = false; }
@@ -48,7 +56,7 @@ public:
 
     int getLevel() { return min_level; }
 
-    void setFormatString(std::string format) { this->format = format; }
+    void setFormatString(const std::string& format) { this->format = format; }
 
 protected:
     virtual void logImpl(std::string l) = 0;
@@ -65,15 +73,18 @@ private:
 class FileLogSink : public LogSink
 {
 public:
-    FileLogSink(FILE* f) : f(f) {}
-
     FileLogSink() {}
+
+    explicit FileLogSink(FILE* f) : f(f) {}
 
     void setFile(FILE* f_) { f = f_; }
 
 protected:
-    void logImpl(std::string l);
-
+#if defined(COMPILING_FMT) && !defined(DISABLE_PRINTLOGGER)
+    void logImpl(std::string l) override;
+#else
+    void logImpl(std::string l) override { (void)l; }
+#endif
     FILE* f;
     FastMutex mutex;
 };
@@ -89,9 +100,14 @@ public:
     FileLogSinkBuffered() : logger(Logger::instance()) {}
 
 protected:
-    void logImpl(std::string l);
+#if defined(COMPILING_FMT) && !defined(DISABLE_PRINTLOGGER)
+    void logImpl(std::string l) override;
+#else
+    void logImpl(std::string l) override { (void)l; }
+#endif
 
 private:
     Logger& logger;
-    FastMutex mutex;
 };
+
+}  // namespace Boardcore

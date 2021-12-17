@@ -20,15 +20,15 @@
  * THE SOFTWARE.
  */
 
+#include <drivers/gamma868/Gamma868.h>
 #include <stdio.h>
 #include <string.h>
 
 #include "miosix.h"
 
+using namespace Boardcore;
 using namespace std;
 using namespace miosix;
-
-#include <drivers/gamma868/Gamma868.h>
 
 /* DISCOVERY F429I*/
 typedef Gpio<GPIOA_BASE, 0> button;

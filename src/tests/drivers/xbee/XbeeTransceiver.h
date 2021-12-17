@@ -23,20 +23,23 @@
 #pragma once
 
 #include <arch/common/drivers/stm32_hardware_rng.h>
+#include <drivers/Xbee/APIFramesLog.h>
+#include <drivers/Xbee/Xbee.h>
+#include <logger/Logger.h>
 #include <miosix.h>
+#include <utils/testutils/ThroughputCalculator.h>
 
 #include <functional>
 
 #include "ActiveObject.h"
 #include "XbeeTestData.h"
-#include "drivers/Xbee/APIFramesLog.h"
-#include "drivers/Xbee/Xbee.h"
-#include "logger/Logger.h"
-#include "utils/testutils/ThroughputCalculator.h"
 
 using miosix::getTick;
 using std::bind;
 using std::function;
+
+namespace Boardcore
+{
 
 static constexpr size_t RCV_BUF_SIZE       = 256;
 static constexpr uint32_t PACKET_FIRST_INT = 0xF0E1C2B3;
@@ -107,22 +110,22 @@ public:
 protected:
     void run() override
     {
-        long long loop_start_ts = getTick();
+        long long loop_start_ts = miosix::getTick();
         while (!shouldStop())
         {
-            data.time_since_last_send = getTick() - loop_start_ts;
-            loop_start_ts             = getTick();
+            data.time_since_last_send = miosix::getTick() - loop_start_ts;
+            loop_start_ts             = miosix::getTick();
 
             // Create packet
             memcpy(buf, &PACKET_FIRST_INT, sizeof(uint32_t));
             memset32(buf + sizeof(uint32_t), packet_counter++,
                      data.packet_size - sizeof(uint32_t));
 
-            long long send_start_ts = getTick();
+            long long send_start_ts = miosix::getTick();
 
             bool result = xbee.send(buf, data.packet_size);
 
-            data.time_to_send = getTick() - send_start_ts;
+            data.time_to_send = miosix::getTick() - send_start_ts;
             data.timestamp    = send_start_ts;
 
             if (result)
@@ -180,11 +183,11 @@ protected:
     {
         while (!shouldStop())
         {
-            long long start = getTick();
+            long long start = miosix::getTick();
 
             size_t len = xbee.receive(buf, RCV_BUF_SIZE);
 
-            data.last_packet_timestamp = getTick();
+            data.last_packet_timestamp = miosix::getTick();
             data.timestamp             = start;
 
             ++data.rcv_count;
@@ -210,7 +213,10 @@ protected:
                 }
                 else
                 {
-                    TRACE("[XBeeTransceiver] Wrong packet payload! num: %u, start: 0x%08X\n", num, strt);
+                    TRACE(
+                        "[XBeeTransceiver] Wrong packet payload! num: %u, "
+                        "start: 0x%08X\n",
+                        num, strt);
                     ++data.rcv_wrong_payload;
                 }
             }
@@ -261,9 +267,8 @@ public:
           receiver(new Receiver(xbee, logger, expected_packet_interval)),
           logger(logger)
     {
-        using namespace std::placeholders;
-        xbee.setOnFrameReceivedListener(
-            bind(&XbeeTransceiver::handleApiFrame, this, _1));
+        xbee.setOnFrameReceivedListener(std::bind(
+            &XbeeTransceiver::handleApiFrame, this, std::placeholders::_1));
     }
 
     ~XbeeTransceiver()
@@ -421,3 +426,5 @@ private:
 
     Xbee::Xbee::OnFrameReceivedListener frame_listener;
 };
+
+}  // namespace Boardcore

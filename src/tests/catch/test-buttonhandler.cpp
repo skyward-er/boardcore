@@ -24,14 +24,13 @@
 #include "catch-tests-entry.cpp"
 #endif
 
-#include <functional>
-
 #include <Singleton.h>
 #include <miosix.h>
-#include <utils/testutils/catch.hpp>
+#include <utils/ButtonHandler.h>
 
-#include "utils/ButtonHandler.h"
+#include <catch2/catch.hpp>
 
+using namespace Boardcore;
 using namespace miosix;
 using std::bind;
 
@@ -114,7 +113,7 @@ protected:
 
     void callback(int id, ButtonPress press_type)
     {
-        if(id != 0x5E)
+        if (id != 0x5E)
         {
             return;
         }

@@ -22,7 +22,10 @@
 
 #pragma once
 
-#include "sensors/SensorData.h"
+#include <sensors/SensorData.h>
+
+namespace Boardcore
+{
 
 /**
  * @brief Structure to handle current sense data.
@@ -42,3 +45,5 @@ struct CurrentSensorData : public ADCData
            << current << "\n";
     }
 };
+
+}  // namespace Boardcore

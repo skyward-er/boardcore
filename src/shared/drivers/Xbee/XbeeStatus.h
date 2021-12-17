@@ -22,14 +22,19 @@
 
 #pragma once
 
+#include <math/Stats.h>
+
 #include <cstdint>
 #include <cstdio>
 #include <ostream>
 #include <string>
 
-#include "math/Stats.h"
+namespace Boardcore
+{
+
 namespace Xbee
 {
+
 struct XbeeStatus
 {
     long long timestamp = 0LL;
@@ -63,4 +68,7 @@ struct XbeeStatus
            << rx_dropped_buffers << "," << frame_buf_max_length << "\n";
     }
 };
+
 }  // namespace Xbee
+
+}  // namespace Boardcore

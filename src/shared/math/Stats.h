@@ -24,15 +24,18 @@
 
 #include <ostream>
 
+namespace Boardcore
+{
+
 /**
  * Statisitics computed by the Stats class
  */
 struct StatsResult
 {
-    float minValue;  ///< Min value found so far
-    float maxValue;  ///< Max value found so far
-    float mean;      ///< Mean of datased
-    float stdev;     ///< Standard deviation of datset
+    float minValue;         ///< Min value found so far
+    float maxValue;         ///< Max value found so far
+    float mean;             ///< Mean of datased
+    float stdev;            ///< Standard deviation of datset
     unsigned int nSamples;  ///< Number of samples
 };
 
@@ -72,3 +75,5 @@ private:
     float minValue, maxValue, mean, m2;
     unsigned int n;
 };
+
+}  // namespace Boardcore

@@ -22,8 +22,12 @@
 
 #include "EventBroker.h"
 
+#include <diagnostic/StackLogger.h>
+
 #include "Debug.h"
-#include "diagnostic/StackLogger.h"
+
+namespace Boardcore
+{
 
 EventBroker::EventBroker() {}
 
@@ -152,3 +156,5 @@ void EventBroker::clearDelayedEvents()
     Lock<FastMutex> lock(mtx_delayed_events);
     delayed_events.clear();
 }
+
+}  // namespace Boardcore

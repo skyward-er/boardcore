@@ -23,10 +23,14 @@
 #pragma once
 
 #include <cstring>
+#include <ostream>
 
 #ifdef _MIOSIX
 #include <miosix.h>
-#endif //_MIOSIX
+#endif  //_MIOSIX
+
+namespace Boardcore
+{
 
 class Dummy
 {
@@ -34,31 +38,36 @@ public:
     Dummy()
     {
 #ifdef _MIOSIX
-        timestamp=miosix::getTick();
-#else //_MIOSIX
-        timestamp=0;
-#endif //_MIOSIX
-        memset(x,0,sizeof(x));
+        timestamp = miosix::getTick();
+#else   //_MIOSIX
+        timestamp = 0;
+#endif  //_MIOSIX
+        memset(x, 0, sizeof(x));
     }
-    
+
     void correctValue()
     {
-        for(int i=0;i<num;i++) x[i]=42;
+        for (int i = 0; i < num; i++)
+            x[i] = 42;
     }
-    
+
     void print(std::ostream& os) const
     {
-        os<<"timestamp="<<timestamp<<' ';
-        for(int i=0;i<num;i++)
+        os << "timestamp=" << timestamp << " ";
+        for (int i = 0; i < num; i++)
         {
-            if(x[i]==42) continue;
-            os<<"unserialized incorrectly, x["<<i<<"]="<<x[i];
+            if (x[i] == 42)
+                continue;
+            os << "unserialized incorrectly, x[" << i << "]=" << x[i];
             return;
         }
-        os<<"ok";
+        os << "ok";
     }
+
 private:
     long long timestamp;
-    static const int num=50;
+    static const int num = 50;
     int x[num];
 };
+
+}  // namespace Boardcore

@@ -27,6 +27,9 @@
 
 #include "SensorData.h"
 
+namespace Boardcore
+{
+
 /**
  * @brief Check that a given type has a method called `getData()` and that the
  * return type of this method is a subclass of the expected data type.
@@ -150,3 +153,5 @@ public:
         last_interrupt_us = ts;
     }
 };
+
+}  // namespace Boardcore

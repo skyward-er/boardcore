@@ -26,6 +26,9 @@
 
 #include "View.h"
 
+namespace Boardcore
+{
+
 /**
  * @brief Simple view that displays an image
  */
@@ -52,6 +55,9 @@ public:
                                 getBounds().bottomRight(), *image);
         }
     }
+
 private:
     const mxgui::Image* image;
 };
+
+}  // namespace Boardcore

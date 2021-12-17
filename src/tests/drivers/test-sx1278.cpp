@@ -27,20 +27,23 @@
 #include <cstring>
 #include <thread>
 
-/*
-Connection diagram:
-sx1278[0]:nss  -> stm32:pa1
-sx1278[0]:dio0 -> stm32:pc15
-sx1278[0]:mosi -> stm32:pc12 (SPI3_MOSI)
-sx1278[0]:miso -> stm32:pc11 (SPI3_MISO)
-sx1278[0]:sck  -> stm32:pc10 (SPI3_SCK)
+using namespace Boardcore;
+using namespace miosix;
 
-sx1278[1]:nss  -> stm32:pa2
-sx1278[1]:dio0 -> stm32:pc0
-sx1278[1]:mosi -> stm32:pb15 (SPI2_MOSI)
-sx1278[1]:miso -> stm32:pb14 (SPI2_MISO)
-sx1278[1]:sck  -> stm32:pb13 (SPI2_SCK)
-*/
+/**
+ * Connection diagram:
+ * sx1278[0]:nss  -> stm32:pa1
+ * sx1278[0]:dio0 -> stm32:pc15
+ * sx1278[0]:mosi -> stm32:pc12 (SPI3_MOSI)
+ * sx1278[0]:miso -> stm32:pc11 (SPI3_MISO)
+ * sx1278[0]:sck  -> stm32:pc10 (SPI3_SCK)
+
+ * sx1278[1]:nss  -> stm32:pa2
+ * sx1278[1]:dio0 -> stm32:pc0
+ * sx1278[1]:mosi -> stm32:pb15 (SPI2_MOSI)
+ * sx1278[1]:miso -> stm32:pb14 (SPI2_MISO)
+ * sx1278[1]:sck  -> stm32:pb13 (SPI2_SCK)
+ */
 
 SPIBus bus1(SPI3);
 SPIBus bus2(SPI2);

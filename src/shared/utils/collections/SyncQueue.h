@@ -20,57 +20,58 @@
  * THE SOFTWARE.
  */
 
-#ifndef SYNC_QUEUE_H_
-#define SYNC_QUEUE_H_
+#pragma once
+
+#include <miosix.h>
 
 #include <list>
-#include "miosix.h"
 
+namespace Boardcore
+{
 
-template<typename T>
+template <typename T>
 class SynchronizedQueue
 {
 public:
-	SynchronizedQueue() {}
-	void put(const T& data);
-	T get();
-	int len();
+    SynchronizedQueue() {}
+    void put(const T& data);
+    T get();
+    int len();
 
 private:
-	SynchronizedQueue(const SynchronizedQueue&)=delete;
-	SynchronizedQueue& operator=(const SynchronizedQueue&)=delete;
-	std::list<T> queue;
-	miosix::Mutex m_mutex;
-	miosix::ConditionVariable m_cv;
+    SynchronizedQueue(const SynchronizedQueue&) = delete;
+    SynchronizedQueue& operator=(const SynchronizedQueue&) = delete;
+    std::list<T> queue;
+    miosix::Mutex m_mutex;
+    miosix::ConditionVariable m_cv;
 };
 
-
-
-template<typename T>
+template <typename T>
 void SynchronizedQueue<T>::put(const T& data)
 {
-	m_mutex.lock();
-	queue.push_back(data);
-	m_cv.signal();
-	m_mutex.unlock();
+    m_mutex.lock();
+    queue.push_back(data);
+    m_cv.signal();
+    m_mutex.unlock();
 }
 
-template<typename T>
+template <typename T>
 T SynchronizedQueue<T>::get()
 {
-	m_mutex.lock();
-	while(queue.empty()) m_cv.wait(m_mutex);
-	T result=queue.front();
-	queue.pop_front();
-	m_mutex.unlock();
+    m_mutex.lock();
+    while (queue.empty())
+        m_cv.wait(m_mutex);
+    T result = queue.front();
+    queue.pop_front();
+    m_mutex.unlock();
 
-	return result;
+    return result;
 }
 
-template<typename T>
+template <typename T>
 int SynchronizedQueue<T>::len()
 {
-	return queue.size();
+    return queue.size();
 }
 
-#endif //SYNC_QUEUE_H_
+}  // namespace Boardcore

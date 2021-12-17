@@ -32,6 +32,9 @@
 
 using std::min;
 
+namespace Boardcore
+{
+
 /**
  * Classes used if you want to log an APIFrame, but do not want to log the base
  * APIFrame class, which is quite heavy on memory
@@ -378,16 +381,20 @@ struct RXPacketFrameLog
 
     static string header()
     {
-        return "timestamp,src_addr,rx_options,rx_data_size,payload32_0,payload32_1\n";
+        return "timestamp,src_addr,rx_options,rx_data_size,payload32_0,"
+               "payload32_1\n";
     }
 
     void print(std::ostream& os) const
     {
         uint32_t data[2];
-        memcpy(&data, rx_data, min(sizeof(uint32_t)*2, (size_t)rx_data_length));
+        memcpy(&data, rx_data,
+               min(sizeof(uint32_t) * 2, (size_t)rx_data_length));
         os << timestamp << "," << source_address << "," << (int)receive_options
            << "," << rx_data_length << "," << data[0] << "," << data[1] << "\n";
     }
 };
 
 }  // namespace Xbee
+
+}  // namespace Boardcore

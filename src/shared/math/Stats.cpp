@@ -21,11 +21,15 @@
  */
 
 #include "Stats.h"
+
 #include <algorithm>
 #include <cmath>
 #include <limits>
 
 using namespace std;
+
+namespace Boardcore
+{
 
 ostream& operator<<(ostream& os, const StatsResult& sr)
 {
@@ -99,3 +103,5 @@ int main(int argc, char* argv[])
 }
 
 #endif  // STATS_TESTCASE
+
+}  // namespace Boardcore

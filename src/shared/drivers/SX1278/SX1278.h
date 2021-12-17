@@ -23,10 +23,14 @@
 #pragma once
 
 #include <drivers/spi/SPIDriver.h>
+#include <kernel/kernel.h>
 
 #include <cstdint>
 
 #include "SX1278Defs.h"
+
+namespace Boardcore
+{
 
 /**
  * @brief Various SX1278 register/enums definitions.
@@ -95,7 +99,7 @@ public:
      * @param bus SPI bus used.
      * @param cs Chip select pin.
      */
-    SX1278(SPIBusInterface &bus, GpioPin cs);
+    SX1278(SPIBusInterface &bus, miosix::GpioPin cs);
 
     /**
      * @brief Setup the device.
@@ -161,3 +165,5 @@ public:
     SPISlave slave;
     Mode mode;
 };
+
+}  // namespace Boardcore

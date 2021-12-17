@@ -22,20 +22,22 @@
 
 #pragma once
 
+#include <events/EventBroker.h>
+#include <events/FSM.h>
+#include <events/HSM.h>
+#include <events/utils/EventCounter.h>
 #include <miosix.h>
+
 #include <cmath>
 #include <map>
-
-#include "events/EventBroker.h"
-#include "events/FSM.h"
-#include "events/HSM.h"
-
-#include "events/utils/EventCounter.h"
 
 using miosix::FastMutex;
 using miosix::getTick;
 using miosix::Lock;
 using std::map;
+
+namespace Boardcore
+{
 
 /*
  * How long should we wait for the state machine to handle the event?
@@ -196,3 +198,5 @@ bool expectEvent(uint8_t event_id, uint8_t topic, long long when,
  */
 bool waitForEvent(uint8_t event, uint8_t topic, long long timeout = 0,
                   EventBroker& broker = *sEventBroker);
+
+}  // namespace Boardcore

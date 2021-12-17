@@ -23,11 +23,14 @@
 #ifdef STANDALONE_CATCH1_TEST
 #include "catch-tests-entry.cpp"
 #endif
-#include <utils/testutils/catch.hpp>
 
+#include <catch2/catch.hpp>
 
 #define private public
+
 #include <utils/collections/SyncPacketQueue.h>
+
+using namespace Boardcore;
 
 static constexpr int BUF_LEN   = 20;
 static constexpr int PKT_LEN   = 10;
@@ -39,14 +42,12 @@ uint8_t message_base[BUF_LEN] = {'0', '1', '2', '3', '4', '5', '6',
 
 uint8_t buf[BUF_LEN];
 
-inline bool COMPARE(uint8_t* buf, size_t len, const char* expected)
+inline bool COMPARE(const uint8_t* buf, size_t len, const char* expected)
 {
-    size_t i = 0;
-    while (expected[i] != '\0' && i < len)
+    for (size_t i = 0; i < len && expected[i] != '\0'; ++i)
     {
         CAPTURE(i);
         REQUIRE(buf[i] == expected[i]);
-        ++i;
     }
 
     return true;
@@ -83,10 +84,8 @@ TEST_CASE("Packet tests")
     {
 
         REQUIRE(p.tryAppend(message_base, 5));
-        long long ts = p.timestamp();
-#ifndef COMPILE_FOR_X86
+        uint64_t ts = p.timestamp();
         REQUIRE(miosix::getTick() - ts < 5);
-#endif
         REQUIRE(p.dump(buf) == 5);
         COMPARE(buf, BUF_LEN, "01234");
 
@@ -115,9 +114,7 @@ TEST_CASE("Packet tests")
         REQUIRE(p.size() == 10);
         REQUIRE(p.msgCount() == 3);
 
-#ifndef COMPILE_FOR_X86
         REQUIRE(p.timestamp() == ts);
-#endif
 
         p.clear();
         REQUIRE(p.isEmpty());
@@ -221,7 +218,8 @@ TEST_CASE("PacketQueue tests")
         p = pq.get();  // Should still return first packet
         REQUIRE(p.msgCount() == 3);
 
-        INFO("Adding element not fitting the second packet, added to the third");
+        INFO(
+            "Adding element not fitting the second packet, added to the third");
         REQUIRE(pq.put(message_base + 10, 7) == 0);
         p = pq.get();  // Should still return first packet
         REQUIRE(p.msgCount() == 3);
@@ -238,7 +236,6 @@ TEST_CASE("PacketQueue tests")
         COMPARE(pq.buffer.get(0), "0123012301");
         COMPARE(pq.buffer.get(1), "abcd");
         COMPARE(pq.buffer.get(2), "abcdefg");
-
 
         INFO("Popping first element");
         p = pq.pop();  // Should still return first packet
@@ -307,7 +304,7 @@ TEST_CASE("PacketQueue tests")
         REQUIRE(pq.put(message_base + 10, PKT_LEN) == 0);
 
         REQUIRE(pq.buffer.count() == 3);
-        for(int i = 0; i < 3; i++)
+        for (int i = 0; i < 3; i++)
         {
             CAPTURE(i);
             REQUIRE(pq.buffer.get(i).isReady());
@@ -327,12 +324,10 @@ TEST_CASE("PacketQueue tests")
         REQUIRE_NOTHROW(pq.pop());
         REQUIRE_NOTHROW(pq.pop());
 
-
         REQUIRE_THROWS(pq.get());
         REQUIRE_THROWS(pq.pop());
 
         REQUIRE(pq.isEmpty());
         REQUIRE_FALSE(pq.isFull());
     }
-
 }

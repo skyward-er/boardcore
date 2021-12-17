@@ -22,7 +22,10 @@
 
 #pragma once
 
-#include "sensors/BMX160/BMX160Data.h"
+#include <sensors/BMX160/BMX160Data.h>
+
+namespace Boardcore
+{
 
 struct BMX160WithCorrectionData : public BMX160Data
 {
@@ -92,13 +95,12 @@ struct BMX160GyroscopeCalibrationBiases
     {
     }
 
-    static std::string header()
-    {
-        return "bias_x,bias_y,bias_z\n";
-    }
+    static std::string header() { return "bias_x,bias_y,bias_z\n"; }
 
     void print(std::ostream& os) const
     {
         os << bx << "," << by << "," << bz << "\n";
     }
 };
+
+}  // namespace Boardcore

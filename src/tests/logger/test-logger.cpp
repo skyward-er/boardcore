@@ -20,22 +20,23 @@
  * THE SOFTWARE.
  */
 
-#include <cstdio>
-#include <logger/Logger.h>
-#include <diagnostic/CpuMeter.h>
 #include "test-logger.h"
 
+#include <diagnostic/CpuMeter.h>
+#include <logger/Logger.h>
+
+using namespace Boardcore;
 using namespace std;
 using namespace miosix;
 
 void logthread(void*)
 {
-    Logger& log=Logger::instance();
-    const int period=5;
-    for(auto t=getTick();;t+=period)
+    Logger& log      = Logger::instance();
+    const int period = 5;
+    for (auto t = getTick();; t += period)
     {
         Thread::sleepUntil(t);
-        for(int i=0;i<5;i++)
+        for (int i = 0; i < 5; i++)
         {
             Dummy d;
             d.correctValue();
@@ -46,32 +47,35 @@ void logthread(void*)
 
 void printutil(void*)
 {
-    for(;;)
+    for (;;)
     {
         Thread::sleep(1000);
-        printf("cpu: %5.1f\n",averageCpuUtilization());
+        printf("cpu: %5.1f\n", averageCpuUtilization());
     }
 }
 
 int main()
 {
-    Thread::create(printutil,4096);
-    
-    Logger& log=Logger::instance();
+    Thread::create(printutil, 4096);
+
+    Logger& log = Logger::instance();
     log.start();
-    
+
     puts("type enter to start test");
     getchar();
-    
-    Thread::create(logthread,4096);
-    
+
+    Thread::create(logthread, 4096);
+
     puts("type enter to stop test");
     getchar();
-    
+
     log.stop();
-    
+
     puts("stopped");
-    for(;;) { Thread::sleep(1000); }
+    for (;;)
+    {
+        Thread::sleep(1000);
+    }
 
     return 0;
 }

@@ -22,7 +22,11 @@
 
 #pragma once
 
+#include <math/Stats.h>
 #include <mxgui/display.h>
+#include <utils/gui/GridLayout.h>
+#include <utils/gui/TextView.h>
+#include <utils/gui/VerticalLayout.h>
 
 #include <array>
 #include <cstdint>
@@ -30,13 +34,11 @@
 #include <string>
 #include <utility>
 
-#include "math/Stats.h"
-#include "utils/gui/GridLayout.h"
-#include "utils/gui/TextView.h"
-#include "utils/gui/VerticalLayout.h"
-
 using std::array;
 using std::to_string;
+
+namespace Boardcore
+{
 
 struct EnergyScanScreen
 {
@@ -79,7 +81,7 @@ struct EnergyScanScreen
             col_names[i]->setTextColor(pink);
 
             col_current[i] = new TextView("-40");
-            col_min[i]    = new TextView("-40");
+            col_min[i]     = new TextView("-40");
             col_max[i]     = new TextView("-40");
 
             grid_channels.setCell(col_names[i], (i % NUM_CHANNEL_ROWS) + 1,
@@ -229,3 +231,5 @@ private:
 
     array<Stats, NUM_CHANNELS> ch_stats;
 };
+
+}  // namespace Boardcore

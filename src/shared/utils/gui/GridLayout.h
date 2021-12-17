@@ -28,6 +28,9 @@
 
 #include "View.h"
 
+namespace Boardcore
+{
+
 /**
  * @brief Displays childs in a num_rows*num_cols grid
  */
@@ -38,7 +41,7 @@ public:
 
     /**
      * @brief Creates a new GridLayout
-     * 
+     *
      * @param num_rows Number of rows
      * @param num_cols Number of columns
      * @param spacing Distance in pixels between each cell
@@ -66,7 +69,7 @@ public:
         }
 
         map_childs[GridPosition(row, col)] = child;
-        
+
         updateChildBounds();
         invalidate();
     }
@@ -105,7 +108,7 @@ public:
 
     /**
      * @brief Wether to draw the borders of each cell or not
-     * 
+     *
      * @param draw_border True: draw the border
      * @param color Border color
      */
@@ -143,12 +146,12 @@ public:
 
                 if (draw_border && !child_selected)
                 {
-                    context.drawRectangle(
-                        map_child_bounds[pos].topLeft(),
-                        map_child_bounds[pos].bottomRight(), border_color);
+                    context.drawRectangle(map_child_bounds[pos].topLeft(),
+                                          map_child_bounds[pos].bottomRight(),
+                                          border_color);
                 }
             }
-        }   
+        }
     }
 
     uint8_t getRows() { return num_rows; }
@@ -206,3 +209,5 @@ private:
     std::map<GridPosition, View*> map_childs;
     std::map<GridPosition, Bounds> map_child_bounds;
 };
+
+}  // namespace Boardcore

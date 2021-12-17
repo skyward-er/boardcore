@@ -19,10 +19,13 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
-#ifndef VEC3_H
-#define VEC3_H
+
+#pragma once
 
 #include <cmath>
+
+namespace Boardcore
+{
 
 class Vec3
 {
@@ -32,7 +35,7 @@ class Vec3
 public:
     Vec3() { clear(); }
 
-    Vec3(const Vec3& rhs)
+    Vec3(const Vec3 &rhs)
     {
         x = rhs.x;
         y = rhs.y;
@@ -68,7 +71,8 @@ public:
         return true;
     }
 
-    void operator=(const Vec3& rhs){
+    void operator=(const Vec3 &rhs)
+    {
         x = rhs.x;
         y = rhs.y;
         z = rhs.z;
@@ -116,9 +120,7 @@ public:
         return Vec3(x - v.getX(), y - v.getY(), z - v.getZ());
     }
 
-    Vec3 operator-() const {
-        return Vec3(-x, -y, -z);
-    }
+    Vec3 operator-() const { return Vec3(-x, -y, -z); }
 
     float dot(const Vec3 &v) const
     {
@@ -135,4 +137,4 @@ private:
     float x, y, z;
 };
 
-#endif /* ifndef VEC3_H */
+}  // namespace Boardcore

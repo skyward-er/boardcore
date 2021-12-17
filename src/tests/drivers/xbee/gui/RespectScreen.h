@@ -22,18 +22,21 @@
 
 #pragma once
 
-#include <cstdint>
 #include <mxgui/display.h>
+#include <utils/gui/ImageView.h>
+
+#include <cstdint>
 
 #include "res/respect.h"
-#include "utils/gui/ImageView.h"
+
+namespace Boardcore
+{
 
 struct RespectScreen
 {
-    RespectScreen()
-    {
-        
-    }
+    RespectScreen() {}
 
     ImageView root{&respect};
 };
+
+}  // namespace Boardcore

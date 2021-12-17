@@ -22,19 +22,26 @@
 
 #pragma once
 
+#include <sensors/Sensor.h>
+
 #include <cmath>
 
 #include "Common.h"
-#include "sensors/Sensor.h"
 
 using miosix::getTick;
 using miosix::TICK_FREQ;
+
+namespace Boardcore
+{
 
 struct TestData : public TimestampData
 {
     float value;
 
-    TestData(float v) : TimestampData{static_cast<uint64_t>(getTick())}, value(v) {}
+    TestData(float v)
+        : TimestampData{static_cast<uint64_t>(getTick())}, value(v)
+    {
+    }
 
     TestData() : TimestampData{static_cast<uint64_t>(getTick())}, value(0.0) {}
 };
@@ -53,6 +60,8 @@ public:
     {
         TRACE("[TestSensor] sampleImpl() \n");
         return TestData(10 * sin(PI * static_cast<float>(getTick()) /
-                                    static_cast<float>(TICK_FREQ)));
+                                 static_cast<float>(TICK_FREQ)));
     }
 };
+
+}  // namespace Boardcore

@@ -23,10 +23,13 @@
 #pragma once
 
 #include <diagnostic/PrintLogger.h>
+#include <drivers/spi/SPIDriver.h>
+#include <sensors/Sensor.h>
 
 #include "MPU9250Data.h"
-#include "drivers/spi/SPIDriver.h"
-#include "sensors/Sensor.h"
+
+namespace Boardcore
+{
 
 /**
  * @brief Driver class for MPU9250
@@ -189,10 +192,11 @@ public:
      * @param highSpeedSpiClockDivider_ Clocl diver for 20MHz SPI communication
      * with the device
      */
-    MPU9250(SPISlave spiSlave_, unsigned short samplingRate_ = 100,
-            MPU9250GyroFSR gyroFsr_                   = GYRO_FSR_250DPS,
-            MPU9250AccelFSR accelFsr_                 = ACCEL_FSR_2G,
-            SPIClockDivider highSpeedSpiClockDivider_ = SPIClockDivider::DIV4);
+    MPU9250(
+        SPISlave spiSlave_, unsigned short samplingRate_ = 100,
+        MPU9250GyroFSR gyroFsr_                     = GYRO_FSR_250DPS,
+        MPU9250AccelFSR accelFsr_                   = ACCEL_FSR_2G,
+        SPI::ClockDivider highSpeedSpiClockDivider_ = SPI::ClockDivider::DIV_4);
 
     /**
      * @brief Constructs the default config for SPI Bus.
@@ -323,9 +327,11 @@ private:
     const MPU9250AccelFSR accelFsr;
     float magSensAdjCoeff[3];  // Page 32 on datasheet
 
-    const SPIClockDivider highSpeedSpiClockDivider;
+    const SPI::ClockDivider highSpeedSpiClockDivider;
 
     bool initialized = false;  // Whether the sensor has been initialized
 
     PrintLogger logger = Logging::getLogger("mpu9250");
 };
+
+}  // namespace Boardcore
