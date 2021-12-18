@@ -21,12 +21,11 @@
  */
 
 #include "PrintLogger.h"
+
 using miosix::Lock;
 
 namespace Boardcore
 {
-
-#ifndef DISABLE_PRINTLOGGER
 
 static string getLevelString(uint8_t level)
 {
@@ -165,7 +164,5 @@ void Logging::AsyncLogger::run()
         parent.log(rec);
     }
 }
-
-#endif  // DISABLE_PRINTLOGGER
 
 }  // namespace Boardcore
