@@ -20,7 +20,6 @@
  * THE SOFTWARE.
  */
 
-#include <Debug.h>
 #include <drivers/spi/SPIDriver.h>
 #include <drivers/timer/TimestampTimer.h>
 #include <miosix.h>

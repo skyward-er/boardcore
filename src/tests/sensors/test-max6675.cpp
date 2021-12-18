@@ -20,40 +20,48 @@
  * THE SOFTWARE.
  */
 
-#include <Common.h>
+#include <miosix.h>
 #include <sensors/MAX6675/MAX6675.h>
 
 using namespace miosix;
 using namespace Boardcore;
 
+GpioPin sckPin  = GpioPin(GPIOE_BASE, 2);
+GpioPin misoPin = GpioPin(GPIOE_BASE, 5);
+GpioPin mosiPin = GpioPin(GPIOE_BASE, 6);
+GpioPin csPin   = GpioPin(GPIOE_BASE, 4);
+
+void initBoard()
+{
+    // Enable clock for SPI4 interface
+    RCC->APB2ENR |= RCC_APB2ENR_SPI4EN;
+
+    // Setup gpio pins
+    csPin.mode(Mode::OUTPUT);
+    csPin.high();
+    sckPin.mode(Mode::ALTERNATE);
+    sckPin.alternateFunction(5);
+    misoPin.mode(Mode::ALTERNATE);
+    misoPin.alternateFunction(5);
+    mosiPin.mode(Mode::ALTERNATE);
+    mosiPin.alternateFunction(5);
+}
+
 int main()
 {
-    SPIBus bus(SPI1);
-    GpioPin spi_sck(GPIOA_BASE, 5);
-    GpioPin spi_miso(GPIOA_BASE, 6);
-    GpioPin cs(GPIOA_BASE, 3);
+    // Enable SPI clock and set gpios
+    initBoard();
 
-    RCC->APB2ENR |= RCC_APB2ENR_SPI1EN;  // Enable SPI1 bus
-
-    // Setting the mode and the alternate function of the pins
-    spi_sck.mode(Mode::ALTERNATE);
-    spi_sck.alternateFunction(5);
-    spi_miso.mode(Mode::ALTERNATE);
-    spi_miso.alternateFunction(5);
-    cs.mode(Mode::OUTPUT);
-    cs.high();
-
-    // Enable the timestamp timer
     TimestampTimer::enableTimestampTimer();
 
-    MAX6675 sensor{bus, cs};
+    SPIBus spiBus(SPI4);
+    MAX6675 sensor{spiBus, csPin};
 
     printf("Starting process verification!\n");
 
     if (!sensor.selfTest())
     {
         printf("Sensor self test failed!\n");
-        return 0;
     }
 
     while (true)
@@ -63,7 +71,7 @@ int main()
 
         printf("%.2f\n", sample.temp);
 
-        Thread::sleep(100);
+        Thread::sleep(500);
     }
     return 0;
 }

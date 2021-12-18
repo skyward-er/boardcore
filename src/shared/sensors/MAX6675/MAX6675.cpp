@@ -46,10 +46,10 @@ bool MAX6675::selfTest()
 
     {
         SPITransaction spi{slave};
-        sample = spi.readRegister(0x00);
+        sample = spi.read16();
     }
 
-    // The third bit (D2) indicated wheter the termocouple is connected or not.
+    // The third bit (D2) indicates wheter the termocouple is connected or not.
     // It is high if open
     if ((sample % 0x2) != 0)
     {
@@ -67,7 +67,7 @@ TemperatureData MAX6675::sampleImpl()
 
     {
         SPITransaction spi{slave};
-        sample = spi.readRegister(0x00);
+        sample = spi.read16();
     }
 
     // Extract bits 14-3
