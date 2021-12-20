@@ -41,12 +41,13 @@ static constexpr int BUFF_SIZE = 1024;
 Thread* irq_wait_thread = nullptr;
 
 SPISignalGenerator spiSignalGenerator(
-    16, BUFF_SIZE, 1000000, SPI::Mode::MODE_0,
+    16, BUFF_SIZE, 1000000, SPI::Mode::MODE_1,
     GeneralPurposeTimer<uint16_t>::Channel::CHANNEL_1,
     GeneralPurposeTimer<uint16_t>::Channel::CHANNEL_4,
     GeneralPurposeTimer<uint16_t>::Channel::CHANNEL_4);
 SPISlaveBus spiBus(SPI4, spiSignalGenerator);
-SPISlave spiSlave(spiBus, csPin, {});
+SPIBusConfig spiConfig = {.mode = SPI::Mode::MODE_1};
+SPISlave spiSlave(spiBus, csPin, spiConfig);
 ADS131M04HighFreq ads131(spiSlave, SPI4, (DMA2_Stream0),
                          DMAStream::Channel::CHANNEL4, spiSignalGenerator,
                          BUFF_SIZE, "ADC1");
@@ -78,13 +79,26 @@ int main()
     timerSckPin.mode(Mode::ALTERNATE);
     timerSckPin.alternateFunction(2);
 
-    ads131.startLogging();
+    ads131.init();
 
     // Setup transfer complete interrupt
     NVIC_EnableIRQ(DMA2_Stream0_IRQn);
     NVIC_SetPriority(DMA2_Stream0_IRQn, 15);
 
-    ads131.startHighFreqSampling();
+    // ads131.startLogging();
+    // ads131.startHighFreqSampling();
+
+    while (true)
+    {
+        ads131.sample();
+
+        ADS131M04Data data = ads131.getLastSample();
+
+        printf("% 2.5f\t% 2.5f\t% 2.5f\t% 2.5f\n", data.voltage[0],
+               data.voltage[1], data.voltage[2], data.voltage[3]);
+
+        delayMs(50);
+    }
 
     while (true)
     {

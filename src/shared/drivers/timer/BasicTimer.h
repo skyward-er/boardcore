@@ -225,10 +225,7 @@ inline void BasicTimer::enable() { timer->CR1 |= TIM_CR1_CEN; }
 
 inline void BasicTimer::disable() { timer->CR1 &= ~TIM_CR1_CEN; }
 
-inline bool BasicTimer::isEnabled()
-{
-    return (timer->CR1 & ~TIM_CR1_CEN) == TIM_CR1_CEN;
-}
+inline bool BasicTimer::isEnabled() { return timer->CR1 & TIM_CR1_CEN; }
 
 inline void BasicTimer::enableAutoReloadPreload()
 {

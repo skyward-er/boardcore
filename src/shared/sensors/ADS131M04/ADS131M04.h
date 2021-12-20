@@ -170,9 +170,10 @@ public:
 
     bool selfTest() override;
 
-private:
+protected:
     ADS131M04Data sampleImpl() override;
 
+private:
     enum class Registers : uint16_t
     {
         // Device settings and indicators

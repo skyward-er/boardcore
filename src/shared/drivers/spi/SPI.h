@@ -472,6 +472,9 @@ inline uint16_t SPI::transfer(uint16_t data)
 
 inline void SPI::transfer(uint8_t *data, size_t nBytes)
 {
+    // Cleaer the RX buffer
+    (void)spi->DR;
+
     // Write the first data item to transmit
     spi->DR = data[0];
 
@@ -504,6 +507,9 @@ inline void SPI::transfer(uint8_t *data, size_t nBytes)
 
 inline void SPI::transfer(uint16_t *data, size_t nBytes)
 {
+    // Cleaer the RX buffer
+    (void)spi->DR;
+
     // Set 16 bit frame format
     set16BitFrameFormat();
 
