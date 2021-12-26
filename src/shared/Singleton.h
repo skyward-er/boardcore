@@ -26,14 +26,14 @@ namespace Boardcore
 {
 
 /**
- * WARNING: deriving from this class is not enough to make a singleton,
- * you also have to declare the constructor of your class private!
+ * WARNING: Deriving from this class is not enough to make a singleton, you also
+ * have to declare the constructor of your class private!
  *
  * \code
  * class Foo : public Singleton<Foo>
  * {
  * private:
- *     Foo() {} //Ok, private constructor
+ *     Foo() {} // Ok, private constructor
  * };
  * \endcode
  */
@@ -42,7 +42,7 @@ class Singleton
 {
 public:
     /**
-     * \return a pointer to the only instance of the class T
+     * \return A pointer to the only instance of the class T.
      */
     inline static T* getInstance()
     {
@@ -53,7 +53,7 @@ public:
 protected:
     Singleton() {}
 
-private:
+public:
     Singleton(const Singleton&) = delete;
     Singleton& operator=(const Singleton&) = delete;
 };
