@@ -41,18 +41,6 @@ using namespace tscpp;
 namespace Boardcore
 {
 
-//
-// class Logger
-//
-
-// typedef Gpio<GPIOG_BASE, 13> green_led;  // STM32F429ZI green led
-
-Logger& Logger::instance()
-{
-    static Logger logger;
-    return logger;
-}
-
 int Logger::start()
 {
     if (started)
@@ -205,7 +193,7 @@ void Logger::packThread()
     {
         for (;;)
         {
-            StackLogger::getInstance()->updateStack(THID_LOGGER_PACK);
+            StackLogger::getInstance().updateStack(THID_LOGGER_PACK);
 
             Buffer* buffer = nullptr;
             {
@@ -260,7 +248,7 @@ void Logger::writeThread()
     {
         for (;;)
         {
-            StackLogger::getInstance()->updateStack(THID_LOGGER_WRITE);
+            StackLogger::getInstance().updateStack(THID_LOGGER_WRITE);
 
             Buffer* buffer = nullptr;
             {

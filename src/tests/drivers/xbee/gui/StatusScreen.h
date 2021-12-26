@@ -61,7 +61,7 @@ std::string tickToHMS(long long tick)
 
 struct StatusScreen
 {
-    XbeeConfig config;
+    XbeeConfig config = {};
 
     StatusScreen()
     {

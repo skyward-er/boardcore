@@ -70,7 +70,7 @@ void setupXbee(XbeeConfig config);
 void configure();
 
 // Global variables
-Logger& logger   = Logger::instance();
+Logger& logger   = Logger::getInstance();
 Xbee::Xbee* xbee = nullptr;
 ConstSendInterval snd_int{0};
 XbeeTransceiver* trans = nullptr;

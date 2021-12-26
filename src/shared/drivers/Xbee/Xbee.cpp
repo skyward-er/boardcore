@@ -109,7 +109,7 @@ bool Xbee::send(uint8_t* pkt, size_t pkt_len)
     }
     time_to_send_stats.add(miosix::getTick() - start_tick);
 
-    StackLogger::getInstance()->updateStack(THID_XBEE);
+    StackLogger::getInstance().updateStack(THID_XBEE);
 
     return success;
 }

@@ -43,14 +43,14 @@ public:
     // Mocked methods
     static void mode(miosix::Mode::Mode_ mode)
     {
-        getInstance()->input_mode = mode == Mode::INPUT;
+        getInstance().input_mode = mode == Mode::INPUT;
     }
 
     static int value()
     {
-        ButtonMock* instance = getInstance();
-        if (instance->input_mode)
-            return getInstance()->btn_value;
+        const ButtonMock& instance = getInstance();
+        if (instance.input_mode)
+            return getInstance().btn_value;
 
         TRACE("Returning 0\n");
         return 0;
@@ -78,7 +78,7 @@ private:
     bool input_mode = false;
 };
 
-ButtonMock* btn = ButtonMock::getInstance();
+ButtonMock& btn = ButtonMock::getInstance();
 
 using ButtonHandler_t = ButtonHandler<ButtonMock>;
 
@@ -100,7 +100,7 @@ public:
             delete handler;
         }
 
-        btn->reset();
+        btn.reset();
     }
 
 protected:
@@ -165,7 +165,7 @@ TEST_CASE_METHOD(ButtonHandlerTestFixture,
 {
     SECTION("Callback")
     {
-        btn->press(TICK_LENGTH + 5);
+        btn.press(TICK_LENGTH + 5);
 
         REQUIRE(down_count == 1);
         REQUIRE(up_count == 1);
@@ -174,7 +174,7 @@ TEST_CASE_METHOD(ButtonHandlerTestFixture,
         CHECK(very_long_press_count == 0);
         REQUIRE(short_press_count == 1);
 
-        btn->press(TICK_LENGTH * (LONG_PRESS_TICKS + 1));
+        btn.press(TICK_LENGTH * (LONG_PRESS_TICKS + 1));
 
         REQUIRE(down_count == 2);
         REQUIRE(up_count == 2);
@@ -182,7 +182,7 @@ TEST_CASE_METHOD(ButtonHandlerTestFixture,
         CHECK(very_long_press_count == 0);
         REQUIRE(long_press_count == 1);
 
-        btn->press(TICK_LENGTH * (VERY_LONG_PRESS_TICKS + 1));
+        btn.press(TICK_LENGTH * (VERY_LONG_PRESS_TICKS + 1));
 
         REQUIRE(down_count == 3);
         REQUIRE(up_count == 3);
@@ -201,7 +201,7 @@ TEST_CASE_METHOD(ButtonHandlerTestFixture,
     REQUIRE(down_count == 0);
     REQUIRE(up_count == 0);
 
-    btn->press(TICK_LENGTH * (LONG_PRESS_TICKS - 1));
+    btn.press(TICK_LENGTH * (LONG_PRESS_TICKS - 1));
 
     REQUIRE(down_count == 1);
     REQUIRE(up_count == 1);
@@ -209,7 +209,7 @@ TEST_CASE_METHOD(ButtonHandlerTestFixture,
     REQUIRE(very_long_press_count == 0);
     REQUIRE(long_press_count == 0);
 
-    btn->press(TICK_LENGTH * (VERY_LONG_PRESS_TICKS - 1));
+    btn.press(TICK_LENGTH * (VERY_LONG_PRESS_TICKS - 1));
 
     REQUIRE(down_count == 2);
     REQUIRE(up_count == 2);

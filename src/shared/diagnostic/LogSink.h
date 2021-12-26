@@ -96,7 +96,7 @@ protected:
 class FileLogSinkBuffered : public FileLogSink
 {
 public:
-    FileLogSinkBuffered() : logger(Logger::instance()) {}
+    FileLogSinkBuffered() : logger(Logger::getInstance()) {}
 
 protected:
 #ifdef DISABLE_PRINTLOGGER

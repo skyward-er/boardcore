@@ -152,7 +152,7 @@ void Piksi::run()
         bytes.removed(
             lookForMessages(bytes.removeEnd(), bytes.availableToRemove()));
 
-        StackLogger::getInstance()->updateStack(THID_PIKSI);
+        StackLogger::getInstance().updateStack(THID_PIKSI);
 
     } while (quit == false);
 }

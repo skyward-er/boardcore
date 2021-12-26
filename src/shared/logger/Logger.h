@@ -22,6 +22,7 @@
 
 #pragma once
 
+#include <Singleton.h>
 #include <miosix.h>
 
 #include <cstdio>
@@ -51,14 +52,11 @@ enum class LogResult
 /**
  * Buffered logger. Needs to be started before it can be used.
  */
-class Logger
+class Logger : public Singleton<Logger>
 {
-public:
-    /**
-     * \return an instance to the logger
-     */
-    static Logger &instance();
+    friend class Singleton<Logger>;
 
+public:
     /**
      * Blocking call. May take a long time.
      *
@@ -139,8 +137,6 @@ public:
 
 private:
     Logger();
-    Logger(const Logger &) = delete;
-    Logger &operator=(const Logger &) = delete;
 
     static void packThreadLauncher(void *argv);
     static void writeThreadLauncher(void *argv);

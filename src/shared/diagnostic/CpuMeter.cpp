@@ -55,7 +55,7 @@ static void cpuMeterThread(void*)
 
         Thread::sleep(gap);
 
-        StackLogger::getInstance()->updateStack(THID_CPU_METER);
+        StackLogger::getInstance().updateStack(THID_CPU_METER);
     }
 }
 
@@ -67,7 +67,7 @@ static void watchdogThread(void*)
         if (previous == update)
             utilization = 100.f;
 
-        StackLogger::getInstance()->updateStack(THID_CPU_WD);
+        StackLogger::getInstance().updateStack(THID_CPU_WD);
     }
 }
 
