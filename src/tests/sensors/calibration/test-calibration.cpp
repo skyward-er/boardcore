@@ -33,7 +33,6 @@
 #define HARD_IRON_CALIBRATION_TEST 1
 #define SOFT_IRON_CALIBRATION_TEST 0
 
-#include <Common.h>
 #include <drivers/spi/SPIDriver.h>
 #include <miosix.h>
 #include <sensors/LIS3DSH/LIS3DSH.h>
@@ -42,6 +41,7 @@
 #include <sensors/calibration/SixParameterCalibration.h>
 #include <sensors/calibration/SoftIronCalibration.h>
 #include <sensors/calibration/TwelveParameterCalibration.h>
+#include <utils/Debug.h>
 
 #if TEST_ACCELEROMETER_DATA
 #include "accelerometer-data.h"

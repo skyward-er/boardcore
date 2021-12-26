@@ -20,6 +20,7 @@
  * THE SOFTWARE.
  */
 
+#include <drivers/timer/TimestampTimer.h>
 #include <miosix.h>
 #include <sensors/MAX6675/MAX6675.h>
 

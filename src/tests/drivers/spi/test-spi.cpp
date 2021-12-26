@@ -20,7 +20,6 @@
  * THE SOFTWARE.
  */
 
-#include <Common.h>
 #include <drivers/spi/SPIDriver.h>
 
 #include <cstdio>

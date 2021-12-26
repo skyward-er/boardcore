@@ -22,7 +22,6 @@
 
 #include "Runcam.h"
 
-#include <Common.h>
 #include <miosix.h>
 
 namespace Boardcore

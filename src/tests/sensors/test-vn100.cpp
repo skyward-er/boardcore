@@ -20,7 +20,7 @@
  * THE SOFTWARE.
  */
 
-#include <Common.h>
+#include <drivers/timer/TimestampTimer.h>
 #include <inttypes.h>
 #include <sensors/VN100/VN100.h>
 

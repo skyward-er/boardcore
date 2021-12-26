@@ -22,10 +22,10 @@
 
 #pragma once
 
-#include <Debug.h>
 #include <miosix.h>
 #include <sensors/Sensor.h>
 #include <stdint.h>
+#include <utils/Debug.h>
 
 #include "AD7994Data.h"
 

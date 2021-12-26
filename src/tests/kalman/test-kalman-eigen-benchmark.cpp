@@ -25,10 +25,10 @@
 
 #define EIGEN_RUNTIME_NO_MALLOC
 
-#include <Common.h>
 #include <drivers/timer/GeneralPurposeTimer.h>
 #include <drivers/timer/TimerUtils.h>
 #include <kalman/KalmanEigen.h>
+#include <kernel/kernel.h>
 #include <math/SkyQuaternion.h>
 #include <util/util.h>
 
@@ -89,18 +89,19 @@ int main()
     KalmanEigen<float, n, p> filter(config);
 
     float last_time = 0.0;  // Variable to save the time of the last sample
-    float time;             // Current time as read from csv file
-    float T;                // Time elapsed between last sample and current one
 
     timer.reset();
     timer.enable();
-    uint32_t tick1;
-    uint32_t tick2;
 
     printf("%d %d \n", TIME.size(), INPUT.size());
 
     for (unsigned i = 1; i < TIME.size(); i++)
     {
+        float time;  // Current time as read from csv file
+        float T;     // Time elapsed between last sample and current one
+        uint32_t tick1;
+        uint32_t tick2;
+
         time = TIME[i];
         T    = time - last_time;
 
@@ -116,12 +117,12 @@ int main()
 
         if (!filter.correct(y))
         {
-            printf("Correction failed at iteration : %d \n", i);
+            printf("Correction failed at iteration : %u \n", i);
         }
 
         tick2 = timer.readCounter();
 
-        printf("%d : %f \n", i,
+        printf("%u : %f \n", i,
                TimerUtils::toMilliSeconds(timer.getTimer(), tick2 - tick1));
 
         // printf("%f, %f, %f;\n", filter.getState()(0), filter.getState()(1),
@@ -133,7 +134,7 @@ int main()
 
         if (filter.getState()(1) < 0)
         {
-            printf("APOGEE DETECTED at iteration %d ! \n", i);
+            printf("APOGEE DETECTED at iteration %u ! \n", i);
         }
     }
 

@@ -24,8 +24,7 @@
 
 #include <drivers/timer/TimestampTimer.h>
 #include <interfaces/endianness.h>
-
-#include "Constants.h"
+#include <utils/Constants.h>
 
 namespace Boardcore
 {

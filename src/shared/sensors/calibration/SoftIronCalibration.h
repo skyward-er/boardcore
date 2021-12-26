@@ -22,7 +22,6 @@
 
 #pragma once
 
-#include <Common.h>
 #include <sensors/SensorData.h>
 
 #include <Eigen/Core>

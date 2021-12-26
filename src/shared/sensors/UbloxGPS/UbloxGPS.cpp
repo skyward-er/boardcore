@@ -24,6 +24,7 @@
 
 #include <diagnostic/StackLogger.h>
 #include <drivers/serial.h>
+#include <drivers/timer/TimestampTimer.h>
 #include <fcntl.h>
 #include <filesystem/file_access.h>
 

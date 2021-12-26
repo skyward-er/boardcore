@@ -27,6 +27,7 @@
 #include <drivers/Xbee/Xbee.h>
 #include <logger/Logger.h>
 #include <miosix.h>
+#include <utils/Debug.h>
 #include <utils/testutils/ThroughputCalculator.h>
 
 #include <functional>

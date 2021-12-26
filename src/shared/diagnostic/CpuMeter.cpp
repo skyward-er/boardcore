@@ -22,7 +22,6 @@
 
 #include "CpuMeter.h"
 
-#include <Common.h>
 #include <diagnostic/SkywardStack.h>
 #include <diagnostic/StackLogger.h>
 

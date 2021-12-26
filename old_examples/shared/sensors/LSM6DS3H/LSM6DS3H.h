@@ -22,8 +22,8 @@
 
 #pragma once
 
-#include <Debug.h>
 #include <drivers/BusTemplate.h>
+#include <utils/Debug.h>
 
 #include "../Sensor.h"
 #include "Common.h"

@@ -45,11 +45,11 @@
  * In the developing test a function generator was used as variable source
  */
 
-#include <Debug.h>
 #include <drivers/spi/SPIDriver.h>
 #include <drivers/timer/TimestampTimer.h>
 #include <miosix.h>
 #include <sensors/ADS1118/ADS1118.h>
+#include <utils/Debug.h>
 
 using namespace miosix;
 

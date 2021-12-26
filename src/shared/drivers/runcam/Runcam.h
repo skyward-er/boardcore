@@ -102,8 +102,8 @@ through the two modes: Video/OSD settings(Long press wifi button);
 
 #pragma once
 
-#include <Debug.h>
 #include <diagnostic/PrintLogger.h>
+#include <utils/Debug.h>
 
 #include "RuncamSerial.h"
 

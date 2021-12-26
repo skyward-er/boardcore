@@ -22,7 +22,6 @@
 
 #include "Logger.h"
 
-#include <Debug.h>
 #include <diagnostic/SkywardStack.h>
 #include <diagnostic/StackLogger.h>
 #include <errno.h>
@@ -31,10 +30,9 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <tscpp/buffer.h>
+#include <utils/Debug.h>
 
 #include <stdexcept>
-
-#include "Debug.h"
 
 using namespace std;
 using namespace miosix;
@@ -111,16 +109,7 @@ int Logger::start()
         fclose(file);
         throw runtime_error("Error creating write thread");
     }
-    /*statsT =
-        Thread::create(statsThreadLauncher, skywardStack(16 * 1024), 1, this,
-    Thread::JOINABLE); if (!statsT)
-    {
-        fullQueue.put(nullptr);  // Signal packThread to stop
-        packT->join();
-        writeT->join();
-        fclose(file);
-        throw runtime_error("Error creating stats thread");
-    }*/
+
     started     = true;
     s.opened    = true;
     s.logNumber = fileNumber;
@@ -159,11 +148,6 @@ void Logger::packThreadLauncher(void* argv)
 void Logger::writeThreadLauncher(void* argv)
 {
     reinterpret_cast<Logger*>(argv)->writeThread();
-}
-
-void Logger::statsThreadLauncher(void* argv)
-{
-    reinterpret_cast<Logger*>(argv)->statsThread();
 }
 
 LogResult Logger::logImpl(const char* name, const void* data, unsigned int size)
@@ -325,34 +309,6 @@ void Logger::writeThread()
     catch (exception& e)
     {
         TRACE("Error: writeThread failed due to an exception: %s\n", e.what());
-    }
-}
-
-/**
- * This thread prints stats
- */
-void Logger::statsThread()
-{
-    try
-    {
-        for (;;)
-        {
-            Thread::sleep(1000);
-            if (started == false)
-                return;
-            logStats();
-            //             TRACE("ls:%d ds:%d qs:%d bf:%d bw:%d wf:%d wt:%d
-            //             mwt:%d\n",
-            //                    s.statTooLargeSamples, s.statDroppedSamples,
-            //                    s.statQueuedSamples, s.statBufferFilled,
-            //                    s.statBufferWritten,
-            //                    s.statWriteFailed, s.statWriteTime,
-            //                    s.statMaxWriteTime);
-        }
-    }
-    catch (exception& e)
-    {
-        TRACE("Error: statsThread failed due to an exception: %s\n", e.what());
     }
 }
 

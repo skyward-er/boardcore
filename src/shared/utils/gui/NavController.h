@@ -24,10 +24,10 @@
 
 #include <diagnostic/PrintLogger.h>
 #include <utils/ButtonHandler.h>
+#include <utils/Debug.h>
 
 #include <vector>
 
-#include "Debug.h"
 #include "TextView.h"
 #include "View.h"
 

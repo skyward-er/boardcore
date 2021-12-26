@@ -22,11 +22,11 @@
 
 #pragma once
 
-#include <Debug.h>
 #include <diagnostic/PrintLogger.h>
 #include <drivers/spi/SPIDriver.h>
 #include <sensors/MS5803/MS5803Data.h>
 #include <sensors/Sensor.h>
+#include <utils/Debug.h>
 
 namespace Boardcore
 {

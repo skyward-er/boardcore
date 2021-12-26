@@ -30,11 +30,10 @@
 #include <termios.h>
 #include <time.h>
 #include <unistd.h>
+#include <utils/Debug.h>
 
 #include <algorithm>
 #include <cmath>
-
-#include "Debug.h"
 
 using namespace std;
 
@@ -73,7 +72,9 @@ static unsigned short crc16piksi(const void *message, unsigned int length)
 
 Piksi::Piksi(const char *serialPath)
 {
+    // cppcheck-suppress memsetClassFloat
     memset(&data, 0, sizeof(PiksiGPSData));
+    // cppcheck-suppress memsetClassFloat
     memset(&partialData, 0, sizeof(PiksiGPSData));
 
     fd = open(serialPath, O_RDWR);

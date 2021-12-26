@@ -1,5 +1,5 @@
-/* Copyright (c) 2020 Skyward Experimental Rocketry
- * Author: Luca Conterio
+/* Copyright (c) 2015-2016 Skyward Experimental Rocketry
+ * Author: Alain Carlucci
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -22,41 +22,22 @@
 
 #pragma once
 
-#include <atomic>
-#include <functional>
+#include <drivers/timer/TimestampTimer.h>
+#include <interfaces/endianness.h>
+#include <kernel/scheduler/scheduler.h>
+#include <miosix.h>
+#include <pthread.h>
+#include <utils/Constants.h>
+#include <utils/Debug.h>
 
-namespace Boardcore
-{
+#include <array>
+#include <cassert>
+#include <cstdint>
+#include <cstdio>
+#include <cstring>
+#include <map>
+#include <memory>
+#include <set>
+#include <vector>
 
-/**
- * @brief Sensors information struct needed by the SensorManager.
- *
- * This structure contains the sampling period of a sensor,
- * the function to be called after the sampling (callback) and
- * two boolean values indicating if the sensor uses DMA and if
- * the sensor has to be sampled (is enabled).
- */
-struct SensorInfo
-{
-    const std::string& id;
-    uint32_t period;  // Period in ms
-    std::function<void()> callback;
-    bool is_dma;
-    bool is_enabled;
-    bool is_initialized;
-
-    SensorInfo(const std::string& id, uint32_t period,
-               std::function<void()> callback, bool is_dma, bool is_enabled)
-        : id(id), period(period), callback(callback), is_dma(is_dma),
-          is_enabled(is_enabled), is_initialized(false)
-    {
-    }
-
-    SensorInfo()
-        : id(""), period(0), callback([]() {}), is_dma(false),
-          is_enabled(false), is_initialized(false)
-    {
-    }
-};
-
-}  // namespace Boardcore
+#define UNUSED(x) (void)(x)

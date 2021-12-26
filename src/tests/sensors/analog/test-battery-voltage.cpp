@@ -24,8 +24,7 @@
 #include <drivers/timer/TimestampTimer.h>
 #include <miosix.h>
 #include <sensors/analog/battery/BatteryVoltageSensor.h>
-
-#include "Debug.h"
+#include <utils/Debug.h>
 
 using namespace Boardcore;
 using namespace miosix;

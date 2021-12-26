@@ -20,9 +20,9 @@
  * THE SOFTWARE.
  */
 
-#include <Common.h>
 #include <drivers/timer/TimestampTimer.h>
 #include <sensors/UbloxGPS/UbloxGPS.h>
+#include <utils/Debug.h>
 
 using namespace miosix;
 using namespace Boardcore;
@@ -96,7 +96,7 @@ int main()
         long long last_tick = miosix::getTick();
 
         sensor.sample();
-        GPSData sample = sensor.getLastSample();
+        GPSData sample __attribute__((unused)) = sensor.getLastSample();
 
         TRACE(
             "timestamp: %4.3f, fix: %01d, lat: %f, lon: %f, height: %4.1f, "

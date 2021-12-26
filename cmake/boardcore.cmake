@@ -27,7 +27,7 @@ foreach(OPT_BOARD ${BOARDS})
     set(BOARDCORE_LIBRARY boardcore-${OPT_BOARD})
     add_library(${BOARDCORE_LIBRARY} STATIC EXCLUDE_FROM_ALL
         # Debug
-        ${SBS_BASE}/src/shared/Debug.cpp
+        ${SBS_BASE}/src/shared/utils/Debug.cpp
         ${SBS_BASE}/src/shared/diagnostic/CpuMeter.cpp
         ${SBS_BASE}/src/shared/diagnostic/PrintLogger.cpp
 

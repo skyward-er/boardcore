@@ -1,5 +1,5 @@
 /* Copyright (c) 2019 Skyward Experimental Rocketry
- * Author: Luca Erbetta
+ * Author: Alvise de' Faveri Tron
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -20,13 +20,6 @@
  * THE SOFTWARE.
  */
 
-#include "Debug.h"
+#pragma once
 
-namespace Boardcore
-{
-
-#ifdef DEBUG
-miosix::FastMutex trace_mutex;
-#endif
-
-}  // namespace Boardcore
+#define UNUSED(x) (void)(x)

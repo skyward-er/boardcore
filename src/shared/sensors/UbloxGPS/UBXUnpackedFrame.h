@@ -22,8 +22,6 @@
 
 #pragma once
 
-#include <Common.h>
-
 #include <algorithm>
 
 namespace Boardcore

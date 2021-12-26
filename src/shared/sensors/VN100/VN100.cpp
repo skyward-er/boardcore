@@ -22,6 +22,8 @@
 
 #include "VN100.h"
 
+#include <drivers/timer/TimestampTimer.h>
+
 namespace Boardcore
 {
 

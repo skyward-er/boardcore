@@ -144,7 +144,6 @@ private:
 
     static void packThreadLauncher(void *argv);
     static void writeThreadLauncher(void *argv);
-    static void statsThreadLauncher(void *argv);
 
     /**
      * Non-template dependente part of log
@@ -222,14 +221,14 @@ private:
     miosix::FastMutex mutex;  ///< To allow concurrent access to the queues
     miosix::ConditionVariable cond;  ///< To lock when buffers are all empty
 
-    miosix::Thread *packT;   ///< Thread packing logged data
-    miosix::Thread *writeT;  ///< Thread writing data to disk
+    miosix::Thread *packT  = nullptr;  ///< Thread packing logged data
+    miosix::Thread *writeT = nullptr;  ///< Thread writing data to disk
     // miosix::Thread *statsT;  ///< Thred printing stats
 
     volatile bool started = false;  ///< Logger is started and accepting data
 
-    FILE *file;  ///< Log file
-    LogStats s;  ///< Logger stats
+    FILE *file = nullptr;  ///< Log file
+    LogStats s;            ///< Logger stats
 };
 
 }  // namespace Boardcore

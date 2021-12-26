@@ -51,11 +51,11 @@
  * - 921600
  */
 
-#include <Debug.h>
 #include <diagnostic/PrintLogger.h>
 #include <fmt/format.h>
 #include <sensors/Sensor.h>
 #include <string.h>
+#include <utils/Debug.h>
 
 #include "VN100Data.h"
 #include "VN100Serial.h"
@@ -244,24 +244,24 @@ private:
     /**
      * @brief IMU pre-elaborated sample string for efficiency reasons.
      */
-    string *preSampleImuString;
+    string *preSampleImuString = nullptr;
 
     /**
      * @brief Temperature and pressure pre-elaborated sample string for
      * efficiency reasons.
      */
-    string *preSampleTempPressString;
+    string *preSampleTempPressString = nullptr;
 
     /**
      * @brief Pointer to the received string by the sensor. Allocated 1 time
      * only (200 bytes).
      */
-    char *recvString;
+    char *recvString = nullptr;
 
     /**
      * @brief Actual strlen() of the recvString.
      */
-    unsigned int recvStringLength;
+    unsigned int recvStringLength = 0;
 
     /**
      * @brief Serial interface that is needed to communicate

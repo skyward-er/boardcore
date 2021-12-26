@@ -22,8 +22,8 @@
 
 #pragma once
 
-#include <Common.h>
 #include <diagnostic/SkywardStack.h>
+#include <miosix.h>
 
 namespace Boardcore
 {

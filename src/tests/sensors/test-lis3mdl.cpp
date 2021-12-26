@@ -20,10 +20,10 @@
  * THE SOFTWARE.
  */
 
-#include <Common.h>
 #include <drivers/spi/SPIDriver.h>
 #include <miosix.h>
 #include <sensors/LIS3MDL/LIS3MDL.h>
+#include <utils/Debug.h>
 
 using namespace Boardcore;
 using namespace miosix;

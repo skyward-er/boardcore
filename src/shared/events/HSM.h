@@ -27,10 +27,10 @@
 #include <assert.h>
 #include <events/Event.h>
 #include <events/EventHandler.h>
+#include <utils/Debug.h>
 #include <utils/collections/SyncQueue.h>
 
 #include "ActiveObject.h"
-#include "Debug.h"
 
 namespace Boardcore
 {

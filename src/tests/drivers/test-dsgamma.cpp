@@ -20,19 +20,17 @@
  * THE SOFTWARE.
  */
 
+#include <drivers/gamma868/Gamma868.h>
+#include <miosix.h>
 #include <stdio.h>
 #include <string.h>
-
-#include "Common.h"
-#include "miosix.h"
+#include <utils/Debug.h>
 
 using namespace Boardcore;
 using namespace std;
 using miosix::FastInterruptDisableLock;
 using miosix::Gpio;
 using miosix::Thread;
-
-#include <drivers/gamma868/Gamma868.h>
 
 // Protocol config
 //#define DATA_LEN 16384

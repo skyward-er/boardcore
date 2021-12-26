@@ -22,8 +22,8 @@
 
 #pragma once
 
-#include <Debug.h>
 #include <drivers/spi/SPIBusInterface.h>
+#include <utils/Debug.h>
 
 #include <cstdint>
 #include <cstdio>

@@ -23,7 +23,6 @@
 #pragma once
 
 #include <ActiveObject.h>
-#include <Common.h>
 #include <Singleton.h>
 #include <math/Stats.h>
 

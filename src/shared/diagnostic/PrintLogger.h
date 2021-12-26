@@ -23,10 +23,11 @@
 #pragma once
 
 #include <ActiveObject.h>
-#include <Common.h>
 #include <Singleton.h>
 #include <fmt/format.h>
 #include <logger/Logger.h>
+#include <utils/Constants.h>
+#include <utils/Unused.h>
 #include <utils/collections/CircularBuffer.h>
 
 #include <memory>

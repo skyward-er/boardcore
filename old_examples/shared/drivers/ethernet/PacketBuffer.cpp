@@ -22,7 +22,7 @@
 
 #include "PacketBuffer.h"
 
-#include <Debug.h>
+#include <utils/Debug.h>
 
 using namespace std;
 using namespace miosix;
@@ -97,8 +97,8 @@ bool PacketBuffer::push(packet_header_t& header, const uint8_t* payload)
 
 packet_header_t PacketBuffer::getHeader()
 {
-    packet_header_t header;
-    uint8_t* dest = reinterpret_cast<uint8_t*>(&header);
+    packet_header_t header = {};
+    uint8_t* dest          = reinterpret_cast<uint8_t*>(&header);
     memset(dest, 0x00, sizeof(packet_header_t));
 
     if (valid)

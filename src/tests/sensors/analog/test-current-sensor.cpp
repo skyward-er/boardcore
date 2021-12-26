@@ -25,8 +25,7 @@
 #include <interfaces-impl/gpio_impl.h>
 #include <miosix.h>
 #include <sensors/analog/current/CurrentSensor.h>
-
-#include "Debug.h"
+#include <utils/Debug.h>
 
 using namespace miosix;
 using namespace Boardcore;

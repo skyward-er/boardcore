@@ -20,17 +20,18 @@
  * THE SOFTWARE.
  */
 
-#include <Common.h>
 #include <drivers/interrupt/external_interrupts.h>
 #include <drivers/timer/TimestampTimer.h>
 #include <sensors/BMX160/BMX160.h>
 #include <sensors/BMX160/BMX160WithCorrection.h>
 #include <sensors/calibration/SoftIronCalibration.h>
+#include <utils/Debug.h>
 
 #include <fstream>
 #include <iostream>
 
 using namespace Boardcore;
+using namespace std;
 
 constexpr const char* CORRECTION_PARAMETER_FILE = "/sd/bmx160_params.csv";
 constexpr const char* MAG_CALIBRATION_DATA_FILE =
@@ -152,19 +153,22 @@ int menu()
 
 bool askToContinue()
 {
-    char choice;
+    string temp;
 
-    printf("Press [c] to continue, otherwise stop...");
-    scanf("%s", &choice);
+    cout << "Write 'c' to continue, otherwise stop:\n";
+    getline(cin, temp);
 
-    return choice == 'c';
+    return temp != "c";
 }
 
 void waitForInput()
 {
-    printf("Press [c] to continue...");
-    while (getchar() != 'c')
-        ;
+    string temp;
+    do
+    {
+        cout << "Write 'c' to continue:\n";
+        getline(cin, temp);
+    } while (temp != "c");
 }
 
 /**
@@ -257,7 +261,7 @@ BMX160CorrectionParameters calibrateAccelerometer(
     for (unsigned i = 0; i < ACC_CALIBRATION_N_ORIENTATIONS; i++)
     {
         printf(
-            "Step n.%d/%d, please rotate the death stack x so that the "
+            "Step n.%u/%d, please rotate the death stack x so that the "
             "sensor "
             "is %s\n",
             i + 1, ACC_CALIBRATION_N_ORIENTATIONS,
@@ -277,9 +281,9 @@ BMX160CorrectionParameters calibrateAccelerometer(
             // Read all the data contained in the fifo
             uint8_t size       = bmx160->getLastFifoSize();
             fifoAccSampleCount = 0;
-            for (int i = 0; i < size && count < ACC_CALIBRATION_SAMPLES; i++)
+            for (int ii = 0; ii < size; ii++)
             {
-                BMX160Data fifoElement = bmx160->getFifoElement(i);
+                BMX160Data fifoElement = bmx160->getFifoElement(ii);
 
                 // Read acceleration data
                 if (fifoElement.accel_timestamp > accelTimestamp)

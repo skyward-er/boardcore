@@ -25,10 +25,11 @@
 // considered lost. It may also receive requests from other canbus devices, to
 // which it will respond
 
+#include <utils/Debug.h>
+
 #include <string>
 
 #include "ActiveObject.h"
-#include "Debug.h"
 #include "SimpleCanManager.h"
 #include "diagnostic/PrintLogger.h"
 #include "drivers/canbus/BusLoadEstimation.h"
@@ -163,7 +164,7 @@ public:
             }
             if (c % 10 == 0)
             {
-                StatsResult res = msgstats.getStats();
+                StatsResult res __attribute__((unused)) = msgstats.getStats();
 
                 TRACE(
                     "Total packets: %u, Missed deadlines: %u, Lost packets: "
@@ -172,8 +173,9 @@ public:
                     total_packets, missed_deadline, lost_packets, res.mean,
                     res.maxValue, res.minValue, buffer_full);
 
-                Canbus::BusLoadEstimation::BusLoadInfo info =
-                    can_mgr->getLoadSensor().getLoadInfo();
+                Canbus::BusLoadEstimation::BusLoadInfo info
+                    __attribute__((unused)) =
+                        can_mgr->getLoadSensor().getLoadInfo();
                 TRACE(
                     "Payload rate: %.2f kbps, Frame rate: %.2f kbps, Load: "
                     "%.2f %%\n",

@@ -23,8 +23,8 @@
 #pragma once
 
 #include <ActiveObject.h>
-#include <Debug.h>
 #include <events/EventBroker.h>
+#include <utils/Debug.h>
 
 #include <iostream>
 #include <sstream>

@@ -22,11 +22,12 @@
 
 #pragma once
 
+#include <miosix.h>
 #include <sensors/Sensor.h>
+#include <utils/Constants.h>
+#include <utils/Debug.h>
 
 #include <cmath>
-
-#include "Common.h"
 
 using miosix::getTick;
 using miosix::TICK_FREQ;

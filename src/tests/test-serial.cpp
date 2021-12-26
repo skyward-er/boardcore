@@ -20,9 +20,8 @@
  * THE SOFTWARE.
  */
 
-#include <Common.h>
+#include <miosix.h>
 
-using namespace Boardcore;
 using namespace miosix;
 
 int main()

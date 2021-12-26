@@ -22,7 +22,6 @@
 
 #pragma once
 
-#include <Common.h>
 #include <logger/Logger.h>
 
 #include "PrintLoggerData.h"

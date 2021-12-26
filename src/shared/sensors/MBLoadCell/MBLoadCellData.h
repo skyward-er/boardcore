@@ -22,6 +22,11 @@
 
 #pragma once
 
+#include <drivers/timer/TimestampTimer.h>
+#include <utils/Debug.h>
+
+#include <map>
+
 #include "sensors/SensorData.h"
 
 namespace Boardcore
