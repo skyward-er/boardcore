@@ -190,11 +190,11 @@ struct StatusScreen
 
     void updateLogStatus(Logger& logger)
     {
-        LogStats stats = logger.getLogStats();
+        LoggerStats stats = logger.getLoggerStats();
 
         if (logger.getLogNumber() >= 0)
         {
-            string log_name = logger.getFileName(logger.getLogNumber());
+            string log_name = logger.getCurrentFileName();
 
             tv_log_status.setText(log_name);
             tv_log_status.setTextColor(mxgui::black);
@@ -207,23 +207,23 @@ struct StatusScreen
             tv_log_status.setBackgroundColor(mxgui::red);
         }
 
-        tv_log_buf_dropped.setText(to_string(stats.statDroppedSamples));
+        tv_log_buf_dropped.setText(to_string(stats.droppedSamples));
 
-        if (stats.statDroppedSamples > 0)
+        if (stats.droppedSamples > 0)
         {
             tv_log_buf_dropped.setBackgroundColor(mxgui::red);
         }
 
-        tv_log_buf_failed.setText(to_string(stats.statWriteFailed) + "   (" +
-                                  to_string(stats.statWriteError) + ")");
+        tv_log_buf_failed.setText(to_string(stats.writesFailed) + "   (" +
+                                  to_string(stats.lastWriteError) + ")");
 
-        if (stats.statWriteError != 0)
+        if (stats.lastWriteError != 0)
         {
             tv_log_buf_failed.setBackgroundColor(mxgui::red);
         }
 
-        tv_log_buf_written.setText(to_string(stats.statBufferWritten));
-        tv_log_buf_ttw.setText(to_string(stats.statWriteTime) + " ms");
+        tv_log_buf_written.setText(to_string(stats.buffersWritten));
+        tv_log_buf_ttw.setText(to_string(stats.writeTime) + " ms");
     }
 
     void updateXbeeStatus(DataRateResult res_rcv, DataRateResult res_snd,

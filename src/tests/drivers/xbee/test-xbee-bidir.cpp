@@ -169,10 +169,10 @@ int main()
 
     try
     {
-        int filenum = logger.start();
+        logger.start();
 
         printf("\nLog file opened! (%s)\n\n",
-               logger.getFileName(filenum).c_str());
+               logger.getCurrentFileName().c_str());
     }
     catch (const std::runtime_error& err)
     {
@@ -220,7 +220,7 @@ int main()
         RxData rxd = trans->getReceiver().getRxData();
 
         logger.log(xbee_driver->getStatus());
-        logger.log(logger.getLogStats());
+        logger.log(logger.getLoggerStats());
 
         long long tick = getTick();
         unsigned int h = tick / (1000 * 3600);

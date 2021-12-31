@@ -24,6 +24,7 @@
 
 #include <diagnostic/SkywardStack.h>
 #include <diagnostic/StackLogger.h>
+#include <drivers/timer/TimestampTimer.h>
 #include <errno.h>
 #include <fcntl.h>
 #include <interfaces/atomic_ops.h>
@@ -36,7 +37,6 @@
 
 using namespace std;
 using namespace miosix;
-using namespace tscpp;
 
 namespace Boardcore
 {
@@ -46,46 +46,50 @@ int Logger::start()
     if (started)
         return fileNumber;
 
+    // Find the proper log filename base on the current files on the disk
     string filename;
-    for (fileNumber = 0; fileNumber < (int)filenameMaxRetry; fileNumber++)
+    for (fileNumber = 0; fileNumber < (int)maxFilenameNumber; fileNumber++)
     {
+        // Check if the current file does not exists
         filename = getFileName(fileNumber);
         struct stat st;
         if (stat(filename.c_str(), &st) != 0)
         {
             break;
         }
-        // File exists
-        if (fileNumber == filenameMaxRetry - 1)
-            puts("Too many files, appending to last");
+
+        if (fileNumber == maxFilenameNumber - 1)
+            TRACE("Too many log files, appending data to last");
     }
 
-    file = fopen(filename.c_str(), "ab");
+    file = fopen(filename.c_str(), "ab");  // b for binary
     if (file == NULL)
     {
         fileNumber = -1;
+        TRACE("Error opening %s file", filename);
         throw runtime_error("Error opening log file");
     }
-    setbuf(file, NULL);
+    setbuf(file, NULL);  // Disable buffering for the file stream
 
     // The boring part, start threads one by one and if they fail, undo
     // Perhaps excessive defensive programming as thread creation failure is
     // highly unlikely (only if ram is full)
 
-    packT = Thread::create(packThreadLauncher, skywardStack(16 * 1024), 1, this,
-                           Thread::JOINABLE);
-    if (!packT)
+    packTh = Thread::create(packThreadLauncher, skywardStack(16 * 1024), 1,
+                            this, Thread::JOINABLE);
+    if (!packTh)
     {
         fclose(file);
+        TRACE("Error creating pack thread");
         throw runtime_error("Error creating pack thread");
     }
 
-    writeT = Thread::create(writeThreadLauncher, skywardStack(16 * 1024), 1,
-                            this, Thread::JOINABLE);
-    if (!writeT)
+    writeTh = Thread::create(writeThreadLauncher, skywardStack(16 * 1024), 1,
+                             this, Thread::JOINABLE);
+    if (!writeTh)
     {
         fullQueue.put(nullptr);  // Signal packThread to stop
-        packT->join();
+        packTh->join();
         // packThread has pushed a buffer and a nullptr to writeThread, remove
         // it
         while (fullList.front() != nullptr)
@@ -95,12 +99,13 @@ int Logger::start()
         }
         fullList.pop();  // Remove nullptr
         fclose(file);
+        TRACE("Error creating write thread");
         throw runtime_error("Error creating write thread");
     }
 
-    started     = true;
-    s.opened    = true;
-    s.logNumber = fileNumber;
+    started         = true;
+    stats.logNumber = fileNumber;
+
     return fileNumber;
 }
 
@@ -109,23 +114,42 @@ void Logger::stop()
     if (started == false)
         return;
     logStats();
-    started = false;
-    fullQueue.put(nullptr);  // Signal packThread to stop
-    packT->join();
-    writeT->join();
-    // statsT->join();
-    fclose(file);
 
-    s.opened = false;
+    started = false;
+
+    fullQueue.put(nullptr);  // Signal packThread to stop
+
+    packTh->join();
+    writeTh->join();
+
+    fclose(file);
 }
+
+int Logger::getLogNumber() { return fileNumber; }
+
+string Logger::getFileName(int log_number)
+{
+    char filename[32];
+    sprintf(filename, "/sd/log%02d.dat", log_number);
+
+    return string(filename);
+}
+
+string Logger::getCurrentFileName() { return getFileName(fileNumber); }
+
+LoggerStats Logger::getLoggerStats() { return stats; }
+
+bool Logger::isStarted() const { return started; }
 
 Logger::Logger()
 {
+    // Allocate the records
+    for (unsigned int i = 0; i < numRecords; i++)
+        emptyQueue.put(new Record);
+
     // Allocate buffers and put them in the empty list
     for (unsigned int i = 0; i < numBuffers; i++)
         emptyList.push(new Buffer);
-    for (unsigned int i = 0; i < numRecords; i++)
-        emptyQueue.put(new Record);
 }
 
 void Logger::packThreadLauncher(void* argv)
@@ -136,44 +160,6 @@ void Logger::packThreadLauncher(void* argv)
 void Logger::writeThreadLauncher(void* argv)
 {
     reinterpret_cast<Logger*>(argv)->writeThread();
-}
-
-LogResult Logger::logImpl(const char* name, const void* data, unsigned int size)
-{
-    if (started == false)
-    {
-        // TRACE("Logger not started!");
-        ++s.statDroppedSamples;
-
-        // Signal that we are trying to write to a closed log
-        s.statWriteError = -1;
-
-        return LogResult::Ignored;
-    }
-
-    Record* record = nullptr;
-    {
-        FastInterruptDisableLock dLock;
-        // We disable interrupts because IRQget() is nonblocking, unlike get()
-        if (emptyQueue.IRQget(record) == false)
-        {
-            s.statDroppedSamples++;
-            return LogResult::Dropped;
-        }
-    }
-
-    auto result = serializeImpl(record->data, maxRecordSize, name, data, size);
-    if (result == BufferTooSmall)
-    {
-        emptyQueue.put(record);
-        atomicAdd(&s.statTooLargeSamples, 1);
-        return LogResult::TooLarge;
-    }
-
-    record->size = result;
-    fullQueue.put(record);
-    atomicAdd(&s.statQueuedSamples, 1);
-    return LogResult::Queued;
 }
 
 void Logger::packThread()
@@ -189,6 +175,7 @@ void Logger::packThread()
      * Now each log() works independently on its own Record, and log() accesses
      * can proceed in parallel.
      */
+
     try
     {
         for (;;)
@@ -218,7 +205,7 @@ void Logger::packThread()
                     fullList.push(buffer);   // Don't lose the buffer
                     fullList.push(nullptr);  // Signal writeThread to stop
                     cond.broadcast();
-                    s.statBufferFilled++;
+                    stats.buffersFilled++;
                     return;
                 }
 
@@ -232,7 +219,7 @@ void Logger::packThread()
                 // Put back full buffer
                 fullList.push(buffer);
                 cond.broadcast();
-                s.statBufferFilled++;
+                stats.buffersFilled++;
             }
         }
     }
@@ -267,27 +254,26 @@ void Logger::writeThread()
             // Write data to disk
             Timer timer;
             timer.start();
-            // green_led::high();
 
             size_t result = fwrite(buffer->data, 1, buffer->size, file);
             if (result != buffer->size)
             {
                 // If this fails and your board uses SDRAM,
                 // define and increase OVERRIDE_SD_CLOCK_DIVIDER_MAX
-                // perror("fwrite");
-                s.statWriteFailed++;
-                s.statWriteError = ferror(file);
+                stats.writesFailed++;
+                stats.lastWriteError = ferror(file);
             }
             else
-                s.statBufferWritten++;
+                stats.buffersWritten++;
 
             // green_led::low();
             timer.stop();
-            s.statWriteTime    = timer.interval();
-            s.statMaxWriteTime = max(s.statMaxWriteTime, s.statWriteTime);
+            stats.writeTime    = timer.interval();
+            stats.maxWriteTime = max(stats.maxWriteTime, stats.writeTime);
 
             {
                 Lock<FastMutex> l(mutex);
+
                 // Put back empty buffer
                 emptyList.push(buffer);
                 cond.broadcast();
@@ -298,6 +284,63 @@ void Logger::writeThread()
     {
         TRACE("Error: writeThread failed due to an exception: %s\n", e.what());
     }
+}
+
+LoggerResult Logger::logImpl(const char* name, const void* data,
+                             unsigned int size)
+{
+    if (started == false)
+    {
+        TRACE("Attempting to log %s but the Logger is not started!", name);
+        stats.droppedSamples++;
+
+        // Signal that we are trying to write to a closed log
+        stats.lastWriteError = -1;
+
+        return LoggerResult::Ignored;
+    }
+
+    Record* record = nullptr;
+
+    // Retrieve a record from the empty queue, if available
+    {
+        // We disable interrupts because IRQget() is nonblocking, unlike get()
+        FastInterruptDisableLock dLock;
+        if (emptyQueue.IRQget(record) == false)
+        {
+            stats.droppedSamples++;
+            return LoggerResult::Dropped;
+        }
+    }
+
+    // Copy the data in the record
+    int result =
+        tscpp::serializeImpl(record->data, maxRecordSize, name, data, size);
+
+    // If the record is too small, move the record in the empty queue and error
+    if (result == tscpp::BufferTooSmall)
+    {
+        emptyQueue.put(record);
+        atomicAdd(&stats.tooLargeSamples, 1);
+        TRACE("The current record size is not enough to store %s", name);
+        return LoggerResult::TooLarge;
+    }
+
+    record->size = result;
+
+    // Movo the record to the full queue, where the pack thread will read and
+    // store it in a buffer
+    fullQueue.put(record);
+
+    atomicAdd(&stats.queuedSamples, 1);
+
+    return LoggerResult::Queued;
+}
+
+void Logger::logStats()
+{
+    stats.timestamp = TimestampTimer::getTimestamp();
+    log(stats);
 }
 
 }  // namespace Boardcore

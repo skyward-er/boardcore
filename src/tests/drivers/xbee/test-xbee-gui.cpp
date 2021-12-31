@@ -123,7 +123,7 @@ int main()
     {
         logger.start();
         printf("\nLog file opened! (%s)\n\n",
-               logger.getFileName(logger.getLogNumber()).c_str());
+               logger.getCurrentFileName().c_str());
     }
     catch (const std::runtime_error& err)
     {
@@ -213,7 +213,7 @@ int main()
                 break;
         }
 
-        logger.log(logger.getLogStats());
+        logger.log(logger.getLoggerStats());
         Thread::sleepUntil(start + 500);
     }
 }
