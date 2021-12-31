@@ -121,17 +121,17 @@ class Logging : public Singleton<Logging>
 public:
     static PrintLogger getLogger(string name)
     {
-        return PrintLogger(*getInstance(), name);
+        return PrintLogger(getInstance(), name);
     }
 
     static void addLogSink(unique_ptr<LogSink>& sink)
     {
-        getInstance()->sinks.push_back(std::move(sink));
+        getInstance().sinks.push_back(std::move(sink));
     }
 
-    static LogSink& getStdOutLogSink() { return *getInstance()->sinks.at(0); }
+    static LogSink& getStdOutLogSink() { return *getInstance().sinks.at(0); }
 
-    static void startAsyncLogger() { getInstance()->async_log.start(); }
+    static void startAsyncLogger() { getInstance().async_log.start(); }
 
 private:
     void log(const LogRecord& record);
@@ -253,7 +253,7 @@ public:
 
     static void addLogSink(unique_ptr<LogSink>& sink) { UNUSED(sink); }
 
-    static LogSink& getStdOutLogSink() { return *getInstance()->sinks.at(0); }
+    static LogSink& getStdOutLogSink() { return *getInstance().sinks.at(0); }
 
     static void startAsyncLogger() {}
 

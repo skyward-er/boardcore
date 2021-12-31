@@ -110,10 +110,10 @@ public:
     FSMExample() : FSM(&FSMExample::state_S1), v(0)
     {
         // Subscribe for events posted on TOPIC_T1
-        sEventBroker->subscribe(this, TOPIC_T1);
+        sEventBroker.subscribe(this, TOPIC_T1);
     }
 
-    ~FSMExample() { sEventBroker->unsubscribe(this); }
+    ~FSMExample() { sEventBroker.unsubscribe(this); }
 
     /*
      * State function definitions.
@@ -208,7 +208,7 @@ public:
 
                 // Post EV_D to itself in 1 seconds
                 delayed_ev_id =
-                    sEventBroker->postDelayed(Event{EV_D}, TOPIC_T1, 1000);
+                    sEventBroker.postDelayed(Event{EV_D}, TOPIC_T1, 1000);
 
                 break;
             }
@@ -219,7 +219,7 @@ public:
                 // don't remove a delayed event. This is an error! Uncomment to
                 // fix, see the wiki for further information !!!
 
-                // sEventBroker->removeDelayed(delayed_ev_id);
+                // sEventBroker.removeDelayed(delayed_ev_id);
                 break;
             }
             case EV_B:

@@ -187,7 +187,7 @@ protected:
                 }
             }
 
-            StackLogger::getInstance()->updateStack(THID_PIN_OBS);
+            StackLogger::getInstance().updateStack(THID_PIN_OBS);
 
             Thread::sleep(poll_interval);
         }

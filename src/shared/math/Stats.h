@@ -28,7 +28,7 @@ namespace Boardcore
 {
 
 /**
- * Statisitics computed by the Stats class
+ * @brief Statisitics computed by the Stats class.
  */
 struct StatsResult
 {
@@ -40,13 +40,13 @@ struct StatsResult
 };
 
 /**
- * Allows printing StatsResult to an ostream
+ * @brief Allows printing StatsResult to an ostream.
  */
 std::ostream& operator<<(std::ostream& os, const StatsResult& sr);
 
 /**
- * Computes on-line statisitics of a dataset. This class should theoretically
- * work with datasets of up to 2^32-1 elements
+ * @brief Computes on-line statisitics of a dataset. This class should
+ * theoretically work with datasets of up to 2^32-1 elements
  */
 class Stats
 {

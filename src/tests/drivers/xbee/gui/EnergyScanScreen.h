@@ -75,7 +75,7 @@ struct EnergyScanScreen
         for (unsigned int i = 0; i < NUM_CHANNELS; ++i)
         {
             char buf[3];
-            snprintf(buf, 3, "%02d", i);
+            snprintf(buf, 3, "%02u", i);
 
             col_names[i] = new TextView(buf);
             col_names[i]->setTextColor(pink);
@@ -174,7 +174,7 @@ struct EnergyScanScreen
     {
         if (logger.getLogNumber() >= 0)
         {
-            string log_name = logger.getFileName(logger.getLogNumber());
+            string log_name = logger.getCurrentFileName();
 
             tv_log_status.setText(log_name);
             tv_log_status.setTextColor(mxgui::black);

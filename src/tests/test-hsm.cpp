@@ -41,17 +41,17 @@ using namespace miosix;
     bool test_value = false; \
     (void)test_value
 
-#define CHECK_STATE(HSM, SIGNAL, STATE)                             \
-    do                                                              \
-    {                                                               \
-        cout << "------------------------------" << endl;           \
-        cout << "Triggering signal " << #SIGNAL << endl;            \
-        sEventBroker->post({SIGNAL}, TOPIC_TEST);                   \
-        Thread::sleep(400);                                         \
-        test_value = HSM->testState(STATE);                         \
-        cout << "Check State " << #STATE << " "                     \
-             << (HSM->testState(STATE) ? "TRUE" : "FALSE") << endl; \
-        assert(HSM->testState(STATE));                              \
+#define CHECK_STATE(HSM, SIGNAL, STATE)                            \
+    do                                                             \
+    {                                                              \
+        cout << "------------------------------" << endl;          \
+        cout << "Triggering signal " << #SIGNAL << endl;           \
+        sEventBroker.post({SIGNAL}, TOPIC_TEST);                   \
+        Thread::sleep(400);                                        \
+        test_value = HSM.testState(STATE);                         \
+        cout << "Check State " << #STATE << " "                    \
+             << (HSM.testState(STATE) ? "TRUE" : "FALSE") << endl; \
+        assert(HSM.testState(STATE));                              \
     } while (0)
 
 enum TestEvents : uint8_t
@@ -93,7 +93,7 @@ using namespace std;
 
 HSMUTTest::HSMUTTest() : HSM(&HSMUTTest::state_initialization)
 {
-    sEventBroker->subscribe(this, TOPIC_TEST);
+    sEventBroker.subscribe(this, TOPIC_TEST);
 }
 
 State HSMUTTest::state_initialization(const Event& e)
@@ -311,24 +311,50 @@ State HSMUTTest::state_S211(const Event& e)
 int main()
 {
 
-    sEventBroker->start();
+    sEventBroker.start();
 
-    HSMUTTest* hsm = HSMUTTest::getInstance();
-    hsm->start();
+    HSMUTTest& hsm = HSMUTTest::getInstance();
+    hsm.start();
 
     CHECK_INIT();
+    // cppcheck-suppress unreadVariable
+    // cppcheck-suppress assertWithSideEffect
     CHECK_STATE(hsm, EV_G, &HSMUTTest::state_S11);
+    // cppcheck-suppress unreadVariable
+    // cppcheck-suppress assertWithSideEffect
     CHECK_STATE(hsm, EV_I, &HSMUTTest::state_S11);
+    // cppcheck-suppress unreadVariable
+    // cppcheck-suppress assertWithSideEffect
     CHECK_STATE(hsm, EV_A, &HSMUTTest::state_S11);
+    // cppcheck-suppress unreadVariable
+    // cppcheck-suppress assertWithSideEffect
     CHECK_STATE(hsm, EV_D, &HSMUTTest::state_S11);
+    // cppcheck-suppress unreadVariable
+    // cppcheck-suppress assertWithSideEffect
     CHECK_STATE(hsm, EV_D, &HSMUTTest::state_S11);
+    // cppcheck-suppress unreadVariable
+    // cppcheck-suppress assertWithSideEffect
     CHECK_STATE(hsm, EV_B, &HSMUTTest::state_S11);
+    // cppcheck-suppress unreadVariable
+    // cppcheck-suppress assertWithSideEffect
     CHECK_STATE(hsm, EV_C, &HSMUTTest::state_S211);
+    // cppcheck-suppress unreadVariable
+    // cppcheck-suppress assertWithSideEffect
     CHECK_STATE(hsm, EV_E, &HSMUTTest::state_S11);
+    // cppcheck-suppress unreadVariable
+    // cppcheck-suppress assertWithSideEffect
     CHECK_STATE(hsm, EV_E, &HSMUTTest::state_S11);
+    // cppcheck-suppress unreadVariable
+    // cppcheck-suppress assertWithSideEffect
     CHECK_STATE(hsm, EV_G, &HSMUTTest::state_S211);
+    // cppcheck-suppress unreadVariable
+    // cppcheck-suppress assertWithSideEffect
     CHECK_STATE(hsm, EV_B, &HSMUTTest::state_S211);
+    // cppcheck-suppress unreadVariable
+    // cppcheck-suppress assertWithSideEffect
     CHECK_STATE(hsm, EV_I, &HSMUTTest::state_S211);
+    // cppcheck-suppress unreadVariable
+    // cppcheck-suppress assertWithSideEffect
     CHECK_STATE(hsm, EV_I, &HSMUTTest::state_S211);
 
     cout << "Test Passed!" << endl;

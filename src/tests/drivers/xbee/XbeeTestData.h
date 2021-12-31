@@ -47,7 +47,7 @@ struct XbeeConfig
     void print()
     {
         printf("+++XBee configuration+++\n\n");
-        printf("Tx: %s, pkt: %u B, int: %d ms\n",
+        printf("Tx: %s, pkt: %u B, int: %u ms\n",
                tx_enabled ? "enabled" : "disabled", packet_size, send_interval);
         printf("Freq hop: %s, data rate: %s \n", freq_hop ? "on" : "off",
                data_rate_80k ? "80 kbps" : "10 kbps");

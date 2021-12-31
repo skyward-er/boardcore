@@ -57,7 +57,7 @@ protected:
             getline(cin, temp);
             stringstream(temp) >> ev >> topic;
 
-            sEventBroker->post({(uint8_t)ev}, topic);
+            sEventBroker.post({(uint8_t)ev}, topic);
         }
     }
 };

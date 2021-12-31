@@ -36,18 +36,21 @@ namespace Boardcore
  *     Foo() {} // Ok, private constructor
  * };
  * \endcode
+ *
+ * Look here for more info on Singletons:
+ * https://stackoverflow.com/questions/1008019/c-singleton-design-pattern
  */
 template <typename T>
 class Singleton
 {
 public:
     /**
-     * \return A pointer to the only instance of the class T.
+     * \return A reference to the only instance of the class T.
      */
-    inline static T* getInstance()
+    inline static T& getInstance()
     {
         static T instance;
-        return &instance;
+        return instance;
     }
 
 protected:

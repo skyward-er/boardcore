@@ -96,7 +96,7 @@ void UbloxGPS::run()
 
     while (!shouldStop())
     {
-        StackLogger::getInstance()->updateStack(THID_GPS);
+        StackLogger::getInstance().updateStack(THID_GPS);
 
         // Try to read the message
         if (!readUBXFrame(frame))

@@ -52,7 +52,7 @@ class XbeeTestFixture
 public:
     XbeeTestFixture() {}
 
-    ~XbeeTestFixture() { BusSPIMock::getInstance()->restoreState(); }
+    ~XbeeTestFixture() { BusSPIMock::getInstance().restoreState(); }
 
 protected:
     BusSPIMock& spi = *BusSPIMock::getInstance();

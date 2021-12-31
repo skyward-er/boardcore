@@ -41,7 +41,7 @@ using namespace {state_machine_name}Config;
 
 {state_machine_name}Controller::~{state_machine_name}Controller()
 {{
-    sEventBroker->unsubscribe(this);
+    sEventBroker.unsubscribe(this);
 }}
 
 {states_functions_definitions}
@@ -60,7 +60,7 @@ void {state_machine_name}Controller::logStatus()
 {{
     status.timestamp = miosix::getTick();
     logger.log(status);
-    StackLogger::getInstance()->updateStack(THID);
+    StackLogger::getInstance().updateStack(THID);
 }}
 
 }}  // namespace {main_namespace}

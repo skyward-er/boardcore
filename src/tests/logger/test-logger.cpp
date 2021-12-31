@@ -31,7 +31,7 @@ using namespace miosix;
 
 void logthread(void*)
 {
-    Logger& log      = Logger::instance();
+    Logger& log      = Logger::getInstance();
     const int period = 5;
     for (auto t = getTick();; t += period)
     {
@@ -58,7 +58,7 @@ int main()
 {
     Thread::create(printutil, 4096);
 
-    Logger& log = Logger::instance();
+    Logger& log = Logger::getInstance();
     log.start();
 
     puts("type enter to start test");

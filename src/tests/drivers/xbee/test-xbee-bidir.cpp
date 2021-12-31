@@ -72,7 +72,7 @@ using GpioLedLog = Gpio<GPIOC_BASE, 13>;
 using GpioUserBtn = Gpio<GPIOA_BASE, 0>;
 
 Xbee::Xbee* xbee_driver = nullptr;
-Logger& logger          = Logger::instance();
+Logger& logger          = Logger::getInstance();
 
 #ifdef _BOARD_STM32F429ZI_SKYWARD_DEATHST_X
 void __attribute__((used)) EXTI10_IRQHandlerImpl()
@@ -167,13 +167,12 @@ int main()
 
     configure();
 
-    int filenum;
     try
     {
-        filenum = logger.start();
+        logger.start();
 
         printf("\nLog file opened! (%s)\n\n",
-               logger.getFileName(filenum).c_str());
+               logger.getCurrentFileName().c_str());
     }
     catch (const std::runtime_error& err)
     {
@@ -209,6 +208,7 @@ int main()
     }
     trans->start();
 
+    // cppcheck-suppress knownConditionTrueFalse
     while (getUserBtnValue() == 0)
     {
         long long loop_start = getTick();
@@ -220,7 +220,7 @@ int main()
         RxData rxd = trans->getReceiver().getRxData();
 
         logger.log(xbee_driver->getStatus());
-        logger.log(logger.getLogStats());
+        logger.log(logger.getLoggerStats());
 
         long long tick = getTick();
         unsigned int h = tick / (1000 * 3600);
@@ -230,7 +230,7 @@ int main()
         printf("%02u:%02u:%06.3f\n", h, m, s);
         if (RUN_SENDER)
         {
-            printf("SND: int: %d, cnt: %d, tts: %u ms, pps: %.1f, fail: % d\n ",
+            printf("SND: int: %u, cnt: %u, tts: %u ms, pps: %.1f, fail: %u\n ",
                    txd.time_since_last_send,
                    txd.tx_success_counter + txd.tx_fail_counter,
                    txd.time_to_send, res_snd.packets_per_second,
@@ -239,7 +239,7 @@ int main()
         if (RUN_RECEIVER)
         {
             printf(
-                "RCV: cnt: %d, last_rx: %lld ms,  RSSI: %d, dr: %.0f, pps: "
+                "RCV: cnt: %u, last_rx: %lld ms,  RSSI: %d, dr: %.0f, pps: "
                 "%.1f,"
                 " pl: %.0f%%, lcnt: %u, fail: %u\n",
                 rxd.rcv_count, rxd.last_packet_timestamp, rxd.RSSI,
