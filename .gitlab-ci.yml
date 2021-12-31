@@ -49,11 +49,11 @@ build-debug:
 
 # Stage test
 
-test:
-  stage: test
-  script:
-    - ./sbs --jobs 2 --test catch-tests-entry
-  allow_failure: true
+# test:
+#   stage: test
+#   script:
+#     - ./sbs --jobs 2 --test catch-tests-entry
+#   allow_failure: true
 
 # Stage lint
 
