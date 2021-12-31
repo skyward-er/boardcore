@@ -160,11 +160,6 @@ private:
     void writeThread();
 
     /**
-     * This thread prints stats
-     */
-    void statsThread();
-
-    /**
      * Log logger stats using the logger itself
      */
     void logStats()
