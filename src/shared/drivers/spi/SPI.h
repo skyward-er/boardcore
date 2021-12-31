@@ -93,7 +93,7 @@ public:
         MODE_3 = 3   ///< CPOL = 1, CPHA = 1
     };
 
-    SPI(SPIType *spi);
+    explicit SPI(SPIType *spi);
 
     SPIType *getSpi();
 

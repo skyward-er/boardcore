@@ -101,7 +101,7 @@ private:
      * Flag used to indicate that the send function is not sending the stop
      * signal.
      */
-    bool noStop;
+    bool noStop = false;
 };
 
 }  // namespace miosix

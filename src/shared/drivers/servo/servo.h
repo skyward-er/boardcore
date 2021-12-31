@@ -36,7 +36,7 @@ namespace Boardcore
 class Servo
 {
 public:
-    Servo(PWM::Timer t);
+    explicit Servo(PWM::Timer t);
     ~Servo();
 
     /**

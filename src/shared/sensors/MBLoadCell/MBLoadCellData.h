@@ -93,7 +93,7 @@ struct Data : public LoadCellData
 
     Data() : LoadCellData{0, 0.0}, valid(false) {}
 
-    Data(float data)
+    explicit Data(float data)
         : LoadCellData{TimestampTimer::getTimestamp(), data}, valid(true)
     {
     }

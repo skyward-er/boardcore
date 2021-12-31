@@ -206,7 +206,10 @@ public:
         UNUSED(name);
     }
 
-    PrintLogger getChild(string name) { return PrintLogger(parent, name); }
+    PrintLogger getChild(const string& name)
+    {
+        return PrintLogger(parent, name);
+    }
 
     template <typename... Args>
     void log(uint8_t level, string function, string file, int line,

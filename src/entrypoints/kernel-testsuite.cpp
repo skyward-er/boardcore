@@ -427,7 +427,9 @@ void process_test_file_concurrency()
             fail("Wrong data from file 2");
     }
 
+    // cppcheck-suppress nullPointerRedundantCheck
     fclose(f1);
+    // cppcheck-suppress nullPointerRedundantCheck
     fclose(f2);
 
     pass();
@@ -4568,7 +4570,6 @@ static void fs_test_1()
     i = 0;
     for (;;)
     {
-        // cppcheck-suppress nullPointerRedundantCheck
         j = fread(buf, 1, 1024, f);
         if (j == 0)
             break;
@@ -4588,7 +4589,6 @@ static void fs_test_1()
     i = 0;
     for (;;)
     {
-        // cppcheck-suppress nullPointerRedundantCheck
         j = fread(buf, 1, 1024, f);
         if (j == 0)
             break;
@@ -4608,7 +4608,6 @@ static void fs_test_1()
     i = 0;
     for (;;)
     {
-        // cppcheck-suppress nullPointerRedundantCheck
         j = fread(buf, 1, 1024, f);
         if (j == 0)
             break;
@@ -4634,7 +4633,6 @@ static void fs_test_1()
         fail("can't open a file_4.txt");
     for (i = 2; i <= 128; i++)
     {
-        // cppcheck-suppress nullPointerRedundantCheck
         fprintf(f, "Hello world line %03d\n", i);
     }
     if (fclose(f) != 0)  // cppcheck-suppress nullPointerRedundantCheck
@@ -4647,9 +4645,11 @@ static void fs_test_1()
     fgets(line, sizeof(line), f);
     if (strcmp(line, "Hello world line 001\n"))
         fail("file_4.txt line 1 error");
+    // cppcheck-suppress nullPointerRedundantCheck
     fgets(line, sizeof(line), f);
     if (strcmp(line, "Hello world line 002\n"))
         fail("file_4.txt line 2 error");
+    // cppcheck-suppress nullPointerRedundantCheck
     if (fclose(f) != 0)
         fail("Can't close r file_4.txt");
     // Test fseek and ftell. When reaching this point file_4.txt contains:
@@ -4661,32 +4661,44 @@ static void fs_test_1()
         fail("can't open r2 file_4.txt");
     if (ftell(f) != 0)  // cppcheck-suppress nullPointerRedundantCheck
         fail("File opend but cursor not @ address 0");
+    // cppcheck-suppress nullPointerRedundantCheck
     fseek(f, -4, SEEK_END);  // Seek to 128\n
+    // cppcheck-suppress nullPointerRedundantCheck
     if ((fgetc(f) != '1') | (fgetc(f) != '2') | (fgetc(f) != '8'))
         fail("fgetc SEEK_END");
+    // cppcheck-suppress nullPointerRedundantCheck
     if (ftell(f) != (21 * 128 - 1))
     {
         iprintf("ftell=%ld\n", ftell(f));
         fail("ftell() 1");
     }
+    // cppcheck-suppress nullPointerRedundantCheck
     fseek(f, 21 + 17, SEEK_SET);  // Seek to 002\n
+    // cppcheck-suppress nullPointerRedundantCheck
     if ((fgetc(f) != '0') | (fgetc(f) != '0') | (fgetc(f) != '2') |
+        // cppcheck-suppress nullPointerRedundantCheck
         (fgetc(f) != '\n'))
         fail("fgetc SEEK_SET");
+    // cppcheck-suppress nullPointerRedundantCheck
     if (ftell(f) != (21 * 2))
     {
         iprintf("ftell=%ld\n", ftell(f));
         fail("ftell() 2");
     }
+    // cppcheck-suppress nullPointerRedundantCheck
     fseek(f, 21 * 50 + 17, SEEK_CUR);  // Seek to 053\n
+    // cppcheck-suppress nullPointerRedundantCheck
     if ((fgetc(f) != '0') | (fgetc(f) != '5') | (fgetc(f) != '3') |
+        // cppcheck-suppress nullPointerRedundantCheck
         (fgetc(f) != '\n'))
         fail("fgetc SEEK_CUR");
+    // cppcheck-suppress nullPointerRedundantCheck
     if (ftell(f) != (21 * 53))
     {
         iprintf("ftell=%ld\n", ftell(f));
         fail("ftell() 2");
     }
+    // cppcheck-suppress nullPointerRedundantCheck
     if (fclose(f) != 0)
         fail("Can't close r2 file_4.txt");
     // Testing remove()
@@ -4780,6 +4792,7 @@ static void checkInDir(const std::string &d, bool createFile)
     fgets(s, sizeof(s), f);  // cppcheck-suppress nullPointerRedundantCheck
     if (strcmp(s, teststr))
         fail("file content after rename");
+    // cppcheck-suppress nullPointerRedundantCheck
     fclose(f);
     if (unlink((d + filename2).c_str()))
         fail("unlink 3");
@@ -4829,10 +4842,10 @@ static void fs_test_3()
         for (unsigned int j = 0; j < size; j++)
             buf[j] = rand() & 0xff;
         checksum ^= crc16(buf, size);
-        // cppcheck-suppress nullPointerRedundantCheck
         if (fwrite(buf, 1, size, f) != size)
             fail("write");
     }
+    // cppcheck-suppress nullPointerRedundantCheck
     if (fclose(f) != 0)
         fail("close 1");
 
@@ -4843,11 +4856,11 @@ static void fs_test_3()
     for (unsigned int i = 0; i < numBlocks; i++)
     {
         memset(buf, 0, size);
-        // cppcheck-suppress nullPointerRedundantCheck
         if (fread(buf, 1, size, f) != size)
             fail("read");
         outChecksum ^= crc16(buf, size);
     }
+    // cppcheck-suppress nullPointerRedundantCheck
     if (fclose(f) != 0)
         fail("close 2");
     delete[] buf;

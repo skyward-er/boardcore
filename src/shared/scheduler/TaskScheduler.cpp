@@ -154,7 +154,8 @@ void TaskScheduler::enqueue(event_t& event)
     condvar.broadcast();
 }
 
-void TaskScheduler::updateStats(event_t& e, int64_t startTime, int64_t endTime)
+void TaskScheduler::updateStats(const event_t& e, int64_t startTime,
+                                int64_t endTime)
 {
     const float tickToMs = 1000.f / TICK_FREQ;
 

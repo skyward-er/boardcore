@@ -54,6 +54,8 @@ class SensorManagerFixture
 public:
     SensorManagerFixture()
     {
+        // cppcheck-suppress noCopyConstructor
+        // cppcheck-suppress noOperatorEq
         scheduler = new TaskScheduler();
         scheduler->add([]() { std::cout << "Task Callback!" << std::endl; },
                        2000,  // inserst a test function in the scheduler

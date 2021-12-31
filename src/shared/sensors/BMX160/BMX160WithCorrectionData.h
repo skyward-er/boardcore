@@ -31,7 +31,7 @@ struct BMX160WithCorrectionData : public BMX160Data
 {
     BMX160WithCorrectionData() : BMX160Data() {}
 
-    BMX160WithCorrectionData(const BMX160Data& data)
+    explicit BMX160WithCorrectionData(const BMX160Data& data)
         : BMX160WithCorrectionData(data, data, data)
     {
     }

@@ -82,7 +82,7 @@ public:
      *
      * @param bmx160_ correction parameter to apply.
      */
-    BMX160WithCorrection(BMX160* bmx160_);
+    explicit BMX160WithCorrection(BMX160* bmx160_);
 
     bool init() override;
 

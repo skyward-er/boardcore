@@ -69,7 +69,8 @@ public:
      *
      * @param slave Slave to communicate with.
      */
-    SPITransaction(SPISlave slave, WriteBit writeBit = WriteBit::NORMAL);
+    explicit SPITransaction(SPISlave slave,
+                            WriteBit writeBit = WriteBit::NORMAL);
 
     /**
      * @brief Instatiates a new SPITransaction, configuring the bus with the

@@ -196,7 +196,6 @@ ADS1118Data ADS1118::sampleImpl()
 
 void ADS1118::readChannel(int8_t nextChannel, int8_t prevChannel)
 {
-    int16_t rawValue;
     uint32_t writeData, transferData;
 
     last_error = NO_ERRORS;
@@ -239,7 +238,7 @@ void ADS1118::readChannel(int8_t nextChannel, int8_t prevChannel)
     // Convert and save the value if last written configuration is valid
     if (prevChannel >= 0)
     {
-        rawValue = swapBytes16(transferData);
+        int16_t rawValue = swapBytes16(transferData);
 
         // TODO: the timestamp should be taken when the configuration is
         // written, now we could be reading the value after some time!
@@ -298,7 +297,7 @@ int8_t ADS1118::findNextEnabledChannel(int8_t startChannel)
         }
 
         // Find next enabled mux config
-        for (; channelsConfig[channel].word == 0 && channel < NUM_OF_CHANNELS;
+        for (; channel < NUM_OF_CHANNELS && channelsConfig[channel].word == 0;
              channel++)
             ;
 

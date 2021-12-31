@@ -230,7 +230,10 @@ struct SPISlave
 class SPIAcquireLock
 {
 public:
-    SPIAcquireLock(SPISlave slave) : SPIAcquireLock(slave.bus, slave.config) {}
+    explicit SPIAcquireLock(SPISlave slave)
+        : SPIAcquireLock(slave.bus, slave.config)
+    {
+    }
 
     SPIAcquireLock(SPIBusInterface& bus, SPIBusConfig cfg) : bus(bus)
     {
@@ -247,7 +250,9 @@ private:
 class SPISelectLock
 {
 public:
-    SPISelectLock(SPISlave slave) : SPISelectLock(slave.bus, slave.cs) {}
+    explicit SPISelectLock(SPISlave slave) : SPISelectLock(slave.bus, slave.cs)
+    {
+    }
 
     SPISelectLock(SPIBusInterface& bus, GpioType cs) : bus(bus), cs(cs)
     {

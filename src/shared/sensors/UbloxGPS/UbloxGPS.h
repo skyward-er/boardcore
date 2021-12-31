@@ -49,7 +49,7 @@ namespace Boardcore
 class UbloxGPS : public Sensor<GPSData>, public ActiveObject
 {
 public:
-    UbloxGPS(uint8_t samplerate) : samplerate(samplerate) {}
+    explicit UbloxGPS(uint8_t samplerate) : samplerate(samplerate) {}
 
     /**
      * @brief Disables the NMEA messages, configures GNSS options and enables

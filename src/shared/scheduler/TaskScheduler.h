@@ -151,7 +151,7 @@ private:
      * \param startTime start of execution time
      * \param endTime end of execution time
      */
-    void updateStats(event_t& e, int64_t startTime, int64_t endTime);
+    void updateStats(const event_t& e, int64_t startTime, int64_t endTime);
 
     miosix::FastMutex mutex;              ///< Mutex to protect agenda
     miosix::ConditionVariable condvar;    ///< Used when agenda is empty

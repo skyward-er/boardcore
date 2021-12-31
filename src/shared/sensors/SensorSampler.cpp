@@ -50,16 +50,13 @@ void SensorSampler::sampleAndCallback()
 
 void SensorSampler::toggleSensor(AbstractSensor* sensor, bool is_en)
 {
-    for (auto& s : sensors)
-    {
-        if (s.first == sensor)
-        {
-            s.second.is_enabled = is_en;
-            LOG_DEBUG(logger, "Sampler {}, toggle Sensor {} ---> enabled = {}",
-                      getID(), static_cast<void*>(sensor), s.second.is_enabled);
-            break;
-        }
-    }
+    auto elem = std::find_if(sensors.begin(), sensors.end(),
+                             [&](std::pair<AbstractSensor*, SensorInfo> s)
+                             { return s.first == sensor; });
+
+    elem->second.is_enabled = is_en;
+    LOG_DEBUG(logger, "Sampler {}, toggle Sensor {} ---> enabled = {}", getID(),
+              static_cast<void*>(sensor), elem->second.is_enabled);
 }
 
 void SensorSampler::enableAllSensors()

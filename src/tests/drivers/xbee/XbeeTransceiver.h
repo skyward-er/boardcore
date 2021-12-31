@@ -260,11 +260,11 @@ private:
 class XbeeTransceiver
 {
 public:
-    // cppcheck-suppress noCopyConstructor
-    // cppcheck-suppress noOperatorEq
     XbeeTransceiver(Xbee::Xbee& xbee, Logger& logger,
                     const SendIntervalBase& snd_interval, size_t tx_pkt_size,
                     long long expected_packet_interval)
+        // cppcheck-suppress noCopyConstructor
+        // cppcheck-suppress noOperatorEq
         : sender(new Sender(xbee, logger, snd_interval, tx_pkt_size,
                             expected_packet_interval)),
           receiver(new Receiver(xbee, logger, expected_packet_interval)),
