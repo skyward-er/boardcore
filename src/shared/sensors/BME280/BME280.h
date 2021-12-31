@@ -153,8 +153,8 @@ public:
     static const BME280Config
         BME280_CONFIG_TEMP_SINGLE;  ///< Temperature enabled in forced mode
 
-    BME280(SPISlave spiSlave_,
-           BME280Config config_ = BME280_CONFIG_ALL_ENABLED);
+    explicit BME280(SPISlave spiSlave_,
+                    BME280Config config_ = BME280_CONFIG_ALL_ENABLED);
 
     /**
      * @brief Initialize the device with the specified configuration

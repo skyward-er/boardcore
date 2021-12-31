@@ -22,7 +22,6 @@
 
 #pragma once
 
-#include <Common.h>
 #include <diagnostic/PrintLogger.h>
 #include <drivers/spi/SPIDriver.h>
 #include <drivers/timer/TimestampTimer.h>

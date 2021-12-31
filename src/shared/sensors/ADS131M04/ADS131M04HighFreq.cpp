@@ -23,6 +23,7 @@
 #include "ADS131M04HighFreq.h"
 
 #include <fmt/format.h>
+#include <kernel/scheduler/scheduler.h>
 
 #include <thread>
 

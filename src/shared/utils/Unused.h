@@ -1,5 +1,5 @@
-/* Copyright (c) 2015-2016 Skyward Experimental Rocketry
- * Author: Alain Carlucci
+/* Copyright (c) 2019 Skyward Experimental Rocketry
+ * Author: Alvise de' Faveri Tron
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -21,24 +21,5 @@
  */
 
 #pragma once
-
-#include <drivers/timer/TimestampTimer.h>
-#include <interfaces/endianness.h>
-#include <kernel/scheduler/scheduler.h>
-#include <miosix.h>
-#include <pthread.h>
-
-#include <array>
-#include <cassert>
-#include <cstdint>
-#include <cstdio>
-#include <cstring>
-#include <map>
-#include <memory>
-#include <set>
-#include <vector>
-
-#include "Constants.h"
-#include "Debug.h"
 
 #define UNUSED(x) (void)(x)

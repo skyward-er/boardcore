@@ -20,7 +20,6 @@
  * THE SOFTWARE.
  */
 
-#include <Common.h>
 #include <diagnostic/PrintLogger.h>
 
 #include "sensors/MBLoadCell/MBLoadCell.h"

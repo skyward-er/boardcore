@@ -22,6 +22,11 @@
 
 #pragma once
 
+#include <drivers/timer/TimestampTimer.h>
+#include <utils/Debug.h>
+
+#include <map>
+
 #include "sensors/SensorData.h"
 
 namespace Boardcore
@@ -88,7 +93,7 @@ struct Data : public LoadCellData
 
     Data() : LoadCellData{0, 0.0}, valid(false) {}
 
-    Data(float data)
+    explicit Data(float data)
         : LoadCellData{TimestampTimer::getTimestamp(), data}, valid(true)
     {
     }

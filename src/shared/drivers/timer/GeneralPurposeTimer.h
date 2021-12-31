@@ -321,7 +321,7 @@ public:
      * @brief Create a GeneralPurposeTimer object. Note that this does not
      * resets the timer configuration.
      */
-    GeneralPurposeTimer(TIM_TypeDef *timer);
+    explicit GeneralPurposeTimer(TIM_TypeDef *timer);
 
     void reset();
 

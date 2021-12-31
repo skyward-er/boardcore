@@ -22,7 +22,9 @@
 
 #pragma once
 
+#include <Singleton.h>
 #include <miosix.h>
+#include <stdint.h>
 
 #include <cstdio>
 #include <list>
@@ -30,7 +32,7 @@
 #include <string>
 #include <type_traits>
 
-#include "LogStats.h"
+#include "LoggerStats.h"
 
 using std::string;
 
@@ -38,121 +40,103 @@ namespace Boardcore
 {
 
 /**
- * Possible outcomes of Logger::log()
+ * @brief Possible outcomes of Logger::log().
  */
-enum class LogResult
+enum class LoggerResult
 {
-    Queued,   ///< Data has been accepted by the logger and will be written
-    Dropped,  ///< Buffers are currently full, data will not be written. Sorry
-    Ignored,  ///< Logger is currently stopped, data will not be written
-    TooLarge  ///< Data is too large to be logged. Increase maxRecordSize
+    Queued,   ///< Data has been accepted by the logger and will be written.
+    Dropped,  ///< Buffers are currently full, data will not be written. Sorry.
+    Ignored,  ///< Logger is currently stopped, data will not be written.
+    TooLarge  ///< Data is too large to be logged. Increase maxRecordSize.
 };
 
 /**
- * Buffered logger. Needs to be started before it can be used.
+ * @brief Buffered logger. Needs to be started before it can be used.
  */
-class Logger
+class Logger : public Singleton<Logger>
 {
+    friend class Singleton<Logger>;
+
 public:
     /**
-     * \return an instance to the logger
-     */
-    static Logger &instance();
-
-    /**
-     * Blocking call. May take a long time.
+     * @brief Call this function to start the logger.
      *
-     * Call this function to start the logger.
      * When this function returns, the logger is started, and subsequent calls
      * to log will actually log the data.
      *
-     * \throws runtime_error if the log could not be opened
-     * \return log number
+     * Blocking call. May take a long time.
+     *
+     * \throws runtime_error if the log could not be opened.
+     * \return log number.
      */
     int start();
 
     /**
-     * Blocking call. May take a very long time (seconds).
+     * @brief Call this function to stop the logger.
      *
-     * Call this function to stop the logger.
      * When this function returns, all log buffers have been flushed to disk,
      * and it is safe to power down the board without losing log data or
      * corrupting the filesystem.
+     *
+     * Blocking call. May take a very long time (seconds).
      */
     void stop();
 
     /**
-     * Return the number representing the current log file.
-     * @return log number
+     * @brief Return the number representing the current log file.
+     *
+     * @return log number.
      */
-    int getLogNumber() { return fileNumber; }
+    int getLogNumber();
 
     /**
-     * Returns the log filename for the specified number.
-     * IE: log_number = 16, returned: "/sd/log16.dat"
-     * @param log_number
+     * @brief Returns the log filename for the specified number.
+     *
+     * IE: log_number = 42, returned: "/sd/log42.dat"
+     *
      * @return
      */
-    static string getFileName(int log_number)
-    {
-        char filename[32];
-        sprintf(filename, "/sd/log%02d.dat", log_number);
+    static string getFileName(int log_number);
 
-        return string(filename);
-    }
+    string getCurrentFileName();
+
+    LoggerStats getLoggerStats();
 
     /**
-     * Returns current log filename
-     * @return
-     */
-    string getFileName() { return getFileName(fileNumber); }
-
-    LogStats getLogStats() { return s; }
-
-    /**
+     * @brief Check if the Logger is started.
+     *
      * Nonblocking call.
      *
      * \return true if the logger is started and ready to accept data.
      */
-    bool isStarted() const { return started; }
+    bool isStarted() const;
 
     /**
-     * Nonblocking call. Call this function to log a class.
-     * \param t the class to be logged. This class has the following
+     * @brief Call this function to log a class.
+     *
+     * Nonblocking call.
+     *
+     * Refer to the TSCPP repository to know more about how the data is stored.
+     * https://git.skywarder.eu/scs/third-party/tscpp
+     *
+     * \param T The class to be logged. This class has the following
      * requirements:
      * - it must be trivially_copyable, so no pointers or references inside
      *   the class, no stl containers, no virtual functions, no base classes.
      * - it must have a "void print(std::ostream& os) const" member function
      *   that prints all its data fields in text form (this is not used by the
      *   logger, but by the log decoder program)
-     * \return whether the class has been logged
+     * \return Whether the class has been logged.
      */
     template <typename T>
-    LogResult log(const T &t)
-    {
-        static_assert(
-            std::is_trivially_copyable<T>::value,
-            "A type T must be trivially copyable in order to be logged!");
-
-        return logImpl(typeid(t).name(), &t, sizeof(t));
-    }
+    LoggerResult log(const T &t);
 
 private:
     Logger();
-    Logger(const Logger &) = delete;
-    Logger &operator=(const Logger &) = delete;
 
     static void packThreadLauncher(void *argv);
-    static void writeThreadLauncher(void *argv);
-    static void statsThreadLauncher(void *argv);
 
-    /**
-     * Non-template dependente part of log
-     * \param name class anem
-     * \param data pointer to class data
-     * \param size class size
-     */
-    LogResult logImpl(const char *name, const void *data, unsigned int size);
+    static void writeThreadLauncher(void *argv);
 
     /**
      * This thread packs logged data into buffers
@@ -165,25 +149,24 @@ private:
     void writeThread();
 
     /**
-     * This thread prints stats
+     * @brief Implementation of the log function non-template dependent.
+     *
+     * \param name Class name.
+     * \param data Pointer to class data.
+     * \param size Class size.
      */
-    void statsThread();
+    LoggerResult logImpl(const char *name, const void *data, unsigned int size);
 
     /**
-     * Log logger stats using the logger itself
+     * @brief Log logger stats using the logger itself.
      */
-    void logStats()
-    {
-        s.setTimestamp(miosix::getTick());
-        log(s);
-    }
+    void logStats();
 
-    static const unsigned int filenameMaxRetry =
-        100;                                        ///< Limit on new filename
-    static const unsigned int maxRecordSize = 512;  ///< Limit on logged data
-    static const unsigned int numRecords    = 512;  ///< Size of record queues
-    static const unsigned int bufferSize = 64 * 1024;  ///< Size of each buffer
-    static const unsigned int numBuffers = 8;          ///< Number of buffers
+    static constexpr uint maxFilenameNumber = 100;  ///< Limit on new filename
+    static constexpr uint maxRecordSize     = 512;  ///< Limit on logged data
+    static constexpr uint numRecords        = 512;  ///< Size of record queues
+    static constexpr uint numBuffers        = 8;    ///< Number of buffers
+    static constexpr uint bufferSize = 64 * 1024;   ///< Size of each buffer
 
     /**
      * A record is a single serialized logged class. Records are used to
@@ -196,7 +179,7 @@ private:
     public:
         Record() : size(0) {}
         char data[maxRecordSize] = {};
-        unsigned int size;
+        uint size;
     };
 
     /**
@@ -215,21 +198,30 @@ private:
 
     int fileNumber = -1;
 
-    miosix::Queue<Record *, numRecords> fullQueue;        ///< Full records
-    miosix::Queue<Record *, numRecords> emptyQueue;       ///< Empty Records
-    std::queue<Buffer *, std::list<Buffer *>> fullList;   ///< Full buffers
-    std::queue<Buffer *, std::list<Buffer *>> emptyList;  ///< Empty buffers
-    miosix::FastMutex mutex;  ///< To allow concurrent access to the queues
-    miosix::ConditionVariable cond;  ///< To lock when buffers are all empty
+    miosix::Queue<Record *, numRecords> fullQueue;        ///< Full records.
+    miosix::Queue<Record *, numRecords> emptyQueue;       ///< Empty Records.
+    std::queue<Buffer *, std::list<Buffer *>> fullList;   ///< Full buffers.
+    std::queue<Buffer *, std::list<Buffer *>> emptyList;  ///< Empty buffers.
+    miosix::FastMutex mutex;  ///< To allow concurrent access to the queues.
+    miosix::ConditionVariable cond;  ///< To lock when buffers are all empty.
 
-    miosix::Thread *packT;   ///< Thread packing logged data
-    miosix::Thread *writeT;  ///< Thread writing data to disk
-    // miosix::Thread *statsT;  ///< Thred printing stats
+    miosix::Thread *packTh  = nullptr;  ///< Thread packing logged data.
+    miosix::Thread *writeTh = nullptr;  ///< Thread writing data to disk.
 
-    volatile bool started = false;  ///< Logger is started and accepting data
+    volatile bool started = false;  ///< Logger is started and accepting data.
 
-    FILE *file;  ///< Log file
-    LogStats s;  ///< Logger stats
+    FILE *file = nullptr;  ///< Log file.
+    LoggerStats stats;     ///< Logger stats.
 };
+
+template <typename T>
+LoggerResult Logger::log(const T &t)
+{
+    static_assert(
+        std::is_trivially_copyable<T>::value,
+        "The type T must be trivially copyable in order to be logged!");
+
+    return logImpl(typeid(t).name(), &t, sizeof(t));
+}
 
 }  // namespace Boardcore

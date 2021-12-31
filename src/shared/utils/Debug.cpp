@@ -1,5 +1,5 @@
-/* Copyright (c) 2020 Skyward Experimental Rocketry
- * Author: Davide Bonomini
+/* Copyright (c) 2019 Skyward Experimental Rocketry
+ * Author: Luca Erbetta
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -20,28 +20,13 @@
  * THE SOFTWARE.
  */
 
-#pragma once
-
-#include <sensors/SensorData.h>
+#include <utils/Debug.h>
 
 namespace Boardcore
 {
 
-struct UbloxGPSData : public GPSData
-{
-    static std::string header()
-    {
-        return "gps_timestamp,latitude,longitude,height,velocity_north,"
-               "velocity_east,velocity_down,speed,track,num_satellites,fix\n";
-    }
-
-    void print(std::ostream &os) const
-    {
-        os << gps_timestamp << "," << latitude << "," << longitude << ","
-           << height << "," << velocity_north << "," << velocity_east << ","
-           << velocity_down << "," << speed << "," << track << ","
-           << (int)num_satellites << "," << (int)fix << "\n";
-    }
-};
+#ifdef DEBUG
+miosix::FastMutex trace_mutex;
+#endif
 
 }  // namespace Boardcore

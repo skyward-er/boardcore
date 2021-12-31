@@ -119,7 +119,7 @@ struct ConfigScreen
     {
         if (logger.getLogNumber() >= 0)
         {
-            string log_name = logger.getFileName(logger.getLogNumber());
+            string log_name = logger.getCurrentFileName();
 
             tv_log_status.setText(log_name);
             tv_log_status.setTextColor(mxgui::black);

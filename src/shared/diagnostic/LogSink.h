@@ -23,7 +23,6 @@
 #pragma once
 
 #include <logger/Logger.h>
-#include <miosix.h>
 
 #include "PrintLoggerData.h"
 
@@ -41,10 +40,10 @@ public:
 
     virtual ~LogSink() {}
 
-#if defined(COMPILING_FMT) && !defined(DISABLE_PRINTLOGGER)
-    void log(const LogRecord& record);
+#ifdef DISABLE_PRINTLOGGER
+    void log(const LogRecord& record) { UNUSED(record); }
 #else
-    void log(const LogRecord& record) { (void)record; }
+    void log(const LogRecord& record);
 #endif
     void enable() { enabled = true; }
 
@@ -59,7 +58,7 @@ public:
     void setFormatString(const std::string& format) { this->format = format; }
 
 protected:
-    virtual void logImpl(std::string l) = 0;
+    virtual void logImpl(const std::string& l) = 0;
 
 private:
     bool enabled       = true;  // enabled by the default when created
@@ -80,10 +79,10 @@ public:
     void setFile(FILE* f_) { f = f_; }
 
 protected:
-#if defined(COMPILING_FMT) && !defined(DISABLE_PRINTLOGGER)
-    void logImpl(std::string l) override;
+#ifdef DISABLE_PRINTLOGGER
+    void logImpl(const std::string& l) override { UNUSED(l); }
 #else
-    void logImpl(std::string l) override { (void)l; }
+    void logImpl(const std::string& l) override;
 #endif
     FILE* f;
     FastMutex mutex;
@@ -97,13 +96,13 @@ protected:
 class FileLogSinkBuffered : public FileLogSink
 {
 public:
-    FileLogSinkBuffered() : logger(Logger::instance()) {}
+    FileLogSinkBuffered() : logger(Logger::getInstance()) {}
 
 protected:
-#if defined(COMPILING_FMT) && !defined(DISABLE_PRINTLOGGER)
-    void logImpl(std::string l) override;
+#ifdef DISABLE_PRINTLOGGER
+    void logImpl(const std::string& l) override { UNUSED(l); }
 #else
-    void logImpl(std::string l) override { (void)l; }
+    void logImpl(const std::string& l) override;
 #endif
 
 private:

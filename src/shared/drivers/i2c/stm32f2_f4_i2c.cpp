@@ -260,8 +260,6 @@ bool I2C1Driver::send(unsigned char address, const void *data, int len,
         return false;
     }
 
-    error = false;
-
 #ifdef I2C_WITH_DMA
     waiting            = Thread::getCurrentThread();
     DMA1_Stream7->CR   = 0;
@@ -302,7 +300,7 @@ bool I2C1Driver::send(unsigned char address, const void *data, int len,
     I2C1->CR2 |= I2C_CR2_ITERREN;
 
     const uint8_t *txData = reinterpret_cast<const uint8_t *>(data);
-    for (int i = 0; i < len && !error; i++)
+    for (int i = 0; i < len; i++)
     {
         I2C1->DR = txData[i];
         while (!(I2C1->SR1 & I2C_SR1_TXE))
@@ -348,7 +346,8 @@ bool I2C1Driver::send(unsigned char address, const void *data, int len,
         // the TxE flag if stop bit is not sent...
         I2C1->DR = 0x00;
     }
-    return !error;
+
+    return true;
 }
 
 bool I2C1Driver::recv(unsigned char address, void *data, int len)

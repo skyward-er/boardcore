@@ -25,6 +25,8 @@
 #include <diagnostic/PrintLogger.h>
 #include <scheduler/TaskScheduler.h>
 
+#include <map>
+
 #include "SensorInfo.h"
 #include "SensorSampler.h"
 
@@ -51,7 +53,7 @@ public:
      * @param sensors_map map containing references to the sensors as keys,
      *                    and objects of type SensorInfo as values.
      */
-    SensorManager(const SensorMap_t& sensors_map);
+    explicit SensorManager(const SensorMap_t& sensors_map);
 
     /**
      * @brief Constructor taking an external TaskScheduler object.

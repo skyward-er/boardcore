@@ -46,7 +46,7 @@ public:
     {state_machine_name}ControllerFixture()
     {{
         controller = new {state_machine_name}Controller();
-        sEventBroker->start();
+        sEventBroker.start();
         controller->start();
     }}
 
@@ -54,8 +54,8 @@ public:
     ~{state_machine_name}ControllerFixture()
     {{
         controller->stop();
-        sEventBroker->unsubscribe(controller);
-        sEventBroker->clearDelayedEvents();
+        sEventBroker.unsubscribe(controller);
+        sEventBroker.clearDelayedEvents();
         delete controller;
     }}
 

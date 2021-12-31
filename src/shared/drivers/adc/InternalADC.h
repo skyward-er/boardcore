@@ -105,9 +105,9 @@ public:
         CYCLES_480 = 0x7
     };
 
-    InternalADC(ADC_TypeDef& ADCx_, const float V_SUPPLY_ = 5.0,
-                const bool isUsingDMA_    = false,
-                DMA_Stream_TypeDef* DMAx_ = DMA1_Stream0);
+    explicit InternalADC(ADC_TypeDef& ADCx_, const float V_SUPPLY_ = 5.0,
+                         const bool isUsingDMA_    = false,
+                         DMA_Stream_TypeDef* DMAx_ = DMA1_Stream0);
 
     ~InternalADC();
 

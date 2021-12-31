@@ -70,6 +70,9 @@ sbs_target(test-hsm stm32f429zi_stm32f4discovery)
 add_executable(test-interrupt src/tests/test-interrupt.cpp)
 sbs_target(test-interrupt stm32f429zi_stm32f4discovery)
 
+add_executable(test-max485 src/tests/test-max485.cpp)
+sbs_target(test-max485 stm32f407vg_stm32f4discovery)
+
 add_executable(test-pinobserver src/tests/test-pinobserver.cpp)
 sbs_target(test-pinobserver stm32f429zi_stm32f4discovery)
 
@@ -105,7 +108,7 @@ add_executable(catch-tests-entry
     src/tests/catch/test-sensormanager-catch.cpp
     src/tests/catch/xbee/test-xbee-parser.cpp
 )
-target_compile_definitions(catch-tests-entry PUBLIC USE_MOCK_PERIPHERALS)
+target_compile_definitions(catch-tests-entry PRIVATE USE_MOCK_PERIPHERALS)
 sbs_target(catch-tests-entry stm32f429zi_stm32f4discovery)
 sbs_catch_test(catch-tests-entry)
 
@@ -113,11 +116,20 @@ sbs_catch_test(catch-tests-entry)
 #                               Tests - Drivers                               #
 #-----------------------------------------------------------------------------#
 
-add_executable(test-ads1118 src/tests/sensors/ADS1118/test-ads1118.cpp)
-sbs_target(test-ads1118 stm32f407vg_stm32f4discovery)
+add_executable(test-canbus-loopback src/tests/drivers/canbus/test-canbus-loopback.cpp)
+sbs_target(test-canbus-loopback stm32f429zi_stm32f4discovery)
+
+add_executable(test-canbus-2way src/tests/drivers/canbus/test-canbus-2way.cpp)
+sbs_target(test-canbus-2way stm32f429zi_stm32f4discovery)
+
+add_executable(test-dma-spi src/tests/drivers/dma/test-dma-spi.cpp)
+sbs_target(test-dma-spi stm32f429zi_stm32f4discovery)
 
 add_executable(test-dsgamma src/tests/drivers/test-dsgamma.cpp)
 sbs_target(test-dsgamma stm32f429zi_stm32f4discovery)
+
+add_executable(test-general-purpose-timer src/tests/drivers/timer/test-general-purpose-timer.cpp)
+sbs_target(test-general-purpose-timer stm32f429zi_stm32f4discovery)
 
 add_executable(test-hbridge src/tests/drivers/test-hbridge.cpp)
 sbs_target(test-hbridge stm32f429zi_stm32f4discovery)
@@ -131,6 +143,9 @@ sbs_target(test-internal-adc-dma stm32f429zi_stm32f4discovery)
 add_executable(test-mavlink src/tests/drivers/test-mavlink.cpp)
 sbs_target(test-mavlink stm32f429zi_skyward_homeone)
 
+add_executable(test-MBLoadCell src/tests/drivers/test-MBLoadCell.cpp)
+sbs_target(test-MBLoadCell stm32f407vg_stm32f4discovery)
+
 add_executable(test-pwm src/tests/drivers/test-pwm.cpp)
 sbs_target(test-pwm stm32f429zi_stm32f4discovery)
 
@@ -140,8 +155,20 @@ sbs_target(test-servo stm32f429zi_skyward_death_stack_x)
 add_executable(test-spi src/tests/drivers/spi/test-spi.cpp)
 sbs_target(test-spi stm32f429zi_stm32f4discovery)
 
-add_executable(test-ublox src/tests/drivers/test-ublox.cpp)
-sbs_target(test-ublox stm32f429zi_skyward_death_stack_x)
+add_executable(test-spi-as-slave src/tests/drivers/spi/test-spi-as-slave.cpp)
+sbs_target(test-spi-as-slave stm32f429zi_stm32f4discovery)
+
+add_executable(test-spi-signal-generator src/tests/drivers/spi/test-spi-signal-generator.cpp)
+sbs_target(test-spi-signal-generator stm32f429zi_stm32f4discovery)
+
+add_executable(test-spi-slave-bus src/tests/drivers/spi/test-spi-slave-bus.cpp)
+sbs_target(test-spi-slave-bus stm32f429zi_stm32f4discovery)
+
+add_executable(test-timer-utils src/tests/drivers/timer/test-timer-utils.cpp)
+sbs_target(test-timer-utils stm32f429zi_stm32f4discovery)
+
+add_executable(test-vn100serial src/tests/drivers/test-vn100serial.cpp)
+sbs_target(test-vn100serial stm32f407vg_stm32f4discovery)
 
 add_executable(test-xbee-bidir src/tests/drivers/xbee/test-xbee-bidir.cpp)
 sbs_target(test-xbee-bidir stm32f429zi_skyward_death_stack_x)
@@ -161,6 +188,18 @@ sbs_target(test-xbee-snd stm32f429zi_stm32f4discovery)
 #-----------------------------------------------------------------------------#
 #                               Tests - Sensors                               #
 #-----------------------------------------------------------------------------#
+
+add_executable(test-ads1118 src/tests/sensors/ADS1118/test-ads1118.cpp)
+sbs_target(test-ads1118 stm32f407vg_stm32f4discovery)
+
+add_executable(test-ads131m04 src/tests/sensors/ADS131M04/test-ads131m04.cpp)
+sbs_target(test-ads131m04 stm32f429zi_stm32f4discovery)
+
+add_executable(test-ads131m04highfreq src/tests/sensors/ADS131M04/test-ads131m04highfreq.cpp)
+sbs_target(test-ads131m04highfreq stm32f429zi_stm32f4discovery)
+
+add_executable(test-ads131m04highfreq-with-logger src/tests/sensors/ADS131M04/test-ads131m04highfreq-with-logger.cpp)
+sbs_target(test-ads131m04highfreq-with-logger stm32f429zi_stm32f4discovery)
 
 add_executable(test-analog-pressure-sensors src/tests/sensors/analog/test-analog-pressure-sensors.cpp)
 sbs_target(test-analog-pressure-sensors stm32f429zi_stm32f4discovery)
@@ -202,7 +241,7 @@ add_executable(test-lis3mdl src/tests/sensors/test-lis3mdl.cpp)
 sbs_target(test-lis3mdl stm32f429zi_skyward_death_stack_x)
 
 add_executable(test-max6675 src/tests/sensors/test-max6675.cpp)
-sbs_target(test-max6675 stm32f407vg_stm32f4discovery)
+sbs_target(test-max6675 stm32f429zi_stm32f4discovery)
 
 add_executable(test-mpu9250 src/tests/sensors/test-mpu9250.cpp)
 sbs_target(test-mpu9250 stm32f429zi_skyward_death_stack_x)
@@ -210,50 +249,12 @@ sbs_target(test-mpu9250 stm32f429zi_skyward_death_stack_x)
 add_executable(test-ms5803 src/tests/sensors/test-ms5803.cpp)
 sbs_target(test-ms5803 stm32f429zi_skyward_death_stack_x)
 
-add_executable(test-vn100serial src/tests/drivers/test-vn100serial.cpp)
-sbs_target(test-vn100serial stm32f407vg_stm32f4discovery)
+add_executable(test-ubloxgps-serial src/tests/sensors/test-ubloxgps.cpp)
+sbs_target(test-ubloxgps-serial stm32f407vg_stm32f4discovery)
+
+add_executable(test-ubloxgps-spi src/tests/sensors/test-ubloxgps.cpp)
+target_compile_definitions(test-ubloxgps-spi PRIVATE USE_SPI)
+sbs_target(test-ubloxgps-spi stm32f407vg_stm32f4discovery)
 
 add_executable(test-vn100 src/tests/sensors/test-vn100.cpp)
 sbs_target(test-vn100 stm32f407vg_stm32f4discovery)
-
-add_executable(test-max485 src/tests/test-max485.cpp)
-sbs_target(test-max485 stm32f407vg_stm32f4discovery)
-
-add_executable(test-MBLoadCell src/tests/drivers/test-MBLoadCell.cpp)
-sbs_target(test-MBLoadCell stm32f407vg_stm32f4discovery)
-
-add_executable(test-canbus-loopback src/tests/drivers/canbus/test-canbus-loopback.cpp)
-sbs_target(test-canbus-loopback stm32f429zi_stm32f4discovery)
-
-add_executable(test-canbus-2way src/tests/drivers/canbus/test-canbus-2way.cpp)
-sbs_target(test-canbus-2way stm32f429zi_stm32f4discovery)
-
-add_executable(test-timer-utils src/tests/drivers/timer/test-timer-utils.cpp)
-sbs_target(test-timer-utils stm32f429zi_stm32f4discovery)
-
-add_executable(test-dma-spi src/tests/drivers/dma/test-dma-spi.cpp)
-sbs_target(test-dma-spi stm32f429zi_stm32f4discovery)
-
-add_executable(test-general-purpose-timer src/tests/drivers/timer/test-general-purpose-timer.cpp)
-sbs_target(test-general-purpose-timer stm32f429zi_stm32f4discovery)
-
-add_executable(test-ads131m04 src/tests/sensors/ADS131M04/test-ads131m04.cpp)
-sbs_target(test-ads131m04 stm32f429zi_stm32f4discovery)
-
-add_executable(test-ads131m04highfreq src/tests/sensors/ADS131M04/test-ads131m04highfreq.cpp)
-sbs_target(test-ads131m04highfreq stm32f429zi_stm32f4discovery)
-
-add_executable(test-ads131m04highfreq-with-logger src/tests/sensors/ADS131M04/test-ads131m04highfreq-with-logger.cpp)
-sbs_target(test-ads131m04highfreq-with-logger stm32f429zi_stm32f4discovery)
-
-add_executable(test-spi-as-slave src/tests/drivers/spi/test-spi-as-slave.cpp)
-sbs_target(test-spi-as-slave stm32f429zi_stm32f4discovery)
-
-add_executable(test-spi-signal-generator src/tests/drivers/spi/test-spi-signal-generator.cpp)
-sbs_target(test-spi-signal-generator stm32f429zi_stm32f4discovery)
-
-add_executable(test-spi-slave-bus src/tests/drivers/spi/test-spi-slave-bus.cpp)
-sbs_target(test-spi-slave-bus stm32f429zi_stm32f4discovery)
-
-add_executable(test-sx1278 src/tests/drivers/test-sx1278.cpp)
-sbs_target(test-sx1278 stm32f407vg_stm32f4discovery)

@@ -103,7 +103,7 @@ public:
      * @brief Create a BasicTimer object. Note that this does not resets the
      * timer configuration.
      */
-    BasicTimer(TIM_TypeDef *timer);
+    explicit BasicTimer(TIM_TypeDef *timer);
 
     TIM_TypeDef *getTimer();
 

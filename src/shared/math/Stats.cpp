@@ -38,10 +38,6 @@ ostream& operator<<(ostream& os, const StatsResult& sr)
     return os;
 }
 
-//
-// class Stats
-//
-
 Stats::Stats()
     : minValue(numeric_limits<float>::max()),
       maxValue(numeric_limits<float>::lowest()), mean(0.f), m2(0.f), n(0)
@@ -84,24 +80,5 @@ StatsResult Stats::getStats() const
             return {minValue, maxValue, mean, sqrtf(m2 / (n - 1)), n};
     }
 }
-
-#ifdef STATS_TESTCASE
-
-#include <fstream>
-#include <iostream>
-
-int main(int argc, char* argv[])
-{
-    if (argc != 2)
-        return -1;
-    ifstream in(argv[1]);
-    Stats stats;
-    float f;
-    while (in >> f)
-        stats.add(f);
-    cout << stats.getStats() << endl;
-}
-
-#endif  // STATS_TESTCASE
 
 }  // namespace Boardcore

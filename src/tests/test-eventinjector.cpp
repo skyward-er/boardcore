@@ -23,8 +23,6 @@
 #include <events/utils/EventCounter.h>
 #include <events/utils/EventInjector.h>
 
-#include "Common.h"
-
 using namespace Boardcore;
 using namespace miosix;
 
@@ -39,7 +37,7 @@ int main()
     EventInjector injector;
     injector.start();
 
-    EventCounter counter(*sEventBroker);
+    EventCounter counter(sEventBroker);
     counter.subscribe({topic});
 
     for (;;)

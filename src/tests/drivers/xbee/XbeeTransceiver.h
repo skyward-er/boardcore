@@ -27,6 +27,7 @@
 #include <drivers/Xbee/Xbee.h>
 #include <logger/Logger.h>
 #include <miosix.h>
+#include <utils/Debug.h>
 #include <utils/testutils/ThroughputCalculator.h>
 
 #include <functional>
@@ -70,7 +71,7 @@ struct SendIntervalBase
 
 struct ConstSendInterval : public SendIntervalBase
 {
-    ConstSendInterval(unsigned int interval) : interval(interval) {}
+    explicit ConstSendInterval(unsigned int interval) : interval(interval) {}
     unsigned int interval;
     unsigned int getInterval() const override { return interval; }
 };
@@ -153,7 +154,7 @@ private:
 
     uint32_t packet_counter = 0;
 
-    uint8_t buf[Xbee::MAX_PACKET_PAYLOAD_LENGTH];
+    uint8_t buf[Xbee::MAX_PACKET_PAYLOAD_LENGTH] = {0};
 };
 
 class Receiver : public ActiveObject
@@ -252,8 +253,8 @@ private:
     ThroughputCalculator dr_calc;
     RxData data{};
 
-    uint8_t buf[RCV_BUF_SIZE];
-    uint32_t last_packet_num = 0;
+    uint8_t buf[RCV_BUF_SIZE] = {0};
+    uint32_t last_packet_num  = 0;
 };
 
 class XbeeTransceiver
@@ -262,6 +263,8 @@ public:
     XbeeTransceiver(Xbee::Xbee& xbee, Logger& logger,
                     const SendIntervalBase& snd_interval, size_t tx_pkt_size,
                     long long expected_packet_interval)
+        // cppcheck-suppress noCopyConstructor
+        // cppcheck-suppress noOperatorEq
         : sender(new Sender(xbee, logger, snd_interval, tx_pkt_size,
                             expected_packet_interval)),
           receiver(new Receiver(xbee, logger, expected_packet_interval)),

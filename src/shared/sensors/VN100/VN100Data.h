@@ -66,6 +66,7 @@ struct VN100Data : public QuaternionData,
      *
      * @param single data structures for all the data
      */
+    // cppcheck-suppress passedByValue
     VN100Data(QuaternionData quat, MagnetometerData magData,
               AccelerometerData accData, GyroscopeData gyro,
               TemperatureData temp, PressureData pres)

@@ -1,5 +1,5 @@
-/* Copyright (c) 2019 Skyward Experimental Rocketry
- * Author: Luca Erbetta
+/* Copyright (c) 2015-2016 Skyward Experimental Rocketry
+ * Author: Alain Carlucci
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -20,13 +20,24 @@
  * THE SOFTWARE.
  */
 
-#include "Debug.h"
+#pragma once
 
-namespace Boardcore
-{
+#include <drivers/timer/TimestampTimer.h>
+#include <interfaces/endianness.h>
+#include <kernel/scheduler/scheduler.h>
+#include <miosix.h>
+#include <pthread.h>
+#include <utils/Constants.h>
+#include <utils/Debug.h>
 
-#ifdef DEBUG
-miosix::FastMutex trace_mutex;
-#endif
+#include <array>
+#include <cassert>
+#include <cstdint>
+#include <cstdio>
+#include <cstring>
+#include <map>
+#include <memory>
+#include <set>
+#include <vector>
 
-}  // namespace Boardcore
+#define UNUSED(x) (void)(x)

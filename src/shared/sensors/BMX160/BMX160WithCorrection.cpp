@@ -31,8 +31,8 @@ namespace Boardcore
 
 BMX160CorrectionParameters::BMX160CorrectionParameters()
 {
-    accelParams << 0, 0, 0, 0, 0, 0;
-    magnetoParams << 0, 0, 0, 0, 0, 0;
+    accelParams << 0, 0, 0, 0, 0, 0;    // cppcheck-suppress constStatement
+    magnetoParams << 0, 0, 0, 0, 0, 0;  // cppcheck-suppress constStatement
 }
 
 std::string BMX160CorrectionParameters::header()

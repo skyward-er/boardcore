@@ -24,11 +24,10 @@
 #include <drivers/pwm/pwm.h>
 #include <drivers/timer/GeneralPurposeTimer.h>
 #include <miosix.h>
+#include <utils/Debug.h>
 
 #include <iostream>
 #include <sstream>
-
-#include "Common.h"
 
 using namespace Boardcore;
 using namespace miosix;

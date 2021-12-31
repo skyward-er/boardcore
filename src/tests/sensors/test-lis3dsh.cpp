@@ -25,8 +25,6 @@
 #include <miosix.h>
 #include <sensors/LIS3DSH/LIS3DSH.h>
 
-#include "Common.h"
-
 using namespace Boardcore;
 using namespace std;
 using namespace miosix;
@@ -71,7 +69,6 @@ int main()
         return -1;
     }
 
-    bool initialized = false;
     // initialize imu
     if (!sensor.init())
     {
@@ -85,23 +82,12 @@ int main()
         }
         return -1;
     }
-    initialized = true;
 
     // check if the sensor is properly working
     if (!sensor.selfTest())
     {
         printf("\nTEST FAILED: self-test failed \n");
         return -1;
-    }
-
-    // if sensor already inizialized, init() should return false
-    if (initialized)
-    {
-        if (sensor.init())
-        {
-            printf("\nTEST FAILED: sensor is already initialized \n");
-            return -1;
-        }
     }
 
     Thread::sleep(500);

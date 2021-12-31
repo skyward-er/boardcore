@@ -191,8 +191,9 @@ public:
      * @param tempDivider_ Specify how many onSimpleUpdate calls between each
      * temperature reading.
      */
-    ADS1118(SPISlave spiSlave_, ADS1118Config config_ = ADS1118_DEFAULT_CONFIG,
-            bool busyWait_ = false, int16_t tempDivider_ = 100);
+    explicit ADS1118(SPISlave spiSlave_,
+                     ADS1118Config config_ = ADS1118_DEFAULT_CONFIG,
+                     bool busyWait_ = false, int16_t tempDivider_ = 100);
 
     /**
      * Constructs the default config for SPI Bus.

@@ -45,7 +45,7 @@ InterruptManager::InterruptManager() : interrupts{NULL}
 void InterruptManager::OnInterruptEvent(unsigned n)
 {
     IGenericInterrupt* const ptr =
-        InterruptManager::GetInstance()->interrupts[n];
+        InterruptManager::getInstance().interrupts[n];
     if (ptr)
         ptr->OnReciveInt();
 }

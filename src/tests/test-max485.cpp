@@ -60,8 +60,6 @@
  * - the baudrate has to be extremely low. "guaranteed" at 2400
  */
 
-#include <Common.h>
-
 #include "string.h"
 #include "thread"
 #include "utils/SerialInterface.h"

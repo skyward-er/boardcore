@@ -22,7 +22,8 @@
 
 #include "SkyQuaternion.h"
 
-#include "Constants.h"
+#include <utils/Constants.h>
+
 #include "iostream"
 
 using namespace std;
@@ -187,6 +188,7 @@ Vector4f SkyQuaternion::quatProd(const Vector4f q1, const Vector4f q2)
     float q2w = q2(3);
 
     Vector4f quater;
+    // cppcheck-suppress constStatement
     quater << q1w * qv2 + q2w * qv1 - qv1.cross(qv2), q1w * q2w - qv1.dot(qv2);
     float quater_norm = sqrt(quater(0) * quater(0) + quater(1) * quater(1) +
                              quater(2) * quater(2) + quater(3) * quater(3));

@@ -46,7 +46,7 @@ int main()
         if (itr)
         {
             ++counter;
-            printf("%d Interrupt received!\n", counter);
+            printf("%u Interrupt received!\n", counter);
             itr = false;
         }
         Thread::sleep(50);

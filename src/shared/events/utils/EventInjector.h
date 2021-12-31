@@ -23,8 +23,8 @@
 #pragma once
 
 #include <ActiveObject.h>
-#include <Debug.h>
 #include <events/EventBroker.h>
+#include <utils/Debug.h>
 
 #include <iostream>
 #include <sstream>
@@ -57,7 +57,7 @@ protected:
             getline(cin, temp);
             stringstream(temp) >> ev >> topic;
 
-            sEventBroker->post({(uint8_t)ev}, topic);
+            sEventBroker.post({(uint8_t)ev}, topic);
         }
     }
 };

@@ -28,7 +28,6 @@
 /* Expressed in Hertz: valid values: 1 <= frequency <= 1000 */
 #define SAMPLE_FREQUENCY_LOAD_TEST 1000
 
-#include <Common.h>
 #include <diagnostic/CpuMeter.h>
 #include <drivers/spi/SPIDriver.h>
 #include <miosix.h>
@@ -38,6 +37,7 @@
 #include <sensors/calibration/SixParameterCalibration.h>
 #include <sensors/calibration/SoftIronCalibration.h>
 #include <sensors/calibration/TwelveParameterCalibration.h>
+#include <utils/Debug.h>
 
 using namespace Boardcore;
 using namespace miosix;

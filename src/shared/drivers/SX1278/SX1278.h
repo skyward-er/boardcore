@@ -22,6 +22,7 @@
 
 #pragma once
 
+#include <diagnostic/PrintLogger.h>
 #include <drivers/spi/SPIDriver.h>
 #include <kernel/kernel.h>
 
@@ -164,6 +165,8 @@ public:
 
     SPISlave slave;
     Mode mode;
+
+    PrintLogger logger = Logging::getLogger("bmx160");
 };
 
 }  // namespace Boardcore

@@ -22,11 +22,11 @@
 
 #pragma once
 
-#include <Debug.h>
 #include <diagnostic/PrintLogger.h>
 #include <drivers/spi/SPIDriver.h>
 #include <sensors/MS5803/MS5803Data.h>
 #include <sensors/Sensor.h>
+#include <utils/Debug.h>
 
 namespace Boardcore
 {
@@ -73,7 +73,7 @@ public:
 
     static constexpr uint8_t TIMEOUT = 5;
 
-    MS5803(SPISlave spiSlave_, uint16_t temperatureDivider_ = 1);
+    explicit MS5803(SPISlave spiSlave_, uint16_t temperatureDivider_ = 1);
     MS5803(SPIBusInterface& spiBus_, miosix::GpioPin cs_,
            SPIBusConfig spiConfig_, uint16_t temperatureDivider_ = 1);
 

@@ -24,6 +24,7 @@
 #include <drivers/timer/TimestampTimer.h>
 #include <sensors/Sensor.h>
 #include <sensors/SensorManager.h>
+#include <utils/Debug.h>
 #include <utils/testutils/TestSensor.h>
 
 #include <functional>
@@ -149,7 +150,9 @@ template <typename FIFOData, uint32_t FifoSize>
 class FIFOProxy : public SensorFIFO<FIFOData, FifoSize>
 {
 public:
-    FIFOProxy(SensorFIFO<FIFOData, FifoSize>* sensor) : sensor(sensor) {}
+    explicit FIFOProxy(SensorFIFO<FIFOData, FifoSize>* sensor) : sensor(sensor)
+    {
+    }
 
     bool init() override { return true; };
     bool selfTest() override { return true; };
@@ -255,7 +258,7 @@ int main()
 
     // TEST SENSORS WITH FIFO
 
-    const uint32_t fifo_size = 20;
+    const uint32_t fifo_size = 20;  // cppcheck-suppress unreadVariable
 
     MySensorFIFO s;
 

@@ -167,7 +167,7 @@ def check_copyright(directory):
     if(not args.quiet):
         linter_print('{:.2} authors per file'.format(
             averageAuthorsPerFile))
-        linter_print('Number of mentrions per author:')
+        linter_print('Number of mentions per author:')
         for author in authors:
             linter_print('{:3} - {}'.format(authors[author], author))
 

@@ -22,11 +22,13 @@
 
 #include <diagnostic/PrintLogger.h>
 #include <drivers/spi/SPIDriver.h>
+#include <drivers/timer/TimestampTimer.h>
 #include <miosix.h>
 #include <sensors/ADS1118/ADS1118.h>
 #include <sensors/analog/pressure/AnalogPressureSensor.h>
 #include <sensors/analog/pressure/honeywell/HSCMAND015PA.h>
 #include <sensors/analog/pressure/honeywell/HSCMRNN030PA.h>
+#include <utils/Debug.h>
 
 using namespace miosix;
 
@@ -60,8 +62,6 @@ void initBoard()
 
 int main()
 {
-    PrintLogger log = Logging::getLogger("test-analog-pressure-sensors");
-
     // Enable SPI clock and set gpios
     initBoard();
 

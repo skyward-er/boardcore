@@ -22,7 +22,6 @@
 
 #pragma once
 
-#include <Common.h>
 #include <fcntl.h>
 #include <sensors/Sensor.h>
 #include <stdio.h>

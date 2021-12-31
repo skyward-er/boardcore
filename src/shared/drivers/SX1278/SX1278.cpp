@@ -22,7 +22,6 @@
 
 #include "SX1278.h"
 
-#include <Debug.h>
 #include <kernel/scheduler/scheduler.h>
 
 #include <cmath>
@@ -431,7 +430,8 @@ void SX1278::debugDumpRegisters()
     {
         auto name = defs[i].name;
         auto addr = defs[i].addr;
-        TRACE("%s: 0x%x\n", name, spi.readRegister(addr));
+
+        LOG_DEBUG(logger, "%s: 0x%x\n", name, spi.readRegister(addr));
 
         i++;
     }

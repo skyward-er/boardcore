@@ -131,7 +131,7 @@ public:
     // Start the thread in the constructor
     FSMTestFixture()
     {
-        sEventBroker->start();
+        sEventBroker.start();
         fsm.start();
     }
     // Stop the thread in the destructor

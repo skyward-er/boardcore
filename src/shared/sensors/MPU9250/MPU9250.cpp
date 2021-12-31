@@ -24,8 +24,7 @@
 
 #include <drivers/timer/TimestampTimer.h>
 #include <interfaces/endianness.h>
-
-#include "Constants.h"
+#include <utils/Constants.h>
 
 namespace Boardcore
 {
@@ -38,7 +37,7 @@ MPU9250::MPU9250(SPISlave spiSlave_, unsigned short samplingRate_,
 {
 }
 
-SPIBusConfig getDefaultSPIConfig()
+SPIBusConfig MPU9250::getDefaultSPIConfig()
 {
     SPIBusConfig spiConfig{};
     spiConfig.clockDivider = SPI::ClockDivider::DIV_64;

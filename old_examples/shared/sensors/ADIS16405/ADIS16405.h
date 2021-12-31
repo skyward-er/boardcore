@@ -22,9 +22,9 @@
 
 #pragma once
 
-#include <Debug.h>
 #include <drivers/BusTemplate.h>
 #include <sensors/Sensor.h>
+#include <utils/Debug.h>
 
 #include "ADIS16405Data.h"
 

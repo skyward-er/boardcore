@@ -39,7 +39,7 @@ EOF
 }
 
 ohai() {
-    printf "\n${TTY_BLUE}==>${TTY_RESET}${TTY_BOLD} %s${TTY_RESET}\n" "$@";
+    printf "\n${TTY_BLUE}==>${TTY_RESET}${TTY_BOLD} %s${TTY_RESET}\n" "$@"
 }
 
 init_dirs() {
@@ -75,14 +75,16 @@ find_deps() {
     printf "Found flasher: ";             [ "$found_stflash" = true ]     && echo "st-flash" \
                                             || { [ "$found_stlink" = true ] && echo "st-link" || echo "no"; }
 
-    [ "$found_cmake" = true ]     || { echo "Error: CMake must be installed"; exit 1; }
-    [ "$found_miosixgpp" = true ] || { echo "Error: arm-miosix-eabi-g++ must be installed"; exit 1; }
+    [ "$found_cmake" = true ]     || { echo "Error: CMake must be installed"; return 1; }
+    [ "$found_miosixgpp" = true ] || { echo "Error: arm-miosix-eabi-g++ must be installed"; return 1; }
 }
 
 # Workaround: Disable tests in excluded subdirectories
 # See: https://gitlab.kitware.com/cmake/cmake/-/issues/20212
 cmake_disable_excluded_tests() {
-    [ ! -f "$1/$CTEST_FILENAME" ] || sed -i.bak 's/^subdirs/# subdirs/' "$1/$CTEST_FILENAME"
+    declare build_dir="$1"
+
+    [ ! -f "$build_dir/$CTEST_FILENAME" ] || sed -i.bak 's/^subdirs/# subdirs/' "$build_dir/$CTEST_FILENAME"
 }
 
 configure() {
@@ -90,7 +92,7 @@ configure() {
 
     ohai "Configure"
 
-    [ -f "$toolchain_file" ] || { echo "Error: CMake Toolchain File for Miosix was not found"; exit 1; }
+    [ -f "$toolchain_file" ] || { echo "Error: CMake Toolchain File for Miosix was not found"; return 1; }
 
     declare -a defs=(-DCMAKE_EXPORT_COMPILE_COMMANDS=ON)
     defs+=(-DCMAKE_C_FLAGS=-fdiagnostics-color=always -DCMAKE_CXX_FLAGS=-fdiagnostics-color=always)
@@ -102,17 +104,16 @@ configure() {
     declare gen
     [ "$found_ninja" = true ] && gen=-GNinja || gen=-G"Unix Makefiles"
 
-    if cmake -B"$build_dir" "${defs[@]}" "$gen" "$source_dir"; then
-        [ "$config_debug" = true ]   && touch "$build_dir/$DEBUG_FILENAME"   || rm -f "$build_dir/$DEBUG_FILENAME"
-        [ "$config_verbose" = true ] && touch "$build_dir/$VERBOSE_FILENAME" || rm -f "$build_dir/$VERBOSE_FILENAME"
-    fi
+    cmake -B"$build_dir" "${defs[@]}" "$gen" "$source_dir" || return
+
+    { [ "$config_debug" = true ]   && touch "$build_dir/$DEBUG_FILENAME";   } || rm -f "$build_dir/$DEBUG_FILENAME"
+    { [ "$config_verbose" = true ] && touch "$build_dir/$VERBOSE_FILENAME"; } || rm -f "$build_dir/$VERBOSE_FILENAME"
 }
 
 check_configured() {
     declare build_dir="$1"
 
     declare to_reconfigure=false
-
     if [ ! -d "$build_dir" ]; then
         to_reconfigure=true
     elif [ ! -f "$build_dir/$CMAKE_FILENAME" ]; then
@@ -129,8 +130,6 @@ check_configured() {
 
     if [ "$to_reconfigure" = true ]; then
         configure "$build_dir"
-    else
-        true
     fi
 }
 
@@ -138,14 +137,14 @@ build() {
     declare build_dir="$1"
     declare target="$2"
 
-    if check_configured "$build_dir"; then
-        ohai "Build"
+    check_configured "$build_dir" || return
 
-        declare -a opts
-        get_build_opts opts
+    ohai "Build"
 
-        cmake --build "$build_dir" "${opts[@]}" --target "$target"
-    fi
+    declare -a opts
+    get_build_opts opts
+
+    cmake --build "$build_dir" "${opts[@]}" --target "$target"
 }
 
 build_all() {
@@ -155,10 +154,10 @@ build_all() {
 }
 
 clean() {
-    declare build_dir_name="$1"
+    declare build_desc="$1"
     declare build_dir="$2"
 
-    ohai "Clean ($build_dir_name)"
+    ohai "Clean ($build_desc)"
 
     if [ -f "$build_dir/$CMAKE_FILENAME" ]; then
         declare -a opts
@@ -178,68 +177,64 @@ clean_all() {
 
 flash() {
     declare target="$1"
-
     declare build_dir="$build_default_dir"
 
-    if build "$build_dir" "$target"; then
-        ohai "Flash"
+    build "$build_dir" "$target" || return
 
-        if [ ! -f "$build_dir/$target.bin" ]; then
-            echo "Error: target '$target' is not flashable"
-            return 1
-        fi
+    ohai "Flash"
 
-        if [ "$found_stflash" = true ]; then
-            st-flash --reset write "$build_dir/$target.bin" 0x8000000
-        elif [ "$found_stlink" = true ]; then
-            ST-LINK_CLI.exe -P "$build_dir/$target.bin" 0x8000000 -V -Rst
-        else
-            echo "Error: No flashing software found!"
-        fi
+    [ -f "$build_dir/$target.bin" ] || { echo "Error: target '$target' is not flashable"; return 1; }
+
+    if [ "$found_stflash" = true ]; then
+        st-flash --reset write "$build_dir/$target.bin" 0x8000000
+    elif [ "$found_stlink" = true ]; then
+        ST-LINK_CLI.exe -P "$build_dir/$target.bin" 0x8000000 -V -Rst
+    else
+        echo "Error: No flashing software found!"
+        return 1
     fi
 }
 
 run_tests() {
     declare target="$1"
-
     declare build_dir="$build_host_dir"
 
     config_host=true
 
-    if build "$build_dir" "$target"; then
-        ohai "Test"
+    build "$build_dir" "$target" || return
 
-        cmake_disable_excluded_tests "$build_dir"
-        ( cd "$build_dir"; ctest ) || return
-    fi
+    ohai "Test"
+
+    cmake_disable_excluded_tests "$build_dir"
+    ( cd "$build_dir" || return; ctest )
 }
 
 list() {
     declare build_dir="$build_default_dir"
 
-    if check_configured "$build_dir"; then
-        ohai "List targets"
+    check_configured "$build_dir" || return
 
-        declare -a opts
-        get_build_opts opts
+    ohai "List targets"
 
-        echo "[1/1] All SBS targets available:"
-        cmake --build "$build_dir" "${opts[@]}" --target help \
-            | grep -o '^[^/]*\.bin' | cut -f 1 -d '.'
-    fi
+    declare -a opts
+    get_build_opts opts
+
+    echo "[1/1] All SBS targets available:"
+    cmake --build "$build_dir" "${opts[@]}" --target help \
+        | grep -o '^[^/]*\.bin' | cut -f 1 -d '.'
 }
 
 boards() {
     declare build_dir="$build_default_dir"
 
-    if check_configured "$build_dir"; then
-        ohai "List boards"
+    check_configured "$build_dir" || return
 
-        declare -a opts
-        get_build_opts opts
+    ohai "List boards"
 
-        cmake --build "$build_dir" "${opts[@]}" --target help-boards
-    fi
+    declare -a opts
+    get_build_opts opts
+
+    cmake --build "$build_dir" "${opts[@]}" --target help-boards
 }
 
 lint_copyright() {
@@ -257,19 +252,23 @@ lint_find() {
 lint_clangtidy() {
     declare build_dir="$1"
 
-    if check_configured "$build_dir"; then
-        ohai "Lint (clang-tidy)"
+    check_configured "$build_dir" || return
 
-        defs=(--extra-arg=-D_MIOSIX=1 --extra-arg=-D_MIOSIX_GCC_PATCH_MINOR=1 --extra-arg=-D_MIOSIX_GCC_PATCH_MAJOR=3 --extra-arg=-D__LINT__)
-        IFS=$'\n' read -rd '' -a incs < <(arm-miosix-eabi-g++ -E -Wp,-v -xc++ /dev/null 2>&1 | sed -n "s/^ /--extra-arg=-isystem/p")
+    ohai "Lint (clang-tidy)"
 
-        declare opts=()
-        [ "$to_edit" = true ] && opts+=(--fix-notes --fix-errors)
+    defs=(--extra-arg=-D_MIOSIX=1 --extra-arg=-D_MIOSIX_GCC_PATCH_MINOR=1 \
+        --extra-arg=-D_MIOSIX_GCC_PATCH_MAJOR=3 --extra-arg=-D__LINT__)
+    IFS=$'\n' read -rd '' -a incs < \
+        <(arm-miosix-eabi-g++ -E -Wp,-v -xc++ /dev/null 2>&1 \
+            | sed -n "s/^ /--extra-arg=-isystem/p")
 
-        find "$source_dir/src" \
-            -type f \( -iname "*.cpp" -o -iname "*.h" -o -iname "*.c" \) \
-            -exec clang-tidy --header-filter=".*" -p="$build_dir" "${defs[@]}" "${incs[@]}" "${opts[@]}" {} \;
-    fi
+    declare opts=()
+    [ "$to_edit" = true ] && opts+=(--fix-notes --fix-errors)
+
+    find "$source_dir/src" \
+        -type f \( -iname "*.cpp" -o -iname "*.h" -o -iname "*.c" \) \
+        -exec clang-tidy --header-filter=".*" -p="$build_dir" "${defs[@]}" \
+        "${incs[@]}" "${opts[@]}" {} \;
 }
 
 lint_cppcheck() {
@@ -426,23 +425,22 @@ done
 
 while getopts b:cdef:hj:lnrt:uv opt; do
     case "$opt" in
-        b) find_deps; build "$build_default_dir" "$OPTARG"; exit;;
-        c) find_deps; clean_all; exit;;
+        b) find_deps && build "$build_default_dir" "$OPTARG"; exit;;
+        c) find_deps && clean_all; exit;;
         d) set_debug;;
-        e) find_deps; lint true; exit;;
-        f) find_deps; flash "$OPTARG"; exit;;
+        e) find_deps && lint true; exit;;
+        f) find_deps && flash "$OPTARG"; exit;;
         h) usage; exit 0;;
         j) set_jobs "$OPTARG";;
-        l) find_deps; list; exit;;
-        n) find_deps; lint false; exit;;
-        r) find_deps; boards; exit;;
-        t) find_deps; run_tests "$OPTARG"; exit;;
-        u) find_deps; configure "$build_default_dir"; exit;;
+        l) find_deps && list; exit;;
+        n) find_deps && lint false; exit;;
+        r) find_deps && boards; exit;;
+        t) find_deps && run_tests "$OPTARG"; exit;;
+        u) find_deps && configure "$build_default_dir"; exit;;
         v) set_verbose;;
         ?) usage; exit 2;;
     esac
 done
 shift $((OPTIND - 1))
 
-find_deps
-build_all
+find_deps && build_all

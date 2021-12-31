@@ -34,12 +34,12 @@ void __attribute__((naked)) EXTI1_IRQHandler()
 void __attribute__((used)) EXTIrqHandler()
 {
     EXTI->PR |= EXTI_PR_PR1;
-    Singleton<UdpManager>::getInstance()->phyIrqHandler();
+    Singleton<UdpManager>::getInstance().phyIrqHandler();
 }
 
 void _evt_mgmt_thread(void* args)
 {
-    Singleton<UdpManager>::getInstance()->evtQueue.run();
+    Singleton<UdpManager>::getInstance().evtQueue.run();
 }
 
 UdpManager::UdpManager()

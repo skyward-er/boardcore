@@ -23,8 +23,7 @@
 #include "EventBroker.h"
 
 #include <diagnostic/StackLogger.h>
-
-#include "Debug.h"
+#include <utils/Debug.h>
 
 namespace Boardcore
 {
@@ -104,7 +103,7 @@ void EventBroker::run()
         {
             // Unlock the mutex while sleeping
             Unlock<FastMutex> unlock(lock);
-            StackLogger::getInstance()->updateStack(THID_EVT_BROKER);
+            StackLogger::getInstance().updateStack(THID_EVT_BROKER);
 
             Thread::sleepUntil(sleep_until);
         }

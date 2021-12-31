@@ -22,8 +22,6 @@
 
 #include "pwm.h"
 
-#include "Common.h"
-
 using namespace std;
 using namespace miosix;
 

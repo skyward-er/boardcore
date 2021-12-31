@@ -26,7 +26,8 @@
 #include <Singleton.h>
 #include <fmt/format.h>
 #include <logger/Logger.h>
-#include <miosix.h>
+#include <utils/Constants.h>
+#include <utils/Unused.h>
 #include <utils/collections/CircularBuffer.h>
 
 #include <memory>
@@ -50,7 +51,7 @@ namespace Boardcore
 #define DEFAULT_STDOUT_LOG_LEVEL 0
 #endif
 
-#if defined(COMPILING_FMT) && !defined(DISABLE_PRINTLOGGER)
+#ifndef DISABLE_PRINTLOGGER
 
 #include <fmt/format.h>
 
@@ -120,17 +121,17 @@ class Logging : public Singleton<Logging>
 public:
     static PrintLogger getLogger(string name)
     {
-        return PrintLogger(*getInstance(), name);
+        return PrintLogger(getInstance(), name);
     }
 
     static void addLogSink(unique_ptr<LogSink>& sink)
     {
-        getInstance()->sinks.push_back(std::move(sink));
+        getInstance().sinks.push_back(std::move(sink));
     }
 
-    static LogSink& getStdOutLogSink() { return *getInstance()->sinks.at(0); }
+    static LogSink& getStdOutLogSink() { return *getInstance().sinks.at(0); }
 
-    static void startAsyncLogger() { getInstance()->async_log.start(); }
+    static void startAsyncLogger() { getInstance().async_log.start(); }
 
 private:
     void log(const LogRecord& record);
@@ -200,30 +201,36 @@ class Logging;
 class PrintLogger
 {
 public:
-    PrintLogger(Logging& logging, string name) : parent(logging) { (void)name; }
+    PrintLogger(Logging& logging, string name) : parent(logging)
+    {
+        UNUSED(name);
+    }
 
-    PrintLogger getChild(string name) { return PrintLogger(parent, name); }
+    PrintLogger getChild(const string& name)
+    {
+        return PrintLogger(parent, name);
+    }
 
     template <typename... Args>
     void log(uint8_t level, string function, string file, int line,
              string format, Args&&... args)
     {
-        (void)level;
-        (void)function;
-        (void)file;
-        (void)line;
-        (void)format;
+        UNUSED(level);
+        UNUSED(function);
+        UNUSED(file);
+        UNUSED(line);
+        UNUSED(format);
     }
 
     template <typename... Args>
     void logAsync(uint8_t level, string function, string file, int line,
                   string format, Args&&... args)
     {
-        (void)level;
-        (void)function;
-        (void)file;
-        (void)line;
-        (void)format;
+        UNUSED(level);
+        UNUSED(function);
+        UNUSED(file);
+        UNUSED(line);
+        UNUSED(format);
     }
 
     void setEnabled(bool enabled) { this->enabled = enabled; }
@@ -247,9 +254,9 @@ public:
         return PrintLogger(*getInstance(), name);
     }
 
-    static void addLogSink(unique_ptr<LogSink>& sink) { (void)sink; }
+    static void addLogSink(unique_ptr<LogSink>& sink) { UNUSED(sink); }
 
-    static LogSink& getStdOutLogSink() { return *getInstance()->sinks.at(0); }
+    static LogSink& getStdOutLogSink() { return *getInstance().sinks.at(0); }
 
     static void startAsyncLogger() {}
 
@@ -267,7 +274,7 @@ private:
     vector<unique_ptr<LogSink>> sinks;
 };
 
-#define LOG(logger, level, ...) (void)logger
+#define LOG(logger, level, ...) UNUSED(logger)
 
 #define LOG_DEBUG(logger, ...) LOG(logger, LOGL_DEBUG, __VA_ARGS__)
 
@@ -279,7 +286,7 @@ private:
 
 #define LOG_CRIT(logger, ...) LOG(logger, LOGL_CRITICAL, __VA_ARGS__)
 
-#define LOG_ASYNC(logger, level, ...) (void)logger
+#define LOG_ASYNC(logger, level, ...) UNUSED(logger)
 
 #define LOG_DEBUG_ASYNC(logger, ...) LOG_ASYNC(logger, LOGL_DEBUG, __VA_ARGS__)
 
@@ -292,5 +299,6 @@ private:
 #define LOG_CRIT_ASYNC(logger, ...) \
     LOG_ASYNC(logger, LOGL_CRITICAL, __VA_ARGS__)
 
-#endif
+#endif  // DISABLE_PRINTLOGGER
+
 }  // namespace Boardcore

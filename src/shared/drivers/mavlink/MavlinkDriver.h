@@ -22,7 +22,6 @@
 
 #pragma once
 
-#include <Common.h>
 #include <diagnostic/PrintLogger.h>
 
 #include <vector>
@@ -322,7 +321,7 @@ void MavlinkDriver<pkt_len, out_queue_size>::runReceiver()
                     // ... handle the command
                     onRcv(this, msg);
 
-                    StackLogger::getInstance()->updateStack(THID_MAV_RECEIVER);
+                    StackLogger::getInstance().updateStack(THID_MAV_RECEIVER);
                 }
             }
         }
@@ -382,7 +381,7 @@ void MavlinkDriver<pkt_len, out_queue_size>::updateSenderStats(size_t msgCount,
         }
     }
 
-    StackLogger::getInstance()->updateStack(THID_MAV_SENDER);
+    StackLogger::getInstance().updateStack(THID_MAV_SENDER);
 }
 
 template <unsigned int pkt_len, unsigned int out_queue_size>

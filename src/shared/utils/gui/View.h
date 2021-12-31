@@ -22,9 +22,9 @@
 
 #pragma once
 
-#include <Debug.h>
 #include <mxgui/display.h>
 #include <mxgui/misc_inst.h>
+#include <utils/Debug.h>
 
 #include <functional>
 

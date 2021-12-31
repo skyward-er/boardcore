@@ -28,7 +28,6 @@
 #include <mavlink_lib/lynx/mavlink.h>
 #pragma GCC diagnostic pop
 
-#include <Common.h>
 #include <drivers/gamma868/Gamma868.h>
 #include <drivers/mavlink/MavlinkDriver.h>
 

@@ -20,11 +20,11 @@
  * THE SOFTWARE.
  */
 
-#include <Common.h>
 #include <drivers/interrupt/external_interrupts.h>
 #include <drivers/timer/TimestampTimer.h>
 #include <sensors/BMX160/BMX160.h>
 #include <sensors/BMX160/BMX160WithCorrection.h>
+#include <utils/Debug.h>
 
 using namespace Boardcore;
 

@@ -22,8 +22,8 @@
 
 #pragma once
 
-#include <Debug.h>
 #include <miosix.h>
+#include <utils/Debug.h>
 
 #include <cstdint>
 #include <list>

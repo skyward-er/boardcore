@@ -20,7 +20,6 @@
  * THE SOFTWARE.
  */
 
-#include <Common.h>
 #include <sensors/VN100/VN100Serial.h>
 
 #include <string>

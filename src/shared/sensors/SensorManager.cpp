@@ -22,7 +22,7 @@
 
 #include "SensorManager.h"
 
-#include <Debug.h>
+#include <utils/Debug.h>
 
 namespace Boardcore
 {
@@ -234,16 +234,12 @@ uint8_t SensorManager::getFirstTaskID()
         return 0;
     }
 
-    uint8_t max_id = 0;
-    for (auto& stats : tasks_stats)
-    {
-        if (stats.id > max_id)
-        {
-            max_id = stats.id;
-        }
-    }
+    auto max =
+        std::max_element(tasks_stats.begin(), tasks_stats.end(),
+                         [](const TaskStatResult& t1, const TaskStatResult& t2)
+                         { return t1.id < t2.id; });
 
-    return max_id + 1;
+    return max->id + 1;
 }
 
 SensorSampler* SensorManager::createSampler(uint8_t id, uint32_t period,

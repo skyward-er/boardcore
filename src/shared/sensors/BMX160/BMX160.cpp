@@ -22,6 +22,8 @@
 
 #include "BMX160.h"
 
+#include <assert.h>
+
 namespace Boardcore
 {
 

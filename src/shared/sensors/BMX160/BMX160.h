@@ -26,6 +26,7 @@
 #include <drivers/spi/SPIDriver.h>
 #include <drivers/timer/TimestampTimer.h>
 #include <sensors/Sensor.h>
+#include <utils/Constants.h>
 
 #include <algorithm>
 #include <cstring>
@@ -33,7 +34,6 @@
 #include "BMX160Config.h"
 #include "BMX160Data.h"
 #include "BMX160Defs.h"
-#include "Constants.h"
 
 namespace Boardcore
 {
@@ -329,10 +329,10 @@ private:
     bool is_init = false;
     SPISlave spi_slave;
 
-    BMX160Defs::TrimData trim_data;
+    BMX160Defs::TrimData trim_data = {};
     BMX160Config config;
 
-    BMX160FifoStats stats;
+    BMX160FifoStats stats = {};
 
     float gyr_sensibility = 0.0f;
     float acc_sensibility = 0.0f;

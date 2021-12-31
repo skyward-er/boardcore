@@ -22,7 +22,6 @@
 
 #define SENSOR_LIS3DSH_STATS_TEST 1
 
-#include <Common.h>
 #include <drivers/spi/SPIDriver.h>
 #include <math/Stats.h>
 #include <miosix.h>

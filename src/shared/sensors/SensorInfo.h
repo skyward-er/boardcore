@@ -38,15 +38,15 @@ namespace Boardcore
  */
 struct SensorInfo
 {
-    std::string id;
+    const std::string& id;
     uint32_t period;  // Period in ms
     std::function<void()> callback;
     bool is_dma;
     bool is_enabled;
     bool is_initialized;
 
-    SensorInfo(std::string id, uint32_t period, std::function<void()> callback,
-               bool is_dma, bool is_enabled)
+    SensorInfo(const std::string& id, uint32_t period,
+               std::function<void()> callback, bool is_dma, bool is_enabled)
         : id(id), period(period), callback(callback), is_dma(is_dma),
           is_enabled(is_enabled), is_initialized(false)
     {

@@ -25,7 +25,9 @@
 namespace Boardcore
 {
 
+#ifndef COMPILE_FOR_HOST
 GeneralPurposeTimer<uint32_t> TimestampTimer::timestampTimer =
     GeneralPurposeTimer<uint32_t>{TIM2};
+#endif
 
-}
+}  // namespace Boardcore
