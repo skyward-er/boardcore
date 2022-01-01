@@ -61,7 +61,6 @@ cppcheck:
   stage: lint
   script:
     - ./scripts/linter.py --cppcheck src
-  allow_failure: true
 
 format:
   stage: lint
