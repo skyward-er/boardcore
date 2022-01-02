@@ -24,12 +24,8 @@
 #include <drivers/timer/TimestampTimer.h>
 #include <miosix.h>
 
-/**
- * Test developed for the STM32F429 Discovery
- */
-
 using namespace miosix;
-
+using namespace Boardcore;
 using namespace TimerUtils;
 
 void printInputClock(InputClock inputClock);
@@ -38,9 +34,6 @@ void testTimerUtils(TIM_TypeDef *timer);
 
 int main()
 {
-    TimestampTimer::initTimestampTimer();
-    TimestampTimer::enableTimestampTimer();
-
     testTimerUtils(TIM2);
 
     while (true)

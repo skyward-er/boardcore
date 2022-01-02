@@ -328,7 +328,7 @@ LoggerResult Logger::logImpl(const char* name, const void* data,
 
     record->size = result;
 
-    // Movo the record to the full queue, where the pack thread will read and
+    // Move the record to the full queue, where the pack thread will read and
     // store it in a buffer
     fullQueue.put(record);
 

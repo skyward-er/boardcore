@@ -22,12 +22,64 @@
 
 #include "TimestampTimer.h"
 
+#include <diagnostic/PrintLogger.h>
+
 namespace Boardcore
 {
 
+#ifdef ENABLE_TIMESTAMP_TIMER
 #ifndef COMPILE_FOR_HOST
-GeneralPurposeTimer<uint32_t> TimestampTimer::timestampTimer =
+
+GeneralPurposeTimer<uint32_t> TimestampTimer::timer =
     GeneralPurposeTimer<uint32_t>{TIM2};
+
+// Create an instance of the timestamp timer to initialize and enable it
+static TimestampTimer timestampTimer;
+
+TimestampTimer::TimestampTimer()
+{
+    initTimestampTimer();
+    enableTimestampTimer();
+}
+
 #endif
+#endif
+
+// TODO: Keep support for CortexM3
+void TimestampTimer::initTimestampTimer()
+{
+#ifndef COMPILE_FOR_HOST
+    {
+        miosix::FastInterruptDisableLock dLock;
+        // Enable TIM2 peripheral clock
+        RCC->APB1ENR |= RCC_APB1ENR_TIM2EN;
+    }
+
+    timer.reset();
+
+    // Compute the timer prescaler
+    uint16_t timerPrescaler = TimerUtils::computePrescalerValue(
+        timer, TimestampTimer::TIMER_FREQUENCY);
+    timerPrescaler--;
+
+    timer.setPrescaler(timerPrescaler);
+
+    // Generate an update event to apply the new prescaler value
+    timer.generateUpdate();
+#endif
+
+    PrintLogger logger = Logging::getLogger("timestamptimer");
+    LOG_INFO(logger, "Initialized timestamp timer");
+}
+
+void TimestampTimer::enableTimestampTimer()
+{
+#ifndef COMPILE_FOR_HOST
+    timer.enable();
+#endif
+
+    PrintLogger logger = Logging::getLogger("timestamptimer");
+    LOG_INFO(logger, "Enabled timestamp timer");
+}
 
 }  // namespace Boardcore

@@ -174,7 +174,7 @@ int main()
                 0,
                 data[i].timestamp,
                 TimerUtils::toIntMicroSeconds(
-                    TimestampTimer::timestampTimer.getTimer(), data[i].sample_delta),
+                    TimestampTimer::timer.getTimer(), data[i].sample_delta),
                 (data[i].timestamp - data[i - 1].timestamp),
                 data[i].data.gyro_x,
                 data[i].data.gyro_y,

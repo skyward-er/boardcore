@@ -29,6 +29,9 @@
 #include "TimerUtils.h"
 #endif
 
+// When defined, a global variable is created and the timestamp timer is set up
+#define ENABLE_TIMESTAMP_TIMER
+
 namespace Boardcore
 {
 
@@ -50,11 +53,13 @@ namespace Boardcore
 class TimestampTimer
 {
 public:
+    TimestampTimer();
+
 #ifndef COMPILE_FOR_HOST
     /**
      * @brief TimestampTimer defaults to TIM2.
      */
-    static GeneralPurposeTimer<uint32_t> timestampTimer;
+    static GeneralPurposeTimer<uint32_t> timer;
 #endif
 
     /**
@@ -83,39 +88,6 @@ public:
     static uint64_t getTimestamp();
 };
 
-// TODO: Keep support for CortexM3
-inline void TimestampTimer::initTimestampTimer()
-{
-#ifndef COMPILE_FOR_HOST
-    {
-        miosix::FastInterruptDisableLock dLock;
-        // Enable TIM2 peripheral clock
-        RCC->APB1ENR |= RCC_APB1ENR_TIM2EN;
-    }
-
-    timestampTimer.reset();
-
-    // TODO: mode this calculation inside TimerUtils
-    // Compute the timer prescaler
-    uint16_t timerPrescaler =
-        TimerUtils::getPrescalerInputFrequency(timestampTimer.getTimer()) /
-        TimestampTimer::TIMER_FREQUENCY;
-    timerPrescaler--;
-
-    timestampTimer.setPrescaler(timerPrescaler);
-
-    // Generate an update event to apply the new prescaler value
-    timestampTimer.generateUpdate();
-#endif
-}
-
-inline void TimestampTimer::enableTimestampTimer()
-{
-#ifndef COMPILE_FOR_HOST
-    timestampTimer.enable();
-#endif
-}
-
 inline uint64_t TimestampTimer::getTimestamp()
 {
 #ifdef COMPILE_FOR_HOST
@@ -123,7 +95,7 @@ inline uint64_t TimestampTimer::getTimestamp()
 #else
     // With a timer frequency of 250KHz, the conversion from timer ticks to
     // microseconds only take a 2 byte shift (x4)
-    return static_cast<uint64_t>(timestampTimer.readCounter() << 2);
+    return static_cast<uint64_t>(timer.readCounter() << 2);
 
     // If the timer frequency is not a multiple of 2 you must compute the value
     // this way:

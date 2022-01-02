@@ -22,6 +22,7 @@
 
 #pragma once
 
+#include <drivers/timer/BasicTimer.h>
 #include <interfaces/arch_registers.h>
 
 namespace Boardcore
@@ -152,11 +153,18 @@ float getResolution(TIM_TypeDef *timer);
 float getMaxDuration(TIM_TypeDef *timer);
 
 /**
- * @brief Computer the prescaler value for the specified target frequency.
+ * @brief Compute the prescaler value for the specified target frequency.
  *
  * @return Prescaler value for the target frequency.
  */
 uint16_t computePrescalerValue(TIM_TypeDef *timer, int targetFrequency);
+
+/**
+ * @brief Compute the prescaler value for the specified target frequency.
+ *
+ * @return Prescaler value for the target frequency.
+ */
+uint16_t computePrescalerValue(BasicTimer &timer, int targetFrequency);
 
 }  // namespace TimerUtils
 
@@ -273,6 +281,12 @@ inline uint16_t TimerUtils::computePrescalerValue(TIM_TypeDef *timer,
                                                   int targetFrequency)
 {
     return TimerUtils::getPrescalerInputFrequency(timer) / targetFrequency - 1;
+}
+
+inline uint16_t TimerUtils::computePrescalerValue(BasicTimer &timer,
+                                                  int targetFrequency)
+{
+    return computePrescalerValue(timer.getTimer(), targetFrequency);
 }
 
 }  // namespace Boardcore

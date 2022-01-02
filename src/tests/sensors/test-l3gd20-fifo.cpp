@@ -197,11 +197,11 @@ int main()
                 fifo_num,
                 fifo[i],
                 level,
-                TimerUtils::toIntMicroSeconds(
-                    TimestampTimer::timestampTimer.getTimer(), watermarkDelta),
+                TimerUtils::toIntMicroSeconds(TimestampTimer::timer.getTimer(),
+                                              watermarkDelta),
                 averageCpuUtilization(),
-                TimerUtils::toIntMicroSeconds(
-                    TimestampTimer::timestampTimer.getTimer(), update)};
+                TimerUtils::toIntMicroSeconds(TimestampTimer::timer.getTimer(),
+                                              update)};
 
             // Stop if we have enough data
             if (data_counter >= NUM_SAMPLES)

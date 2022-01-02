@@ -80,13 +80,10 @@ add_executable(test-sensormanager src/tests/test-sensormanager.cpp)
 sbs_target(test-sensormanager stm32f429zi_skyward_death_stack_x)
 
 add_executable(test-serial src/tests/test-serial.cpp)
-sbs_target(test-serial stm32f429zi_skyward_death_stack_x)
+sbs_target(test-serial stm32f429zi_stm32f4discovery)
 
 add_executable(test-taskscheduler src/tests/test-taskscheduler.cpp)
 sbs_target(test-taskscheduler stm32f429zi_skyward_death_stack_x)
-
-add_executable(test-timestamp-timer src/tests/test-timestamp-timer.cpp)
-sbs_target(test-timestamp-timer stm32f429zi_stm32f4discovery)
 
 add_executable(test-trace-logger src/tests/test-trace-logger.cpp)
 sbs_target(test-trace-logger stm32f429zi_stm32f4discovery)
@@ -166,6 +163,9 @@ sbs_target(test-spi-slave-bus stm32f429zi_stm32f4discovery)
 
 add_executable(test-timer-utils src/tests/drivers/timer/test-timer-utils.cpp)
 sbs_target(test-timer-utils stm32f429zi_stm32f4discovery)
+
+add_executable(test-timestamptimer src/tests/drivers/timer/test-timestamptimer.cpp)
+sbs_target(test-timestamptimer stm32f429zi_stm32f4discovery)
 
 add_executable(test-vn100serial src/tests/drivers/test-vn100serial.cpp)
 sbs_target(test-vn100serial stm32f407vg_stm32f4discovery)
