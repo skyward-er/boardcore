@@ -59,14 +59,14 @@ int Logger::start()
         }
 
         if (fileNumber == maxFilenameNumber - 1)
-            TRACE("Too many log files, appending data to last");
+            TRACE("Too many log files, appending data to last\n");
     }
 
     file = fopen(filename.c_str(), "ab");  // b for binary
     if (file == NULL)
     {
         fileNumber = -1;
-        TRACE("Error opening %s file", filename);
+        TRACE("Error opening %s file\n", filename.c_str());
         throw runtime_error("Error opening log file");
     }
     setbuf(file, NULL);  // Disable buffering for the file stream
@@ -80,7 +80,7 @@ int Logger::start()
     if (!packTh)
     {
         fclose(file);
-        TRACE("Error creating pack thread");
+        TRACE("Error creating pack thread\n");
         throw runtime_error("Error creating pack thread");
     }
 
@@ -99,7 +99,7 @@ int Logger::start()
         }
         fullList.pop();  // Remove nullptr
         fclose(file);
-        TRACE("Error creating write thread");
+        TRACE("Error creating write thread\n");
         throw runtime_error("Error creating write thread");
     }
 
@@ -291,7 +291,7 @@ LoggerResult Logger::logImpl(const char* name, const void* data,
 {
     if (started == false)
     {
-        TRACE("Attempting to log %s but the Logger is not started!", name);
+        TRACE("Attempting to log %s but the Logger is not started!\n", name);
         stats.droppedSamples++;
 
         // Signal that we are trying to write to a closed log
@@ -322,7 +322,7 @@ LoggerResult Logger::logImpl(const char* name, const void* data,
     {
         emptyQueue.put(record);
         atomicAdd(&stats.tooLargeSamples, 1);
-        TRACE("The current record size is not enough to store %s", name);
+        TRACE("The current record size is not enough to store %s\n", name);
         return LoggerResult::TooLarge;
     }
 
