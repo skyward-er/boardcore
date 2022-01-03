@@ -31,6 +31,12 @@ using namespace Boardcore::ADS131M04RegisterBitMasks;
 namespace Boardcore
 {
 
+ADS131M04::ADS131M04(SPIBusInterface &bus, miosix::GpioPin cs,
+                     SPIBusConfig config)
+    : ADS131M04(SPISlave(bus, cs, config))
+{
+}
+
 ADS131M04::ADS131M04(SPISlave spiSlave) : spiSlave(spiSlave)
 {
     // Reset the configuration
@@ -38,6 +44,14 @@ ADS131M04::ADS131M04(SPISlave spiSlave) : spiSlave(spiSlave)
     channelsPGAGain[1] = PGA::PGA_1;
     channelsPGAGain[2] = PGA::PGA_1;
     channelsPGAGain[3] = PGA::PGA_1;
+}
+
+SPIBusConfig ADS131M04::getDefaultSPIConfig()
+{
+    SPIBusConfig spiConfig{};
+    spiConfig.clockDivider = SPI::ClockDivider::DIV_64;
+    spiConfig.mode         = SPI::Mode::MODE_1;
+    return spiConfig;
 }
 
 void ADS131M04::setOversamplingRatio(OversamplingRatio ratio)
