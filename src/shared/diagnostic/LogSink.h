@@ -26,8 +26,6 @@
 
 #include "PrintLoggerData.h"
 
-using miosix::FastMutex;
-
 namespace Boardcore
 {
 
@@ -76,10 +74,10 @@ public:
     void setFile(FILE* f_) { f = f_; }
 
 protected:
-    void logImpl(std::string l) override;
+    void logImpl(const std::string& l) override;
 
     FILE* f;
-    FastMutex mutex;
+    miosix::FastMutex mutex;
 };
 
 /**
@@ -93,7 +91,7 @@ public:
     FileLogSinkBuffered() : logger(Logger::getInstance()) {}
 
 protected:
-    void logImpl(std::string l) override;
+    void logImpl(const std::string& l) override;
 
 private:
     Logger& logger;
