@@ -20,10 +20,10 @@
  * THE SOFTWARE.
  */
 
-#include <Debug.h>
 #include <drivers/SX1278/SX1278.h>
 #include <drivers/interrupt/external_interrupts.h>
 
+#include <atomic>
 #include <cstring>
 #include <thread>
 
@@ -60,140 +60,313 @@ GpioPin mosi2(GPIOB_BASE, 15);
 GpioPin cs2(GPIOA_BASE, 2);
 GpioPin dio2(GPIOC_BASE, 0);
 
-SX1278 *sx1278_rx = nullptr;
-SX1278 *sx1278_tx = nullptr;
+const char *stringFromBool(bool b)
+{
+    if (b)
+    {
+        return "true";
+    }
+    else
+    {
+        return "false";
+    }
+}
 
-void __attribute__((used)) EXTI0_IRQHandlerImpl() { sx1278_rx->handleDioIRQ(); }
+const char *stringFromErr(SX1278::Error err)
+{
+    switch (err)
+    {
+        case SX1278::Error::BAD_VALUE:
+            return "Error::BAD_VALUE";
+
+        case SX1278::Error::BAD_VERSION:
+            return "Error::BAD_VERSION";
+
+        default:
+            return "<unknown>";
+    }
+}
+
+const char *stringFromRxBw(SX1278::RxBw rx_bw)
+{
+    switch (rx_bw)
+    {
+        case SX1278::RxBw::HZ_2600:
+            return "RxBw::HZ_2600";
+
+        case SX1278::RxBw::HZ_3100:
+            return "RxBw::HZ_3100";
+
+        case SX1278::RxBw::HZ_3900:
+            return "RxBw::HZ_3900";
+
+        case SX1278::RxBw::HZ_5200:
+            return "RxBw::HZ_5200";
+
+        case SX1278::RxBw::HZ_6300:
+            return "RxBw::HZ_6300";
+
+        case SX1278::RxBw::HZ_7800:
+            return "RxBw::HZ_7800";
+
+        case SX1278::RxBw::HZ_10400:
+            return "RxBw::HZ_10400";
+
+        case SX1278::RxBw::HZ_12500:
+            return "RxBw::HZ_12500";
+
+        case SX1278::RxBw::HZ_15600:
+            return "RxBw::HZ_15600";
+
+        case SX1278::RxBw::HZ_20800:
+            return "RxBw::HZ_20800";
+
+        case SX1278::RxBw::HZ_25000:
+            return "RxBw::HZ_25000";
+
+        case SX1278::RxBw::HZ_31300:
+            return "RxBw::HZ_31300";
+
+        case SX1278::RxBw::HZ_41700:
+            return "RxBw::HZ_41700";
+
+        case SX1278::RxBw::HZ_50000:
+            return "RxBw::HZ_50000";
+
+        case SX1278::RxBw::HZ_62500:
+            return "RxBw::HZ_62500";
+
+        case SX1278::RxBw::HZ_83300:
+            return "RxBw::HZ_83300";
+
+        case SX1278::RxBw::HZ_100000:
+            return "RxBw::HZ_100000";
+
+        case SX1278::RxBw::HZ_125000:
+            return "RxBw::HZ_125000";
+
+        case SX1278::RxBw::HZ_166700:
+            return "RxBw::HZ_166700";
+
+        case SX1278::RxBw::HZ_200000:
+            return "RxBw::HZ_200000";
+
+        case SX1278::RxBw::HZ_250000:
+            return "RxBw::HZ_250000";
+
+        default:
+            return "<unknown>";
+    }
+}
 
 /// Status informations.
 struct Stats
 {
-    int last_sent_packet = 0;  //< Last sent packet ID.
-    int last_recv_packet = 0;  //< Last received packet ID.
-    int recv_count       = 0;  //< Actual number of packets received.
+    int last_sent_packet  = 0;  //< Last sent packet ID.
+    int last_recv_packet  = 0;  //< Last received packet ID.
+    int corrupted_packets = 0;  //< Packets that got mangled during tx.
+    int recv_count        = 0;  //< Actual number of packets received.
+    int recv_errors       = 0;  //< Number of failed recvs.
 
     float packet_loss() const
     {
         return (1.0f - ((float)recv_count / (float)last_recv_packet)) * 100.0f;
     }
+
+} stats;
+
+void printConfig(SX1278::Config config)
+{
+    printf("config.freq_rf = %d\n", config.freq_rf);
+    printf("config.freq_dev = %d\n", config.freq_dev);
+    printf("config.bitrate = %d\n", config.bitrate);
+    printf("config.rx_bw = %s\n", stringFromRxBw(config.rx_bw));
+    printf("config.afc_bw = %s\n", stringFromRxBw(config.afc_bw));
+    printf("config.ocp = %d\n", config.ocp);
+    printf("config.enable_int = %s\n", stringFromBool(config.enable_int));
+    printf("config.power = %d\n", config.power);
+}
+
+void printStats(Stats stats)
+{
+    // Prints are REALLY slow, so take a COPY of stats, so we can print an
+    // instant in time.
+
+    printf("stats.last_sent_packet = %d\n", stats.last_sent_packet);
+    printf("stats.last_recv_packet = %d\n", stats.last_recv_packet);
+    printf("stats.corrupted_packets = %d\n", stats.corrupted_packets);
+    printf("stats.recv_count = %d\n", stats.recv_count);
+    printf("stats.recv_errors = %d\n", stats.recv_errors);
+    printf("stats.packet_loss = %.2f %%\n", stats.packet_loss());
+}
+
+/// Interval between transmissions.
+const int TX_INTERVAL = 1;
+
+SX1278 *sx1278_rx = nullptr;
+SX1278 *sx1278_tx = nullptr;
+
+struct Msg
+{
+    int idx;
+    int dummy_1;
+    int dummy_2;
+    int dummy_3;
+
+    const static int DUMMY_1 = 0xdeadbeef;
+    const static int DUMMY_2 = 0xbeefdead;
+    const static int DUMMY_3 = 0x1234abcd;
 };
+
+void __attribute__((used)) EXTI15_IRQHandlerImpl()
+{
+    if (sx1278_rx)
+        sx1278_rx->handleDioIRQ();
+}
+
+void __attribute__((used)) EXTI0_IRQHandlerImpl()
+{
+    if (sx1278_tx)
+        sx1278_tx->handleDioIRQ();
+}
+
+void recvLoop()
+{
+    while (1)
+    {
+        Msg msg;
+        msg.idx     = 0;
+        msg.dummy_1 = 0;
+        msg.dummy_2 = 0;
+        msg.dummy_3 = 0;
+
+        int len = sx1278_rx->recv((uint8_t *)&msg, sizeof(msg));
+        if (len != sizeof(msg))
+        {
+            stats.recv_errors++;
+        }
+        else if (msg.dummy_1 != Msg::DUMMY_1 || msg.dummy_2 != Msg::DUMMY_2 ||
+                 msg.dummy_3 != Msg::DUMMY_3)
+        {
+            stats.recv_errors++;
+            stats.corrupted_packets++;
+        }
+        else
+        {
+            stats.last_recv_packet = msg.idx;
+            stats.recv_count++;
+        }
+    }
+}
+
+void sendLoop()
+{
+    while (1)
+    {
+        int next_idx = stats.last_sent_packet + 1;
+
+        Msg msg;
+        msg.idx     = next_idx;
+        msg.dummy_1 = Msg::DUMMY_1;
+        msg.dummy_2 = Msg::DUMMY_2;
+        msg.dummy_3 = Msg::DUMMY_3;
+
+        sx1278_tx->send((uint8_t *)&msg, sizeof(msg));
+        stats.last_sent_packet = next_idx;
+
+        miosix::Thread::sleep(TX_INTERVAL);
+    }
+}
 
 /// Initialize stm32f407g board
 void initBoard()
 {
-    miosix::FastInterruptDisableLock dLock;
+    {
+        miosix::FastInterruptDisableLock dLock;
 
-    // Enable SPI1 and SPI2
-    RCC->APB1ENR |= RCC_APB1ENR_SPI2EN | RCC_APB1ENR_SPI3EN;
-    RCC_SYNC();
+        // Enable SPI1 and SPI2
+        RCC->APB1ENR |= RCC_APB1ENR_SPI2EN | RCC_APB1ENR_SPI3EN;
+        RCC_SYNC();
 
-    // Setup SPI pins
-    sck1.mode(miosix::Mode::ALTERNATE);
-    sck1.alternateFunction(6);
-    miso1.mode(miosix::Mode::ALTERNATE);
-    miso1.alternateFunction(6);
-    mosi1.mode(miosix::Mode::ALTERNATE);
-    mosi1.alternateFunction(6);
+        // Setup SPI pins
+        sck1.mode(miosix::Mode::ALTERNATE);
+        sck1.alternateFunction(6);
+        miso1.mode(miosix::Mode::ALTERNATE);
+        miso1.alternateFunction(6);
+        mosi1.mode(miosix::Mode::ALTERNATE);
+        mosi1.alternateFunction(6);
 
-    sck2.mode(miosix::Mode::ALTERNATE);
-    sck2.alternateFunction(5);
-    miso2.mode(miosix::Mode::ALTERNATE);
-    miso2.alternateFunction(5);
-    mosi2.mode(miosix::Mode::ALTERNATE);
-    mosi2.alternateFunction(5);
+        sck2.mode(miosix::Mode::ALTERNATE);
+        sck2.alternateFunction(5);
+        miso2.mode(miosix::Mode::ALTERNATE);
+        miso2.alternateFunction(5);
+        mosi2.mode(miosix::Mode::ALTERNATE);
+        mosi2.alternateFunction(5);
 
-    cs1.mode(miosix::Mode::OUTPUT);
-    dio1.mode(miosix::Mode::INPUT);
+        cs1.mode(miosix::Mode::OUTPUT);
+        dio1.mode(miosix::Mode::INPUT);
 
-    cs2.mode(miosix::Mode::OUTPUT);
-    dio2.mode(miosix::Mode::INPUT);
+        cs2.mode(miosix::Mode::OUTPUT);
+        dio2.mode(miosix::Mode::INPUT);
+    }
+
+    cs1.high();
+    cs2.high();
+
+    enableExternalInterrupt(GPIOC_BASE, 0, InterruptTrigger::RISING_EDGE);
+    enableExternalInterrupt(GPIOC_BASE, 15, InterruptTrigger::RISING_EDGE);
 }
 
 int main()
 {
-
     initBoard();
-    cs1.high();
-    cs2.high();
-    enableExternalInterrupt(GPIOC_BASE, 0, InterruptTrigger::RISING_EDGE);
 
-    sx1278_rx = new SX1278(bus2, cs2);
-    sx1278_tx = new SX1278(bus1, cs1);
+    sx1278_rx = new SX1278(bus1, cs1);
+    sx1278_tx = new SX1278(bus2, cs2);
 
     // Run default configuration
-    SX1278::Config config;
+    SX1278::Config config_rx;
+    config_rx.enable_int = true;
 
-    TRACE("Configuring sx1278_rx...\n");
-    config.enable_int = true;
-    sx1278_rx->init(config);
+    SX1278::Config config_tx;
+    config_tx.enable_int = true;
 
-    TRACE("Configuring sx1278_tx...\n");
-    config.enable_int = false;
-    sx1278_tx->init(config);
+    SX1278::Error err;
 
-    struct Msg
+    printf("\n[sx1278] Configuring sx1278_rx...\n");
+    printConfig(config_rx);
+    if ((err = sx1278_rx->init(config_rx)) != SX1278::Error::NONE)
     {
-        int idx;
-        unsigned int dummy_1;
-        unsigned int dummy_2;
-        unsigned int dummy_3;
-    };
+        printf("[sx1278] sx1278_rx->init error: %s\n", stringFromErr(err));
+        return -1;
+    }
 
-    // miosix::Thread::sleep(5000);
-    const int LOG_INTERVAL = 100;
+    printf("\n[sx1278] Configuring sx1278_tx...\n");
+    printConfig(config_tx);
+    if ((err = sx1278_tx->init(config_tx)) != SX1278::Error::NONE)
+    {
+        printf("[sx1278] sx1278_tx->init error: %s\n", stringFromErr(err));
+        return -1;
+    }
 
-    Stats stats;
-    std::thread recv(
-        [&stats]()
-        {
-            while (1)
-            {
-                // Reset message
-                Msg msg;
-                msg.idx     = 0;
-                msg.dummy_1 = 0;
-                msg.dummy_2 = 0;
-                msg.dummy_3 = 0;
+    printf("\n[sx1278] Initialization complete!\n");
 
-                uint8_t len = sx1278_rx->recv((uint8_t *)&msg, sizeof(msg));
+    std::thread recv(&recvLoop);
+    std::thread send(&sendLoop);
 
-                if (msg.dummy_1 != 0xdeadbeef || msg.dummy_2 != 0xbeefdead ||
-                    msg.dummy_3 != 0x1234abcd)
-                {
-                    TRACE("Corrupted message!\n");
-                    TRACE("len = %d\n", len);
-                    TRACE("msg.idx = %d\n", msg.idx);
-                    TRACE("msg.dummy_1 = %x\n", msg.dummy_1);
-                    TRACE("msg.dummy_2 = %x\n", msg.dummy_2);
-                    TRACE("msg.dummy_3 = %x\n", msg.dummy_3);
-                    continue;
-                }
-
-                stats.last_recv_packet = msg.idx;
-                stats.recv_count++;
-            }
-        });
+    miosix::Thread::sleep(4000);
 
     while (1)
     {
-        stats.last_sent_packet++;
+        printf("\n[sx1278] Stats:\n");
+        printStats(stats);
 
-        Msg msg;
-        msg.idx     = stats.last_sent_packet;
-        msg.dummy_1 = 0xdeadbeef;
-        msg.dummy_2 = 0xbeefdead;
-        msg.dummy_3 = 0x1234abcd;
+        // Calculate effective bitrate, also keeping track of packet loss.
+        float eff_bitrate = (sizeof(Msg) * 8 * (1000.0f / TX_INTERVAL)) *
+                            (1.0f - stats.packet_loss());
+        printf("Effective bitrate: %.2f kb/s\n", eff_bitrate / 1000.0f);
 
-        sx1278_tx->send((uint8_t *)&msg, sizeof(msg));
-
-        if (stats.last_sent_packet % LOG_INTERVAL == 0)
-        {
-            TRACE("Packet loss: %.2f%% (%d sent, %d recv)\n",
-                  stats.packet_loss(), stats.last_recv_packet,
-                  stats.recv_count);
-        }
-
-        miosix::Thread::sleep(2);
+        miosix::Thread::sleep(2000);
     }
 
     return 0;

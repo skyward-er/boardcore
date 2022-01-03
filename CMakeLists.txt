@@ -185,6 +185,9 @@ sbs_target(test-xbee-rcv stm32f429zi_stm32f4discovery)
 add_executable(test-xbee-snd src/tests/drivers/xbee/test-xbee-snd.cpp)
 sbs_target(test-xbee-snd stm32f429zi_stm32f4discovery)
 
+add_executable(test-sx1278 src/tests/drivers/test-sx1278.cpp)
+sbs_target(test-sx1278 stm32f407vg_stm32f4discovery)
+
 #-----------------------------------------------------------------------------#
 #                               Tests - Sensors                               #
 #-----------------------------------------------------------------------------#
