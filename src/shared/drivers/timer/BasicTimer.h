@@ -24,6 +24,8 @@
 
 #include <interfaces/arch_registers.h>
 
+#include "TimerUtils.h"
+
 namespace Boardcore
 {
 
@@ -181,6 +183,15 @@ public:
      */
     void setPrescaler(uint16_t prescalerValue);
 
+    int getFrequency();
+
+    /**
+     * @brief Allows to set directly the frequency of the timer's clock.
+     *
+     * @param frequency Target frequency for the timer's clock.
+     */
+    void setFrequency(int frequency);
+
     uint16_t readAutoReloadRegister();
 
     void setAutoReloadRegister(uint16_t autoReloadValue);
@@ -261,6 +272,16 @@ inline uint16_t BasicTimer::readPrescaler() { return timer->PSC; }
 inline void BasicTimer::setPrescaler(uint16_t prescalerValue)
 {
     timer->PSC = prescalerValue;
+}
+
+inline int BasicTimer::getFrequency()
+{
+    return TimerUtils::getFrequency(timer);
+}
+
+inline void BasicTimer::setFrequency(int frequency)
+{
+    setPrescaler(TimerUtils::computePrescalerValue(timer, frequency));
 }
 
 inline uint16_t BasicTimer::readAutoReloadRegister() { return timer->ARR; }

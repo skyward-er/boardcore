@@ -169,8 +169,8 @@ inline void SPISignalGenerator::configure()
 
         // Set the prescaler and auto realod value
         uint16_t autoReloadRegister = spiFrequency * 4 / transactionFrequency;
-        masterTimer.setPrescaler(
-            TimerUtils::computePrescalerValue(masterTimer, spiFrequency * 4));
+        masterTimer.setPrescaler(TimerUtils::computePrescalerValue(
+            masterTimer.getTimer(), spiFrequency * 4));
         masterTimer.setAutoReloadRegister(autoReloadRegister);
 
         // Set channels capture/compare register
@@ -221,8 +221,8 @@ inline void SPISignalGenerator::configure()
         slaveTimer.setTriggerSource(slaveTriggerSource);
 
         // Set the prescaler and auto realod value
-        slaveTimer.setPrescaler(
-            TimerUtils::computePrescalerValue(slaveTimer, spiFrequency * 4));
+        slaveTimer.setPrescaler(TimerUtils::computePrescalerValue(
+            slaveTimer.getTimer(), spiFrequency * 4));
         slaveTimer.setAutoReloadRegister(1);
 
         // Set SCK capture/compare register
