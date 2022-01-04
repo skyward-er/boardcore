@@ -53,8 +53,6 @@ int main()
     // Enable SPI clock and set gpios
     initBoard();
 
-    TimestampTimer::enableTimestampTimer();
-
     SPIBus spiBus(SPI4);
     MAX6675 sensor{spiBus, csPin};
 

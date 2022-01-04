@@ -95,8 +95,6 @@ BMX160CorrectionParameters changeMinGyroCorrectionSamples(
 
 int main()
 {
-    TimestampTimer::enableTimestampTimer();
-
     // Enable interrupt from BMX pin
     enableExternalInterrupt(GPIOE_BASE, 5, InterruptTrigger::FALLING_EDGE);
 

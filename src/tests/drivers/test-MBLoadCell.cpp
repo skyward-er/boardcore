@@ -55,9 +55,6 @@ void buttonCallback(uint8_t btn_id, ButtonPress btn_press, MBLoadCell *loadcell)
 
 int main()
 {
-    // Enabling the timestamps
-    TimestampTimer::enableTimestampTimer();
-
     // In order to disable DEBUG prints of the button press events
     Logging::getStdOutLogSink().setLevel(LOGL_WARNING);
 

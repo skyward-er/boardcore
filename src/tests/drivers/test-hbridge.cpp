@@ -77,8 +77,6 @@ int main()
         hbridge_inhibit.low();
     }
 
-    TimestampTimer::enableTimestampTimer();
-
     for (;;)
     {
         uint32_t freq = 0;

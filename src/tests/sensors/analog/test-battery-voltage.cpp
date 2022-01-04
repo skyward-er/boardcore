@@ -51,8 +51,6 @@ void initBoard()
         // Set the clock divider for the analog circuitry (/8)
         ADC->CCR |= ADC_CCR_ADCPRE_0 | ADC_CCR_ADCPRE_1;
     }
-
-    TimestampTimer::enableTimestampTimer();
 }
 
 int main()

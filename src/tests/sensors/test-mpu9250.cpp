@@ -58,8 +58,6 @@ int main()
     // Enable SPI clock and set gpios
     initBoard();
 
-    TimestampTimer::enableTimestampTimer();
-
     // SPI configuration setup
 
     SPIBusConfig spiConfig;

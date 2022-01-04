@@ -148,8 +148,6 @@ void configure()
     cs.high();
 
     enableExternalInterrupt(GPIOA_BASE, 2, InterruptTrigger::RISING_EDGE);
-
-    TimestampTimer::enableTimestampTimer();
 }
 
 int main()
@@ -197,11 +195,11 @@ int main()
                 fifo_num,
                 fifo[i],
                 level,
-                TimerUtils::toIntMicroSeconds(TimestampTimer::timer.getTimer(),
-                                              watermarkDelta),
+                TimerUtils::toIntMicroSeconds(
+                    TimestampTimer::getInstance().getTimer(), watermarkDelta),
                 averageCpuUtilization(),
-                TimerUtils::toIntMicroSeconds(TimestampTimer::timer.getTimer(),
-                                              update)};
+                TimerUtils::toIntMicroSeconds(
+                    TimestampTimer::getInstance().getTimer(), update)};
 
             // Stop if we have enough data
             if (data_counter >= NUM_SAMPLES)

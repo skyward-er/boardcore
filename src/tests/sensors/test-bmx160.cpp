@@ -49,8 +49,6 @@ void __attribute__((used)) EXTI5_IRQHandlerImpl()
 
 int main()
 {
-    TimestampTimer::enableTimestampTimer();
-
     cs.high();
 
     enableExternalInterrupt(GPIOE_BASE, 5, InterruptTrigger::FALLING_EDGE);

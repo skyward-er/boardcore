@@ -42,8 +42,6 @@ int main()
     tx.alternateFunction(7);
     rx.alternateFunction(7);
 
-    TimestampTimer::enableTimestampTimer();
-
     // Let the sensor start up
     Thread::sleep(1000);
 

@@ -32,7 +32,6 @@ int main()
     static constexpr uint8_t SAMPLE_RATE = 4;
 
     PrintLogger logger = Logging::getLogger("test-ubloxgps");
-    TimestampTimer::enableTimestampTimer();
 
 #if defined(USE_SPI)
     SPIBus bus(SPI1);

@@ -125,8 +125,6 @@ void configure()
 
     // Enable rising-edge interrupt detection on PA2
     enableExternalInterrupt(GPIOA_BASE, 2, InterruptTrigger::RISING_EDGE);
-
-    TimestampTimer::enableTimestampTimer();
 }
 
 int main()
@@ -174,7 +172,7 @@ int main()
                 0,
                 data[i].timestamp,
                 TimerUtils::toIntMicroSeconds(
-                    TimestampTimer::timer.getTimer(), data[i].sample_delta),
+                    TimestampTimer::getInstance().getTimer(), data[i].sample_delta),
                 (data[i].timestamp - data[i - 1].timestamp),
                 data[i].data.gyro_x,
                 data[i].data.gyro_y,

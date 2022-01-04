@@ -35,8 +35,6 @@ using namespace miosix;
 
 int main()
 {
-    TimestampTimer::enableTimestampTimer();
-
     SPIBusConfig spiConfig;
     SPIBus spiBus(SPI1);
     SPISlave spiSlave(spiBus, miosix::sensors::ms5803::cs::getPin(), spiConfig);

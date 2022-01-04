@@ -200,8 +200,6 @@ int main()
 {
     srand(time(NULL));
 
-    TimestampTimer::enableTimestampTimer();
-
     MySensor s1;
     MySensor s2;
 

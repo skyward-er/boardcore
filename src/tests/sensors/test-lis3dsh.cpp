@@ -54,8 +54,6 @@ int main()
     }
     cs.high();
 
-    TimestampTimer::enableTimestampTimer();
-
     LIS3DSH sensor(bus, cs, sensor.ODR_100_HZ, sensor.UPDATE_AFTER_READ_MODE,
                    sensor.FULL_SCALE_4G);
 

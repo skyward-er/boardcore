@@ -30,8 +30,6 @@ using namespace miosix;
 
 int main()
 {
-    TimestampTimer::enableTimestampTimer();
-
     GpioPin cs(GPIOB_BASE, 1), miso(GPIOB_BASE, 4), mosi(GPIOB_BASE, 5),
         clk(GPIOB_BASE, 3);
 

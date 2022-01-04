@@ -49,7 +49,6 @@ void bmx160Sample(void *args);
 
 int main()
 {
-    TimestampTimer::enableTimestampTimer();
 
     // Enable interrupt from BMX pin
     enableExternalInterrupt(GPIOE_BASE, 5, InterruptTrigger::FALLING_EDGE);

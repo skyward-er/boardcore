@@ -27,6 +27,8 @@
 namespace Boardcore
 {
 
+TIM_TypeDef *TimestampTimer::getTimer() { return timer.getTimer(); }
+
 TimestampTimer::TimestampTimer()
 {
     initTimestampTimer();

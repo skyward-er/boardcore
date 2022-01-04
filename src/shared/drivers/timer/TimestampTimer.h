@@ -53,13 +53,6 @@ class TimestampTimer : public Singleton<TimestampTimer>
     friend class Singleton<TimestampTimer>;
 
 public:
-#ifndef COMPILE_FOR_HOST
-    /**
-     * @brief TimestampTimer defaults to TIM2.
-     */
-    GeneralPurposeTimer<uint32_t> timer = GeneralPurposeTimer<uint32_t>{TIM2};
-#endif
-
     /**
      * @brief Preferred timer clock frequency.
      */
@@ -71,6 +64,8 @@ public:
      * @return Current timestamp in microseconds.
      */
     uint64_t getTimestamp();
+
+    TIM_TypeDef *getTimer();
 
 private:
     TimestampTimer();
@@ -87,6 +82,13 @@ private:
      * @brief Starts the timer peripheral.
      */
     void enableTimestampTimer();
+
+#ifndef COMPILE_FOR_HOST
+    /**
+     * @brief TimestampTimer defaults to TIM2.
+     */
+    GeneralPurposeTimer<uint32_t> timer = GeneralPurposeTimer<uint32_t>{TIM2};
+#endif
 };
 
 inline uint64_t TimestampTimer::getTimestamp()
