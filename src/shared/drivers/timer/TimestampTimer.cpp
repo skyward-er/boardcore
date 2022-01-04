@@ -48,7 +48,6 @@ void TimestampTimer::initTimestampTimer()
     // Compute the timer prescaler
     uint16_t timerPrescaler = TimerUtils::computePrescalerValue(
         timer, TimestampTimer::TIMER_FREQUENCY);
-    timerPrescaler--;
 
     timer.setPrescaler(timerPrescaler);
 

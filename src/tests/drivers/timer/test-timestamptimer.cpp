@@ -49,8 +49,9 @@ int main()
 
         uint64_t timestamp = TimestampTimer::getInstance().getTimestamp();
 
-        printf("%10lu us, %7f ms, %4f s \n", timestamp, timestamp / 1e3,
-               timestamp / 1e6);
+        // cppcheck-suppress invalidPrintfArgType_uint
+        printf("%12llu us, %12.3f ms, %12.6f s, %12lld tick \n", timestamp,
+               timestamp / 1e3, timestamp / 1e6, prevTick);
 
         Thread::sleepUntil(prevTick + 1000);
     }
