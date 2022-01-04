@@ -26,8 +26,6 @@
 
 #include "PrintLoggerData.h"
 
-using miosix::FastMutex;
-
 namespace Boardcore
 {
 
@@ -40,11 +38,8 @@ public:
 
     virtual ~LogSink() {}
 
-#ifdef DISABLE_PRINTLOGGER
-    void log(const LogRecord& record) { UNUSED(record); }
-#else
     void log(const LogRecord& record);
-#endif
+
     void enable() { enabled = true; }
 
     void disable() { enabled = false; }
@@ -79,13 +74,10 @@ public:
     void setFile(FILE* f_) { f = f_; }
 
 protected:
-#ifdef DISABLE_PRINTLOGGER
-    void logImpl(const std::string& l) override { UNUSED(l); }
-#else
     void logImpl(const std::string& l) override;
-#endif
+
     FILE* f;
-    FastMutex mutex;
+    miosix::FastMutex mutex;
 };
 
 /**
@@ -99,11 +91,7 @@ public:
     FileLogSinkBuffered() : logger(Logger::getInstance()) {}
 
 protected:
-#ifdef DISABLE_PRINTLOGGER
-    void logImpl(const std::string& l) override { UNUSED(l); }
-#else
     void logImpl(const std::string& l) override;
-#endif
 
 private:
     Logger& logger;

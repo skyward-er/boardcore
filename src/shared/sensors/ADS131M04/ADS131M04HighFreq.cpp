@@ -96,6 +96,19 @@ void ADS131M04HighFreq::resumeHighFreqSampling()
 
 void ADS131M04HighFreq::startLogging() { start(); }
 
+ADS131M04Data ADS131M04HighFreq::sampleImpl()
+{
+    if (highFreqSamplingStarted)
+    {
+        // TODO
+        return ADS131M04Data{};
+    }
+    else
+    {
+        return ADS131M04::sampleImpl();
+    }
+}
+
 void ADS131M04HighFreq::run()
 {
     std::string filename = fmt::format("/sd/{}.bin", logFileName);

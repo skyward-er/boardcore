@@ -76,6 +76,8 @@ public:
     void handleTransferCompleteInterrupt();
 
 protected:
+    ADS131M04Data sampleImpl() override;
+
     void run() override;
 
 private:

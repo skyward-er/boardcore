@@ -122,7 +122,17 @@ public:
         CHANNEL_3 = 3
     };
 
+    ADS131M04(SPIBusInterface &bus, miosix::GpioPin cs,
+              SPIBusConfig config = getDefaultSPIConfig());
+
     explicit ADS131M04(SPISlave spiSlave);
+
+    /**
+     * Constructs the default config for SPI Bus.
+     *
+     * @returns The default SPIBusConfig.
+     */
+    static SPIBusConfig getDefaultSPIConfig();
 
     bool init() override;
 
@@ -170,9 +180,10 @@ public:
 
     bool selfTest() override;
 
-private:
+protected:
     ADS131M04Data sampleImpl() override;
 
+private:
     enum class Registers : uint16_t
     {
         // Device settings and indicators
