@@ -490,7 +490,7 @@ QuaternionData VN100::sampleQuaternion()
     }
 
     // Parse the data
-    data.quat_timestamp = TimestampTimer::getTimestamp();
+    data.quat_timestamp = TimestampTimer::getInstance().getTimestamp();
     data.quat_x         = strtod(recvString + indexStart + 1, &nextNumber);
     data.quat_y         = strtod(nextNumber + 1, &nextNumber);
     data.quat_z         = strtod(nextNumber + 1, &nextNumber);
@@ -518,7 +518,7 @@ MagnetometerData VN100::sampleMagnetometer()
     }
 
     // Parse the data
-    data.mag_timestamp = TimestampTimer::getTimestamp();
+    data.mag_timestamp = TimestampTimer::getInstance().getTimestamp();
     data.mag_x         = strtod(recvString + indexStart + 1, &nextNumber);
     data.mag_y         = strtod(nextNumber + 1, &nextNumber);
     data.mag_z         = strtod(nextNumber + 1, NULL);
@@ -545,7 +545,7 @@ AccelerometerData VN100::sampleAccelerometer()
     }
 
     // Parse the data
-    data.accel_timestamp = TimestampTimer::getTimestamp();
+    data.accel_timestamp = TimestampTimer::getInstance().getTimestamp();
     data.accel_x         = strtod(recvString + indexStart + 1, &nextNumber);
     data.accel_y         = strtod(nextNumber + 1, &nextNumber);
     data.accel_z         = strtod(nextNumber + 1, NULL);
@@ -572,7 +572,7 @@ GyroscopeData VN100::sampleGyroscope()
     }
 
     // Parse the data
-    data.gyro_timestamp = TimestampTimer::getTimestamp();
+    data.gyro_timestamp = TimestampTimer::getInstance().getTimestamp();
     data.gyro_x         = strtod(recvString + indexStart + 1, &nextNumber);
     data.gyro_y         = strtod(nextNumber + 1, &nextNumber);
     data.gyro_z         = strtod(nextNumber + 1, NULL);
@@ -598,7 +598,7 @@ TemperatureData VN100::sampleTemperature()
     }
 
     // Parse the data
-    data.temp_timestamp = TimestampTimer::getTimestamp();
+    data.temp_timestamp = TimestampTimer::getInstance().getTimestamp();
     data.temp           = strtod(recvString + indexStart + 1, NULL);
 
     return data;
@@ -622,7 +622,7 @@ PressureData VN100::samplePressure()
     }
 
     // Parse the data
-    data.press_timestamp = TimestampTimer::getTimestamp();
+    data.press_timestamp = TimestampTimer::getInstance().getTimestamp();
     data.press           = strtod(recvString + indexStart + 1, NULL);
 
     return data;

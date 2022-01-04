@@ -44,8 +44,8 @@ struct MySensorData : public PressureData, public TemperatureData
     MySensorData() : PressureData{0, 0.0}, TemperatureData{0, 0.0} {}
 
     MySensorData(float p, float t)
-        : PressureData{TimestampTimer::getTimestamp(), p},
-          TemperatureData{TimestampTimer::getTimestamp(), t}
+        : PressureData{TimestampTimer::getInstance().getTimestamp(), p},
+          TemperatureData{TimestampTimer::getInstance().getTimestamp(), t}
     {
     }
 };
@@ -97,16 +97,18 @@ struct MySensorDataFIFO : public AccelerometerData, public GyroscopeData
 {
 
     MySensorDataFIFO()
-        : AccelerometerData{TimestampTimer::getTimestamp(), 0.0, 0.0, 0.0},
-          GyroscopeData{TimestampTimer::getTimestamp(), 0.0, 0.0, 0.0}
+        : AccelerometerData{TimestampTimer::getInstance().getTimestamp(), 0.0,
+                            0.0, 0.0},
+          GyroscopeData{TimestampTimer::getInstance().getTimestamp(), 0.0, 0.0,
+                        0.0}
     {
     }
 
     MySensorDataFIFO(AccelerometerData acc, GyroscopeData gyro)
-        : AccelerometerData{TimestampTimer::getTimestamp(), acc.accel_x,
-                            acc.accel_y, acc.accel_z},
-          GyroscopeData{TimestampTimer::getTimestamp(), gyro.gyro_x,
-                        gyro.gyro_y, gyro.gyro_z}
+        : AccelerometerData{TimestampTimer::getInstance().getTimestamp(),
+                            acc.accel_x, acc.accel_y, acc.accel_z},
+          GyroscopeData{TimestampTimer::getInstance().getTimestamp(),
+                        gyro.gyro_x, gyro.gyro_y, gyro.gyro_z}
     {
     }
 };
@@ -123,9 +125,10 @@ public:
     {
         for (uint32_t i = 0; i < fifo_size; i++)
         {
-            AccelerometerData acc{TimestampTimer::getTimestamp(), 0.5, 0.5,
-                                  0.5};
-            GyroscopeData gyro{TimestampTimer::getTimestamp(), 0.5, 0.5, 0.5};
+            AccelerometerData acc{TimestampTimer::getInstance().getTimestamp(),
+                                  0.5, 0.5, 0.5};
+            GyroscopeData gyro{TimestampTimer::getInstance().getTimestamp(),
+                               0.5, 0.5, 0.5};
 
             last_fifo[i] = MySensorDataFIFO{acc, gyro};
 

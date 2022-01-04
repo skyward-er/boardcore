@@ -283,7 +283,7 @@ ADS131M04Data ADS131M04::sampleImpl()
 
     // Convert values
     ADS131M04Data adcData;
-    adcData.timestamp = TimestampTimer::getTimestamp();
+    adcData.timestamp = TimestampTimer::getInstance().getTimestamp();
     for (int i = 0; i < 4; i++)
     {
         adcData.voltage[i] =

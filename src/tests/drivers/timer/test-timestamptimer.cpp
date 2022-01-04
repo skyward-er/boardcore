@@ -34,13 +34,20 @@ void testTimerUtils(TIM_TypeDef *timer);
 
 int main()
 {
+    // Force the timestamptimer to init
+    (void)TimestampTimer::getInstance();
+
     testTimerUtils(TIM2);
+
+    printf("Initialization should be complete\n");
+
+    delayMs(1000);
 
     while (true)
     {
         long long prevTick = getTick();
 
-        uint64_t timestamp = TimestampTimer::getTimestamp();
+        uint64_t timestamp = TimestampTimer::getInstance().getTimestamp();
 
         printf("%10lu us, %7f ms, %4f s \n", timestamp, timestamp / 1e3,
                timestamp / 1e6);

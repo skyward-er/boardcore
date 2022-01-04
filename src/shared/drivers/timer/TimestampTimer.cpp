@@ -27,23 +27,11 @@
 namespace Boardcore
 {
 
-#ifdef ENABLE_TIMESTAMP_TIMER
-#ifndef COMPILE_FOR_HOST
-
-GeneralPurposeTimer<uint32_t> TimestampTimer::timer =
-    GeneralPurposeTimer<uint32_t>{TIM2};
-
-// Create an instance of the timestamp timer to initialize and enable it
-static TimestampTimer timestampTimer;
-
 TimestampTimer::TimestampTimer()
 {
     initTimestampTimer();
     enableTimestampTimer();
 }
-
-#endif
-#endif
 
 // TODO: Keep support for CortexM3
 void TimestampTimer::initTimestampTimer()

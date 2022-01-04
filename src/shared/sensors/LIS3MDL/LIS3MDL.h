@@ -528,7 +528,8 @@ private:
                 val = spi.readRegister(TEMP_OUT_L);
                 val |= spi.readRegister(TEMP_OUT_H) << 8;
 
-                newData.temp_timestamp = TimestampTimer::getTimestamp();
+                newData.temp_timestamp =
+                    TimestampTimer::getInstance().getTimestamp();
                 newData.temp = static_cast<float>(val) / LSB_PER_CELSIUS +
                                REFERENCE_TEMPERATURE;
             }
@@ -541,7 +542,7 @@ private:
             currDiv = (currDiv + 1) % mConfig.temperatureDivider;
         }
 
-        newData.mag_timestamp = TimestampTimer::getTimestamp();
+        newData.mag_timestamp = TimestampTimer::getInstance().getTimestamp();
 
         val = spi.readRegister(OUT_X_L);
         val |= spi.readRegister(OUT_X_H) << 8;

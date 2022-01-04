@@ -22,15 +22,13 @@
 
 #pragma once
 
+#include <Singleton.h>
 #include <kernel/kernel.h>
 
 #ifndef COMPILE_FOR_HOST
 #include "GeneralPurposeTimer.h"
 #include "TimerUtils.h"
 #endif
-
-// When defined, a global variable is created and the timestamp timer is set up
-#define ENABLE_TIMESTAMP_TIMER
 
 namespace Boardcore
 {
@@ -50,16 +48,16 @@ namespace Boardcore
  * For timer resolution and duration refer to :
  * https://docs.google.com/spreadsheets/d/1FiNDVU7Rg98yZzz1dZ4GDAq3-nEg994ziezCawJ-OK4/edit?usp=sharing
  */
-class TimestampTimer
+class TimestampTimer : public Singleton<TimestampTimer>
 {
-public:
-    TimestampTimer();
+    friend class Singleton<TimestampTimer>;
 
+public:
 #ifndef COMPILE_FOR_HOST
     /**
      * @brief TimestampTimer defaults to TIM2.
      */
-    static GeneralPurposeTimer<uint32_t> timer;
+    GeneralPurposeTimer<uint32_t> timer = GeneralPurposeTimer<uint32_t>{TIM2};
 #endif
 
     /**
@@ -68,24 +66,27 @@ public:
     static constexpr uint32_t TIMER_FREQUENCY = 250000;
 
     /**
+     * @brief Compute the current timer value in microseconds.
+     *
+     * @return Current timestamp in microseconds.
+     */
+    uint64_t getTimestamp();
+
+private:
+    TimestampTimer();
+
+    /**
      * @brief Initialize the timer.
      *
      * Enables the timer clock, resets the timer registers and sets che correct
      * timer configuration.
      */
-    static void initTimestampTimer();
+    void initTimestampTimer();
 
     /**
      * @brief Starts the timer peripheral.
      */
-    static void enableTimestampTimer();
-
-    /**
-     * @brief Compute the current timer value in microseconds.
-     *
-     * @return Current timestamp in microseconds.
-     */
-    static uint64_t getTimestamp();
+    void enableTimestampTimer();
 };
 
 inline uint64_t TimestampTimer::getTimestamp()

@@ -290,7 +290,8 @@ bool UbloxGPS::parseUBXNAVFrame(const UBXUnpackedFrame& frame)
             last_sample.fix = frame.payload[20] != 0;
 
             // Timestamp
-            last_sample.gps_timestamp = TimestampTimer::getTimestamp();
+            last_sample.gps_timestamp =
+                TimestampTimer::getInstance().getTimestamp();
 
             return true;
     }

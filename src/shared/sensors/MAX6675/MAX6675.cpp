@@ -77,7 +77,7 @@ TemperatureData MAX6675::sampleImpl()
     sample >>= 3;
 
     TemperatureData result{};
-    result.temp_timestamp = TimestampTimer::getTimestamp();
+    result.temp_timestamp = TimestampTimer::getInstance().getTimestamp();
 
     // Convert the sample value
     result.temp = static_cast<unsigned int>(sample >> 2);  // Integer part

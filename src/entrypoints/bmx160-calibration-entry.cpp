@@ -77,7 +77,8 @@ void __attribute__((used)) EXTI5_IRQHandlerImpl()
 {
     if (bmx160)
     {
-        bmx160->IRQupdateTimestamp(TimestampTimer::getTimestamp());
+        bmx160->IRQupdateTimestamp(
+            TimestampTimer::getInstance().getTimestamp());
     }
 }
 
