@@ -1,5 +1,5 @@
-/* Copyright (c) 2018 Skyward Experimental Rocketry
- * Author: Luca Erbetta
+/* Copyright (c) 2018-2021 Skyward Experimental Rocketry
+ * Author: Luca Erbetta, Alberto Nidasio
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -20,121 +20,147 @@
  * THE SOFTWARE.
  */
 
+#include <drivers/timer/TimestampTimer.h>
+#include <math/Stats.h>
+#include <miosix.h>
+#include <stdint.h>
+
 #include <array>
-// #include <chrono>
 #include <cstdio>
 #include <ctime>
 #include <iostream>
-// #include <thread>
-#include <math/Stats.h>
-#include <miosix.h>
-
 #include <vector>
 
 using namespace Boardcore;
 using namespace miosix;
 using namespace std;
 
-const unsigned int NUM_WRITES = 5000;
+///< Number of writes to perform for each buffer size
+const unsigned int NUM_WRITES = 1000;
 
-vector<unsigned int> BUF_SIZES{128, 256, 512, 1024, 2048, 4096, 1024 * 8};
+vector<size_t> BUFFER_SIZES = {128,  256,  512,   1024,  2048,
+                               4096, 8192, 16348, 32768, 65536};
 
-// Fills a buffer with random bytes
-void rndFill(uint8_t* buf, unsigned int size)
+array<float, NUM_WRITES> data;
+
+/**
+ * @brief Fills a buffer with random bytes.
+ *
+ * @param buf Pointer to the buffer to fill.
+ * @param size Size of the buffer
+ */
+void rndFill(uint8_t* buf, size_t size);
+
+/**
+ * @brief Writes random bufferSize bytes on the SD card and measure the duration
+ * of each transaction.
+ *
+ * @param bufferSize Number of bytes to write.
+ * @param results Array where to store the duration measured for each write.
+ * @return True if no error encountered.
+ */
+bool benchmark(size_t bufferSize, array<float, NUM_WRITES>& results);
+
+/**
+ * @brief Prints the test results for the specified buffer size.
+ *
+ * @param bufferSize Buffer size of the benchmarck.
+ * @param results Results form the benchmark.
+ */
+void printResults(size_t bufferSize, array<float, NUM_WRITES>& results);
+
+int main()
 {
-    for (unsigned int i = 0; i < size; i++)
+    TimestampTimer::initTimestampTimer();
+    TimestampTimer::enableTimestampTimer();
+    srand(time(NULL));
+
+    for (size_t bufferSize : BUFFER_SIZES)
     {
-        *buf = rand() % 256;
-        ++buf;
+        if (benchmark(bufferSize, data))
+            printResults(bufferSize, data);
+        else
+            printf("Error while performing the benchmark (buffer size: %lu)\n",
+                   (unsigned long)bufferSize);
     }
+
+    printf("Test completed\n");
+
+    while (true)
+        Thread::sleep(1000);
 }
 
-bool benchmark(unsigned int buf_size, array<float, NUM_WRITES>& results)
+void rndFill(uint8_t* buf, size_t size)
 {
-    bool success = false;
+    for (size_t i = 0; i < size; i++)
+        buf[i] = rand() % 256;
+}
 
-    uint8_t* buf = new uint8_t[buf_size];
+bool benchmark(size_t bufferSize, array<float, NUM_WRITES>& results)
+{
+    uint8_t* buffer = new uint8_t[bufferSize];
 
-    FILE* f = fopen("/sd/buf.dat", "w");
+    FILE* file = fopen("/sd/buf.dat", "w");
 
-    if (f == NULL)
+    if (file == nullptr)
     {
         printf("Error opening file!\n");
-        goto clean;
+        // cppcheck-suppress nullPointerRedundantCheck
+        // cppcheck-suppress nullPointer
+        fclose(file);
+        delete[] buffer;
+        return false;
     }
 
     for (unsigned int i = 0; i < NUM_WRITES; i++)
     {
-        rndFill(buf, buf_size);
-        long long t = getTick();
-        int w       = fwrite(buf, 1, buf_size, f);
-        t           = getTick() - t;
+        rndFill(buffer, bufferSize);
 
-        if (w != (int)buf_size)
+        // Time in microseconds (us)
+        uint64_t duration = TimestampTimer::getTimestamp();
+
+        size_t writeResult = fwrite(buffer, 1, bufferSize, file);
+
+        duration = TimestampTimer::getTimestamp() - duration;
+
+        if (writeResult != bufferSize)
         {
-            printf("fwrite error: %d\n", ferror(f));
-            goto clean;
+            printf("fwrite error: %d\n", ferror(file));
+            fclose(file);
+            delete[] buffer;
+            return false;
         }
-        results[i] = t;
+
+        results[i] = duration;
     }
 
-    success = true;
-
-clean:
-    // Cleanup
-    fclose(f);
-    remove("buf.dat");
-    delete[] buf;
-
-    return success;
+    fclose(file);
+    delete[] buffer;
+    return true;
 }
 
-void printResults(unsigned int buf_size, array<float, NUM_WRITES>& results)
+void printResults(size_t bufferSize, array<float, NUM_WRITES>& results)
 {
-    Stats s;
-    for (float f : results)
-    {
-        s.add(f);
-    }
-    StatsResult res = s.getStats();
+    // Compute statistics on the benchmark results
+    Stats stats;
+    for (float result : results)
+        stats.add(result);
+    StatsResult statsResults = stats.getStats();
 
-    cout << "***BUF SIZE: " << buf_size << "\n";
-    cout << "Times: \n";
-    cout << "- mean: " << res.mean << " ms \n";
-    cout << "- stddev: " << res.stdev << " ms \n";
-    cout << "- min: " << res.minValue << " ms \n";
-    cout << "- max: " << res.maxValue << " ms \n";
+    printf("\tBuffer size: %lu\n", (unsigned long)bufferSize);
+    printf("Times:\n");
+    printf("- mean:    % 6.1f us\n", statsResults.mean);
+    printf("- std dev: % 6.1f us\n", statsResults.stdev);
+    printf("- min:     % 6.1f us\n", statsResults.minValue);
+    printf("- max:     % 6.1f us\n", statsResults.maxValue);
+    printf("Speeds:\n");
+    printf("- mean: % 6.2fKiB/s\n",
+           bufferSize / (statsResults.mean / 1e6) / 1024);
+    printf("- min:  % 6.2fKiB/s\n",
+           bufferSize / (statsResults.maxValue / 1e6)) /
+        1024;
+    printf("- max:  % 6.2fKiB/s\n",
+           bufferSize / (statsResults.minValue / 1e6) / 1024);
 
-    cout << "Speeds: \n";
-    cout << "- mean: " << buf_size / (res.mean * 1024) << " KiB/s \n";
-    cout << "- min: " << buf_size / (res.maxValue * 1024) << " KiB/s \n";
-    cout << "- max: " << buf_size / (res.minValue * 1024) << " KiB/s \n";
-
-    cout << "\n\n";
-}
-
-array<float, NUM_WRITES> data;
-
-int main()
-{
-    srand(time(NULL));
-
-    for (unsigned int s : BUF_SIZES)
-    {
-        if (benchmark(s, data))
-        {
-            printResults(s, data);
-        }
-        else
-        {
-            cout << "Error (buf_size: " << s << ").\nAborting.\n";
-        }
-    }
-    for (;;)
-    {
-        Thread::sleep(60000);
-        cout << "Aborted!\n";
-    }
-
-    return 0;
+    printf("\n");
 }
