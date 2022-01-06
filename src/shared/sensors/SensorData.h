@@ -73,6 +73,13 @@ struct TemperatureData
 {
     uint64_t temp_timestamp;
     float temp;
+
+    static std::string header() { return "timestamp,temperature\n"; }
+
+    void print(std::ostream& os) const
+    {
+        os << temp_timestamp << "," << temp << "\n";
+    }
 };
 
 /**

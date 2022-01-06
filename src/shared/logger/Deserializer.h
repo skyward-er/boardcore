@@ -144,7 +144,7 @@ public:
             return false;
         }
 
-        std::std::ifstream file(logFileWithExt);
+        std::ifstream file(logFileWithExt);
         // file.open;
         tscpp::UnknownInputArchive ia(file, tps);
         int i = 0;
