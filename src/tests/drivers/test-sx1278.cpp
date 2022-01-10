@@ -23,7 +23,6 @@
 #include <drivers/SX1278/SX1278.h>
 #include <drivers/interrupt/external_interrupts.h>
 
-#include <atomic>
 #include <cstring>
 #include <thread>
 
@@ -170,7 +169,7 @@ struct Stats
 
     float packet_loss() const
     {
-        return (1.0f - ((float)recv_count / (float)last_recv_packet)) * 100.0f;
+        return 1.0f - ((float)recv_count / (float)last_recv_packet);
     }
 
 } stats;
@@ -197,7 +196,7 @@ void printStats(Stats stats)
     printf("stats.corrupted_packets = %d\n", stats.corrupted_packets);
     printf("stats.recv_count = %d\n", stats.recv_count);
     printf("stats.recv_errors = %d\n", stats.recv_errors);
-    printf("stats.packet_loss = %.2f %%\n", stats.packet_loss());
+    printf("stats.packet_loss = %.2f %%\n", stats.packet_loss() * 100.0f);
 }
 
 /// Interval between transmissions.
@@ -278,6 +277,9 @@ void sendLoop()
     }
 }
 
+/// Get current time
+long long now() { return miosix::getTick() * 1000 / miosix::TICK_FREQ; }
+
 /// Initialize stm32f407g board
 void initBoard()
 {
@@ -353,6 +355,7 @@ int main()
 
     std::thread recv(&recvLoop);
     std::thread send(&sendLoop);
+    long long start = now();
 
     miosix::Thread::sleep(4000);
 
@@ -361,9 +364,11 @@ int main()
         printf("\n[sx1278] Stats:\n");
         printStats(stats);
 
-        // Calculate effective bitrate, also keeping track of packet loss.
-        float eff_bitrate = (sizeof(Msg) * 8 * (1000.0f / TX_INTERVAL)) *
-                            (1.0f - stats.packet_loss());
+        long long elapsed = now() - start;
+
+        // Calculate effective bitrate
+        float eff_bitrate = (float)(stats.recv_count * sizeof(Msg) * 8) /
+                            ((float)elapsed / 1000.0f);
         printf("Effective bitrate: %.2f kb/s\n", eff_bitrate / 1000.0f);
 
         miosix::Thread::sleep(2000);
