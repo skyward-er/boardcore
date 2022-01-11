@@ -161,15 +161,22 @@ const char *stringFromRxBw(SX1278::RxBw rx_bw)
 /// Status informations.
 struct Stats
 {
-    int last_sent_packet  = 0;  //< Last sent packet ID.
     int last_recv_packet  = 0;  //< Last received packet ID.
     int corrupted_packets = 0;  //< Packets that got mangled during tx.
+    int send_count        = 0;  //< Actual number of packets sent.
     int recv_count        = 0;  //< Actual number of packets received.
     int recv_errors       = 0;  //< Number of failed recvs.
 
     float packet_loss() const
     {
-        return 1.0f - ((float)recv_count / (float)last_recv_packet);
+        if (last_recv_packet != 0)
+        {
+            return 1.0f - ((float)recv_count / (float)last_recv_packet);
+        }
+        else
+        {
+            return 0.0f;
+        }
     }
 
 } stats;
@@ -191,9 +198,9 @@ void printStats(Stats stats)
     // Prints are REALLY slow, so take a COPY of stats, so we can print an
     // instant in time.
 
-    printf("stats.last_sent_packet = %d\n", stats.last_sent_packet);
     printf("stats.last_recv_packet = %d\n", stats.last_recv_packet);
     printf("stats.corrupted_packets = %d\n", stats.corrupted_packets);
+    printf("stats.send_count = %d\n", stats.send_count);
     printf("stats.recv_count = %d\n", stats.recv_count);
     printf("stats.recv_errors = %d\n", stats.recv_errors);
     printf("stats.packet_loss = %.2f %%\n", stats.packet_loss() * 100.0f);
@@ -262,7 +269,7 @@ void sendLoop()
 {
     while (1)
     {
-        int next_idx = stats.last_sent_packet + 1;
+        int next_idx = stats.send_count + 1;
 
         Msg msg;
         msg.idx     = next_idx;
@@ -271,7 +278,7 @@ void sendLoop()
         msg.dummy_3 = Msg::DUMMY_3;
 
         sx1278_tx->send((uint8_t *)&msg, sizeof(msg));
-        stats.last_sent_packet = next_idx;
+        stats.send_count = next_idx;
 
         miosix::Thread::sleep(TX_INTERVAL);
     }
@@ -280,14 +287,14 @@ void sendLoop()
 /// Get current time
 long long now() { return miosix::getTick() * 1000 / miosix::TICK_FREQ; }
 
-/// Initialize stm32f407g board
-void initBoard()
+/// Initialize stm32f407g board (rx only)
+void initBoardRx()
 {
     {
         miosix::FastInterruptDisableLock dLock;
 
-        // Enable SPI1 and SPI2
-        RCC->APB1ENR |= RCC_APB1ENR_SPI2EN | RCC_APB1ENR_SPI3EN;
+        // Enable SPI3
+        RCC->APB1ENR |= RCC_APB1ENR_SPI3EN;
         RCC_SYNC();
 
         // Setup SPI pins
@@ -298,6 +305,25 @@ void initBoard()
         mosi1.mode(miosix::Mode::ALTERNATE);
         mosi1.alternateFunction(6);
 
+        cs1.mode(miosix::Mode::OUTPUT);
+        dio1.mode(miosix::Mode::INPUT);
+    }
+
+    cs1.high();
+    enableExternalInterrupt(dio1.getPort(), dio1.getNumber(),
+                            InterruptTrigger::RISING_EDGE);
+}
+
+/// Initialize stm32f407g board (tx only)
+void initBoardTx()
+{
+    {
+        miosix::FastInterruptDisableLock dLock;
+
+        // Enable SPI2
+        RCC->APB1ENR |= RCC_APB1ENR_SPI2EN;
+        RCC_SYNC();
+
         sck2.mode(miosix::Mode::ALTERNATE);
         sck2.alternateFunction(5);
         miso2.mode(miosix::Mode::ALTERNATE);
@@ -305,26 +331,23 @@ void initBoard()
         mosi2.mode(miosix::Mode::ALTERNATE);
         mosi2.alternateFunction(5);
 
-        cs1.mode(miosix::Mode::OUTPUT);
-        dio1.mode(miosix::Mode::INPUT);
-
         cs2.mode(miosix::Mode::OUTPUT);
         dio2.mode(miosix::Mode::INPUT);
     }
 
-    cs1.high();
     cs2.high();
-
-    enableExternalInterrupt(GPIOC_BASE, 0, InterruptTrigger::RISING_EDGE);
-    enableExternalInterrupt(GPIOC_BASE, 15, InterruptTrigger::RISING_EDGE);
+    enableExternalInterrupt(dio2.getPort(), dio2.getNumber(),
+                            InterruptTrigger::RISING_EDGE);
 }
 
 int main()
 {
-    initBoard();
-
-    sx1278_rx = new SX1278(bus1, cs1);
-    sx1278_tx = new SX1278(bus2, cs2);
+#ifndef DISABLE_RX
+    initBoardRx();
+#endif
+#ifndef DISABLE_TX
+    initBoardTx();
+#endif
 
     // Run default configuration
     SX1278::Config config_rx;
@@ -335,6 +358,10 @@ int main()
 
     SX1278::Error err;
 
+    // Configure them
+#ifndef DISABLE_RX
+    sx1278_rx = new SX1278(bus1, cs1);
+
     printf("\n[sx1278] Configuring sx1278_rx...\n");
     printConfig(config_rx);
     if ((err = sx1278_rx->init(config_rx)) != SX1278::Error::NONE)
@@ -342,6 +369,10 @@ int main()
         printf("[sx1278] sx1278_rx->init error: %s\n", stringFromErr(err));
         return -1;
     }
+#endif
+
+#ifndef DISABLE_TX
+    sx1278_tx = new SX1278(bus2, cs2);
 
     printf("\n[sx1278] Configuring sx1278_tx...\n");
     printConfig(config_tx);
@@ -350,26 +381,38 @@ int main()
         printf("[sx1278] sx1278_tx->init error: %s\n", stringFromErr(err));
         return -1;
     }
+#endif
+
+    // Run background threads
+#ifndef DISABLE_RX
+    std::thread recv(&recvLoop);
+#endif
+#ifndef DISABLE_TX
+    std::thread send(&sendLoop);
+#endif
+
+    // Finish!
+    long long start = now();
 
     printf("\n[sx1278] Initialization complete!\n");
-
-    std::thread recv(&recvLoop);
-    std::thread send(&sendLoop);
-    long long start = now();
 
     miosix::Thread::sleep(4000);
 
     while (1)
     {
-        printf("\n[sx1278] Stats:\n");
-        printStats(stats);
-
         long long elapsed = now() - start;
 
-        // Calculate effective bitrate
-        float eff_bitrate = (float)(stats.recv_count * sizeof(Msg) * 8) /
-                            ((float)elapsed / 1000.0f);
-        printf("Effective bitrate: %.2f kb/s\n", eff_bitrate / 1000.0f);
+        // Calculate bitrates
+        float tx_bitrate = (float)(stats.send_count * sizeof(Msg) * 8) /
+                           ((float)elapsed / 1000.0f);
+
+        float rx_bitrate = (float)(stats.recv_count * sizeof(Msg) * 8) /
+                           ((float)elapsed / 1000.0f);
+
+        printf("\n[sx1278] Stats:\n");
+        printStats(stats);
+        printf("tx_bitrate: %.2f kb/s\n", tx_bitrate / 1000.0f);
+        printf("rx_bitrate: %.2f kb/s\n", rx_bitrate / 1000.0f);
 
         miosix::Thread::sleep(2000);
     }
