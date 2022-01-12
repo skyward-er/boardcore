@@ -127,8 +127,8 @@ public:
      */
     const CVectorP getOutput()
     {
-        y_hat = H * x;
-        return y_hat;
+        yHat = H * x;
+        return yHat;
     }
 
     /**
@@ -146,13 +146,13 @@ public:
      */
     const CVectorN predictState(uint32_t k)
     {
-        CVectorN x_hat = x;
+        CVectorN xHat = x;
 
         for (uint32_t i = 0; i < k; i++)
         {
-            x_hat = F * x_hat;
+            xHat = F * xHat;
         }
-        return x_hat;
+        return xHat;
     }
 
 private:
@@ -167,9 +167,9 @@ private:
 
     MatrixNN I; /**< identity matrix (n x n) */
 
-    CVectorN x;     /**< state vector (n x 1) */
-    CVectorP y_hat; /**< output vector (p x 1) */
-    CVectorP res;   /**< residual error vector (p x 1) */
+    CVectorN x;    /**< state vector (n x 1) */
+    CVectorP yHat; /**< output vector (p x 1) */
+    CVectorP res;  /**< residual error vector (p x 1) */
 };
 
 }  // namespace Boardcore

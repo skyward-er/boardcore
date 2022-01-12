@@ -31,17 +31,21 @@ struct ADS1118Data : public ADCData
 {
     ADS1118Data() : ADCData{0, 0, 0} {}
 
-    ADS1118Data(uint64_t t, uint8_t channel_id, float voltage)
-        : ADCData{t, channel_id, voltage}
+    ADS1118Data(uint64_t t, uint8_t channelId, float voltage)
+        : ADCData{t, channelId, voltage}
 
     {
     }
 
-    static std::string header() { return "adc_timestamp,channel_id,voltage\n"; }
+    static std::string header()
+    {
+        return "voltageTimestamp,channelId,voltage\n";
+    }
 
     void print(std::ostream& os) const
     {
-        os << adc_timestamp << "," << (int)channel_id << "," << voltage << "\n";
+        os << voltageTimestamp << "," << (int)channelId << "," << voltage
+           << "\n";
     }
 };
 

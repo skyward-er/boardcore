@@ -37,25 +37,25 @@ struct EndScreen
 {
     EndScreen()
     {
-        tv_title.setAlignment(HorizAlignment::CENTER, VertAlignment::CENTER);
-        tv_f.setAlignment(HorizAlignment::CENTER, VertAlignment::CENTER);
-        tv_reset.setAlignment(HorizAlignment::CENTER, VertAlignment::CENTER);
+        tvTitle.setAlignment(HorizAlignment::CENTER, VertAlignment::CENTER);
+        tvF.setAlignment(HorizAlignment::CENTER, VertAlignment::CENTER);
+        tvReset.setAlignment(HorizAlignment::CENTER, VertAlignment::CENTER);
 
-        tv_f.setSelectable(true);
-        tv_reset.setSelectable(true);
+        tvF.setSelectable(true);
+        tvReset.setSelectable(true);
 
-        root.addView(&tv_title, 1);
-        root.addView(&tv_f, 1);
-        root.addView(&tv_reset, 1);
+        root.addView(&tvTitle, 1);
+        root.addView(&tvF, 1);
+        root.addView(&tvReset, 1);
     }
 
     VerticalLayout root;
 
-    TextView tv_f{"Press F to pay respects"};
-    TextView tv_reset{"Or RESET to start again"};
+    TextView tvF{"Press F to pay respects"};
+    TextView tvReset{"Or RESET to start again"};
 
 private:
-    TextView tv_title{"You killed the program, you maniac!"};
+    TextView tvTitle{"You killed the program, you maniac!"};
 };
 
 }  // namespace Boardcore

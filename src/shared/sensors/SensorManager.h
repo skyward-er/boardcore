@@ -50,18 +50,18 @@ public:
     /**
      * @brief Constructor.
      *
-     * @param sensors_map map containing references to the sensors as keys,
+     * @param sensorsMap map containing references to the sensors as keys,
      *                    and objects of type SensorInfo as values.
      */
-    explicit SensorManager(const SensorMap_t& sensors_map);
+    explicit SensorManager(const SensorMap_t& sensorsMap);
 
     /**
      * @brief Constructor taking an external TaskScheduler object.
      *
-     * @param sensors_map map containing references to the sensors as keys,
+     * @param sensorsMap map containing references to the sensors as keys,
      *                    and objects of type SensorInfo as values.
      */
-    SensorManager(TaskScheduler* scheduler, const SensorMap_t& sensors_map);
+    SensorManager(TaskScheduler* scheduler, const SensorMap_t& sensorsMap);
 
     /**
      * @brief Destructor.
@@ -122,17 +122,17 @@ private:
     SensorManager(const SensorManager&) = delete;
 
     /**
-     * @brief Initializes samplers vector and sensors_map with the given sensors
+     * @brief Initializes samplers vector and sensorsMap with the given sensors
      *        map, giving incremental IDs to SensorSampler objects.
      *        In case a TaskScheduler was passed in the costructor,
      *        the SensorManager will assign to SensorSamplers incremental IDs
      *        starting from the maximum among the tasks already existing
      *        in the TaskScheduler.
      *
-     * @param sensors_map    map containing sensors and their respective
+     * @param sensorsMap    map containing sensors and their respective
      * information for the sampling
      */
-    bool init(const SensorMap_t& sensors_map);
+    bool init(const SensorMap_t& sensorsMap);
 
     /**
      * @brief Initialize a sensor and run its self-test.
@@ -160,11 +160,11 @@ private:
      *
      * @param id        new sampler's identifier
      * @param period      sampling period of the new sampler
-     * @param is_dma    indicate if the sampler manages sensors that use DMA
+     * @param isDma    indicate if the sampler manages sensors that use DMA
      *
      * @return pointer to the newly created sampler
      */
-    SensorSampler* createSampler(uint8_t id, uint32_t period, bool is_dma);
+    SensorSampler* createSampler(uint8_t id, uint32_t period, bool isDma);
 
     const uint8_t MAX_TASK_ID = 255; /**< max id for tasks in the scheduler */
 
@@ -175,9 +175,9 @@ private:
         samplers; /**< vector of all the samplers (unique) */
 
     std::map<AbstractSensor*, SensorSampler*>
-        samplers_map; /**< map each sensor to the corresponding sampler */
+        samplersMap; /**< map each sensor to the corresponding sampler */
 
-    bool sensors_init_result =
+    bool sensorsInitResult =
         true; /**< true if all the sensors are initialized correctly */
 
     PrintLogger logger = Logging::getLogger("sensormanager");

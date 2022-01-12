@@ -40,18 +40,18 @@ namespace Boardcore
 class ScreenManager : public ActiveObject
 {
 public:
-    ScreenManager(mxgui::DisplayManager& display, unsigned int refresh_rate)
-        : dc(display.getDisplay()), refresh_interval(1000 / refresh_rate)
+    ScreenManager(mxgui::DisplayManager& display, unsigned int refreshRate)
+        : dc(display.getDisplay()), refreshInterval(1000 / refreshRate)
     {
     }
 
     void showScreen(uint8_t id)
     {
-        active_screen = id;
+        activeScreen = id;
         controller.updateViewTree(screens[id]);
     }
 
-    uint8_t getScreen() { return active_screen; }
+    uint8_t getScreen() { return activeScreen; }
 
     void addScreen(uint8_t id, View* root)
     {
@@ -72,21 +72,21 @@ public:
 protected:
     void run() override
     {
-        uint8_t last_screen = 0;
+        uint8_t lastScreen = 0;
         while (!shouldStop())
         {
-            if (active_screen != last_screen)
+            if (activeScreen != lastScreen)
             {
-                last_screen = active_screen;
+                lastScreen = activeScreen;
                 dc.clear(mxgui::black);
-                screens[active_screen]->invalidateTree();
+                screens[activeScreen]->invalidateTree();
             }
 
             long long start = miosix::getTick();
 
-            drawViewTree(screens[active_screen], dc);
+            drawViewTree(screens[activeScreen], dc);
 
-            Thread::sleepUntil(start + refresh_interval);
+            Thread::sleepUntil(start + refreshInterval);
         }
     }
 
@@ -100,31 +100,31 @@ private:
     void drawViewTree(View* root, mxgui::DrawingContext& dc)
     {
         // Avoid recursion
-        std::deque<View*> views_dc;
-        views_dc.push_back(root);
+        std::deque<View*> viewsDc;
+        viewsDc.push_back(root);
 
-        while (views_dc.size() != 0)
+        while (viewsDc.size() != 0)
         {
-            View* view = views_dc.front();
-            views_dc.pop_front();
+            View* view = viewsDc.front();
+            viewsDc.pop_front();
 
             view->draw(dc);
 
             for (View* c : view->getChilds())
             {
-                views_dc.push_back(c);
+                viewsDc.push_back(c);
             }
         }
     }
 
     mxgui::DrawingContext dc;
 
-    unsigned int refresh_interval;
+    unsigned int refreshInterval;
 
     NavController controller;
     std::map<uint8_t, View*> screens;
 
-    uint8_t active_screen = 0;
+    uint8_t activeScreen = 0;
 };
 
 }  // namespace Boardcore

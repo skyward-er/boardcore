@@ -47,11 +47,11 @@ public:
 
     MPXHZ6130AData sampleImpl()
     {
-        last_sample = AnalogPressureSensor<MPXHZ6130AData>::sampleImpl();
+        lastSample = AnalogPressureSensor<MPXHZ6130AData>::sampleImpl();
 
         if (calibrating)
         {
-            press_stats.add(last_sample.press);
+            press_stats.add(lastSample.pressure);
 
             if (press_stats.getStats().nSamples >= num_calib_samples)
             {
@@ -62,11 +62,11 @@ public:
             }
         }
 
-        last_sample.press = last_sample.press + offset;
+        lastSample.pressure = lastSample.pressure + offset;
 
-        last_sample.press = movingAverage(last_sample.press);
+        lastSample.pressure = movingAverage(lastSample.pressure);
 
-        return last_sample;
+        return lastSample;
     }
 
     void setReferencePressure(float p) { ref_press = p; }

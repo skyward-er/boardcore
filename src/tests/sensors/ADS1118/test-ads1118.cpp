@@ -130,7 +130,7 @@ int main()
         miosix::Thread::sleep(5);
         ads1118.sample();
 
-        printf("%.2f\t%.2f\t%.2f\n", ads1118.getTemperature().temp,
+        printf("%.2f\t%.2f\t%.2f\n", ads1118.getTemperature().temperature,
                ads1118.getVoltage(channel1).voltage,
                ads1118.getVoltage(channel2).voltage);
     }

@@ -61,19 +61,19 @@ public:
         ADCData voltage = getSensorVoltage();
 
         // Save the timestamp
-        pressure.press_timestamp = voltage.adc_timestamp;
+        pressure.pressureTimestamp = voltage.voltageTimestamp;
 
         // Convert the value
-        pressure.press = voltageToPressure(voltage.voltage);
+        pressure.pressure = voltageToPressure(voltage.voltage);
 
         // Check if the pressure is in range
-        if (pressure.press < minPressure)
+        if (pressure.pressure < minPressure)
         {
-            pressure.press = minPressure;
+            pressure.pressure = minPressure;
         }
-        else if (pressure.press > maxPressure)
+        else if (pressure.pressure > maxPressure)
         {
-            pressure.press = maxPressure;
+            pressure.pressure = maxPressure;
         }
 
         return pressure;

@@ -28,8 +28,8 @@ using namespace std;
 namespace Boardcore
 {
 
-SensorSampler::SensorSampler(uint8_t id, uint32_t period, bool is_dma)
-    : id(id), period(period), is_dma(is_dma)
+SensorSampler::SensorSampler(uint8_t id, uint32_t period, bool isDma)
+    : id(id), period(period), isDma(isDma)
 {
 }
 
@@ -40,7 +40,7 @@ void SensorSampler::sampleAndCallback()
     for (auto& s : sensors)
     {
         // sample only if that sensor is enabled
-        if (s.second.is_enabled && s.second.is_initialized)
+        if (s.second.isEnabled && s.second.isInitialized)
         {
             sampleSensor(s.first);
             s.second.callback();
@@ -54,16 +54,16 @@ void SensorSampler::toggleSensor(AbstractSensor* sensor, bool is_en)
                              [&](std::pair<AbstractSensor*, SensorInfo> s)
                              { return s.first == sensor; });
 
-    elem->second.is_enabled = is_en;
+    elem->second.isEnabled = is_en;
     LOG_DEBUG(logger, "Sampler {}, toggle Sensor {} ---> enabled = {}", getID(),
-              static_cast<void*>(sensor), elem->second.is_enabled);
+              static_cast<void*>(sensor), elem->second.isEnabled);
 }
 
 void SensorSampler::enableAllSensors()
 {
     for (auto& s : sensors)
     {
-        s.second.is_enabled = true;
+        s.second.isEnabled = true;
     }
 }
 
@@ -71,11 +71,11 @@ void SensorSampler::disableAllSensors()
 {
     for (auto& s : sensors)
     {
-        s.second.is_enabled = false;
+        s.second.isEnabled = false;
     }
 }
 
-bool SensorSampler::isDMA() { return is_dma; }
+bool SensorSampler::isDMA() { return isDma; }
 
 uint8_t SensorSampler::getID() { return id; }
 

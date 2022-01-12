@@ -59,13 +59,13 @@ static constexpr int NUM_SAMPLES = SAMPLE_RATE * 5;
 struct GyroSample
 {
     uint64_t timestamp;
-    uint64_t sample_delta;
+    uint64_t sampleDelta;
     L3GD20Data data;
     float cpu;
 };
 
 GyroSample data[NUM_SAMPLES];
-int data_counter = 0;
+int dataCounter = 0;
 
 // Last interrupt received timer tick
 uint32_t lastSampleTick;  // Stores the high-res tick of the last
@@ -144,9 +144,9 @@ int main()
     Thread::sleep(500);
 
     // Collect NUM_SAMPLE samples
-    while (data_counter < NUM_SAMPLES)
+    while (dataCounter < NUM_SAMPLES)
     {
-        long last_tick = miosix::getTick();
+        long lastTick = miosix::getTick();
 
         // Read data from the sensor
         gyro->sample();
@@ -155,28 +155,28 @@ int main()
         L3GD20Data d = gyro->getLastSample();
 
         // Store the sample in the array, togheter with other useful data
-        data[data_counter++] = {d.gyro_timestamp, sampleDelta, d,
-                                averageCpuUtilization()};
+        data[dataCounter++] = {d.angularVelocityTimestamp, sampleDelta, d,
+                               averageCpuUtilization()};
 
         // Wait until SAMPLE_PERIOD milliseconds from the start of this
         // iteration have passed (SAMPLE_PERIOD = 1000 / SAMPLE_RATE)
-        Thread::sleepUntil(last_tick + 1000 / SAMPLE_RATE);
+        Thread::sleepUntil(lastTick + 1000 / SAMPLE_RATE);
     }
 
     // Dump buffer content as CSV on the serial (might take a while)
-    printf("FIFO_num,timestamp,int_delta,sample_delta,x,y,z,cpu\n");
-    for (int i = 1; i < data_counter; i++)
+    printf("FIFO_num,timestamp,int_delta,sampleDelta,x,y,z,cpu\n");
+    for (int i = 1; i < dataCounter; i++)
     {
         // clang-format off
          printf("%d,%llu,%llu,%llu,%f,%f,%f,%.2f\n",
                 0,
                 data[i].timestamp,
                 TimerUtils::toIntMicroSeconds(
-                    TimestampTimer::getInstance().getTimer(), data[i].sample_delta),
+                    TimestampTimer::getInstance().getTimer(), data[i].sampleDelta),
                 (data[i].timestamp - data[i - 1].timestamp),
-                data[i].data.gyro_x,
-                data[i].data.gyro_y,
-                data[i].data.gyro_z,
+                data[i].data.angularVelocityX,
+                data[i].data.angularVelocityY,
+                data[i].data.angularVelocityZ,
                 data[i].cpu);
         // clang-format on
     }

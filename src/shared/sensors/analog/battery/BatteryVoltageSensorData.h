@@ -32,17 +32,17 @@ namespace Boardcore
  */
 struct BatteryVoltageSensorData : public ADCData
 {
-    float bat_voltage;
+    float batVoltage;
 
     static std::string header()
     {
-        return "adc_timestamp,channel_id,voltage,bat_voltage\n";
+        return "voltageTimestamp,channelId,voltage,bat_voltage\n";
     }
 
     void print(std::ostream& os) const
     {
-        os << adc_timestamp << "," << (int)channel_id << "," << voltage << ","
-           << bat_voltage << "\n";
+        os << voltageTimestamp << "," << (int)channelId << "," << voltage << ","
+           << batVoltage << "\n";
     }
 };
 

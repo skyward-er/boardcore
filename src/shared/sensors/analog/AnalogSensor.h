@@ -1,4 +1,4 @@
-/* Copyright (c) 2020 Skyward Experimental Rocketry
+/* Copyright (c) 2021 Skyward Experimental Rocketry
  * Author: Alberto Nidasio
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -22,19 +22,18 @@
 
 #pragma once
 
-#include <sensors/SensorData.h>
+#include <sensors/Sensor.h>
+
+#include <functional>
 
 namespace Boardcore
 {
 
-struct HSCMRNN160KAData : public PressureData
+template <typename AnalogData>
+class AnalogSensor : public Sensor<AnalogData>
 {
-    static std::string header() { return "pressureTimestamp,pressure\n"; }
-
-    void print(std::ostream& os) const
-    {
-        os << pressureTimestamp << "," << pressure << "\n";
-    }
-};
+public:
+    AnalogSensor(std::function < A)
+}
 
 }  // namespace Boardcore

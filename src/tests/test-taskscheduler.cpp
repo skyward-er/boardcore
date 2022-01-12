@@ -27,16 +27,16 @@ using namespace miosix;
 
 void task5hz()
 {
-    static long long last_tick = getTick();
+    static long long lastTick = getTick();
 
-    printf("%d: 5 Hz tick\n", (int)(getTick() - last_tick));
+    printf("%d: 5 Hz tick\n", (int)(getTick() - lastTick));
 }
 
 void task2hz()
 {
-    static long long last_tick = getTick();
+    static long long lastTick = getTick();
 
-    printf("%d: 2 Hz tick\n", (int)(getTick() - last_tick));
+    printf("%d: 2 Hz tick\n", (int)(getTick() - lastTick));
 }
 
 int main()

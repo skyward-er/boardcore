@@ -74,32 +74,32 @@ public:
      *
      * @param event
      * @param topic
-     * @param delay_ms Delay in milliseconds.
+     * @param delayMs Delay in milliseconds.
      * @return Unique id of the delayed event.
      */
-    template <unsigned int delay_ms>
+    template <unsigned int delayMs>
     uint16_t postDelayed(const Event& ev, uint8_t topic)
     {
         static_assert(
-            delay_ms >= EVENT_BROKER_MIN_DELAY,
-            "delay_ms must be longer or equal to EVENT_BROKER_MIN_DELAY");
+            delayMs >= EVENT_BROKER_MIN_DELAY,
+            "delayMs must be longer or equal to EVENT_BROKER_MIN_DELAY");
 
-        Lock<FastMutex> lock(mtx_delayed_events);
+        Lock<FastMutex> lock(mtxDelayedEvents);
 
         // Delay in system ticks
-        long long delay_ticks =
-            static_cast<long long>(delay_ms * miosix::TICK_FREQ / 1000);
+        long long delayTicks =
+            static_cast<long long>(delayMs * miosix::TICK_FREQ / 1000);
 
-        DelayedEvent dev{eventCounter++, ev, topic, getTick() + delay_ticks};
+        DelayedEvent dev{eventCounter++, ev, topic, getTick() + delayTicks};
         bool added = false;
 
         // Add the new event in the list, ordered by deadline (first = nearest
         // deadline)
-        for (auto it = delayed_events.begin(); it != delayed_events.end(); it++)
+        for (auto it = delayedEvents.begin(); it != delayedEvents.end(); it++)
         {
             if (dev.deadline < (*it).deadline)
             {
-                delayed_events.insert(it, dev);
+                delayedEvents.insert(it, dev);
                 added = true;
                 break;
             }
@@ -107,10 +107,10 @@ public:
 
         if (!added)  // In case this is the last/only event in the list
         {
-            delayed_events.push_back(dev);
+            delayedEvents.push_back(dev);
         }
 
-        return dev.sched_id;
+        return dev.schedId;
     }
 
     /**
@@ -164,7 +164,7 @@ private:
      */
     struct DelayedEvent
     {
-        uint16_t sched_id;
+        uint16_t schedId;
         Event event;
         uint8_t topic;
         long long deadline;
@@ -175,14 +175,14 @@ private:
      */
     void run() override;
 
-    void deleteSubscriber(vector<EventHandlerBase*>& sub_vector,
+    void deleteSubscriber(vector<EventHandlerBase*>& subVector,
                           EventHandlerBase* subscriber);
 
-    vector<DelayedEvent> delayed_events;
-    FastMutex mtx_delayed_events;
+    vector<DelayedEvent> delayedEvents;
+    FastMutex mtxDelayedEvents;
 
     map<uint8_t, vector<EventHandlerBase*>> subscribers;
-    FastMutex mtx_subscribers;
+    FastMutex mtxSubscribers;
 
     uint16_t eventCounter = 0;
 

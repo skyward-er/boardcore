@@ -28,10 +28,9 @@ using namespace miosix;
 namespace Boardcore
 {
 
-PWM::PWM(Timer timer, unsigned int frequency,
-         unsigned int duty_cycle_resolution)
+PWM::PWM(Timer timer, unsigned int frequency, unsigned int dutyCycleResolution)
     : timer(timer), frequency(frequency),
-      duty_cycle_resolution(duty_cycle_resolution)
+      dutyCycleResolution(dutyCycleResolution)
 {
     for (int i = 0; i < 4; i++)
     {
@@ -43,7 +42,7 @@ PWM::PWM(Timer timer, unsigned int frequency,
         FastInterruptDisableLock dLock;
 
         // Enable timer clock
-        *(timer.bus_en_reg) |= timer.TIM_EN;
+        *(timer.busEnableRegister) |= timer.TIM_EN;
         RCC_SYNC();
     }
 
@@ -59,7 +58,7 @@ PWM::~PWM()
         FastInterruptDisableLock dLock;
 
         // Enable timer clock
-        *(timer.bus_en_reg) &= ~timer.TIM_EN;
+        *(timer.busEnableRegister) &= ~timer.TIM_EN;
         RCC_SYNC();
     }
 }
@@ -70,20 +69,20 @@ void PWM::setFrequency(unsigned int frequency)
     hardwareUpdateRegisters();
 }
 
-void PWM::setDutyCycleResolution(unsigned int duty_cycle_resolution)
+void PWM::setDutyCycleResolution(unsigned int dutyCycleResolution)
 {
-    this->duty_cycle_resolution = duty_cycle_resolution;
+    this->dutyCycleResolution = dutyCycleResolution;
     hardwareUpdateRegisters();
 }
 
-void PWM::enableChannel(PWMChannel channel, float duty_cycle, PWMMode mode,
+void PWM::enableChannel(PWMChannel channel, float dutyCycle, PWMMode mode,
                         PWMPolarity polarity)
 {
-    int ch                  = static_cast<int>(channel);
-    channels[ch].enabled    = true;
-    channels[ch].duty_cycle = duty_cycle;
-    channels[ch].mode       = mode;
-    channels[ch].polarity   = polarity;
+    int ch                 = static_cast<int>(channel);
+    channels[ch].enabled   = true;
+    channels[ch].dutyCycle = dutyCycle;
+    channels[ch].mode      = mode;
+    channels[ch].polarity  = polarity;
 
     hardwareEnableChannel(channel);
 }
@@ -208,33 +207,29 @@ void PWM::hardwareEnableChannel(PWMChannel channel)
     }
 }
 
-void PWM::setDutyCycle(PWMChannel channel, float duty_cycle)
+void PWM::setDutyCycle(PWMChannel channel, float dutyCycle)
 {
-    channels[static_cast<int>(channel)].duty_cycle = duty_cycle;
+    channels[static_cast<int>(channel)].dutyCycle = dutyCycle;
 
     hardwareSetDutyCycle(channel);
 }
 
 void PWM::hardwareSetDutyCycle(PWMChannel channel)
 {
-    float duty_cycle = channels[static_cast<int>(channel)].duty_cycle;
+    float dutyCycle = channels[static_cast<int>(channel)].dutyCycle;
     switch (channel)
     {
         case PWMChannel::CH1:
-            timer.TIM->CCR1 =
-                static_cast<uint16_t>(duty_cycle * timer.TIM->ARR);
+            timer.TIM->CCR1 = static_cast<uint16_t>(dutyCycle * timer.TIM->ARR);
             break;
         case PWMChannel::CH2:
-            timer.TIM->CCR2 =
-                static_cast<uint16_t>(duty_cycle * timer.TIM->ARR);
+            timer.TIM->CCR2 = static_cast<uint16_t>(dutyCycle * timer.TIM->ARR);
             break;
         case PWMChannel::CH3:
-            timer.TIM->CCR3 =
-                static_cast<uint16_t>(duty_cycle * timer.TIM->ARR);
+            timer.TIM->CCR3 = static_cast<uint16_t>(dutyCycle * timer.TIM->ARR);
             break;
         case PWMChannel::CH4:
-            timer.TIM->CCR4 =
-                static_cast<uint16_t>(duty_cycle * timer.TIM->ARR);
+            timer.TIM->CCR4 = static_cast<uint16_t>(dutyCycle * timer.TIM->ARR);
             break;
     }
 }
@@ -267,14 +262,14 @@ void PWM::hardwareDisableChannel(PWMChannel channel)
 void PWM::hardwareUpdateRegisters()
 {
     uint32_t psc =
-        (timer.input_clock_freq / (duty_cycle_resolution * frequency));
+        (timer.inputClockFrequency / (dutyCycleResolution * frequency));
     if (psc > 0xFFFF)
     {
         psc = 0xFFFF;
     }
 
     timer.TIM->PSC = psc;
-    timer.TIM->ARR = timer.input_clock_freq / ((psc + 1) * frequency);
+    timer.TIM->ARR = timer.inputClockFrequency / ((psc + 1) * frequency);
 }
 
 void PWM::start()

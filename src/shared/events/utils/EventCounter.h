@@ -60,10 +60,10 @@ public:
     {
         Lock<FastMutex> l(mutex);
 
-        ++map_counter[ev.sig];
-        ++total_count;
+        ++mapCounter[ev.sig];
+        ++totalCount;
 
-        last_event = ev.sig;
+        lastEvent = ev.sig;
     }
 
     /**
@@ -74,13 +74,13 @@ public:
     /**
      * @brief Returns the number of times a specific event has been received
      */
-    unsigned int getCount(uint8_t ev_sig)
+    unsigned int getCount(uint8_t evSig)
     {
         Lock<FastMutex> l(mutex);
 
-        if (map_counter.count(ev_sig) == 1)
+        if (mapCounter.count(evSig) == 1)
         {
-            return map_counter.at(ev_sig);
+            return mapCounter.at(evSig);
         }
 
         return 0;
@@ -89,12 +89,12 @@ public:
     /**
      * @brief Returns how many events have been received in total
      */
-    unsigned int getTotalCount() { return total_count; }
+    unsigned int getTotalCount() { return totalCount; }
 
     /**
      * @brief Returns the signature of the last event received (ev.sig)
      */
-    uint8_t getLastEvent() { return last_event; }
+    uint8_t getLastEvent() { return lastEvent; }
 
 protected:
     // Do nothing
@@ -109,11 +109,11 @@ private:
 
     FastMutex mutex;
     // Count how many times we have received each event
-    map<uint8_t, unsigned int> map_counter;
+    map<uint8_t, unsigned int> mapCounter;
 
     // How many events we have received in total
-    unsigned int total_count = 0;
-    uint8_t last_event;
+    unsigned int totalCount = 0;
+    uint8_t lastEvent;
 };
 
 }  // namespace Boardcore

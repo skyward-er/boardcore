@@ -73,11 +73,11 @@ public:
      * Register a type to be deserialized, and the associated print function
      *
      * @param t the object to be deserialized
-     * @param fnc_print function that prints the deserialized data on the
+     * @param fncPrint function that prints the deserialized data on the
      * provided output stream.
      */
     template <typename T>
-    bool registerType(std::function<void(T& t, std::ostream& os)> fnc_print,
+    bool registerType(std::function<void(T& t, std::ostream& os)> fncPrint,
                       std::string header = "")
     {
         if (closed)
@@ -86,11 +86,11 @@ public:
             return false;
         }
 
-        char c_filename[128];
-        sprintf(c_filename, "%s%s_%s.csv", prefix.c_str(), logFile.c_str(),
+        char cFilename[128];
+        sprintf(cFilename, "%s%s_%s.csv", prefix.c_str(), logFile.c_str(),
                 typeid(T).name());
 
-        std::string filename(c_filename);
+        std::string filename(cFilename);
 
         std::ofstream* stream = new std::ofstream();
         stream->open(filename);
@@ -104,8 +104,8 @@ public:
         }
 
         fileStreams.push_back(stream);
-        stream->precision(flt::max_digits10);  // Set stream precision to
-                                               // maximum float precision
+        stream->precision(flt::maxDigits10);  // Set stream precision to
+                                              // maximum float precision
         // Print the header
         if (header.length() > 0)
         {
@@ -115,7 +115,7 @@ public:
         using namespace std::placeholders;  // for _1
 
         std::function<void(T & t)> callback =
-            std::bind(fnc_print, _1, std::ref(*stream));
+            std::bind(fncPrint, _1, std::ref(*stream));
 
         tps.registerType<T>(callback);
 
@@ -123,8 +123,8 @@ public:
     }
 
     /**
-     * Deserializes the provided file
-     * @param log_filename
+     * @brief Deserializes the provided file.
+     *
      * @return Wheter the deserialization was successful.
      */
     bool deserialize()
@@ -135,7 +135,7 @@ public:
         }
 
         bool success = true;
-        std::string unknown_type_name;
+        std::string unknownTypeName;
 
         struct stat st;
         if (stat(logFileWithExt.c_str(), &st) != 0)
@@ -163,10 +163,9 @@ public:
                 }
                 else if (strcmp(ex.what(), "unknown type") == 0)
                 {
-                    unknown_type_name = ex.name();
-                    success           = false;
-                    printf("Unknown type found: %s\n",
-                           unknown_type_name.c_str());
+                    unknownTypeName = ex.name();
+                    success         = false;
+                    printf("Unknown type found: %s\n", unknownTypeName.c_str());
                     break;
                 }
             }

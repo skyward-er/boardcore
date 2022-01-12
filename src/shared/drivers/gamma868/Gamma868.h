@@ -39,7 +39,7 @@ public:
      * Create a Gamma868 object using the given path as the serial port to use.
      * @param serialPath        Name of the serial port (es. /dev/tty)
      * @param multiplier        If defined, after each send the send function
-     *                          will block for multiplier*n_bytes_sent
+     *                          will block for multiplier*nBytesSent
      * milliseconds.
      */
     explicit Gamma868(const char* serialPath, const uint16_t multiplier = 0);
@@ -47,12 +47,13 @@ public:
     /*
      * Create a Gamma868 that can be configured through the LRN pin.
      * @param serialPath        Name of the serial port (es. /dev/tty)
-     * @param lrn_pin           pin connected to the Learn Mode pin of the Gamma
+     * @param learnModePin           pin connected to the Learn Mode pin of the
+     * Gamma
      * @param multiplier        If defined, after each send the send() function
-     *                          will block for multiplier*n_bytes_sent
+     *                          will block for multiplier*nBytesSent
      * milliseconds.
      */
-    Gamma868(const char* serialPath, miosix::GpioPin* lrn_pin,
+    Gamma868(const char* serialPath, miosix::GpioPin* learnModePin,
              const uint16_t multiplier = 0);
 
     ~Gamma868();
@@ -60,21 +61,22 @@ public:
     /*
      * Send a message through the serial port to the gamma868 module (blocking).
      * @param pkt               Pointer to the packet (needs to be at least
-     * pkt_len bytes).
-     * @param pkt_len           Lenght of the packet to be sent.
+     * packetLength bytes).
+     * @param packetLength           Lenght of the packet to be sent.
      * @return                  True if the message was sent correctly.
      */
-    bool send(uint8_t* pkt, size_t pkt_len) override;
+    bool send(uint8_t* pkt, size_t packetLength) override;
 
     /*
      * Receive a message through the serial port to the gamma868 module
      * (blocking).
      * @param pkt               Pointer to the buffer (needs to be at least
-     * pkt_len bytes).
-     * @param pkt_len           Maximum lenght of the packet to be received.
+     * packetLength bytes).
+     * @param packetLength           Maximum lenght of the packet to be
+     * received.
      * @return                  Size of the data received or -1 if failure
      */
-    ssize_t receive(uint8_t* pkt, size_t pkt_len) override;
+    ssize_t receive(uint8_t* pkt, size_t packetLength) override;
 
     /*
      * Set a new configuration to the gamma868 module. Can be done only if the
@@ -95,17 +97,17 @@ public:
      * Immediately returns the value of the configuration variable, without
      * reading it from the device.
      * @return       The current configuration.
-     * @warning      check the is_valid bit to see if the returned configuration
+     * @warning      check the isValid bit to see if the returned configuration
      * is meaningful.
      */
     GammaConf getConfig() { return conf; }
 
 private:
     int fd;
-    const uint16_t send_timeout_multiplier;
+    const uint16_t sendTimeoutMultiplier;
 
     GammaConf conf;
-    bool conf_enabled;
+    bool confEnabled;
     miosix::GpioPin* gammaSwitch;
 
     void enterLearnMode();

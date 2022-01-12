@@ -99,12 +99,12 @@ struct Data : public LoadCellData
     {
     }
 
-    static std::string header() { return "loadcell_timestamp,weight\n"; }
+    static std::string header() { return "weightTimestamp,weight\n"; }
 
     void print(std::ostream& os) const
     {
         if (valid)
-            os << loadcell_timestamp / 1000000.0 << "," << weight << "\n";
+            os << weightTimestamp / 1000000.0 << "," << weight << "\n";
     }
 };
 
@@ -114,8 +114,8 @@ struct Data : public LoadCellData
 struct MBLoadCellSettings
 {
     LoadCellModes mode;
-    bool gross_mode;
-    Data peak_weight;
+    bool grossMode;
+    Data peakWeight;
     Data setpoint1;
     Data setpoint2;
     Data setpoint3;
@@ -129,7 +129,7 @@ struct MBLoadCellSettings
         switch (val)
         {
             case PEAK_WEIGHT:
-                peak_weight = Data(data);
+                peakWeight = Data(data);
                 break;
             case GET_SETPOINT_1:
                 setpoint1 = Data(data);
@@ -150,14 +150,14 @@ struct MBLoadCellSettings
      */
     void print() const
     {
-        /*if (net_weight.valid)
-            TRACE("Net Weight     : %f [Kg]\n", net_weight.data);
+        /*if (netWeight.valid)
+            TRACE("Net Weight     : %f [Kg]\n", netWeight.data);
 
-        if (gross_weight.valid)
-            TRACE("Gross Weight   : %f [Kg]\n", gross_weight.data);
+        if (grossWeight.valid)
+            TRACE("Gross Weight   : %f [Kg]\n", grossWeight.data);
         */
-        if (peak_weight.valid)
-            TRACE("Peak Weight    : %f [Kg]\n", peak_weight.weight);
+        if (peakWeight.valid)
+            TRACE("Peak Weight    : %f [Kg]\n", peakWeight.weight);
 
         if (setpoint1.valid)
             TRACE("Setpoint 1     : %f [Kg]\n", setpoint1.weight);

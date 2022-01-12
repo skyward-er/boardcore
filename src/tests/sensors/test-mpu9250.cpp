@@ -76,12 +76,13 @@ int main()
     {
         mpu9250.sample();
         MPU9250Data data = mpu9250.getLastSample();
-        printf("%lld,%f,%f,%f;", data.accel_timestamp, data.accel_x,
-               data.accel_y, data.accel_z);
-        printf("%lld,%f,%f,%f;", data.gyro_timestamp, data.gyro_x, data.gyro_y,
-               data.gyro_z);
-        printf("%lld,%f,%f,%f\n", data.mag_timestamp, data.mag_x, data.mag_y,
-               data.mag_z);
+        printf("%lld,%f,%f,%f;", data.accelerationTimestamp, data.accelerationX,
+               data.accelerationY, data.accelerationZ);
+        printf("%lld,%f,%f,%f;", data.angularVelocityTimestamp,
+               data.angularVelocityX, data.angularVelocityY,
+               data.angularVelocityZ);
+        printf("%lld,%f,%f,%f\n", data.magneticFieldTimestamp,
+               data.magneticFieldX, data.magneticFieldY, data.magneticFieldZ);
 
         // Serial communicaion at 115200 baud takes aprx. 10ms
         // miosix::delayMs(10);

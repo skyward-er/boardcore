@@ -37,24 +37,24 @@ struct UBXUnpackedFrame
     uint8_t cls;
     uint8_t id;
     uint8_t payload[UBX_MAX_PAYLOAD_LENGTH];
-    uint16_t payload_length;
+    uint16_t payloadLength;
     uint8_t checksum[2];
 
     UBXUnpackedFrame() = default;
 
     UBXUnpackedFrame(uint8_t cls, uint8_t id, const uint8_t* payload,
-                     uint16_t payload_length)
-        : cls(cls), id(id), payload_length(payload_length)
+                     uint16_t payloadLength)
+        : cls(cls), id(id), payloadLength(payloadLength)
     {
         memcpy(preamble, UBX_VALID_PREAMBLE, 2);
 
         memcpy(this->payload, payload,
-               std::min(payload_length, UBX_MAX_PAYLOAD_LENGTH));
+               std::min(payloadLength, UBX_MAX_PAYLOAD_LENGTH));
 
         calcChecksum(checksum);
     }
 
-    inline uint16_t getFrameLength() const { return payload_length + 8; }
+    inline uint16_t getFrameLength() const { return payloadLength + 8; }
 
     inline bool isValid() const
     {
@@ -63,14 +63,14 @@ struct UBXUnpackedFrame
             return false;
         }
 
-        if (payload_length > UBX_MAX_PAYLOAD_LENGTH)
+        if (payloadLength > UBX_MAX_PAYLOAD_LENGTH)
         {
             return false;
         }
 
-        uint8_t valid_checksum[2];
-        calcChecksum(valid_checksum);
-        return memcmp(checksum, valid_checksum, 2) == 0;
+        uint8_t validChecksum[2];
+        calcChecksum(validChecksum);
+        return memcmp(checksum, validChecksum, 2) == 0;
     }
 
     inline void writePacked(uint8_t* frame) const
@@ -78,9 +78,9 @@ struct UBXUnpackedFrame
         memcpy(frame, preamble, 2);
         frame[2] = cls;
         frame[3] = id;
-        memcpy(&frame[4], &payload_length, 2);
-        memcpy(&frame[6], payload, payload_length);
-        memcpy(&frame[6 + payload_length], checksum, 2);
+        memcpy(&frame[4], &payloadLength, 2);
+        memcpy(&frame[6], payload, payloadLength);
+        memcpy(&frame[6 + payloadLength], checksum, 2);
     }
 
     inline void readPacked(const uint8_t* frame)
@@ -88,10 +88,10 @@ struct UBXUnpackedFrame
         memcpy(preamble, frame, 2);
         cls = frame[2];
         id  = frame[3];
-        memcpy(&payload_length, &frame[4], 2);
+        memcpy(&payloadLength, &frame[4], 2);
         memcpy(payload, &frame[6],
-               std::min(payload_length, UBX_MAX_PAYLOAD_LENGTH));
-        memcpy(checksum, &frame[6 + payload_length], 2);
+               std::min(payloadLength, UBX_MAX_PAYLOAD_LENGTH));
+        memcpy(checksum, &frame[6 + payloadLength], 2);
     }
 
     inline void calcChecksum(uint8_t* checksum) const
@@ -99,17 +99,17 @@ struct UBXUnpackedFrame
         uint8_t data[UBX_MAX_FRAME_LENGTH];
         data[0] = cls;
         data[1] = id;
-        memcpy(&data[2], &payload_length, 2);
+        memcpy(&data[2], &payloadLength, 2);
         memcpy(&data[4], payload,
-               std::min(payload_length, UBX_MAX_PAYLOAD_LENGTH));
+               std::min(payloadLength, UBX_MAX_PAYLOAD_LENGTH));
 
-        uint16_t data_length =
-            std::min(payload_length, UBX_MAX_PAYLOAD_LENGTH) + 4;
+        uint16_t dataLength =
+            std::min(payloadLength, UBX_MAX_PAYLOAD_LENGTH) + 4;
 
         checksum[0] = 0;
         checksum[1] = 0;
 
-        for (uint8_t i = 0; i < data_length; ++i)
+        for (uint8_t i = 0; i < dataLength; ++i)
         {
             checksum[0] += data[i];
             checksum[1] += checksum[0];

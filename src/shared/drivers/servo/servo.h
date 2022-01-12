@@ -94,17 +94,17 @@ public:
      * That is, how long the PWM waveform stays high when the position is 0.
      *
      * Must be between 500 and 1300. Default value is 1000.
-     * @param min_pulse Pulse width in microseconds.
+     * @param minPulse Pulse width in microseconds.
      */
-    void setMinPulseWidth(float min_pulse);
+    void setMinPulseWidth(float minPulse);
 
     /**
      * Sets the mmaximum duration of the PWM pulse.
      * That is, how long the PWM waveform stays high when the position is 1.
      * Must be between 1700 and 2500. Default value is 2000.
-     * @param min_pulse Pulse width in microseconds.
+     * @param minPulse Pulse width in microseconds.
      */
-    void setMaxPulseWidth(float max_pulse);
+    void setMaxPulseWidth(float maxPulse);
 
 private:
     float calculateDutyCycle(float position);
@@ -119,8 +119,8 @@ private:
     float positions[4];
 
     float frequency = 50;
-    float min_pulse = 1000;
-    float max_pulse = 2000;
+    float minPulse  = 1000;
+    float maxPulse  = 2000;
 };
 
 }  // namespace Boardcore

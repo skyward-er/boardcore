@@ -47,11 +47,11 @@ public:
 
     SSCDRRN015PDAData sampleImpl() override
     {
-        last_sample = HoneywellPressureSensor<SSCDRRN015PDAData>::sampleImpl();
+        lastSample = HoneywellPressureSensor<SSCDRRN015PDAData>::sampleImpl();
 
         if (calibrating)
         {
-            press_stats.add(last_sample.press);
+            press_stats.add(lastSample.pressure);
 
             if (press_stats.getStats().nSamples >= num_calib_samples)
             {
@@ -62,9 +62,9 @@ public:
             }
         }
 
-        last_sample.press = last_sample.press - offset;
+        lastSample.pressure = lastSample.pressure - offset;
 
-        return last_sample;
+        return lastSample;
     }
 
     void calibrate()

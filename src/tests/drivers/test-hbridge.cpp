@@ -41,12 +41,12 @@ static const PWM::Timer HBRIDGE_TIM{
 
 static const PWMChannel HBRIDGE_PWM_CHANNEL = PWMChannel::CH2;
 
-GpioPin hbridge_in(GPIOB_BASE, 5);       // pwm pin
-GpioPin hbridge_inhibit(GPIOB_BASE, 7);  // inhibit pin for the hbridge
+GpioPin hbridgeIn(GPIOB_BASE, 5);       // pwm pin
+GpioPin hbridgeInhibit(GPIOB_BASE, 7);  // inhibit pin for the hbridge
 
 bool print = true;  // print the elapsed time or not
 
-long long measured_time = 0;
+long long measuredTime = 0;
 void wait()
 {
     long long t  = getTick();
@@ -64,17 +64,17 @@ void wait()
         }
     }
 
-    measured_time = t - t0;
+    measuredTime = t - t0;
 }
 
 int main()
 {
     {
         FastInterruptDisableLock l;
-        hbridge_in.mode(Mode::ALTERNATE);
-        hbridge_in.alternateFunction(2);
-        hbridge_inhibit.mode(Mode::OUTPUT);
-        hbridge_inhibit.low();
+        hbridgeIn.mode(Mode::ALTERNATE);
+        hbridgeIn.alternateFunction(2);
+        hbridgeInhibit.mode(Mode::OUTPUT);
+        hbridgeInhibit.low();
     }
 
     for (;;)
@@ -106,7 +106,7 @@ int main()
             getline(cin, temp);
         } while (temp != "yeet");
 
-        HBridge hbridge(hbridge_inhibit, HBRIDGE_TIM, HBRIDGE_PWM_CHANNEL, freq,
+        HBridge hbridge(hbridgeInhibit, HBRIDGE_TIM, HBRIDGE_PWM_CHANNEL, freq,
                         duty / 100);
 
         hbridge.enable();
@@ -121,7 +121,7 @@ int main()
 
         Thread::sleep(500);
 
-        TRACE("Elapsed time: %.2f s\n", (measured_time) / 1000.0f);
+        TRACE("Elapsed time: %.2f s\n", (measuredTime) / 1000.0f);
         TRACE("Done!\n\n");
     }
 

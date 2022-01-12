@@ -28,41 +28,40 @@ namespace Boardcore
 namespace aeroutils
 {
 
-float relAltitude(float pressure, float pressure_ref, float temperature_ref)
+float relAltitude(float pressure, float pressureRef, float temperatureRef)
 {
     using namespace constants;
 
-    return temperature_ref / a * (1 - powf(pressure / pressure_ref, n_inv));
+    return temperatureRef / a * (1 - powf(pressure / pressureRef, nInv));
 }
 
-float relDensity(float pressure, float pressure_ref, float altitude_ref,
-                 float temperature_ref)
+float relDensity(float pressure, float pressureRef, float altitudeRef,
+                 float temperatureRef)
 {
     using namespace constants;
 
-    return pressure /
-           (R * a * altitude_ref +
-            R * temperature_ref * powf(pressure / pressure_ref, n_inv));
+    return pressure / (R * a * altitudeRef +
+                       R * temperatureRef * powf(pressure / pressureRef, nInv));
 }
 
-float mslPressure(float pressure_ref, float temperature_ref, float altitude_ref)
+float mslPressure(float pressureRef, float temperatureRef, float altitudeRef)
 {
     using namespace constants;
-    float T0 = mslTemperature(temperature_ref, altitude_ref);
+    float T0 = mslTemperature(temperatureRef, altitudeRef);
 
-    return pressure_ref / powf(1 - a * altitude_ref / T0, n);
+    return pressureRef / powf(1 - a * altitudeRef / T0, n);
 }
 
-float mslTemperature(float temperature_ref, float altitude_ref)
+float mslTemperature(float temperatureRef, float altitudeRef)
 {
-    return temperature_ref + (altitude_ref * constants::a);
+    return temperatureRef + (altitudeRef * constants::a);
 }
 
-float verticalSpeed(float p, float dp_dt, float p_ref, float t_ref)
+float verticalSpeed(float p, float dpDt, float pRef, float tRef)
 {
     using namespace constants;
 
-    return -(t_ref * dp_dt * powf(p / p_ref, n_inv)) / (a * n * p);
+    return -(tRef * dpDt * powf(p / pRef, nInv)) / (a * n * p);
 }
 
 }  // namespace aeroutils

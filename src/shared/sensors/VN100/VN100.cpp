@@ -34,12 +34,12 @@ VN100::VN100(unsigned int portNumber, BaudRates baudRate, CRCOptions crc)
 
 bool VN100::init()
 {
-    SensorErrors backup = last_error;
+    SensorErrors backup = lastError;
 
     // If already initialized
     if (isInit)
     {
-        last_error = SensorErrors::ALREADY_INIT;
+        lastError = SensorErrors::ALREADY_INIT;
         LOG_WARN(logger, "Sensor vn100 already initilized");
         return true;
     }
@@ -61,7 +61,7 @@ bool VN100::init()
 
     // Set the error to init fail and if the init process goes without problem
     // i restore it to the last error
-    last_error = SensorErrors::INIT_FAIL;
+    lastError = SensorErrors::INIT_FAIL;
 
     if (recvString == NULL)
     {
@@ -111,7 +111,7 @@ bool VN100::init()
     isInit = true;
 
     // All good i restore the actual last error
-    last_error = backup;
+    lastError = backup;
 
     return true;
 }
@@ -121,7 +121,7 @@ bool VN100::sampleRaw()
     // Sensor not init
     if (!isInit)
     {
-        last_error = SensorErrors::NOT_INIT;
+        lastError = SensorErrors::NOT_INIT;
         LOG_WARN(logger,
                  "Unable to sample due to not initialized vn100 sensor");
         return false;
@@ -165,7 +165,7 @@ bool VN100::closeAndReset()
     // Sensor not init
     if (!isInit)
     {
-        last_error = SensorErrors::NOT_INIT;
+        lastError = SensorErrors::NOT_INIT;
         LOG_WARN(logger, "Sensor vn100 already not initilized");
         return true;
     }
@@ -199,7 +199,7 @@ bool VN100::selfTest()
 {
     if (!selfTestImpl())
     {
-        last_error = SensorErrors::SELF_TEST_FAIL;
+        lastError = SensorErrors::SELF_TEST_FAIL;
         LOG_WARN(logger, "Unable to perform a successful vn100 self test");
         return false;
     }
@@ -211,16 +211,16 @@ VN100Data VN100::sampleImpl()
 {
     if (!isInit)
     {
-        last_error = SensorErrors::NOT_INIT;
+        lastError = SensorErrors::NOT_INIT;
         LOG_WARN(logger,
                  "Unable to sample due to not initialized vn100 sensor");
-        return last_sample;
+        return lastSample;
     }
 
     // Before sampling i check for errors
-    if (last_error != SensorErrors::NO_ERRORS)
+    if (lastError != SensorErrors::NO_ERRORS)
     {
-        return last_sample;
+        return lastSample;
     }
 
     // Returns Quaternion, Magnetometer, Accelerometer and Gyro
@@ -228,7 +228,7 @@ VN100Data VN100::sampleImpl()
                                 preSampleImuString->length())))
     {
         // If something goes wrong i return the last sampled data
-        return last_sample;
+        return lastSample;
     }
 
     // Wait some time
@@ -238,14 +238,14 @@ VN100Data VN100::sampleImpl()
     if (!recvStringCommand(recvString, recvStringMaxDimension))
     {
         // If something goes wrong i return the last sampled data
-        return last_sample;
+        return lastSample;
     }
 
     if (!verifyChecksum(recvString, recvStringLength))
     {
         LOG_WARN(logger, "Vn100 sampling message invalid checksum");
         // If something goes wrong i return the last sampled data
-        return last_sample;
+        return lastSample;
     }
 
     // Now i have to parse the data
@@ -261,7 +261,7 @@ VN100Data VN100::sampleImpl()
                                 preSampleTempPressString->length())))
     {
         // If something goes wrong i return the last sampled data
-        return last_sample;
+        return lastSample;
     }
 
     // Wait some time
@@ -271,14 +271,14 @@ VN100Data VN100::sampleImpl()
     if (!recvStringCommand(recvString, recvStringMaxDimension))
     {
         // If something goes wrong i return the last sampled data
-        return last_sample;
+        return lastSample;
     }
 
     if (!verifyChecksum(recvString, recvStringLength))
     {
         LOG_WARN(logger, "Vn100 sampling message invalid checksum");
         // If something goes wrong i return the last sampled data
-        return last_sample;
+        return lastSample;
     }
 
     // Parse the data
@@ -426,7 +426,7 @@ bool VN100::selfTestImpl()
     // Check the init status
     if (!isInit)
     {
-        last_error = SensorErrors::NOT_INIT;
+        lastError = SensorErrors::NOT_INIT;
         LOG_WARN(
             logger,
             "Unable to perform vn100 self test due to not initialized sensor");
@@ -490,11 +490,11 @@ QuaternionData VN100::sampleQuaternion()
     }
 
     // Parse the data
-    data.quat_timestamp = TimestampTimer::getInstance().getTimestamp();
-    data.quat_x         = strtod(recvString + indexStart + 1, &nextNumber);
-    data.quat_y         = strtod(nextNumber + 1, &nextNumber);
-    data.quat_z         = strtod(nextNumber + 1, &nextNumber);
-    data.quat_w         = strtod(nextNumber + 1, NULL);
+    data.quatTimestamp = TimestampTimer::getInstance().getTimestamp();
+    data.quatX         = strtod(recvString + indexStart + 1, &nextNumber);
+    data.quatY         = strtod(nextNumber + 1, &nextNumber);
+    data.quatZ         = strtod(nextNumber + 1, &nextNumber);
+    data.quatW         = strtod(nextNumber + 1, NULL);
 
     return data;
 }
@@ -518,10 +518,10 @@ MagnetometerData VN100::sampleMagnetometer()
     }
 
     // Parse the data
-    data.mag_timestamp = TimestampTimer::getInstance().getTimestamp();
-    data.mag_x         = strtod(recvString + indexStart + 1, &nextNumber);
-    data.mag_y         = strtod(nextNumber + 1, &nextNumber);
-    data.mag_z         = strtod(nextNumber + 1, NULL);
+    data.magneticFieldTimestamp = TimestampTimer::getInstance().getTimestamp();
+    data.magneticFieldX = strtod(recvString + indexStart + 1, &nextNumber);
+    data.magneticFieldY = strtod(nextNumber + 1, &nextNumber);
+    data.magneticFieldZ = strtod(nextNumber + 1, NULL);
 
     return data;
 }
@@ -545,10 +545,10 @@ AccelerometerData VN100::sampleAccelerometer()
     }
 
     // Parse the data
-    data.accel_timestamp = TimestampTimer::getInstance().getTimestamp();
-    data.accel_x         = strtod(recvString + indexStart + 1, &nextNumber);
-    data.accel_y         = strtod(nextNumber + 1, &nextNumber);
-    data.accel_z         = strtod(nextNumber + 1, NULL);
+    data.accelerationTimestamp = TimestampTimer::getInstance().getTimestamp();
+    data.accelerationX = strtod(recvString + indexStart + 1, &nextNumber);
+    data.accelerationY = strtod(nextNumber + 1, &nextNumber);
+    data.accelerationZ = strtod(nextNumber + 1, NULL);
 
     return data;
 }
@@ -572,10 +572,11 @@ GyroscopeData VN100::sampleGyroscope()
     }
 
     // Parse the data
-    data.gyro_timestamp = TimestampTimer::getInstance().getTimestamp();
-    data.gyro_x         = strtod(recvString + indexStart + 1, &nextNumber);
-    data.gyro_y         = strtod(nextNumber + 1, &nextNumber);
-    data.gyro_z         = strtod(nextNumber + 1, NULL);
+    data.angularVelocityTimestamp =
+        TimestampTimer::getInstance().getTimestamp();
+    data.angularVelocityX = strtod(recvString + indexStart + 1, &nextNumber);
+    data.angularVelocityY = strtod(nextNumber + 1, &nextNumber);
+    data.angularVelocityZ = strtod(nextNumber + 1, NULL);
 
     return data;
 }
@@ -598,8 +599,8 @@ TemperatureData VN100::sampleTemperature()
     }
 
     // Parse the data
-    data.temp_timestamp = TimestampTimer::getInstance().getTimestamp();
-    data.temp           = strtod(recvString + indexStart + 1, NULL);
+    data.temperatureTimestamp = TimestampTimer::getInstance().getTimestamp();
+    data.temperature          = strtod(recvString + indexStart + 1, NULL);
 
     return data;
 }
@@ -622,8 +623,8 @@ PressureData VN100::samplePressure()
     }
 
     // Parse the data
-    data.press_timestamp = TimestampTimer::getInstance().getTimestamp();
-    data.press           = strtod(recvString + indexStart + 1, NULL);
+    data.pressureTimestamp = TimestampTimer::getInstance().getTimestamp();
+    data.pressure          = strtod(recvString + indexStart + 1, NULL);
 
     return data;
 }

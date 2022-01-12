@@ -44,41 +44,48 @@ struct BMX160WithCorrectionData : public BMX160Data
 
     BMX160WithCorrectionData& operator=(AccelerometerData acc)
     {
-        accel_x = acc.accel_x;
-        accel_y = acc.accel_y;
-        accel_z = acc.accel_z;
+        accelerationX = acc.accelerationX;
+        accelerationY = acc.accelerationY;
+        accelerationZ = acc.accelerationZ;
         return *this;
     }
 
     BMX160WithCorrectionData& operator=(GyroscopeData gyr)
     {
-        gyro_x = gyr.gyro_x;
-        gyro_y = gyr.gyro_y;
-        gyro_z = gyr.gyro_z;
+        angularVelocityX = gyr.angularVelocityX;
+        angularVelocityY = gyr.angularVelocityY;
+        angularVelocityZ = gyr.angularVelocityZ;
         return *this;
     }
 
     BMX160WithCorrectionData& operator=(MagnetometerData mag)
     {
-        mag_x = mag.mag_x;
-        mag_y = mag.mag_y;
-        mag_z = mag.mag_z;
+        magneticFieldX = mag.magneticFieldX;
+        magneticFieldY = mag.magneticFieldY;
+        magneticFieldZ = mag.magneticFieldZ;
         return *this;
     }
 
     static std::string header()
     {
-        return "accel_timestamp,accel_x,accel_y,accel_z,gyro_timestamp,gyro_x,"
-               "gyro_y,"
-               "gyro_z,mag_timestamp,mag_x,mag_y,mag_z\n";
+        return "accelerationTimestamp,accelerationX,accelerationY,"
+               "accelerationZ,gyro_"
+               "timestamp,"
+               "angularVelocityX,"
+               "angularVelocityY,"
+               "angularVelocityZ,magneticFieldTimestamp,magneticFieldX,"
+               "magneticFieldY,"
+               "magneticFieldZ\n";
     }
 
     void print(std::ostream& os) const
     {
-        os << accel_timestamp << "," << accel_x << "," << accel_y << ","
-           << accel_z << "," << gyro_timestamp << "," << gyro_x << "," << gyro_y
-           << "," << gyro_z << "," << mag_timestamp << "," << mag_x << ","
-           << mag_y << "," << mag_z << "\n";
+        os << accelerationTimestamp << "," << accelerationX << ","
+           << accelerationY << "," << accelerationZ << ","
+           << angularVelocityTimestamp << "," << angularVelocityX << ","
+           << angularVelocityY << "," << angularVelocityZ << ","
+           << magneticFieldTimestamp << "," << magneticFieldX << ","
+           << magneticFieldY << "," << magneticFieldZ << "\n";
     }
 };
 

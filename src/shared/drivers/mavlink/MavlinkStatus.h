@@ -33,11 +33,11 @@ namespace Boardcore
 struct MavlinkStatus
 {
     uint64_t timestamp;
-    uint16_t n_send_queue;  // current len of the occupied portion of the queue
-    uint16_t max_send_queue;     // max occupied len of the queue
-    uint16_t n_send_errors;      // Number of failed sends
-    uint16_t n_dropped_packets;  // number of packet drops
-    mavlink_status_t mav_stats;
+    uint16_t nSendQueue;    // current len of the occupied portion of the queue
+    uint16_t maxSendQueue;  // max occupied len of the queue
+    uint16_t nSendErrors;   // Number of failed sends
+    uint16_t nDroppedPackets;  // number of packet drops
+    mavlink_status_t mavStats;
 
     static std::string header()
     {
@@ -52,15 +52,15 @@ struct MavlinkStatus
 
     void print(std::ostream& os) const
     {
-        os << timestamp << "," << n_send_queue << "," << max_send_queue << ","
-           << n_send_errors << "," << n_dropped_packets << ","
-           << (int)mav_stats.msg_received << ","
-           << (int)mav_stats.buffer_overrun << "," << (int)mav_stats.parse_error
-           << "," << (int)mav_stats.parse_state << ","
-           << (int)mav_stats.packet_idx << "," << (int)mav_stats.current_rx_seq
-           << "," << (int)mav_stats.current_tx_seq << ","
-           << mav_stats.packet_rx_success_count << ","
-           << mav_stats.packet_rx_drop_count << "\n";
+        os << timestamp << "," << nSendQueue << "," << maxSendQueue << ","
+           << nSendErrors << "," << nDroppedPackets << ","
+           << (int)mavStats.msg_received << "," << (int)mavStats.buffer_overrun
+           << "," << (int)mavStats.parse_error << ","
+           << (int)mavStats.parse_state << "," << (int)mavStats.packet_idx
+           << "," << (int)mavStats.current_rx_seq << ","
+           << (int)mavStats.current_tx_seq << ","
+           << mavStats.packet_rx_success_count << ","
+           << mavStats.packet_rx_drop_count << "\n";
     }
 };
 

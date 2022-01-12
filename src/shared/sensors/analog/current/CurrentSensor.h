@@ -45,7 +45,7 @@ public:
                   std::function<float(float)> adcToCurrent_)
         : getADCVoltage(getADCVoltage_), adcToCurrent(adcToCurrent_)
     {
-        last_sample.current = 0;
+        lastSample.current = 0;
     }
 
     bool init() override { return true; };
@@ -57,18 +57,18 @@ public:
     {
         ADCData adc_data = getADCVoltage();
 
-        if (last_sample.current == 0)
+        if (lastSample.current == 0)
         {
-            last_sample.current = adcToCurrent(adc_data.voltage);
+            lastSample.current = adcToCurrent(adc_data.voltage);
         }
 
         CurrentSensorData current_data;
-        current_data.adc_timestamp = adc_data.adc_timestamp;
-        current_data.channel_id    = adc_data.channel_id;
-        current_data.voltage       = adc_data.voltage;
+        current_data.voltageTimestamp = adc_data.voltageTimestamp;
+        current_data.channelId        = adc_data.channelId;
+        current_data.voltage          = adc_data.voltage;
 
         // Moving average
-        current_data.current = last_sample.current * MOVING_AVAERAGE_COMP_COEFF;
+        current_data.current = lastSample.current * MOVING_AVAERAGE_COMP_COEFF;
         current_data.current +=
             adcToCurrent(adc_data.voltage) * MOVING_AVAERAGE_COEFF;
 

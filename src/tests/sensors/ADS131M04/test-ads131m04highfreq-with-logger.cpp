@@ -34,11 +34,11 @@ GpioPin csPin   = GpioPin(GPIOE_BASE, 4);
 GpioPin timerCsPin  = GpioPin(GPIOA_BASE, 11);
 GpioPin timerSckPin = GpioPin(GPIOB_BASE, 1);
 
-static volatile bool dma_complete = false;
+static volatile bool dmaComplete = false;
 
 static constexpr int BUFF_SIZE = 1024;
 
-Thread* irq_wait_thread = nullptr;
+Thread* irqWaitThread = nullptr;
 
 SPISignalGenerator spiSignalGenerator(
     16, BUFF_SIZE, 1000000, SPI::Mode::MODE_1,
@@ -104,10 +104,10 @@ int main()
     {
         Thread::sleep(10);
         // delayUs(1);
-        // while (!dma_complete)
+        // while (!dmaComplete)
         //     ;
 
-        // dma_complete = false;
+        // dmaComplete = false;
 
         // ads131.stopHighFreqSampling();
 
@@ -161,7 +161,7 @@ void __attribute__((naked)) DMA2_Stream0_IRQHandler()
 
 void __attribute__((used)) DMA2_Stream0_IRQHandlerImpl()
 {
-    dma_complete = true;
+    dmaComplete = true;
     if (DMA2->LISR & DMA_LISR_TCIF0)
     {
         // Clear the interrupt

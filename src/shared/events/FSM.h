@@ -59,11 +59,11 @@ public:
 
     /**
      * Test if the FSM is in a state
-     * @param test_state state to test
+     * @param testState state to test
      */
-    bool testState(void (T::*test_state)(const Event&))
+    bool testState(void (T::*testState)(const Event&))
     {
-        return (this->state == test_state);
+        return (this->state == testState);
     }
 
 protected:

@@ -42,8 +42,8 @@ constexpr float g = 9.80665f;
 // Air gas constant [J/(Kg*K])]
 constexpr float R = 287.05f;
 
-constexpr float n     = g / (R * a);
-constexpr float n_inv = (R * a) / g;
+constexpr float n    = g / (R * a);
+constexpr float nInv = (R * a) / g;
 
 }  // namespace constants
 
@@ -58,24 +58,24 @@ constexpr float n_inv = (R * a) / g;
  * reference is, in fact, the sea level.
  *
  * @param pressure Current pressure [Pascal]
- * @param pressure_ref Pressure at reference altitude (must be > 0) [Pascal]
- * @param temperature_ref Temperature at reference altitude [Kelvin]
+ * @param pressureRef Pressure at reference altitude (must be > 0) [Pascal]
+ * @param temperatureRef Temperature at reference altitude [Kelvin]
  * @return Current altitude with respect to the reference altitude [meters]
  */
-float relAltitude(float pressure, float pressure_ref, float temperature_ref);
+float relAltitude(float pressure, float pressureRef, float temperatureRef);
 
 /**
  * Returns the current air density with respect to a reference density and
  * temperature, using the Internation Standard Atmosphere model.
  *
  * @param pressure Current atmospheric pressure [Pascal]
- * @param pressure_ref Pressure at reference altitude (must be > 0) [Pascal]
- * @param altitude_ref Reference altitude [m]
- * @param temperature_ref Temperature at reference altitude [Kelvin]
+ * @param pressureRef Pressure at reference altitude (must be > 0) [Pascal]
+ * @param altitudeRef Reference altitude [m]
+ * @param temperatureRef Temperature at reference altitude [Kelvin]
  * @return Current air density  [Kg/m^3]
  */
-float relDensity(float pressure, float pressure_ref, float altitude_ref,
-                 float temperature_ref);
+float relDensity(float pressure, float pressureRef, float altitudeRef,
+                 float temperatureRef);
 
 /**
  * Returns the expected pressure at mean sea level based on temperature and
@@ -85,14 +85,13 @@ float relDensity(float pressure, float pressure_ref, float altitude_ref,
  * @warning This function is valid for altitudes below 11000 meters above sea
  * level
  *
- * @param pressure_ref Pressure at reference altitude [Pascal]
- * @param temperature_ref Temperature at reference altitude. Must be > 0
+ * @param pressureRef Pressure at reference altitude [Pascal]
+ * @param temperatureRef Temperature at reference altitude. Must be > 0
  * [Kelvin]
- * @param altitude_ref Reference altitude [meters]
+ * @param altitudeRef Reference altitude [meters]
  * @return Pressure at mean sea level [pascal]
  */
-float mslPressure(float pressure_ref, float temperature_ref,
-                  float altitude_ref);
+float mslPressure(float pressureRef, float temperatureRef, float altitudeRef);
 
 /**
  * Returns the expected temperature at mean sea level based on temperature at a
@@ -101,11 +100,11 @@ float mslPressure(float pressure_ref, float temperature_ref,
  * @warning This function is valid for altitudes below 11000 meters above sea
  * level
  *
- * @param temperature_ref Temperature at reference altitude [Kelvin]
- * @param altitude_ref Reference altitude [meters]
+ * @param temperatureRef Temperature at reference altitude [Kelvin]
+ * @param altitudeRef Reference altitude [meters]
  * @return Temperature at mean sea level [Kelvin]
  */
-float mslTemperature(float temperature_ref, float altitude_ref);
+float mslTemperature(float temperatureRef, float altitudeRef);
 
 /**
  * Returns the vertical speed (or rate of climb) of the rocket, assuming an
@@ -115,12 +114,12 @@ float mslTemperature(float temperature_ref, float altitude_ref);
  * level
  *
  * @param p Current pressure (must be > 0) [Pa]
- * @param dp_dt [Rate of change of pressure [Pa/s]]
- * @param p_ref Reference pressure (must be > 0) [Pa]
- * @param t_ref Reference temperature [K]
+ * @param dpDt [Rate of change of pressure [Pa/s]]
+ * @param pRef Reference pressure (must be > 0) [Pa]
+ * @param tRef Reference temperature [K]
  * @return Vertical speed, positive upwards [m/s]
  */
-float verticalSpeed(float p, float dp_dt, float p_ref, float t_ref);
+float verticalSpeed(float p, float dpDt, float pRef, float tRef);
 
 }  // namespace aeroutils
 

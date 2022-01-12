@@ -179,7 +179,7 @@ bool InternalADC::selfTest()
     // Try a single sample and check for error
     sample();
 
-    if (last_error != NO_ERRORS)
+    if (lastError != NO_ERRORS)
     {
         return false;
     }
@@ -228,14 +228,14 @@ ADCData InternalADC::sampleImpl()
             *clearFlagReg |= transferErrorMask;
 
             // Signal an error
-            last_error = DMA_ERROR;
-            return last_sample;
+            lastError = DMA_ERROR;
+            return lastSample;
         }
     }
 
     timestamp = TimestampTimer::getInstance().getTimestamp();
 
-    return last_sample;
+    return lastSample;
 }
 
 inline void InternalADC::resetRegisters()

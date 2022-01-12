@@ -182,7 +182,7 @@ public:
                      getBackgroundColor());
 
             dc.drawRectangle(bounds.topLeft(), bounds.bottomRight(),
-                             selected ? col_selected : getBackgroundColor());
+                             selected ? colSelected : getBackgroundColor());
         }
     }
 
@@ -199,18 +199,18 @@ public:
 
     virtual void setBackgroundColor(mxgui::Color color)
     {
-        if (color != col_bg)
+        if (color != colBg)
         {
-            col_bg = color;
+            colBg = color;
             invalidate();
         }
     }
 
-    virtual mxgui::Color getBackgroundColor() { return col_bg; }
+    virtual mxgui::Color getBackgroundColor() { return colBg; }
 
     void setSelectedColor(mxgui::Color color)
     {
-        col_selected = color;
+        colSelected = color;
         invalidate();
     }
 
@@ -246,8 +246,8 @@ protected:
     bool isInvalidated() { return invalidated; }
 
 private:
-    mxgui::Color col_selected = mxgui::red;
-    mxgui::Color col_bg       = mxgui::black;
+    mxgui::Color colSelected = mxgui::red;
+    mxgui::Color colBg       = mxgui::black;
 
     std::vector<OnInteractionListener> listeners;
 
@@ -259,8 +259,8 @@ private:
 
     // Drawing big solid chunks (such as backgrounds) takes a lot of time: do
     // not redraw if not necessary
-    bool was_selected          = false;
-    mxgui::Color last_bg_color = col_bg;
+    bool wasSelected         = false;
+    mxgui::Color lastBgColor = colBg;
 };
 
 }  // namespace Boardcore

@@ -41,7 +41,7 @@ namespace Canbus
  * @brief Low level canbus driver, with support for both peripherals (CAN1 and
  * CAN2) on stm32f4 micros.
  */
-class Canbus
+class CanbusDriver
 {
     // How many frames to store in the RX buffer
     static constexpr unsigned int RX_BUF_SIZE        = 10;
@@ -84,12 +84,12 @@ public:
          * values are preferred but not mandatory: 1000 kpbs, 500 kbps, 250
          * kbps, 125 kbps, 100 kbps, 83.333 kbps, 50 kbps, 25 kbps and 10 kbps.
          */
-        uint32_t baud_rate;
+        uint32_t baudRate;
 
         /**
          * @brief Sample point in percentage of the bit length. Eg: 0.875.
          */
-        float sample_point;
+        float samplePoint;
     };
 
     /**
@@ -110,9 +110,10 @@ public:
      *
      * @param can Canbus peripheral pointer (CAN1 or CAN2).
      * @param config Bus configuration.
-     * @param bit_timing Bit timing requirements.
+     * @param bitTiming Bit timing requirements.
      */
-    Canbus(CAN_TypeDef* can, CanbusConfig config, AutoBitTiming bit_timing);
+    CanbusDriver(CAN_TypeDef* can, CanbusConfig config,
+                 AutoBitTiming bitTiming);
 
     /**
      * @brief Construct a new Canbus object, manually assigning each bit timing
@@ -120,9 +121,9 @@ public:
      *
      * @param can Canbus peripheral pointer (CAN1 or CAN2).
      * @param config Bus configuration.
-     * @param bit_timing Bit timing register values.
+     * @param bitTiming Bit timing register values.
      */
-    Canbus(CAN_TypeDef* can, CanbusConfig config, BitTiming bit_timing);
+    CanbusDriver(CAN_TypeDef* can, CanbusConfig config, BitTiming bitTiming);
 
     /**
      * @brief Exits initialization mode and starts canbus operation.
@@ -152,7 +153,7 @@ public:
      */
     IRQCircularBuffer<CanRXPacket, RX_BUF_SIZE>& getRXBuffer()
     {
-        return buf_rx_packets;
+        return bufRxPackets;
     }
 
     /**
@@ -161,7 +162,7 @@ public:
      */
     IRQCircularBuffer<CanTXResult, TX_STATUS_BUF_SIZE>& getTXResultBuffer()
     {
-        return buf_tx_result;
+        return bufTxResult;
     }
 
     /**
@@ -172,7 +173,7 @@ public:
     /**
      * @brief Gets the sequence number of the message in the ith tx mailbox.
      */
-    uint32_t getTXMailboxSequence(uint8_t i) { return tx_mailbox_seq[i]; }
+    uint32_t getTXMailboxSequence(uint8_t i) { return txMailboxSeq[i]; }
 
     /**
      * @brief Wakes the transmission thread. ONLY to be called from the Canbus
@@ -196,19 +197,19 @@ private:
     static BitTiming calcBitTiming(AutoBitTiming config);
 
     // Stores RX packets
-    IRQCircularBuffer<CanRXPacket, RX_BUF_SIZE> buf_rx_packets;
+    IRQCircularBuffer<CanRXPacket, RX_BUF_SIZE> bufRxPackets;
 
     // Store results of a TX request
-    IRQCircularBuffer<CanTXResult, TX_STATUS_BUF_SIZE> buf_tx_result;
+    IRQCircularBuffer<CanTXResult, TX_STATUS_BUF_SIZE> bufTxResult;
 
     CAN_TypeDef* can;
 
-    uint32_t tx_seq            = 1;    // TX packet sequence number
-    uint32_t tx_mailbox_seq[3] = {0};  // Seq. no. of packets in the TX mailbox
+    uint32_t txSeq           = 1;    // TX packet sequence number
+    uint32_t txMailboxSeq[3] = {0};  // Seq. no. of packets in the TX mailbox
 
-    uint8_t is_init      = false;
-    uint8_t filter_index = 0;
-    Thread* waiting      = nullptr;
+    uint8_t isInit      = false;
+    uint8_t filterIndex = 0;
+    Thread* waiting     = nullptr;
 };
 
 }  // namespace Canbus

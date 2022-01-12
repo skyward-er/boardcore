@@ -43,9 +43,9 @@ public:
     /**
      * @param id      sampler identifier
      * @param period  period at which the sampler performs sensors update
-     * @param is_dma  indicate if the sampler manages DMA sensors or not
+     * @param isDma  indicate if the sampler manages DMA sensors or not
      */
-    SensorSampler(uint8_t id, uint32_t period, bool is_dma);
+    SensorSampler(uint8_t id, uint32_t period, bool isDma);
 
     virtual ~SensorSampler();
 
@@ -113,7 +113,7 @@ private:
 
     uint8_t id;      /**< sampler id used in the task scheduler */
     uint32_t period; /**< sampler update/activation period */
-    bool is_dma;     /**< the sampler's type (if it uses DMA or not) */
+    bool isDma;      /**< the sampler's type (if it uses DMA or not) */
 
 protected:
     std::vector<std::pair<AbstractSensor*, SensorInfo>> sensors;

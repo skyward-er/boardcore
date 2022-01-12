@@ -50,19 +50,19 @@ public:
      */
     void updateViewTree(View* root)
     {
-        if (selected_index < vec_selectable.size())
+        if (selectedIndex < vecSelectable.size())
         {
-            vec_selectable.at(selected_index)->setSelected(false);
+            vecSelectable.at(selectedIndex)->setSelected(false);
         }
 
-        vec_selectable.clear();
-        selected_index = 0;
+        vecSelectable.clear();
+        selectedIndex = 0;
 
         updateSelectableViews(root);
 
-        if (vec_selectable.size() > 0)
+        if (vecSelectable.size() > 0)
         {
-            vec_selectable.at(0)->setSelected(true);
+            vecSelectable.at(0)->setSelected(true);
         }
     }
 
@@ -71,36 +71,36 @@ public:
         switch (press)
         {
             case ButtonPress::SHORT:
-                if (vec_selectable.size() > 0)
+                if (vecSelectable.size() > 0)
                 {
                     selectNext();
                 }
                 break;
             case ButtonPress::DOWN:
-                if (selected_index < vec_selectable.size())
+                if (selectedIndex < vecSelectable.size())
                 {
-                    vec_selectable.at(selected_index)
+                    vecSelectable.at(selectedIndex)
                         ->performInteraction(Interaction::BTN_DOWN);
                 }
                 break;
             case ButtonPress::UP:
-                if (selected_index < vec_selectable.size())
+                if (selectedIndex < vecSelectable.size())
                 {
-                    vec_selectable.at(selected_index)
+                    vecSelectable.at(selectedIndex)
                         ->performInteraction(Interaction::BTN_UP);
                 }
                 break;
             case ButtonPress::LONG:
-                if (selected_index < vec_selectable.size())
+                if (selectedIndex < vecSelectable.size())
                 {
-                    vec_selectable.at(selected_index)
+                    vecSelectable.at(selectedIndex)
                         ->performInteraction(Interaction::CLICK);
                 }
                 break;
             case ButtonPress::VERY_LONG:
-                if (selected_index < vec_selectable.size())
+                if (selectedIndex < vecSelectable.size())
                 {
-                    vec_selectable.at(selected_index)
+                    vecSelectable.at(selectedIndex)
                         ->performInteraction(Interaction::LONG_CLICK);
                 }
                 break;
@@ -113,19 +113,19 @@ private:
     void selectNext()
     {
         // Deselect old drawble
-        if (selected_index < vec_selectable.size())
+        if (selectedIndex < vecSelectable.size())
         {
-            vec_selectable.at(selected_index)->setSelected(false);
+            vecSelectable.at(selectedIndex)->setSelected(false);
         }
 
-        if (vec_selectable.size() > 0)
+        if (vecSelectable.size() > 0)
         {
-            selected_index = (selected_index + 1) % vec_selectable.size();
+            selectedIndex = (selectedIndex + 1) % vecSelectable.size();
 
-            vec_selectable.at(selected_index)->setSelected(true);
+            vecSelectable.at(selectedIndex)->setSelected(true);
 
             TextView* text =
-                dynamic_cast<TextView*>(vec_selectable.at(selected_index));
+                dynamic_cast<TextView*>(vecSelectable.at(selectedIndex));
 
             if (text)
             {
@@ -141,14 +141,14 @@ private:
         {
             if (child->isSelectable())
             {
-                vec_selectable.push_back(child);
+                vecSelectable.push_back(child);
             }
             updateSelectableViews(child);
         }
     }
 
-    unsigned int selected_index = 0;
-    std::vector<View*> vec_selectable;
+    unsigned int selectedIndex = 0;
+    std::vector<View*> vecSelectable;
 
     PrintLogger logger = Logging::getLogger("navcontroller");
 };

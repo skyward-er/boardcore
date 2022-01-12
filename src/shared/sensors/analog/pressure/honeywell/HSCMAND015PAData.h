@@ -29,11 +29,11 @@ namespace Boardcore
 
 struct HSCMAND015PAData : public PressureData
 {
-    static std::string header() { return "press_timestamp,pressure\n"; }
+    static std::string header() { return "pressureTimestamp,pressure\n"; }
 
     void print(std::ostream& os) const
     {
-        os << press_timestamp << "," << press << "\n";
+        os << pressureTimestamp << "," << pressure << "\n";
     }
 };
 

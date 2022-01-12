@@ -26,12 +26,11 @@ namespace Boardcore
 {
 
 HBridge::HBridge(miosix::GpioPin inhibit, PWM::Timer timer, PWMChannel channel,
-                 uint32_t frequency, float duty_cycle,
-                 uint16_t disable_delay_ms)
-    : pin_inh(inhibit), pwm(timer, frequency), channel(channel),
-      duty_cycle(duty_cycle), disable_delay_ms(disable_delay_ms)
+                 uint32_t frequency, float dutyCycle, uint16_t disableDelayMs)
+    : pinInterrupt(inhibit), pwm(timer, frequency), channel(channel),
+      dutyCycle(dutyCycle), disableDelayMs(disableDelayMs)
 {
-    pin_inh.low();
+    pinInterrupt.low();
 
     status.timestamp = TimestampTimer::getInstance().getTimestamp();
     status.state     = HBridgeState::DISABLED;
@@ -56,30 +55,30 @@ void HBridge::disable()
         pwm.setDutyCycle(channel, 0.0f);  // Set duty cycle to 0 to leave the IN
                                           // pin of the h-bridge low
 
-        Thread::sleep(disable_delay_ms);  // Wait a short delay
+        Thread::sleep(disableDelayMs);  // Wait a short delay
 
-        pin_inh.low();  // Disable h-bridge
+        pinInterrupt.low();  // Disable h-bridge
 
         status.timestamp = TimestampTimer::getInstance().getTimestamp();
         status.state     = HBridgeState::DISABLED;
     }
 }
 
-void HBridge::enable() { enableHBridge(channel, pin_inh, duty_cycle); }
+void HBridge::enable() { enableHBridge(channel, pinInterrupt, dutyCycle); }
 
-void HBridge::enableTest(float test_duty_cycle)
+void HBridge::enableTest(float testDutyCycle)
 {
-    enableHBridge(channel, pin_inh, test_duty_cycle);
+    enableHBridge(channel, pinInterrupt, testDutyCycle);
 }
 
 HBridgeStatus HBridge::getStatus() { return status; }
 
-void HBridge::enableHBridge(PWMChannel channel, GpioPin& inh, float duty_cycle)
+void HBridge::enableHBridge(PWMChannel channel, GpioPin& inh, float dutyCycle)
 {
     if (status.state == HBridgeState::DISABLED)
     {
         // Enable PWM Generation
-        pwm.setDutyCycle(channel, duty_cycle);
+        pwm.setDutyCycle(channel, dutyCycle);
         // enable h-bridge
         inh.high();
 

@@ -37,7 +37,7 @@ MBLoadCell::MBLoadCell(LoadCellModes mode, int serialPortNum,
                        int baudrate = 2400)
 {
     this->settings.mode = mode;
-    max_print = max_setted = min_print = min_setted = 0;
+    maxPrint = maxSetted = minPrint = minSetted = 0;
 
     // Creating the instance of the serial interface
     serial = new SerialInterface(baudrate, serialPortNum);
@@ -47,13 +47,13 @@ bool MBLoadCell::init()
 {
     if (serial->isInit())
     {
-        last_error = SensorErrors::ALREADY_INIT;
+        lastError = SensorErrors::ALREADY_INIT;
     }
 
     // Initializing the serial connection
     if (!serial->init())
     {
-        last_error = SensorErrors::INIT_FAIL;
+        lastError = SensorErrors::INIT_FAIL;
         TRACE("[MBLoadCell] init of the serial communication failed\n");
         return false;
     }
@@ -109,7 +109,7 @@ ReturnsStates MBLoadCell::asciiRequest(LoadCellValuesEnum reqType, int value)
             // Taking the value returned
             float val = stof(response.substr(3, 6)) / 10.0;
 
-            // Updating the last_value struct
+            // Updating the last value struct
             settings.updateValue(reqType, val);
             break;
         }
@@ -117,11 +117,11 @@ ReturnsStates MBLoadCell::asciiRequest(LoadCellValuesEnum reqType, int value)
             TRACE("TARE RESETTED\n");
             break;
         case LoadCellValuesEnum::COMMUTE_TO_GROSS:
-            settings.gross_mode = true;
+            settings.grossMode = true;
             TRACE("COMMUTED TO GROSS WEIGHT\n");
             break;
         case LoadCellValuesEnum::COMMUTE_TO_NET:
-            settings.gross_mode = false;
+            settings.grossMode = false;
             TRACE("COMMUTED TO NET WEIGHT\n");
             break;
     }
@@ -132,42 +132,42 @@ ReturnsStates MBLoadCell::asciiRequest(LoadCellValuesEnum reqType, int value)
 void MBLoadCell::resetMaxMinWeights()
 {
     TRACE("max and min values erased!\n");
-    max_weight.valid = false;
-    min_weight.valid = false;
+    maxWeight.valid = false;
+    minWeight.valid = false;
 }
 
 void MBLoadCell::printData()
 {
-    if (last_sample.valid)
+    if (lastSample.valid)
     {
 #ifdef PRINT_ALL_SAMPLES
-        last_sample.print(std::cout);
+        lastSample.print(std::cout);
 #endif
     }
     else
     {
-        last_error = SensorErrors::NO_NEW_DATA;
+        lastError = SensorErrors::NO_NEW_DATA;
         TRACE("No valida data has been collected\n");
     }
 
-    if (max_print)
+    if (maxPrint)
     {
-        TRACE("NEW MAX %.2f (ts: %.3f [s])\n", max_weight.weight,
-              max_weight.loadcell_timestamp / 1000000.0);
-        max_print = false;
+        TRACE("NEW MAX %.2f (ts: %.3f [s])\n", maxWeight.weight,
+              maxWeight.weightTimestamp / 1000000.0);
+        maxPrint = false;
     }
 
-    if (min_print)
+    if (minPrint)
     {
-        TRACE("NEW MIN %.2f (ts: %.3f [s])\n", min_weight.weight,
-              min_weight.loadcell_timestamp / 1000000.0);
-        min_print = false;
+        TRACE("NEW MIN %.2f (ts: %.3f [s])\n", minWeight.weight,
+              minWeight.weightTimestamp / 1000000.0);
+        minPrint = false;
     }
 }
 
-Data MBLoadCell::getMaxWeight() { return max_weight; }
+Data MBLoadCell::getMaxWeight() { return maxWeight; }
 
-Data MBLoadCell::getMinWeight() { return min_weight; }
+Data MBLoadCell::getMinWeight() { return minWeight; }
 
 bool MBLoadCell::selfTest() { return true; }
 
@@ -186,32 +186,32 @@ Data MBLoadCell::sampleImpl()
             value = sampleAsciiModTd();
             break;
         default:
-            last_error = SensorErrors::NO_NEW_DATA;
-            return last_sample;
+            lastError = SensorErrors::NO_NEW_DATA;
+            return lastSample;
     }
 
     // Memorizing also the maximum gross weight registered
-    if (!max_weight.valid || max_weight.weight < value.weight)
+    if (!maxWeight.valid || maxWeight.weight < value.weight)
     {
-        max_weight = value;
-        max_setted = true;
+        maxWeight = value;
+        maxSetted = true;
     }
-    else if (max_setted)
+    else if (maxSetted)
     {
-        max_setted = false;
-        max_print  = true;
+        maxSetted = false;
+        maxPrint  = true;
     }
 
     // Memorizing also the minimum gross weight registered
-    if (!min_weight.valid || min_weight.weight > value.weight)
+    if (!minWeight.valid || minWeight.weight > value.weight)
     {
-        min_weight = value;
-        min_setted = true;
+        minWeight = value;
+        minSetted = true;
     }
-    else if (min_setted)
+    else if (minSetted)
     {
-        min_setted = false;
-        min_print  = true;
+        minSetted = false;
+        minPrint  = true;
     }
 
     return value;
@@ -246,18 +246,18 @@ Data MBLoadCell::sampleAsciiModTd()
     // Waiting for the response
     std::string response = receiveASCII();
 
-    // If response invalid returns last_sample, otherwise returns new sample
+    // If response invalid returns lastSample, otherwise returns new sample
     if (response.find('!') != std::string::npos)
     {
         TRACE("Gross weight reception error\n");
-        last_error = SensorErrors::NO_NEW_DATA;
-        return last_sample;
+        lastError = SensorErrors::NO_NEW_DATA;
+        return lastSample;
     }
     else if (response.find('#') != std::string::npos)
     {
         TRACE("Gross weight execution error\n");
-        last_error = SensorErrors::NO_NEW_DATA;
-        return last_sample;
+        lastError = SensorErrors::NO_NEW_DATA;
+        return lastSample;
     }
     else
     {

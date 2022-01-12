@@ -37,9 +37,9 @@ using namespace miosix;
 
 #define TOPIC_TEST 1
 
-#define CHECK_INIT()         \
-    bool test_value = false; \
-    (void)test_value
+#define CHECK_INIT()        \
+    bool testValue = false; \
+    (void)testValue
 
 #define CHECK_STATE(HSM, SIGNAL, STATE)                            \
     do                                                             \
@@ -48,7 +48,7 @@ using namespace miosix;
         cout << "Triggering signal " << #SIGNAL << endl;           \
         sEventBroker.post({SIGNAL}, TOPIC_TEST);                   \
         Thread::sleep(400);                                        \
-        test_value = HSM.testState(STATE);                         \
+        testValue = HSM.testState(STATE);                          \
         cout << "Check State " << #STATE << " "                    \
              << (HSM.testState(STATE) ? "TRUE" : "FALSE") << endl; \
         assert(HSM.testState(STATE));                              \
@@ -130,7 +130,7 @@ State HSMUTTest::state_S(const Event& e)
             retState = transition(&HSMUTTest::state_S11);
             break;
         default:
-            retState = tran_super(&HSMUTTest::Hsm_top);
+            retState = tranSuper(&HSMUTTest::Hsm_top);
             break;
     }
     return retState;
@@ -176,7 +176,7 @@ State HSMUTTest::state_S1(const Event& e)
             retState = HANDLED;
             break;
         default:
-            retState = tran_super(&HSMUTTest::state_S);
+            retState = tranSuper(&HSMUTTest::state_S);
             break;
     }
     return retState;
@@ -212,7 +212,7 @@ State HSMUTTest::state_S11(const Event& e)
             retState = transition(&HSMUTTest::state_S);
             break;
         default:
-            retState = tran_super(&HSMUTTest::state_S1);
+            retState = tranSuper(&HSMUTTest::state_S1);
             break;
     }
     return retState;
@@ -248,7 +248,7 @@ State HSMUTTest::state_S2(const Event& e)
             }
             break;
         default:
-            retState = tran_super(&HSMUTTest::state_S);
+            retState = tranSuper(&HSMUTTest::state_S);
             break;
     }
     return retState;
@@ -274,7 +274,7 @@ State HSMUTTest::state_S21(const Event& e)
             retState = transition(&HSMUTTest::state_S11);
             break;
         default:
-            retState = tran_super(&HSMUTTest::state_S2);
+            retState = tranSuper(&HSMUTTest::state_S2);
             break;
     }
     return retState;
@@ -298,7 +298,7 @@ State HSMUTTest::state_S211(const Event& e)
             retState = transition(&HSMUTTest::state_S);
             break;
         default:
-            retState = tran_super(&HSMUTTest::state_S21);
+            retState = tranSuper(&HSMUTTest::state_S21);
             break;
     }
     return retState;

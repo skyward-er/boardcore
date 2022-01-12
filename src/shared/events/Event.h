@@ -57,7 +57,7 @@ struct Event
 /* Example of extended Event structure
 
         struct ExtendedEvent : public Event{
-                uint32_t custom_member;
+                uint32_t customMember;
         };
 */
 

@@ -87,7 +87,7 @@ public:
      * Performs a transiction to the super state
      * @param superState super state
      */
-    State tran_super(State (T::*superState)(const Event&))
+    State tranSuper(State (T::*superState)(const Event&))
     {
         temp = superState;
         return SUPER;
@@ -95,11 +95,11 @@ public:
 
     /**
      * Test if the HSM is in a state
-     * @param test_state state to test
+     * @param testState state to test
      */
-    bool testState(State (T::*test_state)(const Event&))
+    bool testState(State (T::*testState)(const Event&))
     {
-        return (this->state == test_state);
+        return (this->state == testState);
     }
 
     /* Internal pointers representing the state o the HSM*/

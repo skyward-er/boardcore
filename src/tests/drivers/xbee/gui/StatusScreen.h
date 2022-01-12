@@ -70,122 +70,120 @@ struct StatusScreen
         title.setBackgroundColor(mxgui::green);
         title.setAlignment(HorizAlignment::CENTER, VertAlignment::CENTER);
 
-        tv_log_status.setFont(mxgui::miscFixedBold);
-        tv_log_status.setTextColor(mxgui::white);
-        tv_log_status.setBackgroundColor(mxgui::red);
-        tv_log_status.setAlignment(HorizAlignment::CENTER,
-                                   VertAlignment::CENTER);
+        tvLogStatus.setFont(mxgui::miscFixedBold);
+        tvLogStatus.setTextColor(mxgui::white);
+        tvLogStatus.setBackgroundColor(mxgui::red);
+        tvLogStatus.setAlignment(HorizAlignment::CENTER, VertAlignment::CENTER);
 
-        grid_title.setCell(&title, 0, 0);
-        grid_title.setCell(&tv_log_status, 0, 1);
+        gridTitle.setCell(&title, 0, 0);
+        gridTitle.setCell(&tvLogStatus, 0, 1);
 
-        grid_config.setCell(&tv_cfg_txt_tx_enabled, 0, 0);
-        grid_config.setCell(&tv_cfg_tx_enabled, 0, 1);
+        gridConfig.setCell(&tvCfgTxtTxEnabled, 0, 0);
+        gridConfig.setCell(&tvCfgTxEnabled, 0, 1);
 
-        grid_config.setCell(&tv_cfg_txt_pkt_size, 0, 2);
-        grid_config.setCell(&tv_cfg_pkt_size, 0, 3);
+        gridConfig.setCell(&tvCfgTxtPktSize, 0, 2);
+        gridConfig.setCell(&tvCfgPktSize, 0, 3);
 
-        grid_config.setCell(&tv_cfg_txt_snd_interval, 1, 0);
-        grid_config.setCell(&tv_cfg_snd_interval, 1, 1);
+        gridConfig.setCell(&tvCfgTxtSndInterval, 1, 0);
+        gridConfig.setCell(&tvCfgSndInterval, 1, 1);
 
-        grid_config.setCell(&tv_cfg_txt_freq_hop, 1, 2);
-        grid_config.setCell(&tv_cfg_freq_hop, 1, 3);
+        gridConfig.setCell(&tvCfgTxtFreqHop, 1, 2);
+        gridConfig.setCell(&tvCfgFreqHop, 1, 3);
 
-        grid_config.setCell(&tv_cfg_txt_data_rate, 2, 0);
-        grid_config.setCell(&tv_cfg_data_rate, 2, 1);
+        gridConfig.setCell(&tvCfgTxtDataRate, 2, 0);
+        gridConfig.setCell(&tvCfgDataRate, 2, 1);
 
-        tv_log_title.setTextColor(mxgui::blue);
+        tvLogTitle.setTextColor(mxgui::blue);
 
-        grid_log_status.setCell(&tv_log_title, 0, 0);
+        gridLogStatus.setCell(&tvLogTitle, 0, 0);
 
-        grid_log_status.setCell(&tv_log_txt_buf_written, 1, 0);
-        grid_log_status.setCell(&tv_log_buf_written, 1, 1);
+        gridLogStatus.setCell(&tvLogTxtBufWritten, 1, 0);
+        gridLogStatus.setCell(&tvLogBufWritten, 1, 1);
 
-        grid_log_status.setCell(&tv_log_txt_buf_ttw, 1, 2);
-        grid_log_status.setCell(&tv_log_buf_ttw, 1, 3);
+        gridLogStatus.setCell(&tvLogTxtBufTtw, 1, 2);
+        gridLogStatus.setCell(&tvLogBufTtw, 1, 3);
 
-        grid_log_status.setCell(&tv_log_txt_buf_dropped, 2, 0);
-        grid_log_status.setCell(&tv_log_buf_dropped, 2, 1);
+        gridLogStatus.setCell(&tvLogTxtBufDropped, 2, 0);
+        gridLogStatus.setCell(&tvLogBufDropped, 2, 1);
 
-        grid_log_status.setCell(&tv_log_txt_buf_failed, 2, 2);
-        grid_log_status.setCell(&tv_log_buf_failed, 2, 3);
+        gridLogStatus.setCell(&tvLogTxtBufFailed, 2, 2);
+        gridLogStatus.setCell(&tvLogBufFailed, 2, 3);
 
-        tv_tx_title.setTextColor(mxgui::blue);
+        tvTxTitle.setTextColor(mxgui::blue);
 
-        grid_data.setCell(&tv_tx_title, 0, 0);
+        gridData.setCell(&tvTxTitle, 0, 0);
 
-        grid_data.setCell(&tv_tx_txt_num_pkt, 1, 0);
-        grid_data.setCell(&tv_tx_num_pkt, 1, 1);
+        gridData.setCell(&tvTxTxtNumPkt, 1, 0);
+        gridData.setCell(&tvTxNumPkt, 1, 1);
 
-        grid_data.setCell(&tv_tx_txt_num_fail, 2, 0);
-        grid_data.setCell(&tv_tx_num_fail, 2, 1);
+        gridData.setCell(&tvTxTxtNumFail, 2, 0);
+        gridData.setCell(&tvTxNumFail, 2, 1);
 
-        grid_data.setCell(&tv_tx_txt_pps, 3, 0);
-        grid_data.setCell(&tv_tx_pps, 3, 1);
+        gridData.setCell(&tvTxTxtPps, 3, 0);
+        gridData.setCell(&tvTxPps, 3, 1);
 
-        grid_data.setCell(&tv_tx_txt_TTS, 4, 0);
-        grid_data.setCell(&tv_tx_tts, 4, 1);
+        gridData.setCell(&tvTxTxtTTS, 4, 0);
+        gridData.setCell(&tvTxTts, 4, 1);
 
-        grid_data.setCell(&tv_tx_txt_last_status, 5, 0);
-        grid_data.setCell(&tv_tx_last_status, 5, 1);
+        gridData.setCell(&tvTxTxtLastStatus, 5, 0);
+        gridData.setCell(&tvTxLastStatus, 5, 1);
 
-        grid_data.setCell(&tv_tx_txt_last_err, 6, 0);
-        grid_data.setCell(&tv_tx_last_err, 6, 1);
+        gridData.setCell(&tvTxTxtLastErr, 6, 0);
+        gridData.setCell(&tvTxLastErr, 6, 1);
 
-        tv_rx_title.setTextColor(mxgui::blue);
-        grid_data.setCell(&tv_rx_title, 0, 2);
+        tvRxTitle.setTextColor(mxgui::blue);
+        gridData.setCell(&tvRxTitle, 0, 2);
 
-        grid_data.setCell(&tv_rx_txt_num_pkt, 1, 2);
-        grid_data.setCell(&tv_rx_num_pkt, 1, 3);
+        gridData.setCell(&tvRxTxtNumPkt, 1, 2);
+        gridData.setCell(&tvRxNumPkt, 1, 3);
 
-        grid_data.setCell(&tv_rx_txt_num_fail, 2, 2);
-        grid_data.setCell(&tv_rx_num_fail, 2, 3);
+        gridData.setCell(&tvRxTxtNumFail, 2, 2);
+        gridData.setCell(&tvRxNumFail, 2, 3);
 
-        grid_data.setCell(&tv_rx_txt_lost, 3, 2);
-        grid_data.setCell(&tv_rx_lost, 3, 3);
+        gridData.setCell(&tvRxTxtLost, 3, 2);
+        gridData.setCell(&tvRxLost, 3, 3);
 
-        grid_data.setCell(&tv_rx_txt_RSSI, 4, 2);
-        grid_data.setCell(&tv_rx_RSSI, 4, 3);
+        gridData.setCell(&tvRxTxtRSSI, 4, 2);
+        gridData.setCell(&tvRx_RSSI, 4, 3);
 
-        grid_data.setCell(&tv_rx_txt_data_rate, 5, 2);
-        grid_data.setCell(&tv_rx_data_rate, 5, 3);
+        gridData.setCell(&tvRxTxtDataRate, 5, 2);
+        gridData.setCell(&tvRxDataRate, 5, 3);
 
-        grid_data.setCell(&tv_rx_txt_pps, 6, 2);
-        grid_data.setCell(&tv_rx_pps, 6, 3);
+        gridData.setCell(&tvRxTxtPps, 6, 2);
+        gridData.setCell(&tvRxPps, 6, 3);
 
-        grid_data.setCell(&tv_rx_txt_time_since_last_rx, 7, 2);
-        grid_data.setCell(&tv_rx_time_since_last_rx, 7, 3);
+        gridData.setCell(&tvRxTxtTimeSinceLastRx, 7, 2);
+        gridData.setCell(&tvRxTimeSinceLastRx, 7, 3);
 
-        btn_mark.setSelectable(true);
-        btn_mark.setAlignment(HorizAlignment::CENTER, VertAlignment::CENTER);
-        btn_mark.setBackgroundColor(mxgui::darkGrey);
+        btnMark.setSelectable(true);
+        btnMark.setAlignment(HorizAlignment::CENTER, VertAlignment::CENTER);
+        btnMark.setBackgroundColor(mxgui::darkGrey);
 
-        btn_stop.setSelectable(true);
-        btn_stop.setAlignment(HorizAlignment::CENTER, VertAlignment::CENTER);
-        btn_stop.setBackgroundColor(mxgui::darkGrey);
+        btnStop.setSelectable(true);
+        btnStop.setAlignment(HorizAlignment::CENTER, VertAlignment::CENTER);
+        btnStop.setBackgroundColor(mxgui::darkGrey);
 
-        grid_buttons.setCell(&btn_mark, 0);
-        grid_buttons.setCell(&btn_stop, 1);
-        grid_buttons.setDrawBorder(true);
+        gridButtons.setCell(&btnMark, 0);
+        gridButtons.setCell(&btnStop, 1);
+        gridButtons.setDrawBorder(true);
 
-        root.addView(&grid_title, 0.8);
-        root.addView(&grid_config, 1.5);
-        root.addView(&grid_log_status, 1.5);
-        root.addView(&grid_data, 5);
-        root.addView(&grid_buttons, 1);
+        root.addView(&gridTitle, 0.8);
+        root.addView(&gridConfig, 1.5);
+        root.addView(&gridLogStatus, 1.5);
+        root.addView(&gridData, 5);
+        root.addView(&gridButtons, 1);
     }
 
     void updateConfig(XbeeConfig cfg)
     {
         // Update GUI with selected config values
-        tv_cfg_tx_enabled.setText(cfg.tx_enabled ? "Enabled" : "Disabled");
-        tv_cfg_pkt_size.setText(std::to_string(cfg.packet_size));
-        tv_cfg_snd_interval.setText(cfg.send_interval == 0
-                                        ? "Cont"
-                                        : std::to_string(cfg.send_interval));
+        tvCfgTxEnabled.setText(cfg.txEnabled ? "Enabled" : "Disabled");
+        tvCfgPktSize.setText(std::to_string(cfg.packetSize));
+        tvCfgSndInterval.setText(
+            cfg.sendInterval == 0 ? "Cont" : std::to_string(cfg.sendInterval));
 
-        tv_cfg_freq_hop.setText(cfg.freq_hop ? "Enabled" : "Disabled");
-        tv_cfg_data_rate.setText(cfg.data_rate_80k ? "80 kbps" : "10 kbps");
+        tvCfgFreqHop.setText(cfg.freqHop ? "Enabled" : "Disabled");
+        tvCfgDataRate.setText(cfg.dataRate80k ? "80 kbps" : "10 kbps");
     }
 
     void updateLogStatus(Logger& logger)
@@ -194,144 +192,143 @@ struct StatusScreen
 
         if (logger.getLogNumber() >= 0)
         {
-            string log_name = logger.getCurrentFileName();
+            string logName = logger.getCurrentFileName();
 
-            tv_log_status.setText(log_name);
-            tv_log_status.setTextColor(mxgui::black);
-            tv_log_status.setBackgroundColor(mxgui::green);
+            tvLogStatus.setText(logName);
+            tvLogStatus.setTextColor(mxgui::black);
+            tvLogStatus.setBackgroundColor(mxgui::green);
         }
         else
         {
-            tv_log_status.setText("SD ERR");
-            tv_log_status.setTextColor(mxgui::white);
-            tv_log_status.setBackgroundColor(mxgui::red);
+            tvLogStatus.setText("SD ERR");
+            tvLogStatus.setTextColor(mxgui::white);
+            tvLogStatus.setBackgroundColor(mxgui::red);
         }
 
-        tv_log_buf_dropped.setText(to_string(stats.droppedSamples));
+        tvLogBufDropped.setText(to_string(stats.droppedSamples));
 
         if (stats.droppedSamples > 0)
         {
-            tv_log_buf_dropped.setBackgroundColor(mxgui::red);
+            tvLogBufDropped.setBackgroundColor(mxgui::red);
         }
 
-        tv_log_buf_failed.setText(to_string(stats.writesFailed) + "   (" +
-                                  to_string(stats.lastWriteError) + ")");
+        tvLogBufFailed.setText(to_string(stats.writesFailed) + "   (" +
+                               to_string(stats.lastWriteError) + ")");
 
         if (stats.lastWriteError != 0)
         {
-            tv_log_buf_failed.setBackgroundColor(mxgui::red);
+            tvLogBufFailed.setBackgroundColor(mxgui::red);
         }
 
-        tv_log_buf_written.setText(to_string(stats.buffersWritten));
-        tv_log_buf_ttw.setText(to_string(stats.writeTime) + " ms");
+        tvLogBufWritten.setText(to_string(stats.buffersWritten));
+        tvLogBufTtw.setText(to_string(stats.writeTime) + " ms");
     }
 
-    void updateXbeeStatus(DataRateResult res_rcv, DataRateResult res_snd,
-                          TxData txd, RxData rxd, Xbee::XbeeStatus xbee_status)
+    void updateXbeeStatus(DataRateResult resRcv, DataRateResult resSnd,
+                          TxData txd, RxData rxd, Xbee::XbeeStatus xbeeStatus)
     {
-        char str_buf[30];
+        char strBuf[30];
 
-        tv_tx_num_pkt.setText(
-            to_string(txd.tx_success_counter + txd.tx_fail_counter));
-        tv_tx_num_fail.setText(to_string(txd.tx_fail_counter));
+        tvTxNumPkt.setText(to_string(txd.txSuccessCounter + txd.txFailCounter));
+        tvTxNumFail.setText(to_string(txd.txFailCounter));
 
-        snprintf(str_buf, 30, "%.1f pkt/s", res_snd.packets_per_second);
+        snprintf(strBuf, 30, "%.1f pkt/s", resSnd.packetsPerSecond);
 
-        tv_tx_pps.setText(str_buf);
-        tv_tx_tts.setText(to_string(txd.time_to_send) + " ms");
+        tvTxPps.setText(strBuf);
+        tvTxTts.setText(to_string(txd.timeToSend) + " ms");
 
-        tv_tx_last_status.setText(to_string(xbee_status.last_tx_status));
-        tv_tx_last_err.setText(to_string(xbee_status.last_tx_status_error));
+        tvTxLastStatus.setText(to_string(xbeeStatus.lastTxStatus));
+        tvTxLastErr.setText(to_string(xbeeStatus.lastTxStatusError));
 
-        tv_rx_num_pkt.setText(to_string(rxd.rcv_count));
-        tv_rx_num_fail.setText(to_string(rxd.rcv_errors));
-        // tv_rx_num_fail.setText(to_string(int_counter) + " " +
+        tvRxNumPkt.setText(to_string(rxd.rcvCount));
+        tvRxNumFail.setText(to_string(rxd.rcvErrors));
+        // tvRxNumFail.setText(to_string(int_counter) + " " +
         //                               to_string(GpioATTN::value()));
-        tv_rx_lost.setText(to_string(rxd.packets_lost));
+        tvRxLost.setText(to_string(rxd.packetsLost));
 
-        tv_rx_RSSI.setText(to_string(rxd.RSSI) + " dB");
+        tvRx_RSSI.setText(to_string(rxd.RSSI) + " dB");
 
-        snprintf(str_buf, 30, "%.0f B/s", res_rcv.data_rate);
-        tv_rx_data_rate.setText(str_buf);
+        snprintf(strBuf, 30, "%.0f B/s", resRcv.dataRate);
+        tvRxDataRate.setText(strBuf);
 
-        snprintf(str_buf, 30, "%.1f pkt/s", res_rcv.packets_per_second);
-        tv_rx_pps.setText(str_buf);
+        snprintf(strBuf, 30, "%.1f pkt/s", resRcv.packetsPerSecond);
+        tvRxPps.setText(strBuf);
 
-        tv_rx_time_since_last_rx.setText(
-            tickToHMS(miosix::getTick() - rxd.last_packet_timestamp));
+        tvRxTimeSinceLastRx.setText(
+            tickToHMS(miosix::getTick() - rxd.lastPacketTimestamp));
     }
 
     VerticalLayout root{10};
 
-    TextView tv_cfg_tx_enabled{"Disabled"};
-    TextView tv_cfg_pkt_size{"256 B"};
-    TextView tv_cfg_snd_interval{"Cont"};
-    TextView tv_cfg_freq_hop{"Enabled"};
-    TextView tv_cfg_data_rate{"10 kbps"};
+    TextView tvCfgTxEnabled{"Disabled"};
+    TextView tvCfgPktSize{"256 B"};
+    TextView tvCfgSndInterval{"Cont"};
+    TextView tvCfgFreqHop{"Enabled"};
+    TextView tvCfgDataRate{"10 kbps"};
 
-    TextView tv_log_status{"SD ERR"};
+    TextView tvLogStatus{"SD ERR"};
 
-    TextView tv_log_buf_dropped{"0"};
-    TextView tv_log_buf_failed{"0 (0)"};
-    TextView tv_log_buf_written{"0"};
-    TextView tv_log_buf_ttw{"0 ms"};
+    TextView tvLogBufDropped{"0"};
+    TextView tvLogBufFailed{"0 (0)"};
+    TextView tvLogBufWritten{"0"};
+    TextView tvLogBufTtw{"0 ms"};
 
-    TextView tv_tx_num_pkt{"0"};
-    TextView tv_tx_num_fail{"0"};
-    TextView tv_tx_pps{"0 pkt/s"};
-    TextView tv_tx_tts{"- ms"};
-    TextView tv_tx_last_status{"0"};
-    TextView tv_tx_last_err{"0"};
+    TextView tvTxNumPkt{"0"};
+    TextView tvTxNumFail{"0"};
+    TextView tvTxPps{"0 pkt/s"};
+    TextView tvTxTts{"- ms"};
+    TextView tvTxLastStatus{"0"};
+    TextView tvTxLastErr{"0"};
 
-    TextView tv_rx_num_pkt{"0"};
-    TextView tv_rx_num_fail{"0"};
-    TextView tv_rx_lost{"0"};
-    TextView tv_rx_RSSI{"-40 dB"};
-    TextView tv_rx_data_rate{"0 B/s"};
-    TextView tv_rx_pps{"0 pkt/s"};
-    TextView tv_rx_time_since_last_rx{"00:00:00"};
+    TextView tvRxNumPkt{"0"};
+    TextView tvRxNumFail{"0"};
+    TextView tvRxLost{"0"};
+    TextView tvRx_RSSI{"-40 dB"};
+    TextView tvRxDataRate{"0 B/s"};
+    TextView tvRxPps{"0 pkt/s"};
+    TextView tvRxTimeSinceLastRx{"00:00:00"};
 
-    TextView btn_mark{"Mark Log (1)"};
-    TextView btn_stop{"Stop"};
+    TextView btnMark{"Mark Log (1)"};
+    TextView btnStop{"Stop"};
 
 private:
     TextView title{"Xbee Status"};
-    GridLayout grid_title{1, 2};
-    GridLayout grid_config{3, 4};
-    GridLayout grid_buttons{1, 2};
-    GridLayout grid_log_status{3, 4};
-    GridLayout grid_data{8, 4};
+    GridLayout gridTitle{1, 2};
+    GridLayout gridConfig{3, 4};
+    GridLayout gridButtons{1, 2};
+    GridLayout gridLogStatus{3, 4};
+    GridLayout gridData{8, 4};
 
-    TextView tv_cfg_txt_tx_enabled{"TX"};
-    TextView tv_cfg_txt_pkt_size{"Pkt size"};
-    TextView tv_cfg_txt_snd_interval{"Interv"};
-    TextView tv_cfg_txt_freq_hop{"Freq hop"};
-    TextView tv_cfg_txt_data_rate{"Data rate"};
+    TextView tvCfgTxtTxEnabled{"TX"};
+    TextView tvCfgTxtPktSize{"Pkt size"};
+    TextView tvCfgTxtSndInterval{"Interv"};
+    TextView tvCfgTxtFreqHop{"Freq hop"};
+    TextView tvCfgTxtDataRate{"Data rate"};
 
-    TextView tv_log_title{"LOG"};
-    TextView tv_log_txt_buf_dropped{"Buf drops"};
-    TextView tv_log_txt_buf_failed{"Wrt fails"};
-    TextView tv_log_txt_buf_written{"Wrt succ"};
-    TextView tv_log_txt_buf_ttw{"TTW"};
+    TextView tvLogTitle{"LOG"};
+    TextView tvLogTxtBufDropped{"Buf drops"};
+    TextView tvLogTxtBufFailed{"Wrt fails"};
+    TextView tvLogTxtBufWritten{"Wrt succ"};
+    TextView tvLogTxtBufTtw{"TTW"};
 
-    TextView tv_tx_title{"TX"};
+    TextView tvTxTitle{"TX"};
 
-    TextView tv_tx_txt_num_pkt{"Sent"};
-    TextView tv_tx_txt_num_fail{"Fails"};
-    TextView tv_tx_txt_pps{"PPS"};
-    TextView tv_tx_txt_TTS{"TTS"};
-    TextView tv_tx_txt_last_status{"Status"};
-    TextView tv_tx_txt_last_err{"Last err"};
+    TextView tvTxTxtNumPkt{"Sent"};
+    TextView tvTxTxtNumFail{"Fails"};
+    TextView tvTxTxtPps{"PPS"};
+    TextView tvTxTxtTTS{"TTS"};
+    TextView tvTxTxtLastStatus{"Status"};
+    TextView tvTxTxtLastErr{"Last err"};
 
-    TextView tv_rx_title{"RX"};
+    TextView tvRxTitle{"RX"};
 
-    TextView tv_rx_txt_num_pkt{"Recv"};
-    TextView tv_rx_txt_num_fail{"Fails"};
-    TextView tv_rx_txt_lost{"Lost"};
-    TextView tv_rx_txt_RSSI{"RSSI"};
-    TextView tv_rx_txt_data_rate{"DR"};
-    TextView tv_rx_txt_pps{"PPS"};
-    TextView tv_rx_txt_time_since_last_rx{"No RX dt"};
+    TextView tvRxTxtNumPkt{"Recv"};
+    TextView tvRxTxtNumFail{"Fails"};
+    TextView tvRxTxtLost{"Lost"};
+    TextView tvRxTxtRSSI{"RSSI"};
+    TextView tvRxTxtDataRate{"DR"};
+    TextView tvRxTxtPps{"PPS"};
+    TextView tvRxTxtTimeSinceLastRx{"No RX dt"};
 };
 
 }  // namespace Boardcore

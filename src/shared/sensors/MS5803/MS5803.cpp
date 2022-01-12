@@ -127,7 +127,7 @@ MS5803Data MS5803::sampleImpl()
                 LOG_ERR(logger, "The read raw pressure isn't valid");
             }
 
-            last_sample = updateData();
+            lastSample = updateData();
 
             // Check whether to read the pressure or the temperature
             tempCounter++;
@@ -148,7 +148,7 @@ MS5803Data MS5803::sampleImpl()
             break;
     }
 
-    return last_sample;
+    return lastSample;
 }
 
 MS5803Data MS5803::updateData()

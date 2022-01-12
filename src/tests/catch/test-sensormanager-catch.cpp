@@ -61,30 +61,30 @@ public:
                        2000,  // inserst a test function in the scheduler
                        FIRST_TASK_ID);
 
-        sensor_manager = new SensorManager(scheduler, {{&s1, s1_info},
-                                                       {&s2, s2_info},
-                                                       {&s3, s3_info},
-                                                       {&s4, s4_info},
-                                                       {&s5, s5_info}});
+        sensorManager = new SensorManager(scheduler, {{&s1, s1_info},
+                                                      {&s2, s2_info},
+                                                      {&s3, s3_info},
+                                                      {&s4, s4_info},
+                                                      {&s5, s5_info}});
 
-        sampler1 = sensor_manager->samplers_map[&s1];
-        sampler2 = sensor_manager->samplers_map[&s2];
-        sampler3 = sensor_manager->samplers_map[&s3];
-        sampler4 = sensor_manager->samplers_map[&s4];
-        sampler5 = sensor_manager->samplers_map[&s5];
+        sampler1 = sensorManager->samplersMap[&s1];
+        sampler2 = sensorManager->samplersMap[&s2];
+        sampler3 = sensorManager->samplersMap[&s3];
+        sampler4 = sensorManager->samplersMap[&s4];
+        sampler5 = sensorManager->samplersMap[&s5];
     }
 
     ~SensorManagerFixture()
     {
-        sensor_manager->stop();
+        sensorManager->stop();
 
-        delete sensor_manager;
+        delete sensorManager;
     }
 
 private:
     TaskScheduler* scheduler;
 
-    SensorManager* sensor_manager;
+    SensorManager* sensorManager;
 
     SensorSampler* sampler1;
     SensorSampler* sampler2;
@@ -140,13 +140,13 @@ bool operator==(const SensorInfo& lhs, const SensorInfo& rhs)
     return lhs.id == rhs.id && lhs.period == rhs.period &&
            lhs.callback.target_type() == rhs.callback.target_type() &&
            lhs.callback.target<void()>() == rhs.callback.target<void()>() &&
-           lhs.is_dma == rhs.is_dma && lhs.is_enabled == rhs.is_enabled;
+           lhs.isDma == rhs.isDma && lhs.isEnabled == rhs.isEnabled;
 }
 
 bool operator==(const SensorSampler& lhs, const SensorSampler& rhs)
 {
     return lhs.id == rhs.id && lhs.period == rhs.period &&
-           lhs.is_dma == rhs.is_dma && lhs.sensors.size() == rhs.sensors.size();
+           lhs.isDma == rhs.isDma && lhs.sensors.size() == rhs.sensors.size();
 }
 
 }  // namespace Boardcore
@@ -156,11 +156,11 @@ using namespace Boardcore;
 TEST_CASE_METHOD(SensorManagerFixture,
                  "Samplers IDs should incrementally start from FIRST_TASK_ID")
 {
-    sensor_manager->start();
+    sensorManager->start();
 
-    vector<TaskStatResult> tasks_stats = scheduler->getTaskStats();
+    vector<TaskStatResult> tasksStats = scheduler->getTaskStats();
 
-    std::cout << "Tasks number : " << tasks_stats.size() << std::endl;
+    std::cout << "Tasks number : " << tasksStats.size() << std::endl;
 
     // Sampler with lower period are inserted in the TaskScheduler
     // before higher period ones
@@ -169,36 +169,36 @@ TEST_CASE_METHOD(SensorManagerFixture,
     //    Task id 9  : sampler at 500 ms  (2 Hz), not DMA ---> first to be added
     //                                                         to the scheduler
     //    Task id 10 : sampler at 1000 ms (1 Hz), with DMA
-    REQUIRE(tasks_stats[0].id == FIRST_TASK_ID);
-    REQUIRE(tasks_stats[1].id == static_cast<uint8_t>(FIRST_TASK_ID + 2));
-    REQUIRE(tasks_stats[2].id == static_cast<uint8_t>(FIRST_TASK_ID + 1));
-    REQUIRE(tasks_stats[3].id == static_cast<uint8_t>(FIRST_TASK_ID + 3));
-    REQUIRE(tasks_stats[4].id == static_cast<uint8_t>(FIRST_TASK_ID + 4));
+    REQUIRE(tasksStats[0].id == FIRST_TASK_ID);
+    REQUIRE(tasksStats[1].id == static_cast<uint8_t>(FIRST_TASK_ID + 2));
+    REQUIRE(tasksStats[2].id == static_cast<uint8_t>(FIRST_TASK_ID + 1));
+    REQUIRE(tasksStats[3].id == static_cast<uint8_t>(FIRST_TASK_ID + 3));
+    REQUIRE(tasksStats[4].id == static_cast<uint8_t>(FIRST_TASK_ID + 4));
 }
 
 TEST_CASE_METHOD(SensorManagerFixture,
                  "Sensors are correctly added to the samplers")
 {
     // check that 3 samplers exist (1 hz, 2 hz, 1 hz with DMA and 0.5 Hz)
-    REQUIRE(sensor_manager->samplers.size() == 4);
+    REQUIRE(sensorManager->samplers.size() == 4);
 
     // samplers are sorted by period, in decreasing order!
 
     // check that s1, s2 and s3 are assigned to correct samplers
-    REQUIRE(sampler1 == sensor_manager->samplers[1]);
-    REQUIRE(*sampler1 == *(sensor_manager->samplers[1]));
+    REQUIRE(sampler1 == sensorManager->samplers[1]);
+    REQUIRE(*sampler1 == *(sensorManager->samplers[1]));
     // s1 and s2 are assigned to same sampler
     REQUIRE(sampler1 == sampler2);
     REQUIRE(*sampler1 == *sampler2);
     // s3 assigned to another sampler
-    REQUIRE(sampler3 == sensor_manager->samplers[0]);
-    REQUIRE(*sampler3 == *(sensor_manager->samplers[0]));
+    REQUIRE(sampler3 == sensorManager->samplers[0]);
+    REQUIRE(*sampler3 == *(sensorManager->samplers[0]));
     // s4 assigned to another sampler
-    REQUIRE(sampler4 == sensor_manager->samplers[2]);
-    REQUIRE(*sampler4 == *(sensor_manager->samplers[2]));
+    REQUIRE(sampler4 == sensorManager->samplers[2]);
+    REQUIRE(*sampler4 == *(sensorManager->samplers[2]));
     // s5 assigned to the last sampler
-    REQUIRE(sampler5 == sensor_manager->samplers[3]);
-    REQUIRE(*sampler5 == *(sensor_manager->samplers[3]));
+    REQUIRE(sampler5 == sensorManager->samplers[3]);
+    REQUIRE(*sampler5 == *(sensorManager->samplers[3]));
 }
 
 TEST_CASE_METHOD(SensorManagerFixture,
@@ -219,13 +219,13 @@ TEST_CASE_METHOD(SensorManagerFixture,
 
     REQUIRE(
         !(s5_info ==
-          info5));  // it fails, so is_enabled is set to false instead of true
+          info5));  // it fails, so isEnabled is set to false instead of true
     REQUIRE(s5_info.id == info5.id);
     REQUIRE(s5_info.period == info5.period);
-    REQUIRE(s5_info.is_dma == info5.is_dma);
-    REQUIRE(info5.is_enabled ==
+    REQUIRE(s5_info.isDma == info5.isDma);
+    REQUIRE(info5.isEnabled ==
             false);  // disabled even if it was created as enabled
-    REQUIRE(info5.is_initialized == false);  // always fails the initialization
+    REQUIRE(info5.isInitialized == false);  // always fails the initialization
 }
 
 TEST_CASE_METHOD(SensorManagerFixture,
@@ -234,7 +234,7 @@ TEST_CASE_METHOD(SensorManagerFixture,
     // check that sampler at 1000 ms (1 Hz) has 2 sensors
     // sampler at 500 ms (2 Hz) has 1 sensor
     // sampler at 1000 ms (1 Hz) with DMA has 1 sensor
-    for (auto s : sensor_manager->samplers)
+    for (auto s : sensorManager->samplers)
     {
         if (s->getSamplingPeriod() == 1000 && s->isDMA() == false)
         {
@@ -263,57 +263,57 @@ TEST_CASE_METHOD(SensorManagerFixture,
 
 TEST_CASE_METHOD(SensorManagerFixture, "Enable/disable sensors at runtime")
 {
-    sensor_manager->start();
+    sensorManager->start();
 
-    sensor_manager->enableSensor(&s2);
-    sensor_manager->disableSensor(&s4);
+    sensorManager->enableSensor(&s2);
+    sensorManager->disableSensor(&s4);
 
-    REQUIRE(sensor_manager->getSensorInfo(&s2).is_enabled == true);
-    REQUIRE(sensor_manager->getSensorInfo(&s4).is_enabled == false);
+    REQUIRE(sensorManager->getSensorInfo(&s2).isEnabled == true);
+    REQUIRE(sensorManager->getSensorInfo(&s4).isEnabled == false);
 
-    sensor_manager->disableSensor(&s2);
-    sensor_manager->enableSensor(&s4);
+    sensorManager->disableSensor(&s2);
+    sensorManager->enableSensor(&s4);
 
-    REQUIRE(sensor_manager->getSensorInfo(&s2).is_enabled == false);
-    REQUIRE(sensor_manager->getSensorInfo(&s4).is_enabled == true);
+    REQUIRE(sensorManager->getSensorInfo(&s2).isEnabled == false);
+    REQUIRE(sensorManager->getSensorInfo(&s4).isEnabled == true);
 }
 
 TEST_CASE_METHOD(SensorManagerFixture, "Enable/disable all sensors at runtime")
 {
-    sensor_manager->start();
+    sensorManager->start();
 
-    sensor_manager->enableAllSensors();
+    sensorManager->enableAllSensors();
 
-    REQUIRE(sensor_manager->getSensorInfo(&s1).is_enabled == true);
-    REQUIRE(sensor_manager->getSensorInfo(&s2).is_enabled == true);
-    REQUIRE(sensor_manager->getSensorInfo(&s3).is_enabled == true);
-    REQUIRE(sensor_manager->getSensorInfo(&s4).is_enabled == true);
-    REQUIRE(sensor_manager->getSensorInfo(&s5).is_enabled == true);
+    REQUIRE(sensorManager->getSensorInfo(&s1).isEnabled == true);
+    REQUIRE(sensorManager->getSensorInfo(&s2).isEnabled == true);
+    REQUIRE(sensorManager->getSensorInfo(&s3).isEnabled == true);
+    REQUIRE(sensorManager->getSensorInfo(&s4).isEnabled == true);
+    REQUIRE(sensorManager->getSensorInfo(&s5).isEnabled == true);
 
-    sensor_manager->disableAllSensors();
+    sensorManager->disableAllSensors();
 
-    REQUIRE(sensor_manager->getSensorInfo(&s1).is_enabled == false);
-    REQUIRE(sensor_manager->getSensorInfo(&s2).is_enabled == false);
-    REQUIRE(sensor_manager->getSensorInfo(&s3).is_enabled == false);
-    REQUIRE(sensor_manager->getSensorInfo(&s4).is_enabled == false);
-    REQUIRE(sensor_manager->getSensorInfo(&s5).is_enabled == false);
+    REQUIRE(sensorManager->getSensorInfo(&s1).isEnabled == false);
+    REQUIRE(sensorManager->getSensorInfo(&s2).isEnabled == false);
+    REQUIRE(sensorManager->getSensorInfo(&s3).isEnabled == false);
+    REQUIRE(sensorManager->getSensorInfo(&s4).isEnabled == false);
+    REQUIRE(sensorManager->getSensorInfo(&s5).isEnabled == false);
 
-    sensor_manager->enableAllSensors();
+    sensorManager->enableAllSensors();
 
-    REQUIRE(sensor_manager->getSensorInfo(&s1).is_enabled == true);
-    REQUIRE(sensor_manager->getSensorInfo(&s2).is_enabled == true);
-    REQUIRE(sensor_manager->getSensorInfo(&s3).is_enabled == true);
-    REQUIRE(sensor_manager->getSensorInfo(&s4).is_enabled == true);
-    REQUIRE(sensor_manager->getSensorInfo(&s5).is_enabled == true);
+    REQUIRE(sensorManager->getSensorInfo(&s1).isEnabled == true);
+    REQUIRE(sensorManager->getSensorInfo(&s2).isEnabled == true);
+    REQUIRE(sensorManager->getSensorInfo(&s3).isEnabled == true);
+    REQUIRE(sensorManager->getSensorInfo(&s4).isEnabled == true);
+    REQUIRE(sensorManager->getSensorInfo(&s5).isEnabled == true);
 }
 
 TEST_CASE_METHOD(SensorManagerFixture,
                  "Try to get info about a non-existing sensor")
 {
-    TestSensor invalid_sensor;
-    SensorInfo invalid_info = sensor_manager->getSensorInfo(&invalid_sensor);
-    REQUIRE(invalid_info == SensorInfo{});
+    TestSensor invalidSensor;
+    SensorInfo invalidInfo = sensorManager->getSensorInfo(&invalidSensor);
+    REQUIRE(invalidInfo == SensorInfo{});
 
-    SensorInfo valid_info = sensor_manager->getSensorInfo(&s2);
-    REQUIRE(valid_info == s2_info);
+    SensorInfo validInfo = sensorManager->getSensorInfo(&s2);
+    REQUIRE(validInfo == s2_info);
 }

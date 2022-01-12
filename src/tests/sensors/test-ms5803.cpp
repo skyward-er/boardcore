@@ -50,15 +50,15 @@ int main()
     }
 
     Thread::sleep(100);
-    printf("press_timestamp,press,temp_timestamp,temp\n");
+    printf("pressureTimestamp,press,temperatureTimestamp,temp\n");
 
     while (true)
     {
         sensor.sample();
 
         MS5803Data data = sensor.getLastSample();
-        printf("%llu,%f,%llu,%f\n", data.press_timestamp, data.press,
-               data.temp_timestamp, data.temp);
+        printf("%llu,%f,%llu,%f\n", data.pressureTimestamp, data.pressure,
+               data.temperatureTimestamp, data.temperature);
 
         Thread::sleep(10);
     }

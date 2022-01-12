@@ -266,7 +266,6 @@ void Logger::writeThread()
             else
                 stats.buffersWritten++;
 
-            // green_led::low();
             timer.stop();
             stats.writeTime    = timer.interval();
             stats.maxWriteTime = max(stats.maxWriteTime, stats.writeTime);

@@ -69,7 +69,7 @@ public:
 
     /**
      * @brief Generates and sends a request in ASCII mode, waits for the
-     * response and updates the last_sample structure.
+     * response and updates the lastSample structure.
      */
     ReturnsStates asciiRequest(LoadCellValuesEnum r, int value = 0);
 
@@ -124,7 +124,7 @@ protected:
      *
      * @param req Reference to the request that will be generated.
      * @param toRequest The request to forge.
-     * @param value The value used in the forging of the "set_setpoint"
+     * @param value The value used in the forging of the "set point"
      * requests.
      */
     void generateRequest(DataAsciiRequest &req,
@@ -158,12 +158,12 @@ protected:
 
 private:
     MBLoadCellSettings settings;  ///< Contains all the configuration
-    Data max_weight;              ///< Maximum weight detected by the load cell
-    Data min_weight;              ///< Minimum weight detected by the load cell
-    bool max_setted;
-    bool max_print;
-    bool min_setted;
-    bool min_print;
+    Data maxWeight;               ///< Maximum weight detected by the load cell
+    Data minWeight;               ///< Minimum weight detected by the load cell
+    bool maxSetted;
+    bool maxPrint;
+    bool minSetted;
+    bool minPrint;
 
     ///< Pointer to the instance of the serial port used for the connection
     SerialInterface *serial;

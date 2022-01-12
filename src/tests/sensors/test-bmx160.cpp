@@ -31,9 +31,9 @@ using namespace Boardcore;
 SPIBus bus(SPI1);
 GpioPin cs(GPIOA_BASE, 8);
 
-GpioPin spi_sck(GPIOA_BASE, 5);
-GpioPin spi_miso(GPIOA_BASE, 6);
-GpioPin spi_mosi(GPIOA_BASE, 7);
+GpioPin spiSck(GPIOA_BASE, 5);
+GpioPin spiMiso(GPIOA_BASE, 6);
+GpioPin spiMosi(GPIOA_BASE, 7);
 
 BMX160 *sensor = nullptr;
 uint32_t tick  = 0;
@@ -54,10 +54,10 @@ int main()
     enableExternalInterrupt(GPIOE_BASE, 5, InterruptTrigger::FALLING_EDGE);
 
     BMX160Config config;
-    config.fifo_mode      = BMX160Config::FifoMode::HEADER;
-    config.fifo_int       = BMX160Config::FifoInterruptPin::PIN_INT1;
-    config.fifo_watermark = 100;
-    config.temp_divider   = 1;
+    config.fifoMode           = BMX160Config::FifoMode::HEADER;
+    config.fifoInterrupt      = BMX160Config::FifoInterruptPin::PIN_INT1;
+    config.fifoWatermark      = 100;
+    config.temperatureDivider = 1;
 
     sensor = new BMX160(bus, cs, config);
 
@@ -99,7 +99,7 @@ int main()
 
         printf("Tick: %.4f s, Now: %.4f s\n", tick / 1000000.0f,
                now / 1000000.0f);
-        printf("Temp: %.2f deg\n", sensor->getTemperature().temp);
+        printf("Temp: %.2f deg\n", sensor->getTemperature().temperature);
         printf("Fill: %d\n", sensor->getLastFifoSize());
 
         printf("----------------------------\n");
@@ -109,16 +109,18 @@ int main()
         {
             BMX160Data data = sensor->getFifoElement(i);
             printf("Mag [%.4f s]:\t%.2f\t%.2f\t%.2f\n",
-                   data.mag_timestamp / 1000000.0f, data.mag_x, data.mag_y,
-                   data.mag_z);
+                   data.magneticFieldTimestamp / 1000000.0f,
+                   data.magneticFieldX, data.magneticFieldY,
+                   data.magneticFieldZ);
 
             printf("Gyr [%.4f s]:\t%.2f\t%.2f\t%.2f\n",
-                   data.gyro_timestamp / 1000000.0f, data.gyro_x, data.gyro_y,
-                   data.gyro_z);
+                   data.angularVelocityTimestamp / 1000000.0f,
+                   data.angularVelocityX, data.angularVelocityY,
+                   data.angularVelocityZ);
 
             printf("Acc [%.4f s]:\t%.2f\t%.2f\t%.2f\n",
-                   data.accel_timestamp / 1000000.0f, data.accel_x,
-                   data.accel_y, data.accel_z);
+                   data.accelerationTimestamp / 1000000.0f, data.accelerationX,
+                   data.accelerationY, data.accelerationZ);
         }
     }
 

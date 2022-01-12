@@ -43,11 +43,11 @@ namespace Boardcore
  * Usage:
  * 1. Set the expected config (data wont be written / read if the bus current
  * configuration of the bus is different from the expected one)
- * 2. Set the data to be read from the bus (in_buf).
- * 3. Perform operations. write() will write bytes in out_buf, read() will
- * return data from in_buf.
- * 4. Check if out_buf contains the expected data. Check if data returned from
- * read() is as expected from in_buf.
+ * 2. Set the data to be read from the bus (inBuf).
+ * 3. Perform operations. write() will write bytes in outBuffer, read() will
+ * return data from inBuf.
+ * 4. Check if outBuffer contains the expected data. Check if data returned from
+ * read() is as expected from inBuf.
  * 5. ???
  * 6. Profit.
  */
@@ -64,9 +64,7 @@ using miosix::Lock;
 class MockSPIBus : public SPIBusInterface
 {
 public:
-    MockSPIBus(SPIBusConfig expected_config) : expected_config(expected_config)
-    {
-    }
+    MockSPIBus(SPIBusConfig expectedConfig) : expectedConfig(expectedConfig) {}
 
     ~MockSPIBus() {}
 
@@ -167,32 +165,32 @@ public:
     virtual vector<uint8_t> getOutBuf()
     {
         Lock<FastMutex> l(mutex);
-        return out_buf;
+        return outBuffer;
     }
 
     virtual vector<uint8_t> getInBuf()
     {
         Lock<FastMutex> l(mutex);
-        return in_buf;
+        return inBuf;
     }
 
     virtual void push(uint8_t* data, size_t len);
 
     virtual void clearBuffers()
     {
-        out_buf.clear();
-        in_buf.clear();
-        in_buf_pos_cntr = 0;
+        outBuffer.clear();
+        inBuf.clear();
+        inBufPosCntr = 0;
     }
 
 protected:
     FastMutex mutex;
 
-    vector<uint8_t> out_buf;  // Data written on the bus are stored here
-    vector<uint8_t> in_buf;   // Store here data to be read from the bus
-    size_t in_buf_pos_cntr = 0;
+    vector<uint8_t> outBuffer;  // Data written on the bus are stored here
+    vector<uint8_t> inBuf;      // Store here data to be read from the bus
+    size_t inBufPosCntr = 0;
 
-    SPIBusConfig expected_config;  // Expected configuration of the bus
+    SPIBusConfig expectedConfig;  // Expected configuration of the bus
 
     virtual uint8_t _read();
 
@@ -202,13 +200,13 @@ protected:
 
     bool canCommunicate();
 
-    SPIBusConfig current_config;
+    SPIBusConfig currentConfig;
     bool selected = false;
 };
 
 inline bool MockSPIBus::canCommunicate()
 {
-    bool result = selected && current_config == expected_config;
+    bool result = selected && currentConfig == expectedConfig;
     if (!result)
     {
         TRACE("Error, cannot communicato on MockSPIBus: ");
@@ -228,11 +226,11 @@ inline void MockSPIBus::_write(uint8_t byte)
 {
     if (canCommunicate())
     {
-        out_buf.push_back(byte);
+        outBuffer.push_back(byte);
     }
     else
     {
-        out_buf.push_back(0);
+        outBuffer.push_back(0);
     }
 }
 
@@ -273,9 +271,9 @@ inline uint8_t MockSPIBus::_read()
 {
     if (canCommunicate())
     {
-        if (in_buf_pos_cntr < in_buf.size())
+        if (inBufPosCntr < inBuf.size())
         {
-            return in_buf[in_buf_pos_cntr++];
+            return inBuf[inBufPosCntr++];
         }
     }
     return 0;
@@ -368,7 +366,7 @@ inline void MockSPIBus::configure(SPIBusConfig config)
 
     this->configure(config);
 
-    current_config = config;
+    currentConfig = config;
 }
 
 inline void MockSPIBus::push(uint8_t* data, size_t len)
@@ -379,7 +377,7 @@ inline void MockSPIBus::push(uint8_t* data, size_t len)
 
 inline void MockSPIBus::_push(uint8_t* data, size_t len)
 {
-    in_buf.insert(in_buf.end(), data, data + len);
+    inBuf.insert(inBuf.end(), data, data + len);
 }
 
 }  // namespace Boardcore

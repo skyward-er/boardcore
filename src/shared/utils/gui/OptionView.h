@@ -41,36 +41,36 @@ public:
     using OnOptionChosenListener = std::function<void(unsigned int id)>;
 
     OptionView(std::string name, std::map<uint8_t, std::string> options,
-               uint8_t default_option = 0, uint8_t num_cols = 4)
-        : tv_title(new TextView(name))
+               uint8_t defaultOption = 0, uint8_t numCols = 4)
+        : tvTitle(new TextView(name))
     {
-        uint8_t num_rows = options.size() / num_cols;
-        if (options.size() % num_cols != 0)
+        uint8_t numRows = options.size() / numCols;
+        if (options.size() % numCols != 0)
         {
-            ++num_rows;
+            ++numRows;
         }
 
-        grid_options = new GridLayout(num_rows, num_cols);
+        gridOptions = new GridLayout(numRows, numCols);
 
-        unsigned int grid_pos = 0;
-        unsigned int i        = 0;
+        unsigned int gridPos = 0;
+        unsigned int i       = 0;
         for (auto it = options.begin(); it != options.end(); it++)
         {
             using namespace std::placeholders;
 
-            TextView* tv_opt = new TextView(it->second);
-            tv_opt->setSelectable(true);
-            tv_opt->addOnInteractionListener(
+            TextView* tvOpt = new TextView(it->second);
+            tvOpt->setSelectable(true);
+            tvOpt->addOnInteractionListener(
                 std::bind(&OptionView::onOptionClick, this, _1, _2));
-            tv_opt->setAlignment(HorizAlignment::CENTER, VertAlignment::CENTER);
+            tvOpt->setAlignment(HorizAlignment::CENTER, VertAlignment::CENTER);
 
-            map_options[tv_opt] = it->first;
+            mapOptions[tvOpt] = it->first;
 
-            grid_options->setCell(tv_opt, grid_pos++);
+            gridOptions->setCell(tvOpt, gridPos++);
 
-            if (i == default_option)
+            if (i == defaultOption)
             {
-                selectOption(tv_opt);
+                selectOption(tvOpt);
             }
 
             ++i;
@@ -79,9 +79,9 @@ public:
 
     virtual ~OptionView()
     {
-        delete grid_options;
-        delete tv_title;
-        for (auto it = map_options.begin(); it != map_options.end(); it++)
+        delete gridOptions;
+        delete tvTitle;
+        for (auto it = mapOptions.begin(); it != mapOptions.end(); it++)
         {
             delete it->first;
         }
@@ -91,16 +91,16 @@ public:
     {
         View::setBounds(bounds);
 
-        Bounds title_bounds      = getBounds();
-        title_bounds.size.height = tv_title->getFont().getHeight();
-        tv_title->setBounds(title_bounds);
+        Bounds titleBounds      = getBounds();
+        titleBounds.size.height = tvTitle->getFont().getHeight();
+        tvTitle->setBounds(titleBounds);
 
-        Bounds grid_bounds = getBounds();
-        grid_bounds.pos.y  = getBounds().pos.y + title_bounds.size.height + 1;
-        grid_bounds.size.height =
-            getBounds().size.height - title_bounds.size.height;
+        Bounds gridBounds = getBounds();
+        gridBounds.pos.y  = getBounds().pos.y + titleBounds.size.height + 1;
+        gridBounds.size.height =
+            getBounds().size.height - titleBounds.size.height;
 
-        grid_options->setBounds(grid_bounds);
+        gridOptions->setBounds(gridBounds);
     }
 
     /**
@@ -109,14 +109,14 @@ public:
      */
     void addOnOptionChosenListener(OnOptionChosenListener listener)
     {
-        opt_listeners.push_back(listener);
+        optListeners.push_back(listener);
     }
 
     std::vector<View*> getChilds() override
     {
         std::vector<View*> out;
-        out.push_back(tv_title);
-        out.push_back(grid_options);
+        out.push_back(tvTitle);
+        out.push_back(gridOptions);
 
         return out;
     }
@@ -124,21 +124,21 @@ public:
     void draw(mxgui::DrawingContext& dc) override
     {
         View::draw(dc);
-        tv_title->draw(dc);
-        grid_options->draw(dc);
+        tvTitle->draw(dc);
+        gridOptions->draw(dc);
     }
 
 private:
     void selectOption(TextView* opt)
     {
-        if (selected_option != nullptr)
+        if (selectedOption != nullptr)
         {
-            selected_option->setBackgroundColor(col_bg_normal);
+            selectedOption->setBackgroundColor(colBgNormal);
         }
 
-        selected_option = opt;
+        selectedOption = opt;
 
-        selected_option->setBackgroundColor(col_bg_highlight);
+        selectedOption->setBackgroundColor(colBgHighlight);
     }
 
     void onOptionClick(View* option, Interaction action)
@@ -149,26 +149,26 @@ private:
 
             selectOption(textview);
 
-            for (auto l : opt_listeners)
+            for (auto l : optListeners)
             {
                 if (l != nullptr)
                 {
-                    l(map_options[textview]);
+                    l(mapOptions[textview]);
                 }
             }
         }
     }
 
-    TextView* tv_title;
-    mxgui::Color col_bg_normal    = mxgui::black;
-    mxgui::Color col_bg_highlight = mxgui::blue;
+    TextView* tvTitle;
+    mxgui::Color colBgNormal    = mxgui::black;
+    mxgui::Color colBgHighlight = mxgui::blue;
 
-    GridLayout* grid_options;
-    std::map<TextView*, uint8_t> map_options;
+    GridLayout* gridOptions;
+    std::map<TextView*, uint8_t> mapOptions;
 
-    std::vector<OnOptionChosenListener> opt_listeners;
+    std::vector<OnOptionChosenListener> optListeners;
 
-    TextView* selected_option = nullptr;
+    TextView* selectedOption = nullptr;
 };
 
 }  // namespace Boardcore

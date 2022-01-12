@@ -59,7 +59,7 @@ long long tickToMilliseconds(long long tick);
  * @tparam FSM_type Finite State Machine class to be tested
  * @param fsm FSM object reference
  * @param ev The event that should trigger the transition
- * @param expected_state Expected state after transition (state function
+ * @param expectedState Expected state after transition (state function
  * pointer)
  * @return true If the state machine is in the expected state after posting the
  * event
@@ -68,10 +68,10 @@ long long tickToMilliseconds(long long tick);
  */
 template <class FSM_type>
 bool testFSMTransition(FSM_type& fsm, const Event& ev,
-                       void (FSM_type::*expected_state)(const Event&))
+                       void (FSM_type::*expectedState)(const Event&))
 {
     fsm.handleEvent(ev);
-    return fsm.testState(expected_state);
+    return fsm.testState(expectedState);
 }
 
 /**
@@ -87,7 +87,7 @@ bool testFSMTransition(FSM_type& fsm, const Event& ev,
  * @param fsm FSM object reference
  * @param ev The event that should trigger the transition
  * @param topic Topic to post the event on
- * @param expected_state Expected state after transition (state function
+ * @param expectedState Expected state after transition (state function
  * pointer)
  * @param broker Eventbroker instance (Defaults to the singleton instance)
  * @return true If the state machine is in the expected state after posting the
@@ -97,13 +97,13 @@ bool testFSMTransition(FSM_type& fsm, const Event& ev,
  */
 template <class FSM_type>
 bool testFSMAsyncTransition(FSM_type& fsm, const Event& ev, uint8_t topic,
-                            void (FSM_type::*expected_state)(const Event&),
+                            void (FSM_type::*expectedState)(const Event&),
                             EventBroker& broker = sEventBroker)
 {
     broker.post(ev, topic);
     // Wait for the event to be handled
     miosix::Thread::sleep(EVENT_TIMING_UNCERTAINTY);
-    return fsm.testState(expected_state);
+    return fsm.testState(expectedState);
 }
 
 /**
@@ -115,7 +115,7 @@ bool testFSMAsyncTransition(FSM_type& fsm, const Event& ev, uint8_t topic,
  * @tparam HSM_type Hierarchical State Machine class to be tested
  * @param fsm FSM object reference
  * @param ev The event that should trigger the transition
- * @param expected_state Expected state after transition (state function
+ * @param expectedState Expected state after transition (state function
  * pointer)
  * @return true If the state machine is in the expected state after posting the
  * event
@@ -124,10 +124,10 @@ bool testFSMAsyncTransition(FSM_type& fsm, const Event& ev, uint8_t topic,
  */
 template <class HSM_type>
 bool testHSMTransition(HSM_type& hsm, const Event& ev,
-                       State (HSM_type::*expected_state)(const Event&))
+                       State (HSM_type::*expectedState)(const Event&))
 {
     hsm.handleEvent(ev);
-    return hsm.testState(expected_state);
+    return hsm.testState(expectedState);
 }
 
 /**
@@ -143,7 +143,7 @@ bool testHSMTransition(HSM_type& hsm, const Event& ev,
  * @param fsm FSM object reference
  * @param ev The event that should trigger the transition
  * @param topic Topic to post the event on
- * @param expected_state Expected state after transition (state function
+ * @param expectedState Expected state after transition (state function
  * pointer)
  * @param broker Eventbroker instance (Defaults to the singleton instance)
  * @return true If the state machine is in the expected state after posting the
@@ -153,13 +153,13 @@ bool testHSMTransition(HSM_type& hsm, const Event& ev,
  */
 template <class HSM_type>
 bool testHSMAsyncTransition(HSM_type& hsm, const Event& ev, uint8_t topic,
-                            State (HSM_type::*expected_state)(const Event&),
+                            State (HSM_type::*expectedState)(const Event&),
                             EventBroker& broker = sEventBroker)
 {
     broker.post(ev, topic);
     // Wait for the event to be handled
     miosix::Thread::sleep(EVENT_TIMING_UNCERTAINTY);
-    return hsm.testState(expected_state);
+    return hsm.testState(expectedState);
 }
 
 /**
@@ -174,14 +174,14 @@ bool testHSMAsyncTransition(HSM_type& hsm, const Event& ev, uint8_t topic,
  * Use this function with DEBUG *undefined*, as printfs are very slow and will
  * mess with the timings, ultimately failing the tests.
  *
- * @param event_id The event to be checked
+ * @param eventId The event to be checked
  * @param topic The topic the event will be posted on
  * @param when Expected time at which the event will be posted, in system ticks
  * @param uncertainty Size of the time window
  * @param broker
  * @return True if the event is posted inside the time window
  */
-bool expectEvent(uint8_t event_id, uint8_t topic, long long when,
+bool expectEvent(uint8_t eventId, uint8_t topic, long long when,
                  long long uncertainty = EVENT_TIMING_UNCERTAINTY,
                  EventBroker& broker   = sEventBroker);
 

@@ -82,10 +82,10 @@ static constexpr float SAMPLE_FREQUENCY = 782.3f;
 
 struct GyroSample
 {
-    int fifo_num;
+    int fifoNum;
     L3GD20Data gyro;
     int level;
-    uint64_t wtm_delta;
+    uint64_t wtmDelta;
     float cpu;
     uint64_t update;
 };
@@ -94,7 +94,7 @@ struct GyroSample
 static constexpr int NUM_SAMPLES = SAMPLE_FREQUENCY * 20;
 
 GyroSample data[NUM_SAMPLES];
-int data_counter = 0;
+int dataCounter = 0;
 
 // Last interrupt received timer tick
 volatile uint64_t lastWatermarkTick;  // Stores the high-res tick of the last
@@ -169,10 +169,10 @@ int main()
     }
 
     // Sample NUM_SAMPLES data
-    int fifo_num = 0;
-    while (data_counter < NUM_SAMPLES)
+    int fifoNum = 0;
+    while (dataCounter < NUM_SAMPLES)
     {
-        long last_tick = miosix::getTick();
+        long lastTick = miosix::getTick();
 
         // Read the fifo
         uint64_t update = TimestampTimer::getInstance().getTimestamp();
@@ -190,9 +190,9 @@ int main()
         // Store everything in the data buffer
         for (int i = 0; i < level; i++)
         {
-            // data[data_counter++] = fifo[i];
-            data[data_counter++] = {
-                fifo_num,
+            // data[dataCounter++] = fifo[i];
+            data[dataCounter++] = {
+                fifoNum,
                 fifo[i],
                 level,
                 TimerUtils::toIntMicroSeconds(
@@ -202,36 +202,36 @@ int main()
                     TimestampTimer::getInstance().getTimer(), update)};
 
             // Stop if we have enough data
-            if (data_counter >= NUM_SAMPLES)
+            if (dataCounter >= NUM_SAMPLES)
             {
                 break;
             }
         }
-        ++fifo_num;
+        ++fifoNum;
 
         // Wait until fifo has about 25 samples. The fifo size is 32 samples, so
         // we have 7 samples (~ 9 ms) of wiggle room before we start losing
         // data, in case we sleep a bit too much (may happen if an higher
         // priority thread has a long task to perform)
-        Thread::sleepUntil(last_tick + 25.5 * 1000 / SAMPLE_FREQUENCY);
+        Thread::sleepUntil(lastTick + 25.5 * 1000 / SAMPLE_FREQUENCY);
     }
 
     // Dump buffer content as CSV on the serial (might take a while)
     // printf("t,x,y,z\n");
     printf("FIFO_num,timestamp,int_delta,read_time,sample_delta,x,y,z,cpu\n");
 
-    for (int i = 1; i < data_counter; i++)
+    for (int i = 1; i < dataCounter; i++)
     {
         // clang-format off
         printf("%d,%llu,%llu,%llu,%llu,%f,%f,%f,%.2f\n",
-                data[i].fifo_num,
-                data[i].gyro.gyro_timestamp,
-                data[i].wtm_delta,
+                data[i].fifoNum,
+                data[i].gyro.angularVelocityTimestamp,
+                data[i].wtmDelta,
                 data[i].update,
-                (data[i].gyro.gyro_timestamp - data[i - 1].gyro.gyro_timestamp),
-                data[i].gyro.gyro_x,
-                data[i].gyro.gyro_y,
-                data[i].gyro.gyro_z,
+                (data[i].gyro.angularVelocityTimestamp - data[i - 1].gyro.angularVelocityTimestamp),
+                data[i].gyro.angularVelocityX,
+                data[i].gyro.angularVelocityY,
+                data[i].gyro.angularVelocityZ,
                 data[i].cpu);
         // clang-format on
     }

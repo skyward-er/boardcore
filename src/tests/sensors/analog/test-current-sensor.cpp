@@ -30,7 +30,7 @@
 using namespace miosix;
 using namespace Boardcore;
 
-GpioPin battery_pin              = GpioPin(GPIOA_BASE, 3);
+GpioPin batteryPin               = GpioPin(GPIOA_BASE, 3);
 InternalADC::Channel ADC_CHANNEL = InternalADC::Channel::CH3;
 ADC_TypeDef& ADCx                = *ADC3;
 InternalADC adc(ADCx);
@@ -40,7 +40,7 @@ void initBoard()
     {
         miosix::FastInterruptDisableLock dLock;
 
-        battery_pin.mode(miosix::Mode::INPUT_ANALOG);
+        batteryPin.mode(miosix::Mode::INPUT_ANALOG);
 
         // Set pins PA0 PA1 PA2 PA3 as analog input
         // RCC->AHB1ENR |= RCC_AHB1ENR_GPIOAEN;
@@ -63,13 +63,13 @@ int main()
 
     printf("Configuration completed\n");
 
-    std::function<ADCData()> get_voltage_function = []()
+    std::function<ADCData()> getVoltageFunction = []()
     { return adc.getVoltage(ADC_CHANNEL); };
     // std::bind(&InternalADC::getVoltage, adc, ADC_CHANNEL);
     // example transfer function
-    std::function<float(float)> adc_to_current = [](float adc_in)
-    { return (adc_in - 107.0f) * 32.4f; };
-    CurrentSensor current_sensor(get_voltage_function, adc_to_current);
+    std::function<float(float)> adcToCurrent = [](float adcIn)
+    { return (adcIn - 107.0f) * 32.4f; };
+    CurrentSensor currentSensor(getVoltageFunction, adcToCurrent);
 
     if (!adc.init() || !adc.selfTest())
     {
@@ -77,7 +77,7 @@ int main()
     }
     else
     {
-        current_sensor.init();
+        currentSensor.init();
 
         // Read samples with sample()
         while (1)
@@ -86,12 +86,12 @@ int main()
 
             miosix::Thread::sleep(500);
 
-            current_sensor.sample();
+            currentSensor.sample();
 
-            CurrentSensorData current_data = current_sensor.getLastSample();
-            printf("%llu %u %f %f \n", current_data.adc_timestamp,
-                   current_data.channel_id, current_data.voltage,
-                   current_data.current);
+            CurrentSensorData currentData = currentSensor.getLastSample();
+            printf("%llu %u %f %f \n", currentData.voltageTimestamp,
+                   currentData.channelId, currentData.voltage,
+                   currentData.current);
 
             miosix::Thread::sleep(100);
         }

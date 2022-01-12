@@ -24,8 +24,8 @@
 
 using namespace miosix;
 
-static bool dma_complete = false;
-static bool dma_error    = false;
+static bool dmaComplete = false;
+static bool dmaError    = false;
 
 static uint8_t txData[]  = {0xA8, 0x00};
 static uint8_t rxData[2] = {0};
@@ -187,15 +187,15 @@ int main()
 
         csPin.high();
 
-        if (dma_error)
+        if (dmaError)
         {
-            dma_error = false;
+            dmaError = false;
             printf("DMA transfer error!\n");
         }
 
-        if (dma_complete)
+        if (dmaComplete)
         {
-            dma_error = false;
+            dmaError = false;
             printf("DMA transfer completed!\n");
         }
 
@@ -218,7 +218,7 @@ void __attribute__((used)) DMA2_Stream4_IRQHandlerImpl()
 {
     if (DMA2->HISR & DMA_HISR_TCIF4)
     {
-        dma_complete = true;
+        dmaComplete = true;
 
         // Clear the interrupt
         SET_BIT(DMA2->HIFCR, DMA_HIFCR_CTCIF4);
@@ -226,7 +226,7 @@ void __attribute__((used)) DMA2_Stream4_IRQHandlerImpl()
 
     if (DMA2->HISR & DMA_HISR_TEIF4)
     {
-        dma_error = true;
+        dmaError = true;
 
         // Clear the interrupt
         SET_BIT(DMA2->HIFCR, DMA_HIFCR_CTEIF4);

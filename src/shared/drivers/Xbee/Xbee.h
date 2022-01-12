@@ -67,10 +67,10 @@ public:
      * @param cs Xbee SPI Chip Select Pin
      * @param attn Xbee ATTN Pin
      * @param rst Xbee RST PIN
-     * @param tx_timeout How long to wait to for a TX Status
+     * @param txTimeout How long to wait to for a TX Status
      */
     Xbee(SPIBusInterface& bus, GpioType cs, GpioType attn, GpioType rst,
-         long long tx_timeout = DEFAULT_TX_TIMEOUT);
+         long long txTimeout = DEFAULT_TX_TIMEOUT);
 
     /**
      * @brief Constructs a new instance of the Xbee driver.
@@ -80,11 +80,11 @@ public:
      * @param cs Xbee SPI Chip Select Pin
      * @param attn Xbee ATTN Pin
      * @param rst Xbee RST PIN
-     * @param tx_timeout How long to wait to for a TX Status
+     * @param txTimeout How long to wait to for a TX Status
      *
      */
     Xbee(SPIBusInterface& bus, SPIBusConfig config, GpioType cs, GpioType attn,
-         GpioType rst, long long tx_timeout = DEFAULT_TX_TIMEOUT);
+         GpioType rst, long long txTimeout = DEFAULT_TX_TIMEOUT);
 
     ~Xbee();
 
@@ -94,21 +94,21 @@ public:
      * not wait for an ACK or send confirmation from the Xbee. Thus, it always
      * returns true.
      *
-     * @param pkt       Pointer to the packet (needs to be at least pkt_len
+     * @param pkt       Pointer to the packet (needs to be at least packetLength
      * bytes).
-     * @param pkt_len   Lenght of the packet to be sent.
+     * @param packetLength   Lenght of the packet to be sent.
      * @return          Always true
      */
-    bool send(uint8_t* pkt, size_t pkt_len) override;
+    bool send(uint8_t* pkt, size_t packetLength) override;
 
     /**
      * @brief Waits until a new packet is received.
      *
      * @param buf            Buffer to store the received packet into.
-     * @param buf_max_size   Maximum length of the received data.
+     * @param bufferMaxSize   Maximum length of the received data.
      * @return               Size of the data received or -1 if failure
      */
-    ssize_t receive(uint8_t* buf, size_t buf_max_size) override;
+    ssize_t receive(uint8_t* buf, size_t bufferMaxSize) override;
 
     /**
      * @brief Hardware resets the Xbee.
@@ -126,10 +126,10 @@ public:
     /**
      * @brief Wakes the receive function without needing an interrupt
      *
-     * @param force_return Wether receive(..) should return even if it has not
+     * @param forceReturn Wether receive(..) should return even if it has not
      * received any data
      */
-    void wakeReceiver(bool force_return = false);
+    void wakeReceiver(bool forceReturn = false);
 
     /**
      * @brief Sends an AT Command to the Xbee (see datasheet) without waiting
@@ -137,10 +137,10 @@ public:
      *
      * @param cmd Two character string with the name of the command (eg "DB")
      * @param params Optional command parameters
-     * @param params_len Length in bytes of the params array
+     * @param paramsLength Length in bytes of the params array
      */
     void sendATCommand(const char* cmd, uint8_t* params = nullptr,
-                       size_t params_len = 0);
+                       size_t paramsLength = 0);
 
     /**
      * @brief Sends an AT Command to the Xbee and wait for a response (see
@@ -148,13 +148,13 @@ public:
      *
      * @param cmd Two character string with the name of the command (eg "DB")
      * @param params Optional command parameters
-     * @param params_len Length in bytes of the params array
+     * @param paramsLength Length in bytes of the params array
      * @param response Where to store the response
      * @param timeout Maximum time to wait for the response
      * @return true if response received before the timeout, false otherwise
      */
     bool sendATCommand(const char* cmd, ATCommandResponseFrame* response,
-                       uint8_t* params = nullptr, size_t params_len = 0,
+                       uint8_t* params = nullptr, size_t paramsLength = 0,
                        unsigned int timeout = 1000);
 
     /**
@@ -170,43 +170,48 @@ public:
 private:
     /**
      * @brief Handles an API Frame
-     * @attention  mutex_xbee_comm must be locked before calling this function.
+     * @attention  mutexXbeeCommunication must be locked before calling this
+     * function.
      */
     void handleFrame(APIFrame& frame);
 
     /**
      * @brief Sends an AT command to the devices
-     * @attention  mutex_xbee_comm must be locked before calling this function.
+     * @attention  mutexXbeeCommunication must be locked before calling this
+     * function.
      */
     uint8_t sendATCommandInternal(const char* cmd, uint8_t* params = nullptr,
-                                  size_t params_len = 0);
+                                  size_t paramsLength = 0);
 
     /**
      * @brief Sends an AT command to the devices
-     * @attention  mutex_xbee_comm must be locked before calling this function.
+     * @attention  mutexXbeeCommunication must be locked before calling this
+     * function.
      */
-    uint8_t sendATCommandInternal(uint8_t frame_id, const char* cmd,
-                                  uint8_t* params   = nullptr,
-                                  size_t params_len = 0);
+    uint8_t sendATCommandInternal(uint8_t frameId, const char* cmd,
+                                  uint8_t* params     = nullptr,
+                                  size_t paramsLength = 0);
 
-    uint8_t buildTXRequestFrame(TXRequestFrame& tx_req, uint8_t* pkt,
-                                size_t pkt_len);
+    uint8_t buildTXRequestFrame(TXRequestFrame& txReq, uint8_t* pkt,
+                                size_t packetLength);
 
     /**
-     * @brief Fills the provided buffer with data contained in rx_frames_buf
+     * @brief Fills the provided buffer with data contained in rxFramesBuffer
      */
-    size_t fillReceiveBuf(uint8_t* buf, size_t buf_max_size);
+    size_t fillReceiveBuf(uint8_t* buf, size_t bufferMaxSize);
 
     /**
      * @brief Reads a single frame from the SPI bus.
-     * @attention mutex_xbee_comm must be locked before calling this function.
+     * @attention mutexXbeeCommunication must be locked before calling this
+     * function.
      */
     ParseResult readOneFrame();
 
     /**
      * @brief Reads the SPI bus until an RXPacketFrame is encountered or no more
      * data is available
-     * @attention  mutex_xbee_comm must be locked before calling this function.
+     * @attention  mutexXbeeCommunication must be locked before calling this
+     * function.
      *
      * @return true RXPacketFrame received
      * @return false No more data available on SPI and RXPacketFrame not
@@ -216,69 +221,71 @@ private:
 
     /**
      * @brief Writes a frame from the SPI bus.
-     * @attention  mutex_xbee_comm must be locked before calling this function.
+     * @attention  mutexXbeeCommunication must be locked before calling this
+     * function.
      */
     void writeFrame(APIFrame& frame);
 
     uint8_t getNewFrameID();
 
     /**
-     * @brief Waits until an APIFrame with frame type \p frame_type is received
+     * @brief Waits until an APIFrame with frame type \p frameType is received
      * on the SPI or until the timeouts expires. The frame is then stored in the
-     * parsing_api_frame local class varibale. Any frame received by this
+     * parsingApiFrame local class varibale. Any frame received by this
      * function is automatically passed to the handleFrame() function
-     * @attention mutex_xbee_comm must be locked before calling this function.
+     * @attention mutexXbeeCommunication must be locked before calling this
+     * function.
      *
-     * @param poll_interval Polling interval for the attn pin in milliseconds
-     * @param timeout_tick Tick after which the function should stop waiting for
+     * @param pollInterval Polling interval for the attn pin in milliseconds
+     * @param timeoutTick Tick after which the function should stop waiting for
      * frames
-     * @return true If a frame with type equal to \p frame_type is received
-     * @return false If the timeout_tick reached
+     * @return true If a frame with type equal to \p frameType is received
+     * @return false If the timeoutTick reached
      */
-    bool waitForFrame(uint8_t frame_type, unsigned int poll_interval,
-                      long long timeout_tick);
+    bool waitForFrame(uint8_t frameType, unsigned int pollInterval,
+                      long long timeoutTick);
 
     // Synchronizes all communications to the xbee, as they may happen on
     // multiple threads
-    FastMutex mutex_xbee_comm;
+    FastMutex mutexXbeeCommunication;
 
     APIFrameParser parser;
     // Frame being parsed. Only valid if last call to
     // parser.parse() returned ParseResult::SUCCESS
-    APIFrame parsing_api_frame;
+    APIFrame parsingApiFrame;
 
     // Temporary storage for RX packet frames, waiting to be returned by
     // receive()
-    CircularBuffer<RXPacketFrame, RX_FRAMES_BUF_SIZE> rx_frames_buf;
-    FastMutex mutex_rx_frames;
+    CircularBuffer<RXPacketFrame, RX_FRAMES_BUF_SIZE> rxFramesBuffer;
+    FastMutex mutexRxFrames;
     // RX Packet currently being returned by receive()
-    RXPacketFrame curr_rx_frame;
-    // Index of the first byte of the payload of curr_rx_frame that will be
+    RXPacketFrame currRxFrame;
+    // Index of the first byte of the payload of currRxFrame that will be
     // returned on the next call to receive()
-    int curr_rx_payload_ptr = -1;
+    int currRxPayloadPointer = -1;
 
     // SPI defs
-    SPISlave spi_xbee;
+    SPISlave spiXbee;
     GpioType attn;
     GpioType rst;
 
     // How long to wait for a TX Status
-    long long tx_timeout;
+    long long txTimeout;
 
-    OnFrameReceivedListener frame_listener;
+    OnFrameReceivedListener frameListener;
 
     // Used to generate a unique frame id
-    uint8_t frame_id_counter = 1;
+    uint8_t frameIdCounter = 1;
 
     // Forces receive() to return even if there is no new data
-    bool force_rcv_return = false;
+    bool forceRcvReturn = false;
 
     // Status structs
     XbeeStatus status;
-    Stats time_to_send_stats;
+    Stats timeToSendStats;
 
     // Waiting thread to be woken when something has been received.
-    miosix::Thread* receive_thread = 0;
+    miosix::Thread* receiveThread = 0;
 
     PrintLogger logger = Logging::getLogger("xbee");
 };

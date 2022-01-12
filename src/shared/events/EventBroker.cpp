@@ -36,7 +36,7 @@ void EventBroker::post(const Event& ev, uint8_t topic)
     LOG_DEBUG(logger, "Event: {}, Topic: {}", ev.sig, topic);
 #endif
 
-    Lock<FastMutex> lock(mtx_subscribers);
+    Lock<FastMutex> lock(mtxSubscribers);
 
     if (subscribers.count(topic) > 0)
     {
@@ -55,12 +55,12 @@ void EventBroker::post(const Event& ev, uint8_t topic)
 
 void EventBroker::removeDelayed(uint16_t id)
 {
-    Lock<FastMutex> lock(mtx_delayed_events);
-    for (auto it = delayed_events.begin(); it != delayed_events.end(); it++)
+    Lock<FastMutex> lock(mtxDelayedEvents);
+    for (auto it = delayedEvents.begin(); it != delayedEvents.end(); it++)
     {
-        if ((*it).sched_id == id)
+        if ((*it).schedId == id)
         {
-            delayed_events.erase(it);
+            delayedEvents.erase(it);
             break;
         }
     }
@@ -69,15 +69,15 @@ void EventBroker::removeDelayed(uint16_t id)
 // Posts delayed events with expired deadline
 void EventBroker::run()
 {
-    Lock<FastMutex> lock(mtx_delayed_events);
+    Lock<FastMutex> lock(mtxDelayedEvents);
     while (!shouldStop())
     {
-        while (delayed_events.size() > 0 &&
-               delayed_events.front().deadline <= getTick())
+        while (delayedEvents.size() > 0 &&
+               delayedEvents.front().deadline <= getTick())
         {
             // Pop the first element
-            DelayedEvent dev = delayed_events.front();
-            delayed_events.erase(delayed_events.begin());
+            DelayedEvent dev = delayedEvents.front();
+            delayedEvents.erase(delayedEvents.begin());
 
             {
                 // Unlock the mutex to avoid a deadlock if someone calls
@@ -88,15 +88,15 @@ void EventBroker::run()
         }
 
         // When to wakeup for the next cycle
-        long long sleep_until =
+        long long sleepUntil =
             getTick() + EVENT_BROKER_MIN_DELAY * miosix::TICK_FREQ / 1000;
 
-        if (delayed_events.size() > 0)
+        if (delayedEvents.size() > 0)
         {
             // If a deadline expires earlier, sleep until the deadline instead
-            if (delayed_events.front().deadline < sleep_until)
+            if (delayedEvents.front().deadline < sleepUntil)
             {
-                sleep_until = delayed_events.front().deadline;
+                sleepUntil = delayedEvents.front().deadline;
             }
         }
 
@@ -105,27 +105,27 @@ void EventBroker::run()
             Unlock<FastMutex> unlock(lock);
             StackLogger::getInstance().updateStack(THID_EVT_BROKER);
 
-            Thread::sleepUntil(sleep_until);
+            Thread::sleepUntil(sleepUntil);
         }
     }
 }
 
 void EventBroker::subscribe(EventHandlerBase* subscriber, uint8_t topic)
 {
-    Lock<FastMutex> lock(mtx_subscribers);
+    Lock<FastMutex> lock(mtxSubscribers);
     subscribers[topic].push_back(subscriber);
 }
 
 void EventBroker::unsubscribe(EventHandlerBase* subscriber, uint8_t topic)
 {
-    Lock<FastMutex> lock(mtx_subscribers);
+    Lock<FastMutex> lock(mtxSubscribers);
 
     deleteSubscriber(subscribers.at(topic), subscriber);
 }
 
 void EventBroker::unsubscribe(EventHandlerBase* subscriber)
 {
-    Lock<FastMutex> lock(mtx_subscribers);
+    Lock<FastMutex> lock(mtxSubscribers);
     for (auto it = subscribers.begin(); it != subscribers.end(); it++)
     {
         deleteSubscriber(it->second, subscriber);
@@ -152,8 +152,8 @@ void EventBroker::deleteSubscriber(vector<EventHandlerBase*>& subs,
 
 void EventBroker::clearDelayedEvents()
 {
-    Lock<FastMutex> lock(mtx_delayed_events);
-    delayed_events.clear();
+    Lock<FastMutex> lock(mtxDelayedEvents);
+    delayedEvents.clear();
 }
 
 }  // namespace Boardcore

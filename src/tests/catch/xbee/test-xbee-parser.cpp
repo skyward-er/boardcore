@@ -45,21 +45,21 @@ using namespace Xbee;
  * frame.
  *
  * @param frame bytes (including start delimiter, and checksum set to 0)
- * @param frame_size size of the frame, including start delimiter and checksum
+ * @param frameSize size of the frame, including start delimiter and checksum
  */
-void calcChecksum(uint8_t* frame, size_t frame_size)
+void calcChecksum(uint8_t* frame, size_t frameSize)
 {
-    frame[frame_size - 1] = 0;
-    for (size_t i = 3; i < frame_size - 1; i++)
+    frame[frameSize - 1] = 0;
+    for (size_t i = 3; i < frameSize - 1; i++)
     {
-        frame[frame_size - 1] += frame[i];
+        frame[frameSize - 1] += frame[i];
     }
-    frame[frame_size - 1] = 0xFF - frame[frame_size - 1];
+    frame[frameSize - 1] = 0xFF - frame[frameSize - 1];
 }
 
-void printHex(uint8_t* frame, size_t frame_size)
+void printHex(uint8_t* frame, size_t frameSize)
 {
-    for (size_t i = 0; i < frame_size; i++)
+    for (size_t i = 0; i < frameSize; i++)
     {
         printf("%02X ", frame[i]);
     }
@@ -90,11 +90,11 @@ void printBuf(uint8_t* buf, size_t size)
 
 bool compareAPIFrames(const APIFrame& a, const APIFrame& b)
 {
-    bool result = a.start_del == b.start_del && a.frame_type == b.frame_type &&
+    bool result = a.startDel == b.startDel && a.frameType == b.frameType &&
                   a.length == b.length && a.checksum == b.checksum;
 
     return result &&
-           memcmp(a.frame_data, b.frame_data, a.getFrameDataLength()) == 0;
+           memcmp(a.frameData, b.frameData, a.getFrameDataLength()) == 0;
 }
 
 APIFrame parse(APIFrameParser& parser, uint8_t* data, size_t len)
@@ -127,9 +127,9 @@ void testParse(APIFrameParser& parser, FrameType orig)
 
     size_t len = orig.toBytes(bytes);
 
-    APIFrame parsed_api = parse(parser, bytes, len);
+    APIFrame parsedApi = parse(parser, bytes, len);
 
-    REQUIRE(compareAPIFrames(orig, parsed_api));
+    REQUIRE(compareAPIFrames(orig, parsedApi));
 }
 
 // Taken from examples in the datasheet
@@ -140,267 +140,267 @@ TEST_CASE("Frame serialization")
 
     SECTION("AT Command")
     {
-        ATCommandFrame at_orig;
-        at_orig.setATCommand("NH");
-        REQUIRE(memcmp(at_orig.getATCommand(), "NH", 2) == 0);
+        ATCommandFrame atOrig;
+        atOrig.setATCommand("NH");
+        REQUIRE(memcmp(atOrig.getATCommand(), "NH", 2) == 0);
 
-        at_orig.setFrameID(0x01);
-        REQUIRE(at_orig.getFrameID() == 0x01);
+        atOrig.setFrameID(0x01);
+        REQUIRE(atOrig.getFrameID() == 0x01);
 
-        at_orig.setParameterSize(2);
-        at_orig.getCommandDataPointer()[0] = 0x07;
-        at_orig.getCommandDataPointer()[1] = 0x17;
+        atOrig.setParameterSize(2);
+        atOrig.getCommandDataPointer()[0] = 0x07;
+        atOrig.getCommandDataPointer()[1] = 0x17;
 
-        REQUIRE(at_orig.getCommandDataLength() == 2);
-        REQUIRE(at_orig.getFrameDataLength() == 5);
+        REQUIRE(atOrig.getCommandDataLength() == 2);
+        REQUIRE(atOrig.getFrameDataLength() == 5);
 
-        at_orig.calcChecksum();
+        atOrig.calcChecksum();
 
-        uint8_t expected_bytes[] = {0x7E, 0,    6,    0x08, 1,
-                                    0x4E, 0x48, 0x07, 0x17, 0x00};
+        uint8_t expectedBytes[] = {0x7E, 0,    6,    0x08, 1,
+                                   0x4E, 0x48, 0x07, 0x17, 0x00};
 
-        calcChecksum(expected_bytes, 10);
+        calcChecksum(expectedBytes, 10);
 
-        size_t len = at_orig.toBytes(bytes);
+        size_t len = atOrig.toBytes(bytes);
 
         REQUIRE(len == 10);
 
-        REQUIRE(memcmp(bytes, expected_bytes, len) == 0);
+        REQUIRE(memcmp(bytes, expectedBytes, len) == 0);
 
         REQUIRE(APIFrame::fromBytes(bytes, len, &deserialized));
-        REQUIRE(compareAPIFrames(deserialized, at_orig));
+        REQUIRE(compareAPIFrames(deserialized, atOrig));
     }
 
     SECTION("AT Command, No parameters")
     {
-        ATCommandFrame at_orig;
+        ATCommandFrame atOrig;
 
-        at_orig.setATCommand("NH");
+        atOrig.setATCommand("NH");
 
-        at_orig.setFrameID(0x01);
-        REQUIRE(at_orig.getFrameID() == 0x01);
+        atOrig.setFrameID(0x01);
+        REQUIRE(atOrig.getFrameID() == 0x01);
 
-        REQUIRE(at_orig.getCommandDataLength() == 0);
-        REQUIRE(at_orig.getFrameDataLength() == 3);
+        REQUIRE(atOrig.getCommandDataLength() == 0);
+        REQUIRE(atOrig.getFrameDataLength() == 3);
 
-        at_orig.calcChecksum();
+        atOrig.calcChecksum();
 
-        uint8_t expected_bytes[] = {0x7E, 0, 4, 0x08, 1, 0x4E, 0x48, 0x60};
+        uint8_t expectedBytes[] = {0x7E, 0, 4, 0x08, 1, 0x4E, 0x48, 0x60};
 
-        size_t len = at_orig.toBytes(bytes);
+        size_t len = atOrig.toBytes(bytes);
 
         REQUIRE(len == 8);
 
-        REQUIRE(memcmp(bytes, expected_bytes, len) == 0);
+        REQUIRE(memcmp(bytes, expectedBytes, len) == 0);
 
         REQUIRE(APIFrame::fromBytes(bytes, len, &deserialized));
-        REQUIRE(compareAPIFrames(deserialized, at_orig));
+        REQUIRE(compareAPIFrames(deserialized, atOrig));
     }
 
     SECTION("AT Command Response")
     {
-        ATCommandResponseFrame at_orig;
-        at_orig.setATCommand("BD");
-        REQUIRE(memcmp(at_orig.getATCommand(), "BD", 2) == 0);
+        ATCommandResponseFrame atOrig;
+        atOrig.setATCommand("BD");
+        REQUIRE(memcmp(atOrig.getATCommand(), "BD", 2) == 0);
 
-        at_orig.setFrameID(0x01);
-        REQUIRE(at_orig.getFrameID() == 0x01);
+        atOrig.setFrameID(0x01);
+        REQUIRE(atOrig.getFrameID() == 0x01);
 
-        at_orig.setCommandDataSize(3);
-        at_orig.getCommandDataPointer()[0] = 0x07;
-        at_orig.getCommandDataPointer()[1] = 0x17;
-        at_orig.getCommandDataPointer()[2] = 0x27;
+        atOrig.setCommandDataSize(3);
+        atOrig.getCommandDataPointer()[0] = 0x07;
+        atOrig.getCommandDataPointer()[1] = 0x17;
+        atOrig.getCommandDataPointer()[2] = 0x27;
 
-        REQUIRE(at_orig.getCommandDataLength() == 3);
-        REQUIRE(at_orig.getFrameDataLength() == 7);
+        REQUIRE(atOrig.getCommandDataLength() == 3);
+        REQUIRE(atOrig.getFrameDataLength() == 7);
 
-        at_orig.setCommandStatus(0x55);
-        REQUIRE(at_orig.getCommandStatus() == 0x55);
+        atOrig.setCommandStatus(0x55);
+        REQUIRE(atOrig.getCommandStatus() == 0x55);
 
-        at_orig.calcChecksum();
+        atOrig.calcChecksum();
 
-        uint8_t expected_bytes[] = {0x7E, 0,    8,    0x88, 0x01, 0x42,
-                                    0x44, 0x55, 0x07, 0x17, 0x27, 0};
+        uint8_t expectedBytes[] = {0x7E, 0,    8,    0x88, 0x01, 0x42,
+                                   0x44, 0x55, 0x07, 0x17, 0x27, 0};
 
-        calcChecksum(expected_bytes, 12);
+        calcChecksum(expectedBytes, 12);
 
-        size_t len = at_orig.toBytes(bytes);
+        size_t len = atOrig.toBytes(bytes);
         REQUIRE(len == 12);
 
-        REQUIRE(memcmp(bytes, expected_bytes, len) == 0);
+        REQUIRE(memcmp(bytes, expectedBytes, len) == 0);
 
         REQUIRE(APIFrame::fromBytes(bytes, len, &deserialized));
-        REQUIRE(compareAPIFrames(deserialized, at_orig));
+        REQUIRE(compareAPIFrames(deserialized, atOrig));
     }
 
     SECTION("AT Command Response, No cmd data")
     {
-        ATCommandResponseFrame at_orig;
-        at_orig.setATCommand("BD");
+        ATCommandResponseFrame atOrig;
+        atOrig.setATCommand("BD");
 
-        at_orig.setFrameID(0x01);
-        REQUIRE(at_orig.getFrameID() == 0x01);
+        atOrig.setFrameID(0x01);
+        REQUIRE(atOrig.getFrameID() == 0x01);
 
-        REQUIRE(at_orig.getCommandDataLength() == 0);
-        REQUIRE(at_orig.getFrameDataLength() == 4);
+        REQUIRE(atOrig.getCommandDataLength() == 0);
+        REQUIRE(atOrig.getFrameDataLength() == 4);
 
-        at_orig.setCommandStatus(0x0);
-        REQUIRE(at_orig.getCommandStatus() == 0x00);
+        atOrig.setCommandStatus(0x0);
+        REQUIRE(atOrig.getCommandStatus() == 0x00);
 
-        at_orig.calcChecksum();
+        atOrig.calcChecksum();
 
-        uint8_t expected_bytes[] = {0x7E, 0,    5,    0x88, 0x01,
-                                    0x42, 0x44, 0x00, 0xF0};
+        uint8_t expectedBytes[] = {0x7E, 0,    5,    0x88, 0x01,
+                                   0x42, 0x44, 0x00, 0xF0};
 
-        calcChecksum(expected_bytes, 9);
+        calcChecksum(expectedBytes, 9);
 
-        size_t len = at_orig.toBytes(bytes);
+        size_t len = atOrig.toBytes(bytes);
         REQUIRE(len == 9);
 
-        REQUIRE(memcmp(bytes, expected_bytes, len) == 0);
+        REQUIRE(memcmp(bytes, expectedBytes, len) == 0);
         REQUIRE(APIFrame::fromBytes(bytes, len, &deserialized));
-        REQUIRE(compareAPIFrames(deserialized, at_orig));
+        REQUIRE(compareAPIFrames(deserialized, atOrig));
     }
 
     SECTION("TX Request Frame")
     {
-        TXRequestFrame tx_orig;
+        TXRequestFrame txOrig;
 
-        tx_orig.setFrameID(0x01);
-        REQUIRE(tx_orig.getFrameID() == 0x01);
+        txOrig.setFrameID(0x01);
+        REQUIRE(txOrig.getFrameID() == 0x01);
 
-        tx_orig.setDestAddress(0x0013A200400A0127);
+        txOrig.setDestAddress(0x0013A200400A0127);
 
-        bool addr_cmp = tx_orig.getDestAddress() == 0x0013A200400A0127;
-        REQUIRE(addr_cmp);
+        bool addrCmp = txOrig.getDestAddress() == 0x0013A200400A0127;
+        REQUIRE(addrCmp);
 
-        tx_orig.setBroadcastRadius(0x55);
-        REQUIRE(tx_orig.getBroadcastRadius() == 0x55);
+        txOrig.setBroadcastRadius(0x55);
+        REQUIRE(txOrig.getBroadcastRadius() == 0x55);
 
-        tx_orig.setTransmitOptions(0x40);
-        REQUIRE(tx_orig.getTrasmitOptions() == 0x40);
+        txOrig.setTransmitOptions(0x40);
+        REQUIRE(txOrig.getTrasmitOptions() == 0x40);
 
-        uint8_t* rf_data = tx_orig.getRFDataPointer();
+        uint8_t* rfData = txOrig.getRFDataPointer();
 
-        rf_data[0] = 0x54;
-        rf_data[1] = 0x78;
-        rf_data[2] = 0x44;
-        rf_data[3] = 0x61;
-        rf_data[4] = 0x74;
-        rf_data[5] = 0x61;
-        rf_data[6] = 0x30;
-        rf_data[7] = 0x41;
+        rfData[0] = 0x54;
+        rfData[1] = 0x78;
+        rfData[2] = 0x44;
+        rfData[3] = 0x61;
+        rfData[4] = 0x74;
+        rfData[5] = 0x61;
+        rfData[6] = 0x30;
+        rfData[7] = 0x41;
 
-        tx_orig.setRFDataLength(8);
+        txOrig.setRFDataLength(8);
 
-        REQUIRE(tx_orig.getRFDataLength() == 8);
-        REQUIRE(tx_orig.getFrameDataLength() == 21);
+        REQUIRE(txOrig.getRFDataLength() == 8);
+        REQUIRE(txOrig.getFrameDataLength() == 21);
 
-        uint8_t expected_bytes[] = {0x7E, 0,    0x16, 0x10, 0x01, 0x00, 0x13,
-                                    0xA2, 0x00, 0x40, 0x0A, 0x01, 0x27, 0xFF,
-                                    0xFE, 0x55, 0x40, 0x54, 0x78, 0x44, 0x61,
-                                    0x74, 0x61, 0x30, 0x41, 0x00};
+        uint8_t expectedBytes[] = {0x7E, 0,    0x16, 0x10, 0x01, 0x00, 0x13,
+                                   0xA2, 0x00, 0x40, 0x0A, 0x01, 0x27, 0xFF,
+                                   0xFE, 0x55, 0x40, 0x54, 0x78, 0x44, 0x61,
+                                   0x74, 0x61, 0x30, 0x41, 0x00};
 
         // Datasheet example checksum is wrong
-        calcChecksum(expected_bytes, 26);
-        tx_orig.calcChecksum();
-        size_t len = tx_orig.toBytes(bytes);
+        calcChecksum(expectedBytes, 26);
+        txOrig.calcChecksum();
+        size_t len = txOrig.toBytes(bytes);
 
         REQUIRE(len == 26);
 
-        REQUIRE(memcmp(bytes, expected_bytes, len) == 0);
+        REQUIRE(memcmp(bytes, expectedBytes, len) == 0);
         REQUIRE(APIFrame::fromBytes(bytes, len, &deserialized));
-        REQUIRE(compareAPIFrames(deserialized, tx_orig));
+        REQUIRE(compareAPIFrames(deserialized, txOrig));
     }
 
     SECTION("TX Request Frame - No payload")
     {
-        TXRequestFrame tx_orig;
+        TXRequestFrame txOrig;
 
-        tx_orig.setFrameID(0x01);
-        REQUIRE(tx_orig.getFrameID() == 0x01);
+        txOrig.setFrameID(0x01);
+        REQUIRE(txOrig.getFrameID() == 0x01);
 
-        tx_orig.setDestAddress(0x0013A200400A0127);
-        bool addr_cmp = tx_orig.getDestAddress() == 0x0013A200400A0127;
-        REQUIRE(addr_cmp);
+        txOrig.setDestAddress(0x0013A200400A0127);
+        bool addrCmp = txOrig.getDestAddress() == 0x0013A200400A0127;
+        REQUIRE(addrCmp);
 
-        tx_orig.setBroadcastRadius(0x55);
-        REQUIRE(tx_orig.getBroadcastRadius() == 0x55);
+        txOrig.setBroadcastRadius(0x55);
+        REQUIRE(txOrig.getBroadcastRadius() == 0x55);
 
-        tx_orig.setTransmitOptions(0x40);
-        REQUIRE(tx_orig.getTrasmitOptions() == 0x40);
+        txOrig.setTransmitOptions(0x40);
+        REQUIRE(txOrig.getTrasmitOptions() == 0x40);
 
-        uint8_t* rf_data = tx_orig.getRFDataPointer();
-        UNUSED(rf_data);  // TODO: Check rf_data
+        uint8_t* rfData = txOrig.getRFDataPointer();
+        UNUSED(rfData);  // TODO: Check rfData
 
-        REQUIRE(tx_orig.getRFDataLength() == 0);
-        REQUIRE(tx_orig.getFrameDataLength() == 13);
+        REQUIRE(txOrig.getRFDataLength() == 0);
+        REQUIRE(txOrig.getFrameDataLength() == 13);
 
-        tx_orig.calcChecksum();
+        txOrig.calcChecksum();
 
-        uint8_t expected_bytes[] = {0x7E, 0,    14,   0x10, 0x01, 0x00,
-                                    0x13, 0xA2, 0x00, 0x40, 0x0A, 0x01,
-                                    0x27, 0xFF, 0xFE, 0x55, 0x40, 0x00};
+        uint8_t expectedBytes[] = {0x7E, 0,    14,   0x10, 0x01, 0x00,
+                                   0x13, 0xA2, 0x00, 0x40, 0x0A, 0x01,
+                                   0x27, 0xFF, 0xFE, 0x55, 0x40, 0x00};
 
-        calcChecksum(expected_bytes, 18);
+        calcChecksum(expectedBytes, 18);
 
-        size_t len = tx_orig.toBytes(bytes);
+        size_t len = txOrig.toBytes(bytes);
 
         REQUIRE(len == 18);
 
-        REQUIRE(memcmp(bytes, expected_bytes, len) == 0);
+        REQUIRE(memcmp(bytes, expectedBytes, len) == 0);
         REQUIRE(APIFrame::fromBytes(bytes, len, &deserialized));
-        REQUIRE(compareAPIFrames(deserialized, tx_orig));
+        REQUIRE(compareAPIFrames(deserialized, txOrig));
     }
 
     SECTION("Modem status frame")
     {
-        ModemStatusFrame mod_orig;
+        ModemStatusFrame modOrig;
 
-        mod_orig.setStatus(0x55);
+        modOrig.setStatus(0x55);
 
-        mod_orig.calcChecksum();
+        modOrig.calcChecksum();
 
-        uint8_t expected_bytes[] = {0x7E, 0, 2, 0x8A, 0x55, 0x00};
+        uint8_t expectedBytes[] = {0x7E, 0, 2, 0x8A, 0x55, 0x00};
 
-        calcChecksum(expected_bytes, 6);
+        calcChecksum(expectedBytes, 6);
 
-        size_t len = mod_orig.toBytes(bytes);
+        size_t len = modOrig.toBytes(bytes);
 
-        REQUIRE(memcmp(bytes, expected_bytes, len) == 0);
+        REQUIRE(memcmp(bytes, expectedBytes, len) == 0);
         REQUIRE(APIFrame::fromBytes(bytes, len, &deserialized));
-        REQUIRE(compareAPIFrames(deserialized, mod_orig));
+        REQUIRE(compareAPIFrames(deserialized, modOrig));
     }
 
     SECTION("TX Status frame")
     {
-        // constexpr size_t frame_size = 11;
-        TXStatusFrame tx_orig{};
+        // constexpr size_t frameSize = 11;
+        TXStatusFrame txOrig{};
 
-        tx_orig.setFrameID(0x47);
-        REQUIRE(tx_orig.getFrameID() == 0x47);
-        tx_orig.setTransmitRetryCount(0x55);
-        REQUIRE(tx_orig.getTransmitRetryCount() == 0x55);
+        txOrig.setFrameID(0x47);
+        REQUIRE(txOrig.getFrameID() == 0x47);
+        txOrig.setTransmitRetryCount(0x55);
+        REQUIRE(txOrig.getTransmitRetryCount() == 0x55);
 
-        tx_orig.setDeliveryStatus(0x44);
-        REQUIRE(tx_orig.getDeliveryStatus() == 0x44);
+        txOrig.setDeliveryStatus(0x44);
+        REQUIRE(txOrig.getDeliveryStatus() == 0x44);
 
-        tx_orig.setDiscoveryStatus(2);
-        REQUIRE(tx_orig.getDiscoveryStatus() == 2);
+        txOrig.setDiscoveryStatus(2);
+        REQUIRE(txOrig.getDiscoveryStatus() == 2);
 
-        tx_orig.calcChecksum();
+        txOrig.calcChecksum();
 
-        uint8_t expected_bytes[] = {0x7E, 0,    0x07, 0x8B, 0x47, 0xFF,
-                                    0xFE, 0x55, 0x44, 0x02, 0x00};
+        uint8_t expectedBytes[] = {0x7E, 0,    0x07, 0x8B, 0x47, 0xFF,
+                                   0xFE, 0x55, 0x44, 0x02, 0x00};
 
-        calcChecksum(expected_bytes, 11);
+        calcChecksum(expectedBytes, 11);
 
-        size_t len = tx_orig.toBytes(bytes);
+        size_t len = txOrig.toBytes(bytes);
         REQUIRE(len == 11);
 
-        REQUIRE(memcmp(bytes, expected_bytes, len) == 0);
+        REQUIRE(memcmp(bytes, expectedBytes, len) == 0);
         REQUIRE(APIFrame::fromBytes(bytes, len, &deserialized));
-        REQUIRE(compareAPIFrames(deserialized, tx_orig));
+        REQUIRE(compareAPIFrames(deserialized, txOrig));
     }
 
     SECTION("RX Packet frame")
@@ -408,20 +408,20 @@ TEST_CASE("Frame serialization")
         RXPacketFrame rx;
 
         rx.setSourceAddress(0x0013A20040522BAA);
-        bool addr_cmp = rx.getSourceAddress() == 0x0013A20040522BAA;
-        REQUIRE(addr_cmp);
+        bool addrCmp = rx.getSourceAddress() == 0x0013A20040522BAA;
+        REQUIRE(addrCmp);
 
         rx.setReceiveOptions(0x01);
         REQUIRE(rx.getReceiveOptions() == 0x01);
 
-        uint8_t* rf_data = rx.getRXDataPointer();
+        uint8_t* rfData = rx.getRXDataPointer();
 
-        rf_data[0] = 0x52;
-        rf_data[1] = 0x78;
-        rf_data[2] = 0x44;
-        rf_data[3] = 0x61;
-        rf_data[4] = 0x74;
-        rf_data[5] = 0x61;
+        rfData[0] = 0x52;
+        rfData[1] = 0x78;
+        rfData[2] = 0x44;
+        rfData[3] = 0x61;
+        rfData[4] = 0x74;
+        rfData[5] = 0x61;
 
         rx.setRXDataLength(6);
         REQUIRE(rx.getRXDataLength() == 6);
@@ -429,17 +429,17 @@ TEST_CASE("Frame serialization")
 
         rx.calcChecksum();
 
-        uint8_t expected_bytes[] = {
+        uint8_t expectedBytes[] = {
             0x7E, 0,    0x12, 0x90, 0x00, 0x13, 0xA2, 0x00, 0x40, 0x52, 0x2B,
             0xAA, 0xFF, 0xFE, 0x01, 0x52, 0x78, 0x44, 0x61, 0x74, 0x61, 0x11};
 
-        // calcChecksum(expected_bytes, frame_size);
+        // calcChecksum(expectedBytes, frameSize);
 
         size_t len = rx.toBytes(bytes);
 
         REQUIRE(len == 22);
 
-        REQUIRE(memcmp(bytes, expected_bytes, len) == 0);
+        REQUIRE(memcmp(bytes, expectedBytes, len) == 0);
         REQUIRE(APIFrame::fromBytes(bytes, len, &deserialized));
         REQUIRE(compareAPIFrames(deserialized, rx));
     }
@@ -449,8 +449,8 @@ TEST_CASE("Frame serialization")
         RXPacketFrame rx;
 
         rx.setSourceAddress(0x0013A20040522BAA);
-        bool addr_cmp = rx.getSourceAddress() == 0x0013A20040522BAA;
-        REQUIRE(addr_cmp);
+        bool addrCmp = rx.getSourceAddress() == 0x0013A20040522BAA;
+        REQUIRE(addrCmp);
 
         rx.setReceiveOptions(0x01);
         REQUIRE(rx.getReceiveOptions() == 0x01);
@@ -460,19 +460,19 @@ TEST_CASE("Frame serialization")
 
         rx.calcChecksum();
 
-        uint8_t expected_bytes[] = {0x7E, 0,    12,   0x90, 0x00, 0x13,
-                                    0xA2, 0x00, 0x40, 0x52, 0x2B, 0xAA,
-                                    0xFF, 0xFE, 0x01, 0x00};
+        uint8_t expectedBytes[] = {0x7E, 0,    12,   0x90, 0x00, 0x13,
+                                   0xA2, 0x00, 0x40, 0x52, 0x2B, 0xAA,
+                                   0xFF, 0xFE, 0x01, 0x00};
 
-        calcChecksum(expected_bytes, 16);
+        calcChecksum(expectedBytes, 16);
 
         size_t len = rx.toBytes(bytes);
 
         REQUIRE(len == 16);
 
-        REQUIRE(memcmp(bytes, expected_bytes, len) == 0);
+        REQUIRE(memcmp(bytes, expectedBytes, len) == 0);
 
-        memset(deserialized.frame_data, 0, FRAME_DATA_SIZE);
+        memset(deserialized.frameData, 0, FRAME_DATA_SIZE);
         REQUIRE(APIFrame::fromBytes(bytes, len, &deserialized));
         REQUIRE(compareAPIFrames(deserialized, rx));
     }
@@ -487,14 +487,14 @@ TEST_CASE("Frame parsing")
         RXPacketFrame rx;
         rx.setSourceAddress(0x0013A20040522BAA);
         rx.setReceiveOptions(0x01);
-        uint8_t* rf_data = rx.getRXDataPointer();
+        uint8_t* rfData = rx.getRXDataPointer();
 
-        rf_data[0] = 0x52;
-        rf_data[1] = 0x78;
-        rf_data[2] = 0x44;
-        rf_data[3] = 0x61;
-        rf_data[4] = 0x74;
-        rf_data[5] = 0x61;
+        rfData[0] = 0x52;
+        rfData[1] = 0x78;
+        rfData[2] = 0x44;
+        rfData[3] = 0x61;
+        rfData[4] = 0x74;
+        rfData[5] = 0x61;
 
         rx.setRXDataLength(6);
         rx.calcChecksum();
@@ -515,14 +515,14 @@ TEST_CASE("Parser edge cases")
         RXPacketFrame rx;
         rx.setSourceAddress(0x0013A20040522BAA);
         rx.setReceiveOptions(0x01);
-        uint8_t* rf_data = rx.getRXDataPointer();
+        uint8_t* rfData = rx.getRXDataPointer();
 
-        rf_data[0] = 0x52;
-        rf_data[1] = 0x78;
-        rf_data[2] = 0x44;
-        rf_data[3] = 0x61;
-        rf_data[4] = 0x74;
-        rf_data[5] = 0x61;
+        rfData[0] = 0x52;
+        rfData[1] = 0x78;
+        rfData[2] = 0x44;
+        rfData[3] = 0x61;
+        rfData[4] = 0x74;
+        rfData[5] = 0x61;
 
         rx.setRXDataLength(6);
         rx.calcChecksum();
@@ -549,17 +549,17 @@ TEST_CASE("Parser edge cases")
     SECTION("Wrong start delimiter")
     {
         RXPacketFrame rx;
-        rx.start_del = 0x55;
+        rx.startDel = 0x55;
         rx.setSourceAddress(0x0013A20040522BAA);
         rx.setReceiveOptions(0x01);
-        uint8_t* rf_data = rx.getRXDataPointer();
+        uint8_t* rfData = rx.getRXDataPointer();
 
-        rf_data[0] = 0x52;
-        rf_data[1] = 0x78;
-        rf_data[2] = 0x44;
-        rf_data[3] = 0x61;
-        rf_data[4] = 0x74;
-        rf_data[5] = 0x61;
+        rfData[0] = 0x52;
+        rfData[1] = 0x78;
+        rfData[2] = 0x44;
+        rfData[3] = 0x61;
+        rfData[4] = 0x74;
+        rfData[5] = 0x61;
 
         rx.setRXDataLength(6);
         rx.calcChecksum();

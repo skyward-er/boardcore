@@ -64,7 +64,7 @@ bool ADS131M04::init()
 {
     if (!reset())
     {
-        last_error = SensorErrors::INIT_FAIL;
+        lastError = SensorErrors::INIT_FAIL;
         LOG_ERR(logger, "Initialization failed");
         return false;
     }
@@ -90,7 +90,7 @@ bool ADS131M04::reset()
     // Check for the correct response
     if (response != 0xFF24)
     {
-        last_error = SensorErrors::COMMAND_FAILED;
+        lastError = SensorErrors::COMMAND_FAILED;
         LOG_ERR(logger, "Reset command failed, response was {:X}", response);
         return false;
     }
@@ -110,7 +110,7 @@ void ADS131M04::calibrateOffset()
 
         for (int ii = 0; ii < 4; ii++)
             averageValues[ii] +=
-                last_sample.voltage[ii] /
+                lastSample.voltage[ii] /
                 PGA_LSB_SIZE[static_cast<uint16_t>(channelsPGAGain[ii])];
     }
 
@@ -266,11 +266,11 @@ ADS131M04Data ADS131M04::sampleImpl()
 
     if (dataCrc != calculatedCrc)
     {
-        last_error = SensorErrors::BUS_FAULT;
+        lastError = SensorErrors::BUS_FAULT;
         LOG_ERR(logger, "Failed CRC check during sensor sampling");
 
         // Return and don't convert the corrupted data
-        return last_sample;
+        return lastSample;
     }
 
     // Set the two complement
@@ -329,7 +329,7 @@ void ADS131M04::writeRegister(Registers reg, uint16_t data)
     uint16_t response = writeCommand[0] << 8 | writeCommand[1];
     if (response != (0x4000 | (static_cast<uint16_t>(reg) << 7)))
     {
-        last_error = SensorErrors::COMMAND_FAILED;
+        lastError = SensorErrors::COMMAND_FAILED;
         LOG_ERR(logger, "Write command failed, response was {:X}", response);
     }
 }

@@ -190,9 +190,9 @@ Vector4f SkyQuaternion::quatProd(const Vector4f q1, const Vector4f q2)
     Vector4f quater;
     // cppcheck-suppress constStatement
     quater << q1w * qv2 + q2w * qv1 - qv1.cross(qv2), q1w * q2w - qv1.dot(qv2);
-    float quater_norm = sqrt(quater(0) * quater(0) + quater(1) * quater(1) +
-                             quater(2) * quater(2) + quater(3) * quater(3));
-    quater            = quater / quater_norm;
+    float quaternionNorm = sqrt(quater(0) * quater(0) + quater(1) * quater(1) +
+                                quater(2) * quater(2) + quater(3) * quater(3));
+    quater               = quater / quaternionNorm;
 
     return quater;
 }

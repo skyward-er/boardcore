@@ -56,7 +56,7 @@ public:
 
     virtual void stop() override
     {
-        should_stop = true;
+        stopFlag = true;
 
         // Put empty event in the list to wake the runner thread
         eventList.put(Event{EV_EMPTY});

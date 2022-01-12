@@ -52,12 +52,13 @@ public:
      */
     struct Timer
     {
-        TIM_TypeDef* TIM;               // The timer we want to use
-        volatile uint32_t* bus_en_reg;  // Pointer to APB1 or APB2 Peripheral
-                                        // clock enable register
-        uint32_t TIM_EN;  // Enable bit mask for the clock enable register
+        TIM_TypeDef* TIM;  // The timer we want to use
+        volatile uint32_t*
+            busEnableRegister;  // Pointer to APB1 or APB2 Peripheral
+                                // clock enable register
+        uint32_t TIM_EN;        // Enable bit mask for the clock enable register
 
-        unsigned int input_clock_freq;  // Timer input clock frequency [Hz]
+        unsigned int inputClockFrequency;  // Timer input clock frequency [Hz]
     };
 
     /**
@@ -65,10 +66,10 @@ public:
      *
      * @param timer Timer object
      * @param frequency PWM frequency
-     * @param duty_cycle_resolution Number of possible values in the range [0,1]
+     * @param dutyCycleResolution Number of possible values in the range [0,1]
      */
     PWM(Timer timer, unsigned int frequency,
-        unsigned int duty_cycle_resolution = 1024);
+        unsigned int dutyCycleResolution = 1024);
 
     ~PWM();
 
@@ -84,19 +85,19 @@ public:
      * @brief Set the Duty Cycle Resolution
      * The duty cycle resolution is effectively changed once the timer is
      * restarted.
-     * @param duty_cycle_resolution Number of possible values of duty cycle
+     * @param dutyCycleResolution Number of possible values of duty cycle
      */
-    void setDutyCycleResolution(unsigned int duty_cycle_resolution);
+    void setDutyCycleResolution(unsigned int dutyCycleResolution);
 
     /**
      * @brief Enable output on the specified channel
      *
      * @param channel Output channel (1 to 4, refer to datasheet)
-     * @param duty_cycle Duty cycle
+     * @param dutyCycle Duty cycle
      * @param mode PWM mode
      * @param polarity Output polarity
      */
-    void enableChannel(PWMChannel channel, float duty_cycle,
+    void enableChannel(PWMChannel channel, float dutyCycle,
                        PWMMode mode         = PWMMode::MODE_1,
                        PWMPolarity polarity = PWMPolarity::ACTIVE_HIGH);
 
@@ -104,9 +105,9 @@ public:
      * @brief Set the duty cycle for the specified channel
      *
      * @param channel
-     * @param duty_cycle
+     * @param dutyCycle
      */
-    void setDutyCycle(PWMChannel channel, float duty_cycle);
+    void setDutyCycle(PWMChannel channel, float dutyCycle);
 
     /**
      * @brief Disables output on the specified channel
@@ -147,7 +148,7 @@ private:
     bool started = false;
 
     unsigned int frequency;
-    unsigned int duty_cycle_resolution;
+    unsigned int dutyCycleResolution;
 
     PWMChannelConfig channels[4]{};
 };

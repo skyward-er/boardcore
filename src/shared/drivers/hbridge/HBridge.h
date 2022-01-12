@@ -50,13 +50,12 @@ public:
      * @param   timer              Timer peripheral used for the PWM signal
      * @param   channel            PWM channel
      * @param   frequency          Frequency of the PWM driving the h-bridge
-     * @param   duty_cycle         Duty cycle of the PWM (from 0.0 to 1.0)
-     * @param   disable_delay_ms   Period of time where the IN must be kept
+     * @param   dutyCycle         Duty cycle of the PWM (from 0.0 to 1.0)
+     * @param   disableDelayMs   Period of time where the IN must be kept
      *                             low before bringing ENA/INH low
      */
     HBridge(GpioPin inhibit, PWM::Timer timer, PWMChannel channel,
-            uint32_t frequency, float duty_cycle,
-            uint16_t disable_delay_ms = 50);
+            uint32_t frequency, float dutyCycle, uint16_t disableDelayMs = 50);
 
     ~HBridge();
 
@@ -76,10 +75,10 @@ public:
      * @brief Enables the h-bridge using the "test" duty cycle.
      *        Call disable() to stop
      *
-     * @param test_duty_cycle   Duty cycle to be used when testing the
+     * @param testDutyCycle   Duty cycle to be used when testing the
      *                          h-bridge for continuity
      */
-    void enableTest(float test_duty_cycle);
+    void enableTest(float testDutyCycle);
 
     /**
      * @return the HBridge object status
@@ -91,19 +90,19 @@ private:
      * @brief Enables the h-bridge.
      *
      * @param channel       the h-bridge PWM channel
-     * @param ena_pin       enable pin of the h-bridge
-     * @param duty_cycle    the duty cycle to be used
+     * @param enablePin       enable pin of the h-bridge
+     * @param dutyCycle    the duty cycle to be used
      */
-    void enableHBridge(PWMChannel channel, GpioPin& ena_pin, float duty_cycle);
+    void enableHBridge(PWMChannel channel, GpioPin& enablePin, float dutyCycle);
 
     HBridge(const HBridge& hb) = delete;
 
-    GpioPin pin_inh;
+    GpioPin pinInterrupt;
     PWM pwm;
     PWMChannel channel;
 
-    float duty_cycle;
-    uint16_t disable_delay_ms;
+    float dutyCycle;
+    uint16_t disableDelayMs;
 
     HBridgeStatus status;
 };

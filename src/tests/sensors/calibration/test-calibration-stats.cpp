@@ -69,9 +69,9 @@ int main()
 {
     SPIBus bus(SPI1);
 
-    GpioPin spi_sck(GPIOA_BASE, 5);
-    GpioPin spi_miso(GPIOA_BASE, 6);
-    GpioPin spi_mosi(GPIOA_BASE, 7);
+    GpioPin spiSck(GPIOA_BASE, 5);
+    GpioPin spiMiso(GPIOA_BASE, 6);
+    GpioPin spiMosi(GPIOA_BASE, 7);
     GpioPin cs(GPIOE_BASE, 3);
 
     {
@@ -79,12 +79,12 @@ int main()
 
         RCC->APB2ENR |= RCC_APB2ENR_SPI1EN;  // Enable SPI1 bus
 
-        spi_sck.mode(miosix::Mode::ALTERNATE);
-        spi_sck.alternateFunction(5);
-        spi_miso.mode(miosix::Mode::ALTERNATE);
-        spi_miso.alternateFunction(5);
-        spi_mosi.mode(miosix::Mode::ALTERNATE);
-        spi_mosi.alternateFunction(5);
+        spiSck.mode(miosix::Mode::ALTERNATE);
+        spiSck.alternateFunction(5);
+        spiMiso.mode(miosix::Mode::ALTERNATE);
+        spiMiso.alternateFunction(5);
+        spiMosi.mode(miosix::Mode::ALTERNATE);
+        spiMosi.alternateFunction(5);
 
         cs.mode(miosix::Mode::OUTPUT);
     }
@@ -190,12 +190,12 @@ int main()
                     sensor.sample();
                     auto data = sensor.getLastSample();
 
-                    xAxis[selected].add(data.accel_x);
-                    yAxis[selected].add(data.accel_y);
-                    zAxis[selected].add(data.accel_z);
+                    xAxis[selected].add(data.accelerationX);
+                    yAxis[selected].add(data.accelerationY);
+                    zAxis[selected].add(data.accelerationZ);
 
-                    printf("Added sample: %f, %f, %f\n", data.accel_x,
-                           data.accel_y, data.accel_z);
+                    printf("Added sample: %f, %f, %f\n", data.accelerationX,
+                           data.accelerationY, data.accelerationZ);
 
                     if (sleepTime > 0)
                     {

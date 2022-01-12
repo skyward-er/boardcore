@@ -71,8 +71,8 @@ using GpioLedLog = Gpio<GPIOC_BASE, 13>;
 
 using GpioUserBtn = Gpio<GPIOA_BASE, 0>;
 
-Xbee::Xbee* xbee_driver = nullptr;
-Logger& logger          = Logger::getInstance();
+Xbee::Xbee* xbeeDriver = nullptr;
+Logger& logger         = Logger::getInstance();
 
 #ifdef _BOARD_STM32F429ZI_SKYWARD_DEATHST_X
 void __attribute__((used)) EXTI10_IRQHandlerImpl()
@@ -80,9 +80,9 @@ void __attribute__((used)) EXTI10_IRQHandlerImpl()
 void __attribute__((used)) EXTI5_IRQHandlerImpl()
 #endif
 {
-    if (xbee_driver != nullptr)
+    if (xbeeDriver != nullptr)
     {
-        xbee_driver->handleATTNInterrupt();
+        xbeeDriver->handleATTNInterrupt();
     }
 }
 
@@ -134,19 +134,19 @@ void configure()
 
 void setupXbee(XbeeConfig config)
 {
-    if (xbee_driver)
+    if (xbeeDriver)
     {
-        if (config.data_rate_80k)
+        if (config.dataRate80k)
         {
-            if (!Xbee::setDataRate(*xbee_driver, true))
+            if (!Xbee::setDataRate(*xbeeDriver, true))
             {
-                TRACE("[main] Error setting xbee_driver data rate!\n");
+                TRACE("[main] Error setting xbeeDriver data rate!\n");
             }
         }
 
-        if (!config.freq_hop)
+        if (!config.freqHop)
         {
-            if (!Xbee::disableFrequencyHopping(*xbee_driver))
+            if (!Xbee::disableFrequencyHopping(*xbeeDriver))
             {
                 TRACE("[main] Error disabling frequency hop!\n");
             }
@@ -157,13 +157,13 @@ void setupXbee(XbeeConfig config)
 int main()
 {
     XbeeConfig config;
-    config.data_rate_80k = true;
-    config.freq_hop      = true;
+    config.dataRate80k = true;
+    config.freqHop     = true;
 
-    config.packet_size   = 256;
-    config.send_interval = 333;
-    config.tx_enabled    = RUN_SENDER;
-    config.timestamp     = getTick();
+    config.packetSize   = 256;
+    config.sendInterval = 333;
+    config.txEnabled    = RUN_SENDER;
+    config.timestamp    = getTick();
 
     configure();
 
@@ -182,7 +182,7 @@ int main()
 
     logger.log(config);
 
-    SPIBus spi_bus(XBEE_SPI);
+    SPIBus spiBus(XBEE_SPI);
     SPIBusConfig cfg{};
     cfg.clockDivider = SPI::ClockDivider::DIV_16;
 
@@ -190,15 +190,15 @@ int main()
     GpioPin attn = GpioATTN::getPin();
     GpioPin rst  = GpioRST::getPin();
 
-    xbee_driver = new Xbee::Xbee(spi_bus, cfg, cs, attn, rst);
+    xbeeDriver = new Xbee::Xbee(spiBus, cfg, cs, attn, rst);
 
     setupXbee(config);
 
     // RandSendInterval intv(333, 1500);
-    ConstSendInterval intv(config.send_interval);
+    ConstSendInterval intv(config.sendInterval);
     XbeeTransceiver* trans =
-        new XbeeTransceiver(*xbee_driver, logger, intv, 256, 333);
-    if (!config.tx_enabled)
+        new XbeeTransceiver(*xbeeDriver, logger, intv, 256, 333);
+    if (!config.txEnabled)
     {
         trans->disableSender();
     }
@@ -211,15 +211,15 @@ int main()
     // cppcheck-suppress knownConditionTrueFalse
     while (getUserBtnValue() == 0)
     {
-        long long loop_start = getTick();
+        long long loopStart = getTick();
 
-        DataRateResult res_rcv = trans->getReceiver().getDataRate();
-        DataRateResult res_snd = trans->getSender().getDataRate();
+        DataRateResult resRcv = trans->getReceiver().getDataRate();
+        DataRateResult resSnd = trans->getSender().getDataRate();
 
         TxData txd = trans->getSender().getTxData();
         RxData rxd = trans->getReceiver().getRxData();
 
-        logger.log(xbee_driver->getStatus());
+        logger.log(xbeeDriver->getStatus());
         logger.log(logger.getLoggerStats());
 
         long long tick = getTick();
@@ -231,10 +231,9 @@ int main()
         if (RUN_SENDER)
         {
             printf("SND: int: %u, cnt: %u, tts: %u ms, pps: %.1f, fail: %u\n ",
-                   txd.time_since_last_send,
-                   txd.tx_success_counter + txd.tx_fail_counter,
-                   txd.time_to_send, res_snd.packets_per_second,
-                   txd.tx_fail_counter);
+                   txd.timeSinceLastSend,
+                   txd.txSuccessCounter + txd.txFailCounter, txd.timeToSend,
+                   resSnd.packetsPerSecond, txd.txFailCounter);
         }
         if (RUN_RECEIVER)
         {
@@ -242,18 +241,18 @@ int main()
                 "RCV: cnt: %u, last_rx: %lld ms,  RSSI: %d, dr: %.0f, pps: "
                 "%.1f,"
                 " pl: %.0f%%, lcnt: %u, fail: %u\n",
-                rxd.rcv_count, rxd.last_packet_timestamp, rxd.RSSI,
-                res_rcv.data_rate, res_rcv.packets_per_second,
-                res_rcv.packet_loss * 100, rxd.packets_lost, rxd.rcv_errors);
+                rxd.rcvCount, rxd.lastPacketTimestamp, rxd.RSSI,
+                resRcv.dataRate, resRcv.packetsPerSecond,
+                resRcv.packetLoss * 100, rxd.packetsLost, rxd.rcvCount);
         }
         printf("\n");
 
-        Thread::sleepUntil(loop_start + 1000);
+        Thread::sleepUntil(loopStart + 1000);
     }
 
     trans->stop();
     delete trans;
-    delete xbee_driver;
+    delete xbeeDriver;
     logger.stop();
     printf("Log closed.\n");
 

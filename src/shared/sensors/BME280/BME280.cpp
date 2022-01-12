@@ -56,7 +56,7 @@ bool BME280::init()
     {
         LOG_ERR(logger, "Already initialized");
 
-        last_error = SensorErrors::ALREADY_INIT;
+        lastError = SensorErrors::ALREADY_INIT;
 
         return false;
     }
@@ -66,14 +66,14 @@ bool BME280::init()
     {
         LOG_ERR(logger, "Invalid WHO AM I");
 
-        last_error = SensorErrors::INVALID_WHOAMI;
+        lastError = SensorErrors::INVALID_WHOAMI;
 
         return false;
     }
 
     loadCompensationParameters();
 
-    // Read once the temperature to compute t_fine
+    // Read once the temperature to compute fineTemperature
     setConfiguration(BME280_CONFIG_TEMP_SINGLE);
     miosix::Thread::sleep(
         calculateMaxMeasurementTime(BME280_CONFIG_TEMP_SINGLE));
@@ -84,13 +84,14 @@ bool BME280::init()
     BME280Config readBackConfig = readConfiguration();
 
     // Check if the configration on the device matches ours
-    if (config.bytes.ctrl_hum != readBackConfig.bytes.ctrl_hum ||
-        config.bytes.ctrl_meas != readBackConfig.bytes.ctrl_meas ||
+    if (config.bytes.ctrlHumidity != readBackConfig.bytes.ctrlHumidity ||
+        config.bytes.ctrlPressureAndTemperature !=
+            readBackConfig.bytes.ctrlPressureAndTemperature ||
         config.bytes.config != readBackConfig.bytes.config)
     {
         LOG_ERR(logger, "Device configuration incorrect, setup failed");
 
-        last_error = SensorErrors::NOT_INIT;
+        lastError = SensorErrors::NOT_INIT;
 
         return false;
     }
@@ -101,7 +102,7 @@ bool BME280::init()
 
 void BME280::setHumidityOversampling(Oversampling oversampling)
 {
-    config.bits.osrs_h = oversampling;
+    config.bits.oversamplingHumidity = oversampling;
 
     setConfiguration();
 }
@@ -115,14 +116,14 @@ void BME280::setSensorMode(Mode mode)
 
 void BME280::setPressureOversampling(Oversampling oversampling)
 {
-    config.bits.osrs_p = oversampling;
+    config.bits.oversamplingPressure = oversampling;
 
     setConfiguration();
 }
 
 void BME280::setTemperatureOversampling(Oversampling oversampling)
 {
-    config.bits.osrs_t = oversampling;
+    config.bits.oversamplingTemperature = oversampling;
 
     setConfiguration();
 }
@@ -136,7 +137,7 @@ void BME280::setFilterCoeff(FilterCoeff filterCoeff)
 
 void BME280::setStandbyTime(StandbyTime standbyTime)
 {
-    config.bits.t_sb = standbyTime;
+    config.bits.standbyTime = standbyTime;
 
     setConfiguration();
 }
@@ -156,11 +157,11 @@ HumidityData BME280::readHumidity()
     adc_H |= buffer[1];
 
     // Compensate humidity
-    last_sample.humid_timestamp = TimestampTimer::getInstance().getTimestamp();
-    last_sample.humid =
+    lastSample.humidityTimestamp = TimestampTimer::getInstance().getTimestamp();
+    lastSample.humidity =
         (float)compensateHumidity(adc_H) / 1024;  // Converto to %RH
 
-    return last_sample;
+    return lastSample;
 }
 
 PressureData BME280::readPressure()
@@ -179,17 +180,17 @@ PressureData BME280::readPressure()
     adc_P |= (buffer[2] >> 4) & 0x0F;
 
     // Compensate pressure
-    last_sample.press_timestamp = TimestampTimer::getInstance().getTimestamp();
-    last_sample.press =
+    lastSample.pressureTimestamp = TimestampTimer::getInstance().getTimestamp();
+    lastSample.pressure =
         (float)compensatePressure(adc_P) / 256;  // Convert to Pa
 
-    return last_sample;
+    return lastSample;
 }
 
 TemperatureData BME280::readTemperature()
 {
     uint8_t buffer[3];
-    int32_t adc_T = 0;
+    int32_t adcTemperature = 0;
 
     {
         SPITransaction transaction(spiSlave);
@@ -197,30 +198,31 @@ TemperatureData BME280::readTemperature()
         transaction.readRegisters(REG_TEMP_MSB, buffer, 3);
     }
 
-    adc_T |= ((uint32_t)buffer[0]) << 12;
-    adc_T |= ((uint32_t)buffer[1]) << 4;
-    adc_T |= (buffer[2] >> 4) & 0x0F;
+    adcTemperature |= ((uint32_t)buffer[0]) << 12;
+    adcTemperature |= ((uint32_t)buffer[1]) << 4;
+    adcTemperature |= (buffer[2] >> 4) & 0x0F;
 
     // Compensate temperature
-    t_fine                     = computeFineTemperature(adc_T);
-    last_sample.temp_timestamp = TimestampTimer::getInstance().getTimestamp();
-    last_sample.temp =
-        (float)compensateTemperature(t_fine) / 100;  // Converto to DegC
+    fineTemperature = computeFineTemperature(adcTemperature);
+    lastSample.temperatureTimestamp =
+        TimestampTimer::getInstance().getTimestamp();
+    lastSample.temperature = (float)compensateTemperature(fineTemperature) /
+                             100;  // Converto to DegC
 
-    return last_sample;
+    return lastSample;
 }
 
-HumidityData BME280::getHumidity() { return last_sample; }
+HumidityData BME280::getHumidity() { return lastSample; }
 
-PressureData BME280::getPressure() { return last_sample; }
+PressureData BME280::getPressure() { return lastSample; }
 
-TemperatureData BME280::getTemerature() { return last_sample; }
+TemperatureData BME280::getTemerature() { return lastSample; }
 
 unsigned int BME280::calculateMaxMeasurementTime(BME280Config config_)
 {
-    return ceil(1.25 + (2.3 * config_.bits.osrs_t) +
-                (2.3 * config_.bits.osrs_p + 0.575) +
-                (2.3 * config_.bits.osrs_h + 0.575));
+    return ceil(1.25 + (2.3 * config_.bits.oversamplingTemperature) +
+                (2.3 * config_.bits.oversamplingPressure + 0.575) +
+                (2.3 * config_.bits.oversamplingHumidity + 0.575));
 }
 
 unsigned int BME280::getMaxMeasurementTime()
@@ -233,9 +235,9 @@ bool BME280::selfTest() { return checkWhoAmI(); }
 BME280Data BME280::sampleImpl()
 {
     uint8_t buffer[8];
-    int32_t adc_T = 0;
-    int32_t adc_P = 0;
-    int32_t adc_H = 0;
+    int32_t adcTemperature = 0;
+    int32_t adc_P          = 0;
+    int32_t adc_H          = 0;
     BME280Data data;
 
     // TODO: implement selective read!
@@ -247,9 +249,9 @@ BME280Data BME280::sampleImpl()
         transaction.readRegisters(REG_PRESS_MSB, buffer, 8);
     }
 
-    adc_T |= ((uint32_t)buffer[3]) << 12;
-    adc_T |= ((uint32_t)buffer[4]) << 4;
-    adc_T |= (buffer[5] >> 4) & 0x0F;
+    adcTemperature |= ((uint32_t)buffer[3]) << 12;
+    adcTemperature |= ((uint32_t)buffer[4]) << 4;
+    adcTemperature |= (buffer[5] >> 4) & 0x0F;
 
     adc_P |= ((uint32_t)buffer[0]) << 12;
     adc_P |= ((uint32_t)buffer[1]) << 4;
@@ -259,17 +261,18 @@ BME280Data BME280::sampleImpl()
     adc_H |= buffer[7];
 
     // Compensate temperature
-    t_fine              = computeFineTemperature(adc_T);
-    data.temp_timestamp = TimestampTimer::getInstance().getTimestamp();
-    data.temp = (float)compensateTemperature(t_fine) / 100;  // Converto to DegC
+    fineTemperature           = computeFineTemperature(adcTemperature);
+    data.temperatureTimestamp = TimestampTimer::getInstance().getTimestamp();
+    data.temperature          = (float)compensateTemperature(fineTemperature) /
+                       100;  // Converto to DegC
 
     // Compensate pressure
-    data.press_timestamp = TimestampTimer::getInstance().getTimestamp();
-    data.press = (float)compensatePressure(adc_P) / 256;  // Convert to Pa
+    data.pressureTimestamp = TimestampTimer::getInstance().getTimestamp();
+    data.pressure = (float)compensatePressure(adc_P) / 256;  // Convert to Pa
 
     // Compensate humidity
-    data.humid_timestamp = TimestampTimer::getInstance().getTimestamp();
-    data.humid = (float)compensateHumidity(adc_H) / 1024;  // Converto to %RH
+    data.humidityTimestamp = TimestampTimer::getInstance().getTimestamp();
+    data.humidity = (float)compensateHumidity(adc_H) / 1024;  // Converto to %RH
 
     return data;
 }
@@ -278,9 +281,9 @@ bool BME280::checkWhoAmI()
 {
     SPITransaction transaction(spiSlave);
 
-    uint8_t who_am_i_value = transaction.readRegister(REG_ID);
+    uint8_t whoAmIValue = transaction.readRegister(REG_ID);
 
-    return who_am_i_value == REG_ID_VAL;
+    return whoAmIValue == REG_ID_VAL;
 }
 
 void BME280::setConfiguration() { setConfiguration(config); }
@@ -290,8 +293,9 @@ void BME280::setConfiguration(BME280Config config_)
     SPITransaction transaction(spiSlave);
 
     transaction.writeRegister(REG_CONFIG & 0x7F, config_.bytes.config);
-    transaction.writeRegister(REG_CTRL_HUM & 0x7F, config_.bytes.ctrl_hum);
-    transaction.writeRegister(REG_CTRL_MEAS & 0x7F, config_.bytes.ctrl_meas);
+    transaction.writeRegister(REG_CTRL_HUM & 0x7F, config_.bytes.ctrlHumidity);
+    transaction.writeRegister(REG_CTRL_MEAS & 0x7F,
+                              config_.bytes.ctrlPressureAndTemperature);
 }
 
 BME280::BME280Config BME280::readConfiguration()
@@ -322,35 +326,35 @@ void BME280::loadCompensationParameters()
     }
 
     // Adjust unaligned data
-    compParams.bytes_array[29] =
-        (compParams.bytes_array[29] << 4) | (compParams.bytes_array[29] >> 4);
+    compParams.bytesArray[29] =
+        (compParams.bytesArray[29] << 4) | (compParams.bytesArray[29] >> 4);
     compParams.bits.dig_H4 =
         (compParams.bits.dig_H4 << 4) | (compParams.bits.dig_H4 >> 8);
 }
 
-int32_t BME280::computeFineTemperature(int32_t adc_T)
+int32_t BME280::computeFineTemperature(int32_t adcTemperature)
 {
     int32_t var1, var2;
-    var1 = ((((adc_T >> 3) - ((int32_t)compParams.bits.dig_T1 << 1))) *
+    var1 = ((((adcTemperature >> 3) - ((int32_t)compParams.bits.dig_T1 << 1))) *
             ((int32_t)compParams.bits.dig_T2)) >>
            11;
-    var2 = (((((adc_T >> 4) - ((int32_t)compParams.bits.dig_T1)) *
-              ((adc_T >> 4) - ((int32_t)compParams.bits.dig_T1))) >>
+    var2 = (((((adcTemperature >> 4) - ((int32_t)compParams.bits.dig_T1)) *
+              ((adcTemperature >> 4) - ((int32_t)compParams.bits.dig_T1))) >>
              12) *
             ((int32_t)compParams.bits.dig_T3)) >>
            14;
     return var1 + var2;
 }
 
-int32_t BME280::compensateTemperature(int32_t t_fine)
+int32_t BME280::compensateTemperature(int32_t fineTemperature)
 {
-    return (t_fine * 5 + 128) >> 8;
+    return (fineTemperature * 5 + 128) >> 8;
 }
 
 uint32_t BME280::compensatePressure(int32_t adc_P)
 {
     int64_t var1, var2, p;
-    var1 = ((int64_t)t_fine) - 128000;
+    var1 = ((int64_t)fineTemperature) - 128000;
     var2 = var1 * var1 * (int64_t)compParams.bits.dig_P6;
     var2 = var2 + ((var1 * (int64_t)compParams.bits.dig_P5) << 17);
     var2 = var2 + (((int64_t)compParams.bits.dig_P4) << 35);
@@ -374,7 +378,7 @@ uint32_t BME280::compensateHumidity(int32_t adc_H)
 {
     int32_t v_x1_u32r;
 
-    v_x1_u32r = (t_fine - ((int32_t)768000));
+    v_x1_u32r = (fineTemperature - ((int32_t)768000));
     v_x1_u32r = (((((adc_H << 14) - (((int32_t)compParams.bits.dig_H4) << 20) -
                     (((int32_t)compParams.bits.dig_H5) * v_x1_u32r)) +
                    ((int32_t)16384)) >>

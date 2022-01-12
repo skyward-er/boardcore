@@ -20,14 +20,15 @@
  * THE SOFTWARE.
  */
 
+#include <ActiveObject.h>
+#include <diagnostic/PrintLogger.h>
+#include <drivers/canbus/BusLoadEstimation.h>
+#include <drivers/canbus/Canbus.h>
+
 #include <string>
 
-#include "ActiveObject.h"
-#include "diagnostic/PrintLogger.h"
-#include "drivers/canbus/BusLoadEstimation.h"
-#include "drivers/canbus/Canbus.h"
-
 using std::string;
+using namespace Boardcore;
 using namespace Canbus;
 using namespace miosix;
 
@@ -46,11 +47,10 @@ void printPacket(PrintLogger& logger, string name, Canbus::CanPacket p)
 void printRXPacket(PrintLogger& logger, string name, Canbus::CanRXPacket p)
 {
     printPacket(logger, name, p.packet);
-    LOG_DEBUG(
-        logger,
-        "RX result: fifo={}, status={:#04X}, err_cnt:{}, err_code:{:#04X}",
-        p.status.fifo, p.status.rx_status, p.status.rx_err_counter,
-        p.status.err_code);
+    LOG_DEBUG(logger,
+              "RX result: fifo={}, status={:#04X}, errCnt:{}, errCode:{:#04X}",
+              p.status.fifo, p.status.rxStatus, p.status.rxErrCounter,
+              p.status.errCode);
 }
 
 int main()
@@ -70,14 +70,14 @@ int main()
         CanTX::alternateFunction(9);
     }
 
-    Canbus::Canbus::CanbusConfig cfg;
+    CanbusDriver::CanbusConfig cfg;
     cfg.loopback = true;
 
-    Canbus::Canbus::AutoBitTiming bt;
-    bt.baud_rate    = BAUD_RATE;
-    bt.sample_point = 87.5f / 100.0f;
+    CanbusDriver::AutoBitTiming bt;
+    bt.baudRate    = BAUD_RATE;
+    bt.samplePoint = 87.5f / 100.0f;
 
-    Canbus::Canbus* c = new Canbus::Canbus(CAN1, cfg, bt);
+    CanbusDriver* c = new CanbusDriver(CAN1, cfg, bt);
 
     // Canbus::Mask32Filter f1(365854720, 0xFF000000, 1, 1, 0, 0, 1);
     // Canbus::Mask32Filter f2(1, 1, 1, 1, 0, 0, 0);

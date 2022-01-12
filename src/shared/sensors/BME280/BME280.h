@@ -76,8 +76,8 @@ public:
     {
         struct __attribute__((packed)) BME280ConfigBits
         {
-            // ctrl_hum
-            Oversampling osrs_h : 3;  ///< Oversampling of humidity
+            Oversampling
+                oversamplingHumidity : 3;  ///< Oversampling of humidity
             uint8_t : 5;
 
             // status
@@ -85,7 +85,7 @@ public:
              * '1' when the NVM data are being copied to image registers, '0'
              * when the copying is done
              */
-            uint8_t im_update : 1;
+            uint8_t imUpdate : 1;
             uint8_t : 2;
             /**
              * '1' whenever a conversion is running, '0' when the result have
@@ -94,27 +94,29 @@ public:
             uint8_t measuring : 1;
             uint8_t : 4;
 
-            // ctrl_meas
-            Mode mode : 2;            ///< Device modes
-            Oversampling osrs_p : 3;  ///< Oversampling of pressure
-            Oversampling osrs_t : 3;  ///< Oversampling of temperature
+            Mode mode : 2;  ///< Device modes
+            Oversampling
+                oversamplingPressure : 3;  ///< Oversampling of pressure
+            Oversampling
+                oversamplingTemperature : 3;  ///< Oversampling of temperature
 
             // config
-            uint8_t spi3w_en : 1;  ///< Enables 3-wire SPI interface
+            uint8_t spi3wEn : 1;  ///< Enables 3-wire SPI interface
             uint8_t : 1;
-            FilterCoeff filter : 3;  ///< Time constant of the IIR filter
-            StandbyTime t_sb : 3;    ///< Inactive duration in normal mode
+            FilterCoeff filter : 3;       ///< Time constant of the IIR filter
+            StandbyTime standbyTime : 3;  ///< Inactive duration in normal mode
         } bits;
 
         struct
         {
-            uint8_t ctrl_hum;   ///< Humidity options
-            uint8_t status;     ///< Device status
-            uint8_t ctrl_meas;  ///< Pressure and temperature options
-            uint8_t config;     ///< Rate, filter and interface options
+            uint8_t ctrlHumidity;                ///< Humidity options
+            uint8_t status;                      ///< Device status
+            uint8_t ctrlPressureAndTemperature;  ///< Pressure and temperature
+                                                 ///< options
+            uint8_t config;  ///< Rate, filter and interface options
         } bytes;
 
-        uint8_t bytes_array[4];
+        uint8_t bytesArray[4];
     };
 
     union BME280Comp
@@ -141,7 +143,7 @@ public:
             int8_t dig_H6;
         } bits;
 
-        uint8_t bytes_array[32];
+        uint8_t bytesArray[32];
     };
 
     static constexpr uint8_t REG_ID_VAL = 0x60;  ///< Who am I value
@@ -253,13 +255,13 @@ private:
 
     // Compensation algorithm rev.1.1 from Bosh datasheet
 
-    int32_t computeFineTemperature(int32_t adc_T);
+    int32_t computeFineTemperature(int32_t adcTemperature);
 
-    int32_t compensateTemperature(int32_t t_fine);
+    int32_t compensateTemperature(int32_t fineTemperature);
 
-    uint32_t compensatePressure(int32_t adc_P);
+    uint32_t compensatePressure(int32_t adcPressure);
 
-    uint32_t compensateHumidity(int32_t adc_H);
+    uint32_t compensateHumidity(int32_t adcHumidity);
 
     /**
      * @brief Check the WHO AM I code from the device.
@@ -297,7 +299,7 @@ private:
     const SPISlave spiSlave;
     BME280Config config;
     BME280Comp compParams;
-    int32_t t_fine;  // Used in compensation algorithm
+    int32_t fineTemperature;  // Used in compensation algorithm
 
     bool initialized = false;  // Whether the sensor has been initialized
 

@@ -39,16 +39,16 @@ struct XbeeStatus
 {
     long long timestamp = 0LL;
 
-    uint8_t last_tx_status_error = 0;
-    uint8_t last_tx_status       = 0;
+    uint8_t lastTxStatusError = 0;
+    uint8_t lastTxStatus      = 0;
 
-    StatsResult time_to_send_stats;
+    StatsResult timeToSendStats;
 
-    unsigned int tx_timeout_count = 0;
+    unsigned int txTimeoutCount = 0;
 
-    unsigned int rx_dropped_buffers = 0;
+    unsigned int rxDroppedBuffers = 0;
 
-    unsigned int frame_buf_max_length = 0;
+    unsigned int frameBufMaxLength = 0;
 
     static std::string header()
     {
@@ -60,12 +60,12 @@ struct XbeeStatus
 
     void print(std::ostream& os) const
     {
-        os << timestamp << "," << (int)last_tx_status_error << ","
-           << (int)last_tx_status << "," << time_to_send_stats.minValue << ","
-           << time_to_send_stats.maxValue << "," << time_to_send_stats.mean
-           << "," << time_to_send_stats.stdev << ","
-           << time_to_send_stats.nSamples << "," << tx_timeout_count << ","
-           << rx_dropped_buffers << "," << frame_buf_max_length << "\n";
+        os << timestamp << "," << (int)lastTxStatusError << ","
+           << (int)lastTxStatus << "," << timeToSendStats.minValue << ","
+           << timeToSendStats.maxValue << "," << timeToSendStats.mean << ","
+           << timeToSendStats.stdev << "," << timeToSendStats.nSamples << ","
+           << txTimeoutCount << "," << rxDroppedBuffers << ","
+           << frameBufMaxLength << "\n";
     }
 };
 

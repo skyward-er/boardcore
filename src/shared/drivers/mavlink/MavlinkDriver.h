@@ -30,7 +30,7 @@
  * This object includes only the protocol header (`protocol.h`). To use this
  * driver, you should include YOUR OWN implementation of the messages definition
  * (`mavlink.h`) before including this header. To create your implementation you
- * can use Skyward's *Mavlink_editor*.
+ * can use Skyward's *Mavlink Editor*.
  */
 #ifndef MAVLINK_H
 #error \
@@ -54,10 +54,10 @@ namespace Boardcore
  * a Transceiver object using an implementation of the Mavlink protocol.
  * See `tests/mavlink/test-mavlink.cpp` for an axample of usage.
  *
- * @tparam pkt_len         Maximum length in bytes of each packet.
- * @tparam out_queue_size  Max number of packets in the out queue.
+ * @tparam PktLength         Maximum length in bytes of each packet.
+ * @tparam OutQueueSize  Max number of packets in the out queue.
  */
-template <unsigned int pkt_len, unsigned int out_queue_size>
+template <unsigned int PktLength, unsigned int OutQueueSize>
 class MavlinkDriver
 {
     /* Alias of the function to be executed on message rcv */
@@ -68,12 +68,12 @@ public:
     /**
      * @param device     transceiver used to send and receive messages
      * @param onRcv      function to be executed on message rcv
-     * @param sleep_after_send  guaranteed sleep time after each send (ms)
-     * @param out_buf_max_age max residence time for message in the queue: after
+     * @param sleepAfterSend  guaranteed sleep time after each send (ms)
+     * @param outBufferMaxAge max residence time for message in the queue: after
      *                        this time the message will be automatically sent.
      */
     MavlinkDriver(Transceiver* device, MavHandler onRcv,
-                  uint16_t sleep_after_send = 0, size_t out_buf_max_age = 1000);
+                  uint16_t sleepAfterSend = 0, size_t outBufferMaxAge = 1000);
 
     ~MavlinkDriver() {}
 
@@ -147,22 +147,22 @@ private:
     MavHandler onRcv;     // function executed on message rcv
 
     // Tweakable params
-    uint16_t sleep_after_send;
-    size_t out_buf_max_age;
-    uint16_t polling_time = 100;  // ms
+    uint16_t sleepAfterSend;
+    size_t outBufferMaxAge;
+    uint16_t pollingTime = 100;  // ms
 
     // Buffers
     static constexpr size_t MAV_IN_BUFFER_SIZE = 256;
 
-    SyncPacketQueue<pkt_len, out_queue_size> out_queue;
-    uint8_t rcv_buffer[MAV_IN_BUFFER_SIZE];
+    SyncPacketQueue<PktLength, OutQueueSize> outQueue;
+    uint8_t rcvBuffer[MAV_IN_BUFFER_SIZE];
 
     // Status
     MavlinkStatus status;
-    miosix::FastMutex mtx_status;
+    miosix::FastMutex mtxStatus;
 
     // Threads
-    bool stop_flag  = false;
+    bool stopFlag   = false;
     bool sndStarted = false;
     bool rcvStarted = false;
 
@@ -175,21 +175,21 @@ private:
 /**********************************************************************
  * NOTE: Dont't move the implementation in a .cpp, it won't compile.  *
  **********************************************************************/
-template <unsigned int pkt_len, unsigned int out_queue_size>
-MavlinkDriver<pkt_len, out_queue_size>::MavlinkDriver(Transceiver* device,
+template <unsigned int PktLength, unsigned int OutQueueSize>
+MavlinkDriver<PktLength, OutQueueSize>::MavlinkDriver(Transceiver* device,
                                                       MavHandler onRcv,
-                                                      uint16_t sleep_after_send,
-                                                      size_t out_buf_max_age)
-    : device(device), onRcv(onRcv), sleep_after_send(sleep_after_send),
-      out_buf_max_age(out_buf_max_age)
+                                                      uint16_t sleepAfterSend,
+                                                      size_t outBufferMaxAge)
+    : device(device), onRcv(onRcv), sleepAfterSend(sleepAfterSend),
+      outBufferMaxAge(outBufferMaxAge)
 {
     memset(&status, 0, sizeof(MavlinkStatus));
 }
 
-template <unsigned int pkt_len, unsigned int out_queue_size>
-bool MavlinkDriver<pkt_len, out_queue_size>::start()
+template <unsigned int PktLength, unsigned int OutQueueSize>
+bool MavlinkDriver<PktLength, OutQueueSize>::start()
 {
-    stop_flag = false;
+    stopFlag = false;
 
     // Start sender (joinable thread)
     if (!sndStarted)
@@ -233,25 +233,25 @@ bool MavlinkDriver<pkt_len, out_queue_size>::start()
     return (sndStarted && rcvStarted);
 }
 
-template <unsigned int pkt_len, unsigned int out_queue_size>
-void MavlinkDriver<pkt_len, out_queue_size>::stop()
+template <unsigned int PktLength, unsigned int OutQueueSize>
+void MavlinkDriver<PktLength, OutQueueSize>::stop()
 {
-    stop_flag = true;
+    stopFlag = true;
 
     // Wait for sender to stop
     sndThread->join();
 }
 
-template <unsigned int pkt_len, unsigned int out_queue_size>
-bool MavlinkDriver<pkt_len, out_queue_size>::enqueueMsg(
+template <unsigned int PktLength, unsigned int OutQueueSize>
+bool MavlinkDriver<PktLength, OutQueueSize>::enqueueMsg(
     const mavlink_message_t& msg)
 {
     // Convert mavlink message to char array
-    uint8_t msgtemp_buf[pkt_len];
-    int msgLen = mavlink_msg_to_send_buffer(msgtemp_buf, &msg);
+    uint8_t msgtempBuf[PktLength];
+    int msgLen = mavlink_msg_to_send_buffer(msgtempBuf, &msg);
 
     // Append message to the queue
-    int dropped = out_queue.put(msgtemp_buf, msgLen);
+    int dropped = outQueue.put(msgtempBuf, msgLen);
 
     // Update stats
     updateQueueStats(dropped);
@@ -260,54 +260,54 @@ bool MavlinkDriver<pkt_len, out_queue_size>::enqueueMsg(
     return dropped != -1;
 }
 
-template <unsigned int pkt_len, unsigned int out_queue_size>
-void MavlinkDriver<pkt_len, out_queue_size>::updateQueueStats(int dropped)
+template <unsigned int PktLength, unsigned int OutQueueSize>
+void MavlinkDriver<PktLength, OutQueueSize>::updateQueueStats(int dropped)
 {
-    miosix::Lock<miosix::FastMutex> l(mtx_status);
+    miosix::Lock<miosix::FastMutex> l(mtxStatus);
 
     if (dropped != 0)
     {
         LOG_ERR(logger, "Buffer full, the oldest message has been discarded");
-        status.n_dropped_packets++;
+        status.nDroppedPackets++;
     }
 
-    status.n_send_queue++;
+    status.nSendQueue++;
 
-    if (status.n_send_queue > status.max_send_queue)
+    if (status.nSendQueue > status.maxSendQueue)
     {
-        status.max_send_queue = status.n_send_queue;
+        status.maxSendQueue = status.nSendQueue;
     }
 }
 
-template <unsigned int pkt_len, unsigned int out_queue_size>
-void MavlinkDriver<pkt_len, out_queue_size>::runReceiver()
+template <unsigned int PktLength, unsigned int OutQueueSize>
+void MavlinkDriver<PktLength, OutQueueSize>::runReceiver()
 {
     mavlink_message_t msg;
-    ssize_t rcv_size;
-    uint8_t parse_result = 0;
+    ssize_t rcvSize;
+    uint8_t parseResult = 0;
 
-    while (!stop_flag)
+    while (!stopFlag)
     {
         // Check for a new message on the device
-        rcv_size = device->receive(rcv_buffer, MAV_IN_BUFFER_SIZE);
+        rcvSize = device->receive(rcvBuffer, MAV_IN_BUFFER_SIZE);
 
         // If there's a new messages...
-        if (rcv_size > 0)
+        if (rcvSize > 0)
         {
-            parse_result = 0;
-            miosix::Lock<miosix::FastMutex> l(mtx_status);
+            parseResult = 0;
+            miosix::Lock<miosix::FastMutex> l(mtxStatus);
 
-            for (ssize_t i = 0; i < rcv_size; i++)
+            for (ssize_t i = 0; i < rcvSize; i++)
             {
                 // ... parse received bytes
-                parse_result =
+                parseResult =
                     mavlink_parse_char(MAVLINK_COMM_0,
-                                       rcv_buffer[i],  // byte to parse
-                                       &msg,           // where to parse it
-                                       &(status.mav_stats));  // stats to update
+                                       rcvBuffer[i],  // byte to parse
+                                       &msg,          // where to parse it
+                                       &(status.mavStats));  // stats to update
 
                 // When a valid message is found ...
-                if (parse_result == 1)
+                if (parseResult == 1)
                 {
                     // Unlock mutex before calling the callback, no one knows
                     // what could happen.
@@ -328,34 +328,34 @@ void MavlinkDriver<pkt_len, out_queue_size>::runReceiver()
     }
 }
 
-template <unsigned int pkt_len, unsigned int out_queue_size>
-void MavlinkDriver<pkt_len, out_queue_size>::runSender()
+template <unsigned int PktLength, unsigned int OutQueueSize>
+void MavlinkDriver<PktLength, OutQueueSize>::runSender()
 {
     LOG_DEBUG(logger, "Sender is running");
-    Packet<pkt_len> pkt;
+    Packet<PktLength> pkt;
 
-    while (!stop_flag)
+    while (!stopFlag)
     {
-        out_queue.waitUntilNotEmpty();
+        outQueue.waitUntilNotEmpty();
 
-        if (!out_queue.isEmpty())
+        if (!outQueue.isEmpty())
         {
             // Get the first packet in the queue, without removing it
-            pkt = out_queue.get();
+            pkt = outQueue.get();
 
             uint64_t age = (uint64_t)miosix::getTick() - pkt.timestamp();
             // If the packet is ready or too old, send it
-            if (pkt.isReady() || age >= out_buf_max_age)
+            if (pkt.isReady() || age >= outBufferMaxAge)
             {
-                out_queue.pop();  // remove from queue
+                outQueue.pop();  // remove from queue
 
                 // LOG_DEBUG(logger, "Sending packet. Size: {} (age: {})",
                 //           pkt.size(), age);
 
                 bool sent = device->send(pkt.content.data(), pkt.size());
-                updateSenderStats(pkt.msgCount(), sent);
+                updateSenderStats(pkt.getMsgCount(), sent);
 
-                miosix::Thread::sleep(sleep_after_send);
+                miosix::Thread::sleep(sleepAfterSend);
             }
             else
             {
@@ -366,17 +366,17 @@ void MavlinkDriver<pkt_len, out_queue_size>::runSender()
     }
 }
 
-template <unsigned int pkt_len, unsigned int out_queue_size>
-void MavlinkDriver<pkt_len, out_queue_size>::updateSenderStats(size_t msgCount,
+template <unsigned int PktLength, unsigned int OutQueueSize>
+void MavlinkDriver<PktLength, OutQueueSize>::updateSenderStats(size_t msgCount,
                                                                bool sent)
 {
     {
-        miosix::Lock<miosix::FastMutex> l(mtx_status);
-        status.n_send_queue -= msgCount;
+        miosix::Lock<miosix::FastMutex> l(mtxStatus);
+        status.nSendQueue -= msgCount;
 
         if (!sent)
         {
-            status.n_send_errors++;
+            status.nSendErrors++;
             LOG_ERR(logger, "Could not send message");
         }
     }
@@ -384,19 +384,19 @@ void MavlinkDriver<pkt_len, out_queue_size>::updateSenderStats(size_t msgCount,
     StackLogger::getInstance().updateStack(THID_MAV_SENDER);
 }
 
-template <unsigned int pkt_len, unsigned int out_queue_size>
-MavlinkStatus MavlinkDriver<pkt_len, out_queue_size>::getStatus()
+template <unsigned int PktLength, unsigned int OutQueueSize>
+MavlinkStatus MavlinkDriver<PktLength, OutQueueSize>::getStatus()
 {
-    miosix::Lock<miosix::FastMutex> l(mtx_status);
+    miosix::Lock<miosix::FastMutex> l(mtxStatus);
     status.timestamp = miosix::getTick();
     return status;
 }
 
-template <unsigned int pkt_len, unsigned int out_queue_size>
-void MavlinkDriver<pkt_len, out_queue_size>::setSleepAfterSend(
+template <unsigned int PktLength, unsigned int OutQueueSize>
+void MavlinkDriver<PktLength, OutQueueSize>::setSleepAfterSend(
     uint16_t newSleepTime)
 {
-    sleep_after_send = newSleepTime;
+    sleepAfterSend = newSleepTime;
 }
 
 }  // namespace Boardcore

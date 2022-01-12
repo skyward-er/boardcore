@@ -50,18 +50,15 @@ SensorManager::~SensorManager()
     }
 }
 
-bool SensorManager::start()
-{
-    return scheduler->start() && sensors_init_result;
-}
+bool SensorManager::start() { return scheduler->start() && sensorsInitResult; }
 
 void SensorManager::stop() { scheduler->stop(); }
 
 void SensorManager::enableSensor(AbstractSensor* sensor)
 {
-    if (samplers_map.find(sensor) != samplers_map.end())
+    if (samplersMap.find(sensor) != samplersMap.end())
     {
-        samplers_map[sensor]->toggleSensor(sensor, true);
+        samplersMap[sensor]->toggleSensor(sensor, true);
     }
     else
     {
@@ -72,9 +69,9 @@ void SensorManager::enableSensor(AbstractSensor* sensor)
 
 void SensorManager::disableSensor(AbstractSensor* sensor)
 {
-    if (samplers_map.find(sensor) != samplers_map.end())
+    if (samplersMap.find(sensor) != samplersMap.end())
     {
-        samplers_map[sensor]->toggleSensor(sensor, false);
+        samplersMap[sensor]->toggleSensor(sensor, false);
     }
     else
     {
@@ -101,9 +98,9 @@ void SensorManager::disableAllSensors()
 
 const SensorInfo SensorManager::getSensorInfo(AbstractSensor* sensor)
 {
-    if (samplers_map.find(sensor) != samplers_map.end())
+    if (samplersMap.find(sensor) != samplersMap.end())
     {
-        return samplers_map[sensor]->getSensorInfo(sensor);
+        return samplersMap[sensor]->getSensorInfo(sensor);
     }
 
     LOG_ERR(logger, "Sensor {} not found, can't return SensorInfo",
@@ -135,9 +132,9 @@ bool SensorManager::init(const SensorMap_t& sensors_map)
         // avoid adding sensors that fail to be initalized
         if (!initSensor(sensor))
         {
-            sensor_info.is_enabled = false;  // disable the failing sensor
+            sensor_info.isEnabled = false;  // disable the failing sensor
 
-            sensors_init_result = false;
+            sensorsInitResult = false;
 
             LOG_ERR(
                 logger,
@@ -147,14 +144,14 @@ bool SensorManager::init(const SensorMap_t& sensors_map)
         }
         else
         {
-            sensor_info.is_initialized = true;
+            sensor_info.isInitialized = true;
         }
 
         // add sensor even if not initialized correctly, its is_initialized info
         // field will be false
         LOG_DEBUG(logger, "Adding {} -> period: {} ms, enabled = {}",
                   sensor_info.id.c_str(), sensor_info.period,
-                  sensor_info.is_enabled);
+                  sensor_info.isEnabled);
 
         // check if a sampler with the same sampling period and the same
         // type exists
@@ -162,11 +159,11 @@ bool SensorManager::init(const SensorMap_t& sensors_map)
         for (auto s : samplers)
         {
             if (sensor_info.period == s->getSamplingPeriod() &&
-                sensor_info.is_dma == s->isDMA())
+                sensor_info.isDma == s->isDMA())
             {
                 s->addSensor(sensor, sensor_info);
-                samplers_map[sensor] = s;
-                found                = true;
+                samplersMap[sensor] = s;
+                found               = true;
             }
         }
 
@@ -174,12 +171,12 @@ bool SensorManager::init(const SensorMap_t& sensors_map)
         {
             // a sampler with the required period does not exist yet
             SensorSampler* new_sampler = createSampler(
-                current_sampler_id, sensor_info.period, sensor_info.is_dma);
+                current_sampler_id, sensor_info.period, sensor_info.isDma);
 
             new_sampler->addSensor(sensor, sensor_info);
 
             samplers.push_back(new_sampler);
-            samplers_map[sensor] = new_sampler;
+            samplersMap[sensor] = new_sampler;
 
             if (current_sampler_id == MAX_TASK_ID)
             {
@@ -194,7 +191,7 @@ bool SensorManager::init(const SensorMap_t& sensors_map)
 
     initScheduler();
 
-    return sensors_init_result;
+    return sensorsInitResult;
 }
 
 bool SensorManager::initSensor(AbstractSensor* sensor)
@@ -243,12 +240,12 @@ uint8_t SensorManager::getFirstTaskID()
 }
 
 SensorSampler* SensorManager::createSampler(uint8_t id, uint32_t period,
-                                            bool is_dma)
+                                            bool isDma)
 {
     LOG_DEBUG(logger, "Creating Sampler {} with sampling period {} ms", id,
               period);
 
-    if (is_dma)
+    if (isDma)
     {
         return new DMASensorSampler(id, period);
     }

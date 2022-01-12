@@ -113,7 +113,7 @@ public:
 
     static LogSink& getStdOutLogSink() { return *getInstance().sinks.at(0); }
 
-    static void startAsyncLogger() { getInstance().async_log.start(); }
+    static void startAsyncLogger() { getInstance().asyncLog.start(); }
 
 private:
     void log(const LogRecord& record);
@@ -135,7 +135,7 @@ private:
         ConditionVariable cv;
     };
 
-    Logging() : async_log(*this)
+    Logging() : asyncLog(*this)
     {
         unique_ptr<FileLogSink> serial = std::make_unique<FileLogSink>(stdout);
         serial->setLevel(DEFAULT_STDOUT_LOG_LEVEL);
@@ -145,7 +145,7 @@ private:
         sinks.push_back(std::move(serial));
     }
 
-    AsyncLogger async_log;
+    AsyncLogger asyncLog;
     vector<unique_ptr<LogSink>> sinks;
 };
 

@@ -49,14 +49,14 @@ public:
      */
     virtual T& put(const T& elem)
     {
-        buffer[write_ptr] = elem;
-        T& added          = buffer[write_ptr];
+        buffer[writePtr] = elem;
+        T& added         = buffer[writePtr];
 
-        if (!empty && write_ptr == read_ptr)
+        if (!empty && writePtr == readPtr)
         {
-            read_ptr = (read_ptr + 1) % Size;
+            readPtr = (readPtr + 1) % Size;
         }
-        write_ptr = (write_ptr + 1) % Size;
+        writePtr = (writePtr + 1) % Size;
 
         empty = false;
 
@@ -79,7 +79,7 @@ public:
     {
         if (i < CircularBuffer<T, Size>::count())
         {
-            int ptr = (read_ptr + i) % Size;
+            int ptr = (readPtr + i) % Size;
             return buffer[ptr];
         }
         else
@@ -105,7 +105,7 @@ public:
     {
         if (!empty)
         {
-            return buffer[read_ptr];
+            return buffer[readPtr];
         }
         else
             throw range_error("CircularBuffer is empty!");
@@ -121,10 +121,10 @@ public:
     {
         if (!empty)
         {
-            size_t ptr = read_ptr;
-            read_ptr   = (read_ptr + 1) % Size;
+            size_t ptr = readPtr;
+            readPtr    = (readPtr + 1) % Size;
 
-            empty = read_ptr == write_ptr;
+            empty = readPtr == writePtr;
 
             return buffer[ptr];
         }
@@ -140,13 +140,13 @@ public:
     {
         if (empty)
             return 0;
-        if (write_ptr > read_ptr)
+        if (writePtr > readPtr)
         {
-            return write_ptr - read_ptr;
+            return writePtr - readPtr;
         }
         else
         {
-            return Size - read_ptr + write_ptr;
+            return Size - readPtr + writePtr;
         }
     }
 
@@ -165,7 +165,7 @@ public:
 protected:
     T buffer[Size];
 
-    size_t write_ptr = 0, read_ptr = 0;
+    size_t writePtr = 0, readPtr = 0;
     bool empty = true;
 };
 

@@ -35,19 +35,19 @@ int main()
 
 #if defined(USE_SPI)
     SPIBus bus(SPI1);
-    GpioPin spi_sck(GPIOA_BASE, 5);
-    GpioPin spi_miso(GPIOA_BASE, 6);
-    GpioPin spi_mosi(GPIOA_BASE, 7);
+    GpioPin spiSck(GPIOA_BASE, 5);
+    GpioPin spiMiso(GPIOA_BASE, 6);
+    GpioPin spiMosi(GPIOA_BASE, 7);
     GpioPin cs(GPIOA_BASE, 3);
 
     RCC->APB2ENR |= RCC_APB2ENR_SPI1EN;  // Enable SPI1 bus
 
-    spi_sck.mode(Mode::ALTERNATE);
-    spi_sck.alternateFunction(5);
-    spi_miso.mode(Mode::ALTERNATE);
-    spi_miso.alternateFunction(5);
-    spi_mosi.mode(miosix::Mode::ALTERNATE);
-    spi_mosi.alternateFunction(5);
+    spiSck.mode(Mode::ALTERNATE);
+    spiSck.alternateFunction(5);
+    spiMiso.mode(Mode::ALTERNATE);
+    spiMiso.alternateFunction(5);
+    spiMosi.mode(miosix::Mode::ALTERNATE);
+    spiMosi.alternateFunction(5);
     cs.mode(Mode::OUTPUT);
     cs.high();
 
@@ -92,7 +92,7 @@ int main()
 
     while (true)
     {
-        long long last_tick = miosix::getTick();
+        long long lastTick = miosix::getTick();
 
         sensor.sample();
         GPSData sample __attribute__((unused)) = sensor.getLastSample();
@@ -100,11 +100,10 @@ int main()
         TRACE(
             "timestamp: %4.3f, fix: %01d, lat: %f, lon: %f, height: %4.1f, "
             "nsat: %2d, speed: %3.2f, velN: %3.2f, velE: %3.2f, track %3.1f\n",
-            (float)sample.gps_timestamp / 1000000, sample.fix, sample.latitude,
-            sample.longitude, sample.height, sample.num_satellites,
-            sample.speed, sample.velocity_north, sample.velocity_east,
-            sample.track);
+            (float)sample.gpsTimestamp / 1000000, sample.fix, sample.latitude,
+            sample.longitude, sample.height, sample.satellites, sample.speed,
+            sample.velocityNorth, sample.velocityEast, sample.track);
 
-        Thread::sleepUntil(last_tick + 1000 / SAMPLE_RATE);  // Sample period
+        Thread::sleepUntil(lastTick + 1000 / SAMPLE_RATE);  // Sample period
     }
 }

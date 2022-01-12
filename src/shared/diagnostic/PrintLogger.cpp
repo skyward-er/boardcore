@@ -49,14 +49,14 @@ static string getLevelString(uint8_t level)
 void LogSink::log(const LogRecord& record)
 {
     using namespace fmt::literals;
-    if (record.level >= min_level)
+    if (record.level >= minimumLevel)
     {
-        float ts      = miosix::getTick() / 1000.0f;
-        int min       = ts / 60;
-        string ts_str = fmt::format("{:02d}:{:06.3f}", min, (ts - min * 60));
+        float ts     = miosix::getTick() / 1000.0f;
+        int min      = ts / 60;
+        string tsStr = fmt::format("{:02d}:{:06.3f}", min, (ts - min * 60));
 
         logImpl(fmt::format(
-            format, "ts"_a = ts_str, "file"_a = record.file,
+            format, "ts"_a = tsStr, "file"_a = record.file,
             "line"_a =  // cppcheck-suppress AssignmentIntegerToAddress
             record.line,
             "fun"_a = record.function, "lvl"_a = getLevelString(record.level),
@@ -74,7 +74,7 @@ void FileLogSinkBuffered::logImpl(const string& l)
 {
     Lock<FastMutex> lock(mutex);
     LoggingString s;
-    strncpy(s.log_string, l.c_str(), MAX_LOG_STRING_SIZE - 1);
+    strncpy(s.logString, l.c_str(), MAX_LOG_STRING_SIZE - 1);
     logger.log(s);
 }
 
@@ -132,7 +132,7 @@ void Logging::log(const LogRecord& record)
     }
 }
 
-void Logging::logAsync(const LogRecord& record) { async_log.log(record); }
+void Logging::logAsync(const LogRecord& record) { asyncLog.log(record); }
 
 Logging::AsyncLogger::AsyncLogger(Logging& parent) : parent(parent) {}
 

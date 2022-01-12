@@ -29,44 +29,44 @@ namespace Boardcore
 
 void operator<<(AccelerometerData& lhs, const Vector3f& rhs)
 {
-    lhs.accel_x = rhs[0];
-    lhs.accel_y = rhs[1];
-    lhs.accel_z = rhs[2];
+    lhs.accelerationX = rhs[0];
+    lhs.accelerationY = rhs[1];
+    lhs.accelerationZ = rhs[2];
 }
 
 void operator<<(GyroscopeData& lhs, const Vector3f& rhs)
 {
-    lhs.gyro_x = rhs[0];
-    lhs.gyro_y = rhs[1];
-    lhs.gyro_z = rhs[2];
+    lhs.angularVelocityX = rhs[0];
+    lhs.angularVelocityY = rhs[1];
+    lhs.angularVelocityZ = rhs[2];
 }
 
 void operator<<(MagnetometerData& lhs, const Vector3f& rhs)
 {
-    lhs.mag_x = rhs[0];
-    lhs.mag_y = rhs[1];
-    lhs.mag_z = rhs[2];
+    lhs.magneticFieldX = rhs[0];
+    lhs.magneticFieldY = rhs[1];
+    lhs.magneticFieldZ = rhs[2];
 }
 
 void operator>>(const AccelerometerData& lhs, Vector3f& rhs)
 {
-    rhs[0] = lhs.accel_x;
-    rhs[1] = lhs.accel_y;
-    rhs[2] = lhs.accel_z;
+    rhs[0] = lhs.accelerationX;
+    rhs[1] = lhs.accelerationY;
+    rhs[2] = lhs.accelerationZ;
 }
 
 void operator>>(const GyroscopeData& lhs, Vector3f& rhs)
 {
-    rhs[0] = lhs.gyro_x;
-    rhs[1] = lhs.gyro_y;
-    rhs[2] = lhs.gyro_z;
+    rhs[0] = lhs.angularVelocityX;
+    rhs[1] = lhs.angularVelocityY;
+    rhs[2] = lhs.angularVelocityZ;
 }
 
 void operator>>(const MagnetometerData& lhs, Vector3f& rhs)
 {
-    rhs[0] = lhs.mag_x;
-    rhs[1] = lhs.mag_y;
-    rhs[2] = lhs.mag_z;
+    rhs[0] = lhs.magneticFieldX;
+    rhs[1] = lhs.magneticFieldY;
+    rhs[2] = lhs.magneticFieldZ;
 }
 
 }  // namespace Boardcore

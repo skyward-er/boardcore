@@ -76,10 +76,9 @@ public:
     /**
      * @brief Construct a new Pin Observer object
      *
-     * @param poll_interval_ms Pin transition polling interval
+     * @param pollIntervalMs Pin transition polling interval
      */
-    PinObserver(unsigned int poll_interval_ms = 20)
-        : poll_interval(poll_interval_ms)
+    PinObserver(unsigned int pollIntervalMs = 20) : pollInterval(pollIntervalMs)
     {
     }
 
@@ -87,37 +86,37 @@ public:
      * Observe a pin for a specific transition, and optionally for every
      * single state change.
      *
-     * The @param transition_cb function is called only if the two following
+     * The @param transitionCb function is called only if the two following
      * conditions are verified:
      * 1.  The transition specified in the @param transition is detected
      * 2.  The pin stays in the new state for at least detection_threshols
      * samples.
      *
-     * The @param onstatechange_cb function [optional] is called at each state
+     * The @param onstatechangeCb function [optional] is called at each state
      * change, both rising and falling edge, regardless of the @param
-     * detection_threshold
+     * detectionThreshold
      *
      * @param p GPIOA_BASE, GPIOB_BASE ...
      * @param n Which pin (0 to 15)
      * @param transition What transition to detect (RISING or FALLING edge)
-     * @param transition_cb Function to call when the transition is detected and
+     * @param transitionCb Function to call when the transition is detected and
      * the pin stays in the new configuration for at least @param
-     * detection_threshold samples
-     * @param detection_threshold How many times the pin should be observed in
+     * detectionThreshold samples
+     * @param detectionThreshold How many times the pin should be observed in
      * the post-transition state to trigger the actual transition callback.
-     * @param onstatechange_cb Function to be called at each pin state change,
+     * @param onstatechangeCb Function to be called at each pin state change,
      * no matter the threshold or the transition
      */
     void observePin(unsigned int p, unsigned char n, Transition transition,
-                    OnTransitionCallback transition_cb,
-                    unsigned int detection_threshold       = 1,
-                    OnStateChangeCallback onstatechange_cb = nullptr)
+                    OnTransitionCallback transitionCb,
+                    unsigned int detectionThreshold       = 1,
+                    OnStateChangeCallback onstatechangeCb = nullptr)
     {
-        Lock<FastMutex> lock(mtx_map);
-        observed_pins.insert(std::make_pair(
-            pair<unsigned int, unsigned char>({p, n}),
-            ObserverData{GpioPin{p, n}, transition, transition_cb,
-                         onstatechange_cb, detection_threshold}));
+        Lock<FastMutex> lock(mtxMap);
+        observedPins.insert(
+            std::make_pair(pair<unsigned int, unsigned char>({p, n}),
+                           ObserverData{GpioPin{p, n}, transition, transitionCb,
+                                        onstatechangeCb, detectionThreshold}));
     }
 
     /**
@@ -128,8 +127,8 @@ public:
      */
     void removeObservedPin(unsigned int p, unsigned char n)
     {
-        Lock<FastMutex> lock(mtx_map);
-        observed_pins.erase({p, n});
+        Lock<FastMutex> lock(mtxMap);
+        observedPins.erase({p, n});
     }
 
 protected:
@@ -138,50 +137,50 @@ protected:
         while (true)
         {
             {
-                Lock<FastMutex> lock(mtx_map);
+                Lock<FastMutex> lock(mtxMap);
 
-                for (auto it = observed_pins.begin(); it != observed_pins.end();
+                for (auto it = observedPins.begin(); it != observedPins.end();
                      it++)
                 {
-                    pair<int, int> key     = it->first;
-                    ObserverData& pin_data = it->second;
+                    pair<int, int> key    = it->first;
+                    ObserverData& pinData = it->second;
 
-                    int old_state = pin_data.state;
-                    int new_state = pin_data.pin.value();
+                    int oldState = pinData.state;
+                    int newState = pinData.pin.value();
 
                     // Save current state in the struct
-                    pin_data.state = new_state;
+                    pinData.state = newState;
 
                     // Are we in a post-transition state?
-                    if (pin_data.state == static_cast<int>(pin_data.transition))
+                    if (pinData.state == static_cast<int>(pinData.transition))
                     {
-                        ++pin_data.detected_count;
+                        ++pinData.detectedCount;
                     }
                     else
                     {
-                        pin_data.detected_count = 0;
+                        pinData.detectedCount = 0;
                     }
 
                     // Pre-calcualate conditions in order to unlock the mutex
                     // only one time
 
-                    bool state_change = pin_data.onstatechange_callback &&
-                                        old_state != pin_data.state;
-                    bool pin_triggered =
-                        pin_data.detected_count == pin_data.detection_threshold;
+                    bool stateChange = pinData.onstatechangeCallback &&
+                                       oldState != pinData.state;
+                    bool pinTriggered =
+                        pinData.detectedCount == pinData.detectionThreshold;
 
                     {
                         Unlock<FastMutex> unlock(lock);
 
-                        if (state_change)
+                        if (stateChange)
                         {
-                            pin_data.onstatechange_callback(
-                                key.first, key.second, new_state);
+                            pinData.onstatechangeCallback(key.first, key.second,
+                                                          newState);
                         }
 
-                        if (pin_triggered)
+                        if (pinTriggered)
                         {
-                            pin_data.transition_callback(key.first, key.second);
+                            pinData.transitionCallback(key.first, key.second);
                         }
                     }
                 }
@@ -189,7 +188,7 @@ protected:
 
             StackLogger::getInstance().updateStack(THID_PIN_OBS);
 
-            Thread::sleep(poll_interval);
+            Thread::sleep(pollInterval);
         }
     }
 
@@ -198,31 +197,31 @@ private:
     {
         GpioPin pin;
         Transition transition;
-        OnTransitionCallback transition_callback;
-        OnStateChangeCallback onstatechange_callback;
-        unsigned int detection_threshold;
-        unsigned int detected_count;
+        OnTransitionCallback transitionCallback;
+        OnStateChangeCallback onstatechangeCallback;
+        unsigned int detectionThreshold;
+        unsigned int detectedCount;
         int state;  // 1 if HIGH, 0 if LOW
 
         ObserverData(GpioPin pin, Transition transition,
-                     OnTransitionCallback transition_callback,
-                     OnStateChangeCallback onstatechange_callback,
-                     unsigned int detection_threshold)
+                     OnTransitionCallback transitionCallback,
+                     OnStateChangeCallback onstatechangeCallback,
+                     unsigned int detectionThreshold)
             : pin(pin), transition(transition),
-              transition_callback(transition_callback),
-              onstatechange_callback(onstatechange_callback),
-              detection_threshold(detection_threshold),
+              transitionCallback(transitionCallback),
+              onstatechangeCallback(onstatechangeCallback),
+              detectionThreshold(detectionThreshold),
               // Set to this value to avoid detection if the pin is already in
               // the ending state of the "trigger" transition
-              detected_count(detection_threshold + 1), state(0)
+              detectedCount(detectionThreshold + 1), state(0)
         {
         }
     };
 
-    map<pair<unsigned int, unsigned char>, ObserverData> observed_pins;
-    FastMutex mtx_map;
+    map<pair<unsigned int, unsigned char>, ObserverData> observedPins;
+    FastMutex mtxMap;
 
-    unsigned int poll_interval;
+    unsigned int pollInterval;
     bool stopped = true;
 };
 

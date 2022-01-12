@@ -45,7 +45,7 @@ public:
      */
     ActiveObject(unsigned int stacksize    = miosix::STACK_DEFAULT_FOR_PTHREAD,
                  miosix::Priority priority = miosix::MAIN_PRIORITY)
-        : stack_size(skywardStack(stacksize)), priority(priority)
+        : stackSize(skywardStack(stacksize)), priority(priority)
     {
     }
 
@@ -61,9 +61,9 @@ public:
     {
         if (!started && !stopped)
         {
-            thread = miosix::Thread::create(
-                threadLauncher, stack_size, priority,
-                reinterpret_cast<void*>(this), miosix::Thread::JOINABLE);
+            thread = miosix::Thread::create(threadLauncher, stackSize, priority,
+                                            reinterpret_cast<void*>(this),
+                                            miosix::Thread::JOINABLE);
 
             if (thread != nullptr)
                 started = true;
@@ -86,7 +86,7 @@ public:
     {
         if (isRunning())
         {
-            should_stop = true;
+            stopFlag = true;
             thread->join();
             stopped = true;
         }
@@ -115,14 +115,14 @@ protected:
      * @return true if stop() has been called and the ActiveObject should
      * stop executing
      */
-    bool shouldStop() { return should_stop; }
+    bool shouldStop() { return stopFlag; }
 
     miosix::Thread* thread = nullptr;  ///< Gives access to the thread object
-    bool should_stop       = false;
+    bool stopFlag          = false;
     bool stopped           = false;
 
 private:
-    unsigned int stack_size;
+    unsigned int stackSize;
     miosix::Priority priority;
 
     /**

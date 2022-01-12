@@ -234,7 +234,7 @@ public:
         if (isInitialized)
         {
             LOG_ERR(logger, "Attempted to initialized sensor twice but failed");
-            last_error = ALREADY_INIT;
+            lastError = ALREADY_INIT;
             return false;
         }
 
@@ -248,7 +248,7 @@ public:
                         "WHO_AM_I value differs from expectation: read 0x{02x} "
                         "but expected 0x{02x}",
                         res, WHO_AM_I_VALUE);
-                last_error = INVALID_WHOAMI;
+                lastError = INVALID_WHOAMI;
                 return false;
             }
         }
@@ -269,7 +269,7 @@ public:
         if (!isInitialized)
         {
             LOG_ERR(logger, "Invoked selfTest() but sensor was unitialized");
-            last_error = NOT_INIT;
+            lastError = NOT_INIT;
             return false;
         }
 
@@ -292,7 +292,7 @@ public:
          */
         constexpr float r[3][2] = {{1.f, 3.f}, {1.f, 3.f}, {0.1f, 1.f}};
 
-        float avg_x = 0.f, avg_y = 0.f, avg_z = 0.f;
+        float avgX = 0.f, avgY = 0.f, avgZ = 0.f;
 
         {
             SPITransaction spi(mSlave);
@@ -305,14 +305,14 @@ public:
             miosix::Thread::sleep(SLEEP_TIME);
 
             LIS3MDLData lastData = sampleImpl();
-            avg_x += lastData.mag_x;
-            avg_y += lastData.mag_y;
-            avg_z += lastData.mag_z;
+            avgX += lastData.magneticFieldX;
+            avgY += lastData.magneticFieldY;
+            avgZ += lastData.magneticFieldZ;
         }
 
-        avg_x /= NUM_SAMPLES;
-        avg_y /= NUM_SAMPLES;
-        avg_z /= NUM_SAMPLES;
+        avgX /= NUM_SAMPLES;
+        avgY /= NUM_SAMPLES;
+        avgZ /= NUM_SAMPLES;
 
         /*
          * Setting up the sensor settings for
@@ -339,9 +339,9 @@ public:
             miosix::Thread::sleep(SLEEP_TIME);
 
             LIS3MDLData lastData = sampleImpl();
-            d[0]                 = std::abs(lastData.mag_x - avg_x);
-            d[1]                 = std::abs(lastData.mag_y - avg_y);
-            d[2]                 = std::abs(lastData.mag_z - avg_z);
+            d[0]                 = std::abs(lastData.magneticFieldX - avgX);
+            d[1]                 = std::abs(lastData.magneticFieldY - avgY);
+            d[2]                 = std::abs(lastData.magneticFieldZ - avgZ);
 
             bool passed = true;
             for (int j = 0; j < 3; ++j)
@@ -355,7 +355,7 @@ public:
                 // reset configuration, then return
                 applyConfig(mConfig);
 
-                last_error = SELF_TEST_FAIL;
+                lastError = SELF_TEST_FAIL;
                 return false;
             }
         }
@@ -476,7 +476,7 @@ public:
         if (err)
         {
             LOG_ERR(logger, "Spi error");
-            last_error = BUS_FAULT;
+            lastError = BUS_FAULT;
             return false;
         }
 
@@ -503,20 +503,20 @@ private:
             LOG_ERR(logger,
                     "Invoked sampleImpl() but sensor was "
                     "unitialized");
-            last_error = NOT_INIT;
-            return last_sample;
+            lastError = NOT_INIT;
+            return lastSample;
         }
 
         SPITransaction spi(mSlave);
 
         if (!spi.readRegister(STATUS_REG))
         {
-            last_error = NO_NEW_DATA;
-            return last_sample;
+            lastError = NO_NEW_DATA;
+            return lastSample;
         }
 
         // Reset any error
-        last_error = SensorErrors::NO_ERRORS;
+        lastError = SensorErrors::NO_ERRORS;
 
         int16_t val;
         LIS3MDLData newData{};
@@ -528,33 +528,35 @@ private:
                 val = spi.readRegister(TEMP_OUT_L);
                 val |= spi.readRegister(TEMP_OUT_H) << 8;
 
-                newData.temp_timestamp =
+                newData.temperatureTimestamp =
                     TimestampTimer::getInstance().getTimestamp();
-                newData.temp = static_cast<float>(val) / LSB_PER_CELSIUS +
-                               REFERENCE_TEMPERATURE;
+                newData.temperature =
+                    static_cast<float>(val) / LSB_PER_CELSIUS +
+                    REFERENCE_TEMPERATURE;
             }
             else
             {
                 // Keep old value
-                newData.temp = last_sample.temp;
+                newData.temperature = lastSample.temperature;
             }
 
             currDiv = (currDiv + 1) % mConfig.temperatureDivider;
         }
 
-        newData.mag_timestamp = TimestampTimer::getInstance().getTimestamp();
+        newData.magneticFieldTimestamp =
+            TimestampTimer::getInstance().getTimestamp();
 
         val = spi.readRegister(OUT_X_L);
         val |= spi.readRegister(OUT_X_H) << 8;
-        newData.mag_x = mUnit * val;
+        newData.magneticFieldX = mUnit * val;
 
         val = spi.readRegister(OUT_Y_L);
         val |= spi.readRegister(OUT_Y_H) << 8;
-        newData.mag_y = mUnit * val;
+        newData.magneticFieldY = mUnit * val;
 
         val = spi.readRegister(OUT_Z_L);
         val |= spi.readRegister(OUT_Z_H) << 8;
-        newData.mag_z = mUnit * val;
+        newData.magneticFieldZ = mUnit * val;
 
         return newData;
     }

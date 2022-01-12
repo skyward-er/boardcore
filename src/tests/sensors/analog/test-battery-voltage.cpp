@@ -29,7 +29,7 @@
 using namespace Boardcore;
 using namespace miosix;
 
-GpioPin battery_pin              = GpioPin(GPIOA_BASE, 3);
+GpioPin batteryPin               = GpioPin(GPIOA_BASE, 3);
 InternalADC::Channel ADC_CHANNEL = InternalADC::Channel::CH3;
 ADC_TypeDef& ADCx                = *ADC3;
 InternalADC adc(ADCx);
@@ -39,7 +39,7 @@ void initBoard()
     {
         miosix::FastInterruptDisableLock dLock;
 
-        battery_pin.mode(miosix::Mode::INPUT_ANALOG);
+        batteryPin.mode(miosix::Mode::INPUT_ANALOG);
 
         // Set pins PA0 PA1 PA2 PA3 as analog input
         // RCC->AHB1ENR |= RCC_AHB1ENR_GPIOAEN;
@@ -62,11 +62,11 @@ int main()
 
     printf("Configuration completed\n");
 
-    std::function<ADCData()> get_voltage_function = []()
+    std::function<ADCData()> getVoltageFunction = []()
     { return adc.getVoltage(ADC_CHANNEL); };
     // std::bind(&InternalADC::getVoltage, adc, ADC_CHANNEL);
 
-    BatteryVoltageSensor battery_sensor(get_voltage_function, 0.2063);
+    BatteryVoltageSensor batterySensor(getVoltageFunction, 0.2063);
 
     if (!adc.init() || !adc.selfTest())
     {
@@ -74,7 +74,7 @@ int main()
     }
     else
     {
-        battery_sensor.init();
+        batterySensor.init();
 
         // Read samples with sample()
         while (1)
@@ -83,11 +83,11 @@ int main()
 
             miosix::Thread::sleep(100);
 
-            battery_sensor.sample();
+            batterySensor.sample();
 
-            BatteryVoltageSensorData bat_data = battery_sensor.getLastSample();
-            printf("%llu %u %f %f \n", bat_data.adc_timestamp,
-                   bat_data.channel_id, bat_data.voltage, bat_data.bat_voltage);
+            BatteryVoltageSensorData batData = batterySensor.getLastSample();
+            printf("%llu %u %f %f \n", batData.voltageTimestamp,
+                   batData.channelId, batData.voltage, batData.batVoltage);
 
             miosix::Thread::sleep(100);
         }

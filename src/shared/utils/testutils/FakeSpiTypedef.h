@@ -53,7 +53,7 @@ struct FakeSpiTypedef
             if (parent.cs.value() == 0 && parent.CR1 == parent.CR1_expected &&
                 parent.CR2 == parent.CR2_expected)
             {
-                out_buf.push_back(DR);
+                outBuffer.push_back(DR);
             }
         }
 
@@ -63,7 +63,7 @@ struct FakeSpiTypedef
             if (parent.cs.value() == 0 && parent.CR1 == parent.CR1_expected &&
                 parent.CR2 == parent.CR2_expected)
             {
-                return in_buf[in_it++];
+                return inBuffer[inIt++];
             }
 
             return 0;
@@ -71,9 +71,9 @@ struct FakeSpiTypedef
 
         RegDR(FakeSpiTypedef& parent) : parent(parent) {}
 
-        unsigned int in_it = 0;
-        vector<uint32_t> in_buf;
-        vector<uint32_t> out_buf;
+        unsigned int inIt = 0;
+        vector<uint32_t> inBuffer;
+        vector<uint32_t> outBuffer;
 
     private:
         FakeSpiTypedef& parent;

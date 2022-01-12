@@ -65,16 +65,16 @@ void Servo::setFrequency(unsigned int freq)
     updateParameters();
 }
 
-void Servo::setMinPulseWidth(float min_pulse)
+void Servo::setMinPulseWidth(float minPulse)
 {
-    this->min_pulse = fmax(500.0f, fmin(1300.0f, min_pulse));
+    this->minPulse = fmax(500.0f, fmin(1300.0f, minPulse));
 
     updateParameters();
 }
 
-void Servo::setMaxPulseWidth(float max_pulse)
+void Servo::setMaxPulseWidth(float maxPulse)
 {
-    this->max_pulse = fmax(1700.0f, fmin(2500.0f, max_pulse));
+    this->maxPulse = fmax(1700.0f, fmin(2500.0f, maxPulse));
 
     updateParameters();
 }
@@ -90,7 +90,7 @@ void Servo::updateParameters()
 
 float Servo::calculateDutyCycle(float position)
 {
-    float pulse = min_pulse + (max_pulse - min_pulse) * position;
+    float pulse = minPulse + (maxPulse - minPulse) * position;
 
     return pulse * frequency / 1000000.0f;
 }

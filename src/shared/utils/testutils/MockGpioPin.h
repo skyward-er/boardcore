@@ -34,11 +34,11 @@ class MockGpioPin
 public:
     MockGpioPin()
         : val(new int(0)),
-          gpio_mode(new miosix::Mode::Mode_(miosix::Mode::OUTPUT))
+          gpioMode(new miosix::Mode::Mode_(miosix::Mode::OUTPUT))
     {
     }
 
-    void mode(miosix::Mode::Mode_ m) { *gpio_mode = m; }
+    void mode(miosix::Mode::Mode_ m) { *gpioMode = m; }
 
     void high() { *val = 1; }
 
@@ -47,9 +47,9 @@ public:
     int value() { return *val; }
 
     // shared_ptr: make all copies of this instance share the same val /
-    // gpio_mode
+    // gpioMode
     std::shared_ptr<int> val;
-    std::shared_ptr<miosix::Mode::Mode_> gpio_mode;
+    std::shared_ptr<miosix::Mode::Mode_> gpioMode;
 };
 
 }  // namespace Boardcore

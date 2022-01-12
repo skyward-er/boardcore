@@ -55,7 +55,7 @@ bool MAX6675::selfTest()
     // It is high if open
     if ((sample % 0x2) != 0)
     {
-        last_error = SensorErrors::SELF_TEST_FAIL;
+        lastError = SensorErrors::SELF_TEST_FAIL;
         LOG_ERR(logger, "Self test failed, the termocouple is not connected");
         return false;
     }
@@ -77,12 +77,14 @@ TemperatureData MAX6675::sampleImpl()
     sample >>= 3;
 
     TemperatureData result{};
-    result.temp_timestamp = TimestampTimer::getInstance().getTimestamp();
+    result.temperatureTimestamp = TimestampTimer::getInstance().getTimestamp();
 
     // Convert the sample value
-    result.temp = static_cast<unsigned int>(sample >> 2);  // Integer part
-    sample &= 0x0003;  // Take the floating point part
-    result.temp += static_cast<float>(sample * 0.25);  // Floating point part
+    result.temperature =
+        static_cast<unsigned int>(sample >> 2);  // Integer part
+    sample &= 0x0003;                            // Take the floating point part
+    result.temperature +=
+        static_cast<float>(sample * 0.25);  // Floating point part
 
     return result;
 }

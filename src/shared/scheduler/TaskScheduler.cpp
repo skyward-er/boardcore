@@ -39,7 +39,7 @@ TaskScheduler::TaskScheduler()
 void TaskScheduler::stop()
 {
     // Signal the run function to stop
-    should_stop = true;
+    stopFlag = true;
     condvar.signal();  // Wake the run function even if there are no tasks
 
     ActiveObject::stop();

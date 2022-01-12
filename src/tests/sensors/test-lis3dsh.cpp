@@ -31,9 +31,9 @@ using namespace miosix;
 
 SPIBus bus(SPI1);
 
-GpioPin spi_sck(GPIOA_BASE, 5);
-GpioPin spi_miso(GPIOA_BASE, 6);
-GpioPin spi_mosi(GPIOA_BASE, 7);
+GpioPin spiSck(GPIOA_BASE, 5);
+GpioPin spiMiso(GPIOA_BASE, 6);
+GpioPin spiMosi(GPIOA_BASE, 7);
 GpioPin cs(GPIOE_BASE, 3);
 
 int main()
@@ -43,12 +43,12 @@ int main()
 
         RCC->APB2ENR |= RCC_APB2ENR_SPI1EN;  // Enable SPI1 bus
 
-        spi_sck.mode(miosix::Mode::ALTERNATE);
-        spi_sck.alternateFunction(5);
-        spi_miso.mode(miosix::Mode::ALTERNATE);
-        spi_miso.alternateFunction(5);
-        spi_mosi.mode(miosix::Mode::ALTERNATE);
-        spi_mosi.alternateFunction(5);
+        spiSck.mode(miosix::Mode::ALTERNATE);
+        spiSck.alternateFunction(5);
+        spiMiso.mode(miosix::Mode::ALTERNATE);
+        spiMiso.alternateFunction(5);
+        spiMosi.mode(miosix::Mode::ALTERNATE);
+        spiMosi.alternateFunction(5);
 
         cs.mode(miosix::Mode::OUTPUT);
     }
@@ -103,10 +103,10 @@ int main()
 
         data = sensor.getLastSample();
 
-        printf("\nTimestamp: %llu \n", data.accel_timestamp);
-        printf("Acc: x: %f | y: %f | z: %f \n", data.accel_x, data.accel_y,
-               data.accel_z);
-        printf("Temp: %.2f C \n", data.temp);
+        printf("\nTimestamp: %llu \n", data.accelerationTimestamp);
+        printf("Acc: x: %f | y: %f | z: %f \n", data.accelerationX,
+               data.accelerationY, data.accelerationZ);
+        printf("Temp: %.2f C \n", data.temperature);
 
         Thread::sleep(200);
     }

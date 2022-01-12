@@ -68,7 +68,7 @@ int main()
         sensor.sample();
         TemperatureData sample = sensor.getLastSample();
 
-        printf("%.2f\n", sample.temp);
+        printf("%.2f\n", sample.temperature);
 
         Thread::sleep(500);
     }

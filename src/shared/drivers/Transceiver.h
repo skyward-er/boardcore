@@ -22,6 +22,9 @@
 
 #pragma once
 
+#include <stddef.h>
+#include <stdint.h>
+
 namespace Boardcore
 {
 
@@ -31,25 +34,26 @@ public:
     Transceiver() {}
     virtual ~Transceiver() {}
 
-    /*
-     * Send a packet.
-     * The function must block until the packet is sent (successfully or not)
+    /**
+     * @brief Send a packet.
      *
-     * @param pkt       Pointer to the packet (needs to be at least pkt_len
+     * The function must block until the packet is sent (successfully or not).
+     *
+     * @param packet Pointer to the packet (needs to be at least packetLength
      * bytes).
-     * @param pkt_len   Lenght of the packet to be sent.
-     * @return          True if the message was sent correctly.
+     * @param packetLength Lenght of the packet to be sent.
+     * @return True if the message was sent correctly.
      */
-    virtual bool send(uint8_t* pkt, size_t pkt_len) = 0;
+    virtual bool send(uint8_t* packet, size_t packetLength) = 0;
 
-    /*
-     * Wait until a new packet is received.
+    /**
+     * @brief Wait until a new packet is received.
      *
-     * @param pkt       Buffer to store the received packet into.
-     * @param pkt_len   Maximum length of the received data.
-     * @return          Size of the data received or -1 if failure
+     * @param packet Buffer to store the received packet into.
+     * @param packetLength Maximum length of the received data.
+     * @return Size of the data received or -1 if failure
      */
-    virtual ssize_t receive(uint8_t* pkt, size_t pkt_len) = 0;
+    virtual ssize_t receive(uint8_t* packet, size_t packetLength) = 0;
 };
 
 }  // namespace Boardcore

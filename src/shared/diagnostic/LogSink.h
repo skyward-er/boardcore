@@ -46,9 +46,9 @@ public:
 
     bool isEnabled() { return enabled; }
 
-    void setLevel(uint8_t level) { min_level = level; }
+    void setLevel(uint8_t level) { minimumLevel = level; }
 
-    int getLevel() { return min_level; }
+    int getLevel() { return minimumLevel; }
 
     void setFormatString(const std::string& format) { this->format = format; }
 
@@ -56,9 +56,9 @@ protected:
     virtual void logImpl(const std::string& l) = 0;
 
 private:
-    bool enabled       = true;  // enabled by the default when created
-    uint8_t min_level  = LOGL_NOTSET;
-    std::string format = "{ts} {file}:{line} {fun} {lvl} [{name}] {msg}\n";
+    bool enabled         = true;  // enabled by the default when created
+    uint8_t minimumLevel = LOGL_NOTSET;
+    std::string format   = "{ts} {file}:{line} {fun} {lvl} [{name}] {msg}\n";
 };
 
 /**

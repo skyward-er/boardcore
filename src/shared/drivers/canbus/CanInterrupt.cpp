@@ -34,7 +34,7 @@ namespace Boardcore
 namespace Canbus
 {
 
-Canbus* can_drivers[2];
+CanbusDriver* canDrivers[2];
 
 }
 
@@ -92,38 +92,38 @@ void __attribute__((naked)) CAN2_TX_IRQHandler()
     restoreContext();
 }
 
-void __attribute__((used)) CAN_RXIRQHandlerImpl(int can_dev, int fifo)
+void __attribute__((used)) CAN_RXIRQHandlerImpl(int canDev, int fifo)
 {
     using namespace Boardcore::Canbus;
-    (void)can_dev;
+    (void)canDev;
 
-    if (can_drivers[can_dev])
+    if (canDrivers[canDev])
     {
-        can_drivers[can_dev]->handleRXInterrupt(fifo);
+        canDrivers[canDev]->handleRXInterrupt(fifo);
     }
 }
 
-void __attribute__((used)) CAN_TXIRQHandlerImpl(int can_dev)
+void __attribute__((used)) CAN_TXIRQHandlerImpl(int canDev)
 {
-    (void)can_dev;
+    (void)canDev;
     bool hppw = false;
 
     using namespace Boardcore::Canbus;
 
-    Canbus* bus = can_drivers[can_dev];
+    CanbusDriver* bus = canDrivers[canDev];
 
     if (bus)
     {
         CAN_TypeDef* can = bus->getCAN();
 
         CanTXResult res;
-        res.tme      = can->TSR & CAN_TSR_TME >> 26;
-        res.err_code = (can->ESR | CAN_ESR_LEC) >> 4;
+        res.tme     = can->TSR & CAN_TSR_TME >> 26;
+        res.errCode = (can->ESR | CAN_ESR_LEC) >> 4;
 
         if ((can->TSR & CAN_TSR_RQCP0) > 0)
         {
             res.mailbox = 0;
-            res.tx_status =
+            res.txStatus =
                 can->TSR & (CAN_TSR_TXOK0 | CAN_TSR_ALST0 | CAN_TSR_TERR0) >> 1;
 
             can->TSR |= CAN_TSR_RQCP0;
@@ -131,16 +131,15 @@ void __attribute__((used)) CAN_TXIRQHandlerImpl(int can_dev)
         if ((can->TSR & CAN_TSR_RQCP1) > 0)
         {
             res.mailbox = 1;
-            res.tx_status =
+            res.txStatus =
                 can->TSR & (CAN_TSR_TXOK1 | CAN_TSR_ALST1 | CAN_TSR_TERR1) >> 9;
 
             can->TSR |= CAN_TSR_RQCP1;
         }
         if ((can->TSR & CAN_TSR_RQCP2) > 0)
         {
-            res.mailbox = 2;
-            res.tx_status =
-                can->TSR & (CAN_TSR_TXOK2 | 2 | CAN_TSR_TERR2) >> 17;
+            res.mailbox  = 2;
+            res.txStatus = can->TSR & (CAN_TSR_TXOK2 | 2 | CAN_TSR_TERR2) >> 17;
 
             can->TSR |= CAN_TSR_RQCP2;
         }

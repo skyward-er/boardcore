@@ -118,9 +118,9 @@ int main()
         adc.sample();
 
         printf("%8lld:%.2f\t%8lld:%.2f\n",
-               adc.getVoltage(InternalADC::CH0).adc_timestamp,
+               adc.getVoltage(InternalADC::CH0).voltageTimestamp,
                adc.getVoltage(InternalADC::CH0).voltage,
-               adc.getVoltage(InternalADC::CH0).adc_timestamp,
+               adc.getVoltage(InternalADC::CH0).voltageTimestamp,
                adc.getVoltage(InternalADC::CH3).voltage);
 
         miosix::delayMs(1000);

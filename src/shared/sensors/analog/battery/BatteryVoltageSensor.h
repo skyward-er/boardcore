@@ -46,7 +46,7 @@ public:
                          float conversionCoeff_)
         : getADCVoltage(getADCVoltage_), conversionCoeff(conversionCoeff_)
     {
-        last_sample.bat_voltage = 0;
+        lastSample.batVoltage = 0;
     }
 
     bool init() override { return true; };
@@ -56,25 +56,24 @@ public:
     ///< Converts the adc voltage value to battery voltage
     BatteryVoltageSensorData sampleImpl() override
     {
-        ADCData adc_data = getADCVoltage();
+        ADCData adcData = getADCVoltage();
 
-        if (last_sample.bat_voltage == 0)
+        if (lastSample.batVoltage == 0)
         {
-            last_sample.bat_voltage = adcToBatteryVoltage(adc_data.voltage);
+            lastSample.batVoltage = adcToBatteryVoltage(adcData.voltage);
         }
 
-        BatteryVoltageSensorData bat_data;
-        bat_data.adc_timestamp = adc_data.adc_timestamp;
-        bat_data.channel_id    = adc_data.channel_id;
-        bat_data.voltage       = adc_data.voltage;
+        BatteryVoltageSensorData batData;
+        batData.voltageTimestamp = adcData.voltageTimestamp;
+        batData.channelId        = adcData.channelId;
+        batData.voltage          = adcData.voltage;
 
         // Moving average
-        bat_data.bat_voltage =
-            last_sample.bat_voltage * MOVING_AVAERAGE_COMP_COEFF;
-        bat_data.bat_voltage +=
-            adcToBatteryVoltage(adc_data.voltage) * MOVING_AVAERAGE_COEFF;
+        batData.batVoltage = lastSample.batVoltage * MOVING_AVAERAGE_COMP_COEFF;
+        batData.batVoltage +=
+            adcToBatteryVoltage(adcData.voltage) * MOVING_AVAERAGE_COEFF;
 
-        return bat_data;
+        return batData;
     }
 
 private:

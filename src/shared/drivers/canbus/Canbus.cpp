@@ -39,12 +39,14 @@ namespace Canbus
 
 PrintLogger l = Logging::getLogger("canbus");
 
-Canbus::Canbus(CAN_TypeDef* can, CanbusConfig config, AutoBitTiming bit_timing)
-    : Canbus(can, config, calcBitTiming(bit_timing))
+CanbusDriver::CanbusDriver(CAN_TypeDef* can, CanbusConfig config,
+                           AutoBitTiming bitTiming)
+    : CanbusDriver(can, config, calcBitTiming(bitTiming))
 {
 }
 
-Canbus::Canbus(CAN_TypeDef* can, CanbusConfig config, BitTiming bit_timing)
+CanbusDriver::CanbusDriver(CAN_TypeDef* can, CanbusConfig config,
+                           BitTiming bitTiming)
     : can(can)
 {
     // Enter init mode
@@ -75,10 +77,10 @@ Canbus::Canbus(CAN_TypeDef* can, CanbusConfig config, BitTiming bit_timing)
     can->BTR &= ~CAN_BTR_TS2;
     can->BTR &= ~CAN_BTR_SJW;
 
-    can->BTR |= bit_timing.BRP & 0x3FF;
-    can->BTR |= ((bit_timing.BS1 - 1) & 0xF) << 16;
-    can->BTR |= ((bit_timing.BS2 - 1) & 0x7) << 20;
-    can->BTR |= ((bit_timing.SJW - 1) & 0x3) << 24;
+    can->BTR |= bitTiming.BRP & 0x3FF;
+    can->BTR |= ((bitTiming.BS1 - 1) & 0xF) << 16;
+    can->BTR |= ((bitTiming.BS2 - 1) & 0x7) << 20;
+    can->BTR |= ((bitTiming.SJW - 1) & 0x3) << 24;
 
     if (config.loopback)
     {
@@ -90,11 +92,11 @@ Canbus::Canbus(CAN_TypeDef* can, CanbusConfig config, BitTiming bit_timing)
 
     if (can == CAN1)
     {
-        can_drivers[0] = this;
+        canDrivers[0] = this;
     }
     else
     {
-        can_drivers[1] = this;
+        canDrivers[1] = this;
     }
 
     // Enable interrupts
@@ -110,16 +112,16 @@ Canbus::Canbus(CAN_TypeDef* can, CanbusConfig config, BitTiming bit_timing)
     NVIC_SetPriority(CAN1_TX_IRQn, 14);
 }
 
-Canbus::BitTiming Canbus::calcBitTiming(AutoBitTiming auto_bt)
+CanbusDriver::BitTiming CanbusDriver::calcBitTiming(AutoBitTiming autoBt)
 {
     PrintLogger ls = l.getChild("bittiming");
 
-    BitTiming cfg_opt;
-    float cost_opt = 1000;
-    uint8_t N_opt  = 5;
+    BitTiming cfgOpt;
+    float costOpt = 1000;
+    uint8_t NOpt  = 5;
 
-    BitTiming cfg_iter;
-    cfg_iter.SJW    = 0;
+    BitTiming cfgIter;
+    cfgIter.SJW     = 0;
     uint32_t apbclk = ClockFrequency::APB1();
 
     // Iterate over the possible number of quanta in a bit to find the best
@@ -127,65 +129,62 @@ Canbus::BitTiming Canbus::calcBitTiming(AutoBitTiming auto_bt)
     for (uint8_t N = 3; N <= 25; N++)
     {
         // Calc optimal baud rate prescaler
-        cfg_iter.BRP = std::max(
-            std::min((int)roundf(apbclk * 1.0f / (auto_bt.baud_rate * N) - 1),
+        cfgIter.BRP = std::max(
+            std::min((int)roundf(apbclk * 1.0f / (autoBt.baudRate * N) - 1),
                      1 << 10),
             1);
 
         // Given N, calculate BS1 and BS2 that statusult in a sample time as
         // close as possible to the target one
-        cfg_iter.BS1 =
-            std::min(std::max((int)roundf(auto_bt.sample_point * N - 1), 1),
+        cfgIter.BS1 =
+            std::min(std::max((int)roundf(autoBt.samplePoint * N - 1), 1),
                      std::min(N - 2, 16));
 
-        cfg_iter.BS2 = N - cfg_iter.BS1 - 1;
+        cfgIter.BS2 = N - cfgIter.BS1 - 1;
 
-        float br_err_percent =
-            fabs(apbclk * 1.0f / (N * (cfg_iter.BRP + 1)) - auto_bt.baud_rate) /
-            auto_bt.baud_rate;
-        float sp =
-            (1 + cfg_iter.BS1) * 1.0f / (1 + cfg_iter.BS1 + cfg_iter.BS2);
+        float brErrPercent =
+            fabs(apbclk * 1.0f / (N * (cfgIter.BRP + 1)) - autoBt.baudRate) /
+            autoBt.baudRate;
+        float sp = (1 + cfgIter.BS1) * 1.0f / (1 + cfgIter.BS1 + cfgIter.BS2);
 
-        float sp_err_percent =
-            fabs(sp - auto_bt.sample_point) / auto_bt.sample_point;
+        float spErrPercent = fabs(sp - autoBt.samplePoint) / autoBt.samplePoint;
 
         // Calculate the cost function over N
-        float cost = BR_ERR_WEIGHT * br_err_percent +
-                     SP_ERR_WEIGHT * sp_err_percent +
+        float cost = BR_ERR_WEIGHT * brErrPercent +
+                     SP_ERR_WEIGHT * spErrPercent +
                      N_ERR_WEIGHT * fabs(N - 10) / 25;
 
         // Find config that minimizes the cost function
-        if (cost < cost_opt)
+        if (cost < costOpt)
         {
-            cfg_opt  = cfg_iter;
-            cost_opt = cost;
-            N_opt    = N;
+            cfgOpt  = cfgIter;
+            costOpt = cost;
+            NOpt    = N;
         }
     }
 
-    cfg_opt.SJW = fminf(ceilf(N_opt * 1.0f / 5), 4);
+    cfgOpt.SJW = fminf(ceilf(NOpt * 1.0f / 5), 4);
 
     LOG_DEBUG(ls,
               "Optimal Bit Timing Registers: BRP={}, BS1={}, BS2={}, SJW={}",
-              cfg_opt.BRP, cfg_opt.BS1, cfg_opt.BS2, cfg_opt.SJW);
+              cfgOpt.BRP, cfgOpt.BS1, cfgOpt.BS2, cfgOpt.SJW);
 
-    float br_true = apbclk * 1.0f / ((cfg_opt.BRP + 1) * N_opt);
-    float sp_true = (1 + cfg_opt.BS1) * 1.0f / (1 + cfg_opt.BS1 + cfg_opt.BS2);
+    float brTrue = apbclk * 1.0f / ((cfgOpt.BRP + 1) * NOpt);
+    float spTrue = (1 + cfgOpt.BS1) * 1.0f / (1 + cfgOpt.BS1 + cfgOpt.BS2);
 
-    LOG_DEBUG(
-        ls,
-        "Optimal Bit Timing: BR_true={:.2f}, sp_true:{:.2f}%, "
-        "BR_error={:.2f}%, SP_error={:.2f}%",
-        br_true / 1000, sp_true * 100,
-        fabsf(br_true - auto_bt.baud_rate) / auto_bt.baud_rate * 100,
-        fabs(sp_true - auto_bt.sample_point) / auto_bt.sample_point * 100);
+    LOG_DEBUG(ls,
+              "Optimal Bit Timing: BR_true={:.2f}, spTrue:{:.2f}%, "
+              "BR_error={:.2f}%, SP_error={:.2f}%",
+              brTrue / 1000, spTrue * 100,
+              fabsf(brTrue - autoBt.baudRate) / autoBt.baudRate * 100,
+              fabs(spTrue - autoBt.samplePoint) / autoBt.samplePoint * 100);
 
-    return cfg_opt;
+    return cfgOpt;
 }
 
-void Canbus::init()
+void CanbusDriver::init()
 {
-    if (is_init)
+    if (isInit)
     {
         return;
     }
@@ -205,58 +204,58 @@ void Canbus::init()
 
     LOG_INFO(ls, "Canbus synchronized! Init done!");
 
-    is_init = true;
+    isInit = true;
 }
 
-bool Canbus::addFilter(FilterBank filter)
+bool CanbusDriver::addFilter(FilterBank filter)
 {
     PrintLogger ls = l.getChild("addfilter");
 
-    if (is_init)
+    if (isInit)
     {
         LOG_ERR(ls, "Cannot add filter: canbus already initialized");
         return false;
     }
-    if (filter_index == NUM_FILTER_BANKS)
+    if (filterIndex == NUM_FILTER_BANKS)
     {
         LOG_ERR(ls, "Cannot add filter: no more filter banks available");
         return false;
     }
 
-    can->sFilterRegister[filter_index].FR1 = filter.FR1;
-    can->sFilterRegister[filter_index].FR2 = filter.FR2;
+    can->sFilterRegister[filterIndex].FR1 = filter.FR1;
+    can->sFilterRegister[filterIndex].FR2 = filter.FR2;
 
-    can->FM1R |= (filter.mode == FilterMode::MASK ? 0 : 1) << filter_index;
-    can->FS1R |= (filter.scale == FilterScale::DUAL16 ? 0 : 1) << filter_index;
-    can->FFA1R |= (filter.fifo & 0x1) << filter_index;
+    can->FM1R |= (filter.mode == FilterMode::MASK ? 0 : 1) << filterIndex;
+    can->FS1R |= (filter.scale == FilterScale::DUAL16 ? 0 : 1) << filterIndex;
+    can->FFA1R |= (filter.fifo & 0x1) << filterIndex;
 
     // Enable the filter
-    can->FA1R |= 1 << filter_index;
+    can->FA1R |= 1 << filterIndex;
 
-    ++filter_index;
+    ++filterIndex;
 
     return true;
 }
 
-uint32_t Canbus::send(CanPacket packet)
+uint32_t CanbusDriver::send(CanPacket packet)
 {
     PrintLogger ls = l.getChild("send");
 
-    if (!is_init)
+    if (!isInit)
     {
         LOG_ERR(ls, "Canbus is not initialized!");
         return 0;
     }
 
-    bool did_wait = false;
+    bool didWait = false;
 
     {
         miosix::FastInterruptDisableLock d;
         // Wait until there is an empty mailbox available to use
         while ((can->TSR & CAN_TSR_TME) == 0)
         {
-            did_wait = true;
-            waiting  = Thread::IRQgetCurrentThread();
+            didWait = true;
+            waiting = Thread::IRQgetCurrentThread();
             Thread::IRQwait();
             {
                 miosix::FastInterruptEnableLock e(d);
@@ -265,38 +264,38 @@ uint32_t Canbus::send(CanPacket packet)
         }
     }
 
-    if (did_wait)
+    if (didWait)
     {
         // Warn that the function blocked. We are probably transmitting too fast
         LOG_WARN_ASYNC(ls, "Had to wait for an empty mailbox!");
     }
 
     // Index of first empty mailbox
-    uint8_t mbx_code = (can->TSR & CAN_TSR_CODE) >> 24;
+    uint8_t mbxCode = (can->TSR & CAN_TSR_CODE) >> 24;
 
-    if (mbx_code > 2)
+    if (mbxCode > 2)
     {
         LOG_ERR(ls, "Error! Invalid TSR_CODE!");
         return 0;
     }
 
-    uint32_t seq             = tx_seq++;
-    tx_mailbox_seq[mbx_code] = seq;
+    uint32_t seq          = txSeq++;
+    txMailboxSeq[mbxCode] = seq;
 
-    CAN_TxMailBox_TypeDef* mailbox = &can->sTxMailBox[mbx_code];
+    CAN_TxMailBox_TypeDef* mailbox = &can->sTxMailBox[mbxCode];
 
-    can->sTxMailBox[mbx_code].TIR &= CAN_TI0R_TXRQ;
+    can->sTxMailBox[mbxCode].TIR &= CAN_TI0R_TXRQ;
     if (packet.ext)
     {
-        can->sTxMailBox[mbx_code].TIR |= ((packet.id & 0x1FFFFFFF) << 3);
-        can->sTxMailBox[mbx_code].TIR |= 1 << 2;
+        can->sTxMailBox[mbxCode].TIR |= ((packet.id & 0x1FFFFFFF) << 3);
+        can->sTxMailBox[mbxCode].TIR |= 1 << 2;
     }
     else
     {
-        can->sTxMailBox[mbx_code].TIR |= ((packet.id & 0x7FF) << 21);
+        can->sTxMailBox[mbxCode].TIR |= ((packet.id & 0x7FF) << 21);
     }
 
-    can->sTxMailBox[mbx_code].TIR |= (packet.rtr ? 1 : 0) << 1;
+    can->sTxMailBox[mbxCode].TIR |= (packet.rtr ? 1 : 0) << 1;
 
     mailbox->TDTR = (packet.length & 0xF);
 
@@ -318,12 +317,12 @@ uint32_t Canbus::send(CanPacket packet)
     }
 
     // Finally send the packet
-    can->sTxMailBox[mbx_code].TIR |= CAN_TI0R_TXRQ;
+    can->sTxMailBox[mbxCode].TIR |= CAN_TI0R_TXRQ;
 
     return seq;
 }
 
-void Canbus::handleRXInterrupt(int fifo)
+void CanbusDriver::handleRXInterrupt(int fifo)
 {
     CanRXStatus status;
     status.fifo = fifo;
@@ -340,8 +339,8 @@ void Canbus::handleRXInterrupt(int fifo)
         RFR = &can->RF1R;
     }
 
-    status.fifo_overrun = (*RFR & CAN_RF0R_FOVR0) > 0;
-    status.fifo_full    = (*RFR & CAN_RF0R_FULL0) > 0;
+    status.fifoOverrun = (*RFR & CAN_RF0R_FOVR0) > 0;
+    status.fifoFull    = (*RFR & CAN_RF0R_FULL0) > 0;
 
     CanPacket p;
     bool hppw = false;
@@ -353,9 +352,9 @@ void Canbus::handleRXInterrupt(int fifo)
     {
         p.timestamp = miosix::getTick();
 
-        status.rx_status      = *RFR & (CAN_RF0R_FULL0 | CAN_RF0R_FOVR0) >> 3;
-        status.err_code       = (can->ESR | CAN_ESR_LEC) >> 4;
-        status.rx_err_counter = (can->ESR | CAN_ESR_REC) >> 24;
+        status.rxStatus     = *RFR & (CAN_RF0R_FULL0 | CAN_RF0R_FOVR0) >> 3;
+        status.errCode      = (can->ESR | CAN_ESR_LEC) >> 4;
+        status.rxErrCounter = (can->ESR | CAN_ESR_REC) >> 24;
 
         p.ext = (mailbox->RIR & CAN_RI0R_IDE) > 0;
         p.rtr = (mailbox->RIR & CAN_RI0R_RTR) > 0;
@@ -385,14 +384,14 @@ void Canbus::handleRXInterrupt(int fifo)
         *RFR |= CAN_RF0R_RFOM0;
 
         // Put the message into the queue
-        buf_rx_packets.IRQput(CanRXPacket{p, status}, hppw);
+        bufRxPackets.IRQput(CanRXPacket{p, status}, hppw);
     }
 
     if (hppw)
         miosix::Scheduler::IRQfindNextThread();
 }
 
-void Canbus::wakeTXThread()
+void CanbusDriver::wakeTXThread()
 {
     if (waiting)
     {
