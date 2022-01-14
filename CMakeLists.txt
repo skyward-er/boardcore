@@ -258,3 +258,10 @@ sbs_target(test-ubloxgps-spi stm32f407vg_stm32f4discovery)
 
 add_executable(test-vn100 src/tests/sensors/test-vn100.cpp)
 sbs_target(test-vn100 stm32f407vg_stm32f4discovery)
+
+#-----------------------------------------------------------------------------#
+#                               Tests - Sensors                               #
+#-----------------------------------------------------------------------------#
+
+add_executable(test-csvreader src/tests/utils/test-csvreader.cpp)
+sbs_target(test-csvreader stm32f429zi_stm32f4discovery)
