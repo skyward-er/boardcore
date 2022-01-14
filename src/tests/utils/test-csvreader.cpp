@@ -43,7 +43,13 @@ std::istream& operator>>(std::istream& input, TestData& data)
 
 int main()
 {
-    // Use the iterato in sequentially in a for loop
+    // Use the iterator sequentially in a for loop
     for (auto& data : CSVParser<TestData>("/sd/config.csv"))
+        printf("%llu,%d\n", data.timestamp, data.counter);
+
+    // First retrieve all the data and then display it
+    auto fileData = CSVParser<TestData>("/sd/config.csv").collect();
+    printf("vector size: %d\n", fileData.size());
+    for (auto& data : fileData)
         printf("%llu,%d\n", data.timestamp, data.counter);
 }

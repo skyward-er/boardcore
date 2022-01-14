@@ -55,9 +55,11 @@
 
 #pragma once
 
+#include <algorithm>
 #include <fstream>
 #include <iterator>
 #include <string>
+#include <vector>
 
 namespace Boardcore
 {
@@ -120,9 +122,22 @@ class CSVParser
 public:
     CSVParser(const char* fileName) : fileStream(fileName) {}
 
+    ~CSVParser() { fileStream.close(); }
+
     CSVIterator<Data> begin() { return CSVIterator<Data>(fileStream); }
 
     CSVIterator<Data> end() { return CSVIterator<Data>(); }
+
+    std::vector<Data> collect()
+    {
+        std::vector<Data> fileData;
+
+        std::for_each(begin(), end(),
+                      [&fileData](const Data& data)
+                      { fileData.push_back(data); });
+
+        return fileData;
+    }
 
 private:
     std::ifstream fileStream;
