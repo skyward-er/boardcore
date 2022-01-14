@@ -65,9 +65,13 @@ namespace Boardcore
 {
 
 /**
- * @brief Implements
+ * @brief Iterable CSV data.
  *
- * @tparam Data
+ * Holds one element of data read from the file stream. When incremented the
+ * next data item is read.
+ *
+ * @tparam Data Data type contained in the CSV file. Must implement the >>
+ * stream operator.
  */
 template <typename Data>
 class CSVIterator
@@ -116,6 +120,16 @@ private:
     Data parsedData;
 };
 
+/**
+ * @brief Iterable parser of CSV files.
+ *
+ * Given the file name, reads the contents as elements of type Data. Can be used
+ * with CSVIterator to iterate through all the CSV rows.
+ * You can retrieve all data inside the file as a vector with collect().
+ *
+ * @tparam Data Data type contained in the CSV file. Must implement the >>
+ * stream operator.
+ */
 template <typename Data>
 class CSVParser
 {
