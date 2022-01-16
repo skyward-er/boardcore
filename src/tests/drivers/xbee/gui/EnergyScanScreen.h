@@ -171,7 +171,7 @@ struct EnergyScanScreen
 
     void updateLogStatus(Logger& logger)
     {
-        if (logger.getLogNumber() >= 0)
+        if (logger.getCurrentLogNumber() >= 0)
         {
             string logName = logger.getCurrentFileName();
 

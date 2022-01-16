@@ -34,8 +34,6 @@
 
 #include "LoggerStats.h"
 
-using std::string;
-
 namespace Boardcore
 {
 
@@ -83,32 +81,16 @@ public:
     void stop();
 
     /**
-     * @brief Return the number representing the current log file.
-     *
-     * @return log number.
+     * @brief Tests if the Logger can write to the SD card by opening a file.
      */
-    int getLogNumber();
+    static bool testSDCard();
 
-    /**
-     * @brief Returns the log filename for the specified number.
-     *
-     * IE: log_number = 42, returned: "/sd/log42.dat"
-     *
-     * @return
-     */
-    static string getFileName(int log_number);
+    int getCurrentLogNumber();
 
-    string getCurrentFileName();
+    std::string getCurrentFileName();
 
     LoggerStats getLoggerStats();
 
-    /**
-     * @brief Check if the Logger is started.
-     *
-     * Nonblocking call.
-     *
-     * \return true if the logger is started and ready to accept data.
-     */
     bool isStarted() const;
 
     /**
@@ -133,6 +115,8 @@ public:
 
 private:
     Logger();
+
+    static std::string getFileName(int logNumber);
 
     static void packThreadLauncher(void *argv);
 

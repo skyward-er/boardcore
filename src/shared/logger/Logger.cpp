@@ -33,6 +33,7 @@
 #include <tscpp/buffer.h>
 #include <utils/Debug.h>
 
+#include <fstream>
 #include <stdexcept>
 
 using namespace std;
@@ -123,17 +124,13 @@ void Logger::stop()
     writeTh->join();
 
     fclose(file);
+
+    fileNumber = -1;  // Reset the fileNumber to an invalid value
 }
 
-int Logger::getLogNumber() { return fileNumber; }
+bool Logger::testSDCard() { return ofstream("/sd/test").good(); }
 
-string Logger::getFileName(int log_number)
-{
-    char filename[32];
-    sprintf(filename, "/sd/log%02d.dat", log_number);
-
-    return string(filename);
-}
+int Logger::getCurrentLogNumber() { return fileNumber; }
 
 string Logger::getCurrentFileName() { return getFileName(fileNumber); }
 
@@ -150,6 +147,14 @@ Logger::Logger()
     // Allocate buffers and put them in the empty list
     for (unsigned int i = 0; i < numBuffers; i++)
         emptyList.push(new Buffer);
+}
+
+string Logger::getFileName(int logNumber)
+{
+    char filename[32];
+    sprintf(filename, "/sd/log%02d.dat", logNumber);
+
+    return string(filename);
 }
 
 void Logger::packThreadLauncher(void* argv)
