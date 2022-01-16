@@ -59,6 +59,11 @@ public:
     static constexpr uint32_t TIMER_FREQUENCY = 250000;
 
     /**
+     * @brief Resets the timestamp timer to 0.
+     */
+    void resetTimestamp();
+
+    /**
      * @brief Compute the current timer value in microseconds.
      *
      * @return Current timestamp in microseconds.
@@ -105,5 +110,7 @@ inline uint64_t TimestampTimer::getTimestamp()
     // return TimerUtils::toIntMicroSeconds(timestampTimer.getTimer());
 #endif
 }
+
+inline void TimestampTimer::resetTimestamp() { timer.setCounter(0); }
 
 }  // namespace Boardcore
