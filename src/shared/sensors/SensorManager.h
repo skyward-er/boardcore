@@ -34,12 +34,14 @@ namespace Boardcore
 {
 
 /**
- * @brief The SensorManager class manages all the sensors connected to the
- * Board.
+ * @brief The SensorManager handles sensors initialization and sampling.
  *
- * Sensors are grouped in various SensorSampler objects by "type" (if they use
- * DMA or not) and "sampling period". These SensorSampler objects are then
- * added to the scheduler that manages the timings for the sampling.
+ * Sensors are grouped in various SensorSampler objects by sampling perios.
+ * These SensorSampler objects are then added to the scheduler that manages the
+ * timings for the sampling.
+ *
+ * TODO: The SensorManager should be able to reinitialized sensors that have
+ * failed previous initializations.
  */
 class SensorManager
 {
@@ -47,90 +49,64 @@ public:
     using function_t  = std::function<void()>;
     using SensorMap_t = std::map<AbstractSensor*, SensorInfo>;
 
-    /**
-     * @brief Constructor.
-     *
-     * @param sensorsMap map containing references to the sensors as keys,
-     *                    and objects of type SensorInfo as values.
-     */
     explicit SensorManager(const SensorMap_t& sensorsMap);
 
-    /**
-     * @brief Constructor taking an external TaskScheduler object.
-     *
-     * @param sensorsMap map containing references to the sensors as keys,
-     *                    and objects of type SensorInfo as values.
-     */
-    SensorManager(TaskScheduler* scheduler, const SensorMap_t& sensorsMap);
+    SensorManager(const SensorMap_t& sensorsMap, TaskScheduler* scheduler);
 
     /**
-     * @brief Destructor.
-     *
-     * Deallocates samplers (through the samplers vector).
+     * @brief Deallocates samplers (through the samplers vector).
      */
     ~SensorManager();
 
-    /**
-     * @brief Start the sensor manager.
-     */
     bool start();
 
-    /**
-     * @brief Stop the sensor manager.
-     */
     void stop();
 
     /**
-     * @brief Enable sampling for the passed sensor.
+     * @brief Enable sampling for the specified sensor.
      *
-     * @param sensor    the sensor to be enabled
+     * @param sensor The sensor to be enabled.
      */
     void enableSensor(AbstractSensor* sensor);
 
     /**
-     * @brief Disable sampling for the passed sensor.
+     * @brief Disable sampling for the specified sensor.
      *
-     * @param sensor    the sensor to be disabled
+     * @param sensor The sensor to be disabled.
      */
     void disableSensor(AbstractSensor* sensor);
 
-    /**
-     * @brief Enable sampling for all the sensors.
-     */
     void enableAllSensors();
 
-    /**
-     * @brief Disable sampling for all the sensors.
-     */
     void disableAllSensors();
 
     /**
-     * @return the information related to the given sensor
+     * @brief Checks whether all the sensors have been initialized correctly.
      */
+    bool areAllSensorsInitilized();
+
     const SensorInfo getSensorInfo(AbstractSensor* sensor);
 
     /**
-     * @return vector of statistics, one for each sampler, taken from the
-     * scheduler
+     * @return Vector of statistics, one for each sampler, taken from the
+     * scheduler.
      */
     const vector<TaskStatResult> getSamplersStats();
 
 private:
-    /**
-     * @brief Copy constructor. Deleted.
-     */
     SensorManager(const SensorManager&) = delete;
+    SensorManager& operator=(const SensorManager&) = delete;
 
     /**
      * @brief Initializes samplers vector and sensorsMap with the given sensors
-     *        map, giving incremental IDs to SensorSampler objects.
-     *        In case a TaskScheduler was passed in the costructor,
-     *        the SensorManager will assign to SensorSamplers incremental IDs
-     *        starting from the maximum among the tasks already existing
-     *        in the TaskScheduler.
+     * map, giving incremental IDs to SensorSampler objects.
      *
-     * @param sensorsMap    map containing sensors and their respective
-     * information for the sampling
+     * In case a TaskScheduler was passed in the costructor, the SensorManager
+     * will assign to SensorSamplers incremental IDs starting from the maximum
+     * among the tasks already existing in the TaskScheduler.
+     *
+     * @param sensorsMap Map containing sensors and their respective information
+     * for the sampling.
      */
     bool init(const SensorMap_t& sensorsMap);
 
@@ -147,38 +123,36 @@ private:
     void initScheduler();
 
     /**
-     * @brief Avoid creating duplicate IDs for tasks in case the scheduler
-     *        is received from outside.
+     * @brief Avoid creating duplicate IDs for tasks in case the scheduler is
+     * received from outside.
      *
-     * @return maximum ID among those assigned to tasks in the scheduler.
+     * @return Maximum ID among those assigned to tasks in the scheduler.
      */
     uint8_t getFirstTaskID();
 
     /**
-     * @brief Create a sampler object according to the fact that it needs to use
-     * DMA or not.
+     * @brief Create a sampler object with the specified sampling period.
      *
-     * @param id        new sampler's identifier
-     * @param period      sampling period of the new sampler
-     * @param isDma    indicate if the sampler manages sensors that use DMA
+     * @param id New sampler's identifier.
+     * @param period Sampling period of the new sampler.
      *
-     * @return pointer to the newly created sampler
+     * @return Pointer to the newly created sampler.
      */
-    SensorSampler* createSampler(uint8_t id, uint32_t period, bool isDma);
+    SensorSampler* createSampler(uint8_t id, uint32_t period);
 
-    const uint8_t MAX_TASK_ID = 255; /**< max id for tasks in the scheduler */
+    const uint8_t MAX_TASK_ID = 255;  ///< Max id for tasks in the scheduler.
 
-    TaskScheduler* scheduler; /**< scheduler to update the samplers at the
-                                correct period */
+    TaskScheduler*
+        scheduler;         ///< To update the samplers at the correct period.
+    bool customScheduler;  ///< Whether or not the scheduler comes from outside.
 
     std::vector<SensorSampler*>
-        samplers; /**< vector of all the samplers (unique) */
+        samplers;  ///< Vector of all the samplers (unique).
 
     std::map<AbstractSensor*, SensorSampler*>
-        samplersMap; /**< map each sensor to the corresponding sampler */
+        samplersMap;  ///< Map each sensor to the corresponding sampler.
 
-    bool sensorsInitResult =
-        true; /**< true if all the sensors are initialized correctly */
+    bool initResult = true;  ///< true if sensors are initialized correctly.
 
     PrintLogger logger = Logging::getLogger("sensormanager");
 };

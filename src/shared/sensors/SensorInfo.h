@@ -33,30 +33,33 @@ namespace Boardcore
  *
  * This structure contains the sampling period of a sensor,
  * the function to be called after the sampling (callback) and
- * two boolean values indicating if the sensor uses DMA and if
- * the sensor has to be sampled (is enabled).
+ * oneboolean indicating if the sensor has to be sampled (is enabled).
  */
 struct SensorInfo
 {
     const std::string& id;
-    uint32_t period;  // Period in ms
+    uint32_t period;  ///< Period in ms
     std::function<void()> callback;
-    bool isDma;
     bool isEnabled;
     bool isInitialized;
 
     SensorInfo(const std::string& id, uint32_t period,
-               std::function<void()> callback, bool isDma, bool isEnabled)
-        : id(id), period(period), callback(callback), isDma(isDma),
-          isEnabled(isEnabled), isInitialized(false)
-    {
-    }
+               std::function<void()> callback, bool isEnabled);
 
-    SensorInfo()
-        : id(""), period(0), callback([]() {}), isDma(false), isEnabled(false),
-          isInitialized(false)
-    {
-    }
+    SensorInfo();
 };
+
+inline SensorInfo::SensorInfo(const std::string& id, uint32_t period,
+                              std::function<void()> callback, bool isEnabled)
+    : id(id), period(period), callback(callback), isEnabled(isEnabled),
+      isInitialized(false)
+{
+}
+
+inline SensorInfo::SensorInfo()
+    : id(""), period(0), callback([]() {}), isEnabled(false),
+      isInitialized(false)
+{
+}
 
 }  // namespace Boardcore

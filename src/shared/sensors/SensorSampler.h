@@ -41,29 +41,28 @@ class SensorSampler
 {
 public:
     /**
-     * @param id      sampler identifier
-     * @param period  period at which the sampler performs sensors update
-     * @param isDma  indicate if the sampler manages DMA sensors or not
+     * @param id Sampler identifier.
+     * @param period Period at which the sampler performs sensors update.
      */
-    SensorSampler(uint8_t id, uint32_t period, bool isDma);
+    SensorSampler(uint8_t id, uint32_t period);
 
     virtual ~SensorSampler();
 
     /**
      * @brief Add a sensor to the sensors map.
      *
-     * @param sensor  the sensor to be added
+     * @param sensor The sensor to be added.
      */
-    virtual void addSensor(AbstractSensor* sensor, SensorInfo sensor_info) = 0;
+    virtual void addSensor(AbstractSensor* sensor, SensorInfo sensorInfo) = 0;
 
     /**
      * @brief Enabled or disable a sensor.
      *
-     * @param sensor    the sensor to be toggled (enabled/disabled)
-     * @param is_en     bool value to be set in the sensor info to indicate if
-     *                  the sensor will be enabled or disabled
+     * @param sensor The sensor to be toggled (enabled/disabled).
+     * @param isEnabled Bool value to be set in the sensor info to indicate if
+     * the sensor will be enabled or disabled.
      */
-    void toggleSensor(AbstractSensor* sensor, bool is_en);
+    void toggleSensor(AbstractSensor* sensor, bool isEnabled);
 
     /**
      * @brief Enable sampling for all the sensors.
@@ -80,29 +79,12 @@ public:
      */
     void sampleAndCallback();
 
-    /**
-     * @return  the sampler's type
-     */
-    bool isDMA();
-
-    /**
-     * @return  the sampler's ID
-     */
     uint8_t getID();
 
-    /**
-     * @return  the sampler's activation period
-     */
     uint32_t getSamplingPeriod();
 
-    /**
-     * @return  the number of sensors assigned to this sampler
-     */
     unsigned int getNumSensors();
 
-    /**
-     * @return  the information related to the given sensor
-     */
     const SensorInfo getSensorInfo(AbstractSensor* sensor);
 
 private:
@@ -111,9 +93,8 @@ private:
      */
     virtual void sampleSensor(AbstractSensor* s) = 0;
 
-    uint8_t id;      /**< sampler id used in the task scheduler */
-    uint32_t period; /**< sampler update/activation period */
-    bool isDma;      /**< the sampler's type (if it uses DMA or not) */
+    uint8_t id;       ///< Sampler id used in the task scheduler.
+    uint32_t period;  ///< Sampler update/activation period.
 
 protected:
     std::vector<std::pair<AbstractSensor*, SensorInfo>> sensors;
@@ -122,8 +103,8 @@ protected:
 };
 
 /**
- * @brief Sampler for simple sensors, those that are simply
- *        sampled by calling the sample() method.
+ * @brief Sampler for simple sensors, those that are simply sampled by calling
+ * the sample() method.
  */
 class SimpleSensorSampler : public virtual SensorSampler
 {
@@ -132,30 +113,12 @@ public:
 
     ~SimpleSensorSampler();
 
-    void addSensor(AbstractSensor* sensor, SensorInfo sensor_info) override;
+    void addSensor(AbstractSensor* sensor, SensorInfo sensorInfo) override;
 
     void sampleSensor(AbstractSensor* s) override;
 
 private:
     SimpleSensorSampler(const SimpleSensorSampler&) = delete;
-};
-
-/**
- * @brief Sampler for sensors that use DMA for updates.
- */
-class DMASensorSampler : public virtual SensorSampler
-{
-public:
-    DMASensorSampler(uint8_t id, uint32_t period);
-
-    ~DMASensorSampler();
-
-    void addSensor(AbstractSensor* sensor, SensorInfo sensor_info) override;
-
-    void sampleSensor(AbstractSensor* s) override;
-
-private:
-    DMASensorSampler(const DMASensorSampler&) = delete;
 };
 
 }  // namespace Boardcore

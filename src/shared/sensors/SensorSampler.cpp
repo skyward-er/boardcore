@@ -28,33 +28,20 @@ using namespace std;
 namespace Boardcore
 {
 
-SensorSampler::SensorSampler(uint8_t id, uint32_t period, bool isDma)
-    : id(id), period(period), isDma(isDma)
+SensorSampler::SensorSampler(uint8_t id, uint32_t period)
+    : id(id), period(period)
 {
 }
 
 SensorSampler::~SensorSampler() { sensors.clear(); }
 
-void SensorSampler::sampleAndCallback()
-{
-    for (auto& s : sensors)
-    {
-        // sample only if that sensor is enabled
-        if (s.second.isEnabled && s.second.isInitialized)
-        {
-            sampleSensor(s.first);
-            s.second.callback();
-        }
-    }
-}
-
-void SensorSampler::toggleSensor(AbstractSensor* sensor, bool is_en)
+void SensorSampler::toggleSensor(AbstractSensor* sensor, bool isEnabled)
 {
     auto elem = std::find_if(sensors.begin(), sensors.end(),
                              [&](std::pair<AbstractSensor*, SensorInfo> s)
                              { return s.first == sensor; });
 
-    elem->second.isEnabled = is_en;
+    elem->second.isEnabled = isEnabled;
     LOG_DEBUG(logger, "Sampler {}, toggle Sensor {} ---> enabled = {}", getID(),
               static_cast<void*>(sensor), elem->second.isEnabled);
 }
@@ -75,7 +62,18 @@ void SensorSampler::disableAllSensors()
     }
 }
 
-bool SensorSampler::isDMA() { return isDma; }
+void SensorSampler::sampleAndCallback()
+{
+    for (auto& s : sensors)
+    {
+        // Sample only if that sensor is enabled and initialized
+        if (s.second.isEnabled && s.second.isInitialized)
+        {
+            sampleSensor(s.first);
+            s.second.callback();
+        }
+    }
+}
 
 uint8_t SensorSampler::getID() { return id; }
 
@@ -99,42 +97,20 @@ const SensorInfo SensorSampler::getSensorInfo(AbstractSensor* sensor)
     return SensorInfo{};
 }
 
-// simple sampler
 SimpleSensorSampler::SimpleSensorSampler(uint8_t id, uint32_t period)
-    : SensorSampler(id, period, false)
+    : SensorSampler(id, period)
 {
 }
 
 SimpleSensorSampler::~SimpleSensorSampler() {}
 
 void SimpleSensorSampler::addSensor(AbstractSensor* sensor,
-                                    SensorInfo sensor_info)
+                                    SensorInfo sensorInfo)
 {
-    sensors.push_back(make_pair(sensor, sensor_info));
+    sensors.push_back(make_pair(sensor, sensorInfo));
 }
 
 void SimpleSensorSampler::sampleSensor(AbstractSensor* sensor)
-{
-    sensor->sample();
-}
-
-// DMA sampler
-DMASensorSampler::DMASensorSampler(uint8_t id, uint32_t period)
-    : SensorSampler(id, period, true)
-{
-}
-
-DMASensorSampler::~DMASensorSampler() {}
-
-void DMASensorSampler::addSensor(AbstractSensor* sensor, SensorInfo sensor_info)
-{
-    sensors.push_back(make_pair(sensor, sensor_info));
-}
-
-/*
-    TODO : Handle sensors that use DMA
-*/
-void DMASensorSampler::sampleSensor(AbstractSensor* sensor)
 {
     sensor->sample();
 }

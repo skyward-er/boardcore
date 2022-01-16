@@ -61,11 +61,12 @@ public:
                        2000,  // inserst a test function in the scheduler
                        FIRST_TASK_ID);
 
-        sensorManager = new SensorManager(scheduler, {{&s1, s1_info},
-                                                      {&s2, s2_info},
-                                                      {&s3, s3_info},
-                                                      {&s4, s4_info},
-                                                      {&s5, s5_info}});
+        sensorManager = new SensorManager({{&s1, s1_info},
+                                           {&s2, s2_info},
+                                           {&s3, s3_info},
+                                           {&s4, s4_info},
+                                           {&s5, s5_info}},
+                                          scheduler);
 
         sampler1 = sensorManager->samplersMap[&s1];
         sampler2 = sensorManager->samplersMap[&s2];
@@ -97,7 +98,6 @@ private:
         /*ID=*/"s1",
         /*Period=*/1000,
         /*Callback=*/[]() { std::cout << "Callback 1!" << std::endl; },
-        /*DMA=*/false,
         /*Enabled=*/true};
 
     TestSensor s2;
@@ -105,7 +105,6 @@ private:
         /*ID=*/"s2",
         /*Period=*/1000,
         /*Callback=*/[]() { std::cout << "Callback 2!" << std::endl; },
-        /*DMA=*/false,
         /*Enabled=*/false};
 
     TestSensor s3;
@@ -113,16 +112,13 @@ private:
         /*ID=*/"s3",
         /*Period=*/500,
         /*Callback=*/[]() { std::cout << "Callback 3!" << std::endl; },
-        /*DMA=*/false,
         /*Enabled=*/true};
 
-    // same period as s1 and s2 but uses DMA
     TestSensor s4;
     SensorInfo s4_info{
         /*ID=*/"s4",
         /*Period=*/1000,
         /*Callback=*/[]() { std::cout << "Callback 4!" << std::endl; },
-        /*DMA=*/true,
         /*Enabled=*/true};
 
     // always failing self-test
@@ -131,7 +127,6 @@ private:
         /*ID=*/"s5",
         /*Period=*/2000,
         /*Callback=*/[]() { std::cout << "Callback 5!" << std::endl; },
-        /*DMA=*/false,
         /*Enabled=*/true};
 };
 
@@ -140,13 +135,13 @@ bool operator==(const SensorInfo& lhs, const SensorInfo& rhs)
     return lhs.id == rhs.id && lhs.period == rhs.period &&
            lhs.callback.target_type() == rhs.callback.target_type() &&
            lhs.callback.target<void()>() == rhs.callback.target<void()>() &&
-           lhs.isDma == rhs.isDma && lhs.isEnabled == rhs.isEnabled;
+           lhs.isEnabled == rhs.isEnabled;
 }
 
 bool operator==(const SensorSampler& lhs, const SensorSampler& rhs)
 {
     return lhs.id == rhs.id && lhs.period == rhs.period &&
-           lhs.isDma == rhs.isDma && lhs.sensors.size() == rhs.sensors.size();
+           lhs.sensors.size() == rhs.sensors.size();
 }
 
 }  // namespace Boardcore
@@ -165,10 +160,9 @@ TEST_CASE_METHOD(SensorManagerFixture,
     // Sampler with lower period are inserted in the TaskScheduler
     // before higher period ones
     // =>
-    //    Task id 8  : sampler at 1000 ms (1 Hz), not DMA
-    //    Task id 9  : sampler at 500 ms  (2 Hz), not DMA ---> first to be added
-    //                                                         to the scheduler
-    //    Task id 10 : sampler at 1000 ms (1 Hz), with DMA
+    //    Task id 8  : sampler at 1000 ms (1 Hz)
+    //    Task id 9  : sampler at 500 ms  (2 Hz) ---> first to be added to the
+    //                                                scheduler
     REQUIRE(tasksStats[0].id == FIRST_TASK_ID);
     REQUIRE(tasksStats[1].id == static_cast<uint8_t>(FIRST_TASK_ID + 2));
     REQUIRE(tasksStats[2].id == static_cast<uint8_t>(FIRST_TASK_ID + 1));
@@ -179,8 +173,8 @@ TEST_CASE_METHOD(SensorManagerFixture,
 TEST_CASE_METHOD(SensorManagerFixture,
                  "Sensors are correctly added to the samplers")
 {
-    // check that 3 samplers exist (1 hz, 2 hz, 1 hz with DMA and 0.5 Hz)
-    REQUIRE(sensorManager->samplers.size() == 4);
+    // check that 3 samplers exist (1 hz, 2 hz and 0.5 Hz)
+    REQUIRE(sensorManager->samplers.size() == 3);
 
     // samplers are sorted by period, in decreasing order!
 
@@ -222,7 +216,6 @@ TEST_CASE_METHOD(SensorManagerFixture,
           info5));  // it fails, so isEnabled is set to false instead of true
     REQUIRE(s5_info.id == info5.id);
     REQUIRE(s5_info.period == info5.period);
-    REQUIRE(s5_info.isDma == info5.isDma);
     REQUIRE(info5.isEnabled ==
             false);  // disabled even if it was created as enabled
     REQUIRE(info5.isInitialized == false);  // always fails the initialization
@@ -231,24 +224,20 @@ TEST_CASE_METHOD(SensorManagerFixture,
 TEST_CASE_METHOD(SensorManagerFixture,
                  "Samplers have the correct number of sensors")
 {
-    // check that sampler at 1000 ms (1 Hz) has 2 sensors
     // sampler at 500 ms (2 Hz) has 1 sensor
-    // sampler at 1000 ms (1 Hz) with DMA has 1 sensor
+    // sampler at 1000 ms (1 Hz) has 3 sensors
+    // sampler at 2000 ms (2 Hz) has 1 sensor
     for (auto s : sensorManager->samplers)
     {
-        if (s->getSamplingPeriod() == 1000 && s->isDMA() == false)
+        if (s->getSamplingPeriod() == 1000)
         {
-            REQUIRE(s->getNumSensors() == 2);
+            REQUIRE(s->getNumSensors() == 3);
         }
         else if (s->getSamplingPeriod() == 500)
         {
             REQUIRE(s->getNumSensors() == 1);
         }
-        else if (s->getSamplingPeriod() == 1000 && s->isDMA() == true)
-        {
-            REQUIRE(s->getNumSensors() == 1);
-        }
-        else if (s->getSamplingPeriod() == 2000 && s->isDMA() == false)
+        else if (s->getSamplingPeriod() == 2000)
         {
             REQUIRE(s->getNumSensors() == 1);
         }

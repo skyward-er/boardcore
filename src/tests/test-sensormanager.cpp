@@ -214,27 +214,23 @@ int main()
                        {/*ID=*/"s1",
                         /*Freq=*/1000,
                         /*Callback=*/[]() { cout << "Callback s1!" << endl; },
-                        /*DMA=*/false,
                         /*Enabled=*/true}},
                       {/*Sensor=*/&s2,
                        {/*ID=*/"s2",
                         /*Freq=*/1000,
                         /*Callback=*/[]() { cout << "Callback s2!" << endl; },
-                        /*DMA=*/false,
                         /*Enabled=*/true}},
                       {/*Sensor=*/&filter,
                        {/*ID=*/"filter",
                         /*Freq=*/2000,
                         /*Callback=*/
                         []() { cout << "Callback filter!" << endl; },
-                        /*DMA=*/false,
                         /*Enabled=*/true}},
                       {/*Sensor=*/&failigS,
                        {/*ID=*/"failing",
                         /*Freq=*/3000,
                         /*Callback=*/
                         []() { cout << "Callback failing sensor!" << endl; },
-                        /*DMA=*/false,
                         /*Enabled=*/true}}});
 
     sm.start();
