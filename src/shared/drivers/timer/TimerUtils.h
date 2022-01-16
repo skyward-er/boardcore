@@ -22,7 +22,7 @@
 
 #pragma once
 
-#include <interfaces/arch_registers.h>
+#include <utils/ClockUtils.h>
 
 namespace Boardcore
 {
@@ -34,30 +34,11 @@ namespace TimerUtils
 {
 
 /**
- * @brief Timer input clock.
- */
-enum class InputClock
-{
-    APB1,
-    APB2
-};
-
-/**
  * @brief Returns the timer input clock.
  *
  * @return Timer input clock, APB1 or ABP2.
  */
-InputClock getTimerInputClock(TIM_TypeDef *timer);
-
-/**
- * @brief Returns the timer clock frequency before the prescaler.
- *
- * Class borrowed from the SyncronizedServo class in Miosix.
- *
- * @param inputClock Timer input clock.
- * @return Prescaler input frequency.
- */
-uint32_t getPrescalerInputFrequency(InputClock inputClock);
+ClockUtils::APB getTimerInputClock(TIM_TypeDef *timer);
 
 /**
  * @brief Returns the timer clock frequency before the prescaler.
@@ -160,57 +141,26 @@ uint16_t computePrescalerValue(TIM_TypeDef *timer, int targetFrequency);
 
 }  // namespace TimerUtils
 
-inline TimerUtils::InputClock TimerUtils::getTimerInputClock(TIM_TypeDef *timer)
+inline ClockUtils::APB TimerUtils::getTimerInputClock(TIM_TypeDef *timer)
 {
     // Timers can be connected to APB1 or APB2 clocks.
     // APB1: TIM2-7,12-15
     // APB2: TIM1,8-11
+    // TODO: Add support for F103
     if (timer == TIM1 || timer == TIM8 || timer == TIM9 || timer == TIM10 ||
         timer == TIM11)
     {
-        return InputClock::APB2;
+        return ClockUtils::APB::APB2;
     }
     else
     {
-        return InputClock::APB1;
+        return ClockUtils::APB::APB1;
     }
-}
-
-inline uint32_t TimerUtils::getPrescalerInputFrequency(InputClock inputClock)
-{
-    // The global variable SystemCoreClock from ARM's CMIS allows to know the
-    // CPU frequency.
-    uint32_t inputFrequency = SystemCoreClock;
-
-    // The timer frequency may be a submultiple of the CPU frequency, due to the
-    // bus at which the peripheral is connected being slower.
-    // The RCC-ZCFGR register tells us how slower the APB bus is running.
-    // The following formula takes into account that if the APB1 clock is
-    // divided by a factor of two or grater, the timer is clocked at twice the
-    // bus interface.
-    // TODO: Check if this and the code are correct
-    // TODO: Keep the Cortex M3 support
-    if (inputClock == InputClock::APB1)
-    {
-        if (RCC->CFGR & RCC_CFGR_PPRE1_2)
-        {
-            inputFrequency /= 1 << ((RCC->CFGR >> 10) & 0x3);
-        }
-    }
-    else
-    {
-        if (RCC->CFGR & RCC_CFGR_PPRE2_2)
-        {
-            inputFrequency /= 1 << ((RCC->CFGR >> 13) >> 0x3);
-        }
-    }
-
-    return inputFrequency;
 }
 
 inline uint32_t TimerUtils::getPrescalerInputFrequency(TIM_TypeDef *timer)
 {
-    return getPrescalerInputFrequency(getTimerInputClock(timer));
+    return ClockUtils::getAPBFrequecy(getTimerInputClock(timer));
 }
 
 inline uint32_t TimerUtils::getFrequency(TIM_TypeDef *timer)

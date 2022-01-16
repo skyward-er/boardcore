@@ -64,11 +64,11 @@ int main()
     TIM8->CR1 = TIM_CR1_CEN;
 
     printf("%lu\n", TIM8->CNT);
-    /*PWM::Timer t{
-        TIM8, &(RCC->APB2ENR), RCC_APB2ENR_TIM8EN,
-        TimerUtils::getPrescalerInputFrequency(TimerUtils::InputClock::APB2)};
 
-    for(;;)
+    PWM::Timer t{TIM8, &(RCC->APB2ENR), RCC_APB2ENR_TIM8EN,
+                 ClockUtils::getAPBFrequecy(ClockUtils::APB::APB2)};
+
+    for (;;)
     {
         PWM pwm{t, 150};
         sep();
@@ -86,7 +86,8 @@ int main()
         sep();
     }
 
-    sep();*/
+    sep();
+
     while (1)
     {
         printf("End\n");

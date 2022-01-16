@@ -23,13 +23,13 @@
 #include "Canbus.h"
 
 #include <kernel/scheduler/scheduler.h>
+#include <utils/ClockUtils.h>
 
 #include <algorithm>
 #include <cmath>
 
 #include "CanInterrupt.h"
 #include "diagnostic/PrintLogger.h"
-#include "utils/ClockFrequency.h"
 
 namespace Boardcore
 {
@@ -122,7 +122,7 @@ CanbusDriver::BitTiming CanbusDriver::calcBitTiming(AutoBitTiming autoBt)
 
     BitTiming cfgIter;
     cfgIter.SJW     = 0;
-    uint32_t apbclk = ClockFrequency::APB1();
+    uint32_t apbclk = ClockUtils::getAPBFrequecy(ClockUtils::APB::APB1);
 
     // Iterate over the possible number of quanta in a bit to find the best
     // settings

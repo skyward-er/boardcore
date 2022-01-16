@@ -94,7 +94,7 @@ namespace Boardcore
  * Other timer functionalities still needs to be implemented.
  */
 template <typename T>
-class GeneralPurposeTimer : public BasicTimer
+class GeneralPurposeTimer final : public BasicTimer
 {
 public:
     static_assert(std::is_same<T, uint16_t>::value ||
@@ -323,7 +323,9 @@ public:
      */
     explicit GeneralPurposeTimer(TIM_TypeDef *timer);
 
-    void reset();
+    ~GeneralPurposeTimer();
+
+    void reset() override;
 
     T readCounter();
 
@@ -366,7 +368,7 @@ public:
     /**
      * @brief Tha capture/compare register is not buffered.
      *
-     * This means that when you change the capture/compare  register, its value
+     * This means that when you change the capture/compare register, its value
      * is taken into account immediately.
      */
     void disableCaptureComparePreload(Channel channel);
@@ -389,10 +391,6 @@ public:
 
     void setCaptureCompareRegister(T value, Channel channel);
 
-    void enableOnePulseMode();
-
-    void disableOnePulseMode();
-
     static void clearTriggerInterruptFlag(TIM_TypeDef *timer);
 
     static void clearCaptureCompareInterruptFlag(TIM_TypeDef *timer,
@@ -403,6 +401,12 @@ template <typename T>
 inline GeneralPurposeTimer<T>::GeneralPurposeTimer(TIM_TypeDef *timer)
     : BasicTimer(timer)
 {
+}
+
+template <typename T>
+inline GeneralPurposeTimer<T>::~GeneralPurposeTimer()
+{
+    reset();
 }
 
 template <typename T>
@@ -686,18 +690,6 @@ inline void GeneralPurposeTimer<T>::setCaptureCompareRegister(T value,
             timer->CCR4 = value;
             break;
     }
-}
-
-template <typename T>
-inline void GeneralPurposeTimer<T>::enableOnePulseMode()
-{
-    timer->CR1 |= TIM_CR1_OPM;
-}
-
-template <typename T>
-inline void GeneralPurposeTimer<T>::disableOnePulseMode()
-{
-    timer->CR1 &= ~TIM_CR1_OPM;
 }
 
 template <typename T>

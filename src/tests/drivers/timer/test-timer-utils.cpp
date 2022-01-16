@@ -28,8 +28,9 @@
  */
 
 using namespace Boardcore::TimerUtils;
+using namespace Boardcore::ClockUtils;
 
-void printInputClock(InputClock inputClock);
+void printInputClock(APB bus);
 
 void testGetTimerInputClock();
 
@@ -94,9 +95,9 @@ int main()
     printf("\n");
 }
 
-void printInputClock(InputClock inputClock)
+void printInputClock(APB bus)
 {
-    if (inputClock == InputClock::APB1)
+    if (bus == APB::APB1)
     {
         printf("APB1");
     }

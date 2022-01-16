@@ -27,8 +27,9 @@
 using namespace miosix;
 using namespace Boardcore;
 using namespace TimerUtils;
+using namespace ClockUtils;
 
-void printInputClock(InputClock inputClock);
+void printInputClock(APB bus);
 
 void testTimerUtils(TIM_TypeDef *timer);
 
@@ -57,9 +58,9 @@ int main()
     }
 }
 
-void printInputClock(InputClock inputClock)
+void printInputClock(APB bus)
 {
-    if (inputClock == InputClock::APB1)
+    if (bus == APB::APB1)
     {
         printf("Timer input clock from APB1\n");
     }
