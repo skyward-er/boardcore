@@ -71,12 +71,6 @@ namespace Boardcore
  * - Very-low-power: 62.5-8KSPS
  * You will probably have the ADC in high resolution mode.
  */
-
-/**
- * @brief Driver class for ADS131M04 ADC.
- *
- * This class allows to manage the device configuration and the data smaling.
- */
 class ADS131M04 : public Sensor<ADS131M04Data>
 {
 public:
