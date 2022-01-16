@@ -96,7 +96,7 @@ private:
 
         void postEvent(const Event& ev)
         {
-            parent.onEventReceived(ev.sig, topic);
+            parent.onEventReceived(ev.code, topic);
         }
 
         ~Sniffer() { parent.broker.unsubscribe(this); }

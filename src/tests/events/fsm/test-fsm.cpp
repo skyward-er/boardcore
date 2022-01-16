@@ -20,13 +20,14 @@
  * THE SOFTWARE.
  */
 
-#include "example-fsm.h"
+#include "test-fsm.h"
 
 #include <miosix.h>
 
 #include <cstdio>
 
 using miosix::Thread;
+using namespace Boardcore;
 
 int main()
 {

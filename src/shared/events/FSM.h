@@ -34,47 +34,63 @@ namespace Boardcore
 template <class T>
 class FSM : public EventHandler
 {
-
 public:
     FSM(void (T::*initialState)(const Event&),
         unsigned int stacksize    = miosix::STACK_DEFAULT_FOR_PTHREAD,
-        miosix::Priority priority = miosix::MAIN_PRIORITY)
-        : EventHandler(stacksize, priority)
-    {
-        state            = initialState;
-        specialEvent.sig = EV_ENTRY;
-        postEvent(specialEvent);
-    }
+        miosix::Priority priority = miosix::MAIN_PRIORITY);
 
-    virtual ~FSM(){};
+    virtual ~FSM();
 
-    void transition(void (T::*nextState)(const Event&))
-    {
-        specialEvent.sig = EV_EXIT;
-        (static_cast<T*>(this)->*state)(specialEvent);
-        state            = nextState;
-        specialEvent.sig = EV_ENTRY;
-        (static_cast<T*>(this)->*state)(specialEvent);
-    }
+    void transition(void (T::*nextState)(const Event&));
 
     /**
-     * Test if the FSM is in a state
-     * @param testState state to test
+     * @brief Test if the FSM is in the given state.
+     *
+     * @param testState State to test.
      */
-    bool testState(void (T::*testState)(const Event&))
-    {
-        return (this->state == testState);
-    }
+    bool testState(void (T::*testState)(const Event&));
 
 protected:
-    void handleEvent(const Event& e) override
-    {
-        (static_cast<T*>(this)->*state)(e);
-    }
+    void handleEvent(const Event& e) override;
 
 private:
     void (T::*state)(const Event&);
     Event specialEvent;
 };
+
+template <class T>
+FSM<T>::FSM(void (T::*initialState)(const Event&), unsigned int stacksize,
+            miosix::Priority priority)
+    : EventHandler(stacksize, priority)
+{
+    state             = initialState;
+    specialEvent.code = EV_ENTRY;
+    postEvent(specialEvent);
+}
+
+template <class T>
+FSM<T>::~FSM(){};
+
+template <class T>
+void FSM<T>::transition(void (T::*nextState)(const Event&))
+{
+    specialEvent.code = EV_EXIT;
+    (static_cast<T*>(this)->*state)(specialEvent);
+    state             = nextState;
+    specialEvent.code = EV_ENTRY;
+    (static_cast<T*>(this)->*state)(specialEvent);
+}
+
+template <class T>
+bool FSM<T>::testState(void (T::*testState)(const Event&))
+{
+    return (this->state == testState);
+}
+
+template <class T>
+void FSM<T>::handleEvent(const Event& e)
+{
+    (static_cast<T*>(this)->*state)(e);
+}
 
 }  // namespace Boardcore

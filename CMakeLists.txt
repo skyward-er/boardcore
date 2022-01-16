@@ -186,6 +186,13 @@ add_executable(test-xbee-snd src/tests/drivers/xbee/test-xbee-snd.cpp)
 sbs_target(test-xbee-snd stm32f429zi_stm32f4discovery)
 
 #-----------------------------------------------------------------------------#
+#                               Tests - Events                                #
+#-----------------------------------------------------------------------------#
+
+add_executable(test-fsm src/tests/events/fsm/test-fsm.cpp)
+sbs_target(test-fsm stm32f429zi_stm32f4discovery)
+
+#-----------------------------------------------------------------------------#
 #                               Tests - Sensors                               #
 #-----------------------------------------------------------------------------#
 
@@ -260,7 +267,7 @@ add_executable(test-vn100 src/tests/sensors/test-vn100.cpp)
 sbs_target(test-vn100 stm32f407vg_stm32f4discovery)
 
 #-----------------------------------------------------------------------------#
-#                               Tests - Sensors                               #
+#                                Tests - Utils                                #
 #-----------------------------------------------------------------------------#
 
 add_executable(test-csvreader src/tests/utils/test-csvreader.cpp)

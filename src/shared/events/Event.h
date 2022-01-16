@@ -51,7 +51,7 @@ enum EventSignal : uint8_t
 
 struct Event
 {
-    uint8_t sig;
+    uint8_t code;
 };
 
 /* Example of extended Event structure

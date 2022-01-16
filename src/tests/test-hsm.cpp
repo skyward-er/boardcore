@@ -87,7 +87,7 @@ public:
 };
 
 #define DEBUG_PRINT \
-    cout << __func__ << ": event received:" << (int)e.sig << endl
+    cout << __func__ << ": event received:" << (int)e.code << endl
 
 using namespace std;
 
@@ -107,7 +107,7 @@ State HSMUTTest::state_S(const Event& e)
 {
     State retState = HANDLED;
     DEBUG_PRINT;
-    switch (e.sig)
+    switch (e.code)
     {
         case EV_ENTRY:
             break;
@@ -140,7 +140,7 @@ State HSMUTTest::state_S1(const Event& e)
 {
     State retState = HANDLED;
     DEBUG_PRINT;
-    switch (e.sig)
+    switch (e.code)
     {
         case EV_ENTRY:
             break;
@@ -186,7 +186,7 @@ State HSMUTTest::state_S11(const Event& e)
 {
     State retState = HANDLED;
     DEBUG_PRINT;
-    switch (e.sig)
+    switch (e.code)
     {
         case EV_ENTRY:
             break;
@@ -222,7 +222,7 @@ State HSMUTTest::state_S2(const Event& e)
 {
     State retState = HANDLED;
     DEBUG_PRINT;
-    switch (e.sig)
+    switch (e.code)
     {
         case EV_ENTRY:
             break;
@@ -258,7 +258,7 @@ State HSMUTTest::state_S21(const Event& e)
 {
     State retState = HANDLED;
     DEBUG_PRINT;
-    switch (e.sig)
+    switch (e.code)
     {
         case EV_ENTRY:
             break;
@@ -283,7 +283,7 @@ State HSMUTTest::state_S211(const Event& e)
 {
     State retState = HANDLED;
     DEBUG_PRINT;
-    switch (e.sig)
+    switch (e.code)
     {
         case EV_ENTRY:
             break;
