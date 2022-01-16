@@ -162,11 +162,11 @@ private:
      */
     void logStats();
 
-    static constexpr uint maxFilenameNumber = 100;  ///< Limit on new filename
-    static constexpr uint maxRecordSize     = 512;  ///< Limit on logged data
-    static constexpr uint numRecords        = 512;  ///< Size of record queues
-    static constexpr uint numBuffers        = 8;    ///< Number of buffers
-    static constexpr uint bufferSize = 64 * 1024;   ///< Size of each buffer
+    static constexpr unsigned int maxFilenameNumber = 100;  ///< Limit on files
+    static constexpr unsigned int maxRecordSize     = 512;  ///< Limit on data
+    static constexpr unsigned int numRecords = 512;  ///< Size of record queues
+    static constexpr unsigned int numBuffers = 8;    ///< Number of buffers
+    static constexpr unsigned int bufferSize = 64 * 1024;  ///< Size of buffers
 
     /**
      * A record is a single serialized logged class. Records are used to
@@ -179,7 +179,7 @@ private:
     public:
         Record() : size(0) {}
         char data[maxRecordSize] = {};
-        uint size;
+        unsigned int size;
     };
 
     /**

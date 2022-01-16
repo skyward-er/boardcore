@@ -189,6 +189,6 @@ private:
     PrintLogger logger = Logging::getLogger("eventbroker");
 };
 
-#define sEventBroker Singleton<EventBroker>::getInstance()
-
 }  // namespace Boardcore
+
+#define sEventBroker Boardcore::Singleton<Boardcore::EventBroker>::getInstance()
