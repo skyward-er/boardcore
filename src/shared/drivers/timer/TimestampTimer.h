@@ -92,7 +92,7 @@ private:
     /**
      * @brief TimestampTimer defaults to TIM2.
      */
-    GeneralPurposeTimer<uint32_t> timer = GeneralPurposeTimer<uint32_t>{TIM2};
+    GP32bitTimer timer = GP32bitTimer{TIM2};
 #endif
 };
 

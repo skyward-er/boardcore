@@ -52,7 +52,7 @@ int main()
     printf("RUNNING...\n");
 
     // Timer for benchmarking purposes
-    GeneralPurposeTimer<uint32_t> timer{TIM5};
+    GP32bitTimer timer{TIM5};
 
     const int n = 3;
     const int p = 1;

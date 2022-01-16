@@ -327,6 +327,10 @@ public:
 
     void reset() override;
 
+    void enable() override;
+
+    void disable() override;
+
     T readCounter();
 
     void setCounter(T counterValue);
@@ -335,6 +339,7 @@ public:
 
     void setAutoReloadRegister(T autoReloadValue);
 
+    // cppcheck-suppress missingOverride
     void setMasterMode(MasterMode masterMode);
 
     void setSlaveMode(SlaveMode slaveMode);
@@ -366,14 +371,14 @@ public:
     void enableCaptureComparePreload(Channel channel);
 
     /**
-     * @brief Tha capture/compare register is not buffered.
+     * @brief The capture/compare register is not buffered.
      *
      * This means that when you change the capture/compare register, its value
      * is taken into account immediately.
      */
     void disableCaptureComparePreload(Channel channel);
 
-    void setOutputCompareMode(OutputCompareMode modeChannel, Channel channel);
+    void setOutputCompareMode(Channel channel, OutputCompareMode modeChannel);
 
     void enableCaptureCompareOutput(Channel channel);
 
@@ -383,19 +388,36 @@ public:
 
     void disableCaptureCompareComplementaryOutput(Channel channel);
 
-    void setCaptureComparePolarity(OutputComparePolarity polarity,
-                                   Channel channel);
+    bool isCaptureComapreOutputEnabled(Channel channel);
 
-    void setCaptureCompareComplementaryPolarity(OutputComparePolarity polarity,
-                                                Channel channel);
+    bool isCaptureComapreComplementaryOutputEnabled(Channel channel);
 
-    void setCaptureCompareRegister(T value, Channel channel);
+    void setCaptureComparePolarity(Channel channel,
+                                   OutputComparePolarity polarity);
+
+    void setCaptureCompareComplementaryPolarity(Channel channel,
+                                                OutputComparePolarity polarity);
+
+    void setCaptureCompareRegister(Channel channel, T value);
 
     static void clearTriggerInterruptFlag(TIM_TypeDef *timer);
 
-    static void clearCaptureCompareInterruptFlag(TIM_TypeDef *timer,
-                                                 Channel channel);
+    static void clearCaptureCompareInterruptFlag(Channel channel,
+                                                 TIM_TypeDef *timer);
 };
+
+/**
+ * @brief General purpose 16bit timer.
+ *
+ * If a timer is natively 32bit, it can be used as 16bit (or even as a basic
+ * timer).
+ */
+using GP16bitTimer = GeneralPurposeTimer<uint16_t>;
+
+/**
+ * @brief General purpose 32bit timer.
+ */
+using GP32bitTimer = GeneralPurposeTimer<uint32_t>;
 
 template <typename T>
 inline GeneralPurposeTimer<T>::GeneralPurposeTimer(TIM_TypeDef *timer)
@@ -430,6 +452,32 @@ inline void GeneralPurposeTimer<T>::reset()
     timer->DCR   = 0;
     timer->DMAR  = 0;
     timer->OR    = 0;
+}
+
+template <typename T>
+inline void GeneralPurposeTimer<T>::enable()
+{
+    timer->CR1 |= TIM_CR1_CEN;
+
+    // On TIM1 and TIM8 the outputs are enabled only if the MOE bit in the BDTR
+    // register is set
+    if (timer == TIM1 || timer == TIM8)
+    {
+        timer->BDTR |= TIM_BDTR_MOE;
+    }
+}
+
+template <typename T>
+inline void GeneralPurposeTimer<T>::disable()
+{
+    timer->CR1 &= ~TIM_CR1_CEN;
+
+    // On TIM1 and TIM8 the outputs are enabled only if the MOE bit in the BDTR
+    // register is set
+    if (timer == TIM1 || timer == TIM8)
+    {
+        timer->BDTR |= TIM_BDTR_MOE;
+    }
 }
 
 template <typename T>
@@ -581,8 +629,8 @@ inline void GeneralPurposeTimer<T>::disableCaptureComparePreload(
 }
 
 template <typename T>
-inline void GeneralPurposeTimer<T>::setOutputCompareMode(OutputCompareMode mode,
-                                                         Channel channel)
+inline void GeneralPurposeTimer<T>::setOutputCompareMode(Channel channel,
+                                                         OutputCompareMode mode)
 {
     switch (channel)
     {
@@ -621,13 +669,6 @@ template <typename T>
 inline void GeneralPurposeTimer<T>::enableCaptureCompareOutput(Channel channel)
 {
     timer->CCER |= TIM_CCER_CC1E << (static_cast<int>(channel) * 4);
-
-    // On TIM1 and TIM8 the outputs are enabled only if the MOE bit in the BDTR
-    // register is set
-    if (timer == TIM1 || timer == TIM8)
-    {
-        timer->BDTR |= TIM_BDTR_MOE;
-    }
 }
 
 template <typename T>
@@ -635,13 +676,6 @@ inline void GeneralPurposeTimer<T>::enableCaptureCompareComplementaryOutput(
     Channel channel)
 {
     timer->CCER |= TIM_CCER_CC1NE << (static_cast<int>(channel) * 4);
-
-    // On TIM1 and TIM8 the outputs are enabled only if the MOE bit in the BDTR
-    // register is set
-    if (timer == TIM1 || timer == TIM8)
-    {
-        timer->BDTR |= TIM_BDTR_MOE;
-    }
 }
 
 template <typename T>
@@ -658,22 +692,36 @@ inline void GeneralPurposeTimer<T>::disableCaptureCompareComplementaryOutput(
 }
 
 template <typename T>
+inline bool GeneralPurposeTimer<T>::isCaptureComapreOutputEnabled(
+    Channel channel)
+{
+    return timer->CCER & (TIM_CCER_CC1E << (static_cast<int>(channel) * 4));
+}
+
+template <typename T>
+inline bool GeneralPurposeTimer<T>::isCaptureComapreComplementaryOutputEnabled(
+    Channel channel)
+{
+    return timer->CCER & (TIM_CCER_CC1NE << (static_cast<int>(channel) * 4));
+}
+
+template <typename T>
 inline void GeneralPurposeTimer<T>::setCaptureComparePolarity(
-    OutputComparePolarity polarity, Channel channel)
+    Channel channel, OutputComparePolarity polarity)
 {
     timer->CCER |= (uint16_t)polarity << (1 + static_cast<int>(channel) * 4);
 }
 
 template <typename T>
 inline void GeneralPurposeTimer<T>::setCaptureCompareComplementaryPolarity(
-    OutputComparePolarity polarity, Channel channel)
+    Channel channel, OutputComparePolarity polarity)
 {
     timer->CCER |= (uint16_t)polarity << (3 + static_cast<int>(channel) * 4);
 }
 
 template <typename T>
-inline void GeneralPurposeTimer<T>::setCaptureCompareRegister(T value,
-                                                              Channel channel)
+inline void GeneralPurposeTimer<T>::setCaptureCompareRegister(Channel channel,
+                                                              T value)
 {
     switch (channel)
     {
@@ -701,7 +749,7 @@ inline void GeneralPurposeTimer<T>::clearTriggerInterruptFlag(
 
 template <typename T>
 inline void GeneralPurposeTimer<T>::clearCaptureCompareInterruptFlag(
-    TIM_TypeDef *timer, Channel channel)
+    Channel channel, TIM_TypeDef *timer)
 {
     timer->SR &= ~(TIM_SR_CC1IF << static_cast<int>(channel));
 }

@@ -35,7 +35,7 @@ TimestampTimer::TimestampTimer()
     enableTimestampTimer();
 }
 
-// TODO: Keep support for CortexM3
+// TODO: Keep support for STM32F103
 void TimestampTimer::initTimestampTimer()
 {
 #ifndef COMPILE_FOR_HOST

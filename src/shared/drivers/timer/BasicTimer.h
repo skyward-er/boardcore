@@ -22,8 +22,6 @@
 
 #pragma once
 
-#include <interfaces/arch_registers.h>
-
 #include "TimerUtils.h"
 
 namespace Boardcore
@@ -70,7 +68,8 @@ namespace Boardcore
  * - The buffer of the prescaler is reloaded with the preload value (PSC)
  * - The auto-reload shadow register is updated with the preload value (ARR)
  *
- * The clock source is provided by the internal clock source. Specifically:
+ * The clock source is provided by the internal clock source.
+ * For STM32F4s they are:
  * - APB1: TIM2-7/12-15
  * - APB2: TIM1/8-11
  */
@@ -128,9 +127,9 @@ public:
      */
     virtual void reset();
 
-    virtual void enable() final;
+    virtual void enable();
 
-    virtual void disable() final;
+    virtual void disable();
 
     virtual bool isEnabled() final;
 

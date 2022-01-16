@@ -135,6 +135,9 @@ float getMaxDuration(TIM_TypeDef *timer);
 /**
  * @brief Compute the prescaler value for the specified target frequency.
  *
+ * If the target frequency is above the prescaler input frequency, the returned
+ * value will be 0 which is the maximum.
+ *
  * @return Prescaler value for the target frequency.
  */
 uint16_t computePrescalerValue(TIM_TypeDef *timer, int targetFrequency);
@@ -222,7 +225,9 @@ inline float TimerUtils::getMaxDuration(TIM_TypeDef *timer)
 inline uint16_t TimerUtils::computePrescalerValue(TIM_TypeDef *timer,
                                                   int targetFrequency)
 {
-    return TimerUtils::getPrescalerInputFrequency(timer) / targetFrequency - 1;
+    int32_t targetPrescaler =
+        TimerUtils::getPrescalerInputFrequency(timer) / targetFrequency - 1;
+    return targetPrescaler >= 0 ? targetPrescaler : 0;
 }
 
 }  // namespace Boardcore
