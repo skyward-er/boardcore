@@ -133,8 +133,8 @@ struct BMX160Config
      */
     enum class IntMode
     {
-        PUSH_PULL,   //< Push-pull behaviour.
-        OPEN_DRAIN,  //< Open drain behaviour.
+        PUSH_PULL,   ///< Push-pull behaviour.
+        OPEN_DRAIN,  ///< Open drain behaviour.
     };
 
     /**

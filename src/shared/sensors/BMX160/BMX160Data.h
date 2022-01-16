@@ -82,13 +82,13 @@ struct BMX160FifoStats
 {
     uint64_t timestamp;
 
-    uint64_t watermarkTimestamp;  //< Watermark timestamp (from the start of
+    uint64_t watermarkTimestamp;  ///< Watermark timestamp (from the start of
                                   // the fifo)
-    uint64_t fifoDuration;        //< Total fifo duration
+    uint64_t fifoDuration;        ///< Total fifo duration
     uint64_t
-        interruptTimestampDelta;  //< Reported delta time between the previous
+        interruptTimestampDelta;  ///< Reported delta time between the previous
                                   // interrupt and the current one.
-    int len;                      //< Fifo length in bytes.
+    int len;                      ///< Fifo length in bytes.
 
     static std::string header()
     {
