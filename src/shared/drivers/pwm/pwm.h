@@ -47,7 +47,7 @@ public:
      *   RCC_APB1ENR_TIM4EN, // TIM4 enable bit on the APB1 enable register
      *
      *   // APB1 Clock speed
-     *   TimerUtils::getPrescalerInputFrequency(TimerUtils::InputClock::APB1)
+     *   TimerUtils::getPrescalerInputFrequency(TimerUtils::APB::APB1)
      *   };
      */
     struct Timer

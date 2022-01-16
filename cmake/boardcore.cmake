@@ -39,7 +39,8 @@ foreach(OPT_BOARD ${BOARDS})
         ${SBS_BASE}/src/shared/drivers/hbridge/HBridge.cpp
         ${SBS_BASE}/src/shared/drivers/i2c/stm32f2_f4_i2c.cpp
         ${SBS_BASE}/src/shared/drivers/interrupt/external_interrupts.cpp
-        ${SBS_BASE}/src/shared/drivers/pwm/pwm.cpp
+        ${SBS_BASE}/src/shared/drivers/timer/PWM.cpp
+        ${SBS_BASE}/src/shared/drivers/timer/TimestampTimer.cpp
         ${SBS_BASE}/src/shared/drivers/runcam/Runcam.cpp
         ${SBS_BASE}/src/shared/drivers/servo/servo.cpp
         ${SBS_BASE}/src/shared/drivers/spi/SPITransaction.cpp
@@ -76,9 +77,6 @@ foreach(OPT_BOARD ${BOARDS})
         ${SBS_BASE}/src/shared/sensors/SensorSampler.cpp
         ${SBS_BASE}/src/shared/sensors/UbloxGPS/UbloxGPS.cpp
         ${SBS_BASE}/src/shared/sensors/VN100/VN100.cpp
-
-        # Timer
-        ${SBS_BASE}/src/shared/drivers/timer/TimestampTimer.cpp
 
         # AeroUtils
         ${SBS_BASE}/src/shared/utils/aero/AeroUtils.cpp

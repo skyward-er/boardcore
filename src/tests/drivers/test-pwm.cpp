@@ -20,24 +20,21 @@
  * THE SOFTWARE.
  */
 
-#include <drivers/pwm/pwm.h>
-#include <drivers/timer/GeneralPurposeTimer.h>
+#include <drivers/timer/PWM.h>
+#include <miosix.h>
 
-using namespace Boardcore;
 using namespace miosix;
+using namespace Boardcore;
 
-// TODO: Update this test
-
-typedef Gpio<GPIOC_BASE, 8> ch2;  // ch1
-// typedef Gpio<GPIOD_BASE, 13> ch2;      // ch2
-typedef Gpio<GPIOG_BASE, 2> timeunit;  // ch2
+typedef Gpio<GPIOC_BASE, 8> ch2;       // TIM8 CH2
+typedef Gpio<GPIOG_BASE, 2> timeunit;  // Signaling output
 
 void sep()
 {
     timeunit::high();
-    Thread::sleep(25);
+    delayMs(1);
     timeunit::low();
-    Thread::sleep(100);
+    delayMs(499);
 }
 
 int main()
@@ -45,9 +42,6 @@ int main()
     printf("Setting up pins...\n");
     {
         FastInterruptDisableLock dLock;
-
-        // ch1::mode(Mode::ALTERNATE);
-        // ch1::alternateFunction(2);
 
         ch2::mode(Mode::ALTERNATE);
         ch2::alternateFunction(3);
@@ -58,41 +52,25 @@ int main()
 
     RCC->APB2ENR |= RCC_APB2ENR_TIM8EN;
 
-    TIM8->PSC = 1;
-    TIM8->CNT = 0;
-    TIM8->EGR |= TIM_EGR_UG;
-    TIM8->CR1 = TIM_CR1_CEN;
+    PWM pwm(TIM8);
 
-    printf("%lu\n", TIM8->CNT);
-
-    PWM::Timer t{TIM8, &(RCC->APB2ENR), RCC_APB2ENR_TIM8EN,
-                 ClockUtils::getAPBFrequecy(ClockUtils::APB::APB2)};
-
-    for (;;)
-    {
-        PWM pwm{t, 150};
-        sep();
-
-        pwm.start();
-        sep();
-
-        pwm.enableChannel(PWMChannel::CH2, 0.3);
-        sep();
-
-        pwm.setDutyCycle(PWMChannel::CH2, 0.7);
-        sep();
-
-        pwm.stop();
-        sep();
-    }
-
+    pwm.setDutyCycle(GP16bitTimer::Channel::CHANNEL_2, 0.9);
+    pwm.enableChannel(GP16bitTimer::Channel::CHANNEL_2);
     sep();
 
-    while (1)
+    for (int i = 0; i < 10; i++)
     {
-        printf("End\n");
-        Thread::sleep(10000);
+
+        pwm.setDutyCycle(GP16bitTimer::Channel::CHANNEL_2, 0.7);
+        sep();
+
+        pwm.setDutyCycle(GP16bitTimer::Channel::CHANNEL_2, 0.5);
+        sep();
+
+        pwm.setDutyCycle(GP16bitTimer::Channel::CHANNEL_2, 0.3);
+        sep();
     }
 
-    return 0;
+    while (true)
+        Thread::sleep(10000);
 }
