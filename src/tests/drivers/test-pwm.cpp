@@ -54,20 +54,20 @@ int main()
 
     PWM pwm(TIM8);
 
-    pwm.setDutyCycle(GP16bitTimer::Channel::CHANNEL_2, 0.9);
-    pwm.enableChannel(GP16bitTimer::Channel::CHANNEL_2);
+    pwm.setDutyCycle(TimerUtils::Channel::CHANNEL_2, 0.9);
+    pwm.enableChannel(TimerUtils::Channel::CHANNEL_2);
     sep();
 
     for (int i = 0; i < 10; i++)
     {
 
-        pwm.setDutyCycle(GP16bitTimer::Channel::CHANNEL_2, 0.7);
+        pwm.setDutyCycle(TimerUtils::Channel::CHANNEL_2, 0.7);
         sep();
 
-        pwm.setDutyCycle(GP16bitTimer::Channel::CHANNEL_2, 0.5);
+        pwm.setDutyCycle(TimerUtils::Channel::CHANNEL_2, 0.5);
         sep();
 
-        pwm.setDutyCycle(GP16bitTimer::Channel::CHANNEL_2, 0.3);
+        pwm.setDutyCycle(TimerUtils::Channel::CHANNEL_2, 0.3);
         sep();
     }
 

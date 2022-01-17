@@ -70,13 +70,13 @@ public:
      */
     SPISignalGenerator(
         size_t nBytes, int transactionFrequency, int spiFrequency = 1e6,
-        SPI::Mode spiMode                  = SPI::Mode::MODE_0,
-        GP16bitTimer::Channel chainChannel = GP16bitTimer::Channel::CHANNEL_2,
-        GP16bitTimer::Channel csChannel    = GP16bitTimer::Channel::CHANNEL_2,
-        GP16bitTimer::Channel sckChannel   = GP16bitTimer::Channel::CHANNEL_4,
+        SPI::Mode spiMode                = SPI::Mode::MODE_0,
+        TimerUtils::Channel chainChannel = TimerUtils::Channel::CHANNEL_2,
+        TimerUtils::Channel csChannel    = TimerUtils::Channel::CHANNEL_2,
+        TimerUtils::Channel sckChannel   = TimerUtils::Channel::CHANNEL_4,
         TIM_TypeDef *masterTimer = TIM1, TIM_TypeDef *slaveTimer = TIM3,
-        GP16bitTimer::TriggerSource slaveTriggerSource =
-            GP16bitTimer::TriggerSource::ITR0);
+        TimerUtils::TriggerSource slaveTriggerSource =
+            TimerUtils::TriggerSource::ITR0);
 
     /**
      * @brief Sets up the two timers.
@@ -110,20 +110,20 @@ private:
     int transactionFrequency;  ///< Frequency of the transactions are generated.
     int spiFrequency;          ///< SPI Clock frequency.
     SPI::Mode spiMode;
-    GP16bitTimer::Channel chainChannel;
-    GP16bitTimer::Channel csChannel;
-    GP16bitTimer::Channel sckChannel;
+    TimerUtils::Channel chainChannel;
+    TimerUtils::Channel csChannel;
+    TimerUtils::Channel sckChannel;
     GP16bitTimer masterTimer;  ///< Master timer for CS generation.
     GP16bitTimer slaveTimer;   ///< Slave timer for SCK generation.
-    GP16bitTimer::TriggerSource slaveTriggerSource;
+    TimerUtils::TriggerSource slaveTriggerSource;
 };
 
 inline SPISignalGenerator::SPISignalGenerator(
     size_t nBytes, int transactionFrequency, int spiFrequency,
-    SPI::Mode spiMode, GP16bitTimer::Channel chainChannel,
-    GP16bitTimer::Channel csChannel, GP16bitTimer::Channel sckChannel,
+    SPI::Mode spiMode, TimerUtils::Channel chainChannel,
+    TimerUtils::Channel csChannel, TimerUtils::Channel sckChannel,
     TIM_TypeDef *masterTimer, TIM_TypeDef *slaveTimer,
-    GP16bitTimer::TriggerSource slaveTriggerSource)
+    TimerUtils::TriggerSource slaveTriggerSource)
     : nBytes(nBytes), transactionFrequency(transactionFrequency),
       spiFrequency(spiFrequency), spiMode(spiMode), chainChannel(chainChannel),
       csChannel(csChannel), sckChannel(sckChannel), masterTimer(masterTimer),
@@ -143,21 +143,21 @@ inline void SPISignalGenerator::configure()
         // Connect the specified channel to the trigger output
         switch (chainChannel)
         {
-            case GP16bitTimer::Channel::CHANNEL_1:
+            case TimerUtils::Channel::CHANNEL_1:
                 masterTimer.setMasterMode(
-                    GP16bitTimer::MasterMode::OC1REF_OUTPUT);
+                    TimerUtils::MasterMode::OC1REF_OUTPUT);
                 break;
-            case GP16bitTimer::Channel::CHANNEL_2:
+            case TimerUtils::Channel::CHANNEL_2:
                 masterTimer.setMasterMode(
-                    GP16bitTimer::MasterMode::OC2REF_OUTPUT);
+                    TimerUtils::MasterMode::OC2REF_OUTPUT);
                 break;
-            case GP16bitTimer::Channel::CHANNEL_3:
+            case TimerUtils::Channel::CHANNEL_3:
                 masterTimer.setMasterMode(
-                    GP16bitTimer::MasterMode::OC3REF_OUTPUT);
+                    TimerUtils::MasterMode::OC3REF_OUTPUT);
                 break;
-            case GP16bitTimer::Channel::CHANNEL_4:
+            case TimerUtils::Channel::CHANNEL_4:
                 masterTimer.setMasterMode(
-                    GP16bitTimer::MasterMode::OC4REF_OUTPUT);
+                    TimerUtils::MasterMode::OC4REF_OUTPUT);
                 break;
         }
 
@@ -174,14 +174,14 @@ inline void SPISignalGenerator::configure()
         // Set chain channel
         masterTimer.setCaptureCompareRegister(chainChannel, ccRegister);
         masterTimer.setOutputCompareMode(
-            chainChannel, GP16bitTimer::OutputCompareMode::PWM_MODE_2);
+            chainChannel, TimerUtils::OutputCompareMode::PWM_MODE_2);
 
         // Set CS channel if different
         if (chainChannel != csChannel)
         {
             masterTimer.setCaptureCompareRegister(csChannel, ccRegister);
             masterTimer.setOutputCompareMode(
-                csChannel, GP16bitTimer::OutputCompareMode::PWM_MODE_1);
+                csChannel, TimerUtils::OutputCompareMode::PWM_MODE_1);
 
             // Enable CS capture/compare output
             masterTimer.enableCaptureCompareOutput(csChannel);
@@ -191,7 +191,7 @@ inline void SPISignalGenerator::configure()
             // If chain channel and cs channel are the same, the cs output
             // must be from the complementary output
             masterTimer.setCaptureCompareComplementaryPolarity(
-                chainChannel, GP16bitTimer::OutputComparePolarity::ACTIVE_LOW);
+                chainChannel, TimerUtils::OutputComparePolarity::ACTIVE_LOW);
             masterTimer.enableCaptureCompareComplementaryOutput(chainChannel);
         }
 
@@ -204,7 +204,7 @@ inline void SPISignalGenerator::configure()
         slaveTimer.reset();
 
         // Set slaveTimer in gated mode
-        slaveTimer.setSlaveMode(GP16bitTimer::SlaveMode::GATED_MODE);
+        slaveTimer.setSlaveMode(TimerUtils::SlaveMode::GATED_MODE);
 
         // Set ITR1 as internal trigger source
         slaveTimer.setTriggerSource(slaveTriggerSource);
@@ -218,12 +218,12 @@ inline void SPISignalGenerator::configure()
         slaveTimer.setCaptureCompareRegister(sckChannel, 1);
 
         // Set channel 1 to toggle mode
-        slaveTimer.setOutputCompareMode(
-            sckChannel, GP16bitTimer::OutputCompareMode::TOGGLE);
+        slaveTimer.setOutputCompareMode(sckChannel,
+                                        TimerUtils::OutputCompareMode::TOGGLE);
         if (spiMode >= SPI::Mode::MODE_2)
         {
             slaveTimer.setCaptureComparePolarity(
-                sckChannel, GP16bitTimer::OutputComparePolarity::ACTIVE_LOW);
+                sckChannel, TimerUtils::OutputComparePolarity::ACTIVE_LOW);
         }
 
         // Enable capture/compare output

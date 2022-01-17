@@ -57,12 +57,12 @@ void PWM::setDutyCycleResolution(unsigned int dutyCycleResolution)
     setTimerConfiguration();
 }
 
-void PWM::enableChannel(GP16bitTimer::Channel channel, Polarity polarity)
+void PWM::enableChannel(TimerUtils::Channel channel, Polarity polarity)
 {
     timer.setOutputCompareMode(channel,
-                               GP16bitTimer::OutputCompareMode::PWM_MODE_1);
+                               TimerUtils::OutputCompareMode::PWM_MODE_1);
     timer.setCaptureComparePolarity(
-        channel, static_cast<GP16bitTimer::OutputComparePolarity>(polarity));
+        channel, static_cast<TimerUtils::OutputComparePolarity>(polarity));
 
     // This will ensure that the duty cycle will change only at the next period
     timer.enableCaptureComparePreload(channel);
@@ -70,17 +70,17 @@ void PWM::enableChannel(GP16bitTimer::Channel channel, Polarity polarity)
     timer.enableCaptureCompareOutput(channel);
 }
 
-void PWM::disableChannel(GP16bitTimer::Channel channel)
+void PWM::disableChannel(TimerUtils::Channel channel)
 {
     timer.disableCaptureCompareOutput(channel);
 }
 
-bool PWM::isChannelEnabled(GP16bitTimer::Channel channel)
+bool PWM::isChannelEnabled(TimerUtils::Channel channel)
 {
     return timer.isCaptureComapreOutputEnabled(channel);
 }
 
-void PWM::setDutyCycle(GP16bitTimer::Channel channel, float dutyCycle)
+void PWM::setDutyCycle(TimerUtils::Channel channel, float dutyCycle)
 {
     if (dutyCycle >= 0 && dutyCycle <= 1)
         timer.setCaptureCompareRegister(

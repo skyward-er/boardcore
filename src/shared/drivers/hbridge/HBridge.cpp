@@ -25,66 +25,46 @@
 namespace Boardcore
 {
 
-HBridge::HBridge(miosix::GpioPin inhibit, PWM::Timer timer, PWMChannel channel,
-                 uint32_t frequency, float dutyCycle, uint16_t disableDelayMs)
-    : pinInterrupt(inhibit), pwm(timer, frequency), channel(channel),
-      dutyCycle(dutyCycle), disableDelayMs(disableDelayMs)
+HBridge::HBridge(GpioPin inhibitPin, TIM_TypeDef* timer,
+                 TimerUtils::Channel channel, unsigned int frequency,
+                 float dutyCycle, unsigned int disableDelayMs)
+    : inhibitPin(inhibitPin), pwm(timer, frequency), channel(channel),
+      frequency(frequency), dutyCycle(dutyCycle), disableDelayMs(disableDelayMs)
 {
-    pinInterrupt.low();
-
-    status.timestamp = TimestampTimer::getInstance().getTimestamp();
-    status.state     = HBridgeState::DISABLED;
-
-    // Start PWM with 0 duty cycle to keep IN pins low
-    pwm.enableChannel(channel, 0.0f);
-
-    pwm.start();
+    inhibitPin.low();
 }
 
-HBridge::~HBridge()
-{
-    disable();
+HBridge::~HBridge() { disable(); }
 
-    pwm.stop();
+void HBridge::enable()
+{
+    pwm.setDutyCycle(channel, dutyCycle);
+    pwm.enableChannel(channel);
+
+    inhibitPin.high();
 }
 
 void HBridge::disable()
 {
-    if (status.state == HBridgeState::ENABLED)
-    {
-        pwm.setDutyCycle(channel, 0.0f);  // Set duty cycle to 0 to leave the IN
-                                          // pin of the h-bridge low
+    pwm.disableChannel(channel);
 
-        Thread::sleep(disableDelayMs);  // Wait a short delay
+    Thread::sleep(disableDelayMs);
 
-        pinInterrupt.low();  // Disable h-bridge
-
-        status.timestamp = TimestampTimer::getInstance().getTimestamp();
-        status.state     = HBridgeState::DISABLED;
-    }
+    inhibitPin.low();
 }
 
-void HBridge::enable() { enableHBridge(channel, pinInterrupt, dutyCycle); }
+bool HBridge::isEnabled() { return pwm.isChannelEnabled(channel); }
 
-void HBridge::enableTest(float testDutyCycle)
+void HBridge::setDutyCycle(float dutyCycle)
 {
-    enableHBridge(channel, pinInterrupt, testDutyCycle);
+    this->dutyCycle = dutyCycle;
+
+    pwm.setDutyCycle(channel, dutyCycle);
 }
 
-HBridgeStatus HBridge::getStatus() { return status; }
-
-void HBridge::enableHBridge(PWMChannel channel, GpioPin& inh, float dutyCycle)
+void HBridge::testDutyCycle(float testDutyCycle)
 {
-    if (status.state == HBridgeState::DISABLED)
-    {
-        // Enable PWM Generation
-        pwm.setDutyCycle(channel, dutyCycle);
-        // enable h-bridge
-        inh.high();
-
-        status.timestamp = TimestampTimer::getInstance().getTimestamp();
-        status.state     = HBridgeState::ENABLED;
-    }
+    pwm.setDutyCycle(channel, testDutyCycle);
 }
 
 }  // namespace Boardcore

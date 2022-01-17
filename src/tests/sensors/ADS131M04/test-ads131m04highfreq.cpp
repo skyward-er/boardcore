@@ -67,8 +67,8 @@ int main()
 
     SPISignalGenerator spiSignalGenerator(
         16, BUFF_SIZE, 1000000, SPI::Mode::MODE_0,
-        GP16bitTimer::Channel::CHANNEL_1, GP16bitTimer::Channel::CHANNEL_4,
-        GP16bitTimer::Channel::CHANNEL_4);
+        TimerUtils::Channel::CHANNEL_1, TimerUtils::Channel::CHANNEL_4,
+        TimerUtils::Channel::CHANNEL_4);
     SPISlaveBus spiBus(SPI4, spiSignalGenerator);
     SPISlave spiSlave(spiBus, csPin, {});
     ADS131M04HighFreq ads131(spiSlave, SPI4, (DMA2_Stream0),

@@ -21,8 +21,6 @@
  */
 
 #include <drivers/hbridge/HBridge.h>
-#include <drivers/pwm/pwm.h>
-#include <drivers/timer/GeneralPurposeTimer.h>
 #include <miosix.h>
 #include <utils/Debug.h>
 
@@ -39,7 +37,8 @@ static const PWM::Timer HBRIDGE_TIM{
     TIM3, &(RCC->APB1ENR), RCC_APB1ENR_TIM3EN,
     ClockUtils::getAPBFrequecy(ClockUtils::APB::APB2)};
 
-static const PWMChannel HBRIDGE_PWM_CHANNEL = PWMChannel::CH2;
+static const TimerUtils::Channel HBRIDGE_PWM_CHANNEL =
+    TimerUtils::Channel::CHANNEL_2;
 
 GpioPin hbridgeIn(GPIOB_BASE, 5);       // pwm pin
 GpioPin hbridgeInhibit(GPIOB_BASE, 7);  // inhibit pin for the hbridge
@@ -110,14 +109,12 @@ int main()
                         duty / 100);
 
         hbridge.enable();
-        TRACE("Hbridge status : timestamp = %llu - state = %d \n",
-              hbridge.getStatus().timestamp, hbridge.getStatus().state);
+        TRACE("Hbridge enabled\n");
 
         wait();
 
         hbridge.disable();
-        TRACE("Hbridge status : timestamp = %llu - state = %d \n",
-              hbridge.getStatus().timestamp, hbridge.getStatus().state);
+        TRACE("Hbridge disabled\n");
 
         Thread::sleep(500);
 

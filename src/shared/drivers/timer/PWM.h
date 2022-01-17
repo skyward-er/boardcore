@@ -31,6 +31,10 @@ namespace Boardcore
  * @brief Driver for easy access to the PWM capabilities of the general purpose
  * timers.
  *
+ * Note that the pwm timer is started when the object is created (and disabled
+ * when deleted) but no channels are enalbed. This means that you will only need
+ * to use the channels whithout worring about the underlying timer.
+ *
  * The PWM driver accepts a the pointer to the peripheral registers of a timer
  * and uses it as a 16bit general purpose timer. No checks are in place to this
  * pointer, thus make shure to pass a proper value!
@@ -39,6 +43,10 @@ namespace Boardcore
  * At the moment there is no need for further accuracy but if it ever will be,
  * exending this class is simble, just add a template parameter and pass it to
  * the GeneralPurposeTimer parameter.
+ *
+ * Check out the following spread sheet to visually see how the timers registers
+ * are calculated and the accuracy achieved:
+ * https://docs.google.com/spreadsheets/d/1FiNDVU7Rg98yZzz1dZ4GDAq3-nEg994ziezCawJ-OK4/edit#gid=0
  */
 class PWM
 {
@@ -57,7 +65,7 @@ public:
      * @param dutyCycleResolution Duty cycle levels.
      */
     explicit PWM(TIM_TypeDef *timer, unsigned int pwmFrequency = 50,
-                 unsigned int dutyCycleResolution = 65535);
+                 unsigned int dutyCycleResolution = 1000);
 
     ~PWM();
 
@@ -65,12 +73,12 @@ public:
 
     void setDutyCycleResolution(unsigned int dutyCycleResolution);
 
-    void enableChannel(GP16bitTimer::Channel channel,
+    void enableChannel(TimerUtils::Channel channel,
                        Polarity polarity = Polarity::NORMAL);
 
-    void disableChannel(GP16bitTimer::Channel channel);
+    void disableChannel(TimerUtils::Channel channel);
 
-    bool isChannelEnabled(GP16bitTimer::Channel channel);
+    bool isChannelEnabled(TimerUtils::Channel channel);
 
     /**
      * @brief Sets the duty cycle for the specified channel.
@@ -80,7 +88,7 @@ public:
      * @param channel Channel to change the duty cycle
      * @param dutyCycle Relative duty cycle, ranges from 0 to 1
      */
-    void setDutyCycle(GP16bitTimer::Channel channel, float dutyCycle);
+    void setDutyCycle(TimerUtils::Channel channel, float dutyCycle);
 
 private:
     void setTimerConfiguration();

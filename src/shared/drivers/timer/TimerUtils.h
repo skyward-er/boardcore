@@ -34,6 +34,222 @@ namespace TimerUtils
 {
 
 /**
+ * @brief Trigger sourcer modes.
+ *
+ * Here a quick recap of the internal trigger sources:
+ *
+ *       ITR0  ITR1  ITR2  ITR3
+ * TIM1  TIM5  TIM2  TIM3  TIM4
+ * TIM2  TIM1  TIM8  TIM3  TIM4
+ * TIM3  TIM1  TIM2  TIM5  TIM4
+ * TIM4  TIM1  TIM2  TIM3  TIM8
+ * TIM5  TIM2  TIM3  TIM4  TIM8
+ * TIM6  ----  ----  ----  ----
+ * TIM7  ----  ----  ----  ----
+ * TIM8  TIM1  TIM2  TIM4  TIM5
+ * TIM9  TIM2  TIM3  TIM10 TIM11
+ * TIM10 ----  ----  ----  ----
+ * TIM11 ----  ----  ----  ----
+ * TIM12 TIM4  TIM5  TIM13 TIM14
+ * TIM13 ----  ----  ----  ----
+ * TIM14 ----  ----  ----  ----
+ */
+enum class TriggerSource : uint16_t
+{
+    /**
+     * @brief Internal trigger 0.
+     */
+    ITR0 = 0,
+
+    /**
+     * @brief Internal trigger 1.
+     */
+    ITR1 = TIM_SMCR_TS_0,
+
+    /**
+     * @brief Internal trigger 2.
+     */
+    ITR2 = TIM_SMCR_TS_1,
+
+    /**
+     * @brief Internal trigger 3.
+     */
+    ITR3 = TIM_SMCR_TS_1 | TIM_SMCR_TS_0,
+
+    /**
+     * @brief TI1 edge detector.
+     */
+    TI1F_ED = TIM_SMCR_TS_2,
+
+    /**
+     * @brief Filtered timer input 1.
+     */
+    TI1FP1 = TIM_SMCR_TS_2 | TIM_SMCR_TS_0,
+
+    /**
+     * @brief Filtered timer input 2.
+     */
+    TI2FP2 = TIM_SMCR_TS_2 | TIM_SMCR_TS_1
+};
+
+enum class MasterMode : uint32_t
+{
+    /**
+     * @brief Only the updateGeneration() function is used as trigger
+     * output.
+     */
+    RESET = 0,
+
+    /**
+     * @brief Only the timer enable is used as trigger output.
+     *
+     * This is useful to start several timers at the same time.
+     */
+    ENABLE = TIM_CR2_MMS_0,
+
+    /**
+     * @brief The UEV is selected as trigger output.
+     *
+     * This is useful when one timer is used as a prescaler for another
+     * timer.
+     */
+    UPDATE = TIM_CR2_MMS_1,
+
+    /**
+     * @brief The trigger output send a positive pulse when the OC1IF flag
+     * is to be set (even if it was already high), as soon as a capture or a
+     * compare match occurred.
+     */
+    COMPARE_PULSE = TIM_CR2_MMS_1 | TIM_CR2_MMS_0,
+
+    /**
+     * @brief OC1REF signal is used as trigger output (TRGO).
+     */
+    OC1REF_OUTPUT = TIM_CR2_MMS_2,
+
+    /**
+     * @brief OC2REF signal is used as trigger output (TRGO).
+     */
+    OC2REF_OUTPUT = TIM_CR2_MMS_2 | TIM_CR2_MMS_0,
+
+    /**
+     * @brief OC3REF signal is used as trigger output (TRGO).
+     */
+    OC3REF_OUTPUT = TIM_CR2_MMS_2 | TIM_CR2_MMS_1,
+
+    /**
+     * @brief OC4REF signal is used as trigger output (TRGO).
+     */
+    OC4REF_OUTPUT = TIM_CR2_MMS
+};
+
+enum class SlaveMode : uint16_t
+{
+    /**
+     * @brief Slave mode disabled.
+     *
+     * The clock is only enabled by software.
+     */
+    DISABLED = 0,
+
+    /**
+     * @brief Reset mode.
+     *
+     * Rising edge of the selected trigger input (TRGI) reinitialize the
+     * counter and generates an update of the registers.
+     */
+    RESET_MODE = TIM_SMCR_SMS_2,
+
+    /**
+     * @brief Gated mode.
+     *
+     * The counter clock is eneabled when the trigger input (TRGI) is high.
+     * The counter stops (but is not reset) as soon as the trigger becomes
+     * low. Counter starts and stops are both controlled.
+     *
+     * Note: The gated mode must not be used if TI1F_ED is selected as the
+     * trigger input.
+     */
+    GATED_MODE = TIM_SMCR_SMS_2 | TIM_SMCR_SMS_0,
+
+    /**
+     * @brief Trigger mode.
+     *
+     * The counter starts on a rising edge of the trigger TRGI (but it is
+     * not reset). Only the start of the counter is controlled.
+     */
+    TRIGGER_MODE = TIM_SMCR_SMS_2 | TIM_SMCR_SMS_1,
+
+    /**
+     * @brief External clock mode 1.
+     *
+     * Rising edges of the selected trigger (TRGI) clock the counter
+     */
+    EXTERNAL_CLOCK_MODE_1 = TIM_SMCR_SMS
+};
+
+enum class OutputCompareMode : uint16_t
+{
+    /**
+     * @brief The comparison between the output compare register and the
+     * counter has no effect on the outputs.
+     */
+    FROZEN = 0,
+
+    /**
+     * @brief Set channel to active level on match.
+     */
+    ACTIVE_ON_MATCH = 0x1,
+
+    /**
+     * @brief Set channel to inactive level on match.
+     */
+    INACTIVE_ON_MATCH = 0x2,
+
+    /**
+     * @brief The output toggles when the output compare register and the
+     * counter match.
+     */
+    TOGGLE = 0x3,
+
+    /**
+     * @brief Output is forced low
+     */
+    FORCE_INACTIVE = 0x4,
+
+    /**
+     * @brief Output is forced high
+     */
+    FORCE_ACTIVE = 0x5,
+
+    /**
+     * @brief Output is active as long as the counter is smaller than the
+     * compare register (reverse when downcounting).
+     */
+    PWM_MODE_1 = 0x6,
+
+    /**
+     * @brief Output is active as long as the counter is greater than the
+     * compare register (reverse when downcounting).
+     */
+    PWM_MODE_2 = 0x7
+};
+
+enum class OutputComparePolarity : uint16_t
+{
+    ACTIVE_HIGH = 0,
+    ACTIVE_LOW  = 0x1
+};
+
+enum class Channel : int
+{
+    CHANNEL_1 = 0,
+    CHANNEL_2 = 1,
+    CHANNEL_3 = 2,
+    CHANNEL_4 = 3
+};
+
+/**
  * @brief Returns the timer input clock.
  *
  * @return Timer input clock, APB1 or ABP2.

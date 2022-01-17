@@ -55,9 +55,9 @@ int main()
                                           1000,
                                           1000000,
                                           SPI::Mode::MODE_0,
-                                          GP16bitTimer::Channel::CHANNEL_1,
-                                          GP16bitTimer::Channel::CHANNEL_4,
-                                          GP16bitTimer::Channel::CHANNEL_4};
+                                          TimerUtils::Channel::CHANNEL_1,
+                                          TimerUtils::Channel::CHANNEL_4,
+                                          TimerUtils::Channel::CHANNEL_4};
     spiSignalGenerator.configure();
 
     Thread::sleep(1000);

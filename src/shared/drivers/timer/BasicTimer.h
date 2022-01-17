@@ -76,30 +76,6 @@ namespace Boardcore
 class BasicTimer
 {
 public:
-    enum class MasterMode : uint16_t
-    {
-        /**
-         * @brief Only the updateGeneration() function is used as trigger
-         * output.
-         */
-        RESET = 0,
-
-        /**
-         * @brief Only the timer enable is used as trigger output.
-         *
-         * This is useful to start several timers at the same time.
-         */
-        ENABLE = TIM_CR2_MMS_0,
-
-        /**
-         * @brief The UEV is selected as trigger output.
-         *
-         * This is useful when one timer is used as a prescaler for another
-         * timer.
-         */
-        UPDATE = TIM_CR2_MMS_1
-    };
-
     /**
      * @brief Create a BasicTimer object. Note that this does not resets the
      * timer configuration.
@@ -213,7 +189,7 @@ public:
 
     virtual void disableUGInterruptAndDMA() final;
 
-    virtual void setMasterMode(MasterMode masterMode) final;
+    virtual void setMasterMode(TimerUtils::MasterMode masterMode);
 
     static void clearUpdateInterruptFlag(TIM_TypeDef *timer);
 
@@ -327,8 +303,12 @@ inline void BasicTimer::disableUGInterruptAndDMA()
     timer->CR1 |= TIM_CR1_URS;
 }
 
-inline void BasicTimer::setMasterMode(MasterMode masterMode)
+inline void BasicTimer::setMasterMode(TimerUtils::MasterMode masterMode)
 {
+    // Only RESET, ENABLE, UPDATE are available on basic timers
+    if (masterMode > TimerUtils::MasterMode::UPDATE)
+        return;
+
     // First clear the configuration
     timer->CR2 &= ~TIM_CR2_MMS;
 

@@ -41,9 +41,9 @@ static constexpr int BUFF_SIZE = 1024;
 Thread* irqWaitThread = nullptr;
 
 SPISignalGenerator spiSignalGenerator(16, BUFF_SIZE, 1000000, SPI::Mode::MODE_1,
-                                      GP16bitTimer::Channel::CHANNEL_1,
-                                      GP16bitTimer::Channel::CHANNEL_4,
-                                      GP16bitTimer::Channel::CHANNEL_4);
+                                      TimerUtils::Channel::CHANNEL_1,
+                                      TimerUtils::Channel::CHANNEL_4,
+                                      TimerUtils::Channel::CHANNEL_4);
 SPISlaveBus spiBus(SPI4, spiSignalGenerator);
 SPIBusConfig spiConfig = {.mode = SPI::Mode::MODE_1};
 SPISlave spiSlave(spiBus, csPin, spiConfig);

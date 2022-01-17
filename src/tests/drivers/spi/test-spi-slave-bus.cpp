@@ -63,9 +63,9 @@ int main()
                                           100,
                                           1000000,
                                           SPI::Mode::MODE_0,
-                                          GP16bitTimer::Channel::CHANNEL_1,
-                                          GP16bitTimer::Channel::CHANNEL_4,
-                                          GP16bitTimer::Channel::CHANNEL_4};
+                                          TimerUtils::Channel::CHANNEL_1,
+                                          TimerUtils::Channel::CHANNEL_4,
+                                          TimerUtils::Channel::CHANNEL_4};
     SPISlaveBus bus(SPI4, spiSignalGenerator);
     SPISlave spiSlave(bus, csPin, {});
     spiSlave.config.clockDivider = SPI::ClockDivider::DIV_64;
