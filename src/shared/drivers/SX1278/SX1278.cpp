@@ -112,16 +112,12 @@ SX1278::Error SX1278::init(Config config)
 
 int SX1278::recv(uint8_t *buf, size_t max_len)
 {
-    // Enter RX mode
-    if (mode == Mode::MODE_STDBY)
-        enterMode(Mode::MODE_FSRX);
-
     enterMode(Mode::MODE_RX);
 
     uint8_t len = 0;
     do
     {
-        waitForIrq2(RegIrqFlags2::PAYLOAD_READY);
+        waitForIrq(RegIrqFlags::PAYLOAD_READY);
 
         {
             SPITransaction spi(slave, SPITransaction::WriteBit::INVERTED);
@@ -140,14 +136,10 @@ int SX1278::recv(uint8_t *buf, size_t max_len)
 
 void SX1278::send(const uint8_t *buf, uint8_t len)
 {
-    // Enter TX mode
-    if (mode == Mode::MODE_STDBY)
-        enterMode(Mode::MODE_FSTX);
-
     enterMode(Mode::MODE_TX);
 
     // Wait for TX ready
-    waitForIrq1(RegIrqFlags1::TX_READY);
+    waitForIrq(RegIrqFlags::TX_READY);
 
     {
         SPITransaction spi(slave, SPITransaction::WriteBit::INVERTED);
@@ -158,7 +150,7 @@ void SX1278::send(const uint8_t *buf, uint8_t len)
     }
 
     // Wait for packet sent
-    waitForIrq2(RegIrqFlags2::PACKET_SENT);
+    waitForIrq(RegIrqFlags::PACKET_SENT);
 }
 
 void SX1278::handleDioIRQ()
@@ -180,6 +172,14 @@ uint8_t SX1278::getVersion() const
     SPITransaction spi(slave, SPITransaction::WriteBit::INVERTED);
 
     return spi.readRegister(REG_VERSION);
+}
+
+uint16_t SX1278::getIrqFlags() const
+{
+    SPITransaction spi(slave, SPITransaction::WriteBit::INVERTED);
+
+    return ((uint16_t)spi.readRegister(REG_IRQ_FLAGS_1)) |
+           ((uint16_t)spi.readRegister(REG_IRQ_FLAGS_2) << 8);
 }
 
 void SX1278::setBitrate(int bitrate)
@@ -310,21 +310,19 @@ void SX1278::enterMode(Mode mode)
     }
 
     // Wait for mode ready
-    waitForIrq1(RegIrqFlags1::MODE_READY);
+    waitForIrq(RegIrqFlags::MODE_READY);
 
     this->mode = mode;
 }
 
-void SX1278::waitForIrq(uint8_t reg, uint8_t mask)
+void SX1278::waitForIrq(uint16_t mask)
 {
-    SPITransaction spi(slave, SPITransaction::WriteBit::INVERTED);
-
-    if ((mask == RegIrqFlags2::PACKET_SENT ||
-         mask == RegIrqFlags2::PAYLOAD_READY) &&
+    if ((mask == RegIrqFlags::PACKET_SENT ||
+         mask == RegIrqFlags::PAYLOAD_READY) &&
         enable_int)
     {
         // Check before entering irq mode
-        if (spi.readRegister(reg) & mask)
+        if (getIrqFlags() & mask)
         {
             return;
         }
@@ -347,16 +345,12 @@ void SX1278::waitForIrq(uint8_t reg, uint8_t mask)
     else
     {
         // Tight loop on IRQ register
-        while (!(spi.readRegister(reg) & mask))
+        while (!(getIrqFlags() & mask))
         {
             miosix::delayUs(10);
         }
     }
 }
-
-void SX1278::waitForIrq1(uint8_t mask) { waitForIrq(REG_IRQ_FLAGS_1, mask); }
-
-void SX1278::waitForIrq2(uint8_t mask) { waitForIrq(REG_IRQ_FLAGS_2, mask); }
 
 void SX1278::debugDumpRegisters()
 {

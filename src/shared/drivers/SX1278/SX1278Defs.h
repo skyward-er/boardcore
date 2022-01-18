@@ -54,7 +54,7 @@ inline SPIBusConfig spiConfig()
     SPIBusConfig config = {};
 
     // FIXME(davide.mor): This depends on the device
-    config.clockDivider = SPI::ClockDivider::DIV_256;
+    config.clockDivider = SPI::ClockDivider::DIV_64;
     config.mode         = SPI::Mode::MODE_1;
     config.bitOrder     = SPI::BitOrder::MSB_FIRST;
     // config.cs_setup_time_us = 30;
@@ -207,29 +207,26 @@ enum TxStartCondition
 };
 }
 
-namespace RegIrqFlags1
+namespace RegIrqFlags
 {
-constexpr uint8_t MODE_READY         = 1 << 7;
-constexpr uint8_t RX_READY           = 1 << 6;
-constexpr uint8_t TX_READY           = 1 << 5;
-constexpr uint8_t PILL_LOCK          = 1 << 4;
-constexpr uint8_t RSSI               = 1 << 3;
-constexpr uint8_t TIMEOUT            = 1 << 2;
-constexpr uint8_t PREAMBLE_DETECT    = 1 << 1;
-constexpr uint8_t SYNC_ADDRESS_MATCH = 1 << 0;
-}  // namespace RegIrqFlags1
+constexpr uint16_t MODE_READY         = 1 << 7;
+constexpr uint16_t RX_READY           = 1 << 6;
+constexpr uint16_t TX_READY           = 1 << 5;
+constexpr uint16_t PILL_LOCK          = 1 << 4;
+constexpr uint16_t RSSI               = 1 << 3;
+constexpr uint16_t TIMEOUT            = 1 << 2;
+constexpr uint16_t PREAMBLE_DETECT    = 1 << 1;
+constexpr uint16_t SYNC_ADDRESS_MATCH = 1 << 0;
+constexpr uint16_t FIFO_FULL          = 1 << 15;
+constexpr uint16_t FIFO_EMPTY         = 1 << 14;
+constexpr uint16_t FIFO_LEVEL         = 1 << 13;
+constexpr uint16_t FIFO_OVERRUN       = 1 << 12;
+constexpr uint16_t PACKET_SENT        = 1 << 11;
+constexpr uint16_t PAYLOAD_READY      = 1 << 10;
+constexpr uint16_t CRC_OK             = 1 << 9;
+constexpr uint16_t LOW_BAT            = 1 << 8;
 
-namespace RegIrqFlags2
-{
-constexpr uint8_t FIFO_FULL     = 1 << 7;
-constexpr uint8_t FIFO_EMPTY    = 1 << 6;
-constexpr uint8_t FIFO_LEVEL    = 1 << 5;
-constexpr uint8_t FIFO_OVERRUN  = 1 << 4;
-constexpr uint8_t PACKET_SENT   = 1 << 3;
-constexpr uint8_t PAYLOAD_READY = 1 << 2;
-constexpr uint8_t CRC_OK        = 1 << 1;
-constexpr uint8_t LOW_BAT       = 1 << 0;
-}  // namespace RegIrqFlags2
+}  // namespace RegIrqFlags
 
 namespace RegPaDac
 {

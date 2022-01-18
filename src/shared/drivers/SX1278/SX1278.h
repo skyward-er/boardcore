@@ -108,13 +108,6 @@ public:
     Error init(Config config);
 
     /**
-     * @brief Read the chip revision.
-     *
-     * @return It should always return 0x12.
-     */
-    uint8_t getVersion() const;
-
-    /**
      * @brief Receive data.
      *
      * @param buf Buffer to put the received data.
@@ -145,6 +138,9 @@ public:
 public:
     using Mode = SX1278Defs::RegOpMode::Mode;
 
+    uint8_t getVersion() const;
+    uint16_t getIrqFlags() const;
+
     void setBitrate(int bitrate);
     void setFreqDev(int freq_dev);
     void setFreqRF(int freq_rf);
@@ -156,9 +152,7 @@ public:
     void setPa(int power, bool pa_boost);
 
     void enterMode(Mode mode);
-    void waitForIrq(uint8_t reg, uint8_t mask);
-    void waitForIrq1(uint8_t mask);
-    void waitForIrq2(uint8_t mask);
+    void waitForIrq(uint16_t mask);
 
     miosix::Thread *irq_wait_thread = nullptr;
     bool enable_int                 = false;
@@ -166,7 +160,7 @@ public:
     SPISlave slave;
     Mode mode;
 
-    PrintLogger logger = Logging::getLogger("bmx160");
+    PrintLogger logger = Logging::getLogger("sx1278");
 };
 
 }  // namespace Boardcore
