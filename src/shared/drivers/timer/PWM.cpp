@@ -88,6 +88,12 @@ void PWM::setDutyCycle(TimerUtils::Channel channel, float dutyCycle)
             static_cast<uint16_t>(dutyCycle * timer.readAutoReloadRegister()));
 }
 
+float PWM::getDutyCycle(TimerUtils::Channel channel)
+{
+    return static_cast<float>(timer.readCaptureCompareRegister(channel) /
+                              timer.readAutoReloadRegister());
+}
+
 void PWM::setTimerConfiguration()
 {
     timer.disable();

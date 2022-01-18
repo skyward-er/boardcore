@@ -1,5 +1,5 @@
 /* Copyright (c) 2020 Skyward Experimental Rocketry
- * Author: Luca Conterio
+ * Authors: Luca Conterio, Alberto Nidasio
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -25,9 +25,6 @@
 #include <drivers/timer/PWM.h>
 #include <drivers/timer/TimestampTimer.h>
 #include <miosix.h>
-
-using miosix::GpioPin;
-using miosix::Thread;
 
 namespace Boardcore
 {
@@ -62,28 +59,37 @@ public:
     /**
      * @brief Prepares the enable pin and the timer.
      *
+     * Note that the timer is enabled automatically when the PWM object is
+     * created.
+     *
      * @param inhibitPin Inhibit pin of the H-bridge.
      * @param timer Timer peripheral used for the PWM signal.
-     * @param channel PWM channel.
+     * @param channel Timer's channel used for the PWM signal.
      * @param frequency Frequency of the PWM driving the H-bridge.
      * @param dutyCycle Duty cycle of the PWM in the range [0-1].
      * @param disableDelayMs Delay between changing the inhibit pin and the pwm
      * signal when disabling the device.
      */
-    HBridge(GpioPin inhibitPin, TIM_TypeDef* timer, TimerUtils::Channel channel,
-            unsigned int frequency, float dutyCycle = 0,
-            unsigned int disableDelayMs = 50);
+    HBridge(miosix::GpioPin inhibitPin, TIM_TypeDef* timer,
+            TimerUtils::Channel channel, unsigned int frequency,
+            float dutyCycle = 0, unsigned int disableDelayMs = 50);
 
+    /**
+     * @brief Disables the H-bridge.
+     *
+     * Note that the timer is disabled automatically when the PWM object is
+     * destructed, the PWM signal stops.
+     */
     ~HBridge();
 
     /**
-     * @brief Enables the H-bridge and, after the configured amount of timer,
-     * tarts the pwm signal with the previous duty cycle.
+     * @brief Enables the H-bridge and starts the pwm signal.
      */
     void enable();
 
     /**
-     * @brief Stops the pwm signal and deactivates the H-bridge.
+     * @brief Stops the pwm signal and deactivates the H-bridge after the
+     * configured amount of time.
      */
     void disable();
 
@@ -111,9 +117,12 @@ public:
     void resetDutyCycle();
 
 private:
-    HBridge(const HBridge& hb) = delete;
+    // This class is not copyable!
+    HBridge& operator=(const HBridge&) = delete;
+    HBridge(const HBridge& hb)         = delete;
+    HBridge()                          = default;
 
-    GpioPin inhibitPin;
+    miosix::GpioPin inhibitPin;
     PWM pwm;
     TimerUtils::Channel channel;
 

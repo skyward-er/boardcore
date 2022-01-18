@@ -58,13 +58,13 @@ public:
     };
 
     /**
-     * @brief Sets up the PWM timer.
+     * @brief Sets up and enables the PWM timer.
      *
      * @param timer Pointer to the timer's peripheral registers.
      * @param pwmFrequency Frequency of the PWM signal.
      * @param dutyCycleResolution Duty cycle levels.
      */
-    explicit PWM(TIM_TypeDef *timer, unsigned int pwmFrequency = 50,
+    explicit PWM(TIM_TypeDef* timer, unsigned int pwmFrequency = 50,
                  unsigned int dutyCycleResolution = 1000);
 
     ~PWM();
@@ -90,7 +90,17 @@ public:
      */
     void setDutyCycle(TimerUtils::Channel channel, float dutyCycle);
 
+    /**
+     * @brief Return the channel's duty cycle in the range [0,1].
+     */
+    float getDutyCycle(TimerUtils::Channel channel);
+
 private:
+    // This class is not copyable!
+    PWM& operator=(const PWM&) = delete;
+    PWM(const PWM& p)          = delete;
+    PWM()                      = default;
+
     void setTimerConfiguration();
 
     GP16bitTimer timer;

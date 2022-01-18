@@ -33,10 +33,6 @@ using namespace std;
 
 static constexpr int PWM_DURATION = 60 * 1000;
 
-static const PWM::Timer HBRIDGE_TIM{
-    TIM3, &(RCC->APB1ENR), RCC_APB1ENR_TIM3EN,
-    ClockUtils::getAPBFrequecy(ClockUtils::APB::APB2)};
-
 static const TimerUtils::Channel HBRIDGE_PWM_CHANNEL =
     TimerUtils::Channel::CHANNEL_2;
 
@@ -105,7 +101,7 @@ int main()
             getline(cin, temp);
         } while (temp != "yeet");
 
-        HBridge hbridge(hbridgeInhibit, HBRIDGE_TIM, HBRIDGE_PWM_CHANNEL, freq,
+        HBridge hbridge(hbridgeInhibit, TIM3, HBRIDGE_PWM_CHANNEL, freq,
                         duty / 100);
 
         hbridge.enable();

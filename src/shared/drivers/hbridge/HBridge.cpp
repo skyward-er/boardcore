@@ -1,5 +1,5 @@
 /* Copyright (c) 2020 Skyward Experimental Rocketry
- * Author: Luca Conterio
+ * Authors: Luca Conterio, Alberto Nidasio
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -25,7 +25,7 @@
 namespace Boardcore
 {
 
-HBridge::HBridge(GpioPin inhibitPin, TIM_TypeDef* timer,
+HBridge::HBridge(miosix::GpioPin inhibitPin, TIM_TypeDef* timer,
                  TimerUtils::Channel channel, unsigned int frequency,
                  float dutyCycle, unsigned int disableDelayMs)
     : inhibitPin(inhibitPin), pwm(timer, frequency), channel(channel),
@@ -48,7 +48,7 @@ void HBridge::disable()
 {
     pwm.disableChannel(channel);
 
-    Thread::sleep(disableDelayMs);
+    miosix::Thread::sleep(disableDelayMs);
 
     inhibitPin.low();
 }

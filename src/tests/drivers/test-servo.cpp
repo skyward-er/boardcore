@@ -1,5 +1,5 @@
 /* Copyright (c) 2019 Skyward Experimental Rocketry
- * Author: Luca Erbetta
+ * Author: Luca Erbetta, Alberto Nidasio
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -20,7 +20,7 @@
  * THE SOFTWARE.
  */
 
-#include <drivers/servo/servo.h>
+#include <drivers/servo/Servo.h>
 #include <miosix.h>
 #include <utils/ClockUtils.h>
 
@@ -30,11 +30,6 @@ using namespace miosix;
 using ps1 = Gpio<GPIOD_BASE, 12>;
 using ps2 = Gpio<GPIOD_BASE, 13>;
 using ps3 = Gpio<GPIOC_BASE, 7>;
-
-PWMChannel s1_ch = PWMChannel::CH1;
-PWMChannel s2_ch = PWMChannel::CH2;
-
-PWMChannel s3_ch = PWMChannel::CH2;
 
 int main()
 {
@@ -50,39 +45,27 @@ int main()
         ps3::alternateFunction(3);
     }
 
-    PWM::Timer tim4{TIM4, &(RCC->APB1ENR), RCC_APB1ENR_TIM4EN,
-                    ClockUtils::getAPBFrequecy(ClockUtils::APB::APB1)};
+    Servo s1(TIM4, TimerUtils::Channel::CHANNEL_1);
+    Servo s2(TIM4, TimerUtils::Channel::CHANNEL_2);
+    Servo s3(TIM8, TimerUtils::Channel::CHANNEL_2);
 
-    PWM::Timer tim8{TIM8, &(RCC->APB2ENR), RCC_APB2ENR_TIM8EN,
-                    ClockUtils::getAPBFrequecy(ClockUtils::APB::APB2)};
+    s1.enable();
+    s2.enable();
+    s3.enable();
 
-    Servo s12{tim4};
-    Servo s3{tim8};
+    float pos[] = {0, 0.5, 1.0};
 
-    s12.start();
-    s3.start();
+    s1.setPosition(pos[0]);
+    s2.setPosition(pos[1]);
+    s3.setPosition(pos[2]);
 
-    s12.enable(s1_ch);
-    s12.enable(s2_ch);
-    s3.enable(s3_ch);
-
-    float pos[] = {0, 0.5f, 1.0f};
-
-    s12.setPosition(s1_ch, pos[0]);
-    s12.setPosition(s2_ch, pos[1]);
-    s3.setPosition(s3_ch, pos[2]);
-    for (;;)
-        Thread::sleep(1000);
-    int i = 0;
-    for (;;)
+    for (int i = 0;; i++)
     {
         // Cycle each servo between the 3 predefined positions
-        s12.setPosition(s1_ch, pos[i % 3]);
-        s12.setPosition(s2_ch, pos[(i + 1) % 3]);
-        s3.setPosition(s3_ch, pos[(i + 2) % 3]);
+        s1.setPosition(pos[i % 3]);
+        s2.setPosition(pos[(i + 1) % 3]);
+        s3.setPosition(pos[(i + 2) % 3]);
 
-        ++i;
-
-        Thread::sleep(5000);
+        Thread::sleep(2000);
     }
 }

@@ -195,6 +195,8 @@ public:
 
     void setCaptureCompareRegister(TimerUtils::Channel channel, T value);
 
+    T readCaptureCompareRegister(TimerUtils::Channel channel);
+
     static void clearTriggerInterruptFlag(TIM_TypeDef *timer);
 
     static void clearCaptureCompareInterruptFlag(TimerUtils::Channel channel,
@@ -541,6 +543,25 @@ inline void GeneralPurposeTimer<T>::setCaptureCompareRegister(
             timer->CCR4 = value;
             break;
     }
+}
+
+template <typename T>
+inline T GeneralPurposeTimer<T>::readCaptureCompareRegister(
+    TimerUtils::Channel channel)
+{
+    switch (channel)
+    {
+        case TimerUtils::Channel::CHANNEL_1:
+            return timer->CCR1;
+        case TimerUtils::Channel::CHANNEL_2:
+            return timer->CCR2;
+        case TimerUtils::Channel::CHANNEL_3:
+            return timer->CCR3;
+        case TimerUtils::Channel::CHANNEL_4:
+            return timer->CCR4;
+    }
+
+    return 0;
 }
 
 template <typename T>

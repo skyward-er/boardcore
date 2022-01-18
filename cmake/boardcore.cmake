@@ -42,7 +42,7 @@ foreach(OPT_BOARD ${BOARDS})
         ${SBS_BASE}/src/shared/drivers/timer/PWM.cpp
         ${SBS_BASE}/src/shared/drivers/timer/TimestampTimer.cpp
         ${SBS_BASE}/src/shared/drivers/runcam/Runcam.cpp
-        ${SBS_BASE}/src/shared/drivers/servo/servo.cpp
+        ${SBS_BASE}/src/shared/drivers/servo/Servo.cpp
         ${SBS_BASE}/src/shared/drivers/spi/SPITransaction.cpp
         ${SBS_BASE}/src/shared/drivers/Xbee/APIFrameParser.cpp
         ${SBS_BASE}/src/shared/drivers/Xbee/Xbee.cpp
