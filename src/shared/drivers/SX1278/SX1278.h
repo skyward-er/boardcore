@@ -33,6 +33,36 @@
 namespace Boardcore
 {
 
+class SX1278BusManager
+{
+public:
+    using Mode = SX1278Defs::RegOpMode::Mode;
+
+    SX1278BusManager(SPIBusInterface &bus, miosix::GpioPin cs);
+
+    void lock(Mode mode);
+    void unlock();
+
+    SPISlave &getBus();
+
+    void handleDioIRQ();
+    void waitForIrq(uint16_t mask);
+    void waitForRxIrq();
+
+private:
+    void enterMode(Mode mode);
+
+    uint16_t getIrqFlags();
+    void setMode(Mode mode);
+
+    miosix::Thread *irq_wait_thread = nullptr;
+    miosix::Thread *rx_wait_thread  = nullptr;
+    miosix::FastMutex mutex;
+
+    SPISlave slave;
+    Mode mode;
+};
+
 /**
  * @brief Various SX1278 register/enums definitions.
  */
@@ -79,7 +109,6 @@ public:
         RxBw afc_bw  = RxBw::HZ_125000;  //< Afc filter bandwidth.
         int ocp =
             120;  //< Over current protection limit in mA (0 for no limit).
-        bool enable_int = false;  //< Enable interrupt pin.
         int power = 10;  //< Output power in dB (Between +2 and +17, or +20 for
                          // full power).
     };
@@ -126,6 +155,11 @@ public:
     void send(const uint8_t *buf, uint8_t len);
 
     /**
+     * @brief Return device version.
+     */
+    uint8_t getVersion();
+
+    /**
      * @brief Handle an incoming interrupt.
      */
     void handleDioIRQ();
@@ -136,10 +170,7 @@ public:
     void debugDumpRegisters();
 
 public:
-    using Mode = SX1278Defs::RegOpMode::Mode;
-
-    uint8_t getVersion() const;
-    uint16_t getIrqFlags() const;
+    using Mode = SX1278BusManager::Mode;
 
     void setBitrate(int bitrate);
     void setFreqDev(int freq_dev);
@@ -151,15 +182,9 @@ public:
     void setPreableLen(int len);
     void setPa(int power, bool pa_boost);
 
-    void enterMode(Mode mode);
     void waitForIrq(uint16_t mask);
 
-    miosix::Thread *irq_wait_thread = nullptr;
-    bool enable_int                 = false;
-
-    SPISlave slave;
-    Mode mode;
-
+    SX1278BusManager bus_mgr;
     PrintLogger logger = Logging::getLogger("sx1278");
 };
 

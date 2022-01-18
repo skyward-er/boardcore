@@ -189,7 +189,6 @@ void printConfig(SX1278::Config config)
     printf("config.rx_bw = %s\n", stringFromRxBw(config.rx_bw));
     printf("config.afc_bw = %s\n", stringFromRxBw(config.afc_bw));
     printf("config.ocp = %d\n", config.ocp);
-    printf("config.enable_int = %s\n", stringFromBool(config.enable_int));
     printf("config.power = %d\n", config.power);
 }
 
@@ -351,10 +350,7 @@ int main()
 
     // Run default configuration
     SX1278::Config config_rx;
-    config_rx.enable_int = true;
-
     SX1278::Config config_tx;
-    config_tx.enable_int = true;
 
     SX1278::Error err;
 
