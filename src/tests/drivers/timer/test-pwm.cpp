@@ -26,51 +26,35 @@
 using namespace miosix;
 using namespace Boardcore;
 
-typedef Gpio<GPIOC_BASE, 8> ch2;       // TIM8 CH2
-typedef Gpio<GPIOG_BASE, 2> timeunit;  // Signaling output
-
-void sep()
-{
-    timeunit::high();
-    delayMs(1);
-    timeunit::low();
-    delayMs(499);
-}
+typedef Gpio<GPIOB_BASE, 4> ch1;
+typedef Gpio<GPIOA_BASE, 7> ch2;
+typedef Gpio<GPIOC_BASE, 8> ch3;
 
 int main()
 {
-    printf("Setting up pins...\n");
-    {
-        FastInterruptDisableLock dLock;
+    ch1::mode(Mode::ALTERNATE);
+    ch1::alternateFunction(2);
+    ch2::mode(Mode::ALTERNATE);
+    ch2::alternateFunction(2);
+    ch3::mode(Mode::ALTERNATE);
+    ch3::alternateFunction(2);
 
-        ch2::mode(Mode::ALTERNATE);
-        ch2::alternateFunction(3);
+    RCC->APB1ENR |= RCC_APB1ENR_TIM3EN;
 
-        timeunit::mode(Mode::OUTPUT);
-        timeunit::low();
-    }
+    PWM pwm(TIM3);
 
-    RCC->APB2ENR |= RCC_APB2ENR_TIM8EN;
-
-    PWM pwm(TIM8);
-
-    pwm.setDutyCycle(TimerUtils::Channel::CHANNEL_2, 0.9);
+    pwm.enableChannel(TimerUtils::Channel::CHANNEL_1);
     pwm.enableChannel(TimerUtils::Channel::CHANNEL_2);
-    sep();
+    pwm.enableChannel(TimerUtils::Channel::CHANNEL_3);
 
-    for (int i = 0; i < 10; i++)
+    float pos[] = {0.1, 0.5, 0.9};
+
+    for (int i = 0;; i++)
     {
+        pwm.setDutyCycle(TimerUtils::Channel::CHANNEL_1, pos[i % 3]);
+        pwm.setDutyCycle(TimerUtils::Channel::CHANNEL_2, pos[(i + 1) % 3]);
+        pwm.setDutyCycle(TimerUtils::Channel::CHANNEL_3, pos[(i + 2) % 3]);
 
-        pwm.setDutyCycle(TimerUtils::Channel::CHANNEL_2, 0.7);
-        sep();
-
-        pwm.setDutyCycle(TimerUtils::Channel::CHANNEL_2, 0.5);
-        sep();
-
-        pwm.setDutyCycle(TimerUtils::Channel::CHANNEL_2, 0.3);
-        sep();
+        Thread::sleep(2000);
     }
-
-    while (true)
-        Thread::sleep(10000);
 }

@@ -27,27 +27,25 @@
 using namespace Boardcore;
 using namespace miosix;
 
-using ps1 = Gpio<GPIOD_BASE, 12>;
-using ps2 = Gpio<GPIOD_BASE, 13>;
-using ps3 = Gpio<GPIOC_BASE, 7>;
+using ps1 = Gpio<GPIOB_BASE, 4>;
+using ps2 = Gpio<GPIOA_BASE, 7>;
+using ps3 = Gpio<GPIOC_BASE, 8>;
 
 int main()
 {
-    {
-        FastInterruptDisableLock dLock;
-        ps1::mode(Mode::ALTERNATE);
-        ps2::mode(Mode::ALTERNATE);
-        ps3::mode(Mode::ALTERNATE);
+    ps1::mode(Mode::ALTERNATE);
+    ps2::mode(Mode::ALTERNATE);
+    ps3::mode(Mode::ALTERNATE);
 
-        ps1::alternateFunction(2);
-        ps2::alternateFunction(2);
+    ps1::alternateFunction(2);
+    ps2::alternateFunction(2);
+    ps3::alternateFunction(2);
 
-        ps3::alternateFunction(3);
-    }
+    RCC->APB1ENR |= RCC_APB1ENR_TIM3EN;
 
-    Servo s1(TIM4, TimerUtils::Channel::CHANNEL_1);
-    Servo s2(TIM4, TimerUtils::Channel::CHANNEL_2);
-    Servo s3(TIM8, TimerUtils::Channel::CHANNEL_2);
+    Servo s1(TIM3, TimerUtils::Channel::CHANNEL_1);
+    Servo s2(TIM3, TimerUtils::Channel::CHANNEL_2);
+    Servo s3(TIM3, TimerUtils::Channel::CHANNEL_3);
 
     s1.enable();
     s2.enable();
@@ -61,7 +59,6 @@ int main()
 
     for (int i = 0;; i++)
     {
-        // Cycle each servo between the 3 predefined positions
         s1.setPosition(pos[i % 3]);
         s2.setPosition(pos[(i + 1) % 3]);
         s3.setPosition(pos[(i + 2) % 3]);

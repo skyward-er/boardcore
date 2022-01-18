@@ -34,14 +34,15 @@ using namespace std;
 static constexpr int PWM_DURATION = 60 * 1000;
 
 static const TimerUtils::Channel HBRIDGE_PWM_CHANNEL =
-    TimerUtils::Channel::CHANNEL_2;
+    TimerUtils::Channel::CHANNEL_1;
 
-GpioPin hbridgeIn(GPIOB_BASE, 5);       // pwm pin
-GpioPin hbridgeInhibit(GPIOB_BASE, 7);  // inhibit pin for the hbridge
+GpioPin hbridgePwm(GPIOB_BASE, 4);      // pwm pin
+GpioPin hbridgeInhibit(GPIOA_BASE, 7);  // inhibit pin for the hbridge
 
 bool print = true;  // print the elapsed time or not
 
 long long measuredTime = 0;
+
 void wait()
 {
     long long t  = getTick();
@@ -64,13 +65,12 @@ void wait()
 
 int main()
 {
-    {
-        FastInterruptDisableLock l;
-        hbridgeIn.mode(Mode::ALTERNATE);
-        hbridgeIn.alternateFunction(2);
-        hbridgeInhibit.mode(Mode::OUTPUT);
-        hbridgeInhibit.low();
-    }
+    hbridgePwm.mode(Mode::ALTERNATE);
+    hbridgePwm.alternateFunction(2);
+    hbridgeInhibit.mode(Mode::OUTPUT);
+    hbridgeInhibit.low();
+
+    RCC->APB1ENR |= RCC_APB1ENR_TIM3EN;
 
     for (;;)
     {

@@ -143,11 +143,11 @@ sbs_target(test-mavlink stm32f429zi_skyward_homeone)
 add_executable(test-MBLoadCell src/tests/drivers/test-MBLoadCell.cpp)
 sbs_target(test-MBLoadCell stm32f407vg_stm32f4discovery)
 
-add_executable(test-pwm src/tests/drivers/test-pwm.cpp)
+add_executable(test-pwm src/tests/drivers/timer/test-pwm.cpp)
 sbs_target(test-pwm stm32f429zi_stm32f4discovery)
 
 add_executable(test-servo src/tests/drivers/test-servo.cpp)
-sbs_target(test-servo stm32f429zi_skyward_death_stack_x)
+sbs_target(test-servo stm32f429zi_stm32f4discovery)
 
 add_executable(test-spi src/tests/drivers/spi/test-spi.cpp)
 sbs_target(test-spi stm32f429zi_stm32f4discovery)
