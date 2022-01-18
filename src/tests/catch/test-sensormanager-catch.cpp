@@ -35,8 +35,7 @@
 #include <sensors/SensorInfo.h>
 #include <sensors/SensorManager.h>
 
-namespace Boardcore
-{
+using namespace Boardcore;
 
 static const uint8_t FIRST_TASK_ID = 7;  // used to test IDs assignment to tasks
 
@@ -54,8 +53,6 @@ class SensorManagerFixture
 public:
     SensorManagerFixture()
     {
-        // cppcheck-suppress noCopyConstructor
-        // cppcheck-suppress noOperatorEq
         scheduler = new TaskScheduler();
         scheduler->add([]() { std::cout << "Task Callback!" << std::endl; },
                        2000,  // inserst a test function in the scheduler
@@ -68,11 +65,11 @@ public:
                                            {&s5, s5_info}},
                                           scheduler);
 
-        sampler1 = sensorManager->samplersMap[&s1];
-        sampler2 = sensorManager->samplersMap[&s2];
-        sampler3 = sensorManager->samplersMap[&s3];
-        sampler4 = sensorManager->samplersMap[&s4];
-        sampler5 = sensorManager->samplersMap[&s5];
+        samplerSensor1 = sensorManager->samplersMap[&s1];
+        samplerSensor2 = sensorManager->samplersMap[&s2];
+        samplerSensor3 = sensorManager->samplersMap[&s3];
+        samplerSensor4 = sensorManager->samplersMap[&s4];
+        samplerSensor5 = sensorManager->samplersMap[&s5];
     }
 
     ~SensorManagerFixture()
@@ -82,16 +79,19 @@ public:
         delete sensorManager;
     }
 
+    SensorManagerFixture& operator=(SensorManagerFixture const&) = delete;
+    SensorManagerFixture(const SensorManagerFixture& p)          = delete;
+
 private:
     TaskScheduler* scheduler;
 
     SensorManager* sensorManager;
 
-    SensorSampler* sampler1;
-    SensorSampler* sampler2;
-    SensorSampler* sampler3;
-    SensorSampler* sampler4;
-    SensorSampler* sampler5;
+    SensorSampler* samplerSensor1;
+    SensorSampler* samplerSensor2;
+    SensorSampler* samplerSensor3;
+    SensorSampler* samplerSensor4;
+    SensorSampler* samplerSensor5;
 
     TestSensor s1;
     SensorInfo s1_info{
@@ -130,24 +130,6 @@ private:
         /*Enabled=*/true};
 };
 
-bool operator==(const SensorInfo& lhs, const SensorInfo& rhs)
-{
-    return lhs.id == rhs.id && lhs.period == rhs.period &&
-           lhs.callback.target_type() == rhs.callback.target_type() &&
-           lhs.callback.target<void()>() == rhs.callback.target<void()>() &&
-           lhs.isEnabled == rhs.isEnabled;
-}
-
-bool operator==(const SensorSampler& lhs, const SensorSampler& rhs)
-{
-    return lhs.id == rhs.id && lhs.period == rhs.period &&
-           lhs.sensors.size() == rhs.sensors.size();
-}
-
-}  // namespace Boardcore
-
-using namespace Boardcore;
-
 TEST_CASE_METHOD(SensorManagerFixture,
                  "Samplers IDs should incrementally start from FIRST_TASK_ID")
 {
@@ -155,7 +137,7 @@ TEST_CASE_METHOD(SensorManagerFixture,
 
     vector<TaskStatResult> tasksStats = scheduler->getTaskStats();
 
-    std::cout << "Tasks number : " << tasksStats.size() << std::endl;
+    INFO("Tasks number : " << tasksStats.size());
 
     // Sampler with lower period are inserted in the TaskScheduler
     // before higher period ones
@@ -167,7 +149,6 @@ TEST_CASE_METHOD(SensorManagerFixture,
     REQUIRE(tasksStats[1].id == static_cast<uint8_t>(FIRST_TASK_ID + 2));
     REQUIRE(tasksStats[2].id == static_cast<uint8_t>(FIRST_TASK_ID + 1));
     REQUIRE(tasksStats[3].id == static_cast<uint8_t>(FIRST_TASK_ID + 3));
-    REQUIRE(tasksStats[4].id == static_cast<uint8_t>(FIRST_TASK_ID + 4));
 }
 
 TEST_CASE_METHOD(SensorManagerFixture,
@@ -179,46 +160,51 @@ TEST_CASE_METHOD(SensorManagerFixture,
     // samplers are sorted by period, in decreasing order!
 
     // check that s1, s2 and s3 are assigned to correct samplers
-    REQUIRE(sampler1 == sensorManager->samplers[1]);
-    REQUIRE(*sampler1 == *(sensorManager->samplers[1]));
+    REQUIRE(samplerSensor1 == sensorManager->samplers[1]);
+    REQUIRE(*samplerSensor1 == *(sensorManager->samplers[1]));
     // s1 and s2 are assigned to same sampler
-    REQUIRE(sampler1 == sampler2);
-    REQUIRE(*sampler1 == *sampler2);
+    REQUIRE(samplerSensor1 == samplerSensor2);
+    REQUIRE(*samplerSensor1 == *samplerSensor2);
+    // s1 and s4 are assigned to same sampler
+    REQUIRE(samplerSensor1 == samplerSensor4);
+    REQUIRE(*samplerSensor1 == *samplerSensor4);
     // s3 assigned to another sampler
-    REQUIRE(sampler3 == sensorManager->samplers[0]);
-    REQUIRE(*sampler3 == *(sensorManager->samplers[0]));
-    // s4 assigned to another sampler
-    REQUIRE(sampler4 == sensorManager->samplers[2]);
-    REQUIRE(*sampler4 == *(sensorManager->samplers[2]));
+    REQUIRE(samplerSensor3 == sensorManager->samplers[0]);
+    REQUIRE(*samplerSensor3 == *(sensorManager->samplers[0]));
     // s5 assigned to the last sampler
-    REQUIRE(sampler5 == sensorManager->samplers[3]);
-    REQUIRE(*sampler5 == *(sensorManager->samplers[3]));
+    REQUIRE(samplerSensor5 == sensorManager->samplers[2]);
+    REQUIRE(*samplerSensor5 == *(sensorManager->samplers[2]));
 }
 
 TEST_CASE_METHOD(SensorManagerFixture,
                  "Sensors are correctly coupled with their info and failing "
                  "sensors are automatically disabled")
 {
-    SensorInfo info1 = sampler1->getSensorInfo(&s1);
-    SensorInfo info2 = sampler2->getSensorInfo(&s2);
-    SensorInfo info3 = sampler3->getSensorInfo(&s3);
-    SensorInfo info4 = sampler4->getSensorInfo(&s4);
-    SensorInfo info5 = sampler5->getSensorInfo(&s5);
+    SensorInfo info1 = samplerSensor1->getSensorInfo(&s1);
+    SensorInfo info2 = samplerSensor2->getSensorInfo(&s2);
+    SensorInfo info3 = samplerSensor3->getSensorInfo(&s3);
+    SensorInfo info4 = samplerSensor4->getSensorInfo(&s4);
+    SensorInfo info5 = samplerSensor5->getSensorInfo(&s5);
 
-    // correctly initialized sensors
+    // The sensors show now be initialized
+    s1_info.isInitialized = true;
+    s2_info.isInitialized = true;
+    s3_info.isInitialized = true;
+    s4_info.isInitialized = true;
+    s5_info.isInitialized = true;
+
+    // Correctly initialized sensors
     REQUIRE(s1_info == info1);
     REQUIRE(s2_info == info2);
     REQUIRE(s3_info == info3);
     REQUIRE(s4_info == info4);
 
-    REQUIRE(
-        !(s5_info ==
-          info5));  // it fails, so isEnabled is set to false instead of true
+    // Sensor 5 should have failed
+    REQUIRE(!(s5_info == info5));
     REQUIRE(s5_info.id == info5.id);
     REQUIRE(s5_info.period == info5.period);
-    REQUIRE(info5.isEnabled ==
-            false);  // disabled even if it was created as enabled
-    REQUIRE(info5.isInitialized == false);  // always fails the initialization
+    REQUIRE(info5.isEnabled == false);  // Disabled even if it was as enabled
+    REQUIRE(info5.isInitialized == false);  // Always fails the initialization
 }
 
 TEST_CASE_METHOD(SensorManagerFixture,
@@ -301,8 +287,5 @@ TEST_CASE_METHOD(SensorManagerFixture,
 {
     TestSensor invalidSensor;
     SensorInfo invalidInfo = sensorManager->getSensorInfo(&invalidSensor);
-    REQUIRE(invalidInfo == SensorInfo{});
-
-    SensorInfo validInfo = sensorManager->getSensorInfo(&s2);
-    REQUIRE(validInfo == s2_info);
+    REQUIRE(!invalidInfo.isInitialized);
 }

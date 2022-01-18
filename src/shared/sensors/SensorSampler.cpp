@@ -35,6 +35,11 @@ SensorSampler::SensorSampler(uint8_t id, uint32_t period)
 
 SensorSampler::~SensorSampler() { sensors.clear(); }
 
+bool SensorSampler::comparareByPeriod(SensorSampler* left, SensorSampler* right)
+{
+    return left->getSamplingPeriod() < right->getSamplingPeriod();
+}
+
 void SensorSampler::toggleSensor(AbstractSensor* sensor, bool isEnabled)
 {
     auto elem = std::find_if(sensors.begin(), sensors.end(),

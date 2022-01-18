@@ -112,7 +112,6 @@ private:
     // This class is not copyable!
     Servo& operator=(const Servo&) = delete;
     Servo(const Servo& s)          = delete;
-    Servo()                        = default;
 
     PWM pwm;
     TimerUtils::Channel pwmChannel;

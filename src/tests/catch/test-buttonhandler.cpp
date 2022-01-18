@@ -20,6 +20,9 @@
  * THE SOFTWARE.
  */
 
+// Depends on Active Object which is not supported from miosix host
+#ifndef COMPILE_FOR_HOST
+
 #ifdef STANDALONE_CATCH1_TEST
 #include "catch-tests-entry.cpp"
 #endif
@@ -217,3 +220,5 @@ TEST_CASE_METHOD(ButtonHandlerTestFixture,
     REQUIRE(longPressCount == 1);
     REQUIRE(veryLongPressCount == 0);
 }
+
+#endif

@@ -48,6 +48,14 @@ public:
 
     virtual ~SensorSampler();
 
+    bool operator==(const SensorSampler& sampler) const
+    {
+        return id == sampler.id && period == sampler.period &&
+               sensors.size() == sampler.sensors.size();
+    }
+
+    static bool comparareByPeriod(SensorSampler* left, SensorSampler* right);
+
     /**
      * @brief Add a sensor to the sensors map.
      *

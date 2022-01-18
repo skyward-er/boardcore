@@ -37,19 +37,29 @@ namespace Boardcore
  */
 struct SensorInfo
 {
-    const std::string& id;
+    const std::string id;
     uint32_t period;  ///< Period in ms
     std::function<void()> callback;
     bool isEnabled;
     bool isInitialized;
 
-    SensorInfo(const std::string& id, uint32_t period,
+    SensorInfo(const std::string id, uint32_t period,
                std::function<void()> callback, bool isEnabled);
 
     SensorInfo();
+
+    bool operator==(const SensorInfo& info) const
+    {
+        return id == info.id && period == info.period &&
+               isEnabled == info.isEnabled &&
+               isInitialized == info.isInitialized &&
+               callback.target_type() == info.callback.target_type() &&
+               callback.target<void()>() == info.callback.target<void()>();
+    };
 };
 
-inline SensorInfo::SensorInfo(const std::string& id, uint32_t period,
+// cppcheck-suppress passedByValue
+inline SensorInfo::SensorInfo(const std::string id, uint32_t period,
                               std::function<void()> callback, bool isEnabled)
     : id(id), period(period), callback(callback), isEnabled(isEnabled),
       isInitialized(false)

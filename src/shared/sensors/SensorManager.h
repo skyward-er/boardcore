@@ -36,9 +36,10 @@ namespace Boardcore
 /**
  * @brief The SensorManager handles sensors initialization and sampling.
  *
- * Sensors are grouped in various SensorSampler objects by sampling perios.
- * These SensorSampler objects are then added to the scheduler that manages the
- * timings for the sampling.
+ * Sensors are grouped by sampling period in various SensorSampler objects.
+ * These samplers are then added to the scheduler ordered by sampling period.
+ * The scheduler then manages the samplers by calling their sampleAndCallback
+ * method periodically.
  *
  * TODO: The SensorManager should be able to reinitialized sensors that have
  * failed previous initializations.

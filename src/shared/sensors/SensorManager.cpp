@@ -197,18 +197,16 @@ void SensorManager::initScheduler()
 {
     // Sort the vector to have lower period samplers (higher frequency) inserted
     // before higher period ones into the TaskScheduler
-    std::sort(samplers.begin(), samplers.end(),
-              [](SensorSampler* left, SensorSampler* right) {
-                  return left->getSamplingPeriod() < right->getSamplingPeriod();
-              });
+    std::stable_sort(samplers.begin(), samplers.end(),
+                     SensorSampler::comparareByPeriod);
 
     uint64_t startTime = miosix::getTick() + 10;
 
     // Add all the samplers to the scheduler
     for (auto& sampler : samplers)
     {
-        function_t samplerUpdateFunction =
-            std::bind(&SensorSampler::sampleAndCallback, sampler);
+        function_t samplerUpdateFunction([=]()
+                                         { sampler->sampleAndCallback(); });
 
         scheduler->add(samplerUpdateFunction, sampler->getSamplingPeriod(),
                        sampler->getID(), startTime);

@@ -99,7 +99,6 @@ private:
     // This class is not copyable!
     PWM& operator=(const PWM&) = delete;
     PWM(const PWM& p)          = delete;
-    PWM()                      = default;
 
     void setTimerConfiguration();
 

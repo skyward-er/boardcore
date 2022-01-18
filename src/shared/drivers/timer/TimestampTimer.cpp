@@ -27,7 +27,9 @@
 namespace Boardcore
 {
 
+#ifndef COMPILE_FOR_HOST
 TIM_TypeDef *TimestampTimer::getTimer() { return timer.getTimer(); }
+#endif
 
 TimestampTimer::TimestampTimer()
 {

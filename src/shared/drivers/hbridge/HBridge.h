@@ -120,7 +120,6 @@ private:
     // This class is not copyable!
     HBridge& operator=(const HBridge&) = delete;
     HBridge(const HBridge& hb)         = delete;
-    HBridge()                          = default;
 
     miosix::GpioPin inhibitPin;
     PWM pwm;

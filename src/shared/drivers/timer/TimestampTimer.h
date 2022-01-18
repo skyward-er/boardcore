@@ -70,7 +70,9 @@ public:
      */
     uint64_t getTimestamp();
 
+#ifndef COMPILE_FOR_HOST
     TIM_TypeDef *getTimer();
+#endif
 
 private:
     TimestampTimer();
@@ -111,6 +113,11 @@ inline uint64_t TimestampTimer::getTimestamp()
 #endif
 }
 
-inline void TimestampTimer::resetTimestamp() { timer.setCounter(0); }
+inline void TimestampTimer::resetTimestamp()
+{
+#ifndef COMPILE_FOR_HOST
+    timer.setCounter(0);
+#endif
+}
 
 }  // namespace Boardcore
