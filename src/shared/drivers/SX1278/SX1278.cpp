@@ -127,7 +127,9 @@ void SX1278BusManager::enterMode(Mode mode)
         return;
 
     setMode(mode);
-    waitForIrq(RegIrqFlags::MODE_READY);
+
+    // BUG: Removing the next line makes it, better?!?
+    // waitForIrq(RegIrqFlags::MODE_READY);
 
     this->mode = mode;
 }
@@ -136,8 +138,10 @@ uint16_t SX1278BusManager::getIrqFlags()
 {
     SPITransaction spi(getBus(), SPITransaction::WriteBit::INVERTED);
 
-    return ((uint16_t)spi.readRegister(REG_IRQ_FLAGS_1)) |
-           ((uint16_t)spi.readRegister(REG_IRQ_FLAGS_2) << 8);
+    uint8_t flags[2] = {0, 0};
+    spi.readRegisters(REG_IRQ_FLAGS_1, flags, 2);
+
+    return (flags[0] | flags[1] << 8);
 }
 
 void SX1278BusManager::setMode(Mode mode)
@@ -152,6 +156,7 @@ SX1278::Error SX1278::init(Config config)
 {
     // Lock the bus
     bus_mgr.lock(Mode::MODE_STDBY);
+    bus_mgr.waitForIrq(RegIrqFlags::MODE_READY);
 
     if (getVersion() != 0x12)
     {

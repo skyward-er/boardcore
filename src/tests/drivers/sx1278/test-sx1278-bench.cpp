@@ -23,7 +23,6 @@
 #include <drivers/SX1278/SX1278.h>
 #include <drivers/interrupt/external_interrupts.h>
 
-#include <cstring>
 #include <thread>
 
 using namespace Boardcore;
@@ -59,12 +58,104 @@ GpioPin mosi1(GPIOB_BASE, 15);
 GpioPin cs1(GPIOA_BASE, 2);
 GpioPin dio1(GPIOC_BASE, 0);
 
+struct Stats;
+
 const char *stringFromErr(SX1278::Error err);
 const char *stringFromRxBw(SX1278::RxBw rx_bw);
 
+void printStats(Stats stats);
 void printConfig(SX1278::Config config);
 
+/// Status informations.
+struct Stats
+{
+    int last_recv_packet  = 0;  //< Last received packet ID.
+    int corrupted_packets = 0;  //< Packets that got mangled during tx.
+    int send_count        = 0;  //< Actual number of packets sent.
+    int recv_count        = 0;  //< Actual number of packets received.
+    int recv_errors       = 0;  //< Number of failed recvs.
+
+    float packet_loss() const
+    {
+        if (last_recv_packet != 0)
+        {
+            return 1.0f - ((float)recv_count / (float)last_recv_packet);
+        }
+        else
+        {
+            return 0.0f;
+        }
+    }
+
+} stats;
+
+/// Interval between transmissions.
+const int TX_INTERVAL = 1;
+
 SX1278 *sx1278[2] = {nullptr, nullptr};
+
+struct Msg
+{
+    int idx;
+    int dummy_1;
+    int dummy_2;
+    int dummy_3;
+
+    const static int DUMMY_1 = 0xdeadbeef;
+    const static int DUMMY_2 = 0xbeefdead;
+    const static int DUMMY_3 = 0x1234abcd;
+};
+
+void recvLoop(int idx)
+{
+    while (1)
+    {
+        Msg msg;
+        msg.idx     = 0;
+        msg.dummy_1 = 0;
+        msg.dummy_2 = 0;
+        msg.dummy_3 = 0;
+
+        int len = sx1278[idx]->recv((uint8_t *)&msg, sizeof(msg));
+        if (len != sizeof(msg))
+        {
+            stats.recv_errors++;
+        }
+        else if (msg.dummy_1 != Msg::DUMMY_1 || msg.dummy_2 != Msg::DUMMY_2 ||
+                 msg.dummy_3 != Msg::DUMMY_3)
+        {
+            stats.recv_errors++;
+            stats.corrupted_packets++;
+        }
+        else
+        {
+            stats.last_recv_packet = msg.idx;
+            stats.recv_count++;
+        }
+    }
+}
+
+void sendLoop(int idx)
+{
+    while (1)
+    {
+        miosix::Thread::sleep(TX_INTERVAL);
+
+        int next_idx = stats.send_count + 1;
+
+        Msg msg;
+        msg.idx     = next_idx;
+        msg.dummy_1 = Msg::DUMMY_1;
+        msg.dummy_2 = Msg::DUMMY_2;
+        msg.dummy_3 = Msg::DUMMY_3;
+
+        sx1278[idx]->send((uint8_t *)&msg, sizeof(msg));
+        stats.send_count = next_idx;
+    }
+}
+
+/// Get current time
+long long now() { return miosix::getTick() * 1000 / miosix::TICK_FREQ; }
 
 void __attribute__((used)) EXTI15_IRQHandlerImpl()
 {
@@ -131,40 +222,21 @@ void initBoard1()
                             InterruptTrigger::RISING_EDGE);
 }
 
-void recvLoop(int idx)
-{
-    char buf[256];
-    while (1)
-    {
-        sx1278[idx]->recv((uint8_t *)buf, sizeof(buf));
-
-        // Make sure there is a terminator somewhere
-        buf[255] = 0;
-        printf("[sx1278 @ %p] Received '%s'\n", sx1278[idx], buf);
-    }
-}
-
-void sendLoop(int idx, int interval, char *data)
-{
-    while (1)
-    {
-        miosix::Thread::sleep(interval);
-
-        sx1278[idx]->send((uint8_t *)data, strlen(data) + 1);
-        printf("[sx1278 @ %p] Sent '%s'\n", sx1278[idx], data);
-    }
-}
-
 int main()
 {
+#ifndef DISABLE_RX
     initBoard0();
+#endif
+#ifndef DISABLE_TX
     initBoard1();
+#endif
 
     // Run default configuration
     SX1278::Config config;
     SX1278::Error err;
 
     // Configure them
+#ifndef DISABLE_RX
     sx1278[0] = new SX1278(bus0, cs0);
 
     printf("\n[sx1278] Configuring sx1278[0]...\n");
@@ -174,7 +246,9 @@ int main()
         printf("[sx1278] sx1278[0]->init error: %s\n", stringFromErr(err));
         return -1;
     }
+#endif
 
+#ifndef DISABLE_TX
     sx1278[1] = new SX1278(bus1, cs1);
 
     printf("\n[sx1278] Configuring sx1278[1]...\n");
@@ -184,20 +258,41 @@ int main()
         printf("[sx1278] sx1278[1]->init error: %s\n", stringFromErr(err));
         return -1;
     }
+#endif
 
-    // Spawn all threads
-    std::thread send0(
-        [=]() { sendLoop(0, 1000, const_cast<char *>("Hi from sx1278[0]!")); });
-    std::thread send1(
-        [=]() { sendLoop(1, 3333, const_cast<char *>("Hi from sx1278[1]!")); });
+    // Run background threads
+#ifndef DISABLE_RX
+    std::thread recv([]() { recvLoop(0); });
+#endif
+#ifndef DISABLE_TX
+    std::thread send([]() { sendLoop(1); });
+#endif
 
-    std::thread recv0([]() { recvLoop(0); });
-    std::thread recv1([]() { recvLoop(1); });
+    // Finish!
+    long long start = now();
 
     printf("\n[sx1278] Initialization complete!\n");
 
+    miosix::Thread::sleep(4000);
+
     while (1)
-        miosix::Thread::wait();
+    {
+        long long elapsed = now() - start;
+
+        // Calculate bitrates
+        float tx_bitrate = (float)(stats.send_count * sizeof(Msg) * 8) /
+                           ((float)elapsed / 1000.0f);
+
+        float rx_bitrate = (float)(stats.recv_count * sizeof(Msg) * 8) /
+                           ((float)elapsed / 1000.0f);
+
+        printf("\n[sx1278] Stats:\n");
+        printStats(stats);
+        printf("tx_bitrate: %.2f kb/s\n", tx_bitrate / 1000.0f);
+        printf("rx_bitrate: %.2f kb/s\n", rx_bitrate / 1000.0f);
+
+        miosix::Thread::sleep(2000);
+    }
 
     return 0;
 }
@@ -298,4 +393,17 @@ void printConfig(SX1278::Config config)
     printf("config.afc_bw = %s\n", stringFromRxBw(config.afc_bw));
     printf("config.ocp = %d\n", config.ocp);
     printf("config.power = %d\n", config.power);
+}
+
+void printStats(Stats stats)
+{
+    // Prints are REALLY slow, so take a COPY of stats, so we can print an
+    // instant in time.
+
+    printf("stats.last_recv_packet = %d\n", stats.last_recv_packet);
+    printf("stats.corrupted_packets = %d\n", stats.corrupted_packets);
+    printf("stats.send_count = %d\n", stats.send_count);
+    printf("stats.recv_count = %d\n", stats.recv_count);
+    printf("stats.recv_errors = %d\n", stats.recv_errors);
+    printf("stats.packet_loss = %.2f %%\n", stats.packet_loss() * 100.0f);
 }

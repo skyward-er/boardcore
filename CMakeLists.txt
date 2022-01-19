@@ -185,8 +185,11 @@ sbs_target(test-xbee-rcv stm32f429zi_stm32f4discovery)
 add_executable(test-xbee-snd src/tests/drivers/xbee/test-xbee-snd.cpp)
 sbs_target(test-xbee-snd stm32f429zi_stm32f4discovery)
 
-add_executable(test-sx1278 src/tests/drivers/sx1278/test-sx1278-bidir.cpp)
-sbs_target(test-sx1278 stm32f407vg_stm32f4discovery)
+add_executable(test-sx1278-bench src/tests/drivers/sx1278/test-sx1278-bench.cpp)
+sbs_target(test-sx1278-bench stm32f407vg_stm32f4discovery)
+
+add_executable(test-sx1278-bidir src/tests/drivers/sx1278/test-sx1278-bidir.cpp)
+sbs_target(test-sx1278-bidir stm32f407vg_stm32f4discovery)
 
 add_executable(test-sx1278-tx src/tests/drivers/sx1278/test-sx1278-tx.cpp)
 sbs_target(test-sx1278-tx stm32f407vg_stm32f4discovery)
