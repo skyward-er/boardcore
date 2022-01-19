@@ -29,6 +29,7 @@ using namespace Boardcore;
 typedef Gpio<GPIOB_BASE, 4> ch1;
 typedef Gpio<GPIOA_BASE, 7> ch2;
 typedef Gpio<GPIOC_BASE, 8> ch3;
+typedef Gpio<GPIOB_BASE, 8> ch4;
 
 int main()
 {
@@ -38,14 +39,20 @@ int main()
     ch2::alternateFunction(2);
     ch3::mode(Mode::ALTERNATE);
     ch3::alternateFunction(2);
+    ch4::mode(Mode::ALTERNATE);
+    ch4::alternateFunction(3);
 
     RCC->APB1ENR |= RCC_APB1ENR_TIM3EN;
+    RCC->APB2ENR |= RCC_APB2ENR_TIM10EN;
 
     PWM pwm(TIM3);
+    PWM pwm2(TIM10);
 
     pwm.enableChannel(TimerUtils::Channel::CHANNEL_1);
     pwm.enableChannel(TimerUtils::Channel::CHANNEL_2);
     pwm.enableChannel(TimerUtils::Channel::CHANNEL_3);
+    pwm2.enableChannel(TimerUtils::Channel::CHANNEL_1);
+    pwm2.setDutyCycle(TimerUtils::Channel::CHANNEL_1, 0.25);
 
     float pos[] = {0.1, 0.5, 0.9};
 
