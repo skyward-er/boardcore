@@ -104,8 +104,8 @@ public:
         }
 
         fileStreams.push_back(stream);
-        stream->precision(flt::maxDigits10);  // Set stream precision to
-                                              // maximum float precision
+        stream->precision(flt::max_digits10);  // Set stream precision to
+                                               // maximum float precision
         // Print the header
         if (header.length() > 0)
         {
