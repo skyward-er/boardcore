@@ -113,9 +113,10 @@ inline bool ActiveObject::start()
 {
     if (!running)
     {
-        thread = miosix::Thread::create(threadLauncher, stackSize, priority,
-                                        reinterpret_cast<void*>(this),
-                                        miosix::Thread::JOINABLE);
+        stopFlag = false;
+        thread   = miosix::Thread::create(threadLauncher, stackSize, priority,
+                                          reinterpret_cast<void*>(this),
+                                          miosix::Thread::JOINABLE);
 
         if (thread != nullptr)
         {
