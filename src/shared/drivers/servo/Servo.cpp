@@ -22,13 +22,15 @@
 
 #include "Servo.h"
 
+#include "miosix.h"
+
 namespace Boardcore
 {
 
 Servo::Servo(TIM_TypeDef* timer, TimerUtils::Channel pwmChannel,
              unsigned int frequency, unsigned int minPulse,
              unsigned int maxPulse)
-    : pwm(timer), pwmChannel(pwmChannel), frequency(frequency),
+    : pwm(timer, frequency), pwmChannel(pwmChannel), frequency(frequency),
       minPulse(minPulse), maxPulse(maxPulse)
 {
     setPosition(0);

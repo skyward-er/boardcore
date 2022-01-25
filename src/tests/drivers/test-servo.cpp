@@ -29,7 +29,7 @@ using namespace miosix;
 
 using ps1 = Gpio<GPIOB_BASE, 4>;
 using ps2 = Gpio<GPIOA_BASE, 7>;
-using ps3 = Gpio<GPIOC_BASE, 8>;
+using ps3 = Gpio<GPIOB_BASE, 8>;
 
 int main()
 {
@@ -39,13 +39,14 @@ int main()
 
     ps1::alternateFunction(2);
     ps2::alternateFunction(2);
-    ps3::alternateFunction(2);
+    ps3::alternateFunction(3);
 
     RCC->APB1ENR |= RCC_APB1ENR_TIM3EN;
+    RCC->APB2ENR |= RCC_APB2ENR_TIM10EN;
 
     Servo s1(TIM3, TimerUtils::Channel::CHANNEL_1);
     Servo s2(TIM3, TimerUtils::Channel::CHANNEL_2);
-    Servo s3(TIM3, TimerUtils::Channel::CHANNEL_3);
+    Servo s3(TIM10, TimerUtils::Channel::CHANNEL_1);
 
     s1.enable();
     s2.enable();
