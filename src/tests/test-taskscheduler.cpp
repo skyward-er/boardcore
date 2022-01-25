@@ -45,8 +45,8 @@ int main()
 
     TaskScheduler::function_t f5hz{&task5hz};
     TaskScheduler::function_t f2hz{&task2hz};
-    scheduler.add(f5hz, 1000 / 5, 1);
-    scheduler.add(f2hz, 1000 / 2, 1);
+    scheduler.addTask(f5hz, 1000 / 5, 1);
+    scheduler.addTask(f2hz, 1000 / 2, 2);
 
     scheduler.start();
 

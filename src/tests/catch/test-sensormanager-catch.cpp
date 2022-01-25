@@ -54,9 +54,9 @@ public:
     SensorManagerFixture()
     {
         scheduler = new TaskScheduler();
-        scheduler->add([]() { std::cout << "Task Callback!" << std::endl; },
-                       2000,  // inserst a test function in the scheduler
-                       FIRST_TASK_ID);
+        scheduler->addTask([]() { std::cout << "Task Callback!" << std::endl; },
+                           2000,  // inserst a test function in the scheduler
+                           FIRST_TASK_ID);
 
         sensorManager = new SensorManager({{&s1, s1_info},
                                            {&s2, s2_info},
@@ -135,7 +135,7 @@ TEST_CASE_METHOD(SensorManagerFixture,
 {
     sensorManager->start();
 
-    vector<TaskStatResult> tasksStats = scheduler->getTaskStats();
+    vector<TaskStatsResult> tasksStats = scheduler->getTaskStats();
 
     INFO("Tasks number : " << tasksStats.size());
 

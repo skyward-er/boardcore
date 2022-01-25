@@ -28,6 +28,7 @@
 
 #include <cstdint>
 #include <list>
+#include <map>
 #include <queue>
 
 #include "TaskSchedulerData.h"
@@ -47,7 +48,7 @@ namespace Boardcore
  *    TaskScheduler.add(magic_std::function, 150);
  *
  * **IMPORTANT REMINDER**
- * Tasks in the event scheduler are meant to be added at inizialization.
+ * Tasks in the event scheduler are meant to be added at initialization.
  * DO NOT add task with long intervals/delays BEFORE adding the ones with
  * shorter intervals/delays: when adding first a task with a long delay, other
  * tasks are not executed until the long interval has expired once, producing
@@ -59,105 +60,133 @@ public:
     typedef std::function<void()> function_t;
 
     /**
-     * Constructor
+     * @brief Task behavior policy.
+     *
+     * This policies allows to change the behavior of the scheduler for the
+     * specific task:
+     * - ONE_SHOT: Allows to run the task once. When it is executed, it is
+     * removed from the tasks list.
+     * - SKIP: If for whatever reason a task can't be executed when
+     * it is supposed to (e.g. another thread occupies the CPU), the scheduler
+     * doesn't recover the missed executions but insted skips those and
+     * continues normally. This ensures that the next events are aligned with
+     * the original start tick. The period is not respected between the late
+     * execution and the next.
+     * - RECOVER: On the other hand, the SKIP policy ensures that the missed
+     * executions are run. However, this will cause the period to not be
+     * respected and the task will run consecutively for some time (See issue
+     * #91).
      */
+    enum class Policy
+    {
+        ONE_SHOT,  ///< Run the task one single timer.
+        SKIP,      // Skips lost executions and stays aligned with the original
+                   // start tick.
+        RECOVER    ///< Prioritize the number of executions over the period.
+    };
+
     TaskScheduler();
 
     /**
-     * Add a task function to be called periodically by the scheduler
-     * \param func function to be called
-     * \param intervalMs inter call period
-     * \param start the first activation will be at time start+intervalMs,
-     * useful for synchronizing tasks
+     * @brief Add a task function to the scheduler.
+     *
+     * Note that each task has it's own ID, even one shot tasks! Therefore, if a
+     * task already exists with the same id, the function will fail and return
+     * false.
+     *
+     * @param function Function to be called periodically.
+     * @param period Inter call period.
+     * @param id Task identification number.
+     * @param policy Task policy, default is SKIP.
+     * @param startTick First activation time, useful for synchronizing tasks.
+     * @return true if the task was added successfully.
      */
-    void add(function_t func, uint32_t intervalMs, uint8_t id,
-             int64_t start = miosix::getTick());
+    bool addTask(function_t function, uint32_t period, uint8_t id,
+                 Policy policy     = Policy::SKIP,
+                 int64_t startTick = miosix::getTick());
 
     /**
-     * Add a single shot task function to be called only once, after the
-     * given delay
-     * \param func function to be called
-     * \param delayMs delay before the call
-     * \param start the first activation will be at time start+intervalMs,
-     * useful for synchronizing tasks
+     * @brief Removes the task identified by the given id if it exists.
+     *
+     * Note that the task will be run one last time (it is set as one shot and
+     * removed by the schedule after it is executed).
+     *
+     * @param id Id of the task to remove.
+     * @return true if the task was removed.
      */
-    void addOnce(function_t func, uint32_t delayMs,
-                 int64_t start = miosix::getTick());
+    bool removeTask(uint8_t id);
 
     void stop() override;
-    /**
-     * \return statistics for all tasks
-     */
-    std::vector<TaskStatResult> getTaskStats();
+
+    std::vector<TaskStatsResult> getTaskStats();
 
 private:
-    /**
-     * std::function you want to call + timer
-     */
-    struct task_t
+    struct Task
     {
-        function_t function;    ///< Task function
-        uint32_t intervalMs;    ///< Task period
-        uint8_t id;             ///< Task id
-        bool once;              ///< true if the task is not periodic
-        int64_t lastcall;       ///< Last activation for period computaton
-        Stats activationStats;  ///< Stats about activation error
-        Stats periodStats;      ///< Stats about period error
-        Stats workloadStats;    ///< Stats about time the task takes to compute
+        function_t function;
+        uint32_t period;
+        uint8_t id;
+        Policy policy;
+        int64_t lastCall;  ///< Last activation tick for statistics computation.
+        unsigned int failedEvents;  ///< Number of events ended with exceptions.
+        Stats activationStats;      ///< Stats about activation error.
+        Stats periodStats;          ///< Stats about period error.
+        Stats workloadStats;  ///< Stats about time the task takes to compute.
     };
 
-    /**
-     * A single event
-     */
-    struct event_t
+    struct Event
     {
-        std::list<task_t>::iterator task;  ///< The task and period
-        int64_t nextTick;                  ///< Absolute time of next activation
+        Task* task;        ///< The task to execute.
+        int64_t nextTick;  ///< Tick of next activation.
 
-        bool operator<(const event_t& e) const
+        bool operator<(const Event& e) const
         {
-            // Note: operator < is reversed, so that the priority_queue
-            // will return the lowest element first
+            // Note: operator < is reversed, so that the priority_queue will
+            // return the lowest element first
             return this->nextTick > e.nextTick;
         }
     };
 
-    /**
-     * Overrides ActiveObject::run()
-     */
     void run() override;
 
     /**
-     * Add a task to be executed, both periodic and single shot.
-     * In addition, also takes care of genrating the (first) event for the task
-     * \param pask the task to add
-     */
-    void addTask(const task_t& task, int64_t start);
-
-    /**
-     * (Re)Enqueue a schedule.
+     * @brief Update task statistics.
      *
-     * Requires the mutex to be locked.
-     * \param event event to be scheduled. Note: this parameter is
-     * modified, in detail the nextTick field is overvritten in
-     * order to respect the task interval. This is done for
-     * performance reason
+     * This function changes the task last call tick to the startTick.
+     *
+     * \param event Current event.
+     * \param startTick Start of execution tick.
+     * \param endTick End of execution tick.
      */
-    void enqueue(event_t& event);
+    void updateStats(const Event& event, int64_t startTick, int64_t endTick);
 
     /**
-     * Update task stats
-     * \param e current event
-     * \param startTime start of execution time
-     * \param endTime end of execution time
+     * (Re)Enqueue an event.
+     *
+     * Requires the mutex to be locked!
+     *
+     * \param event Event to be scheduled. Note: this parameter is modified, the
+     * nextTick field is updated in order to respect the task interval.
+     * \param startTick Activation tick, needed to update the nextTick value of
+     * the event.
      */
-    void updateStats(const event_t& e, int64_t startTime, int64_t endTime);
+    void enqueue(Event& event, int64_t startTick);
 
-    miosix::FastMutex mutex;              ///< Mutex to protect agenda
-    miosix::ConditionVariable condvar;    ///< Used when agenda is empty
-    std::list<task_t> tasks;              ///< Holds all tasks to be scheduled
-    std::priority_queue<event_t> agenda;  ///< Ordered list of functions
-    uint32_t permanentTasks;              ///< Number of non-oneshot tasks
+    static TaskStatsResult fromTaskIdPairToStatsResult(
+        const std::pair<const uint8_t, Boardcore::TaskScheduler::Task>& task)
+    {
+        return TaskStatsResult{
+            task.second.id,
+            task.second.activationStats.getStats(),
+            task.second.periodStats.getStats(),
+            task.second.workloadStats.getStats(),
+        };
+    }
+
+    miosix::FastMutex mutex;            ///< Mutex to protect tasks and agenda.
+    std::map<uint8_t, Task> tasks;      ///< Holds all tasks to be scheduled.
+    miosix::ConditionVariable condvar;  ///< Used when agenda is empty.
+    std::priority_queue<Event> agenda;  ///< Ordered list of functions.
 };
 
 }  // namespace Boardcore

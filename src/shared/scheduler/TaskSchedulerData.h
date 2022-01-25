@@ -20,25 +20,22 @@
  * THE SOFTWARE.
  */
 
+#pragma once
+
 #include <math/Stats.h>
 
 #include <cstdint>
 #include <ostream>
 
-#pragma once
-
 namespace Boardcore
 {
 
-/**
- * Statistics for a task
- */
-struct TaskStatResult
+struct TaskStatsResult
 {
-    uint8_t id;                   ///< Task id
-    StatsResult activationStats;  ///< Task activation stats
-    StatsResult periodStats;      ///< Task period stats
-    StatsResult workloadStats;    ///< Task workload stats
+    uint8_t id;                   ///< Task id.
+    StatsResult activationStats;  ///< Task activation stats.
+    StatsResult periodStats;      ///< Task period stats.
+    StatsResult workloadStats;    ///< Task workload stats.
 
     static std::string header()
     {

@@ -105,7 +105,7 @@ const SensorInfo SensorManager::getSensorInfo(AbstractSensor* sensor)
     return SensorInfo{};
 }
 
-const vector<TaskStatResult> SensorManager::getSamplersStats()
+const vector<TaskStatsResult> SensorManager::getSamplersStats()
 {
     return scheduler->getTaskStats();
 }
@@ -200,30 +200,28 @@ void SensorManager::initScheduler()
     std::stable_sort(samplers.begin(), samplers.end(),
                      SensorSampler::comparareByPeriod);
 
-    uint64_t startTime = miosix::getTick() + 10;
-
     // Add all the samplers to the scheduler
     for (auto& sampler : samplers)
     {
         function_t samplerUpdateFunction([=]()
                                          { sampler->sampleAndCallback(); });
 
-        scheduler->add(samplerUpdateFunction, sampler->getSamplingPeriod(),
-                       sampler->getID(), startTime);
+        scheduler->addTask(samplerUpdateFunction, sampler->getSamplingPeriod(),
+                           sampler->getID());
     }
 }
 
 uint8_t SensorManager::getFirstTaskID()
 {
-    std::vector<TaskStatResult> tasksStats = scheduler->getTaskStats();
+    std::vector<TaskStatsResult> tasksStats = scheduler->getTaskStats();
 
     if (tasksStats.empty())
         return 0;
 
-    auto max =
-        std::max_element(tasksStats.begin(), tasksStats.end(),
-                         [](const TaskStatResult& t1, const TaskStatResult& t2)
-                         { return t1.id < t2.id; });
+    auto max = std::max_element(
+        tasksStats.begin(), tasksStats.end(),
+        [](const TaskStatsResult& t1, const TaskStatsResult& t2)
+        { return t1.id < t2.id; });
 
     return max->id + 1;
 }
