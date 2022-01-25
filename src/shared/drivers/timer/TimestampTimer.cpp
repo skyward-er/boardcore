@@ -27,6 +27,13 @@
 namespace Boardcore
 {
 
+void TimestampTimer::resetTimestamp()
+{
+#ifndef COMPILE_FOR_HOST
+    timer.setCounter(0);
+#endif
+}
+
 #ifndef COMPILE_FOR_HOST
 TIM_TypeDef *TimestampTimer::getTimer() { return timer.getTimer(); }
 #endif

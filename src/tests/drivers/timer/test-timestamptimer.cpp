@@ -44,6 +44,23 @@ int main()
 
     delayMs(1000);
 
+    for (int i = 0; i < 10; i++)
+    {
+        long long prevTick = getTick();
+
+        uint64_t timestamp = TimestampTimer::getInstance().getTimestamp();
+
+        // cppcheck-suppress invalidPrintfArgType_uint
+        printf("%12llu us, %12.3f ms, %12.6f s, %12lld tick \n", timestamp,
+               timestamp / 1e3, timestamp / 1e6, prevTick);
+
+        Thread::sleepUntil(prevTick + 1000);
+    }
+
+    printf("Now resetting the TimestampTimer\n");
+
+    TimestampTimer::getInstance().resetTimestamp();
+
     while (true)
     {
         long long prevTick = getTick();

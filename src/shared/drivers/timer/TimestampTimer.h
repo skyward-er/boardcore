@@ -113,11 +113,4 @@ inline uint64_t TimestampTimer::getTimestamp()
 #endif
 }
 
-inline void TimestampTimer::resetTimestamp()
-{
-#ifndef COMPILE_FOR_HOST
-    timer.setCounter(0);
-#endif
-}
-
 }  // namespace Boardcore
