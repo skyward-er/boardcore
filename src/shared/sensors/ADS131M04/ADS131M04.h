@@ -133,8 +133,8 @@ public:
     bool reset();
 
     /**
-     * @brief Samples each channel, averages the samples and applies sets up
-     * offset compensation in the device.
+     * @brief Samples each channel, averages the samples and applies offset
+     * compensation in the device.
      */
     void calibrateOffset();
 

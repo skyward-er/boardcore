@@ -24,6 +24,8 @@
 
 #include <stdint.h>
 
+#include <ostream>
+
 namespace Boardcore
 {
 
