@@ -32,7 +32,7 @@ namespace Boardcore
 {
 
 /**
- * @brief Common class for battery voltage sensors
+ * @brief Common class for battery voltage sensors.
  *
  * It needs the conversion ratio, in order to convert the raw voltage to
  * battery voltage.
@@ -40,11 +40,11 @@ namespace Boardcore
 class BatteryVoltageSensor : public Sensor<BatteryVoltageSensorData>
 {
 public:
-    static constexpr int MOVING_AVAERAGE_N = 20;
+    static constexpr int MOVING_AVERAGE_N = 20;
 
-    BatteryVoltageSensor(std::function<ADCData()> getADCVoltage_,
-                         float conversionCoeff_)
-        : getADCVoltage(getADCVoltage_), conversionCoeff(conversionCoeff_)
+    BatteryVoltageSensor(std::function<ADCData()> getVoltage,
+                         float conversionCoeff)
+        : getVoltage(getVoltage), conversionCoeff(conversionCoeff)
     {
         lastSample.batVoltage = 0;
     }
@@ -56,12 +56,10 @@ public:
     ///< Converts the adc voltage value to battery voltage
     BatteryVoltageSensorData sampleImpl() override
     {
-        ADCData adcData = getADCVoltage();
+        ADCData adcData = getVoltage();
 
         if (lastSample.batVoltage == 0)
-        {
             lastSample.batVoltage = adcToBatteryVoltage(adcData.voltage);
-        }
 
         BatteryVoltageSensorData batData;
         batData.voltageTimestamp = adcData.voltageTimestamp;
@@ -69,9 +67,9 @@ public:
         batData.voltage          = adcData.voltage;
 
         // Moving average
-        batData.batVoltage = lastSample.batVoltage * MOVING_AVAERAGE_COMP_COEFF;
+        batData.batVoltage = lastSample.batVoltage * MOVING_AVERAGE_COMP_COEFF;
         batData.batVoltage +=
-            adcToBatteryVoltage(adcData.voltage) * MOVING_AVAERAGE_COEFF;
+            adcToBatteryVoltage(adcData.voltage) * MOVING_AVERAGE_COEFF;
 
         return batData;
     }
@@ -84,13 +82,12 @@ private:
     }
 
     ///< Function that returns the adc voltage
-    std::function<ADCData()> getADCVoltage;
+    std::function<ADCData()> getVoltage;
 
     float conversionCoeff;
 
-    static constexpr float MOVING_AVAERAGE_COEFF = 1 / (float)MOVING_AVAERAGE_N;
-    static constexpr float MOVING_AVAERAGE_COMP_COEFF =
-        1 - MOVING_AVAERAGE_COEFF;
+    static constexpr float MOVING_AVERAGE_COEFF = 1 / (float)MOVING_AVERAGE_N;
+    static constexpr float MOVING_AVERAGE_COMP_COEFF = 1 - MOVING_AVERAGE_COEFF;
 };
 
 }  // namespace Boardcore

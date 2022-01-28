@@ -1,4 +1,4 @@
-/* Copyright (c) 2021 Skyward Experimental Rocketry
+/* Copyright (c) 2022 Skyward Experimental Rocketry
  * Author: Alberto Nidasio
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -22,18 +22,23 @@
 
 #pragma once
 
-#include <sensors/Sensor.h>
-
-#include <functional>
+#include <ostream>
 
 namespace Boardcore
 {
 
-template <typename AnalogData>
-class AnalogSensor : public Sensor<AnalogData>
+struct LoadCellData
 {
-public:
-    AnalogSensor(std::function < A)
-}
+    uint64_t timestamp;
+    float voltage;
+    float load;
+
+    static std::string header() { return "timestamp,voltage,load\n"; }
+
+    void print(std::ostream& os) const
+    {
+        os << timestamp << "," << voltage << "," << load << "\n";
+    }
+};
 
 }  // namespace Boardcore

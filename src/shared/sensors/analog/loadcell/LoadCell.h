@@ -1,4 +1,4 @@
-/* Copyright (c) 2020 Skyward Experimental Rocketry
+/* Copyright (c) 2022 Skyward Experimental Rocketry
  * Author: Alberto Nidasio
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -22,39 +22,44 @@
 
 #pragma once
 
-#include "../AnalogPressureSensor.h"
+#include <sensors/Sensor.h>
+
+#include <functional>
+
+#include "LoadCellData.h"
 
 namespace Boardcore
 {
 
-/**
- * @brief Driver for Honeywell's pressure sensors (absolute and differential)
- *
- * All this sensors shares the same transfer function which varies only by few
- * parameters: voltage supply and the sensor pressure range
- */
-template <typename HoneywellPressureData>
-class HoneywellPressureSensor
-    : public AnalogPressureSensor<HoneywellPressureData>
+class LoadCellSensor : public Sensor<LoadCellData>
 {
 public:
-    using AnalogPressureSensor<HoneywellPressureData>::AnalogPressureSensor;
-
-protected:
-    ///< Common transfer function from volts to pascals (from datasheet pag 11)
-    inline float voltageToPressure(float voltage)
+    LoadCellSensor(std::function<std::pair<uint64_t, float>()> getVoltage,
+                   const float mVtoV, const unsigned int fullScale,
+                   const float supplyVoltage = 5)
+        : getVoltage(getVoltage),
+          conversionCoeff(mVtoV * supplyVoltage / fullScale / 1e3)
     {
-        float tmp;
-
-        tmp = voltage -
-              0.1 * AnalogPressureSensor<HoneywellPressureData>::supplyVoltage;
-        tmp *= AnalogPressureSensor<HoneywellPressureData>::maxPressure -
-               AnalogPressureSensor<HoneywellPressureData>::minPressure;
-        tmp /= 0.8 * AnalogPressureSensor<HoneywellPressureData>::supplyVoltage;
-        tmp += AnalogPressureSensor<HoneywellPressureData>::minPressure;
-
-        return tmp;
     }
+
+    bool init() override { return true; };
+
+    bool selfTest() override { return true; };
+
+    LoadCellData sampleImpl() override
+    {
+        LoadCellData data;
+
+        std::tie(data.timestamp, data.voltage) = getVoltage();
+
+        data.load = data.voltage / conversionCoeff;
+
+        return data;
+    }
+
+private:
+    std::function<std::pair<uint64_t, float>()> getVoltage;
+    const float conversionCoeff;
 };
 
 }  // namespace Boardcore

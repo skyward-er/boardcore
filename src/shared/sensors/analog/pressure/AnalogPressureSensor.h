@@ -30,7 +30,7 @@ namespace Boardcore
 {
 
 /**
- * @brief Common class for all analog pressure sensors
+ * @brief Common class for all analog pressure sensors.
  *
  * All analog pressure sensors have a transfer function to convert the read
  * voltage into pressure and a range within which they operate.
@@ -39,12 +39,12 @@ template <typename AnalogPressureData>
 class AnalogPressureSensor : public Sensor<AnalogPressureData>
 {
 public:
-    AnalogPressureSensor(std::function<ADCData()> getSensorVoltage_,
-                         const float V_SUPPLY_    = 5.0,
-                         const float maxPressure_ = 0,
-                         const float minPressure_ = 0)
-        : getSensorVoltage(getSensorVoltage_), V_SUPPLY(V_SUPPLY_),
-          maxPressure(maxPressure_), minPressure(minPressure_)
+    AnalogPressureSensor(std::function<ADCData()> getVoltage,
+                         const float supplyVoltage = 5.0,
+                         const float maxPressure   = 0,
+                         const float minPressure   = 0)
+        : getVoltage(getVoltage), supplyVoltage(supplyVoltage),
+          maxPressure(maxPressure), minPressure(minPressure)
     {
     }
 
@@ -58,23 +58,17 @@ public:
         AnalogPressureData pressure = AnalogPressureData();
 
         // Retrieve the voltage
-        ADCData voltage = getSensorVoltage();
+        ADCData voltage = getVoltage();
 
-        // Save the timestamp
+        // Save the timestamp and convert the voltage
         pressure.pressureTimestamp = voltage.voltageTimestamp;
-
-        // Convert the value
-        pressure.pressure = voltageToPressure(voltage.voltage);
+        pressure.pressure          = voltageToPressure(voltage.voltage);
 
         // Check if the pressure is in range
         if (pressure.pressure < minPressure)
-        {
             pressure.pressure = minPressure;
-        }
         else if (pressure.pressure > maxPressure)
-        {
             pressure.pressure = maxPressure;
-        }
 
         return pressure;
     }
@@ -84,12 +78,10 @@ protected:
     virtual float voltageToPressure(float voltage) = 0;
 
     ///< Function that returns the sensor voltage
-    std::function<ADCData()> getSensorVoltage;
+    std::function<ADCData()> getVoltage;
 
-    const float V_SUPPLY;  ///< Suppply voltage
-
+    const float supplyVoltage;
     const float maxPressure;
-
     const float minPressure;
 };
 

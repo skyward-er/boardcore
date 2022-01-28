@@ -36,10 +36,10 @@ namespace Boardcore
 class SSCDRRN015PDA final : public HoneywellPressureSensor<SSCDRRN015PDAData>
 {
 public:
-    SSCDRRN015PDA(std::function<ADCData()> getSensorVoltage_,
-                  const float V_SUPPLY_                 = 5.0,
+    SSCDRRN015PDA(std::function<ADCData()> getSensorVoltage,
+                  const float supplyVoltage             = 5.0,
                   const unsigned int num_calib_samples_ = 200)
-        : HoneywellPressureSensor(getSensorVoltage_, V_SUPPLY_, 103421.3594,
+        : HoneywellPressureSensor(getSensorVoltage, supplyVoltage, 103421.3594,
                                   -103421.3594),
           offset(0.0), num_calib_samples(num_calib_samples_)
     {

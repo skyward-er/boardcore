@@ -27,11 +27,11 @@
 namespace Boardcore
 {
 
-InternalADC::InternalADC(ADC_TypeDef& ADCx_, const float V_SUPPLY_,
-                         const bool isUsingDMA_,
-                         DMA_Stream_TypeDef* DMAx_Streamx_)
-    : ADCx(ADCx_), V_SUPPLY(V_SUPPLY_), isUsingDMA(isUsingDMA_),
-      DMAx_Streamx(DMAx_Streamx_)
+InternalADC::InternalADC(ADC_TypeDef& ADCx, const float supplyVoltage,
+                         const bool isUsingDMA,
+                         DMA_Stream_TypeDef* DMAx_Streamx)
+    : ADCx(ADCx), supplyVoltage(supplyVoltage), isUsingDMA(isUsingDMA),
+      DMAx_Streamx(DMAx_Streamx)
 {
     resetRegisters();
     enableADCClock();
@@ -168,7 +168,7 @@ ADCData InternalADC::getVoltage(Channel channel)
 
     if (indexMap[channel] >= 0 && indexMap[channel] < CH_NUM)
     {
-        voltage = values[indexMap[channel]] * V_SUPPLY / RESOLUTION;
+        voltage = values[indexMap[channel]] * supplyVoltage / RESOLUTION;
     }
 
     return ADCData{timestamp, (uint8_t)channel, voltage};

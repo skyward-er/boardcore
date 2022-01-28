@@ -54,7 +54,7 @@ struct TimestampData
     uint64_t timestamp;
 };
 
-struct LoadCellData
+struct DigitalLoadCellData
 {
     uint64_t weightTimestamp;
     float weight;

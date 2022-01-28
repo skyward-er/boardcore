@@ -87,14 +87,15 @@ enum ReturnsStates
  * @brief Structure that stores a data value, with his timestamp and his
  * validity.
  */
-struct Data : public LoadCellData
+struct Data : public DigitalLoadCellData
 {
     bool valid = false;
 
-    Data() : LoadCellData{0, 0.0}, valid(false) {}
+    Data() : DigitalLoadCellData{0, 0.0}, valid(false) {}
 
     explicit Data(float data)
-        : LoadCellData{TimestampTimer::getInstance().getTimestamp(), data},
+        : DigitalLoadCellData{TimestampTimer::getInstance().getTimestamp(),
+                              data},
           valid(true)
     {
     }
