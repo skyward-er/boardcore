@@ -182,10 +182,10 @@ private:
 
     int fileNumber = -1;
 
-    miosix::Queue<Record *, numRecords> fullQueue;        ///< Full records.
-    miosix::Queue<Record *, numRecords> emptyQueue;       ///< Empty Records.
-    std::queue<Buffer *, std::list<Buffer *>> fullList;   ///< Full buffers.
-    std::queue<Buffer *, std::list<Buffer *>> emptyList;  ///< Empty buffers.
+    miosix::Queue<Record *, numRecords> fullRecordsQueue;
+    miosix::Queue<Record *, numRecords> emptyRecordsQueue;
+    std::queue<Buffer *, std::list<Buffer *>> fullBufferList;
+    std::queue<Buffer *, std::list<Buffer *>> emptyBufferList;
     miosix::FastMutex mutex;  ///< To allow concurrent access to the queues.
     miosix::ConditionVariable cond;  ///< To lock when buffers are all empty.
 

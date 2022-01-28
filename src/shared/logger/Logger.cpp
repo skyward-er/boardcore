@@ -89,16 +89,16 @@ int Logger::start()
                              this, Thread::JOINABLE);
     if (!writeTh)
     {
-        fullQueue.put(nullptr);  // Signal packThread to stop
+        fullRecordsQueue.put(nullptr);  // Signal packThread to stop
         packTh->join();
         // packThread has pushed a buffer and a nullptr to writeThread, remove
         // it
-        while (fullList.front() != nullptr)
+        while (fullBufferList.front() != nullptr)
         {
-            emptyList.push(fullList.front());
-            fullList.pop();
+            emptyBufferList.push(fullBufferList.front());
+            fullBufferList.pop();
         }
-        fullList.pop();  // Remove nullptr
+        fullBufferList.pop();  // Remove nullptr
         fclose(file);
         TRACE("Error creating write thread\n");
         throw runtime_error("Error creating write thread");
@@ -118,7 +118,7 @@ void Logger::stop()
 
     started = false;
 
-    fullQueue.put(nullptr);  // Signal packThread to stop
+    fullRecordsQueue.put(nullptr);  // Signal packThread to stop
 
     packTh->join();
     writeTh->join();
@@ -142,11 +142,11 @@ Logger::Logger()
 {
     // Allocate the records
     for (unsigned int i = 0; i < numRecords; i++)
-        emptyQueue.put(new Record);
+        emptyRecordsQueue.put(new Record);
 
     // Allocate buffers and put them in the empty list
     for (unsigned int i = 0; i < numBuffers; i++)
-        emptyList.push(new Buffer);
+        emptyBufferList.push(new Buffer);
 }
 
 string Logger::getFileName(int logNumber)
@@ -191,24 +191,24 @@ void Logger::packThread()
             {
                 Lock<FastMutex> l(mutex);
                 // Get an empty buffer, wait if none is available
-                while (emptyList.empty())
+                while (emptyBufferList.empty())
                     cond.wait(l);
-                buffer = emptyList.front();
-                emptyList.pop();
+                buffer = emptyBufferList.front();
+                emptyBufferList.pop();
                 buffer->size = 0;
             }
 
             do
             {
                 Record* record = nullptr;
-                fullQueue.get(record);
+                fullRecordsQueue.get(record);
 
                 // When stop() is called, it pushes a nullptr signaling to stop
                 if (record == nullptr)
                 {
                     Lock<FastMutex> l(mutex);
-                    fullList.push(buffer);   // Don't lose the buffer
-                    fullList.push(nullptr);  // Signal writeThread to stop
+                    fullBufferList.push(buffer);   // Don't lose the buffer
+                    fullBufferList.push(nullptr);  // Signal writeThread to stop
                     cond.broadcast();
                     stats.buffersFilled++;
                     return;
@@ -216,13 +216,13 @@ void Logger::packThread()
 
                 memcpy(buffer->data + buffer->size, record->data, record->size);
                 buffer->size += record->size;
-                emptyQueue.put(record);
+                emptyRecordsQueue.put(record);
             } while (bufferSize - buffer->size >= maxRecordSize);
 
             {
                 Lock<FastMutex> l(mutex);
                 // Put back full buffer
-                fullList.push(buffer);
+                fullBufferList.push(buffer);
                 cond.broadcast();
                 stats.buffersFilled++;
             }
@@ -246,13 +246,14 @@ void Logger::writeThread()
             {
                 Lock<FastMutex> l(mutex);
                 // Get a full buffer, wait if none is available
-                while (fullList.empty())
+                while (fullBufferList.empty())
                     cond.wait(l);
-                buffer = fullList.front();
-                fullList.pop();
+                buffer = fullBufferList.front();
+                fullBufferList.pop();
             }
 
-            // When packThread stops, it pushes a nullptr signaling to stop
+            // When packThread stops, it pushes a nullptr signaling to
+            // stop
             if (buffer == nullptr)
                 return;
 
@@ -279,7 +280,7 @@ void Logger::writeThread()
                 Lock<FastMutex> l(mutex);
 
                 // Put back empty buffer
-                emptyList.push(buffer);
+                emptyBufferList.push(buffer);
                 cond.broadcast();
             }
         }
@@ -310,7 +311,7 @@ LoggerResult Logger::logImpl(const char* name, const void* data,
     {
         // We disable interrupts because IRQget() is nonblocking, unlike get()
         FastInterruptDisableLock dLock;
-        if (emptyQueue.IRQget(record) == false)
+        if (emptyRecordsQueue.IRQget(record) == false)
         {
             stats.droppedSamples++;
             return LoggerResult::Dropped;
@@ -324,7 +325,7 @@ LoggerResult Logger::logImpl(const char* name, const void* data,
     // If the record is too small, move the record in the empty queue and error
     if (result == tscpp::BufferTooSmall)
     {
-        emptyQueue.put(record);
+        emptyRecordsQueue.put(record);
         atomicAdd(&stats.tooLargeSamples, 1);
         TRACE("The current record size is not enough to store %s\n", name);
         return LoggerResult::TooLarge;
@@ -334,7 +335,7 @@ LoggerResult Logger::logImpl(const char* name, const void* data,
 
     // Move the record to the full queue, where the pack thread will read and
     // store it in a buffer
-    fullQueue.put(record);
+    fullRecordsQueue.put(record);
 
     atomicAdd(&stats.queuedSamples, 1);
 
