@@ -75,7 +75,9 @@ void SensorSampler::sampleAndCallback()
         if (s.second.isEnabled && s.second.isInitialized)
         {
             sampleSensor(s.first);
-            s.second.callback();
+
+            if (s.second.callback)
+                s.second.callback();
         }
     }
 }
