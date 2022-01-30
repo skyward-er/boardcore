@@ -138,10 +138,11 @@ private:
         uint8_t id;
         Policy policy;
         int64_t lastCall;  ///< Last activation tick for statistics computation.
-        unsigned int failedEvents;  ///< Number of events ended with exceptions.
-        Stats activationStats;      ///< Stats about activation error.
-        Stats periodStats;          ///< Stats about period error.
-        Stats workloadStats;  ///< Stats about time the task takes to compute.
+        Stats activationStats;  ///< Stats about activation tick error.
+        Stats periodStats;      ///< Stats about period error.
+        Stats workloadStats;    ///< Stats about time the task takes to compute.
+        uint32_t missedEvents;  ///< Number of events that could not be run.
+        uint32_t failedEvents;  ///< Number of events ended with exceptions.
     };
 
     struct Event
@@ -160,7 +161,7 @@ private:
     void run() override;
 
     /**
-     * @brief Update task statistics.
+     * @brief Update task statistics (Intended for when the task is executed).
      *
      * This function changes the task last call tick to the startTick.
      *
@@ -171,7 +172,8 @@ private:
     void updateStats(const Event& event, int64_t startTick, int64_t endTick);
 
     /**
-     * @brief (Re)Enqueue an event.
+     * @brief (Re)Enqueue an event into the agenda based on the scheduling
+     * policy.
      *
      * Requires the mutex to be locked!
      *
@@ -185,12 +187,12 @@ private:
     static TaskStatsResult fromTaskIdPairToStatsResult(
         const std::pair<const uint8_t, Boardcore::TaskScheduler::Task>& task)
     {
-        return TaskStatsResult{
-            task.second.id,
-            task.second.activationStats.getStats(),
-            task.second.periodStats.getStats(),
-            task.second.workloadStats.getStats(),
-        };
+        return TaskStatsResult{task.second.id,
+                               task.second.activationStats.getStats(),
+                               task.second.periodStats.getStats(),
+                               task.second.workloadStats.getStats(),
+                               task.second.missedEvents,
+                               task.second.failedEvents};
     }
 
     miosix::FastMutex mutex;            ///< Mutex to protect tasks and agenda.

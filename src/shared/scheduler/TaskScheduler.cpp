@@ -51,7 +51,7 @@ bool TaskScheduler::addTask(function_t function, uint32_t period, uint8_t id,
     Lock<FastMutex> lock(mutex);
 
     // Register the task into the map
-    Task task   = {function, period, id, policy, -1, 0, {}, {}, {}};
+    Task task   = {function, period, id, policy, -1, {}, {}, {}, 0, 0};
     auto result = tasks.insert({id, task});
 
     if (result.second)
@@ -191,11 +191,7 @@ void TaskScheduler::run()
                 }
             }
 
-            // Update the task statistics
             updateStats(nextEvent, startTick, getTick());
-
-            // Re-enqueue the task in the agenda based on the scheduling
-            // policy
             enqueue(nextEvent, startTick);
         }
         else
@@ -240,6 +236,10 @@ void TaskScheduler::enqueue(Event& event, int64_t startTick)
             tasks.erase(event.task->id);
             return;
         case Policy::SKIP:
+            // Updated the missed events count
+            event.task->missedEvents +=
+                (startTick - event.nextTick) / event.task->period;
+
             // Compute the number of periods between the tick the event should
             // have been run and the tick it actually run. Than adds 1 and
             // multiply the period to get the next execution tick still aligned

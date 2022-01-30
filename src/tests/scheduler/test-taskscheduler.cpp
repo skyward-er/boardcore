@@ -115,8 +115,8 @@ int main()
 
     printf("Now readding task 1 and 3\n");
     signalPin5();
-    scheduler.addTask(f2Hz, 1000 / 2, 1);
-    scheduler.addTask(f500Hz, 1000 / 500, 3, TaskScheduler::Policy::RECOVER);
+    scheduler.addTask(f2Hz, 500, 1);
+    scheduler.addTask(f500Hz, 2, 3, TaskScheduler::Policy::RECOVER);
 
     Thread::sleep(4 * 1000);
 
@@ -133,7 +133,14 @@ int main()
     printf("Tasks stats:\n");
     for (auto stat : scheduler.getTaskStats())
     {
-        printf("%d, %.2f, %.2f\n", stat.id, stat.periodStats.mean,
+        printf("- %d:\n", stat.id);
+        printf("\tActivation: %.2f, %.2f\n", stat.activationStats.mean,
+               stat.activationStats.stdev);
+        printf("\tPeriod: %.2f, %.2f\n", stat.periodStats.mean,
                stat.periodStats.stdev);
+        printf("\tWorkload: %.2f, %.2f\n", stat.workloadStats.mean,
+               stat.workloadStats.stdev);
+        printf("\tMissed events: %lu\n", stat.missedEvents);
+        printf("\tFailed events: %lu\n", stat.failedEvents);
     }
 }
