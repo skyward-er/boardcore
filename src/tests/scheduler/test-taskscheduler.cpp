@@ -134,6 +134,6 @@ int main()
     for (auto stat : scheduler.getTaskStats())
     {
         printf("%d, %.2f, %.2f\n", stat.id, stat.periodStats.mean,
-               stat.periodStats.stddev);
+               stat.periodStats.stdev);
     }
 }

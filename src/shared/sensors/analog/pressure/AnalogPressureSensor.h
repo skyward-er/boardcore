@@ -55,7 +55,7 @@ public:
     ///< Converts the voltage value to pressure
     AnalogPressureData sampleImpl() override
     {
-        AnalogPressureData pressure = AnalogPressureData();
+        AnalogPressureData pressure;
 
         // Retrieve the voltage
         ADCData voltage = getVoltage();
