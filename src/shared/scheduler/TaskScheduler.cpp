@@ -40,9 +40,13 @@ TaskScheduler::TaskScheduler()
 bool TaskScheduler::addTask(function_t function, uint32_t period, uint8_t id,
                             Policy policy, int64_t startTick)
 {
-    // Perion must be grather than zero!
-    if (period <= 0)
+    // Perion must be grater than zero!
+    if (period <= 0 && policy != Policy::ONE_SHOT)
+    {
+        LOG_ERR(logger,
+                "Trying to add a task non one shot with an invalid period");
         return false;
+    }
 
     Lock<FastMutex> lock(mutex);
 
@@ -57,6 +61,10 @@ bool TaskScheduler::addTask(function_t function, uint32_t period, uint8_t id,
         agenda.push(event);
         condvar.broadcast();  // Signals the run thread
     }
+    else
+    {
+        LOG_ERR(logger, "Trying to add a task which id is already present");
+    }
 
     return result.second;
 }
@@ -65,14 +73,39 @@ bool TaskScheduler::removeTask(uint8_t id)
 {
     Lock<FastMutex> lock(mutex);
 
-    auto result = tasks.find(id);
-
-    if (result == tasks.end())
+    if (tasks.find(id) == tasks.end())
+    {
+        LOG_ERR(logger, "Attempting to remove a task not registered");
         return false;
+    }
 
-    result->second.policy = Policy::ONE_SHOT;
+    // Find the task in the agenda and remove it
+    std::priority_queue<Event> newAgenda;
+    while (agenda.size() > 0)
+    {
+        Event event = agenda.top();
+        agenda.pop();
+
+        if (event.task->id != id)
+            newAgenda.push(event);
+    }
+    agenda = newAgenda;
+
+    // Remove the task from the tasks map
+    tasks.erase(id);
 
     return true;
+}
+
+bool TaskScheduler::start()
+{
+    if (running)
+        return false;
+
+    // Normalize the tasks start time if they preceed the current tick
+    normalizeTasks();
+
+    return ActiveObject::start();
 }
 
 void TaskScheduler::stop()
@@ -95,28 +128,52 @@ vector<TaskStatsResult> TaskScheduler::getTaskStats()
     return result;
 }
 
+void TaskScheduler ::normalizeTasks()
+{
+    int64_t currentTick = getTick();
+
+    std::priority_queue<Event> newAgenda;
+    while (agenda.size() > 0)
+    {
+        Event event = agenda.top();
+        agenda.pop();
+
+        if (event.nextTick < currentTick)
+            event.nextTick +=
+                ((currentTick - event.nextTick) / event.task->period + 1) *
+                event.task->period;
+
+        newAgenda.push(event);
+    }
+    agenda = newAgenda;
+}
+
 void TaskScheduler::run()
 {
     Lock<FastMutex> lock(mutex);
-
-    // First of all check if the tasks start tick precedes the current tick.
-    // This is to prevent unwanted
 
     while (true)
     {
         while (agenda.size() == 0 && !shouldStop())
             condvar.wait(mutex);
 
-        // Exit if the ActiveObject has been stopped.
+        // Exit if the ActiveObject has been stopped
         if (shouldStop())
             return;
 
         int64_t startTick = getTick();
-        int64_t nextTick  = agenda.top().nextTick;
+        Event nextEvent   = agenda.top();
 
-        if (nextTick <= startTick)
+        // If the task has the SKIP policy and its execution was missed, we need
+        // to move it forward to match the period
+        if (nextEvent.nextTick < startTick &&
+            agenda.top().task->policy == Policy::SKIP)
         {
-            Event event = agenda.top();
+            agenda.pop();
+            enqueue(nextEvent, startTick);
+        }
+        else if (nextEvent.nextTick <= startTick)
+        {
             agenda.pop();
 
             // Execute the task function
@@ -125,25 +182,26 @@ void TaskScheduler::run()
 
                 try
                 {
-                    event.task->function();
+                    nextEvent.task->function();
                 }
                 catch (...)
                 {
                     // Update the failed statistic
-                    event.task->failedEvents++;
+                    nextEvent.task->failedEvents++;
                 }
             }
 
-            // Update the task statistics.
-            updateStats(event, startTick, getTick());
+            // Update the task statistics
+            updateStats(nextEvent, startTick, getTick());
 
-            // Re-enqueue the task in the agenda based on the scheduling policy
-            enqueue(event, startTick);
+            // Re-enqueue the task in the agenda based on the scheduling
+            // policy
+            enqueue(nextEvent, startTick);
         }
         else
         {
             Unlock<FastMutex> unlock(lock);
-            Thread::sleepUntil(nextTick);
+            Thread::sleepUntil(nextEvent.nextTick);
         }
     }
 }

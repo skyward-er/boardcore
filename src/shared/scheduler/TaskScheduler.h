@@ -24,6 +24,7 @@
 
 #include <ActiveObject.h>
 #include <Singleton.h>
+#include <diagnostic/PrintLogger.h>
 #include <math/Stats.h>
 
 #include <cstdint>
@@ -37,8 +38,14 @@ namespace Boardcore
 {
 
 /**
+ * @brief The Task Scheduler allow to manage simple tasks with a single thread.
+ * All the task added must not take more than 1ms to execute and should take
+ * less time as possible to ensure other tasks are executed as they are supposed
+ * to.
+ *
  * HOW TO USE THE TASK SCHEDULER
- * TaskScheduler.add(nonblocking_std::function_without_sleeps, millisec);
+ *
+ * TaskScheduler.add(nonblocking_std::function_without_sleeps, millisec, id);
  * and.. it works like magic. :)
  *
  * Example:
@@ -47,12 +54,6 @@ namespace Boardcore
  *    }
  *    TaskScheduler.add(magic_std::function, 150);
  *
- * **IMPORTANT REMINDER**
- * Tasks in the event scheduler are meant to be added at initialization.
- * DO NOT add task with long intervals/delays BEFORE adding the ones with
- * shorter intervals/delays: when adding first a task with a long delay, other
- * tasks are not executed until the long interval has expired once, producing
- * unwanted delays.
  */
 class TaskScheduler : public ActiveObject
 {
@@ -69,10 +70,12 @@ public:
      * - SKIP: If for whatever reason a task can't be executed when
      * it is supposed to (e.g. another thread occupies the CPU), the scheduler
      * doesn't recover the missed executions but insted skips those and
-     * continues normally. This ensures that the next events are aligned with
-     * the original start tick. The period is not respected between the late
-     * execution and the next.
-     * - RECOVER: On the other hand, the SKIP policy ensures that the missed
+     * continues normally. This ensures that all the events are aligned with
+     * the original start tick. In other words, the period and the start tick of
+     * a task specifies the time slots the task has to be executed. If one of
+     * this time slots can't be used, that specific execution won't be
+     * recovered.
+     * - RECOVER: On the other hand, the RECOVER policy ensures that the missed
      * executions are run. However, this will cause the period to not be
      * respected and the task will run consecutively for some time (See issue
      * #91).
@@ -90,9 +93,11 @@ public:
     /**
      * @brief Add a task function to the scheduler.
      *
-     * Note that each task has it's own ID, even one shot tasks! Therefore, if a
-     * task already exists with the same id, the function will fail and return
-     * false.
+     * Note that each task has it's own unique ID, even one shot tasks!
+     * Therefore, if a task already exists with the same id, the function will
+     * fail and return false.
+     *
+     * For one shot tasks, the period is useless and not used.
      *
      * @param function Function to be called periodically.
      * @param period Inter call period.
@@ -108,19 +113,24 @@ public:
     /**
      * @brief Removes the task identified by the given id if it exists.
      *
-     * Note that the task will be run one last time (it is set as one shot and
-     * removed by the schedule after it is executed).
-     *
      * @param id Id of the task to remove.
      * @return true if the task was removed.
      */
     bool removeTask(uint8_t id);
+
+    bool start() override;
 
     void stop() override;
 
     std::vector<TaskStatsResult> getTaskStats();
 
 private:
+    /**
+     * @brief Check the start time of the tasks in the agenda and moves them in
+     * the future respecting the period in respect to the original start time.
+     */
+    void normalizeTasks();
+
     struct Task
     {
         function_t function;
@@ -161,7 +171,7 @@ private:
     void updateStats(const Event& event, int64_t startTick, int64_t endTick);
 
     /**
-     * (Re)Enqueue an event.
+     * @brief (Re)Enqueue an event.
      *
      * Requires the mutex to be locked!
      *
@@ -187,6 +197,8 @@ private:
     std::map<uint8_t, Task> tasks;      ///< Holds all tasks to be scheduled.
     miosix::ConditionVariable condvar;  ///< Used when agenda is empty.
     std::priority_queue<Event> agenda;  ///< Ordered list of functions.
+
+    PrintLogger logger = Logging::getLogger("taskscheduler");
 };
 
 }  // namespace Boardcore

@@ -82,8 +82,8 @@ sbs_target(test-sensormanager stm32f429zi_skyward_death_stack_x)
 add_executable(test-serial src/tests/test-serial.cpp)
 sbs_target(test-serial stm32f429zi_stm32f4discovery)
 
-add_executable(test-taskscheduler src/tests/test-taskscheduler.cpp)
-sbs_target(test-taskscheduler stm32f429zi_skyward_death_stack_x)
+add_executable(test-taskscheduler src/tests/scheduler/test-taskscheduler.cpp)
+sbs_target(test-taskscheduler stm32f407vg_stm32f4discovery)
 
 add_executable(test-trace-logger src/tests/test-trace-logger.cpp)
 sbs_target(test-trace-logger stm32f429zi_stm32f4discovery)
