@@ -31,33 +31,30 @@
 using namespace Boardcore;
 using namespace miosix;
 
-using button              = miosix::Gpio<GPIOA_BASE, 0>;  ///< User button
-const uint8_t btn_user_id = 1;
+using button            = miosix::Gpio<GPIOA_BASE, 0>;  ///< User button
+const uint8_t btnUserId = 1;
 
 /**
  * @brief Callback function that is called when the button is pressed. When the
  * button is pressed for a long time, resets the minimum and maximum values of
  * the recorded weights
  */
-void buttonCallback(uint8_t btn_id, ButtonPress btn_press, MBLoadCell *loadcell)
+void buttonCallback(uint8_t btnId, ButtonPress btnPress, MBLoadCell *loadcell)
 {
-    if (btn_id == btn_user_id && btn_press == ButtonPress::DOWN)
+    if (btnId == btnUserId && btnPress == ButtonPress::DOWN)
         TRACE(
             "## MAX: %.2f [Kg] (ts: %.3f)\t##\tMIN: %.2f [Kg] (ts: %.3f) ##\n",
             loadcell->getMaxWeight().weight,
-            loadcell->getMaxWeight().loadcell_timestamp / 1000000.0,
+            loadcell->getMaxWeight().weightTimestamp / 1000000.0,
             loadcell->getMinWeight().weight,
-            loadcell->getMinWeight().loadcell_timestamp / 1000000.0);
+            loadcell->getMinWeight().weightTimestamp / 1000000.0);
 
-    if (btn_id == btn_user_id && btn_press == ButtonPress::LONG)
+    if (btnId == btnUserId && btnPress == ButtonPress::LONG)
         loadcell->resetMaxMinWeights();
 }
 
 int main()
 {
-    // Enabling the timestamps
-    TimestampTimer::enableTimestampTimer();
-
     // In order to disable DEBUG prints of the button press events
     Logging::getStdOutLogSink().setLevel(LOGL_WARNING);
 
@@ -76,8 +73,8 @@ int main()
                   &loadCell);
 
     // Instanciating the button
-    ButtonHandler<button> btn_handler(btn_user_id, callback);
-    btn_handler.start();
+    ButtonHandler<button> btnHandler(btnUserId, callback);
+    btnHandler.start();
 
     // Initializing the load cell
     if (!loadCell.init())

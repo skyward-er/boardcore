@@ -56,23 +56,24 @@ int main()
         // Write new configuration
         GammaConf newConf;
 
-        newConf.local_addr[0] = 126;
-        newConf.local_addr[1] = 126;
-        newConf.local_addr[2] = 126;
-        newConf.dest_addr[0]  = 126;
-        newConf.dest_addr[1]  = 126;
-        newConf.dest_addr[2]  = 126;
-        newConf.lora_sf       = SF6;     // SF6
-        newConf.lora_power    = dbm20;   //+20dbm
-        newConf.handshake     = false;   // No handshake
-        newConf.baudrate      = B_9600;  // 9600 baud
+        newConf.localAddress[0]       = 126;
+        newConf.localAddress[1]       = 126;
+        newConf.localAddress[2]       = 126;
+        newConf.destinationAddress[0] = 126;
+        newConf.destinationAddress[1] = 126;
+        newConf.destinationAddress[2] = 126;
+        newConf.loraSf                = SF6;     // SF6
+        newConf.loraPower             = dbm20;   //+20dbm
+        newConf.handshake             = false;   // No handshake
+        newConf.baudrate              = B_9600;  // 9600 baud
 
         // printf("LOCAL ADDRESS (3 bytes, 0-127 each):\n");
-        // scanf("%d %d %d", &newConf.local_addr[0], &newConf.local_addr[1],
-        //       &newConf.local_addr[2]);
+        // scanf("%d %d %d", &newConf.localAddress[0], &newConf.localAddress[1],
+        //       &newConf.localAddress[2]);
         // printf("DESTINATION ADDRESS (3 bytes, 0-127 each):\n");
-        // scanf("%d %d %d", &newConf.dest_addr[0], &newConf.dest_addr[1],
-        //       &newConf.dest_addr[2]);
+        // scanf("%d %d %d", &newConf.destinationAddress[0],
+        // &newConf.destinationAddress[1],
+        //       &newConf.destinationAddress[2]);
         // printf("LORA MODE (1-6):\n");
         // scanf("%d", &newConf.lora_mode);
         // printf("LORA POWER (0-15):\n");

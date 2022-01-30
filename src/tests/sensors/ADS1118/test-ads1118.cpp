@@ -86,8 +86,6 @@ int main()
     // Enable SPI clock and set gpios
     initBoard();
 
-    TimestampTimer::enableTimestampTimer();
-
     // SPI configuration setup
     SPIBusConfig spiConfig = ADS1118::getDefaultSPIConfig();
     SPIBus spiBus(SPI2);
@@ -132,7 +130,7 @@ int main()
         miosix::Thread::sleep(5);
         ads1118.sample();
 
-        printf("%.2f\t%.2f\t%.2f\n", ads1118.getTemperature().temp,
+        printf("%.2f\t%.2f\t%.2f\n", ads1118.getTemperature().temperature,
                ads1118.getVoltage(channel1).voltage,
                ads1118.getVoltage(channel2).voltage);
     }

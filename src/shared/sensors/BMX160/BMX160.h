@@ -67,10 +67,10 @@ public:
      * @param bus SPI bus
      * @param cs SPI Chip Select pin
      * @param config BMX160 configuration
-     * @param bus_config SPI bus configuration
+     * @param busConfig SPI bus configuration
      */
     BMX160(SPIBusInterface& bus, miosix::GpioPin cs, BMX160Config config,
-           SPIBusConfig bus_config);
+           SPIBusConfig busConfig);
 
     /**
      * @brief Initialize the driver.
@@ -100,7 +100,7 @@ public:
     /**
      * @brief Sometimes the sensor pulls down the interrupt pin while reading
      * data. We override this method and update the timestamps only if we are
-     * not still reading the fifo ( @see{irq_enabled} ).
+     * not still reading the fifo ( @see{irqEnabled} ).
      */
     void IRQupdateTimestamp(uint64_t ts) override;
 
@@ -322,22 +322,22 @@ private:
     float boschMagCompensateZ(int16_t z, uint16_t rhall);
 
     float temperature = 0.0f;
-    MagnetometerData old_mag;
-    GyroscopeData old_gyr;
-    AccelerometerData old_acc;
+    MagnetometerData oldMag;
+    GyroscopeData oldGyr;
+    AccelerometerData oldAcc;
 
-    bool is_init = false;
-    SPISlave spi_slave;
+    bool isInit = false;
+    SPISlave spiSlave;
 
-    BMX160Defs::TrimData trim_data = {};
+    BMX160Defs::TrimData trimData = {};
     BMX160Config config;
 
     BMX160FifoStats stats = {};
 
-    float gyr_sensibility = 0.0f;
-    float acc_sensibility = 0.0f;
+    float gyrSensibility = 0.0f;
+    float accSensibility = 0.0f;
 
-    int temp_counter = 0;
+    int tempCounter = 0;
 
     // Sometimes the buffer gets over 1000
     static constexpr unsigned int FIFO_BUF_SIZE = 1100;
@@ -347,7 +347,7 @@ private:
      * We use this variable to ignore incoming interrupts while reading the
      * fifo.
      */
-    bool irq_enabled = true;
+    bool irqEnabled = true;
 
     PrintLogger logger = Logging::getLogger("bmx160");
 };

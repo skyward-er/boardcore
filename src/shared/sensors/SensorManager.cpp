@@ -27,41 +27,38 @@
 namespace Boardcore
 {
 
-SensorManager::SensorManager(const SensorMap_t& sensors_map)
-    : SensorManager(new TaskScheduler(), sensors_map)
+SensorManager::SensorManager(const SensorMap_t& sensorsMap)
+    : scheduler(new TaskScheduler()), customScheduler(true)
 {
+    if (!init(sensorsMap))
+        LOG_ERR(logger, "Initialization failed");
 }
 
-SensorManager::SensorManager(TaskScheduler* scheduler,
-                             const SensorMap_t& sensors_map)
-    : scheduler(scheduler)
+SensorManager::SensorManager(const SensorMap_t& sensorsMap,
+                             TaskScheduler* scheduler)
+    : scheduler(scheduler), customScheduler(false)
 {
-    if (!init(sensors_map))
-    {
+    if (!init(sensorsMap))
         LOG_ERR(logger, "Initialization failed");
-    }
 }
 
 SensorManager::~SensorManager()
 {
-    for (auto s : samplers)
-    {
-        delete s;
-    }
+    for (auto sampler : samplers)
+        delete sampler;
+    if (customScheduler)
+        delete scheduler;
 }
 
-bool SensorManager::start()
-{
-    return scheduler->start() && sensors_init_result;
-}
+bool SensorManager::start() { return scheduler->start() && initResult; }
 
 void SensorManager::stop() { scheduler->stop(); }
 
 void SensorManager::enableSensor(AbstractSensor* sensor)
 {
-    if (samplers_map.find(sensor) != samplers_map.end())
+    if (samplersMap.find(sensor) != samplersMap.end())
     {
-        samplers_map[sensor]->toggleSensor(sensor, true);
+        samplersMap[sensor]->toggleSensor(sensor, true);
     }
     else
     {
@@ -72,9 +69,9 @@ void SensorManager::enableSensor(AbstractSensor* sensor)
 
 void SensorManager::disableSensor(AbstractSensor* sensor)
 {
-    if (samplers_map.find(sensor) != samplers_map.end())
+    if (samplersMap.find(sensor) != samplersMap.end())
     {
-        samplers_map[sensor]->toggleSensor(sensor, false);
+        samplersMap[sensor]->toggleSensor(sensor, false);
     }
     else
     {
@@ -85,26 +82,22 @@ void SensorManager::disableSensor(AbstractSensor* sensor)
 
 void SensorManager::enableAllSensors()
 {
-    for (auto s : samplers)
-    {
-        s->enableAllSensors();
-    }
+    for (auto sampler : samplers)
+        sampler->enableAllSensors();
 }
 
 void SensorManager::disableAllSensors()
 {
-    for (auto s : samplers)
-    {
-        s->disableAllSensors();
-    }
+    for (auto sampler : samplers)
+        sampler->disableAllSensors();
 }
+
+bool SensorManager::areAllSensorsInitialized() { return initResult; }
 
 const SensorInfo SensorManager::getSensorInfo(AbstractSensor* sensor)
 {
-    if (samplers_map.find(sensor) != samplers_map.end())
-    {
-        return samplers_map[sensor]->getSensorInfo(sensor);
-    }
+    if (samplersMap.find(sensor) != samplersMap.end())
+        return samplersMap[sensor]->getSensorInfo(sensor);
 
     LOG_ERR(logger, "Sensor {} not found, can't return SensorInfo",
             static_cast<void*>(sensor));
@@ -112,89 +105,87 @@ const SensorInfo SensorManager::getSensorInfo(AbstractSensor* sensor)
     return SensorInfo{};
 }
 
-const vector<TaskStatResult> SensorManager::getSamplersStats()
+const vector<TaskStatsResult> SensorManager::getSamplersStats()
 {
     return scheduler->getTaskStats();
 }
 
-bool SensorManager::init(const SensorMap_t& sensors_map)
+bool SensorManager::init(const SensorMap_t& sensorsMap)
 {
-    uint8_t current_sampler_id = getFirstTaskID();
+    uint8_t currentSamplerId = getFirstTaskID();
 
-    if (current_sampler_id != 0)
+    if (currentSamplerId != 0)
     {
         LOG_INFO(logger, "Task scheduler not empty: starting from task ID {}",
-                 current_sampler_id);
+                 currentSamplerId);
     }
 
-    for (auto it = sensors_map.begin(); it != sensors_map.end(); it++)
+    for (auto it : sensorsMap)
     {
-        AbstractSensor* sensor = it->first;
-        SensorInfo sensor_info = it->second;
+        AbstractSensor* sensor = it.first;
+        SensorInfo sensorInfo  = it.second;
 
-        // avoid adding sensors that fail to be initalized
+        // Try to initialize the sensors
         if (!initSensor(sensor))
         {
-            sensor_info.is_enabled = false;  // disable the failing sensor
+            sensorInfo.isEnabled = false;
 
-            sensors_init_result = false;
+            initResult = false;
 
             LOG_ERR(
                 logger,
                 "Failed to initialize sensor {} -> Error: {} (period: {} ms)",
-                sensor_info.id.c_str(), sensor->getLastError(),
-                sensor_info.period);
+                sensorInfo.id.c_str(), sensor->getLastError(),
+                sensorInfo.period);
         }
         else
         {
-            sensor_info.is_initialized = true;
+            sensorInfo.isInitialized = true;
         }
 
-        // add sensor even if not initialized correctly, its is_initialized info
+        // Add sensor even if not initialized correctly, its isInitialized info
         // field will be false
         LOG_DEBUG(logger, "Adding {} -> period: {} ms, enabled = {}",
-                  sensor_info.id.c_str(), sensor_info.period,
-                  sensor_info.is_enabled);
+                  sensorInfo.id.c_str(), sensorInfo.period,
+                  sensorInfo.isEnabled);
 
-        // check if a sampler with the same sampling period and the same
-        // type exists
+        // Check if a sampler with the same sampling period exists
         bool found = false;
-        for (auto s : samplers)
+        for (auto sampler : samplers)
         {
-            if (sensor_info.period == s->getSamplingPeriod() &&
-                sensor_info.is_dma == s->isDMA())
+            if (sensorInfo.period == sampler->getSamplingPeriod())
             {
-                s->addSensor(sensor, sensor_info);
-                samplers_map[sensor] = s;
-                found                = true;
+                sampler->addSensor(sensor, sensorInfo);
+                samplersMap[sensor] = sampler;
+                found               = true;
             }
         }
 
         if (!found)
         {
-            // a sampler with the required period does not exist yet
-            SensorSampler* new_sampler = createSampler(
-                current_sampler_id, sensor_info.period, sensor_info.is_dma);
+            // A sampler with the required period does not exist yet
+            SensorSampler* newSampler =
+                createSampler(currentSamplerId, sensorInfo.period);
 
-            new_sampler->addSensor(sensor, sensor_info);
+            newSampler->addSensor(sensor, sensorInfo);
 
-            samplers.push_back(new_sampler);
-            samplers_map[sensor] = new_sampler;
+            samplers.push_back(newSampler);
+            samplersMap[sensor] = newSampler;
 
-            if (current_sampler_id == MAX_TASK_ID)
+            if (currentSamplerId == MAX_TASK_ID)
             {
                 LOG_WARN(logger,
                          "Max task ID (255) reached in task scheduler, IDs "
                          "will start again from 0");
             }
 
-            current_sampler_id++;
+            currentSamplerId++;
         }
     }
 
     initScheduler();
 
-    return sensors_init_result;
+    return initResult;
 }
 
 bool SensorManager::initSensor(AbstractSensor* sensor)
@@ -204,58 +195,43 @@ bool SensorManager::initSensor(AbstractSensor* sensor)
 
 void SensorManager::initScheduler()
 {
-    // sort the vector to have lower period samplers
-    // (higher frequency) inserted before
-    // higher period ones into the TaskScheduler
-    std::sort(samplers.begin(), samplers.end(),
-              [](auto& left, auto& right) {
-                  return left->getSamplingPeriod() < right->getSamplingPeriod();
-              });
+    // Sort the vector to have lower period samplers (higher frequency) inserted
+    // before higher period ones into the TaskScheduler
+    std::stable_sort(samplers.begin(), samplers.end(),
+                     SensorSampler::comparareByPeriod);
 
-    uint64_t start_time = miosix::getTick() + 10;
-
-    // add all the samplers to the scheduler
-    for (auto& s : samplers)
+    // Add all the samplers to the scheduler
+    for (auto& sampler : samplers)
     {
-        function_t sampler_update_function =
-            std::bind(&SensorSampler::sampleAndCallback, s);
+        function_t samplerUpdateFunction([=]()
+                                         { sampler->sampleAndCallback(); });
 
-        scheduler->add(sampler_update_function, s->getSamplingPeriod(),
-                       s->getID(), start_time);
+        scheduler->addTask(samplerUpdateFunction, sampler->getSamplingPeriod(),
+                           sampler->getID());
     }
 }
 
 uint8_t SensorManager::getFirstTaskID()
 {
-    std::vector<TaskStatResult> tasks_stats = scheduler->getTaskStats();
+    std::vector<TaskStatsResult> tasksStats = scheduler->getTaskStats();
 
-    if (tasks_stats.empty())
-    {
+    if (tasksStats.empty())
         return 0;
-    }
 
-    auto max =
-        std::max_element(tasks_stats.begin(), tasks_stats.end(),
-                         [](const TaskStatResult& t1, const TaskStatResult& t2)
-                         { return t1.id < t2.id; });
+    auto max = std::max_element(
+        tasksStats.begin(), tasksStats.end(),
+        [](const TaskStatsResult& t1, const TaskStatsResult& t2)
+        { return t1.id < t2.id; });
 
     return max->id + 1;
 }
 
-SensorSampler* SensorManager::createSampler(uint8_t id, uint32_t period,
-                                            bool is_dma)
+SensorSampler* SensorManager::createSampler(uint8_t id, uint32_t period)
 {
     LOG_DEBUG(logger, "Creating Sampler {} with sampling period {} ms", id,
               period);
 
-    if (is_dma)
-    {
-        return new DMASensorSampler(id, period);
-    }
-    else
-    {
-        return new SimpleSensorSampler(id, period);
-    }
+    return new SimpleSensorSampler(id, period);
 }
 
 }  // namespace Boardcore

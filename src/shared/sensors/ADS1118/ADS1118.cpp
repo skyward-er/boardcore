@@ -50,7 +50,7 @@ ADS1118::ADS1118(SPISlave spiSlave_, ADS1118Config config_, bool busyWait_,
         channelsConfig[i].word = 0;
 
         // Set channel id for each ADS1118Data object in values array
-        values[i].channel_id = i;
+        values[i].channelId = i;
     }
 
     // Reset the last written config value
@@ -129,7 +129,7 @@ ADS1118Data ADS1118::getVoltage(ADS1118Mux mux) { return values[mux]; }
 
 TemperatureData ADS1118::getTemperature()
 {
-    return TemperatureData{values[TEMP_CHANNEL].adc_timestamp,
+    return TemperatureData{values[TEMP_CHANNEL].voltageTimestamp,
                            values[TEMP_CHANNEL].voltage};
 }
 
@@ -166,7 +166,7 @@ bool ADS1118::selfTest()
     channelsConfig[TEMP_CHANNEL].word = prevTempConfig;
 
     // Return false if an error occurred
-    return last_error == 0;  // The sensor class misses a constant for no error
+    return lastError == 0;  // The sensor class misses a constant for no error
 }
 
 /**
@@ -198,7 +198,7 @@ void ADS1118::readChannel(int8_t nextChannel, int8_t prevChannel)
 {
     uint32_t writeData, transferData;
 
-    last_error = NO_ERRORS;
+    lastError = NO_ERRORS;
 
     // Prepare the next configuration data
     if (nextChannel > INVALID_CHANNEL && nextChannel < NUM_OF_CHANNELS)
@@ -228,7 +228,7 @@ void ADS1118::readChannel(int8_t nextChannel, int8_t prevChannel)
             (transferData >> 16 & CONFIG_MASK))
         {
             // Save the error
-            last_error = BUS_FAULT;
+            lastError = BUS_FAULT;
 
             // Disable next value conversion
             lastConfig.word = 0;
@@ -242,7 +242,8 @@ void ADS1118::readChannel(int8_t nextChannel, int8_t prevChannel)
 
         // TODO: the timestamp should be taken when the configuration is
         // written, now we could be reading the value after some time!
-        values[prevChannel].adc_timestamp = TimestampTimer::getTimestamp();
+        values[prevChannel].voltageTimestamp =
+            TimestampTimer::getInstance().getTimestamp();
 
         if (prevChannel != 8)  // Voltage value
         {

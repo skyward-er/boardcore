@@ -36,8 +36,6 @@ int main()
     // maximum frequency the analog circuitry supports and compare it with the
     // parent clock
 
-    TimestampTimer::enableTimestampTimer();
-
     InternalADC adc(ADCx, 3.3);
     adc.enableChannel(InternalADC::CH4);  // PF6
     adc.enableChannel(InternalADC::CH5);  // PF7

@@ -49,26 +49,25 @@ struct EnergyScanScreen
     static constexpr float COLOR_PERCENTILE = 0.15f;
     EnergyScanScreen()
     {
-        tv_title.setFont(mxgui::miscFixedBold);
-        tv_title.setTextColor(mxgui::black);
-        tv_title.setBackgroundColor(mxgui::green);
-        tv_title.setAlignment(HorizAlignment::CENTER, VertAlignment::CENTER);
+        tvTitle.setFont(mxgui::miscFixedBold);
+        tvTitle.setTextColor(mxgui::black);
+        tvTitle.setBackgroundColor(mxgui::green);
+        tvTitle.setAlignment(HorizAlignment::CENTER, VertAlignment::CENTER);
 
-        tv_log_status.setFont(mxgui::miscFixedBold);
-        tv_log_status.setTextColor(mxgui::white);
-        tv_log_status.setBackgroundColor(mxgui::red);
-        tv_log_status.setAlignment(HorizAlignment::CENTER,
-                                   VertAlignment::CENTER);
+        tvLogStatus.setFont(mxgui::miscFixedBold);
+        tvLogStatus.setTextColor(mxgui::white);
+        tvLogStatus.setBackgroundColor(mxgui::red);
+        tvLogStatus.setAlignment(HorizAlignment::CENTER, VertAlignment::CENTER);
 
-        grid_title.setCell(&tv_title, 0, 0);
-        grid_title.setCell(&tv_log_status, 0, 1);
+        gridTitle.setCell(&tvTitle, 0, 0);
+        gridTitle.setCell(&tvLogStatus, 0, 1);
 
         for (unsigned int i = 0; i < NUM_COLS; i++)
         {
-            col_titles[i] = new TextView(titles[i % (NUM_COLS / 2)]);
-            col_titles[i]->setTextColor(mxgui::blue);
+            colTitles[i] = new TextView(titles[i % (NUM_COLS / 2)]);
+            colTitles[i]->setTextColor(mxgui::blue);
 
-            grid_channels.setCell(col_titles[i], 0, i);
+            gridChannels.setCell(colTitles[i], 0, i);
         }
 
         mxgui::Color pink(0xFC59);
@@ -77,58 +76,58 @@ struct EnergyScanScreen
             char buf[3];
             snprintf(buf, 3, "%02u", i);
 
-            col_names[i] = new TextView(buf);
-            col_names[i]->setTextColor(pink);
+            colNames[i] = new TextView(buf);
+            colNames[i]->setTextColor(pink);
 
-            col_current[i] = new TextView("-40");
-            col_min[i]     = new TextView("-40");
-            col_max[i]     = new TextView("-40");
+            colCurrent[i] = new TextView("-40");
+            colMin[i]     = new TextView("-40");
+            colMax[i]     = new TextView("-40");
 
-            grid_channels.setCell(col_names[i], (i % NUM_CHANNEL_ROWS) + 1,
-                                  (i / NUM_CHANNEL_ROWS) * 4 + 0);
-            grid_channels.setCell(col_current[i], (i % NUM_CHANNEL_ROWS) + 1,
-                                  (i / NUM_CHANNEL_ROWS) * 4 + 1);
-            grid_channels.setCell(col_min[i], (i % NUM_CHANNEL_ROWS) + 1,
-                                  (i / NUM_CHANNEL_ROWS) * 4 + 2);
-            grid_channels.setCell(col_max[i], (i % NUM_CHANNEL_ROWS) + 1,
-                                  (i / NUM_CHANNEL_ROWS) * 4 + 3);
+            gridChannels.setCell(colNames[i], (i % NUM_CHANNEL_ROWS) + 1,
+                                 (i / NUM_CHANNEL_ROWS) * 4 + 0);
+            gridChannels.setCell(colCurrent[i], (i % NUM_CHANNEL_ROWS) + 1,
+                                 (i / NUM_CHANNEL_ROWS) * 4 + 1);
+            gridChannels.setCell(colMin[i], (i % NUM_CHANNEL_ROWS) + 1,
+                                 (i / NUM_CHANNEL_ROWS) * 4 + 2);
+            gridChannels.setCell(colMax[i], (i % NUM_CHANNEL_ROWS) + 1,
+                                 (i / NUM_CHANNEL_ROWS) * 4 + 3);
         }
 
-        btn_mark.setSelectable(true);
-        btn_mark.setAlignment(HorizAlignment::CENTER, VertAlignment::CENTER);
-        btn_mark.setBackgroundColor(mxgui::darkGrey);
+        btnMark.setSelectable(true);
+        btnMark.setAlignment(HorizAlignment::CENTER, VertAlignment::CENTER);
+        btnMark.setBackgroundColor(mxgui::darkGrey);
 
-        btn_stop.setSelectable(true);
-        btn_stop.setAlignment(HorizAlignment::CENTER, VertAlignment::CENTER);
-        btn_stop.setBackgroundColor(mxgui::darkGrey);
+        btnStop.setSelectable(true);
+        btnStop.setAlignment(HorizAlignment::CENTER, VertAlignment::CENTER);
+        btnStop.setBackgroundColor(mxgui::darkGrey);
 
-        btn_reset.setSelectable(true);
-        btn_reset.setAlignment(HorizAlignment::CENTER, VertAlignment::CENTER);
-        btn_reset.setBackgroundColor(mxgui::darkGrey);
+        btnReset.setSelectable(true);
+        btnReset.setAlignment(HorizAlignment::CENTER, VertAlignment::CENTER);
+        btnReset.setBackgroundColor(mxgui::darkGrey);
 
-        grid_buttons.setCell(&btn_mark, 0);
-        grid_buttons.setCell(&btn_reset, 1);
-        grid_buttons.setCell(&btn_stop, 2);
-        grid_buttons.setDrawBorder(true);
+        gridButtons.setCell(&btnMark, 0);
+        gridButtons.setCell(&btnReset, 1);
+        gridButtons.setCell(&btnStop, 2);
+        gridButtons.setDrawBorder(true);
 
-        root.addView(&grid_title, 0.8);
-        root.addView(&grid_channels, 10);
-        root.addView(&grid_buttons, 1);
+        root.addView(&gridTitle, 0.8);
+        root.addView(&gridChannels, 10);
+        root.addView(&gridButtons, 1);
     }
 
     ~EnergyScanScreen()
     {
         for (unsigned int i = 0; i < NUM_COLS; i++)
         {
-            delete col_titles[i];
+            delete colTitles[i];
         }
 
         for (unsigned int i = 0; i < NUM_CHANNELS; ++i)
         {
-            delete col_names[i];
-            delete col_current[i];
-            delete col_min[i];
-            delete col_max[i];
+            delete colNames[i];
+            delete colCurrent[i];
+            delete colMin[i];
+            delete colMax[i];
         }
     }
 
@@ -136,26 +135,26 @@ struct EnergyScanScreen
     {
         for (unsigned int i = 0; i < NUM_CHANNELS; i++)
         {
-            ch_stats[i].add(scan[i]);
+            chStats[i].add(scan[i]);
 
-            StatsResult r = ch_stats[i].getStats();
+            StatsResult r = chStats[i].getStats();
 
-            abs_max = std::max(r.maxValue, abs_max);
-            abs_min = std::min(r.minValue, abs_min);
+            absMax = std::max(r.maxValue, absMax);
+            absMin = std::min(r.minValue, absMin);
         }
 
         for (unsigned int i = 0; i < NUM_CHANNELS; i++)
         {
-            StatsResult r = ch_stats[i].getStats();
+            StatsResult r = chStats[i].getStats();
 
-            col_min[i]->setText(to_string((int)r.minValue));
-            setColor(col_min[i], r.minValue);
+            colMin[i]->setText(to_string((int)r.minValue));
+            setColor(colMin[i], r.minValue);
 
-            col_current[i]->setText(to_string(scan[i]));
-            setColor(col_current[i], scan[i]);
+            colCurrent[i]->setText(to_string(scan[i]));
+            setColor(colCurrent[i], scan[i]);
 
-            col_max[i]->setText(to_string((int)r.maxValue));
-            setColor(col_max[i], r.maxValue);
+            colMax[i]->setText(to_string((int)r.maxValue));
+            setColor(colMax[i], r.maxValue);
         }
     }
 
@@ -163,46 +162,46 @@ struct EnergyScanScreen
     {
         for (unsigned int i = 0; i < NUM_CHANNELS; i++)
         {
-            ch_stats[i].reset();
+            chStats[i].reset();
         }
 
-        abs_max = std::numeric_limits<float>::lowest();
-        abs_min = std::numeric_limits<float>::max();
+        absMax = std::numeric_limits<float>::lowest();
+        absMin = std::numeric_limits<float>::max();
     }
 
     void updateLogStatus(Logger& logger)
     {
-        if (logger.getLogNumber() >= 0)
+        if (logger.getCurrentLogNumber() >= 0)
         {
-            string log_name = logger.getCurrentFileName();
+            string logName = logger.getCurrentFileName();
 
-            tv_log_status.setText(log_name);
-            tv_log_status.setTextColor(mxgui::black);
-            tv_log_status.setBackgroundColor(mxgui::green);
+            tvLogStatus.setText(logName);
+            tvLogStatus.setTextColor(mxgui::black);
+            tvLogStatus.setBackgroundColor(mxgui::green);
         }
         else
         {
-            tv_log_status.setText("SD ERR");
-            tv_log_status.setTextColor(mxgui::white);
-            tv_log_status.setBackgroundColor(mxgui::red);
+            tvLogStatus.setText("SD ERR");
+            tvLogStatus.setTextColor(mxgui::white);
+            tvLogStatus.setBackgroundColor(mxgui::red);
         }
     }
 
     VerticalLayout root{5};
 
-    TextView btn_mark{"Mark Log (1)"};
-    TextView btn_stop{"Stop"};
-    TextView btn_reset{"Reset"};
+    TextView btnMark{"Mark Log (1)"};
+    TextView btnStop{"Stop"};
+    TextView btnReset{"Reset"};
 
 private:
     void setColor(TextView* tv, float val)
     {
-        float delta = abs_max - abs_min;
-        if (val >= abs_max - delta * COLOR_PERCENTILE)
+        float delta = absMax - absMin;
+        if (val >= absMax - delta * COLOR_PERCENTILE)
         {
             tv->setTextColor(mxgui::green);
         }
-        else if (val <= abs_min + delta * COLOR_PERCENTILE)
+        else if (val <= absMin + delta * COLOR_PERCENTILE)
         {
             tv->setTextColor(0xFDC0);  // Light orange
         }
@@ -211,25 +210,25 @@ private:
             tv->setTextColor(mxgui::white);
         }
     }
-    float abs_max = std::numeric_limits<float>::lowest();
-    float abs_min = std::numeric_limits<float>::max();
+    float absMax = std::numeric_limits<float>::lowest();
+    float absMin = std::numeric_limits<float>::max();
 
-    GridLayout grid_channels{NUM_CHANNEL_ROWS + 1, NUM_COLS};
-    GridLayout grid_title{1, 2};
-    GridLayout grid_buttons{1, 3};
+    GridLayout gridChannels{NUM_CHANNEL_ROWS + 1, NUM_COLS};
+    GridLayout gridTitle{1, 2};
+    GridLayout gridButtons{1, 3};
 
-    TextView tv_log_status{"SD ERR"};
-    TextView tv_title{"Energy Scan"};
+    TextView tvLogStatus{"SD ERR"};
+    TextView tvTitle{"Energy Scan"};
 
     array<std::string, NUM_COLS / 2> titles = {"CH", "Curr", "Min", "Max"};
-    array<TextView*, NUM_COLS> col_titles;
+    array<TextView*, NUM_COLS> colTitles;
 
-    array<TextView*, NUM_CHANNELS> col_names;
-    array<TextView*, NUM_CHANNELS> col_current;
-    array<TextView*, NUM_CHANNELS> col_min;
-    array<TextView*, NUM_CHANNELS> col_max;
+    array<TextView*, NUM_CHANNELS> colNames;
+    array<TextView*, NUM_CHANNELS> colCurrent;
+    array<TextView*, NUM_CHANNELS> colMin;
+    array<TextView*, NUM_CHANNELS> colMax;
 
-    array<Stats, NUM_CHANNELS> ch_stats;
+    array<Stats, NUM_CHANNELS> chStats;
 };
 
 }  // namespace Boardcore

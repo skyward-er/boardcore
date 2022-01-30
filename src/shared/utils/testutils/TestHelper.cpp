@@ -30,37 +30,37 @@ long long tickToMilliseconds(long long tick)
     return tick * 1000 / miosix::TICK_FREQ;
 }
 
-bool expectEvent(uint8_t event_id, uint8_t topic, long long when,
+bool expectEvent(uint8_t eventId, uint8_t topic, long long when,
                  long long uncertainty, EventBroker& broker)
 {
     EventCounter c{broker};
     c.subscribe(topic);
 
-    long long window_start = when - uncertainty;
-    long long window_end   = when + uncertainty;
+    long long windowStart = when - uncertainty;
+    long long windowEnd   = when + uncertainty;
 
-    while (getTick() < window_end)
+    while (getTick() < windowEnd)
     {
-        if (c.getCount(event_id) > 0)
+        if (c.getCount(eventId) > 0)
         {
-            long long recv_tick = getTick();
-            if (recv_tick < window_start)
+            long long recvTick = getTick();
+            if (recvTick < windowStart)
             {
                 TRACE(
                     "[expectEvent] Event %d on topic %d receveid %d ms before "
                     "the opening of "
                     "the window.\n",
-                    event_id, topic,
+                    eventId, topic,
                     static_cast<int>(
-                        tickToMilliseconds(window_start - recv_tick)));
+                        tickToMilliseconds(windowStart - recvTick)));
                 return false;
             }
             TRACE(
                 "[expectEvent] Event %d on topic %d received inside the "
                 "window, %d ms from "
                 "the target time.\n",
-                event_id, topic,
-                static_cast<int>(tickToMilliseconds(abs(recv_tick - when))));
+                eventId, topic,
+                static_cast<int>(tickToMilliseconds(abs(recvTick - when))));
 
             return true;
         }
@@ -71,7 +71,7 @@ bool expectEvent(uint8_t event_id, uint8_t topic, long long when,
         "[expectEvent] The event %d on topic %d was not yet received at the "
         "end of the "
         "window.\n",
-        event_id, topic);
+        eventId, topic);
     return false;
 }
 

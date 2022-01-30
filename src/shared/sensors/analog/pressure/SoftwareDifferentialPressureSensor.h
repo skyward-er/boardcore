@@ -64,8 +64,8 @@ public:
      */
     PressureData sampleImpl() override
     {
-        float p1 = first_pressure_sensor->getLastSample().press;
-        float p2 = second_pressure_sensor->getLastSample().press;
+        float p1 = first_pressure_sensor->getLastSample().pressure;
+        float p2 = second_pressure_sensor->getLastSample().pressure;
 
         return PressureData{miosix::getTick(), p1 - p2};
     }

@@ -40,18 +40,27 @@ struct MPU9250Data : public AccelerometerData,
 
     static std::string header()
     {
-        return "accel_timestamp,accel_x,accel_y,accel_z,gyro_timestamp,gyro_x,"
-               "gyro_y,gyro_z,mag_timestamp,mag_x,mag_y,mag_z,temp_timestamp,"
+        return "accelerationTimestamp,accelerationX,accelerationY,"
+               "accelerationZ,gyro_"
+               "timestamp,"
+               "angularVelocityX,"
+               "angularVelocityY,angularVelocityZ,magneticFieldTimestamp,"
+               "magneticFieldX,"
+               "magneticFieldY,"
+               "magneticFieldZ,"
+               "temperatureTimestamp,"
                "temp\n";
     }
 
     void print(std::ostream& os) const
     {
-        os << accel_timestamp << "," << accel_x << "," << accel_y << ","
-           << accel_z << "," << gyro_timestamp << "," << gyro_x << "," << gyro_y
-           << "," << gyro_z << "," << mag_timestamp << "," << mag_x << ","
-           << mag_y << "," << mag_z << "," << temp_timestamp << "," << temp
-           << "\n";
+        os << accelerationTimestamp << "," << accelerationX << ","
+           << accelerationY << "," << accelerationZ << ","
+           << angularVelocityTimestamp << "," << angularVelocityX << ","
+           << angularVelocityY << "," << angularVelocityZ << ","
+           << magneticFieldTimestamp << "," << magneticFieldX << ","
+           << magneticFieldY << "," << magneticFieldZ << ","
+           << temperatureTimestamp << "," << temperature << "\n";
     }
 };
 

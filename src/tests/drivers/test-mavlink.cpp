@@ -34,14 +34,14 @@
 using namespace Boardcore;
 using namespace miosix;
 
-static const unsigned int queue_len          = 10;
-static const unsigned int packet_size        = 256;
-static const unsigned int silence_after_send = 250;
-static const unsigned int max_pkt_age        = 1000;
-static const unsigned int ping_period        = 1000;
+static const unsigned int queueLen         = 10;
+static const unsigned int packetSize       = 256;
+static const unsigned int silenceAfterSend = 250;
+static const unsigned int maxPktAge        = 1000;
+static const unsigned int pingPeriod       = 1000;
 
 // Mavlink out buffer with 10 packets, 256 bytes each.
-using Mav = MavlinkDriver<queue_len, packet_size>;
+using Mav = MavlinkDriver<queueLen, packetSize>;
 
 Gamma868* gamma868;
 Mav* channel;
@@ -71,7 +71,7 @@ static void onReceive(Mav* channel, const mavlink_message_t& msg)
 int main()
 {
     gamma868 = new Gamma868("/dev/radio");
-    channel  = new Mav(gamma868, &onReceive, silence_after_send, max_pkt_age);
+    channel  = new Mav(gamma868, &onReceive, silenceAfterSend, maxPktAge);
 
     channel->start();
 
@@ -95,7 +95,7 @@ int main()
         miosix::delayMs(200);
         ledOff();
 
-        miosix::Thread::sleep(ping_period);
+        miosix::Thread::sleep(pingPeriod);
     }
 
     return 0;

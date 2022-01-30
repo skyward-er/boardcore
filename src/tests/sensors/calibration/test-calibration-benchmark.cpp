@@ -64,9 +64,9 @@ int main()
 
     SPIBus bus(SPI1);
 
-    GpioPin spi_sck(GPIOA_BASE, 5);
-    GpioPin spi_miso(GPIOA_BASE, 6);
-    GpioPin spi_mosi(GPIOA_BASE, 7);
+    GpioPin spiSck(GPIOA_BASE, 5);
+    GpioPin spiMiso(GPIOA_BASE, 6);
+    GpioPin spiMosi(GPIOA_BASE, 7);
     GpioPin cs(GPIOE_BASE, 3);
 
     {
@@ -74,12 +74,12 @@ int main()
 
         RCC->APB2ENR |= RCC_APB2ENR_SPI1EN;  // Enable SPI1 bus
 
-        spi_sck.mode(miosix::Mode::ALTERNATE);
-        spi_sck.alternateFunction(5);
-        spi_miso.mode(miosix::Mode::ALTERNATE);
-        spi_miso.alternateFunction(5);
-        spi_mosi.mode(miosix::Mode::ALTERNATE);
-        spi_mosi.alternateFunction(5);
+        spiSck.mode(miosix::Mode::ALTERNATE);
+        spiSck.alternateFunction(5);
+        spiMiso.mode(miosix::Mode::ALTERNATE);
+        spiMiso.alternateFunction(5);
+        spiMosi.mode(miosix::Mode::ALTERNATE);
+        spiMosi.alternateFunction(5);
 
         cs.mode(miosix::Mode::OUTPUT);
     }
@@ -101,9 +101,9 @@ int main()
 
         AccelerometerData tmp = corrector.correct(sensor.getLastSample());
 
-        testData.accel_x = tmp.accel_x;
-        testData.accel_y = tmp.accel_y;
-        testData.accel_z = tmp.accel_z;
+        testData.accelerationX = tmp.accelerationX;
+        testData.accelerationY = tmp.accelerationY;
+        testData.accelerationZ = tmp.accelerationZ;
 
         if (elapsed > 500)
         {

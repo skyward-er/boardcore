@@ -38,28 +38,28 @@ using CanTX = Gpio<GPIOA_BASE, 12>;
 PrintLogger l                = Logging::getLogger("main");
 constexpr uint32_t BAUD_RATE = 1000 * 1000;
 
-void printPacket(string name, Canbus::CanPacket p)
+void printPacket(string name, CanPacket p)
 {
     LOG_INFO(l, "Packet {}: {{id: {} ({}), len: {}, b0: {:#04X} }}", name, p.id,
              p.ext, p.length, p.data[0]);
 }
 
-void printRXPacket(string name, Canbus::CanRXPacket p)
+void printRXPacket(string name, CanRXPacket p)
 {
     printPacket(name, p.packet);
-    LOG_DEBUG(l, "RX result: status={:#04X}, err_cnt:{}, err_code:{:#04X}",
-              p.status.rx_status, p.status.rx_err_counter, p.status.err_code);
+    LOG_DEBUG(l, "RX result: status={:#04X}, rxErrCounter:{}, errCode:{:#04X}",
+              p.status.rxStatus, p.status.rxErrCounter, p.status.errCode);
 }
 
 class BusLoadSensor : public ActiveObject
 {
 public:
-    explicit BusLoadSensor(uint32_t baud_rate)
-        : baud_rate(baud_rate), ble(baud_rate)
+    explicit BusLoadSensor(uint32_t baudRate)
+        : baudRate(baudRate), ble(baudRate)
     {
     }
 
-    void addPacket(Canbus::CanPacket p) { ble.addPacket(p); }
+    void addPacket(CanPacket p) { ble.addPacket(p); }
     void run() override
     {
         while (!shouldStop())
@@ -69,15 +69,15 @@ public:
             LOG_INFO(l,
                      "payload rate: {:.2f} kbps, total rate: {:.2f} kbps, "
                      "utilization: {:.2f}%",
-                     info.payload_bit_rate / 1000.0f,
-                     info.total_bit_rate / 1000.0f, info.load_percent);
+                     info.payloadBitRate / 1000.0f, info.totalBitRate / 1000.0f,
+                     info.loadPercent);
             Thread::sleepUntil(start + 1000);
         }
     }
 
 private:
-    PrintLogger l = Logging::getLogger("bus_load");
-    uint32_t baud_rate;
+    PrintLogger l = Logging::getLogger("busLoad");
+    uint32_t baudRate;
     BusLoadEstimation ble;
 };
 
@@ -100,16 +100,16 @@ int main()
 
     load.start();
 
-    Canbus::Canbus::CanbusConfig cfg;
+    CanbusDriver::CanbusConfig cfg;
     cfg.loopback = true;
 
-    Canbus::Canbus::AutoBitTiming bt;
-    bt.baud_rate    = BAUD_RATE;
-    bt.sample_point = 87.5f / 100.0f;
+    CanbusDriver::AutoBitTiming bt;
+    bt.baudRate    = BAUD_RATE;
+    bt.samplePoint = 87.5f / 100.0f;
 
-    Canbus::Canbus* c = new Canbus::Canbus(CAN1, cfg, bt);
+    CanbusDriver* c = new CanbusDriver(CAN1, cfg, bt);
 
-    Canbus::Mask32FilterBank f2(0, 0, 0, 0, 0, 0, 0);
+    Mask32FilterBank f2(0, 0, 0, 0, 0, 0, 0);
 
     c->addFilter(f2);
     c->init();
@@ -137,16 +137,16 @@ int main()
             load.addPacket(c->getRXBuffer().pop().packet);
         }
         // c->getRXBuffer().waitUntilNotEmpty();
-        // Canbus::CanRXPacket prx = c->getRXBuffer().pop();
+        // CanRXPacket prx = c->getRXBuffer().pop();
         // printRXPacket("RX", prx);
 
         // c->getTXResultBuffer().waitUntilNotEmpty();
-        // Canbus::CanTXResult res_tx = c->getTXResultBuffer().pop();
+        // CanTXResult resTx = c->getTXResultBuffer().pop();
         // LOG_DEBUG(l,
         //           "TX result: mailbox={}, status={:#04X}, tme={:#04X}, "
-        //           "err_code={:#04X}",
-        //           res_tx.mailbox, res_tx.tx_status, res_tx.tme,
-        //           res_tx.err_code);
+        //           "errCode={:#04X}",
+        //           resTx.mailbox, resTx.txStatus, resTx.tme,
+        //           resTx.errCode);
 
         Thread::sleep(1);
     }

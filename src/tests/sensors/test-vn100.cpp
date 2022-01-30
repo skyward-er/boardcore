@@ -42,8 +42,6 @@ int main()
     tx.alternateFunction(7);
     rx.alternateFunction(7);
 
-    TimestampTimer::enableTimestampTimer();
-
     // Let the sensor start up
     Thread::sleep(1000);
 
@@ -68,10 +66,11 @@ int main()
     {
         /*sensor.sample();
         sample = sensor.getLastSample();
-        //printf("%" PRIu64 ", %.3f, %.3f, %.3f\n", sample.accel_timestamp,
-        sample.accel_x, sample.accel_y, sample.accel_z);
-        //printf("%.3f, %.3f, %.3f\n", sample.gyro_x, sample.gyro_y,
-        sample.gyro_z);*/
+        //printf("%" PRIu64 ", %.3f, %.3f, %.3f\n",
+        sample.accelerationTimestamp, sample.accelerationX,
+        sample.accelerationY, sample.accelerationZ);
+        //printf("%.3f, %.3f, %.3f\n", sample.angularVelocityX,
+        sample.angularVelocityY, sample.angularVelocityZ);*/
 
         sensor.sampleRaw();
         sampleRaw = sensor.getLastRawSample();

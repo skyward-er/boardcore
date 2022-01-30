@@ -60,8 +60,8 @@ public:
 
     static bool isPressed() { return Button::value(); }
 
-    ButtonHandler(uint8_t btn_id, ButtonCallback callback)
-        : btn_id(btn_id), callback(callback)
+    ButtonHandler(uint8_t btnId, ButtonCallback callback)
+        : btnId(btnId), callback(callback)
     {
         Button::mode(miosix::Mode::INPUT);
     }
@@ -77,39 +77,39 @@ protected:
             {
                 if (!pressed && callback)
                 {
-                    callback(btn_id, ButtonPress::DOWN);
+                    callback(btnId, ButtonPress::DOWN);
                 }
 
-                pressed_ticks++;
+                pressedTicks++;
                 pressed = true;
             }
             else if (pressed)  // if the button was unpressed since
                                // the last operation
             {
-                if (pressed_ticks >= VERY_LONG_PRESS_TICKS)
+                if (pressedTicks >= VERY_LONG_PRESS_TICKS)
                 {
                     LOG_DEBUG(logger, "Button pressed (very long) (%d ticks)",
-                              pressed_ticks);
+                              pressedTicks);
 
-                    callback(btn_id, ButtonPress::VERY_LONG);
+                    callback(btnId, ButtonPress::VERY_LONG);
                 }
-                else if (pressed_ticks >= LONG_PRESS_TICKS)
+                else if (pressedTicks >= LONG_PRESS_TICKS)
                 {
                     LOG_DEBUG(logger, "Button pressed (long) (%d ticks)",
-                              pressed_ticks);
-                    callback(btn_id, ButtonPress::LONG);
+                              pressedTicks);
+                    callback(btnId, ButtonPress::LONG);
                 }
                 else
                 {
                     LOG_DEBUG(logger, "Button pressed (short) (%d ticks)",
-                              pressed_ticks);
-                    callback(btn_id, ButtonPress::SHORT);
+                              pressedTicks);
+                    callback(btnId, ButtonPress::SHORT);
                 }
 
-                callback(btn_id, ButtonPress::UP);
+                callback(btnId, ButtonPress::UP);
 
-                pressed       = false;
-                pressed_ticks = 0;
+                pressed      = false;
+                pressedTicks = 0;
             }
 
             Thread::sleep(TICK_LENGTH);
@@ -117,9 +117,9 @@ protected:
     }
 
 private:
-    uint8_t btn_id    = 0;
-    bool pressed      = false;
-    int pressed_ticks = 0;
+    uint8_t btnId    = 0;
+    bool pressed     = false;
+    int pressedTicks = 0;
 
     ButtonCallback callback;
 

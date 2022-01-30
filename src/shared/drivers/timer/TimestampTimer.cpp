@@ -27,14 +27,16 @@
 namespace Boardcore
 {
 
-#ifdef ENABLE_TIMESTAMP_TIMER
+void TimestampTimer::resetTimestamp()
+{
 #ifndef COMPILE_FOR_HOST
+    timer.setCounter(0);
+#endif
+}
 
-GeneralPurposeTimer<uint32_t> TimestampTimer::timer =
-    GeneralPurposeTimer<uint32_t>{TIM2};
-
-// Create an instance of the timestamp timer to initialize and enable it
-static TimestampTimer timestampTimer;
+#ifndef COMPILE_FOR_HOST
+TIM_TypeDef *TimestampTimer::getTimer() { return timer.getTimer(); }
+#endif
 
 TimestampTimer::TimestampTimer()
 {
@@ -42,10 +44,7 @@ TimestampTimer::TimestampTimer()
     enableTimestampTimer();
 }
 
-#endif
-#endif
-
-// TODO: Keep support for CortexM3
+// TODO: Keep support for STM32F103
 void TimestampTimer::initTimestampTimer()
 {
 #ifndef COMPILE_FOR_HOST
@@ -57,12 +56,7 @@ void TimestampTimer::initTimestampTimer()
 
     timer.reset();
 
-    // Compute the timer prescaler
-    uint16_t timerPrescaler = TimerUtils::computePrescalerValue(
-        timer, TimestampTimer::TIMER_FREQUENCY);
-    timerPrescaler--;
-
-    timer.setPrescaler(timerPrescaler);
+    timer.setFrequency(TIMER_FREQUENCY);
 
     // Generate an update event to apply the new prescaler value
     timer.generateUpdate();

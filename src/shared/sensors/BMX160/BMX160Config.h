@@ -133,8 +133,8 @@ struct BMX160Config
      */
     enum class IntMode
     {
-        PUSH_PULL,   //< Push-pull behaviour.
-        OPEN_DRAIN,  //< Open drain behaviour.
+        PUSH_PULL,   ///< Push-pull behaviour.
+        OPEN_DRAIN,  ///< Open drain behaviour.
     };
 
     /**
@@ -144,7 +144,7 @@ struct BMX160Config
      * A really high watermark value (the default) will disable it, falling back
      * to FIFO full.
      */
-    uint8_t fifo_watermark = -1;
+    uint8_t fifoWatermark = -1;
 
     /**
      * @brief Repetitions for the XY axis.
@@ -162,7 +162,7 @@ struct BMX160Config
      * regular)
      * - 0x17, RMS Noise (x/y/z) 0.3/0.3/0.3, Current: 4.9mA  (High accuracy)
      */
-    uint8_t mag_repxy = 0x04;
+    uint8_t magnetometerRepetitionsXY = 0x04;
 
     /**
      * @brief Repetitions for the Z axis.
@@ -180,7 +180,7 @@ struct BMX160Config
      * regular)
      * - 0x52, RMS Noise (x/y/z) 0.3/0.3/0.3, Current: 4.9mA  (High accuracy)
      */
-    uint8_t mag_repz = 0x0E;
+    uint8_t magnetometerRepetitionsZ = 0x0E;
 
     /**
      * @brief Enable magnetometer data compensation.
@@ -191,7 +191,7 @@ struct BMX160Config
      * The implementation is slow, probably buggy, and only god knows what it
      * does, it's so bad that I added a switch to disable it, use it wisely!
      */
-    bool enable_compensation = true;
+    bool enableCompensation = true;
 
     /**
      * @brief Divide the temperature sampling rate.
@@ -202,44 +202,44 @@ struct BMX160Config
      * Every time you call onSimpleUpdate a value is incremented and only if
      * the value is a multiple of this parameter a read is performed.
      */
-    int temp_divider = 0;
+    int temperatureDivider = 0;
 
     /**
      * @brief Should the fifo use accelerometer filtered data?
      */
-    bool fifo_acc_filtered = true;
+    bool fifoAccelerometerFiltered = true;
 
     /**
      * @brief Fifo accelerometer downsampling (between 0 and 15).
      */
-    uint8_t fifo_acc_downs = 0;
+    uint8_t fifoAccelerationDownsampling = 0;
 
     /**
      * @brief Should the fifo use gyroscope filtered data?
      */
-    bool fifo_gyr_filtered = true;
+    bool fifoGyroscopeFiltered = true;
 
     /**
      * @brief Fifo gyroscope downsampling (between 0 and 15).
      */
-    uint8_t fifo_gyr_downs = 0;
+    uint8_t fifoGyroscopeDownsampling = 0;
 
-    FifoMode fifo_mode        = FifoMode::DISABLED;
-    FifoInterruptPin fifo_int = FifoInterruptPin::DISABLED;
+    FifoMode fifoMode              = FifoMode::DISABLED;
+    FifoInterruptPin fifoInterrupt = FifoInterruptPin::DISABLED;
 
-    OutputDataRate acc_odr       = OutputDataRate::HZ_100;
-    BandwidthParameter acc_bwp   = BandwidthParameter::NORMAL;
-    AccelerometerRange acc_range = AccelerometerRange::G_2;
+    OutputDataRate accelerometerDataRate      = OutputDataRate::HZ_100;
+    BandwidthParameter accelerometerBandwidth = BandwidthParameter::NORMAL;
+    AccelerometerRange accelerometerRange     = AccelerometerRange::G_2;
 
-    OutputDataRate gyr_odr        = OutputDataRate::HZ_100;
-    BandwidthParameter gyr_bwp    = BandwidthParameter::NORMAL;
-    GyroscopeRange gyr_range      = GyroscopeRange::DEG_2000;
-    GyroscopeMeasureUnit gyr_unit = GyroscopeMeasureUnit::RAD;
+    OutputDataRate gyroscopeDataRate      = OutputDataRate::HZ_100;
+    BandwidthParameter gyroscopeBandwidth = BandwidthParameter::NORMAL;
+    GyroscopeRange gyroscopeRange         = GyroscopeRange::DEG_2000;
+    GyroscopeMeasureUnit gyroscopeUnit    = GyroscopeMeasureUnit::RAD;
 
-    OutputDataRate mag_odr = OutputDataRate::HZ_100;
+    OutputDataRate magnetometerRate = OutputDataRate::HZ_100;
 
-    IntMode int1_mode = IntMode::PUSH_PULL;
-    IntMode int2_mode = IntMode::PUSH_PULL;
+    IntMode interrupt1Mode = IntMode::PUSH_PULL;
+    IntMode interrupt2Mode = IntMode::PUSH_PULL;
 
     BMX160Config() {}
 };

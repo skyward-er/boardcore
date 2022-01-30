@@ -20,6 +20,16 @@
  * THE SOFTWARE.
  */
 
+#pragma once
+
+#include <drivers/spi/SPIDriver.h>
+#include <sensors/Sensor.h>
+
+#include "ADS1118Data.h"
+
+namespace Boardcore
+{
+
 /**
  * @brief Driver for ADS1118 adc.
  *
@@ -57,22 +67,6 @@
  *
  * An example for how to use the driver can be found in the test code
  * (src/tests/drivers/test-ads1118.cpp)
- */
-
-#pragma once
-
-#include <drivers/spi/SPIDriver.h>
-#include <sensors/Sensor.h>
-
-#include "ADS1118Data.h"
-
-namespace Boardcore
-{
-
-/**
- * @brief Driver class for ADS1118 ADC.
- *
- * This class allows to mange the device configuration and the data sampling.
  */
 class ADS1118 : public Sensor<ADS1118Data>
 {

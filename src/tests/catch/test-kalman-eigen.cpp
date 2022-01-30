@@ -80,14 +80,14 @@ TEST_CASE("Update test")
     KalmanEigen<float, STATES_DIM, OUTPUTS_DIM> filter(getKalmanConfig());
 
     Matrix<float, OUTPUTS_DIM, 1> y{};
-    float last_time = TIME[0];
+    float lastTime = TIME[0];
 
     for (unsigned i = 1; i < 101; i++)
     {
         float T;
 
         y(0, 0) = INPUT[i];
-        T       = TIME[i] - last_time;
+        T       = TIME[i] - lastTime;
 
         Matrix<float, STATES_DIM, STATES_DIM> F_new;
         F_new << F;
@@ -170,6 +170,6 @@ TEST_CASE("Update test")
             SUCCEED();
         }
 
-        last_time = TIME[i];
+        lastTime = TIME[i];
     }
 }

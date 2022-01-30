@@ -32,20 +32,20 @@ namespace Boardcore
 {
 
 /**
- * @brief Common class for current sense sensors
+ * @brief Common class for current sensors.
  *
  * It needs a transfer function to convert the read voltage into current.
  */
 class CurrentSensor : public Sensor<CurrentSensorData>
 {
 public:
-    static constexpr int MOVING_AVAERAGE_N = 20;
+    static constexpr int MOVING_AVERAGE_N = 20;
 
-    CurrentSensor(std::function<ADCData()> getADCVoltage_,
-                  std::function<float(float)> adcToCurrent_)
-        : getADCVoltage(getADCVoltage_), adcToCurrent(adcToCurrent_)
+    CurrentSensor(std::function<ADCData()> getVoltage,
+                  std::function<float(float)> voltageToCurrent)
+        : getVoltage(getVoltage), voltageToCurrent(voltageToCurrent)
     {
-        last_sample.current = 0;
+        lastSample.current = 0;
     }
 
     bool init() override { return true; };
@@ -55,36 +55,35 @@ public:
     ///< Converts the voltage value to pressure
     CurrentSensorData sampleImpl() override
     {
-        ADCData adc_data = getADCVoltage();
+        ADCData adc_data = getVoltage();
 
-        if (last_sample.current == 0)
+        if (lastSample.current == 0)
         {
-            last_sample.current = adcToCurrent(adc_data.voltage);
+            lastSample.current = voltageToCurrent(adc_data.voltage);
         }
 
         CurrentSensorData current_data;
-        current_data.adc_timestamp = adc_data.adc_timestamp;
-        current_data.channel_id    = adc_data.channel_id;
-        current_data.voltage       = adc_data.voltage;
+        current_data.voltageTimestamp = adc_data.voltageTimestamp;
+        current_data.channelId        = adc_data.channelId;
+        current_data.voltage          = adc_data.voltage;
 
         // Moving average
-        current_data.current = last_sample.current * MOVING_AVAERAGE_COMP_COEFF;
+        current_data.current = lastSample.current * MOVING_AVERAGE_COMP_COEFF;
         current_data.current +=
-            adcToCurrent(adc_data.voltage) * MOVING_AVAERAGE_COEFF;
+            voltageToCurrent(adc_data.voltage) * MOVING_AVERAGE_COEFF;
 
         return current_data;
     };
 
 private:
     ///< Function that returns the adc voltage
-    std::function<ADCData()> getADCVoltage;
+    std::function<ADCData()> getVoltage;
 
     ///< Function that converts adc voltage to current
-    std::function<float(float)> adcToCurrent;
+    std::function<float(float)> voltageToCurrent;
 
-    static constexpr float MOVING_AVAERAGE_COEFF = 1 / (float)MOVING_AVAERAGE_N;
-    static constexpr float MOVING_AVAERAGE_COMP_COEFF =
-        1 - MOVING_AVAERAGE_COEFF;
+    static constexpr float MOVING_AVERAGE_COEFF = 1 / (float)MOVING_AVERAGE_N;
+    static constexpr float MOVING_AVERAGE_COMP_COEFF = 1 - MOVING_AVERAGE_COEFF;
 };
 
 }  // namespace Boardcore

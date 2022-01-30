@@ -48,7 +48,7 @@ struct checkIfProduces
 class AbstractSensor
 {
 protected:
-    SensorErrors last_error = SensorErrors::NO_ERRORS;
+    SensorErrors lastError = SensorErrors::NO_ERRORS;
 
 public:
     virtual ~AbstractSensor() {}
@@ -74,7 +74,7 @@ public:
      * @brief Get last error for debugging purposes. Avoid silent fails.
      * @return the last error recorded by this sensor
      */
-    SensorErrors getLastError() { return last_error; };
+    SensorErrors getLastError() { return lastError; };
 };
 
 /**
@@ -87,7 +87,7 @@ template <typename Data>
 class Sensor : public virtual AbstractSensor
 {
 protected:
-    Data last_sample;
+    Data lastSample;
 
     /**
      * @brief Read a data sample from the sensor.
@@ -100,12 +100,12 @@ protected:
 public:
     virtual ~Sensor() {}
 
-    void sample() override { last_sample = sampleImpl(); }
+    void sample() override { lastSample = sampleImpl(); }
 
     /**
      * @return last available sample from this sensor
      */
-    virtual const Data& getLastSample() { return last_sample; }
+    virtual const Data& getLastSample() { return lastSample; }
 };
 
 /**
@@ -115,30 +115,31 @@ template <typename Data, uint32_t FifoSize>
 class SensorFIFO : public Sensor<Data>
 {
 protected:
-    std::array<Data, FifoSize> last_fifo;
-    uint8_t last_fifo_level = 1; /**< number of samples in last_fifo */
+    std::array<Data, FifoSize> lastFifo;
+    uint8_t lastFifoLevel = 1;  ///< number of samples in lastFifo
 
-    uint64_t last_interrupt_us = 0; /**< last interrupt timestamp */
-    uint64_t dt_interrupt = 0; /**< delta between previous interrupt timestamp
-                                  and the last received one */
+    uint64_t lastInterruptTimestamp = 0;
+    uint64_t interruptTimestampDelta =
+        0;  ///< delta between previous interrupt timestamp and the last
+            ///< received one
 
 public:
     /**
      * @return last FIFO sampled from the sensor
      */
-    const std::array<Data, FifoSize>& getLastFifo() { return last_fifo; }
+    const std::array<Data, FifoSize>& getLastFifo() { return lastFifo; }
 
     /**
      * @param i index of the requested item inside the FIFO
      *
      * @return the i-th element of the FIFO
      */
-    const Data& getFifoElement(uint32_t i) const { return last_fifo[i]; }
+    const Data& getFifoElement(uint32_t i) const { return lastFifo[i]; }
 
     /**
      * @return number of elements in the last FIFO sampled from the sensor
      */
-    uint8_t getLastFifoSize() const { return last_fifo_level; }
+    uint8_t getLastFifoSize() const { return lastFifoLevel; }
 
     /**
      * @brief Called by the interrupt handling routine: provides the timestamp
@@ -149,8 +150,8 @@ public:
      */
     inline virtual void IRQupdateTimestamp(uint64_t ts)
     {
-        dt_interrupt      = ts - last_interrupt_us;
-        last_interrupt_us = ts;
+        interruptTimestampDelta = ts - lastInterruptTimestamp;
+        lastInterruptTimestamp  = ts;
     }
 };
 

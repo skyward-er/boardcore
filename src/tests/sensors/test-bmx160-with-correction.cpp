@@ -40,7 +40,8 @@ void __attribute__((used)) EXTI5_IRQHandlerImpl()
 {
     if (bmx160)
     {
-        bmx160->IRQupdateTimestamp(TimestampTimer::getTimestamp());
+        bmx160->IRQupdateTimestamp(
+            TimestampTimer::getInstance().getTimestamp());
     }
 }
 
@@ -48,30 +49,29 @@ void bmx160Sample(void *args);
 
 int main()
 {
-    TimestampTimer::enableTimestampTimer();
 
     // Enable interrupt from BMX pin
     enableExternalInterrupt(GPIOE_BASE, 5, InterruptTrigger::FALLING_EDGE);
 
     SPIBus bus(SPI1);
 
-    BMX160Config bmx_config;
-    bmx_config.fifo_mode      = BMX160Config::FifoMode::HEADER;
-    bmx_config.fifo_watermark = 500 / 4;
-    bmx_config.fifo_int       = BMX160Config::FifoInterruptPin::PIN_INT1;
+    BMX160Config bmxConfig;
+    bmxConfig.fifoMode      = BMX160Config::FifoMode::HEADER;
+    bmxConfig.fifoWatermark = 500 / 4;
+    bmxConfig.fifoInterrupt = BMX160Config::FifoInterruptPin::PIN_INT1;
 
-    bmx_config.temp_divider = 0;
+    bmxConfig.temperatureDivider = 0;
 
-    bmx_config.acc_range = BMX160Config::AccelerometerRange::G_16;
-    bmx_config.gyr_range = BMX160Config::GyroscopeRange::DEG_2000;
+    bmxConfig.accelerometerRange = BMX160Config::AccelerometerRange::G_16;
+    bmxConfig.gyroscopeRange     = BMX160Config::GyroscopeRange::DEG_2000;
 
-    bmx_config.acc_odr = BMX160Config::OutputDataRate::HZ_1600;
-    bmx_config.gyr_odr = BMX160Config::OutputDataRate::HZ_1600;
-    bmx_config.mag_odr = BMX160Config::OutputDataRate::HZ_50;
+    bmxConfig.accelerometerDataRate = BMX160Config::OutputDataRate::HZ_1600;
+    bmxConfig.gyroscopeDataRate     = BMX160Config::OutputDataRate::HZ_1600;
+    bmxConfig.magnetometerRate      = BMX160Config::OutputDataRate::HZ_50;
 
-    bmx_config.gyr_unit = BMX160Config::GyroscopeMeasureUnit::RAD;
+    bmxConfig.gyroscopeUnit = BMX160Config::GyroscopeMeasureUnit::RAD;
 
-    bmx160 = new BMX160(bus, miosix::sensors::bmx160::cs::getPin(), bmx_config);
+    bmx160 = new BMX160(bus, miosix::sensors::bmx160::cs::getPin(), bmxConfig);
 
     // Read the correction parameters
     BMX160CorrectionParameters correctionParameters =
@@ -139,19 +139,20 @@ int main()
         printf("\n");
 
         printf("[Raw]       ");
-        printf("Mag: %7.3f %7.3f %7.3f", data.mag_x, data.mag_y, data.mag_z);
-        printf("\tGyr: %7.3f %7.3f %7.3f", data.gyro_x, data.gyro_y,
-               data.gyro_z);
-        printf("\tAcc: %7.3f %7.3f %7.3f\n", data.accel_x, data.accel_y,
-               data.accel_z);
+        printf("Mag: %7.3f %7.3f %7.3f", data.magneticFieldX,
+               data.magneticFieldY, data.magneticFieldZ);
+        printf("\tGyr: %7.3f %7.3f %7.3f", data.angularVelocityX,
+               data.angularVelocityY, data.angularVelocityZ);
+        printf("\tAcc: %7.3f %7.3f %7.3f\n", data.accelerationX,
+               data.accelerationY, data.accelerationZ);
 
         printf("[Corrected] ");
-        printf("Mag: %7.3f %7.3f %7.3f", correctedData.mag_x,
-               correctedData.mag_y, correctedData.mag_z);
-        printf("\tGyr: %7.3f %7.3f %7.3f", correctedData.gyro_x,
-               correctedData.gyro_y, correctedData.gyro_z);
-        printf("\tAcc: %7.3f %7.3f %7.3f\n", correctedData.accel_x,
-               correctedData.accel_y, correctedData.accel_z);
+        printf("Mag: %7.3f %7.3f %7.3f", correctedData.magneticFieldX,
+               correctedData.magneticFieldY, correctedData.magneticFieldZ);
+        printf("\tGyr: %7.3f %7.3f %7.3f", correctedData.angularVelocityX,
+               correctedData.angularVelocityY, correctedData.angularVelocityZ);
+        printf("\tAcc: %7.3f %7.3f %7.3f\n", correctedData.accelerationX,
+               correctedData.accelerationY, correctedData.accelerationZ);
 
         miosix::Thread::sleep(1000 / UPDATE_RATE);
     }

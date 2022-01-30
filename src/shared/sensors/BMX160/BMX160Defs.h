@@ -223,17 +223,17 @@ struct AccRaw
  */
 struct TrimData
 {
-    int8_t dig_x1;
-    int8_t dig_y1;
-    int8_t dig_x2;
-    int8_t dig_y2;
-    uint16_t dig_z1;
-    int16_t dig_z2;
-    int16_t dig_z3;
-    int16_t dig_z4;
-    uint8_t dig_xy1;
-    int8_t dig_xy2;
-    uint16_t dig_xyz1;
+    int8_t digX1;
+    int8_t digY1;
+    int8_t digX2;
+    int8_t digY2;
+    uint16_t digZ1;
+    int16_t digZ2;
+    int16_t digZ3;
+    int16_t digZ4;
+    uint8_t digXY1;
+    int8_t digXY2;
+    uint16_t digXYZ1;
 };
 
 /**

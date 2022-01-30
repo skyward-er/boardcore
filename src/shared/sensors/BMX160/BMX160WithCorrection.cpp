@@ -133,9 +133,9 @@ bool BMX160WithCorrection::calibrate()
     {
         fifoElement = bmx160->getFifoElement(i);
 
-        if (fifoElement.gyro_timestamp > gyroTimestamp)
+        if (fifoElement.angularVelocityTimestamp > gyroTimestamp)
         {
-            gyroTimestamp = fifoElement.gyro_timestamp;
+            gyroTimestamp = fifoElement.angularVelocityTimestamp;
             gyroscopeCalibrator.feed(fifoElement);
 
             samplesCounter++;
@@ -155,9 +155,9 @@ bool BMX160WithCorrection::calibrate()
         {
             fifoElement = bmx160->getFifoElement(i);
 
-            if (fifoElement.gyro_timestamp > gyroTimestamp)
+            if (fifoElement.angularVelocityTimestamp > gyroTimestamp)
             {
-                gyroTimestamp = fifoElement.gyro_timestamp;
+                gyroTimestamp = fifoElement.angularVelocityTimestamp;
                 gyroscopeCalibrator.feed(fifoElement);
 
                 samplesCounter++;
@@ -224,32 +224,32 @@ BMX160WithCorrectionData BMX160WithCorrection::sampleImpl()
         fifoElement = bmx160->getFifoElement(i);
 
         // Read acceleration data
-        if (fifoElement.accel_timestamp > accelTimestamp)
+        if (fifoElement.accelerationTimestamp > accelTimestamp)
         {
             static_cast<AccelerometerData>(fifoElement) >> vec;
             avgAccel += vec;
 
-            accelTimestamp = fifoElement.accel_timestamp;
+            accelTimestamp = fifoElement.accelerationTimestamp;
             numAccel++;
         }
 
         // Read magnetometer data
-        if (fifoElement.mag_timestamp > magTimestamp)
+        if (fifoElement.magneticFieldTimestamp > magTimestamp)
         {
             static_cast<MagnetometerData>(fifoElement) >> vec;
             avgMag += vec;
 
-            magTimestamp = fifoElement.mag_timestamp;
+            magTimestamp = fifoElement.magneticFieldTimestamp;
             numMag++;
         }
 
         // Read gyroscope data
-        if (fifoElement.gyro_timestamp > gyroTimestamp)
+        if (fifoElement.angularVelocityTimestamp > gyroTimestamp)
         {
             static_cast<GyroscopeData>(fifoElement) >> vec;
             avgGyro += vec;
 
-            gyroTimestamp = fifoElement.gyro_timestamp;
+            gyroTimestamp = fifoElement.angularVelocityTimestamp;
             numGyro++;
         }
     }
@@ -284,9 +284,9 @@ BMX160WithCorrectionData BMX160WithCorrection::sampleImpl()
     result = gyro;
 
     // Get the timestamp of the newest value in fifo
-    result.accel_timestamp = fifoElement.accel_timestamp;
-    result.mag_timestamp   = fifoElement.accel_timestamp;
-    result.gyro_timestamp  = fifoElement.accel_timestamp;
+    result.accelerationTimestamp    = fifoElement.accelerationTimestamp;
+    result.magneticFieldTimestamp   = fifoElement.accelerationTimestamp;
+    result.angularVelocityTimestamp = fifoElement.accelerationTimestamp;
 
     result = rotateAxis(result);
 

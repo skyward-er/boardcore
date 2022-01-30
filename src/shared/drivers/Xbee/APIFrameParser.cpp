@@ -34,59 +34,59 @@ APIFrameParser::APIFrameParser() {}
 
 APIFrameParser::ParseResult APIFrameParser::parse(uint8_t byte, APIFrame* frame)
 {
-    switch (parser_state)
+    switch (parserState)
     {
         // Look for the start of frame delimiter
         case ParserState::FIND_START:
 
             if (byte == START_DELIMITER)
             {
-                parser_state = ParserState::READ_LENGTH_1;
+                parserState = ParserState::READ_LENGTH_1;
             }
             break;
         // Read most significant byte of the length
         case ParserState::READ_LENGTH_1:
             frame->length = byte;
-            parser_state  = ParserState::READ_LENGTH_2;
+            parserState   = ParserState::READ_LENGTH_2;
 
             break;
         // Read least significant byte of the length
         case ParserState::READ_LENGTH_2:
             frame->length |= ((uint16_t)byte << 8) & 0xFF00;
-            // At least two frame data bytes (frame_type and a payload)
+            // At least two frame data bytes (frameType and a payload)
             if (swapBytes16(frame->length) < 2)
             {
-                parser_state = ParserState::FIND_START;
+                parserState = ParserState::FIND_START;
                 return ParseResult::FAIL;
             }
 
             if (frame->getFrameDataLength() > FRAME_DATA_SIZE)
             {
-                parser_state = ParserState::FIND_START;
+                parserState = ParserState::FIND_START;
                 return ParseResult::FAIL;
             }
 
-            parser_state = ParserState::READ_FRAME_TYPE;
+            parserState = ParserState::READ_FRAME_TYPE;
             break;
         // Read frame type
         case ParserState::READ_FRAME_TYPE:
-            frame->frame_type = byte;
-            parser_state      = ParserState::READ_FRAME_DATA;
+            frame->frameType = byte;
+            parserState      = ParserState::READ_FRAME_DATA;
             break;
         // Read the data frame
         case ParserState::READ_FRAME_DATA:
-            frame->frame_data[current_frame_data_index++] = byte;
+            frame->frameData[currentFrameDataIndex++] = byte;
 
-            if (current_frame_data_index == frame->getFrameDataLength())
+            if (currentFrameDataIndex == frame->getFrameDataLength())
             {
-                current_frame_data_index = 0;
-                parser_state             = ParserState::READ_CHECKSUM;
+                currentFrameDataIndex = 0;
+                parserState           = ParserState::READ_CHECKSUM;
             }
             break;
         // Read & verify checksum
         case ParserState::READ_CHECKSUM:
             frame->checksum = byte;
-            parser_state    = ParserState::FIND_START;
+            parserState     = ParserState::FIND_START;
 
             if (frame->verifyChecksum())
             {
@@ -100,7 +100,7 @@ APIFrameParser::ParseResult APIFrameParser::parse(uint8_t byte, APIFrame* frame)
             break;
     }
 
-    if (parser_state != ParserState::FIND_START)
+    if (parserState != ParserState::FIND_START)
     {
         return ParseResult::PARSING;
     }

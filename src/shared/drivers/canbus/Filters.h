@@ -26,8 +26,10 @@
 
 namespace Boardcore
 {
+
 namespace Canbus
 {
+
 enum class FilterMode
 {
     ID,
@@ -59,10 +61,10 @@ struct FilterBank
 
 protected:
     static uint32_t packRegister32(uint32_t id, uint8_t ide, uint8_t rtr,
-                                   bool is_ext)
+                                   bool isExt)
     {
         uint32_t reg = 0;
-        if (is_ext)
+        if (isExt)
         {
             reg = ((id & 0x1FFFFFFF) << 3);
         }
@@ -76,10 +78,10 @@ protected:
     }
 
     static uint16_t packRegister16(uint32_t id, uint8_t ide, uint8_t rtr,
-                                   bool is_ext)
+                                   bool isExt)
     {
         uint16_t reg = 0;
-        if (is_ext)
+        if (isExt)
         {
             reg = ((id >> 18) & 0x7FF) << 5;
             reg |= ((id >> 15) & 0x07);
@@ -103,23 +105,22 @@ struct Mask32FilterBank : public FilterBank
      * @brief Construct a new 32 bit mask filter.
      *
      * @param id 29 bit frame identifier.
-     * @param id_mask 29 bit frame identifier mask.
+     * @param idMask 29 bit frame identifier mask.
      * @param ide Value for the IDE bit in the canbus frame.
-     * @param ide_mask Mask the ide bit.
+     * @param ideMask Mask the ide bit.
      * @param rtr Value for the RTR bit in the canbus frame.
-     * @param rtr_mask Mask for RTR bit.
+     * @param rtrMask Mask for RTR bit.
      * @param fifo Where to store the filtered messages (fifo 0 or fifo 1).
      */
-    Mask32FilterBank(uint32_t id, uint32_t id_mask, uint8_t ide,
-                     uint8_t ide_mask, uint8_t rtr, uint8_t rtr_mask,
-                     uint8_t fifo)
+    Mask32FilterBank(uint32_t id, uint32_t idMask, uint8_t ide, uint8_t ideMask,
+                     uint8_t rtr, uint8_t rtrMask, uint8_t fifo)
         : FilterBank(FilterScale::SINGLE32, FilterMode::MASK, fifo)
     {
         scale = FilterScale::SINGLE32;
         mode  = FilterMode::MASK;
 
         FR1 = packRegister32(id, ide, rtr, true);
-        FR2 = packRegister32(id_mask, ide_mask, rtr_mask, true);
+        FR2 = packRegister32(idMask, ideMask, rtrMask, true);
     }
 };
 
@@ -145,18 +146,18 @@ struct ID32FilterBank : public FilterBank
      */
     bool addID(uint32_t id, bool ide, uint8_t rtr)
     {
-        if (id_cnt == 2)
+        if (idCount == 2)
             return false;
 
-        uint32_t* reg = id_cnt < 1 ? &FR1 : &FR2;
+        uint32_t* reg = idCount < 1 ? &FR1 : &FR2;
 
         *reg = packRegister32(id, ide, rtr, true);
-        ++id_cnt;
+        ++idCount;
         return true;
     }
 
 private:
-    uint8_t id_cnt = 0;
+    uint8_t idCount = 0;
 };
 
 struct Mask16FilterBank : public FilterBank
@@ -178,16 +179,16 @@ struct Mask16FilterBank : public FilterBank
      * checked by the filter. See datasheet!
      *
      * @param id 29 bit frame identifier.
-     * @param id_mask 29 bit frame identifier mask.
+     * @param idMask 29 bit frame identifier mask.
      * @param ide Value for the IDE bit in the canbus frame.
-     * @param ide_mask Mask the ide bit.
+     * @param ideMask Mask the ide bit.
      * @param rtr Set to one if filtering for Remote Transmission Requests.
-     * @param rtr_mask Mask for RTR bit.
+     * @param rtrMask Mask for RTR bit.
      */
-    bool addIDExt(uint32_t id, uint32_t id_mask, uint8_t ide, uint8_t ide_mask,
-                  uint8_t rtr, uint8_t rtr_mask)
+    bool addIDExt(uint32_t id, uint32_t idMask, uint8_t ide, uint8_t ideMask,
+                  uint8_t rtr, uint8_t rtrMask)
     {
-        return addID(id, id_mask, ide, ide_mask, rtr, rtr_mask, true);
+        return addID(id, idMask, ide, ideMask, rtr, rtrMask, true);
     }
 
     /**
@@ -195,34 +196,34 @@ struct Mask16FilterBank : public FilterBank
      * standard id (11 bit).
      *
      * @param id 11 bit frame identifier.
-     * @param id_mask 11 bit frame identifier mask.
+     * @param idMask 11 bit frame identifier mask.
      * @param ide Value for the IDE bit in the canbus frame.
-     * @param ide_mask Mask the ide bit.
+     * @param ideMask Mask the ide bit.
      * @param rtr Set to one if filtering for Remote Transmission Requests.
-     * @param rtr_mask Mask for RTR bit.
+     * @param rtrMask Mask for RTR bit.
      */
-    bool addIDStd(uint32_t id, uint32_t id_mask, uint8_t ide, uint8_t ide_mask,
-                  uint8_t rtr, uint8_t rtr_mask)
+    bool addIDStd(uint32_t id, uint32_t idMask, uint8_t ide, uint8_t ideMask,
+                  uint8_t rtr, uint8_t rtrMask)
     {
-        return addID(id, id_mask, ide, ide_mask, rtr, rtr_mask, false);
+        return addID(id, idMask, ide, ideMask, rtr, rtrMask, false);
     }
 
 private:
-    bool addID(uint32_t id, uint32_t id_mask, uint8_t ide, uint8_t ide_mask,
-               uint8_t rtr, uint8_t rtr_mask, bool extended_id)
+    bool addID(uint32_t id, uint32_t idMask, uint8_t ide, uint8_t ideMask,
+               uint8_t rtr, uint8_t rtrMask, bool extendedId)
     {
-        if (id_cnt == 2)
+        if (idCount == 2)
             return false;
 
-        uint32_t* reg = id_cnt < 1 ? &FR1 : &FR2;
+        uint32_t* reg = idCount < 1 ? &FR1 : &FR2;
 
         *reg = packRegister16(id, ide, rtr, ide) |
-               (packRegister16(id_mask, ide_mask, rtr_mask, extended_id) << 16);
-        ++id_cnt;
+               (packRegister16(idMask, ideMask, rtrMask, extendedId) << 16);
+        ++idCount;
         return true;
     }
 
-    uint8_t id_cnt = 0;
+    uint8_t idCount = 0;
 };
 
 struct ID16FilterBank : public FilterBank
@@ -268,22 +269,22 @@ struct ID16FilterBank : public FilterBank
     }
 
 private:
-    bool addID(uint32_t id, uint8_t ide, uint8_t rtr, bool extended_id)
+    bool addID(uint32_t id, uint8_t ide, uint8_t rtr, bool extendedId)
     {
-        if (id_cnt == 4)
+        if (idCount == 4)
             return false;
 
-        uint32_t* reg = id_cnt < 2 ? &FR1 : &FR2;
+        uint32_t* reg = idCount < 2 ? &FR1 : &FR2;
 
         const uint32_t bitmask = 0xFFFF;
 
-        *reg &= ~(bitmask << (16 * (id_cnt % 2)));
-        *reg |= packRegister16(id, ide, rtr, extended_id)
-                << (16 * (id_cnt % 2));
-        ++id_cnt;
+        *reg &= ~(bitmask << (16 * (idCount % 2)));
+        *reg |= packRegister16(id, ide, rtr, extendedId)
+                << (16 * (idCount % 2));
+        ++idCount;
         return true;
     }
-    uint8_t id_cnt = 0;
+    uint8_t idCount = 0;
 };
 
 }  // namespace Canbus

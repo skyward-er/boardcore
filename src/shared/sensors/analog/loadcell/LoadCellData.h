@@ -1,5 +1,5 @@
-/* Copyright (c) 2018 Skyward Experimental Rocketry
- * Author: Luca Erbetta
+/* Copyright (c) 2022 Skyward Experimental Rocketry
+ * Author: Alberto Nidasio
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -22,45 +22,23 @@
 
 #pragma once
 
+#include <ostream>
+
 namespace Boardcore
 {
 
-/**
- * @brief PWM channel output polarity
- *
- */
-enum class PWMPolarity
+struct LoadCellData
 {
-    ACTIVE_HIGH,
-    ACTIVE_LOW
-};
+    uint64_t timestamp;
+    float voltage;
+    float load;
 
-/**
- * @brief PWM mode selection. Refer to datasheet
- * MODE_1  Channel high when CNT < CCRx
- * MODE_2  Channel high when CNT > CCRx
- */
-enum class PWMMode
-{
-    MODE_1,  // Channel high when CNT < CCRx
-    MODE_2   // Channel high when CNT > CCRx
-};
+    static std::string header() { return "timestamp,voltage,load\n"; }
 
-enum class PWMChannel : int
-{
-    CH1 = 0,
-    CH2,
-    CH3,
-    CH4
-};
-
-struct PWMChannelConfig
-{
-    PWMChannel channel;
-    bool enabled         = false;
-    float duty_cycle     = 0;
-    PWMMode mode         = PWMMode::MODE_1;
-    PWMPolarity polarity = PWMPolarity::ACTIVE_HIGH;
+    void print(std::ostream& os) const
+    {
+        os << timestamp << "," << voltage << "," << load << "\n";
+    }
 };
 
 }  // namespace Boardcore

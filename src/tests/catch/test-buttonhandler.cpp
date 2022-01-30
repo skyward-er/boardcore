@@ -20,6 +20,9 @@
  * THE SOFTWARE.
  */
 
+// Depends on Active Object which is not supported from miosix host
+#ifndef COMPILE_FOR_HOST
+
 #ifdef STANDALONE_CATCH1_TEST
 #include "catch-tests-entry.cpp"
 #endif
@@ -43,26 +46,26 @@ public:
     // Mocked methods
     static void mode(miosix::Mode::Mode_ mode)
     {
-        getInstance().input_mode = mode == Mode::INPUT;
+        getInstance().inputMode = mode == Mode::INPUT;
     }
 
     static int value()
     {
         const ButtonMock& instance = getInstance();
-        if (instance.input_mode)
-            return getInstance().btn_value;
+        if (instance.inputMode)
+            return getInstance().btnValue;
 
         TRACE("Returning 0\n");
         return 0;
     }
 
     // Test methods
-    void setValue(int value) { btn_value = value; }
+    void setValue(int value) { btnValue = value; }
 
     void reset()
     {
-        btn_value  = 0;
-        input_mode = false;
+        btnValue  = 0;
+        inputMode = false;
     }
 
     void press(unsigned int duration)
@@ -74,8 +77,8 @@ public:
     }
 
 private:
-    int btn_value   = 0;
-    bool input_mode = false;
+    int btnValue   = 0;
+    bool inputMode = false;
 };
 
 ButtonMock& btn = ButtonMock::getInstance();
@@ -112,39 +115,39 @@ protected:
         handler = new ButtonHandler_t(0x5E, cb);
     }
 
-    void callback(int id, ButtonPress press_type)
+    void callback(int id, ButtonPress pressType)
     {
         if (id != 0x5E)
         {
             return;
         }
-        switch (press_type)
+        switch (pressType)
         {
             case ButtonPress::DOWN:
-                ++down_count;
+                ++downCount;
                 break;
             case ButtonPress::UP:
-                ++up_count;
+                ++upCount;
                 break;
             case ButtonPress::SHORT:
-                ++short_press_count;
+                ++shortPressCount;
                 break;
             case ButtonPress::LONG:
-                ++long_press_count;
+                ++longPressCount;
                 break;
             case ButtonPress::VERY_LONG:
-                ++very_long_press_count;
+                ++veryLongPressCount;
                 break;
             default:
                 break;
         }
     }
 
-    unsigned int down_count            = 0;
-    unsigned int up_count              = 0;
-    unsigned int short_press_count     = 0;
-    unsigned int long_press_count      = 0;
-    unsigned int very_long_press_count = 0;
+    unsigned int downCount          = 0;
+    unsigned int upCount            = 0;
+    unsigned int shortPressCount    = 0;
+    unsigned int longPressCount     = 0;
+    unsigned int veryLongPressCount = 0;
     ButtonHandler_t* handler;
 };
 
@@ -153,11 +156,11 @@ TEST_CASE_METHOD(ButtonHandlerTestFixture,
 {
     Thread::sleep((VERY_LONG_PRESS_TICKS + 1) * TICK_LENGTH);
 
-    REQUIRE(down_count == 0);
-    REQUIRE(up_count == 0);
-    REQUIRE(short_press_count == 0);
-    REQUIRE(long_press_count == 0);
-    REQUIRE(very_long_press_count == 0);
+    REQUIRE(downCount == 0);
+    REQUIRE(upCount == 0);
+    REQUIRE(shortPressCount == 0);
+    REQUIRE(longPressCount == 0);
+    REQUIRE(veryLongPressCount == 0);
 }
 
 TEST_CASE_METHOD(ButtonHandlerTestFixture,
@@ -167,53 +170,55 @@ TEST_CASE_METHOD(ButtonHandlerTestFixture,
     {
         btn.press(TICK_LENGTH + 5);
 
-        REQUIRE(down_count == 1);
-        REQUIRE(up_count == 1);
+        REQUIRE(downCount == 1);
+        REQUIRE(upCount == 1);
 
-        CHECK(long_press_count == 0);
-        CHECK(very_long_press_count == 0);
-        REQUIRE(short_press_count == 1);
+        CHECK(longPressCount == 0);
+        CHECK(veryLongPressCount == 0);
+        REQUIRE(shortPressCount == 1);
 
         btn.press(TICK_LENGTH * (LONG_PRESS_TICKS + 1));
 
-        REQUIRE(down_count == 2);
-        REQUIRE(up_count == 2);
-        CHECK(short_press_count == 1);
-        CHECK(very_long_press_count == 0);
-        REQUIRE(long_press_count == 1);
+        REQUIRE(downCount == 2);
+        REQUIRE(upCount == 2);
+        CHECK(shortPressCount == 1);
+        CHECK(veryLongPressCount == 0);
+        REQUIRE(longPressCount == 1);
 
         btn.press(TICK_LENGTH * (VERY_LONG_PRESS_TICKS + 1));
 
-        REQUIRE(down_count == 3);
-        REQUIRE(up_count == 3);
-        CHECK(short_press_count == 1);
-        CHECK(long_press_count == 1);
-        REQUIRE(very_long_press_count == 1);
+        REQUIRE(downCount == 3);
+        REQUIRE(upCount == 3);
+        CHECK(shortPressCount == 1);
+        CHECK(longPressCount == 1);
+        REQUIRE(veryLongPressCount == 1);
     }
 }
 
 TEST_CASE_METHOD(ButtonHandlerTestFixture,
                  "ButtonHandler - Just short of each button press")
 {
-    REQUIRE(long_press_count == 0);
-    REQUIRE(very_long_press_count == 0);
-    REQUIRE(short_press_count == 0);
-    REQUIRE(down_count == 0);
-    REQUIRE(up_count == 0);
+    REQUIRE(longPressCount == 0);
+    REQUIRE(veryLongPressCount == 0);
+    REQUIRE(shortPressCount == 0);
+    REQUIRE(downCount == 0);
+    REQUIRE(upCount == 0);
 
     btn.press(TICK_LENGTH * (LONG_PRESS_TICKS - 1));
 
-    REQUIRE(down_count == 1);
-    REQUIRE(up_count == 1);
-    REQUIRE(short_press_count == 1);
-    REQUIRE(very_long_press_count == 0);
-    REQUIRE(long_press_count == 0);
+    REQUIRE(downCount == 1);
+    REQUIRE(upCount == 1);
+    REQUIRE(shortPressCount == 1);
+    REQUIRE(veryLongPressCount == 0);
+    REQUIRE(longPressCount == 0);
 
     btn.press(TICK_LENGTH * (VERY_LONG_PRESS_TICKS - 1));
 
-    REQUIRE(down_count == 2);
-    REQUIRE(up_count == 2);
-    REQUIRE(short_press_count == 1);
-    REQUIRE(long_press_count == 1);
-    REQUIRE(very_long_press_count == 0);
+    REQUIRE(downCount == 2);
+    REQUIRE(upCount == 2);
+    REQUIRE(shortPressCount == 1);
+    REQUIRE(longPressCount == 1);
+    REQUIRE(veryLongPressCount == 0);
 }
+
+#endif

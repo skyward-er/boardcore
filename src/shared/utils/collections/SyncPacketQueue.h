@@ -58,7 +58,7 @@ public:
     /**
      * @brief Constructor: reserves a fixed length for the packet.
      */
-    Packet() : msg_count(0), ts(0), ready(false) { content.reserve(len); };
+    Packet() : msgCounter(0), ts(0), ready(false) { content.reserve(len); };
 
     /**
      * @brief Destructor: clears the buffer.
@@ -69,11 +69,11 @@ public:
      * @brief Try to append a given message to the packet. If it's the first
      * message, also set the timestamp.
      * @param msg      the message to be appended
-     * @param msg_len  length of msg
+     * @param msgLen  length of msg
      * @return true    if the message was appended correctly
      * @return false   if there isn't enough space for the message
      */
-    bool tryAppend(const uint8_t* msg, const size_t msg_len);
+    bool tryAppend(const uint8_t* msg, const size_t msgLen);
 
     /**
      * @brief mark the packet as ready to be sent.
@@ -126,7 +126,7 @@ public:
      * @return how many times the tryAppend() function has been called
      * successfully.
      */
-    inline unsigned int msgCount() const { return msg_count; }
+    inline unsigned int getMsgCount() const { return msgCounter; }
 
     /**
      * @brief Print information about this object.
@@ -139,15 +139,15 @@ public:
 
 private:
     // Helper variables
-    unsigned int msg_count;
+    unsigned int msgCounter;
     uint64_t ts;
     bool ready;
 };
 
 template <unsigned int len>
-bool Packet<len>::tryAppend(const uint8_t* msg, const size_t msg_len)
+bool Packet<len>::tryAppend(const uint8_t* msg, const size_t msgLen)
 {
-    if (msg_len == 0 || content.size() + msg_len > len)
+    if (msgLen == 0 || content.size() + msgLen > len)
     {
         return false;
     }
@@ -160,8 +160,8 @@ bool Packet<len>::tryAppend(const uint8_t* msg, const size_t msg_len)
         }
 
         // Append the message to the packet
-        content.insert(content.end(), msg, msg + msg_len);
-        msg_count++;
+        content.insert(content.end(), msg, msg + msgLen);
+        msgCounter++;
 
         return true;
     }
@@ -171,9 +171,9 @@ template <unsigned int len>
 void Packet<len>::clear()
 {
     content.clear();
-    msg_count = 0;
-    ts        = 0;
-    ready     = false;
+    msgCounter = 0;
+    ts         = 0;
+    ready      = false;
 }
 
 template <unsigned int len>
@@ -187,7 +187,7 @@ template <unsigned int len>
 void Packet<len>::print(std::ostream& os) const
 {
     os << "timestamp=" << ts << ", ready=" << ready
-       << ", size=" << content.size() << ", msgCount=" << msg_count
+       << ", size=" << content.size() << ", msgCounter=" << msgCounter
        << ", content= ";
 
     for (auto const& i : content)
@@ -203,13 +203,13 @@ void Packet<len>::print(std::ostream& os) const
  * to the first available packet. This class is suitable for synchronization
  * between two threads.
  *
- * @tparam pkt_len  Maximum length of each packet. (bytes)
- * @tparam pkt_num  Total number of packets.
+ * @tparam pktLen  Maximum length of each packet. (bytes)
+ * @tparam pktNum  Total number of packets.
  ******************************************************************************/
-template <unsigned int pkt_len, unsigned int pkt_num>
+template <unsigned int pktLen, unsigned int pktNum>
 class SyncPacketQueue
 {
-    using Pkt = Packet<pkt_len>;
+    using Pkt = Packet<pktLen>;
 
 public:
     /**
@@ -218,15 +218,15 @@ public:
      * to the next packet. If there are no more avaible packets, the oldest one
      * is overwritten.
      * @param msg      the message to be appended
-     * @param msg_len  length of msg
+     * @param msgLen  length of msg
      * @return true    if the message was appended correctly
      * @return false   if there isn't enough space for the message
      */
-    int put(uint8_t* msg, size_t msg_len)
+    int put(uint8_t* msg, size_t msgLen)
     {
         int dropped = 0;
 
-        if (msg_len == 0 || msg_len > pkt_len)
+        if (msgLen == 0 || msgLen > pktLen)
         {
             return -1;
         }
@@ -246,7 +246,7 @@ public:
             // Add to the current packet only if it isn't already ready
             if (!last.isReady())
             {
-                added = last.tryAppend(msg, msg_len);
+                added = last.tryAppend(msg, msgLen);
             }
 
             // If already ready or cannot fit the new data, add to a new packet
@@ -263,7 +263,7 @@ public:
                 // Add a new packet and fill that instead
                 Pkt& newpkt = buffer.put(Pkt{});
 
-                if (!newpkt.tryAppend(msg, msg_len))
+                if (!newpkt.tryAppend(msg, msgLen))
                 {
                     TRACE("Packet is too big!\n");
                     return -1;
@@ -276,7 +276,7 @@ public:
                 buffer.last().markAsReady();
             }
 
-            cv_notempty.broadcast();
+            cvNotempty.broadcast();
             return dropped;
         }
     }
@@ -335,7 +335,7 @@ public:
         Lock<FastMutex> l(mutex);
         if (buffer.isEmpty())
         {
-            cv_notempty.wait(mutex);
+            cvNotempty.wait(mutex);
         }
     }
 
@@ -370,9 +370,9 @@ public:
 
 private:
     FastMutex mutex;
-    ConditionVariable cv_notempty;
+    ConditionVariable cvNotempty;
 
-    CircularBuffer<Pkt, pkt_num> buffer;
+    CircularBuffer<Pkt, pktNum> buffer;
 };
 
 }  // namespace Boardcore

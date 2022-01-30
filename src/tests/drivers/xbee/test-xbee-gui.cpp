@@ -72,12 +72,12 @@ void configure();
 // Global variables
 Logger& logger   = Logger::getInstance();
 Xbee::Xbee* xbee = nullptr;
-ConstSendInterval snd_int{0};
+ConstSendInterval sndInt{0};
 XbeeTransceiver* trans = nullptr;
 XbeeGUI* gui;
-ButtonHandler<GpioUserBtn>* btn_handler;
+ButtonHandler<GpioUserBtn>* btnHandler;
 
-unsigned int mark_counter = 1;
+unsigned int markCounter = 1;
 
 /**
  * @brief Activeobject to perform an energy detect scan as frequently as
@@ -104,14 +104,14 @@ protected:
                     scan[i] = -(int)(*(response.getCommandDataPointer() + i));
                 }
 
-                gui->screen_energy.updateScan(scan);
+                gui->screenEnergy.updateScan(scan);
 
                 EnergyScanData data{getTick(), scan};
                 logger.log(data);
             }
         }
     }
-} energy_scanner;
+} energyScanner;
 
 int main()
 {
@@ -132,7 +132,7 @@ int main()
     }
 
     // XBee
-    SPIBus spi_bus(SPI1);
+    SPIBus spiBus(SPI1);
     SPIBusConfig cfg{};
     cfg.clockDivider = SPI::ClockDivider::DIV_16;
 
@@ -140,41 +140,41 @@ int main()
     GpioPin attn = GpioATTN::getPin();
     GpioPin rst  = GpioRST::getPin();
 
-    xbee = new Xbee::Xbee(spi_bus, cfg, cs, attn, rst);
+    xbee = new Xbee::Xbee(spiBus, cfg, cs, attn, rst);
 
     // GUI
     gui = new XbeeGUI();
 
-    btn_handler = new ButtonHandler<GpioUserBtn>(
-        0, bind(&ScreenManager::onButtonPress, &gui->screen_manager, _2));
+    btnHandler = new ButtonHandler<GpioUserBtn>(
+        0, bind(&ScreenManager::onButtonPress, &gui->screenManager, _2));
 
-    btn_handler->start();
+    btnHandler->start();
 
-    gui->screen_config.btn_start.addOnInteractionListener(onStartButtonClick);
-    gui->screen_config.btn_energy.addOnInteractionListener(onEnergyButtonClick);
+    gui->screenConfig.btnStart.addOnInteractionListener(onStartButtonClick);
+    gui->screenConfig.btnEnergy.addOnInteractionListener(onEnergyButtonClick);
 
-    gui->screen_status.btn_stop.addOnInteractionListener(onStopButtonClick);
-    gui->screen_status.btn_mark.addOnInteractionListener(onMarkButtonClick);
+    gui->screenStatus.btnStop.addOnInteractionListener(onStopButtonClick);
+    gui->screenStatus.btnMark.addOnInteractionListener(onMarkButtonClick);
 
-    gui->screen_energy.btn_stop.addOnInteractionListener(onStopButtonClick);
-    gui->screen_energy.btn_mark.addOnInteractionListener(onMarkButtonClick);
-    gui->screen_energy.btn_reset.addOnInteractionListener(
+    gui->screenEnergy.btnStop.addOnInteractionListener(onStopButtonClick);
+    gui->screenEnergy.btnMark.addOnInteractionListener(onMarkButtonClick);
+    gui->screenEnergy.btnReset.addOnInteractionListener(
         [&](View* d, Interaction action)
         {
             UNUSED(d);
             if (action == Interaction::CLICK)
-                gui->screen_energy.resetStats();
+                gui->screenEnergy.resetStats();
         });
 
-    gui->screen_end.tv_f.addOnInteractionListener(
+    gui->screenEnd.tvF.addOnInteractionListener(
         [&](View* d, Interaction action)
         {
             UNUSED(d);
             if (action == Interaction::CLICK)
-                gui->screen_manager.showScreen(XbeeGUI::SCREEN_RESPECT);
+                gui->screenManager.showScreen(XbeeGUI::SCREEN_RESPECT);
         });
 
-    gui->screen_end.tv_reset.addOnInteractionListener(
+    gui->screenEnd.tvReset.addOnInteractionListener(
         [&](View* d, Interaction action)
         {
             UNUSED(d);
@@ -187,15 +187,15 @@ int main()
     {
         long long start = getTick();
         // Update display values
-        switch (gui->screen_manager.getScreen())
+        switch (gui->screenManager.getScreen())
         {
             case XbeeGUI::SCREEN_CONFIG:
-                gui->screen_config.updateLogStatus(logger);
+                gui->screenConfig.updateLogStatus(logger);
                 break;
             case XbeeGUI::SCREEN_STATUS:
                 if (trans && xbee)
                 {
-                    gui->screen_status.updateXbeeStatus(
+                    gui->screenStatus.updateXbeeStatus(
                         trans->getReceiver().getDataRate(),
                         trans->getSender().getDataRate(),
                         trans->getSender().getTxData(),
@@ -204,10 +204,10 @@ int main()
                     logger.log(xbee->getStatus());
                 }
 
-                gui->screen_status.updateLogStatus(logger);
+                gui->screenStatus.updateLogStatus(logger);
                 break;
             case XbeeGUI::SCREEN_ENERGYSCAN:
-                gui->screen_energy.updateLogStatus(logger);
+                gui->screenEnergy.updateLogStatus(logger);
                 break;
             default:
                 break;
@@ -224,19 +224,19 @@ void onStartButtonClick(View* btn, Interaction action)
     if (action == Interaction::CLICK)
     {
 
-        XbeeConfig cfg = gui->screen_config.config;
+        XbeeConfig cfg = gui->screenConfig.config;
         cfg.timestamp  = getTick();
         logger.log(cfg);
 
-        gui->screen_config.btn_start.setText("Starting...");
+        gui->screenConfig.btnStart.setText("Starting...");
 
-        gui->screen_status.updateConfig(cfg);
+        gui->screenStatus.updateConfig(cfg);
 
         setupXbee(cfg);
         startTransceiver(cfg);
 
         // Show status screen
-        gui->screen_manager.showScreen(XbeeGUI::SCREEN_STATUS);
+        gui->screenManager.showScreen(XbeeGUI::SCREEN_STATUS);
     }
 }
 
@@ -244,11 +244,11 @@ void onStopButtonClick(View* btn, Interaction action)
 {
     if (action == Interaction::LONG_CLICK)
     {
-        TextView* tv_btn = dynamic_cast<TextView*>(btn);
+        TextView* tvBtn = dynamic_cast<TextView*>(btn);
 
-        if (tv_btn)
+        if (tvBtn)
         {
-            tv_btn->setText("Stopping...");
+            tvBtn->setText("Stopping...");
         }
 
         if (trans)
@@ -256,14 +256,14 @@ void onStopButtonClick(View* btn, Interaction action)
             trans->stop();
         }
 
-        if (energy_scanner.isRunning())
+        if (energyScanner.isRunning())
         {
-            energy_scanner.stop();
+            energyScanner.stop();
         }
 
         logger.stop();
 
-        gui->screen_manager.showScreen(XbeeGUI::SCREEN_END);
+        gui->screenManager.showScreen(XbeeGUI::SCREEN_END);
     }
 }
 
@@ -272,13 +272,13 @@ void onMarkButtonClick(View* btn, Interaction action)
     UNUSED(btn);
     if (action == Interaction::CLICK)
     {
-        Mark m{getTick(), mark_counter++};
+        Mark m{getTick(), markCounter++};
         logger.log(m);
 
-        TextView* tv_btn = dynamic_cast<TextView*>(btn);
-        if (tv_btn)
+        TextView* tvBtn = dynamic_cast<TextView*>(btn);
+        if (tvBtn)
         {
-            tv_btn->setText("Mark Log (" + to_string(mark_counter) + ")");
+            tvBtn->setText("Mark Log (" + to_string(markCounter) + ")");
         }
     }
 }
@@ -288,18 +288,18 @@ void onEnergyButtonClick(View* btn, Interaction action)
     UNUSED(btn);
     if (action == Interaction::CLICK)
     {
-        energy_scanner.start();
-        gui->screen_manager.showScreen(XbeeGUI::SCREEN_ENERGYSCAN);
+        energyScanner.start();
+        gui->screenManager.showScreen(XbeeGUI::SCREEN_ENERGYSCAN);
     }
 }
 
 void startTransceiver(XbeeConfig config)
 {
-    snd_int.interval = config.send_interval;
-    trans = new XbeeTransceiver(*xbee, logger, snd_int, config.packet_size,
-                                config.send_interval);
+    sndInt.interval = config.sendInterval;
+    trans = new XbeeTransceiver(*xbee, logger, sndInt, config.packetSize,
+                                config.sendInterval);
 
-    if (!config.tx_enabled)
+    if (!config.txEnabled)
     {
         trans->disableSender();
     }
@@ -309,20 +309,20 @@ void startTransceiver(XbeeConfig config)
 
 void setupXbee(XbeeConfig config)
 {
-    if (config.data_rate_80k)
+    if (config.dataRate80k)
     {
         if (!Xbee::setDataRate(*xbee, true))
         {
-            gui->screen_status.tv_cfg_data_rate.setBackgroundColor(mxgui::red);
+            gui->screenStatus.tvCfgDataRate.setBackgroundColor(mxgui::red);
             TRACE("[main] Error setting xbee data rate!\n");
         }
     }
 
-    if (!config.freq_hop)
+    if (!config.freqHop)
     {
         if (!Xbee::disableFrequencyHopping(*xbee))
         {
-            gui->screen_status.tv_cfg_freq_hop.setBackgroundColor(mxgui::red);
+            gui->screenStatus.tvCfgFreqHop.setBackgroundColor(mxgui::red);
             TRACE("[main] Error disabling frequency hop!\n");
         }
     }

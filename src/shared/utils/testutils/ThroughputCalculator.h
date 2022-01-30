@@ -36,9 +36,9 @@ namespace Boardcore
 
 struct DataRateResult
 {
-    float data_rate;
-    float packet_loss;
-    float packets_per_second;
+    float dataRate;
+    float packetLoss;
+    float packetsPerSecond;
 };
 
 /**
@@ -52,15 +52,15 @@ public:
     /**
      * @brief Creates a new ThroughputCalculator
      *
-     * @param expected_pkt_interval Expected packet delivery interval for packet
+     * @param expectedPktInterval Expected packet delivery interval for packet
      * loss estimation
-     * @param window_duration Duration of the observation window. Longer windows
+     * @param windowDuration Duration of the observation window. Longer windows
      * means more stable values but slow response to abrupt changes
      */
-    ThroughputCalculator(unsigned int expected_pkt_interval,
-                         unsigned int window_duration = 2000)
-        : expected_pkt_interval(expected_pkt_interval),
-          window_duration(window_duration)
+    ThroughputCalculator(unsigned int expectedPktInterval,
+                         unsigned int windowDuration = 2000)
+        : expectedPktInterval(expectedPktInterval),
+          windowDuration(windowDuration)
     {
     }
 
@@ -68,11 +68,11 @@ public:
      * @brief Signal that a new packet has arrived. Call this as soon as the
      * packet is available
      *
-     * @param packet_size The size of the packet
+     * @param packetSize The size of the packet
      */
-    void addPacket(size_t packet_size)
+    void addPacket(size_t packetSize)
     {
-        Lock<FastMutex> lock(mutex_pkt);
+        Lock<FastMutex> lock(mutexPkt);
 
         long long ts = miosix::getTick();
 
@@ -82,7 +82,7 @@ public:
             interval = static_cast<unsigned int>(ts - packets.back().timestamp);
         }
 
-        packets.push_back({ts, packet_size, interval});
+        packets.push_back({ts, packetSize, interval});
 
         removeOldPackets(ts);
     }
@@ -93,7 +93,7 @@ public:
      */
     float getDataRate()
     {
-        Lock<FastMutex> lock(mutex_pkt);
+        Lock<FastMutex> lock(mutexPkt);
 
         long long ts = miosix::getTick();
         removeOldPackets(ts);
@@ -103,7 +103,7 @@ public:
         {
             sum += packets[i].size;
         }
-        return sum / (window_duration / 1000.0f);
+        return sum / (windowDuration / 1000.0f);
     }
 
     /**
@@ -112,23 +112,23 @@ public:
      */
     float getPacketLoss()
     {
-        Lock<FastMutex> lock(mutex_pkt);
+        Lock<FastMutex> lock(mutexPkt);
         long long ts = miosix::getTick();
         removeOldPackets(ts);
 
-        float avg_interval = std::numeric_limits<float>::infinity();
+        float avgInterval = std::numeric_limits<float>::infinity();
         if (packets.size() > 0)
         {
-            avg_interval = packets[0].interval;
+            avgInterval = packets[0].interval;
             for (size_t i = 1; i < packets.size(); i++)
             {
-                avg_interval += packets[i].interval;
+                avgInterval += packets[i].interval;
             }
 
-            avg_interval /= packets.size();
+            avgInterval /= packets.size();
         }
 
-        return 1 - expected_pkt_interval / avg_interval;
+        return 1 - expectedPktInterval / avgInterval;
     }
 
     /**
@@ -136,19 +136,19 @@ public:
      */
     float getPacketsPerSecond()
     {
-        Lock<FastMutex> lock(mutex_pkt);
+        Lock<FastMutex> lock(mutexPkt);
         long long ts = miosix::getTick();
         removeOldPackets(ts);
 
-        return (float)packets.size() / (window_duration / 1000.0f);
+        return (float)packets.size() / (windowDuration / 1000.0f);
     }
 
     DataRateResult getResult()
     {
         DataRateResult r;
-        r.data_rate          = getDataRate();
-        r.packet_loss        = getPacketLoss();
-        r.packets_per_second = getPacketsPerSecond();
+        r.dataRate         = getDataRate();
+        r.packetLoss       = getPacketLoss();
+        r.packetsPerSecond = getPacketsPerSecond();
 
         return r;
     }
@@ -164,17 +164,17 @@ private:
     void removeOldPackets(long long ts)
     {
         while (packets.size() > 0 &&
-               packets.front().timestamp < ts - window_duration)
+               packets.front().timestamp < ts - windowDuration)
         {
             packets.pop_front();
         }
     }
 
-    unsigned int expected_pkt_interval;
-    unsigned int window_duration;
+    unsigned int expectedPktInterval;
+    unsigned int windowDuration;
     deque<Packet> packets;
 
-    FastMutex mutex_pkt;
+    FastMutex mutexPkt;
 };
 
 }  // namespace Boardcore

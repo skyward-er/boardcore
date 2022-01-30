@@ -81,11 +81,11 @@ public:
     /**
      * @brief Returns the current state of the parser
      */
-    ParserState getParserState() { return parser_state; }
+    ParserState getParserState() { return parserState; }
 
 private:
-    ParserState parser_state          = ParserState::FIND_START;
-    uint16_t current_frame_data_index = 0;
+    ParserState parserState        = ParserState::FIND_START;
+    uint16_t currentFrameDataIndex = 0;
 
     PrintLogger logger = Logging::getLogger("apiframeparser");
 };

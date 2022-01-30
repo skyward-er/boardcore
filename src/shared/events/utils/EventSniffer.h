@@ -50,11 +50,11 @@ public:
      * EventSniffer that sniffs only the specified topics
      * @param broker Event broker to subscribe to
      * @param topics Which topics to sniff
-     * @param on_event_received Callback to call upon receiving an event
+     * @param onEventReceived Callback to call upon receiving an event
      */
     EventSniffer(EventBroker& broker, vector<uint8_t> topics,
-                 OnEventReceived on_event_received)
-        : broker(broker), on_event_received(on_event_received)
+                 OnEventReceived onEventReceived)
+        : broker(broker), onEventReceived(onEventReceived)
     {
         for (uint8_t t : topics)
         {
@@ -65,10 +65,10 @@ public:
     /**
      * EventSniffer that sniffs all the possible topics (0-255)
      * @param broker Event broker to subscribe to
-     * @param on_event_received Callback to call upon receiving an event
+     * @param onEventReceived Callback to call upon receiving an event
      */
-    EventSniffer(EventBroker& broker, OnEventReceived on_event_received)
-        : broker(broker), on_event_received(on_event_received)
+    EventSniffer(EventBroker& broker, OnEventReceived onEventReceived)
+        : broker(broker), onEventReceived(onEventReceived)
     {
         for (int t = 0; t <= 255; t++)
         {
@@ -96,7 +96,7 @@ private:
 
         void postEvent(const Event& ev)
         {
-            parent.on_event_received(ev.sig, topic);
+            parent.onEventReceived(ev.code, topic);
         }
 
         ~Sniffer() { parent.broker.unsubscribe(this); }
@@ -109,7 +109,7 @@ private:
     vector<Sniffer*> sniffers;
 
     EventBroker& broker;
-    OnEventReceived on_event_received;
+    OnEventReceived onEventReceived;
 };
 
 }  // namespace Boardcore

@@ -77,7 +77,8 @@ void __attribute__((used)) EXTI5_IRQHandlerImpl()
 {
     if (bmx160)
     {
-        bmx160->IRQupdateTimestamp(TimestampTimer::getTimestamp());
+        bmx160->IRQupdateTimestamp(
+            TimestampTimer::getInstance().getTimestamp());
     }
 }
 
@@ -94,8 +95,6 @@ BMX160CorrectionParameters changeMinGyroCorrectionSamples(
 
 int main()
 {
-    TimestampTimer::enableTimestampTimer();
-
     // Enable interrupt from BMX pin
     enableExternalInterrupt(GPIOE_BASE, 5, InterruptTrigger::FALLING_EDGE);
 
@@ -187,23 +186,23 @@ BMX160CorrectionParameters calibrateAccelerometer(
 
     SPIBus bus(SPI1);
 
-    BMX160Config bmx_config;
-    bmx_config.fifo_mode      = BMX160Config::FifoMode::HEADER;
-    bmx_config.fifo_watermark = 100;
-    bmx_config.fifo_int       = BMX160Config::FifoInterruptPin::PIN_INT1;
+    BMX160Config bmxConfig;
+    bmxConfig.fifoMode      = BMX160Config::FifoMode::HEADER;
+    bmxConfig.fifoWatermark = 100;
+    bmxConfig.fifoInterrupt = BMX160Config::FifoInterruptPin::PIN_INT1;
 
-    bmx_config.temp_divider = 0;
+    bmxConfig.temperatureDivider = 0;
 
-    bmx_config.acc_range = BMX160Config::AccelerometerRange::G_16;
-    bmx_config.gyr_range = BMX160Config::GyroscopeRange::DEG_2000;
+    bmxConfig.accelerometerRange = BMX160Config::AccelerometerRange::G_16;
+    bmxConfig.gyroscopeRange     = BMX160Config::GyroscopeRange::DEG_2000;
 
-    bmx_config.acc_odr = BMX160Config::OutputDataRate::HZ_1600;
-    bmx_config.gyr_odr = BMX160Config::OutputDataRate::HZ_1600;
-    bmx_config.mag_odr = BMX160Config::OutputDataRate::HZ_50;
+    bmxConfig.accelerometerDataRate = BMX160Config::OutputDataRate::HZ_1600;
+    bmxConfig.gyroscopeDataRate     = BMX160Config::OutputDataRate::HZ_1600;
+    bmxConfig.magnetometerRate      = BMX160Config::OutputDataRate::HZ_50;
 
-    bmx_config.gyr_unit = BMX160Config::GyroscopeMeasureUnit::RAD;
+    bmxConfig.gyroscopeUnit = BMX160Config::GyroscopeMeasureUnit::RAD;
 
-    bmx160 = new BMX160(bus, miosix::sensors::bmx160::cs::getPin(), bmx_config);
+    bmx160 = new BMX160(bus, miosix::sensors::bmx160::cs::getPin(), bmxConfig);
 
     TRACE("Initializing BMX160...\n");
 
@@ -286,12 +285,12 @@ BMX160CorrectionParameters calibrateAccelerometer(
                 BMX160Data fifoElement = bmx160->getFifoElement(ii);
 
                 // Read acceleration data
-                if (fifoElement.accel_timestamp > accelTimestamp)
+                if (fifoElement.accelerationTimestamp > accelTimestamp)
                 {
                     static_cast<AccelerometerData>(fifoElement) >> vec;
                     avgAccel += vec;
 
-                    accelTimestamp = fifoElement.accel_timestamp;
+                    accelTimestamp = fifoElement.accelerationTimestamp;
                     fifoAccSampleCount++;
                 }
             }
@@ -336,21 +335,21 @@ BMX160CorrectionParameters calibrateMagnetometer(
 
     SPIBus bus(SPI1);
 
-    BMX160Config bmx_config;
-    bmx_config.fifo_mode = BMX160Config::FifoMode::DISABLED;
+    BMX160Config bmxConfig;
+    bmxConfig.fifoMode = BMX160Config::FifoMode::DISABLED;
 
-    bmx_config.temp_divider = 0;
+    bmxConfig.temperatureDivider = 0;
 
-    bmx_config.acc_range = BMX160Config::AccelerometerRange::G_16;
-    bmx_config.gyr_range = BMX160Config::GyroscopeRange::DEG_2000;
+    bmxConfig.accelerometerRange = BMX160Config::AccelerometerRange::G_16;
+    bmxConfig.gyroscopeRange     = BMX160Config::GyroscopeRange::DEG_2000;
 
-    bmx_config.acc_odr = BMX160Config::OutputDataRate::HZ_1600;
-    bmx_config.gyr_odr = BMX160Config::OutputDataRate::HZ_1600;
-    bmx_config.mag_odr = BMX160Config::OutputDataRate::HZ_50;
+    bmxConfig.accelerometerDataRate = BMX160Config::OutputDataRate::HZ_1600;
+    bmxConfig.gyroscopeDataRate     = BMX160Config::OutputDataRate::HZ_1600;
+    bmxConfig.magnetometerRate      = BMX160Config::OutputDataRate::HZ_50;
 
-    bmx_config.gyr_unit = BMX160Config::GyroscopeMeasureUnit::RAD;
+    bmxConfig.gyroscopeUnit = BMX160Config::GyroscopeMeasureUnit::RAD;
 
-    bmx160 = new BMX160(bus, miosix::sensors::bmx160::cs::getPin(), bmx_config);
+    bmx160 = new BMX160(bus, miosix::sensors::bmx160::cs::getPin(), bmxConfig);
 
     TRACE("Initializing BMX160...\n");
 

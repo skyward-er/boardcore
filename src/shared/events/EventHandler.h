@@ -45,39 +45,52 @@ class EventHandler : public EventHandlerBase, public ActiveObject
 {
 public:
     EventHandler(unsigned int stacksize    = miosix::STACK_DEFAULT_FOR_PTHREAD,
-                 miosix::Priority priority = miosix::MAIN_PRIORITY)
-        : ActiveObject(stacksize, priority)
-    {
-    }
+                 miosix::Priority priority = miosix::MAIN_PRIORITY);
 
-    virtual ~EventHandler(){};
+    virtual ~EventHandler();
 
-    virtual void postEvent(const Event& ev) override { eventList.put(ev); }
+    void postEvent(const Event& ev) override;
 
-    virtual void stop() override
-    {
-        should_stop = true;
-
-        // Put empty event in the list to wake the runner thread
-        eventList.put(Event{EV_EMPTY});
-        thread->join();
-
-        stopped = true;
-    }
+    void stop() override;
 
 protected:
     virtual void handleEvent(const Event& ev) = 0;
 
-    void run() override
-    {
-        while (!shouldStop())
-        {
-            Event e = eventList.get();
-            handleEvent(e);
-        }
-    }
+    void run() override;
 
     SynchronizedQueue<Event> eventList;
 };
+
+inline EventHandler::EventHandler(unsigned int stacksize,
+                                  miosix::Priority priority)
+    : ActiveObject(stacksize, priority)
+{
+}
+
+inline EventHandler::~EventHandler(){};
+
+inline void EventHandler::postEvent(const Event& ev) { eventList.put(ev); }
+
+inline void EventHandler::stop()
+{
+    if (isRunning())
+    {
+        stopFlag = true;
+
+        // Put empty event in the list to wake the runner thread
+        eventList.put(Event{EV_EMPTY});
+
+        thread->join();
+    }
+}
+
+inline void EventHandler::run()
+{
+    while (!shouldStop())
+    {
+        Event e = eventList.get();
+        handleEvent(e);
+    }
+}
 
 }  // namespace Boardcore

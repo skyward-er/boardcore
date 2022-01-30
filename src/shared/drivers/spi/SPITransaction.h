@@ -58,9 +58,9 @@ class SPITransaction
 public:
     enum class WriteBit
     {
-        NORMAL,    //< Normal write bit settings (0 for write, 1 for reads)
-        INVERTED,  //< Inverted write bit settings (1 for write, 0 for reads)
-        DISABLED,  //< Do not set write bit in any way
+        NORMAL,    ///< Normal write bit settings (0 for write, 1 for reads)
+        INVERTED,  ///< Inverted write bit settings (1 for write, 0 for reads)
+        DISABLED,  ///< Do not set write bit in any way
     };
 
     /**

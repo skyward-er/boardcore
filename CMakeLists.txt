@@ -82,8 +82,8 @@ sbs_target(test-sensormanager stm32f429zi_skyward_death_stack_x)
 add_executable(test-serial src/tests/test-serial.cpp)
 sbs_target(test-serial stm32f429zi_stm32f4discovery)
 
-add_executable(test-taskscheduler src/tests/test-taskscheduler.cpp)
-sbs_target(test-taskscheduler stm32f429zi_skyward_death_stack_x)
+add_executable(test-taskscheduler src/tests/scheduler/test-taskscheduler.cpp)
+sbs_target(test-taskscheduler stm32f407vg_stm32f4discovery)
 
 add_executable(test-trace-logger src/tests/test-trace-logger.cpp)
 sbs_target(test-trace-logger stm32f429zi_stm32f4discovery)
@@ -143,11 +143,11 @@ sbs_target(test-mavlink stm32f429zi_skyward_homeone)
 add_executable(test-MBLoadCell src/tests/drivers/test-MBLoadCell.cpp)
 sbs_target(test-MBLoadCell stm32f407vg_stm32f4discovery)
 
-add_executable(test-pwm src/tests/drivers/test-pwm.cpp)
+add_executable(test-pwm src/tests/drivers/timer/test-pwm.cpp)
 sbs_target(test-pwm stm32f429zi_stm32f4discovery)
 
 add_executable(test-servo src/tests/drivers/test-servo.cpp)
-sbs_target(test-servo stm32f429zi_skyward_death_stack_x)
+sbs_target(test-servo stm32f429zi_stm32f4discovery)
 
 add_executable(test-spi src/tests/drivers/spi/test-spi.cpp)
 sbs_target(test-spi stm32f429zi_stm32f4discovery)
@@ -184,6 +184,13 @@ sbs_target(test-xbee-rcv stm32f429zi_stm32f4discovery)
 
 add_executable(test-xbee-snd src/tests/drivers/xbee/test-xbee-snd.cpp)
 sbs_target(test-xbee-snd stm32f429zi_stm32f4discovery)
+
+#-----------------------------------------------------------------------------#
+#                               Tests - Events                                #
+#-----------------------------------------------------------------------------#
+
+add_executable(test-fsm src/tests/events/fsm/test-fsm.cpp)
+sbs_target(test-fsm stm32f429zi_stm32f4discovery)
 
 #-----------------------------------------------------------------------------#
 #                               Tests - Sensors                               #
@@ -258,3 +265,10 @@ sbs_target(test-ubloxgps-spi stm32f407vg_stm32f4discovery)
 
 add_executable(test-vn100 src/tests/sensors/test-vn100.cpp)
 sbs_target(test-vn100 stm32f407vg_stm32f4discovery)
+
+#-----------------------------------------------------------------------------#
+#                                Tests - Utils                                #
+#-----------------------------------------------------------------------------#
+
+add_executable(test-csvreader src/tests/utils/test-csvreader.cpp)
+sbs_target(test-csvreader stm32f429zi_stm32f4discovery)

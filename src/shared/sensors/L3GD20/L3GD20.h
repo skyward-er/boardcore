@@ -63,13 +63,13 @@ public:
      * @param    cs Chip Select GPIO
      * @param    range Full Scale Range (See datasheet)
      * @param    odr Output Data Rate (See datasheet)
-     * @param    cutoff_freq Low pass filter cutoff frequency (See datasheet)
+     * @param    cutoffFreq Low pass filter cutoff frequency (See datasheet)
      */
     L3GD20(SPIBusInterface& bus, miosix::GpioPin cs,
            FullScaleRange range = FullScaleRange::FS_250,
            OutPutDataRate odr   = OutPutDataRate::ODR_95,
-           uint8_t cutoff_freq  = 0x03)
-        : L3GD20(bus, cs, {}, range, odr, cutoff_freq)
+           uint8_t cutoffFreq   = 0x03)
+        : L3GD20(bus, cs, {}, range, odr, cutoffFreq)
     {
         // Configure SPI
         spislave.config.clockDivider = SPI::ClockDivider::DIV_32;
@@ -83,13 +83,13 @@ public:
      * @param    cfg Custom SPI bus configuration
      * @param    range Full Scale Range (See datasheet)
      * @param    odr Output Data Rate (See datasheet)
-     * @param    cutoff_freq Low pass filter cutoff selector (See datasheet)
+     * @param    cutoffFreq Low pass filter cutoff selector (See datasheet)
      */
     L3GD20(SPIBusInterface& bus, miosix::GpioPin cs, SPIBusConfig cfg,
            FullScaleRange range = FullScaleRange::FS_250,
            OutPutDataRate odr   = OutPutDataRate::ODR_95,
-           uint8_t cutoff_freq  = 0x03)
-        : spislave(bus, cs, cfg), fs(range), odr(odr), cutoff_freq(cutoff_freq)
+           uint8_t cutoffFreq   = 0x03)
+        : spislave(bus, cs, cfg), fs(range), odr(odr), cutoffFreq(cutoffFreq)
     {
         switch (fs)
         {
@@ -108,13 +108,13 @@ public:
     /**
      * @brief Enables storing samples in a FIFO, must be called before init().
      *
-     * @param fifo_watermark How many samples in the FIFO when the fifo
+     * @param fifoWatermark How many samples in the FIFO when the fifo
      * watermark input is generated on INT2.
      */
-    void enableFifo(unsigned int fifo_watermark)
+    void enableFifo(unsigned int fifoWatermark)
     {
-        fifo_enabled         = true;
-        this->fifo_watermark = fifo_watermark;
+        fifoEnabled         = true;
+        this->fifoWatermark = fifoWatermark;
     }
 
     bool init()
@@ -125,7 +125,7 @@ public:
 
         if (whoami != WHO_AM_I_VAL)
         {
-            last_error = SensorErrors::INVALID_WHOAMI;
+            lastError = SensorErrors::INVALID_WHOAMI;
             return false;
         }
 
@@ -144,18 +144,18 @@ public:
                 break;
         }
 
-        if (fifo_enabled)
+        if (fifoEnabled)
         {
             // Enable fifo
             spi.writeRegister(REG_CTRL5, 1 << 6);
 
-            // Set watermark level to fifo_watermark samples
-            uint8_t fifo_ctrl = fifo_watermark;
+            // Set watermark level to fifoWatermark samples
+            uint8_t fifoCtrl = fifoWatermark;
 
             // Set fifo to STREAM mode
-            fifo_ctrl |= 0x02 << 5;
+            fifoCtrl |= 0x02 << 5;
 
-            spi.writeRegister(REG_FIFO_CTRL, fifo_ctrl);
+            spi.writeRegister(REG_FIFO_CTRL, fifoCtrl);
 
             // Enable FIFO watermark interrupt on INT2
             spi.writeRegister(REG_CTRL3, 0x04);
@@ -170,7 +170,7 @@ public:
         uint8_t ctrl1 = 0x0F;
 
         // Configure cutoff frequency
-        ctrl1 |= (cutoff_freq & 0x03) << 4;
+        ctrl1 |= (cutoffFreq & 0x03) << 4;
 
         // Configure ODR
         switch (odr)
@@ -197,10 +197,10 @@ public:
 
     L3GD20Data sampleImpl()
     {
-        if (!fifo_enabled)  // FIFO not enabled
+        if (!fifoEnabled)  // FIFO not enabled
         {
             // Timestamp of the last sample
-            uint64_t last_sample_ts;
+            uint64_t lastSampleTimestamp;
 
             // Read output data registers (X, Y, Z)
             {
@@ -213,39 +213,39 @@ public:
                 // interrupt may come just as we are reading it and causing a
                 // race condition.
                 miosix::FastInterruptDisableLock dLock;
-                last_sample_ts = last_interrupt_us;
+                lastSampleTimestamp = lastInterruptTimestamp;
             }
 
             int16_t x = buf[0] | buf[1] << 8;
             int16_t y = buf[2] | buf[3] << 8;
             int16_t z = buf[4] | buf[5] << 8;
 
-            Vec3 rads    = toRadiansPerSecond(x, y, z);
-            last_fifo[0] = {last_sample_ts, rads.getX(), rads.getY(),
-                            rads.getZ()};
+            Vec3 rads   = toRadiansPerSecond(x, y, z);
+            lastFifo[0] = {lastSampleTimestamp, rads.getX(), rads.getY(),
+                           rads.getZ()};
         }
 
         else  // FIFO is enabled
         {
             SPITransaction spi(spislave);
             // Read last fifo level
-            uint8_t fifo_src   = spi.readRegister(REG_FIFO_SRC);
-            uint8_t ovr        = (fifo_src & 0x40) >> 7;  // Overrun bit
-            uint8_t fifo_level = (fifo_src & 0x1F) + ovr;
+            uint8_t fifoSrc   = spi.readRegister(REG_FIFO_SRC);
+            uint8_t ovr       = (fifoSrc & 0x40) >> 7;  // Overrun bit
+            uint8_t fifoLevel = (fifoSrc & 0x1F) + ovr;
 
             // Read fifo
-            spi.readRegisters(REG_OUT_X_L | 0x40, buf, fifo_level * 6);
+            spi.readRegisters(REG_OUT_X_L | 0x40, buf, fifoLevel * 6);
 
-            uint64_t dt = dt_interrupt / last_fifo_level;
+            uint64_t dt = interruptTimestampDelta / lastFifoLevel;
 
             uint8_t duplicates = 0;
-            for (uint8_t i = 0; i < fifo_level; ++i)
+            for (uint8_t i = 0; i < fifoLevel; ++i)
             {
                 bool rmv;
                 // Check for duplicates: there seems to be a bug where the
                 // sensor occasionaly shifts out the same sample two times in a
                 // row: discard one
-                if (i < fifo_level - 1)
+                if (i < fifoLevel - 1)
                 {
                     rmv = true;
                     for (uint8_t j = 0; j < 6; ++j)
@@ -275,22 +275,22 @@ public:
                 // timestamp between the two times)
                 // Ignoring possible duplicates, the timestamp of the ith sample
                 // in the fifo is:
-                // ts(i) = ts(fifo_watermark) + (i - fifo_watermark)*dt;
+                // ts(i) = ts(fifoWatermark) + (i - fifoWatermark)*dt;
                 Vec3 rads =
                     toRadiansPerSecond(buf[i * 6] | buf[i * 6 + 1] << 8,
                                        buf[i * 6 + 2] | buf[i * 6 + 3] << 8,
                                        buf[i * 6 + 4] | buf[i * 6 + 5] << 8);
 
-                last_fifo[i - duplicates] = L3GD20Data{
-                    last_interrupt_us +
-                        ((int)i - (int)fifo_watermark - (int)duplicates) * dt,
+                lastFifo[i - duplicates] = L3GD20Data{
+                    lastInterruptTimestamp +
+                        ((int)i - (int)fifoWatermark - (int)duplicates) * dt,
                     rads.getX(), rads.getY(), rads.getZ()};
             }
 
-            last_fifo_level = fifo_level - duplicates;
+            lastFifoLevel = fifoLevel - duplicates;
         }
 
-        return last_fifo[last_fifo_level - 1];
+        return lastFifo[lastFifoLevel - 1];
     }
 
 private:
@@ -305,12 +305,12 @@ private:
 
     SPISlave spislave;
 
-    FullScaleRange fs   = FullScaleRange::FS_250;
-    OutPutDataRate odr  = OutPutDataRate::ODR_760;
-    uint8_t cutoff_freq = 0x03;
+    FullScaleRange fs  = FullScaleRange::FS_250;
+    OutPutDataRate odr = OutPutDataRate::ODR_760;
+    uint8_t cutoffFreq = 0x03;
 
-    bool fifo_enabled           = false;
-    unsigned int fifo_watermark = 24;
+    bool fifoEnabled           = false;
+    unsigned int fifoWatermark = 24;
 
     float sensitivity = SENSITIVITY_250;
 

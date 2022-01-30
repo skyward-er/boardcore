@@ -34,8 +34,6 @@
 
 #include "LoggerStats.h"
 
-using std::string;
-
 namespace Boardcore
 {
 
@@ -83,32 +81,16 @@ public:
     void stop();
 
     /**
-     * @brief Return the number representing the current log file.
-     *
-     * @return log number.
+     * @brief Tests if the Logger can write to the SD card by opening a file.
      */
-    int getLogNumber();
+    static bool testSDCard();
 
-    /**
-     * @brief Returns the log filename for the specified number.
-     *
-     * IE: log_number = 42, returned: "/sd/log42.dat"
-     *
-     * @return
-     */
-    static string getFileName(int log_number);
+    int getCurrentLogNumber();
 
-    string getCurrentFileName();
+    std::string getCurrentFileName();
 
     LoggerStats getLoggerStats();
 
-    /**
-     * @brief Check if the Logger is started.
-     *
-     * Nonblocking call.
-     *
-     * \return true if the logger is started and ready to accept data.
-     */
     bool isStarted() const;
 
     /**
@@ -133,6 +115,8 @@ public:
 
 private:
     Logger();
+
+    static std::string getFileName(int logNumber);
 
     static void packThreadLauncher(void *argv);
 
@@ -162,11 +146,11 @@ private:
      */
     void logStats();
 
-    static constexpr uint maxFilenameNumber = 100;  ///< Limit on new filename
-    static constexpr uint maxRecordSize     = 512;  ///< Limit on logged data
-    static constexpr uint numRecords        = 512;  ///< Size of record queues
-    static constexpr uint numBuffers        = 8;    ///< Number of buffers
-    static constexpr uint bufferSize = 64 * 1024;   ///< Size of each buffer
+    static constexpr unsigned int maxFilenameNumber = 100;  ///< Limit on files
+    static constexpr unsigned int maxRecordSize     = 512;  ///< Limit on data
+    static constexpr unsigned int numRecords = 512;  ///< Size of record queues
+    static constexpr unsigned int numBuffers = 8;    ///< Number of buffers
+    static constexpr unsigned int bufferSize = 64 * 1024;  ///< Size of buffers
 
     /**
      * A record is a single serialized logged class. Records are used to
@@ -179,7 +163,7 @@ private:
     public:
         Record() : size(0) {}
         char data[maxRecordSize] = {};
-        uint size;
+        unsigned int size;
     };
 
     /**
@@ -198,10 +182,10 @@ private:
 
     int fileNumber = -1;
 
-    miosix::Queue<Record *, numRecords> fullQueue;        ///< Full records.
-    miosix::Queue<Record *, numRecords> emptyQueue;       ///< Empty Records.
-    std::queue<Buffer *, std::list<Buffer *>> fullList;   ///< Full buffers.
-    std::queue<Buffer *, std::list<Buffer *>> emptyList;  ///< Empty buffers.
+    miosix::Queue<Record *, numRecords> fullRecordsQueue;
+    miosix::Queue<Record *, numRecords> emptyRecordsQueue;
+    std::queue<Buffer *, std::list<Buffer *>> fullBufferList;
+    std::queue<Buffer *, std::list<Buffer *>> emptyBufferList;
     miosix::FastMutex mutex;  ///< To allow concurrent access to the queues.
     miosix::ConditionVariable cond;  ///< To lock when buffers are all empty.
 

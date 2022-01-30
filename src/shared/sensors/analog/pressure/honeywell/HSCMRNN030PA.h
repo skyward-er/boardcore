@@ -34,9 +34,9 @@ namespace Boardcore
 class HSCMRNN030PA final : public HoneywellPressureSensor<HSCMRNN030PAData>
 {
 public:
-    HSCMRNN030PA(std::function<ADCData()> getSensorVoltage_,
-                 const float V_SUPPLY_ = 5.0)
-        : HoneywellPressureSensor(getSensorVoltage_, V_SUPPLY_, 206842.7188)
+    HSCMRNN030PA(std::function<ADCData()> getSensorVoltage,
+                 const float supplyVoltage = 5.0)
+        : HoneywellPressureSensor(getSensorVoltage, supplyVoltage, 206842.7188)
     {
     }
 };

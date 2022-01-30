@@ -32,7 +32,7 @@ namespace Boardcore
 {
 
 /**
- * @brief Displays childs in a num_rows*num_cols grid
+ * @brief Displays childs in a numRows*numCols grid
  */
 class GridLayout : public View
 {
@@ -42,12 +42,12 @@ public:
     /**
      * @brief Creates a new GridLayout
      *
-     * @param num_rows Number of rows
-     * @param num_cols Number of columns
+     * @param numRows Number of rows
+     * @param numCols Number of columns
      * @param spacing Distance in pixels between each cell
      */
-    GridLayout(uint8_t num_rows, uint8_t num_cols, short int spacing = 0)
-        : View(), num_rows(num_rows), num_cols(num_cols), spacing(spacing)
+    GridLayout(uint8_t numRows, uint8_t numCols, short int spacing = 0)
+        : View(), numRows(numRows), numCols(numCols), spacing(spacing)
     {
     }
 
@@ -55,20 +55,20 @@ public:
 
     void setCell(View* child, unsigned int position)
     {
-        uint8_t col = position % num_cols;
-        uint8_t row = (position - col) / num_cols;
+        uint8_t col = position % numCols;
+        uint8_t row = (position - col) / numCols;
 
         setCell(child, row, col);
     }
 
     void setCell(View* child, uint8_t row, uint8_t col)
     {
-        if (row >= num_rows || col >= num_cols)
+        if (row >= numRows || col >= numCols)
         {
             return;
         }
 
-        map_childs[GridPosition(row, col)] = child;
+        mapChilds[GridPosition(row, col)] = child;
 
         updateChildBounds();
         invalidate();
@@ -78,27 +78,27 @@ public:
     {
         GridPosition pos(row, col);
 
-        if (map_childs.count(pos) > 0)
-            return map_childs[pos];
+        if (mapChilds.count(pos) > 0)
+            return mapChilds[pos];
         else
             return nullptr;
     }
 
     View* getCell(unsigned int position)
     {
-        uint8_t col = position % num_cols;
-        uint8_t row = position - col / num_rows;
+        uint8_t col = position % numCols;
+        uint8_t row = position - col / numRows;
 
         return getCell(row, col);
     }
 
     void clearCell(View* child)
     {
-        for (auto it = map_childs.begin(); it != map_childs.end(); it++)
+        for (auto it = mapChilds.begin(); it != mapChilds.end(); it++)
         {
             if (it->second == child)
             {
-                map_childs.erase(it);
+                mapChilds.erase(it);
                 break;
             }
         }
@@ -109,13 +109,13 @@ public:
     /**
      * @brief Wether to draw the borders of each cell or not
      *
-     * @param draw_border True: draw the border
+     * @param drawBorder True: draw the border
      * @param color Border color
      */
-    void setDrawBorder(bool draw_border, mxgui::Color color = mxgui::white)
+    void setDrawBorder(bool drawBorder, mxgui::Color color = mxgui::white)
     {
-        this->draw_border = draw_border;
-        border_color      = color;
+        this->drawBorder = drawBorder;
+        borderColor      = color;
 
         invalidate();
     }
@@ -131,37 +131,37 @@ public:
     {
         View::draw(context);
 
-        for (uint8_t row = 0; row < num_rows; ++row)
+        for (uint8_t row = 0; row < numRows; ++row)
         {
-            for (uint8_t col = 0; col < num_cols; ++col)
+            for (uint8_t col = 0; col < numCols; ++col)
             {
                 GridPosition pos(row, col);
 
-                bool child_selected = false;
-                if (map_childs.count(pos) > 0)
+                bool childSelected = false;
+                if (mapChilds.count(pos) > 0)
                 {
-                    map_childs[pos]->draw(context);
-                    child_selected = map_childs[pos]->isSelected();
+                    mapChilds[pos]->draw(context);
+                    childSelected = mapChilds[pos]->isSelected();
                 }
 
-                if (draw_border && !child_selected)
+                if (drawBorder && !childSelected)
                 {
-                    context.drawRectangle(map_child_bounds[pos].topLeft(),
-                                          map_child_bounds[pos].bottomRight(),
-                                          border_color);
+                    context.drawRectangle(mapChildBounds[pos].topLeft(),
+                                          mapChildBounds[pos].bottomRight(),
+                                          borderColor);
                 }
             }
         }
     }
 
-    uint8_t getRows() { return num_rows; }
+    uint8_t getRows() { return numRows; }
 
-    uint8_t getCols() { return num_cols; }
+    uint8_t getCols() { return numCols; }
 
     std::vector<View*> getChilds() override
     {
         std::vector<View*> out;
-        for (auto it = map_childs.begin(); it != map_childs.end(); it++)
+        for (auto it = mapChilds.begin(); it != mapChilds.end(); it++)
         {
             out.push_back(it->second);
         }
@@ -172,42 +172,42 @@ private:
     void updateChildBounds()
     {
         Bounds bounds = getBounds();
-        Bounds child_bounds;
+        Bounds childBounds;
 
-        child_bounds.size.width = std::max(
-            0, (bounds.size.width - (num_cols + 1) * spacing) / num_cols);
-        child_bounds.size.height = std::max(
-            0, (bounds.size.height - (num_rows + 1) * spacing) / num_rows);
+        childBounds.size.width = std::max(
+            0, (bounds.size.width - (numCols + 1) * spacing) / numCols);
+        childBounds.size.height = std::max(
+            0, (bounds.size.height - (numRows + 1) * spacing) / numRows);
 
-        for (uint8_t row = 0; row < num_rows; ++row)
+        for (uint8_t row = 0; row < numRows; ++row)
         {
-            for (uint8_t col = 0; col < num_cols; ++col)
+            for (uint8_t col = 0; col < numCols; ++col)
             {
                 GridPosition pos(row, col);
 
-                child_bounds.pos.x = bounds.pos.x + (col + 1) * spacing +
-                                     col * child_bounds.size.width;
-                child_bounds.pos.y = bounds.pos.y + (row + 1) * spacing +
-                                     row * child_bounds.size.height;
+                childBounds.pos.x = bounds.pos.x + (col + 1) * spacing +
+                                    col * childBounds.size.width;
+                childBounds.pos.y = bounds.pos.y + (row + 1) * spacing +
+                                    row * childBounds.size.height;
 
-                map_child_bounds[pos] = child_bounds;
-                if (map_childs.count(pos) > 0)
+                mapChildBounds[pos] = childBounds;
+                if (mapChilds.count(pos) > 0)
                 {
-                    map_childs[pos]->setBounds(child_bounds);
+                    mapChilds[pos]->setBounds(childBounds);
                 }
             }
         }
     }
 
-    uint8_t num_rows;
-    uint8_t num_cols;
+    uint8_t numRows;
+    uint8_t numCols;
     short int spacing;
 
-    bool draw_border          = false;
-    mxgui::Color border_color = mxgui::white;
+    bool drawBorder          = false;
+    mxgui::Color borderColor = mxgui::white;
 
-    std::map<GridPosition, View*> map_childs;
-    std::map<GridPosition, Bounds> map_child_bounds;
+    std::map<GridPosition, View*> mapChilds;
+    std::map<GridPosition, Bounds> mapChildBounds;
 };
 
 }  // namespace Boardcore

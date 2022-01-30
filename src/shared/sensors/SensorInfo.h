@@ -33,30 +33,43 @@ namespace Boardcore
  *
  * This structure contains the sampling period of a sensor,
  * the function to be called after the sampling (callback) and
- * two boolean values indicating if the sensor uses DMA and if
- * the sensor has to be sampled (is enabled).
+ * oneboolean indicating if the sensor has to be sampled (is enabled).
  */
 struct SensorInfo
 {
-    const std::string& id;
-    uint32_t period;  // Period in ms
+    const std::string id;
+    uint32_t period;  ///< Period in ms
     std::function<void()> callback;
-    bool is_dma;
-    bool is_enabled;
-    bool is_initialized;
+    bool isEnabled;
+    bool isInitialized;
 
-    SensorInfo(const std::string& id, uint32_t period,
-               std::function<void()> callback, bool is_dma, bool is_enabled)
-        : id(id), period(period), callback(callback), is_dma(is_dma),
-          is_enabled(is_enabled), is_initialized(false)
-    {
-    }
+    SensorInfo(const std::string id, uint32_t period,
+               std::function<void()> callback, bool isEnabled);
 
-    SensorInfo()
-        : id(""), period(0), callback([]() {}), is_dma(false),
-          is_enabled(false), is_initialized(false)
+    SensorInfo();
+
+    bool operator==(const SensorInfo& info) const
     {
-    }
+        return id == info.id && period == info.period &&
+               isEnabled == info.isEnabled &&
+               isInitialized == info.isInitialized &&
+               callback.target_type() == info.callback.target_type() &&
+               callback.target<void()>() == info.callback.target<void()>();
+    };
 };
+
+// cppcheck-suppress passedByValue
+inline SensorInfo::SensorInfo(const std::string id, uint32_t period,
+                              std::function<void()> callback, bool isEnabled)
+    : id(id), period(period), callback(callback), isEnabled(isEnabled),
+      isInitialized(false)
+{
+}
+
+inline SensorInfo::SensorInfo()
+    : id(""), period(0), callback([]() {}), isEnabled(false),
+      isInitialized(false)
+{
+}
 
 }  // namespace Boardcore

@@ -55,7 +55,7 @@ using CanRX = Gpio<GPIOA_BASE, 11>;
 using CanTX = Gpio<GPIOA_BASE, 12>;
 #endif
 
-SimpleCanManager* can_mgr;
+SimpleCanManager* canManager;
 
 struct CanMsg
 {
@@ -64,7 +64,7 @@ struct CanMsg
 };
 
 CircularBuffer<CanMsg, 4000> msgs;
-FastMutex mutex_msgs;
+FastMutex mutexMsgs;
 
 void handleCanMessage(Canbus::CanRXPacket packet)
 {
@@ -72,11 +72,11 @@ void handleCanMessage(Canbus::CanRXPacket packet)
     {
         CanPacket response = packet.packet;
         response.data[0]   = 0x55;
-        can_mgr->send(response);
+        canManager->send(response);
     }
     else if (packet.packet.data[0] == 0x55)  // This is a response to a request
     {
-        Lock<FastMutex> l(mutex_msgs);
+        Lock<FastMutex> l(mutexMsgs);
         for (size_t i = 0; i < msgs.count(); ++i)
         {
             CanMsg& msg = msgs.get(i);
@@ -112,11 +112,11 @@ void sendNewRequest()
     }
 
     {
-        Lock<FastMutex> l(mutex_msgs);
+        Lock<FastMutex> l(mutexMsgs);
         msgs.put({packet.id, (uint32_t)getTick()});
     }
 
-    can_mgr->send(packet);
+    canManager->send(packet);
 }
 
 class MessageCollector : public ActiveObject
@@ -129,10 +129,10 @@ public:
         {
             uint32_t tick = (uint32_t)getTick();
             {
-                Lock<FastMutex> l(mutex_msgs);
+                Lock<FastMutex> l(mutexMsgs);
                 if (msgs.isFull())
                 {
-                    ++buffer_full;
+                    ++bufferFull;
                 }
                 while (!msgs.isEmpty())
                 {
@@ -141,19 +141,19 @@ public:
                     {
                         msgs.pop();
 
-                        ++total_packets;
+                        ++totalPackets;
                         if (msg.id == 0)
                         {
                             msgstats.add(msg.ts * 1.0f);
                             if (msg.ts > MSG_DEADLINE)
                             {
-                                ++missed_deadline;
+                                ++missedDeadline;
                             }
                         }
                         else
                         {
                             // No response
-                            ++lost_packets;
+                            ++lostPackets;
                         }
                     }
                     else
@@ -170,17 +170,17 @@ public:
                     "Total packets: %u, Missed deadlines: %u, Lost packets: "
                     "%u, Mean ping: %.2f, "
                     "Max ping: %.0f, Min ping: %.0f, Buffer full: %u\n",
-                    total_packets, missed_deadline, lost_packets, res.mean,
-                    res.maxValue, res.minValue, buffer_full);
+                    totalPackets, missedDeadline, lostPackets, res.mean,
+                    res.maxValue, res.minValue, bufferFull);
 
                 Canbus::BusLoadEstimation::BusLoadInfo info
                     __attribute__((unused)) =
-                        can_mgr->getLoadSensor().getLoadInfo();
+                        canManager->getLoadSensor().getLoadInfo();
                 TRACE(
                     "Payload rate: %.2f kbps, Frame rate: %.2f kbps, Load: "
                     "%.2f %%\n",
-                    info.payload_bit_rate / 1000.0f,
-                    info.total_bit_rate / 1000.0f, info.load_percent);
+                    info.payloadBitRate / 1000.0f, info.totalBitRate / 1000.0f,
+                    info.loadPercent);
             }
             ++c;
             Thread::sleepUntil(tick + MSG_DEADLINE);
@@ -188,10 +188,10 @@ public:
     }
 
 private:
-    unsigned int total_packets   = 0;
-    unsigned int lost_packets    = 0;
-    unsigned int missed_deadline = 0;
-    unsigned int buffer_full     = 0;
+    unsigned int totalPackets   = 0;
+    unsigned int lostPackets    = 0;
+    unsigned int missedDeadline = 0;
+    unsigned int bufferFull     = 0;
     Stats msgstats;
 };
 
@@ -218,20 +218,20 @@ int main()
 #endif
     }
 
-    Canbus::Canbus::CanbusConfig cfg{};
-    Canbus::Canbus::AutoBitTiming bt;
-    bt.baud_rate    = BAUD_RATE;
-    bt.sample_point = SAMPLE_POINT;
+    CanbusDriver::CanbusConfig cfg{};
+    CanbusDriver::AutoBitTiming bt;
+    bt.baudRate    = BAUD_RATE;
+    bt.samplePoint = SAMPLE_POINT;
 
-    Canbus::Canbus* c = new Canbus::Canbus(CAN1, cfg, bt);
-    can_mgr           = new SimpleCanManager(*c, BAUD_RATE, handleCanMessage);
+    CanbusDriver* c = new CanbusDriver(CAN1, cfg, bt);
+    canManager      = new SimpleCanManager(*c, BAUD_RATE, handleCanMessage);
 
     // Allow every message
-    Canbus::Mask32FilterBank f2(0, 0, 0, 0, 0, 0, 0);
+    Mask32FilterBank f2(0, 0, 0, 0, 0, 0, 0);
     c->addFilter(f2);
     c->init();
 
-    can_mgr->start();
+    canManager->start();
     mc.start();
 
     for (;;)

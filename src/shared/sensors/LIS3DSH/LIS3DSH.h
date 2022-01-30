@@ -50,23 +50,23 @@ public:
      *  @brief Constructor.
      *
      *  @param bus          the spi bus.
-     *  @param chip_select  the chip_select for the sensor.
-     *  @param _odr         output data rate for the accelerometer.
+     *  @param chipSelect  the chipSelect for the sensor.
+     *  @param odr         output data rate for the accelerometer.
      *                      Default value is 100 Hz.
-     *  @param _bdu         BlockDataUpdate value, continuous or non-continuous
+     *  @param bdu         BlockDataUpdate value, continuous or non-continuous
      *                      update mode. Default value is to update after data
      *                      has been read (BDU=1).
-     *  @param _full_scale  full scale range (from +/-2g up to +/-16g).
+     *  @param fullScale  full scale range (from +/-2g up to +/-16g).
      *                      Default value is +/-2g.
      */
-    LIS3DSH(SPIBusInterface& bus, miosix::GpioPin chip_select,
-            uint8_t _odr        = OutputDataRate::ODR_100_HZ,
-            uint8_t _bdu        = BlockDataUpdate::UPDATE_AFTER_READ_MODE,
-            uint8_t _full_scale = FullScale::FULL_SCALE_2G)
-        : spi_slave(bus, chip_select, {}), odr(_odr), bdu(_bdu),
-          full_scale(_full_scale)
+    LIS3DSH(SPIBusInterface& bus, miosix::GpioPin chipSelect,
+            uint8_t odr       = OutputDataRate::ODR_100_HZ,
+            uint8_t bdu       = BlockDataUpdate::UPDATE_AFTER_READ_MODE,
+            uint8_t fullScale = FullScale::FULL_SCALE_2G)
+        : spiSlave(bus, chipSelect, {}), odr(odr), bdu(bdu),
+          fullScale(fullScale)
     {
-        spi_slave.config.clockDivider =
+        spiSlave.config.clockDivider =
             SPI::ClockDivider::DIV_64;  // used to set the spi baud rate
                                         // (maximum is 10 Mhz)
     }
@@ -75,22 +75,22 @@ public:
      *  @brief Constructor.
      *
      *  @param bus          the spi bus.
-     *  @param chip_select  the chip_select for the sensor.
+     *  @param chipSelect  the chipSelect for the sensor.
      *  @param config       the spi bus configurations.
-     *  @param _odr         output data rate for the accelerometer.
+     *  @param odr         output data rate for the accelerometer.
      *                      Default value is 100 Hz.
-     *  @param _bdu         BlockDataUpdate value, continuous or non-continuous
+     *  @param bdu         BlockDataUpdate value, continuous or non-continuous
      *                      update mode. Default value is to update after data
      *                      has been read (BDU=1).
-     *  @param _full_scale  full scale range (from +/-2g up to +/-16g).
+     *  @param fullScale  full scale range (from +/-2g up to +/-16g).
      *                      Default value is +/-2g.
      */
-    LIS3DSH(SPIBusInterface& bus, miosix::GpioPin chip_select,
-            SPIBusConfig config, uint8_t _odr = OutputDataRate::ODR_100_HZ,
-            uint8_t _bdu        = BlockDataUpdate::UPDATE_AFTER_READ_MODE,
-            uint8_t _full_scale = FullScale::FULL_SCALE_2G)
-        : spi_slave(bus, chip_select, config), odr(_odr), bdu(_bdu),
-          full_scale(_full_scale)
+    LIS3DSH(SPIBusInterface& bus, miosix::GpioPin chipSelect,
+            SPIBusConfig config, uint8_t odr = OutputDataRate::ODR_100_HZ,
+            uint8_t bdu       = BlockDataUpdate::UPDATE_AFTER_READ_MODE,
+            uint8_t fullScale = FullScale::FULL_SCALE_2G)
+        : spiSlave(bus, chipSelect, config), odr(odr), bdu(bdu),
+          fullScale(fullScale)
     {
     }
 
@@ -105,7 +105,7 @@ public:
         if (initialized)
         {
             LOG_WARN(logger, "Already initialized");
-            last_error = SensorErrors::ALREADY_INIT;
+            lastError = SensorErrors::ALREADY_INIT;
             return false;
         }
 
@@ -115,21 +115,21 @@ public:
             return false;  // sensor correctly initialized
         }
 
-        SPITransaction spi(spi_slave);
+        SPITransaction spi(spiSlave);
 
         // set the full scale value in CTRL_REG5
-        uint8_t ctrl_reg5_value = (full_scale << 3);
-        spi.writeRegister(CTRL_REG5, ctrl_reg5_value);
+        uint8_t ctrlReg5Value = (fullScale << 3);
+        spi.writeRegister(CTRL_REG5, ctrlReg5Value);
 
         // select the correct sensitivity
         // for the specified full scale range
-        sensitivity = select_sensitivity();
+        sensitivity = selectSensitivity();
 
         // set the output data rate and the BDU in CTRL_REG4
         // the three least significant bits are enable bits for X, Y and Z axis
-        uint8_t ctrl_reg4_value =
+        uint8_t ctrlReg4Value =
             (odr << 4) | (bdu << 3) | (7 << 0);  // 7 = 111 -> enable the 3 axis
-        spi.writeRegister(CTRL_REG4, ctrl_reg4_value);
+        spi.writeRegister(CTRL_REG4, ctrlReg4Value);
 
         initialized = true;
 
@@ -148,68 +148,68 @@ public:
         {
             LOG_WARN(logger,
                      "Unable to perform selftest, sensor not initialized");
-            last_error = SensorErrors::NOT_INIT;
+            lastError = SensorErrors::NOT_INIT;
             return false;
         }
 
-        const uint8_t num_samples = 5;  // number of samples to be used
+        const uint8_t numSamples = 5;  // number of samples to be used
         // vectors for storing samples, both
         // in self-test and no-self-test modes
-        float X_ST[num_samples]    = {0};
-        float Y_ST[num_samples]    = {0};
-        float Z_ST[num_samples]    = {0};
-        float X_NO_ST[num_samples] = {0};
-        float Y_NO_ST[num_samples] = {0};
-        float Z_NO_ST[num_samples] = {0};
+        float X_ST[numSamples]    = {0};
+        float Y_ST[numSamples]    = {0};
+        float Z_ST[numSamples]    = {0};
+        float X_NO_ST[numSamples] = {0};
+        float Y_NO_ST[numSamples] = {0};
+        float Z_NO_ST[numSamples] = {0};
         // vectors containing avg values for each axis
         float AVG_ST[3]    = {0};  // one element per axis
         float AVG_NO_ST[3] = {0};  // one element per axis
 
         // set output data rate to 50 hz
-        uint8_t ctrl_reg4_value =
-            (OutputDataRate::ODR_100_HZ << 4) |
-            (BlockDataUpdate::UPDATE_AFTER_READ_MODE << 3) | (7 << 0);
+        uint8_t ctrlReg4Value = (OutputDataRate::ODR_100_HZ << 4) |
+                                (BlockDataUpdate::UPDATE_AFTER_READ_MODE << 3) |
+                                (7 << 0);
 
         {
-            SPITransaction spi(spi_slave);
-            spi.writeRegister(CTRL_REG4, ctrl_reg4_value);
+            SPITransaction spi(spiSlave);
+            spi.writeRegister(CTRL_REG4, ctrlReg4Value);
         }
 
         // set full scale to default value +/-2g
         // enable the self-test mode with positive sign
-        uint8_t ctrl_reg5_value = (FullScale::FULL_SCALE_2G << 3) | (1 << 1);
+        uint8_t ctrlReg5Value = (FullScale::FULL_SCALE_2G << 3) | (1 << 1);
 
         {
-            SPITransaction spi(spi_slave);
-            spi.writeRegister(CTRL_REG5, ctrl_reg5_value);
+            SPITransaction spi(spiSlave);
+            spi.writeRegister(CTRL_REG5, ctrlReg5Value);
         }
 
         // read samples in self-test positive sign mode
-        for (uint8_t i = 0; i < num_samples; i++)
+        for (uint8_t i = 0; i < numSamples; i++)
         {
-            AccelerometerData accel_data = readAccelData();
-            X_ST[i]                      = accel_data.accel_x;
-            Y_ST[i]                      = accel_data.accel_y;
-            Z_ST[i]                      = accel_data.accel_z;
+            AccelerometerData accelData = readAccelData();
+            X_ST[i]                     = accelData.accelerationX;
+            Y_ST[i]                     = accelData.accelerationY;
+            Z_ST[i]                     = accelData.accelerationZ;
             miosix::Thread::sleep(10);
         }
         // reset the self-test bits
-        ctrl_reg5_value &= ~(3 << 1);
+        ctrlReg5Value &= ~(3 << 1);
         // normal mode with full scale range +/-2g
-        ctrl_reg5_value |= (FULL_SCALE_2G << 3);
+        ctrlReg5Value |= (FULL_SCALE_2G << 3);
 
         {
-            SPITransaction spi(spi_slave);
-            spi.writeRegister(CTRL_REG5, ctrl_reg5_value);
+            SPITransaction spi(spiSlave);
+            spi.writeRegister(CTRL_REG5, ctrlReg5Value);
         }
 
         // read samples in normal mode
-        for (uint8_t i = 0; i < num_samples; i++)
+        for (uint8_t i = 0; i < numSamples; i++)
         {
-            AccelerometerData accel_data = readAccelData();
-            X_NO_ST[i]                   = accel_data.accel_x;
-            Y_NO_ST[i]                   = accel_data.accel_y;
-            Z_NO_ST[i]                   = accel_data.accel_z;
+            AccelerometerData accelData = readAccelData();
+            X_NO_ST[i]                  = accelData.accelerationX;
+            Y_NO_ST[i]                  = accelData.accelerationY;
+            Z_NO_ST[i]                  = accelData.accelerationZ;
             miosix::Thread::sleep(10);
         }
         // compute averages vectors:
@@ -217,7 +217,7 @@ public:
         // (position 0 for x, 1 for y and 2 for z)
         // AVG_ST    : for self-test samples
         // AVG_NO_ST : for normal mode samples
-        for (uint8_t i = 0; i < num_samples; i++)
+        for (uint8_t i = 0; i < numSamples; i++)
         {
             AVG_ST[0] += X_ST[i];
             AVG_ST[1] += Y_ST[i];
@@ -228,25 +228,25 @@ public:
         }
         for (uint8_t i = 0; i < 3; i++)
         {
-            AVG_ST[i] /= num_samples;
-            AVG_NO_ST[i] /= num_samples;
+            AVG_ST[i] /= numSamples;
+            AVG_NO_ST[i] /= numSamples;
         }
 
         // Reset registers values with the ones
         // specified in the constructor:
         // set the output data rate value in CTRL_REG4
-        ctrl_reg4_value = (odr << 4) | (bdu << 3) | (7 << 0);
+        ctrlReg4Value = (odr << 4) | (bdu << 3) | (7 << 0);
 
         {
-            SPITransaction spi(spi_slave);
-            spi.writeRegister(CTRL_REG4, ctrl_reg4_value);
+            SPITransaction spi(spiSlave);
+            spi.writeRegister(CTRL_REG4, ctrlReg4Value);
         }
         // set the full scale value in CTRL_REG5
-        ctrl_reg5_value = (full_scale << 3);  // normal mode
+        ctrlReg5Value = (fullScale << 3);  // normal mode
 
         {
-            SPITransaction spi(spi_slave);
-            spi.writeRegister(CTRL_REG5, ctrl_reg5_value);
+            SPITransaction spi(spiSlave);
+            spi.writeRegister(CTRL_REG5, ctrlReg5Value);
         }
 
         float delta[3] = {0};
@@ -269,7 +269,7 @@ public:
              SELF_TEST_DIFF_Z + SELF_TEST_DIFF_Z * SELF_TEST_TOLERANCE))
         {
             LOG_ERR(logger, "Selftest failed");
-            last_error = SensorErrors::SELF_TEST_FAIL;
+            lastError = SensorErrors::SELF_TEST_FAIL;
             return false;
         }
 
@@ -328,20 +328,20 @@ private:
         if (!initialized)
         {
             LOG_WARN(logger, "Unable to sample, sensor not initialized");
-            last_error = SensorErrors::NOT_INIT;
-            return last_sample;
+            lastError = SensorErrors::NOT_INIT;
+            return lastSample;
         }
 
-        AccelerometerData accel_data = readAccelData();
-        TemperatureData temp_data    = readTemperature();
+        AccelerometerData accelData = readAccelData();
+        TemperatureData tempData    = readTemperature();
 
-        if (last_error != SensorErrors::NO_ERRORS)
+        if (lastError != SensorErrors::NO_ERRORS)
         {
-            return last_sample;
+            return lastSample;
         }
         else
         {
-            return LIS3DSHData(accel_data, temp_data);
+            return LIS3DSHData(accelData, tempData);
         }
     }
 
@@ -352,9 +352,9 @@ private:
      */
     AccelerometerData readAccelData()
     {
-        AccelerometerData accel_data;
+        AccelerometerData accelData;
 
-        SPITransaction spi(spi_slave);
+        SPITransaction spi(spiSlave);
 
         // read the sensor's status register
         uint8_t status = spi.readRegister(STATUS);
@@ -364,35 +364,36 @@ private:
             if (status & 0x80)
             {  // bit 7 of status set to 1 (some data overwritten)
 
-                accel_data.accel_timestamp = TimestampTimer::getTimestamp();
+                accelData.accelerationTimestamp =
+                    TimestampTimer::getInstance().getTimestamp();
 
                 // read acceleration on X
                 int8_t accel_L = spi.readRegister(OUT_X_L);
                 int8_t accel_H = spi.readRegister(OUT_X_H);
-                accel_data.accel_x =
+                accelData.accelerationX =
                     static_cast<float>(combine(accel_H, accel_L)) * sensitivity;
 
                 // read acceleration on Y
                 accel_L = spi.readRegister(OUT_Y_L);
                 accel_H = spi.readRegister(OUT_Y_H);
-                accel_data.accel_y =
+                accelData.accelerationY =
                     static_cast<float>(combine(accel_H, accel_L)) * sensitivity;
 
                 // read acceleration on Z
                 accel_L = spi.readRegister(OUT_Z_L);
                 accel_H = spi.readRegister(OUT_Z_H);
-                accel_data.accel_z =
+                accelData.accelerationZ =
                     static_cast<float>(combine(accel_H, accel_L)) * sensitivity;
 
-                last_error = SensorErrors::NO_ERRORS;
+                lastError = SensorErrors::NO_ERRORS;
             }
         }
         else
         {
-            last_error = SensorErrors::NO_NEW_DATA;
+            lastError = SensorErrors::NO_NEW_DATA;
         }
 
-        return accel_data;
+        return accelData;
     }
 
     /**
@@ -402,13 +403,13 @@ private:
      */
     TemperatureData readTemperature()
     {
-        SPITransaction spi(spi_slave);
+        SPITransaction spi(spiSlave);
 
         // the temperature is given as a 8-bits integer (in 2-complement)
         int8_t t = spi.readRegister(OUT_T);
 
         return TemperatureData{
-            TimestampTimer::getTimestamp(),
+            TimestampTimer::getInstance().getTimestamp(),
             t + TEMPERATURE_REF};  // add the 'zero' of the temperature sensor
     }
 
@@ -421,11 +422,11 @@ private:
      */
     bool checkWhoAmI()
     {
-        SPITransaction spi(spi_slave);
+        SPITransaction spi(spiSlave);
 
         // check the WHO_AM_I_REG register
-        uint8_t who_am_i_value = spi.readRegister(WHO_AM_I_REG);
-        if (who_am_i_value == WHO_AM_I_DEFAULT_VALUE)
+        uint8_t whoAmIValue = spi.readRegister(WHO_AM_I_REG);
+        if (whoAmIValue == WHO_AM_I_DEFAULT_VALUE)
         {
             LOG_DEBUG(logger, "Correct WHO_AM_I value");
             return true;
@@ -433,8 +434,8 @@ private:
         else
         {
             LOG_ERR(logger, "Wrong WHO_AM_I value, got {} instead of {}",
-                    who_am_i_value, WHO_AM_I_DEFAULT_VALUE);
-            last_error = SensorErrors::INVALID_WHOAMI;
+                    whoAmIValue, WHO_AM_I_DEFAULT_VALUE);
+            lastError = SensorErrors::INVALID_WHOAMI;
         }
 
         return false;
@@ -456,30 +457,30 @@ private:
      * @return the sensitivity value corresponding to the requested full scale
      * range
      */
-    float select_sensitivity()
+    float selectSensitivity()
     {
         float s;
-        switch (full_scale)
+        switch (fullScale)
         {
             case FULL_SCALE_2G:
-                s = sensitivity_values[FullScale::FULL_SCALE_2G];
+                s = sensitivityValues[FullScale::FULL_SCALE_2G];
                 break;
             case FULL_SCALE_4G:
-                s = sensitivity_values[FullScale::FULL_SCALE_4G];
+                s = sensitivityValues[FullScale::FULL_SCALE_4G];
                 break;
             case FULL_SCALE_6G:
-                s = sensitivity_values[FullScale::FULL_SCALE_6G];
+                s = sensitivityValues[FullScale::FULL_SCALE_6G];
                 break;
             case FULL_SCALE_8G:
-                s = sensitivity_values[FullScale::FULL_SCALE_8G];
+                s = sensitivityValues[FullScale::FULL_SCALE_8G];
                 break;
             case FULL_SCALE_16G:
-                s = sensitivity_values[FullScale::FULL_SCALE_16G];
+                s = sensitivityValues[FullScale::FULL_SCALE_16G];
                 break;
             default:
                 LOG_ERR(logger, "Invalid full scale range given, using +/-2g");
-                this->full_scale = FullScale::FULL_SCALE_2G;
-                s                = sensitivity_values[FullScale::FULL_SCALE_2G];
+                this->fullScale = FullScale::FULL_SCALE_2G;
+                s               = sensitivityValues[FullScale::FULL_SCALE_2G];
                 break;
         }
         return s;
@@ -522,23 +523,23 @@ private:
         OUT_T = 0x0C,
     };
 
-    SPISlave spi_slave;
+    SPISlave spiSlave;
 
     bool initialized = false;  // whether the sensor has been initialized or not
 
-    uint8_t odr;         // output data rate, default 100 Hz
-    uint8_t bdu;         // continuous or block after update
-    uint8_t full_scale;  // full scale value, default +/- 2g
+    uint8_t odr;        // output data rate, default 100 Hz
+    uint8_t bdu;        // continuous or block after update
+    uint8_t fullScale;  // full scale value, default +/- 2g
 
     /**
      * @brief Sensitivity values corresponding to full scale range allowed
      * values.
      */
-    const float sensitivity_values[5] = {0.06, 0.12, 0.18, 0.24, 0.73};
+    const float sensitivityValues[5] = {0.06, 0.12, 0.18, 0.24, 0.73};
 
     float sensitivity =
-        sensitivity_values[FullScale::FULL_SCALE_2G];  // default sensitivity
-                                                       // value
+        sensitivityValues[FullScale::FULL_SCALE_2G];  // default sensitivity
+                                                      // value
 
     const uint8_t WHO_AM_I_DEFAULT_VALUE = 63;  // 00111111
 

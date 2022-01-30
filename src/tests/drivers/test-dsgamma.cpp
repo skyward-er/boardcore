@@ -71,14 +71,14 @@ int main()
 
     //  uint8_t inputBuf[DATA_LEN];
 
-    int index         = 0;
-    int lost_bytes    = 0;
-    uint8_t pkt_count = 0;
+    int index        = 0;
+    int lostBytes    = 0;
+    uint8_t pktCount = 0;
 
     int state = ST_STARTING;
     bool end  = false;
 
-    uint32_t start_t, end_t;
+    uint32_t startT, endT;
 
     while (1)
     {
@@ -95,12 +95,12 @@ int main()
                     if (c == 255)
                     {
                         TRACE("Starting!\n", 0);
-                        start_t = miosix::getTick();
+                        startT = miosix::getTick();
                         // printf("%c", c);
                         //  inputBuf[index] = c;
                         ++index;
                         state = ST_WAIT_END_FRAME;
-                        end_t = miosix::getTick();
+                        endT  = miosix::getTick();
                     }
                     break;
                 }
@@ -129,39 +129,39 @@ int main()
 
                     // inputBuf[index++] = c;
                     ++index;
-                    if (c != 255 && c != pkt_count)
+                    if (c != 255 && c != pktCount)
                     {
-                        TRACE("Error: Expected: %d: %d\n", pkt_count, (int)c);
-                        lost_bytes++;
+                        TRACE("Error: Expected: %d: %d\n", pktCount, (int)c);
+                        lostBytes++;
                     }
 
-                    if (c == 255 && pkt_count < 251)
+                    if (c == 255 && pktCount < 251)
                     {
-                        printf("Packet end %d. lost: %d\n", pkt_count,
-                               lost_bytes);
-                        ++pkt_count;
-                        // end_t = miosix::getTick();
+                        printf("Packet end %d. lost: %d\n", pktCount,
+                               lostBytes);
+                        ++pktCount;
+                        // endT = miosix::getTick();
                         state = ST_WAIT_START_FRAME;
                     }
 
-                    if (c == 255 && pkt_count >= 252)
+                    if (c == 255 && pktCount >= 252)
                     {
                         TRACE("Ending\n", 0);
 
                         state = ST_SEND_DATA;
                     }
                     /* if (c != 255)
-                         pkt_count = max(pkt_count, c);*/
+                         pktCount = max(pktCount, c);*/
                     break;
                 }
                 case ST_SEND_DATA:
                 {
-                    end_t = miosix::getTick();
-                    end   = true;
+                    endT = miosix::getTick();
+                    end  = true;
                     break;
                     /*  uint8_t buf[] = {0x23, 0x23, 0x23, 0x23, 0x23};
                       gamma.send(buf, 1);
-                      pkt_count++;
+                      pktCount++;
                       TRACE("Sent ack.\n");
                       end = true;
                       break;*/
@@ -169,20 +169,20 @@ int main()
             }
         }
 
-        printf("Bytes received: %d\nDropped: %d,Time:%d ms\n", index,
-               lost_bytes, (int)(end_t - start_t));
+        printf("Bytes received: %d\nDropped: %d,Time:%d ms\n", index, lostBytes,
+               (int)(endT - startT));
         printf("Speed: %.3f KB/s\n",
-               index / ((end_t - start_t) / 1024.0f) / 1024.0f);
+               index / ((endT - startT) / 1024.0f) / 1024.0f);
         /*  for (int i = 0; i < index; i++)
           {
               printf("%c", inputBuf[i]);
           }
           printf("\n");*/
 
-        lost_bytes = 0;
-        index      = 0;
-        state      = 0;
-        end        = false;
+        lostBytes = 0;
+        index     = 0;
+        state     = 0;
+        end       = false;
     }
     return 0;
 }

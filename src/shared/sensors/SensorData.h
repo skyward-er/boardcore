@@ -49,39 +49,34 @@ enum SensorErrors : uint8_t
     END_OF_BASE_ERRORS = 11  // used to extend this enum
 };
 
-/**
- * @brief Structure to handle sensor data timestamp.
- */
 struct TimestampData
 {
     uint64_t timestamp;
 };
 
-/**
- * @brief Structure to handle force data.
- */
-struct LoadCellData
+struct DigitalLoadCellData
 {
-    uint64_t loadcell_timestamp;
+    uint64_t weightTimestamp;
     float weight;
 };
 
-/**
- * @brief Structure to handle temperature data.
- */
 struct TemperatureData
 {
-    uint64_t temp_timestamp;
-    float temp;
+    uint64_t temperatureTimestamp;
+    float temperature;
+
+    static std::string header() { return "timestamp,temperature\n"; }
+
+    void print(std::ostream& os) const
+    {
+        os << temperatureTimestamp << "," << temperature << "\n";
+    }
 };
 
-/**
- * @brief Structure to handle pressure data.
- */
 struct PressureData
 {
-    uint64_t press_timestamp;
-    float press;
+    uint64_t pressureTimestamp;
+    float pressure;
 };
 
 /**
@@ -89,8 +84,8 @@ struct PressureData
  */
 struct HumidityData
 {
-    uint64_t humid_timestamp;
-    float humid;
+    uint64_t humidityTimestamp;
+    float humidity;
 };
 
 /**
@@ -98,10 +93,10 @@ struct HumidityData
  */
 struct AccelerometerData
 {
-    uint64_t accel_timestamp;
-    float accel_x;
-    float accel_y;
-    float accel_z;
+    uint64_t accelerationTimestamp;
+    float accelerationX;
+    float accelerationY;
+    float accelerationZ;
 };
 
 /**
@@ -109,10 +104,10 @@ struct AccelerometerData
  */
 struct GyroscopeData
 {
-    uint64_t gyro_timestamp;
-    float gyro_x;
-    float gyro_y;
-    float gyro_z;
+    uint64_t angularVelocityTimestamp;
+    float angularVelocityX;
+    float angularVelocityY;
+    float angularVelocityZ;
 };
 
 /**
@@ -120,10 +115,10 @@ struct GyroscopeData
  */
 struct MagnetometerData
 {
-    uint64_t mag_timestamp;
-    float mag_x;
-    float mag_y;
-    float mag_z;
+    uint64_t magneticFieldTimestamp;
+    float magneticFieldX;
+    float magneticFieldY;
+    float magneticFieldZ;
 };
 
 /**
@@ -131,16 +126,16 @@ struct MagnetometerData
  */
 struct GPSData
 {
-    uint64_t gps_timestamp;
-    float latitude;         /**< [deg] */
-    float longitude;        /**< [deg] */
-    float height;           /**< [m]   */
-    float velocity_north;   /**< [m/s] */
-    float velocity_east;    /**< [m/s] */
-    float velocity_down;    /**< [m/s] */
-    float speed;            /**< [m/s] */
-    float track;            /**< [deg] */
-    uint8_t num_satellites; /**< [1]   */
+    uint64_t gpsTimestamp;
+    float latitude;      /**< [deg] */
+    float longitude;     /**< [deg] */
+    float height;        /**< [m]   */
+    float velocityNorth; /**< [m/s] */
+    float velocityEast;  /**< [m/s] */
+    float velocityDown;  /**< [m/s] */
+    float speed;         /**< [m/s] */
+    float track;         /**< [deg] */
+    uint8_t satellites;  /**< [1]   */
     bool fix;
 };
 
@@ -149,8 +144,8 @@ struct GPSData
  */
 struct ADCData
 {
-    uint64_t adc_timestamp;
-    uint8_t channel_id;
+    uint64_t voltageTimestamp;
+    uint8_t channelId;
     float voltage;
 };
 

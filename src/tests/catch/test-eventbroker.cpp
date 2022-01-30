@@ -75,26 +75,26 @@ TEST_CASE("EventBroker - Posts to different topics")
 
     SECTION("Post event on TOPIC_1, only sub1 should receive it")
     {
-        ev.sig = EV_A;
+        ev.code = EV_A;
         broker.post(ev, TOPIC_1);
         REQUIRE(sub1.getTotalCount() == 1);
-        REQUIRE(sub1.getLastEvent() == ev.sig);
+        REQUIRE(sub1.getLastEvent() == ev.code);
         REQUIRE(sub2.getTotalCount() == 0);
     }
 
     SECTION("Post event on TOPIC_2, both sub1 and sub2 should receive it")
     {
-        ev.sig = EV_B;
+        ev.code = EV_B;
         broker.post(ev, TOPIC_2);
         REQUIRE(sub1.getTotalCount() == 1);
         REQUIRE(sub2.getTotalCount() == 1);
-        REQUIRE(sub1.getLastEvent() == ev.sig);
-        REQUIRE(sub2.getLastEvent() == ev.sig);
+        REQUIRE(sub1.getLastEvent() == ev.code);
+        REQUIRE(sub2.getLastEvent() == ev.code);
     }
 
     SECTION("Post event on TOPIC_3, no one should receive it")
     {
-        ev.sig = EV_C;
+        ev.code = EV_C;
         broker.post(ev, TOPIC_3);
 
         REQUIRE(sub1.getTotalCount() == 0);

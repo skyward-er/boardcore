@@ -24,8 +24,8 @@
 
 #include <drivers/Xbee/APIFrameParser.h>
 #include <drivers/Xbee/APIFrames.h>
-#include <drivers/spi/test/MockSPIBus.h>
 #include <utils/testutils/MockGpioPin.h>
+#include <utils/testutils/MockSPIBus.h>
 
 #include <deque>
 #include <functional>
@@ -37,12 +37,12 @@ namespace Boardcore
 class MockXbeeSPIBus : public MockSPIBus
 {
 public:
-    MockXbeeSPIBus(SPIBusConfig expected_config, MockGpioPin& attn)
-        : MockSPIBus(expected_config), attn(attn)
+    MockXbeeSPIBus(SPIBusConfig expectedConfig, MockGpioPin& attn)
+        : MockSPIBus(expectedConfig), attn(attn)
     {
     }
 
-    void registerCallback(function<void(MockGpioPin&)> callback)
+    void registerCallback(std::function<void(MockGpioPin&)> callback)
     {
         this->callback = callback;
     }
@@ -57,10 +57,10 @@ public:
         push(bytes.get(), len);
     }
 
-    deque<Xbee::APIFrame> getParsedFrames()
+    std::deque<Xbee::APIFrame> getParsedFrames()
     {
         Lock<FastMutex> l(mutex);
-        return parsed_frames;
+        return parsedFrames;
     }
 
     /**
@@ -68,10 +68,10 @@ public:
      * request
      *
      */
-    void setRespondWithTxStatus(bool respond, uint8_t delivery_status = 0)
+    void setRespondWithTxStatus(bool respond, uint8_t deliveryStatus = 0)
     {
-        tx_status_delivery_status = delivery_status;
-        respond_with_tx_status    = respond;
+        txStatusDeliveryStatus = deliveryStatus;
+        respondWithTxStatus    = respond;
     }
 
 protected:
@@ -86,7 +86,7 @@ protected:
     {
         uint8_t r = MockSPIBus::_read();
 
-        if (in_buf_pos_cntr == in_buf.size())
+        if (inBufPosCntr == inBuf.size())
         {
             resetATTN();
         }
@@ -99,26 +99,26 @@ protected:
         MockSPIBus::_write(byte);
 
         Xbee::APIFrameParser::ParseResult res =
-            parser.parse(byte, &parsing_frame);
+            parser.parse(byte, &parsingFrame);
 
         if (res == Xbee::APIFrameParser::ParseResult::SUCCESS)
         {
-            parsed_frames.push_back(parsing_frame);
+            parsedFrames.push_back(parsingFrame);
 
-            if (parsing_frame.frame_type == Xbee::FTYPE_TX_REQUEST &&
-                respond_with_tx_status)
+            if (parsingFrame.frameType == Xbee::FTYPE_TX_REQUEST &&
+                respondWithTxStatus)
             {
-                Xbee::TXRequestFrame* tx_req =
-                    parsing_frame.toFrameType<Xbee::TXRequestFrame>();
-                Xbee::TXStatusFrame tx_stat;
+                Xbee::TXRequestFrame* txReq =
+                    parsingFrame.toFrameType<Xbee::TXRequestFrame>();
+                Xbee::TXStatusFrame txStat;
 
-                tx_stat.setFrameID(tx_req->getFrameID());
-                tx_stat.setDeliveryStatus(tx_status_delivery_status);
-                tx_stat.setDiscoveryStatus(0);
-                tx_stat.setTransmitRetryCount(0);
-                tx_stat.calcChecksum();
+                txStat.setFrameID(txReq->getFrameID());
+                txStat.setDeliveryStatus(txStatusDeliveryStatus);
+                txStat.setDiscoveryStatus(0);
+                txStat.setTransmitRetryCount(0);
+                txStat.calcChecksum();
 
-                _pushApiFrame(tx_stat);
+                _pushApiFrame(txStat);
             }
         }
         else if (res == Xbee::APIFrameParser::ParseResult::FAIL)
@@ -157,16 +157,16 @@ private:
         }
     }
 
-    deque<Xbee::APIFrame> parsed_frames;
+    std::deque<Xbee::APIFrame> parsedFrames;
 
     Xbee::APIFrameParser parser;
-    Xbee::APIFrame parsing_frame;
+    Xbee::APIFrame parsingFrame;
 
-    function<void(MockGpioPin&)> callback;
+    std::function<void(MockGpioPin&)> callback;
     MockGpioPin attn;
 
-    bool respond_with_tx_status       = true;
-    uint8_t tx_status_delivery_status = 0;
+    bool respondWithTxStatus       = true;
+    uint8_t txStatusDeliveryStatus = 0;
 };
 
 }  // namespace Boardcore

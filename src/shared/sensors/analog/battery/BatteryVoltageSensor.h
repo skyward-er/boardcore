@@ -32,7 +32,7 @@ namespace Boardcore
 {
 
 /**
- * @brief Common class for battery voltage sensors
+ * @brief Common class for battery voltage sensors.
  *
  * It needs the conversion ratio, in order to convert the raw voltage to
  * battery voltage.
@@ -40,13 +40,13 @@ namespace Boardcore
 class BatteryVoltageSensor : public Sensor<BatteryVoltageSensorData>
 {
 public:
-    static constexpr int MOVING_AVAERAGE_N = 20;
+    static constexpr int MOVING_AVERAGE_N = 20;
 
-    BatteryVoltageSensor(std::function<ADCData()> getADCVoltage_,
-                         float conversionCoeff_)
-        : getADCVoltage(getADCVoltage_), conversionCoeff(conversionCoeff_)
+    BatteryVoltageSensor(std::function<ADCData()> getVoltage,
+                         float conversionCoeff)
+        : getVoltage(getVoltage), conversionCoeff(conversionCoeff)
     {
-        last_sample.bat_voltage = 0;
+        lastSample.batVoltage = 0;
     }
 
     bool init() override { return true; };
@@ -56,25 +56,22 @@ public:
     ///< Converts the adc voltage value to battery voltage
     BatteryVoltageSensorData sampleImpl() override
     {
-        ADCData adc_data = getADCVoltage();
+        ADCData adcData = getVoltage();
 
-        if (last_sample.bat_voltage == 0)
-        {
-            last_sample.bat_voltage = adcToBatteryVoltage(adc_data.voltage);
-        }
+        if (lastSample.batVoltage == 0)
+            lastSample.batVoltage = adcToBatteryVoltage(adcData.voltage);
 
-        BatteryVoltageSensorData bat_data;
-        bat_data.adc_timestamp = adc_data.adc_timestamp;
-        bat_data.channel_id    = adc_data.channel_id;
-        bat_data.voltage       = adc_data.voltage;
+        BatteryVoltageSensorData batData;
+        batData.voltageTimestamp = adcData.voltageTimestamp;
+        batData.channelId        = adcData.channelId;
+        batData.voltage          = adcData.voltage;
 
         // Moving average
-        bat_data.bat_voltage =
-            last_sample.bat_voltage * MOVING_AVAERAGE_COMP_COEFF;
-        bat_data.bat_voltage +=
-            adcToBatteryVoltage(adc_data.voltage) * MOVING_AVAERAGE_COEFF;
+        batData.batVoltage = lastSample.batVoltage * MOVING_AVERAGE_COMP_COEFF;
+        batData.batVoltage +=
+            adcToBatteryVoltage(adcData.voltage) * MOVING_AVERAGE_COEFF;
 
-        return bat_data;
+        return batData;
     }
 
 private:
@@ -85,13 +82,12 @@ private:
     }
 
     ///< Function that returns the adc voltage
-    std::function<ADCData()> getADCVoltage;
+    std::function<ADCData()> getVoltage;
 
     float conversionCoeff;
 
-    static constexpr float MOVING_AVAERAGE_COEFF = 1 / (float)MOVING_AVAERAGE_N;
-    static constexpr float MOVING_AVAERAGE_COMP_COEFF =
-        1 - MOVING_AVAERAGE_COEFF;
+    static constexpr float MOVING_AVERAGE_COEFF = 1 / (float)MOVING_AVERAGE_N;
+    static constexpr float MOVING_AVERAGE_COMP_COEFF = 1 - MOVING_AVERAGE_COEFF;
 };
 
 }  // namespace Boardcore

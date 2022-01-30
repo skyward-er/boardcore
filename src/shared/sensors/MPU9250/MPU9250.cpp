@@ -52,7 +52,7 @@ bool MPU9250::init()
     {
         LOG_ERR(logger, "Already initialized\n");
 
-        last_error = SensorErrors::ALREADY_INIT;
+        lastError = SensorErrors::ALREADY_INIT;
 
         return false;
     }
@@ -69,7 +69,7 @@ bool MPU9250::init()
     {
         LOG_ERR(logger, "Invalid WHO AM I\n");
 
-        last_error = SensorErrors::INVALID_WHOAMI;
+        lastError = SensorErrors::INVALID_WHOAMI;
 
         return false;
     }
@@ -115,23 +115,29 @@ MPU9250Data MPU9250::sampleImpl()
     spiSlave.config.clockDivider = clockDivider;
 
     // Save timestamps
-    uint64_t timestamp   = TimestampTimer::getTimestamp();
-    data.accel_timestamp = timestamp;
-    data.temp_timestamp  = timestamp;
-    data.gyro_timestamp  = timestamp;
-    data.mag_timestamp   = timestamp;
+    uint64_t timestamp         = TimestampTimer::getInstance().getTimestamp();
+    data.accelerationTimestamp = timestamp;
+    data.temperatureTimestamp  = timestamp;
+    data.angularVelocityTimestamp = timestamp;
+    data.magneticFieldTimestamp   = timestamp;
 
     // Save data
-    data.accel_x = normalizeAcceleration(swapBytes16(rawData.bits.accelX));
-    data.accel_y = normalizeAcceleration(swapBytes16(rawData.bits.accelY));
-    data.accel_z = normalizeAcceleration(swapBytes16(rawData.bits.accelZ));
-    data.temp    = normalizeTemperature(swapBytes16(rawData.bits.temp));
-    data.gyro_x  = normalizeGyroscope(swapBytes16(rawData.bits.gyroX));
-    data.gyro_y  = normalizeGyroscope(swapBytes16(rawData.bits.gyroY));
-    data.gyro_z  = normalizeGyroscope(swapBytes16(rawData.bits.gyroZ));
-    data.mag_x   = normalizeMagnetometer(rawData.bits.magX, magSensAdjCoeff[0]);
-    data.mag_y   = normalizeMagnetometer(rawData.bits.magY, magSensAdjCoeff[1]);
-    data.mag_z   = normalizeMagnetometer(rawData.bits.magZ, magSensAdjCoeff[2]);
+    data.accelerationX =
+        normalizeAcceleration(swapBytes16(rawData.bits.accelX));
+    data.accelerationY =
+        normalizeAcceleration(swapBytes16(rawData.bits.accelY));
+    data.accelerationZ =
+        normalizeAcceleration(swapBytes16(rawData.bits.accelZ));
+    data.temperature = normalizeTemperature(swapBytes16(rawData.bits.temp));
+    data.angularVelocityX = normalizeGyroscope(swapBytes16(rawData.bits.gyroX));
+    data.angularVelocityY = normalizeGyroscope(swapBytes16(rawData.bits.gyroY));
+    data.angularVelocityZ = normalizeGyroscope(swapBytes16(rawData.bits.gyroZ));
+    data.magneticFieldX =
+        normalizeMagnetometer(rawData.bits.magX, magSensAdjCoeff[0]);
+    data.magneticFieldY =
+        normalizeMagnetometer(rawData.bits.magY, magSensAdjCoeff[1]);
+    data.magneticFieldZ =
+        normalizeMagnetometer(rawData.bits.magZ, magSensAdjCoeff[2]);
 
     return data;
 }
@@ -370,7 +376,7 @@ bool MPU9250::initAk()
     {
         LOG_ERR(logger, "Invalid AK8963 WHO AM I\n");
 
-        last_error = SensorErrors::INVALID_WHOAMI;
+        lastError = SensorErrors::INVALID_WHOAMI;
 
         return false;
     }
@@ -404,16 +410,16 @@ bool MPU9250::checkWhoAmI()
 {
     SPITransaction transaction(spiSlave);
 
-    uint8_t who_am_i_value = transaction.readRegister(REG_WHO_AM_I);
+    uint8_t whoAmIValue = transaction.readRegister(REG_WHO_AM_I);
 
-    return who_am_i_value == REG_WHO_AM_I_VAL;
+    return whoAmIValue == REG_WHO_AM_I_VAL;
 }
 
 bool MPU9250::checkAkWhoAmI()
 {
-    uint8_t who_am_i_value = readFromAk(AK8963_REG_WHO_AM_I);
+    uint8_t whoAmIValue = readFromAk(AK8963_REG_WHO_AM_I);
 
-    return who_am_i_value == AK8963_REG_WHO_AM_I_VAL;
+    return whoAmIValue == AK8963_REG_WHO_AM_I_VAL;
 }
 
 void MPU9250::writeSPIWithDelay(SPITransaction& transaction, uint8_t reg,

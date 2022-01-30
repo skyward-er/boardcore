@@ -50,15 +50,15 @@ enum ThreadId : uint8_t
 
 struct StackData
 {
-    long long timestamp    = 0;
-    uint8_t thread_id      = 0;
-    unsigned int min_stack = 0;
+    long long timestamp       = 0;
+    uint8_t threadId          = 0;
+    unsigned int minimumStack = 0;
 
-    static std::string header() { return "timestamp,thread_id,min_stack\n"; }
+    static std::string header() { return "timestamp,threadId,minimumStack\n"; }
 
     void print(std::ostream& os)
     {
-        os << timestamp << "," << (int)thread_id << "," << min_stack << "\n";
+        os << timestamp << "," << (int)threadId << "," << minimumStack << "\n";
     }
 };
 

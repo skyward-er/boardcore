@@ -1,5 +1,5 @@
 /* Copyright (c) 2020 Skyward Experimental Rocketry
- * Author: Luca Conterio
+ * Authors: Luca Conterio, Alberto Nidasio
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -22,90 +22,112 @@
 
 #pragma once
 
-#include <drivers/pwm/pwm.h>
+#include <drivers/timer/PWM.h>
 #include <drivers/timer/TimestampTimer.h>
 #include <miosix.h>
-
-#include "HBridgeData.h"
-
-using miosix::GpioPin;
-using miosix::Thread;
 
 namespace Boardcore
 {
 
 /**
- * @brief Interface class to operate an h-bridge.
+ * @brief Driver to operate an H-bridge.
  *
- * Provides the ability to enable an h-bridge using a "nominal" duty cycle or
- * using a "test" duty cycle.
+ * From Wikipedia (https://en.wikipedia.org/wiki/H-bridge):
+ * An H-bridge is an electronic circuit that switches the polarity of a voltage
+ * applied to a load. These circuits are often used in robotics and other
+ * applications to allow DC motors to run forwards or backwards. ... In
+ * particular, a bipolar stepper motor is almost always driven by a motor
+ * controller containing two H bridges.
+ *
+ * Also, most ICs allow to control the voltage applied to the device by the
+ * means of a PWM signal which proportionally controls the voltage.
+ *
+ * This driver allow to manage the enable pin of the H-bridge and the pwm
+ * signal, but it does not still support the control pin needed to reverse the
+ * polarity.
+ *
+ * When disabling the device, the driver waits a predefined amount of time
+ * between changing the inhibit pin and the pwm signal. This delay is achieved
+ * by making the current thread sleep.
+ *
+ * Note that the driver assumes that the inhibit pin disables the driver if
+ * driven low.
  */
 class HBridge
 {
 public:
     /**
-     * @brief Create a new HBridge
+     * @brief Prepares the enable pin and the timer.
      *
-     * @param   inhibit            Inhibit pin of the h-bridge
-     * @param   timer              Timer peripheral used for the PWM signal
-     * @param   channel            PWM channel
-     * @param   frequency          Frequency of the PWM driving the h-bridge
-     * @param   duty_cycle         Duty cycle of the PWM (from 0.0 to 1.0)
-     * @param   disable_delay_ms   Period of time where the IN must be kept
-     *                             low before bringing ENA/INH low
+     * Note that the timer is enabled automatically when the PWM object is
+     * created.
+     *
+     * @param inhibitPin Inhibit pin of the H-bridge.
+     * @param timer Timer peripheral used for the PWM signal.
+     * @param channel Timer's channel used for the PWM signal.
+     * @param frequency Frequency of the PWM driving the H-bridge.
+     * @param dutyCycle Duty cycle of the PWM in the range [0-1].
+     * @param disableDelayMs Delay between changing the inhibit pin and the pwm
+     * signal when disabling the device.
      */
-    HBridge(GpioPin inhibit, PWM::Timer timer, PWMChannel channel,
-            uint32_t frequency, float duty_cycle,
-            uint16_t disable_delay_ms = 50);
+    HBridge(miosix::GpioPin inhibitPin, TIM_TypeDef* timer,
+            TimerUtils::Channel channel, unsigned int frequency,
+            float dutyCycle = 0, unsigned int disableDelayMs = 50);
 
+    /**
+     * @brief Disables the H-bridge.
+     *
+     * Note that the timer is disabled automatically when the PWM object is
+     * destructed, the PWM signal stops.
+     */
     ~HBridge();
 
     /**
-     * @brief Deactivates the h-bridge
-     */
-    void disable();
-
-    /**
-     * @brief Enables the h-bridge
-     *
-     * call disable() to stop
+     * @brief Enables the H-bridge and starts the pwm signal.
      */
     void enable();
 
     /**
-     * @brief Enables the h-bridge using the "test" duty cycle.
-     *        Call disable() to stop
-     *
-     * @param test_duty_cycle   Duty cycle to be used when testing the
-     *                          h-bridge for continuity
+     * @brief Stops the pwm signal and deactivates the H-bridge after the
+     * configured amount of time.
      */
-    void enableTest(float test_duty_cycle);
+    void disable();
+
+    bool isEnabled();
 
     /**
-     * @return the HBridge object status
+     * @brief Changes the current duty cycle and saves it.
+     *
+     * Node that the change will take effect immediately and it is not needed to
+     * re-enable the H-bridge.
      */
-    HBridgeStatus getStatus();
+    void setDutyCycle(float dutyCycle);
+
+    /**
+     * @brief Same as setDutyCycle() but does not memorize the value.
+     *
+     * This is useful if you then want to reset the duty cycle to the previously
+     * configured value.
+     */
+    void testDutyCycle(float dutyCycle);
+
+    /**
+     * @brief Resets the duty cycle to the last configure value.
+     */
+    void resetDutyCycle();
 
 private:
-    /**
-     * @brief Enables the h-bridge.
-     *
-     * @param channel       the h-bridge PWM channel
-     * @param ena_pin       enable pin of the h-bridge
-     * @param duty_cycle    the duty cycle to be used
-     */
-    void enableHBridge(PWMChannel channel, GpioPin& ena_pin, float duty_cycle);
+    // This class is not copyable!
+    HBridge& operator=(const HBridge&) = delete;
+    HBridge(const HBridge& hb)         = delete;
 
-    HBridge(const HBridge& hb) = delete;
-
-    GpioPin pin_inh;
+    miosix::GpioPin inhibitPin;
     PWM pwm;
-    PWMChannel channel;
+    TimerUtils::Channel channel;
 
-    float duty_cycle;
-    uint16_t disable_delay_ms;
-
-    HBridgeStatus status;
+    unsigned int frequency;
+    float dutyCycle;
+    unsigned int disableDelayMs;
 };
 
 }  // namespace Boardcore

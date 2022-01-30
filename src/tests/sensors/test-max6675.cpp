@@ -53,8 +53,6 @@ int main()
     // Enable SPI clock and set gpios
     initBoard();
 
-    TimestampTimer::enableTimestampTimer();
-
     SPIBus spiBus(SPI4);
     MAX6675 sensor{spiBus, csPin};
 
@@ -70,7 +68,7 @@ int main()
         sensor.sample();
         TemperatureData sample = sensor.getLastSample();
 
-        printf("%.2f\n", sample.temp);
+        printf("%.2f\n", sample.temperature);
 
         Thread::sleep(500);
     }

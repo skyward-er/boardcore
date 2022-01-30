@@ -86,8 +86,8 @@ bool UbloxGPS::selfTest() { return true; }
 
 GPSData UbloxGPS::sampleImpl()
 {
-    Lock<FastMutex> l(sample_mutex);
-    return last_sample;
+    Lock<FastMutex> l(sampleMutex);
+    return lastSample;
 }
 
 void UbloxGPS::run()
@@ -118,25 +118,25 @@ void UbloxGPS::run()
 
 bool UbloxGPS::resetConfiguration()
 {
-    static constexpr uint16_t payload_length = 4;
+    static constexpr uint16_t payloadLength = 4;
 
-    uint8_t payload[payload_length] = {
+    uint8_t payload[payloadLength] = {
         0x00, 0x00,  // navBbrMask (Hot start)
         0x00,        // Hardware reset immediately
         0x00         // Reserved
     };
 
     UBXUnpackedFrame frame{0x06, 0x04,  // Message UBX-CFG-RST
-                           payload, payload_length};
+                           payload, payloadLength};
 
     return writeUBXFrame(frame);
 }
 
 bool UbloxGPS::disableNMEAMessages()
 {
-    static constexpr uint16_t payload_length = 34;
+    static constexpr uint16_t payloadLength = 34;
 
-    uint8_t payload[payload_length] = {
+    uint8_t payload[payloadLength] = {
         0x00,                    // Version
         0xff,                    // All layers
         0x00, 0x00,              // Reserved
@@ -155,16 +155,16 @@ bool UbloxGPS::disableNMEAMessages()
     };
 
     UBXUnpackedFrame frame{0x06, 0x8a,  // Message UBX-CFG-VALSET
-                           payload, payload_length};
+                           payload, payloadLength};
 
     return writeUBXFrame(frame);
 }
 
 bool UbloxGPS::setGNSSConfiguration()
 {
-    static constexpr uint16_t payload_length = 9;
+    static constexpr uint16_t payloadLength = 9;
 
-    uint8_t payload[payload_length] = {
+    uint8_t payload[payloadLength] = {
         0x00,                    // Version
         0x07,                    // All layers
         0x00, 0x00,              // Reserved
@@ -173,16 +173,16 @@ bool UbloxGPS::setGNSSConfiguration()
     };
 
     UBXUnpackedFrame frame{0x06, 0x8a,  // Message UBX-CFG-VALSET
-                           payload, payload_length};
+                           payload, payloadLength};
 
     return writeUBXFrame(frame);
 }
 
 bool UbloxGPS::enableUBXMessages()
 {
-    static constexpr uint16_t payload_length = 9;
+    static constexpr uint16_t payloadLength = 9;
 
-    uint8_t payload[payload_length] = {
+    uint8_t payload[payloadLength] = {
         0x00,                    // Version
         0xff,                    // All layers
         0x00, 0x00,              // Reserved
@@ -191,16 +191,16 @@ bool UbloxGPS::enableUBXMessages()
     };
 
     UBXUnpackedFrame frame{0x06, 0x8a,  // Message UBX-CFG-VALSET
-                           payload, payload_length};
+                           payload, payloadLength};
 
     return writeUBXFrame(frame);
 }
 
 bool UbloxGPS::setSampleRate()
 {
-    static constexpr uint16_t payload_length = 10;
+    static constexpr uint16_t payloadLength = 10;
 
-    uint8_t payload[payload_length] = {
+    uint8_t payload[payloadLength] = {
         0x00,                    // Version
         0x07,                    // All layers
         0x00, 0x00,              // Reserved
@@ -210,7 +210,7 @@ bool UbloxGPS::setSampleRate()
     memcpy(&payload[8], &samplerate, 2);
 
     UBXUnpackedFrame frame{0x06, 0x8a,  // Message UBX-CFG-VALSET
-                           payload, payload_length};
+                           payload, payloadLength};
 
     return writeUBXFrame(frame);
 }
@@ -232,65 +232,66 @@ bool UbloxGPS::parseUBXNAVFrame(const UBXUnpackedFrame& frame)
     switch (frame.id)  // Message ID
     {
         case 0x07:  // UBX-NAV-PVT
-            // Lock the last_sample variable
-            Lock<FastMutex> l(sample_mutex);
+            // Lock the lastSample variable
+            Lock<FastMutex> l(sampleMutex);
 
             // Latitude
-            int32_t raw_latitude = frame.payload[28] | frame.payload[29] << 8 |
-                                   frame.payload[30] << 16 |
-                                   frame.payload[31] << 24;
-            last_sample.latitude = (float)raw_latitude / 1e7;
+            int32_t rawLatitude = frame.payload[28] | frame.payload[29] << 8 |
+                                  frame.payload[30] << 16 |
+                                  frame.payload[31] << 24;
+            lastSample.latitude = (float)rawLatitude / 1e7;
 
             // Longitude
-            int32_t raw_longitude = frame.payload[24] | frame.payload[25] << 8 |
-                                    frame.payload[26] << 16 |
-                                    frame.payload[27] << 24;
-            last_sample.longitude = (float)raw_longitude / 1e7;
+            int32_t rawLongitude = frame.payload[24] | frame.payload[25] << 8 |
+                                   frame.payload[26] << 16 |
+                                   frame.payload[27] << 24;
+            lastSample.longitude = (float)rawLongitude / 1e7;
 
             // Height
-            int32_t raw_height = frame.payload[32] | frame.payload[33] << 8 |
-                                 frame.payload[34] << 16 |
-                                 frame.payload[35] << 24;
-            last_sample.height = (float)raw_height / 1e3;
+            int32_t rawHeight = frame.payload[32] | frame.payload[33] << 8 |
+                                frame.payload[34] << 16 |
+                                frame.payload[35] << 24;
+            lastSample.height = (float)rawHeight / 1e3;
 
             // Velocity north
-            int32_t raw_velocity_north =
+            int32_t rawVelocityNorth =
                 frame.payload[48] | frame.payload[49] << 8 |
                 frame.payload[50] << 16 | frame.payload[51] << 24;
-            last_sample.velocity_north = (float)raw_velocity_north / 1e3;
+            lastSample.velocityNorth = (float)rawVelocityNorth / 1e3;
 
             // Velocity east
-            int32_t raw_velocity_east =
+            int32_t rawVelocityEast =
                 frame.payload[52] | frame.payload[53] << 8 |
                 frame.payload[54] << 16 | frame.payload[55] << 24;
-            last_sample.velocity_east = (float)raw_velocity_east / 1e3;
+            lastSample.velocityEast = (float)rawVelocityEast / 1e3;
 
             // Velocity down
-            int32_t raw_velocity_down =
+            int32_t rawVelocityDown =
                 frame.payload[56] | frame.payload[57] << 8 |
                 frame.payload[58] << 16 | frame.payload[59] << 24;
-            last_sample.velocity_down = (float)raw_velocity_down / 1e3;
+            lastSample.velocityDown = (float)rawVelocityDown / 1e3;
 
             // Speed
-            int32_t raw_speed = frame.payload[60] | frame.payload[61] << 8 |
-                                frame.payload[62] << 16 |
-                                frame.payload[63] << 24;
-            last_sample.speed = (float)raw_speed / 1e3;
+            int32_t rawSpeed = frame.payload[60] | frame.payload[61] << 8 |
+                               frame.payload[62] << 16 |
+                               frame.payload[63] << 24;
+            lastSample.speed = (float)rawSpeed / 1e3;
 
             // Track (heading of motion)
-            int32_t raw_track = frame.payload[64] | frame.payload[65] << 8 |
-                                frame.payload[66] << 16 |
-                                frame.payload[67] << 24;
-            last_sample.track = (float)raw_track / 1e5;
+            int32_t rawTrack = frame.payload[64] | frame.payload[65] << 8 |
+                               frame.payload[66] << 16 |
+                               frame.payload[67] << 24;
+            lastSample.track = (float)rawTrack / 1e5;
 
             // Number of satellite
-            last_sample.num_satellites = (uint8_t)frame.payload[23];
+            lastSample.satellites = (uint8_t)frame.payload[23];
 
             // Fix (every type of fix accepted)
-            last_sample.fix = frame.payload[20] != 0;
+            lastSample.fix = frame.payload[20] != 0;
 
             // Timestamp
-            last_sample.gps_timestamp = TimestampTimer::getTimestamp();
+            lastSample.gpsTimestamp =
+                TimestampTimer::getInstance().getTimestamp();
 
             return true;
     }
@@ -324,10 +325,10 @@ bool UbloxGPS::writeUBXFrame(const UBXUnpackedFrame& frame)
         return false;
     }
 
-    uint8_t packed_frame[UBX_MAX_FRAME_LENGTH];
-    frame.writePacked(packed_frame);
+    uint8_t packedFrame[UBX_MAX_FRAME_LENGTH];
+    frame.writePacked(packedFrame);
 
-    writeRaw(packed_frame, frame.getFrameLength());
+    writeRaw(packedFrame, frame.getFrameLength());
 
     return true;
 }
@@ -349,8 +350,8 @@ bool UbloxGPS::readUBXFrame(UBXUnpackedFrame& frame)
     }
 
     if (!readRaw(&frame.cls, 1) || !readRaw(&frame.id, 1) ||
-        !readRaw((uint8_t*)&frame.payload_length, 2) ||
-        !readRaw(frame.payload, frame.payload_length) ||
+        !readRaw((uint8_t*)&frame.payloadLength, 2) ||
+        !readRaw(frame.payload, frame.payloadLength) ||
         !readRaw(frame.checksum, 2))
         return false;
 
@@ -363,44 +364,43 @@ bool UbloxGPS::readUBXFrame(UBXUnpackedFrame& frame)
     return true;
 }
 
-UbloxGPSSPI::UbloxGPSSPI(SPIBusInterface& spi_bus, GpioPin spi_cs,
-                         SPIBusConfig spi_config, uint8_t samplerate)
-    : UbloxGPS(samplerate), spi_slave(spi_bus, spi_cs, spi_config)
+UbloxGPSSPI::UbloxGPSSPI(SPIBusInterface& spiBus, GpioPin spiCs,
+                         SPIBusConfig spiConfig, uint8_t samplerate)
+    : UbloxGPS(samplerate), spiSlave(spiBus, spiCs, spiConfig)
 {
 }
 
 SPIBusConfig UbloxGPSSPI::getDefaultSPIConfig()
 {
-    SPIBusConfig spi_config{};
-    spi_config.clockDivider = SPI::ClockDivider::DIV_32;
-    spi_config.mode         = SPI::Mode::MODE_1;
-    return spi_config;
+    SPIBusConfig spiConfig{};
+    spiConfig.clockDivider = SPI::ClockDivider::DIV_32;
+    spiConfig.mode         = SPI::Mode::MODE_1;
+    return spiConfig;
 }
 
 bool UbloxGPSSPI::writeRaw(uint8_t* data, size_t size)
 {
-    SPITransaction spi{spi_slave};
+    SPITransaction spi{spiSlave};
     spi.write(data, size);
     return true;
 }
 
 bool UbloxGPSSPI::readRaw(uint8_t* data, size_t size)
 {
-    SPITransaction spi{spi_slave};
+    SPITransaction spi{spiSlave};
     spi.read(data, size);
     return true;
 }
 
-UbloxGPSSerial::UbloxGPSSerial(int serial_port_number,
-                               const char* serial_port_name,
-                               int serial_baudrate, int serial_default_baudrate,
+UbloxGPSSerial::UbloxGPSSerial(int serialPortNumber, const char* serialPortName,
+                               int serialBaudrate, int serialDefaultBaudrate,
                                uint8_t samplerate)
-    : UbloxGPS(samplerate), serial_port_number(serial_port_number),
-      serial_port_name(serial_port_name), serial_baudrate(serial_baudrate),
-      serial_default_baudrate(serial_default_baudrate)
+    : UbloxGPS(samplerate), serialPortNumber(serialPortNumber),
+      serialPortName(serialPortName), serialBaudrate(serialBaudrate),
+      serialDefaultBaudrate(serialDefaultBaudrate)
 {
-    strcpy(serial_file_path, "/dev/");
-    strcat(serial_file_path, serial_port_name);
+    strcpy(serialFilePath, "/dev/");
+    strcat(serialFilePath, serialPortName);
 }
 
 bool UbloxGPSSerial::setupCommunication()
@@ -408,29 +408,27 @@ bool UbloxGPSSerial::setupCommunication()
     intrusive_ref_ptr<DevFs> devFs = FilesystemManager::instance().getDevFs();
 
     // Close the serial file if already opened
-    devFs->remove(serial_port_name);
+    devFs->remove(serialPortName);
 
     // Change the baudrate only if it is different than the default
-    if (serial_baudrate != serial_default_baudrate)
+    if (serialBaudrate != serialDefaultBaudrate)
     {
         // Open the serial port device with the default baudrate
-        if (!devFs->addDevice(
-                serial_port_name,
-                intrusive_ref_ptr<Device>(new STM32Serial(
-                    serial_port_number, serial_default_baudrate))))
+        if (!devFs->addDevice(serialPortName,
+                              intrusive_ref_ptr<Device>(new STM32Serial(
+                                  serialPortNumber, serialDefaultBaudrate))))
         {
             LOG_ERR(logger,
                     "[gps] Faild to open serial port {} with baudrate {} as "
                     "file {}",
-                    serial_port_number, serial_default_baudrate,
-                    serial_port_name);
+                    serialPortNumber, serialDefaultBaudrate, serialPortName);
             return false;
         }
 
         // Open the serial file
-        if ((serial_file = open(serial_file_path, O_RDWR)) < 0)
+        if ((serialFile = open(serialFilePath, O_RDWR)) < 0)
         {
-            LOG_ERR(logger, "Failed to open serial file {}", serial_file_path);
+            LOG_ERR(logger, "Failed to open serial file {}", serialFilePath);
             return false;
         }
 
@@ -441,36 +439,36 @@ bool UbloxGPSSerial::setupCommunication()
         }
 
         // Close the serial file
-        if (close(serial_file) < 0)
+        if (close(serialFile) < 0)
         {
-            LOG_ERR(logger, "Failed to close serial file {}", serial_file_path);
+            LOG_ERR(logger, "Failed to close serial file {}", serialFilePath);
             return false;
         }
 
         // Close the serial port
-        if (!devFs->remove(serial_port_name))
+        if (!devFs->remove(serialPortName))
         {
             LOG_ERR(logger, "Failed to close serial port {} as file {}",
-                    serial_port_number, serial_port_name);
+                    serialPortNumber, serialPortName);
             return false;
         }
     }
 
     // Reopen the serial port with the configured baudrate
-    if (!devFs->addDevice(serial_port_name,
+    if (!devFs->addDevice(serialPortName,
                           intrusive_ref_ptr<Device>(new STM32Serial(
-                              serial_port_number, serial_baudrate))))
+                              serialPortNumber, serialBaudrate))))
     {
         LOG_ERR(logger,
                 "Faild to open serial port {} with baudrate {} as file {}\n",
-                serial_port_number, serial_default_baudrate, serial_port_name);
+                serialPortNumber, serialDefaultBaudrate, serialPortName);
         return false;
     }
 
     // Reopen the serial file
-    if ((serial_file = open(serial_file_path, O_RDWR)) < 0)
+    if ((serialFile = open(serialFilePath, O_RDWR)) < 0)
     {
-        LOG_ERR(logger, "Failed to open serial file {}", serial_file_path);
+        LOG_ERR(logger, "Failed to open serial file {}", serialFilePath);
         return false;
     }
 
@@ -479,31 +477,31 @@ bool UbloxGPSSerial::setupCommunication()
 
 bool UbloxGPSSerial::setBaudrate()
 {
-    static constexpr uint16_t payload_length = 12;
+    static constexpr uint16_t payloadLength = 12;
 
-    uint8_t payload[payload_length] = {
+    uint8_t payload[payloadLength] = {
         0x00,                    // Version
         0xff,                    // All layers
         0x00, 0x00,              // Reserved
         0x01, 0x00, 0x52, 0x40,  // Configuration item key ID
         0xff, 0xff, 0xff, 0xff   // Value (placeholder)
     };
-    memcpy(&payload[8], &serial_baudrate, 4);
+    memcpy(&payload[8], &serialBaudrate, 4);
 
     UBXUnpackedFrame frame{0x06, 0x8a,  // Message UBX-CFG-VALSET
-                           payload, payload_length};
+                           payload, payloadLength};
 
     return writeUBXFrame(frame);
 }
 
 bool UbloxGPSSerial::writeRaw(uint8_t* data, size_t size)
 {
-    return write(serial_file, data, size) >= 0;
+    return write(serialFile, data, size) >= 0;
 }
 
 bool UbloxGPSSerial::readRaw(uint8_t* data, size_t size)
 {
-    return read(serial_file, data, size) >= 0;
+    return read(serialFile, data, size) >= 0;
 }
 
 }  // namespace Boardcore

@@ -39,21 +39,25 @@ struct LIS3DSHData : public AccelerometerData, public TemperatureData
     }
 
     LIS3DSHData(AccelerometerData acc, TemperatureData temp)
-        : AccelerometerData{acc.accel_timestamp, acc.accel_x, acc.accel_y,
-                            acc.accel_z},
-          TemperatureData{temp.temp_timestamp, temp.temp}
+        : AccelerometerData{acc.accelerationTimestamp, acc.accelerationX,
+                            acc.accelerationY, acc.accelerationZ},
+          TemperatureData{temp.temperatureTimestamp, temp.temperature}
     {
     }
 
     static std::string header()
     {
-        return "accel_timestamp,accel_x,accel_y,accel_z,temp_timestamp,temp\n";
+        return "accelerationTimestamp,accelerationX,accelerationY,"
+               "accelerationZ,temp_"
+               "timestamp,"
+               "temp\n";
     }
 
     void print(std::ostream& os) const
     {
-        os << accel_timestamp << "," << accel_x << "," << accel_y << ","
-           << accel_z << "," << temp_timestamp << "," << temp << "\n";
+        os << accelerationTimestamp << "," << accelerationX << ","
+           << accelerationY << "," << accelerationZ << ","
+           << temperatureTimestamp << "," << temperature << "\n";
     }
 };
 

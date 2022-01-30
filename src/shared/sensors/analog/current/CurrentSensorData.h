@@ -36,12 +36,12 @@ struct CurrentSensorData : public ADCData
 
     static std::string header()
     {
-        return "adc_timestamp,channel_id,voltage,current\n";
+        return "voltageTimestamp,channelId,voltage,current\n";
     }
 
     void print(std::ostream& os) const
     {
-        os << adc_timestamp << "," << (int)channel_id << "," << voltage << ","
+        os << voltageTimestamp << "," << (int)channelId << "," << voltage << ","
            << current << "\n";
     }
 };

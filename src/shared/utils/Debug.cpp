@@ -26,7 +26,7 @@ namespace Boardcore
 {
 
 #ifdef DEBUG
-miosix::FastMutex trace_mutex;
+miosix::FastMutex traceMutex;
 #endif
 
 }  // namespace Boardcore

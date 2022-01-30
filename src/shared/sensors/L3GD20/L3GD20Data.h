@@ -41,13 +41,14 @@ struct L3GD20Data : public GyroscopeData
 
     static std::string header()
     {
-        return "gyro_timestamp,gyro_x,gyro_y,gyro_z\n";
+        return "angularVelocityTimestamp,angularVelocityX,angularVelocityY,"
+               "angularVelocityZ\n";
     }
 
     void print(std::ostream& os) const
     {
-        os << gyro_timestamp << "," << gyro_x << "," << gyro_y << "," << gyro_z
-           << "\n";
+        os << angularVelocityTimestamp << "," << angularVelocityX << ","
+           << angularVelocityY << "," << angularVelocityZ << "\n";
     }
 };
 

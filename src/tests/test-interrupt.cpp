@@ -32,11 +32,11 @@ bool itr = false;
 // called from an assembly instruction. Use attribute used to avoid this.
 void __attribute__((used)) EXTI0_IRQHandlerImpl() { itr = true; }
 
-typedef Gpio<GPIOA_BASE, 0> user_button;
+typedef Gpio<GPIOA_BASE, 0> userButton;
 
 int main()
 {
-    user_button::mode(Mode::INPUT);
+    userButton::mode(Mode::INPUT);
 
     enableExternalInterrupt(GPIOA_BASE, 0, InterruptTrigger::RISING_EDGE, 15);
 

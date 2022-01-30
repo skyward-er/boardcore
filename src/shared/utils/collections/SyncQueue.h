@@ -42,28 +42,28 @@ private:
     SynchronizedQueue(const SynchronizedQueue&) = delete;
     SynchronizedQueue& operator=(const SynchronizedQueue&) = delete;
     std::list<T> queue;
-    miosix::Mutex m_mutex;
-    miosix::ConditionVariable m_cv;
+    miosix::Mutex mMutex;
+    miosix::ConditionVariable mCv;
 };
 
 template <typename T>
 void SynchronizedQueue<T>::put(const T& data)
 {
-    m_mutex.lock();
+    mMutex.lock();
     queue.push_back(data);
-    m_cv.signal();
-    m_mutex.unlock();
+    mCv.signal();
+    mMutex.unlock();
 }
 
 template <typename T>
 T SynchronizedQueue<T>::get()
 {
-    m_mutex.lock();
+    mMutex.lock();
     while (queue.empty())
-        m_cv.wait(m_mutex);
+        mCv.wait(mMutex);
     T result = queue.front();
     queue.pop_front();
-    m_mutex.unlock();
+    mMutex.unlock();
 
     return result;
 }

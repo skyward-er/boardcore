@@ -137,16 +137,16 @@ enum ReceiveOptions : uint8_t
 #pragma pack(1)
 struct APIFrame
 {
-    uint8_t start_del  = 0x7E;
-    uint16_t length    = 0;
-    uint8_t frame_type = 0;
-    uint8_t frame_data[FRAME_DATA_SIZE];
+    uint8_t startDel  = 0x7E;
+    uint16_t length   = 0;
+    uint8_t frameType = 0;
+    uint8_t frameData[FRAME_DATA_SIZE];
 
     uint8_t checksum = 0;
     // Used for logging, not part of the standard Xbee API Frame
     long long timestamp = 0;
 
-    APIFrame() { memset(frame_data, 0, FRAME_DATA_SIZE); }
+    APIFrame() { memset(frameData, 0, FRAME_DATA_SIZE); }
 
     uint16_t getFrameDataLength() const
     {
@@ -165,20 +165,20 @@ struct APIFrame
         // Sum all the bytes including checksum and frame type.
         // The sum can be stored in a uint8_t since we only care about the least
         // significant byte.
-        uint8_t sum = checksum + frame_type;
+        uint8_t sum = checksum + frameType;
         for (uint16_t i = 0; i < getFrameDataLength(); ++i)
         {
-            sum += frame_data[i];
+            sum += frameData[i];
         }
         return sum == 0xFF;
     }
 
     void calcChecksum()
     {
-        checksum = frame_type;
+        checksum = frameType;
         for (uint16_t i = 0; i < getFrameDataLength(); ++i)
         {
-            checksum += frame_data[i];
+            checksum += frameData[i];
         }
 
         checksum = 0xFF - checksum;
@@ -220,26 +220,26 @@ struct ATCommandFrame : public APIFrame
 {
     ATCommandFrame() : APIFrame()
     {
-        frame_type = FTYPE_AT_COMMAND;
+        frameType = FTYPE_AT_COMMAND;
         setFrameDataLength(MIN_AT_COMMAND_FRAME_SIZE);
     }
 
-    uint8_t getFrameID() const { return frame_data[0]; }
+    uint8_t getFrameID() const { return frameData[0]; }
 
-    void setFrameID(uint8_t frame_id) { frame_data[0] = frame_id; }
+    void setFrameID(uint8_t frameId) { frameData[0] = frameId; }
 
     const char* getATCommand() const
     {
-        return reinterpret_cast<const char*>(&frame_data[1]);
+        return reinterpret_cast<const char*>(&frameData[1]);
     }
 
     void setATCommand(const char* at)
     {
-        frame_data[1] = at[0];
-        frame_data[2] = at[1];
+        frameData[1] = at[0];
+        frameData[2] = at[1];
     }
 
-    uint8_t* getCommandDataPointer() { return &frame_data[3]; }
+    uint8_t* getCommandDataPointer() { return &frameData[3]; }
 
     uint16_t getCommandDataLength() const
     {
@@ -261,30 +261,30 @@ struct ATCommandResponseFrame : public APIFrame
 {
     ATCommandResponseFrame() : APIFrame()
     {
-        frame_type = FTYPE_AT_COMMAND_RESPONSE;
+        frameType = FTYPE_AT_COMMAND_RESPONSE;
         setFrameDataLength(MIN_AT_RESPONSE_FRAME_SIZE);
     }
 
-    uint8_t getFrameID() const { return frame_data[0]; }
+    uint8_t getFrameID() const { return frameData[0]; }
 
-    void setFrameID(uint8_t frame_id) { frame_data[0] = frame_id; }
+    void setFrameID(uint8_t frameId) { frameData[0] = frameId; }
 
     const char* getATCommand() const
     {
-        return reinterpret_cast<const char*>(&frame_data[1]);
+        return reinterpret_cast<const char*>(&frameData[1]);
     }
 
     void setATCommand(const char* at)
     {
-        frame_data[1] = at[0];
-        frame_data[2] = at[1];
+        frameData[1] = at[0];
+        frameData[2] = at[1];
     }
 
-    uint8_t getCommandStatus() const { return frame_data[3]; }
+    uint8_t getCommandStatus() const { return frameData[3]; }
 
-    void setCommandStatus(uint8_t cs) { frame_data[3] = cs; }
+    void setCommandStatus(uint8_t cs) { frameData[3] = cs; }
 
-    uint8_t* getCommandDataPointer() { return &frame_data[4]; }
+    uint8_t* getCommandDataPointer() { return &frameData[4]; }
 
     uint16_t getCommandDataLength() const
     {
@@ -306,40 +306,40 @@ struct TXRequestFrame : public APIFrame
 {
     TXRequestFrame() : APIFrame()
     {
-        frame_type = FTYPE_TX_REQUEST;
+        frameType = FTYPE_TX_REQUEST;
         setFrameDataLength(MIN_TX_REQUEST_FRAME_SIZE);
 
         // Reserved bytes
-        frame_data[9]  = 0xFF;
-        frame_data[10] = 0xFE;
+        frameData[9]  = 0xFF;
+        frameData[10] = 0xFE;
     }
 
-    uint8_t getFrameID() const { return frame_data[0]; }
+    uint8_t getFrameID() const { return frameData[0]; }
 
-    void setFrameID(uint8_t frame_id) { frame_data[0] = frame_id; }
+    void setFrameID(uint8_t frameId) { frameData[0] = frameId; }
 
     uint64_t getDestAddress() const
     {
         uint64_t addr;
-        memcpy(&addr, &frame_data[1], sizeof(uint64_t));
+        memcpy(&addr, &frameData[1], sizeof(uint64_t));
         return swapBytes64(addr);
     }
 
     void setDestAddress(uint64_t address)
     {
         address = swapBytes64(address);
-        memcpy(&frame_data[1], &address, 8);
+        memcpy(&frameData[1], &address, 8);
     }
 
-    uint8_t getBroadcastRadius() const { return frame_data[11]; }
+    uint8_t getBroadcastRadius() const { return frameData[11]; }
 
-    void setBroadcastRadius(uint8_t br) { frame_data[11] = br; }
+    void setBroadcastRadius(uint8_t br) { frameData[11] = br; }
 
-    uint8_t getTrasmitOptions() const { return frame_data[12]; }
+    uint8_t getTrasmitOptions() const { return frameData[12]; }
 
-    void setTransmitOptions(uint8_t br) { frame_data[12] = br; }
+    void setTransmitOptions(uint8_t br) { frameData[12] = br; }
 
-    uint8_t* getRFDataPointer() { return &frame_data[13]; }
+    uint8_t* getRFDataPointer() { return &frameData[13]; }
 
     uint16_t getRFDataLength() const
     {
@@ -362,13 +362,13 @@ struct ModemStatusFrame : public APIFrame
 {
     ModemStatusFrame() : APIFrame()
     {
-        frame_type = FTYPE_MODEM_STATUS;
+        frameType = FTYPE_MODEM_STATUS;
         setFrameDataLength(MODEM_STATUS_FRAME_SIZE);
     }
 
-    uint8_t getStatus() const { return frame_data[0]; }
+    uint8_t getStatus() const { return frameData[0]; }
 
-    void setStatus(uint8_t status) { frame_data[0] = status; }
+    void setStatus(uint8_t status) { frameData[0] = status; }
 };
 static_assert(sizeof(ModemStatusFrame) == sizeof(APIFrame),
               "Size of derived classes must be the same as APIFrame class (no "
@@ -378,29 +378,29 @@ struct TXStatusFrame : public APIFrame
 {
     TXStatusFrame() : APIFrame()
     {
-        frame_type = FTYPE_TX_STATUS;
+        frameType = FTYPE_TX_STATUS;
         setFrameDataLength(TX_STATUS_FRAME_SIZE);
 
         // Reserved bytes
-        frame_data[1] = 0xFF;
-        frame_data[2] = 0xFE;
+        frameData[1] = 0xFF;
+        frameData[2] = 0xFE;
     }
 
-    uint8_t getFrameID() const { return frame_data[0]; }
+    uint8_t getFrameID() const { return frameData[0]; }
 
-    void setFrameID(uint8_t frame_id) { frame_data[0] = frame_id; }
+    void setFrameID(uint8_t frameId) { frameData[0] = frameId; }
 
-    uint8_t getTransmitRetryCount() const { return frame_data[3]; }
+    uint8_t getTransmitRetryCount() const { return frameData[3]; }
 
-    void setTransmitRetryCount(uint8_t trc) { frame_data[3] = trc; }
+    void setTransmitRetryCount(uint8_t trc) { frameData[3] = trc; }
 
-    uint8_t getDeliveryStatus() const { return frame_data[4]; }
+    uint8_t getDeliveryStatus() const { return frameData[4]; }
 
-    void setDeliveryStatus(uint8_t ds) { frame_data[4] = ds; }
+    void setDeliveryStatus(uint8_t ds) { frameData[4] = ds; }
 
-    uint8_t getDiscoveryStatus() const { return frame_data[5]; }
+    uint8_t getDiscoveryStatus() const { return frameData[5]; }
 
-    void setDiscoveryStatus(uint8_t ds) { frame_data[5] = ds; }
+    void setDiscoveryStatus(uint8_t ds) { frameData[5] = ds; }
 };
 
 static_assert(sizeof(TXStatusFrame) == sizeof(APIFrame),
@@ -411,17 +411,17 @@ struct RXPacketFrame : public APIFrame
 {
     RXPacketFrame() : APIFrame()
     {
-        frame_type = FTYPE_RX_PACKET_FRAME;
+        frameType = FTYPE_RX_PACKET_FRAME;
         setFrameDataLength(MIN_RX_PACKET_FRAME_SIZE);
 
-        frame_data[8] = 0xFF;
-        frame_data[9] = 0xFE;
+        frameData[8] = 0xFF;
+        frameData[9] = 0xFE;
     }
 
     uint64_t getSourceAddress() const
     {
         uint64_t addr;
-        memcpy(&addr, &frame_data[0], sizeof(uint64_t));
+        memcpy(&addr, &frameData[0], sizeof(uint64_t));
         return swapBytes64(addr);
     }
 
@@ -430,14 +430,14 @@ struct RXPacketFrame : public APIFrame
         address       = swapBytes64(address);
         uint8_t* addr = reinterpret_cast<uint8_t*>(&address);
 
-        memcpy(&frame_data[0], addr, 8);
+        memcpy(&frameData[0], addr, 8);
     }
 
-    uint8_t getReceiveOptions() const { return frame_data[10]; }
+    uint8_t getReceiveOptions() const { return frameData[10]; }
 
-    void setReceiveOptions(uint8_t ro) { frame_data[10] = ro; }
+    void setReceiveOptions(uint8_t ro) { frameData[10] = ro; }
 
-    uint8_t* getRXDataPointer() { return &frame_data[11]; }
+    uint8_t* getRXDataPointer() { return &frameData[11]; }
 
     uint16_t getRXDataLength() const
     {

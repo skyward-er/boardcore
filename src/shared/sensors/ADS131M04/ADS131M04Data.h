@@ -24,6 +24,8 @@
 
 #include <stdint.h>
 
+#include <ostream>
+
 namespace Boardcore
 {
 
@@ -47,7 +49,7 @@ struct ADS131M04Data
     static std::string header()
     {
         return "timestamp,voltage_channel_1,voltage_channel_2,voltage_channel_"
-               "3,voltage_channel_4";
+               "3,voltage_channel_4\n";
     }
 
     void print(std::ostream& os) const

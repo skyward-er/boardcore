@@ -2627,12 +2627,12 @@ void *t16_p3(void *argv)
     (void)argv;
     Thread::sleep(30);
     if (pthread_mutex_trylock(&t16_m1) != 0)
-        fail("cond_wait did not release mutex");  //<---
+        fail("cond_wait did not release mutex");
     t16_v1 = true;
     if (pthread_cond_signal(&t16_c1) != 0)
         fail("signal");
     if (pthread_mutex_unlock(&t16_m1) != 0)
-        fail("cond mutex unlock");  //<---
+        fail("cond mutex unlock");
     return NULL;
 }
 
@@ -2643,7 +2643,7 @@ void *t16_p4(void *argv)
     (void)argv;
     Thread::sleep(30);
     if (pthread_mutex_trylock(&t16_m1) != 0)
-        fail("cond_wait did not release mutex (2)");  //<---
+        fail("cond_wait did not release mutex (2)");
     t16_v1 = true;
     // testing pthread_cond_destroy while a thread is waiting
     if (pthread_cond_destroy(&t16_c2) == 0)
@@ -2652,7 +2652,7 @@ void *t16_p4(void *argv)
     if (pthread_cond_broadcast(&t16_c2) != 0)
         fail("broadcast");
     if (pthread_mutex_unlock(&t16_m1) != 0)
-        fail("cond mutex unlock (2)");  //<---
+        fail("cond mutex unlock (2)");
     return NULL;
 }
 
@@ -2770,7 +2770,7 @@ static void test_16()
     // testing pthread_mutex_*
     //
     if (pthread_mutex_lock(&t16_m1) != 0)
-        fail("mutex lock");  //<---
+        fail("mutex lock");
     t16_v1 = false;
     if (pthread_create(&thread, NULL, t16_p2, (void *)&t16_m1) != 0)
         fail("pthread_create (4)");
@@ -2783,7 +2783,7 @@ static void test_16()
     if (t16_v1 == true)
         fail("mutex fail");
     if (pthread_mutex_unlock(&t16_m1) != 0)
-        fail("mutex unlock");  //<---
+        fail("mutex unlock");
     Thread::sleep(10);
     if (t16_v1 == false)
         fail("mutex fail (2)");
@@ -2798,16 +2798,16 @@ static void test_16()
         fail("trylock");
     pthread_join(thread, NULL);
     if (pthread_mutex_trylock(&t16_m1) != 0)
-        fail("trylock (2)");  //<---
+        fail("trylock (2)");
     if (pthread_mutex_unlock(&t16_m1) != 0)
-        fail("mutex unlock (3)");  //<---
+        fail("mutex unlock (3)");
     Thread::sleep(10);
     // now testing pthread_mutex_init
     pthread_mutex_t mutex;
     if (pthread_mutex_init(&mutex, NULL) != 0)
         fail("mutex init");
     if (pthread_mutex_lock(&mutex) != 0)
-        fail("mutex lock (4)");  //<---
+        fail("mutex lock (4)");
     t16_v1 = false;
     if (pthread_create(&thread, NULL, t16_p2, (void *)&mutex) != 0)
         fail("pthread_create (6)");
@@ -2820,7 +2820,7 @@ static void test_16()
     if (t16_v1 == true)
         fail("mutex fail (3)");
     if (pthread_mutex_unlock(&mutex) != 0)
-        fail("mutex unlock (4)");  //<---
+        fail("mutex unlock (4)");
     Thread::sleep(10);
     if (t16_v1 == false)
         fail("mutex fail (4)");
@@ -2852,14 +2852,14 @@ static void test_16()
     if (t->isDetached() == true)
         fail("detached by mistake (6)");
     if (pthread_mutex_lock(&t16_m1) != 0)
-        fail("mutex lock (5)");  //<---
+        fail("mutex lock (5)");
     t16_v1 = false;
     if (pthread_cond_wait(&t16_c1, &t16_m1) != 0)
         fail("wait");
     if (t16_v1 == false)
         fail("did not really wait");
     if (pthread_mutex_unlock(&t16_m1) != 0)
-        fail("mutex unlock (5)");  //<---
+        fail("mutex unlock (5)");
     pthread_join(thread, NULL);
     Thread::sleep(10);
     // now testing pthread_cond_init
@@ -2873,14 +2873,14 @@ static void test_16()
     if (t->isDetached() == true)
         fail("detached by mistake (7)");
     if (pthread_mutex_lock(&t16_m1) != 0)
-        fail("mutex lock (6)");  //<---
+        fail("mutex lock (6)");
     t16_v1 = false;
     if (pthread_cond_wait(&t16_c2, &t16_m1) != 0)
         fail("wait (2)");
     if (t16_v1 == false)
         fail("did not really wait (2)");
     if (pthread_mutex_unlock(&t16_m1) != 0)
-        fail("mutex unlock (6)");  //<---
+        fail("mutex unlock (6)");
     pthread_join(thread, NULL);
     Thread::sleep(10);
     if (pthread_cond_destroy(&t16_c2) != 0)

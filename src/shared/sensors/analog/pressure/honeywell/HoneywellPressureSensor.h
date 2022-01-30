@@ -47,10 +47,10 @@ protected:
         float tmp;
 
         tmp = voltage -
-              0.1 * AnalogPressureSensor<HoneywellPressureData>::V_SUPPLY;
+              0.1 * AnalogPressureSensor<HoneywellPressureData>::supplyVoltage;
         tmp *= AnalogPressureSensor<HoneywellPressureData>::maxPressure -
                AnalogPressureSensor<HoneywellPressureData>::minPressure;
-        tmp /= 0.8 * AnalogPressureSensor<HoneywellPressureData>::V_SUPPLY;
+        tmp /= 0.8 * AnalogPressureSensor<HoneywellPressureData>::supplyVoltage;
         tmp += AnalogPressureSensor<HoneywellPressureData>::minPressure;
 
         return tmp;

@@ -34,19 +34,19 @@ struct CanTXResult
 {
     uint32_t seq;
     uint8_t mailbox;
-    uint8_t tx_status;
+    uint8_t txStatus;
     uint8_t tme;
-    uint8_t err_code;
+    uint8_t errCode;
 };
 
 struct CanRXStatus
 {
-    uint8_t rx_status;
+    uint8_t rxStatus;
     uint8_t fifo;
-    uint8_t rx_err_counter = 0;
-    uint8_t err_code;
-    bool fifo_overrun;
-    bool fifo_full;
+    uint8_t rxErrCounter = 0;
+    uint8_t errCode;
+    bool fifoOverrun;
+    bool fifoFull;
 };
 
 struct CanPacket

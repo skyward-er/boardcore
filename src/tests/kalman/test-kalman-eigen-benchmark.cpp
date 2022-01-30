@@ -52,7 +52,7 @@ int main()
     printf("RUNNING...\n");
 
     // Timer for benchmarking purposes
-    GeneralPurposeTimer<uint32_t> timer{TIM5};
+    GP32bitTimer timer{TIM5};
 
     const int n = 3;
     const int p = 1;
@@ -88,7 +88,7 @@ int main()
 
     KalmanEigen<float, n, p> filter(config);
 
-    float last_time = 0.0;  // Variable to save the time of the last sample
+    float lastTime = 0.0;  // Variable to save the time of the last sample
 
     timer.reset();
     timer.enable();
@@ -103,7 +103,7 @@ int main()
         uint32_t tick2;
 
         time = TIME[i];
-        T    = time - last_time;
+        T    = time - lastTime;
 
         F(0, 1) = T;
         F(0, 2) = 0.5 * T * T;
@@ -130,7 +130,7 @@ int main()
 
         // printf("%u \n", MemoryProfiling::getCurrentFreeStack());
 
-        last_time = time;
+        lastTime = time;
 
         if (filter.getState()(1) < 0)
         {

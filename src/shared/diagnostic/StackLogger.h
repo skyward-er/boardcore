@@ -49,18 +49,18 @@ public:
     /**
      * Update the stored absolute free stack associated to the calling thread.
      * This function must be called by the thread to be logged.
-     * @param thread_id Unique id identifying the thread
+     * @param threadId Unique id identifying the thread
      */
-    void updateStack(uint8_t thread_id)
+    void updateStack(uint8_t threadId)
     {
         StackData d;
-        d.timestamp = miosix::getTick();
-        d.thread_id = thread_id;
-        d.min_stack = miosix::MemoryProfiling::getAbsoluteFreeStack();
+        d.timestamp    = miosix::getTick();
+        d.threadId     = threadId;
+        d.minimumStack = miosix::MemoryProfiling::getAbsoluteFreeStack();
 
         {
             Lock<FastMutex> l(mutex);
-            stacks[thread_id] = d;
+            stacks[threadId] = d;
         }
     }
 

@@ -59,14 +59,13 @@ int main()
     timerSckPin.alternateFunction(2);
 
     // Setup spi as a slave
-    SPISignalGenerator spiSignalGenerator{
-        2,
-        100,
-        1000000,
-        SPI::Mode::MODE_0,
-        GeneralPurposeTimer<uint16_t>::Channel::CHANNEL_1,
-        GeneralPurposeTimer<uint16_t>::Channel::CHANNEL_4,
-        GeneralPurposeTimer<uint16_t>::Channel::CHANNEL_4};
+    SPISignalGenerator spiSignalGenerator{2,
+                                          100,
+                                          1000000,
+                                          SPI::Mode::MODE_0,
+                                          TimerUtils::Channel::CHANNEL_1,
+                                          TimerUtils::Channel::CHANNEL_4,
+                                          TimerUtils::Channel::CHANNEL_4};
     SPISlaveBus bus(SPI4, spiSignalGenerator);
     SPISlave spiSlave(bus, csPin, {});
     spiSlave.config.clockDivider = SPI::ClockDivider::DIV_64;

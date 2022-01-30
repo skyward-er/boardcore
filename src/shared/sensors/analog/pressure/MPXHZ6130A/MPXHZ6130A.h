@@ -34,12 +34,12 @@ namespace Boardcore
 class MPXHZ6130A final : public AnalogPressureSensor<MPXHZ6130AData>
 {
 public:
-    MPXHZ6130A(std::function<ADCData()> getSensorVoltage_,
-               const float V_SUPPLY_                 = 5.0,
+    MPXHZ6130A(std::function<ADCData()> getSensorVoltage,
+               const float supplyVoltage             = 5.0,
                const unsigned int num_calib_samples_ = 200,
                const float moving_avg_coeff_         = 1.0,
                const float ref_press_                = 101325.0f)
-        : AnalogPressureSensor(getSensorVoltage_, V_SUPPLY_, 130000),
+        : AnalogPressureSensor(getSensorVoltage, supplyVoltage, 130000),
           offset(0.0), num_calib_samples(num_calib_samples_),
           moving_avg_coeff(moving_avg_coeff_), ref_press(ref_press_)
     {
@@ -47,11 +47,11 @@ public:
 
     MPXHZ6130AData sampleImpl()
     {
-        last_sample = AnalogPressureSensor<MPXHZ6130AData>::sampleImpl();
+        lastSample = AnalogPressureSensor<MPXHZ6130AData>::sampleImpl();
 
         if (calibrating)
         {
-            press_stats.add(last_sample.press);
+            press_stats.add(lastSample.pressure);
 
             if (press_stats.getStats().nSamples >= num_calib_samples)
             {
@@ -62,11 +62,11 @@ public:
             }
         }
 
-        last_sample.press = last_sample.press + offset;
+        lastSample.pressure = lastSample.pressure + offset;
 
-        last_sample.press = movingAverage(last_sample.press);
+        lastSample.pressure = movingAverage(lastSample.pressure);
 
-        return last_sample;
+        return lastSample;
     }
 
     void setReferencePressure(float p) { ref_press = p; }
@@ -83,7 +83,7 @@ public:
 private:
     float voltageToPressure(float voltage) override
     {
-        return (((voltage / V_SUPPLY) + CONST_B) / CONST_A) * 1000;
+        return (((voltage / supplyVoltage) + CONST_B) / CONST_A) * 1000;
     }
 
     float movingAverage(float new_value)

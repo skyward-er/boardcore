@@ -41,55 +41,55 @@ namespace Xbee
 {
 
 Xbee::Xbee(SPIBusInterface& bus, GpioType cs, GpioType attn, GpioType rst,
-           long long tx_timeout)
-    : Xbee(bus, {}, cs, attn, rst, tx_timeout)
+           long long txTimeout)
+    : Xbee(bus, {}, cs, attn, rst, txTimeout)
 {
-    spi_xbee.config.clockDivider = SPI::ClockDivider::DIV_128;
+    spiXbee.config.clockDivider = SPI::ClockDivider::DIV_128;
 }
 
 Xbee::Xbee(SPIBusInterface& bus, SPIBusConfig config, GpioType cs,
-           GpioType attn, GpioType rst, long long tx_timeout)
-    : spi_xbee(bus, cs, config), attn(attn), rst(rst), tx_timeout(tx_timeout)
+           GpioType attn, GpioType rst, long long txTimeout)
+    : spiXbee(bus, cs, config), attn(attn), rst(rst), txTimeout(txTimeout)
 {
     reset();
 }
 
 Xbee::~Xbee() { wakeReceiver(true); }
 
-bool Xbee::send(uint8_t* pkt, size_t pkt_len)
+bool Xbee::send(uint8_t* pkt, size_t packeLength)
 {
-    if (pkt_len > MAX_PACKET_PAYLOAD_LENGTH || pkt_len == 0)
+    if (packeLength > MAX_PACKET_PAYLOAD_LENGTH || packeLength == 0)
     {
-        LOG_ERR(logger, "Invalid packet length (0< {} <= {})", pkt_len,
+        LOG_ERR(logger, "Invalid packet length (0< {} <= {})", packeLength,
                 MAX_PACKET_PAYLOAD_LENGTH);
         return false;
     }
-    long long start_tick = miosix::getTick();
+    long long startTick = miosix::getTick();
 
-    TXRequestFrame tx_req;
-    uint8_t tx_frame_id = buildTXRequestFrame(tx_req, pkt, pkt_len);
-    bool success        = false;
-    bool status_timeout = true;
+    TXRequestFrame txReq;
+    uint8_t txFrameId  = buildTXRequestFrame(txReq, pkt, packeLength);
+    bool success       = false;
+    bool statusTimeout = true;
     {
-        Lock<FastMutex> l(mutex_xbee_comm);
-        writeFrame(tx_req);
+        Lock<FastMutex> l(mutexXbeeCommunication);
+        writeFrame(txReq);
 
         // Wait for a TX Status frame
-        long long timeout_tick = miosix::getTick() + tx_timeout;
+        long long timeoutTick = miosix::getTick() + txTimeout;
 
-        while (waitForFrame(FTYPE_TX_STATUS, FRAME_POLL_INTERVAL, timeout_tick))
+        while (waitForFrame(FTYPE_TX_STATUS, FRAME_POLL_INTERVAL, timeoutTick))
         {
-            TXStatusFrame* f = parsing_api_frame.toFrameType<TXStatusFrame>();
+            TXStatusFrame* f = parsingApiFrame.toFrameType<TXStatusFrame>();
 
-            if (f->getFrameID() == tx_frame_id)
+            if (f->getFrameID() == txFrameId)
             {
-                success        = f->getDeliveryStatus() == DELS_SUCCESS;
-                status_timeout = false;
+                success       = f->getDeliveryStatus() == DELS_SUCCESS;
+                statusTimeout = false;
                 break;
             }
             else
             {
-                LOG_ERR(logger, "Wrong tx_status ID");
+                LOG_ERR(logger, "Wrong txStatus ID");
             }
         }
 
@@ -102,31 +102,31 @@ bool Xbee::send(uint8_t* pkt, size_t pkt_len)
     {
         wakeReceiver();
     }
-    if (status_timeout)
+    if (statusTimeout)
     {
-        ++status.tx_timeout_count;
+        ++status.txTimeoutCount;
         LOG_ERR(logger, "TX_STATUS timeout");
     }
-    time_to_send_stats.add(miosix::getTick() - start_tick);
+    timeToSendStats.add(miosix::getTick() - startTick);
 
     StackLogger::getInstance().updateStack(THID_XBEE);
 
     return success;
 }
 
-ssize_t Xbee::receive(uint8_t* buf, size_t buf_max_size)
+ssize_t Xbee::receive(uint8_t* buf, size_t bufMaxSize)
 {
     while (true)
     {
         // We have data in the buffer pending to be returned
-        if (!rx_frames_buf.isEmpty() || curr_rx_payload_ptr >= 0)
+        if (!rxFramesBuffer.isEmpty() || currRxPayloadPointer >= 0)
         {
-            return fillReceiveBuf(buf, buf_max_size);
+            return fillReceiveBuf(buf, bufMaxSize);
         }
         // No data in the buffer, but the xbee has data to return via SPI
         else if (attn.value() == 0)
         {
-            Lock<FastMutex> l(mutex_xbee_comm);
+            Lock<FastMutex> l(mutexXbeeCommunication);
             if (readRXFrame())
             {
                 sendATCommandInternal("DB");  // Query last packet RSSI
@@ -138,11 +138,11 @@ ssize_t Xbee::receive(uint8_t* buf, size_t buf_max_size)
         {
             {
                 miosix::FastInterruptDisableLock dLock;
-                receive_thread = miosix::Thread::getCurrentThread();
+                receiveThread = miosix::Thread::getCurrentThread();
 
-                while (receive_thread != 0)  // Avoid spurious wakeups
+                while (receiveThread != 0)  // Avoid spurious wakeups
                 {
-                    receive_thread->IRQwait();
+                    receiveThread->IRQwait();
                     {
                         miosix::FastInterruptEnableLock eLock(dLock);
                         miosix::Thread::yield();
@@ -151,9 +151,9 @@ ssize_t Xbee::receive(uint8_t* buf, size_t buf_max_size)
             }
 
             // Forcefully return without receiving anything
-            if (force_rcv_return)
+            if (forceRcvReturn)
             {
-                force_rcv_return = false;
+                forceRcvReturn = false;
                 return -1;
             }
         }
@@ -162,14 +162,14 @@ ssize_t Xbee::receive(uint8_t* buf, size_t buf_max_size)
 
 XbeeStatus Xbee::getStatus()
 {
-    status.timestamp          = miosix::getTick();
-    status.time_to_send_stats = time_to_send_stats.getStats();
+    status.timestamp       = miosix::getTick();
+    status.timeToSendStats = timeToSendStats.getStats();
     return status;
 }
 
 void Xbee::reset()
 {
-    Lock<FastMutex> l(mutex_xbee_comm);
+    Lock<FastMutex> l(mutexXbeeCommunication);
     {
         miosix::FastInterruptDisableLock dLock();
         rst.mode(miosix::Mode::OPEN_DRAIN);
@@ -186,19 +186,19 @@ void Xbee::reset()
         // Assert SSEL on every iteration as we don't exactly know when the
         // xbee will be ready.
         {
-            SPIAcquireLock acq(spi_xbee);
-            spi_xbee.cs.low();
+            SPIAcquireLock acq(spiXbee);
+            spiXbee.cs.low();
             miosix::delayUs(10);
-            spi_xbee.cs.high();
+            spiXbee.cs.high();
         }
 
         miosix::delayUs(50);
 
         if (attn.value() == 0 && readOneFrame() == ParseResult::SUCCESS)
         {
-            handleFrame(parsing_api_frame);
+            handleFrame(parsingApiFrame);
 
-            if (parsing_api_frame.frame_type == FTYPE_MODEM_STATUS)
+            if (parsingApiFrame.frameType == FTYPE_MODEM_STATUS)
             {
                 break;
             }
@@ -207,61 +207,61 @@ void Xbee::reset()
     } while (miosix::getTick() < timeout);
 }
 
-void Xbee::wakeReceiver(bool force_return)
+void Xbee::wakeReceiver(bool forceReturn)
 {
-    force_rcv_return = force_return;
+    forceRcvReturn = forceReturn;
     miosix::FastInterruptDisableLock dLock;
 
-    if (receive_thread)
+    if (receiveThread)
     {
-        receive_thread->IRQwakeup();
-        receive_thread = 0;
+        receiveThread->IRQwakeup();
+        receiveThread = 0;
     }
 }
 
 void Xbee::handleATTNInterrupt()
 {
-    if (receive_thread)
+    if (receiveThread)
     {
-        receive_thread->IRQwakeup();
-        if (receive_thread->IRQgetPriority() >
+        receiveThread->IRQwakeup();
+        if (receiveThread->IRQgetPriority() >
             miosix::Thread::IRQgetCurrentThread()->IRQgetPriority())
         {
             miosix::Scheduler::IRQfindNextThread();
         }
-        receive_thread = 0;
+        receiveThread = 0;
     }
 }
 
-size_t Xbee::fillReceiveBuf(uint8_t* buf, size_t buf_max_size)
+size_t Xbee::fillReceiveBuf(uint8_t* buf, size_t bufMaxSize)
 {
-    if (!rx_frames_buf.isEmpty() && curr_rx_payload_ptr == -1)
+    if (!rxFramesBuffer.isEmpty() && currRxPayloadPointer == -1)
     {
-        Lock<FastMutex> l(mutex_rx_frames);
-        curr_rx_frame       = rx_frames_buf.pop();
-        curr_rx_payload_ptr = 0;
+        Lock<FastMutex> l(mutexRxFrames);
+        currRxFrame          = rxFramesBuffer.pop();
+        currRxPayloadPointer = 0;
     }
 
-    if (curr_rx_payload_ptr >= 0)
+    if (currRxPayloadPointer >= 0)
     {
-        size_t len_remaining_data =
-            curr_rx_frame.getRXDataLength() - curr_rx_payload_ptr;
+        size_t lenRemainingData =
+            currRxFrame.getRXDataLength() - currRxPayloadPointer;
 
         // The buffer may be smaller than the data we need to return
-        size_t len_to_copy = min(buf_max_size, len_remaining_data);
+        size_t lenToCopy = min(bufMaxSize, lenRemainingData);
 
-        memcpy(buf, curr_rx_frame.getRXDataPointer() + curr_rx_payload_ptr,
-               len_to_copy);
+        memcpy(buf, currRxFrame.getRXDataPointer() + currRxPayloadPointer,
+               lenToCopy);
 
-        curr_rx_payload_ptr += len_to_copy;
+        currRxPayloadPointer += lenToCopy;
 
-        if (curr_rx_payload_ptr == curr_rx_frame.getRXDataLength())
+        if (currRxPayloadPointer == currRxFrame.getRXDataLength())
         {
             // We've emptied the current frame
-            curr_rx_payload_ptr = -1;
+            currRxPayloadPointer = -1;
         }
 
-        return len_to_copy;
+        return lenToCopy;
     }
 
     return 0;
@@ -269,13 +269,13 @@ size_t Xbee::fillReceiveBuf(uint8_t* buf, size_t buf_max_size)
 
 ParseResult Xbee::readOneFrame()
 {
-    SPIAcquireLock acq(spi_xbee);
-    SPISelectLock sel(spi_xbee);
+    SPIAcquireLock acq(spiXbee);
+    SPISelectLock sel(spiXbee);
 
     ParseResult result = ParseResult::IDLE;
     do
     {
-        result = parser.parse(spi_xbee.bus.read(), &parsing_api_frame);
+        result = parser.parse(spiXbee.bus.read(), &parsingApiFrame);
     } while (attn.value() == 0 && result == ParseResult::PARSING);
 
     return result;
@@ -287,9 +287,9 @@ bool Xbee::readRXFrame()
     {
         if (readOneFrame() == ParseResult::SUCCESS)
         {
-            handleFrame(parsing_api_frame);
+            handleFrame(parsingApiFrame);
 
-            if (parsing_api_frame.frame_type == FTYPE_RX_PACKET_FRAME)
+            if (parsingApiFrame.frameType == FTYPE_RX_PACKET_FRAME)
             {
                 return true;
             }
@@ -303,34 +303,34 @@ void Xbee::writeFrame(APIFrame& frame)
     frame.timestamp = miosix::getTick();  // Only for logging purposes
 
     // Serialize the frame
-    uint8_t tx_buf[MAX_API_FRAME_SIZE];
-    size_t tx_buf_size = frame.toBytes(tx_buf);
+    uint8_t txBuf[MAX_API_FRAME_SIZE];
+    size_t txBufSize = frame.toBytes(txBuf);
 
     {
-        SPITransaction spi(spi_xbee);
-        spi.transfer(tx_buf, tx_buf_size);
+        SPITransaction spi(spiXbee);
+        spi.transfer(txBuf, txBufSize);
     }
 
     // Pass the frame we just sent to the listener
-    if (frame_listener)
+    if (frameListener)
     {
-        frame_listener(frame);
+        frameListener(frame);
     }
 
     // Full duplex spi transfer: we may have received valid data while we
     // were sending the frame.
-    for (unsigned int i = 0; i < tx_buf_size; i++)
+    for (unsigned int i = 0; i < txBufSize; i++)
     {
-        ParseResult res = parser.parse(tx_buf[i], &parsing_api_frame);
+        ParseResult res = parser.parse(txBuf[i], &parsingApiFrame);
         if (res == ParseResult::SUCCESS)
         {
-            handleFrame(parsing_api_frame);
+            handleFrame(parsingApiFrame);
         }
     }
 }
 
-bool Xbee::waitForFrame(uint8_t frame_type, unsigned int poll_interval,
-                        long long timeout_tick)
+bool Xbee::waitForFrame(uint8_t frameType, unsigned int pollInterval,
+                        long long timeoutTick)
 {
     do
     {
@@ -338,9 +338,9 @@ bool Xbee::waitForFrame(uint8_t frame_type, unsigned int poll_interval,
         {
             if (readOneFrame() == ParseResult::SUCCESS)
             {
-                handleFrame(parsing_api_frame);
+                handleFrame(parsingApiFrame);
 
-                if (parsing_api_frame.frame_type == frame_type)
+                if (parsingApiFrame.frameType == frameType)
                 {
                     return true;
                 }
@@ -348,60 +348,60 @@ bool Xbee::waitForFrame(uint8_t frame_type, unsigned int poll_interval,
         }
         else
         {
-            miosix::Thread::sleep(poll_interval);
+            miosix::Thread::sleep(pollInterval);
         }
-    } while (miosix::getTick() < timeout_tick);
+    } while (miosix::getTick() < timeoutTick);
 
     return false;
 }
 
-uint8_t Xbee::buildTXRequestFrame(TXRequestFrame& tx_req, uint8_t* pkt,
-                                  size_t pkt_len)
+uint8_t Xbee::buildTXRequestFrame(TXRequestFrame& txReq, uint8_t* pkt,
+                                  size_t packeLength)
 {
-    memcpy(tx_req.getRFDataPointer(), pkt, pkt_len);
-    tx_req.setRFDataLength(pkt_len);
+    memcpy(txReq.getRFDataPointer(), pkt, packeLength);
+    txReq.setRFDataLength(packeLength);
 
-    uint8_t tx_frame_id = getNewFrameID();
+    uint8_t txFrameId = getNewFrameID();
 
-    tx_req.setFrameID(tx_frame_id);
+    txReq.setFrameID(txFrameId);
 
-    tx_req.setDestAddress(ADDRESS_BROADCAST);
-    tx_req.setBroadcastRadius(0);  // 0 = max hops, but we don't really care as
-                                   // it does not apply to point-multipoint mode
+    txReq.setDestAddress(ADDRESS_BROADCAST);
+    txReq.setBroadcastRadius(0);  // 0 = max hops, but we don't really care as
+                                  // it does not apply to point-multipoint mode
     // Point-multipoint mode, disable ack, disable route discovery
-    tx_req.setTransmitOptions(TO_DM_POINT_MULTIPOINT | TO_DISABLE_ACK |
-                              TO_DISABLE_RD);
-    tx_req.calcChecksum();
+    txReq.setTransmitOptions(TO_DM_POINT_MULTIPOINT | TO_DISABLE_ACK |
+                             TO_DISABLE_RD);
+    txReq.calcChecksum();
 
-    return tx_frame_id;
+    return txFrameId;
 }
 
-void Xbee::sendATCommand(const char* cmd, uint8_t* params, size_t params_len)
+void Xbee::sendATCommand(const char* cmd, uint8_t* params, size_t paramsLen)
 {
-    Lock<FastMutex> l(mutex_xbee_comm);
+    Lock<FastMutex> l(mutexXbeeCommunication);
 
-    sendATCommandInternal(0, cmd, params, params_len);
+    sendATCommandInternal(0, cmd, params, paramsLen);
 }
 
 bool Xbee::sendATCommand(const char* cmd, ATCommandResponseFrame* response,
-                         uint8_t* params, size_t params_len,
+                         uint8_t* params, size_t paramsLen,
                          unsigned int timeout)
 {
-    Lock<FastMutex> l(mutex_xbee_comm);
+    Lock<FastMutex> l(mutexXbeeCommunication);
 
-    uint8_t tx_frame_id = sendATCommandInternal(cmd, params, params_len);
+    uint8_t txFrameId = sendATCommandInternal(cmd, params, paramsLen);
 
     bool success = false;
 
-    long long timeout_tick = miosix::getTick() + timeout;
+    long long timeoutTick = miosix::getTick() + timeout;
 
     while (waitForFrame(FTYPE_AT_COMMAND_RESPONSE, FRAME_POLL_INTERVAL,
-                        timeout_tick))
+                        timeoutTick))
     {
         ATCommandResponseFrame* f =
-            parsing_api_frame.toFrameType<ATCommandResponseFrame>();
+            parsingApiFrame.toFrameType<ATCommandResponseFrame>();
 
-        if (f->getFrameID() == tx_frame_id &&
+        if (f->getFrameID() == txFrameId &&
             strncmp(cmd, f->getATCommand(), 2) == 0)
         {
             memcpy(response, f, sizeof(ATCommandResponseFrame));
@@ -414,27 +414,27 @@ bool Xbee::sendATCommand(const char* cmd, ATCommandResponseFrame* response,
 }
 
 uint8_t Xbee::sendATCommandInternal(const char* cmd, uint8_t* params,
-                                    size_t params_len)
+                                    size_t paramsLen)
 {
-    return sendATCommandInternal(getNewFrameID(), cmd, params, params_len);
+    return sendATCommandInternal(getNewFrameID(), cmd, params, paramsLen);
 }
 
-uint8_t Xbee::sendATCommandInternal(uint8_t tx_frame_id, const char* cmd,
-                                    uint8_t* params, size_t params_len)
+uint8_t Xbee::sendATCommandInternal(uint8_t txFrameId, const char* cmd,
+                                    uint8_t* params, size_t paramsLen)
 {
     // Build the AT command
     ATCommandFrame at;
     at.setATCommand(cmd);
-    at.setFrameID(tx_frame_id);
-    if (params_len > 0)
+    at.setFrameID(txFrameId);
+    if (paramsLen > 0)
     {
-        if (params_len > MAX_AT_COMMAND_PARAMS_LENGTH)
+        if (paramsLen > MAX_AT_COMMAND_PARAMS_LENGTH)
         {
             LOG_ERR(logger, "AT Command payload too large, it was truncated");
-            params_len = MAX_AT_COMMAND_PARAMS_LENGTH;
+            paramsLen = MAX_AT_COMMAND_PARAMS_LENGTH;
         }
-        at.setParameterSize(params_len);
-        memcpy(at.getCommandDataPointer(), params, params_len);
+        at.setParameterSize(paramsLen);
+        memcpy(at.getCommandDataPointer(), params, paramsLen);
     }
 
     at.calcChecksum();
@@ -442,7 +442,7 @@ uint8_t Xbee::sendATCommandInternal(uint8_t tx_frame_id, const char* cmd,
     // Send it
     writeFrame(at);
 
-    return tx_frame_id;
+    return txFrameId;
 }
 
 void Xbee::handleFrame(APIFrame& frame)
@@ -450,22 +450,22 @@ void Xbee::handleFrame(APIFrame& frame)
     // Set the timestamp to the frame
     frame.timestamp = miosix::getTick();
 
-    switch (frame.frame_type)
+    switch (frame.frameType)
     {
         case FTYPE_RX_PACKET_FRAME:
         {
             RXPacketFrame* pf = frame.toFrameType<RXPacketFrame>();
             {
-                Lock<FastMutex> l(mutex_rx_frames);
+                Lock<FastMutex> l(mutexRxFrames);
 
-                if (rx_frames_buf.isFull())
+                if (rxFramesBuffer.isFull())
                 {
-                    ++status.rx_dropped_buffers;
+                    ++status.rxDroppedBuffers;
                 }
-                rx_frames_buf.put(*pf);
-                if (rx_frames_buf.count() > status.frame_buf_max_length)
+                rxFramesBuffer.put(*pf);
+                if (rxFramesBuffer.count() > status.frameBufMaxLength)
                 {
-                    status.frame_buf_max_length = rx_frames_buf.count();
+                    status.frameBufMaxLength = rxFramesBuffer.count();
                 }
             }
             wakeReceiver();
@@ -488,20 +488,20 @@ void Xbee::handleFrame(APIFrame& frame)
         }
         case FTYPE_TX_STATUS:
         {
-            TXStatusFrame* ts     = frame.toFrameType<TXStatusFrame>();
-            status.last_tx_status = ts->getDeliveryStatus();
-            if (status.last_tx_status != DELS_SUCCESS)
+            TXStatusFrame* ts   = frame.toFrameType<TXStatusFrame>();
+            status.lastTxStatus = ts->getDeliveryStatus();
+            if (status.lastTxStatus != DELS_SUCCESS)
             {
-                status.last_tx_status_error = status.last_tx_status;
+                status.lastTxStatusError = status.lastTxStatus;
             }
-            switch (status.last_tx_status)
+            switch (status.lastTxStatus)
             {
                 case DELS_SUCCESS:
                     break;
                 default:
                     LOG_ERR(
                         logger, "TX Status Error: {} (retries: {}, RD: {})",
-                        status.last_tx_status, ts->getTransmitRetryCount(),
+                        status.lastTxStatus, ts->getTransmitRetryCount(),
                         ts->getDiscoveryStatus() == 2 ? "Enabled" : "Disabled");
                     break;
             }
@@ -512,26 +512,26 @@ void Xbee::handleFrame(APIFrame& frame)
     }
 
     // Pass the frame to the listener
-    if (frame_listener)
+    if (frameListener)
     {
-        frame_listener(frame);
+        frameListener(frame);
     }
 }
 
 void Xbee::setOnFrameReceivedListener(OnFrameReceivedListener listener)
 {
-    frame_listener = listener;
+    frameListener = listener;
 }
 
 uint8_t Xbee::getNewFrameID()
 {
-    uint8_t tx_frame_id = frame_id_counter++;
+    uint8_t txFrameId = frameIdCounter++;
 
     // Any value != 0 implies that we DO want a tx status response
-    if (frame_id_counter == 0)
-        frame_id_counter = 1;
+    if (frameIdCounter == 0)
+        frameIdCounter = 1;
 
-    return tx_frame_id;
+    return txFrameId;
 }
 
 }  // namespace Xbee

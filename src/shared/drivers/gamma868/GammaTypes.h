@@ -74,46 +74,48 @@ enum GammaPower : uint8_t
 /* Device configuration */
 struct GammaConf
 {
-    bool is_valid =
+    bool isValid =
         false;  // True if the configuration has been read from the device
-    bool handshake                    = false;
-    std::array<uint8_t, 3> local_addr = {{125}};
-    std::array<uint8_t, 3> dest_addr  = {{125}};
-    GammaSF lora_sf                   = SF6;
-    GammaPower lora_power             = dbm15;
-    GammaBaudrate baudrate            = B_57600;
+    bool handshake                            = false;
+    std::array<uint8_t, 3> localAddress       = {{125}};
+    std::array<uint8_t, 3> destinationAddress = {{125}};
+    GammaSF loraSf                            = SF6;
+    GammaPower loraPower                      = dbm15;
+    GammaBaudrate baudrate                    = B_57600;
 };
 
 /* Comparison operator */
 inline bool operator==(const GammaConf& lhs, const GammaConf& rhs)
 {
-    return lhs.handshake == rhs.handshake && lhs.local_addr == rhs.local_addr &&
-           lhs.dest_addr == rhs.dest_addr && lhs.lora_sf == rhs.lora_sf &&
-           lhs.lora_power == rhs.lora_power && lhs.baudrate == rhs.baudrate;
+    return lhs.handshake == rhs.handshake &&
+           lhs.localAddress == rhs.localAddress &&
+           lhs.destinationAddress == rhs.destinationAddress &&
+           lhs.loraSf == rhs.loraSf && lhs.loraPower == rhs.loraPower &&
+           lhs.baudrate == rhs.baudrate;
 }
 
 /* Stream operator */
 inline std::ostream& operator<<(std::ostream& o, const GammaConf& conf)
 {
-    return o << "local_addr: " << conf.local_addr[0]
-             << "\tdest_addr: " << conf.dest_addr[0]
-             << "spreading factor: " << (uint8_t)conf.lora_sf
-             << "\toutput power: " << (uint8_t)conf.lora_power
+    return o << "local_address: " << conf.localAddress[0]
+             << "\tdest_addr: " << conf.destinationAddress[0]
+             << "spreading factor: " << (uint8_t)conf.loraSf
+             << "\toutput power: " << (uint8_t)conf.loraPower
              << "handshake: " << (uint8_t)conf.handshake
              << "\tbaudrate: " << (uint8_t)conf.baudrate << std::endl;
 }
 
 /* Message received from the Gamma, as per datasheet */
-union gamma_msg
+union GammaMessage
 {
     struct gamma_msg_t
     {
-        uint8_t cmd_echo[2];
-        uint8_t local_addr[3];
-        uint8_t dest_addr[3];
-        uint8_t null_value;
-        uint8_t lora_mode;
-        uint8_t lora_power;
+        uint8_t commandEcho[2];
+        uint8_t localAddress[3];
+        uint8_t destinationAddress[3];
+        uint8_t nullValue;
+        uint8_t loraMode;
+        uint8_t loraPower;
         uint8_t handshake;
         uint8_t baudrate;
     } conf;

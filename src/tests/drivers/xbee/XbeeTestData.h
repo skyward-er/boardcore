@@ -38,87 +38,87 @@ namespace Boardcore
 struct XbeeConfig
 {
     long long timestamp;
-    bool tx_enabled            = false;
-    uint16_t packet_size       = 256;
-    unsigned int send_interval = 0;
-    bool freq_hop              = true;
-    bool data_rate_80k         = false;
+    bool txEnabled            = false;
+    uint16_t packetSize       = 256;
+    unsigned int sendInterval = 0;
+    bool freqHop              = true;
+    bool dataRate80k          = false;
 
     void print()
     {
         printf("+++XBee configuration+++\n\n");
         printf("Tx: %s, pkt: %u B, int: %u ms\n",
-               tx_enabled ? "enabled" : "disabled", packet_size, send_interval);
-        printf("Freq hop: %s, data rate: %s \n", freq_hop ? "on" : "off",
-               data_rate_80k ? "80 kbps" : "10 kbps");
+               txEnabled ? "enabled" : "disabled", packetSize, sendInterval);
+        printf("Freq hop: %s, data rate: %s \n", freqHop ? "on" : "off",
+               dataRate80k ? "80 kbps" : "10 kbps");
     }
 
     static string header()
     {
-        return "timestamp,tx_enabled,packet_size,send_interval,freq_hop,data_"
+        return "timestamp,txEnabled,packetSize,send_interval,freq_hop,data_"
                "rate_80k\n";
     }
 
     void print(std::ostream& os) const
     {
-        os << timestamp << "," << tx_enabled << "," << packet_size << ","
-           << send_interval << "," << freq_hop << "," << data_rate_80k << "\n";
+        os << timestamp << "," << txEnabled << "," << packetSize << ","
+           << sendInterval << "," << freqHop << "," << dataRate80k << "\n";
     }
 };
 
 struct TxData
 {
-    long long timestamp               = 0LL;
-    unsigned int packet_size          = 0;
-    unsigned int time_since_last_send = 0;
-    unsigned int time_to_send         = 0;
-    unsigned int tx_success_counter   = 0;
-    unsigned int tx_fail_counter      = 0;
+    long long timestamp            = 0LL;
+    unsigned int packetSize        = 0;
+    unsigned int timeSinceLastSend = 0;
+    unsigned int timeToSend        = 0;
+    unsigned int txSuccessCounter  = 0;
+    unsigned int txFailCounter     = 0;
 
     static string header()
     {
-        return "timestamp,packet_size,time_since_last_send,time_to_send,tx_"
+        return "timestamp,packetSize,time_since_last_send,time_to_send,tx_"
                "success_cnt,tx_fail_cnt\n";
     }
 
     void print(std::ostream& os) const
     {
-        os << timestamp << "," << packet_size << "," << time_since_last_send
-           << "," << time_to_send << "," << tx_success_counter << ","
-           << tx_fail_counter << "\n";
+        os << timestamp << "," << packetSize << "," << timeSinceLastSend << ","
+           << timeToSend << "," << txSuccessCounter << "," << txFailCounter
+           << "\n";
     }
 };
 
 struct RxData
 {
     long long timestamp;
-    size_t pkt_size                 = 0;
-    long long last_packet_timestamp = 0;
-    int RSSI                        = 0;
-    unsigned int rcv_count          = 0;
-    unsigned int packets_lost       = 0;
-    unsigned int rcv_errors         = 0;
-    unsigned int rcv_wrong_payload  = 0;
+    size_t pktSize                = 0;
+    long long lastPacketTimestamp = 0;
+    int RSSI                      = 0;
+    unsigned int rcvCount         = 0;
+    unsigned int packetsLost      = 0;
+    unsigned int rcvErrors        = 0;
+    unsigned int rcvWrongPayload  = 0;
 
     static string header()
     {
-        return "timestamp,packet_size,last_packet_timestamp,RSSI,rcv_cnt,rcv_"
+        return "timestamp,packetSize,last_packet_timestamp,RSSI,rcv_cnt,rcv_"
                "errors,"
                "rcv_wrong\n";
     }
 
     void print(std::ostream& os) const
     {
-        os << timestamp << "," << pkt_size << "," << last_packet_timestamp
-           << "," << RSSI << "," << rcv_count << "," << rcv_errors << ","
-           << rcv_wrong_payload << "\n";
+        os << timestamp << "," << pktSize << "," << lastPacketTimestamp << ","
+           << RSSI << "," << rcvCount << "," << rcvErrors << ","
+           << rcvWrongPayload << "\n";
     }
 };
 
 struct EnergyScanData
 {
     long long timestamp;
-    int channel_data[30];
+    int channelData[30];
 
     EnergyScanData() = default;
 
@@ -126,7 +126,7 @@ struct EnergyScanData
     {
         for (int i = 0; i < 30; i++)
         {
-            channel_data[i] = scan[i];
+            channelData[i] = scan[i];
         }
 
         timestamp = ts;
@@ -148,7 +148,7 @@ struct EnergyScanData
 
         for (int i = 0; i < 30; i++)
         {
-            os << "," << channel_data[i];
+            os << "," << channelData[i];
         }
 
         os << "\n";

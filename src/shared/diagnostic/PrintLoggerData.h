@@ -56,11 +56,11 @@ enum LogLevel : uint8_t
  */
 struct LoggingString
 {
-    char log_string[MAX_LOG_STRING_SIZE];
+    char logString[MAX_LOG_STRING_SIZE];
 
     static std::string header() { return "log_string\n"; }
 
-    void print(std::ostream& os) const { os << log_string << "\n"; }
+    void print(std::ostream& os) const { os << logString << "\n"; }
 };
 
 }  // namespace Boardcore

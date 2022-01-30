@@ -22,15 +22,13 @@
 
 #pragma once
 
+#include <Singleton.h>
 #include <kernel/kernel.h>
 
 #ifndef COMPILE_FOR_HOST
 #include "GeneralPurposeTimer.h"
 #include "TimerUtils.h"
 #endif
-
-// When defined, a global variable is created and the timestamp timer is set up
-#define ENABLE_TIMESTAMP_TIMER
 
 namespace Boardcore
 {
@@ -50,22 +48,34 @@ namespace Boardcore
  * For timer resolution and duration refer to :
  * https://docs.google.com/spreadsheets/d/1FiNDVU7Rg98yZzz1dZ4GDAq3-nEg994ziezCawJ-OK4/edit?usp=sharing
  */
-class TimestampTimer
+class TimestampTimer : public Singleton<TimestampTimer>
 {
+    friend class Singleton<TimestampTimer>;
+
 public:
-    TimestampTimer();
-
-#ifndef COMPILE_FOR_HOST
-    /**
-     * @brief TimestampTimer defaults to TIM2.
-     */
-    static GeneralPurposeTimer<uint32_t> timer;
-#endif
-
     /**
      * @brief Preferred timer clock frequency.
      */
     static constexpr uint32_t TIMER_FREQUENCY = 250000;
+
+    /**
+     * @brief Resets the timestamp timer to 0.
+     */
+    void resetTimestamp();
+
+    /**
+     * @brief Compute the current timer value in microseconds.
+     *
+     * @return Current timestamp in microseconds.
+     */
+    uint64_t getTimestamp();
+
+#ifndef COMPILE_FOR_HOST
+    TIM_TypeDef *getTimer();
+#endif
+
+private:
+    TimestampTimer();
 
     /**
      * @brief Initialize the timer.
@@ -73,19 +83,19 @@ public:
      * Enables the timer clock, resets the timer registers and sets che correct
      * timer configuration.
      */
-    static void initTimestampTimer();
+    void initTimestampTimer();
 
     /**
      * @brief Starts the timer peripheral.
      */
-    static void enableTimestampTimer();
+    void enableTimestampTimer();
 
+#ifndef COMPILE_FOR_HOST
     /**
-     * @brief Compute the current timer value in microseconds.
-     *
-     * @return Current timestamp in microseconds.
+     * @brief TimestampTimer defaults to TIM2.
      */
-    static uint64_t getTimestamp();
+    GP32bitTimer timer = GP32bitTimer{TIM2};
+#endif
 };
 
 inline uint64_t TimestampTimer::getTimestamp()

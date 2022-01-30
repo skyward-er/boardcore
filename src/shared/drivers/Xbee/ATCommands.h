@@ -99,12 +99,12 @@ bool disableFrequencyHopping(Xbee& xbee, unsigned int timeout = 1000)
  * @brief Configures the desired xbee data rate.
  *
  * @param xbee Reference to an xbee object
- * @param data_rate_80kbps true for 80kbps, false for 10kbps
+ * @param dataRate80kbps true for 80kbps, false for 10kbps
  * @return True if the command was executed successfully
  */
-bool setDataRate(Xbee& xbee, bool data_rate_80kbps, unsigned int timeout = 1000)
+bool setDataRate(Xbee& xbee, bool dataRate80kbps, unsigned int timeout = 1000)
 {
-    uint8_t param = (uint8_t)data_rate_80kbps;
+    uint8_t param = (uint8_t)dataRate80kbps;
     ATCommandResponseFrame response;
 
     return xbee.sendATCommand("BR", &response, &param, 1, timeout);
@@ -127,24 +127,24 @@ bool writeToMemory(Xbee& xbee, unsigned int timeout = 1000)
  * @brief Performs an energy detect scan on all channels
  *
  * @param xbee Reference to an xbee object
- * @param energy_detect_data Pointer to a 30-bytes buffer where energy levels
+ * @param energyDetectData Pointer to a 30-bytes buffer where energy levels
  * will be stored. Energy levels are in -dBm units.
  * @param duration Scan duration in ms
  * @return True if the command was executed successfully and data stored in
- * energy_detect_data is valid
+ * energyDetectData is valid
  */
-bool energyDetect(Xbee& xbee, int* energy_detect_data, uint8_t duration,
+bool energyDetect(Xbee& xbee, int* energyDetectData, uint8_t duration,
                   unsigned int timeout = 1000)
 {
     ATCommandResponseFrame response;
     if (xbee.sendATCommand("ED", &response, &duration, 1, timeout))
     {
-        uint16_t resp_len = response.getCommandDataLength();
-        if (resp_len == 30)
+        uint16_t respLen = response.getCommandDataLength();
+        if (respLen == 30)
         {
             for (int i = 0; i < 30; i++)
             {
-                energy_detect_data[i] =
+                energyDetectData[i] =
                     (int)(*(response.getCommandDataPointer() + i));
             }
 

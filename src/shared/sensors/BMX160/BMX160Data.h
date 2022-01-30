@@ -44,27 +44,34 @@ struct BMX160Data : public AccelerometerData,
 
     static std::string header()
     {
-        return "accel_timestamp,accel_x,accel_y,accel_z,gyro_timestamp,gyro_x,"
-               "gyro_y,"
-               "gyro_z,mag_timestamp,mag_x,mag_y,mag_z\n";
+        return "accelerationTimestamp,accelerationX,accelerationY,"
+               "accelerationZ,gyro_"
+               "timestamp,"
+               "angularVelocityX,"
+               "angularVelocityY,"
+               "angularVelocityZ,magneticFieldTimestamp,magneticFieldX,"
+               "magneticFieldY,"
+               "magneticFieldZ\n";
     }
 
     void print(std::ostream& os) const
     {
-        os << accel_timestamp << "," << accel_x << "," << accel_y << ","
-           << accel_z << "," << gyro_timestamp << "," << gyro_x << "," << gyro_y
-           << "," << gyro_z << "," << mag_timestamp << "," << mag_x << ","
-           << mag_y << "," << mag_z << "\n";
+        os << accelerationTimestamp << "," << accelerationX << ","
+           << accelerationY << "," << accelerationZ << ","
+           << angularVelocityTimestamp << "," << angularVelocityX << ","
+           << angularVelocityY << "," << angularVelocityZ << ","
+           << magneticFieldTimestamp << "," << magneticFieldX << ","
+           << magneticFieldY << "," << magneticFieldZ << "\n";
     }
 };
 
 struct BMX160Temperature : public TemperatureData
 {
-    static std::string header() { return "temp_timestamp,temperature\n"; }
+    static std::string header() { return "temperatureTimestamp,temperature\n"; }
 
     void print(std::ostream& os) const
     {
-        os << temp_timestamp << "," << temp << "\n";
+        os << temperatureTimestamp << "," << temperature << "\n";
     }
 };
 
@@ -75,22 +82,24 @@ struct BMX160FifoStats
 {
     uint64_t timestamp;
 
-    uint64_t watermark_ts;   //< Watermark timestamp (from the start of
-                             // the fifo)
-    uint64_t fifo_duration;  //< Total fifo duration
-    uint64_t interrupt_dt;   //< Reported delta time between the previous
-                             // interrupt and the current one.
-    int len;                 //< Fifo length in bytes.
+    uint64_t watermarkTimestamp;  ///< Watermark timestamp (from the start of
+                                  // the fifo)
+    uint64_t fifoDuration;        ///< Total fifo duration
+    uint64_t
+        interruptTimestampDelta;  ///< Reported delta time between the previous
+                                  // interrupt and the current one.
+    int len;                      ///< Fifo length in bytes.
 
     static std::string header()
     {
-        return "timestamp,watermark_ts,fifo_duration,interrupt_dt,fifo_len\n";
+        return "timestamp,watermark_timestamp,fifo_duration,interrupt_"
+               "timestamp_delta,fifo_len\n";
     }
 
     void print(std::ostream& os) const
     {
-        os << timestamp << "," << watermark_ts << "," << fifo_duration << ","
-           << interrupt_dt << "," << len << "\n";
+        os << timestamp << "," << watermarkTimestamp << "," << fifoDuration
+           << "," << interruptTimestampDelta << "," << len << "\n";
     }
 };
 

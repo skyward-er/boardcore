@@ -30,8 +30,6 @@ using namespace miosix;
 
 int main()
 {
-    TimestampTimer::enableTimestampTimer();
-
     GpioPin cs(GPIOB_BASE, 1), miso(GPIOB_BASE, 4), mosi(GPIOB_BASE, 5),
         clk(GPIOB_BASE, 3);
 
@@ -87,8 +85,8 @@ int main()
         sensor.sample();
         LIS3MDLData data = sensor.getLastSample();
         UNUSED(data);
-        TRACE("%f C | x: %f | y: %f | z %f\n", data.temp, data.mag_x,
-              data.mag_y, data.mag_z);
+        TRACE("%f C | x: %f | y: %f | z %f\n", data.temperature,
+              data.magneticFieldX, data.magneticFieldY, data.magneticFieldZ);
         miosix::Thread::sleep(2000);
     }
 }

@@ -40,31 +40,31 @@ public:
      * @brief Creates a new TextView
      *
      * @param text Text
-     * @param text_color Text color
+     * @param textColor Text color
      * @param padding Spacing from view bounds in pixels
      */
-    TextView(std::string text = "", mxgui::Color text_color = mxgui::white,
+    TextView(std::string text = "", mxgui::Color textColor = mxgui::white,
              uint8_t padding = 1)
-        : View(), text(text), col_text(text_color), padding(padding)
+        : View(), text(text), colText(textColor), padding(padding)
     {
     }
 
     void setVerticalAlignment(VertAlignment alignment)
     {
-        vert_align = alignment;
+        vertAlign = alignment;
         invalidate();
     }
 
     void setHorizontalAlignment(HorizAlignment alignment)
     {
-        horiz_align = alignment;
+        horizAlign = alignment;
         invalidate();
     }
 
-    void setAlignment(HorizAlignment horiz_align, VertAlignment vert_align)
+    void setAlignment(HorizAlignment horizAlign, VertAlignment vertAlign)
     {
-        setVerticalAlignment(vert_align);
-        setHorizontalAlignment(horiz_align);
+        setVerticalAlignment(vertAlign);
+        setHorizontalAlignment(horizAlign);
     }
 
     void setText(std::string text)
@@ -80,14 +80,14 @@ public:
 
     virtual void setTextColor(mxgui::Color color)
     {
-        if (color != col_text)
+        if (color != colText)
         {
-            this->col_text = color;
+            this->colText = color;
             invalidate();
         }
     }
 
-    mxgui::Color getTextColor() { return col_text; }
+    mxgui::Color getTextColor() { return colText; }
 
     virtual void draw(mxgui::DrawingContext& dc) override
     {
@@ -95,51 +95,50 @@ public:
         {
             View::draw(dc);
 
-            Bounds padded_bounds = getBounds();
-            padded_bounds.pos += Position{padding, padding};
-            padded_bounds.size.height -= padding;
-            padded_bounds.size.width -= padding;
+            Bounds paddedBounds = getBounds();
+            paddedBounds.pos += Position{padding, padding};
+            paddedBounds.size.height -= padding;
+            paddedBounds.size.width -= padding;
 
-            Position top_left = padded_bounds.topLeft();
-            switch (vert_align)
+            Position topLeft = paddedBounds.topLeft();
+            switch (vertAlign)
             {
                 case VertAlignment::BOTTOM:
-                    top_left.y =
-                        padded_bounds.bottomLeft().y - dc.getFont().getHeight();
+                    topLeft.y =
+                        paddedBounds.bottomLeft().y - dc.getFont().getHeight();
                     break;
                 case VertAlignment::CENTER:
-                    top_left.y =
-                        padded_bounds.pos.y +
-                        (padded_bounds.size.height - dc.getFont().getHeight()) /
+                    topLeft.y =
+                        paddedBounds.pos.y +
+                        (paddedBounds.size.height - dc.getFont().getHeight()) /
                             2;
                     break;
                 case VertAlignment::TOP:
                     break;
             }
 
-            switch (horiz_align)
+            switch (horizAlign)
             {
                 case HorizAlignment::RIGHT:
-                    top_left.x =
-                        padded_bounds.topRight().x - getTextWidth(text);
+                    topLeft.x = paddedBounds.topRight().x - getTextWidth(text);
                     break;
                 case HorizAlignment::CENTER:
-                    top_left.x =
-                        padded_bounds.pos.x +
-                        (padded_bounds.size.width - getTextWidth(text)) / 2;
+                    topLeft.x =
+                        paddedBounds.pos.x +
+                        (paddedBounds.size.width - getTextWidth(text)) / 2;
                     break;
                 case HorizAlignment::LEFT:
                     break;
             }
 
-            mxgui::Font old_font = dc.getFont();
+            mxgui::Font oldFont = dc.getFont();
             dc.setFont(font);
 
             dc.setTextColor(getTextColor(), getBackgroundColor());
-            dc.clippedWrite(top_left, padded_bounds.topLeft(),
-                            padded_bounds.bottomRight(), text);
+            dc.clippedWrite(topLeft, paddedBounds.topLeft(),
+                            paddedBounds.bottomRight(), text);
 
-            dc.setFont(old_font);
+            dc.setFont(oldFont);
         }
     }
 
@@ -173,12 +172,12 @@ protected:
     }
 
 private:
-    mxgui::Font font           = mxgui::tahoma;
-    VertAlignment vert_align   = VertAlignment::TOP;
-    HorizAlignment horiz_align = HorizAlignment::LEFT;
+    mxgui::Font font          = mxgui::tahoma;
+    VertAlignment vertAlign   = VertAlignment::TOP;
+    HorizAlignment horizAlign = HorizAlignment::LEFT;
     std::string text;
 
-    mxgui::Color col_text = mxgui::white;
+    mxgui::Color colText = mxgui::white;
     uint8_t padding;
 };
 

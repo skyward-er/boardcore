@@ -105,9 +105,9 @@ public:
         CYCLES_480 = 0x7
     };
 
-    explicit InternalADC(ADC_TypeDef& ADCx_, const float V_SUPPLY_ = 5.0,
-                         const bool isUsingDMA_    = false,
-                         DMA_Stream_TypeDef* DMAx_ = DMA1_Stream0);
+    explicit InternalADC(ADC_TypeDef& ADCx, const float supplyVoltage = 5.0,
+                         const bool isUsingDMA    = false,
+                         DMA_Stream_TypeDef* DMAx = DMA1_Stream0);
 
     ~InternalADC();
 
@@ -148,7 +148,7 @@ private:
     inline void disableADCClock();
 
     ADC_TypeDef& ADCx;
-    const float V_SUPPLY = 5.0;
+    const float supplyVoltage = 5.0;
 
     uint8_t activeChannels = 0;
     uint64_t timestamp;

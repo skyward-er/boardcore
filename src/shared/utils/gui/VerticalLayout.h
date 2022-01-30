@@ -52,7 +52,7 @@ public:
         if (weight < 0)
             weight = 0;
         childs.push_back({weight, view});
-        weigth_sum += weight;
+        weigthSum += weight;
 
         // Recalculated child bounds
         updateChildBounds();
@@ -92,35 +92,35 @@ public:
 private:
     void updateChildBounds()
     {
-        if (weigth_sum > 0)
+        if (weigthSum > 0)
         {
-            short int aval_height =
+            short int avalHeight =
                 getBounds().size.height - (childs.size() - 1) * spacing;
 
             short int y = 0;
 
             for (auto view : childs)
             {
-                Bounds view_bounds{{0, y}, {getBounds().size.width, 0}};
+                Bounds viewBounds{{0, y}, {getBounds().size.width, 0}};
 
-                view_bounds.size.height =
-                    aval_height / weigth_sum * view.vert_weight;
-                view_bounds.pos += getBounds().pos;
+                viewBounds.size.height =
+                    avalHeight / weigthSum * view.vertWeight;
+                viewBounds.pos += getBounds().pos;
 
-                view.drawable->setBounds(view_bounds);
+                view.drawable->setBounds(viewBounds);
 
-                y += view_bounds.size.height + spacing;
+                y += viewBounds.size.height + spacing;
             }
         }
     }
 
     struct Child
     {
-        float vert_weight;
+        float vertWeight;
         View* drawable;
     };
 
-    float weigth_sum = 0;
+    float weigthSum = 0;
     short int spacing;
     std::vector<Child> childs;
 };

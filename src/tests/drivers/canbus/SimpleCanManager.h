@@ -33,21 +33,15 @@
 
 using std::function;
 
-using Boardcore::ActiveObject;
-using Boardcore::SyncCircularBuffer;
-using Boardcore::Canbus::BusLoadEstimation;
-using Boardcore::Canbus::Canbus;
-using Boardcore::Canbus::CanPacket;
-using Boardcore::Canbus::CanRXPacket;
-
 class SimpleCanManager
 {
 public:
-    using RXFunction = function<void(CanRXPacket)>;
+    using RXFunction = function<void(Boardcore::Canbus::CanRXPacket)>;
 
-    SimpleCanManager(Canbus& can, uint32_t baud_Rate, RXFunction rx_fun)
-        : canbus(can), bus_load(baud_Rate), sender(*this), receiver(*this),
-          rx_fun(rx_fun)
+    SimpleCanManager(Boardcore::Canbus::CanbusDriver& can, uint32_t baud_Rate,
+                     RXFunction rxFun)
+        : canbus(can), busLoad(baud_Rate), sender(*this), receiver(*this),
+          rxFun(rxFun)
     {
     }
 
@@ -63,22 +57,22 @@ public:
         receiver.stop();
 
         // Empty packet to wakeup sender thread
-        tx_packets.put({});
+        txPackets.put({});
     }
 
-    void send(CanPacket packet)
+    void send(Boardcore::Canbus::CanPacket packet)
     {
-        if (tx_packets.isFull())
+        if (txPackets.isFull())
         {
             printf("Pkt drop\n");
         }
-        tx_packets.put(packet);
+        txPackets.put(packet);
     }
 
-    BusLoadEstimation& getLoadSensor() { return bus_load; }
+    Boardcore::Canbus::BusLoadEstimation& getLoadSensor() { return busLoad; }
 
 private:
-    class CanSender : public ActiveObject
+    class CanSender : public Boardcore::ActiveObject
     {
     public:
         explicit CanSender(SimpleCanManager& parent) : parent(parent) {}
@@ -86,16 +80,16 @@ private:
         {
             while (!shouldStop())
             {
-                parent.tx_packets.waitUntilNotEmpty();
+                parent.txPackets.waitUntilNotEmpty();
 
                 if (shouldStop())
                 {
                     return;
                 }
-                CanPacket p = parent.tx_packets.pop();
+                Boardcore::Canbus::CanPacket p = parent.txPackets.pop();
                 parent.canbus.send(p);
                 p.timestamp = miosix::getTick();
-                parent.bus_load.addPacket(p);
+                parent.busLoad.addPacket(p);
             }
         }
 
@@ -103,7 +97,7 @@ private:
         SimpleCanManager& parent;
     };
 
-    class CanReceiver : public ActiveObject
+    class CanReceiver : public Boardcore::ActiveObject
     {
     public:
         explicit CanReceiver(SimpleCanManager& parent) : parent(parent) {}
@@ -114,9 +108,10 @@ private:
                 parent.canbus.getRXBuffer().waitUntilNotEmpty();
                 while (!parent.canbus.getRXBuffer().isEmpty())
                 {
-                    CanRXPacket p = parent.canbus.getRXBuffer().pop();
-                    parent.bus_load.addPacket(p.packet);
-                    parent.rx_fun(p);
+                    Boardcore::Canbus::CanRXPacket p =
+                        parent.canbus.getRXBuffer().pop();
+                    parent.busLoad.addPacket(p.packet);
+                    parent.rxFun(p);
                 }
             }
         }
@@ -125,10 +120,10 @@ private:
         SimpleCanManager& parent;
     };
 
-    Canbus& canbus;
-    BusLoadEstimation bus_load;
+    Boardcore::Canbus::CanbusDriver& canbus;
+    Boardcore::Canbus::BusLoadEstimation busLoad;
     CanSender sender;
     CanReceiver receiver;
-    RXFunction rx_fun;
-    SyncCircularBuffer<CanPacket, 10> tx_packets;
+    RXFunction rxFun;
+    Boardcore::SyncCircularBuffer<Boardcore::Canbus::CanPacket, 10> txPackets;
 };

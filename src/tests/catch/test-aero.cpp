@@ -58,14 +58,14 @@ TEST_CASE("[AeroUtils] mslPressure")
     REQUIRE(mslPressure(102531.8, 288.8, -100) == isa_P0);
 }
 
-float mslAltitude(float pressure, float pressure_ref, float temperature_ref,
-                  float z_ref)
+float mslAltitude(float pressure, float pressureRef, float temperatureRef,
+                  float zRef)
 {
     using namespace aeroutils;
-    float t0 = mslTemperature(temperature_ref, z_ref);
+    float t0 = mslTemperature(temperatureRef, zRef);
 
-    return relAltitude(pressure,
-                       mslPressure(pressure_ref, temperature_ref, z_ref), t0);
+    return relAltitude(pressure, mslPressure(pressureRef, temperatureRef, zRef),
+                       t0);
 }
 
 TEST_CASE("[AeroUtils] relAltitude")
@@ -105,13 +105,12 @@ TEST_CASE("[AeroUtils] verticalSpeed")
     const int count = 5;
     float p[]       = {100129.4, 99555.8, 89153.1, 23611.1, 101284.6};
 
-    float dp_dt[] = {-114.98, -114.45, -104.66, -35.691, -116.05};
+    float dpDt[] = {-114.98, -114.45, -104.66, -35.691, -116.05};
 
-    Approx target_v_speed = Approx(10).epsilon(0.001);
+    Approx targetVSpeed = Approx(10).epsilon(0.001);
 
     for (int i = 0; i < count; i++)
     {
-        REQUIRE(verticalSpeed(p[i], dp_dt[i], 100129.4, 297.5) ==
-                target_v_speed);
+        REQUIRE(verticalSpeed(p[i], dpDt[i], 100129.4, 297.5) == targetVSpeed);
     }
 }

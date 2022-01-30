@@ -1,5 +1,5 @@
-/* Copyright (c) 2020 Skyward Experimental Rocketry
- * Authors: Luca Erbetta, Luca Conterio
+/* Copyright (c) 2021 Skyward Experimental Rocketry
+ * Author: Alberto Nidasio
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -20,31 +20,36 @@
  * THE SOFTWARE.
  */
 
-#pragma once
+#include <utils/CSVReader/CSVReader.h>
 
-#include <ostream>
-#include <string>
+#include <vector>
 
-namespace Boardcore
-{
+using namespace Boardcore;
 
-enum class HBridgeState : uint8_t
-{
-    DISABLED = 0,
-    ENABLED  = 1
-};
-
-struct HBridgeStatus
+struct TestData
 {
     uint64_t timestamp;
-    HBridgeState state = HBridgeState::DISABLED;
-
-    static std::string header() { return "timestamp,state\n"; }
-
-    void print(std::ostream& os) const
-    {
-        os << timestamp << "," << (uint8_t)state << "\n";
-    }
+    int counter;
 };
 
-}  // namespace Boardcore
+std::istream& operator>>(std::istream& input, TestData& data)
+{
+    input >> data.timestamp;
+    input.ignore(1, ',');
+    input >> data.counter;
+
+    return input;
+}
+
+int main()
+{
+    // Use the iterator sequentially in a for loop
+    for (auto& data : CSVParser<TestData>("/sd/config.csv"))
+        printf("%llu,%d\n", data.timestamp, data.counter);
+
+    // First retrieve all the data and then display it
+    auto fileData = CSVParser<TestData>("/sd/config.csv").collect();
+    printf("vector size: %d\n", fileData.size());
+    for (auto& data : fileData)
+        printf("%llu,%d\n", data.timestamp, data.counter);
+}

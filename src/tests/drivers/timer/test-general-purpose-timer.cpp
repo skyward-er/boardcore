@@ -27,11 +27,10 @@
 using namespace miosix;
 using namespace Boardcore;
 
-GeneralPurposeTimer<uint16_t> timer(TIM4);
-GeneralPurposeTimer<uint16_t>::Channel channel =
-    GeneralPurposeTimer<uint16_t>::Channel::CHANNEL_1;
-constexpr int frequency = 123456;
-GpioPin timerPin        = GpioPin(GPIOB_BASE, 7);
+GP16bitTimer timer(TIM4);
+TimerUtils::Channel channel = TimerUtils::Channel::CHANNEL_1;
+constexpr int frequency     = 123456;
+GpioPin timerPin            = GpioPin(GPIOB_BASE, 7);
 
 int main()
 {
@@ -42,10 +41,9 @@ int main()
     timer.setPrescaler(
         TimerUtils::computePrescalerValue(timer.getTimer(), frequency * 4));
     timer.setAutoReloadRegister(100);
-    timer.setOutputCompareMode(
-        GeneralPurposeTimer<uint16_t>::OutputCompareMode::TOGGLE, channel);
+    timer.setOutputCompareMode(channel, TimerUtils::OutputCompareMode::TOGGLE);
     timer.generateUpdate();
-    timer.setCaptureCompareRegister(100, channel);
+    timer.setCaptureCompareRegister(channel, 100);
     timer.enableCaptureCompareOutput(channel);
     timer.enableCaptureCompareComplementaryOutput(channel);
     timer.enable();

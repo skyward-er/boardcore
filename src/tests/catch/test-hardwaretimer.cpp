@@ -53,8 +53,8 @@ public:
         RCC->APB2ENR &= ~RCC_APB2ENR_TIM10EN;
     }
 
-    GeneralPurposeTimer<uint32_t> timer32;
-    GeneralPurposeTimer<uint16_t> timer16;
+    GP32bitTimer timer32;
+    GP16bitTimer timer16;
 };
 
 TEST_CASE_METHOD(TimerTestFixture, "Test basic functionality")

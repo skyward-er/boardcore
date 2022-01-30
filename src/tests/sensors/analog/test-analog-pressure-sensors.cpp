@@ -65,8 +65,6 @@ int main()
     // Enable SPI clock and set gpios
     initBoard();
 
-    TimestampTimer::enableTimestampTimer();
-
     // SPI configuration setup
     SPIBusConfig spiConfig;
     spiConfig.clockDivider = SPI::ClockDivider::DIV_32;
@@ -77,19 +75,19 @@ int main()
     // Device initialization
     ADS1118 ads1118(spiSlave);
 
-    std::function<ADCData()> get_voltage_function =
+    std::function<ADCData()> getVoltageFunction =
         std::bind(&ADS1118::getVoltage, ads1118, channel1);
-    HSCMAND015PA analog_sensor(get_voltage_function);
+    HSCMAND015PA analogSensor(getVoltageFunction);
 
-    analog_sensor.init();
-    analog_sensor.selfTest();
+    analogSensor.init();
+    analogSensor.selfTest();
 
-    std::function<ADCData()> get_voltage_function2 =
+    std::function<ADCData()> getVoltageFunction2 =
         std::bind(&ADS1118::getVoltage, ads1118, channel2);
-    HSCMRNN030PA analog_sensor2(get_voltage_function2);
+    HSCMRNN030PA analogSensor2(getVoltageFunction2);
 
-    analog_sensor2.init();
-    analog_sensor2.selfTest();
+    analogSensor2.init();
+    analogSensor2.selfTest();
 
     // Enable channels
     ads1118.enableInput(channel1, ADS1118::ADS1118DataRate::DR_250,

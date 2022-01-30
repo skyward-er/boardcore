@@ -39,21 +39,25 @@ struct LIS3MDLData : public MagnetometerData, public TemperatureData
     {
     }
 
-    LIS3MDLData(MagnetometerData mag_data, TemperatureData temp_data)
-        : MagnetometerData(mag_data), TemperatureData(temp_data)
+    LIS3MDLData(MagnetometerData magData, TemperatureData tempData)
+        : MagnetometerData(magData), TemperatureData(tempData)
 
     {
     }
 
     static std::string header()
     {
-        return "mag_timestamp,mag_x,mag_y,mag_z,temp_timestamp,temp\n";
+        return "magneticFieldTimestamp,magneticFieldX,magneticFieldY,"
+               "magneticFieldZ,"
+               "temperatureTimestamp,"
+               "temp\n";
     }
 
     void print(std::ostream& os) const
     {
-        os << mag_timestamp << "," << mag_x << "," << mag_y << "," << mag_z
-           << "," << temp_timestamp << "," << temp << "\n";
+        os << magneticFieldTimestamp << "," << magneticFieldX << ","
+           << magneticFieldY << "," << magneticFieldZ << ","
+           << temperatureTimestamp << "," << temperature << "\n";
     }
 };
 

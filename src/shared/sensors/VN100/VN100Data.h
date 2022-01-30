@@ -32,11 +32,11 @@ namespace Boardcore
  */
 struct QuaternionData
 {
-    uint64_t quat_timestamp;
-    float quat_x;
-    float quat_y;
-    float quat_z;
-    float quat_w;
+    uint64_t quatTimestamp;
+    float quatX;
+    float quatY;
+    float quatZ;
+    float quatW;
 };
 
 /**
@@ -70,36 +70,45 @@ struct VN100Data : public QuaternionData,
     VN100Data(QuaternionData quat, MagnetometerData magData,
               AccelerometerData accData, GyroscopeData gyro,
               TemperatureData temp, PressureData pres)
-        : QuaternionData{quat.quat_timestamp, quat.quat_x, quat.quat_y,
-                         quat.quat_z, quat.quat_w},
-          MagnetometerData{magData.mag_timestamp, magData.mag_x, magData.mag_y,
-                           magData.mag_z},
-          AccelerometerData{accData.accel_timestamp, accData.accel_x,
-                            accData.accel_y, accData.accel_z},
-          GyroscopeData{gyro.gyro_timestamp, gyro.gyro_x, gyro.gyro_y,
-                        gyro.gyro_z},
-          TemperatureData{temp.temp_timestamp, temp.temp},
-          PressureData{pres.press_timestamp, pres.press}
+        : QuaternionData{quat.quatTimestamp, quat.quatX, quat.quatY, quat.quatZ,
+                         quat.quatW},
+          MagnetometerData{magData.magneticFieldTimestamp,
+                           magData.magneticFieldX, magData.magneticFieldY,
+                           magData.magneticFieldZ},
+          AccelerometerData{accData.accelerationTimestamp,
+                            accData.accelerationX, accData.accelerationY,
+                            accData.accelerationZ},
+          GyroscopeData{gyro.angularVelocityTimestamp, gyro.angularVelocityX,
+                        gyro.angularVelocityY, gyro.angularVelocityZ},
+          TemperatureData{temp.temperatureTimestamp, temp.temperature},
+          PressureData{pres.pressureTimestamp, pres.pressure}
     {
     }
 
     static std::string header()
     {
-        return "quat_timestamp,quat_x,quat_y,quat_z,quat_w,mag_timestamp,mag_x,"
-               "mag_y,mag_z,"
-               "accel_timestamp,accel_x,accel_y,accel_z,gyro_timestamp,gyro_x,"
-               "gyro_y,gyro_z"
-               "temp_timestamp,temp,press_timestamp,press\n";
+        return "quatTimestamp,quatX,quatY,quatZ,quatW,"
+               "magneticFieldTimestamp,magneticFieldX,"
+               "magneticFieldY,magneticFieldZ,"
+               "accelerationTimestamp,accelerationX,accelerationY,"
+               "accelerationZ,gyro_"
+               "timestamp,"
+               "angularVelocityX,"
+               "angularVelocityY,angularVelocityZ"
+               "temperatureTimestamp,temp,pressureTimestamp,press\n";
     }
 
     void print(std::ostream& os) const
     {
-        os << quat_timestamp << "," << quat_x << "," << quat_y << "," << quat_z
-           << "," << quat_w << "," << mag_timestamp << "," << mag_x << ","
-           << mag_y << "," << mag_z << "," << accel_timestamp << "," << accel_x
-           << "," << accel_y << "," << accel_z << "," << gyro_timestamp << ","
-           << gyro_x << "," << gyro_y << "," << gyro_z << "," << temp_timestamp
-           << "," << temp << "," << press_timestamp << "," << press << "\n";
+        os << quatTimestamp << "," << quatX << "," << quatY << "," << quatZ
+           << "," << quatW << "," << magneticFieldTimestamp << ","
+           << magneticFieldX << "," << magneticFieldY << "," << magneticFieldZ
+           << "," << accelerationTimestamp << "," << accelerationX << ","
+           << accelerationY << "," << accelerationZ << ","
+           << angularVelocityTimestamp << "," << angularVelocityX << ","
+           << angularVelocityY << "," << angularVelocityZ << ","
+           << temperatureTimestamp << "," << temperature << ","
+           << pressureTimestamp << "," << pressure << "\n";
     }
 };
 

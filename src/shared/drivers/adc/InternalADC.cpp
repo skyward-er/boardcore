@@ -27,11 +27,11 @@
 namespace Boardcore
 {
 
-InternalADC::InternalADC(ADC_TypeDef& ADCx_, const float V_SUPPLY_,
-                         const bool isUsingDMA_,
-                         DMA_Stream_TypeDef* DMAx_Streamx_)
-    : ADCx(ADCx_), V_SUPPLY(V_SUPPLY_), isUsingDMA(isUsingDMA_),
-      DMAx_Streamx(DMAx_Streamx_)
+InternalADC::InternalADC(ADC_TypeDef& ADCx, const float supplyVoltage,
+                         const bool isUsingDMA,
+                         DMA_Stream_TypeDef* DMAx_Streamx)
+    : ADCx(ADCx), supplyVoltage(supplyVoltage), isUsingDMA(isUsingDMA),
+      DMAx_Streamx(DMAx_Streamx)
 {
     resetRegisters();
     enableADCClock();
@@ -168,7 +168,7 @@ ADCData InternalADC::getVoltage(Channel channel)
 
     if (indexMap[channel] >= 0 && indexMap[channel] < CH_NUM)
     {
-        voltage = values[indexMap[channel]] * V_SUPPLY / RESOLUTION;
+        voltage = values[indexMap[channel]] * supplyVoltage / RESOLUTION;
     }
 
     return ADCData{timestamp, (uint8_t)channel, voltage};
@@ -179,7 +179,7 @@ bool InternalADC::selfTest()
     // Try a single sample and check for error
     sample();
 
-    if (last_error != NO_ERRORS)
+    if (lastError != NO_ERRORS)
     {
         return false;
     }
@@ -228,14 +228,14 @@ ADCData InternalADC::sampleImpl()
             *clearFlagReg |= transferErrorMask;
 
             // Signal an error
-            last_error = DMA_ERROR;
-            return last_sample;
+            lastError = DMA_ERROR;
+            return lastSample;
         }
     }
 
-    timestamp = TimestampTimer::getTimestamp();
+    timestamp = TimestampTimer::getInstance().getTimestamp();
 
-    return last_sample;
+    return lastSample;
 }
 
 inline void InternalADC::resetRegisters()

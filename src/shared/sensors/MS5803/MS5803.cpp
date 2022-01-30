@@ -90,7 +90,8 @@ MS5803Data MS5803::sampleImpl()
             uint32_t tmpRawTemperature = (uint32_t)buffer[2] |
                                          ((uint32_t)buffer[1] << 8) |
                                          ((uint32_t)buffer[0] << 16);
-            lastTemperatureTimestamp = TimestampTimer::getTimestamp();
+            lastTemperatureTimestamp =
+                TimestampTimer::getInstance().getTimestamp();
 
             // Check if the value is valid
             if (tmpRawTemperature != 0)
@@ -126,7 +127,7 @@ MS5803Data MS5803::sampleImpl()
                 LOG_ERR(logger, "The read raw pressure isn't valid");
             }
 
-            last_sample = updateData();
+            lastSample = updateData();
 
             // Check whether to read the pressure or the temperature
             tempCounter++;
@@ -147,7 +148,7 @@ MS5803Data MS5803::sampleImpl()
             break;
     }
 
-    return last_sample;
+    return lastSample;
 }
 
 MS5803Data MS5803::updateData()
@@ -190,7 +191,7 @@ MS5803Data MS5803::updateData()
     // Pressure in Pascal
     float temp_ = temp / 100.0f;
 
-    return MS5803Data(TimestampTimer::getTimestamp(), pressure,
+    return MS5803Data(TimestampTimer::getInstance().getTimestamp(), pressure,
                       lastTemperatureTimestamp, temp_);
 }
 

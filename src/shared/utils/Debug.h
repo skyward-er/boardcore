@@ -35,13 +35,13 @@
 namespace Boardcore
 {
 
-extern miosix::FastMutex trace_mutex;
+extern miosix::FastMutex traceMutex;
 
 #define D(x) x
 
 inline void TRACE(const char* format, ...)
 {
-    miosix::Lock<miosix::FastMutex> lock(trace_mutex);  // Synchronize TRACEs
+    miosix::Lock<miosix::FastMutex> lock(traceMutex);  // Synchronize TRACEs
 
     va_list argptr;
     va_start(argptr, format);
@@ -68,10 +68,10 @@ inline void TRACE(const char* format, ...)
 namespace Boardcore
 {
 
-inline void LOG_STACK(std::string thread_name)
+inline void LOG_STACK(std::string threadName)
 {
     using namespace miosix;
-    printf("[STACK %s] Abs: %d, Curr: %d, Size: %d\n", thread_name.c_str(),
+    printf("[STACK %s] Abs: %d, Curr: %d, Size: %d\n", threadName.c_str(),
                 (int)MemoryProfiling::getAbsoluteFreeStack(),
                 (int)MemoryProfiling::getCurrentFreeStack(),
                 (int)MemoryProfiling::getStackSize());

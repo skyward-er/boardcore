@@ -49,26 +49,26 @@ public:
         SCREEN_RESPECT
     };
 
-    XbeeGUI() : screen_manager(mxgui::DisplayManager::instance(), 4)
+    XbeeGUI() : screenManager(mxgui::DisplayManager::instance(), 4)
     {
-        screen_manager.addScreen(SCREEN_CONFIG, &screen_config.root);
-        screen_manager.addScreen(SCREEN_STATUS, &screen_status.root);
-        screen_manager.addScreen(SCREEN_ENERGYSCAN, &screen_energy.root);
-        screen_manager.addScreen(SCREEN_END, &screen_end.root);
-        screen_manager.addScreen(SCREEN_RESPECT, &screen_respect.root);
+        screenManager.addScreen(SCREEN_CONFIG, &screenConfig.root);
+        screenManager.addScreen(SCREEN_STATUS, &screenStatus.root);
+        screenManager.addScreen(SCREEN_ENERGYSCAN, &screenEnergy.root);
+        screenManager.addScreen(SCREEN_END, &screenEnd.root);
+        screenManager.addScreen(SCREEN_RESPECT, &screenRespect.root);
 
-        screen_manager.start();
+        screenManager.start();
     }
 
-    ~XbeeGUI() { screen_manager.stop(); }
+    ~XbeeGUI() { screenManager.stop(); }
 
-    ScreenManager screen_manager;
+    ScreenManager screenManager;
 
-    ConfigScreen screen_config{};
-    StatusScreen screen_status{};
-    EnergyScanScreen screen_energy{};
-    EndScreen screen_end{};
-    RespectScreen screen_respect{};
+    ConfigScreen screenConfig{};
+    StatusScreen screenStatus{};
+    EnergyScanScreen screenEnergy{};
+    EndScreen screenEnd{};
+    RespectScreen screenRespect{};
 };
 
 }  // namespace Boardcore

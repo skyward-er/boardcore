@@ -50,18 +50,18 @@ static constexpr uint32_t PACKET_FIRST_INT = 0xF0E1C2B3;
  *
  * @param buf Buffer to fill
  * @param val Value to fill the buffer with
- * @param buf_size size of the buffer
+ * @param bufSize size of the buffer
  */
-void memset32(uint8_t* buf, uint32_t val, int buf_size)
+void memset32(uint8_t* buf, uint32_t val, int bufSize)
 {
     int i = 0;
-    while (i <= buf_size - (int)sizeof(val))
+    while (i <= bufSize - (int)sizeof(val))
     {
         memcpy(buf + i, &val, sizeof(val));
         i += sizeof(val);
     }
 
-    memcpy(buf + i, &val, buf_size % sizeof(val));
+    memcpy(buf + i, &val, bufSize % sizeof(val));
 }
 
 struct SendIntervalBase
@@ -96,63 +96,63 @@ class Sender : public ActiveObject
 
 public:
     Sender(Xbee::Xbee& xbee, Logger& logger, const SendIntervalBase& interval,
-           size_t packet_size, long long expected_packet_interval)
-        : xbee(xbee), logger(logger), dr_calc(expected_packet_interval),
+           size_t packetSize, long long expectedPacketInterval)
+        : xbee(xbee), logger(logger), drCalc(expectedPacketInterval),
           interval(interval)
     {
-        data.packet_size = packet_size;
-        packet_counter   = 0;
+        data.packetSize = packetSize;
+        packetCounter   = 0;
     }
 
     TxData getTxData() const { return data; }
 
-    DataRateResult getDataRate() { return dr_calc.getResult(); }
+    DataRateResult getDataRate() { return drCalc.getResult(); }
 
 protected:
     void run() override
     {
-        long long loop_start_ts = miosix::getTick();
+        long long loopStartTs = miosix::getTick();
         while (!shouldStop())
         {
-            data.time_since_last_send = miosix::getTick() - loop_start_ts;
-            loop_start_ts             = miosix::getTick();
+            data.timeSinceLastSend = miosix::getTick() - loopStartTs;
+            loopStartTs            = miosix::getTick();
 
             // Create packet
             memcpy(buf, &PACKET_FIRST_INT, sizeof(uint32_t));
-            memset32(buf + sizeof(uint32_t), packet_counter++,
-                     data.packet_size - sizeof(uint32_t));
+            memset32(buf + sizeof(uint32_t), packetCounter++,
+                     data.packetSize - sizeof(uint32_t));
 
-            long long send_start_ts = miosix::getTick();
+            long long sendStartTs = miosix::getTick();
 
-            bool result = xbee.send(buf, data.packet_size);
+            bool result = xbee.send(buf, data.packetSize);
 
-            data.time_to_send = miosix::getTick() - send_start_ts;
-            data.timestamp    = send_start_ts;
+            data.timeToSend = miosix::getTick() - sendStartTs;
+            data.timestamp  = sendStartTs;
 
             if (result)
             {
-                ++data.tx_success_counter;
-                dr_calc.addPacket(data.packet_size);
+                ++data.txSuccessCounter;
+                drCalc.addPacket(data.packetSize);
             }
             else
             {
-                ++data.tx_fail_counter;
+                ++data.txFailCounter;
             }
 
             logger.log(data);
 
-            miosix::Thread::sleepUntil(loop_start_ts + interval.getInterval());
+            miosix::Thread::sleepUntil(loopStartTs + interval.getInterval());
         }
     }
 
 private:
     Xbee::Xbee& xbee;
     Logger& logger;
-    ThroughputCalculator dr_calc;
+    ThroughputCalculator drCalc;
     TxData data;
     const SendIntervalBase& interval;
 
-    uint32_t packet_counter = 0;
+    uint32_t packetCounter = 0;
 
     uint8_t buf[Xbee::MAX_PACKET_PAYLOAD_LENGTH] = {0};
 };
@@ -162,22 +162,21 @@ class Receiver : public ActiveObject
     friend class XbeeTransceiver;
 
 public:
-    Receiver(Xbee::Xbee& xbee, Logger& logger,
-             long long expected_packet_interval)
-        : xbee(xbee), logger(logger), dr_calc(expected_packet_interval)
+    Receiver(Xbee::Xbee& xbee, Logger& logger, long long expectedPacketInterval)
+        : xbee(xbee), logger(logger), drCalc(expectedPacketInterval)
     {
     }
 
     void stop() override
     {
-        should_stop = true;
+        stopFlag = true;
         xbee.wakeReceiver(true);
         ActiveObject::stop();
     }
 
     RxData getRxData() const { return data; }
 
-    DataRateResult getDataRate() { return dr_calc.getResult(); }
+    DataRateResult getDataRate() { return drCalc.getResult(); }
 
 protected:
     void run() override
@@ -188,14 +187,14 @@ protected:
 
             size_t len = xbee.receive(buf, RCV_BUF_SIZE);
 
-            data.last_packet_timestamp = miosix::getTick();
-            data.timestamp             = start;
+            data.lastPacketTimestamp = miosix::getTick();
+            data.timestamp           = start;
 
-            ++data.rcv_count;
+            ++data.rcvCount;
 
             if (len > sizeof(uint32_t))
             {
-                data.pkt_size = len;
+                data.pktSize = len;
 
                 // Packet payload is a repeated sequential 32 bit number
                 uint32_t num, strt;
@@ -204,13 +203,13 @@ protected:
 
                 if (checkPacket(num, buf, len))
                 {
-                    dr_calc.addPacket(len);
-                    if (last_packet_num > 0)
+                    drCalc.addPacket(len);
+                    if (lastPacketNum > 0)
                     {
-                        if (num > last_packet_num)
-                            data.packets_lost += num - last_packet_num - 1;
+                        if (num > lastPacketNum)
+                            data.packetsLost += num - lastPacketNum - 1;
                     }
-                    last_packet_num = num;
+                    lastPacketNum = num;
                 }
                 else
                 {
@@ -218,7 +217,7 @@ protected:
                         "[XBeeTransceiver] Wrong packet payload! num: %u, "
                         "start: 0x%08X\n",
                         num, strt);
-                    ++data.rcv_wrong_payload;
+                    ++data.rcvWrongPayload;
                 }
             }
 
@@ -227,22 +226,20 @@ protected:
     }
 
 private:
-    bool checkPacket(uint32_t expected_num, uint8_t* packet, size_t packet_size)
+    bool checkPacket(uint32_t expectedNum, uint8_t* packet, size_t packetSize)
     {
         if (memcmp(packet, &PACKET_FIRST_INT, sizeof(uint32_t)) == 0)
         {
             int i = sizeof(uint32_t);
-            while (i <= (int)packet_size - (int)sizeof(expected_num))
+            while (i <= (int)packetSize - (int)sizeof(expectedNum))
             {
-                if (memcmp(packet + i, &expected_num, sizeof(expected_num)) !=
-                    0)
+                if (memcmp(packet + i, &expectedNum, sizeof(expectedNum)) != 0)
                 {
                     return false;
                 }
-                i += sizeof(expected_num);
+                i += sizeof(expectedNum);
             }
-            memcpy(packet + i, &expected_num,
-                   packet_size % sizeof(expected_num));
+            memcpy(packet + i, &expectedNum, packetSize % sizeof(expectedNum));
             return true;
         }
         return false;
@@ -250,24 +247,24 @@ private:
 
     Xbee::Xbee& xbee;
     Logger& logger;
-    ThroughputCalculator dr_calc;
+    ThroughputCalculator drCalc;
     RxData data{};
 
     uint8_t buf[RCV_BUF_SIZE] = {0};
-    uint32_t last_packet_num  = 0;
+    uint32_t lastPacketNum    = 0;
 };
 
 class XbeeTransceiver
 {
 public:
     XbeeTransceiver(Xbee::Xbee& xbee, Logger& logger,
-                    const SendIntervalBase& snd_interval, size_t tx_pkt_size,
-                    long long expected_packet_interval)
+                    const SendIntervalBase& sndInterval, size_t txPktSize,
+                    long long expectedPacketInterval)
         // cppcheck-suppress noCopyConstructor
         // cppcheck-suppress noOperatorEq
-        : sender(new Sender(xbee, logger, snd_interval, tx_pkt_size,
-                            expected_packet_interval)),
-          receiver(new Receiver(xbee, logger, expected_packet_interval)),
+        : sender(new Sender(xbee, logger, sndInterval, txPktSize,
+                            expectedPacketInterval)),
+          receiver(new Receiver(xbee, logger, expectedPacketInterval)),
           logger(logger)
     {
         xbee.setOnFrameReceivedListener(std::bind(
@@ -283,17 +280,17 @@ public:
         delete receiver;
     }
 
-    void disableSender() { sender_enabled = false; }
+    void disableSender() { senderEnabled = false; }
 
-    void disableReceiver() { receiver_enabled = false; }
+    void disableReceiver() { receiverEnabled = false; }
 
     void start()
     {
-        if (sender_enabled)
+        if (senderEnabled)
         {
             sender->start();
         }
-        if (receiver_enabled)
+        if (receiverEnabled)
         {
             receiver->start();
         }
@@ -306,9 +303,9 @@ public:
     }
 
     void setOnFrameReceivedListener(
-        Xbee::Xbee::OnFrameReceivedListener frame_listener)
+        Xbee::Xbee::OnFrameReceivedListener frameListener)
     {
-        this->frame_listener = frame_listener;
+        this->frameListener = frameListener;
     }
 
     Sender& getSender() { return *sender; }
@@ -320,12 +317,12 @@ private:
     {
         logAPIFrame(frame);
 
-        if (frame_listener)
+        if (frameListener)
         {
-            frame_listener(frame);
+            frameListener(frame);
         }
 
-        if (frame.frame_type == Xbee::FTYPE_AT_COMMAND_RESPONSE)
+        if (frame.frameType == Xbee::FTYPE_AT_COMMAND_RESPONSE)
         {
             Xbee::ATCommandResponseFrame* at =
                 frame.toFrameType<Xbee::ATCommandResponseFrame>();
@@ -339,7 +336,7 @@ private:
             {
                 uint16_t errs;
                 memcpy(&errs, at->getCommandDataPointer(), 2);
-                receiver->data.rcv_errors = swapBytes16(errs);
+                receiver->data.rcvErrors = swapBytes16(errs);
             }
         }
     }
@@ -348,7 +345,7 @@ private:
     {
         using namespace Xbee;
         bool logged = false;
-        switch (frame.frame_type)
+        switch (frame.frameType)
         {
             case FTYPE_AT_COMMAND:
             {
@@ -420,14 +417,14 @@ private:
         }
     }
 
-    bool sender_enabled   = true;
-    bool receiver_enabled = true;
+    bool senderEnabled   = true;
+    bool receiverEnabled = true;
 
     Sender* sender;
     Receiver* receiver;
     Logger& logger;
 
-    Xbee::Xbee::OnFrameReceivedListener frame_listener;
+    Xbee::Xbee::OnFrameReceivedListener frameListener;
 };
 
 }  // namespace Boardcore

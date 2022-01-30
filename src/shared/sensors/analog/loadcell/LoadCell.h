@@ -1,5 +1,5 @@
-/* Copyright (c) 2019 Skyward Experimental Rocketry
- * Author: Luca Erbetta
+/* Copyright (c) 2022 Skyward Experimental Rocketry
+ * Author: Alberto Nidasio
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -20,43 +20,46 @@
  * THE SOFTWARE.
  */
 
-#include <scheduler/TaskScheduler.h>
+#pragma once
 
-using namespace Boardcore;
-using namespace miosix;
+#include <sensors/Sensor.h>
 
-void task5hz()
+#include <functional>
+
+#include "LoadCellData.h"
+
+namespace Boardcore
 {
-    static long long last_tick = getTick();
 
-    printf("%d: 5 Hz tick\n", (int)(getTick() - last_tick));
-}
-
-void task2hz()
+class LoadCellSensor : public Sensor<LoadCellData>
 {
-    static long long last_tick = getTick();
-
-    printf("%d: 2 Hz tick\n", (int)(getTick() - last_tick));
-}
-
-int main()
-{
-    TaskScheduler scheduler;
-
-    TaskScheduler::function_t f5hz{&task5hz};
-    TaskScheduler::function_t f2hz{&task2hz};
-    scheduler.add(f5hz, 1000 / 5, 1);
-    scheduler.add(f2hz, 1000 / 2, 1);
-
-    scheduler.start();
-
-    Thread::sleep(10000);
-
-    scheduler.stop();
-
-    for (;;)
+public:
+    LoadCellSensor(std::function<std::pair<uint64_t, float>()> getVoltage,
+                   const float mVtoV, const unsigned int fullScale,
+                   const float supplyVoltage = 5)
+        : getVoltage(getVoltage),
+          conversionCoeff(mVtoV * supplyVoltage / fullScale / 1e3)
     {
-        printf("end\n");
-        Thread::sleep(5000);
     }
-}
+
+    bool init() override { return true; };
+
+    bool selfTest() override { return true; };
+
+    LoadCellData sampleImpl() override
+    {
+        LoadCellData data;
+
+        std::tie(data.timestamp, data.voltage) = getVoltage();
+
+        data.load = data.voltage / conversionCoeff;
+
+        return data;
+    }
+
+private:
+    std::function<std::pair<uint64_t, float>()> getVoltage;
+    const float conversionCoeff;
+};
+
+}  // namespace Boardcore

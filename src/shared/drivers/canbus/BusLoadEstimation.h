@@ -45,12 +45,12 @@ class BusLoadEstimation
 public:
     struct BusLoadInfo
     {
-        float payload_bit_rate;
-        float total_bit_rate;
-        float load_percent;
+        float payloadBitRate;
+        float totalBitRate;
+        float loadPercent;
     };
 
-    BusLoadEstimation(uint32_t baud_rate) : baud_rate(baud_rate) {}
+    BusLoadEstimation(uint32_t baudRate) : baudRate(baudRate) {}
 
     void addPacket(CanPacket p)
     {
@@ -68,29 +68,29 @@ public:
 
         float dt =
             (c.get(c.count() - 1).timestamp - c.get(0).timestamp) / 1000.0f;
-        uint32_t size_payload = 0;
-        uint32_t size_frames  = 0;
+        uint32_t sizePayload = 0;
+        uint32_t sizeFrames  = 0;
 
         for (size_t i = 0; i < c.count(); ++i)
         {
-            size_payload += c.get(i).data_length * 8;
+            sizePayload += c.get(i).dataLength * 8;
         }
-        size_frames = size_payload + (64 + 8) * c.count();
+        sizeFrames = sizePayload + (64 + 8) * c.count();
 
-        return BusLoadInfo{(size_payload / dt), (size_frames / dt),
-                           ((size_frames / dt) / baud_rate) * 100};
+        return BusLoadInfo{(sizePayload / dt), (sizeFrames / dt),
+                           ((sizeFrames / dt) / baudRate) * 100};
     }
 
 private:
     struct PacketInfo
     {
         uint32_t timestamp;
-        uint8_t data_length;
+        uint8_t dataLength;
     };
 
     CircularBuffer<PacketInfo, BUFFER_LEN> c;
     mutable FastMutex mutex;
-    uint32_t baud_rate;
+    uint32_t baudRate;
 };
 
 }  // namespace Canbus

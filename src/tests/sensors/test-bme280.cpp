@@ -75,8 +75,6 @@ int main()
     // Enable SPI clock and set gpios
     initBoard();
 
-    TimestampTimer::enableTimestampTimer();
-
     // SPI configuration setup
     SPIBusConfig spiConfig;
     spiConfig.clockDivider = SPI::ClockDivider::DIV_32;
@@ -109,8 +107,8 @@ int main()
         bme280.sample();
 
         TRACE("temp: %.2f DegC\tpress: %.2f hPa\thumid: %.2f %%RH\n",
-              bme280.getLastSample().temp, bme280.getLastSample().press,
-              bme280.getLastSample().humid);
+              bme280.getLastSample().temperature,
+              bme280.getLastSample().pressure, bme280.getLastSample().humidity);
 
         miosix::Thread::sleep(1000);
     }
@@ -122,8 +120,8 @@ int main()
         bme280.sample();
 
         TRACE("temp: %.2f DegC\tpress: %.2f hPa\thumid: %.2f %%RH\n",
-              bme280.getLastSample().temp, bme280.getLastSample().press,
-              bme280.getLastSample().humid);
+              bme280.getLastSample().temperature,
+              bme280.getLastSample().pressure, bme280.getLastSample().humidity);
 
         miosix::Thread::sleep(40);  // 25Hz
     }

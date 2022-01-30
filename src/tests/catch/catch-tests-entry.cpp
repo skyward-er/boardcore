@@ -126,9 +126,9 @@ int main()
     string skw{"Skyward-tests"};
 
     // CATCH_CL_OPTIONS defined in CMakeLists.txt
-    string options_str{CATCH_CL_OPTIONS};
+    string optionsStr{CATCH_CL_OPTIONS};
 
-    vector<string> options = splitSpaces(options_str);
+    vector<string> options = splitSpaces(optionsStr);
     vector<string> args{skw};
 
     if (options.size() > 0)
@@ -141,10 +141,10 @@ int main()
     char** argv = new char*[argc];
     for (size_t i = 0; i < argc; i++)
     {
-        string s    = args.at(i);
-        char* c_arg = new char[s.length() + 1];
-        strcpy(c_arg, s.c_str());
-        argv[i] = c_arg;
+        string s   = args.at(i);
+        char* cArg = new char[s.length() + 1];
+        strcpy(cArg, s.c_str());
+        argv[i] = cArg;
     }
 
     // Run tests with the provided arguments

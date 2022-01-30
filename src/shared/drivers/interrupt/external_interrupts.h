@@ -33,11 +33,11 @@ enum class InterruptTrigger
  * @brief Enables external interrupts on the provided pin.
  * Remember to set the GPIO to input mode!
  *
- * @param gpio_port Port of the pin (eg:  GPIOC_BASE)
- * @param gpio_num Pin number (eg: 4 for PC4)
+ * @param gpioPort Port of the pin (eg:  GPIOC_BASE)
+ * @param gpioNum Pin number (eg: 4 for PC4)
  * @param trigger Interrupt detection trigger (rising edge, falling or both)
  * @param priority Interrupt priority [0-15], 0 = Highest priority
  */
-void enableExternalInterrupt(unsigned int gpio_port, unsigned int gpio_num,
+void enableExternalInterrupt(unsigned int gpioPort, unsigned int gpioNum,
                              InterruptTrigger trigger,
                              unsigned int priority = 15);

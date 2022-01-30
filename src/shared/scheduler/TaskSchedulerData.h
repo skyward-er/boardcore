@@ -20,34 +20,42 @@
  * THE SOFTWARE.
  */
 
+#pragma once
+
 #include <math/Stats.h>
 
 #include <cstdint>
 #include <ostream>
 
-#pragma once
-
 namespace Boardcore
 {
 
 /**
- * Statistics for a task
+ * @brief Statistics over a single task.
+ *
+ * 3 statistics are provided:
+ * - Activation statistics: errors between the task intended execution tick and
+ * the actual execution tick when it started;
+ * - Period statistics: actual period between task executions;
+ * - Workload statistics: time (in ticks) the task took to execute;
+ * - Mixed events: cumulative number of missed executions;
+ * - Failed events: Number of events ended with exceptions.
  */
-struct TaskStatResult
+struct TaskStatsResult
 {
-    uint8_t id;                   ///< Task id
-    StatsResult activationStats;  ///< Task activation stats
-    StatsResult periodStats;      ///< Task period stats
-    StatsResult workloadStats;    ///< Task workload stats
+    uint8_t id;
+    StatsResult activationStats;
+    StatsResult periodStats;
+    StatsResult workloadStats;
+    uint32_t missedEvents;
+    uint32_t failedEvents;
 
     static std::string header()
     {
-        return "id,act_min,act_max,act_mean,act_stddev,act_nsamples,"
-               "period_min,period_max,period_mean,period_stddev,period_"
-               "nsamples,"
-               "workload_min,workload_max,workload_mean,workload_stddev,"
-               "workload_"
-               "nsamples\n";
+        return "id,actMin,actMax,actMean,actStddev,actNsamples,"
+               "periodMin,periodMax,periodMean,period_stddev,"
+               "periodNSamples,workloadMin,workloadMax,workloadMean,"
+               "workload_stddev,workloadNSample,missedEvents,failedEvents\n";
     }
 
     void print(std::ostream& os) const
@@ -59,7 +67,8 @@ struct TaskStatResult
            << periodStats.mean << "," << periodStats.stdev << ","
            << periodStats.nSamples << "," << workloadStats.minValue << ","
            << workloadStats.maxValue << "," << workloadStats.mean << ","
-           << workloadStats.stdev << "," << workloadStats.nSamples << "\n";
+           << workloadStats.stdev << "," << workloadStats.nSamples << ","
+           << missedEvents << "," << failedEvents << "\n";
     }
 };
 

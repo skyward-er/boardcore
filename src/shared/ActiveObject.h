@@ -44,58 +44,28 @@ public:
      * priority of the thread that will be spawned
      */
     ActiveObject(unsigned int stacksize    = miosix::STACK_DEFAULT_FOR_PTHREAD,
-                 miosix::Priority priority = miosix::MAIN_PRIORITY)
-        : stack_size(skywardStack(stacksize)), priority(priority)
-    {
-    }
+                 miosix::Priority priority = miosix::MAIN_PRIORITY);
 
     virtual ~ActiveObject(){};
 
     /**
      * @brief Start the thread associated with this activeobject.
+     *
      * Call stop() to terminate execution of the thread.
-     * @return true
-     * @return false
+     * @return true if the thread has been started.
      */
-    virtual bool start()
-    {
-        if (!started && !stopped)
-        {
-            thread = miosix::Thread::create(
-                threadLauncher, stack_size, priority,
-                reinterpret_cast<void*>(this), miosix::Thread::JOINABLE);
-
-            if (thread != nullptr)
-                started = true;
-
-            return started;
-        }
-        else
-        {
-            return false;
-        }
-    }
+    virtual bool start();
 
     /**
      * @brief Signals the runner thread to terminate and joins the thread.
+     *
      * This is a blocking call that will not return until the thread terminates!
      * Your run() implementation must check shouldStop() and terminate ASAP if
      * it returns true.
      */
-    virtual void stop()
-    {
-        if (isRunning())
-        {
-            should_stop = true;
-            thread->join();
-            stopped = true;
-        }
-    }
+    virtual void stop();
 
-    bool isStarted() { return started; }
-    bool isStopped() { return stopped; }
-
-    bool isRunning() { return started && !stopped; }
+    bool isRunning();
 
 protected:
     /**
@@ -107,34 +77,77 @@ protected:
     virtual void run() = 0;
 
     /**
-     * @brief Tells whether or not the stop() function has been called, and
-     * so if the ActiveObject should stop its execution. Your implementation
-     * of the run() method should periodically check this function and
-     * should terminate as soon as possible if required to.
+     * @brief Tells whether or not the ActiveObject should stop its execution.
      *
-     * @return true if stop() has been called and the ActiveObject should
-     * stop executing
+     * Your implementation of the run() method should periodically check this
+     * function and should terminate as soon as possible if required to.
+     *
+     * @return true if the ActiveObject should stop executing.
      */
-    bool shouldStop() { return should_stop; }
+    bool shouldStop();
 
     miosix::Thread* thread = nullptr;  ///< Gives access to the thread object
-    bool should_stop       = false;
-    bool stopped           = false;
+
+    bool stopFlag = false;
+    bool running  = false;
 
 private:
-    unsigned int stack_size;
-    miosix::Priority priority;
-
     /**
-     * Calls the run member function
-     * \param arg the object pointer cast to void*
+     * @brief Calls the run member function.
+     *
+     * \param arg The object pointer casted to void*
      */
-    static void threadLauncher(void* arg)
+    static void threadLauncher(void* arg);
+
+    unsigned int stackSize;
+    miosix::Priority priority;
+};
+
+inline ActiveObject::ActiveObject(unsigned int stacksize,
+                                  miosix::Priority priority)
+    : stackSize(skywardStack(stacksize)), priority(priority)
+{
+}
+
+inline bool ActiveObject::start()
+{
+    if (!running)
     {
-        reinterpret_cast<ActiveObject*>(arg)->run();
+        stopFlag = false;
+        thread   = miosix::Thread::create(threadLauncher, stackSize, priority,
+                                          reinterpret_cast<void*>(this),
+                                          miosix::Thread::JOINABLE);
+
+        if (thread != nullptr)
+        {
+            running = true;
+            return true;
+        }
     }
 
-    bool started = false;
-};
+    return false;
+}
+
+inline void ActiveObject::stop()
+{
+    if (isRunning())
+    {
+        stopFlag = true;
+        thread->join();
+    }
+}
+
+inline bool ActiveObject::isRunning() { return running; }
+
+inline bool ActiveObject::shouldStop() { return stopFlag; }
+
+inline void ActiveObject::threadLauncher(void* arg)
+{
+    reinterpret_cast<ActiveObject*>(arg)->run();
+
+    // When the run function ends, update the status
+    reinterpret_cast<ActiveObject*>(arg)->running  = false;
+    reinterpret_cast<ActiveObject*>(arg)->stopFlag = false;
+}
 
 }  // namespace Boardcore

@@ -36,7 +36,7 @@ namespace Boardcore
 struct EnergyScanData
 {
     long long timestamp;
-    int channel_data[30];
+    int channelData[30];
 
     EnergyScanData() = default;
 
@@ -44,7 +44,7 @@ struct EnergyScanData
     {
         for (int i = 0; i < 30; i++)
         {
-            channel_data[i] = scan[i];
+            channelData[i] = scan[i];
         }
     }
 
@@ -64,7 +64,7 @@ struct EnergyScanData
 
         for (int i = 0; i < 30; i++)
         {
-            os << "," << channel_data[i];
+            os << "," << channelData[i];
         }
 
         os << "\n";

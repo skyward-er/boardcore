@@ -33,10 +33,10 @@ namespace Boardcore
  *
  */
 Gamma868::Gamma868(const char* serialPath, const uint16_t multiplier)
-    : send_timeout_multiplier(multiplier), conf{}, gammaSwitch{}
+    : sendTimeoutMultiplier(multiplier), conf{}, gammaSwitch{}
 {
-    conf_enabled = false;
-    fd           = open(serialPath, O_RDWR);
+    confEnabled = false;
+    fd          = open(serialPath, O_RDWR);
 
     if (fd < 0)
         LOG_ERR(logger, "Cannot open {}", serialPath);
@@ -48,12 +48,12 @@ Gamma868::Gamma868(const char* serialPath, const uint16_t multiplier)
  * to be passed to the object in order to communicate with the device.
  *
  */
-Gamma868::Gamma868(const char* serialPath, GpioPin* lrn_pin,
+Gamma868::Gamma868(const char* serialPath, GpioPin* learnModePin,
                    const uint16_t multiplier)
     : Gamma868(serialPath, multiplier)
 {
-    gammaSwitch  = lrn_pin;
-    conf_enabled = true;
+    gammaSwitch = learnModePin;
+    confEnabled = true;
 
     gammaSwitch->mode(Mode::OUTPUT);
     gammaSwitch->high();
@@ -64,19 +64,19 @@ Gamma868::~Gamma868() { close(fd); }
 /*
  * Immediately sends command (blocking).
  */
-bool Gamma868::send(uint8_t* pkt, size_t pkt_len)
+bool Gamma868::send(uint8_t* pkt, size_t packetLength)
 {
-    bool ret = (write(fd, pkt, pkt_len) > 0);
-    Thread::sleep(send_timeout_multiplier * pkt_len);
+    bool ret = (write(fd, pkt, packetLength) > 0);
+    Thread::sleep(sendTimeoutMultiplier * packetLength);
     return ret;
 }
 
 /*
  * Reads from the gamma868 serial (blocking).
  */
-ssize_t Gamma868::receive(uint8_t* pkt, size_t pkt_len)
+ssize_t Gamma868::receive(uint8_t* pkt, size_t packetLength)
 {
-    if (pkt_len > 0)
+    if (packetLength > 0)
         return read(fd, pkt, 1);
     else
         return 0;
@@ -87,9 +87,9 @@ ssize_t Gamma868::receive(uint8_t* pkt, size_t pkt_len)
  */
 GammaConf Gamma868::readConfig()
 {
-    if (!conf_enabled)
+    if (!confEnabled)
     {
-        conf.is_valid = false;
+        conf.isValid = false;
     }
     else
     {
@@ -97,7 +97,7 @@ GammaConf Gamma868::readConfig()
 
         bool ok = updateConfig();
         if (!ok)
-            conf.is_valid = false;
+            conf.isValid = false;
 
         exitLearnMode();
     }
@@ -113,7 +113,7 @@ bool Gamma868::configure(const GammaConf& newConf)
 {
     bool retValue;
 
-    if (!conf_enabled)
+    if (!confEnabled)
         return false;
 
     enterLearnMode();
@@ -178,31 +178,31 @@ void Gamma868::exitLearnMode()
  */
 void Gamma868::writeConfig(const GammaConf& newConf)
 {
-    uint8_t conf_addr[8] = "#A";
-    memcpy(conf_addr + 2, &(newConf.local_addr), 3);
-    memcpy(conf_addr + 5, &(newConf.dest_addr), 3);
+    uint8_t confAddress[8] = "#A";
+    memcpy(confAddress + 2, &(newConf.localAddress), 3);
+    memcpy(confAddress + 5, &(newConf.destinationAddress), 3);
 
-    write(fd, conf_addr, 8);
+    write(fd, confAddress, 8);
     waitForOk();
 
-    char conf_baud[3] = "#B";
-    conf_baud[2]      = (uint8_t)newConf.baudrate;
-    write(fd, conf_baud, 3);
+    char confBaud[3] = "#B";
+    confBaud[2]      = (uint8_t)newConf.baudrate;
+    write(fd, confBaud, 3);
     waitForOk();
 
-    char conf_handshake[3] = "#H";
-    conf_handshake[2]      = (uint8_t)newConf.handshake;
-    write(fd, conf_handshake, 3);
+    char confHandshake[3] = "#H";
+    confHandshake[2]      = (uint8_t)newConf.handshake;
+    write(fd, confHandshake, 3);
     waitForOk();
 
-    char conf_lora[4] = "#C";
-    conf_lora[2]      = (uint8_t)newConf.lora_sf;
-    conf_lora[3]      = (uint8_t)newConf.lora_power;
-    write(fd, conf_lora, 4);
+    char confLora[4] = "#C";
+    confLora[2]      = (uint8_t)newConf.loraSf;
+    confLora[3]      = (uint8_t)newConf.loraPower;
+    write(fd, confLora, 4);
     waitForOk();
 
     memcpy(&conf, &newConf, sizeof(GammaConf));
-    conf.is_valid = true;
+    conf.isValid = true;
 }
 
 /*
@@ -210,33 +210,33 @@ void Gamma868::writeConfig(const GammaConf& newConf)
  */
 bool Gamma868::updateConfig()
 {
-    if (!conf_enabled)
+    if (!confEnabled)
         return false;
 
-    gamma_msg msg;
+    GammaMessage msg;
 
     // Read from device
     write(fd, "#?", 2);
-    read(fd, &(msg.buf), sizeof(gamma_msg));
+    read(fd, &(msg.buf), sizeof(GammaMessage));
 
     // Check values validity
-    if (msg.conf.lora_mode >= LAST_SF || msg.conf.lora_power >= LAST_POWER ||
+    if (msg.conf.loraMode >= LAST_SF || msg.conf.loraPower >= LAST_POWER ||
         msg.conf.baudrate >= LAST_BAUDRATE)
     {
         return false;
     }
 
     // Update conf variable
-    conf.is_valid = true;
+    conf.isValid = true;
 
     // Addresses
-    memcpy(&conf.local_addr, msg.conf.local_addr, 3);
-    memcpy(&conf.dest_addr, msg.conf.dest_addr, 3);
+    memcpy(&conf.localAddress, msg.conf.localAddress, 3);
+    memcpy(&conf.destinationAddress, msg.conf.destinationAddress, 3);
 
     // LoRa values
-    conf.lora_sf    = static_cast<GammaSF>(msg.conf.lora_mode);
-    conf.lora_power = static_cast<GammaPower>(msg.conf.lora_power);
-    conf.baudrate   = static_cast<GammaBaudrate>(msg.conf.baudrate);
+    conf.loraSf    = static_cast<GammaSF>(msg.conf.loraMode);
+    conf.loraPower = static_cast<GammaPower>(msg.conf.loraPower);
+    conf.baudrate  = static_cast<GammaBaudrate>(msg.conf.baudrate);
 
     conf.handshake = (msg.conf.handshake > 0) ? true : false;
 

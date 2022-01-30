@@ -306,28 +306,29 @@ constexpr unsigned GetEXTICR_register_value(unsigned P, unsigned N)
     return (ConvertGPIO_BASEtoUnsiged(P) << ((N % 4) * 4));
 }
 
-void enableExternalInterrupt(unsigned int gpio_port, unsigned int gpio_num,
+void enableExternalInterrupt(unsigned int gpioPort, unsigned int gpioNumber,
                              InterruptTrigger trigger, unsigned int priority)
 {
-    auto exitcr_reg_value = GetEXTICR_register_value(gpio_port, gpio_num);
+    auto exitcrRegValue = GetEXTICR_register_value(gpioPort, gpioNumber);
 
     {
         FastInterruptDisableLock dLock;
 
         RCC->APB2ENR |= RCC_APB2ENR_SYSCFGEN;
-        SYSCFG->EXTICR[int(gpio_num / 4)] |= exitcr_reg_value;
+        SYSCFG->EXTICR[int(gpioNumber / 4)] |= exitcrRegValue;
     }
 
-    EXTI->IMR |= 1 << gpio_num;
+    EXTI->IMR |= 1 << gpioNumber;
 
     if (trigger == InterruptTrigger::RISING_EDGE ||
         trigger == InterruptTrigger::RISING_FALLING_EDGE)
-        EXTI->RTSR |= 1 << gpio_num;
+        EXTI->RTSR |= 1 << gpioNumber;
 
     if (trigger == InterruptTrigger::FALLING_EDGE ||
         trigger == InterruptTrigger::RISING_FALLING_EDGE)
-        EXTI->FTSR |= 1 << gpio_num;
+        EXTI->FTSR |= 1 << gpioNumber;
 
-    NVIC_EnableIRQ(static_cast<IRQn_Type>(GetEXTI_IRQn(gpio_num)));
-    NVIC_SetPriority(static_cast<IRQn_Type>(GetEXTI_IRQn(gpio_num)), priority);
+    NVIC_EnableIRQ(static_cast<IRQn_Type>(GetEXTI_IRQn(gpioNumber)));
+    NVIC_SetPriority(static_cast<IRQn_Type>(GetEXTI_IRQn(gpioNumber)),
+                     priority);
 }
