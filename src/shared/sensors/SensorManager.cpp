@@ -92,7 +92,7 @@ void SensorManager::disableAllSensors()
         sampler->disableAllSensors();
 }
 
-bool SensorManager::areAllSensorsInitilized() { return initResult; }
+bool SensorManager::areAllSensorsInitialized() { return initResult; }
 
 const SensorInfo SensorManager::getSensorInfo(AbstractSensor* sensor)
 {

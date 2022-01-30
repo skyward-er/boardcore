@@ -146,8 +146,8 @@ TEST_CASE_METHOD(SensorManagerFixture,
     //    Task id 9  : sampler at 500 ms  (2 Hz) ---> first to be added to the
     //                                                scheduler
     REQUIRE(tasksStats[0].id == FIRST_TASK_ID);
-    REQUIRE(tasksStats[1].id == static_cast<uint8_t>(FIRST_TASK_ID + 2));
-    REQUIRE(tasksStats[2].id == static_cast<uint8_t>(FIRST_TASK_ID + 1));
+    REQUIRE(tasksStats[1].id == static_cast<uint8_t>(FIRST_TASK_ID + 1));
+    REQUIRE(tasksStats[2].id == static_cast<uint8_t>(FIRST_TASK_ID + 2));
     REQUIRE(tasksStats[3].id == static_cast<uint8_t>(FIRST_TASK_ID + 3));
 }
 

@@ -84,7 +84,7 @@ public:
     /**
      * @brief Checks whether all the sensors have been initialized correctly.
      */
-    bool areAllSensorsInitilized();
+    bool areAllSensorsInitialized();
 
     const SensorInfo getSensorInfo(AbstractSensor* sensor);
 
