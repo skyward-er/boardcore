@@ -114,218 +114,228 @@ inline bool ClockUtils::enablePeripheralClock(void* peripheral)
 {
     miosix::FastInterruptDisableLock dLock;
 
-    switch (*(uint32_t*)peripheral)
+    switch (reinterpret_cast<uint32_t>(peripheral))
     {
-            // AHB1 peripherals
-        case GPIOA_BASE:
-            RCC->AHB1ENR |= RCC_AHB1ENR_GPIOAEN;
-            break;
-        case GPIOB_BASE:
-            RCC->AHB1ENR |= RCC_AHB1ENR_GPIOBEN;
-            break;
-        case GPIOC_BASE:
-            RCC->AHB1ENR |= RCC_AHB1ENR_GPIOCEN;
-            break;
-        case GPIOD_BASE:
-            RCC->AHB1ENR |= RCC_AHB1ENR_GPIODEN;
-            break;
-        case GPIOE_BASE:
-            RCC->AHB1ENR |= RCC_AHB1ENR_GPIOEEN;
-            break;
-        case GPIOF_BASE:
-            RCC->AHB1ENR |= RCC_AHB1ENR_GPIOFEN;
-            break;
-        case GPIOG_BASE:
-            RCC->AHB1ENR |= RCC_AHB1ENR_GPIOGEN;
-            break;
-        case GPIOH_BASE:
-            RCC->AHB1ENR |= RCC_AHB1ENR_GPIOHEN;
-            break;
-        case GPIOI_BASE:
-            RCC->AHB1ENR |= RCC_AHB1ENR_GPIOIEN;
-            break;
+        // AHB1 peripherals
+        {
+            case GPIOA_BASE:
+                RCC->AHB1ENR |= RCC_AHB1ENR_GPIOAEN;
+                break;
+            case GPIOB_BASE:
+                RCC->AHB1ENR |= RCC_AHB1ENR_GPIOBEN;
+                break;
+            case GPIOC_BASE:
+                RCC->AHB1ENR |= RCC_AHB1ENR_GPIOCEN;
+                break;
+            case GPIOD_BASE:
+                RCC->AHB1ENR |= RCC_AHB1ENR_GPIODEN;
+                break;
+            case GPIOE_BASE:
+                RCC->AHB1ENR |= RCC_AHB1ENR_GPIOEEN;
+                break;
+            case GPIOF_BASE:
+                RCC->AHB1ENR |= RCC_AHB1ENR_GPIOFEN;
+                break;
+            case GPIOG_BASE:
+                RCC->AHB1ENR |= RCC_AHB1ENR_GPIOGEN;
+                break;
+            case GPIOH_BASE:
+                RCC->AHB1ENR |= RCC_AHB1ENR_GPIOHEN;
+                break;
+            case GPIOI_BASE:
+                RCC->AHB1ENR |= RCC_AHB1ENR_GPIOIEN;
+                break;
 #ifdef STM32F429xx
-        case GPIOJ_BASE:
-            RCC->AHB1ENR |= RCC_AHB1ENR_GPIOJEN;
-            break;
-        case GPIOK_BASE:
-            RCC->AHB1ENR |= RCC_AHB1ENR_GPIOKEN;
-            break;
+            case GPIOJ_BASE:
+                RCC->AHB1ENR |= RCC_AHB1ENR_GPIOJEN;
+                break;
+            case GPIOK_BASE:
+                RCC->AHB1ENR |= RCC_AHB1ENR_GPIOKEN;
+                break;
 #endif
-        case CRC_BASE:
-            RCC->AHB1ENR |= RCC_AHB1ENR_CRCEN;
-            break;
-        case BKPSRAM_BASE:
-            RCC->AHB1ENR |= RCC_AHB1ENR_BKPSRAMEN;
-            break;
-        case CCMDATARAM_BASE:
-            RCC->AHB1ENR |= RCC_AHB1ENR_CCMDATARAMEN;
-            break;
-        case DMA1_BASE:
-            RCC->AHB1ENR |= RCC_AHB1ENR_DMA1EN;
-            break;
-        case DMA2_BASE:
-            RCC->AHB1ENR |= RCC_AHB1ENR_DMA2EN;
-            break;
+            case CRC_BASE:
+                RCC->AHB1ENR |= RCC_AHB1ENR_CRCEN;
+                break;
+            case BKPSRAM_BASE:
+                RCC->AHB1ENR |= RCC_AHB1ENR_BKPSRAMEN;
+                break;
+            case CCMDATARAM_BASE:
+                RCC->AHB1ENR |= RCC_AHB1ENR_CCMDATARAMEN;
+                break;
+            case DMA1_BASE:
+                RCC->AHB1ENR |= RCC_AHB1ENR_DMA1EN;
+                break;
+            case DMA2_BASE:
+                RCC->AHB1ENR |= RCC_AHB1ENR_DMA2EN;
+                break;
 #ifdef STM32F429xx
-        case DMA2D_BASE:
-            RCC->AHB1ENR |= RCC_AHB1ENR_DMA2DEN;
-            break;
+            case DMA2D_BASE:
+                RCC->AHB1ENR |= RCC_AHB1ENR_DMA2DEN;
+                break;
 #endif
-        case ETH_MAC_BASE:
-            RCC->AHB1ENR |= RCC_AHB1ENR_ETHMACEN;
-            break;
-        case USB_OTG_HS_PERIPH_BASE:
-            RCC->AHB1ENR |= RCC_AHB1ENR_OTGHSEN;
-            break;
-            // AHB2 peripherals
-        case DCMI_BASE:
-            RCC->AHB2ENR |= RCC_AHB2ENR_DCMIEN;
-            break;
-        case RNG_BASE:
-            RCC->AHB2ENR |= RCC_AHB2ENR_RNGEN;
-            break;
-        case USB_OTG_FS_PERIPH_BASE:
-            RCC->AHB2ENR |= RCC_AHB2ENR_OTGFSEN;
-            break;
-            // APB1 peripherals
-        case TIM2_BASE:
-            RCC->APB1ENR |= RCC_APB1ENR_TIM2EN;
-            break;
-        case TIM3_BASE:
-            RCC->APB1ENR |= RCC_APB1ENR_TIM2EN;
-            break;
-        case TIM4_BASE:
-            RCC->APB1ENR |= RCC_APB1ENR_TIM4EN;
-            break;
-        case TIM5_BASE:
-            RCC->APB1ENR |= RCC_APB1ENR_TIM5EN;
-            break;
-        case TIM6_BASE:
-            RCC->APB1ENR |= RCC_APB1ENR_TIM6EN;
-            break;
-        case TIM7_BASE:
-            RCC->APB1ENR |= RCC_APB1ENR_TIM7EN;
-            break;
-        case TIM12_BASE:
-            RCC->APB1ENR |= RCC_APB1ENR_TIM12EN;
-            break;
-        case TIM13_BASE:
-            RCC->APB1ENR |= RCC_APB1ENR_TIM13EN;
-            break;
-        case TIM14_BASE:
-            RCC->APB1ENR |= RCC_APB1ENR_TIM14EN;
-            break;
-        case WWDG_BASE:
-            RCC->APB1ENR |= RCC_APB1ENR_WWDGEN;
-            break;
-        case SPI2_BASE:
-            RCC->APB1ENR |= RCC_APB1ENR_SPI2EN;
-            break;
-        case SPI3_BASE:
-            RCC->APB1ENR |= RCC_APB1ENR_SPI3EN;
-            break;
-        case USART2_BASE:
-            RCC->APB1ENR |= RCC_APB1ENR_USART2EN;
-            break;
-        case USART3_BASE:
-            RCC->APB1ENR |= RCC_APB1ENR_USART3EN;
-            break;
-        case UART4_BASE:
-            RCC->APB1ENR |= RCC_APB1ENR_UART4EN;
-            break;
-        case UART5_BASE:
-            RCC->APB1ENR |= RCC_APB1ENR_UART5EN;
-            break;
-        case I2C1_BASE:
-            RCC->APB1ENR |= RCC_APB1ENR_I2C1EN;
-            break;
-        case I2C2_BASE:
-            RCC->APB1ENR |= RCC_APB1ENR_I2C2EN;
-            break;
-        case I2C3_BASE:
-            RCC->APB1ENR |= RCC_APB1ENR_I2C3EN;
-            break;
-        case CAN1_BASE:
-            RCC->APB1ENR |= RCC_APB1ENR_CAN1EN;
-            break;
-        case CAN2_BASE:
-            RCC->APB1ENR |= RCC_APB1ENR_CAN2EN;
-            break;
-        case PWR_BASE:
-            RCC->APB1ENR |= RCC_APB1ENR_PWREN;
-            break;
-        case DAC_BASE:
-            RCC->APB1ENR |= RCC_APB1ENR_DACEN;
-            break;
-#ifdef STM32F429xx
-        case UART7_BASE:
-            RCC->APB1ENR |= RCC_APB1ENR_UART7EN;
-            break;
-        case UART8_BASE:
-            RCC->APB1ENR |= RCC_APB1ENR_UART8EN;
-            break;
-#endif
+            case ETH_MAC_BASE:
+                RCC->AHB1ENR |= RCC_AHB1ENR_ETHMACEN;
+                break;
+            case USB_OTG_HS_PERIPH_BASE:
+                RCC->AHB1ENR |= RCC_AHB1ENR_OTGHSEN;
+                break;
+        }
 
-            // APB2 peripherals
-        case TIM1_BASE:
-            RCC->APB2ENR |= RCC_APB2ENR_TIM1EN;
-            break;
-        case TIM8_BASE:
-            RCC->APB2ENR |= RCC_APB2ENR_TIM8EN;
-            break;
-        case USART1_BASE:
-            RCC->APB2ENR |= RCC_APB2ENR_USART1EN;
-            break;
-        case USART6_BASE:
-            RCC->APB2ENR |= RCC_APB2ENR_USART6EN;
-            break;
-        case ADC1_BASE:
-            RCC->APB2ENR |= RCC_APB2ENR_ADC1EN;
-            break;
-        case ADC2_BASE:
-            RCC->APB2ENR |= RCC_APB2ENR_ADC2EN;
-            break;
-        case ADC3_BASE:
-            RCC->APB2ENR |= RCC_APB2ENR_ADC3EN;
-            break;
-        case SDIO_BASE:
-            RCC->APB2ENR |= RCC_APB2ENR_SDIOEN;
-            break;
-        case SPI1_BASE:
-            RCC->APB2ENR |= RCC_APB2ENR_SPI1EN;
-            break;
+        // AHB2 peripherals
+        {
+            case DCMI_BASE:
+                RCC->AHB2ENR |= RCC_AHB2ENR_DCMIEN;
+                break;
+            case RNG_BASE:
+                RCC->AHB2ENR |= RCC_AHB2ENR_RNGEN;
+                break;
+            case USB_OTG_FS_PERIPH_BASE:
+                RCC->AHB2ENR |= RCC_AHB2ENR_OTGFSEN;
+                break;
+        }
+
+        // APB1 peripherals
+        {
+            case TIM2_BASE:
+                RCC->APB1ENR |= RCC_APB1ENR_TIM2EN;
+                break;
+            case TIM3_BASE:
+                RCC->APB1ENR |= RCC_APB1ENR_TIM2EN;
+                break;
+            case TIM4_BASE:
+                RCC->APB1ENR |= RCC_APB1ENR_TIM4EN;
+                break;
+            case TIM5_BASE:
+                RCC->APB1ENR |= RCC_APB1ENR_TIM5EN;
+                break;
+            case TIM6_BASE:
+                RCC->APB1ENR |= RCC_APB1ENR_TIM6EN;
+                break;
+            case TIM7_BASE:
+                RCC->APB1ENR |= RCC_APB1ENR_TIM7EN;
+                break;
+            case TIM12_BASE:
+                RCC->APB1ENR |= RCC_APB1ENR_TIM12EN;
+                break;
+            case TIM13_BASE:
+                RCC->APB1ENR |= RCC_APB1ENR_TIM13EN;
+                break;
+            case TIM14_BASE:
+                RCC->APB1ENR |= RCC_APB1ENR_TIM14EN;
+                break;
+            case WWDG_BASE:
+                RCC->APB1ENR |= RCC_APB1ENR_WWDGEN;
+                break;
+            case SPI2_BASE:
+                RCC->APB1ENR |= RCC_APB1ENR_SPI2EN;
+                break;
+            case SPI3_BASE:
+                RCC->APB1ENR |= RCC_APB1ENR_SPI3EN;
+                break;
+            case USART2_BASE:
+                RCC->APB1ENR |= RCC_APB1ENR_USART2EN;
+                break;
+            case USART3_BASE:
+                RCC->APB1ENR |= RCC_APB1ENR_USART3EN;
+                break;
+            case UART4_BASE:
+                RCC->APB1ENR |= RCC_APB1ENR_UART4EN;
+                break;
+            case UART5_BASE:
+                RCC->APB1ENR |= RCC_APB1ENR_UART5EN;
+                break;
+            case I2C1_BASE:
+                RCC->APB1ENR |= RCC_APB1ENR_I2C1EN;
+                break;
+            case I2C2_BASE:
+                RCC->APB1ENR |= RCC_APB1ENR_I2C2EN;
+                break;
+            case I2C3_BASE:
+                RCC->APB1ENR |= RCC_APB1ENR_I2C3EN;
+                break;
+            case CAN1_BASE:
+                RCC->APB1ENR |= RCC_APB1ENR_CAN1EN;
+                break;
+            case CAN2_BASE:
+                RCC->APB1ENR |= RCC_APB1ENR_CAN2EN;
+                break;
+            case PWR_BASE:
+                RCC->APB1ENR |= RCC_APB1ENR_PWREN;
+                break;
+            case DAC_BASE:
+                RCC->APB1ENR |= RCC_APB1ENR_DACEN;
+                break;
 #ifdef STM32F429xx
-        case SPI4_BASE:
-            RCC->APB2ENR |= RCC_APB2ENR_SPI4EN;
-            break;
+            case UART7_BASE:
+                RCC->APB1ENR |= RCC_APB1ENR_UART7EN;
+                break;
+            case UART8_BASE:
+                RCC->APB1ENR |= RCC_APB1ENR_UART8EN;
+                break;
 #endif
-        case SYSCFG_BASE:
-            RCC->APB2ENR |= RCC_APB2ENR_SYSCFGEN;
-            break;
-        case TIM9_BASE:
-            RCC->APB2ENR |= RCC_APB2ENR_TIM9EN;
-            break;
-        case TIM10_BASE:
-            RCC->APB2ENR |= RCC_APB2ENR_TIM10EN;
-            break;
-        case TIM11_BASE:
-            RCC->APB2ENR |= RCC_APB2ENR_TIM11EN;
-            break;
+        }
+
+        // APB2 peripherals
+        {
+            case TIM1_BASE:
+                RCC->APB2ENR |= RCC_APB2ENR_TIM1EN;
+                break;
+            case TIM8_BASE:
+                RCC->APB2ENR |= RCC_APB2ENR_TIM8EN;
+                break;
+            case USART1_BASE:
+                RCC->APB2ENR |= RCC_APB2ENR_USART1EN;
+                break;
+            case USART6_BASE:
+                RCC->APB2ENR |= RCC_APB2ENR_USART6EN;
+                break;
+            case ADC1_BASE:
+                RCC->APB2ENR |= RCC_APB2ENR_ADC1EN;
+                break;
+            case ADC2_BASE:
+                RCC->APB2ENR |= RCC_APB2ENR_ADC2EN;
+                break;
+            case ADC3_BASE:
+                RCC->APB2ENR |= RCC_APB2ENR_ADC3EN;
+                break;
+            case SDIO_BASE:
+                RCC->APB2ENR |= RCC_APB2ENR_SDIOEN;
+                break;
+            case SPI1_BASE:
+                RCC->APB2ENR |= RCC_APB2ENR_SPI1EN;
+                break;
 #ifdef STM32F429xx
-        case SPI5_BASE:
-            RCC->APB2ENR |= RCC_APB2ENR_SPI5EN;
-            break;
-        case SPI6_BASE:
-            RCC->APB2ENR |= RCC_APB2ENR_SPI6EN;
-            break;
-        case SAI1_BASE:
-            RCC->APB2ENR |= RCC_APB2ENR_SAI1EN;
-            break;
-        case LTDC_BASE:
-            RCC->APB2ENR |= RCC_APB2ENR_LTDCEN;
-            break;
+            case SPI4_BASE:
+                RCC->APB2ENR |= RCC_APB2ENR_SPI4EN;
+                break;
 #endif
+            case SYSCFG_BASE:
+                RCC->APB2ENR |= RCC_APB2ENR_SYSCFGEN;
+                break;
+            case TIM9_BASE:
+                RCC->APB2ENR |= RCC_APB2ENR_TIM9EN;
+                break;
+            case TIM10_BASE:
+                RCC->APB2ENR |= RCC_APB2ENR_TIM10EN;
+                break;
+            case TIM11_BASE:
+                RCC->APB2ENR |= RCC_APB2ENR_TIM11EN;
+                break;
+#ifdef STM32F429xx
+            case SPI5_BASE:
+                RCC->APB2ENR |= RCC_APB2ENR_SPI5EN;
+                break;
+            case SPI6_BASE:
+                RCC->APB2ENR |= RCC_APB2ENR_SPI6EN;
+                break;
+            case SAI1_BASE:
+                RCC->APB2ENR |= RCC_APB2ENR_SAI1EN;
+                break;
+            case LTDC_BASE:
+                RCC->APB2ENR |= RCC_APB2ENR_LTDCEN;
+                break;
+#endif
+        }
 
         default:
             return false;
@@ -336,146 +346,230 @@ inline bool ClockUtils::enablePeripheralClock(void* peripheral)
 
 inline bool ClockUtils::disablePeripheralClock(void* peripheral)
 {
-    switch (*(uint32_t*)peripheral)
-    {
-            // APB1 peripherals
-        case TIM2_BASE:
-            RCC->APB1ENR &= ~RCC_APB1ENR_TIM2EN;
-            break;
-        case TIM3_BASE:
-            RCC->APB1ENR &= ~RCC_APB1ENR_TIM2EN;
-            break;
-        case TIM4_BASE:
-            RCC->APB1ENR &= ~RCC_APB1ENR_TIM4EN;
-            break;
-        case TIM5_BASE:
-            RCC->APB1ENR &= ~RCC_APB1ENR_TIM5EN;
-            break;
-        case TIM6_BASE:
-            RCC->APB1ENR &= ~RCC_APB1ENR_TIM6EN;
-            break;
-        case TIM7_BASE:
-            RCC->APB1ENR &= ~RCC_APB1ENR_TIM7EN;
-            break;
-        case TIM12_BASE:
-            RCC->APB1ENR &= ~RCC_APB1ENR_TIM12EN;
-            break;
-        case TIM13_BASE:
-            RCC->APB1ENR &= ~RCC_APB1ENR_TIM13EN;
-            break;
-        case TIM14_BASE:
-            RCC->APB1ENR &= ~RCC_APB1ENR_TIM14EN;
-            break;
-        case WWDG_BASE:
-            RCC->APB1ENR &= ~RCC_APB1ENR_WWDGEN;
-            break;
-        case SPI2_BASE:
-            RCC->APB1ENR &= ~RCC_APB1ENR_SPI2EN;
-            break;
-        case SPI3_BASE:
-            RCC->APB1ENR &= ~RCC_APB1ENR_SPI3EN;
-            break;
-        case USART2_BASE:
-            RCC->APB1ENR &= ~RCC_APB1ENR_USART2EN;
-            break;
-        case USART3_BASE:
-            RCC->APB1ENR &= ~RCC_APB1ENR_USART3EN;
-            break;
-        case UART4_BASE:
-            RCC->APB1ENR &= ~RCC_APB1ENR_UART4EN;
-            break;
-        case UART5_BASE:
-            RCC->APB1ENR &= ~RCC_APB1ENR_UART5EN;
-            break;
-        case I2C1_BASE:
-            RCC->APB1ENR &= ~RCC_APB1ENR_I2C1EN;
-            break;
-        case I2C2_BASE:
-            RCC->APB1ENR &= ~RCC_APB1ENR_I2C2EN;
-            break;
-        case I2C3_BASE:
-            RCC->APB1ENR &= ~RCC_APB1ENR_I2C3EN;
-            break;
-        case CAN1_BASE:
-            RCC->APB1ENR &= ~RCC_APB1ENR_CAN1EN;
-            break;
-        case CAN2_BASE:
-            RCC->APB1ENR &= ~RCC_APB1ENR_CAN2EN;
-            break;
-        case PWR_BASE:
-            RCC->APB1ENR &= ~RCC_APB1ENR_PWREN;
-            break;
-        case DAC_BASE:
-            RCC->APB1ENR &= ~RCC_APB1ENR_DACEN;
-            break;
-#ifdef STM32F429xx
-        case UART7_BASE:
-            RCC->APB1ENR &= ~RCC_APB1ENR_UART7EN;
-            break;
-        case UART8_BASE:
-            RCC->APB1ENR &= ~RCC_APB1ENR_UART8EN;
-            break;
-#endif
+    miosix::FastInterruptDisableLock dLock;
 
-            // APB2 peripherals
-        case TIM1_BASE:
-            RCC->APB2ENR &= ~RCC_APB2ENR_TIM1EN;
-            break;
-        case TIM8_BASE:
-            RCC->APB2ENR &= ~RCC_APB2ENR_TIM8EN;
-            break;
-        case USART1_BASE:
-            RCC->APB2ENR &= ~RCC_APB2ENR_USART1EN;
-            break;
-        case USART6_BASE:
-            RCC->APB2ENR &= ~RCC_APB2ENR_USART6EN;
-            break;
-        case ADC1_BASE:
-            RCC->APB2ENR &= ~RCC_APB2ENR_ADC1EN;
-            break;
-        case ADC2_BASE:
-            RCC->APB2ENR &= ~RCC_APB2ENR_ADC2EN;
-            break;
-        case ADC3_BASE:
-            RCC->APB2ENR &= ~RCC_APB2ENR_ADC3EN;
-            break;
-        case SDIO_BASE:
-            RCC->APB2ENR &= ~RCC_APB2ENR_SDIOEN;
-            break;
-        case SPI1_BASE:
-            RCC->APB2ENR &= ~RCC_APB2ENR_SPI1EN;
-            break;
+    switch (reinterpret_cast<uint32_t>(peripheral))
+    {
+        // AHB1 peripherals
+        {
+            case GPIOA_BASE:
+                RCC->AHB1ENR &= ~RCC_AHB1ENR_GPIOAEN;
+                break;
+            case GPIOB_BASE:
+                RCC->AHB1ENR &= ~RCC_AHB1ENR_GPIOBEN;
+                break;
+            case GPIOC_BASE:
+                RCC->AHB1ENR &= ~RCC_AHB1ENR_GPIOCEN;
+                break;
+            case GPIOD_BASE:
+                RCC->AHB1ENR &= ~RCC_AHB1ENR_GPIODEN;
+                break;
+            case GPIOE_BASE:
+                RCC->AHB1ENR &= ~RCC_AHB1ENR_GPIOEEN;
+                break;
+            case GPIOF_BASE:
+                RCC->AHB1ENR &= ~RCC_AHB1ENR_GPIOFEN;
+                break;
+            case GPIOG_BASE:
+                RCC->AHB1ENR &= ~RCC_AHB1ENR_GPIOGEN;
+                break;
+            case GPIOH_BASE:
+                RCC->AHB1ENR &= ~RCC_AHB1ENR_GPIOHEN;
+                break;
+            case GPIOI_BASE:
+                RCC->AHB1ENR &= ~RCC_AHB1ENR_GPIOIEN;
+                break;
 #ifdef STM32F429xx
-        case SPI4_BASE:
-            RCC->APB2ENR &= ~RCC_APB2ENR_SPI4EN;
-            break;
+            case GPIOJ_BASE:
+                RCC->AHB1ENR &= ~RCC_AHB1ENR_GPIOJEN;
+                break;
+            case GPIOK_BASE:
+                RCC->AHB1ENR &= ~RCC_AHB1ENR_GPIOKEN;
+                break;
 #endif
-        case SYSCFG_BASE:
-            RCC->APB2ENR &= ~RCC_APB2ENR_SYSCFGEN;
-            break;
-        case TIM9_BASE:
-            RCC->APB2ENR &= ~RCC_APB2ENR_TIM9EN;
-            break;
-        case TIM10_BASE:
-            RCC->APB2ENR &= ~RCC_APB2ENR_TIM10EN;
-            break;
-        case TIM11_BASE:
-            RCC->APB2ENR &= ~RCC_APB2ENR_TIM11EN;
-            break;
+            case CRC_BASE:
+                RCC->AHB1ENR &= ~RCC_AHB1ENR_CRCEN;
+                break;
+            case BKPSRAM_BASE:
+                RCC->AHB1ENR &= ~RCC_AHB1ENR_BKPSRAMEN;
+                break;
+            case CCMDATARAM_BASE:
+                RCC->AHB1ENR &= ~RCC_AHB1ENR_CCMDATARAMEN;
+                break;
+            case DMA1_BASE:
+                RCC->AHB1ENR &= ~RCC_AHB1ENR_DMA1EN;
+                break;
+            case DMA2_BASE:
+                RCC->AHB1ENR &= ~RCC_AHB1ENR_DMA2EN;
+                break;
 #ifdef STM32F429xx
-        case SPI5_BASE:
-            RCC->APB2ENR &= ~RCC_APB2ENR_SPI5EN;
-            break;
-        case SPI6_BASE:
-            RCC->APB2ENR &= ~RCC_APB2ENR_SPI6EN;
-            break;
-        case SAI1_BASE:
-            RCC->APB2ENR &= ~RCC_APB2ENR_SAI1EN;
-            break;
-        case LTDC_BASE:
-            RCC->APB2ENR &= ~RCC_APB2ENR_LTDCEN;
-            break;
+            case DMA2D_BASE:
+                RCC->AHB1ENR &= ~RCC_AHB1ENR_DMA2DEN;
+                break;
 #endif
+            case ETH_MAC_BASE:
+                RCC->AHB1ENR &= ~RCC_AHB1ENR_ETHMACEN;
+                break;
+            case USB_OTG_HS_PERIPH_BASE:
+                RCC->AHB1ENR &= ~RCC_AHB1ENR_OTGHSEN;
+                break;
+        }
+
+        // AHB2 peripherals
+        {
+            case DCMI_BASE:
+                RCC->AHB2ENR &= ~RCC_AHB2ENR_DCMIEN;
+                break;
+            case RNG_BASE:
+                RCC->AHB2ENR &= ~RCC_AHB2ENR_RNGEN;
+                break;
+            case USB_OTG_FS_PERIPH_BASE:
+                RCC->AHB2ENR &= ~RCC_AHB2ENR_OTGFSEN;
+                break;
+        }
+
+        // APB1 peripherals
+        {
+            case TIM2_BASE:
+                RCC->APB1ENR &= ~RCC_APB1ENR_TIM2EN;
+                break;
+            case TIM3_BASE:
+                RCC->APB1ENR &= ~RCC_APB1ENR_TIM2EN;
+                break;
+            case TIM4_BASE:
+                RCC->APB1ENR &= ~RCC_APB1ENR_TIM4EN;
+                break;
+            case TIM5_BASE:
+                RCC->APB1ENR &= ~RCC_APB1ENR_TIM5EN;
+                break;
+            case TIM6_BASE:
+                RCC->APB1ENR &= ~RCC_APB1ENR_TIM6EN;
+                break;
+            case TIM7_BASE:
+                RCC->APB1ENR &= ~RCC_APB1ENR_TIM7EN;
+                break;
+            case TIM12_BASE:
+                RCC->APB1ENR &= ~RCC_APB1ENR_TIM12EN;
+                break;
+            case TIM13_BASE:
+                RCC->APB1ENR &= ~RCC_APB1ENR_TIM13EN;
+                break;
+            case TIM14_BASE:
+                RCC->APB1ENR &= ~RCC_APB1ENR_TIM14EN;
+                break;
+            case WWDG_BASE:
+                RCC->APB1ENR &= ~RCC_APB1ENR_WWDGEN;
+                break;
+            case SPI2_BASE:
+                RCC->APB1ENR &= ~RCC_APB1ENR_SPI2EN;
+                break;
+            case SPI3_BASE:
+                RCC->APB1ENR &= ~RCC_APB1ENR_SPI3EN;
+                break;
+            case USART2_BASE:
+                RCC->APB1ENR &= ~RCC_APB1ENR_USART2EN;
+                break;
+            case USART3_BASE:
+                RCC->APB1ENR &= ~RCC_APB1ENR_USART3EN;
+                break;
+            case UART4_BASE:
+                RCC->APB1ENR &= ~RCC_APB1ENR_UART4EN;
+                break;
+            case UART5_BASE:
+                RCC->APB1ENR &= ~RCC_APB1ENR_UART5EN;
+                break;
+            case I2C1_BASE:
+                RCC->APB1ENR &= ~RCC_APB1ENR_I2C1EN;
+                break;
+            case I2C2_BASE:
+                RCC->APB1ENR &= ~RCC_APB1ENR_I2C2EN;
+                break;
+            case I2C3_BASE:
+                RCC->APB1ENR &= ~RCC_APB1ENR_I2C3EN;
+                break;
+            case CAN1_BASE:
+                RCC->APB1ENR &= ~RCC_APB1ENR_CAN1EN;
+                break;
+            case CAN2_BASE:
+                RCC->APB1ENR &= ~RCC_APB1ENR_CAN2EN;
+                break;
+            case PWR_BASE:
+                RCC->APB1ENR &= ~RCC_APB1ENR_PWREN;
+                break;
+            case DAC_BASE:
+                RCC->APB1ENR &= ~RCC_APB1ENR_DACEN;
+                break;
+#ifdef STM32F429xx
+            case UART7_BASE:
+                RCC->APB1ENR &= ~RCC_APB1ENR_UART7EN;
+                break;
+            case UART8_BASE:
+                RCC->APB1ENR &= ~RCC_APB1ENR_UART8EN;
+                break;
+#endif
+        }
+
+        // APB2 peripherals
+        {
+            case TIM1_BASE:
+                RCC->APB2ENR &= ~RCC_APB2ENR_TIM1EN;
+                break;
+            case TIM8_BASE:
+                RCC->APB2ENR &= ~RCC_APB2ENR_TIM8EN;
+                break;
+            case USART1_BASE:
+                RCC->APB2ENR &= ~RCC_APB2ENR_USART1EN;
+                break;
+            case USART6_BASE:
+                RCC->APB2ENR &= ~RCC_APB2ENR_USART6EN;
+                break;
+            case ADC1_BASE:
+                RCC->APB2ENR &= ~RCC_APB2ENR_ADC1EN;
+                break;
+            case ADC2_BASE:
+                RCC->APB2ENR &= ~RCC_APB2ENR_ADC2EN;
+                break;
+            case ADC3_BASE:
+                RCC->APB2ENR &= ~RCC_APB2ENR_ADC3EN;
+                break;
+            case SDIO_BASE:
+                RCC->APB2ENR &= ~RCC_APB2ENR_SDIOEN;
+                break;
+            case SPI1_BASE:
+                RCC->APB2ENR &= ~RCC_APB2ENR_SPI1EN;
+                break;
+#ifdef STM32F429xx
+            case SPI4_BASE:
+                RCC->APB2ENR &= ~RCC_APB2ENR_SPI4EN;
+                break;
+#endif
+            case SYSCFG_BASE:
+                RCC->APB2ENR &= ~RCC_APB2ENR_SYSCFGEN;
+                break;
+            case TIM9_BASE:
+                RCC->APB2ENR &= ~RCC_APB2ENR_TIM9EN;
+                break;
+            case TIM10_BASE:
+                RCC->APB2ENR &= ~RCC_APB2ENR_TIM10EN;
+                break;
+            case TIM11_BASE:
+                RCC->APB2ENR &= ~RCC_APB2ENR_TIM11EN;
+                break;
+#ifdef STM32F429xx
+            case SPI5_BASE:
+                RCC->APB2ENR &= ~RCC_APB2ENR_SPI5EN;
+                break;
+            case SPI6_BASE:
+                RCC->APB2ENR &= ~RCC_APB2ENR_SPI6EN;
+                break;
+            case SAI1_BASE:
+                RCC->APB2ENR &= ~RCC_APB2ENR_SAI1EN;
+                break;
+            case LTDC_BASE:
+                RCC->APB2ENR &= ~RCC_APB2ENR_LTDCEN;
+                break;
+#endif
+        }
 
         default:
             return false;
