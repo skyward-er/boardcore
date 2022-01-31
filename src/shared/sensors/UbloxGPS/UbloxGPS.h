@@ -28,6 +28,7 @@
 #include <sensors/Sensor.h>
 
 #include "UBXUnpackedFrame.h"
+#include "UbloxGPSData.h"
 
 namespace Boardcore
 {
@@ -46,7 +47,7 @@ namespace Boardcore
  *
  * This driver was written for a NEO-M9N gps with the latest version of UBX.
  */
-class UbloxGPS : public Sensor<GPSData>, public ActiveObject
+class UbloxGPS : public Sensor<UbloxGPSData>, public ActiveObject
 {
 public:
     explicit UbloxGPS(uint8_t samplerate) : samplerate(samplerate) {}
@@ -67,7 +68,7 @@ public:
     bool selfTest() override;
 
 protected:
-    GPSData sampleImpl() override;
+    UbloxGPSData sampleImpl() override;
 
     void run() override;
 
@@ -100,7 +101,7 @@ protected:
     const uint8_t samplerate;  // [Hz]
 
     mutable miosix::FastMutex sampleMutex;
-    GPSData lastSample{};
+    UbloxGPSData lastSample{};
 
     PrintLogger logger = Logging::getLogger("ubloxgps");
 };
@@ -148,9 +149,9 @@ public:
      * @param samplerate GPS sample rate (max: 25 for NEO-M9N)
      * @param serialDefaultBaudrate Startup baudrate (38400 for NEO-M9N)
      */
-    UbloxGPSSerial(int serialPortNumber = 2, const char* serialPortName = "gps",
-                   int serialBaudrate        = 921600,
-                   int serialDefaultBaudrate = 38400, uint8_t samplerate = 10);
+    UbloxGPSSerial(int serialBaudrate = 921600, uint8_t samplerate = 10,
+                   int serialDefaultBaudrate = 38400, int serialPortNumber = 2,
+                   const char* serialPortName = "gps");
 
 private:
     /**

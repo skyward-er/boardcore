@@ -84,7 +84,7 @@ bool UbloxGPS::init()
 
 bool UbloxGPS::selfTest() { return true; }
 
-GPSData UbloxGPS::sampleImpl()
+UbloxGPSData UbloxGPS::sampleImpl()
 {
     Lock<FastMutex> l(sampleMutex);
     return lastSample;
@@ -392,9 +392,9 @@ bool UbloxGPSSPI::readRaw(uint8_t* data, size_t size)
     return true;
 }
 
-UbloxGPSSerial::UbloxGPSSerial(int serialPortNumber, const char* serialPortName,
-                               int serialBaudrate, int serialDefaultBaudrate,
-                               uint8_t samplerate)
+UbloxGPSSerial::UbloxGPSSerial(int serialBaudrate, uint8_t samplerate,
+                               int serialDefaultBaudrate, int serialPortNumber,
+                               const char* serialPortName)
     : UbloxGPS(samplerate), serialPortNumber(serialPortNumber),
       serialPortName(serialPortName), serialBaudrate(serialBaudrate),
       serialDefaultBaudrate(serialDefaultBaudrate)

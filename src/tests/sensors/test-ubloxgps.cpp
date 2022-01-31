@@ -64,7 +64,7 @@ int main()
     tx.alternateFunction(7);
     rx.alternateFunction(7);
 
-    UbloxGPSSerial sensor{1, "gps", 921600, 38400, SAMPLE_RATE};
+    UbloxGPSSerial sensor{91600, SAMPLE_RATE, 38400, 1, "gps"};
 #endif
 
     LOG_INFO(logger, "Initializing sensor...\n");
