@@ -39,8 +39,6 @@ GpioPin csPin(GPIOE_BASE, 3);
 
 int main()
 {
-    RCC->APB2ENR |= RCC_APB2ENR_SPI1EN;  // Enable SPI1 bus
-
     sckPin.mode(Mode::ALTERNATE);
     sckPin.alternateFunction(5);
     misoPin.mode(Mode::ALTERNATE);

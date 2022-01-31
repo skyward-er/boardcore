@@ -35,9 +35,6 @@ uint16_t counter = 0;
 
 int main()
 {
-    // Enable clock for SPI4 interface
-    RCC->APB2ENR |= RCC_APB2ENR_SPI4EN;
-
     // Setup gpio pins
     csPin.mode(Mode::ALTERNATE);
     csPin.alternateFunction(5);

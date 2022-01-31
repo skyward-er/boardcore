@@ -38,24 +38,17 @@ using namespace miosix;
 class TimerTestFixture
 {
 public:
-    TimerTestFixture() : timer32(TIM5), timer16(TIM10)
-    {
-        RCC->APB1ENR |= RCC_APB1ENR_TIM5EN;
-        RCC->APB2ENR |= RCC_APB2ENR_TIM10EN;
-    }
-
-    ~TimerTestFixture()
-    {
-        timer16.disable();
-        timer32.disable();
-
-        RCC->APB1ENR &= ~RCC_APB1ENR_TIM5EN;
-        RCC->APB2ENR &= ~RCC_APB2ENR_TIM10EN;
-    }
+    TimerTestFixture() : timer32(TIM5), timer16(TIM10) {}
 
     GP32bitTimer timer32;
     GP16bitTimer timer16;
 };
+
+TEST_CASE_METHOD(TimerTestFixture, "Timers peripheral clock should be enabled")
+{
+    REQUIRE((RCC->APB1ENR & RCC_APB1ENR_TIM5EN) != 0);
+    REQUIRE((RCC->APB2ENR & RCC_APB2ENR_TIM10EN) != 0);
+}
 
 TEST_CASE_METHOD(TimerTestFixture, "Test basic functionality")
 {

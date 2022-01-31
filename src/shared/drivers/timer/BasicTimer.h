@@ -22,6 +22,8 @@
 
 #pragma once
 
+#include <utils/ClockUtils.h>
+
 #include "TimerUtils.h"
 
 namespace Boardcore
@@ -56,9 +58,9 @@ namespace Boardcore
  *
  * The auto-reload register can be preloaded, meaning that there you can use a
  * preload register which acts as a buffer. If enabled, when you change the
- * auto-reload register, its content is transfered into the shadow register
+ * auto-reload register, its content is transferred into the shadow register
  * (they became active) at each UEV, otherwise the new value takes effect
- * immidiately.
+ * immediately.
  *
  * You can change on the fly the prescaler value as well as the auto-reload
  * register and the counter.
@@ -78,10 +80,13 @@ class BasicTimer
 public:
     /**
      * @brief Create a BasicTimer object. Note that this does not resets the
-     * timer configuration.
+     * timer configuration but automatically enables the timer peripheral clock.
      */
     explicit BasicTimer(TIM_TypeDef *timer);
 
+    /**
+     * @brief Resets the registers and disables the peripheral clock.
+     */
     ~BasicTimer();
 
     TIM_TypeDef *getTimer();
@@ -197,9 +202,16 @@ protected:
     TIM_TypeDef *timer;
 };
 
-inline BasicTimer::BasicTimer(TIM_TypeDef *timer) : timer(timer) {}
+inline BasicTimer::BasicTimer(TIM_TypeDef *timer) : timer(timer)
+{
+    ClockUtils::enablePeripheralClock(timer);
+}
 
-inline BasicTimer::~BasicTimer() { reset(); }
+inline BasicTimer::~BasicTimer()
+{
+    reset();
+    ClockUtils::disablePeripheralClock(timer);
+}
 
 inline TIM_TypeDef *BasicTimer::getTimer() { return timer; }
 

@@ -32,8 +32,7 @@ using namespace Boardcore;
 
 GpioPin batteryPin               = GpioPin(GPIOA_BASE, 3);
 InternalADC::Channel ADC_CHANNEL = InternalADC::Channel::CH3;
-ADC_TypeDef& ADCx                = *ADC3;
-InternalADC adc(ADCx);
+InternalADC adc(ADC3);
 
 void initBoard()
 {
@@ -41,13 +40,6 @@ void initBoard()
         miosix::FastInterruptDisableLock dLock;
 
         batteryPin.mode(miosix::Mode::INPUT_ANALOG);
-
-        // Set pins PA0 PA1 PA2 PA3 as analog input
-        // RCC->AHB1ENR |= RCC_AHB1ENR_GPIOAEN;
-        // GPIOA->MODER = 0xFF;
-
-        // Enable ADC3 clock
-        RCC->APB2ENR |= RCC_APB2ENR_ADC3EN;  // <- CHANGE THIS!
 
         // Set the clock divider for the analog circuitry (/8)
         ADC->CCR |= ADC_CCR_ADCPRE_0 | ADC_CCR_ADCPRE_1;

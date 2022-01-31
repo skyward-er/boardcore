@@ -49,6 +49,9 @@ CanbusDriver::CanbusDriver(CAN_TypeDef* can, CanbusConfig config,
                            BitTiming bitTiming)
     : can(can)
 {
+    // Enable the peripheral clock
+    ClockUtils::enablePeripheralClock(can);
+
     // Enter init mode
     can->MCR &= (~CAN_MCR_SLEEP);
     can->MCR |= CAN_MCR_INRQ;
@@ -112,6 +115,8 @@ CanbusDriver::CanbusDriver(CAN_TypeDef* can, CanbusConfig config,
     NVIC_SetPriority(CAN1_TX_IRQn, 14);
 }
 
+CanbusDriver::~CanbusDriver() { ClockUtils::disablePeripheralClock(can); }
+
 CanbusDriver::BitTiming CanbusDriver::calcBitTiming(AutoBitTiming autoBt)
 {
     PrintLogger ls = l.getChild("bittiming");
@@ -122,7 +127,7 @@ CanbusDriver::BitTiming CanbusDriver::calcBitTiming(AutoBitTiming autoBt)
 
     BitTiming cfgIter;
     cfgIter.SJW     = 0;
-    uint32_t apbclk = ClockUtils::getAPBFrequecy(ClockUtils::APB::APB1);
+    uint32_t apbclk = ClockUtils::getAPBFrequency(ClockUtils::APB::APB1);
 
     // Iterate over the possible number of quanta in a bit to find the best
     // settings

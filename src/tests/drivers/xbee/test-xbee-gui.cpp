@@ -330,29 +330,22 @@ void setupXbee(XbeeConfig config)
 
 void configure()
 {
-    {
-        FastInterruptDisableLock dLock;
+    // Set SPI pins to correct alternate mode
+    GpioSck::mode(Mode::ALTERNATE);
+    GpioMiso::mode(Mode::ALTERNATE);
+    GpioMosi::mode(Mode::ALTERNATE);
 
-        // Enable SPI5 and TIM5 peripheral clocks
-        RCC->APB2ENR |= RCC_APB2ENR_SPI1EN;
+    GpioSck::alternateFunction(5);
+    GpioMiso::alternateFunction(5);
+    GpioMosi::alternateFunction(5);
 
-        // Set SPI pins to correct alternate mode
-        GpioSck::mode(Mode::ALTERNATE);
-        GpioMiso::mode(Mode::ALTERNATE);
-        GpioMosi::mode(Mode::ALTERNATE);
+    GpioATTN::mode(Mode::INPUT_PULL_UP);
 
-        GpioSck::alternateFunction(5);
-        GpioMiso::alternateFunction(5);
-        GpioMosi::alternateFunction(5);
+    GpioLedLog::mode(Mode::OUTPUT);
+    GpioUserBtn::mode(Mode::INPUT_PULL_DOWN);
 
-        GpioATTN::mode(Mode::INPUT_PULL_UP);
-
-        GpioLedLog::mode(Mode::OUTPUT);
-        GpioUserBtn::mode(Mode::INPUT_PULL_DOWN);
-
-        // Set chip select pin to OUTPUT
-        GpioCS::mode(Mode::OUTPUT);
-    }
+    // Set chip select pin to OUTPUT
+    GpioCS::mode(Mode::OUTPUT);
 
     // Chip select starts high (not asserted)
     GpioCS::high();

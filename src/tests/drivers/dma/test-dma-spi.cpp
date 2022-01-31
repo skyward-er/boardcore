@@ -91,9 +91,6 @@ void initGPIOs()
 
 void initSPI()
 {
-    // Enable SPI clock for SPI5 interface
-    RCC->APB2ENR |= RCC_APB2ENR_SPI5EN;
-
     spi5.reset();
     spi5.setClockDiver(SPI::ClockDivider::DIV_256);
     spi5.setMode(SPI::Mode::MODE_3);

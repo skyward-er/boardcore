@@ -24,6 +24,7 @@
 
 #include <interfaces/arch_registers.h>
 #include <stddef.h>
+#include <utils/ClockUtils.h>
 
 #ifndef USE_MOCK_PERIPHERALS
 using SPIType = SPI_TypeDef;
@@ -93,7 +94,15 @@ public:
         MODE_3 = 3   ///< CPOL = 1, CPHA = 1
     };
 
+    /**
+     * @brief Automatically enables the timer peripheral clock.
+     */
     explicit SPI(SPIType *spi);
+
+    /**
+     * @brief Resets the registers and disables the peripheral clock.
+     */
+    ~SPI();
 
     SPIType *getSpi();
 
@@ -242,7 +251,11 @@ private:
     SPIType *spi;
 };
 
-inline SPI::SPI(SPIType *spi) : spi(spi) {}
+inline SPI::SPI(SPIType *spi) : spi(spi)
+{
+    ClockUtils::enablePeripheralClock(spi);
+}
+inline SPI::~SPI() { ClockUtils::disablePeripheralClock(spi); }
 
 inline SPIType *SPI::getSpi() { return spi; }
 

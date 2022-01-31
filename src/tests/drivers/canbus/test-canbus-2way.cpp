@@ -204,8 +204,6 @@ int main()
     {
         miosix::FastInterruptDisableLock dLock;
 
-        RCC->APB1ENR |= RCC_APB1ENR_CAN1EN;  // Enable CAN1 bus
-
 #ifdef _ARCH_CORTEXM3_STM32
         CanRX::mode(Mode::ALTERNATE);
         CanTX::mode(Mode::ALTERNATE);

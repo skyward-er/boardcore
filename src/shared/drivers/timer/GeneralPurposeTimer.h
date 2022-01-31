@@ -48,7 +48,7 @@ namespace Boardcore
  * - Interrupt generation on the following events:
  *   - Update: counter overflow, counter initialization (by software of internal
  * trigger)
- *   - Trigger event (counter start, stop, initializationm or count by internal
+ *   - Trigger event (counter start, stop, initialization or count by internal
  * trigger)
  *   - Input capture
  *   - Ouput compare
@@ -65,7 +65,8 @@ namespace Boardcore
  * and interrupt can't be generated from trigger events
  *
  * For a basic introduction to timers read BasicTimer description.
- * For a more exhautive explanation and feature list study the reference manual!
+ * For a more exhaustive explanation and feature list study the reference
+ * manual!
  *
  * The counter clock can be provided by the following clock sources:
  *   - Internal clock
@@ -103,10 +104,14 @@ public:
 
     /**
      * @brief Create a GeneralPurposeTimer object. Note that this does not
-     * resets the timer configuration.
+     * resets the timer configuration but automatically enables the timer
+     * peripheral clock.
      */
     explicit GeneralPurposeTimer(TIM_TypeDef *timer);
 
+    /**
+     * @brief Resets the registers and disables the peripheral clock.
+     */
     ~GeneralPurposeTimer();
 
     void reset() override;
@@ -226,6 +231,7 @@ template <typename T>
 inline GeneralPurposeTimer<T>::~GeneralPurposeTimer()
 {
     reset();
+    ClockUtils::disablePeripheralClock(timer);
 }
 
 template <typename T>

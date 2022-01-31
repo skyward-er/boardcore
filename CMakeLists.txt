@@ -99,7 +99,7 @@ add_executable(catch-tests-entry
     src/tests/catch/test-buttonhandler.cpp
     src/tests/catch/test-circularbuffer.cpp
     src/tests/catch/test-eventbroker.cpp
-    src/tests/catch/test-hardwaretimer.cpp
+    src/tests/catch/test-timestamptimer.cpp
     src/tests/catch/test-kalman-eigen.cpp
     src/tests/catch/test-packetqueue.cpp
     src/tests/catch/test-sensormanager-catch.cpp

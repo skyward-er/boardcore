@@ -42,13 +42,6 @@ using namespace Eigen;
 
 int main()
 {
-    // Setting pin mode for signaling ADA status
-    {
-        FastInterruptDisableLock dLock;
-
-        RCC->APB1ENR |= RCC_APB1ENR_TIM5EN;
-    }
-
     printf("RUNNING...\n");
 
     // Timer for benchmarking purposes

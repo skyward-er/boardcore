@@ -34,9 +34,6 @@ GpioPin csPin   = GpioPin(GPIOE_BASE, 4);
 
 void initBoard()
 {
-    // Enable clock for SPI4 interface
-    RCC->APB2ENR |= RCC_APB2ENR_SPI4EN;
-
     // Setup gpio pins
     csPin.mode(Mode::OUTPUT);
     csPin.high();

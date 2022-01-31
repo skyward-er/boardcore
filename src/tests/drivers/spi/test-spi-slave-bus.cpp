@@ -36,13 +36,6 @@ GpioPin timerSckPin = GpioPin(GPIOB_BASE, 1);
 
 int main()
 {
-    // Enable clock for SPI4 interface
-    RCC->APB2ENR |= RCC_APB2ENR_SPI4EN;
-
-    // Enable clock for timers TIM1 and TIM3
-    RCC->APB2ENR |= RCC_APB2ENR_TIM1EN;
-    RCC->APB1ENR |= RCC_APB1ENR_TIM3EN;
-
     // Setup gpio pins
     csPin.mode(Mode::ALTERNATE);
     csPin.alternateFunction(5);

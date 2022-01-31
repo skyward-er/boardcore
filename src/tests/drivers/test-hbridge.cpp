@@ -70,8 +70,6 @@ int main()
     hbridgeInhibit.mode(Mode::OUTPUT);
     hbridgeInhibit.low();
 
-    RCC->APB1ENR |= RCC_APB1ENR_TIM3EN;
-
     for (;;)
     {
         uint32_t freq = 0;

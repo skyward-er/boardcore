@@ -34,7 +34,6 @@ GpioPin timerPin            = GpioPin(GPIOB_BASE, 7);
 
 int main()
 {
-    RCC->APB2ENR |= RCC_APB2ENR_TIM1EN;
     timerPin.mode(Mode::ALTERNATE);
     timerPin.alternateFunction(2);
 

@@ -43,9 +43,12 @@ namespace Boardcore
  * sequence as they are enabled
  * - DMA: Used in scan mode to transfer data from the peripheral data register
  *
+ * Note that only the DMA2 controller can be used with the ADC in stm32f4
+ * microcontrollers.
+ *
  * When you don't use the DMA, the driver works with the injected channels.
  * When a conversion is started the values are stored in 4 specific data
- * registes, whithout the need to use DMA.
+ * register, without the need to use DMA.
  *
  * If you need more than 4 channels you must use DMA. When the regular group
  * of channels is converted, the data will be stored sequentially in a single
@@ -67,7 +70,7 @@ class InternalADC : public Sensor<ADCData>
 {
 public:
     /**
-     * @brief ADC channels enumeration
+     * @brief ADC channels enumeration.
      */
     enum Channel : uint8_t
     {
@@ -105,16 +108,20 @@ public:
         CYCLES_480 = 0x7
     };
 
-    explicit InternalADC(ADC_TypeDef& ADCx, const float supplyVoltage = 5.0,
-                         const bool isUsingDMA    = false,
-                         DMA_Stream_TypeDef* DMAx = DMA1_Stream0);
+    /**
+     * @brief Resets the ADC configuration and automatically enables the
+     * peripheral clock (also for the dma channel if used).
+     */
+    explicit InternalADC(ADC_TypeDef* adc, const float supplyVoltage = 5.0,
+                         const bool isUsingDMA   = false,
+                         DMA_Stream_TypeDef* dma = DMA1_Stream0);
 
     ~InternalADC();
 
     /**
-     * @brief ADC Initialization
+     * @brief ADC Initialization.
      *
-     * The ADC clock must be set before hand as well as GPIO configuration
+     * The ADC clock must be set beforehand as well as GPIO configuration
      * and DMA if used. Also the clock for the analog circuitry should be set
      * accordingly to the device datasheet.
      */
@@ -143,15 +150,11 @@ private:
 
     inline void setChannelSampleTime(Channel channel, SampleTime sampleTime);
 
-    inline void enableADCClock();
-
-    inline void disableADCClock();
-
-    ADC_TypeDef& ADCx;
+    ADC_TypeDef* adc;
     const float supplyVoltage = 5.0;
 
     uint8_t activeChannels = 0;
-    uint64_t timestamp;
+    uint64_t timestamp     = 0;
 
     // Raw value used by DMA
     uint16_t values[CH_NUM] = {};
@@ -162,18 +165,17 @@ private:
     /**
      * @brief Determines whether to use regular channels or injected channels
      *
-     * We'll use up to 4 injected channel by dafult and up to 16 channels when
+     * We'll use up to 4 injected channel by default and up to 16 channels when
      * using DMA.
      *
-     * The differantiation is necessary because whitout DMA it is much more
-     * simplier to use injected channel for multichannel readings. Otherwise we
-     * would need to handle each channel's end of conversion interrupt or go
-     * through
+     * The differentiation is necessary because whitout DMA it is much simplier
+     * to use injected channel for multichannel readings. Otherwise we would
+     * need to handle each channel's end of conversion interrupt or go through
      */
     const bool isUsingDMA;
-    DMA_Stream_TypeDef* DMAx_Streamx;
-    DMA_TypeDef* DMAx = DMA1;
-    uint8_t streamNum = 0;
+    DMA_Stream_TypeDef* dmaStream;
+    DMA_TypeDef* dma = DMA2;
+    uint8_t streamNum;
     uint32_t transferCompleteMask;
     uint32_t transferErrorMask;
     volatile uint32_t* statusReg;

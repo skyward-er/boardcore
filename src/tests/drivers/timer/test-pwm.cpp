@@ -1,5 +1,5 @@
 /* Copyright (c) 2018-2019 Skyward Experimental Rocketry
- * Author: Luca Erbetta
+ * Author: Luca Erbetta, Alberto Nidasio
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -41,9 +41,6 @@ int main()
     ch3::alternateFunction(2);
     ch4::mode(Mode::ALTERNATE);
     ch4::alternateFunction(3);
-
-    RCC->APB1ENR |= RCC_APB1ENR_TIM3EN;
-    RCC->APB2ENR |= RCC_APB2ENR_TIM10EN;
 
     PWM pwm(TIM3);
     PWM pwm2(TIM10);

@@ -38,20 +38,14 @@ GpioPin cs(GPIOE_BASE, 3);
 
 int main()
 {
-    {
-        miosix::FastInterruptDisableLock dLock;
+    spiSck.mode(miosix::Mode::ALTERNATE);
+    spiSck.alternateFunction(5);
+    spiMiso.mode(miosix::Mode::ALTERNATE);
+    spiMiso.alternateFunction(5);
+    spiMosi.mode(miosix::Mode::ALTERNATE);
+    spiMosi.alternateFunction(5);
 
-        RCC->APB2ENR |= RCC_APB2ENR_SPI1EN;  // Enable SPI1 bus
-
-        spiSck.mode(miosix::Mode::ALTERNATE);
-        spiSck.alternateFunction(5);
-        spiMiso.mode(miosix::Mode::ALTERNATE);
-        spiMiso.alternateFunction(5);
-        spiMosi.mode(miosix::Mode::ALTERNATE);
-        spiMosi.alternateFunction(5);
-
-        cs.mode(miosix::Mode::OUTPUT);
-    }
+    cs.mode(miosix::Mode::OUTPUT);
     cs.high();
 
     LIS3DSH sensor(bus, cs, sensor.ODR_100_HZ, sensor.UPDATE_AFTER_READ_MODE,

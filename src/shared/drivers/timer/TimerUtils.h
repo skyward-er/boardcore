@@ -34,7 +34,7 @@ namespace TimerUtils
 {
 
 /**
- * @brief Trigger sourcer modes.
+ * @brief Trigger sources.
  *
  * Here a quick recap of the internal trigger sources:
  *
@@ -163,7 +163,7 @@ enum class SlaveMode : uint16_t
     /**
      * @brief Gated mode.
      *
-     * The counter clock is eneabled when the trigger input (TRGI) is high.
+     * The counter clock is enabled when the trigger input (TRGI) is high.
      * The counter stops (but is not reset) as soon as the trigger becomes
      * low. Counter starts and stops are both controlled.
      *
@@ -259,7 +259,7 @@ ClockUtils::APB getTimerInputClock(TIM_TypeDef *timer);
 /**
  * @brief Returns the timer clock frequency before the prescaler.
  *
- * Class borrowed from the SyncronizedServo class in Miosix.
+ * Class borrowed from the SynchronizedServo class in Miosix.
  *
  * @param timer Timer to use.
  * @return Prescaler input frequency.
@@ -344,7 +344,7 @@ float getResolution(TIM_TypeDef *timer);
 /**
  * @brief Computes the number of seconds for timer reset.
  *
- * @return Timer duration before counter reset in secondss.
+ * @return Timer duration before counter reset in seconds.
  */
 float getMaxDuration(TIM_TypeDef *timer);
 
@@ -379,7 +379,7 @@ inline ClockUtils::APB TimerUtils::getTimerInputClock(TIM_TypeDef *timer)
 
 inline uint32_t TimerUtils::getPrescalerInputFrequency(TIM_TypeDef *timer)
 {
-    return ClockUtils::getAPBFrequecy(getTimerInputClock(timer));
+    return ClockUtils::getAPBFrequency(getTimerInputClock(timer));
 }
 
 inline uint32_t TimerUtils::getFrequency(TIM_TypeDef *timer)

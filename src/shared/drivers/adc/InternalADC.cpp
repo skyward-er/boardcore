@@ -23,72 +23,29 @@
 #include "InternalADC.h"
 
 #include <drivers/timer/TimestampTimer.h>
+#include <utils/ClockUtils.h>
 
 namespace Boardcore
 {
 
-InternalADC::InternalADC(ADC_TypeDef& ADCx, const float supplyVoltage,
-                         const bool isUsingDMA,
-                         DMA_Stream_TypeDef* DMAx_Streamx)
-    : ADCx(ADCx), supplyVoltage(supplyVoltage), isUsingDMA(isUsingDMA),
-      DMAx_Streamx(DMAx_Streamx)
+InternalADC::InternalADC(ADC_TypeDef* adc, const float supplyVoltage,
+                         const bool isUsingDMA, DMA_Stream_TypeDef* dmaStream)
+    : adc(adc), supplyVoltage(supplyVoltage), isUsingDMA(isUsingDMA),
+      dmaStream(dmaStream)
 {
     resetRegisters();
-    enableADCClock();
-
-    // Init indexMap
-    for (auto i = 0; i < CH_NUM; i++)
-    {
-        indexMap[i] = -1;
-    }
-}
-
-InternalADC::~InternalADC()
-{
-    resetRegisters();
-    disableADCClock();
-}
-
-bool InternalADC::init()
-{
-    // Turn on the ADC
-    ADCx.CR2 |= ADC_CR2_ADON;
-
-    // Set single conversion mode
-    ADCx.CR2 &= ~ADC_CR2_CONT;
-
-    // Set scan mode
-    ADCx.CR1 |= ADC_CR1_SCAN;
-
-    // Data alignment
-    ADCx.CR2 &= ~ADC_CR2_ALIGN;  // right
+    ClockUtils::enablePeripheralClock(adc);
 
     if (isUsingDMA)
     {
-        // Set the DMA peripheral address
-        DMAx_Streamx->PAR = (uint32_t) & (ADCx.DR);
-
-        // Set the DMA memory address
-        DMAx_Streamx->M0AR = (uint32_t)values;
-
-        // Enable DMA on ADC
-        ADCx.CR2 |= ADC_CR2_DMA;
-
-        // Enable DMA stream
-        DMAx_Streamx->CR |= DMA_SxCR_EN;
-
-        // Check if we are using the DMA2 controller, otherwise it's DMA1
-        if (((uint32_t)&DMAx_Streamx & ~0xFF) == (uint32_t)DMA2_BASE)
-        {
-            DMAx = DMA2;
-        }
+        ClockUtils::enablePeripheralClock(dma);
 
         // Find the DMA stream number
-        streamNum = ((((uint32_t)&DMAx_Streamx) & 0xFF) - 0x10) / 0x18;
+        streamNum = ((((uint32_t)&dmaStream) & 0xFF) - 0x10) / 0x18;
 
         // Check which registers to use
-        statusReg    = (streamNum < 4 ? &(DMAx->LISR) : &(DMAx->HISR));
-        clearFlagReg = (streamNum < 4 ? &(DMAx->LIFCR) : &(DMAx->HIFCR));
+        statusReg    = (streamNum < 4 ? &(dma->LISR) : &(dma->HISR));
+        clearFlagReg = (streamNum < 4 ? &(dma->LIFCR) : &(dma->HIFCR));
 
         // Create the masks for the status bits (this will do for both high and
         // low registers as well as status and reset status registers)
@@ -111,9 +68,58 @@ bool InternalADC::init()
                 transferErrorMask    = DMA_LISR_TEIF3;
                 break;
         }
+    }
+
+    // Init indexMap
+    for (auto i = 0; i < CH_NUM; i++)
+    {
+        indexMap[i] = -1;
+    }
+}
+
+InternalADC::~InternalADC()
+{
+    resetRegisters();
+    ClockUtils::disablePeripheralClock(adc);
+    // Do not disable the DMA controller, other streams could use it!
+}
+
+bool InternalADC::init()
+{
+    // Turn on the ADC
+    adc->CR2 |= ADC_CR2_ADON;
+
+    // Set single conversion mode
+    adc->CR2 &= ~ADC_CR2_CONT;
+
+    // Set scan mode
+    adc->CR1 |= ADC_CR1_SCAN;
+
+    // Data alignment
+    adc->CR2 &= ~ADC_CR2_ALIGN;  // right
+
+    if (isUsingDMA)
+    {
+        // Set the DMA peripheral address
+        dmaStream->PAR = (uint32_t) & (adc->DR);
+
+        // Set the DMA memory address
+        dmaStream->M0AR = (uint32_t)values;
+
+        // Enable DMA on ADC
+        adc->CR2 |= ADC_CR2_DMA;
+
+        // Enable DMA stream
+        dmaStream->CR |= DMA_SxCR_EN;
+
+        // Check if we are using the DMA2 controller, otherwise it's DMA1
+        if (((uint32_t)&dmaStream & ~0xFF) == (uint32_t)DMA2_BASE)
+        {
+            dma = DMA2;
+        }
 
         // All this is because the status bits are not stored in the
-        // DMAx_Streamx registers but in the main DMA controller status
+        // dmaStream registers but in the main DMA controller status
         // register. We could not care about the transfer status but the
         // timestamp would not match the values read after calling sample().
 
@@ -153,7 +159,7 @@ bool InternalADC::enableChannel(Channel channel, SampleTime sampleTime)
         }
 
         // Update the DMA number of data
-        DMAx_Streamx->NDTR = activeChannels;
+        dmaStream->NDTR = activeChannels;
     }
 
     // Set channel's sample time
@@ -194,20 +200,20 @@ ADCData InternalADC::sampleImpl()
         startInjectedConversion();
 
         // Wait for end of conversion
-        while (!(ADCx.SR & ADC_SR_JEOC))
+        while (!(adc->SR & ADC_SR_JEOC))
             ;
 
         // Read all 4 channels (faster than read only the enabled ones)
-        values[0] = ADCx.JDR1;
-        values[1] = ADCx.JDR2;
-        values[2] = ADCx.JDR3;
-        values[3] = ADCx.JDR4;
+        values[0] = adc->JDR1;
+        values[1] = adc->JDR2;
+        values[2] = adc->JDR3;
+        values[3] = adc->JDR4;
     }
     else
     {
         // Rewrite the DMA bit in ADC CR2 (reference manual chapter 13.8.1)
-        ADCx.CR2 &= ~ADC_CR2_DMA;
-        ADCx.CR2 |= ADC_CR2_DMA;
+        adc->CR2 &= ~ADC_CR2_DMA;
+        adc->CR2 |= ADC_CR2_DMA;
 
         startRegularConversion();
 
@@ -241,30 +247,30 @@ ADCData InternalADC::sampleImpl()
 inline void InternalADC::resetRegisters()
 {
     // Reset the ADC configuration
-    ADCx.CR1   = 0;
-    ADCx.CR2   = 0;
-    ADCx.SMPR1 = 0;
-    ADCx.SMPR2 = 0;
-    ADCx.JOFR1 = 0;
-    ADCx.JOFR2 = 0;
-    ADCx.JOFR3 = 0;
-    ADCx.JOFR4 = 0;
-    ADCx.HTR   = 0;
-    ADCx.LTR   = 0;
-    ADCx.SQR1  = 0;
-    ADCx.SQR2  = 0;
-    ADCx.SQR3  = 0;
-    ADCx.JSQR  = 0;
+    adc->CR1   = 0;
+    adc->CR2   = 0;
+    adc->SMPR1 = 0;
+    adc->SMPR2 = 0;
+    adc->JOFR1 = 0;
+    adc->JOFR2 = 0;
+    adc->JOFR3 = 0;
+    adc->JOFR4 = 0;
+    adc->HTR   = 0;
+    adc->LTR   = 0;
+    adc->SQR1  = 0;
+    adc->SQR2  = 0;
+    adc->SQR3  = 0;
+    adc->JSQR  = 0;
 }
 
 inline void InternalADC::startInjectedConversion()
 {
-    ADCx.CR2 |= ADC_CR2_JSWSTART;
+    adc->CR2 |= ADC_CR2_JSWSTART;
 }
 
 inline void InternalADC::startRegularConversion()
 {
-    ADCx.CR2 |= ADC_CR2_SWSTART;
+    adc->CR2 |= ADC_CR2_SWSTART;
 }
 
 inline bool InternalADC::addInjectedChannel(Channel channel)
@@ -276,11 +282,11 @@ inline bool InternalADC::addInjectedChannel(Channel channel)
     }
 
     // Add the channel to the sequence, starting from position 4
-    ADCx.JSQR |= channel << (15 - activeChannels * 5);
+    adc->JSQR |= channel << (15 - activeChannels * 5);
 
     // Update the channels number in the register
-    ADCx.JSQR &= 0x000FFFFF;
-    ADCx.JSQR |= activeChannels << 20;
+    adc->JSQR &= 0x000FFFFF;
+    adc->JSQR |= activeChannels << 20;
 
     // Increment the index of all enabled channels
     for (auto i = 0; i < CH_NUM; i++)
@@ -313,18 +319,18 @@ inline bool InternalADC::addRegularChannel(Channel channel)
     switch (activeChannels % 6)
     {
         case 1:
-            sqrPtr = &(ADCx.SQR3);
+            sqrPtr = &(adc->SQR3);
             break;
         case 2:
-            sqrPtr = &(ADCx.SQR2);
+            sqrPtr = &(adc->SQR2);
             break;
         default:
-            sqrPtr = &(ADCx.SQR1);
+            sqrPtr = &(adc->SQR1);
     }
     *sqrPtr = channel << ((activeChannels % 6) * 5);
 
     // Update the channels number in the register
-    ADCx.SQR1 |= activeChannels << 20;
+    adc->SQR1 |= activeChannels << 20;
 
     // Save the index of the channel in the ADC's regular sequence
     indexMap[channel] = activeChannels;
@@ -341,51 +347,13 @@ inline void InternalADC::setChannelSampleTime(Channel channel,
     volatile uint32_t* smprPtr;
     if (channel <= 9)
     {
-        smprPtr = &(ADCx.SMPR2);
+        smprPtr = &(adc->SMPR2);
     }
     else
     {
-        smprPtr = &(ADCx.SMPR1);
+        smprPtr = &(adc->SMPR1);
     }
     *smprPtr = sampleTime << (channel * 3);
-}
-
-inline void InternalADC::enableADCClock()
-{
-    miosix::FastInterruptDisableLock dLock;
-
-    if (&ADCx == ADC1)
-    {
-        RCC->APB2ENR |= RCC_APB2ENR_ADC1EN;
-    }
-    else if (&ADCx == ADC2)
-    {
-        RCC->APB2ENR |= RCC_APB2ENR_ADC2EN;
-    }
-    else if (&ADCx == ADC3)
-    {
-        RCC->APB2ENR |= RCC_APB2ENR_ADC3EN;
-    }
-
-    RCC_SYNC();
-}
-
-inline void InternalADC::disableADCClock()
-{
-    miosix::FastInterruptDisableLock dLock;
-
-    if (&ADCx == ADC1)
-    {
-        RCC->APB2ENR &= ~RCC_APB2ENR_ADC1EN;
-    }
-    else if (&ADCx == ADC2)
-    {
-        RCC->APB2ENR &= ~RCC_APB2ENR_ADC2EN;
-    }
-    else if (&ADCx == ADC3)
-    {
-        RCC->APB2ENR &= ~RCC_APB2ENR_ADC3EN;
-    }
 }
 
 }  // namespace Boardcore

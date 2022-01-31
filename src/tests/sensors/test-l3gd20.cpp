@@ -96,29 +96,21 @@ void __attribute__((used)) EXTI2_IRQHandlerImpl()
 
 void configure()
 {
-    {
-        FastInterruptDisableLock dLock;
+    // Set SPI pins to correct alternate mode
+    GpioSck::mode(Mode::ALTERNATE);
+    GpioMiso::mode(Mode::ALTERNATE);
+    GpioMosi::mode(Mode::ALTERNATE);
 
-        // Enable SPI5 and TIM5 peripheral clocks
-        RCC->APB1ENR |= RCC_APB1ENR_TIM5EN;
-        RCC->APB2ENR |= RCC_APB2ENR_SPI5EN;
+    GpioSck::alternateFunction(5);
+    GpioMiso::alternateFunction(5);
+    GpioMosi::alternateFunction(5);
 
-        // Set SPI pins to correct alternate mode
-        GpioSck::mode(Mode::ALTERNATE);
-        GpioMiso::mode(Mode::ALTERNATE);
-        GpioMosi::mode(Mode::ALTERNATE);
+    // Setup interrupt pin (sensors pulls INT2 up, so we set it to PULL_DOWN
+    // to avoid spurious interrupts)
+    GpioINT2::mode(Mode::INPUT_PULL_DOWN);
 
-        GpioSck::alternateFunction(5);
-        GpioMiso::alternateFunction(5);
-        GpioMosi::alternateFunction(5);
-
-        // Setup interrupt pin (sensors pulls INT2 up, so we set it to PULL_DOWN
-        // to avoid spurious interrupts)
-        GpioINT2::mode(Mode::INPUT_PULL_DOWN);
-
-        // Set chip select pin to OUTPUT
-        cs.mode(Mode::OUTPUT);
-    }
+    // Set chip select pin to OUTPUT
+    cs.mode(Mode::OUTPUT);
 
     // Chip select starts high (not asserted)
     cs.high();

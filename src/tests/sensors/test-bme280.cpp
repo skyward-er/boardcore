@@ -54,9 +54,6 @@ GpioPin csPin   = GpioPin(GPIOC_BASE, 1);
 
 void initBoard()
 {
-    // Enable SPI clock for SPI2 interface
-    RCC->APB1ENR |= RCC_APB1ENR_SPI2EN;
-
     // Alternate function configuration for SPI pins
     sckPin.mode(miosix::Mode::ALTERNATE);
     sckPin.alternateFunction(5);  // SPI function

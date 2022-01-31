@@ -26,8 +26,6 @@
 
 using namespace Boardcore;
 
-ADC_TypeDef& ADCx = *ADC3;
-
 int main()
 {
     // Set the clock divider for the analog circuitry (/8)
@@ -36,7 +34,7 @@ int main()
     // maximum frequency the analog circuitry supports and compare it with the
     // parent clock
 
-    InternalADC adc(ADCx, 3.3);
+    InternalADC adc(ADC3, 3.3);
     adc.enableChannel(InternalADC::CH4);  // PF6
     adc.enableChannel(InternalADC::CH5);  // PF7
     adc.enableChannel(InternalADC::CH6);  // PF8

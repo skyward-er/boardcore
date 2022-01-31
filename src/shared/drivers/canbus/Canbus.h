@@ -119,11 +119,18 @@ public:
      * @brief Construct a new Canbus object, manually assigning each bit timing
      * register value.
      *
+     * Also enables the CAN peripheral clock automatically
+     *
      * @param can Canbus peripheral pointer (CAN1 or CAN2).
      * @param config Bus configuration.
      * @param bitTiming Bit timing register values.
      */
     CanbusDriver(CAN_TypeDef* can, CanbusConfig config, BitTiming bitTiming);
+
+    /**
+     * @brief Disables the peripheral clock.
+     */
+    ~CanbusDriver();
 
     /**
      * @brief Exits initialization mode and starts canbus operation.

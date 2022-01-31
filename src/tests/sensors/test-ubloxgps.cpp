@@ -40,8 +40,6 @@ int main()
     GpioPin spiMosi(GPIOA_BASE, 7);
     GpioPin cs(GPIOA_BASE, 3);
 
-    RCC->APB2ENR |= RCC_APB2ENR_SPI1EN;  // Enable SPI1 bus
-
     spiSck.mode(Mode::ALTERNATE);
     spiSck.alternateFunction(5);
     spiMiso.mode(Mode::ALTERNATE);

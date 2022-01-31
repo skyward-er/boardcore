@@ -25,12 +25,12 @@
 
 using namespace Boardcore;
 
-ADC_TypeDef& ADCx                = *ADC3;
 DMA_Stream_TypeDef* DMAx_Streamx = DMA2_Stream1;
+
+// TODO: Review this test, why the DMA stream is configured in main?
 
 int main()
 {
-
     // DMA INIT ---------------------------------------------------------------
     {
         // 1: Disable the stream
@@ -97,16 +97,13 @@ int main()
     RCC->AHB1ENR |= RCC_AHB1ENR_GPIOAEN;
     GPIOA->MODER = 0xFF;
 
-    // Enable ADC clock
-    RCC->APB2ENR |= RCC_APB2ENR_ADC3EN;  // <-- CHANGE THIS!
-
     // Set the clock divider for the analog circuitry (/8)
     ADC->CCR |= ADC_CCR_ADCPRE_0 | ADC_CCR_ADCPRE_1;
     // In this case I've set the maximum value, check the datasheet for the
     // maximum frequency the analog circuitry supports and compare it with the
     // parent clock
 
-    InternalADC adc(ADCx, 3.0, DMAx_Streamx);
+    InternalADC adc(ADC3, 3.0, DMAx_Streamx);
     adc.enableChannel(InternalADC::CH0);
     adc.enableChannel(InternalADC::CH3);
     adc.init();

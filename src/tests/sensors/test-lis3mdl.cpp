@@ -33,24 +33,17 @@ int main()
     GpioPin cs(GPIOB_BASE, 1), miso(GPIOB_BASE, 4), mosi(GPIOB_BASE, 5),
         clk(GPIOB_BASE, 3);
 
-    {
-        FastInterruptDisableLock dLock;
+    cs.mode(Mode::OUTPUT);
+    cs.high();
 
-        /* Enable SPI1 */
-        RCC->APB2ENR |= RCC_APB2ENR_SPI1EN;
+    clk.mode(Mode::ALTERNATE);
+    clk.alternateFunction(5);
 
-        cs.mode(Mode::OUTPUT);
-        cs.high();
+    miso.mode(Mode::ALTERNATE);
+    miso.alternateFunction(5);
 
-        clk.mode(Mode::ALTERNATE);
-        clk.alternateFunction(5);
-
-        miso.mode(Mode::ALTERNATE);
-        miso.alternateFunction(5);
-
-        mosi.mode(Mode::ALTERNATE);
-        mosi.alternateFunction(5);
-    }
+    mosi.mode(Mode::ALTERNATE);
+    mosi.alternateFunction(5);
 
     SPIBus bus(SPI1);
 

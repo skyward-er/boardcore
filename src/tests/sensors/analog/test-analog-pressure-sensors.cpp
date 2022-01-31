@@ -44,9 +44,6 @@ constexpr ADS1118::ADS1118Mux channel2 = ADS1118::ADS1118Mux::MUX_AIN3_GND;
 
 void initBoard()
 {
-    // Enable SPI clock for SPI2 interface
-    RCC->APB1ENR |= RCC_APB1ENR_SPI2EN;
-
     // Alternate function configuration for SPI pins
     sckPin.mode(miosix::Mode::ALTERNATE);
     sckPin.alternateFunction(5);  // SPI function

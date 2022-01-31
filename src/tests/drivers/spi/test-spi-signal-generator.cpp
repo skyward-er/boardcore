@@ -43,12 +43,6 @@ void setupGPIOs();
 
 int main()
 {
-    // Enable timers clock
-    {
-        RCC->APB1ENR |= RCC_APB1ENR_TIM3EN;
-        RCC->APB2ENR |= RCC_APB2ENR_TIM1EN;
-    }
-
     setupGPIOs();
 
     SPISignalGenerator spiSignalGenerator{2,

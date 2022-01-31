@@ -101,8 +101,6 @@ void configure()
     {
         FastInterruptDisableLock dLock;
 
-        RCC->APB2ENR |= RCC_APB2ENR_SPI1EN;
-
         // Set SPI pins to correct alternate mode
         GpioSck::mode(Mode::ALTERNATE);
         GpioMiso::mode(Mode::ALTERNATE);

@@ -62,7 +62,6 @@ int main()
     {
         miosix::FastInterruptDisableLock dLock;
 
-        RCC->APB1ENR |= RCC_APB1ENR_CAN1EN;  // Enable CAN1 bus
         CanRX::mode(Mode::ALTERNATE);
         CanTX::mode(Mode::ALTERNATE);
 
