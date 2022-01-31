@@ -37,16 +37,26 @@ namespace Boardcore
  */
 struct SensorInfo
 {
-    const std::string id;
+    std::string id;
     uint32_t period;  ///< Period in ms
     std::function<void()> callback;
     bool isEnabled;
     bool isInitialized;
 
-    SensorInfo(const std::string id, uint32_t period,
-               std::function<void()> callback, bool isEnabled);
+    SensorInfo(
+        const std::string id = "", uint32_t period = 0,
+        std::function<void()> callback = []() {}, bool isEnabled = true);
 
-    SensorInfo();
+    SensorInfo& operator=(const SensorInfo& info)
+    {
+        id            = info.id;
+        period        = info.period;
+        callback      = info.callback;
+        isEnabled     = info.isEnabled;
+        isInitialized = info.isInitialized;
+
+        return *this;
+    }
 
     bool operator==(const SensorInfo& info) const
     {
@@ -56,19 +66,26 @@ struct SensorInfo
                callback.target_type() == info.callback.target_type() &&
                callback.target<void()>() == info.callback.target<void()>();
     };
+
+private:
+    SensorInfo(const std::string id, uint32_t period,
+               std::function<void()> callback, bool isEnabled,
+               bool isInitialized);
 };
 
 // cppcheck-suppress passedByValue
 inline SensorInfo::SensorInfo(const std::string id, uint32_t period,
                               std::function<void()> callback, bool isEnabled)
-    : id(id), period(period), callback(callback), isEnabled(isEnabled),
-      isInitialized(false)
+    : SensorInfo(id, period, callback, isEnabled, false)
 {
 }
 
-inline SensorInfo::SensorInfo()
-    : id(""), period(0), callback([]() {}), isEnabled(false),
-      isInitialized(false)
+// cppcheck-suppress passedByValue
+inline SensorInfo::SensorInfo(const std::string id, uint32_t period,
+                              std::function<void()> callback, bool isEnabled,
+                              bool isInitialized)
+    : id(id), period(period), callback(callback), isEnabled(isEnabled),
+      isInitialized(isInitialized)
 {
 }
 

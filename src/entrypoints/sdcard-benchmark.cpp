@@ -101,7 +101,7 @@ void printResults(unsigned int buf_size, array<float, NUM_WRITES>& results)
     cout << "***BUF SIZE: " << buf_size << "\n";
     cout << "Times: \n";
     cout << "- mean: " << res.mean << " ms \n";
-    cout << "- stddev: " << res.stdev << " ms \n";
+    cout << "- stddev: " << res.stdDev << " ms \n";
     cout << "- min: " << res.minValue << " ms \n";
     cout << "- max: " << res.maxValue << " ms \n";
 

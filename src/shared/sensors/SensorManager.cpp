@@ -105,7 +105,7 @@ const SensorInfo SensorManager::getSensorInfo(AbstractSensor* sensor)
     return SensorInfo{};
 }
 
-const vector<TaskStatsResult> SensorManager::getSamplersStats()
+const vector<TaskStatResult> SensorManager::getSamplersStats()
 {
     return scheduler->getTaskStats();
 }
@@ -213,15 +213,15 @@ void SensorManager::initScheduler()
 
 uint8_t SensorManager::getFirstTaskID()
 {
-    std::vector<TaskStatsResult> tasksStats = scheduler->getTaskStats();
+    std::vector<TaskStatResult> tasksStats = scheduler->getTaskStats();
 
     if (tasksStats.empty())
         return 0;
 
-    auto max = std::max_element(
-        tasksStats.begin(), tasksStats.end(),
-        [](const TaskStatsResult& t1, const TaskStatsResult& t2)
-        { return t1.id < t2.id; });
+    auto max =
+        std::max_element(tasksStats.begin(), tasksStats.end(),
+                         [](const TaskStatResult& t1, const TaskStatResult& t2)
+                         { return t1.id < t2.id; });
 
     return max->id + 1;
 }

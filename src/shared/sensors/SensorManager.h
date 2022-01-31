@@ -92,7 +92,7 @@ public:
      * @return Vector of statistics, one for each sampler, taken from the
      * scheduler.
      */
-    const vector<TaskStatsResult> getSamplersStats();
+    const vector<TaskStatResult> getSamplersStats();
 
 private:
     SensorManager(const SensorManager&) = delete;

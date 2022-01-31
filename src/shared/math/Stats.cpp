@@ -34,7 +34,7 @@ namespace Boardcore
 ostream& operator<<(ostream& os, const StatsResult& sr)
 {
     os << "min=" << sr.minValue << " max=" << sr.maxValue << " mean=" << sr.mean
-       << " stdev=" << sr.stdev;
+       << " stdDev=" << sr.stdDev;
     return os;
 }
 

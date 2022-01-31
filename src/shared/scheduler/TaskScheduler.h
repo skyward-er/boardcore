@@ -122,7 +122,7 @@ public:
 
     void stop() override;
 
-    std::vector<TaskStatsResult> getTaskStats();
+    std::vector<TaskStatResult> getTaskStats();
 
 private:
     /**
@@ -184,15 +184,15 @@ private:
      */
     void enqueue(Event& event, int64_t startTick);
 
-    static TaskStatsResult fromTaskIdPairToStatsResult(
+    static TaskStatResult fromTaskIdPairToStatsResult(
         const std::pair<const uint8_t, Boardcore::TaskScheduler::Task>& task)
     {
-        return TaskStatsResult{task.second.id,
-                               task.second.activationStats.getStats(),
-                               task.second.periodStats.getStats(),
-                               task.second.workloadStats.getStats(),
-                               task.second.missedEvents,
-                               task.second.failedEvents};
+        return TaskStatResult{task.second.id,
+                              task.second.activationStats.getStats(),
+                              task.second.periodStats.getStats(),
+                              task.second.workloadStats.getStats(),
+                              task.second.missedEvents,
+                              task.second.failedEvents};
     }
 
     miosix::FastMutex mutex;            ///< Mutex to protect tasks and agenda.

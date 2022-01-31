@@ -286,7 +286,7 @@ int main()
             }
             else
             {
-                printf("\t%f, %f, %f\n", xRes.stdev, yRes.stdev, zRes.stdev);
+                printf("\t%f, %f, %f\n", xRes.stdDev, yRes.stdDev, zRes.stdDev);
             }
         }
         else if (!strncmp("samples", input, 7))

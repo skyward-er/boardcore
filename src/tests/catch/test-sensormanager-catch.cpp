@@ -135,7 +135,7 @@ TEST_CASE_METHOD(SensorManagerFixture,
 {
     sensorManager->start();
 
-    vector<TaskStatsResult> tasksStats = scheduler->getTaskStats();
+    vector<TaskStatResult> tasksStats = scheduler->getTaskStats();
 
     INFO("Tasks number : " << tasksStats.size());
 

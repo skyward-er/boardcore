@@ -25,7 +25,7 @@
 namespace Boardcore
 {
 
-PWM::PWM(TIM_TypeDef *timer, unsigned int pwmFrequency,
+PWM::PWM(TIM_TypeDef* const timer, unsigned int pwmFrequency,
          unsigned int dutyCycleResolution)
     : timer(timer), pwmFrequency(pwmFrequency),
       dutyCycleResolution(dutyCycleResolution)

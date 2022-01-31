@@ -27,11 +27,11 @@
 namespace Boardcore
 {
 
-Servo::Servo(TIM_TypeDef* timer, TimerUtils::Channel pwmChannel,
-             unsigned int frequency, unsigned int minPulse,
-             unsigned int maxPulse)
-    : pwm(timer, frequency), pwmChannel(pwmChannel), frequency(frequency),
-      minPulse(minPulse), maxPulse(maxPulse)
+Servo::Servo(TIM_TypeDef* const timer, TimerUtils::Channel pwmChannel,
+             unsigned int minPulse, unsigned int maxPulse,
+             unsigned int frequency)
+    : pwm(timer, frequency), pwmChannel(pwmChannel), minPulse(minPulse),
+      maxPulse(maxPulse), frequency(frequency)
 {
     setPosition(0);
 }

@@ -64,7 +64,7 @@ public:
      * @param pwmFrequency Frequency of the PWM signal.
      * @param dutyCycleResolution Duty cycle levels.
      */
-    explicit PWM(TIM_TypeDef* timer, unsigned int pwmFrequency = 50,
+    explicit PWM(TIM_TypeDef* const timer, unsigned int pwmFrequency = 50,
                  unsigned int dutyCycleResolution = 1000);
 
     ~PWM();

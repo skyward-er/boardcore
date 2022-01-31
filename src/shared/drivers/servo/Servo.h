@@ -65,9 +65,9 @@ public:
      * @param minPulse Minimum signal pulse in microseconds.
      * @param maxPulse Maximum signal pulse in microseconds.
      */
-    explicit Servo(TIM_TypeDef* timer, TimerUtils::Channel pwmChannel,
-                   unsigned int frequency = 50, unsigned int minPulse = 1000,
-                   unsigned int maxPulse = 2000);
+    explicit Servo(TIM_TypeDef* const timer, TimerUtils::Channel pwmChannel,
+                   unsigned int minPulse = 1000, unsigned int maxPulse = 2000,
+                   unsigned int frequency = 50);
 
     /**
      * @brief Starts producing the PWM signal.
@@ -116,9 +116,9 @@ private:
     PWM pwm;
     TimerUtils::Channel pwmChannel;
 
-    float frequency;
     float minPulse;
     float maxPulse;
+    float frequency;
 };
 
 }  // namespace Boardcore

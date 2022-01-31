@@ -41,7 +41,7 @@ namespace Boardcore
  * - Mixed events: cumulative number of missed executions;
  * - Failed events: Number of events ended with exceptions.
  */
-struct TaskStatsResult
+struct TaskStatResult
 {
     uint8_t id;
     StatsResult activationStats;
@@ -62,12 +62,12 @@ struct TaskStatsResult
     {
         os << (int)id << "," << activationStats.minValue << ","
            << activationStats.maxValue << "," << activationStats.mean << ","
-           << activationStats.stdev << "," << activationStats.nSamples << ","
+           << activationStats.stdDev << "," << activationStats.nSamples << ","
            << periodStats.minValue << "," << periodStats.maxValue << ","
-           << periodStats.mean << "," << periodStats.stdev << ","
+           << periodStats.mean << "," << periodStats.stdDev << ","
            << periodStats.nSamples << "," << workloadStats.minValue << ","
            << workloadStats.maxValue << "," << workloadStats.mean << ","
-           << workloadStats.stdev << "," << workloadStats.nSamples << ","
+           << workloadStats.stdDev << "," << workloadStats.nSamples << ","
            << missedEvents << "," << failedEvents << "\n";
     }
 };

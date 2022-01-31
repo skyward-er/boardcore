@@ -135,11 +135,11 @@ int main()
     {
         printf("- %d:\n", stat.id);
         printf("\tActivation: %.2f, %.2f\n", stat.activationStats.mean,
-               stat.activationStats.stdev);
+               stat.activationStats.stdDev);
         printf("\tPeriod: %.2f, %.2f\n", stat.periodStats.mean,
-               stat.periodStats.stdev);
+               stat.periodStats.stdDev);
         printf("\tWorkload: %.2f, %.2f\n", stat.workloadStats.mean,
-               stat.workloadStats.stdev);
+               stat.workloadStats.stdDev);
         printf("\tMissed events: %lu\n", stat.missedEvents);
         printf("\tFailed events: %lu\n", stat.failedEvents);
     }

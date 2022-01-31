@@ -63,7 +63,7 @@ struct XbeeStatus
         os << timestamp << "," << (int)lastTxStatusError << ","
            << (int)lastTxStatus << "," << timeToSendStats.minValue << ","
            << timeToSendStats.maxValue << "," << timeToSendStats.mean << ","
-           << timeToSendStats.stdev << "," << timeToSendStats.nSamples << ","
+           << timeToSendStats.stdDev << "," << timeToSendStats.nSamples << ","
            << txTimeoutCount << "," << rxDroppedBuffers << ","
            << frameBufMaxLength << "\n";
     }
