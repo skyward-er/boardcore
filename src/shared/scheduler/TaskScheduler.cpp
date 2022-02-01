@@ -116,11 +116,11 @@ void TaskScheduler::stop()
     ActiveObject::stop();
 }
 
-vector<TaskStatResult> TaskScheduler::getTaskStats()
+vector<TaskStatsResult> TaskScheduler::getTaskStats()
 {
     Lock<FastMutex> lock(mutex);
 
-    vector<TaskStatResult> result;
+    vector<TaskStatsResult> result;
 
     std::transform(tasks.begin(), tasks.end(), std::back_inserter(result),
                    fromTaskIdPairToStatsResult);

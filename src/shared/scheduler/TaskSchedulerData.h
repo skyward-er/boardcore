@@ -41,7 +41,7 @@ namespace Boardcore
  * - Mixed events: cumulative number of missed executions;
  * - Failed events: Number of events ended with exceptions.
  */
-struct TaskStatResult
+struct TaskStatsResult
 {
     uint8_t id;
     StatsResult activationStats;

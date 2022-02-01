@@ -149,30 +149,40 @@ private:
     vector<unique_ptr<LogSink>> sinks;
 };
 
+}  // namespace Boardcore
+
 #define LOG(logger, level, ...) \
     logger.log(level, __FUNCTION__, __FILE__, __LINE__, __VA_ARGS__)
 
-#define LOG_DEBUG(logger, ...) LOG(logger, LOGL_DEBUG, __VA_ARGS__)
+#define LOG_DEBUG(logger, ...) \
+    LOG(logger, Boardcore::LogLevel::LOGL_DEBUG, __VA_ARGS__)
 
-#define LOG_INFO(logger, ...) LOG(logger, LOGL_INFO, __VA_ARGS__)
+#define LOG_INFO(logger, ...) \
+    LOG(logger, Boardcore::LogLevel::LOGL_INFO, __VA_ARGS__)
 
-#define LOG_WARN(logger, ...) LOG(logger, LOGL_WARNING, __VA_ARGS__)
+#define LOG_WARN(logger, ...) \
+    LOG(logger, Boardcore::LogLevel::LOGL_WARNING, __VA_ARGS__)
 
-#define LOG_ERR(logger, ...) LOG(logger, LOGL_ERROR, __VA_ARGS__)
+#define LOG_ERR(logger, ...) \
+    LOG(logger, Boardcore::LogLevel::LOGL_ERROR, __VA_ARGS__)
 
-#define LOG_CRIT(logger, ...) LOG(logger, LOGL_CRITICAL, __VA_ARGS__)
+#define LOG_CRIT(logger, ...) \
+    LOG(logger, Boardcore::LogLevel::LOGL_CRITICAL, __VA_ARGS__)
 
 #define LOG_ASYNC(logger, level, ...) \
     logger.logAsync(level, __FUNCTION__, __FILE__, __LINE__, __VA_ARGS__)
 
-#define LOG_DEBUG_ASYNC(logger, ...) LOG_ASYNC(logger, LOGL_DEBUG, __VA_ARGS__)
+#define LOG_DEBUG_ASYNC(logger, ...) \
+    LOG_ASYNC(logger, Boardcore::LogLevel::LOGL_DEBUG, __VA_ARGS__)
 
-#define LOG_INFO_ASYNC(logger, ...) LOG_ASYNC(logger, LOGL_INFO, __VA_ARGS__)
+#define LOG_INFO_ASYNC(logger, ...) \
+    LOG_ASYNC(logger, Boardcore::LogLevel::LOGL_INFO, __VA_ARGS__)
 
-#define LOG_WARN_ASYNC(logger, ...) LOG_ASYNC(logger, LOGL_WARNING, __VA_ARGS__)
+#define LOG_WARN_ASYNC(logger, ...) \
+    LOG_ASYNC(logger, Boardcore::LogLevel::LOGL_WARNING, __VA_ARGS__)
 
-#define LOG_ERR_ASYNC(logger, ...) LOG_ASYNC(logger, LOGL_ERROR, __VA_ARGS__)
+#define LOG_ERR_ASYNC(logger, ...) \
+    LOG_ASYNC(logger, Boardcore::LogLevel::LOGL_ERROR, __VA_ARGS__)
 
 #define LOG_CRIT_ASYNC(logger, ...) \
-    LOG_ASYNC(logger, LOGL_CRITICAL, __VA_ARGS__)
-}  // namespace Boardcore
+    LOG_ASYNC(logger, Boardcore::LogLevel::LOGL_CRITICAL, __VA_ARGS__)

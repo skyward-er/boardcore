@@ -22,11 +22,6 @@
 
 #include <utils/Debug.h>
 
-namespace Boardcore
-{
-
 #ifdef DEBUG
 miosix::FastMutex traceMutex;
 #endif
-
-}  // namespace Boardcore

@@ -22,18 +22,14 @@
 
 #pragma once
 
-// linter off
-// clang-format off
-
 #ifdef DEBUG
-
-#include <cstdio>
-#include <string>
-#include <cstdarg>
 #include <miosix.h>
 
-namespace Boardcore
-{
+#include <cstdarg>
+#include <cstdio>
+#include <string>
+
+// linter off
 
 extern miosix::FastMutex traceMutex;
 
@@ -46,15 +42,14 @@ inline void TRACE(const char* format, ...)
     va_list argptr;
     va_start(argptr, format);
 
-    printf("%.2f> ", miosix::getTick()/1000.0f);
+    printf("%.2f> ", miosix::getTick() / 1000.0f);
     vprintf(format, argptr);
 
     va_end(argptr);
 }
 
-// #define TRACE(...) printf("%.2f> ", miosix::getTick()/1000.0f); printf(__VA_ARGS__)
-
-}  // namespace Boardcore
+// #define TRACE(...) printf("%.2f> ", miosix::getTick()/1000.0f);
+// printf(__VA_ARGS__)
 
 #else
 
@@ -72,9 +67,9 @@ inline void LOG_STACK(std::string threadName)
 {
     using namespace miosix;
     printf("[STACK %s] Abs: %d, Curr: %d, Size: %d\n", threadName.c_str(),
-                (int)MemoryProfiling::getAbsoluteFreeStack(),
-                (int)MemoryProfiling::getCurrentFreeStack(),
-                (int)MemoryProfiling::getStackSize());
+           (int)MemoryProfiling::getAbsoluteFreeStack(),
+           (int)MemoryProfiling::getCurrentFreeStack(),
+           (int)MemoryProfiling::getStackSize());
 }
 
 }  // namespace Boardcore
