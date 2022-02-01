@@ -99,5 +99,10 @@
         "ranges": "cpp",
         "compare": "cpp",
         "concepts": "cpp"
-    }
+    },
+    "cSpell.words": [
+        "Gpio",
+        "GPIOB",
+        "miosix"
+    ]
 }

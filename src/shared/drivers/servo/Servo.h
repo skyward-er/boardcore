@@ -50,7 +50,7 @@ class Servo
 {
 public:
     /**
-     * @brief Prepared the timer and sets the PWM output to the minimum.
+     * @brief Prepare the timer and sets the PWM output to the minimum.
      *
      * More specifically, the PWM output is prepared to be equal to minPulse bu
      * it is not enabled! After creating the object the PWM signal is not
