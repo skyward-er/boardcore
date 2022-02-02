@@ -104,8 +104,6 @@ inline void Stepper::setSpeed(float speed) { this->speed = speed; }
 
 inline void Stepper::move(int32_t steps)
 {
-    printf("Set to %ld\n", steps);
-
     if (speed == 0)
         return;
 
@@ -127,8 +125,6 @@ inline void Stepper::move(int32_t steps)
     }
 
     currentPosition += steps;
-
-    printf("Current position: %ld\n", currentPosition);
 }
 
 inline void Stepper::moveDeg(float degrees) { move(degrees / stepAngle); }
