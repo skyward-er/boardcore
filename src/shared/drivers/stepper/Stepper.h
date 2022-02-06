@@ -82,11 +82,13 @@ public:
 
     uint32_t getCurrentPosition();
 
+    float getCurrentDegPosition();
+
 private:
     miosix::GpioPin stepPin;
     miosix::GpioPin directionPin;
     float speed;
-    float stepAngle;
+    float stepAngle;  ///< Degrees per step.
     bool revertDirection;
     int32_t currentPosition = 0;
 };
@@ -122,9 +124,9 @@ inline void Stepper::move(int32_t steps)
         miosix::delayUs(halfStepDelay);
         stepPin.low();
         miosix::delayUs(halfStepDelay);
-    }
 
-    currentPosition += steps;
+        currentPosition++;
+    }
 }
 
 inline void Stepper::moveDeg(float degrees) { move(degrees / stepAngle); }
@@ -138,5 +140,9 @@ inline void Stepper::setPositionDeg(float position)
 {
     setPosition(position / stepAngle);
 }
+
+uint32_t Stepper::getCurrentPosition() { return currentPosition; }
+
+float Stepper::getCurrentDegPosition() { return currentPosition * stepAngle; }
 
 }  // namespace Boardcore
