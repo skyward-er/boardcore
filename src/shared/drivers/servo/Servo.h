@@ -37,14 +37,19 @@ namespace Boardcore
  * relative to the range. A PWM signal is then used to periodically tell the
  * servo the position where it should be.
  *
- * Also Servo motors comes in a variety motion range configuration. This driver
- * is prepare for non continuous rotation servo motor, which usually have a
- * range of 90, 180 or 360 degrees. The driver accepts the position relative to
- * the range (a percentage basically) but provides tree function to convert to
- * and from degrees.
+ * Also Servo motors comes in a variety of motion range configurations. This
+ * driver is prepared for non continuous rotation servo motor, which usually
+ * have a range of 90, 180 or 360 degrees. The driver accepts the position
+ * relative to the range (a percentage basically) but provides tree function to
+ * convert to and from degrees.
  *
- * Note that the PWM signal is disabled automatically when the Servo object is
- * destructed and the output of the signal pin will be low.
+ * The PWM signal is disabled automatically when the Servo object is destructed
+ * and the output of the signal pin will be low.
+ *
+ * Note that the peripheral clock of the undelying timer used to generate the
+ * PWM signal, is enabled when the object is created and disabled when
+ * destructed. When using the same timer for two or more sensors keep in mind
+ * that you could encouter issues.
  */
 class Servo
 {
@@ -56,8 +61,8 @@ public:
      * it is not enabled! After creating the object the PWM signal is not
      * active. This is to ensure
      *
-     * Note that the timer is enabled automatically when the PWM object is
-     * created.
+     * Note that the timer peripheral's clock is enabled automatically when the
+     * PWM object is created.
      *
      * @param timer Timer peripheral used for the PWM signal.
      * @param pwmChannel Timer's channel used for the PWM signal.
