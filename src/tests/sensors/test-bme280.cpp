@@ -44,7 +44,6 @@
 #include <utils/Debug.h>
 
 using namespace miosix;
-
 using namespace Boardcore;
 
 GpioPin sckPin  = GpioPin(GPIOB_BASE, 13);
@@ -116,10 +115,10 @@ int main()
     {
         bme280.sample();
 
-        TRACE("temp: %.2f DegC\tpress: %.2f hPa\thumid: %.2f %%RH\n",
+        TRACE("temp: %.2f DegC\tpress: %.2f Pa\thumid: %.2f %%RH\n",
               bme280.getLastSample().temperature,
               bme280.getLastSample().pressure, bme280.getLastSample().humidity);
 
-        miosix::Thread::sleep(40);  // 25Hz
+        miosix::Thread::sleep(50);  // 25Hz
     }
 }

@@ -224,7 +224,7 @@ public:
 
     PressureData getPressure();
 
-    TemperatureData getTemerature();
+    TemperatureData getTemperature();
 
     /**
      * @brief Maximum measurement time formula from datasheet page 51

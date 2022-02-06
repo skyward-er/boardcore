@@ -23,6 +23,9 @@
 #include "BME280.h"
 
 #include <drivers/timer/TimestampTimer.h>
+#include <math.h>
+
+using namespace std;
 
 namespace Boardcore
 {
@@ -216,7 +219,7 @@ HumidityData BME280::getHumidity() { return lastSample; }
 
 PressureData BME280::getPressure() { return lastSample; }
 
-TemperatureData BME280::getTemerature() { return lastSample; }
+TemperatureData BME280::getTemperature() { return lastSample; }
 
 unsigned int BME280::calculateMaxMeasurementTime(BME280Config config_)
 {
