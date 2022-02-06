@@ -22,6 +22,8 @@
 
 #pragma once
 
+#include <limits>
+
 namespace Boardcore
 {
 
@@ -32,7 +34,9 @@ class PIController
 {
 
 public:
-    PIController(double Kp, double Ki, double uMin, double uMax)
+    PIController(double Kp, double Ki,
+                 double uMin = -std::numeric_limits<double>::infinity(),
+                 double uMax = std::numeric_limits<double>::infinity())
         : Kp(Kp), Ki(Ki), uMin(uMin), uMax(uMax)
     {
     }
