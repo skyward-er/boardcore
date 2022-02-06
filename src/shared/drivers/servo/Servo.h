@@ -31,15 +31,15 @@ namespace Boardcore
  * @brief Driver to operate a PWM controlled servo motor.
  *
  * Servo motors often are controlled via a PWM signal. A PWM signal is a simple
- * rectangular wave with a set frequency and duty cycle. Usually servo motos
+ * rectangular wave with a set frequency and duty cycle. Usually servo motor
  * listen for a pulse with a specific duration between two limits you can set to
- * this driver. The position is then proportiional to the size of the pulse
+ * this driver. The position is then proportional to the size of the pulse
  * relative to the range. A PWM signal is then used to periodically tell the
  * servo the position where it should be.
  *
  * Also Servo motors comes in a variety motion range configuration. This driver
- * is prepare for non continuous rotation servo motor, which usuarrly have a
- * range of 90, 180 or 360 degreen. The driver accepts the position relative to
+ * is prepare for non continuous rotation servo motor, which usually have a
+ * range of 90, 180 or 360 degrees. The driver accepts the position relative to
  * the range (a percentage basically) but provides tree function to convert to
  * and from degrees.
  *
@@ -90,7 +90,7 @@ public:
 
     void setPosition180Deg(float degrees);
 
-    void setPositio360Deg(float degrees);
+    void setPosition360Deg(float degrees);
 
     /**
      * @brief Returns the current position of the servomotor.
@@ -100,7 +100,7 @@ public:
      *
      * @return Position in range [0, 1].
      */
-    float getPositon();
+    float getPosition();
 
     float getPosition90Deg();
 

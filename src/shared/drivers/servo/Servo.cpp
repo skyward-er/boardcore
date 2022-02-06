@@ -53,9 +53,9 @@ void Servo::setPosition90Deg(float degrees) { setPosition(degrees / 90); }
 
 void Servo::setPosition180Deg(float degrees) { setPosition(degrees / 180); }
 
-void Servo::setPositio360Deg(float degrees) { setPosition(degrees / 360); }
+void Servo::setPosition360Deg(float degrees) { setPosition(degrees / 360); }
 
-float Servo::getPositon()
+float Servo::getPosition()
 {
     float dutyCycle = pwm.getDutyCycle(pwmChannel);
 
@@ -64,10 +64,10 @@ float Servo::getPositon()
     return (pulse - minPulse) / (maxPulse - minPulse);
 }
 
-float Servo::getPosition90Deg() { return getPositon() * 90; }
+float Servo::getPosition90Deg() { return getPosition() * 90; }
 
-float Servo::getPosition180Deg() { return getPositon() * 1800; }
+float Servo::getPosition180Deg() { return getPosition() * 1800; }
 
-float Servo::getPosition360Deg() { return getPositon() * 3600; }
+float Servo::getPosition360Deg() { return getPosition() * 3600; }
 
 }  // namespace Boardcore
