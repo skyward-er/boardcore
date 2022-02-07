@@ -124,9 +124,9 @@ inline void Stepper::move(int32_t steps)
         miosix::delayUs(halfStepDelay);
         stepPin.low();
         miosix::delayUs(halfStepDelay);
-
-        currentPosition++;
     }
+
+    currentPosition += steps;
 }
 
 inline void Stepper::moveDeg(float degrees) { move(degrees / stepAngle); }

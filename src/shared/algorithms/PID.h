@@ -34,10 +34,10 @@ class PIController
 {
 
 public:
-    PIController(double Kp, double Ki,
+    PIController(double Kp, double Ki, double Ts = 1,
                  double uMin = -std::numeric_limits<double>::infinity(),
                  double uMax = std::numeric_limits<double>::infinity())
-        : Kp(Kp), Ki(Ki), uMin(uMin), uMax(uMax)
+        : Kp(Kp), Ki(Ki), Ts(Ts), uMin(uMin), uMax(uMax)
     {
     }
 
@@ -51,7 +51,7 @@ public:
 
         if (!saturation)
         {
-            i = i + Ki * error;
+            i = i + Ki * Ts * error;
         }
 
         double u = p + i;
@@ -82,9 +82,12 @@ public:
         return u;
     }
 
+    double getI() { return i; }
+
 private:
     const double Kp;          // Proportional factor.
     const double Ki;          // Integral factor.
+    const double Ts;          // Sampling period.
     const double uMin, uMax;  // Anti-windup limits.
     double i = 0;             // Integral contribution.
 
