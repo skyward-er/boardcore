@@ -200,7 +200,7 @@ inline bool ClockUtils::enablePeripheralClock(void* peripheral)
                 RCC->APB1ENR |= RCC_APB1ENR_TIM2EN;
                 break;
             case TIM3_BASE:
-                RCC->APB1ENR |= RCC_APB1ENR_TIM2EN;
+                RCC->APB1ENR |= RCC_APB1ENR_TIM3EN;
                 break;
             case TIM4_BASE:
                 RCC->APB1ENR |= RCC_APB1ENR_TIM4EN;
