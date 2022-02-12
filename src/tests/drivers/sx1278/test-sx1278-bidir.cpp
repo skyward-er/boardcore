@@ -136,11 +136,12 @@ void recvLoop(int idx)
     char buf[256];
     while (1)
     {
-        sx1278[idx]->recv((uint8_t *)buf, sizeof(buf));
-
-        // Make sure there is a terminator somewhere
-        buf[255] = 0;
-        printf("[sx1278 @ %p] Received '%s'\n", sx1278[idx], buf);
+        if (sx1278[idx]->receive((uint8_t *)buf, sizeof(buf)) != -1)
+        {
+            // Make sure there is a terminator somewhere
+            buf[255] = 0;
+            printf("[sx1278 @ %p] Received '%s'\n", sx1278[idx], buf);
+        }
     }
 }
 

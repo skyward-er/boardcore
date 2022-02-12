@@ -218,7 +218,7 @@ SX1278::Error SX1278::init(Config config)
     return Error::NONE;
 }
 
-int SX1278::recv(uint8_t *buf, size_t max_len)
+ssize_t SX1278::receive(uint8_t *pkt, size_t max_len)
 {
     bus_mgr.lock(Mode::MODE_RX);
 
@@ -235,7 +235,7 @@ int SX1278::recv(uint8_t *buf, size_t max_len)
             if (len > max_len)
                 return -1;
 
-            spi.readRegisters(REG_FIFO, buf, len);
+            spi.readRegisters(REG_FIFO, pkt, len);
         }
 
         // For some reason this sometimes happen?
@@ -245,8 +245,12 @@ int SX1278::recv(uint8_t *buf, size_t max_len)
     return len;
 }
 
-void SX1278::send(const uint8_t *buf, uint8_t len)
+bool SX1278::send(uint8_t *pkt, size_t len)
 {
+    // Packets longer than 255 are not supported
+    if (len > 255)
+        return false;
+
     bus_mgr.lock(SX1278BusManager::Mode::MODE_TX);
 
     // Wait for TX ready
@@ -256,14 +260,14 @@ void SX1278::send(const uint8_t *buf, uint8_t len)
         SPITransaction spi(bus_mgr.getBus(),
                            SPITransaction::WriteBit::INVERTED);
 
-        spi.writeRegister(REG_FIFO, len);
-        // FIXME(Davide Mor): This needs to be fixed!!
-        spi.writeRegisters(REG_FIFO, const_cast<uint8_t *>(buf), len);
+        spi.writeRegister(REG_FIFO, static_cast<uint8_t>(len));
+        spi.writeRegisters(REG_FIFO, pkt, len);
     }
 
     // Wait for packet sent
     bus_mgr.waitForIrq(RegIrqFlags::PACKET_SENT);
     bus_mgr.unlock();
+    return true;
 }
 
 void SX1278::handleDioIRQ() { bus_mgr.handleDioIRQ(); }

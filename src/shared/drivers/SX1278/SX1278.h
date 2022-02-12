@@ -23,6 +23,7 @@
 #pragma once
 
 #include <diagnostic/PrintLogger.h>
+#include <drivers/Transceiver.h>
 #include <drivers/spi/SPIDriver.h>
 #include <kernel/kernel.h>
 
@@ -30,9 +31,39 @@
 
 #include "SX1278Defs.h"
 
+/*
+# Description
+## Concurrent access
+The device is stateful, in order to send/receive data you need to set in a
+particular state. This is handled by SX1278BusManager::setMode. This causes a
+lot of issues with multithreaded code, and receiving/transmitting concurrently.
+
+So the driver wraps the bus in a BusManager for this reason, in order to perform
+anything you need to lock the bus. The driver then locks the internal mutex and
+sets the device in the correct mode for that operation.
+
+But this causes problems when receiving, as receive can block indefinetly, and
+would prevent any thread from actually sending stuff. The solution is to release
+the lock only when waiting for a packet. This allows other threads to lock it
+and change mode, and unlocking the bus resets its state back to RX so it can
+continue to listen for incoming packets.
+
+The BusManager also multiplexes who is currently waiting for an interrupt. This
+is needed because due to the limited interrupts pins, the device signals
+multiples of them on one pin. And for some random reasons, the designers decided
+to put "packet received" and "packed sent" on same pin (DIO0)...
+
+Again, the solution is to track who is actually using the bus, so when sending a
+packet that triggers the "packet sent" interrupt, the manager knows to dispatch
+it to the currect thread, and not wake up the RX thread.
+*/
+
 namespace Boardcore
 {
 
+/**
+ * @brief SX1278 bus access manager.
+ */
 class SX1278BusManager
 {
 public:
@@ -40,13 +71,36 @@ public:
 
     SX1278BusManager(SPIBusInterface &bus, miosix::GpioPin cs);
 
+    /**
+     * @brief Lock bus for exclusive access.
+     *
+     * @param mode Device mode requested
+     */
     void lock(Mode mode);
+
+    /**
+     * @brief Release buf for exclusive access
+     */
     void unlock();
 
+    /**
+     * @brief Get underlying bus.
+     */
     SPISlave &getBus();
 
+    /**
+     * @brief Handle DIO0 irq.
+     */
     void handleDioIRQ();
+
+    /**
+     * @brief Wait for generic irq (DOES NOT RELEASE LOCK!).
+     */
     void waitForIrq(uint16_t mask);
+
+    /**
+     * @brief Wait for RX irq (releases lock safely).
+     */
     void waitForRxIrq();
 
 private:
@@ -66,7 +120,7 @@ private:
 /**
  * @brief Various SX1278 register/enums definitions.
  */
-class SX1278
+class SX1278 : public Transceiver
 {
 public:
     /**
@@ -137,22 +191,24 @@ public:
     Error init(Config config);
 
     /**
-     * @brief Receive data.
+     * @brief Wait until a new packet is received.
      *
-     * @param buf Buffer to put the received data.
-     * @param max_len How big is the supplied buffer.
-     * @return How many bytes were received (or -1 if the supplied buffer was
-     * too small).
+     * @param pkt       Buffer to store the received packet into.
+     * @param pkt_len   Maximum length of the received data.
+     * @return          Size of the data received or -1 if failure
      */
-    int recv(uint8_t *buf, size_t max_len);
+    ssize_t receive(uint8_t *pkt, size_t max_len);
 
     /**
-     * @brief Send data.
+     * @brief Send a packet.
+     * The function must block until the packet is sent (successfully or not)
      *
-     * @param buf Buffer with the data to send.
-     * @param len Length of buffer.
+     * @param pkt       Pointer to the packet (needs to be at least pkt_len
+     * bytes).
+     * @param pkt_len   Lenght of the packet to be sent.
+     * @return          True if the message was sent correctly.
      */
-    void send(const uint8_t *buf, uint8_t len);
+    bool send(uint8_t *pkt, size_t len);
 
     /**
      * @brief Return device version.

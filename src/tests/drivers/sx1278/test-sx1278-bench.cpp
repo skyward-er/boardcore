@@ -29,6 +29,9 @@ using namespace Boardcore;
 using namespace miosix;
 
 /**
+ * 0 -> RX
+ * 1 -> TX
+ *
  * Connection diagram:
  * sx1278[0]:nss  -> stm32:pa1
  * sx1278[0]:dio0 -> stm32:pc15
@@ -116,7 +119,7 @@ void recvLoop(int idx)
         msg.dummy_2 = 0;
         msg.dummy_3 = 0;
 
-        int len = sx1278[idx]->recv((uint8_t *)&msg, sizeof(msg));
+        int len = sx1278[idx]->receive((uint8_t *)&msg, sizeof(msg));
         if (len != sizeof(msg))
         {
             stats.recv_errors++;

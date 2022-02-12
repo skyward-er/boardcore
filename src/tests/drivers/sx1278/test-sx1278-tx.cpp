@@ -21,4 +21,4 @@
  */
 
 #define DISABLE_RX
-#include "test-sx1278-bidir.cpp"
+#include "test-sx1278-bench.cpp"
