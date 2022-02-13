@@ -31,7 +31,7 @@
 #include "../catch-tests-entry.cpp"
 #endif
 
-#include <drivers/Xbee/APIFrameParser.h>
+#include <radio/Xbee/APIFrameParser.h>
 
 #include <catch2/catch.hpp>
 #include <cstdio>

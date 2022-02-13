@@ -23,10 +23,10 @@
 #pragma once
 
 #include <arch/common/drivers/stm32_hardware_rng.h>
-#include <drivers/Xbee/APIFramesLog.h>
-#include <drivers/Xbee/Xbee.h>
 #include <logger/Logger.h>
 #include <miosix.h>
+#include <radio/Xbee/APIFramesLog.h>
+#include <radio/Xbee/Xbee.h>
 #include <utils/Debug.h>
 #include <utils/testutils/ThroughputCalculator.h>
 

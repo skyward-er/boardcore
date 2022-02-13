@@ -22,8 +22,8 @@
 
 #pragma once
 
-#include <drivers/Xbee/APIFrameParser.h>
-#include <drivers/Xbee/APIFrames.h>
+#include <radio/Xbee/APIFrameParser.h>
+#include <radio/Xbee/APIFrames.h>
 #include <utils/testutils/MockGpioPin.h>
 #include <utils/testutils/MockSPIBus.h>
 

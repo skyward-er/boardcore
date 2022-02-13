@@ -23,8 +23,8 @@
 #ifdef STANDALONE_CATCH1_TEST
 #include "../catch-tests-entry.cpp"
 #endif
-#include <drivers/Xbee/Xbee.h>
 #include <drivers/spi/SPIDriver.h>
+#include <radio/Xbee/Xbee.h>
 
 #include <catch2/catch.hpp>
 #include <ctime>

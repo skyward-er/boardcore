@@ -21,10 +21,10 @@
  */
 
 #include <drivers/BusTemplate.h>
-#include <drivers/Xbee/Xbee.h>
 #include <interfaces-impl/hwmapping.h>
 #include <math/Stats.h>
 #include <miosix.h>
+#include <radio/Xbee/Xbee.h>
 
 #include <cstdio>
 #include <iostream>

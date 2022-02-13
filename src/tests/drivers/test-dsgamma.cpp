@@ -20,8 +20,8 @@
  * THE SOFTWARE.
  */
 
-#include <drivers/gamma868/Gamma868.h>
 #include <miosix.h>
+#include <radio/gamma868/Gamma868.h>
 #include <stdio.h>
 #include <string.h>
 #include <utils/Debug.h>

@@ -22,6 +22,7 @@
 
 #pragma once
 
+#include <miosix.h>
 #include <utils/Debug.h>
 
 #include <cstdint>

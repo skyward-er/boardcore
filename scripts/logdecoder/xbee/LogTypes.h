@@ -22,12 +22,12 @@
 
 #pragma once
 
-#include <drivers/Xbee/APIFramesLog.h>
-#include <drivers/Xbee/XbeeStatus.h>
-#include <drivers/xbee/Mark.h>
-#include <drivers/xbee/XbeeTestData.h>
 #include <logger/Deserializer.h>
 #include <logger/LogStats.h>
+#include <radio/Xbee/APIFramesLog.h>
+#include <radio/Xbee/Mark.h>
+#include <radio/Xbee/XbeeStatus.h>
+#include <radio/Xbee/XbeeTestData.h>
 
 #include <fstream>
 #include <iostream>

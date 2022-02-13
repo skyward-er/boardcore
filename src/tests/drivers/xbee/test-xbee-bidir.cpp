@@ -27,12 +27,12 @@
 #define RUN_RECEIVER true
 #endif
 
-#include <drivers/Xbee/APIFramesLog.h>
-#include <drivers/Xbee/ATCommands.h>
-#include <drivers/Xbee/Xbee.h>
 #include <drivers/interrupt/external_interrupts.h>
 #include <logger/Logger.h>
 #include <miosix.h>
+#include <radio/Xbee/APIFramesLog.h>
+#include <radio/Xbee/ATCommands.h>
+#include <radio/Xbee/Xbee.h>
 
 #include <cstdio>
 #include <stdexcept>

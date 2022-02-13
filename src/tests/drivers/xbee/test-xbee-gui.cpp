@@ -20,13 +20,13 @@
  * THE SOFTWARE.
  */
 
-#include <drivers/Xbee/APIFramesLog.h>
-#include <drivers/Xbee/ATCommands.h>
-#include <drivers/Xbee/Xbee.h>
 #include <drivers/interrupt/external_interrupts.h>
 #include <logger/Logger.h>
 #include <miosix.h>
 #include <mxgui/display.h>
+#include <radio/Xbee/APIFramesLog.h>
+#include <radio/Xbee/ATCommands.h>
+#include <radio/Xbee/Xbee.h>
 #include <utils/ButtonHandler.h>
 
 #include <array>

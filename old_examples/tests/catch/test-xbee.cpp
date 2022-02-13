@@ -29,7 +29,7 @@
 
 #define private public
 
-#include <drivers/Xbee/Xbee.h>
+#include <radio/Xbee/Xbee.h>
 #include <utils/testutils/BusTemplateMock.h>
 
 using std::vector;
