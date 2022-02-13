@@ -35,7 +35,6 @@ foreach(OPT_BOARD ${BOARDS})
         ${SBS_BASE}/src/shared/drivers/adc/InternalADC.cpp
         ${SBS_BASE}/src/shared/drivers/canbus/Canbus.cpp
         ${SBS_BASE}/src/shared/drivers/canbus/CanInterrupt.cpp
-        ${SBS_BASE}/src/shared/drivers/gamma868/Gamma868.cpp
         ${SBS_BASE}/src/shared/drivers/hbridge/HBridge.cpp
         ${SBS_BASE}/src/shared/drivers/i2c/stm32f2_f4_i2c.cpp
         ${SBS_BASE}/src/shared/drivers/interrupt/external_interrupts.cpp
@@ -44,8 +43,6 @@ foreach(OPT_BOARD ${BOARDS})
         ${SBS_BASE}/src/shared/drivers/runcam/Runcam.cpp
         ${SBS_BASE}/src/shared/drivers/servo/Servo.cpp
         ${SBS_BASE}/src/shared/drivers/spi/SPITransaction.cpp
-        ${SBS_BASE}/src/shared/drivers/Xbee/APIFrameParser.cpp
-        ${SBS_BASE}/src/shared/drivers/Xbee/Xbee.cpp
 
         # Events
         ${SBS_BASE}/src/shared/events/EventBroker.cpp
@@ -57,6 +54,11 @@ foreach(OPT_BOARD ${BOARDS})
         ${SBS_BASE}/src/shared/math/Matrix.cpp
         ${SBS_BASE}/src/shared/math/SkyQuaternion.cpp
         ${SBS_BASE}/src/shared/math/Stats.cpp
+
+        # Radio
+        ${SBS_BASE}/src/shared/radio/gamma868/Gamma868.cpp
+        ${SBS_BASE}/src/shared/radio/Xbee/APIFrameParser.cpp
+        ${SBS_BASE}/src/shared/radio/Xbee/Xbee.cpp
 
         # Scheduler
         ${SBS_BASE}/src/shared/scheduler/TaskScheduler.cpp

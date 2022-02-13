@@ -138,7 +138,7 @@ add_executable(test-internal-adc-dma src/tests/drivers/test-internal-adc-dma.cpp
 sbs_target(test-internal-adc-dma stm32f429zi_stm32f4discovery)
 
 add_executable(test-mavlink src/tests/drivers/test-mavlink.cpp)
-sbs_target(test-mavlink stm32f429zi_skyward_homeone)
+sbs_target(test-mavlink stm32f407vg_stm32f4discovery)
 
 add_executable(test-MBLoadCell src/tests/drivers/test-MBLoadCell.cpp)
 sbs_target(test-MBLoadCell stm32f407vg_stm32f4discovery)

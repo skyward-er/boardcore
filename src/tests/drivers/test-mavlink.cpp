@@ -28,41 +28,23 @@
 #include <mavlink_lib/lynx/mavlink.h>
 #pragma GCC diagnostic pop
 
-#include <drivers/gamma868/Gamma868.h>
-#include <drivers/mavlink/MavlinkDriver.h>
+#include <radio/MavlinkDriver/MavlinkDriver.h>
+#include <radio/SerialTransceiver/SerialTransceiver.h>
 
-using namespace Boardcore;
 using namespace miosix;
+using namespace Boardcore;
 
-static const unsigned int queueLen         = 10;
-static const unsigned int packetSize       = 256;
 static const unsigned int silenceAfterSend = 250;
 static const unsigned int maxPktAge        = 1000;
 static const unsigned int pingPeriod       = 1000;
 
 // Mavlink out buffer with 10 packets, 256 bytes each.
-using Mav = MavlinkDriver<queueLen, packetSize>;
+static const unsigned int queueLen   = 10;
+static const unsigned int packetSize = 256;
+using MavDriver                      = MavlinkDriver<packetSize, queueLen>;
 
-Gamma868* gamma868;
-Mav* channel;
-
-/**
- * @brief Receive function: print the received message id and send an ACK.
- */
-static void onReceive(Mav* channel, const mavlink_message_t& msg)
-{
-    TRACE("[TmtcTest] Received message, id: %d! Sending ack\n", msg.msgid);
-
-    // Prepare ack messages
-    mavlink_message_t ackMsg;
-    mavlink_msg_ack_tm_pack(1, 1, &ackMsg, msg.msgid, msg.seq);
-
-    // Send the ack back to the sender
-    bool ackSent = channel->enqueueMsg(ackMsg);
-
-    if (!ackSent)
-        TRACE("[Receiver] Could not enqueue ack\n");
-}
+SerialTransceiver* transceiver;
+MavDriver* mavlink;
 
 /**
  * @brief This test enqueues a ping message every second and replies to every
@@ -70,30 +52,20 @@ static void onReceive(Mav* channel, const mavlink_message_t& msg)
  */
 int main()
 {
-    gamma868 = new Gamma868("/dev/radio");
-    channel  = new Mav(gamma868, &onReceive, silenceAfterSend, maxPktAge);
+    transceiver = new SerialTransceiver();
+    mavlink = new MavDriver(transceiver, nullptr, silenceAfterSend, maxPktAge);
 
-    channel->start();
+    mavlink->start();
 
-    // Send function: enqueue a ping every second
+    // Send a ping every second
     while (1)
     {
-        TRACE("[TmtcTest] Enqueueing ping\n");
-
         // Create a Mavlink message
         mavlink_message_t pingMsg;
         mavlink_msg_ping_tc_pack(1, 1, &pingMsg, miosix::getTick());
 
         // Send the message
-        bool ackSent = channel->enqueueMsg(pingMsg);
-
-        if (!ackSent)
-            TRACE("[TmtcTest] Could not enqueue ping\n");
-
-        // LED blink
-        ledOn();
-        miosix::delayMs(200);
-        ledOff();
+        mavlink->enqueueMsg(pingMsg);
 
         miosix::Thread::sleep(pingPeriod);
     }

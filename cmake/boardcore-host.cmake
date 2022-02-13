@@ -25,8 +25,8 @@ add_library(boardcore-host STATIC EXCLUDE_FROM_ALL
     ${SBS_BASE}/src/shared/diagnostic/CpuMeter.cpp
     ${SBS_BASE}/src/shared/diagnostic/PrintLogger.cpp
 
-    # Drivers
-    ${SBS_BASE}/src/shared/drivers/Xbee/APIFrameParser.cpp
+    # Radio
+    ${SBS_BASE}/src/shared/radio/Xbee/APIFrameParser.cpp
 
     # Events
     ${SBS_BASE}/src/shared/events/EventBroker.cpp

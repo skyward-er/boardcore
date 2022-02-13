@@ -22,7 +22,6 @@
 
 #pragma once
 
-#include <miosix.h>
 #include <utils/Debug.h>
 
 #include <cstdint>
@@ -42,95 +41,99 @@ using std::range_error;
 namespace Boardcore
 {
 
-/*******************************************************************************
+/**
  * @brief The Packet class is used for packing together messages with variable
  * lengths into a fixed size packet. Useful for telemetry.
+ *
  * The buffer can only be appended, read or flushed. The caller can also mark
  * the packet as ready to be sent.
  *
- * @tparam len  Maximum length of this packet.
- *******************************************************************************/
+ * @tparam len Maximum length for the packet.
+ */
 template <unsigned int len>
 class Packet
 {
 
 public:
     /**
-     * @brief Constructor: reserves a fixed length for the packet.
+     * @brief Reserves a fixed length for the packet.
      */
     Packet() : msgCounter(0), ts(0), ready(false) { content.reserve(len); };
 
     /**
-     * @brief Destructor: clears the buffer.
+     * @brief Clears the buffer.
      */
     ~Packet() { content.clear(); };
 
     /**
-     * @brief Try to append a given message to the packet. If it's the first
-     * message, also set the timestamp.
-     * @param msg      the message to be appended
-     * @param msgLen  length of msg
-     * @return true    if the message was appended correctly
-     * @return false   if there isn't enough space for the message
+     * @brief Try to append a given message to the packet.
+     *
+     * If it's the first message, also set the timestamp.
+     *
+     * @param msg The message to be appended.
+     * @param msgLen Length of msg.
+     * @return true if the message was appended correctly.
+     * @return false if there isn't enough space for the message.
      */
     bool tryAppend(const uint8_t* msg, const size_t msgLen);
 
     /**
-     * @brief mark the packet as ready to be sent.
+     * @brief Mark the packet as ready to be sent.
      */
     inline void markAsReady() { ready = true; }
 
     /**
      * @brief Copies the content of the buffer at a given address.
-     * @param buf  Where to copy the content.
-     * @return     How many bytes where copied, i.e. the size of the packet.
+     * @param buf Where to copy the content.
+     * @return How many bytes where copied, i.e. the size of the packet.
      */
     size_t dump(uint8_t* buf);
 
     /**
-     * @brief clear the buffer and reset members.
+     * @brief Clear the buffer and reset members.
      */
     void clear();
 
     /**
-     * @return true if the packet has reached the maximum length.
+     * @return True if the packet has reached the maximum length.
      */
     inline bool isFull() const { return content.size() == len; }
 
     /**
-     * @return true if no message has been inserted yet.
+     * @return True if no message has been inserted yet.
      */
     inline bool isEmpty() const { return content.size() == 0; }
 
     /**
-     * @return true if the packet has been marked as ready.
+     * @return True if the packet has been marked as ready.
      */
     inline bool isReady() const { return ready; }
 
     /**
-     * @return the timestamp of the first successful call to tryAppend().
+     * @return The timestamp of the first successful call to tryAppend().
      */
     inline uint64_t timestamp() const { return ts; }
 
     /**
-     * @return the occupied portion of the buffer (bytes).
+     * @return The occupied portion of the buffer (bytes).
      */
     inline size_t size() const { return content.size(); }
 
     /**
-     * @return the maximum number of bytes in the buffer.
+     * @return The maximum number of bytes in the buffer.
      */
     inline unsigned int maxSize() const { return len; }
 
     /**
-     * @return how many times the tryAppend() function has been called
+     * @return How many times the tryAppend() function has been called
      * successfully.
      */
     inline unsigned int getMsgCount() const { return msgCounter; }
 
     /**
      * @brief Print information about this object.
-     * @param os  for example, std::cout
+     *
+     * @param os For example, std::cout
      */
     void print(std::ostream& os) const;
 
@@ -138,7 +141,6 @@ public:
     std::vector<uint8_t> content;
 
 private:
-    // Helper variables
     unsigned int msgCounter;
     uint64_t ts;
     bool ready;
@@ -215,8 +217,9 @@ public:
     /**
      * @brief Try to append a given message to the last packet. If there isn't
      * enough space, the packet is marked as ready and the message is appended
-     * to the next packet. If there are no more avaible packets, the oldest one
-     * is overwritten.
+     * to the next packet. If there are no more available packets, the oldest
+     * one is overwritten.
+     *
      * @param msg      the message to be appended
      * @param msgLen  length of msg
      * @return true    if the message was appended correctly

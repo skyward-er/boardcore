@@ -23,8 +23,8 @@
 #pragma once
 
 #include <diagnostic/PrintLogger.h>
-#include <drivers/Transceiver.h>
 #include <fcntl.h>
+#include <radio/Transceiver.h>
 
 #include "GammaTypes.h"
 

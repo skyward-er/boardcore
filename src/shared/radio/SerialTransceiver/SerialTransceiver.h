@@ -1,5 +1,5 @@
-/* Copyright (c) 2018 Skyward Experimental Rocketry
- * Author: Nuno Barcellos
+/* Copyright (c) 2022 Skyward Experimental Rocketry
+ * Author: Alberto Nidasio
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -22,38 +22,30 @@
 
 #pragma once
 
-#include <stddef.h>
-#include <stdint.h>
+#include <radio/Transceiver.h>
+
+#include <iostream>
+#include <iterator>
 
 namespace Boardcore
 {
 
-class Transceiver
+class SerialTransceiver : public Transceiver
 {
 public:
-    Transceiver() {}
-    virtual ~Transceiver() {}
+    bool send(uint8_t* packet, size_t packetLength)
+    {
+        for (size_t i = 0; i < packetLength; i++)
+            std::cout << packet[i];
+        std::cout << "\n";
+        return true;
+    }
 
-    /**
-     * @brief Send a packet.
-     *
-     * The function must block until the packet is sent (successfully or not).
-     *
-     * @param packet Pointer to the packet (needs to be at least packetLength
-     * bytes).
-     * @param packetLength Lenght of the packet to be sent.
-     * @return True if the message was sent correctly.
-     */
-    virtual bool send(uint8_t* packet, size_t packetLength) = 0;
-
-    /**
-     * @brief Wait until a new packet is received.
-     *
-     * @param packet Buffer to store the received packet into.
-     * @param packetLength Maximum length of the received data.
-     * @return Size of the data received or -1 if failure
-     */
-    virtual ssize_t receive(uint8_t* packet, size_t packetLength) = 0;
+    ssize_t receive(uint8_t* packet, size_t packetLength)
+    {
+        std::cin.read(reinterpret_cast<char*>(packet), packetLength);
+        return packetLength;
+    }
 };
 
 }  // namespace Boardcore

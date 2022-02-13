@@ -40,8 +40,8 @@ implementation before including MavlinkDriver.h"
 
 #include <diagnostic/SkywardStack.h>
 #include <diagnostic/StackLogger.h>
-#include <drivers/Transceiver.h>
 #include <mavlink_lib/mavlink_types.h>
+#include <radio/Transceiver.h>
 #include <utils/collections/SyncPacketQueue.h>
 
 #include "MavlinkStatus.h"
@@ -50,29 +50,32 @@ namespace Boardcore
 {
 
 /**
- * @brief The **MavChannel** object offers an interface to send and receive from
- * a Transceiver object using an implementation of the Mavlink protocol.
- * See `tests/mavlink/test-mavlink.cpp` for an axample of usage.
+ * @brief The MavChannel object offers an interface to send and receive from a
+ * Transceiver object using an implementation of the Mavlink protocol.
  *
- * @tparam PktLength         Maximum length in bytes of each packet.
- * @tparam OutQueueSize  Max number of packets in the out queue.
+ * See `tests/mavlink/test-mavlink.cpp` for an example.
+ *
+ * @tparam PktLength Maximum length in bytes of each packet.
+ * @tparam OutQueueSize Max number of packets in the out queue.
  */
 template <unsigned int PktLength, unsigned int OutQueueSize>
 class MavlinkDriver
 {
-    /* Alias of the function to be executed on message rcv */
+    ///< Alias of the function to be executed on message reception.
     using MavHandler = std::function<void(MavlinkDriver* channel,
                                           const mavlink_message_t& msg)>;
 
 public:
     /**
-     * @param device     transceiver used to send and receive messages
-     * @param onRcv      function to be executed on message rcv
-     * @param sleepAfterSend  guaranteed sleep time after each send (ms)
-     * @param outBufferMaxAge max residence time for message in the queue: after
-     *                        this time the message will be automatically sent.
+     * @brief Initializes all data structures.
+     *
+     * @param device Transceiver used to send and receive messages.
+     * @param onReceive Function to be executed on message rcv.
+     * @param sleepAfterSend Guaranteed sleep time after each send (ms).
+     * @param outBufferMaxAge Max residence time for message in the queue: after
+     * this time the message will be automatically sent.
      */
-    MavlinkDriver(Transceiver* device, MavHandler onRcv,
+    MavlinkDriver(Transceiver* device, MavHandler onReceive = nullptr,
                   uint16_t sleepAfterSend = 0, size_t outBufferMaxAge = 1000);
 
     ~MavlinkDriver() {}
@@ -91,15 +94,18 @@ public:
     /**
      * @brief Non-blocking send function, puts the message in a queue.
      * Message is discarded if the queue is full.
-     * @param msg    message to send (mavlink struct)
-     * @return true if the message could be enqueued (queue not full)
+     *
+     * @param msg Message to send (mavlink struct).
+     * @return true if the message could be enqueued (queue not full).
      */
     bool enqueueMsg(const mavlink_message_t& msg);
 
     /**
      * @brief Receiver thread: reads one char at a time from the transceiver and
      * tries to parse a mavlink message.
-     * If the message is successfully parsed, the onRcv function is executed.
+     *
+     * If the message is successfully parsed, the onReceive function is
+     * executed.
      */
     void runReceiver();
     /**
@@ -143,8 +149,8 @@ private:
 
     void updateSenderStats(size_t msgCount, bool sent);
 
-    Transceiver* device;  // transceiver used to send and receive
-    MavHandler onRcv;     // function executed on message rcv
+    Transceiver* device;   // transceiver used to send and receive
+    MavHandler onReceive;  // function executed on message rcv
 
     // Tweakable params
     uint16_t sleepAfterSend;
@@ -172,15 +178,12 @@ private:
     PrintLogger logger = Logging::getLogger("mavlinkdriver");
 };
 
-/**********************************************************************
- * NOTE: Dont't move the implementation in a .cpp, it won't compile.  *
- **********************************************************************/
 template <unsigned int PktLength, unsigned int OutQueueSize>
 MavlinkDriver<PktLength, OutQueueSize>::MavlinkDriver(Transceiver* device,
-                                                      MavHandler onRcv,
+                                                      MavHandler onReceive,
                                                       uint16_t sleepAfterSend,
                                                       size_t outBufferMaxAge)
-    : device(device), onRcv(onRcv), sleepAfterSend(sleepAfterSend),
+    : device(device), onReceive(onReceive), sleepAfterSend(sleepAfterSend),
       outBufferMaxAge(outBufferMaxAge)
 {
     memset(&status, 0, sizeof(MavlinkStatus));
@@ -319,7 +322,8 @@ void MavlinkDriver<PktLength, OutQueueSize>::runReceiver()
                               msg.msgid, msg.seq, msg.compid, msg.sysid);
 
                     // ... handle the command
-                    onRcv(this, msg);
+                    if (onReceive != nullptr)
+                        onReceive(this, msg);
 
                     StackLogger::getInstance().updateStack(THID_MAV_RECEIVER);
                 }
@@ -349,8 +353,8 @@ void MavlinkDriver<PktLength, OutQueueSize>::runSender()
             {
                 outQueue.pop();  // remove from queue
 
-                // LOG_DEBUG(logger, "Sending packet. Size: {} (age: {})",
-                //           pkt.size(), age);
+                LOG_DEBUG(logger, "Sending packet. Size: {} (age: {})",
+                          pkt.size(), age);
 
                 bool sent = device->send(pkt.content.data(), pkt.size());
                 updateSenderStats(pkt.getMsgCount(), sent);

@@ -21,6 +21,7 @@
                 "${workspaceFolder}/libs/miosix-kernel/miosix/arch/cortexM4_stm32f4/common",
                 "${workspaceFolder}/libs/miosix-kernel/miosix/arch/common",
                 "${workspaceFolder}/libs/miosix-kernel/miosix",
+                "${workspaceFolder}/libs/mavlink_skyward_lib",
                 "${workspaceFolder}/libs/fmt/include",
                 "${workspaceFolder}/libs/eigen",
                 "${workspaceFolder}/libs",
