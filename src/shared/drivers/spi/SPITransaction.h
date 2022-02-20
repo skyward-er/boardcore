@@ -64,7 +64,7 @@ public:
     };
 
     /**
-     * @brief Instatiates a new SPITransaction, configuring the bus with the
+     * @brief Instantiates a new SPITransaction, configuring the bus with the
      * provided parameters.
      *
      * @param slave Slave to communicate with.
@@ -73,7 +73,7 @@ public:
                             WriteBit writeBit = WriteBit::NORMAL);
 
     /**
-     * @brief Instatiates a new SPITransaction, configuring the bus with the
+     * @brief Instantiates a new SPITransaction, configuring the bus with the
      * provided parameters.
      *
      * @param bus Bus to communicate on.
