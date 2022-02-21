@@ -22,34 +22,42 @@
 
 #pragma once
 
-#include <miosix.h>
+#include <interfaces-impl/gpio_impl.h>
 
 #include <memory>
 
 namespace Boardcore
 {
 
-class MockGpioPin
+class MockGpioPin : public miosix::GpioPin
 {
 public:
     MockGpioPin()
-        : val(new int(0)),
+        : GpioPin(0, 0), gpioValue(new int(0)),
           gpioMode(new miosix::Mode::Mode_(miosix::Mode::OUTPUT))
     {
     }
 
     void mode(miosix::Mode::Mode_ m) { *gpioMode = m; }
 
-    void high() { *val = 1; }
+    void speed(miosix::Speed::Speed_ s) {}
 
-    void low() { *val = 0; }
+    void high() { *gpioValue = 1; }
 
-    int value() { return *val; }
+    void low() { *gpioValue = 0; }
 
-    // shared_ptr: make all copies of this instance share the same val /
-    // gpioMode
-    std::shared_ptr<int> val;
+    int value() { return *gpioValue; }
+
+    // shared_ptr: Make all copies of this instance share the same values
+    std::shared_ptr<int> gpioValue;
     std::shared_ptr<miosix::Mode::Mode_> gpioMode;
+
+private:
+    static void modeImpl(unsigned int p, unsigned char n, miosix::Mode::Mode_ m)
+    {
+    }
+
+    static void afImpl(unsigned int p, unsigned char n, unsigned char af) {}
 };
 
 }  // namespace Boardcore

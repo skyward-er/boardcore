@@ -25,69 +25,104 @@
 using namespace miosix;
 using namespace Boardcore;
 
+miosix::GpioPin directionPin = miosix::GpioPin(GPIOC_BASE, 13);
+miosix::GpioPin stepPin      = miosix::GpioPin(GPIOC_BASE, 14);
+miosix::GpioPin resetPin     = miosix::GpioPin(GPIOE_BASE, 5);
+miosix::GpioPin ms1Pin       = miosix::GpioPin(GPIOE_BASE, 6);
+miosix::GpioPin ms2Pin       = miosix::GpioPin(GPIOE_BASE, 2);
+miosix::GpioPin ms3Pin       = miosix::GpioPin(GPIOE_BASE, 4);
+miosix::GpioPin enablePin    = miosix::GpioPin(GPIOC_BASE, 15);
+
+void doRoutine(Stepper stepper)
+{
+    stepper.enable();
+
+    for (int i = 1; i < 9; i++)
+    {
+        stepper.setSpeed(i);
+        printf("Current speed: %d\n", i);
+
+        stepper.setPositionDeg(360);
+        printf("This are 360°\n");
+
+        delayMs(500);
+
+        stepper.setPositionDeg(180);
+        printf("This are 180°\n");
+
+        delayMs(500);
+
+        stepper.moveDeg(-180);
+        printf("This are 0°\n");
+
+        delayMs(500);
+
+        printf("1 full rotation\n");
+        stepper.setPositionDeg(-360);
+        delayMs(500);
+        stepper.setPosition(0);
+
+        printf("Current position: %f\n", stepper.getCurrentDegPosition());
+        delayMs(1000);
+    }
+
+    stepper.enable();
+}
+
 int main()
 {
-    GpioPin stepPin(GPIOB_BASE, 13);
-    GpioPin directionPin(GPIOB_BASE, 14);
+    directionPin.mode(miosix::Mode::OUTPUT);
+    stepPin.mode(miosix::Mode::OUTPUT);
+    resetPin.mode(miosix::Mode::OUTPUT);
+    resetPin.high();
+    ms3Pin.mode(miosix::Mode::OUTPUT);
+    ms2Pin.mode(miosix::Mode::OUTPUT);
+    ms1Pin.mode(miosix::Mode::OUTPUT);
+    enablePin.mode(miosix::Mode::OUTPUT);
 
-    stepPin.mode(Mode::OUTPUT);
-    directionPin.mode(Mode::OUTPUT);
+    Stepper stepper(stepPin, directionPin, 1, 1.8, false,
+                    Stepper::Microstep::MICROSTEP_1, enablePin, ms1Pin, ms2Pin,
+                    ms3Pin);
 
-    Stepper stepper(stepPin, directionPin, 1, 1.8 / 16, false);
+    printf("The stepper is now disabled, waiting 2 seconds...\n");
+    delayMs(2 * 1000);
 
     while (true)
     {
         printf("Press something to start\n");
         getchar();
 
-        stepper.setPositionDeg(360);
-        printf("This are 360°\n");
-        delayMs(2 * 1000);
+        printf("\t1x microstepping\n");
+        stepper.setMicrostepping(Stepper::Microstep::MICROSTEP_1);
+        doRoutine(stepper);
+        printf("The stepper is now disabled\n");
 
-        stepper.setPositionDeg(180);
-        printf("This are 180°\n");
-        delayMs(2 * 1000);
+        delayMs(1000);
 
-        stepper.moveDeg(-180);
-        printf("This are 0°\n");
-        delayMs(2 * 1000);
+        printf("\t2x microstepping\n");
+        stepper.setMicrostepping(Stepper::Microstep::MICROSTEP_2);
+        doRoutine(stepper);
+        printf("The stepper is now disabled\n");
 
-        stepper.setSpeed(4);
-        printf("Set speed to 4rev/sec\n");
+        delayMs(1000);
 
-        stepper.setPositionDeg(-360);
-        printf("This are -360°\n");
-        delayMs(2 * 1000);
+        printf("\t4x microstepping\n");
+        stepper.setMicrostepping(Stepper::Microstep::MICROSTEP_4);
+        doRoutine(stepper);
+        printf("The stepper is now disabled\n");
 
-        stepper.setPositionDeg(-180);
-        printf("This are -180°\n");
-        delayMs(2 * 1000);
+        delayMs(1000);
 
-        stepper.setPositionDeg(0);
-        printf("This are 0°\n");
-        delayMs(2 * 1000);
+        printf("\t8x microstepping\n");
+        stepper.setMicrostepping(Stepper::Microstep::MICROSTEP_8);
+        doRoutine(stepper);
+        printf("The stepper is now disabled\n");
 
-        stepper.setPositionDeg(360 * 10);
-        printf("This are 3600°\n");
-        delayMs(2 * 1000);
+        delayMs(1000);
 
-        stepper.setPositionDeg(0);
-        printf("This are 0°\n");
-
-        printf("Now 6 steps of 60°\n");
-        for (int i = 0; i < 6; i++)
-        {
-            stepper.moveDeg(60);
-            delayMs(500);
-        }
-
-        printf("Now 6 steps of -60°\n");
-        for (int i = 0; i < 6; i++)
-        {
-            stepper.moveDeg(-60);
-            delayMs(500);
-        }
-
-        printf("\n");
+        printf("\t16x microstepping\n");
+        stepper.setMicrostepping(Stepper::Microstep::MICROSTEP_16);
+        doRoutine(stepper);
+        printf("The stepper is now disabled\n");
     }
 }

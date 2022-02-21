@@ -186,7 +186,7 @@ add_executable(test-xbee-snd src/tests/drivers/xbee/test-xbee-snd.cpp)
 sbs_target(test-xbee-snd stm32f429zi_stm32f4discovery)
 
 add_executable(test-stepper src/tests/drivers/stepper/test-stepper.cpp)
-sbs_target(test-stepper stm32f407vg_stm32f4discovery)
+sbs_target(test-stepper stm32f429zi_stm32f4discovery)
 
 #-----------------------------------------------------------------------------#
 #                               Tests - Events                                #
@@ -230,7 +230,7 @@ add_executable(test-calibration src/tests/sensors/calibration/test-calibration.c
 sbs_target(test-calibration stm32f407vg_stm32f4discovery)
 
 add_executable(test-bme280 src/tests/sensors/test-bme280.cpp)
-sbs_target(test-bme280 stm32f407vg_stm32f4discovery)
+sbs_target(test-bme280 stm32f429zi_stm32f4discovery)
 
 add_executable(test-bmx160 src/tests/sensors/test-bmx160.cpp)
 sbs_target(test-bmx160 stm32f429zi_skyward_death_stack_x)
