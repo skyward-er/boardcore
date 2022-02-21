@@ -92,7 +92,7 @@ bool MPU9250::init()
     // Set the sample rate
     setSampleRate(samplingRate);
 
-    LOG_DEBUG(logger, "Magnetometer sensitivity adjustment: %d, %d, %d",
+    LOG_DEBUG(logger, "Magnetometer sensitivity adjustment: {}, {}, {}",
               magSensAdjCoeff[0], magSensAdjCoeff[1], magSensAdjCoeff[2]);
 
     initialized = true;
