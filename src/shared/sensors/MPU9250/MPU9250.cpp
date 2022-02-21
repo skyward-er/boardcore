@@ -50,7 +50,7 @@ bool MPU9250::init()
     // Check if already initialized
     if (initialized)
     {
-        LOG_ERR(logger, "Already initialized\n");
+        LOG_ERR(logger, "Already initialized");
 
         lastError = SensorErrors::ALREADY_INIT;
 
@@ -67,7 +67,7 @@ bool MPU9250::init()
     // Check WHO AM I
     if (!checkWhoAmI())
     {
-        LOG_ERR(logger, "Invalid WHO AM I\n");
+        LOG_ERR(logger, "Invalid WHO AM I");
 
         lastError = SensorErrors::INVALID_WHOAMI;
 
@@ -92,7 +92,7 @@ bool MPU9250::init()
     // Set the sample rate
     setSampleRate(samplingRate);
 
-    LOG_DEBUG(logger, "Magnetometer sensitivity adjustment: %d, %d, %d\n",
+    LOG_DEBUG(logger, "Magnetometer sensitivity adjustment: %d, %d, %d",
               magSensAdjCoeff[0], magSensAdjCoeff[1], magSensAdjCoeff[2]);
 
     initialized = true;
@@ -374,7 +374,7 @@ bool MPU9250::initAk()
     // Check AK8963 WHO AM I
     if (!checkAkWhoAmI())
     {
-        LOG_ERR(logger, "Invalid AK8963 WHO AM I\n");
+        LOG_ERR(logger, "Invalid AK8963 WHO AM I");
 
         lastError = SensorErrors::INVALID_WHOAMI;
 

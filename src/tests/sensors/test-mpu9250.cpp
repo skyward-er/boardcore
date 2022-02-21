@@ -67,7 +67,11 @@ int main()
     MPU9250 mpu9250(spiSlave);
 
     // Initialize the device
-    mpu9250.init();
+    bool result = mpu9250.init();
+    printf("Init result: %d\n", result);
+
+    result = mpu9250.selfTest();
+    printf("Self test result: %d\n", result);
 
     while (true)
     {
