@@ -45,7 +45,7 @@ SPISignalGenerator spiSignalGenerator(16, BUFF_SIZE, 1000000, SPI::Mode::MODE_1,
                                       TimerUtils::Channel::CHANNEL_4,
                                       TimerUtils::Channel::CHANNEL_4);
 SPISlaveBus spiBus(SPI4, spiSignalGenerator);
-SPIBusConfig spiConfig = {.mode = SPI::Mode::MODE_1};
+SPIBusConfig spiConfig(SPI::ClockDivider::DIV_32, SPI::Mode::MODE_1);
 SPISlave spiSlave(spiBus, csPin, spiConfig);
 ADS131M04HighFreq ads131(spiSlave, SPI4, (DMA2_Stream0),
                          DMAStream::Channel::CHANNEL4, spiSignalGenerator,
