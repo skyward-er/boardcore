@@ -84,13 +84,13 @@ public:
 
     double getI() { return i; }
 
-private:
-    const double Kp;          // Proportional factor.
-    const double Ki;          // Integral factor.
-    const double Ts;          // Sampling period.
-    const double uMin, uMax;  // Anti-windup limits.
-    double i = 0;             // Integral contribution.
+    double Kp;          // Proportional factor.
+    double Ki;          // Integral factor.
+    double Ts;          // Sampling period.
+    double uMin, uMax;  // Anti-windup limits.
 
+private:
+    double i        = 0;  // Integral contribution.
     bool saturation = false;
 };
 
