@@ -42,7 +42,9 @@ SPIBusConfig MAX6675::getDefaultSPIConfig()
 
 bool MAX6675::init() { return true; }
 
-bool MAX6675::selfTest()
+bool MAX6675::selfTest() { return true; }
+
+bool MAX6675::checkConnection()
 {
     uint16_t sample;
 
@@ -51,7 +53,7 @@ bool MAX6675::selfTest()
         sample = spi.read16();
     }
 
-    // The third bit (D2) indicates wheter the termocouple is connected or not.
+    // The third bit (D2) indicates wheter the termocouple is connected or not
     // It is high if open
     if ((sample % 0x2) != 0)
     {

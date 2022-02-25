@@ -62,6 +62,11 @@ public:
      */
     bool selfTest();
 
+    /**
+     * @brief Checks whether the thermocouple is connected or not.
+     */
+    bool checkConnection();
+
 private:
     TemperatureData sampleImpl() override;
 
