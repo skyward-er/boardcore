@@ -1,5 +1,5 @@
-/* Copyright (c) 2020 Skyward Experimental Rocketry
- * Author: Davide Bonomini
+/* Copyright (c) 2021 Skyward Experimental Rocketry
+ * Author: Davide Mor
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -22,26 +22,9 @@
 
 #pragma once
 
-#include <sensors/SensorData.h>
+#include <drivers/SX1278/SX1278.h>
 
-namespace Boardcore
-{
+const char *stringFromErr(Boardcore::SX1278::Error err);
+const char *stringFromRxBw(Boardcore::SX1278::RxBw rx_bw);
 
-struct UbloxGPSData : public GPSData
-{
-    static std::string header()
-    {
-        return "gps_timestamp,latitude,longitude,height,velocity_north,"
-               "velocity_east,velocity_down,speed,track,num_satellites,fix\n";
-    }
-
-    void print(std::ostream &os) const
-    {
-        os << gpsTimestamp << "," << latitude << "," << longitude << ","
-           << height << "," << velocityNorth << "," << velocityEast << ","
-           << velocityDown << "," << speed << "," << track << ","
-           << (int)satellites << "," << (int)fix << "\n";
-    }
-};
-
-}  // namespace Boardcore
+void printConfig(Boardcore::SX1278::Config config);

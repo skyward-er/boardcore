@@ -43,6 +43,7 @@ foreach(OPT_BOARD ${BOARDS})
         ${SBS_BASE}/src/shared/drivers/runcam/Runcam.cpp
         ${SBS_BASE}/src/shared/drivers/servo/Servo.cpp
         ${SBS_BASE}/src/shared/drivers/spi/SPITransaction.cpp
+        ${SBS_BASE}/src/shared/drivers/SX1278/SX1278.cpp
 
         # Events
         ${SBS_BASE}/src/shared/events/EventBroker.cpp
