@@ -269,8 +269,6 @@ bool BME280::checkWhoAmI()
 
     uint8_t whoAmIValue = transaction.readRegister(REG_ID);
 
-    printf("%2X\n", whoAmIValue);
-
     return whoAmIValue == REG_ID_VAL;
 }
 

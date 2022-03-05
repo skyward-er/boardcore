@@ -192,7 +192,6 @@ BMP280Data BMP280::sampleImpl()
     uint8_t buffer[8];
     int32_t adcTemperature = 0;
     int32_t adc_P          = 0;
-    int32_t adc_H          = 0;
     BMP280Data data;
 
     // TODO: implement selective read!
@@ -212,9 +211,6 @@ BMP280Data BMP280::sampleImpl()
     adc_P |= ((uint32_t)buffer[1]) << 4;
     adc_P |= (buffer[2] >> 4) & 0x0F;
 
-    adc_H |= ((uint32_t)buffer[6] << 8);
-    adc_H |= buffer[7];
-
     // Compensate temperature
     fineTemperature           = computeFineTemperature(adcTemperature);
     data.temperatureTimestamp = TimestampTimer::getInstance().getTimestamp();
@@ -233,8 +229,6 @@ bool BMP280::checkWhoAmI()
     SPITransaction transaction(spiSlave);
 
     uint8_t whoAmIValue = transaction.readRegister(REG_ID);
-
-    printf("%2X\n", whoAmIValue);
 
     return whoAmIValue == REG_ID_VAL;
 }
