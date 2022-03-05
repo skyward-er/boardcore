@@ -51,6 +51,8 @@ void Servo::setPosition(float position)
 
 void Servo::setPosition90Deg(float degrees) { setPosition(degrees / 90); }
 
+void Servo::setPosition120Deg(float degrees) { setPosition(degrees / 120); }
+
 void Servo::setPosition180Deg(float degrees) { setPosition(degrees / 180); }
 
 void Servo::setPosition360Deg(float degrees) { setPosition(degrees / 360); }

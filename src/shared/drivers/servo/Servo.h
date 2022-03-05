@@ -93,6 +93,8 @@ public:
 
     void setPosition90Deg(float degrees);
 
+    void setPosition120Deg(float degrees);
+
     void setPosition180Deg(float degrees);
 
     void setPosition360Deg(float degrees);
