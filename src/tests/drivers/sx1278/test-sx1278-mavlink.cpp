@@ -20,8 +20,8 @@
  * THE SOFTWARE.
  */
 
-#include <radio/SX1278/SX1278.h>
 #include <drivers/interrupt/external_interrupts.h>
+#include <radio/SX1278/SX1278.h>
 
 #include "test-sx1278-core.h"
 

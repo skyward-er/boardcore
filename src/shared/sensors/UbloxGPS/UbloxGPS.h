@@ -129,7 +129,7 @@ private:
     const int defaultBaudrate;  // [baud]
 
     char gpsFilePath[16];  ///< Allows for a filename of up to 10 characters
-    int gpsFile;
+    int gpsFile = -1;
 
     mutable miosix::FastMutex mutex;
     UbloxGPSData threadSample{};
