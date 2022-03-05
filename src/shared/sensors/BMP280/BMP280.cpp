@@ -20,7 +20,7 @@
  * THE SOFTWARE.
  */
 
-#include "BME280.h"
+#include "BMP280.h"
 
 #include <drivers/timer/TimestampTimer.h>
 #include <math.h>
@@ -30,11 +30,10 @@ using namespace std;
 namespace Boardcore
 {
 
-const BME280::BME280Config BME280::BME280_DEFAULT_CONFIG = {
-    SKIPPED, 0, 0, SLEEP_MODE, SKIPPED, SKIPPED, 0, FILTER_OFF, STB_TIME_0_5};
+const BMP280::BMP280Config BMP280::BMP280_DEFAULT_CONFIG = {
+    0, 0, SLEEP_MODE, SKIPPED, SKIPPED, 0, FILTER_OFF, STB_TIME_0_5};
 
-const BME280::BME280Config BME280::BME280_CONFIG_ALL_ENABLED = {OVERSAMPLING_1,
-                                                                0,
+const BMP280::BMP280Config BMP280::BMP280_CONFIG_ALL_ENABLED = {0,
                                                                 0,
                                                                 NORMAL_MODE,
                                                                 OVERSAMPLING_16,
@@ -43,16 +42,15 @@ const BME280::BME280Config BME280::BME280_CONFIG_ALL_ENABLED = {OVERSAMPLING_1,
                                                                 FILTER_COEFF_16,
                                                                 STB_TIME_0_5};
 
-const BME280::BME280Config BME280::BME280_CONFIG_TEMP_SINGLE = {
-    SKIPPED,        0, 0,          FORCED_MODE, SKIPPED,
-    OVERSAMPLING_1, 0, FILTER_OFF, STB_TIME_0_5};
+const BMP280::BMP280Config BMP280::BMP280_CONFIG_TEMP_SINGLE = {
+    0, 0, FORCED_MODE, SKIPPED, OVERSAMPLING_1, 0, FILTER_OFF, STB_TIME_0_5};
 
-BME280::BME280(SPISlave spiSlave_, BME280Config config_)
+BMP280::BMP280(SPISlave spiSlave_, BMP280Config config_)
     : spiSlave(spiSlave_), config(config_)
 {
 }
 
-bool BME280::init()
+bool BMP280::init()
 {
     // Check WHO AM I
     if (!checkWhoAmI())
@@ -67,18 +65,17 @@ bool BME280::init()
     loadCompensationParameters();
 
     // Read once the temperature to compute fineTemperature
-    setConfiguration(BME280_CONFIG_TEMP_SINGLE);
+    setConfiguration(BMP280_CONFIG_TEMP_SINGLE);
     miosix::Thread::sleep(
-        calculateMaxMeasurementTime(BME280_CONFIG_TEMP_SINGLE));
+        calculateMaxMeasurementTime(BMP280_CONFIG_TEMP_SINGLE));
     readTemperature();
 
     setConfiguration();
 
-    BME280Config readBackConfig = readConfiguration();
+    BMP280Config readBackConfig = readConfiguration();
 
     // Check if the configration on the device matches ours
-    if (config.bytes.ctrlHumidity != readBackConfig.bytes.ctrlHumidity ||
-        config.bytes.ctrlPressureAndTemperature !=
+    if (config.bytes.ctrlPressureAndTemperature !=
             readBackConfig.bytes.ctrlPressureAndTemperature ||
         config.bytes.config != readBackConfig.bytes.config)
     {
@@ -92,71 +89,42 @@ bool BME280::init()
     return true;
 }
 
-void BME280::setSensorMode(Mode mode)
+void BMP280::setSensorMode(Mode mode)
 {
     config.bits.mode = mode;
 
     setConfiguration();
 }
 
-void BME280::setHumidityOversampling(Oversampling oversampling)
-{
-    config.bits.oversamplingHumidity = oversampling;
-
-    setConfiguration();
-}
-
-void BME280::setPressureOversampling(Oversampling oversampling)
+void BMP280::setPressureOversampling(Oversampling oversampling)
 {
     config.bits.oversamplingPressure = oversampling;
 
     setConfiguration();
 }
 
-void BME280::setTemperatureOversampling(Oversampling oversampling)
+void BMP280::setTemperatureOversampling(Oversampling oversampling)
 {
     config.bits.oversamplingTemperature = oversampling;
 
     setConfiguration();
 }
 
-void BME280::setFilterCoeff(FilterCoeff filterCoeff)
+void BMP280::setFilterCoeff(FilterCoeff filterCoeff)
 {
     config.bits.filter = filterCoeff;
 
     setConfiguration();
 }
 
-void BME280::setStandbyTime(StandbyTime standbyTime)
+void BMP280::setStandbyTime(StandbyTime standbyTime)
 {
     config.bits.standbyTime = standbyTime;
 
     setConfiguration();
 }
 
-HumidityData BME280::readHumidity()
-{
-    uint8_t buffer[2];
-    int32_t adc_H = 0;
-
-    {
-        SPITransaction transaction(spiSlave);
-
-        transaction.readRegisters(REG_HUM_MSB, buffer, 2);
-    }
-
-    adc_H |= ((uint32_t)buffer[0] << 8);
-    adc_H |= buffer[1];
-
-    // Compensate humidity
-    lastSample.humidityTimestamp = TimestampTimer::getInstance().getTimestamp();
-    lastSample.humidity =
-        (float)compensateHumidity(adc_H) / 1024;  // Converto to %RH
-
-    return lastSample;
-}
-
-PressureData BME280::readPressure()
+PressureData BMP280::readPressure()
 {
     uint8_t buffer[3];
     int32_t adc_P = 0;
@@ -179,7 +147,7 @@ PressureData BME280::readPressure()
     return lastSample;
 }
 
-TemperatureData BME280::readTemperature()
+TemperatureData BMP280::readTemperature()
 {
     uint8_t buffer[3];
     int32_t adcTemperature = 0;
@@ -204,27 +172,28 @@ TemperatureData BME280::readTemperature()
     return lastSample;
 }
 
-unsigned int BME280::calculateMaxMeasurementTime(BME280Config config_)
+unsigned int BMP280::calculateMaxMeasurementTime(BMP280Config config_)
 {
+    // TODO: This folrmula is not present in the BMP280's datasheet, it should
+    // be checked
     return ceil(1.25 + (2.3 * config_.bits.oversamplingTemperature) +
-                (2.3 * config_.bits.oversamplingPressure + 0.575) +
-                (2.3 * config_.bits.oversamplingHumidity + 0.575));
+                (2.3 * config_.bits.oversamplingPressure + 0.575));
 }
 
-unsigned int BME280::getMaxMeasurementTime()
+unsigned int BMP280::getMaxMeasurementTime()
 {
     return calculateMaxMeasurementTime(config);
 }
 
-bool BME280::selfTest() { return checkWhoAmI(); }
+bool BMP280::selfTest() { return checkWhoAmI(); }
 
-BME280Data BME280::sampleImpl()
+BMP280Data BMP280::sampleImpl()
 {
     uint8_t buffer[8];
     int32_t adcTemperature = 0;
     int32_t adc_P          = 0;
     int32_t adc_H          = 0;
-    BME280Data data;
+    BMP280Data data;
 
     // TODO: implement selective read!
 
@@ -256,14 +225,10 @@ BME280Data BME280::sampleImpl()
     data.pressureTimestamp = TimestampTimer::getInstance().getTimestamp();
     data.pressure = (float)compensatePressure(adc_P) / 256;  // Convert to Pa
 
-    // Compensate humidity
-    data.humidityTimestamp = TimestampTimer::getInstance().getTimestamp();
-    data.humidity = (float)compensateHumidity(adc_H) / 1024;  // Converto to %RH
-
     return data;
 }
 
-bool BME280::checkWhoAmI()
+bool BMP280::checkWhoAmI()
 {
     SPITransaction transaction(spiSlave);
 
@@ -274,53 +239,38 @@ bool BME280::checkWhoAmI()
     return whoAmIValue == REG_ID_VAL;
 }
 
-void BME280::setConfiguration() { setConfiguration(config); }
+void BMP280::setConfiguration() { setConfiguration(config); }
 
-void BME280::setConfiguration(BME280Config config_)
+void BMP280::setConfiguration(BMP280Config config_)
 {
     SPITransaction transaction(spiSlave);
 
     transaction.writeRegister(REG_CONFIG & 0x7F, config_.bytes.config);
-    transaction.writeRegister(REG_CTRL_HUM & 0x7F, config_.bytes.ctrlHumidity);
     transaction.writeRegister(REG_CTRL_MEAS & 0x7F,
                               config_.bytes.ctrlPressureAndTemperature);
 }
 
-BME280::BME280Config BME280::readConfiguration()
+BMP280::BMP280Config BMP280::readConfiguration()
 {
-    BME280Config tmp;
+    BMP280Config tmp;
     SPITransaction transaction(spiSlave);
 
-    transaction.readRegisters(REG_CTRL_HUM, (uint8_t *)&tmp, 4);
+    transaction.readRegisters(REG_STATUS, (uint8_t *)&tmp, 3);
 
     return tmp;
 }
 
-void BME280::loadCompensationParameters()
+void BMP280::loadCompensationParameters()
 {
-    // Read first batch of compensation parameters
+    // Read compensation parameters
     {
         SPITransaction transaction(spiSlave);
 
         transaction.readRegisters(REG_CALIB_0, (uint8_t *)&compParams, 25);
     }
-
-    // Reat second batch of compensation parameters
-    {
-        SPITransaction transaction(spiSlave);
-
-        transaction.readRegisters(REG_CALIB_26,
-                                  (uint8_t *)&compParams.bits.dig_H2, 7);
-    }
-
-    // Adjust unaligned data
-    compParams.bytesArray[29] =
-        (compParams.bytesArray[29] << 4) | (compParams.bytesArray[29] >> 4);
-    compParams.bits.dig_H4 =
-        (compParams.bits.dig_H4 << 4) | (compParams.bits.dig_H4 >> 8);
 }
 
-int32_t BME280::computeFineTemperature(int32_t adcTemperature)
+int32_t BMP280::computeFineTemperature(int32_t adcTemperature)
 {
     int32_t var1, var2;
     var1 = ((((adcTemperature >> 3) - ((int32_t)compParams.bits.dig_T1 << 1))) *
@@ -334,12 +284,12 @@ int32_t BME280::computeFineTemperature(int32_t adcTemperature)
     return var1 + var2;
 }
 
-int32_t BME280::compensateTemperature(int32_t fineTemperature)
+int32_t BMP280::compensateTemperature(int32_t fineTemperature)
 {
     return (fineTemperature * 5 + 128) >> 8;
 }
 
-uint32_t BME280::compensatePressure(int32_t adc_P)
+uint32_t BMP280::compensatePressure(int32_t adc_P)
 {
     int64_t var1, var2, p;
     var1 = ((int64_t)fineTemperature) - 128000;
@@ -360,31 +310,6 @@ uint32_t BME280::compensatePressure(int32_t adc_P)
     var2 = (((int64_t)compParams.bits.dig_P8) * p) >> 19;
     p    = ((p + var1 + var2) >> 8) + (((int64_t)compParams.bits.dig_P7) << 4);
     return (uint32_t)p;
-}
-
-uint32_t BME280::compensateHumidity(int32_t adc_H)
-{
-    int32_t v_x1_u32r;
-
-    v_x1_u32r = (fineTemperature - ((int32_t)768000));
-    v_x1_u32r = (((((adc_H << 14) - (((int32_t)compParams.bits.dig_H4) << 20) -
-                    (((int32_t)compParams.bits.dig_H5) * v_x1_u32r)) +
-                   ((int32_t)16384)) >>
-                  15) *
-                 (((((((v_x1_u32r * ((int32_t)compParams.bits.dig_H6)) >> 10) *
-                      (((v_x1_u32r * ((int32_t)compParams.bits.dig_H3)) >> 11) +
-                       ((int32_t)32768))) >>
-                     10) +
-                    ((int32_t)2097152)) *
-                       ((int32_t)compParams.bits.dig_H2) +
-                   8192) >>
-                  14));
-    v_x1_u32r = (v_x1_u32r - (((((v_x1_u32r >> 15) * (v_x1_u32r >> 15)) >> 7) *
-                               ((int32_t)compParams.bits.dig_H1)) >>
-                              4));
-    v_x1_u32r = (v_x1_u32r < 0 ? 0 : v_x1_u32r);
-    v_x1_u32r = (v_x1_u32r > 419430400 ? 419430400 : v_x1_u32r);
-    return (uint32_t)(v_x1_u32r >> 12);
 }
 
 }  // namespace Boardcore

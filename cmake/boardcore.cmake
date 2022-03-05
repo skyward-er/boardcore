@@ -68,6 +68,7 @@ foreach(OPT_BOARD ${BOARDS})
         ${SBS_BASE}/src/shared/sensors/ADS131M04/ADS131M04.cpp
         ${SBS_BASE}/src/shared/sensors/ADS131M04/ADS131M04HighFreq.cpp
         ${SBS_BASE}/src/shared/sensors/BME280/BME280.cpp
+        ${SBS_BASE}/src/shared/sensors/BMP280/BMP280.cpp
         ${SBS_BASE}/src/shared/sensors/BMX160/BMX160.cpp
         ${SBS_BASE}/src/shared/sensors/BMX160/BMX160WithCorrection.cpp
         ${SBS_BASE}/src/shared/sensors/calibration/SensorDataExtra.cpp
