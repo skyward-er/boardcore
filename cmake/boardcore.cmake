@@ -43,7 +43,6 @@ foreach(OPT_BOARD ${BOARDS})
         ${SBS_BASE}/src/shared/drivers/runcam/Runcam.cpp
         ${SBS_BASE}/src/shared/drivers/servo/Servo.cpp
         ${SBS_BASE}/src/shared/drivers/spi/SPITransaction.cpp
-        ${SBS_BASE}/src/shared/drivers/SX1278/SX1278.cpp
 
         # Events
         ${SBS_BASE}/src/shared/events/EventBroker.cpp
@@ -60,6 +59,7 @@ foreach(OPT_BOARD ${BOARDS})
         ${SBS_BASE}/src/shared/radio/gamma868/Gamma868.cpp
         ${SBS_BASE}/src/shared/radio/Xbee/APIFrameParser.cpp
         ${SBS_BASE}/src/shared/radio/Xbee/Xbee.cpp
+        ${SBS_BASE}/src/shared/radio/SX1278/SX1278.cpp
 
         # Scheduler
         ${SBS_BASE}/src/shared/scheduler/TaskScheduler.cpp
