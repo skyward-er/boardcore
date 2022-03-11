@@ -31,6 +31,8 @@ namespace Boardcore
 
 using namespace SX1278Defs;
 
+long long now() { return miosix::getTick() * 1000 / miosix::TICK_FREQ; }
+
 // Default values for registers
 constexpr uint8_t REG_OP_MODE_DEFAULT = RegOpMode::LONG_RANGE_MODE_FSK |
                                         RegOpMode::MODULATION_TYPE_FSK |
@@ -247,30 +249,54 @@ ssize_t SX1278::receive(uint8_t *pkt, size_t max_len)
 
 bool SX1278::send(uint8_t *pkt, size_t len)
 {
-    // Packets longer than 255 are not supported
-    if (len > 255)
-        return false;
-
-    bus_mgr.lock(SX1278BusManager::Mode::MODE_TX);
-
-    // Wait for TX ready
-    bus_mgr.waitForIrq(RegIrqFlags::TX_READY);
-
+    // Hacked together larger packets support
+    while (len > 0)
     {
-        SPITransaction spi(bus_mgr.getBus(),
-                           SPITransaction::WriteBit::INVERTED);
+        // This shouldn't be needed, but for some reason the device "lies" about
+        // being ready, so lock up if we are going too fast
+        rateLimitTx();
 
-        spi.writeRegister(REG_FIFO, static_cast<uint8_t>(len));
-        spi.writeRegisters(REG_FIFO, pkt, len);
+        bus_mgr.lock(SX1278BusManager::Mode::MODE_TX);
+
+        // Wait for TX ready
+        bus_mgr.waitForIrq(RegIrqFlags::TX_READY);
+
+        // Segment a packet that is bigger than the MTU (-1 for the length)
+        uint8_t pkt_len = std::min(len, FIFO_LEN - 1);
+
+        {
+            SPITransaction spi(bus_mgr.getBus(),
+                               SPITransaction::WriteBit::INVERTED);
+
+            spi.writeRegister(REG_FIFO, pkt_len);
+            spi.writeRegisters(REG_FIFO, pkt, pkt_len);
+        }
+
+        // Wait for packet sent
+        bus_mgr.waitForIrq(RegIrqFlags::PACKET_SENT);
+
+        pkt += pkt_len;
+        len -= pkt_len;
+        bus_mgr.unlock();
+
+        last_tx = now();
     }
 
-    // Wait for packet sent
-    bus_mgr.waitForIrq(RegIrqFlags::PACKET_SENT);
-    bus_mgr.unlock();
     return true;
 }
 
 void SX1278::handleDioIRQ() { bus_mgr.handleDioIRQ(); }
+
+void SX1278::rateLimitTx()
+{
+    const long long RATE_LIMIT = 2;
+
+    long long delta = now() - last_tx;
+    if (delta <= RATE_LIMIT)
+    {
+        miosix::Thread::sleep(RATE_LIMIT - delta);
+    }
+}
 
 uint8_t SX1278::getVersion()
 {
