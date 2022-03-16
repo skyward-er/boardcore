@@ -109,10 +109,6 @@ private:
 
     bool readUBXFrame(UBXUnpackedFrame& frame);
 
-    bool writeRaw(uint8_t* data, size_t size);
-
-    bool readRaw(uint8_t* data, size_t size);
-
     SPISlave spiSlave;
 
     const uint8_t samplerate;  // [Hz]

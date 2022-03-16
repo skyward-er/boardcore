@@ -330,35 +330,20 @@ bool UbloxGPS::writeUBXFrame(const UBXUnpackedFrame& frame)
         return false;
     }
 
+    SPITransaction spi{spiSlave};
     uint8_t packedFrame[UBX_MAX_FRAME_LENGTH];
     frame.writePacked(packedFrame);
-
-    writeRaw(packedFrame, frame.getFrameLength());
+    spi.write(packedFrame, frame.getLength());
 
     return true;
 }
 
 bool UbloxGPS::readUBXFrame(UBXUnpackedFrame& frame)
 {
-    bool synchronized = false;
-    while (!synchronized)
-    {
-        synchronized = true;
-        for (uint16_t i = 0; synchronized && i < 2; ++i)
-        {
-            if (!readRaw(&frame.preamble[i], 1))
-                return false;
-
-            if (frame.preamble[i] != UBX_VALID_PREAMBLE[i])
-                synchronized = false;
-        }
-    }
-
-    if (!readRaw(&frame.cls, 1) || !readRaw(&frame.id, 1) ||
-        !readRaw((uint8_t*)&frame.payloadLength, 2) ||
-        !readRaw(frame.payload, frame.payloadLength) ||
-        !readRaw(frame.checksum, 2))
-        return false;
+    SPITransaction spi{spiSlave};
+    uint8_t packedFrame[UBX_MAX_FRAME_LENGTH];
+    spi.read(packedFrame, UBX_MAX_FRAME_LENGTH);
+    frame.readPacked(packedFrame);
 
     if (!frame.isValid())
     {
@@ -366,20 +351,6 @@ bool UbloxGPS::readUBXFrame(UBXUnpackedFrame& frame)
         return false;
     }
 
-    return true;
-}
-
-bool UbloxGPS::writeRaw(uint8_t* data, size_t size)
-{
-    SPITransaction spi{spiSlave};
-    spi.write(data, size);
-    return true;
-}
-
-bool UbloxGPS::readRaw(uint8_t* data, size_t size)
-{
-    SPITransaction spi{spiSlave};
-    spi.read(data, size);
     return true;
 }
 

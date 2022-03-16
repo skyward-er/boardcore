@@ -1,4 +1,4 @@
-/* Copyright (c) 2021 Skyward Experimental Rocketry
+/* Copyright (c) 2022 Skyward Experimental Rocketry
  * Author: Damiano Amatruda
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -54,7 +54,7 @@ struct UBXUnpackedFrame
         calcChecksum(checksum);
     }
 
-    inline uint16_t getFrameLength() const { return payloadLength + 8; }
+    inline uint16_t getLength() const { return payloadLength + 8; }
 
     inline bool isValid() const
     {
