@@ -23,24 +23,29 @@
 #include "UbloxGPS.h"
 
 #include <diagnostic/StackLogger.h>
-#include <drivers/serial.h>
 #include <drivers/timer/TimestampTimer.h>
-#include <fcntl.h>
-#include <filesystem/file_access.h>
 
 namespace Boardcore
 {
 
 using namespace miosix;
 
+UbloxGPS::UbloxGPS(SPIBusInterface& spiBus, GpioPin spiCs,
+                   SPIBusConfig spiConfig, uint8_t samplerate)
+    : spiSlave(spiBus, spiCs, spiConfig), samplerate(samplerate)
+{
+}
+
+SPIBusConfig UbloxGPS::getDefaultSPIConfig()
+{
+    SPIBusConfig spiConfig{};
+    spiConfig.clockDivider = SPI::ClockDivider::DIV_32;
+    spiConfig.mode         = SPI::Mode::MODE_1;
+    return spiConfig;
+}
+
 bool UbloxGPS::init()
 {
-    // Change the baud rate from the default value
-    if (!setupCommunication())
-    {
-        return false;
-    }
-
     // Reset configuration to default
     if (!resetConfiguration())
     {
@@ -364,144 +369,18 @@ bool UbloxGPS::readUBXFrame(UBXUnpackedFrame& frame)
     return true;
 }
 
-UbloxGPSSPI::UbloxGPSSPI(SPIBusInterface& spiBus, GpioPin spiCs,
-                         SPIBusConfig spiConfig, uint8_t samplerate)
-    : UbloxGPS(samplerate), spiSlave(spiBus, spiCs, spiConfig)
-{
-}
-
-SPIBusConfig UbloxGPSSPI::getDefaultSPIConfig()
-{
-    SPIBusConfig spiConfig{};
-    spiConfig.clockDivider = SPI::ClockDivider::DIV_32;
-    spiConfig.mode         = SPI::Mode::MODE_1;
-    return spiConfig;
-}
-
-bool UbloxGPSSPI::writeRaw(uint8_t* data, size_t size)
+bool UbloxGPS::writeRaw(uint8_t* data, size_t size)
 {
     SPITransaction spi{spiSlave};
     spi.write(data, size);
     return true;
 }
 
-bool UbloxGPSSPI::readRaw(uint8_t* data, size_t size)
+bool UbloxGPS::readRaw(uint8_t* data, size_t size)
 {
     SPITransaction spi{spiSlave};
     spi.read(data, size);
     return true;
-}
-
-UbloxGPSSerial::UbloxGPSSerial(int serialBaudrate, uint8_t samplerate,
-                               int serialDefaultBaudrate, int serialPortNumber,
-                               const char* serialPortName)
-    : UbloxGPS(samplerate), serialPortNumber(serialPortNumber),
-      serialPortName(serialPortName), serialBaudrate(serialBaudrate),
-      serialDefaultBaudrate(serialDefaultBaudrate)
-{
-    strcpy(serialFilePath, "/dev/");
-    strcat(serialFilePath, serialPortName);
-}
-
-bool UbloxGPSSerial::setupCommunication()
-{
-    intrusive_ref_ptr<DevFs> devFs = FilesystemManager::instance().getDevFs();
-
-    // Close the serial file if already opened
-    devFs->remove(serialPortName);
-
-    // Change the baudrate only if it is different than the default
-    if (serialBaudrate != serialDefaultBaudrate)
-    {
-        // Open the serial port device with the default baudrate
-        if (!devFs->addDevice(serialPortName,
-                              intrusive_ref_ptr<Device>(new STM32Serial(
-                                  serialPortNumber, serialDefaultBaudrate))))
-        {
-            LOG_ERR(logger,
-                    "[gps] Faild to open serial port {} with baudrate {} as "
-                    "file {}",
-                    serialPortNumber, serialDefaultBaudrate, serialPortName);
-            return false;
-        }
-
-        // Open the serial file
-        if ((serialFile = open(serialFilePath, O_RDWR)) < 0)
-        {
-            LOG_ERR(logger, "Failed to open serial file {}", serialFilePath);
-            return false;
-        }
-
-        // Change baudrate
-        if (!setBaudrate())
-        {
-            return false;
-        }
-
-        // Close the serial file
-        if (close(serialFile) < 0)
-        {
-            LOG_ERR(logger, "Failed to close serial file {}", serialFilePath);
-            return false;
-        }
-
-        // Close the serial port
-        if (!devFs->remove(serialPortName))
-        {
-            LOG_ERR(logger, "Failed to close serial port {} as file {}",
-                    serialPortNumber, serialPortName);
-            return false;
-        }
-    }
-
-    // Reopen the serial port with the configured baudrate
-    if (!devFs->addDevice(serialPortName,
-                          intrusive_ref_ptr<Device>(new STM32Serial(
-                              serialPortNumber, serialBaudrate))))
-    {
-        LOG_ERR(logger,
-                "Faild to open serial port {} with baudrate {} as file {}\n",
-                serialPortNumber, serialDefaultBaudrate, serialPortName);
-        return false;
-    }
-
-    // Reopen the serial file
-    if ((serialFile = open(serialFilePath, O_RDWR)) < 0)
-    {
-        LOG_ERR(logger, "Failed to open serial file {}", serialFilePath);
-        return false;
-    }
-
-    return true;
-}
-
-bool UbloxGPSSerial::setBaudrate()
-{
-    static constexpr uint16_t payloadLength = 12;
-
-    uint8_t payload[payloadLength] = {
-        0x00,                    // Version
-        0xff,                    // All layers
-        0x00, 0x00,              // Reserved
-        0x01, 0x00, 0x52, 0x40,  // Configuration item key ID
-        0xff, 0xff, 0xff, 0xff   // Value (placeholder)
-    };
-    memcpy(&payload[8], &serialBaudrate, 4);
-
-    UBXUnpackedFrame frame{0x06, 0x8a,  // Message UBX-CFG-VALSET
-                           payload, payloadLength};
-
-    return writeUBXFrame(frame);
-}
-
-bool UbloxGPSSerial::writeRaw(uint8_t* data, size_t size)
-{
-    return write(serialFile, data, size) >= 0;
-}
-
-bool UbloxGPSSerial::readRaw(uint8_t* data, size_t size)
-{
-    return read(serialFile, data, size) >= 0;
 }
 
 }  // namespace Boardcore

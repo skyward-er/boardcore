@@ -33,7 +33,6 @@ int main()
 
     PrintLogger logger = Logging::getLogger("test-ubloxgps");
 
-#if defined(USE_SPI)
     SPIBus bus(SPI1);
     GpioPin spiSck(GPIOA_BASE, 5);
     GpioPin spiMiso(GPIOA_BASE, 6);
@@ -49,23 +48,7 @@ int main()
     cs.mode(Mode::OUTPUT);
     cs.high();
 
-    UbloxGPSSPI sensor{bus, cs, UbloxGPSSPI::getDefaultSPIConfig(),
-                       SAMPLE_RATE};
-#elif defined(_BOARD_STM32F429ZI_SKYWARD_DEATHST_X)
-    // Keep GPS baud SAMPLE_RATE at default for easier testing
-    UbloxGPSSerial sensor{2, "gps", 921600, 38400, SAMPLE_RATE};
-#else
-    GpioPin tx(GPIOB_BASE, 6);
-    GpioPin rx(GPIOB_BASE, 7);
-
-    tx.mode(miosix::Mode::ALTERNATE);
-    rx.mode(miosix::Mode::ALTERNATE);
-
-    tx.alternateFunction(7);
-    rx.alternateFunction(7);
-
-    UbloxGPSSerial sensor{91600, SAMPLE_RATE, 38400, 1, "gps"};
-#endif
+    UbloxGPS sensor{bus, cs, UbloxGPS::getDefaultSPIConfig(), SAMPLE_RATE};
 
     LOG_INFO(logger, "Initializing sensor...\n");
 
