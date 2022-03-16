@@ -48,7 +48,7 @@ int main()
     cs.mode(Mode::OUTPUT);
     cs.high();
 
-    UbloxGPS sensor{bus, cs, UbloxGPS::getDefaultSPIConfig(), SAMPLE_RATE};
+    UbloxGPS sensor{bus, cs};
 
     LOG_INFO(logger, "Initializing sensor...\n");
 
@@ -66,10 +66,6 @@ int main()
                 sensor.getLastError());
         return -1;
     }
-
-    // Start the sensor thread
-    LOG_INFO(logger, "Starting sensor...\n");
-    sensor.start();
 
     while (true)
     {

@@ -31,8 +31,8 @@ namespace Boardcore
 using namespace miosix;
 
 UbloxGPS::UbloxGPS(SPIBusInterface& spiBus, GpioPin spiCs,
-                   SPIBusConfig spiConfig, uint8_t samplerate)
-    : spiSlave(spiBus, spiCs, spiConfig), samplerate(samplerate)
+                   SPIBusConfig spiConfig)
+    : spiSlave(spiBus, spiCs, spiConfig)
 {
 }
 
@@ -76,14 +76,6 @@ bool UbloxGPS::init()
         return false;
     }
 
-    Thread::sleep(100);
-
-    // Set sample rate
-    if (!setSampleRate())
-    {
-        return false;
-    }
-
     return true;
 }
 
@@ -91,34 +83,25 @@ bool UbloxGPS::selfTest() { return true; }
 
 UbloxGPSData UbloxGPS::sampleImpl()
 {
-    Lock<FastMutex> l(sampleMutex);
-    return lastSample;
-}
-
-void UbloxGPS::run()
-{
     UBXUnpackedFrame frame;
 
-    while (!shouldStop())
+    if (!readUBXFrame(frame))
     {
-        StackLogger::getInstance().updateStack(THID_GPS);
+        LOG_ERR(logger, "Unable to read a UBX message");
+        return lastSample;
+    }
 
-        // Try to read the message
-        if (!readUBXFrame(frame))
-        {
-            LOG_DEBUG(logger, "Unable to read a UBX message");
-            continue;
-        }
+    UbloxGPSData sample;
 
-        // Parse the message
-        if (!parseUBXFrame(frame))
-        {
-            LOG_DEBUG(
-                logger,
+    if (!parseUBXFrame(frame, sample))
+    {
+        LOG_ERR(logger,
                 "UBX message not recognized (class: {:#02x}, id: {:#02x})",
                 frame.cls, frame.id);
-        }
+        return lastSample;
     }
+
+    return sample;
 }
 
 bool UbloxGPS::resetConfiguration()
@@ -201,102 +184,81 @@ bool UbloxGPS::enableUBXMessages()
     return writeUBXFrame(frame);
 }
 
-bool UbloxGPS::setSampleRate()
-{
-    static constexpr uint16_t payloadLength = 10;
-
-    uint8_t payload[payloadLength] = {
-        0x00,                    // Version
-        0x07,                    // All layers
-        0x00, 0x00,              // Reserved
-        0x01, 0x00, 0x21, 0x30,  // CFG-RATE-MEAS key ID
-        0xff, 0xff               // CFG-RATE-MEAS value (placeholder)
-    };
-    memcpy(&payload[8], &samplerate, 2);
-
-    UBXUnpackedFrame frame{0x06, 0x8a,  // Message UBX-CFG-VALSET
-                           payload, payloadLength};
-
-    return writeUBXFrame(frame);
-}
-
-bool UbloxGPS::parseUBXFrame(const UBXUnpackedFrame& frame)
+bool UbloxGPS::parseUBXFrame(const UBXUnpackedFrame& frame,
+                             UbloxGPSData& sample)
 {
     switch (frame.cls)  // Message class
     {
         case 0x01:  // UBX-NAV
-            return parseUBXNAVFrame(frame);
+            return parseUBXNAVFrame(frame, sample);
         case 0x05:  // UBX-ACK
-            return parseUBXACKFrame(frame);
+            return parseUBXACKFrame(frame, sample);
     }
     return false;
 }
 
-bool UbloxGPS::parseUBXNAVFrame(const UBXUnpackedFrame& frame)
+bool UbloxGPS::parseUBXNAVFrame(const UBXUnpackedFrame& frame,
+                                UbloxGPSData& sample)
 {
     switch (frame.id)  // Message ID
     {
         case 0x07:  // UBX-NAV-PVT
-            // Lock the lastSample variable
-            Lock<FastMutex> l(sampleMutex);
-
             // Latitude
             int32_t rawLatitude = frame.payload[28] | frame.payload[29] << 8 |
                                   frame.payload[30] << 16 |
                                   frame.payload[31] << 24;
-            lastSample.latitude = (float)rawLatitude / 1e7;
+            sample.latitude = (float)rawLatitude / 1e7;
 
             // Longitude
             int32_t rawLongitude = frame.payload[24] | frame.payload[25] << 8 |
                                    frame.payload[26] << 16 |
                                    frame.payload[27] << 24;
-            lastSample.longitude = (float)rawLongitude / 1e7;
+            sample.longitude = (float)rawLongitude / 1e7;
 
             // Height
             int32_t rawHeight = frame.payload[32] | frame.payload[33] << 8 |
                                 frame.payload[34] << 16 |
                                 frame.payload[35] << 24;
-            lastSample.height = (float)rawHeight / 1e3;
+            sample.height = (float)rawHeight / 1e3;
 
             // Velocity north
             int32_t rawVelocityNorth =
                 frame.payload[48] | frame.payload[49] << 8 |
                 frame.payload[50] << 16 | frame.payload[51] << 24;
-            lastSample.velocityNorth = (float)rawVelocityNorth / 1e3;
+            sample.velocityNorth = (float)rawVelocityNorth / 1e3;
 
             // Velocity east
             int32_t rawVelocityEast =
                 frame.payload[52] | frame.payload[53] << 8 |
                 frame.payload[54] << 16 | frame.payload[55] << 24;
-            lastSample.velocityEast = (float)rawVelocityEast / 1e3;
+            sample.velocityEast = (float)rawVelocityEast / 1e3;
 
             // Velocity down
             int32_t rawVelocityDown =
                 frame.payload[56] | frame.payload[57] << 8 |
                 frame.payload[58] << 16 | frame.payload[59] << 24;
-            lastSample.velocityDown = (float)rawVelocityDown / 1e3;
+            sample.velocityDown = (float)rawVelocityDown / 1e3;
 
             // Speed
             int32_t rawSpeed = frame.payload[60] | frame.payload[61] << 8 |
                                frame.payload[62] << 16 |
                                frame.payload[63] << 24;
-            lastSample.speed = (float)rawSpeed / 1e3;
+            sample.speed = (float)rawSpeed / 1e3;
 
             // Track (heading of motion)
             int32_t rawTrack = frame.payload[64] | frame.payload[65] << 8 |
                                frame.payload[66] << 16 |
                                frame.payload[67] << 24;
-            lastSample.track = (float)rawTrack / 1e5;
+            sample.track = (float)rawTrack / 1e5;
 
             // Number of satellite
-            lastSample.satellites = (uint8_t)frame.payload[23];
+            sample.satellites = (uint8_t)frame.payload[23];
 
             // Fix (every type of fix accepted)
-            lastSample.fix = frame.payload[20] != 0;
+            sample.fix = frame.payload[20] != 0;
 
             // Timestamp
-            lastSample.gpsTimestamp =
-                TimestampTimer::getInstance().getTimestamp();
+            sample.gpsTimestamp = TimestampTimer::getInstance().getTimestamp();
 
             return true;
     }
@@ -304,7 +266,8 @@ bool UbloxGPS::parseUBXNAVFrame(const UBXUnpackedFrame& frame)
     return false;
 }
 
-bool UbloxGPS::parseUBXACKFrame(const UBXUnpackedFrame& frame)
+bool UbloxGPS::parseUBXACKFrame(const UBXUnpackedFrame& frame,
+                                UbloxGPSData& sample)
 {
     switch (frame.id)  // Message ID
     {
@@ -317,6 +280,7 @@ bool UbloxGPS::parseUBXACKFrame(const UBXUnpackedFrame& frame)
             LOG_DEBUG(logger,
                       "Received ACK for message (class: {:#02x}, id: {:#02x})",
                       frame.cls, frame.id);
+            sample = lastSample;
             return true;
     }
     return false;

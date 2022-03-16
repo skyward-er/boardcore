@@ -22,7 +22,6 @@
 
 #pragma once
 
-#include <ActiveObject.h>
 #include <diagnostic/PrintLogger.h>
 #include <drivers/spi/SPIDriver.h>
 #include <sensors/Sensor.h>
@@ -40,14 +39,14 @@ namespace Boardcore
  * binary UBX protocol to retrieve and parse navigation data quicker than using
  * the string based NMEA.
  *
- * At initialization it configures the device with the specified sample rate,
- * resets the configuration and sets up UBX messages and GNSS parameters.
+ * At initialization it resets the device, sets the configuration and sets up
+ * UBX messages and GNSS parameters.
  *
  * Communication with the device is performed through SPI.
  *
- * This driver was written for a NEO-M9N gps with the latest version of UBX.
+ * This sensor was written for a NEO-M9N gps.
  */
-class UbloxGPS : public Sensor<UbloxGPSData>, public ActiveObject
+class UbloxGPS : public Sensor<UbloxGPSData>
 {
 public:
     /**
@@ -56,11 +55,9 @@ public:
      * @param bus The Spi bus.
      * @param cs The CS pin to lower when we need to sample.
      * @param config The SPI configuration.
-     * @param samplerate Sample rate to communicate with the device
      */
     UbloxGPS(SPIBusInterface& spiBus, miosix::GpioPin spiCs,
-             SPIBusConfig spiConfig = getDefaultSPIConfig(),
-             uint8_t samplerate     = 250);
+             SPIBusConfig spiConfig = getDefaultSPIConfig());
 
     /**
      * Constructs the default config for SPI Bus.
@@ -77,17 +74,10 @@ public:
      */
     bool init() override;
 
-    /**
-     * @brief Reads a single message form the GPS, waits 2 sample cycles.
-     *
-     * @return True if a message was sampled
-     */
     bool selfTest() override;
 
 private:
     UbloxGPSData sampleImpl() override;
-
-    void run() override;
 
     bool resetConfiguration();
 
@@ -99,22 +89,17 @@ private:
 
     bool setSampleRate();
 
-    bool parseUBXFrame(const UBXUnpackedFrame& frame);
+    bool parseUBXFrame(const UBXUnpackedFrame& frame, UbloxGPSData& sample);
 
-    bool parseUBXNAVFrame(const UBXUnpackedFrame& frame);
+    bool parseUBXNAVFrame(const UBXUnpackedFrame& frame, UbloxGPSData& sample);
 
-    bool parseUBXACKFrame(const UBXUnpackedFrame& frame);
+    bool parseUBXACKFrame(const UBXUnpackedFrame& frame, UbloxGPSData& sample);
 
     bool writeUBXFrame(const UBXUnpackedFrame& frame);
 
     bool readUBXFrame(UBXUnpackedFrame& frame);
 
     SPISlave spiSlave;
-
-    const uint8_t samplerate;  // [Hz]
-
-    mutable miosix::FastMutex sampleMutex;
-    UbloxGPSData lastSample{};
 
     PrintLogger logger = Logging::getLogger("ubloxgps");
 };
