@@ -1,5 +1,5 @@
 /* Copyright (c) 2021 Skyward Experimental Rocketry
- * Authors: Davide Bonomini, Davide Mor, Alberto Nidasio
+ * Authors: Davide Bonomini, Davide Mor, Alberto Nidasio, Damiano Amatruda
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -21,69 +21,87 @@
  */
 
 #include <drivers/timer/TimestampTimer.h>
-#include <miosix.h>
 #include <sensors/UbloxGPS/UbloxGPS.h>
 #include <utils/Debug.h>
 
-#include <cstdio>
-
-using namespace Boardcore;
 using namespace miosix;
-
-#define RATE 4
+using namespace Boardcore;
 
 int main()
 {
-    (void)TimestampTimer::getInstance();
+    static constexpr uint8_t SAMPLE_RATE = 4;
 
-    printf("Welcome to the ublox test\n");
+    PrintLogger logger = Logging::getLogger("test-ubloxgps");
 
-    // Keep GPS baud rate at default for easier testing
-    UbloxGPS gps(921600, RATE, 2, "gps", 38400);
-    UbloxGPSData dataGPS;
-    printf("Gps allocated\n");
+#if defined(USE_SPI)
+    SPIBus bus(SPI1);
+    GpioPin spiSck(GPIOA_BASE, 5);
+    GpioPin spiMiso(GPIOA_BASE, 6);
+    GpioPin spiMosi(GPIOA_BASE, 7);
+    GpioPin cs(GPIOA_BASE, 3);
 
-    // Init the gps
-    if (gps.init())
+    spiSck.mode(Mode::ALTERNATE);
+    spiSck.alternateFunction(5);
+    spiMiso.mode(Mode::ALTERNATE);
+    spiMiso.alternateFunction(5);
+    spiMosi.mode(miosix::Mode::ALTERNATE);
+    spiMosi.alternateFunction(5);
+    cs.mode(Mode::OUTPUT);
+    cs.high();
+
+    UbloxGPSSPI sensor{bus, cs, UbloxGPSSPI::getDefaultSPIConfig(),
+                       SAMPLE_RATE};
+#elif defined(_BOARD_STM32F429ZI_SKYWARD_DEATHST_X)
+    // Keep GPS baud SAMPLE_RATE at default for easier testing
+    UbloxGPSSerial sensor{2, "gps", 921600, 38400, SAMPLE_RATE};
+#else
+    GpioPin tx(GPIOB_BASE, 6);
+    GpioPin rx(GPIOB_BASE, 7);
+
+    tx.mode(miosix::Mode::ALTERNATE);
+    rx.mode(miosix::Mode::ALTERNATE);
+
+    tx.alternateFunction(7);
+    rx.alternateFunction(7);
+
+    UbloxGPSSerial sensor{91600, SAMPLE_RATE, 38400, 1, "gps"};
+#endif
+
+    LOG_INFO(logger, "Initializing sensor...\n");
+
+    if (!sensor.init())
     {
-        printf("Successful gps initialization\n");
-    }
-    else
-    {
-        printf("Failed gps initialization\n");
+        LOG_ERR(logger, "Initialization failed!\n");
+        return -1;
     }
 
-    // Perform the selftest
-    if (gps.selfTest())
+    LOG_INFO(logger, "Performing self-test...\n");
+
+    if (!sensor.selfTest())
     {
-        printf("Successful gps selftest\n");
-    }
-    else
-    {
-        printf("Failed gps selftest\n");
+        LOG_ERR(logger, "Self-test failed! (code: %d)\n",
+                sensor.getLastError());
+        return -1;
     }
 
-    // Start the gps thread
-    gps.start();
-    printf("Gps started\n");
+    // Start the sensor thread
+    LOG_INFO(logger, "Starting sensor...\n");
+    sensor.start();
 
     while (true)
     {
-        // Give time to the thread
-        Thread::sleep(1000 / RATE);
+        long long lastTick = miosix::getTick();
 
-        // Sample
-        gps.sample();
-        dataGPS = gps.getLastSample();
+        sensor.sample();
+        GPSData sample __attribute__((unused)) = sensor.getLastSample();
 
-        // Print out the latest sample
         TRACE(
-            "[gps] timestamp: % 4.3f, fix: %01d lat: % f lon: % f "
-            "height: %4.1f nsat: %2d speed: %3.2f velN: % 3.2f velE: % 3.2f "
-            "track %3.1f\n",
-            (float)dataGPS.gpsTimestamp / 1000000, dataGPS.fix,
-            dataGPS.latitude, dataGPS.longitude, dataGPS.height,
-            dataGPS.satellites, dataGPS.speed, dataGPS.velocityNorth,
-            dataGPS.velocityEast, dataGPS.track);
+            "timestamp: %4.3f, fix: %01d, lat: %f, lon: %f, height: %4.1f, "
+            "nsat: %2d, speed: %3.2f, velN: %3.2f, velE: %3.2f, track %3.1f\n",
+            (float)sample.gpsTimestamp / 1000000, sample.fix, sample.latitude,
+            sample.longitude, sample.height, sample.satellites, sample.speed,
+            sample.velocityNorth, sample.velocityEast, sample.track);
+
+        Thread::sleepUntil(lastTick + 1000 / SAMPLE_RATE);  // Sample period
     }
 }
