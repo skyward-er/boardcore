@@ -80,7 +80,7 @@ add_executable(test-sensormanager src/tests/test-sensormanager.cpp)
 sbs_target(test-sensormanager stm32f429zi_skyward_death_stack_x)
 
 add_executable(test-serial src/tests/test-serial.cpp)
-sbs_target(test-serial stm32f429zi_stm32f4discovery)
+sbs_target(test-serial stm32f407vg_stm32f4discovery)
 
 add_executable(test-taskscheduler src/tests/scheduler/test-taskscheduler.cpp)
 sbs_target(test-taskscheduler stm32f407vg_stm32f4discovery)
@@ -187,6 +187,9 @@ sbs_target(test-xbee-snd stm32f429zi_stm32f4discovery)
 
 add_executable(test-stepper src/tests/drivers/stepper/test-stepper.cpp)
 sbs_target(test-stepper stm32f407vg_stm32f4discovery)
+
+add_executable(test-usart src/tests/test-usart.cpp)
+sbs_target(test-usart stm32f407vg_stm32f4discovery)
 
 #-----------------------------------------------------------------------------#
 #                               Tests - Events                                #
