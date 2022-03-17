@@ -117,6 +117,8 @@ bool BME280::init()
         LOG_ERR(logger, "Device configuration incorrect, setup failed");
 
         lastError = SensorErrors::NOT_INIT;
+
+        return false;
     }
 
     initialized = true;
