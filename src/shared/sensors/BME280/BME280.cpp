@@ -84,19 +84,39 @@ bool BME280::init()
 
     setConfiguration();
 
-    BME280Config readBackConfig = readConfiguration();
+    // Set a sleep time to allow the sensor to change internally the data
+    miosix::Thread::sleep(100);
 
-    // Check if the configration on the device matches ours
-    if (config.bytes.ctrlHumidity != readBackConfig.bytes.ctrlHumidity ||
-        config.bytes.ctrlPressureAndTemperature !=
-            readBackConfig.bytes.ctrlPressureAndTemperature ||
-        config.bytes.config != readBackConfig.bytes.config)
+    // I create the config state which represents the logic or of all the
+    // 5 readConfiguration controls (We perform 5 checks to avoid that the
+    // sensor is busy implicating in wrong responses)
+    bool readConfigResult = false;
+    BME280Config readBackConfig;
+
+    for (int i = 0; i < 5; i++)
+    {
+        readBackConfig = readConfiguration();
+        // Check if the configration on the device matches ours
+        if (config.bytes.ctrlHumidity == readBackConfig.bytes.ctrlHumidity &&
+            config.bytes.ctrlPressureAndTemperature ==
+                readBackConfig.bytes.ctrlPressureAndTemperature &&
+            config.bytes.config == readBackConfig.bytes.config)
+        {
+            readConfigResult = true;
+            break;
+        }
+
+        // After the check i sleep 100 milliseconds
+        miosix::Thread::sleep(100);
+    }
+
+    // If after the 5 iterations the sensor didn't report the configuration set
+    // I can report the init error
+    if (readConfigResult)
     {
         LOG_ERR(logger, "Device configuration incorrect, setup failed");
 
         lastError = SensorErrors::NOT_INIT;
-
-        return false;
     }
 
     initialized = true;
