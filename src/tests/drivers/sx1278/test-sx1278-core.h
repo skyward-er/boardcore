@@ -22,7 +22,7 @@
 
 #pragma once
 
-#include <drivers/SX1278/SX1278.h>
+#include <radio/SX1278/SX1278.h>
 
 const char *stringFromErr(Boardcore::SX1278::Error err);
 const char *stringFromRxBw(Boardcore::SX1278::RxBw rx_bw);

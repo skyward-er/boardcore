@@ -20,9 +20,9 @@
  * THE SOFTWARE.
  */
 
-#include <drivers/SX1278/SX1278.h>
 #include <drivers/interrupt/external_interrupts.h>
 #include <filesystem/console/console_device.h>
+#include <radio/SX1278/SX1278.h>
 
 #include <thread>
 
