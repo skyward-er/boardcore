@@ -45,7 +45,8 @@ int main()
 
     while (true)
     {
-        printf("%d\n", usart1.read(buf, 32));
+        if (usart1.read(buf, 32) > 0)
+            printf("%s\n", buf);
         Thread::sleep(1000);
         Thread::sleep(1000);
     }

@@ -202,6 +202,8 @@ void USART::init()
             NVIC_EnableIRQ(USART1_IRQn);
             u1tx::getPin().mode(miosix::Mode::ALTERNATE);  // check 1
             u1rx::getPin().mode(miosix::Mode::ALTERNATE);  // check 4
+            u1tx::alternateFunction(7);
+            u1rx::alternateFunction(7);
             break;
         case 2:
             NVIC_SetPriority(USART2_IRQn,
@@ -209,6 +211,8 @@ void USART::init()
             NVIC_EnableIRQ(USART2_IRQn);
             u2tx::getPin().mode(miosix::Mode::ALTERNATE);
             u2rx::getPin().mode(miosix::Mode::ALTERNATE);
+            u2tx::alternateFunction(7);
+            u2rx::alternateFunction(7);
             break;
         case 3:
             NVIC_SetPriority(USART3_IRQn,
@@ -216,6 +220,8 @@ void USART::init()
             NVIC_EnableIRQ(USART3_IRQn);
             u3tx::getPin().mode(miosix::Mode::ALTERNATE);
             u3rx::getPin().mode(miosix::Mode::ALTERNATE);
+            u3tx::alternateFunction(7);
+            u3rx::alternateFunction(7);
             break;
     }
 
