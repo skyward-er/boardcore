@@ -112,7 +112,7 @@ bool BME280::init()
 
     // If after the 5 iterations the sensor didn't report the configuration set
     // I can report the init error
-    if (readConfigResult)
+    if (!readConfigResult)
     {
         LOG_ERR(logger, "Device configuration incorrect, setup failed");
 
