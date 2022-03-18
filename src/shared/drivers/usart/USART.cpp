@@ -23,6 +23,9 @@
 #include "drivers/usart/USART.h"
 
 #include <miosix.h>
+
+// TODO: define the length of the queue
+#define QUEUE_LEN 1024
 /*
  * Constructor, initializes the serial port using the default pins, which
  * are:
@@ -146,7 +149,8 @@ void USART::IRQHandleInterrupt()
     // ledOff();
 }
 
-USART::USART(USARTType *usart, Baudrate baudrate) : usart(usart), rxQueue(64)
+USART::USART(USARTType *usart, Baudrate baudrate)
+    : usart(usart), rxQueue(QUEUE_LEN)
 {
     // enable the peripehral on the right APB
     ClockUtils::enablePeripheralClock(usart);
@@ -197,17 +201,17 @@ void USART::init()
     switch (id)
     {
         case 1:
-            NVIC_SetPriority(USART1_IRQn,
-                             15);  // Lowest priority for serial
+            // Lowest priority for serial
+            NVIC_SetPriority(USART1_IRQn, 15);
             NVIC_EnableIRQ(USART1_IRQn);
-            u1tx::getPin().mode(miosix::Mode::ALTERNATE);  // check 1
-            u1rx::getPin().mode(miosix::Mode::ALTERNATE);  // check 4
+            u1tx::getPin().mode(miosix::Mode::ALTERNATE);
+            u1rx::getPin().mode(miosix::Mode::ALTERNATE);
             u1tx::alternateFunction(7);
             u1rx::alternateFunction(7);
             break;
         case 2:
-            NVIC_SetPriority(USART2_IRQn,
-                             15);  // Lowest priority for serial
+            // Lowest priority for serial
+            NVIC_SetPriority(USART2_IRQn, 15);
             NVIC_EnableIRQ(USART2_IRQn);
             u2tx::getPin().mode(miosix::Mode::ALTERNATE);
             u2rx::getPin().mode(miosix::Mode::ALTERNATE);
@@ -215,8 +219,8 @@ void USART::init()
             u2rx::alternateFunction(7);
             break;
         case 3:
-            NVIC_SetPriority(USART3_IRQn,
-                             15);  // Lowest priority for serial
+            // Lowest priority for serials
+            NVIC_SetPriority(USART3_IRQn, 15);
             NVIC_EnableIRQ(USART3_IRQn);
             u3tx::getPin().mode(miosix::Mode::ALTERNATE);
             u3rx::getPin().mode(miosix::Mode::ALTERNATE);
@@ -293,13 +297,19 @@ int USART::read(char *buf, int nChars)
     }
 
     int i;
-    for (i = 0; i < nChars; i++)
+    for (i = 0; i < nChars - 1; i++)
     {
         if (!rxQueue.tryGet(buf[i]))
         {
             break;
         }
     }
+
+    // ending the string
+    buf[i] = '\0';
+
     return i;
 }
+
+void write(char *buf, int nChars) {}
 }  // namespace Boardcore

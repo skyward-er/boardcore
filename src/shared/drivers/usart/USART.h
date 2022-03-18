@@ -119,6 +119,8 @@ public:
 
     int read(char *buf, int nChars);
 
+    void write(char *buf, int nChars);
+
 private:
     USARTType *usart;
     miosix::DynUnsyncQueue<char> rxQueue;  ///< Receiving queue
