@@ -120,12 +120,12 @@ public:
     /**
      * @brief Blocking read operation
      */
-    int read(char *buf, int nChars);
+    int read(void *buf, size_t nChars);
 
     /**
      * @brief Blocking write operation
      */
-    void write(char *buf, int nChars);
+    void write(void *buf, size_t nChars);
 
 private:
     USARTType *usart;

@@ -27,29 +27,37 @@
 using namespace miosix;
 using namespace Boardcore;
 
+/**
+setup:
+    - short the rx and tx pins of the port you wanto to test
+    - connect the default serial port to the pc
+*/
+
 int main()
 {
-    char buf[32] = "\0";
-
-    ledOff();
+    char buf[64] = "Questo e' un test!";
 
     /*
-     * USART1: tx=PA9  rx=PA10 cts=PA11 rts=PA12
+     * // USART1: tx=PA9  rx=PA10 cts=PA11 rts=PA12
+     * USART1: tx=PB6  rx=PB7
      * USART2: tx=PA2  rx=PA3  cts=PA0  rts=PA1
      * USART3: tx=PB10 rx=PB11 cts=PB13 rts=PB14
      */
-    Boardcore::USART usart1(USART2, Boardcore::USART::Baudrate::B19200);
+    Boardcore::USART usart1(USART1, Boardcore::USART::Baudrate::B19200);
     usart1.setStopBits(1);
     usart1.setWordLength(USART::WordLength::BIT8);
     usart1.setParity(USART::ParityBit::NO_PARITY);
     usart1.init();
 
+    // testing write function
+
     while (true)
     {
-        if (usart1.read(buf, 32) > 0)
-            printf("%s\n", buf);
-
         usart1.write(buf, strlen(buf));
+
+        int nRead = usart1.read(buf, 64);
+        if (nRead > 0)
+            printf("read %d bytes: %s\n", nRead, buf);
 
         Thread::sleep(1000);
         Thread::sleep(1000);

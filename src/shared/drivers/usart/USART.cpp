@@ -40,10 +40,13 @@
 // Unfortunately, this does not hold with DMA.
 using namespace miosix;
 
-typedef Gpio<GPIOA_BASE, 9> u1tx;
-typedef Gpio<GPIOA_BASE, 10> u1rx;
-typedef Gpio<GPIOA_BASE, 11> u1cts;
-typedef Gpio<GPIOA_BASE, 12> u1rts;
+typedef Gpio<GPIOB_BASE, 6> u1tx;
+typedef Gpio<GPIOB_BASE, 7> u1rx;
+
+// typedef Gpio<GPIOA_BASE, 9> u1tx;
+// typedef Gpio<GPIOA_BASE, 10> u1rx;
+// typedef Gpio<GPIOA_BASE, 11> u1cts;
+// typedef Gpio<GPIOA_BASE, 12> u1rts;
 
 typedef Gpio<GPIOA_BASE, 2> u2tx;
 typedef Gpio<GPIOA_BASE, 3> u2rx;
@@ -72,11 +75,9 @@ void __attribute__((used)) usart1irqImplBoardcore()
  */
 void __attribute__((naked)) USART1_IRQHandler()
 {
-    // ledOn();
     saveContext();
     asm volatile("bl _Z22usart1irqImplBoardcorev");
     restoreContext();
-    // ledOff();
 }
 
 /**
@@ -93,11 +94,9 @@ void __attribute__((used)) usart2irqImplBoardcore()
  */
 void __attribute__((naked)) USART2_IRQHandler()
 {
-    // ledOn();
     saveContext();
     asm volatile("bl _Z22usart2irqImplBoardcorev");
     restoreContext();
-    // ledOff();
 }
 
 /**
@@ -114,11 +113,9 @@ void __attribute__((used)) usart3irqImplBoardcore()
  */
 void __attribute__((naked)) USART3_IRQHandler()
 {
-    // ledOn();
     saveContext();
     asm volatile("bl _Z22usart3irqImplBoardcorev");
     restoreContext();
-    // ledOff();
 }
 
 namespace Boardcore
@@ -128,7 +125,6 @@ void USART::IRQHandleInterrupt()
 {
     unsigned int status = this->usart->SR;
     char c;
-    ledOn();
 
     // if read data register is empty then read data
     if (status & USART_SR_RXNE)
@@ -145,8 +141,6 @@ void USART::IRQHandleInterrupt()
     {
         c = usart->DR;  // clears interrupt flags
     }
-
-    // ledOff();
 }
 
 USART::USART(USARTType *usart, Baudrate baudrate)
@@ -286,18 +280,17 @@ void USART::setBaudrate(Baudrate baudrate)
     this->baudrate = baudrate;
 }
 
-int USART::read(char *buf, int nChars)
+int USART::read(void *buffer, size_t nBytes)
 {
-    printf("SR: %lx\n", usart->SR);
-    printf("BR: %lx\n", usart->BRR);
-    printf("C1: %lx\n", usart->CR1);
     if (rxQueue.isEmpty())
     {
         printf("no data\n");
     }
 
     int i;
-    for (i = 0; i < nChars - 1; i++)
+    char *buf = reinterpret_cast<char *>(buffer);
+
+    for (i = 0; i < nBytes - 1; i++)
     {
         if (!rxQueue.tryGet(buf[i]))
         {
@@ -311,10 +304,12 @@ int USART::read(char *buf, int nChars)
     return i;
 }
 
-void USART::write(char *buffer, int nChars)
+void USART::write(void *buffer, size_t nBytes)
 {
+    // use the send complete interrupt in order not to have a busy while loop
+    // waiting
     const char *buf = reinterpret_cast<const char *>(buffer);
-    for (size_t i = 0; i < nChars; i++)
+    for (size_t i = 0; i < nBytes; i++)
     {
         while ((usart->SR & USART_SR_TXE) == 0)
             ;
