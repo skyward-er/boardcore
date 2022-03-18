@@ -22,13 +22,14 @@
 
 #include "drivers/usart/USART.h"
 #include "miosix.h"
+#include "string.h"
 
 using namespace miosix;
 using namespace Boardcore;
 
 int main()
 {
-    char buf[32];
+    char buf[32] = "\0";
 
     ledOff();
 
@@ -47,6 +48,9 @@ int main()
     {
         if (usart1.read(buf, 32) > 0)
             printf("%s\n", buf);
+
+        usart1.write(buf, strlen(buf));
+
         Thread::sleep(1000);
         Thread::sleep(1000);
     }

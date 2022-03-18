@@ -117,8 +117,14 @@ public:
 
     void IRQHandleInterrupt();
 
+    /**
+     * @brief Blocking read operation
+     */
     int read(char *buf, int nChars);
 
+    /**
+     * @brief Blocking write operation
+     */
     void write(char *buf, int nChars);
 
 private:

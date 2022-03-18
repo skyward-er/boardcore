@@ -311,5 +311,17 @@ int USART::read(char *buf, int nChars)
     return i;
 }
 
-void write(char *buf, int nChars) {}
+void USART::write(char *buffer, int nChars)
+{
+    const char *buf = reinterpret_cast<const char *>(buffer);
+    for (size_t i = 0; i < nChars; i++)
+    {
+        while ((usart->SR & USART_SR_TXE) == 0)
+            ;
+
+        usart->DR = *buf;
+
+        buf++;
+    }
+}
 }  // namespace Boardcore
