@@ -143,8 +143,6 @@ void sendLoop(int idx)
 {
     while (1)
     {
-        miosix::Thread::sleep(TX_INTERVAL);
-
         int next_idx = stats.send_count + 1;
 
         Msg msg;
@@ -269,6 +267,7 @@ int main()
     std::thread recv([]() { recvLoop(0); });
 #endif
 #ifndef DISABLE_TX
+    miosix::Thread::sleep(500);
     std::thread send([]() { sendLoop(1); });
 #endif
 
