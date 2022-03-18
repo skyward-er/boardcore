@@ -128,7 +128,12 @@ void Logger::stop()
     fileNumber = -1;  // Reset the fileNumber to an invalid value
 }
 
-bool Logger::testSDCard() { return ofstream("/sd/test").good(); }
+bool Logger::testSDCard()
+{
+    bool result = ofstream("/sd/test").good();
+    std::remove("/sd/test");
+    return result;
+}
 
 int Logger::getCurrentLogNumber() { return fileNumber; }
 
