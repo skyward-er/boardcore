@@ -67,16 +67,15 @@ public:
     ~Packet() { content.clear(); };
 
     /**
-     * @brief Try to append a given message to the packet.
+     * @brief Append a given message to the packet.
      *
      * If it's the first message, also set the timestamp.
      *
      * @param msg The message to be appended.
      * @param msgLen Length of msg.
-     * @return true if the message was appended correctly.
-     * @return false if there isn't enough space for the message.
+     * @return How many bytes were actually appended.
      */
-    bool tryAppend(const uint8_t* msg, const size_t msgLen);
+    size_t append(const uint8_t* msg, size_t msgLen);
 
     /**
      * @brief Mark the packet as ready to be sent.
@@ -111,7 +110,7 @@ public:
     inline bool isReady() const { return ready; }
 
     /**
-     * @return The timestamp of the first successful call to tryAppend().
+     * @return The timestamp of the first successful call to append().
      */
     inline uint64_t timestamp() const { return ts; }
 
@@ -126,7 +125,7 @@ public:
     inline unsigned int maxSize() const { return len; }
 
     /**
-     * @return How many times the tryAppend() function has been called
+     * @return How many times the append() function has been called
      * successfully.
      */
     inline unsigned int getMsgCount() const { return msgCounter; }
@@ -148,13 +147,12 @@ private:
 };
 
 template <unsigned int len>
-bool Packet<len>::tryAppend(const uint8_t* msg, const size_t msgLen)
+size_t Packet<len>::append(const uint8_t* msg, size_t msgLen)
 {
-    if (msgLen == 0 || content.size() + msgLen > len)
-    {
-        return false;
-    }
-    else
+    size_t remaining = len - content.size();
+    msgLen           = std::min(remaining, msgLen);
+
+    if (msgLen != 0)
     {
         // Set the packet's timestamp when the first message is inserted
         if (content.size() == 0)
@@ -165,9 +163,9 @@ bool Packet<len>::tryAppend(const uint8_t* msg, const size_t msgLen)
         // Append the message to the packet
         content.insert(content.end(), msg, msg + msgLen);
         msgCounter++;
-
-        return true;
     }
+
+    return msgLen;
 }
 
 template <unsigned int len>
@@ -230,7 +228,7 @@ public:
     {
         int dropped = 0;
 
-        if (msgLen == 0 || msgLen > pktLen)
+        if (msgLen == 0)
         {
             return -1;
         }
@@ -243,41 +241,35 @@ public:
                 buffer.put(Pkt{});
             }
 
-            Pkt& last = buffer.last();
-
-            bool added = false;
-
-            // Add to the current packet only if it isn't already ready
-            if (!last.isReady())
+            while (msgLen > 0)
             {
-                added = last.tryAppend(msg, msgLen);
-            }
-
-            // If already ready or cannot fit the new data, add to a new packet
-            if (!added)
-            {
-                // Mark the packet as ready (in the case it wasn't already)
-                last.markAsReady();
-
-                if (buffer.isFull())
+                if (buffer.last().isReady())
                 {
-                    // We have dropped a packet
-                    ++dropped;
-                }
-                // Add a new packet and fill that instead
-                Pkt& newpkt = buffer.put(Pkt{});
+                    if (buffer.isFull())
+                    {
+                        // We have dropped a packet
+                        ++dropped;
+                    }
 
-                if (!newpkt.tryAppend(msg, msgLen))
+                    // If the last pkt is ready, append a new one
+                    buffer.put(Pkt{});
+                    // FIXME(davide.mor): Figure out quantum shenanigans
+                    // uncommenting the following line causes everything to
+                    // break, why?
+
+                    // last = buffer.last();
+                }
+
+                size_t sentLen = buffer.last().append(msg, msgLen);
+
+                msgLen -= sentLen;
+                msg += sentLen;
+
+                // Mark as ready if the packet is full
+                if (buffer.last().isFull())
                 {
-                    TRACE("Packet is too big!\n");
-                    return -1;
+                    buffer.last().markAsReady();
                 }
-            }
-
-            // Mark as ready if the packet is full
-            if (buffer.last().isFull())
-            {
-                buffer.last().markAsReady();
             }
 
             cvNotempty.broadcast();
