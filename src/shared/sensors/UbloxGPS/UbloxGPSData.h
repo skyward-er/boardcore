@@ -1,5 +1,5 @@
-/* Copyright (c) 2020 Skyward Experimental Rocketry
- * Author: Davide Bonomini
+/* Copyright (c) 2020-2022 Skyward Experimental Rocketry
+ * Author: Davide Bonomini, Damiano Amatruda
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -32,15 +32,16 @@ struct UbloxGPSData : public GPSData
     static std::string header()
     {
         return "gpsTimestamp,latitude,longitude,height,velocityNorth,"
-               "velocityEast,velocityDown,speed,track,satellites,fix\n";
+               "velocityEast,velocityDown,speed,track,positionDOP,satellites,"
+               "fix\n";
     }
 
     void print(std::ostream &os) const
     {
         os << gpsTimestamp << "," << latitude << "," << longitude << ","
            << height << "," << velocityNorth << "," << velocityEast << ","
-           << velocityDown << "," << speed << "," << track << ","
-           << (int)satellites << "," << (int)fix << "\n";
+           << velocityDown << "," << speed << "," << track << "," << positionDOP
+           << "," << (int)satellites << "," << (int)fix << "\n";
     }
 };
 

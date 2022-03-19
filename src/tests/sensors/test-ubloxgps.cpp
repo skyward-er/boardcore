@@ -60,12 +60,12 @@ int main()
 
         TRACE(
             "timestamp: %4.3f, lat: %f, lon: %f, height: %4.1f, velN: %3.2f, "
-            "velE: %3.2f, velD: %3.2f, speed: %3.2f, track %3.1f, nsat: %2d, "
-            "fix: %01d\n",
+            "velE: %3.2f, velD: %3.2f, speed: %3.2f, track %3.1f, pDOP: %f, "
+            "nsat: %2d, fix: %01d\n",
             (float)sample.gpsTimestamp / 1000000, sample.latitude,
             sample.longitude, sample.height, sample.velocityNorth,
             sample.velocityEast, sample.velocityDown, sample.speed,
-            sample.track, sample.satellites, sample.fix);
+            sample.track, sample.positionDOP, sample.satellites, sample.fix);
 
         Thread::sleep(1000);
     }

@@ -135,6 +135,7 @@ struct GPSData
     float velocityDown;  /**< [m/s] */
     float speed;         /**< [m/s] */
     float track;         /**< [deg] */
+    float positionDOP;   /**< [1]   */
     uint8_t satellites;  /**< [1]   */
     bool fix;
 };

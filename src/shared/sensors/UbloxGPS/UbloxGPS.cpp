@@ -75,6 +75,7 @@ UbloxGPSData UbloxGPS::sampleImpl()
     sample.velocityDown  = (float)pvt.velD / 1e3;
     sample.speed         = (float)pvt.gSpeed / 1e3;
     sample.track         = (float)pvt.headMot / 1e5;
+    sample.positionDOP   = (float)pvt.pDOP / 1e2;
     sample.satellites    = pvt.numSV;
     sample.fix           = pvt.fixType != 0;  // All types of fix are accepted
 
