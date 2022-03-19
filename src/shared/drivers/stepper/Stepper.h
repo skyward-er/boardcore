@@ -20,6 +20,8 @@
  * THE SOFTWARE.
  */
 
+#pragma once
+
 #include <interfaces-impl/gpio_impl.h>
 #include <interfaces/delays.h>
 #include <utils/testutils/MockGpioPin.h>
@@ -73,6 +75,12 @@ public:
      * @brief Set the motor driver microstepping configuration.
      */
     void setMicrostepping(Microstep microstep);
+
+    /**
+     * @brief Zeros the driver's internal position.
+     *
+     */
+    void zeroPosition();
 
     /**
      * @brief Move the stepper motor by the specified amount of steps.
@@ -184,6 +192,8 @@ inline void Stepper::setMicrostepping(Microstep microstep)
     }
 }
 
+void Stepper::zeroPosition() { currentPosition = 0; }
+
 inline void Stepper::move(int32_t steps)
 {
     if (speed == 0)
@@ -229,7 +239,7 @@ inline uint32_t Stepper::getCurrentPosition() { return currentPosition; }
 
 inline float Stepper::getCurrentDegPosition()
 {
-    return currentPosition * stepAngle;
+    return currentPosition * stepAngle / getMicrosteppingValue();
 }
 
 inline int Stepper::getMicrosteppingValue()
