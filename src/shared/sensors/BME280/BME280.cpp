@@ -66,13 +66,17 @@ bool BME280::init()
 
     loadCompensationParameters();
 
-    // Read once the temperature to compute fineTemperature
-    setConfiguration(BME280_CONFIG_TEMP_SINGLE);
-    miosix::Thread::sleep(
-        calculateMaxMeasurementTime(BME280_CONFIG_TEMP_SINGLE));
-    readTemperature();
+    // Set the configuration 10 times to be sure
+    for (int i = 0; i < 10; i++)
+    {
+        // Read once the temperature to compute fineTemperature
+        setConfiguration(BME280_CONFIG_TEMP_SINGLE);
+        miosix::Thread::sleep(
+            calculateMaxMeasurementTime(BME280_CONFIG_TEMP_SINGLE));
+        readTemperature();
 
-    setConfiguration();
+        setConfiguration();
+    }
 
     // Set a sleep time to allow the sensor to change internally the data
     miosix::Thread::sleep(100);
@@ -83,7 +87,7 @@ bool BME280::init()
     bool readConfigResult = false;
     BME280Config readBackConfig;
 
-    for (int i = 0; i < 5; i++)
+    for (int i = 0; i < 10; i++)
     {
         readBackConfig = readConfiguration();
         // Check if the configration on the device matches ours
@@ -97,11 +101,11 @@ bool BME280::init()
         }
 
         // After the check i sleep 100 milliseconds
-        miosix::Thread::sleep(100);
+        miosix::Thread::sleep(20);
     }
 
-    // If after the 5 iterations the sensor didn't report the configuration set
-    // I can report the init error
+    //   If after the 5 iterations the sensor didn't report the configuration
+    //   set I can report the init error
     if (!readConfigResult)
     {
         LOG_ERR(logger, "Device configuration incorrect, setup failed");
