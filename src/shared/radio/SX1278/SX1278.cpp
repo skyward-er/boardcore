@@ -259,28 +259,15 @@ bool SX1278::send(uint8_t *pkt, size_t len)
 
     bus_mgr.lock(SX1278BusManager::Mode::MODE_TX);
 
-        // Wait for TX ready
-        bus_mgr.waitForIrq(RegIrqFlags::TX_READY);
+    // Wait for TX ready
+    bus_mgr.waitForIrq(RegIrqFlags::TX_READY);
 
-        // Segment a packet that is bigger than the MTU (-1 for the length)
-        uint8_t pkt_len = std::min(len, FIFO_LEN - 1);
+    {
+        SPITransaction spi(bus_mgr.getBus(),
+                           SPITransaction::WriteBit::INVERTED);
 
-        {
-            SPITransaction spi(bus_mgr.getBus(),
-                               SPITransaction::WriteBit::INVERTED);
-
-            spi.writeRegister(REG_FIFO, pkt_len);
-            spi.writeRegisters(REG_FIFO, pkt, pkt_len);
-        }
-
-        // Wait for packet sent
-        bus_mgr.waitForIrq(RegIrqFlags::PACKET_SENT);
-
-        pkt += pkt_len;
-        len -= pkt_len;
-        bus_mgr.unlock();
-
-        last_tx = now();
+        spi.writeRegister(REG_FIFO, static_cast<uint8_t>(len));
+        spi.writeRegisters(REG_FIFO, pkt, len);
     }
 
     // Wait for packet sent
