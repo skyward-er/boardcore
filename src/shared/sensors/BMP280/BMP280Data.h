@@ -27,34 +27,28 @@
 namespace Boardcore
 {
 
-struct BME280Data : public TemperatureData,
-                    public PressureData,
-                    public HumidityData
+struct BMP280Data : public TemperatureData, public PressureData
 {
-    BME280Data()
-        : TemperatureData{0, 0.0}, PressureData{0, 0.0}, HumidityData{0, 0.0}
-    {
-    }
+    BMP280Data() : TemperatureData{0, 0.0}, PressureData{0, 0.0} {}
 
-    BME280Data(uint64_t timestamp, float temperature, float pressure,
+    BMP280Data(uint64_t timestamp, float temperature, float pressure,
                float humidity)
-        : TemperatureData{timestamp, temperature},
-          PressureData{timestamp, pressure}, HumidityData{timestamp, humidity}
+        : TemperatureData{timestamp, temperature}, PressureData{timestamp,
+                                                                pressure}
 
     {
     }
 
     static std::string header()
     {
-        return "temperatureTimestamp,temperature,pressureTimestamp,pressure,"
-               "humid_timestamp,humidity\n";
+        return "temperatureTimestamp,temperature,pressureTimestamp,pressure,\n";
     }
 
     void print(std::ostream& os) const
     {
         os << temperatureTimestamp << "," << temperature << ","
-           << pressureTimestamp << "," << pressure << "," << humidityTimestamp
-           << "," << humidity << "\n";
+           << pressureTimestamp << "," << pressure << ","
+           << "\n";
     }
 };
 

@@ -34,9 +34,9 @@ namespace SX1278Defs
 {
 
 /**
- * @brief Length of the fifo.
+ * @brief Length of the internal FIFO
  */
-constexpr size_t FIFO_LEN = 64;
+constexpr int FIFO_LEN = 64;
 
 /**
  * @brief Main oscillator frequency (Hz)

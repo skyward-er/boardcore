@@ -20,36 +20,19 @@
  * THE SOFTWARE.
  */
 
-/**
- * This test has been setup for the following configuration:
- *
- * SPI pheripheral 2 (SPI2) with /32 divider
- *
- * Pins (STM32F407 - BME280):
- *  PB12 (NSS)  - not connected (we use pin C1 as chip select)
- *  PB13 (SCK)  - SCK
- *  PB14 (MISO) - SDO
- *  PB15 (MOSI) - SDA
- *  PC1         - CBS
- *
- * The BME280 is powered by 3.3V
- *
- * In the developing test a function generator was used as variable source
- */
-
 #include <drivers/spi/SPIDriver.h>
 #include <drivers/timer/TimestampTimer.h>
 #include <miosix.h>
-#include <sensors/BME280/BME280.h>
+#include <sensors/BMP280/BMP280.h>
 #include <utils/Debug.h>
 
 using namespace miosix;
 using namespace Boardcore;
 
-GpioPin sckPin  = GpioPin(GPIOB_BASE, 13);
-GpioPin misoPin = GpioPin(GPIOB_BASE, 14);
-GpioPin mosiPin = GpioPin(GPIOB_BASE, 15);
-GpioPin csPin   = GpioPin(GPIOC_BASE, 1);
+GpioPin sckPin  = GpioPin(GPIOA_BASE, 5);
+GpioPin misoPin = GpioPin(GPIOB_BASE, 4);
+GpioPin mosiPin = GpioPin(GPIOA_BASE, 7);
+GpioPin csPin   = GpioPin(GPIOB_BASE, 2);
 
 void initBoard()
 {
@@ -73,19 +56,19 @@ int main()
 
     // SPI configuration setup
     SPIBusConfig spiConfig;
-    spiConfig.clockDivider = SPI::ClockDivider::DIV_32;
-    spiConfig.mode         = SPI::Mode::MODE_0;
-    SPIBus spiBus(SPI2);
+    // spiConfig.clockDivider = SPI::ClockDivider::DIV_32;
+    spiConfig.mode = SPI::Mode::MODE_0;
+    SPIBus spiBus(SPI1);
     SPISlave spiSlave(spiBus, csPin, spiConfig);
 
     // Device initialization
-    BME280 bme280(spiSlave);
+    BMP280 bmp280(spiSlave);
 
-    bme280.init();
+    bmp280.init();
 
     // In practice the self test reads the who am i reagister, this is already
     // done in init()
-    if (!bme280.selfTest())
+    if (!bmp280.selfTest())
     {
         TRACE("Self test failed!\n");
 
@@ -96,28 +79,28 @@ int main()
     TRACE("Forced mode\n");
     for (int i = 0; i < 10; i++)
     {
-        bme280.setSensorMode(BME280::FORCED_MODE);
+        bmp280.setSensorMode(BMP280::FORCED_MODE);
 
-        Thread::sleep(bme280.getMaxMeasurementTime());
+        Thread::sleep(bmp280.getMaxMeasurementTime());
 
-        bme280.sample();
+        bmp280.sample();
 
-        TRACE("temp: %.2f DegC\tpress: %.2f hPa\thumid: %.2f %%RH\n",
-              bme280.getLastSample().temperature,
-              bme280.getLastSample().pressure, bme280.getLastSample().humidity);
+        TRACE("temp: %.2f DegC\tpress: %.2f hPa\n",
+              bmp280.getLastSample().temperature,
+              bmp280.getLastSample().pressure);
 
         Thread::sleep(1000);
     }
 
     TRACE("Normal mode\n");
-    bme280.setSensorMode(BME280::NORMAL_MODE);
+    bmp280.setSensorMode(BMP280::NORMAL_MODE);
     while (true)
     {
-        bme280.sample();
+        bmp280.sample();
 
         TRACE("temp: %.2f DegC\tpress: %.2f Pa\thumid: %.2f %%RH\n",
-              bme280.getLastSample().temperature,
-              bme280.getLastSample().pressure, bme280.getLastSample().humidity);
+              bmp280.getLastSample().temperature,
+              bmp280.getLastSample().pressure);
 
         Thread::sleep(50);  // 25Hz
     }

@@ -250,7 +250,8 @@ bool MavlinkDriver<PktLength, OutQueueSize>::enqueueMsg(
     const mavlink_message_t& msg)
 {
     // Convert mavlink message to char array
-    uint8_t msgtempBuf[PktLength];
+    // Use fixed buffer size to avoid overflows
+    uint8_t msgtempBuf[256];
     int msgLen = mavlink_msg_to_send_buffer(msgtempBuf, &msg);
 
     // Append message to the queue

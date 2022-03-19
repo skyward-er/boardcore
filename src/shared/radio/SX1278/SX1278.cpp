@@ -249,14 +249,15 @@ ssize_t SX1278::receive(uint8_t *pkt, size_t max_len)
 
 bool SX1278::send(uint8_t *pkt, size_t len)
 {
-    // Hacked together larger packets support
-    while (len > 0)
-    {
-        // This shouldn't be needed, but for some reason the device "lies" about
-        // being ready, so lock up if we are going too fast
-        rateLimitTx();
+    // Packets longer than FIFO_LEN (-1 for the len byte) are not supported
+    if (len > SX1278Defs::FIFO_LEN - 1)
+        return false;
 
-        bus_mgr.lock(SX1278BusManager::Mode::MODE_TX);
+    // This shouldn't be needed, but for some reason the device "lies" about
+    // being ready, so lock up if we are going too fast
+    rateLimitTx();
+
+    bus_mgr.lock(SX1278BusManager::Mode::MODE_TX);
 
         // Wait for TX ready
         bus_mgr.waitForIrq(RegIrqFlags::TX_READY);
@@ -282,6 +283,11 @@ bool SX1278::send(uint8_t *pkt, size_t len)
         last_tx = now();
     }
 
+    // Wait for packet sent
+    bus_mgr.waitForIrq(RegIrqFlags::PACKET_SENT);
+    bus_mgr.unlock();
+
+    last_tx = now();
     return true;
 }
 

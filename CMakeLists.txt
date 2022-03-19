@@ -272,6 +272,9 @@ sbs_target(test-calibration stm32f407vg_stm32f4discovery)
 add_executable(test-bme280 src/tests/sensors/test-bme280.cpp)
 sbs_target(test-bme280 stm32f429zi_stm32f4discovery)
 
+add_executable(test-bmp280 src/tests/sensors/test-bmp280.cpp)
+sbs_target(test-bmp280 stm32f429zi_stm32f4discovery)
+
 add_executable(test-bmx160 src/tests/sensors/test-bmx160.cpp)
 sbs_target(test-bmx160 stm32f429zi_skyward_death_stack_x)
 

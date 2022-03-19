@@ -340,7 +340,7 @@ inline uint16_t SPI::read16() { return transfer(static_cast<uint16_t>(0)); }
 inline void SPI::read(uint8_t *data, size_t nBytes)
 {
     // Reset the data
-    for (size_t i = 0; i < nBytes / 2; i++)
+    for (size_t i = 0; i < nBytes; i++)
         data[i] = 0;
 
     // Read the data

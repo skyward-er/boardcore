@@ -57,9 +57,9 @@ public:
     /**
      * @brief Prepare the timer and sets the PWM output to the minimum.
      *
-     * More specifically, the PWM output is prepared to be equal to minPulse bu
+     * More specifically, the PWM output is prepared to be equal to minPulse but
      * it is not enabled! After creating the object the PWM signal is not
-     * active. This is to ensure
+     * active. This is to ensure the servo motor doesn't move unexpectedly.
      *
      * Note that the timer peripheral's clock is enabled automatically when the
      * PWM object is created.
@@ -92,6 +92,8 @@ public:
     void setPosition(float position);
 
     void setPosition90Deg(float degrees);
+
+    void setPosition120Deg(float degrees);
 
     void setPosition180Deg(float degrees);
 
