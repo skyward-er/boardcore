@@ -1,4 +1,4 @@
-/* Copyright (c) 2021 Skyward Experimental Rocketry
+/* Copyright (c) 2022 Skyward Experimental Rocketry
  * Authors: Davide Bonomini, Davide Mor, Alberto Nidasio, Damiano Amatruda
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -20,7 +20,6 @@
  * THE SOFTWARE.
  */
 
-#include <drivers/timer/TimestampTimer.h>
 #include <sensors/UbloxGPS/UbloxGPS.h>
 #include <utils/Debug.h>
 
@@ -29,58 +28,45 @@ using namespace Boardcore;
 
 int main()
 {
-    static constexpr uint8_t SAMPLE_RATE = 4;
-
-    PrintLogger logger = Logging::getLogger("test-ubloxgps");
-
-    SPIBus bus(SPI1);
+    SPIBus spiBus(SPI1);
+    GpioPin spiCs(GPIOA_BASE, 3);
     GpioPin spiSck(GPIOA_BASE, 5);
     GpioPin spiMiso(GPIOA_BASE, 6);
     GpioPin spiMosi(GPIOA_BASE, 7);
-    GpioPin cs(GPIOA_BASE, 3);
 
+    spiCs.mode(Mode::OUTPUT);
+    spiCs.high();
     spiSck.mode(Mode::ALTERNATE);
     spiSck.alternateFunction(5);
     spiMiso.mode(Mode::ALTERNATE);
     spiMiso.alternateFunction(5);
-    spiMosi.mode(miosix::Mode::ALTERNATE);
+    spiMosi.mode(Mode::ALTERNATE);
     spiMosi.alternateFunction(5);
-    cs.mode(Mode::OUTPUT);
-    cs.high();
 
-    UbloxGPS sensor{bus, cs};
+    UbloxGPS sensor{spiBus, spiCs};
 
-    LOG_INFO(logger, "Initializing sensor...\n");
+    TRACE("Initializing UbloxGPS...\n");
 
     if (!sensor.init())
     {
-        LOG_ERR(logger, "Initialization failed!\n");
-        return -1;
-    }
-
-    LOG_INFO(logger, "Performing self-test...\n");
-
-    if (!sensor.selfTest())
-    {
-        LOG_ERR(logger, "Self-test failed! (code: %d)\n",
-                sensor.getLastError());
-        return -1;
+        TRACE("Init failed! (code: %d)\n", sensor.getLastError());
+        return 1;
     }
 
     while (true)
     {
-        long long lastTick = miosix::getTick();
-
         sensor.sample();
         GPSData sample __attribute__((unused)) = sensor.getLastSample();
 
         TRACE(
-            "timestamp: %4.3f, fix: %01d, lat: %f, lon: %f, height: %4.1f, "
-            "nsat: %2d, speed: %3.2f, velN: %3.2f, velE: %3.2f, track %3.1f\n",
-            (float)sample.gpsTimestamp / 1000000, sample.fix, sample.latitude,
-            sample.longitude, sample.height, sample.satellites, sample.speed,
-            sample.velocityNorth, sample.velocityEast, sample.track);
+            "timestamp: %4.3f, lat: %f, lon: %f, height: %4.1f, velN: %3.2f, "
+            "velE: %3.2f, velD: %3.2f, speed: %3.2f, track %3.1f, nsat: %2d, "
+            "fix: %01d\n",
+            (float)sample.gpsTimestamp / 1000000, sample.latitude,
+            sample.longitude, sample.height, sample.velocityNorth,
+            sample.velocityEast, sample.velocityDown, sample.speed,
+            sample.track, sample.satellites, sample.fix);
 
-        Thread::sleepUntil(lastTick + 1000 / SAMPLE_RATE);  // Sample period
+        Thread::sleep(1000);
     }
 }

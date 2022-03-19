@@ -1,4 +1,4 @@
-/* Copyright (c) 2021 Skyward Experimental Rocketry
+/* Copyright (c) 2022 Skyward Experimental Rocketry
  * Authors: Davide Bonomini, Davide Mor, Alberto Nidasio, Damiano Amatruda
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -28,9 +28,7 @@
 namespace Boardcore
 {
 
-using namespace miosix;
-
-UbloxGPS::UbloxGPS(SPIBusInterface& spiBus, GpioPin spiCs,
+UbloxGPS::UbloxGPS(SPIBusInterface& spiBus, miosix::GpioPin spiCs,
                    SPIBusConfig spiConfig)
     : spiSlave(spiBus, spiCs, spiConfig)
 {
@@ -38,44 +36,17 @@ UbloxGPS::UbloxGPS(SPIBusInterface& spiBus, GpioPin spiCs,
 
 SPIBusConfig UbloxGPS::getDefaultSPIConfig()
 {
-    SPIBusConfig spiConfig{};
-    spiConfig.clockDivider = SPI::ClockDivider::DIV_32;
-    spiConfig.mode         = SPI::Mode::MODE_1;
-    return spiConfig;
+    return SPIBusConfig{SPI::ClockDivider::DIV_256, SPI::Mode::MODE_0};
 }
 
 bool UbloxGPS::init()
 {
-    // Reset configuration to default
-    if (!resetConfiguration())
+    if (!reset() || !setConfiguration())
     {
+        lastError = SensorErrors::INIT_FAIL;
+        LOG_ERR(logger, "Initialization failed");
         return false;
     }
-
-    Thread::sleep(100);
-
-    // Disable NMEA messages
-    if (!disableNMEAMessages())
-    {
-        return false;
-    }
-
-    Thread::sleep(100);
-
-    // Set GNSS configuration
-    if (!setGNSSConfiguration())
-    {
-        return false;
-    }
-
-    Thread::sleep(100);
-
-    // Enable UBX messages
-    if (!enableUBXMessages())
-    {
-        return false;
-    }
-
     return true;
 }
 
@@ -83,207 +54,173 @@ bool UbloxGPS::selfTest() { return true; }
 
 UbloxGPSData UbloxGPS::sampleImpl()
 {
-    UBXUnpackedFrame frame;
+    UBXUnpackedFrame res;
 
-    if (!readUBXFrame(frame))
+    if (!pollReadUBXFrame(UBX_NAV, UBX_NAV_PVT, res))
     {
-        LOG_ERR(logger, "Unable to read a UBX message");
+        LOG_ERR(logger, "Unable to poll UBX-NAV-PVT frame");
         return lastSample;
     }
+
+    UBXPayloadNAVPVT& pvt = (UBXPayloadNAVPVT&)res.payload;
 
     UbloxGPSData sample;
 
-    if (!parseUBXFrame(frame, sample))
-    {
-        LOG_ERR(logger,
-                "UBX message not recognized (class: {:#02x}, id: {:#02x})",
-                frame.cls, frame.id);
-        return lastSample;
-    }
+    sample.gpsTimestamp  = TimestampTimer::getInstance().getTimestamp();
+    sample.latitude      = (float)pvt.lat / 1e7;
+    sample.longitude     = (float)pvt.lon / 1e7;
+    sample.height        = (float)pvt.height / 1e3;
+    sample.velocityNorth = (float)pvt.velN / 1e3;
+    sample.velocityEast  = (float)pvt.velE / 1e3;
+    sample.velocityDown  = (float)pvt.velD / 1e3;
+    sample.speed         = (float)pvt.gSpeed / 1e3;
+    sample.track         = (float)pvt.headMot / 1e5;
+    sample.satellites    = pvt.numSV;
+    sample.fix           = pvt.fixType != 0;  // All types of fix are accepted
 
     return sample;
 }
 
-bool UbloxGPS::resetConfiguration()
+bool UbloxGPS::reset()
 {
-    static constexpr uint16_t payloadLength = 4;
-
-    uint8_t payload[payloadLength] = {
+    uint8_t payload[] = {
         0x00, 0x00,  // navBbrMask (Hot start)
         0x00,        // Hardware reset immediately
         0x00         // Reserved
     };
 
-    UBXUnpackedFrame frame{0x06, 0x04,  // Message UBX-CFG-RST
-                           payload, payloadLength};
+    UBXUnpackedFrame frame{UBX_CFG, UBX_CFG_RST, payload,
+                           std::extent<decltype(payload)>::value};
 
-    return writeUBXFrame(frame);
+    if (!writeUBXFrame(frame))
+    {
+        return false;
+    }
+
+    miosix::Thread::sleep(100);
+
+    return true;
 }
 
-bool UbloxGPS::disableNMEAMessages()
+bool UbloxGPS::setConfiguration()
 {
-    static constexpr uint16_t payloadLength = 34;
-
-    uint8_t payload[payloadLength] = {
-        0x00,                    // Version
-        0xff,                    // All layers
-        0x00, 0x00,              // Reserved
-        0xbb, 0x00, 0x91, 0x20,  // CFG-MSGOUT-NMEA_ID_GGA_UART1 key ID
-        0x00,                    // CFG-MSGOUT-NMEA_ID_GGA_UART1 value
-        0xca, 0x00, 0x91, 0x20,  // CFG-MSGOUT-NMEA_ID_GLL_UART1 key ID
-        0x00,                    // CFG-MSGOUT-NMEA_ID_GLL_UART1 value
-        0xc0, 0x00, 0x91, 0x20,  // CFG-MSGOUT-NMEA_ID_GSA_UART1 key ID
-        0x00,                    // CFG-MSGOUT-NMEA_ID_GSA_UART1 value
-        0xc5, 0x00, 0x91, 0x20,  // CFG-MSGOUT-NMEA_ID_GSV_UART1 key ID
-        0x00,                    // CFG-MSGOUT-NMEA_ID_GSV_UART1 value
-        0xac, 0x00, 0x91, 0x20,  // CFG-MSGOUT-NMEA_ID_RMC_UART1 key ID
-        0x00,                    // CFG-MSGOUT-NMEA_ID_RMC_UART1 value
-        0xb1, 0x00, 0x91, 0x20,  // CFG-MSGOUT-NMEA_ID_VTG_UART1 key ID
-        0x00                     // CFG-MSGOUT-NMEA_ID_VTG_UART1 value
-    };
-
-    UBXUnpackedFrame frame{0x06, 0x8a,  // Message UBX-CFG-VALSET
-                           payload, payloadLength};
-
-    return writeUBXFrame(frame);
-}
-
-bool UbloxGPS::setGNSSConfiguration()
-{
-    static constexpr uint16_t payloadLength = 9;
-
-    uint8_t payload[payloadLength] = {
+    uint8_t payload[] = {
         0x00,                    // Version
         0x07,                    // All layers
         0x00, 0x00,              // Reserved
-        0x21, 0x00, 0x11, 0x20,  // CFG-NAVSPG-DYNMODEL key ID
-        0x08                     // CFG-NAVSPG-DYNMODEL value
+        0x21, 0x00, 0x11, 0x20,  // CFG-NAVSPG-DYNMODEL
+        0x08,                    // = AIR4
+        0x03, 0x00, 0x51, 0x10,  // CFG-I2C-ENABLED
+        0x00, 0x00,              // = false
+        0x06, 0x00, 0x64, 0x10,  // CFG-SPI-ENABLED
+        0x00, 0x01,              // = true
+        0x01, 0x00, 0x79, 0x10,  // CFG-SPIINPROT-UBX
+        0x00, 0x01,              // = true
+        0x02, 0x00, 0x79, 0x10,  // CFG-SPIINPROT-NMEA
+        0x00, 0x00,              // = false
+        0x03, 0x00, 0x79, 0x10,  // CFG-SPIINPROT-RTCM3X
+        0x00, 0x00,              // = false
+        0x01, 0x00, 0x7a, 0x10,  // CFG-SPIOUTPROT-UBX
+        0x00, 0x01,              // = true
+        0x02, 0x00, 0x7a, 0x10,  // CFG-SPIOUTPROT-NMEA
+        0x00, 0x00,              // = false
+        0x05, 0x00, 0x52, 0x10,  // CFG-UART1-ENABLED
+        0x00, 0x00,              // = false
+        0x05, 0x00, 0x53, 0x10,  // CFG-UART2-ENABLED
+        0x00, 0x00,              // = false
+        0x01, 0x00, 0x65, 0x10,  // CFG-USB-ENABLED
+        0x00, 0x00               // = false
     };
 
-    UBXUnpackedFrame frame{0x06, 0x8a,  // Message UBX-CFG-VALSET
-                           payload, payloadLength};
+    UBXUnpackedFrame frame{UBX_CFG, UBX_CFG_VALSET, payload,
+                           std::extent<decltype(payload)>::value};
 
-    return writeUBXFrame(frame);
+    return safeWriteUBXFrame(frame);
 }
 
-bool UbloxGPS::enableUBXMessages()
+bool UbloxGPS::safeWriteUBXFrame(const UBXUnpackedFrame& frame)
 {
-    static constexpr uint16_t payloadLength = 9;
-
-    uint8_t payload[payloadLength] = {
-        0x00,                    // Version
-        0xff,                    // All layers
-        0x00, 0x00,              // Reserved
-        0x07, 0x00, 0x91, 0x20,  // CFG-MSGOUT-UBX_NAV_PVT_UART1 key ID
-        0x01                     // CFG-MSGOUT-UBX_NAV_PVT_UART1 value
-    };
-
-    UBXUnpackedFrame frame{0x06, 0x8a,  // Message UBX-CFG-VALSET
-                           payload, payloadLength};
-
-    return writeUBXFrame(frame);
-}
-
-bool UbloxGPS::parseUBXFrame(const UBXUnpackedFrame& frame,
-                             UbloxGPSData& sample)
-{
-    switch (frame.cls)  // Message class
+    while (true)
     {
-        case 0x01:  // UBX-NAV
-            return parseUBXNAVFrame(frame, sample);
-        case 0x05:  // UBX-ACK
-            return parseUBXACKFrame(frame, sample);
-    }
-    return false;
-}
+        if (!writeUBXFrame(frame))
+        {
+            return false;
+        }
 
-bool UbloxGPS::parseUBXNAVFrame(const UBXUnpackedFrame& frame,
-                                UbloxGPSData& sample)
-{
-    switch (frame.id)  // Message ID
-    {
-        case 0x07:  // UBX-NAV-PVT
-            // Latitude
-            int32_t rawLatitude = frame.payload[28] | frame.payload[29] << 8 |
-                                  frame.payload[30] << 16 |
-                                  frame.payload[31] << 24;
-            sample.latitude = (float)rawLatitude / 1e7;
+        UBXUnpackedFrame res;
 
-            // Longitude
-            int32_t rawLongitude = frame.payload[24] | frame.payload[25] << 8 |
-                                   frame.payload[26] << 16 |
-                                   frame.payload[27] << 24;
-            sample.longitude = (float)rawLongitude / 1e7;
+        if (!readUBXFrame(res))
+        {
+            return false;
+        }
 
-            // Height
-            int32_t rawHeight = frame.payload[32] | frame.payload[33] << 8 |
-                                frame.payload[34] << 16 |
-                                frame.payload[35] << 24;
-            sample.height = (float)rawHeight / 1e3;
+        if (res.cls == UBX_ACK && res.id == UBX_ACK_ACK)
+        {
+            UBXPayloadACK& ack = (UBXPayloadACK&)res.payload;
 
-            // Velocity north
-            int32_t rawVelocityNorth =
-                frame.payload[48] | frame.payload[49] << 8 |
-                frame.payload[50] << 16 | frame.payload[51] << 24;
-            sample.velocityNorth = (float)rawVelocityNorth / 1e3;
+            if (ack.clsID != frame.cls || ack.msgID != frame.id)
+            {
+                break;
+            }
 
-            // Velocity east
-            int32_t rawVelocityEast =
-                frame.payload[52] | frame.payload[53] << 8 |
-                frame.payload[54] << 16 | frame.payload[55] << 24;
-            sample.velocityEast = (float)rawVelocityEast / 1e3;
-
-            // Velocity down
-            int32_t rawVelocityDown =
-                frame.payload[56] | frame.payload[57] << 8 |
-                frame.payload[58] << 16 | frame.payload[59] << 24;
-            sample.velocityDown = (float)rawVelocityDown / 1e3;
-
-            // Speed
-            int32_t rawSpeed = frame.payload[60] | frame.payload[61] << 8 |
-                               frame.payload[62] << 16 |
-                               frame.payload[63] << 24;
-            sample.speed = (float)rawSpeed / 1e3;
-
-            // Track (heading of motion)
-            int32_t rawTrack = frame.payload[64] | frame.payload[65] << 8 |
-                               frame.payload[66] << 16 |
-                               frame.payload[67] << 24;
-            sample.track = (float)rawTrack / 1e5;
-
-            // Number of satellite
-            sample.satellites = (uint8_t)frame.payload[23];
-
-            // Fix (every type of fix accepted)
-            sample.fix = frame.payload[20] != 0;
-
-            // Timestamp
-            sample.gpsTimestamp = TimestampTimer::getInstance().getTimestamp();
-
-            return true;
-    }
-
-    return false;
-}
-
-bool UbloxGPS::parseUBXACKFrame(const UBXUnpackedFrame& frame,
-                                UbloxGPSData& sample)
-{
-    switch (frame.id)  // Message ID
-    {
-        case 0x00:  // UBX-ACK-NAC
             LOG_DEBUG(logger,
-                      "Received NAC for message (class: {:#02x}, id: {:#02x})",
-                      frame.cls, frame.id);
+                      "Received ACK for frame (class: {:#02x}, id: {:#02x})",
+                      res.cls, res.id);
+
             return true;
-        case 0x01:  // UBX-ACK-ACK
+        }
+        else if (res.cls == UBX_ACK && res.id == UBX_ACK_NAK)
+        {
+            UBXPayloadACK& nak = (UBXPayloadACK&)res.payload;
+
+            if (nak.clsID != frame.cls || nak.msgID != frame.id)
+            {
+                break;
+            }
+
             LOG_DEBUG(logger,
-                      "Received ACK for message (class: {:#02x}, id: {:#02x})",
-                      frame.cls, frame.id);
-            sample = lastSample;
-            return true;
+                      "Received NAK for frame (class: {:#02x}, id: {:#02x})",
+                      res.cls, res.id);
+        }
+        else
+        {
+            LOG_ERR(logger,
+                    "UBX frame not recognized (class: {:#02x}, id: {:#02x})",
+                    res.cls, res.id);
+
+            break;
+        }
     }
+
     return false;
+}
+
+bool UbloxGPS::pollReadUBXFrame(uint8_t cls, uint8_t id,
+                                UBXUnpackedFrame& frame)
+{
+    UBXUnpackedFrame req{cls, id, nullptr, 0};
+
+    if (!writeUBXFrame(req))
+    {
+        return false;
+    }
+
+    UBXUnpackedFrame res;
+
+    if (!readUBXFrame(res))
+    {
+        return false;
+    }
+
+    if (res.cls != cls || res.id != id)
+    {
+        LOG_ERR(logger,
+                "UBX frame not recognized (class: {:#02x}, id: {:#02x})",
+                res.cls, res.id);
+        return false;
+    }
+
+    return true;
 }
 
 bool UbloxGPS::writeUBXFrame(const UBXUnpackedFrame& frame)
@@ -311,7 +248,7 @@ bool UbloxGPS::readUBXFrame(UBXUnpackedFrame& frame)
 
     if (!frame.isValid())
     {
-        LOG_ERR(logger, "UBX frame to read is invalid");
+        LOG_ERR(logger, "UBX frame received is invalid");
         return false;
     }
 
