@@ -178,9 +178,6 @@ USART::USART(USARTType *usart, Baudrate baudrate)
 
         setBaudrate(baudrate);
     }
-
-    printf("init usart %d\n", this->id);
-    printf("br: %ld\n", usart->BRR);
 }
 
 void USART::init()
@@ -282,15 +279,16 @@ void USART::setBaudrate(Baudrate baudrate)
 
 int USART::read(void *buffer, size_t nBytes)
 {
+    // if no char has been read
     if (rxQueue.isEmpty())
     {
-        printf("no data\n");
+        return 0;
     }
 
     int i;
     char *buf = reinterpret_cast<char *>(buffer);
 
-    for (i = 0; i < nBytes - 1; i++)
+    for (i = 0; i < nBytes; i++)
     {
         if (!rxQueue.tryGet(buf[i]))
         {
@@ -298,25 +296,32 @@ int USART::read(void *buffer, size_t nBytes)
         }
     }
 
-    // ending the string
-    buf[i] = '\0';
-
     return i;
 }
 
 void USART::write(void *buffer, size_t nBytes)
 {
-    // use the send complete interrupt in order not to have a busy while loop
-    // waiting
+    // TODO: use the send complete interrupt in order not to have a busy while
+    // loop waiting
     const char *buf = reinterpret_cast<const char *>(buffer);
     for (size_t i = 0; i < nBytes; i++)
     {
         while ((usart->SR & USART_SR_TXE) == 0)
             ;
 
-        usart->DR = *buf;
+        usart->DR = buf[i];
+    }
+}
 
-        buf++;
+void USART::writeString(char *buffer)
+{
+    // send everything, comprising the '\0' character
+    for (size_t i = 0; buffer[i] != '\0'; i++)
+    {
+        while ((usart->SR & USART_SR_TXE) == 0)
+            ;
+
+        usart->DR = buffer[i];
     }
 }
 }  // namespace Boardcore

@@ -24,7 +24,6 @@
 
 #include <interfaces/arch_registers.h>
 #include <miosix.h>
-#include <stddef.h>
 #include <utils/ClockUtils.h>
 
 #ifndef USE_MOCK_PERIPHERALS
@@ -126,6 +125,11 @@ public:
      * @brief Blocking write operation
      */
     void write(void *buf, size_t nChars);
+
+    /**
+     * @brief Write a string to the serial
+     */
+    void writeString(char *buffer);
 
 private:
     USARTType *usart;

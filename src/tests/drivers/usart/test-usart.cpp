@@ -20,6 +20,8 @@
  * THE SOFTWARE.
  */
 
+#include <cassert>
+
 #include "drivers/usart/USART.h"
 #include "miosix.h"
 #include "string.h"
@@ -35,7 +37,17 @@ setup:
 
 int main()
 {
-    char buf[64] = "Questo e' un test!";
+    char buf_tx[64] = "Questo e' un test!";
+
+    typedef struct
+    {
+        char dataChar;
+        int dataInt;
+        float dataFloat;
+        double dataDouble;
+    } StructToSend;
+    StructToSend struct_tx;
+    struct_tx = {'C', 42, 420.69, 48.84};
 
     /*
      * // USART1: tx=PA9  rx=PA10 cts=PA11 rts=PA12
@@ -49,18 +61,37 @@ int main()
     usart1.setParity(USART::ParityBit::NO_PARITY);
     usart1.init();
 
-    // testing write function
+    printf("Data to be received: char:%c, int:%d, float:%f, double:%f\n",
+           struct_tx.dataChar, struct_tx.dataInt, struct_tx.dataFloat,
+           struct_tx.dataDouble);
 
     while (true)
     {
-        usart1.write(buf, strlen(buf));
+        // new data to receive
+        StructToSend struct_rx;
+        char buf_rx[64];
 
-        int nRead = usart1.read(buf, 64);
-        if (nRead > 0)
-            printf("read %d bytes: %s\n", nRead, buf);
+        // testing write function for strings
+        usart1.writeString(buf_tx);
+        Thread::sleep(100);
+        {
+            int nRead = usart1.read(buf_rx, 64);
+            printf("string: %s\n", buf_rx);
+        }
 
-        Thread::sleep(1000);
-        Thread::sleep(1000);
+        // testing write function for binary data
+        usart1.write(&struct_tx, sizeof(StructToSend));
+        Thread::sleep(100);
+        {
+            int nRead = usart1.read(&struct_rx, sizeof(StructToSend));
+            printf("char:   %c\n", struct_rx.dataChar);
+            printf("int:    %d\n", struct_rx.dataInt);
+            printf("float:  %f\n", struct_rx.dataFloat);
+            printf("double: %f\n", struct_rx.dataDouble);
+        }
+
+        printf("\n");
+        Thread::sleep(2000);
     }
 
     return 0;
