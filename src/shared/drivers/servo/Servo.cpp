@@ -27,6 +27,8 @@
 namespace Boardcore
 {
 
+#ifndef COMPILE_FOR_HOST
+
 Servo::Servo(TIM_TypeDef* const timer, TimerUtils::Channel pwmChannel,
              unsigned int minPulse, unsigned int maxPulse,
              unsigned int frequency)
@@ -40,13 +42,32 @@ void Servo::enable() { pwm.enableChannel(pwmChannel); }
 
 void Servo::disable() { pwm.disableChannel(pwmChannel); }
 
+#else
+
+Servo::Servo(unsigned int minPulse, unsigned int maxPulse,
+             unsigned int frequency)
+    : minPulse(minPulse), maxPulse(maxPulse), frequency(frequency)
+{
+    setPosition(0);
+}
+
+void Servo::enable() {}
+
+void Servo::disable() {}
+
+#endif
+
 void Servo::setPosition(float position)
 {
     float pulse = minPulse + (maxPulse - minPulse) * position;
 
     float dutyCycle = pulse * frequency / 1000000.0f;
 
+#ifndef COMPILE_FOR_HOST
     pwm.setDutyCycle(pwmChannel, dutyCycle);
+#else
+    this->dutyCycle = dutyCycle;
+#endif
 }
 
 void Servo::setPosition90Deg(float degrees) { setPosition(degrees / 90); }
@@ -59,7 +80,11 @@ void Servo::setPosition360Deg(float degrees) { setPosition(degrees / 360); }
 
 float Servo::getPosition()
 {
+#ifndef COMPILE_FOR_HOST
     float dutyCycle = pwm.getDutyCycle(pwmChannel);
+#else
+    float dutyCycle = this->dutyCycle;
+#endif
 
     float pulse = dutyCycle * 1000000.0f / frequency;
 

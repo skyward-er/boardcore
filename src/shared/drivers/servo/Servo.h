@@ -20,7 +20,9 @@
  * THE SOFTWARE.
  */
 
+#ifndef COMPILE_FOR_HOST
 #include <drivers/timer/PWM.h>
+#endif
 
 #pragma once
 
@@ -54,6 +56,7 @@ namespace Boardcore
 class Servo
 {
 public:
+#ifndef COMPILE_FOR_HOST
     /**
      * @brief Prepare the timer and sets the PWM output to the minimum.
      *
@@ -73,6 +76,10 @@ public:
     explicit Servo(TIM_TypeDef* const timer, TimerUtils::Channel pwmChannel,
                    unsigned int minPulse = 1000, unsigned int maxPulse = 2000,
                    unsigned int frequency = 50);
+#else
+    explicit Servo(unsigned int minPulse = 1000, unsigned int maxPulse = 2000,
+                   unsigned int frequency = 50);
+#endif
 
     /**
      * @brief Starts producing the PWM signal.
@@ -120,8 +127,12 @@ private:
     Servo& operator=(const Servo&) = delete;
     Servo(const Servo& s)          = delete;
 
+#ifndef COMPILE_FOR_HOST
     PWM pwm;
     TimerUtils::Channel pwmChannel;
+#else
+    float dutyCycle;
+#endif
 
     float minPulse;
     float maxPulse;

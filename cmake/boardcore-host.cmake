@@ -27,6 +27,7 @@ add_library(boardcore-host STATIC EXCLUDE_FROM_ALL
 
     # Drivers
     ${SBS_BASE}/src/shared/drivers/timer/TimestampTimer.cpp
+    ${SBS_BASE}/src/shared/drivers/servo/Servo.cpp
 
     # Events
     ${SBS_BASE}/src/shared/events/EventBroker.cpp
