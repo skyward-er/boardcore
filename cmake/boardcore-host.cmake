@@ -25,8 +25,8 @@ add_library(boardcore-host STATIC EXCLUDE_FROM_ALL
     ${SBS_BASE}/src/shared/diagnostic/CpuMeter.cpp
     ${SBS_BASE}/src/shared/diagnostic/PrintLogger.cpp
 
-    # Radio
-    ${SBS_BASE}/src/shared/radio/Xbee/APIFrameParser.cpp
+    # Drivers
+    ${SBS_BASE}/src/shared/drivers/timer/TimestampTimer.cpp
 
     # Events
     ${SBS_BASE}/src/shared/events/EventBroker.cpp
@@ -39,15 +39,15 @@ add_library(boardcore-host STATIC EXCLUDE_FROM_ALL
     ${SBS_BASE}/src/shared/math/SkyQuaternion.cpp
     ${SBS_BASE}/src/shared/math/Stats.cpp
 
+    # Radio
+    ${SBS_BASE}/src/shared/radio/Xbee/APIFrameParser.cpp
+
     # Scheduler
     ${SBS_BASE}/src/shared/scheduler/TaskScheduler.cpp
 
     # Sensors
     ${SBS_BASE}/src/shared/sensors/SensorManager.cpp
     ${SBS_BASE}/src/shared/sensors/SensorSampler.cpp
-
-    # Timer
-    ${SBS_BASE}/src/shared/drivers/timer/TimestampTimer.cpp
 
     # AeroUtils
     ${SBS_BASE}/src/shared/utils/aero/AeroUtils.cpp
