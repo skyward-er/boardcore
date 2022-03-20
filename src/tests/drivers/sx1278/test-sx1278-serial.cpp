@@ -77,15 +77,13 @@ void initBoard()
 void recvLoop()
 {
     uint8_t msg[256];
-    auto console = miosix::DefaultConsole::instance().get();
-
     while (1)
     {
         int len = sx1278->receive(msg, sizeof(msg));
         if (len > 0)
         {
-            console->writeBlock(msg, len, 0);
-            // TODO: Flushing?
+            auto serial = miosix::DefaultConsole::instance().get();
+            serial->writeBlock(msg, len, 0);
         }
     }
 }
@@ -93,11 +91,10 @@ void recvLoop()
 void sendLoop()
 {
     uint8_t msg[256];
-    auto console = miosix::DefaultConsole::instance().get();
-
     while (1)
     {
-        int len = console->readBlock(msg, sizeof(msg), 0);
+        auto serial = miosix::DefaultConsole::instance().get();
+        int len     = serial->readBlock(msg, sizeof(msg), 0);
         if (len > 0)
         {
             sx1278->send(msg, len);
@@ -127,8 +124,10 @@ int main()
 
     printf("\n[sx1278] Initialization complete!\n");
 
-    while (1)
-        miosix::Thread::wait();
+    // God please forgive me
+    // FIXME(davide.mor): ABSOLUTELY fix this
+    miosix::Thread::sleep(10000);
+    miosix::reboot();
 
     return 0;
 }
