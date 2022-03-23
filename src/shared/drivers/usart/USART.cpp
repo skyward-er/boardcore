@@ -40,13 +40,12 @@
 // Unfortunately, this does not hold with DMA.
 using namespace miosix;
 
-typedef Gpio<GPIOB_BASE, 6> u1tx;
-typedef Gpio<GPIOB_BASE, 7> u1rx;
-
 // typedef Gpio<GPIOA_BASE, 9> u1tx;
 // typedef Gpio<GPIOA_BASE, 10> u1rx;
-// typedef Gpio<GPIOA_BASE, 11> u1cts;
-// typedef Gpio<GPIOA_BASE, 12> u1rts;
+typedef Gpio<GPIOB_BASE, 6> u1tx;
+typedef Gpio<GPIOB_BASE, 7> u1rx;
+typedef Gpio<GPIOA_BASE, 11> u1cts;
+typedef Gpio<GPIOA_BASE, 12> u1rts;
 
 typedef Gpio<GPIOA_BASE, 2> u2tx;
 typedef Gpio<GPIOA_BASE, 3> u2rx;
@@ -120,24 +119,22 @@ void __attribute__((naked)) USART3_IRQHandler()
 
 namespace Boardcore
 {
-
 void USART::IRQHandleInterrupt()
 {
-    unsigned int status = this->usart->SR;
     char c;
 
     // if read data register is empty then read data
-    if (status & USART_SR_RXNE)
+    if (usart->SR & USART_SR_RXNE)
     {
         // Always read data, since this clears interrupt flags
         c = usart->DR;
         // If no error put data in buffer
-        if (!(status & USART_SR_FE))
+        if (!(usart->SR & USART_SR_FE))
             if (rxQueue.tryPut(c) == false) /*fifo overflow*/
                 ;
     }
 
-    if (status & USART_SR_IDLE)
+    if (usart->SR & USART_SR_IDLE)
     {
         c = usart->DR;  // clears interrupt flags
     }
@@ -169,9 +166,10 @@ USART::USART(USARTType *usart, Baudrate baudrate)
         // enable usart, receiver, receiver interurpt and idle interrupt
         usart->CR1 = USART_CR1_UE        // Enable port
                      | USART_CR1_RXNEIE  // Interrupt on data received
-                     | USART_CR1_IDLEIE  // Interrupt on idle line
-                     | USART_CR1_TE      // Transmission enbled
-                     | USART_CR1_RE;     // Reception enabled
+                     | USART_CR1_IDLEIE
+                     //  | USART_CR1_TXEIE   // Interrupt on data transmitted
+                     | USART_CR1_TE   // Transmission enbled
+                     | USART_CR1_RE;  // Reception enabled
 
         // sample only one bit
         usart->CR3 |= USART_CR3_ONEBIT;
@@ -224,8 +222,18 @@ void USART::init()
     ports[id - 1] = this;
 }
 
+void USART::enableDMA()
+{
+    miosix::FastInterruptDisableLock dLock;
+    // enable DMA transmitter and receiver
+    usart->CR3 |= USART_CR3_DMAT | USART_CR3_DMAR;
+    return;
+}
+
 void USART::setWordLength(WordLength wordLength)
 {
+
+    miosix::FastInterruptDisableLock dLock;
     (wordLength == WordLength::BIT8 ? usart->CR1 &= ~USART_CR1_M
                                     : usart->CR1 |= USART_CR1_M);
     this->wordLength = wordLength;
@@ -233,17 +241,34 @@ void USART::setWordLength(WordLength wordLength)
 
 void USART::setParity(ParityBit parity)
 {
+    miosix::FastInterruptDisableLock dLock;
     (parity == ParityBit::NO_PARITY ? usart->CR1 &= ~USART_CR1_PCE
                                     : usart->CR1 |= USART_CR1_PCE);
     this->parity = parity;
 }
 
-void USART::setStopBits(int stopBits) { this->stopBits = stopBits; }
+void USART::setStopBits(int stopBits)
+{
+    miosix::FastInterruptDisableLock dLock;
+    this->stopBits = stopBits;
+    usart->CR2 &= ~USART_CR2_STOP;
+    if (stopBits == 2)
+    {
+        usart->CR2 |= USART_CR2_STOP_1;
+    }
+}
 
-void USART::setOversampling(bool oversampling) { this->over8 = oversampling; }
+void USART::setOversampling(bool oversampling)
+{
+    miosix::FastInterruptDisableLock dLock;
+    this->over8 = oversampling;
+    (oversampling ? usart->CR1 |= USART_CR1_OVER8
+                  : usart->CR1 &= ~USART_CR1_OVER8);
+}
 
 void USART::setBaudrate(Baudrate baudrate)
 {
+    InterruptDisableLock dLock;
     // fixed point: mantissa first 12 bits;
     // other 4 bits are the fixed point value of the fraction.
     // if over8==0 => DIV_Fraction[3:0] (all fraction used) USART_DIV =
@@ -279,21 +304,23 @@ void USART::setBaudrate(Baudrate baudrate)
 
 int USART::read(void *buffer, size_t nBytes)
 {
+    Lock<FastMutex> l(rxMutex);
     // if no char has been read
     if (rxQueue.isEmpty())
     {
         return 0;
     }
 
-    int i;
+    size_t i  = 0;
     char *buf = reinterpret_cast<char *>(buffer);
 
-    for (i = 0; i < nBytes; i++)
+    for (; i < nBytes; i++)
     {
-        if (!rxQueue.tryGet(buf[i]))
+        if (!rxQueue.tryGet(*buf))
         {
             break;
         }
+        buf++;
     }
 
     return i;
@@ -301,6 +328,7 @@ int USART::read(void *buffer, size_t nBytes)
 
 void USART::write(void *buffer, size_t nBytes)
 {
+    Lock<FastMutex> l(txMutex);
     // TODO: use the send complete interrupt in order not to have a busy while
     // loop waiting
     const char *buf = reinterpret_cast<const char *>(buffer);
@@ -309,19 +337,25 @@ void USART::write(void *buffer, size_t nBytes)
         while ((usart->SR & USART_SR_TXE) == 0)
             ;
 
-        usart->DR = buf[i];
+        usart->DR = *buf;
+        buf++;
     }
 }
 
 void USART::writeString(char *buffer)
 {
+    Lock<FastMutex> l(txMutex);
     // send everything, comprising the '\0' character
-    for (size_t i = 0; buffer[i] != '\0'; i++)
+    usart->DR = *buffer;
+    do
     {
-        while ((usart->SR & USART_SR_TXE) == 0)
+        buffer++;
+        while (!(usart->SR & USART_SR_TXE))
             ;
 
-        usart->DR = buffer[i];
-    }
+        usart->DR = *buffer;
+    } while (*buffer != '\0');
 }
+
+int USART::getId() { return this->id; }
 }  // namespace Boardcore

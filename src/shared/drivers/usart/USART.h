@@ -83,6 +83,9 @@ public:
     USART(USARTType *usart, Baudrate baudrate);
 
     void init();
+    void IRQHandleInterrupt();
+
+    void enableDMA();
 
     /**
      * @brief Set the length of the word to 8 or to 9.
@@ -114,8 +117,6 @@ public:
      */
     void setOversampling(bool oversampling);
 
-    void IRQHandleInterrupt();
-
     /**
      * @brief Blocking read operation
      */
@@ -131,7 +132,14 @@ public:
      */
     void writeString(char *buffer);
 
+    /**
+     * @brief returns the id of the serial
+     */
+    int getId();
+
 private:
+    miosix::FastMutex rxMutex;
+    miosix::FastMutex txMutex;
     USARTType *usart;
     miosix::DynUnsyncQueue<char> rxQueue;  ///< Receiving queue
     Baudrate baudrate;
