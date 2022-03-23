@@ -38,7 +38,7 @@ class ExtendedKalmanEigen
 {
 
 public:
-    ExtendedKalmanEigen(ExtendedKalmanConfig config);
+    explicit ExtendedKalmanEigen(ExtendedKalmanConfig config);
 
     /**
      * @brief Prediction step of the EKF.

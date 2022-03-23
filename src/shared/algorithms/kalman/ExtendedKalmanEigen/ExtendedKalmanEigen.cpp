@@ -59,10 +59,12 @@ ExtendedKalmanEigen::ExtendedKalmanEigen(ExtendedKalmanConfig config)
     P_bias = eye3 * config.P_BIAS;
     P << P_pos, Eigen::MatrixXf::Zero(3, N - 4), Eigen::MatrixXf::Zero(3, 3), P_vel,
         Eigen::MatrixXf::Zero(3, N - 7), Eigen::MatrixXf::Zero(3, 6), P_att,
+        // cppcheck-suppress constStatement
         Eigen::MatrixXf::Zero(3, N - 10), Eigen::MatrixXf::Zero(3, 9), P_bias;
 
     Q_pos = eye3 * config.SIGMA_POS;
     Q_vel = eye3 * config.SIGMA_VEL;
+    // cppcheck-suppress constStatement
     Q_lin << Q_pos, Eigen::MatrixXf::Zero(3, NL - 3), Eigen::MatrixXf::Zero(3, 3), Q_vel;
 
     F << 0.0F, 0.0F, 0.0F, 1.0F, 0.0F, 0.0F,
@@ -79,10 +81,12 @@ ExtendedKalmanEigen::ExtendedKalmanEigen(ExtendedKalmanConfig config)
              0.0F, 0.0F, 0.0F, 0.0F, 1.0F, 0.0F;
     H_gpstr = H_gps.transpose();
 
+    // cppcheck-suppress constStatement
     Fatt << -eye3, -eye3 * config.T, Eigen::Matrix3f::Zero(3, 3), eye3;
     Fatttr = Fatt.transpose();
 
     Gatt << -eye3, Eigen::Matrix3f::Zero(3, 3),
+            // cppcheck-suppress constStatement
             Eigen::Matrix3f::Zero(3, 3), eye3;
     Gatttr = Gatt.transpose();
 
