@@ -118,9 +118,16 @@ public:
     void setOversampling(bool oversampling);
 
     /**
-     * @brief Blocking read operation
+     * @brief Blocking read operation that reads at most nBytes but doesn't wait
+     * for other data if it isn't arrived completely
      */
-    int read(void *buf, size_t nChars);
+    int readFast(void *buf, size_t nBytes);
+
+    /**
+     * @brief Blocking read operation to read nBytes or till the data transfer
+     * is complete
+     */
+    int read(void *buffer, size_t nBytes);
 
     /**
      * @brief Blocking write operation
@@ -138,10 +145,12 @@ public:
     int getId();
 
 private:
+    USARTType *usart;
     miosix::FastMutex rxMutex;
     miosix::FastMutex txMutex;
-    USARTType *usart;
+    miosix::Thread *rxWaiting = 0;
     miosix::DynUnsyncQueue<char> rxQueue;  ///< Receiving queue
+    bool idle = true;                      ///< Receiver idle
     Baudrate baudrate;
     ParityBit parity      = ParityBit::NO_PARITY;
     WordLength wordLength = WordLength::BIT8;

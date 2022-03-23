@@ -37,14 +37,12 @@ typedef struct
     float dataFloat;
     double dataDouble;
 } StructToSend;
-StructToSend struct_tx       = {'C', 42, 420.69, 48.84};
-char buf_tx[64]              = "Testing communication :D";
-USART::Baudrate baudrates[4] = {
-    USART::Baudrate::B2400,
-    USART::Baudrate::B9600,
-    USART::Baudrate::B19200,
-    USART::Baudrate::B115200,
-};
+StructToSend struct_tx      = {'C', 42, 420.69, 48.84};
+char buf_tx[64]             = "Testing communication :D";
+USART::Baudrate baudrates[] = {
+    USART::Baudrate::B1200,  USART::Baudrate::B2400,  USART::Baudrate::B38400,
+    USART::Baudrate::B9600,  USART::Baudrate::B19200, USART::Baudrate::B115200,
+    USART::Baudrate::B230400};
 
 // function for the thread that has to read from serial
 void readSer(USART *s, void *rcv)
@@ -63,7 +61,6 @@ void testCommunicationSequential(USART *src, USART *dst)
     printf("Sending string\n");
     printf("\t-->%d sending: \t'%s'\n", src->getId(), buf_tx);
     src->writeString(buf_tx);
-    Thread::sleep(100);
     dst->read(buf_rx, 64);
     printf("\t<--%d received: \t'%s'\n", dst->getId(), buf_rx);
 
@@ -82,7 +79,6 @@ void testCommunicationSequential(USART *src, USART *dst)
            struct_tx.dataChar, struct_tx.dataInt, struct_tx.dataFloat,
            struct_tx.dataDouble);
     src->write(&struct_tx, sizeof(StructToSend));
-    Thread::sleep(100);
     dst->read(&struct_rx, sizeof(StructToSend));
     printf("\t<--%d received: \t'%c,%d,%f,%f'\n", dst->getId(),
            struct_rx.dataChar, struct_rx.dataInt, struct_rx.dataFloat,
@@ -108,7 +104,8 @@ void testCommunicationSequential(USART *src, USART *dst)
 int main()
 {
     printf("*** SERIAL 3 WORKING!\n");
-    for (int iBaud = 0; iBaud < 4; iBaud++)
+    for (int iBaud = 0; iBaud < sizeof(baudrates) / sizeof(baudrates[0]);
+         iBaud++)
     {
         // Setting the baudrate to 2400, maximum functioning baudrate for the
         // Max485 adapters
@@ -126,7 +123,7 @@ int main()
         usart2.setParity(USART::ParityBit::NO_PARITY);
         usart2.init();
 
-        printf("\n\n########################### %d\n", baudrates[iBaud]);
+        printf("\n\n########################### %d\n", (int)baudrates[iBaud]);
         // testing transmission "serial 1 <- serial 2"
         testCommunicationSequential(&usart1, &usart2);
 

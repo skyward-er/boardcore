@@ -132,11 +132,23 @@ void USART::IRQHandleInterrupt()
         if (!(usart->SR & USART_SR_FE))
             if (rxQueue.tryPut(c) == false) /*fifo overflow*/
                 ;
+
+        idle = false;
     }
 
     if (usart->SR & USART_SR_IDLE)
+        idle = true;
+
+    if (usart->SR & USART_SR_IDLE || rxQueue.size() >= QUEUE_LEN / 2)
     {
         c = usart->DR;  // clears interrupt flags
+
+        // Enough data in buffer or idle line, awake thread
+        if (rxWaiting)
+        {
+            rxWaiting->IRQwakeup();
+            rxWaiting = 0;
+        }
     }
 }
 
@@ -166,10 +178,9 @@ USART::USART(USARTType *usart, Baudrate baudrate)
         // enable usart, receiver, receiver interurpt and idle interrupt
         usart->CR1 = USART_CR1_UE        // Enable port
                      | USART_CR1_RXNEIE  // Interrupt on data received
-                     | USART_CR1_IDLEIE
-                     //  | USART_CR1_TXEIE   // Interrupt on data transmitted
-                     | USART_CR1_TE   // Transmission enbled
-                     | USART_CR1_RE;  // Reception enabled
+                     | USART_CR1_IDLEIE  // interrupt on idle line
+                     | USART_CR1_TE      // Transmission enbled
+                     | USART_CR1_RE;     // Reception enabled
 
         // sample only one bit
         usart->CR3 |= USART_CR3_ONEBIT;
@@ -305,6 +316,43 @@ void USART::setBaudrate(Baudrate baudrate)
 int USART::read(void *buffer, size_t nBytes)
 {
     Lock<FastMutex> l(rxMutex);
+
+    char *buf     = reinterpret_cast<char *>(buffer);
+    size_t result = 0;
+    FastInterruptDisableLock dLock;
+    for (;;)
+    {
+        // Try to get data from the queue
+        for (; result < nBytes; result++)
+        {
+            if (rxQueue.tryGet(buf[result]) == false)
+                break;
+            // This is here just not to keep IRQ disabled for the whole loop
+            FastInterruptEnableLock eLock(dLock);
+        }
+
+        if (result == nBytes || (idle && result > 0))
+            break;
+
+        // Wait for data in the queue
+        do
+        {
+            rxWaiting = Thread::IRQgetCurrentThread();
+            Thread::IRQwait();
+            {
+                FastInterruptEnableLock eLock(dLock);
+                Thread::yield();
+            }
+        } while (rxWaiting);
+    }
+
+    return result;
+}
+
+int USART::readFast(void *buffer, size_t nBytes)
+{
+    Lock<FastMutex> l(rxMutex);
+    FastInterruptDisableLock dLock;
     // if no char has been read
     if (rxQueue.isEmpty())
     {
