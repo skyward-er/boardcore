@@ -22,22 +22,23 @@
 
 #pragma once
 
-#include <configs/NASConfig.h>
 #include <math/SkyQuaternion.h>
 #include <utils/aero/AeroUtils.h>
 
 #include <Eigen/Dense>
 
-namespace DeathStackBoard
+#include "ExtendedKalmanConfig.h"
+
+namespace Boardcore
 {
 
-using VectorNf = Eigen::Matrix<float, NASConfigs::N, 1>;
+using VectorNf = Eigen::Matrix<float, 13, 1>;
 
 class ExtendedKalmanEigen
 {
 
 public:
-    ExtendedKalmanEigen();
+    ExtendedKalmanEigen(ExtendedKalmanConfig config);
 
     /**
      * @brief Prediction step of the EKF.
@@ -90,20 +91,65 @@ public:
     void setX(const VectorNf& x);
 
 private:
+    // Dimensions of matrices and vectors
+
+    static constexpr uint16_t N = 13;  ///< State vector elements, N x 1
+
+    /**
+     * @brief P matrix, N-1 x N-1.
+     *
+     * Reduced order thanks to the MEKF.
+     */
+    static constexpr uint16_t NP = N - 1;
+
+    /**
+     * @brief Number of attitude related elements.
+     *
+     * Quaternion components and biases: [q1, q2, q3, q4, bx, by, bz]
+     */
+    static constexpr uint16_t NATT = 7;
+
+    /**
+     * @brief Number of linear elements in the state vector.
+     *
+     * Position and velocity: [p_north, p_east, p_down, v_n, v_e, v_d]
+     */
+    static constexpr uint16_t NL = N - NATT;
+
+    ///< States of the barometer [pressure]
+    static constexpr uint16_t NBAR = 1;
+
+    ///< States of the gps [lon, lat, v_north, v_east]
+    static constexpr uint16_t NGPS = 4;
+
+    ///< States of the magnetometer [mx, my, mz]
+    static constexpr uint16_t NMAG = 3;
+
+    /**
+     * @brief Dimension used in the MEKF.
+     *
+     * 4 quaternion components + 3 biases - 1.
+     * The MEKF structure allows us to perform the dimensionality reduction of 1
+     */
+    static constexpr uint16_t NMEKF = 6;
+
+    ///< Extended Kalman filter configuration parameters
+    ExtendedKalmanConfig config;
+
     VectorNf x;
-    Eigen::Matrix<float, NASConfigs::NP, NASConfigs::NP> P;
-    Eigen::Matrix<float, NASConfigs::NL, NASConfigs::NL> F;
-    Eigen::Matrix<float, NASConfigs::NL, NASConfigs::NL> Ftr;
+    Eigen::Matrix<float, NP, NP> P;
+    Eigen::Matrix<float, NL, NL> F;
+    Eigen::Matrix<float, NL, NL> Ftr;
 
     Eigen::Matrix3f P_pos;
     Eigen::Matrix3f P_vel;
     Eigen::Matrix3f P_att;
     Eigen::Matrix3f P_bias;
-    Eigen::Matrix<float, NASConfigs::NL, NASConfigs::NL> Plin;
+    Eigen::Matrix<float, NL, NL> Plin;
 
     Eigen::Matrix3f Q_pos;
     Eigen::Matrix3f Q_vel;
-    Eigen::Matrix<float, NASConfigs::NL, NASConfigs::NL> Q_lin;
+    Eigen::Matrix<float, NL, NL> Q_lin;
 
     Eigen::Vector3f g;
     Eigen::Matrix2f eye2;
@@ -111,22 +157,22 @@ private:
     Eigen::Matrix4f eye4;
     Eigen::Matrix<float, 6, 6> eye6;
 
-    Eigen::Matrix<float, NASConfigs::NBAR, NASConfigs::NBAR> R_bar;
+    Eigen::Matrix<float, NBAR, NBAR> R_bar;
 
-    Eigen::Matrix<float, NASConfigs::NGPS, NASConfigs::NGPS> R_gps;
-    Eigen::Matrix<float, NASConfigs::NGPS, NASConfigs::NL> H_gps;
-    Eigen::Matrix<float, NASConfigs::NL, NASConfigs::NGPS> H_gpstr;
+    Eigen::Matrix<float, NGPS, NGPS> R_gps;
+    Eigen::Matrix<float, NGPS, NL> H_gps;
+    Eigen::Matrix<float, NL, NGPS> H_gpstr;
 
     Eigen::Vector4f q;
-    Eigen::Matrix<float, NASConfigs::NMAG, NASConfigs::NMAG> R_mag;
-    Eigen::Matrix<float, NASConfigs::NMEKF, NASConfigs::NMEKF> Q_mag;
-    Eigen::Matrix<float, NASConfigs::NMEKF, NASConfigs::NMEKF> Fatt;
-    Eigen::Matrix<float, NASConfigs::NMEKF, NASConfigs::NMEKF> Fatttr;
-    Eigen::Matrix<float, NASConfigs::NMEKF, NASConfigs::NMEKF> Gatt;
-    Eigen::Matrix<float, NASConfigs::NMEKF, NASConfigs::NMEKF> Gatttr;
-    Eigen::Matrix<float, NASConfigs::NMEKF, NASConfigs::NMEKF> Patt;
+    Eigen::Matrix<float, NMAG, NMAG> R_mag;
+    Eigen::Matrix<float, NMEKF, NMEKF> Q_mag;
+    Eigen::Matrix<float, NMEKF, NMEKF> Fatt;
+    Eigen::Matrix<float, NMEKF, NMEKF> Fatttr;
+    Eigen::Matrix<float, NMEKF, NMEKF> Gatt;
+    Eigen::Matrix<float, NMEKF, NMEKF> Gatttr;
+    Eigen::Matrix<float, NMEKF, NMEKF> Patt;
 
     Boardcore::SkyQuaternion quater;
 };
 
-}  // namespace DeathStackBoard
+}  // namespace Boardcore

@@ -101,8 +101,27 @@
         "concepts": "cpp"
     },
     "cSpell.words": [
+        "Alessandro",
+        "Baro",
+        "Duca",
+        "Eigen",
+        "Fatt",
+        "Fatttr",
+        "Gatttr",
         "Gpio",
         "GPIOB",
-        "miosix"
+        "gpstr",
+        "Kalman",
+        "Luca",
+        "MEKF",
+        "miosix",
+        "NATT",
+        "NBAR",
+        "NGPS",
+        "NMAG",
+        "NMEKF",
+        "nord",
+        "Plin",
+        "sats"
     ]
 }

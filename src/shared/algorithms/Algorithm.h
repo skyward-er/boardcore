@@ -22,6 +22,9 @@
 
 #pragma once
 
+namespace Boardcore
+{
+
 class Algorithm
 {
 public:
@@ -63,3 +66,5 @@ protected:
 
     bool running = false;
 };
+
+}  // namespace Boardcore

@@ -31,7 +31,7 @@
 #include <catch2/catch.hpp>
 #include <iostream>
 
-#include "../kalman/test-kalman-data.h"
+#include "../algorithms/kalman/test-kalman-data.h"
 
 using namespace Boardcore;
 using namespace Eigen;

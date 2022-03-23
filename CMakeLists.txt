@@ -55,9 +55,6 @@ sbs_target(sdcard-benchmark stm32f429zi_stm32f4discovery)
 #                                    Tests                                    #
 #-----------------------------------------------------------------------------#
 
-add_executable(test-kalman-eigen-benchmark src/tests/kalman/test-kalman-eigen-benchmark.cpp)
-sbs_target(test-kalman-eigen-benchmark stm32f429zi_stm32f4discovery)
-
 add_executable(test-logger src/tests/logger/test-logger.cpp)
 sbs_target(test-logger stm32f429zi_stm32f4discovery)
 
@@ -108,6 +105,16 @@ add_executable(catch-tests-boardcore
 target_compile_definitions(catch-tests-boardcore PRIVATE USE_MOCK_PERIPHERALS)
 sbs_target(catch-tests-boardcore stm32f429zi_stm32f4discovery)
 sbs_catch_test(catch-tests-boardcore)
+
+#-----------------------------------------------------------------------------#
+#                             Tests - Algorithms                              #
+#-----------------------------------------------------------------------------#
+
+add_executable(test-kalman-eigen-benchmark src/tests/algorithms/kalman/test-kalman-eigen-benchmark.cpp)
+sbs_target(test-kalman-eigen-benchmark stm32f429zi_stm32f4discovery)
+
+add_executable(test-extended-kalman-eigen src/tests/algorithms/kalman/test-extended-kalman-eigen.cpp)
+sbs_target(test-extended-kalman-eigen stm32f429zi_skyward_death_stack_x)
 
 #-----------------------------------------------------------------------------#
 #                               Tests - Drivers                               #

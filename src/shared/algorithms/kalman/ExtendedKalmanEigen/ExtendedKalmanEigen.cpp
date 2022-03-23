@@ -20,17 +20,16 @@
  * THE SOFTWARE.
  */
 
-#include <NavigationAttitudeSystem/ExtendedKalmanEigen.h>
+#include "ExtendedKalmanEigen.h"
 
 using namespace Boardcore;
 using namespace Eigen;
 
-namespace DeathStackBoard
+namespace Boardcore
 {
 
-using namespace NASConfigs;
-
-ExtendedKalmanEigen::ExtendedKalmanEigen()
+ExtendedKalmanEigen::ExtendedKalmanEigen(ExtendedKalmanConfig config)
+    : config(config)
 {
     eye6.setIdentity();
     eye4.setIdentity();
@@ -39,38 +38,38 @@ ExtendedKalmanEigen::ExtendedKalmanEigen()
 
     // clang-format off
 
-    R_bar << SIGMA_BAR;
-    R_mag << SIGMA_MAG * eye3;
-    R_gps << eye4 * SIGMA_GPS / SATS_NUM;
-    Q_mag << (SIGMA_W * SIGMA_W * T +
-              (1.0F / 3.0F) * SIGMA_BETA * SIGMA_BETA * T * T * T) *
+    R_bar << config.SIGMA_BAR;
+    R_mag << config.SIGMA_MAG * eye3;
+    R_gps << eye4 * config.SIGMA_GPS / config.SATS_NUM;
+    Q_mag << (config.SIGMA_W * config.SIGMA_W * config.T +
+              (1.0F / 3.0F) * config.SIGMA_BETA * config.SIGMA_BETA * config.T * config.T * config.T) *
                  eye3,
-        (0.5F * SIGMA_BETA * SIGMA_BETA * T * T) * eye3,
+        (0.5F * config.SIGMA_BETA * config.SIGMA_BETA * config.T * config.T) * eye3,
         // cppcheck-suppress constStatement
-        (0.5F * SIGMA_BETA * SIGMA_BETA * T * T) * eye3,
-        (SIGMA_BETA * SIGMA_BETA * T) * eye3;
+        (0.5F * config.SIGMA_BETA * config.SIGMA_BETA * config.T * config.T) * eye3,
+        (config.SIGMA_BETA * config.SIGMA_BETA * config.T) * eye3;
 
-    P_pos << P_POS, 0,     0,
-             0,     P_POS, 0,
-             0,     0,     P_POS_VERTICAL;
-    P_vel << P_VEL, 0,     0,
-             0,     P_VEL, 0,
-             0,     0,     P_VEL_VERTICAL;
-    P_att  = eye3 * P_ATT;
-    P_bias = eye3 * P_BIAS;
+    P_pos << config.P_POS, 0,     0,
+             0,    config.P_POS, 0,
+             0,     0,     config.P_POS_VERTICAL;
+    P_vel << config.P_VEL, 0,     0,
+             0,     config.P_VEL, 0,
+             0,     0,     config.P_VEL_VERTICAL;
+    P_att  = eye3 * config.P_ATT;
+    P_bias = eye3 * config.P_BIAS;
     P << P_pos, Eigen::MatrixXf::Zero(3, N - 4), Eigen::MatrixXf::Zero(3, 3), P_vel,
         Eigen::MatrixXf::Zero(3, N - 7), Eigen::MatrixXf::Zero(3, 6), P_att,
         Eigen::MatrixXf::Zero(3, N - 10), Eigen::MatrixXf::Zero(3, 9), P_bias;
 
-    Q_pos = eye3 * SIGMA_POS;
-    Q_vel = eye3 * SIGMA_VEL;
+    Q_pos = eye3 * config.SIGMA_POS;
+    Q_vel = eye3 * config.SIGMA_VEL;
     Q_lin << Q_pos, Eigen::MatrixXf::Zero(3, NL - 3), Eigen::MatrixXf::Zero(3, 3), Q_vel;
 
     F << 0.0F, 0.0F, 0.0F, 1.0F, 0.0F, 0.0F,
          0.0F, 0.0F, 0.0F, 0.0F, 1.0F, 0.0F,
          0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 1.0F,
          Eigen::MatrixXf::Zero(3, NL);
-    F   = eye6 + T * F;
+    F   = eye6 + config.T * F;
     Ftr = F.transpose();
 
     H_gps << 1.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F,
@@ -80,7 +79,7 @@ ExtendedKalmanEigen::ExtendedKalmanEigen()
              0.0F, 0.0F, 0.0F, 0.0F, 1.0F, 0.0F;
     H_gpstr = H_gps.transpose();
 
-    Fatt << -eye3, -eye3 * T, Eigen::Matrix3f::Zero(3, 3), eye3;
+    Fatt << -eye3, -eye3 * config.T, Eigen::Matrix3f::Zero(3, 3), eye3;
     Fatttr = Fatt.transpose();
 
     Gatt << -eye3, Eigen::Matrix3f::Zero(3, 3),
@@ -125,7 +124,7 @@ void ExtendedKalmanEigen::predict(const Eigen::Vector3f& u)
             NATT,
             1);  // The quaternions and the biases don't need to be updated
 
-    x = x + T * x_dot;
+    x = x + config.T * x_dot;
 }
 
 void ExtendedKalmanEigen::correctBaro(const float y, const float msl_press,
@@ -179,7 +178,7 @@ void ExtendedKalmanEigen::correctGPS(const Vector4f& y, const uint8_t sats_num)
 
     Matrix<float, NGPS, 1> yned(xnord, yest, velnord, velest);
 
-    R_gps = eye4 * SIGMA_GPS / sqrtf(sats_num);
+    R_gps = eye4 * config.SIGMA_GPS / sqrtf(sats_num);
 
     Plin = P.block<NL, NL>(0, 0);
 
@@ -223,7 +222,7 @@ void ExtendedKalmanEigen::predictMEKF(const Eigen::Vector3f& u)
     // cppcheck-suppress constStatement
     omega_mat << -omega_submat, omega, -omega.transpose(), 0.0F;
 
-    q = (eye4 + 0.5F * omega_mat * T) * q;
+    q = (eye4 + 0.5F * omega_mat * config.T) * q;
     q.normalize();
 
     // cppcheck-suppress constStatement
@@ -265,7 +264,7 @@ void ExtendedKalmanEigen::correctMEKF(const Eigen::Vector3f& y)
         2.0F * q2 * q3 - 2.0F * q1 * q4,
         -powf(q1, 2) - powf(q2, 2) + powf(q3, 2) + powf(q4, 2);
 
-    z = A * NED_MAG;
+    z = A * config.NED_MAG;
 
     // cppcheck-suppress constStatement
     z_mat << 0.0F, -z(2), z(1), z(2), 0.0F, -z(0), -z(1), z(0), 0.0F;
@@ -301,4 +300,4 @@ void ExtendedKalmanEigen::correctMEKF(const Eigen::Vector3f& y)
         Katt * R_mag * Katt.transpose();
 }
 
-}  // namespace DeathStackBoard
+}  // namespace Boardcore

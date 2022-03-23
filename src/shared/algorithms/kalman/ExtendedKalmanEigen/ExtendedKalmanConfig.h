@@ -24,28 +24,32 @@
 
 #include <Eigen/Dense>
 
-namespace DeathStackBoard
+namespace Boardcore
 {
-
-// function with 2 vectors as parameters
-typedef std::function<MatrixXf(VectorXf, VectorXf)> function_2v;
-// function with 1 vector as parameter
-typedef std::function<MatrixXf(VectorXf)> function_v;
 
 struct ExtendedKalmanConfig
 {
-    uint8_t n;
-    uint8_t m;
-    uint8_t p;
+    float T;           ///< [s] Sample period
+    float SIGMA_BETA;  ///< [rad/s^2] Estimated gyroscope bias variance
+    float SIGMA_W;     ///< [rad^2] Estimated gyroscope variance
+    float SIGMA_MAG;   ///< [uT^2] Estimated magnetometer variance
+    float SIGMA_GPS;   ///< [m^2] Estimated GPS variance
+    float SIGMA_BAR;   ///< [m^2] Estimated altitude variance
+    float SIGMA_POS;   ///< [m^2] Estimated variance of the position noise
+    float SIGMA_VEL;   ///< [(m/s)^2] Estimated variance of teh velocity noise
 
-    Eigen::Matrix<float, 12, 12> P;
-    Eigen::Matrix<float, 6, 6> Q;
-    Vector<float, 13> x;
+    float P_POS;  ///< Position prediction covariance
+    float P_POS_VERTICAL;
 
-    function_v h;
+    float P_VEL;  ///< Velocity prediction covariance
+    float P_VEL_VERTICAL;
 
-    function_2v dfdx;
-    function_v dhdx;
+    float P_ATT;   ///< Attitude prediction covariance
+    float P_BIAS;  ///< Bias prediction covariance
+
+    float SATS_NUM = 6.0f;  ///< Number of satellites used at setup time
+
+    Eigen::Vector3f NED_MAG;  ///< Normalized magnetic field vector
 };
 
-}  // namespace DeathStackBoard
+}  // namespace Boardcore

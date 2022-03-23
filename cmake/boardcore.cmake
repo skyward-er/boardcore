@@ -26,6 +26,9 @@ include(boardcore-host)
 foreach(OPT_BOARD ${BOARDS})
     set(BOARDCORE_LIBRARY boardcore-${OPT_BOARD})
     add_library(${BOARDCORE_LIBRARY} STATIC EXCLUDE_FROM_ALL
+        # Algorithms
+        ${SBS_BASE}/src/shared/algorithms/kalman/ExtendedKalmanEigen/ExtendedKalmanEigen.cpp
+
         # Debug
         ${SBS_BASE}/src/shared/utils/Debug.cpp
         ${SBS_BASE}/src/shared/diagnostic/CpuMeter.cpp
