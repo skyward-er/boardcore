@@ -69,5 +69,4 @@ int main()
 
         Thread::sleep(500);
     }
-    return 0;
 }

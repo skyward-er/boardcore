@@ -101,6 +101,7 @@
         "concepts": "cpp"
     },
     "cSpell.words": [
+        "AVDD",
         "Gpio",
         "GPIOB",
         "miosix"

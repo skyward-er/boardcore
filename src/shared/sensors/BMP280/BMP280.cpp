@@ -45,8 +45,8 @@ const BMP280::BMP280Config BMP280::BMP280_CONFIG_ALL_ENABLED = {0,
 const BMP280::BMP280Config BMP280::BMP280_CONFIG_TEMP_SINGLE = {
     0, 0, FORCED_MODE, SKIPPED, OVERSAMPLING_1, 0, FILTER_OFF, STB_TIME_0_5};
 
-BMP280::BMP280(SPISlave spiSlave_, BMP280Config config_)
-    : spiSlave(spiSlave_), config(config_)
+BMP280::BMP280(SPISlave spiSlave, BMP280Config config)
+    : spiSlave(spiSlave), config(config)
 {
 }
 
