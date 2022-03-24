@@ -48,6 +48,8 @@ namespace Boardcore
  * not require any external component. On-chip power-on-reset circuitry
  * simplifies digital interface initialization. There is no programming needed
  * for the internal registers. All controls to the HX711 are through the pins.
+ *
+ * Reference: https://github.com/bogde/HX711
  */
 class HX711 : public Sensor<HX711Data>
 {
