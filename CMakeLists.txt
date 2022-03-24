@@ -281,6 +281,9 @@ sbs_target(test-bmx160 stm32f429zi_skyward_death_stack_x)
 add_executable(test-bmx160-with-correction src/tests/sensors/test-bmx160-with-correction.cpp)
 sbs_target(test-bmx160-with-correction stm32f429zi_skyward_death_stack_x)
 
+add_executable(test-hx711 src/tests/sensors/test-hx711.cpp)
+sbs_target(test-hx711 stm32f429zi_stm32f4discovery)
+
 add_executable(test-l3gd20 src/tests/sensors/test-l3gd20.cpp)
 sbs_target(test-l3gd20 stm32f429zi_stm32f4discovery)
 
