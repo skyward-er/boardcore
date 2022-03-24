@@ -78,12 +78,39 @@ public:
     };
 
     /**
+     * @brief interrupt handler that deals with receive interrupt, idle
+     * interrupt
+     */
+    void IRQHandleInterrupt();
+    /*
+     * Constructor, initializes the serial port using the default pins, which
+     * are:
+     * USART1: tx=PA9  rx=PA10 cts=PA11 rts=PA12
+     * USART2: tx=PA2  rx=PA3  cts=PA0  rts=PA1
+     * USART3: tx=PB10 rx=PB11 cts=PB13 rts=PB14
+     */
+    /**
      * @brief Automatically enables the peripheral and timer peripheral clock.
+     * sets the default values for all the parameters (1 stop bit, 8 bit data,
+     * no control flow and no oversampling).
+     * @param usart structure that represents the usart peripheral [accepted
+     * are: USART1, USART2 or USART3].
+     * @param baudrate member of the enum Baudrate that represents the baudrate
+     * with which the communication will take place.
      */
     USART(USARTType *usart, Baudrate baudrate);
 
+    /**
+     * @brief initializes the peripheral enabling his interrupts, enabling the
+     * interrupts in the NVIC and setting the pins with the appropriate
+     * alternate functions. All the setup phase must be done before the
+     * initialization of the peripheral. Initializes the serial port using
+     * the default pins, which are:
+     * USART1: tx=PA9  rx=PA10 cts=PA11 rts=PA12
+     * USART2: tx=PA2  rx=PA3  cts=PA0  rts=PA1
+     * USART3: tx=PB10 rx=PB11 cts=PB13 rts=PB14
+     */
     void init();
-    void IRQHandleInterrupt();
 
     void enableDMA();
 
@@ -113,15 +140,10 @@ public:
     void setBaudrate(Baudrate br);
 
     /**
-     * @brief Sets the Over8 bit
+     * @brief Sets the Over8 bit. If it is set, the speed is increased; if it is
+     * reset the tolerance is increased.
      */
     void setOversampling(bool oversampling);
-
-    /**
-     * @brief Blocking read operation that reads at most nBytes but doesn't wait
-     * for other data if it isn't arrived completely
-     */
-    int readFast(void *buf, size_t nBytes);
 
     /**
      * @brief Blocking read operation to read nBytes or till the data transfer
@@ -135,7 +157,7 @@ public:
     void write(void *buf, size_t nChars);
 
     /**
-     * @brief Write a string to the serial
+     * @brief Write a string to the serial, comprising the '\0' character
      */
     void writeString(char *buffer);
 
@@ -145,18 +167,20 @@ public:
     int getId();
 
 private:
-    USARTType *usart;
-    miosix::FastMutex rxMutex;
-    miosix::FastMutex txMutex;
-    miosix::Thread *rxWaiting = 0;
+    USARTType
+        *usart;  ///< pointer to the struct representing the USART peripheral
+    miosix::FastMutex rxMutex;  ///< mutex for receiving on serial
+    miosix::FastMutex txMutex;  ///< mutex for transmitting on serial
+    miosix::Thread *rxWaiting =
+        0;  ///< pointer to the waiting on receive thread
     miosix::DynUnsyncQueue<char> rxQueue;  ///< Receiving queue
     bool idle = true;                      ///< Receiver idle
+    int id    = 1;                         ///< can be 1, 2, 3
     Baudrate baudrate;
     ParityBit parity      = ParityBit::NO_PARITY;
     WordLength wordLength = WordLength::BIT8;
     int stopBits          = 1;
     bool over8            = false;
-    int id                = 1;  ///< can be 1, 2, 3
 };
 
 }  // namespace Boardcore

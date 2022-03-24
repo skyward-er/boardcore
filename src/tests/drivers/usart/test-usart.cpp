@@ -30,6 +30,13 @@
 using namespace miosix;
 using namespace Boardcore;
 
+/**
+ * SETUP:
+ * - connect the default serial (USART3) to the pc
+ * - connect usart1_rx to the usart2_tx
+ * - connect usart2_rx to the usart1_tx
+ */
+
 typedef struct
 {
     char dataChar;
@@ -40,22 +47,19 @@ typedef struct
 StructToSend struct_tx      = {'C', 42, 420.69, 48.84};
 char buf_tx[64]             = "Testing communication :D";
 USART::Baudrate baudrates[] = {
-    USART::Baudrate::B1200,  USART::Baudrate::B2400,  USART::Baudrate::B38400,
-    USART::Baudrate::B9600,  USART::Baudrate::B19200, USART::Baudrate::B115200,
-    USART::Baudrate::B230400};
+    USART::Baudrate::B2400,  USART::Baudrate::B38400,  USART::Baudrate::B9600,
+    USART::Baudrate::B19200, USART::Baudrate::B115200, USART::Baudrate::B230400,
+    USART::Baudrate::B460800};
 
-// function for the thread that has to read from serial
-void readSer(USART *s, void *rcv)
-{
-    s->read(rcv, 64);
-    // printf("\t<--%d received: \t'%s'\n", s->getId(), rcv);
-}
-
-// Communicatio: src -> dst
-void testCommunicationSequential(USART *src, USART *dst)
+/**
+ * Communication: src -> dst
+ * tests the writeString, write and read methods of the USART driver
+ */
+bool testCommunicationSequential(USART *src, USART *dst)
 {
     char buf_rx[64];
     StructToSend struct_rx;
+    bool passed = true;
 
     // SENDING STRING
     printf("Sending string\n");
@@ -71,6 +75,7 @@ void testCommunicationSequential(USART *src, USART *dst)
     else
     {
         printf("### %d -> %d ERROR!\n", src->getId(), dst->getId());
+        passed = false;
     }
 
     // SENDING BINARY DATA
@@ -91,10 +96,12 @@ void testCommunicationSequential(USART *src, USART *dst)
     else
     {
         printf("### %d -> %d ERROR!\n", src->getId(), dst->getId());
+        passed = false;
     }
+
+    return passed;
 }
 
-//##############################################################################//
 /*
  * // USART1: tx=PA9  rx=PA10 cts=PA11 rts=PA12
  * USART1: tx=PB6  rx=PB7
@@ -103,35 +110,58 @@ void testCommunicationSequential(USART *src, USART *dst)
  */
 int main()
 {
+    bool testPassed = true;
     printf("*** SERIAL 3 WORKING!\n");
-    for (int iBaud = 0; iBaud < sizeof(baudrates) / sizeof(baudrates[0]);
-         iBaud++)
+    for (unsigned int iBaud = 0;
+         iBaud < sizeof(baudrates) / sizeof(baudrates[0]); iBaud++)
     {
-        // Setting the baudrate to 2400, maximum functioning baudrate for the
-        // Max485 adapters
+        printf("\n\n########################### %d\n", (int)baudrates[iBaud]);
+
+        // declaring the usart peripherals
         Boardcore::USART usart1(USART1, baudrates[iBaud]);
-        usart1.setOversampling(false);
-        usart1.setStopBits(1);
-        usart1.setWordLength(USART::WordLength::BIT8);
-        usart1.setParity(USART::ParityBit::NO_PARITY);
+        // usart1.setOversampling(false);
+        // usart1.setStopBits(1);
+        // usart1.setWordLength(USART::WordLength::BIT8);
+        // usart1.setParity(USART::ParityBit::NO_PARITY);
         usart1.init();
 
         Boardcore::USART usart2(USART2, baudrates[iBaud]);
-        usart2.setOversampling(false);
-        usart2.setStopBits(1);
-        usart2.setWordLength(USART::WordLength::BIT8);
-        usart2.setParity(USART::ParityBit::NO_PARITY);
+        // usart2.setOversampling(false);
+        // usart2.setStopBits(1);
+        // usart2.setWordLength(USART::WordLength::BIT8);
+        // usart2.setParity(USART::ParityBit::NO_PARITY);
         usart2.init();
 
-        printf("\n\n########################### %d\n", (int)baudrates[iBaud]);
-        // testing transmission "serial 1 <- serial 2"
-        testCommunicationSequential(&usart1, &usart2);
+        // testing transmission (both char and binary) "serial 1 -> serial 2"
+        testPassed &= testCommunicationSequential(&usart1, &usart2);
 
-        // testing transmission "serial 1 -> serial 2"
-        testCommunicationSequential(&usart2, &usart1);
+        // testing transmission (both char and binary) "serial 1 <- serial 2"
+        testPassed &= testCommunicationSequential(&usart2, &usart1);
 
-        Thread::sleep(1000);
+        // trying if read and readFast returns if there is no communication
+        // holding
+        {
+            char buf_fast[64];
+            usart1.read(buf_fast, 64);
+            printf("read didn't block\n");
+        }
+
+        // Thread::sleep(50);
     }
 
+    if (testPassed)
+    {
+        printf(
+            "********************************\n"
+            "***        TEST PASSED       ***\n"
+            "********************************\n");
+    }
+    else
+    {
+        printf(
+            "################################\n"
+            "###        TEST FAILED       ###\n"
+            "################################\n");
+    }
     return 0;
 }

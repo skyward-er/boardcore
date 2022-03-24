@@ -25,37 +25,29 @@
 #include <miosix.h>
 
 // TODO: define the length of the queue
-#define QUEUE_LEN 1024
-/*
- * Constructor, initializes the serial port using the default pins, which
- * are:
- * USART1: tx=PA9  rx=PA10 cts=PA11 rts=PA12
- * USART2: tx=PA2  rx=PA3  cts=PA0  rts=PA1
- * USART3: tx=PB10 rx=PB11 cts=PB13 rts=PB14
- */
+#define QUEUE_LEN 256
 
 // A nice feature of the stm32 is that the USART are connected to the same
 // GPIOS in all families, stm32f1, f2, f4 and l1. Additionally, USART1 is
-// always connected to the APB2, while USART2 and USART3 are always on APB1
+// always connected to the APB2, while USART2 and USART3 are always on APB1.
 // Unfortunately, this does not hold with DMA.
-using namespace miosix;
 
-// typedef Gpio<GPIOA_BASE, 9> u1tx;
-// typedef Gpio<GPIOA_BASE, 10> u1rx;
-typedef Gpio<GPIOB_BASE, 6> u1tx;
-typedef Gpio<GPIOB_BASE, 7> u1rx;
-typedef Gpio<GPIOA_BASE, 11> u1cts;
-typedef Gpio<GPIOA_BASE, 12> u1rts;
+// typedef miosix::Gpio<GPIOA_BASE, 9> u1tx;
+// typedef miosix::Gpio<GPIOA_BASE, 10> u1rx;
+typedef miosix::Gpio<GPIOB_BASE, 6> u1tx;
+typedef miosix::Gpio<GPIOB_BASE, 7> u1rx;
+typedef miosix::Gpio<GPIOA_BASE, 11> u1cts;
+typedef miosix::Gpio<GPIOA_BASE, 12> u1rts;
 
-typedef Gpio<GPIOA_BASE, 2> u2tx;
-typedef Gpio<GPIOA_BASE, 3> u2rx;
-typedef Gpio<GPIOA_BASE, 0> u2cts;
-typedef Gpio<GPIOA_BASE, 1> u2rts;
+typedef miosix::Gpio<GPIOA_BASE, 2> u2tx;
+typedef miosix::Gpio<GPIOA_BASE, 3> u2rx;
+typedef miosix::Gpio<GPIOA_BASE, 0> u2cts;
+typedef miosix::Gpio<GPIOA_BASE, 1> u2rts;
 
-typedef Gpio<GPIOB_BASE, 10> u3tx;
-typedef Gpio<GPIOB_BASE, 11> u3rx;
-typedef Gpio<GPIOB_BASE, 13> u3cts;
-typedef Gpio<GPIOB_BASE, 14> u3rts;
+typedef miosix::Gpio<GPIOB_BASE, 10> u3tx;
+typedef miosix::Gpio<GPIOB_BASE, 11> u3rx;
+typedef miosix::Gpio<GPIOB_BASE, 13> u3cts;
+typedef miosix::Gpio<GPIOB_BASE, 14> u3rts;
 
 /// Pointer to serial port classes to let interrupts access the classes
 static Boardcore::USART *ports[3] = {0};
@@ -172,21 +164,20 @@ USART::USART(USARTType *usart, Baudrate baudrate)
             break;
     }
 
+    // enabling the usart
     {
         miosix::FastInterruptDisableLock dLock;
-
-        // enable usart, receiver, receiver interurpt and idle interrupt
-        usart->CR1 = USART_CR1_UE        // Enable port
-                     | USART_CR1_RXNEIE  // Interrupt on data received
-                     | USART_CR1_IDLEIE  // interrupt on idle line
-                     | USART_CR1_TE      // Transmission enbled
-                     | USART_CR1_RE;     // Reception enabled
-
-        // sample only one bit
-        usart->CR3 |= USART_CR3_ONEBIT;
-
-        setBaudrate(baudrate);
+        usart->CR1 |= USART_CR1_UE;
     }
+
+    // setting the baudrate chosen
+    setBaudrate(baudrate);
+
+    // default settings
+    setStopBits(1);
+    setWordLength(USART::WordLength::BIT8);
+    setParity(USART::ParityBit::NO_PARITY);
+    setOversampling(false);
 }
 
 void USART::init()
@@ -196,7 +187,16 @@ void USART::init()
         return;
     }
 
-    InterruptDisableLock dLock;
+    miosix::FastInterruptDisableLock dLock;
+
+    // enable usart, receiver, receiver interurpt and idle interrupt
+    usart->CR1 |= USART_CR1_RXNEIE    // Interrupt on data received
+                  | USART_CR1_IDLEIE  // interrupt on idle line
+                  | USART_CR1_TE      // Transmission enbled
+                  | USART_CR1_RE;     // Reception enabled
+
+    // sample only one bit
+    usart->CR3 |= USART_CR3_ONEBIT;
 
     switch (id)
     {
@@ -279,28 +279,30 @@ void USART::setOversampling(bool oversampling)
 
 void USART::setBaudrate(Baudrate baudrate)
 {
-    InterruptDisableLock dLock;
-    // fixed point: mantissa first 12 bits;
-    // other 4 bits are the fixed point value of the fraction.
-    // if over8==0 => DIV_Fraction[3:0] (all fraction used) USART_DIV =
-    // f/(16*baud) if over8==1 => 0+DIV_Fraction[2:0] (first bit of fraction is
-    // 0)  USART_DIV = f/(8*baud)
+    /*
+     * Baudrate setting:
+     * fixed point: mantissa first 12 bits, other 4 bits are the fixed point
+     * value of the fraction.
+     * - if over8==0 => DIV_Fraction[3:0] (all fraction used)
+     * USART_DIV = f/(16*baud)
+     * - if over8==1 => 0+DIV_Fraction[2:0] (first bit of fraction is 0)
+     * USART_DIV = f/(8*baud)
+     */
+    miosix::InterruptDisableLock dLock;
 
     // USART1 is always connected to the APB2, while USART2 and USART3 are
     // always on APB1
     uint32_t f = ClockUtils::getAPBFrequency(
-        (id == 1 ? ClockUtils::APB::APB2
-                 : ClockUtils::APB::APB1));  // 42MHz clock frequency for APB1,
-                                             // 84MHz for APB2
+        (id == 1 ? ClockUtils::APB::APB2     // High speed APB2
+                 : ClockUtils::APB::APB1));  // Low speed APB1,
 
     // <<4 in order to shift to left of 4 positions, to create a fixed point
     // number of 4 decimal digits /8 == >>3 in order to divide per 8 (from the
     // formula in the datasheet)
-
     uint32_t USART_DIV = ((f << 1) / (((int)baudrate * (over8 ? 1 : 2))));
 
-    uint32_t brr =
-        (USART_DIV / 2) + (USART_DIV & 1);  // rounding to the nearest
+    // rounding to the nearest
+    uint32_t brr = (USART_DIV / 2) + (USART_DIV & 1);
 
     if (over8)
     {
@@ -309,17 +311,16 @@ void USART::setBaudrate(Baudrate baudrate)
 
     usart->BRR = brr;
 
-    // usart_brr register: 12 bit mantissa + 4 bit fraction
     this->baudrate = baudrate;
 }
 
 int USART::read(void *buffer, size_t nBytes)
 {
-    Lock<FastMutex> l(rxMutex);
+    miosix::Lock<miosix::FastMutex> l(rxMutex);
 
     char *buf     = reinterpret_cast<char *>(buffer);
     size_t result = 0;
-    FastInterruptDisableLock dLock;
+    miosix::FastInterruptDisableLock dLock;
     for (;;)
     {
         // Try to get data from the queue
@@ -328,20 +329,21 @@ int USART::read(void *buffer, size_t nBytes)
             if (rxQueue.tryGet(buf[result]) == false)
                 break;
             // This is here just not to keep IRQ disabled for the whole loop
-            FastInterruptEnableLock eLock(dLock);
+            miosix::FastInterruptEnableLock eLock(dLock);
         }
 
-        if (result == nBytes || (idle && result > 0))
+        // not checking if the nBytes read are more than 0
+        if (result == nBytes || idle)
             break;
 
         // Wait for data in the queue
         do
         {
-            rxWaiting = Thread::IRQgetCurrentThread();
-            Thread::IRQwait();
+            rxWaiting = miosix::Thread::IRQgetCurrentThread();
+            miosix::Thread::IRQwait();
             {
-                FastInterruptEnableLock eLock(dLock);
-                Thread::yield();
+                miosix::FastInterruptEnableLock eLock(dLock);
+                miosix::Thread::yield();
             }
         } while (rxWaiting);
     }
@@ -349,34 +351,9 @@ int USART::read(void *buffer, size_t nBytes)
     return result;
 }
 
-int USART::readFast(void *buffer, size_t nBytes)
-{
-    Lock<FastMutex> l(rxMutex);
-    FastInterruptDisableLock dLock;
-    // if no char has been read
-    if (rxQueue.isEmpty())
-    {
-        return 0;
-    }
-
-    size_t i  = 0;
-    char *buf = reinterpret_cast<char *>(buffer);
-
-    for (; i < nBytes; i++)
-    {
-        if (!rxQueue.tryGet(*buf))
-        {
-            break;
-        }
-        buf++;
-    }
-
-    return i;
-}
-
 void USART::write(void *buffer, size_t nBytes)
 {
-    Lock<FastMutex> l(txMutex);
+    miosix::Lock<miosix::FastMutex> l(txMutex);
     // TODO: use the send complete interrupt in order not to have a busy while
     // loop waiting
     const char *buf = reinterpret_cast<const char *>(buffer);
@@ -392,17 +369,21 @@ void USART::write(void *buffer, size_t nBytes)
 
 void USART::writeString(char *buffer)
 {
-    Lock<FastMutex> l(txMutex);
+    miosix::Lock<miosix::FastMutex> l(txMutex);
+
     // send everything, comprising the '\0' character
     usart->DR = *buffer;
-    do
+    if (*buffer != '\0')
     {
-        buffer++;
-        while (!(usart->SR & USART_SR_TXE))
-            ;
+        do
+        {
+            buffer++;
+            while (!(usart->SR & USART_SR_TXE))
+                ;
 
-        usart->DR = *buffer;
-    } while (*buffer != '\0');
+            usart->DR = *buffer;
+        } while (*buffer != '\0');
+    }
 }
 
 int USART::getId() { return this->id; }
