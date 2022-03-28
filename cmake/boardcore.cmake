@@ -74,6 +74,7 @@ foreach(OPT_BOARD ${BOARDS})
         ${SBS_BASE}/src/shared/sensors/BMX160/BMX160WithCorrection.cpp
         ${SBS_BASE}/src/shared/sensors/calibration/SensorDataExtra.cpp
         ${SBS_BASE}/src/shared/sensors/MAX6675/MAX6675.cpp
+        ${SBS_BASE}/src/shared/sensors/MAX31855/MAX31855.cpp
         ${SBS_BASE}/src/shared/sensors/MBLoadCell/MBLoadCell.cpp
         ${SBS_BASE}/src/shared/sensors/MPU9250/MPU9250.cpp
         ${SBS_BASE}/src/shared/sensors/MS5803/MS5803.cpp

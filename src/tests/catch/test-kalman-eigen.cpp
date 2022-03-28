@@ -26,7 +26,7 @@
 
 #define EIGEN_RUNTIME_NO_MALLOC
 
-#include <kalman/KalmanEigen.h>
+#include <algorithms/kalman/KalmanEigen.h>
 
 #include <catch2/catch.hpp>
 #include <iostream>

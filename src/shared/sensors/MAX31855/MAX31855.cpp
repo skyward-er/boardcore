@@ -27,7 +27,8 @@
 namespace Boardcore
 {
 
-MAX31855::MAX31855(SPIBusInterface &bus, miosix::GpioPin cs, SPIBusConfig config)
+MAX31855::MAX31855(SPIBusInterface& bus, miosix::GpioPin cs,
+                   SPIBusConfig config)
     : slave(bus, cs, config)
 {
 }
@@ -44,17 +45,18 @@ bool MAX31855::init() { return true; }
 
 bool MAX31855::selfTest() { return true; }
 
-bool MAX6675::checkConnection()
+bool MAX31855::checkConnection()
 {
     uint16_t sample[2];
 
     {
         SPITransaction spi{slave};
-        sample = spi.read(sample, sizeof(sample));
+        spi.read(sample, sizeof(sample));
     }
 
-    // First bit (D0) is 1 if thermocouple is open (no connections). Default value is 0.
-    if ((sample[2] % 0x0) != 0)
+    // Bits D0, D1 and D2 go high if thermocouple is open or shorted either to
+    // gnd or Vcc
+    if ((sample[1] & 0x7) != 0)
     {
         lastError = SensorErrors::SELF_TEST_FAIL;
         LOG_ERR(logger, "Self test failed, the termocouple is not connected");
@@ -64,42 +66,48 @@ bool MAX6675::checkConnection()
     return true;
 }
 
-float temperature(uint16_t* sample)
+TemperatureData MAX31855::sampleImpl()
 {
-    // c is voltage coefficient, v is tension measured by thermocouple
-    float c = 41.276, v;
+    uint16_t sample;
 
+    {
+        SPITransaction spi{slave};
+        sample = spi.read16();
+    }
 
-    // read thermocouple temperature
-    sample[0] >>= 2;
+    TemperatureData result{};
+    result.temperatureTimestamp = TimestampTimer::getInstance().getTimestamp();
 
-    // read internal temperature
-    sample[1] >>= 4;
+    // Extract data bits
+    sample = sample >> 2;
 
-    v = c * ()
+    // Convert the integer and decimal part separetly
+    result.temperature = static_cast<float>(sample >> 2);
+    result.temperature += static_cast<float>(sample & 0x3) * 0.25;
 
-
+    return result;
 }
 
-
-TemperatureData MAX31855::sampleImpl()
+TemperatureData MAX31855::readInternalTemperature()
 {
     uint16_t sample[2];
 
     {
         SPITransaction spi{slave};
-        sample = spi.read(sample, sizeof(sample));
+        spi.read(sample, sizeof(sample));
     }
-
 
     TemperatureData result{};
     result.temperatureTimestamp = TimestampTimer::getInstance().getTimestamp();
 
-    // calculate temperature
-    result.temperature = temperature(sample);
+    // Extract data bits
+    sample[1] = sample[1] >> 4;
 
+    // Convert the integer and decimal part separetly
+    result.temperature = static_cast<float>(sample[1] >> 4);
+    result.temperature += static_cast<float>(sample[1] & 0xF) * 0.0625;
 
     return result;
 }
 
-} // namespace Boardcore
+}  // namespace Boardcore

@@ -22,7 +22,6 @@
 
 #pragma once
 
-
 #include <diagnostic/PrintLogger.h>
 #include <drivers/spi/SPIDriver.h>
 #include <sensors/Sensor.h>
@@ -36,15 +35,15 @@ class MAX31855 : public Sensor<TemperatureData>
 {
 public:
     /**
-    * @brief Constructor.
-    *
-    * @param bus The Spi bus.
-    * @param cs The CS pin to lower when we need to sample.
-    * @param config The SPI configuration.
-    */
+     * @brief Constructor.
+     *
+     * @param bus The Spi bus.
+     * @param cs The CS pin to lower when we need to sample.
+     * @param config The SPI configuration.
+     */
     MAX31855(SPIBusInterface &bus, miosix::GpioPin cs,
-            SPIBusConfig config = getDefaultSPIConfig());
-    
+             SPIBusConfig config = getDefaultSPIConfig());
+
     /**
      * Constructs the default config for SPI Bus.
      *
@@ -66,10 +65,17 @@ public:
      */
     bool checkConnection();
 
+    /**
+     * @brief Read the device internal temperature (cold junction).
+     */
+    TemperatureData readInternalTemperature();
+
 private:
     TemperatureData sampleImpl() override;
 
     SPISlave slave;
+
+    PrintLogger logger = Logging::getLogger("max31855");
 };
 
-}   // namespace Boardcore
+}  // namespace Boardcore

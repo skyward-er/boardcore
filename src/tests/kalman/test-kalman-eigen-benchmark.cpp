@@ -25,9 +25,9 @@
 
 #define EIGEN_RUNTIME_NO_MALLOC
 
+#include <algorithms/kalman/KalmanEigen.h>
 #include <drivers/timer/GeneralPurposeTimer.h>
 #include <drivers/timer/TimerUtils.h>
-#include <kalman/KalmanEigen.h>
 #include <kernel/kernel.h>
 #include <math/SkyQuaternion.h>
 #include <util/util.h>
