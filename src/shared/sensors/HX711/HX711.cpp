@@ -23,13 +23,16 @@
 #include "HX711.h"
 
 #include <drivers/timer/TimestampTimer.h>
+#include <interfaces-impl/gpio_impl.h>
 #include <miosix.h>
 
 namespace Boardcore
 {
 
-HX711::HX711(SPIBusInterface &bus, miosix::GpioPin sckPin, SPIBusConfig config)
-    : bus(bus), sckPin(sckPin), config(config)
+HX711::HX711(SPIBusInterface &bus, miosix::GpioPin sckPin, SPIBusConfig config,
+             unsigned char sckAlternateFunction)
+    : bus(bus), sckPin(sckPin), config(config),
+      sckAlternateFunction(sckAlternateFunction)
 {
 }
 
@@ -57,12 +60,12 @@ HX711Data HX711::sampleImpl()
     miosix::delayUs(1);
     sckPin.low();
     sckPin.mode(miosix::Mode::ALTERNATE);
-    sckPin.alternateFunction(5);
+    sckPin.alternateFunction(sckAlternateFunction);
 
-    if (sample & 0x800000)
+    if (sample & static_cast<int32_t>(0x800000))
         sample |= 0xFF << 24;
 
-    if (sample == 0xFFFFFFFF)
+    if (sample == static_cast<int32_t>(0xFFFFFFFF))
         return lastSample;
 
     return {TimestampTimer::getInstance().getTimestamp(),

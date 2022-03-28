@@ -55,7 +55,8 @@ class HX711 : public Sensor<HX711Data>
 {
 public:
     HX711(SPIBusInterface& bus, miosix::GpioPin sckPin,
-          SPIBusConfig config = getDefaultSPIConfig());
+          SPIBusConfig config                = getDefaultSPIConfig(),
+          unsigned char sckAlternateFunction = 5);
 
     static SPIBusConfig getDefaultSPIConfig();
 
@@ -88,6 +89,7 @@ private:
     SPIBusInterface& bus;
     miosix::GpioPin sckPin;
     const SPIBusConfig config;
+    unsigned char sckAlternateFunction;
 
     float scale    = 1;
     int32_t offset = 0;
