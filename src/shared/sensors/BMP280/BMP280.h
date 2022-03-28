@@ -147,8 +147,8 @@ public:
                                                           ///< enabled in
                                                           ///< forced mode
 
-    explicit BMP280(SPISlave spiSlave_,
-                    BMP280Config config_ = BMP280_CONFIG_ALL_ENABLED);
+    explicit BMP280(SPISlave spiSlave,
+                    BMP280Config config = BMP280_CONFIG_ALL_ENABLED);
 
     /**
      * @brief Initialize the device with the specified configuration
