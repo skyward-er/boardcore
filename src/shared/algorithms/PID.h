@@ -89,7 +89,7 @@ public:
 
     double getLastOutput() { return lastOutput; }
 
-    bool isSaturated() { return saturation; }    
+    bool isSaturated() { return saturation; }
 
     double Kp;          // Proportional factor.
     double Ki;          // Integral factor.
@@ -97,8 +97,8 @@ public:
     double uMin, uMax;  // Anti-windup limits.
 
 private:
-    double i        = 0;  // Integral contribution.
-    double lastP = 0; // Last computer proportional contribution.
+    double i     = 0;   // Integral contribution.
+    double lastP = 0;   // Last computer proportional contribution.
     double lastOutput;  // Last computed controller output.
     bool saturation = false;
 };

@@ -89,8 +89,8 @@ private:
     miosix::GpioPin sckPin;
     const SPIBusConfig config;
 
-    float scale;
-    int32_t offset;
+    float scale    = 1;
+    int32_t offset = 0;
 };
 
 }  // namespace Boardcore
