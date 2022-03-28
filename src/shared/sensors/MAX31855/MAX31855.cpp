@@ -1,5 +1,5 @@
 /* Copyright (c) 2021 Skyward Experimental Rocketry
- * Author: Matteo Pignataro
+ * Author: Angelo Zangari
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -20,19 +20,20 @@
  * THE SOFTWARE.
  */
 
-#include "MAX6675.h"
+#include "MAX31855.h"
 
 #include <drivers/timer/TimestampTimer.h>
 
 namespace Boardcore
 {
 
-MAX6675::MAX6675(SPIBusInterface &bus, miosix::GpioPin cs, SPIBusConfig config)
+MAX31855::MAX31855(SPIBusInterface& bus, miosix::GpioPin cs,
+                   SPIBusConfig config)
     : slave(bus, cs, config)
 {
 }
 
-SPIBusConfig MAX6675::getDefaultSPIConfig()
+SPIBusConfig MAX31855::getDefaultSPIConfig()
 {
     SPIBusConfig spiConfig{};
     spiConfig.clockDivider = SPI::ClockDivider::DIV_32;
@@ -40,22 +41,22 @@ SPIBusConfig MAX6675::getDefaultSPIConfig()
     return spiConfig;
 }
 
-bool MAX6675::init() { return true; }
+bool MAX31855::init() { return true; }
 
-bool MAX6675::selfTest() { return true; }
+bool MAX31855::selfTest() { return true; }
 
-bool MAX6675::checkConnection()
+bool MAX31855::checkConnection()
 {
-    uint16_t sample;
+    uint16_t sample[2];
 
     {
         SPITransaction spi{slave};
-        sample = spi.read16();
+        spi.read(sample, sizeof(sample));
     }
 
-    // The third bit (D2) indicates wheter the termocouple is connected or not
-    // It is high if open
-    if ((sample & 0x4) != 0)
+    // Bits D0, D1 and D2 go high if thermocouple is open or shorted either to
+    // gnd or Vcc
+    if ((sample[1] & 0x7) != 0)
     {
         lastError = SensorErrors::SELF_TEST_FAIL;
         LOG_ERR(logger, "Self test failed, the termocouple is not connected");
@@ -65,7 +66,7 @@ bool MAX6675::checkConnection()
     return true;
 }
 
-TemperatureData MAX6675::sampleImpl()
+TemperatureData MAX31855::sampleImpl()
 {
     uint16_t sample;
 
@@ -77,13 +78,34 @@ TemperatureData MAX6675::sampleImpl()
     TemperatureData result{};
     result.temperatureTimestamp = TimestampTimer::getInstance().getTimestamp();
 
-    // Extract bits 14-3
-    sample &= 0x7FF8;
-    sample >>= 3;
+    // Extract data bits
+    sample = sample >> 2;
 
     // Convert the integer and decimal part separetly
     result.temperature = static_cast<float>(sample >> 2);
     result.temperature += static_cast<float>(sample & 0x3) * 0.25;
+
+    return result;
+}
+
+TemperatureData MAX31855::readInternalTemperature()
+{
+    uint16_t sample[2];
+
+    {
+        SPITransaction spi{slave};
+        spi.read(sample, sizeof(sample));
+    }
+
+    TemperatureData result{};
+    result.temperatureTimestamp = TimestampTimer::getInstance().getTimestamp();
+
+    // Extract data bits
+    sample[1] = sample[1] >> 4;
+
+    // Convert the integer and decimal part separetly
+    result.temperature = static_cast<float>(sample[1] >> 4);
+    result.temperature += static_cast<float>(sample[1] & 0xF) * 0.0625;
 
     return result;
 }

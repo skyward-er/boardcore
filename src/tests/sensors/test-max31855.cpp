@@ -22,7 +22,7 @@
 
 #include <drivers/timer/TimestampTimer.h>
 #include <miosix.h>
-#include <sensors/MAX6675/MAX6675.h>
+#include <sensors/MAX31855/MAX31855.h>
 
 using namespace miosix;
 using namespace Boardcore;
@@ -48,7 +48,7 @@ int main()
     initBoard();
 
     SPIBus spiBus(SPI4);
-    MAX6675 sensor{spiBus, csPin};
+    MAX31855 sensor{spiBus, csPin};
 
     printf("Starting process verification!\n");
 
@@ -66,4 +66,5 @@ int main()
 
         Thread::sleep(500);
     }
+    return 0;
 }

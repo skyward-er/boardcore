@@ -299,6 +299,9 @@ sbs_target(test-lis3mdl stm32f429zi_skyward_death_stack_x)
 add_executable(test-max6675 src/tests/sensors/test-max6675.cpp)
 sbs_target(test-max6675 stm32f429zi_stm32f4discovery)
 
+add_executable(test-max31855 src/tests/sensors/test-max31855.cpp)
+sbs_target(test-max31855 stm32f429zi_stm32f4discovery)
+
 add_executable(test-mpu9250 src/tests/sensors/test-mpu9250.cpp)
 sbs_target(test-mpu9250 stm32f407vg_stm32f4discovery)
 
