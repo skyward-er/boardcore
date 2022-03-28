@@ -180,11 +180,37 @@ USART::USART(USARTType *usart, Baudrate baudrate)
     setOversampling(false);
 }
 
-void USART::init()
+USART::~USART()
+{
+    {
+        miosix::FastInterruptDisableLock dLock;
+
+        // take out the usart object we are going to destruct
+        ports[this->id] = nullptr;
+
+        // disabling the usart
+        usart->CR1 &= ~USART_CR1_UE;
+
+        switch (id)
+        {
+            case 1:
+                NVIC_DisableIRQ(USART1_IRQn);
+                break;
+            case 2:
+                NVIC_DisableIRQ(USART2_IRQn);
+                break;
+            case 3:
+                NVIC_DisableIRQ(USART3_IRQn);
+                break;
+        }
+    }
+}
+
+bool USART::init()
 {
     if (id > 3 || id < 1)
     {
-        return;
+        return false;
     }
 
     miosix::FastInterruptDisableLock dLock;
@@ -231,6 +257,8 @@ void USART::init()
 
     // add to the array of usarts so that the interrupts can see it
     ports[id - 1] = this;
+
+    return true;
 }
 
 void USART::enableDMA()
@@ -333,7 +361,7 @@ int USART::read(void *buffer, size_t nBytes)
         }
 
         // not checking if the nBytes read are more than 0
-        if (result == nBytes || idle)
+        if (result == nBytes || (idle && result > 0))
             break;
 
         // Wait for data in the queue
@@ -351,13 +379,14 @@ int USART::read(void *buffer, size_t nBytes)
     return result;
 }
 
-void USART::write(void *buffer, size_t nBytes)
+int USART::write(void *buffer, size_t nBytes)
 {
     miosix::Lock<miosix::FastMutex> l(txMutex);
     // TODO: use the send complete interrupt in order not to have a busy while
     // loop waiting
     const char *buf = reinterpret_cast<const char *>(buffer);
-    for (size_t i = 0; i < nBytes; i++)
+    size_t i        = 0;
+    for (i = 0; i < nBytes; i++)
     {
         while ((usart->SR & USART_SR_TXE) == 0)
             ;
@@ -365,10 +394,13 @@ void USART::write(void *buffer, size_t nBytes)
         usart->DR = *buf;
         buf++;
     }
+
+    return i;
 }
 
-void USART::writeString(char *buffer)
+int USART::writeString(const char *buffer)
 {
+    int i = 0;
     miosix::Lock<miosix::FastMutex> l(txMutex);
 
     // send everything, comprising the '\0' character
@@ -382,8 +414,11 @@ void USART::writeString(char *buffer)
                 ;
 
             usart->DR = *buffer;
+            i++;
         } while (*buffer != '\0');
     }
+
+    return i;
 }
 
 int USART::getId() { return this->id; }

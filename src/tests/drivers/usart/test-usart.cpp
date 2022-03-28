@@ -141,9 +141,9 @@ int main()
         // trying if read and readFast returns if there is no communication
         // holding
         {
-            char buf_fast[64];
-            usart1.read(buf_fast, 64);
-            printf("read didn't block\n");
+            // char buf_fast[64];
+            // usart1.read(buf_fast, 64);
+            // printf("read didn't block\n");
         }
 
         // Thread::sleep(50);

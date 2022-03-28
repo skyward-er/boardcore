@@ -74,7 +74,8 @@ public:
         B57600  = 57600,
         B115200 = 115200,
         B230400 = 230400,
-        B460800 = 460800
+        B460800 = 460800,
+        B921600 = 921600
     };
 
     /**
@@ -101,6 +102,11 @@ public:
     USART(USARTType *usart, Baudrate baudrate);
 
     /**
+     * @brief destructor of the USART object.
+     */
+    ~USART();
+
+    /**
      * @brief initializes the peripheral enabling his interrupts, enabling the
      * interrupts in the NVIC and setting the pins with the appropriate
      * alternate functions. All the setup phase must be done before the
@@ -110,7 +116,7 @@ public:
      * USART2: tx=PA2  rx=PA3  cts=PA0  rts=PA1
      * USART3: tx=PB10 rx=PB11 cts=PB13 rts=PB14
      */
-    void init();
+    bool init();
 
     void enableDMA();
 
@@ -154,12 +160,12 @@ public:
     /**
      * @brief Blocking write operation
      */
-    void write(void *buf, size_t nChars);
+    int write(void *buf, size_t nChars);
 
     /**
      * @brief Write a string to the serial, comprising the '\0' character
      */
-    void writeString(char *buffer);
+    int writeString(const char *buffer);
 
     /**
      * @brief returns the id of the serial
