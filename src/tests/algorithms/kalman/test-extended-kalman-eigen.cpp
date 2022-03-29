@@ -48,10 +48,17 @@ int main()
 {
     bmxInit();
 
+    Logger::getInstance().start();
+
     kalman = new ExtendedKalmanEigen(getEKConfig());
     setInitialOrientation();
 
     sensorManager->start();
+
+    // Thread::sleep(30 * 1000);
+
+    // sensorManager->stop();
+    // Logger::getInstance().stop();
 
     while (true)
         Thread::sleep(1000);
@@ -64,7 +71,7 @@ ExtendedKalmanConfig getEKConfig()
     config.T              = 0.02f;
     config.SIGMA_BETA     = 0.0001f;
     config.SIGMA_W        = 0.3f;
-    config.SIGMA_MAG      = 7.089f;
+    config.SIGMA_MAG      = 0.05f;
     config.SIGMA_GPS      = 10.0f;
     config.SIGMA_BAR      = 4.3f;
     config.SIGMA_POS      = 10.0;
@@ -152,6 +159,10 @@ void bmxCallback()
     auto kalmanRotation = quat.quat2eul(Vector4f(
         kalmanState(6), kalmanState(7), kalmanState(8), kalmanState(9)));
 
-    printf("yaw: %6.4f, pitch: %6.2f, roll: %6.4f\n", kalmanRotation(0),
+    data.accelerationTimestamp = TimestampTimer::getInstance().getTimestamp();
+
+    printf("Orientation: %6.4f, %6.2f, %6.4f\n", kalmanRotation(0),
            kalmanRotation(1), kalmanRotation(2));
+
+    Logger::getInstance().log(data);
 }
