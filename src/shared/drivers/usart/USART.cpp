@@ -24,6 +24,8 @@
 
 #include <miosix.h>
 
+#include "arch/common/drivers/serial.h"
+
 // TODO: define the length of the queue
 #define QUEUE_LEN 256
 
@@ -49,22 +51,28 @@ typedef miosix::Gpio<GPIOB_BASE, 11> u3rx;
 typedef miosix::Gpio<GPIOB_BASE, 13> u3cts;
 typedef miosix::Gpio<GPIOB_BASE, 14> u3rts;
 
-/// Pointer to serial port classes to let interrupts access the classes
-static Boardcore::USART *ports[3] = {0};
+Boardcore::USART *Boardcore::USART::ports[3];
 
 /**
  * \internal interrupt routine for usart1 actual implementation
  */
 void __attribute__((used)) usart1irqImplBoardcore()
 {
-    if (ports[0])
-        ports[0]->IRQHandleInterrupt();
+    Boardcore::USART *port_boardcore = Boardcore::USART::ports[0];
+    if (port_boardcore)
+        port_boardcore->IRQhandleInterrupt();
+    else
+    {
+        miosix::STM32Serial *port = miosix::STM32Serial::ports[0];
+        if (port)
+            port->IRQhandleInterrupt();
+    }
 }
 
 /**
  * \internal interrupt routine for usart1
  */
-void __attribute__((naked)) USART1_IRQHandler()
+void __attribute__((naked, used)) USART1_IRQHandler()
 {
     saveContext();
     asm volatile("bl _Z22usart1irqImplBoardcorev");
@@ -76,14 +84,21 @@ void __attribute__((naked)) USART1_IRQHandler()
  */
 void __attribute__((used)) usart2irqImplBoardcore()
 {
-    if (ports[1])
-        ports[1]->IRQHandleInterrupt();
+    Boardcore::USART *port_boardcore = Boardcore::USART::ports[1];
+    if (port_boardcore)
+        port_boardcore->IRQhandleInterrupt();
+    else
+    {
+        miosix::STM32Serial *port = miosix::STM32Serial::ports[1];
+        if (port)
+            port->IRQhandleInterrupt();
+    }
 }
 
 /**
  * \internal interrupt routine for usart2
  */
-void __attribute__((naked)) USART2_IRQHandler()
+void __attribute__((naked, used)) USART2_IRQHandler()
 {
     saveContext();
     asm volatile("bl _Z22usart2irqImplBoardcorev");
@@ -95,14 +110,21 @@ void __attribute__((naked)) USART2_IRQHandler()
  */
 void __attribute__((used)) usart3irqImplBoardcore()
 {
-    if (ports[2])
-        ports[2]->IRQHandleInterrupt();
+    Boardcore::USART *port_boardcore = Boardcore::USART::ports[2];
+    if (port_boardcore)
+        port_boardcore->IRQhandleInterrupt();
+    else
+    {
+        miosix::STM32Serial *port = miosix::STM32Serial::ports[2];
+        if (port)
+            port->IRQhandleInterrupt();
+    }
 }
 
 /**
  * \internal interrupt routine for usart3
  */
-void __attribute__((naked)) USART3_IRQHandler()
+void __attribute__((naked, used)) USART3_IRQHandler()
 {
     saveContext();
     asm volatile("bl _Z22usart3irqImplBoardcorev");
@@ -111,7 +133,7 @@ void __attribute__((naked)) USART3_IRQHandler()
 
 namespace Boardcore
 {
-void USART::IRQHandleInterrupt()
+void USART::IRQhandleInterrupt()
 {
     char c;
 
@@ -144,8 +166,8 @@ void USART::IRQHandleInterrupt()
     }
 }
 
-USART::USART(USARTType *usart, Baudrate baudrate)
-    : usart(usart), rxQueue(QUEUE_LEN)
+USART::USART(USARTType *usart, Baudrate baudrate, Type type)
+    : usart(usart), rxQueue(QUEUE_LEN), type(type)
 {
     // enable the peripehral on the right APB
     ClockUtils::enablePeripheralClock(usart);
@@ -186,10 +208,10 @@ USART::~USART()
         miosix::FastInterruptDisableLock dLock;
 
         // take out the usart object we are going to destruct
-        ports[this->id] = nullptr;
+        USART::ports[this->id - 1] = nullptr;
 
         // disabling the usart
-        usart->CR1 &= ~USART_CR1_UE;
+        usart->CR1 &= ~(USART_CR1_UE | USART_CR1_TE | USART_CR1_RE);
 
         switch (id)
         {
@@ -213,50 +235,56 @@ bool USART::init()
         return false;
     }
 
-    miosix::FastInterruptDisableLock dLock;
-
-    // enable usart, receiver, receiver interurpt and idle interrupt
-    usart->CR1 |= USART_CR1_RXNEIE    // Interrupt on data received
-                  | USART_CR1_IDLEIE  // interrupt on idle line
-                  | USART_CR1_TE      // Transmission enbled
-                  | USART_CR1_RE;     // Reception enabled
-
-    // sample only one bit
-    usart->CR3 |= USART_CR3_ONEBIT;
-
-    switch (id)
     {
-        case 1:
-            // Lowest priority for serial
-            NVIC_SetPriority(USART1_IRQn, 15);
-            NVIC_EnableIRQ(USART1_IRQn);
-            u1tx::getPin().mode(miosix::Mode::ALTERNATE);
-            u1rx::getPin().mode(miosix::Mode::ALTERNATE);
-            u1tx::alternateFunction(7);
-            u1rx::alternateFunction(7);
-            break;
-        case 2:
-            // Lowest priority for serial
-            NVIC_SetPriority(USART2_IRQn, 15);
-            NVIC_EnableIRQ(USART2_IRQn);
-            u2tx::getPin().mode(miosix::Mode::ALTERNATE);
-            u2rx::getPin().mode(miosix::Mode::ALTERNATE);
-            u2tx::alternateFunction(7);
-            u2rx::alternateFunction(7);
-            break;
-        case 3:
-            // Lowest priority for serials
-            NVIC_SetPriority(USART3_IRQn, 15);
-            NVIC_EnableIRQ(USART3_IRQn);
-            u3tx::getPin().mode(miosix::Mode::ALTERNATE);
-            u3rx::getPin().mode(miosix::Mode::ALTERNATE);
-            u3tx::alternateFunction(7);
-            u3rx::alternateFunction(7);
-            break;
+        miosix::FastInterruptDisableLock dLock;
+
+        // enable usart, receiver, receiver interurpt and idle interrupt
+        usart->CR1 |= USART_CR1_RXNEIE    // Interrupt on data received
+                      | USART_CR1_IDLEIE  // interrupt on idle line
+                      | USART_CR1_TE      // Transmission enbled
+                      | USART_CR1_RE;     // Reception enabled
+
+        // sample only one bit
+        usart->CR3 |= USART_CR3_ONEBIT;
+
+        switch (id)
+        {
+            case 1:
+                // Lowest priority for serial
+                NVIC_SetPriority(USART1_IRQn, 15);
+                NVIC_EnableIRQ(USART1_IRQn);
+                u1tx::getPin().mode(miosix::Mode::ALTERNATE);
+                u1rx::getPin().mode(miosix::Mode::ALTERNATE);
+                u1tx::alternateFunction(7);
+                u1rx::alternateFunction(7);
+                break;
+            case 2:
+                // Lowest priority for serial
+                NVIC_SetPriority(USART2_IRQn, 15);
+                NVIC_EnableIRQ(USART2_IRQn);
+                u2tx::getPin().mode(miosix::Mode::ALTERNATE);
+                u2rx::getPin().mode(miosix::Mode::ALTERNATE);
+                u2tx::alternateFunction(7);
+                u2rx::alternateFunction(7);
+                break;
+            case 3:
+                // Lowest priority for serials
+                NVIC_SetPriority(USART3_IRQn, 15);
+                NVIC_EnableIRQ(USART3_IRQn);
+                u3tx::getPin().mode(miosix::Mode::ALTERNATE);
+                u3rx::getPin().mode(miosix::Mode::ALTERNATE);
+                u3tx::alternateFunction(7);
+                u3rx::alternateFunction(7);
+                break;
+        }
+
+        // add to the array of usarts so that the interrupts can see it
+        USART::ports[id - 1] = this;
     }
 
-    // add to the array of usarts so that the interrupts can see it
-    ports[id - 1] = this;
+    // clearing the queue for random data read at the beginning
+    miosix::Thread::sleep(1);
+    this->clearQueue();
 
     return true;
 }
@@ -382,6 +410,7 @@ int USART::read(void *buffer, size_t nBytes)
 int USART::write(void *buffer, size_t nBytes)
 {
     miosix::Lock<miosix::FastMutex> l(txMutex);
+
     // TODO: use the send complete interrupt in order not to have a busy while
     // loop waiting
     const char *buf = reinterpret_cast<const char *>(buffer);
@@ -422,4 +451,7 @@ int USART::writeString(const char *buffer)
 }
 
 int USART::getId() { return this->id; }
+
+void USART::clearQueue() { rxQueue.reset(); }
+
 }  // namespace Boardcore

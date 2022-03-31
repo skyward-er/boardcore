@@ -26,6 +26,7 @@
 #include "miosix.h"
 #include "string.h"
 #include "thread"
+#include "utils/SerialInterface.h"
 
 using namespace miosix;
 using namespace Boardcore;
@@ -47,9 +48,11 @@ typedef struct
 StructToSend struct_tx      = {'C', 42, 420.69, 48.84};
 char buf_tx[64]             = "Testing communication :D";
 USART::Baudrate baudrates[] = {
-    USART::Baudrate::B2400,  USART::Baudrate::B38400,  USART::Baudrate::B9600,
-    USART::Baudrate::B19200, USART::Baudrate::B115200, USART::Baudrate::B230400,
-    USART::Baudrate::B460800};
+    USART::Baudrate::B2400,   USART::Baudrate::B9600,
+    USART::Baudrate::B19200,  USART::Baudrate::B38400,
+    USART::Baudrate::B57600,  USART::Baudrate::B115200,
+    USART::Baudrate::B230400, USART::Baudrate::B460800,
+    USART::Baudrate::B921600};
 
 /**
  * Communication: src -> dst
@@ -57,16 +60,18 @@ USART::Baudrate baudrates[] = {
  */
 bool testCommunicationSequential(USART *src, USART *dst)
 {
+    int n_rcvd = 0;
     char buf_rx[64];
     StructToSend struct_rx;
     bool passed = true;
 
     // SENDING STRING
     printf("Sending string\n");
-    printf("\t-->%d sending: \t'%s'\n", src->getId(), buf_tx);
+    printf("\t-->%d sending: \t'%s' (%d)\n", src->getId(), buf_tx,
+           strlen(buf_tx));
     src->writeString(buf_tx);
-    dst->read(buf_rx, 64);
-    printf("\t<--%d received: \t'%s'\n", dst->getId(), buf_rx);
+    n_rcvd = dst->read(buf_rx, 64);
+    printf("\t<--%d received: \t'%s' (%d)\n", dst->getId(), buf_rx, n_rcvd);
 
     if (strcmp(buf_tx, buf_rx) == 0)
     {
@@ -115,24 +120,26 @@ int main()
     for (unsigned int iBaud = 0;
          iBaud < sizeof(baudrates) / sizeof(baudrates[0]); iBaud++)
     {
-        printf("\n\n########################### %d\n", (int)baudrates[iBaud]);
+        USART::Baudrate baudrate =
+            baudrates[iBaud];  // USART::Baudrate::B230400;  //
+        printf("\n\n########################### %d\n", (int)baudrate);
 
         // declaring the usart peripherals
-        Boardcore::USART usart1(USART1, baudrates[iBaud]);
+        Boardcore::USART usart1(USART1, baudrate);
         // usart1.setOversampling(false);
         // usart1.setStopBits(1);
         // usart1.setWordLength(USART::WordLength::BIT8);
         // usart1.setParity(USART::ParityBit::NO_PARITY);
         usart1.init();
 
-        Boardcore::USART usart2(USART2, baudrates[iBaud]);
+        Boardcore::USART usart2(USART2, baudrate);
         // usart2.setOversampling(false);
         // usart2.setStopBits(1);
         // usart2.setWordLength(USART::WordLength::BIT8);
         // usart2.setParity(USART::ParityBit::NO_PARITY);
         usart2.init();
 
-        // testing transmission (both char and binary) "serial 1 -> serial 2"
+                // testing transmission (both char and binary) "serial 1 -> serial 2"
         testPassed &= testCommunicationSequential(&usart1, &usart2);
 
         // testing transmission (both char and binary) "serial 1 <- serial 2"

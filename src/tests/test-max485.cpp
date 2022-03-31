@@ -56,10 +56,9 @@
  *      A       |       A
  *      B       |       B
  *
- * WARNINGS:
- * - the baudrate has to be extremely low. "guaranteed" at 2400
  */
 
+#include "drivers/usart/USART.cpp"  // TODO: be able to delete it always
 #include "string.h"
 #include "thread"
 #include "utils/SerialInterface.h"
@@ -77,7 +76,8 @@ using ctrlPin2_s2 = miosix::Gpio<GPIOC_BASE, 2>;
 
 char msg[64] = "Testing communication :D";
 char rcv[64];
-int baudrates[6] = {2400, 3600, 4800, 9600, 19200, 115200};
+int baudrates[] = {2400,   3600,   4800,   9600,  19200,
+                   115200, 230400, 460800, 921600};
 
 // function for the thread that has to read from serial
 void readSer(SerialInterface *s)
@@ -132,7 +132,8 @@ int main()
     }
 
     printf("*** SERIAL 3 WORKING!\n");
-    for (int iBaud = 0; iBaud < 6; iBaud++)
+    for (int iBaud = 0; iBaud < sizeof(baudrates) / sizeof(baudrates[0]);
+         iBaud++)
     {
         Thread::sleep(1000);
 

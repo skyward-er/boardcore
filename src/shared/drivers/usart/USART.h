@@ -47,6 +47,12 @@ namespace Boardcore
 class USART
 {
 public:
+    enum class Type : bool
+    {
+        BOARDCORE,
+        MIOSIX
+    };
+
     enum class Mode : int
     {
         UART
@@ -66,7 +72,7 @@ public:
 
     enum class Baudrate : int
     {
-        B1200   = 1200,
+        // B1200   = 1200, // NOT WORKING WITH 1200 baud
         B2400   = 2400,
         B9600   = 9600,
         B19200  = 19200,
@@ -82,7 +88,7 @@ public:
      * @brief interrupt handler that deals with receive interrupt, idle
      * interrupt
      */
-    void IRQHandleInterrupt();
+    void IRQhandleInterrupt();
     /*
      * Constructor, initializes the serial port using the default pins, which
      * are:
@@ -99,7 +105,7 @@ public:
      * @param baudrate member of the enum Baudrate that represents the baudrate
      * with which the communication will take place.
      */
-    USART(USARTType *usart, Baudrate baudrate);
+    USART(USARTType *usart, Baudrate baudrate, Type type = Type::BOARDCORE);
 
     /**
      * @brief destructor of the USART object.
@@ -172,6 +178,14 @@ public:
      */
     int getId();
 
+    /**
+     * @brief clears the rxQueue
+     */
+    void clearQueue();
+
+    /// Pointer to serial port classes to let interrupts access the classes
+    static USART *ports[3];
+
 private:
     USARTType
         *usart;  ///< pointer to the struct representing the USART peripheral
@@ -183,6 +197,7 @@ private:
     bool idle = true;                      ///< Receiver idle
     int id    = 1;                         ///< can be 1, 2, 3
     Baudrate baudrate;
+    Type type;
     ParityBit parity      = ParityBit::NO_PARITY;
     WordLength wordLength = WordLength::BIT8;
     int stopBits          = 1;
