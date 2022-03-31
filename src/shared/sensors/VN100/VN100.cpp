@@ -317,7 +317,7 @@ bool VN100::configUserSerialPort()
     std::string command;
 
     // I format the command to change baud rate
-    command = fmt::format("{}{}", "VNWRG,5,", baudRate);
+    command = fmt::format("{}{}", "VNWRG,5,", static_cast<int>(baudRate));
 
     // I can send the command
     if (!sendStringCommand(command))
@@ -645,7 +645,7 @@ bool VN100::sendStringCommand(std::string command)
 
     // Wait some time
     // TODO dimension the time
-    miosix::Thread::sleep(1);
+    miosix::Thread::sleep(500);
 
     return true;
 }
