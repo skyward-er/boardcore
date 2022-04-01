@@ -28,11 +28,11 @@ using namespace Boardcore;
 
 int main()
 {
-    SPIBus spiBus(SPI1);
-    GpioPin spiCs(GPIOA_BASE, 3);
-    GpioPin spiSck(GPIOA_BASE, 5);
-    GpioPin spiMiso(GPIOA_BASE, 6);
-    GpioPin spiMosi(GPIOA_BASE, 7);
+    SPIBus spiBus(SPI2);
+    GpioPin spiCs(GPIOG_BASE, 3);
+    GpioPin spiSck(GPIOB_BASE, 13);
+    GpioPin spiMiso(GPIOB_BASE, 14);
+    GpioPin spiMosi(GPIOB_BASE, 15);
 
     spiCs.mode(Mode::OUTPUT);
     spiCs.high();
@@ -43,30 +43,27 @@ int main()
     spiMosi.mode(Mode::ALTERNATE);
     spiMosi.alternateFunction(5);
 
-    UbloxGPS sensor{spiBus, spiCs};
+    UbloxGPS gps{spiBus, spiCs};
 
     TRACE("Initializing UbloxGPS...\n");
 
-    if (!sensor.init())
-    {
-        TRACE("Init failed! (code: %d)\n", sensor.getLastError());
-        return 1;
-    }
+    if (!gps.init())
+        TRACE("Init failed! (code: %d)\n", gps.getLastError());
 
     while (true)
     {
-        sensor.sample();
-        GPSData sample __attribute__((unused)) = sensor.getLastSample();
+        gps.sample();
+        GPSData sample __attribute__((unused)) = gps.getLastSample();
 
         TRACE(
             "timestamp: %4.3f, lat: %f, lon: %f, height: %4.1f, velN: %3.2f, "
             "velE: %3.2f, velD: %3.2f, speed: %3.2f, track %3.1f, pDOP: %f, "
-            "nsat: %2d, fix: %01d\n",
+            "nsat: %2d, fix: %2d\n",
             (float)sample.gpsTimestamp / 1000000, sample.latitude,
             sample.longitude, sample.height, sample.velocityNorth,
             sample.velocityEast, sample.velocityDown, sample.speed,
             sample.track, sample.positionDOP, sample.satellites, sample.fix);
 
-        Thread::sleep(1000);
+        Thread::sleep(1000 / gps.getRate());
     }
 }

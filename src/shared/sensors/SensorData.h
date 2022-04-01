@@ -127,17 +127,17 @@ struct MagnetometerData
 struct GPSData
 {
     uint64_t gpsTimestamp;
-    float latitude;      /**< [deg] */
-    float longitude;     /**< [deg] */
-    float height;        /**< [m]   */
-    float velocityNorth; /**< [m/s] */
-    float velocityEast;  /**< [m/s] */
-    float velocityDown;  /**< [m/s] */
-    float speed;         /**< [m/s] */
-    float track;         /**< [deg] */
-    float positionDOP;   /**< [1]   */
-    uint8_t satellites;  /**< [1]   */
-    bool fix;
+    float latitude;       // [deg]
+    float longitude;      // [deg]
+    float height;         // [m]
+    float velocityNorth;  // [m/s]
+    float velocityEast;   // [m/s]
+    float velocityDown;   // [m/s]
+    float speed;          // [m/s]
+    float track;          // [deg]
+    float positionDOP;    // [?]
+    uint8_t satellites;   // [1]
+    uint8_t fix;          // 0 = no fix
 };
 
 /**

@@ -22,15 +22,14 @@
 
 #include "UbloxGPS.h"
 
-#include <diagnostic/StackLogger.h>
 #include <drivers/timer/TimestampTimer.h>
 
 namespace Boardcore
 {
 
 UbloxGPS::UbloxGPS(SPIBusInterface& spiBus, miosix::GpioPin spiCs,
-                   SPIBusConfig spiConfig)
-    : spiSlave(spiBus, spiCs, spiConfig)
+                   SPIBusConfig spiConfig, uint8_t rate)
+    : spiSlave(spiBus, spiCs, spiConfig), rate(rate)
 {
 }
 
@@ -39,14 +38,45 @@ SPIBusConfig UbloxGPS::getDefaultSPIConfig()
     return SPIBusConfig{SPI::ClockDivider::DIV_256, SPI::Mode::MODE_0};
 }
 
+uint8_t UbloxGPS::getRate() { return rate; }
+
 bool UbloxGPS::init()
 {
-    if (!reset() || !setConfiguration())
+    if (!reset())
     {
         lastError = SensorErrors::INIT_FAIL;
-        LOG_ERR(logger, "Initialization failed");
+        LOG_ERR(logger, "Could not reset the device");
         return false;
     }
+
+    if (!disableNMEAMessages())
+    {
+        lastError = SensorErrors::INIT_FAIL;
+        LOG_ERR(logger, "Could not disable NMEA messages");
+        return false;
+    }
+
+    if (!setDynamicModelToAirborne4g())
+    {
+        lastError = SensorErrors::INIT_FAIL;
+        LOG_ERR(logger, "Could not set the dynamic model");
+        return false;
+    }
+
+    if (!setUpdateRate())
+    {
+        lastError = SensorErrors::INIT_FAIL;
+        LOG_ERR(logger, "Could not set the update rate");
+        return false;
+    }
+
+    if (!setPVTMessageRate())
+    {
+        lastError = SensorErrors::INIT_FAIL;
+        LOG_ERR(logger, "Could not set the PVT message rate");
+        return false;
+    }
+
     return true;
 }
 
@@ -54,18 +84,17 @@ bool UbloxGPS::selfTest() { return true; }
 
 UbloxGPSData UbloxGPS::sampleImpl()
 {
-    UBXUnpackedFrame res;
+    UBXFrame frame;
 
-    if (!pollReadUBXFrame(UBX_NAV, UBX_NAV_PVT, res))
+    if (!readUBXFrame(frame))
     {
-        LOG_ERR(logger, "Unable to poll UBX-NAV-PVT frame");
+        LOG_ERR(logger, "Unable to parse the current frame");
         return lastSample;
     }
 
-    UBXPayloadNAVPVT& pvt = (UBXPayloadNAVPVT&)res.payload;
+    UBXPayloadNAVPVT& pvt = (UBXPayloadNAVPVT&)frame.payload;
 
     UbloxGPSData sample;
-
     sample.gpsTimestamp  = TimestampTimer::getInstance().getTimestamp();
     sample.latitude      = (float)pvt.lat / 1e7;
     sample.longitude     = (float)pvt.lon / 1e7;
@@ -77,7 +106,7 @@ UbloxGPSData UbloxGPS::sampleImpl()
     sample.track         = (float)pvt.headMot / 1e5;
     sample.positionDOP   = (float)pvt.pDOP / 1e2;
     sample.satellites    = pvt.numSV;
-    sample.fix           = pvt.fixType != 0;  // All types of fix are accepted
+    sample.fix           = pvt.fixType;
 
     return sample;
 }
@@ -85,171 +114,176 @@ UbloxGPSData UbloxGPS::sampleImpl()
 bool UbloxGPS::reset()
 {
     uint8_t payload[] = {
-        0x00, 0x00,  // navBbrMask (Hot start)
-        0x00,        // Hardware reset immediately
+        0x00, 0x00,  // Hoy start
+        0x00,        // Hardware reset
         0x00         // Reserved
     };
 
-    UBXUnpackedFrame frame{UBX_CFG, UBX_CFG_RST, payload,
-                           std::extent<decltype(payload)>::value};
+    UBXFrame frame(UBXMessage::UBX_CFG_RST, payload, sizeof(payload));
 
-    if (!writeUBXFrame(frame))
-    {
-        return false;
-    }
+    // The reset message will not be followed by an ack
+    bool result = writeUBXFrame(frame);
 
-    miosix::Thread::sleep(100);
+    miosix::Thread::sleep(150);
 
-    return true;
+    return result;
 }
 
-bool UbloxGPS::setConfiguration()
+bool UbloxGPS::disableNMEAMessages()
 {
+    // Use the UBX-CFG-PRT message to disable NMEA on the SPI port
     uint8_t payload[] = {
-        0x00,                    // Version
-        0x07,                    // All layers
-        0x00, 0x00,              // Reserved
-        0x21, 0x00, 0x11, 0x20,  // CFG-NAVSPG-DYNMODEL
-        0x08,                    // = AIR4
-        0x03, 0x00, 0x51, 0x10,  // CFG-I2C-ENABLED
-        0x00, 0x00,              // = false
-        0x06, 0x00, 0x64, 0x10,  // CFG-SPI-ENABLED
-        0x00, 0x01,              // = true
-        0x01, 0x00, 0x79, 0x10,  // CFG-SPIINPROT-UBX
-        0x00, 0x01,              // = true
-        0x02, 0x00, 0x79, 0x10,  // CFG-SPIINPROT-NMEA
-        0x00, 0x00,              // = false
-        0x03, 0x00, 0x79, 0x10,  // CFG-SPIINPROT-RTCM3X
-        0x00, 0x00,              // = false
-        0x01, 0x00, 0x7a, 0x10,  // CFG-SPIOUTPROT-UBX
-        0x00, 0x01,              // = true
-        0x02, 0x00, 0x7a, 0x10,  // CFG-SPIOUTPROT-NMEA
-        0x00, 0x00,              // = false
-        0x05, 0x00, 0x52, 0x10,  // CFG-UART1-ENABLED
-        0x00, 0x00,              // = false
-        0x05, 0x00, 0x53, 0x10,  // CFG-UART2-ENABLED
-        0x00, 0x00,              // = false
-        0x01, 0x00, 0x65, 0x10,  // CFG-USB-ENABLED
-        0x00, 0x00               // = false
+        0x04,                    // SPI port
+        0x00,                    // reserved1
+        0x00, 0x00,              // txReady
+        0x00, 0x32, 0x00, 0x00,  // mode = 0, ffCnt = 50
+        0x00, 0x00, 0x00, 0x00,  // reserved2
+        0x01, 0x00,              // inProtoMask = UBX
+        0x01, 0x00,              // outProtoMask = UBX
+        0x00, 0x00,              // flags
+        0x00, 0x00               // reserved3
     };
 
-    UBXUnpackedFrame frame{UBX_CFG, UBX_CFG_VALSET, payload,
-                           std::extent<decltype(payload)>::value};
+    UBXFrame frame(UBXMessage::UBX_CFG_PRT, payload, sizeof(payload));
 
     return safeWriteUBXFrame(frame);
 }
 
-bool UbloxGPS::safeWriteUBXFrame(const UBXUnpackedFrame& frame)
+bool UbloxGPS::setDynamicModelToAirborne4g()
 {
-    while (true)
-    {
-        if (!writeUBXFrame(frame))
-        {
-            return false;
-        }
+    // UBX-CFG-NAV5 message with length 36
+    uint8_t payload[] = {
+        0x01, 0x00,  // Parameters bitmask, apply dynamic model configuration
+        0x08,        // Dynamic model = airbone 4g
+        0x00,        // Fix mode
+        0x00, 0x00, 0x00, 0x00,  // Fixed altitude for 2D mode
+        0x00, 0x00, 0x00, 0x00,  // Fixed altitude variance for 2D mode
+        0x00,        // Minimun elevation for a GNSS satellite to be used
+        0x00,        // Reserved
+        0x00, 0x00,  // Position DOP mask to use
+        0x00, 0x00,  // Time DOP mask to use
+        0x00, 0x00,  // Position accuracy mask
+        0x00, 0x00,  // Time accuracy mask
+        0x00,        // Static hold threshold
+        0x00,        // DGNSS timeout
+        0x00,        // C/NO threshold number SVs
+        0x00,        // C/NO threshold
+        0x00, 0x00,  // Reserved
+        0x00, 0x00,  // Static hold distance threshold
+        0x00,        // UTC standard to be used
+        0x00, 0x00, 0x00, 0x00, 0x00  // Reserved
+    };
 
-        UBXUnpackedFrame res;
+    UBXFrame frame(UBXMessage::UBX_CFG_NAV5, payload, sizeof(payload));
 
-        if (!readUBXFrame(res))
-        {
-            return false;
-        }
-
-        if (res.cls == UBX_ACK && res.id == UBX_ACK_ACK)
-        {
-            UBXPayloadACK& ack = (UBXPayloadACK&)res.payload;
-
-            if (ack.clsID != frame.cls || ack.msgID != frame.id)
-            {
-                break;
-            }
-
-            LOG_DEBUG(logger,
-                      "Received ACK for frame (class: {:#02x}, id: {:#02x})",
-                      res.cls, res.id);
-
-            return true;
-        }
-        else if (res.cls == UBX_ACK && res.id == UBX_ACK_NAK)
-        {
-            UBXPayloadACK& nak = (UBXPayloadACK&)res.payload;
-
-            if (nak.clsID != frame.cls || nak.msgID != frame.id)
-            {
-                break;
-            }
-
-            LOG_DEBUG(logger,
-                      "Received NAK for frame (class: {:#02x}, id: {:#02x})",
-                      res.cls, res.id);
-        }
-        else
-        {
-            LOG_ERR(logger,
-                    "UBX frame not recognized (class: {:#02x}, id: {:#02x})",
-                    res.cls, res.id);
-
-            break;
-        }
-    }
-
-    return false;
+    return safeWriteUBXFrame(frame);
 }
 
-bool UbloxGPS::pollReadUBXFrame(uint8_t cls, uint8_t id,
-                                UBXUnpackedFrame& frame)
+bool UbloxGPS::setUpdateRate()
 {
-    UBXUnpackedFrame req{cls, id, nullptr, 0};
+    uint8_t payload[] = {
+        0x00, 0x00,  // Measurement rate
+        0x01, 0x00,  // One navigation solution per measurement
+        0x01, 0x01   // GPS time
+    };
 
-    if (!writeUBXFrame(req))
-    {
-        return false;
-    }
+    uint16_t rateMs = 1000 / rate;
+    payload[0]      = rateMs;
+    payload[1]      = rateMs >> 8;
 
-    UBXUnpackedFrame res;
+    UBXFrame frame(UBXMessage::UBX_CFG_RATE, payload, sizeof(payload));
 
-    if (!readUBXFrame(res))
-    {
-        return false;
-    }
-
-    if (res.cls != cls || res.id != id)
-    {
-        LOG_ERR(logger,
-                "UBX frame not recognized (class: {:#02x}, id: {:#02x})",
-                res.cls, res.id);
-        return false;
-    }
-
-    return true;
+    return safeWriteUBXFrame(frame);
 }
 
-bool UbloxGPS::writeUBXFrame(const UBXUnpackedFrame& frame)
+bool UbloxGPS::setPVTMessageRate()
+{
+    // Set the PVT message update rate on the current port
+    uint8_t payload[] = {
+        0x01, 0x07,  // PVT message
+        0x01         // Rate = 1 navigation solution update
+    };
+
+    UBXFrame frame(UBXMessage::UBX_CFG_MSG, payload, sizeof(payload));
+
+    return safeWriteUBXFrame(frame);
+}
+
+bool UbloxGPS::readUBXFrame(UBXFrame& frame, size_t frameLength)
+{
+    uint8_t packedFrame[UBXFrame::UBX_MAX_FRAME_LENGTH];
+
+    {
+        SPITransaction spi{spiSlave};
+        spi.read(packedFrame, frameLength);
+    }
+
+    frame.readPacked(packedFrame);
+
+    return frame.isValid();
+}
+
+bool UbloxGPS::writeUBXFrame(const UBXFrame& frame)
 {
     if (!frame.isValid())
     {
-        LOG_ERR(logger, "UBX frame to write is invalid");
+        LOG_ERR(logger, "Trying to send an invalid UBX frame");
         return false;
     }
 
-    SPITransaction spi{spiSlave};
-    uint8_t packedFrame[UBX_MAX_FRAME_LENGTH];
+    uint8_t packedFrame[frame.getLength()];
     frame.writePacked(packedFrame);
+
+    SPITransaction spi{spiSlave};
     spi.write(packedFrame, frame.getLength());
 
     return true;
 }
 
-bool UbloxGPS::readUBXFrame(UBXUnpackedFrame& frame)
+bool UbloxGPS::safeWriteUBXFrame(const UBXFrame& frame)
 {
-    SPITransaction spi{spiSlave};
-    uint8_t packedFrame[UBX_MAX_FRAME_LENGTH];
-    spi.read(packedFrame, UBX_MAX_FRAME_LENGTH);
-    frame.readPacked(packedFrame);
+    if (!writeUBXFrame(frame))
+        return false;
 
-    if (!frame.isValid())
+    miosix::Thread::sleep(5);
+
+    UBXAckFrame ack;
+
+    // Read a frame with the correct length for an ack frame
+    if (!readUBXFrame(ack, UBXAckFrame::UBX_MAX_FRAME_LENGTH))
     {
-        LOG_ERR(logger, "UBX frame received is invalid");
+        LOG_ERR(logger, "The received UBX frame is not valid");
+        return false;
+    }
+
+    if (ack.getAckMessage() != frame.getMessage())
+    {
+        LOG_DEBUG(logger, "Received ACK for a different frame {:#04x}",
+                  static_cast<uint16_t>(ack.getAckMessage()));
+        return false;
+    }
+
+    return ack.isAck();
+}
+
+bool UbloxGPS::pollReadUBXFrame(UBXMessage message, UBXFrame& response)
+{
+    UBXFrame req(message, nullptr, 0);
+
+    if (!writeUBXFrame(req))
+        return false;
+
+    miosix::Thread::sleep(5);
+
+    if (!readUBXFrame(response))
+    {
+        LOG_ERR(logger, "Invalid UBX frame");
+        return false;
+    }
+
+    if (response.getMessage() != message)
+    {
+        LOG_ERR(logger, "UBX frame not recognized");
         return false;
     }
 

@@ -26,7 +26,7 @@
 #include <drivers/spi/SPIDriver.h>
 #include <sensors/Sensor.h>
 
-#include "UBXUnpackedFrame.h"
+#include "UBXFrame.h"
 #include "UbloxGPSData.h"
 
 namespace Boardcore
@@ -49,37 +49,6 @@ namespace Boardcore
 class UbloxGPS : public Sensor<UbloxGPSData>
 {
 public:
-    /**
-     * @brief UBX frame classes.
-     */
-    enum UBXFrameClass : uint8_t
-    {
-        UBX_ACK = 0x05,
-        UBX_CFG = 0x06,
-        UBX_NAV = 0x01
-    };
-
-    /**
-     * @brief UBX frame IDs.
-     */
-    enum UBXFrameID : uint8_t
-    {
-        UBX_ACK_NAK    = 0x00,
-        UBX_ACK_ACK    = 0x01,
-        UBX_CFG_RST    = 0x04,
-        UBX_CFG_VALSET = 0x8a,
-        UBX_NAV_PVT    = 0x07
-    };
-
-    /**
-     * @brief Payload of UBX frames UBX-ACK-ACK and UBX-ACK-NAK.
-     */
-    struct __attribute__((packed)) UBXPayloadACK
-    {
-        uint8_t clsID;  // Class ID of the Acknowledged Message
-        uint8_t msgID;  // Message ID of the Acknowledged Message
-    };
-
     /**
      * @brief Payload of UBX frame UBX-NAV-PVT.
      */
@@ -127,9 +96,10 @@ public:
      * @param spiBus The SPI bus.
      * @param spiCs The CS pin to lower when we need to sample.
      * @param spiConfig The SPI configuration.
+     * @param rate GPS sample rate
      */
     UbloxGPS(SPIBusInterface& spiBus, miosix::GpioPin spiCs,
-             SPIBusConfig spiConfig = getDefaultSPIConfig());
+             SPIBusConfig spiConfig = getDefaultSPIConfig(), uint8_t rate = 5);
 
     /**
      * @brief Constructs the default config for the SPI bus.
@@ -137,6 +107,8 @@ public:
      * @return The default SPIBusConfig object.
      */
     static SPIBusConfig getDefaultSPIConfig();
+
+    uint8_t getRate();
 
     bool init() override;
 
@@ -146,36 +118,44 @@ private:
     UbloxGPSData sampleImpl() override;
 
     /**
-     * @brief Resets the device.
+     * @brief Resets the device to its default configuration.
      *
      * @return True if the device reset succeeded.
      */
     bool reset();
 
     /**
-     * @brief Configures the device.
+     * @brief Disables NMEA messages on the SPI port.
      *
-     * @return True if the device configuration succeeded.
+     * @return True if the configuration received an ack.
      */
-    bool setConfiguration();
+    bool disableNMEAMessages();
 
     /**
-     * @brief Writes a UBX frame and waits for its acknowledgement.
+     * @brief Configures the dynamic model to airborn 4g.
      *
-     * @param frame The UBX frame to write.
-     * @return True if the frame is valid and acknowledged.
+     * @return True if the configuration received an ack.
      */
-    bool safeWriteUBXFrame(const UBXUnpackedFrame& frame);
+    bool setDynamicModelToAirborne4g();
 
     /**
-     * @brief Sends a poll request for a UBX frame with the specified class and
-     * ID and reads it.
-     *
-     * @param cls The class of the requested frame.
-     * @param id The ID of the requested frame.
-     * @return True if the received frame that was requested is valid.
+     * @brief Configures the navigation solution update rate.
      */
-    bool pollReadUBXFrame(uint8_t cls, uint8_t id, UBXUnpackedFrame& frame);
+    bool setUpdateRate();
+
+    /**
+     * @brief Configures the PVT message output rate.
+     */
+    bool setPVTMessageRate();
+
+    /**
+     * @brief Reads a UBX frame.
+     *
+     * @param frame The received frame.
+     * @return True if a valid frame was read.
+     */
+    bool readUBXFrame(UBXFrame& frame,
+                      size_t frameLength = UBXFrame::UBX_MAX_FRAME_LENGTH);
 
     /**
      * @brief Writes a UBX frame.
@@ -183,17 +163,32 @@ private:
      * @param frame The frame to write.
      * @return True if the frame to write is valid.
      */
-    bool writeUBXFrame(const UBXUnpackedFrame& frame);
+    bool writeUBXFrame(const UBXFrame& frame);
 
     /**
-     * @brief Reads a UBX frame.
+     * @brief Writes a UBX frame and waits for its acknowledgement.
      *
-     * @param frame The received frame.
-     * @return True if the received frame is valid.
+     * @param frame The UBX frame to write.
+     * @return True if the frame is valid and acknowledged.
      */
-    bool readUBXFrame(UBXUnpackedFrame& frame);
+    bool safeWriteUBXFrame(const UBXFrame& frame);
+
+    /**
+     * @brief Sends a poll request for a UBX frame for the specified message and
+     * reads it.
+     *
+     * Note that for some messages a payload is required even for polling (e.g.
+     * UBX-CFG-PRT
+     * )
+     *
+     * @param message Requested message identifier.
+     * @param frame Frame filled with data.
+     * @return True if the received frame that was requested is valid.
+     */
+    bool pollReadUBXFrame(UBXMessage message, UBXFrame& frame);
 
     SPISlave spiSlave;
+    uint8_t rate;
 
     PrintLogger logger = Logging::getLogger("ubloxgps");
 };

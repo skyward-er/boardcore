@@ -80,7 +80,7 @@ add_executable(test-sensormanager src/tests/test-sensormanager.cpp)
 sbs_target(test-sensormanager stm32f429zi_skyward_death_stack_x)
 
 add_executable(test-serial src/tests/test-serial.cpp)
-sbs_target(test-serial stm32f429zi_stm32f4discovery)
+sbs_target(test-serial stm32f429zi_skyward_death_stack_x)
 
 add_executable(test-taskscheduler src/tests/scheduler/test-taskscheduler.cpp)
 sbs_target(test-taskscheduler stm32f407vg_stm32f4discovery)
@@ -309,7 +309,7 @@ add_executable(test-ms5803 src/tests/sensors/test-ms5803.cpp)
 sbs_target(test-ms5803 stm32f429zi_skyward_death_stack_x)
 
 add_executable(test-ubloxgps src/tests/sensors/test-ubloxgps.cpp)
-sbs_target(test-ubloxgps stm32f407vg_stm32f4discovery)
+sbs_target(test-ubloxgps stm32f429zi_skyward_death_stack_x)
 
 add_executable(test-vn100 src/tests/sensors/test-vn100.cpp)
 sbs_target(test-vn100 stm32f407vg_stm32f4discovery)
