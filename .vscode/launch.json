@@ -3,7 +3,7 @@
     "configurations": [
         {
             "cwd": "${workspaceRoot}",
-            "executable": "${workspaceFolder}/bin/${fileBasenameNoExtension}/${fileBasenameNoExtension}.elf",
+            "executable": "${workspaceFolder}/build/${fileBasenameNoExtension}",
             "name": "ST-LINK V2 (current entrypoint)",
             "request": "attach",
             "type": "cortex-debug",
@@ -17,7 +17,7 @@
         },
         {
             "cwd": "${workspaceRoot}",
-            "executable": "${workspaceFolder}/bin/${fileBasenameNoExtension}/${fileBasenameNoExtension}.elf",
+            "executable": "${workspaceFolder}/build/${fileBasenameNoExtension}",
             "name": "ST-LINK V1 (current entrypoint)",
             "request": "attach",
             "type": "cortex-debug",
