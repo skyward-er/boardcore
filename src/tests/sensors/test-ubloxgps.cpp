@@ -28,11 +28,19 @@ using namespace Boardcore;
 
 int main()
 {
+#ifdef _BOARD_STM32F429ZI_SKYWARD_DEATHST_X
     SPIBus spiBus(SPI2);
     GpioPin spiCs(GPIOG_BASE, 3);
     GpioPin spiSck(GPIOB_BASE, 13);
     GpioPin spiMiso(GPIOB_BASE, 14);
     GpioPin spiMosi(GPIOB_BASE, 15);
+#else
+    SPIBus spiBus(SPI1);
+    GpioPin spiCs(GPIOA_BASE, 3);
+    GpioPin spiSck(GPIOA_BASE, 5);
+    GpioPin spiMiso(GPIOA_BASE, 6);
+    GpioPin spiMosi(GPIOA_BASE, 7);
+#endif
 
     spiCs.mode(Mode::OUTPUT);
     spiCs.high();
