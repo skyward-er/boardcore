@@ -45,6 +45,9 @@ enum class UBXMessage : uint16_t
     UBX_CFG_NAV5 = 0x0624,  // Navigation engine settings
 };
 
+/**
+ * @brief Generic UBX frame.
+ */
 struct UBXFrame
 {
     static constexpr uint16_t UBX_MAX_PAYLOAD_LENGTH = 92;
@@ -103,30 +106,37 @@ struct UBXFrame
     void calcChecksum(uint8_t* checksum) const;
 };
 
+/**
+ * @brief UBX frames UBX-ACK-ACK and UBX-ACK-NAK.
+ */
 struct UBXAckFrame : public UBXFrame
 {
-    // TODO: Do something better!
-    // static constexpr size_t UBX_MAX_PAYLOAD_LENGTH = 2;
-    // static constexpr size_t UBX_MAX_FRAME_LENGTH   = UBX_MAX_PAYLOAD_LENGTH +
-    // 8;
+    /**
+     * @brief Payload of UBX frames UBX-ACK-ACK and UBX-ACK-NAK.
+     */
+    struct __attribute__((packed)) Payload
+    {
+        uint16_t ackMessage;
+    };
 
-    UBXMessage getAckMessage();
+    Payload& getPayload() const;
+
+    UBXMessage getAckMessage() const;
 
     /**
      * @brief Tells whether the frame is an ack.
      */
-    bool isAck();
+    bool isAck() const;
 
     /**
      * @brief Tells whether the frame is a nak.
      */
-    bool isNack();
+    bool isNack() const;
 
     /**
      * @brief Tells whether the frame is an ack frame.
-     *
      */
-    bool isValid();
+    bool isValid() const;
 };
 
 inline UBXFrame::UBXFrame(UBXMessage message, const uint8_t* payload,
@@ -198,22 +208,27 @@ inline void UBXFrame::calcChecksum(uint8_t* checksum) const
     }
 }
 
-inline UBXMessage UBXAckFrame::getAckMessage()
+inline UBXAckFrame::Payload& UBXAckFrame::getPayload() const
 {
-    return static_cast<UBXMessage>((uint16_t)payload[0] << 8 | payload[1]);
+    return (Payload&)payload;
 }
 
-inline bool UBXAckFrame::isAck()
+inline UBXMessage UBXAckFrame::getAckMessage() const
+{
+    return static_cast<UBXMessage>(getPayload().ackMessage);
+}
+
+inline bool UBXAckFrame::isAck() const
 {
     return getMessage() == UBXMessage::UBX_ACK_ACK;
 }
 
-inline bool UBXAckFrame::isNack()
+inline bool UBXAckFrame::isNack() const
 {
     return getMessage() == UBXMessage::UBX_ACK_NAK;
 }
 
-inline bool UBXAckFrame::isValid()
+inline bool UBXAckFrame::isValid() const
 {
     return UBXFrame::isValid() && (isAck() || isNack());
 }

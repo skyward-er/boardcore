@@ -256,7 +256,7 @@ bool UBXGPS::safeWriteUBXFrame(const UBXFrame& frame)
     if (ack.getAckMessage() != frame.getMessage())
     {
         LOG_DEBUG(logger, "Received ACK for a different frame {:#04x}",
-                  static_cast<uint16_t>(ack.getAckMessage()));
+                  static_cast<uint16_t>(ack.getPayload().ackMessage));
         return false;
     }
 
