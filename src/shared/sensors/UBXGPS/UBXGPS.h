@@ -27,26 +27,26 @@
 #include <sensors/Sensor.h>
 
 #include "UBXFrame.h"
-#include "UbloxGPSData.h"
+#include "UBXGPSData.h"
 
 namespace Boardcore
 {
 
 /**
- * @brief Sensor for Ublox GPS.
+ * @brief Sensor for u-blox GPS.
  *
- * This sensor handles communication and setup with Ublox GPSs. It uses the
- * binary UBX protocol to retrieve and parse navigation data quicker than using
- * the string based NMEA.
+ * This sensor handles communication and setup with u-blox GPSs. It uses the
+ * binary UBX protocol to retrieve and parse navigation data faster than using
+ * the string-based NMEA.
  *
  * At initialization it resets the device, sets the configuration and sets up
  * UBX messages and GNSS parameters.
  *
  * Communication with the device is performed through SPI.
  *
- * This sensor was written for a NEO-M9N gps.
+ * This sensor is compatible with series NEO-M8 and NEO-M9.
  */
-class UbloxGPS : public Sensor<UbloxGPSData>
+class UBXGPS : public Sensor<UBXGPSData>
 {
 public:
     /**
@@ -96,10 +96,10 @@ public:
      * @param spiBus The SPI bus.
      * @param spiCs The CS pin to lower when we need to sample.
      * @param spiConfig The SPI configuration.
-     * @param rate GPS sample rate
+     * @param rate The GPS sample rate.
      */
-    UbloxGPS(SPIBusInterface& spiBus, miosix::GpioPin spiCs,
-             SPIBusConfig spiConfig = getDefaultSPIConfig(), uint8_t rate = 5);
+    UBXGPS(SPIBusInterface& spiBus, miosix::GpioPin spiCs,
+           SPIBusConfig spiConfig = getDefaultSPIConfig(), uint8_t rate = 5);
 
     /**
      * @brief Constructs the default config for the SPI bus.
@@ -115,7 +115,7 @@ public:
     bool selfTest() override;
 
 private:
-    UbloxGPSData sampleImpl() override;
+    UBXGPSData sampleImpl() override;
 
     /**
      * @brief Resets the device to its default configuration.
@@ -127,24 +127,28 @@ private:
     /**
      * @brief Disables NMEA messages on the SPI port.
      *
-     * @return True if the configuration received an ack.
+     * @return True if the configuration received an acknowledgement.
      */
     bool disableNMEAMessages();
 
     /**
      * @brief Configures the dynamic model to airborn 4g.
      *
-     * @return True if the configuration received an ack.
+     * @return True if the configuration received an acknowledgement.
      */
     bool setDynamicModelToAirborne4g();
 
     /**
      * @brief Configures the navigation solution update rate.
+     *
+     * @return True if the configuration received an acknowledgement.
      */
     bool setUpdateRate();
 
     /**
      * @brief Configures the PVT message output rate.
+     *
+     * @return True if the configuration received an acknowledgement.
      */
     bool setPVTMessageRate();
 
@@ -161,14 +165,14 @@ private:
      * @brief Writes a UBX frame.
      *
      * @param frame The frame to write.
-     * @return True if the frame to write is valid.
+     * @return True if the frame is valid.
      */
     bool writeUBXFrame(const UBXFrame& frame);
 
     /**
      * @brief Writes a UBX frame and waits for its acknowledgement.
      *
-     * @param frame The UBX frame to write.
+     * @param frame The frame to write.
      * @return True if the frame is valid and acknowledged.
      */
     bool safeWriteUBXFrame(const UBXFrame& frame);
@@ -178,8 +182,7 @@ private:
      * reads it.
      *
      * Note that for some messages a payload is required even for polling (e.g.
-     * UBX-CFG-PRT
-     * )
+     * UBX-CFG-PRT)
      *
      * @param message Requested message identifier.
      * @param frame Frame filled with data.
@@ -190,7 +193,7 @@ private:
     SPISlave spiSlave;
     uint8_t rate;
 
-    PrintLogger logger = Logging::getLogger("ubloxgps");
+    PrintLogger logger = Logging::getLogger("ubxgps");
 };
 
 }  // namespace Boardcore

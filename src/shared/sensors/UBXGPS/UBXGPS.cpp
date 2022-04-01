@@ -20,27 +20,27 @@
  * THE SOFTWARE.
  */
 
-#include "UbloxGPS.h"
+#include "UBXGPS.h"
 
 #include <drivers/timer/TimestampTimer.h>
 
 namespace Boardcore
 {
 
-UbloxGPS::UbloxGPS(SPIBusInterface& spiBus, miosix::GpioPin spiCs,
-                   SPIBusConfig spiConfig, uint8_t rate)
+UBXGPS::UBXGPS(SPIBusInterface& spiBus, miosix::GpioPin spiCs,
+               SPIBusConfig spiConfig, uint8_t rate)
     : spiSlave(spiBus, spiCs, spiConfig), rate(rate)
 {
 }
 
-SPIBusConfig UbloxGPS::getDefaultSPIConfig()
+SPIBusConfig UBXGPS::getDefaultSPIConfig()
 {
     return SPIBusConfig{SPI::ClockDivider::DIV_256, SPI::Mode::MODE_0};
 }
 
-uint8_t UbloxGPS::getRate() { return rate; }
+uint8_t UBXGPS::getRate() { return rate; }
 
-bool UbloxGPS::init()
+bool UBXGPS::init()
 {
     if (!reset())
     {
@@ -80,9 +80,9 @@ bool UbloxGPS::init()
     return true;
 }
 
-bool UbloxGPS::selfTest() { return true; }
+bool UBXGPS::selfTest() { return true; }
 
-UbloxGPSData UbloxGPS::sampleImpl()
+UBXGPSData UBXGPS::sampleImpl()
 {
     UBXFrame frame;
 
@@ -94,7 +94,7 @@ UbloxGPSData UbloxGPS::sampleImpl()
 
     UBXPayloadNAVPVT& pvt = (UBXPayloadNAVPVT&)frame.payload;
 
-    UbloxGPSData sample;
+    UBXGPSData sample;
     sample.gpsTimestamp  = TimestampTimer::getInstance().getTimestamp();
     sample.latitude      = (float)pvt.lat / 1e7;
     sample.longitude     = (float)pvt.lon / 1e7;
@@ -111,7 +111,7 @@ UbloxGPSData UbloxGPS::sampleImpl()
     return sample;
 }
 
-bool UbloxGPS::reset()
+bool UBXGPS::reset()
 {
     uint8_t payload[] = {
         0x00, 0x00,  // Hoy start
@@ -129,9 +129,8 @@ bool UbloxGPS::reset()
     return result;
 }
 
-bool UbloxGPS::disableNMEAMessages()
+bool UBXGPS::disableNMEAMessages()
 {
-    // Use the UBX-CFG-PRT message to disable NMEA on the SPI port
     uint8_t payload[] = {
         0x04,                    // SPI port
         0x00,                    // reserved1
@@ -149,9 +148,8 @@ bool UbloxGPS::disableNMEAMessages()
     return safeWriteUBXFrame(frame);
 }
 
-bool UbloxGPS::setDynamicModelToAirborne4g()
+bool UBXGPS::setDynamicModelToAirborne4g()
 {
-    // UBX-CFG-NAV5 message with length 36
     uint8_t payload[] = {
         0x01, 0x00,  // Parameters bitmask, apply dynamic model configuration
         0x08,        // Dynamic model = airbone 4g
@@ -179,7 +177,7 @@ bool UbloxGPS::setDynamicModelToAirborne4g()
     return safeWriteUBXFrame(frame);
 }
 
-bool UbloxGPS::setUpdateRate()
+bool UBXGPS::setUpdateRate()
 {
     uint8_t payload[] = {
         0x00, 0x00,  // Measurement rate
@@ -196,9 +194,8 @@ bool UbloxGPS::setUpdateRate()
     return safeWriteUBXFrame(frame);
 }
 
-bool UbloxGPS::setPVTMessageRate()
+bool UBXGPS::setPVTMessageRate()
 {
-    // Set the PVT message update rate on the current port
     uint8_t payload[] = {
         0x01, 0x07,  // PVT message
         0x01         // Rate = 1 navigation solution update
@@ -209,7 +206,7 @@ bool UbloxGPS::setPVTMessageRate()
     return safeWriteUBXFrame(frame);
 }
 
-bool UbloxGPS::readUBXFrame(UBXFrame& frame, size_t frameLength)
+bool UBXGPS::readUBXFrame(UBXFrame& frame, size_t frameLength)
 {
     uint8_t packedFrame[UBXFrame::UBX_MAX_FRAME_LENGTH];
 
@@ -223,7 +220,7 @@ bool UbloxGPS::readUBXFrame(UBXFrame& frame, size_t frameLength)
     return frame.isValid();
 }
 
-bool UbloxGPS::writeUBXFrame(const UBXFrame& frame)
+bool UBXGPS::writeUBXFrame(const UBXFrame& frame)
 {
     if (!frame.isValid())
     {
@@ -240,7 +237,7 @@ bool UbloxGPS::writeUBXFrame(const UBXFrame& frame)
     return true;
 }
 
-bool UbloxGPS::safeWriteUBXFrame(const UBXFrame& frame)
+bool UBXGPS::safeWriteUBXFrame(const UBXFrame& frame)
 {
     if (!writeUBXFrame(frame))
         return false;
@@ -266,7 +263,7 @@ bool UbloxGPS::safeWriteUBXFrame(const UBXFrame& frame)
     return ack.isAck();
 }
 
-bool UbloxGPS::pollReadUBXFrame(UBXMessage message, UBXFrame& response)
+bool UBXGPS::pollReadUBXFrame(UBXMessage message, UBXFrame& response)
 {
     UBXFrame req(message, nullptr, 0);
 

@@ -27,7 +27,7 @@
 namespace Boardcore
 {
 
-struct UbloxGPSData : public GPSData
+struct UBXGPSData : public GPSData
 {
     static std::string header()
     {

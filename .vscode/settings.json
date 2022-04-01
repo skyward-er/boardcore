@@ -115,8 +115,7 @@
         "Mosi",
         "NMEA",
         "nsat",
-        "Ublox",
-        "ubloxgps"
+        "UBXGPS"
     ],
     "cortex-debug.variableUseNaturalFormat": false
 }

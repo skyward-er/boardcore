@@ -20,7 +20,7 @@
  * THE SOFTWARE.
  */
 
-#include <sensors/UbloxGPS/UbloxGPS.h>
+#include <sensors/UBXGPS/UBXGPS.h>
 #include <utils/Debug.h>
 
 using namespace miosix;
@@ -51,9 +51,9 @@ int main()
     spiMosi.mode(Mode::ALTERNATE);
     spiMosi.alternateFunction(5);
 
-    UbloxGPS gps{spiBus, spiCs};
+    UBXGPS gps{spiBus, spiCs};
 
-    TRACE("Initializing UbloxGPS...\n");
+    TRACE("Initializing UBXGPS...\n");
 
     if (!gps.init())
         TRACE("Init failed! (code: %d)\n", gps.getLastError());
