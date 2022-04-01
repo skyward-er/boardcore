@@ -139,6 +139,61 @@ struct UBXAckFrame : public UBXFrame
     bool isValid() const;
 };
 
+/**
+ * @brief UBX frame UBX-NAV-PVT.
+ */
+struct UBXPvtFrame : public UBXFrame
+{
+public:
+    /**
+     * @brief Payload of UBX frame UBX-NAV-PVT.
+     */
+    struct __attribute__((packed)) Payload
+    {
+        uint32_t iTOW;     // GPS time of week of the navigation epoch [ms]
+        uint16_t year;     // Year (UTC) [y]
+        uint8_t month;     // Month, range 1..12 (UTC) [month]
+        uint8_t day;       // Day of month, range 1..31 (UTC) [d]
+        uint8_t hour;      // Hour of day, range 0..23 (UTC) [h]
+        uint8_t min;       // Minute of hour, range 0..59 (UTC) [min]
+        uint8_t sec;       // Seconds of minute, range 0..60 (UTC) [s]
+        uint8_t valid;     // Validity flags
+        uint32_t tAcc;     // Time accuracy estimate (UTC) [ns]
+        int32_t nano;      // Fraction of second, range -1e9 .. 1e9 (UTC) [ns]
+        uint8_t fixType;   // GNSS fix Type
+        uint8_t flags;     // Fix status flags
+        uint8_t flags2;    // Additional flags
+        uint8_t numSV;     // Number of satellites used in Nav Solution
+        int32_t lon;       // Longitude {1e-7} [deg]
+        int32_t lat;       // Latitude {1e-7} [deg]
+        int32_t height;    // Height above ellipsoid [mm]
+        int32_t hMSL;      // Height above mean sea level [mm]
+        uint32_t hAcc;     // Horizontal accuracy estimate [mm]
+        uint32_t vAcc;     // Vertical accuracy estimate [mm]
+        int32_t velN;      // NED north velocity [mm/s]
+        int32_t velE;      // NED east velocity [mm/s]
+        int32_t velD;      // NED down velocity [mm/s]
+        int32_t gSpeed;    // Ground Speed (2-D) [mm/s]
+        int32_t headMot;   // Heading of motion (2-D) {1e-5} [deg]
+        uint32_t sAcc;     // Speed accuracy estimate [mm/s]
+        uint32_t headAcc;  // Heading accuracy estimate (both motion and
+                           // vehicle) {1e-5} [deg]
+        uint16_t pDOP;     // Position DOP {0.01}
+        uint16_t flags3;   // Additional flags
+        uint8_t reserved0[4];  // Reserved
+        int32_t headVeh;       // Heading of vehicle (2-D) {1e-5} [deg]
+        int16_t magDec;        // Magnetic declination {1e-2} [deg]
+        uint16_t magAcc;       // Magnetic declination accuracy {1e-2} [deg]
+    };
+
+    Payload& getPayload() const;
+
+    /**
+     * @brief Tells whether the frame is an ack frame.
+     */
+    bool isValid() const;
+};
+
 inline UBXFrame::UBXFrame(UBXMessage message, const uint8_t* payload,
                           uint16_t payloadLength)
     : message(static_cast<uint16_t>(message)), payloadLength(payloadLength)
@@ -231,6 +286,16 @@ inline bool UBXAckFrame::isNack() const
 inline bool UBXAckFrame::isValid() const
 {
     return UBXFrame::isValid() && (isAck() || isNack());
+}
+
+inline UBXPvtFrame::Payload& UBXPvtFrame::getPayload() const
+{
+    return (Payload&)payload;
+}
+
+inline bool UBXPvtFrame::isValid() const
+{
+    return UBXFrame::isValid() && getMessage() == UBXMessage::UBX_NAV_PVT;
 }
 
 }  // namespace Boardcore

@@ -84,7 +84,7 @@ bool UBXGPS::selfTest() { return true; }
 
 UBXGPSData UBXGPS::sampleImpl()
 {
-    UBXFrame frame;
+    UBXPvtFrame frame;
 
     if (!readUBXFrame(frame))
     {
@@ -92,7 +92,7 @@ UBXGPSData UBXGPS::sampleImpl()
         return lastSample;
     }
 
-    UBXPayloadNAVPVT& pvt = (UBXPayloadNAVPVT&)frame.payload;
+    UBXPvtFrame::Payload& pvt = frame.getPayload();
 
     UBXGPSData sample;
     sample.gpsTimestamp  = TimestampTimer::getInstance().getTimestamp();
