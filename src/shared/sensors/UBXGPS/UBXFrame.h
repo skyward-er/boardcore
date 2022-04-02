@@ -30,6 +30,10 @@
 namespace Boardcore
 {
 
+static constexpr uint16_t UBX_MAX_PAYLOAD_LENGTH = 92;
+static constexpr uint16_t UBX_MAX_FRAME_LENGTH   = UBX_MAX_PAYLOAD_LENGTH + 8;
+static constexpr uint8_t UBX_PREAMBLE[]          = {0xb5, 0x62};
+
 /**
  * @brief UBX messages enumeration.
  */
@@ -50,10 +54,6 @@ enum class UBXMessage : uint16_t
  */
 struct UBXFrame
 {
-    static constexpr uint16_t UBX_MAX_PAYLOAD_LENGTH = 92;
-    static constexpr uint16_t UBX_MAX_FRAME_LENGTH = UBX_MAX_PAYLOAD_LENGTH + 8;
-    static constexpr uint8_t UBX_PREAMBLE[]        = {0xb5, 0x62};
-
     uint8_t preamble[2];
     uint16_t message;
     uint16_t payloadLength;
@@ -73,6 +73,11 @@ struct UBXFrame
      * @brief Return the total frame length.
      */
     uint16_t getLength() const;
+
+    /**
+     * @brief Return the stored payload length.
+     */
+    uint16_t getRealPayloadLength() const;
 
     UBXMessage getMessage() const;
 
@@ -200,12 +205,16 @@ inline UBXFrame::UBXFrame(UBXMessage message, const uint8_t* payload,
 {
     memcpy(preamble, UBX_PREAMBLE, 2);
     if (payload != nullptr)
-        memcpy(this->payload, payload,
-               std::min(payloadLength, UBX_MAX_PAYLOAD_LENGTH));
+        memcpy(this->payload, payload, getRealPayloadLength());
     calcChecksum(checksum);
 }
 
 inline uint16_t UBXFrame::getLength() const { return payloadLength + 8; }
+
+inline uint16_t UBXFrame::getRealPayloadLength() const
+{
+    return std::min(payloadLength, UBX_MAX_PAYLOAD_LENGTH);
+}
 
 inline UBXMessage UBXFrame::getMessage() const
 {
@@ -214,6 +223,9 @@ inline UBXMessage UBXFrame::getMessage() const
 
 inline bool UBXFrame::isValid() const
 {
+    if (memcmp(preamble, UBX_PREAMBLE, 2) != 0)
+        return false;
+
     if (payloadLength > UBX_MAX_PAYLOAD_LENGTH)
         return false;
 
@@ -225,38 +237,32 @@ inline bool UBXFrame::isValid() const
 inline void UBXFrame::writePacked(uint8_t* frame) const
 {
     memcpy(frame, preamble, 2);
-    frame[2] = message >> 8;
-    frame[3] = message;
+    memcpy(&frame[2], &message, 2);
     memcpy(&frame[4], &payloadLength, 2);
-    memcpy(&frame[6], payload, payloadLength);
+    memcpy(&frame[6], payload, getRealPayloadLength());
     memcpy(&frame[6 + payloadLength], checksum, 2);
 }
 
 inline void UBXFrame::readPacked(const uint8_t* frame)
 {
     memcpy(preamble, frame, 2);
-    message = frame[2] << 8;
-    message |= frame[3];
+    memcpy(&message, &frame[2], 2);
     memcpy(&payloadLength, &frame[4], 2);
-    payloadLength = std::min(payloadLength, UBX_MAX_PAYLOAD_LENGTH);
-    memcpy(payload, &frame[6], payloadLength);
+    memcpy(payload, &frame[6], getRealPayloadLength());
     memcpy(checksum, &frame[6 + payloadLength], 2);
 }
 
 inline void UBXFrame::calcChecksum(uint8_t* checksum) const
 {
-    uint8_t data[UBX_MAX_FRAME_LENGTH];
-    data[0] = message >> 8;
-    data[1] = message;
+    uint8_t data[getRealPayloadLength() + 4];
+    memcpy(data, &message, 2);
     memcpy(&data[2], &payloadLength, 2);
-    memcpy(&data[4], payload, std::min(payloadLength, UBX_MAX_PAYLOAD_LENGTH));
-
-    uint16_t dataLength = std::min(payloadLength, UBX_MAX_PAYLOAD_LENGTH) + 4;
+    memcpy(&data[4], payload, getRealPayloadLength());
 
     checksum[0] = 0;
     checksum[1] = 0;
 
-    for (uint8_t i = 0; i < dataLength; ++i)
+    for (size_t i = 0; i < sizeof(data); ++i)
     {
         checksum[0] += data[i];
         checksum[1] += checksum[0];

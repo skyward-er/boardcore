@@ -211,7 +211,7 @@ bool UBXGPS::readUBXFrame(UBXFrame& frame, size_t frameLength)
     if (frameLength == 0)
         return false;
 
-    uint8_t packedFrame[UBXFrame::UBX_MAX_FRAME_LENGTH];
+    uint8_t packedFrame[UBX_MAX_FRAME_LENGTH];
 
     {
         SPITransaction spi{spiSlave};
@@ -258,7 +258,7 @@ bool UBXGPS::safeWriteUBXFrame(const UBXFrame& frame)
     UBXAckFrame ack;
 
     // Read a frame with the correct length for an ack frame
-    if (!readUBXFrame(ack, UBXAckFrame::UBX_MAX_FRAME_LENGTH))
+    if (!readUBXFrame(ack, UBX_MAX_FRAME_LENGTH))
     {
         LOG_ERR(logger, "The received UBX frame is not valid");
         return false;
