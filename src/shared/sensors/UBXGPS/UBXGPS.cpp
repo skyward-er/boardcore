@@ -212,25 +212,29 @@ bool UBXGPS::readUBXFrame(UBXFrame& frame)
     {
         SPITransaction spi{spiSlave};
 
-        // Wait for UBX frame preamble
-        bool synchronized = false;
-        while (!synchronized)
+        // Search UBX frame preamble byte by byte
+        size_t i = 0;
+        while (i < 2)
         {
-            synchronized = true;
-            for (size_t i = 0; synchronized && i < 2; i++)
+            uint8_t c = spi.read();
+            miosix::delayUs(100);
+            if (c == UBX_PREAMBLE[i])
+                frame.preamble[i++] = c;
+            else if (i > 0)
             {
-                if ((frame.preamble[i] = spi.read()) != UBX_PREAMBLE[i])
-                {
-                    synchronized = false;
-                    if (frame.preamble[i] != UBX_WAIT)
-                        LOG_DEBUG(logger, "Received unexpected byte {:#02x}",
-                                  frame.preamble[i]);
-                }
+                i = 0;
+                if (c == UBX_PREAMBLE[i])
+                    frame.preamble[i++] = c;
             }
+            else if (c != UBX_WAIT)
+                LOG_DEBUG(logger, "Received unexpected byte {:#02x}", c);
         }
         spi.read(&frame.message, 2);
+        miosix::delayUs(100);
         spi.read(&frame.payloadLength, 2);
+        miosix::delayUs(100);
         spi.read(frame.payload, frame.getRealPayloadLength());
+        miosix::delayUs(100);
         spi.read(frame.checksum, 2);
     }
 
