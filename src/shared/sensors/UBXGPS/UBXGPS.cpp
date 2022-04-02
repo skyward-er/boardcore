@@ -126,6 +126,7 @@ bool UBXGPS::reset()
     if (!writeUBXFrame(frame))
         return false;
 
+    // Do something else while the module is resetting
     miosix::Thread::sleep(150);
 
     return true;
@@ -210,6 +211,31 @@ bool UBXGPS::setPVTMessageRate()
 
 bool UBXGPS::readUBXFrame(UBXFrame& frame)
 {
+    // if (frame.getRealPayloadLength() == 0)
+    //     return false;
+
+    // uint8_t packedFrame[UBX_MAX_FRAME_LENGTH];
+
+    // {
+    //     spiSlave.bus.select(spiSlave.cs);
+
+    //     // Wait for 1st byte after 0xff bytes
+    //     do
+    //     {
+    //         packedFrame[0] = spiSlave.bus.read();
+    //     } while (packedFrame[0] == UBX_WAIT);
+
+    //     // Read remaining bytes
+    //     spiSlave.bus.read(&packedFrame[1],
+    //                       frame.getRealPayloadLength() + 8 - 1);
+
+    //     spiSlave.bus.deselect(spiSlave.cs);
+    // }
+
+    // frame.readPacked(packedFrame);
+
+    // return frame.isValid();
+
     {
         SPITransaction spi{spiSlave};
 
@@ -267,6 +293,8 @@ bool UBXGPS::safeWriteUBXFrame(const UBXFrame& frame)
     if (!writeUBXFrame(frame))
         return false;
 
+    miosix::Thread::sleep(5);
+
     UBXAckFrame ack;
 
     if (!readUBXFrame(ack))
@@ -291,6 +319,8 @@ bool UBXGPS::pollReadUBXFrame(UBXMessage message, UBXFrame& response)
 
     if (!writeUBXFrame(request))
         return false;
+
+    miosix::Thread::sleep(5);
 
     if (!readUBXFrame(response))
     {
