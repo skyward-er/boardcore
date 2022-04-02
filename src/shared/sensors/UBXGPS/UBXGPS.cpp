@@ -208,11 +208,22 @@ bool UBXGPS::setPVTMessageRate()
 
 bool UBXGPS::readUBXFrame(UBXFrame& frame, size_t frameLength)
 {
+    if (frameLength == 0)
+        return false;
+
     uint8_t packedFrame[UBXFrame::UBX_MAX_FRAME_LENGTH];
 
     {
         SPITransaction spi{spiSlave};
-        spi.read(packedFrame, frameLength);
+
+        // Wait for 1st byte after 0xff bytes
+        do
+        {
+            packedFrame[0] = spi.read();
+        } while (packedFrame[0] == 0xff);
+
+        // Read remaining bytes
+        spi.read(&packedFrame[1], frameLength - 1);
     }
 
     frame.readPacked(packedFrame);
@@ -231,8 +242,10 @@ bool UBXGPS::writeUBXFrame(const UBXFrame& frame)
     uint8_t packedFrame[frame.getLength()];
     frame.writePacked(packedFrame);
 
-    SPITransaction spi{spiSlave};
-    spi.write(packedFrame, frame.getLength());
+    {
+        SPITransaction spi{spiSlave};
+        spi.write(packedFrame, frame.getLength());
+    }
 
     return true;
 }
@@ -241,8 +254,6 @@ bool UBXGPS::safeWriteUBXFrame(const UBXFrame& frame)
 {
     if (!writeUBXFrame(frame))
         return false;
-
-    miosix::Thread::sleep(5);
 
     UBXAckFrame ack;
 
@@ -269,8 +280,6 @@ bool UBXGPS::pollReadUBXFrame(UBXMessage message, UBXFrame& response)
 
     if (!writeUBXFrame(req))
         return false;
-
-    miosix::Thread::sleep(5);
 
     if (!readUBXFrame(response))
     {
