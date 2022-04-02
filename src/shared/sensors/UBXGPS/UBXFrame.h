@@ -33,6 +33,7 @@ namespace Boardcore
 static constexpr uint16_t UBX_MAX_PAYLOAD_LENGTH = 92;
 static constexpr uint16_t UBX_MAX_FRAME_LENGTH   = UBX_MAX_PAYLOAD_LENGTH + 8;
 static constexpr uint8_t UBX_PREAMBLE[]          = {0xb5, 0x62};
+static constexpr uint8_t UBX_WAIT                = 0xff;
 
 /**
  * @brief UBX messages enumeration.

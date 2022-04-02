@@ -117,8 +117,7 @@ private:
      * @param frame The received frame.
      * @return True if a valid frame was read.
      */
-    bool readUBXFrame(UBXFrame& frame,
-                      size_t frameLength = UBX_MAX_FRAME_LENGTH);
+    bool readUBXFrame(UBXFrame& frame);
 
     /**
      * @brief Writes a UBX frame.

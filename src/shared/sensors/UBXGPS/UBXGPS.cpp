@@ -84,29 +84,29 @@ bool UBXGPS::selfTest() { return true; }
 
 UBXGPSData UBXGPS::sampleImpl()
 {
-    UBXPvtFrame frame;
+    UBXPvtFrame pvt;
 
-    if (!readUBXFrame(frame))
+    if (!readUBXFrame(pvt))
     {
-        LOG_ERR(logger, "Unable to parse the current frame");
+        LOG_ERR(logger, "Have not received a NAV-PVT frame");
         return lastSample;
     }
 
-    UBXPvtFrame::Payload& pvt = frame.getPayload();
+    UBXPvtFrame::Payload& pvtP = pvt.getPayload();
 
     UBXGPSData sample;
     sample.gpsTimestamp  = TimestampTimer::getInstance().getTimestamp();
-    sample.latitude      = (float)pvt.lat / 1e7;
-    sample.longitude     = (float)pvt.lon / 1e7;
-    sample.height        = (float)pvt.height / 1e3;
-    sample.velocityNorth = (float)pvt.velN / 1e3;
-    sample.velocityEast  = (float)pvt.velE / 1e3;
-    sample.velocityDown  = (float)pvt.velD / 1e3;
-    sample.speed         = (float)pvt.gSpeed / 1e3;
-    sample.track         = (float)pvt.headMot / 1e5;
-    sample.positionDOP   = (float)pvt.pDOP / 1e2;
-    sample.satellites    = pvt.numSV;
-    sample.fix           = pvt.fixType;
+    sample.latitude      = (float)pvtP.lat / 1e7;
+    sample.longitude     = (float)pvtP.lon / 1e7;
+    sample.height        = (float)pvtP.height / 1e3;
+    sample.velocityNorth = (float)pvtP.velN / 1e3;
+    sample.velocityEast  = (float)pvtP.velE / 1e3;
+    sample.velocityDown  = (float)pvtP.velD / 1e3;
+    sample.speed         = (float)pvtP.gSpeed / 1e3;
+    sample.track         = (float)pvtP.headMot / 1e5;
+    sample.positionDOP   = (float)pvtP.pDOP / 1e2;
+    sample.satellites    = pvtP.numSV;
+    sample.fix           = pvtP.fixType;
 
     return sample;
 }
@@ -119,14 +119,15 @@ bool UBXGPS::reset()
         0x00         // Reserved
     };
 
-    UBXFrame frame(UBXMessage::UBX_CFG_RST, payload, sizeof(payload));
+    UBXFrame frame{UBXMessage::UBX_CFG_RST, payload, sizeof(payload)};
 
     // The reset message will not be followed by an ack
-    bool result = writeUBXFrame(frame);
+    if (!writeUBXFrame(frame))
+        return false;
 
     miosix::Thread::sleep(150);
 
-    return result;
+    return true;
 }
 
 bool UBXGPS::disableNMEAMessages()
@@ -143,7 +144,7 @@ bool UBXGPS::disableNMEAMessages()
         0x00, 0x00               // reserved3
     };
 
-    UBXFrame frame(UBXMessage::UBX_CFG_PRT, payload, sizeof(payload));
+    UBXFrame frame{UBXMessage::UBX_CFG_PRT, payload, sizeof(payload)};
 
     return safeWriteUBXFrame(frame);
 }
@@ -172,7 +173,7 @@ bool UBXGPS::setDynamicModelToAirborne4g()
         0x00, 0x00, 0x00, 0x00, 0x00  // Reserved
     };
 
-    UBXFrame frame(UBXMessage::UBX_CFG_NAV5, payload, sizeof(payload));
+    UBXFrame frame{UBXMessage::UBX_CFG_NAV5, payload, sizeof(payload)};
 
     return safeWriteUBXFrame(frame);
 }
@@ -189,7 +190,7 @@ bool UBXGPS::setUpdateRate()
     payload[0]      = rateMs;
     payload[1]      = rateMs >> 8;
 
-    UBXFrame frame(UBXMessage::UBX_CFG_RATE, payload, sizeof(payload));
+    UBXFrame frame{UBXMessage::UBX_CFG_RATE, payload, sizeof(payload)};
 
     return safeWriteUBXFrame(frame);
 }
@@ -201,32 +202,37 @@ bool UBXGPS::setPVTMessageRate()
         0x01         // Rate = 1 navigation solution update
     };
 
-    UBXFrame frame(UBXMessage::UBX_CFG_MSG, payload, sizeof(payload));
+    UBXFrame frame{UBXMessage::UBX_CFG_MSG, payload, sizeof(payload)};
 
     return safeWriteUBXFrame(frame);
 }
 
-bool UBXGPS::readUBXFrame(UBXFrame& frame, size_t frameLength)
+bool UBXGPS::readUBXFrame(UBXFrame& frame)
 {
-    if (frameLength == 0)
-        return false;
-
-    uint8_t packedFrame[UBX_MAX_FRAME_LENGTH];
-
     {
         SPITransaction spi{spiSlave};
 
-        // Wait for 1st byte after 0xff bytes
-        do
+        // Wait for UBX frame preamble
+        bool synchronized = false;
+        while (!synchronized)
         {
-            packedFrame[0] = spi.read();
-        } while (packedFrame[0] == 0xff);
-
-        // Read remaining bytes
-        spi.read(&packedFrame[1], frameLength - 1);
+            synchronized = true;
+            for (size_t i = 0; synchronized && i < 2; i++)
+            {
+                if ((frame.preamble[i] = spi.read()) != UBX_PREAMBLE[i])
+                {
+                    synchronized = false;
+                    if (frame.preamble[i] != UBX_WAIT)
+                        LOG_DEBUG(logger, "Received unexpected byte {:#02x}",
+                                  frame.preamble[i]);
+                }
+            }
+        }
+        spi.read(&frame.message, 2);
+        spi.read(&frame.payloadLength, 2);
+        spi.read(frame.payload, frame.getRealPayloadLength());
+        spi.read(frame.checksum, 2);
     }
-
-    frame.readPacked(packedFrame);
 
     return frame.isValid();
 }
@@ -258,7 +264,7 @@ bool UBXGPS::safeWriteUBXFrame(const UBXFrame& frame)
     UBXAckFrame ack;
 
     // Read a frame with the correct length for an ack frame
-    if (!readUBXFrame(ack, UBX_MAX_FRAME_LENGTH))
+    if (!readUBXFrame(ack))
     {
         LOG_ERR(logger, "The received UBX frame is not valid");
         return false;
@@ -276,9 +282,9 @@ bool UBXGPS::safeWriteUBXFrame(const UBXFrame& frame)
 
 bool UBXGPS::pollReadUBXFrame(UBXMessage message, UBXFrame& response)
 {
-    UBXFrame req(message, nullptr, 0);
+    UBXFrame request{message, nullptr, 0};
 
-    if (!writeUBXFrame(req))
+    if (!writeUBXFrame(request))
         return false;
 
     if (!readUBXFrame(response))
