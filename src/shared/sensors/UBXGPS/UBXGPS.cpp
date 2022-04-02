@@ -23,6 +23,7 @@
 #include "UBXGPS.h"
 
 #include <drivers/timer/TimestampTimer.h>
+#include <interfaces/endianness.h>
 
 namespace Boardcore
 {
@@ -229,9 +230,10 @@ bool UBXGPS::readUBXFrame(UBXFrame& frame)
             else if (c != UBX_WAIT)
                 LOG_DEBUG(logger, "Received unexpected byte {:#02x}", c);
         }
-        spi.read(&frame.message, 2);
+
+        frame.message = swapBytes16(spi.read16());
         miosix::delayUs(100);
-        spi.read(&frame.payloadLength, 2);
+        frame.payloadLength = swapBytes16(spi.read16());
         miosix::delayUs(100);
         spi.read(frame.payload, frame.getRealPayloadLength());
         miosix::delayUs(100);
@@ -267,7 +269,6 @@ bool UBXGPS::safeWriteUBXFrame(const UBXFrame& frame)
 
     UBXAckFrame ack;
 
-    // Read a frame with the correct length for an ack frame
     if (!readUBXFrame(ack))
     {
         LOG_ERR(logger, "The received UBX frame is not valid");
