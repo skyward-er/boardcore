@@ -485,10 +485,10 @@ inline uint16_t SPI::transfer(uint16_t data)
 
 inline void SPI::transfer(uint8_t *data, size_t nBytes)
 {
-    // Cleaer the RX buffer
+    // Clear the RX buffer
     (void)spi->DR;
 
-    // Write the first data item to transmit
+    // Write the first data item to transmitted
     spi->DR = data[0];
 
     for (size_t i = 1; i < nBytes; i++)
@@ -508,26 +508,30 @@ inline void SPI::transfer(uint8_t *data, size_t nBytes)
         data[i - 1] = static_cast<uint8_t>(spi->DR);
     }
 
-    // Wait until data is received
-    // while ((spi->SR & SPI_SR_RXNE) == 0)
-    //     ;
-    while (spi->SR & SPI_SR_BSY)
+    // Wait until the last data item is received
+    while ((spi->SR & SPI_SR_RXNE) == 0)
         ;
 
     // Read the last received data item
     data[nBytes - 1] = static_cast<uint8_t>(spi->DR);
+
+    // Wait until TXE=1 and then wait until BSY=0 before concluding
+    while ((spi->SR & SPI_SR_TXE) == 0)
+        ;
+    while (spi->SR & SPI_SR_BSY)
+        ;
 }
 
 inline void SPI::transfer(uint16_t *data, size_t nBytes)
 {
-    // Cleaer the RX buffer
+    // Clear the RX buffer
     (void)spi->DR;
 
     // Set 16 bit frame format
     set16BitFrameFormat();
 
-    // Write the first data item to transmit
-    spi->DR = data[0];
+    // Write the first data item to transmitted
+    spi->DR = static_cast<uint16_t>(data[0]);
 
     for (size_t i = 1; i < nBytes / 2; i++)
     {
@@ -546,14 +550,18 @@ inline void SPI::transfer(uint16_t *data, size_t nBytes)
         data[i - 1] = static_cast<uint16_t>(spi->DR);
     }
 
-    // Wait until data is received
-    // while ((spi->SR & SPI_SR_RXNE) == 0)
-    //     ;
-    while (spi->SR & SPI_SR_BSY)
+    // Wait until the last data item is received
+    while ((spi->SR & SPI_SR_RXNE) == 0)
         ;
 
     // Read the last received data item
     data[nBytes / 2 - 1] = static_cast<uint16_t>(spi->DR);
+
+    // Wait until TXE=1 and then wait until BSY=0 before concluding
+    while ((spi->SR & SPI_SR_TXE) == 0)
+        ;
+    while (spi->SR & SPI_SR_BSY)
+        ;
 
     // Go back to 8 bit frame format
     set8BitFrameFormat();

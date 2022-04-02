@@ -104,6 +104,7 @@
     "cSpell.words": [
         "Amatruda",
         "AVDD",
+        "CPHA",
         "Damiano",
         "Davide",
         "DGNSS",
@@ -113,8 +114,16 @@
         "GPIOG",
         "miosix",
         "Mosi",
+        "MSTR",
         "NMEA",
         "nsat",
+        "PCLK",
+        "RXCRCR",
+        "RXDMAEN",
+        "RXNE",
+        "trasfer",
+        "TXCRCR",
+        "TXDMAEN",
         "UBXGPS"
     ],
     "cortex-debug.variableUseNaturalFormat": false
