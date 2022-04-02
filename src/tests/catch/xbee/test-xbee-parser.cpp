@@ -72,7 +72,7 @@ void printu64(uint64_t v)
 
     for (int i = 0; i < 8; i++)
     {
-        printf("%02X ", p[i]);
+        printf("%02X ", p[i]);  // cppcheck-suppress objectIndex
     }
 
     printf("\n");
@@ -330,8 +330,8 @@ TEST_CASE("Frame serialization")
         txOrig.setTransmitOptions(0x40);
         REQUIRE(txOrig.getTrasmitOptions() == 0x40);
 
-        uint8_t* rfData = txOrig.getRFDataPointer();
-        UNUSED(rfData);  // TODO: Check rfData
+        uint8_t* rfData __attribute__((unused)) = txOrig.getRFDataPointer();
+        // TODO: Check rfData
 
         REQUIRE(txOrig.getRFDataLength() == 0);
         REQUIRE(txOrig.getFrameDataLength() == 13);
