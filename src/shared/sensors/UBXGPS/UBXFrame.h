@@ -40,14 +40,14 @@ static constexpr uint8_t UBX_WAIT                = 0xff;
  */
 enum class UBXMessage : uint16_t
 {
-    UBX_NAV_PVT  = 0x0107,  // Navigation position velocity time solution
-    UBX_ACK_NAK  = 0x0500,  // Message acknowledged
-    UBX_ACK_ACK  = 0x0501,  // Message not acknowledged
-    UBX_CFG_PRT  = 0x0600,  // Port configuration
-    UBX_CFG_MSG  = 0x0601,  // Set message rate
-    UBX_CFG_RST  = 0x0604,  // Reset receiver
-    UBX_CFG_RATE = 0x0608,  // Navigation/measurement rate settings
-    UBX_CFG_NAV5 = 0x0624,  // Navigation engine settings
+    UBX_NAV_PVT  = 0x0701,  // Navigation position velocity time solution
+    UBX_ACK_NAK  = 0x0005,  // Message acknowledged
+    UBX_ACK_ACK  = 0x0105,  // Message not acknowledged
+    UBX_CFG_PRT  = 0x0006,  // Port configuration
+    UBX_CFG_MSG  = 0x0106,  // Set message rate
+    UBX_CFG_RST  = 0x0406,  // Reset receiver
+    UBX_CFG_RATE = 0x0806,  // Navigation/measurement rate settings
+    UBX_CFG_NAV5 = 0x2406,  // Navigation engine settings
 };
 
 /**
