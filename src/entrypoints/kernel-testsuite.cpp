@@ -4530,8 +4530,6 @@ static void fs_test_1()
     i = 0;
     for (;;)
     {
-        // cppcheck-suppress nullPointerRedundantCheck
-        // cppcheck-suppress unmatchedSuppression
         j = fread(buf, 1, 1024, f);
         if (j == 0)
             break;
@@ -4551,8 +4549,6 @@ static void fs_test_1()
     i = 0;
     for (;;)
     {
-        // cppcheck-suppress nullPointerRedundantCheck
-        // cppcheck-suppress unmatchedSuppression
         j = fread(buf, 1, 1024, f);
         if (j == 0)
             break;
@@ -4572,8 +4568,6 @@ static void fs_test_1()
     i = 0;
     for (;;)
     {
-        // cppcheck-suppress nullPointerRedundantCheck
-        // cppcheck-suppress unmatchedSuppression
         j = fread(buf, 1, 1024, f);
         if (j == 0)
             break;
@@ -4598,11 +4592,7 @@ static void fs_test_1()
     if ((f = fopen("/sd/testdir/file_4.txt", "a")) == NULL)
         fail("can't open a file_4.txt");
     for (i = 2; i <= 128; i++)
-    {
-        // cppcheck-suppress nullPointerRedundantCheck
-        // cppcheck-suppress unmatchedSuppression
         fprintf(f, "Hello world line %03d\n", i);
-    }
     if (fclose(f) != 0)  // cppcheck-suppress nullPointerRedundantCheck
         fail("Can't close a file_4.txt");
     // Reading to check (only first 2 lines)
@@ -4633,8 +4623,6 @@ static void fs_test_1()
                              // cppcheck-suppress nullPointerRedundantCheck
     if ((fgetc(f) != '1') | (fgetc(f) != '2') | (fgetc(f) != '8'))
         fail("fgetc SEEK_END");
-    // cppcheck-suppress nullPointerRedundantCheck
-    // cppcheck-suppress unmatchedSuppression
     if (ftell(f) != (21 * 128 - 1))
     {
         iprintf("ftell=%ld\n", ftell(f));
@@ -4806,8 +4794,6 @@ static void fs_test_3()
         for (unsigned int j = 0; j < size; j++)
             buf[j] = rand() & 0xff;
         checksum ^= crc16(buf, size);
-        // cppcheck-suppress nullPointerRedundantCheck
-        // cppcheck-suppress unmatchedSuppression
         if (fwrite(buf, 1, size, f) != size)
             fail("write");
     }
@@ -4821,8 +4807,6 @@ static void fs_test_3()
     for (unsigned int i = 0; i < numBlocks; i++)
     {
         memset(buf, 0, size);
-        // cppcheck-suppress nullPointerRedundantCheck
-        // cppcheck-suppress unmatchedSuppression
         if (fread(buf, 1, size, f) != size)
             fail("read");
         outChecksum ^= crc16(buf, size);
