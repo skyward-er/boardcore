@@ -36,7 +36,7 @@ int main()
     GpioPin spiMosi(GPIOB_BASE, 15);
 #else
     SPIBus spiBus(SPI1);
-    GpioPin spiCs(GPIOA_BASE, 3);
+    GpioPin spiCs(GPIOE_BASE, 3);
     GpioPin spiSck(GPIOA_BASE, 5);
     GpioPin spiMiso(GPIOA_BASE, 6);
     GpioPin spiMosi(GPIOA_BASE, 7);
