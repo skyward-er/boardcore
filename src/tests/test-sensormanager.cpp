@@ -259,6 +259,8 @@ int main()
 
     // TEST SENSORS WITH FIFO
 
+    // cppcheck-suppress unmatchedSuppression
+    // cppcheck-suppress unreadVariable
     const uint32_t fifoSize = 20;
 
     MySensorFIFO s;

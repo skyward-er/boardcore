@@ -72,7 +72,9 @@ void printu64(uint64_t v)
 
     for (int i = 0; i < 8; i++)
     {
-        printf("%02X ", p[i]);  // cppcheck-suppress objectIndex
+        // cppcheck-suppress objectIndex
+        // cppcheck-suppress unmatchedSuppression
+        printf("%02X ", p[i]);
     }
 
     printf("\n");
