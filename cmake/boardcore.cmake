@@ -90,11 +90,11 @@ foreach(OPT_BOARD ${BOARDS})
         # TestUtils
         ${SBS_BASE}/src/shared/utils/testutils/TestHelper.cpp
     )
-    add_library(SkywardBoardcore::Boardcore-${OPT_BOARD} ALIAS ${BOARDCORE_LIBRARY})
+    add_library(SkywardBoardcore::Boardcore::${OPT_BOARD} ALIAS ${BOARDCORE_LIBRARY})
     target_include_directories(${BOARDCORE_LIBRARY} PUBLIC ${SBS_BASE}/src/shared)
     target_link_libraries(${BOARDCORE_LIBRARY} PUBLIC
-        Miosix::Miosix-${OPT_BOARD}
-        Mxgui::Mxgui-${OPT_BOARD}
+        Miosix::Miosix::${OPT_BOARD}
+        Mxgui::Mxgui::${OPT_BOARD}
         TSCPP::TSCPP
         Eigen3::Eigen
         fmt::fmt-header-only

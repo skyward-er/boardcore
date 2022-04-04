@@ -47,7 +47,7 @@ function(sbs_target TARGET OPT_BOARD)
     endif()
     target_include_directories(${TARGET} PRIVATE src/shared)
     if(CMAKE_CROSSCOMPILING)
-        target_link_libraries(${TARGET} PRIVATE SkywardBoardcore::Boardcore-${OPT_BOARD})
+        target_link_libraries(${TARGET} PRIVATE SkywardBoardcore::Boardcore::${OPT_BOARD})
         add_custom_command(
             TARGET ${TARGET} POST_BUILD
             COMMAND ${CMAKE_OBJCOPY} -O ihex ${TARGET} ${TARGET}.hex
@@ -56,7 +56,7 @@ function(sbs_target TARGET OPT_BOARD)
             VERBATIM
         )
     else()
-        target_link_libraries(${TARGET} PRIVATE SkywardBoardcore::Boardcore-host)
+        target_link_libraries(${TARGET} PRIVATE SkywardBoardcore::Boardcore::host)
     endif()
 endfunction()
 
