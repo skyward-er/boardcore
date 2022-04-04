@@ -231,26 +231,6 @@ bool UBXGPS::setPVTMessageRate()
     return safeWriteUBXFrame(frame);
 }
 
-void UBXGPS::waitUntilReady()
-{
-    SPITransaction spi{spiSlave};
-
-    uint8_t data[READY_DATA_SIZE];
-    long long start   = miosix::getTick();
-    long long minTick = start + MIN_READY_TIME * MS_TO_TICK;
-    long long maxTick = start + MAX_READY_TIME * MS_TO_TICK;
-    long long now;
-    do
-    {
-        spi.read(data, READY_DATA_SIZE);
-        now = miosix::getTick();
-    } while (now < minTick ||
-             (data[READY_DATA_SIZE - 1] != UBX_WAIT && now < maxTick));
-
-    if (now >= maxTick)
-        LOG_ERR(logger, "Timeout for wait expired");
-}
-
 bool UBXGPS::readUBXFrame(UBXFrame& frame)
 {
     long long start = miosix::getTick();
@@ -343,8 +323,6 @@ bool UBXGPS::safeWriteUBXFrame(const UBXFrame& frame)
             LOG_DEBUG(logger, "Retrying (attempt {:#d} of {:#d})...", i + 1,
                       MAX_TRIES);
 
-        // waitUntilReady();
-
         if (!writeUBXFrame(frame))
             return false;
 
@@ -371,34 +349,6 @@ bool UBXGPS::safeWriteUBXFrame(const UBXFrame& frame)
         }
 
         return true;
-    }
-
-    LOG_ERR(logger, "Gave up after {:#d} tries", MAX_TRIES);
-    return false;
-}
-
-bool UBXGPS::pollReadUBXFrame(UBXMessage message, UBXFrame& response)
-{
-    UBXFrame request{message, nullptr, 0};
-
-    for (unsigned int i = 0; i < MAX_TRIES; i++)
-    {
-        if (i > 0)
-            LOG_DEBUG(logger, "Retrying (attempt {:#d} of {:#d})...", i + 1,
-                      MAX_TRIES);
-
-        if (!writeUBXFrame(request))
-            return false;
-
-        if (!readUBXFrame(response))
-            continue;
-
-        if (response.getMessage() != message)
-        {
-            LOG_ERR(logger, "Received different UBX frame {:04x}",
-                    static_cast<uint16_t>(response.message));
-            continue;
-        }
     }
 
     LOG_ERR(logger, "Gave up after {:#d} tries", MAX_TRIES);

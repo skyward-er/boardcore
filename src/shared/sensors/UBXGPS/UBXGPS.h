@@ -113,13 +113,6 @@ private:
     bool setPVTMessageRate();
 
     /**
-     * @brief Waits until the device has nothing to send. The bytes that are
-     * read are ignored, as they are used only to check if they correspond to
-     * the device wait symbol.
-     */
-    void waitUntilReady();
-
-    /**
      * @brief Reads a UBX frame.
      *
      * @param frame The received frame.
@@ -143,19 +136,6 @@ private:
      */
     bool safeWriteUBXFrame(const UBXFrame& frame);
 
-    /**
-     * @brief Sends a poll request for a UBX frame for the specified message and
-     * reads it.
-     *
-     * Note that for some messages a payload is required even for polling (e.g.
-     * UBX-CFG-PRT)
-     *
-     * @param message Requested message identifier.
-     * @param frame Frame filled with data.
-     * @return True if the received frame that was requested is valid.
-     */
-    bool pollReadUBXFrame(UBXMessage message, UBXFrame& frame);
-
     SPISlave spiSlave;
     uint8_t sampleRate;
 
@@ -164,9 +144,6 @@ private:
     static constexpr float MS_TO_TICK = miosix::TICK_FREQ / 1000.f;
 
     static constexpr unsigned int RESET_SLEEP_TIME = 5000;  // [ms]
-    static constexpr unsigned int MIN_READY_TIME   = 1000;  // [ms]
-    static constexpr unsigned int MAX_READY_TIME   = 2000;  // [ms]
-    static constexpr size_t READY_DATA_SIZE        = 64;    // [B]
     static constexpr unsigned int READ_TIMEOUT     = 5000;  // [ms]
     static constexpr unsigned int MAX_TRIES        = 5;     // [1]
 };
