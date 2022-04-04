@@ -55,8 +55,13 @@ int main()
 
     TRACE("Initializing UBXGPS...\n");
 
-    if (!gps.init())
+    while (!gps.init())
+    {
         TRACE("Init failed! (code: %d)\n", gps.getLastError());
+
+        TRACE("Retrying in 10 seconds...\n");
+        miosix::Thread::sleep(10000);
+    }
 
     while (true)
     {
@@ -72,6 +77,6 @@ int main()
             sample.velocityEast, sample.velocityDown, sample.speed,
             sample.track, sample.positionDOP, sample.satellites, sample.fix);
 
-        Thread::sleep(1000 / gps.getRate());
+        Thread::sleep(1000 / gps.getSampleRate());
     }
 }

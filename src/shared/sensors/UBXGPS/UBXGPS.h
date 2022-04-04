@@ -55,10 +55,11 @@ public:
      * @param spiBus The SPI bus.
      * @param spiCs The CS pin to lower when we need to sample.
      * @param spiConfig The SPI configuration.
-     * @param rate The GPS sample rate.
+     * @param sampleRate The GPS sample rate [kHz].
      */
     UBXGPS(SPIBusInterface& spiBus, miosix::GpioPin spiCs,
-           SPIBusConfig spiConfig = getDefaultSPIConfig(), uint8_t rate = 5);
+           SPIBusConfig spiConfig = getDefaultSPIConfig(),
+           uint8_t sampleRate     = 5);
 
     /**
      * @brief Constructs the default config for the SPI bus.
@@ -67,7 +68,7 @@ public:
      */
     static SPIBusConfig getDefaultSPIConfig();
 
-    uint8_t getRate();
+    uint8_t getSampleRate();
 
     bool init() override;
 
@@ -84,11 +85,11 @@ private:
     bool reset();
 
     /**
-     * @brief Disables NMEA messages on the SPI port.
+     * @brief Enables UBX and disables NMEA on the SPI port.
      *
      * @return True if the configuration received an acknowledgement.
      */
-    bool disableNMEAMessages();
+    bool setUBXProtocol();
 
     /**
      * @brief Configures the dynamic model to airborn 4g.
@@ -98,11 +99,11 @@ private:
     bool setDynamicModelToAirborne4g();
 
     /**
-     * @brief Configures the navigation solution update rate.
+     * @brief Configures the navigation solution sample rate.
      *
      * @return True if the configuration received an acknowledgement.
      */
-    bool setUpdateRate();
+    bool setSampleRate();
 
     /**
      * @brief Configures the PVT message output rate.
@@ -110,6 +111,13 @@ private:
      * @return True if the configuration received an acknowledgement.
      */
     bool setPVTMessageRate();
+
+    /**
+     * @brief Waits until the device has nothing to send. The bytes that are
+     * read are ignored, as they are used only to check if they correspond to
+     * the device wait symbol.
+     */
+    void waitUntilReady();
 
     /**
      * @brief Reads a UBX frame.
@@ -149,9 +157,18 @@ private:
     bool pollReadUBXFrame(UBXMessage message, UBXFrame& frame);
 
     SPISlave spiSlave;
-    uint8_t rate;
+    uint8_t sampleRate;
 
     PrintLogger logger = Logging::getLogger("ubxgps");
+
+    static constexpr float MS_TO_TICK = miosix::TICK_FREQ / 1000.f;
+
+    static constexpr unsigned int RESET_SLEEP_TIME = 5000;  // [ms]
+    static constexpr unsigned int MIN_READY_TIME   = 1000;  // [ms]
+    static constexpr unsigned int MAX_READY_TIME   = 2000;  // [ms]
+    static constexpr size_t READY_DATA_SIZE        = 64;    // [B]
+    static constexpr unsigned int READ_TIMEOUT     = 5000;  // [ms]
+    static constexpr unsigned int MAX_TRIES        = 5;     // [1]
 };
 
 }  // namespace Boardcore

@@ -30,11 +30,6 @@
 namespace Boardcore
 {
 
-static constexpr uint16_t UBX_MAX_PAYLOAD_LENGTH = 92;
-static constexpr uint16_t UBX_MAX_FRAME_LENGTH   = UBX_MAX_PAYLOAD_LENGTH + 8;
-static constexpr uint8_t UBX_PREAMBLE[]          = {0xb5, 0x62};
-static constexpr uint8_t UBX_WAIT                = 0xff;
-
 /**
  * @brief UBX messages enumeration.
  */
@@ -55,10 +50,15 @@ enum class UBXMessage : uint16_t
  */
 struct UBXFrame
 {
+    static constexpr uint16_t MAX_PAYLOAD_LENGTH = 92;
+    static constexpr uint16_t MAX_FRAME_LENGTH   = MAX_PAYLOAD_LENGTH + 8;
+    static constexpr uint8_t PREAMBLE[]          = {0xb5, 0x62};
+    static constexpr uint8_t WAIT                = 0xff;
+
     uint8_t preamble[2];
     uint16_t message;
     uint16_t payloadLength;
-    uint8_t payload[UBX_MAX_PAYLOAD_LENGTH];
+    uint8_t payload[MAX_PAYLOAD_LENGTH];
     uint8_t checksum[2];
 
     UBXFrame() = default;
@@ -100,7 +100,7 @@ struct UBXFrame
      *
      * Note that the frame bytes are assumed to start with the preamble.
      *
-     * @param frame An array of length at least UBX_MAX_FRAME_LENGTH.
+     * @param frame An array of length at least MAX_FRAME_LENGTH.
      */
     void readPacked(const uint8_t* frame);
 
@@ -204,7 +204,7 @@ inline UBXFrame::UBXFrame(UBXMessage message, const uint8_t* payload,
                           uint16_t payloadLength)
     : message(static_cast<uint16_t>(message)), payloadLength(payloadLength)
 {
-    memcpy(preamble, UBX_PREAMBLE, 2);
+    memcpy(preamble, PREAMBLE, 2);
     if (payload != nullptr)
         memcpy(this->payload, payload, getRealPayloadLength());
     calcChecksum(checksum);
@@ -214,7 +214,7 @@ inline uint16_t UBXFrame::getLength() const { return payloadLength + 8; }
 
 inline uint16_t UBXFrame::getRealPayloadLength() const
 {
-    return std::min(payloadLength, UBX_MAX_PAYLOAD_LENGTH);
+    return std::min(payloadLength, MAX_PAYLOAD_LENGTH);
 }
 
 inline UBXMessage UBXFrame::getMessage() const
@@ -224,10 +224,10 @@ inline UBXMessage UBXFrame::getMessage() const
 
 inline bool UBXFrame::isValid() const
 {
-    if (memcmp(preamble, UBX_PREAMBLE, 2) != 0)
+    if (memcmp(preamble, PREAMBLE, 2) != 0)
         return false;
 
-    if (payloadLength > UBX_MAX_PAYLOAD_LENGTH)
+    if (payloadLength > MAX_PAYLOAD_LENGTH)
         return false;
 
     uint8_t validChecksum[2];

@@ -28,21 +28,38 @@
 namespace Boardcore
 {
 
+constexpr uint16_t UBXFrame::MAX_PAYLOAD_LENGTH;
+constexpr uint16_t UBXFrame::MAX_FRAME_LENGTH;
+constexpr uint8_t UBXFrame::PREAMBLE[];
+constexpr uint8_t UBXFrame::WAIT;
+
+constexpr float UBXGPS::MS_TO_TICK;
+
+constexpr unsigned int UBXGPS::RESET_SLEEP_TIME;
+constexpr unsigned int UBXGPS::READ_TIMEOUT;
+constexpr unsigned int UBXGPS::MAX_TRIES;
+
 UBXGPS::UBXGPS(SPIBusInterface& spiBus, miosix::GpioPin spiCs,
-               SPIBusConfig spiConfig, uint8_t rate)
-    : spiSlave(spiBus, spiCs, spiConfig), rate(rate)
+               SPIBusConfig spiConfig, uint8_t sampleRate)
+    : spiSlave(spiBus, spiCs, spiConfig), sampleRate(sampleRate)
 {
 }
 
 SPIBusConfig UBXGPS::getDefaultSPIConfig()
 {
-    return SPIBusConfig{SPI::ClockDivider::DIV_256, SPI::Mode::MODE_0};
+    /* From data sheet of series NEO-M8:
+     * "Minimum initialization time" (setup time): 10 us
+     * "Minimum deselect time" (hold time): 1 ms */
+    return SPIBusConfig{SPI::ClockDivider::DIV_32, SPI::Mode::MODE_0,
+                        SPI::BitOrder::MSB_FIRST, 10, 1000};
 }
 
-uint8_t UBXGPS::getRate() { return rate; }
+uint8_t UBXGPS::getSampleRate() { return sampleRate; }
 
 bool UBXGPS::init()
 {
+    LOG_DEBUG(logger, "Resetting the device...");
+
     if (!reset())
     {
         lastError = SensorErrors::INIT_FAIL;
@@ -50,12 +67,16 @@ bool UBXGPS::init()
         return false;
     }
 
-    if (!disableNMEAMessages())
+    LOG_DEBUG(logger, "Setting the UBX protocol...");
+
+    if (!setUBXProtocol())
     {
         lastError = SensorErrors::INIT_FAIL;
-        LOG_ERR(logger, "Could not disable NMEA messages");
+        LOG_ERR(logger, "Could not set the UBX protocol");
         return false;
     }
+
+    LOG_DEBUG(logger, "Setting the dynamic model...");
 
     if (!setDynamicModelToAirborne4g())
     {
@@ -64,12 +85,16 @@ bool UBXGPS::init()
         return false;
     }
 
-    if (!setUpdateRate())
+    LOG_DEBUG(logger, "Setting the sample rate...");
+
+    if (!setSampleRate())
     {
         lastError = SensorErrors::INIT_FAIL;
-        LOG_ERR(logger, "Could not set the update rate");
+        LOG_ERR(logger, "Could not set the sample rate");
         return false;
     }
+
+    LOG_DEBUG(logger, "Setting the PVT message rate...");
 
     if (!setPVTMessageRate())
     {
@@ -88,10 +113,7 @@ UBXGPSData UBXGPS::sampleImpl()
     UBXPvtFrame pvt;
 
     if (!readUBXFrame(pvt))
-    {
-        LOG_ERR(logger, "Have not received a NAV-PVT frame");
         return lastSample;
-    }
 
     UBXPvtFrame::Payload& pvtP = pvt.getPayload();
 
@@ -115,35 +137,35 @@ UBXGPSData UBXGPS::sampleImpl()
 bool UBXGPS::reset()
 {
     uint8_t payload[] = {
-        0x00, 0x00,  // Hoy start
+        0x00, 0x00,  // Hot start
         0x00,        // Hardware reset
         0x00         // Reserved
     };
 
     UBXFrame frame{UBXMessage::UBX_CFG_RST, payload, sizeof(payload)};
 
-    // The reset message will not be followed by an ack
+    // The reset message will not be followed by an acknowledgment
     if (!writeUBXFrame(frame))
         return false;
 
-    // Do something else while the module is resetting
-    miosix::Thread::sleep(150);
+    // Do not interact with the module while it is resetting
+    miosix::Thread::sleep(RESET_SLEEP_TIME);
 
     return true;
 }
 
-bool UBXGPS::disableNMEAMessages()
+bool UBXGPS::setUBXProtocol()
 {
     uint8_t payload[] = {
         0x04,                    // SPI port
-        0x00,                    // reserved1
+        0x00,                    // reserved0
         0x00, 0x00,              // txReady
-        0x00, 0x32, 0x00, 0x00,  // mode = 0, ffCnt = 50
-        0x00, 0x00, 0x00, 0x00,  // reserved2
+        0x00, 0x00, 0x00, 0x00,  // spiMode = 0, ffCnt = 0 (mechanism off)
+        0x00, 0x00, 0x00, 0x00,  // reserved1
         0x01, 0x00,              // inProtoMask = UBX
         0x01, 0x00,              // outProtoMask = UBX
         0x00, 0x00,              // flags
-        0x00, 0x00               // reserved3
+        0x00, 0x00               // reserved2
     };
 
     UBXFrame frame{UBXMessage::UBX_CFG_PRT, payload, sizeof(payload)};
@@ -180,7 +202,7 @@ bool UBXGPS::setDynamicModelToAirborne4g()
     return safeWriteUBXFrame(frame);
 }
 
-bool UBXGPS::setUpdateRate()
+bool UBXGPS::setSampleRate()
 {
     uint8_t payload[] = {
         0x00, 0x00,  // Measurement rate
@@ -188,9 +210,9 @@ bool UBXGPS::setUpdateRate()
         0x01, 0x01   // GPS time
     };
 
-    uint16_t rateMs = 1000 / rate;
-    payload[0]      = rateMs;
-    payload[1]      = rateMs >> 8;
+    uint16_t sampleRateMs = 1000 / sampleRate;
+    payload[0]            = sampleRateMs;
+    payload[1]            = sampleRateMs >> 8;
 
     UBXFrame frame{UBXMessage::UBX_CFG_RATE, payload, sizeof(payload)};
 
@@ -209,64 +231,89 @@ bool UBXGPS::setPVTMessageRate()
     return safeWriteUBXFrame(frame);
 }
 
+void UBXGPS::waitUntilReady()
+{
+    SPITransaction spi{spiSlave};
+
+    uint8_t data[READY_DATA_SIZE];
+    long long start   = miosix::getTick();
+    long long minTick = start + MIN_READY_TIME * MS_TO_TICK;
+    long long maxTick = start + MAX_READY_TIME * MS_TO_TICK;
+    long long now;
+    do
+    {
+        spi.read(data, READY_DATA_SIZE);
+        now = miosix::getTick();
+    } while (now < minTick ||
+             (data[READY_DATA_SIZE - 1] != UBX_WAIT && now < maxTick));
+
+    if (now >= maxTick)
+        LOG_ERR(logger, "Timeout for wait expired");
+}
+
 bool UBXGPS::readUBXFrame(UBXFrame& frame)
 {
-    // if (frame.getRealPayloadLength() == 0)
-    //     return false;
-
-    // uint8_t packedFrame[UBX_MAX_FRAME_LENGTH];
-
-    // {
-    //     spiSlave.bus.select(spiSlave.cs);
-
-    //     // Wait for 1st byte after 0xff bytes
-    //     do
-    //     {
-    //         packedFrame[0] = spiSlave.bus.read();
-    //     } while (packedFrame[0] == UBX_WAIT);
-
-    //     // Read remaining bytes
-    //     spiSlave.bus.read(&packedFrame[1],
-    //                       frame.getRealPayloadLength() + 8 - 1);
-
-    //     spiSlave.bus.deselect(spiSlave.cs);
-    // }
-
-    // frame.readPacked(packedFrame);
-
-    // return frame.isValid();
+    long long start = miosix::getTick();
+    long long end   = start + READ_TIMEOUT * MS_TO_TICK;
 
     {
         SPITransaction spi{spiSlave};
 
         // Search UBX frame preamble byte by byte
-        size_t i = 0;
+        size_t i     = 0;
+        bool waiting = false;
         while (i < 2)
         {
+            if (miosix::getTick() >= end)
+            {
+                LOG_ERR(logger, "Timeout for read expired");
+                return false;
+            }
+
             uint8_t c = spi.read();
-            miosix::delayUs(100);
-            if (c == UBX_PREAMBLE[i])
+
+            if (c == UBXFrame::PREAMBLE[i])
+            {
+                waiting             = false;
                 frame.preamble[i++] = c;
-            else if (i > 0)
+            }
+            else if (c == UBXFrame::PREAMBLE[0])
+            {
+                i                   = 0;
+                waiting             = false;
+                frame.preamble[i++] = c;
+            }
+            else if (c == UBXFrame::WAIT)
             {
                 i = 0;
-                if (c == UBX_PREAMBLE[i])
-                    frame.preamble[i++] = c;
+                if (!waiting)
+                {
+                    waiting = true;
+                    // LOG_DEBUG(logger, "Device is waiting...");
+                }
             }
-            else if (c != UBX_WAIT)
-                LOG_DEBUG(logger, "Received unexpected byte {:#02x}", c);
+            else
+            {
+                i       = 0;
+                waiting = false;
+                LOG_DEBUG(logger, "Received unexpected byte: {:02x} {:#c}", c,
+                          c);
+            }
         }
 
-        frame.message = swapBytes16(spi.read16());
-        miosix::delayUs(100);
+        frame.message       = swapBytes16(spi.read16());
         frame.payloadLength = swapBytes16(spi.read16());
-        miosix::delayUs(100);
         spi.read(frame.payload, frame.getRealPayloadLength());
-        miosix::delayUs(100);
         spi.read(frame.checksum, 2);
     }
 
-    return frame.isValid();
+    if (!frame.isValid())
+    {
+        LOG_ERR(logger, "Received invalid UBX frame");
+        return false;
+    }
+
+    return true;
 }
 
 bool UBXGPS::writeUBXFrame(const UBXFrame& frame)
@@ -290,51 +337,72 @@ bool UBXGPS::writeUBXFrame(const UBXFrame& frame)
 
 bool UBXGPS::safeWriteUBXFrame(const UBXFrame& frame)
 {
-    if (!writeUBXFrame(frame))
-        return false;
-
-    miosix::Thread::sleep(5);
-
-    UBXAckFrame ack;
-
-    if (!readUBXFrame(ack))
+    for (unsigned int i = 0; i < MAX_TRIES; i++)
     {
-        LOG_ERR(logger, "The received UBX frame is not valid");
-        return false;
+        if (i > 0)
+            LOG_DEBUG(logger, "Retrying (attempt {:#d} of {:#d})...", i + 1,
+                      MAX_TRIES);
+
+        // waitUntilReady();
+
+        if (!writeUBXFrame(frame))
+            return false;
+
+        UBXAckFrame ack;
+
+        if (!readUBXFrame(ack))
+            continue;
+
+        if (ack.isNack())
+        {
+            if (ack.getAckMessage() == frame.getMessage())
+                LOG_DEBUG(logger, "Received NAK");
+            else
+                LOG_DEBUG(logger, "Received NAK for different UBX frame {:04x}",
+                          static_cast<uint16_t>(ack.getPayload().ackMessage));
+            continue;
+        }
+
+        if (ack.isAck() && ack.getAckMessage() != frame.getMessage())
+        {
+            LOG_DEBUG(logger, "Received ACK for different UBX frame {:04x}",
+                      static_cast<uint16_t>(ack.getPayload().ackMessage));
+            continue;
+        }
+
+        return true;
     }
 
-    if (ack.getAckMessage() != frame.getMessage())
-    {
-        LOG_DEBUG(logger, "Received ACK for a different frame {:#04x}",
-                  static_cast<uint16_t>(ack.getPayload().ackMessage));
-        return false;
-    }
-
-    return ack.isAck();
+    LOG_ERR(logger, "Gave up after {:#d} tries", MAX_TRIES);
+    return false;
 }
 
 bool UBXGPS::pollReadUBXFrame(UBXMessage message, UBXFrame& response)
 {
     UBXFrame request{message, nullptr, 0};
 
-    if (!writeUBXFrame(request))
-        return false;
-
-    miosix::Thread::sleep(5);
-
-    if (!readUBXFrame(response))
+    for (unsigned int i = 0; i < MAX_TRIES; i++)
     {
-        LOG_ERR(logger, "Invalid UBX frame");
-        return false;
+        if (i > 0)
+            LOG_DEBUG(logger, "Retrying (attempt {:#d} of {:#d})...", i + 1,
+                      MAX_TRIES);
+
+        if (!writeUBXFrame(request))
+            return false;
+
+        if (!readUBXFrame(response))
+            continue;
+
+        if (response.getMessage() != message)
+        {
+            LOG_ERR(logger, "Received different UBX frame {:04x}",
+                    static_cast<uint16_t>(response.message));
+            continue;
+        }
     }
 
-    if (response.getMessage() != message)
-    {
-        LOG_ERR(logger, "UBX frame not recognized");
-        return false;
-    }
-
-    return true;
+    LOG_ERR(logger, "Gave up after {:#d} tries", MAX_TRIES);
+    return false;
 }
 
 }  // namespace Boardcore
