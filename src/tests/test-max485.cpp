@@ -37,10 +37,10 @@
  *
  *  WIRINGS:
  *  Max485 n1   |   stm32f407vg_discovery ser 1
- *      DI      |       PA9
+ *      DI      |       PA9 / PB6
  *      DE      |       PC9
  *      RE      |       PC8
- *      RO      |       PA10
+ *      RO      |       PA10 / PB7
  *      VCC     |       3.3/5 V
  *      GND     |       GND
  *
@@ -58,7 +58,6 @@
  *
  */
 
-#include "drivers/usart/USART.cpp"  // TODO: be able to delete it always
 #include "string.h"
 #include "thread"
 #include "utils/SerialInterface.h"
@@ -132,8 +131,8 @@ int main()
     }
 
     printf("*** SERIAL 3 WORKING!\n");
-    for (int iBaud = 0; iBaud < sizeof(baudrates) / sizeof(baudrates[0]);
-         iBaud++)
+    for (unsigned int iBaud = 0;
+         iBaud < sizeof(baudrates) / sizeof(baudrates[0]); iBaud++)
     {
         Thread::sleep(1000);
 

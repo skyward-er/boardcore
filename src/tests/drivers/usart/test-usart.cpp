@@ -20,10 +20,13 @@
  * THE SOFTWARE.
  */
 
+#include <fmt/format.h>
+
 #include <cassert>
 
 #include "drivers/usart/USART.h"
 #include "miosix.h"
+#include "string"
 #include "string.h"
 #include "thread"
 #include "utils/SerialInterface.h"
@@ -36,6 +39,10 @@ using namespace Boardcore;
  * - connect the default serial (USART3) to the pc
  * - connect usart1_rx to the usart2_tx
  * - connect usart2_rx to the usart1_tx
+ *
+ * WARNING: working if "write, >10ms sleep (or a printf...),
+ * STM32SerialWrapper::read". if we omit "time" we end up failing the test. More
+ * data is sent and more baudrates will fail (from 2400 to greater).
  */
 
 typedef struct
@@ -44,34 +51,41 @@ typedef struct
     int dataInt;
     float dataFloat;
     double dataDouble;
+
+    std::string print()
+    {
+        return fmt::format("{},{:d},{:f},{:f}", dataChar, dataInt, dataFloat,
+                           dataDouble);
+    }
 } StructToSend;
-StructToSend struct_tx      = {'C', 42, 420.69, 48.84};
-char buf_tx[64]             = "Testing communication :D";
-USART::Baudrate baudrates[] = {
-    USART::Baudrate::B2400,   USART::Baudrate::B9600,
-    USART::Baudrate::B19200,  USART::Baudrate::B38400,
-    USART::Baudrate::B57600,  USART::Baudrate::B115200,
-    USART::Baudrate::B230400, USART::Baudrate::B460800,
-    USART::Baudrate::B921600};
+StructToSend struct_tx = {'C', 42, 420.69, 48.84};
+char buf_tx[64]        = "Testing communication, but very very very loong :D";
+USARTInterface::Baudrate baudrates[] = {
+    USARTInterface::Baudrate::B2400,   USARTInterface::Baudrate::B9600,
+    USARTInterface::Baudrate::B19200,  USARTInterface::Baudrate::B38400,
+    USARTInterface::Baudrate::B57600,  USARTInterface::Baudrate::B115200,
+    USARTInterface::Baudrate::B230400, USARTInterface::Baudrate::B460800,
+    USARTInterface::Baudrate::B921600};
 
 /**
  * Communication: src -> dst
- * tests the writeString, write and read methods of the USART driver
+ * tests the writeString, write and read methods of the USART drivers
  */
-bool testCommunicationSequential(USART *src, USART *dst)
+bool testCommunicationSequential(USARTInterface *src, USARTInterface *dst)
 {
-    int n_rcvd = 0;
     char buf_rx[64];
     StructToSend struct_rx;
     bool passed = true;
 
-    // SENDING STRING
+    /************************** SENDING STRING **************************/
     printf("Sending string\n");
-    printf("\t-->%d sending: \t'%s' (%d)\n", src->getId(), buf_tx,
-           strlen(buf_tx));
+
+    printf("\t%d--> sent: \t'%s'\n", src->getId(), buf_tx);
     src->writeString(buf_tx);
-    n_rcvd = dst->read(buf_rx, 64);
-    printf("\t<--%d received: \t'%s' (%d)\n", dst->getId(), buf_rx, n_rcvd);
+    // Thread::sleep(10); // enable this to pass the test
+    dst->read(buf_rx, 64);
+
+    printf("\t%d<-- received: \t'%s'\n", dst->getId(), buf_rx);
 
     if (strcmp(buf_tx, buf_rx) == 0)
     {
@@ -83,16 +97,15 @@ bool testCommunicationSequential(USART *src, USART *dst)
         passed = false;
     }
 
-    // SENDING BINARY DATA
+    /*********************** SENDING BINARY DATA ************************/
+
     printf("Sending binary data\n");
-    printf("\t-->%d sending: \t'%c,%d,%f,%f'\n", src->getId(),
-           struct_tx.dataChar, struct_tx.dataInt, struct_tx.dataFloat,
-           struct_tx.dataDouble);
+    printf("\t%d--> sent: \t'%s'\n", src->getId(), struct_tx.print().c_str());
     src->write(&struct_tx, sizeof(StructToSend));
+    // Thread::sleep(10); // enable this to pass the test
     dst->read(&struct_rx, sizeof(StructToSend));
-    printf("\t<--%d received: \t'%c,%d,%f,%f'\n", dst->getId(),
-           struct_rx.dataChar, struct_rx.dataInt, struct_rx.dataFloat,
-           struct_rx.dataDouble);
+    printf("\t%d<-- received: \t'%s'\n", dst->getId(),
+           struct_rx.print().c_str());
 
     if (memcmp(&struct_tx, &struct_rx, sizeof(StructToSend)) == 0)
     {
@@ -120,40 +133,25 @@ int main()
     for (unsigned int iBaud = 0;
          iBaud < sizeof(baudrates) / sizeof(baudrates[0]); iBaud++)
     {
-        USART::Baudrate baudrate =
-            baudrates[iBaud];  // USART::Baudrate::B230400;  //
+        USARTInterface::Baudrate baudrate = baudrates[iBaud];
         printf("\n\n########################### %d\n", (int)baudrate);
 
         // declaring the usart peripherals
-        Boardcore::USART usart1(USART1, baudrate);
-        // usart1.setOversampling(false);
-        // usart1.setStopBits(1);
-        // usart1.setWordLength(USART::WordLength::BIT8);
-        // usart1.setParity(USART::ParityBit::NO_PARITY);
+        STM32SerialWrapper usart1(USART1, baudrate);
         usart1.init();
 
-        Boardcore::USART usart2(USART2, baudrate);
+        USART usart2(USART2, baudrate);
         // usart2.setOversampling(false);
         // usart2.setStopBits(1);
         // usart2.setWordLength(USART::WordLength::BIT8);
         // usart2.setParity(USART::ParityBit::NO_PARITY);
         usart2.init();
 
-                // testing transmission (both char and binary) "serial 1 -> serial 2"
+        // testing transmission (both char and binary) "serial 1 -> serial 2"
         testPassed &= testCommunicationSequential(&usart1, &usart2);
 
         // testing transmission (both char and binary) "serial 1 <- serial 2"
         testPassed &= testCommunicationSequential(&usart2, &usart1);
-
-        // trying if read and readFast returns if there is no communication
-        // holding
-        {
-            // char buf_fast[64];
-            // usart1.read(buf_fast, 64);
-            // printf("read didn't block\n");
-        }
-
-        // Thread::sleep(50);
     }
 
     if (testPassed)

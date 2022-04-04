@@ -22,9 +22,15 @@
 
 #include "drivers/usart/USART.h"
 
-#include <miosix.h>
+#include <fcntl.h>
+#include <stdio.h>
+#include <utils/Debug.h>
+
+#include <string>
 
 #include "arch/common/drivers/serial.h"
+#include "filesystem/file_access.h"
+#include "miosix.h"
 
 // TODO: define the length of the queue
 #define QUEUE_LEN 256
@@ -133,6 +139,8 @@ void __attribute__((naked, used)) USART3_IRQHandler()
 
 namespace Boardcore
 {
+USARTInterface::~USARTInterface() {}
+
 void USART::IRQhandleInterrupt()
 {
     char c;
@@ -166,13 +174,13 @@ void USART::IRQhandleInterrupt()
     }
 }
 
-USART::USART(USARTType *usart, Baudrate baudrate, Type type)
-    : usart(usart), rxQueue(QUEUE_LEN), type(type)
+USART::USART(USARTType *usart, Baudrate baudrate) : rxQueue(QUEUE_LEN)
 {
     // enable the peripehral on the right APB
     ClockUtils::enablePeripheralClock(usart);
     RCC_SYNC();
 
+    this->usart = usart;
     switch (reinterpret_cast<uint32_t>(usart))
     {
         case USART1_BASE:
@@ -432,26 +440,118 @@ int USART::writeString(const char *buffer)
     int i = 0;
     miosix::Lock<miosix::FastMutex> l(txMutex);
 
-    // send everything, comprising the '\0' character
+    // send everything, also the ending '\0' character
     usart->DR = *buffer;
-    if (*buffer != '\0')
+    i++;
+    while (*buffer != '\0')
     {
-        do
-        {
-            buffer++;
-            while (!(usart->SR & USART_SR_TXE))
-                ;
+        buffer++;
+        while (!(usart->SR & USART_SR_TXE))
+            ;
 
-            usart->DR = *buffer;
-            i++;
-        } while (*buffer != '\0');
-    }
+        usart->DR = *buffer;
+        i++;
+    };
 
     return i;
 }
 
-int USART::getId() { return this->id; }
-
 void USART::clearQueue() { rxQueue.reset(); }
 
+void STM32SerialWrapper::IRQhandleInterrupt() { serial->IRQhandleInterrupt(); }
+
+STM32SerialWrapper::STM32SerialWrapper(USARTType *usart, Baudrate baudrate)
+{
+    this->usart    = usart;
+    this->baudrate = baudrate;
+    switch (reinterpret_cast<uint32_t>(usart))
+    {
+        case USART1_BASE:
+            this->id             = 1;
+            this->serialPortName = std::string("usart1");
+            break;
+        case USART2_BASE:
+            this->id             = 2;
+            this->serialPortName = std::string("usart2");
+            break;
+        case USART3_BASE:
+            this->id             = 3;
+            this->serialPortName = std::string("usart3");
+            break;
+    }
+    initialized = false;
+    fd          = -1;
+}
+
+STM32SerialWrapper::~STM32SerialWrapper()
+{
+    miosix::intrusive_ref_ptr<miosix::DevFs> devFs =
+        miosix::FilesystemManager::instance().getDevFs();
+    close(fd);
+    devFs->remove(serialPortName.c_str());
+}
+
+bool STM32SerialWrapper::init()
+{
+    if (initialized)
+    {
+        TRACE(
+            "[SerialCommunication] Error : serial communication already "
+            "initialized!\n");
+        return false;
+    }
+    else if (!serialCommSetup())
+    {
+        TRACE(
+            "[SerialCommunication] Error : can't initialize serial "
+            "communication!\n");
+        return false;
+    }
+
+    initialized = true;
+    return true;
+}
+
+bool STM32SerialWrapper::serialCommSetup()
+{
+    // Takes the file system pointer of the devices
+    miosix::intrusive_ref_ptr<miosix::DevFs> devFs =
+        miosix::FilesystemManager::instance().getDevFs();
+
+    // Creates and adds the serial port to the devices
+    serial = new miosix::STM32Serial(id, static_cast<int>(baudrate));
+    if (!devFs->addDevice(serialPortName.c_str(),
+                          miosix::intrusive_ref_ptr<miosix::Device>(serial)))
+        return false;
+
+    // path string "/dev/<name_of_port>" for the port we want to open
+    std::string serialPortPath = "/dev/" + serialPortName;
+
+    // open serial port
+    fd = open(serialPortPath.c_str(), O_RDWR);
+
+    if (fd <= -1)
+    {
+        TRACE("Cannot open %s\n", serialPortPath.c_str());
+        return false;
+    }
+
+    return true;
+}
+
+int STM32SerialWrapper::writeString(const char *data)
+{
+    // strlen + 1 in order to send the '/0' terminated string
+    return ::write(fd, data, strlen(data) + 1);
+}
+
+int STM32SerialWrapper::write(void *buf, size_t nChars)
+{
+    return ::write(fd, buf, nChars);
+}
+
+int STM32SerialWrapper::read(void *buf, size_t nBytes)
+{
+    return ::read(fd, buf, nBytes);
+}
 }  // namespace Boardcore

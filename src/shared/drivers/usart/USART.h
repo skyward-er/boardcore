@@ -26,6 +26,10 @@
 #include <miosix.h>
 #include <utils/ClockUtils.h>
 
+#include <string>
+
+#include "arch/common/drivers/serial.h"
+
 #ifndef USE_MOCK_PERIPHERALS
 using USARTType = USART_TypeDef;
 #else
@@ -34,42 +38,13 @@ using USARTType = USART_TypeDef;
 
 namespace Boardcore
 {
-
 /**
- * @brief Driver for STM32 low level USART peripheral.
- *
- * This driver applies to STM32F4 family.
- *
- * The Universal Synchronous and asynchronous Receiver/Transmitter (USART)
- * allows:
- * - UART communications
+ * @brief Abstract class that implements the interface for the serial
+ * communication
  */
-class USART
+class USARTInterface
 {
 public:
-    enum class Type : bool
-    {
-        BOARDCORE,
-        MIOSIX
-    };
-
-    enum class Mode : int
-    {
-        UART
-    };
-
-    enum class WordLength : bool
-    {
-        BIT8 = 0,
-        BIT9 = 1
-    };
-
-    enum class ParityBit : bool
-    {
-        NO_PARITY = 0,
-        PARITY    = 1
-    };
-
     enum class Baudrate : int
     {
         // B1200   = 1200, // NOT WORKING WITH 1200 baud
@@ -88,41 +63,120 @@ public:
      * @brief interrupt handler that deals with receive interrupt, idle
      * interrupt
      */
-    void IRQhandleInterrupt();
-    /*
-     * Constructor, initializes the serial port using the default pins, which
-     * are:
-     * USART1: tx=PA9  rx=PA10 cts=PA11 rts=PA12
-     * USART2: tx=PA2  rx=PA3  cts=PA0  rts=PA1
-     * USART3: tx=PB10 rx=PB11 cts=PB13 rts=PB14
+    virtual void IRQhandleInterrupt() = 0;
+
+    virtual ~USARTInterface() = 0;
+
+    /**
+     * @brief initializes the peripheral enabling his interrupts, enabling the
+     * interrupts in the NVIC and setting the pins with the appropriate
+     * alternate functions. All the setup phase must be done before the
+     * initialization of the peripheral. Initializes also the serial port using
+     * the chosen pins.
      */
+    virtual bool init() = 0;
+
+    /**
+     * @brief Blocking read operation to read nBytes or till the data transfer
+     * is complete
+     */
+    virtual int read(void *buffer, size_t nBytes) = 0;
+
+    /**
+     * @brief Blocking write operation
+     */
+    virtual int write(void *buf, size_t nChars) = 0;
+
+    /**
+     * @brief Write a string to the serial, comprising the '\0' character
+     */
+    virtual int writeString(const char *buffer) = 0;
+
+    /**
+     * @brief returns the id of the serial
+     */
+    int getId() { return id; };
+
+protected:
+    USARTType
+        *usart;  ///< pointer to the struct representing the USART peripheral
+    int id = 1;  ///< can be 1, 2, 3
+    bool initialized =
+        false;  ///< True if init() already called successfully, false otherwise
+    Baudrate baudrate;  ///< Baudrate of the serial communication
+};
+
+/**
+ * @brief Driver for STM32 low level USART peripheral.
+ *
+ * This driver applies to STM32F4 family.
+ *
+ * The Universal Synchronous and asynchronous Receiver/Transmitter (USART)
+ * allows:
+ * - UART communications
+ */
+class USART : public USARTInterface
+{
+public:
+    enum class WordLength : bool
+    {
+        BIT8 = 0,
+        BIT9 = 1
+    };
+
+    enum class ParityBit : bool
+    {
+        NO_PARITY = 0,
+        PARITY    = 1
+    };
+
+    /**
+     * @brief interrupt handler that deals with receive interrupt, idle
+     * interrupt
+     */
+    void IRQhandleInterrupt();
+
     /**
      * @brief Automatically enables the peripheral and timer peripheral clock.
      * sets the default values for all the parameters (1 stop bit, 8 bit data,
-     * no control flow and no oversampling).
+     * no control flow and no oversampling). Initializes the serial port using
+     * the default pins, which are:
+     * - USART1: tx=PA9  rx=PA10 cts=PA11 rts=PA12
+     * - USART2: tx=PA2  rx=PA3  cts=PA0  rts=PA1
+     * - USART3: tx=PB10 rx=PB11 cts=PB13 rts=PB14
      * @param usart structure that represents the usart peripheral [accepted
      * are: USART1, USART2 or USART3].
      * @param baudrate member of the enum Baudrate that represents the baudrate
      * with which the communication will take place.
      */
-    USART(USARTType *usart, Baudrate baudrate, Type type = Type::BOARDCORE);
+    USART(USARTType *usart, Baudrate baudrate);
 
-    /**
-     * @brief destructor of the USART object.
-     */
     ~USART();
 
     /**
      * @brief initializes the peripheral enabling his interrupts, enabling the
      * interrupts in the NVIC and setting the pins with the appropriate
      * alternate functions. All the setup phase must be done before the
-     * initialization of the peripheral. Initializes the serial port using
-     * the default pins, which are:
-     * USART1: tx=PA9  rx=PA10 cts=PA11 rts=PA12
-     * USART2: tx=PA2  rx=PA3  cts=PA0  rts=PA1
-     * USART3: tx=PB10 rx=PB11 cts=PB13 rts=PB14
+     * initialization of the peripheral. Initializes also the serial port using
+     * the chosen pins.
      */
     bool init();
+
+    /**
+     * @brief Blocking read operation to read nBytes or till the data transfer
+     * is complete
+     */
+    int read(void *buffer, size_t nBytes);
+
+    /**
+     * @brief Blocking write operation
+     */
+    int write(void *buf, size_t nChars);
+
+    /**
+     * @brief Write a string to the serial, comprising the '\0' character
+     */
+    int writeString(const char *buffer);
 
     void enableDMA();
 
@@ -158,6 +212,45 @@ public:
     void setOversampling(bool oversampling);
 
     /**
+     * @brief clears the rxQueue
+     */
+    void clearQueue();
+
+    /// Pointer to serial port classes to let interrupts access the classes
+    static USART *ports[3];
+
+private:
+    miosix::FastMutex rxMutex;  ///< mutex for receiving on serial
+    miosix::FastMutex txMutex;  ///< mutex for transmitting on serial
+    miosix::Thread *rxWaiting =
+        0;  ///< pointer to the waiting on receive thread
+    miosix::DynUnsyncQueue<char> rxQueue;  ///< Receiving queue
+    bool idle             = true;          ///< Receiver idle
+    ParityBit parity      = ParityBit::NO_PARITY;
+    WordLength wordLength = WordLength::BIT8;
+    int stopBits          = 1;      ///< number of stop bits [1,2]
+    bool over8            = false;  ///< oversalmpling 8 bit
+};
+
+/**
+ * @brief Wrapper for the STM32Serial driver in miosix.
+ */
+class STM32SerialWrapper : public USARTInterface
+{
+public:
+    /**
+     * @brief interrupt handler that deals with receive interrupt, idle
+     * interrupt
+     */
+    void IRQhandleInterrupt();
+
+    STM32SerialWrapper(USARTType *usart, Baudrate baudrate);
+
+    ~STM32SerialWrapper();
+
+    bool init();
+
+    /**
      * @brief Blocking read operation to read nBytes or till the data transfer
      * is complete
      */
@@ -173,35 +266,18 @@ public:
      */
     int writeString(const char *buffer);
 
-    /**
-     * @brief returns the id of the serial
-     */
-    int getId();
-
-    /**
-     * @brief clears the rxQueue
-     */
-    void clearQueue();
-
-    /// Pointer to serial port classes to let interrupts access the classes
-    static USART *ports[3];
-
 private:
-    USARTType
-        *usart;  ///< pointer to the struct representing the USART peripheral
-    miosix::FastMutex rxMutex;  ///< mutex for receiving on serial
-    miosix::FastMutex txMutex;  ///< mutex for transmitting on serial
-    miosix::Thread *rxWaiting =
-        0;  ///< pointer to the waiting on receive thread
-    miosix::DynUnsyncQueue<char> rxQueue;  ///< Receiving queue
-    bool idle = true;                      ///< Receiver idle
-    int id    = 1;                         ///< can be 1, 2, 3
-    Baudrate baudrate;
-    Type type;
-    ParityBit parity      = ParityBit::NO_PARITY;
-    WordLength wordLength = WordLength::BIT8;
-    int stopBits          = 1;
-    bool over8            = false;
+    /**
+     * @brief Creates and opens the serial port for communication between
+     * OBSW and simulation device
+     */
+    bool serialCommSetup();
+
+    miosix::STM32Serial *serial;  ///< pointer to the serial object
+    std::string serialPortName;   ///< Port name of the serial port that has to
+                                  ///< be created for the communication
+    int fd;  ///< Stores the file descriptor of the serial port file opened for
+             ///< trasmission
 };
 
 }  // namespace Boardcore

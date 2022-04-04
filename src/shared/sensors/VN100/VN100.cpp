@@ -27,7 +27,8 @@
 namespace Boardcore
 {
 
-VN100::VN100(USARTType *portNumber, USART::Baudrate baudRate, CRCOptions crc)
+VN100::VN100(USARTType *portNumber, USARTInterface::Baudrate baudRate,
+             CRCOptions crc)
     : portNumber(portNumber), baudRate(baudRate), crc(crc)
 {
 }
@@ -302,7 +303,7 @@ bool VN100::disableAsyncMessages(bool waitResponse)
 bool VN100::configDefaultSerialPort()
 {
     // Initial default settings
-    serialInterface = new USART(portNumber, USART::Baudrate::B115200);
+    serialInterface = new USART(portNumber, USARTInterface::Baudrate::B115200);
 
     // Check correct serial init
     return serialInterface->init();

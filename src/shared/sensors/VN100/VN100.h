@@ -58,7 +58,6 @@
 #include <utils/Debug.h>
 
 #include "VN100Data.h"
-// #include "VN100Serial.h"
 #include "drivers/usart/USART.h"
 
 namespace Boardcore
@@ -86,7 +85,7 @@ public:
      * @param Redundancy check option.
      */
     VN100(USARTType *portNumber    = USART2,
-          USART::Baudrate baudRate = USART::Baudrate::B115200,
+          USART::Baudrate baudRate = USART::Baudrate::B921600,
           CRCOptions crc           = CRCOptions::CRC_ENABLE_8);
 
     bool init() override;
@@ -256,7 +255,7 @@ private:
      * @brief Serial interface that is needed to communicate
      * with the sensor via ASCII codes.
      */
-    USART *serialInterface = nullptr;
+    USARTInterface *serialInterface = nullptr;
 
     PrintLogger logger = Logging::getLogger("vn100");
 
