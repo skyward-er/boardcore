@@ -90,7 +90,7 @@ void recvLoop()
 
 void sendLoop()
 {
-    uint8_t msg[256];
+    uint8_t msg[63];
     while (1)
     {
         auto serial = miosix::DefaultConsole::instance().get();
