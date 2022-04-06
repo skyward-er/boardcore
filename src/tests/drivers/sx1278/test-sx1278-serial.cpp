@@ -31,17 +31,17 @@
 using namespace Boardcore;
 using namespace miosix;
 
-SPIBus bus(SPI3);
+SPIBus bus(SPI4);
 
-GpioPin sck(GPIOC_BASE, 10);
-GpioPin miso(GPIOC_BASE, 11);
-GpioPin mosi(GPIOC_BASE, 12);
-GpioPin cs(GPIOA_BASE, 1);
-GpioPin dio(GPIOC_BASE, 15);
+GpioPin sck(GPIOE_BASE, 2);
+GpioPin miso(GPIOE_BASE, 5);
+GpioPin mosi(GPIOE_BASE, 6);
+GpioPin cs(GPIOC_BASE, 1);
+GpioPin dio(GPIOF_BASE, 10);
 
 SX1278* sx1278 = nullptr;
 
-void __attribute__((used)) EXTI15_IRQHandlerImpl()
+void __attribute__((used)) EXTI10_IRQHandlerImpl()
 {
     if (sx1278)
         sx1278->handleDioIRQ();
@@ -54,16 +54,16 @@ void initBoard()
         miosix::FastInterruptDisableLock dLock;
 
         // Enable SPI3
-        RCC->APB1ENR |= RCC_APB1ENR_SPI3EN;
+        RCC->APB2ENR |= RCC_APB2ENR_SPI4EN;  // Enable SPI4 bus
         RCC_SYNC();
 
         // Setup SPI pins
         sck.mode(miosix::Mode::ALTERNATE);
-        sck.alternateFunction(6);
+        sck.alternateFunction(5);
         miso.mode(miosix::Mode::ALTERNATE);
-        miso.alternateFunction(6);
+        miso.alternateFunction(5);
         mosi.mode(miosix::Mode::ALTERNATE);
-        mosi.alternateFunction(6);
+        mosi.alternateFunction(5);
 
         cs.mode(miosix::Mode::OUTPUT);
         dio.mode(miosix::Mode::INPUT);
@@ -119,14 +119,14 @@ int main()
         return -1;
     }
 
+    printf("\n[sx1278] Initialization complete!\n");
+
     std::thread recv([]() { recvLoop(); });
     std::thread send([]() { sendLoop(); });
 
-    printf("\n[sx1278] Initialization complete!\n");
-
     // God please forgive me
     // FIXME(davide.mor): ABSOLUTELY fix this
-    miosix::Thread::sleep(10000);
+    miosix::Thread::sleep(20000);
     miosix::reboot();
 
     return 0;
