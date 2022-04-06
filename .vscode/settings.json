@@ -103,7 +103,9 @@
     "cSpell.words": [
         "AVDD",
         "Gpio",
+        "GPIOA",
         "GPIOB",
+        "GPIOC",
         "miosix"
     ]
 }
