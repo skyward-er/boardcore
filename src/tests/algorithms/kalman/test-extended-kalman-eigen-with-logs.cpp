@@ -128,6 +128,8 @@ void updateKalman(BMX160Data data)
 
 void printState()
 {
+    SkyQuaternion quat;
+
     auto kalmanState    = kalman->getState();
     auto kalmanRotation = quat.quat2eul(Vector4f(
         kalmanState(6), kalmanState(7), kalmanState(8), kalmanState(9)));

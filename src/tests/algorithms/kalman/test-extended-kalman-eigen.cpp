@@ -38,6 +38,7 @@ void bmxInit();
 void bmxCallback();
 
 ExtendedKalmanEigen* kalman;
+SkyQuaternion quat;
 
 SPIBus spi1(SPI1);
 BMX160* bmx160                          = nullptr;
@@ -92,7 +93,6 @@ ExtendedKalmanConfig getEKConfig()
 void setInitialOrientation()
 {
     Eigen::Matrix<float, 13, 1> x;
-    SkyQuaternion quat;
 
     // Set quaternions
     Eigen::Vector4f q = quat.eul2quat({0, 0, 0});
