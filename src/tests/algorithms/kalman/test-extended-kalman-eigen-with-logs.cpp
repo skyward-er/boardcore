@@ -22,9 +22,8 @@
 
 #include <algorithms/kalman/ExtendedKalmanEigen/ExtendedKalmanEigen.h>
 #include <math/SkyQuaternion.h>
-#include <miosix.h>
 #include <sensors/BMX160/BMX160.h>
-#include <sensors/SensorManager.h>
+#include <utils/CSVReader/CSVReader.h>
 
 #include <iostream>
 
@@ -34,33 +33,40 @@ using namespace Eigen;
 
 ExtendedKalmanConfig getEKConfig();
 void setInitialOrientation();
-void bmxInit();
-void bmxCallback();
+void updateKalman(BMX160Data data);
+void printState();
+std::istream& operator>>(std::istream& input, BMX160Data& data);
 
 ExtendedKalmanEigen* kalman;
 
-SPIBus spi1(SPI1);
-BMX160* bmx160                          = nullptr;
-Boardcore::SensorManager* sensorManager = nullptr;
-
 int main()
 {
-    bmxInit();
-
-    Logger::getInstance().start();
-
+    // Prepare the Kalman
     kalman = new ExtendedKalmanEigen(getEKConfig());
     setInitialOrientation();
 
-    sensorManager->start();
+    // Retrieve all the data
+    auto logData = CSVParser<BMX160Data>("/sd/bmx160log2.csv").collect();
+    printf("Log size: %d\n", logData.size());
 
-    // Thread::sleep(30 * 1000);
+    // Wait to start
+    std::cin.get();
 
-    // sensorManager->stop();
-    // Logger::getInstance().stop();
+    // Loop thrpugh the logs
+    for (size_t index = 0; index < logData.size(); index++)
+    {
+        printf("Iteration %lu\n", (unsigned long)index);
+        auto iterationData = logData.at(index);
 
-    while (true)
-        Thread::sleep(1000);
+        // Predict and correct
+        updateKalman(iterationData);
+
+        // Print results
+        printState();
+
+        // Wait to continue
+        std::cin.get();
+    }
 }
 
 ExtendedKalmanConfig getEKConfig()
@@ -104,47 +110,11 @@ void setInitialOrientation()
     kalman->setX(x);
 }
 
-void bmxInit()
+void updateKalman(BMX160Data data)
 {
-
-    SPIBusConfig spi_cfg;
-    spi_cfg.clockDivider = SPI::ClockDivider::DIV_8;
-
-    BMX160Config bmx_config;
-    bmx_config.fifoMode      = BMX160Config::FifoMode::HEADER;
-    bmx_config.fifoWatermark = 80;
-    bmx_config.fifoInterrupt = BMX160Config::FifoInterruptPin::PIN_INT1;
-
-    bmx_config.temperatureDivider = 1;
-
-    bmx_config.accelerometerRange = BMX160Config::AccelerometerRange::G_16;
-
-    bmx_config.gyroscopeRange = BMX160Config::GyroscopeRange::DEG_1000;
-
-    bmx_config.accelerometerDataRate = BMX160Config::OutputDataRate::HZ_1600;
-    bmx_config.gyroscopeDataRate     = BMX160Config::OutputDataRate::HZ_1600;
-    bmx_config.magnetometerRate      = BMX160Config::OutputDataRate::HZ_100;
-
-    bmx_config.gyroscopeUnit = BMX160Config::GyroscopeMeasureUnit::RAD;
-
-    bmx160 = new BMX160(spi1, miosix::sensors::bmx160::cs::getPin(), bmx_config,
-                        spi_cfg);
-
-    SensorInfo info("BMX160", 20, &bmxCallback);
-
-    Boardcore::SensorManager::SensorMap_t sensorsMap;
-    sensorsMap.emplace(std::make_pair(bmx160, info));
-
-    sensorManager = new SensorManager(sensorsMap);
-}
-
-void bmxCallback()
-{
-    auto data = bmx160->getLastSample();
-
-    Vector3f acceleration(data.accelerationX, data.accelerationY,
-                          data.accelerationZ);
-    kalman->predict(acceleration);
+    // Vector3f acceleration(data.accelerationX, data.accelerationY,
+    //                       data.accelerationZ);
+    // kalman->predict(acceleration);
 
     Vector3f angularVelocity(data.angularVelocityX, data.angularVelocityY,
                              data.angularVelocityZ);
@@ -154,15 +124,43 @@ void bmxCallback()
                            data.magneticFieldZ);
     magneticField.normalize();
     kalman->correctMEKF(magneticField);
+}
 
+void printState()
+{
     auto kalmanState    = kalman->getState();
     auto kalmanRotation = quat.quat2eul(Vector4f(
         kalmanState(6), kalmanState(7), kalmanState(8), kalmanState(9)));
 
-    data.accelerationTimestamp = TimestampTimer::getInstance().getTimestamp();
-
     printf("Orientation: %6.4f, %6.2f, %6.4f\n", kalmanRotation(0),
            kalmanRotation(1), kalmanRotation(2));
+}
 
-    Logger::getInstance().log(data);
+std::istream& operator>>(std::istream& input, BMX160Data& data)
+{
+    input >> data.accelerationTimestamp;
+    input.ignore(1, ',');
+    input >> data.accelerationX;
+    input.ignore(1, ',');
+    input >> data.accelerationY;
+    input.ignore(1, ',');
+    input >> data.accelerationZ;
+    input.ignore(1, ',');
+    input >> data.angularVelocityTimestamp;
+    input.ignore(1, ',');
+    input >> data.angularVelocityX;
+    input.ignore(1, ',');
+    input >> data.angularVelocityY;
+    input.ignore(1, ',');
+    input >> data.angularVelocityZ;
+    input.ignore(1, ',');
+    input >> data.magneticFieldTimestamp;
+    input.ignore(1, ',');
+    input >> data.magneticFieldX;
+    input.ignore(1, ',');
+    input >> data.magneticFieldY;
+    input.ignore(1, ',');
+    input >> data.magneticFieldZ;
+
+    return input;
 }

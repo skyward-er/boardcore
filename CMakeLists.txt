@@ -116,6 +116,9 @@ sbs_target(test-kalman-eigen-benchmark stm32f429zi_stm32f4discovery)
 add_executable(test-extended-kalman-eigen src/tests/algorithms/kalman/test-extended-kalman-eigen.cpp)
 sbs_target(test-extended-kalman-eigen stm32f429zi_skyward_death_stack_x)
 
+add_executable(test-extended-kalman-eigen-with-logs src/tests/algorithms/kalman/test-extended-kalman-eigen-with-logs.cpp)
+sbs_target(test-extended-kalman-eigen-with-logs stm32f429zi_skyward_death_stack_x)
+
 #-----------------------------------------------------------------------------#
 #                               Tests - Drivers                               #
 #-----------------------------------------------------------------------------#

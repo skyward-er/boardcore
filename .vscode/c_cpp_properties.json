@@ -103,8 +103,7 @@
                     "${workspaceFolder}/src/tests"
                 ],
                 "limitSymbolsToIncludedHeaders": true
-            },
-            "compileCommands": "${workspaceFolder}/build/compile_commands.json"
+            }
         },
         {
             "name": "stm32f429zi_skyward_death_stack_x",
@@ -156,8 +155,7 @@
                     "${workspaceFolder}/src/tests"
                 ],
                 "limitSymbolsToIncludedHeaders": true
-            },
-            "compileCommands": "${workspaceFolder}/build/compile_commands.json"
+            }
         }
     ],
     "version": 4
