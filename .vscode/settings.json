@@ -108,8 +108,11 @@
         "Fatt",
         "Fatttr",
         "Gatttr",
+        "AVDD",
         "Gpio",
+        "GPIOA",
         "GPIOB",
+        "GPIOC",
         "gpstr",
         "Kalman",
         "Luca",
@@ -122,6 +125,7 @@
         "NMEKF",
         "nord",
         "Plin",
-        "sats"
+        "sats",
+        "miosix"
     ]
 }

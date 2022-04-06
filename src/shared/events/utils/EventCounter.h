@@ -98,11 +98,7 @@ public:
 
 protected:
     // Do nothing
-    void handleEvent(const Event& ev) override
-    {
-        // Avoid unused argument warning
-        (void)ev;
-    };
+    void handleEvent(const Event& ev __attribute__((unused))) override{};
 
 private:
     EventBroker& broker;

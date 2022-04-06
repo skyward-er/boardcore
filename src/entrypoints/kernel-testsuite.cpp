@@ -187,8 +187,7 @@ int main()
                 break;
         }
         // For testing mpu
-        unsigned int *m;
-        (void)m;  // Disable unused warning
+        unsigned int *m __attribute__((unused));
         switch (c)
         {
             case 't':
@@ -427,9 +426,7 @@ void process_test_file_concurrency()
             fail("Wrong data from file 2");
     }
 
-    // cppcheck-suppress nullPointerRedundantCheck
     fclose(f1);
-    // cppcheck-suppress nullPointerRedundantCheck
     fclose(f2);
 
     pass();
@@ -638,9 +635,8 @@ and test argv pointer passing
 
 static volatile bool t1_v1;
 
-static void t1_p1(void *argv)
+static void t1_p1(void *argv __attribute__((unused)))
 {
-    (void)argv;
     for (;;)
     {
         if (Thread::testTerminate())
@@ -742,10 +738,8 @@ Thread::getCurrentThread
 static volatile bool t2_v1;
 static Thread *t2_p_v1;
 
-static void t2_p1(void *argv)
+static void t2_p1(void *argv __attribute__((unused)))
 {
-    (void)argv;
-
     // This is to fix a race condition: the immediately after the thread
     // creation a yield occurs, t2_p_v1 is not yet assigned so the check fails
     Thread::sleep(5);
@@ -762,9 +756,8 @@ static void t2_p1(void *argv)
     }
 }
 
-static void t2_p2(void *argv)
+static void t2_p2(void *argv __attribute__((unused)))
 {
-    (void)argv;
     while (Thread::testTerminate() == false)
         t2_v1 = true;
 }
@@ -836,9 +829,8 @@ getTick()
 also tests creation of multiple instances of the same thread
 */
 
-static void t3_p1(void *argv)
+static void t3_p1(void *argv __attribute__((unused)))
 {
-    (void)argv;
     const int SLEEP_TIME = 100;
     for (;;)
     {
@@ -855,9 +847,8 @@ static void t3_p1(void *argv)
 static volatile bool t3_v2;       // Set to true by t3_p2
 static volatile bool t3_deleted;  // Set when an instance of t3_p2 is deleted
 
-static void t3_p2(void *argv)
+static void t3_p2(void *argv __attribute__((unused)))
 {
-    (void)argv;
     const int SLEEP_TIME = 15;
     for (;;)
     {
@@ -959,9 +950,8 @@ Thread::IRQgetPriority
 
 static volatile bool t4_v1;
 
-static void t4_p1(void *argv)
+static void t4_p1(void *argv __attribute__((unused)))
 {
-    (void)argv;
     for (;;)
     {
         if (Thread::testTerminate())
@@ -1112,9 +1102,8 @@ static volatile bool t5_v1;
 static volatile bool
     t5_v2;  // False=testing Thread::wait() else Thread::IRQwait()
 
-static void t5_p1(void *argv)
+static void t5_p1(void *argv __attribute__((unused)))
 {
-    (void)argv;
     for (;;)
     {
         if (Thread::testTerminate())
@@ -1231,9 +1220,8 @@ static Sequence seq;
 static Mutex t6_m1;
 static FastMutex t6_m1a;
 
-static void t6_p1(void *argv)
+static void t6_p1(void *argv __attribute__((unused)))
 {
-    (void)argv;
     t6_m1.lock();
     seq.add('1');
     Thread::sleep(100);
@@ -1244,9 +1232,8 @@ static void t6_p1(void *argv)
     t6_m1.unlock();
 }
 
-static void t6_p2(void *argv)
+static void t6_p2(void *argv __attribute__((unused)))
 {
-    (void)argv;
     t6_m1.lock();
     seq.add('2');
     Thread::sleep(100);
@@ -1256,9 +1243,8 @@ static void t6_p2(void *argv)
     t6_m1.unlock();
 }
 
-static void t6_p3(void *argv)
+static void t6_p3(void *argv __attribute__((unused)))
 {
-    (void)argv;
     t6_m1.lock();
     seq.add('3');
     Thread::sleep(100);
@@ -1268,9 +1254,8 @@ static void t6_p3(void *argv)
     t6_m1.unlock();
 }
 
-static void t6_p4(void *argv)
+static void t6_p4(void *argv __attribute__((unused)))
 {
-    (void)argv;
     t6_m1.lock();
     for (;;)
     {
@@ -1287,36 +1272,32 @@ static void t6_p4(void *argv)
     }
 }
 
-static void t6_p1a(void *argv)
+static void t6_p1a(void *argv __attribute__((unused)))
 {
-    (void)argv;
     t6_m1a.lock();
     seq.add('1');
     Thread::sleep(100);
     t6_m1a.unlock();
 }
 
-static void t6_p2a(void *argv)
+static void t6_p2a(void *argv __attribute__((unused)))
 {
-    (void)argv;
     t6_m1a.lock();
     seq.add('2');
     Thread::sleep(100);
     t6_m1a.unlock();
 }
 
-static void t6_p3a(void *argv)
+static void t6_p3a(void *argv __attribute__((unused)))
 {
-    (void)argv;
     t6_m1a.lock();
     seq.add('3');
     Thread::sleep(100);
     t6_m1a.unlock();
 }
 
-static void t6_p4a(void *argv)
+static void t6_p4a(void *argv __attribute__((unused)))
 {
-    (void)argv;
     t6_m1a.lock();
     for (;;)
     {
@@ -1337,9 +1318,8 @@ static volatile bool t6_v1;
 static Mutex t6_m2;
 static FastMutex t6_m2a;
 
-static void t6_p5(void *argv)
+static void t6_p5(void *argv __attribute__((unused)))
 {
-    (void)argv;
     for (;;)
     {
         if (Thread::testTerminate())
@@ -1354,9 +1334,8 @@ static void t6_p5(void *argv)
     }
 }
 
-static void t6_p5a(void *argv)
+static void t6_p5a(void *argv __attribute__((unused)))
 {
-    (void)argv;
     for (;;)
     {
         if (Thread::testTerminate())
@@ -1395,9 +1374,8 @@ static void t6_p6a(void *argv)
 static Mutex t6_m5(Mutex::RECURSIVE);
 static FastMutex t6_m5a(FastMutex::RECURSIVE);
 
-static void *t6_p7(void *argv)
+static void *t6_p7(void *argv __attribute__((unused)))
 {
-    (void)argv;
     if (t6_m5.tryLock() == false)
         return reinterpret_cast<void *>(1);  // 1 = locked
     t6_m5.unlock();
@@ -1412,9 +1390,8 @@ bool checkIft6_m5IsLocked()
     return reinterpret_cast<int>(result) == 0 ? false : true;
 }
 
-static void *t6_p7a(void *argv)
+static void *t6_p7a(void *argv __attribute__((unused)))
 {
-    (void)argv;
     if (t6_m5a.tryLock() == false)
         return reinterpret_cast<void *>(1);  // 1 = locked
     t6_m5a.unlock();
@@ -1896,9 +1873,8 @@ FIXME: The overloaded versions of IRQput and IRQget are not tested
 static Queue<char, 4> t8_q1;
 static Queue<char, 4> t8_q2;
 
-static void t8_p1(void *argv)
+static void t8_p1(void *argv __attribute__((unused)))
 {
-    (void)argv;
     for (;;)
     {
         if (Thread::testTerminate())
@@ -2176,9 +2152,8 @@ void t10_f2()
     }
 }
 
-void t10_p1(void *argv)
+void t10_p1(void *argv __attribute__((unused)))
 {
-    (void)argv;
     t10_f2();
     fail("Exception not thrown");
 }
@@ -2204,9 +2179,8 @@ tests class MemoryProfiling
 
 static volatile unsigned int t11_v1;  // Free heap after spawning thread
 
-void t11_p1(void *argv)
+void t11_p1(void *argv __attribute__((unused)))
 {
-    (void)argv;
     if (MemoryProfiling::getStackSize() != STACK_SMALL)
         fail("getStackSize (2)");
     // Check that getCurrentFreeHeap returns the same value from different
@@ -2256,18 +2230,13 @@ Additional test for priority inheritance
 Mutex t12_m1;
 Mutex t12_m2;
 
-void t12_p1(void *argv)
+void t12_p1(void *argv __attribute__((unused)))
 {
-    (void)argv;
     Lock<Mutex> l1(t12_m1);
     Lock<Mutex> l2(t12_m2);
 }
 
-void t12_p2(void *argv)
-{
-    (void)argv;
-    Lock<Mutex> l(t12_m1);
-}
+void t12_p2(void *argv __attribute__((unused))) { Lock<Mutex> l(t12_m1); }
 
 void test_12()
 {
@@ -2485,9 +2454,8 @@ static int t15_v3;
 static ConditionVariable t15_c1;
 static Mutex t15_m1;
 
-void t15_p1(void *argv)
+void t15_p1(void *argv __attribute__((unused)))
 {
-    (void)argv;
     for (int i = 0; i < 10; i++)
     {
         Lock<Mutex> l(t15_m1);
@@ -2497,9 +2465,8 @@ void t15_p1(void *argv)
     }
 }
 
-void t15_p2(void *argv)
+void t15_p2(void *argv __attribute__((unused)))
 {
-    (void)argv;
     for (int i = 0; i < 10; i++)
     {
         Lock<Mutex> l(t15_m1);
@@ -2622,9 +2589,8 @@ void *t16_p2(void *argv)
 
 pthread_cond_t t16_c1 = PTHREAD_COND_INITIALIZER;
 
-void *t16_p3(void *argv)
+void *t16_p3(void *argv __attribute__((unused)))
 {
-    (void)argv;
     Thread::sleep(30);
     if (pthread_mutex_trylock(&t16_m1) != 0)
         fail("cond_wait did not release mutex");
@@ -2638,9 +2604,8 @@ void *t16_p3(void *argv)
 
 pthread_cond_t t16_c2;
 
-void *t16_p4(void *argv)
+void *t16_p4(void *argv __attribute__((unused)))
 {
-    (void)argv;
     Thread::sleep(30);
     if (pthread_mutex_trylock(&t16_m1) != 0)
         fail("cond_wait did not release mutex (2)");
@@ -3093,9 +3058,8 @@ static void be()
     bq.bufferEmptied();
 }
 
-static void t19_p1(void *argv)
+static void t19_p1(void *argv __attribute__((unused)))
 {
-    (void)argv;
     Thread::sleep(50);
     {
         FastInterruptDisableLock dLock;
@@ -3628,9 +3592,8 @@ struct t22_s1
     int b;
 };
 
-static void t22_t2(void *argv)
+static void t22_t2(void *argv __attribute__((unused)))
 {
-    (void)argv;
     while (Thread::testTerminate() == false)
     {
         t22_v5 = true;
@@ -4428,9 +4391,8 @@ Also tests concurrent write by opening and writing 3 files from 3 threads
 */
 static volatile bool fs_1_error;
 
-static void fs_t1_p1(void *argv)
+static void fs_t1_p1(void *argv __attribute__((unused)))
 {
-    (void)argv;
     FILE *f;
     if ((f = fopen("/sd/testdir/file_1.txt", "w")) == NULL)
     {
@@ -4460,9 +4422,8 @@ static void fs_t1_p1(void *argv)
     }
 }
 
-static void fs_t1_p2(void *argv)
+static void fs_t1_p2(void *argv __attribute__((unused)))
 {
-    (void)argv;
     FILE *f;
     if ((f = fopen("/sd/testdir/file_2.txt", "w")) == NULL)
     {
@@ -4492,9 +4453,8 @@ static void fs_t1_p2(void *argv)
     }
 }
 
-static void fs_t1_p3(void *argv)
+static void fs_t1_p3(void *argv __attribute__((unused)))
 {
-    (void)argv;
     FILE *f;
     if ((f = fopen("/sd/testdir/file_3.txt", "w")) == NULL)
     {
@@ -4570,6 +4530,7 @@ static void fs_test_1()
     i = 0;
     for (;;)
     {
+        // cppcheck-suppress nullPointerRedundantCheck
         j = fread(buf, 1, 1024, f);
         if (j == 0)
             break;
@@ -4589,6 +4550,7 @@ static void fs_test_1()
     i = 0;
     for (;;)
     {
+        // cppcheck-suppress nullPointerRedundantCheck
         j = fread(buf, 1, 1024, f);
         if (j == 0)
             break;
@@ -4608,6 +4570,7 @@ static void fs_test_1()
     i = 0;
     for (;;)
     {
+        // cppcheck-suppress nullPointerRedundantCheck
         j = fread(buf, 1, 1024, f);
         if (j == 0)
             break;
@@ -4633,6 +4596,7 @@ static void fs_test_1()
         fail("can't open a file_4.txt");
     for (i = 2; i <= 128; i++)
     {
+        // cppcheck-suppress nullPointerRedundantCheck
         fprintf(f, "Hello world line %03d\n", i);
     }
     if (fclose(f) != 0)  // cppcheck-suppress nullPointerRedundantCheck
@@ -4645,11 +4609,9 @@ static void fs_test_1()
     fgets(line, sizeof(line), f);
     if (strcmp(line, "Hello world line 001\n"))
         fail("file_4.txt line 1 error");
-    // cppcheck-suppress nullPointerRedundantCheck
     fgets(line, sizeof(line), f);
     if (strcmp(line, "Hello world line 002\n"))
         fail("file_4.txt line 2 error");
-    // cppcheck-suppress nullPointerRedundantCheck
     if (fclose(f) != 0)
         fail("Can't close r file_4.txt");
     // Test fseek and ftell. When reaching this point file_4.txt contains:
@@ -4661,44 +4623,32 @@ static void fs_test_1()
         fail("can't open r2 file_4.txt");
     if (ftell(f) != 0)  // cppcheck-suppress nullPointerRedundantCheck
         fail("File opend but cursor not @ address 0");
-    // cppcheck-suppress nullPointerRedundantCheck
     fseek(f, -4, SEEK_END);  // Seek to 128\n
-    // cppcheck-suppress nullPointerRedundantCheck
     if ((fgetc(f) != '1') | (fgetc(f) != '2') | (fgetc(f) != '8'))
         fail("fgetc SEEK_END");
-    // cppcheck-suppress nullPointerRedundantCheck
     if (ftell(f) != (21 * 128 - 1))
     {
         iprintf("ftell=%ld\n", ftell(f));
         fail("ftell() 1");
     }
-    // cppcheck-suppress nullPointerRedundantCheck
     fseek(f, 21 + 17, SEEK_SET);  // Seek to 002\n
-    // cppcheck-suppress nullPointerRedundantCheck
     if ((fgetc(f) != '0') | (fgetc(f) != '0') | (fgetc(f) != '2') |
-        // cppcheck-suppress nullPointerRedundantCheck
         (fgetc(f) != '\n'))
         fail("fgetc SEEK_SET");
-    // cppcheck-suppress nullPointerRedundantCheck
     if (ftell(f) != (21 * 2))
     {
         iprintf("ftell=%ld\n", ftell(f));
         fail("ftell() 2");
     }
-    // cppcheck-suppress nullPointerRedundantCheck
     fseek(f, 21 * 50 + 17, SEEK_CUR);  // Seek to 053\n
-    // cppcheck-suppress nullPointerRedundantCheck
     if ((fgetc(f) != '0') | (fgetc(f) != '5') | (fgetc(f) != '3') |
-        // cppcheck-suppress nullPointerRedundantCheck
         (fgetc(f) != '\n'))
         fail("fgetc SEEK_CUR");
-    // cppcheck-suppress nullPointerRedundantCheck
     if (ftell(f) != (21 * 53))
     {
         iprintf("ftell=%ld\n", ftell(f));
         fail("ftell() 2");
     }
-    // cppcheck-suppress nullPointerRedundantCheck
     if (fclose(f) != 0)
         fail("Can't close r2 file_4.txt");
     // Testing remove()
@@ -4792,7 +4742,6 @@ static void checkInDir(const std::string &d, bool createFile)
     fgets(s, sizeof(s), f);  // cppcheck-suppress nullPointerRedundantCheck
     if (strcmp(s, teststr))
         fail("file content after rename");
-    // cppcheck-suppress nullPointerRedundantCheck
     fclose(f);
     if (unlink((d + filename2).c_str()))
         fail("unlink 3");
@@ -4842,10 +4791,10 @@ static void fs_test_3()
         for (unsigned int j = 0; j < size; j++)
             buf[j] = rand() & 0xff;
         checksum ^= crc16(buf, size);
+        // cppcheck-suppress nullPointerRedundantCheck
         if (fwrite(buf, 1, size, f) != size)
             fail("write");
     }
-    // cppcheck-suppress nullPointerRedundantCheck
     if (fclose(f) != 0)
         fail("close 1");
 
@@ -4856,11 +4805,11 @@ static void fs_test_3()
     for (unsigned int i = 0; i < numBlocks; i++)
     {
         memset(buf, 0, size);
+        // cppcheck-suppress nullPointerRedundantCheck
         if (fread(buf, 1, size, f) != size)
             fail("read");
         outChecksum ^= crc16(buf, size);
     }
-    // cppcheck-suppress nullPointerRedundantCheck
     if (fclose(f) != 0)
         fail("close 2");
     delete[] buf;
@@ -5162,9 +5111,8 @@ tests:
 context switch speed
 */
 
-static void b2_p1(void *argv)
+static void b2_p1(void *argv __attribute__((unused)))
 {
-    (void)argv;
     for (;;)
     {
         if (Thread::testTerminate())
@@ -5315,9 +5263,8 @@ Mutex lonk/unlock time
 
 volatile bool b4_end = false;
 
-void b4_t1(void *argv)
+void b4_t1(void *argv __attribute__((unused)))
 {
-    (void)argv;
     Thread::sleep(1000);
     b4_end = true;
 }

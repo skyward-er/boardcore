@@ -1,5 +1,6 @@
-/* Copyright (c) 2021 Skyward Experimental Rocketry
- * Author: Matteo Pignataro
+
+/* Copyright (c) 2019 Skyward Experimental Rocketry
+ * Author: Luca Erbetta
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -22,45 +23,26 @@
 
 #pragma once
 
-#include <diagnostic/PrintLogger.h>
-#include <drivers/spi/SPIDriver.h>
-#include <sensors/Sensor.h>
 #include <sensors/SensorData.h>
 
 namespace Boardcore
 {
 
-/**
- * @brief MAX6675 thermocouple sensor driver.
- */
-class MAX6675 : public Sensor<TemperatureData>
+struct HX711Data : public LoadCellData
 {
-public:
-    MAX6675(SPIBusInterface &bus, miosix::GpioPin cs,
-            SPIBusConfig config = getDefaultSPIConfig());
+    HX711Data() : LoadCellData{0, 0} {}
 
-    static SPIBusConfig getDefaultSPIConfig();
+    HX711Data(uint64_t weightTimestamp, float weight)
+        : LoadCellData{weightTimestamp, weight}
+    {
+    }
 
-    bool init();
+    static std::string header() { return "weightTimestamp,weight\n"; }
 
-    /**
-     * @brief Checks whether the thermocouple is connected or not.
-     *
-     * @return True if the thermocouple is connected.
-     */
-    bool selfTest();
-
-    /**
-     * @brief Checks whether the thermocouple is connected or not.
-     */
-    bool checkConnection();
-
-private:
-    TemperatureData sampleImpl() override;
-
-    const SPISlave slave;
-
-    PrintLogger logger = Logging::getLogger("max6675");
+    void print(std::ostream& os) const
+    {
+        os << weightTimestamp << "," << weight << "\n";
+    }
 };
 
 }  // namespace Boardcore

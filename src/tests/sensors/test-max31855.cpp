@@ -1,5 +1,5 @@
-/* Copyright (c) 2019 Skyward Experimental Rocketry
- * Author: Alvise de' Faveri Tron
+/* Copyright (c) 2021 Skyward Experimental Rocketry
+ * Author: Matteo Pignataro
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -20,6 +20,51 @@
  * THE SOFTWARE.
  */
 
-#pragma once
+#include <drivers/timer/TimestampTimer.h>
+#include <miosix.h>
+#include <sensors/MAX31855/MAX31855.h>
 
-#define UNUSED(x) (void)(x)
+using namespace miosix;
+using namespace Boardcore;
+
+GpioPin sckPin  = GpioPin(GPIOE_BASE, 2);
+GpioPin misoPin = GpioPin(GPIOE_BASE, 5);
+GpioPin csPin   = GpioPin(GPIOE_BASE, 4);
+
+void initBoard()
+{
+    // Setup gpio pins
+    csPin.mode(Mode::OUTPUT);
+    csPin.high();
+    sckPin.mode(Mode::ALTERNATE);
+    sckPin.alternateFunction(5);
+    misoPin.mode(Mode::ALTERNATE);
+    misoPin.alternateFunction(5);
+}
+
+int main()
+{
+    // Enable SPI clock and set gpios
+    initBoard();
+
+    SPIBus spiBus(SPI4);
+    MAX31855 sensor{spiBus, csPin};
+
+    printf("Starting process verification!\n");
+
+    if (!sensor.selfTest())
+    {
+        printf("Sensor self test failed!\n");
+    }
+
+    while (true)
+    {
+        sensor.sample();
+        TemperatureData sample = sensor.getLastSample();
+
+        printf("%.2f\n", sample.temperature);
+
+        Thread::sleep(500);
+    }
+    return 0;
+}

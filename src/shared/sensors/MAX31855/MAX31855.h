@@ -1,5 +1,5 @@
 /* Copyright (c) 2021 Skyward Experimental Rocketry
- * Author: Matteo Pignataro
+ * Author: Angelo Zangari
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -25,28 +25,38 @@
 #include <diagnostic/PrintLogger.h>
 #include <drivers/spi/SPIDriver.h>
 #include <sensors/Sensor.h>
-#include <sensors/SensorData.h>
 
 namespace Boardcore
 {
-
 /**
- * @brief MAX6675 thermocouple sensor driver.
+ * @brief MAX31855 termocouple sensor driver.
  */
-class MAX6675 : public Sensor<TemperatureData>
+class MAX31855 : public Sensor<TemperatureData>
 {
 public:
-    MAX6675(SPIBusInterface &bus, miosix::GpioPin cs,
-            SPIBusConfig config = getDefaultSPIConfig());
+    /**
+     * @brief Constructor.
+     *
+     * @param bus The Spi bus.
+     * @param cs The CS pin to lower when we need to sample.
+     * @param config The SPI configuration.
+     */
+    MAX31855(SPIBusInterface &bus, miosix::GpioPin cs,
+             SPIBusConfig config = getDefaultSPIConfig());
 
+    /**
+     * Constructs the default config for SPI Bus.
+     *
+     * @returns The default SPIBusConfig.
+     */
     static SPIBusConfig getDefaultSPIConfig();
 
     bool init();
 
     /**
-     * @brief Checks whether the thermocouple is connected or not.
+     * @brief Checks wheter the termocouple is open.
      *
-     * @return True if the thermocouple is connected.
+     * @return True if the termocouple is connected.
      */
     bool selfTest();
 
@@ -55,12 +65,17 @@ public:
      */
     bool checkConnection();
 
+    /**
+     * @brief Read the device internal temperature (cold junction).
+     */
+    TemperatureData readInternalTemperature();
+
 private:
     TemperatureData sampleImpl() override;
 
-    const SPISlave slave;
+    SPISlave slave;
 
-    PrintLogger logger = Logging::getLogger("max6675");
+    PrintLogger logger = Logging::getLogger("max31855");
 };
 
 }  // namespace Boardcore

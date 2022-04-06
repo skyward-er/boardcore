@@ -56,10 +56,10 @@ add_library(boardcore-host STATIC EXCLUDE_FROM_ALL
     # TestUtils
     ${SBS_BASE}/src/shared/utils/testutils/TestHelper.cpp
 )
-add_library(SkywardBoardcore::Boardcore-host ALIAS boardcore-host)
+add_library(SkywardBoardcore::Boardcore::host ALIAS boardcore-host)
 target_include_directories(boardcore-host PUBLIC ${SBS_BASE}/src/shared)
 target_link_libraries(boardcore-host PUBLIC
-    Miosix::Miosix-host
+    Miosix::Miosix::host
     TSCPP::TSCPP
     Eigen3::Eigen
     fmt::fmt-header-only

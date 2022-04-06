@@ -20,47 +20,54 @@
  * THE SOFTWARE.
  */
 
-#pragma once
+#include <drivers/timer/TimestampTimer.h>
+#include <miosix.h>
+#include <sensors/HX711/HX711.h>
 
-#include <diagnostic/PrintLogger.h>
-#include <drivers/spi/SPIDriver.h>
-#include <sensors/Sensor.h>
-#include <sensors/SensorData.h>
+using namespace miosix;
+using namespace Boardcore;
 
-namespace Boardcore
+GpioPin sckPin  = GpioPin(GPIOB_BASE, 3);
+GpioPin misoPin = GpioPin(GPIOB_BASE, 4);
+
+void initBoard()
 {
+    // Setup gpio pins
+    sckPin.mode(Mode::ALTERNATE);
+    sckPin.alternateFunction(5);
+    misoPin.mode(Mode::ALTERNATE);
+    misoPin.alternateFunction(5);
+}
 
-/**
- * @brief MAX6675 thermocouple sensor driver.
- */
-class MAX6675 : public Sensor<TemperatureData>
+int main()
 {
-public:
-    MAX6675(SPIBusInterface &bus, miosix::GpioPin cs,
-            SPIBusConfig config = getDefaultSPIConfig());
+    // Enable SPI clock and set gpios
+    initBoard();
 
-    static SPIBusConfig getDefaultSPIConfig();
+    SPIBus spiBus(SPI1);
+    HX711 sensor{spiBus, sckPin};
+    sensor.setScale(1.0f);
 
-    bool init();
+    // Average 100 samples and then apply the offset
+    printf("Measuring offset...\n");
+    float average = 0;
+    for (int i = 0; i < 100; i++)
+    {
+        sensor.sample();
+        average += sensor.getLastSample().weight;
+        Thread::sleep(12);
+    }
+    average /= 100;
+    sensor.setZero(-average);
+    sensor.setScale(214000);
 
-    /**
-     * @brief Checks whether the thermocouple is connected or not.
-     *
-     * @return True if the thermocouple is connected.
-     */
-    bool selfTest();
+    while (true)
+    {
+        sensor.sample();
 
-    /**
-     * @brief Checks whether the thermocouple is connected or not.
-     */
-    bool checkConnection();
+        printf("[%.1f] %f\n", sensor.getLastSample().weightTimestamp / 1e6,
+               sensor.getLastSample().weight);
 
-private:
-    TemperatureData sampleImpl() override;
-
-    const SPISlave slave;
-
-    PrintLogger logger = Logging::getLogger("max6675");
-};
-
-}  // namespace Boardcore
+        Thread::sleep(10);
+    }
+}
