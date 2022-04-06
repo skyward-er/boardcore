@@ -90,6 +90,12 @@ void recvLoop()
 
 void sendLoop()
 {
+    // I create a GPIO with the onboard led to tell the user that
+    // a package is being sent
+    miosix::GpioPin led(GPIOG_BASE, 13);
+    led.mode(miosix::Mode::OUTPUT);
+    led.low();
+
     uint8_t msg[63];
     while (1)
     {
@@ -97,7 +103,9 @@ void sendLoop()
         int len     = serial->readBlock(msg, sizeof(msg), 0);
         if (len > 0)
         {
+            led.high();
             sx1278->send(msg, len);
+            led.low();
         }
     }
 }
@@ -124,10 +132,15 @@ int main()
     std::thread recv([]() { recvLoop(); });
     std::thread send([]() { sendLoop(); });
 
+    for (;;)
+    {
+        miosix::Thread::sleep(100);
+    }
+
     // God please forgive me
     // FIXME(davide.mor): ABSOLUTELY fix this
-    miosix::Thread::sleep(20000);
-    miosix::reboot();
+    // miosix::Thread::sleep(20000);
+    // miosix::reboot();
 
     return 0;
 }
