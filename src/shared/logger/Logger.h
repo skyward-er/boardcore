@@ -59,15 +59,17 @@ public:
     /**
      * @brief Call this function to start the logger.
      *
-     * When this function returns, the logger is started, and subsequent calls
-     * to log will actually log the data.
+     * The function tryies to start the logger. It first opens the log file and
+     * then create the pack and write threads. If it fails on one of this
+     * operation, the logger is not started.
+     *
+     * Use getCurrentLogNumber to retrieve the log file number.
      *
      * Blocking call. May take a long time.
      *
-     * \throws runtime_error if the log could not be opened.
-     * \return log number.
+     * \return true if the logger was started correctly.
      */
-    int start();
+    bool start();
 
     /**
      * @brief Call this function to stop the logger.
