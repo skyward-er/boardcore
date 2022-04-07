@@ -106,6 +106,8 @@
         "GPIOA",
         "GPIOB",
         "GPIOC",
-        "miosix"
+        "miosix",
+        "SDRAM",
+        "testsuite"
     ]
 }
