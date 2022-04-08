@@ -110,7 +110,7 @@ public:
     explicit GeneralPurposeTimer(TIM_TypeDef *timer);
 
     /**
-     * @brief Resets the registers and disables the peripheral clock.
+     * @brief Disables the peripheral clock.
      */
     ~GeneralPurposeTimer();
 
@@ -230,7 +230,6 @@ inline GeneralPurposeTimer<T>::GeneralPurposeTimer(TIM_TypeDef *timer)
 template <typename T>
 inline GeneralPurposeTimer<T>::~GeneralPurposeTimer()
 {
-    reset();
     ClockUtils::disablePeripheralClock(timer);
 }
 

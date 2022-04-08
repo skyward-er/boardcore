@@ -108,6 +108,7 @@
         "GPIOC",
         "miosix",
         "SDRAM",
-        "testsuite"
+        "testsuite",
+        "upcounter"
     ]
 }

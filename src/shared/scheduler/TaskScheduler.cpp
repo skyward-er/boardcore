@@ -40,14 +40,6 @@ TaskScheduler::TaskScheduler()
 bool TaskScheduler::addTask(function_t function, uint32_t period, uint8_t id,
                             Policy policy, int64_t startTick)
 {
-    // Perion must be grater than zero!
-    if (period <= 0 && policy != Policy::ONE_SHOT)
-    {
-        LOG_ERR(logger,
-                "Trying to add a task non one shot with an invalid period");
-        return false;
-    }
-
     Lock<FastMutex> lock(mutex);
 
     // Register the task into the map
