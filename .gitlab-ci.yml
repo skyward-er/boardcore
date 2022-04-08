@@ -36,7 +36,7 @@ build-release:
   tags:
     - miosix
   script:
-    - ./sbs --jobs 2
+    - ./sbs
 
 # Stage build-debug
 
@@ -45,14 +45,14 @@ build-debug:
   tags:
     - miosix
   script:
-    - ./sbs --jobs 2 --debug
+    - ./sbs --debug
 
 # Stage test
 
 test:
   stage: test
   script:
-    - ./sbs --jobs 2 --test catch-tests-boardcore
+    - ./sbs --test catch-tests-boardcore
 
 # Stage lint
 
