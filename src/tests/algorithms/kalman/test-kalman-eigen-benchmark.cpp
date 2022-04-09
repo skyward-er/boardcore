@@ -29,8 +29,8 @@
 #include <drivers/timer/GeneralPurposeTimer.h>
 #include <drivers/timer/TimerUtils.h>
 #include <kernel/kernel.h>
-#include <math/SkyQuaternion.h>
 #include <util/util.h>
+#include <utils/SkyQuaternion/SkyQuaternion.h>
 
 #include <iostream>
 

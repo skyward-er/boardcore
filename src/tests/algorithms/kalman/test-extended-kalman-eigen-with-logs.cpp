@@ -21,9 +21,10 @@
  */
 
 #include <algorithms/kalman/ExtendedKalmanEigen/ExtendedKalmanEigen.h>
-#include <math/SkyQuaternion.h>
+#include <algorithms/kalman/ExtendedKalmanEigen/InitStates.h>
 #include <sensors/BMX160/BMX160.h>
 #include <utils/CSVReader/CSVReader.h>
+#include <utils/SkyQuaternion/SkyQuaternion.h>
 
 #include <iostream>
 
@@ -37,12 +38,16 @@ void updateKalman(BMX160Data data);
 void printState();
 std::istream& operator>>(std::istream& input, BMX160Data& data);
 
+auto milanMag = Vector3f(0.4742f, 0.025f, 0.8801f);  // Already normalized
+
 ExtendedKalmanEigen* kalman;
+bool triad = false;
 
 int main()
 {
     // Prepare the Kalman
     kalman = new ExtendedKalmanEigen(getEKConfig());
+    InitStates initStates;
     setInitialOrientation();
 
     // Retrieve all the data
@@ -58,14 +63,33 @@ int main()
         printf("Iteration %lu\n", (unsigned long)index);
         auto iterationData = logData.at(index);
 
-        // Predict and correct
-        updateKalman(iterationData);
+        if (triad)
+        {
+            triad = false;
 
-        // Print results
-        printState();
+            Vector3f acceleration(iterationData.accelerationX,
+                                  iterationData.accelerationY,
+                                  iterationData.accelerationZ);
+            Vector3f magneticField(iterationData.magneticFieldX,
+                                   iterationData.magneticFieldY,
+                                   iterationData.magneticFieldZ);
+
+            initStates.triad(acceleration, magneticField, milanMag);
+
+            std::cout << "Triad output" << std::endl;
+            std::cout << initStates.getInitX().transpose() << std::endl;
+        }
+        else
+        {
+            // Predict and correct
+            updateKalman(iterationData);
+
+            // Print results
+            printState();
+        }
 
         // Wait to continue
-        std::cin.get();
+        // std::cin.get();
     }
 }
 
@@ -90,23 +114,24 @@ ExtendedKalmanConfig getEKConfig()
     config.SATS_NUM       = 6.0f;
 
     // Normalized magnetic field in Milan
-    config.NED_MAG = Vector3f(0.4742f, 0.025f, 0.8801f);
+    config.NED_MAG = milanMag;
 
     return config;
 }
 
 void setInitialOrientation()
 {
-    Eigen::Matrix<float, 13, 1> x;
-    SkyQuaternion quat;
+    Eigen::Matrix<float, 13, 1> x = Eigen::Matrix<float, 13, 1>::Zero();
 
     // Set quaternions
-    Eigen::Vector4f q = quat.eul2quat({0, 0, 0});
+    Eigen::Vector4f q = SkyQuaternion::eul2quat({0, 0, 0});
     x(6)              = q(0);
     x(7)              = q(1);
     x(8)              = q(2);
     x(9)              = q(3);
 
+    std::cout << "Initial state" << std::endl;
+    std::cout << x.transpose() << std::endl;
     kalman->setX(x);
 }
 
@@ -118,6 +143,8 @@ void updateKalman(BMX160Data data)
 
     Vector3f angularVelocity(data.angularVelocityX, data.angularVelocityY,
                              data.angularVelocityZ);
+    std::cout << "Angular velocity" << std::endl;
+    std::cout << angularVelocity.transpose() << std::endl;
     kalman->predictMEKF(angularVelocity);
 
     Vector3f magneticField(data.magneticFieldX, data.magneticFieldY,
@@ -128,12 +155,12 @@ void updateKalman(BMX160Data data)
 
 void printState()
 {
-    SkyQuaternion quat;
-
     auto kalmanState    = kalman->getState();
-    auto kalmanRotation = quat.quat2eul(Vector4f(
+    auto kalmanRotation = SkyQuaternion::quat2eul(Vector4f(
         kalmanState(6), kalmanState(7), kalmanState(8), kalmanState(9)));
 
+    std::cout << "Kalman state:" << std::endl;
+    std::cout << kalmanState << std::endl;
     printf("Orientation: %6.4f, %6.2f, %6.4f\n", kalmanRotation(0),
            kalmanRotation(1), kalmanRotation(2));
 }
