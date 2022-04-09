@@ -100,7 +100,7 @@ class Logging : public Singleton<Logging>
     friend class PrintLogger;
 
 public:
-    static PrintLogger getLogger(string name)
+    static PrintLogger getLogger(const string& name)
     {
         return PrintLogger(getInstance(), name);
     }

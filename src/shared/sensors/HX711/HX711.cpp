@@ -63,7 +63,7 @@ HX711Data HX711::sampleImpl()
     sckPin.alternateFunction(sckAlternateFunction);
 
     if (sample & static_cast<int32_t>(0x800000))
-        sample |= 0xFF << 24;
+        sample |= static_cast<uint32_t>(0xFF) << 24;
 
     if (sample == static_cast<int32_t>(0xFFFFFFFF))
         return lastSample;

@@ -80,7 +80,7 @@ static constexpr unsigned int FIFO_WATERMARK = 12;
 // output data rate) is the following:
 static constexpr float SAMPLE_FREQUENCY = 782.3f;
 
-struct GyroSample
+struct GyroSampleFifo
 {
     int fifoNum;
     L3GD20Data gyro;
@@ -93,7 +93,7 @@ struct GyroSample
 // How many samples to collect
 static constexpr int NUM_SAMPLES = SAMPLE_FREQUENCY * 20;
 
-GyroSample data[NUM_SAMPLES];
+GyroSampleFifo data[NUM_SAMPLES];
 int dataCounter = 0;
 
 // Last interrupt received timer tick

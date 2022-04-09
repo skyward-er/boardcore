@@ -53,6 +53,7 @@ struct VN100Data : public QuaternionData,
     /**
      * @brief Void parameters constructor
      */
+    // cppcheck-suppress uninitDerivedMemberVar
     VN100Data()
         : QuaternionData{0, 0.0, 0.0, 0.0, 0.0}, MagnetometerData{0, 0.0, 0.0,
                                                                   0.0},
@@ -67,35 +68,24 @@ struct VN100Data : public QuaternionData,
      * @param single data structures for all the data
      */
     // cppcheck-suppress passedByValue
+    // cppcheck-suppress uninitDerivedMemberVar
     VN100Data(QuaternionData quat, MagnetometerData magData,
               AccelerometerData accData, GyroscopeData gyro,
               TemperatureData temp, PressureData pres)
-        : QuaternionData{quat.quatTimestamp, quat.quatX, quat.quatY, quat.quatZ,
-                         quat.quatW},
-          MagnetometerData{magData.magneticFieldTimestamp,
-                           magData.magneticFieldX, magData.magneticFieldY,
-                           magData.magneticFieldZ},
-          AccelerometerData{accData.accelerationTimestamp,
-                            accData.accelerationX, accData.accelerationY,
-                            accData.accelerationZ},
-          GyroscopeData{gyro.angularVelocityTimestamp, gyro.angularVelocityX,
-                        gyro.angularVelocityY, gyro.angularVelocityZ},
-          TemperatureData{temp.temperatureTimestamp, temp.temperature},
-          PressureData{pres.pressureTimestamp, pres.pressure}
+        : QuaternionData(quat), MagnetometerData(magData),
+          AccelerometerData(accData), GyroscopeData(gyro),
+          TemperatureData(temp), PressureData(pres)
     {
     }
 
     static std::string header()
     {
-        return "quatTimestamp,quatX,quatY,quatZ,quatW,"
-               "magneticFieldTimestamp,magneticFieldX,"
-               "magneticFieldY,magneticFieldZ,"
+        return "quatTimestamp,quatX,quatY,quatZ,quatW,magneticFieldTimestamp,"
+               "magneticFieldX,magneticFieldY,magneticFieldZ,"
                "accelerationTimestamp,accelerationX,accelerationY,"
-               "accelerationZ,gyro_"
-               "timestamp,"
-               "angularVelocityX,"
-               "angularVelocityY,angularVelocityZ"
-               "temperatureTimestamp,temp,pressureTimestamp,press\n";
+               "accelerationZ,gyro_timestamp,angularVelocityX,angularVelocityY,"
+               "angularVelocityZ,temperatureTimestamp,temperature,"
+               "pressureTimestamp,pressure\n";
     }
 
     void print(std::ostream& os) const

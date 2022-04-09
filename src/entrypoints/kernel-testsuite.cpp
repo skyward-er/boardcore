@@ -5012,6 +5012,7 @@ const int nThreads = 8;
 bool flags[nThreads];
 
 static int throwable(std::vector<int> &v) __attribute__((noinline));
+// cppcheck-suppress containerOutOfBounds
 static int throwable(std::vector<int> &v) { return v.at(10); }
 
 static void test(void *argv)

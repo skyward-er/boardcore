@@ -164,7 +164,10 @@
         "velnord",
         "Xbee",
         "xnord",
-        "yned"
+        "yned",
+        "SDRAM",
+        "testsuite",
+        "upcounter"
     ],
     "cSpell.language": "en,it"
 }

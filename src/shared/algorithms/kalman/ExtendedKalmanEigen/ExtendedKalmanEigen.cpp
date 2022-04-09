@@ -197,7 +197,6 @@ void ExtendedKalmanEigen::correctGPS(const Vector4f& y, const uint8_t sats_num)
 
     x.head(NL) = x.head(NL) + K_gps * (yned - h_gps);
 
-    // cppcheck-suppress unreadVariable
     res_gps = y - h_gps;
 }
 
