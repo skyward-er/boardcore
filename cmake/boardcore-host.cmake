@@ -35,11 +35,6 @@ add_library(boardcore-host STATIC EXCLUDE_FROM_ALL
     # Logger
     ${SBS_BASE}/src/shared/logger/Logger.cpp
 
-    # Math
-    ${SBS_BASE}/src/shared/math/Matrix.cpp
-    ${SBS_BASE}/src/shared/math/SkyQuaternion.cpp
-    ${SBS_BASE}/src/shared/math/Stats.cpp
-
     # Radio
     ${SBS_BASE}/src/shared/radio/Xbee/APIFrameParser.cpp
 
@@ -50,11 +45,11 @@ add_library(boardcore-host STATIC EXCLUDE_FROM_ALL
     ${SBS_BASE}/src/shared/sensors/SensorManager.cpp
     ${SBS_BASE}/src/shared/sensors/SensorSampler.cpp
 
-    # AeroUtils
-    ${SBS_BASE}/src/shared/utils/aero/AeroUtils.cpp
-
-    # TestUtils
-    ${SBS_BASE}/src/shared/utils/testutils/TestHelper.cpp
+    # Utils
+    ${SBS_BASE}/src/shared/utils/AeroUtils/AeroUtils.cpp
+    ${SBS_BASE}/src/shared/utils/SkyQuaternion/SkyQuaternion.cpp
+    ${SBS_BASE}/src/shared/utils/Stats/Stats.cpp
+    ${SBS_BASE}/src/shared/utils/TestUtils/TestHelper.cpp
 )
 add_library(SkywardBoardcore::Boardcore::host ALIAS boardcore-host)
 target_include_directories(boardcore-host PUBLIC ${SBS_BASE}/src/shared)
