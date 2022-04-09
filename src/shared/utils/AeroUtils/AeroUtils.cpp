@@ -22,15 +22,17 @@
 
 #include "AeroUtils.h"
 
+#include <utils/Constants.h>
+
 namespace Boardcore
 {
 
-namespace aeroutils
+namespace Aeroutils
 {
 
 float relAltitude(float pressure, float pressureRef, float temperatureRef)
 {
-    using namespace constants;
+    using namespace Constants;
 
     return temperatureRef / a * (1 - powf(pressure / pressureRef, nInv));
 }
@@ -38,7 +40,7 @@ float relAltitude(float pressure, float pressureRef, float temperatureRef)
 float relDensity(float pressure, float pressureRef, float altitudeRef,
                  float temperatureRef)
 {
-    using namespace constants;
+    using namespace Constants;
 
     return pressure / (R * a * altitudeRef +
                        R * temperatureRef * powf(pressure / pressureRef, nInv));
@@ -46,7 +48,7 @@ float relDensity(float pressure, float pressureRef, float altitudeRef,
 
 float mslPressure(float pressureRef, float temperatureRef, float altitudeRef)
 {
-    using namespace constants;
+    using namespace Constants;
     float T0 = mslTemperature(temperatureRef, altitudeRef);
 
     return pressureRef / powf(1 - a * altitudeRef / T0, n);
@@ -54,16 +56,16 @@ float mslPressure(float pressureRef, float temperatureRef, float altitudeRef)
 
 float mslTemperature(float temperatureRef, float altitudeRef)
 {
-    return temperatureRef + (altitudeRef * constants::a);
+    return temperatureRef + (altitudeRef * Constants::a);
 }
 
 float verticalSpeed(float p, float dpDt, float pRef, float tRef)
 {
-    using namespace constants;
+    using namespace Constants;
 
     return -(tRef * dpDt * powf(p / pRef, nInv)) / (a * n * p);
 }
 
-}  // namespace aeroutils
+}  // namespace Aeroutils
 
 }  // namespace Boardcore

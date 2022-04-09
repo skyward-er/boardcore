@@ -27,29 +27,12 @@
 namespace Boardcore
 {
 
-namespace aeroutils
+namespace Aeroutils
 {
-
-namespace constants
-{
-
-// Troposphere temperature gradient [deg/m]
-constexpr float a = 0.0065f;
-
-// Acceleration of gravity [m^s^2]
-constexpr float g = 9.80665f;
-
-// Air gas constant [J/(Kg*K])]
-constexpr float R = 287.05f;
-
-constexpr float n    = g / (R * a);
-constexpr float nInv = (R * a) / g;
-
-}  // namespace constants
 
 /**
  * Returns the current altitude with respect to a reference altitude for the
- * given pressure, using International Standard Atmosphere  model.
+ * given pressure, using International Standard Atmosphere model.
  *
  * @warning This function is valid for altitudes below 11000 meters above sea
  * level
@@ -57,10 +40,10 @@ constexpr float nInv = (R * a) / g;
  * altitude. It does not provide altitude above mean sea level unless the
  * reference is, in fact, the sea level.
  *
- * @param pressure Current pressure [Pascal]
- * @param pressureRef Pressure at reference altitude (must be > 0) [Pascal]
- * @param temperatureRef Temperature at reference altitude [Kelvin]
- * @return Current altitude with respect to the reference altitude [meters]
+ * @param pressure Current pressure [Pas]
+ * @param pressureRef Pressure at reference altitude (must be > 0) [Pa]
+ * @param temperatureRef Temperature at reference altitude [K]
+ * @return Current altitude with respect to the reference altitude [m]
  */
 float relAltitude(float pressure, float pressureRef, float temperatureRef);
 
@@ -68,10 +51,10 @@ float relAltitude(float pressure, float pressureRef, float temperatureRef);
  * Returns the current air density with respect to a reference density and
  * temperature, using the Internation Standard Atmosphere model.
  *
- * @param pressure Current atmospheric pressure [Pascal]
- * @param pressureRef Pressure at reference altitude (must be > 0) [Pascal]
+ * @param pressure Current atmospheric pressure [Pa]
+ * @param pressureRef Pressure at reference altitude (must be > 0) [Pa]
  * @param altitudeRef Reference altitude [m]
- * @param temperatureRef Temperature at reference altitude [Kelvin]
+ * @param temperatureRef Temperature at reference altitude [K]
  * @return Current air density  [Kg/m^3]
  */
 float relDensity(float pressure, float pressureRef, float altitudeRef,
@@ -85,11 +68,10 @@ float relDensity(float pressure, float pressureRef, float altitudeRef,
  * @warning This function is valid for altitudes below 11000 meters above sea
  * level
  *
- * @param pressureRef Pressure at reference altitude [Pascal]
- * @param temperatureRef Temperature at reference altitude. Must be > 0
- * [Kelvin]
- * @param altitudeRef Reference altitude [meters]
- * @return Pressure at mean sea level [pascal]
+ * @param pressureRef Pressure at reference altitude [Pa]
+ * @param temperatureRef Temperature at reference altitude. Must be > 0 [K]
+ * @param altitudeRef Reference altitude [m]
+ * @return Pressure at mean sea level [Pa]
  */
 float mslPressure(float pressureRef, float temperatureRef, float altitudeRef);
 
@@ -100,9 +82,9 @@ float mslPressure(float pressureRef, float temperatureRef, float altitudeRef);
  * @warning This function is valid for altitudes below 11000 meters above sea
  * level
  *
- * @param temperatureRef Temperature at reference altitude [Kelvin]
- * @param altitudeRef Reference altitude [meters]
- * @return Temperature at mean sea level [Kelvin]
+ * @param temperatureRef Temperature at reference altitude [K]
+ * @param altitudeRef Reference altitude [m]
+ * @return Temperature at mean sea level [K]
  */
 float mslTemperature(float temperatureRef, float altitudeRef);
 
@@ -121,6 +103,6 @@ float mslTemperature(float temperatureRef, float altitudeRef);
  */
 float verticalSpeed(float p, float dpDt, float pRef, float tRef);
 
-}  // namespace aeroutils
+}  // namespace Aeroutils
 
 }  // namespace Boardcore

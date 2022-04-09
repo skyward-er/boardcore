@@ -22,8 +22,7 @@
 
 #pragma once
 
-#include <math/SkyQuaternion.h>
-#include <utils/aero/AeroUtils.h>
+#include <utils/AeroUtils/AeroUtils.h>
 
 #include <Eigen/Dense>
 
@@ -36,8 +35,49 @@ using VectorNf = Eigen::Matrix<float, 13, 1>;
 
 class ExtendedKalmanEigen
 {
-
 public:
+    // Dimensions of matrices and vectors
+
+    static constexpr uint16_t N = 13;  ///< State vector elements, N x 1
+
+    /**
+     * @brief P matrix, N-1 x N-1.
+     *
+     * Reduced order thanks to the MEKF.
+     */
+    static constexpr uint16_t NP = N - 1;
+
+    /**
+     * @brief Number of attitude related elements.
+     *
+     * Quaternion components and biases: [q1, q2, q3, q4, bx, by, bz]
+     */
+    static constexpr uint16_t NATT = 7;
+
+    /**
+     * @brief Number of linear elements in the state vector.
+     *
+     * Position and velocity: [p_north, p_east, p_down, v_n, v_e, v_d]
+     */
+    static constexpr uint16_t NL = N - NATT;
+
+    ///< States of the barometer [pressure]
+    static constexpr uint16_t NBAR = 1;
+
+    ///< States of the gps [lon, lat, v_north, v_east]
+    static constexpr uint16_t NGPS = 4;
+
+    ///< States of the magnetometer [mx, my, mz]
+    static constexpr uint16_t NMAG = 3;
+
+    /**
+     * @brief Dimension used in the MEKF.
+     *
+     * 4 quaternion components + 3 biases - 1.
+     * The MEKF structure allows us to perform the dimensionality reduction of 1
+     */
+    static constexpr uint16_t NMEKF = 6;
+
     explicit ExtendedKalmanEigen(ExtendedKalmanConfig config);
 
     /**
@@ -91,48 +131,6 @@ public:
     void setX(const VectorNf& x);
 
 private:
-    // Dimensions of matrices and vectors
-
-    static constexpr uint16_t N = 13;  ///< State vector elements, N x 1
-
-    /**
-     * @brief P matrix, N-1 x N-1.
-     *
-     * Reduced order thanks to the MEKF.
-     */
-    static constexpr uint16_t NP = N - 1;
-
-    /**
-     * @brief Number of attitude related elements.
-     *
-     * Quaternion components and biases: [q1, q2, q3, q4, bx, by, bz]
-     */
-    static constexpr uint16_t NATT = 7;
-
-    /**
-     * @brief Number of linear elements in the state vector.
-     *
-     * Position and velocity: [p_north, p_east, p_down, v_n, v_e, v_d]
-     */
-    static constexpr uint16_t NL = N - NATT;
-
-    ///< States of the barometer [pressure]
-    static constexpr uint16_t NBAR = 1;
-
-    ///< States of the gps [lon, lat, v_north, v_east]
-    static constexpr uint16_t NGPS = 4;
-
-    ///< States of the magnetometer [mx, my, mz]
-    static constexpr uint16_t NMAG = 3;
-
-    /**
-     * @brief Dimension used in the MEKF.
-     *
-     * 4 quaternion components + 3 biases - 1.
-     * The MEKF structure allows us to perform the dimensionality reduction of 1
-     */
-    static constexpr uint16_t NMEKF = 6;
-
     ///< Extended Kalman filter configuration parameters
     ExtendedKalmanConfig config;
 
@@ -171,8 +169,6 @@ private:
     Eigen::Matrix<float, NMEKF, NMEKF> Gatt;
     Eigen::Matrix<float, NMEKF, NMEKF> Gatttr;
     Eigen::Matrix<float, NMEKF, NMEKF> Patt;
-
-    Boardcore::SkyQuaternion quater;
 };
 
 }  // namespace Boardcore

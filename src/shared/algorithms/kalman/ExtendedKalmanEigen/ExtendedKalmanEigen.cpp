@@ -22,6 +22,9 @@
 
 #include "ExtendedKalmanEigen.h"
 
+#include <utils/Constants.h>
+#include <utils/SkyQuaternion/SkyQuaternion.h>
+
 using namespace Boardcore;
 using namespace Eigen;
 
@@ -90,7 +93,7 @@ ExtendedKalmanEigen::ExtendedKalmanEigen(ExtendedKalmanConfig config)
             Eigen::Matrix3f::Zero(3, 3), eye3;
     Gatttr = Gatt.transpose();
 
-    g << 0.0F, 0.0F, aeroutils::constants::g; // [m/s^2]
+    g << 0.0F, 0.0F, Constants::g; // [m/s^2]
 
     // clang-format on
 }
@@ -143,13 +146,11 @@ void ExtendedKalmanEigen::correctBaro(const float y, const float msl_press,
     // temperature at current altitude :
     // since x(2) (altitude) is negative, mslTemperature returns temperature at
     // current altitude and not at mean sea level
-    float temp = aeroutils::mslTemperature(msl_temp, x(2));
+    float temp = Aeroutils::mslTemperature(msl_temp, x(2));
 
     // compute gradient of the altitude-pressure function
-    float dp_dx = aeroutils::constants::a * aeroutils::constants::n *
-                  msl_press *
-                  powf(1 - aeroutils::constants::a * x(2) / temp,
-                       -aeroutils::constants::n - 1) /
+    float dp_dx = Constants::a * Constants::n * msl_press *
+                  powf(1 - Constants::a * x(2) / temp, -Constants::n - 1) /
                   temp;
 
     H_bar << 0.0F, 0.0F, dp_dx,
@@ -161,7 +162,7 @@ void ExtendedKalmanEigen::correctBaro(const float y, const float msl_press,
 
     P.block<NL, NL>(0, 0) = (eye6 - K_bar * H_bar) * Plin;
 
-    float y_hat = aeroutils::mslPressure(msl_press, msl_temp, x(2));
+    float y_hat = Aeroutils::mslPressure(msl_press, msl_temp, x(2));
 
     x.head(NL) = x.head(NL) + K_bar * (y - y_hat);
 
@@ -288,7 +289,7 @@ void ExtendedKalmanEigen::correctMEKF(const Eigen::Vector3f& y)
 
     // cppcheck-suppress constStatement
     q << q1, q2, q3, q4;
-    u_att        = quater.quatProd(r, q);
+    u_att        = SkyQuaternion::quatProd(r, q);
     float u_norm = u_att.norm();
 
     x(NL)     = u_att(0) / u_norm;

@@ -29,9 +29,6 @@
 
 #include <cmath>
 
-using miosix::getTick;
-using miosix::TICK_FREQ;
-
 namespace Boardcore
 {
 
@@ -40,11 +37,14 @@ struct TestData : public TimestampData
     float value;
 
     TestData(float v)
-        : TimestampData{static_cast<uint64_t>(getTick())}, value(v)
+        : TimestampData{static_cast<uint64_t>(miosix::getTick())}, value(v)
     {
     }
 
-    TestData() : TimestampData{static_cast<uint64_t>(getTick())}, value(0.0) {}
+    TestData()
+        : TimestampData{static_cast<uint64_t>(miosix::getTick())}, value(0.0)
+    {
+    }
 };
 
 class TestSensor : public Sensor<TestData>
@@ -60,8 +60,9 @@ public:
     TestData sampleImpl() override
     {
         TRACE("[TestSensor] sampleImpl() \n");
-        return TestData(10 * sin(PI * static_cast<float>(getTick()) /
-                                 static_cast<float>(TICK_FREQ)));
+        return TestData(
+            10 * sin(Constants::PI * static_cast<float>(miosix::getTick()) /
+                     static_cast<float>(miosix::TICK_FREQ)));
     }
 };
 
