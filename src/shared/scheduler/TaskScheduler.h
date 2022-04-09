@@ -25,7 +25,7 @@
 #include <ActiveObject.h>
 #include <Singleton.h>
 #include <diagnostic/PrintLogger.h>
-#include <math/Stats.h>
+#include <utils/Stats/Stats.h>
 
 #include <cstdint>
 #include <list>
