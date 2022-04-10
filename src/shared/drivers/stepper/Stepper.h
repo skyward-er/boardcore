@@ -24,7 +24,7 @@
 
 #include <interfaces-impl/gpio_impl.h>
 #include <interfaces/delays.h>
-#include <utils/testutils/MockGpioPin.h>
+#include <utils/TestUtils/MockGpioPin.h>
 
 namespace Boardcore
 {

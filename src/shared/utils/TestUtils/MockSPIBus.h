@@ -57,7 +57,7 @@ namespace Boardcore
     "SpiBusInterface must be built using MockGpioPin (-DUSE_MOCK_PERIPHERALS)"
 #endif
 
-#include <utils/testutils/MockGpioPin.h>
+#include <utils/TestUtils/MockGpioPin.h>
 
 using miosix::FastMutex;
 using miosix::Lock;

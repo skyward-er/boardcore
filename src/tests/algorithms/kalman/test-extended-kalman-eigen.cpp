@@ -176,9 +176,9 @@ void bmxCallback()
     magneticField.normalize();
     kalman->correctMEKF(magneticField);
 
-    auto kalmanState    = kalman->getState();
-    auto kalmanRotation = SkyQuaternion::quat2eul(Vector4f(
-        kalmanState(6), kalmanState(7), kalmanState(8), kalmanState(9)));
+    auto kalmanState = kalman->getState();
+    // auto kalmanRotation = SkyQuaternion::quat2eul(Vector4f(
+    //     kalmanState(6), kalmanState(7), kalmanState(8), kalmanState(9)));
 
     // data.accelerationTimestamp =
     // TimestampTimer::getInstance().getTimestamp();
