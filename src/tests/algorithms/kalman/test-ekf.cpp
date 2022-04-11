@@ -36,15 +36,12 @@ using namespace Eigen;
 ExtendedKalmanConfig getEKConfig();
 void setInitialOrientation();
 void bmxInit();
-void lisInit();
 void bmxCallback();
-void lisCallback();
 
 ExtendedKalman* kalman;
 
 SPIBus spi1(SPI1);
-BMX160* bmx160   = nullptr;
-LIS3MDL* lis3mdl = nullptr;
+BMX160* bmx160 = nullptr;
 
 Boardcore::SensorManager::SensorMap_t sensorsMap;
 Boardcore::SensorManager* sensorManager = nullptr;
@@ -52,20 +49,12 @@ Boardcore::SensorManager* sensorManager = nullptr;
 int main()
 {
     bmxInit();
-    lisInit();
+
     sensorManager = new SensorManager(sensorsMap);
-
-    Logger::getInstance().start();
-
-    kalman = new ExtendedKalman(getEKConfig());
+    kalman        = new ExtendedKalman(getEKConfig());
     setInitialOrientation();
 
     sensorManager->start();
-
-    // Thread::sleep(30 * 1000);
-
-    // sensorManager->stop();
-    // Logger::getInstance().stop();
 
     while (true)
         Thread::sleep(1000);
@@ -77,8 +66,8 @@ ExtendedKalmanConfig getEKConfig()
 
     config.T              = 0.02f;
     config.SIGMA_BETA     = 0.0001f;
-    config.SIGMA_W        = 1.0f;
-    config.SIGMA_MAG      = 1.0f;
+    config.SIGMA_W        = 0.3f;
+    config.SIGMA_MAG      = 0.05f;
     config.SIGMA_GPS      = 10.0f;
     config.SIGMA_BAR      = 4.3f;
     config.SIGMA_POS      = 10.0;
@@ -127,86 +116,47 @@ void bmxInit()
 
     bmx_config.gyroscopeRange = BMX160Config::GyroscopeRange::DEG_1000;
 
-    bmx_config.accelerometerDataRate = BMX160Config::OutputDataRate::HZ_50;
-    bmx_config.gyroscopeDataRate     = BMX160Config::OutputDataRate::HZ_50;
-    bmx_config.magnetometerRate      = BMX160Config::OutputDataRate::HZ_50;
+    bmx_config.accelerometerDataRate = BMX160Config::OutputDataRate::HZ_100;
+    bmx_config.gyroscopeDataRate     = BMX160Config::OutputDataRate::HZ_100;
+    bmx_config.magnetometerRate      = BMX160Config::OutputDataRate::HZ_100;
 
     bmx_config.gyroscopeUnit = BMX160Config::GyroscopeMeasureUnit::RAD;
 
     bmx160 = new BMX160(spi1, miosix::sensors::bmx160::cs::getPin(), bmx_config,
                         spiConfig);
 
-    SensorInfo info("BMX160", 20, &lisCallback);
+    SensorInfo info("BMX160", 20, &bmxCallback);
 
     sensorsMap.emplace(std::make_pair(bmx160, info));
-}
-
-void lisInit()
-{
-    SPIBusConfig spiConfig;
-    spiConfig.clockDivider = SPI::ClockDivider::DIV_32;
-
-    LIS3MDL::Config config;
-    config.odr                = LIS3MDL::ODR_80_HZ;
-    config.scale              = LIS3MDL::FS_4_GAUSS;
-    config.temperatureDivider = 1;
-
-    lis3mdl = new LIS3MDL(spi1, miosix::sensors::lis3mdl::cs::getPin(),
-                          spiConfig, config);
-
-    SensorInfo info("LIS3", 20, &bmxCallback);
-
-    sensorsMap.emplace(std::make_pair(lis3mdl, info));
 }
 
 void bmxCallback()
 {
     auto data = bmx160->getLastSample();
 
-    // Vector3f acceleration(data.accelerationX, data.accelerationY,
-    //                       data.accelerationZ);
-    // kalman->predict(acceleration);
-
+    // Predict step
     Vector3f angularVelocity(data.angularVelocityX, data.angularVelocityY,
                              data.angularVelocityZ);
     kalman->predictMEKF(angularVelocity);
 
-    Vector3f magneticField(data.magneticFieldX, data.magneticFieldY,
-                           data.magneticFieldZ);
-    magneticField.normalize();
-    kalman->correctMEKF(magneticField);
+    // Correct ster
+    {
+        Vector3f magneticField(data.magneticFieldX, data.magneticFieldY,
+                               data.magneticFieldZ);
 
-    // auto kalmanState = kalman->getState();
-    // auto kalmanRotation = SkyQuaternion::quat2eul(Vector4f(
-    //     kalmanState(6), kalmanState(7), kalmanState(8), kalmanState(9)));
+        // Apply correction
+        Vector3f b{-0.41624041, 0.45523345, 0.08584968};
+        Matrix3f A{{1.06120306, 0.07064581, -0.00367332},
+                   {0.07064581, 0.99640889, -0.00599803},
+                   {-0.00367332, -0.00599803, 0.95025392}};
+        magneticField = (magneticField - b).transpose() * A;
 
-    // data.accelerationTimestamp =
-    // TimestampTimer::getInstance().getTimestamp();
+        magneticField.normalize();
+        kalman->correctMEKF(magneticField);
+    }
 
-    // printf("Orientation: %6.4f, %6.2f, %6.4f\n", kalmanRotation(0),
-    //        kalmanRotation(1), kalmanRotation(2));
-    // printf("Quaternion: %6.4f, %6.2f, %6.4f, %6.4f\n", kalmanState(6),
-    //        kalmanState(7), kalmanState(8), kalmanState(9));
+    auto kalmanState = kalman->getState();
 
-    // printf("w%fwa%fab%fbc%fc\n", kalmanState(9), kalmanState(6),
-    // kalmanState(7),
-    //        kalmanState(8));
-
-    std::cout << magneticField(0) << "," << magneticField(1) << ","
-              << magneticField(2) << ",";
-
-    // Logger::getInstance().log(data);
-}
-
-void lisCallback()
-{
-    auto data = lis3mdl->getLastSample();
-
-    Vector3f magneticField(data.magneticFieldX, data.magneticFieldY,
-                           data.magneticFieldZ);
-    magneticField.normalize();
-    kalman->correctMEKF(magneticField);
-
-    std::cout << magneticField(0) << "," << magneticField(1) << ","
-              << magneticField(2) << std::endl;
+    printf("w%fwa%fab%fbc%fc\n", kalmanState(9), kalmanState(6), kalmanState(7),
+           kalmanState(8));
 }
