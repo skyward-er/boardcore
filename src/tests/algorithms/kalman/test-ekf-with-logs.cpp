@@ -20,8 +20,8 @@
  * THE SOFTWARE.
  */
 
-#include <algorithms/kalman/ExtendedKalmanEigen/ExtendedKalmanEigen.h>
-#include <algorithms/kalman/ExtendedKalmanEigen/InitStates.h>
+#include <algorithms/ExtendedKalman/ExtendedKalman.h>
+#include <algorithms/ExtendedKalman/StateInitializer.h>
 #include <sensors/BMX160/BMX160.h>
 #include <utils/CSVReader/CSVReader.h>
 #include <utils/SkyQuaternion/SkyQuaternion.h>
@@ -40,14 +40,14 @@ std::istream& operator>>(std::istream& input, BMX160Data& data);
 
 auto milanMag = Vector3f(0.4742f, 0.025f, 0.8801f);  // Already normalized
 
-ExtendedKalmanEigen* kalman;
+ExtendedKalman* kalman;
 bool triad = false;
 
 int main()
 {
     // Prepare the Kalman
-    kalman = new ExtendedKalmanEigen(getEKConfig());
-    InitStates initStates;
+    kalman = new ExtendedKalman(getEKConfig());
+    StateInitializer initStates;
     setInitialOrientation();
 
     // Retrieve all the data

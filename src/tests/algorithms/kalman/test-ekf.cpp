@@ -20,7 +20,7 @@
  * THE SOFTWARE.
  */
 
-#include <algorithms/kalman/ExtendedKalmanEigen/ExtendedKalmanEigen.h>
+#include <algorithms/ExtendedKalman/ExtendedKalman.h>
 #include <miosix.h>
 #include <sensors/BMX160/BMX160.h>
 #include <sensors/LIS3MDL/LIS3MDL.h>
@@ -40,7 +40,7 @@ void lisInit();
 void bmxCallback();
 void lisCallback();
 
-ExtendedKalmanEigen* kalman;
+ExtendedKalman* kalman;
 
 SPIBus spi1(SPI1);
 BMX160* bmx160   = nullptr;
@@ -57,7 +57,7 @@ int main()
 
     Logger::getInstance().start();
 
-    kalman = new ExtendedKalmanEigen(getEKConfig());
+    kalman = new ExtendedKalman(getEKConfig());
     setInitialOrientation();
 
     sensorManager->start();
@@ -176,7 +176,7 @@ void bmxCallback()
     magneticField.normalize();
     kalman->correctMEKF(magneticField);
 
-    auto kalmanState = kalman->getState();
+    // auto kalmanState = kalman->getState();
     // auto kalmanRotation = SkyQuaternion::quat2eul(Vector4f(
     //     kalmanState(6), kalmanState(7), kalmanState(8), kalmanState(9)));
 
@@ -188,22 +188,25 @@ void bmxCallback()
     // printf("Quaternion: %6.4f, %6.2f, %6.4f, %6.4f\n", kalmanState(6),
     //        kalmanState(7), kalmanState(8), kalmanState(9));
 
-    printf("w%fwa%fab%fbc%fc\n", kalmanState(9), kalmanState(6), kalmanState(7),
-           kalmanState(8));
+    // printf("w%fwa%fab%fbc%fc\n", kalmanState(9), kalmanState(6),
+    // kalmanState(7),
+    //        kalmanState(8));
 
-    // std::cout << magneticField.transpose() << std::endl;
+    std::cout << magneticField(0) << "," << magneticField(1) << ","
+              << magneticField(2) << ",";
 
     // Logger::getInstance().log(data);
 }
 
 void lisCallback()
 {
-    // auto data = lis3mdl->getLastSample();
+    auto data = lis3mdl->getLastSample();
 
-    // Vector3f magneticField(data.magneticFieldX, data.magneticFieldY,
-    //                        data.magneticFieldZ);
-    // magneticField.normalize();
-    // kalman->correctMEKF(magneticField);
+    Vector3f magneticField(data.magneticFieldX, data.magneticFieldY,
+                           data.magneticFieldZ);
+    magneticField.normalize();
+    kalman->correctMEKF(magneticField);
 
-    // std::cout << magneticField.transpose() << std::endl;
+    std::cout << magneticField(0) << "," << magneticField(1) << ","
+              << magneticField(2) << std::endl;
 }

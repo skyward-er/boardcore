@@ -29,12 +29,21 @@
 #include <Eigen/Dense>
 #include <iostream>
 
-#include "ExtendedKalmanEigen.h"
+#include "ExtendedKalman.h"
 
 namespace Boardcore
 {
 
-class InitStates
+/**
+ * @brief Utility used to initialize the extended kalman filter's state.
+ *
+ * The intended use is the following:
+ * - Instantiate the object, the state is initialize to zero;
+ * - Call positionInit to set the initial position;
+ * - Call either eCompass or triad to set the initial orientation;
+ * - Get the initial state for the kalman with getInitX
+ */
+class StateInitializer
 {
 
 public:
@@ -45,7 +54,7 @@ public:
      * can be left to zero since the sensor performs self-calibration and the
      * measurements are already compensated.
      */
-    InitStates();
+    StateInitializer();
 
     /**
      * @brief Ecompass algorithm to estimate the attitude before the liftoff.
@@ -67,32 +76,36 @@ public:
      *
      * @param acc 3x1 accelerometer readings [x y z][m/s^2].
      * @param mag 3x1 magnetometer readings [x y z][uT].
+     * @param nedMag 3x1 magnetometer readings [x y z][uT].
      */
     const void triad(Eigen::Vector3f& acc, Eigen::Vector3f& mag,
                      Eigen::Vector3f& nedMag);
 
     /**
-     * @brief Initialization of the positions before the liftoff.
+     * @brief Initialization of the position at a specific altitude
      *
-     * @param press Reference pressure [Pa].
+     * @param pressure Current pressure [Pas]
+     * @param pressureRef Pressure at reference altitude (must be > 0) [Pa]
+     * @param temperatureRef Temperature at reference altitude [K]
      */
-    void positionInit(const float press, const float ref_press,
-                      const float ref_temp);
+    void positionInit(const float pressure, const float pressureRef,
+                      const float temperatureRef);
 
-    Eigen::Matrix<float, ExtendedKalmanEigen::N, 1> getInitX();
+    Eigen::Matrix<float, ExtendedKalman::N, 1> getInitX();
 
 private:
-    Eigen::Matrix<float, ExtendedKalmanEigen::N, 1> x_init;
+    Eigen::Matrix<float, ExtendedKalman::N, 1> x_init;
 
     PrintLogger log = Logging::getLogger("initstates");
 };
 
-InitStates::InitStates()
+StateInitializer::StateInitializer()
 {
-    x_init << Eigen::MatrixXf::Zero(ExtendedKalmanEigen::N, 1);
+    x_init << Eigen::MatrixXf::Zero(ExtendedKalman::N, 1);
 }
 
-void InitStates::eCompass(const Eigen::Vector3f acc, const Eigen::Vector3f mag)
+void StateInitializer::eCompass(const Eigen::Vector3f acc,
+                                const Eigen::Vector3f mag)
 {
     // ndr: since this method runs only when the rocket is stationary, there's
     // no need to add the gravity vector because the accelerometers already
@@ -108,31 +121,23 @@ void InitStates::eCompass(const Eigen::Vector3f acc, const Eigen::Vector3f mag)
 
     Eigen::Vector4f x_quat = SkyQuaternion::rotationMatrix2quat(R);
 
-    x_init(ExtendedKalmanEigen::NL)     = x_quat(0);
-    x_init(ExtendedKalmanEigen::NL + 1) = x_quat(1);
-    x_init(ExtendedKalmanEigen::NL + 2) = x_quat(2);
-    x_init(ExtendedKalmanEigen::NL + 3) = x_quat(3);
+    x_init(ExtendedKalman::NL)     = x_quat(0);
+    x_init(ExtendedKalman::NL + 1) = x_quat(1);
+    x_init(ExtendedKalman::NL + 2) = x_quat(2);
+    x_init(ExtendedKalman::NL + 3) = x_quat(3);
 }
 
-const void InitStates::triad(Eigen::Vector3f& acc, Eigen::Vector3f& mag,
-                             Eigen::Vector3f& nedMag)
+const void StateInitializer::triad(Eigen::Vector3f& acc, Eigen::Vector3f& mag,
+                                   Eigen::Vector3f& nedMag)
 {
-    std::cout << "Input to triad:" << std::endl;
-    std::cout << acc << std::endl;
-    std::cout << mag << std::endl;
-    std::cout << nedMag << std::endl;
-
-    // NB: Prima avevamo un meno in terza posizione
+    // Prepare the graviti vector in NED frame
     Eigen::Vector3f gravityNed(0.0F, 0.0F, Constants::g);
 
-    // Vettore gravità "vero" in NED, normalizzato : -1 su asse "down", perché
-    // da fermo l'accelerometro misura la reazione vincolare (rivolta verso
-    // l'alto)
     Eigen::Vector3f R1 = gravityNed;
     R1.normalize();
     Eigen::Vector3f R2 = gravityNed.cross(nedMag);
     R2.normalize();
-    Eigen::Vector3f R3 = R1.cross(R2);  // NB: Abbiamo invertito R1 e R2
+    Eigen::Vector3f R3 = R1.cross(R2);
 
     Eigen::Vector3f r1 = acc;
     r1.normalize();
@@ -148,30 +153,25 @@ const void InitStates::triad(Eigen::Vector3f& acc, Eigen::Vector3f& mag,
 
     Eigen::Matrix3f dcm = Mr * Mou.transpose();
 
-    std::cout << "dcm" << std::endl;
-    std::cout << dcm << std::endl;
-
-    // La funzione dovrebbe essere statica
     Eigen::Vector4f q = SkyQuaternion::rotationMatrix2quat(dcm);
 
-    std::cout << SkyQuaternion::quat2eul(q) << std::endl;
-
-    x_init(ExtendedKalmanEigen::NL)     = q(0);
-    x_init(ExtendedKalmanEigen::NL + 1) = q(1);
-    x_init(ExtendedKalmanEigen::NL + 2) = q(2);
-    x_init(ExtendedKalmanEigen::NL + 3) = q(3);
+    x_init(ExtendedKalman::NL)     = q(0);
+    x_init(ExtendedKalman::NL + 1) = q(1);
+    x_init(ExtendedKalman::NL + 2) = q(2);
+    x_init(ExtendedKalman::NL + 3) = q(3);
 }
 
-void InitStates::positionInit(const float press, const float ref_press,
-                              const float ref_temp)
+void StateInitializer::positionInit(const float pressure,
+                                    const float pressureRef,
+                                    const float temperatureRef)
 {
     x_init(0) = 0.0;
     x_init(1) = 0.0;
     // msl altitude (in NED, so negative)
-    x_init(2) = -Aeroutils::relAltitude(press, ref_press, ref_temp);
+    x_init(2) = -Aeroutils::relAltitude(pressure, pressureRef, temperatureRef);
 }
 
-Eigen::Matrix<float, ExtendedKalmanEigen::N, 1> InitStates::getInitX()
+Eigen::Matrix<float, ExtendedKalman::N, 1> StateInitializer::getInitX()
 {
     return x_init;
 }

@@ -33,7 +33,7 @@ namespace Boardcore
 
 using VectorNf = Eigen::Matrix<float, 13, 1>;
 
-class ExtendedKalmanEigen
+class ExtendedKalman
 {
 public:
     // Dimensions of matrices and vectors
@@ -78,7 +78,7 @@ public:
      */
     static constexpr uint16_t NMEKF = 6;
 
-    explicit ExtendedKalmanEigen(ExtendedKalmanConfig config);
+    explicit ExtendedKalman(ExtendedKalmanConfig config);
 
     /**
      * @brief Prediction step of the EKF.

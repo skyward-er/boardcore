@@ -20,7 +20,7 @@
  * THE SOFTWARE.
  */
 
-#include "ExtendedKalmanEigen.h"
+#include "ExtendedKalman.h"
 
 #include <utils/Constants.h>
 #include <utils/SkyQuaternion/SkyQuaternion.h>
@@ -31,8 +31,7 @@ using namespace Eigen;
 namespace Boardcore
 {
 
-ExtendedKalmanEigen::ExtendedKalmanEigen(ExtendedKalmanConfig config)
-    : config(config)
+ExtendedKalman::ExtendedKalman(ExtendedKalmanConfig config) : config(config)
 {
     eye6.setIdentity();
     eye4.setIdentity();
@@ -98,7 +97,7 @@ ExtendedKalmanEigen::ExtendedKalmanEigen(ExtendedKalmanConfig config)
     // clang-format on
 }
 
-void ExtendedKalmanEigen::predict(const Eigen::Vector3f& u)
+void ExtendedKalman::predict(const Eigen::Vector3f& u)
 {
     Eigen::Matrix3f A;
     Eigen::Vector3f a;
@@ -134,8 +133,8 @@ void ExtendedKalmanEigen::predict(const Eigen::Vector3f& u)
     x = x + config.T * x_dot;
 }
 
-void ExtendedKalmanEigen::correctBaro(const float y, const float msl_press,
-                                      const float msl_temp)
+void ExtendedKalman::correctBaro(const float y, const float msl_press,
+                                 const float msl_temp)
 {
     Matrix<float, NL, NBAR> K_bar;
     Matrix<float, NBAR, NL> H_bar;
@@ -169,7 +168,7 @@ void ExtendedKalmanEigen::correctBaro(const float y, const float msl_press,
     // float res_bar = y - h_bar;
 }
 
-void ExtendedKalmanEigen::correctGPS(const Vector4f& y, const uint8_t sats_num)
+void ExtendedKalman::correctGPS(const Vector4f& y, const uint8_t sats_num)
 {
     Matrix<float, NGPS, 1> h_gps;
     Matrix<float, NL, NGPS> K_gps;
@@ -200,14 +199,14 @@ void ExtendedKalmanEigen::correctGPS(const Vector4f& y, const uint8_t sats_num)
     res_gps = y - h_gps;
 }
 
-const VectorNf& ExtendedKalmanEigen::getState() { return x; }
+const VectorNf& ExtendedKalman::getState() { return x; }
 
-void ExtendedKalmanEigen::setX(const VectorNf& x) { this->x = x; }
+void ExtendedKalman::setX(const VectorNf& x) { this->x = x; }
 
 /*
     MULTIPLICATIVE EXTENDED KALMAN FILTER
 */
-void ExtendedKalmanEigen::predictMEKF(const Eigen::Vector3f& u)
+void ExtendedKalman::predictMEKF(const Eigen::Vector3f& u)
 {
     Eigen::Vector3f omega;
     Eigen::Vector3f prev_bias;
@@ -241,7 +240,7 @@ void ExtendedKalmanEigen::predictMEKF(const Eigen::Vector3f& u)
         Gatt * Q_mag * Gatttr;  // Update only the attitude related part of P
 }
 
-void ExtendedKalmanEigen::correctMEKF(const Eigen::Vector3f& y)
+void ExtendedKalman::correctMEKF(const Eigen::Vector3f& y)
 {
     Eigen::Matrix3f A;
     Eigen::Vector3f z;

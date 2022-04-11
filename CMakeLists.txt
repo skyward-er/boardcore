@@ -113,11 +113,11 @@ sbs_catch_test(catch-tests-boardcore)
 add_executable(test-kalman-eigen-benchmark src/tests/algorithms/kalman/test-kalman-eigen-benchmark.cpp)
 sbs_target(test-kalman-eigen-benchmark stm32f429zi_stm32f4discovery)
 
-add_executable(test-extended-kalman-eigen src/tests/algorithms/kalman/test-extended-kalman-eigen.cpp)
-sbs_target(test-extended-kalman-eigen stm32f429zi_skyward_death_stack_x)
+add_executable(test-ekf src/tests/algorithms/kalman/test-ekf.cpp)
+sbs_target(test-ekf stm32f429zi_skyward_death_stack_x)
 
-add_executable(test-extended-kalman-eigen-with-logs src/tests/algorithms/kalman/test-extended-kalman-eigen-with-logs.cpp)
-sbs_target(test-extended-kalman-eigen-with-logs stm32f429zi_skyward_death_stack_x)
+add_executable(test-ekf-with-logs src/tests/algorithms/kalman/test-ekf-with-logs.cpp)
+sbs_target(test-ekf-with-logs stm32f429zi_skyward_death_stack_x)
 
 #-----------------------------------------------------------------------------#
 #                               Tests - Drivers                               #
@@ -313,7 +313,7 @@ add_executable(test-max31855 src/tests/sensors/test-max31855.cpp)
 sbs_target(test-max31855 stm32f429zi_stm32f4discovery)
 
 add_executable(test-mpu9250 src/tests/sensors/test-mpu9250.cpp)
-sbs_target(test-mpu9250 stm32f407vg_stm32f4discovery)
+sbs_target(test-mpu9250 stm32f429zi_skyward_death_stack_x)
 
 add_executable(test-ms5803 src/tests/sensors/test-ms5803.cpp)
 sbs_target(test-ms5803 stm32f429zi_skyward_death_stack_x)
