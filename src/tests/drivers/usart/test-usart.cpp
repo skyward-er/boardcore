@@ -45,6 +45,9 @@ using namespace Boardcore;
  * data is sent and more baudrates will fail (from 2400 to greater).
  */
 
+typedef miosix::Gpio<GPIOA_BASE, 0> u4tx;
+typedef miosix::Gpio<GPIOA_BASE, 1> u4rx;
+
 typedef struct
 {
     char dataChar;
@@ -137,21 +140,22 @@ int main()
         printf("\n\n########################### %d\n", (int)baudrate);
 
         // declaring the usart peripherals
-        STM32SerialWrapper usart1(USART1, baudrate);
+        USART usart1(USART1, baudrate);
         usart1.init();
 
-        USART usart2(USART2, baudrate);
+        USART usart4(UART4, baudrate);
+        usart4.initPins(u4tx::getPin(), 8, u4rx::getPin(), 8);
         // usart2.setOversampling(false);
         // usart2.setStopBits(1);
         // usart2.setWordLength(USART::WordLength::BIT8);
         // usart2.setParity(USART::ParityBit::NO_PARITY);
-        usart2.init();
+        usart4.init();
 
         // testing transmission (both char and binary) "serial 1 -> serial 2"
-        testPassed &= testCommunicationSequential(&usart1, &usart2);
+        testPassed &= testCommunicationSequential(&usart1, &usart4);
 
         // testing transmission (both char and binary) "serial 1 <- serial 2"
-        testPassed &= testCommunicationSequential(&usart2, &usart1);
+        testPassed &= testCommunicationSequential(&usart4, &usart1);
     }
 
     if (testPassed)

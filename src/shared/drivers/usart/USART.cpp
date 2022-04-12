@@ -57,7 +57,21 @@ typedef miosix::Gpio<GPIOB_BASE, 11> u3rx;
 typedef miosix::Gpio<GPIOB_BASE, 13> u3cts;
 typedef miosix::Gpio<GPIOB_BASE, 14> u3rts;
 
-Boardcore::USART *Boardcore::USART::ports[3];
+typedef miosix::Gpio<GPIOA_BASE, 0> u4tx;
+typedef miosix::Gpio<GPIOA_BASE, 1> u4rx;
+
+typedef miosix::Gpio<GPIOA_BASE, 0> u4tx1;
+typedef miosix::Gpio<GPIOA_BASE, 1> u4rx1;
+typedef miosix::Gpio<GPIOC_BASE, 10> u4tx2;
+typedef miosix::Gpio<GPIOC_BASE, 11> u4rx2;
+
+typedef miosix::Gpio<GPIOC_BASE, 12> u5tx;
+typedef miosix::Gpio<GPIOD_BASE, 2> u5rx;
+
+typedef miosix::Gpio<GPIOC_BASE, 6> u6tx;
+typedef miosix::Gpio<GPIOC_BASE, 7> u6rx;
+
+Boardcore::USART *Boardcore::USART::ports[MAX_SERIAL_PORTS];
 
 /**
  * \internal interrupt routine for usart1 actual implementation
@@ -137,6 +151,138 @@ void __attribute__((naked, used)) USART3_IRQHandler()
     restoreContext();
 }
 
+/**
+ * \internal interrupt routine for uart4 actual implementation
+ */
+void __attribute__((used)) uart4irqImplBoardcore()
+{
+    Boardcore::USART *port_boardcore = Boardcore::USART::ports[3];
+    if (port_boardcore)
+        port_boardcore->IRQhandleInterrupt();
+    else
+    {
+        miosix::STM32Serial *port = miosix::STM32Serial::ports[3];
+        if (port)
+            port->IRQhandleInterrupt();
+    }
+}
+
+/**
+ * \internal interrupt routine for uart4
+ */
+void __attribute__((naked, used)) UART4_IRQHandler()
+{
+    saveContext();
+    asm volatile("bl _Z21uart4irqImplBoardcorev");
+    restoreContext();
+}
+
+/**
+ * \internal interrupt routine for uart5 actual implementation
+ */
+void __attribute__((used)) uart5irqImplBoardcore()
+{
+    Boardcore::USART *port_boardcore = Boardcore::USART::ports[4];
+    if (port_boardcore)
+        port_boardcore->IRQhandleInterrupt();
+    else
+    {
+        miosix::STM32Serial *port = miosix::STM32Serial::ports[4];
+        if (port)
+            port->IRQhandleInterrupt();
+    }
+}
+
+/**
+ * \internal interrupt routine for uart5
+ */
+void __attribute__((naked, used)) UART5_IRQHandler()
+{
+    saveContext();
+    asm volatile("bl _Z21uart5irqImplBoardcorev");
+    restoreContext();
+}
+
+/**
+ * \internal interrupt routine for usart6 actual implementation
+ */
+void __attribute__((used)) usart6irqImplBoardcore()
+{
+    Boardcore::USART *port_boardcore = Boardcore::USART::ports[5];
+    if (port_boardcore)
+        port_boardcore->IRQhandleInterrupt();
+    else
+    {
+        miosix::STM32Serial *port = miosix::STM32Serial::ports[5];
+        if (port)
+            port->IRQhandleInterrupt();
+    }
+}
+
+/**
+ * \internal interrupt routine for usart6
+ */
+void __attribute__((naked, used)) USART6_IRQHandler()
+{
+    saveContext();
+    asm volatile("bl _Z22usart6irqImplBoardcorev");
+    restoreContext();
+}
+
+#ifdef STM32F429xx
+/**
+ * \internal interrupt routine for uart7 actual implementation
+ */
+void __attribute__((used)) uart7irqImplBoardcore()
+{
+    Boardcore::USART *port_boardcore = Boardcore::USART::ports[6];
+    if (port_boardcore)
+        port_boardcore->IRQhandleInterrupt();
+    else
+    {
+        miosix::STM32Serial *port = miosix::STM32Serial::ports[6];
+        if (port)
+            port->IRQhandleInterrupt();
+    }
+}
+
+/**
+ * \internal interrupt routine for uart7
+ */
+void __attribute__((naked, used)) UART7_IRQHandler()
+{
+    saveContext();
+    asm volatile("bl _Z21uart7irqImplBoardcorev");
+    restoreContext();
+}
+
+/**
+ * \internal interrupt routine for uart8 actual implementation
+ */
+void __attribute__((used)) uart8irqImplBoardcore()
+{
+    Boardcore::USART *port_boardcore = Boardcore::USART::ports[7];
+    if (port_boardcore)
+        port_boardcore->IRQhandleInterrupt();
+    else
+    {
+        miosix::STM32Serial *port = miosix::STM32Serial::ports[7];
+        if (port)
+            port->IRQhandleInterrupt();
+    }
+}
+
+/**
+ * \internal interrupt routine for uart8
+ */
+void __attribute__((naked, used)) UART8_IRQHandler()
+{
+    saveContext();
+    asm volatile("bl _Z21uart8irqImplBoardcorev");
+    restoreContext();
+}
+#endif  // STM32F429xx
+
 namespace Boardcore
 {
 USARTInterface::~USARTInterface() {}
@@ -181,17 +327,47 @@ USART::USART(USARTType *usart, Baudrate baudrate) : rxQueue(QUEUE_LEN)
     RCC_SYNC();
 
     this->usart = usart;
+
+    // setting the id of the serial port
     switch (reinterpret_cast<uint32_t>(usart))
     {
         case USART1_BASE:
             this->id = 1;
+            initPins(u1tx::getPin(), 7, u1rx::getPin(), 7);
+            irqn = USART1_IRQn;
             break;
         case USART2_BASE:
             this->id = 2;
+            initPins(u2tx::getPin(), 7, u2rx::getPin(), 7);
+            irqn = USART2_IRQn;
             break;
         case USART3_BASE:
             this->id = 3;
+            initPins(u3tx::getPin(), 7, u3rx::getPin(), 7);
+            irqn = USART3_IRQn;
             break;
+        case UART4_BASE:
+            this->id = 4;
+            irqn     = UART4_IRQn;
+            break;
+        case UART5_BASE:
+            this->id = 5;
+            irqn     = UART5_IRQn;
+            break;
+        case USART6_BASE:
+            this->id = 6;
+            irqn     = USART6_IRQn;
+            break;
+#ifdef STM32F429xx
+        case UART7_BASE:
+            this->id = 7;
+            irqn     = UART7_IRQn;
+            break;
+        case UART8_BASE:
+            this->id = 8;
+            irqn     = UART8_IRQn;
+            break;
+#endif  // STM32F429xx
     }
 
     // enabling the usart
@@ -221,24 +397,14 @@ USART::~USART()
         // disabling the usart
         usart->CR1 &= ~(USART_CR1_UE | USART_CR1_TE | USART_CR1_RE);
 
-        switch (id)
-        {
-            case 1:
-                NVIC_DisableIRQ(USART1_IRQn);
-                break;
-            case 2:
-                NVIC_DisableIRQ(USART2_IRQn);
-                break;
-            case 3:
-                NVIC_DisableIRQ(USART3_IRQn);
-                break;
-        }
+        // disabling the interrupt of the serial port
+        NVIC_DisableIRQ(irqn);
     }
 }
 
 bool USART::init()
 {
-    if (id > 3 || id < 1)
+    if (id < 1 || id > MAX_SERIAL_PORTS || !pinInitialized)
     {
         return false;
     }
@@ -255,36 +421,9 @@ bool USART::init()
         // sample only one bit
         usart->CR3 |= USART_CR3_ONEBIT;
 
-        switch (id)
-        {
-            case 1:
-                // Lowest priority for serial
-                NVIC_SetPriority(USART1_IRQn, 15);
-                NVIC_EnableIRQ(USART1_IRQn);
-                u1tx::getPin().mode(miosix::Mode::ALTERNATE);
-                u1rx::getPin().mode(miosix::Mode::ALTERNATE);
-                u1tx::alternateFunction(7);
-                u1rx::alternateFunction(7);
-                break;
-            case 2:
-                // Lowest priority for serial
-                NVIC_SetPriority(USART2_IRQn, 15);
-                NVIC_EnableIRQ(USART2_IRQn);
-                u2tx::getPin().mode(miosix::Mode::ALTERNATE);
-                u2rx::getPin().mode(miosix::Mode::ALTERNATE);
-                u2tx::alternateFunction(7);
-                u2rx::alternateFunction(7);
-                break;
-            case 3:
-                // Lowest priority for serials
-                NVIC_SetPriority(USART3_IRQn, 15);
-                NVIC_EnableIRQ(USART3_IRQn);
-                u3tx::getPin().mode(miosix::Mode::ALTERNATE);
-                u3rx::getPin().mode(miosix::Mode::ALTERNATE);
-                u3tx::alternateFunction(7);
-                u3rx::alternateFunction(7);
-                break;
-        }
+        // enabling the interrupt for the relative serial port
+        NVIC_SetPriority(irqn, 15);
+        NVIC_EnableIRQ(irqn);
 
         // add to the array of usarts so that the interrupts can see it
         USART::ports[id - 1] = this;
@@ -294,6 +433,26 @@ bool USART::init()
     miosix::Thread::sleep(1);
     this->clearQueue();
 
+    return true;
+}
+
+bool USART::initPins(miosix::GpioPin tx, int nAFtx, miosix::GpioPin rx,
+                     int nAFrx)
+{
+    if (pinInitialized)
+    {
+        return false;
+    }
+
+    miosix::FastInterruptDisableLock dLock;
+
+    tx.mode(miosix::Mode::ALTERNATE);
+    tx.alternateFunction(nAFtx);
+
+    rx.mode(miosix::Mode::ALTERNATE);
+    rx.alternateFunction(nAFrx);
+
+    pinInitialized = true;
     return true;
 }
 

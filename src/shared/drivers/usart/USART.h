@@ -157,10 +157,19 @@ public:
      * @brief initializes the peripheral enabling his interrupts, enabling the
      * interrupts in the NVIC and setting the pins with the appropriate
      * alternate functions. All the setup phase must be done before the
-     * initialization of the peripheral. Initializes also the serial port using
-     * the chosen pins.
+     * initialization of the peripheral. The pins must be initialized before
+     * calling this function.
      */
     bool init();
+
+    /**
+     * @brief initializes the pins with the appropriate alternate functions
+     * @param tx trasmission pin
+     * @param nAFtx trasmission pin alternate function
+     * @param rx reception pin
+     * @param nAFrx reception pin alternate function
+     */
+    bool initPins(miosix::GpioPin tx, int nAFtx, miosix::GpioPin rx, int nAFrx);
 
     /**
      * @brief Blocking read operation to read nBytes or till the data transfer
@@ -217,9 +226,11 @@ public:
     void clearQueue();
 
     /// Pointer to serial port classes to let interrupts access the classes
-    static USART *ports[3];
+    static USART *ports[];
 
 private:
+    bool pinInitialized = false;
+    IRQn_Type irqn;
     miosix::FastMutex rxMutex;  ///< mutex for receiving on serial
     miosix::FastMutex txMutex;  ///< mutex for transmitting on serial
     miosix::Thread *rxWaiting =
