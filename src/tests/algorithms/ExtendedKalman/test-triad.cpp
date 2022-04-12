@@ -20,25 +20,23 @@
  * THE SOFTWARE.
  */
 
-#include <algorithms/ExtendedKalman/ExtendedKalman.h>
+#include <algorithms/ExtendedKalman/StateInitializer.h>
 #include <miosix.h>
 #include <sensors/BMX160/BMX160.h>
 #include <sensors/LIS3MDL/LIS3MDL.h>
 #include <sensors/SensorManager.h>
-#include <utils/SkyQuaternion/SkyQuaternion.h>
 
+#include <cmath>
 #include <iostream>
 
 using namespace miosix;
 using namespace Boardcore;
 using namespace Eigen;
 
-ExtendedKalmanConfig getEKConfig();
-void setInitialOrientation();
 void bmxInit();
 void bmxCallback();
 
-ExtendedKalman* kalman;
+Vector3f nedMag = Vector3f(0.0812241, -0.963085, 0.256649);
 
 SPIBus spi1(SPI1);
 BMX160* bmx160 = nullptr;
@@ -51,53 +49,10 @@ int main()
     bmxInit();
 
     sensorManager = new SensorManager(sensorsMap);
-    kalman        = new ExtendedKalman(getEKConfig());
-    setInitialOrientation();
-
     sensorManager->start();
 
     while (true)
         Thread::sleep(1000);
-}
-
-ExtendedKalmanConfig getEKConfig()
-{
-    ExtendedKalmanConfig config;
-
-    config.T              = 0.02f;
-    config.SIGMA_BETA     = 0.0001f;
-    config.SIGMA_W        = 0.3f;
-    config.SIGMA_MAG      = 0.05f;
-    config.SIGMA_GPS      = 10.0f;
-    config.SIGMA_BAR      = 4.3f;
-    config.SIGMA_POS      = 10.0;
-    config.SIGMA_VEL      = 10.0;
-    config.P_POS          = 1.0f;
-    config.P_POS_VERTICAL = 10.0f;
-    config.P_VEL          = 1.0f;
-    config.P_VEL_VERTICAL = 10.0f;
-    config.P_ATT          = 0.01f;
-    config.P_BIAS         = 0.01f;
-    config.SATS_NUM       = 6.0f;
-
-    // Normalized magnetic field in Milan
-    config.NED_MAG = Vector3f(0.0812241, -0.963085, 0.256649);
-
-    return config;
-}
-
-void setInitialOrientation()
-{
-    Eigen::Matrix<float, 13, 1> x;
-
-    // Set quaternions
-    Eigen::Vector4f q = SkyQuaternion::eul2quat({0, 0, 0});
-    x(6)              = q(0);
-    x(7)              = q(1);
-    x(8)              = q(2);
-    x(9)              = q(3);
-
-    kalman->setX(x);
 }
 
 void bmxInit()
@@ -134,29 +89,24 @@ void bmxCallback()
 {
     auto data = bmx160->getLastSample();
 
-    // Predict step
-    Vector3f angularVelocity(data.angularVelocityX, data.angularVelocityY,
-                             data.angularVelocityZ);
-    kalman->predictMEKF(angularVelocity);
+    Vector3f acceleration(data.accelerationX, data.accelerationY,
+                          data.accelerationZ);
+    Vector3f magneticField(data.magneticFieldX, data.magneticFieldY,
+                           data.magneticFieldZ);
 
-    // Correct ster
-    {
-        Vector3f magneticField(data.magneticFieldX, data.magneticFieldY,
-                               data.magneticFieldZ);
+    // Apply magnetometer correction
+    Vector3f b{21.0730033648425, -24.3997259703105, -2.32621524742862};
+    Matrix3f A{{0.659926504672263, 0, 0},
+               {0, 0.662442130094073, 0},
+               {0, 0, 2.28747567094359}};
+    magneticField = (magneticField - b).transpose() * A;
 
-        // Apply correction
-        Vector3f b{-0.41624041, 0.45523345, 0.08584968};
-        Matrix3f A{{1.06120306, 0.07064581, -0.00367332},
-                   {0.07064581, 0.99640889, -0.00599803},
-                   {-0.00367332, -0.00599803, 0.95025392}};
-        magneticField = (magneticField - b).transpose() * A;
+    // Use triad
+    StateInitializer state;
+    state.triad(acceleration, magneticField, nedMag);
 
-        magneticField.normalize();
-        kalman->correctMEKF(magneticField);
-    }
-
-    auto kalmanState = kalman->getState();
-
-    printf("w%fwa%fab%fbc%fc\n", kalmanState(9), kalmanState(6), kalmanState(7),
-           kalmanState(8));
+    auto kalmanState = state.getInitX();
+    if (!std::isnan(kalmanState(9)))
+        printf("w%fwa%fab%fbc%fc\n", kalmanState(9), kalmanState(6),
+               kalmanState(7), kalmanState(8));
 }

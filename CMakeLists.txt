@@ -113,11 +113,14 @@ sbs_catch_test(catch-tests-boardcore)
 add_executable(test-kalman-eigen-benchmark src/tests/algorithms/kalman/test-kalman-eigen-benchmark.cpp)
 sbs_target(test-kalman-eigen-benchmark stm32f429zi_stm32f4discovery)
 
-add_executable(test-ekf src/tests/algorithms/kalman/test-ekf.cpp)
+add_executable(test-ekf src/tests/algorithms/ExtendedKalman/test-ekf.cpp)
 sbs_target(test-ekf stm32f429zi_skyward_death_stack_x)
 
-add_executable(test-ekf-with-logs src/tests/algorithms/kalman/test-ekf-with-logs.cpp)
+add_executable(test-ekf-with-logs src/tests/algorithms/ExtendedKalman/test-ekf-with-logs.cpp)
 sbs_target(test-ekf-with-logs stm32f429zi_skyward_death_stack_x)
+
+add_executable(test-triad src/tests/algorithms/ExtendedKalman/test-triad.cpp)
+sbs_target(test-triad stm32f429zi_skyward_death_stack_x)
 
 #-----------------------------------------------------------------------------#
 #                               Tests - Drivers                               #

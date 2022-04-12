@@ -45,7 +45,6 @@ namespace Boardcore
  */
 class StateInitializer
 {
-
 public:
     /**
      * @brief Initialize the state of the Extended Kalman Filter.
@@ -78,8 +77,8 @@ public:
      * @param mag 3x1 magnetometer readings [x y z][uT].
      * @param nedMag 3x1 magnetometer readings [x y z][uT].
      */
-    const void triad(Eigen::Vector3f& acc, Eigen::Vector3f& mag,
-                     Eigen::Vector3f& nedMag);
+    void triad(Eigen::Vector3f& acc, Eigen::Vector3f& mag,
+               Eigen::Vector3f& nedMag);
 
     /**
      * @brief Initialization of the position at a specific altitude
@@ -127,7 +126,7 @@ void StateInitializer::eCompass(const Eigen::Vector3f acc,
     x_init(ExtendedKalman::NL + 3) = x_quat(3);
 }
 
-const void StateInitializer::triad(Eigen::Vector3f& acc, Eigen::Vector3f& mag,
+void StateInitializer::triad(Eigen::Vector3f& acc, Eigen::Vector3f& mag,
                                    Eigen::Vector3f& nedMag)
 {
     // Prepare the graviti vector in NED frame
