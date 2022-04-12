@@ -127,10 +127,10 @@ void StateInitializer::eCompass(const Eigen::Vector3f acc,
 }
 
 void StateInitializer::triad(Eigen::Vector3f& acc, Eigen::Vector3f& mag,
-                                   Eigen::Vector3f& nedMag)
+                             Eigen::Vector3f& nedMag)
 {
-    // Prepare the graviti vector in NED frame
-    Eigen::Vector3f gravityNed(0.0F, 0.0F, Constants::g);
+    // Prepare the gravity vector in NED frame
+    Eigen::Vector3f gravityNed(0.0F, 0.0F, -Constants::g);
 
     Eigen::Vector3f R1 = gravityNed;
     R1.normalize();

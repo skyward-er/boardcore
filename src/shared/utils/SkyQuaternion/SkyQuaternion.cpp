@@ -100,42 +100,60 @@ Vector4f rotationMatrix2quat(Matrix3f rtm)
     float qw;
 
     float tr = r11 + r22 + r33;
-    float r  = sqrt(1 + tr);
 
-    if (r32 - r23 > 0)
-        qx = 0.5 * sqrt(1 + r11 - r22 - r33);
-    else if (r32 - r23 < 0)
-        qx = -0.5 * sqrt(1 + r11 - r22 - r33);
-    else
-        qx = 0;
-
-    if (r13 - r31 > 0)
-        qy = 0.5 * sqrt(1 - r11 + r22 - r33);
-    else if (r13 - r31 < 0)
-        qy = -0.5 * sqrt(1 - r11 + r22 - r33);
-    else
-        qy = 0;
-
-    if (r21 - r12 > 0)
-        qz = 0.5 * sqrt(1 - r11 - r22 + r33);
-    else if (r21 - r12 < 0)
-        qz = -0.5 * sqrt(1 - r11 - r22 + r33);
-    else
-        qz = 0;
-
-    qw = 0.5 * r;
-
-    if (qw < 0)
+    if (tr > 0)
     {
-        qx = -qx;
-        qy = -qy;
-        qz = -qz;
-        qw = -qw;
+        float sqtrp1 = sqrt(1 + tr);
+
+        qx = (r23 - r32) / (2.0 * sqtrp1);
+        qy = (r31 - r13) / (2.0 * sqtrp1);
+        qz = (r12 - r21) / (2.0 * sqtrp1);
+        qw = 0.5 * sqtrp1;
+    }
+    else
+    {
+        if ((r22 > r11) && (r22 > r33))
+        {
+            float sqdip1 = sqrt(r22 - r11 - r33 + 1.0);
+
+            qy = 0.5 * sqdip1;
+
+            if (sqdip1 != 0)
+                sqdip1 = 0.5 / sqdip1;
+
+            qx = (r12 + r21) * sqdip1;
+            qz = (r23 + r32) * sqdip1;
+            qw = (r31 - r13) * sqdip1;
+        }
+        else if (r33 > r11)
+        {
+            float sqdip1 = sqrt(r33 - r11 - r22 + 1.0);
+
+            qz = 0.5 * sqdip1;
+
+            if (sqdip1 != 0)
+                sqdip1 = 0.5 / sqdip1;
+
+            qx = (r31 + r13) * sqdip1;
+            qy = (r23 + r32) * sqdip1;
+            qw = (r12 - r21) * sqdip1;
+        }
+        else
+        {
+            float sqdip1 = sqrt(r11 - r22 - r33 + 1.0);
+
+            qx = 0.5 * sqdip1;
+
+            if (sqdip1 != 0)
+                sqdip1 = 0.5 / sqdip1;
+
+            qy = (r12 + r21) * sqdip1;
+            qz = (r31 + r13) * sqdip1;
+            qw = (r23 - r32) * sqdip1;
+        }
     }
 
-    Vector4f quat(qx, qy, qz, qw);
-
-    return quat / quat.norm();
+    return Vector4f(qx, qy, qz, qw);
 }
 
 bool quatNormalize(Vector4f& quat)
