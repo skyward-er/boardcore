@@ -90,18 +90,15 @@ public:
     void positionInit(const float pressure, const float pressureRef,
                       const float temperatureRef);
 
-    Eigen::Matrix<float, ExtendedKalman::N, 1> getInitX();
+    Eigen::Matrix<float, 13, 1> getInitX();
 
 private:
-    Eigen::Matrix<float, ExtendedKalman::N, 1> x_init;
+    Eigen::Matrix<float, 13, 1> x_init;
 
     PrintLogger log = Logging::getLogger("initstates");
 };
 
-StateInitializer::StateInitializer()
-{
-    x_init << Eigen::MatrixXf::Zero(ExtendedKalman::N, 1);
-}
+StateInitializer::StateInitializer() { x_init << Eigen::MatrixXf::Zero(13, 1); }
 
 void StateInitializer::eCompass(const Eigen::Vector3f acc,
                                 const Eigen::Vector3f mag)
@@ -120,10 +117,10 @@ void StateInitializer::eCompass(const Eigen::Vector3f acc,
 
     Eigen::Vector4f x_quat = SkyQuaternion::rotationMatrix2quat(R);
 
-    x_init(ExtendedKalman::NL)     = x_quat(0);
-    x_init(ExtendedKalman::NL + 1) = x_quat(1);
-    x_init(ExtendedKalman::NL + 2) = x_quat(2);
-    x_init(ExtendedKalman::NL + 3) = x_quat(3);
+    x_init(ExtendedKalman::IDX_QUAT)     = x_quat(0);
+    x_init(ExtendedKalman::IDX_QUAT + 1) = x_quat(1);
+    x_init(ExtendedKalman::IDX_QUAT + 2) = x_quat(2);
+    x_init(ExtendedKalman::IDX_QUAT + 3) = x_quat(3);
 }
 
 void StateInitializer::triad(Eigen::Vector3f& acc, Eigen::Vector3f& mag,
@@ -154,10 +151,10 @@ void StateInitializer::triad(Eigen::Vector3f& acc, Eigen::Vector3f& mag,
 
     Eigen::Vector4f q = SkyQuaternion::rotationMatrix2quat(dcm);
 
-    x_init(ExtendedKalman::NL)     = q(0);
-    x_init(ExtendedKalman::NL + 1) = q(1);
-    x_init(ExtendedKalman::NL + 2) = q(2);
-    x_init(ExtendedKalman::NL + 3) = q(3);
+    x_init(ExtendedKalman::IDX_QUAT)     = q(0);
+    x_init(ExtendedKalman::IDX_QUAT + 1) = q(1);
+    x_init(ExtendedKalman::IDX_QUAT + 2) = q(2);
+    x_init(ExtendedKalman::IDX_QUAT + 3) = q(3);
 }
 
 void StateInitializer::positionInit(const float pressure,
@@ -170,9 +167,6 @@ void StateInitializer::positionInit(const float pressure,
     x_init(2) = -Aeroutils::relAltitude(pressure, pressureRef, temperatureRef);
 }
 
-Eigen::Matrix<float, ExtendedKalman::N, 1> StateInitializer::getInitX()
-{
-    return x_init;
-}
+Eigen::Matrix<float, 13, 1> StateInitializer::getInitX() { return x_init; }
 
 }  // namespace Boardcore

@@ -145,12 +145,12 @@ void updateKalman(BMX160Data data)
                              data.angularVelocityZ);
     std::cout << "Angular velocity" << std::endl;
     std::cout << angularVelocity.transpose() << std::endl;
-    kalman->predictMEKF(angularVelocity);
+    kalman->predictGyro(angularVelocity);
 
     Vector3f magneticField(data.magneticFieldX, data.magneticFieldY,
                            data.magneticFieldZ);
     magneticField.normalize();
-    kalman->correctMEKF(magneticField);
+    kalman->correctMag(magneticField);
 }
 
 void printState()

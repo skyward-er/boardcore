@@ -22,7 +22,6 @@
 
 #include "ExtendedKalman.h"
 
-#include <utils/Constants.h>
 #include <utils/SkyQuaternion/SkyQuaternion.h>
 
 using namespace Boardcore;
@@ -33,274 +32,238 @@ namespace Boardcore
 
 ExtendedKalman::ExtendedKalman(ExtendedKalmanConfig config) : config(config)
 {
-    eye6.setIdentity();
-    eye4.setIdentity();
-    eye3.setIdentity();
-    eye2.setIdentity();
+    // Initialize magnetometer utility matix
+    R_mag << config.SIGMA_MAG * Matrix3f::Identity();
 
-    // clang-format off
+    // Initialize GPS utility matixes
+    H_gps                = Matrix<float, 4, 6>::Identity();
+    H_gps.coeffRef(2, 2) = 0;
+    H_gps.coeffRef(5, 5) = 0;
+    H_gps_tr             = H_gps.transpose();
+    R_gps << config.SIGMA_GPS * Matrix<float, 4, 4>::Identity();
 
-    R_bar << config.SIGMA_BAR;
-    R_mag << config.SIGMA_MAG * eye3;
-    R_gps << eye4 * config.SIGMA_GPS / config.SATS_NUM;
+    // TODO: Review
+
     Q_mag << (config.SIGMA_W * config.SIGMA_W * config.T +
-              (1.0F / 3.0F) * config.SIGMA_BETA * config.SIGMA_BETA * config.T * config.T * config.T) *
-                 eye3,
-        (0.5F * config.SIGMA_BETA * config.SIGMA_BETA * config.T * config.T) * eye3,
-        // cppcheck-suppress constStatement
-        (0.5F * config.SIGMA_BETA * config.SIGMA_BETA * config.T * config.T) * eye3,
-        (config.SIGMA_BETA * config.SIGMA_BETA * config.T) * eye3;
+              (1.0f / 3.0f) * config.SIGMA_BETA * config.SIGMA_BETA * config.T *
+                  config.T * config.T) *
+                 Matrix3f::Identity(),
+        (0.5F * config.SIGMA_BETA * config.SIGMA_BETA * config.T * config.T) *
+            Matrix3f::Identity(),
+        (0.5F * config.SIGMA_BETA * config.SIGMA_BETA * config.T * config.T) *
+            // cppcheck-suppress constStatement
+            Matrix3f::Identity(),
+        (config.SIGMA_BETA * config.SIGMA_BETA * config.T) *
+            Matrix3f::Identity();
 
-    P_pos << config.P_POS, 0,     0,
-             0,    config.P_POS, 0,
-             0,     0,     config.P_POS_VERTICAL;
-    P_vel << config.P_VEL, 0,     0,
-             0,     config.P_VEL, 0,
-             0,     0,     config.P_VEL_VERTICAL;
-    P_att  = eye3 * config.P_ATT;
-    P_bias = eye3 * config.P_BIAS;
-    P << P_pos, Eigen::MatrixXf::Zero(3, N - 4), Eigen::MatrixXf::Zero(3, 3), P_vel,
-        Eigen::MatrixXf::Zero(3, N - 7), Eigen::MatrixXf::Zero(3, 6), P_att,
+    Eigen::Matrix3f P_pos{{config.P_POS, 0, 0},
+                          {0, config.P_POS, 0},
+                          {0, 0, config.P_POS_VERTICAL}};
+    Eigen::Matrix3f P_vel{{config.P_VEL, 0, 0},
+                          {0, config.P_VEL, 0},
+                          {0, 0, config.P_VEL_VERTICAL}};
+    Eigen::Matrix3f P_att  = Matrix3f::Identity() * config.P_ATT;
+    Eigen::Matrix3f P_bias = Matrix3f::Identity() * config.P_BIAS;
+    P << P_pos, MatrixXf::Zero(3, 13 - 4), MatrixXf::Zero(3, 3), P_vel,
+        MatrixXf::Zero(3, 13 - 7), MatrixXf::Zero(3, 6), P_att,
         // cppcheck-suppress constStatement
-        Eigen::MatrixXf::Zero(3, N - 10), Eigen::MatrixXf::Zero(3, 9), P_bias;
+        MatrixXf::Zero(3, 13 - 10), MatrixXf::Zero(3, 9), P_bias;
 
-    Q_pos = eye3 * config.SIGMA_POS;
-    Q_vel = eye3 * config.SIGMA_VEL;
+    Eigen::Matrix3f Q_pos = Matrix3f::Identity() * config.SIGMA_POS;
+    Eigen::Matrix3f Q_vel = Matrix3f::Identity() * config.SIGMA_VEL;
     // cppcheck-suppress constStatement
-    Q_lin << Q_pos, Eigen::MatrixXf::Zero(3, NL - 3), Eigen::MatrixXf::Zero(3, 3), Q_vel;
+    Q_lin << Q_pos, MatrixXf::Zero(3, 6 - 3), MatrixXf::Zero(3, 3), Q_vel;
 
-    F << 0.0F, 0.0F, 0.0F, 1.0F, 0.0F, 0.0F,
-         0.0F, 0.0F, 0.0F, 0.0F, 1.0F, 0.0F,
-         0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 1.0F,
-         Eigen::MatrixXf::Zero(3, NL);
-    F   = eye6 + config.T * F;
+    F << 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f,
+        0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, MatrixXf::Zero(3, 6);
+    F   = Matrix<float, 6, 6>::Identity() + config.T * F;
     Ftr = F.transpose();
 
-    H_gps << 1.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F,
-             0.0F, 1.0F, 0.0F, 0.0F, 0.0F, 0.0F,
-             0.0F, 0.0F, 0.0F, 1.0F, 0.0F, 0.0F,
-             // cppcheck-suppress constStatement
-             0.0F, 0.0F, 0.0F, 0.0F, 1.0F, 0.0F;
-    H_gpstr = H_gps.transpose();
-
-    // cppcheck-suppress constStatement
-    Fatt << -eye3, -eye3 * config.T, Eigen::Matrix3f::Zero(3, 3), eye3;
+    Fatt << -Matrix3f::Identity(), -Matrix3f::Identity() * config.T,
+        Matrix3f::Zero(3, 3), Matrix3f::Identity();
     Fatttr = Fatt.transpose();
 
-    Gatt << -eye3, Eigen::Matrix3f::Zero(3, 3),
-            // cppcheck-suppress constStatement
-            Eigen::Matrix3f::Zero(3, 3), eye3;
+    Gatt << -Matrix3f::Identity(), Matrix3f::Zero(3, 3), Matrix3f::Zero(3, 3),
+        Matrix3f::Identity();
     Gatttr = Gatt.transpose();
 
-    g << 0.0F, 0.0F, Constants::g; // [m/s^2]
+    gravityNed << 0.0f, 0.0f, Constants::g;  // [m/s^2]
+}
 
+void ExtendedKalman::predictAcc(const Vector3f& acceleration)
+{
+    Matrix3f A   = body2ned(x.block<4, 1>(IDX_QUAT, 0));
+    Vector3f pos = x.block<3, 1>(IDX_POS, 0);
+    Vector3f vel = x.block<3, 1>(IDX_VEL, 0);
+
+    // Update position by integrating the velocity
+    pos = pos + vel * config.T;
+
+    // Measured acceleration in NED frame with added gravity
+    Vector3f a = A.transpose() * acceleration + gravityNed;
+
+    // Update velocity by integrating the acceleration
+    vel = vel + a * config.T;
+
+    // Save the updated state
+    x.block<3, 1>(IDX_POS, 0) = pos;
+    x.block<3, 1>(IDX_VEL, 0) = vel;
+
+    // Variance propagation
+    // TODO: Review
+    Eigen::Matrix<float, 6, 6> Plin = P.block<6, 6>(0, 0);
+    P.block<6, 6>(0, 0)             = F * Plin * Ftr + Q_lin;
+}
+
+void ExtendedKalman::predictGyro(const Vector3f& angularVelocity)
+{
+    Vector3f bias = x.block<3, 1>(IDX_BIAS, 0);
+    Vector4f q    = x.block<4, 1>(IDX_QUAT, 0);
+
+    Vector3f omega = angularVelocity - bias;
+    // clang-format off
+    Matrix4f omega_mat{
+        { 0.0f,      omega(2), -omega(1), omega(0)},
+        {-omega(2),  0.0f,      omega(0), omega(1)},
+        { omega(1), -omega(0),  0.0f,     omega(2)},
+        {-omega(0), -omega(1), -omega(2), 0.0f}
+    };
     // clang-format on
-}
 
-void ExtendedKalman::predict(const Eigen::Vector3f& u)
-{
-    Eigen::Matrix3f A;
-    Eigen::Vector3f a;
-    VectorNf x_dot;
-
-    Plin                  = P.block<NL, NL>(0, 0);
-    P.block<NL, NL>(0, 0) = F * Plin * Ftr + Q_lin;
-
-    float q1 =
-        x(NL);  // Since the index begins from 0, the first quaternion
-                // component will be at index  = # linear states before itself
-    float q2 = x(NL + 1);
-    float q3 = x(NL + 2);
-    float q4 = x(NL + 3);
-
-    A << powf(q1, 2) - powf(q2, 2) - powf(q3, 2) + powf(q4, 2),
-        2.0F * q1 * q2 + 2.0F * q3 * q4, 2.0F * q1 * q3 - 2.0F * q2 * q4,
-        2.0F * q1 * q2 - 2.0F * q3 * q4,
-        -powf(q1, 2) + powf(q2, 2) - powf(q3, 2) + powf(q4, 2),
-        2.0F * q2 * q3 + 2.0F * q1 * q4, 2.0F * q1 * q3 + 2.0F * q2 * q4,
-        // cppcheck-suppress constStatement
-        2.0F * q2 * q3 - 2.0F * q1 * q4,
-        -powf(q1, 2) - powf(q2, 2) + powf(q3, 2) + powf(q4, 2);
-
-    a = A.transpose() * u +
-        g;  // Real accelerometers don't measure g during the flight
-
-    x_dot << x(3), x(4), x(5), a,
-        Eigen::MatrixXf::Zero(
-            NATT,
-            1);  // The quaternions and the biases don't need to be updated
-
-    x = x + config.T * x_dot;
-}
-
-void ExtendedKalman::correctBaro(const float y, const float msl_press,
-                                 const float msl_temp)
-{
-    Matrix<float, NL, NBAR> K_bar;
-    Matrix<float, NBAR, NL> H_bar;
-    Matrix<float, NBAR, NBAR> S_bar;
-
-    Plin = P.block<NL, NL>(0, 0);
-
-    // temperature at current altitude :
-    // since x(2) (altitude) is negative, mslTemperature returns temperature at
-    // current altitude and not at mean sea level
-    float temp = Aeroutils::mslTemperature(msl_temp, x(2));
-
-    // compute gradient of the altitude-pressure function
-    float dp_dx = Constants::a * Constants::n * msl_press *
-                  powf(1 - Constants::a * x(2) / temp, -Constants::n - 1) /
-                  temp;
-
-    H_bar << 0.0F, 0.0F, dp_dx,
-        Eigen::MatrixXf::Zero(1, N - 3 - NATT);  // Gradient of h_bar
-
-    S_bar = H_bar * Plin * H_bar.transpose() + R_bar;
-
-    K_bar = Plin * H_bar.transpose() * S_bar.inverse();
-
-    P.block<NL, NL>(0, 0) = (eye6 - K_bar * H_bar) * Plin;
-
-    float y_hat = Aeroutils::mslPressure(msl_press, msl_temp, x(2));
-
-    x.head(NL) = x.head(NL) + K_bar * (y - y_hat);
-
-    // float res_bar = y - h_bar;
-}
-
-void ExtendedKalman::correctGPS(const Vector4f& y, const uint8_t sats_num)
-{
-    Matrix<float, NGPS, 1> h_gps;
-    Matrix<float, NL, NGPS> K_gps;
-    Matrix<float, NGPS, 1> res_gps;
-    Matrix<float, NGPS, NGPS> S_gps;
-
-    float xnord   = y(0);
-    float yest    = y(1);
-    float velnord = y(2);
-    float velest  = y(3);
-
-    Matrix<float, NGPS, 1> yned(xnord, yest, velnord, velest);
-
-    R_gps = eye4 * config.SIGMA_GPS / sqrtf(sats_num);
-
-    Plin = P.block<NL, NL>(0, 0);
-
-    S_gps = H_gps * Plin * H_gpstr + R_gps;
-
-    K_gps = Plin * H_gpstr * S_gps.inverse();
-
-    P.block<NL, NL>(0, 0) = (eye6 - K_gps * H_gps) * Plin;
-
-    h_gps << x(0), x(1), x(3), x(4);
-
-    x.head(NL) = x.head(NL) + K_gps * (yned - h_gps);
-
-    res_gps = y - h_gps;
-}
-
-const VectorNf& ExtendedKalman::getState() { return x; }
-
-void ExtendedKalman::setX(const VectorNf& x) { this->x = x; }
-
-/*
-    MULTIPLICATIVE EXTENDED KALMAN FILTER
-*/
-void ExtendedKalman::predictMEKF(const Eigen::Vector3f& u)
-{
-    Eigen::Vector3f omega;
-    Eigen::Vector3f prev_bias;
-    Matrix4f omega_mat;
-    Eigen::Matrix3f omega_submat;
-
-    q << x(NL), x(NL + 1), x(NL + 2), x(NL + 3);
-    prev_bias << x(NL + 4), x(NL + 5), x(NL + 6);
-
-    omega = u - prev_bias;
-
-    omega_submat << 0.0F, -omega(2), omega(1), omega(2), 0.0F, -omega(0),
-        // cppcheck-suppress constStatement
-        -omega(1), omega(0), 0.0F;
-
-    // cppcheck-suppress constStatement
-    omega_mat << -omega_submat, omega, -omega.transpose(), 0.0F;
-
-    q = (eye4 + 0.5F * omega_mat * config.T) * q;
+    // Update orientation by integrating the angular velocity
+    q = (Matrix4f::Identity() + 0.5F * omega_mat * config.T) * q;
     q.normalize();
 
-    // cppcheck-suppress constStatement
-    x.tail(NATT) << q, prev_bias;
+    // Save the updated state
+    x.block<4, 1>(IDX_QUAT, 0) = q;
 
-    Patt = P.block<NMEKF, NMEKF>(
-        NL, NL);  // The block of P related to the attitude starts at (NL, NL)
-                  // because the index starts from 0. The block is of size
-                  // NMEKF x NMEKF.
-    P.block<NMEKF, NMEKF>(NL, NL) =
-        Fatt * Patt * Fatttr +
-        Gatt * Q_mag * Gatttr;  // Update only the attitude related part of P
+    // Variance propagation
+    // TODO: Review
+    Patt = P.block<6, 6>(IDX_QUAT, IDX_QUAT);
+    P.block<6, 6>(IDX_QUAT, IDX_QUAT) =
+        Fatt * Patt * Fatttr + Gatt * Q_mag * Gatttr;
 }
 
-void ExtendedKalman::correctMEKF(const Eigen::Vector3f& y)
+void ExtendedKalman::correctBaro(const float pressure, const float mslPress,
+                                 const float mslTemp)
 {
-    Eigen::Matrix3f A;
-    Eigen::Vector3f z;
+    Matrix<float, 1, 6> H = Matrix<float, 1, 6>::Zero();
+
+    // Temperature at current altitude. Since in NED the altitude is negative,
+    // mslTemperature returns temperature at current altitude and not at msl
+    float temp = Aeroutils::mslTemperature(mslTemp, x(2));
+
+    // Compute gradient of the altitude-pressure function
+    H[2] = Constants::a * Constants::n * mslPress *
+           powf(1 - Constants::a * x(2) / temp, -Constants::n - 1) / temp;
+
+    Eigen::Matrix<float, 6, 6> Pl = P.block<6, 6>(0, 0);
+    Matrix<float, 1, 1> S =
+        H * Pl * H.transpose() + Matrix<float, 1, 1>(config.SIGMA_BAR);
+    Matrix<float, 6, 1> K = Pl * H.transpose() * S.inverse();
+    P.block<6, 6>(0, 0)   = (Matrix<float, 6, 6>::Identity() - K * H) * Pl;
+
+    float y_hat = Aeroutils::mslPressure(mslPress, mslTemp, x(2));
+
+    // Update the state
+    x.head<6>() = x.head<6>() + K * (pressure - y_hat);
+}
+
+void ExtendedKalman::correctGPS(const Vector4f& gps, const uint8_t sats_num)
+{
+    Eigen::Matrix<float, 6, 6> Pl = P.block<6, 6>(0, 0);
+
+    Matrix<float, 4, 4> S = H_gps * Pl * H_gps_tr + R_gps;
+    Matrix<float, 6, 4> K = Pl * H_gps_tr * S.inverse();
+
+    P.block<6, 6>(0, 0) =
+        (Eigen::Matrix<float, 6, 6>::Identity() - K * H_gps) * Pl;
+
+    // Current state [n e vn ve]
+    Matrix<float, 4, 1> H{x(0), x(1), x(3), x(4)};
+
+    // Update the state
+    x.head<6>() = x.head<6>() + K * (gps - H);
+}
+
+void ExtendedKalman::correctMag(const Vector3f& mag)
+{
+    Vector4f q = x.block<4, 1>(IDX_QUAT, 0);
+    Matrix3f A = body2ned(q);
+
+    Vector3f h;  // Magnetormeter in NED
     Vector4f r;
-    Eigen::Matrix3f z_mat;
     Vector4f u_att;
-    Eigen::Vector3f r_sub;
-    Matrix<float, NMAG, NMAG> Satt;
-    Matrix<float, NMAG, NMEKF> Hatt;
-    Matrix<float, NMEKF, NMAG> Katt;
-    Matrix<float, NMEKF, 1> delta_x;
+    Vector3f r_sub;
+    Matrix<float, 3, 3> Satt;
+    Matrix<float, 3, 6> Hatt;
+    Matrix<float, 6, 3> Katt;
+    Matrix<float, 6, 1> delta_x;
 
-    float q1 = x(NL);
-    float q2 = x(NL + 1);
-    float q3 = x(NL + 2);
-    float q4 = x(NL + 3);
+    h = A.transpose() * mag;
 
-    A << powf(q1, 2) - powf(q2, 2) - powf(q3, 2) + powf(q4, 2),
-        2.0F * q1 * q2 + 2.0F * q3 * q4, 2.0F * q1 * q3 - 2.0F * q2 * q4,
-        2.0F * q1 * q2 - 2.0F * q3 * q4,
-        -powf(q1, 2) + powf(q2, 2) - powf(q3, 2) + powf(q4, 2),
-        2.0F * q2 * q3 + 2.0F * q1 * q4, 2.0F * q1 * q3 + 2.0F * q2 * q4,
-        // cppcheck-suppress constStatement
-        2.0F * q2 * q3 - 2.0F * q1 * q4,
-        -powf(q1, 2) - powf(q2, 2) + powf(q3, 2) + powf(q4, 2);
+    Vector3f r_mag{static_cast<float>(sqrt(h(0) * h(0) + h(1) * h(1))), 0,
+                   h(2)};
+    Vector3f mEst = A * r_mag;
 
-    z = A * config.NED_MAG;
+    Matrix3f M{
+        {0, -mEst(2), mEst(1)}, {mEst(2), 0, -mEst(0)}, {-mEst(1), mEst(0), 0}};
 
-    // cppcheck-suppress constStatement
-    z_mat << 0.0F, -z(2), z(1), z(2), 0.0F, -z(0), -z(1), z(0), 0.0F;
+    Hatt << M, Matrix3f::Zero(3, 3);
 
-    Hatt << z_mat, Eigen::Matrix3f::Zero(3, 3);
-
-    Patt = P.block<NMEKF, NMEKF>(NL, NL);
+    Patt = P.block<6, 6>(6, 6);
     Satt = Hatt * Patt * Hatt.transpose() + R_mag;
 
     Katt = Patt * Hatt.transpose() * Satt.inverse();
 
-    delta_x = Katt * (y - z);
+    delta_x = Katt * (mag - mEst);
 
     r_sub << delta_x(0), delta_x(1), delta_x(2);
 
-    r << 0.5F * r_sub, sqrtf(1.0F - 0.25F * r_sub.transpose() * r_sub);
+    r << 0.5F * r_sub, sqrtf(1.0f - 0.25F * r_sub.transpose() * r_sub);
 
-    // cppcheck-suppress constStatement
-    q << q1, q2, q3, q4;
     u_att        = SkyQuaternion::quatProd(r, q);
     float u_norm = u_att.norm();
 
-    x(NL)     = u_att(0) / u_norm;
-    x(NL + 1) = u_att(1) / u_norm;
-    x(NL + 2) = u_att(2) / u_norm;
-    x(NL + 3) = u_att(3) / u_norm;
-    x(NL + 4) = x(NL + 4) + delta_x(3);
-    x(NL + 5) = x(NL + 5) + delta_x(4);
-    x(NL + 6) = x(NL + 6) + delta_x(5);
+    x(6)     = u_att(0) / u_norm;
+    x(6 + 1) = u_att(1) / u_norm;
+    x(6 + 2) = u_att(2) / u_norm;
+    x(6 + 3) = u_att(3) / u_norm;
+    x(6 + 4) = x(6 + 4) + delta_x(3);
+    x(6 + 5) = x(6 + 5) + delta_x(4);
+    x(6 + 6) = x(6 + 6) + delta_x(5);
 
-    P.block<NMEKF, NMEKF>(NL, NL) =
-        (eye6 - Katt * Hatt) * Patt * (eye6 - Katt * Hatt).transpose() +
+    P.block<6, 6>(6, 6) =
+        (Matrix<float, 6, 6>::Identity() - Katt * Hatt) * Patt *
+            (Matrix<float, 6, 6>::Identity() - Katt * Hatt).transpose() +
         Katt * R_mag * Katt.transpose();
+}
+
+Matrix<float, 13, 1> ExtendedKalman::getState() const { return x; }
+
+void ExtendedKalman::setX(const Matrix<float, 13, 1>& x) { this->x = x; }
+
+Matrix3f ExtendedKalman::body2ned(const Vector4f& q)
+{
+    // clang-format off
+    return Matrix3f{
+        {
+            powf(q[0], 2) - powf(q[1], 2) - powf(q[2], 2) + powf(q[3], 2),
+            2.0f * (q[0] * q[1] + q[2] * q[3]),
+            2.0f * (q[0] * q[2] - q[1] * q[3]),
+        },
+        {
+            2.0f * (q[0] * q[1] - q[2] * q[3]),
+            -powf(q[0], 2) + powf(q[1], 2) - powf(q[2], 2) + powf(q[3], 2),
+            2.0f * (q[1] * q[2] + q[0] * q[3]),
+        },
+        {
+            2.0f * (q[0] * q[2] + q[1] * q[3]),
+            2.0f * (q[1] * q[2] - q[0] * q[3]),
+            -powf(q[0], 2) - powf(q[1], 2) + powf(q[2], 2) + powf(q[3], 2)
+        }
+    };
+    // clanf-format on
 }
 
 }  // namespace Boardcore

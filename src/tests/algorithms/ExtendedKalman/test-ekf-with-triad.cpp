@@ -21,6 +21,7 @@
  */
 
 #include <algorithms/ExtendedKalman/ExtendedKalman.h>
+#include <algorithms/ExtendedKalman/StateInitializer.h>
 #include <miosix.h>
 #include <sensors/BMX160/BMX160.h>
 #include <sensors/LIS3MDL/LIS3MDL.h>
@@ -34,10 +35,14 @@ using namespace Boardcore;
 using namespace Eigen;
 
 ExtendedKalmanConfig getEKConfig();
-void setInitialOrientation();
 void bmxInit();
 void bmxCallback();
 
+constexpr uint64_t CALIBRATION_TIMEOUT = 5 * 1e6;
+
+Vector3f nedMag = Vector3f(0.47338841, 0.02656764, 0.88045305);
+
+StateInitializer* stateInitializer;
 ExtendedKalman* kalman;
 
 SPIBus spi1(SPI1);
@@ -50,10 +55,12 @@ int main()
 {
     bmxInit();
 
-    sensorManager = new SensorManager(sensorsMap);
-    kalman        = new ExtendedKalman(getEKConfig());
-    setInitialOrientation();
+    sensorManager    = new SensorManager(sensorsMap);
+    stateInitializer = new StateInitializer();
+    kalman           = new ExtendedKalman(getEKConfig());
 
+    Logger::getInstance().start();
+    TimestampTimer::getInstance().resetTimestamp();
     sensorManager->start();
 
     while (true)
@@ -81,23 +88,9 @@ ExtendedKalmanConfig getEKConfig()
     config.SATS_NUM       = 6.0f;
 
     // Normalized magnetic field in Milan
-    config.NED_MAG = Vector3f(0.0812241, -0.963085, 0.256649);
+    config.NED_MAG = nedMag;
 
     return config;
-}
-
-void setInitialOrientation()
-{
-    Eigen::Matrix<float, 13, 1> x;
-
-    // Set quaternions
-    Eigen::Vector4f q = SkyQuaternion::eul2quat({0, 0, 0});
-    x(6)              = q(0);
-    x(7)              = q(1);
-    x(8)              = q(2);
-    x(9)              = q(3);
-
-    kalman->setX(x);
 }
 
 void bmxInit()
@@ -132,43 +125,69 @@ void bmxInit()
 
 void bmxCallback()
 {
+    static int meanCount    = 0;
+    static bool calibrating = true;
+    static Vector3f accMean = Vector3f::Zero();
+    static Vector3f magMean = Vector3f::Zero();
+
     auto data = bmx160->getLastSample();
+    Vector3f acceleration(data.accelerationX, data.accelerationY,
+                          data.accelerationZ);
+    Vector3f angularVelocity(data.angularVelocityX, data.angularVelocityY,
+                             data.angularVelocityZ);
+    Vector3f magneticField(data.magneticFieldX, data.magneticFieldY,
+                           data.magneticFieldZ);
 
-    // Predict step
+    if (calibrating)
     {
-        Vector3f angularVelocity(data.angularVelocityX, data.angularVelocityY,
-                                 data.angularVelocityZ);
-        Vector3f offset{-1.63512255486542, 3.46523431469979, -3.08516033954451};
-        angularVelocity = angularVelocity - offset;
-        angularVelocity = angularVelocity / 180 * Constants::PI / 10;
-
-        kalman->predictGyro(angularVelocity);
-
-        // printf("%f,%f,%f\n", angularVelocity(0), angularVelocity(1),
-        //        angularVelocity(2));
+        accMean = (accMean * meanCount + acceleration) / (meanCount + 1);
+        magMean = (magMean * meanCount + acceleration) / (meanCount + 1);
+        meanCount++;
     }
-
-    // Correct ster
+    else if (TimestampTimer::getInstance().getTimestamp() > CALIBRATION_TIMEOUT)
     {
-        Vector3f magneticField(data.magneticFieldX, data.magneticFieldY,
-                               data.magneticFieldZ);
+        // Now the calibration has ended, compute and log the kalman state
+        calibrating = false;
 
-        // Apply correction
-        Vector3f b{21.0730033648425, -24.3997259703105, -2.32621524742862};
-        Matrix3f A{{0.659926504672263, 0, 0},
-                   {0, 0.662442130094073, 0},
-                   {0, 0, 2.28747567094359}};
-        magneticField = (magneticField - b).transpose() * A;
+        // Compute the initial kalman state
+        stateInitializer->triad(accMean, magMean, nedMag);
+        kalman->setX(stateInitializer->getInitX());
 
-        magneticField.normalize();
-        kalman->correctMag(magneticField);
+        // Save the state and the IMU data
+        // Logger::getInstance().log(stateInitializer->getInitX());
+        Logger::getInstance().log(data);
 
-        // printf("%f,%f,%f\n", magneticField(0), magneticField(1),
-        //        magneticField(2));
+        // Restart the logger to change log filename
+        Logger::getInstance().stop();
+        Logger::getInstance().start();
     }
+    else
+    {
+        // Predict step
+        {
+            Vector3f offset{-1.63512255486542, 3.46523431469979,
+                            -3.08516033954451};
+            angularVelocity = angularVelocity - offset;
+            angularVelocity = angularVelocity / 180 * Constants::PI / 10;
 
-    auto kalmanState = kalman->getState();
+            kalman->predictGyro(angularVelocity);
+        }
 
-    printf("w%fwa%fab%fbc%fc\n", kalmanState(9), kalmanState(6), kalmanState(7),
-           kalmanState(8));
+        // Correct step
+        {
+            // Apply correction
+            Vector3f b{21.0730033648425, -24.3997259703105, -2.32621524742862};
+            Matrix3f A{{0.659926504672263, 0, 0},
+                       {0, 0.662442130094073, 0},
+                       {0, 0, 2.28747567094359}};
+            magneticField = (magneticField - b).transpose() * A;
+
+            magneticField.normalize();
+            kalman->correctMag(magneticField);
+        }
+
+        auto kalmanState = kalman->getState();
+        printf("w%fwa%fab%fbc%fc\n", kalmanState(9), kalmanState(6),
+               kalmanState(7), kalmanState(8));
+    }
 }

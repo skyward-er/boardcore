@@ -22,34 +22,32 @@
 
 #pragma once
 
-#include <Eigen/Dense>
+#include <Eigen/Core>
 
 namespace Boardcore
 {
 
-struct ExtendedKalmanConfig
+class ExtendedKalmanState
 {
-    float T;           ///< [s] Sample period
-    float SIGMA_BETA;  ///< [rad/s^2] Estimated gyroscope bias variance
-    float SIGMA_W;     ///< [rad^2] Estimated gyroscope variance
-    float SIGMA_MAG;   ///< [uT^2] Estimated magnetometer variance
-    float SIGMA_GPS;   ///< [m^2] Estimated GPS variance
-    float SIGMA_BAR;   ///< [m^2] Estimated altitude variance
-    float SIGMA_POS;   ///< [m^2] Estimated variance of the position noise
-    float SIGMA_VEL;   ///< [(m/s)^2] Estimated variance of teh velocity noise
+    float n, e, d, vn, ve, vd, qx, qy, qz, qw, b1, b2, b3;
 
-    float P_POS;  ///< Position prediction covariance
-    float P_POS_VERTICAL;
+    ExtendedKalmanState(Eigen::Matrix<float, 13, 1> x)
+        : n(x(0)), e(x(1)), d(x(2)), vn(x(3)), ve(x(4)), vd(x(5)), qx(x(6)),
+          qy(x(7)), qz(x(8)), qw(x(9)), b1(x(10)), b2(x(11)), b3(x(12))
+    {
+    }
 
-    float P_VEL;  ///< Velocity prediction covariance
-    float P_VEL_VERTICAL;
+    static std::string header()
+    {
+        return "n,e,d,vn,ve,vd,qx,qy,qz,qw,b1,b2,b3,b4\n";
+    }
 
-    float P_ATT;   ///< Attitude prediction covariance
-    float P_BIAS;  ///< Bias prediction covariance
-
-    float SATS_NUM = 6.0f;  ///< Number of satellites used at setup time
-
-    Eigen::Vector3f NED_MAG;  ///< Normalized magnetic field vector in NED frame
+    void print(std::ostream& os) const
+    {
+        os << (0) << "," << (1) << "," << (2) << "," << (3) << "," << (5) << ","
+           << (5) << "," << (6) << "," << (7) << "," << (8) << "," << (9) << ","
+           << (10) << "," << (11) << "," << (12) << "\n";
+    }
 };
 
 }  // namespace Boardcore

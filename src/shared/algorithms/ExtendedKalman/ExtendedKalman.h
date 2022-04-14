@@ -1,4 +1,4 @@
-/* Copyright (c) 2020 Skyward Experimental Rocketry
+/* Copyright (c) 2020-2022 Skyward Experimental Rocketry
  * Authors: Alessandro Del Duca, Luca Conterio, Marco Cella
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -23,6 +23,7 @@
 #pragma once
 
 #include <utils/AeroUtils/AeroUtils.h>
+#include <utils/Constants.h>
 
 #include <Eigen/Dense>
 
@@ -31,144 +32,112 @@
 namespace Boardcore
 {
 
-using VectorNf = Eigen::Matrix<float, 13, 1>;
-
 class ExtendedKalman
 {
 public:
-    // Dimensions of matrices and vectors
+    ///< Index of position elements in the state.
+    static constexpr uint16_t IDX_POS = 0;
 
-    static constexpr uint16_t N = 13;  ///< State vector elements, N x 1
+    ///< Index of velocity elements in the state.
+    static constexpr uint16_t IDX_VEL = 3;
 
-    /**
-     * @brief P matrix, N-1 x N-1.
-     *
-     * Reduced order thanks to the MEKF.
-     */
-    static constexpr uint16_t NP = N - 1;
+    ///< Index of quaternions elements in the state.
+    static constexpr uint16_t IDX_QUAT = 6;
 
-    /**
-     * @brief Number of attitude related elements.
-     *
-     * Quaternion components and biases: [q1, q2, q3, q4, bx, by, bz]
-     */
-    static constexpr uint16_t NATT = 7;
-
-    /**
-     * @brief Number of linear elements in the state vector.
-     *
-     * Position and velocity: [p_north, p_east, p_down, v_n, v_e, v_d]
-     */
-    static constexpr uint16_t NL = N - NATT;
-
-    ///< States of the barometer [pressure]
-    static constexpr uint16_t NBAR = 1;
-
-    ///< States of the gps [lon, lat, v_north, v_east]
-    static constexpr uint16_t NGPS = 4;
-
-    ///< States of the magnetometer [mx, my, mz]
-    static constexpr uint16_t NMAG = 3;
-
-    /**
-     * @brief Dimension used in the MEKF.
-     *
-     * 4 quaternion components + 3 biases - 1.
-     * The MEKF structure allows us to perform the dimensionality reduction of 1
-     */
-    static constexpr uint16_t NMEKF = 6;
+    ///< Index of bias elements in the state.
+    static constexpr uint16_t IDX_BIAS = 10;
 
     explicit ExtendedKalman(ExtendedKalmanConfig config);
 
     /**
-     * @brief Prediction step of the EKF.
+     * @brief Prediction with accelerometer data.
      *
-     * @param u 3x1 Vector of the accelerometer readings [ax ay az].
+     * @param u Vector with acceleration data [x y z][m/s^2]
      */
-    void predict(const Eigen::Vector3f& u);
+    void predictAcc(const Eigen::Vector3f& acceleration);
 
     /**
-     * @brief EKF correction of the barometer data.
+     * @brief Prediction with gyroscope data.
      *
-     * @param y Pressure read from the barometer [Pa]
-     * @param msl_press Pressure at sea level [Pa]
-     * @param msl_temp Temperature at sea level [Kelvin]
+     * @param u Vector with angular velocity data [x y z]
      */
-    void correctBaro(const float y, const float msl_press,
-                     const float msl_temp);
+    void predictGyro(const Eigen::Vector3f& angularVelocity);
 
     /**
-     * @brief EKF correction of the gps readings.
+     * @brief Correction with barometer data.
      *
-     * @param y 4x1 Vector of the gps readings [longitude, latitude,
-     * gps_nord_vel, gps_east_vel].
+     * @param pressure Pressure read from the barometer [Pa]
+     * @param mslPress Pressure at sea level [Pa]
+     * @param mslTemp Temperature at sea level [Kelvin]
+     */
+    void correctBaro(const float pressure, const float mslPress,
+                     const float mslTemp);
+
+    /**
+     * @brief Correction with gps data.
+     *
+     * @param y 4x1 Vector of the gps readings [n e vn ve][m m m/s m/s]
      * @param sats_num Number of satellites available
      */
-    void correctGPS(const Eigen::Vector4f& y, const uint8_t sats_num);
-
-    /**
-     * @brief Prediction step of the Multiplicative EKF.
-     *
-     * @param u 3x1 Vector of the gyroscope readings [wx wy wz].
-     */
-    void predictMEKF(const Eigen::Vector3f& u);
+    void correctGPS(const Eigen::Vector4f& gps, const uint8_t sats_num);
 
     /**
      * @brief MEKF correction of the magnetometer readings.
      *
-     * @param y 3x1 Vector of the magnetometer readings [mx my mz].
+     * @param y 3x1 Normalized vector of the magnetometer readings [x y z].
      */
-    void correctMEKF(const Eigen::Vector3f& y);
+    void correctMag(const Eigen::Vector3f& y);
 
     /**
-     * @return 13x1 State vector [px py pz vx vy vz qx qy qz qw bx by bz].
+     * @return 13x1 State vector [n e d vn ve vd qx qy qz qw bx by bz].
      */
-    const VectorNf& getState();
+    Eigen::Matrix<float, 13, 1> getState() const;
 
     /**
-     * @param x 13x1 State vector [px py pz vx vy vz qx qy qz qw bx by bz].
+     * @param x 13x1 State vector [n e d vn ve vd qx qy qz qw bx by bz].
      */
-    void setX(const VectorNf& x);
+    void setX(const Eigen::Matrix<float, 13, 1>& x);
 
 private:
+    /**
+     * @brief Return a rotation matrix from body from to NED frame;
+     *
+     * TODO: Move to SkyQuaternion utilities
+     */
+    Eigen::Matrix3f body2ned(const Eigen::Vector4f& q);
+
     ///< Extended Kalman filter configuration parameters
     ExtendedKalmanConfig config;
 
-    VectorNf x;
-    Eigen::Matrix<float, NP, NP> P;
-    Eigen::Matrix<float, NL, NL> F;
-    Eigen::Matrix<float, NL, NL> Ftr;
+    ///< State vector [n e d vn ve vd qx qy qz qw bx by bz]
+    Eigen::Matrix<float, 13, 1> x;
 
-    Eigen::Matrix3f P_pos;
-    Eigen::Matrix3f P_vel;
-    Eigen::Matrix3f P_att;
-    Eigen::Matrix3f P_bias;
-    Eigen::Matrix<float, NL, NL> Plin;
+    ///< TODO
+    Eigen::Matrix<float, 12, 12> P;
 
-    Eigen::Matrix3f Q_pos;
-    Eigen::Matrix3f Q_vel;
-    Eigen::Matrix<float, NL, NL> Q_lin;
+    ///< NED gravity vector [m/s^2]
+    Eigen::Vector3f gravityNed{0.0f, 0.0f, Boardcore::Constants::g};
 
-    Eigen::Vector3f g;
-    Eigen::Matrix2f eye2;
-    Eigen::Matrix3f eye3;
-    Eigen::Matrix4f eye4;
-    Eigen::Matrix<float, 6, 6> eye6;
+    // Utility matrix used for the accelerometer
+    Eigen::Matrix<float, 6, 6> Q_lin;
 
-    Eigen::Matrix<float, NBAR, NBAR> R_bar;
+    // Utility matrixes used for the gps
+    Eigen::Matrix<float, 4, 6> H_gps;
+    Eigen::Matrix<float, 6, 4> H_gps_tr;
+    Eigen::Matrix<float, 4, 4> R_gps;
 
-    Eigen::Matrix<float, NGPS, NGPS> R_gps;
-    Eigen::Matrix<float, NGPS, NL> H_gps;
-    Eigen::Matrix<float, NL, NGPS> H_gpstr;
+    // Utility matrix used for the magnetometer
+    Eigen::Matrix3f R_mag;
+    Eigen::Matrix<float, 6, 6> Q_mag;
 
-    Eigen::Vector4f q;
-    Eigen::Matrix<float, NMAG, NMAG> R_mag;
-    Eigen::Matrix<float, NMEKF, NMEKF> Q_mag;
-    Eigen::Matrix<float, NMEKF, NMEKF> Fatt;
-    Eigen::Matrix<float, NMEKF, NMEKF> Fatttr;
-    Eigen::Matrix<float, NMEKF, NMEKF> Gatt;
-    Eigen::Matrix<float, NMEKF, NMEKF> Gatttr;
-    Eigen::Matrix<float, NMEKF, NMEKF> Patt;
+    // Other utility matrixes
+    Eigen::Matrix<float, 6, 6> F;
+    Eigen::Matrix<float, 6, 6> Ftr;
+    Eigen::Matrix<float, 6, 6> Fatt;
+    Eigen::Matrix<float, 6, 6> Fatttr;
+    Eigen::Matrix<float, 6, 6> Gatt;
+    Eigen::Matrix<float, 6, 6> Gatttr;
+    Eigen::Matrix<float, 6, 6> Patt;
 };
 
 }  // namespace Boardcore

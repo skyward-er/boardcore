@@ -110,7 +110,7 @@ sbs_catch_test(catch-tests-boardcore)
 #                             Tests - Algorithms                              #
 #-----------------------------------------------------------------------------#
 
-add_executable(test-kalman-eigen-benchmark src/tests/algorithms/kalman/test-kalman-eigen-benchmark.cpp)
+add_executable(test-kalman-eigen-benchmark src/tests/algorithms/Kalman/test-kalman-eigen-benchmark.cpp)
 sbs_target(test-kalman-eigen-benchmark stm32f429zi_stm32f4discovery)
 
 add_executable(test-ekf src/tests/algorithms/ExtendedKalman/test-ekf.cpp)
