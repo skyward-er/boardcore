@@ -29,14 +29,15 @@ namespace Boardcore
 
 struct ExtendedKalmanConfig
 {
-    float T;           ///< [s] Sample period
-    float SIGMA_BETA;  ///< [rad/s^2] Estimated gyroscope bias variance
-    float SIGMA_W;     ///< [rad^2] Estimated gyroscope variance
-    float SIGMA_MAG;   ///< [uT^2] Estimated magnetometer variance
-    float SIGMA_GPS;   ///< [m^2] Estimated GPS variance
-    float SIGMA_BAR;   ///< [m^2] Estimated altitude variance
-    float SIGMA_POS;   ///< [m^2] Estimated variance of the position noise
-    float SIGMA_VEL;   ///< [(m/s)^2] Estimated variance of teh velocity noise
+    float T;            ///< [s]       Sample period
+    float SIGMA_BETA;   ///< [rad/s^2] Estimated gyroscope bias variance
+    float SIGMA_W;      ///< [rad^2]   Estimated gyroscope variance
+    float SIGMA_MAG;    ///< [uT^2]    Estimated magnetometer variance
+    float SIGMA_GPS;    ///< [m^2]     Estimated GPS variance
+    float SIGMA_BAR;    ///< [m^2]     Estimated altitude variance
+    float SIGMA_POS;    ///< [m^2]     Estimated variance of the position noise
+    float SIGMA_VEL;    ///< [(m/s)^2] Estimated variance of the velocity noise
+    float SIGMA_PITOT;  ///< [Pa^2]    Estimated variance of the pitot velocity
 
     float P_POS;  ///< Position prediction covariance
     float P_POS_VERTICAL;

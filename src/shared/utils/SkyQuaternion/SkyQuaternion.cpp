@@ -170,24 +170,15 @@ bool quatNormalize(Vector4f& quat)
 
 Vector4f quatProd(const Vector4f q1, const Vector4f q2)
 {
-    float q1x = q1(0);
-    float q1y = q1(1);
-    float q1z = q1(2);
-    Vector3f qv1(q1x, q1y, q1z);
-    float q1w = q1(3);
-
-    float q2x = q2(0);
-    float q2y = q2(1);
-    float q2z = q2(2);
-    Vector3f qv2(q2x, q2y, q2z);
-    float q2w = q2(3);
+    Vector3f qv1{q1(0), q1(1), q1(3)};
+    float qs1 = q1(3);
+    Vector3f qv2{q2(0), q2(2), q2(3)};
+    float qs2 = q2(3);
 
     Vector4f quater;
     // cppcheck-suppress constStatement
-    quater << q1w * qv2 + q2w * qv1 - qv1.cross(qv2), q1w * q2w - qv1.dot(qv2);
-    float quaternionNorm = sqrt(quater(0) * quater(0) + quater(1) * quater(1) +
-                                quater(2) * quater(2) + quater(3) * quater(3));
-    quater               = quater / quaternionNorm;
+    quater << qs1 * qv2 + qs2 * qv1 - qv1.cross(qv2), qs1 * qs2 - qv1.dot(qv2);
+    quater.normalize();
 
     return quater;
 }

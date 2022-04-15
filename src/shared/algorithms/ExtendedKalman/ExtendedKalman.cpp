@@ -32,62 +32,57 @@ namespace Boardcore
 
 ExtendedKalman::ExtendedKalman(ExtendedKalmanConfig config) : config(config)
 {
-    // Initialize magnetometer utility matix
-    R_mag << config.SIGMA_MAG * Matrix3f::Identity();
+    // clang-format off
+    Q_mag << (config.SIGMA_W * config.SIGMA_W * config.T + (1.0f / 3.0f) * config.SIGMA_BETA * config.SIGMA_BETA * config.T * config.T * config.T) * Matrix3f::Identity(),
+        (0.5f * config.SIGMA_BETA * config.SIGMA_BETA * config.T * config.T) * Matrix3f::Identity(),
+        (0.5f * config.SIGMA_BETA * config.SIGMA_BETA * config.T * config.T) * Matrix3f::Identity(), // cppcheck-suppress constStatement
+        (config.SIGMA_BETA * config.SIGMA_BETA * config.T) * Matrix3f::Identity();
+    G_att <<
+        -Matrix3f::Identity(), Matrix3f::Zero(3, 3),
+         Matrix3f::Zero(3, 3), Matrix3f::Identity();
+    G_att_tr = G_att.transpose();
+    // clang-format on
 
-    // Initialize GPS utility matixes
+    R_mag << config.SIGMA_MAG * Matrix3f::Identity();
+    F_att << -Matrix3f::Identity(), -Matrix3f::Identity() * config.T,
+        Matrix3f::Zero(3, 3), Matrix3f::Identity();
+    F_att_tr = F_att.transpose();
+
     H_gps                = Matrix<float, 4, 6>::Identity();
     H_gps.coeffRef(2, 2) = 0;
     H_gps.coeffRef(5, 5) = 0;
     H_gps_tr             = H_gps.transpose();
     R_gps << config.SIGMA_GPS * Matrix<float, 4, 4>::Identity();
 
-    // TODO: Review
-
-    Q_mag << (config.SIGMA_W * config.SIGMA_W * config.T +
-              (1.0f / 3.0f) * config.SIGMA_BETA * config.SIGMA_BETA * config.T *
-                  config.T * config.T) *
-                 Matrix3f::Identity(),
-        (0.5F * config.SIGMA_BETA * config.SIGMA_BETA * config.T * config.T) *
-            Matrix3f::Identity(),
-        (0.5F * config.SIGMA_BETA * config.SIGMA_BETA * config.T * config.T) *
-            // cppcheck-suppress constStatement
-            Matrix3f::Identity(),
-        (config.SIGMA_BETA * config.SIGMA_BETA * config.T) *
-            Matrix3f::Identity();
-
-    Eigen::Matrix3f P_pos{{config.P_POS, 0, 0},
-                          {0, config.P_POS, 0},
-                          {0, 0, config.P_POS_VERTICAL}};
-    Eigen::Matrix3f P_vel{{config.P_VEL, 0, 0},
-                          {0, config.P_VEL, 0},
-                          {0, 0, config.P_VEL_VERTICAL}};
+    // clang-format off
+    Eigen::Matrix3f P_pos{
+        {config.P_POS, 0,            0},
+        {0,            config.P_POS, 0},
+        {0,            0,            config.P_POS_VERTICAL}
+    };
+    Eigen::Matrix3f P_vel{
+        {config.P_VEL, 0,            0},
+        {0,            config.P_VEL, 0},
+        {0,            0,            config.P_VEL_VERTICAL}
+    };
+    // clang-format on
     Eigen::Matrix3f P_att  = Matrix3f::Identity() * config.P_ATT;
     Eigen::Matrix3f P_bias = Matrix3f::Identity() * config.P_BIAS;
-    P << P_pos, MatrixXf::Zero(3, 13 - 4), MatrixXf::Zero(3, 3), P_vel,
-        MatrixXf::Zero(3, 13 - 7), MatrixXf::Zero(3, 6), P_att,
-        // cppcheck-suppress constStatement
-        MatrixXf::Zero(3, 13 - 10), MatrixXf::Zero(3, 9), P_bias;
+    // clang-format off
+    P << P_pos,               MatrixXf::Zero(3, 9),
+        MatrixXf::Zero(3, 3), P_vel, MatrixXf::Zero(3, 6),
+        MatrixXf::Zero(3, 6),        P_att, MatrixXf::Zero(3, 3),
+        MatrixXf::Zero(3, 9),               P_bias; // cppcheck-suppress constStatement
+    // clang-format on
 
     Eigen::Matrix3f Q_pos = Matrix3f::Identity() * config.SIGMA_POS;
     Eigen::Matrix3f Q_vel = Matrix3f::Identity() * config.SIGMA_VEL;
     // cppcheck-suppress constStatement
-    Q_lin << Q_pos, MatrixXf::Zero(3, 6 - 3), MatrixXf::Zero(3, 3), Q_vel;
+    Q_lin << Q_pos, MatrixXf::Zero(3, 3), MatrixXf::Zero(3, 3), Q_vel;
 
-    F << 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f,
-        0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, MatrixXf::Zero(3, 6);
-    F   = Matrix<float, 6, 6>::Identity() + config.T * F;
-    Ftr = F.transpose();
-
-    Fatt << -Matrix3f::Identity(), -Matrix3f::Identity() * config.T,
-        Matrix3f::Zero(3, 3), Matrix3f::Identity();
-    Fatttr = Fatt.transpose();
-
-    Gatt << -Matrix3f::Identity(), Matrix3f::Zero(3, 3), Matrix3f::Zero(3, 3),
-        Matrix3f::Identity();
-    Gatttr = Gatt.transpose();
-
-    gravityNed << 0.0f, 0.0f, Constants::g;  // [m/s^2]
+    F_lin                   = Matrix<float, 6, 6>::Identity();
+    F_lin.block<3, 3>(0, 3) = Matrix3f::Identity() * config.T;
+    F_lin_tr                = F_lin.transpose();
 }
 
 void ExtendedKalman::predictAcc(const Vector3f& acceleration)
@@ -110,9 +105,8 @@ void ExtendedKalman::predictAcc(const Vector3f& acceleration)
     x.block<3, 1>(IDX_VEL, 0) = vel;
 
     // Variance propagation
-    // TODO: Review
-    Eigen::Matrix<float, 6, 6> Plin = P.block<6, 6>(0, 0);
-    P.block<6, 6>(0, 0)             = F * Plin * Ftr + Q_lin;
+    Eigen::Matrix<float, 6, 6> Pl = P.block<6, 6>(0, 0);
+    P.block<6, 6>(0, 0)           = F_lin * Pl * F_lin_tr + Q_lin;
 }
 
 void ExtendedKalman::predictGyro(const Vector3f& angularVelocity)
@@ -138,10 +132,10 @@ void ExtendedKalman::predictGyro(const Vector3f& angularVelocity)
     x.block<4, 1>(IDX_QUAT, 0) = q;
 
     // Variance propagation
-    // TODO: Review
-    Patt = P.block<6, 6>(IDX_QUAT, IDX_QUAT);
-    P.block<6, 6>(IDX_QUAT, IDX_QUAT) =
-        Fatt * Patt * Fatttr + Gatt * Q_mag * Gatttr;
+    // TODO: Optimize last G_att * Q_mag * G_att_tr
+    Matrix<float, 6, 6> Pq = P.block<6, 6>(IDX_QUAT + 1, IDX_QUAT + 1);
+    Pq                     = F_att * Pq * F_att_tr + G_att * Q_mag * G_att_tr;
+    P.block<6, 6>(IDX_QUAT + 1, IDX_QUAT + 1) = Pq;
 }
 
 void ExtendedKalman::correctBaro(const float pressure, const float mslPress,
@@ -169,7 +163,7 @@ void ExtendedKalman::correctBaro(const float pressure, const float mslPress,
     x.head<6>() = x.head<6>() + K * (pressure - y_hat);
 }
 
-void ExtendedKalman::correctGPS(const Vector4f& gps, const uint8_t sats_num)
+void ExtendedKalman::correctGPS(const Vector4f& gps)
 {
     Eigen::Matrix<float, 6, 6> Pl = P.block<6, 6>(0, 0);
 
@@ -191,52 +185,71 @@ void ExtendedKalman::correctMag(const Vector3f& mag)
     Vector4f q = x.block<4, 1>(IDX_QUAT, 0);
     Matrix3f A = body2ned(q);
 
-    Vector3f h;  // Magnetormeter in NED
-    Vector4f r;
-    Vector4f u_att;
-    Vector3f r_sub;
-    Matrix<float, 3, 3> Satt;
-    Matrix<float, 3, 6> Hatt;
-    Matrix<float, 6, 3> Katt;
-    Matrix<float, 6, 1> delta_x;
+    // Rotate the NED magnetic field in the relative reference frame
+    Vector3f mEst = A * config.NED_MAG;
 
-    h = A.transpose() * mag;
-
-    Vector3f r_mag{static_cast<float>(sqrt(h(0) * h(0) + h(1) * h(1))), 0,
-                   h(2)};
-    Vector3f mEst = A * r_mag;
-
+    // clang-format off
     Matrix3f M{
-        {0, -mEst(2), mEst(1)}, {mEst(2), 0, -mEst(0)}, {-mEst(1), mEst(0), 0}};
+        { 0,      -mEst(2), mEst(1)},
+        { mEst(2), 0,      -mEst(0)},
+        {-mEst(1), mEst(0), 0}
+    };
+    // clang-format on
 
-    Hatt << M, Matrix3f::Zero(3, 3);
+    Matrix<float, 3, 6> H;
+    H << M, Matrix3f::Zero(3, 3);
+    Matrix<float, 6, 6> Pq = P.block<6, 6>(6, 6);
+    Matrix<float, 3, 3> S  = H * Pq * H.transpose() + R_mag;
 
-    Patt = P.block<6, 6>(6, 6);
-    Satt = Hatt * Patt * Hatt.transpose() + R_mag;
+    Matrix<float, 6, 3> K  = Pq * H.transpose() * S.inverse();
+    Vector3f e             = mag - mEst;
+    Matrix<float, 6, 1> dx = K * e;
+    Vector4f r{0.5f * dx(0), 0.5f * dx(1), 0.5f * dx(2),
+               sqrtf(1.0f - 0.25F * r.transpose() * r)};
 
-    Katt = Patt * Hatt.transpose() * Satt.inverse();
+    x.block<4, 1>(IDX_QUAT, 0) = SkyQuaternion::quatProd(r, q);
+    x.block<3, 1>(IDX_BIAS, 0) += dx.block<3, 1>(3, 0);
+    Matrix<float, 6, 6> tmp = Matrix<float, 6, 6>::Identity() - K * H;
+    Pq = tmp * Pq * tmp.transpose() + K * R_mag * K.transpose();
+    P.block<6, 6>(6, 6) = Pq;
+}
 
-    delta_x = Katt * (mag - mEst);
+void ExtendedKalman::correctPitot(const float deltaP, const float staticP)
+{
+    if (deltaP >= 0)
+    {
+        float c      = 343;  // Speed of sound
+        Vector3f vel = x.block<3, 1>(IDX_VEL, 0);
+        float vPitot;
 
-    r_sub << delta_x(0), delta_x(1), delta_x(2);
+        if (vel.norm() / c >= 0.9419)
+        {
+            float rho = 1.225;  // Air density
+            vPitot    = -sqrtf(
+                   fabs(-2.0f * c * c +
+                        sqrtf((4.0f * powf(c, 4) + 8.0f * c * c * deltaP / rho))));
+        }
+        else
+        {
+            float gamma = 1.4;  // Heat capacity ratio of dry air
+            float p0    = staticP + deltaP;
+            vPitot =
+                -sqrtf(c * c * 2 / (gamma - 1) *
+                       fabs(powf((p0 / staticP), (gamma - 1) / gamma) - 1));
+        }
 
-    r << 0.5F * r_sub, sqrtf(1.0f - 0.25F * r_sub.transpose() * r_sub);
+        Matrix<float, 1, 6> H = Matrix<float, 1, 6>::Zero();
+        H.coeffRef(0, 5)      = 1;
 
-    u_att        = SkyQuaternion::quatProd(r, q);
-    float u_norm = u_att.norm();
+        Eigen::Matrix<float, 6, 6> Pl = P.block<6, 6>(0, 0);
+        Matrix<float, 1, 1> S =
+            H * Pl * H.transpose() + Matrix<float, 1, 1>(config.SIGMA_PITOT);
 
-    x(6)     = u_att(0) / u_norm;
-    x(6 + 1) = u_att(1) / u_norm;
-    x(6 + 2) = u_att(2) / u_norm;
-    x(6 + 3) = u_att(3) / u_norm;
-    x(6 + 4) = x(6 + 4) + delta_x(3);
-    x(6 + 5) = x(6 + 5) + delta_x(4);
-    x(6 + 6) = x(6 + 6) + delta_x(5);
-
-    P.block<6, 6>(6, 6) =
-        (Matrix<float, 6, 6>::Identity() - Katt * Hatt) * Patt *
-            (Matrix<float, 6, 6>::Identity() - Katt * Hatt).transpose() +
-        Katt * R_mag * Katt.transpose();
+        float e               = vPitot - x[5];
+        Matrix<float, 6, 1> K = Pl * H.transpose() * S.inverse();
+        x.head<6>()           = x.head<6>() + K * e;
+        P.block<6, 6>(0, 0)   = (Matrix<float, 6, 6>::Identity() - K * H) * Pl;
+    }
 }
 
 Matrix<float, 13, 1> ExtendedKalman::getState() const { return x; }

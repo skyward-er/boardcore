@@ -79,14 +79,24 @@ public:
      * @param y 4x1 Vector of the gps readings [n e vn ve][m m m/s m/s]
      * @param sats_num Number of satellites available
      */
-    void correctGPS(const Eigen::Vector4f& gps, const uint8_t sats_num);
+    void correctGPS(const Eigen::Vector4f& gps);
 
     /**
-     * @brief MEKF correction of the magnetometer readings.
+     * @brief Correction with magnetometer data.
      *
-     * @param y 3x1 Normalized vector of the magnetometer readings [x y z].
+     * @param mag 3x1 Normalized vector of the magnetometer readings [x y z]
      */
-    void correctMag(const Eigen::Vector3f& y);
+    void correctMag(const Eigen::Vector3f& mag);
+
+    /**
+     * @brief Correction with pitot pressure.
+     *
+     * Do not call this function after apogee!
+     *
+     * @param deltaP Delta pressure measured by the differential sensor [Pa]
+     * @param staticP Static pressure [Pa]
+     */
+    void correctPitot(const float deltaP, const float staticP);
 
     /**
      * @return 13x1 State vector [n e d vn ve vd qx qy qz qw bx by bz].
@@ -131,13 +141,12 @@ private:
     Eigen::Matrix<float, 6, 6> Q_mag;
 
     // Other utility matrixes
-    Eigen::Matrix<float, 6, 6> F;
-    Eigen::Matrix<float, 6, 6> Ftr;
-    Eigen::Matrix<float, 6, 6> Fatt;
-    Eigen::Matrix<float, 6, 6> Fatttr;
-    Eigen::Matrix<float, 6, 6> Gatt;
-    Eigen::Matrix<float, 6, 6> Gatttr;
-    Eigen::Matrix<float, 6, 6> Patt;
+    Eigen::Matrix<float, 6, 6> F_lin;
+    Eigen::Matrix<float, 6, 6> F_lin_tr;
+    Eigen::Matrix<float, 6, 6> F_att;
+    Eigen::Matrix<float, 6, 6> F_att_tr;
+    Eigen::Matrix<float, 6, 6> G_att;
+    Eigen::Matrix<float, 6, 6> G_att_tr;
 };
 
 }  // namespace Boardcore
