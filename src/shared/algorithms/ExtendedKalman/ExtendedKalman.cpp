@@ -95,7 +95,7 @@ void ExtendedKalman::predictAcc(const Vector3f& acceleration)
     pos = pos + vel * config.T;
 
     // Measured acceleration in NED frame with added gravity
-    Vector3f a = A.transpose() * acceleration + gravityNed;
+    Vector3f a = A * acceleration + gravityNed;
 
     // Update velocity by integrating the acceleration
     vel = vel + a * config.T;
@@ -183,7 +183,7 @@ void ExtendedKalman::correctGPS(const Vector4f& gps)
 void ExtendedKalman::correctMag(const Vector3f& mag)
 {
     Vector4f q = x.block<4, 1>(IDX_QUAT, 0);
-    Matrix3f A = body2ned(q);
+    Matrix3f A = body2ned(q).transpose();
 
     // Rotate the NED magnetic field in the relative reference frame
     Vector3f mEst = A * config.NED_MAG;
@@ -198,12 +198,11 @@ void ExtendedKalman::correctMag(const Vector3f& mag)
 
     Matrix<float, 3, 6> H;
     H << M, Matrix3f::Zero(3, 3);
-    Matrix<float, 6, 6> Pq = P.block<6, 6>(6, 6);
+    Matrix<float, 6, 6> Pq = P.block<6, 6>(7, 7);
     Matrix<float, 3, 3> S  = H * Pq * H.transpose() + R_mag;
 
     Matrix<float, 6, 3> K  = Pq * H.transpose() * S.inverse();
-    Vector3f e             = mag - mEst;
-    Matrix<float, 6, 1> dx = K * e;
+    Matrix<float, 6, 1> dx = K * (mag - mEst);
     Vector4f r{0.5f * dx(0), 0.5f * dx(1), 0.5f * dx(2),
                sqrtf(1.0f - 0.25F * r.transpose() * r)};
 
@@ -245,9 +244,8 @@ void ExtendedKalman::correctPitot(const float deltaP, const float staticP)
         Matrix<float, 1, 1> S =
             H * Pl * H.transpose() + Matrix<float, 1, 1>(config.SIGMA_PITOT);
 
-        float e               = vPitot - x[5];
         Matrix<float, 6, 1> K = Pl * H.transpose() * S.inverse();
-        x.head<6>()           = x.head<6>() + K * e;
+        x.head<6>()           = x.head<6>() + K * (vPitot - x[5]);
         P.block<6, 6>(0, 0)   = (Matrix<float, 6, 6>::Identity() - K * H) * Pl;
     }
 }
