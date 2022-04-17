@@ -40,7 +40,7 @@ void bmxCallback();
 
 constexpr uint64_t CALIBRATION_TIMEOUT = 5 * 1e6;
 
-Vector3f nedMag = Vector3f(0.47338841, 0.02656764, 0.88045305);
+Vector3f nedMag = Vector3f(0.47472049, 0.02757190, 0.87970463);
 
 StateInitializer* stateInitializer;
 ExtendedKalman* kalman;
@@ -59,7 +59,7 @@ int main()
     stateInitializer = new StateInitializer();
     kalman           = new ExtendedKalman(getEKConfig());
 
-    Logger::getInstance().start();
+    // Logger::getInstance().start();
     TimestampTimer::getInstance().resetTimestamp();
     sensorManager->start();
 
@@ -99,21 +99,16 @@ void bmxInit()
     spiConfig.clockDivider = SPI::ClockDivider::DIV_8;
 
     BMX160Config bmx_config;
-    bmx_config.fifoMode      = BMX160Config::FifoMode::HEADER;
-    bmx_config.fifoWatermark = 80;
-    bmx_config.fifoInterrupt = BMX160Config::FifoInterruptPin::PIN_INT1;
-
-    bmx_config.temperatureDivider = 1;
-
-    bmx_config.accelerometerRange = BMX160Config::AccelerometerRange::G_16;
-
-    bmx_config.gyroscopeRange = BMX160Config::GyroscopeRange::DEG_1000;
-
+    bmx_config.fifoMode              = BMX160Config::FifoMode::HEADER;
+    bmx_config.fifoWatermark         = 80;
+    bmx_config.fifoInterrupt         = BMX160Config::FifoInterruptPin::PIN_INT1;
+    bmx_config.temperatureDivider    = 1;
+    bmx_config.accelerometerRange    = BMX160Config::AccelerometerRange::G_16;
+    bmx_config.gyroscopeRange        = BMX160Config::GyroscopeRange::DEG_1000;
     bmx_config.accelerometerDataRate = BMX160Config::OutputDataRate::HZ_100;
     bmx_config.gyroscopeDataRate     = BMX160Config::OutputDataRate::HZ_100;
     bmx_config.magnetometerRate      = BMX160Config::OutputDataRate::HZ_100;
-
-    bmx_config.gyroscopeUnit = BMX160Config::GyroscopeMeasureUnit::RAD;
+    bmx_config.gyroscopeUnit         = BMX160Config::GyroscopeMeasureUnit::RAD;
 
     bmx160 = new BMX160(spi1, miosix::sensors::bmx160::cs::getPin(), bmx_config,
                         spiConfig);
@@ -138,56 +133,82 @@ void bmxCallback()
     Vector3f magneticField(data.magneticFieldX, data.magneticFieldY,
                            data.magneticFieldZ);
 
+    // Apply correction
+    Vector3f acc_b(0.3763 + 0.094, -0.1445 - 0.0229, -0.1010 + 0.0150);
+    acceleration -= acc_b;
+    Vector3f gyro_b{-1.63512255486542, 3.46523431469979, -3.08516033954451};
+    angularVelocity = angularVelocity - gyro_b;
+    angularVelocity = angularVelocity / 180 * Constants::PI / 10;
+    Vector3f mag_b{21.0730033648425, -24.3997259703105, -2.32621524742862};
+    Matrix3f A{{0.659926504672263, 0, 0},
+               {0, 0.662442130094073, 0},
+               {0, 0, 2.28747567094359}};
+    magneticField = (magneticField - mag_b).transpose() * A;
+
     if (calibrating)
     {
-        accMean = (accMean * meanCount + acceleration) / (meanCount + 1);
-        magMean = (magMean * meanCount + acceleration) / (meanCount + 1);
-        meanCount++;
-    }
-    else if (TimestampTimer::getInstance().getTimestamp() > CALIBRATION_TIMEOUT)
-    {
-        // Now the calibration has ended, compute and log the kalman state
-        calibrating = false;
+        if (TimestampTimer::getInstance().getTimestamp() < CALIBRATION_TIMEOUT)
+        {
+            accMean = (accMean * meanCount + acceleration) / (meanCount + 1);
+            magMean = (magMean * meanCount + acceleration) / (meanCount + 1);
+            meanCount++;
+        }
+        else
+        {
+            // Now the calibration has ended, compute and log the kalman state
+            calibrating = false;
 
-        // Compute the initial kalman state
-        stateInitializer->triad(accMean, magMean, nedMag);
-        kalman->setX(stateInitializer->getInitX());
+            // Compute the initial kalman state
+            stateInitializer->triad(accMean, magMean, nedMag);
+            kalman->setX(stateInitializer->getInitX());
 
-        // Save the state and the IMU data
-        // Logger::getInstance().log(stateInitializer->getInitX());
-        Logger::getInstance().log(data);
+            // Save the state and the IMU data
+            // Logger::getInstance().log(kalman->getState());
+            data.accelerationX  = accMean[0];
+            data.accelerationY  = accMean[1];
+            data.accelerationZ  = accMean[2];
+            data.magneticFieldX = magMean[0];
+            data.magneticFieldY = magMean[1];
+            data.magneticFieldZ = magMean[2];
+            // Logger::getInstance().log(data);
 
-        // Restart the logger to change log filename
-        Logger::getInstance().stop();
-        Logger::getInstance().start();
+            // Restart the logger to change log filename
+            // Logger::getInstance().stop();
+            // Logger::getInstance().start();
+        }
     }
     else
     {
         // Predict step
         {
-            Vector3f offset{-1.63512255486542, 3.46523431469979,
-                            -3.08516033954451};
-            angularVelocity = angularVelocity - offset;
-            angularVelocity = angularVelocity / 180 * Constants::PI / 10;
-
+            // kalman->predictAcc(acceleration);
             kalman->predictGyro(angularVelocity);
+
+            data.angularVelocityX = angularVelocity[0];
+            data.angularVelocityY = angularVelocity[1];
+            data.angularVelocityZ = angularVelocity[2];
         }
 
         // Correct step
         {
-            // Apply correction
-            Vector3f b{21.0730033648425, -24.3997259703105, -2.32621524742862};
-            Matrix3f A{{0.659926504672263, 0, 0},
-                       {0, 0.662442130094073, 0},
-                       {0, 0, 2.28747567094359}};
-            magneticField = (magneticField - b).transpose() * A;
-
             magneticField.normalize();
             kalman->correctMag(magneticField);
+
+            data.magneticFieldX = magneticField[0];
+            data.magneticFieldY = magneticField[1];
+            data.magneticFieldZ = magneticField[2];
         }
 
         auto kalmanState = kalman->getState();
-        printf("w%fwa%fab%fbc%fc\n", kalmanState(9), kalmanState(6),
-               kalmanState(7), kalmanState(8));
+
+        kalmanState.timestamp = TimestampTimer::getInstance().getTimestamp();
+        data.accelerationTimestamp    = kalmanState.timestamp;
+        data.magneticFieldTimestamp   = kalmanState.timestamp;
+        data.angularVelocityTimestamp = kalmanState.timestamp;
+
+        // Logger::getInstance().log(kalmanState);
+        // Logger::getInstance().log(data);
+        printf("w%fwa%fab%fbc%fc\n", kalmanState.qw, kalmanState.qx,
+               kalmanState.qy, kalmanState.qz);
     }
 }

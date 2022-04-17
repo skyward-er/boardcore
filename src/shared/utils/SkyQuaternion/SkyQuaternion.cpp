@@ -1,5 +1,5 @@
 /* Copyright (c) 2022 Skyward Experimental Rocketry
- * Author: Marco Cella, Alberto Nidasio
+ * Authors: Marco Cella, Alberto Nidasio
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -170,10 +170,10 @@ bool quatNormalize(Vector4f& quat)
 
 Vector4f quatProd(const Vector4f q1, const Vector4f q2)
 {
-    Vector3f qv1{q1(0), q1(1), q1(3)};
-    float qs1 = q1(3);
-    Vector3f qv2{q2(0), q2(2), q2(3)};
-    float qs2 = q2(3);
+    Vector3f qv1 = q1.head<3>();
+    float qs1    = q1(3);
+    Vector3f qv2 = q2.head<3>();
+    float qs2    = q2(3);
 
     Vector4f quater;
     // cppcheck-suppress constStatement

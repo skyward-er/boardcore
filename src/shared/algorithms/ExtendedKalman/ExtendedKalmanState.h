@@ -1,5 +1,5 @@
 /* Copyright (c) 2022 Skyward Experimental Rocketry
- * Authors: Alberto Nidasio
+ * Author: Alberto Nidasio
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -27,26 +27,58 @@
 namespace Boardcore
 {
 
-class ExtendedKalmanState
+struct ExtendedKalmanState
 {
-    float n, e, d, vn, ve, vd, qx, qy, qz, qw, b1, b2, b3;
+    uint64_t timestamp;
 
-    ExtendedKalmanState(Eigen::Matrix<float, 13, 1> x)
-        : n(x(0)), e(x(1)), d(x(2)), vn(x(3)), ve(x(4)), vd(x(5)), qx(x(6)),
-          qy(x(7)), qz(x(8)), qw(x(9)), b1(x(10)), b2(x(11)), b3(x(12))
+    // 13 extended kalman states
+
+    // Position [m]
+    float n = 0;
+    float e = 0;
+    float d = 0;
+
+    // Velocity [m/s]
+    float vn = 0;
+    float ve = 0;
+    float vd = 0;
+
+    // Attitude as quaternion
+    float qx = 0;
+    float qy = 0;
+    float qz = 0;
+    float qw = 1;
+
+    // Gyroscope bias
+    float bx = 0;
+    float by = 0;
+    float bz = 0;
+
+    ExtendedKalmanState() {}
+
+    ExtendedKalmanState(uint64_t timestamp, Eigen::Matrix<float, 13, 1> x)
+        : timestamp(timestamp), n(x(0)), e(x(1)), d(x(2)), vn(x(3)), ve(x(4)),
+          vd(x(5)), qx(x(6)), qy(x(7)), qz(x(8)), qw(x(9)), bx(x(10)),
+          by(x(11)), bz(x(12))
     {
+    }
+
+    Eigen::Matrix<float, 13, 1> getX() const
+    {
+        return Eigen::Matrix<float, 13, 1>(n, e, d, vn, ve, vd, qx, qy, qz, qw,
+                                           bx, by, bz);
     }
 
     static std::string header()
     {
-        return "n,e,d,vn,ve,vd,qx,qy,qz,qw,b1,b2,b3,b4\n";
+        return "timestamp,n,e,d,vn,ve,vd,qx,qy,qz,qw,bx,by,bz\n";
     }
 
     void print(std::ostream& os) const
     {
-        os << (0) << "," << (1) << "," << (2) << "," << (3) << "," << (5) << ","
-           << (5) << "," << (6) << "," << (7) << "," << (8) << "," << (9) << ","
-           << (10) << "," << (11) << "," << (12) << "\n";
+        os << timestamp << "," << n << "," << e << "," << d << "," << vn << ","
+           << ve << "," << vd << "," << qx << "," << qy << "," << qz << ","
+           << qw << "," << bx << "," << by << "," << bz << "\n";
     }
 };
 

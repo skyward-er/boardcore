@@ -28,6 +28,7 @@
 #include <Eigen/Dense>
 
 #include "ExtendedKalmanConfig.h"
+#include "ExtendedKalmanState.h"
 
 namespace Boardcore
 {
@@ -76,7 +77,7 @@ public:
     /**
      * @brief Correction with gps data.
      *
-     * @param y 4x1 Vector of the gps readings [n e vn ve][m m m/s m/s]
+     * @param gps Vector of the gps readings [n e vn ve][m m m/s m/s]
      * @param sats_num Number of satellites available
      */
     void correctGPS(const Eigen::Vector4f& gps);
@@ -84,9 +85,16 @@ public:
     /**
      * @brief Correction with magnetometer data.
      *
-     * @param mag 3x1 Normalized vector of the magnetometer readings [x y z]
+     * @param mag Normalized vector of the magnetometer readings [x y z]
      */
     void correctMag(const Eigen::Vector3f& mag);
+
+    /**
+     * @brief Correction with accelerometer data.
+     *
+     * @param u Vector with acceleration data [x y z][m/s^2]
+     */
+    void correctAcc(const Eigen::Vector3f& acceleration);
 
     /**
      * @brief Correction with pitot pressure.
@@ -99,12 +107,22 @@ public:
     void correctPitot(const float deltaP, const float staticP);
 
     /**
-     * @return 13x1 State vector [n e d vn ve vd qx qy qz qw bx by bz].
+     * @return EKF state.
      */
-    Eigen::Matrix<float, 13, 1> getState() const;
+    ExtendedKalmanState getState() const;
 
     /**
-     * @param x 13x1 State vector [n e d vn ve vd qx qy qz qw bx by bz].
+     * @return State vector [n e d vn ve vd qx qy qz qw bx by bz].
+     */
+    Eigen::Matrix<float, 13, 1> getX() const;
+
+    /**
+     * @param state EKF state.
+     */
+    void setState(const ExtendedKalmanState& state);
+
+    /**
+     * @param state State vector [n e d vn ve vd qx qy qz qw bx by bz].
      */
     void setX(const Eigen::Matrix<float, 13, 1>& x);
 
@@ -122,31 +140,29 @@ private:
     ///< State vector [n e d vn ve vd qx qy qz qw bx by bz]
     Eigen::Matrix<float, 13, 1> x;
 
-    ///< TODO
+    ///< Covariance matrix
     Eigen::Matrix<float, 12, 12> P;
 
     ///< NED gravity vector [m/s^2]
-    Eigen::Vector3f gravityNed{0.0f, 0.0f, Boardcore::Constants::g};
-
-    // Utility matrix used for the accelerometer
-    Eigen::Matrix<float, 6, 6> Q_lin;
+    Eigen::Vector3f gravityNed{0.0f, 0.0f, -Constants::g};
 
     // Utility matrixes used for the gps
     Eigen::Matrix<float, 4, 6> H_gps;
     Eigen::Matrix<float, 6, 4> H_gps_tr;
     Eigen::Matrix<float, 4, 4> R_gps;
 
-    // Utility matrix used for the magnetometer
+    // Utility matrixes used for the magnetometer
     Eigen::Matrix3f R_mag;
-    Eigen::Matrix<float, 6, 6> Q_mag;
 
     // Other utility matrixes
+    Eigen::Matrix<float, 6, 6> Q_quat;
+    Eigen::Matrix<float, 6, 6> Q_lin;
     Eigen::Matrix<float, 6, 6> F_lin;
     Eigen::Matrix<float, 6, 6> F_lin_tr;
-    Eigen::Matrix<float, 6, 6> F_att;
-    Eigen::Matrix<float, 6, 6> F_att_tr;
-    Eigen::Matrix<float, 6, 6> G_att;
-    Eigen::Matrix<float, 6, 6> G_att_tr;
+    Eigen::Matrix<float, 6, 6> F_quat;
+    Eigen::Matrix<float, 6, 6> F_quat_tr;
+    Eigen::Matrix<float, 6, 6> G_quat;
+    Eigen::Matrix<float, 6, 6> G_quat_tr;
 };
 
 }  // namespace Boardcore

@@ -36,7 +36,7 @@ using namespace Eigen;
 void bmxInit();
 void bmxCallback();
 
-Vector3f nedMag = Vector3f(0.47338841, 0.02656764, 0.88045305);
+Vector3f nedMag = Vector3f(0.4747, 0.0276, 0.8797);
 
 SPIBus spi1(SPI1);
 BMX160* bmx160 = nullptr;
@@ -94,17 +94,18 @@ void bmxCallback()
     Vector3f magneticField(data.magneticFieldX, data.magneticFieldY,
                            data.magneticFieldZ);
 
-    // Apply magnetometer correction
-    Vector3f b{21.0730033648425, -24.3997259703105, -2.32621524742862};
+    // Apply correction
+    Vector3f acc_b(0.3763, -0.1445, -0.1010);
+    acceleration -= acc_b;
+    Vector3f mag_b{21.0730033648425, -24.3997259703105, -2.32621524742862};
     Matrix3f A{{0.659926504672263, 0, 0},
                {0, 0.662442130094073, 0},
                {0, 0, 2.28747567094359}};
-    magneticField = (magneticField - b).transpose() * A;
-    // magneticField.normalize();
+    magneticField = (magneticField - mag_b).transpose() * A;
 
-    // printf("%f,%f,%f\n", acceleration(0), acceleration(1), acceleration(2));
+    acceleration.normalize();
+    magneticField.normalize();
 
-    // Use triad
     StateInitializer state;
     state.triad(acceleration, magneticField, nedMag);
 

@@ -1,5 +1,5 @@
 /* Copyright (c) 2022 Skyward Experimental Rocketry
- * Author: Marco Cella, Alberto Nidasio
+ * Authors: Marco Cella, Alberto Nidasio
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -27,7 +27,6 @@
 #include <utils/SkyQuaternion/SkyQuaternion.h>
 
 #include <Eigen/Dense>
-#include <iostream>
 
 #include "ExtendedKalman.h"
 
@@ -71,11 +70,12 @@ public:
      * @brief Triad algorithm to estimate the attitude before the liftoff.
      *
      * triad reference:
+     *   https://en.wikipedia.org/wiki/Triad_method
      *   https://www.aero.iitb.ac.in/satelliteWiki/index.php/Triad_Algorithm
      *
-     * @param acc 3x1 accelerometer readings [x y z][m/s^2].
-     * @param mag 3x1 magnetometer readings [x y z][uT].
-     * @param nedMag 3x1 magnetometer readings [x y z][uT].
+     * @param acc Normalized accelerometer readings [x y z].
+     * @param mag Normalized magnetometer readings [x y z].
+     * @param nedMag Normalized magnetic field vector in NED frame [x y z].
      */
     void triad(Eigen::Vector3f& acc, Eigen::Vector3f& mag,
                Eigen::Vector3f& nedMag);
@@ -126,35 +126,32 @@ void StateInitializer::eCompass(const Eigen::Vector3f acc,
 void StateInitializer::triad(Eigen::Vector3f& acc, Eigen::Vector3f& mag,
                              Eigen::Vector3f& nedMag)
 {
-    // Prepare the gravity vector in NED frame
-    Eigen::Vector3f gravityNed(0.0F, 0.0F, -Constants::g);
+    // The gravity vector is expected to be read inversely because
+    // accelerometers read the binding reaction
+    Eigen::Vector3f nedAcc(0.0f, 0.0f, -1.0f);
 
-    Eigen::Vector3f R1 = gravityNed;
-    R1.normalize();
-    Eigen::Vector3f R2 = gravityNed.cross(nedMag);
-    R2.normalize();
+    // Compute the reference triad
+    Eigen::Vector3f R1 = nedAcc;
+    Eigen::Vector3f R2 = nedAcc.cross(nedMag).normalized();
     Eigen::Vector3f R3 = R1.cross(R2);
 
+    // Compute the measured triad
     Eigen::Vector3f r1 = acc;
-    r1.normalize();
-    Eigen::Vector3f r2 = acc.cross(mag);
-    r2.normalize();
+    Eigen::Vector3f r2 = acc.cross(mag).normalized();
     Eigen::Vector3f r3 = r1.cross(r2);
 
-    Eigen::Matrix3f Mr;
-    Mr << R1, R2, R3;
+    // Compose the reference and measured matrixes
+    Eigen::Matrix3f M;
+    M << R1, R2, R3;
+    Eigen::Matrix3f m;
+    m << r1, r2, r3;
 
-    Eigen::Matrix3f Mou;
-    Mou << r1, r2, r3;
+    // Compute the rotation matrix and the corresponding quaternion
+    Eigen::Matrix3f A = M * m.transpose();
+    Eigen::Vector4f q = SkyQuaternion::rotationMatrix2quat(A);
 
-    Eigen::Matrix3f dcm = Mr * Mou.transpose();
-
-    Eigen::Vector4f q = SkyQuaternion::rotationMatrix2quat(dcm);
-
-    x_init(ExtendedKalman::IDX_QUAT)     = q(0);
-    x_init(ExtendedKalman::IDX_QUAT + 1) = q(1);
-    x_init(ExtendedKalman::IDX_QUAT + 2) = q(2);
-    x_init(ExtendedKalman::IDX_QUAT + 3) = q(3);
+    // Save the orientation in the state
+    x_init.block<4, 1>(ExtendedKalman::IDX_QUAT, 0) = q;
 }
 
 void StateInitializer::positionInit(const float pressure,

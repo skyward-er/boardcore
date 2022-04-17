@@ -70,8 +70,8 @@ ExtendedKalmanConfig getEKConfig()
     config.SIGMA_MAG      = 0.1f;
     config.SIGMA_GPS      = 10.0f;
     config.SIGMA_BAR      = 4.3f;
-    config.SIGMA_POS      = 10.0;
-    config.SIGMA_VEL      = 10.0;
+    config.SIGMA_POS      = 10.0f;
+    config.SIGMA_VEL      = 10.0f;
     config.P_POS          = 1.0f;
     config.P_POS_VERTICAL = 10.0f;
     config.P_VEL          = 1.0f;
@@ -143,12 +143,17 @@ void bmxCallback()
         angularVelocity = angularVelocity / 180 * Constants::PI / 10;
 
         kalman->predictGyro(angularVelocity);
-
-        // printf("%f,%f,%f\n", angularVelocity(0), angularVelocity(1),
-        //        angularVelocity(2));
     }
 
-    // Correct ster
+    // Correct with acclelerometer
+    // {
+    //     Vector3f angularVelocity(data.accelerationX, data.accelerationY,
+    //                              data.accelerationZ);
+
+    //     kalman->correctAcc(angularVelocity);
+    // }
+
+    // Correct step
     {
         Vector3f magneticField(data.magneticFieldX, data.magneticFieldY,
                                data.magneticFieldZ);
@@ -162,13 +167,10 @@ void bmxCallback()
 
         magneticField.normalize();
         kalman->correctMag(magneticField);
-
-        // printf("%f,%f,%f\n", magneticField(0), magneticField(1),
-        //        magneticField(2));
     }
 
     auto kalmanState = kalman->getState();
 
-    printf("w%fwa%fab%fbc%fc\n", kalmanState(9), kalmanState(6), kalmanState(7),
-           kalmanState(8));
+    printf("w%fwa%fab%fbc%fc\n", kalmanState.qw, kalmanState.qx, kalmanState.qy,
+           kalmanState.qz);
 }

@@ -22,7 +22,10 @@
 
 #include "ExtendedKalman.h"
 
+#include <drivers/timer/TimestampTimer.h>
 #include <utils/SkyQuaternion/SkyQuaternion.h>
+
+#include <iostream>
 
 using namespace Boardcore;
 using namespace Eigen;
@@ -32,57 +35,65 @@ namespace Boardcore
 
 ExtendedKalman::ExtendedKalman(ExtendedKalmanConfig config) : config(config)
 {
-    // clang-format off
-    Q_mag << (config.SIGMA_W * config.SIGMA_W * config.T + (1.0f / 3.0f) * config.SIGMA_BETA * config.SIGMA_BETA * config.T * config.T * config.T) * Matrix3f::Identity(),
-        (0.5f * config.SIGMA_BETA * config.SIGMA_BETA * config.T * config.T) * Matrix3f::Identity(),
-        (0.5f * config.SIGMA_BETA * config.SIGMA_BETA * config.T * config.T) * Matrix3f::Identity(), // cppcheck-suppress constStatement
-        (config.SIGMA_BETA * config.SIGMA_BETA * config.T) * Matrix3f::Identity();
-    G_att <<
-        -Matrix3f::Identity(), Matrix3f::Zero(3, 3),
-         Matrix3f::Zero(3, 3), Matrix3f::Identity();
-    G_att_tr = G_att.transpose();
-    // clang-format on
+    // Covariance setup
+    {
+        // clang-format off
+        Eigen::Matrix3f P_pos{
+            {config.P_POS, 0,            0},
+            {0,            config.P_POS, 0},
+            {0,            0,            config.P_POS_VERTICAL}
+        };
+        Eigen::Matrix3f P_vel{
+            {config.P_VEL, 0,            0},
+            {0,            config.P_VEL, 0},
+            {0,            0,            config.P_VEL_VERTICAL}
+        };
+        Eigen::Matrix3f P_att  = Matrix3f::Identity() * config.P_ATT;
+        Eigen::Matrix3f P_bias = Matrix3f::Identity() * config.P_BIAS;
+        P << P_pos,               MatrixXf::Zero(3, 9),
+            MatrixXf::Zero(3, 3), P_vel, MatrixXf::Zero(3, 6),
+            MatrixXf::Zero(3, 6),        P_att, MatrixXf::Zero(3, 3),
+            MatrixXf::Zero(3, 9),               P_bias; // cppcheck-suppress constStatement
+        // clang-format on
+    }
 
+    // GPS matrixes
+    {
+        H_gps                = Matrix<float, 4, 6>::Identity();
+        H_gps.coeffRef(2, 2) = 0;
+        H_gps.coeffRef(5, 5) = 0;
+        H_gps_tr             = H_gps.transpose();
+        R_gps << config.SIGMA_GPS * Matrix<float, 4, 4>::Identity();
+    }
+
+    // Magnetometer utility matrix
     R_mag << config.SIGMA_MAG * Matrix3f::Identity();
-    F_att << -Matrix3f::Identity(), -Matrix3f::Identity() * config.T,
-        Matrix3f::Zero(3, 3), Matrix3f::Identity();
-    F_att_tr = F_att.transpose();
 
-    H_gps                = Matrix<float, 4, 6>::Identity();
-    H_gps.coeffRef(2, 2) = 0;
-    H_gps.coeffRef(5, 5) = 0;
-    H_gps_tr             = H_gps.transpose();
-    R_gps << config.SIGMA_GPS * Matrix<float, 4, 4>::Identity();
+    // Other utility matrixes
+    {
+        // clang-format off
+        Q_quat << (config.SIGMA_W * config.SIGMA_W * config.T + (1.0f / 3.0f) * config.SIGMA_BETA * config.SIGMA_BETA * config.T * config.T * config.T) * Matrix3f::Identity(),
+            (0.5f * config.SIGMA_BETA * config.SIGMA_BETA * config.T * config.T) * Matrix3f::Identity(),
+            (0.5f * config.SIGMA_BETA * config.SIGMA_BETA * config.T * config.T) * Matrix3f::Identity(), // cppcheck-suppress constStatement
+            (config.SIGMA_BETA * config.SIGMA_BETA * config.T) * Matrix3f::Identity();
+        // clang-format on
 
-    // clang-format off
-    Eigen::Matrix3f P_pos{
-        {config.P_POS, 0,            0},
-        {0,            config.P_POS, 0},
-        {0,            0,            config.P_POS_VERTICAL}
-    };
-    Eigen::Matrix3f P_vel{
-        {config.P_VEL, 0,            0},
-        {0,            config.P_VEL, 0},
-        {0,            0,            config.P_VEL_VERTICAL}
-    };
-    // clang-format on
-    Eigen::Matrix3f P_att  = Matrix3f::Identity() * config.P_ATT;
-    Eigen::Matrix3f P_bias = Matrix3f::Identity() * config.P_BIAS;
-    // clang-format off
-    P << P_pos,               MatrixXf::Zero(3, 9),
-        MatrixXf::Zero(3, 3), P_vel, MatrixXf::Zero(3, 6),
-        MatrixXf::Zero(3, 6),        P_att, MatrixXf::Zero(3, 3),
-        MatrixXf::Zero(3, 9),               P_bias; // cppcheck-suppress constStatement
-    // clang-format on
+        Q_lin << config.SIGMA_POS * Matrix3f::Identity(), MatrixXf::Zero(3, 3),
+            // cppcheck-suppress constStatement
+            MatrixXf::Zero(3, 3), config.SIGMA_VEL * Matrix3f::Identity();
 
-    Eigen::Matrix3f Q_pos = Matrix3f::Identity() * config.SIGMA_POS;
-    Eigen::Matrix3f Q_vel = Matrix3f::Identity() * config.SIGMA_VEL;
-    // cppcheck-suppress constStatement
-    Q_lin << Q_pos, MatrixXf::Zero(3, 3), MatrixXf::Zero(3, 3), Q_vel;
+        F_lin                   = Matrix<float, 6, 6>::Identity();
+        F_lin.block<3, 3>(0, 3) = config.T * Matrix3f::Identity();
+        F_lin_tr                = F_lin.transpose();
 
-    F_lin                   = Matrix<float, 6, 6>::Identity();
-    F_lin.block<3, 3>(0, 3) = Matrix3f::Identity() * config.T;
-    F_lin_tr                = F_lin.transpose();
+        F_quat << -Matrix3f::Identity(), -Matrix3f::Identity() * config.T,
+            Matrix3f::Zero(3, 3), Matrix3f::Identity();
+        F_quat_tr = F_quat.transpose();
+
+        G_quat << -Matrix3f::Identity(), Matrix3f::Zero(3, 3),
+            Matrix3f::Zero(3, 3), Matrix3f::Identity();
+        G_quat_tr = G_quat.transpose();
+    }
 }
 
 void ExtendedKalman::predictAcc(const Vector3f& acceleration)
@@ -94,8 +105,8 @@ void ExtendedKalman::predictAcc(const Vector3f& acceleration)
     // Update position by integrating the velocity
     pos = pos + vel * config.T;
 
-    // Measured acceleration in NED frame with added gravity
-    Vector3f a = A * acceleration + gravityNed;
+    // Measured acceleration in NED frame without gravity
+    Vector3f a = A * acceleration - gravityNed;
 
     // Update velocity by integrating the acceleration
     vel = vel + a * config.T;
@@ -132,10 +143,10 @@ void ExtendedKalman::predictGyro(const Vector3f& angularVelocity)
     x.block<4, 1>(IDX_QUAT, 0) = q;
 
     // Variance propagation
-    // TODO: Optimize last G_att * Q_mag * G_att_tr
-    Matrix<float, 6, 6> Pq = P.block<6, 6>(IDX_QUAT + 1, IDX_QUAT + 1);
-    Pq                     = F_att * Pq * F_att_tr + G_att * Q_mag * G_att_tr;
-    P.block<6, 6>(IDX_QUAT + 1, IDX_QUAT + 1) = Pq;
+    // TODO: Optimize last G_quat * Q_quat * G_att_tr
+    Matrix<float, 6, 6> Pq = P.block<6, 6>(IDX_QUAT, IDX_QUAT);
+    Pq = F_quat * Pq * F_quat_tr + G_quat * Q_quat * G_quat_tr;
+    P.block<6, 6>(IDX_QUAT, IDX_QUAT) = Pq;
 }
 
 void ExtendedKalman::correctBaro(const float pressure, const float mslPress,
@@ -198,19 +209,59 @@ void ExtendedKalman::correctMag(const Vector3f& mag)
 
     Matrix<float, 3, 6> H;
     H << M, Matrix3f::Zero(3, 3);
-    Matrix<float, 6, 6> Pq = P.block<6, 6>(7, 7);
+    Matrix<float, 6, 6> Pq = P.block<6, 6>(IDX_QUAT, IDX_QUAT);
     Matrix<float, 3, 3> S  = H * Pq * H.transpose() + R_mag;
 
     Matrix<float, 6, 3> K  = Pq * H.transpose() * S.inverse();
     Matrix<float, 6, 1> dx = K * (mag - mEst);
     Vector4f r{0.5f * dx(0), 0.5f * dx(1), 0.5f * dx(2),
-               sqrtf(1.0f - 0.25F * r.transpose() * r)};
+               sqrtf(1.0f - 0.25f * dx.head<3>().transpose() * dx.head<3>())};
 
     x.block<4, 1>(IDX_QUAT, 0) = SkyQuaternion::quatProd(r, q);
-    x.block<3, 1>(IDX_BIAS, 0) += dx.block<3, 1>(3, 0);
+    x.block<3, 1>(IDX_BIAS, 0) += dx.tail<3>();
     Matrix<float, 6, 6> tmp = Matrix<float, 6, 6>::Identity() - K * H;
     Pq = tmp * Pq * tmp.transpose() + K * R_mag * K.transpose();
-    P.block<6, 6>(6, 6) = Pq;
+    P.block<6, 6>(IDX_QUAT, IDX_QUAT) = Pq;
+}
+
+void ExtendedKalman::correctAcc(const Eigen::Vector3f& acceleration)
+{
+    Vector4f q = x.block<4, 1>(IDX_QUAT, 0);
+    Matrix3f A = body2ned(q).transpose();
+
+    // Rotate the NED magnetic field in the relative reference frame
+    Vector3f aEst = A * gravityNed;
+
+    // Gradient matrix
+    // clang-format off
+    Matrix3f M{
+        { 0,      -aEst(2), aEst(1)},
+        { aEst(2), 0,      -aEst(0)},
+        {-aEst(1), aEst(0), 0}
+    };
+    // clang-format on
+
+    Matrix<float, 3, 6> H;
+    H << M, Matrix3f::Zero(3, 3);
+    Matrix<float, 6, 6> Pq = P.block<6, 6>(IDX_QUAT, IDX_QUAT);
+    Matrix<float, 3, 3> S =
+        H * Pq * H.transpose() + R_mag;  // TODO: Change R_mag with R_acc
+
+    Matrix<float, 6, 3> K = Pq * H.transpose() * S.inverse();
+
+    Eigen::Vector3f a = acceleration;
+    a.normalize();
+    aEst.normalize();
+    Vector3f e             = a - aEst;
+    Matrix<float, 6, 1> dx = K * e;
+    Vector4f r{0.5f * dx(0), 0.5f * dx(1), 0.5f * dx(2),
+               sqrtf(1.0f - 0.25f * dx.head<3>().squaredNorm())};
+
+    x.block<4, 1>(IDX_QUAT, 0) = SkyQuaternion::quatProd(r, q);
+    x.block<3, 1>(IDX_BIAS, 0) += dx.tail<3>();
+    Matrix<float, 6, 6> tmp = Matrix<float, 6, 6>::Identity() - K * H;
+    Pq = tmp * Pq * tmp.transpose() + K * R_mag * K.transpose();
+    P.block<6, 6>(IDX_QUAT, IDX_QUAT) = Pq;
 }
 
 void ExtendedKalman::correctPitot(const float deltaP, const float staticP)
@@ -250,31 +301,41 @@ void ExtendedKalman::correctPitot(const float deltaP, const float staticP)
     }
 }
 
-Matrix<float, 13, 1> ExtendedKalman::getState() const { return x; }
+ExtendedKalmanState ExtendedKalman::getState() const
+{
+    return ExtendedKalmanState(TimestampTimer::getInstance().getTimestamp(), x);
+}
 
-void ExtendedKalman::setX(const Matrix<float, 13, 1>& x) { this->x = x; }
+Eigen::Matrix<float, 13, 1> ExtendedKalman::getX() const { return x; }
+
+void ExtendedKalman::setState(const ExtendedKalmanState& state)
+{
+    this->x = state.getX();
+}
+
+void ExtendedKalman::setX(const Eigen::Matrix<float, 13, 1>& x) { this->x = x; }
 
 Matrix3f ExtendedKalman::body2ned(const Vector4f& q)
 {
     // clang-format off
     return Matrix3f{
         {
-            powf(q[0], 2) - powf(q[1], 2) - powf(q[2], 2) + powf(q[3], 2),
-            2.0f * (q[0] * q[1] + q[2] * q[3]),
-            2.0f * (q[0] * q[2] - q[1] * q[3]),
-        },
-        {
+            q[0] * q[0] - q[1] * q[1] - q[2] * q[2] + q[3] * q[3],
             2.0f * (q[0] * q[1] - q[2] * q[3]),
-            -powf(q[0], 2) + powf(q[1], 2) - powf(q[2], 2) + powf(q[3], 2),
-            2.0f * (q[1] * q[2] + q[0] * q[3]),
+            2.0f * (q[0] * q[2] + q[1] * q[3]),
         },
         {
-            2.0f * (q[0] * q[2] + q[1] * q[3]),
+            2.0f * (q[0] * q[1] + q[2] * q[3]),
+            - q[0] * q[0] + q[1] * q[1] - q[2] * q[2] + q[3] * q[3],
             2.0f * (q[1] * q[2] - q[0] * q[3]),
-            -powf(q[0], 2) - powf(q[1], 2) + powf(q[2], 2) + powf(q[3], 2)
+        },
+        {
+            2.0f * (q[0] * q[2] - q[1] * q[3]),
+            2.0f * (q[1] * q[2] + q[0] * q[3]),
+            - q[0] * q[0] - q[1] * q[1] + q[2] * q[2] + q[3] * q[3]
         }
     };
-    // clanf-format on
+    // clang-format on
 }
 
 }  // namespace Boardcore
