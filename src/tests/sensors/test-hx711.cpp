@@ -54,7 +54,7 @@ int main()
     for (int i = 0; i < 100; i++)
     {
         sensor.sample();
-        average += sensor.getLastSample().weight;
+        average += sensor.getLastSample().load;
         Thread::sleep(12);
     }
     average /= 100;
@@ -65,8 +65,8 @@ int main()
     {
         sensor.sample();
 
-        printf("[%.1f] %f\n", sensor.getLastSample().weightTimestamp / 1e6,
-               sensor.getLastSample().weight);
+        printf("[%.1f] %f\n", sensor.getLastSample().loadTimestamp / 1e6,
+               sensor.getLastSample().load);
 
         Thread::sleep(10);
     }

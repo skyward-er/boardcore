@@ -152,15 +152,15 @@ void MBLoadCell::printData()
 
     if (maxPrint)
     {
-        TRACE("NEW MAX %.2f (ts: %.3f [s])\n", maxWeight.weight,
-              maxWeight.weightTimestamp / 1000000.0);
+        TRACE("NEW MAX %.2f (ts: %.3f [s])\n", maxWeight.load,
+              maxWeight.loadTimestamp / 1000000.0);
         maxPrint = false;
     }
 
     if (minPrint)
     {
-        TRACE("NEW MIN %.2f (ts: %.3f [s])\n", minWeight.weight,
-              minWeight.weightTimestamp / 1000000.0);
+        TRACE("NEW MIN %.2f (ts: %.3f [s])\n", minWeight.load,
+              minWeight.loadTimestamp / 1000000.0);
         minPrint = false;
     }
 }
@@ -191,7 +191,7 @@ MBLoadCellData MBLoadCell::sampleImpl()
     }
 
     // Memorizing also the maximum gross weight registered
-    if (!maxWeight.valid || maxWeight.weight < value.weight)
+    if (!maxWeight.valid || maxWeight.load < value.load)
     {
         maxWeight = value;
         maxSetted = true;
@@ -203,7 +203,7 @@ MBLoadCellData MBLoadCell::sampleImpl()
     }
 
     // Memorizing also the minimum gross weight registered
-    if (!minWeight.valid || minWeight.weight > value.weight)
+    if (!minWeight.valid || minWeight.load > value.load)
     {
         minWeight = value;
         minSetted = true;

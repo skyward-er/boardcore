@@ -47,6 +47,16 @@ build-debug:
   script:
     - ./sbs --debug
 
+# Stage build-logdecoder
+
+build-logdecoder:
+  stage: build-logdecoder
+  tags:
+    - miosix
+  script:
+    - cd scripts/logdecoder
+    - make
+
 # Stage test
 
 test:

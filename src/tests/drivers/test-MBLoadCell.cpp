@@ -44,10 +44,10 @@ void buttonCallback(uint8_t btnId, ButtonPress btnPress, MBLoadCell *loadcell)
     if (btnId == btnUserId && btnPress == ButtonPress::DOWN)
         TRACE(
             "## MAX: %.2f [Kg] (ts: %.3f)\t##\tMIN: %.2f [Kg] (ts: %.3f) ##\n",
-            loadcell->getMaxWeight().weight,
-            loadcell->getMaxWeight().weightTimestamp / 1000000.0,
-            loadcell->getMinWeight().weight,
-            loadcell->getMinWeight().weightTimestamp / 1000000.0);
+            loadcell->getMaxWeight().load,
+            loadcell->getMaxWeight().loadTimestamp / 1000000.0,
+            loadcell->getMinWeight().load,
+            loadcell->getMinWeight().load / 1000000.0);
 
     if (btnId == btnUserId && btnPress == ButtonPress::LONG)
         loadcell->resetMaxMinWeights();

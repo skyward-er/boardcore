@@ -74,7 +74,7 @@ HX711Data HX711::sampleImpl()
 
 void HX711::setScale(float scale) { this->scale = scale; }
 
-void HX711::setZero() { offset = -lastSample.weight * scale; }
+void HX711::setZero() { offset = -lastSample.load * scale; }
 
 void HX711::setZero(float offset) { this->offset = offset * scale; }
 
