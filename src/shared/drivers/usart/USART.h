@@ -36,15 +36,75 @@ using USARTType = USART_TypeDef;
 // TODO: create test utils
 #endif
 
+// A nice feature of the stm32 is that the USART are connected to the same
+// GPIOS in all families, stm32f1, f2, f4 and l1. Additionally, USART1 and
+// USART6 are always connected to the APB2, while the other USART/UARTs are
+// connected to the APB1.
+
+// USART1: AF7
+typedef miosix::Gpio<GPIOB_BASE, 6> u1tx1;
+typedef miosix::Gpio<GPIOB_BASE, 7> u1rx1;
+typedef miosix::Gpio<GPIOA_BASE, 9> u1tx2;
+typedef miosix::Gpio<GPIOA_BASE, 10> u1rx2;
+// typedef miosix::Gpio<GPIOA_BASE, 11> u1cts;
+// typedef miosix::Gpio<GPIOA_BASE, 12> u1rts;
+
+// USART2: AF7
+typedef miosix::Gpio<GPIOA_BASE, 2> u2tx1;
+typedef miosix::Gpio<GPIOA_BASE, 3> u2rx1;
+typedef miosix::Gpio<GPIOD_BASE, 5> u2tx2;
+typedef miosix::Gpio<GPIOD_BASE, 6> u2rx2;
+// typedef miosix::Gpio<GPIOA_BASE, 0> u2cts;
+// typedef miosix::Gpio<GPIOA_BASE, 1> u2rts;
+
+// USART3: AF7
+typedef miosix::Gpio<GPIOB_BASE, 10> u3tx1;
+typedef miosix::Gpio<GPIOB_BASE, 11> u3rx1;
+typedef miosix::Gpio<GPIOD_BASE, 8> u3tx2;
+typedef miosix::Gpio<GPIOD_BASE, 9> u3rx2;
+// typedef miosix::Gpio<GPIOB_BASE, 13> u3cts;
+// typedef miosix::Gpio<GPIOB_BASE, 14> u3rts;
+
+// UART4: AF8
+typedef miosix::Gpio<GPIOA_BASE, 0> u4tx1;
+typedef miosix::Gpio<GPIOA_BASE, 1> u4rx1;
+typedef miosix::Gpio<GPIOC_BASE, 10> u4tx2;
+typedef miosix::Gpio<GPIOC_BASE, 11> u4rx2;
+
+// UART5: AF8
+typedef miosix::Gpio<GPIOC_BASE, 12> u5tx;
+typedef miosix::Gpio<GPIOD_BASE, 2> u5rx;
+
+// USART6: AF8
+typedef miosix::Gpio<GPIOC_BASE, 6> u6tx1;
+typedef miosix::Gpio<GPIOC_BASE, 7> u6rx1;
+#ifdef STM32F429xx
+typedef miosix::Gpio<GPIOG_BASE, 14> u6tx2;
+typedef miosix::Gpio<GPIOG_BASE, 9> u6rx2;
+
+// USART7: AF8
+typedef miosix::Gpio<GPIOE_BASE, 8> u7tx1;
+typedef miosix::Gpio<GPIOE_BASE, 7> u7rx1;
+typedef miosix::Gpio<GPIOF_BASE, 7> u7tx2;
+typedef miosix::Gpio<GPIOF_BASE, 6> u7rx2;
+
+// USART8: AF8
+typedef miosix::Gpio<GPIOE_BASE, 1> u8tx;
+typedef miosix::Gpio<GPIOE_BASE, 0> u8rx;
+#endif  // STM32F429xx
+
 namespace Boardcore
 {
 /**
- * @brief Abstract class that implements the interface for the serial
+ * @brief Abstract class that implements the interface for the USART/UART serial
  * communication
  */
 class USARTInterface
 {
 public:
+    /**
+     * @brief enumeration that lists all the available baudrate values
+     */
     enum class Baudrate : int
     {
         // B1200   = 1200, // NOT WORKING WITH 1200 baud
@@ -59,20 +119,13 @@ public:
         B921600 = 921600
     };
 
-    /**
-     * @brief interrupt handler that deals with receive interrupt, idle
-     * interrupt
-     */
-    virtual void IRQhandleInterrupt() = 0;
-
     virtual ~USARTInterface() = 0;
 
     /**
      * @brief initializes the peripheral enabling his interrupts, enabling the
-     * interrupts in the NVIC and setting the pins with the appropriate
-     * alternate functions. All the setup phase must be done before the
-     * initialization of the peripheral. Initializes also the serial port using
-     * the chosen pins.
+     * interrupts in the NVIC. All the setup phase (with the setting of the pins
+     * and their alternate functions) must be done before the initialization of
+     * the peripheral.
      */
     virtual bool init() = 0;
 
@@ -98,22 +151,33 @@ public:
     int getId() { return id; };
 
 protected:
+    /**
+     * @brief initializes the pins with the appropriate alternate functions
+     * @param tx trasmission pin
+     * @param nAFtx trasmission pin alternate function
+     * @param rx reception pin
+     * @param nAFrx reception pin alternate function
+     */
+    bool initPins(miosix::GpioPin tx, int nAFtx, miosix::GpioPin rx, int nAFrx);
+
+    bool pinInitialized = false;  ///< True if initPins() already called
+                                  ///< successfully, false otherwise
+    miosix::GpioPin tx{GPIOA_BASE,
+                       0};  ///< GpioPin that represents the transmitter pin
+    miosix::GpioPin rx{GPIOA_BASE,
+                       0};  ///< GpioPin that represents the receiver pin
     USARTType
         *usart;  ///< pointer to the struct representing the USART peripheral
-    int id = 1;  ///< can be 1, 2, 3
+    int id = 1;  ///< can be 1, 2, 3, 4, 5, 6, 7, 8
     bool initialized =
         false;  ///< True if init() already called successfully, false otherwise
     Baudrate baudrate;  ///< Baudrate of the serial communication
 };
 
 /**
- * @brief Driver for STM32 low level USART peripheral.
- *
- * This driver applies to STM32F4 family.
- *
- * The Universal Synchronous and asynchronous Receiver/Transmitter (USART)
- * allows:
- * - UART communications
+ * @brief Driver for STM32F4 low level USART/UART peripheral. It permits to
+ * configure some low level parameters such as word length, parity, stop bits
+ * and oversampling.
  */
 class USART : public USARTInterface
 {
@@ -131,8 +195,9 @@ public:
     };
 
     /**
-     * @brief interrupt handler that deals with receive interrupt, idle
-     * interrupt
+     * @brief interrupt handler that deals with receive interrupt and idle
+     * interrupt. Used to implement the reads, fills up a buffer when the
+     * interrupt is fired.
      */
     void IRQhandleInterrupt();
 
@@ -141,16 +206,41 @@ public:
      * sets the default values for all the parameters (1 stop bit, 8 bit data,
      * no control flow and no oversampling). Initializes the serial port using
      * the default pins, which are:
-     * - USART1: tx=PA9  rx=PA10 cts=PA11 rts=PA12
-     * - USART2: tx=PA2  rx=PA3  cts=PA0  rts=PA1
-     * - USART3: tx=PB10 rx=PB11 cts=PB13 rts=PB14
+     * - USART1: tx=PA9  rx=PA10
+     * - USART2: tx=PA2  rx=PA3
+     * - USART3: tx=PB10 rx=PB11
+     * - UART4:  tx=PA0 rx=PA1
+     * - UART5:  tx=PC12 rx=PD2
+     * - USART6: tx=PC6 rx=PC7
+     * - UART7: tx=PE8 rx=PE7
+     * - UART8: tx=PE1 rx=PE0
      * @param usart structure that represents the usart peripheral [accepted
-     * are: USART1, USART2 or USART3].
+     * are: USART1, USART2, USART3, UART4, UART5, USART6, UART7, UART8].
      * @param baudrate member of the enum Baudrate that represents the baudrate
      * with which the communication will take place.
      */
     USART(USARTType *usart, Baudrate baudrate);
 
+    /**
+     * @brief Automatically enables the peripheral and timer peripheral clock.
+     * sets the default values for all the parameters (1 stop bit, 8 bit data,
+     * no control flow and no oversampling). Initializes the serial port using
+     * custom pins.
+     * @param usart structure that represents the usart peripheral [accepted
+     * are: USART1, USART2, USART3, UART4, UART5, USART6, UART7, UART8].
+     * @param baudrate member of the enum Baudrate that represents the baudrate
+     * with which the communication will take place.
+     * @param tx trasmission pin
+     * @param rx reception pin
+     */
+    USART(USARTType *usart, Baudrate baudrate, miosix::GpioPin tx,
+          miosix::GpioPin rx);
+
+    /**
+     * @brief Disables the flags for the generation of the interrupts, disables
+     * the IRQ from the NVIC, disables the peripheral and removes his pointer
+     * from the ports list.
+     */
     ~USART();
 
     /**
@@ -161,15 +251,6 @@ public:
      * calling this function.
      */
     bool init();
-
-    /**
-     * @brief initializes the pins with the appropriate alternate functions
-     * @param tx trasmission pin
-     * @param nAFtx trasmission pin alternate function
-     * @param rx reception pin
-     * @param nAFrx reception pin alternate function
-     */
-    bool initPins(miosix::GpioPin tx, int nAFtx, miosix::GpioPin rx, int nAFrx);
 
     /**
      * @brief Blocking read operation to read nBytes or till the data transfer
@@ -186,8 +267,6 @@ public:
      * @brief Write a string to the serial, comprising the '\0' character
      */
     int writeString(const char *buffer);
-
-    void enableDMA();
 
     /**
      * @brief Set the length of the word to 8 or to 9.
@@ -229,7 +308,8 @@ public:
     static USART *ports[];
 
 private:
-    bool pinInitialized = false;
+    void commonConstructor(USARTType *usart, Baudrate baudrate);
+
     IRQn_Type irqn;
     miosix::FastMutex rxMutex;  ///< mutex for receiving on serial
     miosix::FastMutex txMutex;  ///< mutex for transmitting on serial
@@ -250,15 +330,41 @@ class STM32SerialWrapper : public USARTInterface
 {
 public:
     /**
-     * @brief interrupt handler that deals with receive interrupt, idle
-     * interrupt
+     * @brief Initializes the serialPortName and initializes the default pins,
+     * which are:
+     * - USART1: tx=PA9  rx=PA10
+     * - USART2: tx=PA2  rx=PA3
+     * - USART3: tx=PB10 rx=PB11
+     * @param usart structure that represents the usart peripheral [accepted
+     * are: USART1, USART2, USART3].
+     * @param baudrate member of the enum Baudrate that represents the baudrate
+     * with which the communication will take place.
      */
-    void IRQhandleInterrupt();
-
     STM32SerialWrapper(USARTType *usart, Baudrate baudrate);
 
+    /**
+     * @brief Initializes the serialPortName and initializes the serial port
+     * using custom pins.
+     * @param usart structure that represents the usart peripheral [accepted
+     * are: USART1, USART2, USART3].
+     * @param baudrate member of the enum Baudrate that represents the baudrate
+     * with which the communication will take place.
+     * @param tx trasmission pin
+     * @param rx reception pin
+     */
+    STM32SerialWrapper(USARTType *usart, Baudrate baudrate, miosix::GpioPin tx,
+                       miosix::GpioPin rx);
+
+    /**
+     * @brief Removes the device from the list of the devices and closes the
+     * file of the device.
+     */
     ~STM32SerialWrapper();
 
+    /**
+     * @brief initializes the peripheral.
+     * @see{STM32SerialWrapper::serialCommSetup}
+     */
     bool init();
 
     /**
@@ -279,8 +385,8 @@ public:
 
 private:
     /**
-     * @brief Creates and opens the serial port for communication between
-     * OBSW and simulation device
+     * @brief Creates a device that represents the serial port, adds it to the
+     * file system and opens the file that represents the serial port.
      */
     bool serialCommSetup();
 

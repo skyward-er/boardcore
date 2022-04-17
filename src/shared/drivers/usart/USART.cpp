@@ -35,42 +35,6 @@
 // TODO: define the length of the queue
 #define QUEUE_LEN 256
 
-// A nice feature of the stm32 is that the USART are connected to the same
-// GPIOS in all families, stm32f1, f2, f4 and l1. Additionally, USART1 is
-// always connected to the APB2, while USART2 and USART3 are always on APB1.
-// Unfortunately, this does not hold with DMA.
-
-// typedef miosix::Gpio<GPIOA_BASE, 9> u1tx;
-// typedef miosix::Gpio<GPIOA_BASE, 10> u1rx;
-typedef miosix::Gpio<GPIOB_BASE, 6> u1tx;
-typedef miosix::Gpio<GPIOB_BASE, 7> u1rx;
-typedef miosix::Gpio<GPIOA_BASE, 11> u1cts;
-typedef miosix::Gpio<GPIOA_BASE, 12> u1rts;
-
-typedef miosix::Gpio<GPIOA_BASE, 2> u2tx;
-typedef miosix::Gpio<GPIOA_BASE, 3> u2rx;
-typedef miosix::Gpio<GPIOA_BASE, 0> u2cts;
-typedef miosix::Gpio<GPIOA_BASE, 1> u2rts;
-
-typedef miosix::Gpio<GPIOB_BASE, 10> u3tx;
-typedef miosix::Gpio<GPIOB_BASE, 11> u3rx;
-typedef miosix::Gpio<GPIOB_BASE, 13> u3cts;
-typedef miosix::Gpio<GPIOB_BASE, 14> u3rts;
-
-typedef miosix::Gpio<GPIOA_BASE, 0> u4tx;
-typedef miosix::Gpio<GPIOA_BASE, 1> u4rx;
-
-typedef miosix::Gpio<GPIOA_BASE, 0> u4tx1;
-typedef miosix::Gpio<GPIOA_BASE, 1> u4rx1;
-typedef miosix::Gpio<GPIOC_BASE, 10> u4tx2;
-typedef miosix::Gpio<GPIOC_BASE, 11> u4rx2;
-
-typedef miosix::Gpio<GPIOC_BASE, 12> u5tx;
-typedef miosix::Gpio<GPIOD_BASE, 2> u5rx;
-
-typedef miosix::Gpio<GPIOC_BASE, 6> u6tx;
-typedef miosix::Gpio<GPIOC_BASE, 7> u6rx;
-
 Boardcore::USART *Boardcore::USART::ports[MAX_SERIAL_PORTS];
 
 /**
@@ -285,7 +249,31 @@ void __attribute__((naked, used)) UART8_IRQHandler()
 
 namespace Boardcore
 {
+
 USARTInterface::~USARTInterface() {}
+
+bool USARTInterface::initPins(miosix::GpioPin tx, int nAFtx, miosix::GpioPin rx,
+                              int nAFrx)
+{
+    if (pinInitialized)
+    {
+        return false;
+    }
+
+    miosix::FastInterruptDisableLock dLock;
+
+    this->tx = tx;
+    this->rx = rx;
+
+    tx.mode(miosix::Mode::ALTERNATE);
+    tx.alternateFunction(nAFtx);
+
+    rx.mode(miosix::Mode::ALTERNATE);
+    rx.alternateFunction(nAFrx);
+
+    pinInitialized = true;
+    return true;
+}
 
 void USART::IRQhandleInterrupt()
 {
@@ -298,7 +286,7 @@ void USART::IRQhandleInterrupt()
         c = usart->DR;
         // If no error put data in buffer
         if (!(usart->SR & USART_SR_FE))
-            if (rxQueue.tryPut(c) == false) /*fifo overflow*/
+            if (rxQueue.tryPut(c) == false)  // fifo overflow
                 ;
 
         idle = false;
@@ -322,53 +310,117 @@ void USART::IRQhandleInterrupt()
 
 USART::USART(USARTType *usart, Baudrate baudrate) : rxQueue(QUEUE_LEN)
 {
-    // enable the peripehral on the right APB
-    ClockUtils::enablePeripheralClock(usart);
-    RCC_SYNC();
-
-    this->usart = usart;
-
     // setting the id of the serial port
     switch (reinterpret_cast<uint32_t>(usart))
     {
         case USART1_BASE:
             this->id = 1;
-            initPins(u1tx::getPin(), 7, u1rx::getPin(), 7);
+            initPins(u1tx1::getPin(), 7, u1rx1::getPin(), 7);
             irqn = USART1_IRQn;
             break;
         case USART2_BASE:
             this->id = 2;
-            initPins(u2tx::getPin(), 7, u2rx::getPin(), 7);
+            initPins(u2tx1::getPin(), 7, u2rx1::getPin(), 7);
             irqn = USART2_IRQn;
             break;
         case USART3_BASE:
             this->id = 3;
-            initPins(u3tx::getPin(), 7, u3rx::getPin(), 7);
+            initPins(u3tx1::getPin(), 7, u3rx1::getPin(), 7);
             irqn = USART3_IRQn;
             break;
         case UART4_BASE:
             this->id = 4;
-            irqn     = UART4_IRQn;
+            initPins(u4tx1::getPin(), 8, u4rx1::getPin(), 8);
+            irqn = UART4_IRQn;
             break;
         case UART5_BASE:
             this->id = 5;
-            irqn     = UART5_IRQn;
+            initPins(u5tx::getPin(), 8, u5rx::getPin(), 8);
+            irqn = UART5_IRQn;
             break;
         case USART6_BASE:
             this->id = 6;
-            irqn     = USART6_IRQn;
+            initPins(u6tx1::getPin(), 8, u6rx1::getPin(), 8);
+            irqn = USART6_IRQn;
             break;
 #ifdef STM32F429xx
         case UART7_BASE:
             this->id = 7;
-            irqn     = UART7_IRQn;
+            initPins(u7tx1::getPin(), 8, u7rx1::getPin(), 8);
+            irqn = UART7_IRQn;
             break;
         case UART8_BASE:
             this->id = 8;
-            irqn     = UART8_IRQn;
+            initPins(u8tx1::getPin(), 8, u8rx1::getPin(), 8);
+            irqn = UART8_IRQn;
             break;
 #endif  // STM32F429xx
     }
+
+    commonConstructor(usart, baudrate);
+}
+
+USART::USART(USARTType *usart, Baudrate baudrate, miosix::GpioPin tx,
+             miosix::GpioPin rx)
+    : rxQueue(QUEUE_LEN)
+{
+    // setting the id of the serial port
+    switch (reinterpret_cast<uint32_t>(usart))
+    {
+        case USART1_BASE:
+            this->id = 1;
+            initPins(tx, 7, rx, 7);
+            irqn = USART1_IRQn;
+            break;
+        case USART2_BASE:
+            this->id = 2;
+            initPins(tx, 7, rx, 7);
+            irqn = USART2_IRQn;
+            break;
+        case USART3_BASE:
+            this->id = 3;
+            initPins(tx, 7, rx, 7);
+            irqn = USART3_IRQn;
+            break;
+        case UART4_BASE:
+            this->id = 4;
+            initPins(tx, 8, rx, 8);
+            irqn = UART4_IRQn;
+            break;
+        case UART5_BASE:
+            this->id = 5;
+            initPins(tx, 8, rx, 8);
+            irqn = UART5_IRQn;
+            break;
+        case USART6_BASE:
+            this->id = 6;
+            initPins(tx, 8, rx, 8);
+            irqn = USART6_IRQn;
+            break;
+#ifdef STM32F429xx
+        case UART7_BASE:
+            this->id = 7;
+            initPins(tx, 8, rx, 8);
+            irqn = UART7_IRQn;
+            break;
+        case UART8_BASE:
+            this->id = 8;
+            initPins(tx, 8, rx, 8);
+            irqn = UART8_IRQn;
+            break;
+#endif  // STM32F429xx
+    }
+
+    commonConstructor(usart, baudrate);
+}
+
+void USART::commonConstructor(USARTType *usart, Baudrate baudrate)
+{
+    this->usart = usart;
+
+    // enable the peripehral on the right APB
+    ClockUtils::enablePeripheralClock(usart);
+    RCC_SYNC();
 
     // enabling the usart
     {
@@ -406,6 +458,7 @@ bool USART::init()
 {
     if (id < 1 || id > MAX_SERIAL_PORTS || !pinInitialized)
     {
+        TRACE("Not supported USART id or pins not initialized\n");
         return false;
     }
 
@@ -434,34 +487,6 @@ bool USART::init()
     this->clearQueue();
 
     return true;
-}
-
-bool USART::initPins(miosix::GpioPin tx, int nAFtx, miosix::GpioPin rx,
-                     int nAFrx)
-{
-    if (pinInitialized)
-    {
-        return false;
-    }
-
-    miosix::FastInterruptDisableLock dLock;
-
-    tx.mode(miosix::Mode::ALTERNATE);
-    tx.alternateFunction(nAFtx);
-
-    rx.mode(miosix::Mode::ALTERNATE);
-    rx.alternateFunction(nAFrx);
-
-    pinInitialized = true;
-    return true;
-}
-
-void USART::enableDMA()
-{
-    miosix::FastInterruptDisableLock dLock;
-    // enable DMA transmitter and receiver
-    usart->CR3 |= USART_CR3_DMAT | USART_CR3_DMAR;
-    return;
 }
 
 void USART::setWordLength(WordLength wordLength)
@@ -513,11 +538,11 @@ void USART::setBaudrate(Baudrate baudrate)
      */
     miosix::InterruptDisableLock dLock;
 
-    // USART1 is always connected to the APB2, while USART2 and USART3 are
-    // always on APB1
+    // USART1 and USART6 is always connected to the APB2, while all the others
+    // UART/USART peripherals are always connected to APB1
     uint32_t f = ClockUtils::getAPBFrequency(
-        (id == 1 ? ClockUtils::APB::APB2     // High speed APB2
-                 : ClockUtils::APB::APB1));  // Low speed APB1,
+        (id == 1 || id == 6 ? ClockUtils::APB::APB2     // High speed APB2
+                            : ClockUtils::APB::APB1));  // Low speed APB1,
 
     // <<4 in order to shift to left of 4 positions, to create a fixed point
     // number of 4 decimal digits /8 == >>3 in order to divide per 8 (from the
@@ -617,9 +642,34 @@ int USART::writeString(const char *buffer)
 
 void USART::clearQueue() { rxQueue.reset(); }
 
-void STM32SerialWrapper::IRQhandleInterrupt() { serial->IRQhandleInterrupt(); }
-
 STM32SerialWrapper::STM32SerialWrapper(USARTType *usart, Baudrate baudrate)
+{
+    this->usart    = usart;
+    this->baudrate = baudrate;
+    switch (reinterpret_cast<uint32_t>(usart))
+    {
+        case USART1_BASE:
+            this->id = 1;
+            initPins(u1tx1::getPin(), 7, u1rx1::getPin(), 7);
+            this->serialPortName = std::string("usart1");
+            break;
+        case USART2_BASE:
+            this->id = 2;
+            initPins(u2tx1::getPin(), 7, u2rx1::getPin(), 7);
+            this->serialPortName = std::string("usart2");
+            break;
+        case USART3_BASE:
+            this->id = 3;
+            initPins(u3tx1::getPin(), 7, u3rx1::getPin(), 7);
+            this->serialPortName = std::string("usart3");
+            break;
+    }
+    initialized = false;
+    fd          = -1;
+}
+
+STM32SerialWrapper::STM32SerialWrapper(USARTType *usart, Baudrate baudrate,
+                                       miosix::GpioPin tx, miosix::GpioPin rx)
 {
     this->usart    = usart;
     this->baudrate = baudrate;
@@ -638,6 +688,7 @@ STM32SerialWrapper::STM32SerialWrapper(USARTType *usart, Baudrate baudrate)
             this->serialPortName = std::string("usart3");
             break;
     }
+    initPins(tx, 7, rx, 7);
     initialized = false;
     fd          = -1;
 }
@@ -652,17 +703,24 @@ STM32SerialWrapper::~STM32SerialWrapper()
 
 bool STM32SerialWrapper::init()
 {
+    if (id > 3)
+    {
+        TRACE(
+            "[STM32SerialWrapper] USART id greater than 3 is not supported\n");
+        return false;
+    }
+
     if (initialized)
     {
         TRACE(
-            "[SerialCommunication] Error : serial communication already "
+            "[STM32SerialWrapper] Error : serial communication already "
             "initialized!\n");
         return false;
     }
     else if (!serialCommSetup())
     {
         TRACE(
-            "[SerialCommunication] Error : can't initialize serial "
+            "[STM32SerialWrapper] Error : can't initialize serial "
             "communication!\n");
         return false;
     }
@@ -673,14 +731,19 @@ bool STM32SerialWrapper::init()
 
 bool STM32SerialWrapper::serialCommSetup()
 {
-    // Takes the file system pointer of the devices
-    miosix::intrusive_ref_ptr<miosix::DevFs> devFs =
-        miosix::FilesystemManager::instance().getDevFs();
-
     // Creates and adds the serial port to the devices
-    serial = new miosix::STM32Serial(id, static_cast<int>(baudrate));
-    if (!devFs->addDevice(serialPortName.c_str(),
-                          miosix::intrusive_ref_ptr<miosix::Device>(serial)))
+    if (!pinInitialized)
+        serial = new miosix::STM32Serial(id, static_cast<int>(baudrate));
+    else
+    {
+        serial =
+            new miosix::STM32Serial(id, static_cast<int>(baudrate), tx, rx);
+    }
+
+    // Adds a device to the file system
+    if (!miosix::FilesystemManager::instance().getDevFs()->addDevice(
+            serialPortName.c_str(),
+            miosix::intrusive_ref_ptr<miosix::Device>(serial)))
         return false;
 
     // path string "/dev/<name_of_port>" for the port we want to open

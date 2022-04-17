@@ -37,16 +37,17 @@ using namespace Boardcore;
 /**
  * SETUP:
  * - connect the default serial (USART3) to the pc
- * - connect usart1_rx to the usart2_tx
- * - connect usart2_rx to the usart1_tx
+ * - connect usartx_rx to the usarty_tx
+ * - connect usarty_rx to the usartx_tx
  *
- * WARNING: working if "write, >10ms sleep (or a printf...),
- * STM32SerialWrapper::read". if we omit "time" we end up failing the test. More
- * data is sent and more baudrates will fail (from 2400 to greater).
+ * WARNING: If using the STM32SerialWrapper, the test passes only if we:
+ *  1. do a write/writeString with USART or STM32SerialWrapper;
+ *  2. sleep 10ms or more (or a printf...)
+ *  3. we finally read from STM32SerialWrapper::read method.
+ * if we omit the waiting time we end up failing the test. If more data is sent,
+ * then more baudrates tests will fail (from 2400 to greater). The USART driver
+ * doesn't have this problem.
  */
-
-typedef miosix::Gpio<GPIOA_BASE, 0> u4tx;
-typedef miosix::Gpio<GPIOA_BASE, 1> u4rx;
 
 typedef struct
 {
@@ -85,7 +86,7 @@ bool testCommunicationSequential(USARTInterface *src, USARTInterface *dst)
 
     printf("\t%d--> sent: \t'%s'\n", src->getId(), buf_tx);
     src->writeString(buf_tx);
-    // Thread::sleep(10); // enable this to pass the test
+    // Thread::sleep(10); // enable to pass the test with STM32SerialWrapper
     dst->read(buf_rx, 64);
 
     printf("\t%d<-- received: \t'%s'\n", dst->getId(), buf_rx);
@@ -105,7 +106,7 @@ bool testCommunicationSequential(USARTInterface *src, USARTInterface *dst)
     printf("Sending binary data\n");
     printf("\t%d--> sent: \t'%s'\n", src->getId(), struct_tx.print().c_str());
     src->write(&struct_tx, sizeof(StructToSend));
-    // Thread::sleep(10); // enable this to pass the test
+    // Thread::sleep(10); // enable to pass the test with STM32SerialWrapper
     dst->read(&struct_rx, sizeof(StructToSend));
     printf("\t%d<-- received: \t'%s'\n", dst->getId(),
            struct_rx.print().c_str());
@@ -123,11 +124,15 @@ bool testCommunicationSequential(USARTInterface *src, USARTInterface *dst)
     return passed;
 }
 
-/*
- * // USART1: tx=PA9  rx=PA10 cts=PA11 rts=PA12
- * USART1: tx=PB6  rx=PB7
- * USART2: tx=PA2  rx=PA3  cts=PA0  rts=PA1
- * USART3: tx=PB10 rx=PB11 cts=PB13 rts=PB14
+/* Available default pins:
+ * - USART1: tx=PA9  rx=PA10
+ * - USART2: tx=PA2  rx=PA3
+ * - USART3: tx=PB10 rx=PB11
+ * - UART4:  tx=PA0 rx=PA1
+ * - UART5:  tx=PC12 rx=PD2
+ * - USART6: tx=PC6 rx=PC7
+ * - UART7: tx=PE8 rx=PE7
+ * - UART8: tx=PE1 rx=PE0
  */
 int main()
 {
@@ -140,22 +145,23 @@ int main()
         printf("\n\n########################### %d\n", (int)baudrate);
 
         // declaring the usart peripherals
-        USART usart1(USART1, baudrate);
-        usart1.init();
+        STM32SerialWrapper usartx(USART1, baudrate, u1rx2::getPin(),
+                                  u1tx1::getPin());
+        usartx.init();
 
-        USART usart4(UART4, baudrate);
-        usart4.initPins(u4tx::getPin(), 8, u4rx::getPin(), 8);
-        // usart2.setOversampling(false);
-        // usart2.setStopBits(1);
-        // usart2.setWordLength(USART::WordLength::BIT8);
-        // usart2.setParity(USART::ParityBit::NO_PARITY);
-        usart4.init();
-
-        // testing transmission (both char and binary) "serial 1 -> serial 2"
-        testPassed &= testCommunicationSequential(&usart1, &usart4);
+        USART usarty(UART4, baudrate);
+        // usarty.initPins(u5tx::getPin(), 8, u5rx::getPin(), 8);
+        // usarty.setOversampling(false);
+        // usarty.setStopBits(1);
+        // usarty.setWordLength(USART::WordLength::BIT8);
+        // usarty.setParity(USART::ParityBit::NO_PARITY);
+        usarty.init();
 
         // testing transmission (both char and binary) "serial 1 <- serial 2"
-        testPassed &= testCommunicationSequential(&usart4, &usart1);
+        testPassed &= testCommunicationSequential(&usartx, &usarty);
+
+        // testing transmission (both char and binary) "serial 1 -> serial 2"
+        testPassed &= testCommunicationSequential(&usarty, &usartx);
     }
 
     if (testPassed)
