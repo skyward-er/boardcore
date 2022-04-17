@@ -25,6 +25,7 @@ variables:
 stages:
   - build-release
   - build-debug
+  - build-logdecoder
   - test
   - lint
   - documentation
