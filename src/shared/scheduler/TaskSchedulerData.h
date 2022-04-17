@@ -22,7 +22,7 @@
 
 #pragma once
 
-#include <math/Stats.h>
+#include <utils/Stats/Stats.h>
 
 #include <cstdint>
 #include <ostream>

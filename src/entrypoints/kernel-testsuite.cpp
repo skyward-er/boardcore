@@ -584,7 +584,7 @@ void syscall_test_files()
             fail("Open with O_RDWR should have failed, the file doesn't exist");
             break;
         case 2:
-            fail("Cannot craete new file");
+            fail("Cannot create new file");
             break;
         case 3:
             fail("file descriptor not valid");
@@ -596,7 +596,7 @@ void syscall_test_files()
             fail("read has read the wrong amount of data");
             break;
         case 6:
-            fail("readed data doesn't match the written one");
+            fail("read data doesn't match the written one");
             break;
         case 7:
             fail("close hasn't returned 0");
@@ -605,10 +605,10 @@ void syscall_test_files()
             fail("open with O_RDWR failed, but the file exists");
             break;
         case 9:
-            fail("read has return the wrogn amount of data");
+            fail("read has return the wrong amount of data");
             break;
         case 10:
-            fail("readed data doesn't match the written one");
+            fail("read data doesn't match the written one");
             break;
         case 11:
             fail("close hasn't returned 0");
@@ -2133,7 +2133,7 @@ static void test_9()
 // Test 10
 //
 /*
-tests exception propagation throug entry point of a thread
+tests exception propagation through entry point of a thread
 */
 
 #ifndef __NO_EXCEPTIONS
@@ -4171,7 +4171,7 @@ static void test_24()
     checkAtomicOps<Derived1, Derived1>();
     checkAtomicOps<Derived2, Derived2>();
 
-    // atomic_load(), atomic_store(), with polimorphism
+    // atomic_load(), atomic_store(), with polymorphism
     checkAtomicOps<Base0, Derived0>();
     checkAtomicOps<Middle1, Derived1>();
     checkAtomicOps<Middle1, Derived2>();
@@ -4622,7 +4622,7 @@ static void fs_test_1()
     if ((f = fopen("/sd/testdir/file_4.txt", "r")) == NULL)
         fail("can't open r2 file_4.txt");
     if (ftell(f) != 0)  // cppcheck-suppress nullPointerRedundantCheck
-        fail("File opend but cursor not @ address 0");
+        fail("File opened but cursor not @ address 0");
     fseek(f, -4, SEEK_END);  // Seek to 128\n
     if ((fgetc(f) != '1') | (fgetc(f) != '2') | (fgetc(f) != '8'))
         fail("fgetc SEEK_END");
@@ -5168,7 +5168,7 @@ static void benchmark_2()
 //
 /*
 tests:
-Fisesystem write speed and latency
+File system write speed and latency
 makes a 1MB file and measures time required to read/write it.
 */
 
@@ -5259,7 +5259,7 @@ quit:
 //
 /*
 tests:
-Mutex lonk/unlock time
+Mutex lock/unlock time
 */
 
 volatile bool b4_end = false;

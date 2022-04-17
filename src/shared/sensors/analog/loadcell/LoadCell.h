@@ -26,8 +26,6 @@
 
 #include <functional>
 
-#include "LoadCellData.h"
-
 namespace Boardcore
 {
 
@@ -50,7 +48,7 @@ public:
     {
         LoadCellData data;
 
-        std::tie(data.timestamp, data.voltage) = getVoltage();
+        std::tie(data.loadTimestamp, data.voltage) = getVoltage();
 
         data.load = data.voltage / conversionCoeff;
 

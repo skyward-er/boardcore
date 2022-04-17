@@ -42,10 +42,10 @@ using namespace miosix;
 namespace Boardcore
 {
 
-int Logger::start()
+bool Logger::start()
 {
     if (started)
-        return fileNumber;
+        return true;
 
     // Find the proper log filename base on the current files on the disk
     string filename;
@@ -68,13 +68,13 @@ int Logger::start()
     {
         fileNumber = -1;
         TRACE("Error opening %s file\n", filename.c_str());
-        throw runtime_error("Error opening log file");
+        return false;
     }
     setbuf(file, NULL);  // Disable buffering for the file stream
 
-    // The boring part, start threads one by one and if they fail, undo
+    // The boring part, start threads one by one and if they fail, undo.
     // Perhaps excessive defensive programming as thread creation failure is
-    // highly unlikely (only if ram is full)
+    // highly unlikely (only if ram is full).
 
     packTh = Thread::create(packThreadLauncher, skywardStack(16 * 1024), 1,
                             this, Thread::JOINABLE);
@@ -82,7 +82,7 @@ int Logger::start()
     {
         fclose(file);
         TRACE("Error creating pack thread\n");
-        throw runtime_error("Error creating pack thread");
+        return false;
     }
 
     writeTh = Thread::create(writeThreadLauncher, skywardStack(16 * 1024), 1,
@@ -101,13 +101,13 @@ int Logger::start()
         fullBufferList.pop();  // Remove nullptr
         fclose(file);
         TRACE("Error creating write thread\n");
-        throw runtime_error("Error creating write thread");
+        return false;
     }
 
     started         = true;
     stats.logNumber = fileNumber;
 
-    return fileNumber;
+    return true;
 }
 
 void Logger::stop()

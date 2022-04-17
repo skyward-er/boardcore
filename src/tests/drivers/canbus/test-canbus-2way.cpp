@@ -26,6 +26,7 @@
 // which it will respond
 
 #include <utils/Debug.h>
+#include <utils/Stats/Stats.h>
 
 #include <string>
 
@@ -34,7 +35,6 @@
 #include "diagnostic/PrintLogger.h"
 #include "drivers/canbus/BusLoadEstimation.h"
 #include "drivers/canbus/Canbus.h"
-#include "math/Stats.h"
 #include "utils/collections/CircularBuffer.h"
 
 constexpr uint32_t BAUD_RATE         = 1000 * 1000;

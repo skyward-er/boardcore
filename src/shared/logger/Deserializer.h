@@ -27,6 +27,7 @@
 
 #include <cstdio>
 #include <fstream>
+#include <iostream>
 #include <limits>
 #include <ostream>
 #include <string>
@@ -51,141 +52,30 @@ typedef std::numeric_limits<float> flt;
 class Deserializer
 {
 public:
-    Deserializer(std::string logfile, std::string prefix = "")
-        : prefix(prefix), logFile(logfile),
-          logFileWithExt(prefix + logFile + ".dat")
-    {
-    }
+    Deserializer(std::string fileName);
 
-    ~Deserializer()
-    {
-        if (!closed)
-        {
-            for (auto it = fileStreams.begin(); it != fileStreams.end(); it++)
-            {
-                (*it)->close();
-                delete *it;
-            }
-        }
-    }
+    ~Deserializer();
 
     /**
-     * Register a type to be deserialized, and the associated print function
+     * Register a type to be deserialized, and the associated print function.
      *
-     * @param t the object to be deserialized
-     * @param fncPrint function that prints the deserialized data on the
+     * @param t The object to be deserialized.
+     * @param fncPrint Function that prints the deserialized data on the
      * provided output stream.
+     * @param header Optional CSV header text.
      */
     template <typename T>
     bool registerType(std::function<void(T& t, std::ostream& os)> fncPrint,
-                      std::string header = "")
-    {
-        if (closed)
-        {
-            printf("Error: Deserializer is closed.\n");
-            return false;
-        }
-
-        char cFilename[128];
-        sprintf(cFilename, "%s%s_%s.csv", prefix.c_str(), logFile.c_str(),
-                typeid(T).name());
-
-        std::string filename(cFilename);
-
-        std::ofstream* stream = new std::ofstream();
-        stream->open(filename);
-
-        if (!stream->is_open())
-        {
-            printf("Error opening file %s.\n", filename.c_str());
-            perror("Error is:");
-            delete stream;
-            return false;
-        }
-
-        fileStreams.push_back(stream);
-        stream->precision(flt::max_digits10);  // Set stream precision to
-                                               // maximum float precision
-        // Print the header
-        if (header.length() > 0)
-        {
-            *stream << header;
-        }
-
-        using namespace std::placeholders;  // for _1
-
-        std::function<void(T & t)> callback =
-            std::bind(fncPrint, _1, std::ref(*stream));
-
-        tps.registerType<T>(callback);
-
-        return true;
-    }
+                      std::string header = "");
 
     /**
      * @brief Deserializes the provided file.
      *
-     * @return Wheter the deserialization was successful.
+     * @return Whether the deserialization was successful.
      */
-    bool deserialize()
-    {
-        if (closed)
-        {
-            return false;
-        }
+    bool deserialize();
 
-        bool success = true;
-        std::string unknownTypeName;
-
-        struct stat st;
-        if (stat(logFileWithExt.c_str(), &st) != 0)
-        {
-            printf("File %s does not exists.\n", logFileWithExt.c_str());
-            return false;
-        }
-
-        std::ifstream file(logFileWithExt);
-        // file.open;
-        tscpp::UnknownInputArchive ia(file, tps);
-        int i = 0;
-        while (success)
-        {
-            try
-            {
-                ia.unserialize();
-            }
-            catch (tscpp::TscppException& ex)
-            {
-                // Reached end of file
-                if (strcmp(ex.what(), "eof") == 0)
-                {
-                    break;
-                }
-                else if (strcmp(ex.what(), "unknown type") == 0)
-                {
-                    unknownTypeName = ex.name();
-                    success         = false;
-                    printf("Unknown type found: %s\n", unknownTypeName.c_str());
-                    break;
-                }
-            }
-        }
-        file.close();
-        return success;
-    }
-
-    void close()
-    {
-        if (!closed)
-        {
-            closed = true;
-            for (auto it = fileStreams.begin(); it != fileStreams.end(); it++)
-            {
-                (*it)->close();
-                delete *it;
-            }
-        }
-    }
+    void close();
 
 private:
     bool closed = false;
@@ -193,9 +83,124 @@ private:
     std::vector<std::ofstream*> fileStreams;
     tscpp::TypePoolStream tps;
 
-    std::string prefix;
-    std::string logFile;
-    std::string logFileWithExt;
+    std::string fileName;
 };
+
+Deserializer::Deserializer(std::string fileName) : fileName(fileName) {}
+
+Deserializer::~Deserializer()
+{
+    if (!closed)
+        for (auto it = fileStreams.begin(); it != fileStreams.end(); it++)
+        {
+            (*it)->close();
+            delete *it;
+        }
+}
+
+template <typename T>
+bool Deserializer::registerType(
+    std::function<void(T& t, std::ostream& os)> fncPrint, std::string header)
+{
+    if (closed)
+    {
+        printf("Error: Deserializer is closed.\n");
+        return false;
+    }
+
+    char cFilename[128];
+    sprintf(cFilename, "%s_%s.csv", fileName.c_str(), typeid(T).name());
+
+    std::string filename(cFilename);
+
+    std::ofstream* stream = new std::ofstream();
+    stream->open(filename);
+
+    if (!stream->is_open())
+    {
+        printf("Error opening file %s.\n", filename.c_str());
+        perror("Error is:");
+        delete stream;
+        return false;
+    }
+
+    fileStreams.push_back(stream);
+    stream->precision(flt::max_digits10);  // Set stream precision to
+                                           // maximum float precision
+    // Print the header
+    if (header.length() > 0)
+    {
+        *stream << header;
+    }
+
+    using namespace std::placeholders;  // for _1
+
+    std::function<void(T & t)> callback =
+        std::bind(fncPrint, _1, std::ref(*stream));
+
+    tps.registerType<T>(callback);
+
+    return true;
+}
+
+bool Deserializer::deserialize()
+{
+    if (closed)
+        return false;
+
+    bool success = true;
+    std::string unknownTypeName;
+
+    std::ifstream file(fileName);
+
+    // Check if the file exists
+    if (!file)
+    {
+        std::cout << fileName << " does not exists." << std::endl;
+        return false;
+    }
+
+    tscpp::UnknownInputArchive ia(file, tps);
+    int i = 0;
+    while (success)
+    {
+        try
+        {
+            ia.unserialize();
+        }
+        catch (tscpp::TscppException& ex)
+        {
+            // Reached end of file
+            if (strcmp(ex.what(), "eof") == 0)
+            {
+                break;
+            }
+            else if (strcmp(ex.what(), "unknown type") == 0)
+            {
+                unknownTypeName = ex.name();
+                success         = false;
+                std::cout << "Unknown type found: " << unknownTypeName
+                          << std::endl;
+                break;
+            }
+        }
+    }
+
+    file.close();
+    return success;
+}
+
+void Deserializer::close()
+{
+    if (!closed)
+    {
+        closed = true;
+        for (auto it = fileStreams.begin(); it != fileStreams.end(); it++)
+        {
+            (*it)->close();
+            delete *it;
+        }
+    }
+}
 
 }  // namespace Boardcore

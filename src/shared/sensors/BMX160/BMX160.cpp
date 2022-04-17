@@ -23,6 +23,7 @@
 #include "BMX160.h"
 
 #include <assert.h>
+#include <utils/Constants.h>
 
 namespace Boardcore
 {
@@ -598,25 +599,24 @@ MagnetometerData BMX160::buildMagData(BMX160Defs::MagRaw data,
 AccelerometerData BMX160::buildAccData(BMX160Defs::AccRaw data,
                                        uint64_t timestamp)
 {
-    return AccelerometerData{timestamp, data.x * accSensibility * EARTH_GRAVITY,
-                             data.y * accSensibility * EARTH_GRAVITY,
-                             data.z * accSensibility * EARTH_GRAVITY};
+    using namespace Constants;
+
+    return AccelerometerData{timestamp, data.x * accSensibility * g,
+                             data.y * accSensibility * g,
+                             data.z * accSensibility * g};
 }
 
 GyroscopeData BMX160::buildGyrData(BMX160Defs::GyrRaw data, uint64_t timestamp)
 {
+    using namespace Constants;
+
     if (config.gyroscopeUnit == BMX160Config::GyroscopeMeasureUnit::DEG)
-    {
         return GyroscopeData{timestamp, data.x * gyrSensibility,
                              data.y * gyrSensibility, data.z * gyrSensibility};
-    }
     else
-    {
-        return GyroscopeData{timestamp,
-                             data.x * gyrSensibility * DEGREES_TO_RADIANS,
-                             data.y * gyrSensibility * DEGREES_TO_RADIANS,
-                             data.z * gyrSensibility * DEGREES_TO_RADIANS};
-    }
+        return GyroscopeData{timestamp, data.x * gyrSensibility * g,
+                             data.y * gyrSensibility * g,
+                             data.z * gyrSensibility * g};
 }
 
 const char* BMX160::debugErr(SPITransaction& spi)

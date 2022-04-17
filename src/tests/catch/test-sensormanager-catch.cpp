@@ -24,7 +24,7 @@
 #include "catch-tests-entry.cpp"
 #endif
 
-#include <utils/testutils/TestSensor.h>
+#include <utils/TestUtils/TestSensor.h>
 
 #include <catch2/catch.hpp>
 #include <iostream>

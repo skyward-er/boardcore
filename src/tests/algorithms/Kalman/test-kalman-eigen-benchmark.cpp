@@ -25,12 +25,12 @@
 
 #define EIGEN_RUNTIME_NO_MALLOC
 
-#include <algorithms/kalman/KalmanEigen.h>
+#include <algorithms/Kalman/Kalman.h>
 #include <drivers/timer/GeneralPurposeTimer.h>
 #include <drivers/timer/TimerUtils.h>
 #include <kernel/kernel.h>
-#include <math/SkyQuaternion.h>
 #include <util/util.h>
+#include <utils/SkyQuaternion/SkyQuaternion.h>
 
 #include <iostream>
 
@@ -71,7 +71,7 @@ int main()
 
     Matrix<float, p, 1> y(p);  // vector with p elements (only one in this case)
 
-    KalmanEigen<float, n, p>::KalmanConfig config;
+    Kalman<float, n, p>::KalmanConfig config;
     config.F = F;
     config.H = H;
     config.Q = Q;
@@ -79,7 +79,7 @@ int main()
     config.P = P;
     config.x = x0;
 
-    KalmanEigen<float, n, p> filter(config);
+    Kalman<float, n, p> filter(config);
 
     float lastTime = 0.0;  // Variable to save the time of the last sample
 

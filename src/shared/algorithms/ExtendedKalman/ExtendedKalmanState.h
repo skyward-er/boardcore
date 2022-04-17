@@ -22,22 +22,63 @@
 
 #pragma once
 
-#include <ostream>
+#include <Eigen/Core>
 
 namespace Boardcore
 {
 
-struct LoadCellData
+struct ExtendedKalmanState
 {
     uint64_t timestamp;
-    float voltage;
-    float load;
 
-    static std::string header() { return "timestamp,voltage,load\n"; }
+    // 13 extended kalman states
+
+    // Position [m]
+    float n = 0;
+    float e = 0;
+    float d = 0;
+
+    // Velocity [m/s]
+    float vn = 0;
+    float ve = 0;
+    float vd = 0;
+
+    // Attitude as quaternion
+    float qx = 0;
+    float qy = 0;
+    float qz = 0;
+    float qw = 1;
+
+    // Gyroscope bias
+    float bx = 0;
+    float by = 0;
+    float bz = 0;
+
+    ExtendedKalmanState() {}
+
+    ExtendedKalmanState(uint64_t timestamp, Eigen::Matrix<float, 13, 1> x)
+        : timestamp(timestamp), n(x(0)), e(x(1)), d(x(2)), vn(x(3)), ve(x(4)),
+          vd(x(5)), qx(x(6)), qy(x(7)), qz(x(8)), qw(x(9)), bx(x(10)),
+          by(x(11)), bz(x(12))
+    {
+    }
+
+    Eigen::Matrix<float, 13, 1> getX() const
+    {
+        return Eigen::Matrix<float, 13, 1>(n, e, d, vn, ve, vd, qx, qy, qz, qw,
+                                           bx, by, bz);
+    }
+
+    static std::string header()
+    {
+        return "timestamp,n,e,d,vn,ve,vd,qx,qy,qz,qw,bx,by,bz\n";
+    }
 
     void print(std::ostream& os) const
     {
-        os << timestamp << "," << voltage << "," << load << "\n";
+        os << timestamp << "," << n << "," << e << "," << d << "," << vn << ","
+           << ve << "," << vd << "," << qx << "," << qy << "," << qz << ","
+           << qw << "," << bx << "," << by << "," << bz << "\n";
     }
 };
 

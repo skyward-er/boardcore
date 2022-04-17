@@ -1,5 +1,5 @@
-/* Copyright (c) 2020 Skyward Experimental Rocketry
- * Author: Marco Cella
+/* Copyright (c) 2022 Skyward Experimental Rocketry
+ * Authors: Marco Cella, Alberto Nidasio
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -32,13 +32,15 @@ using namespace Eigen;
 namespace Boardcore
 {
 
-SkyQuaternion::SkyQuaternion() {}
-
-Vector4f SkyQuaternion::eul2quat(Vector3f degeul)  // ZYX rotation
+namespace SkyQuaternion
 {
-    float yaw   = degeul(0) * DEGREES_TO_RADIANS;
-    float pitch = degeul(1) * DEGREES_TO_RADIANS;
-    float roll  = degeul(2) * DEGREES_TO_RADIANS;
+
+Vector4f eul2quat(Vector3f euler)
+{
+    // Euler angles are ZYX
+    float yaw   = euler(0) * Constants::DEGREES_TO_RADIANS;
+    float pitch = euler(1) * Constants::DEGREES_TO_RADIANS;
+    float roll  = euler(2) * Constants::DEGREES_TO_RADIANS;
 
     float cyaw   = cosf(yaw * 0.5F);
     float syaw   = sinf(yaw * 0.5F);
@@ -52,52 +54,45 @@ Vector4f SkyQuaternion::eul2quat(Vector3f degeul)  // ZYX rotation
     float qz = syaw * cpitch * croll - cyaw * spitch * sroll;
     float qw = cyaw * cpitch * croll + syaw * spitch * sroll;
 
-    Vector4f quat(qx, qy, qz, qw);
-
-    return quat;
+    return Vector4f(qx, qy, qz, qw);
 }
 
-Vector3f SkyQuaternion::quat2eul(Vector4f quater)
+Vector3f quat2eul(Vector4f quat)
 {
-    float qx = quater(0);
-    float qy = quater(1);
-    float qz = quater(2);
-    float qw = quater(3);
+    // Euler angles are ZYX
+    float qx = quat(0);
+    float qy = quat(1);
+    float qz = quat(2);
+    float qw = quat(3);
 
     float yaw = atan2f(2.0F * (qx * qy + qw * qz),
                        powf(qw, 2) + powf(qx, 2) - powf(qy, 2) - powf(qz, 2));
 
     float a = -2.0F * (qx * qz - qw * qy);
     if (a > 1.0F)
-    {
         a = 1.0F;
-    }
     else if (a < -1.0F)
-    {
         a = -1.0F;
-    }
 
     float pitch = asinf(a);
 
     float roll = atan2f(2.0F * (qy * qz + qw * qx),
                         powf(qw, 2) - powf(qx, 2) - powf(qy, 2) + powf(qz, 2));
 
-    Vector3f eul(roll, pitch, yaw);
-
-    return eul * 180.0F / PI;
+    return Vector3f(roll, pitch, yaw) * Constants::RADIANS_TO_DEGREES;
 }
 
-Vector4f SkyQuaternion::rotm2quat(Matrix3f R)
+Vector4f rotationMatrix2quat(Matrix3f rtm)
 {
-    float r11 = R(0, 0);
-    float r12 = R(0, 1);
-    float r13 = R(0, 2);
-    float r21 = R(1, 0);
-    float r22 = R(1, 1);
-    float r23 = R(1, 2);
-    float r31 = R(2, 0);
-    float r32 = R(2, 1);
-    float r33 = R(2, 2);
+    float r11 = rtm(0, 0);
+    float r12 = rtm(0, 1);
+    float r13 = rtm(0, 2);
+    float r21 = rtm(1, 0);
+    float r22 = rtm(1, 1);
+    float r23 = rtm(1, 2);
+    float r31 = rtm(2, 0);
+    float r32 = rtm(2, 1);
+    float r33 = rtm(2, 2);
 
     float qx;
     float qy;
@@ -105,63 +100,63 @@ Vector4f SkyQuaternion::rotm2quat(Matrix3f R)
     float qw;
 
     float tr = r11 + r22 + r33;
-    float r  = sqrt(1 + tr);
 
-    if (r32 - r23 > 0)
+    if (tr > 0)
     {
-        qx = 0.5 * sqrt(1 + r11 - r22 - r33);
-    }
-    else if (r32 - r23 < 0)
-    {
-        qx = -0.5 * sqrt(1 + r11 - r22 - r33);
+        float sqtrp1 = sqrt(1 + tr);
+
+        qx = (r23 - r32) / (2.0 * sqtrp1);
+        qy = (r31 - r13) / (2.0 * sqtrp1);
+        qz = (r12 - r21) / (2.0 * sqtrp1);
+        qw = 0.5 * sqtrp1;
     }
     else
     {
-        qx = 0;
+        if ((r22 > r11) && (r22 > r33))
+        {
+            float sqdip1 = sqrt(r22 - r11 - r33 + 1.0);
+
+            qy = 0.5 * sqdip1;
+
+            if (sqdip1 != 0)
+                sqdip1 = 0.5 / sqdip1;
+
+            qx = (r12 + r21) * sqdip1;
+            qz = (r23 + r32) * sqdip1;
+            qw = (r31 - r13) * sqdip1;
+        }
+        else if (r33 > r11)
+        {
+            float sqdip1 = sqrt(r33 - r11 - r22 + 1.0);
+
+            qz = 0.5 * sqdip1;
+
+            if (sqdip1 != 0)
+                sqdip1 = 0.5 / sqdip1;
+
+            qx = (r31 + r13) * sqdip1;
+            qy = (r23 + r32) * sqdip1;
+            qw = (r12 - r21) * sqdip1;
+        }
+        else
+        {
+            float sqdip1 = sqrt(r11 - r22 - r33 + 1.0);
+
+            qx = 0.5 * sqdip1;
+
+            if (sqdip1 != 0)
+                sqdip1 = 0.5 / sqdip1;
+
+            qy = (r12 + r21) * sqdip1;
+            qz = (r31 + r13) * sqdip1;
+            qw = (r23 - r32) * sqdip1;
+        }
     }
 
-    if (r13 - r31 > 0)
-    {
-        qy = 0.5 * sqrt(1 - r11 + r22 - r33);
-    }
-    else if (r13 - r31 < 0)
-    {
-        qy = -0.5 * sqrt(1 - r11 + r22 - r33);
-    }
-    else
-    {
-        qy = 0;
-    }
-
-    if (r21 - r12 > 0)
-    {
-        qz = 0.5 * sqrt(1 - r11 - r22 + r33);
-    }
-    else if (r21 - r12 < 0)
-    {
-        qz = -0.5 * sqrt(1 - r11 - r22 + r33);
-    }
-    else
-    {
-        qz = 0;
-    }
-
-    qw = 0.5 * r;
-
-    if (qw < 0)
-    {
-        qx = -qx;
-        qy = -qy;
-        qz = -qz;
-        qw = -qw;
-    }
-
-    Vector4f quat(qx, qy, qz, qw);
-
-    return quat / quat.norm();
+    return Vector4f(qx, qy, qz, qw);
 }
 
-bool SkyQuaternion::quatnormalize(Vector4f& quat)
+bool quatNormalize(Vector4f& quat)
 {
     float den = sqrt(powf(quat(0), 2) + powf(quat(1), 2) + powf(quat(2), 2) +
                      powf(quat(3), 2));
@@ -173,28 +168,21 @@ bool SkyQuaternion::quatnormalize(Vector4f& quat)
     return true;
 }
 
-Vector4f SkyQuaternion::quatProd(const Vector4f q1, const Vector4f q2)
+Vector4f quatProd(const Vector4f q1, const Vector4f q2)
 {
-    float q1x = q1(0);
-    float q1y = q1(1);
-    float q1z = q1(2);
-    Vector3f qv1(q1x, q1y, q1z);
-    float q1w = q1(3);
-
-    float q2x = q2(0);
-    float q2y = q2(1);
-    float q2z = q2(2);
-    Vector3f qv2(q2x, q2y, q2z);
-    float q2w = q2(3);
+    Vector3f qv1 = q1.head<3>();
+    float qs1    = q1(3);
+    Vector3f qv2 = q2.head<3>();
+    float qs2    = q2(3);
 
     Vector4f quater;
     // cppcheck-suppress constStatement
-    quater << q1w * qv2 + q2w * qv1 - qv1.cross(qv2), q1w * q2w - qv1.dot(qv2);
-    float quaternionNorm = sqrt(quater(0) * quater(0) + quater(1) * quater(1) +
-                                quater(2) * quater(2) + quater(3) * quater(3));
-    quater               = quater / quaternionNorm;
+    quater << qs1 * qv2 + qs2 * qv1 - qv1.cross(qv2), qs1 * qs2 - qv1.dot(qv2);
+    quater.normalize();
 
     return quater;
 }
+
+}  // namespace SkyQuaternion
 
 }  // namespace Boardcore

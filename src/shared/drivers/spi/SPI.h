@@ -29,7 +29,7 @@
 #ifndef USE_MOCK_PERIPHERALS
 using SPIType = SPI_TypeDef;
 #else
-#include <utils/testutils/FakeSpiTypedef.h>
+#include <utils/TestUtils/FakeSpiTypedef.h>
 using SPIType = FakeSpiTypedef;
 #endif
 

@@ -30,7 +30,7 @@
 #define private public
 
 #include <radio/Xbee/Xbee.h>
-#include <utils/testutils/BusTemplateMock.h>
+#include <utils/TestUtils/BusTemplateMock.h>
 
 using std::vector;
 

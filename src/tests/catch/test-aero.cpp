@@ -24,7 +24,7 @@
 #include "catch-tests-entry.cpp"
 #endif
 
-#include <utils/aero/AeroUtils.h>
+#include <utils/AeroUtils/AeroUtils.h>
 
 #include <catch2/catch.hpp>
 
@@ -32,7 +32,7 @@ using namespace Boardcore;
 
 TEST_CASE("[AeroUtils] mslTemperature")
 {
-    using namespace aeroutils;
+    using namespace Aeroutils;
     Approx isa_T0 =
         Approx(288.151).margin(0.001);  // 15 deg celsius, 0.01% error allowed
 
@@ -46,7 +46,7 @@ TEST_CASE("[AeroUtils] mslTemperature")
 
 TEST_CASE("[AeroUtils] mslPressure")
 {
-    using namespace aeroutils;
+    using namespace Aeroutils;
     Approx isa_P0 =
         Approx(101325).epsilon(0.0001);  // 15 deg celsius, 0.01% error allowed
 
@@ -61,7 +61,7 @@ TEST_CASE("[AeroUtils] mslPressure")
 float mslAltitude(float pressure, float pressureRef, float temperatureRef,
                   float zRef)
 {
-    using namespace aeroutils;
+    using namespace Aeroutils;
     float t0 = mslTemperature(temperatureRef, zRef);
 
     return relAltitude(pressure, mslPressure(pressureRef, temperatureRef, zRef),
@@ -84,7 +84,7 @@ TEST_CASE("[AeroUtils] relAltitude")
 
 TEST_CASE("[AeroUtils] relDensity")
 {
-    using namespace aeroutils;
+    using namespace Aeroutils;
 
     REQUIRE(relDensity(101325, 101325, 0, 288.15) ==
             Approx(1.225).epsilon(0.0001));
@@ -100,7 +100,7 @@ TEST_CASE("[AeroUtils] relDensity")
 
 TEST_CASE("[AeroUtils] verticalSpeed")
 {
-    using namespace aeroutils;
+    using namespace Aeroutils;
 
     const int count = 5;
     float p[]       = {100129.4, 99555.8, 89153.1, 23611.1, 101284.6};

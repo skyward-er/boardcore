@@ -36,7 +36,7 @@ namespace Boardcore
  *           dynamically.
  */
 template <typename t, uint8_t n, uint8_t p>
-class KalmanEigen
+class Kalman
 {
     using MatrixNN = Eigen::Matrix<t, n, n>;
     using MatrixPN = Eigen::Matrix<t, p, n>;
@@ -47,7 +47,7 @@ class KalmanEigen
 
 public:
     /**
-     * @brief Configuration struct for the KalmanEigen class.
+     * @brief Configuration struct for the Kalman class.
      */
     struct KalmanConfig
     {
@@ -63,7 +63,7 @@ public:
      * @param config configuration object containing all the initialized
      *               matrices
      */
-    KalmanEigen(const KalmanConfig& config)
+    Kalman(const KalmanConfig& config)
         : F(config.F), H(config.H), Q(config.Q), R(config.R), P(config.P),
           S(MatrixPP::Zero(p, p)), K(MatrixNP::Zero(n, p)), x(config.x)
     {

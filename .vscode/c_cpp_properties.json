@@ -24,6 +24,7 @@
                 "${workspaceFolder}/libs/mavlink_skyward_lib",
                 "${workspaceFolder}/libs/fmt/include",
                 "${workspaceFolder}/libs/eigen",
+                "${workspaceFolder}/libs/tscpp",
                 "${workspaceFolder}/libs",
                 "${workspaceFolder}/src/shared",
                 "${workspaceFolder}/src/tests"
@@ -77,6 +78,7 @@
                 "${workspaceFolder}/libs/mavlink_skyward_lib",
                 "${workspaceFolder}/libs/fmt/include",
                 "${workspaceFolder}/libs/eigen",
+                "${workspaceFolder}/libs/tscpp",
                 "${workspaceFolder}/libs",
                 "${workspaceFolder}/src/shared",
                 "${workspaceFolder}/src/tests"
@@ -103,8 +105,7 @@
                     "${workspaceFolder}/src/tests"
                 ],
                 "limitSymbolsToIncludedHeaders": true
-            },
-            "compileCommands": "${workspaceFolder}/build/compile_commands.json"
+            }
         },
         {
             "name": "stm32f429zi_skyward_death_stack_x",
@@ -130,6 +131,7 @@
                 "${workspaceFolder}/libs/mavlink_skyward_lib",
                 "${workspaceFolder}/libs/fmt/include",
                 "${workspaceFolder}/libs/eigen",
+                "${workspaceFolder}/libs/tscpp",
                 "${workspaceFolder}/libs",
                 "${workspaceFolder}/src/shared",
                 "${workspaceFolder}/src/tests"
@@ -156,8 +158,7 @@
                     "${workspaceFolder}/src/tests"
                 ],
                 "limitSymbolsToIncludedHeaders": true
-            },
-            "compileCommands": "${workspaceFolder}/build/compile_commands.json"
+            }
         }
     ],
     "version": 4

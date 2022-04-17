@@ -434,7 +434,7 @@ void MPU9250::writeSPIWithDelay(SPITransaction& transaction, uint8_t reg,
 float MPU9250::normalizeAcceleration(int16_t rawValue)
 {
     return static_cast<float>(rawValue) / 32768.0f *
-           ACCELERATION_FS_MAP[accelFsr >> 3] * EARTH_GRAVITY;
+           ACCELERATION_FS_MAP[accelFsr >> 3] * Constants::g;
 }
 
 // Page 33 of register map document
@@ -446,7 +446,7 @@ float MPU9250::normalizeTemperature(int16_t rawValue)
 float MPU9250::normalizeGyroscope(int16_t rawValue)
 {
     return static_cast<float>(rawValue) / 32768.0f *
-           GYROSCOPE_FS_MAP[gyroFsr >> 3] * DEGREES_TO_RADIANS;
+           GYROSCOPE_FS_MAP[gyroFsr >> 3] * Constants::DEGREES_TO_RADIANS;
 }
 
 float MPU9250::normalizeMagnetometer(int16_t rawValue, float adjustmentCoeff)

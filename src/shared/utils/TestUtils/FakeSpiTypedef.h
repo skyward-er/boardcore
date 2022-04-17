@@ -22,7 +22,7 @@
 
 #pragma once
 #include <miosix.h>
-#include <utils/testutils/MockGpioPin.h>
+#include <utils/TestUtils/MockGpioPin.h>
 
 #include <cstdint>
 #include <vector>

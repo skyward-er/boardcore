@@ -29,7 +29,7 @@
 
 #include <events/EventBroker.h>
 #include <miosix.h>
-#include <utils/testutils/TestHelper.h>
+#include <utils/TestUtils/TestHelper.h>
 
 #include <catch2/catch.hpp>
 #include <cstdio>

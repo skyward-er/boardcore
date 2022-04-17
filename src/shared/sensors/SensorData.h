@@ -56,8 +56,16 @@ struct TimestampData
 
 struct LoadCellData
 {
-    uint64_t weightTimestamp;
-    float weight;
+    uint64_t loadTimestamp;
+    float voltage;
+    float load;
+
+    static std::string header() { return "loadTimestamp,voltage,load\n"; }
+
+    void print(std::ostream& os) const
+    {
+        os << loadTimestamp << "," << voltage << "," << load << "\n";
+    }
 };
 
 struct TemperatureData

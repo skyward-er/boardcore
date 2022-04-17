@@ -55,9 +55,6 @@ sbs_target(sdcard-benchmark stm32f429zi_stm32f4discovery)
 #                                    Tests                                    #
 #-----------------------------------------------------------------------------#
 
-add_executable(test-kalman-eigen-benchmark src/tests/kalman/test-kalman-eigen-benchmark.cpp)
-sbs_target(test-kalman-eigen-benchmark stm32f429zi_stm32f4discovery)
-
 add_executable(test-logger src/tests/logger/test-logger.cpp)
 sbs_target(test-logger stm32f429zi_stm32f4discovery)
 
@@ -108,6 +105,25 @@ add_executable(catch-tests-boardcore
 target_compile_definitions(catch-tests-boardcore PRIVATE USE_MOCK_PERIPHERALS)
 sbs_target(catch-tests-boardcore stm32f429zi_stm32f4discovery)
 sbs_catch_test(catch-tests-boardcore)
+
+#-----------------------------------------------------------------------------#
+#                             Tests - Algorithms                              #
+#-----------------------------------------------------------------------------#
+
+add_executable(test-kalman-eigen-benchmark src/tests/algorithms/Kalman/test-kalman-eigen-benchmark.cpp)
+sbs_target(test-kalman-eigen-benchmark stm32f429zi_stm32f4discovery)
+
+add_executable(test-ekf src/tests/algorithms/ExtendedKalman/test-ekf.cpp)
+sbs_target(test-ekf stm32f429zi_skyward_death_stack_x)
+
+add_executable(test-ekf-with-triad src/tests/algorithms/ExtendedKalman/test-ekf-with-triad.cpp)
+sbs_target(test-ekf-with-triad stm32f429zi_skyward_death_stack_x)
+
+add_executable(test-ekf-with-logs src/tests/algorithms/ExtendedKalman/test-ekf-with-logs.cpp)
+sbs_target(test-ekf-with-logs stm32f429zi_skyward_death_stack_x)
+
+add_executable(test-triad src/tests/algorithms/ExtendedKalman/test-triad.cpp)
+sbs_target(test-triad stm32f429zi_skyward_death_stack_x)
 
 #-----------------------------------------------------------------------------#
 #                               Tests - Drivers                               #
@@ -303,7 +319,7 @@ add_executable(test-max31855 src/tests/sensors/test-max31855.cpp)
 sbs_target(test-max31855 stm32f429zi_stm32f4discovery)
 
 add_executable(test-mpu9250 src/tests/sensors/test-mpu9250.cpp)
-sbs_target(test-mpu9250 stm32f407vg_stm32f4discovery)
+sbs_target(test-mpu9250 stm32f429zi_skyward_death_stack_x)
 
 add_executable(test-ms5803 src/tests/sensors/test-ms5803.cpp)
 sbs_target(test-ms5803 stm32f429zi_skyward_death_stack_x)
