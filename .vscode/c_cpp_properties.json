@@ -24,6 +24,7 @@
                 "${workspaceFolder}/libs/mavlink_skyward_lib",
                 "${workspaceFolder}/libs/fmt/include",
                 "${workspaceFolder}/libs/eigen",
+                "${workspaceFolder}/libs/tscpp",
                 "${workspaceFolder}/libs",
                 "${workspaceFolder}/src/shared",
                 "${workspaceFolder}/src/tests"
@@ -77,6 +78,7 @@
                 "${workspaceFolder}/libs/mavlink_skyward_lib",
                 "${workspaceFolder}/libs/fmt/include",
                 "${workspaceFolder}/libs/eigen",
+                "${workspaceFolder}/libs/tscpp",
                 "${workspaceFolder}/libs",
                 "${workspaceFolder}/src/shared",
                 "${workspaceFolder}/src/tests"
@@ -129,6 +131,7 @@
                 "${workspaceFolder}/libs/mavlink_skyward_lib",
                 "${workspaceFolder}/libs/fmt/include",
                 "${workspaceFolder}/libs/eigen",
+                "${workspaceFolder}/libs/tscpp",
                 "${workspaceFolder}/libs",
                 "${workspaceFolder}/src/shared",
                 "${workspaceFolder}/src/tests"

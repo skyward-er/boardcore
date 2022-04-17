@@ -32,16 +32,16 @@ struct HX711Data : public LoadCellData
 {
     HX711Data() : LoadCellData{0, 0} {}
 
-    HX711Data(uint64_t weightTimestamp, float weight)
-        : LoadCellData{weightTimestamp, weight}
+    HX711Data(uint64_t loadTimestamp, float load)
+        : LoadCellData{loadTimestamp, load}
     {
     }
 
-    static std::string header() { return "weightTimestamp,weight\n"; }
+    static std::string header() { return "loadTimestamp,load\n"; }
 
     void print(std::ostream& os) const
     {
-        os << weightTimestamp << "," << weight << "\n";
+        os << loadTimestamp << "," << load << "\n";
     }
 };
 

@@ -165,15 +165,15 @@ void MBLoadCell::printData()
     }
 }
 
-Data MBLoadCell::getMaxWeight() { return maxWeight; }
+MBLoadCellData MBLoadCell::getMaxWeight() { return maxWeight; }
 
-Data MBLoadCell::getMinWeight() { return minWeight; }
+MBLoadCellData MBLoadCell::getMinWeight() { return minWeight; }
 
 bool MBLoadCell::selfTest() { return true; }
 
-Data MBLoadCell::sampleImpl()
+MBLoadCellData MBLoadCell::sampleImpl()
 {
-    Data value;
+    MBLoadCellData value;
     switch (settings.mode)
     {
         case LoadCellModes::CONT_MOD_T:
@@ -217,23 +217,23 @@ Data MBLoadCell::sampleImpl()
     return value;
 }
 
-Data MBLoadCell::sampleContModT()
+MBLoadCellData MBLoadCell::sampleContModT()
 {
     DataModT data;
     receive(&data);
 
-    return Data(atof(data.weight) / 10.0);
+    return MBLoadCellData(atof(data.weight) / 10.0);
 }
 
-Data MBLoadCell::sampleContModTd()
+MBLoadCellData MBLoadCell::sampleContModTd()
 {
     DataModTd data;
     receive(&data);
 
-    return Data(atof(data.weightT) / 10.0);
+    return MBLoadCellData(atof(data.weightT) / 10.0);
 }
 
-Data MBLoadCell::sampleAsciiModTd()
+MBLoadCellData MBLoadCell::sampleAsciiModTd()
 {
     DataAsciiRequest request;
 
@@ -262,7 +262,7 @@ Data MBLoadCell::sampleAsciiModTd()
     else
     {
         // Taking the value returned
-        return Data(stof(response.substr(3, 6)) / 10.0);
+        return MBLoadCellData(stof(response.substr(3, 6)) / 10.0);
     }
 }
 

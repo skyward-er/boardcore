@@ -47,7 +47,7 @@ namespace Boardcore
  * - ASCII-modTd: bidirectional mode that consists in sending a request and
  * receiving a response with the data requested or an error message
  */
-class MBLoadCell : public Sensor<Data>
+class MBLoadCell : public Sensor<MBLoadCellData>
 {
 public:
     /**
@@ -86,12 +86,12 @@ public:
     /**
      * @brief Returns a copy of the max weight detected.
      */
-    Data getMaxWeight();
+    MBLoadCellData getMaxWeight();
 
     /**
      * @brief Returns a copy of the min weight detected.
      */
-    Data getMinWeight();
+    MBLoadCellData getMinWeight();
 
     bool selfTest() override;
 
@@ -102,22 +102,22 @@ protected:
      *
      * @return The weight measured from the load cell.
      */
-    Data sampleImpl() override;
+    MBLoadCellData sampleImpl() override;
 
     /**
      * @brief Sampling in the "continuous Mod T" mode.
      */
-    Data sampleContModT(void);
+    MBLoadCellData sampleContModT(void);
 
     /**
      * @brief Sampling in the "continuous Mod Td" mode.
      */
-    Data sampleContModTd(void);
+    MBLoadCellData sampleContModTd(void);
 
     /**
      * @brief Sampling in the "ASCII Mod Td" mode.
      */
-    Data sampleAsciiModTd(void);
+    MBLoadCellData sampleAsciiModTd(void);
 
     /**
      * @brief Forges a request for the ascii mode.
@@ -158,8 +158,8 @@ protected:
 
 private:
     MBLoadCellSettings settings;  ///< Contains all the configuration
-    Data maxWeight;               ///< Maximum weight detected by the load cell
-    Data minWeight;               ///< Minimum weight detected by the load cell
+    MBLoadCellData maxWeight;     ///< Maximum weight detected by the load cell
+    MBLoadCellData minWeight;     ///< Minimum weight detected by the load cell
     bool maxSetted;
     bool maxPrint;
     bool minSetted;
