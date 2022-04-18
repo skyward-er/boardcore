@@ -69,7 +69,7 @@ HX711Data HX711::sampleImpl()
         return lastSample;
 
     return {TimestampTimer::getInstance().getTimestamp(),
-            (sample + offset) / scale};
+            static_cast<float>(sample + offset) / scale};
 }
 
 void HX711::setScale(float scale) { this->scale = scale; }
