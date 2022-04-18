@@ -351,7 +351,7 @@ USART::USART(USARTType *usart, Baudrate baudrate) : rxQueue(QUEUE_LEN)
             break;
         case UART8_BASE:
             this->id = 8;
-            initPins(u8tx1::getPin(), 8, u8rx1::getPin(), 8);
+            initPins(u8tx::getPin(), 8, u8rx::getPin(), 8);
             irqn = UART8_IRQn;
             break;
 #endif  // STM32F429xx
