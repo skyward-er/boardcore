@@ -61,6 +61,18 @@ bool TaskScheduler::addTask(function_t function, uint32_t period, uint8_t id,
     return result.second;
 }
 
+bool TaskScheduler::addTask(function_t function, uint32_t period, Policy policy,
+                            int64_t startTick)
+{
+    uint8_t id = 1;
+
+    auto it = tasks.cbegin(), end = tasks.cend();
+    for (; it != end && id == it->first; ++it, ++id)
+        ;
+
+    return addTask(function, period, id, policy, startTick);
+}
+
 bool TaskScheduler::removeTask(uint8_t id)
 {
     Lock<FastMutex> lock(mutex);
@@ -91,6 +103,8 @@ bool TaskScheduler::removeTask(uint8_t id)
 
 bool TaskScheduler::start()
 {
+    // This check is necessary to prevent task normalization if the scheduler is
+    // already stopped
     if (running)
         return false;
 
@@ -120,7 +134,7 @@ vector<TaskStatsResult> TaskScheduler::getTaskStats()
     return result;
 }
 
-void TaskScheduler ::normalizeTasks()
+void TaskScheduler::normalizeTasks()
 {
     int64_t currentTick = getTick();
 

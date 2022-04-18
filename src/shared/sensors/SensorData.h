@@ -57,14 +57,13 @@ struct TimestampData
 struct LoadCellData
 {
     uint64_t loadTimestamp;
-    float voltage;
     float load;
 
-    static std::string header() { return "loadTimestamp,voltage,load\n"; }
+    static std::string header() { return "loadTimestamp,load\n"; }
 
     void print(std::ostream& os) const
     {
-        os << loadTimestamp << "," << voltage << "," << load << "\n";
+        os << loadTimestamp << "," << load << "\n";
     }
 };
 
