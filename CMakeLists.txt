@@ -93,7 +93,7 @@ add_executable(catch-tests-boardcore
     src/tests/catch/catch-tests-entry.cpp
     src/tests/catch/examples/example-test-factorial.cpp
     src/tests/catch/test-aero.cpp
-    src/tests/catch/test-buttonhandler.cpp
+    # src/tests/catch/test-buttonhandler.cpp
     src/tests/catch/test-circularbuffer.cpp
     src/tests/catch/test-eventbroker.cpp
     src/tests/catch/test-timestamptimer.cpp
@@ -340,3 +340,6 @@ sbs_target(test-vn100 stm32f407vg_stm32f4discovery)
 
 add_executable(test-csvreader src/tests/utils/test-csvreader.cpp)
 sbs_target(test-csvreader stm32f429zi_stm32f4discovery)
+
+add_executable(test-buttonhandler src/tests/utils/test-buttonhandler.cpp)
+sbs_target(test-buttonhandler stm32f429zi_stm32f4discovery)
