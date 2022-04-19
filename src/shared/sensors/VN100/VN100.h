@@ -26,7 +26,7 @@
  * @brief Driver for the VN100S IMU.
  *
  * The VN100S sensor is a calibrated IMU which includes accelerometer,
- * magnetometer, gyroscope, barometer and temperature sensor. ùThe device
+ * magnetometer, gyroscope, barometer and temperature sensor. The device
  * provides also a calibration matrix and an anti-drift matrix for the gyroscope
  * values. The goal of this driver though is to interface the sensor in its
  * basic use. Things like asynchronous data and anti-drift techniques haven't
@@ -58,7 +58,7 @@
 #include <utils/Debug.h>
 
 #include "VN100Data.h"
-#include "VN100Serial.h"
+#include "drivers/usart/USART.h"
 
 namespace Boardcore
 {
@@ -69,19 +69,6 @@ namespace Boardcore
 class VN100 : public Sensor<VN100Data>
 {
 public:
-    enum class BaudRates : unsigned int
-    {
-        Baud_9600   = 9600,
-        Baud_19200  = 19200,
-        Baud_38400  = 38400,
-        Baud_57600  = 57600,
-        Baud_115200 = 115200,
-        Baud_128000 = 128000,
-        Baud_230400 = 230400,
-        Baud_460800 = 460800,
-        Baud_921600 = 921600
-    };
-
     enum class CRCOptions : uint8_t
     {
         CRC_NO        = 0x00,
@@ -93,12 +80,13 @@ public:
      * @brief Constructor.
      *
      * @param USART port number.
-     * @param BaudRate different from the sensor's default.
+     * @param BaudRate different from the sensor's default [9600, 19200, 38400,
+     * 57600, 115200, 128000, 230400, 460800, 921600].
      * @param Redundancy check option.
      */
-    VN100(unsigned int portNumber = defaultPortNumber,
-          BaudRates baudRate      = BaudRates::Baud_115200,
-          CRCOptions crc          = CRCOptions::CRC_ENABLE_8);
+    VN100(USARTType *portNumber    = USART2,
+          USART::Baudrate baudRate = USART::Baudrate::B921600,
+          CRCOptions crc           = CRCOptions::CRC_ENABLE_8);
 
     bool init() override;
 
@@ -236,8 +224,8 @@ private:
      */
     uint16_t calculateChecksum16(uint8_t *message, int length);
 
-    unsigned int portNumber;
-    BaudRates baudRate;
+    USARTType *portNumber;
+    USART::Baudrate baudRate;
     CRCOptions crc;
     bool isInit = false;
 
@@ -267,11 +255,10 @@ private:
      * @brief Serial interface that is needed to communicate
      * with the sensor via ASCII codes.
      */
-    VN100Serial *serialInterface = nullptr;
+    USARTInterface *serialInterface = nullptr;
 
     PrintLogger logger = Logging::getLogger("vn100");
 
-    static const unsigned int defaultPortNumber      = 2;
     static const unsigned int recvStringMaxDimension = 200;
 };
 }  // namespace Boardcore
