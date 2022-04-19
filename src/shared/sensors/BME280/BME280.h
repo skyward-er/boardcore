@@ -155,19 +155,13 @@ public:
     static const BME280Config
         BME280_CONFIG_TEMP_SINGLE;  ///< Temperature enabled in forced mode
 
-    explicit BME280(SPISlave spiSlave_,
-                    BME280Config config_ = BME280_CONFIG_ALL_ENABLED);
+    explicit BME280(SPISlave spiSlave,
+                    BME280Config config = BME280_CONFIG_ALL_ENABLED);
 
     /**
      * @brief Initialize the device with the specified configuration
      */
     bool init() override;
-
-    /**
-     * @brief Sets the oversampling for humidity readings, use SKIPPED to
-     * disable humidity sampling
-     */
-    void setHumidityOversampling(Oversampling oversampling);
 
     /**
      * @brief Sets the sensor mode
@@ -181,6 +175,12 @@ public:
      * be set using setStandbyTime()
      */
     void setSensorMode(Mode mode);
+
+    /**
+     * @brief Sets the oversampling for humidity readings, use SKIPPED to
+     * disable humidity sampling
+     */
+    void setHumidityOversampling(Oversampling oversampling);
 
     /**
      * @brief Sets the oversampling for pressure readings, use SKIPPED to
@@ -219,12 +219,6 @@ public:
      * @brief Reads only the temperature, does not set the configuration
      */
     TemperatureData readTemperature();
-
-    HumidityData getHumidity();
-
-    PressureData getPressure();
-
-    TemperatureData getTemperature();
 
     /**
      * @brief Maximum measurement time formula from datasheet page 51
@@ -300,8 +294,6 @@ private:
     BME280Config config;
     BME280Comp compParams;
     int32_t fineTemperature;  // Used in compensation algorithm
-
-    bool initialized = false;  // Whether the sensor has been initialized
 
     PrintLogger logger = Logging::getLogger("bme280");
 };

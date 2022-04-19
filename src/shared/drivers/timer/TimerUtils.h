@@ -254,7 +254,7 @@ enum class Channel : int
  *
  * @return Timer input clock, APB1 or ABP2.
  */
-ClockUtils::APB getTimerInputClock(TIM_TypeDef *timer);
+ClockUtils::APB getTimerInputClock(const TIM_TypeDef *timer);
 
 /**
  * @brief Returns the timer clock frequency before the prescaler.
@@ -264,7 +264,7 @@ ClockUtils::APB getTimerInputClock(TIM_TypeDef *timer);
  * @param timer Timer to use.
  * @return Prescaler input frequency.
  */
-uint32_t getPrescalerInputFrequency(TIM_TypeDef *timer);
+uint32_t getPrescalerInputFrequency(const TIM_TypeDef *timer);
 
 /**
  * @brief Return the timer clock frequency.
@@ -360,7 +360,7 @@ uint16_t computePrescalerValue(TIM_TypeDef *timer, int targetFrequency);
 
 }  // namespace TimerUtils
 
-inline ClockUtils::APB TimerUtils::getTimerInputClock(TIM_TypeDef *timer)
+inline ClockUtils::APB TimerUtils::getTimerInputClock(const TIM_TypeDef *timer)
 {
     // Timers can be connected to APB1 or APB2 clocks.
     // APB1: TIM2-7,12-15
@@ -377,7 +377,7 @@ inline ClockUtils::APB TimerUtils::getTimerInputClock(TIM_TypeDef *timer)
     }
 }
 
-inline uint32_t TimerUtils::getPrescalerInputFrequency(TIM_TypeDef *timer)
+inline uint32_t TimerUtils::getPrescalerInputFrequency(const TIM_TypeDef *timer)
 {
     return ClockUtils::getAPBFrequency(getTimerInputClock(timer));
 }
@@ -443,7 +443,11 @@ inline uint16_t TimerUtils::computePrescalerValue(TIM_TypeDef *timer,
 {
     int32_t targetPrescaler =
         TimerUtils::getPrescalerInputFrequency(timer) / targetFrequency - 1;
-    return targetPrescaler >= 0 ? targetPrescaler : 0;
+
+    if (targetPrescaler >= 0 && targetFrequency <= 0xffff)
+        return targetPrescaler;
+    else
+        return 0;
 }
 
 }  // namespace Boardcore

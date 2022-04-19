@@ -30,11 +30,11 @@
 
 #include <miosix.h>
 
-#include <utils/testutils/catch.hpp>
+#include <utils/TestUtils/catch.hpp>
 
 #include "{state_machine_name}Controller/{state_machine_name}Controller.h"
 #include <events/Events.h>
-#include <utils/testutils/TestHelper.h>
+#include <utils/TestUtils/TestHelper.h>
 
 using miosix::Thread;
 using namespace DeathStackBoard;

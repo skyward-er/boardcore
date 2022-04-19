@@ -29,7 +29,7 @@
 #ifndef USE_MOCK_PERIPHERALS
 using GpioType = miosix::GpioPin;
 #else
-#include <utils/testutils/MockGpioPin.h>
+#include <utils/TestUtils/MockGpioPin.h>
 using GpioType = MockGpioPin;
 #endif
 
@@ -44,19 +44,28 @@ namespace Boardcore
 struct SPIBusConfig
 {
     ///< Peripheral clock division
-    SPI::ClockDivider clockDivider = SPI::ClockDivider::DIV_256;
+    SPI::ClockDivider clockDivider;
 
     ///< Clock polarity and phace configuration
-    SPI::Mode mode = SPI::Mode::MODE_0;
+    SPI::Mode mode;
 
     ///< MSB or LSB first
-    SPI::BitOrder bitOrder = SPI::BitOrder::MSB_FIRST;
+    SPI::BitOrder bitOrder;
 
     ///< How long to wait before starting a trasmission after CS is set (us)
-    unsigned int csSetupTimeUs = 0;
+    unsigned int csSetupTimeUs;
 
     ///< How long to hold cs after the end of a trasmission (us)
-    unsigned int csHoldTimeUs = 0;
+    unsigned int csHoldTimeUs;
+
+    SPIBusConfig(SPI::ClockDivider clockDivider = SPI::ClockDivider::DIV_256,
+                 SPI::Mode mode                 = SPI::Mode::MODE_0,
+                 SPI::BitOrder bitOrder         = SPI::BitOrder::MSB_FIRST,
+                 unsigned int csSetupTimeUs = 0, unsigned int csHoldTimeUs = 0)
+        : clockDivider(clockDivider), mode(mode), bitOrder(bitOrder),
+          csSetupTimeUs(csSetupTimeUs), csHoldTimeUs(csHoldTimeUs)
+    {
+    }
 
     /**
      * @brief Custom comparison operator.

@@ -76,8 +76,7 @@ int main()
     while (true)
     {
         sensor.sample();
-        LIS3MDLData data = sensor.getLastSample();
-        UNUSED(data);
+        LIS3MDLData data __attribute__((unused)) = sensor.getLastSample();
         TRACE("%f C | x: %f | y: %f | z %f\n", data.temperature,
               data.magneticFieldX, data.magneticFieldY, data.magneticFieldZ);
         miosix::Thread::sleep(2000);

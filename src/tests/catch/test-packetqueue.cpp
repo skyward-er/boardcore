@@ -152,7 +152,7 @@ TEST_CASE("Packet tests")
         REQUIRE(p.getMsgCount() == 0);
         REQUIRE(p.dump(buf) == 0);
 
-        INFO("Adding something to full packet")
+        INFO("Adding something to full packet");
         REQUIRE(p.tryAppend(messageBase, PKT_LEN));
         REQUIRE_FALSE(p.tryAppend(messageBase, 1));
 
@@ -288,17 +288,17 @@ TEST_CASE("PacketQueue tests")
 
     SECTION("Edge cases")
     {
-        INFO("Adding too big msg")
+        INFO("Adding too big msg");
         REQUIRE(pq.put(messageBase, PKT_LEN + 1) == -1);
         REQUIRE_FALSE(pq.isFull());
         REQUIRE(pq.isEmpty());
         REQUIRE(pq.countNotEmpty() == 0);
         REQUIRE(pq.countReady() == 0);
 
-        INFO("Adding empty message")
+        INFO("Adding empty message");
         REQUIRE(pq.put(messageBase, 0) == -1);
 
-        INFO("Adding something to full queue")
+        INFO("Adding something to full queue");
         REQUIRE(pq.put(messageBase, PKT_LEN) == 0);
         REQUIRE(pq.put(messageBase + 5, PKT_LEN) == 0);
         REQUIRE(pq.put(messageBase + 10, PKT_LEN) == 0);
@@ -319,7 +319,7 @@ TEST_CASE("PacketQueue tests")
         REQUIRE(pq.countNotEmpty() == 3);
         REQUIRE(pq.countReady() == 3);
 
-        INFO("Get/Pop on empty queue")
+        INFO("Get/Pop on empty queue");
         REQUIRE_NOTHROW(pq.pop());
         REQUIRE_NOTHROW(pq.pop());
         REQUIRE_NOTHROW(pq.pop());

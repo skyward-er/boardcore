@@ -68,6 +68,7 @@ def parse_scxml(file):
                     (topic, event) = camel_case_to_underscores(
                         transition.attrib['event']).split('.')
                     topics.append(topic)
+                    event = topic + "_" + event
                 else:
                     event = camel_case_to_underscores(
                         transition.attrib['event'])

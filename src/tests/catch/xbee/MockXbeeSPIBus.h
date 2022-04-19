@@ -24,8 +24,8 @@
 
 #include <radio/Xbee/APIFrameParser.h>
 #include <radio/Xbee/APIFrames.h>
-#include <utils/testutils/MockGpioPin.h>
-#include <utils/testutils/MockSPIBus.h>
+#include <utils/TestUtils/MockGpioPin.h>
+#include <utils/TestUtils/MockSPIBus.h>
 
 #include <deque>
 #include <functional>

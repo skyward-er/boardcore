@@ -65,7 +65,7 @@ public:
         }
     }
 
-    void onButtonPress(ButtonPress press) { controller.onButtonPress(press); }
+    void onButtonEvent(ButtonEvent press) { controller.onButtonEvent(press); }
 
     mxgui::DrawingContext& getDrawingContext() { return dc; }
 
@@ -86,7 +86,7 @@ protected:
 
             drawViewTree(screens[activeScreen], dc);
 
-            Thread::sleepUntil(start + refreshInterval);
+            miosix::Thread::sleepUntil(start + refreshInterval);
         }
     }
 

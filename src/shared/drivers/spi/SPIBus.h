@@ -168,37 +168,43 @@ public:
 private:
     SPI spi;
     SPIBusConfig config{};
+    bool firstConfigApplied = false;
 };
 
 inline SPIBus::SPIBus(SPIType* spi) : spi(spi) {}
 
 inline void SPIBus::configure(SPIBusConfig newConfig)
 {
-    // Save the new configuration
-    config = newConfig;
+    // Do not reconfigure if already in the correct configuration.
+    if (!firstConfigApplied || newConfig != config)
+    {
+        // Save the new configuration
+        config             = newConfig;
+        firstConfigApplied = true;
 
-    // Wait until the peripheral is done before changing configuration
-    spi.waitPeripheral();
+        // Wait until the peripheral is done before changing configuration
+        spi.waitPeripheral();
 
-    // Disable the peripheral
-    spi.disable();
+        // Disable the peripheral
+        spi.disable();
 
-    // Configure clock polarity and phase
-    spi.setMode(config.mode);
+        // Configure clock polarity and phase
+        spi.setMode(config.mode);
 
-    // Configure clock frequency
-    spi.setClockDiver(config.clockDivider);
+        // Configure clock frequency
+        spi.setClockDiver(config.clockDivider);
 
-    // Configure bit order
-    spi.setBitOrder(config.bitOrder);
+        // Configure bit order
+        spi.setBitOrder(config.bitOrder);
 
-    // Configure chip select and master mode
-    spi.enableSoftwareSlaveManagement();
-    spi.enableInternalSlaveSelection();
-    spi.setMasterConfiguration();
+        // Configure chip select and master mode
+        spi.enableSoftwareSlaveManagement();
+        spi.enableInternalSlaveSelection();
+        spi.setMasterConfiguration();
 
-    // Enable the peripheral
-    spi.enable();
+        // Enable the peripheral
+        spi.enable();
+    }
 }
 
 inline void SPIBus::select(GpioType& cs)

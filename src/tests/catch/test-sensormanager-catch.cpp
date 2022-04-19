@@ -24,7 +24,7 @@
 #include "catch-tests-entry.cpp"
 #endif
 
-#include <utils/testutils/TestSensor.h>
+#include <utils/TestUtils/TestSensor.h>
 
 #include <catch2/catch.hpp>
 #include <iostream>
@@ -39,7 +39,7 @@ using namespace Boardcore;
 
 static const uint8_t FIRST_TASK_ID = 7;  // used to test IDs assignment to tasks
 
-class FailingSensor : public Sensor<TestData>
+class FailingSensorCatch : public Sensor<TestData>
 {
     bool init() { return true; }
 
@@ -122,7 +122,7 @@ private:
         /*Enabled=*/true};
 
     // always failing self-test
-    FailingSensor s5;
+    FailingSensorCatch s5;
     SensorInfo s5_info{
         /*ID=*/"s5",
         /*Period=*/2000,

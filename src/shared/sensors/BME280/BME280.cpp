@@ -47,23 +47,13 @@ const BME280::BME280Config BME280::BME280_CONFIG_TEMP_SINGLE = {
     SKIPPED,        0, 0,          FORCED_MODE, SKIPPED,
     OVERSAMPLING_1, 0, FILTER_OFF, STB_TIME_0_5};
 
-BME280::BME280(SPISlave spiSlave_, BME280Config config_)
-    : spiSlave(spiSlave_), config(config_)
+BME280::BME280(SPISlave spiSlave, BME280Config config)
+    : spiSlave(spiSlave), config(config)
 {
 }
 
 bool BME280::init()
 {
-    // Check if already initialized
-    if (initialized)
-    {
-        LOG_ERR(logger, "Already initialized");
-
-        lastError = SensorErrors::ALREADY_INIT;
-
-        return false;
-    }
-
     // Check WHO AM I
     if (!checkWhoAmI())
     {
@@ -99,20 +89,19 @@ bool BME280::init()
         return false;
     }
 
-    initialized = true;
     return true;
-}
-
-void BME280::setHumidityOversampling(Oversampling oversampling)
-{
-    config.bits.oversamplingHumidity = oversampling;
-
-    setConfiguration();
 }
 
 void BME280::setSensorMode(Mode mode)
 {
     config.bits.mode = mode;
+
+    setConfiguration();
+}
+
+void BME280::setHumidityOversampling(Oversampling oversampling)
+{
+    config.bits.oversamplingHumidity = oversampling;
 
     setConfiguration();
 }
@@ -214,12 +203,6 @@ TemperatureData BME280::readTemperature()
 
     return lastSample;
 }
-
-HumidityData BME280::getHumidity() { return lastSample; }
-
-PressureData BME280::getPressure() { return lastSample; }
-
-TemperatureData BME280::getTemperature() { return lastSample; }
 
 unsigned int BME280::calculateMaxMeasurementTime(BME280Config config_)
 {

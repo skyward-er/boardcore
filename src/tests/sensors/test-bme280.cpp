@@ -54,15 +54,15 @@ GpioPin csPin   = GpioPin(GPIOC_BASE, 1);
 void initBoard()
 {
     // Alternate function configuration for SPI pins
-    sckPin.mode(miosix::Mode::ALTERNATE);
+    sckPin.mode(Mode::ALTERNATE);
     sckPin.alternateFunction(5);  // SPI function
-    mosiPin.mode(miosix::Mode::ALTERNATE);
+    mosiPin.mode(Mode::ALTERNATE);
     mosiPin.alternateFunction(5);  // SPI function
-    misoPin.mode(miosix::Mode::ALTERNATE);
+    misoPin.mode(Mode::ALTERNATE);
     misoPin.alternateFunction(5);  // SPI function
 
     // Chip select pin as output starting high
-    csPin.mode(miosix::Mode::OUTPUT);
+    csPin.mode(Mode::OUTPUT);
     csPin.high();
 }
 
@@ -98,7 +98,7 @@ int main()
     {
         bme280.setSensorMode(BME280::FORCED_MODE);
 
-        miosix::Thread::sleep(bme280.getMaxMeasurementTime());
+        Thread::sleep(bme280.getMaxMeasurementTime());
 
         bme280.sample();
 
@@ -106,7 +106,7 @@ int main()
               bme280.getLastSample().temperature,
               bme280.getLastSample().pressure, bme280.getLastSample().humidity);
 
-        miosix::Thread::sleep(1000);
+        Thread::sleep(1000);
     }
 
     TRACE("Normal mode\n");
@@ -119,6 +119,6 @@ int main()
               bme280.getLastSample().temperature,
               bme280.getLastSample().pressure, bme280.getLastSample().humidity);
 
-        miosix::Thread::sleep(50);  // 25Hz
+        Thread::sleep(50);  // 25Hz
     }
 }

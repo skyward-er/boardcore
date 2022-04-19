@@ -46,9 +46,8 @@ struct BME280Data : public TemperatureData,
 
     static std::string header()
     {
-        return "temperatureTimestamp,temp,pressureTimestamp,press,humid_"
-               "timestamp,"
-               "humid\n";
+        return "temperatureTimestamp,temperature,pressureTimestamp,pressure,"
+               "humid_timestamp,humidity\n";
     }
 
     void print(std::ostream& os) const

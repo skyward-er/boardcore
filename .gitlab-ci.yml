@@ -25,6 +25,7 @@ variables:
 stages:
   - build-release
   - build-debug
+  - build-logdecoder
   - test
   - lint
   - documentation
@@ -36,7 +37,7 @@ build-release:
   tags:
     - miosix
   script:
-    - ./sbs --jobs 2
+    - ./sbs
 
 # Stage build-debug
 
@@ -45,14 +46,24 @@ build-debug:
   tags:
     - miosix
   script:
-    - ./sbs --jobs 2 --debug
+    - ./sbs --debug
+
+# Stage build-logdecoder
+
+build-logdecoder:
+  stage: build-logdecoder
+  tags:
+    - miosix
+  script:
+    - cd scripts/logdecoder
+    - make
 
 # Stage test
 
 test:
   stage: test
   script:
-    - ./sbs --jobs 2 --test catch-tests-entry
+    - ./sbs --test catch-tests-boardcore
 
 # Stage lint
 

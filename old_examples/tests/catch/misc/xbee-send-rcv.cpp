@@ -22,9 +22,9 @@
 
 #include <drivers/spi/SPIDriver.h>
 #include <interfaces-impl/hwmapping.h>
-#include <math/Stats.h>
 #include <miosix.h>
 #include <radio/Xbee/Xbee.h>
+#include <utils/Stats/Stats.h>
 
 #include <cstdio>
 #include <iostream>

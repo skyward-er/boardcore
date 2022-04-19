@@ -50,7 +50,7 @@ SensorManager::~SensorManager()
         delete scheduler;
 }
 
-bool SensorManager::start() { return scheduler->start() && initResult; }
+bool SensorManager::start() { return initResult ? scheduler->start() : false; }
 
 void SensorManager::stop() { scheduler->stop(); }
 

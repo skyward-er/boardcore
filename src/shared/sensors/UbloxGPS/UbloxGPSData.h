@@ -31,8 +31,8 @@ struct UbloxGPSData : public GPSData
 {
     static std::string header()
     {
-        return "gpsTimestamp,latitude,longitude,height,velocityNorth,"
-               "velocityEast,velocityDown,speed,track,satellites,fix\n";
+        return "gps_timestamp,latitude,longitude,height,velocity_north,"
+               "velocity_east,velocity_down,speed,track,num_satellites,fix\n";
     }
 
     void print(std::ostream &os) const

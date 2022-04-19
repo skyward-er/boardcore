@@ -37,9 +37,7 @@ using namespace miosix;
 
 #define TOPIC_TEST 1
 
-#define CHECK_INIT()        \
-    bool testValue = false; \
-    (void)testValue
+#define CHECK_INIT() bool testValue __attribute__((unused)) = false;
 
 #define CHECK_STATE(HSM, SIGNAL, STATE)                            \
     do                                                             \
@@ -317,43 +315,30 @@ int main()
     hsm.start();
 
     CHECK_INIT();
-    // cppcheck-suppress unreadVariable
     // cppcheck-suppress assertWithSideEffect
     CHECK_STATE(hsm, EV_G, &HSMUTTest::state_S11);
-    // cppcheck-suppress unreadVariable
     // cppcheck-suppress assertWithSideEffect
     CHECK_STATE(hsm, EV_I, &HSMUTTest::state_S11);
-    // cppcheck-suppress unreadVariable
     // cppcheck-suppress assertWithSideEffect
     CHECK_STATE(hsm, EV_A, &HSMUTTest::state_S11);
-    // cppcheck-suppress unreadVariable
     // cppcheck-suppress assertWithSideEffect
     CHECK_STATE(hsm, EV_D, &HSMUTTest::state_S11);
-    // cppcheck-suppress unreadVariable
     // cppcheck-suppress assertWithSideEffect
     CHECK_STATE(hsm, EV_D, &HSMUTTest::state_S11);
-    // cppcheck-suppress unreadVariable
     // cppcheck-suppress assertWithSideEffect
     CHECK_STATE(hsm, EV_B, &HSMUTTest::state_S11);
-    // cppcheck-suppress unreadVariable
     // cppcheck-suppress assertWithSideEffect
     CHECK_STATE(hsm, EV_C, &HSMUTTest::state_S211);
-    // cppcheck-suppress unreadVariable
     // cppcheck-suppress assertWithSideEffect
     CHECK_STATE(hsm, EV_E, &HSMUTTest::state_S11);
-    // cppcheck-suppress unreadVariable
     // cppcheck-suppress assertWithSideEffect
     CHECK_STATE(hsm, EV_E, &HSMUTTest::state_S11);
-    // cppcheck-suppress unreadVariable
     // cppcheck-suppress assertWithSideEffect
     CHECK_STATE(hsm, EV_G, &HSMUTTest::state_S211);
-    // cppcheck-suppress unreadVariable
     // cppcheck-suppress assertWithSideEffect
     CHECK_STATE(hsm, EV_B, &HSMUTTest::state_S211);
-    // cppcheck-suppress unreadVariable
     // cppcheck-suppress assertWithSideEffect
     CHECK_STATE(hsm, EV_I, &HSMUTTest::state_S211);
-    // cppcheck-suppress unreadVariable
     // cppcheck-suppress assertWithSideEffect
     CHECK_STATE(hsm, EV_I, &HSMUTTest::state_S211);
 

@@ -218,7 +218,7 @@ public:
      *
      * @return True if everything ok
      */
-    bool selfTest() override { return false; };
+    bool selfTest() override { return true; };
 
 private:
     MPU9250Data sampleImpl() override;

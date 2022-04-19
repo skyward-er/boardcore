@@ -22,9 +22,9 @@
 
 #pragma once
 
-#include <drivers/timer/TimestampTimer.h>
 #include <utils/Debug.h>
 
+#include <cstdio>
 #include <map>
 
 #include "sensors/SensorData.h"
@@ -87,25 +87,25 @@ enum ReturnsStates
  * @brief Structure that stores a data value, with his timestamp and his
  * validity.
  */
-struct Data : public DigitalLoadCellData
+struct MBLoadCellData : public LoadCellData
 {
     bool valid = false;
 
-    Data() : DigitalLoadCellData{0, 0.0}, valid(false) {}
+    MBLoadCellData() : LoadCellData{0, 0.0}, valid(false) {}
 
-    explicit Data(float data)
-        : DigitalLoadCellData{TimestampTimer::getInstance().getTimestamp(),
-                              data},
-          valid(true)
+    explicit MBLoadCellData(float data) : MBLoadCellData{0, data} {}
+
+    explicit MBLoadCellData(uint64_t loadTimestamp, float data)
+        : LoadCellData{loadTimestamp, data}, valid(true)
     {
     }
 
-    static std::string header() { return "weightTimestamp,weight\n"; }
+    static std::string header() { return "loadTimestamp,weight\n"; }
 
     void print(std::ostream& os) const
     {
         if (valid)
-            os << weightTimestamp / 1000000.0 << "," << weight << "\n";
+            os << loadTimestamp / 1000000.0 << "," << load << "\n";
     }
 };
 
@@ -116,10 +116,10 @@ struct MBLoadCellSettings
 {
     LoadCellModes mode;
     bool grossMode;
-    Data peakWeight;
-    Data setpoint1;
-    Data setpoint2;
-    Data setpoint3;
+    MBLoadCellData peakWeight;
+    MBLoadCellData setpoint1;
+    MBLoadCellData setpoint2;
+    MBLoadCellData setpoint3;
 
     /**
      * @brief Updates the correct value with the data passed. Also, memorizes
@@ -130,16 +130,16 @@ struct MBLoadCellSettings
         switch (val)
         {
             case PEAK_WEIGHT:
-                peakWeight = Data(data);
+                peakWeight = MBLoadCellData(data);
                 break;
             case GET_SETPOINT_1:
-                setpoint1 = Data(data);
+                setpoint1 = MBLoadCellData(data);
                 break;
             case GET_SETPOINT_2:
-                setpoint2 = Data(data);
+                setpoint2 = MBLoadCellData(data);
                 break;
             case GET_SETPOINT_3:
-                setpoint3 = Data(data);
+                setpoint3 = MBLoadCellData(data);
                 break;
             default:
                 break;
@@ -152,22 +152,22 @@ struct MBLoadCellSettings
     void print() const
     {
         /*if (netWeight.valid)
-            TRACE("Net Weight     : %f [Kg]\n", netWeight.data);
+            TRACE("Net Weight     : %f [Kg]\n", netWeight.load);
 
         if (grossWeight.valid)
-            TRACE("Gross Weight   : %f [Kg]\n", grossWeight.data);
+            TRACE("Gross Weight   : %f [Kg]\n", grossWeight.load);
         */
         if (peakWeight.valid)
-            TRACE("Peak Weight    : %f [Kg]\n", peakWeight.weight);
+            TRACE("Peak Weight    : %f [Kg]\n", peakWeight.load);
 
         if (setpoint1.valid)
-            TRACE("Setpoint 1     : %f [Kg]\n", setpoint1.weight);
+            TRACE("Setpoint 1     : %f [Kg]\n", setpoint1.load);
 
         if (setpoint2.valid)
-            TRACE("Setpoint 2     : %f [Kg]\n", setpoint2.weight);
+            TRACE("Setpoint 2     : %f [Kg]\n", setpoint2.load);
 
         if (setpoint3.valid)
-            TRACE("Setpoint 3     : %f [Kg]\n", setpoint3.weight);
+            TRACE("Setpoint 3     : %f [Kg]\n", setpoint3.load);
     }
 };
 
@@ -224,7 +224,7 @@ struct DataAsciiRequest
             checksum ^= str[i];
         }
 
-        itoa(checksum, ck, 16);
+        sprintf(ck, "%x", checksum);
     }
 
     /**

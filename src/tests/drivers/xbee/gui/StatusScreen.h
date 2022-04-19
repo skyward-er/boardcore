@@ -24,11 +24,11 @@
 
 #include <logger/Logger.h>
 #include <mxgui/display.h>
+#include <utils/TestUtils/ThroughputCalculator.h>
 #include <utils/gui/GridLayout.h>
 #include <utils/gui/OptionView.h>
 #include <utils/gui/TextView.h>
 #include <utils/gui/VerticalLayout.h>
-#include <utils/testutils/ThroughputCalculator.h>
 
 #include <cstdint>
 #include <cstring>

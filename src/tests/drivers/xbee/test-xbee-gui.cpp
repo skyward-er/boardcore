@@ -27,7 +27,7 @@
 #include <radio/Xbee/APIFramesLog.h>
 #include <radio/Xbee/ATCommands.h>
 #include <radio/Xbee/Xbee.h>
-#include <utils/ButtonHandler.h>
+#include <utils/ButtonHandler/ButtonHandler.h>
 
 #include <array>
 #include <cstdio>
@@ -75,7 +75,6 @@ Xbee::Xbee* xbee = nullptr;
 ConstSendInterval sndInt{0};
 XbeeTransceiver* trans = nullptr;
 XbeeGUI* gui;
-ButtonHandler<GpioUserBtn>* btnHandler;
 
 unsigned int markCounter = 1;
 
@@ -145,10 +144,9 @@ int main()
     // GUI
     gui = new XbeeGUI();
 
-    btnHandler = new ButtonHandler<GpioUserBtn>(
-        0, bind(&ScreenManager::onButtonPress, &gui->screenManager, _2));
-
-    btnHandler->start();
+    ButtonHandler::getInstance().registerButtonCallback(
+        GpioUserBtn::getPin(),
+        bind(&ScreenManager::onButtonEvent, &gui->screenManager, _1));
 
     gui->screenConfig.btnStart.addOnInteractionListener(onStartButtonClick);
     gui->screenConfig.btnEnergy.addOnInteractionListener(onEnergyButtonClick);
@@ -159,25 +157,22 @@ int main()
     gui->screenEnergy.btnStop.addOnInteractionListener(onStopButtonClick);
     gui->screenEnergy.btnMark.addOnInteractionListener(onMarkButtonClick);
     gui->screenEnergy.btnReset.addOnInteractionListener(
-        [&](View* d, Interaction action)
+        [&](View* d __attribute__((unused)), Interaction action)
         {
-            UNUSED(d);
             if (action == Interaction::CLICK)
                 gui->screenEnergy.resetStats();
         });
 
     gui->screenEnd.tvF.addOnInteractionListener(
-        [&](View* d, Interaction action)
+        [&](View* d __attribute__((unused)), Interaction action)
         {
-            UNUSED(d);
             if (action == Interaction::CLICK)
                 gui->screenManager.showScreen(XbeeGUI::SCREEN_RESPECT);
         });
 
     gui->screenEnd.tvReset.addOnInteractionListener(
-        [&](View* d, Interaction action)
+        [&](View* d __attribute__((unused)), Interaction action)
         {
-            UNUSED(d);
             if (action == Interaction::CLICK)
                 miosix::reboot();
         });
@@ -218,9 +213,8 @@ int main()
     }
 }
 
-void onStartButtonClick(View* btn, Interaction action)
+void onStartButtonClick(View* btn __attribute__((unused)), Interaction action)
 {
-    UNUSED(btn);
     if (action == Interaction::CLICK)
     {
 
@@ -267,9 +261,8 @@ void onStopButtonClick(View* btn, Interaction action)
     }
 }
 
-void onMarkButtonClick(View* btn, Interaction action)
+void onMarkButtonClick(View* btn __attribute__((unused)), Interaction action)
 {
-    UNUSED(btn);
     if (action == Interaction::CLICK)
     {
         Mark m{getTick(), markCounter++};
@@ -283,9 +276,8 @@ void onMarkButtonClick(View* btn, Interaction action)
     }
 }
 
-void onEnergyButtonClick(View* btn, Interaction action)
+void onEnergyButtonClick(View* btn __attribute__((unused)), Interaction action)
 {
-    UNUSED(btn);
     if (action == Interaction::CLICK)
     {
         energyScanner.start();

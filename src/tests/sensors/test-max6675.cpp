@@ -29,7 +29,6 @@ using namespace Boardcore;
 
 GpioPin sckPin  = GpioPin(GPIOE_BASE, 2);
 GpioPin misoPin = GpioPin(GPIOE_BASE, 5);
-GpioPin mosiPin = GpioPin(GPIOE_BASE, 6);
 GpioPin csPin   = GpioPin(GPIOE_BASE, 4);
 
 void initBoard()
@@ -41,8 +40,6 @@ void initBoard()
     sckPin.alternateFunction(5);
     misoPin.mode(Mode::ALTERNATE);
     misoPin.alternateFunction(5);
-    mosiPin.mode(Mode::ALTERNATE);
-    mosiPin.alternateFunction(5);
 }
 
 int main()
@@ -69,5 +66,4 @@ int main()
 
         Thread::sleep(500);
     }
-    return 0;
 }
