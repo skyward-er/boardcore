@@ -35,6 +35,8 @@
 // TODO: define the length of the queue
 #define QUEUE_LEN 256
 
+#define MAX_SERIAL_PORTS 6
+
 Boardcore::USART *Boardcore::USART::ports[MAX_SERIAL_PORTS];
 
 /**

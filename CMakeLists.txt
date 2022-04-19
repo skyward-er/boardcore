@@ -211,9 +211,6 @@ sbs_target(test-xbee-rcv stm32f429zi_stm32f4discovery)
 add_executable(test-xbee-snd src/tests/drivers/xbee/test-xbee-snd.cpp)
 sbs_target(test-xbee-snd stm32f429zi_stm32f4discovery)
 
-add_executable(test-stepper src/tests/drivers/stepper/test-stepper.cpp)
-sbs_target(test-stepper stm32f407vg_stm32f4discovery)
-
 add_executable(test-usart src/tests/drivers/usart/test-usart.cpp)
 sbs_target(test-usart stm32f407vg_stm32f4discovery)
 
