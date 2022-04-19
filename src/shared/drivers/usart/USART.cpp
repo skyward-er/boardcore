@@ -32,12 +32,7 @@
 #include "filesystem/file_access.h"
 #include "miosix.h"
 
-// TODO: define the length of the queue
-#define QUEUE_LEN 256
-
-#define MAX_SERIAL_PORTS 6
-
-Boardcore::USART *Boardcore::USART::ports[MAX_SERIAL_PORTS];
+Boardcore::USART *Boardcore::USART::ports[N_USART_PORTS];
 
 /**
  * \internal interrupt routine for usart1 actual implementation
@@ -297,7 +292,7 @@ void USART::IRQhandleInterrupt()
     if (usart->SR & USART_SR_IDLE)
         idle = true;
 
-    if (usart->SR & USART_SR_IDLE || rxQueue.size() >= QUEUE_LEN / 2)
+    if (usart->SR & USART_SR_IDLE || rxQueue.size() >= rxQueue.capacity() / 2)
     {
         c = usart->DR;  // clears interrupt flags
 
@@ -310,7 +305,8 @@ void USART::IRQhandleInterrupt()
     }
 }
 
-USART::USART(USARTType *usart, Baudrate baudrate) : rxQueue(QUEUE_LEN)
+USART::USART(USARTType *usart, Baudrate baudrate, unsigned int queueLen)
+    : rxQueue(queueLen)
 {
     // setting the id of the serial port
     switch (reinterpret_cast<uint32_t>(usart))
@@ -363,8 +359,8 @@ USART::USART(USARTType *usart, Baudrate baudrate) : rxQueue(QUEUE_LEN)
 }
 
 USART::USART(USARTType *usart, Baudrate baudrate, miosix::GpioPin tx,
-             miosix::GpioPin rx)
-    : rxQueue(QUEUE_LEN)
+             miosix::GpioPin rx, unsigned int queueLen)
+    : rxQueue(queueLen)
 {
     // setting the id of the serial port
     switch (reinterpret_cast<uint32_t>(usart))

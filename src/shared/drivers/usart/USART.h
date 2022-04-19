@@ -36,6 +36,12 @@ using USARTType = USART_TypeDef;
 // TODO: create test utils
 #endif
 
+#ifdef STM32F429xx
+#define N_USART_PORTS 8
+#else
+#define N_USART_PORTS 6
+#endif
+
 // A nice feature of the stm32 is that the USART are connected to the same
 // GPIOS in all families, stm32f1, f2, f4 and l1. Additionally, USART1 and
 // USART6 are always connected to the APB2, while the other USART/UARTs are
@@ -219,7 +225,8 @@ public:
      * @param baudrate member of the enum Baudrate that represents the baudrate
      * with which the communication will take place.
      */
-    USART(USARTType *usart, Baudrate baudrate);
+    USART(USARTType *usart, Baudrate baudrate,
+          unsigned int queueLen = usart_queue_default_capacity);
 
     /**
      * @brief Automatically enables the peripheral and timer peripheral clock.
@@ -234,7 +241,8 @@ public:
      * @param rx reception pin
      */
     USART(USARTType *usart, Baudrate baudrate, miosix::GpioPin tx,
-          miosix::GpioPin rx);
+          miosix::GpioPin rx,
+          unsigned int queueLen = usart_queue_default_capacity);
 
     /**
      * @brief Disables the flags for the generation of the interrupts, disables
@@ -321,6 +329,8 @@ private:
     WordLength wordLength = WordLength::BIT8;
     int stopBits          = 1;      ///< number of stop bits [1,2]
     bool over8            = false;  ///< oversalmpling 8 bit
+    const static unsigned int usart_queue_default_capacity =
+        256;  ///< default queue length
 };
 
 /**
@@ -386,7 +396,7 @@ public:
 private:
     /**
      * @brief Creates a device that represents the serial port, adds it to the
-     * file system and opens the file that represents the serial port.
+     * file system and opens the file that represents the device.
      */
     bool serialCommSetup();
 

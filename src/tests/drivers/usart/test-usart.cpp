@@ -40,7 +40,7 @@ using namespace Boardcore;
  * - connect usartx_rx to the usarty_tx
  * - connect usarty_rx to the usartx_tx
  *
- * WARNING: If using the STM32SerialWrapper, the test passes only if we:
+ * WARNING: If using the STM32SerialWrapper to read, the test passes only if we:
  *  1. do a write/writeString with USART or STM32SerialWrapper;
  *  2. sleep 10ms or more (or a printf...)
  *  3. we finally read from STM32SerialWrapper::read method.
