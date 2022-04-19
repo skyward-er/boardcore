@@ -33,7 +33,7 @@
 #ifndef USE_MOCK_PERIPHERALS
 using USARTType = USART_TypeDef;
 #else
-// TODO: create test utils
+// TODO: Create test utils
 #endif
 
 #ifdef STM32F429xx
@@ -103,14 +103,11 @@ namespace Boardcore
 {
 /**
  * @brief Abstract class that implements the interface for the USART/UART serial
- * communication
+ * communication.
  */
 class USARTInterface
 {
 public:
-    /**
-     * @brief enumeration that lists all the available baudrate values
-     */
     enum class Baudrate : int
     {
         // B1200   = 1200, // NOT WORKING WITH 1200 baud
@@ -128,62 +125,63 @@ public:
     virtual ~USARTInterface() = 0;
 
     /**
-     * @brief initializes the peripheral enabling his interrupts, enabling the
-     * interrupts in the NVIC. All the setup phase (with the setting of the pins
-     * and their alternate functions) must be done before the initialization of
-     * the peripheral.
+     * @brief Initializes the peripheral enabling his interrupts, the interrupts
+     * in the NVIC.
+     *
+     * All the setup phase (with the setting of the pins and their alternate
+     * functions) must be done before the initialization of the peripheral.
      */
     virtual bool init() = 0;
 
     /**
      * @brief Blocking read operation to read nBytes or till the data transfer
-     * is complete
+     * is complete.
      */
     virtual int read(void *buffer, size_t nBytes) = 0;
 
     /**
-     * @brief Blocking write operation
+     * @brief Blocking write operation.
      */
     virtual int write(void *buf, size_t nChars) = 0;
 
     /**
-     * @brief Write a string to the serial, comprising the '\0' character
+     * @brief Write a string to the serial, comprising the '\0' character.
      */
     virtual int writeString(const char *buffer) = 0;
 
     /**
-     * @brief returns the id of the serial
+     * @brief Returns the id of the serial.
      */
     int getId() { return id; };
 
 protected:
     /**
-     * @brief initializes the pins with the appropriate alternate functions
-     * @param tx trasmission pin
-     * @param nAFtx trasmission pin alternate function
-     * @param rx reception pin
-     * @param nAFrx reception pin alternate function
+     * @brief Initializes the pins with the appropriate alternate functions.
+     *
+     * @param tx Tranmission pin.
+     * @param nAFtx Tranmission pin alternate function.
+     * @param rx Reception pin.
+     * @param nAFrx Reception pin alternate function.
      */
     bool initPins(miosix::GpioPin tx, int nAFtx, miosix::GpioPin rx, int nAFrx);
 
-    bool pinInitialized = false;  ///< True if initPins() already called
-                                  ///< successfully, false otherwise
-    miosix::GpioPin tx{GPIOA_BASE,
-                       0};  ///< GpioPin that represents the transmitter pin
-    miosix::GpioPin rx{GPIOA_BASE,
-                       0};  ///< GpioPin that represents the receiver pin
-    USARTType
-        *usart;  ///< pointer to the struct representing the USART peripheral
-    int id = 1;  ///< can be 1, 2, 3, 4, 5, 6, 7, 8
-    bool initialized =
-        false;  ///< True if init() already called successfully, false otherwise
+    ///< True if initPins() already called successfully, false otherwise
+    bool pinInitialized = false;
+
+    miosix::GpioPin tx{GPIOA_BASE, 0};
+    miosix::GpioPin rx{GPIOA_BASE, 0};
+
+    USARTType *usart;
+    int id           = 1;  ///< Can be 1, 2, 3, 4, 5, 6, 7, 8
+    bool initialized = false;
     Baudrate baudrate;  ///< Baudrate of the serial communication
 };
 
 /**
- * @brief Driver for STM32F4 low level USART/UART peripheral. It permits to
- * configure some low level parameters such as word length, parity, stop bits
- * and oversampling.
+ * @brief Driver for STM32F4 low level USART/UART peripheral.
+ *
+ * It allows to configure some low level parameters such as word length, parity,
+ * stop bits and oversampling.
  */
 class USART : public USARTInterface
 {
@@ -200,26 +198,32 @@ public:
         PARITY    = 1
     };
 
+    ///< Pointer to serial port classes to let interrupts access the classes
+    static USART *ports[];
+
     /**
-     * @brief interrupt handler that deals with receive interrupt and idle
-     * interrupt. Used to implement the reads, fills up a buffer when the
-     * interrupt is fired.
+     * @brief Interrupt handler that deals with receive and idle interrupts.
+     *
+     * Used to implement the reads, fills up a buffer when the interrupt is
+     * fired.
      */
     void IRQhandleInterrupt();
 
     /**
      * @brief Automatically enables the peripheral and timer peripheral clock.
-     * sets the default values for all the parameters (1 stop bit, 8 bit data,
-     * no control flow and no oversampling). Initializes the serial port using
-     * the default pins, which are:
+     *
+     * Sets the default values for all the parameters (1 stop bit, 8 bit data,
+     * no control flow and no oversampling).
+     * Initializes the serial port using the default pins, which are:
      * - USART1: tx=PA9  rx=PA10
      * - USART2: tx=PA2  rx=PA3
      * - USART3: tx=PB10 rx=PB11
-     * - UART4:  tx=PA0 rx=PA1
+     * - UART4:  tx=PA0  rx=PA1
      * - UART5:  tx=PC12 rx=PD2
-     * - USART6: tx=PC6 rx=PC7
-     * - UART7: tx=PE8 rx=PE7
-     * - UART8: tx=PE1 rx=PE0
+     * - USART6: tx=PC6  rx=PC7
+     * - UART7:  tx=PE8  rx=PE7
+     * - UART8:  tx=PE1  rx=PE0
+     *
      * @param usart structure that represents the usart peripheral [accepted
      * are: USART1, USART2, USART3, UART4, UART5, USART6, UART7, UART8].
      * @param baudrate member of the enum Baudrate that represents the baudrate
@@ -230,60 +234,65 @@ public:
 
     /**
      * @brief Automatically enables the peripheral and timer peripheral clock.
-     * sets the default values for all the parameters (1 stop bit, 8 bit data,
-     * no control flow and no oversampling). Initializes the serial port using
-     * custom pins.
-     * @param usart structure that represents the usart peripheral [accepted
+     *
+     * Sets the default values for all the parameters (1 stop bit, 8 bit data,
+     * no control flow and no oversampling).
+     * Initializes the serial port using custom pins.
+     *
+     * @param usart Structure that represents the usart peripheral [accepted
      * are: USART1, USART2, USART3, UART4, UART5, USART6, UART7, UART8].
-     * @param baudrate member of the enum Baudrate that represents the baudrate
+     * @param baudrate Member of the enum Baudrate that represents the baudrate
      * with which the communication will take place.
-     * @param tx trasmission pin
-     * @param rx reception pin
+     * @param tx Tranmission pin.
+     * @param rx Reception pin.
      */
     USART(USARTType *usart, Baudrate baudrate, miosix::GpioPin tx,
           miosix::GpioPin rx,
           unsigned int queueLen = usart_queue_default_capacity);
 
     /**
-     * @brief Disables the flags for the generation of the interrupts, disables
-     * the IRQ from the NVIC, disables the peripheral and removes his pointer
-     * from the ports list.
+     * @brief Disables the flags for the generation of the interrupts, the IRQ
+     * from the NVIC, the peripheral and removes his pointer from the ports
+     * list.
      */
     ~USART();
 
     /**
-     * @brief initializes the peripheral enabling his interrupts, enabling the
-     * interrupts in the NVIC and setting the pins with the appropriate
-     * alternate functions. All the setup phase must be done before the
-     * initialization of the peripheral. The pins must be initialized before
-     * calling this function.
+     * @brief Initializes the peripheral enabling his interrupts, the interrupts
+     * in the NVIC and setting the pins with the appropriate alternate
+     * functions.
+     *
+     * All the setup phase must be done before the initialization of the
+     * peripheral. The pins must be initialized before calling this function.
      */
     bool init();
 
     /**
      * @brief Blocking read operation to read nBytes or till the data transfer
-     * is complete
+     * is complete.
      */
     int read(void *buffer, size_t nBytes);
 
     /**
-     * @brief Blocking write operation
+     * @brief Blocking write operation.
      */
     int write(void *buf, size_t nChars);
 
     /**
-     * @brief Write a string to the serial, comprising the '\0' character
+     * @brief Write a string to the serial, comprising the '\0' character.
      */
     int writeString(const char *buffer);
 
     /**
      * @brief Set the length of the word to 8 or to 9.
+     *
      * @param wl WordLength element that represents the length of the word.
      */
     void setWordLength(WordLength wl);
 
     /**
      * @brief Set the presence of the parity in the data sent.
+     *
      * @param pb ParityBit element that represents the presence of the parity
      * bit.
      */
@@ -291,29 +300,30 @@ public:
 
     /**
      * @brief Set the number of stop bits.
+     *
      * @param stopBits number of stop bits [1,2].
      */
     void setStopBits(int stopBits);
 
     /**
      * @brief Set the baudrate in the BRR register.
+     *
      * @param pb Baudrate element that represents the baudrate.
      */
     void setBaudrate(Baudrate br);
 
     /**
-     * @brief Sets the Over8 bit. If it is set, the speed is increased; if it is
-     * reset the tolerance is increased.
+     * @brief Sets the Over8 bit.
+     *
+     * If it is set, the speed is increased; If it is reset the tolerance is
+     * increased.
      */
     void setOversampling(bool oversampling);
 
     /**
-     * @brief clears the rxQueue
+     * @brief Clears the rxQueue.
      */
     void clearQueue();
-
-    /// Pointer to serial port classes to let interrupts access the classes
-    static USART *ports[];
 
 private:
     void commonConstructor(USARTType *usart, Baudrate baudrate);
@@ -321,16 +331,19 @@ private:
     IRQn_Type irqn;
     miosix::FastMutex rxMutex;  ///< mutex for receiving on serial
     miosix::FastMutex txMutex;  ///< mutex for transmitting on serial
-    miosix::Thread *rxWaiting =
-        0;  ///< pointer to the waiting on receive thread
+
+    ///< Pointer to the waiting on receive thread
+    miosix::Thread *rxWaiting = 0;
+
     miosix::DynUnsyncQueue<char> rxQueue;  ///< Receiving queue
     bool idle             = true;          ///< Receiver idle
     ParityBit parity      = ParityBit::NO_PARITY;
     WordLength wordLength = WordLength::BIT8;
-    int stopBits          = 1;      ///< number of stop bits [1,2]
-    bool over8            = false;  ///< oversalmpling 8 bit
-    const static unsigned int usart_queue_default_capacity =
-        256;  ///< default queue length
+    int stopBits          = 1;      ///< Number of stop bits [1,2]
+    bool over8            = false;  ///< Oversalmpling 8 bit
+
+    ///< Default queue length
+    const static unsigned int usart_queue_default_capacity = 256;
 };
 
 /**
@@ -359,8 +372,8 @@ public:
      * are: USART1, USART2, USART3].
      * @param baudrate member of the enum Baudrate that represents the baudrate
      * with which the communication will take place.
-     * @param tx trasmission pin
-     * @param rx reception pin
+     * @param tx Tranmission pin
+     * @param rx Reception pin
      */
     STM32SerialWrapper(USARTType *usart, Baudrate baudrate, miosix::GpioPin tx,
                        miosix::GpioPin rx);
@@ -372,24 +385,25 @@ public:
     ~STM32SerialWrapper();
 
     /**
-     * @brief initializes the peripheral.
+     * @brief Initializes the peripheral.
+     *
      * @see{STM32SerialWrapper::serialCommSetup}
      */
     bool init();
 
     /**
      * @brief Blocking read operation to read nBytes or till the data transfer
-     * is complete
+     * is complete.
      */
     int read(void *buffer, size_t nBytes);
 
     /**
-     * @brief Blocking write operation
+     * @brief Blocking write operation.
      */
     int write(void *buf, size_t nChars);
 
     /**
-     * @brief Write a string to the serial, comprising the '\0' character
+     * @brief Write a string to the serial, comprising the '\0' character.
      */
     int writeString(const char *buffer);
 
@@ -400,11 +414,13 @@ private:
      */
     bool serialCommSetup();
 
-    miosix::STM32Serial *serial;  ///< pointer to the serial object
-    std::string serialPortName;   ///< Port name of the serial port that has to
-                                  ///< be created for the communication
-    int fd;  ///< Stores the file descriptor of the serial port file opened for
-             ///< trasmission
+    miosix::STM32Serial *serial;  ///< Pointer to the serial object
+
+    //< Port name of the port that has to be created for the communication
+    std::string serialPortName;
+
+    ///< File descriptor of the serial port file opened for transmission
+    int fd;
 };
 
 }  // namespace Boardcore

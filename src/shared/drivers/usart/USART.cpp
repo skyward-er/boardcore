@@ -35,7 +35,7 @@
 Boardcore::USART *Boardcore::USART::ports[N_USART_PORTS];
 
 /**
- * \internal interrupt routine for usart1 actual implementation
+ * \internal Interrupt routine for usart1 actual implementation.
  */
 void __attribute__((used)) usart1irqImplBoardcore()
 {
@@ -51,7 +51,7 @@ void __attribute__((used)) usart1irqImplBoardcore()
 }
 
 /**
- * \internal interrupt routine for usart1
+ * \internal Interrupt routine for usart1.
  */
 void __attribute__((naked, used)) USART1_IRQHandler()
 {
@@ -61,7 +61,7 @@ void __attribute__((naked, used)) USART1_IRQHandler()
 }
 
 /**
- * \internal interrupt routine for usart2 actual implementation
+ * \internal Interrupt routine for usart2 actual implementation.
  */
 void __attribute__((used)) usart2irqImplBoardcore()
 {
@@ -77,7 +77,7 @@ void __attribute__((used)) usart2irqImplBoardcore()
 }
 
 /**
- * \internal interrupt routine for usart2
+ * \internal Interrupt routine for usart2.
  */
 void __attribute__((naked, used)) USART2_IRQHandler()
 {
@@ -87,7 +87,7 @@ void __attribute__((naked, used)) USART2_IRQHandler()
 }
 
 /**
- * \internal interrupt routine for usart3 actual implementation
+ * \internal Interrupt routine for usart3 actual implementation.
  */
 void __attribute__((used)) usart3irqImplBoardcore()
 {
@@ -103,7 +103,7 @@ void __attribute__((used)) usart3irqImplBoardcore()
 }
 
 /**
- * \internal interrupt routine for usart3
+ * \internal Interrupt routine for usart3.
  */
 void __attribute__((naked, used)) USART3_IRQHandler()
 {
@@ -113,7 +113,7 @@ void __attribute__((naked, used)) USART3_IRQHandler()
 }
 
 /**
- * \internal interrupt routine for uart4 actual implementation
+ * \internal Interrupt routine for uart4 actual implementation.
  */
 void __attribute__((used)) uart4irqImplBoardcore()
 {
@@ -129,7 +129,7 @@ void __attribute__((used)) uart4irqImplBoardcore()
 }
 
 /**
- * \internal interrupt routine for uart4
+ * \internal Interrupt routine for uart4.
  */
 void __attribute__((naked, used)) UART4_IRQHandler()
 {
@@ -139,7 +139,7 @@ void __attribute__((naked, used)) UART4_IRQHandler()
 }
 
 /**
- * \internal interrupt routine for uart5 actual implementation
+ * \internal Interrupt routine for uart5 actual implementation.
  */
 void __attribute__((used)) uart5irqImplBoardcore()
 {
@@ -155,7 +155,7 @@ void __attribute__((used)) uart5irqImplBoardcore()
 }
 
 /**
- * \internal interrupt routine for uart5
+ * \internal Interrupt routine for uart5.
  */
 void __attribute__((naked, used)) UART5_IRQHandler()
 {
@@ -165,7 +165,7 @@ void __attribute__((naked, used)) UART5_IRQHandler()
 }
 
 /**
- * \internal interrupt routine for usart6 actual implementation
+ * \internal Interrupt routine for usart6 actual implementation.
  */
 void __attribute__((used)) usart6irqImplBoardcore()
 {
@@ -181,7 +181,7 @@ void __attribute__((used)) usart6irqImplBoardcore()
 }
 
 /**
- * \internal interrupt routine for usart6
+ * \internal Interrupt routine for usart6.
  */
 void __attribute__((naked, used)) USART6_IRQHandler()
 {
@@ -191,8 +191,9 @@ void __attribute__((naked, used)) USART6_IRQHandler()
 }
 
 #ifdef STM32F429xx
+
 /**
- * \internal interrupt routine for uart7 actual implementation
+ * \internal Interrupt routine for uart7 actual implementation.
  */
 void __attribute__((used)) uart7irqImplBoardcore()
 {
@@ -208,7 +209,7 @@ void __attribute__((used)) uart7irqImplBoardcore()
 }
 
 /**
- * \internal interrupt routine for uart7
+ * \internal Interrupt routine for uart7.
  */
 void __attribute__((naked, used)) UART7_IRQHandler()
 {
@@ -218,7 +219,7 @@ void __attribute__((naked, used)) UART7_IRQHandler()
 }
 
 /**
- * \internal interrupt routine for uart8 actual implementation
+ * \internal Interrupt routine for uart8 actual implementation.
  */
 void __attribute__((used)) uart8irqImplBoardcore()
 {
@@ -234,7 +235,7 @@ void __attribute__((used)) uart8irqImplBoardcore()
 }
 
 /**
- * \internal interrupt routine for uart8
+ * \internal Interrupt routine for uart8.
  */
 void __attribute__((naked, used)) UART8_IRQHandler()
 {
@@ -242,6 +243,7 @@ void __attribute__((naked, used)) UART8_IRQHandler()
     asm volatile("bl _Z21uart8irqImplBoardcorev");
     restoreContext();
 }
+
 #endif  // STM32F429xx
 
 namespace Boardcore
@@ -276,14 +278,14 @@ void USART::IRQhandleInterrupt()
 {
     char c;
 
-    // if read data register is empty then read data
+    // If read data register is empty then read data
     if (usart->SR & USART_SR_RXNE)
     {
         // Always read data, since this clears interrupt flags
         c = usart->DR;
         // If no error put data in buffer
         if (!(usart->SR & USART_SR_FE))
-            if (rxQueue.tryPut(c) == false)  // fifo overflow
+            if (rxQueue.tryPut(c) == false)  // FIFO overflow
                 ;
 
         idle = false;
@@ -294,7 +296,7 @@ void USART::IRQhandleInterrupt()
 
     if (usart->SR & USART_SR_IDLE || rxQueue.size() >= rxQueue.capacity() / 2)
     {
-        c = usart->DR;  // clears interrupt flags
+        c = usart->DR;  // Clears interrupt flags
 
         // Enough data in buffer or idle line, awake thread
         if (rxWaiting)
@@ -308,7 +310,7 @@ void USART::IRQhandleInterrupt()
 USART::USART(USARTType *usart, Baudrate baudrate, unsigned int queueLen)
     : rxQueue(queueLen)
 {
-    // setting the id of the serial port
+    // Setting the id of the serial port
     switch (reinterpret_cast<uint32_t>(usart))
     {
         case USART1_BASE:
@@ -362,7 +364,7 @@ USART::USART(USARTType *usart, Baudrate baudrate, miosix::GpioPin tx,
              miosix::GpioPin rx, unsigned int queueLen)
     : rxQueue(queueLen)
 {
-    // setting the id of the serial port
+    // Setting the id of the serial port
     switch (reinterpret_cast<uint32_t>(usart))
     {
         case USART1_BASE:
@@ -416,20 +418,20 @@ void USART::commonConstructor(USARTType *usart, Baudrate baudrate)
 {
     this->usart = usart;
 
-    // enable the peripehral on the right APB
+    // Enabling the peripehral on the right APB
     ClockUtils::enablePeripheralClock(usart);
     RCC_SYNC();
 
-    // enabling the usart
+    // Enabling the usart peripheral
     {
         miosix::FastInterruptDisableLock dLock;
         usart->CR1 |= USART_CR1_UE;
     }
 
-    // setting the baudrate chosen
+    // Setting the baudrate chosen
     setBaudrate(baudrate);
 
-    // default settings
+    // Default settings
     setStopBits(1);
     setWordLength(USART::WordLength::BIT8);
     setParity(USART::ParityBit::NO_PARITY);
@@ -441,13 +443,13 @@ USART::~USART()
     {
         miosix::FastInterruptDisableLock dLock;
 
-        // take out the usart object we are going to destruct
+        // Take out the usart object we are going to destruct
         USART::ports[this->id - 1] = nullptr;
 
-        // disabling the usart
+        // Disabling the usart
         usart->CR1 &= ~(USART_CR1_UE | USART_CR1_TE | USART_CR1_RE);
 
-        // disabling the interrupt of the serial port
+        // Disabling the interrupt of the serial port
         NVIC_DisableIRQ(irqn);
     }
 }
@@ -463,24 +465,24 @@ bool USART::init()
     {
         miosix::FastInterruptDisableLock dLock;
 
-        // enable usart, receiver, receiver interurpt and idle interrupt
+        // Enable usart, receiver, receiver interrupt and idle interrupt
         usart->CR1 |= USART_CR1_RXNEIE    // Interrupt on data received
                       | USART_CR1_IDLEIE  // interrupt on idle line
-                      | USART_CR1_TE      // Transmission enbled
+                      | USART_CR1_TE      // Transmission enabled
                       | USART_CR1_RE;     // Reception enabled
 
-        // sample only one bit
+        // Sample only one bit
         usart->CR3 |= USART_CR3_ONEBIT;
 
-        // enabling the interrupt for the relative serial port
+        // Enabling the interrupt for the relative serial port
         NVIC_SetPriority(irqn, 15);
         NVIC_EnableIRQ(irqn);
 
-        // add to the array of usarts so that the interrupts can see it
+        // Add to the array of usarts so that the interrupts can see it
         USART::ports[id - 1] = this;
     }
 
-    // clearing the queue for random data read at the beginning
+    // Clearing the queue for random data read at the beginning
     miosix::Thread::sleep(1);
     this->clearQueue();
 
@@ -578,7 +580,7 @@ int USART::read(void *buffer, size_t nBytes)
             miosix::FastInterruptEnableLock eLock(dLock);
         }
 
-        // not checking if the nBytes read are more than 0
+        // Not checking if the nBytes read are more than 0
         if (result == nBytes || (idle && result > 0))
             break;
 
@@ -601,7 +603,7 @@ int USART::write(void *buffer, size_t nBytes)
 {
     miosix::Lock<miosix::FastMutex> l(txMutex);
 
-    // TODO: use the send complete interrupt in order not to have a busy while
+    // TODO: Use the send complete interrupt in order not to have a busy while
     // loop waiting
     const char *buf = reinterpret_cast<const char *>(buffer);
     size_t i        = 0;
@@ -622,7 +624,7 @@ int USART::writeString(const char *buffer)
     int i = 0;
     miosix::Lock<miosix::FastMutex> l(txMutex);
 
-    // send everything, also the ending '\0' character
+    // Send everything, also the ending '\0' character
     usart->DR = *buffer;
     i++;
     while (*buffer != '\0')
@@ -744,10 +746,10 @@ bool STM32SerialWrapper::serialCommSetup()
             miosix::intrusive_ref_ptr<miosix::Device>(serial)))
         return false;
 
-    // path string "/dev/<name_of_port>" for the port we want to open
+    // Path string "/dev/<name_of_port>" for the port we want to open
     std::string serialPortPath = "/dev/" + serialPortName;
 
-    // open serial port
+    // Open serial port
     fd = open(serialPortPath.c_str(), O_RDWR);
 
     if (fd <= -1)
@@ -774,4 +776,5 @@ int STM32SerialWrapper::read(void *buf, size_t nBytes)
 {
     return ::read(fd, buf, nBytes);
 }
+
 }  // namespace Boardcore
