@@ -26,6 +26,11 @@ include(boardcore-host)
 foreach(OPT_BOARD ${BOARDS})
     set(BOARDCORE_LIBRARY boardcore-${OPT_BOARD})
     add_library(${BOARDCORE_LIBRARY} STATIC EXCLUDE_FROM_ALL
+        # Actuators
+        ${SBS_BASE}/src/shared/actuators/HBridge/HBridge.cpp
+        ${SBS_BASE}/src/shared/actuators/Servo/Servo.cpp
+
+
         # Algorithms
         ${SBS_BASE}/src/shared/algorithms/ExtendedKalman/ExtendedKalman.cpp
 
@@ -38,13 +43,11 @@ foreach(OPT_BOARD ${BOARDS})
         ${SBS_BASE}/src/shared/drivers/adc/InternalADC.cpp
         ${SBS_BASE}/src/shared/drivers/canbus/Canbus.cpp
         ${SBS_BASE}/src/shared/drivers/canbus/CanInterrupt.cpp
-        ${SBS_BASE}/src/shared/drivers/hbridge/HBridge.cpp
         ${SBS_BASE}/src/shared/drivers/i2c/stm32f2_f4_i2c.cpp
         ${SBS_BASE}/src/shared/drivers/interrupt/external_interrupts.cpp
         ${SBS_BASE}/src/shared/drivers/timer/PWM.cpp
         ${SBS_BASE}/src/shared/drivers/timer/TimestampTimer.cpp
         ${SBS_BASE}/src/shared/drivers/runcam/Runcam.cpp
-        ${SBS_BASE}/src/shared/drivers/servo/Servo.cpp
         ${SBS_BASE}/src/shared/drivers/spi/SPITransaction.cpp
 
         # Events

@@ -20,7 +20,7 @@
  * THE SOFTWARE.
  */
 
-#include <drivers/servo/Servo.h>
+#include <actuators/Servo/Servo.h>
 #include <miosix.h>
 #include <scheduler/TaskScheduler.h>
 #include <utils/ClockUtils.h>

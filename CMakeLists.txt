@@ -107,6 +107,22 @@ sbs_target(catch-tests-boardcore stm32f429zi_stm32f4discovery)
 sbs_catch_test(catch-tests-boardcore)
 
 #-----------------------------------------------------------------------------#
+#                             Tests - Actuators                               #
+#-----------------------------------------------------------------------------#
+
+add_executable(test-hbridge src/tests/actuators/test-hbridge.cpp)
+sbs_target(test-hbridge stm32f429zi_stm32f4discovery)
+
+add_executable(test-servo src/tests/actuators/test-servo.cpp)
+sbs_target(test-servo stm32f429zi_stm32f4discovery)
+
+add_executable(test-buzzer src/tests/actuators/test-buzzer.cpp)
+sbs_target(test-buzzer stm32f429zi_hre_test_stand)
+
+add_executable(test-stepper src/tests/actuators/test-stepper.cpp)
+sbs_target(test-stepper stm32f429zi_stm32f4discovery)
+
+#-----------------------------------------------------------------------------#
 #                             Tests - Algorithms                              #
 #-----------------------------------------------------------------------------#
 
@@ -144,9 +160,6 @@ sbs_target(test-dsgamma stm32f429zi_stm32f4discovery)
 add_executable(test-general-purpose-timer src/tests/drivers/timer/test-general-purpose-timer.cpp)
 sbs_target(test-general-purpose-timer stm32f429zi_stm32f4discovery)
 
-add_executable(test-hbridge src/tests/drivers/test-hbridge.cpp)
-sbs_target(test-hbridge stm32f429zi_stm32f4discovery)
-
 add_executable(test-internal-adc src/tests/drivers/test-internal-adc.cpp)
 sbs_target(test-internal-adc stm32f429zi_skyward_death_stack_x)
 
@@ -161,9 +174,6 @@ sbs_target(test-MBLoadCell stm32f407vg_stm32f4discovery)
 
 add_executable(test-pwm src/tests/drivers/timer/test-pwm.cpp)
 sbs_target(test-pwm stm32f429zi_stm32f4discovery)
-
-add_executable(test-servo src/tests/drivers/test-servo.cpp)
-sbs_target(test-servo stm32f429zi_stm32f4discovery)
 
 add_executable(test-spi src/tests/drivers/spi/test-spi.cpp)
 sbs_target(test-spi stm32f429zi_stm32f4discovery)
@@ -200,9 +210,6 @@ sbs_target(test-xbee-rcv stm32f429zi_stm32f4discovery)
 
 add_executable(test-xbee-snd src/tests/drivers/xbee/test-xbee-snd.cpp)
 sbs_target(test-xbee-snd stm32f429zi_stm32f4discovery)
-
-add_executable(test-stepper src/tests/drivers/stepper/test-stepper.cpp)
-sbs_target(test-stepper stm32f429zi_stm32f4discovery)
 
 #-----------------------------------------------------------------------------#
 #                               Tests - Events                                #

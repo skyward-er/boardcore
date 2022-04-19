@@ -25,9 +25,11 @@ add_library(boardcore-host STATIC EXCLUDE_FROM_ALL
     ${SBS_BASE}/src/shared/diagnostic/CpuMeter.cpp
     ${SBS_BASE}/src/shared/diagnostic/PrintLogger.cpp
 
+    # Actuators
+    ${SBS_BASE}/src/shared/actuators/Servo/Servo.cpp
+
     # Drivers
     ${SBS_BASE}/src/shared/drivers/timer/TimestampTimer.cpp
-    ${SBS_BASE}/src/shared/drivers/servo/Servo.cpp
 
     # Events
     ${SBS_BASE}/src/shared/events/EventBroker.cpp

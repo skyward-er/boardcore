@@ -20,7 +20,7 @@
  * THE SOFTWARE.
  */
 
-#include <drivers/hbridge/HBridge.h>
+#include <actuators/HBridge/HBridge.h>
 #include <miosix.h>
 #include <utils/Debug.h>
 
