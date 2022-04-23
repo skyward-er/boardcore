@@ -27,7 +27,7 @@ foreach(OPT_BOARD ${BOARDS})
     set(BOARDCORE_LIBRARY boardcore-${OPT_BOARD})
     add_library(${BOARDCORE_LIBRARY} STATIC EXCLUDE_FROM_ALL
         # Algorithms
-        ${SBS_BASE}/src/shared/algorithms/ExtendedKalman/ExtendedKalman.cpp
+        ${SBS_BASE}/src/shared/algorithms/NAS/NAS.cpp
 
         # Debug
         ${SBS_BASE}/src/shared/utils/Debug.cpp

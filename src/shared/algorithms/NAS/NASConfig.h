@@ -27,7 +27,7 @@
 namespace Boardcore
 {
 
-struct ExtendedKalmanConfig
+struct NASConfig
 {
     float T;            ///< [s]       Sample period
     float SIGMA_BETA;   ///< [rad/s^2] Estimated gyroscope bias variance

@@ -20,8 +20,8 @@
  * THE SOFTWARE.
  */
 
-#include <algorithms/ExtendedKalman/ExtendedKalman.h>
-#include <algorithms/ExtendedKalman/StateInitializer.h>
+#include <algorithms/NAS/NAS.h>
+#include <algorithms/NAS/StateInitializer.h>
 #include <miosix.h>
 #include <sensors/BMX160/BMX160.h>
 #include <sensors/LIS3MDL/LIS3MDL.h>
@@ -34,7 +34,7 @@ using namespace miosix;
 using namespace Boardcore;
 using namespace Eigen;
 
-ExtendedKalmanConfig getEKConfig();
+NASConfig getEKConfig();
 void bmxInit();
 void bmxCallback();
 
@@ -43,7 +43,7 @@ constexpr uint64_t CALIBRATION_TIMEOUT = 5 * 1e6;
 Vector3f nedMag = Vector3f(0.47472049, 0.02757190, 0.87970463);
 
 StateInitializer* stateInitializer;
-ExtendedKalman* kalman;
+NAS* kalman;
 
 SPIBus spi1(SPI1);
 BMX160* bmx160 = nullptr;
@@ -57,7 +57,7 @@ int main()
 
     sensorManager    = new SensorManager(sensorsMap);
     stateInitializer = new StateInitializer();
-    kalman           = new ExtendedKalman(getEKConfig());
+    kalman           = new NAS(getEKConfig());
 
     // Logger::getInstance().start();
     TimestampTimer::getInstance().resetTimestamp();
@@ -67,9 +67,9 @@ int main()
         Thread::sleep(1000);
 }
 
-ExtendedKalmanConfig getEKConfig()
+NASConfig getEKConfig()
 {
-    ExtendedKalmanConfig config;
+    NASConfig config;
 
     config.T              = 0.02f;
     config.SIGMA_BETA     = 0.0001f;

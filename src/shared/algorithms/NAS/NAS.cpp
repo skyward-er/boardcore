@@ -20,7 +20,7 @@
  * THE SOFTWARE.
  */
 
-#include "ExtendedKalman.h"
+#include "NAS.h"
 
 #include <drivers/timer/TimestampTimer.h>
 #include <utils/SkyQuaternion/SkyQuaternion.h>
@@ -33,7 +33,7 @@ using namespace Eigen;
 namespace Boardcore
 {
 
-ExtendedKalman::ExtendedKalman(ExtendedKalmanConfig config) : config(config)
+NAS::NAS(NASConfig config) : config(config)
 {
     // Covariance setup
     {
@@ -96,7 +96,7 @@ ExtendedKalman::ExtendedKalman(ExtendedKalmanConfig config) : config(config)
     }
 }
 
-void ExtendedKalman::predictAcc(const Vector3f& acceleration)
+void NAS::predictAcc(const Vector3f& acceleration)
 {
     Matrix3f A   = body2ned(x.block<4, 1>(IDX_QUAT, 0));
     Vector3f pos = x.block<3, 1>(IDX_POS, 0);
@@ -120,7 +120,7 @@ void ExtendedKalman::predictAcc(const Vector3f& acceleration)
     P.block<6, 6>(0, 0)           = F_lin * Pl * F_lin_tr + Q_lin;
 }
 
-void ExtendedKalman::predictGyro(const Vector3f& angularVelocity)
+void NAS::predictGyro(const Vector3f& angularVelocity)
 {
     Vector3f bias = x.block<3, 1>(IDX_BIAS, 0);
     Vector4f q    = x.block<4, 1>(IDX_QUAT, 0);
@@ -149,8 +149,8 @@ void ExtendedKalman::predictGyro(const Vector3f& angularVelocity)
     P.block<6, 6>(IDX_QUAT, IDX_QUAT) = Pq;
 }
 
-void ExtendedKalman::correctBaro(const float pressure, const float mslPress,
-                                 const float mslTemp)
+void NAS::correctBaro(const float pressure, const float mslPress,
+                      const float mslTemp)
 {
     Matrix<float, 1, 6> H = Matrix<float, 1, 6>::Zero();
 
@@ -174,7 +174,7 @@ void ExtendedKalman::correctBaro(const float pressure, const float mslPress,
     x.head<6>() = x.head<6>() + K * (pressure - y_hat);
 }
 
-void ExtendedKalman::correctGPS(const Vector4f& gps)
+void NAS::correctGPS(const Vector4f& gps)
 {
     Eigen::Matrix<float, 6, 6> Pl = P.block<6, 6>(0, 0);
 
@@ -191,7 +191,7 @@ void ExtendedKalman::correctGPS(const Vector4f& gps)
     x.head<6>() = x.head<6>() + K * (gps - H);
 }
 
-void ExtendedKalman::correctMag(const Vector3f& mag)
+void NAS::correctMag(const Vector3f& mag)
 {
     Vector4f q = x.block<4, 1>(IDX_QUAT, 0);
     Matrix3f A = body2ned(q).transpose();
@@ -224,7 +224,7 @@ void ExtendedKalman::correctMag(const Vector3f& mag)
     P.block<6, 6>(IDX_QUAT, IDX_QUAT) = Pq;
 }
 
-void ExtendedKalman::correctAcc(const Eigen::Vector3f& acceleration)
+void NAS::correctAcc(const Eigen::Vector3f& acceleration)
 {
     Vector4f q = x.block<4, 1>(IDX_QUAT, 0);
     Matrix3f A = body2ned(q).transpose();
@@ -264,7 +264,7 @@ void ExtendedKalman::correctAcc(const Eigen::Vector3f& acceleration)
     P.block<6, 6>(IDX_QUAT, IDX_QUAT) = Pq;
 }
 
-void ExtendedKalman::correctPitot(const float deltaP, const float staticP)
+void NAS::correctPitot(const float deltaP, const float staticP)
 {
     if (deltaP >= 0)
     {
@@ -301,21 +301,18 @@ void ExtendedKalman::correctPitot(const float deltaP, const float staticP)
     }
 }
 
-ExtendedKalmanState ExtendedKalman::getState() const
+NASState NAS::getState() const
 {
-    return ExtendedKalmanState(TimestampTimer::getInstance().getTimestamp(), x);
+    return NASState(TimestampTimer::getInstance().getTimestamp(), x);
 }
 
-Eigen::Matrix<float, 13, 1> ExtendedKalman::getX() const { return x; }
+Eigen::Matrix<float, 13, 1> NAS::getX() const { return x; }
 
-void ExtendedKalman::setState(const ExtendedKalmanState& state)
-{
-    this->x = state.getX();
-}
+void NAS::setState(const NASState& state) { this->x = state.getX(); }
 
-void ExtendedKalman::setX(const Eigen::Matrix<float, 13, 1>& x) { this->x = x; }
+void NAS::setX(const Eigen::Matrix<float, 13, 1>& x) { this->x = x; }
 
-Matrix3f ExtendedKalman::body2ned(const Vector4f& q)
+Matrix3f NAS::body2ned(const Vector4f& q)
 {
     // clang-format off
     return Matrix3f{

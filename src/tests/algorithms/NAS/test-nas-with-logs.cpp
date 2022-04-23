@@ -20,8 +20,8 @@
  * THE SOFTWARE.
  */
 
-#include <algorithms/ExtendedKalman/ExtendedKalman.h>
-#include <algorithms/ExtendedKalman/StateInitializer.h>
+#include <algorithms/NAS/NAS.h>
+#include <algorithms/NAS/StateInitializer.h>
 #include <sensors/BMX160/BMX160.h>
 #include <utils/CSVReader/CSVReader.h>
 #include <utils/SkyQuaternion/SkyQuaternion.h>
@@ -32,23 +32,23 @@ using namespace miosix;
 using namespace Boardcore;
 using namespace Eigen;
 
-ExtendedKalmanConfig getEKConfig();
-ExtendedKalmanState readInitialState();
+NASConfig getEKConfig();
+NASState readInitialState();
 void updateKalman(BMX160Data data);
 void printState();
 std::istream& operator>>(std::istream& input, BMX160Data& data);
-std::istream& operator>>(std::istream& input, ExtendedKalmanState& data);
+std::istream& operator>>(std::istream& input, NASState& data);
 
 // Normalized NED magnetic field in Milan
 Vector3f nedMag = Vector3f(0.47338841, 0.02656764, 0.88045305);
 
-ExtendedKalman* kalman;
+NAS* kalman;
 bool triad = false;
 
 int main()
 {
     // Prepare the Kalman
-    kalman = new ExtendedKalman(getEKConfig());
+    kalman = new NAS(getEKConfig());
     kalman->setState(readInitialState());
 
     // Retrieve all the data
@@ -76,9 +76,9 @@ int main()
     }
 }
 
-ExtendedKalmanConfig getEKConfig()
+NASConfig getEKConfig()
 {
-    ExtendedKalmanConfig config;
+    NASConfig config;
 
     config.T              = 0.02f;
     config.SIGMA_BETA     = 0.0001f;
@@ -102,15 +102,15 @@ ExtendedKalmanConfig getEKConfig()
     return config;
 }
 
-ExtendedKalmanState readInitialState()
+NASState readInitialState()
 {
     auto initialState =
-        CSVParser<ExtendedKalmanState>("/sd/initial_state.csv", true).collect();
+        CSVParser<NASState>("/sd/initial_state.csv", true).collect();
 
     printf("Initial state count: %d\n", initialState.size());
 
     if (initialState.size() == 0)
-        return ExtendedKalmanState();
+        return NASState();
     else
         return initialState.at(0);
 }
@@ -133,9 +133,9 @@ void updateKalman(BMX160Data data)
 
 void printState()
 {
-    auto kalmanState    = kalman->getState().getX();
-    auto kalmanRotation = SkyQuaternion::quat2eul(
-        kalmanState.block<4, 1>(ExtendedKalman::IDX_QUAT, 0));
+    auto kalmanState = kalman->getState().getX();
+    auto kalmanRotation =
+        SkyQuaternion::quat2eul(kalmanState.block<4, 1>(NAS::IDX_QUAT, 0));
 
     std::cout << "Kalman state:" << std::endl;
     std::cout << kalmanState << std::endl;
@@ -172,7 +172,7 @@ std::istream& operator>>(std::istream& input, BMX160Data& data)
     return input;
 }
 
-std::istream& operator>>(std::istream& input, ExtendedKalmanState& data)
+std::istream& operator>>(std::istream& input, NASState& data)
 {
     input >> data.timestamp;
     input.ignore(1, ',');
