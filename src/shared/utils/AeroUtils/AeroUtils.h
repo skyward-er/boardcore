@@ -22,6 +22,7 @@
 
 #pragma once
 
+#include <Eigen/Core>
 #include <cmath>
 
 namespace Boardcore
@@ -96,12 +97,23 @@ float mslTemperature(float temperatureRef, float altitudeRef);
  * level
  *
  * @param p Current pressure (must be > 0) [Pa]
- * @param dpDt [Rate of change of pressure [Pa/s]]
+ * @param dpDt Rate of change of pressure [Pa/s]
  * @param pRef Reference pressure (must be > 0) [Pa]
  * @param tRef Reference temperature [K]
  * @return Vertical speed, positive upwards [m/s]
  */
 float verticalSpeed(float p, float dpDt, float pRef, float tRef);
+
+/**
+ * @brief Converts decimal degrees of latitude and longitude into displacement
+ * in meters between two positions the with an ellipsoidal earth model.
+ *
+ * @param position1 Latitude and longitude of current position [lat lon][deg]
+ * @param position2 Initial position used as an offset [lat lon][deg]
+ * @return Distance between the two coordinates [n e][m]
+ */
+Eigen::Vector2f geodetic2NED(const Eigen::Vector2f& position1,
+                             const Eigen::Vector2f& position2);
 
 }  // namespace Aeroutils
 
