@@ -80,7 +80,7 @@ private:
     TimerUtils::Channel channel;
 };
 
-Buzzer::Buzzer(TIM_TypeDef *timer, TimerUtils::Channel channel)
+inline Buzzer::Buzzer(TIM_TypeDef *timer, TimerUtils::Channel channel)
     : timer(timer), channel(channel)
 {
     // this->timer.setPrescaler(
@@ -94,7 +94,7 @@ Buzzer::Buzzer(TIM_TypeDef *timer, TimerUtils::Channel channel)
     // this->timer.enableCaptureCompareComplementaryOutput(channel);
 }
 
-void Buzzer::on()
+inline void Buzzer::on()
 {
     // First turn off and reset the timer
     off();
@@ -107,13 +107,13 @@ void Buzzer::on()
     timer.enableCaptureCompareOutput(channel);
 }
 
-void Buzzer::off()
+inline void Buzzer::off()
 {
     timer.disable();
     timer.reset();
 }
 
-void Buzzer::oneTimeToggle(uint16_t ms)
+inline void Buzzer::oneTimeToggle(uint16_t ms)
 {
     if (ms == 0)
         return;
@@ -143,7 +143,7 @@ void Buzzer::oneTimeToggle(uint16_t ms)
     timer.enable();
 }
 
-void Buzzer::continuoslyToggle(uint16_t onTime, uint16_t offTime)
+inline void Buzzer::continuoslyToggle(uint16_t onTime, uint16_t offTime)
 {
     if (onTime == 0 || offTime == 0)
         return;
