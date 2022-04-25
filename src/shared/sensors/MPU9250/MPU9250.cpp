@@ -29,11 +29,12 @@
 namespace Boardcore
 {
 
-MPU9250::MPU9250(SPISlave spiSlave_, unsigned short samplingRate_,
-                 MPU9250GyroFSR gyroFsr_, MPU9250AccelFSR accelFsr_,
-                 SPI::ClockDivider highSpeedSpiClockDivider_)
-    : spiSlave(spiSlave_), samplingRate(samplingRate_), gyroFsr(gyroFsr_),
-      accelFsr(accelFsr_), highSpeedSpiClockDivider(highSpeedSpiClockDivider_)
+MPU9250::MPU9250(SPIBusInterface& bus, miosix::GpioPin cs, SPIBusConfig config,
+                 unsigned short samplingRate, MPU9250GyroFSR gyroFsr,
+                 MPU9250AccelFSR accelFsr,
+                 SPI::ClockDivider highSpeedSpiClockDivider)
+    : spiSlave(bus, cs, config), samplingRate(samplingRate), gyroFsr(gyroFsr),
+      accelFsr(accelFsr), highSpeedSpiClockDivider(highSpeedSpiClockDivider)
 {
 }
 

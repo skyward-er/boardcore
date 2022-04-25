@@ -22,9 +22,10 @@
 
 #include <algorithms/NAS/StateInitializer.h>
 #include <miosix.h>
-#include <sensors/BMX160/BMX160.h>
-#include <sensors/LIS3MDL/LIS3MDL.h>
+#include <sensors/MPU9250/MPU9250.h>
 #include <sensors/SensorManager.h>
+#include <sensors/calibration/SensorDataExtra.h>
+#include <sensors/calibration/SoftAndHardIronCalibration/SoftAndHardIronCalibration.h>
 
 #include <cmath>
 #include <iostream>
@@ -39,7 +40,7 @@ void bmxCallback();
 Vector3f nedMag = Vector3f(0.4747, 0.0276, 0.8797);
 
 SPIBus spi1(SPI1);
-BMX160* bmx160 = nullptr;
+MPU9250* mpu = nullptr;
 
 Boardcore::SensorManager::SensorMap_t sensorsMap;
 Boardcore::SensorManager* sensorManager = nullptr;
@@ -57,51 +58,26 @@ int main()
 
 void bmxInit()
 {
-    SPIBusConfig spiConfig;
-    spiConfig.clockDivider = SPI::ClockDivider::DIV_8;
+    mpu = new MPU9250(spi1, miosix::sensors::mpu9250::cs::getPin());
 
-    BMX160Config bmx_config;
-    bmx_config.fifoMode      = BMX160Config::FifoMode::HEADER;
-    bmx_config.fifoWatermark = 80;
-    bmx_config.fifoInterrupt = BMX160Config::FifoInterruptPin::PIN_INT1;
+    SensorInfo info("MPU9250", 20, &bmxCallback);
 
-    bmx_config.temperatureDivider = 1;
-
-    bmx_config.accelerometerRange = BMX160Config::AccelerometerRange::G_16;
-
-    bmx_config.gyroscopeRange = BMX160Config::GyroscopeRange::DEG_1000;
-
-    bmx_config.accelerometerDataRate = BMX160Config::OutputDataRate::HZ_100;
-    bmx_config.gyroscopeDataRate     = BMX160Config::OutputDataRate::HZ_100;
-    bmx_config.magnetometerRate      = BMX160Config::OutputDataRate::HZ_100;
-
-    bmx_config.gyroscopeUnit = BMX160Config::GyroscopeMeasureUnit::RAD;
-
-    bmx160 = new BMX160(spi1, miosix::sensors::bmx160::cs::getPin(), bmx_config,
-                        spiConfig);
-
-    SensorInfo info("BMX160", 20, &bmxCallback);
-
-    sensorsMap.emplace(std::make_pair(bmx160, info));
+    sensorsMap.emplace(std::make_pair(mpu, info));
 }
 
 void bmxCallback()
 {
-    auto data = bmx160->getLastSample();
+    auto data = mpu->getLastSample();
 
     Vector3f acceleration(data.accelerationX, data.accelerationY,
                           data.accelerationZ);
-    Vector3f magneticField(data.magneticFieldX, data.magneticFieldY,
-                           data.magneticFieldZ);
 
-    // Apply correction
-    Vector3f acc_b(0.3763, -0.1445, -0.1010);
-    acceleration -= acc_b;
-    Vector3f mag_b{21.0730033648425, -24.3997259703105, -2.32621524742862};
-    Matrix3f A{{0.659926504672263, 0, 0},
-               {0, 0.662442130094073, 0},
-               {0, 0, 2.28747567094359}};
-    magneticField = (magneticField - mag_b).transpose() * A;
+    SoftAndHardIronCorrector corrector({-5.15221, -56.5428, 38.2193},
+                                       {0.962913, 0.987191, 1.05199});
+    Vector3f magneticField;
+    magneticField << (MagnetometerData)data;
+
+    magneticField << corrector.correct(data);
 
     acceleration.normalize();
     magneticField.normalize();
@@ -109,6 +85,7 @@ void bmxCallback()
     StateInitializer state;
     state.triad(acceleration, magneticField, nedMag);
 
+    std::cout << acceleration.transpose();
     auto kalmanState = state.getInitX();
     if (!std::isnan(kalmanState(9)))
         printf("w%fwa%fab%fbc%fc\n", kalmanState(9), kalmanState(6),

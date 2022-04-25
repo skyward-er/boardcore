@@ -86,6 +86,9 @@ foreach(OPT_BOARD ${BOARDS})
         ${SBS_BASE}/src/shared/sensors/UbloxGPS/UbloxGPS.cpp
         ${SBS_BASE}/src/shared/sensors/VN100/VN100.cpp
 
+        # Calibration
+        ${SBS_BASE}/src/shared/sensors/calibration/SoftAndHardIronCalibration/SoftAndHardIronCalibration.cpp
+
         # Utils
         ${SBS_BASE}/src/shared/utils/AeroUtils/AeroUtils.cpp
         ${SBS_BASE}/src/shared/utils/ButtonHandler/ButtonHandler.cpp

@@ -39,6 +39,9 @@ sbs_target(bmx160-calibration-entry stm32f429zi_skyward_death_stack_x)
 add_executable(config-dsgamma src/entrypoints/config-dsgamma.cpp)
 sbs_target(config-dsgamma stm32f429zi_stm32f4discovery)
 
+add_executable(imu-calibration src/entrypoints/imu-calibration.cpp)
+sbs_target(imu-calibration stm32f429zi_parafoil)
+
 add_executable(mxgui-helloworld src/entrypoints/examples/mxgui-helloworld.cpp)
 sbs_target(mxgui-helloworld stm32f429zi_stm32f4discovery)
 
@@ -133,13 +136,13 @@ add_executable(test-nas src/tests/algorithms/NAS/test-nas.cpp)
 sbs_target(test-nas stm32f429zi_skyward_death_stack_x)
 
 add_executable(test-nas-with-triad src/tests/algorithms/NAS/test-nas-with-triad.cpp)
-sbs_target(test-nas-with-triad stm32f429zi_skyward_death_stack_x)
+sbs_target(test-nas-with-triad stm32f429zi_parafoil)
 
 add_executable(test-nas-with-logs src/tests/algorithms/NAS/test-nas-with-logs.cpp)
 sbs_target(test-nas-with-logs stm32f429zi_skyward_death_stack_x)
 
 add_executable(test-triad src/tests/algorithms/NAS/test-triad.cpp)
-sbs_target(test-triad stm32f429zi_skyward_death_stack_x)
+sbs_target(test-triad stm32f429zi_parafoil)
 
 #-----------------------------------------------------------------------------#
 #                               Tests - Drivers                               #
@@ -329,7 +332,7 @@ add_executable(test-max31855 src/tests/sensors/test-max31855.cpp)
 sbs_target(test-max31855 stm32f429zi_stm32f4discovery)
 
 add_executable(test-mpu9250 src/tests/sensors/test-mpu9250.cpp)
-sbs_target(test-mpu9250 stm32f429zi_skyward_death_stack_x)
+sbs_target(test-mpu9250 stm32f429zi_parafoil)
 
 add_executable(test-ms5803 src/tests/sensors/test-ms5803.cpp)
 sbs_target(test-ms5803 stm32f429zi_skyward_death_stack_x)
