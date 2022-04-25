@@ -1,5 +1,5 @@
 /* Copyright (c) 2015-2022 Skyward Experimental Rocketry
- * Author: Luca Erbetta, Alberto Nidasio
+ * Authors: Luca Erbetta, Alberto Nidasio
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -47,8 +47,8 @@
 #include <sensors/SensorData.h>
 #include <sensors/UbloxGPS/UbloxGPSData.h>
 #include <sensors/VN100/VN100Data.h>
-#include <sensors/analog/battery/BatteryVoltageSensorData.h>
-#include <sensors/analog/current/CurrentSensorData.h>
+#include <sensors/analog/BatteryVoltageSensorData.h>
+#include <sensors/analog/CurrentSensorData.h>
 #include <sensors/analog/pressure/MPXHZ6130A/MPXHZ6130AData.h>
 #include <sensors/analog/pressure/honeywell/HSCMAND015PAData.h>
 #include <sensors/analog/pressure/honeywell/HSCMRNN030PAData.h>

@@ -22,42 +22,21 @@
 
 #pragma once
 
-#include <sensors/Sensor.h>
-
-#include <functional>
+#include <sensors/SensorData.h>
 
 namespace Boardcore
 {
 
-class LoadCellSensor : public Sensor<LoadCellData>
+struct AnalogLoadCellData : LoadCellData
 {
-public:
-    LoadCellSensor(std::function<std::pair<uint64_t, float>()> getVoltage,
-                   const float mVtoV, const unsigned int fullScale,
-                   const float supplyVoltage = 5)
-        : getVoltage(getVoltage),
-          conversionCoeff(mVtoV * supplyVoltage / fullScale / 1e3)
+    float voltage;
+
+    static std::string header() { return "loadTimestamp,load,voltage\n"; }
+
+    void print(std::ostream& os) const
     {
+        os << loadTimestamp << "," << load << "," << voltage << "\n";
     }
-
-    bool init() override { return true; };
-
-    bool selfTest() override { return true; };
-
-    LoadCellData sampleImpl() override
-    {
-        LoadCellData data;
-
-        std::tie(data.loadTimestamp, data.voltage) = getVoltage();
-
-        data.load = data.voltage / conversionCoeff;
-
-        return data;
-    }
-
-private:
-    std::function<std::pair<uint64_t, float>()> getVoltage;
-    const float conversionCoeff;
 };
 
 }  // namespace Boardcore

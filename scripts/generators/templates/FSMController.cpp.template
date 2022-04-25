@@ -41,7 +41,7 @@ using namespace {state_machine_name}Config;
 
 {state_machine_name}Controller::~{state_machine_name}Controller()
 {{
-    sEventBroker.unsubscribe(this);
+    EventBroker::getInstance().unsubscribe(this);
 }}
 
 {states_functions_definitions}

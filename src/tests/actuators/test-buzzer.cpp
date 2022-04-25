@@ -20,56 +20,33 @@
  * THE SOFTWARE.
  */
 
-#include <drivers/timer/TimestampTimer.h>
+#include <actuators/Buzzer.h>
 #include <miosix.h>
-#include <sensors/MAX31855/MAX31855.h>
 
 using namespace miosix;
 using namespace Boardcore;
 
-GpioPin sckPin  = GpioPin(GPIOF_BASE, 7);
-GpioPin misoPin = GpioPin(GPIOF_BASE, 8);
-GpioPin csPin   = GpioPin(GPIOD_BASE, 13);
-
-GpioPin csMems = GpioPin(GPIOC_BASE, 1);
-
-void initBoard()
-{
-    // Setup gpio pins
-    csPin.mode(Mode::OUTPUT);
-    csPin.high();
-    csMems.mode(Mode::OUTPUT);
-    csMems.high();
-    sckPin.mode(Mode::ALTERNATE);
-    sckPin.alternateFunction(5);
-    misoPin.mode(Mode::ALTERNATE);
-    misoPin.alternateFunction(5);
-}
-
 int main()
 {
-    // Enable SPI clock and set gpios
-    initBoard();
+    Buzzer buzzer(TIM4, TimerUtils::Channel::CHANNEL_2);
 
-    SPIBus spiBus(SPI5);
-    MAX31855 sensor{spiBus, csPin};
+    printf("Now beeping for 2 seconds\n");
+    buzzer.oneTimeToggle(2 * 1000);
+    Thread::sleep(3 * 1000);
 
-    printf("Starting process verification!\n");
+    printf("Now continuosly toggle the buzzer every 500ms for 5 seconds");
+    buzzer.continuoslyToggle(500, 500);
+    Thread::sleep(6 * 1000);
 
-    if (!sensor.selfTest())
-    {
-        printf("Sensor self test failed!\n");
-    }
+    printf("Now continuosly toggle the buzzer every 200ms for 5 seconds");
+    buzzer.continuoslyToggle(200, 200);
+    Thread::sleep(6 * 1000);
+
+    printf("Now manually turning on the buzzer for 1 second\n");
+    buzzer.on();
+    Thread::sleep(1000);
+    buzzer.off();
 
     while (true)
-    {
-        sensor.sample();
-        TemperatureData sample = sensor.getLastSample();
-
-        printf("[%.2f] %.2f\n", sample.temperatureTimestamp / 1e6,
-               sample.temperature);
-
-        Thread::sleep(500);
-    }
-    return 0;
+        Thread::sleep(1000);
 }

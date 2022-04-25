@@ -20,56 +20,46 @@
  * THE SOFTWARE.
  */
 
-#include <drivers/timer/TimestampTimer.h>
-#include <miosix.h>
-#include <sensors/MAX31855/MAX31855.h>
+#pragma once
 
-using namespace miosix;
-using namespace Boardcore;
+#include <sensors/Sensor.h>
 
-GpioPin sckPin  = GpioPin(GPIOF_BASE, 7);
-GpioPin misoPin = GpioPin(GPIOF_BASE, 8);
-GpioPin csPin   = GpioPin(GPIOD_BASE, 13);
+#include <functional>
 
-GpioPin csMems = GpioPin(GPIOC_BASE, 1);
+#include "AnalogLoadCellData.h"
 
-void initBoard()
+namespace Boardcore
 {
-    // Setup gpio pins
-    csPin.mode(Mode::OUTPUT);
-    csPin.high();
-    csMems.mode(Mode::OUTPUT);
-    csMems.high();
-    sckPin.mode(Mode::ALTERNATE);
-    sckPin.alternateFunction(5);
-    misoPin.mode(Mode::ALTERNATE);
-    misoPin.alternateFunction(5);
-}
 
-int main()
+class AnalogLoadCell : public Sensor<AnalogLoadCellData>
 {
-    // Enable SPI clock and set gpios
-    initBoard();
-
-    SPIBus spiBus(SPI5);
-    MAX31855 sensor{spiBus, csPin};
-
-    printf("Starting process verification!\n");
-
-    if (!sensor.selfTest())
+public:
+    AnalogLoadCell(std::function<std::pair<uint64_t, float>()> getVoltage,
+                   const float mVtoV, const unsigned int fullScale,
+                   const float supplyVoltage = 5)
+        : getVoltage(getVoltage),
+          conversionCoeff(mVtoV * supplyVoltage / fullScale / 1e3)
     {
-        printf("Sensor self test failed!\n");
     }
 
-    while (true)
+    bool init() override { return true; };
+
+    bool selfTest() override { return true; };
+
+    AnalogLoadCellData sampleImpl() override
     {
-        sensor.sample();
-        TemperatureData sample = sensor.getLastSample();
+        AnalogLoadCellData data;
 
-        printf("[%.2f] %.2f\n", sample.temperatureTimestamp / 1e6,
-               sample.temperature);
+        std::tie(data.loadTimestamp, data.voltage) = getVoltage();
 
-        Thread::sleep(500);
+        data.load = data.voltage / conversionCoeff;
+
+        return data;
     }
-    return 0;
-}
+
+private:
+    std::function<std::pair<uint64_t, float>()> getVoltage;
+    const float conversionCoeff;
+};
+
+}  // namespace Boardcore

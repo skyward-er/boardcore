@@ -98,7 +98,7 @@ bool testFSMTransition(FSM_type& fsm, const Event& ev,
 template <class FSM_type>
 bool testFSMAsyncTransition(FSM_type& fsm, const Event& ev, uint8_t topic,
                             void (FSM_type::*expectedState)(const Event&),
-                            EventBroker& broker = sEventBroker)
+                            EventBroker& broker = EventBroker::getInstance())
 {
     broker.post(ev, topic);
     // Wait for the event to be handled
@@ -154,7 +154,7 @@ bool testHSMTransition(HSM_type& hsm, const Event& ev,
 template <class HSM_type>
 bool testHSMAsyncTransition(HSM_type& hsm, const Event& ev, uint8_t topic,
                             State (HSM_type::*expectedState)(const Event&),
-                            EventBroker& broker = sEventBroker)
+                            EventBroker& broker = EventBroker::getInstance())
 {
     broker.post(ev, topic);
     // Wait for the event to be handled
@@ -183,7 +183,7 @@ bool testHSMAsyncTransition(HSM_type& hsm, const Event& ev, uint8_t topic,
  */
 bool expectEvent(uint8_t eventId, uint8_t topic, long long when,
                  long long uncertainty = EVENT_TIMING_UNCERTAINTY,
-                 EventBroker& broker   = sEventBroker);
+                 EventBroker& broker   = EventBroker::getInstance());
 
 /**
  * @brief Waits until the specified event is received or a timeout expires
@@ -197,6 +197,6 @@ bool expectEvent(uint8_t eventId, uint8_t topic, long long when,
  *         false    if the timeout has expired
  */
 bool waitForEvent(uint8_t event, uint8_t topic, long long timeout = 0,
-                  EventBroker& broker = sEventBroker);
+                  EventBroker& broker = EventBroker::getInstance());
 
 }  // namespace Boardcore

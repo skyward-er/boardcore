@@ -27,7 +27,8 @@
 namespace Boardcore
 {
 
-VN100::VN100(unsigned int portNumber, BaudRates baudRate, CRCOptions crc)
+VN100::VN100(USARTType *portNumber, USARTInterface::Baudrate baudRate,
+             CRCOptions crc)
     : portNumber(portNumber), baudRate(baudRate), crc(crc)
 {
 }
@@ -128,8 +129,7 @@ bool VN100::sampleRaw()
     }
 
     // Send the IMU sampling command
-    if (!(serialInterface->send(preSampleImuString->c_str(),
-                                preSampleImuString->length())))
+    if (!(serialInterface->writeString(preSampleImuString->c_str())))
     {
         LOG_WARN(logger, "Unable to sample due to serial communication error");
         return false;
@@ -177,13 +177,6 @@ bool VN100::closeAndReset()
         return false;
     }
 
-    // Close the serial
-    if (!(serialInterface->closeSerial()))
-    {
-        LOG_WARN(logger, "Impossible to close vn100 serial communication");
-        return false;
-    }
-
     isInit = false;
 
     // Free the recvString memory
@@ -224,8 +217,7 @@ VN100Data VN100::sampleImpl()
     }
 
     // Returns Quaternion, Magnetometer, Accelerometer and Gyro
-    if (!(serialInterface->send(preSampleImuString->c_str(),
-                                preSampleImuString->length())))
+    if (!(serialInterface->writeString(preSampleImuString->c_str())))
     {
         // If something goes wrong i return the last sampled data
         return lastSample;
@@ -257,8 +249,7 @@ VN100Data VN100::sampleImpl()
     // Returns Magnetometer, Accelerometer, Gyroscope, Temperature and Pressure
     // (UNCOMPENSATED) DO NOT USE THESE MAGNETOMETER, ACCELEROMETER AND
     // GYROSCOPE VALUES
-    if (!(serialInterface->send(preSampleTempPressString->c_str(),
-                                preSampleTempPressString->length())))
+    if (!(serialInterface->writeString(preSampleTempPressString->c_str())))
     {
         // If something goes wrong i return the last sampled data
         return lastSample;
@@ -312,16 +303,10 @@ bool VN100::disableAsyncMessages(bool waitResponse)
 bool VN100::configDefaultSerialPort()
 {
     // Initial default settings
-    serialInterface = new VN100Serial(
-        portNumber, static_cast<unsigned int>(BaudRates::Baud_115200));
+    serialInterface = new USART(portNumber, USARTInterface::Baudrate::B115200);
 
     // Check correct serial init
-    if (!serialInterface->init())
-    {
-        return false;
-    }
-
-    return true;
+    return serialInterface->init();
 }
 
 /**
@@ -333,7 +318,7 @@ bool VN100::configUserSerialPort()
     std::string command;
 
     // I format the command to change baud rate
-    command = fmt::format("{}{}", "VNWRG,5,", baudRate);
+    command = fmt::format("{}{}", "VNWRG,5,", static_cast<int>(baudRate));
 
     // I can send the command
     if (!sendStringCommand(command))
@@ -341,23 +326,14 @@ bool VN100::configUserSerialPort()
         return false;
     }
 
-    // I can close the serial
-    serialInterface->closeSerial();
-
     // Destroy the serial object
     delete serialInterface;
 
     // I can open the serial with user's baud rate
-    serialInterface =
-        new VN100Serial(portNumber, static_cast<unsigned int>(baudRate));
+    serialInterface = new USART(portNumber, baudRate);
 
     // Check correct serial init
-    if (!serialInterface->init())
-    {
-        return false;
-    }
-
-    return true;
+    return serialInterface->init();
 }
 
 bool VN100::setCrc(bool waitResponse)
@@ -443,11 +419,13 @@ bool VN100::selfTestImpl()
 
     if (!sendStringCommand("VNRRG,01"))
     {
+        LOG_WARN(logger, "Unable to send string command");
         return false;
     }
 
     if (!recvStringCommand(recvString, recvStringMaxDimension))
     {
+        LOG_WARN(logger, "Unable to receive string command");
         return false;
     }
 
@@ -661,14 +639,14 @@ bool VN100::sendStringCommand(std::string command)
     }
 
     // I send the final command
-    if (!(serialInterface->send(command.c_str(), command.length() + 1)))
+    if (!serialInterface->writeString(command.c_str()))
     {
         return false;
     }
 
     // Wait some time
     // TODO dimension the time
-    miosix::Thread::sleep(1);
+    miosix::Thread::sleep(500);
 
     return true;
 }
@@ -677,7 +655,7 @@ bool VN100::recvStringCommand(char *command, int maxLength)
 {
     int i = 0;
     // Read the buffer
-    if (!(serialInterface->recv(command, maxLength)))
+    if (!(serialInterface->read(command, maxLength)))
     {
         return false;
     }

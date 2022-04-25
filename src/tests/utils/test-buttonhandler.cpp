@@ -20,56 +20,53 @@
  * THE SOFTWARE.
  */
 
-#include <drivers/timer/TimestampTimer.h>
 #include <miosix.h>
-#include <sensors/MAX31855/MAX31855.h>
+#include <utils/ButtonHandler/ButtonHandler.h>
+
+#include <functional>
 
 using namespace miosix;
 using namespace Boardcore;
+using namespace std;
+using namespace placeholders;
 
-GpioPin sckPin  = GpioPin(GPIOF_BASE, 7);
-GpioPin misoPin = GpioPin(GPIOF_BASE, 8);
-GpioPin csPin   = GpioPin(GPIOD_BASE, 13);
+GpioPin button1 = GpioPin(GPIOG_BASE, 10);
+GpioPin button2 = GpioPin(GPIOG_BASE, 9);
 
-GpioPin csMems = GpioPin(GPIOC_BASE, 1);
-
-void initBoard()
-{
-    // Setup gpio pins
-    csPin.mode(Mode::OUTPUT);
-    csPin.high();
-    csMems.mode(Mode::OUTPUT);
-    csMems.high();
-    sckPin.mode(Mode::ALTERNATE);
-    sckPin.alternateFunction(5);
-    misoPin.mode(Mode::ALTERNATE);
-    misoPin.alternateFunction(5);
-}
+void buttonCallback(ButtonEvent event, int buttonId);
 
 int main()
 {
-    // Enable SPI clock and set gpios
-    initBoard();
+    button1.mode(Mode::INPUT);
+    button2.mode(Mode::INPUT);
 
-    SPIBus spiBus(SPI5);
-    MAX31855 sensor{spiBus, csPin};
-
-    printf("Starting process verification!\n");
-
-    if (!sensor.selfTest())
-    {
-        printf("Sensor self test failed!\n");
-    }
+    ButtonHandler::getInstance().registerButtonCallback(
+        button1, bind(buttonCallback, _1, 1));
+    ButtonHandler::getInstance().registerButtonCallback(
+        button2, bind(buttonCallback, _1, 2));
 
     while (true)
+        Thread::sleep(1000);
+}
+
+void buttonCallback(ButtonEvent event, int buttonId)
+{
+    switch (event)
     {
-        sensor.sample();
-        TemperatureData sample = sensor.getLastSample();
+        case ButtonEvent::PRESSED:
+            printf("Button %d pressed\n", buttonId);
+            break;
+        case ButtonEvent::SHORT_PRESS:
+            printf("Button %d released, it was a short press\n", buttonId);
+            break;
+        case ButtonEvent::LONG_PRESS:
+            printf("Button %d released, it was a long press\n", buttonId);
+            break;
+        case ButtonEvent::VERY_LONG_PRESS:
+            printf("Button %d released, it was a very long press\n", buttonId);
+            break;
 
-        printf("[%.2f] %.2f\n", sample.temperatureTimestamp / 1e6,
-               sample.temperature);
-
-        Thread::sleep(500);
+        default:
+            break;
     }
-    return 0;
 }

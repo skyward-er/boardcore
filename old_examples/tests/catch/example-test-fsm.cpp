@@ -131,7 +131,7 @@ public:
     // Start the thread in the constructor
     FSMTestFixture()
     {
-        sEventBroker.start();
+        EventBroker::getInstance().start();
         fsm.start();
     }
     // Stop the thread in the destructor
@@ -168,7 +168,7 @@ TEST_CASE_METHOD(FSMTestFixture, "Testing async transitions")
 
         SECTION("S3 --> S4 if EV_B. Delayed event should be removed")
         {
-            EventCounter counter{*sEventBroker};
+            EventCounter counter{*EventBroker::getInstance()};
 
             // Post EV_B before EV_D fires. should move to S4 and remove EV_D
             // from the delayed events

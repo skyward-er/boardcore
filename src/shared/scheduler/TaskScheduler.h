@@ -111,6 +111,25 @@ public:
                  int64_t startTick = miosix::getTick());
 
     /**
+     * @brief Add a task function to the scheduler with an auto generated id.
+     *
+     * Note that each task has it's own unique ID, even one shot tasks!
+     * Therefore, if a task already exists with the same id, the function will
+     * fail and return false.
+     *
+     * For one shot tasks, the period is useless and not used.
+     *
+     * @param function Function to be called periodically.
+     * @param period Inter call period.
+     * @param policy Task policy, default is SKIP.
+     * @param startTick First activation time, useful for synchronizing tasks.
+     * @return true if the task was added successfully.
+     */
+    bool addTask(function_t function, uint32_t period,
+                 Policy policy     = Policy::SKIP,
+                 int64_t startTick = miosix::getTick());
+
+    /**
      * @brief Removes the task identified by the given id if it exists.
      *
      * @param id Id of the task to remove.

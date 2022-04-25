@@ -27,7 +27,7 @@
 #include <radio/Xbee/APIFramesLog.h>
 #include <radio/Xbee/ATCommands.h>
 #include <radio/Xbee/Xbee.h>
-#include <utils/ButtonHandler.h>
+#include <utils/ButtonHandler/ButtonHandler.h>
 
 #include <array>
 #include <cstdio>
@@ -75,7 +75,6 @@ Xbee::Xbee* xbee = nullptr;
 ConstSendInterval sndInt{0};
 XbeeTransceiver* trans = nullptr;
 XbeeGUI* gui;
-ButtonHandler<GpioUserBtn>* btnHandler;
 
 unsigned int markCounter = 1;
 
@@ -145,10 +144,9 @@ int main()
     // GUI
     gui = new XbeeGUI();
 
-    btnHandler = new ButtonHandler<GpioUserBtn>(
-        0, bind(&ScreenManager::onButtonPress, &gui->screenManager, _2));
-
-    btnHandler->start();
+    ButtonHandler::getInstance().registerButtonCallback(
+        GpioUserBtn::getPin(),
+        bind(&ScreenManager::onButtonEvent, &gui->screenManager, _1));
 
     gui->screenConfig.btnStart.addOnInteractionListener(onStartButtonClick);
     gui->screenConfig.btnEnergy.addOnInteractionListener(onEnergyButtonClick);

@@ -1,5 +1,5 @@
-/* Copyright (c) 2021 Skyward Experimental Rocketry
- * Author: Matteo Pignataro
+/* Copyright (c) 2022 Skyward Experimental Rocketry
+ * Author: Alberto Nidasio
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -58,7 +58,7 @@ int main()
         Thread::sleep(12);
     }
     average /= 100;
-    sensor.setZero(-average);
+    sensor.setOffset(average);
     sensor.setScale(214000);
 
     while (true)

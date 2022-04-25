@@ -39,8 +39,8 @@
  */
 enum ExampleEvents : uint8_t
 {
-    EV_A = EV_FIRST_SIGNAL,  // The first event must always have value
-                             // EV_FIRST_SIGNAL
+    EV_A = EV_FIRST_CUSTOM,  // The first event must always have value
+                             // EV_FIRST_CUSTOM
     EV_B,  // Values for the following event can be manually specified or
            // assigned automatically
     EV_C,
@@ -110,10 +110,10 @@ public:
     FSMExample() : FSM(&FSMExample::state_S1), v(0)
     {
         // Subscribe for events posted on TOPIC_T1
-        sEventBroker.subscribe(this, TOPIC_T1);
+        EventBroker::getInstance().subscribe(this, TOPIC_T1);
     }
 
-    ~FSMExample() { sEventBroker.unsubscribe(this); }
+    ~FSMExample() { EventBroker::getInstance().unsubscribe(this); }
 
     /*
      * State function definitions.
@@ -207,8 +207,8 @@ public:
                 v = 1;
 
                 // Post EV_D to itself in 1 seconds
-                delayed_ev_id =
-                    sEventBroker.postDelayed(Event{EV_D}, TOPIC_T1, 1000);
+                delayed_ev_id = EventBroker::getInstance().postDelayed(
+                    Event{EV_D}, TOPIC_T1, 1000);
 
                 break;
             }
@@ -219,7 +219,7 @@ public:
                 // don't remove a delayed event. This is an error! Uncomment to
                 // fix, see the wiki for further information !!!
 
-                // sEventBroker.removeDelayed(delayed_ev_id);
+                // EventBroker::getInstance().removeDelayed(delayed_ev_id);
                 break;
             }
             case EV_B:

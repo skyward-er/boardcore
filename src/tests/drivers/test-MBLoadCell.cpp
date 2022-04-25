@@ -21,15 +21,16 @@
  */
 
 #include <diagnostic/PrintLogger.h>
-
-#include "sensors/MBLoadCell/MBLoadCell.h"
-#include "string.h"
-#include "utils/ButtonHandler.h"
+#include <sensors/MBLoadCell/MBLoadCell.h>
+#include <string.h>
+#include <utils/ButtonHandler/ButtonHandler.h>
 
 //#define PRINT_ALL_SAMPLES // To be defined if we want to print all the samples
 
 using namespace Boardcore;
 using namespace miosix;
+using namespace std;
+using namespace placeholders;
 
 using button            = miosix::Gpio<GPIOA_BASE, 0>;  ///< User button
 const uint8_t btnUserId = 1;
@@ -39,9 +40,9 @@ const uint8_t btnUserId = 1;
  * button is pressed for a long time, resets the minimum and maximum values of
  * the recorded weights
  */
-void buttonCallback(uint8_t btnId, ButtonPress btnPress, MBLoadCell *loadcell)
+void buttonCallback(ButtonEvent btnPress, MBLoadCell *loadcell)
 {
-    if (btnId == btnUserId && btnPress == ButtonPress::DOWN)
+    if (btnPress == ButtonEvent::PRESSED)
         TRACE(
             "## MAX: %.2f [Kg] (ts: %.3f)\t##\tMIN: %.2f [Kg] (ts: %.3f) ##\n",
             loadcell->getMaxWeight().load,
@@ -49,7 +50,7 @@ void buttonCallback(uint8_t btnId, ButtonPress btnPress, MBLoadCell *loadcell)
             loadcell->getMinWeight().load,
             loadcell->getMinWeight().load / 1000000.0);
 
-    if (btnId == btnUserId && btnPress == ButtonPress::LONG)
+    if (btnPress == ButtonEvent::LONG_PRESS)
         loadcell->resetMaxMinWeights();
 }
 
@@ -67,14 +68,9 @@ int main()
      */
     MBLoadCell loadCell(LoadCellModes::CONT_MOD_T, 2, 115200);
 
-    // Binding the load cell instance to the callback to be called
-    std::function<void(uint8_t, ButtonPress)> callback =
-        std::bind(buttonCallback, std::placeholders::_1, std::placeholders::_2,
-                  &loadCell);
-
     // Instanciating the button
-    ButtonHandler<button> btnHandler(btnUserId, callback);
-    btnHandler.start();
+    ButtonHandler::getInstance().registerButtonCallback(
+        button::getPin(), bind(buttonCallback, _1, &loadCell));
 
     // Initializing the load cell
     if (!loadCell.init())

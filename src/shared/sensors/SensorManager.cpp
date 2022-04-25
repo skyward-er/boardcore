@@ -50,7 +50,7 @@ SensorManager::~SensorManager()
         delete scheduler;
 }
 
-bool SensorManager::start() { return scheduler->start() && initResult; }
+bool SensorManager::start() { return initResult ? scheduler->start() : false; }
 
 void SensorManager::stop() { scheduler->stop(); }
 
@@ -173,11 +173,9 @@ bool SensorManager::init(const SensorMap_t& sensorsMap)
             samplersMap[sensor] = newSampler;
 
             if (currentSamplerId == MAX_TASK_ID)
-            {
                 LOG_WARN(logger,
                          "Max task ID (255) reached in task scheduler, IDs "
                          "will start again from 0");
-            }
 
             currentSamplerId++;
         }
