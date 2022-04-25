@@ -443,11 +443,7 @@ inline uint16_t TimerUtils::computePrescalerValue(TIM_TypeDef *timer,
 {
     int32_t targetPrescaler =
         TimerUtils::getPrescalerInputFrequency(timer) / targetFrequency - 1;
-
-    if (targetPrescaler >= 0 && targetFrequency <= 0xffff)
-        return targetPrescaler;
-    else
-        return 0;
+    return targetPrescaler >= 0 ? targetPrescaler : 0;
 }
 
 }  // namespace Boardcore
