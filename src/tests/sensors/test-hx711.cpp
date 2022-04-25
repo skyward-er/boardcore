@@ -58,7 +58,7 @@ int main()
         Thread::sleep(12);
     }
     average /= 100;
-    sensor.setZero(-average);
+    sensor.setOffset(average);
     sensor.setScale(214000);
 
     while (true)

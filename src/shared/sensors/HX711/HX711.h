@@ -65,23 +65,52 @@ public:
     bool selfTest() override;
 
     /**
-     * @brief Sets the scale value.
+     * @brief Calculates the scale value such that the load cell's output
+     * matches the given value.
      *
-     * This value is used to convert the raw data into weight.
+     * The value is used to compute the scale coefficient in this way:
+     * scale = value / (sample - offset)
+     *
+     * @param value Value that the load cell should read now.
+     * @param sample Sensor sample used to compute the scale.
+     */
+    void computeScale(float value, float sample);
+
+    /**
+     * @brief Same as computeScale but uses the last sample.
+     */
+    void computeScale(float value);
+
+    /**
+     * @brief Simply changes the scale.
+     *
+     * @param scale New scale value.
      */
     void setScale(float scale);
 
     /**
-     * @brief Sets the offset to zero the current measurement.
+     * @brief Returns the current scale.
      */
-    void setZero();
+    float getScale();
 
     /**
      * @brief Sets the offset to the given value.
      *
-     * @param offset Offset in Kg.
+     * @param offset Offset that will be removed from the measurement.
      */
-    void setZero(float offset);
+    void setOffset(float offset);
+
+    /**
+     * @brief Updates the offset by adding it to the current offset.
+     *
+     * @param offset Offset that will be removed from the measurement.
+     */
+    void updateOffset(float offset);
+
+    /**
+     * @brief Return the current offset.
+     */
+    float getOffset();
 
 private:
     HX711Data sampleImpl() override;

@@ -69,13 +69,28 @@ HX711Data HX711::sampleImpl()
         return lastSample;
 
     return {TimestampTimer::getInstance().getTimestamp(),
-            static_cast<float>(sample + offset) / scale};
+            static_cast<float>(sample - offset) * scale};
 }
+
+void HX711::computeScale(float value, float sample)
+{
+    // Convert the sample in raw measurement with current scale factor
+    sample = sample / scale;
+
+    // Update the scale such that the sample corresponds to the given value
+    this->scale = value / sample;
+}
+
+void HX711::computeScale(float value) { computeScale(value, lastSample.load); }
 
 void HX711::setScale(float scale) { this->scale = scale; }
 
-void HX711::setZero() { offset = -lastSample.load * scale; }
+float HX711::getScale() { return scale; }
 
-void HX711::setZero(float offset) { this->offset = offset * scale; }
+void HX711::setOffset(float offset) { this->offset = offset * scale; }
+
+void HX711::updateOffset(float offset) { this->offset += offset * scale; }
+
+float HX711::getOffset() { return offset; }
 
 }  // namespace Boardcore
