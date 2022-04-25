@@ -63,8 +63,8 @@ FSM<T>::FSM(void (T::*initialState)(const Event&), unsigned int stacksize,
             miosix::Priority priority)
     : EventHandler(stacksize, priority)
 {
-    state             = initialState;
-    specialEvent.code = EV_ENTRY;
+    state        = initialState;
+    specialEvent = EV_ENTRY;
     postEvent(specialEvent);
 }
 
@@ -74,10 +74,10 @@ FSM<T>::~FSM(){};
 template <class T>
 void FSM<T>::transition(void (T::*nextState)(const Event&))
 {
-    specialEvent.code = EV_EXIT;
+    specialEvent = EV_EXIT;
     (static_cast<T*>(this)->*state)(specialEvent);
-    state             = nextState;
-    specialEvent.code = EV_ENTRY;
+    state        = nextState;
+    specialEvent = EV_ENTRY;
     (static_cast<T*>(this)->*state)(specialEvent);
 }
 

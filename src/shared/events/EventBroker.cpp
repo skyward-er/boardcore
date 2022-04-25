@@ -33,7 +33,7 @@ EventBroker::EventBroker() {}
 void EventBroker::post(const Event& ev, uint8_t topic)
 {
 #ifdef TRACE_EVENTS
-    LOG_DEBUG(logger, "Event: {}, Topic: {}", ev.code, topic);
+    LOG_DEBUG(logger, "Event: {}, Topic: {}", ev, topic);
 #endif
 
     Lock<FastMutex> lock(mtxSubscribers);

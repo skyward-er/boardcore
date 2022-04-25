@@ -44,7 +44,7 @@ using namespace miosix;
     {                                                              \
         cout << "------------------------------" << endl;          \
         cout << "Triggering signal " << #SIGNAL << endl;           \
-        sEventBroker.post({SIGNAL}, TOPIC_TEST);                   \
+        EventBroker::getInstance().post({SIGNAL}, TOPIC_TEST);     \
         Thread::sleep(400);                                        \
         testValue = HSM.testState(STATE);                          \
         cout << "Check State " << #STATE << " "                    \
@@ -54,7 +54,7 @@ using namespace miosix;
 
 enum TestEvents : uint8_t
 {
-    EV_A = EV_FIRST_SIGNAL,
+    EV_A = EV_FIRST_CUSTOM,
     EV_B,
     EV_C,
     EV_D,
@@ -84,14 +84,13 @@ public:
     bool foo;
 };
 
-#define DEBUG_PRINT \
-    cout << __func__ << ": event received:" << (int)e.code << endl
+#define DEBUG_PRINT cout << __func__ << ": event received:" << (int)e << endl
 
 using namespace std;
 
 HSMUTTest::HSMUTTest() : HSM(&HSMUTTest::state_initialization)
 {
-    sEventBroker.subscribe(this, TOPIC_TEST);
+    EventBroker::getInstance().subscribe(this, TOPIC_TEST);
 }
 
 State HSMUTTest::state_initialization(const Event& e)
@@ -105,7 +104,7 @@ State HSMUTTest::state_S(const Event& e)
 {
     State retState = HANDLED;
     DEBUG_PRINT;
-    switch (e.code)
+    switch (e)
     {
         case EV_ENTRY:
             break;
@@ -138,7 +137,7 @@ State HSMUTTest::state_S1(const Event& e)
 {
     State retState = HANDLED;
     DEBUG_PRINT;
-    switch (e.code)
+    switch (e)
     {
         case EV_ENTRY:
             break;
@@ -184,7 +183,7 @@ State HSMUTTest::state_S11(const Event& e)
 {
     State retState = HANDLED;
     DEBUG_PRINT;
-    switch (e.code)
+    switch (e)
     {
         case EV_ENTRY:
             break;
@@ -220,7 +219,7 @@ State HSMUTTest::state_S2(const Event& e)
 {
     State retState = HANDLED;
     DEBUG_PRINT;
-    switch (e.code)
+    switch (e)
     {
         case EV_ENTRY:
             break;
@@ -256,7 +255,7 @@ State HSMUTTest::state_S21(const Event& e)
 {
     State retState = HANDLED;
     DEBUG_PRINT;
-    switch (e.code)
+    switch (e)
     {
         case EV_ENTRY:
             break;
@@ -281,7 +280,7 @@ State HSMUTTest::state_S211(const Event& e)
 {
     State retState = HANDLED;
     DEBUG_PRINT;
-    switch (e.code)
+    switch (e)
     {
         case EV_ENTRY:
             break;
@@ -309,7 +308,7 @@ State HSMUTTest::state_S211(const Event& e)
 int main()
 {
 
-    sEventBroker.start();
+    EventBroker::getInstance().start();
 
     HSMUTTest& hsm = HSMUTTest::getInstance();
     hsm.start();
