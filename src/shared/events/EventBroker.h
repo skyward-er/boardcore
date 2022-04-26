@@ -148,13 +148,11 @@ public:
 
     /**
      * @brief Construct a new Event Broker object.
+     *
      * Public access required for testing purposes. Use the singleton interface
      * to access this class in production code.
-     *
      */
     EventBroker();
-
-    virtual ~EventBroker(){};
 
 private:
     /**

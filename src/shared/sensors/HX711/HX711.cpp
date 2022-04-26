@@ -87,9 +87,9 @@ void HX711::setScale(float scale) { this->scale = scale; }
 
 float HX711::getScale() { return scale; }
 
-void HX711::setOffset(float offset) { this->offset = offset * scale; }
+void HX711::setOffset(float offset) { this->offset = offset / scale; }
 
-void HX711::updateOffset(float offset) { this->offset += offset * scale; }
+void HX711::updateOffset(float offset) { this->offset += offset / scale; }
 
 float HX711::getOffset() { return offset; }
 

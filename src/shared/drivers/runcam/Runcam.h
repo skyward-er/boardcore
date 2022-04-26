@@ -130,7 +130,7 @@ public:
 
 private:
     /**
-     * @brief Confiugre Serial Communication
+     * @brief Configure Serial Communication
      */
     bool configureSerialCommunication();
 
