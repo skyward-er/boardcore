@@ -224,7 +224,7 @@ void NAS::correctMag(const Vector3f& mag)
     P.block<6, 6>(IDX_QUAT, IDX_QUAT) = Pq;
 }
 
-void NAS::correctAcc(const Eigen::Vector3f& acceleration)
+void NAS::correctAcc(const Eigen::Vector3f& acc)
 {
     Vector4f q = x.block<4, 1>(IDX_QUAT, 0);
     Matrix3f A = body2ned(q).transpose();
@@ -249,10 +249,8 @@ void NAS::correctAcc(const Eigen::Vector3f& acceleration)
 
     Matrix<float, 6, 3> K = Pq * H.transpose() * S.inverse();
 
-    Eigen::Vector3f a = acceleration;
-    a.normalize();
     aEst.normalize();
-    Vector3f e             = a - aEst;
+    Vector3f e             = acc - aEst;
     Matrix<float, 6, 1> dx = K * e;
     Vector4f r{0.5f * dx(0), 0.5f * dx(1), 0.5f * dx(2),
                sqrtf(1.0f - 0.25f * dx.head<3>().squaredNorm())};

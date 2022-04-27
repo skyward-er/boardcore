@@ -22,12 +22,9 @@
 
 #include <algorithms/NAS/NAS.h>
 #include <algorithms/NAS/StateInitializer.h>
-#include <drivers/timer/TimestampTimer.h>
 #include <miosix.h>
-#include <sensors/MPU9250/MPU9250.h>
+#include <sensors/BMX160/BMX160.h>
 #include <sensors/SensorManager.h>
-#include <sensors/calibration/SensorDataExtra.h>
-#include <sensors/calibration/SoftAndHardIronCalibration/SoftAndHardIronCalibration.h>
 #include <utils/SkyQuaternion/SkyQuaternion.h>
 
 #include <iostream>
@@ -45,10 +42,10 @@ constexpr uint64_t CALIBRATION_TIMEOUT = 5 * 1e6;
 Vector3f nedMag = Vector3f(0.47472049, 0.02757190, 0.87970463);
 
 StateInitializer* stateInitializer;
-NAS* kalman;
+NAS* nas;
 
 SPIBus spi1(SPI1);
-MPU9250* mpu = nullptr;
+BMX160* bmx160 = nullptr;
 
 Boardcore::SensorManager::SensorMap_t sensorsMap;
 Boardcore::SensorManager* sensorManager = nullptr;
@@ -59,7 +56,7 @@ int main()
 
     sensorManager    = new SensorManager(sensorsMap);
     stateInitializer = new StateInitializer();
-    kalman           = new NAS(getEKConfig());
+    nas              = new NAS(getEKConfig());
 
     // Logger::getInstance().start();
     TimestampTimer::getInstance().resetTimestamp();
@@ -97,11 +94,27 @@ NASConfig getEKConfig()
 
 void bmxInit()
 {
-    mpu = new MPU9250(spi1, miosix::sensors::mpu9250::cs::getPin());
+    SPIBusConfig spiConfig;
+    spiConfig.clockDivider = SPI::ClockDivider::DIV_8;
 
-    SensorInfo info("MPU9250", 20, &bmxCallback);
+    BMX160Config bmx_config;
+    bmx_config.fifoMode              = BMX160Config::FifoMode::HEADER;
+    bmx_config.fifoWatermark         = 80;
+    bmx_config.fifoInterrupt         = BMX160Config::FifoInterruptPin::PIN_INT1;
+    bmx_config.temperatureDivider    = 1;
+    bmx_config.accelerometerRange    = BMX160Config::AccelerometerRange::G_16;
+    bmx_config.gyroscopeRange        = BMX160Config::GyroscopeRange::DEG_1000;
+    bmx_config.accelerometerDataRate = BMX160Config::OutputDataRate::HZ_100;
+    bmx_config.gyroscopeDataRate     = BMX160Config::OutputDataRate::HZ_100;
+    bmx_config.magnetometerRate      = BMX160Config::OutputDataRate::HZ_100;
+    bmx_config.gyroscopeUnit         = BMX160Config::GyroscopeMeasureUnit::RAD;
 
-    sensorsMap.emplace(std::make_pair(mpu, info));
+    bmx160 = new BMX160(spi1, miosix::sensors::bmx160::cs::getPin(), bmx_config,
+                        spiConfig);
+
+    SensorInfo info("BMX160", 20, &bmxCallback);
+
+    sensorsMap.emplace(std::make_pair(bmx160, info));
 }
 
 void bmxCallback()
@@ -111,19 +124,25 @@ void bmxCallback()
     static Vector3f accMean = Vector3f::Zero();
     static Vector3f magMean = Vector3f::Zero();
 
-    auto data = mpu->getLastSample();
-
+    auto data = bmx160->getLastSample();
     Vector3f acceleration(data.accelerationX, data.accelerationY,
                           data.accelerationZ);
-
     Vector3f angularVelocity(data.angularVelocityX, data.angularVelocityY,
                              data.angularVelocityZ);
-    angularVelocity = angularVelocity * Constants::DEGREES_TO_RADIANS;
+    Vector3f magneticField(data.magneticFieldX, data.magneticFieldY,
+                           data.magneticFieldZ);
 
-    SoftAndHardIronCorrector corrector({-5.15221, -56.5428, 38.2193},
-                                       {0.962913, 0.987191, 1.05199});
-    Vector3f magneticField;
-    magneticField << corrector.correct(data);
+    // Apply correction
+    Vector3f acc_b(0.3763 + 0.094, -0.1445 - 0.0229, -0.1010 + 0.0150);
+    acceleration -= acc_b;
+    Vector3f gyro_b{-1.63512255486542, 3.46523431469979, -3.08516033954451};
+    angularVelocity = angularVelocity - gyro_b;
+    angularVelocity = angularVelocity / 180 * Constants::PI / 10;
+    Vector3f mag_b{21.0730033648425, -24.3997259703105, -2.32621524742862};
+    Matrix3f A{{0.659926504672263, 0, 0},
+               {0, 0.662442130094073, 0},
+               {0, 0, 2.28747567094359}};
+    magneticField = (magneticField - mag_b).transpose() * A;
 
     if (calibrating)
     {
@@ -135,15 +154,15 @@ void bmxCallback()
         }
         else
         {
-            // Now the calibration has ended, compute and log the kalman state
+            // Now the calibration has ended, compute and log the nas state
             calibrating = false;
 
-            // Compute the initial kalman state
+            // Compute the initial nas state
             stateInitializer->triad(accMean, magMean, nedMag);
-            kalman->setX(stateInitializer->getInitX());
+            nas->setX(stateInitializer->getInitX());
 
             // Save the state and the IMU data
-            // Logger::getInstance().log(kalman->getState());
+            // Logger::getInstance().log(nas->getState());
             data.accelerationX  = accMean[0];
             data.accelerationY  = accMean[1];
             data.accelerationZ  = accMean[2];
@@ -161,8 +180,8 @@ void bmxCallback()
     {
         // Predict step
         {
-            // kalman->predictAcc(acceleration);
-            kalman->predictGyro(angularVelocity);
+            // nas->predictAcc(acceleration);
+            nas->predictGyro(angularVelocity);
 
             data.angularVelocityX = angularVelocity[0];
             data.angularVelocityY = angularVelocity[1];
@@ -172,23 +191,23 @@ void bmxCallback()
         // Correct step
         {
             magneticField.normalize();
-            kalman->correctMag(magneticField);
+            nas->correctMag(magneticField);
 
             data.magneticFieldX = magneticField[0];
             data.magneticFieldY = magneticField[1];
             data.magneticFieldZ = magneticField[2];
         }
 
-        auto kalmanState = kalman->getState();
+        auto nasState = nas->getState();
 
-        kalmanState.timestamp = TimestampTimer::getInstance().getTimestamp();
-        data.accelerationTimestamp    = kalmanState.timestamp;
-        data.magneticFieldTimestamp   = kalmanState.timestamp;
-        data.angularVelocityTimestamp = kalmanState.timestamp;
+        nasState.timestamp = TimestampTimer::getInstance().getTimestamp();
+        data.accelerationTimestamp    = nasState.timestamp;
+        data.magneticFieldTimestamp   = nasState.timestamp;
+        data.angularVelocityTimestamp = nasState.timestamp;
 
-        // Logger::getInstance().log(kalmanState);
+        // Logger::getInstance().log(nasState);
         // Logger::getInstance().log(data);
-        printf("w%fwa%fab%fbc%fc\n", kalmanState.qw, kalmanState.qx,
-               kalmanState.qy, kalmanState.qz);
+        printf("w%fwa%fab%fbc%fc\n", nasState.qw, nasState.qx, nasState.qy,
+               nasState.qz);
     }
 }

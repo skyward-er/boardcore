@@ -92,7 +92,7 @@ public:
     /**
      * @brief Correction with accelerometer data.
      *
-     * @param u Vector with acceleration data [x y z][m/s^2]
+     * @param u Normaliezed vector with acceleration data [x y z]
      */
     void correctAcc(const Eigen::Vector3f& acceleration);
 

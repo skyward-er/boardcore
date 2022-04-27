@@ -132,17 +132,26 @@ sbs_target(test-stepper stm32f429zi_stm32f4discovery)
 add_executable(test-kalman-eigen-benchmark src/tests/algorithms/Kalman/test-kalman-eigen-benchmark.cpp)
 sbs_target(test-kalman-eigen-benchmark stm32f429zi_stm32f4discovery)
 
-add_executable(test-nas src/tests/algorithms/NAS/test-nas.cpp)
-sbs_target(test-nas stm32f429zi_skyward_death_stack_x)
+add_executable(test-tmp src/tests/algorithms/NAS/test-tmp.cpp)
+sbs_target(test-tmp stm32f429zi_skyward_death_stack_x)
+
+add_executable(test-attitude src/tests/algorithms/NAS/test-attitude.cpp)
+sbs_target(test-attitude stm32f429zi_skyward_death_stack_x)
+
+add_executable(test-attitude-parafoil src/tests/algorithms/NAS/test-attitude-parafoil.cpp)
+sbs_target(test-attitude-parafoil stm32f429zi_parafoil)
+
+add_executable(test-nas-parafoil src/tests/algorithms/NAS/test-nas-parafoil.cpp)
+sbs_target(test-nas-parafoil stm32f429zi_parafoil)
 
 add_executable(test-nas-with-triad src/tests/algorithms/NAS/test-nas-with-triad.cpp)
-sbs_target(test-nas-with-triad stm32f429zi_parafoil)
-
-add_executable(test-nas-with-logs src/tests/algorithms/NAS/test-nas-with-logs.cpp)
-sbs_target(test-nas-with-logs stm32f429zi_skyward_death_stack_x)
+sbs_target(test-nas-with-triad stm32f429zi_skyward_death_stack_x)
 
 add_executable(test-triad src/tests/algorithms/NAS/test-triad.cpp)
-sbs_target(test-triad stm32f429zi_parafoil)
+sbs_target(test-triad stm32f429zi_skyward_death_stack_x)
+
+add_executable(test-triad-parafoil src/tests/algorithms/NAS/test-triad-parafoil.cpp)
+sbs_target(test-triad-parafoil stm32f429zi_parafoil)
 
 #-----------------------------------------------------------------------------#
 #                               Tests - Drivers                               #

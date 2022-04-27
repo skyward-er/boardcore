@@ -21,9 +21,9 @@
  */
 
 #include <algorithms/NAS/NAS.h>
+#include <algorithms/NAS/StateInitializer.h>
 #include <miosix.h>
 #include <sensors/BMX160/BMX160.h>
-#include <sensors/LIS3MDL/LIS3MDL.h>
 #include <sensors/SensorManager.h>
 #include <utils/SkyQuaternion/SkyQuaternion.h>
 
@@ -35,26 +35,26 @@ using namespace Eigen;
 
 NASConfig getEKConfig();
 void setInitialOrientation();
-void bmxInit();
-void bmxCallback();
+void imuInit();
+void imuStep();
 
-NAS* kalman;
+Vector3f nedMag = Vector3f(0.4747, 0.0276, 0.8797);
+
+NAS* nas;
 
 SPIBus spi1(SPI1);
-BMX160* bmx160 = nullptr;
-
-Boardcore::SensorManager::SensorMap_t sensorsMap;
-Boardcore::SensorManager* sensorManager = nullptr;
+BMX160* imu = nullptr;
 
 int main()
 {
-    bmxInit();
+    imuInit();
 
-    sensorManager = new SensorManager(sensorsMap);
-    kalman        = new NAS(getEKConfig());
+    nas = new NAS(getEKConfig());
     setInitialOrientation();
 
-    sensorManager->start();
+    TaskScheduler scheduler;
+    scheduler.addTask(imuStep, 20);
+    scheduler.start();
 
     while (true)
         Thread::sleep(1000);
@@ -70,8 +70,8 @@ NASConfig getEKConfig()
     config.SIGMA_MAG      = 0.1f;
     config.SIGMA_GPS      = 10.0f;
     config.SIGMA_BAR      = 4.3f;
-    config.SIGMA_POS      = 10.0f;
-    config.SIGMA_VEL      = 10.0f;
+    config.SIGMA_POS      = 10.0;
+    config.SIGMA_VEL      = 10.0;
     config.P_POS          = 1.0f;
     config.P_POS_VERTICAL = 10.0f;
     config.P_VEL          = 1.0f;
@@ -79,9 +79,7 @@ NASConfig getEKConfig()
     config.P_ATT          = 0.01f;
     config.P_BIAS         = 0.01f;
     config.SATS_NUM       = 6.0f;
-
-    // Normalized magnetic field in Milan
-    config.NED_MAG = Vector3f(0.0812241, -0.963085, 0.256649);
+    config.NED_MAG        = nedMag;
 
     return config;
 }
@@ -97,10 +95,10 @@ void setInitialOrientation()
     x(8)              = q(2);
     x(9)              = q(3);
 
-    kalman->setX(x);
+    nas->setX(x);
 }
 
-void bmxInit()
+void imuInit()
 {
     SPIBusConfig spiConfig;
     spiConfig.clockDivider = SPI::ClockDivider::DIV_8;
@@ -122,55 +120,48 @@ void bmxInit()
 
     bmx_config.gyroscopeUnit = BMX160Config::GyroscopeMeasureUnit::RAD;
 
-    bmx160 = new BMX160(spi1, miosix::sensors::bmx160::cs::getPin(), bmx_config,
-                        spiConfig);
-
-    SensorInfo info("BMX160", 20, &bmxCallback);
-
-    sensorsMap.emplace(std::make_pair(bmx160, info));
+    imu = new BMX160(spi1, miosix::sensors::bmx160::cs::getPin(), bmx_config,
+                     spiConfig);
+    imu->init();
 }
 
-void bmxCallback()
+void imuStep()
 {
-    auto data = bmx160->getLastSample();
+    imu->sample();
+    auto data = imu->getLastSample();
+    Vector3f acceleration(data.accelerationX, data.accelerationY,
+                          data.accelerationZ);
+    Vector3f angularVelocity(data.angularVelocityX, data.angularVelocityY,
+                             data.angularVelocityZ);
+    Vector3f magneticField(data.magneticFieldX, data.magneticFieldY,
+                           data.magneticFieldZ);
 
-    // Predict step
+    // Calibration
     {
-        Vector3f angularVelocity(data.angularVelocityX, data.angularVelocityY,
-                                 data.angularVelocityZ);
         Vector3f offset{-1.63512255486542, 3.46523431469979, -3.08516033954451};
         angularVelocity = angularVelocity - offset;
         angularVelocity = angularVelocity / 180 * Constants::PI / 10;
-
-        kalman->predictGyro(angularVelocity);
+        Vector3f b{21.5356818859811, -22.7697302909894, -2.68219304319269};
+        Matrix3f A{{0.688760050772712, 0, 0},
+                   {0, 0.637715211784480, 0},
+                   {0, 0, 2.27669720320908}};
+        magneticField = (magneticField - b).transpose() * A;
     }
 
-    // Correct with acclelerometer
-    // {
-    //     Vector3f angularVelocity(data.accelerationX, data.accelerationY,
-    //                              data.accelerationZ);
+    acceleration.normalize();
+    magneticField.normalize();
 
-    //     kalman->correctAcc(angularVelocity);
-    // }
+    // Predict step
+    nas->predictGyro(angularVelocity);
 
     // Correct step
-    {
-        Vector3f magneticField(data.magneticFieldX, data.magneticFieldY,
-                               data.magneticFieldZ);
+    nas->correctMag(magneticField);
+    nas->correctAcc(acceleration);
 
-        // Apply correction
-        Vector3f b{21.0730033648425, -24.3997259703105, -2.32621524742862};
-        Matrix3f A{{0.659926504672263, 0, 0},
-                   {0, 0.662442130094073, 0},
-                   {0, 0, 2.28747567094359}};
-        magneticField = (magneticField - b).transpose() * A;
+    // std::cout << acceleration.transpose() << angularVelocity.transpose()
+    //           << magneticField.transpose() << std::endl;
 
-        magneticField.normalize();
-        kalman->correctMag(magneticField);
-    }
-
-    auto kalmanState = kalman->getState();
-
-    printf("w%fwa%fab%fbc%fc\n", kalmanState.qw, kalmanState.qx, kalmanState.qy,
-           kalmanState.qz);
+    auto nasState = nas->getState();
+    printf("w%fwa%fab%fbc%fc\n", nasState.qw, nasState.qx, nasState.qy,
+           nasState.qz);
 }

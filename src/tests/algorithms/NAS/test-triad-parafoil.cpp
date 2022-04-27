@@ -22,7 +22,7 @@
 
 #include <algorithms/NAS/StateInitializer.h>
 #include <miosix.h>
-#include <sensors/BMX160/BMX160.h>
+#include <sensors/MPU9250/MPU9250.h>
 #include <sensors/SensorManager.h>
 #include <sensors/calibration/SensorDataExtra.h>
 #include <sensors/calibration/SoftAndHardIronCalibration/SoftAndHardIronCalibration.h>
@@ -34,38 +34,33 @@ using namespace miosix;
 using namespace Boardcore;
 using namespace Eigen;
 
-void imuInit();
+void mpuInit();
+void bmxCallback();
 
 Vector3f nedMag = Vector3f(0.4747, 0.0276, 0.8797);
 
 SPIBus spi1(SPI1);
-BMX160* bmx = nullptr;
+MPU9250* mpu = nullptr;
 
 int main()
 {
-    imuInit();
-    bmx->init();
+    mpu = new MPU9250(spi1, sensors::mpu9250::cs::getPin());
+    mpu->init();
 
     auto lastTick = getTick();
     while (true)
     {
-        bmx->sample();
-        auto data = bmx->getLastSample();
+        mpu->sample();
+        auto data = mpu->getLastSample();
 
         Vector3f acceleration(data.accelerationX, data.accelerationY,
                               data.accelerationZ);
-        Vector3f angularVelocity(data.angularVelocityX, data.angularVelocityY,
-                                 data.angularVelocityZ);
-        Vector3f offset{-1.63512255486542, 3.46523431469979, -3.08516033954451};
-        angularVelocity = angularVelocity - offset;
-        angularVelocity = angularVelocity / 180 * Constants::PI / 10;
+
+        Vector3f offset(15.9850903462129, -15.6775071377074, -33.8438469147423);
         Vector3f magneticField(data.magneticFieldX, data.magneticFieldY,
                                data.magneticFieldZ);
-        Vector3f b{21.5356818859811, -22.7697302909894, -2.68219304319269};
-        Matrix3f A{{0.688760050772712, 0, 0},
-                   {0, 0.637715211784480, 0},
-                   {0, 0, 2.27669720320908}};
-        magneticField = (magneticField - b).transpose() * A;
+        magneticField -= offset;
+        magneticField = {magneticField[1], magneticField[0], -magneticField[2]};
 
         acceleration.normalize();
         magneticField.normalize();
@@ -81,30 +76,4 @@ int main()
         Thread::sleepUntil(lastTick + 20);
         lastTick = getTick();
     }
-}
-
-void imuInit()
-{
-    SPIBusConfig spiConfig;
-    spiConfig.clockDivider = SPI::ClockDivider::DIV_8;
-
-    BMX160Config bmx_config;
-    bmx_config.fifoMode      = BMX160Config::FifoMode::HEADER;
-    bmx_config.fifoWatermark = 80;
-    bmx_config.fifoInterrupt = BMX160Config::FifoInterruptPin::PIN_INT1;
-
-    bmx_config.temperatureDivider = 1;
-
-    bmx_config.accelerometerRange = BMX160Config::AccelerometerRange::G_16;
-
-    bmx_config.gyroscopeRange = BMX160Config::GyroscopeRange::DEG_1000;
-
-    bmx_config.accelerometerDataRate = BMX160Config::OutputDataRate::HZ_100;
-    bmx_config.gyroscopeDataRate     = BMX160Config::OutputDataRate::HZ_100;
-    bmx_config.magnetometerRate      = BMX160Config::OutputDataRate::HZ_100;
-
-    bmx_config.gyroscopeUnit = BMX160Config::GyroscopeMeasureUnit::RAD;
-
-    bmx = new BMX160(spi1, miosix::sensors::bmx160::cs::getPin(), bmx_config,
-                     spiConfig);
 }
