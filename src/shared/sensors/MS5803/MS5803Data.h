@@ -55,7 +55,7 @@ struct MS5803Data : public PressureData, TemperatureData
 
     static std::string header()
     {
-        return "pressureTimestamp,press,temperatureTimestamp,temp\n";
+        return "pressureTimestamp,pressure,temperatureTimestamp,temperature\n";
     }
 
     void print(std::ostream& os) const
