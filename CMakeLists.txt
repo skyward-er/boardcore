@@ -135,14 +135,17 @@ sbs_target(test-kalman-eigen-benchmark stm32f429zi_stm32f4discovery)
 add_executable(test-tmp src/tests/algorithms/NAS/test-tmp.cpp)
 sbs_target(test-tmp stm32f429zi_skyward_death_stack_x)
 
-add_executable(test-attitude src/tests/algorithms/NAS/test-attitude.cpp)
-sbs_target(test-attitude stm32f429zi_skyward_death_stack_x)
-
 add_executable(test-attitude-parafoil src/tests/algorithms/NAS/test-attitude-parafoil.cpp)
 sbs_target(test-attitude-parafoil stm32f429zi_parafoil)
 
+add_executable(test-attitude-stack src/tests/algorithms/NAS/test-attitude-stack.cpp)
+sbs_target(test-attitude-stack stm32f429zi_skyward_death_stack_x)
+
 add_executable(test-nas-parafoil src/tests/algorithms/NAS/test-nas-parafoil.cpp)
 sbs_target(test-nas-parafoil stm32f429zi_parafoil)
+
+add_executable(test-nas-stack src/tests/algorithms/NAS/test-nas-stack.cpp)
+sbs_target(test-nas-stack stm32f429zi_skyward_death_stack_x)
 
 add_executable(test-nas-with-triad src/tests/algorithms/NAS/test-nas-with-triad.cpp)
 sbs_target(test-nas-with-triad stm32f429zi_skyward_death_stack_x)
@@ -347,7 +350,7 @@ add_executable(test-ms5803 src/tests/sensors/test-ms5803.cpp)
 sbs_target(test-ms5803 stm32f429zi_skyward_death_stack_x)
 
 add_executable(test-ubloxgps-serial src/tests/sensors/test-ubloxgps.cpp)
-sbs_target(test-ubloxgps-serial stm32f407vg_stm32f4discovery)
+sbs_target(test-ubloxgps-serial stm32f429zi_skyward_death_stack_x)
 
 add_executable(test-ubloxgps-spi src/tests/sensors/test-ubloxgps.cpp)
 target_compile_definitions(test-ubloxgps-spi PRIVATE USE_SPI)

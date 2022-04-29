@@ -24,10 +24,12 @@
 #include <algorithms/NAS/StateInitializer.h>
 #include <logger/Logger.h>
 #include <miosix.h>
-#include <sensors/MPU9250/MPU9250.h>
+#include <sensors/BMX160/BMX160.h>
+#include <sensors/MS5803/MS5803.h>
 #include <sensors/SensorManager.h>
 #include <sensors/UbloxGPS/UbloxGPS.h>
 #include <utils/AeroUtils/AeroUtils.h>
+#include <utils/Constants.h>
 #include <utils/SkyQuaternion/SkyQuaternion.h>
 
 #include <iostream>
@@ -48,8 +50,9 @@ Vector2f startPos = Vector2f(45.501141, 9.156281);
 NAS* nas;
 
 SPIBus spi1(SPI1);
-MPU9250* imu  = nullptr;
+BMX160* imu   = nullptr;
 UbloxGPS* gps = nullptr;
+MS5803* baro  = nullptr;
 
 int main()
 {
@@ -60,7 +63,7 @@ int main()
 
     TaskScheduler scheduler;
     scheduler.addTask(step, 20, TaskScheduler::Policy::RECOVER);
-    scheduler.addTask(print, 250);
+    // scheduler.addTask(print, 250);
     scheduler.start();
 
     while (true)
@@ -107,12 +110,36 @@ void setInitialOrientation()
 
 void init()
 {
-    imu = new MPU9250(spi1, sensors::mpu9250::cs::getPin());
+    SPIBusConfig spiConfig;
+    spiConfig.clockDivider = SPI::ClockDivider::DIV_8;
+
+    BMX160Config bmx_config;
+    bmx_config.fifoMode      = BMX160Config::FifoMode::HEADER;
+    bmx_config.fifoWatermark = 80;
+    bmx_config.fifoInterrupt = BMX160Config::FifoInterruptPin::PIN_INT1;
+
+    bmx_config.temperatureDivider = 1;
+
+    bmx_config.accelerometerRange = BMX160Config::AccelerometerRange::G_16;
+
+    bmx_config.gyroscopeRange = BMX160Config::GyroscopeRange::DEG_1000;
+
+    bmx_config.accelerometerDataRate = BMX160Config::OutputDataRate::HZ_100;
+    bmx_config.gyroscopeDataRate     = BMX160Config::OutputDataRate::HZ_100;
+    bmx_config.magnetometerRate      = BMX160Config::OutputDataRate::HZ_100;
+
+    bmx_config.gyroscopeUnit = BMX160Config::GyroscopeMeasureUnit::RAD;
+
+    imu =
+        new BMX160(spi1, sensors::bmx160::cs::getPin(), bmx_config, spiConfig);
     imu->init();
 
-    gps = new UbloxGPS(38400, 10, 2, "gps", 38400);
+    gps = new UbloxGPS(921600, 10, 2, "gps", 38400);
     gps->init();
     gps->start();
+
+    baro = new MS5803(spi1, sensors::ms5803::cs::getPin());
+    baro->init();
 
     Logger::getInstance().start();
 }
@@ -121,8 +148,10 @@ void step()
 {
     imu->sample();
     gps->sample();
-    auto imuData = imu->getLastSample();
-    auto gpsData = gps->getLastSample();
+    baro->sample();
+    auto imuData  = imu->getLastSample();
+    auto gpsData  = gps->getLastSample();
+    auto baroData = baro->getLastSample();
 
     Vector3f acceleration(imuData.accelerationX, imuData.accelerationY,
                           imuData.accelerationZ);
@@ -133,27 +162,26 @@ void step()
 
     Vector2f gpsPos(gpsData.latitude, gpsData.longitude);
     gpsPos = Aeroutils::geodetic2NED(gpsPos, startPos);
-    Vector2f gpsVel(gpsData.velocityNorth, gpsData.velocityNorth);
+    Vector2f gpsVel(gpsData.velocityNorth, gpsData.velocityEast);
     Vector4f gpsCorrection;
     // cppcheck-suppress constStatement
     gpsCorrection << gpsPos, gpsVel;
 
     // Calibration
     {
-        Vector3f biasAcc(-0.1255, 0.2053, -0.2073);
-        acceleration -= biasAcc;
-        Vector3f bias(-0.0291, 0.0149, 0.0202);
-        angularVelocity -= bias;
-        Vector3f offset(15.9850903462129, -15.6775071377074, -33.8438469147423);
-        magneticField -= offset;
-        magneticField = {magneticField[1], magneticField[0], -magneticField[2]};
+        Vector3f offset{-1.63512255486542, 3.46523431469979, -3.08516033954451};
+        angularVelocity = angularVelocity - offset;
+        angularVelocity = angularVelocity / 180 * Constants::PI / 10;
+        Vector3f b{21.5356818859811, -22.7697302909894, -2.68219304319269};
+        Matrix3f A{{0.688760050772712, 0, 0},
+                   {0, 0.637715211784480, 0},
+                   {0, 0, 2.27669720320908}};
+        magneticField = (magneticField - b).transpose() * A;
     }
 
     // Predict step
     nas->predictGyro(angularVelocity);
-    if (gpsPos[0] < 1e3 && gpsPos[0] > -1e3 && gpsPos[1] < 1e3 &&
-        gpsPos[1] > -1e3)
-        nas->predictAcc(acceleration);
+    nas->predictAcc(acceleration);
 
     // Correct step
     magneticField.normalize();
@@ -162,22 +190,27 @@ void step()
     nas->correctAcc(acceleration);
     if (gpsData.fix)
         nas->correctGPS(gpsCorrection);
-    nas->correctBaro(100000, 110000, 20 + 273.5);
+    nas->correctBaro(100000, Constants::MSL_PRESSURE,
+                     Constants::MSL_TEMPERATURE);
 
     auto nasState = nas->getState();
+
     Logger::getInstance().log(imuData);
     Logger::getInstance().log(gpsData);
+    Logger::getInstance().log(baroData);
     Logger::getInstance().log(nasState);
 }
 
 void print()
 {
     auto gpsData  = gps->getLastSample();
+    auto baroData = baro->getLastSample();
     auto nasState = nas->getState();
 
     Vector2f gpsPos(gpsData.latitude, gpsData.longitude);
     gpsPos = Aeroutils::geodetic2NED(gpsPos, startPos);
 
-    printf("%d, %f, %f, %f, %f, %f, %f\n", gpsData.fix, gpsPos[0], gpsPos[1],
-           nasState.n, nasState.e, nasState.vn, nasState.ve);
+    printf("%d, %f, %f, %f, %f, %f, %f, %f, %f\n", gpsData.fix, gpsPos[0],
+           gpsPos[1], nasState.n, nasState.e, nasState.d, nasState.vn,
+           nasState.ve, baroData.pressure);
 }
