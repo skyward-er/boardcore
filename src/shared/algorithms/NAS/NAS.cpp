@@ -59,9 +59,11 @@ NAS::NAS(NASConfig config) : config(config)
 
     // GPS matrixes
     {
-        H_gps                = Matrix<float, 4, 6>::Identity();
-        H_gps.coeffRef(2, 2) = 0;
-        H_gps.coeffRef(5, 5) = 0;
+        H_gps                = Matrix<float, 4, 6>::Zero();
+        H_gps.coeffRef(0, 0) = 1;
+        H_gps.coeffRef(1, 1) = 1;
+        H_gps.coeffRef(2, 3) = 1;
+        H_gps.coeffRef(3, 4) = 1;
         H_gps_tr             = H_gps.transpose();
         R_gps << config.SIGMA_GPS * Matrix<float, 4, 4>::Identity();
     }
