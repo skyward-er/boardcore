@@ -341,6 +341,8 @@ inline bool ClockUtils::enablePeripheralClock(void* peripheral)
             return false;
     }
 
+    RCC_SYNC();
+
     return true;
 }
 
@@ -574,6 +576,8 @@ inline bool ClockUtils::disablePeripheralClock(void* peripheral)
         default:
             return false;
     }
+
+    RCC_SYNC();
 
     return true;
 }
