@@ -62,6 +62,8 @@ build-logdecoder:
 
 test:
   stage: test
+  tags:
+    - miosix
   script:
     - ./sbs --test catch-tests-boardcore
 
@@ -69,21 +71,29 @@ test:
 
 cppcheck:
   stage: lint
+  tags:
+    - miosix
   script:
     - ./scripts/linter.py --cppcheck src
 
 format:
   stage: lint
+  tags:
+    - miosix
   script:
     - ./scripts/linter.py --format src
 
 copyright:
   stage: lint
+  tags:
+    - miosix
   script:
     - ./scripts/linter.py --copyright src
 
 find:
   stage: lint
+  tags:
+    - miosix
   script:
     - ./scripts/linter.py --find src
 
