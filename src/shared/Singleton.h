@@ -57,7 +57,7 @@ protected:
     Singleton() {}
 
 public:
-    Singleton(const Singleton&) = delete;
+    Singleton(const Singleton&)            = delete;
     Singleton& operator=(const Singleton&) = delete;
 };
 

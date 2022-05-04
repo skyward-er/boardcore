@@ -69,10 +69,10 @@ public:
     ~MockSPIBus() {}
 
     // Delete copy/move contructors/operators
-    MockSPIBus(const MockSPIBus&) = delete;
+    MockSPIBus(const MockSPIBus&)            = delete;
     MockSPIBus& operator=(const MockSPIBus&) = delete;
 
-    MockSPIBus(MockSPIBus&&) = delete;
+    MockSPIBus(MockSPIBus&&)            = delete;
     MockSPIBus& operator=(MockSPIBus&&) = delete;
 
     /**
