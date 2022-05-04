@@ -1,5 +1,5 @@
-/* Copyright (c) 2019 Skyward Experimental Rocketry
- * Author: Alvise de'Faveri Tron
+/* Copyright (c) 2019-2022 Skyward Experimental Rocketry
+ * Author: Alvise de'Faveri Tron, Davide Mor, Alberto Nidasio
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -22,6 +22,7 @@
 
 #pragma once
 
+#include <drivers/timer/TimestampTimer.h>
 #include <miosix.h>
 #include <utils/Debug.h>
 
@@ -46,10 +47,9 @@ namespace Boardcore
  * @brief The Packet class is used for packing together messages with variable
  * lengths into a fixed size packet. Useful for telemetry.
  *
- * The buffer can only be appended, read or flushed. The caller can also mark
- * the packet as ready to be sent.
+ * Data can only be appended to the payload. The packet can be marked ready.
  *
- * @tparam len Maximum length for the packet.
+ * @tparam len Packet's payload length.
  */
 template <unsigned int len>
 class Packet
@@ -59,7 +59,7 @@ public:
     /**
      * @brief Reserves a fixed length for the packet.
      */
-    Packet() : msgCounter(0), ts(0), ready(false) { content.reserve(len); };
+    Packet() { content.reserve(len); };
 
     /**
      * @brief Clears the buffer.
@@ -69,21 +69,23 @@ public:
     /**
      * @brief Append a given message to the packet.
      *
-     * If it's the first message, also set the timestamp.
+     * If the message can't fit inside the remaining space only the first bytes
+     * are copied.
      *
      * @param msg The message to be appended.
-     * @param msgLen Length of msg.
+     * @param msgLen Length of the message.
      * @return How many bytes were actually appended.
      */
     size_t append(const uint8_t* msg, size_t msgLen);
 
     /**
-     * @brief Mark the packet as ready to be sent.
+     * @brief Mark the packet as ready.
      */
     inline void markAsReady() { ready = true; }
 
     /**
-     * @brief Copies the content of the buffer at a given address.
+     * @brief Copies the content of the payload at the given address.
+     *
      * @param buf Where to copy the content.
      * @return How many bytes where copied, i.e. the size of the packet.
      */
@@ -112,10 +114,10 @@ public:
     /**
      * @return The timestamp of the first successful call to append().
      */
-    inline uint64_t timestamp() const { return ts; }
+    inline uint64_t getTimestamp() const { return timestamp; }
 
     /**
-     * @return The occupied portion of the buffer (bytes).
+     * @return The occupied portion of the buffer [bytes].
      */
     inline size_t size() const { return content.size(); }
 
@@ -133,7 +135,7 @@ public:
     /**
      * @brief Print information about this object.
      *
-     * @param os For example, std::cout
+     * @param os For example, std::cout.
      */
     void print(std::ostream& os) const;
 
@@ -141,9 +143,9 @@ public:
     std::vector<uint8_t> content;
 
 private:
-    unsigned int msgCounter;
-    uint64_t ts;
-    bool ready;
+    unsigned int msgCounter = 0;
+    uint64_t timestamp      = 0;
+    bool ready              = false;
 };
 
 template <unsigned int len>
@@ -156,9 +158,7 @@ size_t Packet<len>::append(const uint8_t* msg, size_t msgLen)
     {
         // Set the packet's timestamp when the first message is inserted
         if (content.size() == 0)
-        {
-            ts = miosix::getTick();
-        }
+            timestamp = TimestampTimer::getInstance().getTimestamp();
 
         // Append the message to the packet
         content.insert(content.end(), msg, msg + msgLen);
@@ -173,7 +173,7 @@ void Packet<len>::clear()
 {
     content.clear();
     msgCounter = 0;
-    ts         = 0;
+    timestamp  = 0;
     ready      = false;
 }
 
@@ -187,188 +187,167 @@ size_t Packet<len>::dump(uint8_t* buf)
 template <unsigned int len>
 void Packet<len>::print(std::ostream& os) const
 {
-    os << "timestamp=" << ts << ", ready=" << ready
+    os << "timestamp=" << timestamp << ", ready=" << ready
        << ", size=" << content.size() << ", msgCounter=" << msgCounter
        << ", content= ";
 
     for (auto const& i : content)
-    {
         os << i;
-    }
     os << '\n';
 }
 
-/******************************************************************************
- * @brief A SyncPacketQueue is a SyncCircularBuffer of Packets. The difference
- * is that you pop() Packets but you append() bytes. The bytes will be appended
- * to the first available packet. This class is suitable for synchronization
- * between two threads.
+/**
+ * @brief A SyncPacketQueue is a SyncCircularBuffer of Packets.
  *
- * @tparam pktLen  Maximum length of each packet. (bytes)
- * @tparam pktNum  Total number of packets.
- ******************************************************************************/
+ * The difference is that you pop() Packets but you append() bytes. The bytes
+ * will be appended to the first available packet and the next ones.
+ * This class is suitable for synchronization between two threads.
+ *
+ * @tparam pktLen Maximum length of each packet [bytes].
+ * @tparam pktNum Total number of packets.
+ */
 template <unsigned int pktLen, unsigned int pktNum>
 class SyncPacketQueue
 {
-    using Pkt = Packet<pktLen>;
-
 public:
     /**
-     * @brief Try to append a given message to the last packet. If there isn't
-     * enough space, the packet is marked as ready and the message is appended
-     * to the next packet. If there are no more available packets, the oldest
-     * one is overwritten.
+     * @brief Try to append a given message to the packets queue.
      *
-     * @param msg      the message to be appended
-     * @param msgLen  length of msg
-     * @return true    if the message was appended correctly
-     * @return false   if there isn't enough space for the message
+     * The message is appended to the last packet and if the space isn't enough,
+     * it is divided into successive packets. If there are no more available
+     * packets, the oldest one is overwritten.
+     *
+     * The message isn't added to the queue if there is no space considering all
+     * the queue packets.
+     *
+     * @param msg The message to be appended.
+     * @param msgLen Length of the message [bytes].
+     * @return True if the message was appended.
      */
-    int put(uint8_t* msg, size_t msgLen)
+    bool put(uint8_t* msg, size_t msgLen)
     {
-        int dropped = 0;
-
+        // Check if the message is empty
         if (msgLen == 0)
-        {
-            return -1;
-        }
+            return false;
+
+        // Check if the queue can hold the packet
+        if (msgLen > pktLen * pktNum)
+            return false;
 
         {
+            // Lock the mutex on the buffer
             Lock<FastMutex> l(mutex);
+
             // Add an element if there isn't any
             if (buffer.count() == 0)
-            {
-                buffer.put(Pkt{});
-            }
+                buffer.put({});
 
+            // Write all the packet
             while (msgLen > 0)
             {
+                // If the last packet is ready append a new one
                 if (buffer.last().isReady())
-                {
-                    if (buffer.isFull())
-                    {
-                        // We have dropped a packet
-                        ++dropped;
-                    }
+                    buffer.put({});
 
-                    // If the last pkt is ready, append a new one
-                    buffer.put(Pkt{});
-                    // FIXME(davide.mor): Figure out quantum shenanigans
-                    // uncommenting the following line causes everything to
-                    // break, why?
+                // Append what data is possible to the last packet
+                size_t appendedLength = buffer.last().append(msg, msgLen);
 
-                    // last = buffer.last();
-                }
-
-                size_t sentLen = buffer.last().append(msg, msgLen);
-
-                msgLen -= sentLen;
-                msg += sentLen;
-
-                // Mark as ready if the packet is full
+                // If the packet is full mark it as ready
                 if (buffer.last().isFull())
-                {
                     buffer.last().markAsReady();
-                }
-            }
 
-            cvNotempty.broadcast();
-            return dropped;
+                // Go forward in the data
+                msgLen -= appendedLength;
+                msg += appendedLength;
+            }
         }
+
+        // Wake all waiting threads
+        condVerNotEmpty.broadcast();
+
+        return true;
     }
 
     /**
-     * @return a copy of the oldest packet, without removing it from the queue.
+     * @return The oldest packet, without removing it from the queue.
      */
-    const Pkt& get()
+    const Packet<pktLen>& get()
     {
         Lock<FastMutex> l(mutex);
         return buffer.get();
     }
 
     /**
-     * @return the oldest packet, removing it from the queue.
+     * @return The oldest packet, removing it from the queue.
      */
-    const Pkt& pop()
+    const Packet<pktLen>& pop()
     {
         Lock<FastMutex> l(mutex);
         return buffer.pop();
     }
 
     /**
-     * @return true if all the packets have been marked as ready.
+     * @return True if all the packets have been marked as ready.
      */
     bool isFull()
     {
         Lock<FastMutex> l(mutex);
 
         if (buffer.count() > 0)
-        {
             return buffer.isFull() && buffer.last().isReady();
-        }
         else
-        {
             return false;
-        }
     }
 
     /**
-     * @return true if all the packets are completely empty.
+     * @return True if all the packets are completely empty.
      */
     bool isEmpty()
     {
         Lock<FastMutex> l(mutex);
-
         return buffer.isEmpty();
     }
 
     /**
      * @brief Blocks the calling thread until the queue is not empty.
+     *
      * Returns immediately if already not empty.
      */
     void waitUntilNotEmpty()
     {
         Lock<FastMutex> l(mutex);
         if (buffer.isEmpty())
-        {
-            cvNotempty.wait(mutex);
-        }
+            condVerNotEmpty.wait(mutex);
     }
 
     /**
-     * @return the number of packets that are ready to be sent.
+     * @return The number of packets that are ready to be sent.
      */
     size_t countReady()
     {
         Lock<FastMutex> l(mutex);
 
         if (!buffer.isEmpty())
-        {
             return buffer.last().isReady() ? buffer.count()
                                            : buffer.count() - 1;
-        }
         else
-        {
             return 0;
-        }
     }
 
     /**
-     * @return the number of packets in use, that are either fully or partially
+     * @return The number of packets in use, that are either fully or partially
      * filled.
      */
     size_t countNotEmpty()
     {
         Lock<FastMutex> l(mutex);
-
         return buffer.count();
     }
 
 private:
     FastMutex mutex;
-    ConditionVariable cvNotempty;
-
-    CircularBuffer<Pkt, pktNum> buffer;
+    ConditionVariable condVerNotEmpty;
+    CircularBuffer<Packet<pktLen>, pktNum> buffer;
 };
 
 }  // namespace Boardcore

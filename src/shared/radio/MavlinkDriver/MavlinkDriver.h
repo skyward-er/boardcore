@@ -348,11 +348,12 @@ void MavlinkDriver<PktLength, OutQueueSize>::runSender()
             // Get the first packet in the queue, without removing it
             pkt = outQueue.get();
 
-            uint64_t age = (uint64_t)miosix::getTick() - pkt.timestamp();
             // If the packet is ready or too old, send it
+            uint64_t age = TimestampTimer::getInstance().getTimestamp() -
+                           pkt.getTimestamp();
             if (pkt.isReady() || age >= outBufferMaxAge)
             {
-                outQueue.pop();  // remove from queue
+                outQueue.pop();  //  Remove the packet from queue
 
                 LOG_DEBUG(logger, "Sending packet. Size: {} (age: {})",
                           pkt.size(), age);

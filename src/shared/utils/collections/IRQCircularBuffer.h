@@ -34,7 +34,8 @@ namespace Boardcore
 {
 
 /**
- * Implementation of a synchronized circular buffer
+ * Implementation of a synchronized circular buffer that can be used inside
+ * interrupt service routines.
  */
 template <typename T, unsigned int Size>
 class IRQCircularBuffer : public CircularBuffer<T, Size>
@@ -44,8 +45,7 @@ class IRQCircularBuffer : public CircularBuffer<T, Size>
 
 public:
     /**
-     * Puts a copy of the element in the buffer
-     * @param elem element
+     * @brief Puts a copy of the element in the buffer.
      */
     T& put(const T& elem) override
     {
@@ -55,37 +55,28 @@ public:
     }
 
     /**
-     * Gets the first element from the buffer, without removing it
-     * @warning Remember to catch the exception!
-     * @return the element
-     * @throws range_error if buffer is empty
-     */
-    T& get() override
-    {
-        FastInterruptDisableLock d;
-        return Super::get();
-    }
-
-    /**
-     * Gets an element from the buffer, without removing it
-     * Index starts at the element returned by get() or pop(): get(0) is
-     * the same as get()
+     * @brief Gets an element from the buffer, without removing it.
+     *
+     * Index starts from the oldest element in the buffer.
+     * get() returns the first element.
      *
      * @warning Remember to catch the exception!
-     * @return the element
-     * @throws range_error if buffer is empty
+     * @throw range_error if index >= count().
+     * @param i Index of the element to get, starting from the oldest.
+     * @return The element.
      */
-    T& get(unsigned int i) override
+    T& get(unsigned int i = 0) override
     {
         FastInterruptDisableLock d;
         return Super::get(i);
     }
 
     /**
-     * Pops the first element in the buffer.
+     * @brief Pops the first element in the buffer.
+     *
      * @warning Remember to catch the exception!
-     * @return the element that has been popped
-     * @throws range_error if buffer is empty
+     * @throw range_error if buffer is empty.
+     * @return The element that has been popped.
      */
     const T& pop() override
     {
@@ -94,8 +85,9 @@ public:
     }
 
     /**
-     * Counts the elements in the buffer
-     * @return number of elements in the buffer
+     * @brief Counts the elements in the buffer.
+     *
+     * @return Number of elements in the buffer.
      */
     size_t count() const override
     {
@@ -116,9 +108,9 @@ public:
     }
 
     /**
-     * Puts a copy of the element in the buffer
-     * Only to be called inside an ISR or with interrupts disabled
-     * @param elem element
+     * @brief Puts a copy of the element in the buffer.
+     *
+     * @warning Only to be called inside an ISR or with interrupts disabled.
      */
     T& IRQput(const T& elem)
     {
@@ -127,8 +119,10 @@ public:
     }
 
     /**
-     * Puts a copy of the element in the buffer
-     * Only to be called inside an ISR or with interrupts disabled
+     * @brief Puts a copy of the element in the buffer.
+     *
+     * @warning Only to be called inside an ISR or with interrupts disabled.
+     *
      * @param elem element
      * @param hppw Set to true if the woken thread is higher priority than the
      * current one, unchanged otherwise
@@ -137,68 +131,59 @@ public:
     {
         if (waiting && (waiting->IRQgetPriority() >
                         Thread::IRQgetCurrentThread()->IRQgetPriority()))
-        {
             hppw = true;
-        }
 
         IRQwakeWaitingThread();
         return Super::put(elem);
     }
 
     /**
-     * Gets the first element from the buffer, without removing it
-     * Only to be called inside an ISR or with interrupts disabled
+     * @brief Gets an element from the buffer, without removing it.
+     *
+     * @warning Only to be called inside an ISR or with interrupts disabled.
+     *
+     * Index starts from the oldest element in the buffer.
+     * get() returns the first element.
+     *
      * @warning Remember to catch the exception!
-     * @return the element
-     * @throws range_error if buffer is empty
+     * @throw range_error if index >= count().
+     * @param i Index of the element to get, starting from the oldest.
+     * @return The element.
      */
-    T& IRQget() { return Super::get(); }
+    T& IRQget(unsigned int i = 0) { return Super::get(i); }
 
     /**
-     * Gets an element from the buffer, without removing it
-     * Index starts at the element returned by get() or pop(): get(0) is
-     * the same as get()
-     * @warning Only to be called inside an ISR or with interrupts disabled
+     * @brief Pops the first element in the buffer.
+     *
+     * @warning Only to be called inside an ISR or with interrupts disabled.
+     *
      * @warning Remember to catch the exception!
-     * @return the element
-     * @throws range_error if buffer is empty
-     */
-    T& IRQget(unsigned int i) { return Super::get(i); }
-
-    /**
-     * Pops the first element in the buffer.
-     * @warning Only to be called inside an ISR or with interrupts disabled
-     * @warning Remember to catch the exception!
-     * @return the element that has been popped
-     * @throws range_error if buffer is empty
+     * @throw range_error if buffer is empty.
+     * @return The element that has been popped.
      */
     const T& IRQpop() { return Super::pop(); }
 
     /**
-     * Counts the elements in the buffer
-     * @warning Only to be called inside an ISR or with interrupts disabled
-     * @return number of elements in the buffer
+     * @brief Counts the elements in the buffer.
+     *
+     * @warning Only to be called inside an ISR or with interrupts disabled.
+     *
+     * @return Number of elements in the buffer.
      */
     size_t IRQcount() const { return Super::count(); }
 
     /**
-     * @brief Returns true if the buffer is empty
-     *
-     * @warning Only to be called inside an ISR or with interrupts disabled
-     * @return empty or not
+     * @warning Only to be called inside an ISR or with interrupts disabled.
      */
     bool IRQisEmpty() const { return Super::isEmpty(); }
 
     /**
-     * @brief Returns true if the buffer is full
-     *
-     * @warning Only to be called inside an ISR or with interrupts disabled
-     * @return buffer full or not
+     * @warning Only to be called inside an ISR or with interrupts disabled.
      */
     bool IRQisFull() const { return Super::isFull(); }
 
     /**
-     * @brief Waits until the buffer contains at least one element
+     * @brief Waits until the buffer contains at least one element.
      */
     void waitUntilNotEmpty()
     {
@@ -228,4 +213,5 @@ private:
 
     Thread* waiting = nullptr;
 };
+
 }  // namespace Boardcore
