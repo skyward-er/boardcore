@@ -47,8 +47,8 @@ const BME280::BME280Config BME280::BME280_CONFIG_TEMP_SINGLE = {
     SKIPPED,        0, 0,          FORCED_MODE, SKIPPED,
     OVERSAMPLING_1, 0, FILTER_OFF, STB_TIME_0_5};
 
-BME280::BME280(SPISlave spiSlave_, BME280Config config_)
-    : spiSlave(spiSlave_), config(config_)
+BME280::BME280(SPISlave spiSlave, BME280Config config)
+    : spiSlave(spiSlave), config(config)
 {
 }
 

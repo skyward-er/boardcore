@@ -25,8 +25,11 @@ add_library(boardcore-host STATIC EXCLUDE_FROM_ALL
     ${SBS_BASE}/src/shared/diagnostic/CpuMeter.cpp
     ${SBS_BASE}/src/shared/diagnostic/PrintLogger.cpp
 
-    # Radio
-    ${SBS_BASE}/src/shared/radio/Xbee/APIFrameParser.cpp
+    # Actuators
+    ${SBS_BASE}/src/shared/actuators/Servo/Servo.cpp
+
+    # Drivers
+    ${SBS_BASE}/src/shared/drivers/timer/TimestampTimer.cpp
 
     # Events
     ${SBS_BASE}/src/shared/events/EventBroker.cpp
@@ -34,10 +37,8 @@ add_library(boardcore-host STATIC EXCLUDE_FROM_ALL
     # Logger
     ${SBS_BASE}/src/shared/logger/Logger.cpp
 
-    # Math
-    ${SBS_BASE}/src/shared/math/Matrix.cpp
-    ${SBS_BASE}/src/shared/math/SkyQuaternion.cpp
-    ${SBS_BASE}/src/shared/math/Stats.cpp
+    # Radio
+    ${SBS_BASE}/src/shared/radio/Xbee/APIFrameParser.cpp
 
     # Scheduler
     ${SBS_BASE}/src/shared/scheduler/TaskScheduler.cpp
@@ -46,19 +47,16 @@ add_library(boardcore-host STATIC EXCLUDE_FROM_ALL
     ${SBS_BASE}/src/shared/sensors/SensorManager.cpp
     ${SBS_BASE}/src/shared/sensors/SensorSampler.cpp
 
-    # Timer
-    ${SBS_BASE}/src/shared/drivers/timer/TimestampTimer.cpp
-
-    # AeroUtils
-    ${SBS_BASE}/src/shared/utils/aero/AeroUtils.cpp
-
-    # TestUtils
-    ${SBS_BASE}/src/shared/utils/testutils/TestHelper.cpp
+    # Utils
+    ${SBS_BASE}/src/shared/utils/AeroUtils/AeroUtils.cpp
+    ${SBS_BASE}/src/shared/utils/SkyQuaternion/SkyQuaternion.cpp
+    ${SBS_BASE}/src/shared/utils/Stats/Stats.cpp
+    ${SBS_BASE}/src/shared/utils/TestUtils/TestHelper.cpp
 )
-add_library(SkywardBoardcore::Boardcore-host ALIAS boardcore-host)
+add_library(SkywardBoardcore::Boardcore::host ALIAS boardcore-host)
 target_include_directories(boardcore-host PUBLIC ${SBS_BASE}/src/shared)
 target_link_libraries(boardcore-host PUBLIC
-    Miosix::Miosix-host
+    Miosix::Miosix::host
     TSCPP::TSCPP
     Eigen3::Eigen
     fmt::fmt-header-only

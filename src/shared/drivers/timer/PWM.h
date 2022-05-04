@@ -35,13 +35,13 @@ namespace Boardcore
  * when deleted) but no channels are enabled. This means that you will only need
  * to use the channels without worrying about the underlying timer.
  *
- * The PWM driver accepts a the pointer to the peripheral registers of a timer
- * and uses it as a 16bit general purpose timer. No checks are in place to this
+ * The PWM driver accepts a pointer to the peripheral registers of a timer and
+ * uses it as a 16bit general purpose timer. No checks are in place to this
  * pointer, thus make sure to pass a proper value!
  *
  * Moreover, even 32bit general purpose timers are used as if they where 16bit.
  * At the moment there is no need for further accuracy but if it ever will be,
- * exceeding this class is simble, just add a template parameter and pass it to
+ * exceeding this class is simple, just add a template parameter and pass it to
  * the GeneralPurposeTimer parameter.
  *
  * Check out the following spread sheet to visually see how the timers registers

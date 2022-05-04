@@ -85,7 +85,7 @@ public:
     explicit BasicTimer(TIM_TypeDef *timer);
 
     /**
-     * @brief Resets the registers and disables the peripheral clock.
+     * @brief Disables the peripheral clock.
      */
     ~BasicTimer();
 
@@ -207,11 +207,7 @@ inline BasicTimer::BasicTimer(TIM_TypeDef *timer) : timer(timer)
     ClockUtils::enablePeripheralClock(timer);
 }
 
-inline BasicTimer::~BasicTimer()
-{
-    reset();
-    ClockUtils::disablePeripheralClock(timer);
-}
+inline BasicTimer::~BasicTimer() { ClockUtils::disablePeripheralClock(timer); }
 
 inline TIM_TypeDef *BasicTimer::getTimer() { return timer; }
 

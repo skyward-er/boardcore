@@ -381,8 +381,8 @@ private:
         StateHandler target = this->state;
         State retState;
 
-        State s = (static_cast<T*>(this)->*temp)({EV_EMPTY});
-        UNUSED(s);  // Avoid warning when not compiling for DEBUG
+        State s __attribute__((unused)) =
+            (static_cast<T*>(this)->*temp)({EV_EMPTY});
         D(assert(s == TRAN));
 
         do

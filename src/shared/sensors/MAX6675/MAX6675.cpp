@@ -55,7 +55,7 @@ bool MAX6675::checkConnection()
 
     // The third bit (D2) indicates wheter the termocouple is connected or not
     // It is high if open
-    if ((sample % 0x2) != 0)
+    if ((sample & 0x4) != 0)
     {
         lastError = SensorErrors::SELF_TEST_FAIL;
         LOG_ERR(logger, "Self test failed, the termocouple is not connected");
@@ -74,19 +74,16 @@ TemperatureData MAX6675::sampleImpl()
         sample = spi.read16();
     }
 
+    TemperatureData result{};
+    result.temperatureTimestamp = TimestampTimer::getInstance().getTimestamp();
+
     // Extract bits 14-3
     sample &= 0x7FF8;
     sample >>= 3;
 
-    TemperatureData result{};
-    result.temperatureTimestamp = TimestampTimer::getInstance().getTimestamp();
-
-    // Convert the sample value
-    result.temperature =
-        static_cast<unsigned int>(sample >> 2);  // Integer part
-    sample &= 0x0003;                            // Take the floating point part
-    result.temperature +=
-        static_cast<float>(sample * 0.25);  // Floating point part
+    // Convert the integer and decimal part separetly
+    result.temperature = static_cast<float>(sample >> 2);
+    result.temperature += static_cast<float>(sample & 0x3) * 0.25;
 
     return result;
 }

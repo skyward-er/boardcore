@@ -39,7 +39,6 @@
 #include <sensors/calibration/BiasCalibration.h>
 #include <sensors/calibration/HardIronCalibration.h>
 #include <sensors/calibration/SixParameterCalibration.h>
-#include <sensors/calibration/SoftIronCalibration.h>
 #include <sensors/calibration/TwelveParameterCalibration.h>
 #include <utils/Debug.h>
 

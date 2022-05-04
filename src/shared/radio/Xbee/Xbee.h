@@ -38,7 +38,7 @@ using miosix::FastMutex;
 #ifndef USE_MOCK_PERIPHERALS
 using GpioType = miosix::GpioPin;
 #else
-#include <utils/testutils/MockGpioPin.h>
+#include <utils/TestUtils/MockGpioPin.h>
 using GpioType = MockGpioPin;
 #endif
 

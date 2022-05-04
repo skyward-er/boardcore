@@ -59,8 +59,14 @@ public:
      */
     ~SensorManager();
 
+    /**
+     * @brief Starts the task scheduler.
+     */
     bool start();
 
+    /**
+     * @brief Starts the task scheduler.
+     */
     void stop();
 
     /**

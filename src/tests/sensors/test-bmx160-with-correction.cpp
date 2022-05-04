@@ -160,10 +160,8 @@ int main()
     return 0;
 }
 
-void bmx160Sample(void *args)
+void bmx160Sample(void *args __attribute__((unused)))
 {
-    UNUSED(args);
-
     while (!stopSamplingThread)
     {
         // Sample the bmx160

@@ -30,8 +30,6 @@ PWM::PWM(TIM_TypeDef* const timer, unsigned int pwmFrequency,
     : timer(timer), pwmFrequency(pwmFrequency),
       dutyCycleResolution(dutyCycleResolution)
 {
-    // TODO: Enable the peripheral clock
-
     // Erase the previous timer configuration
     this->timer.reset();
 
@@ -39,11 +37,7 @@ PWM::PWM(TIM_TypeDef* const timer, unsigned int pwmFrequency,
     setTimerConfiguration();
 }
 
-PWM::~PWM()
-{
-    // TODO: Disable the peripheral clock
-    timer.reset();
-}
+PWM::~PWM() { timer.reset(); }
 
 void PWM::setFrequency(unsigned int pwmFrequency)
 {
@@ -90,8 +84,8 @@ void PWM::setDutyCycle(TimerUtils::Channel channel, float dutyCycle)
 
 float PWM::getDutyCycle(TimerUtils::Channel channel)
 {
-    return static_cast<float>(timer.readCaptureCompareRegister(channel) /
-                              timer.readAutoReloadRegister());
+    return static_cast<float>(timer.readCaptureCompareRegister(channel)) /
+           static_cast<float>(timer.readAutoReloadRegister());
 }
 
 void PWM::setTimerConfiguration()

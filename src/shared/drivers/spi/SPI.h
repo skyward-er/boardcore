@@ -29,7 +29,7 @@
 #ifndef USE_MOCK_PERIPHERALS
 using SPIType = SPI_TypeDef;
 #else
-#include <utils/testutils/FakeSpiTypedef.h>
+#include <utils/TestUtils/FakeSpiTypedef.h>
 using SPIType = FakeSpiTypedef;
 #endif
 
@@ -205,7 +205,7 @@ public:
      * @param data Buffer containing data to write.
      * @param size Size of the buffer in bytes.
      */
-    void write(uint8_t *data, size_t nBytes);
+    void write(const uint8_t *data, size_t nBytes);
 
     /**
      * @brief Writes multiple half words to the bus.
@@ -213,7 +213,7 @@ public:
      * @param data Buffer containing data to write.
      * @param size Size of the buffer in bytes.
      */
-    void write(uint16_t *data, size_t nBytes);
+    void write(const uint16_t *data, size_t nBytes);
 
     /**
      * @brief Full duplex transmission of one byte on the bus.
@@ -393,7 +393,7 @@ inline void SPI::write(uint16_t data)
     (void)spi->DR;
 }
 
-inline void SPI::write(uint8_t *data, size_t nBytes)
+inline void SPI::write(const uint8_t *data, size_t nBytes)
 {
     // Write the first data item in the Tx buffer
     spi->DR = data[0];
@@ -419,7 +419,7 @@ inline void SPI::write(uint8_t *data, size_t nBytes)
     (void)spi->DR;
 }
 
-inline void SPI::write(uint16_t *data, size_t nBytes)
+inline void SPI::write(const uint16_t *data, size_t nBytes)
 {
     // Set 16 bit frame format
     set16BitFrameFormat();

@@ -25,13 +25,23 @@
 namespace Boardcore
 {
 
-static constexpr const float PI                 = 3.14159265f;
-static constexpr const float EARTH_GRAVITY      = 9.80665f;
-static constexpr const float EARTH_RADIUS       = 6371.0f * 1000.0f;  // [m]
+namespace Constants
+{
+
+static constexpr const float PI                 = 3.14159265f;  // [rad]
 static constexpr const float DEGREES_TO_RADIANS = PI / 180.0f;
 static constexpr const float RADIANS_TO_DEGREES = 180.0f / PI;
-static constexpr const float KNOTS_TO_MPS       = 0.514444;
-static constexpr const float MSL_PRESSURE       = 101325.0f;  // [Pa]
-static constexpr const float MSL_TEMPERATURE    = 288.15f;    // [Kelvin]
+
+static constexpr const float g = 9.80665f;  // [m^s^2]
+
+static constexpr float a = 0.0065f;  // Troposphere temperature gradient [deg/m]
+static constexpr float R = 287.05f;  // Air gas constant [J/Kg/K]
+static constexpr float n = g / (R * a);
+static constexpr float nInv = (R * a) / g;
+
+static constexpr const float MSL_PRESSURE    = 101325.0f;  // [Pa]
+static constexpr const float MSL_TEMPERATURE = 288.15f;    // [Kelvin]
+
+}  // namespace Constants
 
 }  // namespace Boardcore

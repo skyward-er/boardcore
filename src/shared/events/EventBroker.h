@@ -62,8 +62,6 @@ class EventBroker : public Singleton<EventBroker>, public ActiveObject
 public:
     /**
      * Posts an event to the specified topic.
-     * @param ev
-     * @param topic
      */
     void post(const Event& ev, uint8_t topic);
 
@@ -150,13 +148,11 @@ public:
 
     /**
      * @brief Construct a new Event Broker object.
+     *
      * Public access required for testing purposes. Use the singleton interface
      * to access this class in production code.
-     *
      */
     EventBroker();
-
-    virtual ~EventBroker(){};
 
 private:
     /**
@@ -190,5 +186,3 @@ private:
 };
 
 }  // namespace Boardcore
-
-#define sEventBroker Boardcore::Singleton<Boardcore::EventBroker>::getInstance()

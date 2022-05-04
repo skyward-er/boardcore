@@ -93,7 +93,7 @@ def generate_events_h(events, date):
 
     # Prepare the event list
     enum_event_list = list(events)
-    enum_event_list[0] += ' = EV_FIRST_SIGNAL'
+    enum_event_list[0] += ' = EV_FIRST_CUSTOM'
     enum_event_list = '\n'.join(
         [' '*4 + event + ',' for event in enum_event_list])
     vector_event_list = '\n'.join([' '*4 + event + ',' for event in events])

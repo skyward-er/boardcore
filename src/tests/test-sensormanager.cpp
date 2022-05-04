@@ -25,7 +25,7 @@
 #include <sensors/Sensor.h>
 #include <sensors/SensorManager.h>
 #include <utils/Debug.h>
-#include <utils/testutils/TestSensor.h>
+#include <utils/TestUtils/TestSensor.h>
 
 #include <functional>
 #include <iostream>
@@ -259,7 +259,7 @@ int main()
 
     // TEST SENSORS WITH FIFO
 
-    const uint32_t fifoSize = 20;  // cppcheck-suppress unreadVariable
+    const uint32_t fifoSize = 20;
 
     MySensorFIFO s;
 
@@ -269,9 +269,8 @@ int main()
     {
         s.sample();
 
-        MySensorDataFIFO data = fifoProxy.getLastSample();
-
-        UNUSED(data);
+        MySensorDataFIFO data __attribute__((unused)) =
+            fifoProxy.getLastSample();
 
         TRACE("AccelProxy : %llu %f %f %f \n", data.accelerationTimestamp,
               data.accelerationX, data.accelerationY, data.accelerationZ);

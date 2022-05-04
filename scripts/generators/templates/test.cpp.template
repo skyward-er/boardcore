@@ -30,11 +30,11 @@
 
 #include <miosix.h>
 
-#include <utils/testutils/catch.hpp>
+#include <utils/TestUtils/catch.hpp>
 
 #include "{state_machine_name}Controller/{state_machine_name}Controller.h"
 #include <events/Events.h>
-#include <utils/testutils/TestHelper.h>
+#include <utils/TestUtils/TestHelper.h>
 
 using miosix::Thread;
 using namespace DeathStackBoard;
@@ -46,7 +46,7 @@ public:
     {state_machine_name}ControllerFixture()
     {{
         controller = new {state_machine_name}Controller();
-        sEventBroker.start();
+        EventBroker::getInstance().start();
         controller->start();
     }}
 
@@ -54,8 +54,8 @@ public:
     ~{state_machine_name}ControllerFixture()
     {{
         controller->stop();
-        sEventBroker.unsubscribe(controller);
-        sEventBroker.clearDelayedEvents();
+        EventBroker::getInstance().unsubscribe(controller);
+        EventBroker::getInstance().clearDelayedEvents();
         delete controller;
     }}
 

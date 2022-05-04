@@ -47,16 +47,17 @@ public:
     double update(double error)
     {
 
-        double p = Kp * error;
+        lastP = Kp * error;
 
         if (!saturation)
         {
             i = i + Ki * Ts * error;
         }
 
-        double u = p + i;
+        double u = lastP + i;
 
-        return antiWindUp(u);
+        lastOutput = antiWindUp(u);
+        return lastOutput;
     }
 
     /**
@@ -84,13 +85,21 @@ public:
 
     double getI() { return i; }
 
+    double getLastP() { return lastP; }
+
+    double getLastOutput() { return lastOutput; }
+
+    bool isSaturated() { return saturation; }
+
     double Kp;          // Proportional factor.
     double Ki;          // Integral factor.
     double Ts;          // Sampling period.
     double uMin, uMax;  // Anti-windup limits.
 
 private:
-    double i        = 0;  // Integral contribution.
+    double i     = 0;   // Integral contribution.
+    double lastP = 0;   // Last computer proportional contribution.
+    double lastOutput;  // Last computed controller output.
     bool saturation = false;
 };
 

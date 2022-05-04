@@ -23,13 +23,14 @@
 #define SENSOR_LIS3DSH_STATS_TEST 1
 
 #include <drivers/spi/SPIDriver.h>
-#include <math/Stats.h>
 #include <miosix.h>
+#include <utils/Stats/Stats.h>
 
 #if SENSOR_LIS3DSH_STATS_TEST
 #include <sensors/LIS3DSH/LIS3DSH.h>
 #endif
 
+#include <sensors/calibration/AxisOrientation.h>
 #include <sensors/calibration/Calibration.h>
 
 using namespace Boardcore;

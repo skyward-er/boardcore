@@ -46,16 +46,26 @@ namespace Boardcore
 
 void operator<<(AccelerometerData& lhs, const Eigen::Vector3f& rhs);
 
+void operator<<(Eigen::Vector3f& lhs, const AccelerometerData& rhs);
+
 void operator<<(GyroscopeData& lhs, const Eigen::Vector3f& rhs);
+
+void operator<<(Eigen::Vector3f& lhs, const GyroscopeData& rhs);
 
 void operator<<(MagnetometerData& lhs, const Eigen::Vector3f& rhs);
 
+void operator<<(Eigen::Vector3f& lhs, const MagnetometerData& rhs);
+
 void operator>>(const AccelerometerData& lhs, Eigen::Vector3f& rhs);
+
+void operator>>(const Eigen::Vector3f& lhs, AccelerometerData& rhs);
 
 void operator>>(const GyroscopeData& lhs, Eigen::Vector3f& rhs);
 
-void operator>>(const MagnetometerData& lhs, Eigen::Vector3f& rhs);
+void operator>>(const Eigen::Vector3f& lhs, GyroscopeData& rhs);
 
 void operator>>(const MagnetometerData& lhs, Eigen::Vector3f& rhs);
+
+void operator>>(const Eigen::Vector3f& lhs, MagnetometerData& rhs);
 
 }  // namespace Boardcore

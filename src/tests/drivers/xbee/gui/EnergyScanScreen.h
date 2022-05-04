@@ -22,8 +22,8 @@
 
 #pragma once
 
-#include <math/Stats.h>
 #include <mxgui/display.h>
+#include <utils/Stats/Stats.h>
 #include <utils/gui/GridLayout.h>
 #include <utils/gui/TextView.h>
 #include <utils/gui/VerticalLayout.h>

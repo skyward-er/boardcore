@@ -26,8 +26,8 @@
 #include <ctime>
 #include <iostream>
 // #include <thread>
-#include <math/Stats.h>
 #include <miosix.h>
+#include <utils/Stats/Stats.h>
 
 #include <vector>
 

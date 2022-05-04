@@ -45,12 +45,21 @@ public:
         value += newValue * movingAverageCoeff;
     }
 
+    void reset() { value = 0; }
+
+    void setN(int movingAverageN)
+    {
+        this->movingAverageN   = movingAverageN;
+        movingAverageCoeff     = 1 / (float)movingAverageN;
+        movingAverageCompCoeff = 1 - movingAverageCoeff;
+    }
+
 private:
     T value = 0;
 
-    const int movingAverageN           = 20;
-    const float movingAverageCoeff     = 1 / (float)movingAverageN;
-    const float movingAverageCompCoeff = 1 - movingAverageCoeff;
+    int movingAverageN           = 20;
+    float movingAverageCoeff     = 1 / (float)movingAverageN;
+    float movingAverageCompCoeff = 1 - movingAverageCoeff;
 };
 
 }  // namespace Boardcore

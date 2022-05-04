@@ -23,7 +23,7 @@
 #include <drivers/adc/InternalADC.h>
 #include <drivers/timer/TimestampTimer.h>
 #include <miosix.h>
-#include <sensors/analog/battery/BatteryVoltageSensor.h>
+#include <sensors/analog/BatteryVoltageSensor.h>
 #include <utils/Debug.h>
 
 using namespace Boardcore;

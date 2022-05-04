@@ -27,7 +27,6 @@
 #include <fmt/format.h>
 #include <logger/Logger.h>
 #include <utils/Constants.h>
-#include <utils/Unused.h>
 #include <utils/collections/CircularBuffer.h>
 
 #include <memory>
@@ -101,7 +100,7 @@ class Logging : public Singleton<Logging>
     friend class PrintLogger;
 
 public:
-    static PrintLogger getLogger(string name)
+    static PrintLogger getLogger(const string& name)
     {
         return PrintLogger(getInstance(), name);
     }

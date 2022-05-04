@@ -29,11 +29,10 @@ namespace Boardcore
 {
 
 EventBroker::EventBroker() {}
-
 void EventBroker::post(const Event& ev, uint8_t topic)
 {
 #ifdef TRACE_EVENTS
-    LOG_DEBUG(logger, "Event: {}, Topic: {}", ev.code, topic);
+    LOG_DEBUG(logger, "Event: {}, Topic: {}", ev, topic);
 #endif
 
     Lock<FastMutex> lock(mtxSubscribers);
@@ -64,6 +63,34 @@ void EventBroker::removeDelayed(uint16_t id)
             break;
         }
     }
+}
+
+void EventBroker::subscribe(EventHandlerBase* subscriber, uint8_t topic)
+{
+    Lock<FastMutex> lock(mtxSubscribers);
+    subscribers[topic].push_back(subscriber);
+}
+
+void EventBroker::unsubscribe(EventHandlerBase* subscriber, uint8_t topic)
+{
+    Lock<FastMutex> lock(mtxSubscribers);
+
+    deleteSubscriber(subscribers.at(topic), subscriber);
+}
+
+void EventBroker::unsubscribe(EventHandlerBase* subscriber)
+{
+    Lock<FastMutex> lock(mtxSubscribers);
+    for (auto it = subscribers.begin(); it != subscribers.end(); it++)
+    {
+        deleteSubscriber(it->second, subscriber);
+    }
+}
+
+void EventBroker::clearDelayedEvents()
+{
+    Lock<FastMutex> lock(mtxDelayedEvents);
+    delayedEvents.clear();
 }
 
 // Posts delayed events with expired deadline
@@ -110,28 +137,6 @@ void EventBroker::run()
     }
 }
 
-void EventBroker::subscribe(EventHandlerBase* subscriber, uint8_t topic)
-{
-    Lock<FastMutex> lock(mtxSubscribers);
-    subscribers[topic].push_back(subscriber);
-}
-
-void EventBroker::unsubscribe(EventHandlerBase* subscriber, uint8_t topic)
-{
-    Lock<FastMutex> lock(mtxSubscribers);
-
-    deleteSubscriber(subscribers.at(topic), subscriber);
-}
-
-void EventBroker::unsubscribe(EventHandlerBase* subscriber)
-{
-    Lock<FastMutex> lock(mtxSubscribers);
-    for (auto it = subscribers.begin(); it != subscribers.end(); it++)
-    {
-        deleteSubscriber(it->second, subscriber);
-    }
-}
-
 void EventBroker::deleteSubscriber(vector<EventHandlerBase*>& subs,
                                    EventHandlerBase* subscriber)
 {
@@ -148,12 +153,6 @@ void EventBroker::deleteSubscriber(vector<EventHandlerBase*>& subs,
             ++it;
         }
     }
-}
-
-void EventBroker::clearDelayedEvents()
-{
-    Lock<FastMutex> lock(mtxDelayedEvents);
-    delayedEvents.clear();
 }
 
 }  // namespace Boardcore

@@ -26,6 +26,14 @@ include(boardcore-host)
 foreach(OPT_BOARD ${BOARDS})
     set(BOARDCORE_LIBRARY boardcore-${OPT_BOARD})
     add_library(${BOARDCORE_LIBRARY} STATIC EXCLUDE_FROM_ALL
+        # Actuators
+        ${SBS_BASE}/src/shared/actuators/HBridge/HBridge.cpp
+        ${SBS_BASE}/src/shared/actuators/Servo/Servo.cpp
+
+
+        # Algorithms
+        ${SBS_BASE}/src/shared/algorithms/NAS/NAS.cpp
+
         # Debug
         ${SBS_BASE}/src/shared/utils/Debug.cpp
         ${SBS_BASE}/src/shared/diagnostic/CpuMeter.cpp
@@ -35,25 +43,19 @@ foreach(OPT_BOARD ${BOARDS})
         ${SBS_BASE}/src/shared/drivers/adc/InternalADC.cpp
         ${SBS_BASE}/src/shared/drivers/canbus/Canbus.cpp
         ${SBS_BASE}/src/shared/drivers/canbus/CanInterrupt.cpp
-        ${SBS_BASE}/src/shared/drivers/hbridge/HBridge.cpp
         ${SBS_BASE}/src/shared/drivers/i2c/stm32f2_f4_i2c.cpp
         ${SBS_BASE}/src/shared/drivers/interrupt/external_interrupts.cpp
         ${SBS_BASE}/src/shared/drivers/timer/PWM.cpp
         ${SBS_BASE}/src/shared/drivers/timer/TimestampTimer.cpp
         ${SBS_BASE}/src/shared/drivers/runcam/Runcam.cpp
-        ${SBS_BASE}/src/shared/drivers/servo/Servo.cpp
         ${SBS_BASE}/src/shared/drivers/spi/SPITransaction.cpp
+        ${SBS_BASE}/src/shared/drivers/usart/USART.cpp
 
         # Events
         ${SBS_BASE}/src/shared/events/EventBroker.cpp
 
         # Logger
         ${SBS_BASE}/src/shared/logger/Logger.cpp
-
-        # Math
-        ${SBS_BASE}/src/shared/math/Matrix.cpp
-        ${SBS_BASE}/src/shared/math/SkyQuaternion.cpp
-        ${SBS_BASE}/src/shared/math/Stats.cpp
 
         # Radio
         ${SBS_BASE}/src/shared/radio/gamma868/Gamma868.cpp
@@ -72,8 +74,10 @@ foreach(OPT_BOARD ${BOARDS})
         ${SBS_BASE}/src/shared/sensors/BMP280/BMP280.cpp
         ${SBS_BASE}/src/shared/sensors/BMX160/BMX160.cpp
         ${SBS_BASE}/src/shared/sensors/BMX160/BMX160WithCorrection.cpp
+        ${SBS_BASE}/src/shared/sensors/HX711/HX711.cpp
         ${SBS_BASE}/src/shared/sensors/calibration/SensorDataExtra.cpp
         ${SBS_BASE}/src/shared/sensors/MAX6675/MAX6675.cpp
+        ${SBS_BASE}/src/shared/sensors/MAX31855/MAX31855.cpp
         ${SBS_BASE}/src/shared/sensors/MBLoadCell/MBLoadCell.cpp
         ${SBS_BASE}/src/shared/sensors/MPU9250/MPU9250.cpp
         ${SBS_BASE}/src/shared/sensors/MS5803/MS5803.cpp
@@ -82,17 +86,21 @@ foreach(OPT_BOARD ${BOARDS})
         ${SBS_BASE}/src/shared/sensors/UbloxGPS/UbloxGPS.cpp
         ${SBS_BASE}/src/shared/sensors/VN100/VN100.cpp
 
-        # AeroUtils
-        ${SBS_BASE}/src/shared/utils/aero/AeroUtils.cpp
+        # Calibration
+        ${SBS_BASE}/src/shared/sensors/calibration/SoftAndHardIronCalibration/SoftAndHardIronCalibration.cpp
 
-        # TestUtils
-        ${SBS_BASE}/src/shared/utils/testutils/TestHelper.cpp
+        # Utils
+        ${SBS_BASE}/src/shared/utils/AeroUtils/AeroUtils.cpp
+        ${SBS_BASE}/src/shared/utils/ButtonHandler/ButtonHandler.cpp
+        ${SBS_BASE}/src/shared/utils/SkyQuaternion/SkyQuaternion.cpp
+        ${SBS_BASE}/src/shared/utils/Stats/Stats.cpp
+        ${SBS_BASE}/src/shared/utils/TestUtils/TestHelper.cpp
     )
-    add_library(SkywardBoardcore::Boardcore-${OPT_BOARD} ALIAS ${BOARDCORE_LIBRARY})
+    add_library(SkywardBoardcore::Boardcore::${OPT_BOARD} ALIAS ${BOARDCORE_LIBRARY})
     target_include_directories(${BOARDCORE_LIBRARY} PUBLIC ${SBS_BASE}/src/shared)
     target_link_libraries(${BOARDCORE_LIBRARY} PUBLIC
-        Miosix::Miosix-${OPT_BOARD}
-        Mxgui::Mxgui-${OPT_BOARD}
+        Miosix::Miosix::${OPT_BOARD}
+        Mxgui::Mxgui::${OPT_BOARD}
         TSCPP::TSCPP
         Eigen3::Eigen
         fmt::fmt-header-only

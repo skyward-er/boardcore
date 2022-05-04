@@ -22,7 +22,7 @@
 
 #pragma once
 
-#include <math/Stats.h>
+#include <utils/Stats/Stats.h>
 
 #include <array>
 #include <ostream>
@@ -122,7 +122,7 @@ struct EnergyScanData
 
     EnergyScanData() = default;
 
-    EnergyScanData(long long ts, array<int, 30> scan)
+    EnergyScanData(long long ts, const array<int, 30> scan)
     {
         for (int i = 0; i < 30; i++)
         {
