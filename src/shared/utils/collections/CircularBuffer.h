@@ -32,7 +32,7 @@ namespace Boardcore
 {
 
 /**
- * Implementation of an non-synchronized circular buffer
+ * Implementation of an non-synchronized circular buffer.
  */
 template <typename T, unsigned int Size>
 class CircularBuffer
@@ -41,21 +41,25 @@ class CircularBuffer
 
 public:
     CircularBuffer() {}
+
     virtual ~CircularBuffer() {}
 
     /**
-     * Puts a copy of the element in the buffer
-     * @param elem element
+     * @brief Puts a copy of the element in the buffer.
+     *
+     * @param elem Element to be added to the queue.
+     * @return The element added.
      */
     virtual T& put(const T& elem)
     {
         buffer[writePtr] = elem;
         T& added         = buffer[writePtr];
 
+        // Advance the read pointer if the two pointers match
         if (!empty && writePtr == readPtr)
-        {
             readPtr = (readPtr + 1) % Size;
-        }
+
+        // Advance the write pointer
         writePtr = (writePtr + 1) % Size;
 
         empty = false;
@@ -64,20 +68,19 @@ public:
     }
 
     /**
-     * Gets an element from the buffer, without removing it
-     * Index starts from the oldest element in the buffer: get(0) returns the
-     * same element as get()
+     * @brief Gets an element from the buffer, without removing it.
+     *
+     * Index starts from the oldest element in the buffer.
+     * get() returns the first element.
      *
      * @warning Remember to catch the exception!
-     * @throw range_error if index >= count()
-     *
-     * @param i Index of the elemnt to get, starting from the oldest
-     *
-     * @return the element
+     * @throw range_error if index >= count().
+     * @param i Index of the element to get, starting from the oldest.
+     * @return The element.
      */
-    virtual T& get(unsigned int i)
+    virtual T& get(unsigned int i = 0)
     {
-        if (i < CircularBuffer<T, Size>::count())
+        if (i < count())
         {
             int ptr = (readPtr + i) % Size;
             return buffer[ptr];
@@ -89,33 +92,18 @@ public:
     /**
      * @brief Returns the last element added in the buffer.
      *
-     * @throw range_error if buffer is empty
      * @warning Remember to catch the exception!
-     * @return the element
+     * @throw range_error if buffer is empty.
+     * @return The element.
      */
     virtual T& last() { return get(count() - 1); }
 
     /**
-     * Gets the first element from the buffer, without removing it
-     * @throw range_error if buffer is empty
+     * @brief Pops the first element in the buffer.
+     *
      * @warning Remember to catch the exception!
-     * @return the element
-     */
-    virtual T& get()
-    {
-        if (!empty)
-        {
-            return buffer[readPtr];
-        }
-        else
-            throw range_error("CircularBuffer is empty!");
-    }
-
-    /**
-     * Pops the first element in the buffer.
-     * @throw range_error if buffer is empty
-     * @warning Remember to catch the exception!
-     * @return the element that has been popped
+     * @throw range_error if buffer is empty.
+     * @return The element that has been popped.
      */
     virtual const T& pop()
     {
@@ -133,8 +121,9 @@ public:
     }
 
     /**
-     * Counts the elements in the buffer
-     * @return number of elements in the buffer
+     * @brief Counts the elements in the buffer.
+     *
+     * @return Number of elements in the buffer.
      */
     virtual size_t count() const
     {
@@ -157,16 +146,19 @@ public:
         return CircularBuffer<T, Size>::count() == Size;
     }
     /**
-     * Returns the maximum number of elements that can be stored in the buffer
-     * @return buffer size
+     * @brief Returns the maximum number of elements that can be stored in the
+     * buffer.
+     *
+     * @return Buffer size.
      */
     size_t getSize() const { return Size; }
 
 protected:
     T buffer[Size];
 
-    size_t writePtr = 0, readPtr = 0;
-    bool empty = true;
+    size_t writePtr = 0;
+    size_t readPtr  = 0;
+    bool empty      = true;
 };
 
 }  // namespace Boardcore

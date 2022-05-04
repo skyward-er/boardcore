@@ -31,6 +31,8 @@ namespace Boardcore
 
 using namespace SX1278Defs;
 
+long long now() { return miosix::getTick() * 1000 / miosix::TICK_FREQ; }
+
 // Default values for registers
 constexpr uint8_t REG_OP_MODE_DEFAULT = RegOpMode::LONG_RANGE_MODE_FSK |
                                         RegOpMode::MODULATION_TYPE_FSK |
@@ -247,9 +249,13 @@ ssize_t SX1278::receive(uint8_t *pkt, size_t max_len)
 
 bool SX1278::send(uint8_t *pkt, size_t len)
 {
-    // Packets longer than 255 are not supported
-    if (len > 255)
+    // Packets longer than FIFO_LEN (-1 for the len byte) are not supported
+    if (len > SX1278Defs::FIFO_LEN - 1)
         return false;
+
+    // This shouldn't be needed, but for some reason the device "lies" about
+    // being ready, so lock up if we are going too fast
+    rateLimitTx();
 
     bus_mgr.lock(SX1278BusManager::Mode::MODE_TX);
 
@@ -267,10 +273,23 @@ bool SX1278::send(uint8_t *pkt, size_t len)
     // Wait for packet sent
     bus_mgr.waitForIrq(RegIrqFlags::PACKET_SENT);
     bus_mgr.unlock();
+
+    last_tx = now();
     return true;
 }
 
 void SX1278::handleDioIRQ() { bus_mgr.handleDioIRQ(); }
+
+void SX1278::rateLimitTx()
+{
+    const long long RATE_LIMIT = 2;
+
+    long long delta = now() - last_tx;
+    if (delta <= RATE_LIMIT)
+    {
+        miosix::Thread::sleep(RATE_LIMIT - delta);
+    }
+}
 
 uint8_t SX1278::getVersion()
 {

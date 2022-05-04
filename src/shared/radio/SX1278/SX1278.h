@@ -228,6 +228,8 @@ public:
 public:
     using Mode = SX1278BusManager::Mode;
 
+    void rateLimitTx();
+
     void setBitrate(int bitrate);
     void setFreqDev(int freq_dev);
     void setFreqRF(int freq_rf);
@@ -240,6 +242,7 @@ public:
 
     void waitForIrq(uint16_t mask);
 
+    long long last_tx = 0;
     SX1278BusManager bus_mgr;
     PrintLogger logger = Logging::getLogger("sx1278");
 };

@@ -93,9 +93,6 @@ struct Stats
 
 } stats;
 
-/// Interval between transmissions.
-const int TX_INTERVAL = 1;
-
 SX1278 *sx1278[2] = {nullptr, nullptr};
 
 struct Msg
@@ -115,12 +112,10 @@ void recvLoop(int idx)
     while (1)
     {
         Msg msg;
-        msg.idx     = 0;
-        msg.dummy_1 = 0;
-        msg.dummy_2 = 0;
-        msg.dummy_3 = 0;
+        memset(&msg, 0, sizeof(msg));
 
         int len = sx1278[idx]->receive((uint8_t *)&msg, sizeof(msg));
+
         if (len != sizeof(msg))
         {
             stats.recv_errors++;
@@ -143,8 +138,6 @@ void sendLoop(int idx)
 {
     while (1)
     {
-        miosix::Thread::sleep(TX_INTERVAL);
-
         int next_idx = stats.send_count + 1;
 
         Msg msg;
@@ -269,6 +262,7 @@ int main()
     std::thread recv([]() { recvLoop(0); });
 #endif
 #ifndef DISABLE_TX
+    miosix::Thread::sleep(500);
     std::thread send([]() { sendLoop(1); });
 #endif
 

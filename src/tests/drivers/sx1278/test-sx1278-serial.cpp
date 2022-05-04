@@ -31,17 +31,17 @@
 using namespace Boardcore;
 using namespace miosix;
 
-SPIBus bus(SPI3);
+SPIBus bus(SPI4);
 
-GpioPin sck(GPIOC_BASE, 10);
-GpioPin miso(GPIOC_BASE, 11);
-GpioPin mosi(GPIOC_BASE, 12);
-GpioPin cs(GPIOA_BASE, 1);
-GpioPin dio(GPIOC_BASE, 15);
+GpioPin sck(GPIOE_BASE, 2);
+GpioPin miso(GPIOE_BASE, 5);
+GpioPin mosi(GPIOE_BASE, 6);
+GpioPin cs(GPIOC_BASE, 1);
+GpioPin dio(GPIOF_BASE, 10);
 
 SX1278* sx1278 = nullptr;
 
-void __attribute__((used)) EXTI15_IRQHandlerImpl()
+void __attribute__((used)) EXTI10_IRQHandlerImpl()
 {
     if (sx1278)
         sx1278->handleDioIRQ();
@@ -54,16 +54,16 @@ void initBoard()
         miosix::FastInterruptDisableLock dLock;
 
         // Enable SPI3
-        RCC->APB1ENR |= RCC_APB1ENR_SPI3EN;
+        RCC->APB2ENR |= RCC_APB2ENR_SPI4EN;  // Enable SPI4 bus
         RCC_SYNC();
 
         // Setup SPI pins
         sck.mode(miosix::Mode::ALTERNATE);
-        sck.alternateFunction(6);
+        sck.alternateFunction(5);
         miso.mode(miosix::Mode::ALTERNATE);
-        miso.alternateFunction(6);
+        miso.alternateFunction(5);
         mosi.mode(miosix::Mode::ALTERNATE);
-        mosi.alternateFunction(6);
+        mosi.alternateFunction(5);
 
         cs.mode(miosix::Mode::OUTPUT);
         dio.mode(miosix::Mode::INPUT);
@@ -77,30 +77,35 @@ void initBoard()
 void recvLoop()
 {
     uint8_t msg[256];
-    auto console = miosix::DefaultConsole::instance().get();
-
     while (1)
     {
         int len = sx1278->receive(msg, sizeof(msg));
         if (len > 0)
         {
-            console->writeBlock(msg, len, 0);
-            // TODO: Flushing?
+            auto serial = miosix::DefaultConsole::instance().get();
+            serial->writeBlock(msg, len, 0);
         }
     }
 }
 
 void sendLoop()
 {
-    uint8_t msg[256];
-    auto console = miosix::DefaultConsole::instance().get();
+    // I create a GPIO with the onboard led to tell the user that
+    // a package is being sent
+    miosix::GpioPin led(GPIOG_BASE, 13);
+    led.mode(miosix::Mode::OUTPUT);
+    led.low();
 
+    uint8_t msg[63];
     while (1)
     {
-        int len = console->readBlock(msg, sizeof(msg), 0);
+        auto serial = miosix::DefaultConsole::instance().get();
+        int len     = serial->readBlock(msg, sizeof(msg), 0);
         if (len > 0)
         {
+            led.high();
             sx1278->send(msg, len);
+            led.low();
         }
     }
 }
@@ -122,13 +127,20 @@ int main()
         return -1;
     }
 
+    printf("\n[sx1278] Initialization complete!\n");
+
     std::thread recv([]() { recvLoop(); });
     std::thread send([]() { sendLoop(); });
 
-    printf("\n[sx1278] Initialization complete!\n");
+    for (;;)
+    {
+        miosix::Thread::sleep(100);
+    }
 
-    while (1)
-        miosix::Thread::wait();
+    // God please forgive me
+    // FIXME(davide.mor): ABSOLUTELY fix this
+    // miosix::Thread::sleep(20000);
+    // miosix::reboot();
 
     return 0;
 }

@@ -274,7 +274,7 @@ add_executable(test-sx1278-serial
     src/tests/drivers/sx1278/test-sx1278-serial.cpp
     src/tests/drivers/sx1278/test-sx1278-core.cpp
 )
-sbs_target(test-sx1278-serial stm32f407vg_stm32f4discovery)
+sbs_target(test-sx1278-serial stm32f429zi_stm32f4discovery)
 
 #-----------------------------------------------------------------------------#
 #                               Tests - Sensors                               #
