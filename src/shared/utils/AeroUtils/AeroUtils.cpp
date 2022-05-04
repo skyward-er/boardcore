@@ -24,6 +24,8 @@
 
 #include <utils/Constants.h>
 
+using namespace Eigen;
+
 namespace Boardcore
 {
 
@@ -64,6 +66,18 @@ float verticalSpeed(float p, float dpDt, float pRef, float tRef)
     using namespace Constants;
 
     return -(tRef * dpDt * powf(p / pRef, nInv)) / (a * n * p);
+}
+
+Vector2f geodetic2NED(const Vector2f& gpsData, const Vector2f& offset)
+{
+    float mPerDegLat = 111132.95225;
+    float mPerDegLon =
+        fabsf(111412.87733 * cosf(gpsData[0] * Constants::DEGREES_TO_RADIANS));
+
+    return {
+        mPerDegLat * (gpsData[0] - offset[0]),
+        mPerDegLon * (gpsData[1] - offset[1]),
+    };
 }
 
 }  // namespace Aeroutils

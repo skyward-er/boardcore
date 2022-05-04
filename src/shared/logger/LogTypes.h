@@ -22,7 +22,7 @@
 
 #pragma once
 
-#include <algorithms/ExtendedKalman/ExtendedKalmanState.h>
+#include <algorithms/NAS/NASState.h>
 #include <diagnostic/PrintLoggerData.h>
 #include <drivers/adc/InternalADCData.h>
 #include <events/EventData.h>
@@ -85,7 +85,7 @@ void registerType(Deserializer& ds)
 
 void registerTypes(Deserializer& ds)
 {
-    registerType<ExtendedKalmanState>(ds);
+    registerType<NASState>(ds);
     registerType<LoggingString>(ds);
     registerType<InternalADCData>(ds);
     registerType<EventData>(ds);

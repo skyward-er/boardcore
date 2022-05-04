@@ -34,10 +34,13 @@ static constexpr const float RADIANS_TO_DEGREES = 180.0f / PI;
 
 static constexpr const float g = 9.80665f;  // [m^s^2]
 
-constexpr float a    = 0.0065f;  // Troposphere temperature gradient [deg/m]
-constexpr float R    = 287.05f;  // Air gas constant [J/Kg/K]
-constexpr float n    = g / (R * a);
-constexpr float nInv = (R * a) / g;
+static constexpr float a = 0.0065f;  // Troposphere temperature gradient [deg/m]
+static constexpr float R = 287.05f;  // Air gas constant [J/Kg/K]
+static constexpr float n = g / (R * a);
+static constexpr float nInv = (R * a) / g;
+
+static constexpr const float MSL_PRESSURE    = 101325.0f;  // [Pa]
+static constexpr const float MSL_TEMPERATURE = 288.15f;    // [Kelvin]
 
 }  // namespace Constants
 

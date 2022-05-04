@@ -20,11 +20,12 @@
  * THE SOFTWARE.
  */
 
-#include <algorithms/ExtendedKalman/StateInitializer.h>
+#include <algorithms/NAS/StateInitializer.h>
 #include <miosix.h>
 #include <sensors/BMX160/BMX160.h>
-#include <sensors/LIS3MDL/LIS3MDL.h>
 #include <sensors/SensorManager.h>
+#include <sensors/calibration/SensorDataExtra.h>
+#include <sensors/calibration/SoftAndHardIronCalibration/SoftAndHardIronCalibration.h>
 
 #include <cmath>
 #include <iostream>
@@ -33,29 +34,56 @@ using namespace miosix;
 using namespace Boardcore;
 using namespace Eigen;
 
-void bmxInit();
-void bmxCallback();
+void imuInit();
 
 Vector3f nedMag = Vector3f(0.4747, 0.0276, 0.8797);
 
 SPIBus spi1(SPI1);
-BMX160* bmx160 = nullptr;
-
-Boardcore::SensorManager::SensorMap_t sensorsMap;
-Boardcore::SensorManager* sensorManager = nullptr;
+BMX160* bmx = nullptr;
 
 int main()
 {
-    bmxInit();
+    imuInit();
+    bmx->init();
 
-    sensorManager = new SensorManager(sensorsMap);
-    sensorManager->start();
-
+    auto lastTick = getTick();
     while (true)
-        Thread::sleep(1000);
+    {
+        bmx->sample();
+        auto data = bmx->getLastSample();
+
+        Vector3f acceleration(data.accelerationX, data.accelerationY,
+                              data.accelerationZ);
+        Vector3f angularVelocity(data.angularVelocityX, data.angularVelocityY,
+                                 data.angularVelocityZ);
+        Vector3f offset{-1.63512255486542, 3.46523431469979, -3.08516033954451};
+        angularVelocity = angularVelocity - offset;
+        angularVelocity = angularVelocity / 180 * Constants::PI / 10;
+        Vector3f magneticField(data.magneticFieldX, data.magneticFieldY,
+                               data.magneticFieldZ);
+        Vector3f b{21.5356818859811, -22.7697302909894, -2.68219304319269};
+        Matrix3f A{{0.688760050772712, 0, 0},
+                   {0, 0.637715211784480, 0},
+                   {0, 0, 2.27669720320908}};
+        magneticField = (magneticField - b).transpose() * A;
+
+        acceleration.normalize();
+        magneticField.normalize();
+
+        StateInitializer state;
+        state.triad(acceleration, magneticField, nedMag);
+
+        auto kalmanState = state.getInitX();
+        if (!std::isnan(kalmanState(9)))
+            printf("w%fwa%fab%fbc%fc\n", kalmanState(9), kalmanState(6),
+                   kalmanState(7), kalmanState(8));
+
+        Thread::sleepUntil(lastTick + 20);
+        lastTick = getTick();
+    }
 }
 
-void bmxInit()
+void imuInit()
 {
     SPIBusConfig spiConfig;
     spiConfig.clockDivider = SPI::ClockDivider::DIV_8;
@@ -77,40 +105,6 @@ void bmxInit()
 
     bmx_config.gyroscopeUnit = BMX160Config::GyroscopeMeasureUnit::RAD;
 
-    bmx160 = new BMX160(spi1, miosix::sensors::bmx160::cs::getPin(), bmx_config,
-                        spiConfig);
-
-    SensorInfo info("BMX160", 20, &bmxCallback);
-
-    sensorsMap.emplace(std::make_pair(bmx160, info));
-}
-
-void bmxCallback()
-{
-    auto data = bmx160->getLastSample();
-
-    Vector3f acceleration(data.accelerationX, data.accelerationY,
-                          data.accelerationZ);
-    Vector3f magneticField(data.magneticFieldX, data.magneticFieldY,
-                           data.magneticFieldZ);
-
-    // Apply correction
-    Vector3f acc_b(0.3763, -0.1445, -0.1010);
-    acceleration -= acc_b;
-    Vector3f mag_b{21.0730033648425, -24.3997259703105, -2.32621524742862};
-    Matrix3f A{{0.659926504672263, 0, 0},
-               {0, 0.662442130094073, 0},
-               {0, 0, 2.28747567094359}};
-    magneticField = (magneticField - mag_b).transpose() * A;
-
-    acceleration.normalize();
-    magneticField.normalize();
-
-    StateInitializer state;
-    state.triad(acceleration, magneticField, nedMag);
-
-    auto kalmanState = state.getInitX();
-    if (!std::isnan(kalmanState(9)))
-        printf("w%fwa%fab%fbc%fc\n", kalmanState(9), kalmanState(6),
-               kalmanState(7), kalmanState(8));
+    bmx = new BMX160(spi1, miosix::sensors::bmx160::cs::getPin(), bmx_config,
+                     spiConfig);
 }

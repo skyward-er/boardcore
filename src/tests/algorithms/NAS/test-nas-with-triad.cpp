@@ -20,11 +20,10 @@
  * THE SOFTWARE.
  */
 
-#include <algorithms/ExtendedKalman/ExtendedKalman.h>
-#include <algorithms/ExtendedKalman/StateInitializer.h>
+#include <algorithms/NAS/NAS.h>
+#include <algorithms/NAS/StateInitializer.h>
 #include <miosix.h>
 #include <sensors/BMX160/BMX160.h>
-#include <sensors/LIS3MDL/LIS3MDL.h>
 #include <sensors/SensorManager.h>
 #include <utils/SkyQuaternion/SkyQuaternion.h>
 
@@ -34,7 +33,7 @@ using namespace miosix;
 using namespace Boardcore;
 using namespace Eigen;
 
-ExtendedKalmanConfig getEKConfig();
+NASConfig getEKConfig();
 void bmxInit();
 void bmxCallback();
 
@@ -43,7 +42,7 @@ constexpr uint64_t CALIBRATION_TIMEOUT = 5 * 1e6;
 Vector3f nedMag = Vector3f(0.47472049, 0.02757190, 0.87970463);
 
 StateInitializer* stateInitializer;
-ExtendedKalman* kalman;
+NAS* nas;
 
 SPIBus spi1(SPI1);
 BMX160* bmx160 = nullptr;
@@ -57,7 +56,7 @@ int main()
 
     sensorManager    = new SensorManager(sensorsMap);
     stateInitializer = new StateInitializer();
-    kalman           = new ExtendedKalman(getEKConfig());
+    nas              = new NAS(getEKConfig());
 
     // Logger::getInstance().start();
     TimestampTimer::getInstance().resetTimestamp();
@@ -67,9 +66,9 @@ int main()
         Thread::sleep(1000);
 }
 
-ExtendedKalmanConfig getEKConfig()
+NASConfig getEKConfig()
 {
-    ExtendedKalmanConfig config;
+    NASConfig config;
 
     config.T              = 0.02f;
     config.SIGMA_BETA     = 0.0001f;
@@ -155,15 +154,15 @@ void bmxCallback()
         }
         else
         {
-            // Now the calibration has ended, compute and log the kalman state
+            // Now the calibration has ended, compute and log the nas state
             calibrating = false;
 
-            // Compute the initial kalman state
+            // Compute the initial nas state
             stateInitializer->triad(accMean, magMean, nedMag);
-            kalman->setX(stateInitializer->getInitX());
+            nas->setX(stateInitializer->getInitX());
 
             // Save the state and the IMU data
-            // Logger::getInstance().log(kalman->getState());
+            // Logger::getInstance().log(nas->getState());
             data.accelerationX  = accMean[0];
             data.accelerationY  = accMean[1];
             data.accelerationZ  = accMean[2];
@@ -181,8 +180,8 @@ void bmxCallback()
     {
         // Predict step
         {
-            // kalman->predictAcc(acceleration);
-            kalman->predictGyro(angularVelocity);
+            // nas->predictAcc(acceleration);
+            nas->predictGyro(angularVelocity);
 
             data.angularVelocityX = angularVelocity[0];
             data.angularVelocityY = angularVelocity[1];
@@ -192,23 +191,23 @@ void bmxCallback()
         // Correct step
         {
             magneticField.normalize();
-            kalman->correctMag(magneticField);
+            nas->correctMag(magneticField);
 
             data.magneticFieldX = magneticField[0];
             data.magneticFieldY = magneticField[1];
             data.magneticFieldZ = magneticField[2];
         }
 
-        auto kalmanState = kalman->getState();
+        auto nasState = nas->getState();
 
-        kalmanState.timestamp = TimestampTimer::getInstance().getTimestamp();
-        data.accelerationTimestamp    = kalmanState.timestamp;
-        data.magneticFieldTimestamp   = kalmanState.timestamp;
-        data.angularVelocityTimestamp = kalmanState.timestamp;
+        nasState.timestamp = TimestampTimer::getInstance().getTimestamp();
+        data.accelerationTimestamp    = nasState.timestamp;
+        data.magneticFieldTimestamp   = nasState.timestamp;
+        data.angularVelocityTimestamp = nasState.timestamp;
 
-        // Logger::getInstance().log(kalmanState);
+        // Logger::getInstance().log(nasState);
         // Logger::getInstance().log(data);
-        printf("w%fwa%fab%fbc%fc\n", kalmanState.qw, kalmanState.qx,
-               kalmanState.qy, kalmanState.qz);
+        printf("w%fwa%fab%fbc%fc\n", nasState.qw, nasState.qx, nasState.qy,
+               nasState.qz);
     }
 }

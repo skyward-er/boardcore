@@ -27,13 +27,13 @@
 
 #include <Eigen/Dense>
 
-#include "ExtendedKalmanConfig.h"
-#include "ExtendedKalmanState.h"
+#include "NASConfig.h"
+#include "NASState.h"
 
 namespace Boardcore
 {
 
-class ExtendedKalman
+class NAS
 {
 public:
     ///< Index of position elements in the state.
@@ -48,7 +48,7 @@ public:
     ///< Index of bias elements in the state.
     static constexpr uint16_t IDX_BIAS = 10;
 
-    explicit ExtendedKalman(ExtendedKalmanConfig config);
+    explicit NAS(NASConfig config);
 
     /**
      * @brief Prediction with accelerometer data.
@@ -92,7 +92,7 @@ public:
     /**
      * @brief Correction with accelerometer data.
      *
-     * @param u Vector with acceleration data [x y z][m/s^2]
+     * @param u Normaliezed vector with acceleration data [x y z]
      */
     void correctAcc(const Eigen::Vector3f& acceleration);
 
@@ -109,7 +109,7 @@ public:
     /**
      * @return EKF state.
      */
-    ExtendedKalmanState getState() const;
+    NASState getState() const;
 
     /**
      * @return State vector [n e d vn ve vd qx qy qz qw bx by bz].
@@ -119,7 +119,7 @@ public:
     /**
      * @param state EKF state.
      */
-    void setState(const ExtendedKalmanState& state);
+    void setState(const NASState& state);
 
     /**
      * @param state State vector [n e d vn ve vd qx qy qz qw bx by bz].
@@ -135,7 +135,7 @@ private:
     Eigen::Matrix3f body2ned(const Eigen::Vector4f& q);
 
     ///< Extended Kalman filter configuration parameters
-    ExtendedKalmanConfig config;
+    NASConfig config;
 
     ///< State vector [n e d vn ve vd qx qy qz qw bx by bz]
     Eigen::Matrix<float, 13, 1> x;

@@ -35,12 +35,9 @@ using namespace miosix;
 
 int main()
 {
-    SPIBusConfig spiConfig;
+    // Sample temperature every 10 pressure samples
     SPIBus spiBus(SPI1);
-    SPISlave spiSlave(spiBus, miosix::sensors::ms5803::cs::getPin(), spiConfig);
-
-    // Sample temperature every 5 pressure samples
-    MS5803 sensor(spiSlave, 10);
+    MS5803 sensor(spiBus, miosix::sensors::ms5803::cs::getPin(), {}, 10);
 
     Thread::sleep(100);
 

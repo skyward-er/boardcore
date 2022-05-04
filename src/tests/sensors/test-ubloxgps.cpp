@@ -69,15 +69,17 @@ int main()
 
     while (true)
     {
+        printf("a\n");
         // Give time to the thread
         Thread::sleep(1000 / RATE);
 
         // Sample
         gps.sample();
+        printf("b\n");
         dataGPS = gps.getLastSample();
 
         // Print out the latest sample
-        TRACE(
+        printf(
             "[gps] timestamp: % 4.3f, fix: %01d lat: % f lon: % f "
             "height: %4.1f nsat: %2d speed: %3.2f velN: % 3.2f velE: % 3.2f "
             "track %3.1f\n",

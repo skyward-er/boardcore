@@ -28,7 +28,7 @@
 
 #include <Eigen/Dense>
 
-#include "ExtendedKalman.h"
+#include "NAS.h"
 
 namespace Boardcore
 {
@@ -117,10 +117,10 @@ void StateInitializer::eCompass(const Eigen::Vector3f acc,
 
     Eigen::Vector4f x_quat = SkyQuaternion::rotationMatrix2quat(R);
 
-    x_init(ExtendedKalman::IDX_QUAT)     = x_quat(0);
-    x_init(ExtendedKalman::IDX_QUAT + 1) = x_quat(1);
-    x_init(ExtendedKalman::IDX_QUAT + 2) = x_quat(2);
-    x_init(ExtendedKalman::IDX_QUAT + 3) = x_quat(3);
+    x_init(NAS::IDX_QUAT)     = x_quat(0);
+    x_init(NAS::IDX_QUAT + 1) = x_quat(1);
+    x_init(NAS::IDX_QUAT + 2) = x_quat(2);
+    x_init(NAS::IDX_QUAT + 3) = x_quat(3);
 }
 
 void StateInitializer::triad(Eigen::Vector3f& acc, Eigen::Vector3f& mag,
@@ -151,7 +151,7 @@ void StateInitializer::triad(Eigen::Vector3f& acc, Eigen::Vector3f& mag,
     Eigen::Vector4f q = SkyQuaternion::rotationMatrix2quat(A);
 
     // Save the orientation in the state
-    x_init.block<4, 1>(ExtendedKalman::IDX_QUAT, 0) = q;
+    x_init.block<4, 1>(NAS::IDX_QUAT, 0) = q;
 }
 
 void StateInitializer::positionInit(const float pressure,

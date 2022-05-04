@@ -53,18 +53,11 @@ void initBoard()
 int main()
 {
     // Enable SPI clock and set gpios
-    initBoard();
-
-    // SPI configuration setup
-
-    SPIBusConfig spiConfig;
-    spiConfig.clockDivider = SPI::ClockDivider::DIV_64;
-    spiConfig.mode         = SPI::Mode::MODE_3;
-    SPIBus spiBus(SPI2);
-    SPISlave spiSlave(spiBus, csPin, spiConfig);
+    // initBoard();
 
     // Device initialization
-    MPU9250 mpu9250(spiSlave);
+    SPIBus spiBus(SPI1);
+    MPU9250 mpu9250(spiBus, sensors::mpu9250::cs::getPin());
 
     // Initialize the device
     bool result = mpu9250.init();
@@ -85,7 +78,7 @@ int main()
         printf("%lld,%f,%f,%f\n", data.magneticFieldTimestamp,
                data.magneticFieldX, data.magneticFieldY, data.magneticFieldZ);
 
-        // Serial communicaion at 115200 baud takes aprx. 10ms
+        // Serial communication at 115200 baud takes approximately 10ms
         // miosix::delayMs(10);
     }
 

@@ -89,8 +89,7 @@ private:
 
 template <typename T, unsigned MaxSamples>
 class SixParameterCalibration
-    : public AbstractCalibrationModel<T, SixParameterCorrector<T>,
-                                      AxisOrientation>
+    : public AbstractCalibration<T, SixParameterCorrector<T>, AxisOrientation>
 {
 public:
     SixParameterCalibration() : samples(), ref(1, 0, 0), numSamples(0) {}

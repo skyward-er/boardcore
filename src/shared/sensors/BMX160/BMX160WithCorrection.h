@@ -24,6 +24,7 @@
 
 #include <diagnostic/PrintLogger.h>
 #include <sensors/BMX160/BMX160.h>
+#include <sensors/calibration/AxisOrientation.h>
 #include <sensors/calibration/BiasCalibration.h>
 #include <sensors/calibration/SixParameterCalibration.h>
 

@@ -30,6 +30,7 @@
 #include <sensors/LIS3DSH/LIS3DSH.h>
 #endif
 
+#include <sensors/calibration/AxisOrientation.h>
 #include <sensors/calibration/Calibration.h>
 
 using namespace Boardcore;
