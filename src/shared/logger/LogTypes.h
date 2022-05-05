@@ -22,6 +22,7 @@
 
 #pragma once
 
+#include <actuators/Servo/ServoData.h>
 #include <algorithms/NAS/NASState.h>
 #include <diagnostic/PrintLoggerData.h>
 #include <drivers/adc/InternalADCData.h>
@@ -71,53 +72,42 @@ namespace Boardcore
 namespace LogTypes
 {
 
-template <typename T>
-void print(T& t, std::ostream& os)
-{
-    t.print(os);
-}
-
-template <typename T>
-void registerType(Deserializer& ds)
-{
-    ds.registerType<T>(print<T>, T::header());
-}
-
 void registerTypes(Deserializer& ds)
 {
-    registerType<NASState>(ds);
-    registerType<LoggingString>(ds);
-    registerType<InternalADCData>(ds);
-    registerType<EventData>(ds);
-    registerType<LoggerStats>(ds);
-    registerType<MavlinkStatus>(ds);
-    registerType<Xbee::XbeeStatus>(ds);
-    registerType<TaskStatsResult>(ds);
-    registerType<ADS1118Data>(ds);
-    registerType<ADS131M04Data>(ds);
-    registerType<BME280Data>(ds);
-    registerType<BMP280Data>(ds);
-    registerType<BMX160Data>(ds);
-    registerType<BMX160WithCorrectionData>(ds);
-    registerType<HX711Data>(ds);
-    registerType<L3GD20Data>(ds);
-    registerType<LIS3DSHData>(ds);
-    registerType<LIS3MDLData>(ds);
-    registerType<MBLoadCellData>(ds);
-    registerType<MPU9250Data>(ds);
-    registerType<MS5803Data>(ds);
-    registerType<TemperatureData>(ds);
-    registerType<UbloxGPSData>(ds);
-    registerType<VN100Data>(ds);
-    registerType<BatteryVoltageSensorData>(ds);
-    registerType<CurrentSensorData>(ds);
-    registerType<LoadCellData>(ds);
-    registerType<MPXHZ6130AData>(ds);
-    registerType<HSCMAND015PAData>(ds);
-    registerType<HSCMRNN030PAData>(ds);
-    registerType<HSCMRNN160KAData>(ds);
-    registerType<SSCDANN030PAAData>(ds);
-    registerType<SSCDRRN015PDAData>(ds);
+    ds.registerType<ServoData>();
+    ds.registerType<NASState>();
+    ds.registerType<LoggingString>();
+    ds.registerType<InternalADCData>();
+    ds.registerType<EventData>();
+    ds.registerType<LoggerStats>();
+    ds.registerType<MavlinkStatus>();
+    ds.registerType<Xbee::XbeeStatus>();
+    ds.registerType<TaskStatsResult>();
+    ds.registerType<ADS1118Data>();
+    ds.registerType<ADS131M04Data>();
+    ds.registerType<BME280Data>();
+    ds.registerType<BMP280Data>();
+    ds.registerType<BMX160Data>();
+    ds.registerType<BMX160WithCorrectionData>();
+    ds.registerType<HX711Data>();
+    ds.registerType<L3GD20Data>();
+    ds.registerType<LIS3DSHData>();
+    ds.registerType<LIS3MDLData>();
+    ds.registerType<MBLoadCellData>();
+    ds.registerType<MPU9250Data>();
+    ds.registerType<MS5803Data>();
+    ds.registerType<TemperatureData>();
+    ds.registerType<UbloxGPSData>();
+    ds.registerType<VN100Data>();
+    ds.registerType<BatteryVoltageSensorData>();
+    ds.registerType<CurrentSensorData>();
+    ds.registerType<LoadCellData>();
+    ds.registerType<MPXHZ6130AData>();
+    ds.registerType<HSCMAND015PAData>();
+    ds.registerType<HSCMRNN030PAData>();
+    ds.registerType<HSCMRNN160KAData>();
+    ds.registerType<SSCDANN030PAAData>();
+    ds.registerType<SSCDRRN015PDAData>();
 }
 
 }  // namespace LogTypes

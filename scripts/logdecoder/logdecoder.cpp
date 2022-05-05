@@ -42,25 +42,43 @@
 using namespace tscpp;
 using namespace Boardcore;
 
-void showUsage(string commandName);
+void showUsage(const string& cmdName)
+{
+    std::cerr << "Usage: " << cmdName << " {-a | <log_file_name> | -h}"
+              << "Options:\n"
+              << "\t-h,--help\t\tShow help message\n"
+              << "\t-a,--all Deserialize all logs in the current directory\n"
+              << std::endl;
+}
 
-/**
- * @brief Deserialize a file.
- *
- * @param fileName File name complete with extension.
- * @return Whether the deserialization was successful.
- */
-bool deserialize(string fileName);
+bool deserialize(string logName)
+{
+    std::cout << "Deserializing " << logName << "...\n";
+    Deserializer d(logName);
+    LogTypes::registerTypes(d);
 
-/**
- * @brief Deserialize all log file in the directory. Assumes the log files named
- * as logXX.dat.
- *
- * Scans for all the 100 possible log files and decode the ones found.
- *
- * @return False if an error was encountered.
- */
-bool deserializeAll();
+    return d.deserialize();
+}
+
+bool deserializeAll()
+{
+    for (int i = 0; i < 100; i++)
+    {
+        char fn[10];
+        char fnext[11];
+        sprintf(fn, "log%02d", i);
+        sprintf(fnext, "log%02d.dat", i);
+        struct stat st;
+        if (stat(fnext, &st) != 0)
+            continue;  // File not found
+        // File found
+        if (!deserialize(string(fn)))
+        {
+            return false;
+        }
+    }
+    return true;
+}
 
 int main(int argc, char* argv[])
 {
@@ -92,48 +110,4 @@ int main(int argc, char* argv[])
     else
         std::cout << "Deserialization ended with errors\n";
     return 0;
-}
-
-void showUsage(string commandName)
-{
-    std::cerr << "Usage: " << commandName << " {-a | <log_file_name> | -h}"
-              << "Options:\n"
-              << "\t-h,--help\t\tShow this help message\n"
-              << "\t-a,--all Deserialize all logs in the current directory "
-                 "named as logXX.dat\n"
-              << std::endl;
-}
-
-bool deserialize(string fileName)
-{
-    std::cout << "Deserializing " << fileName << "...\n";
-
-    Deserializer d(fileName);
-    LogTypes::registerTypes(d);
-
-    return d.deserialize();
-}
-
-bool deserializeAll()
-{
-    std::cout << "Deserializing all logs in the current directory...\n";
-
-    for (int i = 0; i < 100; i++)
-    {
-        char fileName[11];
-        sprintf(fileName, "log%02d.dat", i);
-        struct stat st;
-
-        // Check if the current logfile exists
-        if (stat(fileName, &st) != 0)
-            continue;
-
-        // File found
-        if (!deserialize(string(fileName)))
-            return false;
-
-        std::cout << fileName << " deserialized successfully";
-    }
-
-    return true;
 }
