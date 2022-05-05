@@ -88,6 +88,8 @@ float PWM::getDutyCycle(TimerUtils::Channel channel)
            static_cast<float>(timer.readAutoReloadRegister());
 }
 
+GP16bitTimer PWM::getTimer() { return timer; }
+
 void PWM::setTimerConfiguration()
 {
     timer.disable();

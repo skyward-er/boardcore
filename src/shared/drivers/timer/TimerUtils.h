@@ -241,7 +241,7 @@ enum class OutputComparePolarity : uint16_t
     ACTIVE_LOW  = 0x1
 };
 
-enum class Channel : int
+enum class Channel : uint8_t
 {
     CHANNEL_1 = 0,
     CHANNEL_2 = 1,

@@ -91,6 +91,8 @@ public:
 
     TIM_TypeDef *getTimer();
 
+    uint8_t getTimerNumber();
+
     /**
      * @brief Resets the timer configuration to the default state.
      *
@@ -210,6 +212,40 @@ inline BasicTimer::BasicTimer(TIM_TypeDef *timer) : timer(timer)
 inline BasicTimer::~BasicTimer() { ClockUtils::disablePeripheralClock(timer); }
 
 inline TIM_TypeDef *BasicTimer::getTimer() { return timer; }
+
+inline uint8_t BasicTimer::getTimerNumber()
+{
+    if (timer == TIM1)
+        return 1;
+    else if (timer == TIM2)
+        return 2;
+    else if (timer == TIM3)
+        return 3;
+    else if (timer == TIM4)
+        return 4;
+    else if (timer == TIM5)
+        return 5;
+    else if (timer == TIM6)
+        return 6;
+    else if (timer == TIM7)
+        return 7;
+    else if (timer == TIM8)
+        return 8;
+    else if (timer == TIM9)
+        return 9;
+    else if (timer == TIM10)
+        return 10;
+    else if (timer == TIM11)
+        return 11;
+    else if (timer == TIM12)
+        return 12;
+    else if (timer == TIM13)
+        return 13;
+    else if (timer == TIM14)
+        return 14;
+    else
+        return 0;
+}
 
 inline void BasicTimer::reset()
 {

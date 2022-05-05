@@ -22,6 +22,8 @@
 
 #include "Servo.h"
 
+#include <drivers/timer/TimestampTimer.h>
+
 #include "miosix.h"
 
 namespace Boardcore
@@ -31,32 +33,22 @@ namespace Boardcore
 
 Servo::Servo(TIM_TypeDef* const timer, TimerUtils::Channel pwmChannel,
              unsigned int minPulse, unsigned int maxPulse,
-             unsigned int frequency, unsigned int resetPulse)
-    : pwm(timer, frequency), pwmChannel(pwmChannel), minPulse(minPulse),
-      maxPulse(maxPulse), resetPulse(resetPulse), frequency(frequency)
-{
-    setPosition(resetPulse);
-}
-
-Servo::Servo(TIM_TypeDef* const timer, TimerUtils::Channel pwmChannel,
-             unsigned int minPulse, unsigned int maxPulse,
              unsigned int frequency)
-    : Servo(timer, pwmChannel, minPulse, maxPulse, frequency, minPulse)
+    : pwm(timer, frequency), pwmChannel(pwmChannel), minPulse(minPulse),
+      maxPulse(maxPulse), frequency(frequency)
 {
+    setPosition(0);
 }
 
 void Servo::enable() { pwm.enableChannel(pwmChannel); }
 
 void Servo::disable() { pwm.disableChannel(pwmChannel); }
 
-void Servo::reset() { setPosition(resetPulse); }
-
 #else
 
 Servo::Servo(unsigned int minPulse, unsigned int maxPulse,
              unsigned int frequency)
-    : minPulse(minPulse), maxPulse(maxPulse), frequency(frequency),
-      resetPulse(minPulse)
+    : minPulse(minPulse), maxPulse(maxPulse), frequency(frequency)
 {
     setPosition(0);
 }
@@ -106,5 +98,12 @@ float Servo::getPosition90Deg() { return getPosition() * 90; }
 float Servo::getPosition180Deg() { return getPosition() * 1800; }
 
 float Servo::getPosition360Deg() { return getPosition() * 3600; }
+
+ServoData Servo::getState()
+{
+    return {TimestampTimer::getInstance().getTimestamp(),
+            pwm.getTimer().getTimerNumber(), static_cast<uint8_t>(pwmChannel),
+            getPosition()};
+}
 
 }  // namespace Boardcore

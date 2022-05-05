@@ -24,6 +24,8 @@
 #include <drivers/timer/PWM.h>
 #endif
 
+#include "ServoData.h"
+
 #pragma once
 
 namespace Boardcore
@@ -76,21 +78,6 @@ public:
     explicit Servo(TIM_TypeDef* const timer, TimerUtils::Channel pwmChannel,
                    unsigned int minPulse = 1000, unsigned int maxPulse = 2000,
                    unsigned int frequency = 50);
-    /**
-     * @brief Prepare the timer and sets the PWM output to the minimum.
-     *
-     * @see Servo::Servo
-     *
-     * @param timer Timer peripheral used for the PWM signal.
-     * @param pwmChannel Timer's channel used for the PWM signal.
-     * @param frequency Frequency of the PWM driving the H-bridge.
-     * @param minPulse Minimum signal pulse in microseconds.
-     * @param maxPulse Maximum signal pulse in microseconds.
-     * @param resetPulse Reset signal pulse in microseconds.
-     */
-    explicit Servo(TIM_TypeDef* const timer, TimerUtils::Channel pwmChannel,
-                   unsigned int minPulse, unsigned int maxPulse,
-                   unsigned int frequency, unsigned int resetPulse);
 #else
     explicit Servo(unsigned int minPulse = 1000, unsigned int maxPulse = 2000,
                    unsigned int frequency = 50);
@@ -105,11 +92,6 @@ public:
      * @brief Stops producing the PWM signal.
      */
     void disable();
-
-    /**
-     * @brief Moves the servo to the reset position.
-     */
-    void reset();
 
     /**
      * @brief Set the position of the servomotor.
@@ -142,6 +124,11 @@ public:
 
     float getPosition360Deg();
 
+    /**
+     * @brief Returns the current position and the current timestamp.
+     */
+    ServoData getState();
+
 private:
     // This class is not copyable!
     Servo& operator=(const Servo&) = delete;
@@ -156,7 +143,6 @@ private:
 
     float minPulse;
     float maxPulse;
-    float resetPulse;
     float frequency;
 };
 

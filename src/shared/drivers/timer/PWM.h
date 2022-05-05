@@ -95,6 +95,11 @@ public:
      */
     float getDutyCycle(TimerUtils::Channel channel);
 
+    /**
+     * @brief Returns the timer used to generate the pwm signal.
+     */
+    GP16bitTimer getTimer();
+
 private:
     // This class is not copyable!
     PWM& operator=(const PWM&) = delete;
