@@ -102,7 +102,12 @@ float Servo::getPosition360Deg() { return getPosition() * 3600; }
 ServoData Servo::getState()
 {
     return {TimestampTimer::getInstance().getTimestamp(),
+
+#ifndef COMPILE_FOR_HOST
             pwm.getTimer().getTimerNumber(), static_cast<uint8_t>(pwmChannel),
+#else
+            0, 0,
+#endif
             getPosition()};
 }
 
