@@ -99,7 +99,7 @@ private:
 
     bool closed = false;
 
-    std::vector<std::ofstream*> fileStreams;
+    std::map<std::string, std::ofstream*> fileStreams;
     tscpp::TypePoolStream tps;
 
     std::string logFilename;
@@ -130,14 +130,18 @@ void Deserializer::registerType()
 template <typename T>
 void Deserializer::printType(T& t, std::string path, std::string prefix)
 {
-    static std::ofstream* stream = nullptr;
+    std::string demangledTypeName = tscpp::demangle(typeid(T).name());
+    static std::ofstream* stream;
 
-    // If not already initialize, open the file and write the header
-    if (stream == nullptr)
+    try
     {
-        stream = new std::ofstream();
-        std::string filename =
-            path + prefix + "_" + tscpp::demangle(typeid(T).name()) + ".csv";
+        stream = fileStreams.at(demangledTypeName);
+    }
+    // If not already initialize, open the file and write the header
+    catch (std::out_of_range e)
+    {
+        stream               = new std::ofstream();
+        std::string filename = path + prefix + "_" + demangledTypeName + ".csv";
         std::cout << "Creating file " + filename << std::endl;
         stream->open(filename);
 
@@ -152,7 +156,7 @@ void Deserializer::printType(T& t, std::string path, std::string prefix)
         *stream << T::header();
 
         // Add the file to the vector such that it will be closed
-        fileStreams.push_back(stream);
+        fileStreams.emplace(demangledTypeName, stream);
     }
 
     // Print data into the file if it is open
@@ -222,8 +226,8 @@ void Deserializer::close()
         closed = true;
         for (auto it = fileStreams.begin(); it != fileStreams.end(); it++)
         {
-            (*it)->close();
-            delete *it;
+            it->second->close();
+            delete it->second;
         }
     }
 }

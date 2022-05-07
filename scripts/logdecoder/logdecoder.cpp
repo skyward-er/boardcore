@@ -64,18 +64,14 @@ bool deserializeAll()
 {
     for (int i = 0; i < 100; i++)
     {
-        char fn[10];
-        char fnext[11];
-        sprintf(fn, "log%02d", i);
-        sprintf(fnext, "log%02d.dat", i);
+        char nextName[11];
+        sprintf(nextName, "log%02d.dat", i);
         struct stat st;
-        if (stat(fnext, &st) != 0)
+        if (stat(nextName, &st) != 0)
             continue;  // File not found
         // File found
-        if (!deserialize(string(fn)))
-        {
+        if (!deserialize(string(nextName)))
             return false;
-        }
     }
     return true;
 }

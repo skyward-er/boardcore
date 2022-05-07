@@ -101,7 +101,6 @@ void registerTypes(Deserializer& ds)
     ds.registerType<VN100Data>();
     ds.registerType<BatteryVoltageSensorData>();
     ds.registerType<CurrentSensorData>();
-    ds.registerType<LoadCellData>();
     ds.registerType<MPXHZ6130AData>();
     ds.registerType<HSCMAND015PAData>();
     ds.registerType<HSCMRNN030PAData>();
