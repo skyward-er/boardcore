@@ -34,11 +34,12 @@ struct ServoData
     uint8_t channel;
     float position;
 
-    static std::string header() { return "timestamp,position\n"; }
+    static std::string header() { return "timestamp,timer,channel,position\n"; }
 
     void print(std::ostream& os) const
     {
-        os << timestamp << "," << position << "\n";
+        os << timestamp << "," << timer << "," << channel << "," << position
+           << "\n";
     }
 };
 
