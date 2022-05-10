@@ -1,5 +1,5 @@
-/* Copyright (c) 2020 Skyward Experimental Rocketry
- * Author: Luca Conterio
+/* Copyright (c) 2020-2022 Skyward Experimental Rocketry
+ * Authors: Luca Conterio, Alberto Nidasio
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -56,8 +56,15 @@ struct TimestampData
 
 struct LoadCellData
 {
-    uint64_t weightTimestamp;
-    float weight;
+    uint64_t loadTimestamp;
+    float load;
+
+    static std::string header() { return "loadTimestamp,load\n"; }
+
+    void print(std::ostream& os) const
+    {
+        os << loadTimestamp << "," << load << "\n";
+    }
 };
 
 struct TemperatureData

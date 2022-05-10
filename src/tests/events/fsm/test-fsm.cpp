@@ -33,17 +33,18 @@ int main()
 {
     FSMExample fsm;
 
-    sEventBroker.start();  // Start broker thread
-    fsm.start();           // Start FSM thread
+    EventBroker::getInstance().start();  // Start broker thread
+    fsm.start();                         // Start FSM thread
 
     // State machine starts in state S1. Post EV_A to move to S2
-    sEventBroker.post(Event{EV_A}, TOPIC_T1);
+    EventBroker::getInstance().post(Event{EV_A}, TOPIC_T1);
 
     // FSM now in State S2
-    sEventBroker.post(Event{EV_E},
-                      TOPIC_T1);  // This makes the FSM print hello world
+    EventBroker::getInstance().post(
+        Event{EV_E},
+        TOPIC_T1);  // This makes the FSM print hello world
 
-    sEventBroker.post(Event{EV_C}, TOPIC_T1);  // Transition to S3
+    EventBroker::getInstance().post(Event{EV_C}, TOPIC_T1);  // Transition to S3
 
     printf("Waiting for the FSM to transition to S1\n");
     Thread::sleep(1100);
@@ -53,7 +54,7 @@ int main()
 
     // Since previously we've been in state S3, now v == 1 and EV_A will make
     // the FSM transition to S4 instead of S1
-    sEventBroker.post(Event{EV_A}, TOPIC_T1);
+    EventBroker::getInstance().post(Event{EV_A}, TOPIC_T1);
 
     // Now the state machine is in state S4
 
@@ -68,5 +69,5 @@ int main()
     // Stop the threds, even though we will never reach this point, but just for
     // correctness ;)
     fsm.stop();
-    sEventBroker.stop();
+    EventBroker::getInstance().stop();
 }

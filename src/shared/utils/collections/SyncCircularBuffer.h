@@ -55,37 +55,28 @@ public:
     }
 
     /**
-     * Gets the first element from the buffer, without removing it
-     * @warning Remember to catch the exception!
-     * @return the element
-     * @throws range_error if buffer is empty
-     */
-    T& get() override
-    {
-        Lock<FastMutex> l(mutex);
-        return Super::get();
-    }
-
-    /**
-     * Gets an element from the buffer, without removing it
-     * Index starts at the element returned by get() or pop(): get(0) is
-     * the same as get()
+     * @brief Gets an element from the buffer, without removing it.
+     *
+     * Index starts from the oldest element in the buffer.
+     * get() returns the first element.
      *
      * @warning Remember to catch the exception!
-     * @return the element
-     * @throws range_error if buffer is empty
+     * @throw range_error if index >= count().
+     * @param i Index of the element to get, starting from the oldest.
+     * @return The element.
      */
-    T& get(unsigned int i) override
+    T& get(unsigned int i = 0) override
     {
         Lock<FastMutex> l(mutex);
         return Super::get(i);
     }
 
     /**
-     * Pops the first element in the buffer.
+     * @brief Pops the first element in the buffer.
+     *
      * @warning Remember to catch the exception!
-     * @return the element that has been popped
-     * @throws range_error if buffer is empty
+     * @throw range_error if buffer is empty.
+     * @return The element that has been popped.
      */
     const T& pop() override
     {
@@ -94,8 +85,9 @@ public:
     }
 
     /**
-     * Counts the elements in the buffer
-     * @return number of elements in the buffer
+     * @brief Counts the elements in the buffer.
+     *
+     * @return Number of elements in the buffer.
      */
     size_t count() const override
     {
@@ -116,7 +108,7 @@ public:
     }
 
     /**
-     * @brief Waits until the buffer contains at least one element
+     * @brief Waits until the buffer contains at least one element.
      */
     void waitUntilNotEmpty()
     {

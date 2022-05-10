@@ -101,7 +101,7 @@ private:
 inline uint64_t TimestampTimer::getTimestamp()
 {
 #ifdef COMPILE_FOR_HOST
-    return 0;
+    return time(NULL);
 #else
     // With a timer frequency of 250KHz, the conversion from timer ticks to
     // microseconds only take a 2 byte shift (x4)

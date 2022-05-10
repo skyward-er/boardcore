@@ -40,8 +40,8 @@ namespace Boardcore
  */
 enum ExampleEvents : uint8_t
 {
-    EV_A = EV_FIRST_SIGNAL,  // The first event must always have
-                             // value EV_FIRST_SIGNAL
+    EV_A = EV_FIRST_CUSTOM,  // The first event must always have
+                             // value EV_FIRST_CUSTOM
     EV_B,  // Values for the following event can be manually specified or
            // assigned automatically
     EV_C,
@@ -64,7 +64,7 @@ enum ExampleTopics : uint8_t
  */
 void traceState(uint8_t state, const Event& ev)
 {
-    switch (ev.code)
+    switch (ev)
     {
         case EV_ENTRY:
         {
@@ -78,7 +78,7 @@ void traceState(uint8_t state, const Event& ev)
         }
         default:
         {
-            printf("(S%d) Received event %d\n", state, ev.code);
+            printf("(S%d) Received event %d\n", state, ev);
             break;
         }
     }
@@ -110,10 +110,10 @@ public:
     FSMExample() : FSM(&FSMExample::state_S1), v(0)
     {
         // Subscribe for events posted on TOPIC_T1
-        sEventBroker.subscribe(this, TOPIC_T1);
+        EventBroker::getInstance().subscribe(this, TOPIC_T1);
     }
 
-    ~FSMExample() { sEventBroker.unsubscribe(this); }
+    ~FSMExample() { EventBroker::getInstance().unsubscribe(this); }
 
 private:
     /*
@@ -129,7 +129,7 @@ private:
         // state machine on the terminal.
         traceState(STATE_S1, ev);
 
-        switch (ev.code)
+        switch (ev)
         {
             // It's always good to add braces to every single case statement, to
             // avoid problems
@@ -169,7 +169,7 @@ private:
     {
         traceState(STATE_S2, ev);
 
-        switch (ev.code)
+        switch (ev)
         {
             case EV_ENTRY:
             {
@@ -200,7 +200,7 @@ private:
     {
         traceState(STATE_S3, ev);
 
-        switch (ev.code)
+        switch (ev)
         {
             case EV_ENTRY:
             {
@@ -208,15 +208,15 @@ private:
                 v = 1;
 
                 // Post EV_D to itself in 1 seconds
-                delayed_ev_id =
-                    sEventBroker.postDelayed<1000>(Event{EV_D}, TOPIC_T1);
+                delayed_ev_id = EventBroker::getInstance().postDelayed<1000>(
+                    Event{EV_D}, TOPIC_T1);
 
                 break;
             }
             case EV_EXIT:
             {
                 // Remove the delayed event in case it has not fired yet
-                sEventBroker.removeDelayed(delayed_ev_id);
+                EventBroker::getInstance().removeDelayed(delayed_ev_id);
                 break;
             }
             case EV_B:
@@ -243,7 +243,7 @@ private:
     {
         traceState(STATE_S4, ev);
 
-        switch (ev.code)
+        switch (ev)
         {
             case EV_ENTRY:
             {

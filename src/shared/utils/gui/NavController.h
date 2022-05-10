@@ -23,7 +23,7 @@
 #pragma once
 
 #include <diagnostic/PrintLogger.h>
-#include <utils/ButtonHandler.h>
+#include <utils/ButtonHandler/ButtonHandler.h>
 #include <utils/Debug.h>
 
 #include <vector>
@@ -66,43 +66,37 @@ public:
         }
     }
 
-    void onButtonPress(ButtonPress press)
+    void onButtonEvent(ButtonEvent press)
     {
         switch (press)
         {
-            case ButtonPress::SHORT:
-                if (vecSelectable.size() > 0)
-                {
-                    selectNext();
-                }
-                break;
-            case ButtonPress::DOWN:
+            case ButtonEvent::PRESSED:
                 if (selectedIndex < vecSelectable.size())
-                {
                     vecSelectable.at(selectedIndex)
                         ->performInteraction(Interaction::BTN_DOWN);
-                }
+                if (vecSelectable.size() > 0)
+                    selectNext();
                 break;
-            case ButtonPress::UP:
+            case ButtonEvent::SHORT_PRESS:
                 if (selectedIndex < vecSelectable.size())
-                {
                     vecSelectable.at(selectedIndex)
                         ->performInteraction(Interaction::BTN_UP);
-                }
+                if (vecSelectable.size() > 0)
+                    selectNext();
                 break;
-            case ButtonPress::LONG:
+            case ButtonEvent::LONG_PRESS:
                 if (selectedIndex < vecSelectable.size())
-                {
                     vecSelectable.at(selectedIndex)
                         ->performInteraction(Interaction::CLICK);
-                }
+                if (vecSelectable.size() > 0)
+                    selectNext();
                 break;
-            case ButtonPress::VERY_LONG:
+            case ButtonEvent::VERY_LONG_PRESS:
                 if (selectedIndex < vecSelectable.size())
-                {
                     vecSelectable.at(selectedIndex)
                         ->performInteraction(Interaction::LONG_CLICK);
-                }
+                if (vecSelectable.size() > 0)
+                    selectNext();
                 break;
             default:
                 break;

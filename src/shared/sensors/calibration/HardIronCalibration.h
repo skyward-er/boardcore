@@ -68,7 +68,7 @@ private:
 
 template <unsigned MaxSamples>
 class HardIronCalibration
-    : public AbstractCalibrationModel<MagnetometerData, HardIronCorrector>
+    : public AbstractCalibration<MagnetometerData, HardIronCorrector>
 {
 public:
     HardIronCalibration() : samples(), numSamples(0) {}

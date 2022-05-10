@@ -236,7 +236,7 @@ void ADS1118::readChannel(int8_t nextChannel, int8_t prevChannel)
     }
 
     // Convert and save the value if last written configuration is valid
-    if (prevChannel >= 0)
+    if (prevChannel > INVALID_CHANNEL && prevChannel < NUM_OF_CHANNELS)
     {
         int16_t rawValue = swapBytes16(transferData);
 

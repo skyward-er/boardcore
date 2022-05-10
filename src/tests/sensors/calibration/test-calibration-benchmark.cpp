@@ -21,9 +21,9 @@
  */
 
 /*  ACCELEROMETER calibration: please set the chosen one to 1  */
-#define BIAS_CALIBRATION_LOAD_TEST 1
-#define SIX_PARAMETER_CALIBRATION_LOAD_TEST 0
-#define TWELVE_PARAMETER_CALIBRATION_LOAD_TEST 0
+#define BIAS_CALIBRATION_LOAD_TEST
+// #define SIX_PARAMETER_CALIBRATION_LOAD_TEST
+// #define TWELVE_PARAMETER_CALIBRATION_LOAD_TEST
 
 /* Expressed in Hertz: valid values: 1 <= frequency <= 1000 */
 #define SAMPLE_FREQUENCY_LOAD_TEST 1000
@@ -35,7 +35,6 @@
 #include <sensors/calibration/BiasCalibration.h>
 #include <sensors/calibration/HardIronCalibration.h>
 #include <sensors/calibration/SixParameterCalibration.h>
-#include <sensors/calibration/SoftIronCalibration.h>
 #include <sensors/calibration/TwelveParameterCalibration.h>
 #include <utils/Debug.h>
 
@@ -47,17 +46,17 @@ volatile AccelerometerData testData;
 
 int main()
 {
-#if BIAS_CALIBRATION_LOAD_TEST
+#ifdef BIAS_CALIBRATION_LOAD_TEST
     BiasCorrector<AccelerometerData> corrector;
     TRACE("Using BIAS calibration model.\n");
 #endif
 
-#if SIX_PARAMETER_CALIBRATION_LOAD_TEST
+#ifdef SIX_PARAMETER_CALIBRATION_LOAD_TEST
     SixParameterCorrector<AccelerometerData> corrector;
     TRACE("Using SIX-PARAMETER calibration model.\n");
 #endif
 
-#if TWELVE_PARAMETER_CALIBRATION_LOAD_TEST
+#ifdef TWELVE_PARAMETER_CALIBRATION_LOAD_TEST
     TwelveParameterCorrector<AccelerometerData> corrector;
     TRACE("Using TWELVE-PARAMETER calibration model.\n");
 #endif

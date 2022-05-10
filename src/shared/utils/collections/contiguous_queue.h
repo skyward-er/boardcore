@@ -128,7 +128,7 @@ public:
     }
 
 private:
-    ContiguousQueue(const ContiguousQueue&) = delete;
+    ContiguousQueue(const ContiguousQueue&)            = delete;
     ContiguousQueue& operator=(const ContiguousQueue&) = delete;
 
     T elements[N]     = {0};

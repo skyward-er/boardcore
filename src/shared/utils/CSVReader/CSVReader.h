@@ -123,6 +123,9 @@ private:
 /**
  * @brief Iterable parser of CSV files.
  *
+ * If the CSV file has an header row, you must specify true as the second
+ * parameter in the constructor.
+ *
  * Given the file name, reads the contents as elements of type Data. Can be used
  * with CSVIterator to iterate through all the CSV rows.
  * You can retrieve all data inside the file as a vector with collect().
@@ -134,7 +137,14 @@ template <typename Data>
 class CSVParser
 {
 public:
-    CSVParser(const char* fileName) : fileStream(fileName) {}
+    CSVParser(const char* fileName, bool hasHeader = false)
+        : fileStream(fileName)
+    {
+        // If the file has the header, ignore everithing in the first line
+        if (hasHeader)
+            fileStream.ignore(std::numeric_limits<std::streamsize>::max(),
+                              '\n');
+    }
 
     ~CSVParser() { fileStream.close(); }
 

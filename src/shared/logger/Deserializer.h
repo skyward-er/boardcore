@@ -1,5 +1,5 @@
-/* Copyright (c) 2015-2018 Skyward Experimental Rocketry
- * Author: Luca Erbetta
+/* Copyright (c) 2015-2022 Skyward Experimental Rocketry
+ * Authors: Luca Erbetta, Alberto Nidasio
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -27,6 +27,7 @@
 
 #include <cstdio>
 #include <fstream>
+#include <iostream>
 #include <limits>
 #include <ostream>
 #include <string>
@@ -46,156 +47,189 @@ typedef std::numeric_limits<float> flt;
 // linter off
 
 /**
- * Class used to deserialize log files created using fedetft's logger.
+ * @brief Class used to deserialize the binary logs created using fedetft's
+ * logger into csv files.
  */
 class Deserializer
 {
 public:
-    Deserializer(std::string logfile, std::string prefix = "")
-        : prefix(prefix), logFile(logfile),
-          logFileWithExt(prefix + logFile + ".dat")
-    {
-    }
+    /**
+     * @brief Initializes the deserializer with the filename provided.
+     */
+    Deserializer(std::string fileName);
 
-    ~Deserializer()
-    {
-        if (!closed)
-        {
-            for (auto it = fileStreams.begin(); it != fileStreams.end(); it++)
-            {
-                (*it)->close();
-                delete *it;
-            }
-        }
-    }
+    ~Deserializer();
 
     /**
-     * Register a type to be deserialized, and the associated print function
+     * @brief Register a type to be deserialized.
      *
-     * @param t the object to be deserialized
-     * @param fncPrint function that prints the deserialized data on the
-     * provided output stream.
+     * Node: The object type must provide a static header function and a print
+     * function with the following prototypes:
+     * static std::string header()
+     * void print(std::ostream& os) const
+     *
+     * @tparam T The object type to be deserialized.
      */
     template <typename T>
-    bool registerType(std::function<void(T& t, std::ostream& os)> fncPrint,
-                      std::string header = "")
+    void registerType();
+
+    /**
+     * @brief Deserializes the provided file.
+     *
+     * @return Whether the deserialization was successful.
+     */
+    bool deserialize();
+
+    /**
+     * @brief Closes all the openend files.
+     */
+    void close();
+
+private:
+    /**
+     * @brief Function to print a data element into its csv file.
+     *
+     * @tparam T Type of the object.
+     * @param t Object to be printed in the file.
+     * @param path Path where to save the file.
+     * @param prefix Prefix added to the file.
+     */
+    template <typename T>
+    void printType(T& t, std::string path = "", std::string prefix = "");
+
+    bool closed = false;
+
+    std::map<std::string, std::ofstream*> fileStreams;
+    tscpp::TypePoolStream tps;
+
+    std::string logFilename;
+    std::string logFilenameWithoutExtension;
+    std::string logFolderPath;
+};
+
+Deserializer::Deserializer(std::string logFilename) : logFilename(logFilename)
+{
+    // Prepare the folder path
+    logFilenameWithoutExtension =
+        logFilename.substr(0, logFilename.find_last_of("."));
+    logFolderPath = logFilenameWithoutExtension + "/";
+}
+
+Deserializer::~Deserializer() { close(); }
+
+template <typename T>
+void Deserializer::registerType()
+{
+    std::function<void(T & t)> callback =
+        std::bind(&Deserializer::printType<T>, this, std::placeholders::_1,
+                  logFolderPath, logFilenameWithoutExtension);
+
+    tps.registerType<T>(callback);
+}
+
+template <typename T>
+void Deserializer::printType(T& t, std::string path, std::string prefix)
+{
+    std::string demangledTypeName = tscpp::demangle(typeid(T).name());
+    static std::ofstream* stream;
+
+    try
     {
-        if (closed)
-        {
-            printf("Error: Deserializer is closed.\n");
-            return false;
-        }
-
-        char cFilename[128];
-        sprintf(cFilename, "%s%s_%s.csv", prefix.c_str(), logFile.c_str(),
-                typeid(T).name());
-
-        std::string filename(cFilename);
-
-        std::ofstream* stream = new std::ofstream();
+        stream = fileStreams.at(demangledTypeName);
+    }
+    // If not already initialize, open the file and write the header
+    catch (std::out_of_range e)
+    {
+        stream               = new std::ofstream();
+        std::string filename = path + prefix + "_" + demangledTypeName + ".csv";
+        std::cout << "Creating file " + filename << std::endl;
         stream->open(filename);
 
         if (!stream->is_open())
         {
             printf("Error opening file %s.\n", filename.c_str());
             perror("Error is:");
-            delete stream;
-            return false;
+            return;
         }
 
-        fileStreams.push_back(stream);
-        stream->precision(flt::max_digits10);  // Set stream precision to
-                                               // maximum float precision
-        // Print the header
-        if (header.length() > 0)
-        {
-            *stream << header;
-        }
+        // Print the header in the file
+        *stream << T::header();
 
-        using namespace std::placeholders;  // for _1
-
-        std::function<void(T & t)> callback =
-            std::bind(fncPrint, _1, std::ref(*stream));
-
-        tps.registerType<T>(callback);
-
-        return true;
+        // Add the file to the vector such that it will be closed
+        fileStreams.emplace(demangledTypeName, stream);
     }
 
-    /**
-     * @brief Deserializes the provided file.
-     *
-     * @return Wheter the deserialization was successful.
-     */
-    bool deserialize()
+    // Print data into the file if it is open
+    if (stream->is_open())
+        t.print(std::ref(*stream));
+}
+
+bool Deserializer::deserialize()
+{
+    if (closed)
+        return false;
+
+    // Create the folder
+    mkdir(logFolderPath.c_str(), 0777);
+
+    // Move the log file into the folder
+    if (rename(logFilename.c_str(), (logFolderPath + logFilename).c_str()))
     {
-        if (closed)
-        {
-            return false;
-        }
-
-        bool success = true;
-        std::string unknownTypeName;
-
-        struct stat st;
-        if (stat(logFileWithExt.c_str(), &st) != 0)
-        {
-            printf("File %s does not exists.\n", logFileWithExt.c_str());
-            return false;
-        }
-
-        std::ifstream file(logFileWithExt);
-        // file.open;
-        tscpp::UnknownInputArchive ia(file, tps);
-        int i = 0;
-        while (success)
-        {
-            try
-            {
-                ia.unserialize();
-            }
-            catch (tscpp::TscppException& ex)
-            {
-                // Reached end of file
-                if (strcmp(ex.what(), "eof") == 0)
-                {
-                    break;
-                }
-                else if (strcmp(ex.what(), "unknown type") == 0)
-                {
-                    unknownTypeName = ex.name();
-                    success         = false;
-                    printf("Unknown type found: %s\n", unknownTypeName.c_str());
-                    break;
-                }
-            }
-        }
-        file.close();
-        return success;
+        std::cout << logFilename + " does not exists." << std::endl;
+        return false;
     }
 
-    void close()
+    // Open the log file
+    std::ifstream file(logFolderPath + logFilename);
+
+    // Check if the file exists
+    if (!file)
     {
-        if (!closed)
+        std::cout << logFolderPath + logFilename + " does not exists."
+                  << std::endl;
+        return false;
+    }
+
+    tscpp::UnknownInputArchive inputArchive(file, tps);
+    while (true)
+    {
+        try
         {
-            closed = true;
-            for (auto it = fileStreams.begin(); it != fileStreams.end(); it++)
+            inputArchive.unserialize();
+        }
+        catch (tscpp::TscppException& ex)
+        {
+            // Reached end of file
+            if (strcmp(ex.what(), "eof") == 0)
             {
-                (*it)->close();
-                delete *it;
+                return true;
+            }
+            // Unknown type found
+            else if (strcmp(ex.what(), "unknown type") == 0)
+            {
+                std::string unknownTypeName = ex.name();
+                std::cout << "Unknown type found: " << unknownTypeName
+                          << std::endl;
+                return false;
             }
         }
     }
 
-private:
-    bool closed = false;
+    file.close();
+    return true;
+}
 
-    std::vector<std::ofstream*> fileStreams;
-    tscpp::TypePoolStream tps;
-
-    std::string prefix;
-    std::string logFile;
-    std::string logFileWithExt;
-};
+void Deserializer::close()
+{
+    if (!closed)
+    {
+        closed = true;
+        for (auto it = fileStreams.begin(); it != fileStreams.end(); it++)
+        {
+            it->second->close();
+            delete it->second;
+        }
+    }
+}
 
 }  // namespace Boardcore

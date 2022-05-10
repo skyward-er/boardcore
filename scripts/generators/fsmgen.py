@@ -59,7 +59,7 @@ STATE_FUNCTION_CASE_TEMPLATE = ' '*8 + 'case {event}:\n' + \
     ' '*12 + 'break;\n' + \
     ' '*8 + '}}'
 UTILITY_FUNCTION_DECLARATION_TEMPLATE = 'void {function_name}();'
-TOPICS_SUBSCIPTION_TEMPLATE = ' '*4 + 'sEventBroker.subscribe(this, {topic});'
+TOPICS_SUBSCIPTION_TEMPLATE = ' '*4 + 'EventBroker::getInstance().subscribe(this, {topic});'
 UTILITY_FUNCTION_DEFINITION_TEMPLATE = 'void {state_machine_name}Controller::{function_name}()\n{{\n    // ...\n}}'
 STATE_FUNCTION_CASE_TRANSITION_TO_TARGET_TEMPLATE = 'transition(&{state_machine_name}Controller::state_{state_name});'
 TEST_CASE_METHOD_TEMPLATE = 'TEST_CASE_METHOD({state_machine_name}ControllerFixture, "Testing transitions from {state}")\n' + \

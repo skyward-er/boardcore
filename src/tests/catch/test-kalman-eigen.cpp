@@ -26,12 +26,12 @@
 
 #define EIGEN_RUNTIME_NO_MALLOC
 
-#include <algorithms/kalman/KalmanEigen.h>
+#include <algorithms/Kalman/Kalman.h>
 
 #include <catch2/catch.hpp>
 #include <iostream>
 
-#include "../kalman/test-kalman-data.h"
+#include "../algorithms/Kalman/test-kalman-data.h"
 
 using namespace Boardcore;
 using namespace Eigen;
@@ -61,10 +61,10 @@ static const Matrix<float, OUTPUTS_DIM, OUTPUTS_DIM> R{10};
 // State vector
 static const Matrix<float, STATES_DIM, 1> x0(INPUT[0], 0.0, 0.0);
 
-static const KalmanEigen<float, STATES_DIM, OUTPUTS_DIM>::KalmanConfig
+static const Kalman<float, STATES_DIM, OUTPUTS_DIM>::KalmanConfig
 getKalmanConfig()
 {
-    KalmanEigen<float, STATES_DIM, OUTPUTS_DIM>::KalmanConfig config;
+    Kalman<float, STATES_DIM, OUTPUTS_DIM>::KalmanConfig config;
     config.F = F;
     config.H = H;
     config.Q = Q;
@@ -77,7 +77,7 @@ getKalmanConfig()
 
 TEST_CASE("Update test")
 {
-    KalmanEigen<float, STATES_DIM, OUTPUTS_DIM> filter(getKalmanConfig());
+    Kalman<float, STATES_DIM, OUTPUTS_DIM> filter(getKalmanConfig());
 
     Matrix<float, OUTPUTS_DIM, 1> y{};
     float lastTime = TIME[0];

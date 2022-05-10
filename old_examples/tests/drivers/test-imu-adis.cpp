@@ -25,9 +25,9 @@
 #include <drivers/BusTemplate.h>
 #include <drivers/spi/SensorSpi.h>
 #include <interfaces-impl/hwmapping.h>
-#include <math/Stats.h>
 #include <sensors/ADIS16405/ADIS16405.h>
 #include <sensors/SensorSampler.h>
+#include <utils/Stats/Stats.h>
 
 using namespace miosix;
 using namespace miosix::interfaces;

@@ -1,5 +1,5 @@
-/* Copyright (c) 2021 Skyward Experimental Rocketry
- * Author: Matteo Pignataro
+/* Copyright (c) 2022 Skyward Experimental Rocketry
+ * Author: Alberto Nidasio
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -27,15 +27,19 @@
 using namespace miosix;
 using namespace Boardcore;
 
-GpioPin sckPin  = GpioPin(GPIOE_BASE, 2);
-GpioPin misoPin = GpioPin(GPIOE_BASE, 5);
-GpioPin csPin   = GpioPin(GPIOE_BASE, 4);
+GpioPin sckPin  = GpioPin(GPIOF_BASE, 7);
+GpioPin misoPin = GpioPin(GPIOF_BASE, 8);
+GpioPin csPin   = GpioPin(GPIOD_BASE, 13);
+
+GpioPin csMems = GpioPin(GPIOC_BASE, 1);
 
 void initBoard()
 {
     // Setup gpio pins
     csPin.mode(Mode::OUTPUT);
     csPin.high();
+    csMems.mode(Mode::OUTPUT);
+    csMems.high();
     sckPin.mode(Mode::ALTERNATE);
     sckPin.alternateFunction(5);
     misoPin.mode(Mode::ALTERNATE);
@@ -47,7 +51,7 @@ int main()
     // Enable SPI clock and set gpios
     initBoard();
 
-    SPIBus spiBus(SPI4);
+    SPIBus spiBus(SPI5);
     MAX31855 sensor{spiBus, csPin};
 
     printf("Starting process verification!\n");
@@ -62,7 +66,8 @@ int main()
         sensor.sample();
         TemperatureData sample = sensor.getLastSample();
 
-        printf("%.2f\n", sample.temperature);
+        printf("[%.2f] %.2f\n", sample.temperatureTimestamp / 1e6,
+               sample.temperature);
 
         Thread::sleep(500);
     }

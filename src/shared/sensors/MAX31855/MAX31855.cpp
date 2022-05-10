@@ -59,7 +59,7 @@ bool MAX31855::checkConnection()
     if ((sample[1] & 0x7) != 0)
     {
         lastError = SensorErrors::SELF_TEST_FAIL;
-        LOG_ERR(logger, "Self test failed, the termocouple is not connected");
+        LOG_ERR(logger, "Self test failed, the thermocouple is not connected");
         return false;
     }
 

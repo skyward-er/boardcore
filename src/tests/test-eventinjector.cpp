@@ -37,7 +37,7 @@ int main()
     EventInjector injector;
     injector.start();
 
-    EventCounter counter(sEventBroker);
+    EventCounter counter(EventBroker::getInstance());
     counter.subscribe({topic});
 
     for (;;)

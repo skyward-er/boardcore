@@ -97,8 +97,8 @@ private:
 
 template <typename T, unsigned MaxSamples>
 class TwelveParameterCalibration
-    : public AbstractCalibrationModel<T, TwelveParameterCorrector<T>,
-                                      AxisOrientation>
+    : public AbstractCalibration<T, TwelveParameterCorrector<T>,
+                                 AxisOrientation>
 {
 public:
     TwelveParameterCalibration() : samples(), numSamples(0), ref({1, 0, 0}) {}

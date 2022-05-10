@@ -35,6 +35,7 @@ enum ThreadId : uint8_t
     THID_MAV_RECEIVER,
     THID_MAV_SENDER,
     THID_XBEE,
+    THID_GPS,
     THID_EVT_BROKER,
     THID_LOGGER_PACK,
     THID_LOGGER_WRITE,

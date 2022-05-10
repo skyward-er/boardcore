@@ -28,15 +28,9 @@
 namespace Boardcore
 {
 
-MS5803::MS5803(SPISlave spiSlave_, uint16_t temperatureDivider_)
-    : spiSlave(spiSlave_), temperatureDivider(temperatureDivider_)
-{
-}
-
-MS5803::MS5803(SPIBusInterface& spiBus_, miosix::GpioPin cs_,
-               SPIBusConfig spiConfig_, uint16_t temperatureDivider_)
-    : spiSlave(spiBus_, cs_, spiConfig_),
-      temperatureDivider(temperatureDivider_)
+MS5803::MS5803(SPIBusInterface& spiBus, miosix::GpioPin cs,
+               SPIBusConfig spiConfig, uint16_t temperatureDivider)
+    : spiSlave(spiBus, cs, spiConfig), temperatureDivider(temperatureDivider)
 {
 }
 

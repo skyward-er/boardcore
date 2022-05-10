@@ -25,10 +25,10 @@
 
 #include <drivers/spi/SPIDriver.h>
 #include <drivers/timer/TimestampTimer.h>
-#include <math/Vec3.h>
 #include <miosix.h>
 #include <sensors/Sensor.h>
 
+#include <Eigen/Core>
 #include <array>
 
 #include "L3GD20Data.h"
@@ -220,9 +220,8 @@ public:
             int16_t y = buf[2] | buf[3] << 8;
             int16_t z = buf[4] | buf[5] << 8;
 
-            Vec3 rads   = toRadiansPerSecond(x, y, z);
-            lastFifo[0] = {lastSampleTimestamp, rads.getX(), rads.getY(),
-                           rads.getZ()};
+            Eigen::Vector3f rads = toRadiansPerSecond(x, y, z);
+            lastFifo[0] = {lastSampleTimestamp, rads(0), rads(1), rads(2)};
         }
 
         else  // FIFO is enabled
@@ -243,7 +242,7 @@ public:
             {
                 bool rmv;
                 // Check for duplicates: there seems to be a bug where the
-                // sensor occasionaly shifts out the same sample two times in a
+                // sensor occasionally shifts out the same sample two times in a
                 // row: discard one
                 if (i < fifoLevel - 1)
                 {
@@ -276,7 +275,7 @@ public:
                 // Ignoring possible duplicates, the timestamp of the ith sample
                 // in the fifo is:
                 // ts(i) = ts(fifoWatermark) + (i - fifoWatermark)*dt;
-                Vec3 rads =
+                Eigen::Vector3f rads =
                     toRadiansPerSecond(buf[i * 6] | buf[i * 6 + 1] << 8,
                                        buf[i * 6 + 2] | buf[i * 6 + 3] << 8,
                                        buf[i * 6 + 4] | buf[i * 6 + 5] << 8);
@@ -284,7 +283,7 @@ public:
                 lastFifo[i - duplicates] = L3GD20Data{
                     lastInterruptTimestamp +
                         ((int)i - (int)fifoWatermark - (int)duplicates) * dt,
-                    rads.getX(), rads.getY(), rads.getZ()};
+                    rads(0), rads(1), rads(2)};
             }
 
             lastFifoLevel = fifoLevel - duplicates;
@@ -294,9 +293,10 @@ public:
     }
 
 private:
-    Vec3 toRadiansPerSecond(int16_t x, int16_t y, int16_t z)
+    Eigen::Vector3f toRadiansPerSecond(int16_t x, int16_t y, int16_t z)
     {
-        return Vec3(x * sensitivity, y * sensitivity, z * sensitivity);
+        return Eigen::Vector3f(x * sensitivity, y * sensitivity,
+                               z * sensitivity);
     }
 
     static constexpr float SENSITIVITY_250  = 0.00875f;

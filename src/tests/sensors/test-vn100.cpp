@@ -29,18 +29,10 @@ using namespace Boardcore;
 
 int main()
 {
-    GpioPin tx(GPIOB_BASE, 6);
-    GpioPin rx(GPIOB_BASE, 7);
     VN100Data sample;
     string sampleRaw;
-    VN100 sensor{1, VN100::BaudRates::Baud_921600,
+    VN100 sensor{USART1, USARTInterface::Baudrate::B921600,
                  VN100::CRCOptions::CRC_ENABLE_16};
-
-    tx.mode(Mode::ALTERNATE);
-    rx.mode(Mode::ALTERNATE);
-
-    tx.alternateFunction(7);
-    rx.alternateFunction(7);
 
     // Let the sensor start up
     Thread::sleep(1000);
@@ -64,18 +56,19 @@ int main()
     // Sample and print 100 samples
     for (int i = 0; i < 100; i++)
     {
-        /*sensor.sample();
+        sensor.sample();
         sample = sensor.getLastSample();
-        //printf("%" PRIu64 ", %.3f, %.3f, %.3f\n",
-        sample.accelerationTimestamp, sample.accelerationX,
-        sample.accelerationY, sample.accelerationZ);
-        //printf("%.3f, %.3f, %.3f\n", sample.angularVelocityX,
-        sample.angularVelocityY, sample.angularVelocityZ);*/
+        printf("acc: %" PRIu64 ", %.3f, %.3f, %.3f\n",
+               sample.accelerationTimestamp, sample.accelerationX,
+               sample.accelerationY, sample.accelerationZ);
+        printf("ang: %.3f, %.3f, %.3f\n", sample.angularVelocityX,
+               sample.angularVelocityY, sample.angularVelocityZ);
 
         sensor.sampleRaw();
         sampleRaw = sensor.getLastRawSample();
         printf("%s\n", sampleRaw.c_str());
         // Thread::sleep(100);
+        printf("\n");
     }
 
     sensor.closeAndReset();

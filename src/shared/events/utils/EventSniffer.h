@@ -94,10 +94,7 @@ private:
             parent.broker.subscribe(this, topic);
         }
 
-        void postEvent(const Event& ev)
-        {
-            parent.onEventReceived(ev.code, topic);
-        }
+        void postEvent(const Event& ev) { parent.onEventReceived(ev, topic); }
 
         ~Sniffer() { parent.broker.unsubscribe(this); }
 

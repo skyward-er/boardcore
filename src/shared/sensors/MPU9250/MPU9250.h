@@ -189,14 +189,16 @@ public:
     /**
      * @brief Instantiates the driver
      *
-     * @param highSpeedSpiClockDivider_ Clocl diver for 20MHz SPI communication
+     * @param highSpeedSpiClockDivider Clocl diver for 20MHz SPI communication
      * with the device
      */
     explicit MPU9250(
-        SPISlave spiSlave_, unsigned short samplingRate_ = 100,
-        MPU9250GyroFSR gyroFsr_                     = GYRO_FSR_250DPS,
-        MPU9250AccelFSR accelFsr_                   = ACCEL_FSR_2G,
-        SPI::ClockDivider highSpeedSpiClockDivider_ = SPI::ClockDivider::DIV_4);
+        SPIBusInterface& bus, miosix::GpioPin cs,
+        SPIBusConfig config                        = getDefaultSPIConfig(),
+        unsigned short samplingRate                = 100,
+        MPU9250GyroFSR gyroFsr                     = GYRO_FSR_250DPS,
+        MPU9250AccelFSR accelFsr                   = ACCEL_FSR_2G,
+        SPI::ClockDivider highSpeedSpiClockDivider = SPI::ClockDivider::DIV_4);
 
     /**
      * @brief Constructs the default config for SPI Bus.

@@ -1,24 +1,24 @@
-[submodule "libs/miosix-kernel"]
-	path = libs/miosix-kernel
-	url = ../miosix-kernel.git
-[submodule "libs/tscpp"]
-	path = libs/tscpp
-	url = ../third-party/tscpp.git
-[submodule "libs/mavlink_skyward_lib"]
-	path = libs/mavlink_skyward_lib
-	url = ../mavlink_gs/mavlink_skyward_lib.git
-[submodule "libs/eigen"]
-	path = libs/eigen
-	url = ../third-party/eigen.git
-[submodule "libs/mxgui"]
-	path = libs/mxgui
-	url = ../third-party/mxgui.git
-[submodule "libs/fmt"]
-	path = libs/fmt
-	url = ../third-party/fmt.git
-[submodule "libs/Catch2"]
+[submodule "Catch2"]
 	path = libs/Catch2
 	url = ../third-party/Catch2.git
-[submodule "libs/miosix-host"]
+[submodule "Eigen"]
+	path = libs/eigen
+	url = ../third-party/eigen.git
+[submodule "Modern formatting library"]
+	path = libs/fmt
+	url = ../third-party/fmt.git
+[submodule "MAVLink Skyward library"]
+	path = libs/mavlink-skyward-lib
+	url = ../mavlink/mavlink-skyward-lib
+[submodule "Miosix Host"]
 	path = libs/miosix-host
 	url = ../miosix-host.git
+[submodule "Miosix Kernel"]
+	path = libs/miosix-kernel
+	url = ../miosix-kernel.git
+[submodule "Miosix GUI library"]
+	path = libs/mxgui
+	url = ../third-party/mxgui.git
+[submodule "Trivial serialization for C++"]
+	path = libs/tscpp
+	url = ../third-party/tscpp.git

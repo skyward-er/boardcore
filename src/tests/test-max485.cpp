@@ -37,10 +37,10 @@
  *
  *  WIRINGS:
  *  Max485 n1   |   stm32f407vg_discovery ser 1
- *      DI      |       PA9
+ *      DI      |       PA9 / PB6
  *      DE      |       PC9
  *      RE      |       PC8
- *      RO      |       PA10
+ *      RO      |       PA10 / PB7
  *      VCC     |       3.3/5 V
  *      GND     |       GND
  *
@@ -56,8 +56,6 @@
  *      A       |       A
  *      B       |       B
  *
- * WARNINGS:
- * - the baudrate has to be extremely low. "guaranteed" at 2400
  */
 
 #include "string.h"
@@ -77,7 +75,8 @@ using ctrlPin2_s2 = miosix::Gpio<GPIOC_BASE, 2>;
 
 char msg[64] = "Testing communication :D";
 char rcv[64];
-int baudrates[6] = {2400, 3600, 4800, 9600, 19200, 115200};
+int baudrates[] = {2400,   3600,   4800,   9600,  19200,
+                   115200, 230400, 460800, 921600};
 
 // function for the thread that has to read from serial
 void readSer(SerialInterface *s)
@@ -132,7 +131,8 @@ int main()
     }
 
     printf("*** SERIAL 3 WORKING!\n");
-    for (int iBaud = 0; iBaud < 6; iBaud++)
+    for (unsigned int iBaud = 0;
+         iBaud < sizeof(baudrates) / sizeof(baudrates[0]); iBaud++)
     {
         Thread::sleep(1000);
 

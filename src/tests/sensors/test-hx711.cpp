@@ -1,5 +1,5 @@
-/* Copyright (c) 2021 Skyward Experimental Rocketry
- * Author: Matteo Pignataro
+/* Copyright (c) 2022 Skyward Experimental Rocketry
+ * Author: Alberto Nidasio
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -54,19 +54,19 @@ int main()
     for (int i = 0; i < 100; i++)
     {
         sensor.sample();
-        average += sensor.getLastSample().weight;
+        average += sensor.getLastSample().load;
         Thread::sleep(12);
     }
     average /= 100;
-    sensor.setZero(-average);
+    sensor.setOffset(average);
     sensor.setScale(214000);
 
     while (true)
     {
         sensor.sample();
 
-        printf("[%.1f] %f\n", sensor.getLastSample().weightTimestamp / 1e6,
-               sensor.getLastSample().weight);
+        printf("[%.1f] %f\n", sensor.getLastSample().loadTimestamp / 1e6,
+               sensor.getLastSample().load);
 
         Thread::sleep(10);
     }

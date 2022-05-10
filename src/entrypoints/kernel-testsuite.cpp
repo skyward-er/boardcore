@@ -426,8 +426,8 @@ void process_test_file_concurrency()
             fail("Wrong data from file 2");
     }
 
-    fclose(f1);  // cppcheck-suppress nullPointerRedundantCheck
-    fclose(f2);  // cppcheck-suppress nullPointerRedundantCheck
+    fclose(f1);
+    fclose(f2);
 
     pass();
 }
@@ -584,7 +584,7 @@ void syscall_test_files()
             fail("Open with O_RDWR should have failed, the file doesn't exist");
             break;
         case 2:
-            fail("Cannot craete new file");
+            fail("Cannot create new file");
             break;
         case 3:
             fail("file descriptor not valid");
@@ -596,7 +596,7 @@ void syscall_test_files()
             fail("read has read the wrong amount of data");
             break;
         case 6:
-            fail("readed data doesn't match the written one");
+            fail("read data doesn't match the written one");
             break;
         case 7:
             fail("close hasn't returned 0");
@@ -605,10 +605,10 @@ void syscall_test_files()
             fail("open with O_RDWR failed, but the file exists");
             break;
         case 9:
-            fail("read has return the wrogn amount of data");
+            fail("read has return the wrong amount of data");
             break;
         case 10:
-            fail("readed data doesn't match the written one");
+            fail("read data doesn't match the written one");
             break;
         case 11:
             fail("close hasn't returned 0");
@@ -2133,7 +2133,7 @@ static void test_9()
 // Test 10
 //
 /*
-tests exception propagation throug entry point of a thread
+tests exception propagation through entry point of a thread
 */
 
 #ifndef __NO_EXCEPTIONS
@@ -4171,7 +4171,7 @@ static void test_24()
     checkAtomicOps<Derived1, Derived1>();
     checkAtomicOps<Derived2, Derived2>();
 
-    // atomic_load(), atomic_store(), with polimorphism
+    // atomic_load(), atomic_store(), with polymorphism
     checkAtomicOps<Base0, Derived0>();
     checkAtomicOps<Middle1, Derived1>();
     checkAtomicOps<Middle1, Derived2>();
@@ -4530,6 +4530,7 @@ static void fs_test_1()
     i = 0;
     for (;;)
     {
+        // cppcheck-suppress nullPointerRedundantCheck
         j = fread(buf, 1, 1024, f);
         if (j == 0)
             break;
@@ -4549,6 +4550,7 @@ static void fs_test_1()
     i = 0;
     for (;;)
     {
+        // cppcheck-suppress nullPointerRedundantCheck
         j = fread(buf, 1, 1024, f);
         if (j == 0)
             break;
@@ -4568,6 +4570,7 @@ static void fs_test_1()
     i = 0;
     for (;;)
     {
+        // cppcheck-suppress nullPointerRedundantCheck
         j = fread(buf, 1, 1024, f);
         if (j == 0)
             break;
@@ -4592,7 +4595,10 @@ static void fs_test_1()
     if ((f = fopen("/sd/testdir/file_4.txt", "a")) == NULL)
         fail("can't open a file_4.txt");
     for (i = 2; i <= 128; i++)
+    {
+        // cppcheck-suppress nullPointerRedundantCheck
         fprintf(f, "Hello world line %03d\n", i);
+    }
     if (fclose(f) != 0)  // cppcheck-suppress nullPointerRedundantCheck
         fail("Can't close a file_4.txt");
     // Reading to check (only first 2 lines)
@@ -4603,11 +4609,10 @@ static void fs_test_1()
     fgets(line, sizeof(line), f);
     if (strcmp(line, "Hello world line 001\n"))
         fail("file_4.txt line 1 error");
-    // cppcheck-suppress nullPointerRedundantCheck
     fgets(line, sizeof(line), f);
     if (strcmp(line, "Hello world line 002\n"))
         fail("file_4.txt line 2 error");
-    if (fclose(f) != 0)  // cppcheck-suppress nullPointerRedundantCheck
+    if (fclose(f) != 0)
         fail("Can't close r file_4.txt");
     // Test fseek and ftell. When reaching this point file_4.txt contains:
     // Hello world line 001\n
@@ -4617,10 +4622,8 @@ static void fs_test_1()
     if ((f = fopen("/sd/testdir/file_4.txt", "r")) == NULL)
         fail("can't open r2 file_4.txt");
     if (ftell(f) != 0)  // cppcheck-suppress nullPointerRedundantCheck
-        fail("File opend but cursor not @ address 0");
-    // cppcheck-suppress nullPointerRedundantCheck
+        fail("File opened but cursor not @ address 0");
     fseek(f, -4, SEEK_END);  // Seek to 128\n
-                             // cppcheck-suppress nullPointerRedundantCheck
     if ((fgetc(f) != '1') | (fgetc(f) != '2') | (fgetc(f) != '8'))
         fail("fgetc SEEK_END");
     if (ftell(f) != (21 * 128 - 1))
@@ -4628,31 +4631,25 @@ static void fs_test_1()
         iprintf("ftell=%ld\n", ftell(f));
         fail("ftell() 1");
     }
-    // cppcheck-suppress nullPointerRedundantCheck
     fseek(f, 21 + 17, SEEK_SET);  // Seek to 002\n
-    if ((fgetc(f) != '0') |       // cppcheck-suppress nullPointerRedundantCheck
-        (fgetc(f) != '0') |       // cppcheck-suppress nullPointerRedundantCheck
-        (fgetc(f) != '2') |       // cppcheck-suppress nullPointerRedundantCheck
-        (fgetc(f) != '\n'))       // cppcheck-suppress nullPointerRedundantCheck
+    if ((fgetc(f) != '0') | (fgetc(f) != '0') | (fgetc(f) != '2') |
+        (fgetc(f) != '\n'))
         fail("fgetc SEEK_SET");
-    if (ftell(f) != (21 * 2))  // cppcheck-suppress nullPointerRedundantCheck
+    if (ftell(f) != (21 * 2))
     {
         iprintf("ftell=%ld\n", ftell(f));
         fail("ftell() 2");
     }
-    // cppcheck-suppress nullPointerRedundantCheck
     fseek(f, 21 * 50 + 17, SEEK_CUR);  // Seek to 053\n
-    if ((fgetc(f) != '0') |  // cppcheck-suppress nullPointerRedundantCheck
-        (fgetc(f) != '5') |  // cppcheck-suppress nullPointerRedundantCheck
-        (fgetc(f) != '3') |  // cppcheck-suppress nullPointerRedundantCheck
-        (fgetc(f) != '\n'))  // cppcheck-suppress nullPointerRedundantCheck
+    if ((fgetc(f) != '0') | (fgetc(f) != '5') | (fgetc(f) != '3') |
+        (fgetc(f) != '\n'))
         fail("fgetc SEEK_CUR");
-    if (ftell(f) != (21 * 53))  // cppcheck-suppress nullPointerRedundantCheck
+    if (ftell(f) != (21 * 53))
     {
         iprintf("ftell=%ld\n", ftell(f));
         fail("ftell() 2");
     }
-    if (fclose(f) != 0)  // cppcheck-suppress nullPointerRedundantCheck
+    if (fclose(f) != 0)
         fail("Can't close r2 file_4.txt");
     // Testing remove()
     if ((f = fopen("/sd/testdir/deleteme.txt", "w")) == NULL)
@@ -4745,7 +4742,7 @@ static void checkInDir(const std::string &d, bool createFile)
     fgets(s, sizeof(s), f);  // cppcheck-suppress nullPointerRedundantCheck
     if (strcmp(s, teststr))
         fail("file content after rename");
-    fclose(f);  // cppcheck-suppress nullPointerRedundantCheck
+    fclose(f);
     if (unlink((d + filename2).c_str()))
         fail("unlink 3");
     if (checkDirContent(d, 0, filename2) == false)
@@ -4794,10 +4791,11 @@ static void fs_test_3()
         for (unsigned int j = 0; j < size; j++)
             buf[j] = rand() & 0xff;
         checksum ^= crc16(buf, size);
+        // cppcheck-suppress nullPointerRedundantCheck
         if (fwrite(buf, 1, size, f) != size)
             fail("write");
     }
-    if (fclose(f) != 0)  // cppcheck-suppress nullPointerRedundantCheck
+    if (fclose(f) != 0)
         fail("close 1");
 
     if ((f = fopen(name, "r")) == NULL)
@@ -4807,11 +4805,12 @@ static void fs_test_3()
     for (unsigned int i = 0; i < numBlocks; i++)
     {
         memset(buf, 0, size);
+        // cppcheck-suppress nullPointerRedundantCheck
         if (fread(buf, 1, size, f) != size)
             fail("read");
         outChecksum ^= crc16(buf, size);
     }
-    if (fclose(f) != 0)  // cppcheck-suppress nullPointerRedundantCheck
+    if (fclose(f) != 0)
         fail("close 2");
     delete[] buf;
 
@@ -5013,6 +5012,7 @@ const int nThreads = 8;
 bool flags[nThreads];
 
 static int throwable(std::vector<int> &v) __attribute__((noinline));
+// cppcheck-suppress containerOutOfBounds
 static int throwable(std::vector<int> &v) { return v.at(10); }
 
 static void test(void *argv)
@@ -5168,7 +5168,7 @@ static void benchmark_2()
 //
 /*
 tests:
-Fisesystem write speed and latency
+File system write speed and latency
 makes a 1MB file and measures time required to read/write it.
 */
 
@@ -5259,7 +5259,7 @@ quit:
 //
 /*
 tests:
-Mutex lonk/unlock time
+Mutex lock/unlock time
 */
 
 volatile bool b4_end = false;

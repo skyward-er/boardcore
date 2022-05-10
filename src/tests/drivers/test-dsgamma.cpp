@@ -170,8 +170,10 @@ int main()
         }
 
         printf("Bytes received: %d\nDropped: %d,Time:%d ms\n", index, lostBytes,
+               // cppcheck-suppress uninitvar
                (int)(endT - startT));
         printf("Speed: %.3f KB/s\n",
+               // cppcheck-suppress uninitvar
                index / ((endT - startT) / 1024.0f) / 1024.0f);
         /*  for (int i = 0; i < index; i++)
           {

@@ -39,7 +39,7 @@ public:
     int len();
 
 private:
-    SynchronizedQueue(const SynchronizedQueue&) = delete;
+    SynchronizedQueue(const SynchronizedQueue&)            = delete;
     SynchronizedQueue& operator=(const SynchronizedQueue&) = delete;
     std::list<T> queue;
     miosix::Mutex mMutex;

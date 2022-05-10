@@ -27,38 +27,27 @@
 namespace Boardcore
 {
 
-enum EventSignal : uint8_t
+typedef uint8_t Event;
+
+enum BasicEvent : Event
 {
     EV_ENTRY        = 0,
     EV_EXIT         = 1,
     EV_EMPTY        = 2,
     EV_INIT         = 3,
-    EV_FIRST_SIGNAL = 4
+    EV_FIRST_CUSTOM = 4
 };
 
 /**
- * 	Example definiton of custom signals:
-
-        enum CustomSignal : uint8_t
-        {
-                SIG_ONE = SG_FIRST_SIGNAL,
-                SIG_TWO,
-                SIG_THREE,
-                SIG_FOUR
-        };
-
+ * Example definition of custom events:
+ *
+ * enum CustomEvent : Event
+ * {
+ *     EV_ONE = EV_FIRST_CUSTOM,
+ *     EV_TWO,
+ *     EV_THREE.
+ *     EV_FOUR
+ * }
  */
-
-struct Event
-{
-    uint8_t code;
-};
-
-/* Example of extended Event structure
-
-        struct ExtendedEvent : public Event{
-                uint32_t customMember;
-        };
-*/
 
 }  // namespace Boardcore

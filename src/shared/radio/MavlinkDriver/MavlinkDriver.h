@@ -250,7 +250,8 @@ bool MavlinkDriver<PktLength, OutQueueSize>::enqueueMsg(
     const mavlink_message_t& msg)
 {
     // Convert mavlink message to char array
-    uint8_t msgtempBuf[PktLength];
+    // Use fixed buffer size to avoid overflows
+    uint8_t msgtempBuf[256];
     int msgLen = mavlink_msg_to_send_buffer(msgtempBuf, &msg);
 
     // Append message to the queue
@@ -347,11 +348,12 @@ void MavlinkDriver<PktLength, OutQueueSize>::runSender()
             // Get the first packet in the queue, without removing it
             pkt = outQueue.get();
 
-            uint64_t age = (uint64_t)miosix::getTick() - pkt.timestamp();
             // If the packet is ready or too old, send it
+            uint64_t age = TimestampTimer::getInstance().getTimestamp() -
+                           pkt.getTimestamp();
             if (pkt.isReady() || age >= outBufferMaxAge)
             {
-                outQueue.pop();  // remove from queue
+                outQueue.pop();  //  Remove the packet from queue
 
                 LOG_DEBUG(logger, "Sending packet. Size: {} (age: {})",
                           pkt.size(), age);

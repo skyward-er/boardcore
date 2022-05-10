@@ -60,27 +60,22 @@ public:
     {
         Lock<FastMutex> l(mutex);
 
-        ++mapCounter[ev.code];
+        ++mapCounter[ev];
         ++totalCount;
 
-        lastEvent = ev.code;
+        lastEvent = ev;
     }
 
     /**
-     * @brief Returns the number of times a specific event has been received
+     * @brief Returns the number of times a specific event has been received.
      */
-    unsigned int getCount(const Event& ev) { return getCount(ev.code); }
-
-    /**
-     * @brief Returns the number of times a specific event has been received
-     */
-    unsigned int getCount(uint8_t evSig)
+    unsigned int getCount(const Event& ev)
     {
         Lock<FastMutex> l(mutex);
 
-        if (mapCounter.count(evSig) == 1)
+        if (mapCounter.count(ev) == 1)
         {
-            return mapCounter.at(evSig);
+            return mapCounter.at(ev);
         }
 
         return 0;
@@ -92,7 +87,7 @@ public:
     unsigned int getTotalCount() { return totalCount; }
 
     /**
-     * @brief Returns the signature of the last event received (ev.code)
+     * @brief Returns the signature of the last event received (ev)
      */
     uint8_t getLastEvent() { return lastEvent; }
 

@@ -25,7 +25,7 @@
 #include <sensors/Sensor.h>
 #include <sensors/SensorManager.h>
 #include <utils/Debug.h>
-#include <utils/testutils/TestSensor.h>
+#include <utils/TestUtils/TestSensor.h>
 
 #include <functional>
 #include <iostream>

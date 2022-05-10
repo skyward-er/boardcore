@@ -38,10 +38,10 @@ public:
     SPISlaveBus(SPIType* spi, SPISignalGenerator signalGenerator);
 
     ///< Delete copy/move contructors/operators.
-    SPISlaveBus(const SPISlaveBus&) = delete;
+    SPISlaveBus(const SPISlaveBus&)            = delete;
     SPISlaveBus& operator=(const SPISlaveBus&) = delete;
     SPISlaveBus(SPISlaveBus&&)                 = delete;
-    SPISlaveBus& operator=(SPISlaveBus&&) = delete;
+    SPISlaveBus& operator=(SPISlaveBus&&)      = delete;
 
     /**
      * @brief Configures and enables the bus with the provided configuration.

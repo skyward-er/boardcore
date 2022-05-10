@@ -24,7 +24,7 @@
 #include <drivers/timer/TimestampTimer.h>
 #include <interfaces-impl/gpio_impl.h>
 #include <miosix.h>
-#include <sensors/analog/current/CurrentSensor.h>
+#include <sensors/analog/CurrentSensor.h>
 #include <utils/Debug.h>
 
 using namespace miosix;

@@ -24,7 +24,8 @@
 #include <drivers/timer/TimestampTimer.h>
 #include <sensors/BMX160/BMX160.h>
 #include <sensors/BMX160/BMX160WithCorrection.h>
-#include <sensors/calibration/SoftIronCalibration.h>
+#include <sensors/calibration/AxisOrientation.h>
+#include <sensors/calibration/SoftAndHardIronCalibration/SoftAndHardIronCalibration.h>
 #include <utils/Debug.h>
 
 #include <fstream>
@@ -41,9 +42,9 @@ constexpr int ACC_CALIBRATION_SLEEP_TIME     = 25;  // [us]
 constexpr int ACC_CALIBRATION_N_ORIENTATIONS = 6;
 
 constexpr int MAG_CALIBRATION_SAMPLES  = 500;
-constexpr int MAG_CALIBRATION_DURAITON = 60;  // [s]
+constexpr int MAG_CALIBRATION_DURATION = 60;  // [s]
 constexpr int MAG_CALIBRATION_SLEEP_TIME =
-    MAG_CALIBRATION_DURAITON * 1000 / MAG_CALIBRATION_SAMPLES;  // [us]
+    MAG_CALIBRATION_DURATION * 1000 / MAG_CALIBRATION_SAMPLES;  // [us]
 
 BMX160* bmx160;
 
@@ -330,7 +331,7 @@ BMX160CorrectionParameters calibrateMagnetometer(
     BMX160CorrectionParameters correctionParameters)
 {
     Eigen::Matrix<float, 3, 2> m;
-    auto* calibrationModel = new SoftIronCalibration<MAG_CALIBRATION_SAMPLES>;
+    auto* calibrationModel = new SoftAndHardIronCalibration;
     Eigen::Vector3f avgMag{0, 0, 0}, vec;
 
     SPIBus bus(SPI1);
@@ -389,7 +390,7 @@ BMX160CorrectionParameters calibrateMagnetometer(
         "the "
         "most different directions.\n");
     printf("The calibration will run for %d seconds\n",
-           MAG_CALIBRATION_DURAITON);
+           MAG_CALIBRATION_DURATION);
 
     if (!askToContinue())
     {
@@ -411,26 +412,6 @@ BMX160CorrectionParameters calibrateMagnetometer(
 
     printf("Computing the result....");
     auto corrector = calibrationModel->computeResult();
-
-    // Save the calibration data in the sd card
-    // Save the correction parameters in the file
-    {
-        std::ofstream magnetometerCalibrationDataFile(
-            MAG_CALIBRATION_DATA_FILE);
-
-        auto samples        = calibrationModel->getSamples();
-        int numberOfSamples = samples.rows();
-
-        for (int i = 0; i < numberOfSamples; i++)
-        {
-            auto row = samples.row(i);
-            for (int j = 0; j < row.cols(); j++)
-            {
-                magnetometerCalibrationDataFile << samples.row(i)(j) << ",";
-            }
-            magnetometerCalibrationDataFile << "\n";
-        }
-    }
 
     corrector >> m;
     corrector >> correctionParameters.magnetoParams;

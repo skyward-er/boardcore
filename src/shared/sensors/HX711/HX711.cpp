@@ -63,19 +63,34 @@ HX711Data HX711::sampleImpl()
     sckPin.alternateFunction(sckAlternateFunction);
 
     if (sample & static_cast<int32_t>(0x800000))
-        sample |= 0xFF << 24;
+        sample |= static_cast<uint32_t>(0xFF) << 24;
 
     if (sample == static_cast<int32_t>(0xFFFFFFFF))
         return lastSample;
 
     return {TimestampTimer::getInstance().getTimestamp(),
-            (sample + offset) / scale};
+            static_cast<float>(sample - offset) * scale};
 }
+
+void HX711::computeScale(float value, float sample)
+{
+    // Convert the sample in raw measurement with current scale factor
+    sample = sample / scale;
+
+    // Update the scale such that the sample corresponds to the given value
+    this->scale = value / sample;
+}
+
+void HX711::computeScale(float value) { computeScale(value, lastSample.load); }
 
 void HX711::setScale(float scale) { this->scale = scale; }
 
-void HX711::setZero() { offset = -lastSample.weight * scale; }
+float HX711::getScale() { return scale; }
 
-void HX711::setZero(float offset) { this->offset = offset * scale; }
+void HX711::setOffset(float offset) { this->offset = offset / scale; }
+
+void HX711::updateOffset(float offset) { this->offset += offset / scale; }
+
+float HX711::getOffset() { return offset; }
 
 }  // namespace Boardcore

@@ -34,11 +34,25 @@ void operator<<(AccelerometerData& lhs, const Vector3f& rhs)
     lhs.accelerationZ = rhs[2];
 }
 
+void operator<<(Eigen::Vector3f& lhs, const AccelerometerData& rhs)
+{
+    lhs[0] = rhs.accelerationX;
+    lhs[1] = rhs.accelerationY;
+    lhs[2] = rhs.accelerationZ;
+}
+
 void operator<<(GyroscopeData& lhs, const Vector3f& rhs)
 {
     lhs.angularVelocityX = rhs[0];
     lhs.angularVelocityY = rhs[1];
     lhs.angularVelocityZ = rhs[2];
+}
+
+void operator<<(Eigen::Vector3f& lhs, const GyroscopeData& rhs)
+{
+    lhs[0] = rhs.angularVelocityX;
+    lhs[1] = rhs.angularVelocityY;
+    lhs[2] = rhs.angularVelocityZ;
 }
 
 void operator<<(MagnetometerData& lhs, const Vector3f& rhs)
@@ -48,25 +62,35 @@ void operator<<(MagnetometerData& lhs, const Vector3f& rhs)
     lhs.magneticFieldZ = rhs[2];
 }
 
-void operator>>(const AccelerometerData& lhs, Vector3f& rhs)
+void operator<<(Eigen::Vector3f& lhs, const MagnetometerData& rhs)
 {
-    rhs[0] = lhs.accelerationX;
-    rhs[1] = lhs.accelerationY;
-    rhs[2] = lhs.accelerationZ;
+    lhs[0] = rhs.magneticFieldX;
+    lhs[1] = rhs.magneticFieldY;
+    lhs[2] = rhs.magneticFieldZ;
 }
 
-void operator>>(const GyroscopeData& lhs, Vector3f& rhs)
+void operator>>(const AccelerometerData& lhs, Eigen::Vector3f& rhs)
 {
-    rhs[0] = lhs.angularVelocityX;
-    rhs[1] = lhs.angularVelocityY;
-    rhs[2] = lhs.angularVelocityZ;
+    rhs << lhs;
 }
 
-void operator>>(const MagnetometerData& lhs, Vector3f& rhs)
+void operator>>(const Eigen::Vector3f& lhs, AccelerometerData& rhs)
 {
-    rhs[0] = lhs.magneticFieldX;
-    rhs[1] = lhs.magneticFieldY;
-    rhs[2] = lhs.magneticFieldZ;
+    rhs << lhs;
+}
+
+void operator>>(const GyroscopeData& lhs, Eigen::Vector3f& rhs) { rhs << lhs; }
+
+void operator>>(const Eigen::Vector3f& lhs, GyroscopeData& rhs) { rhs << lhs; }
+
+void operator>>(const MagnetometerData& lhs, Eigen::Vector3f& rhs)
+{
+    rhs << lhs;
+}
+
+void operator>>(const Eigen::Vector3f& lhs, MagnetometerData& rhs)
+{
+    rhs << lhs;
 }
 
 }  // namespace Boardcore

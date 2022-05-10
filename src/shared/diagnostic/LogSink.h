@@ -33,7 +33,7 @@ class LogSink
 {
 public:
     LogSink() {}
-    LogSink(const LogSink&) = delete;
+    LogSink(const LogSink&)            = delete;
     LogSink& operator=(const LogSink&) = delete;
 
     virtual ~LogSink() {}

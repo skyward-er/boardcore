@@ -28,7 +28,7 @@
 #include <radio/Xbee/APIFramesLog.h>
 #include <radio/Xbee/Xbee.h>
 #include <utils/Debug.h>
-#include <utils/testutils/ThroughputCalculator.h>
+#include <utils/TestUtils/ThroughputCalculator.h>
 
 #include <functional>
 

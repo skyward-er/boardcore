@@ -59,8 +59,14 @@ public:
      */
     ~SensorManager();
 
+    /**
+     * @brief Starts the task scheduler.
+     */
     bool start();
 
+    /**
+     * @brief Starts the task scheduler.
+     */
     void stop();
 
     /**
@@ -95,7 +101,7 @@ public:
     const vector<TaskStatsResult> getSamplersStats();
 
 private:
-    SensorManager(const SensorManager&) = delete;
+    SensorManager(const SensorManager&)            = delete;
     SensorManager& operator=(const SensorManager&) = delete;
 
     /**

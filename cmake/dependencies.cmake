@@ -47,4 +47,4 @@ add_subdirectory(${SBS_BASE}/libs/Catch2 EXCLUDE_FROM_ALL)
 list(APPEND CMAKE_MODULE_PATH ${SBS_BASE}/libs/Catch2/contrib)
 include(Catch)
 
-add_subdirectory(${SBS_BASE}/libs/mavlink_skyward_lib EXCLUDE_FROM_ALL)
+add_subdirectory(${SBS_BASE}/libs/mavlink-skyward-lib EXCLUDE_FROM_ALL)
