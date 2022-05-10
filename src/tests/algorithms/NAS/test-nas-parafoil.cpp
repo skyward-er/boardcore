@@ -26,7 +26,7 @@
 #include <miosix.h>
 #include <sensors/MPU9250/MPU9250.h>
 #include <sensors/SensorManager.h>
-#include <sensors/UbloxGPS/UbloxGPS.h>
+#include <sensors/UBXGPS/UBXGPSSerial.h>
 #include <utils/AeroUtils/AeroUtils.h>
 #include <utils/SkyQuaternion/SkyQuaternion.h>
 
@@ -48,8 +48,8 @@ Vector2f startPos = Vector2f(45.501141, 9.156281);
 NAS* nas;
 
 SPIBus spi1(SPI1);
-MPU9250* imu  = nullptr;
-UbloxGPS* gps = nullptr;
+MPU9250* imu      = nullptr;
+UBXGPSSerial* gps = nullptr;
 
 int main()
 {
@@ -110,7 +110,7 @@ void init()
     imu = new MPU9250(spi1, sensors::mpu9250::cs::getPin());
     imu->init();
 
-    gps = new UbloxGPS(38400, 10, 2, "gps", 38400);
+    gps = new UBXGPSSerial(38400, 10, 2, "gps", 38400);
     gps->init();
     gps->start();
 

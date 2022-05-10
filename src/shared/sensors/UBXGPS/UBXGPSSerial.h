@@ -1,5 +1,5 @@
-/* Copyright (c) 2022 Skyward Experimental Rocketry
- * Authors: Davide Bonomini, Davide Mor, Alberto Nidasio, Damiano Amatruda
+/* Copyright (c) 2021 Skyward Experimental Rocketry
+ * Authors: Davide Bonomini, Davide Mor, Alberto Nidasio
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -22,8 +22,9 @@
 
 #pragma once
 
+#include <ActiveObject.h>
 #include <diagnostic/PrintLogger.h>
-#include <drivers/spi/SPIDriver.h>
+#include <miosix.h>
 #include <sensors/Sensor.h>
 
 #include "UBXFrame.h"
@@ -33,45 +34,51 @@ namespace Boardcore
 {
 
 /**
- * @brief Sensor for u-blox GPS.
+ * @brief Driver for Ublox GPSs
  *
- * This sensor handles communication and setup with u-blox GPSs. It uses the
- * binary UBX protocol to retrieve and parse navigation data faster than using
- * the string-based NMEA.
+ * This driver handles communication and setup with Ublox GPSs. It uses the
+ * binary UBX protocol to retrieve and parse navigation data quicker than using
+ * the string based NMEA.
  *
- * At initialization it resets the device, sets the configuration and sets up
- * UBX messages and GNSS parameters.
+ * At initialization it configures the device with the specified baudrate, reset
+ * the configuration and sets up UBX messages and GNSS parameters.
  *
- * Communication with the device is performed through SPI.
+ * Communication with the device is performed through a file, the driver opens
+ * the serial port under the filepath /dev/<serialPortName>.
+ * There is no need for the file to be setted up beforhand.
  *
- * This sensor is compatible with series NEO-M8 and NEO-M9.
+ * This driver was written for a NEO-M9N gps with the latest version of UBX.
  */
-class UBXGPS : public Sensor<UBXGPSData>
+class UBXGPSSerial : public Sensor<UBXGPSData>, public ActiveObject
 {
 public:
     /**
-     * @brief Constructor.
+     * @brief Construct a new UBXGPSSerial object.
      *
-     * @param spiBus The SPI bus.
-     * @param spiCs The CS pin to lower when we need to sample.
-     * @param spiConfig The SPI configuration.
-     * @param sampleRate The GPS sample rate [kHz].
+     * @param baudrate Baudrate to communicate with the device (max: 921600,
+     * min: 4800 for NEO-M9N).
+     * @param sampleRate GPS sample rate (max: 25 for NEO-M9N).
+     * @param serialPortNumber Number of the serial port connected to the GPS.
+     * @param serialPortName Name of the file for the gps device.
+     * @param defaultBaudrate Startup baudrate (38400 for NEO-M9N).
      */
-    UBXGPS(SPIBusInterface& spiBus, miosix::GpioPin spiCs,
-           SPIBusConfig spiConfig = getDefaultSPIConfig(),
-           uint8_t sampleRate     = 5);
+    UBXGPSSerial(int baudrate = 921600, uint8_t sampleRate = 10,
+                 int serialPortNumber = 2, const char *serialPortName = "gps",
+                 int defaultBaudrate = 38400);
 
     /**
-     * @brief Constructs the default config for the SPI bus.
+     * @brief Sets up the serial port baudrate, disables the NMEA messages,
+     * configures GNSS options and enables UBX-PVT message.
      *
-     * @return The default SPIBusConfig object.
+     * @return True if the operation succeeded.
      */
-    static SPIBusConfig getDefaultSPIConfig();
-
-    uint8_t getSampleRate();
-
     bool init() override;
 
+    /**
+     * @brief Read a single message form the GPS, waits 2 sample cycle.
+     *
+     * @return True if a message was sampled.
+     */
     bool selfTest() override;
 
 private:
@@ -83,6 +90,19 @@ private:
      * @return True if the device reset succeeded.
      */
     bool reset();
+
+    bool setBaudrate();
+
+    /**
+     * @brief Sets up the serial port with the correct baudrate.
+     *
+     * Opens the serial port with the default baudrate and changes it to the
+     * value specified in the constructor, then it reopens the serial port. If
+     * the device is already using the correct baudrate this won't have effect.
+     * However if the gps is using a different baudrate the diver won't be able
+     * to communicate.
+     */
+    bool setSerialCommunication();
 
     /**
      * @brief Enables UBX and disables NMEA on the SPI port.
@@ -118,7 +138,7 @@ private:
      * @param frame The received frame.
      * @return True if a valid frame was read.
      */
-    bool readUBXFrame(UBXFrame& frame);
+    bool readUBXFrame(UBXFrame &frame);
 
     /**
      * @brief Writes a UBX frame.
@@ -126,7 +146,7 @@ private:
      * @param frame The frame to write.
      * @return True if the frame is valid.
      */
-    bool writeUBXFrame(const UBXFrame& frame);
+    bool writeUBXFrame(const UBXFrame &frame);
 
     /**
      * @brief Writes a UBX frame and waits for its acknowledgement.
@@ -134,17 +154,25 @@ private:
      * @param frame The frame to write.
      * @return True if the frame is valid and acknowledged.
      */
-    bool safeWriteUBXFrame(const UBXFrame& frame);
+    bool safeWriteUBXFrame(const UBXFrame &frame);
 
-    SPISlave spiSlave;
-    uint8_t sampleRate;
+    void run() override;
 
-    PrintLogger logger = Logging::getLogger("ubxgps");
+    const int baudrate;        // [baud]
+    const uint8_t sampleRate;  // [Hz]
+    const int serialPortNumber;
+    const char *serialPortName;
+    const int defaultBaudrate;  // [baud]
 
-    static constexpr float MS_TO_TICK = miosix::TICK_FREQ / 1000.f;
+    char gpsFilePath[16];  ///< Allows for a filename of up to 10 characters
+    int gpsFile = -1;
+
+    mutable miosix::FastMutex mutex;
+    UBXGPSData threadSample{};
+
+    PrintLogger logger = Logging::getLogger("ubloxgps");
 
     static constexpr unsigned int RESET_SLEEP_TIME = 5000;  // [ms]
-    static constexpr unsigned int READ_TIMEOUT     = 5000;  // [ms]
     static constexpr unsigned int MAX_TRIES        = 5;     // [1]
 };
 

@@ -22,7 +22,7 @@
 
 #include <drivers/timer/TimestampTimer.h>
 #include <miosix.h>
-#include <sensors/UbloxGPS/UbloxGPS.h>
+#include <sensors/UBXGPS/UBXGPSSerial.h>
 #include <utils/Debug.h>
 
 #include <cstdio>
@@ -39,8 +39,8 @@ int main()
     printf("Welcome to the ublox test\n");
 
     // Keep GPS baud rate at default for easier testing
-    UbloxGPS gps(921600, RATE, 2, "gps", 38400);
-    UbloxGPSData dataGPS;
+    UBXGPSSerial gps(921600, RATE, 2, "gps", 38400);
+    UBXGPSData dataGPS;
     printf("Gps allocated\n");
 
     // Init the gps

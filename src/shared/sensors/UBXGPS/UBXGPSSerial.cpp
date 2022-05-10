@@ -1,5 +1,5 @@
-/* Copyright (c) 2022 Skyward Experimental Rocketry
- * Authors: Davide Bonomini, Davide Mor, Alberto Nidasio, Damiano Amatruda
+/* Copyright (c) 2021 Skyward Experimental Rocketry
+ * Authors: Davide Bonomini, Davide Mor, Alberto Nidasio
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -20,44 +20,41 @@
  * THE SOFTWARE.
  */
 
-#include "UBXGPS.h"
+#include "UBXGPSSerial.h"
 
+#include <diagnostic/StackLogger.h>
+#include <drivers/serial.h>
 #include <drivers/timer/TimestampTimer.h>
-#include <interfaces/endianness.h>
+#include <fcntl.h>
+#include <filesystem/file_access.h>
+
+using namespace miosix;
 
 namespace Boardcore
 {
 
-constexpr uint16_t UBXFrame::MAX_PAYLOAD_LENGTH;
-constexpr uint16_t UBXFrame::MAX_FRAME_LENGTH;
-constexpr uint8_t UBXFrame::PREAMBLE[];
-constexpr uint8_t UBXFrame::WAIT;
-
-constexpr float UBXGPS::MS_TO_TICK;
-
-constexpr unsigned int UBXGPS::RESET_SLEEP_TIME;
-constexpr unsigned int UBXGPS::READ_TIMEOUT;
-constexpr unsigned int UBXGPS::MAX_TRIES;
-
-UBXGPS::UBXGPS(SPIBusInterface& spiBus, miosix::GpioPin spiCs,
-               SPIBusConfig spiConfig, uint8_t sampleRate)
-    : spiSlave(spiBus, spiCs, spiConfig), sampleRate(sampleRate)
+UBXGPSSerial::UBXGPSSerial(int baudrate, uint8_t sampleRate, int serialPortNum,
+                           const char* serialPortName, int defaultBaudrate)
+    : baudrate(baudrate), sampleRate(sampleRate),
+      serialPortNumber(serialPortNum), serialPortName(serialPortName),
+      defaultBaudrate(defaultBaudrate)
 {
+    // Prepare the gps file path with the specified name
+    strcpy(gpsFilePath, "/dev/");
+    strcat(gpsFilePath, serialPortName);
 }
 
-SPIBusConfig UBXGPS::getDefaultSPIConfig()
+bool UBXGPSSerial::init()
 {
-    /* From data sheet of series NEO-M8:
-     * "Minimum initialization time" (setup time): 10 us
-     * "Minimum deselect time" (hold time): 1 ms */
-    return SPIBusConfig{SPI::ClockDivider::DIV_32, SPI::Mode::MODE_0,
-                        SPI::BitOrder::MSB_FIRST, 10, 1000};
-}
+    LOG_DEBUG(logger, "Changing device baudrate...");
 
-uint8_t UBXGPS::getSampleRate() { return sampleRate; }
+    if (!setSerialCommunication())
+    {
+        lastError = SensorErrors::INIT_FAIL;
+        LOG_ERR(logger, "Error while setting serial communication");
+        return false;
+    }
 
-bool UBXGPS::init()
-{
     LOG_DEBUG(logger, "Resetting the device...");
 
     if (!reset())
@@ -106,35 +103,15 @@ bool UBXGPS::init()
     return true;
 }
 
-bool UBXGPS::selfTest() { return true; }
+bool UBXGPSSerial::selfTest() { return true; }
 
-UBXGPSData UBXGPS::sampleImpl()
+UBXGPSData UBXGPSSerial::sampleImpl()
 {
-    UBXPvtFrame pvt;
-
-    if (!readUBXFrame(pvt))
-        return lastSample;
-
-    UBXPvtFrame::Payload& pvtP = pvt.getPayload();
-
-    UBXGPSData sample;
-    sample.gpsTimestamp  = TimestampTimer::getInstance().getTimestamp();
-    sample.latitude      = (float)pvtP.lat / 1e7;
-    sample.longitude     = (float)pvtP.lon / 1e7;
-    sample.height        = (float)pvtP.height / 1e3;
-    sample.velocityNorth = (float)pvtP.velN / 1e3;
-    sample.velocityEast  = (float)pvtP.velE / 1e3;
-    sample.velocityDown  = (float)pvtP.velD / 1e3;
-    sample.speed         = (float)pvtP.gSpeed / 1e3;
-    sample.track         = (float)pvtP.headMot / 1e5;
-    sample.positionDOP   = (float)pvtP.pDOP / 1e2;
-    sample.satellites    = pvtP.numSV;
-    sample.fix           = pvtP.fixType;
-
-    return sample;
+    Lock<FastMutex> l(mutex);
+    return threadSample;
 }
 
-bool UBXGPS::reset()
+bool UBXGPSSerial::reset()
 {
     uint8_t payload[] = {
         0x00, 0x00,  // Hot start
@@ -154,7 +131,100 @@ bool UBXGPS::reset()
     return true;
 }
 
-bool UBXGPS::setUBXProtocol()
+bool UBXGPSSerial::setBaudrate()
+{
+    uint8_t payload[] = {
+        0x00,                    // Version
+        0xff,                    // All layers
+        0x00, 0x00,              // Reserved
+        0x01, 0x00, 0x52, 0x40,  // Configuration item key ID
+        0xff, 0xff, 0xff, 0xff,  // Value
+    };
+
+    // Prepare baudrate
+    payload[8]  = baudrate;
+    payload[9]  = baudrate >> 8;
+    payload[10] = baudrate >> 16;
+    payload[11] = baudrate >> 24;
+
+    UBXFrame frame{UBXMessage::UBX_CFG_VALSET, payload, sizeof(payload)};
+
+    return safeWriteUBXFrame(frame);
+}
+
+bool UBXGPSSerial::setSerialCommunication()
+{
+    intrusive_ref_ptr<DevFs> devFs = FilesystemManager::instance().getDevFs();
+
+    // Change the baudrate only if it is different than the default
+    if (baudrate != defaultBaudrate)
+    {
+        // Close the gps file if already opened
+        devFs->remove(serialPortName);
+
+        // Open the serial port device with the default boudrate
+        if (!devFs->addDevice(serialPortName,
+                              intrusive_ref_ptr<Device>(new STM32Serial(
+                                  serialPortNumber, defaultBaudrate))))
+        {
+            LOG_ERR(logger,
+                    "[gps] Failed to open serial port {0} with baudrate {1} as "
+                    "file {2}",
+                    serialPortNumber, defaultBaudrate, serialPortName);
+            return false;
+        }
+
+        // Open the gps file
+        if ((gpsFile = open(gpsFilePath, O_RDWR)) < 0)
+        {
+            LOG_ERR(logger, "Failed to open gps file {}", gpsFilePath);
+            return false;
+        }
+
+        // Change boudrate
+        if (!setBaudrate())
+        {
+            return false;
+        };
+
+        // Close the gps file
+        if (close(gpsFile) < 0)
+        {
+            LOG_ERR(logger, "Failed to close gps file {}", gpsFilePath);
+            return false;
+        }
+
+        // Close the serial port
+        if (!devFs->remove(serialPortName))
+        {
+            LOG_ERR(logger, "Failed to close serial port {} as file {}",
+                    serialPortNumber, serialPortName);
+            return false;
+        }
+    }
+
+    // Reopen the serial port with the configured boudrate
+    if (!devFs->addDevice(serialPortName,
+                          intrusive_ref_ptr<Device>(
+                              new STM32Serial(serialPortNumber, baudrate))))
+    {
+        LOG_ERR(logger,
+                "Failed to open serial port {} with baudrate {} as file {}\n",
+                serialPortNumber, defaultBaudrate, serialPortName);
+        return false;
+    }
+
+    // Reopen the gps file
+    if ((gpsFile = open(gpsFilePath, O_RDWR)) < 0)
+    {
+        LOG_ERR(logger, "Failed to open gps file {}", gpsFilePath);
+        return false;
+    }
+
+    return true;
+}
+
+bool UBXGPSSerial::setUBXProtocol()
 {
     uint8_t payload[] = {
         0x04,                    // SPI port
@@ -173,7 +243,7 @@ bool UBXGPS::setUBXProtocol()
     return safeWriteUBXFrame(frame);
 }
 
-bool UBXGPS::setDynamicModelToAirborne4g()
+bool UBXGPSSerial::setDynamicModelToAirborne4g()
 {
     uint8_t payload[] = {
         0x01, 0x00,  // Parameters bitmask, apply dynamic model configuration
@@ -202,7 +272,7 @@ bool UBXGPS::setDynamicModelToAirborne4g()
     return safeWriteUBXFrame(frame);
 }
 
-bool UBXGPS::setSampleRate()
+bool UBXGPSSerial::setSampleRate()
 {
     uint8_t payload[] = {
         0x00, 0x00,  // Measurement rate
@@ -219,7 +289,7 @@ bool UBXGPS::setSampleRate()
     return safeWriteUBXFrame(frame);
 }
 
-bool UBXGPS::setPVTMessageRate()
+bool UBXGPSSerial::setPVTMessageRate()
 {
     uint8_t payload[] = {
         0x01, 0x07,  // PVT message
@@ -231,61 +301,37 @@ bool UBXGPS::setPVTMessageRate()
     return safeWriteUBXFrame(frame);
 }
 
-bool UBXGPS::readUBXFrame(UBXFrame& frame)
+bool UBXGPSSerial::readUBXFrame(UBXFrame& frame)
 {
-    long long start = miosix::getTick();
-    long long end   = start + READ_TIMEOUT * MS_TO_TICK;
-
+    // Search UBX frame preamble byte by byte
+    size_t i = 0;
+    while (i < 2)
     {
-        SPITransaction spi{spiSlave};
+        uint8_t c;
+        if (read(gpsFile, &c, 1) <= 0)  // No more data available
+            return false;
 
-        // Search UBX frame preamble byte by byte
-        size_t i     = 0;
-        bool waiting = false;
-        while (i < 2)
+        if (c == UBXFrame::PREAMBLE[i])
         {
-            if (miosix::getTick() >= end)
-            {
-                LOG_ERR(logger, "Timeout for read expired");
-                return false;
-            }
-
-            uint8_t c = spi.read();
-
-            if (c == UBXFrame::PREAMBLE[i])
-            {
-                waiting             = false;
-                frame.preamble[i++] = c;
-            }
-            else if (c == UBXFrame::PREAMBLE[0])
-            {
-                i                   = 0;
-                waiting             = false;
-                frame.preamble[i++] = c;
-            }
-            else if (c == UBXFrame::WAIT)
-            {
-                i = 0;
-                if (!waiting)
-                {
-                    waiting = true;
-                    // LOG_DEBUG(logger, "Device is waiting...");
-                }
-            }
-            else
-            {
-                i       = 0;
-                waiting = false;
-                LOG_DEBUG(logger, "Received unexpected byte: {:02x} {:#c}", c,
-                          c);
-            }
+            frame.preamble[i++] = c;
         }
-
-        frame.message       = swapBytes16(spi.read16());
-        frame.payloadLength = swapBytes16(spi.read16());
-        spi.read(frame.payload, frame.getRealPayloadLength());
-        spi.read(frame.checksum, 2);
+        else if (c == UBXFrame::PREAMBLE[0])
+        {
+            i                   = 0;
+            frame.preamble[i++] = c;
+        }
+        else
+        {
+            i = 0;
+            LOG_DEBUG(logger, "Received unexpected byte: {:02x} {:#c}", c, c);
+        }
     }
+
+    if (read(gpsFile, &frame.message, 2) <= 0 ||
+        read(gpsFile, &frame.payloadLength, 2) <= 0 ||
+        read(gpsFile, frame.payload, frame.getRealPayloadLength()) <= 0 ||
+        read(gpsFile, frame.checksum, 2) <= 0)
+        return false;
 
     if (!frame.isValid())
     {
@@ -296,7 +342,7 @@ bool UBXGPS::readUBXFrame(UBXFrame& frame)
     return true;
 }
 
-bool UBXGPS::writeUBXFrame(const UBXFrame& frame)
+bool UBXGPSSerial::writeUBXFrame(const UBXFrame& frame)
 {
     if (!frame.isValid())
     {
@@ -307,15 +353,16 @@ bool UBXGPS::writeUBXFrame(const UBXFrame& frame)
     uint8_t packedFrame[frame.getLength()];
     frame.writePacked(packedFrame);
 
+    if (write(gpsFile, packedFrame, frame.getLength()) < 0)
     {
-        SPITransaction spi{spiSlave};
-        spi.write(packedFrame, frame.getLength());
+        LOG_ERR(logger, "Failed to write ubx message");
+        return false;
     }
 
     return true;
 }
 
-bool UBXGPS::safeWriteUBXFrame(const UBXFrame& frame)
+bool UBXGPSSerial::safeWriteUBXFrame(const UBXFrame& frame)
 {
     for (unsigned int i = 0; i < MAX_TRIES; i++)
     {
@@ -353,6 +400,39 @@ bool UBXGPS::safeWriteUBXFrame(const UBXFrame& frame)
 
     LOG_ERR(logger, "Gave up after {:#d} tries", MAX_TRIES);
     return false;
+}
+
+void UBXGPSSerial::run()
+{
+    while (!shouldStop())
+    {
+        UBXPvtFrame pvt;
+
+        // Try to read the message
+        if (!readUBXFrame(pvt))
+        {
+            LOG_DEBUG(logger, "Unable to read a UBX message");
+            continue;
+        }
+
+        UBXPvtFrame::Payload& pvtP = pvt.getPayload();
+
+        threadSample.gpsTimestamp =
+            TimestampTimer::getInstance().getTimestamp();
+        threadSample.latitude      = (float)pvtP.lat / 1e7;
+        threadSample.longitude     = (float)pvtP.lon / 1e7;
+        threadSample.height        = (float)pvtP.height / 1e3;
+        threadSample.velocityNorth = (float)pvtP.velN / 1e3;
+        threadSample.velocityEast  = (float)pvtP.velE / 1e3;
+        threadSample.velocityDown  = (float)pvtP.velD / 1e3;
+        threadSample.speed         = (float)pvtP.gSpeed / 1e3;
+        threadSample.track         = (float)pvtP.headMot / 1e5;
+        threadSample.positionDOP   = (float)pvtP.pDOP / 1e2;
+        threadSample.satellites    = pvtP.numSV;
+        threadSample.fix           = pvtP.fixType;
+
+        StackLogger::getInstance().updateStack(THID_GPS);
+    }
 }
 
 }  // namespace Boardcore
