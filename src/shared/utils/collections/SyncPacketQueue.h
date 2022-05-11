@@ -217,8 +217,8 @@ public:
      * it is divided into successive packets. If there are no more available
      * packets, the oldest one is overwritten.
      *
-     * The message isn't added to the queue if there is no space considering all
-     * the queue packets.
+     * The message isn't added to the queue only if there is no space
+     * considering all the queue packets.
      *
      * @param msg The message to be appended.
      * @param msgLen Length of the message [bytes].
