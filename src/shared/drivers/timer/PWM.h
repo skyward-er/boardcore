@@ -65,7 +65,7 @@ public:
      * @param dutyCycleResolution Duty cycle levels.
      */
     explicit PWM(TIM_TypeDef* const timer, unsigned int pwmFrequency = 50,
-                 unsigned int dutyCycleResolution = 1000);
+                 unsigned int dutyCycleResolution = 20000);
 
     ~PWM();
 
@@ -98,7 +98,7 @@ public:
     /**
      * @brief Returns the timer used to generate the pwm signal.
      */
-    GP16bitTimer getTimer();
+    GP16bitTimer& getTimer();
 
 private:
     // This class is not copyable!

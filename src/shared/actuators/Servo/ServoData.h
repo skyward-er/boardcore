@@ -38,8 +38,8 @@ struct ServoData
 
     void print(std::ostream& os) const
     {
-        os << timestamp << "," << timer << "," << channel << "," << position
-           << "\n";
+        os << timestamp << "," << static_cast<int>(timer) << ","
+           << static_cast<int>(channel) << "," << position << "\n";
     }
 };
 

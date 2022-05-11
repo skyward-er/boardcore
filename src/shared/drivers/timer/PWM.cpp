@@ -78,8 +78,8 @@ void PWM::setDutyCycle(TimerUtils::Channel channel, float dutyCycle)
 {
     if (dutyCycle >= 0 && dutyCycle <= 1)
         timer.setCaptureCompareRegister(
-            channel,
-            static_cast<uint16_t>(dutyCycle * timer.readAutoReloadRegister()));
+            channel, static_cast<uint16_t>(
+                         dutyCycle * timer.readAutoReloadRegister() + 0.5));
 }
 
 float PWM::getDutyCycle(TimerUtils::Channel channel)
@@ -88,7 +88,7 @@ float PWM::getDutyCycle(TimerUtils::Channel channel)
            static_cast<float>(timer.readAutoReloadRegister());
 }
 
-GP16bitTimer PWM::getTimer() { return timer; }
+GP16bitTimer& PWM::getTimer() { return timer; }
 
 void PWM::setTimerConfiguration()
 {

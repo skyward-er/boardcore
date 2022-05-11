@@ -83,15 +83,6 @@ private:
 inline Buzzer::Buzzer(TIM_TypeDef *timer, TimerUtils::Channel channel)
     : timer(timer), channel(channel)
 {
-    // this->timer.setPrescaler(
-    //     TimerUtils::computePrescalerValue(timer, frequency * 2));
-    // this->timer.setAutoReloadRegister(1);
-    // this->timer.setOutputCompareMode(channel,
-    //                                  TimerUtils::OutputCompareMode::TOGGLE);
-    // this->timer.setCaptureCompareRegister(channel, 1);
-    // this->timer.generateUpdate();
-    // this->timer.enableCaptureCompareOutput(channel);
-    // this->timer.enableCaptureCompareComplementaryOutput(channel);
 }
 
 inline void Buzzer::on()
