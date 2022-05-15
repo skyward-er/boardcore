@@ -46,10 +46,10 @@ public:
     SPIBus(SPIType* spi);
 
     ///< Delete copy/move contructors/operators.
-    SPIBus(const SPIBus&) = delete;
+    SPIBus(const SPIBus&)            = delete;
     SPIBus& operator=(const SPIBus&) = delete;
     SPIBus(SPIBus&&)                 = delete;
-    SPIBus& operator=(SPIBus&&) = delete;
+    SPIBus& operator=(SPIBus&&)      = delete;
 
     /**
      * @brief Configures and enables the bus with the provided configuration.
