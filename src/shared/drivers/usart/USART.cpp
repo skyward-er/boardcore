@@ -514,7 +514,7 @@ int USART::write(void *buffer, size_t nBytes)
     // TODO: Use the send complete interrupt in order not to have a busy while
     // loop waiting
     const char *buf = reinterpret_cast<const char *>(buffer);
-    size_t i        = 0;
+    size_t i;
     for (i = 0; i < nBytes; i++)
     {
         while ((usart->SR & USART_SR_TXE) == 0)
