@@ -86,6 +86,8 @@ struct FakeSpiTypedef
     MockGpioPin cs;
 
     FakeSpiTypedef() : DR(*this) { cs.high(); }
+
+    FakeSpiTypedef(SPI_TypeDef* spi) : DR(*this) { cs.high(); }
 };
 
 }  // namespace Boardcore

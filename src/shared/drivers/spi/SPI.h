@@ -30,7 +30,7 @@
 using SPIType = SPI_TypeDef;
 #else
 #include <utils/TestUtils/FakeSpiTypedef.h>
-using SPIType = FakeSpiTypedef;
+using SPIType = Boardcore::FakeSpiTypedef;
 #endif
 
 namespace Boardcore

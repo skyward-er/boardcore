@@ -29,8 +29,8 @@
 #ifndef USE_MOCK_PERIPHERALS
 using SPIType = SPI_TypeDef;
 #else
-#include <test/FakeSpiTypedef.h>
-using SPIType = FakeSpiTypedef;
+#include <utils/TestUtils/FakeSpiTypedef.h>
+using SPIType = Boardcore::FakeSpiTypedef;
 #endif
 
 namespace Boardcore
@@ -46,10 +46,10 @@ public:
     SPIBus(SPIType* spi);
 
     ///< Delete copy/move contructors/operators.
-    SPIBus(const SPIBus&)            = delete;
+    SPIBus(const SPIBus&) = delete;
     SPIBus& operator=(const SPIBus&) = delete;
     SPIBus(SPIBus&&)                 = delete;
-    SPIBus& operator=(SPIBus&&)      = delete;
+    SPIBus& operator=(SPIBus&&) = delete;
 
     /**
      * @brief Configures and enables the bus with the provided configuration.

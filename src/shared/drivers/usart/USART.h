@@ -34,6 +34,7 @@
 using USARTType = USART_TypeDef;
 #else
 // TODO: Create test utils
+using USARTType = USART_TypeDef;
 #endif
 
 #ifdef STM32F429xx

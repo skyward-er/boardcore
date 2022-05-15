@@ -30,7 +30,7 @@
 using GpioType = miosix::GpioPin;
 #else
 #include <utils/TestUtils/MockGpioPin.h>
-using GpioType = MockGpioPin;
+using GpioType = Boardcore::MockGpioPin;
 #endif
 
 namespace Boardcore
@@ -93,10 +93,10 @@ public:
     SPIBusInterface() {}
 
     ///< Delete copy/move contructors/operators.
-    SPIBusInterface(const SPIBusInterface&)            = delete;
+    SPIBusInterface(const SPIBusInterface&) = delete;
     SPIBusInterface& operator=(const SPIBusInterface&) = delete;
     SPIBusInterface(SPIBusInterface&&)                 = delete;
-    SPIBusInterface& operator=(SPIBusInterface&&)      = delete;
+    SPIBusInterface& operator=(SPIBusInterface&&) = delete;
 
     /**
      * @brief Configures the bus with the provided configuration parameters.
