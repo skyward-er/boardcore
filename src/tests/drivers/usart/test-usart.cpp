@@ -136,6 +136,16 @@ bool testCommunicationSequential(USARTInterface *src, USARTInterface *dst)
  */
 int main()
 {
+    // Init serial port pins
+    u1rx2::getPin().mode(miosix::Mode::ALTERNATE);
+    u1rx2::getPin().alternateFunction(7);
+    u1tx1::getPin().mode(miosix::Mode::ALTERNATE);
+    u1tx1::getPin().alternateFunction(7);
+    u4rx1::getPin().mode(miosix::Mode::ALTERNATE);
+    u4rx1::getPin().alternateFunction(8);
+    u4tx1::getPin().mode(miosix::Mode::ALTERNATE);
+    u4tx1::getPin().alternateFunction(8);
+
     bool testPassed = true;
     printf("*** SERIAL 3 WORKING!\n");
     for (unsigned int iBaud = 0;
@@ -145,12 +155,10 @@ int main()
         printf("\n\n########################### %d\n", (int)baudrate);
 
         // declaring the usart peripherals
-        STM32SerialWrapper usartx(USART1, baudrate, u1rx2::getPin(),
-                                  u1tx1::getPin());
+        STM32SerialWrapper usartx(USART1, baudrate);
         usartx.init();
 
         USART usarty(UART4, baudrate);
-        // usarty.initPins(u5tx::getPin(), 8, u5rx::getPin(), 8);
         // usarty.setOversampling(false);
         // usarty.setStopBits(1);
         // usarty.setWordLength(USART::WordLength::BIT8);

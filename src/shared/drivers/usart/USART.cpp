@@ -251,29 +251,6 @@ namespace Boardcore
 
 USARTInterface::~USARTInterface() {}
 
-bool USARTInterface::initPins(miosix::GpioPin tx, int nAFtx, miosix::GpioPin rx,
-                              int nAFrx)
-{
-    if (pinInitialized)
-    {
-        return false;
-    }
-
-    miosix::FastInterruptDisableLock dLock;
-
-    this->tx = tx;
-    this->rx = rx;
-
-    tx.mode(miosix::Mode::ALTERNATE);
-    tx.alternateFunction(nAFtx);
-
-    rx.mode(miosix::Mode::ALTERNATE);
-    rx.alternateFunction(nAFrx);
-
-    pinInitialized = true;
-    return true;
-}
-
 void USART::IRQhandleInterrupt()
 {
     char c;
@@ -315,110 +292,43 @@ USART::USART(USARTType *usart, Baudrate baudrate, unsigned int queueLen)
     {
         case USART1_BASE:
             this->id = 1;
-            initPins(u1tx1::getPin(), 7, u1rx1::getPin(), 7);
-            irqn = USART1_IRQn;
+            irqn     = USART1_IRQn;
             break;
         case USART2_BASE:
             this->id = 2;
-            initPins(u2tx1::getPin(), 7, u2rx1::getPin(), 7);
-            irqn = USART2_IRQn;
+            irqn     = USART2_IRQn;
             break;
         case USART3_BASE:
             this->id = 3;
-            initPins(u3tx1::getPin(), 7, u3rx1::getPin(), 7);
-            irqn = USART3_IRQn;
+            irqn     = USART3_IRQn;
             break;
         case UART4_BASE:
             this->id = 4;
-            initPins(u4tx1::getPin(), 8, u4rx1::getPin(), 8);
-            irqn = UART4_IRQn;
+            irqn     = UART4_IRQn;
             break;
         case UART5_BASE:
             this->id = 5;
-            initPins(u5tx::getPin(), 8, u5rx::getPin(), 8);
-            irqn = UART5_IRQn;
+            irqn     = UART5_IRQn;
             break;
         case USART6_BASE:
             this->id = 6;
-            initPins(u6tx1::getPin(), 8, u6rx1::getPin(), 8);
-            irqn = USART6_IRQn;
+            irqn     = USART6_IRQn;
             break;
 #ifdef STM32F429xx
         case UART7_BASE:
             this->id = 7;
-            initPins(u7tx1::getPin(), 8, u7rx1::getPin(), 8);
-            irqn = UART7_IRQn;
+            irqn     = UART7_IRQn;
             break;
         case UART8_BASE:
             this->id = 8;
-            initPins(u8tx::getPin(), 8, u8rx::getPin(), 8);
-            irqn = UART8_IRQn;
+            irqn     = UART8_IRQn;
             break;
 #endif  // STM32F429xx
     }
 
-    commonConstructor(usart, baudrate);
-}
-
-USART::USART(USARTType *usart, Baudrate baudrate, miosix::GpioPin tx,
-             miosix::GpioPin rx, unsigned int queueLen)
-    : rxQueue(queueLen)
-{
-    // Setting the id of the serial port
-    switch (reinterpret_cast<uint32_t>(usart))
-    {
-        case USART1_BASE:
-            this->id = 1;
-            initPins(tx, 7, rx, 7);
-            irqn = USART1_IRQn;
-            break;
-        case USART2_BASE:
-            this->id = 2;
-            initPins(tx, 7, rx, 7);
-            irqn = USART2_IRQn;
-            break;
-        case USART3_BASE:
-            this->id = 3;
-            initPins(tx, 7, rx, 7);
-            irqn = USART3_IRQn;
-            break;
-        case UART4_BASE:
-            this->id = 4;
-            initPins(tx, 8, rx, 8);
-            irqn = UART4_IRQn;
-            break;
-        case UART5_BASE:
-            this->id = 5;
-            initPins(tx, 8, rx, 8);
-            irqn = UART5_IRQn;
-            break;
-        case USART6_BASE:
-            this->id = 6;
-            initPins(tx, 8, rx, 8);
-            irqn = USART6_IRQn;
-            break;
-#ifdef STM32F429xx
-        case UART7_BASE:
-            this->id = 7;
-            initPins(tx, 8, rx, 8);
-            irqn = UART7_IRQn;
-            break;
-        case UART8_BASE:
-            this->id = 8;
-            initPins(tx, 8, rx, 8);
-            irqn = UART8_IRQn;
-            break;
-#endif  // STM32F429xx
-    }
-
-    commonConstructor(usart, baudrate);
-}
-
-void USART::commonConstructor(USARTType *usart, Baudrate baudrate)
-{
     this->usart = usart;
 
-    // Enabling the peripehral on the right APB
+    // Enabling the peripheral on the right APB
     ClockUtils::enablePeripheralClock(usart);
     RCC_SYNC();
 
@@ -440,25 +350,23 @@ void USART::commonConstructor(USARTType *usart, Baudrate baudrate)
 
 USART::~USART()
 {
-    {
-        miosix::FastInterruptDisableLock dLock;
+    miosix::FastInterruptDisableLock dLock;
 
-        // Take out the usart object we are going to destruct
-        USART::ports[this->id - 1] = nullptr;
+    // Take out the usart object we are going to destruct
+    USART::ports[this->id - 1] = nullptr;
 
-        // Disabling the usart
-        usart->CR1 &= ~(USART_CR1_UE | USART_CR1_TE | USART_CR1_RE);
+    // Disabling the usart
+    usart->CR1 &= ~(USART_CR1_UE | USART_CR1_TE | USART_CR1_RE);
 
-        // Disabling the interrupt of the serial port
-        NVIC_DisableIRQ(irqn);
-    }
+    // Disabling the interrupt of the serial port
+    NVIC_DisableIRQ(irqn);
 }
 
 bool USART::init()
 {
-    if (id < 1 || id > MAX_SERIAL_PORTS || !pinInitialized)
+    if (id < 1 || id > MAX_SERIAL_PORTS)
     {
-        TRACE("Not supported USART id or pins not initialized\n");
+        TRACE("Not supported USART id\n");
         return false;
     }
 
@@ -758,6 +666,27 @@ bool STM32SerialWrapper::serialCommSetup()
         return false;
     }
 
+    return true;
+}
+
+bool STM32SerialWrapper::initPins(miosix::GpioPin tx, int nAFtx,
+                                  miosix::GpioPin rx, int nAFrx)
+{
+    if (pinInitialized)
+        return false;
+
+    miosix::FastInterruptDisableLock dLock;
+
+    this->tx = tx;
+    this->rx = rx;
+
+    tx.mode(miosix::Mode::ALTERNATE);
+    tx.alternateFunction(nAFtx);
+
+    rx.mode(miosix::Mode::ALTERNATE);
+    rx.alternateFunction(nAFrx);
+
+    pinInitialized = true;
     return true;
 }
 
