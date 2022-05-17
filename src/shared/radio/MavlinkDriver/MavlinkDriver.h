@@ -147,7 +147,7 @@ private:
         reinterpret_cast<MavlinkDriver*>(arg)->runSender();
     }
 
-    void updateQueueStats(int dropped);
+    void updateQueueStats(bool appended);
 
     void updateSenderStats(size_t msgCount, bool sent);
 
@@ -224,7 +224,7 @@ bool MavlinkDriver<PktLength, OutQueueSize, MavMsgLength>::start()
     }
 
     if (sndStarted && rcvStarted)
-        LOG_DEBUG(logger, "Start ok (sender and receiver)\n");
+        LOG_DEBUG(logger, "Sender and receiver started");
 
     return (sndStarted && rcvStarted);
 }
@@ -249,23 +249,23 @@ bool MavlinkDriver<PktLength, OutQueueSize, MavMsgLength>::enqueueMsg(
     int msgLen = mavlink_msg_to_send_buffer(msgtempBuf, &msg);
 
     // Append message to the queue
-    int dropped = outQueue.put(msgtempBuf, msgLen);
+    bool appended = outQueue.put(msgtempBuf, msgLen);
 
     // Update stats
-    updateQueueStats(dropped);
+    updateQueueStats(appended);
 
     // return ok even if a packet was discarded
-    return dropped != -1;
+    return appended;
 }
 
 template <unsigned int PktLength, unsigned int OutQueueSize,
           unsigned int MavMsgLength>
 void MavlinkDriver<PktLength, OutQueueSize, MavMsgLength>::updateQueueStats(
-    int dropped)
+    bool appended)
 {
     miosix::Lock<miosix::FastMutex> l(mtxStatus);
 
-    if (dropped != 0)
+    if (!appended)
     {
         LOG_ERR(logger, "Buffer full, the oldest message has been discarded");
         status.nDroppedPackets++;

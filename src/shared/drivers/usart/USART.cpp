@@ -330,7 +330,6 @@ USART::USART(USARTType *usart, Baudrate baudrate, unsigned int queueLen)
 
     // Enabling the peripheral on the right APB
     ClockUtils::enablePeripheralClock(usart);
-    RCC_SYNC();
 
     // Enabling the usart peripheral
     {
