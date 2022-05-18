@@ -61,6 +61,11 @@ void Servo::disable() {}
 
 void Servo::setPosition(float position)
 {
+    if (position < 0)
+        position = 0;
+    else if (position > 1)
+        position = 1;
+
     float pulse = minPulse + (maxPulse - minPulse) * position;
 
     float dutyCycle = pulse * frequency / 1000000.0f;
