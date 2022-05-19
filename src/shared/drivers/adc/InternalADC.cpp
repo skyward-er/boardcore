@@ -168,7 +168,7 @@ bool InternalADC::enableChannel(Channel channel, SampleTime sampleTime)
     return true;
 }
 
-ADCData InternalADC::getVoltage(Channel channel)
+InternalADCData InternalADC::getVoltage(Channel channel)
 {
     float voltage = 0;
 
@@ -177,7 +177,7 @@ ADCData InternalADC::getVoltage(Channel channel)
         voltage = values[indexMap[channel]] * supplyVoltage / RESOLUTION;
     }
 
-    return ADCData{timestamp, (uint8_t)channel, voltage};
+    return InternalADCData{timestamp, (uint8_t)channel, voltage};
 }
 
 bool InternalADC::selfTest()
@@ -193,7 +193,7 @@ bool InternalADC::selfTest()
     return true;
 }
 
-ADCData InternalADC::sampleImpl()
+InternalADCData InternalADC::sampleImpl()
 {
     if (!isUsingDMA)
     {
