@@ -51,8 +51,7 @@
                     "${workspaceFolder}/src/tests"
                 ],
                 "limitSymbolsToIncludedHeaders": true
-            },
-            "compileCommands": "${workspaceFolder}/build/compile_commands.json"
+            }
         },
         {
             "name": "stm32f429zi_stm32f4discovery",
@@ -115,7 +114,7 @@
             "defines": [
                 "DEBUG",
                 "_ARCH_CORTEXM4_STM32F4",
-                "_BOARD_STM32F429ZI_SKYWARD_DEATH_STACK_X",
+                "_BOARD_STM32F429ZI_SKYWARD_DEATHST_X",
                 "_MIOSIX_BOARDNAME=stm32f429zi_skyward_death_stack_x",
                 "HSE_VALUE=8000000",
                 "SYSCLK_FREQ_168MHz=168000000",

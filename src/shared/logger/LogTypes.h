@@ -46,7 +46,7 @@
 #include <sensors/MPU9250/MPU9250Data.h>
 #include <sensors/MS5803/MS5803Data.h>
 #include <sensors/SensorData.h>
-#include <sensors/UbloxGPS/UbloxGPSData.h>
+#include <sensors/UBXGPS/UBXGPSData.h>
 #include <sensors/VN100/VN100Data.h>
 #include <sensors/analog/BatteryVoltageSensorData.h>
 #include <sensors/analog/CurrentSensorData.h>
@@ -97,7 +97,7 @@ void registerTypes(Deserializer& ds)
     ds.registerType<MPU9250Data>();
     ds.registerType<MS5803Data>();
     ds.registerType<TemperatureData>();
-    ds.registerType<UbloxGPSData>();
+    ds.registerType<UBXGPSData>();
     ds.registerType<VN100Data>();
     ds.registerType<BatteryVoltageSensorData>();
     ds.registerType<CurrentSensorData>();
