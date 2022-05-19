@@ -83,7 +83,6 @@ void handleCanMessage(Canbus::CanRXPacket packet)
             CanMsg& msg = msgs.get(i);
             if (msg.id == packet.packet.id)
             {
-                
                 msg.id = 0;
                 msg.ts = getTick() - msg.ts;
                 break;
@@ -243,6 +242,6 @@ int main()
         sendNewRequest();
         Thread::sleep(slp);
         sendNewRequest();
-        Thread::sleep(slp);    
+        Thread::sleep(slp);
     }
 }
