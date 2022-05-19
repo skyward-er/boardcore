@@ -24,9 +24,9 @@
 
 #include <diagnostic/PrintLogger.h>
 #include <drivers/spi/SPIDriver.h>
-#include <sensors/MS5803/MS5803Data.h>
 #include <sensors/Sensor.h>
-#include <utils/Debug.h>
+
+#include "MS5803Data.h"
 
 namespace Boardcore
 {
