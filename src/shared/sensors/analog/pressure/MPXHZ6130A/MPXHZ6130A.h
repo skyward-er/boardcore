@@ -22,7 +22,9 @@
 
 #pragma once
 
-#include "../AnalogPressureSensor.h"
+#include <sensors/analog/pressure/AnalogPressureSensor.h>
+#include <utils/Stats/Stats.h>
+
 #include "MPXHZ6130AData.h"
 
 namespace Boardcore
@@ -34,51 +36,7 @@ namespace Boardcore
 class MPXHZ6130A final : public AnalogPressureSensor<MPXHZ6130AData>
 {
 public:
-    MPXHZ6130A(std::function<ADCData()> getSensorVoltage,
-               const float supplyVoltage             = 5.0,
-               const unsigned int num_calib_samples_ = 200,
-               const float moving_avg_coeff_         = 1.0,
-               const float ref_press_                = 101325.0f)
-        : AnalogPressureSensor(getSensorVoltage, supplyVoltage, 130000),
-          offset(0.0), num_calib_samples(num_calib_samples_),
-          moving_avg_coeff(moving_avg_coeff_), ref_press(ref_press_)
-    {
-    }
-
-    MPXHZ6130AData sampleImpl()
-    {
-        lastSample = AnalogPressureSensor<MPXHZ6130AData>::sampleImpl();
-
-        if (calibrating)
-        {
-            press_stats.add(lastSample.pressure);
-
-            if (press_stats.getStats().nSamples >= num_calib_samples)
-            {
-                calibrating = false;
-                offset      = ref_press - press_stats.getStats().mean;
-
-                TRACE("MPXHZ6130A barometer offset : %.2f \n", offset);
-            }
-        }
-
-        lastSample.pressure = lastSample.pressure + offset;
-
-        lastSample.pressure = movingAverage(lastSample.pressure);
-
-        return lastSample;
-    }
-
-    void setReferencePressure(float p) { ref_press = p; }
-
-    void calibrate()
-    {
-        press_stats.reset();
-        offset      = 0.0f;
-        calibrating = true;
-    }
-
-    bool isCalibrating() { return calibrating; }
+    using AnalogPressureSensor<MPXHZ6130AData>::AnalogPressureSensor;
 
 private:
     float voltageToPressure(float voltage) override
@@ -86,27 +44,9 @@ private:
         return (((voltage / supplyVoltage) + CONST_B) / CONST_A) * 1000;
     }
 
-    float movingAverage(float new_value)
-    {
-        accumulator = (moving_avg_coeff * new_value) +
-                      (1.0 - moving_avg_coeff) * accumulator;
-        return accumulator;
-    }
-
     // Constants from datasheet
     static constexpr float CONST_A = 0.007826;
     static constexpr float CONST_B = 0.07739;
-
-    bool calibrating = false;
-    float offset;
-    Stats press_stats;
-    unsigned int num_calib_samples;
-
-    // moving average
-    const float moving_avg_coeff;
-    float accumulator = 0.0;
-
-    float ref_press;
 };
 
 }  // namespace Boardcore

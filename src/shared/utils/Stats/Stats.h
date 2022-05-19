@@ -28,15 +28,15 @@ namespace Boardcore
 {
 
 /**
- * @brief Statisitics computed by the Stats class.
+ * @brief Statistics computed by the Stats class.
  */
 struct StatsResult
 {
-    float minValue;         ///< Min value found so far
-    float maxValue;         ///< Max value found so far
-    float mean;             ///< Mean of datased
-    float stdDev;           ///< Standard deviation of datset
-    unsigned int nSamples;  ///< Number of samples
+    float minValue;     ///< Min value found so far.
+    float maxValue;     ///< Max value found so far.
+    float mean;         ///< Mean of dataset.
+    float stdDev;       ///< Standard deviation of dataset.
+    uint32_t nSamples;  ///< Number of samples.
 };
 
 /**
@@ -45,35 +45,27 @@ struct StatsResult
 std::ostream& operator<<(std::ostream& os, const StatsResult& sr);
 
 /**
- * @brief Computes on-line statisitics of a dataset. This class should
- * theoretically work with datasets of up to 2^32-1 elements
+ * @brief Computes on-line statistics of a dataset.
+ *
+ * This class should theoretically work with datasets of up to 2^32-1 elements.
  */
 class Stats
 {
 public:
-    /**
-     * Constructor
-     */
     Stats();
 
-    /**
-     * Add an element
-     */
     void add(float data);
 
-    /**
-     * Reset all the stats
-     */
     void reset();
 
     /**
-     * Return statistics of the elements added so far
+     * @brief Return statistics of the elements added so far.
      */
     StatsResult getStats() const;
 
 private:
     float minValue, maxValue, mean, m2;
-    unsigned int n;
+    uint32_t n;
 };
 
 }  // namespace Boardcore
