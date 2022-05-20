@@ -162,13 +162,13 @@ bool UBXGPSSerial::setSerialCommunication()
         // Close the gps file if already opened
         devFs->remove(serialPortName);
 
-        // Open the serial port device with the default boudrate
+        // Open the serial port device with the default baudrate
         if (!devFs->addDevice(serialPortName,
                               intrusive_ref_ptr<Device>(new STM32Serial(
                                   serialPortNumber, defaultBaudrate))))
         {
             LOG_ERR(logger,
-                    "[gps] Failed to open serial port {0} with baudrate {1} as "
+                    "Failed to open serial port {0} with baudrate {1} as "
                     "file {2}",
                     serialPortNumber, defaultBaudrate, serialPortName);
             return false;
@@ -181,7 +181,7 @@ bool UBXGPSSerial::setSerialCommunication()
             return false;
         }
 
-        // Change boudrate
+        // Change baudrate
         if (!setBaudrate())
         {
             return false;
@@ -203,7 +203,7 @@ bool UBXGPSSerial::setSerialCommunication()
         }
     }
 
-    // Reopen the serial port with the configured boudrate
+    // Reopen the serial port with the configured baudrate
     if (!devFs->addDevice(serialPortName,
                           intrusive_ref_ptr<Device>(
                               new STM32Serial(serialPortNumber, baudrate))))
@@ -247,11 +247,11 @@ bool UBXGPSSerial::setDynamicModelToAirborne4g()
 {
     uint8_t payload[] = {
         0x01, 0x00,  // Parameters bitmask, apply dynamic model configuration
-        0x08,        // Dynamic model = airbone 4g
+        0x08,        // Dynamic model = airborne 4g
         0x00,        // Fix mode
         0x00, 0x00, 0x00, 0x00,  // Fixed altitude for 2D mode
         0x00, 0x00, 0x00, 0x00,  // Fixed altitude variance for 2D mode
-        0x00,        // Minimun elevation for a GNSS satellite to be used
+        0x00,        // Minimum elevation for a GNSS satellite to be used
         0x00,        // Reserved
         0x00, 0x00,  // Position DOP mask to use
         0x00, 0x00,  // Time DOP mask to use

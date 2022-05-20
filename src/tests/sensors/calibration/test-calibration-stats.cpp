@@ -128,7 +128,7 @@ int main()
                 const char* yLabel =
                     humanFriendlyDirection[(uint8_t)orientations[i].yAxis];
 
-                printf(" %d. X towards %s, Y towards %s (%d samples)", i,
+                printf(" %d. X towards %s, Y towards %s (%ld samples)", i,
                        xLabel, yLabel, xAxis[i].getStats().nSamples);
 
                 if (selected == i)
@@ -146,7 +146,7 @@ int main()
             printf("Current orientation is: X towards %s, Y towards %s\n",
                    xLabel, yLabel);
 
-            printf("You took %d samples for each axis on this orientation.\n",
+            printf("You took %ld samples for each axis on this orientation.\n",
                    xAxis[selected].getStats().nSamples);
         }
         else if (!strncmp("onext", input, 5))
@@ -292,7 +292,7 @@ int main()
         }
         else if (!strncmp("samples", input, 7))
         {
-            printf("Taken %d samples on the current orientation.\n",
+            printf("Taken %ld samples on the current orientation.\n",
                    xAxis[selected].getStats().nSamples);
         }
         else
