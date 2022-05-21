@@ -81,7 +81,7 @@ TemperatureData MAX31855::sampleImpl()
     // Extract data bits
     sample = sample >> 2;
 
-    // Convert the integer and decimal part separetly
+    // Convert the integer and decimal part separately
     result.temperature = static_cast<float>(sample >> 2);
     result.temperature += static_cast<float>(sample & 0x3) * 0.25;
 
@@ -103,7 +103,7 @@ TemperatureData MAX31855::readInternalTemperature()
     // Extract data bits
     sample[1] = sample[1] >> 4;
 
-    // Convert the integer and decimal part separetly
+    // Convert the integer and decimal part separately
     result.temperature = static_cast<float>(sample[1] >> 4);
     result.temperature += static_cast<float>(sample[1] & 0xF) * 0.0625;
 
