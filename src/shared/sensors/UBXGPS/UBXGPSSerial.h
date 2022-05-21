@@ -91,7 +91,14 @@ private:
      */
     bool reset();
 
-    bool setBaudrate();
+    /**
+     * @brief Sets the UART port baudrate and enables UBX and disables NMEA on
+     * the UART port.
+     *
+     * @param safe Whether to expect an ack after the command.
+     * @return True if the configuration received an acknowledgement.
+     */
+    bool setBaudrateAndUBX(bool safe = true);
 
     /**
      * @brief Sets up the serial port with the correct baudrate.
@@ -103,13 +110,6 @@ private:
      * to communicate.
      */
     bool setSerialCommunication();
-
-    /**
-     * @brief Enables UBX and disables NMEA on the SPI port.
-     *
-     * @return True if the configuration received an acknowledgement.
-     */
-    bool setUBXProtocol();
 
     /**
      * @brief Configures the dynamic model to airborn 4g.

@@ -43,7 +43,6 @@ enum class UBXMessage : uint16_t
     UBX_CFG_RST    = 0x0406,  // Reset receiver
     UBX_CFG_RATE   = 0x0806,  // Navigation/measurement rate settings
     UBX_CFG_NAV5   = 0x2406,  // Navigation engine settings
-    UBX_CFG_VALSET = 0x8a06,  // TODO: Update to newer command
 };
 
 /**

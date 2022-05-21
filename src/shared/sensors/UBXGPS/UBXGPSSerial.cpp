@@ -66,7 +66,7 @@ bool UBXGPSSerial::init()
 
     LOG_DEBUG(logger, "Setting the UBX protocol...");
 
-    if (!setUBXProtocol())
+    if (!setBaudrateAndUBX())
     {
         lastError = SensorErrors::INIT_FAIL;
         LOG_ERR(logger, "Could not set the UBX protocol");
@@ -131,14 +131,18 @@ bool UBXGPSSerial::reset()
     return true;
 }
 
-bool UBXGPSSerial::setBaudrate()
+bool UBXGPSSerial::setBaudrateAndUBX(bool safe)
 {
     uint8_t payload[] = {
-        0x00,                    // Version
-        0xff,                    // All layers
-        0x00, 0x00,              // Reserved
-        0x01, 0x00, 0x52, 0x40,  // Configuration item key ID
-        0xff, 0xff, 0xff, 0xff,  // Value
+        0x01,                    // UART port
+        0x00,                    // Reserved
+        0x00, 0x00,              // txReady
+        0xc0, 0x08, 0x00, 0x00,  // 8bit, no parity, 1 stop bit
+        0x00, 0x00, 0x00, 0x00,  // Baudrate
+        0x01, 0x00,              // inProtoMask = UBX
+        0x01, 0x00,              // outProtoMask = UBX
+        0x00, 0x00,              // flags
+        0x00, 0x00               // reserved2
     };
 
     // Prepare baudrate
@@ -147,9 +151,12 @@ bool UBXGPSSerial::setBaudrate()
     payload[10] = baudrate >> 16;
     payload[11] = baudrate >> 24;
 
-    UBXFrame frame{UBXMessage::UBX_CFG_VALSET, payload, sizeof(payload)};
+    UBXFrame frame{UBXMessage::UBX_CFG_PRT, payload, sizeof(payload)};
 
-    return safeWriteUBXFrame(frame);
+    if (safe)
+        return safeWriteUBXFrame(frame);
+    else
+        return writeUBXFrame(frame);
 }
 
 bool UBXGPSSerial::setSerialCommunication()
@@ -182,7 +189,7 @@ bool UBXGPSSerial::setSerialCommunication()
         }
 
         // Change baudrate
-        if (!setBaudrate())
+        if (!setBaudrateAndUBX(false))
         {
             return false;
         };
@@ -222,25 +229,6 @@ bool UBXGPSSerial::setSerialCommunication()
     }
 
     return true;
-}
-
-bool UBXGPSSerial::setUBXProtocol()
-{
-    uint8_t payload[] = {
-        0x04,                    // SPI port
-        0x00,                    // reserved0
-        0x00, 0x00,              // txReady
-        0x00, 0x00, 0x00, 0x00,  // spiMode = 0, ffCnt = 0 (mechanism off)
-        0x00, 0x00, 0x00, 0x00,  // reserved1
-        0x01, 0x00,              // inProtoMask = UBX
-        0x01, 0x00,              // outProtoMask = UBX
-        0x00, 0x00,              // flags
-        0x00, 0x00               // reserved2
-    };
-
-    UBXFrame frame{UBXMessage::UBX_CFG_PRT, payload, sizeof(payload)};
-
-    return safeWriteUBXFrame(frame);
 }
 
 bool UBXGPSSerial::setDynamicModelToAirborne4g()

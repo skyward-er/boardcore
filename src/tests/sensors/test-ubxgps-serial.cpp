@@ -39,7 +39,7 @@ int main()
     printf("Welcome to the ublox test\n");
 
     // Keep GPS baud rate at default for easier testing
-    UBXGPSSerial gps(921600, RATE, 2, "gps", 38400);
+    UBXGPSSerial gps(38400, RATE, 2, "gps", 9600);
     UBXGPSData dataGPS;
     printf("Gps allocated\n");
 
