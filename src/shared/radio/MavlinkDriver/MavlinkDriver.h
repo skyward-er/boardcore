@@ -98,9 +98,18 @@ public:
      * Message is discarded if the queue is full.
      *
      * @param msg Message to send (mavlink struct).
-     * @return true if the message could be enqueued (queue not full).
+     * @return True if the message could be enqueued.
      */
     bool enqueueMsg(const mavlink_message_t& msg);
+
+    /**
+     * @brief Enqueue a raw packet message into the sync packet queue.
+     *
+     * @param msg Messa to send.
+     * @param size Length in bytes.
+     * @return True if the message was enqueued.
+     */
+    bool enqueueRaw(uint8_t* msg, size_t size);
 
     /**
      * @brief Receiver thread: reads one char at a time from the transceiver and
@@ -110,16 +119,18 @@ public:
      * executed.
      */
     void runReceiver();
+
     /**
      * @brief Sender Thread: Periodically flushes the message queue and sends
      * all the enqueued messages.
+     *
      * After every send, the thread sleeps to guarantee some silence on the
      * channel.
      */
     void runSender();
 
     /**
-     * @brief Synchronized status getter
+     * @brief Synchronized status getter.
      */
     MavlinkStatus getStatus();
 
@@ -139,7 +150,8 @@ private:
     }
 
     /**
-     * @brief Calls the run member function
+     * @brief Calls the run member function.
+     *
      * @param arg the object pointer cast to void*
      */
     static void sndLauncher(void* arg)
@@ -151,8 +163,8 @@ private:
 
     void updateSenderStats(size_t msgCount, bool sent);
 
-    Transceiver* device;   // transceiver used to send and receive
-    MavHandler onReceive;  // function executed on message rcv
+    Transceiver* device;   ///< transceiver used to send and receive
+    MavHandler onReceive;  ///< function executed on message rcv
 
     // Tweakable params
     uint16_t sleepAfterSend;
@@ -254,7 +266,22 @@ bool MavlinkDriver<PktLength, OutQueueSize, MavMsgLength>::enqueueMsg(
     // Update stats
     updateQueueStats(appended);
 
-    // return ok even if a packet was discarded
+    // Return ok even if a packet was discarded
+    return appended;
+}
+
+template <unsigned int PktLength, unsigned int OutQueueSize,
+          unsigned int MavMsgLength>
+bool MavlinkDriver<PktLength, OutQueueSize, MavMsgLength>::enqueueRaw(
+    uint8_t* msg, size_t size)
+{
+    // Append message to the queue
+    bool appended = outQueue.put(msg, size);
+
+    // Update stats
+    updateQueueStats(appended);
+
+    // Return ok even if a packet was discarded
     return appended;
 }
 

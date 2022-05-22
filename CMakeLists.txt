@@ -276,6 +276,9 @@ add_executable(test-sx1278-serial
 )
 sbs_target(test-sx1278-serial stm32f429zi_stm32f4discovery)
 
+add_executable(test-mavlinkdriver src/tests/radio/test-mavlinkdriver.cpp)
+sbs_target(test-mavlinkdriver stm32f407vg_stm32f4discovery)
+
 #-----------------------------------------------------------------------------#
 #                               Tests - Sensors                               #
 #-----------------------------------------------------------------------------#
@@ -367,3 +370,6 @@ sbs_target(test-csvreader stm32f429zi_stm32f4discovery)
 
 add_executable(test-buttonhandler src/tests/utils/test-buttonhandler.cpp)
 sbs_target(test-buttonhandler stm32f429zi_stm32f4discovery)
+
+add_executable(test-syncpacketqueue src/tests/utils/test-syncpacketqueue.cpp)
+sbs_target(test-syncpacketqueue stm32f407vg_stm32f4discovery)
