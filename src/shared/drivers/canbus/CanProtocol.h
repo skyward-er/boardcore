@@ -78,10 +78,12 @@ public:
                     (toSend.len & idMask.leftToSend);
         packet.data[0] = toSend.payload[0];
         can->send(packet);
+        uint8_t tempLen = toSend.len - 1;
         for (int i = 1; i < toSend.len; i++)
         {
-            packet.id = packet.id & !idMask.firstPacket &
-                        (toSend.len - 1 & idMask.leftToSend);
+            packet.id =
+                packet.id & !idMask.firstPacket & (tempLen & idMask.leftToSend);
+            tempLen--;
             packet.data[i] = toSend.payload[i];
         }
     }
