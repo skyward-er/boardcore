@@ -80,6 +80,8 @@ foreach(OPT_BOARD ${BOARDS})
         ${SBS_BASE}/src/shared/sensors/SensorManager.cpp
         ${SBS_BASE}/src/shared/sensors/SensorSampler.cpp
         ${SBS_BASE}/src/shared/sensors/UbloxGPS/UbloxGPS.cpp
+        ${SBS_BASE}/src/shared/sensors/UBXGPS/UBXGPSSerial.cpp
+        ${SBS_BASE}/src/shared/sensors/UBXGPS/UBXGPSSpi.cpp
         ${SBS_BASE}/src/shared/sensors/VN100/VN100.cpp
 
         # AeroUtils
