@@ -29,8 +29,11 @@
 
 #include "Canbus.h"
 
-#define NPACKET 3  // equals the number of board
+#define NPACKET 3  // equals the number of boards in the can system
 
+/**
+ * @brief Struct that contains how the canId is composed
+ */
 struct CanIDMask
 {
     uint32_t priority    = 0x1E000000;
@@ -47,6 +50,11 @@ namespace Boardcore
 namespace Canbus
 {
 
+/**
+ * @brief Generic struct that contains a logical can packet
+ * i.e. 1 accelerometer packet 3*4byte (acc: x,y,z)+timestamp, will be 4
+ * canPacket but a single canData.
+ */
 struct CanData
 {
     uint32_t canId =
@@ -56,25 +64,42 @@ struct CanData
     uint64_t payload[32];
 } data[NPACKET];
 
+/**
+ * @brief Canbus protocol, given an initialized can this class takes care of
+ * sending the multiple packet of CanData with the corresponding id and
+ * receiving single CanPacket that are then reframed as one Candata.
+ */
 class CanProtocol : public ActiveObject
 {
 private:
-    CanbusDriver* can;
-    IRQCircularBuffer<CanData, NPACKET>* buffer;
+    CanbusDriver* can;  // the physical can
+    IRQCircularBuffer<CanData, NPACKET>*
+        buffer;  // the buffer used to send data from CanProtocol to CanHandler
 
 public:
+    /**
+     * @brief Construct a new CanProtocol object
+     * @param can CanbusDriver pointer.
+     * @param The circular buffer
+     */
     CanProtocol(CanbusDriver* can, IRQCircularBuffer<CanData, NPACKET>* buffer)
     {
         this->can    = can;
         this->buffer = buffer;
     }
 
+    /**
+     * @brief Takes a canData, it splits it into single canpacket with the
+     * correct sequential id
+     * @param toSend = containing the id e the data of the packet to send
+     * @warning requires toSend to be not empty
+     */
     void sendCan(CanData toSend)  //@requires toSen to not be empty
     {
         CanPacket packet;
         packet.ext    = true;
         packet.length = toSend.len;
-        packet.id     = (toSend.canId << 7) & idMask.firstPacket &
+        packet.id     = (toSend.canId << 7) | idMask.firstPacket |
                     (toSend.len & idMask.leftToSend);
         packet.data[0] = toSend.payload[0];
         can->send(packet);
@@ -82,17 +107,22 @@ public:
         for (int i = 1; i < toSend.len; i++)
         {
             packet.id =
-                packet.id & !idMask.firstPacket & (tempLen & idMask.leftToSend);
+                packet.id | !idMask.firstPacket | (tempLen & idMask.leftToSend);
             tempLen--;
             packet.data[i] = toSend.payload[i];
         }
     }
 
-    /* Destructor */
-    ~CanProtocol() {}
-
 protected:
-    void run() override
+    /**
+     * @brief Keeps listening on hte canbus for packets, once received it checks
+     * if they are expected (that id is already present in data), if they are
+     * they are added to the list. once we receive the correct amount of packet
+     * we send it to can handler.
+     */
+    void run() override  // for now if a packet is missed/received in the wrong
+                         // order the whole packet will be lost once we receive
+                         // a new first packet without warning canhandler
     {
         uint32_t sourceId;
         CanPacket packet;
@@ -131,10 +161,10 @@ protected:
                                      (packet.id & idMask.leftToSend)] =
                             tempPayload;
                         data[sourceId].nRec++;
-                        if (data[sourceId].nRec == data[sourceId].len)
-                        {
-                            buffer->put(data[sourceId]);
-                        }
+                    }
+                    if (data[sourceId].nRec == data[sourceId].len)
+                    {
+                        buffer->put(data[sourceId]);
                     }
                     break;
                 }
