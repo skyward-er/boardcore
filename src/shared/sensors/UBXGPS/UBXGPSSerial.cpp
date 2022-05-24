@@ -57,12 +57,12 @@ bool UBXGPSSerial::init()
 
     LOG_DEBUG(logger, "Resetting the device...");
 
-    if (!reset())
-    {
-        lastError = SensorErrors::INIT_FAIL;
-        LOG_ERR(logger, "Could not reset the device");
-        return false;
-    }
+    // if (!reset())
+    // {
+    //     lastError = SensorErrors::INIT_FAIL;
+    //     LOG_ERR(logger, "Could not reset the device");
+    //     return false;
+    // }
 
     LOG_DEBUG(logger, "Setting the UBX protocol...");
 

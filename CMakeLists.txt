@@ -309,6 +309,9 @@ add_executable(test-ubloxgps-spi src/tests/sensors/test-ubloxgps.cpp)
 target_compile_definitions(test-ubloxgps-spi PRIVATE USE_SPI)
 sbs_target(test-ubloxgps-spi stm32f407vg_stm32f4discovery)
 
+add_executable(test-ubxgps-serial src/tests/sensors/test-ubxgps-serial.cpp)
+sbs_target(test-ubxgps-serial stm32f429zi_stm32f4discovery)
+
 add_executable(test-vn100 src/tests/sensors/test-vn100.cpp)
 sbs_target(test-vn100 stm32f407vg_stm32f4discovery)
 
