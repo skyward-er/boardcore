@@ -79,11 +79,9 @@ TemperatureData MAX6675::sampleImpl()
 
     // Extract bits 14-3
     sample &= 0x7FF8;
-    sample >>= 3;
 
     // Convert the integer and decimal part separately
-    result.temperature = static_cast<float>(sample >> 2);
-    result.temperature += static_cast<float>(sample & 0x3) * 0.25;
+    result.temperature += static_cast<float>(sample >> 3) * 0.25;
 
     return result;
 }
