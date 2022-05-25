@@ -156,14 +156,15 @@ SX1278::SX1278(SPIBusInterface &bus, miosix::GpioPin cs) : bus_mgr(bus, cs) {}
 
 SX1278::Error SX1278::init(Config config)
 {
-    // Lock the bus
-    bus_mgr.lock(Mode::MODE_STDBY);
-    bus_mgr.waitForIrq(RegIrqFlags::MODE_READY);
-
+    // Check if the device is sane before locking the bus
     if (getVersion() != 0x12)
     {
         return Error::BAD_VERSION;
     }
+
+    // Lock the bus
+    bus_mgr.lock(Mode::MODE_STDBY);
+    bus_mgr.waitForIrq(RegIrqFlags::MODE_READY);
 
     setBitrate(config.bitrate);
     setFreqDev(config.freq_dev);
