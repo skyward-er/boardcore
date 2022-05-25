@@ -22,44 +22,37 @@
 
 #pragma once
 
+#include <utils/collections/CircularBuffer.h>
+
 namespace Boardcore
 {
 
-template <typename T>
+template <typename T, unsigned int Size>
 class MovingAverage
 {
 public:
-    MovingAverage(int movingAverageN = 10) : movingAverageN(movingAverageN) {}
+    MovingAverage() {}
 
-    T getValue() { return value; }
+    void push(T value) { buffer.put(value); }
 
-    void updateValue(T newValue)
+    T getAverage()
     {
-        if (value == 0)
-        {
-            value = newValue;
-            return;
-        }
+        T average = 0;
 
-        value *= movingAverageCompCoeff;
-        value += newValue * movingAverageCoeff;
+        for (size_t i = 0; i < buffer.getSize(); i++)
+            average += buffer.get(i);
+
+        return average / buffer.getSize();
     }
 
-    void reset() { value = 0; }
-
-    void setN(int movingAverageN)
+    void reset()
     {
-        this->movingAverageN   = movingAverageN;
-        movingAverageCoeff     = 1 / (float)movingAverageN;
-        movingAverageCompCoeff = 1 - movingAverageCoeff;
+        while (!buffer.isEmpty())
+            buffer.pop();
     }
 
 private:
-    T value = 0;
-
-    int movingAverageN           = 20;
-    float movingAverageCoeff     = 1 / (float)movingAverageN;
-    float movingAverageCompCoeff = 1 - movingAverageCoeff;
+    CircularBuffer<float, Size> buffer;
 };
 
 }  // namespace Boardcore
