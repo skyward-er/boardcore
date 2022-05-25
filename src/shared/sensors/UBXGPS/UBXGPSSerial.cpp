@@ -100,6 +100,8 @@ bool UBXGPSSerial::init()
         return false;
     }
 
+    this->start();
+
     return true;
 }
 
@@ -311,7 +313,8 @@ bool UBXGPSSerial::readUBXFrame(UBXFrame& frame)
         else
         {
             i = 0;
-            LOG_DEBUG(logger, "Received unexpected byte: {:02x} {:#c}", c, c);
+            // LOG_DEBUG(logger, "Received unexpected byte: {:02x} {:#c}", c,
+            // c);
         }
     }
 
@@ -405,6 +408,8 @@ void UBXGPSSerial::run()
 
         UBXPvtFrame::Payload& pvtP = pvt.getPayload();
 
+        // Lock the mutex
+        Lock<FastMutex> l(mutex);
         threadSample.gpsTimestamp =
             TimestampTimer::getInstance().getTimestamp();
         threadSample.latitude      = (float)pvtP.lat / 1e7;

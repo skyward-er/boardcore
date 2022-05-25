@@ -30,7 +30,7 @@
 using namespace Boardcore;
 using namespace miosix;
 
-#define RATE 4
+#define RATE 10
 
 int main()
 {
@@ -43,7 +43,7 @@ int main()
     tx.alternateFunction(7);
 
     // Keep GPS baud rate at default for easier testing
-    UBXGPSSerial gps(38400, RATE, 2, "gps", 9600);
+    UBXGPSSerial gps(256000, RATE, 2, "gps", 9600);
     UBXGPSData dataGPS;
     printf("Gps allocated\n");
 
@@ -68,7 +68,7 @@ int main()
     }
 
     // Start the gps thread
-    gps.start();
+    // gps.start();
     printf("Gps started\n");
 
     while (true)

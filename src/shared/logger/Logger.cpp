@@ -301,7 +301,7 @@ LoggerResult Logger::logImpl(const char* name, const void* data,
 {
     if (started == false)
     {
-        TRACE("Attempting to log %s but the Logger is not started!\n", name);
+        // TRACE("Attempting to log %s but the Logger is not started!\n", name);
         stats.droppedSamples++;
 
         // Signal that we are trying to write to a closed log

@@ -115,6 +115,8 @@ bool BME280::init()
         return false;
     }
 
+    LOG_DEBUG(logger, "Device configurated correctly!");
+
     return true;
 }
 
