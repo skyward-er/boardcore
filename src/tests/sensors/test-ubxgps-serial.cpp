@@ -30,38 +30,31 @@
 using namespace Boardcore;
 using namespace miosix;
 
-#define RATE 4
+typedef miosix::Gpio<GPIOD_BASE, 5> u2tx2;
+
+#define RATE 1
 
 int main()
 {
-    (void)TimestampTimer::getInstance();
-
-    printf("Welcome to the ublox test\n");
+    u2tx2::mode(Mode::ALTERNATE);
+    u2tx2::alternateFunction(7);
 
     // Keep GPS baud rate at default for easier testing
     UBXGPSSerial gps(38400, RATE, 2, "gps", 9600);
-    UBXGPSData dataGPS;
+    UBXGPSData data;
     printf("Gps allocated\n");
 
     // Init the gps
     if (gps.init())
-    {
         printf("Successful gps initialization\n");
-    }
     else
-    {
         printf("Failed gps initialization\n");
-    }
 
-    // Perform the selftest
+    // Perform the self test
     if (gps.selfTest())
-    {
-        printf("Successful gps selftest\n");
-    }
+        printf("Successful gps self test\n");
     else
-    {
-        printf("Failed gps selftest\n");
-    }
+        printf("Failed gps self test\n");
 
     // Start the gps thread
     gps.start();
@@ -69,23 +62,21 @@ int main()
 
     while (true)
     {
-        printf("a\n");
         // Give time to the thread
         Thread::sleep(1000 / RATE);
 
         // Sample
         gps.sample();
-        printf("b\n");
-        dataGPS = gps.getLastSample();
+        data = gps.getLastSample();
 
         // Print out the latest sample
         printf(
-            "[gps] timestamp: % 4.3f, fix: %01d lat: % f lon: % f "
-            "height: %4.1f nsat: %2d speed: %3.2f velN: % 3.2f velE: % 3.2f "
-            "track %3.1f\n",
-            (float)dataGPS.gpsTimestamp / 1000000, dataGPS.fix,
-            dataGPS.latitude, dataGPS.longitude, dataGPS.height,
-            dataGPS.satellites, dataGPS.speed, dataGPS.velocityNorth,
-            dataGPS.velocityEast, dataGPS.track);
+            "[%.2f] lat: % f lon: % f height: %4.1f velN: % 3.2f velE: % 3.2f "
+            "velD: % 3.2f speed: %3.2f track: %.2f posDOP: %.2f nSat: %2d fix: "
+            "%01d\n",
+            data.gpsTimestamp / 1e6, data.latitude, data.longitude, data.height,
+            data.velocityNorth, data.velocityEast, data.velocityDown,
+            data.speed, data.track, data.positionDOP, data.satellites,
+            data.fix);
     }
 }

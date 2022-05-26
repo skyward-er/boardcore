@@ -353,7 +353,7 @@ add_executable(test-ms5803 src/tests/sensors/test-ms5803.cpp)
 sbs_target(test-ms5803 stm32f429zi_skyward_death_stack_x)
 
 add_executable(test-ubxgps-serial src/tests/sensors/test-ubxgps-serial.cpp)
-sbs_target(test-ubxgps-serial stm32f429zi_skyward_death_stack_x)
+sbs_target(test-ubxgps-serial stm32f429zi_stm32f4discovery)
 
 add_executable(test-ubxgps-spi src/tests/sensors/test-ubxgps-spi.cpp)
 sbs_target(test-ubxgps-spi stm32f429zi_skyward_death_stack_x)

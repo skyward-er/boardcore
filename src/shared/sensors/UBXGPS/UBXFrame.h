@@ -35,14 +35,16 @@ namespace Boardcore
  */
 enum class UBXMessage : uint16_t
 {
-    UBX_NAV_PVT  = 0x0701,  // Navigation position velocity time solution
-    UBX_ACK_NAK  = 0x0005,  // Message acknowledged
-    UBX_ACK_ACK  = 0x0105,  // Message not acknowledged
-    UBX_CFG_PRT  = 0x0006,  // Port configuration
-    UBX_CFG_MSG  = 0x0106,  // Set message rate
-    UBX_CFG_RST  = 0x0406,  // Reset receiver
-    UBX_CFG_RATE = 0x0806,  // Navigation/measurement rate settings
-    UBX_CFG_NAV5 = 0x2406,  // Navigation engine settings
+    UBX_NAV_POSLLH = 0x0201,  // Geodetic position solution
+    UBX_NAV_SOL    = 0x0601,  // Navigation solution information
+    UBX_NAV_PVT    = 0x0701,  // Navigation position velocity time solution
+    UBX_ACK_NAK    = 0x0005,  // Message acknowledged
+    UBX_ACK_ACK    = 0x0105,  // Message not acknowledged
+    UBX_CFG_PRT    = 0x0006,  // Port configuration
+    UBX_CFG_MSG    = 0x0106,  // Set message rate
+    UBX_CFG_RST    = 0x0406,  // Reset receiver
+    UBX_CFG_RATE   = 0x0806,  // Navigation/measurement rate settings
+    UBX_CFG_NAV5   = 0x2406,  // Navigation engine settings
 };
 
 /**
@@ -200,6 +202,52 @@ public:
     bool isValid() const;
 };
 
+struct UBXPosllhFrame : public UBXFrame
+{
+    struct __attribute__((packed)) Payload
+    {
+        uint32_t iTOW;   // GPS time of week of the navigation epoch [ms]
+        int32_t lon;     // Longitude {1e-7} [deg]
+        int32_t lat;     // Latitude {1e-7} [deg]
+        int32_t height;  // Height above ellipsoid [mm]
+        int32_t hMSL;    // Height above mean sea level [mm]
+        uint32_t hAcc;   // Horizontal accuracy estimate [mm]
+        uint32_t vAcc;   // Vertical accuracy estimate [mm]
+    };
+
+    Payload& getPayload() const;
+
+    bool isValid() const;
+};
+
+struct UBXSolFrame : public UBXFrame
+{
+    struct __attribute__((packed)) Payload
+    {
+        uint32_t iTOW;   // GPS time of week of the navigation epoch [ms]
+        int32_t fTOW;    // Fractional nanoseconds remainder of rounded ms
+        int16_t week;    // GPS week (GPS time)
+        uint8_t gpsFix;  // GPS Fix type
+        uint8_t flags;   // Fix status flags
+        int32_t ecefX;   // ECEF X coordinate [cm]
+        int32_t ecefY;   // ECEF Y coordinate [cm]
+        int32_t ecefZ;   // ECEF Z coordinate [cm]
+        uint32_t pAcc;   // 3D position accuracy estimate [cm]
+        int32_t ecefVX;  // ECEF X velocity [cm/s]
+        int32_t ecefVY;  // ECEF y velocity [cm/s]
+        int32_t ecefVZ;  // ECEF z velocity [cm/s]
+        uint32_t sAcc;   // [cm/s]
+        uint16_t pDOP;   // Position DOP
+        uint8_t reserved1;
+        uint8_t numSV;  // Number of satellites used in Nav Solution
+        uint8_t reserved2;
+    };
+
+    Payload& getPayload() const;
+
+    bool isValid() const;
+};
+
 inline UBXFrame::UBXFrame(UBXMessage message, const uint8_t* payload,
                           uint16_t payloadLength)
     : message(static_cast<uint16_t>(message)), payloadLength(payloadLength)
@@ -300,9 +348,29 @@ inline UBXPvtFrame::Payload& UBXPvtFrame::getPayload() const
     return (Payload&)payload;
 }
 
+inline UBXPosllhFrame::Payload& UBXPosllhFrame::getPayload() const
+{
+    return (Payload&)payload;
+}
+
+inline UBXSolFrame::Payload& UBXSolFrame::getPayload() const
+{
+    return (Payload&)payload;
+}
+
 inline bool UBXPvtFrame::isValid() const
 {
     return UBXFrame::isValid() && getMessage() == UBXMessage::UBX_NAV_PVT;
+}
+
+inline bool UBXPosllhFrame::isValid() const
+{
+    return UBXFrame::isValid() && getMessage() == UBXMessage::UBX_NAV_POSLLH;
+}
+
+inline bool UBXSolFrame::isValid() const
+{
+    return UBXFrame::isValid() && getMessage() == UBXMessage::UBX_NAV_SOL;
 }
 
 }  // namespace Boardcore

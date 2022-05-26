@@ -219,14 +219,14 @@ InternalADCData InternalADC::sampleImpl()
 
         // This should trigger the DMA stream for each channel's conversion
 
-        // Wait for tranfer end
+        // Wait for transfer end
         while (!(*statusReg & (transferCompleteMask | transferErrorMask)))
             ;
 
         // Clear the transfer complete flag
         *clearFlagReg |= transferCompleteMask;
 
-        // If and error has occurred (probaly due to a higher priority stream)
+        // If and error has occurred (probably due to a higher priority stream)
         // don't update the timestamp, the values should not have been updated
         if (*statusReg & transferErrorMask)
         {

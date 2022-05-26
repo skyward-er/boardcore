@@ -55,14 +55,14 @@ bool UBXGPSSerial::init()
         return false;
     }
 
-    LOG_DEBUG(logger, "Resetting the device...");
+    // LOG_DEBUG(logger, "Resetting the device...");
 
-    if (!reset())
-    {
-        lastError = SensorErrors::INIT_FAIL;
-        LOG_ERR(logger, "Could not reset the device");
-        return false;
-    }
+    // if (!reset())
+    // {
+    //     lastError = SensorErrors::INIT_FAIL;
+    //     LOG_ERR(logger, "Could not reset the device");
+    //     return false;
+    // }
 
     LOG_DEBUG(logger, "Setting the UBX protocol...");
 
@@ -91,9 +91,16 @@ bool UBXGPSSerial::init()
         return false;
     }
 
-    LOG_DEBUG(logger, "Setting the PVT message rate...");
+    LOG_DEBUG(logger, "Setting the messages rate...");
 
-    if (!setPVTMessageRate())
+    if (!setPOSLLHMessageRate())
+    {
+        lastError = SensorErrors::INIT_FAIL;
+        LOG_ERR(logger, "Could not set the PVT message rate");
+        return false;
+    }
+
+    if (!setSOLMessageRate())
     {
         lastError = SensorErrors::INIT_FAIL;
         LOG_ERR(logger, "Could not set the PVT message rate");
@@ -289,6 +296,30 @@ bool UBXGPSSerial::setPVTMessageRate()
     return safeWriteUBXFrame(frame);
 }
 
+bool UBXGPSSerial::setPOSLLHMessageRate()
+{
+    uint8_t payload[] = {
+        0x01, 0x02,  // POSLLH message
+        0x01         // Rate = 1
+    };
+
+    UBXFrame frame{UBXMessage::UBX_CFG_MSG, payload, sizeof(payload)};
+
+    return safeWriteUBXFrame(frame);
+}
+
+bool UBXGPSSerial::setSOLMessageRate()
+{
+    uint8_t payload[] = {
+        0x01, 0x06,  // POSLLH message
+        0x01         // Rate = 1
+    };
+
+    UBXFrame frame{UBXMessage::UBX_CFG_MSG, payload, sizeof(payload)};
+
+    return safeWriteUBXFrame(frame);
+}
+
 bool UBXGPSSerial::readUBXFrame(UBXFrame& frame)
 {
     // Search UBX frame preamble byte by byte
@@ -311,7 +342,7 @@ bool UBXGPSSerial::readUBXFrame(UBXFrame& frame)
         else
         {
             i = 0;
-            LOG_DEBUG(logger, "Received unexpected byte: {:02x} {:#c}", c, c);
+            // LOG_DEBUG(logger, "Received unexpected byte: {:02x}", c);
         }
     }
 
@@ -394,30 +425,67 @@ void UBXGPSSerial::run()
 {
     while (!shouldStop())
     {
-        UBXPvtFrame pvt;
+        UBXFrame frame;
 
         // Try to read the message
-        if (!readUBXFrame(pvt))
+        if (!readUBXFrame(frame))
         {
             LOG_DEBUG(logger, "Unable to read a UBX message");
             continue;
         }
 
-        UBXPvtFrame::Payload& pvtP = pvt.getPayload();
+        uint8_t data[frame.getLength()];
+        frame.writePacked(data);
 
-        threadSample.gpsTimestamp =
-            TimestampTimer::getInstance().getTimestamp();
-        threadSample.latitude      = (float)pvtP.lat / 1e7;
-        threadSample.longitude     = (float)pvtP.lon / 1e7;
-        threadSample.height        = (float)pvtP.height / 1e3;
-        threadSample.velocityNorth = (float)pvtP.velN / 1e3;
-        threadSample.velocityEast  = (float)pvtP.velE / 1e3;
-        threadSample.velocityDown  = (float)pvtP.velD / 1e3;
-        threadSample.speed         = (float)pvtP.gSpeed / 1e3;
-        threadSample.track         = (float)pvtP.headMot / 1e5;
-        threadSample.positionDOP   = (float)pvtP.pDOP / 1e2;
-        threadSample.satellites    = pvtP.numSV;
-        threadSample.fix           = pvtP.fixType;
+        UBXPvtFrame pvt;
+        pvt.readPacked(data);
+
+        if (pvt.isValid())
+        {
+            UBXPvtFrame::Payload& pvtP = pvt.getPayload();
+
+            threadSample.gpsTimestamp =
+                TimestampTimer::getInstance().getTimestamp();
+            threadSample.latitude      = (float)pvtP.lat / 1e7;
+            threadSample.longitude     = (float)pvtP.lon / 1e7;
+            threadSample.height        = (float)pvtP.height / 1e3;
+            threadSample.velocityNorth = (float)pvtP.velN / 1e3;
+            threadSample.velocityEast  = (float)pvtP.velE / 1e3;
+            threadSample.velocityDown  = (float)pvtP.velD / 1e3;
+            threadSample.speed         = (float)pvtP.gSpeed / 1e3;
+            threadSample.track         = (float)pvtP.headMot / 1e5;
+            threadSample.positionDOP   = (float)pvtP.pDOP / 1e2;
+            threadSample.satellites    = pvtP.numSV;
+            threadSample.fix           = pvtP.fixType;
+        }
+
+        UBXPosllhFrame posllh;
+        posllh.readPacked(data);
+
+        if (posllh.isValid())
+        {
+            UBXPosllhFrame::Payload& posllhP = posllh.getPayload();
+
+            threadSample.gpsTimestamp =
+                TimestampTimer::getInstance().getTimestamp();
+            threadSample.latitude  = (float)posllhP.lat / 1e7;
+            threadSample.longitude = (float)posllhP.lon / 1e7;
+            threadSample.height    = (float)posllhP.height / 1e3;
+        }
+
+        UBXSolFrame sol;
+        sol.readPacked(data);
+
+        if (sol.isValid())
+        {
+            UBXSolFrame::Payload& solP = sol.getPayload();
+
+            threadSample.gpsTimestamp =
+                TimestampTimer::getInstance().getTimestamp();
+            threadSample.positionDOP = (float)solP.pDOP / 1e2;
+            threadSample.satellites  = solP.numSV;
+            threadSample.fix         = solP.gpsFix;
+        }
 
         StackLogger::getInstance().updateStack(THID_GPS);
     }

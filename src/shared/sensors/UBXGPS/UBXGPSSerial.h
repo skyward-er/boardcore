@@ -132,6 +132,10 @@ private:
      */
     bool setPVTMessageRate();
 
+    bool setPOSLLHMessageRate();
+
+    bool setSOLMessageRate();
+
     /**
      * @brief Reads a UBX frame.
      *
