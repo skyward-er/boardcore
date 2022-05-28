@@ -140,7 +140,7 @@ PressureData BMP280::readPressure()
     adc_P |= (buffer[2] >> 4) & 0x0F;
 
     // Compensate pressure
-    lastSample.pressureTimestamp = TimestampTimer::getInstance().getTimestamp();
+    lastSample.pressureTimestamp = TimestampTimer::getTimestamp();
     lastSample.pressure =
         (float)compensatePressure(adc_P) / 256;  // Convert to Pa
 
@@ -163,9 +163,8 @@ TemperatureData BMP280::readTemperature()
     adcTemperature |= (buffer[2] >> 4) & 0x0F;
 
     // Compensate temperature
-    fineTemperature = computeFineTemperature(adcTemperature);
-    lastSample.temperatureTimestamp =
-        TimestampTimer::getInstance().getTimestamp();
+    fineTemperature                 = computeFineTemperature(adcTemperature);
+    lastSample.temperatureTimestamp = TimestampTimer::getTimestamp();
     lastSample.temperature = (float)compensateTemperature(fineTemperature) /
                              100;  // Converto to DegC
 
@@ -213,12 +212,12 @@ BMP280Data BMP280::sampleImpl()
 
     // Compensate temperature
     fineTemperature           = computeFineTemperature(adcTemperature);
-    data.temperatureTimestamp = TimestampTimer::getInstance().getTimestamp();
+    data.temperatureTimestamp = TimestampTimer::getTimestamp();
     data.temperature          = (float)compensateTemperature(fineTemperature) /
                        100;  // Converto to DegC
 
     // Compensate pressure
-    data.pressureTimestamp = TimestampTimer::getInstance().getTimestamp();
+    data.pressureTimestamp = TimestampTimer::getTimestamp();
     data.pressure = (float)compensatePressure(adc_P) / 256;  // Convert to Pa
 
     return data;

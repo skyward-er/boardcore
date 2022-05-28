@@ -303,7 +303,7 @@ void NAS::correctPitot(const float deltaP, const float staticP)
 
 NASState NAS::getState() const
 {
-    return NASState(TimestampTimer::getInstance().getTimestamp(), x);
+    return NASState(TimestampTimer::getTimestamp(), x);
 }
 
 Eigen::Matrix<float, 13, 1> NAS::getX() const { return x; }

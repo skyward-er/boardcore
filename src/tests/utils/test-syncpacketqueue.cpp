@@ -49,8 +49,7 @@ int main()
             uint8_t packetContent[20];
             size_t size = packet.dump(packetContent);
 
-            printf("[%.2f] ",
-                   TimestampTimer::getInstance().getTimestamp() / 1e6);
+            printf("[%.2f] ", TimestampTimer::getTimestamp() / 1e6);
 
             for (size_t i = 0; i < size; i++)
                 printf("%c", packetContent[i]);

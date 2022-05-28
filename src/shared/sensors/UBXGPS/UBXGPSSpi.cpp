@@ -118,7 +118,7 @@ UBXGPSData UBXGPSSpi::sampleImpl()
     UBXPvtFrame::Payload& pvtP = pvt.getPayload();
 
     UBXGPSData sample;
-    sample.gpsTimestamp  = TimestampTimer::getInstance().getTimestamp();
+    sample.gpsTimestamp  = TimestampTimer::getTimestamp();
     sample.latitude      = (float)pvtP.lat / 1e7;
     sample.longitude     = (float)pvtP.lon / 1e7;
     sample.height        = (float)pvtP.height / 1e3;

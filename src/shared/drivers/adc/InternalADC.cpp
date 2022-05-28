@@ -239,7 +239,7 @@ InternalADCData InternalADC::sampleImpl()
         }
     }
 
-    timestamp = TimestampTimer::getInstance().getTimestamp();
+    timestamp = TimestampTimer::getTimestamp();
 
     return lastSample;
 }

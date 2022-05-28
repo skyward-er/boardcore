@@ -405,8 +405,7 @@ void UBXGPSSerial::run()
 
         UBXPvtFrame::Payload& pvtP = pvt.getPayload();
 
-        threadSample.gpsTimestamp =
-            TimestampTimer::getInstance().getTimestamp();
+        threadSample.gpsTimestamp  = TimestampTimer::getTimestamp();
         threadSample.latitude      = (float)pvtP.lat / 1e7;
         threadSample.longitude     = (float)pvtP.lon / 1e7;
         threadSample.height        = (float)pvtP.height / 1e3;

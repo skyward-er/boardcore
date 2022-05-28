@@ -76,7 +76,7 @@ TemperatureData MAX31855::sampleImpl()
     }
 
     TemperatureData result{};
-    result.temperatureTimestamp = TimestampTimer::getInstance().getTimestamp();
+    result.temperatureTimestamp = TimestampTimer::getTimestamp();
 
     // Extract data bits
     sample = sample >> 2;
@@ -98,7 +98,7 @@ TemperatureData MAX31855::readInternalTemperature()
     }
 
     TemperatureData result{};
-    result.temperatureTimestamp = TimestampTimer::getInstance().getTimestamp();
+    result.temperatureTimestamp = TimestampTimer::getTimestamp();
 
     // Extract data bits
     sample[1] = sample[1] >> 4;

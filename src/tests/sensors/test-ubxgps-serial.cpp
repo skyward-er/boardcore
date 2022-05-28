@@ -34,8 +34,6 @@ using namespace miosix;
 
 int main()
 {
-    (void)TimestampTimer::getInstance();
-
     printf("Welcome to the ublox test\n");
 
     // Keep GPS baud rate at default for easier testing

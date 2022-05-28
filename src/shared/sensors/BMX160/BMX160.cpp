@@ -159,7 +159,7 @@ BMX160Data BMX160::sampleImpl()
 BMX160Temperature BMX160::getTemperature()
 {
     BMX160Temperature t;
-    t.temperatureTimestamp = TimestampTimer::getInstance().getTimestamp();
+    t.temperatureTimestamp = TimestampTimer::getTimestamp();
     t.temperature          = temperature;
     return t;
 }
@@ -846,9 +846,9 @@ void BMX160::readFifo(bool headerless)
     }
 
     // Update fifo statistics
-    stats.timestamp          = TimestampTimer::getInstance().getTimestamp();
-    stats.watermarkTimestamp = watermarkTimestamp;
-    stats.fifoDuration       = timestamp;
+    stats.timestamp               = TimestampTimer::getTimestamp();
+    stats.watermarkTimestamp      = watermarkTimestamp;
+    stats.fifoDuration            = timestamp;
     stats.interruptTimestampDelta = interruptTimestampDelta;
     stats.len                     = len;
 

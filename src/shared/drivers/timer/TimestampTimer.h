@@ -48,55 +48,44 @@ namespace Boardcore
  * For timer resolution and duration refer to :
  * https://docs.google.com/spreadsheets/d/1FiNDVU7Rg98yZzz1dZ4GDAq3-nEg994ziezCawJ-OK4/edit?usp=sharing
  */
-class TimestampTimer : public Singleton<TimestampTimer>
+namespace TimestampTimer
 {
-    friend class Singleton<TimestampTimer>;
 
-public:
-    /**
-     * @brief Preferred timer clock frequency.
-     */
-    static constexpr uint32_t TIMER_FREQUENCY = 250000;
+/**
+ * @brief Preferred timer clock frequency.
+ */
+static constexpr uint32_t TIMER_FREQUENCY = 250000;
 
-    /**
-     * @brief Resets the timestamp timer to 0.
-     */
-    void resetTimestamp();
+/**
+ * @brief Resets the timestamp timer to 0.
+ */
+void resetTimestamp();
 
-    /**
-     * @brief Compute the current timer value in microseconds.
-     *
-     * @return Current timestamp in microseconds.
-     */
-    uint64_t getTimestamp();
+/**
+ * @brief Compute the current timer value in microseconds.
+ *
+ * @return Current timestamp in microseconds.
+ */
+uint64_t getTimestamp();
 
 #ifndef COMPILE_FOR_HOST
-    TIM_TypeDef *getTimer();
+
+/**
+ * @brief Initialize the timer.
+ *
+ * Enables the timer clock, resets the timer registers and sets che correct
+ * timer configuration.
+ */
+GP32bitTimer initTimestampTimer();
+
+/**
+ * @brief TimestampTimer defaults to TIM2.
+ */
+extern GP32bitTimer timestampTimer;
+
 #endif
 
-private:
-    TimestampTimer();
-
-    /**
-     * @brief Initialize the timer.
-     *
-     * Enables the timer clock, resets the timer registers and sets che correct
-     * timer configuration.
-     */
-    void initTimestampTimer();
-
-    /**
-     * @brief Starts the timer peripheral.
-     */
-    void enableTimestampTimer();
-
-#ifndef COMPILE_FOR_HOST
-    /**
-     * @brief TimestampTimer defaults to TIM2.
-     */
-    GP32bitTimer timer = GP32bitTimer{TIM2};
-#endif
-};
+};  // namespace TimestampTimer
 
 inline uint64_t TimestampTimer::getTimestamp()
 {
@@ -105,7 +94,7 @@ inline uint64_t TimestampTimer::getTimestamp()
 #else
     // With a timer frequency of 250KHz, the conversion from timer ticks to
     // microseconds only take a 2 byte shift (x4)
-    return static_cast<uint64_t>(timer.readCounter() << 2);
+    return static_cast<uint64_t>(timestampTimer.readCounter() << 2);
 
     // If the timer frequency is not a multiple of 2 you must compute the value
     // this way:

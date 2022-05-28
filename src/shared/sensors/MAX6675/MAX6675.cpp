@@ -75,7 +75,7 @@ TemperatureData MAX6675::sampleImpl()
     }
 
     TemperatureData result{};
-    result.temperatureTimestamp = TimestampTimer::getInstance().getTimestamp();
+    result.temperatureTimestamp = TimestampTimer::getTimestamp();
 
     // Extract bits 14-3
     sample &= 0x7FF8;

@@ -22,7 +22,6 @@
 
 #pragma once
 
-#include <interfaces-impl/hwmapping.h>
 #include <interfaces/arch_registers.h>
 #include <stddef.h>
 #include <utils/ClockUtils.h>

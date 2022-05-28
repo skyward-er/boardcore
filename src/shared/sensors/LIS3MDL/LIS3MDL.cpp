@@ -71,21 +71,15 @@ bool LIS3MDL::selfTest()
         return false;
     }
 
-    // NUM_SAMPLES: # of samples used to take the average value before tests
     constexpr int NUM_SAMPLES = 5;
-
-    // NUM_TESTS: # of actual tests
-    constexpr int NUM_TESTS = 5;
-
-    // SLEEP_TIME: milliseconds between samples/tests
-    constexpr int SLEEP_TIME = 50;
+    constexpr int SLEEP_TIME  = 50;
 
     // Absolute value of extra tolerance
     constexpr float t = 0.1f;
 
     // Range which delta must be between, one for axis and expressed as {min,
     // max}. The unit is gauss.
-    constexpr float r[3][2] = {{1.f, 3.f}, {1.f, 3.f}, {0.1f, 1.f}};
+    constexpr float deltaRange[3][2] = {{1.f, 3.f}, {1.f, 3.f}, {0.1f, 1.f}};
 
     float avgX = 0.f, avgY = 0.f, avgZ = 0.f;
 
@@ -120,30 +114,28 @@ bool LIS3MDL::selfTest()
     }
 
     // Deltas: absolute difference between the values measured before and after
-    float d[3];
+    float deltas[3];
 
-    for (int i = 0; i < NUM_TESTS; ++i)
+    miosix::Thread::sleep(SLEEP_TIME);
+
+    LIS3MDLData lastData = sampleImpl();
+    deltas[0]            = std::abs(lastData.magneticFieldX - avgX);
+    deltas[1]            = std::abs(lastData.magneticFieldY - avgY);
+    deltas[2]            = std::abs(lastData.magneticFieldZ - avgZ);
+
+    bool passed = true;
+    for (int j = 0; j < 3; ++j)
+        if (deltas[j] < (deltaRange[j][0] - t) ||
+            deltas[j] > (deltaRange[j][1] + t))
+            passed = false;
+
+    if (!passed)
     {
-        miosix::Thread::sleep(SLEEP_TIME);
+        // reset configuration, then return
+        applyConfig(mConfig);
 
-        LIS3MDLData lastData = sampleImpl();
-        d[0]                 = std::abs(lastData.magneticFieldX - avgX);
-        d[1]                 = std::abs(lastData.magneticFieldY - avgY);
-        d[2]                 = std::abs(lastData.magneticFieldZ - avgZ);
-
-        bool passed = true;
-        for (int j = 0; j < 3; ++j)
-            if (d[j] < (r[j][0] - t) || d[j] > (r[j][1] + t))
-                passed = false;
-
-        if (!passed)
-        {
-            // reset configuration, then return
-            applyConfig(mConfig);
-
-            lastError = SELF_TEST_FAIL;
-            return false;
-        }
+        lastError = SELF_TEST_FAIL;
+        return false;
     }
 
     return applyConfig(mConfig);
@@ -268,8 +260,7 @@ LIS3MDLData LIS3MDL::sampleImpl()
             val = spi.readRegister(TEMP_OUT_L);
             val |= spi.readRegister(TEMP_OUT_H) << 8;
 
-            newData.temperatureTimestamp =
-                TimestampTimer::getInstance().getTimestamp();
+            newData.temperatureTimestamp = TimestampTimer::getTimestamp();
             newData.temperature = static_cast<float>(val) / LSB_PER_CELSIUS +
                                   REFERENCE_TEMPERATURE;
         }
@@ -282,8 +273,7 @@ LIS3MDLData LIS3MDL::sampleImpl()
         currDiv = (currDiv + 1) % mConfig.temperatureDivider;
     }
 
-    newData.magneticFieldTimestamp =
-        TimestampTimer::getInstance().getTimestamp();
+    newData.magneticFieldTimestamp = TimestampTimer::getTimestamp();
 
     val = spi.readRegister(OUT_X_L);
     val |= spi.readRegister(OUT_X_H) << 8;

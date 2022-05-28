@@ -372,8 +372,7 @@ void MavlinkDriver<PktLength, OutQueueSize, MavMsgLength>::runSender()
             pkt = outQueue.get();
 
             // If the packet is ready or too old, send it
-            uint64_t age = TimestampTimer::getInstance().getTimestamp() -
-                           pkt.getTimestamp();
+            uint64_t age = TimestampTimer::getTimestamp() - pkt.getTimestamp();
             if (pkt.isReady() || age >= outBufferMaxAge * 1e3)
             {
                 outQueue.pop();  //  Remove the packet from queue

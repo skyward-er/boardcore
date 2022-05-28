@@ -348,7 +348,7 @@ LoggerResult Logger::logImpl(const char* name, const void* data,
 
 void Logger::logStats()
 {
-    stats.timestamp = TimestampTimer::getInstance().getTimestamp();
+    stats.timestamp = TimestampTimer::getTimestamp();
     log(stats);
 }
 

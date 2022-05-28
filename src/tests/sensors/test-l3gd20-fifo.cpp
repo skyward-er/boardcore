@@ -113,7 +113,7 @@ volatile uint64_t watermarkDelta;     // Tick delta between the last 2 watermark
 void __attribute__((used)) EXTI2_IRQHandlerImpl()
 {
     // Current high resolution tick
-    uint64_t currentTimestamp = TimestampTimer::getInstance().getTimestamp();
+    uint64_t currentTimestamp = TimestampTimer::getTimestamp();
     watermarkDelta            = currentTimestamp - lastWatermarkTick;
     lastWatermarkTick         = currentTimestamp;
 
@@ -169,11 +169,11 @@ int main()
         long lastTick = miosix::getTick();
 
         // Read the fifo
-        uint64_t update = TimestampTimer::getInstance().getTimestamp();
+        uint64_t update = TimestampTimer::getTimestamp();
         gyro->sample();
 
         // Measure how long we take to read the fifo
-        update = TimestampTimer::getInstance().getTimestamp() - update;
+        update = TimestampTimer::getTimestamp() - update;
 
         uint8_t level =
             gyro->getLastFifoSize();  // Current number of samples in the FIFO
@@ -190,10 +190,10 @@ int main()
                 fifo[i],
                 level,
                 TimerUtils::toIntMicroSeconds(
-                    TimestampTimer::getInstance().getTimer(), watermarkDelta),
+                    TimestampTimer::timestampTimer.getTimer(), watermarkDelta),
                 averageCpuUtilization(),
                 TimerUtils::toIntMicroSeconds(
-                    TimestampTimer::getInstance().getTimer(), update)};
+                    TimestampTimer::timestampTimer.getTimer(), update)};
 
             // Stop if we have enough data
             if (dataCounter >= NUM_SAMPLES)

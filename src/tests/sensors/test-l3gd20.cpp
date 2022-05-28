@@ -83,7 +83,7 @@ uint32_t sampleDelta;     // Tick delta between the last 2 watermark
 void __attribute__((used)) EXTI2_IRQHandlerImpl()
 {
     // Current high resolution tick
-    uint64_t currentTimestamp = TimestampTimer::getInstance().getTimestamp();
+    uint64_t currentTimestamp = TimestampTimer::getTimestamp();
     sampleDelta               = currentTimestamp - lastSampleTick;
     lastSampleTick            = currentTimestamp;
 
@@ -164,7 +164,7 @@ int main()
                 0,
                 data[i].timestamp,
                 TimerUtils::toIntMicroSeconds(
-                    TimestampTimer::getInstance().getTimer(), data[i].sampleDelta),
+                    TimestampTimer::timestampTimer.getTimer(), data[i].sampleDelta),
                 (data[i].timestamp - data[i - 1].timestamp),
                 data[i].data.angularVelocityX,
                 data[i].data.angularVelocityY,

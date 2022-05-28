@@ -35,9 +35,6 @@ void testTimerUtils(TIM_TypeDef *timer);
 
 int main()
 {
-    // Force the timestamptimer to init
-    (void)TimestampTimer::getInstance();
-
     testTimerUtils(TIM2);
 
     printf("Initialization should be complete\n");
@@ -48,7 +45,7 @@ int main()
     {
         long long prevTick = getTick();
 
-        uint64_t timestamp = TimestampTimer::getInstance().getTimestamp();
+        uint64_t timestamp = TimestampTimer::getTimestamp();
 
         // cppcheck-suppress invalidPrintfArgType_uint
         printf("%12llu us, %12.3f ms, %12.6f s, %12lld tick \n", timestamp,
@@ -59,13 +56,13 @@ int main()
 
     printf("Now resetting the TimestampTimer\n");
 
-    TimestampTimer::getInstance().resetTimestamp();
+    TimestampTimer::resetTimestamp();
 
     while (true)
     {
         long long prevTick = getTick();
 
-        uint64_t timestamp = TimestampTimer::getInstance().getTimestamp();
+        uint64_t timestamp = TimestampTimer::getTimestamp();
 
         // cppcheck-suppress invalidPrintfArgType_uint
         printf("%12llu us, %12.3f ms, %12.6f s, %12lld tick \n", timestamp,
