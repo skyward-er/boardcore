@@ -46,16 +46,16 @@ struct SPIBusConfig
     ///< Peripheral clock division
     SPI::ClockDivider clockDivider;
 
-    ///< Clock polarity and phace configuration
+    ///< Clock polarity and phase configuration
     SPI::Mode mode;
 
     ///< MSB or LSB first
     SPI::BitOrder bitOrder;
 
-    ///< How long to wait before starting a trasmission after CS is set (us)
+    ///< How long to wait before starting a tranmission after CS is set (us)
     unsigned int csSetupTimeUs;
 
-    ///< How long to hold cs after the end of a trasmission (us)
+    ///< How long to hold cs after the end of a tranmission (us)
     unsigned int csHoldTimeUs;
 
     SPIBusConfig(SPI::ClockDivider clockDivider = SPI::ClockDivider::DIV_256,
@@ -67,9 +67,6 @@ struct SPIBusConfig
     {
     }
 
-    /**
-     * @brief Custom comparison operator.
-     */
     bool operator==(const SPIBusConfig& other) const
     {
         return clockDivider == other.clockDivider && mode == other.mode &&
@@ -92,11 +89,11 @@ class SPIBusInterface
 public:
     SPIBusInterface() {}
 
-    ///< Delete copy/move contructors/operators.
-    SPIBusInterface(const SPIBusInterface&)            = delete;
+    ///< Delete copy/move constructors/operators.
+    SPIBusInterface(const SPIBusInterface&) = delete;
     SPIBusInterface& operator=(const SPIBusInterface&) = delete;
     SPIBusInterface(SPIBusInterface&&)                 = delete;
-    SPIBusInterface& operator=(SPIBusInterface&&)      = delete;
+    SPIBusInterface& operator=(SPIBusInterface&&) = delete;
 
     /**
      * @brief Configures the bus with the provided configuration parameters.

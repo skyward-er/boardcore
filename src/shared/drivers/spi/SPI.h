@@ -22,6 +22,7 @@
 
 #pragma once
 
+#include <interfaces-impl/hwmapping.h>
 #include <interfaces/arch_registers.h>
 #include <stddef.h>
 #include <utils/ClockUtils.h>
@@ -51,7 +52,7 @@ namespace Boardcore
  * - Full-duplex synchronous transfers on three lines
  * - 8- or 16-bit transfer frame format selection
  * - Master or slave operation
- * - 8 master mode baud rate prescales (f_PCLK/2 max.)
+ * - 8 master mode baud rate prescaler (f_PCLK/2 max.)
  * - Programmable clock polarity and phase
  * - Programmable data order with MSB-first or LSB-first shifting
  * - Hardware CRC feature for reliable communication
@@ -485,6 +486,8 @@ inline uint16_t SPI::transfer(uint16_t data)
 
 inline void SPI::transfer(uint8_t *data, size_t nBytes)
 {
+    miosix::FastInterruptDisableLock lock;
+
     // Clear the RX buffer
     (void)spi->DR;
 
@@ -524,6 +527,8 @@ inline void SPI::transfer(uint8_t *data, size_t nBytes)
 
 inline void SPI::transfer(uint16_t *data, size_t nBytes)
 {
+    miosix::FastInterruptDisableLock lock;
+
     // Clear the RX buffer
     (void)spi->DR;
 
