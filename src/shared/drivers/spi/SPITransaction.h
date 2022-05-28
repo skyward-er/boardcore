@@ -84,10 +84,10 @@ public:
                    WriteBit writeBit = WriteBit::NORMAL);
 
     ///< Delete copy/move contructors/operators.
-    SPITransaction(const SPITransaction &) = delete;
+    SPITransaction(const SPITransaction &)            = delete;
     SPITransaction &operator=(const SPITransaction &) = delete;
     SPITransaction(SPITransaction &&)                 = delete;
-    SPITransaction &operator=(SPITransaction &&) = delete;
+    SPITransaction &operator=(SPITransaction &&)      = delete;
 
     /**
      * @brief Returns the underlying bus for low level access.

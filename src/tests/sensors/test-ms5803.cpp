@@ -37,6 +37,8 @@ int main()
 {
     // Sample temperature every 10 pressure samples
     SPIBus spiBus(SPI1);
+    SPIBusConfig config;
+    config.clockDivider = SPI::ClockDivider::DIV_32;
     MS5803 sensor(spiBus, miosix::sensors::ms5803::cs::getPin(), {}, 10);
 
     Thread::sleep(100);
@@ -57,6 +59,6 @@ int main()
         printf("%llu,%f,%llu,%f\n", data.pressureTimestamp, data.pressure,
                data.temperatureTimestamp, data.temperature);
 
-        Thread::sleep(10);
+        Thread::sleep(20);
     }
 }
