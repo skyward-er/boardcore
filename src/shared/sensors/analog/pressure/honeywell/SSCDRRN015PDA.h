@@ -37,8 +37,7 @@ class SSCDRRN015PDA final : public HoneywellPressureSensor<SSCDRRN015PDAData>
 {
 public:
     SSCDRRN015PDA(std::function<ADCData()> getSensorVoltage,
-                  const float supplyVoltage             = 5.0,
-                  const unsigned int num_calib_samples_ = 200)
+                  const float supplyVoltage = 5.0)
         : HoneywellPressureSensor(getSensorVoltage, supplyVoltage, 103421.3594,
                                   -103421.3594)
     {

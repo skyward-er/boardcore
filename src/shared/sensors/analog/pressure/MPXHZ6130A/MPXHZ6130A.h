@@ -36,12 +36,16 @@ namespace Boardcore
 class MPXHZ6130A final : public AnalogPressureSensor<MPXHZ6130AData>
 {
 public:
-    using AnalogPressureSensor<MPXHZ6130AData>::AnalogPressureSensor;
+    MPXHZ6130A(std::function<ADCData()> getVoltage,
+               const float supplyVoltage = 5.0)
+        : AnalogPressureSensor(getVoltage, supplyVoltage, 130000, 15000)
+    {
+    }
 
 private:
     float voltageToPressure(float voltage) override
     {
-        return (((voltage / supplyVoltage) + CONST_B) / CONST_A) * 1000;
+        return (((voltage / supplyVoltage) + CONST_B) / CONST_A) * 1000.0;
     }
 
     // Constants from datasheet
