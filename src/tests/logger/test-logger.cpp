@@ -50,7 +50,7 @@ void printutil(void*)
     for (;;)
     {
         Thread::sleep(1000);
-        printf("cpu: %5.1f\n", averageCpuUtilization());
+        printf("cpu: %5.1f\n", CpuMeter::averageCpuUtilization().mean);
     }
 }
 

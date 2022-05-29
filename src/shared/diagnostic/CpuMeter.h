@@ -22,7 +22,12 @@
 
 #pragma once
 
+#include <utils/Stats/Stats.h>
+
 namespace Boardcore
+{
+
+namespace CpuMeter
 {
 
 /*
@@ -44,12 +49,14 @@ namespace Boardcore
  * created, otherwise its time will not be accounted.
  */
 
-/// If defined, the CPU meter is active
+/// If defined, the CPU meter is activated
 #define ENABLE_CPU_METER
 
 /**
  * \return the average CPU utilization
  */
-float averageCpuUtilization();
+StatsResult averageCpuUtilization();
+
+}  // namespace CpuMeter
 
 }  // namespace Boardcore
