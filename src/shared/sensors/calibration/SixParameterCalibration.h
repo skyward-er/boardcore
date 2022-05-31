@@ -48,8 +48,8 @@ class SixParameterCorrector : public ValuesCorrector<T>
 public:
     SixParameterCorrector() : SixParameterCorrector({1, 1, 1}, {0, 0, 0}) {}
 
-    SixParameterCorrector(const Eigen::Vector3f& _p, const Eigen::Vector3f& _q)
-        : p(_p), q(_q)
+    SixParameterCorrector(const Eigen::Vector3f& p, const Eigen::Vector3f& q)
+        : p(p), q(q)
     {
     }
 
@@ -110,7 +110,7 @@ public:
         expected = transform.getMatrix() * ref;
 
         /*
-         * measered and expected are column vectors, we need to traspose them
+         * Measured and expected are column vectors, we need to transpose them
          * to be row vectors
          */
         samples.block(numSamples, 0, 1, 3) = measured.transpose();

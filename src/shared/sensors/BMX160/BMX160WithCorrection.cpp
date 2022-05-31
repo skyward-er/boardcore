@@ -37,8 +37,8 @@ BMX160CorrectionParameters::BMX160CorrectionParameters()
 
 std::string BMX160CorrectionParameters::header()
 {
-    return "accel_p1,accel_p2,accel_p3,accel_q1,accel_q2,accel_q3,mag_p1,"
-           "mag_p2,mag_p3,mag_q1,mag_q2,mag_q3,"
+    return "acc_A_x,accel_A_y,accel_A_z,accel_b_x,accel_b_y,accel_b_z,"
+           "mag_A_x,mag_A_y,mag_A_z,mag_b_x,mag_b_y,mag_b_z,"
            "minGyroSamplesForCalibration";
 }
 
@@ -85,26 +85,26 @@ void BMX160CorrectionParameters::print(std::ostream& outputStream) const
 }
 
 BMX160WithCorrection::BMX160WithCorrection(
-    BMX160* bmx160_, BMX160CorrectionParameters correctionParameters,
-    AxisOrthoOrientation rotation_)
-    : bmx160(bmx160_), minGyroSamplesForCalibration(
-                           correctionParameters.minGyroSamplesForCalibration),
-      rotation(rotation_)
+    BMX160* bmx160, BMX160CorrectionParameters correctionParameters,
+    AxisOrthoOrientation rotation)
+    : bmx160(bmx160), minGyroSamplesForCalibration(
+                          correctionParameters.minGyroSamplesForCalibration),
+      rotation(rotation)
 {
     accelerometerCorrector << correctionParameters.accelParams;
     magnetometerCorrector << correctionParameters.magnetoParams;
 }
 
 BMX160WithCorrection::BMX160WithCorrection(
-    BMX160* bmx160_, BMX160CorrectionParameters correctionParameters)
-    : bmx160(bmx160_), minGyroSamplesForCalibration(
-                           correctionParameters.minGyroSamplesForCalibration)
+    BMX160* bmx160, BMX160CorrectionParameters correctionParameters)
+    : bmx160(bmx160), minGyroSamplesForCalibration(
+                          correctionParameters.minGyroSamplesForCalibration)
 {
     accelerometerCorrector << correctionParameters.accelParams;
     magnetometerCorrector << correctionParameters.magnetoParams;
 }
 
-BMX160WithCorrection::BMX160WithCorrection(BMX160* bmx160_) : bmx160(bmx160_) {}
+BMX160WithCorrection::BMX160WithCorrection(BMX160* bmx160) : bmx160(bmx160) {}
 
 bool BMX160WithCorrection::init() { return true; }
 
@@ -171,7 +171,7 @@ bool BMX160WithCorrection::calibrate()
         gyroscopeCorrector = gyroscopeCalibrator.computeResult();
     }
 
-    // Print the calibraton data
+    // Print the calibrator data
     gyroscopeCorrector >> gyroscopeCorrectionParameters;
     LOG_INFO(logger, "Gyroscope bias vector from calibration\n");
     LOG_INFO(logger, "b = [    {: >2.5f}    {: >2.5f}    {: >2.5f}    ]\n\n",

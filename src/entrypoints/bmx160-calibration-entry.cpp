@@ -22,6 +22,7 @@
 
 #include <drivers/interrupt/external_interrupts.h>
 #include <drivers/timer/TimestampTimer.h>
+#include <scheduler/TaskScheduler.h>
 #include <sensors/BMX160/BMX160.h>
 #include <sensors/BMX160/BMX160WithCorrection.h>
 #include <sensors/calibration/AxisOrientation.h>
@@ -31,8 +32,9 @@
 #include <fstream>
 #include <iostream>
 
-using namespace Boardcore;
 using namespace std;
+using namespace miosix;
+using namespace Boardcore;
 
 constexpr const char* CORRECTION_PARAMETER_FILE = "/sd/bmx160_params.csv";
 constexpr const char* MAG_CALIBRATION_DATA_FILE =
@@ -41,15 +43,13 @@ constexpr int ACC_CALIBRATION_SAMPLES        = 200;
 constexpr int ACC_CALIBRATION_SLEEP_TIME     = 25;  // [us]
 constexpr int ACC_CALIBRATION_N_ORIENTATIONS = 6;
 
-constexpr int MAG_CALIBRATION_SAMPLES  = 500;
-constexpr int MAG_CALIBRATION_DURATION = 60;  // [s]
-constexpr int MAG_CALIBRATION_SLEEP_TIME =
-    MAG_CALIBRATION_DURATION * 1000 / MAG_CALIBRATION_SAMPLES;  // [us]
+constexpr int MAG_CALIBRATION_DURATION           = 10;  // [s]
+constexpr uint32_t MAG_CALIBRATION_SAMPLE_PERIOD = 20;  // [ms]
 
 BMX160* bmx160;
 
 /**
- * Orientations for accelerometer calibration
+ * @brief Orientations for accelerometer calibration.
  *
  * The BMX160 reference frame view facing the death stack x is:
  *          z   x
@@ -77,13 +77,10 @@ constexpr const char* testHumanFriendlyDirection[]{
 void __attribute__((used)) EXTI5_IRQHandlerImpl()
 {
     if (bmx160)
-    {
         bmx160->IRQupdateTimestamp(TimestampTimer::getTimestamp());
-    }
 }
 
 int menu();
-bool askToContinue();
 void waitForInput();
 
 BMX160CorrectionParameters calibrateAccelerometer(
@@ -101,7 +98,7 @@ int main()
     // Greet the user
     printf("\nWelcome to the calibration procedure!\n");
 
-    // Read the current correciton parameters
+    // Read the current correction parameters
     BMX160CorrectionParameters correctionParameters;
     correctionParameters =
         BMX160WithCorrection::readCorrectionParametersFromFile(
@@ -148,16 +145,6 @@ int menu()
     scanf("%d", &choice);
 
     return choice;
-}
-
-bool askToContinue()
-{
-    string temp;
-
-    cout << "Write 'c' to continue, otherwise stop:\n";
-    getline(cin, temp);
-
-    return temp != "c";
 }
 
 void waitForInput()
@@ -243,10 +230,7 @@ BMX160CorrectionParameters calibrateAccelerometer(
     printf("    |    % 2.5f    % 2.5f    % 2.5f    |\n", 0.f, 0.f,
            correctionParameters.accelParams(2, 0));
 
-    if (!askToContinue())
-    {
-        return correctionParameters;
-    }
+    waitForInput();
 
     printf(
         "Please note that the BMX axis, viewed facing the death stack x, "
@@ -336,16 +320,18 @@ BMX160CorrectionParameters calibrateMagnetometer(
     SPIBus bus(SPI1);
 
     BMX160Config bmxConfig;
-    bmxConfig.fifoMode = BMX160Config::FifoMode::DISABLED;
+    bmxConfig.fifoMode      = BMX160Config::FifoMode::HEADER;
+    bmxConfig.fifoWatermark = 20;
+    bmxConfig.fifoInterrupt = BMX160Config::FifoInterruptPin::PIN_INT1;
 
     bmxConfig.temperatureDivider = 0;
 
     bmxConfig.accelerometerRange = BMX160Config::AccelerometerRange::G_16;
     bmxConfig.gyroscopeRange     = BMX160Config::GyroscopeRange::DEG_2000;
 
-    bmxConfig.accelerometerDataRate = BMX160Config::OutputDataRate::HZ_1600;
-    bmxConfig.gyroscopeDataRate     = BMX160Config::OutputDataRate::HZ_1600;
-    bmxConfig.magnetometerRate      = BMX160Config::OutputDataRate::HZ_50;
+    bmxConfig.accelerometerDataRate = BMX160Config::OutputDataRate::HZ_100;
+    bmxConfig.gyroscopeDataRate     = BMX160Config::OutputDataRate::HZ_100;
+    bmxConfig.magnetometerRate      = BMX160Config::OutputDataRate::HZ_100;
 
     bmxConfig.gyroscopeUnit = BMX160Config::GyroscopeMeasureUnit::RAD;
 
@@ -371,16 +357,16 @@ BMX160CorrectionParameters calibrateMagnetometer(
 
     // Show the user the current correction values
     printf("Current bias vector\n");
-    printf("b = [    % 2.5f    % 2.5f    % 2.5f    ]\n\n",
+    printf("b = |% 2.5f    % 2.5f    % 2.5f|\n\n",
            correctionParameters.magnetoParams(0, 1),
            correctionParameters.magnetoParams(1, 1),
            correctionParameters.magnetoParams(2, 1));
     printf("Matrix to be multiplied to the input vector\n");
-    printf("    |    % 2.5f    % 2.5f    % 2.5f    |\n",
+    printf("    |% 2.5f    % 2.5f    % 2.5f|\n",
            correctionParameters.magnetoParams(0, 0), 0.f, 0.f);
-    printf("M = |    % 2.5f    % 2.5f    % 2.5f    |\n", 0.f,
+    printf("M = |% 2.5f    % 2.5f    % 2.5f|\n", 0.f,
            correctionParameters.magnetoParams(1, 0), 0.f);
-    printf("    |    % 2.5f    % 2.5f    % 2.5f    |\n", 0.f, 0.f,
+    printf("    |% 2.5f    % 2.5f    % 2.5f|\n", 0.f, 0.f,
            correctionParameters.magnetoParams(2, 0));
 
     printf("Now I will calibrate the magnetometer\n");
@@ -391,37 +377,46 @@ BMX160CorrectionParameters calibrateMagnetometer(
     printf("The calibration will run for %d seconds\n",
            MAG_CALIBRATION_DURATION);
 
-    if (!askToContinue())
-    {
-        return correctionParameters;
-    }
+    waitForInput();
 
-    // Sample the sensor and feed the data to the calibration model
-    int count = 0;
-    while (count < MAG_CALIBRATION_SAMPLES)
-    {
-        bmx160->sample();
+    printf("Calibration started, rotate the stack!\n");
 
-        BMX160Data data = bmx160->getLastSample();
-        calibrationModel->feed(data);
-        count++;
+    TaskScheduler scheduler;
+    scheduler.addTask(
+        [&]()
+        {
+            bmx160->sample();
 
-        miosix::Thread::sleep(MAG_CALIBRATION_SLEEP_TIME);
-    }
+            uint8_t fifoSize = bmx160->getLastFifoSize();
+            auto& fifo       = bmx160->getLastFifo();
 
-    printf("Computing the result....");
+            for (uint8_t i = 0; i < fifoSize; i++)
+            {
+                Logger::getInstance().log(fifo.at(i));
+                calibrationModel->feed(fifo.at(i));
+            }
+        },
+        200);
+    Logger::getInstance().start();
+    scheduler.start();
+
+    Thread::sleep(MAG_CALIBRATION_DURATION * 1000);
+
+    scheduler.stop();
+    Logger::getInstance().stop();
+
+    printf("Computing the result....\n");
     auto corrector = calibrationModel->computeResult();
 
     corrector >> m;
     corrector >> correctionParameters.magnetoParams;
 
     printf("b: the bias vector\n");
-    printf("b = [    % 2.5f    % 2.5f    % 2.5f    ]\n\n", m(0, 1), m(1, 1),
-           m(2, 1));
+    printf("b = |% 2.5f    % 2.5f    % 2.5f|\n\n", m(0, 1), m(1, 1), m(2, 1));
     printf("M: the matrix to be multiplied to the input vector\n");
-    printf("    |    % 2.5f    % 2.5f    % 2.5f    |\n", m(0, 0), 0.f, 0.f);
-    printf("M = |    % 2.5f    % 2.5f    % 2.5f    |\n", 0.f, m(1, 0), 0.f);
-    printf("    |    % 2.5f    % 2.5f    % 2.5f    |\n", 0.f, 0.f, m(2, 0));
+    printf("    |% 2.5f    % 2.5f    % 2.5f|\n", m(0, 0), 0.f, 0.f);
+    printf("M = |% 2.5f    % 2.5f    % 2.5f|\n", 0.f, m(1, 0), 0.f);
+    printf("    |% 2.5f    % 2.5f    % 2.5f|\n", 0.f, 0.f, m(2, 0));
 
     return correctionParameters;
 }
@@ -431,16 +426,12 @@ BMX160CorrectionParameters changeMinGyroCorrectionSamples(
 {
     // Show the user the current parameter
     printf(
-        "The current minimun number of gyroscope samples for calibration "
-        "is "
-        "%d\n",
+        "The current minimum number of gyroscope samples for calibration "
+        "is %d\n",
         correctionParameters.minGyroSamplesForCalibration);
 
-    if (askToContinue())
-    {
-        printf("Insert the new value: ");
-        scanf("%d", &correctionParameters.minGyroSamplesForCalibration);
-    }
+    printf("Insert the new value: ");
+    scanf("%d", &correctionParameters.minGyroSamplesForCalibration);
 
     return correctionParameters;
 }

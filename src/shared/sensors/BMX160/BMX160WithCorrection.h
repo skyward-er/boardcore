@@ -60,30 +60,30 @@ class BMX160WithCorrection : public Sensor<BMX160WithCorrectionData>
 {
 public:
     /**
-     * @param bmx160_ already initialized bmx.
-     * @param correctionParameters correction parameter to apply.
-     * @param rotation_ axis rotation.
+     * @param bmx160 Already initialized bmx.
+     * @param correctionParameters Correction parameter to apply.
+     * @param rotation Axis rotation.
      */
-    BMX160WithCorrection(BMX160* bmx160_,
+    BMX160WithCorrection(BMX160* bmx160,
                          BMX160CorrectionParameters correctionParameters,
-                         AxisOrthoOrientation rotation_);
+                         AxisOrthoOrientation rotation);
 
     /**
-     * Constructor without rotation, no rotation will be applied.
+     * @brief Constructor without rotation, no rotation will be applied.
      *
-     * @param bmx160_ already initialized bmx.
-     * @param correctionParameters correction parameter to apply.
+     * @param bmx160 Already initialized bmx.
+     * @param correctionParameters Correction parameter to apply.
      */
-    BMX160WithCorrection(BMX160* bmx160_,
+    BMX160WithCorrection(BMX160* bmx160,
                          BMX160CorrectionParameters correctionParameters);
 
     /**
-     * @brief Constructor without correction nor rotation, no correciton and
+     * @brief Constructor without correction nor rotation, no correction and
      * rotation will be applied.
      *
-     * @param bmx160_ correction parameter to apply.
+     * @param bmx160 Correction parameter to apply.
      */
-    explicit BMX160WithCorrection(BMX160* bmx160_);
+    explicit BMX160WithCorrection(BMX160* bmx160);
 
     bool init() override;
 

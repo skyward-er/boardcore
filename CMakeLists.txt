@@ -132,9 +132,6 @@ sbs_target(test-stepper stm32f429zi_stm32f4discovery)
 add_executable(test-kalman-eigen-benchmark src/tests/algorithms/Kalman/test-kalman-eigen-benchmark.cpp)
 sbs_target(test-kalman-eigen-benchmark stm32f429zi_stm32f4discovery)
 
-add_executable(test-tmp src/tests/algorithms/NAS/test-tmp.cpp)
-sbs_target(test-tmp stm32f429zi_skyward_death_stack_x)
-
 add_executable(test-attitude-parafoil src/tests/algorithms/NAS/test-attitude-parafoil.cpp)
 sbs_target(test-attitude-parafoil stm32f429zi_parafoil)
 
