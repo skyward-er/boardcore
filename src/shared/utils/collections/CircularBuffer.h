@@ -86,7 +86,7 @@ public:
             return buffer[ptr];
         }
         else
-            throw range_error("Index out of range");
+            throw range_error("Circular buffer index out of range");
     }
 
     /**
@@ -117,7 +117,7 @@ public:
             return buffer[ptr];
         }
         else
-            throw range_error("CircularBuffer is empty!");
+            throw range_error("Circular buffer is empty!");
     }
 
     /**
