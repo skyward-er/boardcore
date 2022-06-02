@@ -35,11 +35,11 @@ int main()
     Thread::sleep(3 * 1000);
 
     printf("Now continuosly toggle the buzzer every 500ms for 5 seconds");
-    buzzer.continuoslyToggle(500, 500);
+    buzzer.continuouslyToggle(500, 500);
     Thread::sleep(6 * 1000);
 
     printf("Now continuosly toggle the buzzer every 200ms for 5 seconds");
-    buzzer.continuoslyToggle(200, 200);
+    buzzer.continuouslyToggle(200, 200);
     Thread::sleep(6 * 1000);
 
     printf("Now manually turning on the buzzer for 1 second\n");
