@@ -24,6 +24,8 @@
 
 #include <utils/Stats/Stats.h>
 
+#include "CpuMeterData.h"
+
 namespace Boardcore
 {
 
@@ -53,9 +55,9 @@ namespace CpuMeter
 #define ENABLE_CPU_METER
 
 /**
- * \return the average CPU utilization
+ * \return The average CPU utilization
  */
-StatsResult averageCpuUtilization();
+CpuMeterData averageCpuUtilization();
 
 }  // namespace CpuMeter
 

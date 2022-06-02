@@ -48,7 +48,7 @@
  * togheter with other useful data.
  */
 
-#include <diagnostic/CpuMeter.h>
+#include <diagnostic/CpuMeter/CpuMeter.h>
 #include <drivers/interrupt/external_interrupts.h>
 #include <drivers/spi/SPIDriver.h>
 #include <drivers/timer/GeneralPurposeTimer.h>

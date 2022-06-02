@@ -1,5 +1,5 @@
-/* Copyright (c) 2018 Skyward Experimental Rocketry
- * Author: Federico Terraneo
+/* Copyright (c) 2022 Skyward Experimental Rocketry
+ * Author: Alberto Nidasio
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -20,62 +20,37 @@
  * THE SOFTWARE.
  */
 
-#include "test-logger.h"
+#pragma once
 
-#include <diagnostic/CpuMeter/CpuMeter.h>
-#include <logger/Logger.h>
+#include <utils/Stats/Stats.h>
 
-using namespace Boardcore;
-using namespace std;
-using namespace miosix;
-
-void logThread(void*)
+namespace Boardcore
 {
-    Logger& log      = Logger::getInstance();
-    const int period = 5;
-    for (auto t = getTick();; t += period)
-    {
-        Thread::sleepUntil(t);
-        for (int i = 0; i < 5; i++)
-        {
-            Dummy d;
-            d.correctValue();
-            log.log(d);
-        }
-    }
-}
 
-void printUtil(void*)
+struct CpuMeterData
 {
-    for (;;)
+    float minValue;     ///< Min value found so far.
+    float maxValue;     ///< Max value found so far.
+    float mean;         ///< Mean of dataset.
+    float stdDev;       ///< Standard deviation of dataset.
+    uint32_t nSamples;  ///< Number of samples.
+
+    explicit CpuMeterData(StatsResult stats)
+        : minValue(stats.minValue), maxValue(stats.maxValue), mean(stats.mean),
+          stdDev(stats.stdDev), nSamples(stats.nSamples)
     {
-        Thread::sleep(1000);
-        printf("cpu: %5.1f\n", CpuMeter::averageCpuUtilization().mean);
-    }
-}
-
-int main()
-{
-    Thread::create(printUtil, 4096);
-
-    Logger& log = Logger::getInstance();
-    log.start();
-
-    puts("type enter to start test");
-    getchar();
-
-    Thread::create(logThread, 4096);
-
-    puts("type enter to stop test");
-    getchar();
-
-    log.stop();
-
-    puts("stopped");
-    for (;;)
-    {
-        Thread::sleep(1000);
     }
 
-    return 0;
-}
+    static std::string header()
+    {
+        return "minValue,maxValue,mean,stdDev,nSamples\n";
+    }
+
+    void print(std::ostream& os) const
+    {
+        os << minValue << "," << maxValue << "," << mean << "," << stdDev << ","
+           << nSamples << "\n";
+    }
+};
+
+}  // namespace Boardcore

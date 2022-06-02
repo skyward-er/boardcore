@@ -28,7 +28,7 @@
 /* Expressed in Hertz: valid values: 1 <= frequency <= 1000 */
 #define SAMPLE_FREQUENCY_LOAD_TEST 1000
 
-#include <diagnostic/CpuMeter.h>
+#include <diagnostic/CpuMeter/CpuMeter.h>
 #include <drivers/spi/SPIDriver.h>
 #include <miosix.h>
 #include <sensors/LIS3DSH/LIS3DSH.h>

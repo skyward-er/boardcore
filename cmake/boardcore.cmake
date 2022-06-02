@@ -36,7 +36,7 @@ foreach(OPT_BOARD ${BOARDS})
 
         # Debug
         ${SBS_BASE}/src/shared/utils/Debug.cpp
-        ${SBS_BASE}/src/shared/diagnostic/CpuMeter.cpp
+        ${SBS_BASE}/src/shared/diagnostic/CpuMeter/CpuMeter.cpp
         ${SBS_BASE}/src/shared/diagnostic/PrintLogger.cpp
 
         # Drivers

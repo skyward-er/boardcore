@@ -41,7 +41,7 @@ static FastMutex utilizationMutex;
 static Stats utilization;
 static volatile unsigned int update = 0;
 
-StatsResult averageCpuUtilization()
+CpuMeterData averageCpuUtilization()
 {
     Lock<FastMutex> l(utilizationMutex);
     auto stats = utilization.getStats();
