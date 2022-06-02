@@ -46,7 +46,7 @@ CpuMeterData averageCpuUtilization()
     Lock<FastMutex> l(utilizationMutex);
     auto stats = utilization.getStats();
     utilization.reset();
-    return stats;
+    return CpuMeterData(stats);
 }
 
 #ifdef ENABLE_CPU_METER
