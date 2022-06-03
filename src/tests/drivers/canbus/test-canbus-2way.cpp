@@ -37,7 +37,7 @@
 #include "drivers/canbus/Canbus.h"
 #include "utils/collections/CircularBuffer.h"
 
-constexpr uint32_t BAUD_RATE         = 1000 * 1000;
+constexpr uint32_t BAUD_RATE         = 500 * 1000;
 constexpr float SAMPLE_POINT         = 87.5f / 100.0f;
 constexpr uint32_t MSG_DEADLINE      = 100;  // ms
 constexpr uint32_t MSG_LOST_DEADLINE = 400;  // ms
@@ -77,6 +77,7 @@ void handleCanMessage(Canbus::CanRXPacket packet)
     else if (packet.packet.data[0] == 0x55)  // This is a response to a request
     {
         Lock<FastMutex> l(mutexMsgs);
+
         for (size_t i = 0; i < msgs.count(); ++i)
         {
             CanMsg& msg = msgs.get(i);
@@ -98,7 +99,7 @@ void sendNewRequest()
 
     if (packet.id % 2 == 0)
     {
-        packet.id = 0xFFFFFFFF - packet.id;
+        packet.id = 0xFFFFFFF - packet.id;
     }
 
     packet.ext    = 1;
@@ -166,7 +167,7 @@ public:
             {
                 StatsResult res __attribute__((unused)) = msgstats.getStats();
 
-                TRACE(
+                printf(
                     "Total packets: %u, Missed deadlines: %u, Lost packets: "
                     "%u, Mean ping: %.2f, "
                     "Max ping: %.0f, Min ping: %.0f, Buffer full: %u\n",
@@ -176,7 +177,7 @@ public:
                 Canbus::BusLoadEstimation::BusLoadInfo info
                     __attribute__((unused)) =
                         canManager->getLoadSensor().getLoadInfo();
-                TRACE(
+                printf(
                     "Payload rate: %.2f kbps, Frame rate: %.2f kbps, Load: "
                     "%.2f %%\n",
                     info.payloadBitRate / 1000.0f, info.totalBitRate / 1000.0f,
@@ -231,12 +232,16 @@ int main()
 
     canManager->start();
     mc.start();
-
+    const int slp = 5;
     for (;;)
     {
         sendNewRequest();
+        Thread::sleep(slp);
         sendNewRequest();
+        Thread::sleep(slp);
         sendNewRequest();
-        Thread::sleep(2);
+        Thread::sleep(slp);
+        sendNewRequest();
+        Thread::sleep(slp);
     }
 }

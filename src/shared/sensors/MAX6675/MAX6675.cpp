@@ -53,12 +53,12 @@ bool MAX6675::checkConnection()
         sample = spi.read16();
     }
 
-    // The third bit (D2) indicates wheter the termocouple is connected or not
+    // The third bit (D2) indicates whether the thermocouple is connected or not
     // It is high if open
     if ((sample & 0x4) != 0)
     {
         lastError = SensorErrors::SELF_TEST_FAIL;
-        LOG_ERR(logger, "Self test failed, the termocouple is not connected");
+        LOG_ERR(logger, "Self test failed, the thermocouple is not connected");
         return false;
     }
 
@@ -79,11 +79,9 @@ TemperatureData MAX6675::sampleImpl()
 
     // Extract bits 14-3
     sample &= 0x7FF8;
-    sample >>= 3;
 
-    // Convert the integer and decimal part separetly
-    result.temperature = static_cast<float>(sample >> 2);
-    result.temperature += static_cast<float>(sample & 0x3) * 0.25;
+    // Convert the integer and decimal part separately
+    result.temperature += static_cast<float>(sample >> 3) * 0.25;
 
     return result;
 }

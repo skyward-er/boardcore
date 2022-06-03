@@ -62,10 +62,10 @@ public:
 
     void send(Boardcore::Canbus::CanPacket packet)
     {
-        if (txPackets.isFull())
-        {
-            printf("Pkt drop\n");
-        }
+        // if (txPackets.isFull())
+        // {
+        //     printf("Pkt drop\n");
+        // }
         txPackets.put(packet);
     }
 

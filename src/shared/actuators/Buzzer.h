@@ -29,7 +29,7 @@ namespace Boardcore
 {
 
 /**
- * @brief This driver does not provide a square wave signal but insted is a
+ * @brief This driver does not provide a square wave signal but instead is a
  * simple utility that provides long PWM signals to make the buzzer beep
  * on and off.
  */
@@ -73,7 +73,7 @@ public:
      * @param onTime Buzzer on time [ms].
      * @param offTime Buzzer off time [ms].
      */
-    void continuoslyToggle(uint16_t onTime, uint16_t offTime);
+    void continuouslyToggle(uint16_t onTime, uint16_t offTime);
 
 private:
     GP16bitTimer timer;
@@ -116,7 +116,7 @@ inline void Buzzer::oneTimeToggle(uint16_t ms)
     timer.setPrescaler(
         TimerUtils::computePrescalerValue(timer.getTimer(), 10000));
 
-    // Make the timer reload after the specified amount of millisseconds
+    // Make the timer reload after the specified amount of milliseconds
     timer.setAutoReloadRegister(ms * 10);
     timer.setCaptureCompareRegister(channel, 1);
 
@@ -134,7 +134,7 @@ inline void Buzzer::oneTimeToggle(uint16_t ms)
     timer.enable();
 }
 
-inline void Buzzer::continuoslyToggle(uint16_t onTime, uint16_t offTime)
+inline void Buzzer::continuouslyToggle(uint16_t onTime, uint16_t offTime)
 {
     if (onTime == 0 || offTime == 0)
         return;
@@ -146,7 +146,7 @@ inline void Buzzer::continuoslyToggle(uint16_t onTime, uint16_t offTime)
     timer.setPrescaler(
         TimerUtils::computePrescalerValue(timer.getTimer(), 10000));
 
-    // Make the timer reload after the specified amount of millisseconds
+    // Make the timer reload after the specified amount of milliseconds
     timer.setAutoReloadRegister((onTime + offTime) * 10);
     timer.setCaptureCompareRegister(channel, onTime * 10);
 
