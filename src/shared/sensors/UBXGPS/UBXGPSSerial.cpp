@@ -57,12 +57,12 @@ bool UBXGPSSerial::init()
 
     LOG_DEBUG(logger, "Resetting the device...");
 
-    if (!reset())
-    {
-        lastError = SensorErrors::INIT_FAIL;
-        LOG_ERR(logger, "Could not reset the device");
-        return false;
-    }
+    // if (!reset())
+    // {
+    //     lastError = SensorErrors::INIT_FAIL;
+    //     LOG_ERR(logger, "Could not reset the device");
+    //     return false;
+    // }
 
     LOG_DEBUG(logger, "Setting the UBX protocol...");
 
@@ -99,6 +99,8 @@ bool UBXGPSSerial::init()
         LOG_ERR(logger, "Could not set the PVT message rate");
         return false;
     }
+
+    this->start();
 
     return true;
 }
@@ -311,7 +313,8 @@ bool UBXGPSSerial::readUBXFrame(UBXFrame& frame)
         else
         {
             i = 0;
-            LOG_DEBUG(logger, "Received unexpected byte: {:02x} {:#c}", c, c);
+            // LOG_DEBUG(logger, "Received unexpected byte: {:02x} {:#c}", c,
+            // c);
         }
     }
 
@@ -405,7 +408,10 @@ void UBXGPSSerial::run()
 
         UBXPvtFrame::Payload& pvtP = pvt.getPayload();
 
-        threadSample.gpsTimestamp  = TimestampTimer::getTimestamp();
+        // Lock the mutex
+        Lock<FastMutex> l(mutex);
+        threadSample.gpsTimestamp =
+            TimestampTimer::getTimestamp();
         threadSample.latitude      = (float)pvtP.lat / 1e7;
         threadSample.longitude     = (float)pvtP.lon / 1e7;
         threadSample.height        = (float)pvtP.height / 1e3;
