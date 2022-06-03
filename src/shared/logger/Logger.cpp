@@ -140,7 +140,7 @@ string Logger::getCurrentFileName() { return getFileName(fileNumber); }
 
 LoggerStats Logger::getLoggerStats()
 {
-    stats.timestamp = TimestampTimer::getInstance().getTimestamp();
+    stats.timestamp = TimestampTimer::getTimestamp();
     stats.logNumber = fileNumber;
     return stats;
 }

@@ -24,6 +24,7 @@
 
 #include <actuators/Servo/ServoData.h>
 #include <algorithms/NAS/NASState.h>
+#include <diagnostic/CpuMeter/CpuMeter.h>
 #include <diagnostic/PrintLoggerData.h>
 #include <drivers/adc/InternalADCData.h>
 #include <events/EventData.h>
@@ -76,6 +77,7 @@ void registerTypes(Deserializer& ds)
 {
     ds.registerType<ServoData>();
     ds.registerType<NASState>();
+    ds.registerType<CpuMeterData>();
     ds.registerType<LoggingString>();
     ds.registerType<InternalADCData>();
     ds.registerType<EventData>();

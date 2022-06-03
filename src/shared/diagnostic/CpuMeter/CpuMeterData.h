@@ -29,11 +29,13 @@ namespace Boardcore
 
 struct CpuMeterData
 {
-    float minValue;     ///< Min value found so far.
-    float maxValue;     ///< Max value found so far.
-    float mean;         ///< Mean of dataset.
-    float stdDev;       ///< Standard deviation of dataset.
-    uint32_t nSamples;  ///< Number of samples.
+    float minValue    = 0;  ///< Min value found so far.
+    float maxValue    = 0;  ///< Max value found so far.
+    float mean        = 0;  ///< Mean of dataset.
+    float stdDev      = 0;  ///< Standard deviation of dataset.
+    uint32_t nSamples = 0;  ///< Number of samples.
+
+    CpuMeterData() {}
 
     explicit CpuMeterData(StatsResult stats)
         : minValue(stats.minValue), maxValue(stats.maxValue), mean(stats.mean),
