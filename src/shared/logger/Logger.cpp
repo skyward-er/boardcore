@@ -104,8 +104,7 @@ bool Logger::start()
         return false;
     }
 
-    started         = true;
-    stats.logNumber = fileNumber;
+    started = true;
 
     return true;
 }
@@ -139,9 +138,22 @@ int Logger::getCurrentLogNumber() { return fileNumber; }
 
 string Logger::getCurrentFileName() { return getFileName(fileNumber); }
 
-LoggerStats Logger::getLoggerStats() { return stats; }
+LoggerStats Logger::getLoggerStats()
+{
+    stats.timestamp = TimestampTimer::getInstance().getTimestamp();
+    stats.logNumber = fileNumber;
+    return stats;
+}
 
 bool Logger::isStarted() const { return started; }
+
+void Logger::logStats()
+{
+    log(getLoggerStats());
+
+    // Reset the logger stats after they have been logger
+    stats = LoggerStats();
+}
 
 Logger::Logger()
 {
@@ -344,12 +356,6 @@ LoggerResult Logger::logImpl(const char* name, const void* data,
     atomicAdd(&stats.queuedSamples, 1);
 
     return LoggerResult::Queued;
-}
-
-void Logger::logStats()
-{
-    stats.timestamp = TimestampTimer::getInstance().getTimestamp();
-    log(stats);
 }
 
 }  // namespace Boardcore
