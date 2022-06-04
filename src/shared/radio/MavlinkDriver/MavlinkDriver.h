@@ -58,7 +58,7 @@ namespace Boardcore
  * @tparam PktLength Maximum length in bytes of each transceiver packet.
  * @tparam OutQueueSize Max number of transceiver packets in the output queue.
  * @tparam MavMsgLength Max length of a mavlink message. By default is 255 the
- * maximun possible but can be replaces with MAVLINK_MAX_DIALECT_PAYLOAD_SIZE
+ * maximum possible but can be replaces with MAVLINK_MAX_DIALECT_PAYLOAD_SIZE
  * for a specific protocol.
  */
 template <unsigned int PktLength, unsigned int OutQueueSize,
@@ -105,7 +105,7 @@ public:
     /**
      * @brief Enqueue a raw packet message into the sync packet queue.
      *
-     * @param msg Messa to send.
+     * @param msg Message to send.
      * @param size Length in bytes.
      * @return True if the message was enqueued.
      */
@@ -257,11 +257,11 @@ bool MavlinkDriver<PktLength, OutQueueSize, MavMsgLength>::enqueueMsg(
     const mavlink_message_t& msg)
 {
     // Convert mavlink message to a byte array
-    uint8_t msgtempBuf[MAVLINK_NUM_NON_PAYLOAD_BYTES + MavMsgLength];
-    int msgLen = mavlink_msg_to_send_buffer(msgtempBuf, &msg);
+    uint8_t msgTempBuf[MAVLINK_NUM_NON_PAYLOAD_BYTES + MavMsgLength];
+    int msgLen = mavlink_msg_to_send_buffer(msgTempBuf, &msg);
 
     // Append message to the queue
-    bool appended = outQueue.put(msgtempBuf, msgLen);
+    bool appended = outQueue.put(msgTempBuf, msgLen);
 
     // Update stats
     updateQueueStats(appended);
@@ -418,7 +418,7 @@ template <unsigned int PktLength, unsigned int OutQueueSize,
 MavlinkStatus MavlinkDriver<PktLength, OutQueueSize, MavMsgLength>::getStatus()
 {
     miosix::Lock<miosix::FastMutex> l(mtxStatus);
-    status.timestamp = miosix::getTick();
+    status.timestamp = TimestampTimer::getTimestamp();
     return status;
 }
 
