@@ -188,7 +188,7 @@ struct StatusScreen
 
     void updateLogStatus(Logger& logger)
     {
-        LoggerStats stats = logger.getLoggerStats();
+        LoggerStats stats = logger.getStats();
 
         if (logger.getCurrentLogNumber() >= 0)
         {

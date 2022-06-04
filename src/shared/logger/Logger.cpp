@@ -138,21 +138,21 @@ int Logger::getCurrentLogNumber() { return fileNumber; }
 
 string Logger::getCurrentFileName() { return getFileName(fileNumber); }
 
-LoggerStats Logger::getLoggerStats()
+LoggerStats Logger::getStats()
 {
     stats.timestamp = TimestampTimer::getTimestamp();
     stats.logNumber = fileNumber;
     return stats;
 }
 
+void Logger::resetStats() { stats = LoggerStats(); }
+
 bool Logger::isStarted() const { return started; }
 
 void Logger::logStats()
 {
-    log(getLoggerStats());
-
-    // Reset the logger stats after they have been logger
-    stats = LoggerStats();
+    log(getStats());
+    resetStats();
 }
 
 Logger::Logger()
