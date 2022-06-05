@@ -24,6 +24,7 @@
 
 #include <diagnostic/SkywardStack.h>
 #include <diagnostic/StackLogger.h>
+#include <drivers/timer/TimestampTimer.h>
 
 using namespace miosix;
 
@@ -44,7 +45,7 @@ static volatile unsigned int update = 0;
 CpuMeterData getCpuStats()
 {
     Lock<FastMutex> l(utilizationMutex);
-    return CpuMeterData(utilization.getStats());
+    return CpuMeterData(TimestampTimer::getTimestamp(), utilization.getStats());
 }
 
 void resetCpuStats() { utilization.reset(); }

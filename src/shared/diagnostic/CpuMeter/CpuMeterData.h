@@ -29,29 +29,31 @@ namespace Boardcore
 
 struct CpuMeterData
 {
-    float minValue    = 0;  ///< Min value found so far.
-    float maxValue    = 0;  ///< Max value found so far.
-    float mean        = 0;  ///< Mean of dataset.
-    float stdDev      = 0;  ///< Standard deviation of dataset.
-    uint32_t nSamples = 0;  ///< Number of samples.
+    uint64_t timestamp = 0;
+    float minValue     = 0;  ///< Min value found so far.
+    float maxValue     = 0;  ///< Max value found so far.
+    float mean         = 0;  ///< Mean of dataset.
+    float stdDev       = 0;  ///< Standard deviation of dataset.
+    uint32_t nSamples  = 0;  ///< Number of samples.
 
     CpuMeterData() {}
 
-    explicit CpuMeterData(StatsResult stats)
-        : minValue(stats.minValue), maxValue(stats.maxValue), mean(stats.mean),
-          stdDev(stats.stdDev), nSamples(stats.nSamples)
+    explicit CpuMeterData(uint64_t timestamp, StatsResult stats)
+        : timestamp(timestamp), minValue(stats.minValue),
+          maxValue(stats.maxValue), mean(stats.mean), stdDev(stats.stdDev),
+          nSamples(stats.nSamples)
     {
     }
 
     static std::string header()
     {
-        return "minValue,maxValue,mean,stdDev,nSamples\n";
+        return "timestamp,minValue,maxValue,mean,stdDev,nSamples\n";
     }
 
     void print(std::ostream& os) const
     {
-        os << minValue << "," << maxValue << "," << mean << "," << stdDev << ","
-           << nSamples << "\n";
+        os << timestamp << "," << minValue << "," << maxValue << "," << mean
+           << "," << stdDev << "," << nSamples << "\n";
     }
 };
 
