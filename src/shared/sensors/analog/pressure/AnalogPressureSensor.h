@@ -48,9 +48,9 @@ public:
     {
     }
 
-    bool init() override { return true; };
+    bool init() override { return true; }
 
-    bool selfTest() override { return true; };
+    bool selfTest() override { return true; }
 
     ///< Converts the voltage value to pressure
     AnalogPressureData sampleImpl() override
