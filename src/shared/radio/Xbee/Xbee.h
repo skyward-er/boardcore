@@ -94,19 +94,19 @@ public:
      * not wait for an ACK or send confirmation from the Xbee. Thus, it always
      * returns true.
      *
-     * @param pkt       Pointer to the packet (needs to be at least packetLength
+     * @param pkt Pointer to the packet (needs to be at least packetLength
      * bytes).
-     * @param packetLength   Lenght of the packet to be sent.
-     * @return          Always true
+     * @param packetLength Length of the packet to be sent.
+     * @return Always true
      */
     bool send(uint8_t* pkt, size_t packetLength) override;
 
     /**
      * @brief Waits until a new packet is received.
      *
-     * @param buf            Buffer to store the received packet into.
-     * @param bufferMaxSize   Maximum length of the received data.
-     * @return               Size of the data received or -1 if failure
+     * @param buf Buffer to store the received packet into.
+     * @param bufferMaxSize Maximum length of the received data.
+     * @return Size of the data received or -1 if failure
      */
     ssize_t receive(uint8_t* buf, size_t bufferMaxSize) override;
 
@@ -117,8 +117,8 @@ public:
 
     /**
      * @brief Signals the receive() function that there is new data available.
-     * Call this from the ATTN pin interrupt servirce routine, and nowhere else
-     * plese.
+     * Call this from the ATTN pin interrupt service routine, and nowhere else
+     * please.
      *
      */
     void handleATTNInterrupt();
@@ -231,7 +231,7 @@ private:
     /**
      * @brief Waits until an APIFrame with frame type \p frameType is received
      * on the SPI or until the timeouts expires. The frame is then stored in the
-     * parsingApiFrame local class varibale. Any frame received by this
+     * parsingApiFrame local class variable. Any frame received by this
      * function is automatically passed to the handleFrame() function
      * @attention mutexXbeeCommunication must be locked before calling this
      * function.

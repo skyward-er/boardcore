@@ -56,18 +56,18 @@ Xbee::Xbee(SPIBusInterface& bus, SPIBusConfig config, GpioType cs,
 
 Xbee::~Xbee() { wakeReceiver(true); }
 
-bool Xbee::send(uint8_t* pkt, size_t packeLength)
+bool Xbee::send(uint8_t* pkt, size_t packetLength)
 {
-    if (packeLength > MAX_PACKET_PAYLOAD_LENGTH || packeLength == 0)
+    if (packetLength > MAX_PACKET_PAYLOAD_LENGTH || packetLength == 0)
     {
-        LOG_ERR(logger, "Invalid packet length (0< {} <= {})", packeLength,
+        LOG_ERR(logger, "Invalid packet length (0< {} <= {})", packetLength,
                 MAX_PACKET_PAYLOAD_LENGTH);
         return false;
     }
     long long startTick = miosix::getTick();
 
     TXRequestFrame txReq;
-    uint8_t txFrameId  = buildTXRequestFrame(txReq, pkt, packeLength);
+    uint8_t txFrameId  = buildTXRequestFrame(txReq, pkt, packetLength);
     bool success       = false;
     bool statusTimeout = true;
     {
@@ -99,9 +99,8 @@ bool Xbee::send(uint8_t* pkt, size_t packeLength)
 
     // If there is more data to receive, wake the receive() thread
     if (attn.value() == 0)
-    {
         wakeReceiver();
-    }
+
     if (statusTimeout)
     {
         ++status.txTimeoutCount;
@@ -120,9 +119,8 @@ ssize_t Xbee::receive(uint8_t* buf, size_t bufMaxSize)
     {
         // We have data in the buffer pending to be returned
         if (!rxFramesBuffer.isEmpty() || currRxPayloadPointer >= 0)
-        {
             return fillReceiveBuf(buf, bufMaxSize);
-        }
+
         // No data in the buffer, but the xbee has data to return via SPI
         else if (attn.value() == 0)
         {
@@ -199,9 +197,7 @@ void Xbee::reset()
             handleFrame(parsingApiFrame);
 
             if (parsingApiFrame.frameType == FTYPE_MODEM_STATUS)
-            {
                 break;
-            }
         }
         miosix::Thread::sleep(5);
     } while (miosix::getTick() < timeout);
@@ -226,9 +222,8 @@ void Xbee::handleATTNInterrupt()
         receiveThread->IRQwakeup();
         if (receiveThread->IRQgetPriority() >
             miosix::Thread::IRQgetCurrentThread()->IRQgetPriority())
-        {
             miosix::Scheduler::IRQfindNextThread();
-        }
+
         receiveThread = 0;
     }
 }
@@ -290,9 +285,7 @@ bool Xbee::readRXFrame()
             handleFrame(parsingApiFrame);
 
             if (parsingApiFrame.frameType == FTYPE_RX_PACKET_FRAME)
-            {
                 return true;
-            }
         }
     }
     return false;
@@ -313,9 +306,7 @@ void Xbee::writeFrame(APIFrame& frame)
 
     // Pass the frame we just sent to the listener
     if (frameListener)
-    {
         frameListener(frame);
-    }
 
     // Full duplex spi transfer: we may have received valid data while we
     // were sending the frame.
@@ -323,9 +314,7 @@ void Xbee::writeFrame(APIFrame& frame)
     {
         ParseResult res = parser.parse(txBuf[i], &parsingApiFrame);
         if (res == ParseResult::SUCCESS)
-        {
             handleFrame(parsingApiFrame);
-        }
     }
 }
 
@@ -341,9 +330,7 @@ bool Xbee::waitForFrame(uint8_t frameType, unsigned int pollInterval,
                 handleFrame(parsingApiFrame);
 
                 if (parsingApiFrame.frameType == frameType)
-                {
                     return true;
-                }
             }
         }
         else
@@ -356,10 +343,10 @@ bool Xbee::waitForFrame(uint8_t frameType, unsigned int pollInterval,
 }
 
 uint8_t Xbee::buildTXRequestFrame(TXRequestFrame& txReq, uint8_t* pkt,
-                                  size_t packeLength)
+                                  size_t packetLength)
 {
-    memcpy(txReq.getRFDataPointer(), pkt, packeLength);
-    txReq.setRFDataLength(packeLength);
+    memcpy(txReq.getRFDataPointer(), pkt, packetLength);
+    txReq.setRFDataLength(packetLength);
 
     uint8_t txFrameId = getNewFrameID();
 
@@ -459,14 +446,12 @@ void Xbee::handleFrame(APIFrame& frame)
                 Lock<FastMutex> l(mutexRxFrames);
 
                 if (rxFramesBuffer.isFull())
-                {
                     ++status.rxDroppedBuffers;
-                }
+
                 rxFramesBuffer.put(*pf);
+
                 if (rxFramesBuffer.count() > status.frameBufMaxLength)
-                {
                     status.frameBufMaxLength = rxFramesBuffer.count();
-                }
             }
             wakeReceiver();
             break;
@@ -490,10 +475,10 @@ void Xbee::handleFrame(APIFrame& frame)
         {
             TXStatusFrame* ts   = frame.toFrameType<TXStatusFrame>();
             status.lastTxStatus = ts->getDeliveryStatus();
+
             if (status.lastTxStatus != DELS_SUCCESS)
-            {
                 status.lastTxStatusError = status.lastTxStatus;
-            }
+
             switch (status.lastTxStatus)
             {
                 case DELS_SUCCESS:
@@ -513,9 +498,7 @@ void Xbee::handleFrame(APIFrame& frame)
 
     // Pass the frame to the listener
     if (frameListener)
-    {
         frameListener(frame);
-    }
 }
 
 void Xbee::setOnFrameReceivedListener(OnFrameReceivedListener listener)
