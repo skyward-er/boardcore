@@ -66,6 +66,7 @@ bool TaskScheduler::addTask(function_t function, uint32_t period, Policy policy,
 {
     uint8_t id = 1;
 
+    // Find a suitable id for the new task
     auto it = tasks.cbegin(), end = tasks.cend();
     for (; it != end && id == it->first; ++it, ++id)
         ;

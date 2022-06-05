@@ -207,6 +207,7 @@ private:
         const std::pair<const uint8_t, Boardcore::TaskScheduler::Task>& task)
     {
         return TaskStatsResult{task.second.id,
+                               task.second.period,
                                task.second.activationStats.getStats(),
                                task.second.periodStats.getStats(),
                                task.second.workloadStats.getStats(),
