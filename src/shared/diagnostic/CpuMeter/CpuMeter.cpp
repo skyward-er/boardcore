@@ -41,13 +41,13 @@ static FastMutex utilizationMutex;
 static Stats utilization;
 static volatile unsigned int update = 0;
 
-CpuMeterData averageCpuUtilization()
+CpuMeterData getCpuStats()
 {
     Lock<FastMutex> l(utilizationMutex);
-    auto stats = utilization.getStats();
-    utilization.reset();
-    return CpuMeterData(stats);
+    return CpuMeterData(utilization.getStats());
 }
+
+void resetCpuStats() { utilization.reset(); }
 
 #ifdef ENABLE_CPU_METER
 

@@ -191,7 +191,7 @@ int main()
                 level,
                 TimerUtils::toIntMicroSeconds(
                     TimestampTimer::timestampTimer.getTimer(), watermarkDelta),
-                CpuMeter::averageCpuUtilization().mean,
+                CpuMeter::getCpuStats().mean,
                 TimerUtils::toIntMicroSeconds(
                     TimestampTimer::timestampTimer.getTimer(), update)};
 

@@ -148,7 +148,7 @@ int main()
 
         // Store the sample in the array, togheter with other useful data
         data[dataCounter++] = {d.angularVelocityTimestamp, sampleDelta, d,
-                               CpuMeter::averageCpuUtilization().mean};
+                               CpuMeter::getCpuStats().mean};
 
         // Wait until SAMPLE_PERIOD milliseconds from the start of this
         // iteration have passed (SAMPLE_PERIOD = 1000 / SAMPLE_RATE)

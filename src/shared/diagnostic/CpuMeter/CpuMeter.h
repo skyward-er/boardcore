@@ -57,7 +57,12 @@ namespace CpuMeter
 /**
  * \return The average CPU utilization
  */
-CpuMeterData averageCpuUtilization();
+CpuMeterData getCpuStats();
+
+/**
+ * @brief Resets the cpu utilization statistics.
+ */
+void resetCpuStats();
 
 }  // namespace CpuMeter
 

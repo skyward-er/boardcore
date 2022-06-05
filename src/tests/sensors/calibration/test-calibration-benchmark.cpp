@@ -101,8 +101,7 @@ int main()
         if (elapsed > 500)
         {
             elapsed = 0;
-            TRACE("Average CPU usage: %f %%\n",
-                  CpuMeter::averageCpuUtilization().mean);
+            TRACE("Average CPU usage: %f %%\n", CpuMeter::getCpuStats().mean);
         }
     }
 }
