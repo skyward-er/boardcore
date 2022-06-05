@@ -90,6 +90,8 @@ void registerTypes(Deserializer& ds)
     ds.registerType<BME280Data>();
     ds.registerType<BMP280Data>();
     ds.registerType<BMX160Data>();
+    ds.registerType<BMX160Temperature>();
+    ds.registerType<BMX160FifoStats>();
     ds.registerType<BMX160WithCorrectionData>();
     ds.registerType<HX711Data>();
     ds.registerType<L3GD20Data>();

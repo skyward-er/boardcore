@@ -42,12 +42,10 @@ struct MavlinkStatus
     static std::string header()
     {
         return "timestamp,n_send_queue,max_send_queue,n_send_errors,n_dropped_"
-               "packets,mav_stats."
-               "buffer_overrun,mav_stats.msg_received,mav_stats.parse_error,"
-               "mav_stats.parse_state, "
-               "mav_stats.packet_idx,mav_stats.current_rx_seq,mav_stats."
-               "current_tx_seq,mav_stats.packet_rx_success_count,mav_stats."
-               "packet_rx_drop_count\n";
+               "packets,mav_stats.buffer_overrun,mav_stats.msg_received,mav_"
+               "stats.parse_error,mav_stats.parse_state,mav_stats.packet_idx,"
+               "mav_stats.current_rx_seq,mav_stats.current_tx_seq,mav_stats."
+               "packet_rx_success_count,mav_stats.packet_rx_drop_count\n";
     }
 
     void print(std::ostream& os) const

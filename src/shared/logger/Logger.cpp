@@ -145,7 +145,19 @@ LoggerStats Logger::getStats()
     return stats;
 }
 
-void Logger::resetStats() { stats = LoggerStats(); }
+void Logger::resetStats()
+{
+    // Keep some of the statistics persistent
+    int buffersWritten = stats.buffersWritten;
+    int writesFailed   = stats.writesFailed;
+
+    // Reset
+    stats = {};
+
+    // Put back
+    stats.buffersWritten = buffersWritten;
+    stats.writesFailed   = writesFailed;
+}
 
 bool Logger::isStarted() const { return started; }
 
@@ -290,8 +302,9 @@ void Logger::writeThread()
                 stats.buffersWritten++;
 
             timer.stop();
-            stats.writeTime    = timer.interval();
-            stats.maxWriteTime = max(stats.maxWriteTime, stats.writeTime);
+            stats.averageWriteTime = timer.interval();
+            stats.maxWriteTime =
+                max(stats.maxWriteTime, stats.averageWriteTime);
 
             {
                 Lock<FastMutex> l(mutex);
