@@ -33,10 +33,10 @@ namespace Boardcore
 struct MavlinkStatus
 {
     uint64_t timestamp;
-    uint16_t nSendQueue;    // current len of the occupied portion of the queue
-    uint16_t maxSendQueue;  // max occupied len of the queue
-    uint16_t nSendErrors;   // Number of failed sends
-    uint16_t nDroppedPackets;  // number of packet drops
+    uint16_t nSendQueue;  ///< Current len of the occupied portion of the queue
+    uint16_t maxSendQueue;     ///< Max occupied len of the queue
+    uint16_t nSendErrors;      ///< Number of failed sends
+    uint16_t nDroppedPackets;  ///< Number of packet drops
     mavlink_status_t mavStats;
 
     static std::string header()
