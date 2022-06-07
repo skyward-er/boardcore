@@ -124,6 +124,8 @@ void Logger::stop()
 
     fclose(file);
 
+    stats = {};
+
     fileNumber = -1;  // Reset the fileNumber to an invalid value
 }
 
