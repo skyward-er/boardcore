@@ -133,9 +133,11 @@ public:
     /**
      * @brief Make a regular conversion for the specified channel.
      */
-    ADCData readChannel(Channel channel);
+    ADCData readChannel(Channel channel, SampleTime sampleTime = CYCLES_3);
 
     bool enableChannel(Channel channel, SampleTime sampleTime = CYCLES_3);
+
+    bool addRegularChannel(Channel channel);
 
     ADCData getVoltage(Channel channel);
 
@@ -151,8 +153,6 @@ private:
     inline void startRegularConversion();
 
     inline bool addInjectedChannel(Channel channel);
-
-    inline bool addRegularChannel(Channel channel);
 
     inline void setChannelSampleTime(Channel channel, SampleTime sampleTime);
 
@@ -174,7 +174,7 @@ private:
      * We'll use up to 4 injected channel by default and up to 16 channels when
      * using DMA.
      *
-     * The differentiation is necessary because whitout DMA it is much simplier
+     * The differentiation is necessary because whiteout DMA it is much simpler
      * to use injected channel for multichannel readings. Otherwise we would
      * need to handle each channel's end of conversion interrupt or go through
      */

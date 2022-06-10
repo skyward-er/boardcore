@@ -128,21 +128,6 @@ bool InternalADC::init()
     return true;
 }
 
-ADCData InternalADC::readChannel(Channel channel)
-{
-    if (activeChannels == 0)
-        addRegularChannel(channel);
-
-    setChannelSampleTime(channel, SampleTime::CYCLES_480);
-    startRegularConversion();
-
-    while (!(adc->SR & ADC_SR_EOC))
-        ;
-
-    return {TimestampTimer::getInstance().getTimestamp(), channel,
-            static_cast<uint16_t>(adc->DR) * supplyVoltage / RESOLUTION};
-}
-
 bool InternalADC::enableChannel(Channel channel, SampleTime sampleTime)
 {
     // Check channel number
@@ -168,6 +153,54 @@ bool InternalADC::enableChannel(Channel channel, SampleTime sampleTime)
     setChannelSampleTime(channel, sampleTime);
 
     return true;
+}
+
+bool InternalADC::addRegularChannel(Channel channel)
+{
+    // Check active channels number
+    if (activeChannels >= 16)
+        return false;
+
+    printf("Active channels %d\n", activeChannels);
+
+    // Add the channel to the sequence
+    volatile uint32_t* sqrPtr;
+    switch (activeChannels / 6)
+    {
+        case 1:
+            sqrPtr = &(adc->SQR2);
+            break;
+        case 2:
+            sqrPtr = &(adc->SQR1);
+            break;
+        default:
+            sqrPtr = &(adc->SQR3);
+    }
+    *sqrPtr = channel << ((activeChannels % 6) * 5);
+
+    // Update the channels number in the register
+    adc->SQR1 &= ~ADC_SQR1_L;
+    adc->SQR1 |= activeChannels << 20;
+
+    // Save the index of the channel in the ADC's regular sequence
+    indexMap[channel] = activeChannels;
+
+    // Update the counter
+    activeChannels++;
+
+    return true;
+}
+
+ADCData InternalADC::readChannel(Channel channel, SampleTime sampleTime)
+{
+    setChannelSampleTime(channel, sampleTime);
+    startRegularConversion();
+
+    while (!(adc->SR & ADC_SR_EOC))
+        ;
+
+    return {TimestampTimer::getInstance().getTimestamp(), channel,
+            static_cast<uint16_t>(adc->DR) * supplyVoltage / RESOLUTION};
 }
 
 ADCData InternalADC::getVoltage(Channel channel)
@@ -297,42 +330,6 @@ inline bool InternalADC::addInjectedChannel(Channel channel)
 
     // Set this channel index to 0
     indexMap[channel] = 0;
-
-    // Update the counter
-    activeChannels++;
-
-    return true;
-}
-
-inline bool InternalADC::addRegularChannel(Channel channel)
-{
-    // Check active channels number
-    if (activeChannels >= 16)
-    {
-        return false;
-    }
-
-    // Add the channel to the sequence
-    volatile uint32_t* sqrPtr;
-    switch (activeChannels / 6)
-    {
-        case 1:
-            sqrPtr = &(adc->SQR2);
-            break;
-        case 2:
-            sqrPtr = &(adc->SQR1);
-            break;
-        default:
-            sqrPtr = &(adc->SQR3);
-    }
-    *sqrPtr = channel << ((activeChannels % 6) * 5);
-
-    // Update the channels number in the register
-    adc->SQR1 &= ~ADC_SQR1_L;
-    adc->SQR1 |= activeChannels << 20;
-
-    // Save the index of the channel in the ADC's regular sequence
-    indexMap[channel] = activeChannels;
 
     // Update the counter
     activeChannels++;
