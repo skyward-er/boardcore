@@ -130,6 +130,11 @@ public:
      */
     bool init() override;
 
+    /**
+     * @brief Make a regular conversion for the specified channel.
+     */
+    ADCData readChannel(Channel channel);
+
     bool enableChannel(Channel channel, SampleTime sampleTime = CYCLES_3);
 
     ADCData getVoltage(Channel channel);
@@ -183,7 +188,7 @@ private:
     volatile uint32_t* clearFlagReg;
 
     static constexpr int INJECTED_CHANNEL_N = 4;
-    static constexpr int RESOLUTION         = 4096;  ///< 12 bits
+    static constexpr int RESOLUTION         = 4095;  ///< 12 bits
 };
 
 }  // namespace Boardcore

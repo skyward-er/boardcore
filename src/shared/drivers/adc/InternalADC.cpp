@@ -72,9 +72,7 @@ InternalADC::InternalADC(ADC_TypeDef* adc, const float supplyVoltage,
 
     // Init indexMap
     for (auto i = 0; i < CH_NUM; i++)
-    {
         indexMap[i] = -1;
-    }
 }
 
 InternalADC::~InternalADC()
@@ -130,28 +128,37 @@ bool InternalADC::init()
     return true;
 }
 
+ADCData InternalADC::readChannel(Channel channel)
+{
+    if (activeChannels == 0)
+        addRegularChannel(channel);
+
+    setChannelSampleTime(channel, SampleTime::CYCLES_480);
+    startRegularConversion();
+
+    while (!(adc->SR & ADC_SR_EOC))
+        ;
+
+    return {TimestampTimer::getInstance().getTimestamp(), channel,
+            static_cast<uint16_t>(adc->DR) * supplyVoltage / RESOLUTION};
+}
+
 bool InternalADC::enableChannel(Channel channel, SampleTime sampleTime)
 {
     // Check channel number
     if (channel < CH0 || channel >= CH_NUM)
-    {
         return false;
-    }
 
     // Add channel to the sequence
     if (!isUsingDMA)
     {
         if (!addInjectedChannel(channel))
-        {
             return false;
-        }
     }
     else
     {
         if (!addRegularChannel(channel))
-        {
             return false;
-        }
 
         // Update the DMA number of data
         dmaStream->NDTR = activeChannels;
@@ -214,14 +221,14 @@ ADCData InternalADC::sampleImpl()
 
         // This should trigger the DMA stream for each channel's conversion
 
-        // Wait for tranfer end
+        // Wait for transfer end
         while (!(*statusReg & (transferCompleteMask | transferErrorMask)))
             ;
 
         // Clear the transfer complete flag
         *clearFlagReg |= transferCompleteMask;
 
-        // If and error has occurred (probaly due to a higher priority stream)
+        // If and error has occurred (probably due to a higher priority stream)
         // don't update the timestamp, the values should not have been updated
         if (*statusReg & transferErrorMask)
         {
@@ -272,9 +279,7 @@ inline bool InternalADC::addInjectedChannel(Channel channel)
 {
     // Check active channels number
     if (activeChannels >= 4)
-    {
         return false;
-    }
 
     // Add the channel to the sequence, starting from position 4
     adc->JSQR |= channel << (15 - activeChannels * 5);
@@ -287,9 +292,7 @@ inline bool InternalADC::addInjectedChannel(Channel channel)
     for (auto i = 0; i < CH_NUM; i++)
     {
         if (indexMap[i] >= 0)
-        {
             indexMap[i]++;
-        }
     }
 
     // Set this channel index to 0
@@ -311,20 +314,21 @@ inline bool InternalADC::addRegularChannel(Channel channel)
 
     // Add the channel to the sequence
     volatile uint32_t* sqrPtr;
-    switch (activeChannels % 6)
+    switch (activeChannels / 6)
     {
         case 1:
-            sqrPtr = &(adc->SQR3);
-            break;
-        case 2:
             sqrPtr = &(adc->SQR2);
             break;
-        default:
+        case 2:
             sqrPtr = &(adc->SQR1);
+            break;
+        default:
+            sqrPtr = &(adc->SQR3);
     }
     *sqrPtr = channel << ((activeChannels % 6) * 5);
 
     // Update the channels number in the register
+    adc->SQR1 &= ~ADC_SQR1_L;
     adc->SQR1 |= activeChannels << 20;
 
     // Save the index of the channel in the ADC's regular sequence
@@ -341,13 +345,10 @@ inline void InternalADC::setChannelSampleTime(Channel channel,
 {
     volatile uint32_t* smprPtr;
     if (channel <= 9)
-    {
         smprPtr = &(adc->SMPR2);
-    }
     else
-    {
         smprPtr = &(adc->SMPR1);
-    }
+
     *smprPtr = sampleTime << (channel * 3);
 }
 
