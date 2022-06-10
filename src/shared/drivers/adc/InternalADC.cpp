@@ -130,11 +130,6 @@ bool InternalADC::init()
     return true;
 }
 
-bool InternalADC::enableChannel(Channel channel)
-{
-    return enableChannel(channel, CYCLES_3);
-}
-
 bool InternalADC::enableChannel(Channel channel, SampleTime sampleTime)
 {
     // Check channel number

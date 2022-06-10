@@ -90,6 +90,9 @@ public:
         CH13,
         CH14,
         CH15,
+        CH16,
+        CH17,
+        CH18,
         CH_NUM
     };
 
@@ -127,9 +130,7 @@ public:
      */
     bool init() override;
 
-    bool enableChannel(Channel channel);
-
-    bool enableChannel(Channel channel, SampleTime sampleTime);
+    bool enableChannel(Channel channel, SampleTime sampleTime = CYCLES_3);
 
     ADCData getVoltage(Channel channel);
 
