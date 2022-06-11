@@ -37,7 +37,8 @@ using namespace std;
 
 const unsigned int NUM_WRITES = 5000;
 
-vector<unsigned int> BUF_SIZES{128, 256, 512, 1024, 2048, 4096, 1024 * 8};
+vector<unsigned int> BUF_SIZES{128,  256,      512,       1024,      2048,
+                               4096, 1024 * 8, 1024 * 16, 1024 * 32, 1024 * 64};
 
 // Fills a buffer with random bytes
 void rndFill(uint8_t* buf, unsigned int size)
