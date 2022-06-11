@@ -156,8 +156,7 @@ void printResults(size_t bufferSize, array<float, NUM_WRITES>& results)
     printf("- mean: % 6.2fKiB/s\n",
            bufferSize / (statsResults.mean / 1e6) / 1024);
     printf("- min:  % 6.2fKiB/s\n",
-           bufferSize / (statsResults.maxValue / 1e6)) /
-        1024;
+           bufferSize / (statsResults.maxValue / 1e6) / 1024);
     printf("- max:  % 6.2fKiB/s\n",
            bufferSize / (statsResults.minValue / 1e6) / 1024);
 
