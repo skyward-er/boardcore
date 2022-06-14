@@ -141,10 +141,17 @@ int main()
     u1rx2::getPin().alternateFunction(7);
     u1tx1::getPin().mode(miosix::Mode::ALTERNATE);
     u1tx1::getPin().alternateFunction(7);
-    u4rx1::getPin().mode(miosix::Mode::ALTERNATE);
-    u4rx1::getPin().alternateFunction(8);
-    u4tx1::getPin().mode(miosix::Mode::ALTERNATE);
-    u4tx1::getPin().alternateFunction(8);
+
+    u2rx1::getPin().mode(miosix::Mode::ALTERNATE);
+    u2rx1::getPin().alternateFunction(7);
+    u2tx1::getPin().mode(miosix::Mode::ALTERNATE);
+    u2tx1::getPin().alternateFunction(7);
+
+
+    // u4rx1::getPin().mode(miosix::Mode::ALTERNATE);
+    // u4rx1::getPin().alternateFunction(8);
+    // u4tx1::getPin().mode(miosix::Mode::ALTERNATE);
+    // u4tx1::getPin().alternateFunction(8);
 
     bool testPassed = true;
     printf("*** SERIAL 3 WORKING!\n");
@@ -158,7 +165,7 @@ int main()
         STM32SerialWrapper usartx(USART1, baudrate);
         usartx.init();
 
-        USART usarty(UART4, baudrate);
+        STM32SerialWrapper usarty(USART2, baudrate);
         // usarty.setOversampling(false);
         // usarty.setStopBits(1);
         // usarty.setWordLength(USART::WordLength::BIT8);
