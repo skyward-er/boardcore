@@ -25,7 +25,7 @@
 #include <sensors/analog/pressure/AnalogPressureSensor.h>
 #include <utils/Stats/Stats.h>
 
-#include "MPXHZ6130AData.h"
+#include "MPXH6400AData.h"
 
 namespace Boardcore
 {
@@ -33,11 +33,11 @@ namespace Boardcore
 /**
  * @brief Driver for NXP's MPXHZ6130A pressure sensor
  */
-class MPXHZ6130A final : public AnalogPressureSensor<MPXHZ6130AData>
+class MPXH6400A final : public AnalogPressureSensor<MPXH6400AData>
 {
 public:
-    MPXHZ6130A(std::function<ADCData()> getVoltage,
-               const float supplyVoltage = 5.0)
+    MPXH6400A(std::function<ADCData()> getVoltage,
+              const float supplyVoltage = 5.0)
         : AnalogPressureSensor(getVoltage, supplyVoltage, 400000, 20000)
     {
     }

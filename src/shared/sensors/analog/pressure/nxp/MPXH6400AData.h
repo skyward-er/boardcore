@@ -27,7 +27,7 @@
 namespace Boardcore
 {
 
-struct MPXH6115AData : public PressureData
+struct MPXH6400AData : public PressureData
 {
     static std::string header() { return "pressureTimestamp,pressure\n"; }
 
