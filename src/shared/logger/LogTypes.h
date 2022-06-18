@@ -51,12 +51,12 @@
 #include <sensors/VN100/VN100Data.h>
 #include <sensors/analog/BatteryVoltageSensorData.h>
 #include <sensors/analog/CurrentSensorData.h>
-#include <sensors/analog/pressure/MPXHZ6130A/MPXHZ6130AData.h>
 #include <sensors/analog/pressure/honeywell/HSCMAND015PAData.h>
 #include <sensors/analog/pressure/honeywell/HSCMRNN030PAData.h>
 #include <sensors/analog/pressure/honeywell/HSCMRNN160KAData.h>
 #include <sensors/analog/pressure/honeywell/SSCDANN030PAAData.h>
 #include <sensors/analog/pressure/honeywell/SSCDRRN015PDAData.h>
+#include <sensors/analog/pressure/nxp/MPXHZ6130AData.h>
 
 #include <fstream>
 #include <iostream>
