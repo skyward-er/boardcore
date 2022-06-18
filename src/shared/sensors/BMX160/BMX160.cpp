@@ -614,9 +614,10 @@ GyroscopeData BMX160::buildGyrData(BMX160Defs::GyrRaw data, uint64_t timestamp)
         return GyroscopeData{timestamp, data.x * gyrSensibility,
                              data.y * gyrSensibility, data.z * gyrSensibility};
     else
-        return GyroscopeData{timestamp, data.x * gyrSensibility * g,
-                             data.y * gyrSensibility * g,
-                             data.z * gyrSensibility * g};
+        return GyroscopeData{timestamp,
+                             data.x * gyrSensibility * DEGREES_TO_RADIANS,
+                             data.y * gyrSensibility * DEGREES_TO_RADIANS,
+                             data.z * gyrSensibility * DEGREES_TO_RADIANS};
 }
 
 const char* BMX160::debugErr(SPITransaction& spi)
