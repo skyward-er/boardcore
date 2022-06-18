@@ -34,9 +34,8 @@ namespace Boardcore
 class AnalogLoadCell : public Sensor<AnalogLoadCellData>
 {
 public:
-    AnalogLoadCell(std::function<std::pair<uint64_t, float>()> getVoltage,
-                   const float mVtoV, const unsigned int fullScale,
-                   const float supplyVoltage = 5)
+    AnalogLoadCell(std::function<ADCData()> getVoltage, const float mVtoV,
+                   const unsigned int fullScale, const float supplyVoltage = 5)
         : getVoltage(getVoltage),
           conversionCoeff(mVtoV * supplyVoltage / fullScale / 1e3)
     {
@@ -48,9 +47,11 @@ public:
 
     AnalogLoadCellData sampleImpl() override
     {
-        AnalogLoadCellData data;
+        ADCData adcData = getVoltage();
 
-        std::tie(data.loadTimestamp, data.voltage) = getVoltage();
+        AnalogLoadCellData data;
+        data.loadTimestamp = adcData.voltageTimestamp;
+        data.voltage       = adcData.voltage;
 
         data.load = data.voltage / conversionCoeff;
 
@@ -58,7 +59,7 @@ public:
     }
 
 private:
-    std::function<std::pair<uint64_t, float>()> getVoltage;
+    std::function<ADCData()> getVoltage;
     const float conversionCoeff;
 };
 
