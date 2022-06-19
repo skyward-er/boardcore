@@ -20,6 +20,8 @@
  * THE SOFTWARE.
  */
 
+#pragma once
+
 #include <utils/Constants.h>
 
 #include <ostream>
