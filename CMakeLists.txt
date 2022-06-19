@@ -100,7 +100,7 @@ add_executable(catch-tests-boardcore
     src/tests/catch/test-circularbuffer.cpp
     src/tests/catch/test-eventbroker.cpp
     src/tests/catch/test-timestamptimer.cpp
-    src/tests/catch/test-kalman-eigen.cpp
+    src/tests/catch/test-kalman.cpp
     src/tests/catch/test-packetqueue.cpp
     src/tests/catch/test-sensormanager-catch.cpp
     src/tests/catch/xbee/test-xbee-parser.cpp
@@ -129,8 +129,8 @@ sbs_target(test-stepper stm32f429zi_stm32f4discovery)
 #                             Tests - Algorithms                              #
 #-----------------------------------------------------------------------------#
 
-add_executable(test-kalman-eigen-benchmark src/tests/algorithms/Kalman/test-kalman-eigen-benchmark.cpp)
-sbs_target(test-kalman-eigen-benchmark stm32f429zi_stm32f4discovery)
+add_executable(test-kalman-benchmark src/tests/algorithms/Kalman/test-kalman-benchmark.cpp)
+sbs_target(test-kalman-benchmark stm32f429zi_stm32f4discovery)
 
 add_executable(test-attitude-parafoil src/tests/algorithms/NAS/test-attitude-parafoil.cpp)
 sbs_target(test-attitude-parafoil stm32f429zi_parafoil)
@@ -152,6 +152,9 @@ sbs_target(test-triad stm32f429zi_skyward_death_stack_x)
 
 add_executable(test-triad-parafoil src/tests/algorithms/NAS/test-triad-parafoil.cpp)
 sbs_target(test-triad-parafoil stm32f429zi_parafoil)
+
+add_executable(test-ada src/tests/algorithms/ADA/test-ada.cpp)
+sbs_target(test-ada stm32f429zi_skyward_death_stack_v3)
 
 #-----------------------------------------------------------------------------#
 #                               Tests - Drivers                               #

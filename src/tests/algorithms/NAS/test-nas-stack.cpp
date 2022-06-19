@@ -190,8 +190,7 @@ void step()
     nas->correctAcc(acceleration);
     if (gpsData.fix)
         nas->correctGPS(gpsCorrection);
-    nas->correctBaro(100000, Constants::MSL_PRESSURE,
-                     Constants::MSL_TEMPERATURE);
+    nas->correctBaro(100000);
 
     auto nasState = nas->getState();
 

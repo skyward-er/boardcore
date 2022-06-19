@@ -22,6 +22,7 @@
 
 #pragma once
 
+#include <algorithms/ReferenceValues.h>
 #include <utils/AeroUtils/AeroUtils.h>
 #include <utils/Constants.h>
 
@@ -53,46 +54,43 @@ public:
     /**
      * @brief Prediction with accelerometer data.
      *
-     * @param u Vector with acceleration data [x y z][m/s^2]
+     * @param u Vector with acceleration data [x y z][m/s^2].
      */
     void predictAcc(const Eigen::Vector3f& acceleration);
 
     /**
      * @brief Prediction with gyroscope data.
      *
-     * @param u Vector with angular velocity data [x y z]
+     * @param u Vector with angular velocity data [x y z].
      */
     void predictGyro(const Eigen::Vector3f& angularVelocity);
 
     /**
      * @brief Correction with barometer data.
      *
-     * @param pressure Pressure read from the barometer [Pa]
-     * @param mslPress Pressure at sea level [Pa]
-     * @param mslTemp Temperature at sea level [Kelvin]
+     * @param pressure Pressure read from the barometer [Pa].
      */
-    void correctBaro(const float pressure, const float mslPress,
-                     const float mslTemp);
+    void correctBaro(const float pressure);
 
     /**
      * @brief Correction with gps data.
      *
-     * @param gps Vector of the gps readings [n e vn ve][m m m/s m/s]
-     * @param sats_num Number of satellites available
+     * @param gps Vector of the gps readings [n e vn ve][m m m/s m/s].
+     * @param sats_num Number of satellites available.
      */
     void correctGPS(const Eigen::Vector4f& gps);
 
     /**
      * @brief Correction with magnetometer data.
      *
-     * @param mag Normalized vector of the magnetometer readings [x y z]
+     * @param mag Normalized vector of the magnetometer readings [x y z].
      */
     void correctMag(const Eigen::Vector3f& mag);
 
     /**
      * @brief Correction with accelerometer data.
      *
-     * @param u Normalized vector with acceleration data [x y z]
+     * @param u Normalized vector with acceleration data [x y z].
      */
     void correctAcc(const Eigen::Vector3f& acceleration);
 
@@ -101,8 +99,8 @@ public:
      *
      * Do not call this function after apogee!
      *
-     * @param deltaP Delta pressure measured by the differential sensor [Pa]
-     * @param staticP Static pressure [Pa]
+     * @param deltaP Delta pressure measured by the differential sensor [Pa].
+     * @param staticP Static pressure [Pa].
      */
     void correctPitot(const float deltaP, const float staticP);
 
@@ -126,25 +124,26 @@ public:
      */
     void setX(const Eigen::Matrix<float, 13, 1>& x);
 
-private:
     /**
-     * @brief Return a rotation matrix from body from to NED frame;
-     *
-     * TODO: Move to SkyQuaternion utilities
+     * @brief Changes the reference values.
      */
-    Eigen::Matrix3f body2ned(const Eigen::Vector4f& q);
+    void setReferenceValues(const ReferenceValues reference);
 
-    ///< Extended Kalman filter configuration parameters
+private:
+    ///< Extended Kalman filter configuration parameters.
     NASConfig config;
 
-    ///< State vector [n e d vn ve vd qx qy qz qw bx by bz]
+    ///< Reference values used for altitude and gps position.
+    ReferenceValues reference;
+
+    ///< State vector [n e d vn ve vd qx qy qz qw bx by bz].
     Eigen::Matrix<float, 13, 1> x;
 
-    ///< Covariance matrix
+    ///< Covariance matrix.
     Eigen::Matrix<float, 12, 12> P;
 
-    ///< NED gravity vector [m/s^2]
-    Eigen::Vector3f gravityNed{0.0f, 0.0f, -Constants::g};
+    ///< NED gravity vector [m/s^2].
+    const Eigen::Vector3f gravityNed{0.0f, 0.0f, -Constants::g};
 
     // Utility matrixes used for the gps
     Eigen::Matrix<float, 4, 6> H_gps;

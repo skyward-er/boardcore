@@ -56,6 +56,7 @@ int main()
     init();
 
     nas = new NAS(getEKConfig());
+    nas->setReferenceValues({0, 0, 0, 110000, 20 + 273.5});
     setInitialOrientation();
 
     TaskScheduler scheduler;
@@ -162,7 +163,7 @@ void step()
     nas->correctAcc(acceleration);
     if (gpsData.fix)
         nas->correctGPS(gpsCorrection);
-    nas->correctBaro(100000, 110000, 20 + 273.5);
+    nas->correctBaro(100000);
 
     auto nasState = nas->getState();
     Logger::getInstance().log(imuData);

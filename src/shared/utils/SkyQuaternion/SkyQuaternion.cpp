@@ -35,7 +35,7 @@ namespace Boardcore
 namespace SkyQuaternion
 {
 
-Vector4f eul2quat(Vector3f euler)
+Vector4f eul2quat(const Vector3f& euler)
 {
     // Euler angles are ZYX
     float yaw   = euler(0) * Constants::DEGREES_TO_RADIANS;
@@ -57,7 +57,7 @@ Vector4f eul2quat(Vector3f euler)
     return Vector4f(qx, qy, qz, qw);
 }
 
-Vector3f quat2eul(Vector4f quat)
+Vector3f quat2eul(const Vector4f& quat)
 {
     // Euler angles are ZYX
     float qx = quat(0);
@@ -82,7 +82,7 @@ Vector3f quat2eul(Vector4f quat)
     return Vector3f(roll, pitch, yaw) * Constants::RADIANS_TO_DEGREES;
 }
 
-Vector4f rotationMatrix2quat(Matrix3f rtm)
+Vector4f rotationMatrix2quat(const Matrix3f& rtm)
 {
     float r11 = rtm(0, 0);
     float r12 = rtm(0, 1);
@@ -156,6 +156,29 @@ Vector4f rotationMatrix2quat(Matrix3f rtm)
     return Vector4f(qx, qy, qz, qw);
 }
 
+Matrix3f quat2rotationMatrix(const Vector4f& q)
+{
+    // clang-format off
+    return Matrix3f{
+        {
+            q[0] * q[0] - q[1] * q[1] - q[2] * q[2] + q[3] * q[3],
+            2.0f * (q[0] * q[1] - q[2] * q[3]),
+            2.0f * (q[0] * q[2] + q[1] * q[3]),
+        },
+        {
+            2.0f * (q[0] * q[1] + q[2] * q[3]),
+            - q[0] * q[0] + q[1] * q[1] - q[2] * q[2] + q[3] * q[3],
+            2.0f * (q[1] * q[2] - q[0] * q[3]),
+        },
+        {
+            2.0f * (q[0] * q[2] - q[1] * q[3]),
+            2.0f * (q[1] * q[2] + q[0] * q[3]),
+            - q[0] * q[0] - q[1] * q[1] + q[2] * q[2] + q[3] * q[3]
+        }
+    };
+    // clang-format on
+}
+
 bool quatNormalize(Vector4f& quat)
 {
     float den = sqrt(powf(quat(0), 2) + powf(quat(1), 2) + powf(quat(2), 2) +
@@ -168,7 +191,7 @@ bool quatNormalize(Vector4f& quat)
     return true;
 }
 
-Vector4f quatProd(const Vector4f q1, const Vector4f q2)
+Vector4f quatProd(const Vector4f& q1, const Vector4f& q2)
 {
     Vector3f qv1 = q1.head<3>();
     float qs1    = q1(3);

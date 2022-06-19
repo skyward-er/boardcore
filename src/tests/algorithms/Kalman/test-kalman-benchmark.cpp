@@ -26,8 +26,7 @@
 #define EIGEN_RUNTIME_NO_MALLOC
 
 #include <algorithms/Kalman/Kalman.h>
-#include <drivers/timer/GeneralPurposeTimer.h>
-#include <drivers/timer/TimerUtils.h>
+#include <drivers/timer/TimestampTimer.h>
 #include <kernel/kernel.h>
 #include <util/util.h>
 #include <utils/SkyQuaternion/SkyQuaternion.h>
@@ -43,9 +42,6 @@ using namespace Eigen;
 int main()
 {
     printf("RUNNING...\n");
-
-    // Timer for benchmarking purposes
-    GP32bitTimer timer{TIM5};
 
     const int n = 3;
     const int p = 1;
@@ -83,8 +79,8 @@ int main()
 
     float lastTime = 0.0;  // Variable to save the time of the last sample
 
-    timer.reset();
-    timer.enable();
+    uint64_t startTime  = TimestampTimer::getTimestamp();
+    bool apogeeDetected = false;
 
     printf("%d %d \n", TIME.size(), INPUT.size());
 
@@ -92,8 +88,8 @@ int main()
     {
         float time;  // Current time as read from csv file
         float T;     // Time elapsed between last sample and current one
-        uint32_t tick1;
-        uint32_t tick2;
+        uint64_t tick1;
+        uint64_t tick2;
 
         time = TIME[i];
         T    = time - lastTime;
@@ -104,34 +100,27 @@ int main()
 
         y(0) = INPUT[i];
 
-        tick1 = timer.readCounter();
+        tick1 = TimestampTimer::getTimestamp();
 
         filter.predict(F);
 
         if (!filter.correct(y))
-        {
             printf("Correction failed at iteration : %u \n", i);
-        }
 
-        tick2 = timer.readCounter();
-
-        printf("%u : %f \n", i,
-               TimerUtils::toMilliSeconds(timer.getTimer(), tick2 - tick1));
-
-        // printf("%f, %f, %f;\n", filter.getState()(0), filter.getState()(1),
-        //       filter.getState()(2));
-
-        // printf("%u \n", MemoryProfiling::getCurrentFreeStack());
+        tick2 = TimestampTimer::getTimestamp();
 
         lastTime = time;
 
-        if (filter.getState()(1) < 0)
+        if (filter.getState()(1) < 0 && !apogeeDetected)
         {
             printf("APOGEE DETECTED at iteration %u ! \n", i);
+            apogeeDetected = true;
         }
     }
 
-    // printf("Total time %d \n", timer.interval());
+    uint64_t endTime = TimestampTimer::getTimestamp();
+    printf("Total time %f \n", (endTime - startTime) / 1e6);
 
-    return 0;
+    while (true)
+        Thread::sleep(1000);
 }
