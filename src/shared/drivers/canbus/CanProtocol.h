@@ -20,8 +20,6 @@
  * THE SOFTWARE.
  */
 
-// this was written under the influence of redbull and ichnusa, pls do not judge
-
 #pragma once
 
 #include <ActiveObject.h>
