@@ -48,11 +48,11 @@ void ADA::update(const float pressure)
                                                  reference.temperature);
     state.aglAltitude   = state.mslAltitude - reference.altitude;
     state.verticalSpeed = Aeroutils::verticalSpeed(
-        filterState(0, 0), filterState(1, 0), reference.mslPressure,
+        filterState(0), filterState(1), reference.mslPressure,
         reference.mslTemperature);
-    state.x0 = filterState(0, 0);
-    state.x1 = filterState(1, 0);
-    state.x2 = filterState(2, 0);
+    state.x0 = filterState(0);
+    state.x1 = filterState(1);
+    state.x2 = filterState(2);
 }
 
 ADAState ADA::getState() { return state; }
