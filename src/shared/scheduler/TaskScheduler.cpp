@@ -46,6 +46,9 @@ bool TaskScheduler::addTask(function_t function, uint32_t period, uint8_t id,
     Task task   = {function, period, id, policy, -1, {}, {}, {}, 0, 0};
     auto result = tasks.insert({id, task});
 
+    if (policy == Policy::ONE_SHOT)
+        startTick += period;
+
     if (result.second)
     {
         // Add the task first event in the agenda
