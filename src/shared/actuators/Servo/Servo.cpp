@@ -59,12 +59,15 @@ void Servo::disable() {}
 
 #endif
 
-void Servo::setPosition(float position)
+void Servo::setPosition(float position, bool limited)
 {
-    if (position < 0)
-        position = 0;
-    else if (position > 1)
-        position = 1;
+    if (limited)
+    {
+        if (position < 0)
+            position = 0;
+        else if (position > 1)
+            position = 1;
+    }
 
     float pulse = minPulse + (maxPulse - minPulse) * position;
 

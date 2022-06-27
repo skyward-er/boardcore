@@ -98,7 +98,7 @@ public:
      *
      * @param position Position in range [0, 1].
      */
-    void setPosition(float position);
+    void setPosition(float position, bool limited = true);
 
     void setPosition90Deg(float degrees);
 
