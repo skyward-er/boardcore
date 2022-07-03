@@ -87,8 +87,6 @@ BMX160CorrectionParameters calibrateAccelerometer(
     BMX160CorrectionParameters correctionParameters);
 BMX160CorrectionParameters calibrateMagnetometer(
     BMX160CorrectionParameters correctionParameters);
-BMX160CorrectionParameters changeMinGyroCorrectionSamples(
-    BMX160CorrectionParameters correctionParameters);
 
 int main()
 {
@@ -113,10 +111,6 @@ int main()
         case 2:
             correctionParameters = calibrateMagnetometer(correctionParameters);
             break;
-        case 3:
-            correctionParameters =
-                changeMinGyroCorrectionSamples(correctionParameters);
-            break;
 
         default:
             break;
@@ -140,7 +134,6 @@ int menu()
     printf("\nWhat do you want to do?\n");
     printf("1. Calibrate accelerometer\n");
     printf("2. Calibrate magnetometer\n");
-    printf("3. Set minimum gyroscope samples for calibration\n");
     printf("\n>> ");
     scanf("%d", &choice);
 
@@ -417,21 +410,6 @@ BMX160CorrectionParameters calibrateMagnetometer(
     printf("    |% 2.5f    % 2.5f    % 2.5f|\n", m(0, 0), 0.f, 0.f);
     printf("M = |% 2.5f    % 2.5f    % 2.5f|\n", 0.f, m(1, 0), 0.f);
     printf("    |% 2.5f    % 2.5f    % 2.5f|\n", 0.f, 0.f, m(2, 0));
-
-    return correctionParameters;
-}
-
-BMX160CorrectionParameters changeMinGyroCorrectionSamples(
-    BMX160CorrectionParameters correctionParameters)
-{
-    // Show the user the current parameter
-    printf(
-        "The current minimum number of gyroscope samples for calibration "
-        "is %d\n",
-        correctionParameters.minGyroSamplesForCalibration);
-
-    printf("Insert the new value: ");
-    scanf("%d", &correctionParameters.minGyroSamplesForCalibration);
 
     return correctionParameters;
 }

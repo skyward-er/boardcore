@@ -117,11 +117,9 @@ int main()
     miosix::Thread *samplingThread =
         miosix::Thread::create(bmx160Sample, 2048, miosix::MAIN_PRIORITY,
                                nullptr, miosix::Thread::JOINABLE);
-    if (!bmx160WithCorrection.calibrate())
-    {
-        TRACE("Calibration failed!\n");
-        return -1;
-    }
+    bmx160WithCorrection.startCalibration();
+    miosix::Thread::sleep(2000);
+    bmx160WithCorrection.stopCalibration();
     stopSamplingThread = true;
     samplingThread->join();
     TRACE("Calibration completed\n");

@@ -26,6 +26,9 @@
 
 #include <fstream>
 
+using namespace miosix;
+using namespace Eigen;
+
 namespace Boardcore
 {
 
@@ -37,9 +40,8 @@ BMX160CorrectionParameters::BMX160CorrectionParameters()
 
 std::string BMX160CorrectionParameters::header()
 {
-    return "acc_A_x,accel_A_y,accel_A_z,accel_b_x,accel_b_y,accel_b_z,"
-           "mag_A_x,mag_A_y,mag_A_z,mag_b_x,mag_b_y,mag_b_z,"
-           "minGyroSamplesForCalibration";
+    return "accAx,accAy,accAz,accbx,accby,accbz,"
+           "magAx,magAy,magAz,magbx,magby,magbz";
 }
 
 void BMX160CorrectionParameters::read(std::istream& inputStream)
@@ -63,9 +65,6 @@ void BMX160CorrectionParameters::read(std::istream& inputStream)
             inputStream.ignore(1, ',');
         }
     }
-
-    // Read gyroscope correction samples
-    inputStream >> minGyroSamplesForCalibration;
 }
 
 void BMX160CorrectionParameters::print(std::ostream& outputStream) const
@@ -79,17 +78,12 @@ void BMX160CorrectionParameters::print(std::ostream& outputStream) const
     outputStream << magnetoParams(0, 0) << "," << magnetoParams(1, 0) << ","
                  << magnetoParams(2, 0) << "," << magnetoParams(0, 1) << ","
                  << magnetoParams(1, 1) << "," << magnetoParams(2, 1) << ",";
-
-    // Print gyroscope correction samples
-    outputStream << minGyroSamplesForCalibration << "\n";
 }
 
 BMX160WithCorrection::BMX160WithCorrection(
     BMX160* bmx160, BMX160CorrectionParameters correctionParameters,
     AxisOrthoOrientation rotation)
-    : bmx160(bmx160), minGyroSamplesForCalibration(
-                          correctionParameters.minGyroSamplesForCalibration),
-      rotation(rotation)
+    : bmx160(bmx160), rotation(rotation)
 {
     accelerometerCorrector << correctionParameters.accelParams;
     magnetometerCorrector << correctionParameters.magnetoParams;
@@ -97,8 +91,7 @@ BMX160WithCorrection::BMX160WithCorrection(
 
 BMX160WithCorrection::BMX160WithCorrection(
     BMX160* bmx160, BMX160CorrectionParameters correctionParameters)
-    : bmx160(bmx160), minGyroSamplesForCalibration(
-                          correctionParameters.minGyroSamplesForCalibration)
+    : bmx160(bmx160)
 {
     accelerometerCorrector << correctionParameters.accelParams;
     magnetometerCorrector << correctionParameters.magnetoParams;
@@ -110,82 +103,28 @@ bool BMX160WithCorrection::init() { return true; }
 
 bool BMX160WithCorrection::selfTest() { return true; }
 
-bool BMX160WithCorrection::calibrate()
+void BMX160WithCorrection::startCalibration()
 {
-    if (!bmx160)
+    gyroscopeCalibrator.reset();
+    calibrating = true;
+}
+
+void BMX160WithCorrection::stopCalibration()
+{
+    calibrating = false;
+
     {
-        LOG_ERR(logger, "Driver doesn't point to valid sensor");
-        return false;
-    }
-
-    int samplesCounter = 0;
-    BiasCalibration<GyroscopeData> gyroscopeCalibrator;
-    BMX160Data fifoElement;
-    uint8_t fifoSize;
-    uint64_t gyroTimestamp = 0;
-
-    // Set reference vector
-    gyroscopeCalibrator.setReferenceVector({0, 0, 0});
-
-    // Read the fifo and feed the gyroscope data to the calibrator
-    fifoSize = bmx160->getLastFifoSize();
-    for (uint8_t i = 0; i < fifoSize; i++)
-    {
-        fifoElement = bmx160->getFifoElement(i);
-
-        if (fifoElement.angularVelocityTimestamp > gyroTimestamp)
-        {
-            gyroTimestamp = fifoElement.angularVelocityTimestamp;
-            gyroscopeCalibrator.feed(fifoElement);
-
-            samplesCounter++;
-        }
-    }
-
-    // Continues until the averaged samples are at least the amount specified in
-    // the configuration
-    while (samplesCounter < minGyroSamplesForCalibration)
-    {
-        // Wait for another sample
-        miosix::Thread::sleep(100);
-
-        // Read the fifo and feed the gyroscope data to the calibrator
-        fifoSize = bmx160->getLastFifoSize();
-        for (uint8_t i = 0; i < fifoSize; i++)
-        {
-            fifoElement = bmx160->getFifoElement(i);
-
-            if (fifoElement.angularVelocityTimestamp > gyroTimestamp)
-            {
-                gyroTimestamp = fifoElement.angularVelocityTimestamp;
-                gyroscopeCalibrator.feed(fifoElement);
-
-                samplesCounter++;
-            }
-        }
-    }
-
-    // Compute and save the calibration results
-    {
-        miosix::PauseKernelLock lock;
+        PauseKernelLock lock;
         gyroscopeCorrector = gyroscopeCalibrator.computeResult();
     }
 
     // Print the calibrator data
+    Vector3f gyroscopeCorrectionParameters;
     gyroscopeCorrector >> gyroscopeCorrectionParameters;
     LOG_INFO(logger, "Gyroscope bias vector from calibration\n");
     LOG_INFO(logger, "b = [    {: >2.5f}    {: >2.5f}    {: >2.5f}    ]\n\n",
              gyroscopeCorrectionParameters(0), gyroscopeCorrectionParameters(1),
              gyroscopeCorrectionParameters(2));
-
-    return true;
-}
-
-BMX160GyroscopeCalibrationBiases BMX160WithCorrection::getGyroscopeBiases()
-{
-    return BMX160GyroscopeCalibrationBiases{gyroscopeCorrectionParameters(0),
-                                            gyroscopeCorrectionParameters(1),
-                                            gyroscopeCorrectionParameters(2)};
 }
 
 BMX160CorrectionParameters
@@ -275,22 +214,19 @@ BMX160WithCorrectionData BMX160WithCorrection::sampleImpl()
     static_cast<GyroscopeData&>(result) << avgGyro;
 
     // Correct the averaged measurements
-    AccelerometerData acc = accelerometerCorrector.correct(result);
-    result                = acc;
-    MagnetometerData mag  = magnetometerCorrector.correct(result);
-    result                = mag;
-    GyroscopeData gyro;
-    gyro   = gyroscopeCorrector.correct(result);
-    result = gyro;
+    result = accelerometerCorrector.correct(result);
+    result = magnetometerCorrector.correct(result);
+    result = gyroscopeCorrector.correct(result);
 
     // Get the timestamp of the newest value in fifo
     result.accelerationTimestamp    = fifoElement.accelerationTimestamp;
     result.magneticFieldTimestamp   = fifoElement.accelerationTimestamp;
     result.angularVelocityTimestamp = fifoElement.accelerationTimestamp;
 
-    result = rotateAxis(result);
+    if (calibrating)
+        gyroscopeCalibrator.feed(result);
 
-    return result;
+    return rotateAxis(result);
 }
 
 BMX160WithCorrectionData BMX160WithCorrection::rotateAxis(

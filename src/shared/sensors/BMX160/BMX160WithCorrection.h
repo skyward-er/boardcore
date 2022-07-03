@@ -27,6 +27,7 @@
 #include <sensors/calibration/AxisOrientation.h>
 #include <sensors/calibration/BiasCalibration.h>
 #include <sensors/calibration/SixParameterCalibration.h>
+#include <utils/Stats/Stats.h>
 
 #include "BMX160WithCorrectionData.h"
 
@@ -39,7 +40,6 @@ namespace Boardcore
 struct BMX160CorrectionParameters
 {
     Eigen::Matrix<float, 3, 2> accelParams, magnetoParams;
-    int minGyroSamplesForCalibration = 0;
 
     BMX160CorrectionParameters();
 
@@ -90,13 +90,20 @@ public:
     bool selfTest() override;
 
     /**
-     * @brief Performs the gyroscope calibration.
+     * @brief Starts collecting calibration data for the gyroscope.
      *
      * The gyroscope calibration consists in averaging some samples to measure
      * the bias. This function is intended to run while another thread samples
-     * the bmx at at least 10Hz.
+     * the bmx.
+     *
+     * Call stopCalibration() to end collection and finalizing the offset.
      */
-    bool calibrate();
+    void startCalibration();
+
+    /**
+     * @brief Stops the data collection and finalizes the calibration.
+     */
+    void stopCalibration();
 
     /**
      * @brief Utility function to read correction parameters from file.
@@ -119,8 +126,6 @@ private:
 
     BMX160* bmx160;
 
-    int minGyroSamplesForCalibration = 200;
-
     AxisOrthoOrientation rotation = {Direction::POSITIVE_X,
                                      Direction::POSITIVE_Y};
 
@@ -128,7 +133,8 @@ private:
     SixParameterCorrector<MagnetometerData> magnetometerCorrector;
     BiasCorrector<GyroscopeData> gyroscopeCorrector{};
 
-    Eigen::Vector3f gyroscopeCorrectionParameters;
+    bool calibrating = false;
+    BiasCalibration<GyroscopeData> gyroscopeCalibrator;
 
     PrintLogger logger = Logging::getLogger("bmx160withcorrection");
 };
