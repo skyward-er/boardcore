@@ -93,9 +93,8 @@ public:
      * @brief Performs the gyroscope calibration.
      *
      * The gyroscope calibration consists in averaging some samples to measure
-     * the bias.
-     * This function is intended to run while another thread samples the bmx at
-     * at least 10Hz.
+     * the bias. This function is intended to run while another thread samples
+     * the bmx at at least 10Hz.
      */
     bool calibrate();
 

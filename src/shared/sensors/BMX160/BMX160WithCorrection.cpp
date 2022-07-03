@@ -31,7 +31,7 @@ namespace Boardcore
 
 BMX160CorrectionParameters::BMX160CorrectionParameters()
 {
-    accelParams << 0, 0, 0, 0, 0, 0;    // cppcheck-suppress constStatement
+    accelParams << 1, 0, 1, 0, 1, 0;    // cppcheck-suppress constStatement
     magnetoParams << 0, 0, 0, 0, 0, 0;  // cppcheck-suppress constStatement
 }
 
