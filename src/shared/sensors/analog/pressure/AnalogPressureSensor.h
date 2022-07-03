@@ -52,7 +52,11 @@ public:
 
     bool selfTest() override { return true; }
 
-    ///< Converts the voltage value to pressure
+    /**
+     * @brief Sets the offset that will be removed from the measured pressure.
+     */
+    void setOffset(const float offset) { this->offset = offset; }
+
     AnalogPressureData sampleImpl() override
     {
         AnalogPressureData pressure;
@@ -70,19 +74,22 @@ public:
         else if (pressure.pressure > maxPressure)
             pressure.pressure = maxPressure;
 
+        pressure.pressure -= offset;
+
         return pressure;
     }
 
 protected:
-    ///< Conversion function from volts to pascals
+    ///< Conversion function from volts to pascals.
     virtual float voltageToPressure(float voltage) = 0;
 
-    ///< Function that returns the sensor voltage
+    ///< Function that returns the sensor voltage.
     std::function<ADCData()> getVoltage;
 
     const float supplyVoltage;
     const float maxPressure;
     const float minPressure;
+    float offset = 0;
 };
 
 }  // namespace Boardcore

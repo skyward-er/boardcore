@@ -45,6 +45,11 @@ public:
 
     bool selfTest() override { return true; };
 
+    /**
+     * @brief Sets the offset that will be removed from the measured load.
+     */
+    void setOffset(const float offset) { this->offset = offset; }
+
     AnalogLoadCellData sampleImpl() override
     {
         ADCData adcData = getVoltage();
@@ -53,14 +58,20 @@ public:
         data.loadTimestamp = adcData.voltageTimestamp;
         data.voltage       = adcData.voltage;
 
-        data.load = data.voltage / conversionCoeff;
+        if (data.voltage != 0)
+            data.load = data.voltage / conversionCoeff - offset;
+        else
+            data.load = -offset;
 
         return data;
     }
 
 private:
+    ///< Function that returns the sensor voltage.
     std::function<ADCData()> getVoltage;
+
     const float conversionCoeff;
+    float offset = 0;
 };
 
 }  // namespace Boardcore
