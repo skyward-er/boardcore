@@ -73,6 +73,9 @@ bool BMX160::init()
     initGyr();
     initMag();
 
+    // sleep in order to let the sensors initialize correctly
+    miosix::Thread::sleep(30);
+
     initFifo();
     initInt();
 
