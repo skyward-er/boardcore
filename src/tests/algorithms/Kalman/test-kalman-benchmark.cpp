@@ -88,8 +88,6 @@ int main()
     {
         float time;  // Current time as read from csv file
         float T;     // Time elapsed between last sample and current one
-        uint64_t tick1;
-        uint64_t tick2;
 
         time = TIME[i];
         T    = time - lastTime;
@@ -100,14 +98,10 @@ int main()
 
         y(0) = INPUT[i];
 
-        tick1 = TimestampTimer::getTimestamp();
-
         filter.predict(F);
 
         if (!filter.correct(y))
             printf("Correction failed at iteration : %u \n", i);
-
-        tick2 = TimestampTimer::getTimestamp();
 
         lastTime = time;
 

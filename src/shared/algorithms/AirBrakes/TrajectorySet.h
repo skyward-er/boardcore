@@ -1,5 +1,5 @@
-/* Copyright (c) 2020 Skyward Experimental Rocketry
- * Author: Luca Conterio
+/* Copyright (c) 2021-2022 Skyward Experimental Rocketry
+ * Author: Vincenzo Santomarco, Alberto Nidasio
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -22,47 +22,23 @@
 
 #pragma once
 
+#include "Trajectory.h"
+
 namespace Boardcore
 {
 
-class Algorithm
+class TrajectorySet
 {
 public:
-    /**
-     * @brief Initializes the Algorithm object, must be called as soon as the
-     * object is created.
-     * */
-    virtual bool init() = 0;
+    Trajectory* trajectories;
+    uint16_t trjSize;
 
-    /**
-     * @brief Starts the execution of the algorithm and set the running flag to
-     * true.
-     * */
-    void begin() { running = true; }
-
-    /**
-     * @brief Terminates the algorithm's execution and sets the running flag to
-     * false.
-     * */
-    void end() { running = false; }
-
-    /**
-     * @brief Checks wether the algorithm is in a running state or not, and
-     * eventually calls the @see{step} routine.
-     * */
-    void update()
+    TrajectorySet(Trajectory trajectories[], uint16_t trjSize)
+        : trajectories(trajectories), trjSize(trjSize)
     {
-        if (running)
-            step();
     }
 
-protected:
-    /**
-     * @brief The actual algorithm step.
-     */
-    virtual void step() = 0;
-
-    bool running = false;
+    uint32_t length() { return trjSize; }
 };
 
 }  // namespace Boardcore

@@ -33,6 +33,7 @@ foreach(OPT_BOARD ${BOARDS})
 
         # Algorithms
         ${SBS_BASE}/src/shared/algorithms/ADA/ADA.cpp
+        ${SBS_BASE}/src/shared/algorithms/AirBrakes/AirBrakes.cpp
         ${SBS_BASE}/src/shared/algorithms/NAS/NAS.cpp
 
         # Debug

@@ -39,6 +39,11 @@ static constexpr float R = 287.05f;  // Air gas constant [J/Kg/K]
 static constexpr float n = g / (R * a);
 static constexpr float nInv = (R * a) / g;
 
+static constexpr float CO    = 340.3;  // Sound speed at ground altitude [m/s]
+static constexpr float ALPHA = -3.871e-3;  // Sound speed gradient [1/s]
+static constexpr float RHO_0 = 1.225;      // Air density at sea level [kg/m^3]
+static constexpr float Hn    = 10400.0;    // Scale height [m]
+
 static constexpr const float MSL_PRESSURE    = 101325.0f;  // [Pa]
 static constexpr const float MSL_TEMPERATURE = 288.15f;    // [Kelvin]
 

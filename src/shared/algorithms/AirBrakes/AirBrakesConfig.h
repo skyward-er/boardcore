@@ -1,5 +1,5 @@
-/* Copyright (c) 2020 Skyward Experimental Rocketry
- * Author: Luca Conterio
+/* Copyright (c) 2022 Skyward Experimental Rocketry
+ * Author: Alberto Nidasio
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -25,44 +25,45 @@
 namespace Boardcore
 {
 
-class Algorithm
+struct AirBrakesConfig
 {
-public:
-    /**
-     * @brief Initializes the Algorithm object, must be called as soon as the
-     * object is created.
-     * */
-    virtual bool init() = 0;
+    // Coefficient of drag coefficients.
+    float N000;
+    float N100;
+    float N200;
+    float N300;
+    float N400;
+    float N500;
+    float N600;
+    float N010;
+    float N020;
+    float N110;
+    float N120;
+    float N210;
+    float N220;
+    float N310;
+    float N320;
+    float N410;
+    float N420;
+    float N510;
+    float N520;
+    float N001;
 
-    /**
-     * @brief Starts the execution of the algorithm and set the running flag to
-     * true.
-     * */
-    void begin() { running = true; }
+    // Aibrakes extension.
+    float EXTENSION;  ///< [m]
+    uint8_t DRAG_STEPS;
+    float EXT_POL_1;
+    float EXT_POL_2;
+    float EXT_POL_3;
+    float EXT_POL_4;
 
-    /**
-     * @brief Terminates the algorithm's execution and sets the running flag to
-     * false.
-     * */
-    void end() { running = false; }
+    float S0;       ///< Rocket surface [m^2]
+    float SURFACE;  ///< AirBrakes max surface [m^2]
 
-    /**
-     * @brief Checks wether the algorithm is in a running state or not, and
-     * eventually calls the @see{step} routine.
-     * */
-    void update()
-    {
-        if (running)
-            step();
-    }
-
-protected:
-    /**
-     * @brief The actual algorithm step.
-     */
-    virtual void step() = 0;
-
-    bool running = false;
+    // PI parameters
+    float KP;
+    float KI;
+    float TS;
 };
 
 }  // namespace Boardcore
