@@ -31,7 +31,7 @@ namespace Boardcore
 {
 
 AirBrakes::AirBrakes(std::function<TimedTrajectoryPoint()> getCurrentPosition,
-                     TrajectorySet &trajectorySet,
+                     const TrajectorySet &trajectorySet,
                      const AirBrakesConfig &config,
                      std::function<void(float)> setActuator)
     : getCurrentPosition(getCurrentPosition), trajectorySet(trajectorySet),

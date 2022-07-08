@@ -38,7 +38,7 @@ public:
     {
     }
 
-    uint32_t length() { return trjSize; }
+    uint32_t length() const { return trjSize; }
 };
 
 }  // namespace Boardcore
