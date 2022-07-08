@@ -1,3 +1,5 @@
+
+
 /* Copyright (c) 2022 Skyward Experimental Rocketry
  * Author: Federico Mandelli
  *
@@ -21,7 +23,9 @@
  */
 
 #include <drivers/canbus/CanProtocol.h>
-#include <utils/Debug.h>
+#include <inttypes.h>
+
+#include <thread>
 
 #include "drivers/canbus/BusLoadEstimation.h"
 #include "drivers/canbus/Canbus.h"
@@ -44,6 +48,18 @@ using CanTX = Gpio<GPIOA_BASE, 12>;
 using CanRX = Gpio<GPIOA_BASE, 11>;
 using CanTX = Gpio<GPIOA_BASE, 12>;
 #endif
+
+#define SLP 5000
+
+void sendData(CanProtocol* protocol, CanData toSend)
+{
+    while (true)
+    {
+        TRACE("send\n");
+        (*protocol).sendCan(toSend);
+        Thread::sleep(SLP);
+    }
+}
 
 int main()
 {
@@ -68,45 +84,48 @@ int main()
     bt.baudRate    = BAUD_RATE;
     bt.samplePoint = SAMPLE_POINT;
 
-    IRQCircularBuffer<CanData, NPACKET>* buffer;
     CanbusDriver* c = new CanbusDriver(CAN1, cfg, bt);
-    CanProtocol protocol(c, buffer);
-
+    CanProtocol protocol(c);
     // Allow every message
     Mask32FilterBank f2(0, 0, 0, 0, 0, 0, 0);
 
     c->addFilter(f2);
     c->init();
-
     protocol.start();
-
-    const int slp = 500;
     CanData toSend;
     toSend.canId      = 0x01;
     toSend.len        = 3;
     toSend.payload[0] = 1;
     toSend.payload[1] = 2;
     toSend.payload[2] = 3;
+    std::thread second(sendData, &protocol, toSend);
     for (;;)
     {
-        protocol.sendCan(toSend);
-        (*buffer).waitUntilNotEmpty();
-        CanData temp = (*buffer).IRQpop();
+        TRACE("start \n");
+        protocol.waitEmpty();
+        CanData temp = protocol.getPacket();
         if (temp.canId != toSend.canId || temp.len != toSend.len ||
             temp.payload[0] != toSend.payload[0] ||
             temp.payload[1] != toSend.payload[1] ||
             temp.payload[2] != toSend.payload[2])
         {
             TRACE("Error\n");
-            TRACE("Expected id %d , received %d\n", toSend.canId, temp.canId);
+            TRACE("Expected id %lu, received  %lu\n", toSend.canId, temp.canId);
             TRACE("Expected len %d , received %d\n", toSend.len, temp.len);
-            TRACE("Expected payload 0 %d , received %d\n", toSend.payload[0],
-                  temp.payload[0]);
-            TRACE("Expected payload 1 %d , received %d\n", toSend.payload[1],
-                  temp.payload[1]);
-            TRACE("Expected payload 2 %d , received %d\n", toSend.payload[2],
-                  temp.payload[2]);
+            TRACE(
+                "Expected payload 0  %llu , received  "
+                "%llu\n",
+                toSend.payload[0], temp.payload[0]);
+            TRACE("Expected payload 1 %llu, received  %llu\n",
+                  toSend.payload[1], temp.payload[1]);
+            TRACE(
+                "Expected payload 2  %llu, received  "
+                "%llu\n",
+                toSend.payload[2], temp.payload[2]);
         }
-        Thread::sleep(slp);
+        else
+        {
+            TRACE("OK :)\n");
+        }
     }
 }

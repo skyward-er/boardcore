@@ -159,6 +159,8 @@ sbs_target(test-triad-parafoil stm32f429zi_parafoil)
 #-----------------------------------------------------------------------------#
 #                               Tests - Drivers                               #
 #-----------------------------------------------------------------------------#
+add_executable(test-can-protocol src/tests/drivers/canbus/test-can-protocol.cpp)
+sbs_target(est-can-protocol stm32f429zi_stm32f4discovery)
 
 add_executable(test-canbus-loopback src/tests/drivers/canbus/test-canbus-loopback.cpp)
 sbs_target(test-canbus-loopback stm32f429zi_stm32f4discovery)

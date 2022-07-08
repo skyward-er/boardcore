@@ -23,6 +23,7 @@
 #pragma once
 
 #include <ActiveObject.h>
+#include <utils/Debug.h>
 #include <utils/collections/IRQCircularBuffer.h>
 
 #include "Canbus.h"
@@ -70,21 +71,41 @@ struct CanData
 class CanProtocol : public ActiveObject
 {
 private:
+    miosix::FastMutex
+        mutex;          // todo add mutex and create get data in can protocol
     CanbusDriver* can;  // the physical can
-    IRQCircularBuffer<CanData, NPACKET>*
+    IRQCircularBuffer<CanData, NPACKET>
         buffer;  // the buffer used to send data from CanProtocol to CanHandler
 
 public:
     /**
      * @brief Construct a new CanProtocol object
      * @param can CanbusDriver pointer.
-     * @param The circular buffer
      */
-    CanProtocol(CanbusDriver* can, IRQCircularBuffer<CanData, NPACKET>* buffer)
+    CanProtocol(CanbusDriver* can) { this->can = can; }
+
+    CanData
+    getPacket()  // return the packet, if buffer is empty return an empty packet
     {
-        this->can    = can;
-        this->buffer = buffer;
+        CanData temp;
+        mutex.lock();
+        if (!buffer.isEmpty())
+        {
+            temp = buffer.pop();
+        }
+        mutex.unlock();
+
+        return temp;
     }
+
+    bool isEmpty()
+    {
+        mutex.lock();
+        return buffer.isEmpty();
+        mutex.unlock();
+    }
+
+    void waitEmpty() { buffer.waitUntilNotEmpty(); }
 
     /**
      * @brief Takes a canData, it splits it into single canpacket with the
@@ -95,19 +116,35 @@ public:
     void sendCan(CanData toSend)  //@requires toSen to not be empty
     {
         CanPacket packet;
-        packet.ext    = true;
-        packet.length = toSend.len;
-        packet.id     = (toSend.canId << 7) | idMask.firstPacket |
-                    (toSend.len & idMask.leftToSend);
-        packet.data[0] = toSend.payload[0];
+        uint32_t tempLen = toSend.len - 1;
+        uint32_t tempId  = toSend.canId;
+        packet.ext       = true;
+        packet.id =
+            (tempId << 7) | idMask.firstPacket | (tempLen & idMask.leftToSend);
+        packet.length = (toSend.payload[0] + 8) /
+                        8;  // simple formula for upper approximation
+        for (int k = 0; k < packet.length; k++)
+        {
+            packet.data[k] = toSend.payload[0] >> (8 * k);
+        }
+        tempLen--;
+
         can->send(packet);
-        uint8_t tempLen = toSend.len - 1;
+        TRACE("tosend len %d\n", toSend.len);
+
         for (int i = 1; i < toSend.len; i++)
         {
-            packet.id =
-                packet.id | !idMask.firstPacket | (tempLen & idMask.leftToSend);
+            tempId    = toSend.canId;
+            packet.id = (tempId << 7) | !(idMask.firstPacket) |
+                        (tempLen & idMask.leftToSend);
+            packet.length = (toSend.payload[i] + 8) / 8;
+            for (int k = 0; k < packet.length; k++)
+            {
+                packet.data[k] = toSend.payload[i] << (8 * k);
+            }
+            TRACE("packetlen %d\n, dato %d\n", packet.length, packet.data[0]);
+            can->send(packet);
             tempLen--;
-            packet.data[i] = toSend.payload[i];
         }
     }
 
@@ -130,41 +167,51 @@ protected:
             can->getRXBuffer().waitUntilNotEmpty();
             if (!can->getRXBuffer().isEmpty())
             {
-                packet   = can->getRXBuffer().pop().packet;
-                sourceId = packet.id & idMask.source;
 
+                packet = can->getRXBuffer().pop().packet;
+
+                sourceId = packet.id & idMask.source;
                 if (data[sourceId].canId == 0 ||
                     (data[sourceId].canId & idMask.source) == sourceId)
                 {
-                    if (sourceId & idMask.firstPacket)  // it is a first
-                                                        // packet of a data;
+                    if (packet.id & idMask.firstPacket)  // it is a first
+                                                         // packet of a data;
                     {
-                        data[sourceId].len = packet.id & idMask.leftToSend;
+                        data[sourceId].len =
+                            (packet.id & idMask.leftToSend) + 1;
                         data[sourceId].canId =
                             packet.id >> 7;  // discard the sequence number
-                                             // data[i].len = packet.length;
                     }
-                    if ((data[sourceId].len - data[sourceId].nRec) ==
+                    TRACE("pakcet %d, nrec %d, left %lu\n", packet.data[0],
+                          data[sourceId].nRec, (packet.id & idMask.leftToSend));
+                    if ((data[sourceId].len - (data[sourceId].nRec + 1)) ==
                         (packet.id & idMask.leftToSend))
                     {
-                        uint64_t tempPayload;
+
+                        uint64_t tempPayload = 0;
                         for (int f = 0; f < packet.length; f++)
                         {
-                            tempPayload =
-                                tempPayload & (packet.data[f] << (56 - f * 8));
+                            uint64_t tempData = packet.data[f];
+                            tempPayload = tempPayload | (tempData << (f * 8));
                         }
 
                         data[sourceId]
                             .payload[data[sourceId].len -
-                                     (packet.id & idMask.leftToSend)] =
+                                     (packet.id & idMask.leftToSend) - 1] =
                             tempPayload;
                         data[sourceId].nRec++;
                     }
+
                     if (data[sourceId].nRec == data[sourceId].len)
                     {
-                        buffer->put(data[sourceId]);
+                        mutex.lock();
+                        buffer.put(data[sourceId]);
+                        // empties the struct
+                        data[sourceId].canId = 0;
+                        data[sourceId].nRec  = 0;
+                        data[sourceId].len   = 0;
+                        mutex.unlock();
                     }
-                    break;
                 }
             }
         }
