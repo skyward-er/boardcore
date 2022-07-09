@@ -174,7 +174,6 @@ protected:
 
                 packet   = can->getRXBuffer().pop().packet;
                 sourceId = (packet.id & idMask.source) >> 15;
-                // TRACE("source id %d\n", sourceId);
                 if (sourceId >= 0 &&
                     sourceId < NPACKET)  // check for maximum size
                 {
@@ -194,9 +193,6 @@ protected:
                             data[sourceId].canId =
                                 packet.id >> 7;  // discard the sequence number
                         }
-                        /*TRACE("len %d, nrec+1 %d, left to send %d\n",
-                              data[sourceId].len, (data[sourceId].nRec + 1),
-                              leftToSend);*/
                         if ((data[sourceId].len - (data[sourceId].nRec + 1)) ==
                             leftToSend)
                         {
@@ -208,16 +204,16 @@ protected:
                                 tempPayload =
                                     tempPayload | (tempData << (f * 8));
                             }
-                            /*TRACE(
-                                "sourceID %d, Payload index %d, tempPayload "
-                                "%llu\n",
-                                sourceId, data[sourceId].len - leftToSend - 1,
-                                tempPayload);*/
-                            // check for index
-                            data[sourceId]
-                                .payload[data[sourceId].len - leftToSend - 1] =
-                                tempPayload;
-                            data[sourceId].nRec++;
+                            if (data[sourceId].len - leftToSend - 1 >= 0 &&
+                                data[sourceId].len - leftToSend - 1 <
+                                    32)  // check for index
+                            {
+
+                                data[sourceId].payload[data[sourceId].len -
+                                                       leftToSend - 1] =
+                                    tempPayload;
+                                data[sourceId].nRec++;
+                            }
                         }
 
                         if (data[sourceId].nRec == data[sourceId].len &&
