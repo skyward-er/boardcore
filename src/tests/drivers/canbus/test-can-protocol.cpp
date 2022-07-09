@@ -48,17 +48,23 @@ using CanRX = Gpio<GPIOA_BASE, 11>;
 using CanTX = Gpio<GPIOA_BASE, 12>;
 #endif
 
-#define SLP 5000
-
+#define SLP 100
+miosix::FastMutex mutex;
+CanData toSend1;
+CanData toSend2;
 void sendData(CanProtocol* protocol, CanData* toSend)
 {
     while (true)
     {
+
         TRACE("send\n");
-        (*protocol).sendCan(*toSend);
+        {
+            miosix::Lock<miosix::FastMutex> l(mutex);
+            (*protocol).sendCan(*toSend);
+        }
         Thread::sleep(SLP);
     }
-}  // todo mchange the source id and send packet at the same time
+}
 bool equal(CanData* first, CanData* second)
 {
     if ((*first).canId != (*second).canId || (*first).len != (*second).len)
@@ -97,11 +103,12 @@ int main()
     CanProtocol protocol(c);
     // Allow every message
     Mask32FilterBank f2(0, 0, 0, 0, 0, 0, 0);
+
     c->addFilter(f2);
     c->init();
     protocol.start();
-    CanData toSend1;
-    toSend1.canId      = 0x01;
+
+    toSend1.canId      = 0x200;
     toSend1.len        = 8;
     toSend1.payload[0] = 0xffffffffffffffff;
     toSend1.payload[1] = 2;
@@ -112,14 +119,15 @@ int main()
     toSend1.payload[6] = 12;
     toSend1.payload[7] = 0;
     std::thread firstSend(sendData, &protocol, &toSend1);
-    CanData toSend2;
+
+    Thread::sleep(10);
     toSend2.canId      = 0x100;
     toSend2.len        = 4;
     toSend2.payload[0] = 0xffffff;
     toSend2.payload[1] = 2;
     toSend2.payload[2] = 0x123ff;
     toSend2.payload[3] = 1;
-    // std::thread secondSend(sendData, &protocol, &toSend2);
+    std::thread secondSend(sendData, &protocol, &toSend2);
     TRACE("start \n");
     for (;;)
     {
@@ -127,20 +135,19 @@ int main()
         protocol.waitEmpty();
         CanData temp = protocol.getPacket();
         TRACE("received packet \n");
-        if (!equal(&temp, &toSend1))
+        if ((!equal(&temp, &toSend1) && !equal(&temp, &toSend2)))
         {
             TRACE("Error\n");
-            TRACE("Received  %lu, expected %lu\n", temp.canId, toSend1.canId);
-            TRACE("Received %d, expected %d\n", temp.len, toSend1.len);
+            TRACE("Received  %lu\n", temp.canId);
+            TRACE("Received %d\n", temp.len);
             for (int i = 0; i < temp.len; i++)
             {
-                TRACE("Received payload %d:  %llu, expected %llu\n", i,
-                      temp.payload[i], toSend1.payload[i]);
+                TRACE("Received payload %d:  %llu,\n", i, temp.payload[i]);
             }
         }
         else
         {
-            TRACE("OK :)\n");
+            TRACE("OK :) id  %lu\n", temp.canId);
         }
     }
 }
