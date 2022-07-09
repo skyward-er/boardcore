@@ -48,7 +48,7 @@ using CanRX = Gpio<GPIOA_BASE, 11>;
 using CanTX = Gpio<GPIOA_BASE, 12>;
 #endif
 
-#define SLP 500
+#define SLP 5000
 
 void sendData(CanProtocol* protocol, CanData* toSend)
 {
@@ -89,28 +89,28 @@ int main()
         CanTX::alternateFunction(9);
 #endif
     }
-    TRACE("start \n");
     CanbusDriver::CanbusConfig cfg{};
     CanbusDriver::AutoBitTiming bt;
-    bt.baudRate    = BAUD_RATE;
-    bt.samplePoint = SAMPLE_POINT;
-    TRACE("start \n");
+    bt.baudRate     = BAUD_RATE;
+    bt.samplePoint  = SAMPLE_POINT;
     CanbusDriver* c = new CanbusDriver(CAN1, cfg, bt);
-    TRACE("start \n");
     CanProtocol protocol(c);
     // Allow every message
-    TRACE("start \n");
     Mask32FilterBank f2(0, 0, 0, 0, 0, 0, 0);
-    TRACE("start \n");
     c->addFilter(f2);
     c->init();
     protocol.start();
     CanData toSend1;
     toSend1.canId      = 0x01;
-    toSend1.len        = 3;
-    toSend1.payload[0] = 1;  // 0xffffffff;
+    toSend1.len        = 8;
+    toSend1.payload[0] = 0xffffffffffffffff;
     toSend1.payload[1] = 2;
-    toSend1.payload[2] = 3;  // 78022;
+    toSend1.payload[2] = 78022;
+    toSend1.payload[3] = 0xfffffffffffff;
+    toSend1.payload[4] = 23;
+    toSend1.payload[5] = 3234;
+    toSend1.payload[6] = 12;
+    toSend1.payload[7] = 0;
     std::thread firstSend(sendData, &protocol, &toSend1);
     CanData toSend2;
     toSend2.canId      = 0x100;
@@ -119,8 +119,7 @@ int main()
     toSend2.payload[1] = 2;
     toSend2.payload[2] = 0x123ff;
     toSend2.payload[3] = 1;
-    TRACE("start \n");
-    std::thread secondSend(sendData, &protocol, &toSend2);
+    // std::thread secondSend(sendData, &protocol, &toSend2);
     TRACE("start \n");
     for (;;)
     {
@@ -131,11 +130,12 @@ int main()
         if (!equal(&temp, &toSend1))
         {
             TRACE("Error\n");
-            TRACE("Received  %lu\n", temp.canId);
-            TRACE("Received %d\n", temp.len);
+            TRACE("Received  %lu, expected %lu\n", temp.canId, toSend1.canId);
+            TRACE("Received %d, expected %d\n", temp.len, toSend1.len);
             for (int i = 0; i < temp.len; i++)
             {
-                TRACE("Received payload %d:  %llu\n", i, temp.payload[i]);
+                TRACE("Received payload %d:  %llu, expected %llu\n", i,
+                      temp.payload[i], toSend1.payload[i]);
             }
         }
         else
