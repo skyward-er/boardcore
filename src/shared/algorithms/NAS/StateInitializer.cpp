@@ -36,6 +36,7 @@ void StateInitializer::eCompass(const Eigen::Vector3f acc,
     Eigen::Vector3f am(acc.cross(mag));
 
     Eigen::Matrix3f R;
+    // cppcheck-suppress constStatement
     R << am.cross(acc), am, acc;
     R.col(0).normalize();
     R.col(1).normalize();
@@ -68,8 +69,10 @@ void StateInitializer::triad(Eigen::Vector3f& acc, Eigen::Vector3f& mag,
 
     // Compose the reference and measured matrixes
     Eigen::Matrix3f M;
+    // cppcheck-suppress constStatement
     M << R1, R2, R3;
     Eigen::Matrix3f m;
+    // cppcheck-suppress constStatement
     m << r1, r2, r3;
 
     // Compute the rotation matrix and the corresponding quaternion
