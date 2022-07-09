@@ -136,6 +136,7 @@
         "croll",
         "cwise",
         "cyaw",
+        "DATABUS",
         "deleteme",
         "DMEIE",
         "Doxyfile",
@@ -182,6 +183,7 @@
         "MINC",
         "miosix",
         "mkdir",
+        "mosfet",
         "mosi",
         "MPXHZ",
         "Musso",
@@ -234,6 +236,7 @@
         "vbat",
         "velnord",
         "vout",
+        "vsense",
         "Xbee",
         "xnord",
         "yned"
