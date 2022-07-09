@@ -65,7 +65,7 @@ template <unsigned int PktLength, unsigned int OutQueueSize,
           unsigned int MavMsgLength = MAVLINK_MAX_PAYLOAD_LEN>
 class MavlinkDriver
 {
-    ///< Alias of the function to be executed on message reception.
+    /// Alias of the function to be executed on message reception.
     using MavHandler = std::function<void(MavlinkDriver* channel,
                                           const mavlink_message_t& msg)>;
 
@@ -87,6 +87,11 @@ public:
      * @return false if at least one could not start.
      */
     bool start();
+
+    /**
+     * @brief Tells whether the driver was started.
+     */
+    bool isStarted();
 
     /**
      * @brief Stops sender and receiver threads.
@@ -141,7 +146,8 @@ public:
 
 private:
     /**
-     * @brief Calls the run member function
+     * @brief Calls the run member function.
+     *
      * @param arg the object pointer cast to void*
      */
     static void rcvLauncher(void* arg)
@@ -238,7 +244,14 @@ bool MavlinkDriver<PktLength, OutQueueSize, MavMsgLength>::start()
     if (sndStarted && rcvStarted)
         LOG_DEBUG(logger, "Sender and receiver started");
 
-    return (sndStarted && rcvStarted);
+    return sndStarted && rcvStarted;
+}
+
+template <unsigned int PktLength, unsigned int OutQueueSize,
+          unsigned int MavMsgLength>
+bool MavlinkDriver<PktLength, OutQueueSize, MavMsgLength>::start()
+{
+    return sndStarted && rcvStarted;
 }
 
 template <unsigned int PktLength, unsigned int OutQueueSize,
