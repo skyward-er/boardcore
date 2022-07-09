@@ -130,7 +130,6 @@ public:
         tempLen--;
 
         can->send(packet);
-        TRACE("tosend len %d\n", toSend.len);
 
         for (int i = 1; i < toSend.len; i++)
         {
@@ -142,7 +141,7 @@ public:
             {
                 packet.data[k] = toSend.payload[i] << (8 * k);
             }
-            TRACE("packetlen %d\n, dato %d\n", packet.length, packet.data[0]);
+
             can->send(packet);
             tempLen--;
         }
@@ -182,8 +181,7 @@ protected:
                         data[sourceId].canId =
                             packet.id >> 7;  // discard the sequence number
                     }
-                    TRACE("pakcet %d, nrec %d, left %lu\n", packet.data[0],
-                          data[sourceId].nRec, (packet.id & idMask.leftToSend));
+
                     if ((data[sourceId].len - (data[sourceId].nRec + 1)) ==
                         (packet.id & idMask.leftToSend))
                     {
@@ -202,7 +200,8 @@ protected:
                         data[sourceId].nRec++;
                     }
 
-                    if (data[sourceId].nRec == data[sourceId].len)
+                    if (data[sourceId].nRec == data[sourceId].len &&
+                        data[sourceId].nRec != 0)
                     {
                         mutex.lock();
                         buffer.put(data[sourceId]);
