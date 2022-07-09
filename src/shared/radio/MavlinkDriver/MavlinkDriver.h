@@ -249,7 +249,7 @@ bool MavlinkDriver<PktLength, OutQueueSize, MavMsgLength>::start()
 
 template <unsigned int PktLength, unsigned int OutQueueSize,
           unsigned int MavMsgLength>
-bool MavlinkDriver<PktLength, OutQueueSize, MavMsgLength>::start()
+bool MavlinkDriver<PktLength, OutQueueSize, MavMsgLength>::isStarted()
 {
     return sndStarted && rcvStarted;
 }
