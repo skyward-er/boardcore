@@ -570,6 +570,11 @@ STM32SerialWrapper::STM32SerialWrapper(USARTType *usart, Baudrate baudrate)
             initPins(u3tx1::getPin(), 7, u3rx1::getPin(), 7);
             this->serialPortName = std::string("usart3");
             break;
+        case UART4_BASE:
+            this->id = 4;
+            initPins(u4tx1::getPin(), 8, u4rx1::getPin(), 8);
+            this->serialPortName = std::string("uart4");
+            break;
     }
     initialized = false;
     fd          = -1;
@@ -594,8 +599,17 @@ STM32SerialWrapper::STM32SerialWrapper(USARTType *usart, Baudrate baudrate,
             this->id             = 3;
             this->serialPortName = std::string("usart3");
             break;
+        case UART4_BASE:
+            this->id             = 4;
+            this->serialPortName = std::string("uart4");
+            break;
     }
-    initPins(tx, 7, rx, 7);
+
+    if(id<4)
+        initPins(tx, 7, rx, 7);
+    else
+        initPins(tx, 8, rx, 8);
+
     initialized = false;
     fd          = -1;
 }
@@ -610,7 +624,7 @@ STM32SerialWrapper::~STM32SerialWrapper()
 
 bool STM32SerialWrapper::init()
 {
-    if (id > 3)
+    if (id > 4)
     {
         TRACE(
             "[STM32SerialWrapper] USART id greater than 3 is not supported\n");
