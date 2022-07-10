@@ -24,6 +24,7 @@
 
 #include <utils/Constants.h>
 
+#include <Eigen/Eigen>
 #include <ostream>
 
 namespace Boardcore
@@ -39,6 +40,10 @@ struct ReferenceValues
     float pressure;
     float temperature;
 
+    // Start position
+    float startLatitude;
+    float startLongitude;
+
     // Pressure and temperature at mean sea level for altitude calculation
     float mslPressure    = Constants::MSL_PRESSURE;
     float mslTemperature = Constants::MSL_TEMPERATURE;
@@ -46,28 +51,35 @@ struct ReferenceValues
     ReferenceValues(){};
 
     ReferenceValues(float altitude, float pressure, float temperature,
+                    float startLatitude  = Constants::B21_LATITUDE,
+                    float startLongitude = Constants::B21_LONGITUDE,
                     float mslPressure    = Constants::MSL_PRESSURE,
                     float mslTemperature = Constants::MSL_TEMPERATURE)
         : altitude(altitude), pressure(pressure), temperature(temperature),
+          startLatitude(startLatitude), startLongitude(startLongitude),
           mslPressure(mslPressure), mslTemperature(mslTemperature)
     {
     }
 
     static std::string header()
     {
-        return "altitude,pressure,temperature,mslPressure,mslTemperature\n";
+        return "altitude,pressure,temperature,startLatitude,startLongitude,"
+               "mslPressure,mslTemperature\n";
     }
 
     void print(std::ostream& os) const
     {
         os << altitude << "," << pressure << "," << temperature << ","
-           << mslPressure << "," << mslTemperature << "\n";
+           << startLatitude << "," << startLongitude << "," << mslPressure
+           << "," << mslTemperature << "\n";
     }
 
     bool operator==(const ReferenceValues& other) const
     {
         return altitude == other.altitude && pressure == other.pressure &&
                temperature == other.temperature &&
+               startLatitude == other.startLatitude &&
+               startLongitude == other.startLongitude &&
                mslPressure == other.mslPressure &&
                mslTemperature == other.mslTemperature;
     }
