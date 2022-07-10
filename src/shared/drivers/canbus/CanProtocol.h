@@ -31,24 +31,35 @@
 #define NPACKET 3  // equals the number of boards in the can system
 
 /**
- * @brief Struct that contains how the canId is composed
+ * @brief enum that contains how the canId is composed
  */
-struct CanIDMask
-{
-    uint32_t priority    = 0x1E000000;
-    uint32_t type        = 0x1F80000;
-    uint32_t source      = 0x78000;
-    uint32_t destination = 0x7800;
-    uint32_t idType      = 0x780;
-    uint32_t firstPacket = 0x40;
-    uint32_t leftToSend  = 0x3F;
-} idMask;
 
 namespace Boardcore
 {
 namespace Canbus
 {
+enum IDMask
+{
+    priority         = 0x3C0000,
+    shiftPriority    = 18,  // number of bit before priority
+    type             = 0x3F000,
+    shiftType        = 12,
+    source           = 0xF00,
+    shiftSource      = 8,
+    destination      = 0xF0,
+    shiftDestination = 4,
+    idType           = 0xF,
+    shiftIdType      = 0
+};
 
+enum SequentialInformation
+{
+    firstPacket         = 0x40,
+    shiftFirstPacket    = 6,
+    leftToSend          = 0x3F,
+    shiftLeftToSend     = 0,
+    shiftSequentialInfo = 7
+};
 /**
  * @brief Generic struct that contains a logical can packet
  * i.e. 1 accelerometer packet 3*4byte (acc: x,y,z)+timestamp, will be 4
@@ -128,8 +139,8 @@ public:
         uint8_t tempLen = toSend.len - 1;
         uint32_t tempId = toSend.canId;
         packet.ext      = true;
-        packet.id       = (tempId << 7) | idMask.firstPacket |
-                    (63 - (tempLen & idMask.leftToSend));
+        packet.id       = (tempId << shiftSequentialInfo) | firstPacket |
+                    (63 - (tempLen & leftToSend));
         packet.length = byteForInt(toSend.payload[0]);
         for (int k = 0; k < packet.length; k++)
         {
@@ -140,8 +151,8 @@ public:
         for (int i = 1; i < toSend.len; i++)
         {
             tempId    = toSend.canId;
-            packet.id = (tempId << 7) | !(idMask.firstPacket) |
-                        (63 - (tempLen & idMask.leftToSend));
+            packet.id = (tempId << shiftSequentialInfo) | !(firstPacket) |
+                        (63 - (tempLen & leftToSend));
             packet.length = byteForInt(toSend.payload[i]);
             for (int k = 0; k < packet.length; k++)
             {
@@ -163,7 +174,8 @@ protected:
                          // order the whole packet will be lost once we receive
                          // a new first packet without warning canhandler
     {
-        uint32_t sourceId;
+        uint32_t idNoSeq;
+        uint8_t sourceId;
         CanPacket packet;
         // Infinite loop
         while (true)
@@ -172,29 +184,29 @@ protected:
             if (!can->getRXBuffer().isEmpty())
             {
 
-                packet   = can->getRXBuffer().pop().packet;
-                sourceId = (packet.id & idMask.source) >> 15;
+                packet  = can->getRXBuffer().pop().packet;
+                idNoSeq = packet.id >>
+                          shiftSequentialInfo;  // discard the sequence number
+                sourceId = (idNoSeq & source) >> shiftSource;
                 if (sourceId >= 0 &&
                     sourceId < NPACKET)  // check for maximum size
                 {
+
                     if (data[sourceId].canId == -1 ||
-                        (((data[sourceId].canId << 7) & idMask.source) >> 15) ==
+                        ((data[sourceId].canId & source) >> shiftSource) ==
                             sourceId)
                     {
-                        uint32_t leftToSend =
-                            63 - (packet.id & idMask.leftToSend);
+                        uint8_t left = 63 - (packet.id & leftToSend);
 
-                        if ((packet.id & idMask.firstPacket) >>
-                            6)  // it is a first
-                                // packet of a data;
+                        if ((packet.id & firstPacket) >>
+                            shiftFirstPacket)  // it is a first
+                                               // packet of a data;
                         {
-
-                            data[sourceId].len = leftToSend + 1;
-                            data[sourceId].canId =
-                                packet.id >> 7;  // discard the sequence number
+                            data[sourceId].len   = left + 1;
+                            data[sourceId].canId = idNoSeq;
                         }
                         if ((data[sourceId].len - (data[sourceId].nRec + 1)) ==
-                            leftToSend)
+                            left)
                         {
 
                             uint64_t tempPayload = 0;
@@ -204,13 +216,14 @@ protected:
                                 tempPayload =
                                     tempPayload | (tempData << (f * 8));
                             }
-                            if (data[sourceId].len - leftToSend - 1 >= 0 &&
-                                data[sourceId].len - leftToSend - 1 <
+
+                            if (data[sourceId].len - left - 1 >= 0 &&
+                                data[sourceId].len - left - 1 <
                                     32)  // check for index
                             {
 
-                                data[sourceId].payload[data[sourceId].len -
-                                                       leftToSend - 1] =
+                                data[sourceId]
+                                    .payload[data[sourceId].len - left - 1] =
                                     tempPayload;
                                 data[sourceId].nRec++;
                             }
