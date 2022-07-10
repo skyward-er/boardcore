@@ -62,4 +62,6 @@ void ADA::setReferenceValues(const ReferenceValues reference)
     this->reference = reference;
 }
 
+ReferenceValues ADA::getReferenceValues() { return reference; }
+
 }  // namespace Boardcore
