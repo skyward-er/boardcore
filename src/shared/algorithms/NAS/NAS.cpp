@@ -122,6 +122,12 @@ void NAS::predictAcc(const Vector3f& acceleration)
     P.block<6, 6>(0, 0)           = F_lin * Pl * F_lin_tr + Q_lin;
 }
 
+void NAS::predictAcc(const AccelerometerData& acceleration)
+{
+    predictAcc(Vector3f{acceleration.accelerationX, acceleration.accelerationY,
+                        acceleration.accelerationZ});
+}
+
 void NAS::predictGyro(const Vector3f& angularVelocity)
 {
     Vector3f bias = x.block<3, 1>(IDX_BIAS, 0);
@@ -149,6 +155,13 @@ void NAS::predictGyro(const Vector3f& angularVelocity)
     Matrix<float, 6, 6> Pq = P.block<6, 6>(IDX_QUAT, IDX_QUAT);
     Pq = F_quat * Pq * F_quat_tr + G_quat * Q_quat * G_quat_tr;
     P.block<6, 6>(IDX_QUAT, IDX_QUAT) = Pq;
+}
+
+void NAS::predictGyro(const GyroscopeData& angularVelocity)
+{
+    predictGyro(Vector3f{angularVelocity.angularVelocityX,
+                         angularVelocity.angularVelocityY,
+                         angularVelocity.angularVelocityZ});
 }
 
 void NAS::correctBaro(const float pressure)
@@ -193,6 +206,19 @@ void NAS::correctGPS(const Vector4f& gps)
     x.head<6>() = x.head<6>() + K * (gps - H);
 }
 
+void NAS::correctGPS(const GPSData& gps)
+{
+    if (!gps.fix)
+        return;
+
+    auto gpsPos = Aeroutils::geodetic2NED(
+        {gps.latitude, gps.longitude},
+        {reference.startLatitude, reference.startLongitude});
+
+    correctGPS(
+        Vector4f{gpsPos(0), gpsPos(1), gps.velocityNorth, gps.velocityEast});
+}
+
 void NAS::correctMag(const Vector3f& mag)
 {
     Vector4f q = x.block<4, 1>(IDX_QUAT, 0);
@@ -224,6 +250,13 @@ void NAS::correctMag(const Vector3f& mag)
     Matrix<float, 6, 6> tmp = Matrix<float, 6, 6>::Identity() - K * H;
     Pq = tmp * Pq * tmp.transpose() + K * R_mag * K.transpose();
     P.block<6, 6>(IDX_QUAT, IDX_QUAT) = Pq;
+}
+
+void NAS::correctMag(const MagnetometerData& mag)
+{
+    Vector3f magV = {mag.magneticFieldX, mag.magneticFieldY,
+                     mag.magneticFieldZ};
+    correctMag(magV.normalized());
 }
 
 void NAS::correctAcc(const Eigen::Vector3f& acc)
@@ -262,6 +295,12 @@ void NAS::correctAcc(const Eigen::Vector3f& acc)
     Matrix<float, 6, 6> tmp = Matrix<float, 6, 6>::Identity() - K * H;
     Pq = tmp * Pq * tmp.transpose() + K * R_mag * K.transpose();
     P.block<6, 6>(IDX_QUAT, IDX_QUAT) = Pq;
+}
+
+void NAS::correctAcc(const AccelerometerData& acc)
+{
+    Vector3f accV = {acc.accelerationX, acc.accelerationY, acc.accelerationZ};
+    correctAcc(accV.normalized());
 }
 
 void NAS::correctPitot(const float deltaP, const float staticP)

@@ -23,6 +23,7 @@
 #pragma once
 
 #include <algorithms/ReferenceValues.h>
+#include <sensors/SensorData.h>
 #include <utils/AeroUtils/AeroUtils.h>
 #include <utils/Constants.h>
 
@@ -54,16 +55,30 @@ public:
     /**
      * @brief Prediction with accelerometer data.
      *
-     * @param u Vector with acceleration data [x y z][m/s^2].
+     * @param acceleration Vector with acceleration data [x y z][m/s^2].
      */
     void predictAcc(const Eigen::Vector3f& acceleration);
 
     /**
+     * @brief Prediction with accelerometer data.
+     *
+     * @param acceleration Accelerometer data [m/s^2].
+     */
+    void predictAcc(const AccelerometerData& acceleration);
+
+    /**
      * @brief Prediction with gyroscope data.
      *
-     * @param u Vector with angular velocity data [x y z].
+     * @param angularVelocity Vector with angular velocity data [x y z][rad/s].
      */
     void predictGyro(const Eigen::Vector3f& angularVelocity);
+
+    /**
+     * @brief Prediction with gyroscope data.
+     *
+     * @param angularVelocity Gyroscope data [rad/s].
+     */
+    void predictGyro(const GyroscopeData& angularVelocity);
 
     /**
      * @brief Correction with barometer data.
@@ -76,23 +91,43 @@ public:
      * @brief Correction with gps data.
      *
      * @param gps Vector of the gps readings [n e vn ve][m m m/s m/s].
-     * @param sats_num Number of satellites available.
      */
     void correctGPS(const Eigen::Vector4f& gps);
 
     /**
+     * @brief Correction with gps data only if fix is acquired.
+     *
+     * @param gps GPS data.
+     */
+    void correctGPS(const GPSData& gps);
+
+    /**
      * @brief Correction with magnetometer data.
      *
-     * @param mag Normalized vector of the magnetometer readings [x y z].
+     * @param mag Normalized vector of the magnetometer readings [x y z][uT].
      */
     void correctMag(const Eigen::Vector3f& mag);
 
     /**
+     * @brief Correction with magnetometer data.
+     *
+     * @param mag Magnetometer data [uT].
+     */
+    void correctMag(const MagnetometerData& mag);
+
+    /**
      * @brief Correction with accelerometer data.
      *
-     * @param u Normalized vector with acceleration data [x y z].
+     * @param u Normalized vector with acceleration data [x y z][m/s^2].
      */
-    void correctAcc(const Eigen::Vector3f& acceleration);
+    void correctAcc(const Eigen::Vector3f& acc);
+
+    /**
+     * @brief Correction with accelerometer data.
+     *
+     * @param u Acceleration data [m/s^2].
+     */
+    void correctAcc(const AccelerometerData& acc);
 
     /**
      * @brief Correction with pitot pressure.
@@ -128,6 +163,11 @@ public:
      * @brief Changes the reference values.
      */
     void setReferenceValues(const ReferenceValues reference);
+
+    /**
+     * @brief Returns the current reference values.
+     */
+    ReferenceValues getReferenceValues();
 
 private:
     ///< Extended Kalman filter configuration parameters.
