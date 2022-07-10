@@ -64,13 +64,13 @@ public:
         uint8_t awum     = 1;  // Automatic wakeup (1: automatic wakeup upon new
                                // message received)
         uint8_t nart =
-            0;  // No auto retransmission (0: packets are retrasmitted until
+            0;  // No auto retransmission (0: packets are retransmitted until
                 // success, 1: only one transfer attempt)
         uint8_t abom = 1;  // Automatic bus off management (1: automatically
                            // recovers from bus-off state)
         uint8_t rflm = 1;  // Receive fifo locked (0: new messages overwrite
                            // last ones, 1: new message discarded)
-        uint8_t txfp = 0;  // TX Fifo priority (0: identifier, 1: chronological)
+        uint8_t txfp = 1;  // TX Fifo priority (0: identifier, 1: chronological)
     };
 
     /**

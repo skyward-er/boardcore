@@ -23,7 +23,6 @@
  */
 
 #include <drivers/canbus/CanProtocol.h>
-#include <inttypes.h>
 
 #include <thread>
 
@@ -49,21 +48,39 @@ using CanRX = Gpio<GPIOA_BASE, 11>;
 using CanTX = Gpio<GPIOA_BASE, 12>;
 #endif
 
-#define SLP 5000
-
-void sendData(CanProtocol* protocol, CanData toSend)
+#define SLP 100
+miosix::FastMutex mutex;
+CanData toSend1;
+CanData toSend2;
+void sendData(CanProtocol* protocol, CanData* toSend)
 {
     while (true)
     {
+
         TRACE("send\n");
-        (*protocol).sendCan(toSend);
+        {
+            miosix::Lock<miosix::FastMutex> l(mutex);
+            (*protocol).sendCan(*toSend);
+        }
         Thread::sleep(SLP);
     }
+}
+bool equal(CanData* first, CanData* second)
+{
+    if ((*first).canId != (*second).canId || (*first).len != (*second).len)
+    {
+        return false;
+    }
+    for (int i = 0; i < (*first).len; i++)
+    {
+        if ((*first).payload[i] != (*second).payload[i])
+            return false;
+    }
+    return true;
 }
 
 int main()
 {
-
     {
         miosix::FastInterruptDisableLock dLock;
 
@@ -78,12 +95,10 @@ int main()
         CanTX::alternateFunction(9);
 #endif
     }
-
     CanbusDriver::CanbusConfig cfg{};
     CanbusDriver::AutoBitTiming bt;
-    bt.baudRate    = BAUD_RATE;
-    bt.samplePoint = SAMPLE_POINT;
-
+    bt.baudRate     = BAUD_RATE;
+    bt.samplePoint  = SAMPLE_POINT;
     CanbusDriver* c = new CanbusDriver(CAN1, cfg, bt);
     CanProtocol protocol(c);
     // Allow every message
@@ -92,40 +107,47 @@ int main()
     c->addFilter(f2);
     c->init();
     protocol.start();
-    CanData toSend;
-    toSend.canId      = 0x01;
-    toSend.len        = 3;
-    toSend.payload[0] = 1;
-    toSend.payload[1] = 2;
-    toSend.payload[2] = 3;
-    std::thread second(sendData, &protocol, toSend);
+
+    toSend1.canId      = 0x200;
+    toSend1.len        = 8;
+    toSend1.payload[0] = 0xffffffffffffffff;
+    toSend1.payload[1] = 2;
+    toSend1.payload[2] = 78022;
+    toSend1.payload[3] = 0xfffffffffffff;
+    toSend1.payload[4] = 23;
+    toSend1.payload[5] = 3234;
+    toSend1.payload[6] = 12;
+    toSend1.payload[7] = 0;
+    std::thread firstSend(sendData, &protocol, &toSend1);
+
+    Thread::sleep(10);
+    toSend2.canId      = 0x100;
+    toSend2.len        = 4;
+    toSend2.payload[0] = 0xffffff;
+    toSend2.payload[1] = 2;
+    toSend2.payload[2] = 0x123ff;
+    toSend2.payload[3] = 1;
+    std::thread secondSend(sendData, &protocol, &toSend2);
+    TRACE("start \n");
     for (;;)
     {
-        TRACE("start \n");
+
         protocol.waitEmpty();
         CanData temp = protocol.getPacket();
-        if (temp.canId != toSend.canId || temp.len != toSend.len ||
-            temp.payload[0] != toSend.payload[0] ||
-            temp.payload[1] != toSend.payload[1] ||
-            temp.payload[2] != toSend.payload[2])
+        TRACE("received packet \n");
+        if ((!equal(&temp, &toSend1) && !equal(&temp, &toSend2)))
         {
             TRACE("Error\n");
-            TRACE("Expected id %lu, received  %lu\n", toSend.canId, temp.canId);
-            TRACE("Expected len %d , received %d\n", toSend.len, temp.len);
-            TRACE(
-                "Expected payload 0  %llu , received  "
-                "%llu\n",
-                toSend.payload[0], temp.payload[0]);
-            TRACE("Expected payload 1 %llu, received  %llu\n",
-                  toSend.payload[1], temp.payload[1]);
-            TRACE(
-                "Expected payload 2  %llu, received  "
-                "%llu\n",
-                toSend.payload[2], temp.payload[2]);
+            TRACE("Received  %lu\n", temp.canId);
+            TRACE("Received %d\n", temp.len);
+            for (int i = 0; i < temp.len; i++)
+            {
+                TRACE("Received payload %d:  %llu,\n", i, temp.payload[i]);
+            }
         }
         else
         {
-            TRACE("OK :)\n");
+            TRACE("OK :) id  %lu\n", temp.canId);
         }
     }
 }

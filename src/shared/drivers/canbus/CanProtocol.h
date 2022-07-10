@@ -56,8 +56,8 @@ namespace Canbus
  */
 struct CanData
 {
-    uint32_t canId =
-        0;  // the id of the can packet without the last 7 bits (sequence bit)
+    int32_t canId =
+        -1;  // the id of the can packet without the last 7 bits (sequence bit)
     uint8_t len;
     uint8_t nRec = 0;
     uint64_t payload[32];
@@ -88,25 +88,34 @@ public:
     getPacket()  // return the packet, if buffer is empty return an empty packet
     {
         CanData temp;
-        mutex.lock();
+        miosix::Lock<miosix::FastMutex> l(mutex);
         if (!buffer.isEmpty())
         {
             temp = buffer.pop();
         }
-        mutex.unlock();
 
         return temp;
     }
 
     bool isEmpty()
     {
-        mutex.lock();
+        miosix::Lock<miosix::FastMutex> l(mutex);
         return buffer.isEmpty();
-        mutex.unlock();
     }
 
     void waitEmpty() { buffer.waitUntilNotEmpty(); }
 
+    uint8_t byteForInt(uint64_t number)
+    {
+        uint8_t i;
+        for (i = 1; i <= 8; i++)
+        {
+            number = number >> 8;
+            if (number == 0)
+                return i;
+        }
+        return i;
+    }
     /**
      * @brief Takes a canData, it splits it into single canpacket with the
      * correct sequential id
@@ -116,33 +125,28 @@ public:
     void sendCan(CanData toSend)  //@requires toSen to not be empty
     {
         CanPacket packet;
-        uint32_t tempLen = toSend.len - 1;
-        uint32_t tempId  = toSend.canId;
-        packet.ext       = true;
-        packet.id =
-            (tempId << 7) | idMask.firstPacket | (tempLen & idMask.leftToSend);
-        packet.length = (toSend.payload[0] + 8) /
-                        8;  // simple formula for upper approximation
+        uint8_t tempLen = toSend.len - 1;
+        uint32_t tempId = toSend.canId;
+        packet.ext      = true;
+        packet.id       = (tempId << 7) | idMask.firstPacket |
+                    (63 - (tempLen & idMask.leftToSend));
+        packet.length = byteForInt(toSend.payload[0]);
         for (int k = 0; k < packet.length; k++)
         {
             packet.data[k] = toSend.payload[0] >> (8 * k);
         }
         tempLen--;
-
         can->send(packet);
-        TRACE("tosend len %d\n", toSend.len);
-
         for (int i = 1; i < toSend.len; i++)
         {
             tempId    = toSend.canId;
             packet.id = (tempId << 7) | !(idMask.firstPacket) |
-                        (tempLen & idMask.leftToSend);
-            packet.length = (toSend.payload[i] + 8) / 8;
+                        (63 - (tempLen & idMask.leftToSend));
+            packet.length = byteForInt(toSend.payload[i]);
             for (int k = 0; k < packet.length; k++)
             {
-                packet.data[k] = toSend.payload[i] << (8 * k);
+                packet.data[k] = toSend.payload[i] >> (8 * k);
             }
-            TRACE("packetlen %d\n, dato %d\n", packet.length, packet.data[0]);
             can->send(packet);
             tempLen--;
         }
@@ -168,49 +172,60 @@ protected:
             if (!can->getRXBuffer().isEmpty())
             {
 
-                packet = can->getRXBuffer().pop().packet;
-
-                sourceId = packet.id & idMask.source;
-                if (data[sourceId].canId == 0 ||
-                    (data[sourceId].canId & idMask.source) == sourceId)
+                packet   = can->getRXBuffer().pop().packet;
+                sourceId = (packet.id & idMask.source) >> 15;
+                if (sourceId >= 0 &&
+                    sourceId < NPACKET)  // check for maximum size
                 {
-                    if (packet.id & idMask.firstPacket)  // it is a first
-                                                         // packet of a data;
+                    if (data[sourceId].canId == -1 ||
+                        (((data[sourceId].canId << 7) & idMask.source) >> 15) ==
+                            sourceId)
                     {
-                        data[sourceId].len =
-                            (packet.id & idMask.leftToSend) + 1;
-                        data[sourceId].canId =
-                            packet.id >> 7;  // discard the sequence number
-                    }
-                    TRACE("pakcet %d, nrec %d, left %lu\n", packet.data[0],
-                          data[sourceId].nRec, (packet.id & idMask.leftToSend));
-                    if ((data[sourceId].len - (data[sourceId].nRec + 1)) ==
-                        (packet.id & idMask.leftToSend))
-                    {
+                        uint32_t leftToSend =
+                            63 - (packet.id & idMask.leftToSend);
 
-                        uint64_t tempPayload = 0;
-                        for (int f = 0; f < packet.length; f++)
+                        if ((packet.id & idMask.firstPacket) >>
+                            6)  // it is a first
+                                // packet of a data;
                         {
-                            uint64_t tempData = packet.data[f];
-                            tempPayload = tempPayload | (tempData << (f * 8));
+
+                            data[sourceId].len = leftToSend + 1;
+                            data[sourceId].canId =
+                                packet.id >> 7;  // discard the sequence number
+                        }
+                        if ((data[sourceId].len - (data[sourceId].nRec + 1)) ==
+                            leftToSend)
+                        {
+
+                            uint64_t tempPayload = 0;
+                            for (int f = 0; f < packet.length; f++)
+                            {
+                                uint64_t tempData = packet.data[f];
+                                tempPayload =
+                                    tempPayload | (tempData << (f * 8));
+                            }
+                            if (data[sourceId].len - leftToSend - 1 >= 0 &&
+                                data[sourceId].len - leftToSend - 1 <
+                                    32)  // check for index
+                            {
+
+                                data[sourceId].payload[data[sourceId].len -
+                                                       leftToSend - 1] =
+                                    tempPayload;
+                                data[sourceId].nRec++;
+                            }
                         }
 
-                        data[sourceId]
-                            .payload[data[sourceId].len -
-                                     (packet.id & idMask.leftToSend) - 1] =
-                            tempPayload;
-                        data[sourceId].nRec++;
-                    }
-
-                    if (data[sourceId].nRec == data[sourceId].len)
-                    {
-                        mutex.lock();
-                        buffer.put(data[sourceId]);
-                        // empties the struct
-                        data[sourceId].canId = 0;
-                        data[sourceId].nRec  = 0;
-                        data[sourceId].len   = 0;
-                        mutex.unlock();
+                        if (data[sourceId].nRec == data[sourceId].len &&
+                            data[sourceId].nRec != 0)
+                        {
+                            miosix::Lock<miosix::FastMutex> l(mutex);
+                            buffer.put(data[sourceId]);
+                            // empties the struct
+                            data[sourceId].canId = -1;
+                            data[sourceId].nRec  = 0;
+                            data[sourceId].len   = 0;
+                        }
                     }
                 }
             }
