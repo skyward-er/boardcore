@@ -356,4 +356,6 @@ void NAS::setReferenceValues(const ReferenceValues reference)
     this->reference = reference;
 }
 
+ReferenceValues NAS::getReferenceValues() { return reference; }
+
 }  // namespace Boardcore
