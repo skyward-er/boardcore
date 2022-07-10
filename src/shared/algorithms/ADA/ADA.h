@@ -55,6 +55,11 @@ public:
      */
     void setReferenceValues(const ReferenceValues reference);
 
+    /**
+     * @brief Returns the current reference values.
+     */
+    ReferenceValues getReferenceValues();
+
 private:
     ReferenceValues reference;
 
