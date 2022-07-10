@@ -605,7 +605,7 @@ STM32SerialWrapper::STM32SerialWrapper(USARTType *usart, Baudrate baudrate,
             break;
     }
 
-    if(id<4)
+    if (id < 4)
         initPins(tx, 7, rx, 7);
     else
         initPins(tx, 8, rx, 8);

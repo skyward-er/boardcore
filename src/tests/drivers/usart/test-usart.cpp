@@ -147,7 +147,6 @@ int main()
     u2tx1::getPin().mode(miosix::Mode::ALTERNATE);
     u2tx1::getPin().alternateFunction(7);
 
-
     // u4rx1::getPin().mode(miosix::Mode::ALTERNATE);
     // u4rx1::getPin().alternateFunction(8);
     // u4tx1::getPin().mode(miosix::Mode::ALTERNATE);
