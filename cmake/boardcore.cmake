@@ -97,6 +97,7 @@ foreach(OPT_BOARD ${BOARDS})
         # Utils
         ${SBS_BASE}/src/shared/utils/AeroUtils/AeroUtils.cpp
         ${SBS_BASE}/src/shared/utils/ButtonHandler/ButtonHandler.cpp
+        ${SBS_BASE}/src/shared/utils/PinObserver/PinObserver.cpp
         ${SBS_BASE}/src/shared/utils/SkyQuaternion/SkyQuaternion.cpp
         ${SBS_BASE}/src/shared/utils/Stats/Stats.cpp
         ${SBS_BASE}/src/shared/utils/TestUtils/TestHelper.cpp

@@ -1,5 +1,5 @@
-/* Copyright (c) 2015-2022 Skyward Experimental Rocketry
- * Authors: Luca Erbetta, Alberto Nidasio
+/* Copyright (c) 2018-2022 Skyward Experimental Rocketry
+ * Author: Luca Erbetta, Alberto Nidasio
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -31,42 +31,47 @@
 namespace Boardcore
 {
 
-enum class ButtonEvent
+/**
+ * @brief Pin transition.
+ */
+enum class PinTransition
 {
-    PRESSED,         ///< The button is pressed.
-    SHORT_PRESS,     ///< The button is released before LONG_PRESS_TICKS.
-    LONG_PRESS,      ///< The button is released before  VERY_LONG_PRESS_TICKS.
-    VERY_LONG_PRESS  ///< The button is released after VERY_LONG_PRESS_TICKS.
+    FALLING_EDGE,  ///< The pin goes from high to low.
+    RISING_EDGE    ///< The pin goes from low to high.
 };
 
 /**
- * @brief Utility to detects if buttons are pressed, long pressed or long-long
- * pressed and calls a callback in each case
+ * Class used to call a callback after a pin performs a specific transition
+ * (RISING or FALLING edge) and stays in the new state for a specific amount of
+ * time. Useful if you want to monitor pin transitions but you want to avoid
+ * spurious state changes.
  *
- * Note: The ButtonHandler assumes the all the buttons to be pulldown meaning
- * that when the button is pressed, the pin is assumed low.
- *
- * TODO: Allow to set pullup or pulldown configuration for each registered pin.
+ * A callback to monitor each state change no matter the threshold or the
+ * transition is also available, in order to be able to observe the current
+ * state of the pin.
  */
-class ButtonHandler : public Singleton<ButtonHandler>
+class PinObserver : public Singleton<PinObserver>
 {
-    friend Singleton<ButtonHandler>;
+    friend Singleton<PinObserver>;
 
-    static constexpr uint32_t SAMPLE_PERIOD    = 100;  // 10Hz
-    static constexpr int LONG_PRESS_TICKS      = 10;   // 1s
-    static constexpr int VERY_LONG_PRESS_TICKS = 50;   // 5s
+    static constexpr uint32_t SAMPLE_PERIOD = 100;  // 10Hz
 
 public:
-    using ButtonCallback = std::function<void(ButtonEvent)>;
+    using PinCallback = std::function<void(PinTransition)>;
 
     /**
-     * @brief Registers a callback on the specified pin.
+     * Observe a pin for a specific transition, and optionally for every
+     * single state change.
      *
      * @param pin Pin to listen to.
      * @param callback Function to call on button events.
+     * @param detectionThreshold How many times the pin should be observed in
+     * the post-transition state to trigger the actual transition callback,
+     * defaults to 1.
      * @return False if another callback was already registered for the pin.
      */
-    bool registerButtonCallback(miosix::GpioPin pin, ButtonCallback callback);
+    bool registerPinCallback(miosix::GpioPin pin, PinCallback callback,
+                             unsigned int detectionThreshold = 1);
 
     /**
      * @brief Unregisters the callback associated with the specified pin, if
@@ -75,12 +80,12 @@ public:
      * @param pin Pin whose callback function is to be removed.
      * @return True if a callback was present and removed for the given pin.
      */
-    bool unregisterButtonCallback(miosix::GpioPin pin);
+    bool unregisterPinCallback(miosix::GpioPin pin);
 
     /**
-     * @brief Starts the ButtonHandler's task scheduler.
+     * @brief Starts the PinObserver's task scheduler.
      *
-     * Note that the scheduler is started as soon as the ButtonHandler is first
+     * Note that the scheduler is started as soon as the PinObserver is first
      * used.
      *
      * @return Whether the task scheduler was started or not.
@@ -88,32 +93,39 @@ public:
     bool start();
 
     /**
-     * @brief Stops the ButtonHandler's task scheduler.
+     * @brief Stops the PinObserver's task scheduler.
      */
     void stop();
 
 private:
-    ButtonHandler();
+    /**
+     * @brief Construct a new PinObserver object.
+     *
+     * @param pollInterval Pin transition polling interval, defaults to 20 [ms].
+     */
+    PinObserver();
 
     /**
      * @brief This function is added to the scheduler for every pin registered
-     * in the ButtonHandler.
+     * in the PinObserver.
      *
      * @param pin Pin whose value need to be checked.
      */
-    void periodicButtonValueCheck(miosix::GpioPin pin);
+    void periodicPinValueCheck(miosix::GpioPin pin);
 
     TaskScheduler scheduler;
 
     /**
-     * @brief Map of all the callbacks registered in the ButtonHandler.
-     *
+     * @brief Map of all the callbacks registered in the PinObserver.
+
      * The type stored is a tuple containing:
      * - The button callback function;
-     * - Whether or not the button was pressed in the last check iteration;
-     * - The relative tick of the last pin value change.
+     * - Detection threshold: number of periods to trigger an event
+     * - The last pin status;
+     * - Number of periods the pin values stayed the same;
      */
-    std::map<miosix::GpioPin, std::tuple<ButtonCallback, bool, unsigned int>,
+    std::map<miosix::GpioPin,
+             std::tuple<PinCallback, unsigned int, bool, unsigned int>,
              GpioPinCompare>
         callbacks;
 };
