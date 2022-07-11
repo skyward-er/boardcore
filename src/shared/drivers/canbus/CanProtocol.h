@@ -30,14 +30,32 @@
 
 #define NPACKET 3  // equals the number of boards in the can system
 
-/**
- * @brief enum that contains how the canId is composed
- */
-
 namespace Boardcore
 {
 namespace Canbus
 {
+
+/**
+ * The id of a can packet is composed of 29 bits
+ * priority     4 bit
+ * type         6 bit
+ * source       4 bit
+ * destination  4 bit
+ * idType       4 bit
+ * firstPacket  1 bit
+ * leftToSend   6 bit
+ * shiftNameOfField the number of shift needed to reach that field
+ */
+
+/**
+ * @brief The mask of the ID without the sequential information (firstPacket and
+ * leftToSend) CompleteID = (IDMask << shiftSequentialInfo)||
+ * SequentialInformation
+ */
+
+/**
+ * @brief enum that contains how the canId without sequential is composed
+ */
 enum IDMask
 {
     priority         = 0x3C0000,
@@ -52,6 +70,9 @@ enum IDMask
     shiftIdType      = 0
 };
 
+/**
+ * @brief enum that contains how the Sequential information are composed
+ */
 enum SequentialInformation
 {
     firstPacket         = 0x40,
@@ -94,7 +115,13 @@ public:
      * @param can CanbusDriver pointer.
      */
     CanProtocol(CanbusDriver* can) { this->can = can; }
+    /* Destructor */
+    ~CanProtocol() { (*can).~CanbusDriver(); }
 
+    /**
+     * @brief return the packet, if buffer is empty return an empty packet
+     * @warning Should be called only after checking isEmpty()
+     */
     CanData
     getPacket()  // return the packet, if buffer is empty return an empty packet
     {
@@ -116,6 +143,9 @@ public:
 
     void waitEmpty() { buffer.waitUntilNotEmpty(); }
 
+    /**
+     * @brief Count the number of byte needed to encode a uint64_t number
+     */
     uint8_t byteForInt(uint64_t number)
     {
         uint8_t i;
