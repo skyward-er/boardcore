@@ -27,8 +27,8 @@ namespace Boardcore
 
 namespace Canbus
 {
-
-CanData data[N_PACKET];
+// For each board contains the packet that we are re-assembling
+CanData data[N_BOARDS];
 
 CanProtocol::CanProtocol(CanbusDriver* can) { this->can = can; }
 
@@ -60,9 +60,10 @@ void CanProtocol::sendData(CanData dataToSend)
 
     // Send the first packet
     packet.ext = true;
-    packet.id  = (tempId << shiftSequentialInfo) | firstPacket |
-                (63 - (tempLen & leftToSend));
+    // create the id for the first packet
+    packet.id = (tempId << shiftSequentialInfo) | (63 - (tempLen & leftToSend));
     packet.length = byteForInt(dataToSend.payload[0]);
+    // Splits payload[0] in the right number of uint8_t
     for (int k = 0; k < packet.length; k++)
         packet.data[k] = dataToSend.payload[0] >> (8 * k);
     can->send(packet);
@@ -71,10 +72,11 @@ void CanProtocol::sendData(CanData dataToSend)
     for (int i = 1; i < dataToSend.length; i++)
     {
         tempId = dataToSend.canId;
-        packet.id =
-            (tempId << shiftSequentialInfo) | (63 - (tempLen & leftToSend));
+        // create the id for the remaining packets
+        packet.id = (tempId << shiftSequentialInfo) | firstPacket |
+                    (63 - (tempLen & leftToSend));
         packet.length = byteForInt(dataToSend.payload[i]);
-
+        // Splits payload[i] in the right number of uint8_t
         for (int k = 0; k < packet.length; k++)
             packet.data[k] = dataToSend.payload[i] >> (8 * k);
 
@@ -111,57 +113,67 @@ void CanProtocol::run()
 
             // Discard the sequence number
             uint32_t idNoSeq = packet.id >> shiftSequentialInfo;
+            // Extract the sourceID
             uint8_t sourceId = (idNoSeq & source) >> shiftSource;
 
             // Check for maximum size
-            if (sourceId < N_PACKET)
+            if (sourceId < N_BOARDS)
             {
-                if (data[sourceId].canId == -1 ||
-                    ((data[sourceId].canId & source) >> shiftSource) ==
-                        sourceId)
+                uint8_t left = 63 - (packet.id & leftToSend);
+
+                // Check if it is the first packet in the sequence
+                if (((packet.id & firstPacket) >> shiftFirstPacket) == 0)
                 {
-                    uint8_t left = 63 - (packet.id & leftToSend);
+                    // if it is we save the id (without the sequence number) the
+                    // number of packet (left to send + 1)
+                    data[sourceId].length = left + 1;
 
-                    // Check if it is the first packet in the sequence
-                    if ((packet.id & firstPacket) >> shiftFirstPacket)
+                    // the number of packet = left to send + 1 since it is the
+                    // first packet
+                    data[sourceId].canId = idNoSeq;
+
+                    // And we reset nRec
+                    data[sourceId].nRec = 0;
+                }
+
+                // if the packet is expected, the length of data - the number of
+                // packet recorded +1 (+1 since we are not counting the last
+                // packet) equals the number of packet left to receive
+                if ((data[sourceId].length - (data[sourceId].nRec + 1)) == left)
+                {
+                    uint64_t tempPayload = 0;
+
+                    // we reassemble the payload
+                    for (int f = 0; f < packet.length; f++)
                     {
-                        data[sourceId].length = left + 1;
-                        data[sourceId].canId  = idNoSeq;
+                        uint64_t tempData = packet.data[f];
+                        tempPayload       = tempPayload | (tempData << (f * 8));
                     }
 
-                    if ((data[sourceId].length - (data[sourceId].nRec + 1)) ==
-                        left)
+                    if (data[sourceId].length - left - 1 >= 0 &&
+                        data[sourceId].length - left - 1 <
+                            32)  // check for index to avoid out of bounds error
                     {
-                        uint64_t tempPayload = 0;
-
-                        for (int f = 0; f < packet.length; f++)
-                        {
-                            uint64_t tempData = packet.data[f];
-                            tempPayload = tempPayload | (tempData << (f * 8));
-                        }
-
-                        if (data[sourceId].length - left - 1 >= 0 &&
-                            data[sourceId].length - left - 1 <
-                                32)  // check for index
-                        {
-                            data[sourceId]
-                                .payload[data[sourceId].length - left - 1] =
-                                tempPayload;
-                            data[sourceId].nRec++;
-                        }
+                        // and put it in data
+                        data[sourceId]
+                            .payload[data[sourceId].length - left - 1] =
+                            tempPayload;
+                        data[sourceId].nRec++;
                     }
-
-                    if (data[sourceId].nRec == data[sourceId].length &&
-                        data[sourceId].nRec != 0)
+                }
+                // If we have received the right number of packet
+                if (data[sourceId].nRec == data[sourceId].length &&
+                    data[sourceId].nRec != 0)
+                {
                     {
+                        // We put the element of data in buffer
                         miosix::Lock<miosix::FastMutex> l(mutex);
                         buffer.put(data[sourceId]);
-
-                        // Empties the struct
-                        data[sourceId].canId  = -1;
-                        data[sourceId].nRec   = 0;
-                        data[sourceId].length = 0;
                     }
+
+                    // Empties the struct
+                    data[sourceId].canId  = -1;
+                    data[sourceId].length = 0;
                 }
             }
         }

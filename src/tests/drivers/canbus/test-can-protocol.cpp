@@ -57,7 +57,7 @@ void sendData(CanProtocol* protocol, CanData* toSend)
     while (true)
     {
 
-        TRACE("send\n");
+        TRACE("send id %d\n", toSend->canId);
         {
             miosix::Lock<miosix::FastMutex> l(mutex);
             (*protocol).sendData(*toSend);

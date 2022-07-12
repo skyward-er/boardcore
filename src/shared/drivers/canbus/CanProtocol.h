@@ -28,7 +28,7 @@
 
 #include "Canbus.h"
 
-#define N_PACKET 3  ///< Number of boards on the bus.
+#define N_BOARDS 3  ///< Number of boards on the bus.
 
 namespace Boardcore
 {
@@ -58,29 +58,36 @@ namespace Canbus
  * @brief Enumeration that contains masks of the elements composing the can
  * packet id without sequential information.
  */
-enum IDMask
+enum IDMask : uint32_t
 {
-    priority         = 0x3C0000,
-    shiftPriority    = 18,
-    type             = 0x03F000,
-    shiftType        = 12,
-    source           = 0x000F00,
-    shiftSource      = 8,
-    destination      = 0x0000F0,
-    shiftDestination = 4,
-    idType           = 0x00000F,
-    shiftIdType      = 0
+    priority = 0x3C0000,
+
+    type        = 0x03F000,
+    source      = 0x000F00,
+    destination = 0x0000F0,
+    idType      = 0x00000F
 };
 
 /**
  * @brief @brief Enumeration that contains masks of the elements composing the
  * sequential information.
  */
-enum SequentialInformation
+enum SequentialInformation : uint8_t
 {
-    firstPacket         = 0x40,
+    firstPacket = 0x40,
+    leftToSend  = 0x3F
+};
+
+enum ShiftInformation : uint8_t
+{
+    // Shift info of IDMask
+    shiftPriority    = 18,
+    shiftType        = 12,
+    shiftSource      = 8,
+    shiftDestination = 4,
+    shiftIdType      = 0,
+    // Shift info of SequentialInformation
     shiftFirstPacket    = 6,
-    leftToSend          = 0x3F,
     shiftLeftToSend     = 0,
     shiftSequentialInfo = 7
 };
@@ -109,11 +116,13 @@ struct CanData
 class CanProtocol : public ActiveObject
 {
 private:
-    // TODO: Add mutex and create get data in can protocol
+    // the physical implementation of the CanBus
+    CanbusDriver* can;
+
+    // the buffer used to store the completed CanData
+    IRQCircularBuffer<CanData, N_BOARDS> buffer;
+
     miosix::FastMutex mutex;
-    CanbusDriver* can;  // the physical can
-    IRQCircularBuffer<CanData, N_PACKET>
-        buffer;  // the buffer used to send data from CanProtocol to CanHandler
 
 public:
     /**
@@ -144,7 +153,7 @@ public:
      * correct sequential id.
      * @warning requires @param data to be not empty.
      *
-     * @param data Contains the id e the data of the packet to send.
+     * @param data Contains the id and the data of the packet to send.
      */
     void sendData(CanData dataToSend);
 
@@ -158,8 +167,8 @@ private:
      * @brief Keeps listening on the canbus for packets.
      *
      * Once a packet is received, it checks if it is expected (that id is
-     * already present in data), if that is the case, it is added to the list.
-     * Once we receive the correct amount of packet we send it to can handler.
+     * already present in data), if it is the case, it's added to the list.
+     * Once we receive the correct amount of packet we offer it in buffer.
      *
      * For now if a packet is missed/received in the wrong order the whole
      * packet will be lost once we receive a new first packet without warning
