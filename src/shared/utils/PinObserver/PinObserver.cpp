@@ -22,17 +22,19 @@
 
 #include "PinObserver.h"
 
+#include <drivers/timer/TimestampTimer.h>
+
 #include <functional>
 
 namespace Boardcore
 {
 
 bool PinObserver::registerPinCallback(miosix::GpioPin pin, PinCallback callback,
-                                      unsigned int detectionThreshold)
+                                      uint32_t detectionThreshold)
 {
     // Try to insert the callback
-    auto result =
-        callbacks.insert({pin, {callback, detectionThreshold, pin.value(), 0}});
+    auto result = callbacks.insert(
+        {pin, {callback, detectionThreshold, 0, 0, pin.value() == 1, 0}});
 
     // Check if the insertion took place
     if (result.second)
@@ -54,6 +56,13 @@ bool PinObserver::start() { return scheduler.start(); }
 
 void PinObserver::stop() { scheduler.stop(); }
 
+PinData PinObserver::getPinData(miosix::GpioPin pin) { return callbacks[pin]; }
+
+void PinObserver::resetPinChangesCount(miosix::GpioPin pin)
+{
+    callbacks[pin].changesCount = 0;
+}
+
 PinObserver::PinObserver() { scheduler.start(); }
 
 void PinObserver::periodicPinValueCheck(miosix::GpioPin pin)
@@ -62,36 +71,37 @@ void PinObserver::periodicPinValueCheck(miosix::GpioPin pin)
     if (callbacks.find(pin) == callbacks.end())
         return;
 
+    auto &pinData = callbacks[pin];
+
     // Retrieve the pin information
-    const PinCallback &callback           = std::get<0>(callbacks[pin]);
-    const unsigned int detectionThreshold = std::get<1>(callbacks[pin]);
-    bool &previousState                   = std::get<2>(callbacks[pin]);
-    unsigned int &detectedCount           = std::get<3>(callbacks[pin]);
+    uint32_t &count = pinData.periodCount;
 
     // Read the current pin status
     const bool newState = pin.value();
 
     // Are we in a transition?
-    if (previousState != newState)
+    if (pinData.lastState != newState)
     {
-        detectedCount = 0;  // Yes, reset the counter
+        count = 0;               // Yes, reset the counter
+        pinData.changesCount++;  // And register the change
     }
     else
     {
-        detectedCount++;  // No, continue to increment
+        count++;  // No, continue to increment
 
         // If the count reaches the threshold, then trigger the event
-        if (detectedCount > detectionThreshold)
+        if (count > pinData.threshold)
         {
             if (newState)
-                callback(PinTransition::RISING_EDGE);
+                pinData.callback(PinTransition::RISING_EDGE);
             else
-                callback(PinTransition::FALLING_EDGE);
+                pinData.callback(PinTransition::FALLING_EDGE);
         }
     }
 
     // Save the current pin status
-    previousState = newState;
+    pinData.lastStateTimestamp = TimestampTimer::getTimestamp();
+    pinData.lastState          = newState;
 }
 
 }  // namespace Boardcore

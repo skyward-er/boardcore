@@ -41,6 +41,19 @@ enum class PinTransition
 };
 
 /**
+ * @brief Pin informations.
+ */
+struct PinData
+{
+    std::function<void(PinTransition)> callback;  ///< The callback function.
+    uint32_t threshold;           ///< Number of periods to trigger an event.
+    uint32_t periodCount;         ///< Number of periods the value was the same.
+    uint64_t lastStateTimestamp;  ///< Timestamp of the last measurement.
+    bool lastState;               ///< The last measured pin state.
+    uint32_t changesCount;        ///< Incremental count of the pin changes.
+};
+
+/**
  * Class used to call a callback after a pin performs a specific transition
  * (RISING or FALLING edge) and stays in the new state for a specific amount of
  * time. Useful if you want to monitor pin transitions but you want to avoid
@@ -71,7 +84,7 @@ public:
      * @return False if another callback was already registered for the pin.
      */
     bool registerPinCallback(miosix::GpioPin pin, PinCallback callback,
-                             unsigned int detectionThreshold = 1);
+                             uint32_t detectionThreshold = 1);
 
     /**
      * @brief Unregisters the callback associated with the specified pin, if
@@ -97,6 +110,16 @@ public:
      */
     void stop();
 
+    /**
+     * @brief Returns the information for the specified pin.
+     */
+    PinData getPinData(miosix::GpioPin pin);
+
+    /**
+     * @brief Resets the changes counter for the specified pin.
+     */
+    void resetPinChangesCount(miosix::GpioPin pin);
+
 private:
     /**
      * @brief Construct a new PinObserver object.
@@ -115,19 +138,8 @@ private:
 
     TaskScheduler scheduler;
 
-    /**
-     * @brief Map of all the callbacks registered in the PinObserver.
-
-     * The type stored is a tuple containing:
-     * - The button callback function;
-     * - Detection threshold: number of periods to trigger an event
-     * - The last pin status;
-     * - Number of periods the pin values stayed the same;
-     */
-    std::map<miosix::GpioPin,
-             std::tuple<PinCallback, unsigned int, bool, unsigned int>,
-             GpioPinCompare>
-        callbacks;
+    /// Map of all the callbacks registered in the PinObserver.
+    std::map<miosix::GpioPin, PinData, GpioPinCompare> callbacks;
 };
 
 }  // namespace Boardcore
