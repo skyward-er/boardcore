@@ -28,50 +28,53 @@
 
 #include "Canbus.h"
 
-#define NPACKET 3  // equals the number of boards in the can system
+#define N_PACKET 3  ///< Number of boards on the bus.
 
 namespace Boardcore
 {
+
 namespace Canbus
 {
 
 /**
- * The id of a can packet is composed of 29 bits
- * priority     4 bit
- * type         6 bit
- * source       4 bit
- * destination  4 bit
- * idType       4 bit
- * firstPacket  1 bit
- * leftToSend   6 bit
+ * The id of a can packet is composed of 29 bits and will be divided such as:
+ * - Priority           4 bit - priority    \
+ * - Type               6 bit - type        |
+ * - Source             4 bit - source      | 22 bits
+ * - Destination        4 bit - destination |
+ * - Type id            4 bit - idType      /
+ * - First packet flag  1 bit - firstPacket \ 7 bits
+ * - Remaining packets  6 bit - leftToSend  /
  * shiftNameOfField the number of shift needed to reach that field
  */
 
 /**
- * @brief The mask of the ID without the sequential information (firstPacket and
- * leftToSend) CompleteID = (IDMask << shiftSequentialInfo)||
- * SequentialInformation
+ * @brief The mask of the ID without the sequential information.
+ *
+ * CompleteID = (IDMask << shiftSequentialInfo) || SequentialInformation
  */
 
 /**
- * @brief enum that contains how the canId without sequential is composed
+ * @brief Enumeration that contains masks of the elements composing the can
+ * packet id without sequential information.
  */
 enum IDMask
 {
     priority         = 0x3C0000,
-    shiftPriority    = 18,  // number of bit before priority
-    type             = 0x3F000,
+    shiftPriority    = 18,
+    type             = 0x03F000,
     shiftType        = 12,
-    source           = 0xF00,
+    source           = 0x000F00,
     shiftSource      = 8,
-    destination      = 0xF0,
+    destination      = 0x0000F0,
     shiftDestination = 4,
-    idType           = 0xF,
+    idType           = 0x00000F,
     shiftIdType      = 0
 };
 
 /**
- * @brief enum that contains how the Sequential information are composed
+ * @brief @brief Enumeration that contains masks of the elements composing the
+ * sequential information.
  */
 enum SequentialInformation
 {
@@ -81,199 +84,90 @@ enum SequentialInformation
     shiftLeftToSend     = 0,
     shiftSequentialInfo = 7
 };
+
 /**
- * @brief Generic struct that contains a logical can packet
- * i.e. 1 accelerometer packet 3*4byte (acc: x,y,z)+timestamp, will be 4
+ * @brief Generic struct that contains a logical can packet.
+ *
+ * i.e. 1 accelerometer packet 3 * 4byte (acc: x,y,z)  +timestamp, will be 4
  * canPacket but a single canData.
  */
 struct CanData
 {
-    int32_t canId =
-        -1;  // the id of the can packet without the last 7 bits (sequence bit)
-    uint8_t len;
+    int32_t canId = -1;  ///< Id of the packet without the sequential info.
+    uint8_t length;
     uint8_t nRec = 0;
     uint64_t payload[32];
-} data[NPACKET];
+};
 
 /**
- * @brief Canbus protocol, given an initialized can this class takes care of
- * sending the multiple packet of CanData with the corresponding id and
- * receiving single CanPacket that are then reframed as one Candata.
+ * @brief Canbus protocol implementation.
+ *
+ * Given a can interface this class takes care of sending CanData packets
+ * segmented into multiple CanPackets and receiving single CanPackets that are
+ * then reframed as CanData.
  */
 class CanProtocol : public ActiveObject
 {
 private:
-    miosix::FastMutex
-        mutex;          // todo add mutex and create get data in can protocol
+    // TODO: Add mutex and create get data in can protocol
+    miosix::FastMutex mutex;
     CanbusDriver* can;  // the physical can
-    IRQCircularBuffer<CanData, NPACKET>
+    IRQCircularBuffer<CanData, N_PACKET>
         buffer;  // the buffer used to send data from CanProtocol to CanHandler
 
 public:
     /**
-     * @brief Construct a new CanProtocol object
-     * @param can CanbusDriver pointer.
+     * @brief Construct a new CanProtocol object.
+     *
+     * @param can Pointer to a CanbusDriver object.
      */
-    CanProtocol(CanbusDriver* can) { this->can = can; }
-    /* Destructor */
-    ~CanProtocol() { (*can).~CanbusDriver(); }
+    explicit CanProtocol(CanbusDriver* can);
+
+    ~CanProtocol();
 
     /**
-     * @brief return the packet, if buffer is empty return an empty packet
+     * @brief Returns the first packet in the buffer.
+     *
+     * If buffer is empty return an empty packet.
      * @warning Should be called only after checking isEmpty()
      */
-    CanData
-    getPacket()  // return the packet, if buffer is empty return an empty packet
-    {
-        CanData temp;
-        miosix::Lock<miosix::FastMutex> l(mutex);
-        if (!buffer.isEmpty())
-        {
-            temp = buffer.pop();
-        }
+    CanData getPacket();
 
-        return temp;
-    }
+    bool isBufferEmpty();
 
-    bool isEmpty()
-    {
-        miosix::Lock<miosix::FastMutex> l(mutex);
-        return buffer.isEmpty();
-    }
-
-    void waitEmpty() { buffer.waitUntilNotEmpty(); }
+    void waitBufferEmpty();
 
     /**
-     * @brief Count the number of byte needed to encode a uint64_t number
+     * @brief Sends a CanData object on the bus.
+     *
+     * Takes a CanData object, splits it into multiple CanPackets with the
+     * correct sequential id.
+     * @warning requires @param data to be not empty.
+     *
+     * @param data Contains the id e the data of the packet to send.
      */
-    uint8_t byteForInt(uint64_t number)
-    {
-        uint8_t i;
-        for (i = 1; i <= 8; i++)
-        {
-            number = number >> 8;
-            if (number == 0)
-                return i;
-        }
-        return i;
-    }
+    void sendData(CanData dataToSend);
+
+private:
     /**
-     * @brief Takes a canData, it splits it into single canpacket with the
-     * correct sequential id
-     * @param toSend = containing the id e the data of the packet to send
-     * @warning requires toSend to be not empty
+     * @brief Count the number of bytes needed to encode a uint64_t number.
      */
-    void sendCan(CanData toSend)  //@requires toSen to not be empty
-    {
-        CanPacket packet;
-        uint8_t tempLen = toSend.len - 1;
-        uint32_t tempId = toSend.canId;
-        packet.ext      = true;
-        packet.id       = (tempId << shiftSequentialInfo) | firstPacket |
-                    (63 - (tempLen & leftToSend));
-        packet.length = byteForInt(toSend.payload[0]);
-        for (int k = 0; k < packet.length; k++)
-        {
-            packet.data[k] = toSend.payload[0] >> (8 * k);
-        }
-        tempLen--;
-        can->send(packet);
-        for (int i = 1; i < toSend.len; i++)
-        {
-            tempId    = toSend.canId;
-            packet.id = (tempId << shiftSequentialInfo) | !(firstPacket) |
-                        (63 - (tempLen & leftToSend));
-            packet.length = byteForInt(toSend.payload[i]);
-            for (int k = 0; k < packet.length; k++)
-            {
-                packet.data[k] = toSend.payload[i] >> (8 * k);
-            }
-            can->send(packet);
-            tempLen--;
-        }
-    }
+    uint8_t byteForInt(uint64_t number);
 
-protected:
     /**
-     * @brief Keeps listening on hte canbus for packets, once received it checks
-     * if they are expected (that id is already present in data), if they are
-     * they are added to the list. once we receive the correct amount of packet
-     * we send it to can handler.
+     * @brief Keeps listening on the canbus for packets.
+     *
+     * Once a packet is received, it checks if it is expected (that id is
+     * already present in data), if that is the case, it is added to the list.
+     * Once we receive the correct amount of packet we send it to can handler.
+     *
+     * For now if a packet is missed/received in the wrong order the whole
+     * packet will be lost once we receive a new first packet without warning
+     * CanHandler.
      */
-    void run() override  // for now if a packet is missed/received in the wrong
-                         // order the whole packet will be lost once we receive
-                         // a new first packet without warning canhandler
-    {
-        uint32_t idNoSeq;
-        uint8_t sourceId;
-        CanPacket packet;
-        // Infinite loop
-        while (true)
-        {
-            can->getRXBuffer().waitUntilNotEmpty();
-            if (!can->getRXBuffer().isEmpty())
-            {
-
-                packet  = can->getRXBuffer().pop().packet;
-                idNoSeq = packet.id >>
-                          shiftSequentialInfo;  // discard the sequence number
-                sourceId = (idNoSeq & source) >> shiftSource;
-                if (sourceId >= 0 &&
-                    sourceId < NPACKET)  // check for maximum size
-                {
-
-                    if (data[sourceId].canId == -1 ||
-                        ((data[sourceId].canId & source) >> shiftSource) ==
-                            sourceId)
-                    {
-                        uint8_t left = 63 - (packet.id & leftToSend);
-
-                        if ((packet.id & firstPacket) >>
-                            shiftFirstPacket)  // it is a first
-                                               // packet of a data;
-                        {
-                            data[sourceId].len   = left + 1;
-                            data[sourceId].canId = idNoSeq;
-                        }
-                        if ((data[sourceId].len - (data[sourceId].nRec + 1)) ==
-                            left)
-                        {
-
-                            uint64_t tempPayload = 0;
-                            for (int f = 0; f < packet.length; f++)
-                            {
-                                uint64_t tempData = packet.data[f];
-                                tempPayload =
-                                    tempPayload | (tempData << (f * 8));
-                            }
-
-                            if (data[sourceId].len - left - 1 >= 0 &&
-                                data[sourceId].len - left - 1 <
-                                    32)  // check for index
-                            {
-
-                                data[sourceId]
-                                    .payload[data[sourceId].len - left - 1] =
-                                    tempPayload;
-                                data[sourceId].nRec++;
-                            }
-                        }
-
-                        if (data[sourceId].nRec == data[sourceId].len &&
-                            data[sourceId].nRec != 0)
-                        {
-                            miosix::Lock<miosix::FastMutex> l(mutex);
-                            buffer.put(data[sourceId]);
-                            // empties the struct
-                            data[sourceId].canId = -1;
-                            data[sourceId].nRec  = 0;
-                            data[sourceId].len   = 0;
-                        }
-                    }
-                }
-            }
-        }
-    }
+    void run() override;
 };
+
 }  // namespace Canbus
+
 }  // namespace Boardcore

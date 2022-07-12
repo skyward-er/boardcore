@@ -46,6 +46,7 @@ foreach(OPT_BOARD ${BOARDS})
         ${SBS_BASE}/src/shared/drivers/adc/InternalADC.cpp
         ${SBS_BASE}/src/shared/drivers/canbus/Canbus.cpp
         ${SBS_BASE}/src/shared/drivers/canbus/CanInterrupt.cpp
+        ${SBS_BASE}/src/shared/drivers/canbus/CanProtocol.cpp
         ${SBS_BASE}/src/shared/drivers/i2c/stm32f2_f4_i2c.cpp
         ${SBS_BASE}/src/shared/drivers/interrupt/external_interrupts.cpp
         ${SBS_BASE}/src/shared/drivers/timer/PWM.cpp
