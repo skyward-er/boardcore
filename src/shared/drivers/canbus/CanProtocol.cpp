@@ -119,61 +119,72 @@ void CanProtocol::run()
             // Check for maximum size
             if (sourceId < N_BOARDS)
             {
+
                 uint8_t left = 63 - (packet.id & leftToSend);
 
                 // Check if it is the first packet in the sequence
                 if (((packet.id & firstPacket) >> shiftFirstPacket) == 0)
                 {
-                    // if it is we save the id (without the sequence number) the
-                    // number of packet (left to send + 1)
+                    // if it is we save the id (without the sequence number)
+                    // the number of packet (left to send + 1)
                     data[sourceId].length = left + 1;
 
-                    // the number of packet = left to send + 1 since it is the
-                    // first packet
+                    // the number of packet = left to send + 1 since it is
+                    // the first packet
                     data[sourceId].canId = idNoSeq;
 
                     // And we reset nRec
                     data[sourceId].nRec = 0;
                 }
 
-                // if the packet is expected, the length of data - the number of
-                // packet recorded +1 (+1 since we are not counting the last
-                // packet) equals the number of packet left to receive
-                if ((data[sourceId].length - (data[sourceId].nRec + 1)) == left)
+                // we accept the packet only if we already received a first
+                // packet (it is already in data)
+                if (data[sourceId].canId == -1 ||
+                    ((data[sourceId].canId & source) >> shiftSource) ==
+                        sourceId)
                 {
-                    uint64_t tempPayload = 0;
-
-                    // we reassemble the payload
-                    for (int f = 0; f < packet.length; f++)
+                    // if the packet is expected, the length of data - the
+                    // number of packet recorded +1 (+1 since we are not
+                    // counting the last packet) equals the number of packet
+                    // left to receive
+                    if ((data[sourceId].length - (data[sourceId].nRec + 1)) ==
+                        left)
                     {
-                        uint64_t tempData = packet.data[f];
-                        tempPayload       = tempPayload | (tempData << (f * 8));
-                    }
+                        uint64_t tempPayload = 0;
 
-                    if (data[sourceId].length - left - 1 >= 0 &&
-                        data[sourceId].length - left - 1 <
-                            32)  // check for index to avoid out of bounds error
-                    {
-                        // and put it in data
-                        data[sourceId]
-                            .payload[data[sourceId].length - left - 1] =
-                            tempPayload;
-                        data[sourceId].nRec++;
-                    }
-                }
-                // If we have received the right number of packet
-                if (data[sourceId].nRec == data[sourceId].length &&
-                    data[sourceId].nRec != 0)
-                {
-                    {
-                        // We put the element of data in buffer
-                        miosix::Lock<miosix::FastMutex> l(mutex);
-                        buffer.put(data[sourceId]);
-                    }
+                        // we reassemble the payload
+                        for (int f = 0; f < packet.length; f++)
+                        {
+                            uint64_t tempData = packet.data[f];
+                            tempPayload = tempPayload | (tempData << (f * 8));
+                        }
 
-                    // Empties the struct
-                    data[sourceId].canId  = -1;
-                    data[sourceId].length = 0;
+                        if (data[sourceId].length - left - 1 >= 0 &&
+                            data[sourceId].length - left - 1 <
+                                32)  // check for index to avoid out of bounds
+                                     // error
+                        {
+                            // and put it in data
+                            data[sourceId]
+                                .payload[data[sourceId].length - left - 1] =
+                                tempPayload;
+                            data[sourceId].nRec++;
+                        }
+                    }
+                    // If we have received the right number of packet
+                    if (data[sourceId].nRec == data[sourceId].length &&
+                        data[sourceId].nRec != 0)
+                    {
+                        {
+                            // We put the element of data in buffer
+                            miosix::Lock<miosix::FastMutex> l(mutex);
+                            buffer.put(data[sourceId]);
+                        }
+
+                        // Empties the struct
+                        data[sourceId].canId  = -1;
+                        data[sourceId].length = 0;
+                    }
                 }
             }
         }

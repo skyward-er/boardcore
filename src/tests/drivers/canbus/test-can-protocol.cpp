@@ -130,7 +130,7 @@ int main()
     toSend2.payload[3] = 1;
     std::thread secondSend(sendData, &protocol, &toSend2);
     TRACE("start \n");
-
+    int error = 0;
     for (;;)
     {
         protocol.waitBufferEmpty();
@@ -138,6 +138,7 @@ int main()
         TRACE("received packet \n");
         if ((!equal(&temp, &toSend1) && !equal(&temp, &toSend2)))
         {
+            error++;
             TRACE("Error\n");
             TRACE("Received  %lu\n", temp.canId);
             TRACE("Received %d\n", temp.length);
@@ -149,6 +150,10 @@ int main()
         else
         {
             TRACE("OK :) id  %lu\n", temp.canId);
+        }
+        if (error != 0)
+        {
+            TRACE("Number of Error  d\n", error);
         }
     }
 }
