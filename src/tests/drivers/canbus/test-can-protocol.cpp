@@ -30,10 +30,8 @@
 #include "drivers/canbus/Canbus.h"
 #include "utils/collections/CircularBuffer.h"
 
-constexpr uint32_t BAUD_RATE         = 500 * 1000;
-constexpr float SAMPLE_POINT         = 87.5f / 100.0f;
-constexpr uint32_t MSG_DEADLINE      = 100;  // ms
-constexpr uint32_t MSG_LOST_DEADLINE = 400;  // ms
+constexpr uint32_t BAUD_RATE = 500 * 1000;
+constexpr float SAMPLE_POINT = 87.5f / 100.0f;
 
 using std::string;
 using namespace Boardcore;
@@ -48,7 +46,7 @@ using CanRX = Gpio<GPIOA_BASE, 11>;
 using CanTX = Gpio<GPIOA_BASE, 12>;
 #endif
 
-#define SLP 100
+#define SLP 5
 miosix::FastMutex mutex;
 CanData toSend1;
 CanData toSend2;
@@ -57,7 +55,7 @@ void sendData(CanProtocol* protocol, CanData* toSend)
     while (true)
     {
 
-        TRACE("send id %d\n", toSend->canId);
+        // TRACE("send id %d\n", toSend->canId);
         {
             miosix::Lock<miosix::FastMutex> l(mutex);
             (*protocol).sendData(*toSend);
@@ -131,11 +129,11 @@ int main()
     std::thread secondSend(sendData, &protocol, &toSend2);
     TRACE("start \n");
     int error = 0;
-    for (;;)
+    for (int f = 0; f < 100000; f++)
     {
         protocol.waitBufferEmpty();
         CanData temp = protocol.getPacket();
-        TRACE("received packet \n");
+        // TRACE("received packet \n");
         if ((!equal(&temp, &toSend1) && !equal(&temp, &toSend2)))
         {
             error++;
@@ -151,9 +149,9 @@ int main()
         {
             TRACE("OK :) id  %lu\n", temp.canId);
         }
-        if (error != 0)
-        {
-            TRACE("Number of Error  d\n", error);
-        }
+    }
+    if (error != 0)
+    {
+        TRACE("Number of Error  d\n", error);
     }
 }
