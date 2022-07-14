@@ -319,7 +319,7 @@
             }
         },
         {
-            "name": "stm32f429zi_skyward_ciuti",
+            "name": "stm32f205rc_skyward_ciuti",
             "cStandard": "c11",
             "cppStandard": "c++11",
             "compilerPath": "/opt/arm-miosix-eabi/bin/arm-miosix-eabi-g++",
