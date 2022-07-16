@@ -50,7 +50,7 @@ public:
     T& put(const T& elem) override
     {
         Lock<FastMutex> l(mutex);
-        cv.broadcast();
+        cv.signal();
         return Super::put(elem);
     }
 
