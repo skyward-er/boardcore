@@ -112,7 +112,7 @@ protected:
      * calling the state ptr function
      * @param e the event
      */
-    void handleEvent(const Event& e)
+    void handleEvent(const Event& e) override
     {
         typedef State (T::*StateHandler)(const Event&);
 
