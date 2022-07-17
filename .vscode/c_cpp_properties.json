@@ -213,23 +213,23 @@
             }
         },
         {
-            "name": "stm32f429zi_parafoil",
+            "name": "stm32f429zi_skyward_parafoil",
             "cStandard": "c11",
             "cppStandard": "c++11",
             "compilerPath": "/opt/arm-miosix-eabi/bin/arm-miosix-eabi-g++",
             "defines": [
                 "DEBUG",
                 "_ARCH_CORTEXM4_STM32F4",
-                "_BOARD_STM32F429ZI_PARAFOIL",
-                "_MIOSIX_BOARDNAME=stm32f429zi_parafoil",
+                "_BOARD_STM32F429ZI_SKYWARD_PARAFOIL",
+                "_MIOSIX_BOARDNAME=stm32f429zi_skyward_parafoil",
                 "HSE_VALUE=8000000",
                 "SYSCLK_FREQ_168MHz=168000000",
                 "_MIOSIX",
                 "__cplusplus=201103L"
             ],
             "includePath": [
-                "${workspaceFolder}/libs/miosix-kernel/miosix/config/arch/cortexM4_stm32f4/stm32f429zi_parafoil",
-                "${workspaceFolder}/libs/miosix-kernel/miosix/arch/cortexM4_stm32f4/stm32f429zi_parafoil",
+                "${workspaceFolder}/libs/miosix-kernel/miosix/config/arch/cortexM4_stm32f4/stm32f429zi_skyward_parafoil",
+                "${workspaceFolder}/libs/miosix-kernel/miosix/arch/cortexM4_stm32f4/stm32f429zi_skyward_parafoil",
                 "${workspaceFolder}/libs/miosix-kernel/miosix/arch/cortexM4_stm32f4/common",
                 "${workspaceFolder}/libs/miosix-kernel/miosix/arch/common",
                 "${workspaceFolder}/libs/miosix-kernel/miosix",
@@ -243,8 +243,8 @@
             ],
             "browse": {
                 "path": [
-                    "${workspaceFolder}/libs/miosix-kernel/miosix/config/arch/cortexM4_stm32f4/stm32f429zi_parafoil",
-                    "${workspaceFolder}/libs/miosix-kernel/miosix/arch/cortexM4_stm32f4/stm32f429zi_parafoil",
+                    "${workspaceFolder}/libs/miosix-kernel/miosix/config/arch/cortexM4_stm32f4/stm32f429zi_skyward_parafoil",
+                    "${workspaceFolder}/libs/miosix-kernel/miosix/arch/cortexM4_stm32f4/stm32f429zi_skyward_parafoil",
                     "${workspaceFolder}/libs/miosix-kernel/miosix/arch/cortexM4_stm32f4/common",
                     "${workspaceFolder}/libs/miosix-kernel/miosix/stdlib_integration",
                     "${workspaceFolder}/libs/miosix-kernel/miosix/arch/common",

@@ -40,7 +40,7 @@ add_executable(config-dsgamma src/entrypoints/config-dsgamma.cpp)
 sbs_target(config-dsgamma stm32f429zi_stm32f4discovery)
 
 add_executable(imu-calibration src/entrypoints/imu-calibration.cpp)
-sbs_target(imu-calibration stm32f429zi_parafoil)
+sbs_target(imu-calibration stm32f429zi_skyward_parafoil)
 
 add_executable(mxgui-helloworld src/entrypoints/examples/mxgui-helloworld.cpp)
 sbs_target(mxgui-helloworld stm32f429zi_stm32f4discovery)
@@ -133,13 +133,13 @@ add_executable(test-kalman-benchmark src/tests/algorithms/Kalman/test-kalman-ben
 sbs_target(test-kalman-benchmark stm32f429zi_stm32f4discovery)
 
 add_executable(test-attitude-parafoil src/tests/algorithms/NAS/test-attitude-parafoil.cpp)
-sbs_target(test-attitude-parafoil stm32f429zi_parafoil)
+sbs_target(test-attitude-parafoil stm32f429zi_skyward_parafoil)
 
 add_executable(test-attitude-stack src/tests/algorithms/NAS/test-attitude-stack.cpp)
 sbs_target(test-attitude-stack stm32f429zi_skyward_death_stack_x)
 
 add_executable(test-nas-parafoil src/tests/algorithms/NAS/test-nas-parafoil.cpp)
-sbs_target(test-nas-parafoil stm32f429zi_parafoil)
+sbs_target(test-nas-parafoil stm32f429zi_skyward_parafoil)
 
 add_executable(test-nas-stack src/tests/algorithms/NAS/test-nas-stack.cpp)
 sbs_target(test-nas-stack stm32f429zi_skyward_death_stack_x)
@@ -151,7 +151,7 @@ add_executable(test-triad src/tests/algorithms/NAS/test-triad.cpp)
 sbs_target(test-triad stm32f429zi_skyward_death_stack_x)
 
 add_executable(test-triad-parafoil src/tests/algorithms/NAS/test-triad-parafoil.cpp)
-sbs_target(test-triad-parafoil stm32f429zi_parafoil)
+sbs_target(test-triad-parafoil stm32f429zi_skyward_parafoil)
 
 add_executable(test-ada src/tests/algorithms/ADA/test-ada.cpp)
 sbs_target(test-ada stm32f429zi_skyward_death_stack_v3)
@@ -349,7 +349,7 @@ add_executable(test-max31855 src/tests/sensors/test-max31855.cpp)
 sbs_target(test-max31855 stm32f429zi_stm32f4discovery)
 
 add_executable(test-mpu9250 src/tests/sensors/test-mpu9250.cpp)
-sbs_target(test-mpu9250 stm32f429zi_parafoil)
+sbs_target(test-mpu9250 stm32f429zi_skyward_parafoil)
 
 add_executable(test-ms5803 src/tests/sensors/test-ms5803.cpp)
 sbs_target(test-ms5803 stm32f429zi_skyward_death_stack_x)
