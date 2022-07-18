@@ -111,6 +111,11 @@ public:
     void stop();
 
     /**
+     * @brief True if the PinObserver started correctly.
+     */
+    bool isRunning();
+
+    /**
      * @brief Returns the information for the specified pin.
      */
     PinData getPinData(miosix::GpioPin pin);
