@@ -152,6 +152,6 @@ int main()
     }
     if (error != 0)
     {
-        TRACE("Number of Error  d\n", error);
+        TRACE("Number of Error  %d\n", error);
     }
 }

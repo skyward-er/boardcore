@@ -69,7 +69,7 @@ enum IDMask : uint32_t
 };
 
 /**
- * @brief @brief Enumeration that contains masks of the elements composing the
+ * @brief Enumeration that contains masks of the elements composing the
  * sequential information.
  */
 enum SequentialInformation : uint8_t
@@ -116,10 +116,10 @@ struct CanData
 class CanProtocol : public ActiveObject
 {
 private:
-    // the physical implementation of the CanBus
+    // The physical implementation of the CanBus
     CanbusDriver* can;
 
-    // the buffer used to store the completed CanData
+    // The buffer used to store the completed CanData
     IRQCircularBuffer<CanData, N_BOARDS> buffer;
 
     miosix::FastMutex mutex;
