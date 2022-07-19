@@ -23,6 +23,7 @@
 #pragma once
 
 #include <actuators/Servo/ServoData.h>
+#include <algorithms/ADA/ADAData.h>
 #include <algorithms/NAS/NASState.h>
 #include <diagnostic/CpuMeter/CpuMeter.h>
 #include <diagnostic/PrintLoggerData.h>
@@ -49,6 +50,7 @@
 #include <sensors/SensorData.h>
 #include <sensors/UBXGPS/UBXGPSData.h>
 #include <sensors/VN100/VN100Data.h>
+#include <sensors/analog/AnalogLoadCellData.h>
 #include <sensors/analog/BatteryVoltageSensorData.h>
 #include <sensors/analog/CurrentSensorData.h>
 #include <sensors/analog/pressure/honeywell/HSCMAND015PAData.h>
@@ -56,6 +58,8 @@
 #include <sensors/analog/pressure/honeywell/HSCMRNN160KAData.h>
 #include <sensors/analog/pressure/honeywell/SSCDANN030PAAData.h>
 #include <sensors/analog/pressure/honeywell/SSCDRRN015PDAData.h>
+#include <sensors/analog/pressure/nxp/MPXH6115AData.h>
+#include <sensors/analog/pressure/nxp/MPXH6400AData.h>
 #include <sensors/analog/pressure/nxp/MPXHZ6130AData.h>
 
 #include <fstream>
@@ -76,6 +80,7 @@ namespace LogTypes
 void registerTypes(Deserializer& ds)
 {
     ds.registerType<ServoData>();
+    ds.registerType<ADAState>();
     ds.registerType<NASState>();
     ds.registerType<CpuMeterData>();
     ds.registerType<LoggingString>();
@@ -103,14 +108,17 @@ void registerTypes(Deserializer& ds)
     ds.registerType<TemperatureData>();
     ds.registerType<UBXGPSData>();
     ds.registerType<VN100Data>();
+    ds.registerType<AnalogLoadCellData>();
     ds.registerType<BatteryVoltageSensorData>();
     ds.registerType<CurrentSensorData>();
-    ds.registerType<MPXHZ6130AData>();
     ds.registerType<HSCMAND015PAData>();
     ds.registerType<HSCMRNN030PAData>();
     ds.registerType<HSCMRNN160KAData>();
     ds.registerType<SSCDANN030PAAData>();
     ds.registerType<SSCDRRN015PDAData>();
+    ds.registerType<MPXH6115AData>();
+    ds.registerType<MPXH6400AData>();
+    ds.registerType<MPXHZ6130AData>();
 }
 
 }  // namespace LogTypes
