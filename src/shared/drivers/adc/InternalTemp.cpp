@@ -22,10 +22,12 @@
 
 #include "InternalTemp.h"
 
+#ifdef _ARCH_CORTEXM4_STM32F4
 #define TEMP30_CAL_VALUE ((uint16_t*)((uint32_t)0x1FFF7A2C))
 #define TEMP110_CAL_VALUE ((uint16_t*)((uint32_t)0x1FFF7A2E))
 #define TEMP30 30
 #define TEMP110 110
+#endif
 
 namespace Boardcore
 {
@@ -40,7 +42,7 @@ bool InternalTemp::init()
 {
     bool result = adc.init();
 
-#ifdef _BOARD_STM32F4DISCOVERY
+#if defined(_BOARD_STM32F4DISCOVERY) || defined(_ARCH_CORTEXM3_STM32F2)
     adc.addRegularChannel(InternalADC::CH16);
 #else
     adc.addRegularChannel(InternalADC::CH18);
@@ -56,7 +58,7 @@ bool InternalTemp::selfTest() { return adc.selfTest(); }
 
 InternalTempData InternalTemp::sampleImpl()
 {
-#ifdef _BOARD_STM32F4DISCOVERY
+#if defined(_BOARD_STM32F4DISCOVERY) || defined(_ARCH_CORTEXM3_STM32F2)
     auto adcData = adc.readChannel(InternalADC::CH16, sampleTime);
 #else
     auto adcData = adc.readChannel(InternalADC::CH18, sampleTime);
@@ -65,14 +67,16 @@ InternalTempData InternalTemp::sampleImpl()
     InternalTempData data;
     data.temperatureTimestamp = adcData.voltageTimestamp;
 
+#ifdef _ARCH_CORTEXM3_STM32F2
     // Default conversion
-    // data.temperature          = ((adcData.voltage - 0.76) / 0.0025) + 25;
-
+    data.temperature = ((adcData.voltage - 0.76) / 0.0025) + 25;
+#else
     // Factory calibration
     float voltage30  = static_cast<float>(*TEMP30_CAL_VALUE) * 3.3 / 4095;
     float voltage110 = static_cast<float>(*TEMP110_CAL_VALUE) * 3.3 / 4095;
     float slope      = (voltage110 - voltage30) / (TEMP110 - TEMP30);
     data.temperature = ((adcData.voltage - voltage30) / slope) + TEMP30;
+#endif
 
     return data;
 }

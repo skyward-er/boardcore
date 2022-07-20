@@ -37,7 +37,7 @@ int main()
     for (;;)
     {
         temp.sample();
-        printf("%2.3f test\n", temp.getLastSample().temperature);
+        printf("Temperature: %2.3f\n", temp.getLastSample().temperature);
 
         miosix::delayMs(1000);
     }
