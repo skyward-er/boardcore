@@ -43,6 +43,7 @@ foreach(OPT_BOARD ${BOARDS})
         ${SBS_BASE}/src/shared/diagnostic/PrintLogger.cpp
 
         # Drivers
+        ${SBS_BASE}/src/shared/drivers/adc/InternalTemp.cpp
         ${SBS_BASE}/src/shared/drivers/adc/InternalADC.cpp
         ${SBS_BASE}/src/shared/drivers/canbus/Canbus.cpp
         ${SBS_BASE}/src/shared/drivers/canbus/CanInterrupt.cpp
