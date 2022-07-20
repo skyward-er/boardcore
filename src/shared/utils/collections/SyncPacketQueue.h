@@ -158,7 +158,7 @@ size_t Packet<len>::append(const uint8_t* msg, size_t msgLen)
     {
         // Set the packet's timestamp when the first message is inserted
         if (content.size() == 0)
-            timestamp = TimestampTimer::getInstance().getTimestamp();
+            timestamp = TimestampTimer::getTimestamp();
 
         // Append the message to the packet
         content.insert(content.end(), msg, msg + msgLen);

@@ -71,9 +71,7 @@ void printu64(uint64_t v)
     uint8_t* p = reinterpret_cast<uint8_t*>(&v);
 
     for (int i = 0; i < 8; i++)
-    {
         printf("%02X ", p[i]);
-    }
 
     printf("\n");
 }

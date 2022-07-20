@@ -24,20 +24,31 @@
 
 #include <diagnostic/SkywardStack.h>
 #include <diagnostic/StackLogger.h>
+#include <drivers/timer/TimestampTimer.h>
 
 using namespace miosix;
 
 namespace Boardcore
 {
 
+namespace CpuMeter
+{
+
 const int period         = 100;
 const int gap            = 100;
 const int watchdogPeriod = 20 * period;
 
-static volatile float utilization   = 0.f;
+static FastMutex utilizationMutex;
+static Stats utilization;
 static volatile unsigned int update = 0;
 
-float averageCpuUtilization() { return utilization; }
+CpuMeterData getCpuStats()
+{
+    Lock<FastMutex> l(utilizationMutex);
+    return CpuMeterData(TimestampTimer::getTimestamp(), utilization.getStats());
+}
+
+void resetCpuStats() { utilization.reset(); }
 
 #ifdef ENABLE_CPU_METER
 
@@ -51,7 +62,10 @@ static void cpuMeterThread(void*)
 
         update++;
         float delta = t2 - t1;
-        utilization = 100.f * (1.f - static_cast<float>(period) / delta);
+        {
+            Lock<FastMutex> l(utilizationMutex);
+            utilization.add(100.f * (1.f - static_cast<float>(period) / delta));
+        }
 
         Thread::sleep(gap);
 
@@ -65,7 +79,10 @@ static void watchdogThread(void*)
     {
         Thread::sleep(watchdogPeriod);
         if (previous == update)
-            utilization = 100.f;
+        {
+            Lock<FastMutex> l(utilizationMutex);
+            utilization.add(100.0);
+        }
 
         StackLogger::getInstance().updateStack(THID_CPU_WD);
     }
@@ -86,5 +103,7 @@ public:
 static CpuMeterLauncher launcher;
 
 #endif  // ENABLE_CPU_METER
+
+}  // namespace CpuMeter
 
 }  // namespace Boardcore

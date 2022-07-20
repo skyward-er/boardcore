@@ -218,7 +218,7 @@ int main()
         RxData rxd = trans->getReceiver().getRxData();
 
         logger.log(xbeeDriver->getStatus());
-        logger.log(logger.getLoggerStats());
+        logger.log(logger.getStats());
 
         long long tick = getTick();
         unsigned int h = tick / (1000 * 3600);

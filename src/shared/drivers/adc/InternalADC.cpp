@@ -197,11 +197,11 @@ ADCData InternalADC::readChannel(Channel channel, SampleTime sampleTime)
     while (!(adc->SR & ADC_SR_EOC))
         ;
 
-    return {TimestampTimer::getInstance().getTimestamp(), channel,
+    return {TimestampTimer::getTimestamp(), channel,
             static_cast<uint16_t>(adc->DR) * supplyVoltage / RESOLUTION};
 }
 
-ADCData InternalADC::getVoltage(Channel channel)
+InternalADCData InternalADC::getVoltage(Channel channel)
 {
     float voltage = 0;
 
@@ -210,7 +210,7 @@ ADCData InternalADC::getVoltage(Channel channel)
         voltage = values[indexMap[channel]] * supplyVoltage / RESOLUTION;
     }
 
-    return ADCData{timestamp, (uint8_t)channel, voltage};
+    return InternalADCData{timestamp, (uint8_t)channel, voltage};
 }
 
 bool InternalADC::selfTest()
@@ -226,7 +226,7 @@ bool InternalADC::selfTest()
     return true;
 }
 
-ADCData InternalADC::sampleImpl()
+InternalADCData InternalADC::sampleImpl()
 {
     if (!isUsingDMA)
     {
@@ -272,7 +272,7 @@ ADCData InternalADC::sampleImpl()
         }
     }
 
-    timestamp = TimestampTimer::getInstance().getTimestamp();
+    timestamp = TimestampTimer::getTimestamp();
 
     return lastSample;
 }

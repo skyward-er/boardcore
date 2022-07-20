@@ -27,21 +27,21 @@
 namespace Boardcore
 {
 
-TimestampTimer::TimestampTimer()
-{
-    initTimestampTimer();
-    enableTimestampTimer();
-}
-
 #ifndef COMPILE_FOR_HOST
 
-TIM_TypeDef *TimestampTimer::getTimer() { return timer.getTimer(); }
+namespace TimestampTimer
+{
 
-void TimestampTimer::resetTimestamp() { timer.setCounter(0); }
+GP32bitTimer timestampTimer = initTimestampTimer();
+
+}  // namespace TimestampTimer
+
+void TimestampTimer::resetTimestamp() { timestampTimer.setCounter(0); }
 
 // TODO: Keep support for STM32F103
-void TimestampTimer::initTimestampTimer()
+GP32bitTimer TimestampTimer::initTimestampTimer()
 {
+    GP32bitTimer timer = GP32bitTimer{TIM2};
     {
         miosix::FastInterruptDisableLock dLock;
         // Enable TIM2 peripheral clock
@@ -55,33 +55,17 @@ void TimestampTimer::initTimestampTimer()
     // Generate an update event to apply the new prescaler value
     timer.generateUpdate();
 
+    timestampTimer.enable();
+
     PrintLogger logger = Logging::getLogger("timestamptimer");
     LOG_INFO(logger, "Initialized timestamp timer");
-}
 
-void TimestampTimer::enableTimestampTimer()
-{
-    timer.enable();
-
-    PrintLogger logger = Logging::getLogger("timestamptimer");
-    LOG_INFO(logger, "Enabled timestamp timer");
+    return timer;
 }
 
 #else
 
 void TimestampTimer::resetTimestamp() {}
-
-void TimestampTimer::initTimestampTimer()
-{
-    PrintLogger logger = Logging::getLogger("timestamptimer");
-    LOG_INFO(logger, "Initialized timestamp timer [COMPILE_FOR_HOST]");
-}
-
-void TimestampTimer::enableTimestampTimer()
-{
-    PrintLogger logger = Logging::getLogger("timestamptimer");
-    LOG_INFO(logger, "Enabled timestamp timer [COMPILE_FOR_HOST]");
-}
 
 #endif
 

@@ -58,14 +58,14 @@ namespace Boardcore
  * @tparam PktLength Maximum length in bytes of each transceiver packet.
  * @tparam OutQueueSize Max number of transceiver packets in the output queue.
  * @tparam MavMsgLength Max length of a mavlink message. By default is 255 the
- * maximun possible but can be replaces with MAVLINK_MAX_DIALECT_PAYLOAD_SIZE
+ * maximum possible but can be replaces with MAVLINK_MAX_DIALECT_PAYLOAD_SIZE
  * for a specific protocol.
  */
 template <unsigned int PktLength, unsigned int OutQueueSize,
           unsigned int MavMsgLength = MAVLINK_MAX_PAYLOAD_LEN>
 class MavlinkDriver
 {
-    ///< Alias of the function to be executed on message reception.
+    /// Alias of the function to be executed on message reception.
     using MavHandler = std::function<void(MavlinkDriver* channel,
                                           const mavlink_message_t& msg)>;
 
@@ -89,6 +89,11 @@ public:
     bool start();
 
     /**
+     * @brief Tells whether the driver was started.
+     */
+    bool isStarted();
+
+    /**
      * @brief Stops sender and receiver threads.
      */
     void stop();
@@ -98,9 +103,18 @@ public:
      * Message is discarded if the queue is full.
      *
      * @param msg Message to send (mavlink struct).
-     * @return true if the message could be enqueued (queue not full).
+     * @return True if the message could be enqueued.
      */
     bool enqueueMsg(const mavlink_message_t& msg);
+
+    /**
+     * @brief Enqueue a raw packet message into the sync packet queue.
+     *
+     * @param msg Message to send.
+     * @param size Length in bytes.
+     * @return True if the message was enqueued.
+     */
+    bool enqueueRaw(uint8_t* msg, size_t size);
 
     /**
      * @brief Receiver thread: reads one char at a time from the transceiver and
@@ -110,16 +124,18 @@ public:
      * executed.
      */
     void runReceiver();
+
     /**
      * @brief Sender Thread: Periodically flushes the message queue and sends
      * all the enqueued messages.
+     *
      * After every send, the thread sleeps to guarantee some silence on the
      * channel.
      */
     void runSender();
 
     /**
-     * @brief Synchronized status getter
+     * @brief Synchronized status getter.
      */
     MavlinkStatus getStatus();
 
@@ -130,7 +146,8 @@ public:
 
 private:
     /**
-     * @brief Calls the run member function
+     * @brief Calls the run member function.
+     *
      * @param arg the object pointer cast to void*
      */
     static void rcvLauncher(void* arg)
@@ -139,7 +156,8 @@ private:
     }
 
     /**
-     * @brief Calls the run member function
+     * @brief Calls the run member function.
+     *
      * @param arg the object pointer cast to void*
      */
     static void sndLauncher(void* arg)
@@ -147,12 +165,12 @@ private:
         reinterpret_cast<MavlinkDriver*>(arg)->runSender();
     }
 
-    void updateQueueStats(int dropped);
+    void updateQueueStats(bool appended);
 
     void updateSenderStats(size_t msgCount, bool sent);
 
-    Transceiver* device;   // transceiver used to send and receive
-    MavHandler onReceive;  // function executed on message rcv
+    Transceiver* device;   ///< transceiver used to send and receive
+    MavHandler onReceive;  ///< function executed on message rcv
 
     // Tweakable params
     uint16_t sleepAfterSend;
@@ -224,9 +242,16 @@ bool MavlinkDriver<PktLength, OutQueueSize, MavMsgLength>::start()
     }
 
     if (sndStarted && rcvStarted)
-        LOG_DEBUG(logger, "Start ok (sender and receiver)\n");
+        LOG_DEBUG(logger, "Sender and receiver started");
 
-    return (sndStarted && rcvStarted);
+    return sndStarted && rcvStarted;
+}
+
+template <unsigned int PktLength, unsigned int OutQueueSize,
+          unsigned int MavMsgLength>
+bool MavlinkDriver<PktLength, OutQueueSize, MavMsgLength>::isStarted()
+{
+    return sndStarted && rcvStarted;
 }
 
 template <unsigned int PktLength, unsigned int OutQueueSize,
@@ -245,27 +270,42 @@ bool MavlinkDriver<PktLength, OutQueueSize, MavMsgLength>::enqueueMsg(
     const mavlink_message_t& msg)
 {
     // Convert mavlink message to a byte array
-    uint8_t msgtempBuf[MAVLINK_NUM_NON_PAYLOAD_BYTES + MavMsgLength];
-    int msgLen = mavlink_msg_to_send_buffer(msgtempBuf, &msg);
+    uint8_t msgTempBuf[MAVLINK_NUM_NON_PAYLOAD_BYTES + MavMsgLength];
+    int msgLen = mavlink_msg_to_send_buffer(msgTempBuf, &msg);
 
     // Append message to the queue
-    int dropped = outQueue.put(msgtempBuf, msgLen);
+    bool appended = outQueue.put(msgTempBuf, msgLen);
 
     // Update stats
-    updateQueueStats(dropped);
+    updateQueueStats(appended);
 
-    // return ok even if a packet was discarded
-    return dropped != -1;
+    // Return ok even if a packet was discarded
+    return appended;
+}
+
+template <unsigned int PktLength, unsigned int OutQueueSize,
+          unsigned int MavMsgLength>
+bool MavlinkDriver<PktLength, OutQueueSize, MavMsgLength>::enqueueRaw(
+    uint8_t* msg, size_t size)
+{
+    // Append message to the queue
+    bool appended = outQueue.put(msg, size);
+
+    // Update stats
+    updateQueueStats(appended);
+
+    // Return ok even if a packet was discarded
+    return appended;
 }
 
 template <unsigned int PktLength, unsigned int OutQueueSize,
           unsigned int MavMsgLength>
 void MavlinkDriver<PktLength, OutQueueSize, MavMsgLength>::updateQueueStats(
-    int dropped)
+    bool appended)
 {
     miosix::Lock<miosix::FastMutex> l(mtxStatus);
 
-    if (dropped != 0)
+    if (!appended)
     {
         LOG_ERR(logger, "Buffer full, the oldest message has been discarded");
         status.nDroppedPackets++;
@@ -345,8 +385,7 @@ void MavlinkDriver<PktLength, OutQueueSize, MavMsgLength>::runSender()
             pkt = outQueue.get();
 
             // If the packet is ready or too old, send it
-            uint64_t age = TimestampTimer::getInstance().getTimestamp() -
-                           pkt.getTimestamp();
+            uint64_t age = TimestampTimer::getTimestamp() - pkt.getTimestamp();
             if (pkt.isReady() || age >= outBufferMaxAge * 1e3)
             {
                 outQueue.pop();  //  Remove the packet from queue
@@ -392,7 +431,7 @@ template <unsigned int PktLength, unsigned int OutQueueSize,
 MavlinkStatus MavlinkDriver<PktLength, OutQueueSize, MavMsgLength>::getStatus()
 {
     miosix::Lock<miosix::FastMutex> l(mtxStatus);
-    status.timestamp = miosix::getTick();
+    status.timestamp = TimestampTimer::getTimestamp();
     return status;
 }
 

@@ -1,4 +1,4 @@
-/* Copyright (c) 2020 Skyward Experimental Rocketry
+/* Copyright (c) 2020-2022 Skyward Experimental Rocketry
  * Authors: Alessandro Del Duca, Luca Conterio, Marco Cella
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -100,7 +100,7 @@ NAS::NAS(NASConfig config) : config(config)
 
 void NAS::predictAcc(const Vector3f& acceleration)
 {
-    Matrix3f A   = body2ned(x.block<4, 1>(IDX_QUAT, 0));
+    Matrix3f A = SkyQuaternion::quat2rotationMatrix(x.block<4, 1>(IDX_QUAT, 0));
     Vector3f pos = x.block<3, 1>(IDX_POS, 0);
     Vector3f vel = x.block<3, 1>(IDX_VEL, 0);
 
@@ -120,6 +120,12 @@ void NAS::predictAcc(const Vector3f& acceleration)
     // Variance propagation
     Eigen::Matrix<float, 6, 6> Pl = P.block<6, 6>(0, 0);
     P.block<6, 6>(0, 0)           = F_lin * Pl * F_lin_tr + Q_lin;
+}
+
+void NAS::predictAcc(const AccelerometerData& acceleration)
+{
+    predictAcc(Vector3f{acceleration.accelerationX, acceleration.accelerationY,
+                        acceleration.accelerationZ});
 }
 
 void NAS::predictGyro(const Vector3f& angularVelocity)
@@ -151,17 +157,23 @@ void NAS::predictGyro(const Vector3f& angularVelocity)
     P.block<6, 6>(IDX_QUAT, IDX_QUAT) = Pq;
 }
 
-void NAS::correctBaro(const float pressure, const float mslPress,
-                      const float mslTemp)
+void NAS::predictGyro(const GyroscopeData& angularVelocity)
+{
+    predictGyro(Vector3f{angularVelocity.angularVelocityX,
+                         angularVelocity.angularVelocityY,
+                         angularVelocity.angularVelocityZ});
+}
+
+void NAS::correctBaro(const float pressure)
 {
     Matrix<float, 1, 6> H = Matrix<float, 1, 6>::Zero();
 
     // Temperature at current altitude. Since in NED the altitude is negative,
     // mslTemperature returns temperature at current altitude and not at msl
-    float temp = Aeroutils::mslTemperature(mslTemp, x(2));
+    float temp = Aeroutils::mslTemperature(reference.mslTemperature, x(2));
 
     // Compute gradient of the altitude-pressure function
-    H[2] = Constants::a * Constants::n * mslPress *
+    H[2] = Constants::a * Constants::n * reference.mslPressure *
            powf(1 - Constants::a * x(2) / temp, -Constants::n - 1) / temp;
 
     Eigen::Matrix<float, 6, 6> Pl = P.block<6, 6>(0, 0);
@@ -170,7 +182,8 @@ void NAS::correctBaro(const float pressure, const float mslPress,
     Matrix<float, 6, 1> K = Pl * H.transpose() * S.inverse();
     P.block<6, 6>(0, 0)   = (Matrix<float, 6, 6>::Identity() - K * H) * Pl;
 
-    float y_hat = Aeroutils::mslPressure(mslPress, mslTemp, x(2));
+    float y_hat = Aeroutils::mslPressure(reference.mslPressure,
+                                         reference.mslTemperature, x(2));
 
     // Update the state
     x.head<6>() = x.head<6>() + K * (pressure - y_hat);
@@ -193,10 +206,23 @@ void NAS::correctGPS(const Vector4f& gps)
     x.head<6>() = x.head<6>() + K * (gps - H);
 }
 
+void NAS::correctGPS(const GPSData& gps)
+{
+    if (!gps.fix)
+        return;
+
+    auto gpsPos = Aeroutils::geodetic2NED(
+        {gps.latitude, gps.longitude},
+        {reference.startLatitude, reference.startLongitude});
+
+    correctGPS(
+        Vector4f{gpsPos(0), gpsPos(1), gps.velocityNorth, gps.velocityEast});
+}
+
 void NAS::correctMag(const Vector3f& mag)
 {
     Vector4f q = x.block<4, 1>(IDX_QUAT, 0);
-    Matrix3f A = body2ned(q).transpose();
+    Matrix3f A = SkyQuaternion::quat2rotationMatrix(q).transpose();
 
     // Rotate the NED magnetic field in the relative reference frame
     Vector3f mEst = A * config.NED_MAG;
@@ -226,10 +252,17 @@ void NAS::correctMag(const Vector3f& mag)
     P.block<6, 6>(IDX_QUAT, IDX_QUAT) = Pq;
 }
 
+void NAS::correctMag(const MagnetometerData& mag)
+{
+    Vector3f magV = {mag.magneticFieldX, mag.magneticFieldY,
+                     mag.magneticFieldZ};
+    correctMag(magV.normalized());
+}
+
 void NAS::correctAcc(const Eigen::Vector3f& acc)
 {
     Vector4f q = x.block<4, 1>(IDX_QUAT, 0);
-    Matrix3f A = body2ned(q).transpose();
+    Matrix3f A = SkyQuaternion::quat2rotationMatrix(q).transpose();
 
     // Rotate the NED magnetic field in the relative reference frame
     Vector3f aEst = A * gravityNed;
@@ -262,6 +295,12 @@ void NAS::correctAcc(const Eigen::Vector3f& acc)
     Matrix<float, 6, 6> tmp = Matrix<float, 6, 6>::Identity() - K * H;
     Pq = tmp * Pq * tmp.transpose() + K * R_mag * K.transpose();
     P.block<6, 6>(IDX_QUAT, IDX_QUAT) = Pq;
+}
+
+void NAS::correctAcc(const AccelerometerData& acc)
+{
+    Vector3f accV = {acc.accelerationX, acc.accelerationY, acc.accelerationZ};
+    correctAcc(accV.normalized());
 }
 
 void NAS::correctPitot(const float deltaP, const float staticP)
@@ -303,7 +342,7 @@ void NAS::correctPitot(const float deltaP, const float staticP)
 
 NASState NAS::getState() const
 {
-    return NASState(TimestampTimer::getInstance().getTimestamp(), x);
+    return NASState(TimestampTimer::getTimestamp(), x);
 }
 
 Eigen::Matrix<float, 13, 1> NAS::getX() const { return x; }
@@ -312,27 +351,11 @@ void NAS::setState(const NASState& state) { this->x = state.getX(); }
 
 void NAS::setX(const Eigen::Matrix<float, 13, 1>& x) { this->x = x; }
 
-Matrix3f NAS::body2ned(const Vector4f& q)
+void NAS::setReferenceValues(const ReferenceValues reference)
 {
-    // clang-format off
-    return Matrix3f{
-        {
-            q[0] * q[0] - q[1] * q[1] - q[2] * q[2] + q[3] * q[3],
-            2.0f * (q[0] * q[1] - q[2] * q[3]),
-            2.0f * (q[0] * q[2] + q[1] * q[3]),
-        },
-        {
-            2.0f * (q[0] * q[1] + q[2] * q[3]),
-            - q[0] * q[0] + q[1] * q[1] - q[2] * q[2] + q[3] * q[3],
-            2.0f * (q[1] * q[2] - q[0] * q[3]),
-        },
-        {
-            2.0f * (q[0] * q[2] - q[1] * q[3]),
-            2.0f * (q[1] * q[2] + q[0] * q[3]),
-            - q[0] * q[0] - q[1] * q[1] + q[2] * q[2] + q[3] * q[3]
-        }
-    };
-    // clang-format on
+    this->reference = reference;
 }
+
+ReferenceValues NAS::getReferenceValues() { return reference; }
 
 }  // namespace Boardcore

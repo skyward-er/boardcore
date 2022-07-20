@@ -31,13 +31,7 @@ namespace Boardcore
 {
 
 /**
- * This enum act like versors towards the chosen axis.
- *
- * X, Y and Z always set according to the right hand rule, so that:
- * X is the index
- * Y is the second finger
- * Z is the thumb
- *
+ * This enum is used to represent directions relative to X, Y and X.
  */
 enum class Direction : uint8_t
 {
@@ -53,9 +47,9 @@ constexpr const char* humanFriendlyDirection[]{
     "North", "South", "East", "West", "Down", "Up",
 };
 
-inline Eigen::Vector3f orientationToVector(Direction val)
+inline Eigen::Vector3f orientationToVector(Direction direction)
 {
-    switch (val)
+    switch (direction)
     {
         case Direction::POSITIVE_X:
             return {1, 0, 0};
@@ -70,65 +64,43 @@ inline Eigen::Vector3f orientationToVector(Direction val)
         case Direction::NEGATIVE_Z:
             return {0, 0, -1};
         default:
-            /* never happens, added just to shut up the warnings */
+            // never happens, added just to shut up the warnings
             return {0, 0, 0};
     }
 }
 
 /**
- * This struct represents in the most general way any kind of transformation of
- * the reference frame (axis X, Y and Z).
- * This data type is intended to simplify the code, so you shouldn't instantiate
- * this struct directly, but rather use the structures AxisAngleOrientation or
- * AxisOrthoOrientation that will be automatically corrected to this one, thanks
- * to the implicit cast in favor of AxisOrientation.
+ * @brief This struct represents in the most general way any kind of
+ * transformation of the reference frame (axis X, Y and Z).
  *
- * For example:
- *
- * AxisAngleOrientation angles ( PI/2, PI, 0);
- * AxisOrthoOrientation ortho  ( Direction::NEGATIVE_X,
- * Direction::POSITIVE_Z );
- *
- * // The implicit cast is supported and recommended
- * AxisOrientation converted1 = angles;
- * AxisOrientation converted2 = ortho;
- *
- * // Now we can use the generated matrix:
- * Eigen::Vector3f zeta = convertedX.getMatrix() * Eigen::Vector3f { 0, 0, 1 }
- *
+ * This class is abstract, use AxisAngleOrientation, AxisOrthoOrientation or
+ * AxisRelativeOrientation.
  */
 struct AxisOrientation
 {
-    Eigen::Matrix3f mat;
-
-    AxisOrientation() : mat(Eigen::Matrix3f::Identity()) {}
-
-    AxisOrientation(Eigen::Matrix3f _mat) : mat(_mat) {}
-
-    void setMatrix(Eigen::Matrix3f _mat) { mat = _mat; }
-
-    Eigen::Matrix3f getMatrix() const { return mat; }
+    virtual Eigen::Matrix3f getMatrix() const = 0;
 };
 
 /**
- * This struct uses the three angles yaw, pitch and roll to define the
- * transformation of the reference frame, so according to N.E.D standard we get:
+ * @brief This struct uses the three angles yaw, pitch and roll to define a
+ * transformation.
  *
- *         X (north)
+ * According to N.E.D standard we get:
+ *
+ *         ^ X (north)
  *        /
  *       /
  *      .----> Y (east)
  *      |
  *      |
- *      v
- *     Z (down)
+ *      v Z (down)
  *
  * Where:
- * Yaw is rotation of Z axis
- * Pitch is rotation of Y axis
- * Roll is rotation of X axis
+ *-  Yaw is rotation of Z axis
+ * - Pitch is rotation of Y axis
+ * - Roll is rotation of X axis
  */
-struct AxisAngleOrientation
+struct AxisAngleOrientation : public AxisOrientation
 {
     float yaw, pitch, roll;
 
@@ -139,22 +111,21 @@ struct AxisAngleOrientation
     {
     }
 
-    operator AxisOrientation() const { return AxisOrientation(getMatrix()); }
-
-    Eigen::Matrix3f getMatrix() const
+    Eigen::Matrix3f getMatrix() const override
     {
-        return (Eigen::AngleAxisf(yaw, Eigen::Vector3f{0, 0, 1}) *
-                Eigen::AngleAxisf(pitch, Eigen::Vector3f{0, 1, 0}) *
-                Eigen::AngleAxisf(roll, Eigen::Vector3f{1, 0, 0}))
+        return (Eigen::AngleAxisf(yaw, Eigen::Vector3f::UnitZ()) *
+                Eigen::AngleAxisf(pitch, Eigen::Vector3f::UnitY()) *
+                Eigen::AngleAxisf(roll, Eigen::Vector3f::UnitX()))
             .toRotationMatrix();
     }
 };
 
 /**
- * This struct represents the orientation of the reference frame relative
- * to X, Y, Z in the start orientation.
- * If we know the orientation of the X and Y axis, using the right hand rule
- * we can infer the Z axis.
+ * @brief This struct represents orthogonal rotations.
+ *
+ * The orientation is specified by describing the X and Y axis position relative
+ * to the absolute frame. Then, using the right hand rule, we can infer the Z
+ * axis.
  *
  * For example, if the base reference is:
  *
@@ -169,13 +140,12 @@ struct AxisAngleOrientation
  * Then if we set x = NEGATIVE_Y, y = POSITIVE_Z, we get:
  *
  *          y   z
- *          ^   ^
- *          |  /
+ *          ^  ^
  *          | /
+ *          |/
  *   x <----/
- *
  */
-struct AxisOrthoOrientation
+struct AxisOrthoOrientation : public AxisOrientation
 {
     Direction xAxis, yAxis;
 
@@ -189,9 +159,7 @@ struct AxisOrthoOrientation
     {
     }
 
-    operator AxisOrientation() const { return AxisOrientation(getMatrix()); }
-
-    Eigen::Matrix3f getMatrix() const
+    Eigen::Matrix3f getMatrix() const override
     {
         Eigen::Vector3f vx, vy, vz;
 
@@ -208,25 +176,25 @@ struct AxisOrthoOrientation
 };
 
 /**
- * This struct represents axis orientation relative to a reference system.
+ * @brief This struct represents axis orientation relative to a reference
+ * system.
+ *
  * Operatively it simply combines two transformations. It is particularly useful
  * to obtain an AxisOrientation from a reference system generally not N.E.D.
  */
-struct AxisRelativeOrientation
+struct AxisRelativeOrientation : public AxisOrientation
 {
-    AxisOrientation systemOrientation, orientation;
+    const AxisOrientation &orientationA, &orientationB;
 
-    AxisRelativeOrientation(const AxisOrientation& _systemOrientation,
-                            const AxisOrientation& _orientation)
-        : systemOrientation(_systemOrientation), orientation(_orientation)
+    AxisRelativeOrientation(const AxisOrientation& orientationA,
+                            const AxisOrientation& orientationB)
+        : orientationA(orientationA), orientationB(orientationB)
     {
     }
 
-    operator AxisOrientation() const { return {getMatrix()}; }
-
-    Eigen::Matrix3f getMatrix() const
+    Eigen::Matrix3f getMatrix() const override
     {
-        return systemOrientation.getMatrix() * orientation.getMatrix();
+        return orientationA.getMatrix() * orientationB.getMatrix();
     }
 };
 

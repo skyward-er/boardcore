@@ -59,15 +59,15 @@ public:
     /**
      * @brief Call this function to start the logger.
      *
-     * The function tryies to start the logger. It first opens the log file and
-     * then create the pack and write threads. If it fails on one of this
-     * operation, the logger is not started.
+     * Tries to start the logger, first opens the log file and then create the
+     * pack and write threads. If it fails on one of this operation, the logger
+     * is not started.
      *
      * Use getCurrentLogNumber to retrieve the log file number.
      *
      * Blocking call. May take a long time.
      *
-     * \return true if the logger was started correctly.
+     * \return True if the logger was started correctly.
      */
     bool start();
 
@@ -91,7 +91,9 @@ public:
 
     std::string getCurrentFileName();
 
-    LoggerStats getLoggerStats();
+    LoggerStats getStats();
+
+    void resetStats();
 
     bool isStarted() const;
 
@@ -114,6 +116,13 @@ public:
      */
     template <typename T>
     LoggerResult log(const T &t);
+
+    /**
+     * @brief Log logger stats using the logger itself.
+     *
+     * The stats are reset after being logged.
+     */
+    void logStats();
 
 private:
     Logger();
@@ -142,11 +151,6 @@ private:
      * \param size Class size.
      */
     LoggerResult logImpl(const char *name, const void *data, unsigned int size);
-
-    /**
-     * @brief Log logger stats using the logger itself.
-     */
-    void logStats();
 
     static constexpr unsigned int maxFilenameNumber = 100;  ///< Limit on files
     static constexpr unsigned int maxRecordSize     = 512;  ///< Limit on data

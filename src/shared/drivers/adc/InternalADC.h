@@ -66,7 +66,7 @@ namespace Boardcore
  * timers and multi adc mode.
  * This features are not implemented to keep the driver simple.
  */
-class InternalADC : public Sensor<ADCData>
+class InternalADC : public Sensor<InternalADCData>
 {
 public:
     /**
@@ -139,11 +139,11 @@ public:
 
     bool addRegularChannel(Channel channel);
 
-    ADCData getVoltage(Channel channel);
+    InternalADCData getVoltage(Channel channel);
 
     bool selfTest() override;
 
-    ADCData sampleImpl() override;
+    InternalADCData sampleImpl() override;
 
     float getSupplyVoltage();
 

@@ -36,7 +36,7 @@ namespace Aeroutils
  * given pressure, using International Standard Atmosphere model.
  *
  * @warning This function is valid for altitudes below 11000 meters above sea
- * level
+ * level.
  * @warning This function provides a relative altitude from the reference
  * altitude. It does not provide altitude above mean sea level unless the
  * reference is, in fact, the sea level.

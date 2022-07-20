@@ -27,6 +27,7 @@
 #include <sensors/calibration/AxisOrientation.h>
 #include <sensors/calibration/BiasCalibration.h>
 #include <sensors/calibration/SixParameterCalibration.h>
+#include <utils/Stats/Stats.h>
 
 #include "BMX160WithCorrectionData.h"
 
@@ -39,7 +40,6 @@ namespace Boardcore
 struct BMX160CorrectionParameters
 {
     Eigen::Matrix<float, 3, 2> accelParams, magnetoParams;
-    int minGyroSamplesForCalibration = 0;
 
     BMX160CorrectionParameters();
 
@@ -60,44 +60,50 @@ class BMX160WithCorrection : public Sensor<BMX160WithCorrectionData>
 {
 public:
     /**
-     * @param bmx160_ already initialized bmx.
-     * @param correctionParameters correction parameter to apply.
-     * @param rotation_ axis rotation.
+     * @param bmx160 Already initialized bmx.
+     * @param correctionParameters Correction parameter to apply.
+     * @param rotation Axis rotation.
      */
-    BMX160WithCorrection(BMX160* bmx160_,
+    BMX160WithCorrection(BMX160* bmx160,
                          BMX160CorrectionParameters correctionParameters,
-                         AxisOrthoOrientation rotation_);
+                         AxisOrthoOrientation rotation);
 
     /**
-     * Constructor without rotation, no rotation will be applied.
+     * @brief Constructor without rotation, no rotation will be applied.
      *
-     * @param bmx160_ already initialized bmx.
-     * @param correctionParameters correction parameter to apply.
+     * @param bmx160 Already initialized bmx.
+     * @param correctionParameters Correction parameter to apply.
      */
-    BMX160WithCorrection(BMX160* bmx160_,
+    BMX160WithCorrection(BMX160* bmx160,
                          BMX160CorrectionParameters correctionParameters);
 
     /**
-     * @brief Constructor without correction nor rotation, no correciton and
+     * @brief Constructor without correction nor rotation, no correction and
      * rotation will be applied.
      *
-     * @param bmx160_ correction parameter to apply.
+     * @param bmx160 Correction parameter to apply.
      */
-    explicit BMX160WithCorrection(BMX160* bmx160_);
+    explicit BMX160WithCorrection(BMX160* bmx160);
 
     bool init() override;
 
     bool selfTest() override;
 
     /**
-     * @brief Performs the gyroscope calibration.
+     * @brief Starts collecting calibration data for the gyroscope.
      *
      * The gyroscope calibration consists in averaging some samples to measure
-     * the bias.
-     * This function is intended to run while another thread samples the bmx at
-     * at least 10Hz.
+     * the bias. This function is intended to run while another thread samples
+     * the bmx.
+     *
+     * Call stopCalibration() to end collection and finalizing the offset.
      */
-    bool calibrate();
+    void startCalibration();
+
+    /**
+     * @brief Stops the data collection and finalizes the calibration.
+     */
+    void stopCalibration();
 
     /**
      * @brief Utility function to read correction parameters from file.
@@ -120,8 +126,6 @@ private:
 
     BMX160* bmx160;
 
-    int minGyroSamplesForCalibration = 200;
-
     AxisOrthoOrientation rotation = {Direction::POSITIVE_X,
                                      Direction::POSITIVE_Y};
 
@@ -129,7 +133,8 @@ private:
     SixParameterCorrector<MagnetometerData> magnetometerCorrector;
     BiasCorrector<GyroscopeData> gyroscopeCorrector{};
 
-    Eigen::Vector3f gyroscopeCorrectionParameters;
+    bool calibrating = false;
+    BiasCalibration<GyroscopeData> gyroscopeCalibrator;
 
     PrintLogger logger = Logging::getLogger("bmx160withcorrection");
 };

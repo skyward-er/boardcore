@@ -1,5 +1,5 @@
-/* Copyright (c) 2020 Skyward Experimental Rocketry
- * Author: Davide Bonomini
+/* Copyright (c) 2021-2022 Skyward Experimental Rocketry
+ * Author: Vincenzo Santomarco, Alberto Nidasio
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -22,26 +22,24 @@
 
 #pragma once
 
-#include <sensors/SensorData.h>
+#include "TrajectoryPoint.h"
 
 namespace Boardcore
 {
 
-struct UbloxGPSData : public GPSData
+class Trajectory
 {
-    static std::string header()
+public:
+    float extension;  ///< AirBrakes target extension for this trajectory [m].
+    TrajectoryPoint *points;
+    uint16_t trjSize;
+
+    Trajectory(float extension, TrajectoryPoint points[], uint16_t trjSize)
+        : extension(extension), points(points), trjSize(trjSize)
     {
-        return "gps_timestamp,latitude,longitude,height,velocity_north,"
-               "velocity_east,velocity_down,speed,track,num_satellites,fix\n";
     }
 
-    void print(std::ostream &os) const
-    {
-        os << gpsTimestamp << "," << latitude << "," << longitude << ","
-           << height << "," << velocityNorth << "," << velocityEast << ","
-           << velocityDown << "," << speed << "," << track << ","
-           << (int)satellites << "," << (int)fix << "\n";
-    }
+    uint32_t size() { return trjSize; }
 };
 
 }  // namespace Boardcore

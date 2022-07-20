@@ -154,7 +154,7 @@ struct BMX160Config
      * in the BMX160 datasheet, for more informations consult the BMM150
      * datasheet, chapter 4.2.4 Active mode.
      *
-     * This are the reccomended presets:
+     * This are the recommended presets:
      * - 0x01, RMS Noise (x/y/z) 1.0/1.0/1.4, Current: 0.17mA (Low power)
      * - 0x04, RMS Noise (x/y/z) 0.6/0.6/0.6, Current: 0.5mA  (Regular)
      * (Default)
@@ -168,11 +168,11 @@ struct BMX160Config
      * @brief Repetitions for the Z axis.
      *
      * Repetitions represent how many internal samples are averaged in order to
-     * get the final outputted sample, these presets are the ones reccomended
+     * get the final outputted sample, these presets are the ones recommended
      * in the BMX160 datasheet, for more informations consult the BMM150
      * datasheet, chapter 4.2.4 Active mode.
      *
-     * This are the reccomended presets:
+     * This are the recommended presets:
      * - 0x02, RMS Noise (x/y/z) 1.0/1.0/1.4, Current: 0.17mA (Low power)
      * - 0x0E, RMS Noise (x/y/z) 0.6/0.6/0.6, Current: 0.5mA  (Regular)
      * (Default)

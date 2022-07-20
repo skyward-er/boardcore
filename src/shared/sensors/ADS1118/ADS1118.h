@@ -44,21 +44,21 @@ namespace Boardcore
  * value while writing the configuration.
  *
  * Data rate between 8Hz and 860Hz can be programmed and an internal
- * programmable gain aplifier can be set with a sensitivity range from ±0.256V
+ * programmable gain amplifier can be set with a sensitivity range from ±0.256V
  * to ±6.144V (note that the inputs must remain between VCC or GND).
  *
  * The data rate should be choosen as low as possible to allow the delta-sigma
  * adc to average the input voltage (this allows a less noisy reading).
  *
  * The device can work in two modes:
- * - CONTIN_CONV_MODE: Continuosly read the last configured channel, when you
- * make a read you'll obtain the lates reading
+ * - CONTINUOUS_CONV_MODE: Continuously read the last configured channel, when
+ * you make a read you'll obtain the lates reading
  * - SINGLE_SHOT_MODE: A single conversion is performed when the configuration
  * is written
  *
  * The ADS1118 is a simple device, it has a single data register where it can
  * store the reading, therefore it can sample a single input at a time. sample()
- * cylces through the enabled channels one at a time and writes it's
+ * cycles through the enabled channels one at a time and writes it's
  * configuration while reading the value of the previous written one.
  *
  * As an example if you need to read 4 inputs at 50Hz you should set all the
@@ -95,9 +95,9 @@ public:
 
     enum ADS1118Mode
     {
-        CONTIN_CONV_MODE = 0x0,  ///< Continuous-conversion mode
-        SINGLE_SHOT_MODE = 0x1   ///< Power-down and single-shot mode (default)
-    };                           ///< Conversione mode values
+        CONTINUOUS_CONV_MODE = 0x0,  ///< Continuous-conversion mode
+        SINGLE_SHOT_MODE = 0x1  ///< Power-down and single-shot mode (default)
+    };                          ///< Conversion mode values
 
     enum ADS1118DataRate
     {
@@ -115,7 +115,7 @@ public:
     {
         ADC_MODE         = 0x0,  ///< ADC mode (default)
         TEMP_SENSOR_MODE = 0x1   ///< Temperature sensor mode
-    };                           ///< Temeprature or ADC mode values
+    };                           ///< Temperature or ADC mode values
 
     enum ADS1118PullUp
     {
@@ -166,7 +166,7 @@ public:
     static constexpr int8_t INVALID_CHANNEL = -1;
 
     /**
-     * @brief Construct a new ADS1118 object specifing spi bus, spi config and
+     * @brief Construct a new ADS1118 object specifying spi bus, spi config and
      * cs pin as well as device configuration.
      */
     ADS1118(SPIBusInterface &bus, miosix::GpioPin cs, ADS1118Config config_,
@@ -302,7 +302,7 @@ private:
     void readChannel(int8_t nextChannel, int8_t prevChannel);
 
     /**
-     * @brief Reads on the fly the speficied channel.
+     * @brief Reads on the fly the specified channel.
      */
     void readChannel(int8_t channel);
 
@@ -341,7 +341,7 @@ private:
 
     /**
      * This masks excludes 2 bits from the configuration, the reserved bit and
-     * the sigle shot bit
+     * the single shot bit.
      */
     static constexpr uint16_t CONFIG_MASK = 0xFE7F;
 };

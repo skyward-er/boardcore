@@ -104,8 +104,7 @@ bool Logger::start()
         return false;
     }
 
-    started         = true;
-    stats.logNumber = fileNumber;
+    started = true;
 
     return true;
 }
@@ -125,6 +124,8 @@ void Logger::stop()
 
     fclose(file);
 
+    stats = {};
+
     fileNumber = -1;  // Reset the fileNumber to an invalid value
 }
 
@@ -139,9 +140,34 @@ int Logger::getCurrentLogNumber() { return fileNumber; }
 
 string Logger::getCurrentFileName() { return getFileName(fileNumber); }
 
-LoggerStats Logger::getLoggerStats() { return stats; }
+LoggerStats Logger::getStats()
+{
+    stats.timestamp = TimestampTimer::getTimestamp();
+    stats.logNumber = fileNumber;
+    return stats;
+}
+
+void Logger::resetStats()
+{
+    // Keep some of the statistics persistent
+    int buffersWritten = stats.buffersWritten;
+    int writesFailed   = stats.writesFailed;
+
+    // Reset
+    stats = {};
+
+    // Put back
+    stats.buffersWritten = buffersWritten;
+    stats.writesFailed   = writesFailed;
+}
 
 bool Logger::isStarted() const { return started; }
+
+void Logger::logStats()
+{
+    log(getStats());
+    resetStats();
+}
 
 Logger::Logger()
 {
@@ -278,8 +304,9 @@ void Logger::writeThread()
                 stats.buffersWritten++;
 
             timer.stop();
-            stats.writeTime    = timer.interval();
-            stats.maxWriteTime = max(stats.maxWriteTime, stats.writeTime);
+            stats.averageWriteTime = timer.interval();
+            stats.maxWriteTime =
+                max(stats.maxWriteTime, stats.averageWriteTime);
 
             {
                 Lock<FastMutex> l(mutex);
@@ -344,12 +371,6 @@ LoggerResult Logger::logImpl(const char* name, const void* data,
     atomicAdd(&stats.queuedSamples, 1);
 
     return LoggerResult::Queued;
-}
-
-void Logger::logStats()
-{
-    stats.timestamp = TimestampTimer::getInstance().getTimestamp();
-    log(stats);
 }
 
 }  // namespace Boardcore

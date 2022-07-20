@@ -22,7 +22,14 @@
 
 #pragma once
 
+#include <utils/Stats/Stats.h>
+
+#include "CpuMeterData.h"
+
 namespace Boardcore
+{
+
+namespace CpuMeter
 {
 
 /*
@@ -40,16 +47,23 @@ namespace Boardcore
  * idle thread from running and thus it prevents the CPU from going into deep
  * sleep.
  *
- * NOTE: for this to work, no other thread with the lowest priority has to be
+ * NOTE: For this to work, no other thread with the lowest priority has to be
  * created, otherwise its time will not be accounted.
  */
 
-/// If defined, the CPU meter is active
+/// If defined, the CPU meter is activated
 #define ENABLE_CPU_METER
 
 /**
- * \return the average CPU utilization
+ * \return The average CPU utilization
  */
-float averageCpuUtilization();
+CpuMeterData getCpuStats();
+
+/**
+ * @brief Resets the cpu utilization statistics.
+ */
+void resetCpuStats();
+
+}  // namespace CpuMeter
 
 }  // namespace Boardcore

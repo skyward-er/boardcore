@@ -175,7 +175,7 @@ HumidityData BME280::readHumidity()
     adc_H |= buffer[1];
 
     // Compensate humidity
-    lastSample.humidityTimestamp = TimestampTimer::getInstance().getTimestamp();
+    lastSample.humidityTimestamp = TimestampTimer::getTimestamp();
     lastSample.humidity =
         (float)compensateHumidity(adc_H) / 1024;  // Converto to %RH
 
@@ -198,7 +198,7 @@ PressureData BME280::readPressure()
     adc_P |= (buffer[2] >> 4) & 0x0F;
 
     // Compensate pressure
-    lastSample.pressureTimestamp = TimestampTimer::getInstance().getTimestamp();
+    lastSample.pressureTimestamp = TimestampTimer::getTimestamp();
     lastSample.pressure =
         (float)compensatePressure(adc_P) / 256;  // Convert to Pa
 
@@ -221,9 +221,8 @@ TemperatureData BME280::readTemperature()
     adcTemperature |= (buffer[2] >> 4) & 0x0F;
 
     // Compensate temperature
-    fineTemperature = computeFineTemperature(adcTemperature);
-    lastSample.temperatureTimestamp =
-        TimestampTimer::getInstance().getTimestamp();
+    fineTemperature                 = computeFineTemperature(adcTemperature);
+    lastSample.temperatureTimestamp = TimestampTimer::getTimestamp();
     lastSample.temperature = (float)compensateTemperature(fineTemperature) /
                              100;  // Converto to DegC
 
@@ -274,16 +273,16 @@ BME280Data BME280::sampleImpl()
 
     // Compensate temperature
     fineTemperature           = computeFineTemperature(adcTemperature);
-    data.temperatureTimestamp = TimestampTimer::getInstance().getTimestamp();
+    data.temperatureTimestamp = TimestampTimer::getTimestamp();
     data.temperature          = (float)compensateTemperature(fineTemperature) /
                        100;  // Converto to DegC
 
     // Compensate pressure
-    data.pressureTimestamp = TimestampTimer::getInstance().getTimestamp();
+    data.pressureTimestamp = TimestampTimer::getTimestamp();
     data.pressure = (float)compensatePressure(adc_P) / 256;  // Convert to Pa
 
     // Compensate humidity
-    data.humidityTimestamp = TimestampTimer::getInstance().getTimestamp();
+    data.humidityTimestamp = TimestampTimer::getTimestamp();
     data.humidity = (float)compensateHumidity(adc_H) / 1024;  // Converto to %RH
 
     return data;

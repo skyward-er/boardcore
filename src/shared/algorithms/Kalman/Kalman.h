@@ -28,24 +28,22 @@ namespace Boardcore
 {
 
 /**
- * @brief Class representing a Kalman filter using the Eigen library for
- *        matrix computations
+ * @brief Implementation of a generic Kalman filter using the Eigen library.
  *
- * WARNING : This class uses templates in order to know the size of each matrix
- *           at compile-time. This way we avoid Eigen to allocate memory
- *           dynamically.
+ * This class uses templates in order to know the size of each matrix at
+ * compile-time. This way we avoid Eigen to allocate memory dynamically.
  */
-template <typename t, uint8_t n, uint8_t p>
+template <typename T, int N_size, int P_size>
 class Kalman
 {
-    using MatrixNN = Eigen::Matrix<t, n, n>;
-    using MatrixPN = Eigen::Matrix<t, p, n>;
-    using MatrixNP = Eigen::Matrix<t, n, p>;
-    using MatrixPP = Eigen::Matrix<t, p, p>;
-    using CVectorN = Eigen::Matrix<t, n, 1>;
-    using CVectorP = Eigen::Matrix<t, p, 1>;
-
 public:
+    using MatrixNN = Eigen::Matrix<T, N_size, N_size>;
+    using MatrixPN = Eigen::Matrix<T, P_size, N_size>;
+    using MatrixNP = Eigen::Matrix<T, N_size, P_size>;
+    using MatrixPP = Eigen::Matrix<T, P_size, P_size>;
+    using CVectorN = Eigen::Vector<T, N_size>;
+    using CVectorP = Eigen::Vector<T, P_size>;
+
     /**
      * @brief Configuration struct for the Kalman class.
      */
@@ -60,52 +58,51 @@ public:
     };
 
     /**
-     * @param config configuration object containing all the initialized
-     *               matrices
+     * @brief Creates a Kalman filter object.
+     *
+     * @param config Configuration parameters.
      */
     Kalman(const KalmanConfig& config)
         : F(config.F), H(config.H), Q(config.Q), R(config.R), P(config.P),
-          S(MatrixPP::Zero(p, p)), K(MatrixNP::Zero(n, p)), x(config.x)
+          S(MatrixPP::Zero(P_size, P_size)), K(MatrixNP::Zero(N_size, P_size)),
+          x(config.x)
     {
         I.setIdentity();
     }
 
     /**
-     * @brief Prediction step.
+     * @brief Prediction step with previous F matrix.
      */
     void predict()
     {
-        P = F * P * F.transpose() + Q;
         x = F * x;
+        P = F * P * F.transpose() + Q;
     }
 
     /**
      * @brief Prediction step.
      *
-     * @param F_new updated F matrix
+     * @param F_new updated F matrix.
      */
     void predict(const MatrixNN& F_new)
     {
-        this->F = F_new;
-        this->predict();
+        F = F_new;
+        predict();
     }
 
     /**
-     * @brief Correction step (correct the estimate).
+     * @brief Correction step.
      *
-     * @param y The measurement vector
+     * @param y The measurement vector.
      */
     bool correct(const CVectorP& y)
     {
         S = H * P * H.transpose() + R;
 
-        // here the determinant is computed and
-        // then the inverse recomputes it,
-        // this passage could be optimized
+        // TODO: The determinant is computed here and when S is inverted, it
+        // could be optimized
         if (S.determinant() < 1e-3)
-        {
             return false;
-        }
 
         K = P * H.transpose() * S.inverse();
         P = (I - K * H) * P;
@@ -137,23 +134,22 @@ public:
     const CVectorP getResidual() { return res; }
 
     /**
-     * @brief Predicts k steps ahead the output
-     */
-    const CVectorP predictOutput(uint32_t k) { return H * predictState(k); }
-
-    /**
-     * @brief Predicts k steps ahead the state
+     * @brief Predicts k steps ahead the state.
      */
     const CVectorN predictState(uint32_t k)
     {
         CVectorN xHat = x;
 
         for (uint32_t i = 0; i < k; i++)
-        {
             xHat = F * xHat;
-        }
+
         return xHat;
     }
+
+    /**
+     * @brief Predicts k steps ahead the output.
+     */
+    const CVectorP predictOutput(uint32_t k) { return H * predictState(k); }
 
 private:
     MatrixNN F; /**< State propagation matrix (n x n) */

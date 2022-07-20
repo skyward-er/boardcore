@@ -97,7 +97,8 @@ public:
      * Therefore, if a task already exists with the same id, the function will
      * fail and return false.
      *
-     * For one shot tasks, the period is useless and not used.
+     * For one shot tasks, the period is used as a delay. If 0 the task will be
+     * executed immediately, otherwise after the given period.
      *
      * @param function Function to be called periodically.
      * @param period Inter call period.
@@ -117,7 +118,8 @@ public:
      * Therefore, if a task already exists with the same id, the function will
      * fail and return false.
      *
-     * For one shot tasks, the period is useless and not used.
+     * For one shot tasks, the period is used as a delay. If 0 the task will be
+     * executed immediately, otherwise after the given period.
      *
      * @param function Function to be called periodically.
      * @param period Inter call period.
@@ -207,6 +209,7 @@ private:
         const std::pair<const uint8_t, Boardcore::TaskScheduler::Task>& task)
     {
         return TaskStatsResult{task.second.id,
+                               task.second.period,
                                task.second.activationStats.getStats(),
                                task.second.periodStats.getStats(),
                                task.second.workloadStats.getStats(),

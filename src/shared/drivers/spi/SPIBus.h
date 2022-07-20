@@ -29,8 +29,8 @@
 #ifndef USE_MOCK_PERIPHERALS
 using SPIType = SPI_TypeDef;
 #else
-#include <test/FakeSpiTypedef.h>
-using SPIType = FakeSpiTypedef;
+#include <utils/TestUtils/FakeSpiTypedef.h>
+using SPIType = Boardcore::FakeSpiTypedef;
 #endif
 
 namespace Boardcore

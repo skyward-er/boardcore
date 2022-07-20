@@ -34,9 +34,9 @@ class PIController
 {
 
 public:
-    PIController(double Kp, double Ki, double Ts = 1,
-                 double uMin = -std::numeric_limits<double>::infinity(),
-                 double uMax = std::numeric_limits<double>::infinity())
+    PIController(float Kp, float Ki, float Ts = 1,
+                 float uMin = -std::numeric_limits<float>::infinity(),
+                 float uMax = std::numeric_limits<float>::infinity())
         : Kp(Kp), Ki(Ki), Ts(Ts), uMin(uMin), uMax(uMax)
     {
     }
@@ -44,26 +44,23 @@ public:
     /**
      * @brief Update the PI internal state.
      * */
-    double update(double error)
+    float update(float error)
     {
-
-        lastP = Kp * error;
-
         if (!saturation)
-        {
             i = i + Ki * Ts * error;
-        }
 
-        double u = lastP + i;
+        float u = Kp * error + i;
 
         lastOutput = antiWindUp(u);
         return lastOutput;
     }
 
+    float antiWindUp(float u) { return antiWindUp(u, uMin, uMax); }
+
     /**
      * @brief Anti-windup mechanism.
      */
-    double antiWindUp(double u)
+    float antiWindUp(float u, float uMin, float uMax)
     {
         if (u < uMin)
         {
@@ -83,23 +80,20 @@ public:
         return u;
     }
 
-    double getI() { return i; }
+    float getI() { return i; }
 
-    double getLastP() { return lastP; }
-
-    double getLastOutput() { return lastOutput; }
+    float getLastOutput() { return lastOutput; }
 
     bool isSaturated() { return saturation; }
 
-    double Kp;          // Proportional factor.
-    double Ki;          // Integral factor.
-    double Ts;          // Sampling period.
-    double uMin, uMax;  // Anti-windup limits.
+    float Kp;          // Proportional factor.
+    float Ki;          // Integral factor.
+    float Ts;          // Sampling period.
+    float uMin, uMax;  // Anti-windup limits.
 
 private:
-    double i     = 0;   // Integral contribution.
-    double lastP = 0;   // Last computer proportional contribution.
-    double lastOutput;  // Last computed controller output.
+    float i = 0;       // Integral contribution.
+    float lastOutput;  // Last computed controller output.
     bool saturation = false;
 };
 

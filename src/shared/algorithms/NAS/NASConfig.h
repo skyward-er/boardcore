@@ -39,11 +39,11 @@ struct NASConfig
     float SIGMA_VEL;    ///< [(m/s)^2] Estimated variance of the velocity noise
     float SIGMA_PITOT;  ///< [Pa^2]    Estimated variance of the pitot velocity
 
-    float P_POS;  ///< Position prediction covariance
-    float P_POS_VERTICAL;
+    float P_POS;           ///< Position prediction covariance horizontal
+    float P_POS_VERTICAL;  ///< Position prediction covariance vertical
 
-    float P_VEL;  ///< Velocity prediction covariance
-    float P_VEL_VERTICAL;
+    float P_VEL;           ///< Velocity prediction covariance horizontal
+    float P_VEL_VERTICAL;  ///< Velocity prediction covariance vertical
 
     float P_ATT;   ///< Attitude prediction covariance
     float P_BIAS;  ///< Bias prediction covariance

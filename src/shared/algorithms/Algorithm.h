@@ -53,9 +53,7 @@ public:
     void update()
     {
         if (running)
-        {
             step();
-        }
     }
 
 protected:

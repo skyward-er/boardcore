@@ -22,14 +22,14 @@
 
 #include "test-logger.h"
 
-#include <diagnostic/CpuMeter.h>
+#include <diagnostic/CpuMeter/CpuMeter.h>
 #include <logger/Logger.h>
 
 using namespace Boardcore;
 using namespace std;
 using namespace miosix;
 
-void logthread(void*)
+void logThread(void*)
 {
     Logger& log      = Logger::getInstance();
     const int period = 5;
@@ -45,18 +45,18 @@ void logthread(void*)
     }
 }
 
-void printutil(void*)
+void printUtil(void*)
 {
     for (;;)
     {
         Thread::sleep(1000);
-        printf("cpu: %5.1f\n", averageCpuUtilization());
+        printf("cpu: %5.1f\n", CpuMeter::getCpuStats().mean);
     }
 }
 
 int main()
 {
-    Thread::create(printutil, 4096);
+    Thread::create(printUtil, 4096);
 
     Logger& log = Logger::getInstance();
     log.start();
@@ -64,7 +64,7 @@ int main()
     puts("type enter to start test");
     getchar();
 
-    Thread::create(logthread, 4096);
+    Thread::create(logThread, 4096);
 
     puts("type enter to stop test");
     getchar();

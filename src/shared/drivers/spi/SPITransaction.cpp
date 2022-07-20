@@ -134,9 +134,7 @@ void SPITransaction::transfer(uint16_t* data, size_t size)
 uint8_t SPITransaction::readRegister(uint8_t reg)
 {
     if (writeBit == WriteBit::NORMAL)
-    {
         reg |= 0x80;
-    }
 
     bus.select(cs);
     bus.write(reg);
@@ -148,9 +146,7 @@ uint8_t SPITransaction::readRegister(uint8_t reg)
 void SPITransaction::readRegisters(uint8_t reg, uint8_t* data, size_t size)
 {
     if (writeBit == WriteBit::NORMAL)
-    {
         reg |= 0x80;
-    }
 
     bus.select(cs);
     bus.write(reg);
@@ -161,9 +157,7 @@ void SPITransaction::readRegisters(uint8_t reg, uint8_t* data, size_t size)
 void SPITransaction::writeRegister(uint8_t reg, uint8_t data)
 {
     if (writeBit == WriteBit::INVERTED)
-    {
         reg |= 0x80;
-    }
 
     bus.select(cs);
     bus.write(reg);
@@ -174,9 +168,7 @@ void SPITransaction::writeRegister(uint8_t reg, uint8_t data)
 void SPITransaction::writeRegisters(uint8_t reg, uint8_t* data, size_t size)
 {
     if (writeBit == WriteBit::INVERTED)
-    {
         reg |= 0x80;
-    }
 
     bus.select(cs);
     bus.write(reg);

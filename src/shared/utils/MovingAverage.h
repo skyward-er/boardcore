@@ -39,7 +39,7 @@ public:
     {
         T average = 0;
 
-        for (size_t i = 0; i < buffer.getSize(); i++)
+        for (size_t i = 0; i < buffer.count(); i++)
             average += buffer.get(i);
 
         return average / buffer.getSize();

@@ -40,20 +40,20 @@ struct LoggerStats
     ///< Number of dropped samples because they where too large.
     int tooLargeSamples = 0;
 
-    int droppedSamples = 0;  ///< Number of dropped samples due to fifo full.
-    int queuedSamples  = 0;  ///< Number of samples written to buffer.
-    int buffersFilled  = 0;  ///< Number of buffers filled.
-    int buffersWritten = 0;  ///< Number of buffers written to disk.
-    int writesFailed   = 0;  ///< Number of fwrite() that failed.
-    int lastWriteError = 0;  ///< Error of the last fwrite() that failed.
-    int writeTime      = 0;  ///< Time to perform an fwrite() of a buffer.
-    int maxWriteTime   = 0;  ///< Max time to perform an fwrite() of a buffer.
+    int droppedSamples   = 0;  ///< Number of dropped samples due to fifo full.
+    int queuedSamples    = 0;  ///< Number of samples written to buffer.
+    int buffersFilled    = 0;  ///< Number of buffers filled.
+    int buffersWritten   = 0;  ///< Number of buffers written to disk.
+    int writesFailed     = 0;  ///< Number of fwrite() that failed.
+    int lastWriteError   = 0;  ///< Error of the last fwrite() that failed.
+    int averageWriteTime = 0;  ///< Average time for an fwrite() of a buffer.
+    int maxWriteTime     = 0;  ///< Max time for an fwrite() of a buffer.
 
     static std::string header()
     {
-        return "timestamp,log_number,too_large_samples,dropped_samples,"
-               "queued_samples,buffers_filled,buffers_written,writes_failed,"
-               "last_write_error,write_time,max_write_time\n";
+        return "timestamp,logNumber,tooLargeSamples,droppedSamples,"
+               "queuedSamples,buffersFilled,buffersWritten,writesFailed,"
+               "lastWriteError,averageWriteTime,maxWriteTime\n";
     }
 
     void print(std::ostream& os) const
@@ -61,7 +61,8 @@ struct LoggerStats
         os << timestamp << "," << logNumber << "," << tooLargeSamples << ","
            << droppedSamples << "," << queuedSamples << "," << buffersFilled
            << "," << buffersWritten << "," << writesFailed << ","
-           << lastWriteError << "," << writeTime << "," << maxWriteTime << "\n";
+           << lastWriteError << "," << averageWriteTime << "," << maxWriteTime
+           << "\n";
     }
 };
 

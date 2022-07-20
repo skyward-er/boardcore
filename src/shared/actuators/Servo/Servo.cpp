@@ -59,8 +59,16 @@ void Servo::disable() {}
 
 #endif
 
-void Servo::setPosition(float position)
+void Servo::setPosition(float position, bool limited)
 {
+    if (limited)
+    {
+        if (position < 0)
+            position = 0;
+        else if (position > 1)
+            position = 1;
+    }
+
     float pulse = minPulse + (maxPulse - minPulse) * position;
 
     float dutyCycle = pulse * frequency / 1000000.0f;
@@ -101,7 +109,7 @@ float Servo::getPosition360Deg() { return getPosition() * 3600; }
 
 ServoData Servo::getState()
 {
-    return {TimestampTimer::getInstance().getTimestamp(),
+    return {TimestampTimer::getTimestamp(),
 
 #ifndef COMPILE_FOR_HOST
             pwm.getTimer().getTimerNumber(), static_cast<uint8_t>(pwmChannel),

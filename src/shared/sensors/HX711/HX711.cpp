@@ -68,7 +68,7 @@ HX711Data HX711::sampleImpl()
     if (sample == static_cast<int32_t>(0xFFFFFFFF))
         return lastSample;
 
-    return {TimestampTimer::getInstance().getTimestamp(),
+    return {TimestampTimer::getTimestamp(),
             static_cast<float>(sample - offset) * scale};
 }
 
