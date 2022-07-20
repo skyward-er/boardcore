@@ -1,5 +1,5 @@
-/* Copyright (c) 2021 Skyward Experimental Rocketry
- * Author: Alberto Nidasio
+/* Copyright (c) 2022 Skyward Experimental Rocketry
+ * Authors: Giulia Ghirardini
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -20,37 +20,32 @@
  * THE SOFTWARE.
  */
 
+#pragma once
 #include <drivers/adc/InternalADC.h>
-#include <drivers/timer/TimestampTimer.h>
-#include <miosix.h>
 
-using namespace Boardcore;
+#include "InternalTempData.h"
 
-int main()
+namespace Boardcore
 {
-    // Set the clock divider for the analog circuitry (/8)
-    ADC->CCR |= ADC_CCR_ADCPRE_0 | ADC_CCR_ADCPRE_1;
-    // In this case I've set the maximum value, check the datasheet for the
-    // maximum frequency the analog circuitry supports and compare it with the
-    // parent clock
 
-    InternalADC adc(ADC3, 3.3);
-    adc.enableChannel(InternalADC::CH18);  // PF6
-    adc.enableChannel(InternalADC::CH5);   // PF7
-    adc.enableChannel(InternalADC::CH6);   // PF8
-    adc.init();
+class InternalTemp : public Sensor<InternalTempData>
+{
+public:
+    explicit InternalTemp(
+        InternalADC::SampleTime sampleTime = InternalADC::CYCLES_3,
+        const float supplyVoltage          = 5.0);
 
-    printf("Configuration completed\n");
+    bool init() override;
 
-    while (1)
-    {
-        adc.sample();
+    bool selfTest() override;
 
-        printf("CH4:%1.3f\tCH5:%1.3f\tCH6:%1.3f\n",
-               adc.getVoltage(InternalADC::CH18).voltage,
-               adc.getVoltage(InternalADC::CH5).voltage,
-               adc.getVoltage(InternalADC::CH6).voltage);
+    InternalTempData sampleImpl() override;
 
-        miosix::delayMs(1000);
-    }
-}
+    // InternalTempData addRegularChannel(InternalADC::Channel channel);
+
+private:
+    InternalADC adc;
+    InternalADC::SampleTime sampleTime;
+};
+
+}  // namespace Boardcore

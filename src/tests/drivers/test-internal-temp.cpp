@@ -1,5 +1,5 @@
-/* Copyright (c) 2021 Skyward Experimental Rocketry
- * Author: Alberto Nidasio
+/* Copyright (c) 2022 Skyward Experimental Rocketry
+ * Authors: Giulia Ghirardini
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -20,36 +20,25 @@
  * THE SOFTWARE.
  */
 
-#include <drivers/adc/InternalADC.h>
+#include <drivers/adc/InternalTemp.h>
 #include <drivers/timer/TimestampTimer.h>
 #include <miosix.h>
+#include <utils/ClockUtils.h>
 
 using namespace Boardcore;
 
 int main()
 {
-    // Set the clock divider for the analog circuitry (/8)
     ADC->CCR |= ADC_CCR_ADCPRE_0 | ADC_CCR_ADCPRE_1;
-    // In this case I've set the maximum value, check the datasheet for the
-    // maximum frequency the analog circuitry supports and compare it with the
-    // parent clock
+    InternalTemp temp(InternalADC::CYCLES_480, 3.0);
+    temp.init();
+    printf("Init done %ld\n",
+           ClockUtils::getAPBFrequency(ClockUtils::APB::APB2));
 
-    InternalADC adc(ADC3, 3.3);
-    adc.enableChannel(InternalADC::CH18);  // PF6
-    adc.enableChannel(InternalADC::CH5);   // PF7
-    adc.enableChannel(InternalADC::CH6);   // PF8
-    adc.init();
-
-    printf("Configuration completed\n");
-
-    while (1)
+    for (;;)
     {
-        adc.sample();
-
-        printf("CH4:%1.3f\tCH5:%1.3f\tCH6:%1.3f\n",
-               adc.getVoltage(InternalADC::CH18).voltage,
-               adc.getVoltage(InternalADC::CH5).voltage,
-               adc.getVoltage(InternalADC::CH6).voltage);
+        temp.sample();
+        printf("%2.3f test\n", temp.getLastSample().temperature);
 
         miosix::delayMs(1000);
     }

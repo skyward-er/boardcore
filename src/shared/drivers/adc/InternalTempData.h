@@ -20,37 +20,23 @@
  * THE SOFTWARE.
  */
 
-#include <drivers/adc/InternalADC.h>
-#include <drivers/timer/TimestampTimer.h>
-#include <miosix.h>
+#pragma once
 
-using namespace Boardcore;
+#include <sensors/SensorData.h>
 
-int main()
+namespace Boardcore
 {
-    // Set the clock divider for the analog circuitry (/8)
-    ADC->CCR |= ADC_CCR_ADCPRE_0 | ADC_CCR_ADCPRE_1;
-    // In this case I've set the maximum value, check the datasheet for the
-    // maximum frequency the analog circuitry supports and compare it with the
-    // parent clock
 
-    InternalADC adc(ADC3, 3.3);
-    adc.enableChannel(InternalADC::CH18);  // PF6
-    adc.enableChannel(InternalADC::CH5);   // PF7
-    adc.enableChannel(InternalADC::CH6);   // PF8
-    adc.init();
+struct InternalTempData : public TemperatureData
+{
+    InternalTempData() : TemperatureData{0, 0} {}
 
-    printf("Configuration completed\n");
+    static std::string header() { return "timestamp,temperature\n"; }
 
-    while (1)
+    void print(std::ostream& os) const
     {
-        adc.sample();
-
-        printf("CH4:%1.3f\tCH5:%1.3f\tCH6:%1.3f\n",
-               adc.getVoltage(InternalADC::CH18).voltage,
-               adc.getVoltage(InternalADC::CH5).voltage,
-               adc.getVoltage(InternalADC::CH6).voltage);
-
-        miosix::delayMs(1000);
+        os << temperatureTimestamp << "," << temperature << "\n";
     }
-}
+};
+
+}  // namespace Boardcore
