@@ -36,12 +36,20 @@ struct CpuMeterData
     float stdDev       = 0;  ///< Standard deviation of dataset.
     uint32_t nSamples  = 0;  ///< Number of samples.
 
+    uint32_t minFreeHeap  = 0;
+    uint32_t freeHeap     = 0;
+    uint32_t minFreeStack = 0;
+    uint32_t freeStack    = 0;
+
     CpuMeterData() {}
 
-    explicit CpuMeterData(uint64_t timestamp, StatsResult stats)
+    explicit CpuMeterData(uint64_t timestamp, StatsResult stats,
+                          uint32_t freeHeap, uint32_t minFreeHeap,
+                          uint32_t minFreeStack, uint32_t freeStack)
         : timestamp(timestamp), minValue(stats.minValue),
           maxValue(stats.maxValue), mean(stats.mean), stdDev(stats.stdDev),
-          nSamples(stats.nSamples)
+          nSamples(stats.nSamples), minFreeHeap(minFreeHeap),
+          freeHeap(freeHeap), minFreeStack(minFreeStack), freeStack(freeStack)
     {
     }
 
