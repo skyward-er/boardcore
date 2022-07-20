@@ -88,13 +88,13 @@ bool InternalADC::init()
     adc->CR2 |= ADC_CR2_ADON;
 
     // Set single conversion mode
-    adc->CR2 &= ~ADC_CR2_CONT;
+    // adc->CR2 &= ~ADC_CR2_CONT;
 
     // Set scan mode
-    adc->CR1 |= ADC_CR1_SCAN;
+    // adc->CR1 |= ADC_CR1_SCAN;
 
     // Data alignment
-    adc->CR2 &= ~ADC_CR2_ALIGN;  // right
+    // adc->CR2 &= ~ADC_CR2_ALIGN;  // right
 
     if (isUsingDMA)
     {
@@ -160,8 +160,6 @@ bool InternalADC::addRegularChannel(Channel channel)
     // Check active channels number
     if (activeChannels >= 16)
         return false;
-
-    printf("Active channels %d\n", activeChannels);
 
     // Add the channel to the sequence
     volatile uint32_t* sqrPtr;
@@ -278,6 +276,8 @@ ADCData InternalADC::sampleImpl()
 
     return lastSample;
 }
+
+float InternalADC::getSupplyVoltage() { return supplyVoltage; }
 
 inline void InternalADC::resetRegisters()
 {

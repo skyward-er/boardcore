@@ -32,7 +32,7 @@ class InternalTemp : public Sensor<InternalTempData>
 {
 public:
     explicit InternalTemp(
-        InternalADC::SampleTime sampleTime = InternalADC::CYCLES_3,
+        InternalADC::SampleTime sampleTime = InternalADC::CYCLES_480,
         const float supplyVoltage          = 5.0);
 
     bool init() override;

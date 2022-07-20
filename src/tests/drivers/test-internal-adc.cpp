@@ -35,9 +35,9 @@ int main()
     // parent clock
 
     InternalADC adc(ADC3, 3.3);
-    adc.enableChannel(InternalADC::CH18);  // PF6
-    adc.enableChannel(InternalADC::CH5);   // PF7
-    adc.enableChannel(InternalADC::CH6);   // PF8
+    adc.enableChannel(InternalADC::CH4);  // PF6
+    adc.enableChannel(InternalADC::CH5);  // PF7
+    adc.enableChannel(InternalADC::CH6);  // PF8
     adc.init();
 
     printf("Configuration completed\n");
@@ -47,7 +47,7 @@ int main()
         adc.sample();
 
         printf("CH4:%1.3f\tCH5:%1.3f\tCH6:%1.3f\n",
-               adc.getVoltage(InternalADC::CH18).voltage,
+               adc.getVoltage(InternalADC::CH4).voltage,
                adc.getVoltage(InternalADC::CH5).voltage,
                adc.getVoltage(InternalADC::CH6).voltage);
 

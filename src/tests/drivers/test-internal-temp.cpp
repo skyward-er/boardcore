@@ -30,10 +30,9 @@ using namespace Boardcore;
 int main()
 {
     ADC->CCR |= ADC_CCR_ADCPRE_0 | ADC_CCR_ADCPRE_1;
+
     InternalTemp temp(InternalADC::CYCLES_480, 3.0);
     temp.init();
-    printf("Init done %ld\n",
-           ClockUtils::getAPBFrequency(ClockUtils::APB::APB2));
 
     for (;;)
     {

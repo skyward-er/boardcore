@@ -145,6 +145,8 @@ public:
 
     ADCData sampleImpl() override;
 
+    float getSupplyVoltage();
+
 private:
     inline void resetRegisters();
 

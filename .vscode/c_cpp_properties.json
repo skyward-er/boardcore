@@ -8,7 +8,7 @@
             "defines": [
                 "DEBUG",
                 "_ARCH_CORTEXM4_STM32F4",
-                "_BOARD_STM32F407VG_STM32F4DISCOVERY",
+                "_BOARD_STM32F4DISCOVERY",
                 "_MIOSIX_BOARDNAME=stm32f407vg_stm32f4discovery",
                 "HSE_VALUE=8000000",
                 "SYSCLK_FREQ_168MHz=168000000",
