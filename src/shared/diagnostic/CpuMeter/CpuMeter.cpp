@@ -45,7 +45,11 @@ static volatile unsigned int update = 0;
 CpuMeterData getCpuStats()
 {
     Lock<FastMutex> l(utilizationMutex);
-    return CpuMeterData(TimestampTimer::getTimestamp(), utilization.getStats());
+    return CpuMeterData(TimestampTimer::getTimestamp(), utilization.getStats(),
+                        MemoryProfiling::getAbsoluteFreeHeap(),
+                        MemoryProfiling::getCurrentFreeHeap(),
+                        MemoryProfiling::getAbsoluteFreeStack(),
+                        MemoryProfiling::getCurrentFreeStack());
 }
 
 void resetCpuStats() { utilization.reset(); }

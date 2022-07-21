@@ -72,9 +72,7 @@ InternalADC::InternalADC(ADC_TypeDef* adc, const float supplyVoltage,
 
     // Init indexMap
     for (auto i = 0; i < CH_NUM; i++)
-    {
         indexMap[i] = -1;
-    }
 }
 
 InternalADC::~InternalADC()
@@ -90,13 +88,13 @@ bool InternalADC::init()
     adc->CR2 |= ADC_CR2_ADON;
 
     // Set single conversion mode
-    adc->CR2 &= ~ADC_CR2_CONT;
+    // adc->CR2 &= ~ADC_CR2_CONT;
 
     // Set scan mode
-    adc->CR1 |= ADC_CR1_SCAN;
+    // adc->CR1 |= ADC_CR1_SCAN;
 
     // Data alignment
-    adc->CR2 &= ~ADC_CR2_ALIGN;  // right
+    // adc->CR2 &= ~ADC_CR2_ALIGN;  // right
 
     if (isUsingDMA)
     {
@@ -130,33 +128,22 @@ bool InternalADC::init()
     return true;
 }
 
-bool InternalADC::enableChannel(Channel channel)
-{
-    return enableChannel(channel, CYCLES_3);
-}
-
 bool InternalADC::enableChannel(Channel channel, SampleTime sampleTime)
 {
     // Check channel number
     if (channel < CH0 || channel >= CH_NUM)
-    {
         return false;
-    }
 
     // Add channel to the sequence
     if (!isUsingDMA)
     {
         if (!addInjectedChannel(channel))
-        {
             return false;
-        }
     }
     else
     {
         if (!addRegularChannel(channel))
-        {
             return false;
-        }
 
         // Update the DMA number of data
         dmaStream->NDTR = activeChannels;
@@ -166,6 +153,52 @@ bool InternalADC::enableChannel(Channel channel, SampleTime sampleTime)
     setChannelSampleTime(channel, sampleTime);
 
     return true;
+}
+
+bool InternalADC::addRegularChannel(Channel channel)
+{
+    // Check active channels number
+    if (activeChannels >= 16)
+        return false;
+
+    // Add the channel to the sequence
+    volatile uint32_t* sqrPtr;
+    switch (activeChannels / 6)
+    {
+        case 1:
+            sqrPtr = &(adc->SQR2);
+            break;
+        case 2:
+            sqrPtr = &(adc->SQR1);
+            break;
+        default:
+            sqrPtr = &(adc->SQR3);
+    }
+    *sqrPtr = channel << ((activeChannels % 6) * 5);
+
+    // Update the channels number in the register
+    adc->SQR1 &= ~ADC_SQR1_L;
+    adc->SQR1 |= activeChannels << 20;
+
+    // Save the index of the channel in the ADC's regular sequence
+    indexMap[channel] = activeChannels;
+
+    // Update the counter
+    activeChannels++;
+
+    return true;
+}
+
+ADCData InternalADC::readChannel(Channel channel, SampleTime sampleTime)
+{
+    setChannelSampleTime(channel, sampleTime);
+    startRegularConversion();
+
+    while (!(adc->SR & ADC_SR_EOC))
+        ;
+
+    return {TimestampTimer::getTimestamp(), channel,
+            static_cast<uint16_t>(adc->DR) * supplyVoltage / RESOLUTION};
 }
 
 InternalADCData InternalADC::getVoltage(Channel channel)
@@ -219,14 +252,14 @@ InternalADCData InternalADC::sampleImpl()
 
         // This should trigger the DMA stream for each channel's conversion
 
-        // Wait for tranfer end
+        // Wait for transfer end
         while (!(*statusReg & (transferCompleteMask | transferErrorMask)))
             ;
 
         // Clear the transfer complete flag
         *clearFlagReg |= transferCompleteMask;
 
-        // If and error has occurred (probaly due to a higher priority stream)
+        // If and error has occurred (probably due to a higher priority stream)
         // don't update the timestamp, the values should not have been updated
         if (*statusReg & transferErrorMask)
         {
@@ -243,6 +276,8 @@ InternalADCData InternalADC::sampleImpl()
 
     return lastSample;
 }
+
+float InternalADC::getSupplyVoltage() { return supplyVoltage; }
 
 inline void InternalADC::resetRegisters()
 {
@@ -277,9 +312,7 @@ inline bool InternalADC::addInjectedChannel(Channel channel)
 {
     // Check active channels number
     if (activeChannels >= 4)
-    {
         return false;
-    }
 
     // Add the channel to the sequence, starting from position 4
     adc->JSQR |= channel << (15 - activeChannels * 5);
@@ -292,48 +325,11 @@ inline bool InternalADC::addInjectedChannel(Channel channel)
     for (auto i = 0; i < CH_NUM; i++)
     {
         if (indexMap[i] >= 0)
-        {
             indexMap[i]++;
-        }
     }
 
     // Set this channel index to 0
     indexMap[channel] = 0;
-
-    // Update the counter
-    activeChannels++;
-
-    return true;
-}
-
-inline bool InternalADC::addRegularChannel(Channel channel)
-{
-    // Check active channels number
-    if (activeChannels >= 16)
-    {
-        return false;
-    }
-
-    // Add the channel to the sequence
-    volatile uint32_t* sqrPtr;
-    switch (activeChannels % 6)
-    {
-        case 1:
-            sqrPtr = &(adc->SQR3);
-            break;
-        case 2:
-            sqrPtr = &(adc->SQR2);
-            break;
-        default:
-            sqrPtr = &(adc->SQR1);
-    }
-    *sqrPtr = channel << ((activeChannels % 6) * 5);
-
-    // Update the channels number in the register
-    adc->SQR1 |= activeChannels << 20;
-
-    // Save the index of the channel in the ADC's regular sequence
-    indexMap[channel] = activeChannels;
 
     // Update the counter
     activeChannels++;
@@ -346,13 +342,10 @@ inline void InternalADC::setChannelSampleTime(Channel channel,
 {
     volatile uint32_t* smprPtr;
     if (channel <= 9)
-    {
         smprPtr = &(adc->SMPR2);
-    }
     else
-    {
         smprPtr = &(adc->SMPR1);
-    }
+
     *smprPtr = sampleTime << (channel * 3);
 }
 

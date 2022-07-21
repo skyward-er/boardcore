@@ -318,9 +318,10 @@ public:
 private:
     /**
      * @brief Read new data from the accelerometer.
-     *        Acceleretions are returned in g.
      *
-     * @return boolean value indicating whether the operation succeded or not
+     * Accelerations are returned in g.
+     *
+     * @return boolean value indicating whether the operation succeeded or not
      */
     LIS3DSHData sampleImpl() override
     {
@@ -346,9 +347,9 @@ private:
     }
 
     /**
-     * @brief Read accelrometer data.
+     * @brief Read accelerometer data.
      *
-     * @return the read accelrometer sample
+     * @return the read accelerometer sample
      */
     AccelerometerData readAccelData()
     {

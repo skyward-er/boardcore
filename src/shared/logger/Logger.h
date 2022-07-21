@@ -124,7 +124,7 @@ public:
      */
     void logStats();
 
-private:
+public:
     Logger();
 
     static std::string getFileName(int logNumber);
@@ -153,10 +153,17 @@ private:
     LoggerResult logImpl(const char *name, const void *data, unsigned int size);
 
     static constexpr unsigned int maxFilenameNumber = 100;  ///< Limit on files
-    static constexpr unsigned int maxRecordSize     = 512;  ///< Limit on data
+#ifndef _ARCH_CORTEXM3_STM32F2
+    static constexpr unsigned int maxRecordSize = 512;  ///< Limit on data
     static constexpr unsigned int numRecords = 512;  ///< Size of record queues
     static constexpr unsigned int numBuffers = 8;    ///< Number of buffers
     static constexpr unsigned int bufferSize = 64 * 1024;  ///< Size of buffers
+#else
+    static constexpr unsigned int maxRecordSize = 512;  ///< Limit on data
+    static constexpr unsigned int numRecords = 64;  ///< Size of record queues
+    static constexpr unsigned int numBuffers = 8;   ///< Number of buffers
+    static constexpr unsigned int bufferSize = 4 * 1024;  ///< Size of buffers
+#endif
 
     /**
      * A record is a single serialized logged class. Records are used to

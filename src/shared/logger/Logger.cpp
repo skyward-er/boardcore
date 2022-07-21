@@ -55,9 +55,7 @@ bool Logger::start()
         filename = getFileName(fileNumber);
         struct stat st;
         if (stat(filename.c_str(), &st) != 0)
-        {
             break;
-        }
 
         if (fileNumber == maxFilenameNumber - 1)
             TRACE("Too many log files, appending data to last\n");

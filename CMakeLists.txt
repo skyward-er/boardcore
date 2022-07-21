@@ -40,19 +40,19 @@ add_executable(config-dsgamma src/entrypoints/config-dsgamma.cpp)
 sbs_target(config-dsgamma stm32f429zi_stm32f4discovery)
 
 add_executable(imu-calibration src/entrypoints/imu-calibration.cpp)
-sbs_target(imu-calibration stm32f429zi_parafoil)
+sbs_target(imu-calibration stm32f429zi_skyward_parafoil)
 
 add_executable(mxgui-helloworld src/entrypoints/examples/mxgui-helloworld.cpp)
 sbs_target(mxgui-helloworld stm32f429zi_stm32f4discovery)
 
 add_executable(kernel-testsuite src/entrypoints/kernel-testsuite.cpp)
-sbs_target(kernel-testsuite stm32f429zi_stm32f4discovery)
+sbs_target(kernel-testsuite stm32f205rc_skyward_ciuti)
 
 add_executable(runcam-settings src/entrypoints/runcam-settings.cpp)
 sbs_target(runcam-settings stm32f407vg_stm32f4discovery)
 
 add_executable(sdcard-benchmark src/entrypoints/sdcard-benchmark.cpp)
-sbs_target(sdcard-benchmark stm32f429zi_skyward_death_stack_x)
+sbs_target(sdcard-benchmark stm32f205rc_skyward_ciuti)
 
 #-----------------------------------------------------------------------------#
 #                                    Tests                                    #
@@ -133,13 +133,13 @@ add_executable(test-kalman-benchmark src/tests/algorithms/Kalman/test-kalman-ben
 sbs_target(test-kalman-benchmark stm32f429zi_stm32f4discovery)
 
 add_executable(test-attitude-parafoil src/tests/algorithms/NAS/test-attitude-parafoil.cpp)
-sbs_target(test-attitude-parafoil stm32f429zi_parafoil)
+sbs_target(test-attitude-parafoil stm32f429zi_skyward_parafoil)
 
 add_executable(test-attitude-stack src/tests/algorithms/NAS/test-attitude-stack.cpp)
 sbs_target(test-attitude-stack stm32f429zi_skyward_death_stack_x)
 
 add_executable(test-nas-parafoil src/tests/algorithms/NAS/test-nas-parafoil.cpp)
-sbs_target(test-nas-parafoil stm32f429zi_parafoil)
+sbs_target(test-nas-parafoil stm32f429zi_skyward_parafoil)
 
 add_executable(test-nas-stack src/tests/algorithms/NAS/test-nas-stack.cpp)
 sbs_target(test-nas-stack stm32f429zi_skyward_death_stack_x)
@@ -151,7 +151,7 @@ add_executable(test-triad src/tests/algorithms/NAS/test-triad.cpp)
 sbs_target(test-triad stm32f429zi_skyward_death_stack_x)
 
 add_executable(test-triad-parafoil src/tests/algorithms/NAS/test-triad-parafoil.cpp)
-sbs_target(test-triad-parafoil stm32f429zi_parafoil)
+sbs_target(test-triad-parafoil stm32f429zi_skyward_parafoil)
 
 add_executable(test-ada src/tests/algorithms/ADA/test-ada.cpp)
 sbs_target(test-ada stm32f429zi_skyward_death_stack_v3)
@@ -178,7 +178,7 @@ add_executable(test-general-purpose-timer src/tests/drivers/timer/test-general-p
 sbs_target(test-general-purpose-timer stm32f429zi_stm32f4discovery)
 
 add_executable(test-internal-adc src/tests/drivers/test-internal-adc.cpp)
-sbs_target(test-internal-adc stm32f429zi_skyward_death_stack_x)
+sbs_target(test-internal-adc stm32f407vg_stm32f4discovery)
 
 add_executable(test-internal-adc-dma src/tests/drivers/test-internal-adc-dma.cpp)
 sbs_target(test-internal-adc-dma stm32f429zi_stm32f4discovery)
@@ -230,6 +230,9 @@ sbs_target(test-xbee-snd stm32f429zi_stm32f4discovery)
 
 add_executable(test-usart src/tests/drivers/usart/test-usart.cpp)
 sbs_target(test-usart stm32f407vg_stm32f4discovery)
+
+add_executable(test-internal-temp src/tests/drivers/test-internal-temp.cpp)
+sbs_target(test-internal-temp stm32f407vg_stm32f4discovery)
 
 #-----------------------------------------------------------------------------#
 #                               Tests - Events                                #
@@ -349,7 +352,7 @@ add_executable(test-max31855 src/tests/sensors/test-max31855.cpp)
 sbs_target(test-max31855 stm32f429zi_stm32f4discovery)
 
 add_executable(test-mpu9250 src/tests/sensors/test-mpu9250.cpp)
-sbs_target(test-mpu9250 stm32f429zi_parafoil)
+sbs_target(test-mpu9250 stm32f429zi_skyward_parafoil)
 
 add_executable(test-ms5803 src/tests/sensors/test-ms5803.cpp)
 sbs_target(test-ms5803 stm32f429zi_skyward_death_stack_x)

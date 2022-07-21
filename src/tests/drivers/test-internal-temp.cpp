@@ -1,5 +1,5 @@
-/* Copyright (c) 2019 Skyward Experimental Rocketry
- * Author: Federico Terraneo
+/* Copyright (c) 2022 Skyward Experimental Rocketry
+ * Authors: Giulia Ghirardini
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -20,22 +20,25 @@
  * THE SOFTWARE.
  */
 
-#pragma once
+#include <drivers/adc/InternalTemp.h>
+#include <drivers/timer/TimestampTimer.h>
+#include <miosix.h>
+#include <utils/ClockUtils.h>
 
-#include <algorithm>
+using namespace Boardcore;
 
-namespace Boardcore
+int main()
 {
+    ADC->CCR |= ADC_CCR_ADCPRE_0 | ADC_CCR_ADCPRE_1;
 
-#ifndef _ARCH_CORTEXM3_STM32F2
-static const unsigned int STACK_MIN_FOR_SKYWARD = 16 * 1024;
-#else
-static const unsigned int STACK_MIN_FOR_SKYWARD = 1024;
-#endif
+    InternalTemp temp(InternalADC::CYCLES_480, 3.0);
+    temp.init();
 
-inline unsigned int skywardStack(unsigned int stack)
-{
-    return std::max(stack, STACK_MIN_FOR_SKYWARD);
+    for (;;)
+    {
+        temp.sample();
+        printf("Temperature: %2.3f\n", temp.getLastSample().temperature);
+
+        miosix::delayMs(1000);
+    }
 }
-
-}  // namespace Boardcore

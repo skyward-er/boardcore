@@ -1,5 +1,5 @@
-/* Copyright (c) 2019 Skyward Experimental Rocketry
- * Author: Federico Terraneo
+/* Copyright (c) 2022 Skyward Experimental Rocketry
+ * Author: Alberto Nidasio
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -20,22 +20,45 @@
  * THE SOFTWARE.
  */
 
-#pragma once
+#include "LIS331HH.h"
 
-#include <algorithm>
+#include <drivers/timer/TimestampTimer.h>
 
 namespace Boardcore
 {
 
-#ifndef _ARCH_CORTEXM3_STM32F2
-static const unsigned int STACK_MIN_FOR_SKYWARD = 16 * 1024;
-#else
-static const unsigned int STACK_MIN_FOR_SKYWARD = 1024;
-#endif
-
-inline unsigned int skywardStack(unsigned int stack)
+LIS331HH::LIS331HH(SPIBusInterface& bus, miosix::GpioPin cs,
+                   SPIBusConfig spiConfig)
+    : slave(bus, cs, spiConfig)
 {
-    return std::max(stack, STACK_MIN_FOR_SKYWARD);
+}
+
+bool LIS331HH::init() { return true; }
+
+bool LIS331HH::selfTest() { return true; }
+
+LIS331HHData LIS331HH::sampleImpl()
+{
+    uint16_t val;
+    LIS331HHData data;
+
+    data.accelerationTimestamp = TimestampTimer::getTimestamp();
+
+    SPITransaction spi(slave);
+
+    val = spi.readRegister(OUT_X_L);
+    val |= spi.readRegister(OUT_X_H) << 8;
+    data.accelerationX = 6.0 / 65536.0 * val;
+
+    val = spi.readRegister(OUT_Y_L);
+    val |= spi.readRegister(OUT_Y_H) << 8;
+    data.accelerationY = 6.0 / 65536.0 * val;
+
+    val = spi.readRegister(OUT_Z_L);
+    val |= spi.readRegister(OUT_Z_H) << 8;
+    data.accelerationZ = 6.0 / 65536.0 * val;
+
+    return data;
 }
 
 }  // namespace Boardcore

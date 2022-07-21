@@ -1,5 +1,5 @@
-/* Copyright (c) 2019 Skyward Experimental Rocketry
- * Author: Federico Terraneo
+/* Copyright (c) 2022 Skyward Experimental Rocketry
+ * Author: Alberto Nidasio
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -22,20 +22,26 @@
 
 #pragma once
 
-#include <algorithm>
+#include <sensors/SensorData.h>
 
 namespace Boardcore
 {
 
-#ifndef _ARCH_CORTEXM3_STM32F2
-static const unsigned int STACK_MIN_FOR_SKYWARD = 16 * 1024;
-#else
-static const unsigned int STACK_MIN_FOR_SKYWARD = 1024;
-#endif
-
-inline unsigned int skywardStack(unsigned int stack)
+struct LIS331HHData : public AccelerometerData
 {
-    return std::max(stack, STACK_MIN_FOR_SKYWARD);
-}
+    static std::string header()
+    {
+        return "accelerationTimestamp,accelerationX,accelerationY,"
+               "accelerationZ,temp_"
+               "timestamp,"
+               "temp\n";
+    }
+
+    void print(std::ostream& os) const
+    {
+        os << accelerationTimestamp << "," << accelerationX << ","
+           << accelerationY << "," << accelerationZ << "\n";
+    }
+};
 
 }  // namespace Boardcore

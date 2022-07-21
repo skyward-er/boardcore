@@ -1,5 +1,5 @@
-/* Copyright (c) 2019 Skyward Experimental Rocketry
- * Author: Federico Terraneo
+/* Copyright (c) 2022 Skyward Experimental Rocketry
+ * Authors: Alberto Nidasio
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -22,20 +22,26 @@
 
 #pragma once
 
-#include <algorithm>
+#include <miosix.h>
 
 namespace Boardcore
 {
 
-#ifndef _ARCH_CORTEXM3_STM32F2
-static const unsigned int STACK_MIN_FOR_SKYWARD = 16 * 1024;
-#else
-static const unsigned int STACK_MIN_FOR_SKYWARD = 1024;
-#endif
-
-inline unsigned int skywardStack(unsigned int stack)
+/**
+ * @brief Comparison operator between GpioPins used for std::map.
+ *
+ * This function was implemented to use GpioPin as a map key. Check here for
+ * more explanation:
+ * https://stackoverflow.com/questions/1102392/how-can-i-use-stdmaps-with-user-defined-types-as-key
+ */
+struct GpioPinCompare
 {
-    return std::max(stack, STACK_MIN_FOR_SKYWARD);
-}
-
+    bool operator()(const miosix::GpioPin& lhs,
+                    const miosix::GpioPin& rhs) const
+    {
+        if (lhs.getPort() == rhs.getPort())
+            return lhs.getNumber() < rhs.getNumber();
+        return lhs.getPort() < rhs.getPort();
+    }
+};
 }  // namespace Boardcore
