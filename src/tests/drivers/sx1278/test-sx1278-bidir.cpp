@@ -155,7 +155,7 @@ int main()
     }
 
     // Spawn all threads
-    std::thread send([]() { sendLoop(1000, "DIO0 (suca palle)"); });
+    std::thread send([]() { sendLoop(1000, "Sample radio message"); });
     std::thread recv([]() { recvLoop(); });
 
     printf("\n[sx1278] Initialization complete!\n");
