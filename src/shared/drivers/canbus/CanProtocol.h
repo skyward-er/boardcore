@@ -144,7 +144,7 @@ public:
 
     bool isBufferEmpty();
 
-    void waitBufferEmpty();
+    void waitBufferNotEmpty();
 
     /**
      * @brief Sends a CanData object on the bus.
