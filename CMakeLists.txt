@@ -245,29 +245,23 @@ sbs_target(test-fsm stm32f429zi_stm32f4discovery)
 #                               Tests - Radio                                 #
 #-----------------------------------------------------------------------------#
 
-add_executable(test-sx1278-bench
-    src/tests/drivers/sx1278/test-sx1278-bench.cpp
-    src/tests/drivers/sx1278/test-sx1278-core.cpp
-)
-sbs_target(test-sx1278-bench stm32f407vg_stm32f4discovery)
+# add_executable(test-sx1278-bench src/tests/drivers/sx1278/test-sx1278-bench.cpp)
+# sbs_target(test-sx1278-bench stm32f407vg_stm32f4discovery)
 
-add_executable(test-sx1278-bidir
-    src/tests/drivers/sx1278/test-sx1278-bidir.cpp
-    src/tests/drivers/sx1278/test-sx1278-core.cpp
-)
-sbs_target(test-sx1278-bidir stm32f407vg_stm32f4discovery)
+# add_executable(test-sx1278-bidir src/tests/drivers/sx1278/test-sx1278-bidir.cpp)
+# sbs_target(test-sx1278-bidir stm32f407vg_stm32f4discovery)
 
-add_executable(test-sx1278-tx
-    src/tests/drivers/sx1278/test-sx1278-tx.cpp
-    src/tests/drivers/sx1278/test-sx1278-core.cpp
-)
-sbs_target(test-sx1278-tx stm32f407vg_stm32f4discovery)
+add_executable(test-sx1278-bidir-gs src/tests/drivers/sx1278/test-sx1278-bidir.cpp)
+sbs_target(test-sx1278-bidir-gs stm32f429zi_skyward_ground_station)
 
-add_executable(test-sx1278-rx
-    src/tests/drivers/sx1278/test-sx1278-rx.cpp
-    src/tests/drivers/sx1278/test-sx1278-core.cpp
-)
-sbs_target(test-sx1278-rx stm32f407vg_stm32f4discovery)
+add_executable(test-sx1278-bidir-v3 src/tests/drivers/sx1278/test-sx1278-bidir.cpp)
+sbs_target(test-sx1278-bidir-v3 stm32f429zi_skyward_death_stack_v3)
+
+add_executable(test-sx1278-tx src/tests/drivers/sx1278/test-sx1278-tx.cpp)
+sbs_target(test-sx1278-tx stm32f429zi_skyward_death_stack_v3)
+
+add_executable(test-sx1278-rx src/tests/drivers/sx1278/test-sx1278-rx.cpp)
+sbs_target(test-sx1278-rx stm32f429zi_skyward_ground_station)
 
 add_executable(test-sx1278-mavlink
     src/tests/drivers/sx1278/test-sx1278-mavlink.cpp

@@ -25,50 +25,58 @@
 
 #include <thread>
 
-#include "test-sx1278-core.h"
-
 using namespace Boardcore;
 using namespace miosix;
 
-/**
- * 0 -> RX
- * 1 -> TX
- *
- * Connection diagram:
- * sx1278[0]:nss  -> stm32:pa1
- * sx1278[0]:dio0 -> stm32:pc15
- * sx1278[0]:mosi -> stm32:pc12 (SPI3_MOSI)
- * sx1278[0]:miso -> stm32:pc11 (SPI3_MISO)
- * sx1278[0]:sck  -> stm32:pc10 (SPI3_SCK)
-
- * sx1278[1]:nss  -> stm32:pa2
- * sx1278[1]:dio0 -> stm32:pc0
- * sx1278[1]:mosi -> stm32:pb15 (SPI2_MOSI)
- * sx1278[1]:miso -> stm32:pb14 (SPI2_MISO)
- * sx1278[1]:sck  -> stm32:pb13 (SPI2_SCK)
- */
-
-SPIBus bus0(SPI3);
-SPIBus bus1(SPI2);
-
-GpioPin sck0(GPIOC_BASE, 10);
-GpioPin miso0(GPIOC_BASE, 11);
-GpioPin mosi0(GPIOC_BASE, 12);
-GpioPin cs0(GPIOA_BASE, 1);
-GpioPin dio0(GPIOC_BASE, 15);
-
-GpioPin sck1(GPIOB_BASE, 13);
-GpioPin miso1(GPIOB_BASE, 14);
-GpioPin mosi1(GPIOB_BASE, 15);
-GpioPin cs1(GPIOA_BASE, 2);
-GpioPin dio1(GPIOC_BASE, 0);
-
 struct Stats;
 
-const char *stringFromErr(SX1278::Error err);
-const char *stringFromRxBw(SX1278::RxBw rx_bw);
+const char *stringFromErr(SX1278::Error err)
+{
+    switch (err)
+    {
+        case SX1278::Error::BAD_VALUE:
+            return "Error::BAD_VALUE";
 
-void printStats(Stats stats);
+        case SX1278::Error::BAD_VERSION:
+            return "Error::BAD_VERSION";
+
+        default:
+            return "<unknown>";
+    }
+}
+
+#if defined _BOARD_STM32F429ZI_SKYWARD_GS
+#include "interfaces-impl/hwmapping.h"
+
+#if 1 // use ra01
+using cs = peripherals::ra01::cs;
+using dio0 = peripherals::ra01::dio0;
+#else
+using cs = peripherals::sx127x::cs;
+using dio0 = peripherals::sx127x::dio0;
+#endif
+
+using sck = interfaces::spi4::sck;
+using miso = interfaces::spi4::miso;
+using mosi = interfaces::spi4::mosi;
+
+#define SX1278_SPI SPI4
+
+#elif defined _BOARD_STM32F429ZI_SKYWARD_DEATHST_V3
+#include "interfaces-impl/hwmapping.h"
+
+using cs = sensors::sx127x::cs;
+using dio0 = sensors::sx127x::dio0;
+
+using sck = interfaces::spi5::sck;
+using miso = interfaces::spi5::miso;
+using mosi = interfaces::spi5::mosi;
+
+#define SX1278_SPI SPI5
+
+#else
+#error "Target not supported"
+#endif
 
 /// Status informations.
 struct Stats
@@ -91,9 +99,23 @@ struct Stats
         }
     }
 
+    void print() const
+    {
+        // Prints are REALLY slow, so take a COPY of stats, so we can print an
+        // instant in time.
+        Stats stats = *this;
+
+        printf("stats.last_recv_packet = %d\n", stats.last_recv_packet);
+        printf("stats.corrupted_packets = %d\n", stats.corrupted_packets);
+        printf("stats.send_count = %d\n", stats.send_count);
+        printf("stats.recv_count = %d\n", stats.recv_count);
+        printf("stats.recv_errors = %d\n", stats.recv_errors);
+        printf("stats.packet_loss = %.2f %%\n", stats.packet_loss() * 100.0f);
+    }
+
 } stats;
 
-SX1278 *sx1278[2] = {nullptr, nullptr};
+SX1278 *sx1278 = nullptr;
 
 struct Msg
 {
@@ -107,14 +129,14 @@ struct Msg
     const static int DUMMY_3 = 0x1234abcd;
 };
 
-void recvLoop(int idx)
+void recvLoop()
 {
     while (1)
     {
         Msg msg;
         memset(&msg, 0, sizeof(msg));
 
-        int len = sx1278[idx]->receive((uint8_t *)&msg, sizeof(msg));
+        int len = sx1278->receive((uint8_t *)&msg, sizeof(msg));
 
         if (len != sizeof(msg))
         {
@@ -134,7 +156,7 @@ void recvLoop(int idx)
     }
 }
 
-void sendLoop(int idx)
+void sendLoop()
 {
     while (1)
     {
@@ -146,7 +168,7 @@ void sendLoop(int idx)
         msg.dummy_2 = Msg::DUMMY_2;
         msg.dummy_3 = Msg::DUMMY_3;
 
-        sx1278[idx]->send((uint8_t *)&msg, sizeof(msg));
+        sx1278->send((uint8_t *)&msg, sizeof(msg));
         stats.send_count = next_idx;
     }
 }
@@ -154,116 +176,57 @@ void sendLoop(int idx)
 /// Get current time
 long long now() { return miosix::getTick() * 1000 / miosix::TICK_FREQ; }
 
-void __attribute__((used)) EXTI15_IRQHandlerImpl()
+#if defined _BOARD_STM32F429ZI_SKYWARD_GS
+void __attribute__((used)) EXTI6_IRQHandlerImpl()
+#elif defined _BOARD_STM32F429ZI_SKYWARD_DEATHST_V3
+void __attribute__((used)) EXTI10_IRQHandlerImpl()
+#else
+#error "Target not supported"
+#endif
 {
-    if (sx1278[0])
-        sx1278[0]->handleDioIRQ();
+    if (sx1278)
+        sx1278->handleDioIRQ();
 }
 
-void __attribute__((used)) EXTI0_IRQHandlerImpl()
+void initBoard()
 {
-    if (sx1278[1])
-        sx1278[1]->handleDioIRQ();
-}
-
-/// Initialize stm32f407g board (sx1278[0] only)
-void initBoard0()
-{
-    {
-        miosix::FastInterruptDisableLock dLock;
-
-        // Enable SPI3
-        RCC->APB1ENR |= RCC_APB1ENR_SPI3EN;
-        RCC_SYNC();
-
-        // Setup SPI pins
-        sck0.mode(miosix::Mode::ALTERNATE);
-        sck0.alternateFunction(6);
-        miso0.mode(miosix::Mode::ALTERNATE);
-        miso0.alternateFunction(6);
-        mosi0.mode(miosix::Mode::ALTERNATE);
-        mosi0.alternateFunction(6);
-
-        cs0.mode(miosix::Mode::OUTPUT);
-        dio0.mode(miosix::Mode::INPUT);
-    }
-
-    cs0.high();
-    enableExternalInterrupt(dio0.getPort(), dio0.getNumber(),
+#if defined _BOARD_STM32F429ZI_SKYWARD_GS
+    enableExternalInterrupt(GPIOF_BASE, 6,
                             InterruptTrigger::RISING_EDGE);
-}
-
-/// Initialize stm32f407g board (sx1278[1] only)
-void initBoard1()
-{
-    {
-        miosix::FastInterruptDisableLock dLock;
-
-        // Enable SPI2
-        RCC->APB1ENR |= RCC_APB1ENR_SPI2EN;
-        RCC_SYNC();
-
-        sck1.mode(miosix::Mode::ALTERNATE);
-        sck1.alternateFunction(5);
-        miso1.mode(miosix::Mode::ALTERNATE);
-        miso1.alternateFunction(5);
-        mosi1.mode(miosix::Mode::ALTERNATE);
-        mosi1.alternateFunction(5);
-
-        cs1.mode(miosix::Mode::OUTPUT);
-        dio1.mode(miosix::Mode::INPUT);
-    }
-
-    cs1.high();
-    enableExternalInterrupt(dio1.getPort(), dio1.getNumber(),
+#elif defined _BOARD_STM32F429ZI_SKYWARD_DEATHST_V3
+    enableExternalInterrupt(GPIOF_BASE, 10,
                             InterruptTrigger::RISING_EDGE);
+#else
+#error "Target not supported"
+#endif
 }
 
 int main()
 {
-#ifndef DISABLE_RX
-    initBoard0();
-#endif
-#ifndef DISABLE_TX
-    initBoard1();
-#endif
+    initBoard();
 
     // Run default configuration
     SX1278::Config config;
     SX1278::Error err;
 
-    // Configure them
-#ifndef DISABLE_RX
-    sx1278[0] = new SX1278(bus0, cs0);
+    SPIBus bus(SX1278_SPI);
+    GpioPin cs = cs::getPin();
 
-    printf("\n[sx1278] Configuring sx1278[0]...\n");
-    printConfig(config);
-    if ((err = sx1278[0]->init(config)) != SX1278::Error::NONE)
+    sx1278 = new SX1278(bus, cs);
+
+    printf("\n[sx1278] Configuring sx1278...\n");
+    if ((err = sx1278->init(config)) != SX1278::Error::NONE)
     {
-        printf("[sx1278] sx1278[0]->init error: %s\n", stringFromErr(err));
+        printf("[sx1278] sx1278->init error: %s\n", stringFromErr(err));
         return -1;
     }
-#endif
-
-#ifndef DISABLE_TX
-    sx1278[1] = new SX1278(bus1, cs1);
-
-    printf("\n[sx1278] Configuring sx1278[1]...\n");
-    printConfig(config);
-    if ((err = sx1278[1]->init(config)) != SX1278::Error::NONE)
-    {
-        printf("[sx1278] sx1278[1]->init error: %s\n", stringFromErr(err));
-        return -1;
-    }
-#endif
 
     // Run background threads
 #ifndef DISABLE_RX
-    std::thread recv([]() { recvLoop(0); });
+    std::thread recv([]() { recvLoop(); });
 #endif
 #ifndef DISABLE_TX
-    miosix::Thread::sleep(500);
-    std::thread send([]() { sendLoop(1); });
+    std::thread send([]() { sendLoop(); });
 #endif
 
     // Finish!
@@ -285,7 +248,7 @@ int main()
                            ((float)elapsed / 1000.0f);
 
         printf("\n[sx1278] Stats:\n");
-        printStats(stats);
+        stats.print();
         printf("tx_bitrate: %.2f kb/s\n", tx_bitrate / 1000.0f);
         printf("rx_bitrate: %.2f kb/s\n", rx_bitrate / 1000.0f);
 
@@ -293,17 +256,4 @@ int main()
     }
 
     return 0;
-}
-
-void printStats(Stats stats)
-{
-    // Prints are REALLY slow, so take a COPY of stats, so we can print an
-    // instant in time.
-
-    printf("stats.last_recv_packet = %d\n", stats.last_recv_packet);
-    printf("stats.corrupted_packets = %d\n", stats.corrupted_packets);
-    printf("stats.send_count = %d\n", stats.send_count);
-    printf("stats.recv_count = %d\n", stats.recv_count);
-    printf("stats.recv_errors = %d\n", stats.recv_errors);
-    printf("stats.packet_loss = %.2f %%\n", stats.packet_loss() * 100.0f);
 }
