@@ -101,7 +101,7 @@ int main()
     CanbusDriver* c = new CanbusDriver(CAN1, cfg, bt);
     CanProtocol protocol(c);
     // Allow every message
-    Mask32FilterBank f2(0, 0, 0, 0, 0, 0, 0);
+    Mask32FilterBank f2(0, 0, 1, 1, 0, 0, 0);
 
     c->addFilter(f2);
     c->init();
@@ -131,15 +131,15 @@ int main()
     int error = 0;
     for (int f = 0; f < 100000; f++)
     {
-        protocol.waitBufferEmpty();
+        protocol.waitBufferNotEmpty();
         CanData temp = protocol.getPacket();
         // TRACE("received packet \n");
         if ((!equal(&temp, &toSend1) && !equal(&temp, &toSend2)))
         {
             error++;
             TRACE("Error\n");
-            TRACE("Received  %lu\n", temp.canId);
-            TRACE("Received %d\n", temp.length);
+            TRACE("Received id %lu\n", temp.canId);
+            TRACE("length %d\n", temp.length);
             for (int i = 0; i < temp.length; i++)
             {
                 TRACE("Received payload %d:  %llu,\n", i, temp.payload[i]);
@@ -154,4 +154,5 @@ int main()
     {
         TRACE("Number of Error  %d\n", error);
     }
+    free(c);
 }

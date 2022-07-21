@@ -36,21 +36,15 @@ CanProtocol::~CanProtocol() { (*can).~CanbusDriver(); }
 
 CanData CanProtocol::getPacket()
 {
-    miosix::Lock<miosix::FastMutex> l(mutex);
-
     if (!buffer.isEmpty())
         return buffer.pop();
     else
         return {};
 }
 
-bool CanProtocol::isBufferEmpty()
-{
-    miosix::Lock<miosix::FastMutex> l(mutex);
-    return buffer.isEmpty();
-}
+bool CanProtocol::isBufferEmpty() { return buffer.isEmpty(); }
 
-void CanProtocol::waitBufferEmpty() { buffer.waitUntilNotEmpty(); }
+void CanProtocol::waitBufferNotEmpty() { buffer.waitUntilNotEmpty(); }
 
 void CanProtocol::sendData(CanData dataToSend)
 {
@@ -71,7 +65,6 @@ void CanProtocol::sendData(CanData dataToSend)
 
     for (int i = 1; i < dataToSend.length; i++)
     {
-        tempId = dataToSend.canId;
         // create the id for the remaining packets
         packet.id = (tempId << shiftSequentialInfo) | firstPacket |
                     (63 - (tempLen & leftToSend));
@@ -175,11 +168,8 @@ void CanProtocol::run()
                     if (data[sourceId].nRec == data[sourceId].length &&
                         data[sourceId].nRec != 0)
                     {
-                        {
-                            // We put the element of data in buffer
-                            miosix::Lock<miosix::FastMutex> l(mutex);
-                            buffer.put(data[sourceId]);
-                        }
+                        // We put the element of data in buffer
+                        buffer.put(data[sourceId]);
 
                         // Empties the struct
                         data[sourceId].canId  = -1;

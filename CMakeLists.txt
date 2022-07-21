@@ -160,13 +160,13 @@ sbs_target(test-ada stm32f429zi_skyward_death_stack_v3)
 #                               Tests - Drivers                               #
 #-----------------------------------------------------------------------------#
 add_executable(test-can-protocol src/tests/drivers/canbus/test-can-protocol.cpp)
-sbs_target(test-can-protocol stm32f429zi_stm32f4discovery)
+sbs_target(test-can-protocol stm32f429zi_skyward_pyxis_auxiliary)
 
 add_executable(test-canbus-loopback src/tests/drivers/canbus/test-canbus-loopback.cpp)
 sbs_target(test-canbus-loopback stm32f429zi_stm32f4discovery)
 
 add_executable(test-canbus-2way src/tests/drivers/canbus/test-canbus-2way.cpp)
-sbs_target(test-canbus-2way stm32f429zi_stm32f4discovery)
+sbs_target(test-canbus-2way stm32f429zi_skyward_pyxis_auxiliary)
 
 add_executable(test-dma-spi src/tests/drivers/dma/test-dma-spi.cpp)
 sbs_target(test-dma-spi stm32f429zi_stm32f4discovery)
