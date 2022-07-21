@@ -87,15 +87,6 @@ public:
                              uint32_t detectionThreshold = 1);
 
     /**
-     * @brief Unregisters the callback associated with the specified pin, if
-     * any.
-     *
-     * @param pin Pin whose callback function is to be removed.
-     * @return True if a callback was present and removed for the given pin.
-     */
-    bool unregisterPinCallback(miosix::GpioPin pin);
-
-    /**
      * @brief Starts the PinObserver's task scheduler.
      *
      * Note that the scheduler is started as soon as the PinObserver is first

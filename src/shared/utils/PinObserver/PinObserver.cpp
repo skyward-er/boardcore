@@ -39,17 +39,15 @@ bool PinObserver::registerPinCallback(miosix::GpioPin pin, PinCallback callback,
     // Check if the insertion took place
     if (result.second)
     {
-        return scheduler.addTask(
-            std::bind(&PinObserver::periodicPinValueCheck, this, pin),
-            SAMPLE_PERIOD, TaskScheduler::Policy::SKIP);
+        if (scheduler.addTask(
+                std::bind(&PinObserver::periodicPinValueCheck, this, pin),
+                SAMPLE_PERIOD, TaskScheduler::Policy::SKIP))
+            return true;
+        else
+            callbacks.erase(pin);
     }
 
     return false;
-}
-
-bool PinObserver::unregisterPinCallback(miosix::GpioPin pin)
-{
-    return callbacks.erase(pin) != 0;
 }
 
 bool PinObserver::start() { return scheduler.start(); }

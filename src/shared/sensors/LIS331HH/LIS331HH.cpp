@@ -33,15 +33,7 @@ LIS331HH::LIS331HH(SPIBusInterface& bus, miosix::GpioPin cs,
 {
 }
 
-bool LIS331HH::init()
-{
-    SPITransaction spi(slave);
-
-    spi.writeRegister(CTRL_REG1, 0x20);
-    printf("CTRL_REG1: %X\n", spi.readRegister(CTRL_REG1));
-
-    return true;
-}
+bool LIS331HH::init() { return true; }
 
 bool LIS331HH::selfTest() { return true; }
 
@@ -57,17 +49,14 @@ LIS331HHData LIS331HH::sampleImpl()
     val = spi.readRegister(OUT_X_L);
     val |= spi.readRegister(OUT_X_H) << 8;
     data.accelerationX = 6.0 / 65536.0 * val;
-    printf("%X\t", val);
 
     val = spi.readRegister(OUT_Y_L);
     val |= spi.readRegister(OUT_Y_H) << 8;
-    data.accelerationX = 6.0 / 65536.0 * val;
-    printf("%X\t", val);
+    data.accelerationY = 6.0 / 65536.0 * val;
 
     val = spi.readRegister(OUT_Z_L);
     val |= spi.readRegister(OUT_Z_H) << 8;
-    data.accelerationX = 6.0 / 65536.0 * val;
-    printf("%X\t", val);
+    data.accelerationZ = 6.0 / 65536.0 * val;
 
     return data;
 }
