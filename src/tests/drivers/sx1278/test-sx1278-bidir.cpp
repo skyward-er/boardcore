@@ -21,8 +21,8 @@
  */
 
 #include <drivers/interrupt/external_interrupts.h>
-#include <radio/SX1278/SX1278.h>
 #include <miosix.h>
+#include <radio/SX1278/SX1278.h>
 
 #include <cstring>
 #include <thread>
@@ -48,15 +48,15 @@ const char *stringFromErr(SX1278::Error err)
 #if defined _BOARD_STM32F429ZI_SKYWARD_GS
 #include "interfaces-impl/hwmapping.h"
 
-#if 1 // use ra01
-using cs = peripherals::ra01::cs;
+#if 1  // use ra01
+using cs   = peripherals::ra01::cs;
 using dio0 = peripherals::ra01::dio0;
 #else
-using cs = peripherals::sx127x::cs;
+using cs   = peripherals::sx127x::cs;
 using dio0 = peripherals::sx127x::dio0;
 #endif
 
-using sck = interfaces::spi4::sck;
+using sck  = interfaces::spi4::sck;
 using miso = interfaces::spi4::miso;
 using mosi = interfaces::spi4::mosi;
 
@@ -65,10 +65,10 @@ using mosi = interfaces::spi4::mosi;
 #elif defined _BOARD_STM32F429ZI_SKYWARD_DEATHST_V3
 #include "interfaces-impl/hwmapping.h"
 
-using cs = sensors::sx127x::cs;
+using cs   = sensors::sx127x::cs;
 using dio0 = sensors::sx127x::dio0;
 
-using sck = interfaces::spi5::sck;
+using sck  = interfaces::spi5::sck;
 using miso = interfaces::spi5::miso;
 using mosi = interfaces::spi5::mosi;
 
@@ -95,11 +95,9 @@ void __attribute__((used)) EXTI10_IRQHandlerImpl()
 void initBoard()
 {
 #if defined _BOARD_STM32F429ZI_SKYWARD_GS
-    enableExternalInterrupt(GPIOF_BASE, 6,
-                            InterruptTrigger::RISING_EDGE);
+    enableExternalInterrupt(GPIOF_BASE, 6, InterruptTrigger::RISING_EDGE);
 #elif defined _BOARD_STM32F429ZI_SKYWARD_DEATHST_V3
-    enableExternalInterrupt(GPIOF_BASE, 10,
-                            InterruptTrigger::RISING_EDGE);
+    enableExternalInterrupt(GPIOF_BASE, 10, InterruptTrigger::RISING_EDGE);
 #else
 #error "Target not supported"
 #endif
