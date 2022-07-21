@@ -60,7 +60,7 @@ inline SPIBusConfig spiConfig()
 
     // FIXME(davide.mor): This depends on the device
     config.clockDivider = SPI::ClockDivider::DIV_64;
-    config.mode         = SPI::Mode::MODE_1;
+    config.mode         = SPI::Mode::MODE_0;
     config.bitOrder     = SPI::BitOrder::MSB_FIRST;
     // config.cs_setup_time_us = 30;
     // config.cs_hold_time_us  = 100;
