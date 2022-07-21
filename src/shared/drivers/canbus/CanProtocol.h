@@ -26,6 +26,8 @@
 #include <utils/Debug.h>
 #include <utils/collections/IRQCircularBuffer.h>
 
+#include <thread>
+
 #include "Canbus.h"
 
 #define N_BOARDS 3  ///< Number of boards on the bus.
@@ -115,14 +117,7 @@ struct CanData
  */
 class CanProtocol : public ActiveObject
 {
-private:
-    // The physical implementation of the CanBus
-    CanbusDriver* can;
-
-    // The buffer used to store the completed CanData
-    IRQCircularBuffer<CanData, N_BOARDS> buffer;
-
-    miosix::FastMutex mutex;
+    using MsgHandler = std::function<void(CanData data)>;
 
 public:
     /**
@@ -130,21 +125,9 @@ public:
      *
      * @param can Pointer to a CanbusDriver object.
      */
-    explicit CanProtocol(CanbusDriver* can);
+    explicit CanProtocol(CanbusDriver* can, MsgHandler callback);
 
     ~CanProtocol();
-
-    /**
-     * @brief Returns the first packet in the buffer.
-     *
-     * If buffer is empty return an empty packet.
-     * @warning Should be called only after checking isEmpty()
-     */
-    CanData getPacket();
-
-    bool isBufferEmpty();
-
-    void waitBufferNotEmpty();
 
     /**
      * @brief Sends a CanData object on the bus.
@@ -155,13 +138,15 @@ public:
      *
      * @param data Contains the id and the data of the packet to send.
      */
-    void sendData(CanData dataToSend);
+    void send(CanData toSend);
 
 private:
     /**
      * @brief Count the number of bytes needed to encode a uint64_t number.
      */
     uint8_t byteForInt(uint64_t number);
+
+    void sendData();
 
     /**
      * @brief Keeps listening on the canbus for packets.
@@ -175,6 +160,16 @@ private:
      * CanHandler.
      */
     void run() override;
+
+    // The physical implementation of the CanBus
+    CanbusDriver* can;
+
+    // The buffer used to store the CanData to send
+    IRQCircularBuffer<CanData, N_BOARDS> TXbuffer;
+
+    miosix::FastMutex mutex;
+
+    MsgHandler callback;
 };
 
 }  // namespace Canbus

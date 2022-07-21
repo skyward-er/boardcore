@@ -24,6 +24,7 @@
 
 #include <drivers/canbus/CanProtocol.h>
 
+#include <functional>
 #include <thread>
 
 #include "drivers/canbus/BusLoadEstimation.h"
@@ -46,23 +47,10 @@ using CanRX = Gpio<GPIOA_BASE, 11>;
 using CanTX = Gpio<GPIOA_BASE, 12>;
 #endif
 
-#define SLP 5
+#define SLP 100
 miosix::FastMutex mutex;
 CanData toSend1;
 CanData toSend2;
-void sendData(CanProtocol* protocol, CanData* toSend)
-{
-    while (true)
-    {
-
-        // TRACE("send id %d\n", toSend->canId);
-        {
-            miosix::Lock<miosix::FastMutex> l(mutex);
-            (*protocol).sendData(*toSend);
-        }
-        Thread::sleep(SLP);
-    }
-}
 bool equal(CanData* first, CanData* second)
 {
     if ((*first).canId != (*second).canId ||
@@ -78,6 +66,36 @@ bool equal(CanData* first, CanData* second)
     return true;
 }
 
+void print(CanData data)
+{
+    if ((!equal(&data, &toSend1) && !equal(&data, &toSend2)))
+    {
+        TRACE("Error\n");
+        TRACE("Received id %lu\n", data.canId);
+        TRACE("length %d\n", data.length);
+        for (int i = 0; i < data.length; i++)
+        {
+            TRACE("Received payload %d:  %llu,\n", i, data.payload[i]);
+        }
+    }
+    else
+    {
+        TRACE("OK :) id  %lu\n", data.canId);
+    }
+}
+void sendData(CanProtocol* protocol, CanData* toSend)
+{
+    while (true)
+    {
+
+        // TRACE("send id %d\n", toSend->canId);
+        {
+            miosix::Lock<miosix::FastMutex> l(mutex);
+            (*protocol).send(*toSend);
+        }
+        Thread::sleep(SLP);
+    }
+}
 int main()
 {
     {
@@ -99,7 +117,8 @@ int main()
     bt.baudRate     = BAUD_RATE;
     bt.samplePoint  = SAMPLE_POINT;
     CanbusDriver* c = new CanbusDriver(CAN1, cfg, bt);
-    CanProtocol protocol(c);
+    CanProtocol protocol(c,
+                         &print);  // std::bind(&print, std::placeholders::_1));
     // Allow every message
     Mask32FilterBank f2(0, 0, 1, 1, 0, 0, 0);
 
@@ -117,7 +136,7 @@ int main()
     toSend1.payload[5] = 3234;
     toSend1.payload[6] = 12;
     toSend1.payload[7] = 0;
-    std::thread firstSend(sendData, &protocol, &toSend1);
+    // std::thread firstSend(sendData, &protocol, &toSend1);
 
     Thread::sleep(10);
     toSend2.canId      = 0x100;
@@ -127,32 +146,15 @@ int main()
     toSend2.payload[2] = 0x123ff;
     toSend2.payload[3] = 1;
     std::thread secondSend(sendData, &protocol, &toSend2);
+
+    /* code */
+
     TRACE("start \n");
-    int error = 0;
-    for (int f = 0; f < 100000; f++)
+    while (true)
     {
-        protocol.waitBufferNotEmpty();
-        CanData temp = protocol.getPacket();
+        protocol.send(toSend1);
+        Thread::sleep(SLP);
+
         // TRACE("received packet \n");
-        if ((!equal(&temp, &toSend1) && !equal(&temp, &toSend2)))
-        {
-            error++;
-            TRACE("Error\n");
-            TRACE("Received id %lu\n", temp.canId);
-            TRACE("length %d\n", temp.length);
-            for (int i = 0; i < temp.length; i++)
-            {
-                TRACE("Received payload %d:  %llu,\n", i, temp.payload[i]);
-            }
-        }
-        else
-        {
-            TRACE("OK :) id  %lu\n", temp.canId);
-        }
     }
-    if (error != 0)
-    {
-        TRACE("Number of Error  %d\n", error);
-    }
-    free(c);
 }

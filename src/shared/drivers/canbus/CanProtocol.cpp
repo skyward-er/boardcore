@@ -30,51 +30,55 @@ namespace Canbus
 // For each board contains the packet that we are re-assembling
 CanData data[N_BOARDS];
 
-CanProtocol::CanProtocol(CanbusDriver* can) { this->can = can; }
-
-CanProtocol::~CanProtocol() { (*can).~CanbusDriver(); }
-
-CanData CanProtocol::getPacket()
+CanProtocol::CanProtocol(CanbusDriver* can, MsgHandler callback)
 {
-    if (!buffer.isEmpty())
-        return buffer.pop();
-    else
-        return {};
+    this->can      = can;
+    this->callback = callback;
 }
 
-bool CanProtocol::isBufferEmpty() { return buffer.isEmpty(); }
+CanProtocol::~CanProtocol() { delete can; }
 
-void CanProtocol::waitBufferNotEmpty() { buffer.waitUntilNotEmpty(); }
+void CanProtocol::send(CanData toSend) { TXbuffer.put(toSend); }
 
-void CanProtocol::sendData(CanData dataToSend)
+void CanProtocol::sendData()
 {
-    CanPacket packet = {};
-    uint8_t tempLen  = dataToSend.length - 1;
-    uint32_t tempId  = dataToSend.canId;
 
-    // Send the first packet
-    packet.ext = true;
-    // create the id for the first packet
-    packet.id = (tempId << shiftSequentialInfo) | (63 - (tempLen & leftToSend));
-    packet.length = byteForInt(dataToSend.payload[0]);
-    // Splits payload[0] in the right number of uint8_t
-    for (int k = 0; k < packet.length; k++)
-        packet.data[k] = dataToSend.payload[0] >> (8 * k);
-    can->send(packet);
-    tempLen--;
-
-    for (int i = 1; i < dataToSend.length; i++)
+    while (true)
     {
-        // create the id for the remaining packets
-        packet.id = (tempId << shiftSequentialInfo) | firstPacket |
-                    (63 - (tempLen & leftToSend));
-        packet.length = byteForInt(dataToSend.payload[i]);
-        // Splits payload[i] in the right number of uint8_t
-        for (int k = 0; k < packet.length; k++)
-            packet.data[k] = dataToSend.payload[i] >> (8 * k);
+        TXbuffer.waitUntilNotEmpty();
+        if (!TXbuffer.IRQisEmpty())
+        {
+            CanData dataToSend = TXbuffer.pop();
+            CanPacket packet   = {};
+            uint8_t tempLen    = dataToSend.length - 1;
+            uint32_t tempId    = dataToSend.canId;
 
-        can->send(packet);
-        tempLen--;
+            // Send the first packet
+            packet.ext = true;
+            // create the id for the first packet
+            packet.id =
+                (tempId << shiftSequentialInfo) | (63 - (tempLen & leftToSend));
+            packet.length = byteForInt(dataToSend.payload[0]);
+            // Splits payload[0] in the right number of uint8_t
+            for (int k = 0; k < packet.length; k++)
+                packet.data[k] = dataToSend.payload[0] >> (8 * k);
+            can->send(packet);
+            tempLen--;
+
+            for (int i = 1; i < dataToSend.length; i++)
+            {
+                // create the id for the remaining packets
+                packet.id = (tempId << shiftSequentialInfo) | firstPacket |
+                            (63 - (tempLen & leftToSend));
+                packet.length = byteForInt(dataToSend.payload[i]);
+                // Splits payload[i] in the right number of uint8_t
+                for (int k = 0; k < packet.length; k++)
+                    packet.data[k] = dataToSend.payload[i] >> (8 * k);
+
+                can->send(packet);
+                tempLen--;
+            }
+        }
     }
 }
 
@@ -94,11 +98,11 @@ uint8_t CanProtocol::byteForInt(uint64_t number)
 
 void CanProtocol::run()
 {
+    std::thread send(std::bind(&CanProtocol::sendData, this));
     while (!shouldStop())
     {
         // Wait for the next packet
         can->getRXBuffer().waitUntilNotEmpty();
-
         // If the buffer is not empty retrieve the packet
         if (!can->getRXBuffer().isEmpty())
         {
@@ -169,7 +173,7 @@ void CanProtocol::run()
                         data[sourceId].nRec != 0)
                     {
                         // We put the element of data in buffer
-                        buffer.put(data[sourceId]);
+                        callback(data[sourceId]);
 
                         // Empties the struct
                         data[sourceId].canId  = -1;
