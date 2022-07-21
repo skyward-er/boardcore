@@ -103,14 +103,15 @@ struct Stats
     {
         // Prints are REALLY slow, so take a COPY of stats, so we can print an
         // instant in time.
-        Stats stats = *this;
+        Stats stats_now = *this;
 
-        printf("stats.last_recv_packet = %d\n", stats.last_recv_packet);
-        printf("stats.corrupted_packets = %d\n", stats.corrupted_packets);
-        printf("stats.send_count = %d\n", stats.send_count);
-        printf("stats.recv_count = %d\n", stats.recv_count);
-        printf("stats.recv_errors = %d\n", stats.recv_errors);
-        printf("stats.packet_loss = %.2f %%\n", stats.packet_loss() * 100.0f);
+        printf("stats.last_recv_packet = %d\n", stats_now.last_recv_packet);
+        printf("stats.corrupted_packets = %d\n", stats_now.corrupted_packets);
+        printf("stats.send_count = %d\n", stats_now.send_count);
+        printf("stats.recv_count = %d\n", stats_now.recv_count);
+        printf("stats.recv_errors = %d\n", stats_now.recv_errors);
+        printf("stats.packet_loss = %.2f %%\n",
+               stats_now.packet_loss() * 100.0f);
     }
 
 } stats;

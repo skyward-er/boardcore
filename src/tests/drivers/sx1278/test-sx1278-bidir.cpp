@@ -108,7 +108,8 @@ void recvLoop()
     char buf[64];
     while (1)
     {
-        ssize_t res = sx1278->receive((uint8_t *)buf, sizeof(buf));
+        ssize_t res =
+            sx1278->receive(reinterpret_cast<uint8_t *>(buf), sizeof(buf));
         if (res != -1)
         {
             // Make sure there is a terminator somewhere
@@ -127,7 +128,7 @@ void sendLoop(int interval, const char *data)
     {
         miosix::Thread::sleep(interval);
 
-        sx1278->send((uint8_t *)buf, strlen(buf) + 1);
+        sx1278->send(reinterpret_cast<uint8_t *>(buf), strlen(buf) + 1);
         printf("[sx1278] Sent '%s'\n", buf);
     }
 }
