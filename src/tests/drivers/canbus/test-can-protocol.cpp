@@ -22,13 +22,13 @@
  * THE SOFTWARE.
  */
 
-#include <drivers/canbus/CanProtocol.h>
+#include <drivers/canbus/CanDriver/BusLoadEstimation.h>
+#include <drivers/canbus/CanDriver/CanDriver.h>
+#include <drivers/canbus/CanProtocol/CanProtocol.h>
 
 #include <functional>
 #include <thread>
 
-#include "drivers/canbus/BusLoadEstimation.h"
-#include "drivers/canbus/Canbus.h"
 #include "utils/collections/CircularBuffer.h"
 
 constexpr uint32_t BAUD_RATE = 500 * 1000;

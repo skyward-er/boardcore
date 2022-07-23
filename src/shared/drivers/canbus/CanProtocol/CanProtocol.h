@@ -23,12 +23,11 @@
 #pragma once
 
 #include <ActiveObject.h>
+#include <drivers/canbus/CanDriver/CanDriver.h>
 #include <utils/Debug.h>
 #include <utils/collections/IRQCircularBuffer.h>
 
 #include <thread>
-
-#include "Canbus.h"
 
 #define N_BOARDS 3  ///< Number of boards on the bus.
 
