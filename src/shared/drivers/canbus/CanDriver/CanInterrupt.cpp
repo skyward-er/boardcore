@@ -26,7 +26,7 @@
 #include <kernel/scheduler/scheduler.h>
 #include <miosix.h>
 
-#include "Canbus.h"
+#include "CanDriver.h"
 
 namespace Boardcore
 {
@@ -98,9 +98,7 @@ void __attribute__((used)) CAN_RXIRQHandlerImpl(int canDev, int fifo)
     (void)canDev;
 
     if (canDrivers[canDev])
-    {
         canDrivers[canDev]->handleRXInterrupt(fifo);
-    }
 }
 
 void __attribute__((used)) CAN_TXIRQHandlerImpl(int canDev)

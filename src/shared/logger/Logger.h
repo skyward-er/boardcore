@@ -124,7 +124,7 @@ public:
      */
     void logStats();
 
-public:
+private:
     Logger();
 
     static std::string getFileName(int logNumber);

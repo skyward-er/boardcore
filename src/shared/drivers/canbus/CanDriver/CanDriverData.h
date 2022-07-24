@@ -54,7 +54,7 @@ struct CanPacket
     uint32_t timestamp = 0;
 
     uint32_t id;
-    bool ext = false;
+    bool ext = false;  ///< Whether to use extended packet id
 
     bool rtr = false;
 

@@ -27,7 +27,7 @@
 
 #include <cstdint>
 
-#include "CanData.h"
+#include "CanDriverData.h"
 
 using miosix::FastMutex;
 using miosix::Lock;

@@ -26,7 +26,7 @@
 #include <miosix.h>
 #include <utils/collections/IRQCircularBuffer.h>
 
-#include "CanData.h"
+#include "CanDriverData.h"
 #include "Filters.h"
 
 using miosix::Thread;
@@ -38,8 +38,8 @@ namespace Canbus
 {
 
 /**
- * @brief Low level canbus driver, with support for both peripherals (CAN1 and
- * CAN2) on stm32f4 micros.
+ * @brief Low level CanBus driver, with support for both peripherals (CAN1 and
+ * CAN2) on stm32f4 microcontrollers.
  */
 class CanbusDriver
 {
@@ -56,7 +56,7 @@ class CanbusDriver
 
 public:
     /**
-     * @brief Configuration struct for basic canbus operation.
+     * @brief Configuration struct for basic CanBus operation.
      */
     struct CanbusConfig
     {
@@ -81,7 +81,7 @@ public:
     {
         /**
          * @brief Canbus baud rate in bps (BITS PER SECOND). CANOpen standard
-         * values are preferred but not mandatory: 1000 kpbs, 500 kbps, 250
+         * values are preferred but not mandatory: 1000 kbps, 500 kbps, 250
          * kbps, 125 kbps, 100 kbps, 83.333 kbps, 50 kbps, 25 kbps and 10 kbps.
          */
         uint32_t baudRate;
@@ -93,7 +93,7 @@ public:
     };
 
     /**
-     * @brief Struct specifing exact bit timing registers values.
+     * @brief Struct specifying exact bit timing registers values.
      */
     struct BitTiming
     {
@@ -133,7 +133,7 @@ public:
     ~CanbusDriver();
 
     /**
-     * @brief Exits initialization mode and starts canbus operation.
+     * @brief Exits initialization mode and starts CanBus operation.
      */
     void init();
 
@@ -173,7 +173,7 @@ public:
     }
 
     /**
-     * @brief Returns the canbus peripheral assigned to this instance.
+     * @brief Returns the CanBus peripheral assigned to this instance.
      */
     CAN_TypeDef* getCAN() { return can; }
 

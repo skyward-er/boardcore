@@ -25,17 +25,17 @@
 // considered lost. It may also receive requests from other canbus devices, to
 // which it will respond
 
+#include <ActiveObject.h>
+#include <diagnostic/PrintLogger.h>
+#include <drivers/canbus/CanDriver/BusLoadEstimation.h>
+#include <drivers/canbus/CanDriver/CanDriver.h>
 #include <utils/Debug.h>
 #include <utils/Stats/Stats.h>
+#include <utils/collections/CircularBuffer.h>
 
 #include <string>
 
-#include "ActiveObject.h"
 #include "SimpleCanManager.h"
-#include "diagnostic/PrintLogger.h"
-#include "drivers/canbus/BusLoadEstimation.h"
-#include "drivers/canbus/Canbus.h"
-#include "utils/collections/CircularBuffer.h"
 
 constexpr uint32_t BAUD_RATE         = 500 * 1000;
 constexpr float SAMPLE_POINT         = 87.5f / 100.0f;

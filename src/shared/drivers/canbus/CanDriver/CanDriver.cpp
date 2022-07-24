@@ -20,7 +20,7 @@
  * THE SOFTWARE.
  */
 
-#include "Canbus.h"
+#include "CanDriver.h"
 
 #include <kernel/scheduler/scheduler.h>
 #include <utils/ClockUtils.h>
@@ -53,26 +53,23 @@ CanbusDriver::CanbusDriver(CAN_TypeDef* can, CanbusConfig config,
     ClockUtils::enablePeripheralClock(can);
 
     // Enter init mode
-    can->MCR &= (~CAN_MCR_SLEEP);
+    can->MCR &= ~CAN_MCR_SLEEP;
     can->MCR |= CAN_MCR_INRQ;
 
     while ((can->MSR & CAN_MSR_INAK) == 0)
         ;
 
+    // Automatic wakeup when a new packet is available
     if (config.awum)
-    {
-        can->MCR |=
-            CAN_MCR_AWUM;  // Automatic wakeup when a new packet is available
-    }
+        can->MCR |= CAN_MCR_AWUM;
 
+    // Automatically recover from Bus-Off mode
     if (config.abom)
-    {
-        can->MCR |= CAN_MCR_ABOM;  // Automatically recover from Bus-Off mode
-    }
+        can->MCR |= CAN_MCR_ABOM;
+
+    // Disable automatic retransmission
     if (config.nart)
-    {
-        can->MCR |= CAN_MCR_NART;  // Disable automatic retransmission
-    }
+        can->MCR |= CAN_MCR_NART;
 
     // Bit timing configuration
     can->BTR &= ~CAN_BTR_BRP;
@@ -86,21 +83,15 @@ CanbusDriver::CanbusDriver(CAN_TypeDef* can, CanbusConfig config,
     can->BTR |= ((bitTiming.SJW - 1) & 0x3) << 24;
 
     if (config.loopback)
-    {
         can->BTR |= CAN_BTR_LBKM;
-    }
 
     // Enter filter initialization mode
     can->FMR |= CAN_FMR_FINIT;
 
     if (can == CAN1)
-    {
         canDrivers[0] = this;
-    }
     else
-    {
         canDrivers[1] = this;
-    }
 
     // Enable interrupts
     can->IER |= CAN_IER_FMPIE0 | CAN_IER_FMPIE1 | CAN_IER_TMEIE;
@@ -139,7 +130,7 @@ CanbusDriver::BitTiming CanbusDriver::calcBitTiming(AutoBitTiming autoBt)
                      1 << 10),
             1);
 
-        // Given N, calculate BS1 and BS2 that statusult in a sample time as
+        // Given N, calculate BS1 and BS2 that result in a sample time as
         // close as possible to the target one
         cfgIter.BS1 =
             std::min(std::max((int)roundf(autoBt.samplePoint * N - 1), 1),
@@ -190,9 +181,7 @@ CanbusDriver::BitTiming CanbusDriver::calcBitTiming(AutoBitTiming autoBt)
 void CanbusDriver::init()
 {
     if (isInit)
-    {
         return;
-    }
 
     PrintLogger ls = l.getChild("init");
 
@@ -203,9 +192,7 @@ void CanbusDriver::init()
 
     LOG_DEBUG(ls, "Waiting for canbus synchronization...");
     while ((can->MSR & CAN_MSR_INAK) > 0)
-    {
         Thread::sleep(1);
-    }
 
     LOG_INFO(ls, "Canbus synchronized! Init done!");
 
@@ -221,6 +208,7 @@ bool CanbusDriver::addFilter(FilterBank filter)
         LOG_ERR(ls, "Cannot add filter: canbus already initialized");
         return false;
     }
+
     if (filterIndex == NUM_FILTER_BANKS)
     {
         LOG_ERR(ls, "Cannot add filter: no more filter banks available");
@@ -256,6 +244,7 @@ uint32_t CanbusDriver::send(CanPacket packet)
 
     {
         miosix::FastInterruptDisableLock d;
+
         // Wait until there is an empty mailbox available to use
         while ((can->TSR & CAN_TSR_TME) == 0)
         {
@@ -312,13 +301,9 @@ uint32_t CanbusDriver::send(CanPacket packet)
     for (uint8_t i = 0; i < packet.length; ++i)
     {
         if (i < 4)
-        {
             mailbox->TDLR |= packet.data[i] << i * 8;
-        }
         else
-        {
             mailbox->TDHR |= packet.data[i] << (i - 4) * 8;
-        }
     }
 
     // Finally send the packet
@@ -336,13 +321,9 @@ void CanbusDriver::handleRXInterrupt(int fifo)
 
     mailbox = &can->sFIFOMailBox[fifo];
     if (fifo == 0)
-    {
         RFR = &can->RF0R;
-    }
     else
-    {
         RFR = &can->RF1R;
-    }
 
     status.fifoOverrun = (*RFR & CAN_RF0R_FOVR0) > 0;
     status.fifoFull    = (*RFR & CAN_RF0R_FULL0) > 0;
@@ -365,25 +346,18 @@ void CanbusDriver::handleRXInterrupt(int fifo)
         p.rtr = (mailbox->RIR & CAN_RI0R_RTR) > 0;
 
         if (p.ext)
-        {
             p.id = (mailbox->RIR >> 3) & 0x1FFFFFFF;
-        }
         else
-        {
             p.id = (mailbox->RIR >> 21) & 0x7FF;
-        }
+
         p.length = mailbox->RDTR & CAN_RDT0R_DLC;
 
         for (uint8_t i = 0; i < p.length; i++)
         {
             if (i < 4)  // Low register
-            {
                 p.data[i] = (mailbox->RDLR >> (i * 8)) & 0xFF;
-            }
             else  // High register
-            {
                 p.data[i] = (mailbox->RDHR >> ((i - 4) * 8)) & 0xFF;
-            }
         }
 
         *RFR |= CAN_RF0R_RFOM0;

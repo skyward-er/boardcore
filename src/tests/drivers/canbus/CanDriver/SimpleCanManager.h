@@ -21,15 +21,15 @@
  */
 
 #pragma once
+
+#include <ActiveObject.h>
+#include <drivers/canbus/CanDriver/BusLoadEstimation.h>
+#include <drivers/canbus/CanDriver/CanDriver.h>
 #include <miosix.h>
+#include <utils/collections/SyncCircularBuffer.h>
 
 #include <cstdlib>
 #include <functional>
-
-#include "ActiveObject.h"
-#include "drivers/canbus/BusLoadEstimation.h"
-#include "drivers/canbus/Canbus.h"
-#include "utils/collections/SyncCircularBuffer.h"
 
 using std::function;
 

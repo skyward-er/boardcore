@@ -20,12 +20,12 @@
  * THE SOFTWARE.
  */
 
-#include <string>
+#include <ActiveObject.h>
+#include <diagnostic/PrintLogger.h>
+#include <drivers/canbus/CanDriver/BusLoadEstimation.h>
+#include <drivers/canbus/CanDriver/CanDriver.h>
 
-#include "ActiveObject.h"
-#include "diagnostic/PrintLogger.h"
-#include "drivers/canbus/BusLoadEstimation.h"
-#include "drivers/canbus/Canbus.h"
+#include <string>
 
 using std::string;
 using namespace Boardcore;

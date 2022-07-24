@@ -22,15 +22,12 @@
 
 #pragma once
 
-#include <diagnostic/PrintLogger.h>
-
 #include <vector>
 
 /**
  * This object includes only the protocol header (`protocol.h`). To use this
  * driver, you should include YOUR OWN implementation of the messages definition
- * (`mavlink.h`) before including this header. To create your implementation you
- * can use Skyward's *Mavlink Editor*.
+ * (`mavlink.h`) before including this header.
  */
 #ifndef MAVLINK_H
 #error \
@@ -38,6 +35,7 @@
 implementation before including MavlinkDriver.h"
 #endif
 
+#include <diagnostic/PrintLogger.h>
 #include <diagnostic/SkywardStack.h>
 #include <diagnostic/StackLogger.h>
 #include <mavlink_lib/mavlink_types.h>
@@ -84,7 +82,8 @@ public:
 
     /**
      * @brief  Start the receiving and sending threads.
-     * @return false if at least one could not start.
+     *
+     * @return False if at least one could not start.
      */
     bool start();
 
@@ -117,6 +116,17 @@ public:
     bool enqueueRaw(uint8_t* msg, size_t size);
 
     /**
+     * @brief Synchronized status getter.
+     */
+    MavlinkStatus getStatus();
+
+    /**
+     * @brief Setter for the sleep after send value.
+     */
+    void setSleepAfterSend(uint16_t newSleepTime);
+
+private:
+    /**
      * @brief Receiver thread: reads one char at a time from the transceiver and
      * tries to parse a mavlink message.
      *
@@ -135,20 +145,9 @@ public:
     void runSender();
 
     /**
-     * @brief Synchronized status getter.
-     */
-    MavlinkStatus getStatus();
-
-    /**
-     * @brief Setter for the sleep after send value.
-     */
-    void setSleepAfterSend(uint16_t newSleepTime);
-
-private:
-    /**
      * @brief Calls the run member function.
      *
-     * @param arg the object pointer cast to void*
+     * @param arg The object pointer cast to void*.
      */
     static void rcvLauncher(void* arg)
     {
@@ -158,7 +157,7 @@ private:
     /**
      * @brief Calls the run member function.
      *
-     * @param arg the object pointer cast to void*
+     * @param arg The object pointer cast to void*.
      */
     static void sndLauncher(void* arg)
     {
@@ -169,8 +168,8 @@ private:
 
     void updateSenderStats(size_t msgCount, bool sent);
 
-    Transceiver* device;   ///< transceiver used to send and receive
-    MavHandler onReceive;  ///< function executed on message rcv
+    Transceiver* device;   ///< Transceiver used to send and receive packets.
+    MavHandler onReceive;  ///< Function executed when a message is ready.
 
     // Tweakable params
     uint16_t sleepAfterSend;
@@ -273,7 +272,7 @@ bool MavlinkDriver<PktLength, OutQueueSize, MavMsgLength>::enqueueMsg(
     uint8_t msgTempBuf[MAVLINK_NUM_NON_PAYLOAD_BYTES + MavMsgLength];
     int msgLen = mavlink_msg_to_send_buffer(msgTempBuf, &msg);
 
-    // Append message to the queue
+    // Append the message to the queue
     bool appended = outQueue.put(msgTempBuf, msgLen);
 
     // Update stats
