@@ -29,14 +29,14 @@ using namespace miosix;
 using namespace Boardcore;
 using namespace Canbus;
 
-void print(CanMessage data)
+void print(const CanMessage& msg)
 {
     printf("Received packet:\n");
-    printf("\tpriority:       %d\n", data.getPriority());
-    printf("\tprimary type:   %d\n", data.getPrimaryType());
-    printf("\tsource:         %d\n", data.getSource());
-    printf("\tdestination:    %d\n", data.getDestination());
-    printf("\tsecondary type: %d\n", data.getSecondaryType());
+    printf("\tpriority:       %d\n", msg.getPriority());
+    printf("\tprimary type:   %d\n", msg.getPrimaryType());
+    printf("\tsource:         %d\n", msg.getSource());
+    printf("\tdestination:    %d\n", msg.getDestination());
+    printf("\tsecondary type: %d\n", msg.getSecondaryType());
     printf("\n");
 }
 

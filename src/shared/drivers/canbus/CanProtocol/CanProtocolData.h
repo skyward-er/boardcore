@@ -130,31 +130,31 @@ struct CanMessage
     uint8_t length = 0;   ///< Length of the message content.
     uint64_t payload[65];
 
-    uint8_t getPriority()
+    uint8_t getPriority() const
     {
         return id >>
                static_cast<uint8_t>(CanProtocolShiftInformation::PRIORITY);
     }
 
-    uint8_t getPrimaryType()
+    uint8_t getPrimaryType() const
     {
         return (id | static_cast<uint32_t>(CanProtocolIdMask::PRIMARY_TYPE)) >>
                static_cast<uint8_t>(CanProtocolShiftInformation::PRIMARY_TYPE);
     }
 
-    uint8_t getSource()
+    uint8_t getSource() const
     {
         return (id | static_cast<uint32_t>(CanProtocolIdMask::SOURCE)) >>
                static_cast<uint8_t>(CanProtocolShiftInformation::SOURCE);
     }
 
-    uint8_t getDestination()
+    uint8_t getDestination() const
     {
         return (id | static_cast<uint32_t>(CanProtocolIdMask::DESTINATION)) >>
                static_cast<uint8_t>(CanProtocolShiftInformation::DESTINATION);
     }
 
-    uint8_t getSecondaryType()
+    uint8_t getSecondaryType() const
     {
         return (id |
                 static_cast<uint32_t>(CanProtocolIdMask::SECONDARY_TYPE)) >>
