@@ -94,6 +94,24 @@ bool CanProtocol::enqueueMsg(const CanMessage& msg)
     return true;
 }
 
+bool CanProtocol::addFilter(uint8_t src, uint64_t dst)
+{
+    if (src > 0xF || dst > 0xF)
+        return false;
+
+    // The filter mask will cover only the source and destination bits
+    uint32_t mask = static_cast<uint32_t>(CanProtocolIdMask::SOURCE) |
+                    static_cast<uint32_t>(CanProtocolIdMask::DESTINATION);
+
+    uint32_t id =
+        src << static_cast<uint8_t>(CanProtocolShiftInformation::SOURCE) |
+        dst << static_cast<uint8_t>(CanProtocolShiftInformation::DESTINATION);
+
+    Mask32FilterBank filterBank(id, mask, 1, 1, 0, 0, 0);
+
+    return can->addFilter(filterBank);
+}
+
 void CanProtocol::sendMessage(const CanMessage& msg)
 {
     CanPacket packet    = {};
@@ -105,7 +123,7 @@ void CanProtocol::sendMessage(const CanMessage& msg)
     // The number of left to send packets
     packet.id = static_cast<uint32_t>(msg.id) |
                 ((static_cast<uint32_t>(0x3F) - leftToSend) &
-                 static_cast<uint32_t>(CanPacketIdMask::LEFT_TO_SEND));
+                 static_cast<uint32_t>(CanProtocolIdMask::LEFT_TO_SEND));
     packet.length = byteForUint64(msg.payload[0]);
 
     // Splits payload[0] in the right number of uint8_t
@@ -119,10 +137,11 @@ void CanProtocol::sendMessage(const CanMessage& msg)
     // Prepare the remaining packets
     for (int i = 1; i < msg.length; i++)
     {
-        packet.id = static_cast<uint32_t>(msg.id) |
-                    static_cast<uint32_t>(CanPacketIdMask::FIRST_PACKET_FLAG) |
-                    ((static_cast<uint32_t>(0x3F) - leftToSend) &
-                     static_cast<uint32_t>(CanPacketIdMask::LEFT_TO_SEND));
+        packet.id =
+            static_cast<uint32_t>(msg.id) |
+            static_cast<uint32_t>(CanProtocolIdMask::FIRST_PACKET_FLAG) |
+            ((static_cast<uint32_t>(0x3F) - leftToSend) &
+             static_cast<uint32_t>(CanProtocolIdMask::LEFT_TO_SEND));
         packet.length = byteForUint64(msg.payload[i]);
 
         // Splits payload[i] in the right number of uint8_t
@@ -151,17 +170,18 @@ void CanProtocol::runReceiver()
 
             uint8_t leftToReceive =
                 static_cast<uint32_t>(0x3F) -
-                (pkt.id & static_cast<uint32_t>(CanPacketIdMask::LEFT_TO_SEND));
+                (pkt.id &
+                 static_cast<uint32_t>(CanProtocolIdMask::LEFT_TO_SEND));
 
             // Check if the packet is the first in the sequence, if this is the
             // case then the previous message is overriden
             if ((pkt.id & static_cast<uint32_t>(
-                              CanPacketIdMask::FIRST_PACKET_FLAG)) == 0)
+                              CanProtocolIdMask::FIRST_PACKET_FLAG)) == 0)
             {
                 // If it is we save the id (without the sequence number) and the
                 // message length
                 msg.id = pkt.id & static_cast<uint32_t>(
-                                      CanPacketIdMask::MESSAGE_INFORMATION);
+                                      CanProtocolIdMask::MESSAGE_INFORMATION);
                 msg.length = leftToReceive + 1;
 
                 // Reset the number of received packets
@@ -171,8 +191,8 @@ void CanProtocol::runReceiver()
             // Accept the packet only if it has the expected id
             // clang-format off
             if (msg.id != -1 &&
-                (pkt.id & static_cast<uint32_t>(CanPacketIdMask::MESSAGE_INFORMATION)) ==
-                (msg.id & static_cast<uint32_t>(CanPacketIdMask::MESSAGE_INFORMATION)))
+                (pkt.id & static_cast<uint32_t>(CanProtocolIdMask::MESSAGE_INFORMATION)) ==
+                (msg.id & static_cast<uint32_t>(CanProtocolIdMask::MESSAGE_INFORMATION)))
             // clang-format on
             {
                 // Check if the packet is expected in the sequence. The received

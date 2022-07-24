@@ -26,7 +26,7 @@
 #include <miosix.h>
 #include <utils/collections/IRQCircularBuffer.h>
 
-#include "CanData.h"
+#include "CanDriverData.h"
 #include "Filters.h"
 
 using miosix::Thread;

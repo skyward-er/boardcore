@@ -28,72 +28,13 @@
 #include <utils/collections/SyncCircularBuffer.h>
 
 #include "CanProtocolData.h"
+#include "CanProtocolTypes.h"
 
 namespace Boardcore
 {
 
 namespace Canbus
 {
-
-/**
- * The CanProtocol allows to transmit arbitrarily sized messages over the CanBus
- * overcoming the 8 byte limitation of each single packet.
- *
- * Our CanProtocol uses the extended can packet, the 29 bits id is divided such
- * as:
- * - Priority           4 bit - priority      \
- * - Primary type       6 bit - primaryType   |
- * - Source             4 bit - source        | 22 bits - Message informations
- * - Destination        4 bit - destination   |
- * - Secondary type     4 bit - secondaryType /
- * - First packet flag  1 bit - firstPacket   \ 7 bits - Sequential informations
- * - Remaining packets  6 bit - leftToSend    /
- * shiftNameOfField the number of shift needed to reach that field
- *
- * The id is split into 2 parts:
- * - Message information: Common to every packet of a given message
- * - Sequential information: Used to distinguish between packets
- *
- * The sender splits into multiple packets a message that is then recomposed on
- * the receiver end. The message informations are encoded into the packets id,
- * therefore they have an effect on packets priorities.
- */
-
-/**
- * @brief Masks of the elements composing can packets ids.
- */
-enum class CanPacketIdMask : uint32_t
-{
-    PRIORITY       = 0x1E000000,
-    PRIMARY_TYPE   = 0x01F80000,
-    SOURCE         = 0x00078000,
-    DESTINATION    = 0x00003800,
-    SECONDARY_TYPE = 0x00000780,
-
-    MESSAGE_INFORMATION = 0x1FFFFF80,
-
-    FIRST_PACKET_FLAG = 0x00000040,
-    LEFT_TO_SEND      = 0x0000003F,
-
-    SEQUENTIAL_INFORMATION = 0x0000007F
-};
-
-enum ShiftInformation : uint8_t
-{
-    // Shift values for message informations
-    PRIORITY       = 25,
-    PRIMARY_TYPE   = 19,
-    SOURCE         = 15,
-    DESCRIPTION    = 11,
-    SECONDARY_TYPE = 7,
-
-    // Shift values for sequential informations
-    FIRST_PACKET_FLAG = 6,
-    LEFT_TO_SEND      = 0,
-
-    // Position of the message infos relative to the entire can packet id
-    SEQUENTIAL_INFORMATION = 7
-};
 
 /**
  * @brief Canbus protocol implementation.
@@ -134,6 +75,16 @@ public:
     void stop();
 
     /**
+     * @brief Adds a filter to the can peripheral to receive only messages from
+     * the given source and targeted to the given destination.
+     *
+     * @param src Message source.
+     * @param dst Message destination.
+     * @return True if the filter was added successfully.
+     */
+    bool addFilter(uint8_t src, uint64_t dst);
+
+    /**
      * @brief Non-blocking send function, puts the messages in a queue.
      * Message is discarded if the queue is full.
      *
@@ -141,6 +92,18 @@ public:
      * @return True if the message could be enqueued.
      */
     bool enqueueMsg(const CanMessage& msg);
+
+    /**
+     * @brief Non-blocking send function for a generic data type.
+     *
+     * @warning There must be a function called with this prototype:
+     *   CanMessage toCanMessage(const T& t);
+     *
+     * @param t The class to be logged.
+     */
+    template <typename T>
+    bool enqueueData(uint8_t priority, uint8_t primaryType, uint8_t source,
+                     uint8_t destination, uint8_t secondaryType, const T& t);
 
 private:
     /**
@@ -206,6 +169,28 @@ private:
 
     PrintLogger logger = Logging::getLogger("canprotocol");
 };
+
+template <typename T>
+bool CanProtocol::enqueueData(uint8_t priority, uint8_t primaryType,
+                              uint8_t source, uint8_t destination,
+                              uint8_t secondaryType, const T& t)
+{
+    if (priority > 0xF || primaryType > 0x3F || source > 0xF ||
+        destination > 0xF || secondaryType > 0xF)
+        return false;
+
+    CanMessage msg = toCanMessage(t);
+
+    // clang-format off
+    msg.id =  priority      << static_cast<uint32_t>(CanProtocolShiftInformation::PRIORITY);
+    msg.id |= primaryType   << static_cast<uint32_t>(CanProtocolShiftInformation::PRIMARY_TYPE);
+    msg.id |= source        << static_cast<uint32_t>(CanProtocolShiftInformation::SOURCE);
+    msg.id |= destination   << static_cast<uint32_t>(CanProtocolShiftInformation::DESTINATION);
+    msg.id |= secondaryType << static_cast<uint32_t>(CanProtocolShiftInformation::SECONDARY_TYPE);
+    // clang-format off
+
+    return enqueueMsg(msg);
+}
 
 }  // namespace Canbus
 

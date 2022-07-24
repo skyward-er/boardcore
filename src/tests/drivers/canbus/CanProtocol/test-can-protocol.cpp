@@ -20,21 +20,25 @@
  * THE SOFTWARE.
  */
 
-#include <drivers/canbus/CanDriver/BusLoadEstimation.h>
-#include <drivers/canbus/CanDriver/CanDriver.h>
 #include <drivers/canbus/CanProtocol/CanProtocol.h>
+#include <drivers/timer/TimestampTimer.h>
 #include <scheduler/TaskScheduler.h>
-#include <utils/collections/CircularBuffer.h>
-
-#include <functional>
-#include <thread>
 
 using namespace std;
 using namespace miosix;
 using namespace Boardcore;
 using namespace Canbus;
 
-void print(CanMessage data) { printf("Received packet %lu\n", data.id); }
+void print(CanMessage data)
+{
+    printf("Received packet:\n");
+    printf("\tpriority:       %d\n", data.getPriority());
+    printf("\tprimary type:   %d\n", data.getPrimaryType());
+    printf("\tsource:         %d\n", data.getSource());
+    printf("\tdestination:    %d\n", data.getDestination());
+    printf("\tsecondary type: %d\n", data.getSecondaryType());
+    printf("\n");
+}
 
 int main()
 {
@@ -57,16 +61,11 @@ int main()
     // Start the protocol
     protocol.start();
 
-    CanMessage msg1, msg2;
-
+    CanMessage msg1;
     msg1.id         = 0x200;
     msg1.length     = 2;
     msg1.payload[0] = 0xffffffffffffffff;
     msg1.payload[1] = 0x0123456789ABCDEF;
-
-    msg2.id         = 0x100;
-    msg2.length     = 1;
-    msg2.payload[0] = 0;
 
     TaskScheduler scheduler;
 
@@ -74,8 +73,9 @@ int main()
     scheduler.addTask(
         [&]()
         {
-            msg2.payload[0]++;
-            protocol.enqueueMsg(msg2);
+            PitotData data{TimestampTimer::getTimestamp(), 23};
+
+            protocol.enqueueData(0xF, 0xA, 0x1, 0x2, 0xB, data);
         },
         2000);
 
