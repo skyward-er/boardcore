@@ -22,14 +22,12 @@
 
 #pragma once
 
-#include <ActiveObject.h>
+#include <diagnostic/PrintLogger.h>
 #include <drivers/canbus/CanDriver/CanDriver.h>
 #include <utils/Debug.h>
-#include <utils/collections/IRQCircularBuffer.h>
+#include <utils/collections/SyncCircularBuffer.h>
 
-#include <thread>
-
-#define N_BOARDS 3  ///< Number of boards on the bus.
+#include "CanProtocolData.h"
 
 namespace Boardcore
 {
@@ -38,85 +36,77 @@ namespace Canbus
 {
 
 /**
- * The id of a can packet is composed of 29 bits and will be divided such as:
- * - Priority           4 bit - priority    \
- * - Type               6 bit - type        |
- * - Source             4 bit - source      | 22 bits
- * - Destination        4 bit - destination |
- * - Type id            4 bit - idType      /
- * - First packet flag  1 bit - firstPacket \ 7 bits
- * - Remaining packets  6 bit - leftToSend  /
- * shiftNameOfField the number of shift needed to reach that field
- */
-
-/**
- * @brief The mask of the ID without the sequential information.
+ * The CanProtocol allows to transmit arbitrarily sized messages over the CanBus
+ * overcoming the 8 byte limitation of each single packet.
  *
- * CompleteID = (IDMask << shiftSequentialInfo) || SequentialInformation
+ * Our CanProtocol uses the extended can packet, the 29 bits id is divided such
+ * as:
+ * - Priority           4 bit - priority      \
+ * - Primary type       6 bit - primaryType   |
+ * - Source             4 bit - source        | 22 bits - Message informations
+ * - Destination        4 bit - destination   |
+ * - Secondary type     4 bit - secondaryType /
+ * - First packet flag  1 bit - firstPacket   \ 7 bits - Sequential informations
+ * - Remaining packets  6 bit - leftToSend    /
+ * shiftNameOfField the number of shift needed to reach that field
+ *
+ * The id is split into 2 parts:
+ * - Message information: Common to every packet of a given message
+ * - Sequential information: Used to distinguish between packets
+ *
+ * The sender splits into multiple packets a message that is then recomposed on
+ * the receiver end. The message informations are encoded into the packets id,
+ * therefore they have an effect on packets priorities.
  */
 
 /**
- * @brief Enumeration that contains masks of the elements composing the can
- * packet id without sequential information.
+ * @brief Masks of the elements composing can packets ids.
  */
-enum IDMask : uint32_t
+enum class CanPacketIdMask : uint32_t
 {
-    priority = 0x3C0000,
+    PRIORITY       = 0x1E000000,
+    PRIMARY_TYPE   = 0x01F80000,
+    SOURCE         = 0x00078000,
+    DESTINATION    = 0x00003800,
+    SECONDARY_TYPE = 0x00000780,
 
-    type        = 0x03F000,
-    source      = 0x000F00,
-    destination = 0x0000F0,
-    idType      = 0x00000F
-};
+    MESSAGE_INFORMATION = 0x1FFFFF80,
 
-/**
- * @brief Enumeration that contains masks of the elements composing the
- * sequential information.
- */
-enum SequentialInformation : uint8_t
-{
-    firstPacket = 0x40,
-    leftToSend  = 0x3F
+    FIRST_PACKET_FLAG = 0x00000040,
+    LEFT_TO_SEND      = 0x0000003F,
+
+    SEQUENTIAL_INFORMATION = 0x0000007F
 };
 
 enum ShiftInformation : uint8_t
 {
-    // Shift info of IDMask
-    shiftPriority    = 18,
-    shiftType        = 12,
-    shiftSource      = 8,
-    shiftDestination = 4,
-    shiftIdType      = 0,
-    // Shift info of SequentialInformation
-    shiftFirstPacket    = 6,
-    shiftLeftToSend     = 0,
-    shiftSequentialInfo = 7
-};
+    // Shift values for message informations
+    PRIORITY       = 25,
+    PRIMARY_TYPE   = 19,
+    SOURCE         = 15,
+    DESCRIPTION    = 11,
+    SECONDARY_TYPE = 7,
 
-/**
- * @brief Generic struct that contains a logical can packet.
- *
- * i.e. 1 accelerometer packet 3 * 4byte (acc: x,y,z)  +timestamp, will be 4
- * canPacket but a single canData.
- */
-struct CanData
-{
-    int32_t canId = -1;  ///< Id of the packet without the sequential info.
-    uint8_t length;
-    uint8_t nRec = 0;
-    uint64_t payload[32];
+    // Shift values for sequential informations
+    FIRST_PACKET_FLAG = 6,
+    LEFT_TO_SEND      = 0,
+
+    // Position of the message infos relative to the entire can packet id
+    SEQUENTIAL_INFORMATION = 7
 };
 
 /**
  * @brief Canbus protocol implementation.
  *
- * Given a can interface this class takes care of sending CanData packets
- * segmented into multiple CanPackets and receiving single CanPackets that are
- * then reframed as CanData.
+ * Given a can interface this class takes care of sending messages segmented
+ * into multiple packets, and receiving single packets that are then reframed
+ * into messages.
+ *
+ * This driver has been implemented following the MavlinkDriver.
  */
-class CanProtocol : public ActiveObject
+class CanProtocol
 {
-    using MsgHandler = std::function<void(CanData data)>;
+    using MsgHandler = std::function<void(CanMessage data)>;
 
 public:
     /**
@@ -124,51 +114,97 @@ public:
      *
      * @param can Pointer to a CanbusDriver object.
      */
-    explicit CanProtocol(CanbusDriver* can, MsgHandler callback);
-
-    ~CanProtocol();
+    CanProtocol(CanbusDriver* can, MsgHandler onReceive);
 
     /**
-     * @brief Sends a CanData object on the bus.
+     * @brief Start the receiving and sending threads.
      *
-     * Takes a CanData object, splits it into multiple CanPackets with the
-     * correct sequential id.
-     * @warning requires @param data to be not empty.
-     *
-     * @param data Contains the id and the data of the packet to send.
+     * @return False if at least one could not start.
      */
-    void send(CanData toSend);
+    bool start();
+
+    /**
+     * @brief Tells whether the driver was started.
+     */
+    bool isStarted();
+
+    /**
+     * @brief Stops sender and receiver threads.
+     */
+    void stop();
+
+    /**
+     * @brief Non-blocking send function, puts the messages in a queue.
+     * Message is discarded if the queue is full.
+     *
+     * @param msg Message to send (CanMessage struct).
+     * @return True if the message could be enqueued.
+     */
+    bool enqueueMsg(const CanMessage& msg);
 
 private:
     /**
-     * @brief Count the number of bytes needed to encode a uint64_t number.
+     * @brief Blocking send function, puts the CanMessage object on the bus.
+     *
+     * Takes a CanMessage object, splits it into multiple CanPackets with the
+     * correct sequential id.
+     *
+     * @param msg Contains the id and the data of the packet to send.
      */
-    uint8_t byteForInt(uint64_t number);
-
-    void sendData();
+    void sendMessage(const CanMessage& msg);
 
     /**
-     * @brief Keeps listening on the canbus for packets.
+     * @brief Receiver thread: waits for one packet at a time from the can
+     * driver and tries to parse a message.
      *
-     * Once a packet is received, it checks if it is expected (that id is
-     * already present in data), if it is the case, it's added to the list.
-     * Once we receive the correct amount of packet we offer it in buffer.
+     * If the message is successfully parsed, the onReceive function is
+     * executed.
      *
-     * For now if a packet is missed/received in the wrong order the whole
-     * packet will be lost once we receive a new first packet without warning
-     * CanHandler.
+     * For now if a packet is received in the wrong order or if a packet with a
+     * different id is received, the current (incomplete) message will be lost.
+     * Once we receive a new first packet, currently saved data are reset.
      */
-    void run() override;
+    void runReceiver();
 
-    // The physical implementation of the CanBus
-    CanbusDriver* can;
+    /**
+     * @brief Sender Thread: Periodically flushes the message queue and sends
+     * all the enqueued messages.
+     */
+    void runSender();
 
-    // The buffer used to store the CanData to send
-    IRQCircularBuffer<CanData, N_BOARDS> TXbuffer;
+    /**
+     * @brief Calls the run member function.
+     *
+     * @param arg The object pointer cast to void*.
+     */
+    static void rcvLauncher(void* arg);
 
-    miosix::FastMutex mutex;
+    /**
+     * @brief Calls the run member function.
+     *
+     * @param arg The object pointer cast to void*.
+     */
+    static void sndLauncher(void* arg);
 
-    MsgHandler callback;
+    /**
+     * @brief Count the number of bytes needed to encode a uint64_t number.
+     */
+    uint8_t byteForUint64(uint64_t number);
+
+    CanbusDriver* can;     ///< Device used to send and receive packets.
+    MsgHandler onReceive;  ///< Function executed when a message is ready.
+
+    // Threads
+    bool stopFlag   = false;
+    bool sndStarted = false;
+    bool rcvStarted = false;
+
+    miosix::Thread* sndThread = nullptr;
+    miosix::Thread* rcvThread = nullptr;
+
+    SyncCircularBuffer<CanMessage, 10> outQueue;
+
+    PrintLogger logger = Logging::getLogger("canprotocol");
 };
 
 }  // namespace Canbus

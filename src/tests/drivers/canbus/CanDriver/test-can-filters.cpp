@@ -22,8 +22,8 @@
 
 #include <ActiveObject.h>
 #include <diagnostic/PrintLogger.h>
-#include <drivers/canbus/BusLoadEstimation.h>
-#include <drivers/canbus/CanDriver.h>
+#include <drivers/canbus/CanDriver/BusLoadEstimation.h>
+#include <drivers/canbus/CanDriver/CanDriver.h>
 
 #include <string>
 

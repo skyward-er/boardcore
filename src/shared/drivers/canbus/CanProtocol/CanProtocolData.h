@@ -1,5 +1,5 @@
-/* Copyright (c) 2018 Skyward Experimental Rocketry
- * Author: Luca Erbetta
+/* Copyright (c) 2022 Skyward Experimental Rocketry
+ * Author: Federico Mandelli
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -22,7 +22,7 @@
 
 #pragma once
 
-#include <cstdint>
+#include <stdint.h>
 
 namespace Boardcore
 {
@@ -30,44 +30,40 @@ namespace Boardcore
 namespace Canbus
 {
 
-struct CanTXResult
+/**
+ * @brief Generic struct that contains a can protocol message.
+ *
+ * For example an accelerometer message could have:
+ * - 4 bytes for the timestamp
+ * - 3x4 bytes for float values
+ * This message would be divided into 2 can packets.
+ *
+ * Note that the maximum size for a message is 520 bytes since the remaining
+ * packet information is 6 bit wide.
+ */
+struct CanMessage
 {
-    uint32_t seq;
-    uint8_t mailbox;
-    uint8_t txStatus;
-    uint8_t tme;
-    uint8_t errCode;
+    int32_t id     = -1;  ///< Id of the message without sequential infos.
+    uint8_t length = 0;   ///< Length of the message content.
+    uint64_t payload[65];
 };
 
-struct CanRXStatus
+inline bool operator==(const CanMessage& lhs, const CanMessage& rhs)
 {
-    uint8_t rxStatus;
-    uint8_t fifo;
-    uint8_t rxErrCounter = 0;
-    uint8_t errCode;
-    bool fifoOverrun;
-    bool fifoFull;
-};
+    if (lhs.id != rhs.id || lhs.length != rhs.length)
+        return false;
 
-struct CanPacket
+    for (int i = 0; i < lhs.length; i++)
+        if (lhs.payload[i] != rhs.payload[i])
+            return false;
+
+    return true;
+}
+
+inline bool operator!=(const CanMessage& lhs, const CanMessage& rhs)
 {
-    uint32_t timestamp = 0;
-
-    uint32_t id;
-    bool ext = false;  ///< Whether to use extended packet id
-
-    bool rtr = false;
-
-    uint8_t length = 0;
-
-    uint8_t data[8];
-};
-
-struct CanRXPacket
-{
-    CanPacket packet;
-    CanRXStatus status;
-};
+    return !(lhs == rhs);
+}
 
 }  // namespace Canbus
 

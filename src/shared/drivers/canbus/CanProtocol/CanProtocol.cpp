@@ -22,67 +22,229 @@
 
 #include "CanProtocol.h"
 
+using namespace miosix;
+
 namespace Boardcore
 {
 
 namespace Canbus
 {
-// For each board contains the packet that we are re-assembling
-CanData data[N_BOARDS];
 
-CanProtocol::CanProtocol(CanbusDriver* can, MsgHandler callback)
+CanProtocol::CanProtocol(CanbusDriver* can, MsgHandler onReceive)
+    : can(can), onReceive(onReceive)
 {
-    this->can      = can;
-    this->callback = callback;
 }
 
-CanProtocol::~CanProtocol() { delete can; }
-
-void CanProtocol::send(CanData toSend) { TXbuffer.put(toSend); }
-
-void CanProtocol::sendData()
+bool CanProtocol::start()
 {
+    stopFlag = false;
 
-    while (true)
+    // Start sender (joinable thread)
+    if (!sndStarted)
     {
-        TXbuffer.waitUntilNotEmpty();
-        if (!TXbuffer.IRQisEmpty())
+        sndThread = miosix::Thread::create(
+            sndLauncher, skywardStack(4 * 1024), miosix::MAIN_PRIORITY,
+            reinterpret_cast<void*>(this), miosix::Thread::JOINABLE);
+
+        if (sndThread != nullptr)
+            sndStarted = true;
+        else
+            LOG_ERR(logger, "Could not start sender!");
+    }
+
+    // Start receiver
+    if (!rcvStarted)
+    {
+        rcvThread = miosix::Thread::create(rcvLauncher, skywardStack(4 * 1024),
+                                           miosix::MAIN_PRIORITY,
+                                           reinterpret_cast<void*>(this));
+
+        if (rcvThread != nullptr)
+            rcvStarted = true;
+        else
+            LOG_ERR(logger, "Could not start receiver!");
+    }
+
+    if (sndStarted && rcvStarted)
+        LOG_DEBUG(logger, "Sender and receiver started");
+
+    return sndStarted && rcvStarted;
+}
+
+bool CanProtocol::isStarted() { return sndStarted && rcvStarted; }
+
+void CanProtocol::stop()
+{
+    stopFlag = true;
+
+    // Wait for sender to stop
+    sndThread->join();
+}
+
+bool CanProtocol::enqueueMsg(const CanMessage& msg)
+{
+    // Append the message to the queue
+    outQueue.put(msg);
+
+    // Update stats
+    // updateQueueStats(appended);
+
+    // Return always true because the circular buffer overrides current packets
+    // and can't get full.
+    return true;
+}
+
+void CanProtocol::sendMessage(const CanMessage& msg)
+{
+    CanPacket packet    = {};
+    uint32_t leftToSend = msg.length - 1;
+
+    // Create the id for the first packet
+    packet.ext = true;  // Use extended packet id
+
+    // The number of left to send packets
+    packet.id = static_cast<uint32_t>(msg.id) |
+                ((static_cast<uint32_t>(0x3F) - leftToSend) &
+                 static_cast<uint32_t>(CanPacketIdMask::LEFT_TO_SEND));
+    packet.length = byteForUint64(msg.payload[0]);
+
+    // Splits payload[0] in the right number of uint8_t
+    for (int i = 0; i < packet.length; i++)
+        packet.data[i] = msg.payload[0] >> (8 * i);
+
+    // Send the first packet
+    can->send(packet);
+    leftToSend--;
+
+    // Prepare the remaining packets
+    for (int i = 1; i < msg.length; i++)
+    {
+        packet.id = static_cast<uint32_t>(msg.id) |
+                    static_cast<uint32_t>(CanPacketIdMask::FIRST_PACKET_FLAG) |
+                    ((static_cast<uint32_t>(0x3F) - leftToSend) &
+                     static_cast<uint32_t>(CanPacketIdMask::LEFT_TO_SEND));
+        packet.length = byteForUint64(msg.payload[i]);
+
+        // Splits payload[i] in the right number of uint8_t
+        for (int k = 0; k < packet.length; k++)
+            packet.data[k] = msg.payload[i] >> (8 * k);
+
+        can->send(packet);
+        leftToSend--;
+    }
+}
+
+void CanProtocol::runReceiver()
+{
+    CanMessage msg;
+    uint8_t nReceived = 0;
+
+    while (!stopFlag)
+    {
+        // Wait for the next packet
+        can->getRXBuffer().waitUntilNotEmpty();
+
+        // If the buffer is not empty retrieve the packet
+        if (!can->getRXBuffer().isEmpty())
         {
-            CanData dataToSend = TXbuffer.pop();
-            CanPacket packet   = {};
-            uint8_t tempLen    = dataToSend.length - 1;
-            uint32_t tempId    = dataToSend.canId;
+            CanPacket pkt = can->getRXBuffer().pop().packet;
 
-            // Send the first packet
-            packet.ext = true;
-            // create the id for the first packet
-            packet.id =
-                (tempId << shiftSequentialInfo) | (63 - (tempLen & leftToSend));
-            packet.length = byteForInt(dataToSend.payload[0]);
-            // Splits payload[0] in the right number of uint8_t
-            for (int k = 0; k < packet.length; k++)
-                packet.data[k] = dataToSend.payload[0] >> (8 * k);
-            can->send(packet);
-            tempLen--;
+            uint8_t leftToReceive =
+                static_cast<uint32_t>(0x3F) -
+                (pkt.id & static_cast<uint32_t>(CanPacketIdMask::LEFT_TO_SEND));
 
-            for (int i = 1; i < dataToSend.length; i++)
+            // Check if the packet is the first in the sequence, if this is the
+            // case then the previous message is overriden
+            if ((pkt.id & static_cast<uint32_t>(
+                              CanPacketIdMask::FIRST_PACKET_FLAG)) == 0)
             {
-                // create the id for the remaining packets
-                packet.id = (tempId << shiftSequentialInfo) | firstPacket |
-                            (63 - (tempLen & leftToSend));
-                packet.length = byteForInt(dataToSend.payload[i]);
-                // Splits payload[i] in the right number of uint8_t
-                for (int k = 0; k < packet.length; k++)
-                    packet.data[k] = dataToSend.payload[i] >> (8 * k);
+                // If it is we save the id (without the sequence number) and the
+                // message length
+                msg.id = pkt.id & static_cast<uint32_t>(
+                                      CanPacketIdMask::MESSAGE_INFORMATION);
+                msg.length = leftToReceive + 1;
 
-                can->send(packet);
-                tempLen--;
+                // Reset the number of received packets
+                nReceived = 0;
+            }
+
+            // Accept the packet only if it has the expected id
+            // clang-format off
+            if (msg.id != -1 &&
+                (pkt.id & static_cast<uint32_t>(CanPacketIdMask::MESSAGE_INFORMATION)) ==
+                (msg.id & static_cast<uint32_t>(CanPacketIdMask::MESSAGE_INFORMATION)))
+            // clang-format on
+            {
+                // Check if the packet is expected in the sequence. The received
+                // packet must have the expected left to send value
+
+                if (msg.length - nReceived - 1 == leftToReceive)
+                {
+                    uint64_t payload = 0;
+
+                    // Assemble the packet data into a uint64_t
+                    for (uint8_t i = 0; i < pkt.length; i++)
+                        payload |= pkt.data[i] << (i * 8);
+
+                    // Add the data to the message
+                    msg.payload[pkt.length - leftToReceive - 1] = payload;
+                    nReceived++;
+                }
+            }
+
+            // If we have received the right number of packet call onReceive and
+            // reset the message
+            if (nReceived == msg.length && nReceived != 0)
+            {
+                onReceive(msg);
+
+                // Reset the packet
+                msg.id     = -1;
+                msg.length = 0;
             }
         }
     }
 }
 
-uint8_t CanProtocol::byteForInt(uint64_t number)
+void CanProtocol::runSender()
+{
+    LOG_DEBUG(logger, "Sender is running");
+    CanMessage msg;
+
+    while (!stopFlag)
+    {
+        outQueue.waitUntilNotEmpty();
+
+        if (!outQueue.isEmpty())
+        {
+            // Get the first packet in the queue, without removing it
+            msg = outQueue.pop();
+
+            LOG_DEBUG(logger, "Sending message, length: {}", msg.length);
+
+            sendMessage(msg);
+
+            // updateSenderStats();
+        }
+        else
+        {
+            // Wait before sending something else
+            miosix::Thread::sleep(50);
+        }
+    }
+}
+
+void CanProtocol::rcvLauncher(void* arg)
+{
+    reinterpret_cast<CanProtocol*>(arg)->runReceiver();
+}
+
+void CanProtocol::sndLauncher(void* arg)
+{
+    reinterpret_cast<CanProtocol*>(arg)->runSender();
+}
+
+uint8_t CanProtocol::byteForUint64(uint64_t number)
 {
     uint8_t i;
 
@@ -94,95 +256,6 @@ uint8_t CanProtocol::byteForInt(uint64_t number)
     }
 
     return i;
-}
-
-void CanProtocol::run()
-{
-    std::thread send(std::bind(&CanProtocol::sendData, this));
-    while (!shouldStop())
-    {
-        // Wait for the next packet
-        can->getRXBuffer().waitUntilNotEmpty();
-        // If the buffer is not empty retrieve the packet
-        if (!can->getRXBuffer().isEmpty())
-        {
-            CanPacket packet = can->getRXBuffer().pop().packet;
-
-            // Discard the sequence number
-            uint32_t idNoSeq = packet.id >> shiftSequentialInfo;
-            // Extract the sourceID
-            uint8_t sourceId = (idNoSeq & source) >> shiftSource;
-
-            // Check for maximum size
-            if (sourceId < N_BOARDS)
-            {
-
-                uint8_t left = 63 - (packet.id & leftToSend);
-
-                // Check if it is the first packet in the sequence
-                if (((packet.id & firstPacket) >> shiftFirstPacket) == 0)
-                {
-                    // if it is we save the id (without the sequence number)
-                    // the number of packet (left to send + 1)
-                    data[sourceId].length = left + 1;
-
-                    // the number of packet = left to send + 1 since it is
-                    // the first packet
-                    data[sourceId].canId = idNoSeq;
-
-                    // And we reset nRec
-                    data[sourceId].nRec = 0;
-                }
-
-                // we accept the packet only if we already received a first
-                // packet (it is already in data)
-                if (data[sourceId].canId == -1 ||
-                    ((data[sourceId].canId & source) >> shiftSource) ==
-                        sourceId)
-                {
-                    // if the packet is expected, the length of data - the
-                    // number of packet recorded +1 (+1 since we are not
-                    // counting the last packet) equals the number of packet
-                    // left to receive
-                    if ((data[sourceId].length - (data[sourceId].nRec + 1)) ==
-                        left)
-                    {
-                        uint64_t tempPayload = 0;
-
-                        // we reassemble the payload
-                        for (int f = 0; f < packet.length; f++)
-                        {
-                            uint64_t tempData = packet.data[f];
-                            tempPayload = tempPayload | (tempData << (f * 8));
-                        }
-
-                        if (data[sourceId].length - left - 1 >= 0 &&
-                            data[sourceId].length - left - 1 <
-                                32)  // check for index to avoid out of bounds
-                                     // error
-                        {
-                            // and put it in data
-                            data[sourceId]
-                                .payload[data[sourceId].length - left - 1] =
-                                tempPayload;
-                            data[sourceId].nRec++;
-                        }
-                    }
-                    // If we have received the right number of packet
-                    if (data[sourceId].nRec == data[sourceId].length &&
-                        data[sourceId].nRec != 0)
-                    {
-                        // We put the element of data in buffer
-                        callback(data[sourceId]);
-
-                        // Empties the struct
-                        data[sourceId].canId  = -1;
-                        data[sourceId].length = 0;
-                    }
-                }
-            }
-        }
-    }
 }
 
 }  // namespace Canbus
