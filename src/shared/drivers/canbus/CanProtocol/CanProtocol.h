@@ -94,6 +94,13 @@ public:
     bool enqueueMsg(const CanMessage& msg);
 
     /**
+     * @brief Non-blocking send function for an event (a message without
+     * payload).
+     */
+    bool enqueueEvent(uint8_t priority, uint8_t primaryType, uint8_t source,
+                      uint8_t destination, uint8_t secondaryType);
+
+    /**
      * @brief Non-blocking send function for a generic data type.
      *
      * @warning There must be a function called with this prototype:

@@ -39,6 +39,9 @@ bool CanProtocol::start()
 {
     stopFlag = false;
 
+    if (can == nullptr)
+        return false;
+
     // Start sender (joinable thread)
     if (!sndStarted)
     {
@@ -109,7 +112,10 @@ bool CanProtocol::addFilter(uint8_t src, uint64_t dst)
 
     Mask32FilterBank filterBank(id, mask, 1, 1, 0, 0, 0);
 
-    return can->addFilter(filterBank);
+    if (can == nullptr)
+        return false;
+    else
+        return can->addFilter(filterBank);
 }
 
 void CanProtocol::sendMessage(const CanMessage& msg)
@@ -151,6 +157,33 @@ void CanProtocol::sendMessage(const CanMessage& msg)
         can->send(packet);
         leftToSend--;
     }
+}
+
+bool CanProtocol::enqueueEvent(uint8_t priority, uint8_t primaryType,
+                               uint8_t source, uint8_t destination,
+                               uint8_t secondaryType)
+{
+    if (priority > 0xF || primaryType > 0x3F || source > 0xF ||
+        destination > 0xF || secondaryType > 0xF)
+        return false;
+
+    CanMessage msg{};
+
+    // Length set to a minumum of 1 even if there is no payload
+    msg.length     = 1;
+    msg.payload[0] = 0xFF;
+
+    // clang-format off
+    msg.id =  priority      << static_cast<uint32_t>(CanProtocolShiftInformation::PRIORITY);
+    msg.id |= primaryType   << static_cast<uint32_t>(CanProtocolShiftInformation::PRIMARY_TYPE);
+    msg.id |= source        << static_cast<uint32_t>(CanProtocolShiftInformation::SOURCE);
+    msg.id |= destination   << static_cast<uint32_t>(CanProtocolShiftInformation::DESTINATION);
+    msg.id |= secondaryType << static_cast<uint32_t>(CanProtocolShiftInformation::SECONDARY_TYPE);
+    // clang-format off
+
+    LOG_DEBUG(logger, "Sending message with id: {:x}", msg.id);
+
+    return enqueueMsg(msg);
 }
 
 void CanProtocol::runReceiver()
@@ -216,6 +249,8 @@ void CanProtocol::runReceiver()
             // reset the message
             if (nReceived == msg.length && nReceived != 0)
             {
+                LOG_DEBUG(logger, "Message ready with id: {:x}", msg.id);
+
                 onReceive(msg);
 
                 // Reset the packet

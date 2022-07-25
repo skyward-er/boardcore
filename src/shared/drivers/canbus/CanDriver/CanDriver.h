@@ -140,6 +140,7 @@ public:
     /**
      * @brief Adds a new filter to the bus, or returns false if there are no
      * more filter banks available.
+     *
      * @warning Can only be called before init().
      *
      * @param filter Filter to be added

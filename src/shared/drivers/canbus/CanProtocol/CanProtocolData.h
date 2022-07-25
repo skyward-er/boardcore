@@ -85,7 +85,7 @@ enum class CanProtocolIdMask : uint32_t
     PRIORITY       = 0x1E000000,
     PRIMARY_TYPE   = 0x01F80000,
     SOURCE         = 0x00078000,
-    DESTINATION    = 0x00003800,
+    DESTINATION    = 0x00007800,
     SECONDARY_TYPE = 0x00000780,
 
     MESSAGE_INFORMATION = 0x1FFFFF80,
@@ -138,27 +138,28 @@ struct CanMessage
 
     uint8_t getPrimaryType() const
     {
-        return (id | static_cast<uint32_t>(CanProtocolIdMask::PRIMARY_TYPE)) >>
+        return (id & static_cast<uint32_t>(CanProtocolIdMask::PRIMARY_TYPE)) >>
                static_cast<uint8_t>(CanProtocolShiftInformation::PRIMARY_TYPE);
     }
 
     uint8_t getSource() const
     {
-        return (id | static_cast<uint32_t>(CanProtocolIdMask::SOURCE)) >>
+        return (id & static_cast<uint32_t>(CanProtocolIdMask::SOURCE)) >>
                static_cast<uint8_t>(CanProtocolShiftInformation::SOURCE);
     }
 
     uint8_t getDestination() const
     {
-        return (id | static_cast<uint32_t>(CanProtocolIdMask::DESTINATION)) >>
+        return (id & static_cast<uint32_t>(CanProtocolIdMask::DESTINATION)) >>
                static_cast<uint8_t>(CanProtocolShiftInformation::DESTINATION);
     }
 
     uint8_t getSecondaryType() const
     {
-        return (id |
+        return (id &
                 static_cast<uint32_t>(CanProtocolIdMask::SECONDARY_TYPE)) >>
-               static_cast<uint8_t>(CanProtocolShiftInformation::PRIMARY_TYPE);
+               static_cast<uint8_t>(
+                   CanProtocolShiftInformation::SECONDARY_TYPE);
     }
 };
 
