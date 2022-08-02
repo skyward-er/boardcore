@@ -1,4 +1,4 @@
-/* Copyright (c) 2021 Skyward Experimental Rocketry
+/* Copyright (c) 2022 Skyward Experimental Rocketry
  * Author: Davide Mor
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -22,62 +22,226 @@
 
 #include "CC3135.h"
 
+#include <kernel/scheduler/scheduler.h>
+#include <utils/Debug.h>
+
+using namespace Boardcore::CC3135Defs;
+using namespace miosix;
+
 namespace Boardcore
 {
 
-using namespace CC3135Defs;
-
-void CC3135Proto::handleIntr()
+CC3135::CC3135(std::unique_ptr<ICC3135Iface> &&iface) : iface(std::move(iface))
 {
-    // TODO:
+    // Start internal thread
+    this->start();
+    irq_wait_thread = thread;
 }
 
-void CC3135::dummyRead()
+CC3135Defs::DeviceVersion CC3135::getVersion()
 {
-    uint8_t buf[220];
-    proto.readPacket(buf);
+    DeviceSetGet tx_command  = {};
+    tx_command.device_set_id = 1;   // Device get general
+    tx_command.option        = 12;  // Device get general version
 
-    ResponseHeader header;
-    memcpy(&header, &buf[0], sizeof(ResponseHeader));
+    DeviceSetGet rx_command  = {};
+    DeviceVersion rx_payload = {};
 
-    // TRACE("status: %d\n", header.dev_status);
-    // TRACE("opcode: %s\n", opToStr(header.gen_header.opcode));
-    // TRACE("len: %d\n", header.gen_header.len);
-    // TRACE("\n");
+    inoutPacketSync(OPCODE_DEVICE_DEVICEGET, Buffer::from(&tx_command),
+                    Buffer::null(), OPCODE_DEVICE_DEVICEGETRESPONSE,
+                    Buffer::from(&rx_command), Buffer::from(&rx_payload));
 
-    // if(header.gen_header.opcode == OPCODE_DEVICE_DEVICEGETRESPONSE) {
-    //     for(int i = 0; i < header.gen_header.len + 4; i++) {
-    //         TRACE("%2x\n", buf[i]);
-    //     }
-    // }
+    return rx_payload;
 }
 
-DeviceVersion CC3135::getVersion()
+void CC3135::handleIrq()
 {
-    DeviceSetGet packet;
-    packet.gen_header.opcode = OPCODE_DEVICE_DEVICEGET;
-    packet.device_set_id     = 1;   // Device get general
-    packet.option            = 12;  // Device get version
+    irq_count++;
 
-    proto.writePacket((uint8_t *)&packet, sizeof(packet));
-
-    return {};
+    if (irq_wait_thread)
+    {
+        irq_wait_thread->IRQwakeup();
+        if (irq_wait_thread->IRQgetPriority() >
+            Thread::IRQgetCurrentThread()->IRQgetPriority())
+        {
+            Scheduler::IRQfindNextThread();
+        }
+    }
 }
 
-//! Get a generic header out of a buffer.
-GenericHeader *getHeader(uint8_t *buf) { return (GenericHeader *)(buf); }
+void CC3135::waitForIrq()
+{
+    Thread *cur = Thread::getCurrentThread();
 
-void CC3135Proto::readPacket(uint8_t *buf)
+    FastInterruptDisableLock dLock;
+    while (irq_wait_thread != cur || irq_count == 0)
+    {
+        irq_wait_thread->IRQwait();
+        {
+            FastInterruptEnableLock eLock(dLock);
+            Thread::yield();
+        }
+    }
+
+    irq_count--;
+}
+
+void CC3135::installAsServiceThread()
+{
+    FastInterruptDisableLock dLock;
+    irq_wait_thread = Thread::getCurrentThread();
+}
+
+void CC3135::restoreDefaultServiceThread()
+{
+    FastInterruptDisableLock dLock;
+    irq_wait_thread = thread;
+
+    // Wakeup just in case
+    irq_wait_thread->IRQwakeup();
+    if (irq_wait_thread->IRQgetPriority() >
+        Thread::IRQgetCurrentThread()->IRQgetPriority())
+    {
+        Scheduler::IRQfindNextThread();
+    }
+}
+
+void CC3135::defaultPacketHandler(CC3135Defs::ResponseHeader header)
+{
+    TRACE(
+        "[cc3135] Received packet:\n"
+        "- Opcode: %s (%4x)\n"
+        "- Status: %u\n"
+        "- Socket tx failures: %u\n"
+        "- Socket non blocking: %u\n",
+        opToStr(header.inner.opcode), header.inner.opcode, header.dev_status,
+        header.socket_tx_failure, header.socket_non_blocking);
+
+    // Dummy read rest of the data
+    // TODO: Add async commands
+    dummyRead(header.inner.len);
+}
+
+void CC3135::run()
+{
+    // TODO: Implement a way to stop this thread
+
+    while (true)
+    {
+        waitForIrq();
+
+        {
+            // Lock the device interface
+            Lock<FastMutex> lock(iface_mutex);
+
+            ResponseHeader header;
+            readHeader(&header);
+
+            defaultPacketHandler(header);
+        }
+    }
+}
+
+void CC3135::inoutPacketSync(CC3135Defs::OpCode tx_opcode,
+                             CC3135::Buffer tx_command,
+                             CC3135::Buffer tx_payload,
+                             CC3135Defs::OpCode rx_opcode,
+                             CC3135::Buffer rx_command,
+                             CC3135::Buffer rx_payload)
+{
+    installAsServiceThread();
+
+    // Lock the device interface
+    Lock<FastMutex> lock(iface_mutex);
+    writePacket(tx_opcode, tx_command, tx_payload);
+
+    readPacket(rx_opcode, rx_command, rx_payload);
+
+    restoreDefaultServiceThread();
+}
+
+void CC3135::readPacketSync(CC3135Defs::OpCode opcode, CC3135::Buffer command,
+                            CC3135::Buffer payload)
+{
+    installAsServiceThread();
+
+    // Lock the device interface
+    Lock<FastMutex> lock(iface_mutex);
+    readPacket(opcode, command, payload);
+
+    restoreDefaultServiceThread();
+}
+
+void CC3135::writePacketSync(CC3135Defs::OpCode opcode, CC3135::Buffer command,
+                             CC3135::Buffer payload)
+{
+    // Lock the device interface
+    Lock<FastMutex> lock(iface_mutex);
+    writePacket(opcode, command, payload);
+}
+
+void CC3135::readPacket(OpCode opcode, CC3135::Buffer command,
+                        CC3135::Buffer payload)
+{
+    while (true)
+    {
+        waitForIrq();
+
+        // Locking the interface is not needed
+
+        ResponseHeader header;
+        readHeader(&header);
+
+        if (header.inner.opcode != opcode)
+        {
+            defaultPacketHandler(header);
+        }
+        else
+        {
+            // Read the rest of the packet
+            size_t len = header.inner.len;
+
+            iface->read(command.ptr, std::min(len, command.len));
+            len -= std::min(len, command.len);
+
+            iface->read(payload.ptr, std::min(len, payload.len));
+            len -= std::min(len, payload.len);
+
+            // Read tail of remanining data
+            if (len > 0)
+                dummyRead(len);
+
+            break;
+        }
+    }
+}
+
+void CC3135::writePacket(OpCode opcode, CC3135::Buffer command,
+                         CC3135::Buffer payload)
+{
+    RequestHeader header{opcode,
+                         static_cast<uint16_t>(command.len + payload.len)};
+
+    writeHeader(&header);
+
+    iface->write(command.ptr, command.len);
+    iface->write(payload.ptr, payload.len);
+}
+
+void CC3135::readHeader(ResponseHeader *header)
 {
     // 1. Write CNYS pattern (only if SPI)
     if (iface->is_spi())
     {
         SyncPattern sync = H2N_CNYS_PATTERN;
-        iface->write((uint8_t *)(&sync.short1), SYNC_PATTERN_LEN);
+        iface->write(reinterpret_cast<uint8_t *>(&sync.short1),
+                     SYNC_PATTERN_LEN);
     }
 
+    uint8_t buf[4];
+
     // 2. Read initial data from the device
-    iface->read(&buf[0], 8);
+    iface->read(&buf[0], 4);
 
     /*
     Here the TI driver does some weird stuff.
@@ -92,70 +256,52 @@ void CC3135Proto::readPacket(uint8_t *buf)
         memcpy(&sync, &buf[0], 4);
 
         if (n2hSyncPatternMatch(sync, tx_seq_num))
-        {
-            // Copy the bytes after the sync to the start
-            memcpy(&buf[0], &buf[4], 4);
             break;
-        }
 
         // TODO: The TI driver reads 4 bytes at a time, is this also good?
 
         // Shift everything
-        memmove(&buf[0], &buf[1], 7);
-        iface->read(&buf[7], 1);
-    }
-
-    // 4. Scan for double syncs
-    while (true)
-    {
-        uint32_t sync;
-        memcpy(&sync, &buf[0], 4);
-
-        if (!n2hSyncPatternMatch(sync, tx_seq_num))
-        {
-            break;
-        }
-
-        iface->read(&buf[0], 4);
+        memmove(&buf[0], &buf[1], 3);
+        iface->read(&buf[3], 1);
     }
 
     tx_seq_num++;
 
-    // 5. Parse generic header
-    GenericHeader *header = getHeader(&buf[0]);
+    // TODO: Is skipping double sync detection good?
 
-    // 6. Finalize and read rest of the data
-    if (header->len > 0)
-    {
-        // TODO: The TI driver reads a ResponseHeader, violating zero size
+    // 4. Read initial header
+    iface->read(reinterpret_cast<uint8_t *>(header), sizeof(ResponseHeader));
 
-        size_t aligned_len = alignSize(header->len);
-        iface->read(&buf[sizeof(GenericHeader)], aligned_len);
-    }
+    // 5. Adjust for bigger response header
+    header->inner.len -= sizeof(ResponseHeader) - sizeof(GenericHeader);
 }
 
-void CC3135Proto::writePacket(uint8_t *buf, size_t size)
+void CC3135::writeHeader(RequestHeader *header)
 {
     // 1. Write SYNC pattern
     if (iface->is_spi())
     {
         // Short pattern for SPI
         SyncPattern sync = H2N_SYNC_PATTERN;
-        iface->write((uint8_t *)&sync.short1, SYNC_PATTERN_LEN);
+        iface->write(reinterpret_cast<uint8_t *>(&sync.short1),
+                     SYNC_PATTERN_LEN);
     }
     else
     {
         // Long pattern for UART
         SyncPattern sync = H2N_SYNC_PATTERN;
-        iface->write((uint8_t *)&sync.long1, SYNC_PATTERN_LEN * 2);
+        iface->write(reinterpret_cast<uint8_t *>(&sync.long1),
+                     SYNC_PATTERN_LEN * 2);
     }
 
-    // 2. Setup header length
-    GenericHeader *header = getHeader(&buf[0]);
-    header->len           = size - sizeof(GenericHeader);
+    // 2. Write body
+    iface->write(reinterpret_cast<uint8_t *>(header), sizeof(RequestHeader));
+}
 
-    // 3. Write message
-    iface->write(buf, size);
+void CC3135::dummyRead(size_t n)
+{
+    uint8_t dummy[n];
+    iface->read(dummy, n);
 }
 
 }  // namespace Boardcore

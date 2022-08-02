@@ -1,4 +1,4 @@
-/* Copyright (c) 2021 Skyward Experimental Rocketry
+/* Copyright (c) 2022 Skyward Experimental Rocketry
  * Author: Davide Mor
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -23,6 +23,8 @@
 #include <drivers/interrupt/external_interrupts.h>
 #include <radio/CC3135/CC3135.h>
 
+#include <thread>
+
 using namespace Boardcore;
 using namespace miosix;
 
@@ -46,15 +48,17 @@ using hib = Gpio<GPIOA_BASE, 5>;
 
 CC3135 *cc3135 = nullptr;
 
+volatile size_t IRQ_COUNT = 0;
+
 void __attribute__((used)) EXTI4_IRQHandlerImpl()
 {
+    IRQ_COUNT += 1;
     if (cc3135)
-        cc3135->handleIntr();
+        cc3135->handleIrq();
 }
 
 void initBoard()
 {
-
 #ifdef CC3135_HIB
     {
         miosix::FastInterruptDisableLock dLock;
@@ -84,19 +88,60 @@ void initBoard()
 
 int main()
 {
+    // IRQ watcher thread
+    /*std::thread _watcher(
+        []()
+        {
+            size_t last = -1;
+            while (1)
+            {
+                if (last != IRQ_COUNT)
+                {
+                    printf("[cc3135] IRQ: %d\n", IRQ_COUNT);
+                    last = IRQ_COUNT;
+                }
+
+                // Sleep to avoid CPU hogging
+                Thread::sleep(10);
+            }
+        });*/
+
     initBoard();
+
+#ifdef CC3135_HIB
+    // Reset CC3135
+    hib::low();
+    Thread::sleep(10);
+    hib::high();
+
+    // Wait for the device to fully initialize.
+    // The device is very chatty at the beginning,
+    // but it's also in a weird state where the IRQ
+    // pin doesn't trigger properly. Just wait for it to calm down
+    Thread::sleep(2000);
+#endif
 
 #ifdef CC3135_UART
     std::unique_ptr<ICC3135Iface> iface(new CC3135Uart(CC3135_UART));
 #endif
 
+    printf("[cc3135] Initializing...\n");
     cc3135 = new CC3135(std::move(iface));
+    printf("[cc3135] Initialization complete!\n");
 
-    Thread::sleep(200);
+    auto version = cc3135->getVersion();
+    printf(
+        "[cc3135] Chip Id: %lx\n"
+        "[cc3135] Fw version: %u.%u.%u.%u\n"
+        "[cc3135] Phy version: %u.%u.%u.%u\n"
+        "[cc3135] Nwp version: %u.%u.%u.%u\n"
+        "[cc3135] Rom version: %x\n",
+        version.chip_id, version.fw_version[0], version.fw_version[1],
+        version.fw_version[2], version.fw_version[3], version.phy_version[0],
+        version.phy_version[1], version.phy_version[2], version.phy_version[3],
+        version.nwp_version[0], version.nwp_version[1], version.nwp_version[2],
+        version.nwp_version[3], version.rom_version);
 
-    cc3135->getVersion();
     while (true)
-    {
-        cc3135->dummyRead();
-    }
+        ;
 }

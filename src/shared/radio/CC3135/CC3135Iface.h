@@ -1,4 +1,4 @@
-/* Copyright (c) 2021 Skyward Experimental Rocketry
+/* Copyright (c) 2022 Skyward Experimental Rocketry
  * Author: Davide Mor
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -37,6 +37,7 @@ public:
     virtual void read(uint8_t *buffer, size_t size)  = 0;
     virtual void write(uint8_t *buffer, size_t size) = 0;
     virtual bool is_spi()                            = 0;
+    virtual void reset()                             = 0;
 };
 
 /**
@@ -65,6 +66,8 @@ public:
 
     bool is_spi() override { return true; }
 
+    void reset() override {}
+
 private:
     SPISlave slave;
 };
@@ -91,6 +94,8 @@ public:
     }
 
     bool is_spi() override { return false; }
+
+    void reset() override { usart.clearQueue(); }
 
 private:
     static constexpr USART::Baudrate DEFAULT_BAUD = USART::Baudrate::B115200;

@@ -1,4 +1,4 @@
-/* Copyright (c) 2021 Skyward Experimental Rocketry
+/* Copyright (c) 2022 Skyward Experimental Rocketry
  * Author: Davide Mor
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -53,6 +53,9 @@ enum OpCode : uint16_t
     OPCODE_DEVICE_DEVICESET                     = 0x84B7,
 };
 
+//! Is this message synchronous?
+inline bool isSync(OpCode op) { return op & OPCODE_SYNC; }
+
 struct SyncPattern
 {
     uint32_t long1;
@@ -79,7 +82,7 @@ struct GenericHeader
 
 struct ResponseHeader
 {
-    GenericHeader gen_header;
+    GenericHeader inner;
     uint8_t tx_pool_count;
     uint8_t dev_status;
     uint16_t min_max_payload;
@@ -87,9 +90,10 @@ struct ResponseHeader
     uint16_t socket_non_blocking;
 };
 
+typedef GenericHeader RequestHeader;
+
 struct DeviceSetGet
 {
-    GenericHeader gen_header;
     uint16_t status;
     uint16_t device_set_id;
     uint16_t option;
@@ -113,9 +117,6 @@ inline bool n2hSyncPatternMatch(uint32_t sync, uint8_t seq_num)
     return (sync & N2H_SYNC_SPI_BUGS_MASK & N2H_SYNC_PATTERN_MASK) ==
            (N2H_SYNC_PATTERN & N2H_SYNC_SPI_BUGS_MASK & N2H_SYNC_PATTERN_MASK);
 }
-
-//! Is this message synchronous?
-inline bool isSync(OpCode op) { return op & OPCODE_SYNC; }
 
 //! Align message size.
 inline size_t alignSize(size_t size) { return (size + 3) & (~3); }
