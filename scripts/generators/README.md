@@ -21,6 +21,7 @@ optional arguments:
 ## FSMGen
 
 The FSMGen program generates cpp files (`FSMController.h`, `FSMController.cpp`, `FSMData.h` and `test-FMS.cpp`) for each scxml file specified.
+DO NOT USE FOR HSM
 
 ```shell
 usage: fsmgen.py [-h] [-q] [-a AUTHORS] [-n MAIN_NAMESPACE] [-f [F [F ...]]] [directory]
