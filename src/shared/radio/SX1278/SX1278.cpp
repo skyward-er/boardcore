@@ -201,7 +201,7 @@ SX1278::Error SX1278::init(Config config)
         spi.writeRegister(REG_RX_TIMEOUT_3, 0x00);
         spi.writeRegister(REG_PACKET_CONFIG_1,
                           RegPacketConfig1::PACKET_FORMAT_VARIABLE_LENGTH |
-                              RegPacketConfig1::DC_FREE_NONE |
+                              RegPacketConfig1::DC_FREE_MANCHESTER |
                               RegPacketConfig1::CRC_ON |
                               RegPacketConfig1::ADDRESS_FILTERING_NONE |
                               RegPacketConfig1::CRC_WHITENING_TYPE_CCITT_CRC);
