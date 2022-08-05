@@ -282,6 +282,12 @@ sbs_target(test-sx1278-serial stm32f429zi_stm32f4discovery)
 add_executable(test-cc3135 src/tests/drivers/CC3135/test-cc3135.cpp)
 sbs_target(test-cc3135 stm32f407vg_stm32f4discovery)
 
+add_executable(test-cc3135-gs src/tests/drivers/CC3135/test-cc3135.cpp)
+sbs_target(test-cc3135-gs stm32f429zi_skyward_ground_station)
+
+add_executable(test-cc3135-v3 src/tests/drivers/CC3135/test-cc3135.cpp)
+sbs_target(test-cc3135-v3 stm32f429zi_skyward_death_stack_v3)
+
 add_executable(test-mavlinkdriver src/tests/radio/test-mavlinkdriver.cpp)
 sbs_target(test-mavlinkdriver stm32f407vg_stm32f4discovery)
 

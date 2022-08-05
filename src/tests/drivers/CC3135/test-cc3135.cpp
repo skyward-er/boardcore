@@ -38,6 +38,25 @@ cc3135:CC_SPI_DOUT -> stm32:pc11 (SPI3_MISO)
 cc3135:CC_SPI_CLK  -> stm32:pc10 (SPI3_SCK)
 */
 
+#if defined _BOARD_STM32F429ZI_SKYWARD_GS
+#include "interfaces-impl/hwmapping.h"
+using sck = interfaces::spi1::sck;
+using miso = interfaces::spi1::miso;
+using mosi = interfaces::spi1::mosi;
+using cs = peripherals::cc3135::cs;
+using irq = peripherals::cc3135::intr;
+
+#define CC3135_SPI SPI1
+#elif defined _BOARD_STM32F429ZI_SKYWARD_DEATHST_V3
+#include "interfaces-impl/hwmapping.h"
+using sck = interfaces::spi6::sck;
+using miso = interfaces::spi6::miso;
+using mosi = interfaces::spi6::mosi;
+using cs = sensors::cc3135::cs;
+using irq = sensors::cc3135::intr;
+
+#define CC3135_SPI SPI6
+#else
 using tx  = Gpio<GPIOA_BASE, 2>;
 using rx  = Gpio<GPIOA_BASE, 3>;
 using irq = Gpio<GPIOA_BASE, 4>;
@@ -45,12 +64,19 @@ using hib = Gpio<GPIOA_BASE, 5>;
 
 #define CC3135_UART USART2
 #define CC3135_HIB
+#endif
 
 CC3135 *cc3135 = nullptr;
 
 volatile size_t IRQ_COUNT = 0;
 
+#if defined _BOARD_STM32F429ZI_SKYWARD_GS
+void __attribute__((used)) EXTI5_IRQHandlerImpl()
+#elif defined _BOARD_STM32F429ZI_SKYWARD_DEATHST_V3
+void __attribute__((used)) EXTI10_IRQHandlerImpl()
+#else
 void __attribute__((used)) EXTI4_IRQHandlerImpl()
+#endif
 {
     IRQ_COUNT += 1;
     if (cc3135)
@@ -79,11 +105,11 @@ void initBoard()
         rx::mode(miosix::Mode::ALTERNATE);
         rx::alternateFunction(7);
     }
+#endif
 
     auto irq_pin = irq::getPin();
     enableExternalInterrupt(irq_pin.getPort(), irq_pin.getNumber(),
                             InterruptTrigger::RISING_EDGE);
-#endif
 }
 
 int main()
@@ -119,6 +145,13 @@ int main()
     // but it's also in a weird state where the IRQ
     // pin doesn't trigger properly. Just wait for it to calm down
     Thread::sleep(2000);
+#endif
+
+#ifdef CC3135_SPI
+    SPIBus bus(CC3135_SPI);
+    GpioPin cs_pin = cs::getPin();
+
+    std::unique_ptr<ICC3135Iface> iface(new CC3135Spi(bus, cs_pin, {}));
 #endif
 
 #ifdef CC3135_UART
