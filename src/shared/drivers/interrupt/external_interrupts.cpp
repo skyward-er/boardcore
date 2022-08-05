@@ -23,6 +23,9 @@
 #include "external_interrupts.h"
 
 #include <miosix.h>
+
+#include "kernel/logging.h"
+
 using namespace miosix;
 
 /**
@@ -62,46 +65,95 @@ using namespace miosix;
 
 // All unused interrupts call this function.
 extern void unexpectedInterrupt();
-extern "C" void Default_EXTI_Handler() { unexpectedInterrupt(); }
+extern "C" void Default_EXTI_Handler()
+{
+    IRQerrorLog("\r\n***Unexpected Peripheral interrupt [Boardcore]\r\n");
+}
 
 /**
  * Declaration of a separate IRQHandler for each external
- * interrupt. If no further implementatio is provided, the
+ * interrupt. If no further implementation is provided, the
  * Default_Handler will be called.
  */
-void __attribute__((weak)) EXTI0_IRQHandlerImpl();
-void __attribute__((weak)) EXTI1_IRQHandlerImpl();
-void __attribute__((weak)) EXTI2_IRQHandlerImpl();
-void __attribute__((weak)) EXTI3_IRQHandlerImpl();
-void __attribute__((weak)) EXTI4_IRQHandlerImpl();
-void __attribute__((weak)) EXTI5_IRQHandlerImpl();
-void __attribute__((weak)) EXTI6_IRQHandlerImpl();
-void __attribute__((weak)) EXTI7_IRQHandlerImpl();
-void __attribute__((weak)) EXTI8_IRQHandlerImpl();
-void __attribute__((weak)) EXTI9_IRQHandlerImpl();
-void __attribute__((weak)) EXTI10_IRQHandlerImpl();
-void __attribute__((weak)) EXTI11_IRQHandlerImpl();
-void __attribute__((weak)) EXTI12_IRQHandlerImpl();
-void __attribute__((weak)) EXTI13_IRQHandlerImpl();
-void __attribute__((weak)) EXTI14_IRQHandlerImpl();
-void __attribute__((weak)) EXTI15_IRQHandlerImpl();
+void __attribute__((weak)) EXTI0_IRQHandlerImpl()
+{
+    IRQerrorLog("\r\nUnexpected Peripheral interrupt EXTI0\r\n");
+}
 
-#pragma weak EXTI0_IRQHandlerImpl  = Default_EXTI_Handler
-#pragma weak EXTI1_IRQHandlerImpl  = Default_EXTI_Handler
-#pragma weak EXTI2_IRQHandlerImpl  = Default_EXTI_Handler
-#pragma weak EXTI3_IRQHandlerImpl  = Default_EXTI_Handler
-#pragma weak EXTI4_IRQHandlerImpl  = Default_EXTI_Handler
-#pragma weak EXTI5_IRQHandlerImpl  = Default_EXTI_Handler
-#pragma weak EXTI6_IRQHandlerImpl  = Default_EXTI_Handler
-#pragma weak EXTI7_IRQHandlerImpl  = Default_EXTI_Handler
-#pragma weak EXTI8_IRQHandlerImpl  = Default_EXTI_Handler
-#pragma weak EXTI9_IRQHandlerImpl  = Default_EXTI_Handler
-#pragma weak EXTI10_IRQHandlerImpl = Default_EXTI_Handler
-#pragma weak EXTI11_IRQHandlerImpl = Default_EXTI_Handler
-#pragma weak EXTI12_IRQHandlerImpl = Default_EXTI_Handler
-#pragma weak EXTI13_IRQHandlerImpl = Default_EXTI_Handler
-#pragma weak EXTI14_IRQHandlerImpl = Default_EXTI_Handler
-#pragma weak EXTI15_IRQHandlerImpl = Default_EXTI_Handler
+void __attribute__((weak)) EXTI1_IRQHandlerImpl()
+{
+    IRQerrorLog("\r\nUnexpected Peripheral interrupt EXTI1\r\n");
+}
+
+void __attribute__((weak)) EXTI2_IRQHandlerImpl()
+{
+    IRQerrorLog("\r\nUnexpected Peripheral interrupt EXTI2\r\n");
+}
+
+void __attribute__((weak)) EXTI3_IRQHandlerImpl()
+{
+    IRQerrorLog("\r\nUnexpected Peripheral interrupt EXTI3\r\n");
+}
+
+void __attribute__((weak)) EXTI4_IRQHandlerImpl()
+{
+    IRQerrorLog("\r\nUnexpected Peripheral interrupt EXTI4\r\n");
+}
+
+void __attribute__((weak)) EXTI5_IRQHandlerImpl()
+{
+    IRQerrorLog("\r\nUnexpected Peripheral interrupt EXTI5\r\n");
+}
+
+void __attribute__((weak)) EXTI6_IRQHandlerImpl()
+{
+    IRQerrorLog("\r\nUnexpected Peripheral interrupt EXTI6\r\n");
+}
+
+void __attribute__((weak)) EXTI7_IRQHandlerImpl()
+{
+    IRQerrorLog("\r\nUnexpected Peripheral interrupt EXTI7\r\n");
+}
+
+void __attribute__((weak)) EXTI8_IRQHandlerImpl()
+{
+    IRQerrorLog("\r\nUnexpected Peripheral interrupt EXTI8\r\n");
+}
+
+void __attribute__((weak)) EXTI9_IRQHandlerImpl()
+{
+    IRQerrorLog("\r\nUnexpected Peripheral interrupt EXTI9\r\n");
+}
+
+void __attribute__((weak)) EXTI10_IRQHandlerImpl()
+{
+    IRQerrorLog("\r\nUnexpected Peripheral interrupt EXTI10\r\n");
+}
+
+void __attribute__((weak)) EXTI11_IRQHandlerImpl()
+{
+    IRQerrorLog("\r\nUnexpected Peripheral interrupt EXTI11\r\n");
+}
+
+void __attribute__((weak)) EXTI12_IRQHandlerImpl()
+{
+    IRQerrorLog("\r\nUnexpected Peripheral interrupt EXTI12\r\n");
+}
+
+void __attribute__((weak)) EXTI13_IRQHandlerImpl()
+{
+    IRQerrorLog("\r\nUnexpected Peripheral interrupt EXTI13\r\n");
+}
+
+void __attribute__((weak)) EXTI14_IRQHandlerImpl()
+{
+    IRQerrorLog("\r\nUnexpected Peripheral interrupt EXTI14\r\n");
+}
+
+void __attribute__((weak)) EXTI15_IRQHandlerImpl()
+{
+    IRQerrorLog("\r\nUnexpected Peripheral interrupt EXTI15\r\n");
+}
 
 /**
  * Implementation of the IRQHandler that is triggered when
@@ -266,7 +318,7 @@ void __attribute__((used)) EXTI15_10_IRQHandlerImpl()
     }
 }
 
-constexpr unsigned ConvertGPIO_BASEtoUnsiged(unsigned P)
+constexpr unsigned ConvertGPIO_BASEtoUnsigned(unsigned P)
 {
     // clang-format off
     return  P == GPIOA_BASE? 0 :
@@ -303,7 +355,7 @@ constexpr unsigned GetEXTI_IRQn(unsigned N)
 
 constexpr unsigned GetEXTICR_register_value(unsigned P, unsigned N)
 {
-    return (ConvertGPIO_BASEtoUnsiged(P) << ((N % 4) * 4));
+    return (ConvertGPIO_BASEtoUnsigned(P) << ((N % 4) * 4));
 }
 
 void enableExternalInterrupt(unsigned int gpioPort, unsigned int gpioNumber,

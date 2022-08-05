@@ -76,7 +76,7 @@ TemperatureData MAX31855::sampleImpl()
     }
 
     TemperatureData result{};
-    result.temperatureTimestamp = TimestampTimer::getInstance().getTimestamp();
+    result.temperatureTimestamp = TimestampTimer::getTimestamp();
 
     // Convert the integer and decimal part separately
     result.temperature = static_cast<float>(sample >> 2) * 0.25;
@@ -94,7 +94,7 @@ TemperatureData MAX31855::readInternalTemperature()
     }
 
     TemperatureData result{};
-    result.temperatureTimestamp = TimestampTimer::getInstance().getTimestamp();
+    result.temperatureTimestamp = TimestampTimer::getTimestamp();
 
     // Extract data bits
     sample[1] = sample[1] >> 4;

@@ -156,14 +156,15 @@ SX1278::SX1278(SPIBusInterface &bus, miosix::GpioPin cs) : bus_mgr(bus, cs) {}
 
 SX1278::Error SX1278::init(Config config)
 {
-    // Lock the bus
-    bus_mgr.lock(Mode::MODE_STDBY);
-    bus_mgr.waitForIrq(RegIrqFlags::MODE_READY);
-
+    // Do an early version check to avoid stalling on non-working device
     if (getVersion() != 0x12)
     {
         return Error::BAD_VERSION;
     }
+
+    // Lock the bus
+    bus_mgr.lock(Mode::MODE_STDBY);
+    bus_mgr.waitForIrq(RegIrqFlags::MODE_READY);
 
     setBitrate(config.bitrate);
     setFreqDev(config.freq_dev);
@@ -200,7 +201,7 @@ SX1278::Error SX1278::init(Config config)
         spi.writeRegister(REG_RX_TIMEOUT_3, 0x00);
         spi.writeRegister(REG_PACKET_CONFIG_1,
                           RegPacketConfig1::PACKET_FORMAT_VARIABLE_LENGTH |
-                              RegPacketConfig1::DC_FREE_NONE |
+                              RegPacketConfig1::DC_FREE_MANCHESTER |
                               RegPacketConfig1::CRC_ON |
                               RegPacketConfig1::ADDRESS_FILTERING_NONE |
                               RegPacketConfig1::CRC_WHITENING_TYPE_CCITT_CRC);

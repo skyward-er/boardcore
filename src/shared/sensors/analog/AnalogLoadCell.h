@@ -34,9 +34,8 @@ namespace Boardcore
 class AnalogLoadCell : public Sensor<AnalogLoadCellData>
 {
 public:
-    AnalogLoadCell(std::function<std::pair<uint64_t, float>()> getVoltage,
-                   const float mVtoV, const unsigned int fullScale,
-                   const float supplyVoltage = 5)
+    AnalogLoadCell(std::function<ADCData()> getVoltage, const float mVtoV,
+                   const unsigned int fullScale, const float supplyVoltage = 5)
         : getVoltage(getVoltage),
           conversionCoeff(mVtoV * supplyVoltage / fullScale / 1e3)
     {
@@ -46,20 +45,33 @@ public:
 
     bool selfTest() override { return true; };
 
+    /**
+     * @brief Sets the offset that will be removed from the measured load.
+     */
+    void setOffset(const float offset) { this->offset = offset; }
+
     AnalogLoadCellData sampleImpl() override
     {
+        ADCData adcData = getVoltage();
+
         AnalogLoadCellData data;
+        data.loadTimestamp = adcData.voltageTimestamp;
+        data.voltage       = adcData.voltage;
 
-        std::tie(data.loadTimestamp, data.voltage) = getVoltage();
-
-        data.load = data.voltage / conversionCoeff;
+        if (data.voltage != 0)
+            data.load = data.voltage / conversionCoeff - offset;
+        else
+            data.load = -offset;
 
         return data;
     }
 
 private:
-    std::function<std::pair<uint64_t, float>()> getVoltage;
+    ///< Function that returns the sensor voltage.
+    std::function<ADCData()> getVoltage;
+
     const float conversionCoeff;
+    float offset = 0;
 };
 
 }  // namespace Boardcore

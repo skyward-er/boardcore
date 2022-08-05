@@ -208,7 +208,7 @@ int main()
                 break;
         }
 
-        logger.log(logger.getLoggerStats());
+        logger.log(logger.getStats());
         Thread::sleepUntil(start + 500);
     }
 }

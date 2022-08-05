@@ -29,6 +29,7 @@ namespace Boardcore
 {
 
 EventBroker::EventBroker() {}
+
 void EventBroker::post(const Event& ev, uint8_t topic)
 {
 #ifdef TRACE_EVENTS

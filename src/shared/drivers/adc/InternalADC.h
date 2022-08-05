@@ -66,7 +66,7 @@ namespace Boardcore
  * timers and multi adc mode.
  * This features are not implemented to keep the driver simple.
  */
-class InternalADC : public Sensor<ADCData>
+class InternalADC : public Sensor<InternalADCData>
 {
 public:
     /**
@@ -90,6 +90,9 @@ public:
         CH13,
         CH14,
         CH15,
+        CH16,
+        CH17,
+        CH18,
         CH_NUM
     };
 
@@ -127,15 +130,22 @@ public:
      */
     bool init() override;
 
-    bool enableChannel(Channel channel);
+    /**
+     * @brief Make a regular conversion for the specified channel.
+     */
+    ADCData readChannel(Channel channel, SampleTime sampleTime = CYCLES_3);
 
-    bool enableChannel(Channel channel, SampleTime sampleTime);
+    bool enableChannel(Channel channel, SampleTime sampleTime = CYCLES_3);
 
-    ADCData getVoltage(Channel channel);
+    bool addRegularChannel(Channel channel);
+
+    InternalADCData getVoltage(Channel channel);
 
     bool selfTest() override;
 
-    ADCData sampleImpl() override;
+    InternalADCData sampleImpl() override;
+
+    float getSupplyVoltage();
 
 private:
     inline void resetRegisters();
@@ -145,8 +155,6 @@ private:
     inline void startRegularConversion();
 
     inline bool addInjectedChannel(Channel channel);
-
-    inline bool addRegularChannel(Channel channel);
 
     inline void setChannelSampleTime(Channel channel, SampleTime sampleTime);
 
@@ -168,7 +176,7 @@ private:
      * We'll use up to 4 injected channel by default and up to 16 channels when
      * using DMA.
      *
-     * The differentiation is necessary because whitout DMA it is much simplier
+     * The differentiation is necessary because whiteout DMA it is much simpler
      * to use injected channel for multichannel readings. Otherwise we would
      * need to handle each channel's end of conversion interrupt or go through
      */
@@ -182,7 +190,7 @@ private:
     volatile uint32_t* clearFlagReg;
 
     static constexpr int INJECTED_CHANNEL_N = 4;
-    static constexpr int RESOLUTION         = 4096;  ///< 12 bits
+    static constexpr int RESOLUTION         = 4095;  ///< 12 bits
 };
 
 }  // namespace Boardcore

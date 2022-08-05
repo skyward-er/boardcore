@@ -29,7 +29,7 @@
 namespace Boardcore
 {
 /**
- * @brief MAX31855 termocouple sensor driver.
+ * @brief MAX31855 thermocouple sensor driver.
  */
 class MAX31855 : public Sensor<TemperatureData>
 {
@@ -54,9 +54,9 @@ public:
     bool init();
 
     /**
-     * @brief Checks wheter the termocouple is open.
+     * @brief Checks whether the thermocouple is open.
      *
-     * @return True if the termocouple is connected.
+     * @return True if the thermocouple is connected.
      */
     bool selfTest();
 

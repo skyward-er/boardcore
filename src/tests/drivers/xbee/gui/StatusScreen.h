@@ -188,7 +188,7 @@ struct StatusScreen
 
     void updateLogStatus(Logger& logger)
     {
-        LoggerStats stats = logger.getLoggerStats();
+        LoggerStats stats = logger.getStats();
 
         if (logger.getCurrentLogNumber() >= 0)
         {
@@ -221,7 +221,7 @@ struct StatusScreen
         }
 
         tvLogBufWritten.setText(to_string(stats.buffersWritten));
-        tvLogBufTtw.setText(to_string(stats.writeTime) + " ms");
+        tvLogBufTtw.setText(to_string(stats.averageWriteTime) + " ms");
     }
 
     void updateXbeeStatus(DataRateResult resRcv, DataRateResult resSnd,

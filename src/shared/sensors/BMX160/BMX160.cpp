@@ -73,6 +73,9 @@ bool BMX160::init()
     initGyr();
     initMag();
 
+    // sleep in order to let the sensors initialize correctly
+    miosix::Thread::sleep(30);
+
     initFifo();
     initInt();
 
@@ -159,7 +162,7 @@ BMX160Data BMX160::sampleImpl()
 BMX160Temperature BMX160::getTemperature()
 {
     BMX160Temperature t;
-    t.temperatureTimestamp = TimestampTimer::getInstance().getTimestamp();
+    t.temperatureTimestamp = TimestampTimer::getTimestamp();
     t.temperature          = temperature;
     return t;
 }
@@ -614,9 +617,10 @@ GyroscopeData BMX160::buildGyrData(BMX160Defs::GyrRaw data, uint64_t timestamp)
         return GyroscopeData{timestamp, data.x * gyrSensibility,
                              data.y * gyrSensibility, data.z * gyrSensibility};
     else
-        return GyroscopeData{timestamp, data.x * gyrSensibility * g,
-                             data.y * gyrSensibility * g,
-                             data.z * gyrSensibility * g};
+        return GyroscopeData{timestamp,
+                             data.x * gyrSensibility * DEGREES_TO_RADIANS,
+                             data.y * gyrSensibility * DEGREES_TO_RADIANS,
+                             data.z * gyrSensibility * DEGREES_TO_RADIANS};
 }
 
 const char* BMX160::debugErr(SPITransaction& spi)
@@ -846,9 +850,9 @@ void BMX160::readFifo(bool headerless)
     }
 
     // Update fifo statistics
-    stats.timestamp          = TimestampTimer::getInstance().getTimestamp();
-    stats.watermarkTimestamp = watermarkTimestamp;
-    stats.fifoDuration       = timestamp;
+    stats.timestamp               = TimestampTimer::getTimestamp();
+    stats.watermarkTimestamp      = watermarkTimestamp;
+    stats.fifoDuration            = timestamp;
     stats.interruptTimestampDelta = interruptTimestampDelta;
     stats.len                     = len;
 

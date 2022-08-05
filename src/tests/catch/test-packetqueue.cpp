@@ -86,8 +86,7 @@ TEST_CASE("Packet tests")
         REQUIRE(p.append(messageBase, 5));
         uint64_t ts = p.getTimestamp();
 
-        REQUIRE(Boardcore::TimestampTimer::getInstance().getTimestamp() - ts <
-                5);
+        REQUIRE(Boardcore::TimestampTimer::getTimestamp() - ts < 5);
         REQUIRE(p.dump(buf) == 5);
         COMPARE(buf, BUF_LEN, "01234");
 

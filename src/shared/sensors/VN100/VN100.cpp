@@ -468,7 +468,7 @@ QuaternionData VN100::sampleQuaternion()
     }
 
     // Parse the data
-    data.quatTimestamp = TimestampTimer::getInstance().getTimestamp();
+    data.quatTimestamp = TimestampTimer::getTimestamp();
     data.quatX         = strtod(recvString + indexStart + 1, &nextNumber);
     data.quatY         = strtod(nextNumber + 1, &nextNumber);
     data.quatZ         = strtod(nextNumber + 1, &nextNumber);
@@ -496,7 +496,7 @@ MagnetometerData VN100::sampleMagnetometer()
     }
 
     // Parse the data
-    data.magneticFieldTimestamp = TimestampTimer::getInstance().getTimestamp();
+    data.magneticFieldTimestamp = TimestampTimer::getTimestamp();
     data.magneticFieldX = strtod(recvString + indexStart + 1, &nextNumber);
     data.magneticFieldY = strtod(nextNumber + 1, &nextNumber);
     data.magneticFieldZ = strtod(nextNumber + 1, NULL);
@@ -523,7 +523,7 @@ AccelerometerData VN100::sampleAccelerometer()
     }
 
     // Parse the data
-    data.accelerationTimestamp = TimestampTimer::getInstance().getTimestamp();
+    data.accelerationTimestamp = TimestampTimer::getTimestamp();
     data.accelerationX = strtod(recvString + indexStart + 1, &nextNumber);
     data.accelerationY = strtod(nextNumber + 1, &nextNumber);
     data.accelerationZ = strtod(nextNumber + 1, NULL);
@@ -550,8 +550,7 @@ GyroscopeData VN100::sampleGyroscope()
     }
 
     // Parse the data
-    data.angularVelocityTimestamp =
-        TimestampTimer::getInstance().getTimestamp();
+    data.angularVelocityTimestamp = TimestampTimer::getTimestamp();
     data.angularVelocityX = strtod(recvString + indexStart + 1, &nextNumber);
     data.angularVelocityY = strtod(nextNumber + 1, &nextNumber);
     data.angularVelocityZ = strtod(nextNumber + 1, NULL);
@@ -577,7 +576,7 @@ TemperatureData VN100::sampleTemperature()
     }
 
     // Parse the data
-    data.temperatureTimestamp = TimestampTimer::getInstance().getTimestamp();
+    data.temperatureTimestamp = TimestampTimer::getTimestamp();
     data.temperature          = strtod(recvString + indexStart + 1, NULL);
 
     return data;
@@ -601,7 +600,7 @@ PressureData VN100::samplePressure()
     }
 
     // Parse the data
-    data.pressureTimestamp = TimestampTimer::getInstance().getTimestamp();
+    data.pressureTimestamp = TimestampTimer::getTimestamp();
     data.pressure          = strtod(recvString + indexStart + 1, NULL);
 
     return data;

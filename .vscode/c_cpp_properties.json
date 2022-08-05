@@ -8,7 +8,7 @@
             "defines": [
                 "DEBUG",
                 "_ARCH_CORTEXM4_STM32F4",
-                "_BOARD_STM32F407VG_STM32F4DISCOVERY",
+                "_BOARD_STM32F4DISCOVERY",
                 "_MIOSIX_BOARDNAME=stm32f407vg_stm32f4discovery",
                 "HSE_VALUE=8000000",
                 "SYSCLK_FREQ_168MHz=168000000",
@@ -51,8 +51,7 @@
                     "${workspaceFolder}/src/tests"
                 ],
                 "limitSymbolsToIncludedHeaders": true
-            },
-            "compileCommands": "${workspaceFolder}/build/compile_commands.json"
+            }
         },
         {
             "name": "stm32f429zi_stm32f4discovery",
@@ -115,7 +114,7 @@
             "defines": [
                 "DEBUG",
                 "_ARCH_CORTEXM4_STM32F4",
-                "_BOARD_STM32F429ZI_SKYWARD_DEATH_STACK_X",
+                "_BOARD_STM32F429ZI_SKYWARD_DEATHST_X",
                 "_MIOSIX_BOARDNAME=stm32f429zi_skyward_death_stack_x",
                 "HSE_VALUE=8000000",
                 "SYSCLK_FREQ_168MHz=168000000",
@@ -161,23 +160,23 @@
             }
         },
         {
-            "name": "stm32f429zi_parafoil",
+            "name": "stm32f429zi_skyward_death_stack_v3",
             "cStandard": "c11",
             "cppStandard": "c++11",
             "compilerPath": "/opt/arm-miosix-eabi/bin/arm-miosix-eabi-g++",
             "defines": [
                 "DEBUG",
                 "_ARCH_CORTEXM4_STM32F4",
-                "_BOARD_STM32F429ZI_PARAFOIL",
-                "_MIOSIX_BOARDNAME=stm32f429zi_parafoil",
+                "_BOARD_STM32F429ZI_SKYWARD_DEATHST_X",
+                "_MIOSIX_BOARDNAME=stm32f429zi_skyward_death_stack_v3",
                 "HSE_VALUE=8000000",
                 "SYSCLK_FREQ_168MHz=168000000",
                 "_MIOSIX",
                 "__cplusplus=201103L"
             ],
             "includePath": [
-                "${workspaceFolder}/libs/miosix-kernel/miosix/config/arch/cortexM4_stm32f4/stm32f429zi_parafoil",
-                "${workspaceFolder}/libs/miosix-kernel/miosix/arch/cortexM4_stm32f4/stm32f429zi_parafoil",
+                "${workspaceFolder}/libs/miosix-kernel/miosix/config/arch/cortexM4_stm32f4/stm32f429zi_skyward_death_stack_v3",
+                "${workspaceFolder}/libs/miosix-kernel/miosix/arch/cortexM4_stm32f4/stm32f429zi_skyward_death_stack_v3",
                 "${workspaceFolder}/libs/miosix-kernel/miosix/arch/cortexM4_stm32f4/common",
                 "${workspaceFolder}/libs/miosix-kernel/miosix/arch/common",
                 "${workspaceFolder}/libs/miosix-kernel/miosix",
@@ -191,9 +190,168 @@
             ],
             "browse": {
                 "path": [
-                    "${workspaceFolder}/libs/miosix-kernel/miosix/config/arch/cortexM4_stm32f4/stm32f429zi_parafoil",
-                    "${workspaceFolder}/libs/miosix-kernel/miosix/arch/cortexM4_stm32f4/stm32f429zi_parafoil",
+                    "${workspaceFolder}/libs/miosix-kernel/miosix/config/arch/cortexM4_stm32f4/stm32f429zi_skyward_death_stack_v3",
+                    "${workspaceFolder}/libs/miosix-kernel/miosix/arch/cortexM4_stm32f4/stm32f429zi_skyward_death_stack_v3",
                     "${workspaceFolder}/libs/miosix-kernel/miosix/arch/cortexM4_stm32f4/common",
+                    "${workspaceFolder}/libs/miosix-kernel/miosix/stdlib_integration",
+                    "${workspaceFolder}/libs/miosix-kernel/miosix/arch/common",
+                    "${workspaceFolder}/libs/miosix-kernel/miosix/interfaces",
+                    "${workspaceFolder}/libs/miosix-kernel/miosix/filesystem",
+                    "${workspaceFolder}/libs/miosix-kernel/miosix/kernel",
+                    "${workspaceFolder}/libs/miosix-kernel/miosix/util",
+                    "${workspaceFolder}/libs/miosix-kernel/miosix/e20",
+                    "${workspaceFolder}/libs/miosix-kernel/miosix/*",
+                    "${workspaceFolder}/libs/mavlink-skyward-lib",
+                    "${workspaceFolder}/libs/eigen",
+                    "${workspaceFolder}/libs/tscpp",
+                    "${workspaceFolder}/libs/mxgui",
+                    "${workspaceFolder}/libs/fmt",
+                    "${workspaceFolder}/src/shared",
+                    "${workspaceFolder}/src/tests"
+                ],
+                "limitSymbolsToIncludedHeaders": true
+            }
+        },
+        {
+            "name": "stm32f429zi_skyward_parafoil",
+            "cStandard": "c11",
+            "cppStandard": "c++11",
+            "compilerPath": "/opt/arm-miosix-eabi/bin/arm-miosix-eabi-g++",
+            "defines": [
+                "DEBUG",
+                "_ARCH_CORTEXM4_STM32F4",
+                "_BOARD_STM32F429ZI_SKYWARD_PARAFOIL",
+                "_MIOSIX_BOARDNAME=stm32f429zi_skyward_parafoil",
+                "HSE_VALUE=8000000",
+                "SYSCLK_FREQ_168MHz=168000000",
+                "_MIOSIX",
+                "__cplusplus=201103L"
+            ],
+            "includePath": [
+                "${workspaceFolder}/libs/miosix-kernel/miosix/config/arch/cortexM4_stm32f4/stm32f429zi_skyward_parafoil",
+                "${workspaceFolder}/libs/miosix-kernel/miosix/arch/cortexM4_stm32f4/stm32f429zi_skyward_parafoil",
+                "${workspaceFolder}/libs/miosix-kernel/miosix/arch/cortexM4_stm32f4/common",
+                "${workspaceFolder}/libs/miosix-kernel/miosix/arch/common",
+                "${workspaceFolder}/libs/miosix-kernel/miosix",
+                "${workspaceFolder}/libs/mavlink-skyward-lib",
+                "${workspaceFolder}/libs/fmt/include",
+                "${workspaceFolder}/libs/eigen",
+                "${workspaceFolder}/libs/tscpp",
+                "${workspaceFolder}/libs",
+                "${workspaceFolder}/src/shared",
+                "${workspaceFolder}/src/tests"
+            ],
+            "browse": {
+                "path": [
+                    "${workspaceFolder}/libs/miosix-kernel/miosix/config/arch/cortexM4_stm32f4/stm32f429zi_skyward_parafoil",
+                    "${workspaceFolder}/libs/miosix-kernel/miosix/arch/cortexM4_stm32f4/stm32f429zi_skyward_parafoil",
+                    "${workspaceFolder}/libs/miosix-kernel/miosix/arch/cortexM4_stm32f4/common",
+                    "${workspaceFolder}/libs/miosix-kernel/miosix/stdlib_integration",
+                    "${workspaceFolder}/libs/miosix-kernel/miosix/arch/common",
+                    "${workspaceFolder}/libs/miosix-kernel/miosix/interfaces",
+                    "${workspaceFolder}/libs/miosix-kernel/miosix/filesystem",
+                    "${workspaceFolder}/libs/miosix-kernel/miosix/kernel",
+                    "${workspaceFolder}/libs/miosix-kernel/miosix/util",
+                    "${workspaceFolder}/libs/miosix-kernel/miosix/e20",
+                    "${workspaceFolder}/libs/miosix-kernel/miosix/*",
+                    "${workspaceFolder}/libs/mavlink-skyward-lib",
+                    "${workspaceFolder}/libs/eigen",
+                    "${workspaceFolder}/libs/tscpp",
+                    "${workspaceFolder}/libs/mxgui",
+                    "${workspaceFolder}/libs/fmt",
+                    "${workspaceFolder}/src/shared",
+                    "${workspaceFolder}/src/tests"
+                ],
+                "limitSymbolsToIncludedHeaders": true
+            }
+        },
+        {
+            "name": "stm32f429zi_skyward_pyxis_auxiliary",
+            "cStandard": "c11",
+            "cppStandard": "c++11",
+            "compilerPath": "/opt/arm-miosix-eabi/bin/arm-miosix-eabi-g++",
+            "defines": [
+                "DEBUG",
+                "_ARCH_CORTEXM4_STM32F4",
+                "_BOARD_STM32F429ZI_SKYWARD_PYXIS_AUXILIARY",
+                "_MIOSIX_BOARDNAME=stm32f429zi_skyward_pyxis_auxiliary",
+                "HSE_VALUE=8000000",
+                "SYSCLK_FREQ_168MHz=168000000",
+                "_MIOSIX",
+                "__cplusplus=201103L"
+            ],
+            "includePath": [
+                "${workspaceFolder}/libs/miosix-kernel/miosix/config/arch/cortexM4_stm32f4/stm32f429zi_skyward_pyxis_auxiliary",
+                "${workspaceFolder}/libs/miosix-kernel/miosix/arch/cortexM4_stm32f4/stm32f429zi_skyward_pyxis_auxiliary",
+                "${workspaceFolder}/libs/miosix-kernel/miosix/arch/cortexM4_stm32f4/common",
+                "${workspaceFolder}/libs/miosix-kernel/miosix/arch/common",
+                "${workspaceFolder}/libs/miosix-kernel/miosix",
+                "${workspaceFolder}/libs/mavlink-skyward-lib",
+                "${workspaceFolder}/libs/fmt/include",
+                "${workspaceFolder}/libs/eigen",
+                "${workspaceFolder}/libs/tscpp",
+                "${workspaceFolder}/libs",
+                "${workspaceFolder}/src/shared",
+                "${workspaceFolder}/src/tests"
+            ],
+            "browse": {
+                "path": [
+                    "${workspaceFolder}/libs/miosix-kernel/miosix/config/arch/cortexM4_stm32f4/stm32f429zi_skyward_pyxis_auxiliary",
+                    "${workspaceFolder}/libs/miosix-kernel/miosix/arch/cortexM4_stm32f4/stm32f429zi_skyward_pyxis_auxiliary",
+                    "${workspaceFolder}/libs/miosix-kernel/miosix/arch/cortexM4_stm32f4/common",
+                    "${workspaceFolder}/libs/miosix-kernel/miosix/stdlib_integration",
+                    "${workspaceFolder}/libs/miosix-kernel/miosix/arch/common",
+                    "${workspaceFolder}/libs/miosix-kernel/miosix/interfaces",
+                    "${workspaceFolder}/libs/miosix-kernel/miosix/filesystem",
+                    "${workspaceFolder}/libs/miosix-kernel/miosix/kernel",
+                    "${workspaceFolder}/libs/miosix-kernel/miosix/util",
+                    "${workspaceFolder}/libs/miosix-kernel/miosix/e20",
+                    "${workspaceFolder}/libs/miosix-kernel/miosix/*",
+                    "${workspaceFolder}/libs/mavlink-skyward-lib",
+                    "${workspaceFolder}/libs/eigen",
+                    "${workspaceFolder}/libs/tscpp",
+                    "${workspaceFolder}/libs/mxgui",
+                    "${workspaceFolder}/libs/fmt",
+                    "${workspaceFolder}/src/shared",
+                    "${workspaceFolder}/src/tests"
+                ],
+                "limitSymbolsToIncludedHeaders": true
+            }
+        },
+        {
+            "name": "stm32f205rc_skyward_ciuti",
+            "cStandard": "c11",
+            "cppStandard": "c++11",
+            "compilerPath": "/opt/arm-miosix-eabi/bin/arm-miosix-eabi-g++",
+            "defines": [
+                "DEBUG",
+                "_ARCH_CORTEXM3_STM32F2",
+                "_BOARD_STM32F205RC_SKYWARD_CIUTI",
+                "_MIOSIX_BOARDNAME=stm32f205RC_skyward_ciuti",
+                "HSE_VALUE=25000000",
+                "SYSCLK_FREQ_120MHz=120000000",
+                "_MIOSIX",
+                "__cplusplus=201103L"
+            ],
+            "includePath": [
+                "${workspaceFolder}/libs/miosix-kernel/miosix/config/arch/cortexM3_stm32f2/stm32f205rc_skyward_ciuti",
+                "${workspaceFolder}/libs/miosix-kernel/miosix/arch/cortexM3_stm32f2/stm32f205rc_skyward_ciuti",
+                "${workspaceFolder}/libs/miosix-kernel/miosix/arch/cortexM3_stm32f2/common",
+                "${workspaceFolder}/libs/miosix-kernel/miosix/arch/common",
+                "${workspaceFolder}/libs/miosix-kernel/miosix",
+                "${workspaceFolder}/libs/mavlink-skyward-lib",
+                "${workspaceFolder}/libs/fmt/include",
+                "${workspaceFolder}/libs/eigen",
+                "${workspaceFolder}/libs/tscpp",
+                "${workspaceFolder}/libs",
+                "${workspaceFolder}/src/shared",
+                "${workspaceFolder}/src/tests"
+            ],
+            "browse": {
+                "path": [
+                    "${workspaceFolder}/libs/miosix-kernel/miosix/config/arch/cortexM3_stm32f2/stm32f205rc_skyward_ciuti",
+                    "${workspaceFolder}/libs/miosix-kernel/miosix/arch/cortexM3_stm32f2/stm32f205rc_skyward_ciuti",
+                    "${workspaceFolder}/libs/miosix-kernel/miosix/arch/cortexM3_stm32f2/common",
                     "${workspaceFolder}/libs/miosix-kernel/miosix/stdlib_integration",
                     "${workspaceFolder}/libs/miosix-kernel/miosix/arch/common",
                     "${workspaceFolder}/libs/miosix-kernel/miosix/interfaces",

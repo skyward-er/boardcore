@@ -108,7 +108,7 @@ public:
         PGA_128 = 0x7   ///< Full scale resolution is ±9.375mV
     };
 
-    enum class Channel : int
+    enum class Channel : uint8_t
     {
         CHANNEL_0 = 0,
         CHANNEL_1 = 1,
@@ -155,7 +155,7 @@ public:
      * The ADS131M04 corrects for gain errors by multiplying the ADC conversion
      * result using the gain calibration registers.
      * The gain calibration value is interpreted as a 24bit unsigned. The values
-     * corresponds to n * (1/2^23), rainging from 0 to 2 - (1/2^23).
+     * corresponds to n * (1/2^23), ranging from 0 to 2 - (1/2^23).
      *
      * This function accepts a value between 0 and 2, it then compute the
      * correct gain register value.
@@ -171,6 +171,8 @@ public:
     void enableGlobalChopMode();
 
     void disableGlobalChopMode();
+
+    ADCData getVoltage(Channel channel);
 
     bool selfTest() override;
 

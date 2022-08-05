@@ -242,7 +242,7 @@ private:
      */
     bool checkWhoAmI();
 
-    enum BMP280Registers : uint8_t
+    enum Registers : uint8_t
     {
         REG_CALIB_0 = 0x88,
         // Calibration register 1-25

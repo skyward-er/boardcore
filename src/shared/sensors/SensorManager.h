@@ -108,7 +108,7 @@ private:
      * @brief Initializes samplers vector and sensorsMap with the given sensors
      * map, giving incremental IDs to SensorSampler objects.
      *
-     * In case a TaskScheduler was passed in the costructor, the SensorManager
+     * In case a TaskScheduler was passed in the constructor, the SensorManager
      * will assign to SensorSamplers incremental IDs starting from the maximum
      * among the tasks already existing in the TaskScheduler.
      *

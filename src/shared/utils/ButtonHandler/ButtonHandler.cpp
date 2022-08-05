@@ -44,6 +44,11 @@ bool ButtonHandler::registerButtonCallback(miosix::GpioPin pin,
     return false;
 }
 
+bool ButtonHandler::unregisterButtonCallback(miosix::GpioPin pin)
+{
+    return callbacks.erase(pin) != 0;
+}
+
 bool ButtonHandler::start() { return scheduler.start(); }
 
 void ButtonHandler::stop() { scheduler.stop(); }
@@ -63,12 +68,12 @@ void ButtonHandler::periodicButtonValueCheck(miosix::GpioPin pin)
     // Retrieve the pin information
     const ButtonCallback &callback = std::get<0>(callbacks[pin]);
     bool &wasPressed               = std::get<1>(callbacks[pin]);
-    int &pressedTicks              = std::get<2>(callbacks[pin]);
+    unsigned int &pressedTicks     = std::get<2>(callbacks[pin]);
 
     // Read the current button status
     // Note: The button is assumed to be pressed if the pin value is low
     // (pulldown)
-    bool isNowPressed = !pin.value();
+    const bool isNowPressed = !pin.value();
 
     if (isNowPressed)
     {

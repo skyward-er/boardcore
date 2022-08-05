@@ -27,7 +27,7 @@
 #include <sensors/BMX160/BMX160.h>
 #include <sensors/MS5803/MS5803.h>
 #include <sensors/SensorManager.h>
-#include <sensors/UbloxGPS/UbloxGPS.h>
+#include <sensors/UBXGPS/UBXGPSSerial.h>
 #include <utils/AeroUtils/AeroUtils.h>
 #include <utils/Constants.h>
 #include <utils/SkyQuaternion/SkyQuaternion.h>
@@ -50,9 +50,9 @@ Vector2f startPos = Vector2f(45.501141, 9.156281);
 NAS* nas;
 
 SPIBus spi1(SPI1);
-BMX160* imu   = nullptr;
-UbloxGPS* gps = nullptr;
-MS5803* baro  = nullptr;
+BMX160* imu       = nullptr;
+UBXGPSSerial* gps = nullptr;
+MS5803* baro      = nullptr;
 
 int main()
 {
@@ -134,7 +134,7 @@ void init()
         new BMX160(spi1, sensors::bmx160::cs::getPin(), bmx_config, spiConfig);
     imu->init();
 
-    gps = new UbloxGPS(921600, 10, 2, "gps", 38400);
+    gps = new UBXGPSSerial(921600, 10, 2, "gps", 38400);
     gps->init();
     gps->start();
 
@@ -190,8 +190,7 @@ void step()
     nas->correctAcc(acceleration);
     if (gpsData.fix)
         nas->correctGPS(gpsCorrection);
-    nas->correctBaro(100000, Constants::MSL_PRESSURE,
-                     Constants::MSL_TEMPERATURE);
+    nas->correctBaro(100000);
 
     auto nasState = nas->getState();
 

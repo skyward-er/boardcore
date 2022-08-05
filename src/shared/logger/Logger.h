@@ -59,15 +59,15 @@ public:
     /**
      * @brief Call this function to start the logger.
      *
-     * The function tryies to start the logger. It first opens the log file and
-     * then create the pack and write threads. If it fails on one of this
-     * operation, the logger is not started.
+     * Tries to start the logger, first opens the log file and then create the
+     * pack and write threads. If it fails on one of this operation, the logger
+     * is not started.
      *
      * Use getCurrentLogNumber to retrieve the log file number.
      *
      * Blocking call. May take a long time.
      *
-     * \return true if the logger was started correctly.
+     * \return True if the logger was started correctly.
      */
     bool start();
 
@@ -91,7 +91,9 @@ public:
 
     std::string getCurrentFileName();
 
-    LoggerStats getLoggerStats();
+    LoggerStats getStats();
+
+    void resetStats();
 
     bool isStarted() const;
 
@@ -117,6 +119,8 @@ public:
 
     /**
      * @brief Log logger stats using the logger itself.
+     *
+     * The stats are reset after being logged.
      */
     void logStats();
 
@@ -149,10 +153,17 @@ private:
     LoggerResult logImpl(const char *name, const void *data, unsigned int size);
 
     static constexpr unsigned int maxFilenameNumber = 100;  ///< Limit on files
-    static constexpr unsigned int maxRecordSize     = 512;  ///< Limit on data
+#ifndef _ARCH_CORTEXM3_STM32F2
+    static constexpr unsigned int maxRecordSize = 512;  ///< Limit on data
     static constexpr unsigned int numRecords = 512;  ///< Size of record queues
     static constexpr unsigned int numBuffers = 8;    ///< Number of buffers
     static constexpr unsigned int bufferSize = 64 * 1024;  ///< Size of buffers
+#else
+    static constexpr unsigned int maxRecordSize = 512;  ///< Limit on data
+    static constexpr unsigned int numRecords = 64;  ///< Size of record queues
+    static constexpr unsigned int numBuffers = 8;   ///< Number of buffers
+    static constexpr unsigned int bufferSize = 4 * 1024;  ///< Size of buffers
+#endif
 
     /**
      * A record is a single serialized logged class. Records are used to

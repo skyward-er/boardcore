@@ -79,7 +79,7 @@ inline uint32_t ClockUtils::getAPBFrequency(APB bus)
         // The position of the PPRE1 bit in RCC->CFGR is different in some stm32
 #ifdef _ARCH_CORTEXM3_STM32
         const uint32_t ppre1 = 8;
-#elif _ARCH_CORTEXM4_STM32F4
+#elif _ARCH_CORTEXM4_STM32F4 | _ARCH_CORTEXM3_STM32F2
         const uint32_t ppre1 = 10;
 #else
 #error "Architecture not supported by TimerUtils"
@@ -95,7 +95,7 @@ inline uint32_t ClockUtils::getAPBFrequency(APB bus)
         // The position of the PPRE2 bit in RCC->CFGR is different in some stm32
 #ifdef _ARCH_CORTEXM3_STM32
         const uint32_t ppre2 = 11;
-#elif _ARCH_CORTEXM4_STM32F4
+#elif _ARCH_CORTEXM4_STM32F4 | _ARCH_CORTEXM3_STM32F2
         const uint32_t ppre2 = 13;
 #else
 #error "Architecture not supported by TimerUtils"
@@ -159,9 +159,11 @@ inline bool ClockUtils::enablePeripheralClock(void* peripheral)
             case BKPSRAM_BASE:
                 RCC->AHB1ENR |= RCC_AHB1ENR_BKPSRAMEN;
                 break;
+#ifndef _ARCH_CORTEXM3_STM32F2
             case CCMDATARAM_BASE:
                 RCC->AHB1ENR |= RCC_AHB1ENR_CCMDATARAMEN;
                 break;
+#endif
             case DMA1_BASE:
                 RCC->AHB1ENR |= RCC_AHB1ENR_DMA1EN;
                 break;
@@ -173,9 +175,11 @@ inline bool ClockUtils::enablePeripheralClock(void* peripheral)
                 RCC->AHB1ENR |= RCC_AHB1ENR_DMA2DEN;
                 break;
 #endif
+#ifndef _ARCH_CORTEXM3_STM32F2
             case ETH_MAC_BASE:
                 RCC->AHB1ENR |= RCC_AHB1ENR_ETHMACEN;
                 break;
+#endif
             case USB_OTG_HS_PERIPH_BASE:
                 RCC->AHB1ENR |= RCC_AHB1ENR_OTGHSEN;
                 break;
@@ -183,9 +187,11 @@ inline bool ClockUtils::enablePeripheralClock(void* peripheral)
 
         // AHB2 peripherals
         {
+#ifndef _ARCH_CORTEXM3_STM32F2
             case DCMI_BASE:
                 RCC->AHB2ENR |= RCC_AHB2ENR_DCMIEN;
                 break;
+#endif
             case RNG_BASE:
                 RCC->AHB2ENR |= RCC_AHB2ENR_RNGEN;
                 break;
@@ -395,9 +401,11 @@ inline bool ClockUtils::disablePeripheralClock(void* peripheral)
             case BKPSRAM_BASE:
                 RCC->AHB1ENR &= ~RCC_AHB1ENR_BKPSRAMEN;
                 break;
+#ifndef _ARCH_CORTEXM3_STM32F2
             case CCMDATARAM_BASE:
                 RCC->AHB1ENR &= ~RCC_AHB1ENR_CCMDATARAMEN;
                 break;
+#endif
             case DMA1_BASE:
                 RCC->AHB1ENR &= ~RCC_AHB1ENR_DMA1EN;
                 break;
@@ -409,9 +417,11 @@ inline bool ClockUtils::disablePeripheralClock(void* peripheral)
                 RCC->AHB1ENR &= ~RCC_AHB1ENR_DMA2DEN;
                 break;
 #endif
+#ifndef _ARCH_CORTEXM3_STM32F2
             case ETH_MAC_BASE:
                 RCC->AHB1ENR &= ~RCC_AHB1ENR_ETHMACEN;
                 break;
+#endif
             case USB_OTG_HS_PERIPH_BASE:
                 RCC->AHB1ENR &= ~RCC_AHB1ENR_OTGHSEN;
                 break;
@@ -419,9 +429,11 @@ inline bool ClockUtils::disablePeripheralClock(void* peripheral)
 
         // AHB2 peripherals
         {
+#ifndef _ARCH_CORTEXM3_STM32F2
             case DCMI_BASE:
                 RCC->AHB2ENR &= ~RCC_AHB2ENR_DCMIEN;
                 break;
+#endif
             case RNG_BASE:
                 RCC->AHB2ENR &= ~RCC_AHB2ENR_RNGEN;
                 break;

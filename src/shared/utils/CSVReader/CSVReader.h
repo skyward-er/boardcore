@@ -152,6 +152,8 @@ public:
 
     CSVIterator<Data> end() { return CSVIterator<Data>(); }
 
+    void close() { fileStream.close(); }
+
     std::vector<Data> collect()
     {
         std::vector<Data> fileData;
