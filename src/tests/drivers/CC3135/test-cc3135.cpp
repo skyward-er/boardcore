@@ -40,20 +40,20 @@ cc3135:CC_SPI_CLK  -> stm32:pc10 (SPI3_SCK)
 
 #if defined _BOARD_STM32F429ZI_SKYWARD_GS
 #include "interfaces-impl/hwmapping.h"
-using sck = interfaces::spi1::sck;
+using sck  = interfaces::spi1::sck;
 using miso = interfaces::spi1::miso;
 using mosi = interfaces::spi1::mosi;
-using cs = peripherals::cc3135::cs;
-using irq = peripherals::cc3135::intr;
+using cs   = peripherals::cc3135::cs;
+using irq  = peripherals::cc3135::intr;
 
 #define CC3135_SPI SPI1
 #elif defined _BOARD_STM32F429ZI_SKYWARD_DEATHST_V3
 #include "interfaces-impl/hwmapping.h"
-using sck = interfaces::spi6::sck;
+using sck  = interfaces::spi6::sck;
 using miso = interfaces::spi6::miso;
 using mosi = interfaces::spi6::mosi;
-using cs = sensors::cc3135::cs;
-using irq = sensors::cc3135::intr;
+using cs   = sensors::cc3135::cs;
+using irq  = sensors::cc3135::intr;
 
 #define CC3135_SPI SPI6
 #else
