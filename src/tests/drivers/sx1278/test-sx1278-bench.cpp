@@ -45,6 +45,20 @@ const char *stringFromErr(SX1278::Error err)
     }
 }
 
+// Simple xorshift RNG
+uint32_t xorshift32()
+{
+    // https://xkcd.com/221/
+    static uint32_t STATE = 0x08104444;
+
+    uint32_t x = STATE;
+    x ^= x << 13;
+    x ^= x >> 17;
+    x ^= x << 5;
+
+    return STATE = x;
+}
+
 #if defined _BOARD_STM32F429ZI_SKYWARD_GS
 #include "interfaces-impl/hwmapping.h"
 
@@ -118,16 +132,13 @@ struct Stats
 
 SX1278 *sx1278 = nullptr;
 
+// Payload size in 32bit blocks
+constexpr size_t PAYLOAD_SIZE = 14;
+
 struct Msg
 {
-    int idx;
-    int dummy_1;
-    int dummy_2;
-    int dummy_3;
-
-    const static int DUMMY_1 = 0xdeadbeef;
-    const static int DUMMY_2 = 0xbeefdead;
-    const static int DUMMY_3 = 0x1234abcd;
+    uint32_t idx;
+    uint32_t payload[PAYLOAD_SIZE];
 };
 
 void recvLoop()
@@ -139,12 +150,15 @@ void recvLoop()
 
         int len = sx1278->receive((uint8_t *)&msg, sizeof(msg));
 
+        uint32_t acc = 0;
+        for (size_t i = 0; i < PAYLOAD_SIZE; i++)
+            acc ^= msg.payload[i];
+
         if (len != sizeof(msg))
         {
             stats.recv_errors++;
         }
-        else if (msg.dummy_1 != Msg::DUMMY_1 || msg.dummy_2 != Msg::DUMMY_2 ||
-                 msg.dummy_3 != Msg::DUMMY_3)
+        else if (acc != 0)
         {
             stats.recv_errors++;
             stats.corrupted_packets++;
@@ -164,10 +178,17 @@ void sendLoop()
         int next_idx = stats.send_count + 1;
 
         Msg msg;
-        msg.idx     = next_idx;
-        msg.dummy_1 = Msg::DUMMY_1;
-        msg.dummy_2 = Msg::DUMMY_2;
-        msg.dummy_3 = Msg::DUMMY_3;
+        msg.idx = next_idx;
+
+        // Setup the buffer so that the xor of the full thing is 0
+        uint32_t acc = 0;
+        for (size_t i = 0; i < PAYLOAD_SIZE - 1; i++)
+        {
+            // Fill only the lower 8bit to simulate a lot of zeroes
+            msg.payload[i] = xorshift32() & 0xff;
+            acc ^= msg.payload[i];
+        }
+        msg.payload[PAYLOAD_SIZE - 1] = acc;
 
         sx1278->send((uint8_t *)&msg, sizeof(msg));
         stats.send_count = next_idx;
