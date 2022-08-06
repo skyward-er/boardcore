@@ -33,30 +33,60 @@ LIS331HH::LIS331HH(SPIBusInterface& bus, miosix::GpioPin cs,
 {
 }
 
-bool LIS331HH::init() { return true; }
+bool LIS331HH::init()
+{
+    SPITransaction spi(slave);
+
+    spi.writeRegister(CTRL_REG1, NORMAL_MODE | CTRL_REG1_Z_EN | CTRL_REG1_Y_EN |
+                                     CTRL_REG1_X_EN);
+
+    return true;
+}
 
 bool LIS331HH::selfTest() { return true; }
 
+void LIS331HH::setOutputDataRate(OutputDataRate odr)
+{
+    SPITransaction spi(slave);
+
+    uint8_t ctrl1 = spi.readRegister(CTRL_REG1);
+    ctrl1         = (ctrl1 & ~CTRL_REG1_DR) | odr;
+    spi.writeRegister(CTRL_REG1, ctrl1);
+}
+
+void LIS331HH::setFullScaleRange(FullScaleRange fs)
+{
+    SPITransaction spi(slave);
+
+    uint8_t ctrl4 = spi.readRegister(CTRL_REG4);
+    ctrl4         = (ctrl4 & ~CTRL_REG4_FS) | fs;
+    spi.writeRegister(CTRL_REG4, ctrl4);
+
+    if (fs == FS_6)
+        sensitivity = 6.0 / 32767.0;
+    else if (fs == FS_12)
+        sensitivity = 12.0 / 32767.0;
+    else
+        sensitivity = 24.0 / 32767.0;
+}
+
 LIS331HHData LIS331HH::sampleImpl()
 {
-    uint16_t val;
+    int16_t val;
     LIS331HHData data;
 
     data.accelerationTimestamp = TimestampTimer::getTimestamp();
 
     SPITransaction spi(slave);
 
-    val = spi.readRegister(OUT_X_L);
-    val |= spi.readRegister(OUT_X_H) << 8;
-    data.accelerationX = 6.0 / 65536.0 * val;
+    spi.readRegisters(0x40 | OUT_X_L, reinterpret_cast<uint8_t*>(&val), 2);
+    data.accelerationX = sensitivity * val;
 
-    val = spi.readRegister(OUT_Y_L);
-    val |= spi.readRegister(OUT_Y_H) << 8;
-    data.accelerationY = 6.0 / 65536.0 * val;
+    spi.readRegisters(0x40 | OUT_Y_L, reinterpret_cast<uint8_t*>(&val), 2);
+    data.accelerationY = sensitivity * val;
 
-    val = spi.readRegister(OUT_Z_L);
-    val |= spi.readRegister(OUT_Z_H) << 8;
-    data.accelerationZ = 6.0 / 65536.0 * val;
+    spi.readRegisters(0x40 | OUT_Z_L, reinterpret_cast<uint8_t*>(&val), 2);
+    data.accelerationZ = sensitivity * val;
 
     return data;
 }

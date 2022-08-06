@@ -20,28 +20,51 @@
  * THE SOFTWARE.
  */
 
-#pragma once
-
+#include <drivers/spi/SPIDriver.h>
+#include <drivers/timer/TimestampTimer.h>
 #include <miosix.h>
+#include <sensors/LIS331HH/LIS331HH.h>
 
-namespace Boardcore
-{
+using namespace miosix;
+using namespace Boardcore;
 
-/**
- * @brief Comparison operator between GpioPins used for std::map.
- *
- * This function was implemented to use GpioPin as a map key. Check here for
- * more explanation:
- * https://stackoverflow.com/questions/1102392/how-can-i-use-stdmaps-with-user-defined-types-as-key
- */
-struct GpioPinCompare
+int main()
 {
-    bool operator()(const miosix::GpioPin& lhs,
-                    const miosix::GpioPin& rhs) const
+    // GpioPin cs(GPIOE_BASE, 4);
+    // GpioPin sck(GPIOE_BASE, 2);
+    // GpioPin miso(GPIOE_BASE, 5);
+    // GpioPin mosi(GPIOE_BASE, 6);
+
+    // sck.mode(miosix::Mode::ALTERNATE);
+    // sck.alternateFunction(5);
+    // miso.mode(miosix::Mode::ALTERNATE);
+    // miso.alternateFunction(5);
+    // mosi.mode(miosix::Mode::ALTERNATE);
+    // mosi.alternateFunction(5);
+    // cs.mode(miosix::Mode::OUTPUT);
+    // cs.high();
+
+    // SPIBus bus(SPI4);
+
+    GpioPin cs = sensors::lis331hh::cs::getPin();
+    SPIBus bus(SPI2);
+
+    SPIBusConfig config;
+    LIS331HH lis(bus, cs, config);
+
+    lis.init();
+    lis.setOutputDataRate(LIS331HH::ODR_1000);
+    lis.setFullScaleRange(LIS331HH::FS_24);
+
+    while (true)
     {
-        if (lhs.getPort() == rhs.getPort())
-            return lhs.getNumber() < rhs.getNumber();
-        return lhs.getPort() < rhs.getPort();
+        lis.sample();
+        auto sample = lis.getLastSample();
+
+        printf("[%.2f] x: % 5.2f, y: % 5.2f, z: % 5.2f\n",
+               sample.accelerationTimestamp / 1e6, sample.accelerationX,
+               sample.accelerationY, sample.accelerationZ);
+
+        Thread::sleep(100);
     }
-};
-}  // namespace Boardcore
+}
