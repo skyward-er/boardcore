@@ -160,6 +160,9 @@ sbs_target(test-ada stm32f429zi_skyward_death_stack_v3)
 #                               Tests - Drivers                               #
 #-----------------------------------------------------------------------------#
 
+add_executable(test-ad5204 src/tests/drivers/test-ad5204.cpp)
+sbs_target(test-ad5204 stm32f205rc_skyward_ciuti)
+
 add_executable(test-can-2way src/tests/drivers/canbus/CanDriver/test-can-2way.cpp)
 sbs_target(test-can-2way stm32f429zi_skyward_pyxis_auxiliary)
 

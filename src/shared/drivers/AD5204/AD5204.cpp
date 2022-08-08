@@ -20,33 +20,27 @@
  * THE SOFTWARE.
  */
 
-#include <drivers/spi/SPIDriver.h>
-#include <drivers/timer/TimestampTimer.h>
-#include <miosix.h>
-#include <sensors/LIS331HH/LIS331HH.h>
+#include "AD5204.h"
 
-using namespace miosix;
-using namespace Boardcore;
-
-int main()
+namespace Boardcore
 {
-    SPIBus bus(SPI2);
-    SPIBusConfig config;
-    LIS331HH lis(bus, devices::lis331hh::cs::getPin(), config);
 
-    lis.init();
-    lis.setOutputDataRate(LIS331HH::ODR_1000);
-    lis.setFullScaleRange(LIS331HH::FS_24);
-
-    while (true)
-    {
-        lis.sample();
-        auto sample = lis.getLastSample();
-
-        printf("[%.2f] x: % 5.2f, y: % 5.2f, z: % 5.2f\n",
-               sample.accelerationTimestamp / 1e6, sample.accelerationX,
-               sample.accelerationY, sample.accelerationZ);
-
-        Thread::sleep(100);
-    }
+AD5204::AD5204(SPIBusInterface& bus, miosix::GpioPin cs, SPIBusConfig spiConfig,
+               Resistance resistance)
+    : slave(bus, cs, spiConfig), resRange(resistance)
+{
 }
+
+void AD5204::setResistance(Channel channel, uint32_t resistance)
+{
+    SPITransaction spi(slave);
+
+    if (resistance > static_cast<uint32_t>(resRange))
+        return;
+
+    uint8_t value = resistance / static_cast<float>(resRange) * 255;
+
+    spi.write(static_cast<uint16_t>(static_cast<uint16_t>(channel) | value));
+}
+
+}  // namespace Boardcore

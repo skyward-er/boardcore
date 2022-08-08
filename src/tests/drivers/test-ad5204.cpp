@@ -20,10 +20,8 @@
  * THE SOFTWARE.
  */
 
-#include <drivers/spi/SPIDriver.h>
-#include <drivers/timer/TimestampTimer.h>
+#include <drivers/AD5204/AD5204.h>
 #include <miosix.h>
-#include <sensors/LIS331HH/LIS331HH.h>
 
 using namespace miosix;
 using namespace Boardcore;
@@ -32,21 +30,18 @@ int main()
 {
     SPIBus bus(SPI2);
     SPIBusConfig config;
-    LIS331HH lis(bus, devices::lis331hh::cs::getPin(), config);
 
-    lis.init();
-    lis.setOutputDataRate(LIS331HH::ODR_1000);
-    lis.setFullScaleRange(LIS331HH::FS_24);
+    AD5204 ad5204(bus, devices::ad5204::cs::getPin(), config,
+                  AD5204::Resistance::R_10);
+
+    uint8_t value = 0;
 
     while (true)
     {
-        lis.sample();
-        auto sample = lis.getLastSample();
+        ad5204.setResistance(AD5204::Channel::RDAC_2, 10e3 / 255 * value);
+        printf("Set to: %f\n", 10e3 / 255 * value);
 
-        printf("[%.2f] x: % 5.2f, y: % 5.2f, z: % 5.2f\n",
-               sample.accelerationTimestamp / 1e6, sample.accelerationX,
-               sample.accelerationY, sample.accelerationZ);
-
-        Thread::sleep(100);
+        value++;
+        Thread::sleep(1000);
     }
 }
