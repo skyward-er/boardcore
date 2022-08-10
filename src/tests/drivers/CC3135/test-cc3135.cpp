@@ -45,8 +45,10 @@ using miso = interfaces::spi1::miso;
 using mosi = interfaces::spi1::mosi;
 using cs   = peripherals::cc3135::cs;
 using irq  = peripherals::cc3135::intr;
+using hib  = peripherals::cc3135::hib;
 
 #define CC3135_SPI SPI1
+#define CC3135_HIB
 #elif defined _BOARD_STM32F429ZI_SKYWARD_DEATHST_V3
 #include "interfaces-impl/hwmapping.h"
 using sck  = interfaces::spi6::sck;
@@ -57,6 +59,9 @@ using irq  = sensors::cc3135::intr;
 
 #define CC3135_SPI SPI6
 #else
+
+// Use UART
+#if 0
 using tx  = Gpio<GPIOA_BASE, 2>;
 using rx  = Gpio<GPIOA_BASE, 3>;
 using irq = Gpio<GPIOA_BASE, 4>;
@@ -64,6 +69,18 @@ using hib = Gpio<GPIOA_BASE, 5>;
 
 #define CC3135_UART USART2
 #define CC3135_HIB
+#else
+using sck  = Gpio<GPIOA_BASE, 5>;
+using miso = Gpio<GPIOB_BASE, 4>;
+using mosi = Gpio<GPIOA_BASE, 7>;
+using cs   = Gpio<GPIOD_BASE, 4>;
+using irq  = Gpio<GPIOA_BASE, 4>;
+using hib  = Gpio<GPIOA_BASE, 6>;
+
+#define CC3135_SPI SPI1
+#define CC3135_HIB
+#endif
+
 #endif
 
 CC3135 *cc3135 = nullptr;
@@ -85,7 +102,8 @@ void __attribute__((used)) EXTI4_IRQHandlerImpl()
 
 void initBoard()
 {
-#ifdef CC3135_HIB
+#if (defined CC3135_HIB && !defined _BOARD_STM32F429ZI_SKYWARD_GS && \
+     !defined _BOARD_STM32F429ZI_SKYWARD_DEATHST_V3)
     {
         miosix::FastInterruptDisableLock dLock;
 
@@ -107,6 +125,24 @@ void initBoard()
     }
 #endif
 
+#if (defined CC3135_SPI && !defined _BOARD_STM32F429ZI_SKYWARD_GS && \
+     !defined _BOARD_STM32F429ZI_SKYWARD_DEATHST_V3)
+    {
+        miosix::FastInterruptDisableLock dLock;
+
+        miso::mode(miosix::Mode::ALTERNATE);
+        miso::alternateFunction(5);
+        mosi::mode(miosix::Mode::ALTERNATE);
+        mosi::alternateFunction(5);
+        sck::mode(miosix::Mode::ALTERNATE);
+        sck::alternateFunction(5);
+        irq::mode(miosix::Mode::INPUT);
+        cs::mode(miosix::Mode::OUTPUT);
+    }
+
+    cs::high();
+#endif
+
     auto irq_pin = irq::getPin();
     enableExternalInterrupt(irq_pin.getPort(), irq_pin.getNumber(),
                             InterruptTrigger::RISING_EDGE);
@@ -115,7 +151,7 @@ void initBoard()
 int main()
 {
     // IRQ watcher thread
-    /*std::thread _watcher(
+    std::thread _watcher(
         []()
         {
             size_t last = -1;
@@ -123,35 +159,27 @@ int main()
             {
                 if (last != IRQ_COUNT)
                 {
-                    printf("[cc3135] IRQ: %d\n", IRQ_COUNT);
+                    printf("[cc3135] IRQ: %zu\n", IRQ_COUNT);
                     last = IRQ_COUNT;
                 }
 
                 // Sleep to avoid CPU hogging
                 Thread::sleep(10);
             }
-        });*/
+        });
 
     initBoard();
-
-#ifdef CC3135_HIB
-    // Reset CC3135
-    hib::low();
-    Thread::sleep(10);
-    hib::high();
-
-    // Wait for the device to fully initialize.
-    // The device is very chatty at the beginning,
-    // but it's also in a weird state where the IRQ
-    // pin doesn't trigger properly. Just wait for it to calm down
-    Thread::sleep(2000);
-#endif
 
 #ifdef CC3135_SPI
     SPIBus bus(CC3135_SPI);
     GpioPin cs_pin = cs::getPin();
 
-    std::unique_ptr<ICC3135Iface> iface(new CC3135Spi(bus, cs_pin, {}));
+    SPIBusConfig config = {};
+    config.clockDivider = SPI::ClockDivider::DIV_128;
+    config.mode         = SPI::Mode::MODE_0;
+    config.bitOrder     = SPI::BitOrder::MSB_FIRST;
+
+    std::unique_ptr<ICC3135Iface> iface(new CC3135Spi(bus, cs_pin, config));
 #endif
 
 #ifdef CC3135_UART
@@ -161,6 +189,15 @@ int main()
     printf("[cc3135] Initializing...\n");
     cc3135 = new CC3135(std::move(iface));
     printf("[cc3135] Initialization complete!\n");
+
+#ifdef CC3135_HIB
+    // Reset CC3135
+    hib::low();
+    Thread::sleep(10);
+    hib::high();
+#endif
+
+    Thread::sleep(3000);
 
     auto version = cc3135->getVersion();
     printf(

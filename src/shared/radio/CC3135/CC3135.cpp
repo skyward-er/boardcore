@@ -189,7 +189,7 @@ void CC3135::readPacket(OpCode opcode, CC3135::Buffer command,
 
         // Locking the interface is not needed
 
-        ResponseHeader header;
+        ResponseHeader header = {};
         readHeader(&header);
 
         if (header.inner.opcode != opcode)
@@ -238,10 +238,10 @@ void CC3135::readHeader(ResponseHeader *header)
                      SYNC_PATTERN_LEN);
     }
 
-    uint8_t buf[4];
+    uint8_t buf[sizeof(ResponseHeader)];
 
     // 2. Read initial data from the device
-    iface->read(&buf[0], 4);
+    iface->read(&buf[0], 8);
 
     /*
     Here the TI driver does some weird stuff.
@@ -251,28 +251,59 @@ void CC3135::readHeader(ResponseHeader *header)
     // 3. Scan for device SYNC
     while (true)
     {
-        // Try and find the SYNC here
-        uint32_t sync;
-        memcpy(&sync, &buf[0], 4);
+        // Reads in SPI are always more than 4 bytes
 
-        if (n2hSyncPatternMatch(sync, tx_seq_num))
+        bool found = false;
+        int i;
+        for (i = 0; i < 4; i++)
+        {
+            // Try and find the SYNC here
+            uint32_t sync;
+            memcpy(&sync, &buf[i], 4);
+
+            if (sync == 0x0a7b2d01)
+            {
+                // BRUH
+            }
+
+            if (n2hSyncPatternMatch(sync, tx_seq_num))
+            {
+                found = true;
+                break;
+            }
+        }
+
+        // Shift everything and read more data
+        if (found)
+        {
+            memmove(&buf[0], &buf[4 + i], 4 - i);
+            iface->read(&buf[4 - i], 4 + i);
             break;
-
-        // TODO: The TI driver reads 4 bytes at a time, is this also good?
-
-        // Shift everything
-        memmove(&buf[0], &buf[1], 3);
-        iface->read(&buf[3], 1);
+        }
+        else
+        {
+            memmove(&buf[0], &buf[4], 4);
+            iface->read(&buf[4], 4);
+        }
     }
+
+    // 4. Scan for double syncs
+    /*uint32_t sync;
+    memcpy(&sync, &buf[0], 4);
+    while(n2hSyncPatternMatch(sync, tx_seq_num)) {
+        memmove(&buf[0], &buf[4], 4);
+        iface->read(&buf[4], 4);
+
+        memcpy(&sync, &buf[0], 4);
+    }*/
 
     tx_seq_num++;
 
-    // TODO: Is skipping double sync detection good?
+    // 5. Read rest of the header
+    iface->read(&buf[8], sizeof(ResponseHeader) - 8);
+    memcpy(header, &buf[0], sizeof(ResponseHeader));
 
-    // 4. Read initial header
-    iface->read(reinterpret_cast<uint8_t *>(header), sizeof(ResponseHeader));
-
-    // 5. Adjust for bigger response header
+    // 6. Adjust for bigger response header
     header->inner.len -= sizeof(ResponseHeader) - sizeof(GenericHeader);
 }
 
