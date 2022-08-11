@@ -63,7 +63,7 @@ void PinObserver::resetPinChangesCount(miosix::GpioPin pin)
     callbacks[pin].changesCount = 0;
 }
 
-PinObserver::PinObserver() { scheduler.start(); }
+PinObserver::PinObserver() {}
 
 void PinObserver::periodicPinValueCheck(miosix::GpioPin pin)
 {
