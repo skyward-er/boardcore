@@ -25,6 +25,17 @@
 #include <kernel/scheduler/scheduler.h>
 #include <utils/Debug.h>
 
+#define TRY(expr)                                            \
+    do                                                       \
+    {                                                        \
+        Boardcore::CC3135::Error result = (expr);            \
+        if (result != Boardcore::CC3135::Error::NO_ERROR)    \
+        {                                                    \
+            TRACE("[cc3135] NWP error@ %s\n", __FUNCTION__); \
+            return result;                                   \
+        }                                                    \
+    } while (0)
+
 using namespace Boardcore::CC3135Defs;
 using namespace miosix;
 
@@ -33,20 +44,38 @@ namespace Boardcore
 
 CC3135::CC3135(std::unique_ptr<ICC3135Iface> &&iface) : iface(std::move(iface))
 {
-    // Start internal thread
-    this->start();
     irq_wait_thread = thread;
 }
 
-DeviceVersion CC3135::getVersion()
+CC3135::Error CC3135::init(bool wait_for_init)
 {
-    DeviceVersion result = {};
+    if (wait_for_init)
+    {
+        DeviceInitInfo init_info = {};
+        TRY(readPacketSync(OPCODE_DEVICE_INITCOMPLETE, Buffer::from(&init_info),
+                           Buffer::null()));
 
-    devigeGet(1, 12, Buffer::from(&result));
-    return result;
+        TRACE(
+            "[cc3135] Init completed:\n"
+            "- Status: %8x\n"
+            "- Chip Id: %lx\n"
+            "- More Data: %8x\n",
+            init_info.status, init_info.chip_id, init_info.more_data);
+    }
+
+    // Start internal thread
+    this->start();
+
+    return Error::NO_ERROR;
 }
 
-void CC3135::devigeGet(uint8_t set_id, uint8_t option, Buffer result)
+CC3135::Error CC3135::getVersion(DeviceVersion &version)
+{
+    version = {};
+    return devigeGet(1, 12, Buffer::from<DeviceVersion>(&version));
+}
+
+CC3135::Error CC3135::devigeGet(uint8_t set_id, uint8_t option, Buffer result)
 {
     DeviceSetGet tx_command  = {};
     tx_command.device_set_id = set_id;
@@ -54,21 +83,21 @@ void CC3135::devigeGet(uint8_t set_id, uint8_t option, Buffer result)
 
     DeviceSetGet rx_command = {};
 
-    inoutPacketSync(OPCODE_DEVICE_DEVICEGET, Buffer::from(&tx_command),
-                    Buffer::null(), OPCODE_DEVICE_DEVICEGETRESPONSE,
-                    Buffer::from(&rx_command), result);
+    return inoutPacketSync(OPCODE_DEVICE_DEVICEGET, Buffer::from(&tx_command),
+                           Buffer::null(), OPCODE_DEVICE_DEVICEGETRESPONSE,
+                           Buffer::from(&rx_command), result);
 }
 
-void CC3135::setMode(CC3135Defs::Mode mode)
+CC3135::Error CC3135::setMode(CC3135Defs::Mode mode)
 {
     WlanSetMode tx_command = {};
     tx_command.mode        = mode;
 
     BasicResponse rx_command = {};
 
-    inoutPacketSync(OPCODE_WLAN_SET_MODE, Buffer::from(&tx_command),
-                    Buffer::null(), OPCODE_WLAN_SET_MODE_RESPONSE,
-                    Buffer::from(&rx_command), Buffer::null());
+    return inoutPacketSync(OPCODE_WLAN_SET_MODE, Buffer::from(&tx_command),
+                           Buffer::null(), OPCODE_WLAN_SET_MODE_RESPONSE,
+                           Buffer::from(&rx_command), Buffer::null());
 }
 
 void CC3135::handleIrq()
@@ -136,28 +165,7 @@ void CC3135::defaultPacketHandler(CC3135Defs::ResponseHeader header)
 
     size_t len = header.inner.len;
 
-    switch (header.inner.opcode)
-    {
-        case OPCODE_DEVICE_INITCOMPLETE:
-        {
-            DeviceInitInfo result = {};
-            safeRead(len, Buffer::from(&result));
-
-            TRACE(
-                "[cc3135] Init completen:\n"
-                "- Status: %8x\n"
-                "- Chip Id: %lx\n"
-                "- More Data: %8x\n",
-                result.status, result.chip_id, result.more_data);
-            break;
-        }
-
-        default:
-            break;
-    }
-
     // Dummy read rest of the data
-    // TODO: Add async commands
     if (len > 0)
         dummyRead(len);
 }
@@ -165,7 +173,6 @@ void CC3135::defaultPacketHandler(CC3135Defs::ResponseHeader header)
 void CC3135::run()
 {
     // TODO: Implement a way to stop this thread
-
     while (true)
     {
         waitForIrq();
@@ -176,53 +183,68 @@ void CC3135::run()
             Lock<FastMutex> lock(iface_mutex);
 
             ResponseHeader header;
-            readHeader(&header);
+            Error result = readHeader(&header);
 
-            defaultPacketHandler(header);
+            if (result != Error::NO_ERROR)
+            {
+                TRACE("[cc3135] NWP error!\n");
+            }
+            else
+            {
+                defaultPacketHandler(header);
+            }
         }
     }
 }
 
-void CC3135::inoutPacketSync(CC3135Defs::OpCode tx_opcode,
-                             CC3135::Buffer tx_command,
-                             CC3135::Buffer tx_payload,
-                             CC3135Defs::OpCode rx_opcode,
-                             CC3135::Buffer rx_command,
-                             CC3135::Buffer rx_payload)
+CC3135::Error CC3135::inoutPacketSync(CC3135Defs::OpCode tx_opcode,
+                                      CC3135::Buffer tx_command,
+                                      CC3135::Buffer tx_payload,
+                                      CC3135Defs::OpCode rx_opcode,
+                                      CC3135::Buffer rx_command,
+                                      CC3135::Buffer rx_payload)
 {
     installAsServiceThread();
 
     // Lock the device interface
     Lock<FastMutex> lock(iface_mutex);
-    writePacket(tx_opcode, tx_command, tx_payload);
+    TRY(writePacket(tx_opcode, tx_command, tx_payload));
 
-    readPacket(rx_opcode, rx_command, rx_payload);
+    TRY(readPacket(rx_opcode, rx_command, rx_payload));
 
     restoreDefaultServiceThread();
+
+    return Error::NO_ERROR;
 }
 
-void CC3135::readPacketSync(CC3135Defs::OpCode opcode, CC3135::Buffer command,
-                            CC3135::Buffer payload)
+CC3135::Error CC3135::readPacketSync(CC3135Defs::OpCode opcode,
+                                     CC3135::Buffer command,
+                                     CC3135::Buffer payload)
 {
     installAsServiceThread();
 
     // Lock the device interface
     Lock<FastMutex> lock(iface_mutex);
-    readPacket(opcode, command, payload);
+    TRY(readPacket(opcode, command, payload));
 
     restoreDefaultServiceThread();
+
+    return Error::NO_ERROR;
 }
 
-void CC3135::writePacketSync(CC3135Defs::OpCode opcode, CC3135::Buffer command,
-                             CC3135::Buffer payload)
+CC3135::Error CC3135::writePacketSync(CC3135Defs::OpCode opcode,
+                                      CC3135::Buffer command,
+                                      CC3135::Buffer payload)
 {
     // Lock the device interface
     Lock<FastMutex> lock(iface_mutex);
-    writePacket(opcode, command, payload);
+    TRY(writePacket(opcode, command, payload));
+
+    return Error::NO_ERROR;
 }
 
-void CC3135::readPacket(OpCode opcode, CC3135::Buffer command,
-                        CC3135::Buffer payload)
+CC3135::Error CC3135::readPacket(OpCode opcode, CC3135::Buffer command,
+                                 CC3135::Buffer payload)
 {
     while (true)
     {
@@ -232,7 +254,7 @@ void CC3135::readPacket(OpCode opcode, CC3135::Buffer command,
         // Locking the interface is not needed
 
         ResponseHeader header = {};
-        readHeader(&header);
+        TRY(readHeader(&header));
 
         if (header.inner.opcode != opcode)
         {
@@ -253,25 +275,34 @@ void CC3135::readPacket(OpCode opcode, CC3135::Buffer command,
             break;
         }
     }
+
+    return Error::NO_ERROR;
 }
 
-void CC3135::writePacket(OpCode opcode, CC3135::Buffer command,
-                         CC3135::Buffer payload)
+CC3135::Error CC3135::writePacket(OpCode opcode, CC3135::Buffer command,
+                                  CC3135::Buffer payload)
 {
     RequestHeader header{opcode,
                          static_cast<uint16_t>(command.len + payload.len)};
 
-    writeHeader(&header);
+    TRY(writeHeader(&header));
 
     if (command.len > 0)
         iface->write(command.ptr, command.len);
 
     if (payload.len > 0)
         iface->write(payload.ptr, payload.len);
+
+    return Error::NO_ERROR;
 }
 
-void CC3135::readHeader(ResponseHeader *header)
+CC3135::Error CC3135::readHeader(ResponseHeader *header)
 {
+    // 20 kernel ticks, or 100ms
+    const int TIMEOUT = 2000;
+
+    long long start = getTick();
+
     // 1. Write CNYS pattern (only if SPI)
     if (iface->is_spi())
     {
@@ -293,8 +324,10 @@ void CC3135::readHeader(ResponseHeader *header)
     // 3. Scan for device SYNC
     while (true)
     {
-        // Reads in SPI are always more than 4 bytes
+        if ((getTick() - start) > TIMEOUT)
+            return Error::NWP_TIMEOUT;
 
+        // Reads in SPI are always more than 4 bytes
         bool found = false;
         int i;
         for (i = 0; i < 4; i++)
@@ -302,11 +335,6 @@ void CC3135::readHeader(ResponseHeader *header)
             // Try and find the SYNC here
             uint32_t sync;
             memcpy(&sync, &buf[i], 4);
-
-            if (sync == 0x0a7b2d01)
-            {
-                // BRUH
-            }
 
             if (n2hSyncPatternMatch(sync, tx_seq_num))
             {
@@ -334,6 +362,9 @@ void CC3135::readHeader(ResponseHeader *header)
     memcpy(&sync, &buf[0], 4);
     while (n2hSyncPatternMatch(sync, tx_seq_num))
     {
+        if ((getTick() - start) > TIMEOUT)
+            return Error::NWP_TIMEOUT;
+
         memmove(&buf[0], &buf[4], 4);
         iface->read(&buf[4], 4);
 
@@ -348,9 +379,11 @@ void CC3135::readHeader(ResponseHeader *header)
 
     // 6. Adjust for bigger response header
     header->inner.len -= sizeof(ResponseHeader) - sizeof(GenericHeader);
+
+    return Error::NO_ERROR;
 }
 
-void CC3135::writeHeader(RequestHeader *header)
+CC3135::Error CC3135::writeHeader(RequestHeader *header)
 {
     // 1. Write SYNC pattern
     if (iface->is_spi())
@@ -370,17 +403,25 @@ void CC3135::writeHeader(RequestHeader *header)
 
     // 2. Write body
     iface->write(reinterpret_cast<uint8_t *>(header), sizeof(RequestHeader));
+
+    return Error::NO_ERROR;
 }
 
 void CC3135::dummyRead(size_t n)
 {
-    uint8_t dummy[n];
-    iface->read(dummy, n);
+    // Avoid HUGE stack allocations
+    uint8_t dummy[256];
+
+    while (n > 0)
+    {
+        iface->read(dummy, std::min(n, sizeof(dummy)));
+        n -= std::min(n, sizeof(dummy));
+    }
 }
 
 void CC3135::safeRead(size_t &len, Buffer buffer)
 {
-    if (buffer.len > 0)
+    if (buffer.len > 0 && len > 0)
     {
         iface->read(buffer.ptr, std::min(len, buffer.len));
         len -= std::min(len, buffer.len);

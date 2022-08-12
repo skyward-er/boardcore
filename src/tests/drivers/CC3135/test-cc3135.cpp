@@ -28,6 +28,14 @@
 using namespace Boardcore;
 using namespace miosix;
 
+#define CHECK(expr)                                       \
+    do                                                    \
+    {                                                     \
+        Boardcore::CC3135::Error result = (expr);         \
+        if (result != Boardcore::CC3135::Error::NO_ERROR) \
+            printf("[cc3135] NWP error!\n");              \
+    } while (0)
+
 /*
 Connection diagram:
 cc3135:CC_SPI_CS   -> stm32:pa1
@@ -170,6 +178,13 @@ int main()
 
     initBoard();
 
+#ifdef CC3135_HIB
+    // Reset CC3135
+    hib::low();
+    Thread::sleep(100);
+    hib::high();
+#endif
+
 #ifdef CC3135_SPI
     SPIBus bus(CC3135_SPI);
     GpioPin cs_pin = cs::getPin();
@@ -186,22 +201,29 @@ int main()
     std::unique_ptr<ICC3135Iface> iface(new CC3135Uart(CC3135_UART));
 #endif
 
+    Thread::sleep(5000);
+
     printf("[cc3135] Initializing...\n");
     cc3135 = new CC3135(std::move(iface));
+
+    cc3135->handleIrq();
+
+    if (cc3135->init(true) != CC3135::Error::NO_ERROR)
+    {
+        printf("[cc3135] Failed to start cc3135, retrying...\n");
+        Thread::sleep(2000);
+        return;
+
+        // miosix::reboot();
+    }
+
     printf("[cc3135] Initialization complete!\n");
 
-#ifdef CC3135_HIB
-    // Reset CC3135
-    hib::low();
-    Thread::sleep(100);
-    hib::high();
-#endif
-
-    Thread::sleep(500);
-    // cc3135->setMode(CC3135Defs::ROLE_AP);
+    // CHECK(cc3135->setMode(CC3135Defs::ROLE_STA));
     // Thread::sleep(500);
 
-    auto version = cc3135->getVersion();
+    CC3135Defs::DeviceVersion version = {};
+    CHECK(cc3135->getVersion(version));
     printf(
         "[cc3135] Chip Id: %lx\n"
         "[cc3135] Fw version: %u.%u.%u.%u\n"
@@ -216,4 +238,6 @@ int main()
 
     while (true)
         ;
+    // Thread::sleep(3000);
+    // miosix::reboot();
 }

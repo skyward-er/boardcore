@@ -43,13 +43,22 @@ namespace Boardcore
 class CC3135 : ActiveObject
 {
 public:
+    enum class Error
+    {
+        NO_ERROR,             //< No error occured.
+        NWP_TIMEOUT,          //< The NWP did not respond.
+        NWP_STATUS_NON_ZERO,  //< The NWD returned a non-zero status code.
+    };
+
     explicit CC3135(std::unique_ptr<ICC3135Iface> &&iface);
+
+    CC3135::Error init(bool wait_for_init);
 
     void handleIrq();
 
-    CC3135Defs::DeviceVersion getVersion();
+    CC3135::Error getVersion(CC3135Defs::DeviceVersion &version);
 
-    void setMode(CC3135Defs::Mode mode);
+    CC3135::Error setMode(CC3135Defs::Mode mode);
 
 private:
     //! Simple buffer for scatter/gather IO
@@ -72,7 +81,7 @@ private:
 
     void defaultPacketHandler(CC3135Defs::ResponseHeader header);
 
-    void devigeGet(uint8_t set_id, uint8_t option, Buffer result);
+    CC3135::Error devigeGet(uint8_t set_id, uint8_t option, Buffer result);
 
     // Functions dedicated to interrupt servicing
 
@@ -86,26 +95,29 @@ private:
     // Functions for high level IO
 
     //! Write a packet in output and wait for a packet in input
-    void inoutPacketSync(CC3135Defs::OpCode tx_opcode, Buffer tx_command,
-                         Buffer tx_payload, CC3135Defs::OpCode rx_opcode,
-                         Buffer rx_command, Buffer rx_payload);
+    CC3135::Error inoutPacketSync(CC3135Defs::OpCode tx_opcode,
+                                  Buffer tx_command, Buffer tx_payload,
+                                  CC3135Defs::OpCode rx_opcode,
+                                  Buffer rx_command, Buffer rx_payload);
     //! Read packet in input, with proper synchronization.
-    void readPacketSync(CC3135Defs::OpCode opcode, Buffer command,
-                        Buffer payload);
+    CC3135::Error readPacketSync(CC3135Defs::OpCode opcode, Buffer command,
+                                 Buffer payload);
     //! Write a packet in output, with proper synchronization.
-    void writePacketSync(CC3135Defs::OpCode opcode, Buffer command,
-                         Buffer payload);
+    CC3135::Error writePacketSync(CC3135Defs::OpCode opcode, Buffer command,
+                                  Buffer payload);
 
     // Functions for low level IO
 
     //! Read a single packet.
-    void readPacket(CC3135Defs::OpCode opcode, Buffer command, Buffer payload);
+    CC3135::Error readPacket(CC3135Defs::OpCode opcode, Buffer command,
+                             Buffer payload);
     //! Write a single packet.
-    void writePacket(CC3135Defs::OpCode opcode, Buffer command, Buffer payload);
+    CC3135::Error writePacket(CC3135Defs::OpCode opcode, Buffer command,
+                              Buffer payload);
     //! Read a packet header.
-    void readHeader(CC3135Defs::ResponseHeader *header);
+    CC3135::Error readHeader(CC3135Defs::ResponseHeader *header);
     //! Write a packet header.
-    void writeHeader(CC3135Defs::RequestHeader *header);
+    CC3135::Error writeHeader(CC3135Defs::RequestHeader *header);
 
     //! Read dummy n bytes.
     void dummyRead(size_t n);
