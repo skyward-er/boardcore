@@ -85,7 +85,7 @@ using hib  = Gpio<GPIOA_BASE, 6>;
 
 CC3135 *cc3135 = nullptr;
 
-volatile size_t IRQ_COUNT = 0;
+volatile unsigned int IRQ_COUNT = 0;
 
 #if defined _BOARD_STM32F429ZI_SKYWARD_GS
 void __attribute__((used)) EXTI5_IRQHandlerImpl()
@@ -159,7 +159,7 @@ int main()
             {
                 if (last != IRQ_COUNT)
                 {
-                    printf("[cc3135] IRQ: %zu\n", IRQ_COUNT);
+                    printf("[cc3135] IRQ: %u\n", IRQ_COUNT);
                     last = IRQ_COUNT;
                 }
 
@@ -175,7 +175,7 @@ int main()
     GpioPin cs_pin = cs::getPin();
 
     SPIBusConfig config = {};
-    config.clockDivider = SPI::ClockDivider::DIV_128;
+    config.clockDivider = SPI::ClockDivider::DIV_64;
     config.mode         = SPI::Mode::MODE_0;
     config.bitOrder     = SPI::BitOrder::MSB_FIRST;
 
@@ -193,11 +193,13 @@ int main()
 #ifdef CC3135_HIB
     // Reset CC3135
     hib::low();
-    Thread::sleep(10);
+    Thread::sleep(100);
     hib::high();
 #endif
 
-    Thread::sleep(3000);
+    Thread::sleep(500);
+    // cc3135->setMode(CC3135Defs::ROLE_AP);
+    // Thread::sleep(500);
 
     auto version = cc3135->getVersion();
     printf(

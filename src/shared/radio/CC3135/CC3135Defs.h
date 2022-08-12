@@ -37,6 +37,15 @@ namespace Boardcore
 namespace CC3135Defs
 {
 
+enum Mode : uint8_t
+{
+    ROLE_STA      = 0,
+    ROLE_RESERVED = 1,
+    ROLE_AP       = 2,
+    ROLE_P2P      = 3,
+    ROLE_TAG      = 4
+};
+
 //! Synchronous message mask.
 constexpr uint16_t OPCODE_SYNC = 1 << 10;
 
@@ -48,9 +57,11 @@ enum OpCode : uint16_t
     OPCODE_DEVICE_DEVICEGETRESPONSE             = 0x0466,
     OPCODE_DEVICE_DEVICESETRESPONSE             = 0x04B7,
     OPCODE_WLAN_PROVISIONING_STATUS_ASYNC_EVENT = 0x089A,  //< ????
+    OPCODE_WLAN_SET_MODE_RESPONSE               = 0x0CB4,
     OPCODE_NETAPP_IPACQUIRED                    = 0x1825,  //< ????
     OPCODE_DEVICE_DEVICEGET                     = 0x8466,
     OPCODE_DEVICE_DEVICESET                     = 0x84B7,
+    OPCODE_WLAN_SET_MODE                        = 0x8CB4,
 };
 
 //! Is this message synchronous?
@@ -92,12 +103,31 @@ struct ResponseHeader
 
 typedef GenericHeader RequestHeader;
 
+struct BasicResponse
+{
+    int16_t status;
+    uint16_t sender;
+};
+
+struct DeviceInitInfo
+{
+    int32_t status;
+    int32_t chip_id;
+    int32_t more_data;
+};
+
 struct DeviceSetGet
 {
     uint16_t status;
     uint16_t device_set_id;
     uint16_t option;
     uint16_t config_len;
+};
+
+struct WlanSetMode
+{
+    Mode mode;
+    uint8_t _pad[3];
 };
 
 constexpr SyncPattern H2N_SYNC_PATTERN = {0xBBDDEEFF, 0x4321, 0x34, 0x12};
@@ -137,10 +167,14 @@ inline const char *opToStr(OpCode op)
             return "OPCODE_NETAPP_IPACQUIRED";
         case OpCode::OPCODE_WLAN_PROVISIONING_STATUS_ASYNC_EVENT:
             return "OPCODE_WLAN_PROVISIONING_STATUS_ASYNC_EVENT";
+        case OpCode::OPCODE_WLAN_SET_MODE_RESPONSE:
+            return "OPCODE_WLAN_SET_MODE_RESPONSE";
         case OpCode::OPCODE_DEVICE_DEVICEGET:
             return "OPCODE_DEVICE_DEVICEGET";
         case OpCode::OPCODE_DEVICE_DEVICESET:
             return "OPCODE_DEVICE_DEVICESET";
+        case OpCode::OPCODE_WLAN_SET_MODE:
+            return "OPCODE_WLAN_SET_MODE";
         default:
             return "<unknown>";
     }

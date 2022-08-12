@@ -49,6 +49,8 @@ public:
 
     CC3135Defs::DeviceVersion getVersion();
 
+    void setMode(CC3135Defs::Mode mode);
+
 private:
     //! Simple buffer for scatter/gather IO
     struct Buffer
@@ -70,6 +72,8 @@ private:
 
     void defaultPacketHandler(CC3135Defs::ResponseHeader header);
 
+    void devigeGet(uint8_t set_id, uint8_t option, Buffer result);
+
     // Functions dedicated to interrupt servicing
 
     //! Wait for an incoming interrupt (only callable in service thread).
@@ -88,7 +92,7 @@ private:
     //! Read packet in input, with proper synchronization.
     void readPacketSync(CC3135Defs::OpCode opcode, Buffer command,
                         Buffer payload);
-    //! Write a apcket in output, with proper synchronization.
+    //! Write a packet in output, with proper synchronization.
     void writePacketSync(CC3135Defs::OpCode opcode, Buffer command,
                          Buffer payload);
 
@@ -105,6 +109,9 @@ private:
 
     //! Read dummy n bytes.
     void dummyRead(size_t n);
+
+    //! Safely read a buffer, does bound checking
+    void safeRead(size_t &len, Buffer buffer);
 
     miosix::Thread *irq_wait_thread = nullptr;  //< Thread waiting on IRQ
     size_t irq_count                = 0;        //< Number of interrupts

@@ -38,20 +38,37 @@ CC3135::CC3135(std::unique_ptr<ICC3135Iface> &&iface) : iface(std::move(iface))
     irq_wait_thread = thread;
 }
 
-CC3135Defs::DeviceVersion CC3135::getVersion()
+DeviceVersion CC3135::getVersion()
+{
+    DeviceVersion result = {};
+
+    devigeGet(1, 12, Buffer::from(&result));
+    return result;
+}
+
+void CC3135::devigeGet(uint8_t set_id, uint8_t option, Buffer result)
 {
     DeviceSetGet tx_command  = {};
-    tx_command.device_set_id = 1;   // Device get general
-    tx_command.option        = 12;  // Device get general version
+    tx_command.device_set_id = set_id;
+    tx_command.option        = option;
 
-    DeviceSetGet rx_command  = {};
-    DeviceVersion rx_payload = {};
+    DeviceSetGet rx_command = {};
 
     inoutPacketSync(OPCODE_DEVICE_DEVICEGET, Buffer::from(&tx_command),
                     Buffer::null(), OPCODE_DEVICE_DEVICEGETRESPONSE,
-                    Buffer::from(&rx_command), Buffer::from(&rx_payload));
+                    Buffer::from(&rx_command), result);
+}
 
-    return rx_payload;
+void CC3135::setMode(CC3135Defs::Mode mode)
+{
+    WlanSetMode tx_command = {};
+    tx_command.mode        = mode;
+
+    BasicResponse rx_command = {};
+
+    inoutPacketSync(OPCODE_WLAN_SET_MODE, Buffer::from(&tx_command),
+                    Buffer::null(), OPCODE_WLAN_SET_MODE_RESPONSE,
+                    Buffer::from(&rx_command), Buffer::null());
 }
 
 void CC3135::handleIrq()
@@ -117,9 +134,32 @@ void CC3135::defaultPacketHandler(CC3135Defs::ResponseHeader header)
         opToStr(header.inner.opcode), header.inner.opcode, header.dev_status,
         header.socket_tx_failure, header.socket_non_blocking);
 
+    size_t len = header.inner.len;
+
+    switch (header.inner.opcode)
+    {
+        case OPCODE_DEVICE_INITCOMPLETE:
+        {
+            DeviceInitInfo result = {};
+            safeRead(len, Buffer::from(&result));
+
+            TRACE(
+                "[cc3135] Init completen:\n"
+                "- Status: %8x\n"
+                "- Chip Id: %lx\n"
+                "- More Data: %8x\n",
+                result.status, result.chip_id, result.more_data);
+            break;
+        }
+
+        default:
+            break;
+    }
+
     // Dummy read rest of the data
     // TODO: Add async commands
-    dummyRead(header.inner.len);
+    if (len > 0)
+        dummyRead(len);
 }
 
 void CC3135::run()
@@ -129,6 +169,7 @@ void CC3135::run()
     while (true)
     {
         waitForIrq();
+        // Thread::sleep(500);
 
         {
             // Lock the device interface
@@ -186,6 +227,7 @@ void CC3135::readPacket(OpCode opcode, CC3135::Buffer command,
     while (true)
     {
         waitForIrq();
+        // Thread::sleep(500);
 
         // Locking the interface is not needed
 
@@ -201,13 +243,10 @@ void CC3135::readPacket(OpCode opcode, CC3135::Buffer command,
             // Read the rest of the packet
             size_t len = header.inner.len;
 
-            iface->read(command.ptr, std::min(len, command.len));
-            len -= std::min(len, command.len);
+            safeRead(len, command);
+            safeRead(len, payload);
 
-            iface->read(payload.ptr, std::min(len, payload.len));
-            len -= std::min(len, payload.len);
-
-            // Read tail of remanining data
+            // Read tail of remaining data
             if (len > 0)
                 dummyRead(len);
 
@@ -224,8 +263,11 @@ void CC3135::writePacket(OpCode opcode, CC3135::Buffer command,
 
     writeHeader(&header);
 
-    iface->write(command.ptr, command.len);
-    iface->write(payload.ptr, payload.len);
+    if (command.len > 0)
+        iface->write(command.ptr, command.len);
+
+    if (payload.len > 0)
+        iface->write(payload.ptr, payload.len);
 }
 
 void CC3135::readHeader(ResponseHeader *header)
@@ -288,14 +330,15 @@ void CC3135::readHeader(ResponseHeader *header)
     }
 
     // 4. Scan for double syncs
-    /*uint32_t sync;
+    uint32_t sync;
     memcpy(&sync, &buf[0], 4);
-    while(n2hSyncPatternMatch(sync, tx_seq_num)) {
+    while (n2hSyncPatternMatch(sync, tx_seq_num))
+    {
         memmove(&buf[0], &buf[4], 4);
         iface->read(&buf[4], 4);
 
         memcpy(&sync, &buf[0], 4);
-    }*/
+    }
 
     tx_seq_num++;
 
@@ -333,6 +376,15 @@ void CC3135::dummyRead(size_t n)
 {
     uint8_t dummy[n];
     iface->read(dummy, n);
+}
+
+void CC3135::safeRead(size_t &len, Buffer buffer)
+{
+    if (buffer.len > 0)
+    {
+        iface->read(buffer.ptr, std::min(len, buffer.len));
+        len -= std::min(len, buffer.len);
+    }
 }
 
 }  // namespace Boardcore
