@@ -49,6 +49,9 @@ CC3135::CC3135(std::unique_ptr<ICC3135Iface> &&iface) : iface(std::move(iface))
 
 CC3135::Error CC3135::init(bool wait_for_init)
 {
+    if (iface->is_spi())
+        dummyDeviceRead();
+
     if (wait_for_init)
     {
         DeviceInitInfo init_info = {};
@@ -86,6 +89,16 @@ CC3135::Error CC3135::devigeGet(uint8_t set_id, uint8_t option, Buffer result)
     return inoutPacketSync(OPCODE_DEVICE_DEVICEGET, Buffer::from(&tx_command),
                            Buffer::null(), OPCODE_DEVICE_DEVICEGETRESPONSE,
                            Buffer::from(&rx_command), result);
+}
+
+CC3135::Error CC3135::dummyDeviceRead()
+{
+    ResponseHeader header;
+    TRY(readHeader(&header));
+
+    defaultPacketHandler(header);
+
+    return Error::NO_ERROR;
 }
 
 CC3135::Error CC3135::setMode(CC3135Defs::Mode mode)

@@ -86,7 +86,7 @@ using irq  = Gpio<GPIOA_BASE, 4>;
 using hib  = Gpio<GPIOA_BASE, 6>;
 
 #define CC3135_SPI SPI1
-#define CC3135_HIB
+// #define CC3135_HIB
 #endif
 
 #endif
@@ -190,7 +190,7 @@ int main()
     GpioPin cs_pin = cs::getPin();
 
     SPIBusConfig config = {};
-    config.clockDivider = SPI::ClockDivider::DIV_64;
+    config.clockDivider = SPI::ClockDivider::DIV_32;
     config.mode         = SPI::Mode::MODE_0;
     config.bitOrder     = SPI::BitOrder::MSB_FIRST;
 
@@ -201,18 +201,16 @@ int main()
     std::unique_ptr<ICC3135Iface> iface(new CC3135Uart(CC3135_UART));
 #endif
 
-    Thread::sleep(5000);
-
     printf("[cc3135] Initializing...\n");
     cc3135 = new CC3135(std::move(iface));
 
-    cc3135->handleIrq();
+    // cc3135->handleIrq();
 
-    if (cc3135->init(true) != CC3135::Error::NO_ERROR)
+    if (cc3135->init(false) != CC3135::Error::NO_ERROR)
     {
         printf("[cc3135] Failed to start cc3135, retrying...\n");
         Thread::sleep(2000);
-        return;
+        return 0;
 
         // miosix::reboot();
     }

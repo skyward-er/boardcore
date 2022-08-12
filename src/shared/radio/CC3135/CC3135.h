@@ -83,6 +83,9 @@ private:
 
     CC3135::Error devigeGet(uint8_t set_id, uint8_t option, Buffer result);
 
+    //! Read something from the device, to wake it up?
+    CC3135::Error dummyDeviceRead();
+
     // Functions dedicated to interrupt servicing
 
     //! Wait for an incoming interrupt (only callable in service thread).
