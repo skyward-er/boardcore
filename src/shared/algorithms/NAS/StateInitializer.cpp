@@ -50,8 +50,9 @@ void StateInitializer::eCompass(const Eigen::Vector3f acc,
     x_init(NAS::IDX_QUAT + 3) = x_quat(3);
 }
 
-void StateInitializer::triad(Eigen::Vector3f& acc, Eigen::Vector3f& mag,
-                             Eigen::Vector3f& nedMag)
+void StateInitializer::triad(const Eigen::Vector3f& acc,
+                             const Eigen::Vector3f& mag,
+                             const Eigen::Vector3f& nedMag)
 {
     // The gravity vector is expected to be read inversely because
     // accelerometers read the binding reaction

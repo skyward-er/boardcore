@@ -77,8 +77,8 @@ public:
      * @param mag Normalized magnetometer readings [x y z].
      * @param nedMag Normalized magnetic field vector in NED frame [x y z].
      */
-    void triad(Eigen::Vector3f& acc, Eigen::Vector3f& mag,
-               Eigen::Vector3f& nedMag);
+    void triad(const Eigen::Vector3f& acc, const Eigen::Vector3f& mag,
+               const Eigen::Vector3f& nedMag);
 
     /**
      * @brief Initialization of the position at a specific altitude
