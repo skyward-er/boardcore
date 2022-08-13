@@ -111,7 +111,8 @@ void init()
     imu = new MPU9250(spi1, sensors::mpu9250::cs::getPin());
     imu->init();
 
-    gps = new UBXGPSSerial(38400, 10, 2, "gps", 38400);
+    gps = new UBXGPSSerial(USARTInterface::Baudrate::B38400, 10, USART2,
+                           USARTInterface::Baudrate::B38400);
     gps->init();
     gps->start();
 

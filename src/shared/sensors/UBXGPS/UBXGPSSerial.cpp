@@ -23,25 +23,23 @@
 #include "UBXGPSSerial.h"
 
 #include <diagnostic/StackLogger.h>
-#include <drivers/serial.h>
 #include <drivers/timer/TimestampTimer.h>
-#include <fcntl.h>
-#include <filesystem/file_access.h>
+#include <drivers/usart/USART.h>
 
 using namespace miosix;
 
 namespace Boardcore
 {
 
-UBXGPSSerial::UBXGPSSerial(int baudrate, uint8_t sampleRate, int serialPortNum,
-                           const char* serialPortName, int defaultBaudrate)
-    : baudrate(baudrate), sampleRate(sampleRate),
-      serialPortNumber(serialPortNum), serialPortName(serialPortName),
-      defaultBaudrate(defaultBaudrate)
+UBXGPSSerial::UBXGPSSerial(USARTInterface::Baudrate baudrate,
+                           uint8_t sampleRate, USARTType* usartNumber,
+                           USARTInterface::Baudrate defaultBaudrate)
 {
-    // Prepare the gps file path with the specified name
-    strcpy(gpsFilePath, "/dev/");
-    strcat(gpsFilePath, serialPortName);
+    this->usart           = nullptr;
+    this->baudrate        = baudrate;
+    this->defaultBaudrate = defaultBaudrate;
+    this->sampleRate      = sampleRate;
+    this->usartNumber     = usartNumber;
 }
 
 bool UBXGPSSerial::init()
@@ -55,6 +53,8 @@ bool UBXGPSSerial::init()
         return false;
     }
 
+    miosix::Thread::sleep(100);
+
     LOG_DEBUG(logger, "Resetting the device...");
 
     // if (!reset())
@@ -66,12 +66,14 @@ bool UBXGPSSerial::init()
 
     LOG_DEBUG(logger, "Setting the UBX protocol...");
 
-    if (!setBaudrateAndUBX())
+    if (!setBaudrateAndUBX(false))
     {
         lastError = SensorErrors::INIT_FAIL;
         LOG_ERR(logger, "Could not set the UBX protocol");
         return false;
     }
+
+    miosix::Thread::sleep(100);
 
     LOG_DEBUG(logger, "Setting the dynamic model...");
 
@@ -82,6 +84,8 @@ bool UBXGPSSerial::init()
         return false;
     }
 
+    miosix::Thread::sleep(100);
+
     LOG_DEBUG(logger, "Setting the sample rate...");
 
     if (!setSampleRate())
@@ -91,6 +95,8 @@ bool UBXGPSSerial::init()
         return false;
     }
 
+    miosix::Thread::sleep(100);
+
     LOG_DEBUG(logger, "Setting the PVT message rate...");
 
     if (!setPVTMessageRate())
@@ -99,6 +105,8 @@ bool UBXGPSSerial::init()
         LOG_ERR(logger, "Could not set the PVT message rate");
         return false;
     }
+
+    miosix::Thread::sleep(100);
 
     this->start();
 
@@ -147,11 +155,13 @@ bool UBXGPSSerial::setBaudrateAndUBX(bool safe)
         0x00, 0x00               // reserved2
     };
 
+    int baud = (int)baudrate;
+
     // Prepare baudrate
-    payload[8]  = baudrate;
-    payload[9]  = baudrate >> 8;
-    payload[10] = baudrate >> 16;
-    payload[11] = baudrate >> 24;
+    payload[8]  = baud;
+    payload[9]  = baud >> 8;
+    payload[10] = baud >> 16;
+    payload[11] = baud >> 24;
 
     UBXFrame frame{UBXMessage::UBX_CFG_PRT, payload, sizeof(payload)};
 
@@ -163,72 +173,21 @@ bool UBXGPSSerial::setBaudrateAndUBX(bool safe)
 
 bool UBXGPSSerial::setSerialCommunication()
 {
-    intrusive_ref_ptr<DevFs> devFs = FilesystemManager::instance().getDevFs();
-
+    usart = new USART(usartNumber, defaultBaudrate);
+    usart->init();
     // Change the baudrate only if it is different than the default
     if (baudrate != defaultBaudrate)
     {
-        // Close the gps file if already opened
-        devFs->remove(serialPortName);
-
-        // Open the serial port device with the default baudrate
-        if (!devFs->addDevice(serialPortName,
-                              intrusive_ref_ptr<Device>(new STM32Serial(
-                                  serialPortNumber, defaultBaudrate))))
-        {
-            LOG_ERR(logger,
-                    "Failed to open serial port {0} with baudrate {1} as "
-                    "file {2}",
-                    serialPortNumber, defaultBaudrate, serialPortName);
-            return false;
-        }
-
-        // Open the gps file
-        if ((gpsFile = open(gpsFilePath, O_RDWR)) < 0)
-        {
-            LOG_ERR(logger, "Failed to open gps file {}", gpsFilePath);
-            return false;
-        }
-
+        miosix::Thread::sleep(100);
         // Change baudrate
         if (!setBaudrateAndUBX(false))
         {
             return false;
         };
-
-        // Close the gps file
-        if (close(gpsFile) < 0)
-        {
-            LOG_ERR(logger, "Failed to close gps file {}", gpsFilePath);
-            return false;
-        }
-
-        // Close the serial port
-        if (!devFs->remove(serialPortName))
-        {
-            LOG_ERR(logger, "Failed to close serial port {} as file {}",
-                    serialPortNumber, serialPortName);
-            return false;
-        }
     }
 
-    // Reopen the serial port with the configured baudrate
-    if (!devFs->addDevice(serialPortName,
-                          intrusive_ref_ptr<Device>(
-                              new STM32Serial(serialPortNumber, baudrate))))
-    {
-        LOG_ERR(logger,
-                "Failed to open serial port {} with baudrate {} as file {}\n",
-                serialPortNumber, defaultBaudrate, serialPortName);
-        return false;
-    }
-
-    // Reopen the gps file
-    if ((gpsFile = open(gpsFilePath, O_RDWR)) < 0)
-    {
-        LOG_ERR(logger, "Failed to open gps file {}", gpsFilePath);
-        return false;
-    }
+    miosix::Thread::sleep(100);
+    usart->setBaudrate(baudrate);
 
     return true;
 }
@@ -298,7 +257,7 @@ bool UBXGPSSerial::readUBXFrame(UBXFrame& frame)
     while (i < 2)
     {
         uint8_t c;
-        if (read(gpsFile, &c, 1) <= 0)  // No more data available
+        if (usart->read(&c, 1) <= 0)  // No more data available
             return false;
 
         if (c == UBXFrame::PREAMBLE[i])
@@ -318,10 +277,10 @@ bool UBXGPSSerial::readUBXFrame(UBXFrame& frame)
         }
     }
 
-    if (read(gpsFile, &frame.message, 2) <= 0 ||
-        read(gpsFile, &frame.payloadLength, 2) <= 0 ||
-        read(gpsFile, frame.payload, frame.getRealPayloadLength()) <= 0 ||
-        read(gpsFile, frame.checksum, 2) <= 0)
+    if (usart->read(&frame.message, 2) <= 0 ||
+        usart->read(&frame.payloadLength, 2) <= 0 ||
+        usart->read(frame.payload, frame.getRealPayloadLength()) <= 0 ||
+        usart->read(frame.checksum, 2) <= 0)
         return false;
 
     if (!frame.isValid())
@@ -344,7 +303,7 @@ bool UBXGPSSerial::writeUBXFrame(const UBXFrame& frame)
     uint8_t packedFrame[frame.getLength()];
     frame.writePacked(packedFrame);
 
-    if (write(gpsFile, packedFrame, frame.getLength()) < 0)
+    if (usart->write(packedFrame, frame.getLength()) < 0)
     {
         LOG_ERR(logger, "Failed to write ubx message");
         return false;

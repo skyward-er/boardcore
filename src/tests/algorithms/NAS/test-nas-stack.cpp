@@ -134,7 +134,8 @@ void init()
         new BMX160(spi1, sensors::bmx160::cs::getPin(), bmx_config, spiConfig);
     imu->init();
 
-    gps = new UBXGPSSerial(921600, 10, 2, "gps", 38400);
+    gps = new UBXGPSSerial(USARTInterface::Baudrate::B921600, 10, USART2,
+                           USARTInterface::Baudrate::B38400);
     gps->init();
     gps->start();
 

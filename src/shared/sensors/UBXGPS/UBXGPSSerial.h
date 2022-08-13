@@ -24,6 +24,7 @@
 
 #include <ActiveObject.h>
 #include <diagnostic/PrintLogger.h>
+#include <drivers/usart/USART.h>
 #include <miosix.h>
 #include <sensors/Sensor.h>
 
@@ -62,9 +63,11 @@ public:
      * @param serialPortName Name of the file for the gps device.
      * @param defaultBaudrate Startup baudrate (38400 for NEO-M9N).
      */
-    UBXGPSSerial(int baudrate = 921600, uint8_t sampleRate = 10,
-                 int serialPortNumber = 2, const char *serialPortName = "gps",
-                 int defaultBaudrate = 38400);
+    UBXGPSSerial(
+        USARTInterface::Baudrate baudrate = USARTInterface::Baudrate::B921600,
+        uint8_t sampleRate = 10, USARTType *usartNumber = USART2,
+        USARTInterface::Baudrate defaultBaudrate =
+            USARTInterface::Baudrate::B38400);
 
     /**
      * @brief Sets up the serial port baudrate, disables the NMEA messages,
@@ -158,14 +161,11 @@ private:
 
     void run() override;
 
-    const int baudrate;        // [baud]
-    const uint8_t sampleRate;  // [Hz]
-    const int serialPortNumber;
-    const char *serialPortName;
-    const int defaultBaudrate;  // [baud]
-
-    char gpsFilePath[16];  ///< Allows for a filename of up to 10 characters
-    int gpsFile = -1;
+    Boardcore::USARTInterface::Baudrate baudrate;
+    Boardcore::USARTInterface::Baudrate defaultBaudrate;
+    uint8_t sampleRate;  // [Hz]
+    USARTType *usartNumber;
+    USART *usart;  // The usart interface
 
     mutable miosix::FastMutex mutex;
     UBXGPSData threadSample{};
