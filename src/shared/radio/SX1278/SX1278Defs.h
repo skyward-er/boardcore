@@ -46,7 +46,7 @@ constexpr int FXOSC = 32000000;
 /**
  * @brief Frequency step (Hz) used in some calculations.
  */
-constexpr int FSTEP = 61;
+constexpr float FSTEP = 61.03515625;
 
 constexpr int TS_OSC = 250;
 constexpr int TS_FS  = 60;
