@@ -46,4 +46,16 @@ inline Canbus::CanMessage toCanMessage(const PitotData& data)
     return message;
 }
 
+inline PitotData pitotDataFromCanMessage(const Canbus::CanMessage& msg)
+{
+    PitotData data;
+
+    uint32_t tmp = msg.payload[0];
+    memcpy(&(data.airspeed), &tmp, sizeof(data.airspeed));
+
+    data.timestamp = (msg.payload[0] >> 30) & ~0x3;
+
+    return data;
+}
+
 }  // namespace Boardcore
