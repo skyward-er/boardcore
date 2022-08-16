@@ -49,9 +49,6 @@ CC3135::CC3135(std::unique_ptr<ICC3135Iface> &&iface) : iface(std::move(iface))
 
 CC3135::Error CC3135::init(bool wait_for_init)
 {
-    if (iface->is_spi())
-        dummyDeviceRead();
-
     if (wait_for_init)
     {
         DeviceInitInfo init_info = {};
@@ -193,7 +190,7 @@ void CC3135::run()
 
         {
             // Lock the device interface
-            Lock<FastMutex> lock(iface_mutex);
+            Lock<FastMutex> iface_lock(iface_mutex);
 
             ResponseHeader header;
             Error result = readHeader(&header);
@@ -217,15 +214,12 @@ CC3135::Error CC3135::inoutPacketSync(CC3135Defs::OpCode tx_opcode,
                                       CC3135::Buffer rx_command,
                                       CC3135::Buffer rx_payload)
 {
-    installAsServiceThread();
+    ServiceThreadLock service_thread_lock(this);
 
     // Lock the device interface
-    Lock<FastMutex> lock(iface_mutex);
+    Lock<FastMutex> iface_lock(iface_mutex);
     TRY(writePacket(tx_opcode, tx_command, tx_payload));
-
     TRY(readPacket(rx_opcode, rx_command, rx_payload));
-
-    restoreDefaultServiceThread();
 
     return Error::NO_ERROR;
 }
@@ -234,13 +228,11 @@ CC3135::Error CC3135::readPacketSync(CC3135Defs::OpCode opcode,
                                      CC3135::Buffer command,
                                      CC3135::Buffer payload)
 {
-    installAsServiceThread();
+    ServiceThreadLock service_thread_lock(this);
 
     // Lock the device interface
-    Lock<FastMutex> lock(iface_mutex);
+    Lock<FastMutex> iface_lock(iface_mutex);
     TRY(readPacket(opcode, command, payload));
-
-    restoreDefaultServiceThread();
 
     return Error::NO_ERROR;
 }
@@ -250,7 +242,7 @@ CC3135::Error CC3135::writePacketSync(CC3135Defs::OpCode opcode,
                                       CC3135::Buffer payload)
 {
     // Lock the device interface
-    Lock<FastMutex> lock(iface_mutex);
+    Lock<FastMutex> iface_lock(iface_mutex);
     TRY(writePacket(opcode, command, payload));
 
     return Error::NO_ERROR;

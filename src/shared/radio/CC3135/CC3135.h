@@ -76,6 +76,20 @@ private:
         static Buffer null() { return {nullptr, 0}; }
     };
 
+    class ServiceThreadLock
+    {
+    public:
+        ServiceThreadLock(CC3135 *parent) : parent(parent)
+        {
+            parent->installAsServiceThread();
+        }
+
+        ~ServiceThreadLock() { parent->restoreDefaultServiceThread(); }
+
+    private:
+        CC3135 *parent;
+    };
+
     //! Function for servicing async messages.
     void run() override;
 
