@@ -25,26 +25,37 @@
 #include <kernel/scheduler/scheduler.h>
 #include <utils/Debug.h>
 
-#define TRY(expr)                                            \
-    do                                                       \
-    {                                                        \
-        Boardcore::CC3135::Error result = (expr);            \
-        if (result != Boardcore::CC3135::Error::NO_ERROR)    \
-        {                                                    \
-            TRACE("[cc3135] NWP error@ %s\n", __FUNCTION__); \
-            return result;                                   \
-        }                                                    \
+#define TRY(expr)                                                      \
+    do                                                                 \
+    {                                                                  \
+        Boardcore::CC3135::Error result = (expr);                      \
+        if (result != Boardcore::CC3135::Error::NO_ERROR)              \
+        {                                                              \
+            TRACE("[cc3135] Error: %s @ %s:%d\n",                      \
+                  Boardcore::CC3135::errorToStr(result), __FUNCTION__, \
+                  __LINE__);                                           \
+            return result;                                             \
+        }                                                              \
     } while (0)
 
 using namespace Boardcore::CC3135Defs;
 using namespace miosix;
 
+constexpr uint8_t TEST_CHANNEL = 6;
+
 namespace Boardcore
 {
 
-CC3135::CC3135(std::unique_ptr<ICC3135Iface> &&iface) : iface(std::move(iface))
+CC3135::CC3135(std::unique_ptr<ICC3135Iface> &&iface)
+    : iface(std::move(iface)), sd(-1)
 {
     irq_wait_thread = thread;
+}
+
+CC3135::~CC3135()
+{
+    socketClose(sd);
+    sd = -1;
 }
 
 CC3135::Error CC3135::init(bool wait_for_init)
@@ -66,16 +77,76 @@ CC3135::Error CC3135::init(bool wait_for_init)
     // Start internal thread
     this->start();
 
+    // Setup transceiver mode
+    TRY(setupTransceiver());
+    TRY(startRecv());
+
+    return Error::NO_ERROR;
+}
+
+CC3135::Error CC3135::prepareForReset()
+{
+    // We need the device in station mode
+    TRY(wlanSetMode(ROLE_STA));
+
+    return Error::NO_ERROR;
+}
+
+CC3135::Error CC3135::startRecv() { return socketRecv(sd, Buffer::null(), 0); }
+
+CC3135::Error CC3135::dummyRecv() { return socketRecv(sd, Buffer::null(), 0); }
+
+CC3135::Error CC3135::dummySend()
+{
+    struct Packet
+    {
+        uint32_t a = 0xdeadbabe;
+        uint32_t b = 0xdeadbeef;
+        uint32_t c = 0xbabebabe;
+    };
+
+    Packet packet;
+
+    uint16_t flags =
+        makeWlanRawRfTxParams(TEST_CHANNEL, RATE_1M, 0, PREAMBLE_LONG);
+    TRY(socketSend2(sd, Buffer::from(&packet), flags));
+
+    return Error::NO_ERROR;
+}
+
+CC3135::Error CC3135::setupTransceiver()
+{
+    // TODO: This should really set the device in the correct mode and re-init
+
+    // Reset connection policies
+    TRY(wlanPolicySet(WLAN_POLICY_CONNECTION, 0, Buffer::null()));
+
+    Error result = wlanDisconnect();
+
+    // Check for not errors and continue
+    if (result != Error::NO_ERROR && result != Error::WLAN_ALREADY_DISCONNECTED)
+        return result;
+
+    // Open transceiver socket
+    // with respect of IEE802.11 medium access policies
+    TRY(socketOpen(AF_RF, SOCK_RAW, TEST_CHANNEL, sd));
+    TRACE("[cc3135] Socket opened: %d\n", sd);
+
+    // As a sanity check, verify the socket type
+    if (sdGetType(sd) != SdType::RAW_TRANSCEIVER)
+        return Error::GENERIC_ERROR;
+
     return Error::NO_ERROR;
 }
 
 CC3135::Error CC3135::getVersion(DeviceVersion &version)
 {
     version = {};
-    return devigeGet(1, 12, Buffer::from<DeviceVersion>(&version));
+    return devigeGet(DEVICE_GENERAL, DEVICE_GENERAL_VERSION,
+                     Buffer::from<DeviceVersion>(&version));
 }
 
-CC3135::Error CC3135::devigeGet(uint8_t set_id, uint8_t option, Buffer result)
+CC3135::Error CC3135::devigeGet(uint8_t set_id, uint8_t option, Buffer value)
 {
     DeviceSetGet tx_command  = {};
     tx_command.device_set_id = set_id;
@@ -83,31 +154,107 @@ CC3135::Error CC3135::devigeGet(uint8_t set_id, uint8_t option, Buffer result)
 
     DeviceSetGet rx_command = {};
 
-    return inoutPacketSync(OPCODE_DEVICE_DEVICEGET, Buffer::from(&tx_command),
-                           Buffer::null(), OPCODE_DEVICE_DEVICEGETRESPONSE,
-                           Buffer::from(&rx_command), result);
+    TRY(inoutPacketSync(OPCODE_DEVICE_DEVICEGET, Buffer::from(&tx_command),
+                        Buffer::null(), OPCODE_DEVICE_DEVICEGETRESPONSE,
+                        Buffer::from(&rx_command), value));
+
+    return errorFromStatus(rx_command.status);
 }
 
-CC3135::Error CC3135::dummyDeviceRead()
-{
-    ResponseHeader header;
-    TRY(readHeader(&header));
-
-    defaultPacketHandler(header);
-
-    return Error::NO_ERROR;
-}
-
-CC3135::Error CC3135::setMode(CC3135Defs::Mode mode)
+CC3135::Error CC3135::wlanSetMode(CC3135Defs::Mode mode)
 {
     WlanSetMode tx_command = {};
     tx_command.mode        = mode;
 
     BasicResponse rx_command = {};
 
-    return inoutPacketSync(OPCODE_WLAN_SET_MODE, Buffer::from(&tx_command),
-                           Buffer::null(), OPCODE_WLAN_SET_MODE_RESPONSE,
-                           Buffer::from(&rx_command), Buffer::null());
+    TRY(inoutPacketSync(OPCODE_WLAN_SET_MODE, Buffer::from(&tx_command),
+                        Buffer::null(), OPCODE_WLAN_SET_MODE_RESPONSE,
+                        Buffer::from(&rx_command), Buffer::null()));
+
+    return errorFromStatus(rx_command.status);
+}
+
+CC3135::Error CC3135::wlanPolicySet(uint8_t type, uint8_t option, Buffer value)
+{
+    WlanPolicySetGet tx_command  = {};
+    tx_command.policy_type       = type;
+    tx_command.policy_option     = option;
+    tx_command.policy_option_len = value.len;
+
+    BasicResponse rx_command = {};
+
+    TRY(inoutPacketSync(OPCODE_WLAN_POLICYSETCOMMAND, Buffer::from(&tx_command),
+                        value, OPCODE_WLAN_POLICYSETRESPONSE,
+                        Buffer::from(&rx_command), Buffer::null()));
+
+    return errorFromStatus(rx_command.status);
+}
+
+CC3135::Error CC3135::wlanDisconnect()
+{
+    BasicResponse rx_command = {};
+
+    TRY(inoutPacketSync(OPCODE_WLAN_WLANDISCONNECTCOMMAND, Buffer::null(),
+                        Buffer::null(), OPCODE_WLAN_WLANDISCONNECTRESPONSE,
+                        Buffer::from(&rx_command), Buffer::null()));
+
+    return errorFromStatus(rx_command.status);
+}
+
+CC3135::Error CC3135::socketOpen(uint8_t domain, uint8_t type, uint8_t protocol,
+                                 Sd &sd)
+{
+    SocketCommand tx_command = {};
+    tx_command.domain        = domain;
+    tx_command.type          = type;
+    tx_command.protocol      = protocol;
+
+    SocketResponse rx_command = {};
+
+    TRY(inoutPacketSync(OPCODE_SOCKET_SOCKET, Buffer::from(&tx_command),
+                        Buffer::null(), OPCODE_SOCKET_SOCKETRESPONSE,
+                        Buffer::from(&rx_command), Buffer::null()));
+
+    sd = rx_command.sd;
+    return errorFromStatus(rx_command.status_or_len);
+}
+
+CC3135::Error CC3135::socketClose(Sd sd)
+{
+    CloseCommand tx_command = {};
+    tx_command.sd           = sd;
+
+    SocketResponse rx_command = {};
+
+    TRY(inoutPacketSync(OPCODE_SOCKET_CLOSE, Buffer::from(&tx_command),
+                        Buffer::null(), OPCODE_SOCKET_CLOSERESPONSE,
+                        Buffer::from(&rx_command), Buffer::null()));
+
+    return errorFromStatus(rx_command.status_or_len);
+}
+
+CC3135::Error CC3135::socketRecv(Sd sd, Buffer buffer, uint16_t flags)
+{
+    SendRecvCommand tx_command  = {};
+    tx_command.sd               = sd;
+    tx_command.status_or_len    = 300;
+    tx_command.family_and_flags = flags & 0x0f;
+
+    return writePacketSync(OPCODE_SOCKET_RECV, Buffer::from(&tx_command),
+                           Buffer::null());
+}
+
+CC3135::Error CC3135::socketSend2(Sd sd, Buffer buffer, uint16_t flags)
+{
+    SendRecvCommand2 tx_command = {};
+    tx_command.sd               = sd;
+    tx_command.status_or_len    = buffer.len;
+    tx_command.family_and_flags = flags & 0x0f;
+    tx_command.flags            = flags;
+
+    return writePacketSync(OPCODE_SOCKET_SEND, Buffer::from(&tx_command),
+                           buffer);
 }
 
 void CC3135::handleIrq()
@@ -162,6 +309,32 @@ void CC3135::restoreDefaultServiceThread()
     }
 }
 
+void CC3135::run()
+{
+    // TODO: Implement a way to stop this thread
+    while (true)
+    {
+        waitForIrq();
+        // Thread::sleep(500);
+
+        ResponseHeader header;
+        {
+            // Lock the device interface
+            Lock<FastMutex> iface_lock(iface_mutex);
+
+            Error result = readHeader(&header);
+
+            if (result != Error::NO_ERROR)
+            {
+                TRACE("[cc3135] Error: %s\n", errorToStr(result));
+                continue;
+            }
+
+            defaultPacketHandler(header);
+        }
+    }
+}
+
 void CC3135::defaultPacketHandler(CC3135Defs::ResponseHeader header)
 {
     TRACE(
@@ -173,37 +346,54 @@ void CC3135::defaultPacketHandler(CC3135Defs::ResponseHeader header)
         opToStr(header.inner.opcode), header.inner.opcode, header.dev_status,
         header.socket_tx_failure, header.socket_non_blocking);
 
-    size_t len = header.inner.len;
+    size_t len = alignSize(header.inner.len);
+
+    switch (header.inner.opcode)
+    {
+        case OPCODE_SOCKET_RECVASYNCRESPONSE:
+        {
+            SocketResponse rx_command = {};
+
+            safeRead(len, Buffer::from(&rx_command));
+
+            // 8 byte proprietary header, format information?
+            uint64_t header2;
+            safeRead(len, Buffer::from(&header2));
+            rx_command.status_or_len -= 8;
+
+            /*
+            notprintf("Header: %8x\n", header2);
+
+            if (rx_command.status_or_len >= 0)
+            {
+                notprintf("%d %d\n", len, rx_command.status_or_len);
+
+                uint8_t response[len];
+                safeRead(len, Buffer{response, len});
+
+                for (int i = 0; i < rx_command.status_or_len; i++)
+                {
+                    notprintf("%2x ", response[i]);
+                }
+                notprintf("\n");
+            }
+            */
+
+            break;
+        }
+        default:
+            if (len > 0)
+            {
+                dummyRead(len);
+                len = 0;
+            }
+    };
 
     // Dummy read rest of the data
     if (len > 0)
-        dummyRead(len);
-}
-
-void CC3135::run()
-{
-    // TODO: Implement a way to stop this thread
-    while (true)
     {
-        waitForIrq();
-        // Thread::sleep(500);
-
-        {
-            // Lock the device interface
-            Lock<FastMutex> iface_lock(iface_mutex);
-
-            ResponseHeader header;
-            Error result = readHeader(&header);
-
-            if (result != Error::NO_ERROR)
-            {
-                TRACE("[cc3135] NWP error!\n");
-            }
-            else
-            {
-                defaultPacketHandler(header);
-            }
-        }
+        TRACE("[cc3135] %d bytes still in receive buffer!\n", len);
+        dummyRead(len);
     }
 }
 
@@ -268,7 +458,7 @@ CC3135::Error CC3135::readPacket(OpCode opcode, CC3135::Buffer command,
         else
         {
             // Read the rest of the packet
-            size_t len = header.inner.len;
+            size_t len = alignSize(header.inner.len);
 
             safeRead(len, command);
             safeRead(len, payload);
@@ -287,8 +477,8 @@ CC3135::Error CC3135::readPacket(OpCode opcode, CC3135::Buffer command,
 CC3135::Error CC3135::writePacket(OpCode opcode, CC3135::Buffer command,
                                   CC3135::Buffer payload)
 {
-    RequestHeader header{opcode,
-                         static_cast<uint16_t>(command.len + payload.len)};
+    size_t len = alignSize(command.len + payload.len);
+    RequestHeader header{opcode, static_cast<uint16_t>(len)};
 
     TRY(writeHeader(&header));
 
@@ -330,7 +520,7 @@ CC3135::Error CC3135::readHeader(ResponseHeader *header)
     while (true)
     {
         if ((getTick() - start) > TIMEOUT)
-            return Error::NWP_TIMEOUT;
+            return Error::SYNC_TIMEOUT;
 
         // Reads in SPI are always more than 4 bytes
         bool found = false;
@@ -368,7 +558,7 @@ CC3135::Error CC3135::readHeader(ResponseHeader *header)
     while (n2hSyncPatternMatch(sync, tx_seq_num))
     {
         if ((getTick() - start) > TIMEOUT)
-            return Error::NWP_TIMEOUT;
+            return Error::SYNC_TIMEOUT;
 
         memmove(&buf[0], &buf[4], 4);
         iface->read(&buf[4], 4);
@@ -415,13 +605,8 @@ CC3135::Error CC3135::writeHeader(RequestHeader *header)
 void CC3135::dummyRead(size_t n)
 {
     // Avoid HUGE stack allocations
-    uint8_t dummy[256];
-
-    while (n > 0)
-    {
-        iface->read(dummy, std::min(n, sizeof(dummy)));
-        n -= std::min(n, sizeof(dummy));
-    }
+    uint8_t dummy[n];
+    iface->read(dummy, n);
 }
 
 void CC3135::safeRead(size_t &len, Buffer buffer)
@@ -430,6 +615,40 @@ void CC3135::safeRead(size_t &len, Buffer buffer)
     {
         iface->read(buffer.ptr, std::min(len, buffer.len));
         len -= std::min(len, buffer.len);
+    }
+}
+
+CC3135::Error CC3135::errorFromStatus(int16_t status)
+{
+    if (status >= 0)
+    {
+        return Error::NO_ERROR;
+    }
+
+    TRACE("[cc3135] Non zero status: %d\n", status);
+    switch (status)
+    {
+        case -2071:
+            return Error::WLAN_ALREADY_DISCONNECTED;
+        default:
+            return Error::GENERIC_ERROR;
+    }
+}
+
+const char *CC3135::errorToStr(Error error)
+{
+    switch (error)
+    {
+        case Error::NO_ERROR:
+            return "NO_ERROR";
+        case Error::SYNC_TIMEOUT:
+            return "SYNC_TIMEOUT";
+        case Error::GENERIC_ERROR:
+            return "GENERIC_ERROR";
+        case Error::WLAN_ALREADY_DISCONNECTED:
+            return "WLAN_ALREADY_DISCONNECTED";
+        default:
+            return "<unknown>";
     }
 }
 

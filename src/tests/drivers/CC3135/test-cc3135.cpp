@@ -86,7 +86,7 @@ using irq  = Gpio<GPIOA_BASE, 4>;
 using hib  = Gpio<GPIOA_BASE, 6>;
 
 #define CC3135_SPI SPI1
-// #define CC3135_HIB
+#define CC3135_HIB
 #endif
 
 #endif
@@ -178,6 +178,8 @@ int main()
 
     initBoard();
 
+    // For some reason, putting this before SPI peripheral activation makes it
+    // more reliable
 #ifdef CC3135_HIB
     // Reset CC3135
     hib::low();
@@ -190,7 +192,7 @@ int main()
     GpioPin cs_pin = cs::getPin();
 
     SPIBusConfig config = {};
-    config.clockDivider = SPI::ClockDivider::DIV_32;
+    config.clockDivider = SPI::ClockDivider::DIV_64;
     config.mode         = SPI::Mode::MODE_0;
     config.bitOrder     = SPI::BitOrder::MSB_FIRST;
 
@@ -204,21 +206,17 @@ int main()
     printf("[cc3135] Initializing...\n");
     cc3135 = new CC3135(std::move(iface));
 
-    // cc3135->handleIrq();
-
-    if (cc3135->init(false) != CC3135::Error::NO_ERROR)
+    auto result = cc3135->init(true);
+    if (result != CC3135::Error::NO_ERROR)
     {
-        printf("[cc3135] Failed to start cc3135, retrying...\n");
-        Thread::sleep(2000);
-        return 0;
+        printf("[cc3135] Failed to start cc3135 (error: %s), retrying...\n",
+               CC3135::errorToStr(result));
+        Thread::sleep(4000);
 
-        // miosix::reboot();
+        miosix::reboot();
     }
 
     printf("[cc3135] Initialization complete!\n");
-
-    // CHECK(cc3135->setMode(CC3135Defs::ROLE_STA));
-    // Thread::sleep(500);
 
     CC3135Defs::DeviceVersion version = {};
     CHECK(cc3135->getVersion(version));
@@ -235,7 +233,29 @@ int main()
         version.nwp_version[3], version.rom_version);
 
     while (true)
-        ;
+    {
+        cc3135->startRecv();
+        Thread::sleep(1000);
+        printf("[cc3135] Looping\n");
+
+        cc3135->dummySend();
+
+        CHECK(cc3135->getVersion(version));
+        printf(
+            "[cc3135] Chip Id: %lx\n"
+            "[cc3135] Fw version: %u.%u.%u.%u\n"
+            "[cc3135] Phy version: %u.%u.%u.%u\n"
+            "[cc3135] Nwp version: %u.%u.%u.%u\n"
+            "[cc3135] Rom version: %x\n",
+            version.chip_id, version.fw_version[0], version.fw_version[1],
+            version.fw_version[2], version.fw_version[3],
+            version.phy_version[0], version.phy_version[1],
+            version.phy_version[2], version.phy_version[3],
+            version.nwp_version[0], version.nwp_version[1],
+            version.nwp_version[2], version.nwp_version[3],
+            version.rom_version);
+    }
+
     // Thread::sleep(3000);
     // miosix::reboot();
 }

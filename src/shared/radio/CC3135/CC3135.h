@@ -43,14 +43,18 @@ namespace Boardcore
 class CC3135 : ActiveObject
 {
 public:
+    constexpr static size_t MTU = 1536;
+
     enum class Error
     {
-        NO_ERROR,             //< No error occured.
-        NWP_TIMEOUT,          //< The NWP did not respond.
-        NWP_STATUS_NON_ZERO,  //< The NWD returned a non-zero status code.
+        NO_ERROR,                   //< No error occured.
+        SYNC_TIMEOUT,               //< The NWP did not respond.
+        GENERIC_ERROR,              //< Generic error class.
+        WLAN_ALREADY_DISCONNECTED,  //< Wlan is already disconnected.
     };
 
     explicit CC3135(std::unique_ptr<ICC3135Iface> &&iface);
+    ~CC3135();
 
     CC3135::Error init(bool wait_for_init);
 
@@ -58,7 +62,14 @@ public:
 
     CC3135::Error getVersion(CC3135Defs::DeviceVersion &version);
 
-    CC3135::Error setMode(CC3135Defs::Mode mode);
+    CC3135::Error startRecv();
+
+    CC3135::Error dummyRecv();
+    CC3135::Error dummySend();
+
+    CC3135::Error prepareForReset();
+
+    static const char *errorToStr(Error error);
 
 private:
     //! Simple buffer for scatter/gather IO
@@ -79,7 +90,7 @@ private:
     class ServiceThreadLock
     {
     public:
-        ServiceThreadLock(CC3135 *parent) : parent(parent)
+        explicit ServiceThreadLock(CC3135 *parent) : parent(parent)
         {
             parent->installAsServiceThread();
         }
@@ -90,15 +101,34 @@ private:
         CC3135 *parent;
     };
 
+    CC3135::Error setupTransceiver();
+
     //! Function for servicing async messages.
     void run() override;
 
     void defaultPacketHandler(CC3135Defs::ResponseHeader header);
 
-    CC3135::Error devigeGet(uint8_t set_id, uint8_t option, Buffer result);
+    // Part of the device API
 
-    //! Read something from the device, to wake it up?
-    CC3135::Error dummyDeviceRead();
+    CC3135::Error devigeGet(uint8_t set_id, uint8_t option, Buffer value);
+
+    CC3135::Error wlanSetMode(CC3135Defs::Mode mode);
+
+    CC3135::Error wlanPolicySet(uint8_t type, uint8_t option, Buffer value);
+
+    CC3135::Error wlanDisconnect();
+
+    CC3135::Error socketOpen(uint8_t domain, uint8_t type, uint8_t protocol,
+                             CC3135Defs::Sd &sd);
+
+    CC3135::Error socketClose(CC3135Defs::Sd sd);
+
+    CC3135::Error socketRecv(CC3135Defs::Sd sd, Buffer buffer, uint16_t flags);
+
+    // CC3135::Error socketSend(CC3135Defs::Sd sd, Buffer buffer, uint8_t
+    // flags);
+
+    CC3135::Error socketSend2(CC3135Defs::Sd sd, Buffer buffer, uint16_t flags);
 
     // Functions dedicated to interrupt servicing
 
@@ -142,6 +172,8 @@ private:
     //! Safely read a buffer, does bound checking
     void safeRead(size_t &len, Buffer buffer);
 
+    static CC3135::Error errorFromStatus(int16_t status);
+
     miosix::Thread *irq_wait_thread = nullptr;  //< Thread waiting on IRQ
     size_t irq_count                = 0;        //< Number of interrupts
 
@@ -149,6 +181,8 @@ private:
     std::unique_ptr<ICC3135Iface> iface;
 
     uint8_t tx_seq_num = 0;
+
+    CC3135Defs::Sd sd;  //< Socket descriptor
 };
 
 }  // namespace Boardcore
