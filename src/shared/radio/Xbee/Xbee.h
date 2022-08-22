@@ -39,7 +39,7 @@ using miosix::FastMutex;
 using GpioType = miosix::GpioPin;
 #else
 #include <utils/TestUtils/MockGpioPin.h>
-using GpioType = MockGpioPin;
+using GpioType = Boardcore::MockGpioPin;
 #endif
 
 namespace Boardcore
