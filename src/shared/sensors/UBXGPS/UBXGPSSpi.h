@@ -144,7 +144,7 @@ private:
     static constexpr float MS_TO_TICK = miosix::TICK_FREQ / 1000.f;
 
     static constexpr unsigned int RESET_SLEEP_TIME = 5000;  // [ms]
-    static constexpr unsigned int READ_TIMEOUT     = 5000;  // [ms]
+    static constexpr unsigned int READ_TIMEOUT     = 500;   // [ms]
     static constexpr unsigned int MAX_TRIES        = 5;     // [1]
 };
 

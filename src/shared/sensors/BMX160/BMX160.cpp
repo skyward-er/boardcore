@@ -63,7 +63,6 @@ bool BMX160::init()
 
     if (!setPowerMode())
     {
-
         LOG_ERR(logger, "Not all interfaces are up and running!");
         lastError = SensorErrors::INIT_FAIL;
         return false;
@@ -252,6 +251,11 @@ bool BMX160::checkChipid()
 {
     SPITransaction spi(spiSlave);
     auto chipId = spi.readRegister(BMX160Defs::REG_CHIPID);
+
+#ifdef DEBUG
+    if (chipId != BMX160Defs::CHIPID)
+        LOG_ERR(logger, "CHIPID = {:02x}", chipId);
+#endif
 
     return chipId == BMX160Defs::CHIPID;
 }
