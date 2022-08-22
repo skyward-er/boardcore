@@ -452,7 +452,7 @@ private:
 
         // This is to assert that the first state given to the constructor
         // transition to the initial state
-        D(assert(s == TRAN));
+        // D(assert(s == TRAN));s
 
         // NOTE: At this point, temp is the initial state
 
