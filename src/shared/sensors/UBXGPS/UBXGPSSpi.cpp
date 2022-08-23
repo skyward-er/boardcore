@@ -47,11 +47,8 @@ UBXGPSSpi::UBXGPSSpi(SPIBusInterface& spiBus, miosix::GpioPin spiCs,
 
 SPIBusConfig UBXGPSSpi::getDefaultSPIConfig()
 {
-    /* From data sheet of series NEO-M8:
-     * "Minimum initialization time" (setup time): 10 us
-     * "Minimum deselect time" (hold time): 1 ms */
-    return SPIBusConfig{SPI::ClockDivider::DIV_32, SPI::Mode::MODE_0,
-                        SPI::BitOrder::MSB_FIRST, 10, 1000};
+    return SPIBusConfig{SPI::ClockDivider::DIV_16, SPI::Mode::MODE_0,
+                        SPI::BitOrder::MSB_FIRST, 10, 10};
 }
 
 uint8_t UBXGPSSpi::getSampleRate() { return sampleRate; }
@@ -237,7 +234,7 @@ bool UBXGPSSpi::readUBXFrame(UBXFrame& frame)
     long long end   = start + READ_TIMEOUT * MS_TO_TICK;
 
     {
-        SPITransaction spi{spiSlave};
+        spiSlave.bus.select(spiSlave.cs);
 
         // Search UBX frame preamble byte by byte
         size_t i     = 0;
@@ -247,10 +244,11 @@ bool UBXGPSSpi::readUBXFrame(UBXFrame& frame)
             if (miosix::getTick() >= end)
             {
                 LOG_ERR(logger, "Timeout for read expired");
+                spiSlave.bus.deselect(spiSlave.cs);
                 return false;
             }
 
-            uint8_t c = spi.read();
+            uint8_t c = spiSlave.bus.read();
 
             if (c == UBXFrame::PREAMBLE[i])
             {
@@ -281,10 +279,12 @@ bool UBXGPSSpi::readUBXFrame(UBXFrame& frame)
             }
         }
 
-        frame.message       = swapBytes16(spi.read16());
-        frame.payloadLength = swapBytes16(spi.read16());
-        spi.read(frame.payload, frame.getRealPayloadLength());
-        spi.read(frame.checksum, 2);
+        frame.message       = swapBytes16(spiSlave.bus.read16());
+        frame.payloadLength = swapBytes16(spiSlave.bus.read16());
+        spiSlave.bus.read(frame.payload, frame.getRealPayloadLength());
+        spiSlave.bus.read(frame.checksum, 2);
+
+        spiSlave.bus.deselect(spiSlave.cs);
     }
 
     if (!frame.isValid())
