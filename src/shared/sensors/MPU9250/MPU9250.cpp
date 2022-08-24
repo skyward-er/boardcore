@@ -30,11 +30,10 @@ namespace Boardcore
 {
 
 MPU9250::MPU9250(SPIBusInterface& bus, miosix::GpioPin cs, SPIBusConfig config,
-                 unsigned short samplingRate, MPU9250GyroFSR gyroFsr,
-                 MPU9250AccelFSR accelFsr,
-                 SPI::ClockDivider highSpeedSpiClockDivider)
+                 unsigned short samplingRate, GyroFSR gyroFsr,
+                 AccelFSR accelFsr)
     : spiSlave(bus, cs, config), samplingRate(samplingRate), gyroFsr(gyroFsr),
-      accelFsr(accelFsr), highSpeedSpiClockDivider(highSpeedSpiClockDivider)
+      accelFsr(accelFsr)
 {
 }
 
@@ -104,16 +103,12 @@ MPU9250Data MPU9250::sampleImpl()
 {
     MPU9250RawData rawData;
     MPU9250Data data;
-    SPI::ClockDivider clockDivider = spiSlave.config.clockDivider;
 
-    // Read the data registers at high speed (up to 20MHz)
-    spiSlave.config.clockDivider = highSpeedSpiClockDivider;
     {
         SPITransaction transaction(spiSlave);
         transaction.readRegisters(REG_ACCEL_XOUT_H, (uint8_t*)rawData.bytes,
                                   sizeof(MPU9250RawData));
     }
-    spiSlave.config.clockDivider = clockDivider;
 
     // Save timestamps
     uint64_t timestamp            = TimestampTimer::getTimestamp();
@@ -158,14 +153,14 @@ void MPU9250::selectAutoClock()
     writeSPIWithDelay(transaction, REG_PWR_MGMT_1, REG_PWR_MGMT_1_CLKSEL_AUTO);
 }
 
-void MPU9250::setGyroFsr(MPU9250GyroFSR fs)
+void MPU9250::setGyroFsr(GyroFSR fs)
 {
     SPITransaction transaction(spiSlave);
 
     writeSPIWithDelay(transaction, REG_GYRO_CONFIG, fs);
 }
 
-void MPU9250::setAccelFsr(MPU9250AccelFSR fs)
+void MPU9250::setAccelFsr(AccelFSR fs)
 {
     SPITransaction transaction(spiSlave);
 
@@ -199,7 +194,7 @@ void MPU9250::enableMpuI2CMasterInterface()
     writeSPIWithDelay(transaction, REG_USER_CTRL, REG_USER_CTRL_I2C_MST_EN);
 }
 
-void MPU9250::setMpuI2CMasterInterfaceClock(MPU9250I2CMasterInterfaceClock clk)
+void MPU9250::setMpuI2CMasterInterfaceClock(I2CMasterInterfaceClock clk)
 {
     SPITransaction transaction(spiSlave);
 
