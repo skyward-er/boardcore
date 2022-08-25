@@ -25,6 +25,8 @@
 #include <drivers/timer/TimestampTimer.h>
 #include <interfaces/endianness.h>
 
+using namespace miosix;
+
 namespace Boardcore
 {
 
@@ -135,7 +137,7 @@ bool UBXGPSSpi::reset()
 {
     uint8_t payload[] = {
         0x00, 0x00,  // Hot start
-        0x00,        // Hardware reset
+        0x01,        // Controlled software reset
         0x00         // Reserved
     };
 
@@ -245,6 +247,7 @@ bool UBXGPSSpi::readUBXFrame(UBXFrame& frame)
             {
                 LOG_ERR(logger, "Timeout for read expired");
                 spiSlave.bus.deselect(spiSlave.cs);
+                Thread::sleep(1);  // GPS minimum time after deselect
                 return false;
             }
 
@@ -285,6 +288,7 @@ bool UBXGPSSpi::readUBXFrame(UBXFrame& frame)
         spiSlave.bus.read(frame.checksum, 2);
 
         spiSlave.bus.deselect(spiSlave.cs);
+        Thread::sleep(1);  // GPS minimum time after deselect
     }
 
     if (!frame.isValid())
@@ -310,6 +314,7 @@ bool UBXGPSSpi::writeUBXFrame(const UBXFrame& frame)
     {
         SPITransaction spi{spiSlave};
         spi.write(packedFrame, frame.getLength());
+        Thread::sleep(1);  // GPS minimum time after deselect
     }
 
     return true;
