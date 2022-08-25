@@ -84,26 +84,30 @@ void PinObserver::periodicPinValueCheck(miosix::GpioPin pin)
     // Are we in a transition?
     if (pinData.lastState != newState)
     {
-        count = 0;               // Yes, reset the counter
-        pinData.changesCount++;  // And register the change
+        // Register the current state change
+        count++;
+
+        // If the count reaches the threshold, then the change is confirmed and
+        // we can trigger the event
+        if (count > pinData.threshold)
+        {
+            count = 0;               // Reset the counter
+            pinData.changesCount++;  // Register the change
+
+            // Update the state
+            pinData.lastStateTimestamp = TimestampTimer::getTimestamp();
+            pinData.lastState          = newState;
+
+            // Execute the callback
+            pinData.callback(newState ? PinTransition::RISING_EDGE
+                                      : PinTransition::FALLING_EDGE);
+        }
     }
     else
     {
-        count++;  // No, continue to increment
-
-        // If the count reaches the threshold, then trigger the event
-        if (count > pinData.threshold)
-        {
-            if (newState)
-                pinData.callback(PinTransition::RISING_EDGE);
-            else
-                pinData.callback(PinTransition::FALLING_EDGE);
-        }
+        // If the value is still the same as before, the counter is reset to 0
+        count = 0;
     }
-
-    // Save the current pin status
-    pinData.lastStateTimestamp = TimestampTimer::getTimestamp();
-    pinData.lastState          = newState;
 }
 
 }  // namespace Boardcore
