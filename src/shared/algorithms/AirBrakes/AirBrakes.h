@@ -1,5 +1,5 @@
 /* Copyright (c) 2021-2022 Skyward Experimental Rocketry
- * Authors: Vincenzo Santomarco, Alberto Nidasio
+ * Authors: Vincenzo Santomarco, Alberto Nidasio, Emilio Corigliano
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -41,7 +41,7 @@ class AirBrakes : public Algorithm
 public:
     AirBrakes(std::function<TimedTrajectoryPoint()> getCurrentPosition,
               const TrajectorySet &trajectorySet, const AirBrakesConfig &config,
-              std::function<void(float)> setActuator);
+              std::function<void(float)> setActuator, bool interpAlgo);
 
     bool init() override;
 
@@ -57,7 +57,19 @@ public:
      */
     void step() override;
 
+    /**
+     * @brief registers the timestamp of liftoff
+     */
+    void setLiftoffTimestamp();
+
 private:
+    /**
+     * @brief Calculates the percentage of aperture of the airbrakes
+     * interpolating the trajectory points of the fully closed and fully opened
+     * references
+     */
+    float controlInterp(TrajectoryPoint currentPosition);
+
     /**
      * @brief Searched all the trajectories and find the neares point to the
      * given position. The trajectory of this point is the one choosen.
@@ -144,10 +156,20 @@ private:
 
     TimedTrajectoryPoint lastPosition;
     uint32_t lastSelectedPointIndex = 0;
+    uint64_t tLiftoff;  ///< timestamp of the liftoff
 
+    // PI
     PIController pi;
 
     Trajectory *chosenTrajectory = nullptr;
+
+    // INTERP
+    float lastPercentage;  ///< last opening of the airbrakes
+    float filter_coeff;    ///< how much the new aperture impacts the real one
+    float Tfilter;         ///< [s] time from liftoff when to update filter
+    bool filter = false;   ///< whether to apply the filter or not
+
+    bool interpAlgo = false;
 };
 
 }  // namespace Boardcore

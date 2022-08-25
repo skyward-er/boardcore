@@ -1,5 +1,5 @@
 /* Copyright (c) 2022 Skyward Experimental Rocketry
- * Author: Alberto Nidasio
+ * Author: Alberto Nidasio, Emilio Corigliano
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -64,6 +64,14 @@ struct AirBrakesConfig
     float KP;
     float KI;
     float TS;
+
+    // interp parameters
+    float INITIAL_FILTER_COEFF;
+    float INITIAL_T_FILTER;  ///< after how much time we change the filter
+                             ///< coefficient
+    float DELTA_T_FILTER;    ///< after how much time we change the filter
+                             ///< coefficient
+    float FILTER_RATIO;      ///< how much the filter coefficient is reduced
 };
 
 }  // namespace Boardcore

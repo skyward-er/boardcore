@@ -1,5 +1,5 @@
 /* Copyright (c) 2021-2022 Skyward Experimental Rocketry
- * Authors: Vincenzo Santomarco, Alberto Nidasio
+ * Authors: Vincenzo Santomarco, Alberto Nidasio, Emilio Corigliano
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -27,16 +27,20 @@
 
 #include <limits>
 
+#include "drivers/timer/TimestampTimer.h"
+#include "utils/Debug.h"
+
 namespace Boardcore
 {
 
 AirBrakes::AirBrakes(std::function<TimedTrajectoryPoint()> getCurrentPosition,
                      const TrajectorySet &trajectorySet,
                      const AirBrakesConfig &config,
-                     std::function<void(float)> setActuator)
+                     std::function<void(float)> setActuator,
+                     bool interpAlgo = false)
     : getCurrentPosition(getCurrentPosition), trajectorySet(trajectorySet),
       config(config), setActuator(setActuator),
-      pi(config.KP, config.KI, config.TS)
+      pi(config.KP, config.KI, config.TS), interpAlgo(interpAlgo)
 {
 }
 
@@ -47,8 +51,18 @@ void AirBrakes::begin()
     if (running)
         return;
 
-    lastPosition = getCurrentPosition();
-    chooseTrajectory(lastPosition);
+    if (!interpAlgo)
+    {
+        lastPosition = getCurrentPosition();
+        chooseTrajectory(lastPosition);
+        TRACE("[ABK] EXECUTING PI\n");
+    }
+    else
+    {
+        filter_coeff = config.INITIAL_FILTER_COEFF;
+        Tfilter      = config.INITIAL_T_FILTER;
+        TRACE("[ABK] EXECUTING INTERP\n");
+    }
 
     Algorithm::begin();
 }
@@ -60,15 +74,92 @@ void AirBrakes::step()
     // Do nothing if we have no new data
     if (lastPosition.timestamp >= currentPosition.timestamp)
         return;
+
     lastPosition = currentPosition;
 
-    auto setPoint = getSetpoint(currentPosition);
-    float rho     = getRho(currentPosition.z);
+    if (!interpAlgo)
+    {
 
-    float targetDrag = piStep(currentPosition, setPoint, rho);
-    float surface    = getSurface(currentPosition, rho, targetDrag);
+        auto setPoint = getSetpoint(currentPosition);
+        float rho     = getRho(currentPosition.z);
 
-    setActuator(surface / config.SURFACE);
+        float targetDrag = piStep(currentPosition, setPoint, rho);
+        float surface    = getSurface(currentPosition, rho, targetDrag);
+        setActuator(surface / config.SURFACE);
+    }
+    else
+    {
+        // interpolation
+        float percentage = controlInterp(currentPosition);
+        // TRACE("perc: %f\n", percentage);
+
+        // filter the aperture value only from the second step
+        if (filter)
+        {
+            percentage =
+                lastPercentage + (percentage - lastPercentage) * filter_coeff;
+
+            // if the time elapsed from liftoff is greater or equal than the
+            // Tfilter (converted in microseconds as for the timestamp), we
+            // update the filter
+            uint64_t currentTimestamp = TimestampTimer::getTimestamp();
+            if (currentTimestamp - tLiftoff >= Tfilter * 1e6)
+            {
+                Tfilter += config.DELTA_T_FILTER;
+                filter_coeff /= config.FILTER_RATIO;
+
+                // TRACE("reduced coefficient: %f\n", filter_coeff);
+            }
+        }
+        else
+        {
+            TRACE("START FILTERING\n");
+            TRACE("tLiftoff: %llu\n", tLiftoff);
+            filter = true;
+        }
+
+        lastPercentage = percentage;
+        setActuator(percentage);
+        // TRACE("perc_after: %f\n\n", percentage);
+    }
+}
+
+void AirBrakes::setLiftoffTimestamp()
+{
+    this->tLiftoff = TimestampTimer::getTimestamp();
+}
+
+float AirBrakes::controlInterp(TrajectoryPoint currentPosition)
+{
+    float dz = 10;  // [TODO] take from PortugalTrajectorySet.h
+
+    // we take the index of the current point of the trajectory and we look
+    // ahead of 2 points
+    int index_z = floor(currentPosition.z / dz) + 2;
+
+    Boardcore::Trajectory t_closed = trajectorySet.trajectories[0];
+    Boardcore::Trajectory t_opened =
+        trajectorySet.trajectories[trajectorySet.trjSize - 1];
+
+    // for safety we check whether the index exceeds the maximum index of the
+    // trajectory sets
+    index_z =
+        std::min(index_z, std::min(t_closed.trjSize - 1, t_opened.trjSize - 1));
+
+    Boardcore::TrajectoryPoint trjPointClosed = t_closed.points[index_z];
+    Boardcore::TrajectoryPoint trjPointOpen   = t_opened.points[index_z];
+
+    // TRACE("z: %+.3f, curr: %+.3f, clos: %+.3f, open: %+.3f\n",
+    //       currentPosition.z, currentPosition.vz, trjPointClosed.vz,
+    //       trjPointOpen.vz);
+
+    if (currentPosition.vz <= trjPointClosed.vz)
+        return 0;
+    else if (currentPosition.vz >= trjPointOpen.vz)
+        return 1;
+    else
+        return (currentPosition.vz - trjPointClosed.vz) /
+               (trjPointOpen.vz - trjPointClosed.vz);
 }
 
 void AirBrakes::chooseTrajectory(TrajectoryPoint currentPosition)
