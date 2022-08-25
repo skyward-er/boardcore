@@ -30,11 +30,13 @@ namespace Boardcore
 {
 
 bool PinObserver::registerPinCallback(miosix::GpioPin pin, PinCallback callback,
-                                      uint32_t detectionThreshold)
+                                      uint32_t detectionThreshold,
+                                      bool reverted)
 {
     // Try to insert the callback
-    auto result = callbacks.insert(
-        {pin, {callback, detectionThreshold, 0, 0, pin.value() == 1, 0}});
+    auto result = callbacks.insert({pin,
+                                    {callback, detectionThreshold, 0, 0,
+                                     pin.value() != reverted, 0, reverted}});
 
     // Check if the insertion took place
     if (result.second)
@@ -77,7 +79,7 @@ void PinObserver::periodicPinValueCheck(miosix::GpioPin pin)
     uint32_t &count = pinData.periodCount;
 
     // Read the current pin status
-    const bool newState = pin.value();
+    const bool newState = pin.value() != pinData.reverted;
 
     // Are we in a transition?
     if (pinData.lastState != newState)

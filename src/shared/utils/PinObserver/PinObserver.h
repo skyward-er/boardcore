@@ -51,6 +51,7 @@ struct PinData
     uint64_t lastStateTimestamp;  ///< Timestamp of the last measurement.
     bool lastState;               ///< The last measured pin state.
     uint32_t changesCount;        ///< Incremental count of the pin changes.
+    bool reverted;                ///< Whether to revert the pin state.
 };
 
 /**
@@ -84,7 +85,8 @@ public:
      * @return False if another callback was already registered for the pin.
      */
     bool registerPinCallback(miosix::GpioPin pin, PinCallback callback,
-                             uint32_t detectionThreshold = 1);
+                             uint32_t detectionThreshold = 1,
+                             bool reverted               = false);
 
     /**
      * @brief Starts the PinObserver's task scheduler.
