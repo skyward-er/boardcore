@@ -44,6 +44,7 @@ namespace Boardcore
 struct TaskStatsResult
 {
     uint8_t id;
+    uint32_t period;
     StatsResult activationStats;
     StatsResult periodStats;
     StatsResult workloadStats;
@@ -52,7 +53,7 @@ struct TaskStatsResult
 
     static std::string header()
     {
-        return "id,actMin,actMax,actMean,actStddev,actNsamples,"
+        return "id,period,actMin,actMax,actMean,actStddev,actNSamples,"
                "periodMin,periodMax,periodMean,period_stddev,"
                "periodNSamples,workloadMin,workloadMax,workloadMean,"
                "workload_stddev,workloadNSample,missedEvents,failedEvents\n";
@@ -60,7 +61,7 @@ struct TaskStatsResult
 
     void print(std::ostream& os) const
     {
-        os << (int)id << "," << activationStats.minValue << ","
+        os << (int)id << "," << period << "," << activationStats.minValue << ","
            << activationStats.maxValue << "," << activationStats.mean << ","
            << activationStats.stdDev << "," << activationStats.nSamples << ","
            << periodStats.minValue << "," << periodStats.maxValue << ","

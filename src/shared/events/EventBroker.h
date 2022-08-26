@@ -62,8 +62,12 @@ class EventBroker : public Singleton<EventBroker>, public ActiveObject
 public:
     /**
      * Posts an event to the specified topic.
+     *
+     * @param subscriber If provided the event won't be forwarded to the given
+     * subscriber.
      */
-    void post(const Event& ev, uint8_t topic);
+    void post(const Event& ev, uint8_t topic,
+              EventHandlerBase* subscriber = nullptr);
 
     /**
      * Posts an event after the specified delay.

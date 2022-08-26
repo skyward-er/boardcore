@@ -32,6 +32,8 @@ namespace Boardcore
  * \code
  * class Foo : public Singleton<Foo>
  * {
+ *     friend Singleton<Foo>;
+ *
  * private:
  *     Foo() {} // Ok, private constructor
  * };

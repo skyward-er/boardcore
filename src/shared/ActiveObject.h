@@ -49,7 +49,7 @@ public:
     virtual ~ActiveObject(){};
 
     /**
-     * @brief Start the thread associated with this activeobject.
+     * @brief Start the thread associated with this active object.
      *
      * Call stop() to terminate execution of the thread.
      * @return true if the thread has been started.

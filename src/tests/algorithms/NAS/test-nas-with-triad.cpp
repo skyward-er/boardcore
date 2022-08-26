@@ -59,7 +59,7 @@ int main()
     nas              = new NAS(getEKConfig());
 
     // Logger::getInstance().start();
-    TimestampTimer::getInstance().resetTimestamp();
+    TimestampTimer::resetTimestamp();
     sensorManager->start();
 
     while (true)
@@ -146,7 +146,7 @@ void bmxCallback()
 
     if (calibrating)
     {
-        if (TimestampTimer::getInstance().getTimestamp() < CALIBRATION_TIMEOUT)
+        if (TimestampTimer::getTimestamp() < CALIBRATION_TIMEOUT)
         {
             accMean = (accMean * meanCount + acceleration) / (meanCount + 1);
             magMean = (magMean * meanCount + acceleration) / (meanCount + 1);
@@ -200,7 +200,7 @@ void bmxCallback()
 
         auto nasState = nas->getState();
 
-        nasState.timestamp = TimestampTimer::getInstance().getTimestamp();
+        nasState.timestamp            = TimestampTimer::getTimestamp();
         data.accelerationTimestamp    = nasState.timestamp;
         data.magneticFieldTimestamp   = nasState.timestamp;
         data.angularVelocityTimestamp = nasState.timestamp;

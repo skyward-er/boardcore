@@ -40,7 +40,8 @@ namespace Xbee
  * @param channels channel mask
  * @return True if the command was executed successfully
  */
-bool setChannelMask(Xbee& xbee, uint32_t mask, unsigned int timeout = 1000)
+inline bool setChannelMask(Xbee& xbee, uint32_t mask,
+                           unsigned int timeout = 1000)
 {
     ATCommandResponseFrame response;
 
@@ -60,7 +61,8 @@ bool setChannelMask(Xbee& xbee, uint32_t mask, unsigned int timeout = 1000)
  *
  * @return True if the command was executed successfully
  */
-bool setChannelMask(Xbee& xbee, bool channels[30], unsigned int timeout = 1000)
+inline bool setChannelMask(Xbee& xbee, bool channels[30],
+                           unsigned int timeout = 1000)
 {
     uint32_t val = 0;
 
@@ -79,7 +81,7 @@ bool setChannelMask(Xbee& xbee, bool channels[30], unsigned int timeout = 1000)
  * @param xbee Reference to an xbee object
  * @return True if the command was executed successfully
  */
-bool enableAllChannels(Xbee& xbee, unsigned int timeout = 1000)
+inline bool enableAllChannels(Xbee& xbee, unsigned int timeout = 1000)
 {
     return setChannelMask(xbee, 0x3EFFFDFF, timeout);
 }
@@ -90,7 +92,7 @@ bool enableAllChannels(Xbee& xbee, unsigned int timeout = 1000)
  *
  * @param xbee Reference to an xbee object
  */
-bool disableFrequencyHopping(Xbee& xbee, unsigned int timeout = 1000)
+inline bool disableFrequencyHopping(Xbee& xbee, unsigned int timeout = 1000)
 {
     return setChannelMask(xbee, 0x20000000, timeout);
 }
@@ -102,7 +104,8 @@ bool disableFrequencyHopping(Xbee& xbee, unsigned int timeout = 1000)
  * @param dataRate80kbps true for 80kbps, false for 10kbps
  * @return True if the command was executed successfully
  */
-bool setDataRate(Xbee& xbee, bool dataRate80kbps, unsigned int timeout = 1000)
+inline bool setDataRate(Xbee& xbee, bool dataRate80kbps,
+                        unsigned int timeout = 1000)
 {
     uint8_t param = (uint8_t)dataRate80kbps;
     ATCommandResponseFrame response;
@@ -117,7 +120,7 @@ bool setDataRate(Xbee& xbee, bool dataRate80kbps, unsigned int timeout = 1000)
  * @param xbee Reference to an xbee object
  * @return True if the command was executed successfully
  */
-bool writeToMemory(Xbee& xbee, unsigned int timeout = 1000)
+inline bool writeToMemory(Xbee& xbee, unsigned int timeout = 1000)
 {
     ATCommandResponseFrame response;
     return xbee.sendATCommand("WR", &response, nullptr, 0, timeout);
@@ -133,8 +136,8 @@ bool writeToMemory(Xbee& xbee, unsigned int timeout = 1000)
  * @return True if the command was executed successfully and data stored in
  * energyDetectData is valid
  */
-bool energyDetect(Xbee& xbee, int* energyDetectData, uint8_t duration,
-                  unsigned int timeout = 1000)
+inline bool energyDetect(Xbee& xbee, int* energyDetectData, uint8_t duration,
+                         unsigned int timeout = 1000)
 {
     ATCommandResponseFrame response;
     if (xbee.sendATCommand("ED", &response, &duration, 1, timeout))

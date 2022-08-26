@@ -28,19 +28,27 @@ namespace Boardcore
 namespace Constants
 {
 
-static constexpr const float PI                 = 3.14159265f;  // [rad]
-static constexpr const float DEGREES_TO_RADIANS = PI / 180.0f;
-static constexpr const float RADIANS_TO_DEGREES = 180.0f / PI;
+static constexpr float PI                 = 3.14159265f;  // [rad]
+static constexpr float DEGREES_TO_RADIANS = PI / 180.0f;
+static constexpr float RADIANS_TO_DEGREES = 180.0f / PI;
 
-static constexpr const float g = 9.80665f;  // [m^s^2]
+static constexpr float g = 9.80665f;  // [m^s^2]
 
 static constexpr float a = 0.0065f;  // Troposphere temperature gradient [deg/m]
 static constexpr float R = 287.05f;  // Air gas constant [J/Kg/K]
 static constexpr float n = g / (R * a);
 static constexpr float nInv = (R * a) / g;
 
-static constexpr const float MSL_PRESSURE    = 101325.0f;  // [Pa]
-static constexpr const float MSL_TEMPERATURE = 288.15f;    // [Kelvin]
+static constexpr float CO    = 340.3;  // Sound speed at ground altitude [m/s]
+static constexpr float ALPHA = -3.871e-3;  // Sound speed gradient [1/s]
+static constexpr float RHO_0 = 1.225;      // Air density at sea level [kg/m^3]
+static constexpr float Hn    = 10400.0;    // Scale height [m]
+
+static constexpr float MSL_PRESSURE    = 101325.0f;  // [Pa]
+static constexpr float MSL_TEMPERATURE = 288.15f;    // [Kelvin]
+
+static constexpr float B21_LATITUDE  = 45.501141;
+static constexpr float B21_LONGITUDE = 9.156281;
 
 }  // namespace Constants
 

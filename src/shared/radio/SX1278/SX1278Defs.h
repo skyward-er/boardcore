@@ -46,7 +46,7 @@ constexpr int FXOSC = 32000000;
 /**
  * @brief Frequency step (Hz) used in some calculations.
  */
-constexpr int FSTEP = 61;
+constexpr float FSTEP = 61.03515625;
 
 constexpr int TS_OSC = 250;
 constexpr int TS_FS  = 60;
@@ -60,7 +60,7 @@ inline SPIBusConfig spiConfig()
 
     // FIXME(davide.mor): This depends on the device
     config.clockDivider = SPI::ClockDivider::DIV_64;
-    config.mode         = SPI::Mode::MODE_1;
+    config.mode         = SPI::Mode::MODE_0;
     config.bitOrder     = SPI::BitOrder::MSB_FIRST;
     // config.cs_setup_time_us = 30;
     // config.cs_hold_time_us  = 100;

@@ -33,7 +33,7 @@ namespace Boardcore
  *
  * This structure contains the sampling period of a sensor,
  * the function to be called after the sampling (callback) and
- * oneboolean indicating if the sensor has to be sampled (is enabled).
+ * one boolean indicating if the sensor has to be sampled (is enabled).
  */
 struct SensorInfo
 {

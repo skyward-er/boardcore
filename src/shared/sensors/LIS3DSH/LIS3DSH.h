@@ -318,9 +318,10 @@ public:
 private:
     /**
      * @brief Read new data from the accelerometer.
-     *        Acceleretions are returned in g.
      *
-     * @return boolean value indicating whether the operation succeded or not
+     * Accelerations are returned in g.
+     *
+     * @return boolean value indicating whether the operation succeeded or not
      */
     LIS3DSHData sampleImpl() override
     {
@@ -346,9 +347,9 @@ private:
     }
 
     /**
-     * @brief Read accelrometer data.
+     * @brief Read accelerometer data.
      *
-     * @return the read accelrometer sample
+     * @return the read accelerometer sample
      */
     AccelerometerData readAccelData()
     {
@@ -365,7 +366,7 @@ private:
             {  // bit 7 of status set to 1 (some data overwritten)
 
                 accelData.accelerationTimestamp =
-                    TimestampTimer::getInstance().getTimestamp();
+                    TimestampTimer::getTimestamp();
 
                 // read acceleration on X
                 int8_t accel_L = spi.readRegister(OUT_X_L);
@@ -409,7 +410,7 @@ private:
         int8_t t = spi.readRegister(OUT_T);
 
         return TemperatureData{
-            TimestampTimer::getInstance().getTimestamp(),
+            TimestampTimer::getTimestamp(),
             t + TEMPERATURE_REF};  // add the 'zero' of the temperature sensor
     }
 

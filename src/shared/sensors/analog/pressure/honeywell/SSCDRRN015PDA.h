@@ -37,50 +37,11 @@ class SSCDRRN015PDA final : public HoneywellPressureSensor<SSCDRRN015PDAData>
 {
 public:
     SSCDRRN015PDA(std::function<ADCData()> getSensorVoltage,
-                  const float supplyVoltage             = 5.0,
-                  const unsigned int num_calib_samples_ = 200)
+                  const float supplyVoltage = 5.0)
         : HoneywellPressureSensor(getSensorVoltage, supplyVoltage, 103421.3594,
-                                  -103421.3594),
-          offset(0.0), num_calib_samples(num_calib_samples_)
+                                  -103421.3594)
     {
     }
-
-    SSCDRRN015PDAData sampleImpl() override
-    {
-        lastSample = HoneywellPressureSensor<SSCDRRN015PDAData>::sampleImpl();
-
-        if (calibrating)
-        {
-            press_stats.add(lastSample.pressure);
-
-            if (press_stats.getStats().nSamples >= num_calib_samples)
-            {
-                calibrating = false;
-                offset      = press_stats.getStats().mean;
-
-                TRACE("Differential barometer offset : %.2f \n", offset);
-            }
-        }
-
-        lastSample.pressure = lastSample.pressure - offset;
-
-        return lastSample;
-    }
-
-    void calibrate()
-    {
-        press_stats.reset();
-        offset      = 0.0f;
-        calibrating = true;
-    }
-
-    bool isCalibrating() { return calibrating; }
-
-private:
-    bool calibrating = false;
-    float offset;
-    Stats press_stats;
-    unsigned int num_calib_samples;
 };
 
 }  // namespace Boardcore

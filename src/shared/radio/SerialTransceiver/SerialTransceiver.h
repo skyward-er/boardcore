@@ -22,6 +22,7 @@
 
 #pragma once
 
+#include <drivers/usart/USART.h>
 #include <radio/Transceiver.h>
 
 #include <iostream>
@@ -33,19 +34,21 @@ namespace Boardcore
 class SerialTransceiver : public Transceiver
 {
 public:
+    SerialTransceiver(USARTInterface& usart) : usart(usart) {}
+
     bool send(uint8_t* packet, size_t packetLength)
     {
-        for (size_t i = 0; i < packetLength; i++)
-            std::cout << packet[i];
-        std::cout << "\n";
+        usart.write(packet, packetLength);
         return true;
     }
 
     ssize_t receive(uint8_t* packet, size_t packetLength)
     {
-        std::cin.read(reinterpret_cast<char*>(packet), packetLength);
-        return packetLength;
+        return usart.read(packet, packetLength);
     }
+
+private:
+    USARTInterface& usart;
 };
 
 }  // namespace Boardcore

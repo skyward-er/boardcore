@@ -81,6 +81,8 @@ public:
 
     Eigen::Vector3f getReferenceVector();
 
+    void reset();
+
     bool feed(const T& measured, const AxisOrientation& transform) override;
 
     bool feed(const T& measured);
@@ -88,7 +90,7 @@ public:
     BiasCorrector<T> computeResult();
 
 private:
-    Eigen::Vector3f sum, ref;
+    Eigen::Vector3f mean, ref;
     unsigned numSamples;
 };
 
@@ -135,7 +137,7 @@ T BiasCorrector<T>::correct(const T& data) const
 
 template <typename T>
 BiasCalibration<T>::BiasCalibration()
-    : sum(0, 0, 0), ref(0, 0, 0), numSamples(0)
+    : mean(0, 0, 0), ref(0, 0, 0), numSamples(0)
 {
 }
 
@@ -151,6 +153,12 @@ Eigen::Vector3f BiasCalibration<T>::getReferenceVector()
     return ref;
 }
 
+template <typename T>
+void BiasCalibration<T>::reset()
+{
+    mean = {0, 0, 0};
+}
+
 /**
  * BiasCalibration accepts an indefinite number of samples,
  * so feed(...) never returns false.
@@ -162,8 +170,9 @@ bool BiasCalibration<T>::feed(const T& measured,
     Eigen::Vector3f vec;
     measured >> vec;
 
-    sum += (transform.getMatrix().transpose() * ref) - vec;
     numSamples++;
+    mean +=
+        (((transform.getMatrix().transpose() * ref) - vec) - mean) / numSamples;
 
     return true;
 }
@@ -178,8 +187,8 @@ template <typename T>
 BiasCorrector<T> BiasCalibration<T>::computeResult()
 {
     if (numSamples == 0)
-        return {Eigen::Vector3f{0, 0, 0}};
-    return {sum / numSamples};
+        return {{0, 0, 0}};
+    return {mean};
 }
 
 }  // namespace Boardcore

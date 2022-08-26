@@ -23,8 +23,8 @@
 #pragma once
 
 #include <Singleton.h>
-#include <miosix.h>
 #include <scheduler/TaskScheduler.h>
+#include <utils/GpioPinCompare.h>
 
 #include <map>
 
@@ -33,24 +33,10 @@ namespace Boardcore
 
 enum class ButtonEvent
 {
-    PRESSED,         // Called as soon as the button is pressed
-    SHORT_PRESS,     // Called as soon as the button is released
-    LONG_PRESS,      // Called as soon as the button is released
-    VERY_LONG_PRESS  // Called as soon as the button is released
-};
-
-/**
- * @brief Comparison operator between GpioPins used for std::map.
- */
-struct GpioPinCompare
-{
-    bool operator()(const miosix::GpioPin& lhs,
-                    const miosix::GpioPin& rhs) const
-    {
-        if (lhs.getPort() == rhs.getPort())
-            return lhs.getNumber() < rhs.getNumber();
-        return lhs.getPort() < rhs.getPort();
-    }
+    PRESSED,         ///< The button is pressed.
+    SHORT_PRESS,     ///< The button is released before LONG_PRESS_TICKS.
+    LONG_PRESS,      ///< The button is released before  VERY_LONG_PRESS_TICKS.
+    VERY_LONG_PRESS  ///< The button is released after VERY_LONG_PRESS_TICKS.
 };
 
 /**
@@ -122,17 +108,12 @@ private:
     /**
      * @brief Map of all the callbacks registered in the ButtonHandler.
      *
-     * The key is the GpioPin for which the callback is registered. To used
-     * GpioPin as a map key, the GpioPinCompare operator was defined as
-     * explained here:
-     * https://stackoverflow.com/questions/1102392/how-can-i-use-stdmaps-with-user-defined-types-as-key
-     *
      * The type stored is a tuple containing:
      * - The button callback function;
      * - Whether or not the button was pressed in the last check iteration;
      * - The relative tick of the last pin value change.
      */
-    std::map<miosix::GpioPin, std::tuple<ButtonCallback, bool, int>,
+    std::map<miosix::GpioPin, std::tuple<ButtonCallback, bool, unsigned int>,
              GpioPinCompare>
         callbacks;
 };

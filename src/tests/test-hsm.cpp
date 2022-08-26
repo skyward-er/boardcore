@@ -127,7 +127,7 @@ State HSMUTTest::state_S(const Event& e)
             retState = transition(&HSMUTTest::state_S11);
             break;
         default:
-            retState = tranSuper(&HSMUTTest::Hsm_top);
+            retState = tranSuper(&HSMUTTest::state_top);
             break;
     }
     return retState;

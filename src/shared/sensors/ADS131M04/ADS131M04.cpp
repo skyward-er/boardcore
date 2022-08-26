@@ -227,6 +227,12 @@ void ADS131M04::disableGlobalChopMode()
                    ADS131M04RegisterBitMasks::REG_CFG_GC_EN);
 }
 
+ADCData ADS131M04::getVoltage(Channel channel)
+{
+    return {lastSample.timestamp, static_cast<uint8_t>(channel),
+            lastSample.voltage[static_cast<uint8_t>(channel)]};
+}
+
 bool ADS131M04::selfTest()
 {
     // TODO
@@ -283,7 +289,7 @@ ADS131M04Data ADS131M04::sampleImpl()
 
     // Convert values
     ADS131M04Data adcData;
-    adcData.timestamp = TimestampTimer::getInstance().getTimestamp();
+    adcData.timestamp = TimestampTimer::getTimestamp();
     for (int i = 0; i < 4; i++)
     {
         adcData.voltage[i] =

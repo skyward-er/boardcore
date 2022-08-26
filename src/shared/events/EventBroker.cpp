@@ -29,7 +29,9 @@ namespace Boardcore
 {
 
 EventBroker::EventBroker() {}
-void EventBroker::post(const Event& ev, uint8_t topic)
+
+void EventBroker::post(const Event& ev, uint8_t topic,
+                       EventHandlerBase* subscriber)
 {
 #ifdef TRACE_EVENTS
     LOG_DEBUG(logger, "Event: {}, Topic: {}", ev, topic);
@@ -47,7 +49,9 @@ void EventBroker::post(const Event& ev, uint8_t topic)
         {
             // TODO: This may cause a deadlock if subscribe(...) in called in
             // postEvent(...), but it should never happen anyway. What to do?
-            (*it)->postEvent(ev);
+
+            if ((*it) != subscriber)
+                (*it)->postEvent(ev);
         }
     }
 }

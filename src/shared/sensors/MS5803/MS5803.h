@@ -24,9 +24,9 @@
 
 #include <diagnostic/PrintLogger.h>
 #include <drivers/spi/SPIDriver.h>
-#include <sensors/MS5803/MS5803Data.h>
 #include <sensors/Sensor.h>
-#include <utils/Debug.h>
+
+#include "MS5803Data.h"
 
 namespace Boardcore
 {
@@ -62,13 +62,12 @@ public:
         // Read command for adc output
         REG_ADC_READ = 0x00,
 
-        REG_PROM_READ_MASK     = 0xA0,
-        REG_PROM_SENS_MASK     = 0x02,
-        REG_PROM_OFF_MASK      = 0x04,
-        REG_PROM_TCS_MASK      = 0x06,
-        REG_PROM_TCO_MASK      = 0x08,
-        REG_PROM_TREF_MASK     = 0x0A,
-        REG_PROM_TEMPSENS_MASK = 0x0C,
+        REG_PROM_SENS_MASK     = 0xA2,
+        REG_PROM_OFF_MASK      = 0xA4,
+        REG_PROM_TCS_MASK      = 0xA6,
+        REG_PROM_TCO_MASK      = 0xA8,
+        REG_PROM_TREF_MASK     = 0xAA,
+        REG_PROM_TEMPSENS_MASK = 0xAC,
     };
 
     static constexpr uint8_t TIMEOUT = 5;

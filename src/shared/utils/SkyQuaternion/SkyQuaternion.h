@@ -30,7 +30,7 @@ namespace Boardcore
 /**
  * @brief Functions for managing quaternions.
  *
- * Convention used: x, y, z, w (scalar element as last element)
+ * Convention used: [x, y, z, w] (scalar element as last element).
  */
 namespace SkyQuaternion
 {
@@ -38,43 +38,51 @@ namespace SkyQuaternion
 /**
  * @brief Transform a vector of euler angles (ZYX) to quaternion.
  *
- * @param euler The vector of euler angles to be transformed [deg]
- * @return Transformed quaternion [x, y, z, w]
+ * @param euler The vector of euler angles to be transformed [deg].
+ * @return Transformed quaternion [x, y, z, w].
  */
-Eigen::Vector4f eul2quat(Eigen::Vector3f euler);
+Eigen::Vector4f eul2quat(const Eigen::Vector3f& euler);
 
 /**
- * @brief Transform a quaternion to a vector of euler angles (ZYX).
+ * @brief Transform a quaternion into a vector of euler angles (ZYX).
  *
- * @param quat The quaternion to be transformed [x, y, z, w]
- * @return Transformed vector of euler angles [deg]
+ * @param quat The quaternion to be transformed [x, y, z, w].
+ * @return Transformed vector of euler angles [deg].
  */
-Eigen::Vector3f quat2eul(Eigen::Vector4f quat);
+Eigen::Vector3f quat2eul(const Eigen::Vector4f& quat);
 
 /**
- * @brief Transform a rotation matrix to a quaternion.
+ * @brief Transform a rotation matrix into a quaternion.
  *
- * @param rtm The rotation matrix to be transformed (3x3)
- * @return Transformed quaternion [x, y, z, w]
+ * @param rtm The rotation matrix to be transformed (3x3).
+ * @return Transformed quaternion [x, y, z, w].
  */
-Eigen::Vector4f rotationMatrix2quat(Eigen::Matrix3f rtm);
+Eigen::Vector4f rotationMatrix2quat(const Eigen::Matrix3f& rtm);
+
+/**
+ * @brief Transform a quaternion into a rotation matrix.
+ *
+ * @param quat The quaternion to be transformed [x, y, z, w].
+ * @return Transformed rotation matrix.
+ */
+Eigen::Matrix3f quat2rotationMatrix(const Eigen::Vector4f& quat);
 
 /**
  * @brief Normalize a quaternion.
  *
- * @param quat The quaternion to be normalized [x, y, z, w]
- * @return True if the operation succeeded or not
+ * @param quat The quaternion to be normalized [x, y, z, w].
+ * @return True if the operation succeeded or not.
  */
 bool quatNormalize(Eigen::Vector4f& quat);
 
 /**
  * @brief Compute the product of two quaternions.
  *
- * @param q1 First factor [x, y, z, w]
- * @param q2 Second factor [x, y, z, w]
- * @return The resulting quaternions product [x, y, z, w]
+ * @param q1 First factor [x, y, z, w].
+ * @param q2 Second factor [x, y, z, w].
+ * @return The resulting quaternions product [x, y, z, w].
  */
-Eigen::Vector4f quatProd(const Eigen::Vector4f q1, const Eigen::Vector4f q2);
+Eigen::Vector4f quatProd(const Eigen::Vector4f& q1, const Eigen::Vector4f& q2);
 
 };  // namespace SkyQuaternion
 

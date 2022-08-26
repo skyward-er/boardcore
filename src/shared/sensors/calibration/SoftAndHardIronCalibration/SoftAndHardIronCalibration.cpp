@@ -133,15 +133,15 @@ SoftAndHardIronCorrector SoftAndHardIronCalibration::computeResult()
 void operator<<(Eigen::Matrix<float, 3, 2>& lhs,
                 const SoftAndHardIronCorrector& rhs)
 {
-    lhs.col(0) = rhs.getOffset();
     lhs.col(0) = rhs.getGain();
+    lhs.col(1) = rhs.getOffset();
 }
 
 void operator<<(SoftAndHardIronCorrector& lhs,
                 const Eigen::Matrix<float, 3, 2>& rhs)
 {
-    lhs.setOffset(rhs.col(0));
-    lhs.setGain(rhs.col(1));
+    lhs.setGain(rhs.col(0));
+    lhs.setOffset(rhs.col(1));
 }
 
 void operator>>(const Eigen::Matrix<float, 3, 2>& lhs,

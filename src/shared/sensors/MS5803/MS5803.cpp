@@ -36,25 +36,21 @@ MS5803::MS5803(SPIBusInterface& spiBus, miosix::GpioPin cs,
 
 bool MS5803::init()
 {
-    SPITransaction transaction{spiSlave};
+    SPITransaction transaction{spiSlave, SPITransaction::WriteBit::DISABLED};
 
     // Read calibration data
-    calibrationData.sens =
-        readReg(transaction, REG_PROM_READ_MASK | REG_PROM_SENS_MASK);
-    calibrationData.off =
-        readReg(transaction, REG_PROM_READ_MASK | REG_PROM_OFF_MASK);
-    calibrationData.tcs =
-        readReg(transaction, REG_PROM_READ_MASK | REG_PROM_TCS_MASK);
-    calibrationData.tco =
-        readReg(transaction, REG_PROM_READ_MASK | REG_PROM_TCO_MASK);
-    calibrationData.tref =
-        readReg(transaction, REG_PROM_READ_MASK | REG_PROM_TREF_MASK);
-    calibrationData.tempsens =
-        readReg(transaction, REG_PROM_READ_MASK | REG_PROM_TEMPSENS_MASK);
+    calibrationData.sens     = readReg(transaction, REG_PROM_SENS_MASK);
+    calibrationData.off      = readReg(transaction, REG_PROM_OFF_MASK);
+    calibrationData.tcs      = readReg(transaction, REG_PROM_TCS_MASK);
+    calibrationData.tco      = readReg(transaction, REG_PROM_TCO_MASK);
+    calibrationData.tref     = readReg(transaction, REG_PROM_TREF_MASK);
+    calibrationData.tempsens = readReg(transaction, REG_PROM_TEMPSENS_MASK);
 
-    LOG_INFO(logger, "Init: off={}, tcs={}, tco={}, tref={}, tsens={}",
-             calibrationData.off, calibrationData.tcs, calibrationData.tco,
-             calibrationData.tref, calibrationData.tempsens);
+    LOG_INFO(
+        logger,
+        "sens={:X}, off={:X}, tcs={:X}, tco={:X}, tref={:X}, tempsens={:X}",
+        calibrationData.sens, calibrationData.off, calibrationData.tcs,
+        calibrationData.tco, calibrationData.tref, calibrationData.tempsens);
 
     return true;
 }
@@ -63,7 +59,7 @@ bool MS5803::selfTest() { return true; }
 
 MS5803Data MS5803::sampleImpl()
 {
-    SPITransaction transaction{spiSlave};
+    SPITransaction transaction{spiSlave, SPITransaction::WriteBit::DISABLED};
 
     uint8_t buffer[3];
 
@@ -79,23 +75,18 @@ MS5803Data MS5803::sampleImpl()
         case STATE_SAMPLED_TEMP:
         {
             // Read back the sampled temperature
-            transaction.writeRegisters(REG_ADC_READ, buffer, 3);
+            transaction.readRegisters(REG_ADC_READ, buffer, 3);
 
             uint32_t tmpRawTemperature = (uint32_t)buffer[2] |
                                          ((uint32_t)buffer[1] << 8) |
                                          ((uint32_t)buffer[0] << 16);
-            lastTemperatureTimestamp =
-                TimestampTimer::getInstance().getTimestamp();
+            lastTemperatureTimestamp = TimestampTimer::getTimestamp();
 
             // Check if the value is valid
             if (tmpRawTemperature != 0)
-            {
                 rawTemperature = tmpRawTemperature;
-            }
             else
-            {
                 LOG_ERR(logger, "The read raw temperature isn't valid");
-            }
 
             // Begin pressure sampling
             transaction.write(static_cast<uint8_t>(REG_CONVERT_D1_4096));
@@ -113,16 +104,11 @@ MS5803Data MS5803::sampleImpl()
 
             // Check if the value is valid
             if (tmpRawPressure != 0)
-            {
                 rawPressure = tmpRawPressure;
-            }
             else
-            {
                 LOG_ERR(logger, "The read raw pressure isn't valid");
-            }
 
             lastSample = updateData();
-
             // Check whether to read the pressure or the temperature
             tempCounter++;
             if (tempCounter % temperatureDivider == 0)
@@ -166,9 +152,7 @@ MS5803Data MS5803::updateData()
         sens2 = (7 * (temp - 2000) * (temp - 2000)) >> 3;
 
         if (temp < -1500)
-        {
             sens2 = sens2 + 2 * (temp + 1500) * (temp + 1500);
-        }
     }
     else if (temp >= 4500)
     {
@@ -185,7 +169,7 @@ MS5803Data MS5803::updateData()
     // Pressure in Pascal
     float temp_ = temp / 100.0f;
 
-    return MS5803Data(TimestampTimer::getInstance().getTimestamp(), pressure,
+    return MS5803Data(TimestampTimer::getTimestamp(), pressure,
                       lastTemperatureTimestamp, temp_);
 }
 

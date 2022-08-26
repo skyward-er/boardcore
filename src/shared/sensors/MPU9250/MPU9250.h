@@ -37,7 +37,7 @@ namespace Boardcore
 class MPU9250 : public Sensor<MPU9250Data>
 {
 public:
-    enum MPU9250GyroFSR : uint8_t
+    enum GyroFSR : uint8_t
     {
         GYRO_FSR_250DPS  = 0x0,
         GYRO_FSR_500DPS  = 0x08,
@@ -45,7 +45,7 @@ public:
         GYRO_FSR_2000DPS = 0x18
     };
 
-    enum MPU9250AccelFSR : uint8_t
+    enum AccelFSR : uint8_t
     {
         ACCEL_FSR_2G  = 0x0,
         ACCEL_FSR_4G  = 0x08,
@@ -53,7 +53,7 @@ public:
         ACCEL_FSR_16G = 0x18
     };
 
-    enum MPU9250I2CMasterInterfaceClock : uint8_t
+    enum I2CMasterInterfaceClock : uint8_t
     {
         I2C_MST_IF_CLK_348 = 0x0,
         I2C_MST_IF_CLK_333 = 0x1,
@@ -192,13 +192,11 @@ public:
      * @param highSpeedSpiClockDivider Clocl diver for 20MHz SPI communication
      * with the device
      */
-    explicit MPU9250(
-        SPIBusInterface& bus, miosix::GpioPin cs,
-        SPIBusConfig config                        = getDefaultSPIConfig(),
-        unsigned short samplingRate                = 100,
-        MPU9250GyroFSR gyroFsr                     = GYRO_FSR_250DPS,
-        MPU9250AccelFSR accelFsr                   = ACCEL_FSR_2G,
-        SPI::ClockDivider highSpeedSpiClockDivider = SPI::ClockDivider::DIV_4);
+    explicit MPU9250(SPIBusInterface& bus, miosix::GpioPin cs,
+                     SPIBusConfig config         = getDefaultSPIConfig(),
+                     unsigned short samplingRate = 100,
+                     GyroFSR gyroFsr             = GYRO_FSR_250DPS,
+                     AccelFSR accelFsr           = ACCEL_FSR_2G);
 
     /**
      * @brief Constructs the default config for SPI Bus.
@@ -234,14 +232,14 @@ private:
      *
      * @param fsr Desired full-scale range
      */
-    void setGyroFsr(MPU9250GyroFSR fs);
+    void setGyroFsr(GyroFSR fs);
 
     /**
      * @brief Set the accel full-scale range.
      *
      * @param fsr Desired full-scale range
      */
-    void setAccelFsr(MPU9250AccelFSR fs);
+    void setAccelFsr(AccelFSR fs);
 
     /**
      * @brief Set sampling rate.
@@ -254,7 +252,7 @@ private:
 
     void enableMpuI2CMasterInterface();
 
-    void setMpuI2CMasterInterfaceClock(MPU9250I2CMasterInterfaceClock clk);
+    void setMpuI2CMasterInterfaceClock(I2CMasterInterfaceClock clk);
 
     /**
      * @brief Setup the I2C slave (0-3) for read operations
@@ -325,11 +323,9 @@ private:
 
     const unsigned short samplingRate;
 
-    const MPU9250GyroFSR gyroFsr;
-    const MPU9250AccelFSR accelFsr;
+    const GyroFSR gyroFsr;
+    const AccelFSR accelFsr;
     float magSensAdjCoeff[3];  // Page 32 on datasheet
-
-    const SPI::ClockDivider highSpeedSpiClockDivider;
 
     bool initialized = false;  // Whether the sensor has been initialized
 

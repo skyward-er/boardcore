@@ -55,9 +55,7 @@ bool Logger::start()
         filename = getFileName(fileNumber);
         struct stat st;
         if (stat(filename.c_str(), &st) != 0)
-        {
             break;
-        }
 
         if (fileNumber == maxFilenameNumber - 1)
             TRACE("Too many log files, appending data to last\n");
@@ -124,6 +122,8 @@ void Logger::stop()
 
     fclose(file);
 
+    stats = {};
+
     fileNumber = -1;  // Reset the fileNumber to an invalid value
 }
 
@@ -138,21 +138,33 @@ int Logger::getCurrentLogNumber() { return fileNumber; }
 
 string Logger::getCurrentFileName() { return getFileName(fileNumber); }
 
-LoggerStats Logger::getLoggerStats()
+LoggerStats Logger::getStats()
 {
-    stats.timestamp = TimestampTimer::getInstance().getTimestamp();
+    stats.timestamp = TimestampTimer::getTimestamp();
     stats.logNumber = fileNumber;
     return stats;
+}
+
+void Logger::resetStats()
+{
+    // Keep some of the statistics persistent
+    int buffersWritten = stats.buffersWritten;
+    int writesFailed   = stats.writesFailed;
+
+    // Reset
+    stats = {};
+
+    // Put back
+    stats.buffersWritten = buffersWritten;
+    stats.writesFailed   = writesFailed;
 }
 
 bool Logger::isStarted() const { return started; }
 
 void Logger::logStats()
 {
-    log(getLoggerStats());
-
-    // Reset the logger stats after they have been logger
-    stats = LoggerStats();
+    log(getStats());
+    resetStats();
 }
 
 Logger::Logger()
@@ -290,8 +302,9 @@ void Logger::writeThread()
                 stats.buffersWritten++;
 
             timer.stop();
-            stats.writeTime    = timer.interval();
-            stats.maxWriteTime = max(stats.maxWriteTime, stats.writeTime);
+            stats.averageWriteTime = timer.interval();
+            stats.maxWriteTime =
+                max(stats.maxWriteTime, stats.averageWriteTime);
 
             {
                 Lock<FastMutex> l(mutex);
