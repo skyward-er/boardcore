@@ -117,7 +117,7 @@ protected:
      *
      * @param event The event to handle.
      */
-    void handleEvent(const Event& event)
+    void handleEvent(const Event& event) override
     {
         // NOTE: here state == temp
 
