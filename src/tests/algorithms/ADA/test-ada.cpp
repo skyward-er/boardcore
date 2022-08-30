@@ -83,7 +83,8 @@ ADA::KalmanFilter::KalmanConfig getADAKalmanConfig()
 
 int main()
 {
-    ada = new ADA(getADAReferenceValues(), getADAKalmanConfig());
+    ada = new ADA(getADAKalmanConfig());
+    ada->setReferenceValues(getADAReferenceValues());
 
     printf("Starting, data duration: %f\n", reference.getDataDuration() / 1e6);
 

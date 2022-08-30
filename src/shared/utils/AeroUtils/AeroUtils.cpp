@@ -51,14 +51,12 @@ float relDensity(float pressure, float pressureRef, float altitudeRef,
 float mslPressure(float pressureRef, float temperatureRef, float altitudeRef)
 {
     using namespace Constants;
-    float T0 = mslTemperature(temperatureRef, altitudeRef);
-
-    return pressureRef / powf(1 - a * altitudeRef / T0, n);
+    return pressureRef * powf(1 - a * altitudeRef / temperatureRef, n);
 }
 
 float mslTemperature(float temperatureRef, float altitudeRef)
 {
-    return temperatureRef + (altitudeRef * Constants::a);
+    return temperatureRef - Constants::a * altitudeRef;
 }
 
 float verticalSpeed(float p, float dpDt, float pRef, float tRef)

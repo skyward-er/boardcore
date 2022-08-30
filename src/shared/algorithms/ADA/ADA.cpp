@@ -28,9 +28,8 @@
 namespace Boardcore
 {
 
-ADA::ADA(const ReferenceValues reference,
-         const KalmanFilter::KalmanConfig kalmanConfig)
-    : reference(reference), filter(kalmanConfig), state()
+ADA::ADA(const KalmanFilter::KalmanConfig kalmanConfig)
+    : filter(kalmanConfig), state()
 {
 }
 
@@ -43,10 +42,10 @@ void ADA::update(const float pressure)
     filter.correct(KalmanFilter::CVectorP{pressure});
 
     // Convert filter data to altitudes and speeds
-    state.timestamp     = TimestampTimer::getTimestamp();
-    state.mslAltitude   = Aeroutils::relAltitude(pressure, reference.pressure,
-                                                 reference.temperature);
-    state.aglAltitude   = state.mslAltitude - reference.altitude;
+    state.timestamp   = TimestampTimer::getTimestamp();
+    state.mslAltitude = Aeroutils::relAltitude(pressure, reference.mslPressure,
+                                               reference.mslTemperature);
+    state.aglAltitude = state.mslAltitude - reference.refAltitude;
     state.verticalSpeed = Aeroutils::verticalSpeed(
         filterState(0), filterState(1), reference.mslPressure,
         reference.mslTemperature);
