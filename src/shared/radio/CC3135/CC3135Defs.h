@@ -46,12 +46,14 @@ enum OpCode : uint16_t
     OPCODE_DEVICE_INITCOMPLETE                  = 0x0008,
     OPCODE_DEVICE_ABORT                         = 0x000C,
     OPCODE_DEVICE_DEVICEASYNCDUMMY              = 0x0063,
+    OPCODE_DEVICE_DEVICE_ASYNC_GENERAL_ERROR    = 0x0078,
     OPCODE_DEVICE_DEVICEGETRESPONSE             = 0x0466,
     OPCODE_DEVICE_DEVICESETRESPONSE             = 0x04B7,
     OPCODE_WLAN_PROVISIONING_STATUS_ASYNC_EVENT = 0x089A,  //< ????
     OPCODE_WLAN_WLANDISCONNECTRESPONSE          = 0x0C81,
     OPCODE_WLAN_POLICYSETRESPONSE               = 0x0C86,
     OPCODE_WLAN_SET_MODE_RESPONSE               = 0x0CB4,
+    OPCODE_WLAN_CFG_SET_RESPONSE                = 0x0CB5,
     OPCODE_SOCKET_RECVASYNCRESPONSE             = 0x100A,
     OPCODE_SOCKET_SOCKETRESPONSE                = 0x1401,
     OPCODE_SOCKET_CLOSERESPONSE                 = 0x1402,
@@ -61,6 +63,7 @@ enum OpCode : uint16_t
     OPCODE_WLAN_POLICYSETCOMMAND                = 0x8C86,
     OPCODE_WLAN_WLANDISCONNECTCOMMAND           = 0x8C81,
     OPCODE_WLAN_SET_MODE                        = 0x8CB4,
+    OPCODE_WLAN_CFG_SET                         = 0x8CB5,
     OPCODE_SOCKET_SOCKET                        = 0x9401,
     OPCODE_SOCKET_CLOSE                         = 0x9402,
     OPCODE_SOCKET_RECV                          = 0x940A,
@@ -80,6 +83,8 @@ inline const char *opToStr(OpCode op)
             return "OPCODE_DEVICE_ABORT";
         case OpCode::OPCODE_DEVICE_DEVICEASYNCDUMMY:
             return "OPCODE_DEVICE_DEVICEASYNCDUMMY";
+        case OpCode::OPCODE_DEVICE_DEVICE_ASYNC_GENERAL_ERROR:
+            return "OPCODE_DEVICE_DEVICE_ASYNC_GENERAL_ERROR";
         case OpCode::OPCODE_DEVICE_DEVICEGETRESPONSE:
             return "OPCODE_DEVICE_DEVICEGETRESPONSE";
         case OpCode::OPCODE_DEVICE_DEVICESETRESPONSE:
@@ -94,6 +99,8 @@ inline const char *opToStr(OpCode op)
             return "OPCODE_WLAN_POLICYSETRESPONSE";
         case OpCode::OPCODE_WLAN_SET_MODE_RESPONSE:
             return "OPCODE_WLAN_SET_MODE_RESPONSE";
+        case OpCode::OPCODE_WLAN_CFG_SET_RESPONSE:
+            return "OPCODE_WLAN_CFG_SET_RESPONSE";
         case OpCode::OPCODE_SOCKET_RECVASYNCRESPONSE:
             return "OPCODE_SOCKET_RECVASYNCRESPONSE";
         case OpCode::OPCODE_SOCKET_SOCKETRESPONSE:
@@ -110,6 +117,8 @@ inline const char *opToStr(OpCode op)
             return "OPCODE_WLAN_WLANDISCONNECTCOMMAND";
         case OpCode::OPCODE_WLAN_SET_MODE:
             return "OPCODE_WLAN_SET_MODE";
+        case OpCode::OPCODE_WLAN_CFG_SET:
+            return "OPCODE_WLAN_CFG_SET";
         case OpCode::OPCODE_SOCKET_SOCKET:
             return "OPCODE_SOCKET_SOCKET";
         case OpCode::OPCODE_SOCKET_CLOSE:
@@ -183,6 +192,26 @@ struct DeviceSetGet
 
 constexpr uint16_t DEVICE_GENERAL         = 1;
 constexpr uint16_t DEVICE_GENERAL_VERSION = 12;
+
+constexpr uint16_t DEVICE_STATUS              = 2;
+constexpr uint16_t DEVICE_EVENT_CLASS_DEVICE  = 1;
+constexpr uint16_t DEVICE_EVENT_CLASS_WLAN    = 2;
+constexpr uint16_t DEVICE_EVENT_CLASS_BSD     = 3;
+constexpr uint16_t DEVICE_EVENT_CLASS_NETAPP  = 4;
+constexpr uint16_t DEVICE_EVENT_CLASS_NETCFG  = 5;
+constexpr uint16_t DEVICE_EVENT_CLASS_FS      = 6;
+constexpr uint16_t DEVICE_EVENT_CLASS_NETUTIL = 7;
+
+struct WlanCfgSetGet
+{
+    uint16_t status;
+    uint16_t config_id;
+    uint16_t option;
+    uint16_t config_len;
+};
+
+constexpr uint16_t WLAN_CFG_AP_ID      = 0;
+constexpr uint16_t WLAN_AP_OPT_CHANNEL = 3;
 
 struct WlanSetMode
 {

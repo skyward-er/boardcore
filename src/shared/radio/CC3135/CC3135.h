@@ -51,6 +51,7 @@ public:
         SYNC_TIMEOUT,               //< The NWP did not respond.
         GENERIC_ERROR,              //< Generic error class.
         WLAN_ALREADY_DISCONNECTED,  //< Wlan is already disconnected.
+        DEVICE_LOCKED,              //< Device is locked
     };
 
     explicit CC3135(std::unique_ptr<ICC3135Iface> &&iface);
@@ -68,6 +69,9 @@ public:
     CC3135::Error dummySend();
 
     CC3135::Error prepareForReset();
+    CC3135::Error setApChannel(uint8_t ch);
+
+    CC3135::Error getStatus(uint16_t mask, uint8_t &status);
 
     static const char *errorToStr(Error error);
 
@@ -110,7 +114,9 @@ private:
 
     // Part of the device API
 
-    CC3135::Error devigeGet(uint8_t set_id, uint8_t option, Buffer value);
+    CC3135::Error deviceGet(uint16_t set_id, uint16_t option, Buffer value);
+
+    CC3135::Error wlanSet(uint16_t config_id, uint16_t option, Buffer value);
 
     CC3135::Error wlanSetMode(CC3135Defs::Mode mode);
 

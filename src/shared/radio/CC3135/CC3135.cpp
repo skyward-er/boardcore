@@ -41,13 +41,13 @@
 using namespace Boardcore::CC3135Defs;
 using namespace miosix;
 
-constexpr uint8_t TEST_CHANNEL = 6;
+constexpr uint8_t TEST_CHANNEL = 64;
 
 namespace Boardcore
 {
 
 CC3135::CC3135(std::unique_ptr<ICC3135Iface> &&iface)
-    : iface(std::move(iface)), sd(-1)
+    : iface(std::move(iface)), sd(128)
 {
     irq_wait_thread = thread;
 }
@@ -78,8 +78,7 @@ CC3135::Error CC3135::init(bool wait_for_init)
     this->start();
 
     // Setup transceiver mode
-    TRY(setupTransceiver());
-    TRY(startRecv());
+    // TRY(setupTransceiver());
 
     return Error::NO_ERROR;
 }
@@ -88,6 +87,20 @@ CC3135::Error CC3135::prepareForReset()
 {
     // We need the device in station mode
     TRY(wlanSetMode(ROLE_STA));
+
+    return Error::NO_ERROR;
+}
+
+CC3135::Error CC3135::setApChannel(uint8_t ch)
+{
+    TRY(wlanSet(WLAN_CFG_AP_ID, WLAN_AP_OPT_CHANNEL, Buffer::from(&ch)));
+
+    return Error::NO_ERROR;
+}
+
+CC3135::Error CC3135::getStatus(uint16_t mask, uint8_t &status)
+{
+    TRY(deviceGet(DEVICE_STATUS, mask, Buffer::from<uint8_t>(&status)));
 
     return Error::NO_ERROR;
 }
@@ -142,21 +155,38 @@ CC3135::Error CC3135::setupTransceiver()
 CC3135::Error CC3135::getVersion(DeviceVersion &version)
 {
     version = {};
-    return devigeGet(DEVICE_GENERAL, DEVICE_GENERAL_VERSION,
+    return deviceGet(DEVICE_GENERAL, DEVICE_GENERAL_VERSION,
                      Buffer::from<DeviceVersion>(&version));
 }
 
-CC3135::Error CC3135::devigeGet(uint8_t set_id, uint8_t option, Buffer value)
+CC3135::Error CC3135::deviceGet(uint16_t set_id, uint16_t option, Buffer value)
 {
     DeviceSetGet tx_command  = {};
     tx_command.device_set_id = set_id;
     tx_command.option        = option;
+    tx_command.config_len    = value.len;
 
     DeviceSetGet rx_command = {};
 
     TRY(inoutPacketSync(OPCODE_DEVICE_DEVICEGET, Buffer::from(&tx_command),
                         Buffer::null(), OPCODE_DEVICE_DEVICEGETRESPONSE,
                         Buffer::from(&rx_command), value));
+
+    return errorFromStatus(rx_command.status);
+}
+
+CC3135::Error CC3135::wlanSet(uint16_t config_id, uint16_t option, Buffer value)
+{
+    WlanCfgSetGet tx_command = {};
+    tx_command.config_id     = config_id;
+    tx_command.option        = option;
+    tx_command.config_len    = value.len;
+
+    BasicResponse rx_command = {};
+
+    TRY(inoutPacketSync(OPCODE_WLAN_CFG_SET, Buffer::from(&tx_command), value,
+                        OPCODE_WLAN_CFG_SET_RESPONSE, Buffer::from(&rx_command),
+                        Buffer::null()));
 
     return errorFromStatus(rx_command.status);
 }
@@ -356,28 +386,44 @@ void CC3135::defaultPacketHandler(CC3135Defs::ResponseHeader header)
 
             safeRead(len, Buffer::from(&rx_command));
 
+            // if (rx_command.status_or_len < 0)
+            //     noprintf("Status: %d\n", rx_command.status_or_len);
+
             // 8 byte proprietary header, format information?
             uint64_t header2;
             safeRead(len, Buffer::from(&header2));
             rx_command.status_or_len -= 8;
 
-            /*
-            notprintf("Header: %8x\n", header2);
+            // noprintf("Header: %8llx\n", header2);
+            //
+            // if (rx_command.status_or_len >= 0)
+            // {
+            //     noprintf("%d %d\n", len, rx_command.status_or_len);
+            //
+            //     uint8_t response[len];
+            //     safeRead(len, Buffer{response, len});
+            //
+            //     for (int i = 0; i < rx_command.status_or_len; i++)
+            //     {
+            //         noprintf("%2x ", response[i]);
+            //     }
+            //     noprintf("\n");
+            //
+            //     while (1)
+            //         ;
+            // }
 
-            if (rx_command.status_or_len >= 0)
-            {
-                notprintf("%d %d\n", len, rx_command.status_or_len);
+            break;
+        }
+        case OPCODE_DEVICE_DEVICE_ASYNC_GENERAL_ERROR:
+        {
+            BasicResponse rx_command = {};
 
-                uint8_t response[len];
-                safeRead(len, Buffer{response, len});
+            safeRead(len, Buffer::from(&rx_command));
 
-                for (int i = 0; i < rx_command.status_or_len; i++)
-                {
-                    notprintf("%2x ", response[i]);
-                }
-                notprintf("\n");
-            }
-            */
+            TRACE("[cc3135] Async general error occurred!\n");
+            TRACE("- Status: %d\n", rx_command.status);
+            TRACE("- Source: %d\n", rx_command.sender);
 
             break;
         }
@@ -483,10 +529,24 @@ CC3135::Error CC3135::writePacket(OpCode opcode, CC3135::Buffer command,
     TRY(writeHeader(&header));
 
     if (command.len > 0)
+    {
         iface->write(command.ptr, command.len);
+        len -= command.len;
+    }
 
     if (payload.len > 0)
+    {
         iface->write(payload.ptr, payload.len);
+        len -= payload.len;
+    }
+
+    // Write final padding
+    while (len > 0)
+    {
+        uint8_t buf[] = {0, 0, 0, 0};
+        iface->write(buf, std::min(len, (size_t)4));
+        len -= std::min(len, (size_t)4);
+    }
 
     return Error::NO_ERROR;
 }
@@ -510,6 +570,11 @@ CC3135::Error CC3135::readHeader(ResponseHeader *header)
 
     // 2. Read initial data from the device
     iface->read(&buf[0], 8);
+
+    // for(int i = 0; i < 8; i++)
+    //     noprintf("%x ", buf[i]);
+    //
+    // noprintf("\n");
 
     /*
     Here the TI driver does some weird stuff.
@@ -549,6 +614,11 @@ CC3135::Error CC3135::readHeader(ResponseHeader *header)
         {
             memmove(&buf[0], &buf[4], 4);
             iface->read(&buf[4], 4);
+
+            // for(int i = 4; i < 8; i++)
+            //     noprintf("%x ", buf[i]);
+            //
+            // noprintf("\n");
         }
     }
 
@@ -630,6 +700,8 @@ CC3135::Error CC3135::errorFromStatus(int16_t status)
     {
         case -2071:
             return Error::WLAN_ALREADY_DISCONNECTED;
+        case -14343:
+            return Error::DEVICE_LOCKED;
         default:
             return Error::GENERIC_ERROR;
     }
@@ -645,6 +717,8 @@ const char *CC3135::errorToStr(Error error)
             return "SYNC_TIMEOUT";
         case Error::GENERIC_ERROR:
             return "GENERIC_ERROR";
+        case Error::DEVICE_LOCKED:
+            return "DEVICE_LOCKED";
         case Error::WLAN_ALREADY_DISCONNECTED:
             return "WLAN_ALREADY_DISCONNECTED";
         default:

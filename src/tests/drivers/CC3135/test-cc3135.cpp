@@ -76,7 +76,7 @@ using irq = Gpio<GPIOA_BASE, 4>;
 using hib = Gpio<GPIOA_BASE, 5>;
 
 #define CC3135_UART USART2
-#define CC3135_HIB
+// #define CC3135_HIB
 #else
 using sck  = Gpio<GPIOA_BASE, 5>;
 using miso = Gpio<GPIOB_BASE, 4>;
@@ -211,10 +211,13 @@ int main()
     {
         printf("[cc3135] Failed to start cc3135 (error: %s), retrying...\n",
                CC3135::errorToStr(result));
-        Thread::sleep(4000);
+        Thread::sleep(1000);
 
         miosix::reboot();
     }
+
+    // cc3135->prepareForReset();
+    // cc3135->setApChannel(100);
 
     printf("[cc3135] Initialization complete!\n");
 
@@ -234,27 +237,31 @@ int main()
 
     while (true)
     {
-        cc3135->startRecv();
-        Thread::sleep(1000);
+        // cc3135->dummySend();
+        // cc3135->startRecv();
+
+        // CHECK(cc3135->getVersion(version));
+        // printf(
+        //     "[cc3135] Chip Id: %lx\n"
+        //     "[cc3135] Fw version: %u.%u.%u.%u\n"
+        //     "[cc3135] Phy version: %u.%u.%u.%u\n"
+        //     "[cc3135] Nwp version: %u.%u.%u.%u\n"
+        //     "[cc3135] Rom version: %x\n",
+        //     version.chip_id, version.fw_version[0], version.fw_version[1],
+        //     version.fw_version[2], version.fw_version[3],
+        //     version.phy_version[0], version.phy_version[1],
+        //     version.phy_version[2], version.phy_version[3],
+        //     version.nwp_version[0], version.nwp_version[1],
+        //     version.nwp_version[2], version.nwp_version[3],
+        //     version.rom_version);
+
         printf("[cc3135] Looping\n");
 
-        cc3135->dummySend();
-
-        CHECK(cc3135->getVersion(version));
-        printf(
-            "[cc3135] Chip Id: %lx\n"
-            "[cc3135] Fw version: %u.%u.%u.%u\n"
-            "[cc3135] Phy version: %u.%u.%u.%u\n"
-            "[cc3135] Nwp version: %u.%u.%u.%u\n"
-            "[cc3135] Rom version: %x\n",
-            version.chip_id, version.fw_version[0], version.fw_version[1],
-            version.fw_version[2], version.fw_version[3],
-            version.phy_version[0], version.phy_version[1],
-            version.phy_version[2], version.phy_version[3],
-            version.nwp_version[0], version.nwp_version[1],
-            version.nwp_version[2], version.nwp_version[3],
-            version.rom_version);
+        Thread::sleep(1000);
     }
+
+    while (true)
+        ;
 
     // Thread::sleep(3000);
     // miosix::reboot();
