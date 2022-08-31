@@ -59,6 +59,10 @@ public:
 
     CC3135::Error init(bool wait_for_init);
 
+    CC3135::Error deviceStop();
+
+    CC3135::Error factoryRestore(CC3135Defs::FsRetToFactoryOp op);
+
     void handleIrq();
 
     CC3135::Error getVersion(CC3135Defs::DeviceVersion &version);
@@ -71,7 +75,16 @@ public:
     CC3135::Error prepareForReset();
     CC3135::Error setApChannel(uint8_t ch);
 
-    CC3135::Error getStatus(uint16_t mask, uint8_t &status);
+    CC3135::Error deviceStatStart();
+    CC3135::Error deviceStatStop();
+    CC3135::Error deviceStatGet(CC3135Defs::DeviceGetStat &stats);
+
+    // Not working :(
+    // The device WON'T respond to this ones, not even an error, why?
+    // The comunication is not broken, it will respond to other commands, just
+    // not this one
+    CC3135::Error getStatus(uint16_t mask, uint32_t &status);
+    CC3135::Error deviceStatGetPm(CC3135Defs::DeviceGetPmStat &stats);
 
     static const char *errorToStr(Error error);
 

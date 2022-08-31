@@ -46,28 +46,39 @@ enum OpCode : uint16_t
     OPCODE_DEVICE_INITCOMPLETE                  = 0x0008,
     OPCODE_DEVICE_ABORT                         = 0x000C,
     OPCODE_DEVICE_DEVICEASYNCDUMMY              = 0x0063,
+    OPCODE_DEVICE_STOP_ASYNC_RESPONSE           = 0x0073,
     OPCODE_DEVICE_DEVICE_ASYNC_GENERAL_ERROR    = 0x0078,
     OPCODE_DEVICE_DEVICEGETRESPONSE             = 0x0466,
+    OPCODE_DEVICE_STOP_RESPONSE                 = 0x0473,
     OPCODE_DEVICE_DEVICESETRESPONSE             = 0x04B7,
     OPCODE_WLAN_PROVISIONING_STATUS_ASYNC_EVENT = 0x089A,  //< ????
     OPCODE_WLAN_WLANDISCONNECTRESPONSE          = 0x0C81,
     OPCODE_WLAN_POLICYSETRESPONSE               = 0x0C86,
+    OPCODE_WLAN_STARTRXSTATRESPONSE             = 0x0CAC,
+    OPCODE_WLAN_STOPRXSTATRESPONSE              = 0x0CAB,
+    OPCODE_WLAN_GETRXSTATRESPONE                = 0x0CAF,
     OPCODE_WLAN_SET_MODE_RESPONSE               = 0x0CB4,
     OPCODE_WLAN_CFG_SET_RESPONSE                = 0x0CB5,
     OPCODE_SOCKET_RECVASYNCRESPONSE             = 0x100A,
     OPCODE_SOCKET_SOCKETRESPONSE                = 0x1401,
     OPCODE_SOCKET_CLOSERESPONSE                 = 0x1402,
+    OPCODE_NVMEM_NVMEMFILESYSTEMCONTROLRESPONSE = 0x244B,
     OPCODE_NETAPP_IPACQUIRED                    = 0x1825,  //< ????
     OPCODE_DEVICE_DEVICEGET                     = 0x8466,
+    OPCODE_DEVICE_STOP_COMMAND                  = 0x8473,
     OPCODE_DEVICE_DEVICESET                     = 0x84B7,
     OPCODE_WLAN_POLICYSETCOMMAND                = 0x8C86,
     OPCODE_WLAN_WLANDISCONNECTCOMMAND           = 0x8C81,
+    OPCODE_WLAN_STARTRXSTATCOMMAND              = 0x8CAC,
+    OPCODE_WLAN_STOPRXSTATCOMMAND               = 0x8CAB,
+    OPCODE_WLAN_GETRXSTATCOMMAND                = 0x8CAF,
     OPCODE_WLAN_SET_MODE                        = 0x8CB4,
     OPCODE_WLAN_CFG_SET                         = 0x8CB5,
     OPCODE_SOCKET_SOCKET                        = 0x9401,
     OPCODE_SOCKET_CLOSE                         = 0x9402,
     OPCODE_SOCKET_RECV                          = 0x940A,
     OPCODE_SOCKET_SEND                          = 0x940C,
+    OPCODE_NVMEM_NVMEMFILESYSTEMCONTROLCOMMAND  = 0xA44B,
 };
 
 //! Is this message synchronous?
@@ -83,10 +94,14 @@ inline const char *opToStr(OpCode op)
             return "OPCODE_DEVICE_ABORT";
         case OpCode::OPCODE_DEVICE_DEVICEASYNCDUMMY:
             return "OPCODE_DEVICE_DEVICEASYNCDUMMY";
+        case OpCode::OPCODE_DEVICE_STOP_ASYNC_RESPONSE:
+            return "OPCODE_DEVICE_STOP_ASYNC_RESPONSE";
         case OpCode::OPCODE_DEVICE_DEVICE_ASYNC_GENERAL_ERROR:
             return "OPCODE_DEVICE_DEVICE_ASYNC_GENERAL_ERROR";
         case OpCode::OPCODE_DEVICE_DEVICEGETRESPONSE:
             return "OPCODE_DEVICE_DEVICEGETRESPONSE";
+        case OpCode::OPCODE_DEVICE_STOP_RESPONSE:
+            return "OPCODE_DEVICE_STOP_RESPONSE";
         case OpCode::OPCODE_DEVICE_DEVICESETRESPONSE:
             return "OPCODE_DEVICE_DEVICESETRESPONSE";
         case OpCode::OPCODE_NETAPP_IPACQUIRED:
@@ -97,6 +112,10 @@ inline const char *opToStr(OpCode op)
             return "OPCODE_WLAN_WLANDISCONNECTRESPONSE";
         case OpCode::OPCODE_WLAN_POLICYSETRESPONSE:
             return "OPCODE_WLAN_POLICYSETRESPONSE";
+        case OpCode::OPCODE_WLAN_STARTRXSTATRESPONSE:
+            return "OPCODE_WLAN_STARTRXSTATRESPONSE";
+        case OpCode::OPCODE_WLAN_GETRXSTATRESPONE:
+            return "OPCODE_WLAN_GETRXSTATRESPONE";
         case OpCode::OPCODE_WLAN_SET_MODE_RESPONSE:
             return "OPCODE_WLAN_SET_MODE_RESPONSE";
         case OpCode::OPCODE_WLAN_CFG_SET_RESPONSE:
@@ -107,14 +126,22 @@ inline const char *opToStr(OpCode op)
             return "OPCODE_SOCKET_SOCKETRESPONSE";
         case OpCode::OPCODE_SOCKET_CLOSERESPONSE:
             return "OPCODE_SOCKET_CLOSERESPONSE";
+        case OpCode::OPCODE_NVMEM_NVMEMFILESYSTEMCONTROLRESPONSE:
+            return "OPCODE_NVMEM_NVMEMFILESYSTEMCONTROLRESPONSE";
         case OpCode::OPCODE_DEVICE_DEVICEGET:
             return "OPCODE_DEVICE_DEVICEGET";
+        case OpCode::OPCODE_DEVICE_STOP_COMMAND:
+            return "OPCODE_DEVICE_STOP_COMMAND";
         case OpCode::OPCODE_DEVICE_DEVICESET:
             return "OPCODE_DEVICE_DEVICESET";
         case OpCode::OPCODE_WLAN_POLICYSETCOMMAND:
             return "OPCODE_WLAN_POLICYSETCOMMAND";
         case OpCode::OPCODE_WLAN_WLANDISCONNECTCOMMAND:
             return "OPCODE_WLAN_WLANDISCONNECTCOMMAND";
+        case OpCode::OPCODE_WLAN_STARTRXSTATCOMMAND:
+            return "OPCODE_WLAN_STARTRXSTATCOMMAND";
+        case OpCode::OPCODE_WLAN_GETRXSTATCOMMAND:
+            return "OPCODE_WLAN_GETRXSTATCOMMAND";
         case OpCode::OPCODE_WLAN_SET_MODE:
             return "OPCODE_WLAN_SET_MODE";
         case OpCode::OPCODE_WLAN_CFG_SET:
@@ -127,6 +154,8 @@ inline const char *opToStr(OpCode op)
             return "OPCODE_SOCKET_RECV";
         case OpCode::OPCODE_SOCKET_SEND:
             return "OPCODE_SOCKET_SEND";
+        case OpCode::OPCODE_NVMEM_NVMEMFILESYSTEMCONTROLCOMMAND:
+            return "OPCODE_NVMEM_NVMEMFILESYSTEMCONTROLCOMMAND";
         default:
             return "<unknown>";
     }
@@ -141,6 +170,23 @@ enum Mode : uint8_t
     ROLE_TAG      = 4
 };
 
+enum FsCtl : uint8_t
+{
+    FS_CTL_RESTORE          = 0,
+    FS_CTL_ROLLBACK         = 1,
+    FS_CTL_COMMIT           = 2,
+    FS_CTL_RENAME           = 3,
+    FS_CTL_GET_STORAGE_INFO = 5,
+    FS_CTL_BUNDLE_ROLLBACK  = 6,
+    FS_CTL_BUNDLE_COMMIT    = 7
+};
+
+enum FsRetToFactoryOp : uint32_t
+{
+    FS_FACTORY_RET_TO_IMAGE   = 0,
+    FS_FACTORY_RET_TO_DEFAULT = 2,
+};
+
 struct DeviceVersion
 {
     uint32_t chip_id;
@@ -149,6 +195,46 @@ struct DeviceVersion
     uint8_t nwp_version[4];
     uint16_t rom_version;
     uint8_t _pad[2];
+};
+
+struct DeviceGetPmStatClrOnRdTypes
+{
+    uint32_t disconnects;
+    uint32_t tx_frames_count;
+    uint32_t received_bytes_count;
+    uint8_t _pad[16];
+};
+
+struct DeviceGetPmStatAcc
+{
+    uint32_t time_mac_awake[2];
+    uint32_t time_mac_sleep[2];
+    uint32_t time_mac_listen_11b[2];
+    uint32_t time_nwp_deep_sleep[2];
+    uint32_t time_nwp_stand_by[2];
+    uint32_t time_nwp_awake[2];
+};
+
+struct DeviceGetPmStat
+{
+    DeviceGetPmStatClrOnRdTypes pm_clr_on_rd;
+    DeviceGetPmStatAcc pm_acc;
+    uint8_t _pad[16];
+    uint32_t start_timestamp;
+    uint32_t get_timestamp;
+};
+
+struct DeviceGetStat
+{
+    uint32_t received_valid_packets_number;
+    uint32_t received_fcs_error_packets_number;
+    uint32_t received_address_mismatch_packets_number;
+    int16_t average_data_ctrl_rssi;
+    int16_t average_mg_mnt_rssi;
+    uint16_t rate_histogram[20];
+    uint16_t rssi_histogram[6];
+    uint32_t start_timestamp;
+    uint32_t get_timestamp;
 };
 
 struct GenericHeader
@@ -192,6 +278,8 @@ struct DeviceSetGet
 
 constexpr uint16_t DEVICE_GENERAL         = 1;
 constexpr uint16_t DEVICE_GENERAL_VERSION = 12;
+constexpr uint16_t DEVICE_STAT_WLAN_RX    = 16;
+constexpr uint16_t DEVICE_STAT_PM         = 14;
 
 constexpr uint16_t DEVICE_STATUS              = 2;
 constexpr uint16_t DEVICE_EVENT_CLASS_DEVICE  = 1;
@@ -299,6 +387,33 @@ struct SocketResponse
     uint8_t _pad;
 };
 
+struct DeviceStop
+{
+    uint16_t timeout;
+    uint8_t _pad[2];
+};
+
+struct FsFileSysControlCommand
+{
+    uint32_t token;
+    FsCtl operation;
+    uint8_t _pad[3];
+    uint32_t file_name_length;
+    uint32_t buffer_length;
+};
+
+struct FsFileSysControlResponse
+{
+    int32_t status;
+    uint32_t token;
+    uint32_t len;
+};
+
+struct FsRetToFactoryCommand
+{
+    FsRetToFactoryOp operation;
+};
+
 enum Rate : uint16_t
 {
     RATE_1M    = 1,
@@ -346,7 +461,7 @@ inline uint16_t makeWlanRawRfTxParams(uint8_t channel, Rate rate, uint8_t power,
 
     if (channel <= MAX_2_4G_CHANNEL)
     {
-        return ((channel << CHANNEL_SHIFT) | (BAND_2_4G << BAND_SHIFT) |
+        return ((channel << CHANNEL_SHIFT) | /*(BAND_2_4G << BAND_SHIFT) |*/
                 (rate << RATE_SHIFT) | (power << POWER_SHIFT) |
                 (preamble << PREAMBLE_SHIFT));
     }

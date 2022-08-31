@@ -98,13 +98,6 @@ CC3135::Error CC3135::setApChannel(uint8_t ch)
     return Error::NO_ERROR;
 }
 
-CC3135::Error CC3135::getStatus(uint16_t mask, uint8_t &status)
-{
-    TRY(deviceGet(DEVICE_STATUS, mask, Buffer::from<uint8_t>(&status)));
-
-    return Error::NO_ERROR;
-}
-
 CC3135::Error CC3135::startRecv() { return socketRecv(sd, Buffer::null(), 0); }
 
 CC3135::Error CC3135::dummyRecv() { return socketRecv(sd, Buffer::null(), 0); }
@@ -152,11 +145,99 @@ CC3135::Error CC3135::setupTransceiver()
     return Error::NO_ERROR;
 }
 
+CC3135::Error CC3135::deviceStop()
+{
+    DeviceStop tx_command = {};
+    // Deafault timeout
+    tx_command.timeout = 10;
+
+    BasicResponse rx_command = {};
+
+    TRY(inoutPacketSync(OPCODE_DEVICE_STOP_COMMAND, Buffer::from(&tx_command),
+                        Buffer::null(), OPCODE_DEVICE_STOP_RESPONSE,
+                        Buffer::from(&rx_command), Buffer::null()));
+
+    return Error::NO_ERROR;
+}
+
+CC3135::Error CC3135::factoryRestore(CC3135Defs::FsRetToFactoryOp op)
+{
+    FsFileSysControlCommand tx_command = {};
+    tx_command.token                   = 0;
+    tx_command.operation               = FS_CTL_RESTORE;
+    tx_command.buffer_length           = sizeof(FsRetToFactoryCommand);
+
+    FsRetToFactoryCommand command = {};
+    command.operation             = op;
+
+    FsFileSysControlResponse rx_command = {};
+
+    TRY(inoutPacketSync(OPCODE_NVMEM_NVMEMFILESYSTEMCONTROLCOMMAND,
+                        Buffer::from(&tx_command), Buffer::from(&command),
+                        OPCODE_NVMEM_NVMEMFILESYSTEMCONTROLRESPONSE,
+                        Buffer::from(&tx_command), Buffer::null()));
+
+    return errorFromStatus(rx_command.status);
+}
+
+CC3135::Error CC3135::getStatus(uint16_t mask, uint32_t &status)
+{
+    status = {};
+    TRY(deviceGet(DEVICE_STATUS, mask, Buffer::from<uint32_t>(&status)));
+
+    return Error::NO_ERROR;
+}
+
 CC3135::Error CC3135::getVersion(DeviceVersion &version)
 {
     version = {};
-    return deviceGet(DEVICE_GENERAL, DEVICE_GENERAL_VERSION,
-                     Buffer::from<DeviceVersion>(&version));
+    TRY(deviceGet(DEVICE_GENERAL, DEVICE_GENERAL_VERSION,
+                  Buffer::from<DeviceVersion>(&version)));
+
+    return Error::NO_ERROR;
+}
+
+CC3135::Error CC3135::deviceStatStart()
+{
+    BasicResponse rx_command = {};
+
+    TRY(inoutPacketSync(OPCODE_WLAN_STARTRXSTATCOMMAND, Buffer::null(),
+                        Buffer::null(), OPCODE_WLAN_STARTRXSTATRESPONSE,
+                        Buffer::from(&rx_command), Buffer::null()));
+
+    return errorFromStatus(rx_command.status);
+}
+
+CC3135::Error CC3135::deviceStatStop()
+{
+    BasicResponse rx_command = {};
+
+    TRY(inoutPacketSync(OPCODE_WLAN_STOPRXSTATCOMMAND, Buffer::null(),
+                        Buffer::null(), OPCODE_WLAN_STOPRXSTATRESPONSE,
+                        Buffer::from(&rx_command), Buffer::null()));
+
+    return errorFromStatus(rx_command.status);
+}
+
+CC3135::Error CC3135::deviceStatGet(CC3135Defs::DeviceGetStat &stats)
+{
+    stats = {};
+
+    TRY(inoutPacketSync(OPCODE_WLAN_GETRXSTATCOMMAND, Buffer::null(),
+                        Buffer::null(), OPCODE_WLAN_GETRXSTATRESPONE,
+                        Buffer::from<DeviceGetStat>(&stats), Buffer::null()));
+
+    return Error::NO_ERROR;
+}
+
+CC3135::Error CC3135::deviceStatGetPm(CC3135Defs::DeviceGetPmStat &stats)
+{
+    stats = {};
+
+    TRY(deviceGet(DEVICE_GENERAL, DEVICE_STAT_PM,
+                  Buffer::from<DeviceGetPmStat>(&stats)));
+
+    return Error::NO_ERROR;
 }
 
 CC3135::Error CC3135::deviceGet(uint16_t set_id, uint16_t option, Buffer value)
@@ -164,7 +245,6 @@ CC3135::Error CC3135::deviceGet(uint16_t set_id, uint16_t option, Buffer value)
     DeviceSetGet tx_command  = {};
     tx_command.device_set_id = set_id;
     tx_command.option        = option;
-    tx_command.config_len    = value.len;
 
     DeviceSetGet rx_command = {};
 
@@ -511,7 +591,10 @@ CC3135::Error CC3135::readPacket(OpCode opcode, CC3135::Buffer command,
 
             // Read tail of remaining data
             if (len > 0)
+            {
+                TRACE("[cc3135] %d bytes still in receive buffer!\n", len);
                 dummyRead(len);
+            }
 
             break;
         }

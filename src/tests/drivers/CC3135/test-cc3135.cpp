@@ -156,6 +156,43 @@ void initBoard()
                             InterruptTrigger::RISING_EDGE);
 }
 
+void printStats()
+{
+    CC3135Defs::DeviceGetStat stats = {};
+    CHECK(cc3135->deviceStatGet(stats));
+
+    printf(
+        "[cc3135] Received valid packets: %lu\n"
+        "[cc3135] Received fcs error packets: %lu\n"
+        "[cc3135] Received address mismatch packets: %lu\n"
+        "[cc3135] Average data control rssi: %d\n"
+        "[cc3135] Average mg mnt rssi: %d\n"
+        "[cc3135] Start timestamp: %lu\n"
+        "[cc3135] Get timestamp: %lu\n",
+        stats.received_valid_packets_number,
+        stats.received_fcs_error_packets_number,
+        stats.received_address_mismatch_packets_number,
+        stats.average_data_ctrl_rssi, stats.average_mg_mnt_rssi,
+        stats.start_timestamp, stats.get_timestamp);
+}
+
+void printChipid()
+{
+    CC3135Defs::DeviceVersion version = {};
+    CHECK(cc3135->getVersion(version));
+    printf(
+        "[cc3135] Chip Id: %lx\n"
+        "[cc3135] Fw version: %u.%u.%u.%u\n"
+        "[cc3135] Phy version: %u.%u.%u.%u\n"
+        "[cc3135] Nwp version: %u.%u.%u.%u\n"
+        "[cc3135] Rom version: %x\n",
+        version.chip_id, version.fw_version[0], version.fw_version[1],
+        version.fw_version[2], version.fw_version[3], version.phy_version[0],
+        version.phy_version[1], version.phy_version[2], version.phy_version[3],
+        version.nwp_version[0], version.nwp_version[1], version.nwp_version[2],
+        version.nwp_version[3], version.rom_version);
+}
+
 int main()
 {
     // IRQ watcher thread
@@ -216,24 +253,24 @@ int main()
         miosix::reboot();
     }
 
+    cc3135->deviceStatStart();
+
     // cc3135->prepareForReset();
     // cc3135->setApChannel(100);
 
     printf("[cc3135] Initialization complete!\n");
 
-    CC3135Defs::DeviceVersion version = {};
-    CHECK(cc3135->getVersion(version));
-    printf(
-        "[cc3135] Chip Id: %lx\n"
-        "[cc3135] Fw version: %u.%u.%u.%u\n"
-        "[cc3135] Phy version: %u.%u.%u.%u\n"
-        "[cc3135] Nwp version: %u.%u.%u.%u\n"
-        "[cc3135] Rom version: %x\n",
-        version.chip_id, version.fw_version[0], version.fw_version[1],
-        version.fw_version[2], version.fw_version[3], version.phy_version[0],
-        version.phy_version[1], version.phy_version[2], version.phy_version[3],
-        version.nwp_version[0], version.nwp_version[1], version.nwp_version[2],
-        version.nwp_version[3], version.rom_version);
+    printChipid();
+
+    // uint32_t status;
+    // CHECK(cc3135->getStatus(0, status));
+    // printf("[cc3135] Device status: %lu\n", status);
+
+    // cc3135->factoryRestore(CC3135Defs::FS_FACTORY_RET_TO_IMAGE);
+    // printf("[cc3135] Requested factory reset\n");
+
+    cc3135->deviceStop();
+    printf("[cc3135] Device stopped!\n");
 
     while (true)
     {
@@ -255,7 +292,7 @@ int main()
         //     version.nwp_version[2], version.nwp_version[3],
         //     version.rom_version);
 
-        printf("[cc3135] Looping\n");
+        // printStats();
 
         Thread::sleep(1000);
     }
