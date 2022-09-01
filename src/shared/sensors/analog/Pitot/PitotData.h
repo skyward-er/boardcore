@@ -30,13 +30,14 @@ namespace Boardcore
 struct PitotData
 {
     uint64_t timestamp;
+    float deltaP;
     float airspeed;
 
-    static std::string header() { return "timestamp,airspeed\n"; }
+    static std::string header() { return "timestamp,deltaP,airspeed\n"; }
 
     void print(std::ostream& os) const
     {
-        os << timestamp << "," << airspeed << "\n";
+        os << timestamp << "," << deltaP << "," << airspeed << "\n";
     }
 };
 

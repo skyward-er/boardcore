@@ -35,13 +35,15 @@ inline Canbus::CanMessage toCanMessage(const PitotData& data)
 {
     Canbus::CanMessage message;
 
-    uint32_t tmp;
-    memcpy(&tmp, &(data.airspeed), sizeof(tmp));
+    uint32_t deltaP, airspeed;
+    memcpy(&deltaP, &(data.deltaP), sizeof(deltaP));
+    memcpy(&airspeed, &(data.airspeed), sizeof(airspeed));
 
     message.id         = -1;
-    message.length     = 1;
+    message.length     = 2;
     message.payload[0] = (data.timestamp & ~0x3) << 30;
-    message.payload[0] |= tmp;
+    message.payload[0] |= deltaP;
+    message.payload[1] = airspeed;
 
     return message;
 }
@@ -50,8 +52,10 @@ inline PitotData pitotDataFromCanMessage(const Canbus::CanMessage& msg)
 {
     PitotData data;
 
-    uint32_t tmp = msg.payload[0];
-    memcpy(&(data.airspeed), &tmp, sizeof(data.airspeed));
+    uint32_t deltaP   = msg.payload[0];
+    uint32_t airspeed = msg.payload[1];
+    memcpy(&(data.deltaP), &deltaP, sizeof(data.deltaP));
+    memcpy(&(data.airspeed), &airspeed, sizeof(data.airspeed));
 
     data.timestamp = (msg.payload[0] >> 30) & ~0x3;
 
