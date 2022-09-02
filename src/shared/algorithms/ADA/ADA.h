@@ -35,7 +35,7 @@ class ADA
 public:
     using KalmanFilter = Kalman<float, 3, 1>;
 
-    ADA(const KalmanFilter::KalmanConfig kalmanConfig);
+    explicit ADA(const KalmanFilter::KalmanConfig kalmanConfig);
 
     /**
      * @brief Update the Kalman filter.
