@@ -22,6 +22,8 @@
 
 #pragma once
 
+#include <utils/Constants.h>
+
 #include <Eigen/Core>
 #include <cmath>
 
@@ -32,25 +34,86 @@ namespace Aeroutils
 {
 
 /**
- * Returns the current altitude with respect to a reference altitude for the
- * given pressure, using International Standard Atmosphere model.
+ * @brief Returns the altitude given the pressure with respect to a reference
+ * pressure and temperature, using International Standard Atmosphere model.
  *
  * @warning This function is valid for altitudes below 11000 meters above sea
  * level.
- * @warning This function provides a relative altitude from the reference
- * altitude. It does not provide altitude above mean sea level unless the
- * reference is, in fact, the sea level.
+ * @warning This function provides a relative altitude from the altitude where
+ * the reference pressure and temperature were measured. It does not provide
+ * altitude above mean sea level unless the reference is, in fact, the sea
+ * level.
  *
- * @param pressure Current pressure [Pas]
+ * This means that if the reference pressure and temperature are those at mean
+ * sea level, then the returned altitude is from mean sea level. Otherwise if
+ * the reference pressure and temperature are those form the launchpad, then the
+ * returned altitude is from above ground level.
+ *
+ * @param pressure Current absolute pressure [Pa]
  * @param pressureRef Pressure at reference altitude (must be > 0) [Pa]
  * @param temperatureRef Temperature at reference altitude [K]
  * @return Current altitude with respect to the reference altitude [m]
  */
-float relAltitude(float pressure, float pressureRef, float temperatureRef);
+float relAltitude(float pressure, float pressureRef = Constants::MSL_PRESSURE,
+                  float temperatureRef = Constants::MSL_TEMPERATURE);
 
 /**
- * Returns the current air density with respect to a reference density and
- * temperature, using the Internation Standard Atmosphere model.
+ * @brief Returns the pressure given the altitude with respect to a reference
+ * pressure and temperature, using International Standard Atmosphere model.
+ *
+ * @warning This function is valid for altitudes below 11000 meters above sea
+ * level.
+ * @warning This function provides a relative pressure at the given altitude
+ * relative to the altitude where the reference pressure and temperature were
+ * measured. It does not provide altitude above mean sea level unless the
+ * reference is, in fact, the sea level.
+ *
+ * This means that if the reference pressure and temperature are those at mean
+ * sea level, then the returned pressure is from mean sea level. Otherwise if
+ * the reference pressure and temperature are those form the launchpad, then the
+ * returned pressure is from above ground level.
+ *
+ * @param altitude Current relative altitude wrt the altitude of the reference
+ * pressure and temperature [m]
+ * @param pressureRef Pressure at reference altitude (must be > 0) [Pa]
+ * @param temperatureRef Temperature at reference altitude [K]
+ * @return Current pressure at the given altitude wrt the reference altitude [m]
+ */
+float relPressure(float altitude, float pressureRef = Constants::MSL_PRESSURE,
+                  float temperatureRef = Constants::MSL_TEMPERATURE);
+
+/**
+ * @brief Returns the temperature at the given altitude with respect to the
+ * reference temperature.
+ *
+ * @warning This function is valid for altitudes below 11000 meters above sea
+ * level.
+ * @warning This function provides a relative temperature from the altitude
+ * where the reference temperature is measured. It does not provide temperature
+ * above mean sea level unless the reference is, in fact, measured at the sea
+ * level.
+ *
+ * This means that if the reference temperature is that at mean sea level, then
+ * the returned temperature is that at the given altitude from mean sea level.
+ * Otherwise if the reference temperature is that form the launchpad, then the
+ * returned temperature is that at the given altitude from above ground level.
+ *
+ * @param altitude Current relative altitude wrt the altitude of the reference
+ * pressure [m]
+ * @param temperatureRef Temperature at reference altitude [K]
+ * @return Current temperature at the given altitude wrt the reference altitude
+ * [m]
+ */
+float relTemperature(float altitude,
+                     float temperatureRef = Constants::MSL_TEMPERATURE);
+
+/**
+ * @brief Returns the air density given the pressure with respect to a
+ * reference pressure, altitude and temperature, using the International
+ * Standard Atmosphere model.
+ *
+ * @warning This function is valid for altitudes below 11000 meters above sea
+ * level.
  *
  * @param pressure Current atmospheric pressure [Pa]
  * @param pressureRef Pressure at reference altitude (must be > 0) [Pa]
@@ -58,12 +121,13 @@ float relAltitude(float pressure, float pressureRef, float temperatureRef);
  * @param temperatureRef Temperature at reference altitude [K]
  * @return Current air density  [Kg/m^3]
  */
-float relDensity(float pressure, float pressureRef, float altitudeRef,
-                 float temperatureRef);
+float relDensity(float pressure, float pressureRef = Constants::MSL_PRESSURE,
+                 float altitudeRef    = 0,
+                 float temperatureRef = Constants::MSL_TEMPERATURE);
 
 /**
- * Returns the expected pressure at mean sea level based on temperature and
- * pressure at a reference altitude, using International Standard Atmosphere
+ * @brief Returns the expected pressure at mean sea level based on temperature
+ * and pressure at a reference altitude, using International Standard Atmosphere
  * model.
  *
  * @warning This function is valid for altitudes below 11000 meters above sea
@@ -77,11 +141,12 @@ float relDensity(float pressure, float pressureRef, float altitudeRef,
 float mslPressure(float pressureRef, float temperatureRef, float altitudeRef);
 
 /**
- * Returns the expected temperature at mean sea level based on temperature at a
- * reference altitude, using International Standard Atmosphere model.
+ * @brief Returns the expected temperature at mean sea level based on
+ * temperature at a reference altitude, using International Standard Atmosphere
+ * model.
  *
  * @warning This function is valid for altitudes below 11000 meters above sea
- * level
+ * level.
  *
  * @param temperatureRef Temperature at reference altitude [K]
  * @param altitudeRef Reference altitude [m]

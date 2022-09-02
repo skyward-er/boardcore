@@ -170,7 +170,7 @@ void NAS::correctBaro(const float pressure)
 
     // Temperature at current altitude. Since in NED the altitude is negative,
     // mslTemperature returns temperature at current altitude and not at msl
-    float temp = Aeroutils::mslTemperature(reference.refTemperature, -x(2));
+    float temp = Aeroutils::relTemperature(-x(2), reference.refTemperature);
 
     // Compute gradient of the altitude-pressure function
     H[2] = Constants::a * Constants::n * reference.refPressure *
@@ -183,8 +183,8 @@ void NAS::correctBaro(const float pressure)
     P.block<6, 6>(0, 0)   = (Matrix<float, 6, 6>::Identity() - K * H) * Pl;
 
     float y_hat =
-        Aeroutils::mslPressure(reference.mslPressure, reference.mslTemperature,
-                               reference.refAltitude - x(2));
+        Aeroutils::relPressure(reference.refAltitude - x(2),
+                               reference.mslPressure, reference.mslTemperature);
 
     // Update the state
     x.head<6>() = x.head<6>() + K * (pressure - y_hat);

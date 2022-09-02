@@ -37,10 +37,9 @@ namespace Boardcore
  * @brief Utility used to initialize the extended kalman filter's state.
  *
  * The intended use is the following:
- * - Instantiate the object, the state is initialize to zero;
- * - Call positionInit to set the initial position;
+ * - Instantiate the object, the state is initialized to zero;
  * - Call either eCompass or triad to set the initial orientation;
- * - Get the initial state for the kalman with getInitX
+ * - Get the initial state for the kalman with getInitX.
  */
 class StateInitializer
 {
@@ -80,21 +79,11 @@ public:
     void triad(const Eigen::Vector3f& acc, const Eigen::Vector3f& mag,
                const Eigen::Vector3f& nedMag);
 
-    /**
-     * @brief Initialization of the position at a specific altitude
-     *
-     * @param pressure Current pressure [Pas]
-     * @param pressureRef Pressure at reference altitude (must be > 0) [Pa]
-     * @param temperatureRef Temperature at reference altitude [K]
-     */
-    void positionInit(const float pressure, const float pressureRef,
-                      const float temperatureRef);
-
     Eigen::Matrix<float, 13, 1> getInitX();
 
 private:
     Eigen::Matrix<float, 13, 1> x_init;
 
-    PrintLogger log = Logging::getLogger("initstates");
+    PrintLogger log = Logging::getLogger("stateinitializer");
 };
 }  // namespace Boardcore
