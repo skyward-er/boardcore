@@ -55,6 +55,11 @@ public:
     void setReferenceValues(const ReferenceValues reference);
 
     /**
+     * @brief Changes the kalman filter configuration.
+     */
+    void setKalmanConfig(KalmanFilter::KalmanConfig config);
+
+    /**
      * @brief Returns the current reference values.
      */
     ReferenceValues getReferenceValues();

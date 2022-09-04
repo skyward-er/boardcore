@@ -70,6 +70,18 @@ public:
         I.setIdentity();
     }
 
+    void setConfig(const KalmanConfig& config)
+    {
+        F = config.F;
+        H = config.H;
+        Q = config.Q;
+        R = config.R;
+        P = config.P;
+        S = MatrixPP::Zero(P_size, P_size);
+        K = MatrixNP::Zero(N_size, P_size);
+        x = config.x;
+    }
+
     /**
      * @brief Prediction step with previous F matrix.
      */

@@ -56,9 +56,7 @@ public:
             step();
     }
 
-    bool isRunning() {
-        return running;
-    }
+    bool isRunning() { return running; }
 
 protected:
     /**

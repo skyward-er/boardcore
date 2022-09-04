@@ -35,14 +35,13 @@ ADA::ADA(const KalmanFilter::KalmanConfig kalmanConfig)
 
 void ADA::update(const float pressure)
 {
-    const auto filterState = filter.getState();
-
     // Update the Kalman filter
     filter.predict();
     filter.correct(KalmanFilter::CVectorP{pressure});
 
     // Convert filter data to altitudes and speeds
-    state.timestamp   = TimestampTimer::getTimestamp();
+    const auto filterState = filter.getState();
+    state.timestamp        = TimestampTimer::getTimestamp();
     state.mslAltitude = Aeroutils::relAltitude(pressure, reference.mslPressure,
                                                reference.mslTemperature);
     state.aglAltitude = state.mslAltitude - reference.refAltitude;
@@ -59,6 +58,11 @@ ADAState ADA::getState() { return state; }
 void ADA::setReferenceValues(const ReferenceValues reference)
 {
     this->reference = reference;
+}
+
+void ADA::setKalmanConfig(KalmanFilter::KalmanConfig config)
+{
+    filter.setConfig(config);
 }
 
 ReferenceValues ADA::getReferenceValues() { return reference; }
