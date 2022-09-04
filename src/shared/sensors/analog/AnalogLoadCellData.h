@@ -29,7 +29,7 @@ namespace Boardcore
 
 struct AnalogLoadCellData : LoadCellData
 {
-    float voltage;
+    float voltage = 0;
 
     static std::string header() { return "loadTimestamp,load,voltage\n"; }
 

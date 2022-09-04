@@ -32,7 +32,7 @@ namespace Boardcore
  */
 struct CurrentSensorData : public ADCData
 {
-    float current;
+    float current = 0;
 
     static std::string header()
     {
