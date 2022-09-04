@@ -179,12 +179,6 @@ float AirBrakes::getSurface(const TimedTrajectoryPoint &currentPosition,
     return bestSurface;
 }
 
-float AirBrakes::getMach(TimedTrajectoryPoint currentPosition)
-{
-    return currentPosition.vMod /
-           (Constants::CO + Constants::ALPHA * currentPosition.z);
-}
-
 float AirBrakes::getExtension(float surface)
 {
     // clang-format off
