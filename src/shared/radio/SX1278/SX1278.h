@@ -69,19 +69,60 @@ class SX1278BusManager
 public:
     using Mode = SX1278Defs::RegOpMode::Mode;
 
+    /**
+     * @brief RAII scoped bus lock guard.
+     */
+    class Lock
+    {
+    public:
+        explicit Lock(SX1278BusManager &bus) : bus(bus) { bus.lock(); }
+
+        ~Lock() { bus.unlock(); }
+
+    private:
+        SX1278BusManager &bus;
+    };
+
+    /**
+     * @brief RAII scoped bus lock guard.
+     */
+    class LockMode
+    {
+    public:
+        LockMode(SX1278BusManager &bus, Mode mode) : bus(bus)
+        {
+            bus.lock_mode(mode);
+        }
+
+        ~LockMode() { bus.unlock_mode(); }
+
+    private:
+        SX1278BusManager &bus;
+    };
+
     SX1278BusManager(SPIBusInterface &bus, miosix::GpioPin cs);
+
+    /**
+     * @brief Lock bus for exclusive access (does not change mode).
+     */
+    void lock();
+
+    /**
+     * @brief Release bus for exclusive access.
+     */
+    void unlock();
 
     /**
      * @brief Lock bus for exclusive access.
      *
-     * @param mode Device mode requested
+     * @param mode Device mode requested.
      */
-    void lock(Mode mode);
+    void lock_mode(Mode mode);
 
     /**
-     * @brief Release buf for exclusive access
+     * @brief Release bus for exclusive access.
      */
-    void unlock();
+    void unlock_mode();
 
     /**
      * @brief Get underlying bus.
@@ -214,6 +255,11 @@ public:
      * @brief Return device version.
      */
     uint8_t getVersion();
+
+    /**
+     * @brief Get calculated RSSI, in dBm
+     */
+    float getRssi();
 
     /**
      * @brief Handle an incoming interrupt.

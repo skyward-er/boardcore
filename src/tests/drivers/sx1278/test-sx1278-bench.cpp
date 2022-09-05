@@ -227,6 +227,8 @@ int main()
 
     // Run default configuration
     SX1278::Config config;
+    config.freq_rf = 430000000;
+
     SX1278::Error err;
 
     SPIBus bus(SX1278_SPI);

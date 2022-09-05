@@ -265,7 +265,7 @@ add_executable(test-sx1278-bidir-v3 src/tests/drivers/sx1278/test-sx1278-bidir.c
 sbs_target(test-sx1278-bidir-v3 stm32f429zi_skyward_death_stack_v3)
 
 add_executable(test-sx1278-tx src/tests/drivers/sx1278/test-sx1278-tx.cpp)
-sbs_target(test-sx1278-tx stm32f429zi_skyward_death_stack_v3)
+sbs_target(test-sx1278-tx stm32f429zi_skyward_groundstation)
 
 add_executable(test-sx1278-rx src/tests/drivers/sx1278/test-sx1278-rx.cpp)
 sbs_target(test-sx1278-rx stm32f429zi_skyward_groundstation)
