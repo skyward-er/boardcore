@@ -56,8 +56,9 @@ public:
             PitotData pitotSpeed;
 
             pitotSpeed.timestamp = getPitotPressure().pressureTimestamp;
+            pitotSpeed.deltaP    = getPitotPressure().pressure;
             pitotSpeed.airspeed =
-                sqrtf(2 * fabs(getPitotPressure().pressure) / airDensity);
+                sqrtf(2 * fabs(pitotSpeed.deltaP) / airDensity);
 
             return pitotSpeed;
         }
