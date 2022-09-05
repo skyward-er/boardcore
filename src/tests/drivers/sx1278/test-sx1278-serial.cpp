@@ -26,7 +26,7 @@
 
 #include <thread>
 
-#include "test-sx1278-core.h"
+#include "common.h"
 
 using namespace Boardcore;
 using namespace miosix;
@@ -126,6 +126,8 @@ int main()
         printf("[sx1278] sx1278->init error: %s\n", stringFromErr(err));
         return -1;
     }
+
+    printConfig(config);
 
     printf("\n[sx1278] Initialization complete!\n");
 

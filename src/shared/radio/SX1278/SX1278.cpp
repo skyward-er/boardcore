@@ -159,16 +159,24 @@ void SX1278BusManager::setMode(Mode mode)
 
 SX1278::SX1278(SPIBusInterface &bus, miosix::GpioPin cs) : bus_mgr(bus, cs) {}
 
-SX1278::Error SX1278::init(Config config)
+SX1278::Error SX1278::init(const Config &config)
 {
-    // Do an early version check to avoid stalling on non-working device
+    // First probe for the device
     uint8_t version = getVersion();
     if (version != 0x12)
     {
-        TRACE("[sx1278] Bad version: %d\n", version);
-        return Error::BAD_VERSION;
+        TRACE("[sx1278] Wrong chipid: %d\n", version);
+        return Error::BAD_VALUE;
     }
 
+    configure(config);
+    return Error::NONE;
+}
+
+bool SX1278::probe() { return getVersion() == 0x12; }
+
+void SX1278::configure(const Config &config)
+{
     // Lock the bus
     SX1278BusManager::LockMode guard(bus_mgr, Mode::MODE_STDBY);
     bus_mgr.waitForIrq(RegIrqFlags::MODE_READY);
@@ -223,8 +231,6 @@ SX1278::Error SX1278::init(Config config)
         // Enable PayloadReady, PacketSent on DIO0
         spi.writeRegister(REG_DIO_MAPPING_1, 0x00);
     }
-
-    return Error::NONE;
 }
 
 ssize_t SX1278::receive(uint8_t *pkt, size_t max_len)
@@ -310,6 +316,21 @@ float SX1278::getRssi()
     SPITransaction spi(bus_mgr.getBus(), SPITransaction::WriteBit::INVERTED);
 
     return static_cast<float>(spi.readRegister(REG_RSSI_VALUE)) * -0.5f;
+}
+
+float SX1278::getFei()
+{
+    SX1278BusManager::Lock guard(bus_mgr);
+    SPITransaction spi(bus_mgr.getBus(), SPITransaction::WriteBit::INVERTED);
+
+    // Order of read is important!!
+    uint8_t fei_msb = spi.readRegister(REG_FEI_MSB);
+    uint8_t fei_lsb = spi.readRegister(REG_FEI_LSB);
+
+    uint16_t fei = (static_cast<uint16_t>(fei_msb) << 8) |
+                   (static_cast<uint16_t>(fei_lsb));
+
+    return static_cast<float>(fei) * FSTEP;
 }
 
 void SX1278::setBitrate(int bitrate)
