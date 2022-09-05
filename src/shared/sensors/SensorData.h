@@ -84,6 +84,13 @@ struct PressureData
 {
     uint64_t pressureTimestamp = 0;
     float pressure             = 0;
+
+    static std::string header() { return "timestamp,pressure\n"; }
+
+    void print(std::ostream& os) const
+    {
+        os << pressureTimestamp << "," << pressure << "\n";
+    }
 };
 
 /**
@@ -104,6 +111,17 @@ struct AccelerometerData
     float accelerationX            = 0;
     float accelerationY            = 0;
     float accelerationZ            = 0;
+
+    static std::string header()
+    {
+        return "timestamp,accelerationX,accelerationY,accelerationZ\n";
+    }
+
+    void print(std::ostream& os) const
+    {
+        os << accelerationTimestamp << "," << accelerationX << ","
+           << accelerationY << "," << accelerationZ << "\n";
+    }
 };
 
 /**
@@ -115,6 +133,17 @@ struct GyroscopeData
     float angularVelocityX            = 0;
     float angularVelocityY            = 0;
     float angularVelocityZ            = 0;
+
+    static std::string header()
+    {
+        return "timestamp,angularVelocityX,angularVelocityY,angularVelocityZ\n";
+    }
+
+    void print(std::ostream& os) const
+    {
+        os << angularVelocityTimestamp << "," << angularVelocityX << ","
+           << angularVelocityY << "," << angularVelocityZ << "\n";
+    }
 };
 
 /**
@@ -126,6 +155,17 @@ struct MagnetometerData
     float magneticFieldX            = 0;
     float magneticFieldY            = 0;
     float magneticFieldZ            = 0;
+
+    static std::string header()
+    {
+        return "timestamp,magneticFieldX,magneticFieldY,magneticFieldZ\n";
+    }
+
+    void print(std::ostream& os) const
+    {
+        os << magneticFieldTimestamp << "," << magneticFieldX << ","
+           << magneticFieldY << "," << magneticFieldZ << "\n";
+    }
 };
 
 /**
@@ -145,6 +185,20 @@ struct GPSData
     float positionDOP     = 0;  // [?]
     uint8_t satellites    = 0;  // [1]
     uint8_t fix           = 0;  // 0 = no fix
+
+    static std::string header()
+    {
+        return "timestamp,latitude,longitude,height,velocityNorth,velocityEast,"
+               "velocityDown,speed,track,positionDOP,satellites,fix\n";
+    }
+
+    void print(std::ostream& os) const
+    {
+        os << gpsTimestamp << "," << longitude << "," << latitude << ","
+           << height << "," << velocityNorth << "," << velocityEast << ","
+           << velocityDown << "," << speed << "," << track << "," << positionDOP
+           << "," << (int)satellites << "," << (int)fix << "\n";
+    }
 };
 
 /**
