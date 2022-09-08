@@ -107,9 +107,9 @@ public:
      * @param startTick First activation time, useful for synchronizing tasks.
      * @return true if the task was added successfully.
      */
-    bool addTask(function_t function, uint32_t period, uint8_t id,
-                 Policy policy     = Policy::SKIP,
-                 int64_t startTick = miosix::getTick());
+    uint8_t addTask(function_t function, uint32_t period, uint8_t id,
+                    Policy policy     = Policy::SKIP,
+                    int64_t startTick = miosix::getTick());
 
     /**
      * @brief Add a task function to the scheduler with an auto generated id.
@@ -127,9 +127,9 @@ public:
      * @param startTick First activation time, useful for synchronizing tasks.
      * @return true if the task was added successfully.
      */
-    bool addTask(function_t function, uint32_t period,
-                 Policy policy     = Policy::SKIP,
-                 int64_t startTick = miosix::getTick());
+    uint8_t addTask(function_t function, uint32_t period,
+                    Policy policy     = Policy::SKIP,
+                    int64_t startTick = miosix::getTick());
 
     /**
      * @brief Removes the task identified by the given id if it exists.
