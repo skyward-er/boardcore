@@ -68,7 +68,7 @@ class PinObserver : public Singleton<PinObserver>
 {
     friend Singleton<PinObserver>;
 
-    static constexpr uint32_t SAMPLE_PERIOD = 100;  // 10Hz
+    static constexpr uint32_t SAMPLE_PERIOD = 50;  // 50Hz
 
 public:
     using PinCallback = std::function<void(PinTransition)>;
