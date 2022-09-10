@@ -31,6 +31,7 @@ namespace Boardcore
 ADA::ADA(const KalmanFilter::KalmanConfig kalmanConfig)
     : filter(kalmanConfig), state()
 {
+    updateState();
 }
 
 void ADA::update(const float pressure)
@@ -40,17 +41,7 @@ void ADA::update(const float pressure)
     filter.correct(KalmanFilter::CVectorP{pressure});
 
     // Convert filter data to altitudes and speeds
-    const auto filterState = filter.getState();
-    state.timestamp        = TimestampTimer::getTimestamp();
-    state.mslAltitude = Aeroutils::relAltitude(pressure, reference.mslPressure,
-                                               reference.mslTemperature);
-    state.aglAltitude = state.mslAltitude - reference.refAltitude;
-    state.verticalSpeed = Aeroutils::verticalSpeed(
-        filterState(0), filterState(1), reference.mslPressure,
-        reference.mslTemperature);
-    state.x0 = filterState(0);
-    state.x1 = filterState(1);
-    state.x2 = filterState(2);
+    updateState();
 }
 
 ADAState ADA::getState() { return state; }
@@ -66,5 +57,22 @@ void ADA::setKalmanConfig(KalmanFilter::KalmanConfig config)
 }
 
 ReferenceValues ADA::getReferenceValues() { return reference; }
+
+void ADA::updateState()
+{
+    const auto filterState = filter.getState();
+
+    // Convert filter data to altitudes and speeds
+    state.x0          = filterState(0);
+    state.x1          = filterState(1);
+    state.x2          = filterState(2);
+    state.timestamp   = TimestampTimer::getTimestamp();
+    state.mslAltitude = Aeroutils::relAltitude(
+        filterState(0), reference.mslPressure, reference.mslTemperature);
+    state.aglAltitude   = state.mslAltitude - reference.refAltitude;
+    state.verticalSpeed = Aeroutils::verticalSpeed(
+        filterState(0), filterState(1), reference.mslPressure,
+        reference.mslTemperature);
+}
 
 }  // namespace Boardcore

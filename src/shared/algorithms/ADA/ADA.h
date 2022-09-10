@@ -65,6 +65,8 @@ public:
     ReferenceValues getReferenceValues();
 
 private:
+    void updateState();
+
     ReferenceValues reference;
 
     KalmanFilter filter;
