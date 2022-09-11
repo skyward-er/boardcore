@@ -236,6 +236,7 @@ bool UBXGPSSpi::readUBXFrame(UBXFrame& frame)
     long long end   = start + READ_TIMEOUT * MS_TO_TICK;
 
     {
+        spiSlave.bus.configure(spiSlave.config);
         spiSlave.bus.select(spiSlave.cs);
 
         // Search UBX frame preamble byte by byte
