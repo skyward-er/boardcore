@@ -34,7 +34,7 @@ namespace Boardcore
  */
 struct EventData
 {
-    long long timestamp;
+    uint64_t timestamp;
     uint8_t event;
     uint8_t topic;
 
