@@ -28,9 +28,10 @@ namespace Boardcore
 {
 
 VN100::VN100(USARTType *portNumber, USARTInterface::Baudrate baudRate,
-             CRCOptions crc)
+             CRCOptions crc, uint16_t samplePeriod)
     : portNumber(portNumber), baudRate(baudRate), crc(crc)
 {
+    this->samplePeriod = samplePeriod;
 }
 
 bool VN100::init()
@@ -108,6 +109,12 @@ bool VN100::init()
         return false;
     }
 
+    if (!this->start())
+    {
+        LOG_ERR(logger, "Unable to start the sampling thread");
+        return false;
+    }
+
     // Set the isInit flag true
     isInit = true;
 
@@ -115,6 +122,19 @@ bool VN100::init()
     lastError = backup;
 
     return true;
+}
+
+void VN100::run()
+{
+    while (!shouldStop())
+    {
+        // Sample the data locking the mutex
+        miosix::Lock<FastMutex> l(mutex);
+        threadSample = sampleData();
+
+        // Sleep for the sampling period
+        miosix::Thread::sleep(samplePeriod);
+    }
 }
 
 bool VN100::sampleRaw()
@@ -201,6 +221,12 @@ bool VN100::selfTest()
 }
 
 VN100Data VN100::sampleImpl()
+{
+    miosix::Lock<FastMutex> l(mutex);
+    return threadSample;
+}
+
+VN100Data VN100::sampleData()
 {
     if (!isInit)
     {

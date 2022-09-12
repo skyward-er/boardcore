@@ -51,6 +51,7 @@
  * - 921600
  */
 
+#include <ActiveObject.h>
 #include <diagnostic/PrintLogger.h>
 #include <fmt/format.h>
 #include <sensors/Sensor.h>
@@ -66,7 +67,7 @@ namespace Boardcore
 /**
  * @brief Driver class for VN100 IMU.
  */
-class VN100 : public Sensor<VN100Data>
+class VN100 : public Sensor<VN100Data>, public ActiveObject
 {
 public:
     enum class CRCOptions : uint8_t
@@ -83,10 +84,12 @@ public:
      * @param BaudRate different from the sensor's default [9600, 19200, 38400,
      * 57600, 115200, 128000, 230400, 460800, 921600].
      * @param Redundancy check option.
+     * @param samplePeriod Sampling period in ms
      */
     VN100(USARTType *portNumber    = USART2,
           USART::Baudrate baudRate = USART::Baudrate::B921600,
-          CRCOptions crc           = CRCOptions::CRC_ENABLE_8);
+          CRCOptions crc           = CRCOptions::CRC_ENABLE_8,
+          uint16_t samplePeriod    = 20);
 
     bool init() override;
 
@@ -119,6 +122,18 @@ private:
      * @brief Sample action implementation.
      */
     VN100Data sampleImpl() override;
+
+    /**
+     * @brief Active object method, about the thread execution
+     */
+    void run() override;
+
+    /**
+     * @brief Sampling method used by the thread
+     *
+     * @return VN100Data The sampled data
+     */
+    VN100Data sampleData();
 
     /**
      * @brief Disables the async messages that the vn100 is default configured
@@ -226,6 +241,7 @@ private:
 
     USARTType *portNumber;
     USART::Baudrate baudRate;
+    uint16_t samplePeriod;
     CRCOptions crc;
     bool isInit = false;
 
@@ -256,6 +272,12 @@ private:
      * with the sensor via ASCII codes.
      */
     USARTInterface *serialInterface = nullptr;
+
+    /**
+     * @brief Mutex to synchronize the reading and writing of the threadSample
+     */
+    mutable miosix::FastMutex mutex;
+    VN100Data threadSample;
 
     PrintLogger logger = Logging::getLogger("vn100");
 
