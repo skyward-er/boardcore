@@ -246,7 +246,7 @@ bool UBXGPSSpi::readUBXFrame(UBXFrame& frame)
         {
             if (miosix::getTick() >= end)
             {
-                LOG_ERR(logger, "Timeout for read expired");
+                // LOG_ERR(logger, "Timeout for read expired");
                 spiSlave.bus.deselect(spiSlave.cs);
                 Thread::sleep(1);  // GPS minimum time after deselect
                 return false;
@@ -278,8 +278,8 @@ bool UBXGPSSpi::readUBXFrame(UBXFrame& frame)
             {
                 i       = 0;
                 waiting = false;
-                LOG_DEBUG(logger, "Received unexpected byte: {:02x} {:#c}", c,
-                          c);
+                // LOG_DEBUG(logger, "Received unexpected byte: {:02x} {:#c}",
+                // c, c);
             }
         }
 
