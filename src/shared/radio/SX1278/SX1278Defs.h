@@ -242,6 +242,21 @@ enum PaDac
 };
 }
 
+namespace RegImageCal
+{
+constexpr uint8_t AUTO_IMAGE_CAL_ON = 0x80;
+
+enum TempTreshold
+{
+    TEMP_TRESHOLD_5DEG  = 0x00,
+    TEMP_TRESHOLD_10DEG = 0x02,
+    TEMP_TRESHOLD_15DEG = 0x04,
+    TEMP_TRESHOLD_20DEG = 0x06,
+};
+
+constexpr uint8_t TEMP_MONITOR_OFF = 0x01;
+}  // namespace RegImageCal
+
 enum Registers
 {
     REG_FIFO = 0x00,
