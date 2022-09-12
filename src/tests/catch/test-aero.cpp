@@ -29,34 +29,7 @@
 #include <catch2/catch.hpp>
 
 using namespace Boardcore;
-
-TEST_CASE("[AeroUtils] mslTemperature")
-{
-    using namespace Aeroutils;
-    Approx isa_T0 =
-        Approx(288.151).margin(0.001);  // 15 deg celsius, 0.01% error allowed
-
-    // Test against various ISA altitudes
-    REQUIRE(mslTemperature(288.15, 0) == isa_T0);
-    REQUIRE(mslTemperature(287.825, 50) == isa_T0);
-    REQUIRE(mslTemperature(281.65, 1000) == isa_T0);
-    REQUIRE(mslTemperature(216.65, 11000) == isa_T0);
-    REQUIRE(mslTemperature(288.8, -100) == isa_T0);
-}
-
-TEST_CASE("[AeroUtils] mslPressure")
-{
-    using namespace Aeroutils;
-    Approx isa_P0 =
-        Approx(101325).epsilon(0.0001);  // 15 deg celsius, 0.01% error allowed
-
-    // Test against various ISA altitudes
-    REQUIRE(mslPressure(101325, 288.15, 0) == isa_P0);
-    REQUIRE(mslPressure(100725.8, 287.825, 50) == isa_P0);
-    REQUIRE(mslPressure(89874.6, 281.65, 1000) == isa_P0);
-    REQUIRE(mslPressure(22632.1, 216.65, 11000) == isa_P0);
-    REQUIRE(mslPressure(102531.8, 288.8, -100) == isa_P0);
-}
+using namespace Aeroutils;
 
 float mslAltitude(float pressure, float pressureRef, float temperatureRef,
                   float zRef)
@@ -82,26 +55,56 @@ TEST_CASE("[AeroUtils] relAltitude")
             Approx(-100).epsilon(0.0001));
 }
 
+TEST_CASE("[AeroUtils] relPressure")
+{
+    REQUIRE(relPressure(35) == Approx(100905).epsilon(0.0001));
+    REQUIRE(relPressure(143) == Approx(99618).epsilon(0.0001));
+    REQUIRE(relPressure(450) == Approx(96034).epsilon(0.0001));
+    REQUIRE(relPressure(1765) == Approx(81842).epsilon(0.0001));
+    REQUIRE(relPressure(2210) == Approx(77444).epsilon(0.0001));
+}
+
 TEST_CASE("[AeroUtils] relDensity")
 {
-    using namespace Aeroutils;
 
-    REQUIRE(relDensity(101325, 101325, 0, 288.15) ==
-            Approx(1.225).epsilon(0.0001));
-    REQUIRE(relDensity(100129.438691069, 101325, 0, 288.15) ==
+    REQUIRE(relDensity(101325) == Approx(1.225).epsilon(0.0001));
+    REQUIRE(relDensity(100129.438691069) ==
             Approx(1.21328277727309).epsilon(0.0001));
-    REQUIRE(relDensity(89874.5715517214, 101325, 0, 288.15) ==
+    REQUIRE(relDensity(89874.5715517214) ==
             Approx(1.11164259066989).epsilon(0.0001));
-    REQUIRE(relDensity(70108.5471843675, 101325, 0, 288.15) ==
+    REQUIRE(relDensity(70108.5471843675) ==
             Approx(0.909122116038058).epsilon(0.0001));
-    REQUIRE_FALSE(relDensity(101325, 101325, 0, 288.15) ==
-                  Approx(1.226).epsilon(0.0001));
+    REQUIRE_FALSE(relDensity(101325) == Approx(1.226).epsilon(0.0001));
+}
+
+TEST_CASE("[AeroUtils] mslPressure")
+{
+    // 101325 Pa, 0.01% error allowed
+    Approx isa_P0 = Approx(101325).epsilon(0.0001);
+
+    // Test against various ISA altitudes
+    REQUIRE(mslPressure(101325, 288.15, 0) == isa_P0);
+    REQUIRE(mslPressure(100725.8, 287.825, 50) == isa_P0);
+    REQUIRE(mslPressure(89874.6, 281.65, 1000) == isa_P0);
+    REQUIRE(mslPressure(22632.1, 216.65, 11000) == isa_P0);
+    REQUIRE(mslPressure(102531.8, 288.8, -100) == isa_P0);
+}
+
+TEST_CASE("[AeroUtils] mslTemperature")
+{
+    // 15 deg celsius, 0.01% error allowed
+    Approx isa_T0 = Approx(288.151).margin(0.001);
+
+    // Test against various ISA altitudes
+    REQUIRE(mslTemperature(288.15, 0) == isa_T0);
+    REQUIRE(mslTemperature(287.825, 50) == isa_T0);
+    REQUIRE(mslTemperature(281.65, 1000) == isa_T0);
+    REQUIRE(mslTemperature(216.65, 11000) == isa_T0);
+    REQUIRE(mslTemperature(288.8, -100) == isa_T0);
 }
 
 TEST_CASE("[AeroUtils] verticalSpeed")
 {
-    using namespace Aeroutils;
-
     const int count = 5;
     float p[]       = {100129.4, 99555.8, 89153.1, 23611.1, 101284.6};
 
@@ -110,7 +113,5 @@ TEST_CASE("[AeroUtils] verticalSpeed")
     Approx targetVSpeed = Approx(10).epsilon(0.001);
 
     for (int i = 0; i < count; i++)
-    {
         REQUIRE(verticalSpeed(p[i], dpDt[i], 100129.4, 297.5) == targetVSpeed);
-    }
 }

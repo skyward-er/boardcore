@@ -56,6 +56,8 @@ public:
             step();
     }
 
+    bool isRunning() { return running; }
+
 protected:
     /**
      * @brief The actual algorithm step.

@@ -36,13 +36,11 @@ namespace Boardcore
 struct ReferenceValues
 {
     // Launch site parameters
-    float altitude;
-    float pressure;
-    float temperature;
-
-    // Start position
-    float startLatitude;
-    float startLongitude;
+    float refAltitude;
+    float refPressure;
+    float refTemperature;
+    float refLatitude;
+    float refLongitude;
 
     // Pressure and temperature at mean sea level for altitude calculation
     float mslPressure    = Constants::MSL_PRESSURE;
@@ -51,35 +49,38 @@ struct ReferenceValues
     ReferenceValues(){};
 
     ReferenceValues(float altitude, float pressure, float temperature,
-                    float startLatitude  = Constants::B21_LATITUDE,
-                    float startLongitude = Constants::B21_LONGITUDE,
+                    float refLatitude    = Constants::B21_LATITUDE,
+                    float refLongitude   = Constants::B21_LONGITUDE,
                     float mslPressure    = Constants::MSL_PRESSURE,
                     float mslTemperature = Constants::MSL_TEMPERATURE)
-        : altitude(altitude), pressure(pressure), temperature(temperature),
-          startLatitude(startLatitude), startLongitude(startLongitude),
-          mslPressure(mslPressure), mslTemperature(mslTemperature)
+        : refAltitude(altitude), refPressure(pressure),
+          refTemperature(temperature), refLatitude(refLatitude),
+          refLongitude(refLongitude), mslPressure(mslPressure),
+          mslTemperature(mslTemperature)
     {
     }
 
     static std::string header()
     {
-        return "altitude,pressure,temperature,startLatitude,startLongitude,"
+        return "refAltitude,refPressure,refTemperature,refLatitude,"
+               "refLongitude,"
                "mslPressure,mslTemperature\n";
     }
 
     void print(std::ostream& os) const
     {
-        os << altitude << "," << pressure << "," << temperature << ","
-           << startLatitude << "," << startLongitude << "," << mslPressure
-           << "," << mslTemperature << "\n";
+        os << refAltitude << "," << refPressure << "," << refTemperature << ","
+           << refLatitude << "," << refLongitude << "," << mslPressure << ","
+           << mslTemperature << "\n";
     }
 
     bool operator==(const ReferenceValues& other) const
     {
-        return altitude == other.altitude && pressure == other.pressure &&
-               temperature == other.temperature &&
-               startLatitude == other.startLatitude &&
-               startLongitude == other.startLongitude &&
+        return refAltitude == other.refAltitude &&
+               refPressure == other.refPressure &&
+               refTemperature == other.refTemperature &&
+               refLatitude == other.refLatitude &&
+               refLongitude == other.refLongitude &&
                mslPressure == other.mslPressure &&
                mslTemperature == other.mslTemperature;
     }

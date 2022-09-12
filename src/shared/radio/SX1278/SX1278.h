@@ -69,19 +69,60 @@ class SX1278BusManager
 public:
     using Mode = SX1278Defs::RegOpMode::Mode;
 
+    /**
+     * @brief RAII scoped bus lock guard.
+     */
+    class Lock
+    {
+    public:
+        explicit Lock(SX1278BusManager &bus) : bus(bus) { bus.lock(); }
+
+        ~Lock() { bus.unlock(); }
+
+    private:
+        SX1278BusManager &bus;
+    };
+
+    /**
+     * @brief RAII scoped bus lock guard.
+     */
+    class LockMode
+    {
+    public:
+        LockMode(SX1278BusManager &bus, Mode mode) : bus(bus)
+        {
+            bus.lock_mode(mode);
+        }
+
+        ~LockMode() { bus.unlock_mode(); }
+
+    private:
+        SX1278BusManager &bus;
+    };
+
     SX1278BusManager(SPIBusInterface &bus, miosix::GpioPin cs);
+
+    /**
+     * @brief Lock bus for exclusive access (does not change mode).
+     */
+    void lock();
+
+    /**
+     * @brief Release bus for exclusive access.
+     */
+    void unlock();
 
     /**
      * @brief Lock bus for exclusive access.
      *
-     * @param mode Device mode requested
+     * @param mode Device mode requested.
      */
-    void lock(Mode mode);
+    void lock_mode(Mode mode);
 
     /**
-     * @brief Release buf for exclusive access
+     * @brief Release bus for exclusive access.
      */
-    void unlock();
+    void unlock_mode();
 
     /**
      * @brief Get underlying bus.
@@ -130,25 +171,25 @@ public:
     {
         HZ_2600   = (0b10 << 3) | 7,
         HZ_3100   = (0b01 << 3) | 7,
-        HZ_3900   = (0b00 << 3) | 7,
+        HZ_3900   = 7,
         HZ_5200   = (0b10 << 3) | 6,
         HZ_6300   = (0b01 << 3) | 6,
-        HZ_7800   = (0b00 << 3) | 6,
+        HZ_7800   = 6,
         HZ_10400  = (0b10 << 3) | 5,
         HZ_12500  = (0b01 << 3) | 5,
-        HZ_15600  = (0b00 << 3) | 5,
+        HZ_15600  = 5,
         HZ_20800  = (0b10 << 3) | 4,
         HZ_25000  = (0b01 << 3) | 4,
-        HZ_31300  = (0b00 << 3) | 4,
+        HZ_31300  = 4,
         HZ_41700  = (0b10 << 3) | 3,
         HZ_50000  = (0b01 << 3) | 3,
-        HZ_62500  = (0b00 << 3) | 3,
+        HZ_62500  = 3,
         HZ_83300  = (0b10 << 3) | 2,
         HZ_100000 = (0b01 << 3) | 2,
-        HZ_125000 = (0b00 << 3) | 2,
+        HZ_125000 = 2,
         HZ_166700 = (0b10 << 3) | 1,
         HZ_200000 = (0b01 << 3) | 1,
-        HZ_250000 = (0b00 << 3) | 1,
+        HZ_250000 = 1,
     };
 
     /**
@@ -174,7 +215,7 @@ public:
     {
         NONE,         //< No error encountered.
         BAD_VALUE,    //< A requested value was outside the valid range.
-        BAD_VERSION,  //< Chip didn't report the correct version.
+        BAD_VERSION,  //< Chip isn't connected.
     };
 
     /**
@@ -188,7 +229,17 @@ public:
     /**
      * @brief Setup the device.
      */
-    Error init(Config config);
+    Error init(const Config &config);
+
+    /*
+     * @brief Check if this device is connected.
+     */
+    bool probe();
+
+    /**
+     * @brief Configure this device on the fly.
+     */
+    void configure(const Config &config);
 
     /**
      * @brief Wait until a new packet is received.
@@ -214,6 +265,16 @@ public:
      * @brief Return device version.
      */
     uint8_t getVersion();
+
+    /**
+     * @brief Get calculated RSSI, in dBm
+     */
+    float getRssi();
+
+    /**
+     * @brief Get the frequency error index in Hz.
+     */
+    float getFei();
 
     /**
      * @brief Handle an incoming interrupt.

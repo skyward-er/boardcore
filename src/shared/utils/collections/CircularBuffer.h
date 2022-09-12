@@ -80,7 +80,13 @@ public:
      */
     virtual T& get(unsigned int i = 0)
     {
-        if (i < count())
+        // Here we need to explicitly specify the name of this class because we
+        // DO NOT want to call the version of count() overridden by a derived
+        // class: this is done to avoid deadlocks, as a derived class may
+        // synchronize get() and count() with a mutex: calling count() from
+        // get() would thus require locking the same mutex twice, causing a
+        // deadlock.
+        if (i < CircularBuffer<T, Size>::count())
         {
             int ptr = (readPtr + i) % Size;
             return buffer[ptr];
@@ -143,6 +149,8 @@ public:
 
     virtual bool isFull() const
     {
+        // Same as in get(): explicitly specify the name of the class to avoid
+        // deadlocks!
         return CircularBuffer<T, Size>::count() == Size;
     }
     /**

@@ -32,7 +32,7 @@ namespace Boardcore
  */
 struct BatteryVoltageSensorData : public ADCData
 {
-    float batVoltage;
+    float batVoltage = 0;
 
     static std::string header()
     {

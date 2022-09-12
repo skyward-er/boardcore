@@ -57,6 +57,8 @@ public:
      */
     void setOffset(const float offset) { this->offset = offset; }
 
+    void updateOffset(float offset) { this->offset += offset; }
+
     AnalogPressureData sampleImpl() override
     {
         AnalogPressureData pressure;

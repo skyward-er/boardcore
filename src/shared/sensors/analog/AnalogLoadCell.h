@@ -50,6 +50,8 @@ public:
      */
     void setOffset(const float offset) { this->offset = offset; }
 
+    void updateOffset(float offset) { this->offset += offset; }
+
     AnalogLoadCellData sampleImpl() override
     {
         ADCData adcData = getVoltage();

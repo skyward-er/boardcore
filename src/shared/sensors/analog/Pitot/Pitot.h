@@ -22,6 +22,7 @@
 
 #pragma once
 
+#include <algorithms/ReferenceValues.h>
 #include <sensors/Sensor.h>
 #include <utils/AeroUtils/AeroUtils.h>
 
@@ -46,18 +47,27 @@ public:
 
     bool selfTest() override { return true; }
 
+    void setReferenceValues(const ReferenceValues reference)
+    {
+        this->reference = reference;
+    }
+
+    ReferenceValues getReferenceValues() { return reference; }
+
     PitotData sampleImpl() override
     {
-        float airDensity =
-            Aeroutils::relDensity(getStaticPressure(), REFERENCE_PRESSURE,
-                                  REFERENCE_ALTITUDE, REFERENCE_TEMPERATURE);
+        float airDensity = Aeroutils::relDensity(
+            getStaticPressure(), reference.refPressure, reference.refAltitude,
+            reference.refTemperature);
+
         if (airDensity != 0.0)
         {
             PitotData pitotSpeed;
 
             pitotSpeed.timestamp = getPitotPressure().pressureTimestamp;
+            pitotSpeed.deltaP    = getPitotPressure().pressure;
             pitotSpeed.airspeed =
-                sqrtf(2 * fabs(getPitotPressure().pressure) / airDensity);
+                sqrtf(2 * fabs(pitotSpeed.deltaP) / airDensity);
 
             return pitotSpeed;
         }
@@ -69,9 +79,7 @@ private:
     std::function<PressureData()> getPitotPressure;
     std::function<float()> getStaticPressure;
 
-    static constexpr float REFERENCE_PRESSURE = 100000.0;  // Milan air pressure
-    static constexpr float REFERENCE_ALTITUDE = 130.0;     // Milan altitude
-    static constexpr float REFERENCE_TEMPERATURE = 273.15 + 25.0;  // 25°
+    ReferenceValues reference;
 };
 
 }  // namespace Boardcore

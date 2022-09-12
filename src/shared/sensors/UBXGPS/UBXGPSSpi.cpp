@@ -236,6 +236,7 @@ bool UBXGPSSpi::readUBXFrame(UBXFrame& frame)
     long long end   = start + READ_TIMEOUT * MS_TO_TICK;
 
     {
+        spiSlave.bus.configure(spiSlave.config);
         spiSlave.bus.select(spiSlave.cs);
 
         // Search UBX frame preamble byte by byte
@@ -245,7 +246,7 @@ bool UBXGPSSpi::readUBXFrame(UBXFrame& frame)
         {
             if (miosix::getTick() >= end)
             {
-                LOG_ERR(logger, "Timeout for read expired");
+                // LOG_ERR(logger, "Timeout for read expired");
                 spiSlave.bus.deselect(spiSlave.cs);
                 Thread::sleep(1);  // GPS minimum time after deselect
                 return false;
@@ -277,8 +278,8 @@ bool UBXGPSSpi::readUBXFrame(UBXFrame& frame)
             {
                 i       = 0;
                 waiting = false;
-                LOG_DEBUG(logger, "Received unexpected byte: {:02x} {:#c}", c,
-                          c);
+                // LOG_DEBUG(logger, "Received unexpected byte: {:02x} {:#c}",
+                // c, c);
             }
         }
 

@@ -56,8 +56,8 @@ struct TimestampData
 
 struct LoadCellData
 {
-    uint64_t loadTimestamp;
-    float load;
+    uint64_t loadTimestamp = 0;
+    float load             = 0;
 
     static std::string header() { return "loadTimestamp,load\n"; }
 
@@ -69,8 +69,8 @@ struct LoadCellData
 
 struct TemperatureData
 {
-    uint64_t temperatureTimestamp;
-    float temperature;
+    uint64_t temperatureTimestamp = 0;
+    float temperature             = 0;
 
     static std::string header() { return "timestamp,temperature\n"; }
 
@@ -82,8 +82,15 @@ struct TemperatureData
 
 struct PressureData
 {
-    uint64_t pressureTimestamp;
-    float pressure;
+    uint64_t pressureTimestamp = 0;
+    float pressure             = 0;
+
+    static std::string header() { return "timestamp,pressure\n"; }
+
+    void print(std::ostream& os) const
+    {
+        os << pressureTimestamp << "," << pressure << "\n";
+    }
 };
 
 /**
@@ -91,8 +98,8 @@ struct PressureData
  */
 struct HumidityData
 {
-    uint64_t humidityTimestamp;
-    float humidity;
+    uint64_t humidityTimestamp = 0;
+    float humidity             = 0;
 };
 
 /**
@@ -100,10 +107,21 @@ struct HumidityData
  */
 struct AccelerometerData
 {
-    uint64_t accelerationTimestamp;
-    float accelerationX;
-    float accelerationY;
-    float accelerationZ;
+    uint64_t accelerationTimestamp = 0;
+    float accelerationX            = 0;
+    float accelerationY            = 0;
+    float accelerationZ            = 0;
+
+    static std::string header()
+    {
+        return "timestamp,accelerationX,accelerationY,accelerationZ\n";
+    }
+
+    void print(std::ostream& os) const
+    {
+        os << accelerationTimestamp << "," << accelerationX << ","
+           << accelerationY << "," << accelerationZ << "\n";
+    }
 };
 
 /**
@@ -111,10 +129,21 @@ struct AccelerometerData
  */
 struct GyroscopeData
 {
-    uint64_t angularVelocityTimestamp;
-    float angularVelocityX;
-    float angularVelocityY;
-    float angularVelocityZ;
+    uint64_t angularVelocityTimestamp = 0;
+    float angularVelocityX            = 0;
+    float angularVelocityY            = 0;
+    float angularVelocityZ            = 0;
+
+    static std::string header()
+    {
+        return "timestamp,angularVelocityX,angularVelocityY,angularVelocityZ\n";
+    }
+
+    void print(std::ostream& os) const
+    {
+        os << angularVelocityTimestamp << "," << angularVelocityX << ","
+           << angularVelocityY << "," << angularVelocityZ << "\n";
+    }
 };
 
 /**
@@ -122,10 +151,21 @@ struct GyroscopeData
  */
 struct MagnetometerData
 {
-    uint64_t magneticFieldTimestamp;
-    float magneticFieldX;
-    float magneticFieldY;
-    float magneticFieldZ;
+    uint64_t magneticFieldTimestamp = 0;
+    float magneticFieldX            = 0;
+    float magneticFieldY            = 0;
+    float magneticFieldZ            = 0;
+
+    static std::string header()
+    {
+        return "timestamp,magneticFieldX,magneticFieldY,magneticFieldZ\n";
+    }
+
+    void print(std::ostream& os) const
+    {
+        os << magneticFieldTimestamp << "," << magneticFieldX << ","
+           << magneticFieldY << "," << magneticFieldZ << "\n";
+    }
 };
 
 /**
@@ -145,6 +185,20 @@ struct GPSData
     float positionDOP     = 0;  // [?]
     uint8_t satellites    = 0;  // [1]
     uint8_t fix           = 0;  // 0 = no fix
+
+    static std::string header()
+    {
+        return "timestamp,latitude,longitude,height,velocityNorth,velocityEast,"
+               "velocityDown,speed,track,positionDOP,satellites,fix\n";
+    }
+
+    void print(std::ostream& os) const
+    {
+        os << gpsTimestamp << "," << longitude << "," << latitude << ","
+           << height << "," << velocityNorth << "," << velocityEast << ","
+           << velocityDown << "," << speed << "," << track << "," << positionDOP
+           << "," << (int)satellites << "," << (int)fix << "\n";
+    }
 };
 
 /**
@@ -152,9 +206,9 @@ struct GPSData
  */
 struct ADCData
 {
-    uint64_t voltageTimestamp;
-    uint8_t channelId;
-    float voltage;
+    uint64_t voltageTimestamp = 0;
+    uint8_t channelId         = 0;
+    float voltage             = 0;
 };
 
 }  // namespace Boardcore

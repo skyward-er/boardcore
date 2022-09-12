@@ -37,8 +37,8 @@ TaskScheduler::TaskScheduler()
 {
 }
 
-bool TaskScheduler::addTask(function_t function, uint32_t period, uint8_t id,
-                            Policy policy, int64_t startTick)
+uint8_t TaskScheduler::addTask(function_t function, uint32_t period, uint8_t id,
+                               Policy policy, int64_t startTick)
 {
     Lock<FastMutex> lock(mutex);
 
@@ -61,11 +61,11 @@ bool TaskScheduler::addTask(function_t function, uint32_t period, uint8_t id,
         LOG_ERR(logger, "Trying to add a task which id is already present");
     }
 
-    return result.second;
+    return result.second ? id : 0;
 }
 
-bool TaskScheduler::addTask(function_t function, uint32_t period, Policy policy,
-                            int64_t startTick)
+uint8_t TaskScheduler::addTask(function_t function, uint32_t period,
+                               Policy policy, int64_t startTick)
 {
     uint8_t id = 1;
 
@@ -74,7 +74,7 @@ bool TaskScheduler::addTask(function_t function, uint32_t period, Policy policy,
     for (; it != end && id == it->first; ++it, ++id)
         ;
 
-    return addTask(function, period, id, policy, startTick);
+    return addTask(function, period, id, policy, startTick) != 0 ? id : 0;
 }
 
 bool TaskScheduler::removeTask(uint8_t id)

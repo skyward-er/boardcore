@@ -28,31 +28,20 @@
 namespace Boardcore
 {
 
-ADA::ADA(const ReferenceValues reference,
-         const KalmanFilter::KalmanConfig kalmanConfig)
-    : reference(reference), filter(kalmanConfig), state()
+ADA::ADA(const KalmanFilter::KalmanConfig kalmanConfig)
+    : filter(kalmanConfig), state()
 {
+    updateState();
 }
 
 void ADA::update(const float pressure)
 {
-    const auto filterState = filter.getState();
-
     // Update the Kalman filter
     filter.predict();
     filter.correct(KalmanFilter::CVectorP{pressure});
 
     // Convert filter data to altitudes and speeds
-    state.timestamp     = TimestampTimer::getTimestamp();
-    state.mslAltitude   = Aeroutils::relAltitude(pressure, reference.pressure,
-                                                 reference.temperature);
-    state.aglAltitude   = state.mslAltitude - reference.altitude;
-    state.verticalSpeed = Aeroutils::verticalSpeed(
-        filterState(0), filterState(1), reference.mslPressure,
-        reference.mslTemperature);
-    state.x0 = filterState(0);
-    state.x1 = filterState(1);
-    state.x2 = filterState(2);
+    updateState();
 }
 
 ADAState ADA::getState() { return state; }
@@ -62,6 +51,28 @@ void ADA::setReferenceValues(const ReferenceValues reference)
     this->reference = reference;
 }
 
+void ADA::setKalmanConfig(KalmanFilter::KalmanConfig config)
+{
+    filter.setConfig(config);
+}
+
 ReferenceValues ADA::getReferenceValues() { return reference; }
+
+void ADA::updateState()
+{
+    const auto filterState = filter.getState();
+
+    // Convert filter data to altitudes and speeds
+    state.x0          = filterState(0);
+    state.x1          = filterState(1);
+    state.x2          = filterState(2);
+    state.timestamp   = TimestampTimer::getTimestamp();
+    state.mslAltitude = Aeroutils::relAltitude(
+        filterState(0), reference.mslPressure, reference.mslTemperature);
+    state.aglAltitude   = state.mslAltitude - reference.refAltitude;
+    state.verticalSpeed = Aeroutils::verticalSpeed(
+        filterState(0), filterState(1), reference.mslPressure,
+        reference.mslTemperature);
+}
 
 }  // namespace Boardcore

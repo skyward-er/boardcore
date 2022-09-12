@@ -21,13 +21,14 @@
  */
 
 #include <drivers/interrupt/external_interrupts.h>
-#include <miosix.h>
 #include <radio/SX1278/SX1278.h>
 
-#include <cstring>
 #include <thread>
 
 #include "common.h"
+
+// Include body of the test
+#include "test-sx1278-bench.cpp"
 
 using namespace Boardcore;
 using namespace miosix;
@@ -65,8 +66,6 @@ using mosi = interfaces::spi5::mosi;
 #error "Target not supported"
 #endif
 
-SX1278 *sx1278 = nullptr;
-
 #if defined _BOARD_STM32F429ZI_SKYWARD_GS
 void __attribute__((used)) EXTI6_IRQHandlerImpl()
 #elif defined _BOARD_STM32F429ZI_SKYWARD_DEATHST_V3
@@ -90,36 +89,6 @@ void initBoard()
 #endif
 }
 
-void recvLoop()
-{
-    char buf[64];
-    while (1)
-    {
-        ssize_t res =
-            sx1278->receive(reinterpret_cast<uint8_t *>(buf), sizeof(buf));
-        if (res != -1)
-        {
-            // Make sure there is a terminator somewhere
-            buf[res] = 0;
-            printf("[sx1278] Received '%s'\n", buf);
-        }
-    }
-}
-
-void sendLoop(int interval, const char *data)
-{
-    char buf[64];
-    strncpy(buf, data, sizeof(buf) - 1);
-
-    while (1)
-    {
-        miosix::Thread::sleep(interval);
-
-        sx1278->send(reinterpret_cast<uint8_t *>(buf), strlen(buf) + 1);
-        printf("[sx1278] Sent '%s'\n", buf);
-    }
-}
-
 int main()
 {
     initBoard();
@@ -141,17 +110,30 @@ int main()
     }
 
     printConfig(config);
-
     printf("\n[sx1278] Initialization complete!\n");
 
-    // Spawn all threads
-    std::thread send([]() { sendLoop(1000, "Sample radio message"); });
-    std::thread recv([]() { recvLoop(); });
-
-    // sx1278->debugDumpRegisters();
+    // Initialize backgrounds threads
+    spawnThreads();
 
     while (1)
-        miosix::Thread::wait();
+    {
+        printf(
+            "\n[sx1278] Stats:\n"
+            "Tx bitrate:        %.2f kb/s\n"
+            "Packet sent:       %d\n"
+            "Rx bitrate:        %.2f kb/s\n"
+            "Packet received:   %d\n"
+            "Corrupted packets: %d\n"
+            "Packet loss:       %.2f %%\n"
+            "RSSI:              %.2f dBm\n"
+            "FEI:               %.2f dBm\n",
+            static_cast<float>(stats.txBitrate()) / 1000.0f, stats.sent_count,
+            static_cast<float>(stats.rxBitrate()) / 1000.0f, stats.recv_count,
+            stats.corrupted_count, 0.0f /* TODO: Packet loss */, stats.rssi,
+            stats.fei);
+
+        miosix::Thread::sleep(2000);
+    }
 
     return 0;
 }

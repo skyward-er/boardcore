@@ -23,6 +23,7 @@
 #include "SX1278.h"
 
 #include <kernel/scheduler/scheduler.h>
+#include <utils/Debug.h>
 
 #include <cmath>
 
@@ -47,7 +48,11 @@ SX1278BusManager::SX1278BusManager(SPIBusInterface &bus, miosix::GpioPin cs)
 {
 }
 
-void SX1278BusManager::lock(SX1278BusManager::Mode mode)
+void SX1278BusManager::lock() { mutex.lock(); }
+
+void SX1278BusManager::unlock() { mutex.unlock(); }
+
+void SX1278BusManager::lock_mode(SX1278BusManager::Mode mode)
 {
     mutex.lock();
 
@@ -55,7 +60,7 @@ void SX1278BusManager::lock(SX1278BusManager::Mode mode)
     irq_wait_thread = nullptr;
 }
 
-void SX1278BusManager::unlock()
+void SX1278BusManager::unlock_mode()
 {
     if (rx_wait_thread != nullptr)
     {
@@ -154,16 +159,26 @@ void SX1278BusManager::setMode(Mode mode)
 
 SX1278::SX1278(SPIBusInterface &bus, miosix::GpioPin cs) : bus_mgr(bus, cs) {}
 
-SX1278::Error SX1278::init(Config config)
+SX1278::Error SX1278::init(const Config &config)
 {
-    // Do an early version check to avoid stalling on non-working device
-    if (getVersion() != 0x12)
+    // First probe for the device
+    uint8_t version = getVersion();
+    if (version != 0x12)
     {
-        return Error::BAD_VERSION;
+        TRACE("[sx1278] Wrong chipid: %d\n", version);
+        return Error::BAD_VALUE;
     }
 
+    configure(config);
+    return Error::NONE;
+}
+
+bool SX1278::probe() { return getVersion() == 0x12; }
+
+void SX1278::configure(const Config &config)
+{
     // Lock the bus
-    bus_mgr.lock(Mode::MODE_STDBY);
+    SX1278BusManager::LockMode guard(bus_mgr, Mode::MODE_STDBY);
     bus_mgr.waitForIrq(RegIrqFlags::MODE_READY);
 
     setBitrate(config.bitrate);
@@ -216,14 +231,11 @@ SX1278::Error SX1278::init(Config config)
         // Enable PayloadReady, PacketSent on DIO0
         spi.writeRegister(REG_DIO_MAPPING_1, 0x00);
     }
-
-    bus_mgr.unlock();
-    return Error::NONE;
 }
 
 ssize_t SX1278::receive(uint8_t *pkt, size_t max_len)
 {
-    bus_mgr.lock(Mode::MODE_RX);
+    SX1278BusManager::LockMode guard(bus_mgr, Mode::MODE_RX);
 
     uint8_t len = 0;
     do
@@ -244,7 +256,6 @@ ssize_t SX1278::receive(uint8_t *pkt, size_t max_len)
         // For some reason this sometimes happen?
     } while (len == 0);
 
-    bus_mgr.unlock();
     return len;
 }
 
@@ -258,7 +269,7 @@ bool SX1278::send(uint8_t *pkt, size_t len)
     // being ready, so lock up if we are going too fast
     rateLimitTx();
 
-    bus_mgr.lock(SX1278BusManager::Mode::MODE_TX);
+    SX1278BusManager::LockMode guard(bus_mgr, Mode::MODE_TX);
 
     // Wait for TX ready
     bus_mgr.waitForIrq(RegIrqFlags::TX_READY);
@@ -273,7 +284,6 @@ bool SX1278::send(uint8_t *pkt, size_t len)
 
     // Wait for packet sent
     bus_mgr.waitForIrq(RegIrqFlags::PACKET_SENT);
-    bus_mgr.unlock();
 
     last_tx = now();
     return true;
@@ -294,9 +304,33 @@ void SX1278::rateLimitTx()
 
 uint8_t SX1278::getVersion()
 {
+    SX1278BusManager::Lock guard(bus_mgr);
     SPITransaction spi(bus_mgr.getBus(), SPITransaction::WriteBit::INVERTED);
 
     return spi.readRegister(REG_VERSION);
+}
+
+float SX1278::getRssi()
+{
+    SX1278BusManager::Lock guard(bus_mgr);
+    SPITransaction spi(bus_mgr.getBus(), SPITransaction::WriteBit::INVERTED);
+
+    return static_cast<float>(spi.readRegister(REG_RSSI_VALUE)) * -0.5f;
+}
+
+float SX1278::getFei()
+{
+    SX1278BusManager::Lock guard(bus_mgr);
+    SPITransaction spi(bus_mgr.getBus(), SPITransaction::WriteBit::INVERTED);
+
+    // Order of read is important!!
+    uint8_t fei_msb = spi.readRegister(REG_FEI_MSB);
+    uint8_t fei_lsb = spi.readRegister(REG_FEI_LSB);
+
+    uint16_t fei = (static_cast<uint16_t>(fei_msb) << 8) |
+                   (static_cast<uint16_t>(fei_lsb));
+
+    return static_cast<float>(fei) * FSTEP;
 }
 
 void SX1278::setBitrate(int bitrate)

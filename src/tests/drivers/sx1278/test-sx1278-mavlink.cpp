@@ -23,7 +23,7 @@
 #include <drivers/interrupt/external_interrupts.h>
 #include <radio/SX1278/SX1278.h>
 
-#include "test-sx1278-core.h"
+#include "common.h"
 
 // Ignore warnings, as we don't want to change third party generated files to
 // fix them

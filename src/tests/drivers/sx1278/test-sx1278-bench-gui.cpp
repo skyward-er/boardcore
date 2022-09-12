@@ -1,4 +1,4 @@
-/* Copyright (c) 2021 Skyward Experimental Rocketry
+/* Copyright (c) 2022 Skyward Experimental Rocketry
  * Author: Davide Mor
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -21,16 +21,19 @@
  */
 
 #include <drivers/interrupt/external_interrupts.h>
-#include <miosix.h>
 #include <radio/SX1278/SX1278.h>
 
-#include <cstring>
 #include <thread>
 
 #include "common.h"
+#include "gui/GUI.h"
+
+// Include body of the test
+#include "test-sx1278-bench.cpp"
 
 using namespace Boardcore;
 using namespace miosix;
+using namespace mxgui;
 
 #if defined _BOARD_STM32F429ZI_SKYWARD_GS
 #include "interfaces-impl/hwmapping.h"
@@ -49,28 +52,14 @@ using mosi = interfaces::spi4::mosi;
 
 #define SX1278_SPI SPI4
 
-#elif defined _BOARD_STM32F429ZI_SKYWARD_DEATHST_V3
-#include "interfaces-impl/hwmapping.h"
-
-using cs   = sensors::sx127x::cs;
-using dio0 = sensors::sx127x::dio0;
-
-using sck  = interfaces::spi5::sck;
-using miso = interfaces::spi5::miso;
-using mosi = interfaces::spi5::mosi;
-
-#define SX1278_SPI SPI5
-
 #else
 #error "Target not supported"
 #endif
 
-SX1278 *sx1278 = nullptr;
+GUI *gui = nullptr;
 
 #if defined _BOARD_STM32F429ZI_SKYWARD_GS
 void __attribute__((used)) EXTI6_IRQHandlerImpl()
-#elif defined _BOARD_STM32F429ZI_SKYWARD_DEATHST_V3
-void __attribute__((used)) EXTI10_IRQHandlerImpl()
 #else
 #error "Target not supported"
 #endif
@@ -83,46 +72,28 @@ void initBoard()
 {
 #if defined _BOARD_STM32F429ZI_SKYWARD_GS
     enableExternalInterrupt(GPIOF_BASE, 6, InterruptTrigger::RISING_EDGE);
-#elif defined _BOARD_STM32F429ZI_SKYWARD_DEATHST_V3
-    enableExternalInterrupt(GPIOF_BASE, 10, InterruptTrigger::RISING_EDGE);
 #else
 #error "Target not supported"
 #endif
 }
 
-void recvLoop()
+void initGUI()
 {
-    char buf[64];
-    while (1)
-    {
-        ssize_t res =
-            sx1278->receive(reinterpret_cast<uint8_t *>(buf), sizeof(buf));
-        if (res != -1)
-        {
-            // Make sure there is a terminator somewhere
-            buf[res] = 0;
-            printf("[sx1278] Received '%s'\n", buf);
-        }
-    }
-}
+    // TODO: This should be in bsp
+    using GpioUserBtn = Gpio<GPIOA_BASE, 0>;
+    GpioUserBtn::mode(Mode::INPUT_PULL_DOWN);
 
-void sendLoop(int interval, const char *data)
-{
-    char buf[64];
-    strncpy(buf, data, sizeof(buf) - 1);
+    gui = new GUI();
 
-    while (1)
-    {
-        miosix::Thread::sleep(interval);
-
-        sx1278->send(reinterpret_cast<uint8_t *>(buf), strlen(buf) + 1);
-        printf("[sx1278] Sent '%s'\n", buf);
-    }
+    ButtonHandler::getInstance().registerButtonCallback(
+        GpioUserBtn::getPin(),
+        [](auto event) { gui->screen_manager.onButtonEvent(event); });
 }
 
 int main()
 {
     initBoard();
+    initGUI();
 
     // Run default configuration
     SX1278::Config config;
@@ -136,22 +107,27 @@ int main()
     printf("\n[sx1278] Configuring sx1278...\n");
     if ((err = sx1278->init(config)) != SX1278::Error::NONE)
     {
+        gui->stats_screen.updateError(err);
         printf("[sx1278] sx1278->init error: %s\n", stringFromErr(err));
-        return -1;
+
+        while (1)
+            Thread::wait();
     }
 
     printConfig(config);
+    gui->stats_screen.updateReady();
 
-    printf("\n[sx1278] Initialization complete!\n");
-
-    // Spawn all threads
-    std::thread send([]() { sendLoop(1000, "Sample radio message"); });
-    std::thread recv([]() { recvLoop(); });
-
-    // sx1278->debugDumpRegisters();
+    // Initialize backgrounds threads
+    spawnThreads();
 
     while (1)
-        miosix::Thread::wait();
+    {
+        StatsScreen::Data data = {
+            stats.txBitrate(), stats.rxBitrate(), stats.corrupted_count,
+            stats.sent_count,  stats.recv_count,  0.0f /* TODO: Packet loss */,
+            stats.rssi};
 
-    return 0;
+        gui->stats_screen.updateStats(data);
+        Thread::sleep(100);
+    }
 }

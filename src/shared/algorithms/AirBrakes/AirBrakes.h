@@ -113,13 +113,6 @@ private:
                      float drag);
 
     /**
-     * @brief Computes the speed in Mach unit for the given position.
-     *
-     * @return Mach speed [M].
-     */
-    float getMach(TimedTrajectoryPoint currentPosition);
-
-    /**
      * @brief Computes the airbrakes extension given the desired area.
      *
      * @param surface Desired airbrakes surface [m^2].

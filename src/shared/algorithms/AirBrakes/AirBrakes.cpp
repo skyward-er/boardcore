@@ -23,17 +23,19 @@
 #include "AirBrakes.h"
 
 #include <logger/Logger.h>
+#include <math.h>
 #include <utils/Constants.h>
 
 #include <limits>
 
 #include "drivers/timer/TimestampTimer.h"
 #include "utils/Debug.h"
+using namespace std;
 
 namespace Boardcore
 {
 
-AirBrakes::AirBrakes(std::function<TimedTrajectoryPoint()> getCurrentPosition,
+AirBrakes::AirBrakes(function<TimedTrajectoryPoint()> getCurrentPosition,
                      const TrajectorySet &trajectorySet,
                      const AirBrakesConfig &config,
                      std::function<void(float)> setActuator,
@@ -164,7 +166,7 @@ float AirBrakes::controlInterp(TrajectoryPoint currentPosition)
 
 void AirBrakes::chooseTrajectory(TrajectoryPoint currentPosition)
 {
-    float minDistance   = std::numeric_limits<float>::infinity();
+    float minDistance   = numeric_limits<float>::infinity();
     uint8_t trjIndexMin = trajectorySet.length() / 2;
 
     for (uint8_t trjIndex = 0; trjIndex < trajectorySet.length(); trjIndex++)
@@ -197,17 +199,17 @@ TrajectoryPoint AirBrakes::getSetpoint(TrajectoryPoint currentPosition)
     if (chosenTrajectory == nullptr)
         return {};
 
-    float minDistance = std::numeric_limits<float>::infinity();
+    float minDistance = numeric_limits<float>::infinity();
 
     uint32_t end = chosenTrajectory->size();
     for (uint32_t ptIndex = lastSelectedPointIndex; ptIndex < end; ptIndex++)
     {
-        float distanceFromCurrentinput = TrajectoryPoint::distanceSquared(
-            chosenTrajectory->points[ptIndex], currentPosition);
+        float distanceFromCurrentInput =
+            abs(chosenTrajectory->points[ptIndex].z - currentPosition.z);
 
-        if (distanceFromCurrentinput < minDistance)
+        if (distanceFromCurrentInput < minDistance)
         {
-            minDistance            = distanceFromCurrentinput;
+            minDistance            = distanceFromCurrentInput;
             lastSelectedPointIndex = ptIndex;
         }
     }
@@ -244,7 +246,7 @@ float AirBrakes::piStep(TimedTrajectoryPoint currentPosition,
 float AirBrakes::getSurface(const TimedTrajectoryPoint &currentPosition,
                             float rho, float targetDrag)
 {
-    float bestDDrag   = std::numeric_limits<float>::infinity();
+    float bestDDrag   = numeric_limits<float>::infinity();
     float bestSurface = 0;
 
     // TODO: Drags are monotone, here the algorithm can be more efficient
@@ -265,12 +267,6 @@ float AirBrakes::getSurface(const TimedTrajectoryPoint &currentPosition,
     }
 
     return bestSurface;
-}
-
-float AirBrakes::getMach(TimedTrajectoryPoint currentPosition)
-{
-    return currentPosition.vMod /
-           (Constants::CO + Constants::ALPHA * currentPosition.z);
 }
 
 float AirBrakes::getExtension(float surface)

@@ -84,15 +84,6 @@ void StateInitializer::triad(const Eigen::Vector3f& acc,
     x_init.block<4, 1>(NAS::IDX_QUAT, 0) = q;
 }
 
-void StateInitializer::positionInit(const float pressure,
-                                    const float pressureRef,
-                                    const float temperatureRef)
-{
-    x_init(0) = 0.0;
-    x_init(1) = 0.0;
-    // msl altitude (in NED, so negative)
-    x_init(2) = -Aeroutils::relAltitude(pressure, pressureRef, temperatureRef);
-}
-
 Eigen::Matrix<float, 13, 1> StateInitializer::getInitX() { return x_init; }
+
 }  // namespace Boardcore
