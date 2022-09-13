@@ -41,48 +41,9 @@ class AirBrakes : public Algorithm
 public:
     AirBrakes(std::function<TimedTrajectoryPoint()> getCurrentPosition,
               const TrajectorySet &trajectorySet, const AirBrakesConfig &config,
-              std::function<void(float)> setActuator, bool interpAlgo);
+              std::function<void(float)> setActuator);
 
-    bool init() override;
-
-    /**
-     * @brief This method chooses the trajectory the rocket will follow and
-     * starts the algorithm.
-     */
-    void begin();
-
-    /**
-     * @brief Looks for nearest point in the current chosen trajectory and moves
-     * the airbraks according to the current rocket speed and the prediction.
-     */
-    void step() override;
-
-    /**
-     * @brief registers the timestamp of liftoff
-     */
-    void setLiftoffTimestamp();
-
-private:
-    /**
-     * @brief Calculates the percentage of aperture of the airbrakes
-     * interpolating the trajectory points of the fully closed and fully opened
-     * references
-     */
-    float controlInterp(TrajectoryPoint currentPosition);
-
-    /**
-     * @brief Searched all the trajectories and find the neares point to the
-     * given position. The trajectory of this point is the one choosen.
-     */
-    void chooseTrajectory(TrajectoryPoint currentPosition);
-
-    /**
-     * @brief Searches, in the choosen trajectory, the point neares to the given
-     * one. This method considers the Euclidean distance between altitude and
-     * vertical speed.
-     */
-    TrajectoryPoint getSetpoint(TrajectoryPoint currentPosition);
-
+protected:
     /**
      * @brief Returns the air density at the current altitude using the basic
      * atmosphere model.
@@ -91,14 +52,6 @@ private:
      * @return The density of air according to current altitude [Kg/m^3]
      */
     float getRho(float z);
-
-    /**
-     * @brief Update PI to compute the target drag froce.
-     *
-     * @returns Target drag force to generate [N].
-     */
-    float piStep(TimedTrajectoryPoint currentPosition,
-                 TrajectoryPoint reference, float rho);
 
     /**
      * @brief Compute the necessary airbrakes surface to match the
@@ -141,7 +94,7 @@ private:
      */
     float getDrag(TimedTrajectoryPoint currentPosition, float cd, float rho);
 
-private:
+protected:
     std::function<TimedTrajectoryPoint()> getCurrentPosition;
     const TrajectorySet &trajectorySet;
     const AirBrakesConfig &config;
@@ -149,20 +102,6 @@ private:
 
     TimedTrajectoryPoint lastPosition;
     uint32_t lastSelectedPointIndex = 0;
-    uint64_t tLiftoff;  ///< timestamp of the liftoff
-
-    // PI
-    PIController pi;
-
-    Trajectory *chosenTrajectory = nullptr;
-
-    // INTERP
-    float lastPercentage;  ///< last opening of the airbrakes
-    float filter_coeff;    ///< how much the new aperture impacts the real one
-    float Tfilter;         ///< [s] time from liftoff when to update filter
-    bool filter = false;   ///< whether to apply the filter or not
-
-    bool interpAlgo = false;
 };
 
 }  // namespace Boardcore

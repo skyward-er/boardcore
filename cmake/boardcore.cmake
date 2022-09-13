@@ -34,6 +34,8 @@ foreach(OPT_BOARD ${BOARDS})
         # Algorithms
         ${SBS_BASE}/src/shared/algorithms/ADA/ADA.cpp
         ${SBS_BASE}/src/shared/algorithms/AirBrakes/AirBrakes.cpp
+        ${SBS_BASE}/src/shared/algorithms/AirBrakes/AirBrakesPI.cpp
+        ${SBS_BASE}/src/shared/algorithms/AirBrakes/AirBrakesInterp.cpp
         ${SBS_BASE}/src/shared/algorithms/NAS/NAS.cpp
         ${SBS_BASE}/src/shared/algorithms/NAS/StateInitializer.cpp
 
