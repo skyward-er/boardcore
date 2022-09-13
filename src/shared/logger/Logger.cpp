@@ -74,8 +74,8 @@ bool Logger::start()
     // Perhaps excessive defensive programming as thread creation failure is
     // highly unlikely (only if ram is full).
 
-    packTh = Thread::create(packThreadLauncher, skywardStack(16 * 1024), 1,
-                            this, Thread::JOINABLE);
+    packTh = Thread::create(packThreadLauncher, STACK_MIN_FOR_SKYWARD, 1, this,
+                            Thread::JOINABLE);
     if (!packTh)
     {
         fclose(file);
@@ -83,7 +83,7 @@ bool Logger::start()
         return false;
     }
 
-    writeTh = Thread::create(writeThreadLauncher, skywardStack(16 * 1024), 1,
+    writeTh = Thread::create(writeThreadLauncher, STACK_MIN_FOR_SKYWARD, 1,
                              this, Thread::JOINABLE);
     if (!writeTh)
     {
