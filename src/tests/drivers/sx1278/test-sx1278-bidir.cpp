@@ -101,7 +101,8 @@ void recvLoop()
         {
             // Make sure there is a terminator somewhere
             buf[res] = 0;
-            printf("[sx1278] Received '%s'\n", buf);
+            printf("[sx1278] Received '%s', power: %.2f\n", buf,
+                   sx1278->getLastRxRssi());
         }
     }
 }

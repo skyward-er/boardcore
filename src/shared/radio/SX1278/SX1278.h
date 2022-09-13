@@ -91,10 +91,10 @@ public:
     public:
         LockMode(SX1278BusManager &bus, Mode mode) : bus(bus)
         {
-            bus.lock_mode(mode);
+            bus.lockMode(mode);
         }
 
-        ~LockMode() { bus.unlock_mode(); }
+        ~LockMode() { bus.unlockMode(); }
 
     private:
         SX1278BusManager &bus;
@@ -117,12 +117,12 @@ public:
      *
      * @param mode Device mode requested.
      */
-    void lock_mode(Mode mode);
+    void lockMode(Mode mode);
 
     /**
      * @brief Release bus for exclusive access.
      */
-    void unlock_mode();
+    void unlockMode();
 
     /**
      * @brief Get underlying bus.
@@ -192,6 +192,17 @@ public:
         HZ_250000 = 1,
     };
 
+    enum class Shaping
+    {
+        NONE = SX1278Defs::RegPaRamp::MODULATION_SHAPING_NONE,
+        GAUSSIAN_BT_1_0 =
+            SX1278Defs::RegPaRamp::MODULATION_SHAPING_GAUSSIAN_BT_1_0,
+        GAUSSIAN_BT_0_5 =
+            SX1278Defs::RegPaRamp::MODULATION_SHAPING_GAUSSIAN_BT_1_0,
+        GAUSSIAN_BT_0_3 =
+            SX1278Defs::RegPaRamp::MODULATION_SHAPING_GAUSSIAN_BT_1_0,
+    };
+
     /**
      * @brief Requested SX1278 configuration.
      */
@@ -206,6 +217,8 @@ public:
             120;  //< Over current protection limit in mA (0 for no limit).
         int power = 10;  //< Output power in dB (Between +2 and +17, or +20 for
                          // full power).
+        Shaping shaping = Shaping::GAUSSIAN_BT_1_0;  //< Shaping applied to
+                                                     // the modulation stream.
     };
 
     /**
@@ -267,14 +280,19 @@ public:
     uint8_t getVersion();
 
     /**
-     * @brief Get calculated RSSI, in dBm
+     * @brief Get the current perceived RSSI in dBm.
      */
-    float getRssi();
+    float getCurRssi();
 
     /**
-     * @brief Get the frequency error index in Hz.
+     * @brief Get the RSSI in dBm, during last packet receive.
      */
-    float getFei();
+    float getLastRxRssi();
+
+    /**
+     * @brief Get the frequency error index in Hz, during last packet receive.
+     */
+    float getLastRxFei();
 
     /**
      * @brief Handle an incoming interrupt.
@@ -290,6 +308,10 @@ public:
     using Mode = SX1278BusManager::Mode;
 
     void rateLimitTx();
+    void imageCalibrate();
+
+    float getRssi();
+    float getFei();
 
     void setBitrate(int bitrate);
     void setFreqDev(int freq_dev);
@@ -300,10 +322,12 @@ public:
     void setAfcBw(RxBw afc_bw);
     void setPreableLen(int len);
     void setPa(int power, bool pa_boost);
+    void setShaping(Shaping shaping);
 
     void waitForIrq(uint16_t mask);
 
-    long long last_tx = 0;
+    long long last_tx  = 0;
+    float last_rx_rssi = 0.0f;
     SX1278BusManager bus_mgr;
     PrintLogger logger = Logging::getLogger("sx1278");
 };

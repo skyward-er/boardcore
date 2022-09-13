@@ -118,8 +118,8 @@ void recvLoop()
         {
             stats.recv_count++;
 
-            stats.rssi = sx1278->getRssi();
-            stats.fei  = sx1278->getFei();
+            stats.rssi = sx1278->getLastRxRssi();
+            stats.fei  = sx1278->getLastRxFei();
         }
         else
         {

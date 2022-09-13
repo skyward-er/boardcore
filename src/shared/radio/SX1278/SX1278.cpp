@@ -43,6 +43,8 @@ constexpr uint8_t REG_SYNC_CONFIG_DEFAULT =
     RegSyncConfig::AUTO_RESTART_RX_MODE_OFF |
     RegSyncConfig::PREAMBLE_POLARITY_55 | RegSyncConfig::SYNC_ON;
 
+constexpr uint8_t REG_IMAGE_CAL_DEFAULT = RegImageCal::TEMP_TRESHOLD_10DEG;
+
 SX1278BusManager::SX1278BusManager(SPIBusInterface &bus, miosix::GpioPin cs)
     : slave(bus, cs, spiConfig()), mode(SX1278BusManager::Mode::MODE_SLEEP)
 {
@@ -52,7 +54,7 @@ void SX1278BusManager::lock() { mutex.lock(); }
 
 void SX1278BusManager::unlock() { mutex.unlock(); }
 
-void SX1278BusManager::lock_mode(SX1278BusManager::Mode mode)
+void SX1278BusManager::lockMode(SX1278BusManager::Mode mode)
 {
     mutex.lock();
 
@@ -60,7 +62,7 @@ void SX1278BusManager::lock_mode(SX1278BusManager::Mode mode)
     irq_wait_thread = nullptr;
 }
 
-void SX1278BusManager::unlock_mode()
+void SX1278BusManager::unlockMode()
 {
     if (rx_wait_thread != nullptr)
     {
@@ -194,14 +196,13 @@ void SX1278::configure(const Config &config)
     setSyncWord(sync_word, 2);
     setPreableLen(2);
     setPa(config.power, true);
+    setShaping(config.shaping);
 
     // Setup generic parameters
     {
         SPITransaction spi(bus_mgr.getBus(),
                            SPITransaction::WriteBit::INVERTED);
 
-        spi.writeRegister(REG_PA_RAMP,
-                          RegPaRamp::MODULATION_SHAPING_NONE | 0x09);
         spi.writeRegister(REG_RX_CONFIG,
                           RegRxConfig::AFC_AUTO_ON | RegRxConfig::AGC_AUTO_ON |
                               RegRxConfig::RX_TRIGGER_PREAMBLE_DETECT |
@@ -231,6 +232,8 @@ void SX1278::configure(const Config &config)
         // Enable PayloadReady, PacketSent on DIO0
         spi.writeRegister(REG_DIO_MAPPING_1, 0x00);
     }
+
+    // imageCalibrate();
 }
 
 ssize_t SX1278::receive(uint8_t *pkt, size_t max_len)
@@ -242,6 +245,7 @@ ssize_t SX1278::receive(uint8_t *pkt, size_t max_len)
     {
         // Special wait for payload ready
         bus_mgr.waitForRxIrq();
+        last_rx_rssi = getRssi();
 
         {
             SPITransaction spi(bus_mgr.getBus(),
@@ -291,6 +295,20 @@ bool SX1278::send(uint8_t *pkt, size_t len)
 
 void SX1278::handleDioIRQ() { bus_mgr.handleDioIRQ(); }
 
+float SX1278::getLastRxFei()
+{
+    SX1278BusManager::Lock guard(bus_mgr);
+    return getFei();
+}
+
+float SX1278::getLastRxRssi() { return last_rx_rssi; }
+
+float SX1278::getCurRssi()
+{
+    SX1278BusManager::Lock guard(bus_mgr);
+    return getRssi();
+}
+
 void SX1278::rateLimitTx()
 {
     const long long RATE_LIMIT = 2;
@@ -300,6 +318,16 @@ void SX1278::rateLimitTx()
     {
         miosix::Thread::sleep(RATE_LIMIT - delta);
     }
+}
+
+void SX1278::imageCalibrate()
+{
+    SPITransaction spi(bus_mgr.getBus(), SPITransaction::WriteBit::INVERTED);
+    spi.writeRegister(REG_IMAGE_CAL, REG_IMAGE_CAL_DEFAULT | (1 << 6));
+
+    // Wait for calibration complete by polling on running register
+    while (spi.readRegister(REG_IMAGE_CAL) & (1 << 5))
+        miosix::delayUs(10);
 }
 
 uint8_t SX1278::getVersion()
@@ -312,7 +340,6 @@ uint8_t SX1278::getVersion()
 
 float SX1278::getRssi()
 {
-    SX1278BusManager::Lock guard(bus_mgr);
     SPITransaction spi(bus_mgr.getBus(), SPITransaction::WriteBit::INVERTED);
 
     return static_cast<float>(spi.readRegister(REG_RSSI_VALUE)) * -0.5f;
@@ -320,7 +347,6 @@ float SX1278::getRssi()
 
 float SX1278::getFei()
 {
-    SX1278BusManager::Lock guard(bus_mgr);
     SPITransaction spi(bus_mgr.getBus(), SPITransaction::WriteBit::INVERTED);
 
     // Order of read is important!!
@@ -346,8 +372,6 @@ void SX1278::setBitrate(int bitrate)
 void SX1278::setFreqDev(int freq_dev)
 {
     uint16_t val = freq_dev / FSTEP;
-
-    // Update values
     SPITransaction spi(bus_mgr.getBus(), SPITransaction::WriteBit::INVERTED);
     spi.writeRegister(REG_FDEV_MSB, (val >> 8) & 0x3f);
     spi.writeRegister(REG_FDEV_LSB, val);
@@ -438,14 +462,21 @@ void SX1278::setPa(int power, bool pa_boost)
                                              RegPaConfig::PA_SELECT_BOOST);
         spi.writeRegister(REG_PA_DAC, RegPaDac::PA_DAC_PA_BOOST | 0x10 << 3);
     }
-    else
-    {
-        // Run power amplifier boost at full power
-        power = 15;
-        spi.writeRegister(REG_PA_CONFIG, MAX_POWER << 4 | power |
-                                             RegPaConfig::PA_SELECT_BOOST);
-        spi.writeRegister(REG_PA_DAC, RegPaDac::PA_DAC_PA_BOOST | 0x10 << 3);
-    }
+    // RA01 modules aren't capable of this, disable it to avoid damaging them
+    // else
+    // {
+    //     // Run power amplifier boost at full power
+    //     power = 15;
+    //     spi.writeRegister(REG_PA_CONFIG, MAX_POWER << 4 | power |
+    //                                          RegPaConfig::PA_SELECT_BOOST);
+    //     spi.writeRegister(REG_PA_DAC, RegPaDac::PA_DAC_PA_BOOST | 0x10 << 3);
+    // }
+}
+
+void SX1278::setShaping(Shaping shaping)
+{
+    SPITransaction spi(bus_mgr.getBus(), SPITransaction::WriteBit::INVERTED);
+    spi.writeRegister(REG_PA_RAMP, static_cast<uint8_t>(shaping) | 0x09);
 }
 
 void SX1278::debugDumpRegisters()

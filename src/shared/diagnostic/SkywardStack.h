@@ -30,7 +30,7 @@ namespace Boardcore
 #ifndef _ARCH_CORTEXM3_STM32F2
 static const unsigned int STACK_MIN_FOR_SKYWARD = 16 * 1024;
 #else
-static const unsigned int STACK_MIN_FOR_SKYWARD = 1024;
+static const unsigned int STACK_MIN_FOR_SKYWARD = 4 * 1024;
 #endif
 
 inline unsigned int skywardStack(unsigned int stack)
