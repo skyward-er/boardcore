@@ -54,7 +54,7 @@ void SX1278BusManager::lock() { mutex.lock(); }
 
 void SX1278BusManager::unlock() { mutex.unlock(); }
 
-void SX1278BusManager::lock_mode(SX1278BusManager::Mode mode)
+void SX1278BusManager::lockMode(SX1278BusManager::Mode mode)
 {
     mutex.lock();
 
@@ -62,7 +62,7 @@ void SX1278BusManager::lock_mode(SX1278BusManager::Mode mode)
     irq_wait_thread = nullptr;
 }
 
-void SX1278BusManager::unlock_mode()
+void SX1278BusManager::unlockMode()
 {
     if (rx_wait_thread != nullptr)
     {

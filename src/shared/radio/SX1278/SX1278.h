@@ -91,10 +91,10 @@ public:
     public:
         LockMode(SX1278BusManager &bus, Mode mode) : bus(bus)
         {
-            bus.lock_mode(mode);
+            bus.lockMode(mode);
         }
 
-        ~LockMode() { bus.unlock_mode(); }
+        ~LockMode() { bus.unlockMode(); }
 
     private:
         SX1278BusManager &bus;
@@ -117,12 +117,12 @@ public:
      *
      * @param mode Device mode requested.
      */
-    void lock_mode(Mode mode);
+    void lockMode(Mode mode);
 
     /**
      * @brief Release bus for exclusive access.
      */
-    void unlock_mode();
+    void unlockMode();
 
     /**
      * @brief Get underlying bus.
