@@ -35,12 +35,12 @@ using namespace std;
 namespace Boardcore
 {
 
-AirBrakesPI::AirBrakesPI(function<TimedTrajectoryPoint()> getCurrentPosition,
-                         const TrajectorySet &trajectorySet,
-                         const AirBrakesPIConfig &config,
-                         std::function<void(float)> setActuator)
+AirBrakesPI::AirBrakesPI(
+    std::function<TimedTrajectoryPoint()> getCurrentPosition,
+    const TrajectorySet &trajectorySet, const AirBrakesConfig &config,
+    const AirBrakesPIConfig &configPI, std::function<void(float)> setActuator)
     : AirBrakes(getCurrentPosition, trajectorySet, config, setActuator),
-      config(config), pi(config.KP, config.KI, config.TS)
+      pi(configPI.KP, configPI.KI, configPI.TS)
 {
 }
 
@@ -53,8 +53,6 @@ void AirBrakesPI::begin()
 
     lastPosition = getCurrentPosition();
     chooseTrajectory(lastPosition);
-    TRACE("[ABK] EXECUTING PI\n");
-
     Algorithm::begin();
 }
 

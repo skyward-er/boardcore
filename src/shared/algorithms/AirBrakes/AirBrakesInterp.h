@@ -41,7 +41,8 @@ class AirBrakesInterp : public AirBrakes
 public:
     AirBrakesInterp(std::function<TimedTrajectoryPoint()> getCurrentPosition,
                     const TrajectorySet &trajectorySet,
-                    const AirBrakesInterpConfig &config,
+                    const AirBrakesConfig &config,
+                    const AirBrakesInterpConfig &configInterp,
                     std::function<void(float)> setActuator, float dz);
 
     bool init() override;
@@ -71,12 +72,12 @@ private:
      */
     float controlInterp(TrajectoryPoint currentPosition);
 
-    const AirBrakesInterpConfig &config;  ///< specialized config for interp
-    uint64_t tLiftoff;                    ///< timestamp of the liftoff
-    float lastPercentage;                 ///< last opening of the airbrakes
-    float filter_coeff;   ///< how much the new aperture impacts the real one
-    float Tfilter;        ///< [s] time from liftoff when to update filter
-    bool filter = false;  ///< whether to apply the filter or not
+    const AirBrakesInterpConfig &configInterp;  ///< specialized config
+    uint64_t tLiftoff;                          ///< timestamp of the liftoff
+    float lastPercentage;  ///< last opening of the airbrakes
+    float filter_coeff;    ///< how much the new aperture impacts the real one
+    float Tfilter;         ///< [s] time from liftoff when to update filter
+    bool filter = false;   ///< whether to apply the filter or not
     float dz;  ///< [m] the distance between two consecutive Trajectory points
 };
 

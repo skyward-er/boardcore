@@ -42,7 +42,8 @@ class AirBrakesPI : public AirBrakes
 public:
     AirBrakesPI(std::function<TimedTrajectoryPoint()> getCurrentPosition,
                 const TrajectorySet &trajectorySet,
-                const AirBrakesPIConfig &config,
+                const AirBrakesConfig &config,
+                const AirBrakesPIConfig &configPI,
                 std::function<void(float)> setActuator);
 
     bool init() override;
@@ -82,7 +83,6 @@ private:
                  TrajectoryPoint reference, float rho);
 
 private:
-    const AirBrakesPIConfig &config;  ///< specialized config for PI
     PIController pi;
 
     Trajectory *chosenTrajectory = nullptr;

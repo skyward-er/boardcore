@@ -35,12 +35,13 @@ namespace Boardcore
 
 AirBrakesInterp::AirBrakesInterp(
     std::function<TimedTrajectoryPoint()> getCurrentPosition,
-    const TrajectorySet &trajectorySet, const AirBrakesInterpConfig &config,
+    const TrajectorySet &trajectorySet, const AirBrakesConfig &config,
+    const AirBrakesInterpConfig &configInterp,
     std::function<void(float)> setActuator, float dz)
     : AirBrakes(getCurrentPosition, trajectorySet, config, setActuator),
-      config(config), tLiftoff(-1), lastPercentage(0),
-      filter_coeff(config.INITIAL_FILTER_COEFF),
-      Tfilter(config.INITIAL_T_FILTER), filter(false), dz(dz)
+      configInterp(configInterp), tLiftoff(-1), lastPercentage(0),
+      filter_coeff(configInterp.INITIAL_FILTER_COEFF),
+      Tfilter(configInterp.INITIAL_T_FILTER), filter(false), dz(dz)
 {
 }
 
@@ -50,10 +51,6 @@ void AirBrakesInterp::begin()
 {
     if (running)
         return;
-
-    filter_coeff = config.INITIAL_FILTER_COEFF;
-    Tfilter      = config.INITIAL_T_FILTER;
-    TRACE("[ABK] EXECUTING INTERP\n");
 
     Algorithm::begin();
 }
@@ -83,8 +80,8 @@ void AirBrakesInterp::step()
         uint64_t currentTimestamp = TimestampTimer::getTimestamp();
         if (currentTimestamp - tLiftoff >= Tfilter * 1e6)
         {
-            Tfilter += config.DELTA_T_FILTER;
-            filter_coeff /= config.FILTER_RATIO;
+            Tfilter += configInterp.DELTA_T_FILTER;
+            filter_coeff /= configInterp.FILTER_RATIO;
         }
     }
     else

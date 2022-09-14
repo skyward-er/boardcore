@@ -26,7 +26,7 @@
 namespace Boardcore
 {
 
-struct AirBrakesInterpConfig : public AirBrakesConfig
+struct AirBrakesInterpConfig
 {
     // interp parameters
     float INITIAL_FILTER_COEFF;
@@ -35,16 +35,6 @@ struct AirBrakesInterpConfig : public AirBrakesConfig
     float DELTA_T_FILTER;    ///< after how much time we change the filter
                              ///< coefficient
     float FILTER_RATIO;      ///< how much the filter coefficient is reduced
-
-    AirBrakesInterpConfig(AirBrakesConfig &abkConfig,
-                          float INITIAL_FILTER_COEFF, float INITIAL_T_FILTER,
-                          float DELTA_T_FILTER, float FILTER_RATIO)
-        : AirBrakesConfig(abkConfig),
-          INITIAL_FILTER_COEFF(INITIAL_FILTER_COEFF),
-          INITIAL_T_FILTER(INITIAL_T_FILTER), DELTA_T_FILTER(DELTA_T_FILTER),
-          FILTER_RATIO(FILTER_RATIO)
-    {
-    }
 };
 
 }  // namespace Boardcore

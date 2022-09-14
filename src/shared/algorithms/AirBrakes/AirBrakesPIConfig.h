@@ -27,18 +27,12 @@
 namespace Boardcore
 {
 
-struct AirBrakesPIConfig : public AirBrakesConfig
+struct AirBrakesPIConfig
 {
     // PI parameters
     float KP;
     float KI;
     float TS;
-
-    AirBrakesPIConfig(const AirBrakesConfig &abkConfig, float KP, float KI,
-                      float TS)
-        : AirBrakesConfig(abkConfig), KP(KP), KI(KI), TS(TS)
-    {
-    }
 };
 
 }  // namespace Boardcore
