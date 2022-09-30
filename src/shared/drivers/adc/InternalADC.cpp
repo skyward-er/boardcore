@@ -87,14 +87,8 @@ bool InternalADC::init()
     // Turn on the ADC
     adc->CR2 |= ADC_CR2_ADON;
 
-    // Set single conversion mode
-    // adc->CR2 &= ~ADC_CR2_CONT;
-
-    // Set scan mode
-    // adc->CR1 |= ADC_CR1_SCAN;
-
-    // Data alignment
-    // adc->CR2 &= ~ADC_CR2_ALIGN;  // right
+    // Set scan mode to read all the enabled channels in sequence
+    adc->CR1 |= ADC_CR1_SCAN;
 
     if (isUsingDMA)
     {
