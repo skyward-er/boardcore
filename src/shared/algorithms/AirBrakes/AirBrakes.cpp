@@ -1,5 +1,5 @@
 /* Copyright (c) 2021-2022 Skyward Experimental Rocketry
- * Authors: Vincenzo Santomarco, Alberto Nidasio
+ * Authors: Vincenzo Santomarco, Alberto Nidasio, Emilio Corigliano
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -28,6 +28,9 @@
 
 #include <limits>
 
+#include "drivers/timer/TimestampTimer.h"
+#include "utils/Debug.h"
+
 using namespace std;
 
 namespace Boardcore
@@ -36,121 +39,15 @@ namespace Boardcore
 AirBrakes::AirBrakes(function<TimedTrajectoryPoint()> getCurrentPosition,
                      const TrajectorySet &trajectorySet,
                      const AirBrakesConfig &config,
-                     function<void(float)> setActuator)
+                     std::function<void(float)> setActuator)
     : getCurrentPosition(getCurrentPosition), trajectorySet(trajectorySet),
-      config(config), setActuator(setActuator),
-      pi(config.KP, config.KI, config.TS)
+      config(config), setActuator(setActuator)
 {
-}
-
-bool AirBrakes::init() { return true; }
-
-void AirBrakes::begin()
-{
-    if (running)
-        return;
-
-    lastPosition = getCurrentPosition();
-    chooseTrajectory(lastPosition);
-
-    Algorithm::begin();
-}
-
-void AirBrakes::step()
-{
-    auto currentPosition = getCurrentPosition();
-
-    // Do nothing if we have no new data
-    if (lastPosition.timestamp >= currentPosition.timestamp)
-        return;
-    lastPosition = currentPosition;
-
-    auto setPoint = getSetpoint(currentPosition);
-    float rho     = getRho(currentPosition.z);
-
-    float targetDrag = piStep(currentPosition, setPoint, rho);
-    float surface    = getSurface(currentPosition, rho, targetDrag);
-
-    setActuator(surface / config.SURFACE);
-}
-
-void AirBrakes::chooseTrajectory(TrajectoryPoint currentPosition)
-{
-    float minDistance   = numeric_limits<float>::infinity();
-    uint8_t trjIndexMin = trajectorySet.length() / 2;
-
-    for (uint8_t trjIndex = 0; trjIndex < trajectorySet.length(); trjIndex++)
-    {
-        Trajectory &trajectory = trajectorySet.trajectories[trjIndex];
-
-        for (uint32_t ptIndex = 0; ptIndex < trajectory.size(); ptIndex++)
-        {
-            TrajectoryPoint point = trajectory.points[ptIndex];
-            float distance =
-                TrajectoryPoint::distanceSquared(point, currentPosition);
-
-            if (distance < minDistance)
-            {
-                minDistance            = distance;
-                trjIndexMin            = trjIndex;
-                lastSelectedPointIndex = ptIndex;
-                chosenTrajectory       = &trajectory;
-            }
-        }
-    }
-
-    chosenTrajectory = &(trajectorySet.trajectories[trjIndexMin]);
-
-    Logger::getInstance().log(AirBrakesChosenTrajectory{trjIndexMin});
-}
-
-TrajectoryPoint AirBrakes::getSetpoint(TrajectoryPoint currentPosition)
-{
-    if (chosenTrajectory == nullptr)
-        return {};
-
-    float minDistance = numeric_limits<float>::infinity();
-
-    uint32_t end = chosenTrajectory->size();
-    for (uint32_t ptIndex = lastSelectedPointIndex; ptIndex < end; ptIndex++)
-    {
-        float distanceFromCurrentInput =
-            abs(chosenTrajectory->points[ptIndex].z - currentPosition.z);
-
-        if (distanceFromCurrentInput < minDistance)
-        {
-            minDistance            = distanceFromCurrentInput;
-            lastSelectedPointIndex = ptIndex;
-        }
-    }
-
-    return chosenTrajectory->points[lastSelectedPointIndex];
 }
 
 float AirBrakes::getRho(float z)
 {
     return Constants::RHO_0 * expf(-z / Constants::Hn);
-}
-
-float AirBrakes::piStep(TimedTrajectoryPoint currentPosition,
-                        TrajectoryPoint setPoint, float rho)
-{
-    const float cdMin   = getCD(currentPosition, 0);
-    const float dragMin = getDrag(currentPosition, cdMin, rho);
-
-    const float cdMax   = getCD(currentPosition, config.EXTENSION);
-    const float dragMax = getDrag(currentPosition, cdMax, rho);
-
-    // Get target surface percentage
-    const float cdRef   = getCD(currentPosition, chosenTrajectory->extension);
-    const float dragRef = getDrag(currentPosition, cdRef, rho);
-
-    // PI update
-    const float error = currentPosition.vz - setPoint.vz;
-    const float dragPi =
-        pi.antiWindUp(pi.update(error) + dragRef, dragMin, dragMax);
-
-    return dragPi;
 }
 
 float AirBrakes::getSurface(const TimedTrajectoryPoint &currentPosition,
