@@ -92,10 +92,6 @@ def print_banner():
     print('+------------------------------+')
 
 
-def linter_print(*strings):
-    print('[linter]', *strings)
-
-
 class Colors():
     BLACK = '\033[30m'
     RED = '\033[31m'
@@ -111,7 +107,7 @@ class Colors():
 
 # Checks for the right copyright notice in all .h and .cpp files
 def check_copyright(directory):
-    linter_print(Colors.GREEN + 'Copyright check' + Colors.RESET)
+    print(Colors.GREEN + 'Copyright check' + Colors.RESET)
 
     # Statistics
     totalCheckdFilesCounter = 0
@@ -134,7 +130,7 @@ def check_copyright(directory):
                     filesWithErrorsCounter += 1
 
                     # The file's copyright notice does not match the template!
-                    linter_print(Colors.YELLOW + 'Wrong copyright notice in file {0}'.format(
+                    print(Colors.YELLOW + 'Wrong copyright notice in file {0}'.format(
                         currentFilepath) + Colors.RESET)
                 else:
                     fileAuthors = [a.strip()
@@ -142,10 +138,10 @@ def check_copyright(directory):
 
                     # Check the number of authors against 'Author' or `Authors`
                     if len(fileAuthors) == 1 and match.group(1)[-1] == 's':
-                        linter_print('\'Authors\' should to be changed to \'Author\' in {0}'.format(
+                        print('\'Authors\' should to be changed to \'Author\' in {0}'.format(
                             currentFilepath))
                     if len(fileAuthors) > 1 and match.group(1)[-1] != 's':
-                        linter_print('\'Author\' should to be changed to \'Authors\' in {0}'.format(
+                        print('\'Author\' should to be changed to \'Authors\' in {0}'.format(
                             currentFilepath))
 
                     # Save statistics on authors
@@ -157,28 +153,29 @@ def check_copyright(directory):
                     averageAuthorsPerFile += len(fileAuthors)
     averageAuthorsPerFile /= totalCheckdFilesCounter
 
-    linter_print('Checked {} files'.format(totalCheckdFilesCounter))
+    print('Checked {} files'.format(totalCheckdFilesCounter))
     if filesWithErrorsCounter == 0:
-        linter_print('All the files have the correct copyright notice')
+        print('All the files have the correct copyright notice')
     else:
-        linter_print(Colors.RED + '{:.1f}% ({}/{}) of all analyzed files do not match with the copyright template!'.format(
+        print(Colors.RED + '{:.1f}% ({}/{}) of all analyzed files do not match with the copyright template!'.format(
             100*filesWithErrorsCounter/totalCheckdFilesCounter, filesWithErrorsCounter, totalCheckdFilesCounter) + Colors.RESET)
 
-    if(not args.quiet):
-        linter_print('{:.2} authors per file'.format(
+    if (not args.quiet):
+        print('{:.2} authors per file'.format(
             averageAuthorsPerFile))
-        linter_print('Number of mentions per author:')
-        for author in authors:
-            linter_print('{:3} - {}'.format(authors[author], author))
+
+        print('Number of mentions per author:')
+        for author in sorted(authors.items(), key=lambda item: item[1], reverse=True):
+            print('{:3} - {}'.format(author[1], author[0]))
 
     # Exit if error if at least one file isn't correct
-    if(filesWithErrorsCounter > 0):
+    if (filesWithErrorsCounter > 0):
         exit(-1)
 
 
 # Checks if all .h and .cpp files respects the clang format specified in .clang-format file
 def check_format(directory):
-    linter_print(Colors.GREEN + 'Formatting check' + Colors.RESET)
+    print(Colors.GREEN + 'Formatting check' + Colors.RESET)
 
     # Statistics
     totalCheckdFilesCounter = 0
@@ -197,27 +194,27 @@ def check_format(directory):
                 ['clang-format', '-style=file', '--dry-run', '--Werror', '--ferror-limit=1', currentFilepath], stderr=DEVNULL)
 
             # If and error occurs warn the user
-            if(returnCode != 0):
+            if (returnCode != 0):
                 filesWithErrorsCounter += 1
 
-                if(not args.quiet):
-                    linter_print(Colors.YELLOW + 'Wrong code format for file {1}'.format(
+                if (not args.quiet):
+                    print(Colors.YELLOW + 'Wrong code format for file {1}'.format(
                         returnCode, currentFilepath) + Colors.RESET)
 
-    linter_print('Checked {} files'.format(totalCheckdFilesCounter))
+    print('Checked {} files'.format(totalCheckdFilesCounter))
     if filesWithErrorsCounter == 0:
-        linter_print('All the files match the Skyward formatting style')
+        print('All the files match the Skyward formatting style')
     else:
-        linter_print(Colors.RED + '{:4.1f}% ({}/{}) of all analyzed files do not match Skyward formatting style!'.format(
+        print(Colors.RED + '{:4.1f}% ({}/{}) of all analyzed files do not match Skyward formatting style!'.format(
             100*filesWithErrorsCounter/totalCheckdFilesCounter, filesWithErrorsCounter, totalCheckdFilesCounter), Colors.RESET)
 
     # Exit if error if at least one file isn't correct
-    if(filesWithErrorsCounter > 0):
+    if (filesWithErrorsCounter > 0):
         exit(-1)
 
 
 def find_in_code(directory, searchTerm, extensionFilters=('.cpp', '.h'), pathFilter=None):
-    linter_print(
+    print(
         Colors.GREEN + 'Checking for \'{}\' in code files'.format(searchTerm) + Colors.RESET)
 
     # Statistics
@@ -243,16 +240,16 @@ def find_in_code(directory, searchTerm, extensionFilters=('.cpp', '.h'), pathFil
                     filesWithErrorsCounter += 1
 
                     # The current file has the error
-                    if(not args.quiet):
-                        linter_print(Colors.YELLOW + 'Found \'{}\' in file {}'.format(searchTerm,
-                                                                                      currentFilepath) + Colors.RESET)
+                    if (not args.quiet):
+                        print(Colors.YELLOW + 'Found \'{}\' in file {}'.format(searchTerm,
+                                                                               currentFilepath) + Colors.RESET)
 
-    linter_print('Checked {} files'.format(totalCheckdFilesCounter))
+    print('Checked {} files'.format(totalCheckdFilesCounter))
     if filesWithErrorsCounter == 0:
-        linter_print(
+        print(
             'All the files does not contain \'{}\''.format(searchTerm))
     else:
-        linter_print(Colors.RED + '{:.1f}% ({}/{}) of all analyzed files contain \'{}\'!'.format(
+        print(Colors.RED + '{:.1f}% ({}/{}) of all analyzed files contain \'{}\'!'.format(
             100*filesWithErrorsCounter/totalCheckdFilesCounter, filesWithErrorsCounter, totalCheckdFilesCounter, searchTerm) + Colors.RESET)
 
     return filesWithErrorsCounter
@@ -260,7 +257,8 @@ def find_in_code(directory, searchTerm, extensionFilters=('.cpp', '.h'), pathFil
 
 def check_find(directory):
     sum = find_in_code(directory, r'^using namespace', '.h')
-    sum += find_in_code(directory, r'[^a-zA-Z0-9]printf\(', pathFilter='shared')
+    sum += find_in_code(directory,
+                        r'[^a-zA-Z0-9]printf\(', pathFilter='shared')
     sum += find_in_code(directory, r'( |^)assert\(')
     sum += find_in_code(directory, '^ *throw ', pathFilter='catch')
 
@@ -269,7 +267,7 @@ def check_find(directory):
 
 
 def check_cppcheck(directory):
-    linter_print(Colors.GREEN + 'cppcheck' + Colors.RESET)
+    print(Colors.GREEN + 'cppcheck' + Colors.RESET)
     # Run cppcheck on the directory
     try:
         result = check_output(['cppcheck', '-q', '--language=c++', '--template=gcc', '--std=c++11', '--enable=all', '--inline-suppr',
@@ -280,21 +278,21 @@ def check_cppcheck(directory):
         errors = re.findall(r'\[(\w+)\]', result.decode('utf-8'))
         errors = Counter(errors)
 
-        if(not args.quiet):
-            linter_print('cppcheck found the following errors:')
+        if (not args.quiet):
+            print('cppcheck found the following errors:')
             for error in errors:
-                linter_print('{:3} - {}'.format(errors[error], error))
+                print('{:3} - {}'.format(errors[error], error))
 
         totalErrors = sum(errors.values())
-        if(totalErrors > 0):
-            linter_print(
+        if (totalErrors > 0):
+            print(
                 Colors.RED + 'cppcheck found {} errors in total'.format(totalErrors) + Colors.RESET)
             exit(-1)
         else:
-            linter_print('cppcheck did not find any errors')
+            print('cppcheck did not find any errors')
 
     except CalledProcessError as e:
-        linter_print(e.output.decode('utf-8'))
+        print(e.output.decode('utf-8'))
         exit(-1)
 
 # -------------------------------------------------------------
@@ -305,26 +303,26 @@ def check_cppcheck(directory):
 parser = config_cmd_parser()
 args = parser.parse_args()
 
-if(not args.directory):
-    linter_print('No directory specified')
+if (not args.directory):
+    print('No directory specified')
     print('')
     parser.print_help()
     exit(-1)
 
-if(args.copyright):
+if (args.copyright):
     check_copyright(args.directory)
 
-if(args.format):
+if (args.format):
     check_format(args.directory)
 
-if(args.cppcheck):
+if (args.cppcheck):
     check_cppcheck(args.directory)
 
-if(args.find):
+if (args.find):
     check_find(args.directory)
 
 # Checks everything if no option is specified
-if(not args.copyright and not args.format and not args.find and not args.cppcheck):
+if (not args.copyright and not args.format and not args.find and not args.cppcheck):
     check_copyright(args.directory)
     check_format(args.directory)
     check_find(args.directory)
