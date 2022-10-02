@@ -234,12 +234,11 @@ void CanProtocol::runReceiver()
                 if (msg.length - nReceived - 1 == leftToReceive)
                 {
                     uint64_t payload = 0;
-                    uint64_t tmp     = 0;
 
                     // Assemble the packet data into a uint64_t
                     for (uint8_t i = 0; i < pkt.length; i++)
                     {
-                        tmp = pkt.data[i];
+                        uint64_t tmp = pkt.data[i];
                         payload |= tmp << (i * 8);
                     }
 
