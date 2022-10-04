@@ -27,6 +27,7 @@
 #include <algorithms/NAS/NASState.h>
 #include <diagnostic/CpuMeter/CpuMeter.h>
 #include <diagnostic/PrintLoggerData.h>
+#include <diagnostic/StackData.h>
 #include <drivers/adc/InternalADCData.h>
 #include <events/EventData.h>
 #include <logger/Deserializer.h>
@@ -83,6 +84,7 @@ void registerTypes(Deserializer& ds)
     ds.registerType<ADAState>();
     ds.registerType<NASState>();
     ds.registerType<CpuMeterData>();
+    ds.registerType<StackData>();
     ds.registerType<LoggingString>();
     ds.registerType<InternalADCData>();
     ds.registerType<EventData>();
