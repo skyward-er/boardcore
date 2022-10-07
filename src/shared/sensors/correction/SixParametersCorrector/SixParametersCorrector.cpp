@@ -77,8 +77,8 @@ bool SixParametersCorrector::toFile(const std::string& fileName)
     if (output)
     {
         output << "b0,b1,b2,A0,A1,A2" << std::endl;
-        output << b(0) << "," << b(1) << "," << b(1) << ",";
-        output << A(0) << "," << A(1) << "," << A(1);
+        output << b(0) << "," << b(1) << "," << b(2) << ",";
+        output << A(0) << "," << A(1) << "," << A(2);
 
         output.close();
 

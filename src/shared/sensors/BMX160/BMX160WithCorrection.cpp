@@ -56,7 +56,11 @@ void BMX160WithCorrection::startCalibration()
     calibrating   = true;
 }
 
-void BMX160WithCorrection::stopCalibration() { calibrating = false; }
+void BMX160WithCorrection::stopCalibration()
+{
+    calibrating       = false;
+    calibrationPoints = 0;
+}
 
 BMX160WithCorrectionData BMX160WithCorrection::sampleImpl()
 {
@@ -114,7 +118,7 @@ BMX160WithCorrectionData BMX160WithCorrection::sampleImpl()
     result.magneticFieldTimestamp = fifoElement.accelerationTimestamp;
     static_cast<MagnetometerData&>(result) << avgMag;
     result.angularVelocityTimestamp = fifoElement.accelerationTimestamp;
-    static_cast<GyroscopeData&>(result) << avgGyro;
+    static_cast<GyroscopeData&>(result) << (avgGyro - gyroscopeBias);
 
     if (calibrating)
     {
