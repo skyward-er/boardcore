@@ -190,10 +190,9 @@ private:
     Eigen::Matrix<float, 6, 4> H_gps_tr;
     Eigen::Matrix<float, 4, 4> R_gps;
 
-    // Utility matrixes used for the magnetometer
+    // Utility matrixes
+    Eigen::Matrix3f R_acc;
     Eigen::Matrix3f R_mag;
-
-    // Other utility matrixes
     Eigen::Matrix<float, 6, 6> Q_quat;
     Eigen::Matrix<float, 6, 6> Q_lin;
     Eigen::Matrix<float, 6, 6> F_lin;

@@ -44,26 +44,28 @@ void init();
 void step();
 void print();
 
+constexpr uint64_t CALIBRATION_TIMEOUT = 5 * 1e6;
+
 Vector3f nedMag   = Vector3f(0.4747, 0.0276, 0.8797);
 Vector2f startPos = Vector2f(45.501141, 9.156281);
 
 NAS* nas;
+StateInitializer* stateInitializer;
 
-SPIBus spi1(SPI1);
-BMX160* imu       = nullptr;
-UBXGPSSerial* gps = nullptr;
-MS5803* baro      = nullptr;
+SPIBus spi(SPI4);
+BMX160* imu = nullptr;
 
 int main()
 {
     init();
 
-    nas = new NAS(getEKConfig());
+    nas              = new NAS(getEKConfig());
+    stateInitializer = new StateInitializer();
     setInitialOrientation();
 
     TaskScheduler scheduler;
     scheduler.addTask(step, 20, TaskScheduler::Policy::RECOVER);
-    // scheduler.addTask(print, 250);
+    scheduler.addTask(print, 250);
     scheduler.start();
 
     while (true)
@@ -77,6 +79,7 @@ NASConfig getEKConfig()
     config.T              = 0.02f;
     config.SIGMA_BETA     = 0.0001f;
     config.SIGMA_W        = 0.3f;
+    config.SIGMA_ACC      = 0.1f;
     config.SIGMA_MAG      = 0.1f;
     config.SIGMA_GPS      = 10.0f;
     config.SIGMA_BAR      = 4.3f;
@@ -130,29 +133,21 @@ void init()
 
     bmx_config.gyroscopeUnit = BMX160Config::GyroscopeMeasureUnit::RAD;
 
-    imu =
-        new BMX160(spi1, sensors::bmx160::cs::getPin(), bmx_config, spiConfig);
+    imu = new BMX160(spi, sensors::bmx160::cs::getPin(), bmx_config, spiConfig);
     imu->init();
-
-    gps = new UBXGPSSerial(USARTInterface::Baudrate::B921600, 10, USART2,
-                           USARTInterface::Baudrate::B38400);
-    gps->init();
-    gps->start();
-
-    baro = new MS5803(spi1, sensors::ms5803::cs::getPin());
-    baro->init();
 
     Logger::getInstance().start();
 }
 
 void step()
 {
+    static int meanCount    = 0;
+    static bool calibrating = true;
+    static Vector3f accMean = Vector3f::Zero();
+    static Vector3f magMean = Vector3f::Zero();
+
     imu->sample();
-    gps->sample();
-    baro->sample();
-    auto imuData  = imu->getLastSample();
-    auto gpsData  = gps->getLastSample();
-    auto baroData = baro->getLastSample();
+    auto imuData = imu->getLastSample();
 
     Vector3f acceleration(imuData.accelerationX, imuData.accelerationY,
                           imuData.accelerationZ);
@@ -161,23 +156,34 @@ void step()
     Vector3f magneticField(imuData.magneticFieldX, imuData.magneticFieldY,
                            imuData.magneticFieldZ);
 
-    Vector2f gpsPos(gpsData.latitude, gpsData.longitude);
-    gpsPos = Aeroutils::geodetic2NED(gpsPos, startPos);
-    Vector2f gpsVel(gpsData.velocityNorth, gpsData.velocityEast);
-    Vector4f gpsCorrection;
-    // cppcheck-suppress constStatement
-    gpsCorrection << gpsPos, gpsVel;
-
     // Calibration
     {
-        Vector3f offset{-1.63512255486542, 3.46523431469979, -3.08516033954451};
-        angularVelocity = angularVelocity - offset;
-        angularVelocity = angularVelocity / 180 * Constants::PI / 10;
-        Vector3f b{21.5356818859811, -22.7697302909894, -2.68219304319269};
-        Matrix3f A{{0.688760050772712, 0, 0},
-                   {0, 0.637715211784480, 0},
-                   {0, 0, 2.27669720320908}};
+        angularVelocity -= Vector3f{-0.00863, 0.00337, 0.01284};
+
+        Matrix3f A{{0.66306, 0, 0}, {0, 0.66940, 0}, {0, 0, 2.25299}};
+        Vector3f b{40.70668, -17.83740, -13.52012};
         magneticField = (magneticField - b).transpose() * A;
+    }
+
+    if (calibrating)
+    {
+        if (TimestampTimer::getTimestamp() < CALIBRATION_TIMEOUT)
+        {
+            accMean = (accMean * meanCount + acceleration) / (meanCount + 1);
+            magMean = (magMean * meanCount + magneticField) / (meanCount + 1);
+            meanCount++;
+        }
+        else
+        {
+            // Now the calibration has ended, compute and log the nas state
+            calibrating = false;
+
+            // Compute the initial nas state
+            stateInitializer->triad(accMean, magMean, nedMag);
+            nas->setX(stateInitializer->getInitX());
+
+            printf("Triad ended\n");
+        }
     }
 
     // Predict step
@@ -189,28 +195,16 @@ void step()
     nas->correctMag(magneticField);
     acceleration.normalize();
     nas->correctAcc(acceleration);
-    if (gpsData.fix)
-        nas->correctGPS(gpsCorrection);
+
+    nas->correctGPS(
+        Vector4f{Constants::B21_LATITUDE, Constants::B21_LONGITUDE, 0, 0});
     nas->correctBaro(100000);
-
-    auto nasState = nas->getState();
-
-    Logger::getInstance().log(imuData);
-    Logger::getInstance().log(gpsData);
-    Logger::getInstance().log(baroData);
-    Logger::getInstance().log(nasState);
 }
 
 void print()
 {
-    auto gpsData  = gps->getLastSample();
-    auto baroData = baro->getLastSample();
     auto nasState = nas->getState();
 
-    Vector2f gpsPos(gpsData.latitude, gpsData.longitude);
-    gpsPos = Aeroutils::geodetic2NED(gpsPos, startPos);
-
-    printf("%d, %f, %f, %f, %f, %f, %f, %f, %f\n", gpsData.fix, gpsPos[0],
-           gpsPos[1], nasState.n, nasState.e, nasState.d, nasState.vn,
-           nasState.ve, baroData.pressure);
+    printf("w%fwa%fab%fbc%fc\n", nasState.qw, nasState.qx, nasState.qy,
+           nasState.qz);
 }

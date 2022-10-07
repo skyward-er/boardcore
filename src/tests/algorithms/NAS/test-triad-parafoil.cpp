@@ -24,7 +24,7 @@
 #include <miosix.h>
 #include <sensors/MPU9250/MPU9250.h>
 #include <sensors/SensorManager.h>
-#include <sensors/calibration/SensorDataExtra.h>
+#include <sensors/calibration/SensorDataExtra/SensorDataExtra.h>
 #include <sensors/calibration/SoftAndHardIronCalibration/SoftAndHardIronCalibration.h>
 
 #include <cmath>

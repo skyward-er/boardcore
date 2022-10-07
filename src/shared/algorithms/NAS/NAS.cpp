@@ -57,7 +57,7 @@ NAS::NAS(NASConfig config) : config(config)
         // clang-format on
     }
 
-    // GPS matrixes
+    // GPS
     {
         H_gps                = Matrix<float, 4, 6>::Zero();
         H_gps.coeffRef(0, 0) = 1;
@@ -68,10 +68,9 @@ NAS::NAS(NASConfig config) : config(config)
         R_gps << config.SIGMA_GPS * Matrix<float, 4, 4>::Identity();
     }
 
-    // Magnetometer utility matrix
+    // Utility matrixes
+    R_acc << config.SIGMA_ACC * Matrix3f::Identity();
     R_mag << config.SIGMA_MAG * Matrix3f::Identity();
-
-    // Other utility matrixes
     {
         // clang-format off
         Q_quat << (config.SIGMA_W * config.SIGMA_W * config.T + (1.0f / 3.0f) * config.SIGMA_BETA * config.SIGMA_BETA * config.T * config.T * config.T) * Matrix3f::Identity(),
@@ -244,7 +243,7 @@ void NAS::correctMag(const Vector3f& mag)
     Matrix<float, 6, 3> K  = Pq * H.transpose() * S.inverse();
     Matrix<float, 6, 1> dx = K * (mag - mEst);
     Vector4f r{0.5f * dx(0), 0.5f * dx(1), 0.5f * dx(2),
-               sqrtf(1.0f - 0.25f * dx.head<3>().transpose() * dx.head<3>())};
+               sqrtf(1.0f - 0.25f * dx.head<3>().squaredNorm())};
 
     x.block<4, 1>(IDX_QUAT, 0) = SkyQuaternion::quatProd(r, q);
     x.block<3, 1>(IDX_BIAS, 0) += dx.tail<3>();
@@ -267,6 +266,7 @@ void NAS::correctAcc(const Eigen::Vector3f& acc)
 
     // Rotate the NED magnetic field in the relative reference frame
     Vector3f aEst = A * gravityNed;
+    aEst.normalize();
 
     // Gradient matrix
     // clang-format off
@@ -280,14 +280,11 @@ void NAS::correctAcc(const Eigen::Vector3f& acc)
     Matrix<float, 3, 6> H;
     H << M, Matrix3f::Zero(3, 3);
     Matrix<float, 6, 6> Pq = P.block<6, 6>(IDX_QUAT, IDX_QUAT);
-    Matrix<float, 3, 3> S =
-        H * Pq * H.transpose() + R_mag;  // TODO: Change R_mag with R_acc
+    // TODO: Change R_mag with R_acc
+    Matrix<float, 3, 3> S = H * Pq * H.transpose() + R_mag;
 
-    Matrix<float, 6, 3> K = Pq * H.transpose() * S.inverse();
-
-    aEst.normalize();
-    Vector3f e             = acc - aEst;
-    Matrix<float, 6, 1> dx = K * e;
+    Matrix<float, 6, 3> K  = Pq * H.transpose() * S.inverse();
+    Matrix<float, 6, 1> dx = K * (acc - aEst);
     Vector4f r{0.5f * dx(0), 0.5f * dx(1), 0.5f * dx(2),
                sqrtf(1.0f - 0.25f * dx.head<3>().squaredNorm())};
 

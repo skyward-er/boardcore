@@ -75,6 +75,7 @@ NASConfig getEKConfig()
     config.T              = 0.02f;
     config.SIGMA_BETA     = 0.0001f;
     config.SIGMA_W        = 0.3f;
+    config.SIGMA_ACC      = 0.1f;
     config.SIGMA_MAG      = 0.1f;
     config.SIGMA_GPS      = 10.0f;
     config.SIGMA_BAR      = 4.3f;

@@ -32,6 +32,7 @@ struct NASConfig
     float T;            ///< [s]       Sample period
     float SIGMA_BETA;   ///< [rad/s^2] Estimated gyroscope bias variance
     float SIGMA_W;      ///< [rad^2]   Estimated gyroscope variance
+    float SIGMA_ACC;    ///< [uT^2]    Estimated accelerometer variance
     float SIGMA_MAG;    ///< [uT^2]    Estimated magnetometer variance
     float SIGMA_GPS;    ///< [m^2]     Estimated GPS variance
     float SIGMA_BAR;    ///< [m^2]     Estimated altitude variance

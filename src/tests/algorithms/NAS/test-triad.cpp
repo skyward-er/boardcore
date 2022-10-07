@@ -24,7 +24,7 @@
 #include <miosix.h>
 #include <sensors/BMX160/BMX160.h>
 #include <sensors/SensorManager.h>
-#include <sensors/calibration/SensorDataExtra.h>
+#include <sensors/calibration/SensorDataExtra/SensorDataExtra.h>
 #include <sensors/calibration/SoftAndHardIronCalibration/SoftAndHardIronCalibration.h>
 
 #include <cmath>
@@ -38,7 +38,7 @@ void imuInit();
 
 Vector3f nedMag = Vector3f(0.4747, 0.0276, 0.8797);
 
-SPIBus spi1(SPI1);
+SPIBus spi1(SPI4);
 BMX160* bmx = nullptr;
 
 int main()
@@ -54,17 +54,11 @@ int main()
 
         Vector3f acceleration(data.accelerationX, data.accelerationY,
                               data.accelerationZ);
-        Vector3f angularVelocity(data.angularVelocityX, data.angularVelocityY,
-                                 data.angularVelocityZ);
-        Vector3f offset{-1.63512255486542, 3.46523431469979, -3.08516033954451};
-        angularVelocity = angularVelocity - offset;
-        angularVelocity = angularVelocity / 180 * Constants::PI / 10;
         Vector3f magneticField(data.magneticFieldX, data.magneticFieldY,
                                data.magneticFieldZ);
-        Vector3f b{21.5356818859811, -22.7697302909894, -2.68219304319269};
-        Matrix3f A{{0.688760050772712, 0, 0},
-                   {0, 0.637715211784480, 0},
-                   {0, 0, 2.27669720320908}};
+
+        Matrix3f A{{0.73726, 0, 0}, {0, 0.59599, 0}, {0, 0, 2.27584}};
+        Vector3f b{39.22325, -17.47903, -13.81505};
         magneticField = (magneticField - b).transpose() * A;
 
         acceleration.normalize();
