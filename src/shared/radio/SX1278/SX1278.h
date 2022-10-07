@@ -198,9 +198,9 @@ public:
         GAUSSIAN_BT_1_0 =
             SX1278Defs::RegPaRamp::MODULATION_SHAPING_GAUSSIAN_BT_1_0,
         GAUSSIAN_BT_0_5 =
-            SX1278Defs::RegPaRamp::MODULATION_SHAPING_GAUSSIAN_BT_1_0,
+            SX1278Defs::RegPaRamp::MODULATION_SHAPING_GAUSSIAN_BT_0_5,
         GAUSSIAN_BT_0_3 =
-            SX1278Defs::RegPaRamp::MODULATION_SHAPING_GAUSSIAN_BT_1_0,
+            SX1278Defs::RegPaRamp::MODULATION_SHAPING_GAUSSIAN_BT_0_3,
     };
 
     /**
