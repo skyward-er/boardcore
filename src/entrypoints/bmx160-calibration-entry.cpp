@@ -26,6 +26,7 @@
 #include <sensors/BMX160/BMX160.h>
 #include <sensors/BMX160/BMX160WithCorrection.h>
 #include <sensors/calibration/AxisOrientation.h>
+#include <sensors/calibration/BiasCalibration/BiasCalibration.h>
 #include <sensors/calibration/SixParameterCalibration/SixParameterCalibration.h>
 #include <sensors/calibration/SoftAndHardIronCalibration/SoftAndHardIronCalibration.h>
 #include <utils/Debug.h>
@@ -259,21 +260,21 @@ void calibrateAccelerometer()
     }
 
     printf("Computing the result....\n");
-    auto newCorrection = calibrationModel.computeResult();
+    auto newCorrector = calibrationModel.computeResult();
 
     printf("New correction parameters:\n");
-    printf("A = |% 2.5f    % 2.5f    % 2.5f|\n\n", newCorrection.getA()(0),
-           newCorrection.getA()(1), newCorrection.getA()(2));
-    printf("b = |% 2.5f    % 2.5f    % 2.5f|\n\n", newCorrection.getb()(0),
-           newCorrection.getb()(1), newCorrection.getb()(2));
+    printf("A = |% 2.5f    % 2.5f    % 2.5f|\n\n", newCorrector.getA()(0),
+           newCorrector.getA()(1), newCorrector.getA()(2));
+    printf("b = |% 2.5f    % 2.5f    % 2.5f|\n\n", newCorrector.getb()(0),
+           newCorrector.getb()(1), newCorrector.getb()(2));
 
-    newCorrection.toFile("/sd/bmx160_accelerometer_correction.csv");
+    newCorrector.toFile("/sd/bmx160_accelerometer_correction.csv");
 }
 
 void calibrateMagnetometer()
 {
-    SixParametersCorrector correction;
-    correction.fromFile("/sd/bmx160_magnetometer_correction.csv");
+    SixParametersCorrector corrector;
+    corrector.fromFile("/sd/bmx160_magnetometer_correction.csv");
 
     SoftAndHardIronCalibration calibrationModel;
     Vector3f avgMag{0, 0, 0}, vec;
@@ -310,10 +311,10 @@ void calibrateMagnetometer()
 
     // Show the user the current correction values
     printf("Current correction parameters:\n");
-    printf("A = |% 2.5f    % 2.5f    % 2.5f|\n\n", correction.getA()(0),
-           correction.getA()(1), correction.getA()(2));
-    printf("b = |% 2.5f    % 2.5f    % 2.5f|\n\n", correction.getb()(0),
-           correction.getb()(1), correction.getb()(2));
+    printf("A = |% 2.5f    % 2.5f    % 2.5f|\n\n", corrector.getA()(0),
+           corrector.getA()(1), corrector.getA()(2));
+    printf("b = |% 2.5f    % 2.5f    % 2.5f|\n\n", corrector.getb()(0),
+           corrector.getb()(1), corrector.getb()(2));
 
     printf("Now I will calibrate the magnetometer\n");
     printf(
@@ -352,20 +353,20 @@ void calibrateMagnetometer()
     Logger::getInstance().stop();
 
     printf("Computing the result....\n");
-    auto newCorrection = calibrationModel.computeResult();
+    auto newCorrector = calibrationModel.computeResult();
 
     printf("New correction parameters:\n");
-    printf("A = |% 2.5f    % 2.5f    % 2.5f|\n\n", newCorrection.getA()(0),
-           newCorrection.getA()(1), newCorrection.getA()(2));
-    printf("b = |% 2.5f    % 2.5f    % 2.5f|\n\n", newCorrection.getb()(0),
-           newCorrection.getb()(1), newCorrection.getb()(2));
+    printf("A = |% 2.5f    % 2.5f    % 2.5f|\n\n", newCorrector.getA()(0),
+           newCorrector.getA()(1), newCorrector.getA()(2));
+    printf("b = |% 2.5f    % 2.5f    % 2.5f|\n\n", newCorrector.getb()(0),
+           newCorrector.getb()(1), newCorrector.getb()(2));
 
-    newCorrection.toFile("/sd/bmx160_magnetometer_correction.csv");
+    newCorrector.toFile("/sd/bmx160_magnetometer_correction.csv");
 }
 
 void calibrateGyroscope()
 {
-    Vector3f avgGyro{0, 0, 0};
+    BiasCalibration calibrationModel;
     int count = 0;
 
     BMX160Config bmxConfig;
@@ -398,7 +399,9 @@ void calibrateGyroscope()
 
     printf("Initialization and self-test completed!\n");
 
-    printf("Now starting the gyroscope calibration\n");
+    printf(
+        "Now starting the gyroscope calibration, leave the stack perfectly "
+        "still\n");
 
     TaskScheduler scheduler;
     scheduler.addTask(
@@ -414,15 +417,11 @@ void calibrateGyroscope()
                 auto data = fifo.at(i);
                 Logger::getInstance().log(data);
 
-                Vector3f gyro = {data.angularVelocityX, data.angularVelocityY,
-                                 data.angularVelocityZ};
-
-                avgGyro = (avgGyro * count + gyro) / (count + 1);
+                calibrationModel.feed({data.angularVelocityX,
+                                       data.angularVelocityY,
+                                       data.angularVelocityZ});
                 count++;
             }
-
-            printf("b = |% 2.5f    % 2.5f    % 2.5f|\n", avgGyro(0), avgGyro(1),
-                   avgGyro(2));
         },
         200);
 
@@ -434,7 +433,9 @@ void calibrateGyroscope()
     scheduler.stop();
     Logger::getInstance().stop();
 
+    auto corrector = calibrationModel.computeResult();
+
     printf("New correction parameters:\n");
-    printf("b = |% 2.5f    % 2.5f    % 2.5f|\n\n", avgGyro(0), avgGyro(1),
-           avgGyro(2));
+    printf("b = |% 2.5f    % 2.5f    % 2.5f|\n\n", corrector.getb()(0),
+           corrector.getb()(1), corrector.getb()(2));
 }

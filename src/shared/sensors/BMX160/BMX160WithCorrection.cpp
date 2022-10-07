@@ -36,12 +36,12 @@ BMX160WithCorrection::BMX160WithCorrection(BMX160* bmx160,
                                            AxisOrthoOrientation rotation)
     : bmx160(bmx160), rotation(rotation)
 {
-    accelerometerCorrector.fromFile("accelerometer_correction.csv");
-    magnetometerCorrector.fromFile("magnetometer_correction.csv");
+    accelerometerCorrector.fromFile("/sd/bmx160_accelerometer_correction.csv");
+    magnetometerCorrector.fromFile("/sd/bmx160_magnetometer_correction.csv");
 
     // TODO: Remove
-    magnetometerCorrector.setA(Vector3f{0.73726, 0.59599, 2.27584});
-    magnetometerCorrector.setb(Vector3f{39.22325, -17.47903, -13.81505});
+    // magnetometerCorrector.setA(Vector3f{0.73726, 0.59599, 2.27584});
+    // magnetometerCorrector.setb(Vector3f{39.22325, -17.47903, -13.81505});
 
     gyroscopeBias = Vector3f{0, 0, 0};
 }
