@@ -91,11 +91,12 @@ int main()
         elapsed += sleepMillis;
         sensor.sample();
 
-        AccelerometerData tmp = corrector.correct(sensor.getLastSample());
+        auto tmp = corrector.correct(
+            static_cast<AccelerometerData>(sensor.getLastSample()));
 
-        testData.accelerationX = tmp.accelerationX;
-        testData.accelerationY = tmp.accelerationY;
-        testData.accelerationZ = tmp.accelerationZ;
+        testData.accelerationX = tmp(0);
+        testData.accelerationY = tmp(1);
+        testData.accelerationZ = tmp(2);
 
         if (elapsed > 500)
         {

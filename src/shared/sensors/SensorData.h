@@ -123,7 +123,7 @@ struct AccelerometerData
 
     AccelerometerData(const AccelerometerData& data) = default;
 
-    AccelerometerData(const Eigen::Vector3f& acc)
+    explicit AccelerometerData(const Eigen::Vector3f& acc)
         : accelerationX(acc(0)), accelerationY(acc(1)), accelerationZ(acc(2))
     {
     }
@@ -165,7 +165,7 @@ struct GyroscopeData
 
     GyroscopeData(const GyroscopeData& data) = default;
 
-    GyroscopeData(const Eigen::Vector3f& vel)
+    explicit GyroscopeData(const Eigen::Vector3f& vel)
         : angularVelocityX(vel(0)), angularVelocityY(vel(1)),
           angularVelocityZ(vel(2))
     {
@@ -208,7 +208,7 @@ struct MagnetometerData
 
     MagnetometerData(const MagnetometerData& data) = default;
 
-    MagnetometerData(const Eigen::Vector3f& mag)
+    explicit MagnetometerData(const Eigen::Vector3f& mag)
         : magneticFieldX(mag(0)), magneticFieldY(mag(1)), magneticFieldZ(mag(2))
     {
     }
