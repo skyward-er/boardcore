@@ -203,6 +203,13 @@ public:
             SX1278Defs::RegPaRamp::MODULATION_SHAPING_GAUSSIAN_BT_0_3,
     };
 
+    enum class DcFree
+    {
+        NONE       = SX1278Defs::RegPacketConfig1::DC_FREE_NONE,
+        MANCHESTER = SX1278Defs::RegPacketConfig1::DC_FREE_MANCHESTER,
+        WHITENING  = SX1278Defs::RegPacketConfig1::DC_FREE_WHITENING
+    };
+
     /**
      * @brief Requested SX1278 configuration.
      */
@@ -219,6 +226,7 @@ public:
                          // full power).
         Shaping shaping = Shaping::GAUSSIAN_BT_1_0;  //< Shaping applied to
                                                      // the modulation stream.
+        DcFree dc_free = DcFree::WHITENING;  //< Dc free encoding scheme.
     };
 
     /**

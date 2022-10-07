@@ -145,16 +145,15 @@ int main()
     initBoard();
 
     // Run default configuration
-    SX1278::Config config = {
-        .freq_rf  = 412000000,
-        .freq_dev = 25000,
-        .bitrate  = 19200,
-        .rx_bw    = SX1278::RxBw::HZ_83300,
-        .afc_bw   = SX1278::RxBw::HZ_125000,
-        .ocp      = 120,
-        .power    = 17,
-        .shaping  = SX1278::Shaping::GAUSSIAN_BT_1_0,
-    };
+    SX1278::Config config = {.freq_rf  = 412000000,
+                             .freq_dev = 25000,
+                             .bitrate  = 19200,
+                             .rx_bw    = SX1278::RxBw::HZ_83300,
+                             .afc_bw   = SX1278::RxBw::HZ_125000,
+                             .ocp      = 120,
+                             .power    = 17,
+                             .shaping  = SX1278::Shaping::GAUSSIAN_BT_1_0,
+                             .dc_free  = SX1278::DcFree::WHITENING};
 
     SX1278::Error err;
 

@@ -217,7 +217,7 @@ void SX1278::configure(const Config &config)
         spi.writeRegister(REG_RX_TIMEOUT_3, 0x00);
         spi.writeRegister(REG_PACKET_CONFIG_1,
                           RegPacketConfig1::PACKET_FORMAT_VARIABLE_LENGTH |
-                              RegPacketConfig1::DC_FREE_MANCHESTER |
+                              static_cast<uint8_t>(config.dc_free) |
                               RegPacketConfig1::CRC_ON |
                               RegPacketConfig1::ADDRESS_FILTERING_NONE |
                               RegPacketConfig1::CRC_WHITENING_TYPE_CCITT_CRC);
