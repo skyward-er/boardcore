@@ -22,6 +22,7 @@
 
 #pragma once
 
+#include <Eigen/Core>
 #include <ostream>
 
 namespace Boardcore
@@ -112,6 +113,21 @@ struct AccelerometerData
     float accelerationY            = 0;
     float accelerationZ            = 0;
 
+    AccelerometerData() {}
+
+    AccelerometerData(uint64_t timestamp, float x, float y, float z)
+        : accelerationTimestamp(timestamp), accelerationX(x), accelerationY(y),
+          accelerationZ(z)
+    {
+    }
+
+    AccelerometerData(const AccelerometerData& data) = default;
+
+    AccelerometerData(const Eigen::Vector3f& acc)
+        : accelerationX(acc(0)), accelerationY(acc(1)), accelerationZ(acc(2))
+    {
+    }
+
     static std::string header()
     {
         return "timestamp,accelerationX,accelerationY,accelerationZ\n";
@@ -121,6 +137,11 @@ struct AccelerometerData
     {
         os << accelerationTimestamp << "," << accelerationX << ","
            << accelerationY << "," << accelerationZ << "\n";
+    }
+
+    operator Eigen::Vector3f() const
+    {
+        return {accelerationX, accelerationY, accelerationZ};
     }
 };
 
@@ -134,6 +155,22 @@ struct GyroscopeData
     float angularVelocityY            = 0;
     float angularVelocityZ            = 0;
 
+    GyroscopeData() {}
+
+    GyroscopeData(uint64_t timestamp, float x, float y, float z)
+        : angularVelocityTimestamp(timestamp), angularVelocityX(x),
+          angularVelocityY(y), angularVelocityZ(z)
+    {
+    }
+
+    GyroscopeData(const GyroscopeData& data) = default;
+
+    GyroscopeData(const Eigen::Vector3f& vel)
+        : angularVelocityX(vel(0)), angularVelocityY(vel(1)),
+          angularVelocityZ(vel(2))
+    {
+    }
+
     static std::string header()
     {
         return "timestamp,angularVelocityX,angularVelocityY,angularVelocityZ\n";
@@ -143,6 +180,11 @@ struct GyroscopeData
     {
         os << angularVelocityTimestamp << "," << angularVelocityX << ","
            << angularVelocityY << "," << angularVelocityZ << "\n";
+    }
+
+    operator Eigen::Vector3f() const
+    {
+        return {angularVelocityX, angularVelocityY, angularVelocityZ};
     }
 };
 
@@ -156,6 +198,21 @@ struct MagnetometerData
     float magneticFieldY            = 0;
     float magneticFieldZ            = 0;
 
+    MagnetometerData() {}
+
+    MagnetometerData(uint64_t timestamp, float x, float y, float z)
+        : magneticFieldTimestamp(timestamp), magneticFieldX(x),
+          magneticFieldY(y), magneticFieldZ(z)
+    {
+    }
+
+    MagnetometerData(const MagnetometerData& data) = default;
+
+    MagnetometerData(const Eigen::Vector3f& mag)
+        : magneticFieldX(mag(0)), magneticFieldY(mag(1)), magneticFieldZ(mag(2))
+    {
+    }
+
     static std::string header()
     {
         return "timestamp,magneticFieldX,magneticFieldY,magneticFieldZ\n";
@@ -165,6 +222,11 @@ struct MagnetometerData
     {
         os << magneticFieldTimestamp << "," << magneticFieldX << ","
            << magneticFieldY << "," << magneticFieldZ << "\n";
+    }
+
+    operator Eigen::Vector3f() const
+    {
+        return {magneticFieldX, magneticFieldY, magneticFieldZ};
     }
 };
 

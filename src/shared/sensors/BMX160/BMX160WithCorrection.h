@@ -25,8 +25,8 @@
 #include <diagnostic/PrintLogger.h>
 #include <sensors/BMX160/BMX160.h>
 #include <sensors/calibration/AxisOrientation.h>
-#include <sensors/calibration/BiasCalibration.h>
-#include <sensors/calibration/SixParameterCalibration.h>
+#include <sensors/calibration/BiasCalibration/BiasCalibration.h>
+#include <sensors/correction/SixParametersCorrector/SixParametersCorrector.h>
 #include <utils/Stats/Stats.h>
 
 #include "BMX160WithCorrectionData.h"
@@ -35,23 +35,7 @@ namespace Boardcore
 {
 
 /**
- * Holds correction parameters for BMX160.
- */
-struct BMX160CorrectionParameters
-{
-    Eigen::Matrix<float, 3, 2> accelParams, magnetoParams;
-
-    BMX160CorrectionParameters();
-
-    static std::string header();
-
-    void read(std::istream& inputStream);
-
-    void print(std::ostream& outputStream) const;
-};
-
-/**
- * @brief Driver for BMX160 with calibration.
+ * @brief Applies calibration to a BMX160
  *
  * Gets samples from a BMX160 and applies a specified correction and rotation.
  * It also calibrates the gyroscope.
@@ -61,60 +45,20 @@ class BMX160WithCorrection : public Sensor<BMX160WithCorrectionData>
 public:
     /**
      * @param bmx160 Already initialized bmx.
-     * @param correctionParameters Correction parameter to apply.
      * @param rotation Axis rotation.
      */
-    BMX160WithCorrection(BMX160* bmx160,
-                         BMX160CorrectionParameters correctionParameters,
-                         AxisOrthoOrientation rotation);
-
-    /**
-     * @brief Constructor without rotation, no rotation will be applied.
-     *
-     * @param bmx160 Already initialized bmx.
-     * @param correctionParameters Correction parameter to apply.
-     */
-    BMX160WithCorrection(BMX160* bmx160,
-                         BMX160CorrectionParameters correctionParameters);
-
-    /**
-     * @brief Constructor without correction nor rotation, no correction and
-     * rotation will be applied.
-     *
-     * @param bmx160 Correction parameter to apply.
-     */
-    explicit BMX160WithCorrection(BMX160* bmx160);
+    explicit BMX160WithCorrection(BMX160* bmx160,
+                                  AxisOrthoOrientation rotation = {
+                                      Direction::POSITIVE_X,
+                                      Direction::POSITIVE_Y});
 
     bool init() override;
 
     bool selfTest() override;
 
-    /**
-     * @brief Starts collecting calibration data for the gyroscope.
-     *
-     * The gyroscope calibration consists in averaging some samples to measure
-     * the bias. This function is intended to run while another thread samples
-     * the bmx.
-     *
-     * Call stopCalibration() to end collection and finalizing the offset.
-     */
     void startCalibration();
 
-    /**
-     * @brief Stops the data collection and finalizes the calibration.
-     */
     void stopCalibration();
-
-    /**
-     * @brief Utility function to read correction parameters from file.
-     */
-    static BMX160CorrectionParameters readCorrectionParametersFromFile(
-        const char* fileName);
-
-    /**
-     * @return Gyroscope calibration biases.
-     */
-    BMX160GyroscopeCalibrationBiases getGyroscopeBiases();
 
 private:
     BMX160WithCorrectionData sampleImpl() override;
@@ -126,17 +70,16 @@ private:
 
     BMX160* bmx160;
 
-    AxisOrthoOrientation rotation = {Direction::POSITIVE_X,
-                                     Direction::POSITIVE_Y};
+    AxisOrthoOrientation rotation;
 
-    SixParameterCorrector<AccelerometerData> accelerometerCorrector;
-    SixParameterCorrector<MagnetometerData> magnetometerCorrector;
-    BiasCorrector<GyroscopeData> gyroscopeCorrector{};
+    SixParametersCorrector accelerometerCorrector;
+    SixParametersCorrector magnetometerCorrector;
+    Eigen::Vector3f gyroscopeBias;
 
-    bool calibrating = false;
-    BiasCalibration<GyroscopeData> gyroscopeCalibrator;
+    bool calibrating      = false;
+    int calibrationPoints = 0;
 
-    PrintLogger logger = Logging::getLogger("bmx160withcorrection");
+    PrintLogger logger = Logging::getLogger("bmx160wc");
 };
 
 }  // namespace Boardcore

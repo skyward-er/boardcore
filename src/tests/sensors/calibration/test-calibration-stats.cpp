@@ -31,7 +31,6 @@
 #endif
 
 #include <sensors/calibration/AxisOrientation.h>
-#include <sensors/calibration/Calibration.h>
 
 using namespace Boardcore;
 using namespace miosix;

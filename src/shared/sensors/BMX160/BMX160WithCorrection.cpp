@@ -32,72 +32,19 @@ using namespace Eigen;
 namespace Boardcore
 {
 
-BMX160CorrectionParameters::BMX160CorrectionParameters()
-{
-    accelParams << 1, 0, 1, 0, 1, 0;    // cppcheck-suppress constStatement
-    magnetoParams << 0, 0, 0, 0, 0, 0;  // cppcheck-suppress constStatement
-}
-
-std::string BMX160CorrectionParameters::header()
-{
-    return "accAx,accAy,accAz,accbx,accby,accbz,"
-           "magAx,magAy,magAz,magbx,magby,magbz";
-}
-
-void BMX160CorrectionParameters::read(std::istream& inputStream)
-{
-    // Read accelerometer parameters
-    for (int i = 0; i < 2; i++)
-    {
-        for (int j = 0; j < 3; j++)
-        {
-            inputStream >> accelParams(j, i);
-            inputStream.ignore(1, ',');
-        }
-    }
-
-    // Read magnetometer parameters
-    for (int i = 0; i < 2; i++)
-    {
-        for (int j = 0; j < 3; j++)
-        {
-            inputStream >> magnetoParams(j, i);
-            inputStream.ignore(1, ',');
-        }
-    }
-}
-
-void BMX160CorrectionParameters::print(std::ostream& outputStream) const
-{
-    // Print accelerometer data
-    outputStream << accelParams(0, 0) << "," << accelParams(1, 0) << ","
-                 << accelParams(2, 0) << "," << accelParams(0, 1) << ","
-                 << accelParams(1, 1) << "," << accelParams(2, 1) << ",";
-
-    // Print magnetometer  data
-    outputStream << magnetoParams(0, 0) << "," << magnetoParams(1, 0) << ","
-                 << magnetoParams(2, 0) << "," << magnetoParams(0, 1) << ","
-                 << magnetoParams(1, 1) << "," << magnetoParams(2, 1) << ",";
-}
-
-BMX160WithCorrection::BMX160WithCorrection(
-    BMX160* bmx160, BMX160CorrectionParameters correctionParameters,
-    AxisOrthoOrientation rotation)
+BMX160WithCorrection::BMX160WithCorrection(BMX160* bmx160,
+                                           AxisOrthoOrientation rotation)
     : bmx160(bmx160), rotation(rotation)
 {
-    accelerometerCorrector << correctionParameters.accelParams;
-    magnetometerCorrector << correctionParameters.magnetoParams;
-}
+    accelerometerCorrector.fromFile("accelerometer_correction.csv");
+    magnetometerCorrector.fromFile("magnetometer_correction.csv");
 
-BMX160WithCorrection::BMX160WithCorrection(
-    BMX160* bmx160, BMX160CorrectionParameters correctionParameters)
-    : bmx160(bmx160)
-{
-    accelerometerCorrector << correctionParameters.accelParams;
-    magnetometerCorrector << correctionParameters.magnetoParams;
-}
+    // TODO: Remove
+    magnetometerCorrector.setA(Vector3f{0.73726, 0.59599, 2.27584});
+    magnetometerCorrector.setb(Vector3f{39.22325, -17.47903, -13.81505});
 
-BMX160WithCorrection::BMX160WithCorrection(BMX160* bmx160) : bmx160(bmx160) {}
+    gyroscopeBias = Vector3f{0, 0, 0};
+}
 
 bool BMX160WithCorrection::init() { return true; }
 
@@ -105,41 +52,11 @@ bool BMX160WithCorrection::selfTest() { return true; }
 
 void BMX160WithCorrection::startCalibration()
 {
-    gyroscopeCalibrator.reset();
-    calibrating = true;
+    gyroscopeBias = Vector3f{0, 0, 0};
+    calibrating   = true;
 }
 
-void BMX160WithCorrection::stopCalibration()
-{
-    calibrating = false;
-
-    {
-        PauseKernelLock lock;
-        gyroscopeCorrector = gyroscopeCalibrator.computeResult();
-    }
-
-    // Print the calibrator data
-    Vector3f gyroscopeCorrectionParameters;
-    gyroscopeCorrector >> gyroscopeCorrectionParameters;
-    LOG_INFO(logger, "Gyroscope bias vector from calibration\n");
-    LOG_INFO(logger, "b = [    {: >2.5f}    {: >2.5f}    {: >2.5f}    ]\n\n",
-             gyroscopeCorrectionParameters(0), gyroscopeCorrectionParameters(1),
-             gyroscopeCorrectionParameters(2));
-}
-
-BMX160CorrectionParameters
-BMX160WithCorrection::readCorrectionParametersFromFile(const char* fileName)
-{
-    BMX160CorrectionParameters correctionParameters;
-    std::ifstream input(fileName);
-
-    // Ignore header line (csv header)
-    input.ignore(1000, '\n');
-
-    correctionParameters.read(input);
-
-    return correctionParameters;
-}
+void BMX160WithCorrection::stopCalibration() { calibrating = false; }
 
 BMX160WithCorrectionData BMX160WithCorrection::sampleImpl()
 {
@@ -150,12 +67,10 @@ BMX160WithCorrectionData BMX160WithCorrection::sampleImpl()
     }
 
     Eigen::Vector3f avgAccel{0, 0, 0}, avgMag{0, 0, 0}, avgGyro{0, 0, 0}, vec;
-    uint64_t accelTimestamp = 0, magTimestamp = 0, gyroTimestamp = 0;
-    uint8_t fifoSize, numAccel = 0, numMag = 0, numGyro = 0;
     BMX160Data fifoElement;
     BMX160WithCorrectionData result;
 
-    fifoSize = bmx160->getLastFifoSize();
+    uint8_t fifoSize = bmx160->getLastFifoSize();
 
     // Read all data in the fifo
     for (int i = 0; i < fifoSize; i++)
@@ -163,68 +78,50 @@ BMX160WithCorrectionData BMX160WithCorrection::sampleImpl()
         fifoElement = bmx160->getFifoElement(i);
 
         // Read acceleration data
-        if (fifoElement.accelerationTimestamp > accelTimestamp)
-        {
-            static_cast<AccelerometerData>(fifoElement) >> vec;
-            avgAccel += vec;
-
-            accelTimestamp = fifoElement.accelerationTimestamp;
-            numAccel++;
-        }
+        static_cast<AccelerometerData>(fifoElement) >> vec;
+        avgAccel += vec;
 
         // Read magnetometer data
-        if (fifoElement.magneticFieldTimestamp > magTimestamp)
-        {
-            static_cast<MagnetometerData>(fifoElement) >> vec;
-            avgMag += vec;
-
-            magTimestamp = fifoElement.magneticFieldTimestamp;
-            numMag++;
-        }
+        static_cast<MagnetometerData>(fifoElement) >> vec;
+        avgMag += vec;
 
         // Read gyroscope data
-        if (fifoElement.angularVelocityTimestamp > gyroTimestamp)
-        {
-            static_cast<GyroscopeData>(fifoElement) >> vec;
-            avgGyro += vec;
-
-            gyroTimestamp = fifoElement.angularVelocityTimestamp;
-            numGyro++;
-        }
+        static_cast<GyroscopeData>(fifoElement) >> vec;
+        avgGyro += vec;
     }
 
     // Average the samples
-    if (numAccel == 0)
+    if (fifoSize == 0)
+    {
         static_cast<AccelerometerData>(bmx160->getLastSample()) >> avgAccel;
-    else
-        avgAccel /= numAccel;
-
-    if (numMag == 0)
         static_cast<MagnetometerData>(bmx160->getLastSample()) >> avgMag;
-    else
-        avgMag /= numMag;
-
-    if (numGyro == 0)
         static_cast<GyroscopeData>(bmx160->getLastSample()) >> avgGyro;
+        fifoElement = bmx160->getLastSample();
+    }
     else
-        avgGyro /= numGyro;
+    {
+        avgAccel /= fifoSize;
+        avgMag /= fifoSize;
+        avgGyro /= fifoSize;
+    }
 
+    // Correct the measurements
+    avgAccel = accelerometerCorrector.correct(avgAccel);
+    avgMag   = magnetometerCorrector.correct(avgMag);
+
+    result.accelerationTimestamp = fifoElement.accelerationTimestamp;
     static_cast<AccelerometerData&>(result) << avgAccel;
+    result.magneticFieldTimestamp = fifoElement.accelerationTimestamp;
     static_cast<MagnetometerData&>(result) << avgMag;
+    result.angularVelocityTimestamp = fifoElement.accelerationTimestamp;
     static_cast<GyroscopeData&>(result) << avgGyro;
 
-    // Correct the averaged measurements
-    result = accelerometerCorrector.correct(result);
-    result = magnetometerCorrector.correct(result);
-    result = gyroscopeCorrector.correct(result);
-
-    // Get the timestamp of the newest value in fifo
-    result.accelerationTimestamp    = fifoElement.accelerationTimestamp;
-    result.magneticFieldTimestamp   = fifoElement.accelerationTimestamp;
-    result.angularVelocityTimestamp = fifoElement.accelerationTimestamp;
-
     if (calibrating)
-        gyroscopeCalibrator.feed(result);
+    {
+        gyroscopeBias = (gyroscopeBias * calibrationPoints + avgGyro) /
+                        (calibrationPoints + 1);
+        calibrationPoints++;
+    }
 
     return rotateAxis(result);
 }
@@ -232,8 +129,6 @@ BMX160WithCorrectionData BMX160WithCorrection::sampleImpl()
 BMX160WithCorrectionData BMX160WithCorrection::rotateAxis(
     BMX160WithCorrectionData data)
 {
-    // Rotate the axes according to the given rotation
-
     // Accelerometer
     AccelerometerData accData = data;
     Eigen::Vector3f accDataVector;

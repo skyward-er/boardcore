@@ -159,6 +159,11 @@ struct AxisOrthoOrientation : public AxisOrientation
     {
     }
 
+    /**
+     * @brief Returns a rotation matrix.
+     *
+     * To use as: out = rotation.getMatrix() * in
+     */
     Eigen::Matrix3f getMatrix() const override
     {
         Eigen::Vector3f vx, vy, vz;
@@ -168,9 +173,9 @@ struct AxisOrthoOrientation : public AxisOrientation
         vz = vx.cross(vy);
 
         Eigen::Matrix3f mat;
-        mat.col(0) << vx;
-        mat.col(1) << vy;
-        mat.col(2) << vz;
+        mat.row(0) << vx.transpose();
+        mat.row(1) << vy.transpose();
+        mat.row(2) << vz.transpose();
         return mat;
     }
 };

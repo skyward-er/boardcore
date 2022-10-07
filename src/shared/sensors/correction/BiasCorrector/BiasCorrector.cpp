@@ -1,4 +1,4 @@
-/* Copyright (c) 2021-2022 Skyward Experimental Rocketry
+/* Copyright (c) 2020-2022 Skyward Experimental Rocketry
  * Authors: Riccardo Musso, Alberto Nidasio
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -19,48 +19,64 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
-#pragma once
 
-#include <sensors/SensorData.h>
-#include <sensors/correction/SixParametersCorrector/SixParametersCorrector.h>
+#include "BiasCorrector.h"
 
-#include <Eigen/Core>
-#include <Eigen/Eigenvalues>
-#include <vector>
+#include <fstream>
+
+using namespace Eigen;
 
 namespace Boardcore
 {
 
-/**
- * @brief Soft and hard iron calibration utility.
- *
- * Fits a non-rotated ellipsoid to the calibration data and then derives the
- * correction parameters.
- *
- * Reference:
- * https://www.st.com/resource/en/design_tip/dt0059-ellipsoid-or-sphere-fitting-for-sensor-calibration-stmicroelectronics.pdf
- *
- * @tparam MaxSamples
- */
-class SoftAndHardIronCalibration
+BiasCorrector::BiasCorrector() : b(0, 0, 0) {}
+
+BiasCorrector::BiasCorrector(const Eigen::Vector3f& b) : b(b) {}
+
+bool BiasCorrector::fromFile(const std::string& fileName)
 {
-public:
-    SoftAndHardIronCalibration();
+    std::ifstream input(fileName);
 
-    bool feed(const MagnetometerData& data);
+    if (input)
+    {
+        // Ignore header line (csv header)
+        input.ignore(1000, '\n');
 
-    /**
-     * @brief Uses the recorded measurements to compute the correction
-     * parameters needed to correct sensor's data.
-     *
-     * Note: Feed at leas 9 measurements!
-     *
-     * @return SoftAndHardIronCorrector containing the correction parameters.
-     */
-    SixParametersCorrector computeResult();
+        for (int i = 0; i < 3; i++)
+        {
+            input >> b(i);
+            input.ignore(1, ',');
+        }
 
-private:
-    Eigen::Matrix<float, 7, 7> D = Eigen::Matrix<float, 7, 7>::Zero();
-};
+        return true;
+    }
+    else
+    {
+        return false;
+    }
+}
+
+bool BiasCorrector::toFile(const std::string& fileName)
+{
+    std::ofstream output(fileName);
+
+    if (output)
+    {
+        output << "b0,b1,b2" << std::endl;
+        output << b(0) << "," << b(1) << "," << b(1);
+
+        return true;
+    }
+    else
+    {
+        return false;
+    }
+}
+
+Eigen::Vector3f BiasCorrector::getb() const { return b; }
+
+void BiasCorrector::setb(const Eigen::Vector3f& b) { this->b = b; }
+
+Vector3f BiasCorrector::correct(const Vector3f& data) const { return data - b; }
 
 }  // namespace Boardcore

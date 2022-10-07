@@ -33,8 +33,11 @@ project(SkywardBoardcore)
 #                                 Entrypoints                                 #
 #-----------------------------------------------------------------------------#
 
-add_executable(bmx160-calibration-entry src/entrypoints/bmx160-calibration-entry.cpp)
-sbs_target(bmx160-calibration-entry stm32f429zi_skyward_death_stack_x)
+add_executable(bmx160-calibration-v2 src/entrypoints/bmx160-calibration-entry.cpp)
+sbs_target(bmx160-calibration-v2 stm32f429zi_skyward_death_stack_x)
+
+add_executable(bmx160-calibration-v3 src/entrypoints/bmx160-calibration-entry.cpp)
+sbs_target(bmx160-calibration-v3 stm32f429zi_skyward_death_stack_v3)
 
 add_executable(config-dsgamma src/entrypoints/config-dsgamma.cpp)
 sbs_target(config-dsgamma stm32f429zi_stm32f4discovery)
@@ -141,14 +144,14 @@ sbs_target(test-attitude-stack stm32f429zi_skyward_death_stack_x)
 add_executable(test-nas-parafoil src/tests/algorithms/NAS/test-nas-parafoil.cpp)
 sbs_target(test-nas-parafoil stm32f429zi_skyward_parafoil)
 
-add_executable(test-nas-stack src/tests/algorithms/NAS/test-nas-stack.cpp)
-sbs_target(test-nas-stack stm32f429zi_skyward_death_stack_x)
+add_executable(test-nas src/tests/algorithms/NAS/test-nas.cpp)
+sbs_target(test-nas stm32f429zi_skyward_death_stack_v3)
 
 add_executable(test-nas-with-triad src/tests/algorithms/NAS/test-nas-with-triad.cpp)
 sbs_target(test-nas-with-triad stm32f429zi_skyward_death_stack_x)
 
 add_executable(test-triad src/tests/algorithms/NAS/test-triad.cpp)
-sbs_target(test-triad stm32f429zi_skyward_death_stack_x)
+sbs_target(test-triad stm32f429zi_skyward_death_stack_v3)
 
 add_executable(test-triad-parafoil src/tests/algorithms/NAS/test-triad-parafoil.cpp)
 sbs_target(test-triad-parafoil stm32f429zi_skyward_parafoil)
@@ -319,9 +322,6 @@ sbs_target(test-calibration-benchmark stm32f407vg_stm32f4discovery)
 
 add_executable(test-calibration-stats src/tests/sensors/calibration/test-calibration-stats.cpp)
 sbs_target(test-calibration-stats stm32f407vg_stm32f4discovery)
-
-add_executable(test-calibration src/tests/sensors/calibration/test-calibration.cpp)
-sbs_target(test-calibration stm32f407vg_stm32f4discovery)
 
 add_executable(test-bme280 src/tests/sensors/test-bme280.cpp)
 sbs_target(test-bme280 stm32f429zi_stm32f4discovery)

@@ -85,7 +85,6 @@ foreach(OPT_BOARD ${BOARDS})
         ${SBS_BASE}/src/shared/sensors/HX711/HX711.cpp
         ${SBS_BASE}/src/shared/sensors/LIS3MDL/LIS3MDL.cpp
         ${SBS_BASE}/src/shared/sensors/LIS331HH/LIS331HH.cpp
-        ${SBS_BASE}/src/shared/sensors/calibration/SensorDataExtra.cpp
         ${SBS_BASE}/src/shared/sensors/MAX6675/MAX6675.cpp
         ${SBS_BASE}/src/shared/sensors/MAX31855/MAX31855.cpp
         ${SBS_BASE}/src/shared/sensors/MBLoadCell/MBLoadCell.cpp
@@ -98,7 +97,14 @@ foreach(OPT_BOARD ${BOARDS})
         ${SBS_BASE}/src/shared/sensors/VN100/VN100.cpp
 
         # Calibration
+        ${SBS_BASE}/src/shared/sensors/calibration/BiasCalibration/BiasCalibration.cpp
+        ${SBS_BASE}/src/shared/sensors/calibration/SensorDataExtra/SensorDataExtra.cpp
+        ${SBS_BASE}/src/shared/sensors/calibration/SixParameterCalibration/SixParameterCalibration.cpp
         ${SBS_BASE}/src/shared/sensors/calibration/SoftAndHardIronCalibration/SoftAndHardIronCalibration.cpp
+
+        # Correction
+        ${SBS_BASE}/src/shared/sensors/correction/BiasCorrector/BiasCorrector.cpp
+        ${SBS_BASE}/src/shared/sensors/correction/SixParametersCorrector/SixParametersCorrector.cpp
 
         # Utils
         ${SBS_BASE}/src/shared/utils/AeroUtils/AeroUtils.cpp

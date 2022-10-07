@@ -1,4 +1,4 @@
-/* Copyright (c) 2021-2022 Skyward Experimental Rocketry
+/* Copyright (c) 2020-2022 Skyward Experimental Rocketry
  * Authors: Riccardo Musso, Alberto Nidasio
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -19,48 +19,37 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
+
 #pragma once
 
-#include <sensors/SensorData.h>
-#include <sensors/correction/SixParametersCorrector/SixParametersCorrector.h>
-
 #include <Eigen/Core>
-#include <Eigen/Eigenvalues>
-#include <vector>
 
 namespace Boardcore
 {
 
 /**
- * @brief Soft and hard iron calibration utility.
+ * @brief Bias correction removes a bias from a measurement.
  *
- * Fits a non-rotated ellipsoid to the calibration data and then derives the
- * correction parameters.
- *
- * Reference:
- * https://www.st.com/resource/en/design_tip/dt0059-ellipsoid-or-sphere-fitting-for-sensor-calibration-stmicroelectronics.pdf
- *
- * @tparam MaxSamples
+ * |x'|   |x|   |b0|
+ * |y'| = |y| - |b1|
+ * |z'|   |z|   |b2|
  */
-class SoftAndHardIronCalibration
+class BiasCorrector
 {
 public:
-    SoftAndHardIronCalibration();
+    BiasCorrector();
+    explicit BiasCorrector(const Eigen::Vector3f& b);
 
-    bool feed(const MagnetometerData& data);
+    virtual bool fromFile(const std::string& fileName);
+    virtual bool toFile(const std::string& fileName);
 
-    /**
-     * @brief Uses the recorded measurements to compute the correction
-     * parameters needed to correct sensor's data.
-     *
-     * Note: Feed at leas 9 measurements!
-     *
-     * @return SoftAndHardIronCorrector containing the correction parameters.
-     */
-    SixParametersCorrector computeResult();
+    Eigen::Vector3f getb() const;
+    void setb(const Eigen::Vector3f& b);
 
-private:
-    Eigen::Matrix<float, 7, 7> D = Eigen::Matrix<float, 7, 7>::Zero();
+    virtual Eigen::Vector3f correct(const Eigen::Vector3f& data) const;
+
+protected:
+    Eigen::Vector3f b;
 };
 
 }  // namespace Boardcore

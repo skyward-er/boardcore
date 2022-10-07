@@ -1,5 +1,5 @@
-/* Copyright (c) 2021-2022 Skyward Experimental Rocketry
- * Authors: Riccardo Musso, Alberto Nidasio
+/* Copyright (c) 2021 Skyward Experimental Rocketry
+ * Author: Riccardo Musso
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -19,48 +19,41 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
+
 #pragma once
 
 #include <sensors/SensorData.h>
+#include <sensors/calibration/AxisOrientation.h>
 #include <sensors/correction/SixParametersCorrector/SixParametersCorrector.h>
 
 #include <Eigen/Core>
-#include <Eigen/Eigenvalues>
-#include <vector>
+#include <iostream>
 
 namespace Boardcore
 {
 
-/**
- * @brief Soft and hard iron calibration utility.
- *
- * Fits a non-rotated ellipsoid to the calibration data and then derives the
- * correction parameters.
- *
- * Reference:
- * https://www.st.com/resource/en/design_tip/dt0059-ellipsoid-or-sphere-fitting-for-sensor-calibration-stmicroelectronics.pdf
- *
- * @tparam MaxSamples
- */
-class SoftAndHardIronCalibration
+class SixParameterCalibration
 {
 public:
-    SoftAndHardIronCalibration();
+    SixParameterCalibration();
+    explicit SixParameterCalibration(Eigen::Vector3f ref);
 
-    bool feed(const MagnetometerData& data);
+    void setReferenceVector(Eigen::Vector3f ref);
+    Eigen::Vector3f getReferenceVector();
 
-    /**
-     * @brief Uses the recorded measurements to compute the correction
-     * parameters needed to correct sensor's data.
-     *
-     * Note: Feed at leas 9 measurements!
-     *
-     * @return SoftAndHardIronCorrector containing the correction parameters.
-     */
+    void feed(const Eigen::Vector3f& measured,
+              const AxisOrientation& transform);
+
     SixParametersCorrector computeResult();
 
 private:
-    Eigen::Matrix<float, 7, 7> D = Eigen::Matrix<float, 7, 7>::Zero();
+    /**
+     * The matrix contains x, y, z measured and x', y', z' expected for
+     * each row. Its shape is (N x 6)
+     */
+    Eigen::Matrix<float, Eigen::Dynamic, 6> samples;
+    Eigen::Vector3f ref = {0, 0, 0};
+    unsigned numSamples = 0;
 };
 
 }  // namespace Boardcore

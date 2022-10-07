@@ -125,7 +125,7 @@ void calibrateMagnetometer()
     auto correction = calibration.computeResult();
 
     printf("b: the bias vector\n");
-    std::cout << correction.getOffset().transpose() << std::endl;
-    printf("g: the gain to be multiplied to the input vector\n");
-    std::cout << correction.getGain().transpose() << std::endl;
+    std::cout << correction.getb().transpose() << std::endl;
+    printf("A: the gain to be multiplied to the input vector\n");
+    std::cout << correction.getA().transpose() << std::endl;
 }

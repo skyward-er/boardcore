@@ -32,10 +32,9 @@
 #include <drivers/spi/SPIDriver.h>
 #include <miosix.h>
 #include <sensors/LIS3DSH/LIS3DSH.h>
-#include <sensors/calibration/BiasCalibration.h>
-#include <sensors/calibration/HardIronCalibration.h>
-#include <sensors/calibration/SixParameterCalibration.h>
-#include <sensors/calibration/TwelveParameterCalibration.h>
+#include <sensors/calibration/BiasCalibration/BiasCalibration.h>
+#include <sensors/calibration/SoftAndHardIronCalibration/SoftAndHardIronCalibration.h>
+#include <sensors/correction/SixParametersCorrector/SixParametersCorrector.h>
 #include <utils/Debug.h>
 
 using namespace Boardcore;
@@ -47,7 +46,7 @@ volatile AccelerometerData testData;
 int main()
 {
 #ifdef BIAS_CALIBRATION_LOAD_TEST
-    BiasCorrector<AccelerometerData> corrector;
+    BiasCorrector corrector;
     TRACE("Using BIAS calibration model.\n");
 #endif
 

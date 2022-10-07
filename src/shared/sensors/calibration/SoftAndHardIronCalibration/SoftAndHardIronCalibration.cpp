@@ -22,7 +22,7 @@
 
 #include "SoftAndHardIronCalibration.h"
 
-#include <sensors/calibration/SensorDataExtra.h>
+#include <sensors/calibration/SensorDataExtra/SensorDataExtra.h>
 
 #include <iostream>
 
@@ -30,50 +30,6 @@ using namespace Eigen;
 
 namespace Boardcore
 {
-
-SoftAndHardIronCorrector::SoftAndHardIronCorrector()
-    : SoftAndHardIronCorrector({0, 0, 0}, {1, 1, 1})
-{
-}
-
-SoftAndHardIronCorrector::SoftAndHardIronCorrector(const Vector3f& offset,
-                                                   const Vector3f& gain)
-    : offset(offset), gain(gain)
-{
-}
-
-void SoftAndHardIronCorrector::setIdentity()
-{
-    offset = {0, 0, 0};
-    gain   = {1, 1, 1};
-}
-
-MagnetometerData SoftAndHardIronCorrector::correct(
-    const MagnetometerData& sample) const
-{
-    MagnetometerData output;
-    Vector3f tmp;
-
-    tmp << sample;
-    tmp = (tmp + offset).cwiseProduct(gain);
-    output << tmp;
-
-    return output;
-}
-
-Eigen::Vector3f SoftAndHardIronCorrector::getOffset() const { return offset; }
-
-void SoftAndHardIronCorrector::setOffset(const Eigen::Vector3f& offset)
-{
-    this->offset = offset;
-}
-
-Eigen::Vector3f SoftAndHardIronCorrector::getGain() const { return gain; }
-
-void SoftAndHardIronCorrector::setGain(const Eigen::Vector3f& gain)
-{
-    this->gain = gain;
-}
 
 SoftAndHardIronCalibration::SoftAndHardIronCalibration() {}
 
@@ -96,7 +52,7 @@ bool SoftAndHardIronCalibration::feed(const MagnetometerData& data)
     return true;
 }
 
-SoftAndHardIronCorrector SoftAndHardIronCalibration::computeResult()
+SixParametersCorrector SoftAndHardIronCalibration::computeResult()
 {
     // Compute eigen value and vectors of D
     SelfAdjointEigenSolver<Matrix<float, 7, 7>> solver(D);
@@ -127,33 +83,7 @@ SoftAndHardIronCorrector SoftAndHardIronCalibration::computeResult()
                     vec[5] / vec[2] / 2};
     Vector3f gain = (vec.block(0, 0, 3, 1) / cbrt(det)).cwiseSqrt();
 
-    return {offset, gain};
-}
-
-void operator<<(Eigen::Matrix<float, 3, 2>& lhs,
-                const SoftAndHardIronCorrector& rhs)
-{
-    lhs.col(0) = rhs.getGain();
-    lhs.col(1) = rhs.getOffset();
-}
-
-void operator<<(SoftAndHardIronCorrector& lhs,
-                const Eigen::Matrix<float, 3, 2>& rhs)
-{
-    lhs.setGain(rhs.col(0));
-    lhs.setOffset(rhs.col(1));
-}
-
-void operator>>(const Eigen::Matrix<float, 3, 2>& lhs,
-                SoftAndHardIronCorrector& rhs)
-{
-    rhs << lhs;
-}
-
-void operator>>(const SoftAndHardIronCorrector& lhs,
-                Eigen::Matrix<float, 3, 2>& rhs)
-{
-    rhs << lhs;
+    return {gain, -offset};
 }
 
 }  // namespace Boardcore

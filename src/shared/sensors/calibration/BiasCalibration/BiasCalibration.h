@@ -1,4 +1,4 @@
-/* Copyright (c) 2021-2022 Skyward Experimental Rocketry
+/* Copyright (c) 2020-2022 Skyward Experimental Rocketry
  * Authors: Riccardo Musso, Alberto Nidasio
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -19,48 +19,48 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
+
 #pragma once
 
 #include <sensors/SensorData.h>
-#include <sensors/correction/SixParametersCorrector/SixParametersCorrector.h>
+#include <sensors/calibration/AxisOrientation.h>
+#include <sensors/calibration/SensorDataExtra/SensorDataExtra.h>
+#include <sensors/correction/BiasCorrector/BiasCorrector.h>
 
 #include <Eigen/Core>
-#include <Eigen/Eigenvalues>
-#include <vector>
 
 namespace Boardcore
 {
 
 /**
- * @brief Soft and hard iron calibration utility.
+ * @brief This is the dumbest type of calibration possible: an offset.
  *
- * Fits a non-rotated ellipsoid to the calibration data and then derives the
- * correction parameters.
- *
- * Reference:
- * https://www.st.com/resource/en/design_tip/dt0059-ellipsoid-or-sphere-fitting-for-sensor-calibration-stmicroelectronics.pdf
- *
- * @tparam MaxSamples
+ * During the calibration phase it will use a given reference vector (for
+ * example the gravitational acceleration), and every time you'll feed the model
+ * with a new value, you have to give it the orientation of the sensor, so it
+ * can guess the bias.
  */
-class SoftAndHardIronCalibration
+class BiasCalibration
 {
 public:
-    SoftAndHardIronCalibration();
+    BiasCalibration();
+    explicit BiasCalibration(Eigen::Vector3f ref);
 
-    bool feed(const MagnetometerData& data);
+    void setReferenceVector(Eigen::Vector3f ref);
+    Eigen::Vector3f getReferenceVector();
 
-    /**
-     * @brief Uses the recorded measurements to compute the correction
-     * parameters needed to correct sensor's data.
-     *
-     * Note: Feed at leas 9 measurements!
-     *
-     * @return SoftAndHardIronCorrector containing the correction parameters.
-     */
-    SixParametersCorrector computeResult();
+    void reset();
+
+    void feed(const Eigen::Vector3f& measured,
+              const AxisOrientation& transform);
+    void feed(const Eigen::Vector3f& measured);
+
+    BiasCorrector computeResult();
 
 private:
-    Eigen::Matrix<float, 7, 7> D = Eigen::Matrix<float, 7, 7>::Zero();
+    Eigen::Vector3f mean = {0, 0, 0};
+    Eigen::Vector3f ref;
+    unsigned numSamples = 0;
 };
 
 }  // namespace Boardcore
