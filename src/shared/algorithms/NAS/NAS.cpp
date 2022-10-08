@@ -38,18 +38,18 @@ NAS::NAS(NASConfig config) : config(config)
     // Covariance setup
     {
         // clang-format off
-        Eigen::Matrix3f P_pos{
+        Matrix3f P_pos{
             {config.P_POS, 0,            0},
             {0,            config.P_POS, 0},
             {0,            0,            config.P_POS_VERTICAL}
         };
-        Eigen::Matrix3f P_vel{
+        Matrix3f P_vel{
             {config.P_VEL, 0,            0},
             {0,            config.P_VEL, 0},
             {0,            0,            config.P_VEL_VERTICAL}
         };
-        Eigen::Matrix3f P_att  = Matrix3f::Identity() * config.P_ATT;
-        Eigen::Matrix3f P_bias = Matrix3f::Identity() * config.P_BIAS;
+        Matrix3f P_att  = Matrix3f::Identity() * config.P_ATT;
+        Matrix3f P_bias = Matrix3f::Identity() * config.P_BIAS;
         P << P_pos,               MatrixXf::Zero(3, 9),
             MatrixXf::Zero(3, 3), P_vel, MatrixXf::Zero(3, 6),
             MatrixXf::Zero(3, 6),        P_att, MatrixXf::Zero(3, 3),
@@ -117,8 +117,8 @@ void NAS::predictAcc(const Vector3f& acceleration)
     x.block<3, 1>(IDX_VEL, 0) = vel;
 
     // Variance propagation
-    Eigen::Matrix<float, 6, 6> Pl = P.block<6, 6>(0, 0);
-    P.block<6, 6>(0, 0)           = F_lin * Pl * F_lin_tr + Q_lin;
+    Matrix<float, 6, 6> Pl = P.block<6, 6>(0, 0);
+    P.block<6, 6>(0, 0)    = F_lin * Pl * F_lin_tr + Q_lin;
 }
 
 void NAS::predictAcc(const AccelerometerData& acceleration)
@@ -175,7 +175,7 @@ void NAS::correctBaro(const float pressure)
     H[2] = Constants::a * Constants::n * reference.refPressure *
            powf(1 - Constants::a * x(2) / temp, -Constants::n - 1) / temp;
 
-    Eigen::Matrix<float, 6, 6> Pl = P.block<6, 6>(0, 0);
+    Matrix<float, 6, 6> Pl = P.block<6, 6>(0, 0);
     Matrix<float, 1, 1> S =
         H * Pl * H.transpose() + Matrix<float, 1, 1>(config.SIGMA_BAR);
     Matrix<float, 6, 1> K = Pl * H.transpose() * S.inverse();
@@ -191,13 +191,12 @@ void NAS::correctBaro(const float pressure)
 
 void NAS::correctGPS(const Vector4f& gps)
 {
-    Eigen::Matrix<float, 6, 6> Pl = P.block<6, 6>(0, 0);
+    Matrix<float, 6, 6> Pl = P.block<6, 6>(0, 0);
 
     Matrix<float, 4, 4> S = H_gps * Pl * H_gps_tr + R_gps;
     Matrix<float, 6, 4> K = Pl * H_gps_tr * S.inverse();
 
-    P.block<6, 6>(0, 0) =
-        (Eigen::Matrix<float, 6, 6>::Identity() - K * H_gps) * Pl;
+    P.block<6, 6>(0, 0) = (Matrix<float, 6, 6>::Identity() - K * H_gps) * Pl;
 
     // Current state [n e vn ve]
     Matrix<float, 4, 1> H{x(0), x(1), x(3), x(4)};
@@ -259,7 +258,7 @@ void NAS::correctMag(const MagnetometerData& mag)
     correctMag(magV.normalized());
 }
 
-void NAS::correctAcc(const Eigen::Vector3f& acc)
+void NAS::correctAcc(const Vector3f& acc)
 {
     Vector4f q = x.block<4, 1>(IDX_QUAT, 0);
     Matrix3f A = SkyQuaternion::quat2rotationMatrix(q).transpose();
@@ -328,7 +327,7 @@ void NAS::correctPitot(const float deltaP, const float staticP)
         Matrix<float, 1, 6> H = Matrix<float, 1, 6>::Zero();
         H.coeffRef(0, 5)      = 1;
 
-        Eigen::Matrix<float, 6, 6> Pl = P.block<6, 6>(0, 0);
+        Matrix<float, 6, 6> Pl = P.block<6, 6>(0, 0);
         Matrix<float, 1, 1> S =
             H * Pl * H.transpose() + Matrix<float, 1, 1>(config.SIGMA_PITOT);
 
@@ -343,11 +342,11 @@ NASState NAS::getState() const
     return NASState(TimestampTimer::getTimestamp(), x);
 }
 
-Eigen::Matrix<float, 13, 1> NAS::getX() const { return x; }
+Matrix<float, 13, 1> NAS::getX() const { return x; }
 
 void NAS::setState(const NASState& state) { this->x = state.getX(); }
 
-void NAS::setX(const Eigen::Matrix<float, 13, 1>& x) { this->x = x; }
+void NAS::setX(const Matrix<float, 13, 1>& x) { this->x = x; }
 
 void NAS::setReferenceValues(const ReferenceValues reference)
 {
