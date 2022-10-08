@@ -137,7 +137,7 @@ public:
     /**
      * @brief Wait for generic irq (DOES NOT RELEASE LOCK!).
      */
-    void waitForIrq(uint16_t mask);
+    bool waitForIrq(uint16_t mask, int timeout = 10);
 
     /**
      * @brief Wait for RX irq (releases lock safely).
@@ -234,9 +234,10 @@ public:
      */
     enum class Error
     {
-        NONE,         //< No error encountered.
-        BAD_VALUE,    //< A requested value was outside the valid range.
-        BAD_VERSION,  //< Chip isn't connected.
+        NONE,              //< No error encountered.
+        BAD_VALUE,         //< A requested value was outside the valid range.
+        BAD_VERSION,       //< Chip isn't connected.
+        CONFIGURE_FAILED,  //< Timeout on IRQ register.
     };
 
     /**
@@ -260,7 +261,7 @@ public:
     /**
      * @brief Configure this device on the fly.
      */
-    void configure(const Config &config);
+    bool configure(const Config &config);
 
     /**
      * @brief Wait until a new packet is received.

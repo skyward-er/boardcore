@@ -95,11 +95,22 @@ void SX1278BusManager::handleDioIRQ()
     }
 }
 
-void SX1278BusManager::waitForIrq(uint16_t mask)
+bool SX1278BusManager::waitForIrq(uint16_t mask, int timeout)
 {
-    // Tight loop on IRQ register
-    while (!(getIrqFlags() & mask))
-        miosix::delayUs(10);
+    long long start = miosix::getTick();
+    while ((miosix::getTick() - start) < timeout)
+    {
+        // Tight loop on IRQ register
+        for (int i = 0; i < 20; i++)
+        {
+            if (getIrqFlags() & mask)
+                return true;
+
+            miosix::delayUs(50);
+        }
+    }
+
+    return false;
 }
 
 void SX1278BusManager::waitForRxIrq()
@@ -171,17 +182,20 @@ SX1278::Error SX1278::init(const Config &config)
         return Error::BAD_VALUE;
     }
 
-    configure(config);
+    if (!configure(config))
+        return Error::CONFIGURE_FAILED;
+
     return Error::NONE;
 }
 
 bool SX1278::probe() { return getVersion() == 0x12; }
 
-void SX1278::configure(const Config &config)
+bool SX1278::configure(const Config &config)
 {
     // Lock the bus
     SX1278BusManager::LockMode guard(bus_mgr, Mode::MODE_STDBY);
-    bus_mgr.waitForIrq(RegIrqFlags::MODE_READY);
+    if (!bus_mgr.waitForIrq(RegIrqFlags::MODE_READY))
+        return false;
 
     setBitrate(config.bitrate);
     setFreqDev(config.freq_dev);
@@ -234,6 +248,7 @@ void SX1278::configure(const Config &config)
     }
 
     // imageCalibrate();
+    return true;
 }
 
 ssize_t SX1278::receive(uint8_t *pkt, size_t max_len)
@@ -276,7 +291,8 @@ bool SX1278::send(uint8_t *pkt, size_t len)
     SX1278BusManager::LockMode guard(bus_mgr, Mode::MODE_TX);
 
     // Wait for TX ready
-    bus_mgr.waitForIrq(RegIrqFlags::TX_READY);
+    if (!bus_mgr.waitForIrq(RegIrqFlags::TX_READY))
+        return false;
 
     {
         SPITransaction spi(bus_mgr.getBus(),
@@ -287,7 +303,8 @@ bool SX1278::send(uint8_t *pkt, size_t len)
     }
 
     // Wait for packet sent
-    bus_mgr.waitForIrq(RegIrqFlags::PACKET_SENT);
+    if (!bus_mgr.waitForIrq(RegIrqFlags::PACKET_SENT, len * 3))
+        return false;
 
     last_tx = now();
     return true;
