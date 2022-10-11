@@ -101,12 +101,12 @@ bool SX1278BusManager::waitForIrq(uint16_t mask, int timeout)
     while ((miosix::getTick() - start) < timeout)
     {
         // Tight loop on IRQ register
-        for (int i = 0; i < 20; i++)
+        for (int i = 0; i < 100; i++)
         {
             if (getIrqFlags() & mask)
                 return true;
 
-            miosix::delayUs(50);
+            miosix::delayUs(10);
         }
     }
 
