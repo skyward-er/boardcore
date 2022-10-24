@@ -155,6 +155,9 @@ void Deserializer::printType(T& t, std::string path, std::string prefix)
         // Print the header in the file
         *stream << T::header();
 
+        // Set stream precision to maximum float precision
+        stream->precision(flt::max_digits10);
+
         // Add the file to the vector such that it will be closed
         fileStreams.emplace(demangledTypeName, stream);
     }
