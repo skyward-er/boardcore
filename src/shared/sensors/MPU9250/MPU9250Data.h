@@ -43,8 +43,8 @@ struct MPU9250Data : public AccelerometerData,
         return "accelerationTimestamp,accelerationX,accelerationY,"
                "accelerationZ,gyro_"
                "timestamp,"
-               "angularVelocityX,"
-               "angularVelocityY,angularVelocityZ,magneticFieldTimestamp,"
+               "angularSpeedX,"
+               "angularSpeedY,angularSpeedZ,magneticFieldTimestamp,"
                "magneticFieldX,"
                "magneticFieldY,"
                "magneticFieldZ,"
@@ -56,8 +56,8 @@ struct MPU9250Data : public AccelerometerData,
     {
         os << accelerationTimestamp << "," << accelerationX << ","
            << accelerationY << "," << accelerationZ << ","
-           << angularVelocityTimestamp << "," << angularVelocityX << ","
-           << angularVelocityY << "," << angularVelocityZ << ","
+           << angularSpeedTimestamp << "," << angularSpeedX << ","
+           << angularSpeedY << "," << angularSpeedZ << ","
            << magneticFieldTimestamp << "," << magneticFieldX << ","
            << magneticFieldY << "," << magneticFieldZ << ","
            << temperatureTimestamp << "," << temperature << "\n";

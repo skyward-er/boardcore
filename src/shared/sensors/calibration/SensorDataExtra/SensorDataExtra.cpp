@@ -43,16 +43,16 @@ void operator<<(Eigen::Vector3f& lhs, const AccelerometerData& rhs)
 
 void operator<<(GyroscopeData& lhs, const Vector3f& rhs)
 {
-    lhs.angularVelocityX = rhs[0];
-    lhs.angularVelocityY = rhs[1];
-    lhs.angularVelocityZ = rhs[2];
+    lhs.angularSpeedX = rhs[0];
+    lhs.angularSpeedY = rhs[1];
+    lhs.angularSpeedZ = rhs[2];
 }
 
 void operator<<(Eigen::Vector3f& lhs, const GyroscopeData& rhs)
 {
-    lhs[0] = rhs.angularVelocityX;
-    lhs[1] = rhs.angularVelocityY;
-    lhs[2] = rhs.angularVelocityZ;
+    lhs[0] = rhs.angularSpeedX;
+    lhs[1] = rhs.angularSpeedY;
+    lhs[2] = rhs.angularSpeedZ;
 }
 
 void operator<<(MagnetometerData& lhs, const Vector3f& rhs)

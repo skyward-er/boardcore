@@ -132,16 +132,16 @@ void imuStep()
     auto data = imu->getLastSample();
     Vector3f acceleration(data.accelerationX, data.accelerationY,
                           data.accelerationZ);
-    Vector3f angularVelocity(data.angularVelocityX, data.angularVelocityY,
-                             data.angularVelocityZ);
+    Vector3f angularSpeed(data.angularSpeedX, data.angularSpeedY,
+                          data.angularSpeedZ);
     Vector3f magneticField(data.magneticFieldX, data.magneticFieldY,
                            data.magneticFieldZ);
 
     // Calibration
     {
         Vector3f offset{-1.63512255486542, 3.46523431469979, -3.08516033954451};
-        angularVelocity = angularVelocity - offset;
-        angularVelocity = angularVelocity / 180 * Constants::PI / 10;
+        angularSpeed = angularSpeed - offset;
+        angularSpeed = angularSpeed / 180 * Constants::PI / 10;
         Vector3f b{21.5356818859811, -22.7697302909894, -2.68219304319269};
         Matrix3f A{{0.688760050772712, 0, 0},
                    {0, 0.637715211784480, 0},
@@ -153,13 +153,13 @@ void imuStep()
     magneticField.normalize();
 
     // Predict step
-    nas->predictGyro(angularVelocity);
+    nas->predictGyro(angularSpeed);
 
     // Correct step
     nas->correctMag(magneticField);
     nas->correctAcc(acceleration);
 
-    // std::cout << acceleration.transpose() << angularVelocity.transpose()
+    // std::cout << acceleration.transpose() << angularSpeed.transpose()
     //           << magneticField.transpose() << std::endl;
 
     auto nasState = nas->getState();

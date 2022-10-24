@@ -129,8 +129,8 @@ void step()
 
     Vector3f acceleration(imuData.accelerationX, imuData.accelerationY,
                           imuData.accelerationZ);
-    Vector3f angularVelocity(imuData.angularVelocityX, imuData.angularVelocityY,
-                             imuData.angularVelocityZ);
+    Vector3f angularSpeed(imuData.angularSpeedX, imuData.angularSpeedY,
+                          imuData.angularSpeedZ);
     Vector3f magneticField(imuData.magneticFieldX, imuData.magneticFieldY,
                            imuData.magneticFieldZ);
 
@@ -146,14 +146,14 @@ void step()
         Vector3f biasAcc(-0.1255, 0.2053, -0.2073);
         acceleration -= biasAcc;
         Vector3f bias(-0.0291, 0.0149, 0.0202);
-        angularVelocity -= bias;
+        angularSpeed -= bias;
         Vector3f offset(15.9850903462129, -15.6775071377074, -33.8438469147423);
         magneticField -= offset;
         magneticField = {magneticField[1], magneticField[0], -magneticField[2]};
     }
 
     // Predict step
-    nas->predictGyro(angularVelocity);
+    nas->predictGyro(angularSpeed);
     if (gpsPos[0] < 1e3 && gpsPos[0] > -1e3 && gpsPos[1] < 1e3 &&
         gpsPos[1] > -1e3)
         nas->predictAcc(acceleration);

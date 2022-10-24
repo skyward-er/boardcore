@@ -128,8 +128,8 @@ void bmxCallback()
     auto data = bmx160->getLastSample();
     Vector3f acceleration(data.accelerationX, data.accelerationY,
                           data.accelerationZ);
-    Vector3f angularVelocity(data.angularVelocityX, data.angularVelocityY,
-                             data.angularVelocityZ);
+    Vector3f angularSpeed(data.angularSpeedX, data.angularSpeedY,
+                          data.angularSpeedZ);
     Vector3f magneticField(data.magneticFieldX, data.magneticFieldY,
                            data.magneticFieldZ);
 
@@ -137,8 +137,8 @@ void bmxCallback()
     Vector3f acc_b(0.3763 + 0.094, -0.1445 - 0.0229, -0.1010 + 0.0150);
     acceleration -= acc_b;
     Vector3f gyro_b{-1.63512255486542, 3.46523431469979, -3.08516033954451};
-    angularVelocity = angularVelocity - gyro_b;
-    angularVelocity = angularVelocity / 180 * Constants::PI / 10;
+    angularSpeed = angularSpeed - gyro_b;
+    angularSpeed = angularSpeed / 180 * Constants::PI / 10;
     Vector3f mag_b{21.0730033648425, -24.3997259703105, -2.32621524742862};
     Matrix3f A{{0.659926504672263, 0, 0},
                {0, 0.662442130094073, 0},
@@ -182,11 +182,11 @@ void bmxCallback()
         // Predict step
         {
             // nas->predictAcc(acceleration);
-            nas->predictGyro(angularVelocity);
+            nas->predictGyro(angularSpeed);
 
-            data.angularVelocityX = angularVelocity[0];
-            data.angularVelocityY = angularVelocity[1];
-            data.angularVelocityZ = angularVelocity[2];
+            data.angularSpeedX = angularSpeed[0];
+            data.angularSpeedY = angularSpeed[1];
+            data.angularSpeedZ = angularSpeed[2];
         }
 
         // Correct step
@@ -201,10 +201,10 @@ void bmxCallback()
 
         auto nasState = nas->getState();
 
-        nasState.timestamp            = TimestampTimer::getTimestamp();
-        data.accelerationTimestamp    = nasState.timestamp;
-        data.magneticFieldTimestamp   = nasState.timestamp;
-        data.angularVelocityTimestamp = nasState.timestamp;
+        nasState.timestamp          = TimestampTimer::getTimestamp();
+        data.accelerationTimestamp  = nasState.timestamp;
+        data.magneticFieldTimestamp = nasState.timestamp;
+        data.angularSpeedTimestamp  = nasState.timestamp;
 
         // Logger::getInstance().log(nasState);
         // Logger::getInstance().log(data);

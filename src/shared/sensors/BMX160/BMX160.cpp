@@ -31,19 +31,19 @@ namespace Boardcore
 BMX160::BMX160(SPIBusInterface& bus, miosix::GpioPin cs, BMX160Config config)
     : BMX160(bus, cs, config, SPIBusConfig{})
 {
-    spiSlave.config.clockDivider    = SPI::ClockDivider::DIV_32;
-    oldMag.magneticFieldTimestamp   = 0.0f;
-    oldGyr.angularVelocityTimestamp = 0.0f;
-    oldAcc.accelerationTimestamp    = 0.0f;
+    spiSlave.config.clockDivider  = SPI::ClockDivider::DIV_32;
+    oldMag.magneticFieldTimestamp = 0.0f;
+    oldGyr.angularSpeedTimestamp  = 0.0f;
+    oldAcc.accelerationTimestamp  = 0.0f;
 }
 
 BMX160::BMX160(SPIBusInterface& bus, miosix::GpioPin cs, BMX160Config config,
                SPIBusConfig bus_config)
     : spiSlave(bus, cs, bus_config), config(config)
 {
-    oldMag.magneticFieldTimestamp   = 0.0f;
-    oldGyr.angularVelocityTimestamp = 0.0f;
-    oldAcc.accelerationTimestamp    = 0.0f;
+    oldMag.magneticFieldTimestamp = 0.0f;
+    oldGyr.angularSpeedTimestamp  = 0.0f;
+    oldAcc.accelerationTimestamp  = 0.0f;
 }
 
 bool BMX160::init()
@@ -732,8 +732,8 @@ void BMX160::readFifo(bool headerless)
     // current frame.
     if (oldMag.magneticFieldTimestamp != 0)
         oldMag.magneticFieldTimestamp -= interruptTimestampDelta;
-    if (oldGyr.angularVelocityTimestamp != 0)
-        oldGyr.angularVelocityTimestamp -= interruptTimestampDelta;
+    if (oldGyr.angularSpeedTimestamp != 0)
+        oldGyr.angularSpeedTimestamp -= interruptTimestampDelta;
     if (oldAcc.accelerationTimestamp != 0)
         oldAcc.accelerationTimestamp -= interruptTimestampDelta;
 
@@ -865,7 +865,7 @@ void BMX160::readFifo(bool headerless)
     {
         lastFifo[i].accelerationTimestamp +=
             lastInterruptTimestamp - watermarkTimestamp;
-        lastFifo[i].angularVelocityTimestamp +=
+        lastFifo[i].angularSpeedTimestamp +=
             lastInterruptTimestamp - watermarkTimestamp;
         lastFifo[i].magneticFieldTimestamp +=
             lastInterruptTimestamp - watermarkTimestamp;

@@ -45,8 +45,8 @@ struct BMX160Data : public AccelerometerData,
     static std::string header()
     {
         return "accelerationTimestamp,accelerationX,accelerationY,"
-               "accelerationZ,angularVelocityTimestamp,angularVelocityX,"
-               "angularVelocityY,angularVelocityZ,magneticFieldTimestamp,"
+               "accelerationZ,angularSpeedTimestamp,angularSpeedX,"
+               "angularSpeedY,angularSpeedZ,magneticFieldTimestamp,"
                "magneticFieldX,magneticFieldY,magneticFieldZ\n";
     }
 
@@ -54,8 +54,8 @@ struct BMX160Data : public AccelerometerData,
     {
         os << accelerationTimestamp << "," << accelerationX << ","
            << accelerationY << "," << accelerationZ << ","
-           << angularVelocityTimestamp << "," << angularVelocityX << ","
-           << angularVelocityY << "," << angularVelocityZ << ","
+           << angularSpeedTimestamp << "," << angularSpeedX << ","
+           << angularSpeedY << "," << angularSpeedZ << ","
            << magneticFieldTimestamp << "," << magneticFieldX << ","
            << magneticFieldY << "," << magneticFieldZ << "\n";
     }

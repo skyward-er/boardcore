@@ -111,8 +111,8 @@ void imuStep()
     auto data = imu->getLastSample();
     Vector3f acceleration(data.accelerationX, data.accelerationY,
                           data.accelerationZ);
-    Vector3f angularVelocity(data.angularVelocityX, data.angularVelocityY,
-                             data.angularVelocityZ);
+    Vector3f angularSpeed(data.angularSpeedX, data.angularSpeedY,
+                          data.angularSpeedZ);
     Vector3f magneticField(data.magneticFieldX, data.magneticFieldY,
                            data.magneticFieldZ);
 
@@ -120,7 +120,7 @@ void imuStep()
     {
         Vector3f bias(0.0218462708018154, 0.0281755574886535,
                       0.0264119470499244);
-        angularVelocity -= bias;
+        angularSpeed -= bias;
         Vector3f offset(15.9850903462129, -15.6775071377074, -33.8438469147423);
         magneticField -= offset;
         magneticField = {magneticField[1], magneticField[0], -magneticField[2]};
@@ -130,7 +130,7 @@ void imuStep()
     magneticField.normalize();
 
     // Predict step
-    nas->predictGyro(angularVelocity);
+    nas->predictGyro(angularSpeed);
 
     // Correct step
     nas->correctMag(magneticField);

@@ -35,8 +35,8 @@ struct LSM6DS3HData
 
     static std::string header()
     {
-        return "timestamp,acc_x,acc_y,acc_z,angularVelocityX,angularVelocityY,"
-               "angularVelocityZ\n";
+        return "timestamp,acc_x,acc_y,acc_z,angularSpeedX,angularSpeedY,"
+               "angularSpeedZ\n";
     }
 
     void print(std::ostream& os) const

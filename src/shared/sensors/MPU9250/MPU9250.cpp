@@ -111,11 +111,11 @@ MPU9250Data MPU9250::sampleImpl()
     }
 
     // Save timestamps
-    uint64_t timestamp            = TimestampTimer::getTimestamp();
-    data.accelerationTimestamp    = timestamp;
-    data.temperatureTimestamp     = timestamp;
-    data.angularVelocityTimestamp = timestamp;
-    data.magneticFieldTimestamp   = timestamp;
+    uint64_t timestamp          = TimestampTimer::getTimestamp();
+    data.accelerationTimestamp  = timestamp;
+    data.temperatureTimestamp   = timestamp;
+    data.angularSpeedTimestamp  = timestamp;
+    data.magneticFieldTimestamp = timestamp;
 
     // Save data
     data.accelerationX =
@@ -124,10 +124,10 @@ MPU9250Data MPU9250::sampleImpl()
         normalizeAcceleration(swapBytes16(rawData.bits.accelY));
     data.accelerationZ =
         normalizeAcceleration(swapBytes16(rawData.bits.accelZ));
-    data.temperature = normalizeTemperature(swapBytes16(rawData.bits.temp));
-    data.angularVelocityX = normalizeGyroscope(swapBytes16(rawData.bits.gyroX));
-    data.angularVelocityY = normalizeGyroscope(swapBytes16(rawData.bits.gyroY));
-    data.angularVelocityZ = normalizeGyroscope(swapBytes16(rawData.bits.gyroZ));
+    data.temperature   = normalizeTemperature(swapBytes16(rawData.bits.temp));
+    data.angularSpeedX = normalizeGyroscope(swapBytes16(rawData.bits.gyroX));
+    data.angularSpeedY = normalizeGyroscope(swapBytes16(rawData.bits.gyroY));
+    data.angularSpeedZ = normalizeGyroscope(swapBytes16(rawData.bits.gyroZ));
     data.magneticFieldX =
         normalizeMagnetometer(rawData.bits.magX, magSensAdjCoeff[0]);
     data.magneticFieldY =

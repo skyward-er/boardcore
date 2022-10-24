@@ -151,14 +151,14 @@ void step()
 
     Vector3f acceleration(imuData.accelerationX, imuData.accelerationY,
                           imuData.accelerationZ);
-    Vector3f angularVelocity(imuData.angularVelocityX, imuData.angularVelocityY,
-                             imuData.angularVelocityZ);
+    Vector3f angularSpeed(imuData.angularSpeedX, imuData.angularSpeedY,
+                          imuData.angularSpeedZ);
     Vector3f magneticField(imuData.magneticFieldX, imuData.magneticFieldY,
                            imuData.magneticFieldZ);
 
     // Calibration
     {
-        angularVelocity -= Vector3f{-0.00863, 0.00337, 0.01284};
+        angularSpeed -= Vector3f{-0.00863, 0.00337, 0.01284};
 
         Matrix3f A{{0.66306, 0, 0}, {0, 0.66940, 0}, {0, 0, 2.25299}};
         Vector3f b{40.70668, -17.83740, -13.52012};
@@ -187,7 +187,7 @@ void step()
     }
 
     // Predict step
-    nas->predictGyro(angularVelocity);
+    nas->predictGyro(angularSpeed);
     nas->predictAcc(acceleration);
 
     // Correct step

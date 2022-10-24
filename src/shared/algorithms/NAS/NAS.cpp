@@ -127,12 +127,12 @@ void NAS::predictAcc(const AccelerometerData& acceleration)
                         acceleration.accelerationZ});
 }
 
-void NAS::predictGyro(const Vector3f& angularVelocity)
+void NAS::predictGyro(const Vector3f& angularSpeed)
 {
     Vector3f bias = x.block<3, 1>(IDX_BIAS, 0);
     Vector4f q    = x.block<4, 1>(IDX_QUAT, 0);
 
-    Vector3f omega = angularVelocity - bias;
+    Vector3f omega = angularSpeed - bias;
     // clang-format off
     Matrix4f omega_mat{
         { 0.0f,      omega(2), -omega(1), omega(0)},
@@ -156,11 +156,10 @@ void NAS::predictGyro(const Vector3f& angularVelocity)
     P.block<6, 6>(IDX_QUAT, IDX_QUAT) = Pq;
 }
 
-void NAS::predictGyro(const GyroscopeData& angularVelocity)
+void NAS::predictGyro(const GyroscopeData& angularSpeed)
 {
-    predictGyro(Vector3f{angularVelocity.angularVelocityX,
-                         angularVelocity.angularVelocityY,
-                         angularVelocity.angularVelocityZ});
+    predictGyro(Vector3f{angularSpeed.angularSpeedX, angularSpeed.angularSpeedY,
+                         angularSpeed.angularSpeedZ});
 }
 
 void NAS::correctBaro(const float pressure)

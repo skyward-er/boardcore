@@ -52,9 +52,9 @@ struct BMX160WithCorrectionData : public BMX160Data
 
     BMX160WithCorrectionData& operator=(GyroscopeData gyr)
     {
-        angularVelocityX = gyr.angularVelocityX;
-        angularVelocityY = gyr.angularVelocityY;
-        angularVelocityZ = gyr.angularVelocityZ;
+        angularSpeedX = gyr.angularSpeedX;
+        angularSpeedY = gyr.angularSpeedY;
+        angularSpeedZ = gyr.angularSpeedZ;
         return *this;
     }
 
@@ -69,21 +69,17 @@ struct BMX160WithCorrectionData : public BMX160Data
     static std::string header()
     {
         return "accelerationTimestamp,accelerationX,accelerationY,"
-               "accelerationZ,gyro_"
-               "timestamp,"
-               "angularVelocityX,"
-               "angularVelocityY,"
-               "angularVelocityZ,magneticFieldTimestamp,magneticFieldX,"
-               "magneticFieldY,"
-               "magneticFieldZ\n";
+               "accelerationZ,angularSpeedTimestamp,angularSpeedX,"
+               "angularSpeedY,angularSpeedZ,magneticFieldTimestamp,"
+               "magneticFieldX,magneticFieldY,magneticFieldZ\n";
     }
 
     void print(std::ostream& os) const
     {
         os << accelerationTimestamp << "," << accelerationX << ","
            << accelerationY << "," << accelerationZ << ","
-           << angularVelocityTimestamp << "," << angularVelocityX << ","
-           << angularVelocityY << "," << angularVelocityZ << ","
+           << angularSpeedTimestamp << "," << angularSpeedX << ","
+           << angularSpeedY << "," << angularSpeedZ << ","
            << magneticFieldTimestamp << "," << magneticFieldX << ","
            << magneticFieldY << "," << magneticFieldZ << "\n";
     }

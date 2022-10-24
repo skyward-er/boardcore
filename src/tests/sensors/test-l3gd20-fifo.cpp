@@ -219,13 +219,13 @@ int main()
         // clang-format off
         printf("%d,%llu,%llu,%llu,%llu,%f,%f,%f,%.2f\n",
                 data[i].fifoNum,
-                data[i].gyro.angularVelocityTimestamp,
+                data[i].gyro.angularSpeedTimestamp,
                 data[i].wtmDelta,
                 data[i].update,
-                (data[i].gyro.angularVelocityTimestamp - data[i - 1].gyro.angularVelocityTimestamp),
-                data[i].gyro.angularVelocityX,
-                data[i].gyro.angularVelocityY,
-                data[i].gyro.angularVelocityZ,
+                (data[i].gyro.angularSpeedTimestamp - data[i - 1].gyro.angularSpeedTimestamp),
+                data[i].gyro.angularSpeedX,
+                data[i].gyro.angularSpeedY,
+                data[i].gyro.angularSpeedZ,
                 data[i].cpu);
         // clang-format on
     }

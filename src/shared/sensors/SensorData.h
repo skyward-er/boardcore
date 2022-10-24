@@ -150,41 +150,40 @@ struct AccelerometerData
  */
 struct GyroscopeData
 {
-    uint64_t angularVelocityTimestamp = 0;
-    float angularVelocityX            = 0;
-    float angularVelocityY            = 0;
-    float angularVelocityZ            = 0;
+    uint64_t angularSpeedTimestamp = 0;
+    float angularSpeedX            = 0;
+    float angularSpeedY            = 0;
+    float angularSpeedZ            = 0;
 
     GyroscopeData() {}
 
     GyroscopeData(uint64_t timestamp, float x, float y, float z)
-        : angularVelocityTimestamp(timestamp), angularVelocityX(x),
-          angularVelocityY(y), angularVelocityZ(z)
+        : angularSpeedTimestamp(timestamp), angularSpeedX(x), angularSpeedY(y),
+          angularSpeedZ(z)
     {
     }
 
     GyroscopeData(const GyroscopeData& data) = default;
 
     explicit GyroscopeData(const Eigen::Vector3f& vel)
-        : angularVelocityX(vel(0)), angularVelocityY(vel(1)),
-          angularVelocityZ(vel(2))
+        : angularSpeedX(vel(0)), angularSpeedY(vel(1)), angularSpeedZ(vel(2))
     {
     }
 
     static std::string header()
     {
-        return "timestamp,angularVelocityX,angularVelocityY,angularVelocityZ\n";
+        return "timestamp,angularSpeedX,angularSpeedY,angularSpeedZ\n";
     }
 
     void print(std::ostream& os) const
     {
-        os << angularVelocityTimestamp << "," << angularVelocityX << ","
-           << angularVelocityY << "," << angularVelocityZ << "\n";
+        os << angularSpeedTimestamp << "," << angularSpeedX << ","
+           << angularSpeedY << "," << angularSpeedZ << "\n";
     }
 
     operator Eigen::Vector3f() const
     {
-        return {angularVelocityX, angularVelocityY, angularVelocityZ};
+        return {angularSpeedX, angularSpeedY, angularSpeedZ};
     }
 };
 

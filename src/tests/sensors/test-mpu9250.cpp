@@ -72,9 +72,8 @@ int main()
         MPU9250Data data = mpu9250.getLastSample();
         printf("%lld,%f,%f,%f;", data.accelerationTimestamp, data.accelerationX,
                data.accelerationY, data.accelerationZ);
-        printf("%lld,%f,%f,%f;", data.angularVelocityTimestamp,
-               data.angularVelocityX, data.angularVelocityY,
-               data.angularVelocityZ);
+        printf("%lld,%f,%f,%f;", data.angularSpeedTimestamp, data.angularSpeedX,
+               data.angularSpeedY, data.angularSpeedZ);
         printf("%lld,%f,%f,%f\n", data.magneticFieldTimestamp,
                data.magneticFieldX, data.magneticFieldY, data.magneticFieldZ);
 

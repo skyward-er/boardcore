@@ -578,10 +578,10 @@ GyroscopeData VN100::sampleGyroscope()
     }
 
     // Parse the data
-    data.angularVelocityTimestamp = TimestampTimer::getTimestamp();
-    data.angularVelocityX = strtod(recvString + indexStart + 1, &nextNumber);
-    data.angularVelocityY = strtod(nextNumber + 1, &nextNumber);
-    data.angularVelocityZ = strtod(nextNumber + 1, NULL);
+    data.angularSpeedTimestamp = TimestampTimer::getTimestamp();
+    data.angularSpeedX = strtod(recvString + indexStart + 1, &nextNumber);
+    data.angularSpeedY = strtod(nextNumber + 1, &nextNumber);
+    data.angularSpeedZ = strtod(nextNumber + 1, NULL);
 
     return data;
 }

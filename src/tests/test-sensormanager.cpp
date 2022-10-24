@@ -105,8 +105,8 @@ struct MySensorDataFIFO : public AccelerometerData, public GyroscopeData
     MySensorDataFIFO(AccelerometerData acc, GyroscopeData gyro)
         : AccelerometerData{TimestampTimer::getTimestamp(), acc.accelerationX,
                             acc.accelerationY, acc.accelerationZ},
-          GyroscopeData{TimestampTimer::getTimestamp(), gyro.angularVelocityX,
-                        gyro.angularVelocityY, gyro.angularVelocityZ}
+          GyroscopeData{TimestampTimer::getTimestamp(), gyro.angularSpeedX,
+                        gyro.angularSpeedY, gyro.angularSpeedZ}
     {
     }
 };
@@ -131,9 +131,8 @@ public:
 
             TRACE("Accel : %llu %f %f %f \n", acc.accelerationTimestamp,
                   acc.accelerationX, acc.accelerationY, acc.accelerationZ);
-            TRACE("Gyro : %llu %f %f %f \n", gyro.angularVelocityTimestamp,
-                  gyro.angularVelocityX, gyro.angularVelocityY,
-                  gyro.angularVelocityZ);
+            TRACE("Gyro : %llu %f %f %f \n", gyro.angularSpeedTimestamp,
+                  gyro.angularSpeedX, gyro.angularSpeedY, gyro.angularSpeedZ);
 
             Thread::sleep(5);
         }
@@ -269,9 +268,8 @@ int main()
 
         TRACE("AccelProxy : %llu %f %f %f \n", data.accelerationTimestamp,
               data.accelerationX, data.accelerationY, data.accelerationZ);
-        TRACE("GyroProxy : %llu %f %f %f \n", data.angularVelocityTimestamp,
-              data.angularVelocityX, data.angularVelocityY,
-              data.angularVelocityZ);
+        TRACE("GyroProxy : %llu %f %f %f \n", data.angularSpeedTimestamp,
+              data.angularSpeedX, data.angularSpeedY, data.angularSpeedZ);
 
         Thread::sleep(1000);
     }

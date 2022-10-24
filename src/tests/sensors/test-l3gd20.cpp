@@ -147,7 +147,7 @@ int main()
         L3GD20Data d = gyro->getLastSample();
 
         // Store the sample in the array, togheter with other useful data
-        data[dataCounter++] = {d.angularVelocityTimestamp, sampleDelta, d,
+        data[dataCounter++] = {d.angularSpeedTimestamp, sampleDelta, d,
                                CpuMeter::getCpuStats().mean};
 
         // Wait until SAMPLE_PERIOD milliseconds from the start of this
@@ -166,9 +166,9 @@ int main()
                 TimerUtils::toIntMicroSeconds(
                     TimestampTimer::timestampTimer.getTimer(), data[i].sampleDelta),
                 (data[i].timestamp - data[i - 1].timestamp),
-                data[i].data.angularVelocityX,
-                data[i].data.angularVelocityY,
-                data[i].data.angularVelocityZ,
+                data[i].data.angularSpeedX,
+                data[i].data.angularSpeedY,
+                data[i].data.angularSpeedZ,
                 data[i].cpu);
         // clang-format on
     }

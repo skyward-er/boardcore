@@ -69,16 +69,16 @@ public:
     /**
      * @brief Prediction with gyroscope data.
      *
-     * @param angularVelocity Vector with angular velocity data [x y z][rad/s].
+     * @param angularSpeed Vector with angular velocity data [x y z][rad/s].
      */
-    void predictGyro(const Eigen::Vector3f& angularVelocity);
+    void predictGyro(const Eigen::Vector3f& angularSpeed);
 
     /**
      * @brief Prediction with gyroscope data.
      *
-     * @param angularVelocity Gyroscope data [rad/s].
+     * @param angularSpeed Gyroscope data [rad/s].
      */
-    void predictGyro(const GyroscopeData& angularVelocity);
+    void predictGyro(const GyroscopeData& angularSpeed);
 
     /**
      * @brief Correction with barometer data.

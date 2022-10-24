@@ -83,9 +83,9 @@ struct VN100Data : public QuaternionData,
         return "quatTimestamp,quatX,quatY,quatZ,quatW,magneticFieldTimestamp,"
                "magneticFieldX,magneticFieldY,magneticFieldZ,"
                "accelerationTimestamp,accelerationX,accelerationY,"
-               "accelerationZ,gyro_timestamp,angularVelocityX,angularVelocityY,"
-               "angularVelocityZ,temperatureTimestamp,temperature,"
-               "pressureTimestamp,pressure\n";
+               "accelerationZ,angularSpeedTimestamp,angularSpeedX,"
+               "angularSpeedY,angularSpeedZ,temperatureTimestamp,"
+               "temperature,pressureTimestamp,pressure\n";
     }
 
     void print(std::ostream& os) const
@@ -95,8 +95,8 @@ struct VN100Data : public QuaternionData,
            << magneticFieldX << "," << magneticFieldY << "," << magneticFieldZ
            << "," << accelerationTimestamp << "," << accelerationX << ","
            << accelerationY << "," << accelerationZ << ","
-           << angularVelocityTimestamp << "," << angularVelocityX << ","
-           << angularVelocityY << "," << angularVelocityZ << ","
+           << angularSpeedTimestamp << "," << angularSpeedX << ","
+           << angularSpeedY << "," << angularSpeedZ << ","
            << temperatureTimestamp << "," << temperature << ","
            << pressureTimestamp << "," << pressure << "\n";
     }
