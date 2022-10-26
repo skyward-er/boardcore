@@ -242,6 +242,9 @@ sbs_target(test-xbee-snd stm32f429zi_stm32f4discovery)
 add_executable(test-usart src/tests/drivers/usart/test-usart.cpp)
 sbs_target(test-usart stm32f407vg_stm32f4discovery)
 
+add_executable(test-i2c src/tests/drivers/i2c/test-i2c.cpp)
+sbs_target(test-i2c stm32f407vg_stm32f4discovery)
+
 add_executable(test-internal-temp src/tests/drivers/test-internal-temp.cpp)
 sbs_target(test-internal-temp stm32f407vg_stm32f4discovery)
 
