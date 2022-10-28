@@ -34,7 +34,7 @@ protected:
 
 public:
     virtual int getDummy() { return dummy; };
-    virtual void toggleDummy() = 0;
+    virtual void toggleDummy(){};
 };
 
 class HILSensors : public SensorsModule
@@ -80,7 +80,7 @@ int main()
     cout << mod.get<SensorsModule>()->getDummy() << ","
          << mod.get<Radio>()->getPippo() << endl;
 
-    mod.get<Radio>()->setPippo(1000);
+    mod.get<Radio>()->setPippo(3000);
     mod.remove<SensorsModule>();
 
     cout << mod.get<SensorsModule>()->getDummy() << ","

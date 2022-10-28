@@ -89,6 +89,10 @@ public:
     template <typename T>
     void remove()
     {
+        // Verify that T is a subclass of module
+        static_assert(std::is_base_of<Module, T>(),
+                      "Class must be subclass of Module");
+
         // Take the module type
         uint8_t id = getId<T>();
 
@@ -110,6 +114,10 @@ public:
     template <class T>
     T *get()
     {
+        // Verify that T is a subclass of module
+        static_assert(std::is_base_of<Module, T>(),
+                      "Class must be subclass of Module");
+
         // Retrieve the module type
         uint8_t id = getId<T>();
 
@@ -121,8 +129,9 @@ public:
         }
 
         // I don't have any module with that type in the array so i instantiate
-        // one
-        // insert<T>(new T());
+        // one. IF YOU ENCOUNTER A COMPILATION ERROR HERE IS PROBABLY BECAUSE
+        // THE UPPER INTERFACE COULD NOT BE INSTANCED
+        insert<T>(new T());
         return static_cast<T *>(modules[id]);
     }
 };
