@@ -24,8 +24,31 @@
 
 using I2CType = I2C_TypeDef;
 
+#if defined(STM32F429xx) || defined(STM32F407xx)
+#define N_I2C_PORTS 3
+#else
+#define N_I2C_PORTS 1
+#warning "Define the number of I2C ports for your architectures in I2C.h file"
+#endif
+
 namespace Boardcore
 {
+
+/**
+ * Features implemented:
+ * - Functions for all the I2C peripherals
+ * - setting Speed modes Standard (100kbps) and Fast (400kbps, with dutycycle
+ * hardcoded to 1-2 and not 9-16)
+ *
+ *
+ * Features to be implemented:
+ * - General call address detection
+ * - DMA
+ * - analog noise filter
+ * - Programmable digital noise filter
+ * - PEC (Packet Error Checking)
+ *
+ */
 class I2C
 {
 public:
@@ -46,6 +69,9 @@ public:
         BIT7  = 0,
         BIT10 = 1
     };
+
+    ///< Pointer to serial port classes to let interrupts access the classes
+    static I2C *ports[];
 
     /**
      * @param speed the speed mode of the I2C communication
@@ -68,22 +94,34 @@ public:
     bool init();
 
     /**
-     * @brief Blocking read operation to read nBytes or till the data transfer
-     * is complete.
+     * @brief Blocking read operation to read nBytes.
      */
-    int read(void *buffer, size_t nBytes);
+    int read(uint16_t slaveAddress, void *buffer, size_t nBytes);
 
     /**
      * @brief Blocking write operation.
      */
-    int write(void *buf, size_t nChars);
+    int write(uint16_t slaveAddress, void *buf, size_t nChars);
+
+    void IRQhandleInterrupt();
 
 protected:
+    bool prologue(uint16_t slaveAddress, bool writeOperation);
+
+    uint8_t id;
+    IRQn_Type irqnEv;
+    IRQn_Type irqnErr;
+
     I2CType *i2c;
     bool initialized = false;
-    Speed speed;            ///< Baudrate of the serial communication
-    Addressing addressing;  ///< Addressing mode of the device
-    uint16_t address;       ///< Address of the device
+    const Speed speed;            ///< Baudrate of the serial communication
+    const Addressing addressing;  ///< Addressing mode of the device
+    const uint8_t header;  ///< Header generated (composed of 11110xx0 bits with
+                           ///< xx as the 9th and 8th bits of the address)
+    const uint16_t address;  ///< Address of the device
     PrintLogger logger = Logging::getLogger("i2c");
+
+    /* handling of interrupts */
+    miosix::Thread *waiting = 0;  ///< Pointer to the waiting on receive thread
 };
 }  // namespace Boardcore
