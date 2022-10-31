@@ -101,12 +101,12 @@ public:
     /**
      * @brief Blocking write operation.
      */
-    int write(uint16_t slaveAddress, void *buf, size_t nChars);
+    int write(uint16_t slaveAddress, void *buffer, size_t nBytes);
 
     void IRQhandleInterrupt();
 
 protected:
-    bool prologue(uint16_t slaveAddress, bool writeOperation);
+    bool prologue(uint16_t slaveAddress, bool writeOperation, size_t nBytes);
 
     uint8_t id;
     IRQn_Type irqnEv;
@@ -116,9 +116,7 @@ protected:
     bool initialized = false;
     const Speed speed;            ///< Baudrate of the serial communication
     const Addressing addressing;  ///< Addressing mode of the device
-    const uint8_t header;  ///< Header generated (composed of 11110xx0 bits with
-                           ///< xx as the 9th and 8th bits of the address)
-    const uint16_t address;  ///< Address of the device
+    const uint16_t address;       ///< Address of the device
     PrintLogger logger = Logging::getLogger("i2c");
 
     /* handling of interrupts */

@@ -140,8 +140,7 @@ namespace Boardcore
 {
 
 I2C::I2C(I2CType *i2c, Speed speed, Addressing addressing, uint16_t address)
-    : i2c(i2c), speed(speed), addressing(addressing),
-      header(0b11110000 & ((address >> 7) & 0b110)), address(address)
+    : i2c(i2c), speed(speed), addressing(addressing), address(address)
 {
     // Setting the id of the serial port
     switch (reinterpret_cast<uint32_t>(i2c))
@@ -230,6 +229,7 @@ bool I2C::init()
     i2c->CR2 = 0;
     i2c->CR2 |= (f & I2C_CR2_FREQ);  // setting FREQ bits
     i2c->CR2 |= I2C_CR2_ITEVTEN;     // enabling interupts for different phases
+    i2c->CR2 |= I2C_CR2_ITBUFEN;     // enabling interupts for rx/tx byte
 
     // Enabling the interrupts (Ev and Err) in the NVIC for the relative i2c
     NVIC_SetPriority(irqnEv, 15);
@@ -260,23 +260,55 @@ bool I2C::init()
  */
 int I2C::read(uint16_t slaveAddress, void *buffer, size_t nBytes)
 {
+    uint8_t *buff     = static_cast<uint8_t *>(buffer);
+    size_t nLostBytes = 0;
+
     // TODO: Synchronize
     waiting = miosix::Thread::getCurrentThread();
-    while (!prologue(slaveAddress, false))
+
+    // Enabling option to generate ACK
+    i2c->CR1 |= I2C_CR1_ACK;
+
+    // Sending prologue until the channel is clear
+    while (!prologue(slaveAddress, false, nBytes))
         ;
 
-    // TODO: implement the read operation
-    return 0;
+    // sending the nBytes
+    for (size_t i = 0; i < nBytes; i++)
+    {
+        // TODO: check BTF bit for loss of data
+        while (!(i2c->SR1 & I2C_SR1_RXNE))
+            miosix::Thread::wait();
+
+        // checking if a byte has been lost
+        if (i2c->SR1 & I2C_SR1_BTF)
+            nLostBytes++;
+
+        buff[i] = I2C1->DR;
+
+        // clearing the ACK flag and setting the STOP flag in order to send a
+        // NACK on the last byte that will be read and generating the stop
+        // condition
+        if (i == nBytes - 2)
+        {
+            i2c->CR1 &= ~I2C_CR1_ACK;
+            i2c->CR1 |= I2C_CR1_STOP;
+        }
+    }
+
+    return nLostBytes;
 };
 
 /**
  * @brief Blocking write operation.
  */
-int I2C::write(uint16_t slaveAddress, void *buf, size_t nChars)
+int I2C::write(uint16_t slaveAddress, void *buffer, size_t nBytes)
 {
+    // uint8_t *buff = static_cast<uint8_t *>(buffer);
+
     // TODO: Synchronize
     waiting = miosix::Thread::getCurrentThread();
-    while (!prologue(slaveAddress, true))
+    while (!prologue(slaveAddress, true, nBytes))
         ;
 
     // TODO: implement the write operation
@@ -287,8 +319,13 @@ int I2C::write(uint16_t slaveAddress, void *buf, size_t nChars)
  * @brief Prologue of any read/write operation.
  * @returns True if the channel is clear; False otherwise.
  */
-bool I2C::prologue(uint16_t slaveAddress, bool writeOperation)
+bool I2C::prologue(uint16_t slaveAddress, bool writeOperation, size_t nBytes)
 {
+
+    // Header generated (composed of 11110xx0 bits with xx as the 9th and
+    // 8th bits of the address)
+    const uint8_t header = 0b11110000 | ((slaveAddress >> 7) & 0b110);
+
     /* Generating start signal */
     // Generating start condition -> passing in Master mode
     i2c->CR1 |= I2C_CR1_START;
@@ -301,7 +338,7 @@ bool I2C::prologue(uint16_t slaveAddress, bool writeOperation)
     if (addressing == Addressing::BIT7)
     {
         // setting the LSB if we want to enter receiver mode
-        i2c->DR = address | (writeOperation ? 0 : 1);
+        i2c->DR = slaveAddress | (writeOperation ? 0 : 1);
 
         // Checking if a slave matched his address
         while (!(i2c->SR1 & I2C_SR1_ADDR))
@@ -317,15 +354,19 @@ bool I2C::prologue(uint16_t slaveAddress, bool writeOperation)
             miosix::Thread::wait();
 
         // sending address ((1 << 8) - 1) = 0xff
-        i2c->DR = (address & 0xff);
+        i2c->DR = (slaveAddress & 0xff);
 
         // Checking if a slave matched his address
         while (!(i2c->SR1 & I2C_SR1_ADDR))
             miosix::Thread::wait();
 
         // if we want to enter in receiver mode
-        if (writeOperation)
+        if (!writeOperation)
         {
+            // Checking if the channel is busy (clearing ADDR flag)
+            if (i2c->SR2 & I2C_SR2_BUSY)
+                return false;
+
             // Repeated start
             i2c->CR1 |= I2C_CR1_START;
 
@@ -335,11 +376,16 @@ bool I2C::prologue(uint16_t slaveAddress, bool writeOperation)
 
             // sending modified header
             i2c->DR = header | 1;
+
+            // TODO: reset ACK flag
         }
-        // TODO: send the repeated Start condition with changed header
     }
 
-    // Checking if the channel is busy
+    // Disabling the generation of the ACK if reading only 1 byte
+    if (!writeOperation && nBytes == 1)
+        i2c->CR1 &= ~I2C_CR1_ACK;
+
+    // Checking if the channel is busy (clearing ADDR flag)
     if (i2c->SR2 & I2C_SR2_BUSY)
         return false;
 
