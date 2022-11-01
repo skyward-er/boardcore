@@ -263,7 +263,9 @@ int I2C::read(uint16_t slaveAddress, void *buffer, size_t nBytes)
     uint8_t *buff     = static_cast<uint8_t *>(buffer);
     size_t nLostBytes = 0;
 
-    // TODO: Synchronize
+    // Synchronization because of the single bus
+    miosix::Lock<miosix::FastMutex> lock(mutex);
+
     waiting = miosix::Thread::getCurrentThread();
 
     // Enabling option to generate ACK
@@ -273,14 +275,13 @@ int I2C::read(uint16_t slaveAddress, void *buffer, size_t nBytes)
     while (!prologue(slaveAddress, false, nBytes))
         ;
 
-    // sending the nBytes
+    // reading the nBytes
     for (size_t i = 0; i < nBytes; i++)
     {
-        // TODO: check BTF bit for loss of data
         while (!(i2c->SR1 & I2C_SR1_RXNE))
             miosix::Thread::wait();
 
-        // checking if a byte has been lost
+        // checking if a byte has been lost (TODO: see what to do)
         if (i2c->SR1 & I2C_SR1_BTF)
             nLostBytes++;
 
@@ -304,14 +305,30 @@ int I2C::read(uint16_t slaveAddress, void *buffer, size_t nBytes)
  */
 int I2C::write(uint16_t slaveAddress, void *buffer, size_t nBytes)
 {
-    // uint8_t *buff = static_cast<uint8_t *>(buffer);
+    uint8_t *buff = static_cast<uint8_t *>(buffer);
 
-    // TODO: Synchronize
+    // Synchronization because of the single bus
+    miosix::Lock<miosix::FastMutex> lock(mutex);
+
     waiting = miosix::Thread::getCurrentThread();
+
     while (!prologue(slaveAddress, true, nBytes))
         ;
 
-    // TODO: implement the write operation
+    // sending the nBytes
+    for (size_t i = 0; i < nBytes; i++)
+    {
+        i2c->DR = buff[i];
+
+        // waiting for the sending of the byte
+        while (!(i2c->SR1 & I2C_SR1_TXE))
+            miosix::Thread::wait();
+
+        // if we are on the last byte, generate the stop condition
+        if (i == nBytes - 1)
+            i2c->CR1 |= I2C_CR1_STOP;
+    }
+
     return 0;
 };
 

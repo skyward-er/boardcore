@@ -112,6 +112,7 @@ protected:
     IRQn_Type irqnEv;
     IRQn_Type irqnErr;
 
+    miosix::FastMutex mutex;  ///< mutex for rx/tx
     I2CType *i2c;
     bool initialized = false;
     const Speed speed;            ///< Baudrate of the serial communication
