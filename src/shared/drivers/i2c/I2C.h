@@ -22,6 +22,8 @@
 
 #include <diagnostic/PrintLogger.h>
 
+#include "miosix.h"
+
 using I2CType = I2C_TypeDef;
 
 #if defined(STM32F429xx) || defined(STM32F407xx)
@@ -105,6 +107,8 @@ public:
 
     void IRQhandleInterrupt();
 
+    void IRQhandleErrInterrupt();
+
 protected:
     bool prologue(uint16_t slaveAddress, bool writeOperation, size_t nBytes);
 
@@ -115,6 +119,7 @@ protected:
     miosix::FastMutex mutex;  ///< mutex for rx/tx
     I2CType *i2c;
     bool initialized = false;
+    bool error       = false;
     const Speed speed;            ///< Baudrate of the serial communication
     const Addressing addressing;  ///< Addressing mode of the device
     const uint16_t address;       ///< Address of the device
