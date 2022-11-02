@@ -76,6 +76,7 @@ public:
     static I2C *ports[];
 
     /**
+     * @param i2c structure that represents the I2C peripheral
      * @param speed the speed mode of the I2C communication
      * @param addressing The addressing mode used in the I2C communication
      * @param address In 7-bit addressing must give the 7 bits shifted to the
@@ -84,48 +85,68 @@ public:
      */
     I2C(I2CType *i2c, Speed speed, Addressing addressing, uint16_t address);
 
+    /**
+     * @brief Deconstructor. Disables the peripheral, the interrupts in the NVIC
+     * and the clock of the peripheral.
+     */
     ~I2C();
 
     /**
-     * @brief Initializes the peripheral enabling his interrupts, the interrupts
-     * in the NVIC.
-     *
-     * All the setup phase (with the setting of the pins and their alternate
-     * functions) must be done before the initialization of the peripheral.
+     * @brief Initializes the peripheral enabling his clock, the interrupts
+     * in the NVIC and setting up various parameters in the peripheral.
      */
     bool init();
 
     /**
-     * @brief Blocking read operation to read nBytes.
+     * @brief Blocking read operation to read nBytes. In case of an error during
+     * the communication, this method returns 0 immediately.
+     * @returns nBytes if the read is successful, 0 otherwise.
      */
-    int read(uint16_t slaveAddress, void *buffer, size_t nBytes);
+    int read(uint16_t slaveAddress, void *buffer, size_t nBytes,
+             bool generateStopSignal);
 
     /**
-     * @brief Blocking write operation.
+     * @brief Blocking write operation of nBytes. In case of an error during the
+     * communication, this method returns 0 immediately.
+     * @returns nBytes if the write is successful, 0 otherwise.
      */
-    int write(uint16_t slaveAddress, void *buffer, size_t nBytes);
+    int write(uint16_t slaveAddress, void *buffer, size_t nBytes,
+              bool generateStopSignal);
 
+    /**
+     * @brief Method that handles the interrupt for the specific peripheral. It
+     * just wakes the thread up
+     */
     void IRQhandleInterrupt();
 
+    /**
+     * @brief Method that handles the interrupt for the errors in the specific
+     * peripheral. It wakes the thread up, sets the "error" software flag and
+     * resets the error flags in the register
+     */
     void IRQhandleErrInterrupt();
 
 protected:
+    /**
+     * @brief Prologue of any read/write operation in Master mode.
+     * @returns True if prologue didn't have any error; False otherwise.
+     */
     bool prologue(uint16_t slaveAddress, bool writeOperation, size_t nBytes);
 
     uint8_t id;
     IRQn_Type irqnEv;
     IRQn_Type irqnErr;
 
-    miosix::FastMutex mutex;  ///< mutex for rx/tx
     I2CType *i2c;
-    bool initialized = false;
-    bool error       = false;
+    bool initialized = false;     ///< Flag that tells if the peripheral has
+                                  ///< already been initialized
+    bool error = false;           ///< Flag that tells if an error occurred
     const Speed speed;            ///< Baudrate of the serial communication
     const Addressing addressing;  ///< Addressing mode of the device
     const uint16_t address;       ///< Address of the device
-    PrintLogger logger = Logging::getLogger("i2c");
-
-    /* handling of interrupts */
     miosix::Thread *waiting = 0;  ///< Pointer to the waiting on receive thread
+    miosix::FastMutex mutex;      ///< mutex for rx/tx
+
+    PrintLogger logger = Logging::getLogger("i2c");
 };
 }  // namespace Boardcore

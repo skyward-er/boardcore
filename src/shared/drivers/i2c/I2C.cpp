@@ -250,7 +250,21 @@ I2C::I2C(I2CType *i2c, Speed speed, Addressing addressing, uint16_t address)
     ClockUtils::enablePeripheralClock(i2c);
 }
 
-I2C::~I2C() {}
+I2C::~I2C()
+{
+    // removing the relative i2c port from the array
+    I2C::ports[id - 1] = 0;
+
+    // Disabling the interrupts (Ev and Err) in the NVIC for the relative i2c
+    NVIC_DisableIRQ(irqnEv);
+    NVIC_DisableIRQ(irqnErr);
+
+    // Disabling the peripheral
+    i2c->CR1 &= ~I2C_CR1_PE;
+
+    // Disabling the peripheral on the bus
+    ClockUtils::disablePeripheralClock(i2c);
+}
 
 bool I2C::init()
 {
@@ -334,14 +348,13 @@ bool I2C::init()
     // Finally enabling the peripheral
     i2c->CR1 |= I2C_CR1_PE;
 
+    initialized = true;
+
     return true;
 }
 
-/**
- * @brief Blocking read operation to read nBytes. In case of an error during the
- * communication, this method returns 0 immediately.
- */
-int I2C::read(uint16_t slaveAddress, void *buffer, size_t nBytes)
+int I2C::read(uint16_t slaveAddress, void *buffer, size_t nBytes,
+              bool generateStopSignal = true)
 {
     uint8_t *buff = static_cast<uint8_t *>(buffer);
 
@@ -372,7 +385,7 @@ int I2C::read(uint16_t slaveAddress, void *buffer, size_t nBytes)
         // clearing the ACK flag and setting the STOP flag in order to send a
         // NACK on the last byte that will be read and generating the stop
         // condition
-        if (i == nBytes - 2)
+        if (i == nBytes - 2 && generateStopSignal)
         {
             i2c->CR1 &= ~I2C_CR1_ACK;
             i2c->CR1 |= I2C_CR1_STOP;
@@ -382,11 +395,8 @@ int I2C::read(uint16_t slaveAddress, void *buffer, size_t nBytes)
     return nBytes;
 };
 
-/**
- * @brief Blocking write operation of nBytes. In case of an error during the
- * communication, this method returns 0 immediately.
- */
-int I2C::write(uint16_t slaveAddress, void *buffer, size_t nBytes)
+int I2C::write(uint16_t slaveAddress, void *buffer, size_t nBytes,
+               bool generateStopSignal = true)
 {
     uint8_t *buff = static_cast<uint8_t *>(buffer);
 
@@ -406,17 +416,13 @@ int I2C::write(uint16_t slaveAddress, void *buffer, size_t nBytes)
         WAIT_FOR_REGISTER_CHANGE(i2c->SR1 & I2C_SR1_TXE, 0)
 
         // if we are on the last byte, generate the stop condition
-        if (i == nBytes - 1)
+        if (i == nBytes - 1 && generateStopSignal)
             i2c->CR1 |= I2C_CR1_STOP;
     }
 
     return 0;
 };
 
-/**
- * @brief Prologue of any read/write operation in Master mode.
- * @returns True if prologue didn't have any error; False otherwise.
- */
 bool I2C::prologue(uint16_t slaveAddress, bool writeOperation, size_t nBytes)
 {
 
@@ -494,6 +500,9 @@ void I2C::IRQhandleErrInterrupt()
     // clearing all the errors in the register
     i2c->SR1 &= ~(I2C_SR1_SMBALERT | I2C_SR1_TIMEOUT | I2C_SR1_PECERR |
                   I2C_SR1_OVR | I2C_SR1_AF | I2C_SR1_ARLO | I2C_SR1_BERR);
+
+    // generating stop signal if error
+    i2c->CR1 |= I2C_CR1_STOP;
 
     // waking up the- waiting thread
     waiting->wakeup();
