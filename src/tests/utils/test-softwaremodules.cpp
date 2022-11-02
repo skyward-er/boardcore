@@ -51,11 +51,11 @@ public:
 
 class Radio : public Module
 {
-    int pippo = 0;
+    int dummy = 0;
 
 public:
-    void setPippo(int p) { pippo = p; }
-    int getPippo() { return pippo; }
+    void setDummy(int p) { dummy = p; }
+    int getDummy() { return dummy; }
 };
 }  // namespace Boardcore
 
@@ -73,18 +73,18 @@ int main()
 
     // Test
     cout << mod.get<SensorsModule>()->getDummy() << ","
-         << mod.get<Radio>()->getPippo() << endl;
+         << mod.get<Radio>()->getDummy() << endl;
 
     mod.get<SensorsModule>()->toggleDummy();
 
     cout << mod.get<SensorsModule>()->getDummy() << ","
-         << mod.get<Radio>()->getPippo() << endl;
+         << mod.get<Radio>()->getDummy() << endl;
 
-    mod.get<Radio>()->setPippo(3000);
+    mod.get<Radio>()->setDummy(3000);
     mod.remove<SensorsModule>();
 
     cout << mod.get<SensorsModule>()->getDummy() << ","
-         << mod.get<Radio>()->getPippo() << endl;
+         << mod.get<Radio>()->getDummy() << endl;
 
     // mod.insert<SensorsModule>(new HILSensors());
 

@@ -21,7 +21,9 @@
  */
 #pragma once
 
+#include <assert.h>
 #include <stdint.h>
+#include <utils/Debug.h>
 
 namespace Boardcore
 {
@@ -127,6 +129,10 @@ public:
             // If the types are the same return the casted one
             return static_cast<T *>(modules[id]);
         }
+
+        // This this part should not be considered properly working, so there is
+        // an assert
+        D(assert(modules[id] == nullptr));
 
         // I don't have any module with that type in the array so i instantiate
         // one. IF YOU ENCOUNTER A COMPILATION ERROR HERE IS PROBABLY BECAUSE
