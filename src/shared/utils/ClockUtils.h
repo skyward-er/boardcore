@@ -133,15 +133,18 @@ inline bool ClockUtils::enablePeripheralClock(void* peripheral)
             case GPIOE_BASE:
                 RCC->AHB1ENR |= RCC_AHB1ENR_GPIOEEN;
                 break;
+#ifndef STM32F401xE
             case GPIOF_BASE:
                 RCC->AHB1ENR |= RCC_AHB1ENR_GPIOFEN;
                 break;
             case GPIOG_BASE:
                 RCC->AHB1ENR |= RCC_AHB1ENR_GPIOGEN;
                 break;
+#endif
             case GPIOH_BASE:
                 RCC->AHB1ENR |= RCC_AHB1ENR_GPIOHEN;
                 break;
+#ifndef STM32F401xE
             case GPIOI_BASE:
                 RCC->AHB1ENR |= RCC_AHB1ENR_GPIOIEN;
                 break;
@@ -152,6 +155,7 @@ inline bool ClockUtils::enablePeripheralClock(void* peripheral)
             case GPIOK_BASE:
                 RCC->AHB1ENR |= RCC_AHB1ENR_GPIOKEN;
                 break;
+#endif
 #endif
             case CRC_BASE:
                 RCC->AHB1ENR |= RCC_AHB1ENR_CRCEN;
@@ -175,6 +179,7 @@ inline bool ClockUtils::enablePeripheralClock(void* peripheral)
                 RCC->AHB1ENR |= RCC_AHB1ENR_DMA2DEN;
                 break;
 #endif
+#ifndef STM32F401xE
 #ifndef _ARCH_CORTEXM3_STM32F2
             case ETH_MAC_BASE:
                 RCC->AHB1ENR |= RCC_AHB1ENR_ETHMACEN;
@@ -183,11 +188,12 @@ inline bool ClockUtils::enablePeripheralClock(void* peripheral)
             case USB_OTG_HS_PERIPH_BASE:
                 RCC->AHB1ENR |= RCC_AHB1ENR_OTGHSEN;
                 break;
+#endif
         }
 
         // AHB2 peripherals
         {
-#ifndef _ARCH_CORTEXM3_STM32F2
+#if !defined(_ARCH_CORTEXM3_STM32F2) && !defined(STM32F401xE)
             case DCMI_BASE:
                 RCC->AHB2ENR |= RCC_AHB2ENR_DCMIEN;
                 break;
@@ -214,6 +220,7 @@ inline bool ClockUtils::enablePeripheralClock(void* peripheral)
             case TIM5_BASE:
                 RCC->APB1ENR |= RCC_APB1ENR_TIM5EN;
                 break;
+#ifndef STM32F401xE
             case TIM6_BASE:
                 RCC->APB1ENR |= RCC_APB1ENR_TIM6EN;
                 break;
@@ -229,6 +236,7 @@ inline bool ClockUtils::enablePeripheralClock(void* peripheral)
             case TIM14_BASE:
                 RCC->APB1ENR |= RCC_APB1ENR_TIM14EN;
                 break;
+#endif
             case WWDG_BASE:
                 RCC->APB1ENR |= RCC_APB1ENR_WWDGEN;
                 break;
@@ -241,6 +249,7 @@ inline bool ClockUtils::enablePeripheralClock(void* peripheral)
             case USART2_BASE:
                 RCC->APB1ENR |= RCC_APB1ENR_USART2EN;
                 break;
+#ifndef STM32F401xE
             case USART3_BASE:
                 RCC->APB1ENR |= RCC_APB1ENR_USART3EN;
                 break;
@@ -250,6 +259,7 @@ inline bool ClockUtils::enablePeripheralClock(void* peripheral)
             case UART5_BASE:
                 RCC->APB1ENR |= RCC_APB1ENR_UART5EN;
                 break;
+#endif
             case I2C1_BASE:
                 RCC->APB1ENR |= RCC_APB1ENR_I2C1EN;
                 break;
@@ -259,18 +269,22 @@ inline bool ClockUtils::enablePeripheralClock(void* peripheral)
             case I2C3_BASE:
                 RCC->APB1ENR |= RCC_APB1ENR_I2C3EN;
                 break;
+#ifndef STM32F401xE
             case CAN1_BASE:
                 RCC->APB1ENR |= RCC_APB1ENR_CAN1EN;
                 break;
             case CAN2_BASE:
                 RCC->APB1ENR |= RCC_APB1ENR_CAN2EN;
                 break;
+#endif
             case PWR_BASE:
                 RCC->APB1ENR |= RCC_APB1ENR_PWREN;
                 break;
+#ifndef STM32F401xE
             case DAC_BASE:
                 RCC->APB1ENR |= RCC_APB1ENR_DACEN;
                 break;
+#endif
 #ifdef STM32F429xx
             case UART7_BASE:
                 RCC->APB1ENR |= RCC_APB1ENR_UART7EN;
@@ -286,9 +300,11 @@ inline bool ClockUtils::enablePeripheralClock(void* peripheral)
             case TIM1_BASE:
                 RCC->APB2ENR |= RCC_APB2ENR_TIM1EN;
                 break;
+#ifndef STM32F401xE
             case TIM8_BASE:
                 RCC->APB2ENR |= RCC_APB2ENR_TIM8EN;
                 break;
+#endif
             case USART1_BASE:
                 RCC->APB2ENR |= RCC_APB2ENR_USART1EN;
                 break;
@@ -298,19 +314,21 @@ inline bool ClockUtils::enablePeripheralClock(void* peripheral)
             case ADC1_BASE:
                 RCC->APB2ENR |= RCC_APB2ENR_ADC1EN;
                 break;
+#ifndef STM32F401xE
             case ADC2_BASE:
                 RCC->APB2ENR |= RCC_APB2ENR_ADC2EN;
                 break;
             case ADC3_BASE:
                 RCC->APB2ENR |= RCC_APB2ENR_ADC3EN;
                 break;
+#endif
             case SDIO_BASE:
                 RCC->APB2ENR |= RCC_APB2ENR_SDIOEN;
                 break;
             case SPI1_BASE:
                 RCC->APB2ENR |= RCC_APB2ENR_SPI1EN;
                 break;
-#ifdef STM32F429xx
+#if defined(STM32F429xx) || defined(STM32F401xE)
             case SPI4_BASE:
                 RCC->APB2ENR |= RCC_APB2ENR_SPI4EN;
                 break;
@@ -375,15 +393,18 @@ inline bool ClockUtils::disablePeripheralClock(void* peripheral)
             case GPIOE_BASE:
                 RCC->AHB1ENR &= ~RCC_AHB1ENR_GPIOEEN;
                 break;
+#ifndef STM32F401xE
             case GPIOF_BASE:
                 RCC->AHB1ENR &= ~RCC_AHB1ENR_GPIOFEN;
                 break;
             case GPIOG_BASE:
                 RCC->AHB1ENR &= ~RCC_AHB1ENR_GPIOGEN;
                 break;
+#endif
             case GPIOH_BASE:
                 RCC->AHB1ENR &= ~RCC_AHB1ENR_GPIOHEN;
                 break;
+#ifndef STM32F401xE
             case GPIOI_BASE:
                 RCC->AHB1ENR &= ~RCC_AHB1ENR_GPIOIEN;
                 break;
@@ -394,6 +415,7 @@ inline bool ClockUtils::disablePeripheralClock(void* peripheral)
             case GPIOK_BASE:
                 RCC->AHB1ENR &= ~RCC_AHB1ENR_GPIOKEN;
                 break;
+#endif
 #endif
             case CRC_BASE:
                 RCC->AHB1ENR &= ~RCC_AHB1ENR_CRCEN;
@@ -417,6 +439,7 @@ inline bool ClockUtils::disablePeripheralClock(void* peripheral)
                 RCC->AHB1ENR &= ~RCC_AHB1ENR_DMA2DEN;
                 break;
 #endif
+#ifndef STM32F401xE
 #ifndef _ARCH_CORTEXM3_STM32F2
             case ETH_MAC_BASE:
                 RCC->AHB1ENR &= ~RCC_AHB1ENR_ETHMACEN;
@@ -425,11 +448,12 @@ inline bool ClockUtils::disablePeripheralClock(void* peripheral)
             case USB_OTG_HS_PERIPH_BASE:
                 RCC->AHB1ENR &= ~RCC_AHB1ENR_OTGHSEN;
                 break;
+#endif
         }
 
         // AHB2 peripherals
         {
-#ifndef _ARCH_CORTEXM3_STM32F2
+#if !defined(_ARCH_CORTEXM3_STM32F2) && !defined(STM32F401xE)
             case DCMI_BASE:
                 RCC->AHB2ENR &= ~RCC_AHB2ENR_DCMIEN;
                 break;
@@ -448,7 +472,7 @@ inline bool ClockUtils::disablePeripheralClock(void* peripheral)
                 RCC->APB1ENR &= ~RCC_APB1ENR_TIM2EN;
                 break;
             case TIM3_BASE:
-                RCC->APB1ENR &= ~RCC_APB1ENR_TIM2EN;
+                RCC->APB1ENR &= ~RCC_APB1ENR_TIM3EN;
                 break;
             case TIM4_BASE:
                 RCC->APB1ENR &= ~RCC_APB1ENR_TIM4EN;
@@ -456,6 +480,7 @@ inline bool ClockUtils::disablePeripheralClock(void* peripheral)
             case TIM5_BASE:
                 RCC->APB1ENR &= ~RCC_APB1ENR_TIM5EN;
                 break;
+#ifndef STM32F401xE
             case TIM6_BASE:
                 RCC->APB1ENR &= ~RCC_APB1ENR_TIM6EN;
                 break;
@@ -471,6 +496,7 @@ inline bool ClockUtils::disablePeripheralClock(void* peripheral)
             case TIM14_BASE:
                 RCC->APB1ENR &= ~RCC_APB1ENR_TIM14EN;
                 break;
+#endif
             case WWDG_BASE:
                 RCC->APB1ENR &= ~RCC_APB1ENR_WWDGEN;
                 break;
@@ -483,6 +509,7 @@ inline bool ClockUtils::disablePeripheralClock(void* peripheral)
             case USART2_BASE:
                 RCC->APB1ENR &= ~RCC_APB1ENR_USART2EN;
                 break;
+#ifndef STM32F401xE
             case USART3_BASE:
                 RCC->APB1ENR &= ~RCC_APB1ENR_USART3EN;
                 break;
@@ -492,6 +519,7 @@ inline bool ClockUtils::disablePeripheralClock(void* peripheral)
             case UART5_BASE:
                 RCC->APB1ENR &= ~RCC_APB1ENR_UART5EN;
                 break;
+#endif
             case I2C1_BASE:
                 RCC->APB1ENR &= ~RCC_APB1ENR_I2C1EN;
                 break;
@@ -501,18 +529,22 @@ inline bool ClockUtils::disablePeripheralClock(void* peripheral)
             case I2C3_BASE:
                 RCC->APB1ENR &= ~RCC_APB1ENR_I2C3EN;
                 break;
+#ifndef STM32F401xE
             case CAN1_BASE:
                 RCC->APB1ENR &= ~RCC_APB1ENR_CAN1EN;
                 break;
             case CAN2_BASE:
                 RCC->APB1ENR &= ~RCC_APB1ENR_CAN2EN;
                 break;
+#endif
             case PWR_BASE:
                 RCC->APB1ENR &= ~RCC_APB1ENR_PWREN;
                 break;
+#ifndef STM32F401xE
             case DAC_BASE:
                 RCC->APB1ENR &= ~RCC_APB1ENR_DACEN;
                 break;
+#endif
 #ifdef STM32F429xx
             case UART7_BASE:
                 RCC->APB1ENR &= ~RCC_APB1ENR_UART7EN;
@@ -528,9 +560,11 @@ inline bool ClockUtils::disablePeripheralClock(void* peripheral)
             case TIM1_BASE:
                 RCC->APB2ENR &= ~RCC_APB2ENR_TIM1EN;
                 break;
+#ifndef STM32F401xE
             case TIM8_BASE:
                 RCC->APB2ENR &= ~RCC_APB2ENR_TIM8EN;
                 break;
+#endif
             case USART1_BASE:
                 RCC->APB2ENR &= ~RCC_APB2ENR_USART1EN;
                 break;
@@ -540,19 +574,21 @@ inline bool ClockUtils::disablePeripheralClock(void* peripheral)
             case ADC1_BASE:
                 RCC->APB2ENR &= ~RCC_APB2ENR_ADC1EN;
                 break;
+#ifndef STM32F401xE
             case ADC2_BASE:
                 RCC->APB2ENR &= ~RCC_APB2ENR_ADC2EN;
                 break;
             case ADC3_BASE:
                 RCC->APB2ENR &= ~RCC_APB2ENR_ADC3EN;
                 break;
+#endif
             case SDIO_BASE:
                 RCC->APB2ENR &= ~RCC_APB2ENR_SDIOEN;
                 break;
             case SPI1_BASE:
                 RCC->APB2ENR &= ~RCC_APB2ENR_SPI1EN;
                 break;
-#ifdef STM32F429xx
+#if defined(STM32F429xx) || defined(STM32F401xE)
             case SPI4_BASE:
                 RCC->APB2ENR &= ~RCC_APB2ENR_SPI4EN;
                 break;
