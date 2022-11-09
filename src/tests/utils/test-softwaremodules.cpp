@@ -61,38 +61,37 @@ public:
 
 int main()
 {
-    ModuleManager mod{};
-
-    mod.insert<SensorsModule>(new HILSensors());
+    ModuleManager::getInstance().insert<SensorsModule>(new HILSensors());
 
     // Ignored insertion because a sensorsModule is already present
-    mod.insert<SensorsModule>(new Sensors());
+    ModuleManager::getInstance().insert<SensorsModule>(new Sensors());
 
     // First correct insertion using the same class
-    mod.insert<Radio>(new Radio());
+    ModuleManager::getInstance().insert<Radio>(new Radio());
 
     // Test
-    cout << mod.get<SensorsModule>()->getDummy() << ","
-         << mod.get<Radio>()->getDummy() << endl;
+    cout << ModuleManager::getInstance().get<SensorsModule>()->getDummy() << ","
+         << ModuleManager::getInstance().get<Radio>()->getDummy() << endl;
 
-    mod.get<SensorsModule>()->toggleDummy();
+    ModuleManager::getInstance().get<SensorsModule>()->toggleDummy();
 
-    cout << mod.get<SensorsModule>()->getDummy() << ","
-         << mod.get<Radio>()->getDummy() << endl;
+    cout << ModuleManager::getInstance().get<SensorsModule>()->getDummy() << ","
+         << ModuleManager::getInstance().get<Radio>()->getDummy() << endl;
 
-    mod.get<Radio>()->setDummy(3000);
-    mod.remove<SensorsModule>();
+    ModuleManager::getInstance().get<Radio>()->setDummy(3000);
+    ModuleManager::getInstance().remove<SensorsModule>();
 
-    cout << mod.get<SensorsModule>()->getDummy() << ","
-         << mod.get<Radio>()->getDummy() << endl;
+    cout << ModuleManager::getInstance().get<SensorsModule>()->getDummy() << ","
+         << ModuleManager::getInstance().get<Radio>()->getDummy() << endl;
 
-    // mod.insert<SensorsModule>(new HILSensors());
+    // ModuleManager::getInstance().insert<SensorsModule>(new HILSensors());
 
-    // mod.get<SensorsModule>()->toggleDummy();
+    // ModuleManager::getInstance().get<SensorsModule>()->toggleDummy();
 
-    // mod.get<Radio>();
+    // ModuleManager::getInstance().get<Radio>();
 
-    // cout << mod.get<SensorsModule>()->getDummy() << endl;
+    // cout << ModuleManager::getInstance().get<SensorsModule>()->getDummy() <<
+    // endl;
 
     return 0;
 }

@@ -21,34 +21,34 @@
  */
 #pragma once
 
+#include <Singleton.h>
 #include <assert.h>
 #include <stdint.h>
 #include <utils/Debug.h>
 
 namespace Boardcore
 {
-namespace ModuleManagerVariables
-{
-/**
- * @brief Unique id sequence for classes
- */
-extern uint8_t currentId;
-}  // namespace ModuleManagerVariables
-
 class Module
 {
 public:
     virtual ~Module() = default;
 };
 
-class ModuleManager
+class ModuleManager : public Singleton<ModuleManager>
 {
+    friend class Singleton<ModuleManager>;
+
 private:
     /**
      * @brief Array that contains all the possible modules created with the
      * maximum number of modules
      */
     Module *modules[256] = {nullptr};
+
+    /**
+     * @brief Id that stores the maximum id assigned so far
+     */
+    uint8_t currentId = 0;
 
     /**
      * @brief This function "assigns" to every type a unique sequential id
@@ -60,9 +60,7 @@ private:
         // This thing works because a new static variable newId is created for
         // every type T and the initial assignment is "called" only when the
         // static variable is created
-        static uint8_t newId = ModuleManagerVariables::currentId == 255
-                                   ? 255
-                                   : ModuleManagerVariables::currentId++;
+        static uint8_t newId = currentId == 255 ? 255 : currentId++;
         return newId;
     }
 
