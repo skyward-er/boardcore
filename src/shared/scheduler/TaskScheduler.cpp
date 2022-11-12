@@ -73,7 +73,7 @@ uint8_t TaskScheduler::addTask(function_t function, uint32_t period,
     uint8_t id = 1;
 
     // Find a suitable id for the new task
-    for (; tasks[id] != nullptr && id < 255; ++id)
+    for (; id < 255 && tasks[id] != nullptr; ++id)
         ;
 
     return addTask(function, period, id, policy, startTick);
