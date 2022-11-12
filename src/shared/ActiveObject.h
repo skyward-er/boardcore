@@ -51,6 +51,8 @@ public:
     /**
      * @brief Start the thread associated with this active object.
      *
+     * @warning The method is not thread safe.
+     *
      * Call stop() to terminate execution of the thread.
      * @return true if the thread has been started.
      */
@@ -114,15 +116,16 @@ inline bool ActiveObject::start()
     if (!running)
     {
         stopFlag = false;
-        thread   = miosix::Thread::create(threadLauncher, stackSize, priority,
-                                          reinterpret_cast<void*>(this),
-                                          miosix::Thread::JOINABLE);
+        running  = true;
 
-        if (thread != nullptr)
-        {
-            running = true;
-            return true;
-        }
+        thread = miosix::Thread::create(threadLauncher, stackSize, priority,
+                                        reinterpret_cast<void*>(this),
+                                        miosix::Thread::JOINABLE);
+
+        if (thread == nullptr)
+            running = false;
+
+        return running;
     }
 
     return false;
@@ -143,6 +146,7 @@ inline bool ActiveObject::shouldStop() { return stopFlag; }
 
 inline void ActiveObject::threadLauncher(void* arg)
 {
+
     reinterpret_cast<ActiveObject*>(arg)->run();
 
     // When the run function ends, update the status
