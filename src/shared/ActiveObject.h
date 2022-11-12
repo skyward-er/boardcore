@@ -25,6 +25,8 @@
 #include <diagnostic/SkywardStack.h>
 #include <miosix.h>
 
+#include <atomic>
+
 namespace Boardcore
 {
 
@@ -90,8 +92,8 @@ protected:
 
     miosix::Thread* thread = nullptr;  ///< Gives access to the thread object
 
-    bool stopFlag = false;
-    bool running  = false;
+    std::atomic<bool> stopFlag;
+    std::atomic<bool> running;
 
 private:
     /**
