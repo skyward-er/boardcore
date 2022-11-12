@@ -210,7 +210,7 @@ void SensorManager::initScheduler()
                                          { sampler->sampleAndCallback(); });
 
         scheduler->addTask(samplerUpdateFunction, sampler->getSamplingPeriod(),
-                           sampler->getID(), TaskScheduler::Policy::RECOVER);
+                           TaskScheduler::Policy::RECOVER);
     }
 }
 

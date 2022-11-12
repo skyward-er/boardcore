@@ -24,6 +24,7 @@
 
 #include <ActiveObject.h>
 #include <Singleton.h>
+#include <debug/debug.h>
 #include <diagnostic/PrintLogger.h>
 #include <utils/Stats/Stats.h>
 
@@ -69,7 +70,7 @@ public:
      * removed from the tasks list.
      * - SKIP: If for whatever reason a task can't be executed when
      * it is supposed to (e.g. another thread occupies the CPU), the scheduler
-     * doesn't recover the missed executions but insted skips those and
+     * doesn't recover the missed executions but instead skips those and
      * continues normally. This ensures that all the events are aligned with
      * the original start tick. In other words, the period and the start tick of
      * a task specifies the time slots the task has to be executed. If one of
@@ -89,27 +90,6 @@ public:
     };
 
     TaskScheduler();
-
-    /**
-     * @brief Add a task function to the scheduler.
-     *
-     * Note that each task has it's own unique ID, even one shot tasks!
-     * Therefore, if a task already exists with the same id, the function will
-     * fail and return false.
-     *
-     * For one shot tasks, the period is used as a delay. If 0 the task will be
-     * executed immediately, otherwise after the given period.
-     *
-     * @param function Function to be called periodically.
-     * @param period Inter call period.
-     * @param id Task identification number.
-     * @param policy Task policy, default is SKIP.
-     * @param startTick First activation time, useful for synchronizing tasks.
-     * @return true if the task was added successfully.
-     */
-    uint8_t addTask(function_t function, uint32_t period, uint8_t id,
-                    Policy policy     = Policy::SKIP,
-                    int64_t startTick = miosix::getTick());
 
     /**
      * @brief Add a task function to the scheduler with an auto generated id.
@@ -157,6 +137,7 @@ private:
         function_t function;
         uint32_t period;
         uint8_t id;
+        bool valid;
         Policy policy;
         int64_t lastCall;  ///< Last activation tick for statistics computation.
         Stats activationStats;  ///< Stats about activation tick error.
@@ -182,6 +163,27 @@ private:
     void run() override;
 
     /**
+     * @brief Add a task function to the scheduler.
+     *
+     * Note that each task has it's own unique ID, even one shot tasks!
+     * Therefore, if a task already exists with the same id, the function will
+     * fail and return false.
+     *
+     * For one shot tasks, the period is used as a delay. If 0 the task will be
+     * executed immediately, otherwise after the given period.
+     *
+     * @param function Function to be called periodically.
+     * @param period Inter call period.
+     * @param id Task identification number.
+     * @param policy Task policy, default is SKIP.
+     * @param startTick First activation time, useful for synchronizing tasks.
+     * @return true if the task was added successfully.
+     */
+    uint8_t addTask(function_t function, uint32_t period, uint8_t id,
+                    Policy policy     = Policy::SKIP,
+                    int64_t startTick = miosix::getTick());
+
+    /**
      * @brief Update task statistics (Intended for when the task is executed).
      *
      * This function changes the task last call tick to the startTick.
@@ -205,20 +207,20 @@ private:
      */
     void enqueue(Event& event, int64_t startTick);
 
-    static TaskStatsResult fromTaskIdPairToStatsResult(
-        const std::pair<const uint8_t, Boardcore::TaskScheduler::Task>& task)
+    static TaskStatsResult fromTaskIdPairToStatsResult(Task* task)
     {
-        return TaskStatsResult{task.second.id,
-                               task.second.period,
-                               task.second.activationStats.getStats(),
-                               task.second.periodStats.getStats(),
-                               task.second.workloadStats.getStats(),
-                               task.second.missedEvents,
-                               task.second.failedEvents};
+
+        return TaskStatsResult{task->id,
+                               task->period,
+                               task->activationStats.getStats(),
+                               task->periodStats.getStats(),
+                               task->workloadStats.getStats(),
+                               task->missedEvents,
+                               task->failedEvents};
     }
 
     miosix::FastMutex mutex;            ///< Mutex to protect tasks and agenda.
-    std::map<uint8_t, Task> tasks;      ///< Holds all tasks to be scheduled.
+    std::array<Task*, 256> tasks{};     ///< Holds all tasks to be scheduled.
     miosix::ConditionVariable condvar;  ///< Used when agenda is empty.
     std::priority_queue<Event> agenda;  ///< Ordered list of functions.
 

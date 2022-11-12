@@ -35,6 +35,8 @@ namespace Boardcore
 TaskScheduler::TaskScheduler()
     : ActiveObject(STACK_MIN_FOR_SKYWARD, miosix::PRIORITY_MAX - 1)
 {
+    stopFlag = false;
+    running  = false;
 }
 
 uint8_t TaskScheduler::addTask(function_t function, uint32_t period, uint8_t id,
@@ -42,26 +44,27 @@ uint8_t TaskScheduler::addTask(function_t function, uint32_t period, uint8_t id,
 {
     Lock<FastMutex> lock(mutex);
 
+    // Check if in the corresponding id there's already a task
+    if (tasks[id] != nullptr)
+    {
+        LOG_ERR(logger, "Full task scheduler, id = 255");
+        return 0;
+    }
+
     // Register the task into the map
-    Task task   = {function, period, id, policy, -1, {}, {}, {}, 0, 0};
-    auto result = tasks.insert({id, task});
+    Task* task =
+        new Task{function, period, id, true, policy, -1, {}, {}, {}, 0, 0};
+    tasks[id] = task;
 
     if (policy == Policy::ONE_SHOT)
         startTick += period;
 
-    if (result.second)
-    {
-        // Add the task first event in the agenda
-        Event event = {&(result.first->second), startTick};
-        agenda.push(event);
-        condvar.broadcast();  // Signals the run thread
-    }
-    else
-    {
-        LOG_ERR(logger, "Trying to add a task which id is already present");
-    }
+    // Add the task first event in the agenda
+    Event event = {task, startTick};
+    agenda.push(event);
+    condvar.broadcast();  // Signals the run thread
 
-    return result.second ? id : 0;
+    return id;
 }
 
 uint8_t TaskScheduler::addTask(function_t function, uint32_t period,
@@ -70,37 +73,30 @@ uint8_t TaskScheduler::addTask(function_t function, uint32_t period,
     uint8_t id = 1;
 
     // Find a suitable id for the new task
-    auto it = tasks.cbegin(), end = tasks.cend();
-    for (; it != end && id == it->first; ++it, ++id)
+    for (; tasks[id] != nullptr && id < 255; ++id)
         ;
 
-    return addTask(function, period, id, policy, startTick) != 0 ? id : 0;
+    return addTask(function, period, id, policy, startTick);
 }
 
 bool TaskScheduler::removeTask(uint8_t id)
 {
     Lock<FastMutex> lock(mutex);
 
-    if (tasks.find(id) == tasks.end())
+    // Check if the task is actually present
+    if (tasks[id] == nullptr)
     {
         LOG_ERR(logger, "Attempting to remove a task not registered");
         return false;
     }
 
-    // Find the task in the agenda and remove it
-    std::priority_queue<Event> newAgenda;
-    while (agenda.size() > 0)
-    {
-        Event event = agenda.top();
-        agenda.pop();
+    // Set the validity of the task to false
+    tasks[id]->valid = false;
 
-        if (event.task->id != id)
-            newAgenda.push(event);
-    }
-    agenda = newAgenda;
-
-    // Remove the task from the tasks map
-    tasks.erase(id);
+    // Remove the task from the tasks array
+    // We do not deallocate the task here because of future deallocation when
+    // popped from queue
+    tasks[id] = nullptr;
 
     return true;
 }
@@ -112,7 +108,7 @@ bool TaskScheduler::start()
     if (running)
         return false;
 
-    // Normalize the tasks start time if they preceed the current tick
+    // Normalize the tasks start time if they precede the current tick
     normalizeTasks();
 
     return ActiveObject::start();
@@ -120,8 +116,8 @@ bool TaskScheduler::start()
 
 void TaskScheduler::stop()
 {
-    stopFlag = true;   // Signal the run function to stop
-    condvar.signal();  // Wake the run function even if there are no tasks
+    stopFlag = true;      // Signal the run function to stop
+    condvar.broadcast();  // Wake the run function even if there are no tasks
 
     ActiveObject::stop();
 }
@@ -132,8 +128,11 @@ vector<TaskStatsResult> TaskScheduler::getTaskStats()
 
     vector<TaskStatsResult> result;
 
-    std::transform(tasks.begin(), tasks.end(), std::back_inserter(result),
-                   fromTaskIdPairToStatsResult);
+    for (auto& task : tasks)
+    {
+        if (task != nullptr)
+            result.push_back(fromTaskIdPairToStatsResult(task));
+    }
 
     return result;
 }
@@ -177,7 +176,7 @@ void TaskScheduler::run()
         // If the task has the SKIP policy and its execution was missed, we need
         // to move it forward to match the period
         if (nextEvent.nextTick < startTick &&
-            agenda.top().task->policy == Policy::SKIP)
+            nextEvent.task->policy == Policy::SKIP)
         {
             agenda.pop();
             enqueue(nextEvent, startTick);
@@ -187,6 +186,7 @@ void TaskScheduler::run()
             agenda.pop();
 
             // Execute the task function
+            if (nextEvent.task->valid)
             {
                 Unlock<FastMutex> unlock(lock);
 
@@ -206,7 +206,14 @@ void TaskScheduler::run()
         }
         else
         {
+            if (!nextEvent.task->valid)
+            {
+                delete nextEvent.task;
+                agenda.pop();
+            }
+
             Unlock<FastMutex> unlock(lock);
+
             Thread::sleepUntil(nextEvent.nextTick);
         }
     }
@@ -215,7 +222,7 @@ void TaskScheduler::run()
 void TaskScheduler::updateStats(const Event& event, int64_t startTick,
                                 int64_t endTick)
 {
-    const float tickToMs = 1000.f / TICK_FREQ;
+    constexpr float tickToMs = 1000.f / TICK_FREQ;
 
     // Activation stats
     float activationError = startTick - event.nextTick;
@@ -236,14 +243,16 @@ void TaskScheduler::updateStats(const Event& event, int64_t startTick,
 
 void TaskScheduler::enqueue(Event& event, int64_t startTick)
 {
-    const float msToTick = TICK_FREQ / 1000.f;
+    constexpr float msToTick = TICK_FREQ / 1000.f;
 
     switch (event.task->policy)
     {
         case Policy::ONE_SHOT:
             // If the task is one shot we won't push it to the agenda and we'll
             // remove it from the tasks map.
-            tasks.erase(event.task->id);
+            tasks[event.task->id] = nullptr;
+            delete event.task;
+
             return;
         case Policy::SKIP:
             // Updated the missed events count
