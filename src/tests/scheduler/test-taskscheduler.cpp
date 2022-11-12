@@ -91,10 +91,10 @@ int main()
     TaskScheduler::function_t f1KHz{&task1KHz};
     TaskScheduler::function_t blockingF{&blockingTask};
 
-    scheduler.addTask(f2Hz, 500, 1);
-    scheduler.addTask(f5Hz, 200, 2);
-    scheduler.addTask(f500Hz, 2, 3, TaskScheduler::Policy::RECOVER);
-    scheduler.addTask(f1KHz, 1, 4);
+    scheduler.addTask(f2Hz, 500);
+    scheduler.addTask(f5Hz, 200);
+    scheduler.addTask(f500Hz, 2, TaskScheduler::Policy::RECOVER);
+    scheduler.addTask(f1KHz, 1, TaskScheduler::Policy::RECOVER);
 
     printf("4 tasks added (2Hz 5Hz 500Hz 1KHz)\n");
     printf("The scheduler will be started in 2 seconds\n");
@@ -115,14 +115,14 @@ int main()
 
     printf("Now readding task 1 and 3\n");
     signalPin5();
-    scheduler.addTask(f2Hz, 500, 1);
-    scheduler.addTask(f500Hz, 2, 3, TaskScheduler::Policy::RECOVER);
+    scheduler.addTask(f2Hz, 500);
+    scheduler.addTask(f500Hz, 2, TaskScheduler::Policy::RECOVER);
 
     Thread::sleep(4 * 1000);
 
     printf("Now adding a one shot task which will take 100ms to complete\n");
     signalPin5();
-    scheduler.addTask(blockingF, 0, 5, TaskScheduler::Policy::ONE_SHOT);
+    scheduler.addTask(blockingF, 0, TaskScheduler::Policy::ONE_SHOT);
 
     Thread::sleep(4 * 1000);
 

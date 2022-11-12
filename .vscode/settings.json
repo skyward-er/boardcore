@@ -273,6 +273,7 @@
                 "stof",
                 "SWSTART",
                 "syaw",
+                "taskscheduler",
                 "TCIE",
                 "TCIF",
                 "TDHR",

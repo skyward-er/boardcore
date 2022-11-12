@@ -80,7 +80,7 @@ int main()
 
     // Start a periodic task to move the first three servos
     TaskScheduler scheduler;
-    scheduler.addTask(&moveServo, 2 * 1000, 1);
+    uint8_t id = scheduler.addTask(&moveServo, 2 * 1000);
     scheduler.start();
 
     // Control the fourth servo manually
