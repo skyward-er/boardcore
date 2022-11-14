@@ -163,27 +163,6 @@ private:
     void run() override;
 
     /**
-     * @brief Add a task function to the scheduler.
-     *
-     * Note that each task has it's own unique ID, even one shot tasks!
-     * Therefore, if a task already exists with the same id, the function will
-     * fail and return false.
-     *
-     * For one shot tasks, the period is used as a delay. If 0 the task will be
-     * executed immediately, otherwise after the given period.
-     *
-     * @param function Function to be called periodically.
-     * @param period Inter call period.
-     * @param id Task identification number.
-     * @param policy Task policy, default is SKIP.
-     * @param startTick First activation time, useful for synchronizing tasks.
-     * @return true if the task was added successfully.
-     */
-    uint8_t addTask(function_t function, uint32_t period, uint8_t id,
-                    Policy policy     = Policy::SKIP,
-                    int64_t startTick = miosix::getTick());
-
-    /**
      * @brief Update task statistics (Intended for when the task is executed).
      *
      * This function changes the task last call tick to the startTick.
@@ -223,6 +202,7 @@ private:
     std::array<Task*, 256> tasks{};     ///< Holds all tasks to be scheduled.
     miosix::ConditionVariable condvar;  ///< Used when agenda is empty.
     std::priority_queue<Event> agenda;  ///< Ordered list of functions.
+    uint8_t possibleFreeID;
 
     PrintLogger logger = Logging::getLogger("taskscheduler");
 };

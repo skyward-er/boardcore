@@ -35,15 +35,23 @@ namespace Boardcore
 TaskScheduler::TaskScheduler()
     : ActiveObject(STACK_MIN_FOR_SKYWARD, miosix::PRIORITY_MAX - 1)
 {
-    stopFlag = false;
-    running  = false;
+    stopFlag       = false;
+    running        = false;
+    possibleFreeID = 1;
 }
 
-uint8_t TaskScheduler::addTask(function_t function, uint32_t period, uint8_t id,
+uint8_t TaskScheduler::addTask(function_t function, uint32_t period,
                                Policy policy, int64_t startTick)
 {
-    Lock<FastMutex> lock(mutex);
 
+    Lock<FastMutex> lock(mutex);
+    uint8_t id = possibleFreeID;
+
+    // Find a suitable id for the new task
+    for (; id < 255 && tasks[id] != nullptr; ++id)
+        ;
+
+    possibleFreeID = id + 1;
     // Check if in the corresponding id there's already a task
     if (tasks[id] != nullptr)
     {
@@ -67,18 +75,6 @@ uint8_t TaskScheduler::addTask(function_t function, uint32_t period, uint8_t id,
     return id;
 }
 
-uint8_t TaskScheduler::addTask(function_t function, uint32_t period,
-                               Policy policy, int64_t startTick)
-{
-    uint8_t id = 1;
-
-    // Find a suitable id for the new task
-    for (; id < 255 && tasks[id] != nullptr; ++id)
-        ;
-
-    return addTask(function, period, id, policy, startTick);
-}
-
 bool TaskScheduler::removeTask(uint8_t id)
 {
     Lock<FastMutex> lock(mutex);
@@ -97,6 +93,8 @@ bool TaskScheduler::removeTask(uint8_t id)
     // We do not deallocate the task here because of future deallocation when
     // popped from queue
     tasks[id] = nullptr;
+    if (id < possibleFreeID)
+        possibleFreeID = id;
 
     return true;
 }
@@ -251,6 +249,8 @@ void TaskScheduler::enqueue(Event& event, int64_t startTick)
             // If the task is one shot we won't push it to the agenda and we'll
             // remove it from the tasks map.
             tasks[event.task->id] = nullptr;
+            if (event.task->id < possibleFreeID)
+                possibleFreeID = event.task->id;
             delete event.task;
 
             return;

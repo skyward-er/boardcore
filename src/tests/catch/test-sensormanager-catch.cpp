@@ -37,7 +37,7 @@
 
 using namespace Boardcore;
 
-static const uint8_t FIRST_TASK_ID = 7;  // used to test IDs assignment to tasks
+static const uint8_t FIRST_TASK_ID = 1;  // used to test IDs assignment to tasks
 
 class FailingSensorCatch : public Sensor<TestData>
 {
@@ -54,9 +54,9 @@ public:
     SensorManagerFixture()
     {
         scheduler = new TaskScheduler();
+        // inserst a test function in the scheduler
         scheduler->addTask([]() { std::cout << "Task Callback!" << std::endl; },
-                           2000,  // inserst a test function in the scheduler
-                           FIRST_TASK_ID);
+                           2000);
 
         sensorManager = new SensorManager({{&s1, s1_info},
                                            {&s2, s2_info},
