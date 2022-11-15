@@ -342,7 +342,7 @@ bool I2C::init()
     {
         // [WARNING] hardcocded to use DUTY = 0
         i2c->CCR = I2C_CCR_FS |  // selecting Fast mode
-                   f * 10 / 3;   // setting the CCR bits
+                   f * 5 / 6;    // setting the CCR bits
 
         // for DUTY = 1
         // i2c->CCR = I2C_CCR_FS |    // selecting Fast mode

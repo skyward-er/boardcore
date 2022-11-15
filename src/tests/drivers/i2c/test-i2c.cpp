@@ -53,7 +53,7 @@ uint16_t address  = 42;
 void i2cDriver()
 {
 #ifndef I2C_MIOSIX
-    I2C i2c(I2C1, I2C::Speed::STANDARD, I2C::Addressing::BIT7, address);
+    I2C i2c(I2C1, I2C::Speed::FAST, I2C::Addressing::BIT7, address);
 
     if (!i2c.init())
         printf("errore inizializzando i2c\n");
