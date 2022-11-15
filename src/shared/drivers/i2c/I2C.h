@@ -26,11 +26,37 @@
 
 using I2CType = I2C_TypeDef;
 
-#if defined(STM32F429xx) || defined(STM32F407xx)
+#if defined(STM32F429xx) || defined(STM32F407xx) || defined(STM32F401xE)
 #define N_I2C_PORTS 3
 #else
 #define N_I2C_PORTS 1
 #warning "Define the number of I2C ports for your architectures in I2C.h file"
+#endif
+
+// I2C1
+typedef miosix::Gpio<GPIOB_BASE, 6> i1sda1;
+typedef miosix::Gpio<GPIOB_BASE, 7> i1scl1;
+typedef miosix::Gpio<GPIOB_BASE, 8> i1sda2;
+typedef miosix::Gpio<GPIOB_BASE, 9> i1scl2;
+
+// I2C2
+typedef miosix::Gpio<GPIOB_BASE, 9> i2sda1;
+typedef miosix::Gpio<GPIOB_BASE, 10> i2scl1;
+typedef miosix::Gpio<GPIOB_BASE, 11> i2sda2;
+typedef miosix::Gpio<GPIOB_BASE, 12> i2scl2;
+#ifndef STM32F401xE
+typedef miosix::Gpio<GPIOF_BASE, 0> i2sda3;
+typedef miosix::Gpio<GPIOF_BASE, 1> i2scl3;
+typedef miosix::Gpio<GPIOH_BASE, 4> i2sda4;
+typedef miosix::Gpio<GPIOH_BASE, 5> i2scl4;
+#endif
+
+// I2C3
+typedef miosix::Gpio<GPIOC_BASE, 9> i3sda1;
+typedef miosix::Gpio<GPIOA_BASE, 8> i3scl1;
+#ifndef STM32F401xE
+typedef miosix::Gpio<GPIOH_BASE, 7> i3sda2;
+typedef miosix::Gpio<GPIOH_BASE, 8> i3scl2;
 #endif
 
 namespace Boardcore
@@ -145,7 +171,7 @@ protected:
     const Addressing addressing;  ///< Addressing mode of the device
     const uint16_t address;       ///< Address of the device
     miosix::Thread *waiting = 0;  ///< Pointer to the waiting on receive thread
-    miosix::FastMutex mutex;      ///< mutex for rx/tx
+    miosix::FastMutex mutex;      ///< recursive mutex for rx/tx
 
     PrintLogger logger = Logging::getLogger("i2c");
 };

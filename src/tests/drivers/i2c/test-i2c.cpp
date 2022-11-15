@@ -26,6 +26,12 @@
 #include "string.h"
 #include "thread"
 
+// #define I2C_MIOSIX
+
+#ifdef I2C_MIOSIX
+#include "drivers/i2c/stm32f2_f4_i2c.h"
+#endif
+
 using namespace miosix;
 using namespace Boardcore;
 
@@ -33,29 +39,67 @@ using namespace Boardcore;
  * SETUP:
  */
 
-typedef struct
+uint8_t addressSensor  = 0b1110111 << 1;
+uint8_t whoamiRegister = 0xD0;
+uint8_t whoamiContent  = 0x55;
+
+uint8_t softReset[] = {
+    0xE0,  // address of the software reset register
+    0xB6   // write this to perform a software reset};
+};
+uint8_t buffer[8] = {0};
+uint16_t address  = 42;
+
+void i2cDriver()
 {
-    char dataChar;
-    int dataInt;
-    float dataFloat;
-    double dataDouble;
+#ifndef I2C_MIOSIX
+    I2C i2c(I2C1, I2C::Speed::STANDARD, I2C::Addressing::BIT7, address);
 
-    std::string print()
+    if (!i2c.init())
+        printf("errore inizializzando i2c\n");
+    else
+        printf("initialized!\n");
+
+    i2c.write(addressSensor, softReset, 2, true);
+
+    for (;;)
     {
-        return fmt::format("{},{:d},{:f},{:f}", dataChar, dataInt, dataFloat,
-                           dataDouble);
+        buffer[0] = 0;
+        if (!i2c.write(addressSensor, &whoamiRegister, 1, true))
+            printf("writing error!\n");
+        if (!i2c.read(addressSensor, buffer, 1, true))
+            printf("reading error!\n");
+
+        printf("read: %d, should be: %d\n", buffer[0], whoamiContent);
+        miosix::Thread::sleep(1000);
     }
-} StructToSend;
+#else
+    miosix::I2C1Driver &i2c = miosix::I2C1Driver::instance();
+    while (true)
+    {
+        if (!i2c.send(addressSensor, &whoamiRegister, 1))
+            printf("writing error!\n");
 
-StructToSend struct_tx = {'C', 42, 420.69, 48.84};
+        if (!i2c.recv(addressSensor, buffer, 1))
+            printf("reading error!\n");
 
-char buf_tx[64] = "Testing communication, but very very very loong :D";
+        printf("read: %d, should be: %d\n", buffer[0], whoamiContent);
+
+        miosix::Thread::sleep(1000);
+    }
+#endif
+    miosix::Thread::sleep(1000);
+}
 
 int main()
 {
-    I2C i2c(I2C1, I2C::Speed::STANDARD, I2C::Addressing::BIT7, 42);
+    // pin settings
+    i1sda2::getPin().mode(miosix::Mode::ALTERNATE);
+    i1sda2::getPin().alternateFunction(4);
+    i1scl2::getPin().mode(miosix::Mode::ALTERNATE);
+    i1scl2::getPin().alternateFunction(4);
 
-    i2c.init();
+    i2cDriver();
 
     return 0;
 }

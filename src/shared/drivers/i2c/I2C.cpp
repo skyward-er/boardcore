@@ -22,24 +22,47 @@
 
 #include "I2C.h"
 
+#include <kernel/scheduler/scheduler.h>
 #include <utils/ClockUtils.h>
 
-// MACRO in order to avoid repeated pattern: This waits till the flag identified
-// in REG becomes true;
-// [WARNING] in case of a wakeup with an error, the macro makes the OUTER (!)
-// function return with the value passed in RETVAL
-#define WAIT_FOR_REGISTER_CHANGE(REG, RETVAL) \
-    while (!(REG))                            \
-    {                                         \
-        miosix::Thread::wait();               \
-        if (error)                            \
-        {                                     \
-            error = false;                    \
-            return RETVAL;                    \
-        }                                     \
+// MACRO in order to avoid repeated pattern: This waits until the thread isn't
+// waken up by an I2C interrupt (EV or ERR). This MACRO shuould be called in a
+// block where interrupts are disabled; this handles the waiting and yielding
+// and the management of the flags for the interrupts.
+// [WARNING] If the flag
+// identified in REG at the end is false or the error interrupt has been invoked
+// the macro makes the OUTER (!) function return with the value passed in RETVAL
+#define WAIT_FOR_REGISTER_CHANGE(REG, DLOCK, RETVAL)   \
+    waiting = miosix::Thread::getCurrentThread();      \
+    while (waiting)                                    \
+    {                                                  \
+        waiting->IRQwait();                            \
+        i2c->CR2 |= I2C_CR2_ITEVTEN | I2C_CR2_ITERREN; \
+        miosix::InterruptEnableLock eLock(DLOCK);      \
+        waiting->yield();                              \
+    }                                                  \
+                                                       \
+    if (error || !(REG))                               \
+    {                                                  \
+        error = false;                                 \
+        i2c->CR1 |= I2C_CR1_STOP;                      \
+        return RETVAL;                                 \
     }
 
 Boardcore::I2C *Boardcore::I2C::ports[N_I2C_PORTS];
+
+inline void wakeUpWaitingThread(miosix::Thread *waiting)
+{
+    if (waiting)
+    {
+        waiting->IRQwakeup();
+        if (waiting->IRQgetPriority() >
+            miosix::Thread::IRQgetCurrentThread()->IRQgetPriority())
+        {
+            miosix::Scheduler::IRQfindNextThread();
+        }
+    }
+}
 
 //** I2C1 **//
 /**
@@ -214,7 +237,8 @@ namespace Boardcore
 {
 
 I2C::I2C(I2CType *i2c, Speed speed, Addressing addressing, uint16_t address)
-    : i2c(i2c), speed(speed), addressing(addressing), address(address)
+    : i2c(i2c), speed(speed), addressing(addressing), address(address),
+      mutex(miosix::FastMutex::Options::RECURSIVE)
 {
     // Setting the id and irqn of the right i2c peripheral
     switch (reinterpret_cast<uint32_t>(i2c))
@@ -275,17 +299,13 @@ bool I2C::init()
     }
 
     // Assuring that the peripheral is disabled
-    if (i2c->CR1 & I2C_CR1_PE)
-    {
-        LOG_INFO(logger,
-                 "Can't set CCR if the peripheral is enabled! Disabling it.");
-        i2c->CR1 &= ~I2C_CR1_PE;
-    }
+    i2c->CR1 = 0;
 
     /* setting the peripheral input clock */
     // Retrieving the frequency of the APB relative to the I2C peripheral [MHz]
     // (I2C peripherals are always connected to APB1, Low speed bus)
-    uint32_t f = ClockUtils::getAPBFrequency(ClockUtils::APB::APB1) >> 20;
+    uint32_t f =
+        ClockUtils::getAPBFrequency(ClockUtils::APB::APB1) / 1000000 / 2;
 
     // frequency higher than 50MHz not allowed
     if (f > 50)
@@ -301,12 +321,13 @@ bool I2C::init()
         return false;
     }
 
+    I2C1->CR1 = I2C_CR1_SWRST;
+    I2C1->CR1 = 0;
+
     // Programming the input clock in order to generate correct timings +
     // enabling generation of all interrupts
     i2c->CR2 = (f & I2C_CR2_FREQ) |  // setting FREQ bits
-               I2C_CR2_ITEVTEN |     // enabling interupts for different phases
-               I2C_CR2_ITBUFEN |     // enabling interupts for rx/tx byte
-               I2C_CR2_ITERREN;      // enabling interupts for errors
+               I2C_CR2_ITBUFEN;      // enabling interupts for rx/tx byte
 
     // Configuring the Clock Control Register
     if (speed == Speed::STANDARD)
@@ -334,8 +355,10 @@ bool I2C::init()
 
     // Enabling the interrupts (Ev and Err) in the NVIC for the relative i2c
     NVIC_SetPriority(irqnEv, 15);
+    NVIC_ClearPendingIRQ(irqnEv);
     NVIC_EnableIRQ(irqnEv);
     NVIC_SetPriority(irqnErr, 15);
+    NVIC_ClearPendingIRQ(irqnErr);
     NVIC_EnableIRQ(irqnErr);
 
     // Setting the Own Address Register
@@ -361,36 +384,42 @@ int I2C::read(uint16_t slaveAddress, void *buffer, size_t nBytes,
     // Synchronization because of the single bus
     miosix::Lock<miosix::FastMutex> lock(mutex);
 
-    waiting = miosix::Thread::getCurrentThread();
-
     // Enabling option to generate ACK
     i2c->CR1 |= I2C_CR1_ACK;
 
     // Sending prologue until the channel is clear
     if (!prologue(slaveAddress, false, nBytes))
+    {
         return 0;
+    }
 
     // reading the nBytes
     for (size_t i = 0; i < nBytes; i++)
     {
-        // waiting for the reception of another byte
-        WAIT_FOR_REGISTER_CHANGE(i2c->SR1 & I2C_SR1_RXNE, 0)
+        {
+            miosix::InterruptDisableLock dLock;
+            // waiting for the reception of another byte
+            WAIT_FOR_REGISTER_CHANGE(i2c->SR1 & I2C_SR1_RXNE, dLock, 0)
+        }
 
         // checking if a byte has been lost (TODO: see what to do)
-        // if (i2c->SR1 & I2C_SR1_BTF)
-        //     nLostBytes++;
+        if (i2c->SR1 & I2C_SR1_BTF)
+            ;
 
         buff[i] = I2C1->DR;
 
         // clearing the ACK flag and setting the STOP flag in order to send a
         // NACK on the last byte that will be read and generating the stop
         // condition
-        if (i == nBytes - 2 && generateStopSignal)
+        if (i == nBytes - 2)
         {
             i2c->CR1 &= ~I2C_CR1_ACK;
-            i2c->CR1 |= I2C_CR1_STOP;
         }
     }
+
+    // generate the stop condition
+    if (generateStopSignal)
+        i2c->CR1 |= I2C_CR1_STOP;
 
     return nBytes;
 };
@@ -403,74 +432,104 @@ int I2C::write(uint16_t slaveAddress, void *buffer, size_t nBytes,
     // Synchronization because of the single bus
     miosix::Lock<miosix::FastMutex> lock(mutex);
 
-    waiting = miosix::Thread::getCurrentThread();
     if (!prologue(slaveAddress, true, nBytes))
+    {
         return 0;
+    }
 
     // sending the nBytes
     for (size_t i = 0; i < nBytes; i++)
     {
+        miosix::InterruptDisableLock dLock;
         i2c->DR = buff[i];
 
         // waiting for the sending of the byte
-        WAIT_FOR_REGISTER_CHANGE(i2c->SR1 & I2C_SR1_TXE, 0)
-
-        // if we are on the last byte, generate the stop condition
-        if (i == nBytes - 1 && generateStopSignal)
-            i2c->CR1 |= I2C_CR1_STOP;
+        WAIT_FOR_REGISTER_CHANGE(i2c->SR1 & I2C_SR1_TXE, dLock, 0)
     }
 
-    return 0;
+    // if we are on the last byte, generate the stop condition
+    if (generateStopSignal)
+        i2c->CR1 |= I2C_CR1_STOP;
+
+    return nBytes;
 };
 
 bool I2C::prologue(uint16_t slaveAddress, bool writeOperation, size_t nBytes)
 {
+    // Generating start condition if bus not busy -> passing in Master mode
+    // [WARNING] BUSY WAIT
+    while (i2c->SR2 & I2C_SR2_BUSY)
+        ;
 
-    // Header generated (composed of 11110xx0 bits with xx as the 9th and
-    // 8th bits of the address)
-    const uint8_t header = 0b11110000 | ((slaveAddress >> 7) & 0b110);
+    {
+        miosix::InterruptDisableLock dLock;
+        i2c->CR1 |= I2C_CR1_START | I2C_CR1_ACK;
 
-    // Generating start condition -> passing in Master mode
-    i2c->CR1 |= I2C_CR1_START;
+        // waiting for reception of start signal
+        WAIT_FOR_REGISTER_CHANGE(i2c->SR1 & I2C_SR1_SB, dLock, false)
 
-    // waiting for reception of start signal
-    WAIT_FOR_REGISTER_CHANGE(i2c->SR1 & I2C_SR1_SB, false)
+        if (!(i2c->SR2 & I2C_SR2_MSL))
+        {
+            // peripheral not changed to master mode
+            i2c->CR1 |= I2C_CR1_STOP;
+            return false;
+        }
+    }
 
     // Sending (header + ) slave address
     if (addressing == Addressing::BIT7)
     {
+        miosix::InterruptDisableLock dLock;
         // setting the LSB if we want to enter receiver mode
         i2c->DR = slaveAddress | (writeOperation ? 0 : 1);
 
-        // Checking if a slave matched his address
-        WAIT_FOR_REGISTER_CHANGE(i2c->SR1 & I2C_SR1_ADDR, false)
+        // // Checking if a slave matched his address
+        WAIT_FOR_REGISTER_CHANGE(i2c->SR1 & I2C_SR1_ADDR, dLock, false)
+
+        if (!(I2C1->SR2 & I2C_SR2_MSL))
+        {
+            return false;
+        }
     }
     else  // addressing == Addressing::BIT10
     {
-        // sending header
-        i2c->DR = header;
+        // Header generated (composed of 11110xx0 bits with xx as the 9th and
+        // 8th bits of the address)
+        const uint8_t header = 0b11110000 | ((slaveAddress >> 7) & 0b110);
 
-        // Checking if the header has been sent
-        WAIT_FOR_REGISTER_CHANGE(i2c->SR1 & I2C_SR1_ADD10, false)
+        {
+            miosix::InterruptDisableLock dLock;
+            // sending header
+            i2c->DR = header;
 
-        // sending address ((1 << 8) - 1) = 0xff
-        i2c->DR = (slaveAddress & 0xff);
+            // Checking if the header has been sent
+            WAIT_FOR_REGISTER_CHANGE(i2c->SR1 & I2C_SR1_ADD10, dLock, false)
+        }
 
-        // Checking if a slave matched his address
-        WAIT_FOR_REGISTER_CHANGE(i2c->SR1 & I2C_SR1_ADDR, false)
+        {
+            miosix::InterruptDisableLock dLock;
+            // sending address ((1 << 8) - 1) = 0xff
+            i2c->DR = (slaveAddress & 0xff);
+
+            // Checking if a slave matched his address
+            WAIT_FOR_REGISTER_CHANGE(i2c->SR1 & I2C_SR1_ADDR, dLock, false)
+        }
 
         // if we want to enter in receiver mode
         if (!writeOperation)
         {
             // Checking if the channel is busy (clearing ADDR flag)
             if (i2c->SR2 & I2C_SR2_BUSY)
-                return false;
+                ;
 
-            // Repeated start
-            i2c->CR1 |= I2C_CR1_START;
+            {
+                miosix::InterruptDisableLock dLock;
+                // Repeated start
+                i2c->CR1 |= I2C_CR1_START;
 
-            // waiting for reception of start signal
-            WAIT_FOR_REGISTER_CHANGE(i2c->SR1 & I2C_SR1_SB, false)
+                // waiting for reception of start signal
+                WAIT_FOR_REGISTER_CHANGE(i2c->SR1 & I2C_SR1_SB, dLock, false)
+            }
 
             // sending modified header
             i2c->DR = header | 1;
@@ -485,27 +544,40 @@ bool I2C::prologue(uint16_t slaveAddress, bool writeOperation, size_t nBytes)
 
     // Checking if the channel is busy (clearing ADDR flag)
     if (i2c->SR2 & I2C_SR2_BUSY)
-        return false;
+        ;
 
     return true;
 }
 
-void I2C::IRQhandleInterrupt() { waiting->wakeup(); }
+void I2C::IRQhandleInterrupt()
+{
+    // disabling the regeneration of the interrupt; if we don't disable the
+    // interrupts we will enter in an infinite loop of interrupts
+    i2c->CR2 &= ~(I2C_CR2_ITEVTEN | I2C_CR2_ITERREN);
+
+    // waking up the waiting thread
+    wakeUpWaitingThread(waiting);
+    waiting = 0;
+}
 
 void I2C::IRQhandleErrInterrupt()
 {
+    // disabling the regeneration of the interrupt; if we don't disable the
+    // interrupts we will enter in an infinite loop of interrupts
+    i2c->CR2 &= ~(I2C_CR2_ITEVTEN | I2C_CR2_ITERREN);
+
     // notifying an error
     error = true;
+
+    // if (i2c->SR1 & I2C_SR1_TIMEOUT)
 
     // clearing all the errors in the register
     i2c->SR1 &= ~(I2C_SR1_SMBALERT | I2C_SR1_TIMEOUT | I2C_SR1_PECERR |
                   I2C_SR1_OVR | I2C_SR1_AF | I2C_SR1_ARLO | I2C_SR1_BERR);
 
-    // generating stop signal if error
-    i2c->CR1 |= I2C_CR1_STOP;
-
-    // waking up the- waiting thread
-    waiting->wakeup();
+    // waking up the waiting thread
+    wakeUpWaitingThread(waiting);
+    waiting = 0;
 }
 
 }  // namespace Boardcore
