@@ -32,39 +32,54 @@ using namespace miosix;
 namespace Boardcore
 {
 
-TaskScheduler::TaskScheduler()
-    : ActiveObject(STACK_MIN_FOR_SKYWARD, miosix::PRIORITY_MAX - 1)
+TaskScheduler::TaskScheduler(miosix::Priority priority)
+    : ActiveObject(STACK_MIN_FOR_SKYWARD, priority)
 {
-    stopFlag = false;
-    running  = false;
+    // Create dynamically the tasks vector because of too much space
+    tasks = new std::array<Task, TASKS_SIZE>();
+
+    // Initialize the vector
+    for (size_t i = 1; i < TASKS_SIZE; i++)
+    {
+        function_t function;
+        (*tasks)[i] = makeTask(function, 0, i, false, Policy::SKIP);
+    }
 }
+
+TaskScheduler::~TaskScheduler() { delete tasks; }
 
 size_t TaskScheduler::addTask(function_t function, uint32_t period,
                               Policy policy, int64_t startTick)
 {
-
     Lock<FastMutex> lock(mutex);
     size_t id = 1;
 
     // Find a suitable id for the new task
-    for (; id < TASKS_SIZE && tasks[id].valid == false; id++)
-        ;
+    for (; id < TASKS_SIZE; id++)
+    {
+        if ((*tasks)[id].valid == false)
+        {
+            break;
+        }
+    }
 
     // Check if in the corresponding id there's already a task
-    if (tasks[id].valid)
+    if ((*tasks)[id].valid)
     {
         LOG_ERR(logger, "Full task scheduler, id = {:zu}", id);
         return 0;
     }
 
     // Register the task into the map
-    tasks[id] = makeTask(function, period, id, true, policy);
+    (*tasks)[id] = makeTask(function, period, id, true, policy);
 
     if (policy == Policy::ONE_SHOT)
+    {
         startTick += period;
+    }
 
     // Add the task first event in the agenda
-    Event event = {&(tasks[id]), startTick};
+    Event event = {&(*tasks)[id], startTick};
     agenda.push(event);
     condvar.broadcast();  // Signals the run thread
 
@@ -76,14 +91,14 @@ bool TaskScheduler::removeTask(uint8_t id)
     Lock<FastMutex> lock(mutex);
 
     // Check if the task is actually present
-    if (tasks[id].valid == false)
+    if ((*tasks)[id].valid == false)
     {
         LOG_ERR(logger, "Attempting to remove a task not registered");
         return false;
     }
 
     // Set the validity of the task to false
-    tasks[id].valid = false;
+    (*tasks)[id].valid = false;
 
     return true;
 }
@@ -93,7 +108,9 @@ bool TaskScheduler::start()
     // This check is necessary to prevent task normalization if the scheduler is
     // already stopped
     if (running)
+    {
         return false;
+    }
 
     // Normalize the tasks start time if they precede the current tick
     normalizeTasks();
@@ -115,10 +132,12 @@ vector<TaskStatsResult> TaskScheduler::getTaskStats()
 
     vector<TaskStatsResult> result;
 
-    for (auto& task : tasks)
+    for (auto& task : (*tasks))
     {
         if (task.valid)
+        {
             result.push_back(fromTaskIdPairToStatsResult(task));
+        }
     }
 
     return result;
@@ -135,9 +154,11 @@ void TaskScheduler::normalizeTasks()
         agenda.pop();
 
         if (event.nextTick < currentTick)
+        {
             event.nextTick +=
                 ((currentTick - event.nextTick) / event.task->period + 1) *
                 event.task->period;
+        }
 
         newAgenda.push(event);
     }
@@ -155,7 +176,9 @@ void TaskScheduler::run()
 
         // Exit if the ActiveObject has been stopped
         if (shouldStop())
+        {
             return;
+        }
 
         int64_t startTick = getTick();
         Event nextEvent   = agenda.top();
@@ -236,8 +259,7 @@ void TaskScheduler::enqueue(Event& event, int64_t startTick)
         case Policy::ONE_SHOT:
             // If the task is one shot we won't push it to the agenda and we'll
             // remove it from the tasks map.
-            tasks[event.task->id].valid = false;
-            delete event.task;
+            (*tasks)[event.task->id].valid = false;
 
             return;
         case Policy::SKIP:
