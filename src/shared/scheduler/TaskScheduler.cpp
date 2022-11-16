@@ -35,40 +35,36 @@ namespace Boardcore
 TaskScheduler::TaskScheduler()
     : ActiveObject(STACK_MIN_FOR_SKYWARD, miosix::PRIORITY_MAX - 1)
 {
-    stopFlag       = false;
-    running        = false;
-    possibleFreeID = 1;
+    stopFlag = false;
+    running  = false;
 }
 
-uint8_t TaskScheduler::addTask(function_t function, uint32_t period,
-                               Policy policy, int64_t startTick)
+size_t TaskScheduler::addTask(function_t function, uint32_t period,
+                              Policy policy, int64_t startTick)
 {
 
     Lock<FastMutex> lock(mutex);
-    uint8_t id = possibleFreeID;
+    size_t id = 1;
 
     // Find a suitable id for the new task
-    for (; id < 255 && tasks[id] != nullptr; ++id)
+    for (; id < TASKS_SIZE && tasks[id].valid == false; id++)
         ;
 
-    possibleFreeID = id + 1;
     // Check if in the corresponding id there's already a task
-    if (tasks[id] != nullptr)
+    if (tasks[id].valid)
     {
-        LOG_ERR(logger, "Full task scheduler, id = 255");
+        LOG_ERR(logger, "Full task scheduler, id = {:zu}", id);
         return 0;
     }
 
     // Register the task into the map
-    Task* task =
-        new Task{function, period, id, true, policy, -1, {}, {}, {}, 0, 0};
-    tasks[id] = task;
+    tasks[id] = makeTask(function, period, id, true, policy);
 
     if (policy == Policy::ONE_SHOT)
         startTick += period;
 
     // Add the task first event in the agenda
-    Event event = {task, startTick};
+    Event event = {&(tasks[id]), startTick};
     agenda.push(event);
     condvar.broadcast();  // Signals the run thread
 
@@ -80,21 +76,14 @@ bool TaskScheduler::removeTask(uint8_t id)
     Lock<FastMutex> lock(mutex);
 
     // Check if the task is actually present
-    if (tasks[id] == nullptr)
+    if (tasks[id].valid == false)
     {
         LOG_ERR(logger, "Attempting to remove a task not registered");
         return false;
     }
 
     // Set the validity of the task to false
-    tasks[id]->valid = false;
-
-    // Remove the task from the tasks array
-    // We do not deallocate the task here because of future deallocation when
-    // popped from queue
-    tasks[id] = nullptr;
-    if (id < possibleFreeID)
-        possibleFreeID = id;
+    tasks[id].valid = false;
 
     return true;
 }
@@ -128,7 +117,7 @@ vector<TaskStatsResult> TaskScheduler::getTaskStats()
 
     for (auto& task : tasks)
     {
-        if (task != nullptr)
+        if (task.valid)
             result.push_back(fromTaskIdPairToStatsResult(task));
     }
 
@@ -206,7 +195,6 @@ void TaskScheduler::run()
         {
             if (!nextEvent.task->valid)
             {
-                delete nextEvent.task;
                 agenda.pop();
             }
 
@@ -248,9 +236,7 @@ void TaskScheduler::enqueue(Event& event, int64_t startTick)
         case Policy::ONE_SHOT:
             // If the task is one shot we won't push it to the agenda and we'll
             // remove it from the tasks map.
-            tasks[event.task->id] = nullptr;
-            if (event.task->id < possibleFreeID)
-                possibleFreeID = event.task->id;
+            tasks[event.task->id].valid = false;
             delete event.task;
 
             return;
@@ -278,6 +264,13 @@ void TaskScheduler::enqueue(Event& event, int64_t startTick)
     // Re-enqueue the event in the agenda and signals the run thread
     agenda.push(event);
     condvar.broadcast();
+}
+
+TaskScheduler::Task TaskScheduler::makeTask(function_t function,
+                                            uint32_t period, size_t id,
+                                            bool validity, Policy policy)
+{
+    return Task{function, period, id, validity, policy, -1, {}, {}, {}, 0, 0};
 }
 
 }  // namespace Boardcore

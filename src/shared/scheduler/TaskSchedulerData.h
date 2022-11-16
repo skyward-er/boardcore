@@ -43,7 +43,7 @@ namespace Boardcore
  */
 struct TaskStatsResult
 {
-    uint8_t id;
+    size_t id;
     uint32_t period;
     StatsResult activationStats;
     StatsResult periodStats;
