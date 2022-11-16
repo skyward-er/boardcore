@@ -94,7 +94,9 @@ public:
         RECOVER    ///< Prioritize the number of executions over the period.
     };
 
-    TaskScheduler();
+    TaskScheduler(miosix::Priority priority = miosix::PRIORITY_MAX - 1);
+
+    ~TaskScheduler();
 
     /**
      * @brief Add a task function to the scheduler with an auto generated id.
@@ -217,9 +219,9 @@ private:
     }
 
     miosix::FastMutex mutex;  ///< Mutex to protect tasks and agenda.
-    std::array<Task, TASKS_SIZE> tasks{};  ///< Holds all tasks to be scheduled.
-    miosix::ConditionVariable condvar;     ///< Used when agenda is empty.
-    std::priority_queue<Event> agenda;     ///< Ordered list of functions.
+    std::array<Task, TASKS_SIZE>* tasks;  ///< Holds all tasks to be scheduled.
+    miosix::ConditionVariable condvar;    ///< Used when agenda is empty.
+    std::priority_queue<Event> agenda;    ///< Ordered list of functions.
 
     PrintLogger logger = Logging::getLogger("taskscheduler");
 };

@@ -37,7 +37,7 @@
 
 using namespace Boardcore;
 
-static const uint8_t FIRST_TASK_ID = 1;  // used to test IDs assignment to tasks
+static const size_t FIRST_TASK_ID = 1;  // used to test IDs assignment to tasks
 
 class FailingSensorCatch : public Sensor<TestData>
 {
