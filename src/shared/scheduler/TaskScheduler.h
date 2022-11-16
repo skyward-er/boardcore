@@ -62,6 +62,11 @@ public:
     typedef std::function<void()> function_t;
 
     /**
+     * @brief It defines the tasks array maximum size
+     */
+    static constexpr size_t TASKS_SIZE = 256;
+
+    /**
      * @brief Task behavior policy.
      *
      * This policies allows to change the behavior of the scheduler for the
@@ -107,9 +112,9 @@ public:
      * @param startTick First activation time, useful for synchronizing tasks.
      * @return true if the task was added successfully.
      */
-    uint8_t addTask(function_t function, uint32_t period,
-                    Policy policy     = Policy::SKIP,
-                    int64_t startTick = miosix::getTick());
+    size_t addTask(function_t function, uint32_t period,
+                   Policy policy     = Policy::SKIP,
+                   int64_t startTick = miosix::getTick());
 
     /**
      * @brief Removes the task identified by the given id if it exists.
@@ -136,7 +141,7 @@ private:
     {
         function_t function;
         uint32_t period;
-        uint8_t id;
+        size_t id;
         bool valid;
         Policy policy;
         int64_t lastCall;  ///< Last activation tick for statistics computation.
@@ -186,23 +191,35 @@ private:
      */
     void enqueue(Event& event, int64_t startTick);
 
-    static TaskStatsResult fromTaskIdPairToStatsResult(Task* task)
+    /**
+     * @brief Creates a task with the passed values
+     *
+     * @param function The std::function to be called
+     * @param period The Period in [ms]
+     * @param id The task intrinsic id
+     * @param validity The validity of the task (false if not initialized or if
+     * removed)
+     * @param policy The task policy in case of a miss
+     */
+    Task makeTask(function_t function, uint32_t period, size_t id,
+                  bool validity, Policy policy);
+
+    static TaskStatsResult fromTaskIdPairToStatsResult(Task task)
     {
 
-        return TaskStatsResult{task->id,
-                               task->period,
-                               task->activationStats.getStats(),
-                               task->periodStats.getStats(),
-                               task->workloadStats.getStats(),
-                               task->missedEvents,
-                               task->failedEvents};
+        return TaskStatsResult{task.id,
+                               task.period,
+                               task.activationStats.getStats(),
+                               task.periodStats.getStats(),
+                               task.workloadStats.getStats(),
+                               task.missedEvents,
+                               task.failedEvents};
     }
 
-    miosix::FastMutex mutex;            ///< Mutex to protect tasks and agenda.
-    std::array<Task*, 256> tasks{};     ///< Holds all tasks to be scheduled.
-    miosix::ConditionVariable condvar;  ///< Used when agenda is empty.
-    std::priority_queue<Event> agenda;  ///< Ordered list of functions.
-    uint8_t possibleFreeID;
+    miosix::FastMutex mutex;  ///< Mutex to protect tasks and agenda.
+    std::array<Task, TASKS_SIZE> tasks{};  ///< Holds all tasks to be scheduled.
+    miosix::ConditionVariable condvar;     ///< Used when agenda is empty.
+    std::priority_queue<Event> agenda;     ///< Ordered list of functions.
 
     PrintLogger logger = Logging::getLogger("taskscheduler");
 };
