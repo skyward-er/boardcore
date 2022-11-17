@@ -38,7 +38,7 @@ TaskScheduler::TaskScheduler(miosix::Priority priority)
     // Create dynamically the tasks vector because of too much space
     tasks = new std::array<Task, TASKS_SIZE>();
 
-    // Initialize the vector
+    // Initialize the vector elements
     for (size_t i = 1; i < TASKS_SIZE; i++)
     {
         function_t function;
@@ -66,6 +66,9 @@ size_t TaskScheduler::addTask(function_t function, uint32_t period,
     // Check if in the corresponding id there's already a task
     if ((*tasks)[id].valid)
     {
+        // Unlock the mutex for expensive operation
+        Unlock<FastMutex> unlock(mutex);
+
         LOG_ERR(logger, "Full task scheduler, id = {:zu}", id);
         return 0;
     }
@@ -93,6 +96,9 @@ bool TaskScheduler::removeTask(uint8_t id)
     // Check if the task is actually present
     if ((*tasks)[id].valid == false)
     {
+        // Unlock the mutex for expensive operation
+        Unlock<FastMutex> unlock(mutex);
+
         LOG_ERR(logger, "Attempting to remove a task not registered");
         return false;
     }
@@ -198,29 +204,27 @@ void TaskScheduler::run()
             // Execute the task function
             if (nextEvent.task->valid)
             {
-                Unlock<FastMutex> unlock(lock);
+                {
+                    Unlock<FastMutex> unlock(lock);
 
-                try
-                {
-                    nextEvent.task->function();
+                    try
+                    {
+                        nextEvent.task->function();
+                    }
+                    catch (...)
+                    {
+                        // Update the failed statistic
+                        nextEvent.task->failedEvents++;
+                    }
                 }
-                catch (...)
-                {
-                    // Update the failed statistic
-                    nextEvent.task->failedEvents++;
-                }
+
+                // Enqueue only on a valid task
+                updateStats(nextEvent, startTick, getTick());
+                enqueue(nextEvent, startTick);
             }
-
-            updateStats(nextEvent, startTick, getTick());
-            enqueue(nextEvent, startTick);
         }
         else
         {
-            if (!nextEvent.task->valid)
-            {
-                agenda.pop();
-            }
-
             Unlock<FastMutex> unlock(lock);
 
             Thread::sleepUntil(nextEvent.nextTick);
@@ -250,7 +254,7 @@ void TaskScheduler::updateStats(const Event& event, int64_t startTick,
     event.task->workloadStats.add(endTick - startTick);
 }
 
-void TaskScheduler::enqueue(Event& event, int64_t startTick)
+void TaskScheduler::enqueue(Event event, int64_t startTick)
 {
     constexpr float msToTick = TICK_FREQ / 1000.f;
 
@@ -260,7 +264,6 @@ void TaskScheduler::enqueue(Event& event, int64_t startTick)
             // If the task is one shot we won't push it to the agenda and we'll
             // remove it from the tasks map.
             (*tasks)[event.task->id].valid = false;
-
             return;
         case Policy::SKIP:
             // Updated the missed events count

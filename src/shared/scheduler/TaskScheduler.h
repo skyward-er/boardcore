@@ -191,7 +191,7 @@ private:
      * \param startTick Activation tick, needed to update the nextTick value of
      * the event.
      */
-    void enqueue(Event& event, int64_t startTick);
+    void enqueue(Event event, int64_t startTick);
 
     /**
      * @brief Creates a task with the passed values
