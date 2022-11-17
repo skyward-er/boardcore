@@ -89,7 +89,7 @@ size_t TaskScheduler::addTask(function_t function, uint32_t period,
     return id;
 }
 
-bool TaskScheduler::removeTask(uint8_t id)
+bool TaskScheduler::removeTask(size_t id)
 {
     Lock<FastMutex> lock(mutex);
 
@@ -138,7 +138,7 @@ vector<TaskStatsResult> TaskScheduler::getTaskStats()
 
     vector<TaskStatsResult> result;
 
-    for (auto& task : (*tasks))
+    for (auto const& task : (*tasks))
     {
         if (task.valid)
         {

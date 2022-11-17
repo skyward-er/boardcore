@@ -94,7 +94,8 @@ public:
         RECOVER    ///< Prioritize the number of executions over the period.
     };
 
-    TaskScheduler(miosix::Priority priority = miosix::PRIORITY_MAX - 1);
+    explicit TaskScheduler(miosix::Priority priority = miosix::PRIORITY_MAX -
+                                                       1);
 
     ~TaskScheduler();
 
@@ -109,7 +110,7 @@ public:
      * executed immediately, otherwise after the given period.
      *
      * @param function Function to be called periodically.
-     * @param period Inter call period.
+     * @param period Inter call period [ms].
      * @param policy Task policy, default is SKIP.
      * @param startTick First activation time, useful for synchronizing tasks.
      * @return true if the task was added successfully.
@@ -124,7 +125,7 @@ public:
      * @param id Id of the task to remove.
      * @return true if the task was removed.
      */
-    bool removeTask(uint8_t id);
+    bool removeTask(size_t id);
 
     bool start() override;
 
@@ -142,7 +143,7 @@ private:
     struct Task
     {
         function_t function;
-        uint32_t period;
+        uint32_t period;  // [ms]
         size_t id;
         bool valid;
         Policy policy;
