@@ -340,6 +340,7 @@
                 "${workspaceFolder}/libs/miosix-kernel/miosix/arch/common",
                 "${workspaceFolder}/libs/miosix-kernel/miosix",
                 "${workspaceFolder}/libs/mxgui/mxgui",
+                "${workspaceFolder}/libs/mxgui",
                 "${workspaceFolder}/libs/mavlink-skyward-lib",
                 "${workspaceFolder}/libs/fmt/include",
                 "${workspaceFolder}/libs/eigen",
