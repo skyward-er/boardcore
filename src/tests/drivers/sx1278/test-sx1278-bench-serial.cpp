@@ -33,16 +33,13 @@
 using namespace Boardcore;
 using namespace miosix;
 
-#if defined _BOARD_STM32F429ZI_SKYWARD_GS
+#if defined _BOARD_STM32F429ZI_SKYWARD_GS_V2
 #include "interfaces-impl/hwmapping.h"
 
-#if 1  // use ra01
-using cs   = peripherals::ra01::cs;
-using dio0 = peripherals::ra01::dio0;
-#else
-using cs   = peripherals::sx127x::cs;
-using dio0 = peripherals::sx127x::dio0;
-#endif
+using cs   = peripherals::ra01::pc13::cs;
+using dio0 = peripherals::ra01::pc13::dio0;
+using dio1 = peripherals::ra01::pc13::dio1;
+using dio3 = peripherals::ra01::pc13::dio3;
 
 using sck  = interfaces::spi4::sck;
 using miso = interfaces::spi4::miso;
@@ -50,43 +47,54 @@ using mosi = interfaces::spi4::mosi;
 
 #define SX1278_SPI SPI4
 
-#elif defined _BOARD_STM32F429ZI_SKYWARD_DEATHST_V3
-#include "interfaces-impl/hwmapping.h"
-
-using cs   = sensors::sx127x::cs;
-using dio0 = sensors::sx127x::dio0;
-
-using sck  = interfaces::spi5::sck;
-using miso = interfaces::spi5::miso;
-using mosi = interfaces::spi5::mosi;
-
-#define SX1278_SPI SPI5
+#define SX1278_IRQ_DIO0 EXTI6_IRQHandlerImpl
+#define SX1278_IRQ_DIO1 EXTI2_IRQHandlerImpl
+#define SX1278_IRQ_DIO3 EXTI11_IRQHandlerImpl
 
 #else
 #error "Target not supported"
 #endif
 
-#if defined _BOARD_STM32F429ZI_SKYWARD_GS
-void __attribute__((used)) EXTI6_IRQHandlerImpl()
-#elif defined _BOARD_STM32F429ZI_SKYWARD_DEATHST_V3
-void __attribute__((used)) EXTI10_IRQHandlerImpl()
-#else
-#error "Target not supported"
-#endif
+volatile int dio0_cnt = 0;
+volatile int dio1_cnt = 0;
+volatile int dio3_cnt = 0;
+
+void __attribute__((used)) SX1278_IRQ_DIO0()
 {
     if (sx1278)
         sx1278->handleDioIRQ();
+
+    dio0_cnt++;
+}
+
+void __attribute__((used)) SX1278_IRQ_DIO1()
+{
+    // if (sx1278)
+    //     sx1278->handleDioIRQ();
+
+    dio1_cnt++;
+}
+
+void __attribute__((used)) SX1278_IRQ_DIO3()
+{
+    // if (sx1278)
+    //     sx1278->handleDioIRQ();
+
+    dio3_cnt++;
 }
 
 void initBoard()
 {
-#if defined _BOARD_STM32F429ZI_SKYWARD_GS
-    enableExternalInterrupt(GPIOF_BASE, 6, InterruptTrigger::RISING_EDGE);
-#elif defined _BOARD_STM32F429ZI_SKYWARD_DEATHST_V3
-    enableExternalInterrupt(GPIOF_BASE, 10, InterruptTrigger::RISING_EDGE);
-#else
-#error "Target not supported"
-#endif
+    GpioPin dio0_pin = dio0::getPin();
+    GpioPin dio1_pin = dio1::getPin();
+    GpioPin dio3_pin = dio3::getPin();
+
+    enableExternalInterrupt(dio0_pin.getPort(), dio0_pin.getNumber(),
+                            InterruptTrigger::RISING_EDGE);
+    enableExternalInterrupt(dio1_pin.getPort(), dio1_pin.getNumber(),
+                            InterruptTrigger::RISING_EDGE);
+    enableExternalInterrupt(dio3_pin.getPort(), dio3_pin.getNumber(),
+                            InterruptTrigger::RISING_EDGE);
 }
 
 int main()
@@ -94,7 +102,17 @@ int main()
     initBoard();
 
     // Run default configuration
-    SX1278::Config config;
+    SX1278::Config config = {
+        .freq_rf  = 422075000,
+        .freq_dev = 25000,
+        .bitrate  = 19200,
+        .rx_bw    = Boardcore::SX1278::RxBw::HZ_83300,
+        .afc_bw   = Boardcore::SX1278::RxBw::HZ_125000,
+        .ocp      = 120,
+        .power    = 17,
+        .shaping  = Boardcore::SX1278::Shaping::GAUSSIAN_BT_1_0,
+        .dc_free  = Boardcore::SX1278::DcFree::WHITENING};
+
     SX1278::Error err;
 
     SPIBus bus(SX1278_SPI);
@@ -126,11 +144,14 @@ int main()
             "Corrupted packets: %d\n"
             "Packet loss:       %.2f %%\n"
             "RSSI:              %.2f dBm\n"
-            "FEI:               %.2f dBm\n",
+            "FEI:               %.2f dBm\n"
+            "dio0:              %d\n"
+            "dio1:              %d\n"
+            "dio3:              %d\n",
             static_cast<float>(stats.txBitrate()) / 1000.0f, stats.sent_count,
             static_cast<float>(stats.rxBitrate()) / 1000.0f, stats.recv_count,
             stats.corrupted_count, 0.0f /* TODO: Packet loss */, stats.rssi,
-            stats.fei);
+            stats.fei, dio0_cnt, dio1_cnt, dio3_cnt);
 
         miosix::Thread::sleep(2000);
     }

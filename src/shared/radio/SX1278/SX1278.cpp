@@ -243,8 +243,11 @@ bool SX1278::configure(const Config &config)
         spi.writeRegister(REG_NODE_ADRS, 0x00);
         spi.writeRegister(REG_BROADCAST_ADRS, 0x00);
 
-        // Enable PayloadReady, PacketSent on DIO0
-        spi.writeRegister(REG_DIO_MAPPING_1, 0x00);
+        // Enable:
+        // - PayloadReady, PacketSent on DIO0 (mode 00)
+        // - FifoLevel on DIO1 (mode 00)
+        // - TxReady on DIO3 (mode 01)
+        spi.writeRegister(REG_DIO_MAPPING_1, 0b01);
     }
 
     // imageCalibrate();

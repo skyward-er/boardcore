@@ -258,39 +258,41 @@ sbs_target(test-fsm stm32f429zi_stm32f4discovery)
 # add_executable(test-sx1278-bidir src/tests/drivers/sx1278/test-sx1278-bidir.cpp)
 # sbs_target(test-sx1278-bidir stm32f407vg_stm32f4discovery)
 
-add_executable(test-sx1278-bidir-gs src/tests/drivers/sx1278/test-sx1278-bidir.cpp)
-sbs_target(test-sx1278-bidir-gs stm32f429zi_skyward_groundstation)
-
-add_executable(test-sx1278-bidir-v3 src/tests/drivers/sx1278/test-sx1278-bidir.cpp)
-sbs_target(test-sx1278-bidir-v3 stm32f429zi_skyward_death_stack_v3)
+# TODO(davide.mor): Fix these
+# add_executable(test-sx1278-bidir-gs src/tests/drivers/sx1278/test-sx1278-bidir.cpp)
+# sbs_target(test-sx1278-bidir-gs stm32f429zi_skyward_groundstation)
+#
+# add_executable(test-sx1278-bidir-v3 src/tests/drivers/sx1278/test-sx1278-bidir.cpp)
+# sbs_target(test-sx1278-bidir-v3 stm32f429zi_skyward_death_stack_v3)
 
 add_executable(test-sx1278-tx src/tests/drivers/sx1278/test-sx1278-bench-serial.cpp)
 target_compile_definitions(test-sx1278-tx PRIVATE DISABLE_RX)
-sbs_target(test-sx1278-tx stm32f429zi_skyward_groundstation)
+sbs_target(test-sx1278-tx stm32f429zi_skyward_groundstation_v2)
 
 add_executable(test-sx1278-rx src/tests/drivers/sx1278/test-sx1278-bench-serial.cpp)
 target_compile_definitions(test-sx1278-rx PRIVATE DISABLE_TX)
-sbs_target(test-sx1278-rx stm32f429zi_skyward_groundstation)
+sbs_target(test-sx1278-rx stm32f429zi_skyward_groundstation_v2)
 
 add_executable(test-sx1278-gui src/tests/drivers/sx1278/test-sx1278-bench-gui.cpp)
-sbs_target(test-sx1278-gui stm32f429zi_skyward_groundstation)
+sbs_target(test-sx1278-gui stm32f429zi_skyward_groundstation_v2)
 
 add_executable(test-sx1278-gui-rx src/tests/drivers/sx1278/test-sx1278-bench-gui.cpp)
 target_compile_definitions(test-sx1278-gui-rx PRIVATE DISABLE_TX)
-sbs_target(test-sx1278-gui-rx stm32f429zi_skyward_groundstation)
+sbs_target(test-sx1278-gui-rx stm32f429zi_skyward_groundstation_v2)
 
 add_executable(test-sx1278-gui-tx src/tests/drivers/sx1278/test-sx1278-bench-gui.cpp)
 target_compile_definitions(test-sx1278-gui-tx PRIVATE DISABLE_RX)
-sbs_target(test-sx1278-gui-tx stm32f429zi_skyward_groundstation)
+sbs_target(test-sx1278-gui-tx stm32f429zi_skyward_groundstation_v2)
 
-add_executable(test-sx1278-mavlink src/tests/drivers/sx1278/test-sx1278-mavlink.cpp)
-sbs_target(test-sx1278-mavlink stm32f429zi_skyward_groundstation_v2)
-
-add_executable(test-sx1278-serial src/tests/drivers/sx1278/test-sx1278-serial.cpp)
-sbs_target(test-sx1278-serial stm32f429zi_stm32f4discovery)
-
-add_executable(test-mavlinkdriver src/tests/radio/test-mavlinkdriver.cpp)
-sbs_target(test-mavlinkdriver stm32f407vg_stm32f4discovery)
+# TODO(davide.mor): Fix these
+# add_executable(test-sx1278-mavlink src/tests/drivers/sx1278/test-sx1278-mavlink.cpp)
+# sbs_target(test-sx1278-mavlink stm32f429zi_skyward_groundstation_v2)
+#
+# add_executable(test-sx1278-serial src/tests/drivers/sx1278/test-sx1278-serial.cpp)
+# sbs_target(test-sx1278-serial stm32f429zi_stm32f4discovery)
+#
+# add_executable(test-mavlinkdriver src/tests/radio/test-mavlinkdriver.cpp)
+# sbs_target(test-mavlinkdriver stm32f407vg_stm32f4discovery)
 
 #-----------------------------------------------------------------------------#
 #                               Tests - Sensors                               #
