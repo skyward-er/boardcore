@@ -26,6 +26,9 @@
 #include <stdint.h>
 #include <utils/Debug.h>
 
+#include <array>
+#include <atomic>
+
 namespace Boardcore
 {
 class Module
@@ -39,32 +42,61 @@ class ModuleManager : public Singleton<ModuleManager>
     friend class Singleton<ModuleManager>;
 
 private:
+    static constexpr size_t MODULES_NUMBER = 256;
+
     /**
      * @brief Array that contains all the possible modules created with the
      * maximum number of modules
      */
-    Module *modules[256] = {nullptr};
+    std::array<Module *, MODULES_NUMBER> modules = {nullptr};
 
     /**
-     * @brief Id that stores the maximum id assigned so far
+     * @brief Id that stores the maximum id assigned so far (atomic)
      */
-    uint8_t currentId = 0;
+    std::atomic<size_t> currentId;
 
     /**
      * @brief This function "assigns" to every type a unique sequential id
      * based on the already assigned ones
      */
     template <typename T>
-    uint8_t getId()
+    size_t getId()
     {
         // This thing works because a new static variable newId is created for
         // every type T and the initial assignment is "called" only when the
         // static variable is created
-        static uint8_t newId = currentId == 255 ? 255 : currentId++;
+        static size_t newId =
+            currentId == MODULES_NUMBER ? MODULES_NUMBER : currentId++;
         return newId;
     }
 
 public:
+    /**
+     * @brief Construct a new Module Manager object and initialize the current
+     * id and vector
+     */
+    ModuleManager()
+    {
+        // Init the first ID
+        currentId = 0;
+    }
+
+    /**
+     * @brief Destroy the Module Manager object and delete all the modules
+     */
+    ~ModuleManager()
+    {
+        // Delete all the modules to avoid memory leak
+        for (size_t i = 0; i < MODULES_NUMBER; i++)
+        {
+            // Delete the object created with a new
+            delete modules[i];
+
+            // Set the pointer to null for further insertions
+            modules[i] = nullptr;
+        }
+    }
+
     /**
      * @brief Inserts the module inside the array if not already present
      */
@@ -76,7 +108,7 @@ public:
                       "Class must be subclass of Module");
 
         // Take the module type
-        uint8_t id = getId<T>();
+        size_t id = getId<T>();
 
         // Only if the module isn't already present i add it
         if (modules[id] == nullptr)
@@ -94,7 +126,7 @@ public:
                       "Class must be subclass of Module");
 
         // Take the module type
-        uint8_t id = getId<T>();
+        size_t id = getId<T>();
 
         // Only if the module is actually present i remove it
         if (modules[id] != nullptr)
@@ -119,7 +151,7 @@ public:
                       "Class must be subclass of Module");
 
         // Retrieve the module type
-        uint8_t id = getId<T>();
+        size_t id = getId<T>();
 
         // If the module is actually present
         if (modules[id] != nullptr)
@@ -128,8 +160,9 @@ public:
             return static_cast<T *>(modules[id]);
         }
 
-        // This this part should not be considered properly working, so there is
-        // an assert
+        // The fact that a user is trying to access to a non previously added
+        // module should not be considered properly working, so there is an
+        // assert
         D(assert(modules[id] == nullptr));
 
         // I don't have any module with that type in the array so i instantiate
