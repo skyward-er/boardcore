@@ -458,9 +458,12 @@ int I2C::write(uint16_t slaveAddress, void *buffer, size_t nBytes,
 bool I2C::prologue(uint16_t slaveAddress, bool writeOperation, size_t nBytes)
 {
     // Generating start condition if bus not busy -> passing in Master mode
-    // [WARNING] BUSY WAIT
-    while (i2c->SR2 & I2C_SR2_BUSY)
+    uint32_t i{0};
+    for (; i < MAX_N_POLLING && i2c->SR2 & I2C_SR2_BUSY; ++i)
         ;
+
+    if (i == MAX_N_POLLING)
+        return false;
 
     {
         miosix::InterruptDisableLock dLock;

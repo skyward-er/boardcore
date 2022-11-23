@@ -148,6 +148,9 @@ protected:
      */
     bool prologue(uint16_t slaveAddress, bool writeOperation, size_t nBytes);
 
+    static const int MAX_N_POLLING =
+        2000;  ///< Maximum number of cycles for polling
+
     uint8_t id;
     IRQn_Type irqnEv;
     IRQn_Type irqnErr;
