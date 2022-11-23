@@ -291,6 +291,8 @@ I2C::~I2C()
 
 bool I2C::init()
 {
+    miosix::Lock<miosix::FastMutex> lock(mutex);
+
     if (initialized)
     {
         LOG_ERR(logger, "Peripheral already initialized!");
