@@ -25,13 +25,16 @@
 #include <kernel/scheduler/scheduler.h>
 #include <utils/ClockUtils.h>
 
-// MACRO in order to avoid repeated pattern: This waits until the thread isn't
-// waken up by an I2C interrupt (EV or ERR). This MACRO shuould be called in a
-// block where interrupts are disabled; this handles the waiting and yielding
-// and the management of the flags for the interrupts.
-// [WARNING] If the flag
-// identified in REG at the end is false or the error interrupt has been invoked
-// the macro makes the OUTER (!) function return with the value passed in RETVAL
+/**
+ * MACRO in order to avoid repeated pattern: This waits until the thread isn't
+ * waken up by an I2C interrupt (EV or ERR). This MACRO shuould be called in a
+ * block where interrupts are disabled; this handles the waiting and yielding
+ * and the management of the flags for the interrupts.
+ *
+ * [WARNING] If the flag identified in REG after wakeup is false or the error
+ * interrupt has been invoked the macro makes the OUTER (!) function return with
+ * the value passed in RETVAL.
+ */
 #define WAIT_FOR_REGISTER_CHANGE(REG, DLOCK, RETVAL)   \
     waiting = miosix::Thread::getCurrentThread();      \
     while (waiting)                                    \
@@ -64,7 +67,6 @@ inline void wakeUpWaitingThread(miosix::Thread *waiting)
     }
 }
 
-//** I2C1 **//
 /**
  * I2C address sent interrupt
  */
@@ -107,7 +109,6 @@ void __attribute__((used)) I2C1errHandlerImpl()
 
 #if defined(STM32F429xx) || defined(STM32F407xx) || defined(STM32F746xx) || \
     defined(STM32F767xx)
-//** I2C2 **//
 /**
  * I2C address sent interrupt
  */
@@ -148,7 +149,6 @@ void __attribute__((used)) I2C2errHandlerImpl()
         port->IRQhandleErrInterrupt();
 }
 
-//** I2C3 **//
 /**
  * I2C address sent interrupt
  */
@@ -190,7 +190,6 @@ void __attribute__((used)) I2C3errHandlerImpl()
 }
 
 #if defined(STM32F746xx) || defined(STM32F767xx)
-//** I2C4 **//
 /**
  * I2C address sent interrupt
  */

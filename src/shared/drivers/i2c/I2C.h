@@ -63,19 +63,8 @@ namespace Boardcore
 {
 
 /**
- * Features implemented:
- * - Functions for all the I2C peripherals
- * - setting Speed modes Standard (100kbps) and Fast (400kbps, with dutycycle
- * hardcoded to 1-2 and not 9-16)
- *
- *
- * Features to be implemented:
- * - General call address detection
- * - DMA
- * - analog noise filter
- * - Programmable digital noise filter
- * - PEC (Packet Error Checking)
- *
+ * Thread safe driver for all I2C peripherals. It implements only the Master
+ * logic and supports Standard/Fast speed modes and 7bit/10bit addressing.
  */
 class I2C
 {
