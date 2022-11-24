@@ -97,6 +97,7 @@ pages:
   stage: documentation
   only:
     - main
+    - pipeline
   script:
     - doxygen doc/Doxyfile
     - mv doc/output/html public
