@@ -1,7 +1,7 @@
 ![alt text](https://avatars2.githubusercontent.com/u/8077370?s=200&v=4)
 
 Skyward Boardcore
-[![pipeline status](https://git.skywarder.eu/scs/skyward-boardcore/badges/master/pipeline.svg)](https://git.skywarder.eu/scs/skyward-boardcore/commits/master)
+[![pipeline status](https://git.skywarder.eu/avn/swd/skyward-boardcore/badges/main/pipeline.svg)](https://git.skywarder.eu/scs/skyward-boardcore/commits/master)
 -------------
 
 Boardcore is a framework for developing and building missile software for custom boards with Miosix.
