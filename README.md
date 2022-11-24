@@ -1,10 +1,8 @@
-<p align="center">
+<div align="center">
 	<img src="https://avatars2.githubusercontent.com/u/8077370?s=200&v=4" alt="Skyward" width="200"></a>
-</p>
-<h2 align="center">Skyward Boardcore</h2>
-<p align="center">
-	<a href="https://git.skywarder.eu/avn/swd/skyward-boardcore/-/pipelines"><img src="https://git.skywarder.eu/avn/swd/skyward-boardcore/badges/main/pipeline.svg"></a>
-</p>
+<h2>Skyward Boardcore</h2>
+<a href="https://git.skywarder.eu/avn/swd/skyward-boardcore/-/pipelines"><img src="https://git.skywarder.eu/avn/swd/skyward-boardcore/badges/main/pipeline.svg"></a>
+</div>
 
 Boardcore is a framework for developing and building rockets software for custom boards with Miosix.
 
@@ -12,7 +10,7 @@ Boardcore is a framework for developing and building rockets software for custom
 
 Building is made with [SBS](https://git.skywarder.eu/avn/swd/skyward-boardcore/wikis/Skyward-Build-System-(SBS)), which was created to easily compile and reuse code for different boards.
 
-### Content
+## Content
 
 | Path             | Description                                                 |
 | ---------------- | ----------------------------------------------------------- |
@@ -25,9 +23,9 @@ Building is made with [SBS](https://git.skywarder.eu/avn/swd/skyward-boardcore/w
 
 In the main folder you will find **CMakeLists.txt** which is used to configure the build system.
 
-### Getting Started
+## Getting Started
 
-#### Dependencies
+### Dependencies
 
 * CMake
 * Git
@@ -35,7 +33,7 @@ In the main folder you will find **CMakeLists.txt** which is used to configure t
 
 Also, Ccache, Ninja, OpenOCD, Cppcheck, clang-format and pre-commit are recommended for a better experience.
 
-#### Cloning the repo
+### Cloning the repo
 
 Clone this repo with the `--recursive` option.
 ```sh
@@ -43,7 +41,7 @@ git clone --recursive https://git.skywarder.eu/avn/swd/skyward-boardcore.git
 cd skyward-boardcore
 ```
 
-### Building
+## Building
 
 You can build everything using the SBS script:
 ```sh
@@ -60,7 +58,11 @@ cmake -DCMAKE_C_COMPILER_LAUNCHER=ccache -DCMAKE_CXX_COMPILER_LAUNCHER=ccache -D
 cmake --build .
 ```
 
-### Contributing
+## Documentation
+
+The code is documented with Doxygen, check it [here](http://avn.pages.skywarder.eu/swd/skyward-boardcore).
+
+## Contributing
 
 You can install a pre-commit hook to ensure changes to the code will pass CI:
 
@@ -68,7 +70,7 @@ You can install a pre-commit hook to ensure changes to the code will pass CI:
 pre-commit install
 ```
 
-### What's next?
+## What's next?
 
 In the [Wiki](https://git.skywarder.eu/avn/swd/skyward-boardcore/wikis/home) you will find some first-steps **guides** (configuring the IDE, building a firmware, etc.) as well as the **coding guidelines** and some **best practices** we adopt.
 
