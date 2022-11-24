@@ -23,35 +23,29 @@ variables:
   GIT_SUBMODULE_STRATEGY: recursive
 
 stages:
-  - build-release
-  - build-debug
-  - build-logdecoder
+  - build
   - test
   - lint
   - documentation
 
-# Stage build-release
+# Stage build
 
 build-release:
-  stage: build-release
+  stage: build
   tags:
     - miosix
   script:
     - ./sbs
 
-# Stage build-debug
-
 build-debug:
-  stage: build-debug
+  stage: build
   tags:
     - miosix
   script:
     - ./sbs --debug
 
-# Stage build-logdecoder
-
 build-logdecoder:
-  stage: build-logdecoder
+  stage: build
   tags:
     - miosix
   script:
@@ -106,6 +100,7 @@ pages:
     - pipeline
   script:
     - doxygen doc/Doxyfile
+    - mv doc/output/html public
   artifacts:
     paths:
-      - doc/output/html
+      - public
