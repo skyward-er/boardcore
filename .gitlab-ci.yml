@@ -99,16 +99,13 @@ find:
 
 # Stage documentation
 
-documentation:
+pages:
   stage: documentation
   only:
-    - master
-  tags:
-    - copyright
+    - main
+    - pipeline
   script:
-    - echo "Generate documentation to https://documentation.skywarder.eu/${CI_PROJECT_NAME}/${CI_COMMIT_REF_NAME}"
-    - rm -rf doc/output
     - doxygen doc/Doxyfile
-    - rm -rf /srv/code_documentation/${CI_PROJECT_NAME}/${CI_COMMIT_REF_NAME}
-    - mkdir -p /srv/code_documentation/${CI_PROJECT_NAME}/
-    - mv doc/output/html /srv/code_documentation/${CI_PROJECT_NAME}/${CI_COMMIT_REF_NAME}
+  artifacts:
+    paths:
+      - doc/output/html
