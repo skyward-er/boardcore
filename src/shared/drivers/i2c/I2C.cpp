@@ -52,7 +52,9 @@
         return RETVAL;                                 \
     }
 
-Boardcore::I2C *Boardcore::I2C::ports[N_I2C_PORTS];
+static Boardcore::I2C
+    *ports[N_I2C_PORTS];  ///< Pointer to serial port classes to let interrupts
+                          ///< access the classes
 
 inline void wakeUpWaitingThread(miosix::Thread *waiting)
 {
@@ -82,7 +84,7 @@ void __attribute__((naked)) I2C1_EV_IRQHandler()
  */
 void __attribute__((used)) I2C1HandlerImpl()
 {
-    Boardcore::I2C *port = Boardcore::I2C::ports[0];
+    Boardcore::I2C *port = ports[0];
     if (port)
         port->IRQhandleInterrupt();
 }
@@ -102,7 +104,7 @@ void __attribute__((naked)) I2C1_ER_IRQHandler()
  */
 void __attribute__((used)) I2C1errHandlerImpl()
 {
-    Boardcore::I2C *port = Boardcore::I2C::ports[0];
+    Boardcore::I2C *port = ports[0];
     if (port)
         port->IRQhandleErrInterrupt();
 }
@@ -124,7 +126,7 @@ void __attribute__((naked)) I2C2_EV_IRQHandler()
  */
 void __attribute__((used)) I2C2HandlerImpl()
 {
-    Boardcore::I2C *port = Boardcore::I2C::ports[1];
+    Boardcore::I2C *port = ports[1];
     if (port)
         port->IRQhandleInterrupt();
 }
@@ -144,7 +146,7 @@ void __attribute__((naked)) I2C2_ER_IRQHandler()
  */
 void __attribute__((used)) I2C2errHandlerImpl()
 {
-    Boardcore::I2C *port = Boardcore::I2C::ports[1];
+    Boardcore::I2C *port = ports[1];
     if (port)
         port->IRQhandleErrInterrupt();
 }
@@ -164,7 +166,7 @@ void __attribute__((naked)) I2C3_EV_IRQHandler()
  */
 void __attribute__((used)) I2C3HandlerImpl()
 {
-    Boardcore::I2C *port = Boardcore::I2C::ports[2];
+    Boardcore::I2C *port = ports[2];
     if (port)
         port->IRQhandleInterrupt();
 }
@@ -184,7 +186,7 @@ void __attribute__((naked)) I2C3_ER_IRQHandler()
  */
 void __attribute__((used)) I2C3errHandlerImpl()
 {
-    Boardcore::I2C *port = Boardcore::I2C::ports[2];
+    Boardcore::I2C *port = ports[2];
     if (port)
         port->IRQhandleErrInterrupt();
 }
@@ -205,7 +207,7 @@ void __attribute__((naked)) I2C4_EV_IRQHandler()
  */
 void __attribute__((used)) I2C4HandlerImpl()
 {
-    Boardcore::I2C *port = Boardcore::I2C::ports[3];
+    Boardcore::I2C *port = ports[3];
     if (port)
         port->IRQhandleInterrupt();
 }
@@ -225,7 +227,7 @@ void __attribute__((naked)) I2C4_ER_IRQHandler()
  */
 void __attribute__((used)) I2C4errHandlerImpl()
 {
-    Boardcore::I2C *port = Boardcore::I2C::ports[3];
+    Boardcore::I2C *port = ports[3];
     if (port)
         port->IRQhandleErrInterrupt();
 }
@@ -276,7 +278,7 @@ I2C::I2C(I2CType *i2c, Speed speed, Addressing addressing, uint16_t address)
 I2C::~I2C()
 {
     // removing the relative i2c port from the array
-    I2C::ports[id - 1] = 0;
+    ports[id - 1] = 0;
 
     // Disabling the interrupts (Ev and Err) in the NVIC for the relative i2c
     NVIC_DisableIRQ(irqnEv);
@@ -367,7 +369,7 @@ bool I2C::init()
                 (addressing << 15);  // Selecting the addressing mode
 
     // Add to the array of i2c peripherals so that the interrupts can see it
-    I2C::ports[id - 1] = this;
+    ports[id - 1] = this;
 
     // Finally enabling the peripheral
     i2c->CR1 |= I2C_CR1_PE;

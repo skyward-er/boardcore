@@ -87,9 +87,6 @@ public:
         BIT10 = 1
     };
 
-    ///< Pointer to serial port classes to let interrupts access the classes
-    static I2C *ports[];
-
     /**
      * @param i2c structure that represents the I2C peripheral
      * @param speed the speed mode of the I2C communication
