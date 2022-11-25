@@ -91,9 +91,6 @@ public:
         {
             // Delete the object created with a new
             delete modules[i];
-
-            // Set the pointer to null for further insertions
-            modules[i] = nullptr;
         }
     }
 
@@ -110,9 +107,12 @@ public:
         // Take the module type
         size_t id = getId<T>();
 
-        // Only if the module isn't already present i add it
+        // Only if the module isn't already present i add it casting to the
+        // module interface.
         if (modules[id] == nullptr)
+        {
             modules[id] = static_cast<Module *>(element);
+        }
     }
 
     /**
@@ -128,7 +128,8 @@ public:
         // Take the module type
         size_t id = getId<T>();
 
-        // Only if the module is actually present i remove it
+        // Only if the module is actually present i remove it avoiding memory
+        // leaks
         if (modules[id] != nullptr)
         {
             // Call the destruction method
@@ -153,7 +154,8 @@ public:
         // Retrieve the module type
         size_t id = getId<T>();
 
-        // If the module is actually present
+        // If the module is actually present i return it by downcasting the
+        // object. It can be done because at every type, a unique id is assigned
         if (modules[id] != nullptr)
         {
             // If the types are the same return the casted one
