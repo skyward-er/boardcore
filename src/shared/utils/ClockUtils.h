@@ -71,9 +71,6 @@ inline uint32_t ClockUtils::getAPBFrequency(APB bus)
     // The timer frequency may be a submultiple of the CPU frequency, due to the
     // bus at which the peripheral is connected being slower.
     // The RCC-ZCFGR register tells us how slower the APB bus is running.
-    // The following formula takes into account that if the APB1 clock is
-    // divided by a factor of two or grater, the timer is clocked at twice the
-    // bus interface.
     if (bus == APB::APB1)
     {
         // The position of the PPRE1 bit in RCC->CFGR is different in some stm32
@@ -87,7 +84,7 @@ inline uint32_t ClockUtils::getAPBFrequency(APB bus)
 
         if (RCC->CFGR & RCC_CFGR_PPRE1_2)
         {
-            inputFrequency /= 1 << ((RCC->CFGR >> ppre1) & 0x3);
+            inputFrequency /= 2 << ((RCC->CFGR >> ppre1) & 0x3);
         }
     }
     else
@@ -103,7 +100,7 @@ inline uint32_t ClockUtils::getAPBFrequency(APB bus)
 
         if (RCC->CFGR & RCC_CFGR_PPRE2_2)
         {
-            inputFrequency /= 1 << ((RCC->CFGR >> ppre2) >> 0x3);
+            inputFrequency /= 2 << ((RCC->CFGR >> ppre2) >> 0x3);
         }
     }
 
