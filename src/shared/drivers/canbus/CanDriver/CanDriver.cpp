@@ -117,8 +117,13 @@ CanbusDriver::BitTiming CanbusDriver::calcBitTiming(AutoBitTiming autoBt)
     uint8_t NOpt  = 5;
 
     BitTiming cfgIter;
-    cfgIter.SJW     = 0;
-    uint32_t apbclk = ClockUtils::getAPBFrequency(ClockUtils::APB::APB1);
+    cfgIter.SJW = 0;
+    /*
+     * TODO: This is modified only for compatibility with the past, MUST check
+     * the clock settings in order to use the right method
+     * 'getAPBPeripheralsClock()'
+     */
+    uint32_t apbclk = ClockUtils::getAPBTimersClock(ClockUtils::APB::APB1);
 
     // Iterate over the possible number of quanta in a bit to find the best
     // settings
