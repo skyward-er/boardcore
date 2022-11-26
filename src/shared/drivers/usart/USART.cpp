@@ -445,11 +445,15 @@ void USART::setBaudrate(Baudrate baudrate)
      */
     miosix::InterruptDisableLock dLock;
 
-    // USART1 and USART6 is always connected to the APB2, while all the others
+    /*
+     * TODO: This is modified only for compatibility with the past, MUST check
+     * the clock settings in order to use the right method 'getAPBFrequency()'
+     */
+    // USART1 and USART6 are always connected to the APB2, while all the others
     // UART/USART peripherals are always connected to APB1
-    uint32_t f = ClockUtils::getAPBFrequency(
+    uint32_t f = ClockUtils::getAPBFrequencyTimers(
         (id == 1 || id == 6 ? ClockUtils::APB::APB2     // High speed APB2
-                            : ClockUtils::APB::APB1));  // Low speed APB1,
+                            : ClockUtils::APB::APB1));  // Low speed APB1
 
     // <<4 in order to shift to left of 4 positions, to create a fixed point
     // number of 4 decimal digits /8 == >>3 in order to divide per 8 (from the

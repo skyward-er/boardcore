@@ -41,12 +41,20 @@ enum class APB
 };
 
 /**
- * @brief Computes the output frequency for the given APB bus.
+ * @brief Computes the output frequency for the given APB peripheral bus.
  *
  * @param bus Advanced Peripheral Bus
  * @return Prescaler input frequency.
  */
 uint32_t getAPBFrequency(APB bus);
+
+/**
+ * @brief Computes the output frequency for the given APB timer bus.
+ *
+ * @param bus Advanced Peripheral Bus
+ * @return Prescaler input frequency.
+ */
+uint32_t getAPBFrequencyTimers(APB bus);
 
 /**
  * @brief Enables a peripheral clock source from the APB1 and APB2 peripheral
@@ -101,6 +109,51 @@ inline uint32_t ClockUtils::getAPBFrequency(APB bus)
         if (RCC->CFGR & RCC_CFGR_PPRE2_2)
         {
             inputFrequency /= 2 << ((RCC->CFGR >> ppre2) >> 0x3);
+        }
+    }
+
+    return inputFrequency;
+}
+
+inline uint32_t ClockUtils::getAPBFrequencyTimers(APB bus)
+{
+    // The global variable SystemCoreClock from ARM's CMIS allows to know the
+    // CPU frequency.
+    uint32_t inputFrequency = SystemCoreClock;
+
+    // The timer frequency may be a submultiple of the CPU frequency, due to the
+    // bus at which the peripheral is connected being slower.
+    // The RCC-ZCFGR register tells us how slower the APB bus is running.
+    if (bus == APB::APB1)
+    {
+        // The position of the PPRE1 bit in RCC->CFGR is different in some stm32
+#ifdef _ARCH_CORTEXM3_STM32
+        const uint32_t ppre1 = 8;
+#elif _ARCH_CORTEXM4_STM32F4 | _ARCH_CORTEXM3_STM32F2
+        const uint32_t ppre1 = 10;
+#else
+#error "Architecture not supported by TimerUtils"
+#endif
+
+        if (RCC->CFGR & RCC_CFGR_PPRE1_2)
+        {
+            inputFrequency /= 1 << ((RCC->CFGR >> ppre1) & 0x3);
+        }
+    }
+    else
+    {
+        // The position of the PPRE2 bit in RCC->CFGR is different in some stm32
+#ifdef _ARCH_CORTEXM3_STM32
+        const uint32_t ppre2 = 11;
+#elif _ARCH_CORTEXM4_STM32F4 | _ARCH_CORTEXM3_STM32F2
+        const uint32_t ppre2 = 13;
+#else
+#error "Architecture not supported by TimerUtils"
+#endif
+
+        if (RCC->CFGR & RCC_CFGR_PPRE2_2)
+        {
+            inputFrequency /= 1 << ((RCC->CFGR >> ppre2) >> 0x3);
         }
     }
 

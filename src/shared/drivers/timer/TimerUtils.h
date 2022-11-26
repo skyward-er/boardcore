@@ -379,7 +379,7 @@ inline ClockUtils::APB TimerUtils::getTimerInputClock(const TIM_TypeDef *timer)
 
 inline uint32_t TimerUtils::getPrescalerInputFrequency(const TIM_TypeDef *timer)
 {
-    return ClockUtils::getAPBFrequency(getTimerInputClock(timer));
+    return ClockUtils::getAPBFrequencyTimers(getTimerInputClock(timer));
 }
 
 inline uint32_t TimerUtils::getFrequency(TIM_TypeDef *timer)
