@@ -109,8 +109,8 @@ void __attribute__((used)) I2C1errHandlerImpl()
         port->IRQhandleErrInterrupt();
 }
 
-#if defined(STM32F429xx) || defined(STM32F407xx) || defined(STM32F746xx) || \
-    defined(STM32F767xx)
+#if defined(STM32F429xx) || defined(STM32F407xx) || defined(STM32F401xE) || \
+    defined(STM32F746xx) || defined(STM32F767xx)
 /**
  * I2C address sent interrupt
  */
