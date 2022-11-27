@@ -41,35 +41,6 @@ class ModuleManager : public Singleton<ModuleManager>
 {
     friend class Singleton<ModuleManager>;
 
-private:
-    static constexpr size_t MODULES_NUMBER = 256;
-
-    /**
-     * @brief Array that contains all the possible modules created with the
-     * maximum number of modules
-     */
-    std::array<Module *, MODULES_NUMBER> modules = {nullptr};
-
-    /**
-     * @brief Id that stores the maximum id assigned so far (atomic)
-     */
-    std::atomic<size_t> currentId;
-
-    /**
-     * @brief This function "assigns" to every type a unique sequential id
-     * based on the already assigned ones
-     */
-    template <typename T>
-    size_t getId()
-    {
-        // This thing works because a new static variable newId is created for
-        // every type T and the initial assignment is "called" only when the
-        // static variable is created
-        static size_t newId =
-            currentId == MODULES_NUMBER ? MODULES_NUMBER : currentId++;
-        return newId;
-    }
-
 public:
     /**
      * @brief Construct a new Module Manager object and initialize the current
@@ -98,46 +69,35 @@ public:
      * @brief Inserts the module inside the array if not already present
      */
     template <typename T>
-    void insert(T *element)
+    bool insert(T *element)
     {
         // Verify that T is a subclass of module
         static_assert(std::is_base_of<Module, T>(),
                       "Class must be subclass of Module");
+        static_assert((std::is_same<Module, T>() == false),
+                      "Class must be subclass of Module and not Module itself");
 
         // Take the module type
         size_t id = getId<T>();
+
+        // This is the case in which the last slot is being occupied, so i
+        // return a failure
+        if (id == MODULES_NUMBER - 1)
+        {
+            return false;
+        }
 
         // Only if the module isn't already present i add it casting to the
         // module interface.
         if (modules[id] == nullptr)
         {
             modules[id] = static_cast<Module *>(element);
+            return true;
         }
-    }
 
-    /**
-     * @brief Removes a particular module inside the array if present
-     */
-    template <typename T>
-    void remove()
-    {
-        // Verify that T is a subclass of module
-        static_assert(std::is_base_of<Module, T>(),
-                      "Class must be subclass of Module");
-
-        // Take the module type
-        size_t id = getId<T>();
-
-        // Only if the module is actually present i remove it avoiding memory
-        // leaks
-        if (modules[id] != nullptr)
-        {
-            // Call the destruction method
-            delete modules[id];
-
-            // Then remove the entry from the array
-            modules[id] = nullptr;
-        }
+        // This is the case when someone tries to insert an already existing
+        // module
+        return false;
     }
 
     /**
@@ -150,6 +110,8 @@ public:
         // Verify that T is a subclass of module
         static_assert(std::is_base_of<Module, T>(),
                       "Class must be subclass of Module");
+        static_assert((std::is_same<Module, T>() == false),
+                      "Class must be subclass of Module and not Module itself");
 
         // Retrieve the module type
         size_t id = getId<T>();
@@ -165,13 +127,41 @@ public:
         // The fact that a user is trying to access to a non previously added
         // module should not be considered properly working, so there is an
         // assert
-        D(assert(modules[id] == nullptr));
+        assert(modules[id] == nullptr);
 
-        // I don't have any module with that type in the array so i instantiate
-        // one. IF YOU ENCOUNTER A COMPILATION ERROR HERE IS PROBABLY BECAUSE
-        // THE UPPER INTERFACE COULD NOT BE INSTANCED
-        insert<T>(new T());
-        return static_cast<T *>(modules[id]);
+        // The nullptr is returned because after the assert it is pretty clear
+        // whether it would crash the software or not in debug mode. Also,
+        // trying to instantiate the module may result in an unwanted behaviour
+        return nullptr;
+    }
+
+private:
+    static constexpr size_t MODULES_NUMBER = 256;
+
+    /**
+     * @brief Array that contains all the possible modules created with the
+     * maximum number of modules
+     */
+    std::array<Module *, MODULES_NUMBER> modules = {nullptr};
+
+    /**
+     * @brief Id that stores the maximum id assigned so far (atomic)
+     */
+    std::atomic<size_t> currentId;
+
+    /**
+     * @brief This function "assigns" to every type a unique sequential id
+     * based on the already assigned ones
+     */
+    template <typename T>
+    size_t getId()
+    {
+        // This thing works because a new static variable newId is created for
+        // every type T and the initial assignment is "called" only when the
+        // static variable is created
+        static size_t newId =
+            currentId == MODULES_NUMBER ? MODULES_NUMBER : currentId++;
+        return newId;
     }
 };
 }  // namespace Boardcore

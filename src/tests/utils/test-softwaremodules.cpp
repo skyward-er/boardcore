@@ -79,7 +79,6 @@ int main()
          << ModuleManager::getInstance().get<Radio>()->getDummy() << endl;
 
     ModuleManager::getInstance().get<Radio>()->setDummy(3000);
-    ModuleManager::getInstance().remove<SensorsModule>();
 
     cout << ModuleManager::getInstance().get<SensorsModule>()->getDummy() << ","
          << ModuleManager::getInstance().get<Radio>()->getDummy() << endl;
