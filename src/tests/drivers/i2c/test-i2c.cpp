@@ -91,17 +91,6 @@ void i2cDriverOLED()
 #ifndef I2C_MIOSIX
     I2C i2c(I2C1, I2C::Speed::STANDARD, I2C::Addressing::BIT7, address);
 
-    if (!i2c.init())
-        printf("errore inizializzando i2c\n");
-    else
-        printf("initialized!\n");
-
-    // pin settings
-    i1sda2::getPin().mode(miosix::Mode::ALTERNATE);
-    i1sda2::getPin().alternateFunction(4);
-    i1scl2::getPin().mode(miosix::Mode::ALTERNATE);
-    i1scl2::getPin().alternateFunction(4);
-
     for (;;)
     {
         buffer[0] = 0;
@@ -131,15 +120,10 @@ void i2cDriverOLED()
     miosix::Thread::sleep(1000);
 }
 
-void i2cDriver()
+void i2cDriverBMP()
 {
 #ifndef I2C_MIOSIX
     I2C i2c(I2C1, I2C::Speed::STANDARD, I2C::Addressing::BIT7, address);
-
-    if (!i2c.init())
-        printf("errore inizializzando i2c\n");
-    else
-        printf("initialized!\n");
 
     i2c.write(BMP180.addressSensor, BMP180.softReset, 2, true);
 
@@ -174,6 +158,12 @@ void i2cDriver()
 
 int main()
 {
+    // pin settings
+    i1sda2::getPin().mode(miosix::Mode::ALTERNATE);
+    i1sda2::getPin().alternateFunction(4);
+    i1scl2::getPin().mode(miosix::Mode::ALTERNATE);
+    i1scl2::getPin().alternateFunction(4);
+
     i2cDriverOLED();
 
     return 0;

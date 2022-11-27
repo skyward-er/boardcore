@@ -22,8 +22,10 @@
 
 #include "I2C.h"
 
+#include <assert.h>
 #include <kernel/scheduler/scheduler.h>
 #include <utils/ClockUtils.h>
+#include <utils/Debug.h>
 
 /**
  * MACRO in order to avoid repeated pattern: This waits until the thread isn't
@@ -35,6 +37,9 @@
  * interrupt has been invoked the macro makes the OUTER (!) function return with
  * the value passed in RETVAL.
  */
+
+// inline bool waitForRegisterChange() {}
+
 #define WAIT_FOR_REGISTER_CHANGE(REG, DLOCK, RETVAL)   \
     waiting = miosix::Thread::getCurrentThread();      \
     while (waiting)                                    \
@@ -69,7 +74,7 @@ inline void wakeUpWaitingThread(miosix::Thread *waiting)
     }
 }
 
-#ifdef I2C1_BASE
+#ifdef I2C1
 /**
  * I2C address sent interrupt
  */
@@ -111,7 +116,7 @@ void __attribute__((used)) I2C1errHandlerImpl()
 }
 #endif
 
-#ifdef I2C2_BASE
+#ifdef I2C2
 /**
  * I2C address sent interrupt
  */
@@ -153,7 +158,7 @@ void __attribute__((used)) I2C2errHandlerImpl()
 }
 #endif
 
-#ifdef I2C3_BASE
+#ifdef I2C3
 /**
  * I2C address sent interrupt
  */
@@ -195,7 +200,7 @@ void __attribute__((used)) I2C3errHandlerImpl()
 }
 #endif
 
-#ifdef I2C4_BASE
+#ifdef I2C4
 /**
  * I2C address sent interrupt
  */
@@ -247,28 +252,28 @@ I2C::I2C(I2CType *i2c, Speed speed, Addressing addressing, uint16_t address)
     // Setting the id and irqn of the right i2c peripheral
     switch (reinterpret_cast<uint32_t>(i2c))
     {
-#ifdef I2C1_BASE
+#ifdef I2C1
         case I2C1_BASE:
             this->id = 1;
             irqnEv   = I2C1_EV_IRQn;
             irqnErr  = I2C1_ER_IRQn;
             break;
 #endif
-#ifdef I2C2_BASE
+#ifdef I2C2
         case I2C2_BASE:
             this->id = 2;
             irqnEv   = I2C2_EV_IRQn;
             irqnErr  = I2C2_ER_IRQn;
             break;
 #endif
-#ifdef I2C3_BASE
+#ifdef I2C3
         case I2C3_BASE:
             this->id = 3;
             irqnEv   = I2C3_EV_IRQn;
             irqnErr  = I2C3_ER_IRQn;
             break;
 #endif
-#ifdef I2C4_BASE
+#ifdef I2C4
         case I2C4_BASE:
             this->id = 4;
             irqnEv   = I2C4_EV_IRQn;
@@ -276,17 +281,18 @@ I2C::I2C(I2CType *i2c, Speed speed, Addressing addressing, uint16_t address)
             break;
 #endif
         default:
+            this->id = 0;
             LOG_ERR(logger, "Peripheral not supported!");
+            break;
     }
 
-    // Enabling the peripheral on the right APB
-    ClockUtils::enablePeripheralClock(i2c);
+    init();
 }
 
 I2C::~I2C()
 {
     // removing the relative i2c port from the array
-    ports[id - 1] = 0;
+    ports[id - 1] = nullptr;
 
     // Disabling the interrupts (Ev and Err) in the NVIC for the relative i2c
     NVIC_DisableIRQ(irqnEv);
@@ -299,15 +305,10 @@ I2C::~I2C()
     ClockUtils::disablePeripheralClock(i2c);
 }
 
-bool I2C::init()
+void I2C::init()
 {
-    miosix::Lock<miosix::FastMutex> lock(mutex);
-
-    if (initialized)
-    {
-        LOG_ERR(logger, "Peripheral already initialized!");
-        return false;
-    }
+    // Enabling the peripheral on the right APB
+    ClockUtils::enablePeripheralClock(i2c);
 
     // Assuring that the peripheral is disabled
     i2c->CR1 = 0;
@@ -315,22 +316,14 @@ bool I2C::init()
     /* setting the peripheral input clock */
     // Retrieving the frequency of the APB relative to the I2C peripheral [MHz]
     // (I2C peripherals are always connected to APB1, Low speed bus)
-    uint32_t f =
-        ClockUtils::getAPBFrequency(ClockUtils::APB::APB1) / 1000000 / 2;
+    uint32_t f{ClockUtils::getAPBFrequency(ClockUtils::APB::APB1) / 1000000 /
+               2};
 
-    // frequency higher than 50MHz not allowed
-    static_assert() if (f > 50)
-    {
-        LOG_ERR(logger, "APB frequency too high!");
-        return false;
-    }
+    // frequency higher than 50MHz not allowed by I2C peripheral
+    assert(f <= 50);
 
     // frequency < 2MHz in standard mode or < 4MHz in fast mode not allowed
-    if ((speed == STANDARD && f < 2) || (speed == FAST && f < 4))
-    {
-        LOG_ERR(logger, "APB frequency too low!");
-        return false;
-    }
+    assert((speed == STANDARD && f >= 2) || (speed == FAST && f >= 4));
 
     I2C1->CR1 = I2C_CR1_SWRST;
     I2C1->CR1 = 0;
@@ -381,10 +374,6 @@ bool I2C::init()
 
     // Finally enabling the peripheral
     i2c->CR1 |= I2C_CR1_PE;
-
-    initialized = true;
-
-    return true;
 }
 
 int I2C::read(uint16_t slaveAddress, void *buffer, size_t nBytes,

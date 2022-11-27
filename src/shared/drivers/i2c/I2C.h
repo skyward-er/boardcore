@@ -26,13 +26,13 @@
 
 using I2CType = I2C_TypeDef;
 
-#if defined(I2C4_BASE)
+#if defined(I2C4)
 #define N_I2C_PORTS 4
-#elif defined(I2C3_BASE)
+#elif defined(I2C3)
 #define N_I2C_PORTS 3
-#elif defined(I2C2_BASE)
+#elif defined(I2C2)
 #define N_I2C_PORTS 2
-#elif defined(I2C1_BASE)
+#elif defined(I2C1)
 #define N_I2C_PORTS 1
 #else
 #error "Your architecture doesn't support I2C"
@@ -77,12 +77,6 @@ public:
     ~I2C();
 
     /**
-     * @brief Initializes the peripheral enabling his clock, the interrupts
-     * in the NVIC and setting up various parameters in the peripheral.
-     */
-    bool init();
-
-    /**
      * @brief Blocking read operation to read nBytes. In case of an error during
      * the communication, this method returns 0 immediately.
      * @returns nBytes if the read is successful, 0 otherwise.
@@ -113,6 +107,12 @@ public:
 
 protected:
     /**
+     * @brief Initializes the peripheral enabling his clock, the interrupts
+     * in the NVIC and setting up various parameters in the peripheral.
+     */
+    void init();
+
+    /**
      * @brief Prologue of any read/write operation in Master mode.
      * @param address the 7 bit address NOT shifted
      * @returns True if prologue didn't have any error; False otherwise.
@@ -127,8 +127,6 @@ protected:
     IRQn_Type irqnErr;
 
     I2CType *i2c;
-    bool initialized = false;     ///< Flag that tells if the peripheral has
-                                  ///< already been initialized
     bool error = false;           ///< Flag that tells if an error occurred
     const Speed speed;            ///< Baudrate of the serial communication
     const Addressing addressing;  ///< Addressing mode of the device
