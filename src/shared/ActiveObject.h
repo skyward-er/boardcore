@@ -125,7 +125,9 @@ inline bool ActiveObject::start()
                                         miosix::Thread::JOINABLE);
 
         if (thread == nullptr)
+        {
             running = false;
+        }
 
         return running;
     }
@@ -148,7 +150,6 @@ inline bool ActiveObject::shouldStop() { return stopFlag; }
 
 inline void ActiveObject::threadLauncher(void* arg)
 {
-
     reinterpret_cast<ActiveObject*>(arg)->run();
 
     // When the run function ends, update the status
