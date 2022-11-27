@@ -34,3 +34,4 @@ __pycache__
 /scripts/generators/scxmls
 
 scripts/logdecoder/logdecoder
+doc/output
