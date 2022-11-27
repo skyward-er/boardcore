@@ -70,7 +70,7 @@ uint16_t address = 42;
 uint8_t buffer[8] = {0};
 struct
 {
-    uint8_t addressSensor  = 0b1110111 << 1;
+    uint8_t addressSensor  = 0b1110111;
     uint8_t whoamiRegister = 0xD0;
     uint8_t whoamiContent  = 0x55;
     uint8_t softReset[2]   = {
@@ -81,7 +81,7 @@ struct
 
 struct
 {
-    uint8_t addressSensor  = 0b0111100 << 1;
+    uint8_t addressSensor  = 0b0111100;
     uint8_t whoamiRegister = 0xD0;
     uint8_t whoamiContent  = 0x55;
 } OLED;

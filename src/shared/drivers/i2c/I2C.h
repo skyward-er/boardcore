@@ -117,9 +117,10 @@ public:
 protected:
     /**
      * @brief Prologue of any read/write operation in Master mode.
+     * @param address the 7 bit address NOT shifted
      * @returns True if prologue didn't have any error; False otherwise.
      */
-    bool prologue(uint16_t slaveAddress, bool writeOperation, size_t nBytes);
+    bool prologue(uint16_t slaveAddress);
 
     static const int MAX_N_POLLING =
         2000;  ///< Maximum number of cycles for polling

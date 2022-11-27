@@ -390,11 +390,16 @@ int I2C::read(uint16_t slaveAddress, void *buffer, size_t nBytes,
     // Enabling option to generate ACK
     i2c->CR1 |= I2C_CR1_ACK;
 
-    // Sending prologue until the channel is clear
-    if (!prologue(slaveAddress, false, nBytes))
+    // Sending prologue when the channel isn't busy (LSB set to signal this is a
+    // read)
+    if (!prologue(slaveAddress << 1 | 0x1))
     {
         return 0;
     }
+
+    // Disabling the generation of the ACK if reading only 1 byte
+    if (nBytes == 1)
+        i2c->CR1 &= ~I2C_CR1_ACK;
 
     // reading the nBytes
     for (size_t i = 0; i < nBytes; i++)
@@ -435,7 +440,8 @@ int I2C::write(uint16_t slaveAddress, void *buffer, size_t nBytes,
     // Synchronization because of the single bus
     miosix::Lock<miosix::FastMutex> lock(mutex);
 
-    if (!prologue(slaveAddress, true, nBytes))
+    // Sending prologue when the channel isn't busy
+    if (!prologue(slaveAddress << 1))
     {
         return 0;
     }
@@ -457,13 +463,15 @@ int I2C::write(uint16_t slaveAddress, void *buffer, size_t nBytes,
     return nBytes;
 };
 
-bool I2C::prologue(uint16_t slaveAddress, bool writeOperation, size_t nBytes)
+bool I2C::prologue(uint16_t slaveAddress)
 {
     // Generating start condition if bus not busy -> passing in Master mode
     uint32_t i{0};
-    for (; i < MAX_N_POLLING && i2c->SR2 & I2C_SR2_BUSY; ++i)
+    for (; (i < MAX_N_POLLING) && (i2c->SR2 & I2C_SR2_BUSY); ++i)
         ;
 
+    // lock state detected after N polling cycles
+    // TODO: apply recovery from locked state!
     if (i == MAX_N_POLLING)
         return false;
 
@@ -486,16 +494,12 @@ bool I2C::prologue(uint16_t slaveAddress, bool writeOperation, size_t nBytes)
     if (addressing == Addressing::BIT7)
     {
         miosix::InterruptDisableLock dLock;
+
         // setting the LSB if we want to enter receiver mode
-        i2c->DR = slaveAddress | (writeOperation ? 0 : 1);
+        i2c->DR = slaveAddress;
 
-        // // Checking if a slave matched his address
+        // Checking if a slave matched his address
         WAIT_FOR_REGISTER_CHANGE(i2c->SR1 & I2C_SR1_ADDR, dLock, false)
-
-        if (!(I2C1->SR2 & I2C_SR2_MSL))
-        {
-            return false;
-        }
     }
     else  // addressing == Addressing::BIT10
     {
@@ -522,11 +526,12 @@ bool I2C::prologue(uint16_t slaveAddress, bool writeOperation, size_t nBytes)
         }
 
         // if we want to enter in receiver mode
-        if (!writeOperation)
+        if (slaveAddress & 0b1)
         {
-            // Checking if the channel is busy (clearing ADDR flag)
-            if (i2c->SR2 & I2C_SR2_BUSY)
-                ;
+            // Checking if the peripheral is in Master mode (clearing ADDR flag
+            // with a read on SR2 register)
+            if (!(i2c->SR2 & I2C_SR2_MSL))
+                return false;
 
             {
                 miosix::InterruptDisableLock dLock;
@@ -538,19 +543,15 @@ bool I2C::prologue(uint16_t slaveAddress, bool writeOperation, size_t nBytes)
             }
 
             // sending modified header
-            i2c->DR = header | 1;
-
-            // TODO: reset ACK flag
+            i2c->DR = header | 0b1;
         }
     }
 
-    // Disabling the generation of the ACK if reading only 1 byte
-    if (!writeOperation && nBytes == 1)
-        i2c->CR1 &= ~I2C_CR1_ACK;
-
-    // Checking if the channel is busy (clearing ADDR flag)
-    if (i2c->SR2 & I2C_SR2_BUSY)
-        ;
+    // clearing ADDR flag
+    if (!(i2c->SR2 & I2C_SR2_BUSY) ||  // channel should be busy
+        !(i2c->SR2 & I2C_SR2_MSL) ||  // the peripheral should be in master mode
+        ((i2c->SR2 & I2C_SR2_TRA) == (slaveAddress & 0b1)))  // Tx or Rx mode
+        return false;
 
     return true;
 }
