@@ -69,6 +69,7 @@ inline void wakeUpWaitingThread(miosix::Thread *waiting)
     }
 }
 
+#ifdef I2C1_BASE
 /**
  * I2C address sent interrupt
  */
@@ -108,9 +109,9 @@ void __attribute__((used)) I2C1errHandlerImpl()
     if (port)
         port->IRQhandleErrInterrupt();
 }
+#endif
 
-#if defined(STM32F429xx) || defined(STM32F407xx) || defined(STM32F401xE) || \
-    defined(STM32F746xx) || defined(STM32F767xx)
+#ifdef I2C2_BASE
 /**
  * I2C address sent interrupt
  */
@@ -150,7 +151,9 @@ void __attribute__((used)) I2C2errHandlerImpl()
     if (port)
         port->IRQhandleErrInterrupt();
 }
+#endif
 
+#ifdef I2C3_BASE
 /**
  * I2C address sent interrupt
  */
@@ -190,8 +193,9 @@ void __attribute__((used)) I2C3errHandlerImpl()
     if (port)
         port->IRQhandleErrInterrupt();
 }
+#endif
 
-#if defined(STM32F746xx) || defined(STM32F767xx)
+#ifdef I2C4_BASE
 /**
  * I2C address sent interrupt
  */
@@ -232,7 +236,6 @@ void __attribute__((used)) I2C4errHandlerImpl()
         port->IRQhandleErrInterrupt();
 }
 #endif
-#endif
 
 namespace Boardcore
 {
@@ -244,31 +247,36 @@ I2C::I2C(I2CType *i2c, Speed speed, Addressing addressing, uint16_t address)
     // Setting the id and irqn of the right i2c peripheral
     switch (reinterpret_cast<uint32_t>(i2c))
     {
+#ifdef I2C1_BASE
         case I2C1_BASE:
             this->id = 1;
             irqnEv   = I2C1_EV_IRQn;
             irqnErr  = I2C1_ER_IRQn;
             break;
-#if defined(STM32F429xx) || defined(STM32F407xx) || defined(STM32F746xx) || \
-    defined(STM32F767xx)
+#endif
+#ifdef I2C2_BASE
         case I2C2_BASE:
             this->id = 2;
             irqnEv   = I2C2_EV_IRQn;
             irqnErr  = I2C2_ER_IRQn;
             break;
+#endif
+#ifdef I2C3_BASE
         case I2C3_BASE:
             this->id = 3;
             irqnEv   = I2C3_EV_IRQn;
             irqnErr  = I2C3_ER_IRQn;
             break;
-#if defined(STM32F746xx) || defined(STM32F767xx)
+#endif
+#ifdef I2C4_BASE
         case I2C4_BASE:
             this->id = 4;
             irqnEv   = I2C4_EV_IRQn;
             irqnErr  = I2C4_ER_IRQn;
             break;
 #endif
-#endif
+        default:
+            LOG_ERR(logger, "Peripheral not supported!");
     }
 
     // Enabling the peripheral on the right APB
@@ -311,7 +319,7 @@ bool I2C::init()
         ClockUtils::getAPBFrequency(ClockUtils::APB::APB1) / 1000000 / 2;
 
     // frequency higher than 50MHz not allowed
-    if (f > 50)
+    static_assert() if (f > 50)
     {
         LOG_ERR(logger, "APB frequency too high!");
         return false;

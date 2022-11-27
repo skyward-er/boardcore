@@ -26,13 +26,16 @@
 
 using I2CType = I2C_TypeDef;
 
-#if defined(STM32F746xx) || defined(STM32F767xx)
+#if defined(I2C4_BASE)
 #define N_I2C_PORTS 4
-#elif defined(STM32F429xx) || defined(STM32F407xx) || defined(STM32F401xE)
+#elif defined(I2C3_BASE)
 #define N_I2C_PORTS 3
-#else
+#elif defined(I2C2_BASE)
+#define N_I2C_PORTS 2
+#elif defined(I2C1_BASE)
 #define N_I2C_PORTS 1
-#warning "Define the number of I2C ports for your architectures in I2C.h file"
+#else
+#error "Your architecture doesn't support I2C"
 #endif
 
 namespace Boardcore
@@ -49,12 +52,6 @@ public:
     {
         STANDARD = 0,
         FAST     = 1
-    };
-
-    enum Mode
-    {
-        MASTER,
-        SLAVE
     };
 
     enum Addressing : uint8_t
