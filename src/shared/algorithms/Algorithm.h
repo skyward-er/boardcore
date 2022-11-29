@@ -21,6 +21,7 @@
  */
 
 #pragma once
+#include <atomic>
 
 namespace Boardcore
 {
@@ -53,7 +54,9 @@ public:
     void update()
     {
         if (running)
+        {
             step();
+        }
     }
 
     bool isRunning() { return running; }
@@ -64,7 +67,7 @@ protected:
      */
     virtual void step() = 0;
 
-    bool running = false;
+    std::atomic<bool> running{false};
 };
 
 }  // namespace Boardcore
