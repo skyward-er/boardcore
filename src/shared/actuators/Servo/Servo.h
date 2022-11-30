@@ -53,7 +53,7 @@ namespace Boardcore
  * Note that the peripheral clock of the undelying timer used to generate the
  * PWM signal, is enabled when the object is created and disabled when
  * destructed. When using the same timer for two or more sensors keep in mind
- * that you could encouter issues.
+ * that you could encounter issues.
  */
 class Servo
 {

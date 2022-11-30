@@ -103,9 +103,9 @@ float Servo::getPosition()
 
 float Servo::getPosition90Deg() { return getPosition() * 90; }
 
-float Servo::getPosition180Deg() { return getPosition() * 1800; }
+float Servo::getPosition180Deg() { return getPosition() * 180; }
 
-float Servo::getPosition360Deg() { return getPosition() * 3600; }
+float Servo::getPosition360Deg() { return getPosition() * 360; }
 
 ServoData Servo::getState()
 {
