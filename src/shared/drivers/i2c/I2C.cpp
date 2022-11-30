@@ -594,7 +594,7 @@ bool I2C::prologue(uint16_t slaveAddress)
 
 inline bool I2C::IRQwaitForRegisterChange(miosix::InterruptDisableLock &dLock)
 {
-    waiting = miosix::Thread::getCurrentThread();
+    waiting = miosix::Thread::IRQgetCurrentThread();
     while (waiting)
     {
         waiting->IRQwait();
