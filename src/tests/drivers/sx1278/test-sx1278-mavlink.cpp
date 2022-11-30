@@ -51,52 +51,63 @@ constexpr uint32_t STATS_TM_PERIOD      = 2000;
 using Mav =
     MavlinkDriver<RADIO_PKT_LENGTH, RADIO_OUT_QUEUE_SIZE, RADIO_MAV_MSG_LENGTH>;
 
-Mav* channel;
-SX1278* sx1278 = nullptr;
-
 #if defined _BOARD_STM32F429ZI_SKYWARD_GS_V2
 #include "interfaces-impl/hwmapping.h"
 
-#define USE_RA01_PC13
-
-#ifdef USE_RA01_PC13  // use ra01
 using cs   = peripherals::ra01::pc13::cs;
 using dio0 = peripherals::ra01::pc13::dio0;
-#else
-using cs   = peripherals::ra01::pe4::cs;
-using dio0 = peripherals::ra01::pe4::dio0;
-#endif
+using dio1 = peripherals::ra01::pc13::dio1;
+using dio3 = peripherals::ra01::pc13::dio3;
+
+using sck  = interfaces::spi4::sck;
+using miso = interfaces::spi4::miso;
+using mosi = interfaces::spi4::mosi;
 
 #define SX1278_SPI SPI4
 
+#define IRQ_DIO0 EXTI6_IRQHandlerImpl
+#define IRQ_DIO1 EXTI5_IRQHandlerImpl
+#define IRQ_DIO3 EXTI11_IRQHandlerImpl
+
 #else
 #error "Target not supported"
 #endif
 
-#if defined _BOARD_STM32F429ZI_SKYWARD_GS_V2
-#ifdef USE_RA01_PC13
-void __attribute__((used)) EXTI6_IRQHandlerImpl()
-#else
-void __attribute__((used)) EXTI3_IRQHandlerImpl()
-#endif
-#else
-#error "Target not supported"
-#endif
+SX1278* sx1278 = nullptr;
+
+void __attribute__((used)) IRQ_DIO0()
 {
     if (sx1278)
-        sx1278->handleDioIRQ();
+        sx1278->handleDioIRQ(SX1278::Dio::DIO0);
+}
+
+void __attribute__((used)) IRQ_DIO1()
+{
+    if (sx1278)
+        sx1278->handleDioIRQ(SX1278::Dio::DIO1);
+}
+
+void __attribute__((used)) IRQ_DIO3()
+{
+    if (sx1278)
+        sx1278->handleDioIRQ(SX1278::Dio::DIO3);
 }
 
 void initBoard()
 {
-#if defined _BOARD_STM32F429ZI_SKYWARD_GS_V2
-    GpioPin dio0 = dio0::getPin();
-    enableExternalInterrupt(dio0.getPort(), dio0.getNumber(),
+    GpioPin dio0_pin = dio0::getPin();
+    GpioPin dio1_pin = dio1::getPin();
+    GpioPin dio3_pin = dio3::getPin();
+
+    enableExternalInterrupt(dio0_pin.getPort(), dio0_pin.getNumber(),
                             InterruptTrigger::RISING_EDGE);
-#else
-#error "Target not supported"
-#endif
+    enableExternalInterrupt(dio1_pin.getPort(), dio1_pin.getNumber(),
+                            InterruptTrigger::RISING_EDGE);
+    enableExternalInterrupt(dio3_pin.getPort(), dio3_pin.getNumber(),
+                            InterruptTrigger::RISING_EDGE);
 }
+
+Mav* channel;
 
 void onReceive(Mav* channel, const mavlink_message_t& msg)
 {

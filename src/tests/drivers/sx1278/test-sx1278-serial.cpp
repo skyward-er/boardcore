@@ -31,46 +31,59 @@
 using namespace Boardcore;
 using namespace miosix;
 
-SPIBus bus(SPI4);
+#if defined _BOARD_STM32F429ZI_SKYWARD_GS_V2
+#include "interfaces-impl/hwmapping.h"
 
-GpioPin sck(GPIOE_BASE, 2);
-GpioPin miso(GPIOE_BASE, 5);
-GpioPin mosi(GPIOE_BASE, 6);
-GpioPin cs(GPIOC_BASE, 1);
-GpioPin dio(GPIOF_BASE, 10);
+using cs   = peripherals::ra01::pc13::cs;
+using dio0 = peripherals::ra01::pc13::dio0;
+using dio1 = peripherals::ra01::pc13::dio1;
+using dio3 = peripherals::ra01::pc13::dio3;
 
-SX1278* sx1278 = nullptr;
+using sck  = interfaces::spi4::sck;
+using miso = interfaces::spi4::miso;
+using mosi = interfaces::spi4::mosi;
 
-void __attribute__((used)) EXTI10_IRQHandlerImpl()
+#define SX1278_SPI SPI4
+
+#define IRQ_DIO0 EXTI6_IRQHandlerImpl
+#define IRQ_DIO1 EXTI5_IRQHandlerImpl
+#define IRQ_DIO3 EXTI11_IRQHandlerImpl
+
+#else
+#error "Target not supported"
+#endif
+
+SX1278 *sx1278 = nullptr;
+
+void __attribute__((used)) IRQ_DIO0()
 {
     if (sx1278)
-        sx1278->handleDioIRQ();
+        sx1278->handleDioIRQ(SX1278::Dio::DIO0);
 }
 
-/// Initialize stm32f407g board.
+void __attribute__((used)) IRQ_DIO1()
+{
+    if (sx1278)
+        sx1278->handleDioIRQ(SX1278::Dio::DIO1);
+}
+
+void __attribute__((used)) IRQ_DIO3()
+{
+    if (sx1278)
+        sx1278->handleDioIRQ(SX1278::Dio::DIO3);
+}
+
 void initBoard()
 {
-    {
-        miosix::FastInterruptDisableLock dLock;
+    GpioPin dio0_pin = dio0::getPin();
+    GpioPin dio1_pin = dio1::getPin();
+    GpioPin dio3_pin = dio3::getPin();
 
-        // Enable SPI3
-        RCC->APB2ENR |= RCC_APB2ENR_SPI4EN;  // Enable SPI4 bus
-        RCC_SYNC();
-
-        // Setup SPI pins
-        sck.mode(miosix::Mode::ALTERNATE);
-        sck.alternateFunction(5);
-        miso.mode(miosix::Mode::ALTERNATE);
-        miso.alternateFunction(5);
-        mosi.mode(miosix::Mode::ALTERNATE);
-        mosi.alternateFunction(5);
-
-        cs.mode(miosix::Mode::OUTPUT);
-        dio.mode(miosix::Mode::INPUT);
-    }
-
-    cs.high();
-    enableExternalInterrupt(dio.getPort(), dio.getNumber(),
+    enableExternalInterrupt(dio0_pin.getPort(), dio0_pin.getNumber(),
+                            InterruptTrigger::RISING_EDGE);
+    enableExternalInterrupt(dio1_pin.getPort(), dio1_pin.getNumber(),
+                            InterruptTrigger::RISING_EDGE);
+    enableExternalInterrupt(dio3_pin.getPort(), dio3_pin.getNumber(),
                             InterruptTrigger::RISING_EDGE);
 }
 
@@ -90,12 +103,6 @@ void recvLoop()
 
 void sendLoop()
 {
-    // I create a GPIO with the onboard led to tell the user that
-    // a package is being sent
-    miosix::GpioPin led(GPIOG_BASE, 13);
-    led.mode(miosix::Mode::OUTPUT);
-    led.low();
-
     uint8_t msg[63];
     while (1)
     {
@@ -103,9 +110,7 @@ void sendLoop()
         int len     = serial->readBlock(msg, sizeof(msg), 0);
         if (len > 0)
         {
-            led.high();
             sx1278->send(msg, len);
-            led.low();
         }
     }
 }
@@ -114,8 +119,12 @@ int main()
 {
     initBoard();
 
+    // Run default configuration
     SX1278::Config config;
     SX1278::Error err;
+
+    SPIBus bus(SX1278_SPI);
+    GpioPin cs = cs::getPin();
 
     sx1278 = new SX1278(bus, cs);
 

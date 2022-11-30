@@ -34,28 +34,12 @@
 /*
 # Description
 ## Concurrent access
-The device is stateful, in order to send/receive data you need to set in a
-particular state. This is handled by SX1278BusManager::setMode. This causes a
-lot of issues with multithreaded code, and receiving/transmitting concurrently.
-
-So the driver wraps the bus in a BusManager for this reason, in order to perform
-anything you need to lock the bus. The driver then locks the internal mutex and
-sets the device in the correct mode for that operation.
-
-But this causes problems when receiving, as receive can block indefinetly, and
-would prevent any thread from actually sending stuff. The solution is to release
-the lock only when waiting for a packet. This allows other threads to lock it
-and change mode, and unlocking the bus resets its state back to RX so it can
-continue to listen for incoming packets.
-
-The BusManager also multiplexes who is currently waiting for an interrupt. This
-is needed because due to the limited interrupts pins, the device signals
-multiples of them on one pin. And for some random reasons, the designers decided
-to put "packet received" and "packed sent" on same pin (DIO0)...
-
-Again, the solution is to track who is actually using the bus, so when sending a
-packet that triggers the "packet sent" interrupt, the manager knows to dispatch
-it to the currect thread, and not wake up the RX thread.
+Access to the bus is managed by the SX1278BusManager, the API is very simple,
+lock the bus and then you can access the underlying SPISlave. Most of the time
+though, you need the device in a particular mode, in that case you can use the
+LockMode API to also change mode. Then via waitForIrq you can comfortably wait
+for stuff to happen, and crucially, you can also release the lock to allow
+others to access (for example when waiting for packet).
 */
 
 namespace Boardcore
@@ -68,7 +52,30 @@ class SX1278BusManager
 {
 public:
     using Mode = SX1278Defs::RegOpMode::Mode;
+    using Irq  = uint16_t;
 
+    enum Dio : uint8_t
+    {
+        DIO0 = 1 << 0,
+        DIO1 = 1 << 1,
+        DIO2 = 1 << 2,
+        DIO3 = 1 << 3,
+        DIO4 = 1 << 4,
+        DIO5 = 1 << 5
+    };
+
+private:
+    struct DeviceState
+    {
+        // Current device mode
+        Mode mode = Mode::MODE_SLEEP;
+        // Thread waiting listening for interrupts
+        miosix::Thread *irq_wait_thread = nullptr;
+        // What DIOs are we waiting on
+        Dio waiting_on_dio = static_cast<Dio>(0);
+    };
+
+public:
     /**
      * @brief RAII scoped bus lock guard.
      */
@@ -84,78 +91,92 @@ public:
     };
 
     /**
-     * @brief RAII scoped bus lock guard.
+     * @brief RAII scoped bus lock guard, which also changes mode.
      */
     class LockMode
     {
     public:
         LockMode(SX1278BusManager &bus, Mode mode) : bus(bus)
         {
-            bus.lockMode(mode);
+            // cppcheck-suppress useInitializationList
+            old_state = bus.lockMode(mode);
         }
 
-        ~LockMode() { bus.unlockMode(); }
+        ~LockMode() { bus.unlockMode(old_state); }
 
     private:
         SX1278BusManager &bus;
+        DeviceState old_state;
     };
 
     SX1278BusManager(SPIBusInterface &bus, miosix::GpioPin cs);
 
     /**
-     * @brief Lock bus for exclusive access (does not change mode).
+     * @brief Get underlying bus.
      */
-    void lock();
-
-    /**
-     * @brief Release bus for exclusive access.
-     */
-    void unlock();
-
-    /**
-     * @brief Lock bus for exclusive access.
-     *
-     * @param mode Device mode requested.
-     */
-    void lockMode(Mode mode);
-
-    /**
-     * @brief Release bus for exclusive access.
-     */
-    void unlockMode();
+    SPISlave &getBus(Lock &_guard) { return slave; }
 
     /**
      * @brief Get underlying bus.
      */
-    SPISlave &getBus();
+    SPISlave &getBus(LockMode &_guard) { return slave; }
 
     /**
-     * @brief Handle DIO0 irq.
+     * @brief Handle generic DIO irq.
      */
-    void handleDioIRQ();
+    void handleDioIRQ(Dio dio);
 
     /**
-     * @brief Wait for generic irq (DOES NOT RELEASE LOCK!).
+     * @brief Wait for generic irq.
+     *
+     * WARNING: Currently only supports:
+     * - PACKET_SENT
+     * - PAYLOAD_READY
+     * - TX_READY
+     * - FIFO_LEVEL
+     *
+     * To add more interrupts edit irq_to_dio!
      */
-    bool waitForIrq(uint16_t mask, int timeout = 10);
+    void waitForIrq(const LockMode &_guard, Irq irq, bool unlock = false);
 
     /**
-     * @brief Wait for RX irq (releases lock safely).
+     * @brief Busy waits for an interrupt by polling the irq register
+     *
+     * USE ONLY DURING INITIALIZATION! BAD THINGS *HAVE* HAPPENED DUE TO THIS!
      */
-    void waitForRxIrq();
+    bool waitForIrqBusy(const LockMode &_guard, Irq irq, int timeout);
 
 private:
+    DeviceState lockMode(Mode mode);
+    void unlockMode(DeviceState old_state);
+
+    void lock();
+    void unlock();
+
     void enterMode(Mode mode);
 
     uint16_t getIrqFlags();
     void setMode(Mode mode);
 
-    miosix::Thread *irq_wait_thread = nullptr;
-    miosix::Thread *rx_wait_thread  = nullptr;
-    miosix::FastMutex mutex;
+    Dio irq_to_dio(Irq irq)
+    {
+        Dio dio = static_cast<Dio>(0);
+        if (irq & SX1278Defs::RegIrqFlags::PACKET_SENT ||
+            irq & SX1278Defs::RegIrqFlags::PAYLOAD_READY)
+            dio = DIO0;
+
+        if (irq & SX1278Defs::RegIrqFlags::FIFO_LEVEL)
+            dio = static_cast<Dio>(dio | DIO1);
+
+        if (irq & SX1278Defs::RegIrqFlags::TX_READY)
+            dio = static_cast<Dio>(dio | DIO3);
+
+        return dio;
+    }
 
     SPISlave slave;
-    Mode mode;
+    FastMutex mutex;
+    DeviceState state;
 };
 
 /**
@@ -164,6 +185,8 @@ private:
 class SX1278 : public Transceiver
 {
 public:
+    using Dio = SX1278BusManager::Dio;
+
     /**
      * @brief Channel filter bandwidth.
      */
@@ -306,7 +329,7 @@ public:
     /**
      * @brief Handle an incoming interrupt.
      */
-    void handleDioIRQ();
+    void handleDioIRQ(Dio dio);
 
     /**
      * @brief Dump all registers via TRACE.
@@ -317,23 +340,22 @@ public:
     using Mode = SX1278BusManager::Mode;
 
     void rateLimitTx();
-    void imageCalibrate();
 
-    float getRssi();
-    float getFei();
+    static void imageCalibrate(SPISlave &slave);
 
-    void setBitrate(int bitrate);
-    void setFreqDev(int freq_dev);
-    void setFreqRF(int freq_rf);
-    void setOcp(int ocp);
-    void setSyncWord(uint8_t value[], int size);
-    void setRxBw(RxBw rx_bw);
-    void setAfcBw(RxBw afc_bw);
-    void setPreableLen(int len);
-    void setPa(int power, bool pa_boost);
-    void setShaping(Shaping shaping);
+    static float getRssi(SPISlave &slave);
+    static float getFei(SPISlave &slave);
 
-    void waitForIrq(uint16_t mask);
+    static void setBitrate(SPISlave &slave, int bitrate);
+    static void setFreqDev(SPISlave &slave, int freq_dev);
+    static void setFreqRF(SPISlave &slave, int freq_rf);
+    static void setOcp(SPISlave &slave, int ocp);
+    static void setSyncWord(SPISlave &slave, uint8_t value[], int size);
+    static void setRxBw(SPISlave &slave, RxBw rx_bw);
+    static void setAfcBw(SPISlave &slave, RxBw afc_bw);
+    static void setPreableLen(SPISlave &slave, int len);
+    static void setPa(SPISlave &slave, int power, bool pa_boost);
+    static void setShaping(SPISlave &slave, Shaping shaping);
 
     long long last_tx  = 0;
     float last_rx_rssi = 0.0f;
