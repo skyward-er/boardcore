@@ -327,7 +327,7 @@ void I2C::init()
 
     // Resetting the I2C peripheral before setting the registers
     i2c->CR1 = I2C_CR1_SWRST;
-    i2c->CR1 = 0;
+    i2c->CR1 = 0;  // cppcheck-suppress redundantAssignment
 
     // Programming the input clock in order to generate correct timings +
     // enabling generation of all interrupts
