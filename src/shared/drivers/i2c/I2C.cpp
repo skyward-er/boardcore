@@ -245,7 +245,7 @@ void __attribute__((used)) I2C4errHandlerImpl()
 namespace Boardcore
 {
 
-I2C::I2C(I2CType *i2c, Speed speed, Addressing addressing, uint16_t address)
+I2C::I2C(I2C_TypeDef *i2c, Speed speed, Addressing addressing, uint16_t address)
     : i2c(i2c), speed(speed), addressing(addressing), address(address),
       mutex(miosix::FastMutex::Options::RECURSIVE)
 {
@@ -320,13 +320,14 @@ void I2C::init()
                2};
 
     // frequency higher than 50MHz not allowed by I2C peripheral
-    assert(f <= 50);
+    D(assert(f <= 50));
 
     // frequency < 2MHz in standard mode or < 4MHz in fast mode not allowed
-    assert((speed == STANDARD && f >= 2) || (speed == FAST && f >= 4));
+    D(assert((speed == STANDARD && f >= 2) || (speed == FAST && f >= 4)));
 
-    I2C1->CR1 = I2C_CR1_SWRST;
-    I2C1->CR1 = 0;
+    // Resetting the I2C peripheral before setting the registers
+    i2c->CR1 = I2C_CR1_SWRST;
+    i2c->CR1 = 0;
 
     // Programming the input clock in order to generate correct timings +
     // enabling generation of all interrupts
@@ -411,7 +412,7 @@ int I2C::read(uint16_t slaveAddress, void *buffer, size_t nBytes,
         if (i2c->SR1 & I2C_SR1_BTF)
             ;
 
-        buff[i] = I2C1->DR;
+        buff[i] = i2c->DR;
 
         // clearing the ACK flag and setting the STOP flag in order to send a
         // NACK on the last byte that will be read and generating the stop

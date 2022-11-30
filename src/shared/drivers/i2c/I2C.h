@@ -24,8 +24,6 @@
 
 #include "miosix.h"
 
-using I2CType = I2C_TypeDef;
-
 #if defined(I2C4)
 #define N_I2C_PORTS 4
 #elif defined(I2C3)
@@ -68,7 +66,7 @@ public:
      * left by 1 (so, MSB of the address must be the eighth bit). In 10 bit
      * addressing, just the 10 bit address
      */
-    I2C(I2CType *i2c, Speed speed, Addressing addressing, uint16_t address);
+    I2C(I2C_TypeDef *i2c, Speed speed, Addressing addressing, uint16_t address);
 
     /**
      * @brief Deconstructor. Disables the peripheral, the interrupts in the NVIC
@@ -126,7 +124,7 @@ protected:
     IRQn_Type irqnEv;
     IRQn_Type irqnErr;
 
-    I2CType *i2c;
+    I2C_TypeDef *i2c;
     bool error = false;           ///< Flag that tells if an error occurred
     const Speed speed;            ///< Baudrate of the serial communication
     const Addressing addressing;  ///< Addressing mode of the device
