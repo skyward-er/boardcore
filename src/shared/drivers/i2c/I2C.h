@@ -117,6 +117,14 @@ protected:
      */
     bool prologue(uint16_t slaveAddress);
 
+    /**
+     * @brief This waits until the thread isn't waken up by an I2C interrupt (EV
+     * or ERR). This method shuould be called in a block where interrupts are
+     * disabled; handles the waiting and yielding and the management of the
+     * flags for the interrupts.
+     */
+    inline bool IRQwaitForRegisterChange(miosix::InterruptDisableLock &dLock);
+
     static const int MAX_N_POLLING =
         2000;  ///< Maximum number of cycles for polling
 

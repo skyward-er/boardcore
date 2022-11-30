@@ -27,36 +27,6 @@
 #include <utils/ClockUtils.h>
 #include <utils/Debug.h>
 
-/**
- * MACRO in order to avoid repeated pattern: This waits until the thread isn't
- * waken up by an I2C interrupt (EV or ERR). This MACRO shuould be called in a
- * block where interrupts are disabled; this handles the waiting and yielding
- * and the management of the flags for the interrupts.
- *
- * [WARNING] If the flag identified in REG after wakeup is false or the error
- * interrupt has been invoked the macro makes the OUTER (!) function return with
- * the value passed in RETVAL.
- */
-
-// inline bool waitForRegisterChange() {}
-
-#define WAIT_FOR_REGISTER_CHANGE(REG, DLOCK, RETVAL)   \
-    waiting = miosix::Thread::getCurrentThread();      \
-    while (waiting)                                    \
-    {                                                  \
-        waiting->IRQwait();                            \
-        i2c->CR2 |= I2C_CR2_ITEVTEN | I2C_CR2_ITERREN; \
-        miosix::InterruptEnableLock eLock(DLOCK);      \
-        waiting->yield();                              \
-    }                                                  \
-                                                       \
-    if (error || !(REG))                               \
-    {                                                  \
-        error = false;                                 \
-        i2c->CR1 |= I2C_CR1_STOP;                      \
-        return RETVAL;                                 \
-    }
-
 static Boardcore::I2C
     *ports[N_I2C_PORTS];  ///< Pointer to serial port classes to let interrupts
                           ///< access the classes
@@ -244,7 +214,6 @@ void __attribute__((used)) I2C4errHandlerImpl()
 
 namespace Boardcore
 {
-
 I2C::I2C(I2C_TypeDef *i2c, Speed speed, Addressing addressing, uint16_t address)
     : i2c(i2c), speed(speed), addressing(addressing), address(address),
       mutex(miosix::FastMutex::Options::RECURSIVE)
@@ -404,8 +373,18 @@ int I2C::read(uint16_t slaveAddress, void *buffer, size_t nBytes,
     {
         {
             miosix::InterruptDisableLock dLock;
+
             // waiting for the reception of another byte
-            WAIT_FOR_REGISTER_CHANGE(i2c->SR1 & I2C_SR1_RXNE, dLock, 0)
+            if (!IRQwaitForRegisterChange(dLock))
+            {
+                return 0;
+            }
+
+            if (!(i2c->SR1 & I2C_SR1_RXNE))
+            {
+                i2c->CR1 |= I2C_CR1_STOP;
+                return 0;
+            }
         }
 
         // checking if a byte has been lost (TODO: see what to do)
@@ -451,7 +430,16 @@ int I2C::write(uint16_t slaveAddress, void *buffer, size_t nBytes,
         i2c->DR = buff[i];
 
         // waiting for the sending of the byte
-        WAIT_FOR_REGISTER_CHANGE(i2c->SR1 & I2C_SR1_TXE, dLock, 0)
+        if (!IRQwaitForRegisterChange(dLock))
+        {
+            return 0;
+        }
+
+        if (!(i2c->SR1 & I2C_SR1_TXE))
+        {
+            i2c->CR1 |= I2C_CR1_STOP;
+            return 0;
+        }
     }
 
     // if we are on the last byte, generate the stop condition
@@ -478,7 +466,17 @@ bool I2C::prologue(uint16_t slaveAddress)
         i2c->CR1 |= I2C_CR1_START | I2C_CR1_ACK;
 
         // waiting for reception of start signal
-        WAIT_FOR_REGISTER_CHANGE(i2c->SR1 & I2C_SR1_SB, dLock, false)
+        if (!IRQwaitForRegisterChange(dLock))
+        {
+            return false;
+        }
+
+        if (!(i2c->SR1 & I2C_SR1_SB))
+        {
+            // start signal not received by slave
+            i2c->CR1 |= I2C_CR1_STOP;
+            return false;
+        }
 
         if (!(i2c->SR2 & I2C_SR2_MSL))
         {
@@ -497,7 +495,17 @@ bool I2C::prologue(uint16_t slaveAddress)
         i2c->DR = slaveAddress;
 
         // Checking if a slave matched his address
-        WAIT_FOR_REGISTER_CHANGE(i2c->SR1 & I2C_SR1_ADDR, dLock, false)
+        if (!IRQwaitForRegisterChange(dLock))
+        {
+            return false;
+        }
+
+        if (!(i2c->SR1 & I2C_SR1_ADDR))
+        {
+            // address not recognized by slaves
+            i2c->CR1 |= I2C_CR1_STOP;
+            return false;
+        }
     }
     else  // addressing == Addressing::BIT10
     {
@@ -511,7 +519,17 @@ bool I2C::prologue(uint16_t slaveAddress)
             i2c->DR = header;
 
             // Checking if the header has been sent
-            WAIT_FOR_REGISTER_CHANGE(i2c->SR1 & I2C_SR1_ADD10, dLock, false)
+            if (!IRQwaitForRegisterChange(dLock))
+            {
+                return false;
+            }
+
+            if (!(i2c->SR1 & I2C_SR1_ADD10))
+            {
+                // Header not received by slave
+                i2c->CR1 |= I2C_CR1_STOP;
+                return false;
+            }
         }
 
         {
@@ -520,7 +538,17 @@ bool I2C::prologue(uint16_t slaveAddress)
             i2c->DR = (slaveAddress & 0xff);
 
             // Checking if a slave matched his address
-            WAIT_FOR_REGISTER_CHANGE(i2c->SR1 & I2C_SR1_ADDR, dLock, false)
+            if (!IRQwaitForRegisterChange(dLock))
+            {
+                return false;
+            }
+
+            if (!(i2c->SR1 & I2C_SR1_ADDR))
+            {
+                // address not recognized by slaves
+                i2c->CR1 |= I2C_CR1_STOP;
+                return false;
+            }
         }
 
         // if we want to enter in receiver mode
@@ -537,7 +565,17 @@ bool I2C::prologue(uint16_t slaveAddress)
                 i2c->CR1 |= I2C_CR1_START;
 
                 // waiting for reception of start signal
-                WAIT_FOR_REGISTER_CHANGE(i2c->SR1 & I2C_SR1_SB, dLock, false)
+                if (!IRQwaitForRegisterChange(dLock))
+                {
+                    return false;
+                }
+
+                if (!(i2c->SR1 & I2C_SR1_SB))
+                {
+                    // Start condition not received by slaves
+                    i2c->CR1 |= I2C_CR1_STOP;
+                    return false;
+                }
             }
 
             // sending modified header
@@ -551,6 +589,26 @@ bool I2C::prologue(uint16_t slaveAddress)
         ((i2c->SR2 & I2C_SR2_TRA) == (slaveAddress & 0b1)))  // Tx or Rx mode
         return false;
 
+    return true;
+}
+
+inline bool I2C::IRQwaitForRegisterChange(miosix::InterruptDisableLock &dLock)
+{
+    waiting = miosix::Thread::getCurrentThread();
+    while (waiting)
+    {
+        waiting->IRQwait();
+        i2c->CR2 |= I2C_CR2_ITEVTEN | I2C_CR2_ITERREN;
+        miosix::InterruptEnableLock eLock(dLock);
+        waiting->yield();
+    }
+
+    if (error)
+    {
+        error = false;
+        i2c->CR1 |= I2C_CR1_STOP;
+        return false;
+    }
     return true;
 }
 
