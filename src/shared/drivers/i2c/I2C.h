@@ -77,18 +77,18 @@ public:
     /**
      * @brief Blocking read operation to read nBytes. In case of an error during
      * the communication, this method returns 0 immediately.
-     * @returns nBytes if the read is successful, 0 otherwise.
+     * @returns true if the read is successful, false otherwise.
      */
-    int read(uint16_t slaveAddress, void *buffer, size_t nBytes,
-             bool generateStopSignal);
+    bool read(uint16_t slaveAddress, void *buffer, size_t nBytes,
+              bool generateStopSignal);
 
     /**
      * @brief Blocking write operation of nBytes. In case of an error during the
      * communication, this method returns 0 immediately.
-     * @returns nBytes if the write is successful, 0 otherwise.
+     * @returns true if the write is successful, false otherwise.
      */
-    int write(uint16_t slaveAddress, void *buffer, size_t nBytes,
-              bool generateStopSignal);
+    bool write(uint16_t slaveAddress, void *buffer, size_t nBytes,
+               bool generateStopSignal);
 
     /**
      * @brief Method that handles the interrupt for the specific peripheral. It

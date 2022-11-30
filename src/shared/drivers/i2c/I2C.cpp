@@ -346,8 +346,8 @@ void I2C::init()
     i2c->CR1 |= I2C_CR1_PE;
 }
 
-int I2C::read(uint16_t slaveAddress, void *buffer, size_t nBytes,
-              bool generateStopSignal = true)
+bool I2C::read(uint16_t slaveAddress, void *buffer, size_t nBytes,
+               bool generateStopSignal = true)
 {
     uint8_t *buff = static_cast<uint8_t *>(buffer);
 
@@ -361,7 +361,7 @@ int I2C::read(uint16_t slaveAddress, void *buffer, size_t nBytes,
     // read)
     if (!prologue(slaveAddress << 1 | 0x1))
     {
-        return 0;
+        return false;
     }
 
     // Disabling the generation of the ACK if reading only 1 byte
@@ -377,13 +377,13 @@ int I2C::read(uint16_t slaveAddress, void *buffer, size_t nBytes,
             // waiting for the reception of another byte
             if (!IRQwaitForRegisterChange(dLock))
             {
-                return 0;
+                return false;
             }
 
             if (!(i2c->SR1 & I2C_SR1_RXNE))
             {
                 i2c->CR1 |= I2C_CR1_STOP;
-                return 0;
+                return false;
             }
         }
 
@@ -406,11 +406,11 @@ int I2C::read(uint16_t slaveAddress, void *buffer, size_t nBytes,
     if (generateStopSignal)
         i2c->CR1 |= I2C_CR1_STOP;
 
-    return nBytes;
+    return true;
 };
 
-int I2C::write(uint16_t slaveAddress, void *buffer, size_t nBytes,
-               bool generateStopSignal = true)
+bool I2C::write(uint16_t slaveAddress, void *buffer, size_t nBytes,
+                bool generateStopSignal = true)
 {
     uint8_t *buff = static_cast<uint8_t *>(buffer);
 
@@ -420,7 +420,7 @@ int I2C::write(uint16_t slaveAddress, void *buffer, size_t nBytes,
     // Sending prologue when the channel isn't busy
     if (!prologue(slaveAddress << 1))
     {
-        return 0;
+        return false;
     }
 
     // sending the nBytes
@@ -432,13 +432,13 @@ int I2C::write(uint16_t slaveAddress, void *buffer, size_t nBytes,
         // waiting for the sending of the byte
         if (!IRQwaitForRegisterChange(dLock))
         {
-            return 0;
+            return false;
         }
 
         if (!(i2c->SR1 & I2C_SR1_TXE))
         {
             i2c->CR1 |= I2C_CR1_STOP;
-            return 0;
+            return false;
         }
     }
 
@@ -446,7 +446,7 @@ int I2C::write(uint16_t slaveAddress, void *buffer, size_t nBytes,
     if (generateStopSignal)
         i2c->CR1 |= I2C_CR1_STOP;
 
-    return nBytes;
+    return true;
 };
 
 bool I2C::prologue(uint16_t slaveAddress)
