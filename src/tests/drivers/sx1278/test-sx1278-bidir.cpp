@@ -32,16 +32,13 @@
 using namespace Boardcore;
 using namespace miosix;
 
-#if defined _BOARD_STM32F429ZI_SKYWARD_GS
+#if defined _BOARD_STM32F429ZI_SKYWARD_GS_V2
 #include "interfaces-impl/hwmapping.h"
 
-#if 1  // use ra01
-using cs   = peripherals::ra01::cs;
-using dio0 = peripherals::ra01::dio0;
-#else
-using cs   = peripherals::sx127x::cs;
-using dio0 = peripherals::sx127x::dio0;
-#endif
+using cs   = peripherals::ra01::pc13::cs;
+using dio0 = peripherals::ra01::pc13::dio0;
+using dio1 = peripherals::ra01::pc13::dio1;
+using dio3 = peripherals::ra01::pc13::dio3;
 
 using sck  = interfaces::spi4::sck;
 using miso = interfaces::spi4::miso;
@@ -49,17 +46,9 @@ using mosi = interfaces::spi4::mosi;
 
 #define SX1278_SPI SPI4
 
-#elif defined _BOARD_STM32F429ZI_SKYWARD_DEATHST_V3
-#include "interfaces-impl/hwmapping.h"
-
-using cs   = sensors::sx127x::cs;
-using dio0 = sensors::sx127x::dio0;
-
-using sck  = interfaces::spi5::sck;
-using miso = interfaces::spi5::miso;
-using mosi = interfaces::spi5::mosi;
-
-#define SX1278_SPI SPI5
+#define IRQ_DIO0 EXTI6_IRQHandlerImpl
+#define IRQ_DIO1 EXTI5_IRQHandlerImpl
+#define IRQ_DIO3 EXTI11_IRQHandlerImpl
 
 #else
 #error "Target not supported"
@@ -67,27 +56,36 @@ using mosi = interfaces::spi5::mosi;
 
 SX1278 *sx1278 = nullptr;
 
-#if defined _BOARD_STM32F429ZI_SKYWARD_GS
-void __attribute__((used)) EXTI6_IRQHandlerImpl()
-#elif defined _BOARD_STM32F429ZI_SKYWARD_DEATHST_V3
-void __attribute__((used)) EXTI10_IRQHandlerImpl()
-#else
-#error "Target not supported"
-#endif
+void __attribute__((used)) IRQ_DIO0()
 {
     if (sx1278)
-        sx1278->handleDioIRQ();
+        sx1278->handleDioIRQ(SX1278::Dio::DIO0);
+}
+
+void __attribute__((used)) IRQ_DIO1()
+{
+    if (sx1278)
+        sx1278->handleDioIRQ(SX1278::Dio::DIO1);
+}
+
+void __attribute__((used)) IRQ_DIO3()
+{
+    if (sx1278)
+        sx1278->handleDioIRQ(SX1278::Dio::DIO3);
 }
 
 void initBoard()
 {
-#if defined _BOARD_STM32F429ZI_SKYWARD_GS
-    enableExternalInterrupt(GPIOF_BASE, 6, InterruptTrigger::RISING_EDGE);
-#elif defined _BOARD_STM32F429ZI_SKYWARD_DEATHST_V3
-    enableExternalInterrupt(GPIOF_BASE, 10, InterruptTrigger::RISING_EDGE);
-#else
-#error "Target not supported"
-#endif
+    GpioPin dio0_pin = dio0::getPin();
+    GpioPin dio1_pin = dio1::getPin();
+    GpioPin dio3_pin = dio3::getPin();
+
+    enableExternalInterrupt(dio0_pin.getPort(), dio0_pin.getNumber(),
+                            InterruptTrigger::RISING_EDGE);
+    enableExternalInterrupt(dio1_pin.getPort(), dio1_pin.getNumber(),
+                            InterruptTrigger::RISING_EDGE);
+    enableExternalInterrupt(dio3_pin.getPort(), dio3_pin.getNumber(),
+                            InterruptTrigger::RISING_EDGE);
 }
 
 void recvLoop()

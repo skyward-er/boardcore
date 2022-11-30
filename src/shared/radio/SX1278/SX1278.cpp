@@ -46,7 +46,7 @@ constexpr uint8_t REG_SYNC_CONFIG_DEFAULT =
 constexpr uint8_t REG_IMAGE_CAL_DEFAULT = RegImageCal::TEMP_TRESHOLD_10DEG;
 
 SX1278BusManager::SX1278BusManager(SPIBusInterface &bus, miosix::GpioPin cs)
-    : slave(bus, cs, spiConfig()), mode(SX1278BusManager::Mode::MODE_SLEEP)
+    : slave(bus, cs, spiConfig())
 {
 }
 
@@ -54,109 +54,116 @@ void SX1278BusManager::lock() { mutex.lock(); }
 
 void SX1278BusManager::unlock() { mutex.unlock(); }
 
-void SX1278BusManager::lockMode(SX1278BusManager::Mode mode)
+SX1278BusManager::DeviceState SX1278BusManager::lockMode(Mode mode)
 {
     mutex.lock();
+    // Store previous state
+    DeviceState old_state = state;
 
     enterMode(mode);
-    irq_wait_thread = nullptr;
+    state.irq_wait_thread = nullptr;
+    state.waiting_on_dio  = static_cast<Dio>(0);
+
+    return old_state;
 }
 
-void SX1278BusManager::unlockMode()
+void SX1278BusManager::unlockMode(DeviceState old_state)
 {
-    if (rx_wait_thread != nullptr)
-    {
-        // Restore rx state
-        irq_wait_thread = rx_wait_thread;
-        enterMode(SX1278BusManager::Mode::MODE_RX);
-    }
+    // Do this copy manually, we want stuff to be copied in a specific order
+    state.irq_wait_thread = old_state.irq_wait_thread;
+    state.waiting_on_dio  = old_state.waiting_on_dio;
+    enterMode(old_state.mode);
 
     mutex.unlock();
 }
 
-SPISlave &SX1278BusManager::getBus() { return slave; }
-
-void SX1278BusManager::handleDioIRQ()
+void SX1278BusManager::handleDioIRQ(Dio dio)
 {
-    if (irq_wait_thread)
+    if ((state.waiting_on_dio & dio) && state.irq_wait_thread)
     {
-        irq_wait_thread->IRQwakeup();
-        if (irq_wait_thread->IRQgetPriority() >
+        state.irq_wait_thread->IRQwakeup();
+        if (state.irq_wait_thread->IRQgetPriority() >
             miosix::Thread::IRQgetCurrentThread()->IRQgetPriority())
         {
             miosix::Scheduler::IRQfindNextThread();
         }
 
-        // Check if we woke the rx thread
-        if (irq_wait_thread == rx_wait_thread)
-            rx_wait_thread = nullptr;
-
-        irq_wait_thread = nullptr;
+        state.irq_wait_thread = nullptr;
     }
 }
 
-bool SX1278BusManager::waitForIrq(uint16_t mask, int timeout)
+void SX1278BusManager::waitForIrq(const LockMode &_guard, Irq irq, bool unlock)
 {
+    // Unused, just for API purposes
+    (void)_guard;
+
+    // Convert the IRQ mask into a DIO mask
+    state.waiting_on_dio  = irq_to_dio(irq);
+    state.irq_wait_thread = miosix::Thread::getCurrentThread();
+
+    // Check that this hasn't already happened
+    if (getIrqFlags() & irq)
+        return;
+
+    if (unlock)
+        mutex.unlock();
+
+    {
+        miosix::FastInterruptDisableLock dLock;
+        while (state.irq_wait_thread)
+        {
+            state.irq_wait_thread->IRQwait();
+            {
+                miosix::FastInterruptEnableLock eLock(dLock);
+                miosix::Thread::yield();
+            }
+        }
+    }
+
+    // Regain ownership of the lock
+    if (unlock)
+        mutex.lock();
+}
+
+bool SX1278BusManager::waitForIrqBusy(const LockMode &_guard, uint16_t mask,
+                                      int timeout)
+{
+    // Unused, just for API purposes
+    (void)_guard;
+
     long long start = miosix::getTick();
     while ((miosix::getTick() - start) < timeout)
     {
+        // Delay between polls
+        const unsigned int DELAY = 100;
+
         // Tight loop on IRQ register
-        for (int i = 0; i < 100; i++)
+        for (unsigned int i = 0; i < 1000 / DELAY; i++)
         {
             if (getIrqFlags() & mask)
                 return true;
 
-            miosix::delayUs(10);
+            miosix::delayUs(DELAY);
         }
     }
 
     return false;
 }
 
-void SX1278BusManager::waitForRxIrq()
-{
-    // NOTE: waitForRxIrq is only available for RX
-
-    // Check before entering irq mode
-    if (getIrqFlags() & RegIrqFlags::PAYLOAD_READY)
-        return;
-
-    miosix::FastInterruptDisableLock dLock;
-    irq_wait_thread = rx_wait_thread = miosix::Thread::getCurrentThread();
-    // Release lock to allow for writers
-    mutex.unlock();
-
-    // Avoid spurious wakeups
-    while (rx_wait_thread != 0)
-    {
-        rx_wait_thread->IRQwait();
-        {
-            miosix::FastInterruptEnableLock eLock(dLock);
-            miosix::Thread::yield();
-        }
-    }
-
-    // Regain ownership of the lock
-    mutex.lock();
-}
-
 void SX1278BusManager::enterMode(Mode mode)
 {
     // Check if necessary
-    if (mode == this->mode)
+    if (mode == state.mode)
         return;
 
     setMode(mode);
 
-    // BUG: Removing the next line makes it, better?!?
-    // waitForIrq(RegIrqFlags::MODE_READY);
-
-    this->mode = mode;
+    state.mode = mode;
 }
 
 uint16_t SX1278BusManager::getIrqFlags()
 {
-    SPITransaction spi(getBus(), SPITransaction::WriteBit::INVERTED);
+    SPITransaction spi(slave, SPITransaction::WriteBit::INVERTED);
 
     uint8_t flags[2] = {0, 0};
     spi.readRegisters(REG_IRQ_FLAGS_1, flags, 2);
@@ -166,7 +173,7 @@ uint16_t SX1278BusManager::getIrqFlags()
 
 void SX1278BusManager::setMode(Mode mode)
 {
-    SPITransaction spi(getBus(), SPITransaction::WriteBit::INVERTED);
+    SPITransaction spi(slave, SPITransaction::WriteBit::INVERTED);
     spi.writeRegister(REG_OP_MODE, REG_OP_MODE_DEFAULT | mode);
 }
 
@@ -194,27 +201,29 @@ bool SX1278::configure(const Config &config)
 {
     // Lock the bus
     SX1278BusManager::LockMode guard(bus_mgr, Mode::MODE_STDBY);
-    if (!bus_mgr.waitForIrq(RegIrqFlags::MODE_READY))
+    if (!bus_mgr.waitForIrqBusy(guard, RegIrqFlags::MODE_READY, 5))
         return false;
 
-    setBitrate(config.bitrate);
-    setFreqDev(config.freq_dev);
-    setFreqRF(config.freq_rf);
+    SPISlave &slave = bus_mgr.getBus(guard);
 
-    setRxBw(config.rx_bw);
-    setAfcBw(config.afc_bw);
+    setBitrate(slave, config.bitrate);
+    setFreqDev(slave, config.freq_dev);
+    setFreqRF(slave, config.freq_rf);
 
-    setOcp(config.ocp);
+    setRxBw(slave, config.rx_bw);
+    setAfcBw(slave, config.afc_bw);
+
+    setOcp(slave, config.ocp);
 
     uint8_t sync_word[2] = {0x12, 0xad};
-    setSyncWord(sync_word, 2);
-    setPreableLen(2);
-    setPa(config.power, true);
-    setShaping(config.shaping);
+    setSyncWord(slave, sync_word, 2);
+    setPreableLen(slave, 2);
+    setPa(slave, config.power, true);
+    setShaping(slave, config.shaping);
 
     // Setup generic parameters
     {
-        SPITransaction spi(bus_mgr.getBus(),
+        SPITransaction spi(bus_mgr.getBus(guard),
                            SPITransaction::WriteBit::INVERTED);
 
         spi.writeRegister(REG_RX_CONFIG,
@@ -262,11 +271,11 @@ ssize_t SX1278::receive(uint8_t *pkt, size_t max_len)
     do
     {
         // Special wait for payload ready
-        bus_mgr.waitForRxIrq();
-        last_rx_rssi = getRssi();
+        bus_mgr.waitForIrq(guard, RegIrqFlags::PAYLOAD_READY, true);
+        last_rx_rssi = getRssi(bus_mgr.getBus(guard));
 
         {
-            SPITransaction spi(bus_mgr.getBus(),
+            SPITransaction spi(bus_mgr.getBus(guard),
                                SPITransaction::WriteBit::INVERTED);
             len = spi.readRegister(REG_FIFO);
             if (len > max_len)
@@ -292,13 +301,10 @@ bool SX1278::send(uint8_t *pkt, size_t len)
     rateLimitTx();
 
     SX1278BusManager::LockMode guard(bus_mgr, Mode::MODE_TX);
-
-    // Wait for TX ready
-    if (!bus_mgr.waitForIrq(RegIrqFlags::TX_READY))
-        return false;
+    bus_mgr.waitForIrq(guard, RegIrqFlags::TX_READY);
 
     {
-        SPITransaction spi(bus_mgr.getBus(),
+        SPITransaction spi(bus_mgr.getBus(guard),
                            SPITransaction::WriteBit::INVERTED);
 
         spi.writeRegister(REG_FIFO, static_cast<uint8_t>(len));
@@ -306,19 +312,18 @@ bool SX1278::send(uint8_t *pkt, size_t len)
     }
 
     // Wait for packet sent
-    if (!bus_mgr.waitForIrq(RegIrqFlags::PACKET_SENT, len * 3))
-        return false;
+    bus_mgr.waitForIrq(guard, RegIrqFlags::PACKET_SENT);
 
     last_tx = now();
     return true;
 }
 
-void SX1278::handleDioIRQ() { bus_mgr.handleDioIRQ(); }
+void SX1278::handleDioIRQ(Dio dio) { bus_mgr.handleDioIRQ(dio); }
 
 float SX1278::getLastRxFei()
 {
     SX1278BusManager::Lock guard(bus_mgr);
-    return getFei();
+    return getFei(bus_mgr.getBus(guard));
 }
 
 float SX1278::getLastRxRssi() { return last_rx_rssi; }
@@ -326,7 +331,16 @@ float SX1278::getLastRxRssi() { return last_rx_rssi; }
 float SX1278::getCurRssi()
 {
     SX1278BusManager::Lock guard(bus_mgr);
-    return getRssi();
+    return getRssi(bus_mgr.getBus(guard));
+}
+
+uint8_t SX1278::getVersion()
+{
+    SX1278BusManager::Lock guard(bus_mgr);
+    SPITransaction spi(bus_mgr.getBus(guard),
+                       SPITransaction::WriteBit::INVERTED);
+
+    return spi.readRegister(REG_VERSION);
 }
 
 void SX1278::rateLimitTx()
@@ -340,9 +354,9 @@ void SX1278::rateLimitTx()
     }
 }
 
-void SX1278::imageCalibrate()
+void SX1278::imageCalibrate(SPISlave &slave)
 {
-    SPITransaction spi(bus_mgr.getBus(), SPITransaction::WriteBit::INVERTED);
+    SPITransaction spi(slave, SPITransaction::WriteBit::INVERTED);
     spi.writeRegister(REG_IMAGE_CAL, REG_IMAGE_CAL_DEFAULT | (1 << 6));
 
     // Wait for calibration complete by polling on running register
@@ -350,24 +364,16 @@ void SX1278::imageCalibrate()
         miosix::delayUs(10);
 }
 
-uint8_t SX1278::getVersion()
+float SX1278::getRssi(SPISlave &slave)
 {
-    SX1278BusManager::Lock guard(bus_mgr);
-    SPITransaction spi(bus_mgr.getBus(), SPITransaction::WriteBit::INVERTED);
-
-    return spi.readRegister(REG_VERSION);
-}
-
-float SX1278::getRssi()
-{
-    SPITransaction spi(bus_mgr.getBus(), SPITransaction::WriteBit::INVERTED);
+    SPITransaction spi(slave, SPITransaction::WriteBit::INVERTED);
 
     return static_cast<float>(spi.readRegister(REG_RSSI_VALUE)) * -0.5f;
 }
 
-float SX1278::getFei()
+float SX1278::getFei(SPISlave &slave)
 {
-    SPITransaction spi(bus_mgr.getBus(), SPITransaction::WriteBit::INVERTED);
+    SPITransaction spi(slave, SPITransaction::WriteBit::INVERTED);
 
     // Order of read is important!!
     uint8_t fei_msb = spi.readRegister(REG_FEI_MSB);
@@ -379,38 +385,38 @@ float SX1278::getFei()
     return static_cast<float>(fei) * FSTEP;
 }
 
-void SX1278::setBitrate(int bitrate)
+void SX1278::setBitrate(SPISlave &slave, int bitrate)
 {
     uint16_t val = SX1278Defs::FXOSC / bitrate;
 
     // Update values
-    SPITransaction spi(bus_mgr.getBus(), SPITransaction::WriteBit::INVERTED);
+    SPITransaction spi(slave, SPITransaction::WriteBit::INVERTED);
     spi.writeRegister(REG_BITRATE_MSB, val >> 8);
     spi.writeRegister(REG_BITRATE_LSB, val);
 }
 
-void SX1278::setFreqDev(int freq_dev)
+void SX1278::setFreqDev(SPISlave &slave, int freq_dev)
 {
     uint16_t val = freq_dev / FSTEP;
-    SPITransaction spi(bus_mgr.getBus(), SPITransaction::WriteBit::INVERTED);
+    SPITransaction spi(slave, SPITransaction::WriteBit::INVERTED);
     spi.writeRegister(REG_FDEV_MSB, (val >> 8) & 0x3f);
     spi.writeRegister(REG_FDEV_LSB, val);
 }
 
-void SX1278::setFreqRF(int freq_rf)
+void SX1278::setFreqRF(SPISlave &slave, int freq_rf)
 {
     uint32_t val = freq_rf / FSTEP;
 
     // Update values
-    SPITransaction spi(bus_mgr.getBus(), SPITransaction::WriteBit::INVERTED);
+    SPITransaction spi(slave, SPITransaction::WriteBit::INVERTED);
     spi.writeRegister(REG_FRF_MSB, val >> 16);
     spi.writeRegister(REG_FRF_MID, val >> 8);
     spi.writeRegister(REG_FRF_LSB, val);
 }
 
-void SX1278::setOcp(int ocp)
+void SX1278::setOcp(SPISlave &slave, int ocp)
 {
-    SPITransaction spi(bus_mgr.getBus(), SPITransaction::WriteBit::INVERTED);
+    SPITransaction spi(slave, SPITransaction::WriteBit::INVERTED);
     if (ocp == 0)
     {
         spi.writeRegister(REG_OCP, 0);
@@ -427,9 +433,9 @@ void SX1278::setOcp(int ocp)
     }
 }
 
-void SX1278::setSyncWord(uint8_t value[], int size)
+void SX1278::setSyncWord(SPISlave &slave, uint8_t value[], int size)
 {
-    SPITransaction spi(bus_mgr.getBus(), SPITransaction::WriteBit::INVERTED);
+    SPITransaction spi(slave, SPITransaction::WriteBit::INVERTED);
     spi.writeRegister(REG_SYNC_CONFIG, REG_SYNC_CONFIG_DEFAULT | size);
 
     for (int i = 0; i < size; i++)
@@ -438,33 +444,33 @@ void SX1278::setSyncWord(uint8_t value[], int size)
     }
 }
 
-void SX1278::setRxBw(RxBw rx_bw)
+void SX1278::setRxBw(SPISlave &slave, RxBw rx_bw)
 {
-    SPITransaction spi(bus_mgr.getBus(), SPITransaction::WriteBit::INVERTED);
+    SPITransaction spi(slave, SPITransaction::WriteBit::INVERTED);
     spi.writeRegister(REG_RX_BW, static_cast<uint8_t>(rx_bw));
 }
 
-void SX1278::setAfcBw(RxBw afc_bw)
+void SX1278::setAfcBw(SPISlave &slave, RxBw afc_bw)
 {
-    SPITransaction spi(bus_mgr.getBus(), SPITransaction::WriteBit::INVERTED);
+    SPITransaction spi(slave, SPITransaction::WriteBit::INVERTED);
     spi.writeRegister(REG_AFC_BW, static_cast<uint8_t>(afc_bw));
 }
 
-void SX1278::setPreableLen(int len)
+void SX1278::setPreableLen(SPISlave &slave, int len)
 {
-    SPITransaction spi(bus_mgr.getBus(), SPITransaction::WriteBit::INVERTED);
+    SPITransaction spi(slave, SPITransaction::WriteBit::INVERTED);
     spi.writeRegister(REG_PREAMBLE_MSB, len >> 8);
     spi.writeRegister(REG_PREAMBLE_LSB, len);
 }
 
-void SX1278::setPa(int power, bool pa_boost)
+void SX1278::setPa(SPISlave &slave, int power, bool pa_boost)
 {
     // [2, 17] or 20 if PA_BOOST
     // [0, 15] if !PA_BOOST
 
     const uint8_t MAX_POWER = 0b111;
 
-    SPITransaction spi(bus_mgr.getBus(), SPITransaction::WriteBit::INVERTED);
+    SPITransaction spi(slave, SPITransaction::WriteBit::INVERTED);
 
     if (!pa_boost)
     {
@@ -493,14 +499,15 @@ void SX1278::setPa(int power, bool pa_boost)
     // }
 }
 
-void SX1278::setShaping(Shaping shaping)
+void SX1278::setShaping(SPISlave &slave, Shaping shaping)
 {
-    SPITransaction spi(bus_mgr.getBus(), SPITransaction::WriteBit::INVERTED);
+    SPITransaction spi(slave, SPITransaction::WriteBit::INVERTED);
     spi.writeRegister(REG_PA_RAMP, static_cast<uint8_t>(shaping) | 0x09);
 }
 
 void SX1278::debugDumpRegisters()
 {
+    SX1278BusManager::Lock guard(bus_mgr);
     struct RegDef
     {
         const char *name;
@@ -564,7 +571,8 @@ void SX1278::debugDumpRegisters()
         RegDef{"REG_DIO_MAPPING_2", REG_DIO_MAPPING_2},
         RegDef{"REG_VERSION", REG_VERSION}, RegDef{NULL, 0}};
 
-    SPITransaction spi(bus_mgr.getBus(), SPITransaction::WriteBit::INVERTED);
+    SPITransaction spi(bus_mgr.getBus(guard),
+                       SPITransaction::WriteBit::INVERTED);
 
     int i = 0;
     while (defs[i].name)

@@ -62,23 +62,23 @@ volatile int dio3_cnt = 0;
 void __attribute__((used)) SX1278_IRQ_DIO0()
 {
     if (sx1278)
-        sx1278->handleDioIRQ();
+        sx1278->handleDioIRQ(SX1278::Dio::DIO0);
 
     dio0_cnt++;
 }
 
 void __attribute__((used)) SX1278_IRQ_DIO1()
 {
-    // if (sx1278)
-    //     sx1278->handleDioIRQ();
+    if (sx1278)
+        sx1278->handleDioIRQ(SX1278::Dio::DIO1);
 
     dio1_cnt++;
 }
 
 void __attribute__((used)) SX1278_IRQ_DIO3()
 {
-    // if (sx1278)
-    //     sx1278->handleDioIRQ();
+    if (sx1278)
+        sx1278->handleDioIRQ(SX1278::Dio::DIO3);
 
     dio3_cnt++;
 }

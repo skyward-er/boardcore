@@ -60,19 +60,19 @@ using mosi = interfaces::spi4::mosi;
 void __attribute__((used)) IRQ_DIO0()
 {
     if (sx1278)
-        sx1278->handleDioIRQ();
+        sx1278->handleDioIRQ(SX1278::Dio::DIO0);
 }
 
 void __attribute__((used)) IRQ_DIO1()
 {
-    // if (sx1278)
-    //     sx1278->handleDioIRQ();
+    if (sx1278)
+        sx1278->handleDioIRQ(SX1278::Dio::DIO1);
 }
 
 void __attribute__((used)) IRQ_DIO3()
 {
-    // if (sx1278)
-    //     sx1278->handleDioIRQ();
+    if (sx1278)
+        sx1278->handleDioIRQ(SX1278::Dio::DIO3);
 }
 
 void initBoard()
