@@ -31,22 +31,9 @@ static Boardcore::I2C
     *ports[N_I2C_PORTS];  ///< Pointer to serial port classes to let interrupts
                           ///< access the classes
 
-inline void wakeUpWaitingThread(miosix::Thread *waiting)
-{
-    if (waiting)
-    {
-        waiting->IRQwakeup();
-        if (waiting->IRQgetPriority() >
-            miosix::Thread::IRQgetCurrentThread()->IRQgetPriority())
-        {
-            miosix::Scheduler::IRQfindNextThread();
-        }
-    }
-}
-
 #ifdef I2C1
 /**
- * I2C address sent interrupt
+ * I2C1 event interrupt
  */
 void __attribute__((naked)) I2C1_EV_IRQHandler()
 {
@@ -56,7 +43,7 @@ void __attribute__((naked)) I2C1_EV_IRQHandler()
 }
 
 /**
- * I2C address sent interrupt actual implementation
+ * I2C1 event interrupt actual implementation
  */
 void __attribute__((used)) I2C1HandlerImpl()
 {
@@ -66,7 +53,7 @@ void __attribute__((used)) I2C1HandlerImpl()
 }
 
 /**
- * I2C error interrupt
+ * I2C1 error interrupt
  */
 void __attribute__((naked)) I2C1_ER_IRQHandler()
 {
@@ -76,7 +63,7 @@ void __attribute__((naked)) I2C1_ER_IRQHandler()
 }
 
 /**
- * I2C error interrupt actual implementation
+ * I2C1 error interrupt actual implementation
  */
 void __attribute__((used)) I2C1errHandlerImpl()
 {
@@ -88,7 +75,7 @@ void __attribute__((used)) I2C1errHandlerImpl()
 
 #ifdef I2C2
 /**
- * I2C address sent interrupt
+ * I2C2 event interrupt
  */
 void __attribute__((naked)) I2C2_EV_IRQHandler()
 {
@@ -98,7 +85,7 @@ void __attribute__((naked)) I2C2_EV_IRQHandler()
 }
 
 /**
- * I2C address sent interrupt actual implementation
+ * I2C2 event interrupt actual implementation
  */
 void __attribute__((used)) I2C2HandlerImpl()
 {
@@ -108,7 +95,7 @@ void __attribute__((used)) I2C2HandlerImpl()
 }
 
 /**
- * I2C error interrupt
+ * I2C2 error interrupt
  */
 void __attribute__((naked)) I2C2_ER_IRQHandler()
 {
@@ -118,7 +105,7 @@ void __attribute__((naked)) I2C2_ER_IRQHandler()
 }
 
 /**
- * I2C error interrupt actual implementation
+ * I2C2 error interrupt actual implementation
  */
 void __attribute__((used)) I2C2errHandlerImpl()
 {
@@ -130,7 +117,7 @@ void __attribute__((used)) I2C2errHandlerImpl()
 
 #ifdef I2C3
 /**
- * I2C address sent interrupt
+ * I2C3 event interrupt
  */
 void __attribute__((naked)) I2C3_EV_IRQHandler()
 {
@@ -140,7 +127,7 @@ void __attribute__((naked)) I2C3_EV_IRQHandler()
 }
 
 /**
- * I2C address sent interrupt actual implementation
+ * I2C3 event interrupt actual implementation
  */
 void __attribute__((used)) I2C3HandlerImpl()
 {
@@ -150,7 +137,7 @@ void __attribute__((used)) I2C3HandlerImpl()
 }
 
 /**
- * I2C error interrupt
+ * I2C3 error interrupt
  */
 void __attribute__((naked)) I2C3_ER_IRQHandler()
 {
@@ -160,7 +147,7 @@ void __attribute__((naked)) I2C3_ER_IRQHandler()
 }
 
 /**
- * I2C error interrupt actual implementation
+ * I2C3 error interrupt actual implementation
  */
 void __attribute__((used)) I2C3errHandlerImpl()
 {
@@ -172,7 +159,7 @@ void __attribute__((used)) I2C3errHandlerImpl()
 
 #ifdef I2C4
 /**
- * I2C address sent interrupt
+ * I2C4 event interrupt
  */
 void __attribute__((naked)) I2C4_EV_IRQHandler()
 {
@@ -182,7 +169,7 @@ void __attribute__((naked)) I2C4_EV_IRQHandler()
 }
 
 /**
- * I2C address sent interrupt actual implementation
+ * I2C4 event interrupt actual implementation
  */
 void __attribute__((used)) I2C4HandlerImpl()
 {
@@ -192,7 +179,7 @@ void __attribute__((used)) I2C4HandlerImpl()
 }
 
 /**
- * I2C error interrupt
+ * I2C4 error interrupt
  */
 void __attribute__((naked)) I2C4_ER_IRQHandler()
 {
@@ -202,7 +189,7 @@ void __attribute__((naked)) I2C4_ER_IRQHandler()
 }
 
 /**
- * I2C error interrupt actual implementation
+ * I2C4 error interrupt actual implementation
  */
 void __attribute__((used)) I2C4errHandlerImpl()
 {
@@ -375,12 +362,7 @@ bool I2C::read(uint16_t slaveAddress, void *buffer, size_t nBytes,
             miosix::InterruptDisableLock dLock;
 
             // waiting for the reception of another byte
-            if (!IRQwaitForRegisterChange(dLock))
-            {
-                return false;
-            }
-
-            if (!(i2c->SR1 & I2C_SR1_RXNE))
+            if (!IRQwaitForRegisterChange(dLock) || !(i2c->SR1 & I2C_SR1_RXNE))
             {
                 i2c->CR1 |= I2C_CR1_STOP;
                 return false;
@@ -430,12 +412,7 @@ bool I2C::write(uint16_t slaveAddress, void *buffer, size_t nBytes,
         i2c->DR = buff[i];
 
         // waiting for the sending of the byte
-        if (!IRQwaitForRegisterChange(dLock))
-        {
-            return false;
-        }
-
-        if (!(i2c->SR1 & I2C_SR1_TXE))
+        if (!IRQwaitForRegisterChange(dLock) || !(i2c->SR1 & I2C_SR1_TXE))
         {
             i2c->CR1 |= I2C_CR1_STOP;
             return false;
@@ -465,22 +442,10 @@ bool I2C::prologue(uint16_t slaveAddress)
         miosix::InterruptDisableLock dLock;
         i2c->CR1 |= I2C_CR1_START | I2C_CR1_ACK;
 
-        // waiting for reception of start signal
-        if (!IRQwaitForRegisterChange(dLock))
+        // waiting for reception of start signal and change to master mode
+        if (!IRQwaitForRegisterChange(dLock) || !(i2c->SR1 & I2C_SR1_SB) ||
+            !(i2c->SR2 & I2C_SR2_MSL))
         {
-            return false;
-        }
-
-        if (!(i2c->SR1 & I2C_SR1_SB))
-        {
-            // start signal not received by slave
-            i2c->CR1 |= I2C_CR1_STOP;
-            return false;
-        }
-
-        if (!(i2c->SR2 & I2C_SR2_MSL))
-        {
-            // peripheral not changed to master mode
             i2c->CR1 |= I2C_CR1_STOP;
             return false;
         }
@@ -495,14 +460,8 @@ bool I2C::prologue(uint16_t slaveAddress)
         i2c->DR = slaveAddress;
 
         // Checking if a slave matched his address
-        if (!IRQwaitForRegisterChange(dLock))
+        if (!IRQwaitForRegisterChange(dLock) || !(i2c->SR1 & I2C_SR1_ADDR))
         {
-            return false;
-        }
-
-        if (!(i2c->SR1 & I2C_SR1_ADDR))
-        {
-            // address not recognized by slaves
             i2c->CR1 |= I2C_CR1_STOP;
             return false;
         }
@@ -519,14 +478,8 @@ bool I2C::prologue(uint16_t slaveAddress)
             i2c->DR = header;
 
             // Checking if the header has been sent
-            if (!IRQwaitForRegisterChange(dLock))
+            if (!IRQwaitForRegisterChange(dLock) || !(i2c->SR1 & I2C_SR1_ADD10))
             {
-                return false;
-            }
-
-            if (!(i2c->SR1 & I2C_SR1_ADD10))
-            {
-                // Header not received by slave
                 i2c->CR1 |= I2C_CR1_STOP;
                 return false;
             }
@@ -538,14 +491,8 @@ bool I2C::prologue(uint16_t slaveAddress)
             i2c->DR = (slaveAddress & 0xff);
 
             // Checking if a slave matched his address
-            if (!IRQwaitForRegisterChange(dLock))
+            if (!IRQwaitForRegisterChange(dLock) || !(i2c->SR1 & I2C_SR1_ADDR))
             {
-                return false;
-            }
-
-            if (!(i2c->SR1 & I2C_SR1_ADDR))
-            {
-                // address not recognized by slaves
                 i2c->CR1 |= I2C_CR1_STOP;
                 return false;
             }
@@ -557,7 +504,10 @@ bool I2C::prologue(uint16_t slaveAddress)
             // Checking if the peripheral is in Master mode (clearing ADDR flag
             // with a read on SR2 register)
             if (!(i2c->SR2 & I2C_SR2_MSL))
+            {
+                i2c->CR1 |= I2C_CR1_STOP;
                 return false;
+            }
 
             {
                 miosix::InterruptDisableLock dLock;
@@ -565,14 +515,9 @@ bool I2C::prologue(uint16_t slaveAddress)
                 i2c->CR1 |= I2C_CR1_START;
 
                 // waiting for reception of start signal
-                if (!IRQwaitForRegisterChange(dLock))
+                if (!IRQwaitForRegisterChange(dLock) ||
+                    !(i2c->SR1 & I2C_SR1_SB))
                 {
-                    return false;
-                }
-
-                if (!(i2c->SR1 & I2C_SR1_SB))
-                {
-                    // Start condition not received by slaves
                     i2c->CR1 |= I2C_CR1_STOP;
                     return false;
                 }
@@ -587,7 +532,10 @@ bool I2C::prologue(uint16_t slaveAddress)
     if (!(i2c->SR2 & I2C_SR2_BUSY) ||  // channel should be busy
         !(i2c->SR2 & I2C_SR2_MSL) ||  // the peripheral should be in master mode
         ((i2c->SR2 & I2C_SR2_TRA) == (slaveAddress & 0b1)))  // Tx or Rx mode
+    {
+        i2c->CR1 |= I2C_CR1_STOP;
         return false;
+    }
 
     return true;
 }
@@ -595,6 +543,7 @@ bool I2C::prologue(uint16_t slaveAddress)
 inline bool I2C::IRQwaitForRegisterChange(miosix::InterruptDisableLock &dLock)
 {
     waiting = miosix::Thread::IRQgetCurrentThread();
+
     while (waiting)
     {
         waiting->IRQwait();
@@ -606,10 +555,26 @@ inline bool I2C::IRQwaitForRegisterChange(miosix::InterruptDisableLock &dLock)
     if (error)
     {
         error = false;
-        i2c->CR1 |= I2C_CR1_STOP;
         return false;
     }
+
     return true;
+}
+
+inline void I2C::IRQwakeUpWaitingThread()
+{
+    if (waiting)
+    {
+        waiting->IRQwakeup();
+
+        if (waiting->IRQgetPriority() >
+            miosix::Thread::IRQgetCurrentThread()->IRQgetPriority())
+        {
+            miosix::Scheduler::IRQfindNextThread();
+        }
+
+        waiting = 0;
+    }
 }
 
 void I2C::IRQhandleInterrupt()
@@ -619,8 +584,7 @@ void I2C::IRQhandleInterrupt()
     i2c->CR2 &= ~(I2C_CR2_ITEVTEN | I2C_CR2_ITERREN);
 
     // waking up the waiting thread
-    wakeUpWaitingThread(waiting);
-    waiting = 0;
+    IRQwakeUpWaitingThread();
 }
 
 void I2C::IRQhandleErrInterrupt()
@@ -632,15 +596,12 @@ void I2C::IRQhandleErrInterrupt()
     // notifying an error
     error = true;
 
-    // if (i2c->SR1 & I2C_SR1_TIMEOUT)
-
     // clearing all the errors in the register
     i2c->SR1 &= ~(I2C_SR1_SMBALERT | I2C_SR1_TIMEOUT | I2C_SR1_PECERR |
                   I2C_SR1_OVR | I2C_SR1_AF | I2C_SR1_ARLO | I2C_SR1_BERR);
 
     // waking up the waiting thread
-    wakeUpWaitingThread(waiting);
-    waiting = 0;
+    IRQwakeUpWaitingThread();
 }
 
 }  // namespace Boardcore

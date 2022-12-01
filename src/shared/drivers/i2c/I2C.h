@@ -125,6 +125,14 @@ protected:
      */
     inline bool IRQwaitForRegisterChange(miosix::InterruptDisableLock &dLock);
 
+    /**
+     * @brief This function has the logic to wake up and reschedule the thread
+     * if it has a higher priority with relation to the one in current
+     * execution. This function is called by interrupts.
+     * @param waiting The thread to be waken up.
+     */
+    inline void IRQwakeUpWaitingThread();
+
     static const int MAX_N_POLLING =
         2000;  ///< Maximum number of cycles for polling
 
