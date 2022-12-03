@@ -19,6 +19,9 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
+#include <Singleton.h>
+#include <diagnostic/PrintLogger.h>
+
 #include <iostream>
 #include <utils/ModuleManager/ModuleManager.hpp>
 
@@ -49,6 +52,14 @@ public:
     void toggleDummy() override { dummy = dummy == 0 ? 1000 : 0; }
 };
 
+class SingletonSensors : public Singleton<Sensors>
+{
+    friend class Singleton<SingletonSensors>;
+
+public:
+    int getDummy() { return 1000; }
+};
+
 class Radio : public Module
 {
     int dummy = 0;
@@ -61,36 +72,82 @@ public:
 
 int main()
 {
+    // Create the print logger to print the debug
+    PrintLogger logger = Logging::getLogger("TestModuleManager");
+
+    // Insert the instance inside the module manager
     ModuleManager::getInstance().insert<SensorsModule>(new HILSensors());
 
-    // Ignored insertion because a sensorsModule is already present
+    // Useless insertion because of already existing module
     ModuleManager::getInstance().insert<SensorsModule>(new Sensors());
 
     // First correct insertion using the same class
     ModuleManager::getInstance().insert<Radio>(new Radio());
 
-    // Test
-    cout << ModuleManager::getInstance().get<SensorsModule>()->getDummy() << ","
-         << ModuleManager::getInstance().get<Radio>()->getDummy() << endl;
+    LOG_INFO(logger, "Checking the default values");
 
+    // Check the output
+    if (ModuleManager::getInstance().get<SensorsModule>()->getDummy() != 0 ||
+        ModuleManager::getInstance().get<Radio>()->getDummy() != 0)
+    {
+        LOG_ERR(logger,
+                "Error with default values, they should 0 whereas they are: "
+                "{:d} {:d}",
+                ModuleManager::getInstance().get<SensorsModule>()->getDummy(),
+                ModuleManager::getInstance().get<Radio>()->getDummy());
+        return -1;
+    }
+
+    LOG_INFO(logger, "Toggling the SensorsModule value");
+    // Toggle the sensors module and the output should be 2000 because HIL
+    // sensors
     ModuleManager::getInstance().get<SensorsModule>()->toggleDummy();
 
-    cout << ModuleManager::getInstance().get<SensorsModule>()->getDummy() << ","
-         << ModuleManager::getInstance().get<Radio>()->getDummy() << endl;
+    // Check the Radio didn't change
+    if (ModuleManager::getInstance().get<Radio>()->getDummy() != 0)
+    {
+        LOG_ERR(logger,
+                "Error with Radio value. It should be 0 "
+                "whereas it is: {:d}",
+                ModuleManager::getInstance().get<Radio>()->getDummy());
+    }
 
-    ModuleManager::getInstance().get<Radio>()->setDummy(3000);
+    // Check the output of the toggle
+    if (ModuleManager::getInstance().get<SensorsModule>()->getDummy() != 2000)
+    {
+        LOG_ERR(logger,
+                "Error with SensorsModule value. It should be 2000 "
+                "whereas it is: {:d}",
+                ModuleManager::getInstance().get<SensorsModule>()->getDummy());
+        return -1;
+    }
 
-    cout << ModuleManager::getInstance().get<SensorsModule>()->getDummy() << ","
-         << ModuleManager::getInstance().get<Radio>()->getDummy() << endl;
+    LOG_INFO(logger, "Toggling the SensorsModule value");
+    LOG_INFO(logger, "Set the Radio module value to 1000");
+    // Toggle the sensors module again and toggle the radio module
+    ModuleManager::getInstance().get<SensorsModule>()->toggleDummy();
+    ModuleManager::getInstance().get<Radio>()->setDummy(1000);
 
-    // ModuleManager::getInstance().insert<SensorsModule>(new HILSensors());
+    // Check the SensorsModule returned to 0
+    if (ModuleManager::getInstance().get<SensorsModule>()->getDummy() != 0)
+    {
+        LOG_ERR(logger,
+                "Error with SensorsModule value. It should be 0 "
+                "whereas it is: {:d}",
+                ModuleManager::getInstance().get<Radio>()->getDummy());
+    }
 
-    // ModuleManager::getInstance().get<SensorsModule>()->toggleDummy();
+    // Check that the radio didn't change
+    if (ModuleManager::getInstance().get<Radio>()->getDummy() != 1000)
+    {
+        LOG_ERR(logger,
+                "Error with Radio value. It should be 1000 "
+                "whereas it is: {:d}",
+                ModuleManager::getInstance().get<Radio>()->getDummy());
+        return -1;
+    }
 
-    // ModuleManager::getInstance().get<Radio>();
-
-    // cout << ModuleManager::getInstance().get<SensorsModule>()->getDummy() <<
-    // endl;
+    LOG_INFO(logger, "Test completed with success!");
 
     return 0;
 }
