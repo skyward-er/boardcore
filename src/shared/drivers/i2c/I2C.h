@@ -63,7 +63,8 @@ public:
      * @param speed the speed mode of the I2C communication
      * @param addressing The addressing mode used in the I2C communication
      */
-    I2C(I2C_TypeDef *i2c, Speed speed, Addressing addressing);
+    I2C(I2C_TypeDef *i2c, Speed speed, Addressing addressing,
+        miosix::GpioPin scl, unsigned char af);
 
     /**
      * @brief Deconstructor. Disables the peripheral, the interrupts in the NVIC
@@ -115,6 +116,13 @@ protected:
     bool prologue(uint16_t slaveAddress);
 
     /**
+     * @brief Performs the recovery from the locked state.
+     * It tries to recover from both Master locked state and Slave locked state.
+     * It *usually* takes circa 15ms for a full recovery.
+     */
+    void recoverFromLockedState();
+
+    /**
      * @brief This waits until the thread isn't waken up by an I2C interrupt (EV
      * or ERR). This method shuould be called in a block where interrupts are
      * disabled; handles the waiting and yielding and the management of the
@@ -130,9 +138,6 @@ protected:
      */
     inline void IRQwakeUpWaitingThread();
 
-    static const int MAX_N_POLLING =
-        2000;  ///< Maximum number of cycles for polling
-
     uint8_t id;
     IRQn_Type irqnEv;
     IRQn_Type irqnErr;
@@ -142,6 +147,8 @@ protected:
     const Speed speed;            ///< Baudrate of the serial communication
     const Addressing addressing;  ///< Addressing mode of the device
     miosix::Thread *waiting = 0;  ///< Pointer to the waiting on receive thread
+    miosix::GpioPin scl;          ///< Pin of the clock for slave lock recovery
+    unsigned char af;             ///< Alternate function of the scl for i2c
     miosix::FastMutex mutex;      ///< recursive mutex for rx/tx
 
     PrintLogger logger = Logging::getLogger("i2c");

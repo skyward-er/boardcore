@@ -90,13 +90,13 @@ bool i2cDriverOLED(I2C &i2c)
     buffer[0] = 0;
     if (!i2c.write(OLED.addressSensor, &OLED.whoamiRegister, 1, true))
     {
-        printf("writing error!\n");
+        // printf("writing error!\n");
         return false;
     }
 
     if (!i2c.read(OLED.addressSensor, buffer, 1, true))
     {
-        printf("reading error!\n");
+        // printf("reading error!\n");
         return false;
     }
     // printf("read: %d, should be: %d\n", buffer[0], OLED.whoamiContent);
@@ -110,12 +110,12 @@ bool i2cDriverBMP(I2C &i2c)
     buffer[0] = 0;
     if (!i2c.write(BMP180.addressSensor, &BMP180.whoamiRegister, 1, true))
     {
-        printf("writing error!\n");
+        // printf("writing error!\n");
         return false;
     }
     if (!i2c.read(BMP180.addressSensor, buffer, 1, true))
     {
-        printf("reading error!\n");
+        // printf("reading error!\n");
         return false;
     }
 
@@ -131,7 +131,8 @@ int main()
     i1scl2::getPin().mode(miosix::Mode::ALTERNATE);
     i1scl2::getPin().alternateFunction(4);
 
-    I2C i2c(I2C1, I2C::Speed::STANDARD, I2C::Addressing::BIT7);
+    I2C i2c(I2C1, I2C::Speed::STANDARD, I2C::Addressing::BIT7, i1scl2::getPin(),
+            4);
 
     for (;;)
     {

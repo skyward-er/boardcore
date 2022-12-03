@@ -31,6 +31,11 @@ static Boardcore::I2C
     *ports[N_I2C_PORTS];  ///< Pointer to serial port classes to let interrupts
                           ///< access the classes
 
+static const int MAX_N_POLLING =
+    2000;  ///< Maximum number of cycles for polling
+static const int N_SCL_BITBANG =
+    16;  ///< Number of clocks created for slave locked bus recovery
+
 #ifdef I2C1
 /**
  * I2C1 event interrupt
@@ -201,8 +206,9 @@ void __attribute__((used)) I2C4errHandlerImpl()
 
 namespace Boardcore
 {
-I2C::I2C(I2C_TypeDef *i2c, Speed speed, Addressing addressing)
-    : i2c(i2c), speed(speed), addressing(addressing),
+I2C::I2C(I2C_TypeDef *i2c, Speed speed, Addressing addressing,
+         miosix::GpioPin scl, unsigned char af)
+    : i2c(i2c), speed(speed), addressing(addressing), scl(scl), af(af),
       mutex(miosix::FastMutex::Options::RECURSIVE)
 {
     // Setting the id and irqn of the right i2c peripheral
@@ -243,6 +249,17 @@ I2C::I2C(I2C_TypeDef *i2c, Speed speed, Addressing addressing)
     }
 
     init();
+
+    // Add to the array of i2c peripherals so that the interrupts can see it
+    ports[id - 1] = this;
+
+    // Enabling the interrupts (Ev and Err) in the NVIC for the relative i2c
+    NVIC_SetPriority(irqnEv, 15);
+    NVIC_ClearPendingIRQ(irqnEv);
+    NVIC_EnableIRQ(irqnEv);
+    NVIC_SetPriority(irqnErr, 15);
+    NVIC_ClearPendingIRQ(irqnErr);
+    NVIC_EnableIRQ(irqnErr);
 }
 
 I2C::~I2C()
@@ -314,19 +331,8 @@ void I2C::init()
     // Configuring the TRISE
     i2c->TRISE = (f & I2C_CR2_FREQ) + 1;
 
-    // Enabling the interrupts (Ev and Err) in the NVIC for the relative i2c
-    NVIC_SetPriority(irqnEv, 15);
-    NVIC_ClearPendingIRQ(irqnEv);
-    NVIC_EnableIRQ(irqnEv);
-    NVIC_SetPriority(irqnErr, 15);
-    NVIC_ClearPendingIRQ(irqnErr);
-    NVIC_EnableIRQ(irqnErr);
-
     // Setting the Own Address Register
     i2c->OAR1 = (addressing << 15);  // Selecting the addressing mode
-
-    // Add to the array of i2c peripherals so that the interrupts can see it
-    ports[id - 1] = this;
 
     // Finally enabling the peripheral
     i2c->CR1 |= I2C_CR1_PE;
@@ -435,7 +441,10 @@ bool I2C::prologue(uint16_t slaveAddress)
     // lock state detected after N polling cycles
     // TODO: apply recovery from locked state!
     if (i == MAX_N_POLLING)
+    {
+        recoverFromLockedState();
         return false;
+    }
 
     {
         miosix::InterruptDisableLock dLock;
@@ -467,8 +476,8 @@ bool I2C::prologue(uint16_t slaveAddress)
     }
     else  // addressing == Addressing::BIT10
     {
-        // Header generated (composed of 11110xx0 bits with xx as the 9th and
-        // 8th bits of the address)
+        // Header generated (composed of 11110xx0 bits with xx as the 9th
+        // and 8th bits of the address)
         const uint8_t header = 0b11110000 | ((slaveAddress >> 7) & 0b110);
 
         {
@@ -500,8 +509,8 @@ bool I2C::prologue(uint16_t slaveAddress)
         // if we want to enter in receiver mode
         if (slaveAddress & 0b1)
         {
-            // Checking if the peripheral is in Master mode (clearing ADDR flag
-            // with a read on SR2 register)
+            // Checking if the peripheral is in Master mode (clearing ADDR
+            // flag with a read on SR2 register)
             if (!(i2c->SR2 & I2C_SR2_MSL))
             {
                 i2c->CR1 |= I2C_CR1_STOP;
@@ -537,6 +546,40 @@ bool I2C::prologue(uint16_t slaveAddress)
     }
 
     return true;
+}
+
+void I2C::recoverFromLockedState()
+{
+    // Recovery from the locked state due to the Master
+    init();
+
+    // Checking for slave locked state
+    uint32_t i{0};
+    for (; (i < MAX_N_POLLING) && (i2c->SR2 & I2C_SR2_BUSY); ++i)
+        ;
+
+    if (i == MAX_N_POLLING)
+    {
+        // Recovery from the locked state due to a stuck Slave. We bit-bang 16
+        // clocks on the scl line in order to restore pending packets of the
+        // slaves
+        scl.mode(miosix::Mode::OUTPUT);
+
+        for (size_t c = 0; c < N_SCL_BITBANG; c++)
+        {
+            scl.low();
+            scl.high();
+        }
+
+        scl.mode(miosix::Mode::ALTERNATE);
+        scl.alternateFunction(af);
+
+        // LOG_DEBUG(logger, "I2C SLAVE locked detected");
+    }
+    else
+    {
+        // LOG_DEBUG(logger, "I2C BUS locked detected");
+    }
 }
 
 inline bool I2C::IRQwaitForRegisterChange(miosix::InterruptDisableLock &dLock)
