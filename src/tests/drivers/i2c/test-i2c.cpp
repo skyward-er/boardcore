@@ -20,6 +20,8 @@
  * THE SOFTWARE.
  */
 
+#include <iostream>
+
 #include "drivers/i2c/I2C.h"
 #include "miosix.h"
 #include "string"
@@ -36,10 +38,10 @@ using namespace miosix;
 using namespace Boardcore;
 
 // I2C1
-typedef miosix::Gpio<GPIOB_BASE, 6> i1sda1;
-typedef miosix::Gpio<GPIOB_BASE, 7> i1scl1;
-typedef miosix::Gpio<GPIOB_BASE, 8> i1sda2;
-typedef miosix::Gpio<GPIOB_BASE, 9> i1scl2;
+typedef miosix::Gpio<GPIOB_BASE, 6> i1scl1;
+typedef miosix::Gpio<GPIOB_BASE, 7> i1sda1;
+typedef miosix::Gpio<GPIOB_BASE, 8> i1scl2;
+typedef miosix::Gpio<GPIOB_BASE, 9> i1sda2;
 
 // I2C2
 typedef miosix::Gpio<GPIOB_BASE, 9> i2sda1;
@@ -64,9 +66,6 @@ typedef miosix::Gpio<GPIOH_BASE, 8> i3scl2;
 /**
  * SETUP:
  */
-
-uint16_t address = 42;
-
 uint8_t buffer[8] = {0};
 struct
 {
@@ -83,77 +82,45 @@ struct
 {
     uint8_t addressSensor  = 0b0111100;
     uint8_t whoamiRegister = 0xD0;
-    uint8_t whoamiContent  = 0x55;
+    uint8_t whoamiContent  = 0x43;
 } OLED;
 
-void i2cDriverOLED()
+bool i2cDriverOLED(I2C &i2c)
 {
-#ifndef I2C_MIOSIX
-    I2C i2c(I2C1, I2C::Speed::STANDARD, I2C::Addressing::BIT7, address);
-
-    for (;;)
+    buffer[0] = 0;
+    if (!i2c.write(OLED.addressSensor, &OLED.whoamiRegister, 1, true))
     {
-        buffer[0] = 0;
-        if (!i2c.write(OLED.addressSensor, &OLED.whoamiRegister, 1, true))
-            printf("writing error!\n");
-        if (!i2c.read(OLED.addressSensor, buffer, 1, true))
-            printf("reading error!\n");
-
-        printf("read: %d\n", buffer[0]);
-        miosix::Thread::sleep(1000);
+        printf("writing error!\n");
+        return false;
     }
-#else
-    miosix::I2C1Driver &i2c = miosix::I2C1Driver::instance();
-    while (true)
+
+    if (!i2c.read(OLED.addressSensor, buffer, 1, true))
     {
-        if (!i2c.send(OLED.addressSensor, &OLED.whoamiRegister, 1))
-            printf("writing error!\n");
-
-        if (!i2c.recv(OLED.addressSensor, buffer, 1))
-            printf("reading error!\n");
-
-        printf("read: %d\n", buffer[0]);
-
-        miosix::Thread::sleep(1000);
+        printf("reading error!\n");
+        return false;
     }
-#endif
-    miosix::Thread::sleep(1000);
+    // printf("read: %d, should be: %d\n", buffer[0], OLED.whoamiContent);
+    return true;
 }
 
-void i2cDriverBMP()
+bool i2cDriverBMP(I2C &i2c)
 {
-#ifndef I2C_MIOSIX
-    I2C i2c(I2C1, I2C::Speed::STANDARD, I2C::Addressing::BIT7, address);
-
     i2c.write(BMP180.addressSensor, BMP180.softReset, 2, true);
 
-    for (;;)
+    buffer[0] = 0;
+    if (!i2c.write(BMP180.addressSensor, &BMP180.whoamiRegister, 1, true))
     {
-        buffer[0] = 0;
-        if (!i2c.write(BMP180.addressSensor, &BMP180.whoamiRegister, 1, true))
-            printf("writing error!\n");
-        if (!i2c.read(BMP180.addressSensor, buffer, 1, true))
-            printf("reading error!\n");
-
-        printf("read: %d, should be: %d\n", buffer[0], BMP180.whoamiContent);
-        miosix::Thread::sleep(1000);
+        printf("writing error!\n");
+        return false;
     }
-#else
-    miosix::I2C1Driver &i2c = miosix::I2C1Driver::instance();
-    while (true)
+    if (!i2c.read(BMP180.addressSensor, buffer, 1, true))
     {
-        if (!i2c.send(BMP180.addressSensor, &BMP180.whoamiRegister, 1))
-            printf("writing error!\n");
-
-        if (!i2c.recv(BMP180.addressSensor, buffer, 1))
-            printf("reading error!\n");
-
-        printf("read: %d, should be: %d\n", buffer[0], BMP180.whoamiContent);
-
-        miosix::Thread::sleep(1000);
+        printf("reading error!\n");
+        return false;
     }
-#endif
-    miosix::Thread::sleep(1000);
+
+    // printf("read: %d, should be: %d\n", buffer[0], BMP180.whoamiContent);
+    return true;
 }
 
 int main()
@@ -164,7 +131,20 @@ int main()
     i1scl2::getPin().mode(miosix::Mode::ALTERNATE);
     i1scl2::getPin().alternateFunction(4);
 
-    i2cDriverOLED();
+    I2C i2c(I2C1, I2C::Speed::STANDARD, I2C::Addressing::BIT7);
+
+    for (;;)
+    {
+        bool ok = true;
+        for (int i = 0; i < 30; i++)
+        {
+            ok &= i2cDriverOLED(i2c);
+            // Thread::sleep(2);
+            ok &= i2cDriverBMP(i2c);
+            // Thread::sleep(10);
+        }
+        std::cout << std::boolalpha << ok << std::endl;
+    }
 
     return 0;
 }

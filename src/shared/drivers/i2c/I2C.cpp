@@ -201,8 +201,8 @@ void __attribute__((used)) I2C4errHandlerImpl()
 
 namespace Boardcore
 {
-I2C::I2C(I2C_TypeDef *i2c, Speed speed, Addressing addressing, uint16_t address)
-    : i2c(i2c), speed(speed), addressing(addressing), address(address),
+I2C::I2C(I2C_TypeDef *i2c, Speed speed, Addressing addressing)
+    : i2c(i2c), speed(speed), addressing(addressing),
       mutex(miosix::FastMutex::Options::RECURSIVE)
 {
     // Setting the id and irqn of the right i2c peripheral
@@ -323,8 +323,7 @@ void I2C::init()
     NVIC_EnableIRQ(irqnErr);
 
     // Setting the Own Address Register
-    i2c->OAR1 = address |            // Setting the own address
-                (addressing << 15);  // Selecting the addressing mode
+    i2c->OAR1 = (addressing << 15);  // Selecting the addressing mode
 
     // Add to the array of i2c peripherals so that the interrupts can see it
     ports[id - 1] = this;
@@ -440,7 +439,7 @@ bool I2C::prologue(uint16_t slaveAddress)
 
     {
         miosix::InterruptDisableLock dLock;
-        i2c->CR1 |= I2C_CR1_START | I2C_CR1_ACK;
+        i2c->CR1 |= I2C_CR1_START;
 
         // waiting for reception of start signal and change to master mode
         if (!IRQwaitForRegisterChange(dLock) || !(i2c->SR1 & I2C_SR1_SB) ||

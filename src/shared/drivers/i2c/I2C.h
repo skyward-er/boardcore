@@ -62,11 +62,8 @@ public:
      * @param i2c structure that represents the I2C peripheral
      * @param speed the speed mode of the I2C communication
      * @param addressing The addressing mode used in the I2C communication
-     * @param address In 7-bit addressing must give the 7 bits shifted to the
-     * left by 1 (so, MSB of the address must be the eighth bit). In 10 bit
-     * addressing, just the 10 bit address
      */
-    I2C(I2C_TypeDef *i2c, Speed speed, Addressing addressing, uint16_t address);
+    I2C(I2C_TypeDef *i2c, Speed speed, Addressing addressing);
 
     /**
      * @brief Deconstructor. Disables the peripheral, the interrupts in the NVIC
@@ -144,7 +141,6 @@ protected:
     bool error = false;           ///< Flag that tells if an error occurred
     const Speed speed;            ///< Baudrate of the serial communication
     const Addressing addressing;  ///< Addressing mode of the device
-    const uint16_t address;       ///< Address of the device
     miosix::Thread *waiting = 0;  ///< Pointer to the waiting on receive thread
     miosix::FastMutex mutex;      ///< recursive mutex for rx/tx
 
