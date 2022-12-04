@@ -92,8 +92,8 @@ protected:
 
     miosix::Thread* thread = nullptr;  ///< Gives access to the thread object
 
-    std::atomic<bool> stopFlag;
-    std::atomic<bool> running;
+    std::atomic<bool> stopFlag{false};
+    std::atomic<bool> running{false};
 
 private:
     /**
