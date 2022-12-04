@@ -243,10 +243,13 @@ I2C::I2C(I2C_TypeDef *i2c, Speed speed, Addressing addressing,
             break;
 #endif
         default:
-            this->id = 0;
-            LOG_ERR(logger, "Peripheral not supported!");
+            // checking that the peripheral is present in this architecture
+            D(assert(id > 0));
             break;
     }
+
+    // Checking that this parcticular I2C port hasn't been already instantiated
+    D(assert(ports[id - 1] == 0));
 
     init();
 
