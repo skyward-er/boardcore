@@ -21,9 +21,14 @@
  */
 #include <Singleton.h>
 #include <diagnostic/PrintLogger.h>
+#include <drivers/timer/TimestampTimer.h>
 
 #include <iostream>
 #include <utils/ModuleManager/ModuleManager.hpp>
+
+#ifndef DEBUG
+#define DEBUG
+#endif
 
 using namespace Boardcore;
 using namespace std;
@@ -33,7 +38,7 @@ namespace Boardcore
 class SensorsModule : public Module
 {
 protected:
-    int dummy = 0;
+    volatile int dummy = 0;
 
 public:
     virtual int getDummy() { return dummy; };
@@ -43,7 +48,11 @@ public:
 class HILSensors : public SensorsModule
 {
 public:
-    void toggleDummy() override { dummy = dummy == 0 ? 2000 : 0; }
+    void toggleDummy() override
+    {
+        dummy = dummy == 0 ? 2000 : 0;
+        printf("Test2\n");
+    }
 };
 
 class Sensors : public SensorsModule
@@ -52,17 +61,25 @@ public:
     void toggleDummy() override { dummy = dummy == 0 ? 1000 : 0; }
 };
 
-class SingletonSensors : public Singleton<Sensors>
+class SingletonSensors : public Singleton<SingletonSensors>
 {
     friend class Singleton<SingletonSensors>;
 
+private:
+    volatile int dummy = 0;
+
 public:
-    int getDummy() { return 1000; }
+    void toggleDummy()
+    {
+        dummy = dummy == 0 ? 2000 : 0;
+        printf("Test1\n");
+    }
+    int getDummy() { return dummy; }
 };
 
 class Radio : public Module
 {
-    int dummy = 0;
+    volatile int dummy = 0;
 
 public:
     void setDummy(int p) { dummy = p; }
@@ -75,11 +92,23 @@ int main()
     // Create the print logger to print the debug
     PrintLogger logger = Logging::getLogger("TestModuleManager");
 
+    LOG_INFO(logger, "Inserting the HILSensors module");
+
     // Insert the instance inside the module manager
-    ModuleManager::getInstance().insert<SensorsModule>(new HILSensors());
+    if (!ModuleManager::getInstance().insert<SensorsModule>(new HILSensors()))
+    {
+        LOG_ERR(logger, "Error inserting the HILSensors module");
+        return -1;
+    }
+
+    LOG_INFO(logger, "Try inserting an already existing module");
 
     // Useless insertion because of already existing module
-    ModuleManager::getInstance().insert<SensorsModule>(new Sensors());
+    if (ModuleManager::getInstance().insert<SensorsModule>(new Sensors()))
+    {
+        LOG_ERR(logger, "Error, already inserted module insertion accepted");
+        return -1;
+    }
 
     // First correct insertion using the same class
     ModuleManager::getInstance().insert<Radio>(new Radio());
@@ -147,7 +176,44 @@ int main()
         return -1;
     }
 
-    LOG_INFO(logger, "Test completed with success!");
+    LOG_INFO(logger, "Test completed with success!\n");
+    LOG_INFO(logger,
+             "Now testing the performance compared to a Singleton instance");
+
+    // TESTING THE PERFORMANCE
+    uint64_t initialTimestamp = 0;
+    uint64_t finalTimestamp   = 0;
+    uint64_t delta            = 0;
+
+    initialTimestamp = TimestampTimer::getTimestamp();
+
+    // Start the benchmark
+    for (int i = 0; i < 10000; i++)
+    {
+        SingletonSensors::getInstance().toggleDummy();
+    }
+
+    finalTimestamp = TimestampTimer::getTimestamp();
+
+    // Calculate the delta of time
+    delta = finalTimestamp - initialTimestamp;
+
+    initialTimestamp = TimestampTimer::getTimestamp();
+
+    // Start the benchmark
+    for (int i = 0; i < 10000; i++)
+    {
+        ModuleManager::getInstance().get<SensorsModule>()->toggleDummy();
+    }
+
+    finalTimestamp = TimestampTimer::getTimestamp();
+
+    LOG_INFO(logger, "Singleton instance: {}us", delta);
+    LOG_INFO(logger, "Module Manager instance: {}us",
+             finalTimestamp - initialTimestamp);
+
+    LOG_INFO(logger, "Singleton is {:.4} times faster than ModuleManager",
+             ((float)(finalTimestamp - initialTimestamp)) / delta);
 
     return 0;
 }

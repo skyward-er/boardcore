@@ -66,7 +66,11 @@ public:
     }
 
     /**
-     * @brief Inserts the module inside the array if not already present
+     * @brief Inserts the module inside the array if not already present. The
+     * module manager also doesn't allow the user to insert further modules
+     * after the first get is performed. PLEASE NOTICE THAT THE MODULE MANAGER
+     * FROM THIS POINT HANDLES COMPLETELY THE OBJECTS. SO, AT THE END OF THE
+     * MODULE MANAGER EXISTENCE, ALL THE MODULES WILL BE DELETED.
      */
     template <typename T>
     bool insert(T *element)
@@ -76,6 +80,10 @@ public:
                       "Class must be subclass of Module");
         static_assert((std::is_same<Module, T>() == false),
                       "Class must be subclass of Module and not Module itself");
+
+        // This assertion enforces the fact that no software module should be
+        // added after the first get
+        assert(insertionAcceptance.load());
 
         // Take the module type
         size_t id = getId<T>();
@@ -101,7 +109,8 @@ public:
     }
 
     /**
-     * @brief Get the Module object if present. Otherwise it creates one
+     * @brief Get the Module object if present. Otherwise it creates one. PLEASE
+     * NOTE THAT AFTER THE FIRST GET, NO FURTHER INSERTION IS ALLOWED
      * @return Software module
      */
     template <class T>
@@ -112,6 +121,10 @@ public:
                       "Class must be subclass of Module");
         static_assert((std::is_same<Module, T>() == false),
                       "Class must be subclass of Module and not Module itself");
+
+        // Set the insertion acceptance to false (inhibit the insertion after
+        // the first get)
+        insertionAcceptance = false;
 
         // Retrieve the module type
         size_t id = getId<T>();
@@ -148,6 +161,13 @@ private:
      * @brief Id that stores the maximum id assigned so far (atomic)
      */
     std::atomic<size_t> currentId;
+
+    /**
+     * @brief This boolean flag just enables the user to insert software modules
+     * at the beginning but not after the first get. With this we enforce the
+     * fact that AFTER A GET, THERE SHOULDN'T BE ANY INSERTIONS
+     */
+    std::atomic<bool> insertionAcceptance{true};
 
     /**
      * @brief This function "assigns" to every type a unique sequential id
