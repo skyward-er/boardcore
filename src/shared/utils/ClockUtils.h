@@ -108,7 +108,7 @@ inline uint32_t ClockUtils::getAPBPeripheralsClock(APB bus)
 
         if (RCC->CFGR & RCC_CFGR_PPRE2_2)
         {
-            inputFrequency /= 2 << ((RCC->CFGR >> ppre2) >> 0b11);
+            inputFrequency /= 2 << ((RCC->CFGR >> ppre2) & 0b11);
         }
     }
 
@@ -137,7 +137,7 @@ inline uint32_t ClockUtils::getAPBTimersClock(APB bus)
 
         if (RCC->CFGR & RCC_CFGR_PPRE1_2)
         {
-            inputFrequency /= 1 << ((RCC->CFGR >> ppre1) & 0x3);
+            inputFrequency /= 1 << ((RCC->CFGR >> ppre1) & 0b11);
         }
     }
     else
@@ -153,7 +153,7 @@ inline uint32_t ClockUtils::getAPBTimersClock(APB bus)
 
         if (RCC->CFGR & RCC_CFGR_PPRE2_2)
         {
-            inputFrequency /= 1 << ((RCC->CFGR >> ppre2) >> 0x3);
+            inputFrequency /= 1 << ((RCC->CFGR >> ppre2) & 0b11);
         }
     }
 
