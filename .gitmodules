@@ -1,24 +1,24 @@
 [submodule "Catch2"]
 	path = libs/Catch2
-	url = ../third-party/Catch2.git
+	url = https://git.skywarder.eu/avn/swd/third-party/Catch2.git
 [submodule "Eigen"]
 	path = libs/eigen
-	url = ../third-party/eigen.git
+	url = https://git.skywarder.eu/avn/swd/third-party/eigen.git
 [submodule "Modern formatting library"]
 	path = libs/fmt
-	url = ../third-party/fmt.git
+	url = https://git.skywarder.eu/avn/swd/third-party/fmt.git
 [submodule "MAVLink Skyward library"]
 	path = libs/mavlink-skyward-lib
-	url = ../mavlink/mavlink-skyward-lib
+	url = https://git.skywarder.eu/avn/swd/mavlink/mavlink-skyward-lib
 [submodule "Miosix Host"]
 	path = libs/miosix-host
-	url = ../miosix-host.git
+	url = https://git.skywarder.eu/avn/swd/miosix-host.git
 [submodule "Miosix Kernel"]
 	path = libs/miosix-kernel
-	url = ../miosix-kernel.git
+	url = https://git.skywarder.eu/avn/swd/miosix-kernel.git
 [submodule "Miosix GUI library"]
 	path = libs/mxgui
-	url = ../third-party/mxgui.git
+	url = https://git.skywarder.eu/avn/swd/third-party/mxgui.git
 [submodule "Trivial serialization for C++"]
 	path = libs/tscpp
-	url = ../third-party/tscpp.git
+	url = https://git.skywarder.eu/avn/swd/third-party/tscpp.git
