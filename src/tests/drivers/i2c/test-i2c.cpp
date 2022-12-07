@@ -100,13 +100,13 @@ struct
 bool i2cDriverOLED(I2C &i2c)
 {
     buffer[0] = 0;
-    if (!i2c.write(OLED.addressSensor, &OLED.whoamiRegister, 1, true))
+    if (!i2c.write(OLED.addressSensor, &OLED.whoamiRegister, 1))
     {
         // printf("writing error!\n");
         return false;
     }
 
-    if (!i2c.read(OLED.addressSensor, buffer, 1, true))
+    if (!i2c.read(OLED.addressSensor, buffer, 1))
     {
         // printf("reading error!\n");
         return false;
@@ -117,15 +117,15 @@ bool i2cDriverOLED(I2C &i2c)
 
 bool i2cDriverBMP(I2C &i2c)
 {
-    i2c.write(BMP180.addressSensor, BMP180.softReset, 2, true);
+    i2c.write(BMP180.addressSensor, BMP180.softReset, 2);
 
     buffer[0] = 0;
-    if (!i2c.write(BMP180.addressSensor, &BMP180.whoamiRegister, 1, true))
+    if (!i2c.write(BMP180.addressSensor, &BMP180.whoamiRegister, 1))
     {
         // printf("writing error!\n");
         return false;
     }
-    if (!i2c.read(BMP180.addressSensor, buffer, 1, true))
+    if (!i2c.read(BMP180.addressSensor, buffer, 1))
     {
         // printf("reading error!\n");
         return false;
@@ -137,15 +137,15 @@ bool i2cDriverBMP(I2C &i2c)
 
 bool i2cDriverBME(I2C &i2c)
 {
-    i2c.write(BME280.addressSensor, BME280.softReset, 2, true);
+    i2c.write(BME280.addressSensor, BME280.softReset, 2);
 
     buffer[0] = 0;
-    if (!i2c.write(BME280.addressSensor, &BME280.whoamiRegister, 1, true))
+    if (!i2c.write(BME280.addressSensor, &BME280.whoamiRegister, 1))
     {
         // printf("writing error!\n");
         return false;
     }
-    if (!i2c.read(BME280.addressSensor, buffer, 1, true))
+    if (!i2c.read(BME280.addressSensor, buffer, 1))
     {
         // printf("reading error!\n");
         return false;

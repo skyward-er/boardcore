@@ -343,8 +343,7 @@ void I2C::init()
     i2c->CR1 |= I2C_CR1_PE;
 }
 
-bool I2C::read(uint16_t slaveAddress, void *buffer, size_t nBytes,
-               bool generateStopSignal = true)
+bool I2C::read(uint16_t slaveAddress, void *buffer, size_t nBytes)
 {
     uint8_t *buff = static_cast<uint8_t *>(buffer);
 
@@ -394,15 +393,13 @@ bool I2C::read(uint16_t slaveAddress, void *buffer, size_t nBytes,
         }
     }
 
-    // generate the stop condition
-    if (generateStopSignal)
-        i2c->CR1 |= I2C_CR1_STOP;
+    // Generate the stop condition after the read transaction
+    i2c->CR1 |= I2C_CR1_STOP;
 
     return true;
 };
 
-bool I2C::write(uint16_t slaveAddress, void *buffer, size_t nBytes,
-                bool generateStopSignal = true)
+bool I2C::write(uint16_t slaveAddress, void *buffer, size_t nBytes)
 {
     uint8_t *buff = static_cast<uint8_t *>(buffer);
 
@@ -430,8 +427,7 @@ bool I2C::write(uint16_t slaveAddress, void *buffer, size_t nBytes,
     }
 
     // if we are on the last byte, generate the stop condition
-    if (generateStopSignal)
-        i2c->CR1 |= I2C_CR1_STOP;
+    i2c->CR1 |= I2C_CR1_STOP;
 
     return true;
 };

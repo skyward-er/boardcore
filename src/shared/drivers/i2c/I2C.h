@@ -74,19 +74,17 @@ public:
 
     /**
      * @brief Blocking read operation to read nBytes. In case of an error during
-     * the communication, this method returns 0 immediately.
+     * the communication, this method returns false immediately.
      * @returns true if the read is successful, false otherwise.
      */
-    bool read(uint16_t slaveAddress, void *buffer, size_t nBytes,
-              bool generateStopSignal);
+    bool read(uint16_t slaveAddress, void *buffer, size_t nBytes);
 
     /**
-     * @brief Blocking write operation of nBytes. In case of an error during the
-     * communication, this method returns 0 immediately.
+     * @brief Blocking write operation to write nBytes. In case of an error
+     * during the communication, this method returns false immediately.
      * @returns true if the write is successful, false otherwise.
      */
-    bool write(uint16_t slaveAddress, void *buffer, size_t nBytes,
-               bool generateStopSignal);
+    bool write(uint16_t slaveAddress, void *buffer, size_t nBytes);
 
     /**
      * @brief Performs the recovery from the locked state.
@@ -99,14 +97,15 @@ public:
 
     /**
      * @brief Method that handles the interrupt for the specific peripheral. It
-     * just wakes the thread up
+     * just wakes the thread up. No user code should call this method.
      */
     void IRQhandleInterrupt();
 
     /**
      * @brief Method that handles the interrupt for the errors in the specific
      * peripheral. It wakes the thread up, sets the "error" software flag and
-     * resets the error flags in the register
+     * resets the error flags in the register. No user code should call this
+     * method.
      */
     void IRQhandleErrInterrupt();
 
@@ -137,7 +136,6 @@ protected:
      * @brief This function has the logic to wake up and reschedule the thread
      * if it has a higher priority with relation to the one in current
      * execution. This function is called by interrupts.
-     * @param waiting The thread to be waken up.
      */
     inline void IRQwakeUpWaitingThread();
 
