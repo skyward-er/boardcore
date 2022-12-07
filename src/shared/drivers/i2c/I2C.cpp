@@ -244,11 +244,13 @@ I2C::I2C(I2C_TypeDef *i2c, Speed speed, Addressing addressing,
 #endif
         default:
             // checking that the peripheral is present in this architecture
-            D(assert(id > 0));
+            D(assert(false &&
+                     "I2C peripheral not present in this architecture"));
             break;
     }
 
     // Checking that this parcticular I2C port hasn't been already instantiated
+    D(assert(id > 0));
     D(assert(ports[id - 1] == 0));
 
     init();
@@ -334,8 +336,8 @@ void I2C::init()
     // Configuring the TRISE
     i2c->TRISE = (f & I2C_CR2_FREQ) + 1;
 
-    // Setting the Own Address Register
-    i2c->OAR1 = (addressing << 15);  // Selecting the addressing mode
+    // Setting the addressing mode
+    i2c->OAR1 = (addressing << 15);
 
     // Finally enabling the peripheral
     i2c->CR1 |= I2C_CR1_PE;
@@ -442,7 +444,6 @@ bool I2C::prologue(uint16_t slaveAddress)
         ;
 
     // lock state detected after N polling cycles
-    // TODO: apply recovery from locked state!
     if (i == MAX_N_POLLING)
     {
         recoverFromLockedState();
@@ -553,36 +554,26 @@ bool I2C::prologue(uint16_t slaveAddress)
 
 void I2C::recoverFromLockedState()
 {
-    // Recovery from the locked state due to the Master
+    // Recovery from the locked state due to a stuck Slave.
+    // We bit-bang 16 clocks on the scl line in order to restore pending
+    // packets of the slaves.
+    scl.mode(miosix::Mode::OUTPUT);
+
+    for (size_t c = 0; c < N_SCL_BITBANG; c++)
+    {
+        scl.low();
+        miosix::delayUs(5);
+        scl.high();
+        miosix::delayUs(5);
+    }
+
+    scl.mode(miosix::Mode::ALTERNATE);
+    scl.alternateFunction(af);
+
+    // Reinitializing the peripheral in order to avoid inconsistent state
     init();
 
-    // Checking for slave locked state
-    uint32_t i{0};
-    for (; (i < MAX_N_POLLING) && (i2c->SR2 & I2C_SR2_BUSY); ++i)
-        ;
-
-    if (i == MAX_N_POLLING)
-    {
-        // Recovery from the locked state due to a stuck Slave. We bit-bang 16
-        // clocks on the scl line in order to restore pending packets of the
-        // slaves
-        scl.mode(miosix::Mode::OUTPUT);
-
-        for (size_t c = 0; c < N_SCL_BITBANG; c++)
-        {
-            scl.low();
-            scl.high();
-        }
-
-        scl.mode(miosix::Mode::ALTERNATE);
-        scl.alternateFunction(af);
-
-        // LOG_DEBUG(logger, "I2C SLAVE locked detected");
-    }
-    else
-    {
-        // LOG_DEBUG(logger, "I2C BUS locked detected");
-    }
+    // LOG_DEBUG(logger, "I2C BUS locked detected");
 }
 
 inline bool I2C::IRQwaitForRegisterChange(miosix::InterruptDisableLock &dLock)
@@ -642,8 +633,7 @@ void I2C::IRQhandleErrInterrupt()
     error = true;
 
     // clearing all the errors in the register
-    i2c->SR1 &= ~(I2C_SR1_SMBALERT | I2C_SR1_TIMEOUT | I2C_SR1_PECERR |
-                  I2C_SR1_OVR | I2C_SR1_AF | I2C_SR1_ARLO | I2C_SR1_BERR);
+    i2c->SR1 = 0;
 
     // waking up the waiting thread
     IRQwakeUpWaitingThread();

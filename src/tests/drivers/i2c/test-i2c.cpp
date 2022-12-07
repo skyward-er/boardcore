@@ -34,6 +34,7 @@
 #include "drivers/i2c/stm32f2_f4_i2c.h"
 #endif
 
+using namespace std;
 using namespace miosix;
 using namespace Boardcore;
 
@@ -80,6 +81,17 @@ struct
 
 struct
 {
+    uint8_t addressSensor  = 0b1110110;
+    uint8_t whoamiRegister = 0xD0;
+    uint8_t whoamiContent  = 0x60;
+    uint8_t softReset[2]   = {
+          0xE0,  // address of the software reset register
+          0xB6   // write this to perform a software reset};
+    };
+} BME280;
+
+struct
+{
     uint8_t addressSensor  = 0b0111100;
     uint8_t whoamiRegister = 0xD0;
     uint8_t whoamiContent  = 0x43;
@@ -123,8 +135,30 @@ bool i2cDriverBMP(I2C &i2c)
     return true;
 }
 
+bool i2cDriverBME(I2C &i2c)
+{
+    i2c.write(BME280.addressSensor, BME280.softReset, 2, true);
+
+    buffer[0] = 0;
+    if (!i2c.write(BME280.addressSensor, &BME280.whoamiRegister, 1, true))
+    {
+        // printf("writing error!\n");
+        return false;
+    }
+    if (!i2c.read(BME280.addressSensor, buffer, 1, true))
+    {
+        // printf("reading error!\n");
+        return false;
+    }
+
+    // printf("read: %d, should be: %d\n", buffer[0], BME280.whoamiContent);
+    return true;
+}
+
 int main()
 {
+    int nRepeat = 50;
+
     // pin settings
     i1sda2::getPin().mode(miosix::Mode::ALTERNATE);
     i1sda2::getPin().alternateFunction(4);
@@ -136,15 +170,14 @@ int main()
 
     for (;;)
     {
-        bool ok = true;
-        for (int i = 0; i < 30; i++)
+        bool okOLED = true;
+        bool okBMP  = true;
+        for (int i = 0; i < nRepeat; i++)
         {
-            ok &= i2cDriverOLED(i2c);
-            // Thread::sleep(2);
-            ok &= i2cDriverBMP(i2c);
-            // Thread::sleep(10);
+            okOLED &= i2cDriverOLED(i2c);
+            okBMP &= i2cDriverBMP(i2c);
         }
-        std::cout << std::boolalpha << ok << std::endl;
+        printf("OLED:%d\tBMP:%d\n", okOLED, okBMP);
     }
 
     return 0;

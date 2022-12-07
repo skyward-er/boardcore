@@ -89,6 +89,15 @@ public:
                bool generateStopSignal);
 
     /**
+     * @brief Performs the recovery from the locked state.
+     * It tries to recover from both Master locked state and Slave locked state
+     * forcing (changing the mode of the clock pin) 16 clock cycles and
+     * reinitializing the peripheral.
+     * It usually takes less than 200us for a full recovery.
+     */
+    void recoverFromLockedState();
+
+    /**
      * @brief Method that handles the interrupt for the specific peripheral. It
      * just wakes the thread up
      */
@@ -103,8 +112,9 @@ public:
 
 protected:
     /**
-     * @brief Initializes the peripheral enabling his clock, the interrupts
-     * in the NVIC and setting up various parameters in the peripheral.
+     * @brief Initializes the peripheral enabling his clock and setting up
+     * various parameters in the peripheral. Safe to call also after init has
+     * already been initialized in order to re-initialize the peripheral.
      */
     void init();
 
@@ -114,13 +124,6 @@ protected:
      * @returns True if prologue didn't have any error; False otherwise.
      */
     bool prologue(uint16_t slaveAddress);
-
-    /**
-     * @brief Performs the recovery from the locked state.
-     * It tries to recover from both Master locked state and Slave locked state.
-     * It *usually* takes circa 15ms for a full recovery.
-     */
-    void recoverFromLockedState();
 
     /**
      * @brief This waits until the thread isn't waken up by an I2C interrupt (EV
