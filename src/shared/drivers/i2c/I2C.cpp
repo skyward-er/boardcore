@@ -293,8 +293,8 @@ void I2C::init()
     /* setting the peripheral input clock */
     // Retrieving the frequency of the APB relative to the I2C peripheral [MHz]
     // (I2C peripherals are always connected to APB1, Low speed bus)
-    uint32_t f{ClockUtils::getAPBFrequency(ClockUtils::APB::APB1) / 1000000 /
-               2};
+    uint32_t f{ClockUtils::getAPBPeripheralsClock(ClockUtils::APB::APB1) /
+               1000000};
 
     // frequency higher than 50MHz not allowed by I2C peripheral
     D(assert(f <= 50));
