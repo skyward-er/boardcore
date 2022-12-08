@@ -40,8 +40,9 @@ namespace Boardcore
 {
 
 /**
- * Thread safe driver for all I2C peripherals. It implements only the Master
- * logic and supports Standard/Fast speed modes and 7bit/10bit addressing.
+ * Base driver for I2C peripherals. This is NOT thread safe. It implements only
+ * the Master logic and supports Standard/Fast speed modes and 7bit/10bit
+ * addressing.
  */
 class I2C
 {
@@ -150,8 +151,25 @@ protected:
     miosix::Thread *waiting = 0;  ///< Pointer to the waiting on receive thread
     miosix::GpioPin scl;          ///< Pin of the clock for slave lock recovery
     unsigned char af;             ///< Alternate function of the scl for i2c
-    miosix::FastMutex mutex;      ///< recursive mutex for rx/tx
 
     PrintLogger logger = Logging::getLogger("i2c");
 };
+
+/**
+ * Thread safe version of the I2C driver.
+ */
+class SyncedI2C : public I2C
+{
+public:
+    SyncedI2C(I2C_TypeDef *i2c, Speed speed, Addressing addressing,
+              miosix::GpioPin scl, unsigned char af);
+
+    bool read(uint16_t slaveAddress, void *buffer, size_t nBytes);
+
+    bool write(uint16_t slaveAddress, void *buffer, size_t nBytes);
+
+private:
+    miosix::FastMutex mutex;  ///< mutex for rx/tx
+};
+
 }  // namespace Boardcore

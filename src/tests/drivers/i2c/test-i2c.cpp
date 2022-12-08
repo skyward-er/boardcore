@@ -165,19 +165,35 @@ int main()
     i1scl2::getPin().mode(miosix::Mode::ALTERNATE);
     i1scl2::getPin().alternateFunction(4);
 
-    I2C i2c(I2C1, I2C::Speed::STANDARD, I2C::Addressing::BIT7, i1scl2::getPin(),
-            4);
-
     for (;;)
     {
-        bool okOLED = true;
-        bool okBMP  = true;
-        for (int i = 0; i < nRepeat; i++)
+        // testing without mutex
         {
-            okOLED &= i2cDriverOLED(i2c);
-            okBMP &= i2cDriverBMP(i2c);
+            I2C i2c(I2C1, I2C::Speed::STANDARD, I2C::Addressing::BIT7,
+                    i1scl2::getPin(), 4);
+            bool okOLED = true;
+            bool okBMP  = true;
+            for (int i = 0; i < nRepeat; i++)
+            {
+                okOLED &= i2cDriverOLED(i2c);
+                okBMP &= i2cDriverBMP(i2c);
+            }
+            printf("OLED:%d\tBMP:%d\tNoSYN\n", okOLED, okBMP);
         }
-        printf("OLED:%d\tBMP:%d\n", okOLED, okBMP);
+
+        // testing without mutex
+        {
+            SyncedI2C i2c(I2C1, I2C::Speed::STANDARD, I2C::Addressing::BIT7,
+                          i1scl2::getPin(), 4);
+            bool okOLED = true;
+            bool okBMP  = true;
+            for (int i = 0; i < nRepeat; i++)
+            {
+                okOLED &= i2cDriverOLED(i2c);
+                okBMP &= i2cDriverBMP(i2c);
+            }
+            printf("OLED:%d\tBMP:%d\tSYN\n", okOLED, okBMP);
+        }
     }
 
     return 0;

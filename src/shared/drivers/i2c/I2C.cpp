@@ -208,8 +208,7 @@ namespace Boardcore
 {
 I2C::I2C(I2C_TypeDef *i2c, Speed speed, Addressing addressing,
          miosix::GpioPin scl, unsigned char af)
-    : i2c(i2c), speed(speed), addressing(addressing), scl(scl), af(af),
-      mutex(miosix::FastMutex::Options::RECURSIVE)
+    : i2c(i2c), speed(speed), addressing(addressing), scl(scl), af(af)
 {
     // Setting the id and irqn of the right i2c peripheral
     switch (reinterpret_cast<uint32_t>(i2c))
@@ -347,9 +346,6 @@ bool I2C::read(uint16_t slaveAddress, void *buffer, size_t nBytes)
 {
     uint8_t *buff = static_cast<uint8_t *>(buffer);
 
-    // Synchronization because of the single bus
-    miosix::Lock<miosix::FastMutex> lock(mutex);
-
     // Enabling option to generate ACK
     i2c->CR1 |= I2C_CR1_ACK;
 
@@ -402,9 +398,6 @@ bool I2C::read(uint16_t slaveAddress, void *buffer, size_t nBytes)
 bool I2C::write(uint16_t slaveAddress, void *buffer, size_t nBytes)
 {
     uint8_t *buff = static_cast<uint8_t *>(buffer);
-
-    // Synchronization because of the single bus
-    miosix::Lock<miosix::FastMutex> lock(mutex);
 
     // Sending prologue when the channel isn't busy
     if (!prologue(slaveAddress << 1))
@@ -633,6 +626,26 @@ void I2C::IRQhandleErrInterrupt()
 
     // waking up the waiting thread
     IRQwakeUpWaitingThread();
+}
+
+SyncedI2C::SyncedI2C(I2C_TypeDef *i2c, Speed speed, Addressing addressing,
+                     miosix::GpioPin scl, unsigned char af)
+    : I2C(i2c, speed, addressing, scl, af)
+{
+}
+
+bool SyncedI2C::read(uint16_t slaveAddress, void *buffer, size_t nBytes)
+{
+    miosix::Lock<miosix::FastMutex> lock(mutex);
+
+    return I2C::read(slaveAddress, buffer, nBytes);
+}
+
+bool SyncedI2C::write(uint16_t slaveAddress, void *buffer, size_t nBytes)
+{
+    miosix::Lock<miosix::FastMutex> lock(mutex);
+
+    return I2C::write(slaveAddress, buffer, nBytes);
 }
 
 }  // namespace Boardcore
