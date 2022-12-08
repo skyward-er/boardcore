@@ -27,9 +27,9 @@
 #include <utils/ClockUtils.h>
 #include <utils/Debug.h>
 
-static Boardcore::I2C
-    *ports[N_I2C_PORTS];  ///< Pointer to serial port classes to let interrupts
-                          ///< access the classes
+static Boardcore::I2C *ports[N_I2C_PORTS] =
+    {};  ///< Pointer to serial port classes to let interrupts
+         ///< access the classes
 
 static const int MAX_N_POLLING =
     2000;  ///< Maximum number of cycles for polling
@@ -250,7 +250,7 @@ I2C::I2C(I2C_TypeDef *i2c, Speed speed, Addressing addressing,
 
     // Checking that this parcticular I2C port hasn't been already instantiated
     D(assert(id > 0));
-    D(assert(ports[id - 1] == 0));
+    D(assert(ports[id - 1] == nullptr));
 
     init();
 
