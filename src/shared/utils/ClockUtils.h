@@ -41,12 +41,20 @@ enum class APB
 };
 
 /**
- * @brief Computes the output frequency for the given APB bus.
+ * @brief Computes the output clock frequency for peripherals on the given APB.
  *
  * @param bus Advanced Peripheral Bus
- * @return Prescaler input frequency.
+ * @return Clock frequency of peripherals.
  */
-uint32_t getAPBFrequency(APB bus);
+uint32_t getAPBPeripheralsClock(APB bus);
+
+/**
+ * @brief Computes the output clock frequency for timers on the given APB.
+ *
+ * @param bus Advanced Peripheral Bus
+ * @return Clock frequency of timers.
+ */
+uint32_t getAPBTimersClock(APB bus);
 
 /**
  * @brief Enables a peripheral clock source from the APB1 and APB2 peripheral
@@ -62,18 +70,15 @@ bool disablePeripheralClock(void* peripheral);
 
 }  // namespace ClockUtils
 
-inline uint32_t ClockUtils::getAPBFrequency(APB bus)
+inline uint32_t ClockUtils::getAPBPeripheralsClock(APB bus)
 {
     // The global variable SystemCoreClock from ARM's CMIS allows to know the
     // CPU frequency.
     uint32_t inputFrequency = SystemCoreClock;
 
-    // The timer frequency may be a submultiple of the CPU frequency, due to the
+    // The APB frequency may be a submultiple of the CPU frequency, due to the
     // bus at which the peripheral is connected being slower.
-    // The RCC-ZCFGR register tells us how slower the APB bus is running.
-    // The following formula takes into account that if the APB1 clock is
-    // divided by a factor of two or grater, the timer is clocked at twice the
-    // bus interface.
+    // The RCC->CFGR register tells us how slower the APB bus is running.
     if (bus == APB::APB1)
     {
         // The position of the PPRE1 bit in RCC->CFGR is different in some stm32
@@ -87,7 +92,7 @@ inline uint32_t ClockUtils::getAPBFrequency(APB bus)
 
         if (RCC->CFGR & RCC_CFGR_PPRE1_2)
         {
-            inputFrequency /= 1 << ((RCC->CFGR >> ppre1) & 0x3);
+            inputFrequency /= 2 << ((RCC->CFGR >> ppre1) & 0b11);
         }
     }
     else
@@ -103,7 +108,52 @@ inline uint32_t ClockUtils::getAPBFrequency(APB bus)
 
         if (RCC->CFGR & RCC_CFGR_PPRE2_2)
         {
-            inputFrequency /= 1 << ((RCC->CFGR >> ppre2) >> 0x3);
+            inputFrequency /= 2 << ((RCC->CFGR >> ppre2) & 0b11);
+        }
+    }
+
+    return inputFrequency;
+}
+
+inline uint32_t ClockUtils::getAPBTimersClock(APB bus)
+{
+    // The global variable SystemCoreClock from ARM's CMIS allows to know the
+    // CPU frequency.
+    uint32_t inputFrequency = SystemCoreClock;
+
+    // The APB frequency may be a submultiple of the CPU frequency, due to the
+    // bus at which the peripheral is connected being slower.
+    // The RCC->CFGR register tells us how slower the APB bus is running.
+    if (bus == APB::APB1)
+    {
+        // The position of the PPRE1 bit in RCC->CFGR is different in some stm32
+#ifdef _ARCH_CORTEXM3_STM32
+        const uint32_t ppre1 = 8;
+#elif _ARCH_CORTEXM4_STM32F4 | _ARCH_CORTEXM3_STM32F2
+        const uint32_t ppre1 = 10;
+#else
+#error "Architecture not supported by TimerUtils"
+#endif
+
+        if (RCC->CFGR & RCC_CFGR_PPRE1_2)
+        {
+            inputFrequency /= 1 << ((RCC->CFGR >> ppre1) & 0b11);
+        }
+    }
+    else
+    {
+        // The position of the PPRE2 bit in RCC->CFGR is different in some stm32
+#ifdef _ARCH_CORTEXM3_STM32
+        const uint32_t ppre2 = 11;
+#elif _ARCH_CORTEXM4_STM32F4 | _ARCH_CORTEXM3_STM32F2
+        const uint32_t ppre2 = 13;
+#else
+#error "Architecture not supported by TimerUtils"
+#endif
+
+        if (RCC->CFGR & RCC_CFGR_PPRE2_2)
+        {
+            inputFrequency /= 1 << ((RCC->CFGR >> ppre2) & 0b11);
         }
     }
 
@@ -448,7 +498,7 @@ inline bool ClockUtils::disablePeripheralClock(void* peripheral)
                 RCC->APB1ENR &= ~RCC_APB1ENR_TIM2EN;
                 break;
             case TIM3_BASE:
-                RCC->APB1ENR &= ~RCC_APB1ENR_TIM2EN;
+                RCC->APB1ENR &= ~RCC_APB1ENR_TIM3EN;
                 break;
             case TIM4_BASE:
                 RCC->APB1ENR &= ~RCC_APB1ENR_TIM4EN;
