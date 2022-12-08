@@ -110,7 +110,7 @@ public:
      */
     void IRQhandleErrInterrupt();
 
-protected:
+private:
     /**
      * @brief Initializes the peripheral enabling his clock and setting up
      * various parameters in the peripheral. Safe to call also after init has
