@@ -64,8 +64,7 @@ public:
      * @param speed the speed mode of the I2C communication
      * @param addressing The addressing mode used in the I2C communication
      */
-    I2C(I2C_TypeDef *i2c, Speed speed, Addressing addressing,
-        miosix::GpioPin scl, unsigned char af);
+    I2C(I2C_TypeDef *i2c, Speed speed, Addressing addressing);
 
     /**
      * @brief Deconstructor. Disables the peripheral, the interrupts in the NVIC
@@ -88,17 +87,19 @@ public:
     bool write(uint16_t slaveAddress, void *buffer, size_t nBytes);
 
     /**
-     * @brief Performs the recovery from the locked state.
-     * It tries to recover from both Master locked state and Slave locked state
-     * forcing (changing the mode of the clock pin) 16 clock cycles and
-     * reinitializing the peripheral.
-     * It usually takes less than 200us for a full recovery.
+     * @brief Performs the recovery from the locked state if necessary.
+     * It tries to recover from the locked state forcing (changing the mode of
+     * the clock pin) N_SCL_BITBANG clock cycles and reinitializing the
+     * peripheral. It usually takes less than 200us for 16 clocks forced in
+     * standard mode.
+     * @param scl Pin of the clock for slave lock recovery
+     * @param af Alternate function of the scl for i2c
      */
-    void recoverFromLockedState();
+    void flushBus(miosix::GpioPin scl, unsigned char af);
 
     /**
-     * @brief Method that handles the interrupt for the specific peripheral. It
-     * just wakes the thread up. No user code should call this method.
+     * @brief Method that handles the interrupt for the specific peripheral.
+     * It just wakes the thread up. No user code should call this method.
      */
     void IRQhandleInterrupt();
 
@@ -140,17 +141,16 @@ private:
      */
     inline void IRQwakeUpWaitingThread();
 
+    I2C_TypeDef *i2c;
     uint8_t id;
     IRQn_Type irqnEv;
     IRQn_Type irqnErr;
-
-    I2C_TypeDef *i2c;
-    bool error = false;           ///< Flag that tells if an error occurred
     const Speed speed;            ///< Baudrate of the serial communication
     const Addressing addressing;  ///< Addressing mode of the device
+
+    bool error              = false;  ///< Flag that tells if an error occurred
+    bool lockedState        = false;  ///< Flag for locked state detection
     miosix::Thread *waiting = 0;  ///< Pointer to the waiting on receive thread
-    miosix::GpioPin scl;          ///< Pin of the clock for slave lock recovery
-    unsigned char af;             ///< Alternate function of the scl for i2c
 
     PrintLogger logger = Logging::getLogger("i2c");
 };
@@ -161,12 +161,13 @@ private:
 class SyncedI2C : public I2C
 {
 public:
-    SyncedI2C(I2C_TypeDef *i2c, Speed speed, Addressing addressing,
-              miosix::GpioPin scl, unsigned char af);
+    SyncedI2C(I2C_TypeDef *i2c, Speed speed, Addressing addressing);
 
     bool read(uint16_t slaveAddress, void *buffer, size_t nBytes);
 
     bool write(uint16_t slaveAddress, void *buffer, size_t nBytes);
+
+    void flushBus(miosix::GpioPin scl, unsigned char af);
 
 private:
     miosix::FastMutex mutex;  ///< mutex for rx/tx

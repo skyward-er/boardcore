@@ -24,15 +24,10 @@
 
 #include "drivers/i2c/I2C.h"
 #include "miosix.h"
+#include "scheduler/TaskScheduler.h"
 #include "string"
 #include "string.h"
 #include "thread"
-
-// #define I2C_MIOSIX
-
-#ifdef I2C_MIOSIX
-#include "drivers/i2c/stm32f2_f4_i2c.h"
-#endif
 
 using namespace std;
 using namespace miosix;
@@ -49,7 +44,7 @@ typedef miosix::Gpio<GPIOB_BASE, 9> i2sda1;
 typedef miosix::Gpio<GPIOB_BASE, 10> i2scl1;
 typedef miosix::Gpio<GPIOB_BASE, 11> i2sda2;
 typedef miosix::Gpio<GPIOB_BASE, 12> i2scl2;
-#ifndef STM32F401xE
+#ifdef GPIOH
 typedef miosix::Gpio<GPIOF_BASE, 0> i2sda3;
 typedef miosix::Gpio<GPIOF_BASE, 1> i2scl3;
 typedef miosix::Gpio<GPIOH_BASE, 4> i2sda4;
@@ -59,7 +54,7 @@ typedef miosix::Gpio<GPIOH_BASE, 5> i2scl4;
 // I2C3
 typedef miosix::Gpio<GPIOC_BASE, 9> i3sda1;
 typedef miosix::Gpio<GPIOA_BASE, 8> i3scl1;
-#ifndef STM32F401xE
+#ifdef GPIOH
 typedef miosix::Gpio<GPIOH_BASE, 7> i3sda2;
 typedef miosix::Gpio<GPIOH_BASE, 8> i3scl2;
 #endif
@@ -73,10 +68,7 @@ struct
     uint8_t addressSensor  = 0b1110111;
     uint8_t whoamiRegister = 0xD0;
     uint8_t whoamiContent  = 0x55;
-    uint8_t softReset[2]   = {
-          0xE0,  // address of the software reset register
-          0xB6   // write this to perform a software reset};
-    };
+    uint8_t softReset[2]   = {0xE0, 0xB6};
 } BMP180;
 
 struct
@@ -84,10 +76,7 @@ struct
     uint8_t addressSensor  = 0b1110110;
     uint8_t whoamiRegister = 0xD0;
     uint8_t whoamiContent  = 0x60;
-    uint8_t softReset[2]   = {
-          0xE0,  // address of the software reset register
-          0xB6   // write this to perform a software reset};
-    };
+    uint8_t softReset[2]   = {0xE0, 0xB6};
 } BME280;
 
 struct
@@ -100,18 +89,12 @@ struct
 bool i2cDriverOLED(I2C &i2c)
 {
     buffer[0] = 0;
-    if (!i2c.write(OLED.addressSensor, &OLED.whoamiRegister, 1))
+    if (!i2c.write(OLED.addressSensor, &OLED.whoamiRegister, 1) &&
+        !i2c.read(OLED.addressSensor, buffer, 1))
     {
-        // printf("writing error!\n");
         return false;
     }
 
-    if (!i2c.read(OLED.addressSensor, buffer, 1))
-    {
-        // printf("reading error!\n");
-        return false;
-    }
-    // printf("read: %d, should be: %d\n", buffer[0], OLED.whoamiContent);
     return true;
 }
 
@@ -120,18 +103,12 @@ bool i2cDriverBMP(I2C &i2c)
     i2c.write(BMP180.addressSensor, BMP180.softReset, 2);
 
     buffer[0] = 0;
-    if (!i2c.write(BMP180.addressSensor, &BMP180.whoamiRegister, 1))
+    if (!i2c.write(BMP180.addressSensor, &BMP180.whoamiRegister, 1) &&
+        !i2c.read(BMP180.addressSensor, buffer, 1))
     {
-        // printf("writing error!\n");
-        return false;
-    }
-    if (!i2c.read(BMP180.addressSensor, buffer, 1))
-    {
-        // printf("reading error!\n");
         return false;
     }
 
-    // printf("read: %d, should be: %d\n", buffer[0], BMP180.whoamiContent);
     return true;
 }
 
@@ -140,18 +117,12 @@ bool i2cDriverBME(I2C &i2c)
     i2c.write(BME280.addressSensor, BME280.softReset, 2);
 
     buffer[0] = 0;
-    if (!i2c.write(BME280.addressSensor, &BME280.whoamiRegister, 1))
+    if (!i2c.write(BME280.addressSensor, &BME280.whoamiRegister, 1) &&
+        !i2c.read(BME280.addressSensor, buffer, 1))
     {
-        // printf("writing error!\n");
-        return false;
-    }
-    if (!i2c.read(BME280.addressSensor, buffer, 1))
-    {
-        // printf("reading error!\n");
         return false;
     }
 
-    // printf("read: %d, should be: %d\n", buffer[0], BME280.whoamiContent);
     return true;
 }
 
@@ -165,36 +136,26 @@ int main()
     i1scl2::getPin().mode(miosix::Mode::ALTERNATE);
     i1scl2::getPin().alternateFunction(4);
 
+    SyncedI2C i2c(I2C1, I2C::Speed::FAST, I2C::Addressing::BIT7);
+
+    // scheduling the flush of the I2C bus
+    TaskScheduler scheduler;
+    scheduler.addTask([&]() { i2c.flushBus(i1scl2::getPin(), 4); }, 100);
+    scheduler.start();
+
     for (;;)
     {
-        // testing without mutex
+        // resetting status of read sensors
+        bool statusOLED = true;
+        bool statusBMP  = true;
+
+        for (int i = 0; i < nRepeat; i++)
         {
-            I2C i2c(I2C1, I2C::Speed::STANDARD, I2C::Addressing::BIT7,
-                    i1scl2::getPin(), 4);
-            bool okOLED = true;
-            bool okBMP  = true;
-            for (int i = 0; i < nRepeat; i++)
-            {
-                okOLED &= i2cDriverOLED(i2c);
-                okBMP &= i2cDriverBMP(i2c);
-            }
-            printf("OLED:%d\tBMP:%d\tNoSYN\n", okOLED, okBMP);
+            statusOLED &= i2cDriverOLED(i2c);
+            statusBMP &= i2cDriverBMP(i2c);
         }
 
-        // testing without mutex
-        {
-            SyncedI2C i2c(I2C1, I2C::Speed::STANDARD, I2C::Addressing::BIT7,
-                          i1scl2::getPin(), 4);
-            bool okOLED = true;
-            bool okBMP  = true;
-            for (int i = 0; i < nRepeat; i++)
-            {
-                okOLED &= i2cDriverOLED(i2c);
-                okBMP &= i2cDriverBMP(i2c);
-            }
-            printf("OLED:%d\tBMP:%d\tSYN\n", okOLED, okBMP);
-        }
+        printf("OLED:%d\tBMP:%d\n", statusOLED, statusBMP);
     }
-
     return 0;
 }

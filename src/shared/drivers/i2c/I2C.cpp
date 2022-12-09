@@ -206,9 +206,8 @@ void __attribute__((used)) I2C4errHandlerImpl()
 
 namespace Boardcore
 {
-I2C::I2C(I2C_TypeDef *i2c, Speed speed, Addressing addressing,
-         miosix::GpioPin scl, unsigned char af)
-    : i2c(i2c), speed(speed), addressing(addressing), scl(scl), af(af)
+I2C::I2C(I2C_TypeDef *i2c, Speed speed, Addressing addressing)
+    : i2c(i2c), speed(speed), addressing(addressing)
 {
     // Setting the id and irqn of the right i2c peripheral
     switch (reinterpret_cast<uint32_t>(i2c))
@@ -427,7 +426,6 @@ bool I2C::write(uint16_t slaveAddress, void *buffer, size_t nBytes)
 
 bool I2C::prologue(uint16_t slaveAddress)
 {
-    // Generating start condition if bus not busy -> passing in Master mode
     uint32_t i{0};
     for (; (i < MAX_N_POLLING) && (i2c->SR2 & I2C_SR2_BUSY); ++i)
         ;
@@ -435,7 +433,7 @@ bool I2C::prologue(uint16_t slaveAddress)
     // lock state detected after N polling cycles
     if (i == MAX_N_POLLING)
     {
-        recoverFromLockedState();
+        lockedState = true;
         return false;
     }
 
@@ -541,8 +539,13 @@ bool I2C::prologue(uint16_t slaveAddress)
     return true;
 }
 
-void I2C::recoverFromLockedState()
+void I2C::flushBus(miosix::GpioPin scl, unsigned char af)
 {
+    if (!lockedState)
+        return;
+
+    uint8_t toggleDelay = (speed == Speed::STANDARD ? 5 : 2);
+
     // Recovery from the locked state due to a stuck Slave.
     // We bit-bang 16 clocks on the scl line in order to restore pending
     // packets of the slaves.
@@ -551,9 +554,9 @@ void I2C::recoverFromLockedState()
     for (size_t c = 0; c < N_SCL_BITBANG; c++)
     {
         scl.low();
-        miosix::delayUs(5);
+        miosix::delayUs(toggleDelay);
         scl.high();
-        miosix::delayUs(5);
+        miosix::delayUs(toggleDelay);
     }
 
     scl.mode(miosix::Mode::ALTERNATE);
@@ -562,7 +565,9 @@ void I2C::recoverFromLockedState()
     // Reinitializing the peripheral in order to avoid inconsistent state
     init();
 
-    // LOG_DEBUG(logger, "I2C BUS locked detected");
+    LOG_WARN(logger, "Bus flushed");
+
+    lockedState = false;
 }
 
 inline bool I2C::IRQwaitForRegisterChange(miosix::InterruptDisableLock &dLock)
@@ -628,9 +633,8 @@ void I2C::IRQhandleErrInterrupt()
     IRQwakeUpWaitingThread();
 }
 
-SyncedI2C::SyncedI2C(I2C_TypeDef *i2c, Speed speed, Addressing addressing,
-                     miosix::GpioPin scl, unsigned char af)
-    : I2C(i2c, speed, addressing, scl, af)
+SyncedI2C::SyncedI2C(I2C_TypeDef *i2c, Speed speed, Addressing addressing)
+    : I2C(i2c, speed, addressing)
 {
 }
 
@@ -646,6 +650,13 @@ bool SyncedI2C::write(uint16_t slaveAddress, void *buffer, size_t nBytes)
     miosix::Lock<miosix::FastMutex> lock(mutex);
 
     return I2C::write(slaveAddress, buffer, nBytes);
+}
+
+void SyncedI2C::flushBus(miosix::GpioPin scl, unsigned char af)
+{
+    miosix::Lock<miosix::FastMutex> lock(mutex);
+
+    return I2C::flushBus(scl, af);
 }
 
 }  // namespace Boardcore
