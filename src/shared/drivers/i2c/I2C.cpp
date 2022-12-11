@@ -35,6 +35,8 @@ static const int MAX_N_POLLING =
     2000;  ///< Maximum number of cycles for polling
 static const int N_SCL_BITBANG =
     16;  ///< Number of clocks created for slave locked bus recovery
+static const uint8_t I2C_ADDRESS_READ  = 0x1;  ///< LSB of address to read
+static const uint8_t I2C_ADDRESS_WRITE = 0x0;  ///< LSB of address to read
 
 #ifdef I2C1
 /**
@@ -54,7 +56,9 @@ void __attribute__((used)) I2C1HandlerImpl()
 {
     Boardcore::I2C *port = ports[0];
     if (port)
+    {
         port->IRQhandleInterrupt();
+    }
 }
 
 /**
@@ -74,7 +78,9 @@ void __attribute__((used)) I2C1errHandlerImpl()
 {
     Boardcore::I2C *port = ports[0];
     if (port)
+    {
         port->IRQhandleErrInterrupt();
+    }
 }
 #endif
 
@@ -96,7 +102,9 @@ void __attribute__((used)) I2C2HandlerImpl()
 {
     Boardcore::I2C *port = ports[1];
     if (port)
+    {
         port->IRQhandleInterrupt();
+    }
 }
 
 /**
@@ -116,7 +124,9 @@ void __attribute__((used)) I2C2errHandlerImpl()
 {
     Boardcore::I2C *port = ports[1];
     if (port)
+    {
         port->IRQhandleErrInterrupt();
+    }
 }
 #endif
 
@@ -138,7 +148,9 @@ void __attribute__((used)) I2C3HandlerImpl()
 {
     Boardcore::I2C *port = ports[2];
     if (port)
+    {
         port->IRQhandleInterrupt();
+    }
 }
 
 /**
@@ -158,7 +170,9 @@ void __attribute__((used)) I2C3errHandlerImpl()
 {
     Boardcore::I2C *port = ports[2];
     if (port)
+    {
         port->IRQhandleErrInterrupt();
+    }
 }
 #endif
 
@@ -180,7 +194,9 @@ void __attribute__((used)) I2C4HandlerImpl()
 {
     Boardcore::I2C *port = ports[3];
     if (port)
+    {
         port->IRQhandleInterrupt();
+    }
 }
 
 /**
@@ -200,7 +216,9 @@ void __attribute__((used)) I2C4errHandlerImpl()
 {
     Boardcore::I2C *port = ports[3];
     if (port)
+    {
         port->IRQhandleErrInterrupt();
+    }
 }
 #endif
 
@@ -350,14 +368,16 @@ bool I2C::read(uint16_t slaveAddress, void *buffer, size_t nBytes)
 
     // Sending prologue when the channel isn't busy (LSB set to signal this is a
     // read)
-    if (!prologue(slaveAddress << 1 | 0x1))
+    if (!prologue(slaveAddress << 1 | I2C_ADDRESS_READ))
     {
         return false;
     }
 
     // Disabling the generation of the ACK if reading only 1 byte
     if (nBytes == 1)
+    {
         i2c->CR1 &= ~I2C_CR1_ACK;
+    }
 
     // reading the nBytes
     for (size_t i = 0; i < nBytes; i++)
@@ -373,15 +393,14 @@ bool I2C::read(uint16_t slaveAddress, void *buffer, size_t nBytes)
             }
         }
 
-        // checking if a byte has been lost (TODO: see what to do)
+        // checking if a byte has been lost
         if (i2c->SR1 & I2C_SR1_BTF)
             ;
 
         buff[i] = i2c->DR;
 
-        // clearing the ACK flag and setting the STOP flag in order to send a
-        // NACK on the last byte that will be read and generating the stop
-        // condition
+        // clearing the ACK flag in order to send a NACK on the last byte that
+        // will be read
         if (i == nBytes - 2)
         {
             i2c->CR1 &= ~I2C_CR1_ACK;
@@ -399,7 +418,7 @@ bool I2C::write(uint16_t slaveAddress, void *buffer, size_t nBytes)
     uint8_t *buff = static_cast<uint8_t *>(buffer);
 
     // Sending prologue when the channel isn't busy
-    if (!prologue(slaveAddress << 1))
+    if (!prologue(slaveAddress << 1 | I2C_ADDRESS_WRITE))
     {
         return false;
     }
@@ -498,7 +517,7 @@ bool I2C::prologue(uint16_t slaveAddress)
         }
 
         // if we want to enter in receiver mode
-        if (slaveAddress & 0b1)
+        if (slaveAddress & I2C_ADDRESS_READ)
         {
             // Checking if the peripheral is in Master mode (clearing ADDR
             // flag with a read on SR2 register)
@@ -523,14 +542,15 @@ bool I2C::prologue(uint16_t slaveAddress)
             }
 
             // sending modified header
-            i2c->DR = header | 0b1;
+            i2c->DR = header | I2C_ADDRESS_READ;
         }
     }
 
     // clearing ADDR flag
     if (!(i2c->SR2 & I2C_SR2_BUSY) ||  // channel should be busy
         !(i2c->SR2 & I2C_SR2_MSL) ||  // the peripheral should be in master mode
-        ((i2c->SR2 & I2C_SR2_TRA) == (slaveAddress & 0b1)))  // Tx or Rx mode
+        !((i2c->SR2 & I2C_SR2_TRA) !=
+          (slaveAddress & I2C_ADDRESS_READ)))  // Tx or Rx mode
     {
         i2c->CR1 |= I2C_CR1_STOP;
         return false;
@@ -541,9 +561,13 @@ bool I2C::prologue(uint16_t slaveAddress)
 
 void I2C::flushBus(miosix::GpioPin scl, unsigned char af)
 {
+    // If there isn't any locked state return immediately
     if (!lockedState)
+    {
         return;
+    }
 
+    // set the period of the bit-banged clock
     uint8_t toggleDelay = (speed == Speed::STANDARD ? 5 : 2);
 
     // Recovery from the locked state due to a stuck Slave.
@@ -559,6 +583,7 @@ void I2C::flushBus(miosix::GpioPin scl, unsigned char af)
         miosix::delayUs(toggleDelay);
     }
 
+    // we set again the scl pin to the correct Alternate function
     scl.mode(miosix::Mode::ALTERNATE);
     scl.alternateFunction(af);
 
@@ -567,6 +592,8 @@ void I2C::flushBus(miosix::GpioPin scl, unsigned char af)
 
     LOG_WARN(logger, "Bus flushed");
 
+    // assuming the locked state is solved. If it is not the case, only when it
+    // will be the case it will be detected again
     lockedState = false;
 }
 

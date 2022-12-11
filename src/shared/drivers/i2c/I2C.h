@@ -40,9 +40,11 @@ namespace Boardcore
 {
 
 /**
- * Base driver for I2C peripherals. This is NOT thread safe. It implements only
- * the Master logic and supports Standard/Fast speed modes and 7bit/10bit
- * addressing.
+ * @brief Low driver for I2C peripherals. This is NOT thread safe. It
+ * implements only the Master logic and supports Standard/Fast speed modes and
+ * 7bit/10bit addressing. Exposes only base read/write methods and a flushBus
+ * method to be called by the user when we want to check if the bus is locked
+ * and, in this case, tries to recover it.
  */
 class I2C
 {
@@ -73,15 +75,23 @@ public:
     ~I2C();
 
     /**
-     * @brief Blocking read operation to read nBytes. In case of an error during
-     * the communication, this method returns false immediately.
+     * @brief Non blocking read operation to read nBytes. In case of an error
+     * during the communication, this method returns false immediately.
+     * @param slaveAddress address (not shifted!) of the slave to communicate
+     * with.
+     * @param buffer Data buffer where to store the data read.
+     * @param nBytes number of bytes to read.
      * @returns true if the read is successful, false otherwise.
      */
     bool read(uint16_t slaveAddress, void *buffer, size_t nBytes);
 
     /**
-     * @brief Blocking write operation to write nBytes. In case of an error
+     * @brief Non blocking write operation to write nBytes. In case of an error
      * during the communication, this method returns false immediately.
+     * @param slaveAddress address (not shifted!) of the slave to communicate
+     * with.
+     * @param buffer Data buffer where to read the data to send.
+     * @param nBytes number of bytes to send.
      * @returns true if the write is successful, false otherwise.
      */
     bool write(uint16_t slaveAddress, void *buffer, size_t nBytes);
@@ -92,36 +102,41 @@ public:
      * the clock pin) N_SCL_BITBANG clock cycles and reinitializing the
      * peripheral. It usually takes less than 200us for 16 clocks forced in
      * standard mode.
-     * @param scl Pin of the clock for slave lock recovery
-     * @param af Alternate function of the scl for i2c
+     * @param scl Pin of the clock of the locked peripheral.
+     * @param af Alternate function of the scl for i2c function.
      */
     void flushBus(miosix::GpioPin scl, unsigned char af);
 
     /**
-     * @brief Method that handles the interrupt for the specific peripheral.
-     * It just wakes the thread up. No user code should call this method.
+     * @brief Method that handles the interrupt for events of the specific
+     * peripheral. It just disables the interrupts of the peripheral and wakes
+     * the thread up.
+     * @warning No user code should call this method.
      */
     void IRQhandleInterrupt();
 
     /**
      * @brief Method that handles the interrupt for the errors in the specific
-     * peripheral. It wakes the thread up, sets the "error" software flag and
-     * resets the error flags in the register. No user code should call this
-     * method.
+     * peripheral. It disables the interrupts of the peripheral, wakes
+     * the thread up, sets the "error" software flag and resets the error flags
+     * in the register.
+     * @warning No user code should call this method.
      */
     void IRQhandleErrInterrupt();
 
 private:
     /**
-     * @brief Initializes the peripheral enabling his clock and setting up
+     * @brief Initializes the peripheral enabling his clock and sets up
      * various parameters in the peripheral. Safe to call also after init has
      * already been initialized in order to re-initialize the peripheral.
      */
     void init();
 
     /**
-     * @brief Prologue of any read/write operation in Master mode.
-     * @param address the 7 bit address NOT shifted
+     * @brief Prologue of any read/write operation in Master mode. It also
+     * detects locked states; in this case sets the lockedState flag to true.
+     * @param slaveAddress address (not shifted!) of the slave to communicate
+     * with.
      * @returns True if prologue didn't have any error; False otherwise.
      */
     bool prologue(uint16_t slaveAddress);
@@ -137,7 +152,8 @@ private:
     /**
      * @brief This function has the logic to wake up and reschedule the thread
      * if it has a higher priority with relation to the one in current
-     * execution. This function is called by interrupts.
+     * execution.
+     * @warning This function should only be called by interrupts.
      */
     inline void IRQwakeUpWaitingThread();
 
@@ -156,7 +172,7 @@ private:
 };
 
 /**
- * Thread safe version of the I2C driver.
+ * @brief Thread safe version of the I2C driver.
  */
 class SyncedI2C : public I2C
 {
