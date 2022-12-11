@@ -76,25 +76,28 @@ public:
 
     /**
      * @brief Non blocking read operation to read nBytes. In case of an error
-     * during the communication, this method returns false immediately.
+     * during the communication, this method returns false immediately. Check
+     * always if the operation succeeded or not!
      * @param slaveAddress address (not shifted!) of the slave to communicate
      * with.
      * @param buffer Data buffer where to store the data read.
      * @param nBytes number of bytes to read.
      * @returns true if the read is successful, false otherwise.
      */
-    bool read(uint16_t slaveAddress, void *buffer, size_t nBytes);
+    [[nodiscard]] bool read(uint16_t slaveAddress, void *buffer, size_t nBytes);
 
     /**
      * @brief Non blocking write operation to write nBytes. In case of an error
-     * during the communication, this method returns false immediately.
+     * during the communication, this method returns false immediately. Check
+     * always if the operation succeeded or not!
      * @param slaveAddress address (not shifted!) of the slave to communicate
      * with.
      * @param buffer Data buffer where to read the data to send.
      * @param nBytes number of bytes to send.
      * @returns true if the write is successful, false otherwise.
      */
-    bool write(uint16_t slaveAddress, void *buffer, size_t nBytes);
+    [[nodiscard]] bool write(uint16_t slaveAddress, void *buffer,
+                             size_t nBytes);
 
     /**
      * @brief Performs the recovery from the locked state if necessary.
@@ -135,11 +138,12 @@ private:
     /**
      * @brief Prologue of any read/write operation in Master mode. It also
      * detects locked states; in this case sets the lockedState flag to true.
+     * Check always if the operation succeeded or not!
      * @param slaveAddress address (not shifted!) of the slave to communicate
      * with.
      * @returns True if prologue didn't have any error; False otherwise.
      */
-    bool prologue(uint16_t slaveAddress);
+    [[nodiscard]] bool prologue(uint16_t slaveAddress);
 
     /**
      * @brief This waits until the thread isn't waken up by an I2C interrupt (EV
@@ -181,7 +185,8 @@ public:
 
     bool read(uint16_t slaveAddress, void *buffer, size_t nBytes);
 
-    bool write(uint16_t slaveAddress, void *buffer, size_t nBytes);
+    [[nodiscard]] bool write(uint16_t slaveAddress, void *buffer,
+                             size_t nBytes);
 
     void flushBus(miosix::GpioPin scl, unsigned char af);
 

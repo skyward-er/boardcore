@@ -100,10 +100,9 @@ bool i2cDriverOLED(I2C &i2c)
 
 bool i2cDriverBMP(I2C &i2c)
 {
-    i2c.write(BMP180.addressSensor, BMP180.softReset, 2);
-
     buffer[0] = 0;
-    if (!i2c.write(BMP180.addressSensor, &BMP180.whoamiRegister, 1) &&
+    if (!i2c.write(BMP180.addressSensor, BMP180.softReset, 2) &&
+        !i2c.write(BMP180.addressSensor, &BMP180.whoamiRegister, 1) &&
         !i2c.read(BMP180.addressSensor, buffer, 1))
     {
         return false;
@@ -114,10 +113,9 @@ bool i2cDriverBMP(I2C &i2c)
 
 bool i2cDriverBME(I2C &i2c)
 {
-    i2c.write(BME280.addressSensor, BME280.softReset, 2);
-
     buffer[0] = 0;
-    if (!i2c.write(BME280.addressSensor, &BME280.whoamiRegister, 1) &&
+    if (!i2c.write(BME280.addressSensor, BME280.softReset, 2) &&
+        !i2c.write(BME280.addressSensor, &BME280.whoamiRegister, 1) &&
         !i2c.read(BME280.addressSensor, buffer, 1))
     {
         return false;
@@ -136,7 +134,7 @@ int main()
     i1scl2::getPin().mode(miosix::Mode::ALTERNATE);
     i1scl2::getPin().alternateFunction(4);
 
-    SyncedI2C i2c(I2C1, I2C::Speed::FAST, I2C::Addressing::BIT7);
+    SyncedI2C i2c(I2C1, I2C::Speed::STANDARD, I2C::Addressing::BIT7);
 
     // scheduling the flush of the I2C bus
     TaskScheduler scheduler;
