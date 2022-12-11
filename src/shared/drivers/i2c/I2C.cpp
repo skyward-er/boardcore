@@ -445,14 +445,21 @@ bool I2C::write(uint16_t slaveAddress, void *buffer, size_t nBytes)
 
 bool I2C::prologue(uint16_t slaveAddress)
 {
+    // if already detected a locked state return directly without loosing time
+    if (lockedState)
+    {
+        return false;
+    }
+
     uint32_t i{0};
     for (; (i < MAX_N_POLLING) && (i2c->SR2 & I2C_SR2_BUSY); ++i)
         ;
 
-    // lock state detected after N polling cycles
+    // locked state detected after N polling cycles
     if (i == MAX_N_POLLING)
     {
         lockedState = true;
+        LOG_ERR(logger, fmt::format("I2C{} bus locked state detected", id));
         return false;
     }
 
@@ -590,7 +597,7 @@ void I2C::flushBus(miosix::GpioPin scl, unsigned char af)
     // Reinitializing the peripheral in order to avoid inconsistent state
     init();
 
-    LOG_WARN(logger, "Bus flushed");
+    LOG_WARN(logger, fmt::format("I2C{} Bus flushed", id));
 
     // assuming the locked state is solved. If it is not the case, only when it
     // will be the case it will be detected again
