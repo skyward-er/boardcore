@@ -96,7 +96,7 @@ public:
      * @param nBytes number of bytes to send.
      * @returns true if the write is successful, false otherwise.
      */
-    [[nodiscard]] bool write(uint16_t slaveAddress, void *buffer,
+    [[nodiscard]] bool write(uint16_t slaveAddress, const void *buffer,
                              size_t nBytes);
 
     /**
@@ -185,7 +185,7 @@ public:
 
     bool read(uint16_t slaveAddress, void *buffer, size_t nBytes);
 
-    [[nodiscard]] bool write(uint16_t slaveAddress, void *buffer,
+    [[nodiscard]] bool write(uint16_t slaveAddress, const void *buffer,
                              size_t nBytes);
 
     void flushBus(miosix::GpioPin scl, unsigned char af);

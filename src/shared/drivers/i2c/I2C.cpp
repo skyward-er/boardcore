@@ -28,8 +28,8 @@
 #include <utils/Debug.h>
 
 static Boardcore::I2C *ports[N_I2C_PORTS] =
-    {};  ///< Pointer to serial port classes to let interrupts
-         ///< access the classes
+    {};  ///< Pointer to serial port classes to
+         ///< let interrupts access the classes
 
 static const int MAX_N_POLLING =
     2000;  ///< Maximum number of cycles for polling
@@ -54,7 +54,7 @@ void __attribute__((naked)) I2C1_EV_IRQHandler()
  */
 void __attribute__((used)) I2C1HandlerImpl()
 {
-    Boardcore::I2C *port = ports[0];
+    auto *port = ports[0];
     if (port)
     {
         port->IRQhandleInterrupt();
@@ -76,7 +76,7 @@ void __attribute__((naked)) I2C1_ER_IRQHandler()
  */
 void __attribute__((used)) I2C1errHandlerImpl()
 {
-    Boardcore::I2C *port = ports[0];
+    auto *port = ports[0];
     if (port)
     {
         port->IRQhandleErrInterrupt();
@@ -100,7 +100,7 @@ void __attribute__((naked)) I2C2_EV_IRQHandler()
  */
 void __attribute__((used)) I2C2HandlerImpl()
 {
-    Boardcore::I2C *port = ports[1];
+    auto *port = ports[1];
     if (port)
     {
         port->IRQhandleInterrupt();
@@ -122,7 +122,7 @@ void __attribute__((naked)) I2C2_ER_IRQHandler()
  */
 void __attribute__((used)) I2C2errHandlerImpl()
 {
-    Boardcore::I2C *port = ports[1];
+    auto *port = ports[1];
     if (port)
     {
         port->IRQhandleErrInterrupt();
@@ -146,7 +146,7 @@ void __attribute__((naked)) I2C3_EV_IRQHandler()
  */
 void __attribute__((used)) I2C3HandlerImpl()
 {
-    Boardcore::I2C *port = ports[2];
+    auto *port = ports[2];
     if (port)
     {
         port->IRQhandleInterrupt();
@@ -168,7 +168,7 @@ void __attribute__((naked)) I2C3_ER_IRQHandler()
  */
 void __attribute__((used)) I2C3errHandlerImpl()
 {
-    Boardcore::I2C *port = ports[2];
+    auto *port = ports[2];
     if (port)
     {
         port->IRQhandleErrInterrupt();
@@ -192,7 +192,7 @@ void __attribute__((naked)) I2C4_EV_IRQHandler()
  */
 void __attribute__((used)) I2C4HandlerImpl()
 {
-    Boardcore::I2C *port = ports[3];
+    auto *port = ports[3];
     if (port)
     {
         port->IRQhandleInterrupt();
@@ -214,7 +214,7 @@ void __attribute__((naked)) I2C4_ER_IRQHandler()
  */
 void __attribute__((used)) I2C4errHandlerImpl()
 {
-    Boardcore::I2C *port = ports[3];
+    auto *port = ports[3];
     if (port)
     {
         port->IRQhandleErrInterrupt();
@@ -361,7 +361,7 @@ void I2C::init()
 
 bool I2C::read(uint16_t slaveAddress, void *buffer, size_t nBytes)
 {
-    uint8_t *buff = static_cast<uint8_t *>(buffer);
+    auto *buff = static_cast<uint8_t *>(buffer);
 
     // Enabling option to generate ACK
     i2c->CR1 |= I2C_CR1_ACK;
@@ -413,9 +413,9 @@ bool I2C::read(uint16_t slaveAddress, void *buffer, size_t nBytes)
     return true;
 };
 
-bool I2C::write(uint16_t slaveAddress, void *buffer, size_t nBytes)
+bool I2C::write(uint16_t slaveAddress, const void *buffer, size_t nBytes)
 {
-    uint8_t *buff = static_cast<uint8_t *>(buffer);
+    auto *buff = static_cast<const uint8_t *>(buffer);
 
     // Sending prologue when the channel isn't busy
     if (!prologue(slaveAddress << 1 | I2C_ADDRESS_WRITE))
@@ -679,7 +679,7 @@ bool SyncedI2C::read(uint16_t slaveAddress, void *buffer, size_t nBytes)
     return I2C::read(slaveAddress, buffer, nBytes);
 }
 
-bool SyncedI2C::write(uint16_t slaveAddress, void *buffer, size_t nBytes)
+bool SyncedI2C::write(uint16_t slaveAddress, const void *buffer, size_t nBytes)
 {
     miosix::Lock<miosix::FastMutex> lock(mutex);
 
