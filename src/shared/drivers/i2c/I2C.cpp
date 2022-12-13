@@ -383,7 +383,7 @@ bool I2C::read(uint16_t slaveAddress, void *buffer, size_t nBytes)
     for (size_t i = 0; i < nBytes; i++)
     {
         {
-            miosix::InterruptDisableLock dLock;
+            miosix::FastInterruptDisableLock dLock;
 
             // waiting for the reception of another byte
             if (!IRQwaitForRegisterChange(dLock) || !(i2c->SR1 & I2C_SR1_RXNE))
@@ -426,7 +426,7 @@ bool I2C::write(uint16_t slaveAddress, const void *buffer, size_t nBytes)
     // sending the nBytes
     for (size_t i = 0; i < nBytes; i++)
     {
-        miosix::InterruptDisableLock dLock;
+        miosix::FastInterruptDisableLock dLock;
         i2c->DR = buff[i];
 
         // waiting for the sending of the byte
@@ -464,7 +464,7 @@ bool I2C::prologue(uint16_t slaveAddress)
     }
 
     {
-        miosix::InterruptDisableLock dLock;
+        miosix::FastInterruptDisableLock dLock;
         i2c->CR1 |= I2C_CR1_START;
 
         // waiting for reception of start signal and change to master mode
@@ -479,7 +479,7 @@ bool I2C::prologue(uint16_t slaveAddress)
     // Sending (header + ) slave address
     if (addressing == Addressing::BIT7)
     {
-        miosix::InterruptDisableLock dLock;
+        miosix::FastInterruptDisableLock dLock;
 
         // setting the LSB if we want to enter receiver mode
         i2c->DR = slaveAddress;
@@ -498,7 +498,7 @@ bool I2C::prologue(uint16_t slaveAddress)
         const uint8_t header = 0b11110000 | ((slaveAddress >> 7) & 0b110);
 
         {
-            miosix::InterruptDisableLock dLock;
+            miosix::FastInterruptDisableLock dLock;
             // sending header
             i2c->DR = header;
 
@@ -511,7 +511,7 @@ bool I2C::prologue(uint16_t slaveAddress)
         }
 
         {
-            miosix::InterruptDisableLock dLock;
+            miosix::FastInterruptDisableLock dLock;
             // sending address ((1 << 8) - 1) = 0xff
             i2c->DR = (slaveAddress & 0xff);
 
@@ -535,7 +535,7 @@ bool I2C::prologue(uint16_t slaveAddress)
             }
 
             {
-                miosix::InterruptDisableLock dLock;
+                miosix::FastInterruptDisableLock dLock;
                 // Repeated start
                 i2c->CR1 |= I2C_CR1_START;
 
@@ -577,10 +577,13 @@ void I2C::flushBus(miosix::GpioPin scl, unsigned char af)
     // set the period of the bit-banged clock
     uint8_t toggleDelay = (speed == Speed::STANDARD ? 5 : 2);
 
-    // Recovery from the locked state due to a stuck Slave.
-    // We bit-bang 16 clocks on the scl line in order to restore pending
-    // packets of the slaves.
-    scl.mode(miosix::Mode::OUTPUT);
+    {
+        miosix::FastInterruptDisableLock dLock;
+        // Recovery from the locked state due to a stuck Slave.
+        // We bit-bang 16 clocks on the scl line in order to restore pending
+        // packets of the slaves.
+        scl.mode(miosix::Mode::OUTPUT);
+    }
 
     for (size_t c = 0; c < N_SCL_BITBANG; c++)
     {
@@ -590,21 +593,25 @@ void I2C::flushBus(miosix::GpioPin scl, unsigned char af)
         miosix::delayUs(toggleDelay);
     }
 
-    // we set again the scl pin to the correct Alternate function
-    scl.mode(miosix::Mode::ALTERNATE);
-    scl.alternateFunction(af);
+    {
+        miosix::FastInterruptDisableLock dLock;
+        // we set again the scl pin to the correct Alternate function
+        scl.mode(miosix::Mode::ALTERNATE);
+        scl.alternateFunction(af);
+    }
 
     // Reinitializing the peripheral in order to avoid inconsistent state
     init();
 
-    LOG_WARN(logger, fmt::format("I2C{} Bus flushed", id));
-
     // assuming the locked state is solved. If it is not the case, only when it
     // will be the case it will be detected again
     lockedState = false;
+
+    LOG_WARN(logger, fmt::format("I2C{} Bus flushed", id));
 }
 
-inline bool I2C::IRQwaitForRegisterChange(miosix::InterruptDisableLock &dLock)
+inline bool I2C::IRQwaitForRegisterChange(
+    miosix::FastInterruptDisableLock &dLock)
 {
     waiting = miosix::Thread::IRQgetCurrentThread();
 
@@ -612,7 +619,7 @@ inline bool I2C::IRQwaitForRegisterChange(miosix::InterruptDisableLock &dLock)
     {
         waiting->IRQwait();
         i2c->CR2 |= I2C_CR2_ITEVTEN | I2C_CR2_ITERREN;
-        miosix::InterruptEnableLock eLock(dLock);
+        miosix::FastInterruptEnableLock eLock(dLock);
         waiting->yield();
     }
 

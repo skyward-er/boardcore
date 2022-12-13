@@ -151,7 +151,8 @@ private:
      * disabled; handles the waiting and yielding and the management of the
      * flags for the interrupts.
      */
-    inline bool IRQwaitForRegisterChange(miosix::InterruptDisableLock &dLock);
+    inline bool IRQwaitForRegisterChange(
+        miosix::FastInterruptDisableLock &dLock);
 
     /**
      * @brief This function has the logic to wake up and reschedule the thread
