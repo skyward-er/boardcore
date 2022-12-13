@@ -596,7 +596,7 @@ void I2C::flushBus(miosix::GpioPin scl, unsigned char af)
     {
         miosix::FastInterruptDisableLock dLock;
         // we set again the scl pin to the correct Alternate function
-        scl.mode(miosix::Mode::ALTERNATE);
+        scl.mode(miosix::Mode::ALTERNATE_OD);
         scl.alternateFunction(af);
     }
 

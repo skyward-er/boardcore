@@ -129,9 +129,9 @@ int main()
     int nRepeat = 50;
 
     // pin settings
-    i1sda2::getPin().mode(miosix::Mode::ALTERNATE);
+    i1sda2::getPin().mode(miosix::Mode::ALTERNATE_OD);
     i1sda2::getPin().alternateFunction(4);
-    i1scl2::getPin().mode(miosix::Mode::ALTERNATE);
+    i1scl2::getPin().mode(miosix::Mode::ALTERNATE_OD);
     i1scl2::getPin().alternateFunction(4);
 
     SyncedI2C i2c(I2C1, I2C::Speed::STANDARD, I2C::Addressing::BIT7);
