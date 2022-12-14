@@ -597,7 +597,7 @@ void I2C::flushBus()
         // Recovery from the locked state due to a stuck Slave.
         // We bit-bang 16 clocks on the scl line in order to restore pending
         // packets of the slaves.
-        scl.mode(miosix::Mode::OUTPUT);
+        scl.mode(miosix::Mode::OPEN_DRAIN);
     }
 
     for (size_t c = 0; c < N_SCL_BITBANG; c++)
