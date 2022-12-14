@@ -79,7 +79,7 @@ int main()
     LOG_INFO(logger, "Inserting the HILSensors module");
 
     // Insert the instance inside the module manager
-    if (!ModuleManager::getInstance().insert<SensorsModule>(new HILSensors()))
+    if (!insertModule(SensorsModule, new HILSensors()))
     {
         LOG_ERR(logger, "Error inserting the HILSensors module");
         return -1;
@@ -88,75 +88,75 @@ int main()
     LOG_INFO(logger, "Try inserting an already existing module");
 
     // Useless insertion because of already existing module
-    if (ModuleManager::getInstance().insert<SensorsModule>(new Sensors()))
+    if (insertModule(SensorsModule, new Sensors()))
     {
         LOG_ERR(logger, "Error, already inserted module insertion accepted");
         return -1;
     }
 
     // First correct insertion using the same class
-    ModuleManager::getInstance().insert<Radio>(new Radio());
+    insertModule(Radio, new Radio());
 
     LOG_INFO(logger, "Checking the default values");
 
     // Check the output
-    if (ModuleManager::getInstance().get<SensorsModule>()->getDummy() != 0 ||
-        ModuleManager::getInstance().get<Radio>()->getDummy() != 0)
+    if (getModule(SensorsModule)->getDummy() != 0 ||
+        getModule(Radio)->getDummy() != 0)
     {
         LOG_ERR(logger,
                 "Error with default values, they should 0 whereas they are: "
                 "{:d} {:d}",
-                ModuleManager::getInstance().get<SensorsModule>()->getDummy(),
-                ModuleManager::getInstance().get<Radio>()->getDummy());
+                getModule(SensorsModule)->getDummy(),
+                getModule(Radio)->getDummy());
         return -1;
     }
 
     LOG_INFO(logger, "Toggling the SensorsModule value");
     // Toggle the sensors module and the output should be 2000 because HIL
     // sensors
-    ModuleManager::getInstance().get<SensorsModule>()->toggleDummy();
+    getModule(SensorsModule)->toggleDummy();
 
     // Check the Radio didn't change
-    if (ModuleManager::getInstance().get<Radio>()->getDummy() != 0)
+    if (getModule(Radio)->getDummy() != 0)
     {
         LOG_ERR(logger,
                 "Error with Radio value. It should be 0 "
                 "whereas it is: {:d}",
-                ModuleManager::getInstance().get<Radio>()->getDummy());
+                getModule(Radio)->getDummy());
     }
 
     // Check the output of the toggle
-    if (ModuleManager::getInstance().get<SensorsModule>()->getDummy() != 2000)
+    if (getModule(SensorsModule)->getDummy() != 2000)
     {
         LOG_ERR(logger,
                 "Error with SensorsModule value. It should be 2000 "
                 "whereas it is: {:d}",
-                ModuleManager::getInstance().get<SensorsModule>()->getDummy());
+                getModule(SensorsModule)->getDummy());
         return -1;
     }
 
     LOG_INFO(logger, "Toggling the SensorsModule value");
     LOG_INFO(logger, "Set the Radio module value to 1000");
     // Toggle the sensors module again and toggle the radio module
-    ModuleManager::getInstance().get<SensorsModule>()->toggleDummy();
-    ModuleManager::getInstance().get<Radio>()->setDummy(1000);
+    getModule(SensorsModule)->toggleDummy();
+    getModule(Radio)->setDummy(1000);
 
     // Check the SensorsModule returned to 0
-    if (ModuleManager::getInstance().get<SensorsModule>()->getDummy() != 0)
+    if (getModule(SensorsModule)->getDummy() != 0)
     {
         LOG_ERR(logger,
                 "Error with SensorsModule value. It should be 0 "
                 "whereas it is: {:d}",
-                ModuleManager::getInstance().get<Radio>()->getDummy());
+                getModule(Radio)->getDummy());
     }
 
     // Check that the radio didn't change
-    if (ModuleManager::getInstance().get<Radio>()->getDummy() != 1000)
+    if (getModule(Radio)->getDummy() != 1000)
     {
         LOG_ERR(logger,
                 "Error with Radio value. It should be 1000 "
                 "whereas it is: {:d}",
-                ModuleManager::getInstance().get<Radio>()->getDummy());
+                getModule(Radio)->getDummy());
         return -1;
     }
 

@@ -29,6 +29,11 @@
 #include <array>
 #include <atomic>
 
+#define insertModule(type, instance) \
+    ModuleManager::getInstance().insert<type>(instance)
+
+#define getModule(type) ModuleManager::getInstance().get<type>()
+
 namespace Boardcore
 {
 class Module
@@ -37,6 +42,27 @@ public:
     virtual ~Module() = default;
 };
 
+/**
+ * @brief The module manager aims the substitution of the Singleton pattern,
+ * concentrating the collection of instances in just one class. The idea is to
+ * add to the module manager the various modules instances and then refer to
+ * them using their interfaces. A good advantage of this technique is that other
+ * modules that refer to a module through the module manager, actually don't
+ * know what is the implementation below, thus an easy substitution of same type
+ * of modules is as easy as it gets.
+ *
+ * Example
+ *
+ * ModuleManager::getInstance().insert<SensorsModule>(instance of a sensors
+ * module subclass)
+ *
+ * // The user
+ * ModuleManager::getInstance().get<SensorsModule>();
+ *
+ * // This way substituting the instance below, the user doesn't actually know
+ * // the difference as far as the upper interface is respected.
+ *
+ */
 class ModuleManager : public Singleton<ModuleManager>
 {
     friend class Singleton<ModuleManager>;
@@ -68,9 +94,10 @@ public:
     /**
      * @brief Inserts the module inside the array if not already present. The
      * module manager also doesn't allow the user to insert further modules
-     * after the first get is performed. PLEASE NOTICE THAT THE MODULE MANAGER
-     * FROM THIS POINT HANDLES COMPLETELY THE OBJECTS. SO, AT THE END OF THE
-     * MODULE MANAGER EXISTENCE, ALL THE MODULES WILL BE DELETED.
+     * after the first get is performed. The modules added to module manager
+     * must be subclass of Module. PLEASE NOTICE THAT THE MODULE MANAGER FROM
+     * THIS POINT HANDLES COMPLETELY THE OBJECTS. SO, AT THE END OF THE MODULE
+     * MANAGER EXISTENCE, ALL THE MODULES WILL BE DELETED.
      */
     template <typename T>
     bool insert(T *element)
