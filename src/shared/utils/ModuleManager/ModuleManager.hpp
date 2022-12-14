@@ -100,7 +100,7 @@ public:
      * MANAGER EXISTENCE, ALL THE MODULES WILL BE DELETED.
      */
     template <typename T>
-    bool insert(T *element)
+    [[nodiscard]] bool insert(T *element)
     {
         // Verify that T is a subclass of module
         static_assert(std::is_base_of<Module, T>(),

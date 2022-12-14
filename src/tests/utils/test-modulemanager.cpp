@@ -95,7 +95,11 @@ int main()
     }
 
     // First correct insertion using the same class
-    insertModule(Radio, new Radio());
+    if (!insertModule(Radio, new Radio()))
+    {
+        LOG_ERR(logger, "Error inserting the Radio module");
+        return -1;
+    }
 
     LOG_INFO(logger, "Checking the default values");
 
