@@ -186,7 +186,7 @@ public:
     SyncedI2C(I2C_TypeDef *i2c, Speed speed, Addressing addressing,
               miosix::GpioPin scl, miosix::GpioPin sda);
 
-    bool read(uint16_t slaveAddress, void *buffer, size_t nBytes);
+    [[nodiscard]] bool read(uint16_t slaveAddress, void *buffer, size_t nBytes);
 
     [[nodiscard]] bool write(uint16_t slaveAddress, const void *buffer,
                              size_t nBytes);
