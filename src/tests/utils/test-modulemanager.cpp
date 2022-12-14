@@ -61,22 +61,6 @@ public:
     void toggleDummy() override { dummy = dummy == 0 ? 1000 : 0; }
 };
 
-class SingletonSensors : public Singleton<SingletonSensors>
-{
-    friend class Singleton<SingletonSensors>;
-
-private:
-    volatile int dummy = 0;
-
-public:
-    void toggleDummy()
-    {
-        dummy = dummy == 0 ? 2000 : 0;
-        printf("Test1\n");
-    }
-    int getDummy() { return dummy; }
-};
-
 class Radio : public Module
 {
     volatile int dummy = 0;
@@ -179,41 +163,6 @@ int main()
     LOG_INFO(logger, "Test completed with success!\n");
     LOG_INFO(logger,
              "Now testing the performance compared to a Singleton instance");
-
-    // TESTING THE PERFORMANCE
-    uint64_t initialTimestamp = 0;
-    uint64_t finalTimestamp   = 0;
-    uint64_t delta            = 0;
-
-    initialTimestamp = TimestampTimer::getTimestamp();
-
-    // Start the benchmark
-    for (int i = 0; i < 10000; i++)
-    {
-        SingletonSensors::getInstance().toggleDummy();
-    }
-
-    finalTimestamp = TimestampTimer::getTimestamp();
-
-    // Calculate the delta of time
-    delta = finalTimestamp - initialTimestamp;
-
-    initialTimestamp = TimestampTimer::getTimestamp();
-
-    // Start the benchmark
-    for (int i = 0; i < 10000; i++)
-    {
-        ModuleManager::getInstance().get<SensorsModule>()->toggleDummy();
-    }
-
-    finalTimestamp = TimestampTimer::getTimestamp();
-
-    LOG_INFO(logger, "Singleton instance: {}us", delta);
-    LOG_INFO(logger, "Module Manager instance: {}us",
-             finalTimestamp - initialTimestamp);
-
-    LOG_INFO(logger, "Singleton is {:.4} times faster than ModuleManager",
-             ((float)(finalTimestamp - initialTimestamp)) / delta);
 
     return 0;
 }
