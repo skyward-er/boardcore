@@ -66,7 +66,8 @@ public:
      * @param speed the speed mode of the I2C communication
      * @param addressing The addressing mode used in the I2C communication
      */
-    I2C(I2C_TypeDef *i2c, Speed speed, Addressing addressing);
+    I2C(I2C_TypeDef *i2c, Speed speed, Addressing addressing,
+        miosix::GpioPin scl, miosix::GpioPin sda);
 
     /**
      * @brief Deconstructor. Disables the peripheral, the interrupts in the NVIC
@@ -105,10 +106,8 @@ public:
      * the clock pin) N_SCL_BITBANG clock cycles and reinitializing the
      * peripheral. It usually takes less than 200us for 16 clocks forced in
      * standard mode.
-     * @param scl Pin of the clock of the locked peripheral.
-     * @param af Alternate function of the scl for i2c function.
      */
-    void flushBus(miosix::GpioPin scl, unsigned char af);
+    void flushBus();
 
     /**
      * @brief Method that handles the interrupt for events of the specific
@@ -168,6 +167,8 @@ private:
     IRQn_Type irqnErr;
     const Speed speed;            ///< Baudrate of the serial communication
     const Addressing addressing;  ///< Addressing mode of the device
+    miosix::GpioPin scl;
+    miosix::GpioPin sda;
 
     bool error              = false;  ///< Flag that tells if an error occurred
     bool lockedState        = false;  ///< Flag for locked state detection
@@ -182,14 +183,15 @@ private:
 class SyncedI2C : public I2C
 {
 public:
-    SyncedI2C(I2C_TypeDef *i2c, Speed speed, Addressing addressing);
+    SyncedI2C(I2C_TypeDef *i2c, Speed speed, Addressing addressing,
+              miosix::GpioPin scl, miosix::GpioPin sda);
 
     bool read(uint16_t slaveAddress, void *buffer, size_t nBytes);
 
     [[nodiscard]] bool write(uint16_t slaveAddress, const void *buffer,
                              size_t nBytes);
 
-    void flushBus(miosix::GpioPin scl, unsigned char af);
+    void flushBus();
 
 private:
     miosix::FastMutex mutex;  ///< mutex for rx/tx

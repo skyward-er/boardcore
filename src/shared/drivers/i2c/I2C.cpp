@@ -37,6 +37,8 @@ static const int N_SCL_BITBANG =
     16;  ///< Number of clocks created for slave locked bus recovery
 static const uint8_t I2C_ADDRESS_READ  = 0x1;  ///< LSB of address to read
 static const uint8_t I2C_ADDRESS_WRITE = 0x0;  ///< LSB of address to read
+static const uint8_t I2C_PIN_ALTERNATE_FUNCTION =
+    4;  ///< Alternate Function number of the I2C peripheral pins
 
 #ifdef I2C1
 /**
@@ -224,8 +226,9 @@ void __attribute__((used)) I2C4errHandlerImpl()
 
 namespace Boardcore
 {
-I2C::I2C(I2C_TypeDef *i2c, Speed speed, Addressing addressing)
-    : i2c(i2c), speed(speed), addressing(addressing)
+I2C::I2C(I2C_TypeDef *i2c, Speed speed, Addressing addressing,
+         miosix::GpioPin scl, miosix::GpioPin sda)
+    : i2c(i2c), speed(speed), addressing(addressing), scl(scl), sda(sda)
 {
     // Setting the id and irqn of the right i2c peripheral
     switch (reinterpret_cast<uint32_t>(i2c))
@@ -265,7 +268,17 @@ I2C::I2C(I2C_TypeDef *i2c, Speed speed, Addressing addressing)
             break;
     }
 
-    // Checking that this parcticular I2C port hasn't been already instantiated
+    {
+        miosix::FastInterruptDisableLock dLock;
+
+        scl.alternateFunction(I2C_PIN_ALTERNATE_FUNCTION);
+        sda.alternateFunction(I2C_PIN_ALTERNATE_FUNCTION);
+        scl.mode(miosix::Mode::ALTERNATE_OD);
+        sda.mode(miosix::Mode::ALTERNATE_OD);
+    }
+
+    // Checking that this parcticular I2C port hasn't been already
+    // instantiated
     D(assert(id > 0));
     D(assert(ports[id - 1] == nullptr));
 
@@ -288,7 +301,8 @@ I2C::~I2C()
     // removing the relative i2c port from the array
     ports[id - 1] = nullptr;
 
-    // Disabling the interrupts (Ev and Err) in the NVIC for the relative i2c
+    // Disabling the interrupts (Ev and Err) in the NVIC for the relative
+    // i2c
     NVIC_DisableIRQ(irqnEv);
     NVIC_DisableIRQ(irqnErr);
 
@@ -308,8 +322,8 @@ void I2C::init()
     i2c->CR1 = 0;
 
     /* setting the peripheral input clock */
-    // Retrieving the frequency of the APB relative to the I2C peripheral [MHz]
-    // (I2C peripherals are always connected to APB1, Low speed bus)
+    // Retrieving the frequency of the APB relative to the I2C peripheral
+    // [MHz] (I2C peripherals are always connected to APB1, Low speed bus)
     uint32_t f{ClockUtils::getAPBPeripheralsClock(ClockUtils::APB::APB1) /
                1000000};
 
@@ -332,9 +346,9 @@ void I2C::init()
     if (speed == Speed::STANDARD)
     {
         // if STANDARD mode, this is the divider to the peripheral clock to
-        // reach the wanted frequency; It's divided by 2 because in reality it
-        // uses this value to calculate the time that the clock needs to be in
-        // the "set" state. [* 1000 KHz / (100 KHz * 2) = *5]
+        // reach the wanted frequency; It's divided by 2 because in reality
+        // it uses this value to calculate the time that the clock needs to
+        // be in the "set" state. [* 1000 KHz / (100 KHz * 2) = *5]
         i2c->CCR = f * 5;  // setting the CCR bits (implicit Standard mode)
     }
     else
@@ -366,8 +380,8 @@ bool I2C::read(uint16_t slaveAddress, void *buffer, size_t nBytes)
     // Enabling option to generate ACK
     i2c->CR1 |= I2C_CR1_ACK;
 
-    // Sending prologue when the channel isn't busy (LSB set to signal this is a
-    // read)
+    // Sending prologue when the channel isn't busy (LSB set to signal this
+    // is a read)
     if (!prologue(slaveAddress << 1 | I2C_ADDRESS_READ))
     {
         return false;
@@ -399,8 +413,8 @@ bool I2C::read(uint16_t slaveAddress, void *buffer, size_t nBytes)
 
         buff[i] = i2c->DR;
 
-        // clearing the ACK flag in order to send a NACK on the last byte that
-        // will be read
+        // clearing the ACK flag in order to send a NACK on the last byte
+        // that will be read
         if (i == nBytes - 2)
         {
             i2c->CR1 &= ~I2C_CR1_ACK;
@@ -445,7 +459,8 @@ bool I2C::write(uint16_t slaveAddress, const void *buffer, size_t nBytes)
 
 bool I2C::prologue(uint16_t slaveAddress)
 {
-    // if already detected a locked state return directly without loosing time
+    // if already detected a locked state return directly without loosing
+    // time
     if (lockedState)
     {
         return false;
@@ -566,7 +581,7 @@ bool I2C::prologue(uint16_t slaveAddress)
     return true;
 }
 
-void I2C::flushBus(miosix::GpioPin scl, unsigned char af)
+void I2C::flushBus()
 {
     // If there isn't any locked state return immediately
     if (!lockedState)
@@ -597,14 +612,14 @@ void I2C::flushBus(miosix::GpioPin scl, unsigned char af)
         miosix::FastInterruptDisableLock dLock;
         // we set again the scl pin to the correct Alternate function
         scl.mode(miosix::Mode::ALTERNATE_OD);
-        scl.alternateFunction(af);
+        scl.alternateFunction(I2C_PIN_ALTERNATE_FUNCTION);
     }
 
     // Reinitializing the peripheral in order to avoid inconsistent state
     init();
 
-    // assuming the locked state is solved. If it is not the case, only when it
-    // will be the case it will be detected again
+    // assuming the locked state is solved. If it is not the case, only when
+    // it will be the case it will be detected again
     lockedState = false;
 
     LOG_WARN(logger, fmt::format("I2C{} Bus flushed", id));
@@ -674,8 +689,9 @@ void I2C::IRQhandleErrInterrupt()
     IRQwakeUpWaitingThread();
 }
 
-SyncedI2C::SyncedI2C(I2C_TypeDef *i2c, Speed speed, Addressing addressing)
-    : I2C(i2c, speed, addressing)
+SyncedI2C::SyncedI2C(I2C_TypeDef *i2c, Speed speed, Addressing addressing,
+                     miosix::GpioPin scl, miosix::GpioPin sda)
+    : I2C(i2c, speed, addressing, scl, sda)
 {
 }
 
@@ -693,11 +709,11 @@ bool SyncedI2C::write(uint16_t slaveAddress, const void *buffer, size_t nBytes)
     return I2C::write(slaveAddress, buffer, nBytes);
 }
 
-void SyncedI2C::flushBus(miosix::GpioPin scl, unsigned char af)
+void SyncedI2C::flushBus()
 {
     miosix::Lock<miosix::FastMutex> lock(mutex);
 
-    return I2C::flushBus(scl, af);
+    I2C::flushBus();
 }
 
 }  // namespace Boardcore
