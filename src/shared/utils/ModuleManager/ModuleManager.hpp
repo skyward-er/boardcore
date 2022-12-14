@@ -29,11 +29,6 @@
 #include <array>
 #include <atomic>
 
-#define insertModule(type, instance) \
-    ModuleManager::getInstance().insert<type>(instance)
-
-#define getModule(type) ModuleManager::getInstance().get<type>()
-
 namespace Boardcore
 {
 class Module
@@ -43,24 +38,27 @@ public:
 };
 
 /**
- * @brief The module manager aims the substitution of the Singleton pattern,
- * concentrating the collection of instances in just one class. The idea is to
- * add to the module manager the various modules instances and then refer to
- * them using their interfaces. A good advantage of this technique is that other
- * modules that refer to a module through the module manager, actually don't
- * know what is the implementation below, thus an easy substitution of same type
- * of modules is as easy as it gets.
+ * @brief The module manager is a singleton object, so it can be instantiated
+ * only once. It contains all the active software modules which can be
+ * accessed in a centralized way.
  *
- * Example
+ * @note Because modules are identified by their type, only one module per type
+ * can be inserted into the module manager. This means that every module
+ * conceptually behaves like a singleton.
  *
- * ModuleManager::getInstance().insert<SensorsModule>(instance of a sensors
- * module subclass)
+ * @code{.cpp}
+ *
+ * class SensorsModule : public Module {...};
+ * class Sensors : public SensorsModule {...};
+ *
+ * ModuleManager::getInstance().insert<SensorsModule>(new Sensors(args..));
  *
  * // The user
  * ModuleManager::getInstance().get<SensorsModule>();
  *
  * // This way substituting the instance below, the user doesn't actually know
  * // the difference as far as the upper interface is respected.
+ * @endcode
  *
  */
 class ModuleManager : public Singleton<ModuleManager>
@@ -68,36 +66,31 @@ class ModuleManager : public Singleton<ModuleManager>
     friend class Singleton<ModuleManager>;
 
 public:
-    /**
-     * @brief Construct a new Module Manager object and initialize the current
-     * id and vector
-     */
     ModuleManager()
     {
         // Init the first ID
         currentId = 0;
     }
 
-    /**
-     * @brief Destroy the Module Manager object and delete all the modules
-     */
     ~ModuleManager()
     {
-        // Delete all the modules to avoid memory leak
+        // Delete all the modules to avoid memory leaks
         for (size_t i = 0; i < MODULES_NUMBER; i++)
         {
-            // Delete the object created with a new
+            // It is okay to have nullptr in delete
             delete modules[i];
         }
     }
 
     /**
-     * @brief Inserts the module inside the array if not already present. The
-     * module manager also doesn't allow the user to insert further modules
-     * after the first get is performed. The modules added to module manager
-     * must be subclass of Module. PLEASE NOTICE THAT THE MODULE MANAGER FROM
-     * THIS POINT HANDLES COMPLETELY THE OBJECTS. SO, AT THE END OF THE MODULE
-     * MANAGER EXISTENCE, ALL THE MODULES WILL BE DELETED.
+     * @brief Inserts the module inside the array.
+     * @param element Module to be added. T must be subclass of Module.
+     * @returns false in case an object of the same class has already been
+     * inserted or the maximum number of modules has been reached.
+     * @note Further insertions of modules after the first get call are not
+     * allowed. Please notice also that the module manager from this point
+     * handles completely the objects. Therefore at the destruction of the
+     * module manager, all the modules will be deleted.
      */
     template <typename T>
     [[nodiscard]] bool insert(T *element)
@@ -112,61 +105,55 @@ public:
         // added after the first get
         assert(insertionAcceptance.load());
 
-        // Take the module type
+        // Take the module type id
         size_t id = getId<T>();
 
-        // This is the case in which the last slot is being occupied, so i
-        // return a failure
-        if (id == MODULES_NUMBER - 1)
+        // This is the case in which the last slot is being occupied, so a
+        // failure is returned
+        if (id == MODULES_NUMBER)
         {
             return false;
         }
 
-        // Only if the module isn't already present i add it casting to the
-        // module interface.
+        // The module is added only a module of the same subclass has already
+        // been added
         if (modules[id] == nullptr)
         {
             modules[id] = static_cast<Module *>(element);
             return true;
         }
-
-        // This is the case when someone tries to insert an already existing
-        // module
         return false;
     }
 
     /**
-     * @brief Get the Module object if present. Otherwise it creates one. PLEASE
-     * NOTE THAT AFTER THE FIRST GET, NO FURTHER INSERTION IS ALLOWED
-     * @return Software module
+     * @brief Get the Module object if present.
+     * @returns T Software module.
+     * @returns nullptr in case of a non existing software module.
+     * @note After the get call, no further insertion is allowed.
      */
     template <class T>
     T *get()
     {
-        // Verify that T is a subclass of module
+        // Verify that T is a subclass of module but not actually a strict
+        // Module
         static_assert(std::is_base_of<Module, T>(),
                       "Class must be subclass of Module");
         static_assert((std::is_same<Module, T>() == false),
                       "Class must be subclass of Module and not Module itself");
 
-        // Set the insertion acceptance to false (inhibit the insertion after
-        // the first get)
+        // Inhibit further insertions
         insertionAcceptance = false;
 
-        // Retrieve the module type
+        // Retrieve the module type id
         size_t id = getId<T>();
 
-        // If the module is actually present i return it by downcasting the
+        // If the module is actually present, returns it by downcasting the
         // object. It can be done because at every type, a unique id is assigned
         if (modules[id] != nullptr)
         {
-            // If the types are the same return the casted one
             return static_cast<T *>(modules[id]);
         }
 
-        // The fact that a user is trying to access to a non previously added
-        // module should not be considered properly working, so there is an
-        // assert
         assert(modules[id] == nullptr);
 
         // The nullptr is returned because after the assert it is pretty clear
@@ -191,8 +178,9 @@ private:
 
     /**
      * @brief This boolean flag just enables the user to insert software modules
-     * at the beginning but not after the first get. With this we enforce the
-     * fact that AFTER A GET, THERE SHOULDN'T BE ANY INSERTIONS
+     * at the beginning but not after the first get.
+     * @note It enforces the fact that after the first get call no further
+     * insertions are allowed.
      */
     std::atomic<bool> insertionAcceptance{true};
 
