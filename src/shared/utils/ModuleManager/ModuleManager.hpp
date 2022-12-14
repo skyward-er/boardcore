@@ -154,11 +154,8 @@ public:
             return static_cast<T *>(modules[id]);
         }
 
+        // Fail if the module hasn't been added before
         assert(modules[id] == nullptr);
-
-        // The nullptr is returned because after the assert it is pretty clear
-        // whether it would crash the software or not in debug mode. Also,
-        // trying to instantiate the module may result in an unwanted behaviour
         return nullptr;
     }
 
@@ -166,8 +163,7 @@ private:
     static constexpr size_t MODULES_NUMBER = 256;
 
     /**
-     * @brief Array that contains all the possible modules created with the
-     * maximum number of modules
+     * @brief Array that contains all the possible modules
      */
     std::array<Module *, MODULES_NUMBER> modules = {nullptr};
 
