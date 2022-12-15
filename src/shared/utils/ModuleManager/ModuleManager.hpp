@@ -66,11 +66,7 @@ class ModuleManager : public Singleton<ModuleManager>
     friend class Singleton<ModuleManager>;
 
 public:
-    ModuleManager()
-    {
-        // Init the first ID
-        currentId = 0;
-    }
+    ModuleManager() {}
 
     ~ModuleManager()
     {
@@ -85,12 +81,12 @@ public:
     /**
      * @brief Inserts the module inside the array.
      * @param element Module to be added. T must be subclass of Module.
-     * @returns false in case an object of the same class has already been
-     * inserted or the maximum number of modules has been reached.
      * @note Further insertions of modules after the first get call are not
      * allowed. Please notice also that the module manager from this point
      * handles completely the objects. Therefore at the destruction of the
      * module manager, all the modules will be deleted.
+     * @returns false in case an object of the same class has already been
+     * inserted or the maximum number of modules has been reached.
      */
     template <typename T>
     [[nodiscard]] bool insert(T *element)
@@ -127,9 +123,9 @@ public:
 
     /**
      * @brief Get the Module object if present.
+     * @note After the get call, no further insertion is allowed.
      * @returns T Software module.
      * @returns nullptr in case of a non existing software module.
-     * @note After the get call, no further insertion is allowed.
      */
     template <class T>
     T *get()
@@ -168,11 +164,6 @@ private:
     std::array<Module *, MODULES_NUMBER> modules = {nullptr};
 
     /**
-     * @brief Id that stores the maximum id assigned so far (atomic)
-     */
-    std::atomic<size_t> currentId;
-
-    /**
      * @brief This boolean flag just enables the user to insert software modules
      * at the beginning but not after the first get.
      * @note It enforces the fact that after the first get call no further
@@ -181,8 +172,29 @@ private:
     std::atomic<bool> insertionAcceptance{true};
 
     /**
+     * @brief Get the next id with respect to the current one.
+     * @note This is not a thread safe function.
+     * @returns size_t incremented currentID
+     */
+    size_t getNextId()
+    {
+        static size_t currentId = 0;
+        if (currentId == MODULES_NUMBER)
+        {
+            return MODULES_NUMBER;
+        }
+        currentId++;
+        return currentId;
+    }
+
+    /**
      * @brief This function "assigns" to every type a unique sequential id
      * based on the already assigned ones
+     * @note This is a thread safe function. It leverages on the cxa_guard of
+     * miosix around a static variable initialization that effectively yields a
+     * thread that tries to initialize the variable concurrently. So getNextId
+     * is executed atomically.
+     * @returns size_t A unique ID for the type T
      */
     template <typename T>
     size_t getId()
@@ -190,8 +202,7 @@ private:
         // This thing works because a new static variable newId is created for
         // every type T and the initial assignment is "called" only when the
         // static variable is created
-        static size_t newId =
-            currentId == MODULES_NUMBER ? MODULES_NUMBER : currentId++;
+        static size_t newId = getNextId();
         return newId;
     }
 };
