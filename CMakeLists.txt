@@ -107,6 +107,7 @@ add_executable(catch-tests-boardcore
     src/tests/catch/test-packetqueue.cpp
     src/tests/catch/test-sensormanager-catch.cpp
     src/tests/catch/xbee/test-xbee-parser.cpp
+    src/tests/catch/test-modulemanager.cpp
 )
 target_compile_definitions(catch-tests-boardcore PRIVATE USE_MOCK_PERIPHERALS)
 sbs_target(catch-tests-boardcore stm32f429zi_stm32f4discovery)
@@ -386,6 +387,3 @@ sbs_target(test-buttonhandler stm32f429zi_stm32f4discovery)
 
 add_executable(test-syncpacketqueue src/tests/utils/test-syncpacketqueue.cpp)
 sbs_target(test-syncpacketqueue stm32f407vg_stm32f4discovery)
-
-add_executable(test-modulemanager src/tests/utils/test-modulemanager.cpp)
-sbs_target(test-modulemanager stm32f407vg_stm32f4discovery)

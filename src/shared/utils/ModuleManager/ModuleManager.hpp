@@ -100,6 +100,10 @@ public:
         // This assertion enforces the fact that no software module should be
         // added after the first get
         assert(insertionAcceptance.load());
+        if (!insertionAcceptance)
+        {
+            return false;
+        }
 
         // Take the module type id
         size_t id = getId<T>();
