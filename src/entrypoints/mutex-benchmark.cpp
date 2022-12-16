@@ -55,12 +55,19 @@
 
 // std::atomic/mutex comparison options
 #define RUN_INCREMENTS_TEST 1
-#define NUM_INCREMENTS 100000
+#define NUM_INCREMENTS 500000
+
+// atomic used instead of mutex test options
+#define RUN_ATOMIC_AS_MUTEX_TEST 1
+#define NUM_MUTEX_ATOMIC_ITERATIONS 50000
 
 // Multithreading options
 #define MIN_THREADS 2
 #define MAX_THREADS 10
 #define STEP_THREADS 2
+
+// How times the tests will be repeated
+#define NUM_LOOPS 10
 
 using namespace Boardcore;
 using namespace miosix;
@@ -86,8 +93,15 @@ struct IncrementTestThreadData
     bool useStdAtomic;
 };
 
+struct AtomicAsMutexThreadData
+{
+    uint64_t timestampStart, timestampEnd;
+    bool useMutex;
+};
+
 // `threadData` must point to the respective xxxThreadData struct.
 void* mutexTestThreadRoutine(void* threadData);
+void* atomicAsMutexTestThreadRoutine(void* threadData);
 void* incrementTestThreadRoutine(void* threadData);
 
 int main()
@@ -95,142 +109,206 @@ int main()
     // Using default SPI configuration (we don't care)
     bus.configure(SPIBusConfig{});
 
+    unsigned remainingLoops = NUM_LOOPS;
+    while (remainingLoops-- != 0)
+    {
+
 #if RUN_MUTEX_BENCHMARK_TEST
-    printf("*** FastMutex lock() and unlock() benchmark ***\n");
+        printf("*** FastMutex lock() and unlock() benchmark ***\n");
 
-    // First, run the baseline test (no mutexes, no cry).
-    {
-        MutexTestThreadData threadData = {NUM_OPERATIONS, NUM_OPERATIONS, 0, 0,
-                                          false};
-        mutexTestThreadRoutine(&threadData);
-        uint64_t executionTimeMs =
-            (threadData.timestampEnd - threadData.timestampStart) / 1000ull;
-
-        printf("Execution time without locks/unlocks: %lld ms\n",
-               executionTimeMs);
-    }
-
-    // Now it's time for the real tests.
-    for (int numberOfThreads = MIN_THREADS; numberOfThreads <= MAX_THREADS;
-         numberOfThreads += STEP_THREADS)
-    {
-        const int operationsPerThread = NUM_OPERATIONS / numberOfThreads;
-
-        for (int operationsBetweenLockGuards = MAX_OPS_BETWEEN_LOCK_GUARDS;
-             operationsBetweenLockGuards >= MIN_OPS_BETWEEN_LOCK_GUARDS;
-             operationsBetweenLockGuards -= STEP_OPS_BETWEEN_LOCK_GUARDS)
+        // First, run the baseline test (no mutexes, no cry).
         {
-            MutexTestThreadData threadDataArray[numberOfThreads];
-            Thread* threads[numberOfThreads];
-            for (int i = 0; i < numberOfThreads; i++)
-            {
-                // Start the concurrent threads
-                threadDataArray[i] = {operationsPerThread,
-                                      operationsBetweenLockGuards, 0, 0, true};
-                threads[i] =
-                    Thread::create(mutexTestThreadRoutine, 8096, Priority(),
-                                   &threadDataArray[i], Thread::JOINABLE);
-            }
+            MutexTestThreadData threadData = {NUM_OPERATIONS, NUM_OPERATIONS, 0,
+                                              0, false};
+            mutexTestThreadRoutine(&threadData);
+            uint64_t executionTimeMs =
+                (threadData.timestampEnd - threadData.timestampStart) / 1000ull;
 
-            // Wait for all threads to end
-            for (Thread* thread : threads)
-            {
-                thread->join();
-            }
-
-            // Take the minimum start time and the maximum end time
-            uint64_t startTime =
-                std::min_element(
-                    threadDataArray, threadDataArray + numberOfThreads,
-                    [](auto a, auto b)
-                    { return a.timestampStart < b.timestampStart; })
-                    ->timestampStart;
-            uint64_t endTime =
-                std::max_element(threadDataArray,
-                                 threadDataArray + numberOfThreads,
-                                 [](auto a, auto b)
-                                 { return a.timestampEnd < b.timestampEnd; })
-                    ->timestampEnd;
-
-            uint64_t executionTimeMs = (endTime - startTime) / 1000ull;
-            printf(
-                "Execution time for %d locks/unlocks (%d threads): %lld ms\n",
-                numberOfThreads *
-                    (int)(std::ceil((double)(NUM_OPERATIONS / numberOfThreads) /
-                                    operationsBetweenLockGuards)),
-                numberOfThreads, executionTimeMs);
+            printf("Execution time without locks/unlocks: %lld ms\n",
+                   executionTimeMs);
         }
-    }
+
+        // Now it's time for the real tests.
+        for (int numberOfThreads = MIN_THREADS; numberOfThreads <= MAX_THREADS;
+             numberOfThreads += STEP_THREADS)
+        {
+            const int operationsPerThread = NUM_OPERATIONS / numberOfThreads;
+
+            for (int operationsBetweenLockGuards = MAX_OPS_BETWEEN_LOCK_GUARDS;
+                 operationsBetweenLockGuards >= MIN_OPS_BETWEEN_LOCK_GUARDS;
+                 operationsBetweenLockGuards -= STEP_OPS_BETWEEN_LOCK_GUARDS)
+            {
+                MutexTestThreadData threadDataArray[numberOfThreads];
+                Thread* threads[numberOfThreads];
+                for (int i = 0; i < numberOfThreads; i++)
+                {
+                    // Start the concurrent threads
+                    threadDataArray[i] = {operationsPerThread,
+                                          operationsBetweenLockGuards, 0, 0,
+                                          true};
+                    threads[i] =
+                        Thread::create(mutexTestThreadRoutine, 8096, Priority(),
+                                       &threadDataArray[i], Thread::JOINABLE);
+                }
+
+                // Wait for all threads to end
+                for (Thread* thread : threads)
+                {
+                    thread->join();
+                }
+
+                // Take the minimum start time and the maximum end time
+                uint64_t startTime =
+                    std::min_element(
+                        threadDataArray, threadDataArray + numberOfThreads,
+                        [](auto a, auto b)
+                        { return a.timestampStart < b.timestampStart; })
+                        ->timestampStart;
+                uint64_t endTime =
+                    std::max_element(
+                        threadDataArray, threadDataArray + numberOfThreads,
+                        [](auto a, auto b)
+                        { return a.timestampEnd < b.timestampEnd; })
+                        ->timestampEnd;
+
+                uint64_t executionTimeMs = (endTime - startTime) / 1000ull;
+                printf(
+                    "Execution time for %d locks/unlocks (%d threads): %lld "
+                    "ms\n",
+                    numberOfThreads *
+                        (int)(std::ceil(
+                            (double)(NUM_OPERATIONS / numberOfThreads) /
+                            operationsBetweenLockGuards)),
+                    numberOfThreads, executionTimeMs);
+            }
+        }
+#endif
+
+#if RUN_ATOMIC_AS_MUTEX_TEST
+        printf("*** using std::atomic<int> instead of a mutex ***\n");
+
+        for (bool useMutex : {true, false})
+        {
+            for (int numberOfThreads = MIN_THREADS;
+                 numberOfThreads <= MAX_THREADS;
+                 numberOfThreads += STEP_THREADS)
+            {
+                atomic_int   = 1;
+                volatile_int = 0;
+
+                AtomicAsMutexThreadData threadDataArray[numberOfThreads];
+                Thread* threads[numberOfThreads];
+                for (int i = 0; i < numberOfThreads; i++)
+                {
+                    // Start the concurrent threads
+                    threadDataArray[i] = {0, 0, useMutex};
+                    threads[i]         = Thread::create(
+                        atomicAsMutexTestThreadRoutine, 8096, Priority(),
+                        &threadDataArray[i], Thread::JOINABLE);
+                }
+
+                // Wait for all threads to end
+                for (Thread* thread : threads)
+                {
+                    thread->join();
+                }
+
+                // Take the minimum start time and the maximum end time
+                uint64_t startTime =
+                    std::min_element(
+                        threadDataArray, threadDataArray + numberOfThreads,
+                        [](auto a, auto b)
+                        { return a.timestampStart < b.timestampStart; })
+                        ->timestampStart;
+                uint64_t endTime =
+                    std::max_element(
+                        threadDataArray, threadDataArray + numberOfThreads,
+                        [](auto a, auto b)
+                        { return a.timestampEnd < b.timestampEnd; })
+                        ->timestampEnd;
+
+                uint64_t executionTimeMs = (endTime - startTime) / 1000ull;
+                printf(
+                    "Execution time for %s after %d locks/unlocks (%d "
+                    "threads): %lld "
+                    "ms\n",
+                    useMutex ? "using mutex" : "using std::atomic<int>",
+                    NUM_MUTEX_ATOMIC_ITERATIONS, numberOfThreads,
+                    executionTimeMs);
+            }
+        }
 #endif
 
 #if RUN_INCREMENTS_TEST
-    printf("*** std::atomic<int> vs int vs mutex+int comparison ***\n");
+        printf("*** std::atomic<int> vs int vs mutex+int comparison ***\n");
 
-    // Baseline test
-    {
-        uint64_t timestampStart, timestampEnd, executionTimeMs;
-
-        timestampStart = TimestampTimer::getTimestamp();
-        volatile_int   = 0;
-        while (volatile_int < NUM_INCREMENTS)
+        // Baseline test
         {
-            ++volatile_int;
-        }
-        timestampEnd    = TimestampTimer::getTimestamp();
-        executionTimeMs = (timestampEnd - timestampStart) / 1000ull;
-        printf("Execution time for %d increments of volatile int: %lld ms\n",
-               NUM_INCREMENTS, executionTimeMs);
-    }
+            uint64_t timestampStart, timestampEnd, executionTimeMs;
 
-    for (int numberOfThreads = MIN_THREADS; numberOfThreads <= MAX_THREADS;
-         numberOfThreads += STEP_THREADS)
-    {
-        for (bool useStdAtomic : {false, true})
-        {
-            IncrementTestThreadData threadDataArray[numberOfThreads];
-            Thread* threads[numberOfThreads];
-            volatile_int = 0;
-            atomic_int   = 0;
-
-            for (int i = 0; i < numberOfThreads; i++)
+            timestampStart = TimestampTimer::getTimestamp();
+            volatile_int   = 0;
+            while (volatile_int < NUM_INCREMENTS)
             {
-                // Start the concurrent threads
-                threadDataArray[i] = {0, 0, useStdAtomic};
-                threads[i] =
-                    Thread::create(incrementTestThreadRoutine, 8096, Priority(),
-                                   &threadDataArray[i], Thread::JOINABLE);
+                ++volatile_int;
             }
-
-            // Wait for all threads to end
-            for (Thread* thread : threads)
-            {
-                thread->join();
-            }
-
-            // Take the minimum start time and the maximum end time
-            uint64_t startTime =
-                std::min_element(
-                    threadDataArray, threadDataArray + numberOfThreads,
-                    [](auto a, auto b)
-                    { return a.timestampStart < b.timestampStart; })
-                    ->timestampStart;
-            uint64_t endTime =
-                std::max_element(threadDataArray,
-                                 threadDataArray + numberOfThreads,
-                                 [](auto a, auto b)
-                                 { return a.timestampEnd < b.timestampEnd; })
-                    ->timestampEnd;
-
-            uint64_t executionTimeMs = (endTime - startTime) / 1000ull;
+            timestampEnd    = TimestampTimer::getTimestamp();
+            executionTimeMs = (timestampEnd - timestampStart) / 1000ull;
             printf(
-                "Execution time for %d increments of %s (%d threads): %lld "
-                "ms\n",
-                NUM_INCREMENTS,
-                useStdAtomic ? "atomic int" : "volatile int (with mutex)",
-                numberOfThreads, executionTimeMs);
+                "Execution time for %d increments of volatile int: %lld ms\n",
+                NUM_INCREMENTS, executionTimeMs);
         }
-    }
+
+        for (int numberOfThreads = MIN_THREADS; numberOfThreads <= MAX_THREADS;
+             numberOfThreads += STEP_THREADS)
+        {
+            for (bool useStdAtomic : {false, true})
+            {
+                IncrementTestThreadData threadDataArray[numberOfThreads];
+                Thread* threads[numberOfThreads];
+                volatile_int = 0;
+                atomic_int   = 0;
+
+                for (int i = 0; i < numberOfThreads; i++)
+                {
+                    // Start the concurrent threads
+                    threadDataArray[i] = {0, 0, useStdAtomic};
+                    threads[i]         = Thread::create(
+                        incrementTestThreadRoutine, 8096, Priority(),
+                        &threadDataArray[i], Thread::JOINABLE);
+                }
+
+                // Wait for all threads to end
+                for (Thread* thread : threads)
+                {
+                    thread->join();
+                }
+
+                // Take the minimum start time and the maximum end time
+                uint64_t startTime =
+                    std::min_element(
+                        threadDataArray, threadDataArray + numberOfThreads,
+                        [](auto a, auto b)
+                        { return a.timestampStart < b.timestampStart; })
+                        ->timestampStart;
+                uint64_t endTime =
+                    std::max_element(
+                        threadDataArray, threadDataArray + numberOfThreads,
+                        [](auto a, auto b)
+                        { return a.timestampEnd < b.timestampEnd; })
+                        ->timestampEnd;
+
+                uint64_t executionTimeMs = (endTime - startTime) / 1000ull;
+                printf(
+                    "Execution time for %d increments of %s (%d threads): %lld "
+                    "ms\n",
+                    NUM_INCREMENTS,
+                    useStdAtomic ? "atomic int" : "volatile int (with mutex)",
+                    numberOfThreads, executionTimeMs);
+            }
+        }
 #endif
+    }
 
     return 0;
 }
@@ -259,6 +337,49 @@ void* mutexTestThreadRoutine(void* param)
             mutex.unlock();
         }
     }
+
+    threadData.timestampEnd = TimestampTimer::getTimestamp();
+    return nullptr;
+}
+
+void* atomicAsMutexTestThreadRoutine(void* param)
+{
+    AtomicAsMutexThreadData& threadData =
+        *static_cast<AtomicAsMutexThreadData*>(param);
+    threadData.timestampStart = TimestampTimer::getTimestamp();
+
+    bool keepRunning = true;
+    // atomic_int must be initialized as 1 in thread main
+    do
+    {
+        if (threadData.useMutex)
+        {
+            mutex.lock();
+        }
+        else
+        {
+            // If old value was 0, we failed locking the resource!
+            if (atomic_int.exchange(0) == 0)
+            {
+                Thread::yield();
+                continue;
+            }
+        }
+
+        keepRunning = ++volatile_int < NUM_MUTEX_ATOMIC_ITERATIONS;
+
+        if (threadData.useMutex)
+        {
+            mutex.unlock();
+        }
+        else
+        {
+            // Free the lock and let other threads take over
+            atomic_int = 1;
+            Thread::yield();
+        }
+
+    } while (keepRunning);
 
     threadData.timestampEnd = TimestampTimer::getTimestamp();
     return nullptr;
