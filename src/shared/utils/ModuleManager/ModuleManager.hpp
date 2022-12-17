@@ -119,7 +119,7 @@ public:
         // been added
         if (modules[id] == nullptr)
         {
-            modules[id] = static_cast<Module *>(element);
+            modules[id] = element;
             return true;
         }
         return false;
@@ -155,7 +155,7 @@ public:
         }
 
         // Fail if the module hasn't been added before
-        assert(modules[id] == nullptr);
+        assert(false && "Get of a non previously inserted module");
         return nullptr;
     }
 
