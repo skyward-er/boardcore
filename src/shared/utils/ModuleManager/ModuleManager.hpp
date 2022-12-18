@@ -46,8 +46,8 @@ public:
  * can be inserted into the module manager. This means that every module
  * conceptually behaves like a singleton.
  *
+ * Example:
  * @code{.cpp}
- *
  * class SensorsModule : public Module {...};
  * class Sensors : public SensorsModule {...};
  *
@@ -59,7 +59,6 @@ public:
  * // This way substituting the instance below, the user doesn't actually know
  * // the difference as far as the upper interface is respected.
  * @endcode
- *
  */
 class ModuleManager : public Singleton<ModuleManager>
 {
@@ -83,13 +82,13 @@ public:
      *
      * @param element Module to be added. T must be subclass of Module.
      *
+     * @returns false in case an object of the same class has already been
+     * inserted or the maximum number of modules has been reached.
+     *
      * @note Further insertions of modules after the first 'get()' call are not
      * allowed. Please notice also that the module manager from this point
      * handles completely the objects. Therefore at the destruction of the
      * module manager, all the modules will be deleted.
-     *
-     * @returns false in case an object of the same class has already been
-     * inserted or the maximum number of modules has been reached.
      */
     template <typename T>
     [[nodiscard]] bool insert(T *element)
@@ -129,12 +128,10 @@ public:
 
     /**
      * @brief Get the Module object if present.
+     * @returns T Software module.
+     * @returns nullptr in case of a non existing software module.
      *
      * @note After the get call, no further insertion is allowed.
-     *
-     * @returns T Software module.
-     *
-     * @returns nullptr in case of a non existing software module.
      */
     template <class T>
     T *get()
@@ -167,9 +164,7 @@ public:
 private:
     static constexpr size_t MODULES_NUMBER = 256;
 
-    /**
-     * @brief Array that contains all the possible modules
-     */
+    /** @brief Array that contains all the possible modules */
     std::array<Module *, MODULES_NUMBER> modules = {nullptr};
 
     /**
@@ -183,14 +178,15 @@ private:
 
     /**
      * @brief Get the next id with respect to the current one.
+     * @returns size_t incremented currentID
      *
      * @note This is not a thread safe function.
-     *
-     * @returns size_t incremented currentID
      */
     size_t getNextId()
     {
+        // Static variable, initialized only the first time
         static size_t currentId = 0;
+
         if (currentId == MODULES_NUMBER)
         {
             return MODULES_NUMBER;
@@ -203,15 +199,15 @@ private:
      * @brief This function "assigns" to every type a unique sequential id
      * based on the already assigned ones.
      *
+     * @returns size_t A unique ID for the type T
+     *
      * @note This is a thread safe function. It leverages on the cxa_guard of
      * miosix around a static variable initialization that yields
      * every thread that tries to initialize the variable concurrently. So
      * getNextId is executed atomically.
      *
      * Reference of cxa_guard function:
-     * https://github.com/fedetft/miosix-kernel/blob/016236373da29d586c5ae665f790e0dbbdad32ae/miosix/stdlib_integration/libstdcpp_integration.cpp
-     *
-     * @returns size_t A unique ID for the type T
+     * miosix/stdlib_integration/libstdcpp_integration.cpp
      */
     template <typename T>
     size_t getId()
