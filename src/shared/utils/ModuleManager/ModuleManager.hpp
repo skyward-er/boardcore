@@ -80,11 +80,14 @@ public:
 
     /**
      * @brief Inserts the module inside the array.
+     *
      * @param element Module to be added. T must be subclass of Module.
-     * @note Further insertions of modules after the first get call are not
+     *
+     * @note Further insertions of modules after the first 'get()' call are not
      * allowed. Please notice also that the module manager from this point
      * handles completely the objects. Therefore at the destruction of the
      * module manager, all the modules will be deleted.
+     *
      * @returns false in case an object of the same class has already been
      * inserted or the maximum number of modules has been reached.
      */
@@ -97,11 +100,10 @@ public:
         static_assert((std::is_same<Module, T>() == false),
                       "Class must be subclass of Module and not Module itself");
 
-        // This assertion enforces the fact that no software module should be
-        // added after the first get
-        assert(insertionAcceptance.load());
         if (!insertionAcceptance)
         {
+            assert(false &&
+                   "Cannot insert any other module after first get() call");
             return false;
         }
 
@@ -115,8 +117,8 @@ public:
             return false;
         }
 
-        // The module is added only a module of the same subclass has already
-        // been added
+        // The module is added if only a module of the same subclass hasn't
+        // already been added
         if (modules[id] == nullptr)
         {
             modules[id] = element;
@@ -127,8 +129,11 @@ public:
 
     /**
      * @brief Get the Module object if present.
+     *
      * @note After the get call, no further insertion is allowed.
+     *
      * @returns T Software module.
+     *
      * @returns nullptr in case of a non existing software module.
      */
     template <class T>
@@ -170,6 +175,7 @@ private:
     /**
      * @brief This boolean flag just enables the user to insert software modules
      * at the beginning but not after the first get.
+     *
      * @note It enforces the fact that after the first get call no further
      * insertions are allowed.
      */
@@ -177,7 +183,9 @@ private:
 
     /**
      * @brief Get the next id with respect to the current one.
+     *
      * @note This is not a thread safe function.
+     *
      * @returns size_t incremented currentID
      */
     size_t getNextId()
@@ -193,11 +201,16 @@ private:
 
     /**
      * @brief This function "assigns" to every type a unique sequential id
-     * based on the already assigned ones
+     * based on the already assigned ones.
+     *
      * @note This is a thread safe function. It leverages on the cxa_guard of
-     * miosix around a static variable initialization that effectively yields a
-     * thread that tries to initialize the variable concurrently. So getNextId
-     * is executed atomically.
+     * miosix around a static variable initialization that yields
+     * every thread that tries to initialize the variable concurrently. So
+     * getNextId is executed atomically.
+     *
+     * Reference of cxa_guard function:
+     * https://github.com/fedetft/miosix-kernel/blob/016236373da29d586c5ae665f790e0dbbdad32ae/miosix/stdlib_integration/libstdcpp_integration.cpp
+     *
      * @returns size_t A unique ID for the type T
      */
     template <typename T>
