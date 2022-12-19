@@ -374,6 +374,9 @@ sbs_target(test-ubxgps-spi stm32f429zi_skyward_death_stack_x)
 add_executable(test-vn100 src/tests/sensors/test-vn100.cpp)
 sbs_target(test-vn100 stm32f407vg_stm32f4discovery)
 
+add_executable(test-lsm6dsrx src/tests/sensors/test-lsm6dsrx.cpp)
+sbs_target(test-lsm6dsrx stm32f407vg_stm32f4discovery)
+
 #-----------------------------------------------------------------------------#
 #                                Tests - Utils                                #
 #-----------------------------------------------------------------------------#
