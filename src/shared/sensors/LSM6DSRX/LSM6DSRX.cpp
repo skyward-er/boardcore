@@ -22,6 +22,8 @@
 
 #include "LSM6DSRX.h"
 
+#include <utils/Debug.h>
+
 namespace Boardcore
 {
 
@@ -32,7 +34,37 @@ LSM6DSRX::LSM6DSRX(SPIBus& bus, miosix::GpioPin csPin, SPIBusConfig busConfigura
 
 bool LSM6DSRX::init()
 {
-    return checkWhoAmI() == true;
+    if(checkWhoAmI() == false)
+    {
+        return false;
+    }
+
+    SPITransaction spiTransaction{spiSlave};
+
+    // set BDU pag. 54
+    uint8_t bduValue = 0;//continuos update
+    spiTransaction.writeRegister(REG_CTRL3_C, bduValue);
+
+    // Setup accelerometer (pag. 28)
+
+    // set accelerometer odr (pag. 52)
+    uint8_t accSetup = static_cast<uint8_t>(ACC_ODR::HZ_104) << 4           // odr
+                                                                            // full scale (defaul = 00 --> +-2g)
+                        ;                                                   // high resolution selection (default)
+    spiTransaction.writeRegister(REG_CTRL1_XL, accSetup);
+
+    // set accelerometer performance mode (pag. 57)
+    // high performance disabled
+    uint8_t accPerformanceMode = 1 << 4;
+    spiTransaction.writeRegister(REG_CTRL6_C, accPerformanceMode);
+
+
+    // setup Fifo (pag. 33)
+    // set fifo mode: bypass_mode = 0 (pag. 48)
+    uint8_t fifoMode = 0;
+    spiTransaction.writeRegister(REG_FIFO_CTRL4, fifoMode);
+
+    return true;
 }
 
 bool LSM6DSRX::checkWhoAmI()
@@ -40,10 +72,18 @@ bool LSM6DSRX::checkWhoAmI()
     uint8_t regValue = 0;
     {
         SPITransaction transaction{spiSlave};
-        regValue = transaction.readRegister(Registers::WHO_AM_I);
+        regValue = transaction.readRegister(Registers::REG_WHO_AM_I);
     }
 
     return regValue == WHO_AM_I_VALUE;
+}
+
+int16_t LSM6DSRX::combineHighLowBits(uint8_t low, uint8_t high)
+{
+    int16_t ret = high;
+    ret <<= 8;
+    ret |= low;
+    return ret;
 }
 
 }
