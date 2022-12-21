@@ -25,23 +25,52 @@
 #include <drivers/spi/SPIDriver.h>
 #include <miosix.h>
 
-
-
 namespace Boardcore
 {
 
 class LSM6DSRX
 {
 public:
+    /**
+     * @brief Output data rate definitions for the accelerometer.
+     */
+    enum class ACC_ODR : uint8_t
+    {
+        HZ_104 = 4,
+    };
+
+    /**
+     * @brief Data update mode for the sensor.
+     */
+    enum class BDU : uint8_t
+    {
+        CONTINUOUS_UPDATE = 0,
+        UPDATE_AFTER_READ = 1,  ///< Output registers are not updated until MSB
+                                ///< and LSB have been read
+    };
+
+    /**
+     * @brief Operating mode for the sensor.
+     */
+    enum class OPERATING_MODE : uint8_t
+    {
+        HIGH_PERFORMANCE = 0,  ///< Valid for all odrs
+        NORMAL = 1,  ///< Works in low power or normal mode depending on the odr
+    };
 
     /**
      * @brief LSM6DSRX constructor.
-     * 
+     *
      * @param bus SPI bus.
      * @param csPin SPI chip select pin.
      * @param busConfiguration SPI bus configuration.
+     * @param blockDataUpdate Data update mode for the sensor.
+     * @param odrAccelerometer Odr value for the accelerometer.
+     * @param opModeAccelerometer Operating mode for the accelerometer.
      */
-    LSM6DSRX(SPIBus& bus, miosix::GpioPin csPin, SPIBusConfig busConfiguration);
+    LSM6DSRX(SPIBus& bus, miosix::GpioPin csPin, SPIBusConfig busConfiguration,
+             BDU blockDataUpdate, ACC_ODR odrAccelerometer,
+             OPERATING_MODE opModeAccelerometer);
 
     /**
      * @brief Initialize the sensor.
@@ -58,22 +87,22 @@ public:
 
         SPITransaction transaction{spiSlave};
 
-
         high = transaction.readRegister(REG_OUTZ_H_A);
-        low = transaction.readRegister(REG_OUTZ_L_A);
+        low  = transaction.readRegister(REG_OUTZ_L_A);
 
         sample = combineHighLowBits(low, high);
 
-        float ret = static_cast<float>(sample) * 0.061;//fs fixed at 2g for now
+        float ret =
+            static_cast<float>(sample) * 0.061;  // fs fixed at 2g for now
         return ret;
     }
 
-
-
 private:
-
     bool isInit = false;
     SPISlave spiSlave;
+    BDU bdu;
+    ACC_ODR odrAcc;            ///< Accelerometer odr
+    OPERATING_MODE opModeAcc;  ///< Operating mode for the accelerometer
 
     const uint8_t WHO_AM_I_VALUE = 0x6B;
 
@@ -82,13 +111,14 @@ private:
      */
     enum Registers
     {
-        REG_WHO_AM_I = 0x0F,        // who_am_i register
+        REG_WHO_AM_I = 0x0F,  ///< who_am_i register
 
-        REG_CTRL1_XL = 0x10,        // accelerometer control register
-        REG_CTRL3_C = 0x12,         // set bdu
-        REG_CTRL6_C = 0x15,         // enable/disable high performance mode for the accelerometer
+        REG_CTRL1_XL = 0x10,  ///< accelerometer control register
+        REG_CTRL3_C  = 0x12,  ///< set bdu
+        REG_CTRL6_C  = 0x15,  ///< enable/disable high performance mode for the
+                              ///< accelerometer
 
-        REG_FIFO_CTRL4 = 0x0A,      // fifo control register 4 (fifo mode)
+        REG_FIFO_CTRL4 = 0x0A,  ///< fifo control register 4 (fifo mode)
 
         REG_FIFO_DATA_OUT_Z_L = 0x7D,
         REG_FIFO_DATA_OUT_Z_H = 0x7E,
@@ -98,16 +128,8 @@ private:
     };
 
     /**
-     * @brief Output data rate definitions for the accelerometer.
-     */
-    enum class ACC_ODR : uint8_t
-    {
-        HZ_104 = 4,
-    };
-
-    /**
      * @brief Check who_am_i register for validity.
-     * 
+     *
      * @return Returns false if not valid.
      */
     bool checkWhoAmI();
@@ -118,7 +140,6 @@ private:
      * @param high High bits of the 16 bit number.
      */
     int16_t combineHighLowBits(uint8_t low, uint8_t high);
-
 };
 
-}
+}  // namespace Boardcore

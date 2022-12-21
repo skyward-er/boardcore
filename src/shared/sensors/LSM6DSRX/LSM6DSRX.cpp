@@ -27,14 +27,17 @@
 namespace Boardcore
 {
 
-LSM6DSRX::LSM6DSRX(SPIBus& bus, miosix::GpioPin csPin, SPIBusConfig busConfiguration)
-                    : spiSlave(bus, csPin, busConfiguration)
+LSM6DSRX::LSM6DSRX(SPIBus& bus, miosix::GpioPin csPin,
+                   SPIBusConfig busConfiguration, BDU blockDataUpdate,
+                   ACC_ODR odrAccelerometer, OPERATING_MODE opModeAccelerometer)
+    : spiSlave(bus, csPin, busConfiguration), bdu(blockDataUpdate),
+      odrAcc(odrAccelerometer), opModeAcc(opModeAccelerometer)
 {
 }
 
 bool LSM6DSRX::init()
 {
-    if(checkWhoAmI() == false)
+    if (checkWhoAmI() == false)
     {
         return false;
     }
@@ -42,22 +45,21 @@ bool LSM6DSRX::init()
     SPITransaction spiTransaction{spiSlave};
 
     // set BDU pag. 54
-    uint8_t bduValue = 0;//continuos update
-    spiTransaction.writeRegister(REG_CTRL3_C, bduValue);
+    spiTransaction.writeRegister(REG_CTRL3_C, static_cast<uint8_t>(bdu));
 
     // Setup accelerometer (pag. 28)
 
     // set accelerometer odr (pag. 52)
-    uint8_t accSetup = static_cast<uint8_t>(ACC_ODR::HZ_104) << 4           // odr
-                                                                            // full scale (defaul = 00 --> +-2g)
-                        ;                                                   // high resolution selection (default)
+    uint8_t accSetup = static_cast<uint8_t>(odrAcc)
+                       << 4  // odr
+                             // full scale (defaul = 00 --> +-2g)
+        ;                    // high resolution selection (default)
     spiTransaction.writeRegister(REG_CTRL1_XL, accSetup);
 
     // set accelerometer performance mode (pag. 57)
     // high performance disabled
-    uint8_t accPerformanceMode = 1 << 4;
+    uint8_t accPerformanceMode = static_cast<uint8_t>(opModeAcc) << 4;
     spiTransaction.writeRegister(REG_CTRL6_C, accPerformanceMode);
-
 
     // setup Fifo (pag. 33)
     // set fifo mode: bypass_mode = 0 (pag. 48)
@@ -86,4 +88,4 @@ int16_t LSM6DSRX::combineHighLowBits(uint8_t low, uint8_t high)
     return ret;
 }
 
-}
+}  // namespace Boardcore
