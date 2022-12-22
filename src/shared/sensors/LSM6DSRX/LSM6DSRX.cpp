@@ -47,7 +47,7 @@ LSM6DSRX::LSM6DSRX(SPIBus& bus, miosix::GpioPin csPin,
             m_sensitivityAcc = 0.488;
             break;
         default:
-            m_config.fsAcc          = LSM6DSRXConfig::ACC_FULLSCALE::G2;
+            m_config.fsAcc   = LSM6DSRXConfig::ACC_FULLSCALE::G2;
             m_sensitivityAcc = 0.061;
             break;
     };
@@ -63,15 +63,15 @@ bool LSM6DSRX::init()
     SPITransaction spiTransaction{m_spiSlave};
 
     // set BDU pag. 54
-    spiTransaction.writeRegister(REG_CTRL3_C, static_cast<uint8_t>(m_config.bdu));
+    spiTransaction.writeRegister(REG_CTRL3_C,
+                                 static_cast<uint8_t>(m_config.bdu));
 
     // Setup accelerometer (pag. 28)
 
     // set accelerometer odr (pag. 52)
-    uint8_t accSetup = static_cast<uint8_t>(m_config.odrAcc)
-                       << 4  // odr
-                             // full scale (defaul = 00 --> +-2g)
-        ;                    // high resolution selection (default)
+    uint8_t accSetup = static_cast<uint8_t>(m_config.odrAcc) << 4 |  // odr
+                       static_cast<uint8_t>(m_config.fsAcc) << 2 |  // fullscale
+                       0 << 1;  // high resolution selection
     spiTransaction.writeRegister(REG_CTRL1_XL, accSetup);
 
     // set accelerometer performance mode (pag. 57)
