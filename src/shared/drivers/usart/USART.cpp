@@ -255,6 +255,7 @@ void USART::IRQhandleInterrupt()
 {
     char c;
 
+#ifndef _ARCH_CORTEXM7_STM32F7
     // If read data register is empty then read data
     if (usart->SR & USART_SR_RXNE)
     {
@@ -282,6 +283,35 @@ void USART::IRQhandleInterrupt()
             rxWaiting = 0;
         }
     }
+#else
+    // If read data register is empty then read data
+    if (usart->ISR & USART_ISR_RXNE)
+    {
+        // Always read data
+        c = usart->RDR;
+        // If no error put data in buffer
+        if (!(usart->ISR & USART_ISR_FE))
+            if (rxQueue.tryPut(c) == false)  // FIFO overflow
+                ;
+
+        idle = false;
+    }
+
+    if (usart->ISR & USART_ISR_IDLE)
+        idle = true;
+
+    if (usart->ISR & USART_ISR_IDLE || rxQueue.size() >= rxQueue.capacity() / 2)
+    {
+        usart->ICR = USART_ICR_IDLECF;  // Clears interrupt flags
+
+        // Enough data in buffer or idle line, awake thread
+        if (rxWaiting)
+        {
+            rxWaiting->IRQwakeup();
+            rxWaiting = 0;
+        }
+    }
+#endif
 }
 
 USART::USART(USARTType *usart, Baudrate baudrate, unsigned int queueLen)
@@ -521,11 +551,15 @@ int USART::write(void *buffer, size_t nBytes)
     size_t i;
     for (i = 0; i < nBytes; i++)
     {
+#ifndef _ARCH_CORTEXM7_STM32F7
         while ((usart->SR & USART_SR_TXE) == 0)
             ;
-
-        usart->DR = *buf;
-        buf++;
+        usart->DR = *buf++;
+#else
+        while ((usart->ISR & USART_ISR_TXE) == 0)
+            ;
+        usart->TDR = *buf++;
+#endif
     }
 
     return i;
@@ -537,15 +571,28 @@ int USART::writeString(const char *buffer)
     miosix::Lock<miosix::FastMutex> l(txMutex);
 
     // Send everything, also the ending '\0' character
+#ifndef _ARCH_CORTEXM7_STM32F7
     usart->DR = *buffer;
+#else
+    usart->TDR = *buffer;
+#endif
+
     i++;
+
     while (*buffer != '\0')
     {
         buffer++;
+
+#ifndef _ARCH_CORTEXM7_STM32F7
         while (!(usart->SR & USART_SR_TXE))
             ;
-
         usart->DR = *buffer;
+#else
+        while ((usart->ISR & USART_ISR_TXE) == 0)
+            ;
+        usart->TDR = *buffer;
+#endif
+
         i++;
     };
 

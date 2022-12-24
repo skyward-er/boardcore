@@ -51,7 +51,7 @@ foreach(OPT_BOARD ${BOARDS})
         ${SBS_BASE}/src/shared/drivers/canbus/CanDriver/CanDriver.cpp
         ${SBS_BASE}/src/shared/drivers/canbus/CanDriver/CanInterrupt.cpp
         ${SBS_BASE}/src/shared/drivers/canbus/CanProtocol/CanProtocol.cpp
-        ${SBS_BASE}/src/shared/drivers/i2c/stm32f2_f4_i2c.cpp
+        # ${SBS_BASE}/src/shared/drivers/i2c/stm32f2_f4_i2c.cpp
         ${SBS_BASE}/src/shared/drivers/interrupt/external_interrupts.cpp
         ${SBS_BASE}/src/shared/drivers/timer/PWM.cpp
         ${SBS_BASE}/src/shared/drivers/timer/TimestampTimer.cpp
@@ -118,11 +118,15 @@ foreach(OPT_BOARD ${BOARDS})
     target_include_directories(${BOARDCORE_LIBRARY} PUBLIC ${SBS_BASE}/src/shared)
     target_link_libraries(${BOARDCORE_LIBRARY} PUBLIC
         Miosix::Miosix::${OPT_BOARD}
-        Mxgui::Mxgui::${OPT_BOARD}
         TSCPP::TSCPP
         Eigen3::Eigen
         fmt::fmt-header-only
         Catch2::Catch2
         Mavlink::Mavlink
     )
+
+    # Link MxGui only if supported by the target
+    if(${OPT_BOARD} IN_LIST MXGUI_BOARDS)
+        target_link_libraries(${BOARDCORE_LIBRARY} PUBLIC Mxgui::Mxgui::${OPT_BOARD})
+    endif()
 endforeach()

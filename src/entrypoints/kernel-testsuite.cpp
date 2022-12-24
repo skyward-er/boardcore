@@ -4196,7 +4196,7 @@ static Thread *waiting = nullptr;  /// Thread waiting on DMA completion IRQ
 /**
  * DMA completion IRQ
  */
-void __attribute__((naked)) DMA2_Stream0_IRQHandler()
+void __attribute__((naked)) DMA2_Stream1_IRQHandler()
 {
     saveContext();
     asm volatile("bl _Z9dma2s0irqv");
@@ -4208,7 +4208,7 @@ void __attribute__((naked)) DMA2_Stream0_IRQHandler()
  */
 void dma2s0irq()
 {
-    DMA2->LIFCR = 0b111101;
+    DMA2->LIFCR = 0b1111010000000;
     if (waiting)
         waiting->IRQwakeup();
     if (waiting->IRQgetPriority() >
@@ -4225,10 +4225,10 @@ void dmaMemcpy(void *dest, const void *source, int size, void *slackBeforeDest,
                void *slackAfterDest, void *slackAfterSource, int slackAfterSize)
 {
     FastInterruptDisableLock dLock;
-    DMA2_Stream0->NDTR = size;
-    DMA2_Stream0->PAR  = reinterpret_cast<unsigned int>(source);
-    DMA2_Stream0->M0AR = reinterpret_cast<unsigned int>(dest);
-    DMA2_Stream0->CR   = 0               // Select channel 0
+    DMA2_Stream1->NDTR = size;
+    DMA2_Stream1->PAR  = reinterpret_cast<unsigned int>(source);
+    DMA2_Stream1->M0AR = reinterpret_cast<unsigned int>(dest);
+    DMA2_Stream1->CR   = 0               // Select channel 0
                        | DMA_SxCR_MINC   // Increment RAM pointer
                        | DMA_SxCR_PINC   // Increment RAM pointer
                        | DMA_SxCR_DIR_1  // Memory to memory
@@ -4320,8 +4320,8 @@ void testCacheAndDMA()
         FastInterruptDisableLock dLock;
         RCC->AHB1ENR |= RCC_AHB1ENR_DMA2EN;
         RCC_SYNC();
-        NVIC_SetPriority(DMA2_Stream0_IRQn, 15);  // Lowest priority for serial
-        NVIC_EnableIRQ(DMA2_Stream0_IRQn);
+        NVIC_SetPriority(DMA2_Stream1_IRQn, 15);  // Lowest priority for serial
+        NVIC_EnableIRQ(DMA2_Stream1_IRQn);
     }
 
     // Testing cache-aligned transactions

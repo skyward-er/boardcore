@@ -185,7 +185,7 @@ enum class SlaveMode : uint16_t
      *
      * Rising edges of the selected trigger (TRGI) clock the counter
      */
-    EXTERNAL_CLOCK_MODE_1 = TIM_SMCR_SMS
+    EXTERNAL_CLOCK_MODE_1 = TIM_SMCR_SMS_0 | TIM_SMCR_SMS_1 | TIM_SMCR_SMS_2
 };
 
 enum class OutputCompareMode : uint16_t

@@ -272,9 +272,15 @@ inline void SPI::enable() { spi->CR1 |= SPI_CR1_SPE; }
 
 inline void SPI::disable() { spi->CR1 &= ~SPI_CR1_SPE; }
 
+#ifndef _ARCH_CORTEXM7_STM32F7
 inline void SPI::set8BitFrameFormat() { spi->CR1 &= ~SPI_CR1_DFF; }
 
 inline void SPI::set16BitFrameFormat() { spi->CR1 |= SPI_CR1_DFF; }
+#else
+inline void SPI::set8BitFrameFormat() { spi->CR1 &= ~SPI_CR1_CRCL; }
+
+inline void SPI::set16BitFrameFormat() { spi->CR1 |= SPI_CR1_CRCL; }
+#endif
 
 inline void SPI::enableSoftwareSlaveManagement() { spi->CR1 |= SPI_CR1_SSM; }
 
