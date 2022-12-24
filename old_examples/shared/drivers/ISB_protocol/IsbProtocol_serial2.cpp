@@ -52,7 +52,7 @@ IsbProtocol_serial2::IsbProtocol_serial2()
         u2tx::mode(Mode::ALTERNATE);
         u2tx::alternateFunction(7);
 
-#ifdef _ARCH_CORTEXM3_STM32
+#ifdef _ARCH_CORTEXM3_STM32F1
         u2rx::mode(Mode::INPUT);
 #else
         u2rx::mode(Mode::ALTERNATE);
@@ -206,7 +206,7 @@ void IsbProtocol_serial2::setBaud(uint32_t baud)
 {
     uint32_t busFreq = SystemCoreClock;
 
-#ifdef _ARCH_CORTEXM3_STM32
+#ifdef _ARCH_CORTEXM3_STM32F1
     if (RCC->CFGR & RCC_CFGR_PPRE1_2)
     {
         busFreq /= 1 << (((RCC->CFGR >> 8) & 0x3) + 1);
