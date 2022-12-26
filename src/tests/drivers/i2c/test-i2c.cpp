@@ -33,6 +33,8 @@ using namespace std;
 using namespace miosix;
 using namespace Boardcore;
 
+bool generateStop = false;
+
 // I2C1
 typedef miosix::Gpio<GPIOB_BASE, 6> i1scl1;
 typedef miosix::Gpio<GPIOB_BASE, 7> i1sda1;
@@ -103,7 +105,8 @@ bool i2cDriverBMP(I2C &i2c)
 {
     buffer[0] = 0;
     if (!i2c.write(BMP180.addressSensor, BMP180.softReset, 2) ||
-        !i2c.write(BMP180.addressSensor, &BMP180.whoamiRegister, 1) ||
+        !i2c.write(BMP180.addressSensor, &BMP180.whoamiRegister, 1,
+                   generateStop) ||
         !i2c.read(BMP180.addressSensor, buffer, 1) ||
         buffer[0] != BMP180.whoamiContent)
     {
@@ -117,7 +120,8 @@ bool i2cDriverBME(I2C &i2c)
 {
     buffer[0] = 0;
     if (!i2c.write(BME280.addressSensor, BME280.softReset, 2) ||
-        !i2c.write(BME280.addressSensor, &BME280.whoamiRegister, 1) ||
+        !i2c.write(BME280.addressSensor, &BME280.whoamiRegister, 1,
+                   generateStop) ||
         !i2c.read(BME280.addressSensor, buffer, 1) ||
         buffer[0] != BME280.whoamiContent)
     {

@@ -95,10 +95,11 @@ public:
      * with.
      * @param buffer Data buffer where to read the data to send.
      * @param nBytes number of bytes to send.
+     * @param generateStop flag for the Stop condition generation.
      * @returns true if the write is successful, false otherwise.
      */
     [[nodiscard]] bool write(uint16_t slaveAddress, const void *buffer,
-                             size_t nBytes);
+                             size_t nBytes, bool generateStop = true);
 
     /**
      * @brief Performs the recovery from the locked state if necessary.
@@ -170,8 +171,9 @@ private:
     miosix::GpioPin scl;
     miosix::GpioPin sda;
 
-    bool error              = false;  ///< Flag that tells if an error occurred
-    bool lockedState        = false;  ///< Flag for locked state detection
+    bool error       = false;  ///< Flag that tells if an error occurred
+    bool lockedState = false;  ///< Flag for locked state detection
+    bool reStarting  = false;  ///< Flag true if not generated a STOP condition
     miosix::Thread *waiting = 0;  ///< Pointer to the waiting on receive thread
 
     PrintLogger logger = Logging::getLogger("i2c");
@@ -189,7 +191,7 @@ public:
     [[nodiscard]] bool read(uint16_t slaveAddress, void *buffer, size_t nBytes);
 
     [[nodiscard]] bool write(uint16_t slaveAddress, const void *buffer,
-                             size_t nBytes);
+                             size_t nBytes, bool generateStop = true);
 
     void flushBus();
 

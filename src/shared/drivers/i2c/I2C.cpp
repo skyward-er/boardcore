@@ -427,7 +427,8 @@ bool I2C::read(uint16_t slaveAddress, void *buffer, size_t nBytes)
     return true;
 };
 
-bool I2C::write(uint16_t slaveAddress, const void *buffer, size_t nBytes)
+bool I2C::write(uint16_t slaveAddress, const void *buffer, size_t nBytes,
+                bool generateStop)
 {
     auto *buff = static_cast<const uint8_t *>(buffer);
 
@@ -451,8 +452,16 @@ bool I2C::write(uint16_t slaveAddress, const void *buffer, size_t nBytes)
         }
     }
 
-    // if we are on the last byte, generate the stop condition
-    i2c->CR1 |= I2C_CR1_STOP;
+    // if we are on the last byte, generate the stop condition if we have to end
+    // the communication
+    if (generateStop)
+    {
+        i2c->CR1 |= I2C_CR1_STOP;
+    }
+    else
+    {
+        reStarting = true;
+    }
 
     return true;
 };
@@ -466,16 +475,19 @@ bool I2C::prologue(uint16_t slaveAddress)
         return false;
     }
 
-    uint32_t i{0};
-    for (; (i < MAX_N_POLLING) && (i2c->SR2 & I2C_SR2_BUSY); ++i)
-        ;
-
-    // locked state detected after N polling cycles
-    if (i == MAX_N_POLLING)
+    if (!reStarting)
     {
-        lockedState = true;
-        LOG_ERR(logger, fmt::format("I2C{} bus locked state detected", id));
-        return false;
+        uint32_t i{0};
+        for (; (i < MAX_N_POLLING) && (i2c->SR2 & I2C_SR2_BUSY); ++i)
+            ;
+
+        // locked state detected after N polling cycles
+        if (i == MAX_N_POLLING)
+        {
+            lockedState = true;
+            LOG_ERR(logger, fmt::format("I2C{} bus locked state detected", id));
+            return false;
+        }
     }
 
     {
@@ -665,6 +677,20 @@ inline void I2C::IRQwakeUpWaitingThread()
 
 void I2C::IRQhandleInterrupt()
 {
+    if (reStarting)
+    {
+        // if we are restarting and the peripheral didn't send the start bit,
+        // return
+        if (i2c->SR1 & I2C_SR1_SB)
+        {
+            reStarting = false;
+        }
+        else
+        {
+            return;
+        }
+    }
+
     // disabling the regeneration of the interrupt; if we don't disable the
     // interrupts we will enter in an infinite loop of interrupts
     i2c->CR2 &= ~(I2C_CR2_ITEVTEN | I2C_CR2_ITERREN);
@@ -675,18 +701,25 @@ void I2C::IRQhandleInterrupt()
 
 void I2C::IRQhandleErrInterrupt()
 {
-    // disabling the regeneration of the interrupt; if we don't disable the
-    // interrupts we will enter in an infinite loop of interrupts
-    i2c->CR2 &= ~(I2C_CR2_ITEVTEN | I2C_CR2_ITERREN);
-
-    // notifying an error
-    error = true;
+    // notifying an error except for the bus error in case of a restarting
+    // condition
+    if (!reStarting || (reStarting && !(i2c->SR1 & I2C_SR1_BERR)))
+    {
+        // disabling the regeneration of the interrupt; if we don't disable
+        // the interrupts we will enter in an infinite loop of interrupts
+        i2c->CR2 &= ~(I2C_CR2_ITEVTEN | I2C_CR2_ITERREN);
+        error = true;
+    }
 
     // clearing all the errors in the register
     i2c->SR1 = 0;
 
-    // waking up the waiting thread
-    IRQwakeUpWaitingThread();
+    if (error)
+    {
+        reStarting = false;
+        // waking up the waiting thread
+        IRQwakeUpWaitingThread();
+    }
 }
 
 SyncedI2C::SyncedI2C(I2C_TypeDef *i2c, Speed speed, Addressing addressing,
@@ -702,11 +735,12 @@ bool SyncedI2C::read(uint16_t slaveAddress, void *buffer, size_t nBytes)
     return I2C::read(slaveAddress, buffer, nBytes);
 }
 
-bool SyncedI2C::write(uint16_t slaveAddress, const void *buffer, size_t nBytes)
+bool SyncedI2C::write(uint16_t slaveAddress, const void *buffer, size_t nBytes,
+                      bool generateStop)
 {
     miosix::Lock<miosix::FastMutex> lock(mutex);
 
-    return I2C::write(slaveAddress, buffer, nBytes);
+    return I2C::write(slaveAddress, buffer, nBytes, generateStop);
 }
 
 void SyncedI2C::flushBus()
