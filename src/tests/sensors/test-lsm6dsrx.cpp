@@ -71,9 +71,13 @@ int main()
     while (true)
     {
         sens.getAccelerometerData(data);
+        TRACE("Accelerometer:\n");
         TRACE("x: %f\n", data.x);
         TRACE("y: %f\n", data.y);
-        TRACE("z: %f\n\n\n", data.z);
+        TRACE("z: %f\n", data.z);
+
+        TRACE("Gyroscope:\n");
+        TRACE("z: %f\n\n\n", sens.getZAxisGyroscopeData());
 
         Thread::sleep(1000);
     }
