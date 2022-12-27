@@ -36,6 +36,7 @@ GpioPin sckPin(GPIOA_BASE, 5);
 GpioPin misoPin(GPIOA_BASE, 6);
 GpioPin mosiPin(GPIOA_BASE, 7);
 GpioPin csPin(GPIOE_BASE, 3);
+// GpioPin csPin(GPIOD_BASE, 14);
 
 int main()
 {
@@ -48,49 +49,68 @@ int main()
     csPin.mode(Mode::OUTPUT);
     csPin.high();
 
+    auto apb2clock = ClockUtils::getAPBPeripheralsClock(ClockUtils::APB::APB2);
+    printf("SPI1 APB2 clock frequency: %.2f\n", apb2clock / 1e6);
+
     SPISlave spiSlave(bus, csPin, {});
     spiSlave.config.clockDivider = SPI::ClockDivider::DIV_64;
 
     SPITransaction transaction(spiSlave);
 
+    printf("Starting test\n");
+
     uint8_t buffer8[6];
     uint16_t buffer16[6];
 
     transaction.read();
-    delayMs(1);
+    delayUs(10);
     transaction.read16();
-    delayMs(1);
-    transaction.read(buffer8, 6);
-    delayMs(1);
-    transaction.read(buffer16, 6);
-    delayMs(1);
+    delayUs(10);
+    transaction.read(buffer8, sizeof(buffer8));
+    delayUs(10);
+    transaction.read(buffer16, sizeof(buffer16));
+    delayUs(10);
     transaction.write((uint8_t)0xAB);
-    delayMs(1);
+    delayUs(10);
     transaction.write((uint16_t)0xABCD);
-    delayMs(1);
+    delayUs(10);
     buffer8[0] = 0x01;
     buffer8[1] = 0x23;
     buffer8[2] = 0x45;
     buffer8[3] = 0x67;
     buffer8[4] = 0x89;
     buffer8[5] = 0xAB;
-    transaction.write(buffer8, 6);
-    delayMs(1);
+    transaction.write(buffer8, sizeof(buffer8));
+    delayUs(10);
     buffer16[0] = 0x0101;
     buffer16[1] = 0x2323;
     buffer16[2] = 0x4545;
     buffer16[3] = 0x6767;
     buffer16[4] = 0x8989;
     buffer16[5] = 0xABAB;
-    transaction.write(buffer16, 6);
-    delayMs(1);
+    transaction.write(buffer16, sizeof(buffer16));
+    delayUs(10);
     transaction.transfer((uint8_t)0xAB);
-    delayMs(1);
+    delayUs(10);
     transaction.transfer((uint16_t)0xABCD);
-    delayMs(1);
-    transaction.transfer(buffer8, 6);
-    delayMs(1);
-    transaction.transfer(buffer16, 6);
+    delayUs(10);
+    buffer8[0] = 0x01;
+    buffer8[1] = 0x23;
+    buffer8[2] = 0x45;
+    buffer8[3] = 0x67;
+    buffer8[4] = 0x89;
+    buffer8[5] = 0xAB;
+    transaction.transfer(buffer8, sizeof(buffer8));
+    delayUs(10);
+    buffer16[0] = 0x0101;
+    buffer16[1] = 0x2323;
+    buffer16[2] = 0x4545;
+    buffer16[3] = 0x6767;
+    buffer16[4] = 0x8989;
+    buffer16[5] = 0xABAB;
+    transaction.transfer(buffer16, sizeof(buffer16));
+
+    printf("Test ended\n");
 
     while (true)
         delayMs(1000);

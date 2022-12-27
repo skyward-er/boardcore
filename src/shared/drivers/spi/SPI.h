@@ -63,7 +63,7 @@ public:
     enum class BitOrder : uint16_t
     {
         MSB_FIRST = 0,
-        LSB_FIRST = 0x80
+        LSB_FIRST = SPI_CR1_LSBFIRST
     };
 
     /**
@@ -77,21 +77,21 @@ public:
     enum class ClockDivider : uint8_t
     {
         DIV_2   = 0x00,
-        DIV_4   = 0x08,
-        DIV_8   = 0x10,
-        DIV_16  = 0x18,
-        DIV_32  = 0x20,
-        DIV_64  = 0x28,
-        DIV_128 = 0x30,
-        DIV_256 = 0x38,
+        DIV_4   = SPI_CR1_BR_0,
+        DIV_8   = SPI_CR1_BR_1,
+        DIV_16  = SPI_CR1_BR_1 | SPI_CR1_BR_0,
+        DIV_32  = SPI_CR1_BR_2,
+        DIV_64  = SPI_CR1_BR_2 | SPI_CR1_BR_0,
+        DIV_128 = SPI_CR1_BR_2 | SPI_CR1_BR_1,
+        DIV_256 = SPI_CR1_BR
     };
 
     enum class Mode : uint8_t
     {
-        MODE_0 = 0,  ///< CPOL = 0, CPHA = 0
-        MODE_1 = 1,  ///< CPOL = 0, CPHA = 1
-        MODE_2 = 2,  ///< CPOL = 1, CPHA = 0
-        MODE_3 = 3   ///< CPOL = 1, CPHA = 1
+        MODE_0 = 0,                           ///< CPOL = 0, CPHA = 0
+        MODE_1 = SPI_CR1_CPHA,                ///< CPOL = 0, CPHA = 1
+        MODE_2 = SPI_CR1_CPOL,                ///< CPOL = 1, CPHA = 0
+        MODE_3 = SPI_CR1_CPOL | SPI_CR1_CPHA  ///< CPOL = 1, CPHA = 1
     };
 
     /**
@@ -120,6 +120,12 @@ public:
      * @brief Disables the peripheral.
      */
     void disable();
+
+#ifdef _ARCH_CORTEXM7_STM32F7
+    void set8bitRXNE();
+
+    void set16bitRXNE();
+#endif
 
     void set8BitFrameFormat();
 
@@ -255,6 +261,7 @@ inline SPI::SPI(SPIType *spi) : spi(spi)
 {
     ClockUtils::enablePeripheralClock(spi);
 }
+
 inline SPI::~SPI() { ClockUtils::disablePeripheralClock(spi); }
 
 inline SPIType *SPI::getSpi() { return spi; }
@@ -273,13 +280,29 @@ inline void SPI::enable() { spi->CR1 |= SPI_CR1_SPE; }
 inline void SPI::disable() { spi->CR1 &= ~SPI_CR1_SPE; }
 
 #ifndef _ARCH_CORTEXM7_STM32F7
+
 inline void SPI::set8BitFrameFormat() { spi->CR1 &= ~SPI_CR1_DFF; }
 
 inline void SPI::set16BitFrameFormat() { spi->CR1 |= SPI_CR1_DFF; }
-#else
-inline void SPI::set8BitFrameFormat() { spi->CR1 &= ~SPI_CR1_CRCL; }
 
-inline void SPI::set16BitFrameFormat() { spi->CR1 |= SPI_CR1_CRCL; }
+#else
+
+inline void SPI::set8bitRXNE() { spi->CR2 |= SPI_CR2_FRXTH; }
+
+inline void SPI::set16bitRXNE() { spi->CR2 &= ~SPI_CR2_FRXTH; }
+
+inline void SPI::set8BitFrameFormat()
+{
+    spi->CR2 &= ~SPI_CR2_DS;
+    set8bitRXNE();
+}
+
+inline void SPI::set16BitFrameFormat()
+{
+    spi->CR2 |= SPI_CR2_DS;
+    set16bitRXNE();
+}
+
 #endif
 
 inline void SPI::enableSoftwareSlaveManagement() { spi->CR1 |= SPI_CR1_SSM; }
@@ -363,46 +386,16 @@ inline void SPI::read(uint16_t *data, size_t nBytes)
     transfer(data, nBytes);
 }
 
-inline void SPI::write(uint8_t data)
-{
-    // Write the data item in the transmit buffer
-    spi->DR = data;
+inline void SPI::write(uint8_t data) { transfer(data); }
 
-    // Wait until Tx buffer is empty and until the peripheral is still busy
-    while ((spi->SR & SPI_SR_TXE) == 0)
-        ;
-    while (spi->SR & SPI_SR_BSY)
-        ;
-
-    // Ensures the Rx buffer is empty
-    (void)spi->DR;
-}
-
-inline void SPI::write(uint16_t data)
-{
-    // Set 16 bit frame format
-    set16BitFrameFormat();
-
-    // Write the data item in the Tx buffer
-    spi->DR = data;
-
-    // Wait until Tx buffer is empty and until the peripheral is still busy
-    while ((spi->SR & SPI_SR_TXE) == 0)
-        ;
-    while (spi->SR & SPI_SR_BSY)
-        ;
-
-    // Go back to 8 bit frame format
-    set8BitFrameFormat();
-
-    // Ensures the Rx buffer is empty
-    (void)spi->DR;
-}
+inline void SPI::write(uint16_t data) { transfer(data); }
 
 inline void SPI::write(const uint8_t *data, size_t nBytes)
 {
+    miosix::FastInterruptDisableLock lock;
+
     // Write the first data item in the Tx buffer
-    spi->DR = data[0];
+    *(uint8_t *)(&spi->DR) = data[0];
 
     // Wait for TXE=1 and write the next data item
     for (size_t i = 1; i < nBytes; i++)
@@ -412,17 +405,28 @@ inline void SPI::write(const uint8_t *data, size_t nBytes)
             ;
 
         // Write the next data item
-        spi->DR = data[i];
+        *(uint8_t *)(&spi->DR) = data[i];
+
+        // Wait until data is received
+        while ((spi->SR & SPI_SR_RXNE) == 0)
+            ;
+
+        // Ensures the Rx buffer is empty
+        (void)spi->DR;
     }
+
+    // Wait until the last data item is received
+    while ((spi->SR & SPI_SR_RXNE) == 0)
+        ;
+
+    // Ensures the Rx buffer is empty
+    (void)spi->DR;
 
     // Wait until Tx buffer is empty and until the peripheral is still busy
     while ((spi->SR & SPI_SR_TXE) == 0)
         ;
     while (spi->SR & SPI_SR_BSY)
         ;
-
-    // Ensures the Rx buffer is empty
-    (void)spi->DR;
 }
 
 inline void SPI::write(const uint16_t *data, size_t nBytes)
@@ -442,7 +446,21 @@ inline void SPI::write(const uint16_t *data, size_t nBytes)
 
         // Write the next data item
         spi->DR = data[i];
+
+        // Wait until data is received
+        while ((spi->SR & SPI_SR_RXNE) == 0)
+            ;
+
+        // Ensures the Rx buffer is empty
+        (void)spi->DR;
     }
+
+    // Wait until the last data item is received
+    while ((spi->SR & SPI_SR_RXNE) == 0)
+        ;
+
+    // Ensures the Rx buffer is empty
+    (void)spi->DR;
 
     // Wait until Tx buffer is empty and until the peripheral is still busy
     while ((spi->SR & SPI_SR_TXE) == 0)
@@ -452,22 +470,19 @@ inline void SPI::write(const uint16_t *data, size_t nBytes)
 
     // Go back to 8 bit frame format
     set8BitFrameFormat();
-
-    // Ensures the Rx buffer is empty
-    (void)spi->DR;
 }
 
 inline uint8_t SPI::transfer(uint8_t data)
 {
     // Write the data item to transmit
-    spi->DR = static_cast<uint8_t>(data);
+    *(uint8_t *)(&spi->DR) = data;
 
     // Wait until data is received
     while ((spi->SR & SPI_SR_RXNE) == 0)
         ;
 
     // Read the received data item
-    return static_cast<uint8_t>(spi->DR);
+    return spi->DR;
 }
 
 inline uint16_t SPI::transfer(uint16_t data)
@@ -476,28 +491,27 @@ inline uint16_t SPI::transfer(uint16_t data)
     set16BitFrameFormat();
 
     // Write the data item to transmit
-    spi->DR = static_cast<uint16_t>(data);
+    spi->DR = data;
 
     // Wait until data is received
     while ((spi->SR & SPI_SR_RXNE) == 0)
         ;
 
+    // Read the received data item
+    auto result = spi->DR;
+
     // Go back to 8 bit frame format
     set8BitFrameFormat();
 
-    // Read the received data item
-    return static_cast<uint16_t>(spi->DR);
+    return result;
 }
 
 inline void SPI::transfer(uint8_t *data, size_t nBytes)
 {
     miosix::FastInterruptDisableLock lock;
 
-    // Clear the RX buffer
-    (void)spi->DR;
-
     // Write the first data item to transmitted
-    spi->DR = data[0];
+    *(uint8_t *)(&spi->DR) = data[0];
 
     for (size_t i = 1; i < nBytes; i++)
     {
@@ -506,14 +520,14 @@ inline void SPI::transfer(uint8_t *data, size_t nBytes)
             ;
 
         // Write the next data item
-        spi->DR = static_cast<uint8_t>(data[i]);
+        *(uint8_t *)(&spi->DR) = data[i];
 
         // Wait until data is received
         while ((spi->SR & SPI_SR_RXNE) == 0)
             ;
 
         // Read the received data item
-        data[i - 1] = static_cast<uint8_t>(spi->DR);
+        data[i - 1] = spi->DR;
     }
 
     // Wait until the last data item is received
@@ -521,7 +535,7 @@ inline void SPI::transfer(uint8_t *data, size_t nBytes)
         ;
 
     // Read the last received data item
-    data[nBytes - 1] = static_cast<uint8_t>(spi->DR);
+    data[nBytes - 1] = spi->DR;
 
     // Wait until TXE=1 and then wait until BSY=0 before concluding
     while ((spi->SR & SPI_SR_TXE) == 0)
@@ -534,14 +548,11 @@ inline void SPI::transfer(uint16_t *data, size_t nBytes)
 {
     miosix::FastInterruptDisableLock lock;
 
-    // Clear the RX buffer
-    (void)spi->DR;
-
     // Set 16 bit frame format
     set16BitFrameFormat();
 
     // Write the first data item to transmitted
-    spi->DR = static_cast<uint16_t>(data[0]);
+    spi->DR = data[0];
 
     for (size_t i = 1; i < nBytes / 2; i++)
     {
@@ -550,14 +561,14 @@ inline void SPI::transfer(uint16_t *data, size_t nBytes)
             ;
 
         // Write the next data item
-        spi->DR = static_cast<uint16_t>(data[i]);
+        spi->DR = data[i];
 
         // Wait until data is received
         while ((spi->SR & SPI_SR_RXNE) == 0)
             ;
 
         // Read the received data item
-        data[i - 1] = static_cast<uint16_t>(spi->DR);
+        data[i - 1] = spi->DR;
     }
 
     // Wait until the last data item is received
@@ -565,7 +576,7 @@ inline void SPI::transfer(uint16_t *data, size_t nBytes)
         ;
 
     // Read the last received data item
-    data[nBytes / 2 - 1] = static_cast<uint16_t>(spi->DR);
+    data[nBytes / 2 - 1] = spi->DR;
 
     // Wait until TXE=1 and then wait until BSY=0 before concluding
     while ((spi->SR & SPI_SR_TXE) == 0)
