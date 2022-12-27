@@ -457,6 +457,7 @@ bool I2C::write(uint16_t slaveAddress, const void *buffer, size_t nBytes,
     if (generateStop)
     {
         i2c->CR1 |= I2C_CR1_STOP;
+        reStarting = false;
     }
     else
     {
@@ -494,12 +495,44 @@ bool I2C::prologue(uint16_t slaveAddress)
         miosix::FastInterruptDisableLock dLock;
         i2c->CR1 |= I2C_CR1_START;
 
-        // waiting for reception of start signal and change to master mode
-        if (!IRQwaitForRegisterChange(dLock) || !(i2c->SR1 & I2C_SR1_SB) ||
-            !(i2c->SR2 & I2C_SR2_MSL))
+        if (!reStarting)
         {
-            i2c->CR1 |= I2C_CR1_STOP;
-            return false;
+            if (!IRQwaitForRegisterChange(dLock) || !(i2c->SR1 & I2C_SR1_SB) ||
+                !(i2c->SR2 & I2C_SR2_MSL))
+            {
+
+                i2c->CR1 |= I2C_CR1_STOP;
+                return false;
+            }
+        }
+        else
+        {
+            // Wait for the "start bit sent" bit for a limited number of times
+            // before considering failed the restart phase. When we want to send
+            // the reStart bit but an interruption or a glitch happens right in
+            // this moment, the SDA would be kept low and no SB event would be
+            // generated. Anyway for another interrupt this thread is being
+            // waken up so we limit the number of wakes up: if we exceed this
+            // number, we consider the reStarting phase failed. Usually the
+            // number of wake ups are less than 8.
+            uint32_t i{0};
+            for (; (i < MAX_N_POLLING) &&
+                   (!IRQwaitForRegisterChange(dLock) ||
+                    !(i2c->SR1 & I2C_SR1_SB) || !(i2c->SR2 & I2C_SR2_MSL));
+                 ++i)
+                ;
+
+            reStarting = false;
+
+            // restart phase failed after N cycles
+            if (i == MAX_N_POLLING)
+            {
+                i2c->CR1 |= I2C_CR1_STOP;
+
+                miosix::FastInterruptEnableLock eLock(dLock);
+                LOG_ERR(logger, fmt::format("I2C{} restart failed!", id));
+                return false;
+            }
         }
     }
 
@@ -677,19 +710,6 @@ inline void I2C::IRQwakeUpWaitingThread()
 
 void I2C::IRQhandleInterrupt()
 {
-    if (reStarting)
-    {
-        // if we are restarting and the peripheral didn't send the start bit,
-        // return
-        if (i2c->SR1 & I2C_SR1_SB)
-        {
-            reStarting = false;
-        }
-        else
-        {
-            return;
-        }
-    }
 
     // disabling the regeneration of the interrupt; if we don't disable the
     // interrupts we will enter in an infinite loop of interrupts
@@ -701,25 +721,16 @@ void I2C::IRQhandleInterrupt()
 
 void I2C::IRQhandleErrInterrupt()
 {
-    // notifying an error except for the bus error in case of a restarting
-    // condition
-    if (!reStarting || (reStarting && !(i2c->SR1 & I2C_SR1_BERR)))
-    {
-        // disabling the regeneration of the interrupt; if we don't disable
-        // the interrupts we will enter in an infinite loop of interrupts
-        i2c->CR2 &= ~(I2C_CR2_ITEVTEN | I2C_CR2_ITERREN);
-        error = true;
-    }
+    // disabling the regeneration of the interrupt; if we don't disable
+    // the interrupts we will enter in an infinite loop of interrupts
+    i2c->CR2 &= ~(I2C_CR2_ITEVTEN | I2C_CR2_ITERREN);
+    error = true;
 
     // clearing all the errors in the register
     i2c->SR1 = 0;
 
-    if (error)
-    {
-        reStarting = false;
-        // waking up the waiting thread
-        IRQwakeUpWaitingThread();
-    }
+    // waking up the waiting thread
+    IRQwakeUpWaitingThread();
 }
 
 SyncedI2C::SyncedI2C(I2C_TypeDef *i2c, Speed speed, Addressing addressing,
