@@ -87,7 +87,7 @@ public:
      * respected and the task will run consecutively for some time (See issue
      * #91).
      */
-    enum class Policy
+    enum class Policy : uint8_t
     {
         ONE_SHOT,  ///< Run the task one single timer.
         SKIP,      // Skips lost executions and stays aligned with the original
@@ -133,17 +133,13 @@ public:
     std::vector<TaskStatsResult> getTaskStats();
 
 private:
-    /**
-     * @brief Check the start time of the tasks in the agenda and moves them in
-     * the future respecting the period in respect to the original start time.
-     */
-    void normalizeTasks();
-
     struct Task
     {
         function_t function;
-        uint32_t period;  // [ms]
-        bool enabled;     ///< Whether the task should be executed.
+        uint32_t period;    // [ms]
+        int64_t startTick;  ///< First activation time, useful for synchronizing
+                            ///< tasks.
+        bool enabled;       ///< Whether the task should be executed.
         Policy policy;
         int64_t lastCall;  ///< Last activation tick for statistics computation.
         Stats activationStats;  ///< Stats about activation tick error.
@@ -163,8 +159,10 @@ private:
          * @param function The std::function to be called
          * @param period The Period in [ms]
          * @param policy The task policy in case of a miss
+         * @param startTick The first activation time
          */
-        explicit Task(function_t function, uint32_t period, Policy policy);
+        explicit Task(function_t function, uint32_t period, Policy policy,
+                      int64_t startTick);
 
         // Delete copy constructor and copy assignment operator to avoid copying
         // and force moving
@@ -208,6 +206,21 @@ private:
     // tick first. Requires operator `>` to be defined for Event.
     using EventQueue =
         std::priority_queue<Event, std::vector<Event>, std::greater<Event>>;
+
+    /**
+     * @brief Instantiates a new EventQueue backed by a vector with a
+     * capacity of `MAX_TASKS` to avoid reallocations when inserting new events.
+     */
+    static EventQueue makeAgenda();
+
+    /**
+     * @brief Populates the agenda prior to starting the scheduler. Checks the
+     * start time of the tasks in the agenda and moves them in the future
+     * respecting the period in respect to the original start time.
+     * @note This function must be called before starting the scheduler or the
+     * agenda will be empty.
+     */
+    void populateAgenda();
 
     void run() override;
 
