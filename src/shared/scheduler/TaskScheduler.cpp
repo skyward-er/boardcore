@@ -31,6 +31,13 @@ using namespace miosix;
 
 namespace Boardcore
 {
+namespace Constants
+{
+static constexpr unsigned int TICKS_PER_MS =
+    miosix::TICK_FREQ / 1000;  // Number of ticks in a millisecond
+static constexpr unsigned int MS_PER_TICK =
+    1000 / miosix::TICK_FREQ;  // Number of milliseconds in a tick
+}  // namespace Constants
 
 TaskScheduler::TaskScheduler(miosix::Priority priority)
     : ActiveObject(STACK_MIN_FOR_SKYWARD, priority)
@@ -215,17 +222,16 @@ void TaskScheduler::run()
 void TaskScheduler::updateStats(const Event& event, int64_t startTick,
                                 int64_t endTick)
 {
-    constexpr float tickToMs = 1000.f / TICK_FREQ;
-    Task& task               = (*tasks)[event.taskId];
+    Task& task = (*tasks)[event.taskId];
 
     // Activation stats
     float activationError = startTick - event.nextTick;
-    task.activationStats.add(activationError * tickToMs);
+    task.activationStats.add(activationError * Constants::MS_PER_TICK);
 
     // Period stats
     int64_t lastCall = task.lastCall;
     if (lastCall >= 0)
-        task.periodStats.add((startTick - lastCall) * tickToMs);
+        task.periodStats.add((startTick - lastCall) * Constants::MS_PER_TICK);
 
     // Update the last call tick to the current start tick for the next
     // iteration
@@ -237,8 +243,6 @@ void TaskScheduler::updateStats(const Event& event, int64_t startTick,
 
 void TaskScheduler::enqueue(Event event, int64_t startTick)
 {
-    constexpr float msToTick = TICK_FREQ / 1000.f;
-
     Task& task = (*tasks)[event.taskId];
     switch (task.policy)
     {
@@ -262,7 +266,7 @@ void TaskScheduler::enqueue(Event event, int64_t startTick)
                 ((startTick - event.nextTick) / task.period + 1) * task.period;
             break;
         case Policy::RECOVER:
-            event.nextTick += task.period * msToTick;
+            event.nextTick += task.period * Constants::TICKS_PER_MS;
             break;
     }
 
