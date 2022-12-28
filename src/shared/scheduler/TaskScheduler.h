@@ -63,9 +63,9 @@ public:
     using function_t = std::function<void()>;
 
     /**
-     * @brief It defines the tasks array maximum size
+     * @brief The maximum number of tasks the scheduler can handle.
      */
-    static constexpr size_t TASKS_SIZE = 256;
+    static constexpr size_t MAX_TASKS = 256;
 
     /**
      * @brief Task behavior policy.
@@ -98,14 +98,10 @@ public:
     explicit TaskScheduler(miosix::Priority priority = miosix::PRIORITY_MAX -
                                                        1);
 
-    ~TaskScheduler();
-
     /**
-     * @brief Add a task function to the scheduler with an auto generated id.
+     * @brief Add a task function to the scheduler with an auto generated ID.
      *
      * Note that each task has it's own unique ID, even one shot tasks!
-     * Therefore, if a task already exists with the same id, the function will
-     * fail and return false.
      *
      * For one shot tasks, the period is used as a delay. If 0 the task will be
      * executed immediately, otherwise after the given period.
@@ -114,7 +110,7 @@ public:
      * @param period Inter call period [ms].
      * @param policy Task policy, default is SKIP.
      * @param startTick First activation time, useful for synchronizing tasks.
-     * @return true if the task was added successfully.
+     * @return The ID of the task if it was added successfully, 0 otherwise.
      */
     size_t addTask(function_t function, uint32_t period,
                    Policy policy     = Policy::SKIP,
@@ -252,9 +248,10 @@ private:
     }
 
     miosix::FastMutex mutex;  ///< Mutex to protect tasks and agenda.
-    std::array<Task, TASKS_SIZE>* tasks;  ///< Holds all tasks to be scheduled.
-    miosix::ConditionVariable condvar;    ///< Used when agenda is empty.
-    EventQueue agenda;                    ///< Ordered list of functions.
+    std::vector<Task> tasks;  ///< Holds all tasks to be scheduled, preallocated
+                              ///< to MAX_TASKS avoid dynamic allocations.
+    miosix::ConditionVariable condvar;  ///< Used when agenda is empty.
+    EventQueue agenda;                  ///< Ordered list of functions.
 
     PrintLogger logger = Logging::getLogger("taskscheduler");
 };
