@@ -81,9 +81,8 @@ size_t TaskScheduler::addTask(function_t function, uint32_t period,
         startTick += period;
     }
 
-    // Add the task first event in the agenda
-    Event event = {&(*tasks)[id], startTick};
-    agenda.push(event);
+    // Add the task first event in the agenda, performs in-place construction
+    agenda.emplace(id, startTick);
     condvar.broadcast();  // Signals the run thread
 
     return id;
@@ -161,9 +160,10 @@ void TaskScheduler::normalizeTasks()
 
         if (event.nextTick < currentTick)
         {
+            Task& task = (*tasks)[event.taskId];
             event.nextTick +=
-                ((currentTick - event.nextTick) / event.task->period + 1) *
-                event.task->period;
+                ((currentTick - event.nextTick) / task.period + 1) *
+                task.period;
         }
 
         newAgenda.push(event);
@@ -188,11 +188,11 @@ void TaskScheduler::run()
 
         int64_t startTick = getTick();
         Event nextEvent   = agenda.top();
+        Task& nextTask    = (*tasks)[nextEvent.taskId];
 
         // If the task has the SKIP policy and its execution was missed, we need
         // to move it forward to match the period
-        if (nextEvent.nextTick < startTick &&
-            nextEvent.task->policy == Policy::SKIP)
+        if (nextEvent.nextTick < startTick && nextTask.policy == Policy::SKIP)
         {
             agenda.pop();
             enqueue(nextEvent, startTick);
@@ -202,19 +202,19 @@ void TaskScheduler::run()
             agenda.pop();
 
             // Execute the task function
-            if (nextEvent.task->valid)
+            if (nextTask.valid)
             {
                 {
                     Unlock<FastMutex> unlock(lock);
 
                     try
                     {
-                        nextEvent.task->function();
+                        nextTask.function();
                     }
                     catch (...)
                     {
                         // Update the failed statistic
-                        nextEvent.task->failedEvents++;
+                        nextTask.failedEvents++;
                     }
                 }
 
@@ -236,39 +236,40 @@ void TaskScheduler::updateStats(const Event& event, int64_t startTick,
                                 int64_t endTick)
 {
     constexpr float tickToMs = 1000.f / TICK_FREQ;
+    Task& task               = (*tasks)[event.taskId];
 
     // Activation stats
     float activationError = startTick - event.nextTick;
-    event.task->activationStats.add(activationError * tickToMs);
+    task.activationStats.add(activationError * tickToMs);
 
     // Period stats
-    int64_t lastCall = event.task->lastCall;
+    int64_t lastCall = task.lastCall;
     if (lastCall >= 0)
-        event.task->periodStats.add((startTick - lastCall) * tickToMs);
+        task.periodStats.add((startTick - lastCall) * tickToMs);
 
     // Update the last call tick to the current start tick for the next
     // iteration
-    event.task->lastCall = startTick;
+    task.lastCall = startTick;
 
     // Workload stats
-    event.task->workloadStats.add(endTick - startTick);
+    task.workloadStats.add(endTick - startTick);
 }
 
 void TaskScheduler::enqueue(Event event, int64_t startTick)
 {
     constexpr float msToTick = TICK_FREQ / 1000.f;
 
-    switch (event.task->policy)
+    Task& task = (*tasks)[event.taskId];
+    switch (task.policy)
     {
         case Policy::ONE_SHOT:
             // If the task is one shot we won't push it to the agenda and we'll
             // remove it from the tasks map.
-            (*tasks)[event.task->id].valid = false;
+            task.valid = false;
             return;
         case Policy::SKIP:
             // Updated the missed events count
-            event.task->missedEvents +=
-                (startTick - event.nextTick) / event.task->period;
+            task.missedEvents += (startTick - event.nextTick) / task.period;
 
             // Compute the number of periods between the tick the event should
             // have been run and the tick it actually run. Than adds 1 and
@@ -278,11 +279,10 @@ void TaskScheduler::enqueue(Event event, int64_t startTick)
             // but for whatever reason the first execution is at tick 3, then
             // the next execution will be at tick 4.
             event.nextTick +=
-                ((startTick - event.nextTick) / event.task->period + 1) *
-                event.task->period;
+                ((startTick - event.nextTick) / task.period + 1) * task.period;
             break;
         case Policy::RECOVER:
-            event.nextTick += event.task->period * msToTick;
+            event.nextTick += task.period * msToTick;
             break;
     }
 
