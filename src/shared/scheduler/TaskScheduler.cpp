@@ -53,12 +53,13 @@ TaskScheduler::TaskScheduler(miosix::Priority priority)
 size_t TaskScheduler::addTask(function_t function, uint32_t period,
                               Policy policy, int64_t startTick)
 {
-    Lock<FastMutex> lock(mutex);
+    // Lock the mutex manually to avoid relocking in the case of early returns
+    mutex.lock();
 
     if (tasks.size() >= MAX_TASKS)
     {
         // Unlock the mutex to release the scheduler resources before logging
-        Unlock<FastMutex> unlock(mutex);
+        mutex.unlock();
 
         LOG_ERR(logger, "Full task scheduler");
         return 0;
@@ -77,6 +78,7 @@ size_t TaskScheduler::addTask(function_t function, uint32_t period,
     agenda.emplace(id, startTick);
     condvar.broadcast();  // Signals the run thread
 
+    mutex.unlock();
     return id;
 }
 
@@ -88,7 +90,8 @@ void TaskScheduler::enableTask(size_t id)
         return;
     }
 
-    Lock<FastMutex> lock(mutex);
+    // Lock the mutex manually to avoid relocking in the case of early returns
+    mutex.lock();
     Task& task = tasks[id];
 
     // Check that the task function is not empty
@@ -97,13 +100,14 @@ void TaskScheduler::enableTask(size_t id)
     if (task.empty())
     {
         // Unlock the mutex to release the scheduler resources before logging
-        Unlock<FastMutex> unlock(mutex);
+        mutex.unlock();
         LOG_WARN(logger, "Tried to enable an empty task, id = {}", id);
         return;
     }
 
     task.enabled = true;
     agenda.emplace(id, getTick() + task.period * Constants::TICKS_PER_MS);
+    mutex.unlock();
 }
 
 void TaskScheduler::disableTask(size_t id)
