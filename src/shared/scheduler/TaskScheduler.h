@@ -144,7 +144,6 @@ private:
     {
         function_t function;
         uint32_t period;  // [ms]
-        size_t id;
         bool valid;
         Policy policy;
         int64_t lastCall;  ///< Last activation tick for statistics computation.
@@ -153,6 +152,20 @@ private:
         Stats workloadStats;    ///< Stats about time the task takes to compute.
         uint32_t missedEvents;  ///< Number of events that could not be run.
         uint32_t failedEvents;  ///< Number of events ended with exceptions.
+
+        /**
+         * @brief Default constructor that creates an empty, invalid task
+         */
+        Task();
+
+        /**
+         * @brief Creates a task with the given parameters
+         *
+         * @param function The std::function to be called
+         * @param period The Period in [ms]
+         * @param policy The task policy in case of a miss
+         */
+        explicit Task(function_t function, uint32_t period, Policy policy);
     };
 
     struct Event
@@ -208,23 +221,10 @@ private:
      */
     void enqueue(Event event, int64_t startTick);
 
-    /**
-     * @brief Creates a task with the passed values
-     *
-     * @param function The std::function to be called
-     * @param period The Period in [ms]
-     * @param id The task intrinsic id
-     * @param validity The validity of the task (false if not initialized or if
-     * removed)
-     * @param policy The task policy in case of a miss
-     */
-    Task makeTask(function_t function, uint32_t period, size_t id,
-                  bool validity, Policy policy);
-
-    static TaskStatsResult fromTaskIdPairToStatsResult(Task task)
+    static TaskStatsResult fromTaskIdPairToStatsResult(Task task, size_t id)
     {
 
-        return TaskStatsResult{task.id,
+        return TaskStatsResult{id,
                                task.period,
                                task.activationStats.getStats(),
                                task.periodStats.getStats(),

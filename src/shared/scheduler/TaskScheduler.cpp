@@ -41,8 +41,7 @@ TaskScheduler::TaskScheduler(miosix::Priority priority)
     // Initialize the vector elements
     for (size_t i = 1; i < TASKS_SIZE; i++)
     {
-        function_t function;
-        (*tasks)[i] = makeTask(function, 0, i, false, Policy::SKIP);
+        (*tasks)[i] = Task();
     }
 }
 
@@ -73,8 +72,8 @@ size_t TaskScheduler::addTask(function_t function, uint32_t period,
         return 0;
     }
 
-    // Register the task into the map
-    (*tasks)[id] = makeTask(function, period, id, true, policy);
+    // Create a new task with the given parameters
+    (*tasks)[id] = Task(function, period, policy);
 
     if (policy == Policy::ONE_SHOT)
     {
@@ -137,11 +136,12 @@ vector<TaskStatsResult> TaskScheduler::getTaskStats()
 
     vector<TaskStatsResult> result;
 
-    for (auto const& task : (*tasks))
+    for (size_t id = 1; id < TASKS_SIZE; id++)
     {
+        const Task& task = (*tasks)[id];
         if (task.valid)
         {
-            result.push_back(fromTaskIdPairToStatsResult(task));
+            result.push_back(fromTaskIdPairToStatsResult(task, id));
         }
     }
 
@@ -291,11 +291,18 @@ void TaskScheduler::enqueue(Event event, int64_t startTick)
     condvar.broadcast();
 }
 
-TaskScheduler::Task TaskScheduler::makeTask(function_t function,
-                                            uint32_t period, size_t id,
-                                            bool validity, Policy policy)
+TaskScheduler::Task::Task()
+    : function(nullptr), period(0), valid(false), policy(Policy::SKIP),
+      lastCall(-1), activationStats(), periodStats(), workloadStats(),
+      missedEvents(0), failedEvents(0)
 {
-    return Task{function, period, id, validity, policy, -1, {}, {}, {}, 0, 0};
+}
+
+TaskScheduler::Task::Task(function_t function, uint32_t period, Policy policy)
+    : function(function), period(period), valid(true), policy(policy),
+      lastCall(-1), activationStats(), periodStats(), workloadStats(),
+      missedEvents(0), failedEvents(0)
+{
 }
 
 }  // namespace Boardcore
