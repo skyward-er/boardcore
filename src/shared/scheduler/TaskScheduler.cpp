@@ -153,7 +153,7 @@ void TaskScheduler::normalizeTasks()
     int64_t currentTick = getTick();
 
     EventQueue newAgenda;
-    while (agenda.size() > 0)
+    while (!agenda.empty())
     {
         Event event = agenda.top();
         agenda.pop();
@@ -168,7 +168,7 @@ void TaskScheduler::normalizeTasks()
 
         newAgenda.push(event);
     }
-    agenda = newAgenda;
+    agenda = std::move(newAgenda);
 }
 
 void TaskScheduler::run()
@@ -177,7 +177,7 @@ void TaskScheduler::run()
 
     while (true)
     {
-        while (agenda.size() == 0 && !shouldStop())
+        while (agenda.empty() && !shouldStop())
             condvar.wait(mutex);
 
         // Exit if the ActiveObject has been stopped
