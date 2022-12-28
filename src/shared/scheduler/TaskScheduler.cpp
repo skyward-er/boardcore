@@ -63,14 +63,14 @@ size_t TaskScheduler::addTask(function_t function, uint32_t period,
     // Find a suitable id for the new task
     for (; id < TASKS_SIZE; id++)
     {
-        if ((*tasks)[id].valid == false)
+        if ((*tasks)[id].empty())
         {
             break;
         }
     }
 
     // Check if in the corresponding id there's already a task
-    if ((*tasks)[id].valid)
+    if ((*tasks)[id].enabled)
     {
         // Unlock the mutex for expensive operation
         Unlock<FastMutex> unlock(mutex);
@@ -92,6 +92,44 @@ size_t TaskScheduler::addTask(function_t function, uint32_t period,
     condvar.broadcast();  // Signals the run thread
 
     return id;
+}
+
+void TaskScheduler::enableTask(size_t id)
+{
+    if (id > TASKS_SIZE)
+    {
+        LOG_ERR(logger, "Tried to enable an out-of-range task, id = {}", id);
+        return;
+    }
+
+    Lock<FastMutex> lock(mutex);
+    Task& task = (*tasks)[id];
+
+    // Check that the task function is not empty
+    // Attempting to run an empty function will throw a bad_function_call
+    // exception
+    if (task.empty())
+    {
+        // Unlock the mutex to release the scheduler resources before logging
+        Unlock<FastMutex> unlock(mutex);
+        LOG_WARN(logger, "Tried to enable an empty task, id = {}", id);
+        return;
+    }
+
+    task.enabled = true;
+    agenda.emplace(id, getTick() + task.period * Constants::TICKS_PER_MS);
+}
+
+void TaskScheduler::disableTask(size_t id)
+{
+    if (id > TASKS_SIZE)
+    {
+        LOG_ERR(logger, "Tried to disable an out-of-range task, id = {}", id);
+        return;
+    }
+
+    Lock<FastMutex> lock(mutex);
+    (*tasks)[id].enabled = false;
 }
 
 bool TaskScheduler::start()
@@ -126,7 +164,7 @@ vector<TaskStatsResult> TaskScheduler::getTaskStats()
     for (size_t id = 1; id < TASKS_SIZE; id++)
     {
         const Task& task = (*tasks)[id];
-        if (task.valid)
+        if (task.enabled)
         {
             result.push_back(fromTaskIdPairToStatsResult(task, id));
         }
@@ -189,7 +227,7 @@ void TaskScheduler::run()
             agenda.pop();
 
             // Execute the task function
-            if (nextTask.valid)
+            if (nextTask.enabled)
             {
                 {
                     Unlock<FastMutex> unlock(lock);
@@ -249,7 +287,7 @@ void TaskScheduler::enqueue(Event event, int64_t startTick)
         case Policy::ONE_SHOT:
             // If the task is one shot we won't push it to the agenda and we'll
             // remove it from the tasks map.
-            task.valid = false;
+            task.enabled = false;
             return;
         case Policy::SKIP:
             // Updated the missed events count
@@ -276,14 +314,14 @@ void TaskScheduler::enqueue(Event event, int64_t startTick)
 }
 
 TaskScheduler::Task::Task()
-    : function(nullptr), period(0), valid(false), policy(Policy::SKIP),
+    : function(nullptr), period(0), enabled(false), policy(Policy::SKIP),
       lastCall(-1), activationStats(), periodStats(), workloadStats(),
       missedEvents(0), failedEvents(0)
 {
 }
 
 TaskScheduler::Task::Task(function_t function, uint32_t period, Policy policy)
-    : function(function), period(period), valid(true), policy(policy),
+    : function(function), period(period), enabled(true), policy(policy),
       lastCall(-1), activationStats(), periodStats(), workloadStats(),
       missedEvents(0), failedEvents(0)
 {
