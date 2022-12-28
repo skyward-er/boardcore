@@ -166,6 +166,16 @@ private:
          * @param policy The task policy in case of a miss
          */
         explicit Task(function_t function, uint32_t period, Policy policy);
+
+        // Delete copy constructor and copy assignment operator to avoid copying
+        // and force moving
+        Task(const Task& other)            = delete;
+        Task& operator=(const Task& other) = delete;
+
+        // Define a move constructor and a move assignment operator to avoid
+        // copying std::function
+        Task(Task&& other)            = default;
+        Task& operator=(Task&& other) = default;
     };
 
     struct Event
@@ -221,9 +231,9 @@ private:
      */
     void enqueue(Event event, int64_t startTick);
 
-    static TaskStatsResult fromTaskIdPairToStatsResult(Task task, size_t id)
+    static TaskStatsResult fromTaskIdPairToStatsResult(const Task& task,
+                                                       size_t id)
     {
-
         return TaskStatsResult{id,
                                task.period,
                                task.activationStats.getStats(),
