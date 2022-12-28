@@ -152,7 +152,7 @@ void TaskScheduler::normalizeTasks()
 {
     int64_t currentTick = getTick();
 
-    std::priority_queue<Event> newAgenda;
+    EventQueue newAgenda;
     while (agenda.size() > 0)
     {
         Event event = agenda.top();
