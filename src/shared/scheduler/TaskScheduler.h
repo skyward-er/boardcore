@@ -119,14 +119,6 @@ public:
                    Policy policy     = Policy::SKIP,
                    int64_t startTick = miosix::getTick());
 
-    /**
-     * @brief Removes the task identified by the given id if it exists.
-     *
-     * @param id Id of the task to remove.
-     * @return true if the task was removed.
-     */
-    bool removeTask(size_t id);
-
     bool start() override;
 
     void stop() override;

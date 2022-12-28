@@ -87,26 +87,6 @@ size_t TaskScheduler::addTask(function_t function, uint32_t period,
     return id;
 }
 
-bool TaskScheduler::removeTask(size_t id)
-{
-    Lock<FastMutex> lock(mutex);
-
-    // Check if the task is actually present
-    if ((*tasks)[id].valid == false)
-    {
-        // Unlock the mutex for expensive operation
-        Unlock<FastMutex> unlock(mutex);
-
-        LOG_ERR(logger, "Attempting to remove a task not registered");
-        return false;
-    }
-
-    // Set the validity of the task to false
-    (*tasks)[id].valid = false;
-
-    return true;
-}
-
 bool TaskScheduler::start()
 {
     // This check is necessary to prevent task normalization if the scheduler is
