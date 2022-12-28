@@ -59,7 +59,7 @@ namespace Boardcore
 class TaskScheduler : public ActiveObject
 {
 public:
-    typedef std::function<void()> function_t;
+    using function_t = std::function<void()>;
 
     /**
      * @brief It defines the tasks array maximum size
@@ -165,13 +165,22 @@ private:
         {
         }
 
-        bool operator<(const Event& e) const
+        /**
+         * @brief Compare two events based on the next tick.
+         * @note This is used to have the event with the lowest tick first in
+         * the agenda. Newly pushed events are moved up in the queue (see
+         * heap bubble-up) until the other tick is lower.
+         */
+        bool operator>(const Event& other) const
         {
-            // Note: operator < is reversed, so that the priority_queue will
-            // return the lowest element first
-            return this->nextTick > e.nextTick;
+            return this->nextTick > other.nextTick;
         }
     };
+
+    // Use `std::greater` as the comparator to have elements with the lowest
+    // tick first. Requires operator `>` to be defined for Event.
+    using EventQueue =
+        std::priority_queue<Event, std::vector<Event>, std::greater<Event>>;
 
     void run() override;
 
@@ -227,7 +236,7 @@ private:
     miosix::FastMutex mutex;  ///< Mutex to protect tasks and agenda.
     std::array<Task, TASKS_SIZE>* tasks;  ///< Holds all tasks to be scheduled.
     miosix::ConditionVariable condvar;    ///< Used when agenda is empty.
-    std::priority_queue<Event> agenda;    ///< Ordered list of functions.
+    EventQueue agenda;                    ///< Ordered list of functions.
 
     PrintLogger logger = Logging::getLogger("taskscheduler");
 };
