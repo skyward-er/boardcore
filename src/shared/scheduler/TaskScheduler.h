@@ -157,8 +157,13 @@ private:
 
     struct Event
     {
-        Task* task;        ///< The task to execute.
+        size_t taskId;     ///< The task to execute.
         int64_t nextTick;  ///< Tick of next activation.
+
+        Event(size_t taskId, int64_t nextTick)
+            : taskId(taskId), nextTick(nextTick)
+        {
+        }
 
         bool operator<(const Event& e) const
         {
