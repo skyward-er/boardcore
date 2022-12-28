@@ -31,6 +31,7 @@ using namespace miosix;
 
 namespace Boardcore
 {
+
 namespace Constants
 {
 static constexpr unsigned int TICKS_PER_MS =
@@ -39,8 +40,16 @@ static constexpr unsigned int MS_PER_TICK =
     1000 / miosix::TICK_FREQ;  // Number of milliseconds in a tick
 }  // namespace Constants
 
+TaskScheduler::EventQueue TaskScheduler::makeAgenda()
+{
+    std::vector<Event> agendaStorage{};
+    agendaStorage.reserve(MAX_TASKS);
+    return EventQueue{std::greater<Event>{}, std::move(agendaStorage)};
+}
+
 TaskScheduler::TaskScheduler(miosix::Priority priority)
-    : ActiveObject(STACK_MIN_FOR_SKYWARD, priority), tasks()
+    : ActiveObject(STACK_MIN_FOR_SKYWARD, priority), tasks(),
+      agenda(makeAgenda())
 {
     // Preallocate the vector to avoid dynamic allocation later on
     tasks.reserve(MAX_TASKS);
@@ -65,17 +74,21 @@ size_t TaskScheduler::addTask(function_t function, uint32_t period,
         return 0;
     }
 
-    // Insert a new task with the given parameters
-    tasks.emplace_back(function, period, policy);
-    size_t id = tasks.size() - 1;
-
     if (policy == Policy::ONE_SHOT)
     {
         startTick += period;
     }
 
-    // Add the task first event in the agenda, performs in-place construction
-    agenda.emplace(id, startTick);
+    // Insert a new task with the given parameters
+    tasks.emplace_back(function, period, policy, startTick);
+    size_t id = tasks.size() - 1;
+
+    // Only add the task to the agenda if the scheduler is running
+    // Otherwise, the agenda will be populated when the scheduler is started
+    if (isRunning())
+    {
+        agenda.emplace(id, startTick);
+    }
     condvar.broadcast();  // Signals the run thread
 
     mutex.unlock();
@@ -131,8 +144,8 @@ bool TaskScheduler::start()
         return false;
     }
 
-    // Normalize the tasks start time if they precede the current tick
-    normalizeTasks();
+    // Populate the agenda with the tasks we have so far
+    populateAgenda();
 
     return ActiveObject::start();
 }
@@ -163,27 +176,24 @@ vector<TaskStatsResult> TaskScheduler::getTaskStats()
     return result;
 }
 
-void TaskScheduler::normalizeTasks()
+void TaskScheduler::populateAgenda()
 {
     int64_t currentTick = getTick();
 
-    EventQueue newAgenda;
-    while (!agenda.empty())
+    for (size_t id = 1; id < tasks.size(); id++)
     {
-        Event event = agenda.top();
-        agenda.pop();
+        Task& task = tasks[id];
 
-        if (event.nextTick < currentTick)
+        int64_t nextTick = task.startTick;
+        // Normalize the tasks start time if they precede the current tick
+        if (nextTick < currentTick)
         {
-            Task& task = tasks[event.taskId];
-            event.nextTick +=
-                ((currentTick - event.nextTick) / task.period + 1) *
-                task.period;
+            nextTick +=
+                ((currentTick - nextTick) / task.period + 1) * task.period;
         }
 
-        newAgenda.push(event);
+        agenda.emplace(id, nextTick);
     }
-    agenda = std::move(newAgenda);
 }
 
 void TaskScheduler::run()
@@ -304,16 +314,17 @@ void TaskScheduler::enqueue(Event event, int64_t startTick)
 }
 
 TaskScheduler::Task::Task()
-    : function(nullptr), period(0), enabled(false), policy(Policy::SKIP),
-      lastCall(-1), activationStats(), periodStats(), workloadStats(),
-      missedEvents(0), failedEvents(0)
+    : function(nullptr), period(0), startTick(0), enabled(false),
+      policy(Policy::SKIP), lastCall(-1), activationStats(), periodStats(),
+      workloadStats(), missedEvents(0), failedEvents(0)
 {
 }
 
-TaskScheduler::Task::Task(function_t function, uint32_t period, Policy policy)
-    : function(function), period(period), enabled(true), policy(policy),
-      lastCall(-1), activationStats(), periodStats(), workloadStats(),
-      missedEvents(0), failedEvents(0)
+TaskScheduler::Task::Task(function_t function, uint32_t period, Policy policy,
+                          int64_t startTick)
+    : function(function), period(period), startTick(startTick), enabled(true),
+      policy(policy), lastCall(-1), activationStats(), periodStats(),
+      workloadStats(), missedEvents(0), failedEvents(0)
 {
 }
 
