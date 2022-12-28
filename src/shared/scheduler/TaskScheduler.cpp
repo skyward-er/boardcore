@@ -40,47 +40,33 @@ static constexpr unsigned int MS_PER_TICK =
 }  // namespace Constants
 
 TaskScheduler::TaskScheduler(miosix::Priority priority)
-    : ActiveObject(STACK_MIN_FOR_SKYWARD, priority)
+    : ActiveObject(STACK_MIN_FOR_SKYWARD, priority), tasks()
 {
-    // Create dynamically the tasks vector because of too much space
-    tasks = new std::array<Task, TASKS_SIZE>();
+    // Preallocate the vector to avoid dynamic allocation later on
+    tasks.reserve(MAX_TASKS);
 
-    // Initialize the vector elements
-    for (size_t i = 1; i < TASKS_SIZE; i++)
-    {
-        (*tasks)[i] = Task();
-    }
+    // Reserve the zeroth element so that the task ID is never zero, for
+    // API compatibility: returned value from addTask() is zero on error.
+    tasks.emplace_back();
 }
-
-TaskScheduler::~TaskScheduler() { delete tasks; }
 
 size_t TaskScheduler::addTask(function_t function, uint32_t period,
                               Policy policy, int64_t startTick)
 {
     Lock<FastMutex> lock(mutex);
-    size_t id = 1;
 
-    // Find a suitable id for the new task
-    for (; id < TASKS_SIZE; id++)
+    if (tasks.size() >= MAX_TASKS)
     {
-        if ((*tasks)[id].empty())
-        {
-            break;
-        }
-    }
-
-    // Check if in the corresponding id there's already a task
-    if ((*tasks)[id].enabled)
-    {
-        // Unlock the mutex for expensive operation
+        // Unlock the mutex to release the scheduler resources before logging
         Unlock<FastMutex> unlock(mutex);
 
-        LOG_ERR(logger, "Full task scheduler, id = {:zu}", id);
+        LOG_ERR(logger, "Full task scheduler");
         return 0;
     }
 
-    // Create a new task with the given parameters
-    (*tasks)[id] = Task(function, period, policy);
+    // Insert a new task with the given parameters
+    tasks.emplace_back(function, period, policy);
+    size_t id = tasks.size() - 1;
 
     if (policy == Policy::ONE_SHOT)
     {
@@ -96,14 +82,14 @@ size_t TaskScheduler::addTask(function_t function, uint32_t period,
 
 void TaskScheduler::enableTask(size_t id)
 {
-    if (id > TASKS_SIZE)
+    if (id > tasks.size() - 1)
     {
         LOG_ERR(logger, "Tried to enable an out-of-range task, id = {}", id);
         return;
     }
 
     Lock<FastMutex> lock(mutex);
-    Task& task = (*tasks)[id];
+    Task& task = tasks[id];
 
     // Check that the task function is not empty
     // Attempting to run an empty function will throw a bad_function_call
@@ -122,14 +108,14 @@ void TaskScheduler::enableTask(size_t id)
 
 void TaskScheduler::disableTask(size_t id)
 {
-    if (id > TASKS_SIZE)
+    if (id > tasks.size() - 1)
     {
         LOG_ERR(logger, "Tried to disable an out-of-range task, id = {}", id);
         return;
     }
 
     Lock<FastMutex> lock(mutex);
-    (*tasks)[id].enabled = false;
+    tasks[id].enabled = false;
 }
 
 bool TaskScheduler::start()
@@ -161,9 +147,9 @@ vector<TaskStatsResult> TaskScheduler::getTaskStats()
 
     vector<TaskStatsResult> result;
 
-    for (size_t id = 1; id < TASKS_SIZE; id++)
+    for (size_t id = 1; id < tasks.size(); id++)
     {
-        const Task& task = (*tasks)[id];
+        const Task& task = tasks[id];
         if (task.enabled)
         {
             result.push_back(fromTaskIdPairToStatsResult(task, id));
@@ -185,7 +171,7 @@ void TaskScheduler::normalizeTasks()
 
         if (event.nextTick < currentTick)
         {
-            Task& task = (*tasks)[event.taskId];
+            Task& task = tasks[event.taskId];
             event.nextTick +=
                 ((currentTick - event.nextTick) / task.period + 1) *
                 task.period;
@@ -213,7 +199,7 @@ void TaskScheduler::run()
 
         int64_t startTick = getTick();
         Event nextEvent   = agenda.top();
-        Task& nextTask    = (*tasks)[nextEvent.taskId];
+        Task& nextTask    = tasks[nextEvent.taskId];
 
         // If the task has the SKIP policy and its execution was missed, we need
         // to move it forward to match the period
@@ -260,7 +246,7 @@ void TaskScheduler::run()
 void TaskScheduler::updateStats(const Event& event, int64_t startTick,
                                 int64_t endTick)
 {
-    Task& task = (*tasks)[event.taskId];
+    Task& task = tasks[event.taskId];
 
     // Activation stats
     float activationError = startTick - event.nextTick;
@@ -281,7 +267,7 @@ void TaskScheduler::updateStats(const Event& event, int64_t startTick,
 
 void TaskScheduler::enqueue(Event event, int64_t startTick)
 {
-    Task& task = (*tasks)[event.taskId];
+    Task& task = tasks[event.taskId];
     switch (task.policy)
     {
         case Policy::ONE_SHOT:
