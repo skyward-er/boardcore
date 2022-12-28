@@ -29,6 +29,7 @@
 #include <utils/Stats/Stats.h>
 
 #include <cstdint>
+#include <functional>
 #include <list>
 #include <map>
 #include <queue>
@@ -119,6 +120,16 @@ public:
                    Policy policy     = Policy::SKIP,
                    int64_t startTick = miosix::getTick());
 
+    /**
+     * @brief Enables the task with the given id.
+     */
+    void enableTask(size_t id);
+
+    /**
+     * @brief Disables the task with the given id, preventing it from executing.
+     */
+    void disableTask(size_t id);
+
     bool start() override;
 
     void stop() override;
@@ -136,7 +147,7 @@ private:
     {
         function_t function;
         uint32_t period;  // [ms]
-        bool valid;
+        bool enabled;     ///< Whether the task should be executed.
         Policy policy;
         int64_t lastCall;  ///< Last activation tick for statistics computation.
         Stats activationStats;  ///< Stats about activation tick error.
@@ -168,6 +179,11 @@ private:
         // copying std::function
         Task(Task&& other)            = default;
         Task& operator=(Task&& other) = default;
+
+        /**
+         * @brief Checks if this task is empty.
+         */
+        bool empty() const { return !function; }
     };
 
     struct Event
