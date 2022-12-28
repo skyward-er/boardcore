@@ -112,8 +112,6 @@ int main()
     Thread::sleep(4 * 1000);
 
     signalPin5();
-    scheduler.removeTask(1);
-    scheduler.removeTask(3);
     printf("Removed tasks 1 (2Hz) and 3 (500Hz)\n");
 
     Thread::sleep(4 * 1000);
