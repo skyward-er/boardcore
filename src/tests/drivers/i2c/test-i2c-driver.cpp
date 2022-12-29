@@ -22,7 +22,7 @@
 
 #include <iostream>
 
-#include "drivers/i2c/I2C.h"
+#include "drivers/i2c/I2CDriver.h"
 #include "miosix.h"
 #include "scheduler/TaskScheduler.h"
 #include "string"
@@ -32,6 +32,8 @@
 using namespace std;
 using namespace miosix;
 using namespace Boardcore;
+
+bool generateStop = false;
 
 // I2CDriver1
 typedef miosix::Gpio<GPIOB_BASE, 6> i1scl1;
@@ -62,7 +64,7 @@ typedef miosix::Gpio<GPIOH_BASE, 8> i3scl2;
 /**
  * SETUP:
  */
-uint8_t buffer = 0;
+uint8_t buffer[8] = {0};
 struct
 {
     uint8_t addressSensor  = 0b1110111;
@@ -86,11 +88,12 @@ struct
     uint8_t whoamiContent  = 0x43;
 } OLED;
 
-bool i2cDriverOLED(I2C &i2c)
+bool i2cDriverOLED(I2CDriver &i2c)
 {
-    buffer = 0;
-    if (!i2c.readRegister(OLED.addressSensor, OLED.whoamiRegister, buffer) ||
-        buffer != OLED.whoamiContent)
+    buffer[0] = 0;
+    if (!i2c.write(OLED.addressSensor, &OLED.whoamiRegister, 1) ||
+        !i2c.read(OLED.addressSensor, buffer, 1) ||
+        buffer[0] != OLED.whoamiContent)
     {
         return false;
     }
@@ -98,13 +101,14 @@ bool i2cDriverOLED(I2C &i2c)
     return true;
 }
 
-bool i2cDriverBMP(I2C &i2c)
+bool i2cDriverBMP(I2CDriver &i2c)
 {
-    buffer = 0;
+    buffer[0] = 0;
     if (!i2c.write(BMP180.addressSensor, BMP180.softReset, 2) ||
-        !i2c.readRegister(BMP180.addressSensor, BMP180.whoamiRegister,
-                          buffer) ||
-        buffer != BMP180.whoamiContent)
+        !i2c.write(BMP180.addressSensor, &BMP180.whoamiRegister, 1,
+                   generateStop) ||
+        !i2c.read(BMP180.addressSensor, buffer, 1) ||
+        buffer[0] != BMP180.whoamiContent)
     {
         return false;
     }
@@ -112,13 +116,14 @@ bool i2cDriverBMP(I2C &i2c)
     return true;
 }
 
-bool i2cDriverBME(I2C &i2c)
+bool i2cDriverBME(I2CDriver &i2c)
 {
-    buffer = 0;
+    buffer[0] = 0;
     if (!i2c.write(BME280.addressSensor, BME280.softReset, 2) ||
-        !i2c.readRegister(BME280.addressSensor, BME280.whoamiRegister,
-                          buffer) ||
-        buffer != BME280.whoamiContent)
+        !i2c.write(BME280.addressSensor, &BME280.whoamiRegister, 1,
+                   generateStop) ||
+        !i2c.read(BME280.addressSensor, buffer, 1) ||
+        buffer[0] != BME280.whoamiContent)
     {
         return false;
     }
@@ -130,8 +135,13 @@ int main()
 {
     int nRepeat = 50;
 
-    I2C i2c(I2C1, I2CDriver::Speed::STANDARD, I2CDriver::Addressing::BIT7,
-            i1scl2::getPin(), i1sda2::getPin());
+    I2CDriver i2c(I2C1, I2CDriver::Speed::STANDARD, I2CDriver::Addressing::BIT7,
+                  i1scl2::getPin(), i1sda2::getPin());
+
+    // scheduling the flush of the I2CDriver bus
+    TaskScheduler scheduler;
+    scheduler.addTask([&]() { i2c.flushBus(); }, 100);
+    scheduler.start();
 
     for (;;)
     {
