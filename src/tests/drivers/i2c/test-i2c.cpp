@@ -60,70 +60,36 @@ typedef miosix::Gpio<GPIOH_BASE, 8> i3scl2;
 #endif
 
 /**
- * SETUP:
+ * SETUP: Connect to the I2C1 port a pullup circuit and than sensors of your
+ * choice (in this test there are the data for some random sensors). The test
+ * just tries to write and read from these sensors. In order to test the
+ * flushBus method try to disconnect and reconnect rapidly the SCL connection of
+ * one sensor (in order to provoke a locked state).
  */
+
 uint8_t buffer = 0;
-struct
-{
-    uint8_t addressSensor  = 0b1110111;
-    uint8_t whoamiRegister = 0xD0;
-    uint8_t whoamiContent  = 0x55;
-    uint8_t softReset[2]   = {0xE0, 0xB6};
-} BMP180;
 
-struct
+typedef struct
 {
-    uint8_t addressSensor  = 0b1110110;
-    uint8_t whoamiRegister = 0xD0;
-    uint8_t whoamiContent  = 0x60;
-    uint8_t softReset[2]   = {0xE0, 0xB6};
-} BME280;
+    const uint8_t addressSensor;
+    const uint8_t whoamiRegister;
+    const uint8_t whoamiContent;
+    const uint8_t softReset[2];
+} I2CSensor;
 
-struct
-{
-    uint8_t addressSensor  = 0b0111100;
-    uint8_t whoamiRegister = 0xD0;
-    uint8_t whoamiContent  = 0x43;
-} OLED;
+I2CSensor BMP180{0b1110111, 0xD0, 0x55, {0xE0, 0xB6}};
+I2CSensor BME280{0b1110110, 0xD0, 0x60, {0xE0, 0xB6}};
+I2CSensor OLED{0b0111100, 0xD0, 0x43, {}};
 
-bool i2cDriverOLED(I2C &i2c)
+bool i2cDriver(I2C &i2c, I2CSensor sensor)
 {
     buffer = 0;
-    if (!i2c.readRegister(OLED.addressSensor, OLED.whoamiRegister, buffer) ||
-        buffer != OLED.whoamiContent)
-    {
-        return false;
-    }
 
-    return true;
-}
-
-bool i2cDriverBMP(I2C &i2c)
-{
-    buffer = 0;
-    if (!i2c.write(BMP180.addressSensor, BMP180.softReset, 2) ||
-        !i2c.readRegister(BMP180.addressSensor, BMP180.whoamiRegister,
-                          buffer) ||
-        buffer != BMP180.whoamiContent)
-    {
-        return false;
-    }
-
-    return true;
-}
-
-bool i2cDriverBME(I2C &i2c)
-{
-    buffer = 0;
-    if (!i2c.write(BME280.addressSensor, BME280.softReset, 2) ||
-        !i2c.readRegister(BME280.addressSensor, BME280.whoamiRegister,
-                          buffer) ||
-        buffer != BME280.whoamiContent)
-    {
-        return false;
-    }
-
-    return true;
+    // reset the sensor and then read the whoami
+    return i2c.write(sensor.addressSensor, sensor.softReset, 2) &&
+           i2c.readRegister(sensor.addressSensor, sensor.whoamiRegister,
+                            buffer) &&
+           buffer == sensor.whoamiContent;
 }
 
 int main()
@@ -141,8 +107,8 @@ int main()
 
         for (int i = 0; i < nRepeat; i++)
         {
-            statusOLED &= i2cDriverOLED(i2c);
-            statusBMP &= i2cDriverBMP(i2c);
+            statusOLED &= i2cDriver(i2c, OLED);
+            statusBMP &= i2cDriver(i2c, BMP180);
         }
 
         printf("OLED:%d\tBMP:%d\n", statusOLED, statusBMP);
