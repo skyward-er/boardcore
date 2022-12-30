@@ -67,9 +67,12 @@ public:
     };
 
     /**
+     * @brief Constructor for the I2C low-level driver.
      * @param i2c structure that represents the I2C peripheral
      * @param speed the speed mode of the I2C communication
      * @param addressing The addressing mode used in the I2C communication
+     * @param scl Serial clock GpioPin of the relative I2C peripheral
+     * @param sda Serial data GpioPin of the relative I2C peripheral
      */
     I2CDriver(I2C_TypeDef *i2c, Speed speed, Addressing addressing,
               miosix::GpioPin scl, miosix::GpioPin sda);
@@ -82,26 +85,26 @@ public:
 
     /**
      * @brief Non blocking read operation to read nBytes. In case of an error
-     * during the communication, this method returns false immediately. Check
-     * always if the operation succeeded or not!
+     * during the communication, this method returns false immediately.
+     * @warning Check always if the operation succeeded or not!
      * @param slaveAddress address (not shifted!) of the slave to communicate
      * with.
      * @param buffer Data buffer where to store the data read.
      * @param nBytes number of bytes to read.
-     * @returns true if the read is successful, false otherwise.
+     * @return true if the read is successful, false otherwise.
      */
     [[nodiscard]] bool read(uint16_t slaveAddress, void *buffer, size_t nBytes);
 
     /**
      * @brief Non blocking write operation to write nBytes. In case of an error
-     * during the communication, this method returns false immediately. Check
-     * always if the operation succeeded or not!
+     * during the communication, this method returns false immediately.
+     * @warning Check always if the operation succeeded or not!
      * @param slaveAddress address (not shifted!) of the slave to communicate
      * with.
      * @param buffer Data buffer where to read the data to send.
      * @param nBytes number of bytes to send.
      * @param generateStop flag for the Stop condition generation.
-     * @returns true if the write is successful, false otherwise.
+     * @return true if the write is successful, false otherwise.
      */
     [[nodiscard]] bool write(uint16_t slaveAddress, const void *buffer,
                              size_t nBytes, bool generateStop = true);
@@ -119,7 +122,8 @@ public:
      * @brief Method that handles the interrupt for events of the specific
      * peripheral. It just disables the interrupts of the peripheral and wakes
      * the thread up.
-     * @warning No user code should call this method.
+     * @warning This function should only be called by interrupts. No user code
+     * should call this method.
      */
     void IRQhandleInterrupt();
 
@@ -128,7 +132,8 @@ public:
      * peripheral. It disables the interrupts of the peripheral, wakes
      * the thread up, sets the "error" software flag and resets the error flags
      * in the register.
-     * @warning No user code should call this method.
+     * @warning This function should only be called by interrupts. No user code
+     * should call this method.
      */
     void IRQhandleErrInterrupt();
 
@@ -146,7 +151,7 @@ private:
      * Check always if the operation succeeded or not!
      * @param slaveAddress address (not shifted!) of the slave to communicate
      * with.
-     * @returns True if prologue didn't have any error; False otherwise.
+     * @return True if prologue didn't have any error; False otherwise.
      */
     [[nodiscard]] bool prologue(uint16_t slaveAddress);
 
@@ -155,6 +160,7 @@ private:
      * or ERR). This method shuould be called in a block where interrupts are
      * disabled; handles the waiting and yielding and the management of the
      * flags for the interrupts.
+     * @return True if waken up by an event, false if an error occurred.
      */
     inline bool IRQwaitForRegisterChange(
         miosix::FastInterruptDisableLock &dLock);
@@ -163,7 +169,6 @@ private:
      * @brief This function has the logic to wake up and reschedule the thread
      * if it has a higher priority with relation to the one in current
      * execution.
-     * @warning This function should only be called by interrupts.
      */
     inline void IRQwakeUpWaitingThread();
 
@@ -173,8 +178,8 @@ private:
     IRQn_Type irqnErr;
     const Speed speed;            ///< Baudrate of the serial communication
     const Addressing addressing;  ///< Addressing mode of the device
-    miosix::GpioPin scl;
-    miosix::GpioPin sda;
+    miosix::GpioPin scl;          ///< GpioPin of the serial clock pin
+    miosix::GpioPin sda;          ///< GpioPin of the serial data pin
 
     bool error       = false;  ///< Flag that tells if an error occurred
     bool lockedState = false;  ///< Flag for locked state detection

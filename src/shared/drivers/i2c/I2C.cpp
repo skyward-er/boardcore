@@ -48,7 +48,7 @@ bool I2C::readRegister(uint16_t slaveAddress, const uint8_t registerAddress,
                        uint8_t &registerContent)
 {
     i2c.flushBus();
-    return i2c.write(slaveAddress, &registerAddress, 1, true) &&
+    return i2c.write(slaveAddress, &registerAddress, 1, false) &&
            i2c.read(slaveAddress, &registerContent, 1);
 }
 
