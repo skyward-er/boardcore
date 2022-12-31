@@ -86,7 +86,8 @@ bool i2cDriver(I2C &i2c, I2CSensor sensor)
     buffer = 0;
 
     // reset the sensor and then read the whoami
-    return i2c.write(sensor.addressSensor, sensor.softReset, 2) &&
+    return i2c.probe(sensor.addressSensor) &&
+           i2c.write(sensor.addressSensor, sensor.softReset, 2) &&
            i2c.readRegister(sensor.addressSensor, sensor.whoamiRegister,
                             buffer) &&
            buffer == sensor.whoamiContent;
@@ -96,11 +97,11 @@ int main()
 {
     int nRepeat = 50;
 
-    I2C i2c(I2C1, I2CDriver::Speed::STANDARD, I2CDriver::Addressing::BIT7,
-            i1scl2::getPin(), i1sda2::getPin());
-
     for (;;)
     {
+        SyncedI2C i2c(I2C1, I2CDriver::Speed::FAST, I2CDriver::Addressing::BIT7,
+                      i1scl2::getPin(), i1sda2::getPin());
+
         // resetting status of read sensors
         bool statusOLED = true;
         bool statusBMP  = true;

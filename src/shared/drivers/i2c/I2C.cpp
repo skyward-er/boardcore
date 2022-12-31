@@ -52,6 +52,12 @@ bool I2C::readRegister(uint16_t slaveAddress, const uint8_t registerAddress,
            i2c.read(slaveAddress, &registerContent, 1);
 }
 
+bool I2C::probe(uint16_t slaveAddress)
+{
+    i2c.flushBus();
+    return i2c.read(slaveAddress, nullptr, 0);
+}
+
 SyncedI2C::SyncedI2C(I2C_TypeDef *i2c, I2CDriver::Speed speed,
                      I2CDriver::Addressing addressing, miosix::GpioPin scl,
                      miosix::GpioPin sda)
@@ -62,13 +68,13 @@ SyncedI2C::SyncedI2C(I2C_TypeDef *i2c, I2CDriver::Speed speed,
 bool SyncedI2C::read(uint16_t slaveAddress, void *buffer, size_t nBytes)
 {
     miosix::Lock<miosix::FastMutex> lock(mutex);
-    return i2c.read(slaveAddress, buffer, nBytes);
+    return I2C::read(slaveAddress, buffer, nBytes);
 }
 
 bool SyncedI2C::write(uint16_t slaveAddress, const void *buffer, size_t nBytes)
 {
     miosix::Lock<miosix::FastMutex> lock(mutex);
-    return i2c.write(slaveAddress, buffer, nBytes);
+    return I2C::write(slaveAddress, buffer, nBytes);
 }
 
 bool SyncedI2C::readRegister(uint16_t slaveAddress,
@@ -76,8 +82,13 @@ bool SyncedI2C::readRegister(uint16_t slaveAddress,
                              uint8_t registerContent)
 {
     miosix::Lock<miosix::FastMutex> lock(mutex);
-    return i2c.write(slaveAddress, &registerAddress, 1, false) &&
-           i2c.read(slaveAddress, &registerContent, 1);
+    return I2C::readRegister(slaveAddress, registerAddress, registerContent);
+}
+
+bool SyncedI2C::probe(uint16_t slaveAddress)
+{
+    miosix::Lock<miosix::FastMutex> lock(mutex);
+    return I2C::probe(slaveAddress);
 }
 
 }  // namespace Boardcore

@@ -93,6 +93,14 @@ public:
                                     const uint8_t registerAddress,
                                     uint8_t &registerContent);
 
+    /**
+     * @brief Non blocking operation to check if a slave is available.
+     * @warning Check always if the operation succeeded or not!
+     * @param slaveAddress address (not shifted!) of the slave to probe.
+     * @returns true if the device is available, false otherwise.
+     */
+    [[nodiscard]] bool probe(uint16_t slaveAddress);
+
 protected:
     I2CDriver i2c;  ///< Instance of I2C low-level driver
 };
@@ -158,6 +166,15 @@ public:
     [[nodiscard]] bool readRegister(uint16_t slaveAddress,
                                     const uint8_t registerAddress,
                                     uint8_t registerContent);
+
+    /**
+     * @brief Check if a slave is available. This method could have to wait that
+     * no other thread is trying to do some operation on the bus.
+     * @warning Check always if the operation succeeded or not!
+     * @param slaveAddress address (not shifted!) of the slave to probe.
+     * @returns true if the device is available, false otherwise.
+     */
+    [[nodiscard]] bool probe(uint16_t slaveAddress);
 
 private:
     miosix::FastMutex mutex;  ///< mutex for rx/tx
