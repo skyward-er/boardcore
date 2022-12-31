@@ -388,7 +388,7 @@ bool I2CDriver::read(uint16_t slaveAddress, void *buffer, size_t nBytes)
     }
 
     // Disabling the generation of the ACK if reading only 1 byte
-    if (nBytes == 1)
+    if (nBytes <= 1)
     {
         i2c->CR1 &= ~I2C_CR1_ACK;
     }
