@@ -68,42 +68,43 @@ public:
 
     /**
      * @brief Constructor for the I2C low-level driver.
-     * @param i2c structure that represents the I2C peripheral
-     * @param speed the speed mode of the I2C communication
-     * @param addressing The addressing mode used in the I2C communication
-     * @param scl Serial clock GpioPin of the relative I2C peripheral
-     * @param sda Serial data GpioPin of the relative I2C peripheral
+     *
+     * @param i2c Structure that represents the I2C peripheral.
+     * @param speed The speed mode of the I2C communication.
+     * @param addressing The addressing mode used in the I2C communication.
+     * @param scl Serial clock GpioPin of the relative I2C peripheral.
+     * @param sda Serial data GpioPin of the relative I2C peripheral.
      */
     I2CDriver(I2C_TypeDef *i2c, Speed speed, Addressing addressing,
               miosix::GpioPin scl, miosix::GpioPin sda);
 
     /**
-     * @brief Deconstructor. Disables the peripheral, the interrupts in the NVIC
-     * and the clock of the peripheral.
+     * @brief Disables the peripheral, the interrupts in the NVIC and the
+     * peripheral's clock.
      */
     ~I2CDriver();
 
     /**
      * @brief Non blocking read operation to read nBytes. In case of an error
      * during the communication, this method returns false immediately.
+     *
      * @warning Check always if the operation succeeded or not!
-     * @param slaveAddress address (not shifted!) of the slave to communicate
-     * with.
-     * @param buffer Data buffer where to store the data read.
-     * @param nBytes number of bytes to read.
-     * @return true if the read is successful, false otherwise.
+     * @param slaveAddress Address (not shifted!) of the slave.
+     * @param buffer Data buffer where to store the data read from the bus.
+     * @param nBytes Number of bytes to read.
+     * @return True if the read is successful, false otherwise.
      */
     [[nodiscard]] bool read(uint16_t slaveAddress, void *buffer, size_t nBytes);
 
     /**
      * @brief Non blocking write operation to write nBytes. In case of an error
      * during the communication, this method returns false immediately.
+     *
      * @warning Check always if the operation succeeded or not!
-     * @param slaveAddress address (not shifted!) of the slave to communicate
-     * with.
+     * @param slaveAddress Address (not shifted!) of the slave.
      * @param buffer Data buffer where to read the data to send.
      * @param nBytes number of bytes to send.
-     * @param generateStop flag for the Stop condition generation.
+     * @param generateStop flag for the stop condition generation.
      * @return true if the write is successful, false otherwise.
      */
     [[nodiscard]] bool write(uint16_t slaveAddress, const void *buffer,
@@ -111,6 +112,7 @@ public:
 
     /**
      * @brief Performs the recovery from the locked state if necessary.
+     *
      * It tries to recover from the locked state forcing (changing the mode of
      * the clock pin) N_SCL_BITBANG clock cycles and reinitializing the
      * peripheral. It usually takes less than 200us for 16 clocks forced in
@@ -119,19 +121,20 @@ public:
     void flushBus();
 
     /**
-     * @brief Method that handles the interrupt for events of the specific
-     * peripheral. It just disables the interrupts of the peripheral and wakes
-     * the thread up.
+     * @brief Handles the interrupt for events of the specific peripheral.
+     *
+     * It just disables the interrupts of the peripheral and wakes the thread
+     * up.
      * @warning This function should only be called by interrupts. No user code
      * should call this method.
      */
     void IRQhandleInterrupt();
 
     /**
-     * @brief Method that handles the interrupt for the errors in the specific
-     * peripheral. It disables the interrupts of the peripheral, wakes
-     * the thread up, sets the "error" software flag and resets the error flags
-     * in the register.
+     * @brief Handles the interrupt for the errors in the specific peripheral.
+     *
+     * It disables the interrupts of the peripheral, wakes the thread up, sets
+     * the "error" software flag and resets the error flags in the register.
      * @warning This function should only be called by interrupts. No user code
      * should call this method.
      */
@@ -139,27 +142,30 @@ public:
 
 private:
     /**
-     * @brief Initializes the peripheral enabling his clock and sets up
-     * various parameters in the peripheral. Safe to call also after init has
-     * already been initialized in order to re-initialize the peripheral.
+     * @brief Enables the peripheral clock and sets up various parameters.
+     *
+     * Safe to call multiple times in order to re-initialize the peripheral.
      */
     void init();
 
     /**
-     * @brief Prologue of any read/write operation in Master mode. It also
-     * detects locked states; in this case sets the lockedState flag to true.
-     * Check always if the operation succeeded or not!
-     * @param slaveAddress address (not shifted!) of the slave to communicate
-     * with.
+     * @brief Prologue of any read/write operation in master mode.
+     *
+     * It also detects locked states; in this case sets the lockedState flag to
+     * true. Check always if the operation succeeded or not!
+     * @param slaveAddress Address (not shifted!) of the slave.
      * @return True if prologue didn't have any error; False otherwise.
      */
     [[nodiscard]] bool prologue(uint16_t slaveAddress);
 
     /**
      * @brief This waits until the thread isn't waken up by an I2C interrupt (EV
-     * or ERR). This method shuould be called in a block where interrupts are
-     * disabled; handles the waiting and yielding and the management of the
-     * flags for the interrupts.
+     * or ERR).
+     *
+     * It handles the waiting and yielding and the management of the flags for
+     * the interrupts.
+     * @warning This method should be called in a block where interrupts are
+     * disabled.
      * @return True if waken up by an event, false if an error occurred.
      */
     inline bool IRQwaitForRegisterChange(

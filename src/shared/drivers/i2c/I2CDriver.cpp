@@ -226,6 +226,7 @@ void __attribute__((used)) I2C4errHandlerImpl()
 
 namespace Boardcore
 {
+
 I2CDriver::I2CDriver(I2C_TypeDef *i2c, Speed speed, Addressing addressing,
                      miosix::GpioPin scl, miosix::GpioPin sda)
     : i2c(i2c), speed(speed), addressing(addressing), scl(scl), sda(sda)
@@ -262,7 +263,7 @@ I2CDriver::I2CDriver(I2C_TypeDef *i2c, Speed speed, Addressing addressing,
             break;
 #endif
         default:
-            // checking that the peripheral is present in this architecture
+            // Checking that the peripheral is present in this architecture
             D(assert(false &&
                      "I2C peripheral not present in this architecture"));
             break;
@@ -277,8 +278,7 @@ I2CDriver::I2CDriver(I2C_TypeDef *i2c, Speed speed, Addressing addressing,
         sda.mode(miosix::Mode::ALTERNATE_OD);
     }
 
-    // Checking that this parcticular I2C port hasn't been already
-    // instantiated
+    // Checking that this particular I2C port hasn't been already instantiated
     D(assert(id > 0));
     D(assert(ports[id - 1] == nullptr));
 
@@ -287,7 +287,7 @@ I2CDriver::I2CDriver(I2C_TypeDef *i2c, Speed speed, Addressing addressing,
     // Add to the array of i2c peripherals so that the interrupts can see it
     ports[id - 1] = this;
 
-    // Enabling the interrupts (Ev and Err) in the NVIC for the relative i2c
+    // Enabling the interrupts (Ev and Err) in the NVIC
     NVIC_SetPriority(irqnEv, 15);
     NVIC_ClearPendingIRQ(irqnEv);
     NVIC_EnableIRQ(irqnEv);
@@ -298,11 +298,10 @@ I2CDriver::I2CDriver(I2C_TypeDef *i2c, Speed speed, Addressing addressing,
 
 I2CDriver::~I2CDriver()
 {
-    // removing the relative i2c port from the array
+    // Removing the relative i2c port from the array
     ports[id - 1] = nullptr;
 
-    // Disabling the interrupts (Ev and Err) in the NVIC for the relative
-    // i2c
+    // Disabling the interrupts (Ev and Err) in the NVIC
     NVIC_DisableIRQ(irqnEv);
     NVIC_DisableIRQ(irqnErr);
 
@@ -315,22 +314,21 @@ I2CDriver::~I2CDriver()
 
 void I2CDriver::init()
 {
-    // Enabling the peripheral on the right APB
+    // Enabling the peripheral's clock
     ClockUtils::enablePeripheralClock(i2c);
 
     // Assuring that the peripheral is disabled
     i2c->CR1 = 0;
 
-    /* setting the peripheral input clock */
     // Retrieving the frequency of the APB relative to the I2C peripheral
     // [MHz] (I2C peripherals are always connected to APB1, Low speed bus)
     uint32_t f{ClockUtils::getAPBPeripheralsClock(ClockUtils::APB::APB1) /
                1000000};
 
-    // frequency higher than 50MHz not allowed by I2C peripheral
+    // Frequency higher than 50MHz not allowed by I2C peripheral
     D(assert(f <= 50));
 
-    // frequency < 2MHz in standard mode or < 4MHz in fast mode not allowed
+    // Frequency < 2MHz in standard mode or < 4MHz in fast mode not allowed
     D(assert((speed == STANDARD && f >= 2) || (speed == FAST && f >= 4)));
 
     // Resetting the I2C peripheral before setting the registers
@@ -345,22 +343,22 @@ void I2CDriver::init()
     // Configuring the Clock Control Register
     if (speed == Speed::STANDARD)
     {
-        // if STANDARD mode, this is the divider to the peripheral clock to
-        // reach the wanted frequency; It's divided by 2 because in reality
+        // If STANDARD mode, this is the divider to the peripheral clock to
+        // reach the wanted frequency. It's divided by 2 because in reality
         // it uses this value to calculate the time that the clock needs to
         // be in the "set" state. [* 1000 KHz / (100 KHz * 2) = *5]
-        i2c->CCR = f * 5;  // setting the CCR bits (implicit Standard mode)
+        i2c->CCR = f * 5;  // Setting the CCR bits (implicit Standard mode)
     }
     else
     {
-        // [WARNING] hardcocded to use DUTY = 0
-        i2c->CCR = I2C_CCR_FS |  // selecting Fast mode
-                   f * 5 / 6;    // setting the CCR bits
+        // [WARNING] Hardcoded to use DUTY = 0
+        i2c->CCR = I2C_CCR_FS |  // Selecting Fast mode
+                   f * 5 / 6;    // Setting the CCR bits
 
-        // for DUTY = 1
-        // i2c->CCR = I2C_CCR_FS |    // selecting Fast mode
-        //            I2C_CCR_DUTY |  // selecting dutycycle of 9 - 16
-        //            f * 2 / 5;      // setting the CCR bits (f * 10 / 25)
+        // For DUTY = 1
+        // i2c->CCR = I2C_CCR_FS |    // Selecting Fast mode
+        //            I2C_CCR_DUTY |  // Selecting duty cycle of 9 - 16
+        //            f * 2 / 5;      // Setting the CCR bits (f * 10 / 25)
     }
 
     // Configuring the TRISE
@@ -393,13 +391,13 @@ bool I2CDriver::read(uint16_t slaveAddress, void *buffer, size_t nBytes)
         i2c->CR1 &= ~I2C_CR1_ACK;
     }
 
-    // reading the nBytes
+    // Reading the nBytes
     for (size_t i = 0; i < nBytes; i++)
     {
         {
             miosix::FastInterruptDisableLock dLock;
 
-            // waiting for the reception of another byte
+            // Waiting for the reception of another byte
             if (!IRQwaitForRegisterChange(dLock) || !(i2c->SR1 & I2C_SR1_RXNE))
             {
                 i2c->CR1 |= I2C_CR1_STOP;
@@ -407,14 +405,14 @@ bool I2CDriver::read(uint16_t slaveAddress, void *buffer, size_t nBytes)
             }
         }
 
-        // checking if a byte has been lost
+        // Checking if a byte has been lost
         if (i2c->SR1 & I2C_SR1_BTF)
             ;
 
         buff[i] = i2c->DR;
 
-        // clearing the ACK flag in order to send a NACK on the last byte
-        // that will be read
+        // Clearing the ACK flag in order to send a NACK on the last byte that
+        // will be read
         if (i == nBytes - 2)
         {
             i2c->CR1 &= ~I2C_CR1_ACK;
@@ -438,13 +436,13 @@ bool I2CDriver::write(uint16_t slaveAddress, const void *buffer, size_t nBytes,
         return false;
     }
 
-    // sending the nBytes
+    // Sending the nBytes
     for (size_t i = 0; i < nBytes; i++)
     {
         miosix::FastInterruptDisableLock dLock;
         i2c->DR = buff[i];
 
-        // waiting for the sending of the byte
+        // Waiting for the sending of the byte
         if (!IRQwaitForRegisterChange(dLock) || !(i2c->SR1 & I2C_SR1_TXE))
         {
             i2c->CR1 |= I2C_CR1_STOP;
@@ -452,7 +450,7 @@ bool I2CDriver::write(uint16_t slaveAddress, const void *buffer, size_t nBytes,
         }
     }
 
-    // if we are on the last byte, generate the stop condition if we have to end
+    // If we are on the last byte, generate the stop condition if we have to end
     // the communication
     if (generateStop)
     {
@@ -469,8 +467,7 @@ bool I2CDriver::write(uint16_t slaveAddress, const void *buffer, size_t nBytes,
 
 bool I2CDriver::prologue(uint16_t slaveAddress)
 {
-    // if already detected a locked state return directly without loosing
-    // time
+    // If already detected a locked state return directly without loosing time
     if (lockedState)
     {
         return false;
@@ -482,7 +479,7 @@ bool I2CDriver::prologue(uint16_t slaveAddress)
         for (; (i < MAX_N_POLLING) && (i2c->SR2 & I2C_SR2_BUSY); ++i)
             ;
 
-        // locked state detected after N polling cycles
+        // Locked state detected after N polling cycles
         if (i == MAX_N_POLLING)
         {
             lockedState = true;
@@ -524,7 +521,7 @@ bool I2CDriver::prologue(uint16_t slaveAddress)
 
             reStarting = false;
 
-            // restart phase failed after N cycles
+            // Restart phase failed after N cycles
             if (i == MAX_N_POLLING)
             {
                 i2c->CR1 |= I2C_CR1_STOP;
@@ -541,7 +538,7 @@ bool I2CDriver::prologue(uint16_t slaveAddress)
     {
         miosix::FastInterruptDisableLock dLock;
 
-        // setting the LSB if we want to enter receiver mode
+        // Setting the LSB if we want to enter receiver mode
         i2c->DR = slaveAddress;
 
         // Checking if a slave matched his address
@@ -559,7 +556,8 @@ bool I2CDriver::prologue(uint16_t slaveAddress)
 
         {
             miosix::FastInterruptDisableLock dLock;
-            // sending header
+
+            // Sending header
             i2c->DR = header;
 
             // Checking if the header has been sent
@@ -572,7 +570,8 @@ bool I2CDriver::prologue(uint16_t slaveAddress)
 
         {
             miosix::FastInterruptDisableLock dLock;
-            // sending address ((1 << 8) - 1) = 0xff
+
+            // Sending address ((1 << 8) - 1) = 0xff
             i2c->DR = (slaveAddress & 0xff);
 
             // Checking if a slave matched his address
@@ -583,7 +582,7 @@ bool I2CDriver::prologue(uint16_t slaveAddress)
             }
         }
 
-        // if we want to enter in receiver mode
+        // If we want to enter in receiver mode
         if (slaveAddress & I2C_ADDRESS_READ)
         {
             // Checking if the peripheral is in Master mode (clearing ADDR
@@ -599,7 +598,7 @@ bool I2CDriver::prologue(uint16_t slaveAddress)
                 // Repeated start
                 i2c->CR1 |= I2C_CR1_START;
 
-                // waiting for reception of start signal
+                // Waiting for reception of start signal
                 if (!IRQwaitForRegisterChange(dLock) ||
                     !(i2c->SR1 & I2C_SR1_SB))
                 {
@@ -608,14 +607,14 @@ bool I2CDriver::prologue(uint16_t slaveAddress)
                 }
             }
 
-            // sending modified header
+            // Sending modified header
             i2c->DR = header | I2C_ADDRESS_READ;
         }
     }
 
-    // clearing ADDR flag
-    if (!(i2c->SR2 & I2C_SR2_BUSY) ||  // channel should be busy
-        !(i2c->SR2 & I2C_SR2_MSL) ||  // the peripheral should be in master mode
+    // Clearing ADDR flag
+    if (!(i2c->SR2 & I2C_SR2_BUSY) ||  // Channel should be busy
+        !(i2c->SR2 & I2C_SR2_MSL) ||  // The peripheral should be in master mode
         !((i2c->SR2 & I2C_SR2_TRA) !=
           (slaveAddress & I2C_ADDRESS_READ)))  // Tx or Rx mode
     {
@@ -634,11 +633,12 @@ void I2CDriver::flushBus()
         return;
     }
 
-    // set the period of the bit-banged clock
+    // Set the period of the bit-banged clock
     uint8_t toggleDelay = (speed == Speed::STANDARD ? 5 : 2);
 
     {
         miosix::FastInterruptDisableLock dLock;
+
         // Recovery from the locked state due to a stuck Slave.
         // We bit-bang 16 clocks on the scl line in order to restore pending
         // packets of the slaves.
@@ -655,7 +655,8 @@ void I2CDriver::flushBus()
 
     {
         miosix::FastInterruptDisableLock dLock;
-        // we set again the scl pin to the correct Alternate function
+
+        // We set again the scl pin to the correct Alternate function
         scl.mode(miosix::Mode::ALTERNATE_OD);
         scl.alternateFunction(I2C_PIN_ALTERNATE_FUNCTION);
     }
@@ -663,7 +664,7 @@ void I2CDriver::flushBus()
     // Reinitializing the peripheral in order to avoid inconsistent state
     init();
 
-    // assuming the locked state is solved. If it is not the case, only when
+    // Assuming the locked state is solved. If it is not the case, only when
     // it will be the case it will be detected again
     lockedState = false;
 
@@ -711,7 +712,7 @@ inline void I2CDriver::IRQwakeUpWaitingThread()
 void I2CDriver::IRQhandleInterrupt()
 {
 
-    // disabling the regeneration of the interrupt; if we don't disable the
+    // Disabling the regeneration of the interrupt; if we don't disable the
     // interrupts we will enter in an infinite loop of interrupts
     i2c->CR2 &= ~(I2C_CR2_ITEVTEN | I2C_CR2_ITERREN);
 
@@ -721,15 +722,15 @@ void I2CDriver::IRQhandleInterrupt()
 
 void I2CDriver::IRQhandleErrInterrupt()
 {
-    // disabling the regeneration of the interrupt; if we don't disable
+    // Disabling the regeneration of the interrupt; if we don't disable
     // the interrupts we will enter in an infinite loop of interrupts
     i2c->CR2 &= ~(I2C_CR2_ITEVTEN | I2C_CR2_ITERREN);
     error = true;
 
-    // clearing all the errors in the register
+    // Clearing all the errors in the register
     i2c->SR1 = 0;
 
-    // waking up the waiting thread
+    // Waking up the waiting thread
     IRQwakeUpWaitingThread();
 }
 

@@ -29,7 +29,7 @@ namespace Boardcore
  *
  * This driver is NOT thread safe. It implements high level functionalities such
  * as:
- * - automatic bus recovery before each operation.
+ * - Automatic bus recovery before each operation;
  * - Method in order to read a one-byte register without issuing a stop
  * condition (unique transaction).
  */
@@ -38,8 +38,9 @@ class I2C
 public:
     /**
      * @brief Constructor for the I2C high-level driver.
-     * @param i2c structure that represents the I2C peripheral
-     * @param speed the speed mode of the I2C communication
+     *
+     * @param i2c Structure that represents the I2C peripheral
+     * @param speed The speed mode of the I2C communication
      * @param addressing The addressing mode used in the I2C communication
      * @param scl Serial clock GpioPin of the relative I2C peripheral
      * @param sda Serial data GpioPin of the relative I2C peripheral
@@ -49,45 +50,45 @@ public:
         miosix::GpioPin sda);
 
     /**
-     * @brief Non blocking read operation to read nBytes. This method, if
-     * necessary, flushes the bus before the read operation is performed. In
-     * case of an error during the communication, this method returns false
-     * immediately.
+     * @brief Non blocking read operation to read nBytes.
+     *
+     * This method, if necessary, flushes the bus before the read operation is
+     * performed. In case of an error during the communication, this method
+     * returns false immediately.
      * @warning Check always if the operation succeeded or not!
-     * @param slaveAddress address (not shifted!) of the slave to communicate
-     * with.
+     * @param slaveAddress Address (not shifted!) of the slave.
      * @param buffer Data buffer where to store the data read.
-     * @param nBytes number of bytes to read.
-     * @returns true if the read is successful, false otherwise.
+     * @param nBytes Number of bytes to read.
+     * @returns True if the read is successful, false otherwise.
      */
     [[nodiscard]] bool read(uint16_t slaveAddress, void *buffer, size_t nBytes);
 
     /**
-     * @brief Non blocking write operation to write nBytes. This method, if
-     * necessary, flushes the bus before the read operation is performed. In
-     * case of an error during the communication, this method returns false
-     * immediately.
+     * @brief Non blocking write operation to write nBytes.
+     *
+     * This method, if necessary, flushes the bus before the read operation is
+     * performed. In case of an error during the communication, this method
+     * returns false immediately.
      * @warning Check always if the operation succeeded or not!
-     * @param slaveAddress address (not shifted!) of the slave to communicate
-     * with.
+     * @param slaveAddress Address (not shifted!) of the slave.
      * @param buffer Data buffer where to read the data to send.
-     * @param nBytes number of bytes to send.
-     * @returns true if the write is successful, false otherwise.
+     * @param nBytes Number of bytes to send.
+     * @returns True if the write is successful, false otherwise.
      */
     [[nodiscard]] bool write(uint16_t slaveAddress, const void *buffer,
                              size_t nBytes);
 
     /**
-     * @brief Non blocking operation to read a 1-byte register from the device.
+     * @brief Non blocking operation to read a 1-byte register from a slave.
+     *
      * This method, if necessary, flushes the bus before the read operation is
      * performed. In case of an error during the communication, this method
      * returns false immediately.
      * @warning Check always if the operation succeeded or not!
-     * @param slaveAddress address (not shifted!) of the slave to communicate
-     * with.
-     * @param registerAddress byte that represents the address of the register
-     * @param registerContent where to store the content of the register
-     * @returns true if the write is successful, false otherwise.
+     * @param slaveAddress Address (not shifted!) of the slave.
+     * @param registerAddress Byte that represents the address of the register
+     * @param registerContent Where to store the content of the register
+     * @returns True if the write is successful, false otherwise.
      */
     [[nodiscard]] bool readRegister(uint16_t slaveAddress,
                                     const uint8_t registerAddress,
@@ -95,9 +96,10 @@ public:
 
     /**
      * @brief Non blocking operation to check if a slave is available.
+     *
      * @warning Check always if the operation succeeded or not!
-     * @param slaveAddress address (not shifted!) of the slave to probe.
-     * @returns true if the device is available, false otherwise.
+     * @param slaveAddress Address (not shifted!) of the slave to probe.
+     * @returns True if the device is available, false otherwise.
      */
     [[nodiscard]] bool probe(uint16_t slaveAddress);
 
@@ -113,63 +115,67 @@ class SyncedI2C : public I2C
 public:
     /**
      * @brief Constructor for the synced I2C high-level driver.
-     * @param i2c structure that represents the I2C peripheral
-     * @param speed the speed mode of the I2C communication
-     * @param addressing The addressing mode used in the I2C communication
-     * @param scl Serial clock GpioPin of the relative I2C peripheral
-     * @param sda Serial data GpioPin of the relative I2C peripheral
+     *
+     * @param i2c Structure that represents the I2C peripheral.
+     * @param speed The speed mode of the I2C communication.
+     * @param addressing The addressing mode used in the I2C communication.
+     * @param scl Serial clock GpioPin of the relative I2C peripheral.
+     * @param sda Serial data GpioPin of the relative I2C peripheral.
      */
     SyncedI2C(I2C_TypeDef *i2c, I2CDriver::Speed speed,
               I2CDriver::Addressing addressing, miosix::GpioPin scl,
               miosix::GpioPin sda);
 
     /**
-     * @brief Read operation to read nBytes. This method could have to wait that
-     * no other thread is trying to do some operation on the bus. In case of an
-     * error during the communication, this method returns false immediately.
+     * @brief Read operation to read nBytes.
+     *
+     * This method could have to wait that no other thread is trying to do some
+     * operation on the bus. In case of an error during the communication, this
+     * method returns false immediately.
      * @warning Check always if the operation succeeded or not!
-     * @param slaveAddress address (not shifted!) of the slave to communicate
-     * with.
+     * @param slaveAddress Address (not shifted!) of the slave.
      * @param buffer Data buffer where to store the data read.
-     * @param nBytes number of bytes to read.
-     * @returns true if the read is successful, false otherwise.
+     * @param nBytes Number of bytes to read.
+     * @returns True if the read is successful, false otherwise.
      */
     [[nodiscard]] bool read(uint16_t slaveAddress, void *buffer, size_t nBytes);
 
     /**
-     * @brief Write operation to write nBytes. This method could have to wait
-     * that no other thread is trying to do some operation on the bus. In case
-     * of an error during the communication, this method returns false
-     * immediately.
+     * @brief Write operation to write nBytes.
+     *
+     * This method could have to wait that no other thread is trying to do some
+     * operation on the bus. In case of an error during the communication, this
+     * method returns false immediately.
      * @warning Check always if the operation succeeded or not!
-     * @param slaveAddress address (not shifted!) of the slave to communicate
-     * with.
+     * @param slaveAddress Address (not shifted!) of the slave.
      * @param buffer Data buffer where to read the data to send.
-     * @param nBytes number of bytes to send.
-     * @returns true if the write is successful, false otherwise.
+     * @param nBytes Number of bytes to send.
+     * @returns True if the write is successful, false otherwise.
      */
     [[nodiscard]] bool write(uint16_t slaveAddress, const void *buffer,
                              size_t nBytes);
 
     /**
-     * @brief Read a one-byte register from the device. This method could have
-     * to wait that no other thread is trying to do some operation on the bus.
-     * In case of an error during the communication, this method returns false
-     * immediately.
+     * @brief Read a one-byte register from the device.
+     *
+     * This method could have to wait that no other thread is trying to do some
+     * operation on the bus. In case of an error during the communication, this
+     * method returns false immediately.
      * @warning Check always if the operation succeeded or not!
-     * @param slaveAddress address (not shifted!) of the slave to communicate
-     * with.
-     * @param registerAddress byte that represents the address of the register
-     * @param registerContent where to store the content of the register
-     * @returns true if the write is successful, false otherwise.
+     * @param slaveAddress Address (not shifted!) of the slave.
+     * @param registerAddress Byte that represents the address of the register.
+     * @param registerContent Where to store the content of the register.
+     * @returns True if the write is successful, false otherwise.
      */
     [[nodiscard]] bool readRegister(uint16_t slaveAddress,
                                     const uint8_t registerAddress,
                                     uint8_t registerContent);
 
     /**
-     * @brief Check if a slave is available. This method could have to wait that
-     * no other thread is trying to do some operation on the bus.
+     * @brief Check if a slave is available.
+     *
+     * This method could have to wait that no other thread is trying to do some
+     * operation on the bus.
      * @warning Check always if the operation succeeded or not!
      * @param slaveAddress address (not shifted!) of the slave to probe.
      * @returns true if the device is available, false otherwise.
@@ -177,7 +183,7 @@ public:
     [[nodiscard]] bool probe(uint16_t slaveAddress);
 
 private:
-    miosix::FastMutex mutex;  ///< mutex for rx/tx
+    miosix::FastMutex mutex;  ///< Mutex for rx/tx
 };
 
 }  // namespace Boardcore
