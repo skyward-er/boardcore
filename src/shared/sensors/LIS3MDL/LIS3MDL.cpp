@@ -151,7 +151,7 @@ bool LIS3MDL::applyConfig(Config config)
     currDiv = 0;
 
     // CTRL_REG1
-    if (config.enableTemperature)
+    if (config.temperatureDivider != 0)
     {
         reg = ENABLE_TEMPERATURE;
     }
@@ -186,36 +186,6 @@ bool LIS3MDL::applyConfig(Config config)
 
     spi.writeRegister(CTRL_REG5, reg);
     err |= spi.readRegister(CTRL_REG5) != reg;
-
-    // INT_CFG
-    if (config.enableInterrupt[0])
-        reg = ENABLE_INT_X;
-    else
-        reg = 0;
-
-    if (config.enableInterrupt[1])
-        reg |= ENABLE_INT_Y;
-    if (config.enableInterrupt[2])
-        reg |= ENABLE_INT_Z;
-
-    // The interrupt of at least one axis is enabled
-    if (reg)
-        reg |= ENABLE_INT_PIN;
-
-    reg |= 0x08;
-    spi.writeRegister(INT_CFG, reg);
-    err |= spi.readRegister(INT_CFG) != reg;
-
-    // INT_THS
-    uint16_t val = static_cast<uint16_t>(std::abs(config.threshold / mUnit));
-    reg          = static_cast<uint8_t>(0xff & val);
-    spi.writeRegister(INT_THS_L, reg);
-    err |= spi.readRegister(INT_THS_L) != reg;
-
-    reg = static_cast<uint8_t>(val >> 8);
-    reg &= 0x7f;  // Remove MSB (according to the datasheet, it must be zero)
-    spi.writeRegister(INT_THS_H, reg);
-    err |= spi.readRegister(INT_THS_H) != reg;
 
     // Set mUnit according to scale
     updateUnit(config.scale);
@@ -253,7 +223,7 @@ LIS3MDLData LIS3MDL::sampleImpl()
     int16_t val;
     LIS3MDLData newData{};
 
-    if (mConfig.enableTemperature)
+    if (mConfig.temperatureDivider != 0)
     {
         if (currDiv == 0)
         {

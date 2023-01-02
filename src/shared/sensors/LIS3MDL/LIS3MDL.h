@@ -46,19 +46,19 @@ public:
      */
     enum ODR : uint8_t
     {
-        ODR_0_625_HZ = 0x00,  //!< 0.625 Hz
-        ODR_1_25_HZ  = 0x04,  //!<  1.25 Hz
-        ODR_2_5_HZ   = 0x08,  //!<   2.5 Hz
-        ODR_5_HZ     = 0x0c,  //!<     5 Hz
-        ODR_10_HZ    = 0x10,  //!<    10 Hz
-        ODR_20_HZ    = 0x14,  //!<    20 Hz
-        ODR_40_HZ    = 0x18,  //!<    40 Hz
-        ODR_80_HZ    = 0x1c,  //!<    80 Hz
+        ODR_0_625_HZ = 0x00,  ///< 0.625 Hz
+        ODR_1_25_HZ  = 0x04,  ///<  1.25 Hz
+        ODR_2_5_HZ   = 0x08,  ///<   2.5 Hz
+        ODR_5_HZ     = 0x0c,  ///<     5 Hz
+        ODR_10_HZ    = 0x10,  ///<    10 Hz
+        ODR_20_HZ    = 0x14,  ///<    20 Hz
+        ODR_40_HZ    = 0x18,  ///<    40 Hz
+        ODR_80_HZ    = 0x1c,  ///<    80 Hz
 
-        ODR_155_HZ  = 0x62,  //!<    155 Hz
-        ODR_300_HZ  = 0x42,  //!<    300 Hz
-        ODR_560_HZ  = 0x22,  //!<    560 Hz
-        ODR_1000_HZ = 0x02,  //!<   1000 Hz
+        ODR_155_HZ  = 0x62,  ///<    155 Hz
+        ODR_300_HZ  = 0x42,  ///<    300 Hz
+        ODR_560_HZ  = 0x22,  ///<    560 Hz
+        ODR_1000_HZ = 0x02,  ///<   1000 Hz
 
         /**
          * Constant used by the driver: this bit
@@ -90,85 +90,28 @@ public:
     };
 
     /**
-     * @brief Sensor configuration
+     * @brief Sensor configuration.
      *
-     * This struct contains all the settings the user
-     * is able to modify with the help of the driver.
-     * They are applied in the constructor of LIS3MDL class
+     * This struct contains all the settings the user is able to modify with the
+     * help of the driver. They are applied in the constructor of LIS3MDL class
      * and on each call of LIS3MDL::applyConfig()
      */
     struct Config
     {
         Config() {}
 
-        /**
-         * @brief Full scale setting.
-         *
-         * @see LIS3MDL::FullScale
-         */
-        FullScale scale = FS_8_GAUSS;
-
-        /**
-         * @brief Data rate configuration
-         *
-         * Default: 40 Hz
-         *
-         * Important: if ODR is set more than 80 Hz, operative mode of x and y
-         * axis will be set accordingly.
-         *
-         * @see LIS3MDL::ODR
-         */
-        ODR odr = ODR_40_HZ;
-
-        /**
-         * @brief Operative mode for x and y axis.
-         *
-         * Note: if ODR is greater than 80 Hz, this setting will be ignored and
-         * actual operative mode will be set depending of the chosen frequency.
-         *
-         * @see LIS3MDL::OperativeMode
-         */
+        FullScale scale      = FS_8_GAUSS;
+        ODR odr              = ODR_40_HZ;
         OperativeMode xyMode = OM_ULTRA_HIGH_POWER;
+        OperativeMode zMode  = OM_ULTRA_HIGH_POWER;
 
         /**
-         * Operative mode for z axis.
+         * @brief Divide the temperature sampling rate.
          *
-         * @see LIS3MDL::OM
+         * This is used to limit the sampling of the temperature, use 0 to
+         * disable it completely.
          */
-        OperativeMode zMode = OM_ULTRA_HIGH_POWER;
-
-        /**
-         * Enables temperature sensor.
-         * Default: true
-         */
-        bool enableTemperature = true;
-
-        /**
-         * @brief Sets the value of tempDivider.
-         *
-         * With the given value you can instruct the driver to update
-         * the temperature according to a different rate.
-         * The temperature will be updated only once in `tempDivider` calls
-         * to sampleImpl(), so for example:
-         * 2 -> updated half the times,
-         * 1 -> updated every time.
-         */
-        unsigned temperatureDivider = 1;
-
-        /**
-         * @brief Enables interrupts
-         *
-         * Whether are interrupts enabled respectively on the x, y and z axis.
-         * If it is set to true on at least one axis, the interrupts will be
-         * generated otherwise, they will be completely disabled by the driver.
-         */
-        bool enableInterrupt[3] = {false, false, false};
-
-        /**
-         * Absolute value of the threshold that triggers the interrupt
-         * (expressed in gauss).
-         */
-        float threshold = 0;
+        unsigned temperatureDivider = 0;
 
         /**
          * @brief BDU setting
@@ -187,7 +130,7 @@ public:
     bool selfTest() override;
 
     /**
-     * @brief Overwrites the sensor settings.
+     * @brief Overrides the sensor settings.
      *
      * Writes a certain config to the sensor registers. This method is
      * automatically called in LIS3MDL::init() using as parameter the
