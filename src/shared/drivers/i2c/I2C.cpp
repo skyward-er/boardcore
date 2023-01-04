@@ -55,7 +55,7 @@ bool I2C::readRegister(uint16_t slaveAddress, const uint8_t registerAddress,
 bool I2C::probe(uint16_t slaveAddress)
 {
     i2c.flushBus();
-    return i2c.read(slaveAddress, nullptr, 0);
+    return i2c.write(slaveAddress, nullptr, 0);
 }
 
 SyncedI2C::SyncedI2C(I2C_TypeDef *i2c, I2CDriver::Speed speed,
