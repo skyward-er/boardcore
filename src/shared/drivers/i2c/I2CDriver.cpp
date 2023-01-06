@@ -36,9 +36,10 @@ static const int MAX_N_POLLING =
 static const int N_SCL_BITBANG =
     16;  ///< Number of clocks created for slave locked bus recovery
 static const uint8_t I2C_ADDRESS_READ  = 0x1;  ///< LSB of address to read
-static const uint8_t I2C_ADDRESS_WRITE = 0x0;  ///< LSB of address to read
+static const uint8_t I2C_ADDRESS_WRITE = 0x0;  ///< LSB of address to write
 static const uint8_t I2C_PIN_ALTERNATE_FUNCTION =
-    4;  ///< Alternate Function number of the I2C peripheral pins
+    4;             ///< Alternate Function number of the I2C peripheral pins
+static uint8_t f;  ///< APB peripheral clock frequency
 
 #ifdef I2C1
 /**
@@ -227,9 +228,8 @@ void __attribute__((used)) I2C4errHandlerImpl()
 namespace Boardcore
 {
 
-I2CDriver::I2CDriver(I2C_TypeDef *i2c, Speed speed, Addressing addressing,
-                     miosix::GpioPin scl, miosix::GpioPin sda)
-    : i2c(i2c), speed(speed), addressing(addressing), scl(scl), sda(sda)
+I2CDriver::I2CDriver(I2C_TypeDef *i2c, miosix::GpioPin scl, miosix::GpioPin sda)
+    : i2c(i2c), scl(scl), sda(sda)
 {
     // Setting the id and irqn of the right i2c peripheral
     switch (reinterpret_cast<uint32_t>(i2c))
@@ -282,6 +282,9 @@ I2CDriver::I2CDriver(I2C_TypeDef *i2c, Speed speed, Addressing addressing,
     D(assert(id > 0));
     D(assert(ports[id - 1] == nullptr));
 
+    // Enabling the peripheral's clock
+    ClockUtils::enablePeripheralClock(i2c);
+
     init();
 
     // Add to the array of i2c peripherals so that the interrupts can see it
@@ -314,34 +317,34 @@ I2CDriver::~I2CDriver()
 
 void I2CDriver::init()
 {
-    // Enabling the peripheral's clock
-    ClockUtils::enablePeripheralClock(i2c);
-
-    // Assuring that the peripheral is disabled
-    i2c->CR1 = 0;
-
-    // Retrieving the frequency of the APB relative to the I2C peripheral
-    // [MHz] (I2C peripherals are always connected to APB1, Low speed bus)
-    uint32_t f{ClockUtils::getAPBPeripheralsClock(ClockUtils::APB::APB1) /
-               1000000};
-
-    // Frequency higher than 50MHz not allowed by I2C peripheral
-    D(assert(f <= 50));
-
-    // Frequency < 2MHz in standard mode or < 4MHz in fast mode not allowed
-    D(assert((speed == STANDARD && f >= 2) || (speed == FAST && f >= 4)));
-
     // Resetting the I2C peripheral before setting the registers
     i2c->CR1 = I2C_CR1_SWRST;
     i2c->CR1 = 0;  // cppcheck-suppress redundantAssignment
+
+    // Retrieving the frequency of the APB relative to the I2C peripheral
+    // [MHz] (I2C peripherals are always connected to APB1, Low speed bus)
+    f = ClockUtils::getAPBPeripheralsClock(ClockUtils::APB::APB1) / 1000000;
+
+    // Frequency higher than 50MHz not allowed by I2C peripheral
+    D(assert(f <= 50));
 
     // Programming the input clock in order to generate correct timings +
     // enabling generation of all interrupts
     i2c->CR2 = (f & I2C_CR2_FREQ) |  // setting FREQ bits
                I2C_CR2_ITBUFEN;      // enabling interupts for rx/tx byte
+}
+
+void I2CDriver::setupPeripheral(I2CSlaveConfig slaveConfig)
+{
+    // Frequency < 2MHz in standard mode or < 4MHz in fast mode not allowed
+    D(assert((slaveConfig.speed == STANDARD && f >= 2) ||
+             (slaveConfig.speed == FAST && f >= 4)));
+
+    // Disabling the I2C peripheral before setting the registers
+    i2c->CR1 &= ~I2C_CR1_PE;
 
     // Configuring the Clock Control Register
-    if (speed == Speed::STANDARD)
+    if (slaveConfig.speed == Speed::STANDARD)
     {
         // If STANDARD mode, this is the divider to the peripheral clock to
         // reach the wanted frequency. It's divided by 2 because in reality
@@ -365,22 +368,26 @@ void I2CDriver::init()
     i2c->TRISE = (f & I2C_CR2_FREQ) + 1;
 
     // Setting the addressing mode
-    i2c->OAR1 = (addressing << 15);
+    i2c->OAR1 = (slaveConfig.addressing << 15);
 
     // Finally enabling the peripheral
     i2c->CR1 |= I2C_CR1_PE;
 }
 
-bool I2CDriver::read(uint16_t slaveAddress, void *buffer, size_t nBytes)
+bool I2CDriver::read(I2CSlaveConfig slaveConfig, void *buffer, size_t nBytes)
 {
     auto *buff = static_cast<uint8_t *>(buffer);
 
     // Enabling option to generate ACK
     i2c->CR1 |= I2C_CR1_ACK;
 
+    // Modifying the slave address to be ready to be sent
+    slaveConfig.slaveAddress =
+        (slaveConfig.slaveAddress << 1 | I2C_ADDRESS_READ);
+
     // Sending prologue when the channel isn't busy (LSB set to signal this
     // is a read)
-    if (!prologue(slaveAddress << 1 | I2C_ADDRESS_READ))
+    if (!prologue(slaveConfig))
     {
         return false;
     }
@@ -425,13 +432,17 @@ bool I2CDriver::read(uint16_t slaveAddress, void *buffer, size_t nBytes)
     return true;
 };
 
-bool I2CDriver::write(uint16_t slaveAddress, const void *buffer, size_t nBytes,
-                      bool generateStop)
+bool I2CDriver::write(I2CSlaveConfig slaveConfig, const void *buffer,
+                      size_t nBytes, bool generateStop)
 {
     auto *buff = static_cast<const uint8_t *>(buffer);
 
+    // Modifying the slave address to be ready to be sent
+    slaveConfig.slaveAddress =
+        (slaveConfig.slaveAddress << 1 | I2C_ADDRESS_WRITE);
+
     // Sending prologue when the channel isn't busy
-    if (!prologue(slaveAddress << 1 | I2C_ADDRESS_WRITE))
+    if (!prologue(slaveConfig))
     {
         return false;
     }
@@ -465,7 +476,7 @@ bool I2CDriver::write(uint16_t slaveAddress, const void *buffer, size_t nBytes,
     return true;
 };
 
-bool I2CDriver::prologue(uint16_t slaveAddress)
+bool I2CDriver::prologue(I2CSlaveConfig slaveConfig)
 {
     // If already detected a locked state return directly without loosing time
     if (lockedState)
@@ -475,6 +486,7 @@ bool I2CDriver::prologue(uint16_t slaveAddress)
 
     if (!reStarting)
     {
+        // Waiting for the bus to be clear
         uint32_t i{0};
         for (; (i < MAX_N_POLLING) && (i2c->SR2 & I2C_SR2_BUSY); ++i)
             ;
@@ -486,6 +498,10 @@ bool I2CDriver::prologue(uint16_t slaveAddress)
             LOG_ERR(logger, fmt::format("I2C{} bus locked state detected", id));
             return false;
         }
+
+        // Setting up the peripheral when the bus is clear in order to
+        // communicate in the mode wanted by the slave device
+        setupPeripheral(slaveConfig);
     }
 
     {
@@ -497,7 +513,6 @@ bool I2CDriver::prologue(uint16_t slaveAddress)
             if (!IRQwaitForRegisterChange(dLock) || !(i2c->SR1 & I2C_SR1_SB) ||
                 !(i2c->SR2 & I2C_SR2_MSL))
             {
-
                 i2c->CR1 |= I2C_CR1_STOP;
                 return false;
             }
@@ -534,12 +549,12 @@ bool I2CDriver::prologue(uint16_t slaveAddress)
     }
 
     // Sending (header + ) slave address
-    if (addressing == Addressing::BIT7)
+    if (slaveConfig.addressing == Addressing::BIT7)
     {
         miosix::FastInterruptDisableLock dLock;
 
         // Setting the LSB if we want to enter receiver mode
-        i2c->DR = slaveAddress;
+        i2c->DR = slaveConfig.slaveAddress;
 
         // Checking if a slave matched his address
         if (!IRQwaitForRegisterChange(dLock) || !(i2c->SR1 & I2C_SR1_ADDR))
@@ -552,7 +567,8 @@ bool I2CDriver::prologue(uint16_t slaveAddress)
     {
         // Header generated (composed of 11110xx0 bits with xx as the 9th
         // and 8th bits of the address)
-        const uint8_t header = 0b11110000 | ((slaveAddress >> 7) & 0b110);
+        const uint8_t header =
+            0b11110000 | ((slaveConfig.slaveAddress >> 7) & 0b110);
 
         {
             miosix::FastInterruptDisableLock dLock;
@@ -572,7 +588,7 @@ bool I2CDriver::prologue(uint16_t slaveAddress)
             miosix::FastInterruptDisableLock dLock;
 
             // Sending address ((1 << 8) - 1) = 0xff
-            i2c->DR = (slaveAddress & 0xff);
+            i2c->DR = (slaveConfig.slaveAddress & 0xff);
 
             // Checking if a slave matched his address
             if (!IRQwaitForRegisterChange(dLock) || !(i2c->SR1 & I2C_SR1_ADDR))
@@ -583,7 +599,7 @@ bool I2CDriver::prologue(uint16_t slaveAddress)
         }
 
         // If we want to enter in receiver mode
-        if (slaveAddress & I2C_ADDRESS_READ)
+        if (slaveConfig.slaveAddress & I2C_ADDRESS_READ)
         {
             // Checking if the peripheral is in Master mode (clearing ADDR
             // flag with a read on SR2 register)
@@ -616,7 +632,7 @@ bool I2CDriver::prologue(uint16_t slaveAddress)
     if (!(i2c->SR2 & I2C_SR2_BUSY) ||  // Channel should be busy
         !(i2c->SR2 & I2C_SR2_MSL) ||  // The peripheral should be in master mode
         !((i2c->SR2 & I2C_SR2_TRA) !=
-          (slaveAddress & I2C_ADDRESS_READ)))  // Tx or Rx mode
+          (slaveConfig.slaveAddress & I2C_ADDRESS_READ)))  // Tx or Rx mode
     {
         i2c->CR1 |= I2C_CR1_STOP;
         return false;
@@ -633,8 +649,8 @@ void I2CDriver::flushBus()
         return;
     }
 
-    // Set the period of the bit-banged clock
-    uint8_t toggleDelay = (speed == Speed::STANDARD ? 5 : 2);
+    // Set the period of the bit-banged clock (Default to standard mode)
+    uint8_t toggleDelay = 5;
 
     {
         miosix::FastInterruptDisableLock dLock;

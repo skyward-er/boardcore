@@ -50,6 +50,8 @@ namespace Boardcore
  * not generate a stop condition;
  * - There is a method 'flushBus' in order to check and possibly recover from a
  * locked state on the bus;
+ * - Dynamic setting of clock parameters in order to change speed or addressing
+ * mode before interacting with a device;
  */
 class I2CDriver
 {
@@ -67,16 +69,24 @@ public:
     };
 
     /**
+     * @brief Configuration struct for a slave device. This will be used for
+     * configuring the bus in order to communicate with the addressed device.
+     */
+    typedef struct
+    {
+        uint16_t slaveAddress;             ///< Slave address
+        I2CDriver::Addressing addressing;  ///< Addressing mode of the device
+        I2CDriver::Speed speed;            ///< Speed mode of the communication
+    } I2CSlaveConfig;
+
+    /**
      * @brief Constructor for the I2C low-level driver.
      *
      * @param i2c Structure that represents the I2C peripheral.
-     * @param speed The speed mode of the I2C communication.
-     * @param addressing The addressing mode used in the I2C communication.
      * @param scl Serial clock GpioPin of the relative I2C peripheral.
      * @param sda Serial data GpioPin of the relative I2C peripheral.
      */
-    I2CDriver(I2C_TypeDef *i2c, Speed speed, Addressing addressing,
-              miosix::GpioPin scl, miosix::GpioPin sda);
+    I2CDriver(I2C_TypeDef *i2c, miosix::GpioPin scl, miosix::GpioPin sda);
 
     /**
      * @brief Disables the peripheral, the interrupts in the NVIC and the
@@ -89,25 +99,26 @@ public:
      * during the communication, this method returns false immediately.
      *
      * @warning Check always if the operation succeeded or not!
-     * @param slaveAddress Address (not shifted!) of the slave.
+     * @param slaveConfig The configuration struct of the slave device.
      * @param buffer Data buffer where to store the data read from the bus.
      * @param nBytes Number of bytes to read.
      * @return True if the read is successful, false otherwise.
      */
-    [[nodiscard]] bool read(uint16_t slaveAddress, void *buffer, size_t nBytes);
+    [[nodiscard]] bool read(I2CSlaveConfig slaveConfig, void *buffer,
+                            size_t nBytes);
 
     /**
      * @brief Non blocking write operation to write nBytes. In case of an error
      * during the communication, this method returns false immediately.
      *
      * @warning Check always if the operation succeeded or not!
-     * @param slaveAddress Address (not shifted!) of the slave.
+     * @param slaveConfig The configuration struct of the slave device.
      * @param buffer Data buffer where to read the data to send.
      * @param nBytes number of bytes to send.
      * @param generateStop flag for the stop condition generation.
      * @return true if the write is successful, false otherwise.
      */
-    [[nodiscard]] bool write(uint16_t slaveAddress, const void *buffer,
+    [[nodiscard]] bool write(I2CSlaveConfig slaveConfig, const void *buffer,
                              size_t nBytes, bool generateStop = true);
 
     /**
@@ -143,20 +154,25 @@ public:
 private:
     /**
      * @brief Enables the peripheral clock and sets up various parameters.
-     *
-     * Safe to call multiple times in order to re-initialize the peripheral.
      */
     void init();
+
+    /**
+     * @brief Sets up the I2C peripheral registers in order to communicate with
+     * the speed and the addressing mode specified.
+     * @param slaveConfig The configuration struct of the slave device.
+     */
+    void setupPeripheral(I2CSlaveConfig slaveConfig);
 
     /**
      * @brief Prologue of any read/write operation in master mode.
      *
      * It also detects locked states; in this case sets the lockedState flag to
      * true. Check always if the operation succeeded or not!
-     * @param slaveAddress Address (not shifted!) of the slave.
+     * @param slaveConfig The configuration struct of the slave device.
      * @return True if prologue didn't have any error; False otherwise.
      */
-    [[nodiscard]] bool prologue(uint16_t slaveAddress);
+    [[nodiscard]] bool prologue(I2CSlaveConfig slaveConfig);
 
     /**
      * @brief This waits until the thread isn't waken up by an I2C interrupt (EV
@@ -182,10 +198,8 @@ private:
     uint8_t id;
     IRQn_Type irqnEv;
     IRQn_Type irqnErr;
-    const Speed speed;            ///< Baudrate of the serial communication
-    const Addressing addressing;  ///< Addressing mode of the device
-    miosix::GpioPin scl;          ///< GpioPin of the serial clock pin
-    miosix::GpioPin sda;          ///< GpioPin of the serial data pin
+    miosix::GpioPin scl;  ///< GpioPin of the serial clock pin
+    miosix::GpioPin sda;  ///< GpioPin of the serial data pin
 
     bool error       = false;  ///< Flag that tells if an error occurred
     bool lockedState = false;  ///< Flag for locked state detection

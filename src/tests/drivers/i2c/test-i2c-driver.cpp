@@ -24,7 +24,6 @@
 
 #include "drivers/i2c/I2CDriver.h"
 #include "miosix.h"
-#include "scheduler/TaskScheduler.h"
 #include "string"
 #include "string.h"
 #include "thread"
@@ -83,28 +82,34 @@ I2CSensor BMP180{0b1110111, 0xD0, 0x55, {0xE0, 0xB6}};
 I2CSensor BME280{0b1110110, 0xD0, 0x60, {0xE0, 0xB6}};
 I2CSensor OLED{0b0111100, 0xD0, 0x43, {}};
 
-bool i2cDriver(I2CDriver &i2c, I2CSensor sensor)
+I2CDriver::I2CSlaveConfig BMP180Config{BMP180.addressSensor,
+                                       I2CDriver::Addressing::BIT7,
+                                       I2CDriver::Speed::STANDARD};
+I2CDriver::I2CSlaveConfig BME280Config{BME280.addressSensor,
+                                       I2CDriver::Addressing::BIT7,
+                                       I2CDriver::Speed::STANDARD};
+I2CDriver::I2CSlaveConfig OLEDConfig{OLED.addressSensor,
+                                     I2CDriver::Addressing::BIT7,
+                                     I2CDriver::Speed::STANDARD};
+
+bool i2cDriver(I2CDriver &i2c, I2CSensor sensor,
+               I2CDriver::I2CSlaveConfig sensorConfig)
 {
     buffer = 0;
 
+    i2c.flushBus();
+
     // reset the sensor and then read the whoami
-    return i2c.write(sensor.addressSensor, sensor.softReset, 2) &&
-           i2c.write(sensor.addressSensor, &sensor.whoamiRegister, 1) &&
-           i2c.read(sensor.addressSensor, &buffer, 1) &&
-           buffer == sensor.whoamiContent;
+    return i2c.write(sensorConfig, sensor.softReset, 2) &&
+           i2c.write(sensorConfig, &sensor.whoamiRegister, 1) &&
+           i2c.read(sensorConfig, &buffer, 1) && buffer == sensor.whoamiContent;
 }
 
 int main()
 {
     int nRepeat = 50;
 
-    I2CDriver i2c(I2C1, I2CDriver::Speed::STANDARD, I2CDriver::Addressing::BIT7,
-                  i1scl2::getPin(), i1sda2::getPin());
-
-    // scheduling the flush of the I2CDriver bus
-    TaskScheduler scheduler;
-    scheduler.addTask([&]() { i2c.flushBus(); }, 100);
-    scheduler.start();
+    I2CDriver i2c(I2C1, i1scl2::getPin(), i1sda2::getPin());
 
     for (;;)
     {
@@ -114,8 +119,8 @@ int main()
 
         for (int i = 0; i < nRepeat; i++)
         {
-            statusOLED &= i2cDriver(i2c, OLED);
-            statusBMP &= i2cDriver(i2c, BMP180);
+            statusOLED &= i2cDriver(i2c, OLED, OLEDConfig);
+            statusBMP &= i2cDriver(i2c, BMP180, BMP180Config);
         }
 
         printf("OLED:%d\tBMP:%d\n", statusOLED, statusBMP);

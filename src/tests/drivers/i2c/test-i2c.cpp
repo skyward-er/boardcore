@@ -81,15 +81,24 @@ I2CSensor BMP180{0b1110111, 0xD0, 0x55, {0xE0, 0xB6}};
 I2CSensor BME280{0b1110110, 0xD0, 0x60, {0xE0, 0xB6}};
 I2CSensor OLED{0b0111100, 0xD0, 0x43, {}};
 
-bool i2cDriver(I2C &i2c, I2CSensor sensor)
+I2CDriver::I2CSlaveConfig BMP180Config{BMP180.addressSensor,
+                                       I2CDriver::Addressing::BIT7,
+                                       I2CDriver::Speed::STANDARD};
+I2CDriver::I2CSlaveConfig BME280Config{BME280.addressSensor,
+                                       I2CDriver::Addressing::BIT7,
+                                       I2CDriver::Speed::STANDARD};
+I2CDriver::I2CSlaveConfig OLEDConfig{
+    OLED.addressSensor, I2CDriver::Addressing::BIT7, I2CDriver::Speed::FAST};
+
+bool i2cDriver(I2C &i2c, I2CSensor sensor,
+               I2CDriver::I2CSlaveConfig sensorConfig)
 {
     buffer = 0;
 
     // reset the sensor and then read the whoami
-    return i2c.probe(sensor.addressSensor) &&
-           i2c.write(sensor.addressSensor, sensor.softReset, 2) &&
-           i2c.readRegister(sensor.addressSensor, sensor.whoamiRegister,
-                            buffer) &&
+    return i2c.probe(sensorConfig) &&
+           i2c.write(sensorConfig, sensor.softReset, 2) &&
+           i2c.readRegister(sensorConfig, sensor.whoamiRegister, buffer) &&
            buffer == sensor.whoamiContent;
 }
 
@@ -99,8 +108,7 @@ int main()
 
     for (;;)
     {
-        SyncedI2C i2c(I2C1, I2CDriver::Speed::FAST, I2CDriver::Addressing::BIT7,
-                      i1scl2::getPin(), i1sda2::getPin());
+        SyncedI2C i2c(I2C1, i1scl2::getPin(), i1sda2::getPin());
 
         // resetting status of read sensors
         bool statusOLED = true;
@@ -108,8 +116,8 @@ int main()
 
         for (int i = 0; i < nRepeat; i++)
         {
-            statusOLED &= i2cDriver(i2c, OLED);
-            statusBMP &= i2cDriver(i2c, BMP180);
+            statusOLED &= i2cDriver(i2c, OLED, OLEDConfig);
+            statusBMP &= i2cDriver(i2c, BMP180, BMP180Config);
         }
 
         printf("OLED:%d\tBMP:%d\n", statusOLED, statusBMP);

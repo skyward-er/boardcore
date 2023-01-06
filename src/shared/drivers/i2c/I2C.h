@@ -39,15 +39,11 @@ public:
     /**
      * @brief Constructor for the I2C high-level driver.
      *
-     * @param i2c Structure that represents the I2C peripheral
-     * @param speed The speed mode of the I2C communication
-     * @param addressing The addressing mode used in the I2C communication
-     * @param scl Serial clock GpioPin of the relative I2C peripheral
-     * @param sda Serial data GpioPin of the relative I2C peripheral
+     * @param i2c Structure that represents the I2C peripheral.
+     * @param scl Serial clock GpioPin of the relative I2C peripheral.
+     * @param sda Serial data GpioPin of the relative I2C peripheral.
      */
-    I2C(I2C_TypeDef *i2c, I2CDriver::Speed speed,
-        I2CDriver::Addressing addressing, miosix::GpioPin scl,
-        miosix::GpioPin sda);
+    I2C(I2C_TypeDef *i2c, miosix::GpioPin scl, miosix::GpioPin sda);
 
     /**
      * @brief Non blocking read operation to read nBytes.
@@ -56,12 +52,13 @@ public:
      * performed. In case of an error during the communication, this method
      * returns false immediately.
      * @warning Check always if the operation succeeded or not!
-     * @param slaveAddress Address (not shifted!) of the slave.
+     * @param slaveConfig The configuration struct of the slave device.
      * @param buffer Data buffer where to store the data read.
      * @param nBytes Number of bytes to read.
      * @returns True if the read is successful, false otherwise.
      */
-    [[nodiscard]] bool read(uint16_t slaveAddress, void *buffer, size_t nBytes);
+    [[nodiscard]] bool read(I2CDriver::I2CSlaveConfig slaveConfig, void *buffer,
+                            size_t nBytes);
 
     /**
      * @brief Non blocking write operation to write nBytes.
@@ -70,13 +67,13 @@ public:
      * performed. In case of an error during the communication, this method
      * returns false immediately.
      * @warning Check always if the operation succeeded or not!
-     * @param slaveAddress Address (not shifted!) of the slave.
+     * @param slaveConfig The configuration struct of the slave device.
      * @param buffer Data buffer where to read the data to send.
      * @param nBytes Number of bytes to send.
      * @returns True if the write is successful, false otherwise.
      */
-    [[nodiscard]] bool write(uint16_t slaveAddress, const void *buffer,
-                             size_t nBytes);
+    [[nodiscard]] bool write(I2CDriver::I2CSlaveConfig slaveConfig,
+                             const void *buffer, size_t nBytes);
 
     /**
      * @brief Non blocking operation to read a 1-byte register from a slave.
@@ -85,12 +82,12 @@ public:
      * performed. In case of an error during the communication, this method
      * returns false immediately.
      * @warning Check always if the operation succeeded or not!
-     * @param slaveAddress Address (not shifted!) of the slave.
+     * @param slaveConfig The configuration struct of the slave device.
      * @param registerAddress Byte that represents the address of the register
      * @param registerContent Where to store the content of the register
      * @returns True if the write is successful, false otherwise.
      */
-    [[nodiscard]] bool readRegister(uint16_t slaveAddress,
+    [[nodiscard]] bool readRegister(I2CDriver::I2CSlaveConfig slaveConfig,
                                     const uint8_t registerAddress,
                                     uint8_t &registerContent);
 
@@ -98,10 +95,10 @@ public:
      * @brief Non blocking operation to check if a slave is available.
      *
      * @warning Check always if the operation succeeded or not!
-     * @param slaveAddress Address (not shifted!) of the slave to probe.
+     * @param slaveConfig The configuration struct of the slave device.
      * @returns True if the device is available, false otherwise.
      */
-    [[nodiscard]] bool probe(uint16_t slaveAddress);
+    [[nodiscard]] bool probe(I2CDriver::I2CSlaveConfig slaveConfig);
 
 protected:
     I2CDriver i2c;  ///< Instance of I2C low-level driver
@@ -117,14 +114,10 @@ public:
      * @brief Constructor for the synced I2C high-level driver.
      *
      * @param i2c Structure that represents the I2C peripheral.
-     * @param speed The speed mode of the I2C communication.
-     * @param addressing The addressing mode used in the I2C communication.
      * @param scl Serial clock GpioPin of the relative I2C peripheral.
      * @param sda Serial data GpioPin of the relative I2C peripheral.
      */
-    SyncedI2C(I2C_TypeDef *i2c, I2CDriver::Speed speed,
-              I2CDriver::Addressing addressing, miosix::GpioPin scl,
-              miosix::GpioPin sda);
+    SyncedI2C(I2C_TypeDef *i2c, miosix::GpioPin scl, miosix::GpioPin sda);
 
     /**
      * @brief Read operation to read nBytes.
@@ -133,12 +126,13 @@ public:
      * operation on the bus. In case of an error during the communication, this
      * method returns false immediately.
      * @warning Check always if the operation succeeded or not!
-     * @param slaveAddress Address (not shifted!) of the slave.
+     * @param slaveConfig The configuration struct of the slave device.
      * @param buffer Data buffer where to store the data read.
      * @param nBytes Number of bytes to read.
      * @returns True if the read is successful, false otherwise.
      */
-    [[nodiscard]] bool read(uint16_t slaveAddress, void *buffer, size_t nBytes);
+    [[nodiscard]] bool read(I2CDriver::I2CSlaveConfig slaveConfig, void *buffer,
+                            size_t nBytes);
 
     /**
      * @brief Write operation to write nBytes.
@@ -147,13 +141,13 @@ public:
      * operation on the bus. In case of an error during the communication, this
      * method returns false immediately.
      * @warning Check always if the operation succeeded or not!
-     * @param slaveAddress Address (not shifted!) of the slave.
+     * @param slaveConfig The configuration struct of the slave device.
      * @param buffer Data buffer where to read the data to send.
      * @param nBytes Number of bytes to send.
      * @returns True if the write is successful, false otherwise.
      */
-    [[nodiscard]] bool write(uint16_t slaveAddress, const void *buffer,
-                             size_t nBytes);
+    [[nodiscard]] bool write(I2CDriver::I2CSlaveConfig slaveConfig,
+                             const void *buffer, size_t nBytes);
 
     /**
      * @brief Read a one-byte register from the device.
@@ -162,12 +156,12 @@ public:
      * operation on the bus. In case of an error during the communication, this
      * method returns false immediately.
      * @warning Check always if the operation succeeded or not!
-     * @param slaveAddress Address (not shifted!) of the slave.
+     * @param slaveConfig The configuration struct of the slave device.
      * @param registerAddress Byte that represents the address of the register.
      * @param registerContent Where to store the content of the register.
      * @returns True if the write is successful, false otherwise.
      */
-    [[nodiscard]] bool readRegister(uint16_t slaveAddress,
+    [[nodiscard]] bool readRegister(I2CDriver::I2CSlaveConfig slaveConfig,
                                     const uint8_t registerAddress,
                                     uint8_t registerContent);
 
@@ -177,10 +171,10 @@ public:
      * This method could have to wait that no other thread is trying to do some
      * operation on the bus.
      * @warning Check always if the operation succeeded or not!
-     * @param slaveAddress address (not shifted!) of the slave to probe.
+     * @param slaveConfig The configuration struct of the slave device.
      * @returns true if the device is available, false otherwise.
      */
-    [[nodiscard]] bool probe(uint16_t slaveAddress);
+    [[nodiscard]] bool probe(I2CDriver::I2CSlaveConfig slaveConfig);
 
 private:
     miosix::FastMutex mutex;  ///< Mutex for rx/tx
