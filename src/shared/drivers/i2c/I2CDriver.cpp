@@ -27,10 +27,11 @@
 #include <utils/ClockUtils.h>
 #include <utils/Debug.h>
 
+namespace I2CConsts
+{
 static Boardcore::I2CDriver *ports[N_I2C_PORTS] =
     {};  ///< Pointer to serial port classes to
          ///< let interrupts access the classes
-
 static const int MAX_N_POLLING =
     2000;  ///< Maximum number of cycles for polling
 static const int N_SCL_BITBANG =
@@ -40,6 +41,7 @@ static const uint8_t I2C_ADDRESS_WRITE = 0x0;  ///< LSB of address to write
 static const uint8_t I2C_PIN_ALTERNATE_FUNCTION =
     4;             ///< Alternate Function number of the I2C peripheral pins
 static uint8_t f;  ///< APB peripheral clock frequency
+}  // namespace I2CConsts
 
 #ifdef I2C1
 /**
@@ -57,7 +59,7 @@ void __attribute__((naked)) I2C1_EV_IRQHandler()
  */
 void __attribute__((used)) I2C1HandlerImpl()
 {
-    auto *port = ports[0];
+    auto *port = I2CConsts::ports[0];
     if (port)
     {
         port->IRQhandleInterrupt();
@@ -79,7 +81,7 @@ void __attribute__((naked)) I2C1_ER_IRQHandler()
  */
 void __attribute__((used)) I2C1errHandlerImpl()
 {
-    auto *port = ports[0];
+    auto *port = I2CConsts::ports[0];
     if (port)
     {
         port->IRQhandleErrInterrupt();
@@ -103,7 +105,7 @@ void __attribute__((naked)) I2C2_EV_IRQHandler()
  */
 void __attribute__((used)) I2C2HandlerImpl()
 {
-    auto *port = ports[1];
+    auto *port = I2CConsts::ports[1];
     if (port)
     {
         port->IRQhandleInterrupt();
@@ -125,7 +127,7 @@ void __attribute__((naked)) I2C2_ER_IRQHandler()
  */
 void __attribute__((used)) I2C2errHandlerImpl()
 {
-    auto *port = ports[1];
+    auto *port = I2CConsts::ports[1];
     if (port)
     {
         port->IRQhandleErrInterrupt();
@@ -149,7 +151,7 @@ void __attribute__((naked)) I2C3_EV_IRQHandler()
  */
 void __attribute__((used)) I2C3HandlerImpl()
 {
-    auto *port = ports[2];
+    auto *port = I2CConsts::ports[2];
     if (port)
     {
         port->IRQhandleInterrupt();
@@ -171,7 +173,7 @@ void __attribute__((naked)) I2C3_ER_IRQHandler()
  */
 void __attribute__((used)) I2C3errHandlerImpl()
 {
-    auto *port = ports[2];
+    auto *port = I2CConsts::ports[2];
     if (port)
     {
         port->IRQhandleErrInterrupt();
@@ -195,7 +197,7 @@ void __attribute__((naked)) I2C4_EV_IRQHandler()
  */
 void __attribute__((used)) I2C4HandlerImpl()
 {
-    auto *port = ports[3];
+    auto *port = I2CConsts::ports[3];
     if (port)
     {
         port->IRQhandleInterrupt();
@@ -217,7 +219,7 @@ void __attribute__((naked)) I2C4_ER_IRQHandler()
  */
 void __attribute__((used)) I2C4errHandlerImpl()
 {
-    auto *port = ports[3];
+    auto *port = I2CConsts::ports[3];
     if (port)
     {
         port->IRQhandleErrInterrupt();
@@ -272,15 +274,15 @@ I2CDriver::I2CDriver(I2C_TypeDef *i2c, miosix::GpioPin scl, miosix::GpioPin sda)
     {
         miosix::FastInterruptDisableLock dLock;
 
-        scl.alternateFunction(I2C_PIN_ALTERNATE_FUNCTION);
-        sda.alternateFunction(I2C_PIN_ALTERNATE_FUNCTION);
+        scl.alternateFunction(I2CConsts::I2C_PIN_ALTERNATE_FUNCTION);
+        sda.alternateFunction(I2CConsts::I2C_PIN_ALTERNATE_FUNCTION);
         scl.mode(miosix::Mode::ALTERNATE_OD);
         sda.mode(miosix::Mode::ALTERNATE_OD);
     }
 
     // Checking that this particular I2C port hasn't been already instantiated
     D(assert(id > 0));
-    D(assert(ports[id - 1] == nullptr));
+    D(assert(I2CConsts::ports[id - 1] == nullptr));
 
     // Enabling the peripheral's clock
     ClockUtils::enablePeripheralClock(i2c);
@@ -288,7 +290,7 @@ I2CDriver::I2CDriver(I2C_TypeDef *i2c, miosix::GpioPin scl, miosix::GpioPin sda)
     init();
 
     // Add to the array of i2c peripherals so that the interrupts can see it
-    ports[id - 1] = this;
+    I2CConsts::ports[id - 1] = this;
 
     // Enabling the interrupts (Ev and Err) in the NVIC
     NVIC_SetPriority(irqnEv, 15);
@@ -302,7 +304,7 @@ I2CDriver::I2CDriver(I2C_TypeDef *i2c, miosix::GpioPin scl, miosix::GpioPin sda)
 I2CDriver::~I2CDriver()
 {
     // Removing the relative i2c port from the array
-    ports[id - 1] = nullptr;
+    I2CConsts::ports[id - 1] = nullptr;
 
     // Disabling the interrupts (Ev and Err) in the NVIC
     NVIC_DisableIRQ(irqnEv);
@@ -323,22 +325,23 @@ void I2CDriver::init()
 
     // Retrieving the frequency of the APB relative to the I2C peripheral
     // [MHz] (I2C peripherals are always connected to APB1, Low speed bus)
-    f = ClockUtils::getAPBPeripheralsClock(ClockUtils::APB::APB1) / 1000000;
+    I2CConsts::f =
+        ClockUtils::getAPBPeripheralsClock(ClockUtils::APB::APB1) / 1000000;
 
     // Frequency higher than 50MHz not allowed by I2C peripheral
-    D(assert(f <= 50));
+    D(assert(I2CConsts::f <= 50));
 
     // Programming the input clock in order to generate correct timings +
     // enabling generation of all interrupts
-    i2c->CR2 = (f & I2C_CR2_FREQ) |  // setting FREQ bits
-               I2C_CR2_ITBUFEN;      // enabling interupts for rx/tx byte
+    i2c->CR2 = (I2CConsts::f & I2C_CR2_FREQ) |  // setting FREQ bits
+               I2C_CR2_ITBUFEN;  // enabling interupts for rx/tx byte
 }
 
 void I2CDriver::setupPeripheral(I2CSlaveConfig slaveConfig)
 {
     // Frequency < 2MHz in standard mode or < 4MHz in fast mode not allowed
-    D(assert((slaveConfig.speed == STANDARD && f >= 2) ||
-             (slaveConfig.speed == FAST && f >= 4)));
+    D(assert((slaveConfig.speed == STANDARD && I2CConsts::f >= 2) ||
+             (slaveConfig.speed == FAST && I2CConsts::f >= 4)));
 
     // Disabling the I2C peripheral before setting the registers
     i2c->CR1 &= ~I2C_CR1_PE;
@@ -350,13 +353,14 @@ void I2CDriver::setupPeripheral(I2CSlaveConfig slaveConfig)
         // reach the wanted frequency. It's divided by 2 because in reality
         // it uses this value to calculate the time that the clock needs to
         // be in the "set" state. [* 1000 KHz / (100 KHz * 2) = *5]
-        i2c->CCR = f * 5;  // Setting the CCR bits (implicit Standard mode)
+        i2c->CCR =
+            I2CConsts::f * 5;  // Setting the CCR bits (implicit Standard mode)
     }
     else
     {
         // [WARNING] Hardcoded to use DUTY = 0
-        i2c->CCR = I2C_CCR_FS |  // Selecting Fast mode
-                   f * 5 / 6;    // Setting the CCR bits
+        i2c->CCR = I2C_CCR_FS |           // Selecting Fast mode
+                   I2CConsts::f * 5 / 6;  // Setting the CCR bits
 
         // For DUTY = 1
         // i2c->CCR = I2C_CCR_FS |    // Selecting Fast mode
@@ -365,7 +369,7 @@ void I2CDriver::setupPeripheral(I2CSlaveConfig slaveConfig)
     }
 
     // Configuring the TRISE
-    i2c->TRISE = (f & I2C_CR2_FREQ) + 1;
+    i2c->TRISE = (I2CConsts::f & I2C_CR2_FREQ) + 1;
 
     // Setting the addressing mode
     i2c->OAR1 = (slaveConfig.addressing << 15);
@@ -383,7 +387,7 @@ bool I2CDriver::read(I2CSlaveConfig slaveConfig, void *buffer, size_t nBytes)
 
     // Modifying the slave address to be ready to be sent
     slaveConfig.slaveAddress =
-        (slaveConfig.slaveAddress << 1 | I2C_ADDRESS_READ);
+        (slaveConfig.slaveAddress << 1 | I2CConsts::I2C_ADDRESS_READ);
 
     // Sending prologue when the channel isn't busy (LSB set to signal this
     // is a read)
@@ -439,7 +443,7 @@ bool I2CDriver::write(I2CSlaveConfig slaveConfig, const void *buffer,
 
     // Modifying the slave address to be ready to be sent
     slaveConfig.slaveAddress =
-        (slaveConfig.slaveAddress << 1 | I2C_ADDRESS_WRITE);
+        (slaveConfig.slaveAddress << 1 | I2CConsts::I2C_ADDRESS_WRITE);
 
     // Sending prologue when the channel isn't busy
     if (!prologue(slaveConfig))
@@ -488,11 +492,11 @@ bool I2CDriver::prologue(I2CSlaveConfig slaveConfig)
     {
         // Waiting for the bus to be clear
         uint32_t i{0};
-        for (; (i < MAX_N_POLLING) && (i2c->SR2 & I2C_SR2_BUSY); ++i)
+        for (; (i < I2CConsts::MAX_N_POLLING) && (i2c->SR2 & I2C_SR2_BUSY); ++i)
             ;
 
         // Locked state detected after N polling cycles
-        if (i == MAX_N_POLLING)
+        if (i == I2CConsts::MAX_N_POLLING)
         {
             lockedState = true;
             LOG_ERR(logger, fmt::format("I2C{} bus locked state detected", id));
@@ -528,7 +532,7 @@ bool I2CDriver::prologue(I2CSlaveConfig slaveConfig)
             // number, we consider the reStarting phase failed. Usually the
             // number of wake ups are less than 8.
             uint32_t i{0};
-            for (; (i < MAX_N_POLLING) &&
+            for (; (i < I2CConsts::MAX_N_POLLING) &&
                    (!IRQwaitForRegisterChange(dLock) ||
                     !(i2c->SR1 & I2C_SR1_SB) || !(i2c->SR2 & I2C_SR2_MSL));
                  ++i)
@@ -537,7 +541,7 @@ bool I2CDriver::prologue(I2CSlaveConfig slaveConfig)
             reStarting = false;
 
             // Restart phase failed after N cycles
-            if (i == MAX_N_POLLING)
+            if (i == I2CConsts::MAX_N_POLLING)
             {
                 i2c->CR1 |= I2C_CR1_STOP;
 
@@ -599,7 +603,7 @@ bool I2CDriver::prologue(I2CSlaveConfig slaveConfig)
         }
 
         // If we want to enter in receiver mode
-        if (slaveConfig.slaveAddress & I2C_ADDRESS_READ)
+        if (slaveConfig.slaveAddress & I2CConsts::I2C_ADDRESS_READ)
         {
             // Checking if the peripheral is in Master mode (clearing ADDR
             // flag with a read on SR2 register)
@@ -624,7 +628,7 @@ bool I2CDriver::prologue(I2CSlaveConfig slaveConfig)
             }
 
             // Sending modified header
-            i2c->DR = header | I2C_ADDRESS_READ;
+            i2c->DR = header | I2CConsts::I2C_ADDRESS_READ;
         }
     }
 
@@ -632,7 +636,8 @@ bool I2CDriver::prologue(I2CSlaveConfig slaveConfig)
     if (!(i2c->SR2 & I2C_SR2_BUSY) ||  // Channel should be busy
         !(i2c->SR2 & I2C_SR2_MSL) ||  // The peripheral should be in master mode
         !((i2c->SR2 & I2C_SR2_TRA) !=
-          (slaveConfig.slaveAddress & I2C_ADDRESS_READ)))  // Tx or Rx mode
+          (slaveConfig.slaveAddress &
+           I2CConsts::I2C_ADDRESS_READ)))  // Tx or Rx mode
     {
         i2c->CR1 |= I2C_CR1_STOP;
         return false;
@@ -661,7 +666,7 @@ void I2CDriver::flushBus()
         scl.mode(miosix::Mode::OPEN_DRAIN);
     }
 
-    for (size_t c = 0; c < N_SCL_BITBANG; c++)
+    for (size_t c = 0; c < I2CConsts::N_SCL_BITBANG; c++)
     {
         scl.low();
         miosix::delayUs(toggleDelay);
@@ -674,7 +679,7 @@ void I2CDriver::flushBus()
 
         // We set again the scl pin to the correct Alternate function
         scl.mode(miosix::Mode::ALTERNATE_OD);
-        scl.alternateFunction(I2C_PIN_ALTERNATE_FUNCTION);
+        scl.alternateFunction(I2CConsts::I2C_PIN_ALTERNATE_FUNCTION);
     }
 
     // Reinitializing the peripheral in order to avoid inconsistent state
