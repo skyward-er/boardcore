@@ -72,6 +72,7 @@ uint8_t buffer = 0;
 
 typedef struct
 {
+    // cppcheck-suppress unusedStructMember
     const uint8_t addressSensor;
     const uint8_t whoamiRegister;
     const uint8_t whoamiContent;
