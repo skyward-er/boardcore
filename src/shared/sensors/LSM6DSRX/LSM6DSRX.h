@@ -36,7 +36,7 @@ public:
     /**
      * @brief Struct used to store the accelerometer data.
      */
-    struct AccData
+    struct SensorData
     {
         float x;
         float y;
@@ -61,25 +61,23 @@ public:
 
     /**
      * @brief Retrieves data from the accelerometer.
+     * @param data The structure where data from the sensor is to be saved.
      */
-    void getAccelerometerData(AccData& data);
+    void getAccelerometerData(SensorData& data);
 
     /**
-     * @brief Perform simple reading from the gyroscope z axis.
-    */
-    float getZAxisGyroscopeData()
-    {
-        SPITransaction spiTransaction{m_spiSlave};
-
-        return getAxisData(REG_OUTZ_L_G, REG_OUTZ_H_G, 8.75);// sensitivity for fullscale=250dps
-    }
+     * @brief Retrieves data from the gyroscope.
+     * @param data The structure where data from the sensor is to be saved.
+     */
+    void getGyroscopeData(SensorData& data);
 
 private:
     bool m_isInit = false;
     SPISlave m_spiSlave;
     LSM6DSRXConfig m_config;
 
-    float m_sensitivityAcc;  ///< Sensitivity value for the accelerator.
+    float m_sensitivityAcc = 0.0;  ///< Sensitivity value for the accelerator.
+    float m_sensitivityGyr = 0.0;  ///< Sensitivity value for the gyroscope.
 
     const uint8_t WHO_AM_I_VALUE = 0x6B;
 
@@ -91,11 +89,11 @@ private:
         REG_WHO_AM_I = 0x0F,  ///< who_am_i register
 
         REG_CTRL1_XL = 0x10,  ///< accelerometer control register
-        REG_CTRL2_G = 0x11,   ///< gyroscope control register
+        REG_CTRL2_G  = 0x11,  ///< gyroscope control register
         REG_CTRL3_C  = 0x12,  ///< set bdu
         REG_CTRL6_C  = 0x15,  ///< enable/disable high performance mode for the
                               ///< accelerometer
-        REG_CTRL7_G = 0x16,    ///< enable/disable high performance mode for the
+        REG_CTRL7_G = 0x16,   ///< enable/disable high performance mode for the
                               ///< gyroscope
 
         REG_FIFO_CTRL4 = 0x0A,  ///< fifo control register 4 (fifo mode)
@@ -112,9 +110,19 @@ private:
             0x2C,  ///< Low bits output register for the accelerometer (z axis)
         REG_OUTZ_H_A =
             0x2D,  ///< High bits output register for the accelerometer (z axis)
-        
-        REG_OUTZ_L_G = 0x26,    ///< Low bits output register for the gyroscope (z axis)
-        REG_OUTZ_H_G = 0x27,    ///< High bits output register for the gyroscope (z axis)
+
+        REG_OUTX_L_G =
+            0x22,  ///< Low bits output register for the gyroscope (x axis)
+        REG_OUTX_H_G =
+            0x23,  ///< High bits output register for the gyroscope (x axis)
+        REG_OUTY_L_G =
+            0x24,  ///< Low bits output register for the gyroscope (y axis)
+        REG_OUTY_H_G =
+            0x25,  ///< High bits output register for the gyroscope (y axis)
+        REG_OUTZ_L_G =
+            0x26,  ///< Low bits output register for the gyroscope (z axis)
+        REG_OUTZ_H_G =
+            0x27,  ///< High bits output register for the gyroscope (z axis)
     };
 
     /**

@@ -50,6 +50,24 @@ struct LSM6DSRXConfig
     };
 
     /**
+     * @brief Output data rate definitions for the gyroscope.
+     */
+    enum class GYR_ODR : uint8_t
+    {
+        POWER_DOWN = 0,
+        HZ_12_5    = 1,  ///< Output data rate of 12.5 Hz
+        HZ_26      = 2,
+        HZ_52      = 3,
+        HZ_104     = 4,
+        HZ_208     = 5,
+        HZ_416     = 6,
+        HZ_833     = 7,
+        HZ_1660    = 8,
+        HZ_3330    = 9,
+        HZ_6660    = 10,  ///< Output data rate of 6.66 kHz
+    };
+
+    /**
      * @brief Fullscale values for the accelerometer.
      */
     enum class ACC_FULLSCALE : uint8_t
@@ -58,6 +76,28 @@ struct LSM6DSRXConfig
         G4  = 2,
         G8  = 3,
         G16 = 1,
+    };
+
+    /**
+     * @brief Fullscale values for the gyroscope.
+     */
+    /*
+    FS		FS1G	FS0G	FS_125	FS_4000		Decimal value
+    125		0   	0   	1   	0		    = 2
+    250		0   	0   	0   	0   		= 0
+    500		0	    1   	0   	0   		= 4
+    1000	1   	0   	0   	0   		= 8
+    2000	1   	1   	0   	0   		= 12
+    4000	0	    0   	0   	1   		= 1
+    */
+    enum class GYR_FULLSCALE : uint8_t
+    {
+        DPS_125  = 2,
+        DPS_250  = 0,
+        DPS_500  = 4,
+        DPS_1000 = 8,
+        DPS_2000 = 12,
+        DPS_4000 = 1,
     };
 
     /**
@@ -84,10 +124,15 @@ struct LSM6DSRXConfig
         NORMAL = 1,  ///< Works in low power or normal mode depending on the odr
     };
 
-    BDU bdu;                   ///< Data update mode.
+    BDU bdu;  ///< Data update mode.
+
     ACC_ODR odrAcc;            ///< Accelerometer odr.
     OPERATING_MODE opModeAcc;  ///< Operating mode for the accelerometer.
     ACC_FULLSCALE fsAcc;       ///< Fullscale selection for the accelerometer.
+
+    GYR_ODR odrGyr;            ///< Accelerometer odr.
+    OPERATING_MODE opModeGyr;  ///< Operating mode for the accelerometer.
+    GYR_FULLSCALE fsGyr;       ///< Fullscale selection for the accelerometer.
 };
 
 }  // namespace Boardcore
