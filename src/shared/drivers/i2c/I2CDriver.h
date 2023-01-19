@@ -74,13 +74,22 @@ public:
      */
     typedef struct
     {
-        uint16_t slaveAddress;             ///< Slave address
-        I2CDriver::Addressing addressing;  ///< Addressing mode of the device
-        I2CDriver::Speed speed;            ///< Speed mode of the communication
+        uint16_t
+            slaveAddress;  ///< Slave address without shifts (in BIT7 addressing
+                           ///< |9-bit unused|7-bit address|; in BIT10
+                           ///< addressing |6-bit unused|10-bit address|).
+        I2CDriver::Addressing addressing;  ///< Addressing mode of the device.
+        I2CDriver::Speed speed;            ///< Speed mode of the communication.
     } I2CSlaveConfig;
 
     /**
      * @brief Constructor for the I2C low-level driver.
+     *
+     * It also initializes internally the pins so that they are always set to
+     * ALTERNATE_OD mode with Alternate Function 4 (the usual AF of I2C pins).
+     * Thanks to this we avoid the possibility of short circuits between master
+     * and slaves when they both drive the same bus on two different logical
+     * values.
      *
      * @param i2c Structure that represents the I2C peripheral.
      * @param scl Serial clock GpioPin of the relative I2C peripheral.
@@ -96,7 +105,8 @@ public:
 
     /**
      * @brief Non blocking read operation to read nBytes. In case of an error
-     * during the communication, this method returns false immediately.
+     * during the communication, this method returns false with no further
+     * attempts.
      *
      * @warning Check always if the operation succeeded or not!
      * @param slaveConfig The configuration struct of the slave device.
@@ -109,14 +119,15 @@ public:
 
     /**
      * @brief Non blocking write operation to write nBytes. In case of an error
-     * during the communication, this method returns false immediately.
+     * during the communication, this method returns false with no further
+     * attempts.
      *
      * @warning Check always if the operation succeeded or not!
      * @param slaveConfig The configuration struct of the slave device.
      * @param buffer Data buffer where to read the data to send.
-     * @param nBytes number of bytes to send.
-     * @param generateStop flag for the stop condition generation.
-     * @return true if the write is successful, false otherwise.
+     * @param nBytes Number of bytes to send.
+     * @param generateStop Flag for the stop condition generation.
+     * @return True if the write is successful, false otherwise.
      */
     [[nodiscard]] bool write(I2CSlaveConfig slaveConfig, const void *buffer,
                              size_t nBytes, bool generateStop = true);
@@ -168,7 +179,9 @@ private:
      * @brief Prologue of any read/write operation in master mode.
      *
      * It also detects locked states; in this case sets the lockedState flag to
-     * true. Check always if the operation succeeded or not!
+     * true.
+     *
+     * @warning Check always if the operation succeeded or not!
      * @param slaveConfig The configuration struct of the slave device.
      * @return True if prologue didn't have any error; False otherwise.
      */
@@ -182,6 +195,8 @@ private:
      * the interrupts.
      * @warning This method should be called in a block where interrupts are
      * disabled.
+     * @param dLock Reference to the InterruptDisableLock object active in the
+     * scope.
      * @return True if waken up by an event, false if an error occurred.
      */
     inline bool IRQwaitForRegisterChange(
@@ -204,7 +219,7 @@ private:
     bool error       = false;  ///< Flag that tells if an error occurred
     bool lockedState = false;  ///< Flag for locked state detection
     bool reStarting  = false;  ///< Flag true if not generated a STOP condition
-    miosix::Thread *waiting = 0;  ///< Pointer to the waiting on receive thread
+    miosix::Thread *waiting = 0;  ///< Pointer to the waiting for event thread
 
     PrintLogger logger = Logging::getLogger("i2c");
 };

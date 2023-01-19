@@ -274,6 +274,10 @@ I2CDriver::I2CDriver(I2C_TypeDef *i2c, miosix::GpioPin scl, miosix::GpioPin sda)
     {
         miosix::FastInterruptDisableLock dLock;
 
+        // Initializing the alternate function and mode of the pins so we won't
+        // forget the open-drain mode, avoiding eventual short-circuits between
+        // master and slaves when they both drive the same bus on two different
+        // logical values.
         scl.alternateFunction(I2CConsts::I2C_PIN_ALTERNATE_FUNCTION);
         sda.alternateFunction(I2CConsts::I2C_PIN_ALTERNATE_FUNCTION);
         scl.mode(miosix::Mode::ALTERNATE_OD);
@@ -339,7 +343,8 @@ void I2CDriver::init()
 
 void I2CDriver::setupPeripheral(I2CSlaveConfig slaveConfig)
 {
-    // Frequency < 2MHz in standard mode or < 4MHz in fast mode not allowed
+    // Frequency < 2MHz in standard mode or < 4MHz in fast mode not allowed by
+    // the peripheral
     D(assert((slaveConfig.speed == STANDARD && I2CConsts::f >= 2) ||
              (slaveConfig.speed == FAST && I2CConsts::f >= 4)));
 
@@ -485,6 +490,7 @@ bool I2CDriver::prologue(I2CSlaveConfig slaveConfig)
     // If already detected a locked state return directly without loosing time
     if (lockedState)
     {
+        reStarting = false;
         return false;
     }
 
@@ -508,47 +514,34 @@ bool I2CDriver::prologue(I2CSlaveConfig slaveConfig)
         setupPeripheral(slaveConfig);
     }
 
+    reStarting = false;
+
     {
         miosix::FastInterruptDisableLock dLock;
+        uint32_t i{0};
+
+        // Sending the start condition
+        // We are waiting on the Start Bit using polling because using
+        // interrupts would have lead to a messy and less reliable code. The
+        // only downside regards the usage of polling instead of interrupts; the
+        // maximum number of cycles used in the tests for waiting for a start
+        // condition were more or less 950. Anyway this is preferred to the risk
+        // of having a deadlock.
         i2c->CR1 |= I2C_CR1_START;
 
-        if (!reStarting)
+        // Waiting for START condition to be sent
+        for (; (i < I2CConsts::MAX_N_POLLING) &&
+               (!(i2c->SR1 & I2C_SR1_SB) || !(i2c->SR2 & I2C_SR2_MSL));
+             ++i)
+            ;
+
+        // START condition not sent after N polling cycles
+        if (i == I2CConsts::MAX_N_POLLING)
         {
-            if (!IRQwaitForRegisterChange(dLock) || !(i2c->SR1 & I2C_SR1_SB) ||
-                !(i2c->SR2 & I2C_SR2_MSL))
-            {
-                i2c->CR1 |= I2C_CR1_STOP;
-                return false;
-            }
-        }
-        else
-        {
-            // Wait for the "start bit sent" bit for a limited number of times
-            // before considering failed the restart phase. When we want to send
-            // the reStart bit but an interruption or a glitch happens right in
-            // this moment, the SDA would be kept low and no SB event would be
-            // generated. Anyway for another interrupt this thread is being
-            // waken up so we limit the number of wakes up: if we exceed this
-            // number, we consider the reStarting phase failed. Usually the
-            // number of wake ups are less than 8.
-            uint32_t i{0};
-            for (; (i < I2CConsts::MAX_N_POLLING) &&
-                   (!IRQwaitForRegisterChange(dLock) ||
-                    !(i2c->SR1 & I2C_SR1_SB) || !(i2c->SR2 & I2C_SR2_MSL));
-                 ++i)
-                ;
-
-            reStarting = false;
-
-            // Restart phase failed after N cycles
-            if (i == I2CConsts::MAX_N_POLLING)
-            {
-                i2c->CR1 |= I2C_CR1_STOP;
-
-                miosix::FastInterruptEnableLock eLock(dLock);
-                LOG_ERR(logger, fmt::format("I2C{} restart failed!", id));
-                return false;
-            }
+            miosix::FastInterruptEnableLock eLock(dLock);
+            LOG_ERR(logger,
+                    fmt::format("I2C{} bus didn't sent the start bit", id));
+            return false;
         }
     }
 
@@ -682,7 +675,7 @@ void I2CDriver::flushBus()
         scl.alternateFunction(I2CConsts::I2C_PIN_ALTERNATE_FUNCTION);
     }
 
-    // Reinitializing the peripheral in order to avoid inconsistent state
+    // Re-initializing the peripheral in order to avoid inconsistent state
     init();
 
     // Assuming the locked state is solved. If it is not the case, only when
@@ -732,7 +725,6 @@ inline void I2CDriver::IRQwakeUpWaitingThread()
 
 void I2CDriver::IRQhandleInterrupt()
 {
-
     // Disabling the regeneration of the interrupt; if we don't disable the
     // interrupts we will enter in an infinite loop of interrupts
     i2c->CR2 &= ~(I2C_CR2_ITEVTEN | I2C_CR2_ITERREN);

@@ -34,13 +34,13 @@ using namespace Boardcore;
 
 bool generateStop = false;
 
-// I2CDriver1
+// I2C1
 typedef miosix::Gpio<GPIOB_BASE, 6> i1scl1;
 typedef miosix::Gpio<GPIOB_BASE, 7> i1sda1;
 typedef miosix::Gpio<GPIOB_BASE, 8> i1scl2;
 typedef miosix::Gpio<GPIOB_BASE, 9> i1sda2;
 
-// I2CDriver2
+// I2C2
 typedef miosix::Gpio<GPIOB_BASE, 9> i2sda1;
 typedef miosix::Gpio<GPIOB_BASE, 10> i2scl1;
 typedef miosix::Gpio<GPIOB_BASE, 11> i2sda2;
@@ -52,7 +52,7 @@ typedef miosix::Gpio<GPIOH_BASE, 4> i2sda4;
 typedef miosix::Gpio<GPIOH_BASE, 5> i2scl4;
 #endif
 
-// I2CDriver3
+// I2C3
 typedef miosix::Gpio<GPIOC_BASE, 9> i3sda1;
 typedef miosix::Gpio<GPIOA_BASE, 8> i3scl1;
 #ifdef GPIOH
@@ -89,9 +89,8 @@ I2CDriver::I2CSlaveConfig BMP180Config{BMP180.addressSensor,
 I2CDriver::I2CSlaveConfig BME280Config{BME280.addressSensor,
                                        I2CDriver::Addressing::BIT7,
                                        I2CDriver::Speed::STANDARD};
-I2CDriver::I2CSlaveConfig OLEDConfig{OLED.addressSensor,
-                                     I2CDriver::Addressing::BIT7,
-                                     I2CDriver::Speed::STANDARD};
+I2CDriver::I2CSlaveConfig OLEDConfig{
+    OLED.addressSensor, I2CDriver::Addressing::BIT7, I2CDriver::Speed::FAST};
 
 bool i2cDriver(I2CDriver &i2c, I2CSensor sensor,
                I2CDriver::I2CSlaveConfig sensorConfig)
@@ -102,7 +101,7 @@ bool i2cDriver(I2CDriver &i2c, I2CSensor sensor,
 
     // reset the sensor and then read the whoami
     return i2c.write(sensorConfig, sensor.softReset, 2) &&
-           i2c.write(sensorConfig, &sensor.whoamiRegister, 1) &&
+           i2c.write(sensorConfig, &sensor.whoamiRegister, 1, false) &&
            i2c.read(sensorConfig, &buffer, 1) && buffer == sensor.whoamiContent;
 }
 

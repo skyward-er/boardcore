@@ -33,13 +33,13 @@ using namespace std;
 using namespace miosix;
 using namespace Boardcore;
 
-// I2CDriver1
+// I2C1
 typedef miosix::Gpio<GPIOB_BASE, 6> i1scl1;
 typedef miosix::Gpio<GPIOB_BASE, 7> i1sda1;
 typedef miosix::Gpio<GPIOB_BASE, 8> i1scl2;
 typedef miosix::Gpio<GPIOB_BASE, 9> i1sda2;
 
-// I2CDriver2
+// I2C2
 typedef miosix::Gpio<GPIOB_BASE, 9> i2sda1;
 typedef miosix::Gpio<GPIOB_BASE, 10> i2scl1;
 typedef miosix::Gpio<GPIOB_BASE, 11> i2sda2;
@@ -51,7 +51,7 @@ typedef miosix::Gpio<GPIOH_BASE, 4> i2sda4;
 typedef miosix::Gpio<GPIOH_BASE, 5> i2scl4;
 #endif
 
-// I2CDriver3
+// I2C3
 typedef miosix::Gpio<GPIOC_BASE, 9> i3sda1;
 typedef miosix::Gpio<GPIOA_BASE, 8> i3scl1;
 #ifdef GPIOH

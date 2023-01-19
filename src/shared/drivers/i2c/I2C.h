@@ -39,6 +39,12 @@ public:
     /**
      * @brief Constructor for the I2C high-level driver.
      *
+     * It uses the low-level I2C constructor that internally initializes the
+     * pins so that they are always set to ALTERNATE_OD mode with Alternate
+     * Function 4 (the usual AF of I2C pins). Thanks to this we avoid the
+     * possibility of short circuits between master and slaves when they both
+     * drive the same bus on two different logical values.
+     *
      * @param i2c Structure that represents the I2C peripheral.
      * @param scl Serial clock GpioPin of the relative I2C peripheral.
      * @param sda Serial data GpioPin of the relative I2C peripheral.
@@ -83,8 +89,8 @@ public:
      * returns false immediately.
      * @warning Check always if the operation succeeded or not!
      * @param slaveConfig The configuration struct of the slave device.
-     * @param registerAddress Byte that represents the address of the register
-     * @param registerContent Where to store the content of the register
+     * @param registerAddress Byte that represents the address of the register.
+     * @param registerContent Where to store the content of the register.
      * @returns True if the write is successful, false otherwise.
      */
     [[nodiscard]] bool readRegister(I2CDriver::I2CSlaveConfig slaveConfig,
