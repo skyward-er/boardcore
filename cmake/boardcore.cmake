@@ -119,11 +119,15 @@ foreach(OPT_BOARD ${BOARDS})
     target_include_directories(${BOARDCORE_LIBRARY} PUBLIC ${SBS_BASE}/src/shared)
     target_link_libraries(${BOARDCORE_LIBRARY} PUBLIC
         Miosix::Miosix::${OPT_BOARD}
-        Mxgui::Mxgui::${OPT_BOARD}
         TSCPP::TSCPP
         Eigen3::Eigen
         fmt::fmt-header-only
         Catch2::Catch2
         Mavlink::Mavlink
     )
+
+    # Link MxGui only if supported by the target
+    if(${OPT_BOARD} IN_LIST MXGUI_BOARDS)
+        target_link_libraries(${BOARDCORE_LIBRARY} PUBLIC Mxgui::Mxgui::${OPT_BOARD})
+    endif()
 endforeach()

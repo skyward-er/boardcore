@@ -30,6 +30,7 @@ add_subdirectory(${SBS_BASE}/libs/miosix-host EXCLUDE_FROM_ALL)
 
 set(KPATH ${KPATH} CACHE PATH "Path to kernel directory")
 add_subdirectory(${SBS_BASE}/libs/mxgui EXCLUDE_FROM_ALL)
+include(${SBS_BASE}/libs/mxgui/cmake/boards.cmake)
 
 add_subdirectory(${SBS_BASE}/libs/tscpp EXCLUDE_FROM_ALL)
 

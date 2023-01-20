@@ -49,7 +49,7 @@ add_executable(mxgui-helloworld src/entrypoints/examples/mxgui-helloworld.cpp)
 sbs_target(mxgui-helloworld stm32f429zi_stm32f4discovery)
 
 add_executable(kernel-testsuite src/entrypoints/kernel-testsuite.cpp)
-sbs_target(kernel-testsuite stm32f205rc_skyward_ciuti)
+sbs_target(kernel-testsuite stm32f769ni_discovery)
 
 add_executable(runcam-settings src/entrypoints/runcam-settings.cpp)
 sbs_target(runcam-settings stm32f407vg_stm32f4discovery)
@@ -83,7 +83,7 @@ add_executable(test-sensormanager src/tests/test-sensormanager.cpp)
 sbs_target(test-sensormanager stm32f429zi_skyward_death_stack_x)
 
 add_executable(test-serial src/tests/test-serial.cpp)
-sbs_target(test-serial stm32f429zi_stm32f4discovery)
+sbs_target(test-serial stm32f769ni_discovery)
 
 add_executable(test-taskscheduler src/tests/scheduler/test-taskscheduler.cpp)
 sbs_target(test-taskscheduler stm32f407vg_stm32f4discovery)
