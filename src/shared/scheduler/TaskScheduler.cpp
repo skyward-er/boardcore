@@ -62,14 +62,17 @@ TaskScheduler::TaskScheduler(miosix::Priority priority)
 size_t TaskScheduler::addTask(function_t function, uint32_t period,
                               Policy policy, int64_t startTick)
 {
-    // Lock the mutex manually to avoid relocking in the case of early returns
+    // In the case of early returns, using RAII mutex wrappers to unlock the
+    // mutex would cause it to be locked and unlocked one more time before
+    // returning, because of the destructor being called on the Unlock object
+    // first and then on the Lock object. To avoid this, we don't use RAII
+    // wrappers and manually lock and unlock the mutex instead.
     mutex.lock();
 
     if (tasks.size() >= MAX_TASKS)
     {
         // Unlock the mutex to release the scheduler resources before logging
         mutex.unlock();
-
         LOG_ERR(logger, "Full task scheduler");
         return 0;
     }
@@ -97,14 +100,15 @@ size_t TaskScheduler::addTask(function_t function, uint32_t period,
 
 void TaskScheduler::enableTask(size_t id)
 {
+    mutex.lock();
+
     if (id > tasks.size() - 1)
     {
+        mutex.unlock();
         LOG_ERR(logger, "Tried to enable an out-of-range task, id = {}", id);
         return;
     }
 
-    // Lock the mutex manually to avoid relocking in the case of early returns
-    mutex.lock();
     Task& task = tasks[id];
 
     // Check that the task function is not empty
@@ -112,7 +116,6 @@ void TaskScheduler::enableTask(size_t id)
     // exception
     if (task.empty())
     {
-        // Unlock the mutex to release the scheduler resources before logging
         mutex.unlock();
         LOG_WARN(logger, "Tried to enable an empty task, id = {}", id);
         return;
@@ -125,18 +128,23 @@ void TaskScheduler::enableTask(size_t id)
 
 void TaskScheduler::disableTask(size_t id)
 {
+    mutex.lock();
+
     if (id > tasks.size() - 1)
     {
+        mutex.unlock();
         LOG_ERR(logger, "Tried to disable an out-of-range task, id = {}", id);
         return;
     }
 
-    Lock<FastMutex> lock(mutex);
     tasks[id].enabled = false;
+    mutex.unlock();
 }
 
 bool TaskScheduler::start()
 {
+    Lock<FastMutex> lock(mutex);
+
     // This check is necessary to prevent task normalization if the scheduler is
     // already stopped
     if (running)
@@ -203,7 +211,9 @@ void TaskScheduler::run()
     while (true)
     {
         while (agenda.empty() && !shouldStop())
+        {
             condvar.wait(mutex);
+        }
 
         // Exit if the ActiveObject has been stopped
         if (shouldStop())
