@@ -38,6 +38,8 @@ using namespace Eigen;
 
 static const uint8_t STATES_DIM  = 3;
 static const uint8_t OUTPUTS_DIM = 1;
+static const uint8_t INPUTS_DIM =
+    1;  // Actually zero, but we can't use 0 in the template
 
 static const Matrix<float, STATES_DIM, STATES_DIM> F =
     (Matrix<float, STATES_DIM, STATES_DIM>(STATES_DIM, STATES_DIM) << 1, 0.2,
@@ -61,15 +63,19 @@ static const Matrix<float, OUTPUTS_DIM, OUTPUTS_DIM> R{10};
 // State vector
 static const Matrix<float, STATES_DIM, 1> x0(INPUT[0], 0.0, 0.0);
 
-static const Kalman<float, STATES_DIM, OUTPUTS_DIM>::KalmanConfig
+static const Matrix<float, STATES_DIM, INPUTS_DIM> G =
+    Matrix<float, STATES_DIM, INPUTS_DIM>::Zero();
+
+static const Kalman<float, STATES_DIM, OUTPUTS_DIM, INPUTS_DIM>::KalmanConfig
 getKalmanConfig()
 {
-    Kalman<float, STATES_DIM, OUTPUTS_DIM>::KalmanConfig config;
+    Kalman<float, STATES_DIM, OUTPUTS_DIM, INPUTS_DIM>::KalmanConfig config;
     config.F = F;
     config.H = H;
     config.Q = Q;
     config.R = R;
     config.P = P;
+    config.G = G;
     config.x = x0;
 
     return config;
@@ -77,7 +83,8 @@ getKalmanConfig()
 
 TEST_CASE("Update test")
 {
-    Kalman<float, STATES_DIM, OUTPUTS_DIM> filter(getKalmanConfig());
+    Kalman<float, STATES_DIM, OUTPUTS_DIM, INPUTS_DIM> filter(
+        getKalmanConfig());
 
     Matrix<float, OUTPUTS_DIM, 1> y{};
     float lastTime = TIME[0];

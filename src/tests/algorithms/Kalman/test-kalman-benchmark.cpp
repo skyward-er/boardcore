@@ -45,6 +45,7 @@ int main()
 
     const int n = 3;
     const int p = 1;
+    const int m = 1;
 
     Matrix<float, n, n> F =
         (Matrix<float, n, n>(n, n) << 1, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0)
@@ -67,15 +68,18 @@ int main()
 
     Matrix<float, p, 1> y(p);  // vector with p elements (only one in this case)
 
-    Kalman<float, n, p>::KalmanConfig config;
+    Matrix<float, n, m> G = Matrix<float, n, m>::Zero();
+
+    Kalman<float, n, p, m>::KalmanConfig config;
     config.F = F;
     config.H = H;
     config.Q = Q;
     config.R = R;
     config.P = P;
+    config.G = G;
     config.x = x0;
 
-    Kalman<float, n, p> filter(config);
+    Kalman<float, n, p, m> filter(config);
 
     float lastTime = 0.0;  // Variable to save the time of the last sample
 

@@ -71,12 +71,14 @@ ADA::KalmanFilter::KalmanConfig getADAKalmanConfig()
     // cppcheck-suppress constStatement
     Q_INIT << 30.0, 0.0, 0.0, 0.0, 10.0, 0.0, 0.0, 0.0, 2.5f;
     ADA::KalmanFilter::MatrixPP R_INIT{4000.0f};
+    ADA::KalmanFilter::MatrixNM G_INIT = ADA::KalmanFilter::MatrixNM::Zero();
 
     return {F_INIT,
             H_INIT,
             Q_INIT,
             R_INIT,
             P_INIT,
+            G_INIT,
             ADA::KalmanFilter::CVectorN(DEFAULT_REFERENCE_PRESSURE, 0,
                                         KALMAN_INITIAL_ACCELERATION)};
 }

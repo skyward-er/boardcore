@@ -33,7 +33,7 @@ namespace Boardcore
 class ADA
 {
 public:
-    using KalmanFilter = Kalman<float, 3, 1>;
+    using KalmanFilter = Kalman<float, 3, 1, 1>;
 
     explicit ADA(const KalmanFilter::KalmanConfig kalmanConfig);
 
