@@ -68,8 +68,6 @@ typedef miosix::Gpio<GPIOH_BASE, 8> i3scl2;
  * one sensor (in order to provoke a locked state).
  */
 
-uint8_t buffer = 0;
-
 typedef struct
 {
     // cppcheck-suppress unusedStructMember
@@ -95,24 +93,45 @@ I2CDriver::I2CSlaveConfig OLEDConfig{
 bool i2cDriver(I2CDriver &i2c, I2CSensor sensor,
                I2CDriver::I2CSlaveConfig sensorConfig)
 {
-    buffer = 0;
+    uint8_t buffer[10]  = {0};
+    const uint8_t nRead = 10;
 
     i2c.flushBus();
 
     // reset the sensor and then read the whoami
-    return i2c.write(sensorConfig, sensor.softReset, 2) &&
-           i2c.write(sensorConfig, &sensor.whoamiRegister, 1, false) &&
-           i2c.read(sensorConfig, &buffer, 1) && buffer == sensor.whoamiContent;
+    if (!(i2c.write(sensorConfig, sensor.softReset, 2) &&
+          i2c.write(sensorConfig, &sensor.whoamiRegister, 1, false) &&
+          i2c.read(sensorConfig, buffer, nRead) &&
+          (buffer[0] == sensor.whoamiContent)))
+    {
+        uint16_t lastError{i2c.getLastError()};
+        if (!(lastError &
+              (I2CDriver::Errors::AF | I2CDriver::Errors::BUS_LOCKED)))
+        {
+            printf("LastError: %d\n", lastError);
+        }
+        return false;
+    }
+
+    return true;
 }
 
 int main()
 {
     int nRepeat = 50;
 
-    I2CDriver i2c(I2C1, i1scl2::getPin(), i1sda2::getPin());
+    // thread that uses 100% CPU
+    std::thread t(
+        []()
+        {
+            while (1)
+                ;
+        });
 
     for (;;)
     {
+        I2CDriver i2c(I2C1, i1scl2::getPin(), i1sda2::getPin());
+
         // resetting status of read sensors
         bool statusOLED = true;
         bool statusBMP  = true;

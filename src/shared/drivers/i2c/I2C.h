@@ -63,8 +63,8 @@ public:
      * @param nBytes Number of bytes to read.
      * @returns True if the read is successful, false otherwise.
      */
-    [[nodiscard]] bool read(I2CDriver::I2CSlaveConfig slaveConfig, void *buffer,
-                            size_t nBytes);
+    [[nodiscard]] bool read(const I2CDriver::I2CSlaveConfig &slaveConfig,
+                            void *buffer, size_t nBytes);
 
     /**
      * @brief Non blocking write operation to write nBytes.
@@ -78,7 +78,7 @@ public:
      * @param nBytes Number of bytes to send.
      * @returns True if the write is successful, false otherwise.
      */
-    [[nodiscard]] bool write(I2CDriver::I2CSlaveConfig slaveConfig,
+    [[nodiscard]] bool write(const I2CDriver::I2CSlaveConfig &slaveConfig,
                              const void *buffer, size_t nBytes);
 
     /**
@@ -93,9 +93,9 @@ public:
      * @param registerContent Where to store the content of the register.
      * @returns True if the write is successful, false otherwise.
      */
-    [[nodiscard]] bool readRegister(I2CDriver::I2CSlaveConfig slaveConfig,
-                                    const uint8_t registerAddress,
-                                    uint8_t &registerContent);
+    [[nodiscard]] bool readRegister(
+        const I2CDriver::I2CSlaveConfig &slaveConfig,
+        const uint8_t registerAddress, uint8_t &registerContent);
 
     /**
      * @brief Non blocking operation to check if a slave is available.
@@ -104,7 +104,22 @@ public:
      * @param slaveConfig The configuration struct of the slave device.
      * @returns True if the device is available, false otherwise.
      */
-    [[nodiscard]] bool probe(I2CDriver::I2CSlaveConfig slaveConfig);
+    [[nodiscard]] bool probe(const I2CDriver::I2CSlaveConfig &slaveConfig);
+
+    /**
+     * @brief Returns the last errors happened in the communication.
+     *
+     * For checking if a specific error occurred in the last transaction you can
+     * do `if(getLastError() & Errors::<error-to-check>)`. Do not use `==` to
+     * check for errors because there could be more errors at once. To check if
+     * no errors occurred use `if(getLastError() == Errors::NO_ERROR)` or simply
+     * `if(!getLastError())`
+     *
+     * @return A bit sequence where the bits set correspond to the last errors
+     * occurred in the peripheral (see the `I2CDriver::Errors` enum to get the
+     * correspondence between bit position and error reported).
+     */
+    uint16_t getLastError();
 
 protected:
     I2CDriver i2c;  ///< Instance of I2C low-level driver
@@ -137,8 +152,8 @@ public:
      * @param nBytes Number of bytes to read.
      * @returns True if the read is successful, false otherwise.
      */
-    [[nodiscard]] bool read(I2CDriver::I2CSlaveConfig slaveConfig, void *buffer,
-                            size_t nBytes);
+    [[nodiscard]] bool read(const I2CDriver::I2CSlaveConfig &slaveConfig,
+                            void *buffer, size_t nBytes);
 
     /**
      * @brief Write operation to write nBytes.
@@ -152,7 +167,7 @@ public:
      * @param nBytes Number of bytes to send.
      * @returns True if the write is successful, false otherwise.
      */
-    [[nodiscard]] bool write(I2CDriver::I2CSlaveConfig slaveConfig,
+    [[nodiscard]] bool write(const I2CDriver::I2CSlaveConfig &slaveConfig,
                              const void *buffer, size_t nBytes);
 
     /**
@@ -167,9 +182,9 @@ public:
      * @param registerContent Where to store the content of the register.
      * @returns True if the write is successful, false otherwise.
      */
-    [[nodiscard]] bool readRegister(I2CDriver::I2CSlaveConfig slaveConfig,
-                                    const uint8_t registerAddress,
-                                    uint8_t registerContent);
+    [[nodiscard]] bool readRegister(
+        const I2CDriver::I2CSlaveConfig &slaveConfig,
+        const uint8_t registerAddress, uint8_t registerContent);
 
     /**
      * @brief Check if a slave is available.
@@ -180,7 +195,22 @@ public:
      * @param slaveConfig The configuration struct of the slave device.
      * @returns true if the device is available, false otherwise.
      */
-    [[nodiscard]] bool probe(I2CDriver::I2CSlaveConfig slaveConfig);
+    [[nodiscard]] bool probe(const I2CDriver::I2CSlaveConfig &slaveConfig);
+
+    /**
+     * @brief Returns the last errors happened in the communication.
+     *
+     * For checking if a specific error occurred in the last transaction you can
+     * do `if(getLastError() & Errors::<error-to-check>)`. Do not use `==` to
+     * check for errors because there could be more errors at once. To check if
+     * no errors occurred use `if(getLastError() == Errors::NO_ERROR)` or simply
+     * `if(!getLastError())`
+     *
+     * @return A bit sequence where the bits set correspond to the last errors
+     * occurred in the peripheral (see the `I2CDriver::Errors` enum to get the
+     * correspondence between bit position and error reported).
+     */
+    uint16_t getLastError();
 
 private:
     miosix::FastMutex mutex;  ///< Mutex for rx/tx

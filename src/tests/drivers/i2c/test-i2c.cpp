@@ -97,15 +97,33 @@ bool i2cDriver(I2C &i2c, I2CSensor sensor,
     buffer = 0;
 
     // reset the sensor and then read the whoami
-    return i2c.probe(sensorConfig) &&
-           i2c.write(sensorConfig, sensor.softReset, 2) &&
-           i2c.readRegister(sensorConfig, sensor.whoamiRegister, buffer) &&
-           buffer == sensor.whoamiContent;
+    if (!(i2c.probe(sensorConfig) &&
+          i2c.write(sensorConfig, sensor.softReset, 2) &&
+          i2c.readRegister(sensorConfig, sensor.whoamiRegister, buffer) &&
+          buffer == sensor.whoamiContent))
+    {
+        uint16_t lastError{i2c.getLastError()};
+        if (!(lastError & I2CDriver::Errors::AF))
+        {
+            printf("LastError: %d\n", lastError);
+        }
+        return false;
+    }
+
+    return true;
 }
 
 int main()
 {
     int nRepeat = 50;
+
+    // thread that uses 100% CPU
+    std::thread t(
+        []()
+        {
+            while (1)
+                ;
+        });
 
     for (;;)
     {

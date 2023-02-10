@@ -45,9 +45,9 @@ namespace Boardcore
  * This is NOT a thread safe driver. The features supported are:
  * - Only Master logic;
  * - Standard/Fast speed modes;
- * - 7bit and 10bit addressing;
+ * - 7bit addressing;
  * - Exposes basic read or write methods with the option for the write method to
- * not generate a stop condition;
+ * not generate a STOP condition;
  * - There is a method 'flushBus' in order to check and possibly recover from a
  * locked state on the bus;
  * - Dynamic setting of clock parameters in order to change speed or addressing
@@ -56,6 +56,12 @@ namespace Boardcore
 class I2CDriver
 {
 public:
+    enum Operation : uint8_t
+    {
+        WRITE = 0,
+        READ  = 1
+    };
+
     enum Speed : uint8_t
     {
         STANDARD = 0,
@@ -66,6 +72,22 @@ public:
     {
         BIT7  = 0,
         BIT10 = 1
+    };
+
+    /**
+     * @brief Error enums with a value that makes it possible to or them and
+     * report more than one error at once
+     */
+    enum Errors : uint16_t
+    {
+        NO_ERROR    = 0,       ///< The bus didn't have any error
+        BUS_LOCKED  = 1 << 0,  ///< Detected a locked state on the bus
+        BERR        = 1 << 1,  ///< External Start or stop condition detected
+        ARLO        = 1 << 2,  ///< Arbitration lost
+        AF          = 1 << 3,  ///< Acknowledge failure
+        OVR         = 1 << 4,  ///< Overrun/underrun error
+        SB_NOT_SENT = 1 << 5,  ///< Start bit not sent
+        ADDR_ERROR  = 1 << 6   ///< Address sent but peripheral in wrong state
     };
 
     /**
@@ -85,7 +107,9 @@ public:
     /**
      * @brief Constructor for the I2C low-level driver.
      *
-     * It also initializes internally the pins so that they are always set to
+     * It initializes the peripheral clock, the pins, calls the `init()` method
+     * and enables the IRQs in the NVIC.
+     * Pins are internally initialized so that they are always set to
      * ALTERNATE_OD mode with Alternate Function 4 (the usual AF of I2C pins).
      * Thanks to this we avoid the possibility of short circuits between master
      * and slaves when they both drive the same bus on two different logical
@@ -104,9 +128,8 @@ public:
     ~I2CDriver();
 
     /**
-     * @brief Non blocking read operation to read nBytes. In case of an error
-     * during the communication, this method returns false with no further
-     * attempts.
+     * @brief Read operation to read nBytes. In case of an error during the
+     * communication, this method returns false with no further attempts.
      *
      * @warning Check always if the operation succeeded or not!
      * @param slaveConfig The configuration struct of the slave device.
@@ -114,13 +137,12 @@ public:
      * @param nBytes Number of bytes to read.
      * @return True if the read is successful, false otherwise.
      */
-    [[nodiscard]] bool read(I2CSlaveConfig slaveConfig, void *buffer,
+    [[nodiscard]] bool read(const I2CSlaveConfig &slaveConfig, void *buffer,
                             size_t nBytes);
 
     /**
-     * @brief Non blocking write operation to write nBytes. In case of an error
-     * during the communication, this method returns false with no further
-     * attempts.
+     * @brief Write operation to write nBytes. In case of an error during the
+     * communication, this method returns false with no further attempts.
      *
      * @warning Check always if the operation succeeded or not!
      * @param slaveConfig The configuration struct of the slave device.
@@ -129,24 +151,42 @@ public:
      * @param generateStop Flag for the stop condition generation.
      * @return True if the write is successful, false otherwise.
      */
-    [[nodiscard]] bool write(I2CSlaveConfig slaveConfig, const void *buffer,
-                             size_t nBytes, bool generateStop = true);
+    [[nodiscard]] bool write(const I2CSlaveConfig &slaveConfig,
+                             const void *buffer, size_t nBytes,
+                             bool generateStop = true);
 
     /**
      * @brief Performs the recovery from the locked state if necessary.
      *
      * It tries to recover from the locked state forcing (changing the mode of
-     * the clock pin) N_SCL_BITBANG clock cycles and reinitializing the
+     * the clock pin) N_SCL_BITBANG clock cycles and re-initializing the
      * peripheral. It usually takes less than 200us for 16 clocks forced in
      * standard mode.
      */
     void flushBus();
 
     /**
+     * @brief Returns the last errors happened in the communication.
+     *
+     * For checking if a specific error occurred in the last transaction you can
+     * do `if(getLastError() & Errors::<error-to-check>)`. Do not use `==` to
+     * check for errors because there could be more errors at once. To check if
+     * no errors occurred use `if(getLastError() == Errors::NO_ERROR)` or simply
+     * `if(!getLastError())`
+     *
+     * @return A bit sequence where the bits set correspond to the last errors
+     * occurred in the peripheral (see the `I2CDriver::Errors` enum to get the
+     * correspondence between bit position and error reported).
+     */
+    uint16_t getLastError();
+
+    /**
      * @brief Handles the interrupt for events of the specific peripheral.
      *
-     * It just disables the interrupts of the peripheral and wakes the thread
-     * up.
+     * Wakes up the thread only if the operation is completed or an error is
+     * detected, otherwise all the phases of the read or write are handled in
+     * this ISR thanks to the changing of the peripheral flags.
+     *
      * @warning This function should only be called by interrupts. No user code
      * should call this method.
      */
@@ -157,6 +197,7 @@ public:
      *
      * It disables the interrupts of the peripheral, wakes the thread up, sets
      * the "error" software flag and resets the error flags in the register.
+     *
      * @warning This function should only be called by interrupts. No user code
      * should call this method.
      */
@@ -164,7 +205,24 @@ public:
 
 private:
     /**
-     * @brief Enables the peripheral clock and sets up various parameters.
+     * @brief Structure that stores all the info of the transaction, such as
+     * operation, buffers, number of bytes of the buffer, number of bytes
+     * already processed (read or written) and whether to generate the stop bit
+     * or not.
+     */
+    typedef struct
+    {
+        Operation operation;       ///< Operation to be performed (R/W)
+        uint8_t *buffRead;         ///< Buffer with the data to read
+        const uint8_t *buffWrite;  ///< Buffer with the data to write
+        size_t nBytes;             ///< Number of bytes of the buffer
+        size_t nBytesDone;         ///< Number of bytes already processed
+        bool generateStop;         ///< Whether to generate stop condition
+    } I2CTransaction;
+
+    /**
+     * @brief Resets the peripheral and sets up the internal clock parameter
+     * parameters.
      */
     void init();
 
@@ -173,19 +231,20 @@ private:
      * the speed and the addressing mode specified.
      * @param slaveConfig The configuration struct of the slave device.
      */
-    void setupPeripheral(I2CSlaveConfig slaveConfig);
+    void setupPeripheral(const I2CSlaveConfig &slaveConfig);
 
     /**
-     * @brief Prologue of any read/write operation in master mode.
+     * @brief Method to perform a read or write operation.
      *
-     * It also detects locked states; in this case sets the lockedState flag to
-     * true.
+     * This method waits for the bus to be clear, sets up the peripheral for the
+     * new communication, sends the START condition and the address. After this,
+     * it delegates the logic to the event ISR.
      *
      * @warning Check always if the operation succeeded or not!
      * @param slaveConfig The configuration struct of the slave device.
-     * @return True if prologue didn't have any error; False otherwise.
+     * @return True if the operation succeeded, False otherwise.
      */
-    [[nodiscard]] bool prologue(I2CSlaveConfig slaveConfig);
+    [[nodiscard]] bool doOperation(const I2CSlaveConfig &slaveConfig);
 
     /**
      * @brief This waits until the thread isn't waken up by an I2C interrupt (EV
@@ -193,13 +252,14 @@ private:
      *
      * It handles the waiting and yielding and the management of the flags for
      * the interrupts.
+     *
      * @warning This method should be called in a block where interrupts are
      * disabled.
      * @param dLock Reference to the InterruptDisableLock object active in the
      * scope.
      * @return True if waken up by an event, false if an error occurred.
      */
-    inline bool IRQwaitForRegisterChange(
+    inline bool IRQwaitForOperationCompletion(
         miosix::FastInterruptDisableLock &dLock);
 
     /**
@@ -216,10 +276,11 @@ private:
     miosix::GpioPin scl;  ///< GpioPin of the serial clock pin
     miosix::GpioPin sda;  ///< GpioPin of the serial data pin
 
-    bool error       = false;  ///< Flag that tells if an error occurred
-    bool lockedState = false;  ///< Flag for locked state detection
-    bool reStarting  = false;  ///< Flag true if not generated a STOP condition
-    miosix::Thread *waiting = 0;  ///< Pointer to the waiting for event thread
+    uint16_t lastError = NO_ERROR;  ///< Flag for the last error occurred
+    uint16_t error     = 0;         ///< Flag that tells if an error occurred
+    bool reStarting = false;    ///< Flag true if not generated a STOP condition
+    miosix::Thread *waiting{};  ///< Pointer to the waiting for event thread
+    I2CTransaction transaction;  ///< Struct storing the transaction info
 
     PrintLogger logger = Logging::getLogger("i2c");
 };

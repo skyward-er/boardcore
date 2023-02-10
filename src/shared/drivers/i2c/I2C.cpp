@@ -30,21 +30,21 @@ I2C::I2C(I2C_TypeDef *i2c, miosix::GpioPin scl, miosix::GpioPin sda)
 {
 }
 
-bool I2C::read(I2CDriver::I2CSlaveConfig slaveConfig, void *buffer,
+bool I2C::read(const I2CDriver::I2CSlaveConfig &slaveConfig, void *buffer,
                size_t nBytes)
 {
     i2c.flushBus();
     return i2c.read(slaveConfig, buffer, nBytes);
 }
 
-bool I2C::write(I2CDriver::I2CSlaveConfig slaveConfig, const void *buffer,
-                size_t nBytes)
+bool I2C::write(const I2CDriver::I2CSlaveConfig &slaveConfig,
+                const void *buffer, size_t nBytes)
 {
     i2c.flushBus();
     return i2c.write(slaveConfig, buffer, nBytes);
 }
 
-bool I2C::readRegister(I2CDriver::I2CSlaveConfig slaveConfig,
+bool I2C::readRegister(const I2CDriver::I2CSlaveConfig &slaveConfig,
                        const uint8_t registerAddress, uint8_t &registerContent)
 {
     i2c.flushBus();
@@ -52,32 +52,34 @@ bool I2C::readRegister(I2CDriver::I2CSlaveConfig slaveConfig,
            i2c.read(slaveConfig, &registerContent, 1);
 }
 
-bool I2C::probe(I2CDriver::I2CSlaveConfig slaveConfig)
+bool I2C::probe(const I2CDriver::I2CSlaveConfig &slaveConfig)
 {
     i2c.flushBus();
     return i2c.write(slaveConfig, nullptr, 0);
 }
+
+uint16_t I2C::getLastError() { return i2c.getLastError(); }
 
 SyncedI2C::SyncedI2C(I2C_TypeDef *i2c, miosix::GpioPin scl, miosix::GpioPin sda)
     : I2C(i2c, scl, sda)
 {
 }
 
-bool SyncedI2C::read(I2CDriver::I2CSlaveConfig slaveConfig, void *buffer,
+bool SyncedI2C::read(const I2CDriver::I2CSlaveConfig &slaveConfig, void *buffer,
                      size_t nBytes)
 {
     miosix::Lock<miosix::FastMutex> lock(mutex);
     return I2C::read(slaveConfig, buffer, nBytes);
 }
 
-bool SyncedI2C::write(I2CDriver::I2CSlaveConfig slaveConfig, const void *buffer,
-                      size_t nBytes)
+bool SyncedI2C::write(const I2CDriver::I2CSlaveConfig &slaveConfig,
+                      const void *buffer, size_t nBytes)
 {
     miosix::Lock<miosix::FastMutex> lock(mutex);
     return I2C::write(slaveConfig, buffer, nBytes);
 }
 
-bool SyncedI2C::readRegister(I2CDriver::I2CSlaveConfig slaveConfig,
+bool SyncedI2C::readRegister(const I2CDriver::I2CSlaveConfig &slaveConfig,
                              const uint8_t registerAddress,
                              uint8_t registerContent)
 {
@@ -85,10 +87,16 @@ bool SyncedI2C::readRegister(I2CDriver::I2CSlaveConfig slaveConfig,
     return I2C::readRegister(slaveConfig, registerAddress, registerContent);
 }
 
-bool SyncedI2C::probe(I2CDriver::I2CSlaveConfig slaveConfig)
+bool SyncedI2C::probe(const I2CDriver::I2CSlaveConfig &slaveConfig)
 {
     miosix::Lock<miosix::FastMutex> lock(mutex);
     return I2C::probe(slaveConfig);
+}
+
+uint16_t SyncedI2C::getLastError()
+{
+    miosix::Lock<miosix::FastMutex> lock(mutex);
+    return i2c.getLastError();
 }
 
 }  // namespace Boardcore

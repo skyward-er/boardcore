@@ -36,8 +36,6 @@ static const int MAX_N_POLLING =
     2000;  ///< Maximum number of cycles for polling
 static const int N_SCL_BITBANG =
     16;  ///< Number of clocks created for slave locked bus recovery
-static const uint8_t I2C_ADDRESS_READ  = 0x1;  ///< LSB of address to read
-static const uint8_t I2C_ADDRESS_WRITE = 0x0;  ///< LSB of address to write
 static const uint8_t I2C_PIN_ALTERNATE_FUNCTION =
     4;             ///< Alternate Function number of the I2C peripheral pins
 static uint8_t f;  ///< APB peripheral clock frequency
@@ -231,7 +229,7 @@ namespace Boardcore
 {
 
 I2CDriver::I2CDriver(I2C_TypeDef *i2c, miosix::GpioPin scl, miosix::GpioPin sda)
-    : i2c(i2c), scl(scl), sda(sda)
+    : i2c(i2c), scl(scl), sda(sda), transaction()
 {
     // Setting the id and irqn of the right i2c peripheral
     switch (reinterpret_cast<uint32_t>(i2c))
@@ -338,10 +336,10 @@ void I2CDriver::init()
     // Programming the input clock in order to generate correct timings +
     // enabling generation of all interrupts
     i2c->CR2 = (I2CConsts::f & I2C_CR2_FREQ) |  // setting FREQ bits
-               I2C_CR2_ITBUFEN;  // enabling interupts for rx/tx byte
+               I2C_CR2_ITBUFEN;  // enabling interrupts for rx/tx byte
 }
 
-void I2CDriver::setupPeripheral(I2CSlaveConfig slaveConfig)
+void I2CDriver::setupPeripheral(const I2CSlaveConfig &slaveConfig)
 {
     // Frequency < 2MHz in standard mode or < 4MHz in fast mode not allowed by
     // the peripheral
@@ -383,117 +381,57 @@ void I2CDriver::setupPeripheral(I2CSlaveConfig slaveConfig)
     i2c->CR1 |= I2C_CR1_PE;
 }
 
-bool I2CDriver::read(I2CSlaveConfig slaveConfig, void *buffer, size_t nBytes)
+bool I2CDriver::read(const I2CSlaveConfig &slaveConfig, void *buffer,
+                     size_t nBytes)
 {
-    auto *buff = static_cast<uint8_t *>(buffer);
+    // Setting up the read transaction
+    transaction.operation    = Operation::READ;
+    transaction.buffWrite    = nullptr;
+    transaction.buffRead     = static_cast<uint8_t *>(buffer);
+    transaction.nBytes       = nBytes;
+    transaction.nBytesDone   = 0;
+    transaction.generateStop = true;
 
-    // Enabling option to generate ACK
-    i2c->CR1 |= I2C_CR1_ACK;
+    // Disabling the generation of the ACK if reading only 1 byte, otherwise
+    // enable it
+    i2c->CR1 =
+        ((nBytes <= 1) ? (i2c->CR1 & ~I2C_CR1_ACK) : (i2c->CR1 | I2C_CR1_ACK));
 
-    // Modifying the slave address to be ready to be sent
-    slaveConfig.slaveAddress =
-        (slaveConfig.slaveAddress << 1 | I2CConsts::I2C_ADDRESS_READ);
-
-    // Sending prologue when the channel isn't busy (LSB set to signal this
+    // Sending doOperation when the channel isn't busy (LSB set to signal this
     // is a read)
-    if (!prologue(slaveConfig))
-    {
-        return false;
-    }
-
-    // Disabling the generation of the ACK if reading only 1 byte
-    if (nBytes <= 1)
-    {
-        i2c->CR1 &= ~I2C_CR1_ACK;
-    }
-
-    // Reading the nBytes
-    for (size_t i = 0; i < nBytes; i++)
-    {
-        {
-            miosix::FastInterruptDisableLock dLock;
-
-            // Waiting for the reception of another byte
-            if (!IRQwaitForRegisterChange(dLock) || !(i2c->SR1 & I2C_SR1_RXNE))
-            {
-                i2c->CR1 |= I2C_CR1_STOP;
-                return false;
-            }
-        }
-
-        // Checking if a byte has been lost
-        if (i2c->SR1 & I2C_SR1_BTF)
-            ;
-
-        buff[i] = i2c->DR;
-
-        // Clearing the ACK flag in order to send a NACK on the last byte that
-        // will be read
-        if (i == nBytes - 2)
-        {
-            i2c->CR1 &= ~I2C_CR1_ACK;
-        }
-    }
-
-    // Generate the stop condition after the read transaction
-    i2c->CR1 |= I2C_CR1_STOP;
-
-    return true;
+    return doOperation(slaveConfig);
 };
 
-bool I2CDriver::write(I2CSlaveConfig slaveConfig, const void *buffer,
+bool I2CDriver::write(const I2CSlaveConfig &slaveConfig, const void *buffer,
                       size_t nBytes, bool generateStop)
 {
-    auto *buff = static_cast<const uint8_t *>(buffer);
+    // Setting up the write transaction
+    transaction.operation    = Operation::WRITE;
+    transaction.buffWrite    = static_cast<const uint8_t *>(buffer);
+    transaction.buffRead     = nullptr;
+    transaction.nBytes       = nBytes;
+    transaction.nBytesDone   = 0;
+    transaction.generateStop = generateStop;
 
-    // Modifying the slave address to be ready to be sent
-    slaveConfig.slaveAddress =
-        (slaveConfig.slaveAddress << 1 | I2CConsts::I2C_ADDRESS_WRITE);
-
-    // Sending prologue when the channel isn't busy
-    if (!prologue(slaveConfig))
-    {
-        return false;
-    }
-
-    // Sending the nBytes
-    for (size_t i = 0; i < nBytes; i++)
-    {
-        miosix::FastInterruptDisableLock dLock;
-        i2c->DR = buff[i];
-
-        // Waiting for the sending of the byte
-        if (!IRQwaitForRegisterChange(dLock) || !(i2c->SR1 & I2C_SR1_TXE))
-        {
-            i2c->CR1 |= I2C_CR1_STOP;
-            return false;
-        }
-    }
-
-    // If we are on the last byte, generate the stop condition if we have to end
-    // the communication
-    if (generateStop)
-    {
-        i2c->CR1 |= I2C_CR1_STOP;
-        reStarting = false;
-    }
-    else
-    {
-        reStarting = true;
-    }
-
-    return true;
+    // Sending doOperation when the channel isn't busy
+    return doOperation(slaveConfig);
 };
 
-bool I2CDriver::prologue(I2CSlaveConfig slaveConfig)
+bool I2CDriver::doOperation(const I2CSlaveConfig &slaveConfig)
 {
+    // Not yet supported
+    D(assert(slaveConfig.addressing == Addressing::BIT7 &&
+             "Only 7-bit addressing supported!"));
+
     // If already detected a locked state return directly without loosing time
-    if (lockedState)
+    if (lastError & Errors::BUS_LOCKED)
     {
         reStarting = false;
         return false;
     }
 
+    // If starting a new transaction (so STOP bit sent in previous transaction),
+    // wait for the bus to be clear
     if (!reStarting)
     {
         // Waiting for the bus to be clear
@@ -504,7 +442,7 @@ bool I2CDriver::prologue(I2CSlaveConfig slaveConfig)
         // Locked state detected after N polling cycles
         if (i == I2CConsts::MAX_N_POLLING)
         {
-            lockedState = true;
+            lastError = Errors::BUS_LOCKED;
             LOG_ERR(logger, fmt::format("I2C{} bus locked state detected", id));
             return false;
         }
@@ -516,8 +454,11 @@ bool I2CDriver::prologue(I2CSlaveConfig slaveConfig)
 
     reStarting = false;
 
+    // Starting the transaction with the START bit
+    // From the wait till the end of transaction it will all be executed in the
+    // event ISR
     {
-        miosix::FastInterruptDisableLock dLock;
+        miosix::PauseKernelLock dLock;
         uint32_t i{0};
 
         // Sending the start condition
@@ -538,111 +479,34 @@ bool I2CDriver::prologue(I2CSlaveConfig slaveConfig)
         // START condition not sent after N polling cycles
         if (i == I2CConsts::MAX_N_POLLING)
         {
-            miosix::FastInterruptEnableLock eLock(dLock);
+            lastError |= Errors::SB_NOT_SENT;
             LOG_ERR(logger,
-                    fmt::format("I2C{} bus didn't sent the start bit", id));
+                    fmt::format("I2C{} bus didn't send the start bit", id));
             return false;
         }
     }
 
-    // Sending (header + ) slave address
-    if (slaveConfig.addressing == Addressing::BIT7)
+    transaction.nBytesDone = 0;
+
+    // Sending slave address
     {
         miosix::FastInterruptDisableLock dLock;
 
         // Setting the LSB if we want to enter receiver mode
-        i2c->DR = slaveConfig.slaveAddress;
+        i2c->DR = ((slaveConfig.slaveAddress << 1) | transaction.operation);
 
-        // Checking if a slave matched his address
-        if (!IRQwaitForRegisterChange(dLock) || !(i2c->SR1 & I2C_SR1_ADDR))
-        {
-            i2c->CR1 |= I2C_CR1_STOP;
-            return false;
-        }
+        // Making the thread wait for the operation completion. The next steps
+        // will be performed in the ISR while the thread stays in waiting state.
+        // The only way the thread will be waken up are the completion of the
+        // operation or an error during the transaction.
+        return IRQwaitForOperationCompletion(dLock);
     }
-    else  // addressing == Addressing::BIT10
-    {
-        // Header generated (composed of 11110xx0 bits with xx as the 9th
-        // and 8th bits of the address)
-        const uint8_t header =
-            0b11110000 | ((slaveConfig.slaveAddress >> 7) & 0b110);
-
-        {
-            miosix::FastInterruptDisableLock dLock;
-
-            // Sending header
-            i2c->DR = header;
-
-            // Checking if the header has been sent
-            if (!IRQwaitForRegisterChange(dLock) || !(i2c->SR1 & I2C_SR1_ADD10))
-            {
-                i2c->CR1 |= I2C_CR1_STOP;
-                return false;
-            }
-        }
-
-        {
-            miosix::FastInterruptDisableLock dLock;
-
-            // Sending address ((1 << 8) - 1) = 0xff
-            i2c->DR = (slaveConfig.slaveAddress & 0xff);
-
-            // Checking if a slave matched his address
-            if (!IRQwaitForRegisterChange(dLock) || !(i2c->SR1 & I2C_SR1_ADDR))
-            {
-                i2c->CR1 |= I2C_CR1_STOP;
-                return false;
-            }
-        }
-
-        // If we want to enter in receiver mode
-        if (slaveConfig.slaveAddress & I2CConsts::I2C_ADDRESS_READ)
-        {
-            // Checking if the peripheral is in Master mode (clearing ADDR
-            // flag with a read on SR2 register)
-            if (!(i2c->SR2 & I2C_SR2_MSL))
-            {
-                i2c->CR1 |= I2C_CR1_STOP;
-                return false;
-            }
-
-            {
-                miosix::FastInterruptDisableLock dLock;
-                // Repeated start
-                i2c->CR1 |= I2C_CR1_START;
-
-                // Waiting for reception of start signal
-                if (!IRQwaitForRegisterChange(dLock) ||
-                    !(i2c->SR1 & I2C_SR1_SB))
-                {
-                    i2c->CR1 |= I2C_CR1_STOP;
-                    return false;
-                }
-            }
-
-            // Sending modified header
-            i2c->DR = header | I2CConsts::I2C_ADDRESS_READ;
-        }
-    }
-
-    // Clearing ADDR flag
-    if (!(i2c->SR2 & I2C_SR2_BUSY) ||  // Channel should be busy
-        !(i2c->SR2 & I2C_SR2_MSL) ||  // The peripheral should be in master mode
-        !((i2c->SR2 & I2C_SR2_TRA) !=
-          (slaveConfig.slaveAddress &
-           I2CConsts::I2C_ADDRESS_READ)))  // Tx or Rx mode
-    {
-        i2c->CR1 |= I2C_CR1_STOP;
-        return false;
-    }
-
-    return true;
 }
 
 void I2CDriver::flushBus()
 {
     // If there isn't any locked state return immediately
-    if (!lockedState)
+    if (!(lastError & Errors::BUS_LOCKED))
     {
         return;
     }
@@ -680,16 +544,21 @@ void I2CDriver::flushBus()
 
     // Assuming the locked state is solved. If it is not the case, only when
     // it will be the case it will be detected again
-    lockedState = false;
+    lastError = Errors::NO_ERROR;
 
     LOG_WARN(logger, fmt::format("I2C{} Bus flushed", id));
 }
 
-inline bool I2CDriver::IRQwaitForRegisterChange(
+uint16_t I2CDriver::getLastError() { return lastError; }
+
+inline bool I2CDriver::IRQwaitForOperationCompletion(
     miosix::FastInterruptDisableLock &dLock)
 {
+    // Saving the current thread in order to be waken up by interrupts
     waiting = miosix::Thread::IRQgetCurrentThread();
 
+    // flag thread as waiting, enable interrupts in I2C peripheral and yield
+    // till an interrupt doesn't wake up the thread
     while (waiting)
     {
         waiting->IRQwait();
@@ -698,10 +567,20 @@ inline bool I2CDriver::IRQwaitForRegisterChange(
         waiting->yield();
     }
 
+    // If error occurred, parse it to notify the error(s); otherwise reset
+    // lastError parameter
     if (error)
     {
-        error = false;
+        lastError |= ((error & I2C_SR1_OVR) ? Errors::OVR : 0) |
+                     ((error & I2C_SR1_BERR) ? Errors::BERR : 0) |
+                     ((error & I2C_SR1_ARLO) ? Errors::ARLO : 0) |
+                     ((error & I2C_SR1_AF) ? Errors::AF : 0);
+        error = 0;
         return false;
+    }
+    else
+    {
+        lastError = Errors::NO_ERROR;
     }
 
     return true;
@@ -709,6 +588,15 @@ inline bool I2CDriver::IRQwaitForRegisterChange(
 
 inline void I2CDriver::IRQwakeUpWaitingThread()
 {
+    // Disabling the regeneration of the interrupt; if we don't disable the
+    // interrupts we will enter in an infinite loop of interrupts
+    i2c->CR2 &= ~(I2C_CR2_ITEVTEN | I2C_CR2_ITERREN);
+
+    // invalidating the buffer pointers (avoiding to keep a pointer to an old
+    // memory location)
+    transaction.buffRead  = nullptr;
+    transaction.buffWrite = nullptr;
+
     if (waiting)
     {
         waiting->IRQwakeup();
@@ -719,29 +607,97 @@ inline void I2CDriver::IRQwakeUpWaitingThread()
             miosix::Scheduler::IRQfindNextThread();
         }
 
-        waiting = 0;
+        waiting = nullptr;
     }
 }
 
 void I2CDriver::IRQhandleInterrupt()
 {
-    // Disabling the regeneration of the interrupt; if we don't disable the
-    // interrupts we will enter in an infinite loop of interrupts
-    i2c->CR2 &= ~(I2C_CR2_ITEVTEN | I2C_CR2_ITERREN);
+    // Address sending
+    if ((i2c->SR1 & I2C_SR1_ADDR))
+    {
+        // Clearing ADDR flag
+        if (!(i2c->SR2 & I2C_SR2_BUSY) ||  // Channel should be busy
+            !(i2c->SR2 & I2C_SR2_MSL) ||   // Should be in Master mode
+            !((i2c->SR2 & I2C_SR2_TRA) != transaction.operation))
+        {
+            // "reserved" bit in the SR1 register, so we don't collide with
+            // other fields
+            error = 1 << 13;
+            lastError |= ADDR_ERROR;
+            IRQwakeUpWaitingThread();
+            return;
+        }
+    }
 
-    // waking up the waiting thread
-    IRQwakeUpWaitingThread();
+    // Performing the read/write
+    if (transaction.operation == Operation::READ)
+    {
+        // READ
+        if (i2c->SR1 & (I2C_SR1_BTF | I2C_SR1_RXNE))
+        {
+            // Clearing the ACK flag in order to send a NACK on the last byte
+            // that will be read
+            if (transaction.nBytesDone >= transaction.nBytes - 2)
+            {
+                i2c->CR1 &= ~I2C_CR1_ACK;
+            }
+
+            if (transaction.nBytesDone < transaction.nBytes)
+            {
+                transaction.buffRead[transaction.nBytesDone] = i2c->DR;
+                transaction.nBytesDone++;
+            }
+        }
+    }
+    else
+    {
+        // WRITE
+        if (i2c->SR1 & (I2C_SR1_BTF | I2C_SR1_TXE))
+        {
+            if (transaction.nBytesDone < transaction.nBytes)
+            {
+                i2c->DR = transaction.buffWrite[transaction.nBytesDone];
+                transaction.nBytesDone++;
+                return;
+            }
+        }
+    }
+
+    // Sending STOP condition and wake up thread
+    if (transaction.nBytesDone >= transaction.nBytes)
+    {
+        // If we are on the last byte, generate the stop condition if we have to
+        // end the communication
+        if (transaction.generateStop)
+        {
+            i2c->CR1 |= I2C_CR1_STOP;
+            reStarting = false;
+        }
+        else
+        {
+            reStarting = true;
+        }
+
+        // waking up the waiting thread
+        IRQwakeUpWaitingThread();
+    }
 }
 
 void I2CDriver::IRQhandleErrInterrupt()
 {
-    // Disabling the regeneration of the interrupt; if we don't disable
-    // the interrupts we will enter in an infinite loop of interrupts
-    i2c->CR2 &= ~(I2C_CR2_ITEVTEN | I2C_CR2_ITERREN);
-    error = true;
+    error = i2c->SR1;
 
     // Clearing all the errors in the register
     i2c->SR1 = 0;
+
+    // In case of arbitration lost, the hardware releases automatically the
+    // lines. Do not send STOP condition. In the other cases, the software must
+    // issue the STOP condition.
+    if (!(error & I2C_SR1_ARLO))
+    {
+        i2c->CR1 |= I2C_CR1_STOP;
+    }
 
     // Waking up the waiting thread
     IRQwakeUpWaitingThread();
