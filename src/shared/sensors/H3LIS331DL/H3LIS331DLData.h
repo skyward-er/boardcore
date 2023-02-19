@@ -24,20 +24,16 @@
 
 #include <sensors/SensorData.h>
 
-namespace Boardcore {
-  class H3LIS331DLData : public AccelerometerData {
+namespace Boardcore
+{
+class H3LIS331DLData : public AccelerometerData
+{
 
-    H3LIS331DLData()
-      : AccelerometerData(0, 0, 0, 0)
-    {};
+    H3LIS331DLData() : AccelerometerData(0, 0, 0, 0){};
 
     H3LIS331DLData(uint64_t ts, float aX, float aY, float aZ)
-      : AccelerometerData(ts, aX, aY, aZ)
-    {};
+        : AccelerometerData(ts, aX, aY, aZ){};
 
-    H3LIS331DLData(AccelerometerData acc)
-      : AccelerometerData(acc)
-    {};
-
-  }
+    H3LIS331DLData(AccelerometerData acc) : AccelerometerData(acc){};
 }
+}  // namespace Boardcore
