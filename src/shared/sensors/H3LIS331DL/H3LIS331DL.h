@@ -21,8 +21,8 @@
  */
 
 #pragma once
-#include <sensors/Sensor.h>
 #include <sensors/H3LIS331DL/H3LIS331DLData.h>
+#include <sensors/Sensor.h>
 
 #include <drivers/spi/SPIDriver.h>
 #include <drivers/timer/TimestampTimer.h>
@@ -31,49 +31,54 @@
 
 #define SETBITS(var, bitpos, mask, value) var |= (value << bitpos) & mask
 
-namespace Boardcore {
+namespace Boardcore
+{
 
-  class H3LIS331DL : Sensor<H3LIS331DLData> {
+class H3LIS331DL : Sensor<H3LIS331DLData>
+{
     /* Class Data Types */
-  public:
-    enum class Registers {
-      WHO_AM_I = 0x07,
-      CTRL_REG1 = 0x20,
-      CTRL_REG2 = 0x21,
-      CTRL_REG3 = 0x22,
-      CTRL_REG4 = 0x23,
-      CTRL_REG5 = 0x24,
-      OUT_X = 0x28,
-      OUT_Y = 0x2a,
-      OUT_Z = 0x2c
+public:
+    enum class Registers
+    {
+        WHO_AM_I  = 0x07,
+        CTRL_REG1 = 0x20,
+        CTRL_REG2 = 0x21,
+        CTRL_REG3 = 0x22,
+        CTRL_REG4 = 0x23,
+        CTRL_REG5 = 0x24,
+        OUT_X     = 0x28,
+        OUT_Y     = 0x2a,
+        OUT_Z     = 0x2c
     }
 
-    enum class FullScaleRange {
-      FS_100 = 0,
-      FS_200 = 1,
-      FS_400 = 3
+    enum class FullScaleRange
+    {
+        FS_100 = 0,
+        FS_200 = 1,
+        FS_400 = 3
     }
 
-    enum class OutputDataRate {
-      ODR_LP_0_5 = 0,
-      ODR_LP_1 = 1,
-      ODR_LP_2 = 2,
-      ODR_LP_5 = 3,
-      ODR_LP_10 = 4,
-      ODR_50 = 5,
-      ODR_100 = 6,
-      ODR_400 = 7,
-      ODR_1000 = 8
+    enum class OutputDataRate
+    {
+        ODR_LP_0_5 = 0,
+        ODR_LP_1   = 1,
+        ODR_LP_2   = 2,
+        ODR_LP_5   = 3,
+        ODR_LP_10  = 4,
+        ODR_50     = 5,
+        ODR_100    = 6,
+        ODR_400    = 7,
+        ODR_1000   = 8
     }
 
-    enum class BlockDataUpdate {
-      BDU_CONTINUOS_UPDATE = 0,
-      BDU_WAIT_UNTIL_READ = 1
+    enum class BlockDataUpdate
+    {
+        BDU_CONTINUOS_UPDATE = 0,
+        BDU_WAIT_UNTIL_READ  = 1
     }
 
     /* Class Members */
-  private:
-    static const WHO_AM_I_ID = 0x32;
+    private : static const WHO_AM_I_ID = 0x32;
 
     SPISlave spi;
     FullScaleRange fs;
@@ -82,27 +87,15 @@ namespace Boardcore {
     bool initialized;
 
     /* Class Methods */
-  public:
+public:
+    H3LIS331DL(SPIBusInterface& spiBus, miosix::GpioPin cs, OutputDataRate odr,
+               BlockDataUpdate bdu);
 
-
-    H3LIS331DL(
-      SPIBusInterface& spiBus,
-      miosix::GpioPin cs,
-      OutputDataRate odr,
-      BlockDataUpdate bdu
-    );
-
-    H3LIS331DL(
-      SPIBusInterface& spiBus,
-      SPIBusConfig cfg,
-      miosix::GpioPin cs,
-      OutputDataRate odr,
-      BlockDataUpdate bdu
-    );
+    H3LIS331DL(SPIBusInterface& spiBus, SPIBusConfig cfg, miosix::GpioPin cs,
+               OutputDataRate odr, BlockDataUpdate bdu);
 
     bool init();
 
     H3LIS331DLData sampleImpl() override;
-
-  }
 }
+}  // namespace Boardcore
