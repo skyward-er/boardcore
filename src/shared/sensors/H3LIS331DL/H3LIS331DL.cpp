@@ -84,6 +84,13 @@ bool H3LIS331DL::init()
             ctrlReg1 == spiTr.readRegister(Registers::CTRL_REG1);
         TRACE("[H3LIS331DL] Control Register 1 After init: 0x%02x\n", ctrlReg1);
     }
+    else
+    {
+        if (this->odr < ODR_50)
+        {
+            lastError = SensorErrors::INIT_FAIL;
+            return false;
+        }
 
     {
         // CTRL_REG4 initialization
