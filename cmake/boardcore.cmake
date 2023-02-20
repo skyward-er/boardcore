@@ -86,6 +86,7 @@ foreach(OPT_BOARD ${BOARDS})
         ${SBS_BASE}/src/shared/sensors/BMP280/BMP280.cpp
         ${SBS_BASE}/src/shared/sensors/BMX160/BMX160.cpp
         ${SBS_BASE}/src/shared/sensors/BMX160/BMX160WithCorrection.cpp
+        ${SBS_BASE}/src/shared/sensors/H3LIS331DL/H3LIS331DL.cpp
         ${SBS_BASE}/src/shared/sensors/HX711/HX711.cpp
         ${SBS_BASE}/src/shared/sensors/LIS3MDL/LIS3MDL.cpp
         ${SBS_BASE}/src/shared/sensors/LIS331HH/LIS331HH.cpp
