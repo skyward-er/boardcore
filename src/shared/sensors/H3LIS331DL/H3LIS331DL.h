@@ -34,13 +34,13 @@
 namespace Boardcore
 {
 
-class H3LIS331DL : Sensor<H3LIS331DLData>
+class H3LIS331DL : public Sensor<H3LIS331DLData>
 {
     /* Class Data Types */
 public:
-    enum class Registers
+    enum Registers
     {
-        WHO_AM_I  = 0x07,
+        WHO_AM_I  = 0x0F,
         CTRL_REG1 = 0x20,
         CTRL_REG2 = 0x21,
         CTRL_REG3 = 0x22,
@@ -49,16 +49,16 @@ public:
         OUT_X     = 0x28,
         OUT_Y     = 0x2a,
         OUT_Z     = 0x2c
-    }
+    };
 
-    enum class FullScaleRange
+    enum FullScaleRange
     {
         FS_100 = 0,
         FS_200 = 1,
         FS_400 = 3
-    }
+    };
 
-    enum class OutputDataRate
+    enum OutputDataRate
     {
         ODR_LP_0_5 = 0,
         ODR_LP_1   = 1,
@@ -69,33 +69,38 @@ public:
         ODR_100    = 6,
         ODR_400    = 7,
         ODR_1000   = 8
-    }
+    };
 
-    enum class BlockDataUpdate
+    enum BlockDataUpdate
     {
         BDU_CONTINUOS_UPDATE = 0,
         BDU_WAIT_UNTIL_READ  = 1
-    }
+    };
 
     /* Class Members */
-    private : static const WHO_AM_I_ID = 0x32;
+private:
+    static const uint8_t WHO_AM_I_ID            = 0x32;
+    static constexpr float SENSITIVITY_VALUES[] = {0.049, 0.098, 0.195};
 
     SPISlave spi;
-    FullScaleRange fs;
     OutputDataRate odr;
     BlockDataUpdate bdu;
+    FullScaleRange fs;
     bool initialized;
 
     /* Class Methods */
 public:
     H3LIS331DL(SPIBusInterface& spiBus, miosix::GpioPin cs, OutputDataRate odr,
-               BlockDataUpdate bdu);
+               BlockDataUpdate bdu, FullScaleRange fs);
 
-    H3LIS331DL(SPIBusInterface& spiBus, SPIBusConfig cfg, miosix::GpioPin cs,
-               OutputDataRate odr, BlockDataUpdate bdu);
+    H3LIS331DL(SPIBusInterface& spiBus, miosix::GpioPin cs, SPIBusConfig cfg,
+               OutputDataRate odr, BlockDataUpdate bdu, FullScaleRange fs);
 
     bool init();
 
     H3LIS331DLData sampleImpl() override;
-}
+
+    bool selfTest();
+};
+
 }  // namespace Boardcore

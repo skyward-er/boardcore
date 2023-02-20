@@ -26,7 +26,8 @@
 
 namespace Boardcore
 {
-class H3LIS331DLData : public AccelerometerData
+
+struct H3LIS331DLData : public AccelerometerData
 {
 
     H3LIS331DLData() : AccelerometerData(0, 0, 0, 0){};
@@ -35,5 +36,6 @@ class H3LIS331DLData : public AccelerometerData
         : AccelerometerData(ts, aX, aY, aZ){};
 
     H3LIS331DLData(AccelerometerData acc) : AccelerometerData(acc){};
-}
+};
+
 }  // namespace Boardcore
