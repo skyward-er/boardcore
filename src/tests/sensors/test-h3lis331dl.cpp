@@ -29,7 +29,7 @@ int main()
     cs.high();
 
     H3LIS331DL sensor(bus, cs, sensor.ODR_50, sensor.BDU_CONTINUOS_UPDATE,
-                      sensor.FS_400);
+                      sensor.FS_100);
 
     H3LIS331DLData data;
 
