@@ -29,7 +29,6 @@
 
 namespace Boardcore
 {
-
 /**
  * Driver for H3LIS331DL, a 3-Axis, high g Accelerometer Sensor made by
  * STMicroelectronics.
