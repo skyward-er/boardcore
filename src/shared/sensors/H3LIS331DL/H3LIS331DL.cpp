@@ -125,10 +125,6 @@ H3LIS331DLData H3LIS331DL::sampleImpl()
     float y = 0;
     float z = 0;
 
-    float x = 0;
-    float y = 0;
-    float z = 0;
-
     // Read output data registers (X, Y, Z)
     {
         SPITransaction spiTr(this->spi);
