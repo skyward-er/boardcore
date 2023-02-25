@@ -22,7 +22,6 @@
 
 #include <math.h>
 #include <sensors/H3LIS331DL/H3LIS331DL.h>
-
 #include <utils/Debug.h>
 
 namespace Boardcore
@@ -37,6 +36,7 @@ bool H3LIS331DL::init()
         lastError = SensorErrors::ALREADY_INIT;
         return false;
     }
+
     SPITransaction spiTr(this->spi);
 
     uint8_t whoami = spiTr.readRegister(Registers::WHO_AM_I);
@@ -133,8 +133,8 @@ H3LIS331DLData H3LIS331DL::sampleImpl()
             return lastSample;  // No new data available
         }
 
-        uint16_t lPart = 0;  // data's LSB.
-        uint16_t hPart = 0;  // data's MSB.
+        uint16_t lPart;  // data's LSB.
+        uint16_t hPart;  // data's MSB.
 
         // Here we get the sensitivity based on the FullScaleRange
         float sensitivity = SENSITIVITY_VALUES[this->fs];
@@ -166,8 +166,6 @@ H3LIS331DLData H3LIS331DL::sampleImpl()
         // was overrun and never read
         if (status & 0b0000'1010 || status & 0b0010'0000)
         {
-            hPart = lPart = 0;
-
             // NOTE: Reading multiple bits with readRegisters does not work
             lPart        = spiTr.readRegister(Registers::OUT_Y);
             hPart        = spiTr.readRegister(Registers::OUT_Y + 1);
@@ -184,8 +182,6 @@ H3LIS331DLData H3LIS331DL::sampleImpl()
         // was overrun and never read
         if (status & 0b0000'1100 || status & 0b0100'0000)
         {
-            hPart = lPart = 0;
-
             // NOTE: Reading multiple bits with readRegisters does not work
             lPart        = spiTr.readRegister(Registers::OUT_Z);
             hPart        = spiTr.readRegister(Registers::OUT_Z + 1);
