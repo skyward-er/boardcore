@@ -31,7 +31,6 @@
 
 namespace Boardcore
 {
-
 /**
  * Driver for H3LIS331DL, a 3-Axis, high g Accelerometer Sensor made by
  * STMicroelectronics.
@@ -227,7 +226,10 @@ private:
      * mask.
      */
     inline void setBits(uint8_t& var, uint8_t bitpos, uint8_t mask,
-                        uint8_t value){var |= (value << bitpos) & mask};
+                        uint8_t value)
+    {
+        var |= (value << bitpos) & mask;
+    };
 };
 
 }  // namespace Boardcore
