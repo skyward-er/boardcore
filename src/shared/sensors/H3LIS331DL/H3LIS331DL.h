@@ -21,13 +21,11 @@
  */
 
 #pragma once
-#include <sensors/H3LIS331DL/H3LIS331DLData.h>
-#include <sensors/Sensor.h>
-
 #include <drivers/spi/SPIDriver.h>
 #include <drivers/timer/TimestampTimer.h>
-
 #include <miosix.h>
+#include <sensors/H3LIS331DL/H3LIS331DLData.h>
+#include <sensors/Sensor.h>
 
 namespace Boardcore
 {
