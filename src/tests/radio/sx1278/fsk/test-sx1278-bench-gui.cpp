@@ -21,7 +21,7 @@
  */
 
 #include <drivers/interrupt/external_interrupts.h>
-#include <radio/SX1278/SX1278.h>
+#include <radio/SX1278/SX1278Fsk.h>
 
 #include <thread>
 
@@ -35,16 +35,13 @@ using namespace Boardcore;
 using namespace miosix;
 using namespace mxgui;
 
-#if defined _BOARD_STM32F429ZI_SKYWARD_GS
+#if defined _BOARD_STM32F429ZI_SKYWARD_GS_V2
 #include "interfaces-impl/hwmapping.h"
 
-#if 1  // use ra01
-using cs   = peripherals::ra01::cs;
-using dio0 = peripherals::ra01::dio0;
-#else
-using cs   = peripherals::sx127x::cs;
-using dio0 = peripherals::sx127x::dio0;
-#endif
+using cs   = peripherals::ra01::pc13::cs;
+using dio0 = peripherals::ra01::pc13::dio0;
+using dio1 = peripherals::ra01::pc13::dio1;
+using dio3 = peripherals::ra01::pc13::dio3;
 
 using sck  = interfaces::spi4::sck;
 using miso = interfaces::spi4::miso;
@@ -52,30 +49,47 @@ using mosi = interfaces::spi4::mosi;
 
 #define SX1278_SPI SPI4
 
+#define SX1278_IRQ_DIO0 EXTI6_IRQHandlerImpl
+#define SX1278_IRQ_DIO1 EXTI2_IRQHandlerImpl
+#define SX1278_IRQ_DIO3 EXTI11_IRQHandlerImpl
+
 #else
 #error "Target not supported"
 #endif
 
-GUI *gui = nullptr;
-
-#if defined _BOARD_STM32F429ZI_SKYWARD_GS
-void __attribute__((used)) EXTI6_IRQHandlerImpl()
-#else
-#error "Target not supported"
-#endif
+void __attribute__((used)) SX1278_IRQ_DIO0()
 {
     if (sx1278)
-        sx1278->handleDioIRQ();
+        sx1278->handleDioIRQ(SX1278Fsk::Dio::DIO0);
+}
+
+void __attribute__((used)) SX1278_IRQ_DIO1()
+{
+    if (sx1278)
+        sx1278->handleDioIRQ(SX1278Fsk::Dio::DIO1);
+}
+
+void __attribute__((used)) SX1278_IRQ_DIO3()
+{
+    if (sx1278)
+        sx1278->handleDioIRQ(SX1278Fsk::Dio::DIO3);
 }
 
 void initBoard()
 {
-#if defined _BOARD_STM32F429ZI_SKYWARD_GS
-    enableExternalInterrupt(GPIOF_BASE, 6, InterruptTrigger::RISING_EDGE);
-#else
-#error "Target not supported"
-#endif
+    GpioPin dio0_pin = dio0::getPin();
+    GpioPin dio1_pin = dio1::getPin();
+    GpioPin dio3_pin = dio3::getPin();
+
+    enableExternalInterrupt(dio0_pin.getPort(), dio0_pin.getNumber(),
+                            InterruptTrigger::RISING_EDGE);
+    enableExternalInterrupt(dio1_pin.getPort(), dio1_pin.getNumber(),
+                            InterruptTrigger::RISING_EDGE);
+    enableExternalInterrupt(dio3_pin.getPort(), dio3_pin.getNumber(),
+                            InterruptTrigger::RISING_EDGE);
 }
+
+GUI *gui = nullptr;
 
 void initGUI()
 {
@@ -95,17 +109,30 @@ int main()
     initBoard();
     initGUI();
 
-    // Run default configuration
-    SX1278::Config config;
-    SX1278::Error err;
+    SX1278Fsk::Config config = {
+        .freq_rf  = 422075000,
+        .freq_dev = 25000,
+        .bitrate  = 19200,
+        .rx_bw    = Boardcore::SX1278Fsk::RxBw::HZ_83300,
+        .afc_bw   = Boardcore::SX1278Fsk::RxBw::HZ_125000,
+        .ocp      = 120,
+        .power    = 17,
+        .shaping  = Boardcore::SX1278Fsk::Shaping::GAUSSIAN_BT_1_0,
+        .dc_free  = Boardcore::SX1278Fsk::DcFree::WHITENING};
+    SX1278Fsk::Error err;
 
     SPIBus bus(SX1278_SPI);
     GpioPin cs = cs::getPin();
 
-    sx1278 = new SX1278(bus, cs);
+    SPIBusConfig spi_config = {};
+    spi_config.clockDivider = SPI::ClockDivider::DIV_64;
+    spi_config.mode         = SPI::Mode::MODE_0;
+    spi_config.bitOrder     = SPI::BitOrder::MSB_FIRST;
+
+    sx1278 = new SX1278Fsk(SPISlave(bus, cs, spi_config));
 
     printf("\n[sx1278] Configuring sx1278...\n");
-    if ((err = sx1278->init(config)) != SX1278::Error::NONE)
+    if ((err = sx1278->init(config)) != SX1278Fsk::Error::NONE)
     {
         gui->stats_screen.updateError(err);
         printf("[sx1278] sx1278->init error: %s\n", stringFromErr(err));

@@ -24,146 +24,25 @@
 
 #include <diagnostic/PrintLogger.h>
 #include <drivers/spi/SPIDriver.h>
-#include <kernel/kernel.h>
-#include <radio/Transceiver.h>
 
 #include <cstdint>
 
-#include "SX1278Defs.h"
-
-/*
-# Description
-## Concurrent access
-The device is stateful, in order to send/receive data you need to set in a
-particular state. This is handled by SX1278BusManager::setMode. This causes a
-lot of issues with multithreaded code, and receiving/transmitting concurrently.
-
-So the driver wraps the bus in a BusManager for this reason, in order to perform
-anything you need to lock the bus. The driver then locks the internal mutex and
-sets the device in the correct mode for that operation.
-
-But this causes problems when receiving, as receive can block indefinetly, and
-would prevent any thread from actually sending stuff. The solution is to release
-the lock only when waiting for a packet. This allows other threads to lock it
-and change mode, and unlocking the bus resets its state back to RX so it can
-continue to listen for incoming packets.
-
-The BusManager also multiplexes who is currently waiting for an interrupt. This
-is needed because due to the limited interrupts pins, the device signals
-multiples of them on one pin. And for some random reasons, the designers decided
-to put "packet received" and "packed sent" on same pin (DIO0)...
-
-Again, the solution is to track who is actually using the bus, so when sending a
-packet that triggers the "packet sent" interrupt, the manager knows to dispatch
-it to the currect thread, and not wake up the RX thread.
-*/
+#include "SX1278Common.h"
 
 namespace Boardcore
 {
 
 /**
- * @brief SX1278 bus access manager.
- */
-class SX1278BusManager
-{
-public:
-    using Mode = SX1278Defs::RegOpMode::Mode;
-
-    /**
-     * @brief RAII scoped bus lock guard.
-     */
-    class Lock
-    {
-    public:
-        explicit Lock(SX1278BusManager &bus) : bus(bus) { bus.lock(); }
-
-        ~Lock() { bus.unlock(); }
-
-    private:
-        SX1278BusManager &bus;
-    };
-
-    /**
-     * @brief RAII scoped bus lock guard.
-     */
-    class LockMode
-    {
-    public:
-        LockMode(SX1278BusManager &bus, Mode mode) : bus(bus)
-        {
-            bus.lockMode(mode);
-        }
-
-        ~LockMode() { bus.unlockMode(); }
-
-    private:
-        SX1278BusManager &bus;
-    };
-
-    SX1278BusManager(SPIBusInterface &bus, miosix::GpioPin cs);
-
-    /**
-     * @brief Lock bus for exclusive access (does not change mode).
-     */
-    void lock();
-
-    /**
-     * @brief Release bus for exclusive access.
-     */
-    void unlock();
-
-    /**
-     * @brief Lock bus for exclusive access.
-     *
-     * @param mode Device mode requested.
-     */
-    void lockMode(Mode mode);
-
-    /**
-     * @brief Release bus for exclusive access.
-     */
-    void unlockMode();
-
-    /**
-     * @brief Get underlying bus.
-     */
-    SPISlave &getBus();
-
-    /**
-     * @brief Handle DIO0 irq.
-     */
-    void handleDioIRQ();
-
-    /**
-     * @brief Wait for generic irq (DOES NOT RELEASE LOCK!).
-     */
-    bool waitForIrq(uint16_t mask, int timeout = 10);
-
-    /**
-     * @brief Wait for RX irq (releases lock safely).
-     */
-    void waitForRxIrq();
-
-private:
-    void enterMode(Mode mode);
-
-    uint16_t getIrqFlags();
-    void setMode(Mode mode);
-
-    miosix::Thread *irq_wait_thread = nullptr;
-    miosix::Thread *rx_wait_thread  = nullptr;
-    miosix::FastMutex mutex;
-
-    SPISlave slave;
-    Mode mode;
-};
-
-/**
  * @brief Various SX1278 register/enums definitions.
  */
-class SX1278 : public Transceiver
+class SX1278Fsk : public SX1278::SX1278Common
 {
 public:
+    /**
+     * @brief Maximum transmittable unit of this driver.
+     */
+    static constexpr size_t MTU = SX1278::Fsk::FIFO_LEN - 1;
+
     /**
      * @brief Channel filter bandwidth.
      */
@@ -194,20 +73,20 @@ public:
 
     enum class Shaping
     {
-        NONE = SX1278Defs::RegPaRamp::MODULATION_SHAPING_NONE,
+        NONE = SX1278::Fsk::RegPaRamp::MODULATION_SHAPING_NONE,
         GAUSSIAN_BT_1_0 =
-            SX1278Defs::RegPaRamp::MODULATION_SHAPING_GAUSSIAN_BT_1_0,
+            SX1278::Fsk::RegPaRamp::MODULATION_SHAPING_GAUSSIAN_BT_1_0,
         GAUSSIAN_BT_0_5 =
-            SX1278Defs::RegPaRamp::MODULATION_SHAPING_GAUSSIAN_BT_0_5,
+            SX1278::Fsk::RegPaRamp::MODULATION_SHAPING_GAUSSIAN_BT_0_5,
         GAUSSIAN_BT_0_3 =
-            SX1278Defs::RegPaRamp::MODULATION_SHAPING_GAUSSIAN_BT_0_3,
+            SX1278::Fsk::RegPaRamp::MODULATION_SHAPING_GAUSSIAN_BT_0_3,
     };
 
     enum class DcFree
     {
-        NONE       = SX1278Defs::RegPacketConfig1::DC_FREE_NONE,
-        MANCHESTER = SX1278Defs::RegPacketConfig1::DC_FREE_MANCHESTER,
-        WHITENING  = SX1278Defs::RegPacketConfig1::DC_FREE_WHITENING
+        NONE       = SX1278::Fsk::RegPacketConfig1::DC_FREE_NONE,
+        MANCHESTER = SX1278::Fsk::RegPacketConfig1::DC_FREE_MANCHESTER,
+        WHITENING  = SX1278::Fsk::RegPacketConfig1::DC_FREE_WHITENING
     };
 
     /**
@@ -224,6 +103,7 @@ public:
             120;  //< Over current protection limit in mA (0 for no limit).
         int power = 10;  //< Output power in dB (Between +2 and +17, or +20 for
                          // full power).
+        bool pa_boost   = true;  //< Enable output on PA_BOOST.
         Shaping shaping = Shaping::GAUSSIAN_BT_1_0;  //< Shaping applied to
                                                      // the modulation stream.
         DcFree dc_free = DcFree::WHITENING;  //< Dc free encoding scheme.
@@ -234,10 +114,10 @@ public:
      */
     enum class Error
     {
-        NONE,              //< No error encountered.
-        BAD_VALUE,         //< A requested value was outside the valid range.
-        BAD_VERSION,       //< Chip isn't connected.
-        CONFIGURE_FAILED,  //< Timeout on IRQ register.
+        NONE,         //< No error encountered.
+        BAD_VALUE,    //< A requested value was outside the valid range.
+        BAD_VERSION,  //< Chip isn't connected.
+        IRQ_TIMEOUT,  //< Timeout on IRQ register.
     };
 
     /**
@@ -246,22 +126,22 @@ public:
      * @param bus SPI bus used.
      * @param cs Chip select pin.
      */
-    SX1278(SPIBusInterface &bus, miosix::GpioPin cs);
+    explicit SX1278Fsk(SPISlave slave) : SX1278Common(slave) {}
 
     /**
      * @brief Setup the device.
      */
-    Error init(const Config &config);
+    [[nodiscard]] virtual Error init(const Config &config);
 
     /*
      * @brief Check if this device is connected.
      */
-    bool probe();
+    bool checkVersion();
 
     /**
      * @brief Configure this device on the fly.
      */
-    bool configure(const Config &config);
+    [[nodiscard]] virtual Error configure(const Config &config);
 
     /**
      * @brief Wait until a new packet is received.
@@ -270,7 +150,7 @@ public:
      * @param pkt_len   Maximum length of the received data.
      * @return          Size of the data received or -1 if failure
      */
-    ssize_t receive(uint8_t *pkt, size_t max_len);
+    ssize_t receive(uint8_t *pkt, size_t max_len) override;
 
     /**
      * @brief Send a packet.
@@ -278,15 +158,10 @@ public:
      *
      * @param pkt       Pointer to the packet (needs to be at least pkt_len
      * bytes).
-     * @param pkt_len   Lenght of the packet to be sent.
+     * @param pkt_len   Length of the packet to be sent.
      * @return          True if the message was sent correctly.
      */
-    bool send(uint8_t *pkt, size_t len);
-
-    /**
-     * @brief Return device version.
-     */
-    uint8_t getVersion();
+    bool send(uint8_t *pkt, size_t len) override;
 
     /**
      * @brief Get the current perceived RSSI in dBm.
@@ -304,23 +179,33 @@ public:
     float getLastRxFei();
 
     /**
-     * @brief Handle an incoming interrupt.
-     */
-    void handleDioIRQ();
-
-    /**
      * @brief Dump all registers via TRACE.
      */
     void debugDumpRegisters();
 
-public:
-    using Mode = SX1278BusManager::Mode;
+protected:
+    // Stuff to work with various front-ends
+    virtual void enableRxFrontend() override {}
+    virtual void disableRxFrontend() override {}
+    virtual void enableTxFrontend() override {}
+    virtual void disableTxFrontend() override {}
 
+private:
     void rateLimitTx();
+
     void imageCalibrate();
+
+    SX1278::DioMask getDioMaskFromIrqFlags(IrqFlags flags, Mode mode,
+                                           SX1278::DioMapping mapping) override;
+
+    IrqFlags getIrqFlags() override;
+    void resetIrqFlags(IrqFlags flags) override;
 
     float getRssi();
     float getFei();
+
+    void setMode(Mode mode) override;
+    void setMapping(SX1278::DioMapping mapping) override;
 
     void setBitrate(int bitrate);
     void setFreqDev(int freq_dev);
@@ -329,15 +214,12 @@ public:
     void setSyncWord(uint8_t value[], int size);
     void setRxBw(RxBw rx_bw);
     void setAfcBw(RxBw afc_bw);
-    void setPreableLen(int len);
+    void setPreambleLen(int len);
     void setPa(int power, bool pa_boost);
     void setShaping(Shaping shaping);
 
-    void waitForIrq(uint16_t mask);
-
     long long last_tx  = 0;
     float last_rx_rssi = 0.0f;
-    SX1278BusManager bus_mgr;
     PrintLogger logger = Logging::getLogger("sx1278");
 };
 

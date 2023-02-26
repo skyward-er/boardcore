@@ -22,7 +22,7 @@
 
 #include <drivers/timer/TimestampTimer.h>
 #include <miosix.h>
-#include <radio/SX1278/SX1278.h>
+#include <radio/SX1278/SX1278Fsk.h>
 #include <utils/MovingAverage.h>
 
 #include <thread>
@@ -30,7 +30,7 @@
 using namespace Boardcore;
 using namespace miosix;
 
-SX1278 *sx1278 = nullptr;
+SX1278Fsk *sx1278 = nullptr;
 
 // Simple xorshift RNG
 uint32_t xorshift32()
