@@ -57,8 +57,9 @@ foreach(OPT_BOARD ${BOARDS})
         ${SBS_BASE}/src/shared/drivers/runcam/Runcam.cpp
         ${SBS_BASE}/src/shared/drivers/spi/SPITransaction.cpp
         ${SBS_BASE}/src/shared/drivers/usart/USART.cpp
-        # ${SBS_BASE}/src/shared/drivers/i2c/I2CDriver.cpp
-        # ${SBS_BASE}/src/shared/drivers/i2c/I2C.cpp
+        ${SBS_BASE}/src/shared/drivers/i2c/I2CDriver-f4.cpp
+        ${SBS_BASE}/src/shared/drivers/i2c/I2CDriver-f7.cpp
+        ${SBS_BASE}/src/shared/drivers/i2c/I2C.cpp
 
         # Events
         ${SBS_BASE}/src/shared/events/EventBroker.cpp

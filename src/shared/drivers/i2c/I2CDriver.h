@@ -62,10 +62,12 @@ public:
         READ  = 1
     };
 
+    // [TODO] limit speed possibilities at compile time with ifdefs?
     enum Speed : uint8_t
     {
-        STANDARD = 0,
-        FAST     = 1
+        STANDARD  = 0,
+        FAST      = 1,
+        FAST_PLUS = 2
     };
 
     enum Addressing : uint8_t
@@ -233,6 +235,12 @@ private:
      */
     void setupPeripheral(const I2CSlaveConfig &slaveConfig);
 
+#ifdef _ARCH_CORTEXM7_STM32F7
+    inline void setupTransaction();
+
+    inline void setupReload();
+#endif  // _ARCH_CORTEXM7_STM32F7
+
     /**
      * @brief Method to perform a read or write operation.
      *
@@ -277,7 +285,7 @@ private:
     miosix::GpioPin sda;  ///< GpioPin of the serial data pin
 
     uint16_t lastError = NO_ERROR;  ///< Flag for the last error occurred
-    uint16_t error     = 0;         ///< Flag that tells if an error occurred
+    uint32_t error     = 0;         ///< Flag that tells if an error occurred
     bool reStarting = false;    ///< Flag true if not generated a STOP condition
     miosix::Thread *waiting{};  ///< Pointer to the waiting for event thread
     I2CTransaction transaction;  ///< Struct storing the transaction info
