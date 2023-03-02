@@ -41,17 +41,23 @@ static const int N_SCL_BITBANG =
 static const uint8_t I2C_PIN_ALTERNATE_FUNCTION =
     4;  ///< Alternate Function number of the I2C peripheral pins
 
-static uint8_t PRESC_STD;  ///< PRESC for STANDARD speed
-static uint8_t SCLH_STD;   ///< SCLH for STANDARD speed
-static uint8_t SCLL_STD;   ///< SCLL for STANDARD speed
+static uint8_t PRESC_STD;   ///< PRESC for STANDARD speed
+static uint8_t SCLH_STD;    ///< SCLH for STANDARD speed
+static uint8_t SCLL_STD;    ///< SCLL for STANDARD speed
+static uint8_t SCLDEL_STD;  ///< SCLDEL for STANDARD speed
+static uint8_t SDADEL_STD;  ///< SDADEL for STANDARD speed
 
-static uint8_t PRESC_F;  ///< PRESC for FAST speed
-static uint8_t SCLH_F;   ///< SCLH for FAST speed
-static uint8_t SCLL_F;   ///< SCLL for FAST speed
+static uint8_t PRESC_F;   ///< PRESC for FAST speed
+static uint8_t SCLH_F;    ///< SCLH for FAST speed
+static uint8_t SCLL_F;    ///< SCLL for FAST speed
+static uint8_t SCLDEL_F;  ///< SCLDEL for FAST speed
+static uint8_t SDADEL_F;  ///< SDADEL for FAST speed
 
-static uint8_t PRESC_FP;  ///< PRESC for FAST PLUS speed
-static uint8_t SCLH_FP;   ///< SCLH for FAST PLUS speed
-static uint8_t SCLL_FP;   ///< SCLL for FAST PLUS speed
+static uint8_t PRESC_FP;   ///< PRESC for FAST PLUS speed
+static uint8_t SCLH_FP;    ///< SCLH for FAST PLUS speed
+static uint8_t SCLL_FP;    ///< SCLL for FAST PLUS speed
+static uint8_t SCLDEL_FP;  ///< SCLDEL for FAST PLUS speed
+static uint8_t SDADEL_FP;  ///< SDADEL for FAST PLUS speed
 }  // namespace I2CConsts
 
 /**
@@ -59,14 +65,14 @@ static uint8_t SCLL_FP;   ///< SCLL for FAST PLUS speed
  * peripheral
  */
 void calculateTimings(uint32_t f, uint32_t fi2c, uint8_t *presc, uint8_t *sclh,
-                      uint8_t *scll)
+                      uint8_t *scll, uint8_t *scldel, uint8_t *sdadel)
 {
     // The formula for the clock is:
     // t_SCL = [(SCLL + 1) + (SCLH + 1)] * (PRESC + 1) * t_I2CCLK + t_sync;
 
     // calculating the "smallest" prescaler so that we can handle in a more
     // refined way (with SCLL and SCLH) the length of high and low phases.
-    uint32_t temp_presc = f / (256 * fi2c);
+    uint32_t temp_presc = f / (64 * fi2c);
 
     // presc is 4 bit long, so avoiding overflow
     if (temp_presc >= 16)
@@ -86,6 +92,31 @@ void calculateTimings(uint32_t f, uint32_t fi2c, uint8_t *presc, uint8_t *sclh,
     // correcting for the 250ns delay of the peripheral (250ns = 12 I2C clocks)
     // distributing the correction on SCLL and SCLH
     *sclh = *scll = (f / (fi2c * 2 * (*presc + 1)) - 1) - (7 / (*presc + 1));
+
+    // SCLDEL >= (t_r + t_su) / ((PRESC+1)*t_i2c) - 1 ; approximated without
+    // subtracting 1
+    uint32_t scldly = 0, sdadly = 0;
+    if (fi2c == 100)
+    {
+        scldly = 1250 * f / (*presc + 1) / 1000000;
+        sdadly = (3450 - 1000 - 260) * f / (*presc + 1) / 1000000;
+    }
+    else if (fi2c == 400)
+    {
+        scldly = 400 * f / (*presc + 1) / 1000000;
+        sdadly = (900 - 300 - 260) * f / (*presc + 1) / 1000000;
+    }
+    else if (fi2c == 1000)
+    {
+        scldly = 170 * f / (*presc + 1) / 1000000;
+        sdadly = (450 - 120 - 260) * f / (*presc + 1) / 1000000;
+    }
+
+    // max value of scldel is 15
+    *scldel = ((scldly < 16) ? (scldly - 1) : 15);
+
+    // max value of sdadel is 15 m
+    *sdadel = ((sdadly < 16) ? (sdadly - 1) : 15);
 }
 
 #ifdef I2C1
@@ -380,17 +411,21 @@ void I2CDriver::init()
         ClockUtils::getAPBPeripheralsClock(ClockUtils::APB::APB1) / 1000;
 
     calculateTimings(f, 100, &I2CConsts::PRESC_STD, &I2CConsts::SCLH_STD,
-                     &I2CConsts::SCLL_STD);
+                     &I2CConsts::SCLL_STD, &I2CConsts::SCLDEL_STD,
+                     &I2CConsts::SDADEL_STD);
 
     calculateTimings(f, 400, &I2CConsts::PRESC_F, &I2CConsts::SCLH_F,
-                     &I2CConsts::SCLL_F);
+                     &I2CConsts::SCLL_F, &I2CConsts::SCLDEL_F,
+                     &I2CConsts::SDADEL_F);
 
     calculateTimings(f, 1000, &I2CConsts::PRESC_FP, &I2CConsts::SCLH_FP,
-                     &I2CConsts::SCLL_FP);
+                     &I2CConsts::SCLL_FP, &I2CConsts::SCLDEL_FP,
+                     &I2CConsts::SDADEL_FP);
 
     // I2CCLK < (t_low - t_filters) / 4
     // I2CCLK < t_high
     // I2CCLK < 4/3 * t_SCL
+    i2c->CR1 |= I2C_CR1_PE;
 }
 
 bool I2CDriver::read(const I2CSlaveConfig &slaveConfig, void *buffer,
@@ -518,28 +553,29 @@ void I2CDriver::setupPeripheral(const I2CSlaveConfig &slaveConfig)
     if (slaveConfig.speed == Speed::STANDARD)
     {
         i2c->TIMINGR =
-            (I2CConsts::PRESC_STD << I2C_TIMINGR_PRESC_Pos) |  // PRESC
-            (I2CConsts::SCLL_STD << I2C_TIMINGR_SCLL_Pos) |    // SCLL
-            (I2CConsts::SCLH_STD << I2C_TIMINGR_SCLH_Pos) |    // SCLH
-            (0x1 << I2C_TIMINGR_SDADEL_Pos) |                  // SDADEL
-            (0x1 << I2C_TIMINGR_SCLDEL_Pos);                   // SCLDEL
+            (I2CConsts::PRESC_STD << I2C_TIMINGR_PRESC_Pos) |    // PRESC
+            (I2CConsts::SCLL_STD << I2C_TIMINGR_SCLL_Pos) |      // SCLL
+            (I2CConsts::SCLH_STD << I2C_TIMINGR_SCLH_Pos) |      // SCLH
+            (I2CConsts::SCLDEL_STD << I2C_TIMINGR_SCLDEL_Pos) |  // SCLDEL
+            (I2CConsts::SDADEL_STD << I2C_TIMINGR_SDADEL_Pos);   // SDADEL
     }
     else if (slaveConfig.speed == Speed::FAST)
     {
-        i2c->TIMINGR = (I2CConsts::PRESC_F << I2C_TIMINGR_PRESC_Pos) |  // PRESC
-                       (I2CConsts::SCLL_F << I2C_TIMINGR_SCLL_Pos) |    // SCLL
-                       (I2CConsts::SCLH_F << I2C_TIMINGR_SCLH_Pos) |    // SCLH
-                       (0x1 << I2C_TIMINGR_SDADEL_Pos) |  // SDADEL
-                       (0x1 << I2C_TIMINGR_SCLDEL_Pos);   // SCLDEL
+        i2c->TIMINGR =
+            (I2CConsts::PRESC_F << I2C_TIMINGR_PRESC_Pos) |    // PRESC
+            (I2CConsts::SCLL_F << I2C_TIMINGR_SCLL_Pos) |      // SCLL
+            (I2CConsts::SCLH_F << I2C_TIMINGR_SCLH_Pos) |      // SCLH
+            (I2CConsts::SCLDEL_F << I2C_TIMINGR_SCLDEL_Pos) |  // SCLDEL
+            (I2CConsts::SDADEL_F << I2C_TIMINGR_SDADEL_Pos);   // SDADEL
     }
     else if (slaveConfig.speed == Speed::FAST_PLUS)
     {
         i2c->TIMINGR =
-            (I2CConsts::PRESC_FP << I2C_TIMINGR_PRESC_Pos) |  // PRESC
-            (I2CConsts::SCLL_FP << I2C_TIMINGR_SCLL_Pos) |    // SCLL
-            (I2CConsts::SCLH_FP << I2C_TIMINGR_SCLH_Pos) |    // SCLH
-            (0x1 << I2C_TIMINGR_SDADEL_Pos) |                 // SDADEL
-            (0x1 << I2C_TIMINGR_SCLDEL_Pos);                  // SCLDEL
+            (I2CConsts::PRESC_FP << I2C_TIMINGR_PRESC_Pos) |    // PRESC
+            (I2CConsts::SCLL_FP << I2C_TIMINGR_SCLL_Pos) |      // SCLL
+            (I2CConsts::SCLH_FP << I2C_TIMINGR_SCLH_Pos) |      // SCLH
+            (I2CConsts::SCLDEL_FP << I2C_TIMINGR_SCLDEL_Pos) |  // SCLDEL
+            (I2CConsts::SDADEL_FP << I2C_TIMINGR_SDADEL_Pos);   // SDADEL
     }
     else
     {
@@ -575,15 +611,16 @@ void I2CDriver::setupReload()
 {
     if ((transaction.nBytes - transaction.nBytesDone) <= 0xffu)
     {
-        i2c->CR2 &= ~I2C_CR2_RELOAD;
-        i2c->CR2 |= ((transaction.nBytes - transaction.nBytesDone)
-                     << I2C_CR2_NBYTES_Pos);
+        i2c->CR2 =
+            (i2c->CR2 & ~(I2C_CR2_NBYTES_Msk |
+                          I2C_CR2_RELOAD)) |  // clearing NBYTES and RELOAD
+            ((transaction.nBytes - transaction.nBytesDone)
+             << I2C_CR2_NBYTES_Pos);  // Reloading right number of bytes
     }
     else
     {
-        i2c->CR2 |=
-            (I2C_CR2_RELOAD |                // There must be a reload
-             (0xff << I2C_CR2_NBYTES_Pos));  // maximum bytes that can be sent
+        i2c->CR2 |= (I2C_CR2_RELOAD |      // There must be a reload
+                     I2C_CR2_NBYTES_Msk);  // maximum bytes that can be sent
     }
 }
 
@@ -716,6 +753,12 @@ void I2CDriver::IRQhandleInterrupt()
         return;
     }
 
+    // Transfer complete reload: setting registers for the remaining bytes
+    if (i2c->ISR & I2C_ISR_TCR)
+    {
+        setupReload();
+    }
+
     if (transaction.nBytesDone < transaction.nBytes)
     {
         // Performing the read/write
@@ -731,12 +774,6 @@ void I2CDriver::IRQhandleInterrupt()
             i2c->TXDR = transaction.buffWrite[transaction.nBytesDone];
             transaction.nBytesDone++;
         }
-    }
-
-    // Transfer complete reload: setting registers for the remaining bytes
-    if (i2c->ISR & I2C_ISR_TCR)
-    {
-        setupReload();
     }
 
     // when stop detected on the bus

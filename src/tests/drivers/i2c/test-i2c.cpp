@@ -24,7 +24,6 @@
 
 #include "drivers/i2c/I2C.h"
 #include "miosix.h"
-#include "scheduler/TaskScheduler.h"
 #include "string"
 #include "string.h"
 #include "thread"
@@ -90,19 +89,14 @@ I2CDriver::I2CSlaveConfig BME280Config{BME280.addressSensor,
                                        I2CDriver::Addressing::BIT7,
                                        I2CDriver::Speed::STANDARD};
 
-I2CDriver::I2CSlaveConfig OLEDConfig_F{
-    OLED.addressSensor, I2CDriver::Addressing::BIT7, I2CDriver::Speed::FAST};
-
-#ifdef _ARCH_CORTEXM7_STM32F7
-I2CDriver::I2CSlaveConfig OLEDConfig_FP{OLED.addressSensor,
-                                        I2CDriver::Addressing::BIT7,
-                                        I2CDriver::Speed::FAST_PLUS};
-#endif  // _ARCH_CORTEXM7_STM32F7
+I2CDriver::I2CSlaveConfig OLEDConfig{OLED.addressSensor,
+                                     I2CDriver::Addressing::BIT7,
+                                     I2CDriver::Speed::STANDARD};
 
 bool i2cDriver(I2C &i2c, I2CSensor sensor,
                I2CDriver::I2CSlaveConfig sensorConfig)
 {
-    buffer = 0;
+    buffer = 48;
 
     // reset the sensor and then read the whoami
     if (!(i2c.probe(sensorConfig) &&
@@ -132,29 +126,39 @@ int main()
 {
     int nRepeat = 50;
 
-    // thread that uses 100% CPU
-    std::thread t(
-        []()
-        {
-            while (1)
-                ;
-        });
+    // // thread that uses 100% CPU
+    // std::thread t(
+    //     []()
+    //     {
+    //         while (1)
+    //             ;
+    //     });
+
+    SyncedI2C i2c(I2C1, i1scl2::getPin(), i1sda2::getPin());
 
     for (;;)
     {
-        SyncedI2C i2c(I2C1, i1scl2::getPin(), i1sda2::getPin());
-
         // resetting status of read sensors
         bool statusOLED = true;
         bool statusBMP  = true;
 
         for (int i = 0; i < nRepeat; i++)
         {
-            statusBMP &= i2cDriver(i2c, BMP180, BMP180Config);
-            statusOLED &= i2cDriver(i2c, OLED, OLEDConfig_F);
+            for (I2CDriver::Speed speed :
+                 {I2CDriver::Speed::STANDARD, I2CDriver::Speed::FAST
 #ifdef _ARCH_CORTEXM7_STM32F7
-            statusOLED &= i2cDriver(i2c, OLED, OLEDConfig_FP);
+                  ,
+                  I2CDriver::Speed::FAST_PLUS
 #endif  // _ARCH_CORTEXM7_STM32F7
+                 })
+            {
+                statusBMP &= i2cDriver(
+                    i2c, BMP180,
+                    {BMP180.addressSensor, I2CDriver::Addressing::BIT7, speed});
+                statusOLED &= i2cDriver(
+                    i2c, OLED,
+                    {OLED.addressSensor, I2CDriver::Addressing::BIT7, speed});
+            }
         }
 
         printf("OLED:%d\tBMP:%d\n", statusOLED, statusBMP);
