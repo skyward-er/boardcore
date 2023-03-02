@@ -95,7 +95,24 @@ public:
      */
     [[nodiscard]] bool readRegister(
         const I2CDriver::I2CSlaveConfig &slaveConfig,
-        const uint8_t registerAddress, uint8_t &registerContent);
+        const uint8_t &registerAddress, uint8_t &registerContent);
+
+    /**
+     * @brief Non blocking operation to read n-bytes from register from a slave.
+     *
+     * This method, if necessary, flushes the bus before the read operation is
+     * performed. In case of an error during the communication, this method
+     * returns false immediately.
+     * @warning Check always if the operation succeeded or not!
+     * @param slaveConfig The configuration struct of the slave device.
+     * @param registerAddress Byte that represents the address of the register.
+     * @param buffer Data buffer where to store the data read.
+     * @param nBytes Number of bytes to read.
+     * @returns True if the write is successful, false otherwise.
+     */
+    [[nodiscard]] bool readFromRegister(
+        const I2CDriver::I2CSlaveConfig &slaveConfig,
+        const uint8_t &registerAddress, void *buffer, size_t nBytes);
 
     /**
      * @brief Non blocking operation to check if a slave is available.
@@ -184,7 +201,24 @@ public:
      */
     [[nodiscard]] bool readRegister(
         const I2CDriver::I2CSlaveConfig &slaveConfig,
-        const uint8_t registerAddress, uint8_t registerContent);
+        const uint8_t &registerAddress, uint8_t registerContent);
+
+    /**
+     * @brief Read n-bytes from register from a slave.
+     *
+     * This method could have to wait that no other thread is trying to do some
+     * operation on the bus. In case of an error during the communication, this
+     * method returns false immediately.
+     * @warning Check always if the operation succeeded or not!
+     * @param slaveConfig The configuration struct of the slave device.
+     * @param registerAddress Byte that represents the address of the register.
+     * @param buffer Data buffer where to store the data read.
+     * @param nBytes Number of bytes to read.
+     * @returns True if the write is successful, false otherwise.
+     */
+    [[nodiscard]] bool readFromRegister(
+        const I2CDriver::I2CSlaveConfig &slaveConfig,
+        const uint8_t &registerAddress, void *buffer, size_t nBytes);
 
     /**
      * @brief Check if a slave is available.
