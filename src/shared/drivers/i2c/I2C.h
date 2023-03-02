@@ -51,6 +51,12 @@ public:
      */
     I2C(I2C_TypeDef *i2c, miosix::GpioPin scl, miosix::GpioPin sda);
 
+    ///< Delete copy/move constructors/operators.
+    I2C(const I2C &)            = delete;
+    I2C &operator=(const I2C &) = delete;
+    I2C(I2C &&)                 = delete;
+    I2C &operator=(I2C &&)      = delete;
+
     /**
      * @brief Non blocking read operation to read nBytes.
      *
@@ -95,7 +101,40 @@ public:
      */
     [[nodiscard]] bool readRegister(
         const I2CDriver::I2CSlaveConfig &slaveConfig,
-        const uint8_t registerAddress, uint8_t &registerContent);
+        const uint8_t &registerAddress, uint8_t &registerContent);
+
+    /**
+     * @brief Non blocking operation to write a 1-byte register from a slave.
+     *
+     * This method, if necessary, flushes the bus before the write operation is
+     * performed. In case of an error during the communication, this method
+     * returns false immediately.
+     * @warning Check always if the operation succeeded or not!
+     * @param slaveConfig The configuration struct of the slave device.
+     * @param registerAddress Byte that represents the address of the register.
+     * @param registerContent The content to write on the register.
+     * @returns True if the write is successful, false otherwise.
+     */
+    [[nodiscard]] bool writeRegister(
+        const I2CDriver::I2CSlaveConfig &slaveConfig,
+        const uint8_t &registerAddress, const uint8_t registerContent);
+
+    /**
+     * @brief Non blocking operation to read n-bytes from register from a slave.
+     *
+     * This method, if necessary, flushes the bus before the read operation is
+     * performed. In case of an error during the communication, this method
+     * returns false immediately.
+     * @warning Check always if the operation succeeded or not!
+     * @param slaveConfig The configuration struct of the slave device.
+     * @param registerAddress Byte that represents the address of the register.
+     * @param buffer Data buffer where to store the data read.
+     * @param nBytes Number of bytes to read.
+     * @returns True if the write is successful, false otherwise.
+     */
+    [[nodiscard]] bool readFromRegister(
+        const I2CDriver::I2CSlaveConfig &slaveConfig,
+        const uint8_t &registerAddress, void *buffer, size_t nBytes);
 
     /**
      * @brief Non blocking operation to check if a slave is available.
@@ -140,6 +179,12 @@ public:
      */
     SyncedI2C(I2C_TypeDef *i2c, miosix::GpioPin scl, miosix::GpioPin sda);
 
+    ///< Delete copy/move constructors/operators.
+    SyncedI2C(const SyncedI2C &)            = delete;
+    SyncedI2C &operator=(const SyncedI2C &) = delete;
+    SyncedI2C(SyncedI2C &&)                 = delete;
+    SyncedI2C &operator=(SyncedI2C &&)      = delete;
+
     /**
      * @brief Read operation to read nBytes.
      *
@@ -180,11 +225,44 @@ public:
      * @param slaveConfig The configuration struct of the slave device.
      * @param registerAddress Byte that represents the address of the register.
      * @param registerContent Where to store the content of the register.
-     * @returns True if the write is successful, false otherwise.
+     * @returns True if the read is successful, false otherwise.
      */
     [[nodiscard]] bool readRegister(
         const I2CDriver::I2CSlaveConfig &slaveConfig,
-        const uint8_t registerAddress, uint8_t registerContent);
+        const uint8_t &registerAddress, uint8_t &registerContent);
+
+    /**
+     * @brief Write a one-byte register from the device.
+     *
+     * This method could have to wait that no other thread is trying to do some
+     * operation on the bus. In case of an error during the communication, this
+     * method returns false immediately.
+     * @warning Check always if the operation succeeded or not!
+     * @param slaveConfig The configuration struct of the slave device.
+     * @param registerAddress Byte that represents the address of the register.
+     * @param registerContent The content to write on the register.
+     * @returns True if the write is successful, false otherwise.
+     */
+    [[nodiscard]] bool writeRegister(
+        const I2CDriver::I2CSlaveConfig &slaveConfig,
+        const uint8_t &registerAddress, const uint8_t registerContent);
+
+    /**
+     * @brief Read n-bytes from register from a slave.
+     *
+     * This method could have to wait that no other thread is trying to do some
+     * operation on the bus. In case of an error during the communication, this
+     * method returns false immediately.
+     * @warning Check always if the operation succeeded or not!
+     * @param slaveConfig The configuration struct of the slave device.
+     * @param registerAddress Byte that represents the address of the register.
+     * @param buffer Data buffer where to store the data read.
+     * @param nBytes Number of bytes to read.
+     * @returns True if the write is successful, false otherwise.
+     */
+    [[nodiscard]] bool readFromRegister(
+        const I2CDriver::I2CSlaveConfig &slaveConfig,
+        const uint8_t &registerAddress, void *buffer, size_t nBytes);
 
     /**
      * @brief Check if a slave is available.

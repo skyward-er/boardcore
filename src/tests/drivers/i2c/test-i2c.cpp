@@ -67,8 +67,6 @@ typedef miosix::Gpio<GPIOH_BASE, 8> i3scl2;
  * one sensor (in order to provoke a locked state).
  */
 
-uint8_t buffer = 0;
-
 typedef struct
 {
     // cppcheck-suppress unusedStructMember
@@ -91,16 +89,21 @@ I2CDriver::I2CSlaveConfig BME280Config{BME280.addressSensor,
 I2CDriver::I2CSlaveConfig OLEDConfig{
     OLED.addressSensor, I2CDriver::Addressing::BIT7, I2CDriver::Speed::FAST};
 
-bool i2cDriver(I2C &i2c, I2CSensor sensor,
+bool i2cDriver(SyncedI2C &i2c, I2CSensor sensor,
                I2CDriver::I2CSlaveConfig sensorConfig)
 {
-    buffer = 0;
+    uint8_t whoamiContent = 0;
+    const size_t nRead    = 300;
+    uint8_t buffer[nRead] = {0};
 
     // reset the sensor and then read the whoami
     if (!(i2c.probe(sensorConfig) &&
-          i2c.write(sensorConfig, sensor.softReset, 2) &&
-          i2c.readRegister(sensorConfig, sensor.whoamiRegister, buffer) &&
-          buffer == sensor.whoamiContent))
+          i2c.writeRegister(sensorConfig, sensor.softReset[0],
+                            sensor.softReset[1]) &&
+          i2c.readRegister(sensorConfig, sensor.whoamiRegister,
+                           whoamiContent) &&
+          i2c.readFromRegister(sensorConfig, sensor.whoamiRegister, buffer,
+                               nRead)))
     {
         uint16_t lastError{i2c.getLastError()};
         if (!(lastError & I2CDriver::Errors::AF))
@@ -110,12 +113,26 @@ bool i2cDriver(I2C &i2c, I2CSensor sensor,
         return false;
     }
 
+    if (whoamiContent != sensor.whoamiContent)
+    {
+        printf("whoami expected %d, received %d\n", sensor.whoamiContent,
+               whoamiContent);
+        return false;
+    }
+
+    if (buffer[0] != sensor.whoamiContent)
+    {
+        printf("buffer[0] expected %d, received %d\n", sensor.whoamiContent,
+               buffer[0]);
+        return false;
+    }
+
     return true;
 }
 
 int main()
 {
-    int nRepeat = 50;
+    int nRepeat = 10;
 
     // thread that uses 100% CPU
     std::thread t(
