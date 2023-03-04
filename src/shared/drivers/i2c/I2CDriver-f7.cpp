@@ -63,15 +63,24 @@ static uint8_t SDADEL_FP;  ///< SDADEL for FAST PLUS speed
 /**
  * @brief Helper function for calculating the timing parameters for the
  * peripheral
+ *
+ * The formula for the clock is:
+ * t_SCL = [(SCLL + 1) + (SCLH + 1)] * (PRESC + 1) * t_I2CCLK + t_sync
+ * @param f Peripheral timer clock frequency in kHz
+ * @param fi2c I2C clock frequency in kHz
+ * @param presc pointer to the prescaler variable to set
+ * @param sclh pointer to the sclh variable to set
+ * @param scll pointer to the scll variable to set
+ * @param scldel pointer to the scldel variable to set
+ * @param sdadel pointer to the sdadel variable to set
  */
 void calculateTimings(uint32_t f, uint32_t fi2c, uint8_t *presc, uint8_t *sclh,
                       uint8_t *scll, uint8_t *scldel, uint8_t *sdadel)
 {
-    // The formula for the clock is:
-    // t_SCL = [(SCLL + 1) + (SCLH + 1)] * (PRESC + 1) * t_I2CCLK + t_sync;
-
     // calculating the "smallest" prescaler so that we can handle in a more
-    // refined way (with SCLL and SCLH) the length of high and low phases.
+    // refined way (with SCLL and SCLH) the length of high and low phases. We
+    // "limit" SCLL and SCLH to 64 because like so we can have acceptable values
+    // for SCLDEL and SDADEL
     uint32_t temp_presc = f / (64 * fi2c);
 
     // presc is 4 bit long, so avoiding overflow
@@ -94,7 +103,8 @@ void calculateTimings(uint32_t f, uint32_t fi2c, uint8_t *presc, uint8_t *sclh,
     *sclh = *scll = (f / (fi2c * 2 * (*presc + 1)) - 1) - (7 / (*presc + 1));
 
     // SCLDEL >= (t_r + t_su) / ((PRESC+1)*t_i2c) - 1 ; approximated without
-    // subtracting 1
+    // subtracting 1. scldly and sdadly are calculated using values taken from
+    // the reference manual
     uint32_t scldly = 0, sdadly = 0;
     if (fi2c == 100)
     {
@@ -115,7 +125,7 @@ void calculateTimings(uint32_t f, uint32_t fi2c, uint8_t *presc, uint8_t *sclh,
     // max value of scldel is 15
     *scldel = ((scldly < 16) ? (scldly - 1) : 15);
 
-    // max value of sdadel is 15 m
+    // max value of sdadel is 15
     *sdadel = ((sdadly < 16) ? (sdadly - 1) : 15);
 }
 
@@ -410,21 +420,24 @@ void I2CDriver::init()
     uint32_t f =
         ClockUtils::getAPBPeripheralsClock(ClockUtils::APB::APB1) / 1000;
 
+    // Calculating for all the speed modes the clock parameters (so we won't
+    // have to calculate them again for every transaction)
+    // Standard mode (100 kHz)
     calculateTimings(f, 100, &I2CConsts::PRESC_STD, &I2CConsts::SCLH_STD,
                      &I2CConsts::SCLL_STD, &I2CConsts::SCLDEL_STD,
                      &I2CConsts::SDADEL_STD);
 
+    // Fast mode (400 kHz)
     calculateTimings(f, 400, &I2CConsts::PRESC_F, &I2CConsts::SCLH_F,
                      &I2CConsts::SCLL_F, &I2CConsts::SCLDEL_F,
                      &I2CConsts::SDADEL_F);
 
+    // Fast mode plus (1000 kHz)
     calculateTimings(f, 1000, &I2CConsts::PRESC_FP, &I2CConsts::SCLH_FP,
                      &I2CConsts::SCLL_FP, &I2CConsts::SCLDEL_FP,
                      &I2CConsts::SDADEL_FP);
 
-    // I2CCLK < (t_low - t_filters) / 4
-    // I2CCLK < t_high
-    // I2CCLK < 4/3 * t_SCL
+    // Enabling the peripheral after initialization
     i2c->CR1 |= I2C_CR1_PE;
 }
 
@@ -468,7 +481,7 @@ bool I2CDriver::write(const I2CSlaveConfig &slaveConfig, const void *buffer,
 
 bool I2CDriver::doOperation(const I2CSlaveConfig &slaveConfig)
 {
-    // Not yet supported
+    // 10-bit addressing not supported
     D(assert(slaveConfig.addressing == Addressing::BIT7 &&
              "Only 7-bit addressing supported!"));
 
@@ -504,7 +517,8 @@ bool I2CDriver::doOperation(const I2CSlaveConfig &slaveConfig)
     // Setting up transaction
     setupTransaction();
 
-    // Sending STOP condition and wake up thread
+    // Now proceeding as every other transaction (re-starting specific code
+    // already executed)
     reStarting = false;
 
     // clearing pending flags
@@ -518,10 +532,14 @@ bool I2CDriver::doOperation(const I2CSlaveConfig &slaveConfig)
         miosix::FastInterruptDisableLock dLock;
 
         // Sending the start condition
+        // [WARNING]: In F7 the START condition is not generated immediately
+        // when set the flag, but the peripheral waits that the bus is free for
+        // sending the START condition + slave address. This could be bad since
+        // the peripheral isn't deterministic in time.
         i2c->CR2 |= I2C_CR2_START;
 
-        // setting automatic stop generation if we have to generate STOP
-        // condition. This must be done after the START condition generation
+        // Setting automatic stop generation if we have to generate STOP
+        // condition. This MUST be done after the START condition generation
         // since, in case of a reStart, this would immediately end the previous
         // transaction before the start condition is generated.
         if (transaction.generateStop)
@@ -543,13 +561,13 @@ bool I2CDriver::doOperation(const I2CSlaveConfig &slaveConfig)
 
 void I2CDriver::setupPeripheral(const I2CSlaveConfig &slaveConfig)
 {
-    // Disabling the I2C peripheral before setting the registers
+    // Disabling the I2C peripheral before setting the registers.
+    // This will also perform a software reset, useful to restore the internal
+    // state machines and flags in order to start with a clear environment
     i2c->CR1 &= ~I2C_CR1_PE;
 
-    // setting the SCLH and SCLL bits in I2C_TIMINGR register to generate
-    // correct timings for each speed modes.
-    // SDADEL and SCLDEL are set to 1 just to provide a bit of margin but not
-    // too much (in order not to slow down communication)
+    // Setting PRESC, SCLH, SCLL, SCLDEL and SDADEL bits in I2C_TIMINGR register
+    // to generate correct timings for each speed mode
     if (slaveConfig.speed == Speed::STANDARD)
     {
         i2c->TIMINGR =
@@ -582,12 +600,13 @@ void I2CDriver::setupPeripheral(const I2CSlaveConfig &slaveConfig)
         D(assert(false && "speed not supported"));
     }
 
-    // setting addressing mode, read or write mode and slave address
+    // setting addressing mode and slave address (for 7-Bit addressing the 7
+    // bits have to be set on SADD[7:1])
     i2c->CR2 =
         (slaveConfig.addressing == Addressing::BIT10 ? I2C_CR2_ADD10 : 0) |
         (slaveConfig.slaveAddress << (I2C_CR2_SADD_Pos + 1));
 
-    // Finally enabling the peripheral
+    // Re-enabling the peripheral
     i2c->CR1 |= I2C_CR1_PE;
 }
 
@@ -609,6 +628,9 @@ void I2CDriver::setupTransaction()
 
 void I2CDriver::setupReload()
 {
+    // If we are left with a communication of less than 256 bytes, we can do it
+    // without reloading, otherwise we must perform the transaction with the
+    // first 255 bytes and then perform a reload operation
     if ((transaction.nBytes - transaction.nBytesDone) <= 0xffu)
     {
         i2c->CR2 =
@@ -626,7 +648,7 @@ void I2CDriver::setupReload()
 
 void I2CDriver::flushBus()
 {
-    // If there isn't any locked state return immediately
+    // If there isn't any locked state or bus error return immediately
     if (!((lastError & (Errors::BUS_LOCKED | Errors::BERR)) &&
           ((i2c->ISR & I2C_ISR_BUSY))))
     {
@@ -745,7 +767,7 @@ void I2CDriver::IRQhandleInterrupt()
     if (i2c->ISR & I2C_ISR_NACKF)
     {
         // "reserved" bit in the ISR register, so we don't collide with
-        // other fields
+        // other fields. Set to force an error
         error = 1 << 14;
         lastError |= Errors::AF;
         i2c->ICR |= I2C_ICR_NACKCF;
