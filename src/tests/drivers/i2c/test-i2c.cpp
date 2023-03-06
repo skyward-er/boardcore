@@ -91,7 +91,7 @@ I2CDriver::I2CSlaveConfig OLEDConfig{OLED.addressSensor,
                                      I2CDriver::Addressing::BIT7,
                                      I2CDriver::Speed::STANDARD};
 
-bool i2cDriver(I2C &i2c, I2CSensor sensor,
+bool i2cDriver(SyncedI2C &i2c, I2CSensor sensor,
                I2CDriver::I2CSlaveConfig sensorConfig)
 {
     uint8_t whoamiContent = 0;
@@ -100,7 +100,8 @@ bool i2cDriver(I2C &i2c, I2CSensor sensor,
 
     // reset the sensor and then read the whoami
     if (!(i2c.probe(sensorConfig) &&
-          i2c.write(sensorConfig, sensor.softReset, 2) &&
+          i2c.writeRegister(sensorConfig, sensor.softReset[0],
+                            sensor.softReset[1]) &&
           i2c.readRegister(sensorConfig, sensor.whoamiRegister,
                            whoamiContent) &&
           i2c.readFromRegister(sensorConfig, sensor.whoamiRegister, buffer,
