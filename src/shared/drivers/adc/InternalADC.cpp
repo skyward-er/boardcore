@@ -25,61 +25,49 @@
 #include <drivers/timer/TimestampTimer.h>
 #include <utils/ClockUtils.h>
 
+#if defined(STM32F407xx) || defined(STM32F429xx)
+#define TEMP30_CAL_VALUE ((uint16_t*)((uint32_t)0x1FFF7A2C))
+#define TEMP110_CAL_VALUE ((uint16_t*)((uint32_t)0x1FFF7A2E))
+#define TEMP30 30
+#define TEMP110 110
+#elif defined(STM32F767xx) || defined(STM32F769xx)
+#define TEMP30_CAL_VALUE ((uint16_t*)((uint32_t)0x1FF0F44C))
+#define TEMP110_CAL_VALUE ((uint16_t*)((uint32_t)0x1FF0F44E))
+#define TEMP30 30
+#define TEMP110 110
+#else
+#warning This microcontroller does not have a calibrated temperature sensor or is not currently supported by this driver
+#define WITHOUT_CALIBRATION
+#endif
+
+#if defined(STM32F407xx) || defined(STM32F205xx)
+#define AUX_CH InternalADC::CH16
+#define VBAT_DIV 2.0f
+#elif defined(STM32F429xx) || defined(STM32F767xx) || defined(STM32F769xx)
+#define AUX_CH InternalADC::CH18
+#define VBAT_DIV 4.0f
+#endif
+
 namespace Boardcore
 {
 
-InternalADC::InternalADC(ADC_TypeDef* adc, const float supplyVoltage,
-                         const bool isUsingDMA, DMA_Stream_TypeDef* dmaStream)
-    : adc(adc), supplyVoltage(supplyVoltage), isUsingDMA(isUsingDMA),
-      dmaStream(dmaStream)
+InternalADC::InternalADC(ADC_TypeDef* adc, const float supplyVoltage)
+    : adc(adc), supplyVoltage(supplyVoltage)
 {
     resetRegisters();
     ClockUtils::enablePeripheralClock(adc);
 
-    if (isUsingDMA)
+    for (int i = 0; i < CH_NUM; i++)
     {
-        ClockUtils::enablePeripheralClock(dma);
-
-        // Find the DMA stream number
-        streamNum = ((((uint32_t)&dmaStream) & 0xFF) - 0x10) / 0x18;
-
-        // Check which registers to use
-        statusReg    = (streamNum < 4 ? &(dma->LISR) : &(dma->HISR));
-        clearFlagReg = (streamNum < 4 ? &(dma->LIFCR) : &(dma->HIFCR));
-
-        // Create the masks for the status bits (this will do for both high and
-        // low registers as well as status and reset status registers)
-        switch (streamNum % 4)
-        {
-            case 0:
-                transferCompleteMask = DMA_LISR_TCIF0;
-                transferErrorMask    = DMA_LISR_TEIF0;
-                break;
-            case 1:
-                transferCompleteMask = DMA_LISR_TCIF1;
-                transferErrorMask    = DMA_LISR_TEIF1;
-                break;
-            case 2:
-                transferCompleteMask = DMA_LISR_TCIF2;
-                transferErrorMask    = DMA_LISR_TEIF2;
-                break;
-            case 3:
-                transferCompleteMask = DMA_LISR_TCIF3;
-                transferErrorMask    = DMA_LISR_TEIF3;
-                break;
-        }
+        channelsEnabled[i]   = false;
+        channelsRawValues[i] = 0;
     }
-
-    // Init indexMap
-    for (auto i = 0; i < CH_NUM; i++)
-        indexMap[i] = -1;
 }
 
 InternalADC::~InternalADC()
 {
     resetRegisters();
     ClockUtils::disablePeripheralClock(adc);
-    // Do not disable the DMA controller, other streams could use it!
 }
 
 bool InternalADC::init()
@@ -87,182 +75,42 @@ bool InternalADC::init()
     // Turn on the ADC
     adc->CR2 |= ADC_CR2_ADON;
 
-    // Set scan mode to read all the enabled channels in sequence
-    adc->CR1 |= ADC_CR1_SCAN;
-
-    if (isUsingDMA)
-    {
-        // Set the DMA peripheral address
-        dmaStream->PAR = (uint32_t) & (adc->DR);
-
-        // Set the DMA memory address
-        dmaStream->M0AR = (uint32_t)values;
-
-        // Enable DMA on ADC
-        adc->CR2 |= ADC_CR2_DMA;
-
-        // Enable DMA stream
-        dmaStream->CR |= DMA_SxCR_EN;
-
-        // Check if we are using the DMA2 controller, otherwise it's DMA1
-        if (((uint32_t)&dmaStream & ~0xFF) == (uint32_t)DMA2_BASE)
-        {
-            dma = DMA2;
-        }
-
-        // All this is because the status bits are not stored in the
-        // dmaStream registers but in the main DMA controller status
-        // register. We could not care about the transfer status but the
-        // timestamp would not match the values read after calling sample().
-
-        // We calculate this values to avoid doing it every time in
-        // sampleImpl().
-    }
-
     return true;
 }
 
-bool InternalADC::enableChannel(Channel channel, SampleTime sampleTime)
-{
-    // Check channel number
-    if (channel < CH0 || channel >= CH_NUM)
-        return false;
-
-    // Add channel to the sequence
-    if (!isUsingDMA)
-    {
-        if (!addInjectedChannel(channel))
-            return false;
-    }
-    else
-    {
-        if (!addRegularChannel(channel))
-            return false;
-
-        // Update the DMA number of data
-        dmaStream->NDTR = activeChannels;
-    }
-
-    // Set channel's sample time
-    setChannelSampleTime(channel, sampleTime);
-
-    return true;
-}
-
-bool InternalADC::addRegularChannel(Channel channel)
-{
-    // Check active channels number
-    if (activeChannels >= 16)
-        return false;
-
-    // Add the channel to the sequence
-    volatile uint32_t* sqrPtr;
-    switch (activeChannels / 6)
-    {
-        case 1:
-            sqrPtr = &(adc->SQR2);
-            break;
-        case 2:
-            sqrPtr = &(adc->SQR1);
-            break;
-        default:
-            sqrPtr = &(adc->SQR3);
-    }
-    *sqrPtr = channel << ((activeChannels % 6) * 5);
-
-    // Update the channels number in the register
-    adc->SQR1 &= ~ADC_SQR1_L;
-    adc->SQR1 |= activeChannels << 20;
-
-    // Save the index of the channel in the ADC's regular sequence
-    indexMap[channel] = activeChannels;
-
-    // Update the counter
-    activeChannels++;
-
-    return true;
-}
-
-ADCData InternalADC::readChannel(Channel channel, SampleTime sampleTime)
-{
-    setChannelSampleTime(channel, sampleTime);
-    startRegularConversion();
-
-    while (!(adc->SR & ADC_SR_EOC))
-        ;
-
-    return {TimestampTimer::getTimestamp(), channel,
-            static_cast<uint16_t>(adc->DR) * supplyVoltage / RESOLUTION};
-}
-
-InternalADCData InternalADC::getVoltage(Channel channel)
-{
-    float voltage = 0;
-
-    if (indexMap[channel] >= 0 && indexMap[channel] < CH_NUM)
-    {
-        voltage = values[indexMap[channel]] * supplyVoltage / RESOLUTION;
-    }
-
-    return InternalADCData{timestamp, (uint8_t)channel, voltage};
-}
-
-bool InternalADC::selfTest()
-{
-    // Try a single sample and check for error
-    sample();
-
-    if (lastError != NO_ERRORS)
-    {
-        return false;
-    }
-
-    return true;
-}
+bool InternalADC::selfTest() { return true; }
 
 InternalADCData InternalADC::sampleImpl()
 {
-    if (!isUsingDMA)
+    for (int i = 0; i < CH_NUM; i++)
     {
-        startInjectedConversion();
+        if (channelsEnabled[i])
+        {
+            channelsRawValues[i] = readChannel(static_cast<Channel>(i));
+        }
+    }
 
-        // Wait for end of conversion
-        while (!(adc->SR & ADC_SR_JEOC))
-            ;
+    // Prepare the auxiliary channel for the next sample
+    if (vbatLastRead)
+    {
+        vbatVoltageRawValue = channelsRawValues[AUX_CH];
 
-        // Read all 4 channels (faster than read only the enabled ones)
-        values[0] = adc->JDR1;
-        values[1] = adc->JDR2;
-        values[2] = adc->JDR3;
-        values[3] = adc->JDR4;
+        if (tempEnabled)
+        {
+            ADC->CCR &= ~ADC_CCR_VBATE;
+            ADC->CCR |= ADC_CCR_TSVREFE;
+            vbatLastRead = false;
+        }
     }
     else
     {
-        // Rewrite the DMA bit in ADC CR2 (reference manual chapter 13.8.1)
-        adc->CR2 &= ~ADC_CR2_DMA;
-        adc->CR2 |= ADC_CR2_DMA;
+        temperatureRawValue = channelsRawValues[AUX_CH];
 
-        startRegularConversion();
-
-        // This should trigger the DMA stream for each channel's conversion
-
-        // Wait for transfer end
-        while (!(*statusReg & (transferCompleteMask | transferErrorMask)))
-            ;
-
-        // Clear the transfer complete flag
-        *clearFlagReg |= transferCompleteMask;
-
-        // If and error has occurred (probably due to a higher priority stream)
-        // don't update the timestamp, the values should not have been updated
-        if (*statusReg & transferErrorMask)
+        if (vbatEnabled)
         {
-            // Clear the transfer error flag
-            *clearFlagReg |= transferErrorMask;
-
-            // Signal an error
-            lastError = DMA_ERROR;
-            return lastSample;
+            ADC->CCR |= ADC_CCR_VBATE;
+            ADC->CCR &= ~ADC_CCR_TSVREFE;
+            vbatLastRead = true;
         }
     }
 
@@ -271,7 +119,77 @@ InternalADCData InternalADC::sampleImpl()
     return lastSample;
 }
 
-float InternalADC::getSupplyVoltage() { return supplyVoltage; }
+void InternalADC::enableChannel(Channel channel, SampleTime sampleTime)
+{
+    channelsEnabled[channel] = true;
+
+    setChannelSampleTime(channel, sampleTime);
+}
+
+void InternalADC::disableChannel(Channel channel)
+{
+    channelsEnabled[channel]   = false;
+    channelsRawValues[channel] = 0;
+}
+
+void InternalADC::enableTemperature(SampleTime sampleTime)
+{
+    tempEnabled = true;
+
+    ADC->CCR &= ~ADC_CCR_VBATE;
+    ADC->CCR |= ADC_CCR_TSVREFE;
+    vbatLastRead = false;
+
+    enableChannel(AUX_CH, sampleTime);
+}
+
+void InternalADC::disableTemperature() { tempEnabled = false; }
+
+void InternalADC::enableVbat(SampleTime sampleTime)
+{
+    vbatEnabled = true;
+
+    ADC->CCR |= ADC_CCR_VBATE;
+    ADC->CCR &= ~ADC_CCR_TSVREFE;
+    vbatLastRead = true;
+
+    enableChannel(AUX_CH, sampleTime);
+}
+
+void InternalADC::disableVbat() { vbatEnabled = false; }
+
+InternalADCData InternalADC::getVoltage(Channel channel)
+{
+    return {timestamp, channel,
+            channelsRawValues[channel] * supplyVoltage / RESOLUTION};
+}
+
+TemperatureData InternalADC::getTemperature()
+{
+    TemperatureData data;
+    data.temperatureTimestamp = timestamp;
+    data.temperature = temperatureRawValue * supplyVoltage / RESOLUTION;
+
+#ifdef WITHOUT_CALIBRATION
+    // Default conversion
+    data.temperature = ((data.temperature - 0.76) / 0.0025) + 25;
+#else
+    // Factory calibration
+    // Read "Temperature sensor characteristics" chapter in the datasheet
+    float voltage30  = static_cast<float>(*TEMP30_CAL_VALUE) * 3.3 / 4095;
+    float voltage110 = static_cast<float>(*TEMP110_CAL_VALUE) * 3.3 / 4095;
+    float slope      = (voltage110 - voltage30) / (TEMP110 - TEMP30);
+    data.temperature = ((data.temperature - voltage30) / slope) + TEMP30;
+#endif
+
+    return data;
+}
+
+InternalADCData InternalADC::getVbatVoltage()
+{
+    return {timestamp, AUX_CH,
+            vbatVoltageRawValue * supplyVoltage / RESOLUTION * VBAT_DIV};
+}
 
 inline void InternalADC::resetRegisters()
 {
@@ -292,55 +210,33 @@ inline void InternalADC::resetRegisters()
     adc->JSQR  = 0;
 }
 
-inline void InternalADC::startInjectedConversion()
-{
-    adc->CR2 |= ADC_CR2_JSWSTART;
-}
-
-inline void InternalADC::startRegularConversion()
-{
-    adc->CR2 |= ADC_CR2_SWSTART;
-}
-
-inline bool InternalADC::addInjectedChannel(Channel channel)
-{
-    // Check active channels number
-    if (activeChannels >= 4)
-        return false;
-
-    // Add the channel to the sequence, starting from position 4
-    adc->JSQR |= channel << (15 - activeChannels * 5);
-
-    // Update the channels number in the register
-    adc->JSQR &= 0x000FFFFF;
-    adc->JSQR |= activeChannels << 20;
-
-    // Increment the index of all enabled channels
-    for (auto i = 0; i < CH_NUM; i++)
-    {
-        if (indexMap[i] >= 0)
-            indexMap[i]++;
-    }
-
-    // Set this channel index to 0
-    indexMap[channel] = 0;
-
-    // Update the counter
-    activeChannels++;
-
-    return true;
-}
-
 inline void InternalADC::setChannelSampleTime(Channel channel,
                                               SampleTime sampleTime)
 {
-    volatile uint32_t* smprPtr;
     if (channel <= 9)
-        smprPtr = &(adc->SMPR2);
+    {
+        adc->SMPR2 &= ~(0x7 << (channel * 3));
+        adc->SMPR2 |= sampleTime << (channel * 3);
+    }
     else
-        smprPtr = &(adc->SMPR1);
+    {
+        adc->SMPR1 &= ~(0x7 << ((channel - 10) * 3));
+        adc->SMPR1 |= sampleTime << ((channel - 10) * 3);
+    }
+}
 
-    *smprPtr = sampleTime << (channel * 3);
+float InternalADC::readChannel(Channel channel)
+{
+    // Slect channel
+    adc->SQR3 = channel;
+
+    // Start conversion
+    adc->CR2 |= ADC_CR2_SWSTART;
+
+    while (!(adc->SR & ADC_SR_EOC))
+        ;
+
+    return static_cast<uint16_t>(adc->DR);
 }
 
 }  // namespace Boardcore

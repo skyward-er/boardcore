@@ -24,6 +24,7 @@
 #include <drivers/timer/TimestampTimer.h>
 #include <miosix.h>
 
+using namespace miosix;
 using namespace Boardcore;
 
 int main()
@@ -34,23 +35,26 @@ int main()
     // maximum frequency the analog circuitry supports and compare it with the
     // parent clock
 
-    InternalADC adc(ADC3, 3.3);
-    adc.enableChannel(InternalADC::CH4);  // PF6
+    InternalADC adc(ADC1, 3.3);
     adc.enableChannel(InternalADC::CH5);  // PF7
     adc.enableChannel(InternalADC::CH6);  // PF8
+    adc.enableTemperature();
+    adc.enableVbat();
     adc.init();
 
     printf("Configuration completed\n");
 
-    while (1)
+    while (true)
     {
         adc.sample();
 
-        printf("CH4:%1.3f\tCH5:%1.3f\tCH6:%1.3f\n",
-               adc.getVoltage(InternalADC::CH4).voltage,
-               adc.getVoltage(InternalADC::CH5).voltage,
-               adc.getVoltage(InternalADC::CH6).voltage);
+        printf(
+            "CH5: %1.3f\tCH6: %1.3f\tCH18: %1.3f\tTemp: %1.3f\tVbat: %1.3f\n",
+            adc.getVoltage(InternalADC::CH5).voltage,
+            adc.getVoltage(InternalADC::CH6).voltage,
+            adc.getVoltage(InternalADC::CH18).voltage,
+            adc.getTemperature().temperature, adc.getVbatVoltage().voltage);
 
-        miosix::delayMs(1000);
+        delayMs(1000);
     }
 }

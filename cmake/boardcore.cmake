@@ -46,7 +46,6 @@ foreach(OPT_BOARD ${BOARDS})
 
         # Drivers
         ${SBS_BASE}/src/shared/drivers/AD5204/AD5204.cpp
-        ${SBS_BASE}/src/shared/drivers/adc/InternalTemp.cpp
         ${SBS_BASE}/src/shared/drivers/adc/InternalADC.cpp
         ${SBS_BASE}/src/shared/drivers/canbus/CanDriver/CanDriver.cpp
         ${SBS_BASE}/src/shared/drivers/canbus/CanDriver/CanInterrupt.cpp

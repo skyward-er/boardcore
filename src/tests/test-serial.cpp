@@ -20,155 +20,20 @@
  * THE SOFTWARE.
  */
 
-// PA14 -> OSC32_IN
-// PA15 -> OSC32_OUT
-
 #include <miosix.h>
 
 using namespace miosix;
 
-GpioPin mco1(GPIOA_BASE, 8);
-GpioPin mco2(GPIOC_BASE, 9);
-
-typedef struct RTC_Date
-{
-    int day;
-    int month;
-    int year;
-} RTC_Date;
-typedef struct RTC_Time
-{
-    int hour;
-    int minutes;
-    int seconds;
-} RTC_Time;
-
 int main()
 {
-    // RCC->AHB1ENR |= RCC_AHB1ENR_GPIOAEN;
-    // RCC_SYNC();
-
-    // mco1.alternateFunction(0);
-    // mco1.speed(Speed::_100MHz);
-    // mco2.alternateFunction(0);
-    // mco2.speed(Speed::_100MHz);
-    // // mco1.mode(Mode::OUTPUT);
-    // // mco1.high();
-
-    // RCC->CFGR |= RCC_CFGR_MCO1;
-    // RCC->CFGR |= RCC_CFGR_MCO2_1;
-
-    for (int i = 5; i > 0; i--)
-    {
-        printf("Waiting... %d seconds left\n", i);
-        Thread::sleep(1000);
-    }
-
-    // Enable clock to RTC and PWR peripherals
-    RCC->APB1ENR |= RCC_APB1ENR_RTCEN;
-    RCC->APB1ENR |= RCC_APB1ENR_PWREN;
-    RCC_SYNC();
-
-    // Disable backup domain write protection
-    PWR->CR1 |= PWR_CR1_DBP;
-
-    // Enable the LSE clock
-    RCC->BDCR |= RCC_BDCR_LSEDRV;    // High drive
-    RCC->BDCR |= RCC_BDCR_LSEON;     // Enable LSE clock
-    RCC->BDCR |= RCC_BDCR_RTCSEL_0;  // LSE as RTC clock
-    RCC->BDCR |= RCC_BDCR_RTCEN;     // Enable RTC clock
-    RCC_SYNC();
-
-    while ((RCC->BDCR & RCC_BDCR_LSERDY) == 0)
-    {
-        printf("LSE clock status %d\n", (RCC->BDCR & RCC_BDCR_LSERDY) != 0);
-        Thread::sleep(250);
-    }
-    printf("LSE clock now stable\n");
-
-    // Enable access to RTC registers
-    RTC->WPR = 0xCA;
-    RTC->WPR = 0x53;
-
-    // Enter RTC initialization mode
-    RTC->ISR |= RTC_ISR_INIT;
-    while (!(RTC->ISR & RTC_ISR_INITF))
-    {
-        printf("Waiting for RTC to enter initialization mode 0x%lx\n",
-               RTC->ISR);
-        Thread::sleep(250);
-    }
-
-    // The RTC prescalers are configured by default for a 32.768KHz clock
-    // f_CK_APRE = f_RTCCLK  / (PREDIV_A + 1) = f_RTCCLK / (127 + 1)
-    // f_CK_SPRE = f_CK_APRE / (PREDIV_B + 1) = f_RTCCLK / (255 + 1)
-    RTC->PRER |= 0x7f7fff;
-
-    // Configure the time
-    uint32_t ht = 17 / 10;
-    uint32_t hu = 17 % 10;
-    uint32_t mt = 15 / 10;
-    uint32_t mu = 15 % 10;
-    uint32_t st = 30 / 10;
-    uint32_t su = 30 % 10;
-    RTC->TR     = ht << 20 | hu << 16 | mt << 12 | mu << 8 | st << 4 | su << 0;
-
-    // Configure the date
-    uint32_t yt = 23 / 10;
-    uint32_t yu = 23 % 10;
-    uint32_t wd = 1;
-    mt          = 3 / 10;
-    mu          = 3 % 10;
-    uint32_t dt = 27 / 10;
-    uint32_t du = 27 % 10;
-    RTC->DR =
-        yt << 20 | yu << 16 | wd << 13 | mt << 12 | mu << 8 | dt << 4 | du << 0;
-
-    // Exit RTC initialization mode
-    RTC->ISR &= ~RTC_ISR_INIT;
-
-    // Reactivate the write protection
-    RTC->WPR = 0xFF;
-    PWR->CR1 &= ~PWR_CR1_DBP;
-
-    Thread::sleep(1000);
-
-    RTC_Time time;
-    RTC_Date date;
-
     while (true)
     {
-        uint32_t rtc_tr = RTC->TR;
-        uint32_t rtc_dr = RTC->DR;
-
-        int hour_tens    = (rtc_tr & RTC_TR_HT_Msk) >> RTC_TR_HT_Pos;
-        int hour_units   = (rtc_tr & RTC_TR_HU_Msk) >> RTC_TR_HU_Pos;
-        time.hour        = (hour_tens * 10) + hour_units;
-        int mins_tens    = (rtc_tr & RTC_TR_MNT_Msk) >> RTC_TR_MNT_Pos;
-        int mins_units   = (rtc_tr & RTC_TR_MNU_Msk) >> RTC_TR_MNU_Pos;
-        time.minutes     = (mins_tens * 10) + mins_units;
-        int second_tens  = (rtc_tr & RTC_TR_ST_Msk) >> RTC_TR_ST_Pos;
-        int second_units = (rtc_tr & RTC_TR_SU_Msk) >> RTC_TR_SU_Pos;
-        time.seconds     = (second_tens * 10) + second_units;
-
-        int day_tens   = (rtc_dr & RTC_DR_DT_Msk) >> RTC_DR_DT_Pos;
-        int day_units  = (rtc_dr & RTC_DR_DU_Msk) >> RTC_DR_DU_Pos;
-        date.day       = (day_tens * 10) + day_units;
-        int month_tens = (rtc_dr & RTC_DR_MT_Msk) >> RTC_DR_MT_Pos;
-        int month_unit = (rtc_dr & RTC_DR_MU_Msk) >> RTC_DR_MU_Pos;
-        date.month     = (month_tens * 10) + month_unit;
-        int year_tens  = (rtc_dr & RTC_DR_YT_Msk) >> RTC_DR_YT_Pos;
-        int year_unit  = (rtc_dr & RTC_DR_YU_Msk) >> RTC_DR_YU_Pos;
-        date.year      = (year_tens * 10) + year_unit + 2000;
-
-        printf("%04d/%02d/%02d %02d:%02d:%02d\n", date.year, date.month,
-               date.day, time.hour, time.minutes, time.seconds);
+        ledOn();
+        printf("Serial is working!\n");
+        Thread::sleep(1000);
+        ledOff();
         Thread::sleep(1000);
     }
 
-    // while (true)
-    // {
-    //     printf("I'm alive!\n");
-    //     Thread::sleep(1000);
-    // }
+    return 0;
 }
