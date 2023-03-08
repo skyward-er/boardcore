@@ -51,6 +51,12 @@ public:
      */
     I2C(I2C_TypeDef *i2c, miosix::GpioPin scl, miosix::GpioPin sda);
 
+    ///< Delete copy/move constructors/operators.
+    I2C(const I2C &)            = delete;
+    I2C &operator=(const I2C &) = delete;
+    I2C(I2C &&)                 = delete;
+    I2C &operator=(I2C &&)      = delete;
+
     /**
      * @brief Non blocking read operation to read nBytes.
      *
@@ -172,6 +178,12 @@ public:
      * @param sda Serial data GpioPin of the relative I2C peripheral.
      */
     SyncedI2C(I2C_TypeDef *i2c, miosix::GpioPin scl, miosix::GpioPin sda);
+
+    ///< Delete copy/move constructors/operators.
+    SyncedI2C(const SyncedI2C &)            = delete;
+    SyncedI2C &operator=(const SyncedI2C &) = delete;
+    SyncedI2C(SyncedI2C &&)                 = delete;
+    SyncedI2C &operator=(SyncedI2C &&)      = delete;
 
     /**
      * @brief Read operation to read nBytes.

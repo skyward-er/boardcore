@@ -123,6 +123,12 @@ public:
      */
     I2CDriver(I2C_TypeDef *i2c, miosix::GpioPin scl, miosix::GpioPin sda);
 
+    ///< Delete copy/move constructors/operators.
+    I2CDriver(const I2CDriver &)            = delete;
+    I2CDriver &operator=(const I2CDriver &) = delete;
+    I2CDriver(I2CDriver &&)                 = delete;
+    I2CDriver &operator=(I2CDriver &&)      = delete;
+
     /**
      * @brief Disables the peripheral, the interrupts in the NVIC and the
      * peripheral's clock.
