@@ -164,6 +164,13 @@ add_executable(test-ada src/tests/algorithms/ADA/test-ada.cpp)
 sbs_target(test-ada stm32f429zi_skyward_death_stack_v3)
 
 #-----------------------------------------------------------------------------#
+#                               Tests - Boards                                #
+#-----------------------------------------------------------------------------#
+
+add_executable(test-compute-unit src/tests/boards/test-compute-unit.cpp)
+sbs_target(test-compute-unit stm32f767zi_compute_unit)
+
+#-----------------------------------------------------------------------------#
 #                               Tests - Drivers                               #
 #-----------------------------------------------------------------------------#
 
