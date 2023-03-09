@@ -170,6 +170,9 @@ sbs_target(test-ada stm32f429zi_skyward_death_stack_v3)
 add_executable(test-compute-unit src/tests/boards/test-compute-unit.cpp)
 sbs_target(test-compute-unit stm32f767zi_compute_unit)
 
+add_executable(test-qspi-flash src/tests/boards/test-qspi-flash.cpp)
+sbs_target(test-qspi-flash stm32f767zi_compute_unit)
+
 #-----------------------------------------------------------------------------#
 #                               Tests - Drivers                               #
 #-----------------------------------------------------------------------------#
