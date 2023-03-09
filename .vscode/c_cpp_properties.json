@@ -1,5 +1,10 @@
 {
     "env": {
+        "defaultDefines": [
+            "_MIOSIX",
+            "DEBUG",
+            "__cplusplus=201402L"
+        ],
         "defaultIncludePaths": [
             "${workspaceFolder}/libs/Catch2/include",
             "${workspaceFolder}/libs/eigen",
@@ -20,15 +25,13 @@
             "cppStandard": "c++14",
             "compilerPath": "/opt/arm-miosix-eabi/bin/arm-miosix-eabi-g++",
             "defines": [
+                "{defaultDefines}",
                 "_MIOSIX_BOARDNAME=stm32f205RC_skyward_ciuti",
                 "_BOARD_STM32F205RC_SKYWARD_CIUTI",
                 "_ARCH_CORTEXM3_STM32F2",
                 "STM32F205xx",
                 "HSE_VALUE=25000000",
-                "SYSCLK_FREQ_120MHz=120000000",
-                "_MIOSIX",
-                "DEBUG",
-                "__cplusplus=201402L"
+                "SYSCLK_FREQ_120MHz=120000000"
             ],
             "includePath": [
                 "${defaultIncludePaths}",
@@ -43,15 +46,13 @@
             "cppStandard": "c++14",
             "compilerPath": "/opt/arm-miosix-eabi/bin/arm-miosix-eabi-g++",
             "defines": [
+                "{defaultDefines}",
                 "_MIOSIX_BOARDNAME=stm32f407vg_stm32f4discovery",
                 "_BOARD_STM32F4DISCOVERY",
                 "_ARCH_CORTEXM4_STM32F4",
                 "STM32F407xx",
                 "HSE_VALUE=8000000",
-                "SYSCLK_FREQ_168MHz=168000000",
-                "_MIOSIX",
-                "DEBUG",
-                "__cplusplus=201402L"
+                "SYSCLK_FREQ_168MHz=168000000"
             ],
             "includePath": [
                 "${defaultIncludePaths}",
@@ -66,15 +67,13 @@
             "cppStandard": "c++14",
             "compilerPath": "/opt/arm-miosix-eabi/bin/arm-miosix-eabi-g++",
             "defines": [
+                "{defaultDefines}",
                 "_MIOSIX_BOARDNAME=stm32f429zi_stm32f4discovery",
                 "_BOARD_STM32F429ZI_STM32F4DISCOVERY",
                 "_ARCH_CORTEXM4_STM32F4",
                 "STM32F429xx",
                 "HSE_VALUE=8000000",
-                "SYSCLK_FREQ_168MHz=168000000",
-                "_MIOSIX",
-                "DEBUG",
-                "__cplusplus=201402L"
+                "SYSCLK_FREQ_168MHz=168000000"
             ],
             "includePath": [
                 "${defaultIncludePaths}",
@@ -89,15 +88,13 @@
             "cppStandard": "c++14",
             "compilerPath": "/opt/arm-miosix-eabi/bin/arm-miosix-eabi-g++",
             "defines": [
+                "{defaultDefines}",
                 "_MIOSIX_BOARDNAME=stm32f429zi_skyward_death_stack_x",
                 "_BOARD_STM32F429ZI_SKYWARD_DEATHST_X",
                 "_ARCH_CORTEXM4_STM32F4",
                 "STM32F429xx",
                 "HSE_VALUE=8000000",
-                "SYSCLK_FREQ_168MHz=168000000",
-                "_MIOSIX",
-                "DEBUG",
-                "__cplusplus=201402L"
+                "SYSCLK_FREQ_168MHz=168000000"
             ],
             "includePath": [
                 "${defaultIncludePaths}",
@@ -112,15 +109,13 @@
             "cppStandard": "c++14",
             "compilerPath": "/opt/arm-miosix-eabi/bin/arm-miosix-eabi-g++",
             "defines": [
+                "{defaultDefines}",
                 "_MIOSIX_BOARDNAME=stm32f429zi_skyward_death_stack_v3",
                 "_BOARD_STM32F429ZI_SKYWARD_DEATHST_X",
                 "_ARCH_CORTEXM4_STM32F4",
                 "STM32F429xx",
                 "HSE_VALUE=8000000",
-                "SYSCLK_FREQ_168MHz=168000000",
-                "_MIOSIX",
-                "DEBUG",
-                "__cplusplus=201402L"
+                "SYSCLK_FREQ_168MHz=168000000"
             ],
             "includePath": [
                 "${defaultIncludePaths}",
@@ -135,15 +130,13 @@
             "cppStandard": "c++14",
             "compilerPath": "/opt/arm-miosix-eabi/bin/arm-miosix-eabi-g++",
             "defines": [
+                "{defaultDefines}",
                 "_MIOSIX_BOARDNAME=stm32f429zi_skyward_parafoil",
                 "_BOARD_STM32F429ZI_SKYWARD_PARAFOIL",
                 "_ARCH_CORTEXM4_STM32F4",
                 "STM32F429xx",
                 "HSE_VALUE=8000000",
-                "SYSCLK_FREQ_168MHz=168000000",
-                "_MIOSIX",
-                "DEBUG",
-                "__cplusplus=201402L"
+                "SYSCLK_FREQ_168MHz=168000000"
             ],
             "includePath": [
                 "${defaultIncludePaths}",
@@ -158,15 +151,13 @@
             "cppStandard": "c++14",
             "compilerPath": "/opt/arm-miosix-eabi/bin/arm-miosix-eabi-g++",
             "defines": [
+                "{defaultDefines}",
                 "_MIOSIX_BOARDNAME=stm32f429zi_skyward_pyxis_auxiliary",
                 "_BOARD_STM32F429ZI_SKYWARD_PYXIS_AUXILIARY",
                 "_ARCH_CORTEXM4_STM32F4",
                 "STM32F429xx",
                 "HSE_VALUE=8000000",
-                "SYSCLK_FREQ_168MHz=168000000",
-                "_MIOSIX",
-                "DEBUG",
-                "__cplusplus=201402L"
+                "SYSCLK_FREQ_168MHz=168000000"
             ],
             "includePath": [
                 "${defaultIncludePaths}",
@@ -181,16 +172,14 @@
             "cppStandard": "c++14",
             "compilerPath": "/opt/arm-miosix-eabi/bin/arm-miosix-eabi-g++",
             "defines": [
+                "{defaultDefines}",
                 "_MIOSIX_BOARDNAME=stm32f767zi_nucleo",
                 "D_BOARD_STM32F767ZI_NUCLEO",
                 "_ARCH_CORTEXM7_STM32F7",
                 "STM32F767xx",
                 "HSE_VALUE=25000000",
                 "SYSCLK_FREQ_216MHz=216000000",
-                "__ENABLE_XRAM",
-                "_MIOSIX",
-                "DEBUG",
-                "__cplusplus=201402L"
+                "__ENABLE_XRAM"
             ],
             "includePath": [
                 "${defaultIncludePaths}",
@@ -205,16 +194,14 @@
             "cppStandard": "c++14",
             "compilerPath": "/opt/arm-miosix-eabi/bin/arm-miosix-eabi-g++",
             "defines": [
+                "{defaultDefines}",
                 "_MIOSIX_BOARDNAME=stm32f769ni_discovery",
                 "_BOARD_STM32F769NI_DISCO",
                 "_ARCH_CORTEXM7_STM32F7",
                 "STM32F769xx",
                 "HSE_VALUE=25000000",
                 "SYSCLK_FREQ_216MHz=216000000",
-                "__ENABLE_XRAM",
-                "_MIOSIX",
-                "DEBUG",
-                "__cplusplus=201402L"
+                "__ENABLE_XRAM"
             ],
             "includePath": [
                 "${defaultIncludePaths}",
@@ -229,16 +216,14 @@
             "cppStandard": "c++14",
             "compilerPath": "/opt/arm-miosix-eabi/bin/arm-miosix-eabi-g++",
             "defines": [
+                "{defaultDefines}",
                 "_MIOSIX_BOARDNAME=stm32f767zi_compute_unit",
                 "_BOARD_STM32F767ZI_COMPUTE_UNIT",
                 "_ARCH_CORTEXM7_STM32F7",
                 "STM32F769xx",
                 "HSE_VALUE=25000000",
                 "SYSCLK_FREQ_216MHz=216000000",
-                "__ENABLE_XRAM",
-                "_MIOSIX",
-                "DEBUG",
-                "__cplusplus=201402L"
+                "__ENABLE_XRAM"
             ],
             "includePath": [
                 "${defaultIncludePaths}",
