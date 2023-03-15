@@ -50,10 +50,30 @@ struct SPIBusConfig
     ///< Clock polarity and phase configuration
     SPI::Mode mode;
 
-    ///< MSB or LSB first
+    ///< MSBit or LSBit first
     SPI::Order bitOrder;
 
-    ///< MSB or LSB first
+    /**
+     * @brief MSByte or LSByte first
+     *
+     * This parameter is used when reading and writing registers 16 bit wide or
+     * more.
+     *
+     * A device features MSByte first ordering if the most significant byte is
+     * at the lowest address. Example of a 24bit register:
+     *   Address:  0x06  0x07  0x08
+     *     value:  MSB   MID   LSB
+     *
+     * Conversely, an LSByte first ordering starts with the lowest significant
+     * byte first.
+     *
+     * Also, in every device used since now, in multiple registers accesses, the
+     * device always increments the address. So the user has always to provide
+     * the lowest address.
+     *
+     * @warning This driver does not support devices which decrements registers
+     * address during multiple registers accesses.
+     */
     SPI::Order byteOrder;
 
     ///< Write bit behaviour, default high when reading

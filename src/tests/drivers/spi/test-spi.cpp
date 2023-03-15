@@ -66,9 +66,9 @@ int main()
         delayMs(1);
         transaction.read32();
         delayMs(1);
-        transaction.read(buffer8, 6);
+        transaction.read(buffer8, sizeof(buffer8));
         delayMs(1);
-        transaction.read16(buffer16, 6);
+        transaction.read16(buffer16, sizeof(buffer16));
         delayMs(1);
     }
 
@@ -88,7 +88,7 @@ int main()
         buffer8[3] = 0x67;
         buffer8[4] = 0x89;
         buffer8[5] = 0xAB;
-        transaction.write(buffer8, 6);
+        transaction.write(buffer8, sizeof(buffer8));
         delayMs(1);
         buffer16[0] = 0x0101;
         buffer16[1] = 0x2323;
@@ -96,7 +96,7 @@ int main()
         buffer16[3] = 0x6767;
         buffer16[4] = 0x8989;
         buffer16[5] = 0xABAB;
-        transaction.write16(buffer16, 6);
+        transaction.write16(buffer16, sizeof(buffer16));
         delayMs(1);
     }
 
@@ -110,9 +110,10 @@ int main()
         delayMs(1);
         transaction.transfer32((uint32_t)0xABCDEF01);
         delayMs(1);
-        transaction.transfer(buffer8, 6);
+        transaction.transfer(buffer8, sizeof(buffer8));
         delayMs(1);
-        transaction.transfer16(buffer16, 6);
+        transaction.transfer16(buffer16, sizeof(buffer16));
+        delayMs(1);
     }
 
     // Registers
@@ -130,6 +131,10 @@ int main()
         transaction.writeRegister24(0x56, 0xABCDEF);
         delayMs(1);
     }
+
+    transaction.writeRegister(0x62, 4);
+    auto whoAmIVaule = transaction.readRegister(0x4f);
+    printf("Who am I value: %x\n", whoAmIVaule);
 
     while (true)
         delayMs(1000);

@@ -22,6 +22,19 @@
 
 #pragma once
 
+/**
+ * This header file is inteded to provide all the necessary files needed to use
+ * the SPI driver.
+ *
+ * The driver is divided into 3 levels:
+ * - Low: SPIBus is the actual driver that talks directly to the STM32
+ * pheripheral
+ * - Middle: SPIBusInterface is a common interface that defines which operations
+ * the implementation has to privde
+ * - High: SPITransaction is a RAII abstraction that manages slave selection
+ * through the chip select signal
+ */
+
 #include "SPIBus.h"
 #include "SPIBusInterface.h"
 #include "SPITransaction.h"

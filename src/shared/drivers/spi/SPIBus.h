@@ -50,11 +50,11 @@ namespace Boardcore
  *
  * Supported SPI main features:
  * - Full-duplex synchronous transfers on three lines
- * - 8- or 16-bit transfer frame format selection
+ * - 8 or 16-bit transfer frame formats
  * - Master operation
- * - 8 master mode baud rate prescaler (f_PCLK/2 max.)
+ * - 8 master mode baud rate prescaler values (f_PCLK/2 max.)
  * - Programmable clock polarity and phase
- * - Programmable data order with MSB-first or LSB-first shifting
+ * - Programmable data order (MSBit-first or LSBit-first)
  */
 class SPIBus : public SPIBusInterface
 {
@@ -544,7 +544,7 @@ inline uint16_t SPIBus::transfer16(uint16_t data)
 
 inline uint32_t SPIBus::transfer24(uint32_t data)
 {
-    uint32_t res = transfer16(data >> 8) << 8;
+    uint32_t res = static_cast<uint32_t>(transfer16(data >> 8)) << 8;
     res |= transfer(data);
 
     return res;
@@ -552,7 +552,7 @@ inline uint32_t SPIBus::transfer24(uint32_t data)
 
 inline uint32_t SPIBus::transfer32(uint32_t data)
 {
-    uint32_t res = transfer16(data >> 16) << 16;
+    uint32_t res = static_cast<uint32_t>(transfer16(data >> 16)) << 16;
     res |= transfer16(data);
 
     return res;
