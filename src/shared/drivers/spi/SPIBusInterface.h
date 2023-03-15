@@ -51,7 +51,13 @@ struct SPIBusConfig
     SPI::Mode mode;
 
     ///< MSB or LSB first
-    SPI::BitOrder bitOrder;
+    SPI::Order bitOrder;
+
+    ///< MSB or LSB first
+    SPI::Order byteOrder;
+
+    ///< Write bit behaviour, default high when reading
+    SPI::WriteBit writeBit;
 
     ///< How long to wait before starting a tranmission after CS is set (us)
     unsigned int csSetupTimeUs;
@@ -61,9 +67,12 @@ struct SPIBusConfig
 
     SPIBusConfig(SPI::ClockDivider clockDivider = SPI::ClockDivider::DIV_256,
                  SPI::Mode mode                 = SPI::Mode::MODE_0,
-                 SPI::BitOrder bitOrder         = SPI::BitOrder::MSB_FIRST,
+                 SPI::Order bitOrder            = SPI::Order::MSB_FIRST,
+                 SPI::Order byteOrder           = SPI::Order::MSB_FIRST,
+                 SPI::WriteBit writeBit         = SPI::WriteBit::NORMAL,
                  unsigned int csSetupTimeUs = 0, unsigned int csHoldTimeUs = 0)
         : clockDivider(clockDivider), mode(mode), bitOrder(bitOrder),
+          byteOrder(byteOrder), writeBit(writeBit),
           csSetupTimeUs(csSetupTimeUs), csHoldTimeUs(csHoldTimeUs)
     {
     }
@@ -110,30 +119,44 @@ public:
      *
      * @param cs Chip select pin for the slave.
      */
-    virtual void select(GpioType& cs) = 0;
+    virtual void select(GpioType cs) = 0;
 
     /**
      * @brief Deselects the slave.
      *
      * @param cs Chip select pin for the slave.
      */
-    virtual void deselect(GpioType& cs) = 0;
+    virtual void deselect(GpioType cs) = 0;
 
     // Read, write and transfer operations
 
     /**
-     * @brief Reads a single byte from the bus.
+     * @brief Reads 8 bits from the bus.
      *
      * @return Byte read from the bus.
      */
     virtual uint8_t read() = 0;
 
     /**
-     * @brief Reads a single half word from the bus.
+     * @brief Reads 16 bits from the bus.
      *
      * @return Half word read from the bus.
      */
     virtual uint16_t read16() = 0;
+
+    /**
+     * @brief Reads 24 bits from the bus.
+     *
+     * @return Bytes read from the bus (MSB of the uint32_t value will be 0).
+     */
+    virtual uint32_t read24() = 0;
+
+    /**
+     * @brief Reads 32 bits from the bus.
+     *
+     * @return Word read from the bus.
+     */
+    virtual uint32_t read32() = 0;
 
     /**
      * @brief Reads multiple bytes from the bus
@@ -152,18 +175,32 @@ public:
     virtual void read16(uint16_t* data, size_t size) = 0;
 
     /**
-     * @brief Writes a single byte to the bus.
+     * @brief Writes 8 bits to the bus.
      *
      * @param data Byte to write.
      */
     virtual void write(uint8_t data) = 0;
 
     /**
-     * @brief Writes a single half word to the bus.
+     * @brief Writes 16 bits to the bus.
      *
      * @param data Half word to write.
      */
     virtual void write16(uint16_t data) = 0;
+
+    /**
+     * @brief Writes 24 bits to the bus.
+     *
+     * @param data Bytes to write (the MSB of the uint32_t is not used).
+     */
+    virtual void write24(uint32_t data) = 0;
+
+    /**
+     * @brief Writes 32 bits to the bus.
+     *
+     * @param data Word to write.
+     */
+    virtual void write32(uint32_t data) = 0;
 
     /**
      * @brief Writes multiple bytes to the bus.
@@ -182,7 +219,7 @@ public:
     virtual void write16(const uint16_t* data, size_t size) = 0;
 
     /**
-     * @brief Full duplex transmission of one byte on the bus.
+     * @brief Full duplex transmission of 8 bits on the bus.
      *
      * @param data Byte to write.
      * @return Byte read from the bus.
@@ -190,7 +227,7 @@ public:
     virtual uint8_t transfer(uint8_t data) = 0;
 
     /**
-     * @brief Full duplex transmission of one half word on the bus.
+     * @brief Full duplex transmission of 16 bits on the bus.
      *
      * @param data Half word to write.
      * @return Half word read from the bus.
@@ -198,9 +235,25 @@ public:
     virtual uint16_t transfer16(uint16_t data) = 0;
 
     /**
+     * @brief Full duplex transmission of 24 bits on the bus.
+     *
+     * @param data Bytes to write (the MSB of the uint32_t is not used).
+     * @return Bytes read from the bus (the MSB of the uint32_t will be 0).
+     */
+    virtual uint32_t transfer24(uint32_t data) = 0;
+
+    /**
+     * @brief Full duplex transmission of 32 bits on the bus.
+     *
+     * @param data Word to write.
+     * @return Half word read from the bus.
+     */
+    virtual uint32_t transfer32(uint32_t data) = 0;
+
+    /**
      * @brief Full duplex transmission of multiple bytes on the bus.
      *
-     * @param data Buffer containing data to trasfer.
+     * @param data Buffer containing data to transfer.
      * @param size Size of the buffer.
      */
     virtual void transfer(uint8_t* data, size_t size) = 0;
@@ -208,7 +261,7 @@ public:
     /**
      * @brief Full duplex transmission of multiple half words on the bus.
      *
-     * @param data Buffer containing data to trasfer.
+     * @param data Buffer containing data to transfer.
      * @param size Size of the buffer.
      */
     virtual void transfer16(uint16_t* data, size_t size) = 0;
@@ -224,7 +277,7 @@ struct SPISlave
                            ///< with the slave.
     GpioType cs;           ///< Chip select pin
 
-    SPISlave(SPIBusInterface& bus, GpioType cs, SPIBusConfig config)
+    SPISlave(SPIBusInterface& bus, GpioType cs, SPIBusConfig config = {})
         : bus(bus), config(config), cs(cs)
     {
     }

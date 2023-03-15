@@ -32,11 +32,13 @@ MS5803::MS5803(SPIBusInterface& spiBus, miosix::GpioPin cs,
                SPIBusConfig spiConfig, uint16_t temperatureDivider)
     : spiSlave(spiBus, cs, spiConfig), temperatureDivider(temperatureDivider)
 {
+    // Ensure that the write bit is disabled
+    spiSlave.config.writeBit = SPI::WriteBit::DISABLED;
 }
 
 bool MS5803::init()
 {
-    SPITransaction transaction{spiSlave, SPITransaction::WriteBit::DISABLED};
+    SPITransaction transaction{spiSlave};
 
     // Read calibration data
     calibrationData.sens     = readReg(transaction, REG_PROM_SENS_MASK);
@@ -59,7 +61,7 @@ bool MS5803::selfTest() { return true; }
 
 MS5803Data MS5803::sampleImpl()
 {
-    SPITransaction transaction{spiSlave, SPITransaction::WriteBit::DISABLED};
+    SPITransaction transaction{spiSlave};
 
     uint8_t buffer[3];
 

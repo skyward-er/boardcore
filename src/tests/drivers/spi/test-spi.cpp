@@ -35,7 +35,7 @@ SPIBus bus(SPI1);
 GpioPin sckPin(GPIOA_BASE, 5);
 GpioPin misoPin(GPIOA_BASE, 6);
 GpioPin mosiPin(GPIOA_BASE, 7);
-GpioPin csPin(GPIOE_BASE, 3);
+GpioPin csPin(GPIOA_BASE, 3);
 
 int main()
 {
@@ -48,7 +48,7 @@ int main()
     csPin.mode(Mode::OUTPUT);
     csPin.high();
 
-    SPISlave spiSlave(bus, csPin, {});
+    SPISlave spiSlave(bus, csPin);
     spiSlave.config.clockDivider = SPI::ClockDivider::DIV_64;
 
     SPITransaction transaction(spiSlave);
@@ -56,41 +56,80 @@ int main()
     uint8_t buffer8[6];
     uint16_t buffer16[6];
 
-    transaction.read();
-    delayMs(1);
-    transaction.read16();
-    delayMs(1);
-    transaction.read(buffer8, 6);
-    delayMs(1);
-    transaction.read16(buffer16, 6);
-    delayMs(1);
-    transaction.write((uint8_t)0xAB);
-    delayMs(1);
-    transaction.write16((uint16_t)0xABCD);
-    delayMs(1);
-    buffer8[0] = 0x01;
-    buffer8[1] = 0x23;
-    buffer8[2] = 0x45;
-    buffer8[3] = 0x67;
-    buffer8[4] = 0x89;
-    buffer8[5] = 0xAB;
-    transaction.write(buffer8, 6);
-    delayMs(1);
-    buffer16[0] = 0x0101;
-    buffer16[1] = 0x2323;
-    buffer16[2] = 0x4545;
-    buffer16[3] = 0x6767;
-    buffer16[4] = 0x8989;
-    buffer16[5] = 0xABAB;
-    transaction.write16(buffer16, 6);
-    delayMs(1);
-    transaction.transfer((uint8_t)0xAB);
-    delayMs(1);
-    transaction.transfer16((uint16_t)0xABCD);
-    delayMs(1);
-    transaction.transfer(buffer8, 6);
-    delayMs(1);
-    transaction.transfer16(buffer16, 6);
+    // Reads
+    {
+        transaction.read();
+        delayMs(1);
+        transaction.read16();
+        delayMs(1);
+        transaction.read24();
+        delayMs(1);
+        transaction.read32();
+        delayMs(1);
+        transaction.read(buffer8, 6);
+        delayMs(1);
+        transaction.read16(buffer16, 6);
+        delayMs(1);
+    }
+
+    // Writes
+    {
+        transaction.write((uint8_t)0xAB);
+        delayMs(1);
+        transaction.write16((uint16_t)0xABCD);
+        delayMs(1);
+        transaction.write24((uint32_t)0xABCDEF);
+        delayMs(1);
+        transaction.write32((uint32_t)0xABCDEF01);
+        delayMs(1);
+        buffer8[0] = 0x01;
+        buffer8[1] = 0x23;
+        buffer8[2] = 0x45;
+        buffer8[3] = 0x67;
+        buffer8[4] = 0x89;
+        buffer8[5] = 0xAB;
+        transaction.write(buffer8, 6);
+        delayMs(1);
+        buffer16[0] = 0x0101;
+        buffer16[1] = 0x2323;
+        buffer16[2] = 0x4545;
+        buffer16[3] = 0x6767;
+        buffer16[4] = 0x8989;
+        buffer16[5] = 0xABAB;
+        transaction.write16(buffer16, 6);
+        delayMs(1);
+    }
+
+    // Transaction
+    {
+        transaction.transfer((uint8_t)0xAB);
+        delayMs(1);
+        transaction.transfer16((uint16_t)0xABCD);
+        delayMs(1);
+        transaction.transfer24((uint32_t)0xABCDEF);
+        delayMs(1);
+        transaction.transfer32((uint32_t)0xABCDEF01);
+        delayMs(1);
+        transaction.transfer(buffer8, 6);
+        delayMs(1);
+        transaction.transfer16(buffer16, 6);
+    }
+
+    // Registers
+    {
+        transaction.readRegister(0x12);
+        delayMs(1);
+        transaction.readRegister16(0x34);
+        delayMs(1);
+        transaction.readRegister24(0x56);
+        delayMs(1);
+        transaction.writeRegister(0x12, 0xAB);
+        delayMs(1);
+        transaction.writeRegister16(0x34, 0xABCD);
+        delayMs(1);
+        transaction.writeRegister24(0x56, 0xABCDEF);
+        delayMs(1);
+    }
 
     while (true)
         delayMs(1000);

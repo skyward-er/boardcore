@@ -99,7 +99,7 @@ public:
 
     void disableInternalSlaveSelection();
 
-    void setBitOrder(SPI::BitOrder bitOrder);
+    void setBitOrder(SPI::Order bitOrder);
 
     void setClockDiver(SPI::ClockDivider divider);
 
@@ -122,8 +122,8 @@ public:
     /**
      * @brief Configures and enables the bus with the provided configuration.
      *
-     * Since this implementation is not syncronized, if configure() is called on
-     * an already in use bus nothing will be done.
+     * Since this implementation is not synchronized, if configure() is called
+     * on an already in use bus nothing will be done.
      *
      * Use SyncedSPIBus if you need to synchronize access to the bus.
      */
@@ -132,28 +132,42 @@ public:
     /**
      * @brief See SPIBusInterface::select().
      */
-    void select(GpioType& cs) override;
+    void select(GpioType cs) override;
 
     /**
      * @brief See SPIBusInterface::deselect().
      */
-    void deselect(GpioType& cs) override;
+    void deselect(GpioType cs) override;
 
     // Read, write and transfer operations
 
     /**
-     * @brief Reads a single byte from the bus.
+     * @brief Reads 8 bits from the bus.
      *
      * @return Byte read from the bus.
      */
     uint8_t read() override;
 
     /**
-     * @brief Reads a single half word from the bus.
+     * @brief Reads 16 bits from the bus.
      *
      * @return Half word read from the bus.
      */
     uint16_t read16() override;
+
+    /**
+     * @brief Reads 24 bits from the bus.
+     *
+     * @return Bytes read from the bus (MSB of the uint32_t value will be 0).
+     */
+    uint32_t read24() override;
+
+    /**
+     * @brief Reads 32 bits from the bus.
+     *
+     * @return Word read from the bus.
+     */
+    uint32_t read32() override;
 
     /**
      * @brief Reads multiple bytes from the bus
@@ -172,18 +186,32 @@ public:
     void read16(uint16_t* data, size_t size) override;
 
     /**
-     * @brief Writes a single byte to the bus.
+     * @brief Writes 8 bits to the bus.
      *
      * @param data Byte to write.
      */
     void write(uint8_t data) override;
 
     /**
-     * @brief Writes a single half word to the bus.
+     * @brief Writes 16 bits to the bus.
      *
      * @param data Half word to write.
      */
     void write16(uint16_t data) override;
+
+    /**
+     * @brief Writes 24 bits to the bus.
+     *
+     * @param data Bytes to write (the MSB of the uint32_t is not used).
+     */
+    void write24(uint32_t data) override;
+
+    /**
+     * @brief Writes 32 bits to the bus.
+     *
+     * @param data Word to write.
+     */
+    void write32(uint32_t data) override;
 
     /**
      * @brief Writes multiple bytes to the bus.
@@ -202,7 +230,7 @@ public:
     void write16(const uint16_t* data, size_t size) override;
 
     /**
-     * @brief Full duplex transmission of one byte on the bus.
+     * @brief Full duplex transmission of 8 bits on the bus.
      *
      * @param data Byte to write.
      * @return Byte read from the bus.
@@ -210,12 +238,28 @@ public:
     uint8_t transfer(uint8_t data) override;
 
     /**
-     * @brief Full duplex transmission of one half word on the bus.
+     * @brief Full duplex transmission of 16 bits on the bus.
      *
      * @param data Half word to write.
      * @return Half word read from the bus.
      */
     uint16_t transfer16(uint16_t data) override;
+
+    /**
+     * @brief Full duplex transmission of 24 bits on the bus.
+     *
+     * @param data Bytes to write (the MSB of the uint32_t is not used).
+     * @return Bytes read from the bus (the MSB of the uint32_t will be 0).
+     */
+    uint32_t transfer24(uint32_t data) override;
+
+    /**
+     * @brief Full duplex transmission of 32 bits on the bus.
+     *
+     * @param data Word to write.
+     * @return Half word read from the bus.
+     */
+    uint32_t transfer32(uint32_t data) override;
 
     /**
      * @brief Full duplex transmission of multiple bytes on the bus.
@@ -277,7 +321,7 @@ inline void SPIBus::disableInternalSlaveSelection()
     spi->CR1 &= ~SPI_CR1_SSI;
 }
 
-inline void SPIBus::setBitOrder(SPI::BitOrder bitOrder)
+inline void SPIBus::setBitOrder(SPI::Order bitOrder)
 {
     // First clear the configuration
     spi->CR1 &= ~SPI_CR1_LSBFIRST;
@@ -358,7 +402,7 @@ inline void SPIBus::configure(SPIBusConfig newConfig)
     }
 }
 
-inline void SPIBus::select(GpioType& cs)
+inline void SPIBus::select(GpioType cs)
 {
     cs.low();
 
@@ -368,7 +412,7 @@ inline void SPIBus::select(GpioType& cs)
     }
 }
 
-inline void SPIBus::deselect(GpioType& cs)
+inline void SPIBus::deselect(GpioType cs)
 {
     if (config.csHoldTimeUs > 0)
     {
@@ -378,9 +422,13 @@ inline void SPIBus::deselect(GpioType& cs)
     cs.high();
 }
 
-inline uint8_t SPIBus::read() { return transfer(static_cast<uint8_t>(0)); }
+inline uint8_t SPIBus::read() { return transfer(0); }
 
-inline uint16_t SPIBus::read16() { return transfer(static_cast<uint16_t>(0)); }
+inline uint16_t SPIBus::read16() { return transfer16(0); }
+
+inline uint32_t SPIBus::read24() { return transfer24(0); }
+
+inline uint32_t SPIBus::read32() { return transfer32(0); }
 
 inline void SPIBus::read(uint8_t* data, size_t nBytes)
 {
@@ -416,7 +464,11 @@ inline void SPIBus::read16(uint16_t* data, size_t nBytes)
 
 inline void SPIBus::write(uint8_t data) { transfer(data); }
 
-inline void SPIBus::write16(uint16_t data) { transfer(data); }
+inline void SPIBus::write16(uint16_t data) { transfer16(data); }
+
+inline void SPIBus::write24(uint32_t data) { transfer24(data); }
+
+inline void SPIBus::write32(uint32_t data) { transfer32(data); }
 
 inline void SPIBus::write(const uint8_t* data, size_t nBytes)
 {
@@ -488,6 +540,22 @@ inline uint16_t SPIBus::transfer16(uint16_t data)
 
     // Read the received data item
     return static_cast<uint16_t>(spi->DR);
+}
+
+inline uint32_t SPIBus::transfer24(uint32_t data)
+{
+    uint32_t res = transfer16(data >> 8) << 8;
+    res |= transfer(data);
+
+    return res;
+}
+
+inline uint32_t SPIBus::transfer32(uint32_t data)
+{
+    uint32_t res = transfer16(data >> 16) << 16;
+    res |= transfer16(data);
+
+    return res;
 }
 
 inline void SPIBus::transfer(uint8_t* data, size_t nBytes)

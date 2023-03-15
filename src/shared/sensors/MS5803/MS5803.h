@@ -98,7 +98,7 @@ private:
 
     uint16_t readReg(SPITransaction& spi, uint8_t reg);
 
-    const SPISlave spiSlave;
+    SPISlave spiSlave;
 
     MS5803CalibrationData calibrationData;
     uint16_t temperatureDivider;

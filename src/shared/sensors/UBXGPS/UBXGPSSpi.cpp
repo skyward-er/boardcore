@@ -49,8 +49,9 @@ UBXGPSSpi::UBXGPSSpi(SPIBusInterface& spiBus, miosix::GpioPin spiCs,
 
 SPIBusConfig UBXGPSSpi::getDefaultSPIConfig()
 {
-    return SPIBusConfig{SPI::ClockDivider::DIV_16, SPI::Mode::MODE_0,
-                        SPI::BitOrder::MSB_FIRST, 10, 10};
+    SPIBusConfig config;
+    config.clockDivider = SPI::ClockDivider::DIV_16;
+    return config;
 }
 
 uint8_t UBXGPSSpi::getSampleRate() { return sampleRate; }

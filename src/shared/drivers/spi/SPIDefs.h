@@ -52,7 +52,7 @@ namespace Boardcore
 namespace SPI
 {
 
-enum class BitOrder : uint16_t
+enum class Order : uint16_t
 {
     MSB_FIRST = 0,
     LSB_FIRST = 0x80
@@ -80,10 +80,21 @@ enum class ClockDivider : uint8_t
 
 enum class Mode : uint8_t
 {
-    MODE_0 = 0,  ///< CPOL = 0, CPHA = 0
-    MODE_1 = 1,  ///< CPOL = 0, CPHA = 1
-    MODE_2 = 2,  ///< CPOL = 1, CPHA = 0
-    MODE_3 = 3   ///< CPOL = 1, CPHA = 1
+    ///< CPOL = 0, CPHA = 0 -> Clock low when idle, sample on first edge
+    MODE_0 = 0,
+    ///< CPOL = 0, CPHA = 1 -> Clock low when idle, sample on second edge
+    MODE_1 = 1,
+    ///< CPOL = 1, CPHA = 0 -> Clock high when idle, sample on first edge
+    MODE_2 = 2,
+    ///< CPOL = 1, CPHA = 1 -> Clock high when idle, sample on second edge
+    MODE_3 = 3
+};
+
+enum class WriteBit
+{
+    NORMAL,    ///< Normal write bit settings (0 for write, 1 for reads)
+    INVERTED,  ///< Inverted write bit settings (1 for write, 0 for reads)
+    DISABLED,  ///< Do not set write bit in any way
 };
 
 }  // namespace SPI

@@ -63,8 +63,7 @@ public:
             uint8_t odr       = OutputDataRate::ODR_100_HZ,
             uint8_t bdu       = BlockDataUpdate::UPDATE_AFTER_READ_MODE,
             uint8_t fullScale = FullScale::FULL_SCALE_2G)
-        : spiSlave(bus, chipSelect, {}), odr(odr), bdu(bdu),
-          fullScale(fullScale)
+        : spiSlave(bus, chipSelect), odr(odr), bdu(bdu), fullScale(fullScale)
     {
         spiSlave.config.clockDivider =
             SPI::ClockDivider::DIV_64;  // used to set the spi baud rate

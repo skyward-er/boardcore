@@ -56,34 +56,25 @@ namespace Boardcore
 class SPITransaction
 {
 public:
-    enum class WriteBit
-    {
-        NORMAL,    ///< Normal write bit settings (0 for write, 1 for reads)
-        INVERTED,  ///< Inverted write bit settings (1 for write, 0 for reads)
-        DISABLED,  ///< Do not set write bit in any way
-    };
-
     /**
      * @brief Instantiates a new SPITransaction, configuring the bus with the
      * provided parameters.
      *
      * @param slave Slave to communicate with.
      */
-    explicit SPITransaction(SPISlave slave,
-                            WriteBit writeBit = WriteBit::NORMAL);
+    explicit SPITransaction(const SPISlave &slave);
 
-    /**
-     * @brief Instantiates a new SPITransaction, configuring the bus with the
-     * provided parameters.
-     *
-     * @param bus Bus to communicate on.
-     * @param cs Chip select of the slave to communicate to.
-     * @param config Configuration of the bus for the selected slave.
-     */
-    SPITransaction(SPIBusInterface &bus, GpioType cs, SPIBusConfig config,
-                   WriteBit writeBit = WriteBit::NORMAL);
+    // /**
+    //  * @brief Instantiates a new SPITransaction, configuring the bus with the
+    //  * provided parameters.
+    //  *
+    //  * @param bus Bus to communicate on.
+    //  * @param cs Chip select of the slave to communicate to.
+    //  * @param config Configuration of the bus for the selected slave.
+    //  */
+    // SPITransaction(SPIBusInterface &bus, GpioType cs, SPIBusConfig config);
 
-    ///< Delete copy/move contructors/operators.
+    ///< Delete copy/move constructors/operators.
     SPITransaction(const SPITransaction &)            = delete;
     SPITransaction &operator=(const SPITransaction &) = delete;
     SPITransaction(SPITransaction &&)                 = delete;
@@ -111,6 +102,20 @@ public:
      * @return Half word read from the bus.
      */
     uint16_t read16();
+
+    /**
+     * @brief Reads 24 bits from the bus.
+     *
+     * @return Bytes read from the bus (MSB of the uint32_t value will be 0).
+     */
+    virtual uint32_t read24();
+
+    /**
+     * @brief Reads 32 bits from the bus.
+     *
+     * @return Word read from the bus.
+     */
+    virtual uint32_t read32();
 
     /**
      * @brief Reads multiple bytes from the bus
@@ -141,6 +146,20 @@ public:
      * @param data Half word to write.
      */
     void write16(uint16_t data);
+
+    /**
+     * @brief Writes 24 bits to the bus.
+     *
+     * @param data Bytes to write (the MSB of the uint32_t is not used).
+     */
+    virtual void write24(uint32_t data);
+
+    /**
+     * @brief Writes 32 bits to the bus.
+     *
+     * @param data Word to write.
+     */
+    virtual void write32(uint32_t data);
 
     /**
      * @brief Writes multiple bytes to the bus.
@@ -175,9 +194,25 @@ public:
     uint16_t transfer16(uint16_t data);
 
     /**
+     * @brief Full duplex transmission of 24 bits on the bus.
+     *
+     * @param data Bytes to write (the MSB of the uint32_t is not used).
+     * @return Bytes read from the bus (the MSB of the uint32_t will be 0).
+     */
+    virtual uint32_t transfer24(uint32_t data);
+
+    /**
+     * @brief Full duplex transmission of 32 bits on the bus.
+     *
+     * @param data Word to write.
+     * @return Half word read from the bus.
+     */
+    virtual uint32_t transfer32(uint32_t data);
+
+    /**
      * @brief Full duplex transmission of multiple bytes on the bus.
      *
-     * @param data Buffer containing data to trasfer.
+     * @param data Buffer containing data to transfer.
      * @param size Size of the buffer in bytes.
      */
     void transfer(uint8_t *data, size_t size);
@@ -185,7 +220,7 @@ public:
     /**
      * @brief Full duplex transmission of multiple half words on the bus.
      *
-     * @param data Buffer containing data to trasfer.
+     * @param data Buffer containing data to transfer.
      * @param size Size of the buffer in bytes.
      */
     void transfer16(uint16_t *data, size_t size);
@@ -193,11 +228,25 @@ public:
     // Read, write and transfer operations with registers
 
     /**
-     * @brief Reads the specified register.
+     * @brief Reads an 8 bit register.
      *
      * @return Byte read from the register.
      */
     uint8_t readRegister(uint8_t reg);
+
+    /**
+     * @brief Reads a 16 bit register.
+     *
+     * @return Byte read from the register.
+     */
+    uint16_t readRegister16(uint8_t reg);
+
+    /**
+     * @brief Reads a 24 bit register.
+     *
+     * @return Byte read from the register.
+     */
+    uint32_t readRegister24(uint8_t reg);
 
     /**
      * @brief Reads multiple bytes starting from the specified register.
@@ -208,12 +257,28 @@ public:
     void readRegisters(uint8_t reg, uint8_t *data, size_t size);
 
     /**
-     * @brief Writes a single byte register.
+     * @brief Writes an 8 bit register.
      *
      * @param reg Register address.
      * @param data Byte to write.
      */
     void writeRegister(uint8_t reg, uint8_t data);
+
+    /**
+     * @brief Writes a 16 bit register.
+     *
+     * @param reg Register address.
+     * @param data Byte to write.
+     */
+    void writeRegister16(uint8_t reg, uint16_t data);
+
+    /**
+     * @brief Writes a 24 bit register.
+     *
+     * @param reg Register address.
+     * @param data Byte to write.
+     */
+    void writeRegister24(uint8_t reg, uint32_t data);
 
     /**
      * @brief Writes multiple bytes starting from the specified register.
@@ -225,9 +290,7 @@ public:
     void writeRegisters(uint8_t reg, uint8_t *data, size_t size);
 
 private:
-    SPIBusInterface &bus;
-    WriteBit writeBit;
-    GpioType cs;
+    const SPISlave &slave;
 };
 
 }  // namespace Boardcore

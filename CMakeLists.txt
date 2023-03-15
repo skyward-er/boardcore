@@ -209,7 +209,7 @@ add_executable(test-pwm src/tests/drivers/timer/test-pwm.cpp)
 sbs_target(test-pwm stm32f429zi_stm32f4discovery)
 
 add_executable(test-spi src/tests/drivers/spi/test-spi.cpp)
-sbs_target(test-spi stm32f429zi_stm32f4discovery)
+sbs_target(test-spi stm32f407vg_stm32f4discovery)
 
 add_executable(test-timer-utils src/tests/drivers/timer/test-timer-utils.cpp)
 sbs_target(test-timer-utils stm32f429zi_stm32f4discovery)
@@ -304,10 +304,10 @@ sbs_target(test-sx1278lora-tx stm32f429zi_skyward_groundstation_v2)
 #                               Tests - Sensors                               #
 #-----------------------------------------------------------------------------#
 
-add_executable(test-ads1118 src/tests/sensors/ADS1118/test-ads1118.cpp)
+add_executable(test-ads1118 src/tests/sensors/test-ads1118.cpp)
 sbs_target(test-ads1118 stm32f407vg_stm32f4discovery)
 
-add_executable(test-ads131m04 src/tests/sensors/ADS131M04/test-ads131m04.cpp)
+add_executable(test-ads131m04 src/tests/sensors/test-ads131m04.cpp)
 sbs_target(test-ads131m04 stm32f429zi_stm32f4discovery)
 
 add_executable(test-analog-pressure-sensors src/tests/sensors/analog/test-analog-pressure-sensors.cpp)
