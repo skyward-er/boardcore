@@ -163,7 +163,9 @@ int main()
     SPIBusConfig spi_config;
     spi_config.clockDivider = SPI::ClockDivider::DIV_64;
     spi_config.mode         = SPI::Mode::MODE_0;
-    spi_config.bitOrder     = SPI::BitOrder::MSB_FIRST;
+    spi_config.bitOrder     = SPI::Order::MSB_FIRST;
+    spi_config.byteOrder    = SPI::Order::MSB_FIRST;
+    spi_config.writeBit     = SPI::WriteBit::INVERTED;
 
     SPIBus bus(SX1278_SPI);
     GpioPin cs = cs::getPin();

@@ -198,7 +198,9 @@ int main()
     SPIBusConfig spi_config = {};
     spi_config.clockDivider = SPI::ClockDivider::DIV_64;
     spi_config.mode         = SPI::Mode::MODE_0;
-    spi_config.bitOrder     = SPI::BitOrder::MSB_FIRST;
+    spi_config.bitOrder     = SPI::Order::MSB_FIRST;
+    spi_config.byteOrder    = SPI::Order::MSB_FIRST;
+    spi_config.writeBit     = SPI::WriteBit::INVERTED;
 
 #ifdef IS_EBYTE
     sx1278 = new EbyteLora(SPISlave(bus, cs, spi_config), txen::getPin(),

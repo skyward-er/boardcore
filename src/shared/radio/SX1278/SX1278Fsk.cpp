@@ -71,7 +71,7 @@ SX1278Fsk::Error SX1278Fsk::init(const Config &config)
 bool SX1278Fsk::checkVersion()
 {
     Lock guard(*this);
-    SPITransaction spi(slave, SPITransaction::WriteBit::INVERTED);
+    SPITransaction spi(slave);
 
     return spi.readRegister(REG_VERSION) == 0x12;
 }
@@ -108,7 +108,7 @@ SX1278Fsk::Error SX1278Fsk::configure(const Config &config)
 
     // Setup generic parameters
     {
-        SPITransaction spi(slave, SPITransaction::WriteBit::INVERTED);
+        SPITransaction spi(slave);
 
         spi.writeRegister(REG_RX_CONFIG,
                           RegRxConfig::AFC_AUTO_ON | RegRxConfig::AGC_AUTO_ON |
@@ -155,7 +155,7 @@ ssize_t SX1278Fsk::receive(uint8_t *pkt, size_t max_len)
         last_rx_rssi = getRssi();
 
         {
-            SPITransaction spi(slave, SPITransaction::WriteBit::INVERTED);
+            SPITransaction spi(slave);
             len = spi.readRegister(REG_FIFO);
             if (len > max_len)
                 return -1;
@@ -186,7 +186,7 @@ bool SX1278Fsk::send(uint8_t *pkt, size_t len)
     waitForIrq(guard_mode, RegIrqFlags::TX_READY);
 
     {
-        SPITransaction spi(slave, SPITransaction::WriteBit::INVERTED);
+        SPITransaction spi(slave);
 
         spi.writeRegister(REG_FIFO, static_cast<uint8_t>(len));
         spi.writeRegisters(REG_FIFO, pkt, len);
@@ -226,7 +226,7 @@ void SX1278Fsk::rateLimitTx()
 
 void SX1278Fsk::imageCalibrate()
 {
-    SPITransaction spi(slave, SPITransaction::WriteBit::INVERTED);
+    SPITransaction spi(slave);
     spi.writeRegister(REG_IMAGE_CAL, REG_IMAGE_CAL_DEFAULT | (1 << 6));
 
     // Wait for calibration complete by polling on running register
@@ -262,7 +262,7 @@ DioMask SX1278Fsk::getDioMaskFromIrqFlags(IrqFlags flags, Mode mode,
 
 ISX1278::IrqFlags SX1278Fsk::getIrqFlags()
 {
-    SPITransaction spi(slave, SPITransaction::WriteBit::INVERTED);
+    SPITransaction spi(slave);
 
     uint8_t flags_msb = spi.readRegister(REG_IRQ_FLAGS_1);
     uint8_t flags_lsb = spi.readRegister(REG_IRQ_FLAGS_2);
@@ -279,7 +279,7 @@ void SX1278Fsk::resetIrqFlags(IrqFlags flags)
 
     if (flags != 0)
     {
-        SPITransaction spi(slave, SPITransaction::WriteBit::INVERTED);
+        SPITransaction spi(slave);
         spi.writeRegister(REG_IRQ_FLAGS_1, flags >> 8);
         spi.writeRegister(REG_IRQ_FLAGS_2, flags);
     }
@@ -287,14 +287,14 @@ void SX1278Fsk::resetIrqFlags(IrqFlags flags)
 
 float SX1278Fsk::getRssi()
 {
-    SPITransaction spi(slave, SPITransaction::WriteBit::INVERTED);
+    SPITransaction spi(slave);
 
     return static_cast<float>(spi.readRegister(REG_RSSI_VALUE)) * -0.5f;
 }
 
 float SX1278Fsk::getFei()
 {
-    SPITransaction spi(slave, SPITransaction::WriteBit::INVERTED);
+    SPITransaction spi(slave);
 
     // Order of read is important!!
     uint8_t fei_msb = spi.readRegister(REG_FEI_MSB);
@@ -308,13 +308,13 @@ float SX1278Fsk::getFei()
 
 void SX1278Fsk::setMode(Mode mode)
 {
-    SPITransaction spi(slave, SPITransaction::WriteBit::INVERTED);
+    SPITransaction spi(slave);
     spi.writeRegister(REG_OP_MODE, REG_OP_MODE_DEFAULT | mode);
 }
 
 void SX1278Fsk::setMapping(SX1278::DioMapping mapping)
 {
-    SPITransaction spi(slave, SPITransaction::WriteBit::INVERTED);
+    SPITransaction spi(slave);
     spi.writeRegister(REG_DIO_MAPPING_1, mapping.raw >> 8);
     spi.writeRegister(REG_DIO_MAPPING_2, mapping.raw);
 }
@@ -324,7 +324,7 @@ void SX1278Fsk::setBitrate(int bitrate)
     uint16_t val = FXOSC / bitrate;
 
     // Update values
-    SPITransaction spi(slave, SPITransaction::WriteBit::INVERTED);
+    SPITransaction spi(slave);
     spi.writeRegister(REG_BITRATE_MSB, val >> 8);
     spi.writeRegister(REG_BITRATE_LSB, val);
 }
@@ -332,7 +332,7 @@ void SX1278Fsk::setBitrate(int bitrate)
 void SX1278Fsk::setFreqDev(int freq_dev)
 {
     uint16_t val = freq_dev / FSTEP;
-    SPITransaction spi(slave, SPITransaction::WriteBit::INVERTED);
+    SPITransaction spi(slave);
     spi.writeRegister(REG_FDEV_MSB, (val >> 8) & 0x3f);
     spi.writeRegister(REG_FDEV_LSB, val);
 }
@@ -342,7 +342,7 @@ void SX1278Fsk::setFreqRF(int freq_rf)
     uint32_t val = freq_rf / FSTEP;
 
     // Update values
-    SPITransaction spi(slave, SPITransaction::WriteBit::INVERTED);
+    SPITransaction spi(slave);
     spi.writeRegister(REG_FRF_MSB, val >> 16);
     spi.writeRegister(REG_FRF_MID, val >> 8);
     spi.writeRegister(REG_FRF_LSB, val);
@@ -350,7 +350,7 @@ void SX1278Fsk::setFreqRF(int freq_rf)
 
 void SX1278Fsk::setOcp(int ocp)
 {
-    SPITransaction spi(slave, SPITransaction::WriteBit::INVERTED);
+    SPITransaction spi(slave);
     if (ocp == 0)
     {
         spi.writeRegister(REG_OCP, 0);
@@ -369,7 +369,7 @@ void SX1278Fsk::setOcp(int ocp)
 
 void SX1278Fsk::setSyncWord(uint8_t value[], int size)
 {
-    SPITransaction spi(slave, SPITransaction::WriteBit::INVERTED);
+    SPITransaction spi(slave);
     spi.writeRegister(REG_SYNC_CONFIG, REG_SYNC_CONFIG_DEFAULT | size);
 
     for (int i = 0; i < size; i++)
@@ -380,19 +380,19 @@ void SX1278Fsk::setSyncWord(uint8_t value[], int size)
 
 void SX1278Fsk::setRxBw(RxBw rx_bw)
 {
-    SPITransaction spi(slave, SPITransaction::WriteBit::INVERTED);
+    SPITransaction spi(slave);
     spi.writeRegister(REG_RX_BW, static_cast<uint8_t>(rx_bw));
 }
 
 void SX1278Fsk::setAfcBw(RxBw afc_bw)
 {
-    SPITransaction spi(slave, SPITransaction::WriteBit::INVERTED);
+    SPITransaction spi(slave);
     spi.writeRegister(REG_AFC_BW, static_cast<uint8_t>(afc_bw));
 }
 
 void SX1278Fsk::setPreambleLen(int len)
 {
-    SPITransaction spi(slave, SPITransaction::WriteBit::INVERTED);
+    SPITransaction spi(slave);
     spi.writeRegister(REG_PREAMBLE_MSB, len >> 8);
     spi.writeRegister(REG_PREAMBLE_LSB, len);
 }
@@ -404,7 +404,7 @@ void SX1278Fsk::setPa(int power, bool pa_boost)
 
     const uint8_t MAX_POWER = 0b111;
 
-    SPITransaction spi(slave, SPITransaction::WriteBit::INVERTED);
+    SPITransaction spi(slave);
 
     if (!pa_boost)
     {
@@ -435,7 +435,7 @@ void SX1278Fsk::setPa(int power, bool pa_boost)
 
 void SX1278Fsk::setShaping(Shaping shaping)
 {
-    SPITransaction spi(slave, SPITransaction::WriteBit::INVERTED);
+    SPITransaction spi(slave);
     spi.writeRegister(REG_PA_RAMP, static_cast<uint8_t>(shaping) | 0x09);
 }
 
@@ -505,7 +505,7 @@ void SX1278Fsk::debugDumpRegisters()
         RegDef{"REG_DIO_MAPPING_2", REG_DIO_MAPPING_2},
         RegDef{"REG_VERSION", REG_VERSION}, RegDef{NULL, 0}};
 
-    SPITransaction spi(slave, SPITransaction::WriteBit::INVERTED);
+    SPITransaction spi(slave);
 
     int i = 0;
     while (defs[i].name)
