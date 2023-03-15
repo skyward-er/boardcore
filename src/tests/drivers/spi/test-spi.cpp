@@ -41,6 +41,7 @@ int main()
 {
     sckPin.mode(Mode::ALTERNATE);
     sckPin.alternateFunction(5);
+    sckPin.speed(Speed::_100MHz);
     misoPin.mode(Mode::ALTERNATE);
     misoPin.alternateFunction(5);
     mosiPin.mode(Mode::ALTERNATE);
@@ -131,10 +132,6 @@ int main()
         transaction.writeRegister24(0x56, 0xABCDEF);
         delayMs(1);
     }
-
-    transaction.writeRegister(0x62, 4);
-    auto whoAmIVaule = transaction.readRegister(0x4f);
-    printf("Who am I value: %x\n", whoAmIVaule);
 
     while (true)
         delayMs(1000);
