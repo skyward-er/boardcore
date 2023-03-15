@@ -184,7 +184,8 @@ uint8_t SPITransaction::readRegister(uint8_t reg)
         reg |= 0x80;
 
     slave.bus.select(slave.cs);
-    uint8_t data = slave.bus.transfer16((uint16_t)reg << 8);
+    slave.bus.write(reg);
+    uint8_t data = slave.bus.read();
     slave.bus.deselect(slave.cs);
 
     return data;
@@ -196,7 +197,8 @@ uint16_t SPITransaction::readRegister16(uint8_t reg)
         reg |= 0x80;
 
     slave.bus.select(slave.cs);
-    uint16_t data = slave.bus.transfer24((uint32_t)reg << 16);
+    slave.bus.write(reg);
+    uint16_t data = slave.bus.read16();
     slave.bus.deselect(slave.cs);
 
     if (slave.config.byteOrder == SPI::Order::LSB_FIRST)
@@ -211,7 +213,24 @@ uint32_t SPITransaction::readRegister24(uint8_t reg)
         reg |= 0x80;
 
     slave.bus.select(slave.cs);
-    uint32_t data = slave.bus.transfer32((uint32_t)reg << 24);
+    slave.bus.write(reg);
+    uint32_t data = slave.bus.read24();
+    slave.bus.deselect(slave.cs);
+
+    if (slave.config.byteOrder == SPI::Order::LSB_FIRST)
+        data = swapBytes32(data) >> 8;
+
+    return data;
+}
+
+uint32_t SPITransaction::readRegister32(uint8_t reg)
+{
+    if (slave.config.writeBit == SPI::WriteBit::NORMAL)
+        reg |= 0x80;
+
+    slave.bus.select(slave.cs);
+    slave.bus.write(reg);
+    uint32_t data = slave.bus.read32();
     slave.bus.deselect(slave.cs);
 
     if (slave.config.byteOrder == SPI::Order::LSB_FIRST)
@@ -237,7 +256,8 @@ void SPITransaction::writeRegister(uint8_t reg, uint8_t data)
         reg |= 0x80;
 
     slave.bus.select(slave.cs);
-    slave.bus.write16((uint16_t)reg << 8 | data);
+    slave.bus.write(reg);
+    slave.bus.write(data);
     slave.bus.deselect(slave.cs);
 }
 
@@ -247,7 +267,8 @@ void SPITransaction::writeRegister16(uint8_t reg, uint16_t data)
         reg |= 0x80;
 
     slave.bus.select(slave.cs);
-    slave.bus.write16((uint32_t)reg << 16 | data);
+    slave.bus.write(reg);
+    slave.bus.write16(data);
     slave.bus.deselect(slave.cs);
 }
 
@@ -257,7 +278,19 @@ void SPITransaction::writeRegister24(uint8_t reg, uint32_t data)
         reg |= 0x80;
 
     slave.bus.select(slave.cs);
-    slave.bus.write16((uint32_t)reg << 24 | data);
+    slave.bus.write(reg);
+    slave.bus.write24(data);
+    slave.bus.deselect(slave.cs);
+}
+
+void SPITransaction::writeRegister32(uint8_t reg, uint32_t data)
+{
+    if (slave.config.writeBit == SPI::WriteBit::INVERTED)
+        reg |= 0x80;
+
+    slave.bus.select(slave.cs);
+    slave.bus.write(reg);
+    slave.bus.write32(data);
     slave.bus.deselect(slave.cs);
 }
 

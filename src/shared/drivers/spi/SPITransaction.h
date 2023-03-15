@@ -249,6 +249,13 @@ public:
     uint32_t readRegister24(uint8_t reg);
 
     /**
+     * @brief Reads a 32 bit register.
+     *
+     * @return Byte read from the register.
+     */
+    uint32_t readRegister32(uint8_t reg);
+
+    /**
      * @brief Reads multiple bytes starting from the specified register.
      *
      * @param data Buffer to be filled with received data.
@@ -279,6 +286,14 @@ public:
      * @param data Byte to write.
      */
     void writeRegister24(uint8_t reg, uint32_t data);
+
+    /**
+     * @brief Writes a 32 bit register.
+     *
+     * @param reg Register address.
+     * @param data Byte to write.
+     */
+    void writeRegister32(uint8_t reg, uint32_t data);
 
     /**
      * @brief Writes multiple bytes starting from the specified register.
