@@ -144,7 +144,7 @@ public:
      * @return True if the read is successful, false otherwise.
      */
     [[nodiscard]] bool read(const I2CSlaveConfig &slaveConfig, void *buffer,
-                            size_t nBytes);
+                            const size_t &nBytes);
 
     /**
      * @brief Write operation to write nBytes. In case of an error during the
@@ -158,7 +158,7 @@ public:
      * @return True if the write is successful, false otherwise.
      */
     [[nodiscard]] bool write(const I2CSlaveConfig &slaveConfig,
-                             const void *buffer, size_t nBytes,
+                             const void *buffer, const size_t &nBytes,
                              bool generateStop = true);
 
     /**

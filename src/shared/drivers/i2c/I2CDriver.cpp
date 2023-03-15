@@ -382,7 +382,7 @@ void I2CDriver::setupPeripheral(const I2CSlaveConfig &slaveConfig)
 }
 
 bool I2CDriver::read(const I2CSlaveConfig &slaveConfig, void *buffer,
-                     size_t nBytes)
+                     const size_t &nBytes)
 {
     // Setting up the read transaction
     transaction.operation    = Operation::READ;
@@ -403,7 +403,7 @@ bool I2CDriver::read(const I2CSlaveConfig &slaveConfig, void *buffer,
 };
 
 bool I2CDriver::write(const I2CSlaveConfig &slaveConfig, const void *buffer,
-                      size_t nBytes, bool generateStop)
+                      const size_t &nBytes, bool generateStop)
 {
     // Setting up the write transaction
     transaction.operation    = Operation::WRITE;

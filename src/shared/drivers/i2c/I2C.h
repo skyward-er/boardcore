@@ -49,7 +49,8 @@ public:
      * @param scl Serial clock GpioPin of the relative I2C peripheral.
      * @param sda Serial data GpioPin of the relative I2C peripheral.
      */
-    I2C(I2C_TypeDef *i2c, miosix::GpioPin scl, miosix::GpioPin sda);
+    I2C(I2C_TypeDef *i2c, const miosix::GpioPin &scl,
+        const miosix::GpioPin &sda);
 
     ///< Delete copy/move constructors/operators.
     I2C(const I2C &)            = delete;
@@ -70,7 +71,7 @@ public:
      * @returns True if the read is successful, false otherwise.
      */
     [[nodiscard]] bool read(const I2CDriver::I2CSlaveConfig &slaveConfig,
-                            void *buffer, size_t nBytes);
+                            void *buffer, const size_t &nBytes);
 
     /**
      * @brief Non blocking write operation to write nBytes.
@@ -85,7 +86,7 @@ public:
      * @returns True if the write is successful, false otherwise.
      */
     [[nodiscard]] bool write(const I2CDriver::I2CSlaveConfig &slaveConfig,
-                             const void *buffer, size_t nBytes);
+                             const void *buffer, const size_t &nBytes);
 
     /**
      * @brief Non blocking operation to read a 1-byte register from a slave.
@@ -117,7 +118,7 @@ public:
      */
     [[nodiscard]] bool writeRegister(
         const I2CDriver::I2CSlaveConfig &slaveConfig,
-        const uint8_t &registerAddress, const uint8_t registerContent);
+        const uint8_t &registerAddress, const uint8_t &registerContent);
 
     /**
      * @brief Non blocking operation to read n-bytes from register from a slave.
@@ -134,7 +135,7 @@ public:
      */
     [[nodiscard]] bool readFromRegister(
         const I2CDriver::I2CSlaveConfig &slaveConfig,
-        const uint8_t &registerAddress, void *buffer, size_t nBytes);
+        const uint8_t &registerAddress, void *buffer, const size_t &nBytes);
 
     /**
      * @brief Non blocking operation to check if a slave is available.
@@ -149,7 +150,7 @@ public:
      * @brief Returns the last errors happened in the communication.
      *
      * For checking if a specific error occurred in the last transaction you can
-     * do `if(getLastError() & Errors::<error-to-check>)`. Do not use `==` to
+     * do `if(getLastError()  &Errors::<error-to-check>)`. Do not use `==` to
      * check for errors because there could be more errors at once. To check if
      * no errors occurred use `if(getLastError() == Errors::NO_ERROR)` or simply
      * `if(!getLastError())`
@@ -177,7 +178,8 @@ public:
      * @param scl Serial clock GpioPin of the relative I2C peripheral.
      * @param sda Serial data GpioPin of the relative I2C peripheral.
      */
-    SyncedI2C(I2C_TypeDef *i2c, miosix::GpioPin scl, miosix::GpioPin sda);
+    SyncedI2C(I2C_TypeDef *i2c, const miosix::GpioPin &scl,
+              const miosix::GpioPin &sda);
 
     ///< Delete copy/move constructors/operators.
     SyncedI2C(const SyncedI2C &)            = delete;
@@ -198,7 +200,7 @@ public:
      * @returns True if the read is successful, false otherwise.
      */
     [[nodiscard]] bool read(const I2CDriver::I2CSlaveConfig &slaveConfig,
-                            void *buffer, size_t nBytes);
+                            void *buffer, const size_t &nBytes);
 
     /**
      * @brief Write operation to write nBytes.
@@ -213,7 +215,7 @@ public:
      * @returns True if the write is successful, false otherwise.
      */
     [[nodiscard]] bool write(const I2CDriver::I2CSlaveConfig &slaveConfig,
-                             const void *buffer, size_t nBytes);
+                             const void *buffer, const size_t &nBytes);
 
     /**
      * @brief Read a one-byte register from the device.
@@ -245,7 +247,7 @@ public:
      */
     [[nodiscard]] bool writeRegister(
         const I2CDriver::I2CSlaveConfig &slaveConfig,
-        const uint8_t &registerAddress, const uint8_t registerContent);
+        const uint8_t &registerAddress, const uint8_t &registerContent);
 
     /**
      * @brief Read n-bytes from register from a slave.
@@ -262,7 +264,7 @@ public:
      */
     [[nodiscard]] bool readFromRegister(
         const I2CDriver::I2CSlaveConfig &slaveConfig,
-        const uint8_t &registerAddress, void *buffer, size_t nBytes);
+        const uint8_t &registerAddress, void *buffer, const size_t &nBytes);
 
     /**
      * @brief Check if a slave is available.
@@ -279,7 +281,7 @@ public:
      * @brief Returns the last errors happened in the communication.
      *
      * For checking if a specific error occurred in the last transaction you can
-     * do `if(getLastError() & Errors::<error-to-check>)`. Do not use `==` to
+     * do `if(getLastError()  &Errors::<error-to-check>)`. Do not use `==` to
      * check for errors because there could be more errors at once. To check if
      * no errors occurred use `if(getLastError() == Errors::NO_ERROR)` or simply
      * `if(!getLastError())`
