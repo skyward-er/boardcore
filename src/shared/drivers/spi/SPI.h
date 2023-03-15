@@ -183,7 +183,7 @@ public:
      * @param data Buffer to be filled with received data.
      * @param size Size of the buffer in bytes.
      */
-    void read(uint16_t *data, size_t nBytes);
+    void read16(uint16_t *data, size_t nBytes);
 
     /**
      * @brief Writes a single byte to the bus.
@@ -197,7 +197,7 @@ public:
      *
      * @param data Half word to write.
      */
-    void write(uint16_t data);
+    void write16(uint16_t data);
 
     /**
      * @brief Writes multiple bytes to the bus.
@@ -213,7 +213,7 @@ public:
      * @param data Buffer containing data to write.
      * @param size Size of the buffer in bytes.
      */
-    void write(const uint16_t *data, size_t nBytes);
+    void write16(const uint16_t *data, size_t nBytes);
 
     /**
      * @brief Full duplex transmission of one byte on the bus.
@@ -229,7 +229,7 @@ public:
      * @param data Half word to write.
      * @return Half word read from the bus.
      */
-    uint16_t transfer(uint16_t data);
+    uint16_t transfer16(uint16_t data);
 
     /**
      * @brief Full duplex transmission of multiple bytes on the bus.
@@ -245,7 +245,7 @@ public:
      * @param data Buffer containing data to trasfer.
      * @param size Size of the buffer in bytes.
      */
-    void transfer(uint16_t *data, size_t nBytes);
+    void transfer16(uint16_t *data, size_t nBytes);
 
 private:
     SPIType *spi;
@@ -344,7 +344,7 @@ inline void SPI::read(uint8_t *data, size_t nBytes)
         data[i] = read();
 }
 
-inline void SPI::read(uint16_t *data, size_t nBytes)
+inline void SPI::read16(uint16_t *data, size_t nBytes)
 {
     // Set 16 bit frame format
     set16BitFrameFormat();
@@ -372,7 +372,7 @@ inline void SPI::read(uint16_t *data, size_t nBytes)
 
 inline void SPI::write(uint8_t data) { transfer(data); }
 
-inline void SPI::write(uint16_t data) { transfer(data); }
+inline void SPI::write16(uint16_t data) { transfer(data); }
 
 inline void SPI::write(const uint8_t *data, size_t nBytes)
 {
@@ -380,7 +380,7 @@ inline void SPI::write(const uint8_t *data, size_t nBytes)
         transfer(data[i]);
 }
 
-inline void SPI::write(const uint16_t *data, size_t nBytes)
+inline void SPI::write16(const uint16_t *data, size_t nBytes)
 {
     // Set 16 bit frame format
     set16BitFrameFormat();
@@ -423,7 +423,7 @@ inline uint8_t SPI::transfer(uint8_t data)
     return static_cast<uint8_t>(spi->DR);
 }
 
-inline uint16_t SPI::transfer(uint16_t data)
+inline uint16_t SPI::transfer16(uint16_t data)
 {
     // Set 16 bit frame format
     set16BitFrameFormat();
@@ -452,7 +452,7 @@ inline void SPI::transfer(uint8_t *data, size_t nBytes)
         data[i] = transfer(data[i]);
 }
 
-inline void SPI::transfer(uint16_t *data, size_t nBytes)
+inline void SPI::transfer16(uint16_t *data, size_t nBytes)
 {
     // Set 16 bit frame format
     set16BitFrameFormat();

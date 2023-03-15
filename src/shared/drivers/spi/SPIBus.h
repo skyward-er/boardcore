@@ -101,7 +101,7 @@ public:
      * @param data Buffer to be filled with received data.
      * @param size Size of the buffer.
      */
-    void read(uint16_t* data, size_t size) override;
+    void read16(uint16_t* data, size_t size) override;
 
     /**
      * @brief Writes a single byte to the bus.
@@ -115,7 +115,7 @@ public:
      *
      * @param data Half word to write.
      */
-    void write(uint16_t data) override;
+    void write16(uint16_t data) override;
 
     /**
      * @brief Writes multiple bytes to the bus.
@@ -131,7 +131,7 @@ public:
      * @param data Buffer containing data to write.
      * @param size Size of the buffer.
      */
-    void write(uint16_t* data, size_t size) override;
+    void write16(uint16_t* data, size_t size) override;
 
     /**
      * @brief Full duplex transmission of one byte on the bus.
@@ -147,7 +147,7 @@ public:
      * @param data Half word to write.
      * @return Half word read from the bus.
      */
-    uint16_t transfer(uint16_t data) override;
+    uint16_t transfer16(uint16_t data) override;
 
     /**
      * @brief Full duplex transmission of multiple bytes on the bus.
@@ -163,7 +163,7 @@ public:
      * @param data Buffer containing data to trasfer.
      * @param size Size of the buffer.
      */
-    void transfer(uint16_t* data, size_t size) override;
+    void transfer16(uint16_t* data, size_t size) override;
 
 private:
     SPI spi;
@@ -233,31 +233,34 @@ inline uint16_t SPIBus::read16() { return spi.read16(); }
 
 inline void SPIBus::read(uint8_t* data, size_t size) { spi.read(data, size); }
 
-inline void SPIBus::read(uint16_t* data, size_t size) { spi.read(data, size); }
+inline void SPIBus::read16(uint16_t* data, size_t size)
+{
+    spi.read16(data, size);
+}
 
 inline void SPIBus::write(uint8_t data) { spi.write(data); }
 
-inline void SPIBus::write(uint16_t data) { spi.write(data); }
+inline void SPIBus::write16(uint16_t data) { spi.write(data); }
 
 inline void SPIBus::write(uint8_t* data, size_t size) { spi.write(data, size); }
 
-inline void SPIBus::write(uint16_t* data, size_t size)
+inline void SPIBus::write16(uint16_t* data, size_t size)
 {
-    spi.write(data, size);
+    spi.write16(data, size);
 }
 
 inline uint8_t SPIBus::transfer(uint8_t data) { return spi.transfer(data); }
 
-inline uint16_t SPIBus::transfer(uint16_t data) { return spi.transfer(data); }
+inline uint16_t SPIBus::transfer16(uint16_t data) { return spi.transfer(data); }
 
 inline void SPIBus::transfer(uint8_t* data, size_t size)
 {
     spi.transfer(data, size);
 }
 
-inline void SPIBus::transfer(uint16_t* data, size_t size)
+inline void SPIBus::transfer16(uint16_t* data, size_t size)
 {
-    spi.transfer(data, size);
+    spi.transfer16(data, size);
 }
 
 }  // namespace Boardcore

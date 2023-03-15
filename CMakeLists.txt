@@ -214,15 +214,6 @@ sbs_target(test-pwm stm32f429zi_stm32f4discovery)
 add_executable(test-spi src/tests/drivers/spi/test-spi.cpp)
 sbs_target(test-spi stm32f429zi_stm32f4discovery)
 
-add_executable(test-spi-as-slave src/tests/drivers/spi/test-spi-as-slave.cpp)
-sbs_target(test-spi-as-slave stm32f429zi_stm32f4discovery)
-
-add_executable(test-spi-signal-generator src/tests/drivers/spi/test-spi-signal-generator.cpp)
-sbs_target(test-spi-signal-generator stm32f429zi_stm32f4discovery)
-
-add_executable(test-spi-slave-bus src/tests/drivers/spi/test-spi-slave-bus.cpp)
-sbs_target(test-spi-slave-bus stm32f429zi_stm32f4discovery)
-
 add_executable(test-timer-utils src/tests/drivers/timer/test-timer-utils.cpp)
 sbs_target(test-timer-utils stm32f429zi_stm32f4discovery)
 
@@ -321,12 +312,6 @@ sbs_target(test-ads1118 stm32f407vg_stm32f4discovery)
 
 add_executable(test-ads131m04 src/tests/sensors/ADS131M04/test-ads131m04.cpp)
 sbs_target(test-ads131m04 stm32f429zi_stm32f4discovery)
-
-add_executable(test-ads131m04highfreq src/tests/sensors/ADS131M04/test-ads131m04highfreq.cpp)
-sbs_target(test-ads131m04highfreq stm32f429zi_stm32f4discovery)
-
-add_executable(test-ads131m04highfreq-with-logger src/tests/sensors/ADS131M04/test-ads131m04highfreq-with-logger.cpp)
-sbs_target(test-ads131m04highfreq-with-logger stm32f429zi_stm32f4discovery)
 
 add_executable(test-analog-pressure-sensors src/tests/sensors/analog/test-analog-pressure-sensors.cpp)
 sbs_target(test-analog-pressure-sensors stm32f429zi_stm32f4discovery)

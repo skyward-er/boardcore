@@ -64,10 +64,10 @@ void SPITransaction::read(uint8_t* data, size_t size)
     bus.deselect(cs);
 }
 
-void SPITransaction::read(uint16_t* data, size_t size)
+void SPITransaction::read16(uint16_t* data, size_t size)
 {
     bus.select(cs);
-    bus.read(data, size);
+    bus.read16(data, size);
     bus.deselect(cs);
 }
 
@@ -78,10 +78,10 @@ void SPITransaction::write(uint8_t data)
     bus.deselect(cs);
 }
 
-void SPITransaction::write(uint16_t data)
+void SPITransaction::write16(uint16_t data)
 {
     bus.select(cs);
-    bus.write(data);
+    bus.write16(data);
     bus.deselect(cs);
 }
 
@@ -92,10 +92,10 @@ void SPITransaction::write(uint8_t* data, size_t size)
     bus.deselect(cs);
 }
 
-void SPITransaction::write(uint16_t* data, size_t size)
+void SPITransaction::write16(uint16_t* data, size_t size)
 {
     bus.select(cs);
-    bus.write(data, size);
+    bus.write16(data, size);
     bus.deselect(cs);
 }
 
@@ -107,10 +107,10 @@ uint8_t SPITransaction::transfer(uint8_t data)
     return data;
 }
 
-uint16_t SPITransaction::transfer(uint16_t data)
+uint16_t SPITransaction::transfer16(uint16_t data)
 {
     bus.select(cs);
-    data = bus.transfer(data);
+    data = bus.transfer16(data);
     bus.deselect(cs);
     return data;
 }
@@ -122,10 +122,10 @@ void SPITransaction::transfer(uint8_t* data, size_t size)
     bus.deselect(cs);
 }
 
-void SPITransaction::transfer(uint16_t* data, size_t size)
+void SPITransaction::transfer16(uint16_t* data, size_t size)
 {
     bus.select(cs);
-    bus.transfer(data, size);
+    bus.transfer16(data, size);
     bus.deselect(cs);
 }
 

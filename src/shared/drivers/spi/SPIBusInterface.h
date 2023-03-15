@@ -148,7 +148,7 @@ public:
      * @param data Buffer to be filled with received data.
      * @param size Size of the buffer.
      */
-    virtual void read(uint16_t* data, size_t size) = 0;
+    virtual void read16(uint16_t* data, size_t size) = 0;
 
     /**
      * @brief Writes a single byte to the bus.
@@ -162,7 +162,7 @@ public:
      *
      * @param data Half word to write.
      */
-    virtual void write(uint16_t data) = 0;
+    virtual void write16(uint16_t data) = 0;
 
     /**
      * @brief Writes multiple bytes to the bus.
@@ -178,7 +178,7 @@ public:
      * @param data Buffer containing data to write.
      * @param size Size of the buffer.
      */
-    virtual void write(uint16_t* data, size_t size) = 0;
+    virtual void write16(uint16_t* data, size_t size) = 0;
 
     /**
      * @brief Full duplex transmission of one byte on the bus.
@@ -194,7 +194,7 @@ public:
      * @param data Half word to write.
      * @return Half word read from the bus.
      */
-    virtual uint16_t transfer(uint16_t data) = 0;
+    virtual uint16_t transfer16(uint16_t data) = 0;
 
     /**
      * @brief Full duplex transmission of multiple bytes on the bus.
@@ -210,7 +210,7 @@ public:
      * @param data Buffer containing data to trasfer.
      * @param size Size of the buffer.
      */
-    virtual void transfer(uint16_t* data, size_t size) = 0;
+    virtual void transfer16(uint16_t* data, size_t size) = 0;
 };
 
 /**

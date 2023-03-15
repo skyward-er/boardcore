@@ -51,7 +51,7 @@ bool MAX31855::checkConnection()
 
     {
         SPITransaction spi{slave};
-        spi.read(sample, sizeof(sample));
+        spi.read16(sample, sizeof(sample));
     }
 
     // Bits D0, D1 and D2 go high if thermocouple is open or shorted either to
@@ -90,7 +90,7 @@ TemperatureData MAX31855::readInternalTemperature()
 
     {
         SPITransaction spi{slave};
-        spi.read(sample, sizeof(sample));
+        spi.read16(sample, sizeof(sample));
     }
 
     TemperatureData result{};

@@ -62,11 +62,11 @@ int main()
     delayMs(1);
     transaction.read(buffer8, 6);
     delayMs(1);
-    transaction.read(buffer16, 6);
+    transaction.read16(buffer16, 6);
     delayMs(1);
     transaction.write((uint8_t)0xAB);
     delayMs(1);
-    transaction.write((uint16_t)0xABCD);
+    transaction.write16((uint16_t)0xABCD);
     delayMs(1);
     buffer8[0] = 0x01;
     buffer8[1] = 0x23;
@@ -82,15 +82,15 @@ int main()
     buffer16[3] = 0x6767;
     buffer16[4] = 0x8989;
     buffer16[5] = 0xABAB;
-    transaction.write(buffer16, 6);
+    transaction.write16(buffer16, 6);
     delayMs(1);
     transaction.transfer((uint8_t)0xAB);
     delayMs(1);
-    transaction.transfer((uint16_t)0xABCD);
+    transaction.transfer16((uint16_t)0xABCD);
     delayMs(1);
     transaction.transfer(buffer8, 6);
     delayMs(1);
-    transaction.transfer(buffer16, 6);
+    transaction.transfer16(buffer16, 6);
 
     while (true)
         delayMs(1000);

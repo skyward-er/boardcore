@@ -24,5 +24,4 @@
 
 #include "SPIBus.h"
 #include "SPIBusInterface.h"
-#include "SPISlaveBus.h"
 #include "SPITransaction.h"
