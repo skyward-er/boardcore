@@ -23,6 +23,7 @@
 #pragma once
 
 #include <interfaces/delays.h>
+#include <utils/ClockUtils.h>
 
 #include "SPIBusInterface.h"
 
@@ -37,8 +38,23 @@ namespace Boardcore
 {
 
 /**
- * @brief Main implementation of SPIBusInterface used for accessing the SPI
- * peripheral in master mode
+ * @brief Driver for STM32 low level SPI peripheral.
+ *
+ * This driver applies to the whole STM32F4xx family.
+ *
+ * The serial peripheral interface (SPI) allows half/full-duplex, synchronous,
+ * serial communication with external devices. The interface can be configured
+ * as the master and in this case it provides the communication clock (SCK) to
+ * the external slave device. The peripheral is also capable of reliable
+ * communication using CRC checking.
+ *
+ * Supported SPI main features:
+ * - Full-duplex synchronous transfers on three lines
+ * - 8- or 16-bit transfer frame format selection
+ * - Master operation
+ * - 8 master mode baud rate prescaler (f_PCLK/2 max.)
+ * - Programmable clock polarity and phase
+ * - Programmable data order with MSB-first or LSB-first shifting
  */
 class SPIBus : public SPIBusInterface
 {
@@ -50,6 +66,58 @@ public:
     SPIBus& operator=(const SPIBus&) = delete;
     SPIBus(SPIBus&&)                 = delete;
     SPIBus& operator=(SPIBus&&)      = delete;
+
+    /**
+     * @brief Retrieve the pointer to the peripheral currently used.
+     */
+    SPIType* getSpi();
+
+    /**
+     * @brief Resets the peripheral configuration.
+     */
+    void reset();
+
+    /**
+     * @brief Enables the peripheral.
+     */
+    void enable();
+
+    /**
+     * @brief Disables the peripheral.
+     */
+    void disable();
+
+    void set8BitFrameFormat();
+
+    void set16BitFrameFormat();
+
+    void enableSoftwareSlaveManagement();
+
+    void disableSoftwareSlaveManagement();
+
+    void enableInternalSlaveSelection();
+
+    void disableInternalSlaveSelection();
+
+    void setBitOrder(SPI::BitOrder bitOrder);
+
+    void setClockDiver(SPI::ClockDivider divider);
+
+    void setSlaveConfiguration();
+
+    void setMasterConfiguration();
+
+    void setMode(SPI::Mode mode);
+
+    void enableTxDMARequest();
+
+    void disableTxDMARequest();
+
+    void enableRxDMARequest();
+
+    void disableRxDMARequest();
+
+    void waitPeripheral();
 
     /**
      * @brief Configures and enables the bus with the provided configuration.
@@ -123,7 +191,7 @@ public:
      * @param data Buffer containing data to write.
      * @param size Size of the buffer.
      */
-    void write(uint8_t* data, size_t size) override;
+    void write(const uint8_t* data, size_t size) override;
 
     /**
      * @brief Writes multiple half words to the bus.
@@ -131,7 +199,7 @@ public:
      * @param data Buffer containing data to write.
      * @param size Size of the buffer.
      */
-    void write16(uint16_t* data, size_t size) override;
+    void write16(const uint16_t* data, size_t size) override;
 
     /**
      * @brief Full duplex transmission of one byte on the bus.
@@ -166,12 +234,95 @@ public:
     void transfer16(uint16_t* data, size_t size) override;
 
 private:
-    SPI spi;
+    SPIType* spi;
     SPIBusConfig config{};
     bool firstConfigApplied = false;
 };
 
-inline SPIBus::SPIBus(SPIType* spi) : spi(spi) {}
+inline SPIBus::SPIBus(SPIType* spi) : spi(spi)
+{
+    ClockUtils::enablePeripheralClock(spi);
+}
+
+inline SPIType* SPIBus::getSpi() { return spi; }
+
+inline void SPIBus::reset()
+{
+    spi->CR1    = 0;
+    spi->CR2    = 0;
+    spi->DR     = 0;
+    spi->RXCRCR = 0;
+    spi->TXCRCR = 0;
+}
+
+inline void SPIBus::enable() { spi->CR1 |= SPI_CR1_SPE; }
+
+inline void SPIBus::disable() { spi->CR1 &= ~SPI_CR1_SPE; }
+
+inline void SPIBus::set8BitFrameFormat() { spi->CR1 &= ~SPI_CR1_DFF; }
+
+inline void SPIBus::set16BitFrameFormat() { spi->CR1 |= SPI_CR1_DFF; }
+
+inline void SPIBus::enableSoftwareSlaveManagement() { spi->CR1 |= SPI_CR1_SSM; }
+
+inline void SPIBus::disableSoftwareSlaveManagement()
+{
+    spi->CR1 &= ~SPI_CR1_SSM;
+}
+
+inline void SPIBus::enableInternalSlaveSelection() { spi->CR1 |= SPI_CR1_SSI; }
+
+inline void SPIBus::disableInternalSlaveSelection()
+{
+    spi->CR1 &= ~SPI_CR1_SSI;
+}
+
+inline void SPIBus::setBitOrder(SPI::BitOrder bitOrder)
+{
+    // First clear the configuration
+    spi->CR1 &= ~SPI_CR1_LSBFIRST;
+
+    // Set the new value
+    spi->CR1 |= static_cast<uint32_t>(bitOrder);
+}
+
+inline void SPIBus::setClockDiver(SPI::ClockDivider divider)
+{
+    // First clear the configuration
+    spi->CR1 &= ~SPI_CR1_BR;
+
+    // Set the new value
+    spi->CR1 |= static_cast<uint32_t>(divider);
+}
+
+inline void SPIBus::setSlaveConfiguration() { spi->CR1 &= ~SPI_CR1_MSTR; }
+
+inline void SPIBus::setMasterConfiguration() { spi->CR1 |= SPI_CR1_MSTR; }
+
+inline void SPIBus::setMode(SPI::Mode mode)
+{
+    // First clear the configuration
+    spi->CR1 &= ~(SPI_CR1_CPOL | SPI_CR1_CPHA);
+
+    // Set the new value
+    spi->CR1 |= static_cast<uint32_t>(mode);
+}
+
+inline void SPIBus::enableTxDMARequest() { spi->CR2 |= SPI_CR2_TXDMAEN; }
+
+inline void SPIBus::disableTxDMARequest() { spi->CR2 &= ~SPI_CR2_TXDMAEN; }
+
+inline void SPIBus::enableRxDMARequest() { spi->CR2 |= SPI_CR2_RXDMAEN; }
+
+inline void SPIBus::disableRxDMARequest() { spi->CR2 &= ~SPI_CR2_RXDMAEN; }
+
+inline void SPIBus::waitPeripheral()
+{
+    while ((spi->SR & SPI_SR_TXE) == 0)
+        ;
+    while ((spi->SR & SPI_SR_BSY) > 0)
+        ;
+}
 
 inline void SPIBus::configure(SPIBusConfig newConfig)
 {
@@ -183,33 +334,34 @@ inline void SPIBus::configure(SPIBusConfig newConfig)
         firstConfigApplied = true;
 
         // Wait until the peripheral is done before changing configuration
-        spi.waitPeripheral();
+        waitPeripheral();
 
         // Disable the peripheral
-        spi.disable();
+        disable();
 
         // Configure clock polarity and phase
-        spi.setMode(config.mode);
+        setMode(config.mode);
 
         // Configure clock frequency
-        spi.setClockDiver(config.clockDivider);
+        setClockDiver(config.clockDivider);
 
         // Configure bit order
-        spi.setBitOrder(config.bitOrder);
+        setBitOrder(config.bitOrder);
 
         // Configure chip select and master mode
-        spi.enableSoftwareSlaveManagement();
-        spi.enableInternalSlaveSelection();
-        spi.setMasterConfiguration();
+        enableSoftwareSlaveManagement();
+        enableInternalSlaveSelection();
+        setMasterConfiguration();
 
         // Enable the peripheral
-        spi.enable();
+        enable();
     }
 }
 
 inline void SPIBus::select(GpioType& cs)
 {
     cs.low();
+
     if (config.csSetupTimeUs > 0)
     {
         miosix::delayUs(config.csSetupTimeUs);
@@ -222,45 +374,152 @@ inline void SPIBus::deselect(GpioType& cs)
     {
         miosix::delayUs(config.csHoldTimeUs);
     }
+
     cs.high();
 }
 
-// Read, write and transfer operations
+inline uint8_t SPIBus::read() { return transfer(static_cast<uint8_t>(0)); }
 
-inline uint8_t SPIBus::read() { return spi.read(); }
+inline uint16_t SPIBus::read16() { return transfer(static_cast<uint16_t>(0)); }
 
-inline uint16_t SPIBus::read16() { return spi.read16(); }
-
-inline void SPIBus::read(uint8_t* data, size_t size) { spi.read(data, size); }
-
-inline void SPIBus::read16(uint16_t* data, size_t size)
+inline void SPIBus::read(uint8_t* data, size_t nBytes)
 {
-    spi.read16(data, size);
+    for (size_t i = 0; i < nBytes; i++)
+        data[i] = read();
 }
 
-inline void SPIBus::write(uint8_t data) { spi.write(data); }
-
-inline void SPIBus::write16(uint16_t data) { spi.write(data); }
-
-inline void SPIBus::write(uint8_t* data, size_t size) { spi.write(data, size); }
-
-inline void SPIBus::write16(uint16_t* data, size_t size)
+inline void SPIBus::read16(uint16_t* data, size_t nBytes)
 {
-    spi.write16(data, size);
+    // Set 16 bit frame format
+    set16BitFrameFormat();
+
+    for (size_t i = 0; i < nBytes / 2; i++)
+    {
+        // Wait until the peripheral is ready to transmit
+        while ((spi->SR & SPI_SR_TXE) == 0)
+            ;
+
+        // Write the data item to transmit
+        spi->DR = 0;
+
+        // Wait until data is received
+        while ((spi->SR & SPI_SR_RXNE) == 0)
+            ;
+
+        // Read the received data item
+        data[i] = static_cast<uint16_t>(spi->DR);
+    }
+
+    // Go back to 8 bit frame format
+    set8BitFrameFormat();
 }
 
-inline uint8_t SPIBus::transfer(uint8_t data) { return spi.transfer(data); }
+inline void SPIBus::write(uint8_t data) { transfer(data); }
 
-inline uint16_t SPIBus::transfer16(uint16_t data) { return spi.transfer(data); }
+inline void SPIBus::write16(uint16_t data) { transfer(data); }
 
-inline void SPIBus::transfer(uint8_t* data, size_t size)
+inline void SPIBus::write(const uint8_t* data, size_t nBytes)
 {
-    spi.transfer(data, size);
+    for (size_t i = 0; i < nBytes; i++)
+        transfer(data[i]);
 }
 
-inline void SPIBus::transfer16(uint16_t* data, size_t size)
+inline void SPIBus::write16(const uint16_t* data, size_t nBytes)
 {
-    spi.transfer16(data, size);
+    // Set 16 bit frame format
+    set16BitFrameFormat();
+
+    for (size_t i = 0; i < nBytes / 2; i++)
+    {
+        // Wait until the peripheral is ready to transmit
+        while ((spi->SR & SPI_SR_TXE) == 0)
+            ;
+
+        // Write the data item to transmit
+        spi->DR = static_cast<uint16_t>(data[i]);
+
+        // Wait until data is received
+        while ((spi->SR & SPI_SR_RXNE) == 0)
+            ;
+
+        // Read the received data item
+        (void)spi->DR;
+    }
+
+    // Go back to 8 bit frame format
+    set8BitFrameFormat();
+}
+
+inline uint8_t SPIBus::transfer(uint8_t data)
+{
+    // Wait until the peripheral is ready to transmit
+    while ((spi->SR & SPI_SR_TXE) == 0)
+        ;
+
+    // Write the data item to transmit
+    spi->DR = static_cast<uint8_t>(data);
+
+    // Wait until data is received
+    while ((spi->SR & SPI_SR_RXNE) == 0)
+        ;
+
+    // Read the received data item
+    return static_cast<uint8_t>(spi->DR);
+}
+
+inline uint16_t SPIBus::transfer16(uint16_t data)
+{
+    // Set 16 bit frame format
+    set16BitFrameFormat();
+
+    // Wait until the peripheral is ready to transmit
+    while ((spi->SR & SPI_SR_TXE) == 0)
+        ;
+
+    // Write the data item to transmit
+    spi->DR = static_cast<uint16_t>(data);
+
+    // Wait until data is received
+    while ((spi->SR & SPI_SR_RXNE) == 0)
+        ;
+
+    // Go back to 8 bit frame format
+    set8BitFrameFormat();
+
+    // Read the received data item
+    return static_cast<uint16_t>(spi->DR);
+}
+
+inline void SPIBus::transfer(uint8_t* data, size_t nBytes)
+{
+    for (size_t i = 0; i < nBytes; i++)
+        data[i] = transfer(data[i]);
+}
+
+inline void SPIBus::transfer16(uint16_t* data, size_t nBytes)
+{
+    // Set 16 bit frame format
+    set16BitFrameFormat();
+
+    for (size_t i = 0; i < nBytes / 2; i++)
+    {
+        // Wait until the peripheral is ready to transmit
+        while ((spi->SR & SPI_SR_TXE) == 0)
+            ;
+
+        // Write the data item to transmit
+        spi->DR = static_cast<uint16_t>(data[i]);
+
+        // Wait until data is received
+        while ((spi->SR & SPI_SR_RXNE) == 0)
+            ;
+
+        // Read the received data item
+        data[i] = static_cast<uint16_t>(spi->DR);
+    }
+
+    // Go back to 8 bit frame format
+    set8BitFrameFormat();
 }
 
 }  // namespace Boardcore

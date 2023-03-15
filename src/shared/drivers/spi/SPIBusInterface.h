@@ -23,8 +23,9 @@
 #pragma once
 
 #include <interfaces-impl/gpio_impl.h>
+#include <stddef.h>
 
-#include "SPI.h"
+#include "SPIDefs.h"
 
 #ifndef USE_MOCK_PERIPHERALS
 using GpioType = miosix::GpioPin;
@@ -170,7 +171,7 @@ public:
      * @param data Buffer containing data to write.
      * @param size Size of the buffer.
      */
-    virtual void write(uint8_t* data, size_t size) = 0;
+    virtual void write(const uint8_t* data, size_t size) = 0;
 
     /**
      * @brief Writes multiple half words to the bus.
@@ -178,7 +179,7 @@ public:
      * @param data Buffer containing data to write.
      * @param size Size of the buffer.
      */
-    virtual void write16(uint16_t* data, size_t size) = 0;
+    virtual void write16(const uint16_t* data, size_t size) = 0;
 
     /**
      * @brief Full duplex transmission of one byte on the bus.

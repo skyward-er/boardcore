@@ -187,9 +187,6 @@ sbs_target(test-can-loopback stm32f429zi_skyward_death_stack_x)
 add_executable(test-can-protocol src/tests/drivers/canbus/CanProtocol/test-can-protocol.cpp)
 sbs_target(test-can-protocol stm32f429zi_skyward_death_stack_x)
 
-add_executable(test-dma-spi src/tests/drivers/dma/test-dma-spi.cpp)
-sbs_target(test-dma-spi stm32f429zi_stm32f4discovery)
-
 add_executable(test-dsgamma src/tests/drivers/test-dsgamma.cpp)
 sbs_target(test-dsgamma stm32f429zi_stm32f4discovery)
 
