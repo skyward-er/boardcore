@@ -48,9 +48,7 @@ int main()
 
     SPIBus bus(SPI1);
 
-    SPIBusConfig busConfig;
-    busConfig.clockDivider = SPI::ClockDivider::DIV_256;
-    busConfig.mode         = SPI::Mode::MODE_3;
+    SPIBusConfig busConfig = LIS2MDL::getDefaultSPIConfig();
 
     LIS2MDL::Config config;
     config.odr                = LIS2MDL::ODR_10_HZ;

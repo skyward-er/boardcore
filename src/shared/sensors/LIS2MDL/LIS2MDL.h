@@ -79,6 +79,8 @@ public:
     LIS2MDL(SPIBusInterface& bus, miosix::GpioPin pin,
             SPIBusConfig spiConfig = {}, Config config = {});
 
+    static SPIBusConfig getDefaultSPIConfig();
+
     bool init() override;
 
     bool selfTest() override;

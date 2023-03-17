@@ -35,6 +35,15 @@ LIS2MDL::LIS2MDL(SPIBusInterface& bus, miosix::GpioPin pin,
 {
 }
 
+SPIBusConfig LIS2MDL::getDefaultSPIConfig()
+{
+    SPIBusConfig spiConfig;
+    spiConfig.clockDivider = SPI::ClockDivider::DIV_256;
+    spiConfig.mode         = SPI::Mode::MODE_3;
+    spiConfig.byteOrder    = SPI::Order::LSB_FIRST;
+    return spiConfig;
+}
+
 bool LIS2MDL::init()
 {
     if (isInitialized)
@@ -187,10 +196,7 @@ LIS2MDLData LIS2MDL::sampleImpl()
     if (configuration.temperatureDivider != 0 &&
         tempCounter % configuration.temperatureDivider == 0)
     {
-        uint8_t values[2];
-        spi.readRegisters(TEMP_OUT_L_REG, values, sizeof(values));
-
-        int16_t outTemp              = values[1] << 8 | values[0];
+        int16_t outTemp              = spi.readRegister16(TEMP_OUT_L_REG);
         newData.temperatureTimestamp = TimestampTimer::getTimestamp();
         newData.temperature          = DEG_PER_LSB * outTemp;
         newData.temperature += REFERENCE_TEMPERATURE;
