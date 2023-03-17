@@ -32,27 +32,19 @@ namespace Boardcore
 {
 
 /**
- * Driver for LIS2MDL, a three-axis magnetic sensor.
+ * @brief Driver for LIS2MDL, a three-axis magnetic sensor.
  */
 class LIS2MDL : public Sensor<LIS2MDLData>
 {
 public:
-    /**
-     * @brief Constants for Output Data Rate configuration.
-     *
-     */
     enum ODR : uint8_t
     {
-        ODR_10_HZ  = 0x00,  //!< 10 Hz
-        ODR_20_HZ  = 0x01,  //!< 20 Hz
-        ODR_50_HZ  = 0x02,  //!< 50 Hz
-        ODR_100_HZ = 0x03,  //!< 100 Hz
+        ODR_10_HZ  = 0x00,  ///< 10 Hz
+        ODR_20_HZ  = 0x01,  ///< 20 Hz
+        ODR_50_HZ  = 0x02,  ///< 50 Hz
+        ODR_100_HZ = 0x03,  ///< 100 Hz
     };
 
-    /**
-     * @brief Mode of operation constants.
-     *
-     */
     enum OperativeMode : uint8_t
     {
         MD_CONTINUOUS = 0x00,
@@ -62,65 +54,26 @@ public:
     };
 
     /**
-     * @brief Sensor configuration
+     * @brief Sensor configuration.
      *
-     * This struct contains all the settings the user
-     * is able to modify with the help of the driver.
-     * They are applied in the constructor of LIS2MDL class
+     * This struct contains all the settings the user is able to modify with the
+     * help of the driver. They are applied in the constructor of LIS2MDL class
      * and on each call of LIS2MDL::applyConfig()
      */
     struct Config
     {
         Config() {}
-        /**
-         * @brief Data rate configuration
-         *
-         * Default: 10 Hz
-         *
-         * @see LIS2MDL::ODR
-         */
-        ODR odr = ODR_10_HZ;
 
-        /**
-         * @brief Mode of operation of the device
-         * Default value: 11 - Idle mode 2
-         *
-         * @see LIS2MDL::OperativeMode
-         */
+        ODR odr                  = ODR_10_HZ;
         OperativeMode deviceMode = MD_IDLE1;
 
         /**
-         * Enables temperature sensor.
-         * Default: true
-         */
-        bool enableTemperature = true;
-
-        /**
-         * @brief Sets the value of tempDivider.
+         * @brief Divide the temperature sampling rate.
          *
-         * With the given value you can instruct the driver to update
-         * the temperature according to a different rate.
-         * The temperature will be updated only once in `tempDivider` calls
-         * to sampleImpl(), so for example:
-         * 2 -> updated half the times,
-         * 1 -> updated every time.
+         * This is used to limit the sampling of the temperature, use 0 to
+         * disable it completely.
          */
-        unsigned temperatureDivider = 1;
-
-        /**
-         * @brief Enables interrupts
-         *
-         * Whether are interrupts enabled respectively on the x, y and z axis.
-         * If it is set to true on at least one axis, the interrupts will be
-         * generated otherwise, they will be completely disabled by the driver.
-         */
-        bool enableInterrupt[3] = {false, false, false};
-
-        /**
-         * Absolute value of the threshold that triggers the interrupt
-         * (expressed in gauss).
-         */
-        float threshold = 0;
+        unsigned temperatureDivider = 0;
 
         /**
          * @brief BDU setting
