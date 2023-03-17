@@ -32,7 +32,7 @@ namespace Boardcore
 {
 
 /**
- * Driver for LIS3MDL, a three-axis magnetic sensor.
+ * @brief Driver for LIS3MDL, a three-axis magnetic sensor.
  */
 class LIS3MDL : public Sensor<LIS3MDLData>
 {
@@ -40,7 +40,7 @@ public:
     /**
      * @brief Constants for Output Data Rate configuration.
      *
-     * Note: constants values already include axis operative mode selection and
+     * Note: Constants values already include axis operative mode selection and
      * FAST_ODR options, so they are ready to be put inside CTRL_REG1 along with
      * TEMP_EN and ST.
      */
@@ -150,12 +150,12 @@ private:
 
     void updateUnit(FullScale fs);
 
-    SPISlave mSlave;
-    Config mConfig;
+    SPISlave slave;
+    Config configuration;
 
-    unsigned currDiv;
-    bool isInitialized;
-    float mUnit = 0;
+    unsigned tempCounter = 0;
+    bool isInitialized   = false;
+    float currentUnit    = 0;
 
     enum Registers : uint8_t
     {
@@ -183,28 +183,25 @@ private:
         INT_THS_H = 0x33,
     };
 
-    enum Constants : unsigned
-    {
-        WHO_AM_I_VALUE = 0x3d,
+    static constexpr uint32_t WHO_AM_I_VALUE       = 0x3d;
+    static constexpr uint32_t CONTINUOS_CONVERSION = 0x0;
 
-        CONTINUOS_CONVERSION  = 0x0,
-        REFERENCE_TEMPERATURE = 25,
-        LSB_PER_CELSIUS       = 8,
+    static constexpr uint32_t REFERENCE_TEMPERATURE = 25;
+    static constexpr float DEG_PER_LSB              = 0.125;
 
-        LSB_PER_GAUSS_FS_4  = 6842,
-        LSB_PER_GAUSS_FS_8  = 3421,
-        LSB_PER_GAUSS_FS_12 = 2281,
-        LSB_PER_GAUSS_FS_16 = 1711,
+    static constexpr float GAUSS_PER_LSB_FS_4  = 0.000146156;
+    static constexpr float GAUSS_PER_LSB_FS_8  = 0.000292312;
+    static constexpr float GAUSS_PER_LSB_FS_12 = 0.000438404;
+    static constexpr float GAUSS_PER_LSB_FS_16 = 0.000584454;
 
-        ENABLE_TEMPERATURE = 0x80,
-        ENABLE_SELF_TEST   = 0x01,
-        ENABLE_BDU         = 0x40,
+    static constexpr uint32_t ENABLE_TEMPERATURE = 1 << 7;
+    static constexpr uint32_t ENABLE_SELF_TEST   = 1 << 0;
+    static constexpr uint32_t ENABLE_BDU         = 1 << 6;
 
-        ENABLE_INT_PIN = 0x01,
-        ENABLE_INT_X   = 0x80,
-        ENABLE_INT_Y   = 0x40,
-        ENABLE_INT_Z   = 0x20,
-    };
+    static constexpr uint32_t ENABLE_INT_PIN = 1 << 0;
+    static constexpr uint32_t ENABLE_INT_X   = 1 << 7;
+    static constexpr uint32_t ENABLE_INT_Y   = 1 << 6;
+    static constexpr uint32_t ENABLE_INT_Z   = 1 << 5;
 
     PrintLogger logger = Logging::getLogger("lis3mdl");
 };

@@ -41,7 +41,7 @@ const float TEMP_SENSIBILITY = 64.0f / 32768.0f;
 /**
  * @brief Magnetometer fixed sensibility.
  */
-const float MAG_SENSIBILITY = 0.3f;
+const float MAG_SENSIBILITY = 0.003;  // [Gauss]
 
 /**
  * @brief BMX160 Chip Id.

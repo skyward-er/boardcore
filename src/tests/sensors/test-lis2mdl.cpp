@@ -29,34 +29,24 @@
 using namespace Boardcore;
 using namespace miosix;
 
+GpioPin clk(GPIOA_BASE, 5);
+GpioPin miso(GPIOA_BASE, 6);
+GpioPin mosi(GPIOA_BASE, 7);
+GpioPin cs(GPIOA_BASE, 15);
+
 int main()
 {
-    GpioPin cs(GPIOA_BASE, 15), miso(GPIOA_BASE, 6), mosi(GPIOA_BASE, 7),
-        clk(GPIOA_BASE, 5), tx(GPIOA_BASE, 2), rx(GPIOA_BASE, 3);
-
-    cs.mode(Mode::OUTPUT);
-    cs.high();
-
     clk.mode(Mode::ALTERNATE);
     clk.alternateFunction(5);
     clk.speed(Speed::_100MHz);
-
     miso.mode(Mode::ALTERNATE);
     miso.alternateFunction(5);
-
     mosi.mode(Mode::ALTERNATE);
     mosi.alternateFunction(5);
-
-    // Serial data write on Matlab
-    rx.mode(Mode::ALTERNATE);
-    rx.alternateFunction(7);
-
-    tx.mode(Mode::ALTERNATE);
-    tx.alternateFunction(7);
+    cs.mode(Mode::OUTPUT);
+    cs.high();
 
     SPIBus bus(SPI1);
-    USART usart(USART2, USARTInterface::Baudrate::B115200);
-    usart.init();
 
     SPIBusConfig busConfig;
     busConfig.clockDivider = SPI::ClockDivider::DIV_256;
@@ -69,33 +59,29 @@ int main()
 
     LIS2MDL sensor(bus, cs, busConfig, config);
 
+    printf("Starting...\n");
+
     if (!sensor.init())
     {
-        TRACE("LIS2MDL: Init failed");
+        printf("LIS2MDL: Init failed\n");
         return 1;
     }
-    TRACE("LIS2MDL: Init done\n");
+    printf("LIS2MDL: Init done\n");
 
-    TRACE("Doing self test!\n");
+    printf("Doing self test!\n");
     if (!sensor.selfTest())
     {
-        TRACE("Error: selfTest() returned false!\n");
+        printf("Error: selfTest() returned false!\n");
     }
-    TRACE("selfTest returned true\n");
-    TRACE("Now printing some sensor data:\n");
-    Thread::sleep(3000);
-    float sensorData[3];
+    printf("selfTest returned true\n");
+    printf("Now printing some sensor data:\n");
 
     while (true)
     {
         sensor.sample();
         LIS2MDLData data = sensor.getLastSample();
-        TRACE("%f C | x: %f | y: %f | z: %f\n", data.temperature,
-              data.magneticFieldX, data.magneticFieldY, data.magneticFieldZ);
-        sensorData[0] = data.magneticFieldX;
-        sensorData[1] = data.magneticFieldY;
-        sensorData[2] = data.magneticFieldZ;
-        usart.write(sensorData, 3 * sizeof(float));
+        printf("%f C | x: %f | y: %f | z: %f\n", data.temperature,
+               data.magneticFieldX, data.magneticFieldY, data.magneticFieldZ);
         miosix::Thread::sleep(10);
     }
 }

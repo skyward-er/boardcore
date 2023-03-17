@@ -31,8 +31,7 @@ namespace Boardcore
 
 LIS2MDL::LIS2MDL(SPIBusInterface& bus, miosix::GpioPin pin,
                  SPIBusConfig spiConfig, Config config)
-    : mSlave(bus, pin, spiConfig), mConfig(config), currDiv(0),
-      isInitialized(false)
+    : slave(bus, pin, spiConfig), configuration(config)
 {
 }
 
@@ -46,13 +45,12 @@ bool LIS2MDL::init()
     }
 
     {
-        // selfTest is disabled
-        SPITransaction spi(mSlave);
+        SPITransaction spi(slave);
         spi.writeRegister(CFG_REG_C, ENABLE_4WSPI | I2C_DISABLE);
     }
 
     {
-        SPITransaction spi(mSlave);
+        SPITransaction spi(slave);
         uint8_t res = spi.readRegister(WHO_AM_I);
 
         if (res != WHO_AM_I_VALUE)
@@ -67,7 +65,7 @@ bool LIS2MDL::init()
     }
 
     isInitialized = true;
-    return applyConfig(mConfig);
+    return applyConfig(configuration);
 }
 
 bool LIS2MDL::selfTest()
@@ -79,7 +77,7 @@ bool LIS2MDL::selfTest()
         return false;
     }
 
-    constexpr int NUM_SAMPLES = 50;
+    constexpr int NUM_SAMPLES = 5;
     constexpr int SLEEP_TIME  = 50;
 
     // Absolute value of extra tolerance
@@ -94,7 +92,7 @@ bool LIS2MDL::selfTest()
 
     // Set configuration for selfTest procedure. selfTest still not enabled
     {
-        SPITransaction spi(mSlave);
+        SPITransaction spi(slave);
         spi.writeRegister(CFG_REG_A,
                           ENABLE_TEMPERATURE_COMP | ODR_100_HZ | MD_CONTINUOUS);
         spi.writeRegister(CFG_REG_B,
@@ -119,7 +117,7 @@ bool LIS2MDL::selfTest()
 
     {
         // selfTest is enabled
-        SPITransaction spi(mSlave);
+        SPITransaction spi(slave);
         spi.writeRegister(CFG_REG_C,
                           spi.readRegister(CFG_REG_C) | ENABLE_SELF_TEST);
     }
@@ -138,8 +136,8 @@ bool LIS2MDL::selfTest()
         if (deltas[j] < (ST_max - t) && deltas[j] > (ST_min + t))
             passed = false;
 
-    // reset configuration, then return
-    applyConfig(mConfig);
+    // Reset configuration, then return
+    applyConfig(configuration);
 
     if (!passed)
     {
@@ -149,7 +147,7 @@ bool LIS2MDL::selfTest()
 
     {
         // Disable selfTest
-        SPITransaction spi(mSlave);
+        SPITransaction spi(slave);
         spi.writeRegister(CFG_REG_C,
                           spi.readRegister(CFG_REG_C) & ~ENABLE_SELF_TEST);
     }
@@ -159,7 +157,7 @@ bool LIS2MDL::selfTest()
 
 bool LIS2MDL::applyConfig(Config config)
 {
-    SPITransaction spi(mSlave);
+    SPITransaction spi(slave);
     uint8_t reg = 0;
 
     // CFG_REG_A: configuration register
@@ -181,53 +179,38 @@ LIS2MDLData LIS2MDL::sampleImpl()
         return lastSample;
     }
 
-    SPITransaction spi(mSlave);
-    // Check STATUS_REG (Zyxda) to see if new data is available.
-    if (!(spi.readRegister(STATUS_REG) | (1 << 4)))
+    SPITransaction spi(slave);
+    LIS2MDLData newData;
+
+    // Check if the temperature has to be sampled
+    tempCounter++;
+    if (configuration.temperatureDivider != 0 &&
+        tempCounter % configuration.temperatureDivider == 0)
     {
-        lastError = NO_NEW_DATA;
-        return lastSample;
+        uint8_t values[2];
+        spi.readRegisters(TEMP_OUT_L_REG, values, sizeof(values));
+
+        int16_t outTemp              = values[1] << 8 | values[0];
+        newData.temperatureTimestamp = TimestampTimer::getTimestamp();
+        newData.temperature          = DEG_PER_LSB * outTemp;
+        newData.temperature += REFERENCE_TEMPERATURE;
+    }
+    else
+    {
+        newData.temperature = lastSample.temperature;
     }
 
-    // Reset any error
-    lastError = SensorErrors::NO_ERRORS;
+    uint8_t values[6];
+    spi.readRegisters(OUTX_L_REG, values, sizeof(values));
 
-    int16_t val;
-    LIS2MDLData newData{};
-
-    if (mConfig.temperatureDivider != 0)
-    {
-        if (currDiv == 0)
-        {
-            val = spi.readRegister(TEMP_OUT_L_REG);
-            val |= ((uint16_t)spi.readRegister(TEMP_OUT_H_REG)) << 8;
-
-            newData.temperatureTimestamp = TimestampTimer::getTimestamp();
-            newData.temperature = static_cast<float>(val) / LSB_PER_CELSIUS +
-                                  REFERENCE_TEMPERATURE;
-        }
-        else
-        {
-            // Keep old value
-            newData.temperature = lastSample.temperature;
-        }
-
-        currDiv = (currDiv + 1) % mConfig.temperatureDivider;
-    }
+    int16_t outX = values[1] << 8 | values[0];
+    int16_t outY = values[3] << 8 | values[2];
+    int16_t outZ = values[5] << 8 | values[4];
 
     newData.magneticFieldTimestamp = TimestampTimer::getTimestamp();
-
-    val = spi.readRegister(OUTX_L_REG);
-    val |= ((uint16_t)spi.readRegister(OUTX_H_REG)) << 8;
-    newData.magneticFieldX = mUnit * val;
-
-    val = spi.readRegister(OUTY_L_REG);
-    val |= ((uint16_t)spi.readRegister(OUTY_H_REG)) << 8;
-    newData.magneticFieldY = mUnit * val;
-
-    val = spi.readRegister(OUTZ_L_REG);
-    val |= ((uint16_t)spi.readRegister(OUTZ_H_REG)) << 8;
-    newData.magneticFieldZ = mUnit * val;
+    newData.magneticFieldX         = GAUSS_PER_LSB * outX;
+    newData.magneticFieldY         = GAUSS_PER_LSB * outY;
+    newData.magneticFieldZ         = GAUSS_PER_LSB * outZ;
 
     return newData;
 }

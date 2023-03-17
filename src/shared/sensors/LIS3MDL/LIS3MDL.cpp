@@ -29,8 +29,7 @@ namespace Boardcore
 
 LIS3MDL::LIS3MDL(SPIBusInterface& bus, miosix::GpioPin pin,
                  SPIBusConfig spiConfig, Config config)
-    : mSlave(bus, pin, spiConfig), mConfig(config), currDiv(0),
-      isInitialized(false)
+    : slave(bus, pin, spiConfig), configuration(config)
 {
 }
 
@@ -44,7 +43,7 @@ bool LIS3MDL::init()
     }
 
     {
-        SPITransaction spi(mSlave);
+        SPITransaction spi(slave);
         uint8_t res = spi.readRegister(WHO_AM_I);
 
         if (res != WHO_AM_I_VALUE)
@@ -59,7 +58,7 @@ bool LIS3MDL::init()
     }
 
     isInitialized = true;
-    return applyConfig(mConfig);
+    return applyConfig(configuration);
 }
 
 bool LIS3MDL::selfTest()
@@ -84,7 +83,7 @@ bool LIS3MDL::selfTest()
     float avgX = 0.f, avgY = 0.f, avgZ = 0.f;
 
     {
-        SPITransaction spi(mSlave);
+        SPITransaction spi(slave);
         spi.writeRegister(CTRL_REG2, FS_12_GAUSS);
     }
     updateUnit(FS_12_GAUSS);
@@ -105,7 +104,7 @@ bool LIS3MDL::selfTest()
 
     // Setting up the sensor settings for proper usage of the self test mode.
     {
-        SPITransaction spi(mSlave);
+        SPITransaction spi(slave);
 
         spi.writeRegister(CTRL_REG1, ODR_20_HZ | ENABLE_SELF_TEST |
                                          (OM_ULTRA_HIGH_POWER << 4));
@@ -129,26 +128,25 @@ bool LIS3MDL::selfTest()
             deltas[j] > (deltaRange[j][1] + t))
             passed = false;
 
+    // Reset configuration, then return
+    applyConfig(configuration);
+
     if (!passed)
     {
-        // reset configuration, then return
-        applyConfig(mConfig);
-
         lastError = SELF_TEST_FAIL;
         return false;
     }
 
-    return applyConfig(mConfig);
+    return applyConfig(configuration);
 }
 
 bool LIS3MDL::applyConfig(Config config)
 {
 
-    SPITransaction spi(mSlave);
+    SPITransaction spi(slave);
     uint8_t reg = 0, err = 0;
 
-    mConfig = config;
-    currDiv = 0;
+    configuration = config;
 
     // CTRL_REG1
     if (config.temperatureDivider != 0)
@@ -209,53 +207,37 @@ LIS3MDLData LIS3MDL::sampleImpl()
         return lastSample;
     }
 
-    SPITransaction spi(mSlave);
+    SPITransaction spi(slave);
+    LIS3MDLData newData;
 
-    if (!spi.readRegister(STATUS_REG))
+    tempCounter++;
+    if (configuration.temperatureDivider != 0 &&
+        tempCounter % configuration.temperatureDivider == 0)
     {
-        lastError = NO_NEW_DATA;
-        return lastSample;
+        uint8_t values[2];
+        spi.readRegisters(TEMP_OUT_L, values, sizeof(values));
+
+        int16_t outTemp              = values[1] << 8 | values[0];
+        newData.temperatureTimestamp = TimestampTimer::getTimestamp();
+        newData.temperature          = DEG_PER_LSB * outTemp;
+        newData.temperature += REFERENCE_TEMPERATURE;
+    }
+    else
+    {
+        newData.temperature = lastSample.temperature;
     }
 
-    // Reset any error
-    lastError = SensorErrors::NO_ERRORS;
+    uint8_t values[6];
+    spi.readRegisters(OUT_X_L, values, sizeof(values));
 
-    int16_t val;
-    LIS3MDLData newData{};
-
-    if (mConfig.temperatureDivider != 0)
-    {
-        if (currDiv == 0)
-        {
-            val = spi.readRegister(TEMP_OUT_L);
-            val |= spi.readRegister(TEMP_OUT_H) << 8;
-
-            newData.temperatureTimestamp = TimestampTimer::getTimestamp();
-            newData.temperature = static_cast<float>(val) / LSB_PER_CELSIUS +
-                                  REFERENCE_TEMPERATURE;
-        }
-        else
-        {
-            // Keep old value
-            newData.temperature = lastSample.temperature;
-        }
-
-        currDiv = (currDiv + 1) % mConfig.temperatureDivider;
-    }
+    int16_t outX = values[1] << 8 | values[0];
+    int16_t outY = values[3] << 8 | values[2];
+    int16_t outZ = values[5] << 8 | values[4];
 
     newData.magneticFieldTimestamp = TimestampTimer::getTimestamp();
-
-    val = spi.readRegister(OUT_X_L);
-    val |= spi.readRegister(OUT_X_H) << 8;
-    newData.magneticFieldX = mUnit * val;
-
-    val = spi.readRegister(OUT_Y_L);
-    val |= spi.readRegister(OUT_Y_H) << 8;
-    newData.magneticFieldY = mUnit * val;
-
-    val = spi.readRegister(OUT_Z_L);
-    val |= spi.readRegister(OUT_Z_H) << 8;
-    newData.magneticFieldZ = mUnit * val;
+    newData.magneticFieldX         = currentUnit * outX;
+    newData.magneticFieldY         = currentUnit * outY;
+    newData.magneticFieldZ         = currentUnit * outZ;
 
     return newData;
 }
@@ -265,19 +247,19 @@ void LIS3MDL::updateUnit(FullScale fs)
     switch (fs)
     {
         case FS_4_GAUSS:
-            mUnit = 1.f / LSB_PER_GAUSS_FS_4;
+            currentUnit = GAUSS_PER_LSB_FS_4;
             break;
 
         case FS_8_GAUSS:
-            mUnit = 1.f / LSB_PER_GAUSS_FS_8;
+            currentUnit = GAUSS_PER_LSB_FS_8;
             break;
 
         case FS_12_GAUSS:
-            mUnit = 1.f / LSB_PER_GAUSS_FS_12;
+            currentUnit = GAUSS_PER_LSB_FS_12;
             break;
 
         case FS_16_GAUSS:
-            mUnit = 1.f / LSB_PER_GAUSS_FS_16;
+            currentUnit = GAUSS_PER_LSB_FS_16;
             break;
     }
 };

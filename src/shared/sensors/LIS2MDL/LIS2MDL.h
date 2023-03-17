@@ -74,14 +74,6 @@ public:
          * disable it completely.
          */
         unsigned temperatureDivider = 0;
-
-        /**
-         * @brief BDU setting
-         *
-         * If set to true, the sensor won't update the data until it is read, if
-         * false the sensor data will be continuously updated.
-         */
-        bool doBlockDataUpdate = false;
     };
 
     LIS2MDL(SPIBusInterface& bus, miosix::GpioPin pin,
@@ -110,12 +102,11 @@ public:
 private:
     LIS2MDLData sampleImpl() override;
 
-    SPISlave mSlave;
-    Config mConfig;
+    SPISlave slave;
+    Config configuration;
 
-    unsigned currDiv;
-    bool isInitialized;
-    float mUnit = 1;  // TODO
+    unsigned tempCounter = 0;
+    bool isInitialized   = false;
 
     enum Registers : uint8_t
     {
@@ -153,16 +144,16 @@ private:
     static constexpr uint32_t CONTINUOS_CONVERSION = 0x0;
 
     static constexpr float REFERENCE_TEMPERATURE = 25;
-    static constexpr float LSB_PER_CELSIUS       = 8;
-    static constexpr float LSB_PER_GAUSS_MIN     = 0.001395;
-    static constexpr float LSB_PER_GAUSS_MAX     = 0.001605;
+    static constexpr float DEG_PER_LSB           = 0.125;
 
-    static constexpr uint32_t ENABLE_TEMPERATURE_COMP = (1 << 7);
-    static constexpr uint32_t ENABLE_SELF_TEST        = (1 << 1);
-    static constexpr uint32_t ENABLE_BDU              = (1 << 4);
-    static constexpr uint32_t ENABLE_4WSPI            = (1 << 2);
-    static constexpr uint32_t OFFSET_CANCELLATION     = (1 << 1);
-    static constexpr uint32_t I2C_DISABLE             = (1 << 5);
+    static constexpr float GAUSS_PER_LSB = 0.0015;
+
+    static constexpr uint32_t ENABLE_TEMPERATURE_COMP = 1 << 7;
+    static constexpr uint32_t ENABLE_SELF_TEST        = 1 << 1;
+    static constexpr uint32_t ENABLE_BDU              = 1 << 4;
+    static constexpr uint32_t ENABLE_4WSPI            = 1 << 2;
+    static constexpr uint32_t OFFSET_CANCELLATION     = 1 << 1;
+    static constexpr uint32_t I2C_DISABLE             = 1 << 5;
 
     PrintLogger logger = Logging::getLogger("lis2mdl");
 };
