@@ -30,7 +30,7 @@ using namespace miosix;
 
 int main()
 {
-    GpioPin cs(GPIOA_BASE, 3), miso(GPIOA_BASE, 6), mosi(GPIOA_BASE, 7),
+    GpioPin cs(GPIOA_BASE, 15), miso(GPIOA_BASE, 6), mosi(GPIOA_BASE, 7),
         clk(GPIOA_BASE, 5);
 
     cs.mode(Mode::OUTPUT);
@@ -53,7 +53,8 @@ int main()
     busConfig.mode         = SPI::Mode::MODE_3;
 
     LIS2MDL::Config config;
-    config.odr = LIS2MDL::ODR_10_HZ;
+    config.odr        = LIS2MDL::ODR_10_HZ;
+    config.deviceMode = LIS2MDL::MD_CONTINUOUS;
     // config.scale              = LIS2MDL::FS_16_GAUSS;
     config.temperatureDivider = 5;
 
@@ -64,7 +65,7 @@ int main()
         TRACE("LIS2MDL: Init failed");
         return 1;
     }
-    TRACE("LIS2MDL: Init done");
+    TRACE("LIS2MDL: Init done\n");
 
     TRACE("Doing self test!\n");
     if (!sensor.selfTest())
@@ -78,9 +79,9 @@ int main()
     while (true)
     {
         sensor.sample();
-        LIS2MDLData data __attribute__((unused)) = sensor.getLastSample();
-        TRACE("%f C | x: %f | y: %f | z %f\n", data.temperature,
+        LIS2MDLData data = sensor.getLastSample();
+        TRACE("%f C | x: %f | y: %f | z: %f\n", data.temperature,
               data.magneticFieldX, data.magneticFieldY, data.magneticFieldZ);
-        miosix::Thread::sleep(2000);
+        miosix::Thread::sleep(100);
     }
 }

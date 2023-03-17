@@ -23,6 +23,8 @@
 #include "LIS2MDL.h"
 
 #include <drivers/timer/TimestampTimer.h>
+#include <miosix.h>
+#include <utils/Debug.h>
 
 namespace Boardcore
 {
@@ -44,8 +46,11 @@ bool LIS2MDL::init()
     }
 
     {
+        // Important! It is imperative to get the 4WSPI enabled (set to the
+        // value of 1) due to the four-wire connection for SPI and the I2C_DIS
+        // must be disabled. In addiction, self test is enabled.
         SPITransaction spi(mSlave);
-        spi.writeRegister(CFG_REG_C, 4);
+        spi.writeRegister(CFG_REG_C, (1 << 2) | (1 << 5));
     }
 
     {
@@ -75,9 +80,8 @@ bool LIS2MDL::selfTest()
         lastError = NOT_INIT;
         return false;
     }
-    return true;
 
-    constexpr int NUM_SAMPLES = 5;
+    constexpr int NUM_SAMPLES = 50;
     constexpr int SLEEP_TIME  = 50;
 
     // Absolute value of extra tolerance
@@ -91,8 +95,10 @@ bool LIS2MDL::selfTest()
 
     {
         SPITransaction spi(mSlave);
-        spi.writeRegister(CFG_REG_C, 4);
+        uint16_t temp = spi.readRegister(CFG_REG_C) | (1 << 1);
+        spi.writeRegister(CFG_REG_C, temp);
     }
+    miosix::Thread::sleep(1);
 
     for (int i = 0; i < NUM_SAMPLES; ++i)
     {
@@ -124,35 +130,35 @@ bool LIS2MDL::selfTest()
             deltas[j] > (deltaRange[j][1] + t))
             passed = false;
 
+    {
+        SPITransaction spi(mSlave);
+        uint16_t temp = spi.readRegister(CFG_REG_C) & ~(1 << 1);
+        spi.writeRegister(CFG_REG_C, temp);
+    }
+
+    // reset configuration, then return
+    applyConfig(mConfig);
+
     if (!passed)
     {
-        // reset configuration, then return
-        applyConfig(mConfig);
-
         lastError = SELF_TEST_FAIL;
         return false;
     }
 
-    return applyConfig(mConfig);
+    return true;
 }
 
 bool LIS2MDL::applyConfig(Config config)
 {
     SPITransaction spi(mSlave);
-    uint8_t reg = 0, err = 0;
+    uint8_t reg = 0;
 
     // CFG_REG_A
     reg |= config.odr << 2;
     reg |= config.deviceMode;
-    reg |= (spi.readRegister(CFG_REG_A) & 0b11110000);
+    reg |= (1 << 7);
+    reg |= (spi.readRegister(CFG_REG_A) & 0b01110000);
     spi.writeRegister(CFG_REG_A, reg);
-
-    if (err)
-    {
-        LOG_ERR(logger, "Spi error");
-        lastError = BUS_FAULT;
-        return false;
-    }
 
     return true;
 }
@@ -185,7 +191,7 @@ LIS2MDLData LIS2MDL::sampleImpl()
         if (currDiv == 0)
         {
             val = spi.readRegister(TEMP_OUT_L_REG);
-            val |= spi.readRegister(TEMP_OUT_H_REG) << 8;
+            val |= ((uint16_t)spi.readRegister(TEMP_OUT_H_REG)) << 8;
 
             newData.temperatureTimestamp = TimestampTimer::getTimestamp();
             newData.temperature = static_cast<float>(val) / LSB_PER_CELSIUS +
@@ -203,15 +209,15 @@ LIS2MDLData LIS2MDL::sampleImpl()
     newData.magneticFieldTimestamp = TimestampTimer::getTimestamp();
 
     val = spi.readRegister(OUTX_L_REG);
-    val |= spi.readRegister(OUTX_H_REG) << 8;
+    val |= ((uint16_t)spi.readRegister(OUTX_H_REG)) << 8;
     newData.magneticFieldX = mUnit * val;
 
     val = spi.readRegister(OUTY_L_REG);
-    val |= spi.readRegister(OUTY_H_REG) << 8;
+    val |= ((uint16_t)spi.readRegister(OUTY_H_REG)) << 8;
     newData.magneticFieldY = mUnit * val;
 
     val = spi.readRegister(OUTZ_L_REG);
-    val |= spi.readRegister(OUTY_H_REG) << 8;
+    val |= ((uint16_t)spi.readRegister(OUTZ_H_REG)) << 8;
     newData.magneticFieldZ = mUnit * val;
 
     return newData;

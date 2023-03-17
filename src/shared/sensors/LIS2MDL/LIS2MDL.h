@@ -115,7 +115,7 @@ private:
 
     unsigned currDiv;
     bool isInitialized;
-    float mUnit = 0;
+    float mUnit = 1;  // TODO
 
     enum Registers : uint8_t
     {
