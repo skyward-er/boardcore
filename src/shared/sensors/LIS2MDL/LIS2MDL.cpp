@@ -89,7 +89,8 @@ bool LIS2MDL::selfTest()
 
     // Range which delta must be between, one for axis and expressed as {min,
     // max}. The unit is gauss.
-    constexpr float deltaRange[3][2] = {{1.f, 3.f}, {1.f, 3.f}, {0.1f, 1.f}};
+    constexpr float ST_min = 0.015;
+    constexpr float ST_max = 0.500;
 
     float avgX = 0.f, avgY = 0.f, avgZ = 0.f;
 
@@ -140,8 +141,7 @@ bool LIS2MDL::selfTest()
 
     bool passed = true;
     for (int j = 0; j < 3; ++j)
-        if (deltas[j] < (deltaRange[j][0] - t) &&
-            deltas[j] > (deltaRange[j][1] + t))
+        if (deltas[j] < (ST_max - t) && deltas[j] > (ST_min + t))
             passed = false;
 
     // reset configuration, then return
