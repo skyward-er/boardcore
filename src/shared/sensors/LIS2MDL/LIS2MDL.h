@@ -157,13 +157,12 @@ private:
     static constexpr float LSB_PER_GAUSS_MIN     = 0.001395;
     static constexpr float LSB_PER_GAUSS_MAX     = 0.001605;
 
-    static constexpr uint32_t ENABLE_TEMPERATURE = 0x80;
-    static constexpr uint32_t ENABLE_SELF_TEST   = 0x02;
-    static constexpr uint32_t ENABLE_BDU         = 0x10;
-    static constexpr uint32_t ENABLE_INT_PIN     = 0x01;
-    static constexpr uint32_t ENABLE_INT_X       = 0x80;
-    static constexpr uint32_t ENABLE_INT_Y       = 0x40;
-    static constexpr uint32_t ENABLE_INT_Z       = 0x20;
+    static constexpr uint32_t ENABLE_TEMPERATURE_COMP = (1 << 7);
+    static constexpr uint32_t ENABLE_SELF_TEST        = (1 << 1);
+    static constexpr uint32_t ENABLE_BDU              = (1 << 4);
+    static constexpr uint32_t ENABLE_4WSPI            = (1 << 2);
+    static constexpr uint32_t OFFSET_CANCELLATION     = (1 << 1);
+    static constexpr uint32_t I2C_DISABLE             = (1 << 5);
 
     PrintLogger logger = Logging::getLogger("lis2mdl");
 };

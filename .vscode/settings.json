@@ -302,9 +302,11 @@
                 "velnord",
                 "vout",
                 "vsense",
+                "WSPI",
                 "Xbee",
                 "xnord",
-                "yned"
+                "yned",
+                "Zyxda"
         ],
         "cSpell.language": "en",
         "cSpell.enabled": true

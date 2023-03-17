@@ -46,9 +46,9 @@ bool LIS2MDL::init()
     }
 
     {
-        // The 4WSPI enabled, I2C_DIS is disabled and selfTest is disabled.
+        // selfTest is disabled
         SPITransaction spi(mSlave);
-        spi.writeRegister(CFG_REG_C, (1 << 2) | (1 << 5));
+        spi.writeRegister(CFG_REG_C, ENABLE_4WSPI | I2C_DISABLE);
     }
 
     {
@@ -95,12 +95,11 @@ bool LIS2MDL::selfTest()
     // Set configuration for selfTest procedure. selfTest still not enabled
     {
         SPITransaction spi(mSlave);
-        // Continuous mode, odr = 100 Hz, enable temperature compensation
-        spi.writeRegister(CFG_REG_A, 140);
-        // Offset cancellation
-        spi.writeRegister(CFG_REG_B, spi.readRegister(CFG_REG_B) | (1 << 1));
-        // BDU enabled
-        spi.writeRegister(CFG_REG_C, spi.readRegister(CFG_REG_C) | (1 << 4));
+        spi.writeRegister(CFG_REG_A,
+                          ENABLE_TEMPERATURE_COMP | ODR_100_HZ | MD_CONTINUOUS);
+        spi.writeRegister(CFG_REG_B,
+                          spi.readRegister(CFG_REG_B) | OFFSET_CANCELLATION);
+        spi.writeRegister(CFG_REG_C, spi.readRegister(CFG_REG_C) | ENABLE_BDU);
     }
     miosix::Thread::sleep(20);
 
@@ -121,7 +120,8 @@ bool LIS2MDL::selfTest()
     {
         // selfTest is enabled
         SPITransaction spi(mSlave);
-        spi.writeRegister(CFG_REG_C, spi.readRegister(CFG_REG_C) | (1 << 1));
+        spi.writeRegister(CFG_REG_C,
+                          spi.readRegister(CFG_REG_C) | ENABLE_SELF_TEST);
     }
     miosix::Thread::sleep(60);
 
@@ -150,11 +150,8 @@ bool LIS2MDL::selfTest()
     {
         // Disable selfTest
         SPITransaction spi(mSlave);
-        spi.writeRegister(CFG_REG_C, spi.readRegister(CFG_REG_C) & ~(1 << 1));
-        // Set idle mode
-        uint16_t reg = spi.readRegister(CFG_REG_A);
-        reg |= 0b11;
-        spi.writeRegister(CFG_REG_A, reg);
+        spi.writeRegister(CFG_REG_C,
+                          spi.readRegister(CFG_REG_C) & ~ENABLE_SELF_TEST);
     }
 
     return true;
