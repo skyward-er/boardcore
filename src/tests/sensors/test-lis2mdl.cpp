@@ -49,7 +49,7 @@ int main()
 
     SPIBusConfig busConfig;
     busConfig.clockDivider = SPI::ClockDivider::DIV_256;
-    busConfig.mode         = SPI::Mode::MODE_0;
+    busConfig.mode         = SPI::Mode::MODE_3;
 
     LIS2MDL::Config config;
     config.odr = LIS2MDL::ODR_10_HZ;
@@ -64,4 +64,22 @@ int main()
         return 1;
     }
     TRACE("LIS2MDL: Init done");
+
+    TRACE("Doing self test!\n");
+    if (!sensor.selfTest())
+    {
+        TRACE("Error: selfTest() returned false!\n");
+    }
+    TRACE("selfTest returned true\n");
+    TRACE("Now printing some sensor data:\n");
+    Thread::sleep(100);
+
+    while (true)
+    {
+        sensor.sample();
+        LIS2MDLData data __attribute__((unused)) = sensor.getLastSample();
+        TRACE("%f C | x: %f | y: %f | z %f\n", data.temperature,
+              data.magneticFieldX, data.magneticFieldY, data.magneticFieldZ);
+        miosix::Thread::sleep(2000);
+    }
 }
