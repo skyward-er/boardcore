@@ -46,9 +46,7 @@ bool LIS2MDL::init()
     }
 
     {
-        // Important! It is imperative to get the 4WSPI enabled (set to the
-        // value of 1) due to the four-wire connection for SPI and the I2C_DIS
-        // disabled. selfTest bit still not enabled.
+        // The 4WSPI enabled, I2C_DIS is disabled and selfTest is disabled.
         SPITransaction spi(mSlave);
         spi.writeRegister(CFG_REG_C, (1 << 2) | (1 << 5));
     }
@@ -97,15 +95,11 @@ bool LIS2MDL::selfTest()
     // Set configuration for selfTest procedure. selfTest still not enabled
     {
         SPITransaction spi(mSlave);
-        // CFG_REG_A: 10001100
-        // continuous mode, odr = 100 Hz, enable temperature compensation
+        // Continuous mode, odr = 100 Hz, enable temperature compensation
         spi.writeRegister(CFG_REG_A, 140);
-        // CFG_REG_B: 00000010
-        // offset cancellation
+        // Offset cancellation
         spi.writeRegister(CFG_REG_B, spi.readRegister(CFG_REG_B) | (1 << 1));
-        // CFG_REG_C: 001(1)0110
-        // BDU enabled. only add the value in parenthesis otherwise overwrite
-        // data
+        // BDU enabled
         spi.writeRegister(CFG_REG_C, spi.readRegister(CFG_REG_C) | (1 << 4));
     }
     miosix::Thread::sleep(20);
@@ -158,8 +152,9 @@ bool LIS2MDL::selfTest()
         SPITransaction spi(mSlave);
         spi.writeRegister(CFG_REG_C, spi.readRegister(CFG_REG_C) & ~(1 << 1));
         // Set idle mode
-        spi.writeRegister(CFG_REG_A,
-                          spi.readRegister(CFG_REG_A) & ~((1 << 0) | (1 << 1)));
+        uint16_t reg = spi.readRegister(CFG_REG_A);
+        reg |= 0b11;
+        spi.writeRegister(CFG_REG_A, reg);
     }
 
     return true;
@@ -190,8 +185,7 @@ LIS2MDLData LIS2MDL::sampleImpl()
     }
 
     SPITransaction spi(mSlave);
-    // check STATUS_REG to see if new data is available. If Zyxda = 1 (true) a
-    // new set of data is available.
+    // Check STATUS_REG (Zyxda) to see if new data is available.
     if (!(spi.readRegister(STATUS_REG) | (1 << 4)))
     {
         lastError = NO_NEW_DATA;
