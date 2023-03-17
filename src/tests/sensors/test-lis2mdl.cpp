@@ -21,6 +21,7 @@
  */
 
 #include <drivers/spi/SPIDriver.h>
+#include <drivers/usart/USART.h>
 #include <miosix.h>
 #include <sensors/LIS2MDL/LIS2MDL.h>
 #include <utils/Debug.h>
@@ -31,7 +32,7 @@ using namespace miosix;
 int main()
 {
     GpioPin cs(GPIOA_BASE, 15), miso(GPIOA_BASE, 6), mosi(GPIOA_BASE, 7),
-        clk(GPIOA_BASE, 5);
+        clk(GPIOA_BASE, 5), tx(GPIOA_BASE, 2), rx(GPIOA_BASE, 3);
 
     cs.mode(Mode::OUTPUT);
     cs.high();
@@ -46,16 +47,24 @@ int main()
     mosi.mode(Mode::ALTERNATE);
     mosi.alternateFunction(5);
 
+    // Serial data write on Matlab
+    rx.mode(Mode::ALTERNATE);
+    rx.alternateFunction(7);
+
+    tx.mode(Mode::ALTERNATE);
+    tx.alternateFunction(7);
+
     SPIBus bus(SPI1);
+    USART usart(USART2, USARTInterface::Baudrate::B115200);
+    usart.init();
 
     SPIBusConfig busConfig;
     busConfig.clockDivider = SPI::ClockDivider::DIV_256;
     busConfig.mode         = SPI::Mode::MODE_3;
 
     LIS2MDL::Config config;
-    config.odr        = LIS2MDL::ODR_10_HZ;
-    config.deviceMode = LIS2MDL::MD_CONTINUOUS;
-    // config.scale              = LIS2MDL::FS_16_GAUSS;
+    config.odr                = LIS2MDL::ODR_10_HZ;
+    config.deviceMode         = LIS2MDL::MD_CONTINUOUS;
     config.temperatureDivider = 5;
 
     LIS2MDL sensor(bus, cs, busConfig, config);
@@ -74,7 +83,8 @@ int main()
     }
     TRACE("selfTest returned true\n");
     TRACE("Now printing some sensor data:\n");
-    Thread::sleep(100);
+    Thread::sleep(3000);
+    float sensorData[3];
 
     while (true)
     {
@@ -82,6 +92,10 @@ int main()
         LIS2MDLData data = sensor.getLastSample();
         TRACE("%f C | x: %f | y: %f | z: %f\n", data.temperature,
               data.magneticFieldX, data.magneticFieldY, data.magneticFieldZ);
-        miosix::Thread::sleep(100);
+        sensorData[0] = data.magneticFieldX;
+        sensorData[1] = data.magneticFieldY;
+        sensorData[2] = data.magneticFieldZ;
+        usart.write(sensorData, 3 * sizeof(float));
+        miosix::Thread::sleep(10);
     }
 }

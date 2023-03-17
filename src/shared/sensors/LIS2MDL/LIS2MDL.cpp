@@ -48,7 +48,7 @@ bool LIS2MDL::init()
     {
         // Important! It is imperative to get the 4WSPI enabled (set to the
         // value of 1) due to the four-wire connection for SPI and the I2C_DIS
-        // must be disabled. In addiction, self test is enabled.
+        // must be disabled.
         SPITransaction spi(mSlave);
         spi.writeRegister(CFG_REG_C, (1 << 2) | (1 << 5));
     }
@@ -94,6 +94,7 @@ bool LIS2MDL::selfTest()
     float avgX = 0.f, avgY = 0.f, avgZ = 0.f;
 
     {
+        // selfTest is enabled
         SPITransaction spi(mSlave);
         uint16_t temp = spi.readRegister(CFG_REG_C) | (1 << 1);
         spi.writeRegister(CFG_REG_C, temp);
@@ -131,6 +132,7 @@ bool LIS2MDL::selfTest()
             passed = false;
 
     {
+        // Disable selfTest
         SPITransaction spi(mSlave);
         uint16_t temp = spi.readRegister(CFG_REG_C) & ~(1 << 1);
         spi.writeRegister(CFG_REG_C, temp);
@@ -153,7 +155,7 @@ bool LIS2MDL::applyConfig(Config config)
     SPITransaction spi(mSlave);
     uint8_t reg = 0;
 
-    // CFG_REG_A
+    // CFG_REG_A: configuration register
     reg |= config.odr << 2;
     reg |= config.deviceMode;
     reg |= (1 << 7);
