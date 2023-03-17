@@ -48,7 +48,7 @@ bool LIS2MDL::init()
     {
         // Important! It is imperative to get the 4WSPI enabled (set to the
         // value of 1) due to the four-wire connection for SPI and the I2C_DIS
-        // must be disabled.
+        // disabled. selfTest bit still not enabled.
         SPITransaction spi(mSlave);
         spi.writeRegister(CFG_REG_C, (1 << 2) | (1 << 5));
     }
@@ -93,13 +93,21 @@ bool LIS2MDL::selfTest()
 
     float avgX = 0.f, avgY = 0.f, avgZ = 0.f;
 
+    // Set configuration for selfTest procedure. selfTest still not enabled
     {
-        // selfTest is enabled
         SPITransaction spi(mSlave);
-        uint16_t temp = spi.readRegister(CFG_REG_C) | (1 << 1);
-        spi.writeRegister(CFG_REG_C, temp);
+        // CFG_REG_A: 10001100
+        // continuous mode, odr = 100 Hz, enable temperature compensation
+        spi.writeRegister(CFG_REG_A, 140);
+        // CFG_REG_B: 00000010
+        // offset cancellation
+        spi.writeRegister(CFG_REG_B, spi.readRegister(CFG_REG_B) | (1 << 1));
+        // CFG_REG_C: 001(1)0110
+        // BDU enabled. only add the value in parenthesis otherwise overwrite
+        // data
+        spi.writeRegister(CFG_REG_C, spi.readRegister(CFG_REG_C) | (1 << 4));
     }
-    miosix::Thread::sleep(1);
+    miosix::Thread::sleep(20);
 
     for (int i = 0; i < NUM_SAMPLES; ++i)
     {
@@ -115,10 +123,15 @@ bool LIS2MDL::selfTest()
     avgY /= NUM_SAMPLES;
     avgZ /= NUM_SAMPLES;
 
+    {
+        // selfTest is enabled
+        SPITransaction spi(mSlave);
+        spi.writeRegister(CFG_REG_C, spi.readRegister(CFG_REG_C) | (1 << 1));
+    }
+    miosix::Thread::sleep(60);
+
     // Deltas: absolute difference between the values measured before and after
     float deltas[3];
-
-    miosix::Thread::sleep(SLEEP_TIME);
 
     LIS2MDLData lastData = sampleImpl();
     deltas[0]            = std::abs(lastData.magneticFieldX - avgX);
@@ -127,16 +140,9 @@ bool LIS2MDL::selfTest()
 
     bool passed = true;
     for (int j = 0; j < 3; ++j)
-        if (deltas[j] < (deltaRange[j][0] - t) ||
+        if (deltas[j] < (deltaRange[j][0] - t) &&
             deltas[j] > (deltaRange[j][1] + t))
             passed = false;
-
-    {
-        // Disable selfTest
-        SPITransaction spi(mSlave);
-        uint16_t temp = spi.readRegister(CFG_REG_C) & ~(1 << 1);
-        spi.writeRegister(CFG_REG_C, temp);
-    }
 
     // reset configuration, then return
     applyConfig(mConfig);
@@ -145,6 +151,15 @@ bool LIS2MDL::selfTest()
     {
         lastError = SELF_TEST_FAIL;
         return false;
+    }
+
+    {
+        // Disable selfTest
+        SPITransaction spi(mSlave);
+        spi.writeRegister(CFG_REG_C, spi.readRegister(CFG_REG_C) & ~(1 << 1));
+        // Set idle mode
+        spi.writeRegister(CFG_REG_A,
+                          spi.readRegister(CFG_REG_A) & ~((1 << 0) | (1 << 1)));
     }
 
     return true;
@@ -175,8 +190,9 @@ LIS2MDLData LIS2MDL::sampleImpl()
     }
 
     SPITransaction spi(mSlave);
-
-    if (!spi.readRegister(STATUS_REG))
+    // check STATUS_REG to see if new data is available. If Zyxda = 1 (true) a
+    // new set of data is available.
+    if (!(spi.readRegister(STATUS_REG) | (1 << 4)))
     {
         lastError = NO_NEW_DATA;
         return lastSample;
