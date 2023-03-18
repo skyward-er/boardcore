@@ -278,8 +278,8 @@ I2CDriver::I2CDriver(I2C_TypeDef *i2c, miosix::GpioPin scl, miosix::GpioPin sda)
         // logical values.
         scl.alternateFunction(I2CConsts::I2C_PIN_ALTERNATE_FUNCTION);
         sda.alternateFunction(I2CConsts::I2C_PIN_ALTERNATE_FUNCTION);
-        scl.mode(miosix::Mode::ALTERNATE_OD);
-        sda.mode(miosix::Mode::ALTERNATE_OD);
+        scl.mode(miosix::Mode::ALTERNATE_OD_PULL_UP);
+        sda.mode(miosix::Mode::ALTERNATE_OD_PULL_UP);
     }
 
     // Checking that this particular I2C port hasn't been already instantiated
@@ -382,7 +382,7 @@ void I2CDriver::setupPeripheral(const I2CSlaveConfig &slaveConfig)
 }
 
 bool I2CDriver::read(const I2CSlaveConfig &slaveConfig, void *buffer,
-                     size_t nBytes)
+                     const size_t &nBytes)
 {
     // Setting up the read transaction
     transaction.operation    = Operation::READ;
@@ -403,7 +403,7 @@ bool I2CDriver::read(const I2CSlaveConfig &slaveConfig, void *buffer,
 };
 
 bool I2CDriver::write(const I2CSlaveConfig &slaveConfig, const void *buffer,
-                      size_t nBytes, bool generateStop)
+                      const size_t &nBytes, bool generateStop)
 {
     // Setting up the write transaction
     transaction.operation    = Operation::WRITE;
@@ -520,7 +520,7 @@ void I2CDriver::flushBus()
         // Recovery from the locked state due to a stuck Slave.
         // We bit-bang 16 clocks on the scl line in order to restore pending
         // packets of the slaves.
-        scl.mode(miosix::Mode::OPEN_DRAIN);
+        scl.mode(miosix::Mode::OPEN_DRAIN_PULL_UP);
     }
 
     for (size_t c = 0; c < I2CConsts::N_SCL_BITBANG; c++)
@@ -535,7 +535,7 @@ void I2CDriver::flushBus()
         miosix::FastInterruptDisableLock dLock;
 
         // We set again the scl pin to the correct Alternate function
-        scl.mode(miosix::Mode::ALTERNATE_OD);
+        scl.mode(miosix::Mode::ALTERNATE_OD_PULL_UP);
         scl.alternateFunction(I2CConsts::I2C_PIN_ALTERNATE_FUNCTION);
     }
 
