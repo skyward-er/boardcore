@@ -55,7 +55,7 @@ namespace SPI
 enum class Order : uint16_t
 {
     MSB_FIRST = 0,
-    LSB_FIRST = 0x80
+    LSB_FIRST = SPI_CR1_LSBFIRST
 };
 
 /**
@@ -69,13 +69,13 @@ enum class Order : uint16_t
 enum class ClockDivider : uint8_t
 {
     DIV_2   = 0x00,
-    DIV_4   = 0x08,
-    DIV_8   = 0x10,
-    DIV_16  = 0x18,
-    DIV_32  = 0x20,
-    DIV_64  = 0x28,
-    DIV_128 = 0x30,
-    DIV_256 = 0x38,
+    DIV_4   = SPI_CR1_BR_0,
+    DIV_8   = SPI_CR1_BR_1,
+    DIV_16  = SPI_CR1_BR_1 | SPI_CR1_BR_0,
+    DIV_32  = SPI_CR1_BR_2,
+    DIV_64  = SPI_CR1_BR_2 | SPI_CR1_BR_0,
+    DIV_128 = SPI_CR1_BR_2 | SPI_CR1_BR_1,
+    DIV_256 = SPI_CR1_BR
 };
 
 enum class Mode : uint8_t
@@ -83,11 +83,11 @@ enum class Mode : uint8_t
     ///< CPOL = 0, CPHA = 0 -> Clock low when idle, sample on first edge
     MODE_0 = 0,
     ///< CPOL = 0, CPHA = 1 -> Clock low when idle, sample on second edge
-    MODE_1 = 1,
+    MODE_1 = SPI_CR1_CPHA,
     ///< CPOL = 1, CPHA = 0 -> Clock high when idle, sample on first edge
-    MODE_2 = 2,
+    MODE_2 = SPI_CR1_CPOL,
     ///< CPOL = 1, CPHA = 1 -> Clock high when idle, sample on second edge
-    MODE_3 = 3
+    MODE_3 = SPI_CR1_CPOL | SPI_CR1_CPHA
 };
 
 enum class WriteBit

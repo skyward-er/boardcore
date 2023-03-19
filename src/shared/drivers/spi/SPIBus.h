@@ -87,6 +87,12 @@ public:
      */
     void disable();
 
+#ifdef _ARCH_CORTEXM7_STM32F7
+    void set8bitRXNE();
+
+    void set16bitRXNE();
+#endif
+
     void set8BitFrameFormat();
 
     void set16BitFrameFormat();
@@ -304,13 +310,29 @@ inline void SPIBus::enable() { spi->CR1 |= SPI_CR1_SPE; }
 inline void SPIBus::disable() { spi->CR1 &= ~SPI_CR1_SPE; }
 
 #ifndef _ARCH_CORTEXM7_STM32F7
+
 inline void SPIBus::set8BitFrameFormat() { spi->CR1 &= ~SPI_CR1_DFF; }
 
 inline void SPIBus::set16BitFrameFormat() { spi->CR1 |= SPI_CR1_DFF; }
-#else
-inline void SPIBus::set8BitFrameFormat() { spi->CR1 &= ~SPI_CR1_CRCL; }
 
-inline void SPIBus::set16BitFrameFormat() { spi->CR1 |= SPI_CR1_CRCL; }
+#else
+
+inline void SPIBus::set8bitRXNE() { spi->CR2 |= SPI_CR2_FRXTH; }
+
+inline void SPIBus::set16bitRXNE() { spi->CR2 &= ~SPI_CR2_FRXTH; }
+
+inline void SPIBus::set8BitFrameFormat()
+{
+    spi->CR2 &= ~SPI_CR2_DS;
+    set8bitRXNE();
+}
+
+inline void SPIBus::set16BitFrameFormat()
+{
+    spi->CR2 |= SPI_CR2_DS;
+    set16bitRXNE();
+}
+
 #endif
 
 inline void SPIBus::enableSoftwareSlaveManagement() { spi->CR1 |= SPI_CR1_SSM; }
@@ -402,6 +424,11 @@ inline void SPIBus::configure(SPIBusConfig newConfig)
         enableSoftwareSlaveManagement();
         enableInternalSlaveSelection();
         setMasterConfiguration();
+
+#ifdef _ARCH_CORTEXM7_STM32F7
+        // By default we use 8 bit transactions
+        spi.set8bitRXNE();
+#endif
 
         // Enable the peripheral
         enable();

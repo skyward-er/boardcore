@@ -233,7 +233,7 @@ inline bool ClockUtils::enablePeripheralClock(void* peripheral)
                 RCC->AHB1ENR |= RCC_AHB1ENR_BKPSRAMEN;
                 break;
 #endif
-// On some micrcontrollers like the stm32f205, CCMDATARAM_BASE is defined
+// On some microcontrollers like the stm32f205, CCMDATARAM_BASE is defined
 // incorrectly. So we check for the macro bit
 #ifdef RCC_AHB1ENR_CCMDATARAMEN
             case CCMDATARAM_BASE:
