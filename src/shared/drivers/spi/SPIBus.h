@@ -427,7 +427,7 @@ inline void SPIBus::configure(SPIBusConfig newConfig)
 
 #ifdef _ARCH_CORTEXM7_STM32F7
         // By default we use 8 bit transactions
-        spi.set8bitRXNE();
+        set8bitRXNE();
 #endif
 
         // Enable the peripheral
