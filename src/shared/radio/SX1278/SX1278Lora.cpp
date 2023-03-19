@@ -197,7 +197,6 @@ SX1278Lora::Error SX1278Lora::configure(const Config &config)
 
         // Setup frequency
         uint32_t freq_rf_raw = errata_values.freq_rf / FSTEP;
-
         spi.writeRegister24(REG_FRF_MSB, freq_rf_raw);
 
         // Setup reg power amplifier

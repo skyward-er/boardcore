@@ -58,6 +58,8 @@ private:
 class RA01Frontend : public SX1278::ISX1278Frontend
 {
 public:
+    RA01Frontend() {}
+
     bool isOnPaBoost() override { return true; }
     int maxInPower() override { return 17; }
 
