@@ -44,7 +44,7 @@ constexpr uint8_t REG_SYNC_CONFIG_DEFAULT =
     RegSyncConfig::AUTO_RESTART_RX_MODE_OFF |
     RegSyncConfig::PREAMBLE_POLARITY_55 | RegSyncConfig::SYNC_ON;
 
-constexpr uint8_t REG_IMAGE_CAL_DEFAULT = RegImageCal::TEMP_TRESHOLD_10DEG;
+constexpr uint8_t REG_IMAGE_CAL_DEFAULT = RegImageCal::TEMP_THRESHOLD_10DEG;
 
 // Enable:
 // - PayloadReady, PacketSent on DIO0 (mode 00)
@@ -263,11 +263,7 @@ DioMask SX1278Fsk::getDioMaskFromIrqFlags(IrqFlags flags, Mode mode,
 ISX1278::IrqFlags SX1278Fsk::getIrqFlags()
 {
     SPITransaction spi(slave);
-
-    uint8_t flags_msb = spi.readRegister(REG_IRQ_FLAGS_1);
-    uint8_t flags_lsb = spi.readRegister(REG_IRQ_FLAGS_2);
-
-    return (flags_msb << 8 | flags_lsb);
+    return spi.readRegister16(REG_IRQ_FLAGS_1);
 }
 
 void SX1278Fsk::resetIrqFlags(IrqFlags flags)
@@ -280,8 +276,7 @@ void SX1278Fsk::resetIrqFlags(IrqFlags flags)
     if (flags != 0)
     {
         SPITransaction spi(slave);
-        spi.writeRegister(REG_IRQ_FLAGS_1, flags >> 8);
-        spi.writeRegister(REG_IRQ_FLAGS_2, flags);
+        spi.writeRegister16(REG_IRQ_FLAGS_1, flags);
     }
 }
 
@@ -289,21 +284,18 @@ float SX1278Fsk::getRssi()
 {
     SPITransaction spi(slave);
 
-    return static_cast<float>(spi.readRegister(REG_RSSI_VALUE)) * -0.5f;
+    uint8_t rssi_raw = spi.readRegister(REG_RSSI_VALUE);
+
+    return static_cast<float>(rssi_raw) * -0.5f;
 }
 
 float SX1278Fsk::getFei()
 {
     SPITransaction spi(slave);
 
-    // Order of read is important!!
-    uint8_t fei_msb = spi.readRegister(REG_FEI_MSB);
-    uint8_t fei_lsb = spi.readRegister(REG_FEI_LSB);
+    uint16_t fei_raw = spi.readRegister16(REG_FEI_MSB);
 
-    uint16_t fei = (static_cast<uint16_t>(fei_msb) << 8) |
-                   (static_cast<uint16_t>(fei_lsb));
-
-    return static_cast<float>(fei) * FSTEP;
+    return static_cast<float>(fei_raw) * FSTEP;
 }
 
 void SX1278Fsk::setMode(Mode mode)
@@ -315,8 +307,7 @@ void SX1278Fsk::setMode(Mode mode)
 void SX1278Fsk::setMapping(SX1278::DioMapping mapping)
 {
     SPITransaction spi(slave);
-    spi.writeRegister(REG_DIO_MAPPING_1, mapping.raw >> 8);
-    spi.writeRegister(REG_DIO_MAPPING_2, mapping.raw);
+    spi.writeRegister16(REG_DIO_MAPPING_1, mapping.raw);
 }
 
 void SX1278Fsk::setBitrate(int bitrate)
@@ -325,16 +316,14 @@ void SX1278Fsk::setBitrate(int bitrate)
 
     // Update values
     SPITransaction spi(slave);
-    spi.writeRegister(REG_BITRATE_MSB, val >> 8);
-    spi.writeRegister(REG_BITRATE_LSB, val);
+    spi.writeRegister16(REG_BITRATE_MSB, val);
 }
 
 void SX1278Fsk::setFreqDev(int freq_dev)
 {
     uint16_t val = freq_dev / FSTEP;
     SPITransaction spi(slave);
-    spi.writeRegister(REG_FDEV_MSB, (val >> 8) & 0x3f);
-    spi.writeRegister(REG_FDEV_LSB, val);
+    spi.writeRegister16(REG_FDEV_MSB, val & 0x3fff);
 }
 
 void SX1278Fsk::setFreqRF(int freq_rf)
@@ -343,9 +332,7 @@ void SX1278Fsk::setFreqRF(int freq_rf)
 
     // Update values
     SPITransaction spi(slave);
-    spi.writeRegister(REG_FRF_MSB, val >> 16);
-    spi.writeRegister(REG_FRF_MID, val >> 8);
-    spi.writeRegister(REG_FRF_LSB, val);
+    spi.writeRegister24(REG_FRF_MSB, val);
 }
 
 void SX1278Fsk::setOcp(int ocp)
@@ -393,8 +380,7 @@ void SX1278Fsk::setAfcBw(RxBw afc_bw)
 void SX1278Fsk::setPreambleLen(int len)
 {
     SPITransaction spi(slave);
-    spi.writeRegister(REG_PREAMBLE_MSB, len >> 8);
-    spi.writeRegister(REG_PREAMBLE_LSB, len);
+    spi.writeRegister16(REG_PREAMBLE_MSB, len);
 }
 
 void SX1278Fsk::setPa(int power, bool pa_boost)
@@ -437,86 +423,6 @@ void SX1278Fsk::setShaping(Shaping shaping)
 {
     SPITransaction spi(slave);
     spi.writeRegister(REG_PA_RAMP, static_cast<uint8_t>(shaping) | 0x09);
-}
-
-void SX1278Fsk::debugDumpRegisters()
-{
-    Lock guard(*this);
-    struct RegDef
-    {
-        const char *name;
-        int addr;
-    };
-
-    const RegDef defs[] = {
-        RegDef{"REG_OP_MODE", REG_OP_MODE},
-        RegDef{"REG_BITRATE_MSB", REG_BITRATE_MSB},
-        RegDef{"REG_BITRATE_LSB", REG_BITRATE_LSB},
-        RegDef{"REG_FDEV_MSB", REG_FDEV_MSB},
-        RegDef{"REG_FDEV_LSB", REG_FDEV_LSB},
-        RegDef{"REG_FRF_MSB", REG_FRF_MSB}, RegDef{"REG_FRF_MID", REG_FRF_MID},
-        RegDef{"REG_FRF_LSB", REG_FRF_LSB},
-        RegDef{"REG_PA_CONFIG", REG_PA_CONFIG},
-        RegDef{"REG_PA_RAMP", REG_PA_RAMP}, RegDef{"REG_OCP", REG_OCP},
-        RegDef{"REG_LNA", REG_LNA}, RegDef{"REG_RX_CONFIG", REG_RX_CONFIG},
-        RegDef{"REG_RSSI_CONFIG", REG_RSSI_CONFIG},
-        RegDef{"REG_RSSI_COLLISION", REG_RSSI_COLLISION},
-        RegDef{"REG_RSSI_THRESH", REG_RSSI_THRESH},
-        // RegDef { "REG_RSSI_VALUE", REG_RSSI_VALUE },
-        RegDef{"REG_RX_BW", REG_RX_BW}, RegDef{"REG_AFC_BW", REG_AFC_BW},
-        RegDef{"REG_OOK_PEAK", REG_OOK_PEAK},
-        RegDef{"REG_OOK_FIX", REG_OOK_FIX}, RegDef{"REG_OOK_AVG", REG_OOK_AVG},
-        RegDef{"REG_AFC_FEI", REG_AFC_FEI}, RegDef{"REG_AFC_MSB", REG_AFC_MSB},
-        RegDef{"REG_AFC_LSB", REG_AFC_LSB}, RegDef{"REG_FEI_MSB", REG_FEI_MSB},
-        RegDef{"REG_FEI_LSB", REG_FEI_LSB},
-        RegDef{"REG_PREAMBLE_DETECT", REG_PREAMBLE_DETECT},
-        RegDef{"REG_RX_TIMEOUT_1", REG_RX_TIMEOUT_1},
-        RegDef{"REG_RX_TIMEOUT_2", REG_RX_TIMEOUT_2},
-        RegDef{"REG_RX_TIMEOUT_3", REG_RX_TIMEOUT_3},
-        RegDef{"REG_RX_DELAY", REG_RX_DELAY}, RegDef{"REG_OSC", REG_OSC},
-        RegDef{"REG_PREAMBLE_MSB", REG_PREAMBLE_MSB},
-        RegDef{"REG_PREAMBLE_LSB", REG_PREAMBLE_LSB},
-        RegDef{"REG_SYNC_CONFIG", REG_SYNC_CONFIG},
-        RegDef{"REG_SYNC_VALUE_1", REG_SYNC_VALUE_1},
-        RegDef{"REG_SYNC_VALUE_2", REG_SYNC_VALUE_2},
-        RegDef{"REG_SYNC_VALUE_3", REG_SYNC_VALUE_3},
-        RegDef{"REG_SYNC_VALUE_4", REG_SYNC_VALUE_4},
-        RegDef{"REG_SYNC_VALUE_5", REG_SYNC_VALUE_5},
-        RegDef{"REG_SYNC_VALUE_6", REG_SYNC_VALUE_6},
-        RegDef{"REG_SYNC_VALUE_7", REG_SYNC_VALUE_7},
-        RegDef{"REG_SYNC_VALUE_8", REG_SYNC_VALUE_8},
-        RegDef{"REG_PACKET_CONFIG_1", REG_PACKET_CONFIG_1},
-        RegDef{"REG_PACKET_CONFIG_2", REG_PACKET_CONFIG_2},
-        RegDef{"REG_PACKET_PAYLOAD_LENGTH", REG_PACKET_PAYLOAD_LENGTH},
-        RegDef{"REG_NODE_ADRS", REG_NODE_ADRS},
-        RegDef{"REG_BROADCAST_ADRS", REG_BROADCAST_ADRS},
-        RegDef{"REG_FIFO_THRESH", REG_FIFO_THRESH},
-        RegDef{"REG_SEQ_CONFIG_1", REG_SEQ_CONFIG_1},
-        RegDef{"REG_SEQ_CONFIG_2", REG_SEQ_CONFIG_2},
-        RegDef{"REG_TIMER_RESOL", REG_TIMER_RESOL},
-        RegDef{"REG_TIMER_1_COEF", REG_TIMER_1_COEF},
-        RegDef{"REG_TIMER_2_COEF", REG_TIMER_2_COEF},
-        RegDef{"REG_IMAGE_CAL", REG_IMAGE_CAL},
-        // RegDef { "REG_TEMP", REG_TEMP },
-        RegDef{"REG_LOW_BAT", REG_LOW_BAT},
-        // RegDef { "REG_IRQ_FLAGS_1", REG_IRQ_FLAGS_1 },
-        // RegDef { "REG_IRQ_FLAGS_2", REG_IRQ_FLAGS_2 },
-        RegDef{"REG_DIO_MAPPING_1", REG_DIO_MAPPING_1},
-        RegDef{"REG_DIO_MAPPING_2", REG_DIO_MAPPING_2},
-        RegDef{"REG_VERSION", REG_VERSION}, RegDef{NULL, 0}};
-
-    SPITransaction spi(slave);
-
-    int i = 0;
-    while (defs[i].name)
-    {
-        auto name = defs[i].name;
-        auto addr = defs[i].addr;
-
-        LOG_DEBUG(logger, "%s: 0x%x\n", name, spi.readRegister(addr));
-
-        i++;
-    }
 }
 
 }  // namespace Boardcore

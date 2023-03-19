@@ -198,9 +198,7 @@ SX1278Lora::Error SX1278Lora::configure(const Config &config)
         // Setup frequency
         uint32_t freq_rf_raw = errata_values.freq_rf / FSTEP;
 
-        spi.writeRegister(REG_FRF_MSB, freq_rf_raw >> 16);
-        spi.writeRegister(REG_FRF_MID, freq_rf_raw >> 8);
-        spi.writeRegister(REG_FRF_LSB, freq_rf_raw);
+        spi.writeRegister24(REG_FRF_MSB, freq_rf_raw);
 
         // Setup reg power amplifier
         const int MAX_POWER = 0b111;
@@ -416,8 +414,7 @@ void SX1278Lora::setMode(ISX1278::Mode mode)
 void SX1278Lora::setMapping(SX1278::DioMapping mapping)
 {
     SPITransaction spi(slave);
-    spi.writeRegister(REG_DIO_MAPPING_1, mapping.raw >> 8);
-    spi.writeRegister(REG_DIO_MAPPING_2, mapping.raw);
+    spi.writeRegister16(REG_DIO_MAPPING_1, mapping.raw);
 }
 
 }  // namespace Boardcore

@@ -22,6 +22,7 @@
 
 #pragma once
 
+#include <drivers/spi/SPIBusInterface.h>
 #include <cstdint>
 
 namespace Boardcore
@@ -39,6 +40,18 @@ constexpr int FXOSC = 32000000;
  * @brief Frequency step (Hz) used in some calculations.
  */
 constexpr float FSTEP = 61.03515625;
+
+inline SPIBusConfig getSpiBusConfig(SPI::ClockDivider clock_divider)
+{
+    SPIBusConfig bus_config = {};
+    bus_config.clockDivider = clock_divider;
+    bus_config.mode         = SPI::Mode::MODE_0;
+    bus_config.bitOrder     = SPI::Order::MSB_FIRST;
+    bus_config.byteOrder    = SPI::Order::MSB_FIRST;
+    bus_config.writeBit     = SPI::WriteBit::INVERTED;
+
+    return bus_config;
+}
 
 /**
  * @brief Represents a DIO..
@@ -301,12 +314,12 @@ namespace RegImageCal
 {
 constexpr uint8_t AUTO_IMAGE_CAL_ON = 0x80;
 
-enum TempTreshold
+enum TempThreshold
 {
-    TEMP_TRESHOLD_5DEG  = 0x00,
-    TEMP_TRESHOLD_10DEG = 0x02,
-    TEMP_TRESHOLD_15DEG = 0x04,
-    TEMP_TRESHOLD_20DEG = 0x06,
+    TEMP_THRESHOLD_5DEG  = 0x00,
+    TEMP_THRESHOLD_10DEG = 0x02,
+    TEMP_THRESHOLD_15DEG = 0x04,
+    TEMP_THRESHOLD_20DEG = 0x06,
 };
 
 constexpr uint8_t TEMP_MONITOR_OFF = 0x01;
@@ -420,7 +433,7 @@ static constexpr int DIO_MAPPINGS[6][8][4] =
              [RegOpMode::MODE_STDBY] = {0, 0, 0, RegIrqFlags::LOW_BAT},
              [RegOpMode::MODE_FSTX]  = {0, 0, 0, RegIrqFlags::LOW_BAT},
              [RegOpMode::MODE_TX]    = {RegIrqFlags::PACKET_SENT, 0, 0,
-                                        RegIrqFlags::LOW_BAT},
+                                     RegIrqFlags::LOW_BAT},
              [RegOpMode::MODE_FSRX]  = {0, 0, 0, RegIrqFlags::LOW_BAT},
              [RegOpMode::MODE_RX] =
                  {RegIrqFlags::PAYLOAD_READY, RegIrqFlags::CRC_OK, 0,
@@ -518,11 +531,11 @@ static constexpr int DIO_MAPPINGS[6][8][4] =
              [RegOpMode::MODE_SLEEP] = {0, 0, 0, 0},
              [RegOpMode::MODE_STDBY] = {RegIrqFlags::LOW_BAT, 0, 0, 0},
              [RegOpMode::MODE_FSTX]  = {RegIrqFlags::LOW_BAT,
-                                        RegIrqFlags::PILL_LOCK, 0, 0},
+                                       RegIrqFlags::PILL_LOCK, 0, 0},
              [RegOpMode::MODE_TX]    = {RegIrqFlags::LOW_BAT,
-                                        RegIrqFlags::PILL_LOCK, 0, 0},
+                                     RegIrqFlags::PILL_LOCK, 0, 0},
              [RegOpMode::MODE_FSRX]  = {RegIrqFlags::LOW_BAT,
-                                        RegIrqFlags::PILL_LOCK, 0, 0},
+                                       RegIrqFlags::PILL_LOCK, 0, 0},
              [RegOpMode::MODE_RX] =
                  {RegIrqFlags::LOW_BAT, RegIrqFlags::PILL_LOCK,
                   RegIrqFlags::TIMEOUT,
@@ -532,14 +545,14 @@ static constexpr int DIO_MAPPINGS[6][8][4] =
          [RegOpMode::MODE_SLEEP] = {0, 0, 0, 0},
          [RegOpMode::MODE_STDBY] = {0, 0, 0, RegIrqFlags::MODE_READY},
          [RegOpMode::MODE_FSTX]  = {0, RegIrqFlags::PILL_LOCK, 0,
-                                    RegIrqFlags::MODE_READY},
+                                   RegIrqFlags::MODE_READY},
 
          [RegOpMode::MODE_TX]   = {0, RegIrqFlags::PILL_LOCK, 0,
-                                   RegIrqFlags::MODE_READY},
+                                 RegIrqFlags::MODE_READY},
          [RegOpMode::MODE_FSRX] = {0, RegIrqFlags::PILL_LOCK, 0,
                                    RegIrqFlags::MODE_READY},
          [RegOpMode::MODE_RX]   = {0, RegIrqFlags::PILL_LOCK, 0,
-                                   RegIrqFlags::MODE_READY},
+                                 RegIrqFlags::MODE_READY},
      }};
 }  // namespace Fsk
 

@@ -133,7 +133,14 @@ public:
         IRQ_TIMEOUT,  //< Timeout on IRQ register.
     };
 
-    explicit SX1278Lora(SPISlave slave) : SX1278Common(slave) {}
+    /**
+     * @brief Construct a new SX1278
+     */
+    explicit SX1278Lora(SPIBus &bus, miosix::GpioPin cs,
+                        SPI::ClockDivider clock_divider)
+        : SX1278Common(bus, cs, clock_divider)
+    {
+    }
 
     /**
      * @brief Setup the device.
