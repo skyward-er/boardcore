@@ -22,11 +22,19 @@
 
 #include "InternalTemp.h"
 
-#ifdef _ARCH_CORTEXM4_STM32F4
+#if defined(STM32F407xx) || defined(STM32F429xx)
 #define TEMP30_CAL_VALUE ((uint16_t*)((uint32_t)0x1FFF7A2C))
 #define TEMP110_CAL_VALUE ((uint16_t*)((uint32_t)0x1FFF7A2E))
 #define TEMP30 30
 #define TEMP110 110
+#elif defined(STM32F767xx) || defined(STM32F769xx)
+#define TEMP30_CAL_VALUE ((uint16_t*)((uint32_t)0x1FF0F44C))
+#define TEMP110_CAL_VALUE ((uint16_t*)((uint32_t)0x1FF0F44E))
+#define TEMP30 30
+#define TEMP110 110
+#else
+#warning This microcontroller does not have a calibrated temperature sensor or is not currently supported by this driver
+#define WITHOUT_CALIBRATION
 #endif
 
 namespace Boardcore
@@ -42,9 +50,9 @@ bool InternalTemp::init()
 {
     bool result = adc.init();
 
-#if defined(_BOARD_STM32F4DISCOVERY) || defined(_ARCH_CORTEXM3_STM32F2)
+#if defined(STM32F407xx) || defined(STM32F205xx)
     adc.addRegularChannel(InternalADC::CH16);
-#else
+#elif defined(STM32F429xx) || defined(STM32F767xx) || defined(STM32F769xx)
     adc.addRegularChannel(InternalADC::CH18);
 #endif
 
@@ -58,16 +66,16 @@ bool InternalTemp::selfTest() { return adc.selfTest(); }
 
 InternalTempData InternalTemp::sampleImpl()
 {
-#if defined(_BOARD_STM32F4DISCOVERY) || defined(_ARCH_CORTEXM3_STM32F2)
+#if defined(STM32F407xx) || defined(STM32F205xx)
     auto adcData = adc.readChannel(InternalADC::CH16, sampleTime);
-#else
+#elif defined(STM32F429xx) || defined(STM32F767xx) || defined(STM32F769xx)
     auto adcData = adc.readChannel(InternalADC::CH18, sampleTime);
 #endif
 
     InternalTempData data;
     data.temperatureTimestamp = adcData.voltageTimestamp;
 
-#ifdef _ARCH_CORTEXM3_STM32F2
+#ifdef WITHOUT_CALIBRATION
     // Default conversion
     data.temperature = ((adcData.voltage - 0.76) / 0.0025) + 25;
 #else
