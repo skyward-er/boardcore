@@ -124,14 +124,7 @@ int main()
     SPIBus bus(SX1278_SPI);
     GpioPin cs = cs::getPin();
 
-    SPIBusConfig spi_config = {};
-    spi_config.clockDivider = SPI::ClockDivider::DIV_64;
-    spi_config.mode         = SPI::Mode::MODE_0;
-    spi_config.bitOrder     = SPI::Order::MSB_FIRST;
-    spi_config.byteOrder    = SPI::Order::MSB_FIRST;
-    spi_config.writeBit     = SPI::WriteBit::INVERTED;
-
-    sx1278 = new SX1278Fsk(SPISlave(bus, cs, spi_config));
+    sx1278 = new SX1278Fsk(bus, cs, SPI::ClockDivider::DIV_64);
 
     printf("\n[sx1278] Configuring sx1278...\n");
     if ((err = sx1278->init(config)) != SX1278Fsk::Error::NONE)

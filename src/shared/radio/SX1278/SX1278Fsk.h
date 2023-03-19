@@ -122,11 +122,12 @@ public:
 
     /**
      * @brief Construct a new SX1278
-     *
-     * @param bus SPI bus used.
-     * @param cs Chip select pin.
      */
-    explicit SX1278Fsk(SPISlave slave) : SX1278Common(slave) {}
+    explicit SX1278Fsk(SPIBus &bus, miosix::GpioPin cs,
+                       SPI::ClockDivider clock_divider)
+        : SX1278Common(bus, cs, clock_divider)
+    {
+    }
 
     /**
      * @brief Setup the device.
@@ -177,11 +178,6 @@ public:
      * @brief Get the frequency error index in Hz, during last packet receive.
      */
     float getLastRxFei();
-
-    /**
-     * @brief Dump all registers via TRACE.
-     */
-    void debugDumpRegisters();
 
 protected:
     // Stuff to work with various front-ends
