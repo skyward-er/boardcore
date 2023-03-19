@@ -82,7 +82,7 @@ inline uint32_t ClockUtils::getAPBPeripheralsClock(APB bus)
     if (bus == APB::APB1)
     {
         // The position of the PPRE1 bit in RCC->CFGR is different in some stm32
-#ifdef _ARCH_CORTEXM3_STM32
+#ifdef _ARCH_CORTEXM3_STM32F1
         const uint32_t ppre1 = 8;
 #elif _ARCH_CORTEXM4_STM32F4 | _ARCH_CORTEXM3_STM32F2
         const uint32_t ppre1 = 10;
@@ -98,7 +98,7 @@ inline uint32_t ClockUtils::getAPBPeripheralsClock(APB bus)
     else
     {
         // The position of the PPRE2 bit in RCC->CFGR is different in some stm32
-#ifdef _ARCH_CORTEXM3_STM32
+#ifdef _ARCH_CORTEXM3_STM32F1
         const uint32_t ppre2 = 11;
 #elif _ARCH_CORTEXM4_STM32F4 | _ARCH_CORTEXM3_STM32F2
         const uint32_t ppre2 = 13;
@@ -127,7 +127,7 @@ inline uint32_t ClockUtils::getAPBTimersClock(APB bus)
     if (bus == APB::APB1)
     {
         // The position of the PPRE1 bit in RCC->CFGR is different in some stm32
-#ifdef _ARCH_CORTEXM3_STM32
+#ifdef _ARCH_CORTEXM3_STM32F1
         const uint32_t ppre1 = 8;
 #elif _ARCH_CORTEXM4_STM32F4 | _ARCH_CORTEXM3_STM32F2
         const uint32_t ppre1 = 10;
@@ -143,7 +143,7 @@ inline uint32_t ClockUtils::getAPBTimersClock(APB bus)
     else
     {
         // The position of the PPRE2 bit in RCC->CFGR is different in some stm32
-#ifdef _ARCH_CORTEXM3_STM32
+#ifdef _ARCH_CORTEXM3_STM32F1
         const uint32_t ppre2 = 11;
 #elif _ARCH_CORTEXM4_STM32F4 | _ARCH_CORTEXM3_STM32F2
         const uint32_t ppre2 = 13;
