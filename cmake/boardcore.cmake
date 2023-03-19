@@ -76,7 +76,6 @@ foreach(OPT_BOARD ${BOARDS})
         ${SBS_BASE}/src/shared/radio/SX1278/SX1278Fsk.cpp
         ${SBS_BASE}/src/shared/radio/SX1278/SX1278Lora.cpp
         ${SBS_BASE}/src/shared/radio/SX1278/SX1278Common.cpp
-        ${SBS_BASE}/src/shared/radio/SX1278/Ebyte.cpp
 
         # Scheduler
         ${SBS_BASE}/src/shared/scheduler/TaskScheduler.cpp
