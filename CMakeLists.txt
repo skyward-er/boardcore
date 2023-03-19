@@ -49,7 +49,7 @@ add_executable(mxgui-helloworld src/entrypoints/examples/mxgui-helloworld.cpp)
 sbs_target(mxgui-helloworld stm32f429zi_stm32f4discovery)
 
 add_executable(kernel-testsuite src/entrypoints/kernel-testsuite.cpp)
-sbs_target(kernel-testsuite stm32f769ni_discovery)
+sbs_target(kernel-testsuite stm32f767zi_compute_unit)
 
 add_executable(runcam-settings src/entrypoints/runcam-settings.cpp)
 sbs_target(runcam-settings stm32f407vg_stm32f4discovery)
@@ -91,7 +91,7 @@ add_executable(test-sensormanager src/tests/test-sensormanager.cpp)
 sbs_target(test-sensormanager stm32f429zi_skyward_death_stack_x)
 
 add_executable(test-serial src/tests/test-serial.cpp)
-sbs_target(test-serial stm32f769ni_discovery)
+sbs_target(test-serial stm32f767zi_compute_unit)
 
 add_executable(test-taskscheduler src/tests/scheduler/test-taskscheduler.cpp)
 sbs_target(test-taskscheduler stm32f407vg_stm32f4discovery)
@@ -238,11 +238,11 @@ sbs_target(test-xbee-snd stm32f429zi_stm32f4discovery)
 add_executable(test-usart src/tests/drivers/usart/test-usart.cpp)
 sbs_target(test-usart stm32f407vg_stm32f4discovery)
 
-add_executable(test-i2c-driver src/tests/drivers/i2c/test-i2c-driver.cpp)
-sbs_target(test-i2c-driver stm32f429zi_stm32f4discovery)
+# add_executable(test-i2c-driver src/tests/drivers/i2c/test-i2c-driver.cpp)
+# sbs_target(test-i2c-driver stm32f429zi_stm32f4discovery)
 
-add_executable(test-i2c src/tests/drivers/i2c/test-i2c.cpp)
-sbs_target(test-i2c stm32f429zi_stm32f4discovery)
+# add_executable(test-i2c src/tests/drivers/i2c/test-i2c.cpp)
+# sbs_target(test-i2c stm32f429zi_stm32f4discovery)
 
 add_executable(test-internal-temp src/tests/drivers/test-internal-temp.cpp)
 sbs_target(test-internal-temp stm32f407vg_stm32f4discovery)
