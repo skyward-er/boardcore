@@ -84,25 +84,32 @@ I2CSensor OLED{0b0111100, 0xD0, 0x43, {}};
 I2CDriver::I2CSlaveConfig BMP180Config{BMP180.addressSensor,
                                        I2CDriver::Addressing::BIT7,
                                        I2CDriver::Speed::STANDARD};
+
 I2CDriver::I2CSlaveConfig BME280Config{BME280.addressSensor,
                                        I2CDriver::Addressing::BIT7,
                                        I2CDriver::Speed::STANDARD};
-I2CDriver::I2CSlaveConfig OLEDConfig{
+
+I2CDriver::I2CSlaveConfig OLEDConfig_F{
     OLED.addressSensor, I2CDriver::Addressing::BIT7, I2CDriver::Speed::FAST};
+
+#ifdef _ARCH_CORTEXM7_STM32F7
+I2CDriver::I2CSlaveConfig OLEDConfig_FP{OLED.addressSensor,
+                                        I2CDriver::Addressing::BIT7,
+                                        I2CDriver::Speed::FAST_PLUS};
+#endif  // _ARCH_CORTEXM7_STM32F7
 
 bool i2cDriver(I2CDriver &i2c, I2CSensor sensor,
                I2CDriver::I2CSlaveConfig sensorConfig)
 {
     uint8_t buffer[10]  = {0};
-    const uint8_t nRead = 10;
+    const uint8_t nRead = 1;
 
     i2c.flushBus();
 
     // reset the sensor and then read the whoami
     if (!(i2c.write(sensorConfig, sensor.softReset, 2) &&
           i2c.write(sensorConfig, &sensor.whoamiRegister, 1, false) &&
-          i2c.read(sensorConfig, buffer, nRead) &&
-          (buffer[0] == sensor.whoamiContent)))
+          i2c.read(sensorConfig, buffer, nRead)))
     {
         uint16_t lastError{i2c.getLastError()};
         if (!(lastError &
@@ -110,6 +117,13 @@ bool i2cDriver(I2CDriver &i2c, I2CSensor sensor,
         {
             printf("LastError: %d\n", lastError);
         }
+        return false;
+    }
+
+    if (buffer[0] != sensor.whoamiContent)
+    {
+        printf("whoami expected %d, received %d\n", sensor.whoamiContent,
+               buffer[0]);
         return false;
     }
 
@@ -138,8 +152,11 @@ int main()
 
         for (int i = 0; i < nRepeat; i++)
         {
-            statusOLED &= i2cDriver(i2c, OLED, OLEDConfig);
             statusBMP &= i2cDriver(i2c, BMP180, BMP180Config);
+            statusOLED &= i2cDriver(i2c, OLED, OLEDConfig_F);
+#ifdef _ARCH_CORTEXM7_STM32F7
+            statusOLED &= i2cDriver(i2c, OLED, OLEDConfig_FP);
+#endif  // _ARCH_CORTEXM7_STM32F7
         }
 
         printf("OLED:%d\tBMP:%d\n", statusOLED, statusBMP);

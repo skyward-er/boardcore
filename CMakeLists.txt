@@ -241,11 +241,17 @@ sbs_target(test-xbee-snd stm32f429zi_stm32f4discovery)
 add_executable(test-usart src/tests/drivers/usart/test-usart.cpp)
 sbs_target(test-usart stm32f407vg_stm32f4discovery)
 
-# add_executable(test-i2c-driver src/tests/drivers/i2c/test-i2c-driver.cpp)
-# sbs_target(test-i2c-driver stm32f429zi_stm32f4discovery)
+add_executable(test-i2c-driver-f4 src/tests/drivers/i2c/test-i2c-driver.cpp)
+sbs_target(test-i2c-driver-f4 stm32f429zi_stm32f4discovery)
 
-# add_executable(test-i2c src/tests/drivers/i2c/test-i2c.cpp)
-# sbs_target(test-i2c stm32f429zi_stm32f4discovery)
+add_executable(test-i2c-f4 src/tests/drivers/i2c/test-i2c.cpp)
+sbs_target(test-i2c-f4 stm32f429zi_stm32f4discovery)
+
+add_executable(test-i2c-driver-f7 src/tests/drivers/i2c/test-i2c-driver.cpp)
+sbs_target(test-i2c-driver-f7 stm32f767zi_nucleo)
+
+add_executable(test-i2c-f7 src/tests/drivers/i2c/test-i2c.cpp)
+sbs_target(test-i2c-f7 stm32f767zi_nucleo)
 
 add_executable(test-internal-temp src/tests/drivers/test-internal-temp.cpp)
 sbs_target(test-internal-temp stm32f407vg_stm32f4discovery)
