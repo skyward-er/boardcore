@@ -103,7 +103,6 @@ public:
             120;  //< Over current protection limit in mA (0 for no limit).
         int power = 10;  //< Output power in dB (Between +2 and +17, or +20 for
                          // full power).
-        bool pa_boost   = true;  //< Enable output on PA_BOOST.
         Shaping shaping = Shaping::GAUSSIAN_BT_1_0;  //< Shaping applied to
                                                      // the modulation stream.
         DcFree dc_free = DcFree::WHITENING;  //< Dc free encoding scheme.
@@ -124,8 +123,9 @@ public:
      * @brief Construct a new SX1278
      */
     explicit SX1278Fsk(SPIBus &bus, miosix::GpioPin cs,
-                       SPI::ClockDivider clock_divider)
-        : SX1278Common(bus, cs, clock_divider)
+                       SPI::ClockDivider clock_divider,
+                       std::unique_ptr<SX1278::ISX1278Frontend> frontend)
+        : SX1278Common(bus, cs, clock_divider, std::move(frontend))
     {
     }
 
@@ -178,13 +178,6 @@ public:
      * @brief Get the frequency error index in Hz, during last packet receive.
      */
     float getLastRxFei();
-
-protected:
-    // Stuff to work with various front-ends
-    virtual void enableRxFrontend() override {}
-    virtual void disableRxFrontend() override {}
-    virtual void enableTxFrontend() override {}
-    virtual void disableTxFrontend() override {}
 
 private:
     void rateLimitTx();

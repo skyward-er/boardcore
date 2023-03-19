@@ -22,7 +22,7 @@
 
 #include <drivers/interrupt/external_interrupts.h>
 #include <miosix.h>
-#include <radio/SX1278/Ebyte.h>
+#include <radio/SX1278/SX1278Frontends.h>
 #include <radio/SX1278/SX1278Lora.h>
 
 #include <cstring>
@@ -174,7 +174,6 @@ int main()
     initBoard();
 
     SX1278Lora::Config config = {};
-    config.pa_boost           = true;
     config.power              = 10;
     config.ocp                = 0;
     config.coding_rate        = SX1278Lora::Config::Cr::CR_4;
@@ -186,11 +185,14 @@ int main()
     GpioPin cs = cs::getPin();
 
 #ifdef IS_EBYTE
-    sx1278 = new EbyteLora(bus, cs, SPI::ClockDivider::DIV_64, txen::getPin(),
-                           rxen::getPin());
+    std::unique_ptr<SX1278::ISX1278Frontend> frontend(
+        new EbyteFrontend(txen::getPin(), rxen::getPin()));
 #else
-    sx1278 = new SX1278Lora(bus, cs, SPI::ClockDivider::DIV_64);
+    std::unique_ptr<SX1278::ISX1278Frontend> frontend(new RA01Frontend());
 #endif
+
+    sx1278 =
+        new SX1278Lora(bus, cs, SPI::ClockDivider::DIV_64, std::move(frontend));
 
     printf("\n[sx1278] Configuring sx1278...\n");
     if ((err = sx1278->init(config)) != SX1278Lora::Error::NONE)

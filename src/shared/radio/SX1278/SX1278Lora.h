@@ -105,7 +105,6 @@ public:
             15;  //< Output power in dB (between +2 and +17 with pa_boost = on,
                  // and between +0 and +14 with pa_boost = off, +20 for +20dBm
                  // max power ignoring pa_boost).
-        bool pa_boost = true;  //< Enable output on PA_BOOST.
 
         /**
          * @brief Calculates effective and usable bitrate.
@@ -137,8 +136,9 @@ public:
      * @brief Construct a new SX1278
      */
     explicit SX1278Lora(SPIBus &bus, miosix::GpioPin cs,
-                        SPI::ClockDivider clock_divider)
-        : SX1278Common(bus, cs, clock_divider)
+                        SPI::ClockDivider clock_divider,
+                        std::unique_ptr<SX1278::ISX1278Frontend> frontend)
+        : SX1278Common(bus, cs, clock_divider, std::move(frontend))
     {
     }
 
@@ -186,13 +186,6 @@ public:
      * @brief Get the RSSI in dBm, during last packet receive.
      */
     float getLastRxSnr();
-
-protected:
-    // Stuff to work with various front-ends
-    virtual void enableRxFrontend() override {}
-    virtual void disableRxFrontend() override {}
-    virtual void enableTxFrontend() override {}
-    virtual void disableTxFrontend() override {}
 
 private:
     void readFifo(uint8_t addr, uint8_t *dst, uint8_t size);

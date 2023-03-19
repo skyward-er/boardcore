@@ -26,6 +26,8 @@
 #include <miosix.h>
 #include <radio/Transceiver.h>
 
+#include <memory>
+
 #include "SX1278Defs.h"
 
 namespace Boardcore
@@ -76,11 +78,28 @@ protected:
 
     virtual DioMask getDioMaskFromIrqFlags(IrqFlags flags, Mode mode,
                                            DioMapping mapping) = 0;
+};
 
-    virtual void enableRxFrontend()  = 0;
-    virtual void disableRxFrontend() = 0;
-    virtual void enableTxFrontend()  = 0;
-    virtual void disableTxFrontend() = 0;
+/**
+ * @brief Shared interface between all SX1278 frontends
+ */
+class ISX1278Frontend
+{
+public:
+    /**
+     * @brief Is this frontend connected to PA_BOOST or RFO_LF/_HF?
+     */
+    virtual bool isOnPaBoost() = 0;
+
+    /**
+     * @brief What is the maximum power supported by this frontend?
+     */
+    virtual int maxInPower() = 0;
+
+    virtual void enableRx()  = 0;
+    virtual void disableRx() = 0;
+    virtual void enableTx()  = 0;
+    virtual void disableTx() = 0;
 };
 
 class SX1278Common : public ISX1278
@@ -112,7 +131,8 @@ public:
 
 protected:
     explicit SX1278Common(SPIBus &bus, miosix::GpioPin cs,
-                          SPI::ClockDivider clock_divider)
+                          SPI::ClockDivider clock_divider,
+                          std::unique_ptr<ISX1278Frontend>)
         : slave(SPISlave(bus, cs, getSpiBusConfig(clock_divider)))
     {
     }
@@ -180,10 +200,9 @@ protected:
      */
     bool checkForIrqAndReset(IrqFlags irq);
 
-    /**
-     * @brief The actual SPISlave, used by child classes.
-     */
-    SPISlave slave;
+    ISX1278Frontend &getFrontend();
+
+    SPISlave &getSpiSlave();
 
 private:
     DeviceState lockMode(Mode mode, DioMapping mapping, bool set_tx_frontend_on,
@@ -198,6 +217,8 @@ private:
 
     miosix::FastMutex mutex;
     DeviceState state;
+    std::unique_ptr<ISX1278Frontend> frontend;
+    SPISlave slave;
 };
 
 }  // namespace SX1278

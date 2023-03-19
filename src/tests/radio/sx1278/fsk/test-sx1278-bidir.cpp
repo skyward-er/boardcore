@@ -22,7 +22,7 @@
 
 #include <drivers/interrupt/external_interrupts.h>
 #include <miosix.h>
-#include <radio/SX1278/Ebyte.h>
+#include <radio/SX1278/SX1278Frontends.h>
 #include <radio/SX1278/SX1278Fsk.h>
 
 #include <cstring>
@@ -141,7 +141,10 @@ int main()
     SPIBus bus(SX1278_SPI);
     GpioPin cs = cs::getPin();
 
-    sx1278 = new SX1278Fsk(bus, cs, SPI::ClockDivider::DIV_64);
+    std::unique_ptr<SX1278::ISX1278Frontend> frontend(new RA01Frontend());
+
+    sx1278 =
+        new SX1278Fsk(bus, cs, SPI::ClockDivider::DIV_64, std::move(frontend));
 
     printf("\n[sx1278] Configuring sx1278...\n");
     if ((err = sx1278->init(config)) != SX1278Fsk::Error::NONE)

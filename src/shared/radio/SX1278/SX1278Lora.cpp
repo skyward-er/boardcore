@@ -149,7 +149,7 @@ SX1278Lora::Error SX1278Lora::init(const Config &config)
 bool SX1278Lora::checkVersion()
 {
     Lock guard(*this);
-    SPITransaction spi(slave);
+    SPITransaction spi(getSpiSlave());
 
     return spi.readRegister(REG_VERSION) == 0x12;
 }
@@ -174,8 +174,8 @@ SX1278Lora::Error SX1278Lora::configure(const Config &config)
 
     int freq_rf   = config.freq_rf;
     int ocp       = config.ocp;
-    int power     = config.power;
-    bool pa_boost = config.pa_boost;
+    int power     = std::min(config.power, getFrontend().maxInPower());
+    bool pa_boost = getFrontend().isOnPaBoost();
 
     bool low_data_rate_optimize = config.low_data_rate_optimize;
 
@@ -188,7 +188,7 @@ SX1278Lora::Error SX1278Lora::configure(const Config &config)
         ErrataRegistersValues::calculate(bw, freq_rf);
 
     {
-        SPITransaction spi(slave);
+        SPITransaction spi(getSpiSlave());
 
         // Setup FIFO sections
         spi.writeRegister(REG_FIFO_TX_BASE_ADDR, FIFO_TX_BASE_ADDR);
@@ -275,7 +275,7 @@ ssize_t SX1278Lora::receive(uint8_t *pkt, size_t max_len)
 {
     Lock guard(*this);
 
-    SPITransaction spi(slave);
+    SPITransaction spi(getSpiSlave());
 
     do
     {
@@ -303,7 +303,7 @@ bool SX1278Lora::send(uint8_t *pkt, size_t len)
 
     Lock guard(*this);
 
-    SPITransaction spi(slave);
+    SPITransaction spi(getSpiSlave());
 
     spi.writeRegister(REG_PAYLOAD_LENGTH, len);
     writeFifo(FIFO_TX_BASE_ADDR, pkt, len);
@@ -325,7 +325,7 @@ float SX1278Lora::getLastRxRssi()
     float rssi;
     {
         Lock guard(*this);
-        SPITransaction spi(slave);
+        SPITransaction spi(getSpiSlave());
         rssi =
             static_cast<float>(spi.readRegister(REG_PKT_RSSI_VALUE)) - 164.0f;
     }
@@ -341,7 +341,7 @@ float SX1278Lora::getLastRxRssi()
 float SX1278Lora::getLastRxSnr()
 {
     Lock guard(*this);
-    SPITransaction spi(slave);
+    SPITransaction spi(getSpiSlave());
     return static_cast<float>(
                static_cast<int8_t>(spi.readRegister(REG_PKT_SNR_VALUE))) /
            4.0f;
@@ -349,14 +349,14 @@ float SX1278Lora::getLastRxSnr()
 
 void SX1278Lora::readFifo(uint8_t addr, uint8_t *dst, uint8_t size)
 {
-    SPITransaction spi(slave);
+    SPITransaction spi(getSpiSlave());
     spi.writeRegister(REG_FIFO_ADDR_PTR, addr);
     spi.readRegisters(REG_FIFO, dst, size);
 }
 
 void SX1278Lora::writeFifo(uint8_t addr, uint8_t *src, uint8_t size)
 {
-    SPITransaction spi(slave);
+    SPITransaction spi(getSpiSlave());
     spi.writeRegister(REG_FIFO_ADDR_PTR, addr);
     spi.writeRegisters(REG_FIFO, src, size);
 }
@@ -391,20 +391,20 @@ SX1278::DioMask SX1278Lora::getDioMaskFromIrqFlags(IrqFlags flags, Mode _mode,
 
 ISX1278::IrqFlags SX1278Lora::getIrqFlags()
 {
-    SPITransaction spi(slave);
+    SPITransaction spi(getSpiSlave());
     return spi.readRegister(REG_IRQ_FLAGS);
 }
 
 void SX1278Lora::resetIrqFlags(IrqFlags flags)
 {
-    SPITransaction spi(slave);
+    SPITransaction spi(getSpiSlave());
     // Register is write clear
     spi.writeRegister(REG_IRQ_FLAGS, flags);
 }
 
 void SX1278Lora::setMode(ISX1278::Mode mode)
 {
-    SPITransaction spi(slave);
+    SPITransaction spi(getSpiSlave());
 
     spi.writeRegister(
         REG_OP_MODE,
@@ -413,7 +413,7 @@ void SX1278Lora::setMode(ISX1278::Mode mode)
 
 void SX1278Lora::setMapping(SX1278::DioMapping mapping)
 {
-    SPITransaction spi(slave);
+    SPITransaction spi(getSpiSlave());
     spi.writeRegister16(REG_DIO_MAPPING_1, mapping.raw);
 }
 
