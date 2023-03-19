@@ -64,7 +64,7 @@ void SX1278Common::waitForIrq(LockMode &_guard, IrqFlags irq, bool unlock)
         // An interrupt could occur and read from this variables
         {
             miosix::FastInterruptDisableLock dLock;
-            state.irq_wait_thread  = miosix::Thread::IRQgetCurrentThread();
+            state.irq_wait_thread = miosix::Thread::IRQgetCurrentThread();
         }
 
         // Check that this hasn't already happened
@@ -156,7 +156,7 @@ SX1278Common::DeviceState SX1278Common::lockMode(Mode mode, DioMapping mapping,
     DeviceState old_state = state;
 
     enterMode(mode, mapping, tx_frontend, rx_frontend);
-    state.irq_wait_thread  = nullptr;
+    state.irq_wait_thread = nullptr;
 
     return old_state;
 }
@@ -164,7 +164,7 @@ SX1278Common::DeviceState SX1278Common::lockMode(Mode mode, DioMapping mapping,
 void SX1278Common::unlockMode(DeviceState old_state)
 {
     // Do this copy manually, we want stuff to be copied in a specific order
-    state.irq_wait_thread  = old_state.irq_wait_thread;
+    state.irq_wait_thread = old_state.irq_wait_thread;
     enterMode(old_state.mode, old_state.mapping, old_state.is_tx_frontend_on,
               old_state.is_rx_frontend_on);
 }

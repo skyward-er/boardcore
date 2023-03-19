@@ -204,7 +204,7 @@ int main()
 
     sx1278 =
         new SX1278Lora(bus, cs, SPI::ClockDivider::DIV_64, std::move(frontend));
-    
+
     printf("\n[sx1278] Configuring sx1278...\n");
     if ((err = sx1278->init(config)) != SX1278Lora::Error::NONE)
     {

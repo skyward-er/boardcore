@@ -98,7 +98,6 @@ private:
     };
 
 public:
-
     /**
      * @brief Handle generic DIO irq.
      */
