@@ -44,56 +44,68 @@ public:
     static constexpr size_t MTU = SX1278::Fsk::FIFO_LEN - 1;
 
     /**
-     * @brief Channel filter bandwidth.
-     */
-    enum class RxBw
-    {
-        HZ_2600   = (0b10 << 3) | 7,
-        HZ_3100   = (0b01 << 3) | 7,
-        HZ_3900   = 7,
-        HZ_5200   = (0b10 << 3) | 6,
-        HZ_6300   = (0b01 << 3) | 6,
-        HZ_7800   = 6,
-        HZ_10400  = (0b10 << 3) | 5,
-        HZ_12500  = (0b01 << 3) | 5,
-        HZ_15600  = 5,
-        HZ_20800  = (0b10 << 3) | 4,
-        HZ_25000  = (0b01 << 3) | 4,
-        HZ_31300  = 4,
-        HZ_41700  = (0b10 << 3) | 3,
-        HZ_50000  = (0b01 << 3) | 3,
-        HZ_62500  = 3,
-        HZ_83300  = (0b10 << 3) | 2,
-        HZ_100000 = (0b01 << 3) | 2,
-        HZ_125000 = 2,
-        HZ_166700 = (0b10 << 3) | 1,
-        HZ_200000 = (0b01 << 3) | 1,
-        HZ_250000 = 1,
-    };
-
-    enum class Shaping
-    {
-        NONE = SX1278::Fsk::RegPaRamp::MODULATION_SHAPING_NONE,
-        GAUSSIAN_BT_1_0 =
-            SX1278::Fsk::RegPaRamp::MODULATION_SHAPING_GAUSSIAN_BT_1_0,
-        GAUSSIAN_BT_0_5 =
-            SX1278::Fsk::RegPaRamp::MODULATION_SHAPING_GAUSSIAN_BT_0_5,
-        GAUSSIAN_BT_0_3 =
-            SX1278::Fsk::RegPaRamp::MODULATION_SHAPING_GAUSSIAN_BT_0_3,
-    };
-
-    enum class DcFree
-    {
-        NONE       = SX1278::Fsk::RegPacketConfig1::DC_FREE_NONE,
-        MANCHESTER = SX1278::Fsk::RegPacketConfig1::DC_FREE_MANCHESTER,
-        WHITENING  = SX1278::Fsk::RegPacketConfig1::DC_FREE_WHITENING
-    };
-
-    /**
      * @brief Requested SX1278 configuration.
      */
     struct Config
     {
+        /**
+         * @brief Channel filter bandwidth.
+         */
+        enum class RxBw
+        {
+            HZ_2600   = SX1278::Fsk::RegRxBw::HZ_2600,
+            HZ_3100   = SX1278::Fsk::RegRxBw::HZ_3100,
+            HZ_3900   = SX1278::Fsk::RegRxBw::HZ_3900,
+            HZ_5200   = SX1278::Fsk::RegRxBw::HZ_5200,
+            HZ_6300   = SX1278::Fsk::RegRxBw::HZ_6300,
+            HZ_7800   = SX1278::Fsk::RegRxBw::HZ_7800,
+            HZ_10400  = SX1278::Fsk::RegRxBw::HZ_10400,
+            HZ_12500  = SX1278::Fsk::RegRxBw::HZ_12500,
+            HZ_15600  = SX1278::Fsk::RegRxBw::HZ_15600,
+            HZ_20800  = SX1278::Fsk::RegRxBw::HZ_20800,
+            HZ_25000  = SX1278::Fsk::RegRxBw::HZ_25000,
+            HZ_31300  = SX1278::Fsk::RegRxBw::HZ_31300,
+            HZ_41700  = SX1278::Fsk::RegRxBw::HZ_41700,
+            HZ_50000  = SX1278::Fsk::RegRxBw::HZ_50000,
+            HZ_62500  = SX1278::Fsk::RegRxBw::HZ_62500,
+            HZ_83300  = SX1278::Fsk::RegRxBw::HZ_83300,
+            HZ_100000 = SX1278::Fsk::RegRxBw::HZ_100000,
+            HZ_125000 = SX1278::Fsk::RegRxBw::HZ_125000,
+            HZ_166700 = SX1278::Fsk::RegRxBw::HZ_166700,
+            HZ_200000 = SX1278::Fsk::RegRxBw::HZ_200000,
+            HZ_250000 = SX1278::Fsk::RegRxBw::HZ_250000,
+        };
+
+        /**
+         * @brief Output modulation shaping.
+         */
+        enum class Shaping
+        {
+            NONE = SX1278::Fsk::RegPaRamp::MODULATION_SHAPING_NONE,
+            GAUSSIAN_BT_1_0 =
+                SX1278::Fsk::RegPaRamp::MODULATION_SHAPING_GAUSSIAN_BT_1_0,
+            GAUSSIAN_BT_0_5 =
+                SX1278::Fsk::RegPaRamp::MODULATION_SHAPING_GAUSSIAN_BT_0_5,
+            GAUSSIAN_BT_0_3 =
+                SX1278::Fsk::RegPaRamp::MODULATION_SHAPING_GAUSSIAN_BT_0_3,
+        };
+
+        /**
+         * @brief Dc free encoding.
+         *
+         * @warning Setting this to NONE heightens the probability of long
+         * sequences of 0s, reducing reliability.
+         *
+         * @warning MANCHESTER might be slightly more reliable, but halves the
+         * bitrate.
+         */
+        enum class DcFree
+        {
+            NONE       = SX1278::Fsk::RegPacketConfig1::DC_FREE_NONE,
+            MANCHESTER = SX1278::Fsk::RegPacketConfig1::DC_FREE_MANCHESTER,
+            WHITENING  = SX1278::Fsk::RegPacketConfig1::DC_FREE_WHITENING
+        };
+
         int freq_rf  = 434000000;        //< RF Frequency in Hz.
         int freq_dev = 50000;            //< Frequency deviation in Hz.
         int bitrate  = 48000;            //< Bitrate in b/s.
@@ -101,7 +113,7 @@ public:
         RxBw afc_bw  = RxBw::HZ_125000;  //< Afc filter bandwidth.
         int ocp =
             120;  //< Over current protection limit in mA (0 for no limit).
-        int power = 10;  //< Output power in dB (Between +2 and +17, or +20 for
+        int power = 13;  //< Output power in dB (Between +2 and +17, or +20 for
                          // full power).
         Shaping shaping = Shaping::GAUSSIAN_BT_1_0;  //< Shaping applied to
                                                      // the modulation stream.
@@ -182,8 +194,6 @@ public:
 private:
     void rateLimitTx();
 
-    void imageCalibrate();
-
     SX1278::DioMask getDioMaskFromIrqFlags(IrqFlags flags, Mode mode,
                                            SX1278::DioMapping mapping) override;
 
@@ -195,17 +205,6 @@ private:
 
     void setMode(Mode mode) override;
     void setMapping(SX1278::DioMapping mapping) override;
-
-    void setBitrate(int bitrate);
-    void setFreqDev(int freq_dev);
-    void setFreqRF(int freq_rf);
-    void setOcp(int ocp);
-    void setSyncWord(uint8_t value[], int size);
-    void setRxBw(RxBw rx_bw);
-    void setAfcBw(RxBw afc_bw);
-    void setPreambleLen(int len);
-    void setPa(int power, bool pa_boost);
-    void setShaping(Shaping shaping);
 
     long long last_tx  = 0;
     float last_rx_rssi = 0.0f;

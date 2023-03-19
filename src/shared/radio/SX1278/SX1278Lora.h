@@ -102,7 +102,7 @@ public:
         int ocp =
             120;  //< Over current protection limit in mA (0 for no limit).
         int power =
-            15;  //< Output power in dB (between +2 and +17 with pa_boost = on,
+            13;  //< Output power in dB (between +2 and +17 with pa_boost = on,
                  // and between +0 and +14 with pa_boost = off, +20 for +20dBm
                  // max power ignoring pa_boost).
 

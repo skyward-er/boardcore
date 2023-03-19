@@ -106,12 +106,12 @@ int main()
         .freq_rf  = 422075000,
         .freq_dev = 25000,
         .bitrate  = 19200,
-        .rx_bw    = Boardcore::SX1278Fsk::RxBw::HZ_83300,
-        .afc_bw   = Boardcore::SX1278Fsk::RxBw::HZ_125000,
+        .rx_bw    = SX1278Fsk::Config::RxBw::HZ_83300,
+        .afc_bw   = SX1278Fsk::Config::RxBw::HZ_125000,
         .ocp      = 120,
         .power    = 17,
-        .shaping  = Boardcore::SX1278Fsk::Shaping::GAUSSIAN_BT_1_0,
-        .dc_free  = Boardcore::SX1278Fsk::DcFree::WHITENING};
+        .shaping  = SX1278Fsk::Config::Shaping::GAUSSIAN_BT_1_0,
+        .dc_free  = SX1278Fsk::Config::DcFree::WHITENING};
     SX1278Fsk::Error err;
 
     SPIBus bus(SX1278_SPI);

@@ -35,17 +35,6 @@ using namespace SX1278::Fsk;
 
 long long now() { return miosix::getTick() * 1000 / miosix::TICK_FREQ; }
 
-// Default values for registers
-constexpr uint8_t REG_OP_MODE_DEFAULT = RegOpMode::LONG_RANGE_MODE_FSK |
-                                        RegOpMode::MODULATION_TYPE_FSK |
-                                        RegOpMode::LOW_FREQUENCY_MODE_ON;
-
-constexpr uint8_t REG_SYNC_CONFIG_DEFAULT =
-    RegSyncConfig::AUTO_RESTART_RX_MODE_OFF |
-    RegSyncConfig::PREAMBLE_POLARITY_55 | RegSyncConfig::SYNC_ON;
-
-constexpr uint8_t REG_IMAGE_CAL_DEFAULT = RegImageCal::TEMP_THRESHOLD_10DEG;
-
 // Enable:
 // - PayloadReady, PacketSent on DIO0 (mode 00)
 // - FifoLevel on DIO1 (mode 00)
@@ -91,57 +80,135 @@ SX1278Fsk::Error SX1278Fsk::configure(const Config &config)
     if (!waitForIrqBusy(guard_mode, RegIrqFlags::MODE_READY, 1000))
         return Error::IRQ_TIMEOUT;
 
-    setBitrate(config.bitrate);
-    setFreqDev(config.freq_dev);
-    setFreqRF(config.freq_rf);
-
-    setRxBw(config.rx_bw);
-    setAfcBw(config.afc_bw);
-
-    setOcp(config.ocp);
-
-    uint8_t sync_word[2] = {0x12, 0xad};
-    setSyncWord(sync_word, 2);
-    setPreambleLen(2);
-    setShaping(config.shaping);
-
-    // Make sure the PA matches settings with the frontend
+    int bitrate              = config.bitrate;
+    int freq_dev             = config.freq_dev;
+    int freq_rf              = config.freq_rf;
+    RegRxBw::RxBw rx_bw      = static_cast<RegRxBw::RxBw>(config.rx_bw);
+    RegAfcBw::RxBwAfc afc_bw = static_cast<RegAfcBw::RxBwAfc>(config.afc_bw);
+    int ocp                  = config.ocp;
     int power     = std::min(config.power, getFrontend().maxInPower());
     bool pa_boost = getFrontend().isOnPaBoost();
-    setPa(power, pa_boost);
+    RegPaRamp::ModulationShaping shaping =
+        static_cast<RegPaRamp::ModulationShaping>(config.shaping);
+    RegPacketConfig1::DcFree dc_free =
+        static_cast<RegPacketConfig1::DcFree>(config.dc_free);
 
-    // Setup generic parameters
     {
         SPITransaction spi(getSpiSlave());
 
-        spi.writeRegister(REG_RX_CONFIG,
-                          RegRxConfig::AFC_AUTO_ON | RegRxConfig::AGC_AUTO_ON |
-                              RegRxConfig::RX_TRIGGER_PREAMBLE_DETECT |
-                              RegRxConfig::RX_TRIGGER_RSSI_INTERRUPT);
+        // Setup bitrate
+        uint16_t bitrate_val = FXOSC / bitrate;
+        spi.writeRegister16(REG_BITRATE_MSB, bitrate_val);
+
+        // Setup frequency deviation
+        uint16_t freq_dev_raw = freq_dev / FSTEP;
+        spi.writeRegister16(REG_FDEV_MSB, freq_dev_raw & 0x3fff);
+
+        // Setup base frequency
+        uint32_t freq_rf_raw = freq_rf / FSTEP;
+        spi.writeRegister24(REG_FRF_MSB, freq_rf_raw);
+
+        // Setup RX bandwidth
+        spi.writeRegister(REG_RX_BW, RegRxBw::make(rx_bw));
+
+        // Setup afc bandwidth
+        spi.writeRegister(REG_AFC_BW, RegAfcBw::make(afc_bw));
+
+        // Setup reg over-current protection
+        if (config.ocp == 0)
+        {
+            spi.writeRegister(REG_OCP, RegOcp::make(0, false));
+        }
+        else if (ocp <= 120)
+        {
+            spi.writeRegister(REG_OCP, RegOcp::make((ocp - 45) / 5, true));
+        }
+        else
+        {
+            spi.writeRegister(REG_OCP, RegOcp::make((ocp + 30) / 10, true));
+        }
+
+        // Setup sync word
+        spi.writeRegister(
+            REG_SYNC_CONFIG,
+            RegSyncConfig::make(2, true, RegSyncConfig::PREAMBLE_POLARITY_55,
+                                RegSyncConfig::AUTO_RESTART_RX_MODE_OFF));
+        spi.writeRegister(REG_SYNC_VALUE_1, 0x12);
+        spi.writeRegister(REG_SYNC_VALUE_2, 0xad);
+
+        // Setup shaping
+        spi.writeRegister(REG_PA_RAMP,
+                          RegPaRamp::make(RegPaRamp::PA_RAMP_US_40, shaping));
+
+        // Setup power amplifier
+        // [2, 17] or 20 if PA_BOOST
+        // [0, 15] if !PA_BOOST
+        const int MAX_POWER = 0b111;
+        if (!pa_boost)
+        {
+            // Don't use power amplifier boost
+            spi.writeRegister(REG_PA_CONFIG,
+                              RegPaConfig::make(power, MAX_POWER, false));
+            spi.writeRegister(REG_PA_DAC,
+                              RegPaDac::make(RegPaDac::PA_DAC_DEFAULT_VALUE));
+        }
+        else if (power != 20)
+        {
+            // Run power amplifier boost but not at full power
+            spi.writeRegister(REG_PA_CONFIG,
+                              RegPaConfig::make(power - 2, MAX_POWER, true));
+            spi.writeRegister(REG_PA_DAC,
+                              RegPaDac::make(RegPaDac::PA_DAC_PA_BOOST));
+        }
+        else
+        {
+            // Run power amplifier boost at full power
+            spi.writeRegister(REG_PA_CONFIG,
+                              RegPaConfig::make(0b1111, MAX_POWER, true));
+            spi.writeRegister(REG_PA_DAC,
+                              RegPaDac::make(RegPaDac::PA_DAC_PA_BOOST));
+        }
+
+        // Setup other registers
+        spi.writeRegister16(REG_PREAMBLE_MSB, 2);
+
+        spi.writeRegister(
+            REG_RX_CONFIG,
+            RegRxConfig::make(true, true, true, true, false, false, false));
+
         spi.writeRegister(REG_RSSI_THRESH, 0xff);
+
         spi.writeRegister(
             REG_PREAMBLE_DETECT,
-            RegPreambleDetector::PREAMBLE_DETECTOR_ON |
-                RegPreambleDetector::PREAMBLE_DETECTOR_SIZE_2_BYTES | 0x0a);
+            RegPreambleDetector::make(
+                0x0a, RegPreambleDetector::PREAMBLE_DETECTOR_SIZE_2_BYTES,
+                true));
+
         spi.writeRegister(REG_RX_TIMEOUT_1, 0x00);
         spi.writeRegister(REG_RX_TIMEOUT_2, 0x00);
         spi.writeRegister(REG_RX_TIMEOUT_3, 0x00);
-        spi.writeRegister(REG_PACKET_CONFIG_1,
-                          RegPacketConfig1::PACKET_FORMAT_VARIABLE_LENGTH |
-                              static_cast<uint8_t>(config.dc_free) |
-                              RegPacketConfig1::CRC_ON |
-                              RegPacketConfig1::ADDRESS_FILTERING_NONE |
-                              RegPacketConfig1::CRC_WHITENING_TYPE_CCITT_CRC);
-        spi.writeRegister(REG_PACKET_CONFIG_2,
-                          RegPacketConfig2::DATA_MODE_PACKET);
+
+        spi.writeRegister(
+            REG_PACKET_CONFIG_1,
+            RegPacketConfig1::make(
+                RegPacketConfig1::CRC_WHITENING_TYPE_CCITT_CRC,
+                RegPacketConfig1::ADDRESS_FILTERING_NONE, false, true, dc_free,
+                RegPacketConfig1::PACKET_FORMAT_VARIABLE_LENGTH));
+
+        spi.writeRegister(
+            REG_PACKET_CONFIG_2,
+            RegPacketConfig2::make(false, false, false,
+                                   RegPacketConfig2::DATA_MODE_PACKET));
+
         spi.writeRegister(
             REG_FIFO_THRESH,
-            RegFifoThresh::TX_START_CONDITION_FIFO_NOT_EMPTY | 0x0f);
+            RegFifoThresh::make(
+                0x0f, RegFifoThresh::TX_START_CONDITION_FIFO_NOT_EMPTY));
+
         spi.writeRegister(REG_NODE_ADRS, 0x00);
         spi.writeRegister(REG_BROADCAST_ADRS, 0x00);
     }
 
-    // imageCalibrate();
     return Error::NONE;
 }
 
@@ -228,16 +295,6 @@ void SX1278Fsk::rateLimitTx()
     }
 }
 
-void SX1278Fsk::imageCalibrate()
-{
-    SPITransaction spi(getSpiSlave());
-    spi.writeRegister(REG_IMAGE_CAL, REG_IMAGE_CAL_DEFAULT | (1 << 6));
-
-    // Wait for calibration complete by polling on running register
-    while (spi.readRegister(REG_IMAGE_CAL) & (1 << 5))
-        miosix::delayUs(10);
-}
-
 DioMask SX1278Fsk::getDioMaskFromIrqFlags(IrqFlags flags, Mode mode,
                                           DioMapping mapping)
 {
@@ -289,7 +346,6 @@ float SX1278Fsk::getRssi()
     SPITransaction spi(getSpiSlave());
 
     uint8_t rssi_raw = spi.readRegister(REG_RSSI_VALUE);
-
     return static_cast<float>(rssi_raw) * -0.5f;
 }
 
@@ -298,134 +354,21 @@ float SX1278Fsk::getFei()
     SPITransaction spi(getSpiSlave());
 
     uint16_t fei_raw = spi.readRegister16(REG_FEI_MSB);
-
     return static_cast<float>(fei_raw) * FSTEP;
 }
 
 void SX1278Fsk::setMode(Mode mode)
 {
     SPITransaction spi(getSpiSlave());
-    spi.writeRegister(REG_OP_MODE, REG_OP_MODE_DEFAULT | mode);
+    spi.writeRegister(REG_OP_MODE,
+                      RegOpMode::make(static_cast<RegOpMode::Mode>(mode), true,
+                                      RegOpMode::MODULATION_TYPE_FSK));
 }
 
 void SX1278Fsk::setMapping(SX1278::DioMapping mapping)
 {
     SPITransaction spi(getSpiSlave());
     spi.writeRegister16(REG_DIO_MAPPING_1, mapping.raw);
-}
-
-void SX1278Fsk::setBitrate(int bitrate)
-{
-    uint16_t val = FXOSC / bitrate;
-
-    // Update values
-    SPITransaction spi(getSpiSlave());
-    spi.writeRegister16(REG_BITRATE_MSB, val);
-}
-
-void SX1278Fsk::setFreqDev(int freq_dev)
-{
-    uint16_t val = freq_dev / FSTEP;
-    SPITransaction spi(getSpiSlave());
-    spi.writeRegister16(REG_FDEV_MSB, val & 0x3fff);
-}
-
-void SX1278Fsk::setFreqRF(int freq_rf)
-{
-    uint32_t val = freq_rf / FSTEP;
-
-    // Update values
-    SPITransaction spi(getSpiSlave());
-    spi.writeRegister24(REG_FRF_MSB, val);
-}
-
-void SX1278Fsk::setOcp(int ocp)
-{
-    SPITransaction spi(getSpiSlave());
-    if (ocp == 0)
-    {
-        spi.writeRegister(REG_OCP, 0);
-    }
-    else if (ocp <= 120)
-    {
-        uint8_t raw = (ocp - 45) / 5;
-        spi.writeRegister(REG_OCP, RegOcp::OCP_ON | raw);
-    }
-    else
-    {
-        uint8_t raw = (ocp + 30) / 10;
-        spi.writeRegister(REG_OCP, RegOcp::OCP_ON | raw);
-    }
-}
-
-void SX1278Fsk::setSyncWord(uint8_t value[], int size)
-{
-    SPITransaction spi(getSpiSlave());
-    spi.writeRegister(REG_SYNC_CONFIG, REG_SYNC_CONFIG_DEFAULT | size);
-
-    for (int i = 0; i < size; i++)
-    {
-        spi.writeRegister(REG_SYNC_VALUE_1 + i, value[i]);
-    }
-}
-
-void SX1278Fsk::setRxBw(RxBw rx_bw)
-{
-    SPITransaction spi(getSpiSlave());
-    spi.writeRegister(REG_RX_BW, static_cast<uint8_t>(rx_bw));
-}
-
-void SX1278Fsk::setAfcBw(RxBw afc_bw)
-{
-    SPITransaction spi(getSpiSlave());
-    spi.writeRegister(REG_AFC_BW, static_cast<uint8_t>(afc_bw));
-}
-
-void SX1278Fsk::setPreambleLen(int len)
-{
-    SPITransaction spi(getSpiSlave());
-    spi.writeRegister16(REG_PREAMBLE_MSB, len);
-}
-
-void SX1278Fsk::setPa(int power, bool pa_boost)
-{
-    // [2, 17] or 20 if PA_BOOST
-    // [0, 15] if !PA_BOOST
-
-    const uint8_t MAX_POWER = 0b111;
-
-    SPITransaction spi(getSpiSlave());
-
-    if (!pa_boost)
-    {
-        // Don't use power amplifier boost
-        power = power - MAX_POWER + 15;
-        spi.writeRegister(REG_PA_CONFIG, MAX_POWER << 4 | power);
-        spi.writeRegister(REG_PA_DAC,
-                          RegPaDac::PA_DAC_DEFAULT_VALUE | 0x10 << 3);
-    }
-    else if (power != 20)
-    {
-        // Run power amplifier boost but not at full power
-        power = power - 2;
-        spi.writeRegister(REG_PA_CONFIG, MAX_POWER << 4 | power |
-                                             RegPaConfig::PA_SELECT_BOOST);
-        spi.writeRegister(REG_PA_DAC, RegPaDac::PA_DAC_PA_BOOST | 0x10 << 3);
-    }
-    else
-    {
-        // Run power amplifier boost at full power
-        power = 15;
-        spi.writeRegister(REG_PA_CONFIG, MAX_POWER << 4 | power |
-                                             RegPaConfig::PA_SELECT_BOOST);
-        spi.writeRegister(REG_PA_DAC, RegPaDac::PA_DAC_PA_BOOST | 0x10 << 3);
-    }
-}
-
-void SX1278Fsk::setShaping(Shaping shaping)
-{
-    SPITransaction spi(getSpiSlave());
-    spi.writeRegister(REG_PA_RAMP, static_cast<uint8_t>(shaping) | 0x09);
 }
 
 }  // namespace Boardcore
