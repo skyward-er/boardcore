@@ -194,9 +194,6 @@ public:
 private:
     void rateLimitTx();
 
-    SX1278::DioMask getDioMaskFromIrqFlags(IrqFlags flags, Mode mode,
-                                           SX1278::DioMapping mapping) override;
-
     IrqFlags getIrqFlags() override;
     void resetIrqFlags(IrqFlags flags) override;
 

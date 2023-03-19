@@ -56,32 +56,22 @@ using mosi = interfaces::spi4::mosi;
 #error "Target not supported"
 #endif
 
-volatile int dio0_cnt = 0;
-volatile int dio1_cnt = 0;
-volatile int dio3_cnt = 0;
-
 void __attribute__((used)) SX1278_IRQ_DIO0()
 {
     if (sx1278)
-        sx1278->handleDioIRQ(SX1278Fsk::Dio::DIO0);
-
-    dio0_cnt++;
+        sx1278->handleDioIRQ();
 }
 
 void __attribute__((used)) SX1278_IRQ_DIO1()
 {
     if (sx1278)
-        sx1278->handleDioIRQ(SX1278Fsk::Dio::DIO1);
-
-    dio1_cnt++;
+        sx1278->handleDioIRQ();
 }
 
 void __attribute__((used)) SX1278_IRQ_DIO3()
 {
     if (sx1278)
-        sx1278->handleDioIRQ(SX1278Fsk::Dio::DIO3);
-
-    dio3_cnt++;
+        sx1278->handleDioIRQ();
 }
 
 void initBoard()
@@ -146,14 +136,11 @@ int main()
             "Corrupted packets: %d\n"
             "Packet loss:       %.2f %%\n"
             "RSSI:              %.2f dBm\n"
-            "FEI:               %.2f dBm\n"
-            "dio0:              %d\n"
-            "dio1:              %d\n"
-            "dio3:              %d\n",
+            "FEI:               %.2f dBm\n",
             static_cast<float>(stats.txBitrate()) / 1000.0f, stats.sent_count,
             static_cast<float>(stats.rxBitrate()) / 1000.0f, stats.recv_count,
             stats.corrupted_count, 0.0f /* TODO: Packet loss */, stats.rssi,
-            stats.fei, dio0_cnt, dio1_cnt, dio3_cnt);
+            stats.fei);
 
         miosix::Thread::sleep(2000);
     }

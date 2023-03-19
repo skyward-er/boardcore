@@ -36,25 +36,6 @@ namespace Boardcore
 namespace SX1278
 {
 
-/**
- * @brief Represents a set of Dio
- */
-class DioMask
-{
-public:
-    DioMask() : mask(0) {}
-
-    bool test(Dio dio) const
-    {
-        return (mask & (1 << static_cast<int>(dio))) != 0;
-    }
-    void set(Dio dio) { mask |= (1 << static_cast<int>(dio)); }
-    void reset(Dio dio) { mask &= ~(1 << static_cast<int>(dio)); }
-
-private:
-    uint8_t mask;
-};
-
 using DioMapping = RegDioMapping::Mapping;
 
 /**
@@ -75,9 +56,6 @@ protected:
 
     virtual IrqFlags getIrqFlags()             = 0;
     virtual void resetIrqFlags(IrqFlags flags) = 0;
-
-    virtual DioMask getDioMaskFromIrqFlags(IrqFlags flags, Mode mode,
-                                           DioMapping mapping) = 0;
 };
 
 /**
@@ -113,8 +91,6 @@ private:
         DioMapping mapping = DioMapping();
         // Thread waiting listening for interrupts
         miosix::Thread *irq_wait_thread = nullptr;
-        // What DIOs are we waiting on
-        DioMask waiting_dio_mask = DioMask();
         // True if the RX frontend is enabled
         bool is_rx_frontend_on = false;
         // True if the TX frontend is enabled
@@ -122,12 +98,11 @@ private:
     };
 
 public:
-    using Dio = SX1278::Dio;
 
     /**
      * @brief Handle generic DIO irq.
      */
-    void handleDioIRQ(Dio dio);
+    void handleDioIRQ();
 
 protected:
     explicit SX1278Common(SPIBus &bus, miosix::GpioPin cs,
