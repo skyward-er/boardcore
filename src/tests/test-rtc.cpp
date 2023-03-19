@@ -27,9 +27,6 @@
 
 using namespace miosix;
 
-GpioPin mco1(GPIOA_BASE, 8);
-GpioPin mco2(GPIOC_BASE, 9);
-
 typedef struct RTC_Date
 {
     int day;
@@ -45,19 +42,6 @@ typedef struct RTC_Time
 
 int main()
 {
-    // RCC->AHB1ENR |= RCC_AHB1ENR_GPIOAEN;
-    // RCC_SYNC();
-
-    // mco1.alternateFunction(0);
-    // mco1.speed(Speed::_100MHz);
-    // mco2.alternateFunction(0);
-    // mco2.speed(Speed::_100MHz);
-    // // mco1.mode(Mode::OUTPUT);
-    // // mco1.high();
-
-    // RCC->CFGR |= RCC_CFGR_MCO1;
-    // RCC->CFGR |= RCC_CFGR_MCO2_1;
-
     for (int i = 5; i > 0; i--)
     {
         printf("Waiting... %d seconds left\n", i);
@@ -102,27 +86,30 @@ int main()
     // The RTC prescalers are configured by default for a 32.768KHz clock
     // f_CK_APRE = f_RTCCLK  / (PREDIV_A + 1) = f_RTCCLK / (127 + 1)
     // f_CK_SPRE = f_CK_APRE / (PREDIV_B + 1) = f_RTCCLK / (255 + 1)
-    RTC->PRER |= 0x7f7fff;
+
+    uint32_t ht, hu, mt, mu, st, su, yt, yu, wd, dt, du;
 
     // Configure the time
-    uint32_t ht = 17 / 10;
-    uint32_t hu = 17 % 10;
-    uint32_t mt = 15 / 10;
-    uint32_t mu = 15 % 10;
-    uint32_t st = 30 / 10;
-    uint32_t su = 30 % 10;
-    RTC->TR     = ht << 20 | hu << 16 | mt << 12 | mu << 8 | st << 4 | su << 0;
+    ht      = 17 / 10;
+    hu      = 17 % 10;
+    mt      = 15 / 10;
+    mu      = 15 % 10;
+    st      = 30 / 10;
+    su      = 30 % 10;
+    RTC->TR = ht << RTC_TR_HT_Pos | hu << RTC_TR_HU_Pos | mt << RTC_TR_MNT_Pos |
+              mu << RTC_TR_MNU_Pos | st << RTC_TR_ST_Pos | su << RTC_TR_SU_Pos;
 
     // Configure the date
-    uint32_t yt = 23 / 10;
-    uint32_t yu = 23 % 10;
-    uint32_t wd = 1;
-    mt          = 3 / 10;
-    mu          = 3 % 10;
-    uint32_t dt = 27 / 10;
-    uint32_t du = 27 % 10;
-    RTC->DR =
-        yt << 20 | yu << 16 | wd << 13 | mt << 12 | mu << 8 | dt << 4 | du << 0;
+    yt      = 23 / 10;
+    yu      = 23 % 10;
+    wd      = 1;
+    mt      = 3 / 10;
+    mu      = 3 % 10;
+    dt      = 27 / 10;
+    du      = 27 % 10;
+    RTC->DR = yt << RTC_DR_YT_Pos | yu << RTC_DR_YU_Pos | wd << RTC_DR_WDU_Pos |
+              mt << RTC_DR_MT_Pos | mu << RTC_DR_MU_Pos | dt << RTC_DR_DT_Pos |
+              du << RTC_DR_DU_Pos;
 
     // Exit RTC initialization mode
     RTC->ISR &= ~RTC_ISR_INIT;
@@ -151,24 +138,18 @@ int main()
         int second_units = (rtc_tr & RTC_TR_SU_Msk) >> RTC_TR_SU_Pos;
         time.seconds     = (second_tens * 10) + second_units;
 
-        int day_tens   = (rtc_dr & RTC_DR_DT_Msk) >> RTC_DR_DT_Pos;
-        int day_units  = (rtc_dr & RTC_DR_DU_Msk) >> RTC_DR_DU_Pos;
-        date.day       = (day_tens * 10) + day_units;
-        int month_tens = (rtc_dr & RTC_DR_MT_Msk) >> RTC_DR_MT_Pos;
-        int month_unit = (rtc_dr & RTC_DR_MU_Msk) >> RTC_DR_MU_Pos;
-        date.month     = (month_tens * 10) + month_unit;
         int year_tens  = (rtc_dr & RTC_DR_YT_Msk) >> RTC_DR_YT_Pos;
         int year_unit  = (rtc_dr & RTC_DR_YU_Msk) >> RTC_DR_YU_Pos;
         date.year      = (year_tens * 10) + year_unit + 2000;
+        int month_tens = (rtc_dr & RTC_DR_MT_Msk) >> RTC_DR_MT_Pos;
+        int month_unit = (rtc_dr & RTC_DR_MU_Msk) >> RTC_DR_MU_Pos;
+        date.month     = (month_tens * 10) + month_unit;
+        int day_tens   = (rtc_dr & RTC_DR_DT_Msk) >> RTC_DR_DT_Pos;
+        int day_units  = (rtc_dr & RTC_DR_DU_Msk) >> RTC_DR_DU_Pos;
+        date.day       = (day_tens * 10) + day_units;
 
         printf("%04d/%02d/%02d %02d:%02d:%02d\n", date.year, date.month,
                date.day, time.hour, time.minutes, time.seconds);
         Thread::sleep(1000);
     }
-
-    // while (true)
-    // {
-    //     printf("I'm alive!\n");
-    //     Thread::sleep(1000);
-    // }
 }
