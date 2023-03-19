@@ -24,7 +24,7 @@
 #include <filesystem/console/console_device.h>
 
 // SX1278 includes
-#include <radio/SX1278/Ebyte.h>
+#include <radio/SX1278/SX1278Frontends.h>
 #include <radio/SX1278/SX1278Fsk.h>
 #include <radio/SX1278/SX1278Lora.h>
 
@@ -170,20 +170,22 @@ int main()
     SPIBus bus(SX1278_SPI);
     GpioPin cs = cs::getPin();
 
-    SPISlave spi(bus, cs, spi_config);
+#ifdef IS_EBYTE
+    std::unique_ptr<SX1278::ISX1278Frontend> frontend(
+        new EbyteFrontend(txen::getPin(), rxen::getPin()));
+#else
+    std::unique_ptr<SX1278::ISX1278Frontend> frontend(new RA01Frontend());
+#endif
 
 #ifdef SX1278_IS_LORA
     // Run default configuration
     SX1278Lora::Config config;
     SX1278Lora::Error err;
 
-#ifdef SX1278_IS_EBYTE
-    sx1278 = new EbyteLora(spi, txen::getPin(), rxen::getPin());
-#else
-    sx1278 = new SX1278Lora(spi);
-#endif
+    sx1278 =
+        new SX1278Lora(bus, cs, SPI::ClockDivider::DIV_64, std::move(frontend));
 
-    printf("\n[sx1278] Configuring sx1278...\n");
+    printf("\n[sx1278] Configuring sx1278 lora...\n");
     if ((err = sx1278->init(config)) != SX1278Lora::Error::NONE)
     {
         printf("[sx1278] sx1278->init error\n");
@@ -196,16 +198,13 @@ int main()
     SX1278Fsk::Config config;
     SX1278Fsk::Error err;
 
-#ifdef SX1278_IS_EBYTE
-    sx1278 = new EbyteFsk(spi, txen::getPin(), rxen::getPin());
-#else
-    sx1278 = new SX1278Fsk(spi);
-#endif
+    sx1278 =
+        new SX1278Fsk(bus, cs, SPI::ClockDivider::DIV_64, std::move(frontend));
 
-    printf("\n[sx1278] Configuring sx1278...\n");
+    printf("\n[sx1278] Configuring sx1278 fsk...\n");
     if ((err = sx1278->init(config)) != SX1278Fsk::Error::NONE)
     {
-                         // FIXME: Why does clang-format put this line up here?
+        // FIXME: Why does clang-format put this line up here?
         printf("[sx1278] sx1278->init error\n");
         return -1;
     }

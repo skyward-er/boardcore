@@ -71,7 +71,7 @@ SX1278Fsk::Error SX1278Fsk::init(const Config &config)
 bool SX1278Fsk::checkVersion()
 {
     Lock guard(*this);
-    SPITransaction spi(slave);
+    SPITransaction spi(getSpiSlave());
 
     return spi.readRegister(REG_VERSION) == 0x12;
 }
@@ -103,12 +103,16 @@ SX1278Fsk::Error SX1278Fsk::configure(const Config &config)
     uint8_t sync_word[2] = {0x12, 0xad};
     setSyncWord(sync_word, 2);
     setPreambleLen(2);
-    setPa(config.power, config.pa_boost);
     setShaping(config.shaping);
+
+    // Make sure the PA matches settings with the frontend
+    int power     = std::min(config.power, getFrontend().maxInPower());
+    bool pa_boost = getFrontend().isOnPaBoost();
+    setPa(power, pa_boost);
 
     // Setup generic parameters
     {
-        SPITransaction spi(slave);
+        SPITransaction spi(getSpiSlave());
 
         spi.writeRegister(REG_RX_CONFIG,
                           RegRxConfig::AFC_AUTO_ON | RegRxConfig::AGC_AUTO_ON |
@@ -155,7 +159,7 @@ ssize_t SX1278Fsk::receive(uint8_t *pkt, size_t max_len)
         last_rx_rssi = getRssi();
 
         {
-            SPITransaction spi(slave);
+            SPITransaction spi(getSpiSlave());
             len = spi.readRegister(REG_FIFO);
             if (len > max_len)
                 return -1;
@@ -186,7 +190,7 @@ bool SX1278Fsk::send(uint8_t *pkt, size_t len)
     waitForIrq(guard_mode, RegIrqFlags::TX_READY);
 
     {
-        SPITransaction spi(slave);
+        SPITransaction spi(getSpiSlave());
 
         spi.writeRegister(REG_FIFO, static_cast<uint8_t>(len));
         spi.writeRegisters(REG_FIFO, pkt, len);
@@ -226,7 +230,7 @@ void SX1278Fsk::rateLimitTx()
 
 void SX1278Fsk::imageCalibrate()
 {
-    SPITransaction spi(slave);
+    SPITransaction spi(getSpiSlave());
     spi.writeRegister(REG_IMAGE_CAL, REG_IMAGE_CAL_DEFAULT | (1 << 6));
 
     // Wait for calibration complete by polling on running register
@@ -262,7 +266,7 @@ DioMask SX1278Fsk::getDioMaskFromIrqFlags(IrqFlags flags, Mode mode,
 
 ISX1278::IrqFlags SX1278Fsk::getIrqFlags()
 {
-    SPITransaction spi(slave);
+    SPITransaction spi(getSpiSlave());
     return spi.readRegister16(REG_IRQ_FLAGS_1);
 }
 
@@ -275,14 +279,14 @@ void SX1278Fsk::resetIrqFlags(IrqFlags flags)
 
     if (flags != 0)
     {
-        SPITransaction spi(slave);
+        SPITransaction spi(getSpiSlave());
         spi.writeRegister16(REG_IRQ_FLAGS_1, flags);
     }
 }
 
 float SX1278Fsk::getRssi()
 {
-    SPITransaction spi(slave);
+    SPITransaction spi(getSpiSlave());
 
     uint8_t rssi_raw = spi.readRegister(REG_RSSI_VALUE);
 
@@ -291,7 +295,7 @@ float SX1278Fsk::getRssi()
 
 float SX1278Fsk::getFei()
 {
-    SPITransaction spi(slave);
+    SPITransaction spi(getSpiSlave());
 
     uint16_t fei_raw = spi.readRegister16(REG_FEI_MSB);
 
@@ -300,13 +304,13 @@ float SX1278Fsk::getFei()
 
 void SX1278Fsk::setMode(Mode mode)
 {
-    SPITransaction spi(slave);
+    SPITransaction spi(getSpiSlave());
     spi.writeRegister(REG_OP_MODE, REG_OP_MODE_DEFAULT | mode);
 }
 
 void SX1278Fsk::setMapping(SX1278::DioMapping mapping)
 {
-    SPITransaction spi(slave);
+    SPITransaction spi(getSpiSlave());
     spi.writeRegister16(REG_DIO_MAPPING_1, mapping.raw);
 }
 
@@ -315,14 +319,14 @@ void SX1278Fsk::setBitrate(int bitrate)
     uint16_t val = FXOSC / bitrate;
 
     // Update values
-    SPITransaction spi(slave);
+    SPITransaction spi(getSpiSlave());
     spi.writeRegister16(REG_BITRATE_MSB, val);
 }
 
 void SX1278Fsk::setFreqDev(int freq_dev)
 {
     uint16_t val = freq_dev / FSTEP;
-    SPITransaction spi(slave);
+    SPITransaction spi(getSpiSlave());
     spi.writeRegister16(REG_FDEV_MSB, val & 0x3fff);
 }
 
@@ -331,13 +335,13 @@ void SX1278Fsk::setFreqRF(int freq_rf)
     uint32_t val = freq_rf / FSTEP;
 
     // Update values
-    SPITransaction spi(slave);
+    SPITransaction spi(getSpiSlave());
     spi.writeRegister24(REG_FRF_MSB, val);
 }
 
 void SX1278Fsk::setOcp(int ocp)
 {
-    SPITransaction spi(slave);
+    SPITransaction spi(getSpiSlave());
     if (ocp == 0)
     {
         spi.writeRegister(REG_OCP, 0);
@@ -356,7 +360,7 @@ void SX1278Fsk::setOcp(int ocp)
 
 void SX1278Fsk::setSyncWord(uint8_t value[], int size)
 {
-    SPITransaction spi(slave);
+    SPITransaction spi(getSpiSlave());
     spi.writeRegister(REG_SYNC_CONFIG, REG_SYNC_CONFIG_DEFAULT | size);
 
     for (int i = 0; i < size; i++)
@@ -367,19 +371,19 @@ void SX1278Fsk::setSyncWord(uint8_t value[], int size)
 
 void SX1278Fsk::setRxBw(RxBw rx_bw)
 {
-    SPITransaction spi(slave);
+    SPITransaction spi(getSpiSlave());
     spi.writeRegister(REG_RX_BW, static_cast<uint8_t>(rx_bw));
 }
 
 void SX1278Fsk::setAfcBw(RxBw afc_bw)
 {
-    SPITransaction spi(slave);
+    SPITransaction spi(getSpiSlave());
     spi.writeRegister(REG_AFC_BW, static_cast<uint8_t>(afc_bw));
 }
 
 void SX1278Fsk::setPreambleLen(int len)
 {
-    SPITransaction spi(slave);
+    SPITransaction spi(getSpiSlave());
     spi.writeRegister16(REG_PREAMBLE_MSB, len);
 }
 
@@ -390,7 +394,7 @@ void SX1278Fsk::setPa(int power, bool pa_boost)
 
     const uint8_t MAX_POWER = 0b111;
 
-    SPITransaction spi(slave);
+    SPITransaction spi(getSpiSlave());
 
     if (!pa_boost)
     {
@@ -408,20 +412,19 @@ void SX1278Fsk::setPa(int power, bool pa_boost)
                                              RegPaConfig::PA_SELECT_BOOST);
         spi.writeRegister(REG_PA_DAC, RegPaDac::PA_DAC_PA_BOOST | 0x10 << 3);
     }
-    // RA01 modules aren't capable of this, disable it to avoid damaging them
-    // else
-    // {
-    //     // Run power amplifier boost at full power
-    //     power = 15;
-    //     spi.writeRegister(REG_PA_CONFIG, MAX_POWER << 4 | power |
-    //                                          RegPaConfig::PA_SELECT_BOOST);
-    //     spi.writeRegister(REG_PA_DAC, RegPaDac::PA_DAC_PA_BOOST | 0x10 << 3);
-    // }
+    else
+    {
+        // Run power amplifier boost at full power
+        power = 15;
+        spi.writeRegister(REG_PA_CONFIG, MAX_POWER << 4 | power |
+                                             RegPaConfig::PA_SELECT_BOOST);
+        spi.writeRegister(REG_PA_DAC, RegPaDac::PA_DAC_PA_BOOST | 0x10 << 3);
+    }
 }
 
 void SX1278Fsk::setShaping(Shaping shaping)
 {
-    SPITransaction spi(slave);
+    SPITransaction spi(getSpiSlave());
     spi.writeRegister(REG_PA_RAMP, static_cast<uint8_t>(shaping) | 0x09);
 }
 

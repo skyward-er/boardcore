@@ -149,6 +149,10 @@ bool SX1278Common::checkForIrqAndReset(IrqFlags irq)
     }
 }
 
+ISX1278Frontend &SX1278Common::getFrontend() { return *frontend; }
+
+SPISlave &SX1278Common::getSpiSlave() { return slave; }
+
 SX1278Common::DeviceState SX1278Common::lockMode(Mode mode, DioMapping mapping,
                                                  bool tx_frontend,
                                                  bool rx_frontend)
@@ -185,23 +189,23 @@ void SX1278Common::enterMode(Mode mode, DioMapping mapping,
     // First disable all of the frontend if necessary
     if (set_tx_frontend_on != state.is_tx_frontend_on && !set_tx_frontend_on)
     {
-        disableTxFrontend();
+        getFrontend().disableTx();
     }
 
     if (set_rx_frontend_on != state.is_rx_frontend_on && !set_rx_frontend_on)
     {
-        disableRxFrontend();
+        getFrontend().disableRx();
     }
 
     // Then enable the newly requested ones
     if (set_tx_frontend_on != state.is_tx_frontend_on && set_tx_frontend_on)
     {
-        enableTxFrontend();
+        getFrontend().enableTx();
     }
 
     if (set_rx_frontend_on != state.is_rx_frontend_on && set_rx_frontend_on)
     {
-        enableRxFrontend();
+        getFrontend().enableRx();
     }
 
     state.is_tx_frontend_on = set_tx_frontend_on;
