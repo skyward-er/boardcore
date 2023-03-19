@@ -132,8 +132,9 @@ public:
 protected:
     explicit SX1278Common(SPIBus &bus, miosix::GpioPin cs,
                           SPI::ClockDivider clock_divider,
-                          std::unique_ptr<ISX1278Frontend>)
-        : slave(SPISlave(bus, cs, getSpiBusConfig(clock_divider)))
+                          std::unique_ptr<ISX1278Frontend> frontend)
+        : slave(SPISlave(bus, cs, getSpiBusConfig(clock_divider))),
+          frontend(std::move(frontend))
     {
     }
 
@@ -217,8 +218,8 @@ private:
 
     miosix::FastMutex mutex;
     DeviceState state;
-    std::unique_ptr<ISX1278Frontend> frontend;
     SPISlave slave;
+    std::unique_ptr<ISX1278Frontend> frontend;
 };
 
 }  // namespace SX1278
