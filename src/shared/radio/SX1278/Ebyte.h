@@ -36,9 +36,10 @@ namespace Boardcore
 class EbyteFsk : public SX1278Fsk
 {
 public:
-    EbyteFsk(SPISlave slave, miosix::GpioPin tx_enable,
-             miosix::GpioPin rx_enable)
-        : SX1278Fsk(slave), tx_enable(tx_enable), rx_enable(rx_enable)
+    EbyteFsk(SPIBus &bus, miosix::GpioPin cs, SPI::ClockDivider clock_divider,
+             miosix::GpioPin tx_enable, miosix::GpioPin rx_enable)
+        : SX1278Fsk(bus, cs, clock_divider), tx_enable(tx_enable),
+          rx_enable(rx_enable)
     {
         // Make sure both the frontends are disabled!
         tx_enable.low();
@@ -63,9 +64,10 @@ private:
 class EbyteLora : public SX1278Lora
 {
 public:
-    EbyteLora(SPISlave slave, miosix::GpioPin tx_enable,
-              miosix::GpioPin rx_enable)
-        : SX1278Lora(slave), tx_enable(tx_enable), rx_enable(rx_enable)
+    EbyteLora(SPIBus &bus, miosix::GpioPin cs, SPI::ClockDivider clock_divider,
+              miosix::GpioPin tx_enable, miosix::GpioPin rx_enable)
+        : SX1278Lora(bus, cs, clock_divider), tx_enable(tx_enable),
+          rx_enable(rx_enable)
     {
         // Make sure both the frontends are disabled!
         tx_enable.low();

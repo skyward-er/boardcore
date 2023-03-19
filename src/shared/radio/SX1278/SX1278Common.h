@@ -111,7 +111,11 @@ public:
     void handleDioIRQ(Dio dio);
 
 protected:
-    explicit SX1278Common(SPISlave slave) : slave(slave) {}
+    explicit SX1278Common(SPIBus &bus, miosix::GpioPin cs,
+                          SPI::ClockDivider clock_divider)
+        : slave(SPISlave(bus, cs, getSpiBusConfig(clock_divider)))
+    {
+    }
 
     /**
      * @brief RAII scoped bus lock guard.

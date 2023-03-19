@@ -185,18 +185,11 @@ int main()
     SPIBus bus(SX1278_SPI);
     GpioPin cs = cs::getPin();
 
-    SPIBusConfig spi_config = {};
-    spi_config.clockDivider = SPI::ClockDivider::DIV_64;
-    spi_config.mode         = SPI::Mode::MODE_0;
-    spi_config.bitOrder     = SPI::Order::MSB_FIRST;
-    spi_config.byteOrder    = SPI::Order::MSB_FIRST;
-    spi_config.writeBit     = SPI::WriteBit::INVERTED;
-
 #ifdef IS_EBYTE
-    sx1278 = new EbyteLora(SPISlave(bus, cs, spi_config), txen::getPin(),
+    sx1278 = new EbyteLora(bus, cs, SPI::ClockDivider::DIV_64, txen::getPin(),
                            rxen::getPin());
 #else
-    sx1278 = new SX1278Lora(SPISlave(bus, cs, spi_config));
+    sx1278 = new SX1278Lora(bus, cs, SPI::ClockDivider::DIV_64);
 #endif
 
     printf("\n[sx1278] Configuring sx1278...\n");
