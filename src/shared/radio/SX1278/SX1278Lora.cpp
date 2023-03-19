@@ -360,34 +360,6 @@ void SX1278Lora::writeFifo(uint8_t addr, uint8_t *src, uint8_t size)
     spi.writeRegisters(REG_FIFO, src, size);
 }
 
-SX1278::DioMask SX1278Lora::getDioMaskFromIrqFlags(IrqFlags flags, Mode _mode,
-                                                   SX1278::DioMapping mapping)
-{
-    // In LoRa the mode doesn't matter for IRQs
-    (void)_mode;
-    DioMask dio_mask;
-
-    if (DIO_MAPPINGS[0][mapping.getMapping(Dio::DIO0)] & flags)
-        dio_mask.set(Dio::DIO0);
-
-    if (DIO_MAPPINGS[1][mapping.getMapping(Dio::DIO1)] & flags)
-        dio_mask.set(Dio::DIO1);
-
-    if (DIO_MAPPINGS[2][mapping.getMapping(Dio::DIO2)] & flags)
-        dio_mask.set(Dio::DIO2);
-
-    if (DIO_MAPPINGS[3][mapping.getMapping(Dio::DIO3)] & flags)
-        dio_mask.set(Dio::DIO3);
-
-    if (DIO_MAPPINGS[4][mapping.getMapping(Dio::DIO4)] & flags)
-        dio_mask.set(Dio::DIO4);
-
-    if (DIO_MAPPINGS[5][mapping.getMapping(Dio::DIO5)] & flags)
-        dio_mask.set(Dio::DIO5);
-
-    return dio_mask;
-}
-
 ISX1278::IrqFlags SX1278Lora::getIrqFlags()
 {
     SPITransaction spi(getSpiSlave());

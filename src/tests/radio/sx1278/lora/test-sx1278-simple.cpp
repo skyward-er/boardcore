@@ -62,19 +62,19 @@ SX1278Lora *sx1278 = nullptr;
 void __attribute__((used)) SX1278_IRQ_DIO0()
 {
     if (sx1278)
-        sx1278->handleDioIRQ(SX1278Lora::Dio::DIO0);
+        sx1278->handleDioIRQ();
 }
 
 void __attribute__((used)) SX1278_IRQ_DIO1()
 {
     if (sx1278)
-        sx1278->handleDioIRQ(SX1278Lora::Dio::DIO1);
+        sx1278->handleDioIRQ();
 }
 
 void __attribute__((used)) SX1278_IRQ_DIO3()
 {
     if (sx1278)
-        sx1278->handleDioIRQ(SX1278Lora::Dio::DIO3);
+        sx1278->handleDioIRQ();
 }
 
 void initBoard()

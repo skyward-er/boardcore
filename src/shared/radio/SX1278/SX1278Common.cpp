@@ -30,9 +30,9 @@ namespace Boardcore
 namespace SX1278
 {
 
-void SX1278Common::handleDioIRQ(Dio dio)
+void SX1278Common::handleDioIRQ()
 {
-    if (state.waiting_dio_mask.test(dio) && state.irq_wait_thread)
+    if (state.irq_wait_thread)
     {
         state.irq_wait_thread->IRQwakeup();
         if (state.irq_wait_thread->IRQgetPriority() >
@@ -59,16 +59,11 @@ void SX1278Common::waitForIrq(LockMode &_guard, IrqFlags irq, bool unlock)
     // otherwise don't do anything with it
     (void)_guard;
 
-    // Convert the IRQ mask into a DIO mask
-    DioMask waiting_dio_mask =
-        getDioMaskFromIrqFlags(irq, state.mode, state.mapping);
-
     do
     {
         // An interrupt could occur and read from this variables
         {
             miosix::FastInterruptDisableLock dLock;
-            state.waiting_dio_mask = waiting_dio_mask;
             state.irq_wait_thread  = miosix::Thread::IRQgetCurrentThread();
         }
 
@@ -162,7 +157,6 @@ SX1278Common::DeviceState SX1278Common::lockMode(Mode mode, DioMapping mapping,
 
     enterMode(mode, mapping, tx_frontend, rx_frontend);
     state.irq_wait_thread  = nullptr;
-    state.waiting_dio_mask = DioMask();
 
     return old_state;
 }
@@ -171,7 +165,6 @@ void SX1278Common::unlockMode(DeviceState old_state)
 {
     // Do this copy manually, we want stuff to be copied in a specific order
     state.irq_wait_thread  = old_state.irq_wait_thread;
-    state.waiting_dio_mask = old_state.waiting_dio_mask;
     enterMode(old_state.mode, old_state.mapping, old_state.is_tx_frontend_on,
               old_state.is_rx_frontend_on);
 }

@@ -191,9 +191,6 @@ private:
     void readFifo(uint8_t addr, uint8_t *dst, uint8_t size);
     void writeFifo(uint8_t addr, uint8_t *src, uint8_t size);
 
-    SX1278::DioMask getDioMaskFromIrqFlags(IrqFlags flags, Mode mode,
-                                           SX1278::DioMapping mapping) override;
-
     IrqFlags getIrqFlags() override;
     void resetIrqFlags(IrqFlags flags) override;
 

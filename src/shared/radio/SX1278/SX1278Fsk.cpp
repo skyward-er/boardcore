@@ -295,32 +295,6 @@ void SX1278Fsk::rateLimitTx()
     }
 }
 
-DioMask SX1278Fsk::getDioMaskFromIrqFlags(IrqFlags flags, Mode mode,
-                                          DioMapping mapping)
-{
-    DioMask dio_mask;
-
-    if (DIO_MAPPINGS[0][mode][mapping.getMapping(Dio::DIO0)] & flags)
-        dio_mask.set(Dio::DIO0);
-
-    if (DIO_MAPPINGS[1][mode][mapping.getMapping(Dio::DIO1)] & flags)
-        dio_mask.set(Dio::DIO1);
-
-    if (DIO_MAPPINGS[2][mode][mapping.getMapping(Dio::DIO2)] & flags)
-        dio_mask.set(Dio::DIO2);
-
-    if (DIO_MAPPINGS[3][mode][mapping.getMapping(Dio::DIO3)] & flags)
-        dio_mask.set(Dio::DIO3);
-
-    if (DIO_MAPPINGS[4][mode][mapping.getMapping(Dio::DIO4)] & flags)
-        dio_mask.set(Dio::DIO4);
-
-    if (DIO_MAPPINGS[5][mode][mapping.getMapping(Dio::DIO5)] & flags)
-        dio_mask.set(Dio::DIO5);
-
-    return dio_mask;
-}
-
 ISX1278::IrqFlags SX1278Fsk::getIrqFlags()
 {
     SPITransaction spi(getSpiSlave());

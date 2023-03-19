@@ -23,6 +23,7 @@
 #pragma once
 
 #include <drivers/spi/SPIBusInterface.h>
+
 #include <cstdint>
 
 namespace Boardcore
@@ -169,7 +170,7 @@ inline constexpr uint8_t make(uint8_t output_power, uint8_t max_power,
            (pa_select ? 1 << 7 : 0);
 }
 
-}
+}  // namespace RegPaConfig
 
 namespace RegPaRamp
 {
@@ -207,7 +208,7 @@ inline constexpr uint8_t make(PaRamp pa_ramp,
     return pa_ramp | (modulation_shaping << 5);
 }
 
-}
+}  // namespace RegPaRamp
 
 namespace RegOcp
 {
@@ -217,7 +218,7 @@ inline constexpr uint8_t make(uint8_t ocp_trim, bool ocp_on)
     return (ocp_trim & 0b11111) | (ocp_on ? 1 << 5 : 0);
 }
 
-}
+}  // namespace RegOcp
 
 namespace RegRxConfig
 {
@@ -268,7 +269,7 @@ enum RxBw
 
 inline constexpr uint8_t make(RxBw rx_bw) { return rx_bw; }
 
-}
+}  // namespace RegRxBw
 
 namespace RegAfcBw
 {
@@ -277,7 +278,7 @@ using RxBwAfc = Boardcore::SX1278::Fsk::RegRxBw::RxBw;
 
 inline constexpr uint8_t make(RxBwAfc rx_bw_afc) { return rx_bw_afc; }
 
-}
+}  // namespace RegAfcBw
 
 namespace RegPreambleDetector
 {
@@ -392,7 +393,7 @@ inline constexpr uint8_t make(int fifo_threshold,
     return (fifo_threshold & 0b111111) | (tx_start_condition << 7);
 }
 
-}
+}  // namespace RegFifoThresh
 
 namespace RegIrqFlags
 {
@@ -429,7 +430,7 @@ enum PaDac
 
 inline constexpr uint8_t make(PaDac pa_dac) { return pa_dac | (0x10 << 3); }
 
-}
+}  // namespace RegPaDac
 
 enum Registers
 {
@@ -532,134 +533,6 @@ enum Registers
     REG_AGC_PILL     = 0x70,
 };
 
-static constexpr int DIO_MAPPINGS[6][8][4] =
-    {[0] =
-         {
-             [RegOpMode::MODE_SLEEP] = {0, 0, 0, 0},
-             [RegOpMode::MODE_STDBY] = {0, 0, 0, RegIrqFlags::LOW_BAT},
-             [RegOpMode::MODE_FSTX]  = {0, 0, 0, RegIrqFlags::LOW_BAT},
-             [RegOpMode::MODE_TX]    = {RegIrqFlags::PACKET_SENT, 0, 0,
-                                     RegIrqFlags::LOW_BAT},
-             [RegOpMode::MODE_FSRX]  = {0, 0, 0, RegIrqFlags::LOW_BAT},
-             [RegOpMode::MODE_RX] =
-                 {RegIrqFlags::PAYLOAD_READY, RegIrqFlags::CRC_OK, 0,
-                  RegIrqFlags::LOW_BAT},
-         },
-     [1] =
-         {
-             [RegOpMode::MODE_SLEEP] = {RegIrqFlags::FIFO_LEVEL,
-                                        RegIrqFlags::FIFO_EMPTY,
-                                        RegIrqFlags::FIFO_FULL, 0},
-             [RegOpMode::MODE_STDBY] = {RegIrqFlags::FIFO_LEVEL,
-                                        RegIrqFlags::FIFO_EMPTY,
-                                        RegIrqFlags::FIFO_FULL, 0},
-             [RegOpMode::MODE_FSTX] =
-                 {RegIrqFlags::FIFO_LEVEL, RegIrqFlags::FIFO_EMPTY,
-                  RegIrqFlags::FIFO_FULL, 0},
-             [RegOpMode::MODE_TX] = {RegIrqFlags::FIFO_LEVEL,
-                                     RegIrqFlags::FIFO_EMPTY,
-                                     RegIrqFlags::FIFO_FULL, 0},
-             [RegOpMode::MODE_FSRX] =
-                 {RegIrqFlags::FIFO_LEVEL, RegIrqFlags::FIFO_EMPTY,
-                  RegIrqFlags::FIFO_FULL, 0},
-             [RegOpMode::MODE_RX] = {RegIrqFlags::FIFO_LEVEL,
-                                     RegIrqFlags::FIFO_EMPTY,
-                                     RegIrqFlags::FIFO_FULL, 0},
-         },
-     [2] =
-         {
-             [RegOpMode::MODE_SLEEP] =
-                 {RegIrqFlags::FIFO_FULL, 0, RegIrqFlags::FIFO_FULL,
-                  RegIrqFlags::FIFO_FULL},
-             [RegOpMode::MODE_STDBY] =
-                 {RegIrqFlags::FIFO_FULL, 0, RegIrqFlags::FIFO_FULL,
-                  RegIrqFlags::FIFO_FULL},
-             [RegOpMode::MODE_FSTX] = {RegIrqFlags::FIFO_FULL, 0,
-                                       RegIrqFlags::FIFO_FULL,
-                                       RegIrqFlags::FIFO_FULL},
-             [RegOpMode::MODE_TX] =
-                 {RegIrqFlags::FIFO_FULL, 0, RegIrqFlags::FIFO_FULL,
-                  RegIrqFlags::FIFO_FULL},
-             [RegOpMode::MODE_FSRX] = {RegIrqFlags::FIFO_FULL, 0,
-                                       RegIrqFlags::FIFO_FULL,
-                                       RegIrqFlags::FIFO_FULL},
-             [RegOpMode::MODE_RX] =
-                 {RegIrqFlags::FIFO_FULL, RegIrqFlags::RX_READY,
-                  RegIrqFlags::TIMEOUT, RegIrqFlags::SYNC_ADDRESS_MATCH},
-         },
-     [3] =
-         {
-             [RegOpMode::MODE_SLEEP] =
-                 {
-                     RegIrqFlags::FIFO_EMPTY,
-                     0,
-                     RegIrqFlags::FIFO_EMPTY,
-                     RegIrqFlags::FIFO_EMPTY,
-                 },
-             [RegOpMode::MODE_STDBY] =
-                 {
-                     RegIrqFlags::FIFO_EMPTY,
-                     0,
-                     RegIrqFlags::FIFO_EMPTY,
-                     RegIrqFlags::FIFO_EMPTY,
-                 },
-             [RegOpMode::MODE_FSTX] =
-                 {
-                     RegIrqFlags::FIFO_EMPTY,
-                     0,
-                     RegIrqFlags::FIFO_EMPTY,
-                     RegIrqFlags::FIFO_EMPTY,
-                 },
-             [RegOpMode::MODE_TX] =
-                 {
-                     RegIrqFlags::FIFO_EMPTY,
-                     RegIrqFlags::TX_READY,
-                     RegIrqFlags::FIFO_EMPTY,
-                     RegIrqFlags::FIFO_EMPTY,
-                 },
-             [RegOpMode::MODE_FSRX] =
-                 {
-                     RegIrqFlags::FIFO_EMPTY,
-                     0,
-                     RegIrqFlags::FIFO_EMPTY,
-                     RegIrqFlags::FIFO_EMPTY,
-                 },
-             [RegOpMode::MODE_RX] =
-                 {
-                     RegIrqFlags::FIFO_EMPTY,
-                     0,
-                     RegIrqFlags::FIFO_EMPTY,
-                     RegIrqFlags::FIFO_EMPTY,
-                 },
-         },
-     [4] =
-         {
-             [RegOpMode::MODE_SLEEP] = {0, 0, 0, 0},
-             [RegOpMode::MODE_STDBY] = {RegIrqFlags::LOW_BAT, 0, 0, 0},
-             [RegOpMode::MODE_FSTX]  = {RegIrqFlags::LOW_BAT,
-                                       RegIrqFlags::PILL_LOCK, 0, 0},
-             [RegOpMode::MODE_TX]    = {RegIrqFlags::LOW_BAT,
-                                     RegIrqFlags::PILL_LOCK, 0, 0},
-             [RegOpMode::MODE_FSRX]  = {RegIrqFlags::LOW_BAT,
-                                       RegIrqFlags::PILL_LOCK, 0, 0},
-             [RegOpMode::MODE_RX] =
-                 {RegIrqFlags::LOW_BAT, RegIrqFlags::PILL_LOCK,
-                  RegIrqFlags::TIMEOUT,
-                  RegIrqFlags::RSSI | RegIrqFlags::PREAMBLE_DETECT},
-         },
-     [5] = {
-         [RegOpMode::MODE_SLEEP] = {0, 0, 0, 0},
-         [RegOpMode::MODE_STDBY] = {0, 0, 0, RegIrqFlags::MODE_READY},
-         [RegOpMode::MODE_FSTX]  = {0, RegIrqFlags::PILL_LOCK, 0,
-                                   RegIrqFlags::MODE_READY},
-
-         [RegOpMode::MODE_TX]   = {0, RegIrqFlags::PILL_LOCK, 0,
-                                 RegIrqFlags::MODE_READY},
-         [RegOpMode::MODE_FSRX] = {0, RegIrqFlags::PILL_LOCK, 0,
-                                   RegIrqFlags::MODE_READY},
-         [RegOpMode::MODE_RX]   = {0, RegIrqFlags::PILL_LOCK, 0,
-                                 RegIrqFlags::MODE_READY},
-     }};
 }  // namespace Fsk
 
 /**
@@ -921,18 +794,6 @@ enum Registers
     REG_AGC_THRESH_3 = 0x64,
     REG_AGC_PILL     = 0x70,
 };
-
-static constexpr int DIO_MAPPINGS[6][4] = {
-    [0] = {RegIrqFlags::RX_DONE, RegIrqFlags::TX_DONE, RegIrqFlags::CAD_DONE,
-           0},
-    [1] = {RegIrqFlags::RX_TIMEOUT, RegIrqFlags::FHSS_CHANGE_CHANNEL,
-           RegIrqFlags::CAD_DETECTED, 0},
-    [2] = {RegIrqFlags::FHSS_CHANGE_CHANNEL, RegIrqFlags::FHSS_CHANGE_CHANNEL,
-           RegIrqFlags::FHSS_CHANGE_CHANNEL, 0},
-    [3] = {RegIrqFlags::CAD_DONE, RegIrqFlags::VALID_HEADER,
-           RegIrqFlags::PAYLOAD_CRC_ERROR, 0},
-    [4] = {RegIrqFlags::CAD_DETECTED, 0, 0, 0},
-    [5] = {0, 0, 0, 0}};
 
 }  // namespace Lora
 
