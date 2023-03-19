@@ -204,7 +204,7 @@ int main()
     printf("\n[sx1278] Configuring sx1278 fsk...\n");
     if ((err = sx1278->init(config)) != SX1278Fsk::Error::NONE)
     {
-        // FIXME: Why does clang-format put this line up here?
+                         // FIXME: Why does clang-format put this line up here?
         printf("[sx1278] sx1278->init error\n");
         return -1;
     }
