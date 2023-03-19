@@ -197,10 +197,7 @@ add_executable(test-general-purpose-timer src/tests/drivers/timer/test-general-p
 sbs_target(test-general-purpose-timer stm32f429zi_stm32f4discovery)
 
 add_executable(test-internal-adc src/tests/drivers/test-internal-adc.cpp)
-sbs_target(test-internal-adc stm32f407vg_stm32f4discovery)
-
-add_executable(test-internal-adc-dma src/tests/drivers/test-internal-adc-dma.cpp)
-sbs_target(test-internal-adc-dma stm32f429zi_stm32f4discovery)
+sbs_target(test-internal-adc stm32f767zi_compute_unit)
 
 add_executable(test-mavlink src/tests/drivers/test-mavlink.cpp)
 sbs_target(test-mavlink stm32f407vg_stm32f4discovery)
@@ -252,9 +249,6 @@ sbs_target(test-i2c-driver-f7 stm32f767zi_nucleo)
 
 add_executable(test-i2c-f7 src/tests/drivers/i2c/test-i2c.cpp)
 sbs_target(test-i2c-f7 stm32f767zi_nucleo)
-
-add_executable(test-internal-temp src/tests/drivers/test-internal-temp.cpp)
-sbs_target(test-internal-temp stm32f407vg_stm32f4discovery)
 
 #-----------------------------------------------------------------------------#
 #                               Tests - Events                                #

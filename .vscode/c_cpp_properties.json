@@ -230,7 +230,7 @@
             "compilerPath": "/opt/arm-miosix-eabi/bin/arm-miosix-eabi-g++",
             "defines": [
                 "_MIOSIX_BOARDNAME=stm32f767zi_compute_unit",
-                "_BOARD_STM32F769NI_DISCO",
+                "_BOARD_STM32F767ZI_COMPUTE_UNIT",
                 "_ARCH_CORTEXM7_STM32F7",
                 "STM32F769xx",
                 "HSE_VALUE=25000000",
