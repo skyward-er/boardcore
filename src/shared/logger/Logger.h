@@ -124,6 +124,14 @@ public:
      */
     void logStats();
 
+    /**
+     * @brief Returns the Max Filename number
+     */
+    static constexpr unsigned int getMaxFilenameNumber()
+    {
+        return maxFilenameNumber;
+    }
+
 private:
     Logger();
 
@@ -152,7 +160,8 @@ private:
      */
     LoggerResult logImpl(const char *name, const void *data, unsigned int size);
 
-    static constexpr unsigned int maxFilenameNumber = 100;  ///< Limit on files
+    static constexpr unsigned int maxFilenameNumber =
+        10000;  ///< Limit on files
 #ifndef _ARCH_CORTEXM3_STM32F2
     static constexpr unsigned int maxRecordSize = 512;  ///< Limit on data
     static constexpr unsigned int numRecords = 512;  ///< Size of record queues
