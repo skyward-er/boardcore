@@ -68,18 +68,19 @@ bool MAX31855::checkConnection()
 
 TemperatureData MAX31855::sampleImpl()
 {
-    uint16_t sample;
+    int16_t sample;
 
     {
         SPITransaction spi{slave};
         sample = spi.read16();
+        sample = sample >> 2;
     }
 
     TemperatureData result{};
     result.temperatureTimestamp = TimestampTimer::getTimestamp();
 
     // Convert the integer and decimal part separately
-    result.temperature = static_cast<float>(sample >> 2) * 0.25;
+    result.temperature = static_cast<float>(sample) * 0.25;
 
     return result;
 }
