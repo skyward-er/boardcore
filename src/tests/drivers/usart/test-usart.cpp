@@ -29,7 +29,6 @@
 #include "string"
 #include "string.h"
 #include "thread"
-#include "utils/SerialInterface.h"
 
 using namespace miosix;
 using namespace Boardcore;

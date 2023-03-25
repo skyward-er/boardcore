@@ -29,8 +29,8 @@
 #include <string>
 
 #include "MBLoadCellData.h"
+#include "drivers/usart/USART.h"
 #include "miosix.h"
-#include "utils/SerialInterface.h"
 
 namespace Boardcore
 {
@@ -54,10 +54,9 @@ public:
      * @brief constructor that initializes the serial communication with the
      * load cell
      * @param mode the mode in which the load cell is in
-     * @param serialPortNum port number to which the load cell is connected
-     * @param baudrate baudrate set on the TLB converter
+     * @param serial the serial port to be used
      */
-    MBLoadCell(LoadCellModes mode, int serialPortNum, int baudrate);
+    MBLoadCell(USARTInterface &serial, LoadCellModes mode);
 
     /**
      * @brief Initializes the serial communication with the load cell.
@@ -136,7 +135,7 @@ protected:
      *
      * @param buf The message to send.
      */
-    void transmitASCII(std::string buf);
+    void transmitASCII(const std::string &buf);
 
     /**
      * @brief Wrapper to the serial recvString method. This also sets the
@@ -166,7 +165,7 @@ private:
     bool minPrint;
 
     ///< Pointer to the instance of the serial port used for the connection
-    SerialInterface *serial;
+    USARTInterface &serial;
 };
 
 }  // namespace Boardcore

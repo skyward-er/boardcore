@@ -58,9 +58,9 @@
  *
  */
 
+#include "drivers/usart/USART.h"
 #include "string.h"
 #include "thread"
-#include "utils/SerialInterface.h"
 
 using namespace miosix;
 using namespace Boardcore;
@@ -75,20 +75,19 @@ using ctrlPin2_s2 = miosix::Gpio<GPIOC_BASE, 2>;
 
 char msg[64] = "Testing communication :D";
 char rcv[64];
-int baudrates[] = {2400,   3600,   4800,   9600,  19200,
-                   115200, 230400, 460800, 921600};
+USARTInterface::Baudrate baudrates[] = {
+    USARTInterface::Baudrate::B2400,   USARTInterface::Baudrate::B9600,
+    USARTInterface::Baudrate::B19200,  USARTInterface::Baudrate::B115200,
+    USARTInterface::Baudrate::B230400, USARTInterface::Baudrate::B460800,
+    USARTInterface::Baudrate::B921600};
 
 // function for the thread that has to read from serial
-void readSer(SerialInterface *s)
-{
-    s->recvString(rcv, 64);
-    printf("\t<--%s received: \t'%s'\n", s->getPortName().c_str(), rcv);
-}
+void readSer(USARTInterface &s) {}
 
 // Communicatio: src -> dst
 template <typename GPIO1_src, typename GPIO2_src, typename GPIO1_dst,
           typename GPIO2_dst>
-void testCommunication(char *data, SerialInterface *src, SerialInterface *dst)
+void testCommunication(char *data, USARTInterface &src, USARTInterface &dst)
 {
     // resetting the buffer so precedent tests won't affect this one
     memset(rcv, 0, strlen(rcv) + 1);
@@ -102,21 +101,24 @@ void testCommunication(char *data, SerialInterface *src, SerialInterface *dst)
     GPIO2_dst::low();
 
     // thread that reads from serial
-    std::thread t(readSer, dst);
+    std::thread t(
+        [&]()
+        {
+            dst.read(rcv, 64);
+            printf("\t<--%d received: \t'%s'\n", dst.getId(), rcv);
+        });
 
-    printf("\t-->%s sending: \t'%s'\n", src->getPortName().c_str(), data);
-    src->sendString(data);
+    printf("\t-->%d sending: \t'%s'\n", src.getId(), data);
+    src.writeString(data);
     t.join();
 
     if (strcmp(data, rcv) == 0)
     {
-        printf("*** %s -> %s WORKING!\n", src->getPortName().c_str(),
-               dst->getPortName().c_str());
+        printf("*** %d -> %d WORKING!\n", src.getId(), dst.getId());
     }
     else
     {
-        printf("### ERROR: %s -> %s!\n", src->getPortName().c_str(),
-               dst->getPortName().c_str());
+        printf("### ERROR: %d -> %d!\n", src.getId(), dst.getId());
     }
 }
 
@@ -136,10 +138,9 @@ int main()
     {
         Thread::sleep(1000);
 
-        // Setting the baudrate to 2400, maximum functioning baudrate for the
-        // Max485 adapters
-        SerialInterface serial1(baudrates[iBaud], 1, "ser1");
-        SerialInterface serial2(baudrates[iBaud], 2, "ser2");
+        // instantiating the two USART drivers
+        USART serial1(USART1, baudrates[iBaud]);
+        USART serial2(USART2, baudrates[iBaud]);
 
         if (!serial2.init())
         {
@@ -152,14 +153,14 @@ int main()
             printf("[Serial1] Wrong initialization\n");
             return 1;
         }
-        printf("\n########################### %d\n", baudrates[iBaud]);
+        printf("\n########################### %d\n", (int)baudrates[iBaud]);
         // testing transmission "serial 1 <- serial 2"
         testCommunication<ctrlPin1_s2, ctrlPin2_s2, ctrlPin1_s1, ctrlPin2_s1>(
-            msg, &serial2, &serial1);
+            msg, serial2, serial1);
 
         // testing transmission "serial 1 -> serial 2"
         testCommunication<ctrlPin1_s1, ctrlPin2_s1, ctrlPin1_s2, ctrlPin2_s2>(
-            msg, &serial1, &serial2);
+            msg, serial1, serial2);
     }
 
     return 0;

@@ -227,9 +227,6 @@ sbs_target(test-timer-utils stm32f429zi_stm32f4discovery)
 add_executable(test-timestamptimer src/tests/drivers/timer/test-timestamptimer.cpp)
 sbs_target(test-timestamptimer stm32f429zi_stm32f4discovery)
 
-add_executable(test-vn100serial src/tests/drivers/test-vn100serial.cpp)
-sbs_target(test-vn100serial stm32f407vg_stm32f4discovery)
-
 add_executable(test-xbee-bidir src/tests/drivers/xbee/test-xbee-bidir.cpp)
 sbs_target(test-xbee-bidir stm32f429zi_skyward_death_stack_x)
 

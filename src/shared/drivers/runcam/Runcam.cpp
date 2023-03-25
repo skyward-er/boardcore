@@ -27,7 +27,7 @@
 namespace Boardcore
 {
 
-Runcam::Runcam(unsigned int portNumber) : portNumber(portNumber) {}
+Runcam::Runcam(USARTInterface &usart) : usart(usart) {}
 
 bool Runcam::init()
 {
@@ -36,12 +36,6 @@ bool Runcam::init()
     {
         LOG_ERR(logger, "Connection with the camera already initialized");
         return true;
-    }
-
-    if (!configureSerialCommunication())
-    {
-        LOG_ERR(logger, "Unable to config camera port");
-        return false;
     }
 
     isInit = true;
@@ -63,39 +57,18 @@ bool Runcam::close()
         return true;
     }
 
-    // Close the serial
-    if (!serialInterface->closeSerial())
-    {
-        LOG_ERR(logger, "Unable to close serial communication");
-        return false;
-    }
-
     isInit = false;
 
-    // Free the serialInterface memory
-    delete serialInterface;
-
     return true;
 }
 
-void Runcam::openMenu() { serialInterface->send(&OPEN_MENU, 4); }
+void Runcam::openMenu() { usart.write(&OPEN_MENU, sizeof(OPEN_MENU)); }
 
-void Runcam::selectSetting() { serialInterface->send(&SELECT_SETTING, 4); }
-
-void Runcam::moveDown() { serialInterface->send(&MOVE_DOWN, 4); }
-
-bool Runcam::configureSerialCommunication()
+void Runcam::selectSetting()
 {
-    serialInterface = new RuncamSerial(portNumber, defaultBaudRate);
-
-    // Check correct serial init
-    if (!serialInterface->init())
-    {
-        LOG_ERR(logger, "Unable to config the default serial port");
-        return false;
-    }
-
-    return true;
+    usart.write(&SELECT_SETTING, sizeof(SELECT_SETTING));
 }
+
+void Runcam::moveDown() { usart.write(&MOVE_DOWN, sizeof(MOVE_DOWN)); }
 
 }  // namespace Boardcore
