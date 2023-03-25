@@ -37,10 +37,24 @@ using USARTType = USART_TypeDef;
 using USARTType = USART_TypeDef;
 #endif
 
-#ifdef STM32F429xx
+#if defined(UART8)
 #define N_USART_PORTS 8
-#else
+#elif defined(UART7)
+#define N_USART_PORTS 7
+#elif defined(USART6)
 #define N_USART_PORTS 6
+#elif defined(UART5)
+#define N_USART_PORTS 5
+#elif defined(UART4)
+#define N_USART_PORTS 4
+#elif defined(USART3)
+#define N_USART_PORTS 3
+#elif defined(USART2)
+#define N_USART_PORTS 2
+#elif defined(USART1)
+#define N_USART_PORTS 1
+#else
+#error "Your architecture doesn't support UART"
 #endif
 
 // A nice feature of the stm32 is that the USART are connected to the same
@@ -188,9 +202,6 @@ public:
         PARITY    = 1
     };
 
-    ///< Pointer to serial port classes to let interrupts access the classes
-    static USART *ports[];
-
     /**
      * @brief Interrupt handler that deals with receive and idle interrupts.
      *
@@ -213,6 +224,12 @@ public:
      */
     USART(USARTType *usart, Baudrate baudrate,
           unsigned int queueLen = usart_queue_default_capacity);
+
+    ///< Delete copy/move constructors/operators.
+    USART(const USART &)            = delete;
+    USART &operator=(const USART &) = delete;
+    USART(USART &&)                 = delete;
+    USART &operator=(USART &&)      = delete;
 
     /**
      * @brief Disables the flags for the generation of the interrupts, the IRQ
@@ -339,6 +356,12 @@ public:
      */
     STM32SerialWrapper(USARTType *usart, Baudrate baudrate, miosix::GpioPin tx,
                        miosix::GpioPin rx);
+
+    ///< Delete copy/move constructors/operators.
+    STM32SerialWrapper(const STM32SerialWrapper &)            = delete;
+    STM32SerialWrapper &operator=(const STM32SerialWrapper &) = delete;
+    STM32SerialWrapper(STM32SerialWrapper &&)                 = delete;
+    STM32SerialWrapper &operator=(STM32SerialWrapper &&)      = delete;
 
     /**
      * @brief Removes the device from the list of the devices and closes the

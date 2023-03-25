@@ -136,20 +136,15 @@ bool testCommunicationSequential(USARTInterface *src, USARTInterface *dst)
 int main()
 {
     // Init serial port pins
-    u1rx2::getPin().mode(miosix::Mode::ALTERNATE);
-    u1rx2::getPin().alternateFunction(7);
-    u1tx1::getPin().mode(miosix::Mode::ALTERNATE);
-    u1tx1::getPin().alternateFunction(7);
+    u6rx1::getPin().mode(miosix::Mode::ALTERNATE);
+    u6rx1::getPin().alternateFunction(8);
+    u6tx1::getPin().mode(miosix::Mode::ALTERNATE);
+    u6tx1::getPin().alternateFunction(8);
 
     u2rx1::getPin().mode(miosix::Mode::ALTERNATE);
     u2rx1::getPin().alternateFunction(7);
     u2tx1::getPin().mode(miosix::Mode::ALTERNATE);
     u2tx1::getPin().alternateFunction(7);
-
-    // u4rx1::getPin().mode(miosix::Mode::ALTERNATE);
-    // u4rx1::getPin().alternateFunction(8);
-    // u4tx1::getPin().mode(miosix::Mode::ALTERNATE);
-    // u4tx1::getPin().alternateFunction(8);
 
     bool testPassed = true;
     printf("*** SERIAL 3 WORKING!\n");
@@ -160,7 +155,7 @@ int main()
         printf("\n\n########################### %d\n", (int)baudrate);
 
         // declaring the usart peripherals
-        STM32SerialWrapper usartx(USART1, baudrate);
+        USART usartx(USART6, baudrate);
         usartx.init();
 
         STM32SerialWrapper usarty(USART2, baudrate);

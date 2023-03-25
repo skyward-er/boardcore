@@ -32,14 +32,16 @@
 #include "filesystem/file_access.h"
 #include "miosix.h"
 
-Boardcore::USART *Boardcore::USART::ports[N_USART_PORTS];
+///< Pointer to serial port classes to let interrupts access the classes
+Boardcore::USART *ports[N_USART_PORTS];
 
+#ifdef USART1
 /**
  * \internal Interrupt routine for usart1 actual implementation.
  */
 void __attribute__((used)) usart1irqImplBoardcore()
 {
-    Boardcore::USART *port_boardcore = Boardcore::USART::ports[0];
+    Boardcore::USART *port_boardcore = ports[0];
     if (port_boardcore)
         port_boardcore->IRQhandleInterrupt();
     else
@@ -59,13 +61,15 @@ void __attribute__((naked, used)) USART1_IRQHandler()
     asm volatile("bl _Z22usart1irqImplBoardcorev");
     restoreContext();
 }
+#endif
 
+#ifdef USART2
 /**
  * \internal Interrupt routine for usart2 actual implementation.
  */
 void __attribute__((used)) usart2irqImplBoardcore()
 {
-    Boardcore::USART *port_boardcore = Boardcore::USART::ports[1];
+    Boardcore::USART *port_boardcore = ports[1];
     if (port_boardcore)
         port_boardcore->IRQhandleInterrupt();
     else
@@ -85,13 +89,15 @@ void __attribute__((naked, used)) USART2_IRQHandler()
     asm volatile("bl _Z22usart2irqImplBoardcorev");
     restoreContext();
 }
+#endif
 
+#ifdef USART3
 /**
  * \internal Interrupt routine for usart3 actual implementation.
  */
 void __attribute__((used)) usart3irqImplBoardcore()
 {
-    Boardcore::USART *port_boardcore = Boardcore::USART::ports[2];
+    Boardcore::USART *port_boardcore = ports[2];
     if (port_boardcore)
         port_boardcore->IRQhandleInterrupt();
     else
@@ -111,13 +117,15 @@ void __attribute__((naked, used)) USART3_IRQHandler()
     asm volatile("bl _Z22usart3irqImplBoardcorev");
     restoreContext();
 }
+#endif
 
+#ifdef UART4
 /**
  * \internal Interrupt routine for uart4 actual implementation.
  */
 void __attribute__((used)) uart4irqImplBoardcore()
 {
-    Boardcore::USART *port_boardcore = Boardcore::USART::ports[3];
+    Boardcore::USART *port_boardcore = ports[3];
     if (port_boardcore)
         port_boardcore->IRQhandleInterrupt();
     else
@@ -137,13 +145,15 @@ void __attribute__((naked, used)) UART4_IRQHandler()
     asm volatile("bl _Z21uart4irqImplBoardcorev");
     restoreContext();
 }
+#endif
 
+#ifdef UART5
 /**
  * \internal Interrupt routine for uart5 actual implementation.
  */
 void __attribute__((used)) uart5irqImplBoardcore()
 {
-    Boardcore::USART *port_boardcore = Boardcore::USART::ports[4];
+    Boardcore::USART *port_boardcore = ports[4];
     if (port_boardcore)
         port_boardcore->IRQhandleInterrupt();
     else
@@ -163,13 +173,15 @@ void __attribute__((naked, used)) UART5_IRQHandler()
     asm volatile("bl _Z21uart5irqImplBoardcorev");
     restoreContext();
 }
+#endif
 
+#ifdef USART6
 /**
  * \internal Interrupt routine for usart6 actual implementation.
  */
 void __attribute__((used)) usart6irqImplBoardcore()
 {
-    Boardcore::USART *port_boardcore = Boardcore::USART::ports[5];
+    Boardcore::USART *port_boardcore = ports[5];
     if (port_boardcore)
         port_boardcore->IRQhandleInterrupt();
     else
@@ -189,15 +201,15 @@ void __attribute__((naked, used)) USART6_IRQHandler()
     asm volatile("bl _Z22usart6irqImplBoardcorev");
     restoreContext();
 }
+#endif
 
-#ifdef STM32F429xx
-
+#ifdef UART7
 /**
  * \internal Interrupt routine for uart7 actual implementation.
  */
 void __attribute__((used)) uart7irqImplBoardcore()
 {
-    Boardcore::USART *port_boardcore = Boardcore::USART::ports[6];
+    Boardcore::USART *port_boardcore = ports[6];
     if (port_boardcore)
         port_boardcore->IRQhandleInterrupt();
     else
@@ -217,13 +229,15 @@ void __attribute__((naked, used)) UART7_IRQHandler()
     asm volatile("bl _Z21uart7irqImplBoardcorev");
     restoreContext();
 }
+#endif
 
+#ifdef UART8
 /**
  * \internal Interrupt routine for uart8 actual implementation.
  */
 void __attribute__((used)) uart8irqImplBoardcore()
 {
-    Boardcore::USART *port_boardcore = Boardcore::USART::ports[7];
+    Boardcore::USART *port_boardcore = ports[7];
     if (port_boardcore)
         port_boardcore->IRQhandleInterrupt();
     else
@@ -243,8 +257,7 @@ void __attribute__((naked, used)) UART8_IRQHandler()
     asm volatile("bl _Z21uart8irqImplBoardcorev");
     restoreContext();
 }
-
-#endif  // STM32F429xx
+#endif
 
 namespace Boardcore
 {
@@ -320,40 +333,56 @@ USART::USART(USARTType *usart, Baudrate baudrate, unsigned int queueLen)
     // Setting the id of the serial port
     switch (reinterpret_cast<uint32_t>(usart))
     {
+#ifdef USART1
         case USART1_BASE:
             this->id = 1;
             irqn     = USART1_IRQn;
             break;
+#endif
+#ifdef USART2
         case USART2_BASE:
             this->id = 2;
             irqn     = USART2_IRQn;
             break;
+#endif
+#ifdef USART3
         case USART3_BASE:
             this->id = 3;
             irqn     = USART3_IRQn;
             break;
+#endif
+#ifdef UART4
         case UART4_BASE:
             this->id = 4;
             irqn     = UART4_IRQn;
             break;
+#endif
+#ifdef UART5
         case UART5_BASE:
             this->id = 5;
             irqn     = UART5_IRQn;
             break;
+#endif
+#ifdef USART6
         case USART6_BASE:
             this->id = 6;
             irqn     = USART6_IRQn;
             break;
-#ifdef STM32F429xx
+#endif
+#ifdef UART7
         case UART7_BASE:
             this->id = 7;
             irqn     = UART7_IRQn;
             break;
+#endif
+#ifdef UART8
         case UART8_BASE:
             this->id = 8;
             irqn     = UART8_IRQn;
             break;
-#endif  // STM32F429xx
+#endif
+        default:
+            D(assert(false && "USART selected not supported!"));
     }
 
     this->usart = usart;
@@ -382,7 +411,7 @@ USART::~USART()
     miosix::FastInterruptDisableLock dLock;
 
     // Take out the usart object we are going to destruct
-    USART::ports[this->id - 1] = nullptr;
+    ports[this->id - 1] = nullptr;
 
     // Disabling the usart
     usart->CR1 &= ~(USART_CR1_UE | USART_CR1_TE | USART_CR1_RE);
@@ -393,7 +422,7 @@ USART::~USART()
 
 bool USART::init()
 {
-    if (id < 1 || id > MAX_SERIAL_PORTS)
+    if (id < 1 || id > N_USART_PORTS)
     {
         TRACE("Not supported USART id\n");
         return false;
@@ -416,7 +445,7 @@ bool USART::init()
         NVIC_EnableIRQ(irqn);
 
         // Add to the array of usarts so that the interrupts can see it
-        USART::ports[id - 1] = this;
+        ports[id - 1] = this;
     }
 
     // Clearing the queue for random data read at the beginning
@@ -428,7 +457,6 @@ bool USART::init()
 
 void USART::setWordLength(WordLength wordLength)
 {
-
     miosix::FastInterruptDisableLock dLock;
     (wordLength == WordLength::BIT8 ? usart->CR1 &= ~USART_CR1_M
                                     : usart->CR1 |= USART_CR1_M);
@@ -475,31 +503,20 @@ void USART::setBaudrate(Baudrate baudrate)
      */
     miosix::InterruptDisableLock dLock;
 
-    /*
-     * TODO: This is modified only for compatibility with the past, MUST check
-     * the clock settings in order to use the right method
-     * 'getAPBPeripheralsClock()'
-     */
     // USART1 and USART6 are always connected to the APB2, while all the others
     // UART/USART peripherals are always connected to APB1
-    uint32_t f = ClockUtils::getAPBTimersClock(
+    uint32_t f = ClockUtils::getAPBPeripheralsClock(
         (id == 1 || id == 6 ? ClockUtils::APB::APB2     // High speed APB2
                             : ClockUtils::APB::APB1));  // Low speed APB1
 
     // <<4 in order to shift to left of 4 positions, to create a fixed point
     // number of 4 decimal digits /8 == >>3 in order to divide per 8 (from the
-    // formula in the datasheet)
-    uint32_t USART_DIV = ((f << 1) / (((int)baudrate * (over8 ? 1 : 2))));
+    // formula in the datasheet). So it should be << 1 but, in order to make the
+    // approximation later, we shift it of 2 positions
+    uint32_t brr = ((f << 2) / (((int)baudrate * (over8 ? 1 : 2))));
 
     // rounding to the nearest
-    uint32_t brr = (USART_DIV / 2) + (USART_DIV & 1);
-
-    if (over8)
-    {
-        brr += brr & 1;
-    }
-
-    usart->BRR = brr;
+    usart->BRR = (brr / 2) + (brr & 1);
 
     this->baudrate = baudrate;
 }
@@ -627,6 +644,8 @@ STM32SerialWrapper::STM32SerialWrapper(USARTType *usart, Baudrate baudrate)
             initPins(u4tx1::getPin(), 8, u4rx1::getPin(), 8);
             this->serialPortName = std::string("uart4");
             break;
+        default:
+            D(assert(false && "USART selected not supported!"));
     }
     initialized = false;
     fd          = -1;
@@ -655,6 +674,8 @@ STM32SerialWrapper::STM32SerialWrapper(USARTType *usart, Baudrate baudrate,
             this->id             = 4;
             this->serialPortName = std::string("uart4");
             break;
+        default:
+            D(assert(false && "USART selected not supported!"));
     }
 
     if (id < 4)
