@@ -84,7 +84,7 @@ void handleCanMessage(Canbus::CanRXPacket packet)
             if (msg.id == packet.packet.id)
             {
                 msg.id = 0;
-                msg.ts = getTick() - msg.ts;
+                msg.ts = IRQgetTime() / 1e6 - msg.ts;
                 break;
             }
         }

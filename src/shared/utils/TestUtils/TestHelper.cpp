@@ -25,10 +25,7 @@
 namespace Boardcore
 {
 
-long long tickToMilliseconds(long long tick)
-{
-    return tick * 1000 / miosix::TICK_FREQ;
-}
+long long tickToMilliseconds(long long tick) { return tick * 1000 / 1000; }
 
 bool expectEvent(uint8_t eventId, uint8_t topic, long long when,
                  long long uncertainty, EventBroker& broker)
@@ -39,11 +36,11 @@ bool expectEvent(uint8_t eventId, uint8_t topic, long long when,
     long long windowStart = when - uncertainty;
     long long windowEnd   = when + uncertainty;
 
-    while (getTick() < windowEnd)
+    while (getTime() / 1e6 < windowEnd)
     {
         if (c.getCount(eventId) > 0)
         {
-            long long recvTick = getTick();
+            long long recvTick = IRQgetTime() / 1e6;
             if (recvTick < windowStart)
             {
                 TRACE(
@@ -80,8 +77,8 @@ bool waitForEvent(uint8_t event, uint8_t topic, long long timeout,
 {
     EventCounter c{broker};
     c.subscribe(topic);
-    long long end = getTick() + timeout;
-    while (timeout == 0 || getTick() < end)
+    long long end = IRQgetTime() / 1e6 + timeout;
+    while (timeout == 0 || IRQgetTime() / 1e6 < end)
     {
         if (c.getCount(event) > 0)
             return true;

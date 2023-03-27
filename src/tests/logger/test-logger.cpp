@@ -33,7 +33,7 @@ void logThread(void*)
 {
     Logger& log      = Logger::getInstance();
     const int period = 5;
-    for (auto t = getTick();; t += period)
+    for (auto t = IRQgetTime() / 1e6;; t += period)
     {
         Thread::sleepUntil(t);
         for (int i = 0; i < 5; i++)

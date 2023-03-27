@@ -111,9 +111,9 @@ bool SX1278Common::waitForIrqBusy(LockMode &_guard, IrqFlags irq, int timeout)
     // otherwise don't do anything with it
     (void)_guard;
 
-    long long start = miosix::getTick();
+    long long start = miosix::IRQgetTime() / 1e6;
 
-    while ((miosix::getTick() - start) < timeout)
+    while ((miosix::IRQgetTime() / 1e6 - start) < timeout)
     {
         // Delay between polls
         const unsigned int DELAY = 100;

@@ -138,7 +138,7 @@ int main()
     // Collect NUM_SAMPLE samples
     while (dataCounter < NUM_SAMPLES)
     {
-        long lastTick = miosix::getTick();
+        long lastTick = miosix::IRQgetTime() / 1e6;
 
         // Read data from the sensor
         gyro->sample();

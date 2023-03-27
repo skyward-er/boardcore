@@ -47,7 +47,7 @@ int main()
     mpu = new MPU9250(spi1, sensors::mpu9250::cs::getPin());
     mpu->init();
 
-    auto lastTick = getTick();
+    auto lastTick = IRQgetTime() / 1e6;
     while (true)
     {
         mpu->sample();
@@ -74,6 +74,6 @@ int main()
                    kalmanState(7), kalmanState(8));
 
         Thread::sleepUntil(lastTick + 20);
-        lastTick = getTick();
+        lastTick = IRQgetTime() / 1e6;
     }
 }

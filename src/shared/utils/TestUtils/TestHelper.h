@@ -31,10 +31,8 @@
 #include <cmath>
 #include <map>
 
-using miosix::FastMutex;
-using miosix::getTick;
-using miosix::Lock;
-using std::map;
+using namespace miosix;
+using namespace std;
 
 namespace Boardcore
 {

@@ -43,7 +43,7 @@ int main()
 
     for (int i = 0; i < 10; i++)
     {
-        long long prevTick = getTick();
+        long long prevTick = IRQgetTime() / 1e6;
 
         uint64_t timestamp = TimestampTimer::getTimestamp();
 
@@ -60,7 +60,7 @@ int main()
 
     while (true)
     {
-        long long prevTick = getTick();
+        long long prevTick = IRQgetTime() / 1e6;
 
         uint64_t timestamp = TimestampTimer::getTimestamp();
 

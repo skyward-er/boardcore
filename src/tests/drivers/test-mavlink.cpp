@@ -63,7 +63,7 @@ int main()
     {
         // Create a Mavlink message
         mavlink_message_t pingMsg;
-        mavlink_msg_ping_tc_pack(1, 1, &pingMsg, miosix::getTick());
+        mavlink_msg_ping_tc_pack(1, 1, &pingMsg, miosix::IRQgetTime() / 1e6);
 
         // Send the message
         mavlink->enqueueMsg(pingMsg);

@@ -111,22 +111,22 @@ public:
 protected:
     void run() override
     {
-        long long loopStartTs = miosix::getTick();
+        long long loopStartTs = miosix::IRQgetTime() / 1e6;
         while (!shouldStop())
         {
-            data.timeSinceLastSend = miosix::getTick() - loopStartTs;
-            loopStartTs            = miosix::getTick();
+            data.timeSinceLastSend = miosix::IRQgetTime() / 1e6 - loopStartTs;
+            loopStartTs            = miosix::IRQgetTime() / 1e6;
 
             // Create packet
             memcpy(buf, &PACKET_FIRST_INT, sizeof(uint32_t));
             memset32(buf + sizeof(uint32_t), packetCounter++,
                      data.packetSize - sizeof(uint32_t));
 
-            long long sendStartTs = miosix::getTick();
+            long long sendStartTs = miosix::IRQgetTime() / 1e6;
 
             bool result = xbee.send(buf, data.packetSize);
 
-            data.timeToSend = miosix::getTick() - sendStartTs;
+            data.timeToSend = miosix::IRQgetTime() / 1e6 - sendStartTs;
             data.timestamp  = sendStartTs;
 
             if (result)
@@ -183,11 +183,11 @@ protected:
     {
         while (!shouldStop())
         {
-            long long start = miosix::getTick();
+            long long start = miosix::IRQgetTime() / 1e6;
 
             size_t len = xbee.receive(buf, RCV_BUF_SIZE);
 
-            data.lastPacketTimestamp = miosix::getTick();
+            data.lastPacketTimestamp = miosix::IRQgetTime() / 1e6;
             data.timestamp           = start;
 
             ++data.rcvCount;

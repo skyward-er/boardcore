@@ -233,7 +233,7 @@ bool UBXGPSSpi::setPVTMessageRate()
 
 bool UBXGPSSpi::readUBXFrame(UBXFrame& frame)
 {
-    long long start = miosix::getTick();
+    long long start = miosix::IRQgetTime() / 1e6;
     long long end   = start + READ_TIMEOUT * MS_TO_TICK;
 
     {
@@ -245,7 +245,7 @@ bool UBXGPSSpi::readUBXFrame(UBXFrame& frame)
         bool waiting = false;
         while (i < 2)
         {
-            if (miosix::getTick() >= end)
+            if (miosix::IRQgetTime() / 1e6 >= end)
             {
                 // LOG_ERR(logger, "Timeout for read expired");
                 spiSlave.bus.deselect(spiSlave.cs);

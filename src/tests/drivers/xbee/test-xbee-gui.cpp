@@ -180,7 +180,7 @@ int main()
     // Main loop: updates the information in the GUI
     for (;;)
     {
-        long long start = getTick();
+        long long start = IRQgetTime() / 1e6;
         // Update display values
         switch (gui->screenManager.getScreen())
         {
@@ -219,7 +219,7 @@ void onStartButtonClick(View* btn __attribute__((unused)), Interaction action)
     {
 
         XbeeConfig cfg = gui->screenConfig.config;
-        cfg.timestamp  = getTick();
+        cfg.timestamp  = IRQgetTime() / 1e6;
         logger.log(cfg);
 
         gui->screenConfig.btnStart.setText("Starting...");

@@ -166,7 +166,7 @@ int main()
     int fifoNum = 0;
     while (dataCounter < NUM_SAMPLES)
     {
-        long lastTick = miosix::getTick();
+        long lastTick = miosix::IRQgetTime() / 1e6;
 
         // Read the fifo
         uint64_t update = TimestampTimer::getTimestamp();

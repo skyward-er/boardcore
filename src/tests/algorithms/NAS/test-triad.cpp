@@ -46,7 +46,7 @@ int main()
     imuInit();
     bmx->init();
 
-    auto lastTick = getTick();
+    auto lastTick = IRQgetTime() / 1e6;
     while (true)
     {
         bmx->sample();
@@ -73,7 +73,7 @@ int main()
                    kalmanState(7), kalmanState(8));
 
         Thread::sleepUntil(lastTick + 20);
-        lastTick = getTick();
+        lastTick = IRQgetTime() / 1e6;
     }
 }
 

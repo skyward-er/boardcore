@@ -265,9 +265,9 @@ int main()
                 process_test_process_ret();
                 process_test_file_concurrency();
                 ledOff();
-#else   //#ifdef WITH_PROCESSES
+#else   // #ifdef WITH_PROCESSES
                 iprintf("Error, process support is disabled\n");
-#endif  //#ifdef WITH_PROCESSES
+#endif  // #ifdef WITH_PROCESSES
                 break;
             case 'y':
                 ledOn();
@@ -337,9 +337,9 @@ int main()
                 mpuTest9();
                 mpuTest10();
                 ProcessPool::instance().deallocate(m);
-#else   //#ifdef WITH_PROCESSES
+#else   // #ifdef WITH_PROCESSES
                 iprintf("Error, process support is disabled\n");
-#endif  //#ifdef WITH_PROCESSES
+#endif  // #ifdef WITH_PROCESSES
                 ledOff();
                 Thread::setPriority(0);
                 break;
@@ -548,13 +548,13 @@ void syscall_test_sleep()
     //	iprintf("diff was: %d\n", (unsigned int)getTick());
 
     int ret        = 0;
-    long long time = getTick();
+    long long time = IRQgetTime() / 1e6;
     pid_t p        = Process::create(prog);
     Process::waitpid(p, &ret, 0);
 
     long long diff = llabs((getTick() - time));
 
-    if (llabs(diff - 5 * TICK_FREQ) > static_cast<long long>(TICK_FREQ * 0.02))
+    if (llabs(diff - 5 * 1000) > static_cast<long long>(1000 * 0.02))
         fail("The sleep should have only a little more than 5 seconds.");
 
     pass();
@@ -837,10 +837,10 @@ static void t3_p1(void *argv __attribute__((unused)))
         if (Thread::testTerminate())
             break;
         // Test that Thread::sleep sleeps the desired number of ticks
-        long long x = getTick();
+        long long x = IRQgetTime() / 1e6;
         Thread::sleep(SLEEP_TIME);
-        if (llabs(((SLEEP_TIME * TICK_FREQ) / 1000) - (getTick() - x)) > 5)
-            fail("Thread::sleep() or getTick()");
+        if (llabs(((SLEEP_TIME * 1000) / 1000) - (getTick() - x)) > 5)
+            fail("Thread::sleep() or IRQgetTime() / 1e6");
     }
 }
 
@@ -869,7 +869,7 @@ static void test_3()
     for (int i = 0; i < 4; i++)
     {
         // The other thread is running tick() test
-        Thread::sleep((101 * 1000) / TICK_FREQ);
+        Thread::sleep((101 * 1000) / 1000);
     }
     p->terminate();
     Thread::sleep(200);  // make sure the other thread does terminate*/
@@ -917,16 +917,16 @@ static void test_3()
         fail("multiple instances (4)");
     // Testing Thread::sleepUntil()
     long long tick;
-    const int period = static_cast<int>(TICK_FREQ * 0.01);  // 10ms
+    const int period = static_cast<int>(1000 * 0.01);  // 10ms
     {
         InterruptDisableLock lock;  // Making these two operations atomic.
-        tick = getTick();
+        tick = IRQgetTime() / 1e6;
         tick += period;
     }
     for (int i = 0; i < 4; i++)
     {
         Thread::sleepUntil(tick);
-        if (tick != getTick())
+        if (tick != IRQgetTime() / 1e6)
             fail("Thread::sleepUntil()");
         tick += period;
     }
@@ -967,8 +967,8 @@ static void t4_p1(void *argv __attribute__((unused)))
 // This takes .014/.03=47% of CPU time
 static void t4_p2(void *argv)
 {
-    const int period = static_cast<int>(TICK_FREQ * 0.03);
-    long long tick   = getTick();
+    const int period = static_cast<int>(1000 * 0.03);
+    long long tick   = IRQgetTime() / 1e6;
     for (int i = 0; i < 10; i++)
     {
         long long prevTick = tick;
@@ -999,12 +999,12 @@ static void test_4()
     if (p->IRQgetPriority() != 0)
         fail("IRQgetPriority");
     // Check that tick is not incremented and t4_v1 is not updated
-    long long tick = getTick();
+    long long tick = IRQgetTime() / 1e6;
     t4_v1          = false;
     for (int i = 0; i < 4; i++)
     {
         delayMs(100);
-        if ((t4_v1 == true) || (tick != getTick()))
+        if ((t4_v1 == true) || (tick != IRQgetTime() / 1e6))
         {
             enableInterrupts();  //
             fail("disableInterrupts");
@@ -1022,12 +1022,12 @@ static void test_4()
 
     fastDisableInterrupts();  //
     // Check that tick is not incremented and t4_v1 is not updated
-    tick  = getTick();
+    tick  = IRQgetTime() / 1e6;
     t4_v1 = false;
     for (int i = 0; i < 4; i++)
     {
         delayMs(100);
-        if ((t4_v1 == true) || (tick != getTick()))
+        if ((t4_v1 == true) || (tick != IRQgetTime() / 1e6))
         {
             fastEnableInterrupts();  //
             fail("disableInterrupts");
@@ -1070,8 +1070,8 @@ static void test_4()
     Thread::sleep(10);
 #ifdef SCHED_TYPE_EDF
     Thread::create(t4_p2, STACK_SMALL);
-    const int period = static_cast<int>(TICK_FREQ * 0.05);
-    tick             = getTick();
+    const int period = static_cast<int>(1000 * 0.05);
+    tick             = IRQgetTime() / 1e6;
     // This takes .024/.05=48% of CPU time
     for (int i = 0; i < 10; i++)
     {
@@ -1781,7 +1781,7 @@ static void test_timer(Timer *t)
     // Testing interval precision
     if (t->interval() == -1)
         fail("interval (3)");
-    if (llabs(t->interval() - ((100 * TICK_FREQ) / 1000)) > 4)
+    if (llabs(t->interval() - ((100 * 1000) / 1000)) > 4)
         fail("not precise");
     // Testing isRunning
     if (t->isRunning() == true)
@@ -1805,7 +1805,7 @@ static void test_7()
     Timer w(t);
     if (w.interval() == -1)
         fail("interval (copy 1)");
-    if (llabs(w.interval() - ((100 * TICK_FREQ) / 1000)) > 4)
+    if (llabs(w.interval() - ((100 * 1000) / 1000)) > 4)
         fail("not precise (copy 1)");
     if (w.isRunning() == true)
         fail("isRunning (copy 1)");
@@ -1813,7 +1813,7 @@ static void test_7()
     q = t;
     if (q.interval() == -1)
         fail("interval (= 1)");
-    if (llabs(q.interval() - ((100 * TICK_FREQ) / 1000)) > 4)
+    if (llabs(q.interval() - ((100 * 1000) / 1000)) > 4)
         fail("not precise (= 1)");
     if (q.isRunning() == true)
         fail("isRunning (= 1)");
@@ -1825,7 +1825,7 @@ static void test_7()
     x.stop();
     if (x.interval() == -1)
         fail("interval (copy 2)");
-    if (llabs(x.interval() - ((100 * TICK_FREQ) / 1000)) > 4)
+    if (llabs(x.interval() - ((100 * 1000) / 1000)) > 4)
         fail("not precise (copy 2)");
     if (x.isRunning() == true)
         fail("isRunning (copy 2)");
@@ -1834,7 +1834,7 @@ static void test_7()
     y.stop();
     if (y.interval() == -1)
         fail("interval (= 2)");
-    if (llabs(y.interval() - ((100 * TICK_FREQ) / 1000)) > 4)
+    if (llabs(y.interval() - ((100 * 1000) / 1000)) > 4)
         fail("not precise (= 2)");
     if (y.isRunning() == true)
         fail("isRunning (= 2)");
@@ -1848,7 +1848,7 @@ static void test_7()
     t.stop();
     if (t.interval() == -1)
         fail("interval (= 2)");
-    if (llabs(t.interval() - ((250 * TICK_FREQ) / 1000)) > 4)
+    if (llabs(t.interval() - ((250 * 1000) / 1000)) > 4)
         fail("not precise (= 2)");
     pass();
 }
@@ -2078,9 +2078,9 @@ static void test_9()
     if (areInterruptsEnabled() == false)
         fail("areInterruptsEnabled() (1)");
     disableInterrupts();  // Now interrupts should be disabled
-    i = getTick();
+    i = IRQgetTime() / 1e6;
     delayMs(100);
-    if (i != getTick())
+    if (i != IRQgetTime() / 1e6)
     {
         enableInterrupts();
         fail("disableInterrups() nesting (1)");
@@ -2091,9 +2091,9 @@ static void test_9()
         fail("areInterruptsEnabled() (2)");
     }
     disableInterrupts();  // Interrupts already disabled
-    i = getTick();
+    i = IRQgetTime() / 1e6;
     delayMs(100);
-    if (i != getTick())
+    if (i != IRQgetTime() / 1e6)
     {
         enableInterrupts();
         fail("disableInterrups() nesting (2)");
@@ -2104,9 +2104,9 @@ static void test_9()
         fail("areInterruptsEnabled() (3)");
     }
     enableInterrupts();  // Now interrupts should remain disabled
-    i = getTick();
+    i = IRQgetTime() / 1e6;
     delayMs(100);
-    if (i != getTick())
+    if (i != IRQgetTime() / 1e6)
     {
         enableInterrupts();
         fail("enableInterrupts() nesting (1)");
@@ -2117,9 +2117,9 @@ static void test_9()
         fail("areInterruptsEnabled() (4)");
     }
     enableInterrupts();  // Now interrupts should be enabled
-    i = getTick();
+    i = IRQgetTime() / 1e6;
     delayMs(100);
-    if (i == getTick())
+    if (i == IRQgetTime() / 1e6)
     {
         enableInterrupts();
         fail("enableInterrupts() nesting (2)");
@@ -3315,11 +3315,11 @@ void t20_t2(void *arg)
     t20_v1                 = 0;
     eq->post(t20_f1);
     eq->post(t20_f1);
-    unsigned long long t1 = getTick();
+    unsigned long long t1 = IRQgetTime() / 1e6;
     eq->post(bind(t20_f2, 10, 4));  // This should block
-    unsigned long long t2 = getTick();
+    unsigned long long t2 = IRQgetTime() / 1e6;
     // The other thread sleep for 50ms before calling run()
-    if ((t2 - t1) < static_cast<unsigned long long>(TICK_FREQ * 0.04))
+    if ((t2 - t1) < static_cast<unsigned long long>(1000 * 0.04))
         fail("Not blocked");
     Thread::sleep(10);
     if (t20_v1 != 14)
@@ -5088,8 +5088,8 @@ static void benchmark_1()
     // every line dumps 16 bytes, and is 81 char long (considering \r\n)
     // so (2048/16)*81=10368
     iprintf("Time required to print 10368 char is %dms\n",
-            (t.interval() * 1000) / TICK_FREQ);
-    unsigned int baudrate = 10368 * 10000 / ((t.interval() * 1000) / TICK_FREQ);
+            (t.interval() * 1000) / 1000);
+    unsigned int baudrate = 10368 * 10000 / ((t.interval() * 1000) / 1000);
     iprintf("Effective baud rate =%u\n", baudrate);
 #else   //_ARCH_ARM7_LPC2000
     memDump(data, 32768);
@@ -5097,9 +5097,8 @@ static void benchmark_1()
     // every line dumps 16 bytes, and is 81 char long (considering \r\n)
     // so (32768/16)*81=165888
     iprintf("Time required to print 165888 char is %dms\n",
-            (t.interval() * 1000) / TICK_FREQ);
-    unsigned int baudrate =
-        165888 * 10000 / ((t.interval() * 1000) / TICK_FREQ);
+            (t.interval() * 1000) / 1000);
+    unsigned int baudrate = 165888 * 10000 / ((t.interval() * 1000) / 1000);
     iprintf("Effective baud rate =%u\n", baudrate);
 #endif  //_ARCH_ARM7_LPC2000
 }
@@ -5133,7 +5132,7 @@ static int b2_f1()
         // we need to make a copy of the timer and stop the copy.
         Timer k(t);
         k.stop();
-        if ((unsigned int)k.interval() >= TICK_FREQ)
+        if ((unsigned int)k.interval() >= 1000)
             break;
         i += 2;
         Thread::yield();
@@ -5207,10 +5206,10 @@ static void benchmark_3()
     if (fclose(f) != 0)
         iprintf("Error in fclose 1\n");
     iprintf("Filesystem write benchmark\n");
-    unsigned int writeTime  = (total.interval() * 1000) / TICK_FREQ;
+    unsigned int writeTime  = (total.interval() * 1000) / 1000;
     unsigned int writeSpeed = static_cast<unsigned int>(1024000.0 / writeTime);
     iprintf("Total write time = %dms (%dKB/s)\n", writeTime, writeSpeed);
-    iprintf("Max filesystem latency = %dms\n", (max * 1000) / TICK_FREQ);
+    iprintf("Max filesystem latency = %dms\n", (max * 1000) / 1000);
     // Read benchmark
     max = 0;
     total.clear();
@@ -5247,10 +5246,10 @@ quit:
     if (fclose(f) != 0)
         iprintf("Error in fclose 2\n");
     iprintf("Filesystem read test\n");
-    unsigned int readTime  = (total.interval() * 1000) / TICK_FREQ;
+    unsigned int readTime  = (total.interval() * 1000) / 1000;
     unsigned int readSpeed = static_cast<unsigned int>(1024000.0 / readTime);
     iprintf("Total read time = %dms (%dKB/s)\n", readTime, readSpeed);
-    iprintf("Max filesystem latency = %dms\n", (max * 1000) / TICK_FREQ);
+    iprintf("Max filesystem latency = %dms\n", (max * 1000) / 1000);
     delete[] buf;
 }
 

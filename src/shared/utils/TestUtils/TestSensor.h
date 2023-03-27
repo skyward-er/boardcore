@@ -37,12 +37,14 @@ struct TestData : public TimestampData
     float value;
 
     TestData(float v)
-        : TimestampData{static_cast<uint64_t>(miosix::getTick())}, value(v)
+        : TimestampData{static_cast<uint64_t>(miosix::IRQgetTime() / 1e6)},
+          value(v)
     {
     }
 
     TestData()
-        : TimestampData{static_cast<uint64_t>(miosix::getTick())}, value(0.0)
+        : TimestampData{static_cast<uint64_t>(miosix::IRQgetTime() / 1e6)},
+          value(0.0)
     {
     }
 };
@@ -61,8 +63,9 @@ public:
     {
         TRACE("[TestSensor] sampleImpl() \n");
         return TestData(
-            10 * sin(Constants::PI * static_cast<float>(miosix::getTick()) /
-                     static_cast<float>(miosix::TICK_FREQ)));
+            10 *
+            sin(Constants::PI * static_cast<float>(miosix::IRQgetTime() / 1e6) /
+                static_cast<float>(1000)));
     }
 };
 

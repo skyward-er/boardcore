@@ -104,7 +104,7 @@ void EventBroker::run()
     while (!shouldStop())
     {
         while (delayedEvents.size() > 0 &&
-               delayedEvents.front().deadline <= getTick())
+               delayedEvents.front().deadline <= IRQgetTime() / 1e6)
         {
             // Pop the first element
             DelayedEvent dev = delayedEvents.front();
@@ -120,7 +120,7 @@ void EventBroker::run()
 
         // When to wakeup for the next cycle
         long long sleepUntil =
-            getTick() + EVENT_BROKER_MIN_DELAY * miosix::TICK_FREQ / 1000;
+            IRQgetTime() / 1e6 + EVENT_BROKER_MIN_DELAY * 1000 / 1000;
 
         if (delayedEvents.size() > 0)
         {
@@ -136,7 +136,7 @@ void EventBroker::run()
             Unlock<FastMutex> unlock(lock);
             StackLogger::getInstance().updateStack(THID_EVT_BROKER);
 
-            Thread::sleepUntil(sleepUntil);
+            Thread::sleep(sleepUntil);
         }
     }
 }

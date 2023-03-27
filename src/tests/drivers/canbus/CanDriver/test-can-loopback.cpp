@@ -64,7 +64,7 @@ public:
     {
         while (!shouldStop())
         {
-            long long start                     = miosix::getTick();
+            long long start                     = miosix::IRQgetTime() / 1e6;
             BusLoadEstimation::BusLoadInfo info = ble.getLoadInfo();
             LOG_INFO(l,
                      "payload rate: {:.2f} kbps, total rate: {:.2f} kbps, "
@@ -122,7 +122,7 @@ int main()
     {
 
         // printPacket("TX", p);
-        p.timestamp = miosix::getTick();
+        p.timestamp = miosix::IRQgetTime() / 1e6;
         c->send(p);
         load.addPacket(p);
         // Thread::sleep(1);

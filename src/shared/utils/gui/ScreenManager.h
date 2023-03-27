@@ -82,7 +82,7 @@ protected:
                 screens[activeScreen]->invalidateTree();
             }
 
-            long long start = miosix::getTick();
+            long long start = miosix::IRQgetTime() / 1e6;
 
             drawViewTree(screens[activeScreen], dc);
 

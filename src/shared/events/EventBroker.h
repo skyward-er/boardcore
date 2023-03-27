@@ -37,11 +37,7 @@
 using std::map;
 using std::vector;
 
-using miosix::FastMutex;
-using miosix::getTick;
-using miosix::Lock;
-using miosix::Thread;
-using miosix::Unlock;
+using namespace miosix;
 
 namespace Boardcore
 {
@@ -90,9 +86,10 @@ public:
 
         // Delay in system ticks
         long long delayTicks =
-            static_cast<long long>(delayMs * miosix::TICK_FREQ / 1000);
+            static_cast<long long>(delayMs * 1000 / 1000);
 
-        DelayedEvent dev{eventCounter++, ev, topic, getTick() + delayTicks};
+        DelayedEvent dev{eventCounter++, ev, topic,
+                         IRQgetTime() / 1e6 + delayTicks};
         bool added = false;
 
         // Add the new event in the list, ordered by deadline (first = nearest

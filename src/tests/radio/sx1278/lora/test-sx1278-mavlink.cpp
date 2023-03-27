@@ -146,7 +146,7 @@ void flightTmLoop()
 {
     while (1)
     {
-        long long start = miosix::getTick();
+        long long start = miosix::IRQgetTime() / 1e6;
 
         mavlink_message_t msg;
         mavlink_rocket_flight_tm_t tm = {0};
@@ -163,7 +163,7 @@ void statsTmLoop()
 {
     while (1)
     {
-        long long start = miosix::getTick();
+        long long start = miosix::IRQgetTime() / 1e6;
 
         mavlink_message_t msg;
         mavlink_rocket_stats_tm_t tm = {0};

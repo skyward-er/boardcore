@@ -60,9 +60,9 @@ static void cpuMeterThread(void*)
 {
     for (;;)
     {
-        long long t1 = getTick();
+        long long t1 = IRQgetTime() / 1e6;
         delayMs(period);
-        long long t2 = getTick();
+        long long t2 = IRQgetTime() / 1e6;
 
         update++;
         float delta = t2 - t1;

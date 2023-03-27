@@ -74,7 +74,7 @@ public:
     {
         Lock<FastMutex> lock(mutexPkt);
 
-        long long ts = miosix::getTick();
+        long long ts = miosix::IRQgetTime() / 1e6;
 
         unsigned int interval = 0;
         if (packets.size() > 0)
@@ -95,7 +95,7 @@ public:
     {
         Lock<FastMutex> lock(mutexPkt);
 
-        long long ts = miosix::getTick();
+        long long ts = miosix::IRQgetTime() / 1e6;
         removeOldPackets(ts);
 
         float sum = 0;
@@ -113,7 +113,7 @@ public:
     float getPacketLoss()
     {
         Lock<FastMutex> lock(mutexPkt);
-        long long ts = miosix::getTick();
+        long long ts = miosix::IRQgetTime() / 1e6;
         removeOldPackets(ts);
 
         float avgInterval = std::numeric_limits<float>::infinity();
@@ -137,7 +137,7 @@ public:
     float getPacketsPerSecond()
     {
         Lock<FastMutex> lock(mutexPkt);
-        long long ts = miosix::getTick();
+        long long ts = miosix::IRQgetTime() / 1e6;
         removeOldPackets(ts);
 
         return (float)packets.size() / (windowDuration / 1000.0f);

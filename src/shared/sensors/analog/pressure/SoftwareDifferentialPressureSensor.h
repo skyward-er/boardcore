@@ -67,7 +67,7 @@ public:
         float p1 = first_pressure_sensor->getLastSample().pressure;
         float p2 = second_pressure_sensor->getLastSample().pressure;
 
-        return PressureData{miosix::getTick(), p1 - p2};
+        return PressureData{miosix::IRQgetTime() / 1e6, p1 - p2};
     }
 
 private:

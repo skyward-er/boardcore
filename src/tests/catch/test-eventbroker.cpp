@@ -208,7 +208,7 @@ protected:
 TEST_CASE_METHOD(EventBrokerTestFixture, "EventBroker - Events can be dalayed")
 {
     Event ev{EV_A};
-    long long start = getTick();
+    long long start = IRQgetTime() / 1e6;
 
     // Post delayed event by 1000 ms
     broker.postDelayed<1000>(ev, TOPIC_1);
@@ -222,7 +222,7 @@ TEST_CASE_METHOD(EventBrokerTestFixture,
                  "EventBroker - Delayed events can be removed")
 {
     Event ev{EV_A};
-    long long start = getTick();
+    long long start = IRQgetTime() / 1e6;
 
     // Post delayed event by 1000 ms
     uint16_t delayed = broker.postDelayed<1000>(ev, TOPIC_1);

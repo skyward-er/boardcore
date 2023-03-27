@@ -33,7 +33,7 @@ namespace Boardcore
 using namespace SX1278;
 using namespace SX1278::Fsk;
 
-long long now() { return miosix::getTick() * 1000 / miosix::TICK_FREQ; }
+long long now() { return miosix::IRQgetTime() / 1e6 * 1000 / 1000; }
 
 // Default values for registers
 constexpr uint8_t REG_OP_MODE_DEFAULT = RegOpMode::LONG_RANGE_MODE_FSK |
