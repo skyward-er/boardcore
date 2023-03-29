@@ -26,8 +26,10 @@
 int main()
 {
     initBoard();
-    if(!initRadio()) {
-        while(1);
+    if (!initRadio())
+    {
+        while (1)
+            ;
     }
 
     // Initialize backgrounds threads
@@ -47,8 +49,7 @@ int main()
             "SNR:               %.2f\n",
             static_cast<float>(stats.txBitrate()) / 1000.0f, stats.sent_count,
             static_cast<float>(stats.rxBitrate()) / 1000.0f, stats.recv_count,
-            stats.corrupted_count, stats.rssi,
-            stats.fei, stats.snr);
+            stats.corrupted_count, stats.rssi, stats.fei, stats.snr);
 
         miosix::Thread::sleep(2000);
     }
