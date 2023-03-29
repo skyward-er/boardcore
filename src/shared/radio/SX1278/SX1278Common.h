@@ -27,6 +27,7 @@
 #include <radio/Transceiver.h>
 
 #include <memory>
+#include <cmath>
 
 #include "SX1278Defs.h"
 
@@ -43,6 +44,22 @@ using DioMapping = RegDioMapping::Mapping;
  */
 class ISX1278 : public Transceiver
 {
+public:
+    /**
+     * @brief Get the RSSI in dBm, during last packet receive.
+     */
+    virtual float getLastRxRssi() = 0;
+
+    /**
+     * @brief Get the frequency error index in Hz, during last packet receive (NaN if not available).
+     */
+    virtual float getLastRxFei() { return std::nanf(""); }
+
+    /**
+     * @brief Get the signal to noise ratio, during last packet receive (NaN if not available).
+     */
+    virtual float getLastRxSnr() { return std::nanf(""); }
+
 protected:
     /*
      * Stuff used internally by SX1278Common

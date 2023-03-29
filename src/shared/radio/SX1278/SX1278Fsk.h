@@ -184,12 +184,12 @@ public:
     /**
      * @brief Get the RSSI in dBm, during last packet receive.
      */
-    float getLastRxRssi();
+    float getLastRxRssi() override;
 
     /**
      * @brief Get the frequency error index in Hz, during last packet receive.
      */
-    float getLastRxFei();
+    float getLastRxFei() override;
 
 private:
     void rateLimitTx();

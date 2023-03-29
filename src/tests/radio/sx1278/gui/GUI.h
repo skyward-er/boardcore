@@ -49,8 +49,9 @@ public:
         int corrupted_count;
         int sent_count;
         int recv_count;
-        float packet_loss;
         float rssi;
+        float fei;
+        float snr;
     };
 
     StatsScreen()
@@ -72,16 +73,19 @@ public:
         rx_data.setCell(&lbl_rx_bitrate, 0, 0);
         rx_data.setCell(&lbl_recv_count, 1, 0);
         rx_data.setCell(&lbl_corrupted_count, 2, 0);
-        rx_data.setCell(&lbl_packet_loss, 3, 0);
 
         rx_data.setCell(&rx_bitrate, 0, 1);
         rx_data.setCell(&recv_count, 1, 1);
         rx_data.setCell(&corrupted_count, 2, 1);
-        rx_data.setCell(&packet_loss, 3, 1);
 
         lbl_misc_data.setTextColor(mxgui::blue);
         misc_data.setCell(&lbl_rssi, 0, 0);
+        misc_data.setCell(&lbl_fei, 1, 0);
+        misc_data.setCell(&lbl_snr, 2, 0);
+
         misc_data.setCell(&rssi, 0, 1);
+        misc_data.setCell(&fei, 1, 1);
+        misc_data.setCell(&snr, 2, 1);
 
         root.addView(&status, 0.1);
         root.addView(&lbl_tx_data, 0.1);
@@ -90,24 +94,6 @@ public:
         root.addView(&rx_data, 0.8);
         root.addView(&lbl_misc_data, 0.1);
         root.addView(&misc_data, 0.2);
-    }
-
-    void updateError(Boardcore::SX1278Fsk::Error value)
-    {
-        switch (value)
-        {
-            case Boardcore::SX1278Fsk::Error::BAD_VALUE:
-                status.setBackgroundColor(mxgui::red);
-                status.setText("BAD VALUE");
-                break;
-            case Boardcore::SX1278Fsk::Error::BAD_VERSION:
-                status.setBackgroundColor(mxgui::red);
-                status.setText("BAD VERSION");
-                break;
-
-            default:
-                break;
-        }
     }
 
     void updateReady()
@@ -124,18 +110,18 @@ public:
         rx_bitrate.setText(format_link_speed(stats.rx_bitrate));
         recv_count.setText(fmt::format("{}", stats.recv_count));
         corrupted_count.setText(fmt::format("{}", stats.corrupted_count));
-        packet_loss.setText(
-            fmt::format("{:.2f} %", stats.packet_loss * 100.0f));
 
         rssi.setText(fmt::format("{} dBm", stats.rssi));
+        fei.setText(fmt::format("{} Hz", stats.fei));
+        snr.setText(fmt::format("{}", stats.snr));
     }
 
     Boardcore::VerticalLayout root{10};
     Boardcore::TextView status{"LOADING"};
 
     Boardcore::GridLayout tx_data{2, 2};
-    Boardcore::GridLayout rx_data{4, 2};
-    Boardcore::GridLayout misc_data{1, 2};
+    Boardcore::GridLayout rx_data{3, 2};
+    Boardcore::GridLayout misc_data{3, 2};
 
     Boardcore::TextView lbl_tx_data{"Tx data"};
     Boardcore::TextView lbl_rx_data{"Rx data"};
@@ -146,16 +132,18 @@ public:
     Boardcore::TextView lbl_rx_bitrate{"Rx bitrate:"};
     Boardcore::TextView lbl_recv_count{"Packets received:"};
     Boardcore::TextView lbl_corrupted_count{"Corrupted packets:"};
-    Boardcore::TextView lbl_packet_loss{"Packet loss:"};
     Boardcore::TextView lbl_rssi{"RSSI:"};
+    Boardcore::TextView lbl_fei{"FEI:"};
+    Boardcore::TextView lbl_snr{"SNR:"};
 
     Boardcore::TextView tx_bitrate{"0.00 b/s"};
     Boardcore::TextView rx_bitrate{"0.00 b/s"};
     Boardcore::TextView corrupted_count{"0"};
     Boardcore::TextView recv_count{"0"};
     Boardcore::TextView sent_count{"0"};
-    Boardcore::TextView packet_loss{"0 %"};
     Boardcore::TextView rssi{"0 dBm"};
+    Boardcore::TextView fei{"0 Hz"};
+    Boardcore::TextView snr{"0"};
 };
 
 class GUI
