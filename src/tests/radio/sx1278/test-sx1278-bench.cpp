@@ -20,17 +20,16 @@
  * THE SOFTWARE.
  */
 
+#include "sx1278-init.h"
+
 #include <drivers/timer/TimestampTimer.h>
 #include <miosix.h>
-#include <radio/SX1278/SX1278Fsk.h>
 #include <utils/MovingAverage.h>
 
 #include <thread>
 
 using namespace Boardcore;
 using namespace miosix;
-
-SX1278Fsk *sx1278 = nullptr;
 
 // Simple xorshift RNG
 uint32_t xorshift32()
@@ -86,6 +85,7 @@ struct LinkStats
 
     float rssi = 0.0f;
     float fei  = 0.0f;
+    float snr  = 0.0f;
 
     uint64_t txBitrate()
     {
@@ -120,6 +120,7 @@ void recvLoop()
 
             stats.rssi = sx1278->getLastRxRssi();
             stats.fei  = sx1278->getLastRxFei();
+            stats.snr  = sx1278->getLastRxSnr();
         }
         else
         {
