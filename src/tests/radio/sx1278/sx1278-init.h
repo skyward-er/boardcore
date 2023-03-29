@@ -1,4 +1,4 @@
-/* Copyright (c) 2022 Skyward Experimental Rocketry
+/* Copyright (c) 2023 Skyward Experimental Rocketry
  * Author: Davide Mor
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -20,18 +20,14 @@
  * THE SOFTWARE.
  */
 
+#pragma once
+
 #include <drivers/interrupt/external_interrupts.h>
-#include <filesystem/console/console_device.h>
 
 // SX1278 includes
 #include <radio/SX1278/SX1278Frontends.h>
 #include <radio/SX1278/SX1278Fsk.h>
 #include <radio/SX1278/SX1278Lora.h>
-
-#include <thread>
-
-using namespace Boardcore;
-using namespace miosix;
 
 // Uncomment the following line to enable Lora mode
 // Or use SBS to define it for you
@@ -43,18 +39,18 @@ using namespace miosix;
 // Uncomment the following line to enable Ebyte module
 // #define SX1278_IS_EBYTE
 
-using cs   = peripherals::ra01::pc13::cs;
-using dio0 = peripherals::ra01::pc13::dio0;
-using dio1 = peripherals::ra01::pc13::dio1;
-using dio3 = peripherals::ra01::pc13::dio3;
+using cs   = miosix::peripherals::ra01::pc13::cs;
+using dio0 = miosix::peripherals::ra01::pc13::dio0;
+using dio1 = miosix::peripherals::ra01::pc13::dio1;
+using dio3 = miosix::peripherals::ra01::pc13::dio3;
 
-using sck  = interfaces::spi4::sck;
-using miso = interfaces::spi4::miso;
-using mosi = interfaces::spi4::mosi;
+using sck  = miosix::interfaces::spi4::sck;
+using miso = miosix::interfaces::spi4::miso;
+using mosi = miosix::interfaces::spi4::mosi;
 
 #ifdef SX1278_IS_EBYTE
-using txen = Gpio<GPIOE_BASE, 4>;
-using rxen = Gpio<GPIOD_BASE, 4>;
+using txen = miosix::Gpio<GPIOE_BASE, 4>;
+using rxen = miosix::Gpio<GPIOD_BASE, 4>;
 #endif
 
 #define SX1278_SPI SPI4
@@ -68,11 +64,11 @@ using rxen = Gpio<GPIOD_BASE, 4>;
 #endif
 
 #ifdef SX1278_IS_LORA
-static constexpr size_t SX1278_MTU = SX1278Lora::MTU;
-SX1278Lora *sx1278                 = nullptr;
+static constexpr size_t SX1278_MTU = Boardcore::SX1278Lora::MTU;
+Boardcore::SX1278Lora *sx1278      = nullptr;
 #else
-static constexpr size_t SX1278_MTU = SX1278Fsk::MTU;
-SX1278Fsk *sx1278                  = nullptr;
+static constexpr size_t SX1278_MTU = Boardcore::SX1278Fsk::MTU;
+Boardcore::SX1278Fsk *sx1278       = nullptr;
 #endif
 
 #ifdef SX1278_IRQ_DIO0
@@ -102,111 +98,80 @@ void __attribute__((used)) SX1278_IRQ_DIO3()
 void initBoard()
 {
 #ifdef SX1278_IS_EBYTE
-    rxen::mode(Mode::OUTPUT);
-    txen::mode(Mode::OUTPUT);
+    rxen::mode(miosix::Mode::OUTPUT);
+    txen::mode(miosix::Mode::OUTPUT);
     rxen::low();
     txen::low();
 #endif
 
 #ifdef SX1278_IRQ_DIO0
-    GpioPin dio0_pin = dio0::getPin();
+    miosix::GpioPin dio0_pin = dio0::getPin();
     enableExternalInterrupt(dio0_pin.getPort(), dio0_pin.getNumber(),
                             InterruptTrigger::RISING_EDGE);
 #endif
 
 #ifdef SX1278_IRQ_DIO1
-    GpioPin dio1_pin = dio1::getPin();
+    miosix::GpioPin dio1_pin = dio1::getPin();
     enableExternalInterrupt(dio1_pin.getPort(), dio1_pin.getNumber(),
                             InterruptTrigger::RISING_EDGE);
 #endif
 
 #ifdef SX1278_IRQ_DIO3
-    GpioPin dio3_pin = dio3::getPin();
+    miosix::GpioPin dio3_pin = dio3::getPin();
     enableExternalInterrupt(dio3_pin.getPort(), dio3_pin.getNumber(),
                             InterruptTrigger::RISING_EDGE);
 #endif
 }
 
-void recvLoop()
+bool initRadio()
 {
-    uint8_t msg[SX1278_MTU];
-    while (1)
-    {
-        int len = sx1278->receive(msg, sizeof(msg));
-        if (len > 0)
-        {
-            auto serial = miosix::DefaultConsole::instance().get();
-            serial->writeBlock(msg, len, 0);
-        }
-    }
-}
-
-void sendLoop()
-{
-    uint8_t msg[SX1278_MTU];
-    while (1)
-    {
-        auto serial = miosix::DefaultConsole::instance().get();
-        int len     = serial->readBlock(msg, sizeof(msg), 0);
-        if (len > 0)
-        {
-            sx1278->send(msg, len);
-        }
-    }
-}
-
-int main()
-{
-    initBoard();
-
-    SPIBus bus(SX1278_SPI);
-    GpioPin cs = cs::getPin();
-
+    // Initialize frontend (if any)
 #ifdef IS_EBYTE
-    std::unique_ptr<SX1278::ISX1278Frontend> frontend(
-        new EbyteFrontend(txen::getPin(), rxen::getPin()));
+    std::unique_ptr<Boardcore::SX1278::ISX1278Frontend> frontend(
+        new Boardcore::EbyteFrontend(txen::getPin(), rxen::getPin()));
 #else
-    std::unique_ptr<SX1278::ISX1278Frontend> frontend(new RA01Frontend());
+    std::unique_ptr<Boardcore::SX1278::ISX1278Frontend> frontend(
+        new Boardcore::RA01Frontend());
 #endif
 
+    Boardcore::SPIBus bus(SX1278_SPI);
+    miosix::GpioPin cs = cs::getPin();
+
+    // Initialize actual radio driver
 #ifdef SX1278_IS_LORA
     // Run default configuration
-    SX1278Lora::Config config;
-    SX1278Lora::Error err;
+    Boardcore::SX1278Lora::Config config;
+    Boardcore::SX1278Lora::Error err;
 
-    sx1278 =
-        new SX1278Lora(bus, cs, SPI::ClockDivider::DIV_64, std::move(frontend));
+    sx1278 = new Boardcore::SX1278Lora(
+        bus, cs, Boardcore::SPI::ClockDivider::DIV_64, std::move(frontend));
 
     printf("\n[sx1278] Configuring sx1278 lora...\n");
-    if ((err = sx1278->init(config)) != SX1278Lora::Error::NONE)
+    if ((err = sx1278->init(config)) != Boardcore::SX1278Lora::Error::NONE)
     {
         printf("[sx1278] sx1278->init error\n");
-        return -1;
+        return false;
     }
 
     printf("\n[sx1278] Initialization complete!\n");
 #else
     // Run default configuration
-    SX1278Fsk::Config config;
-    SX1278Fsk::Error err;
+    Boardcore::SX1278Fsk::Config config;
+    Boardcore::SX1278Fsk::Error err;
 
-    sx1278 =
-        new SX1278Fsk(bus, cs, SPI::ClockDivider::DIV_64, std::move(frontend));
+    sx1278 = new Boardcore::SX1278Fsk(
+        bus, cs, Boardcore::SPI::ClockDivider::DIV_64, std::move(frontend));
 
     printf("\n[sx1278] Configuring sx1278 fsk...\n");
-    if ((err = sx1278->init(config)) != SX1278Fsk::Error::NONE)
+    if ((err = sx1278->init(config)) != Boardcore::SX1278Fsk::Error::NONE)
     {
-                         // FIXME: Why does clang-format put this line up here?
+        // FIXME: Why does clang-format put this line up here?
         printf("[sx1278] sx1278->init error\n");
-        return -1;
+        return false;
     }
 
     printf("\n[sx1278] Initialization complete!\n");
 #endif
 
-    // Actually spawn threads
-    std::thread send([]() { sendLoop(); });
-    recvLoop();
-
-    return 0;
+    return true;
 }

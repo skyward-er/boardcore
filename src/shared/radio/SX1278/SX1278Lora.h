@@ -180,12 +180,12 @@ public:
     /**
      * @brief Get the RSSI in dBm, during last packet receive.
      */
-    float getLastRxRssi();
+    float getLastRxRssi() override;
 
     /**
      * @brief Get the RSSI in dBm, during last packet receive.
      */
-    float getLastRxSnr();
+    float getLastRxSnr() override;
 
 private:
     void readFifo(uint8_t addr, uint8_t *dst, uint8_t size);
