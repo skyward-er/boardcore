@@ -29,6 +29,20 @@ namespace Boardcore
 
 constexpr float H3LIS331DL::SENSITIVITY_VALUES[];
 
+H3LIS331DL::H3LIS331DL(SPIBusInterface& spiBus, miosix::GpioPin cs,
+                       SPIBusConfig cfg, OutputDataRate odr,
+                       BlockDataUpdate bdu, FullScaleRange fs)
+    : spi(spiBus, cs, cfg), odr(odr), bdu(bdu), fs(fs), initialized(false)
+{
+}
+
+H3LIS331DL::H3LIS331DL(SPIBusInterface& spiBus, miosix::GpioPin cs,
+                       OutputDataRate odr, BlockDataUpdate bdu,
+                       FullScaleRange fs)
+    : H3LIS331DL(spiBus, cs, {}, odr, bdu, fs)
+{
+}
+
 bool H3LIS331DL::init()
 {
     if (this->initialized)
@@ -102,6 +116,8 @@ bool H3LIS331DL::init()
 
     return this->initialized;
 }
+
+bool H3LIS331DL::selfTest() { return true; }
 
 H3LIS331DLData H3LIS331DL::sampleImpl()
 {
@@ -197,21 +213,5 @@ H3LIS331DLData H3LIS331DL::sampleImpl()
 
     return H3LIS331DLData(lastSampleTimestamp, x, y, z);
 }
-
-H3LIS331DL::H3LIS331DL(SPIBusInterface& spiBus, miosix::GpioPin cs,
-                       SPIBusConfig cfg, OutputDataRate odr,
-                       BlockDataUpdate bdu, FullScaleRange fs)
-    : spi(spiBus, cs, cfg), odr(odr), bdu(bdu), fs(fs), initialized(false)
-{
-}
-
-H3LIS331DL::H3LIS331DL(SPIBusInterface& spiBus, miosix::GpioPin cs,
-                       OutputDataRate odr, BlockDataUpdate bdu,
-                       FullScaleRange fs)
-    : H3LIS331DL(spiBus, cs, {}, odr, bdu, fs)
-{
-}
-
-bool H3LIS331DL::selfTest() { return true; }
 
 }  // namespace Boardcore
