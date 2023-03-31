@@ -36,6 +36,17 @@ struct H3LIS331DLData : public AccelerometerData
         : AccelerometerData(ts, aX, aY, aZ){};
 
     H3LIS331DLData(AccelerometerData acc) : AccelerometerData(acc){};
+
+    static std::string header()
+    {
+        return "timestamp,accelerationX,accelerationY,accelerationZ\n";
+    }
+
+    void print(std::ostream& os) const
+    {
+        os << accelerationTimestamp << "," << accelerationX << ","
+           << accelerationY << "," << accelerationZ << "\n";
+    }
 };
 
 }  // namespace Boardcore

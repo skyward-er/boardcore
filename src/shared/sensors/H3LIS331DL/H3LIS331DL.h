@@ -29,31 +29,15 @@
 
 namespace Boardcore
 {
+
 /**
  * Driver for H3LIS331DL, a 3-Axis, high g Accelerometer Sensor made by
  * STMicroelectronics.
  */
 class H3LIS331DL : public Sensor<H3LIS331DLData>
 {
-    /* Class Data Types */
-public:
-    /**
-     * @brief Constants for the Registers
-     */
-    enum Registers
-    {
-        WHO_AM_I   = 0x0F,
-        CTRL_REG1  = 0x20,
-        CTRL_REG2  = 0x21,
-        CTRL_REG3  = 0x22,
-        CTRL_REG4  = 0x23,
-        CTRL_REG5  = 0x24,
-        STATUS_REG = 0x27,
-        OUT_X      = 0x28,
-        OUT_Y      = 0x2a,
-        OUT_Z      = 0x2c
-    };
 
+public:
     /**
      * @brief Constants for the FullScale Range.
      *
@@ -76,15 +60,15 @@ public:
      */
     enum OutputDataRate
     {
-        ODR_LP_0_5 = 0,
-        ODR_LP_1   = 1,
-        ODR_LP_2   = 2,
-        ODR_LP_5   = 3,
-        ODR_LP_10  = 4,
-        ODR_50     = 5,
-        ODR_100    = 6,
-        ODR_400    = 7,
-        ODR_1000   = 8
+        ODR_LP_0_5 = 0,  ///<  0.5 Hz low power mode
+        ODR_LP_1   = 1,  ///<    1 Hz low power mode
+        ODR_LP_2   = 2,  ///<    2 Hz low power mode
+        ODR_LP_5   = 3,  ///<    5 Hz low power mode
+        ODR_LP_10  = 4,  ///<   10 Hz low power mode
+        ODR_50     = 5,  ///<   50 Hz normal power mode
+        ODR_100    = 6,  ///<  100 Hz normal power mode
+        ODR_400    = 7,  ///<  400 Hz normal power mode
+        ODR_1000   = 8   ///< 1000 Hz normal power mode
     };
 
     /**
@@ -96,63 +80,6 @@ public:
         BDU_WAIT_UNTIL_READ  = 1
     };
 
-    /* Class Members */
-private:
-    /**
-     * @brief Constant that is contained in the WHO_AM_I register and that
-     * uniquely identifies this sensor
-     */
-    static const uint8_t WHO_AM_I_ID = 0x32;
-
-    /**
-     * @brief Constants for the sensitivity values based on the Full Scale Range
-     *
-     * Note: as there is no 0b10 configuration for the FSR the third value is
-     * set to 0.
-     */
-    static constexpr float SENSITIVITY_VALUES[] = {0.049, 0.098, 0.0, 0.195};
-
-    /**
-     * @brief The SPI driver used to create SPI Transactions
-     */
-    SPISlave spi;
-
-    /**
-     * @brief The OutputDataRate that is set to the sensor.
-     *
-     * Default: 50 HZ (@see OutputDataRate::ODR_50)
-     *
-     * Note: setting the ODR also sets the PowerMode.
-     * If the ODR is less than ODR_50 low PowerMode is set.
-     * Otherwise normal PowerMode is set.
-     */
-    OutputDataRate odr;
-
-    /**
-     * @brief The BlockDataUpdate that is set to the sensor.
-     *
-     * Default: Continuos Update (@see
-     * H3LIS331DL::BlockDataUpdate::BDU_CONTINUOS_UPDATE)
-     */
-    BlockDataUpdate bdu;
-
-    /**
-     * @brief The Full Scale Range set to the sensor.
-     *
-     * Default: +-100 (@see H3LIS331DL::FullScaleRange::FS_100)
-     *
-     * Note: setting the FSR also changes the sensitivity of the sensor.
-     */
-    FullScaleRange fs;
-
-    /**
-     * @brief True if the sensor is already initialized, False otherwise.
-     *
-     * Note: This is only changed by init, read by init and sampleImpl.
-     */
-    bool initialized;
-
-    /* Class Methods */
 public:
     /**
      * @brief Creates an instance of an H3LIS331DL sensor
@@ -228,6 +155,77 @@ private:
     {
         var |= (value << bitpos) & mask;
     };
+
+    /**
+     * @brief Constants for the Registers
+     */
+    enum Registers
+    {
+        REG_WHO_AM_I   = 0x0F,
+        REG_CTRL_REG1  = 0x20,
+        REG_CTRL_REG2  = 0x21,
+        REG_CTRL_REG3  = 0x22,
+        REG_CTRL_REG4  = 0x23,
+        REG_CTRL_REG5  = 0x24,
+        REG_STATUS_REG = 0x27,
+        REG_OUT_X      = 0x28,
+        REG_OUT_Y      = 0x2a,
+        REG_OUT_Z      = 0x2c
+    };
+
+    /**
+     * @brief Constant that is contained in the WHO_AM_I register and that
+     * uniquely identifies this sensor
+     */
+    static const uint8_t WHO_AM_I_ID = 0x32;
+
+    /**
+     * @brief Constants for the sensitivity values based on the Full Scale Range
+     *
+     * Note: as there is no 0b10 configuration for the FSR the third value is
+     * set to 0.
+     */
+    static constexpr float SENSITIVITY_VALUES[] = {0.049, 0.098, 0.0, 0.195};
+
+    /**
+     * @brief The SPI driver used to create SPI Transactions
+     */
+    SPISlave spi;
+
+    /**
+     * @brief The OutputDataRate that is set to the sensor.
+     *
+     * Default: 50 HZ (@see OutputDataRate::ODR_50)
+     *
+     * Note: setting the ODR also sets the PowerMode.
+     * If the ODR is less than ODR_50 low PowerMode is set.
+     * Otherwise normal PowerMode is set.
+     */
+    OutputDataRate odr;
+
+    /**
+     * @brief The BlockDataUpdate that is set to the sensor.
+     *
+     * Default: Continuos Update (@see
+     * H3LIS331DL::BlockDataUpdate::BDU_CONTINUOS_UPDATE)
+     */
+    BlockDataUpdate bdu;
+
+    /**
+     * @brief The Full Scale Range set to the sensor.
+     *
+     * Default: +-100 (@see H3LIS331DL::FullScaleRange::FS_100)
+     *
+     * Note: setting the FSR also changes the sensitivity of the sensor.
+     */
+    FullScaleRange fs;
+
+    /**
+     * @brief True if the sensor is already initialized, False otherwise.
+     *
+     * Note: This is only changed by init, read by init and sampleImpl.
+     */
+    bool initialized;
 };
 
 }  // namespace Boardcore
