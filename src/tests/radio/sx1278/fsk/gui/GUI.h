@@ -23,7 +23,7 @@
 #pragma once
 
 #include <mxgui/display.h>
-#include <radio/SX1278/SX1278.h>
+#include <radio/SX1278/SX1278Fsk.h>
 #include <utils/gui/GridLayout.h>
 #include <utils/gui/OptionView.h>
 #include <utils/gui/ScreenManager.h>
@@ -92,15 +92,15 @@ public:
         root.addView(&misc_data, 0.2);
     }
 
-    void updateError(Boardcore::SX1278::Error value)
+    void updateError(Boardcore::SX1278Fsk::Error value)
     {
         switch (value)
         {
-            case Boardcore::SX1278::Error::BAD_VALUE:
+            case Boardcore::SX1278Fsk::Error::BAD_VALUE:
                 status.setBackgroundColor(mxgui::red);
                 status.setText("BAD VALUE");
                 break;
-            case Boardcore::SX1278::Error::BAD_VERSION:
+            case Boardcore::SX1278Fsk::Error::BAD_VERSION:
                 status.setBackgroundColor(mxgui::red);
                 status.setText("BAD VERSION");
                 break;

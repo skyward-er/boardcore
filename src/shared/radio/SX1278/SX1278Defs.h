@@ -1,4 +1,4 @@
-/* Copyright (c) 2021 Skyward Experimental Rocketry
+/* Copyright (c) 2022 Skyward Experimental Rocketry
  * Author: Davide Mor
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -22,21 +22,13 @@
 
 #pragma once
 
-#include <drivers/spi/SPIDriver.h>
+#include <cstdint>
 
 namespace Boardcore
 {
 
-/**
- * @brief Various SX1278 register/enums definitions.
- */
-namespace SX1278Defs
+namespace SX1278
 {
-
-/**
- * @brief Length of the internal FIFO
- */
-constexpr int FIFO_LEN = 64;
 
 /**
  * @brief Main oscillator frequency (Hz)
@@ -48,25 +40,83 @@ constexpr int FXOSC = 32000000;
  */
 constexpr float FSTEP = 61.03515625;
 
-constexpr int TS_OSC = 250;
-constexpr int TS_FS  = 60;
+/**
+ * @brief Represents a DIO..
+ */
+enum class Dio
+{
+    DIO0 = 0,
+    DIO1 = 1,
+    DIO2 = 2,
+    DIO3 = 3,
+    DIO4 = 4,
+    DIO5 = 5
+};
+
+namespace RegDioMapping
+{
+
+inline constexpr uint16_t make(int dio0, int dio1, int dio2, int dio3, int dio4,
+                               int dio5, bool map_preamble_detect)
+{
+    return (((dio0 & 0b11) << 14) | ((dio1 & 0b11) << 12) |
+            ((dio2 & 0b11) << 10) | ((dio3 & 0b11) << 8) |
+            ((dio4 & 0b11) << 6) | ((dio5 & 0b11) << 4) |
+            (map_preamble_detect ? 1 : 0));
+}
 
 /**
- * @brief Get required spi config
+ * @brief Represents an actual Dio mapping..
  */
-inline SPIBusConfig spiConfig()
+struct Mapping
 {
-    SPIBusConfig config = {};
+    constexpr Mapping() : raw(0) {}
+    constexpr Mapping(int dio0, int dio1, int dio2, int dio3, int dio4,
+                      int dio5, bool map_preamble_detect = false)
+        : raw(make(dio0, dio1, dio2, dio3, dio4, dio5, map_preamble_detect))
+    {
+    }
 
-    // FIXME(davide.mor): This depends on the device
-    config.clockDivider = SPI::ClockDivider::DIV_64;
-    config.mode         = SPI::Mode::MODE_0;
-    config.bitOrder     = SPI::BitOrder::MSB_FIRST;
-    // config.cs_setup_time_us = 30;
-    // config.cs_hold_time_us  = 100;
+    int getMapping(Dio dio) const
+    {
+        switch (dio)
+        {
+            case Dio::DIO0:
+                return (raw >> 14) & 0b11;
+            case Dio::DIO1:
+                return (raw >> 12) & 0b11;
+            case Dio::DIO2:
+                return (raw >> 10) & 0b11;
+            case Dio::DIO3:
+                return (raw >> 8) & 0b11;
+            case Dio::DIO4:
+                return (raw >> 6) & 0b11;
+            case Dio::DIO5:
+                return (raw >> 4) & 0b11;
+            default:
+                return 0;
+        }
+    }
 
-    return config;
-}
+    bool operator==(const Mapping &other) const { return raw == other.raw; }
+
+    bool operator!=(const Mapping &other) const { return raw != other.raw; }
+
+    uint16_t raw;
+};
+
+}  // namespace RegDioMapping
+
+/**
+ * @brief Definitions only valid for Fsk
+ */
+namespace Fsk
+{
+
+/**
+ * @brief Length of the internal FIFO
+ */
+constexpr int FIFO_LEN = 64;
 
 namespace RegOpMode
 {
@@ -94,6 +144,7 @@ enum Mode
     MODE_FSRX  = 0b100,
     MODE_RX    = 0b101,
 };
+
 }  // namespace RegOpMode
 
 namespace RegPaConfig
@@ -214,22 +265,26 @@ enum TxStartCondition
 
 namespace RegIrqFlags
 {
-constexpr uint16_t MODE_READY         = 1 << 7;
-constexpr uint16_t RX_READY           = 1 << 6;
-constexpr uint16_t TX_READY           = 1 << 5;
-constexpr uint16_t PILL_LOCK          = 1 << 4;
-constexpr uint16_t RSSI               = 1 << 3;
-constexpr uint16_t TIMEOUT            = 1 << 2;
-constexpr uint16_t PREAMBLE_DETECT    = 1 << 1;
-constexpr uint16_t SYNC_ADDRESS_MATCH = 1 << 0;
-constexpr uint16_t FIFO_FULL          = 1 << 15;
-constexpr uint16_t FIFO_EMPTY         = 1 << 14;
-constexpr uint16_t FIFO_LEVEL         = 1 << 13;
-constexpr uint16_t FIFO_OVERRUN       = 1 << 12;
-constexpr uint16_t PACKET_SENT        = 1 << 11;
-constexpr uint16_t PAYLOAD_READY      = 1 << 10;
-constexpr uint16_t CRC_OK             = 1 << 9;
-constexpr uint16_t LOW_BAT            = 1 << 8;
+
+enum IrqFlags
+{
+    MODE_READY         = 1 << 15,
+    RX_READY           = 1 << 14,
+    TX_READY           = 1 << 13,
+    PILL_LOCK          = 1 << 12,
+    RSSI               = 1 << 11,
+    TIMEOUT            = 1 << 10,
+    PREAMBLE_DETECT    = 1 << 9,
+    SYNC_ADDRESS_MATCH = 1 << 8,
+    FIFO_FULL          = 1 << 7,
+    FIFO_EMPTY         = 1 << 6,
+    FIFO_LEVEL         = 1 << 5,
+    FIFO_OVERRUN       = 1 << 4,
+    PACKET_SENT        = 1 << 3,
+    PAYLOAD_READY      = 1 << 2,
+    CRC_OK             = 1 << 1,
+    LOW_BAT            = 1 << 0,
+};
 
 }  // namespace RegIrqFlags
 
@@ -355,22 +410,413 @@ enum Registers
     REG_AGC_THRESH_1 = 0x62,
     REG_AGC_THRESH_2 = 0x63,
     REG_AGC_THRESH_3 = 0x64,
-
-    // Low frequency additional registers
-    REG_AGC_REF_LF      = 0x61,
-    REG_AGC_THRESH_1_LF = 0x62,
-    REG_AGC_THRESH_2_LF = 0x63,
-    REG_AGC_THRESH_3_LF = 0x61,
-    REG_AGC_PILL_LF     = 0x70,
-
-    // High frequency additional registers
-    REG_AGC_REF_HF      = 0x61,
-    REG_AGC_THRESH_1_HF = 0x62,
-    REG_AGC_THRESH_2_HF = 0x63,
-    REG_AGC_THRESH_3_HF = 0x61,
-    REG_AGC_PILL_HF     = 0x70,
+    REG_AGC_PILL     = 0x70,
 };
 
-}  // namespace SX1278Defs
+static constexpr int DIO_MAPPINGS[6][8][4] =
+    {[0] =
+         {
+             [RegOpMode::MODE_SLEEP] = {0, 0, 0, 0},
+             [RegOpMode::MODE_STDBY] = {0, 0, 0, RegIrqFlags::LOW_BAT},
+             [RegOpMode::MODE_FSTX]  = {0, 0, 0, RegIrqFlags::LOW_BAT},
+             [RegOpMode::MODE_TX]    = {RegIrqFlags::PACKET_SENT, 0, 0,
+                                        RegIrqFlags::LOW_BAT},
+             [RegOpMode::MODE_FSRX]  = {0, 0, 0, RegIrqFlags::LOW_BAT},
+             [RegOpMode::MODE_RX] =
+                 {RegIrqFlags::PAYLOAD_READY, RegIrqFlags::CRC_OK, 0,
+                  RegIrqFlags::LOW_BAT},
+         },
+     [1] =
+         {
+             [RegOpMode::MODE_SLEEP] = {RegIrqFlags::FIFO_LEVEL,
+                                        RegIrqFlags::FIFO_EMPTY,
+                                        RegIrqFlags::FIFO_FULL, 0},
+             [RegOpMode::MODE_STDBY] = {RegIrqFlags::FIFO_LEVEL,
+                                        RegIrqFlags::FIFO_EMPTY,
+                                        RegIrqFlags::FIFO_FULL, 0},
+             [RegOpMode::MODE_FSTX] =
+                 {RegIrqFlags::FIFO_LEVEL, RegIrqFlags::FIFO_EMPTY,
+                  RegIrqFlags::FIFO_FULL, 0},
+             [RegOpMode::MODE_TX] = {RegIrqFlags::FIFO_LEVEL,
+                                     RegIrqFlags::FIFO_EMPTY,
+                                     RegIrqFlags::FIFO_FULL, 0},
+             [RegOpMode::MODE_FSRX] =
+                 {RegIrqFlags::FIFO_LEVEL, RegIrqFlags::FIFO_EMPTY,
+                  RegIrqFlags::FIFO_FULL, 0},
+             [RegOpMode::MODE_RX] = {RegIrqFlags::FIFO_LEVEL,
+                                     RegIrqFlags::FIFO_EMPTY,
+                                     RegIrqFlags::FIFO_FULL, 0},
+         },
+     [2] =
+         {
+             [RegOpMode::MODE_SLEEP] =
+                 {RegIrqFlags::FIFO_FULL, 0, RegIrqFlags::FIFO_FULL,
+                  RegIrqFlags::FIFO_FULL},
+             [RegOpMode::MODE_STDBY] =
+                 {RegIrqFlags::FIFO_FULL, 0, RegIrqFlags::FIFO_FULL,
+                  RegIrqFlags::FIFO_FULL},
+             [RegOpMode::MODE_FSTX] = {RegIrqFlags::FIFO_FULL, 0,
+                                       RegIrqFlags::FIFO_FULL,
+                                       RegIrqFlags::FIFO_FULL},
+             [RegOpMode::MODE_TX] =
+                 {RegIrqFlags::FIFO_FULL, 0, RegIrqFlags::FIFO_FULL,
+                  RegIrqFlags::FIFO_FULL},
+             [RegOpMode::MODE_FSRX] = {RegIrqFlags::FIFO_FULL, 0,
+                                       RegIrqFlags::FIFO_FULL,
+                                       RegIrqFlags::FIFO_FULL},
+             [RegOpMode::MODE_RX] =
+                 {RegIrqFlags::FIFO_FULL, RegIrqFlags::RX_READY,
+                  RegIrqFlags::TIMEOUT, RegIrqFlags::SYNC_ADDRESS_MATCH},
+         },
+     [3] =
+         {
+             [RegOpMode::MODE_SLEEP] =
+                 {
+                     RegIrqFlags::FIFO_EMPTY,
+                     0,
+                     RegIrqFlags::FIFO_EMPTY,
+                     RegIrqFlags::FIFO_EMPTY,
+                 },
+             [RegOpMode::MODE_STDBY] =
+                 {
+                     RegIrqFlags::FIFO_EMPTY,
+                     0,
+                     RegIrqFlags::FIFO_EMPTY,
+                     RegIrqFlags::FIFO_EMPTY,
+                 },
+             [RegOpMode::MODE_FSTX] =
+                 {
+                     RegIrqFlags::FIFO_EMPTY,
+                     0,
+                     RegIrqFlags::FIFO_EMPTY,
+                     RegIrqFlags::FIFO_EMPTY,
+                 },
+             [RegOpMode::MODE_TX] =
+                 {
+                     RegIrqFlags::FIFO_EMPTY,
+                     RegIrqFlags::TX_READY,
+                     RegIrqFlags::FIFO_EMPTY,
+                     RegIrqFlags::FIFO_EMPTY,
+                 },
+             [RegOpMode::MODE_FSRX] =
+                 {
+                     RegIrqFlags::FIFO_EMPTY,
+                     0,
+                     RegIrqFlags::FIFO_EMPTY,
+                     RegIrqFlags::FIFO_EMPTY,
+                 },
+             [RegOpMode::MODE_RX] =
+                 {
+                     RegIrqFlags::FIFO_EMPTY,
+                     0,
+                     RegIrqFlags::FIFO_EMPTY,
+                     RegIrqFlags::FIFO_EMPTY,
+                 },
+         },
+     [4] =
+         {
+             [RegOpMode::MODE_SLEEP] = {0, 0, 0, 0},
+             [RegOpMode::MODE_STDBY] = {RegIrqFlags::LOW_BAT, 0, 0, 0},
+             [RegOpMode::MODE_FSTX]  = {RegIrqFlags::LOW_BAT,
+                                        RegIrqFlags::PILL_LOCK, 0, 0},
+             [RegOpMode::MODE_TX]    = {RegIrqFlags::LOW_BAT,
+                                        RegIrqFlags::PILL_LOCK, 0, 0},
+             [RegOpMode::MODE_FSRX]  = {RegIrqFlags::LOW_BAT,
+                                        RegIrqFlags::PILL_LOCK, 0, 0},
+             [RegOpMode::MODE_RX] =
+                 {RegIrqFlags::LOW_BAT, RegIrqFlags::PILL_LOCK,
+                  RegIrqFlags::TIMEOUT,
+                  RegIrqFlags::RSSI | RegIrqFlags::PREAMBLE_DETECT},
+         },
+     [5] = {
+         [RegOpMode::MODE_SLEEP] = {0, 0, 0, 0},
+         [RegOpMode::MODE_STDBY] = {0, 0, 0, RegIrqFlags::MODE_READY},
+         [RegOpMode::MODE_FSTX]  = {0, RegIrqFlags::PILL_LOCK, 0,
+                                    RegIrqFlags::MODE_READY},
+
+         [RegOpMode::MODE_TX]   = {0, RegIrqFlags::PILL_LOCK, 0,
+                                   RegIrqFlags::MODE_READY},
+         [RegOpMode::MODE_FSRX] = {0, RegIrqFlags::PILL_LOCK, 0,
+                                   RegIrqFlags::MODE_READY},
+         [RegOpMode::MODE_RX]   = {0, RegIrqFlags::PILL_LOCK, 0,
+                                   RegIrqFlags::MODE_READY},
+     }};
+}  // namespace Fsk
+
+/**
+ * @brief Definitions only valid for LoRa
+ */
+namespace Lora
+{
+
+namespace RegOpMode
+{
+
+enum Mode
+{
+    MODE_SLEEP        = 0b000,
+    MODE_STDBY        = 0b001,
+    MODE_FSTX         = 0b010,
+    MODE_TX           = 0b011,
+    MODE_FSRX         = 0b100,
+    MODE_RXCONTINUOUS = 0b101,
+    MODE_RXSINGLE     = 0b110,
+    MODE_CAD          = 0b111
+};
+
+inline constexpr uint8_t make(Mode mode, bool low_frequency_mode_on,
+                              bool access_shared_reg)
+{
+    return mode | (low_frequency_mode_on ? (1 << 3) : 0) |
+           (access_shared_reg ? (1 << 6) : 0) | (1 << 7);
+}
+
+}  // namespace RegOpMode
+
+namespace RegPaConfig
+{
+
+inline constexpr uint8_t make(uint8_t output_power, uint8_t max_power,
+                              bool pa_select)
+{
+    return (output_power & 0b1111) | ((max_power & 0b111) << 4) |
+           (pa_select ? 1 << 7 : 0);
+}
+
+}  // namespace RegPaConfig
+
+namespace RegOcp
+{
+
+inline constexpr uint8_t make(uint8_t ocp_trim, bool ocp_on)
+{
+    return (ocp_trim & 0b11111) | (ocp_on ? 1 << 5 : 0);
+}
+
+}  // namespace RegOcp
+
+namespace RegIrqFlags
+{
+
+enum IrqFlags
+{
+    RX_TIMEOUT          = 1 << 7,
+    RX_DONE             = 1 << 6,
+    PAYLOAD_CRC_ERROR   = 1 << 5,
+    VALID_HEADER        = 1 << 4,
+    TX_DONE             = 1 << 3,
+    CAD_DONE            = 1 << 2,
+    FHSS_CHANGE_CHANNEL = 1 << 1,
+    CAD_DETECTED        = 1 << 0,
+};
+
+}
+
+namespace RegModemConfig1
+{
+
+enum Bw
+{
+    BW_HZ_7800   = 0b0000,
+    BW_HZ_10400  = 0b0001,
+    BW_HZ_15600  = 0b0010,
+    BW_HZ_20800  = 0b0011,
+    BW_HZ_31250  = 0b0100,
+    BW_HZ_41700  = 0b0101,
+    BW_HZ_62500  = 0b0110,
+    BW_HZ_125000 = 0b0111,
+    BW_HZ_250000 = 0b1000,
+    BW_HZ_500000 = 0b1001,
+};
+
+inline constexpr uint32_t bandwidthToInt(Bw bw)
+{
+    switch (bw)
+    {
+        case RegModemConfig1::BW_HZ_7800:
+            return 7800;
+        case RegModemConfig1::BW_HZ_10400:
+            return 10400;
+        case RegModemConfig1::BW_HZ_15600:
+            return 15600;
+        case RegModemConfig1::BW_HZ_20800:
+            return 20800;
+        case RegModemConfig1::BW_HZ_31250:
+            return 31250;
+        case RegModemConfig1::BW_HZ_41700:
+            return 41700;
+        case RegModemConfig1::BW_HZ_62500:
+            return 62500;
+        case RegModemConfig1::BW_HZ_125000:
+            return 125000;
+        case RegModemConfig1::BW_HZ_250000:
+            return 250000;
+        case RegModemConfig1::BW_HZ_500000:
+            return 500000;
+    }
+
+    // Gcc complains...
+    return 0;
+}
+
+enum Cr
+{
+    CR_1 = 0b001,
+    CR_2 = 0b010,
+    CR_3 = 0b011,
+    CR_4 = 0b100
+};
+
+inline constexpr uint8_t make(bool implicit_mode_on, Cr coding_rate, Bw bw)
+{
+    return (implicit_mode_on ? 1 : 0) | (coding_rate << 1) | (bw << 4);
+}
+
+}  // namespace RegModemConfig1
+
+namespace RegModemConfig2
+{
+
+enum Sf
+{
+    SF_6  = 6,
+    SF_7  = 7,
+    SF_8  = 8,
+    SF_9  = 9,
+    SF_10 = 10,
+    SF_11 = 11,
+    SF_12 = 12,
+};
+
+inline constexpr uint8_t make(bool rx_payload_crc_on, bool tx_continuous_mode,
+                              Sf spreading_factor)
+{
+    return (rx_payload_crc_on ? 1 << 2 : 0) |
+           (tx_continuous_mode ? 1 << 3 : 0) | (spreading_factor << 4);
+}
+
+}  // namespace RegModemConfig2
+
+namespace RegModemConfig3
+{
+
+inline constexpr uint8_t make(bool agc_auto_on, bool low_data_rate_optimize)
+{
+    return (agc_auto_on ? 1 << 2 : 0) | (low_data_rate_optimize ? 1 << 3 : 0);
+}
+
+}  // namespace RegModemConfig3
+
+namespace RegDetectOptimize
+{
+
+inline constexpr uint8_t make(uint8_t detection_optimize, bool automatic_if_on)
+{
+    return (detection_optimize & 0b11) | (automatic_if_on ? 1 << 7 : 0);
+}
+
+}  // namespace RegDetectOptimize
+
+namespace RegPaDac
+{
+
+inline constexpr uint8_t make(bool pa_boost)
+{
+    return (pa_boost ? 0x07 : 0x04) | (0x10 << 3);
+}
+
+}  // namespace RegPaDac
+
+enum Registers
+{
+    REG_FIFO = 0x00,
+
+    // Registers for common settings
+    REG_OP_MODE = 0x01,
+    REG_FRF_MSB = 0x06,
+    REG_FRF_MID = 0x07,
+    REG_FRF_LSB = 0x08,
+
+    // Registers for RF blocks
+    REG_PA_CONFIG = 0x09,
+    REG_PA_RAMP   = 0x0a,
+    REG_OCP       = 0x0b,
+    REG_LNA       = 0x0c,
+
+    // Lora page registers
+    REG_FIFO_ADDR_PTR           = 0x0d,
+    REG_FIFO_TX_BASE_ADDR       = 0x0e,
+    REG_FIFO_RX_BASE_ADDR       = 0x0f,
+    REG_FIFO_RX_CURRENT_ADDR    = 0x10,
+    REG_IRQ_FLAGS_MASK          = 0x11,
+    REG_IRQ_FLAGS               = 0x12,
+    REG_RX_NB_BYTES             = 0x13,
+    REG_RX_HEADER_CNT_VALUE_MSB = 0x14,
+    REG_RX_HEADER_CNT_VALUE_LSB = 0x15,
+    REG_RX_PACKET_CNT_VALUE_MSB = 0x16,
+    REG_RX_PACKET_CNT_VALUE_LSB = 0x17,
+    REG_MODEM_STAT              = 0x18,
+    REG_PKT_SNR_VALUE           = 0x19,
+    REG_PKT_RSSI_VALUE          = 0x1a,
+    REG_RSSI_VALUE              = 0x1b,
+    REG_HOP_CHANNEL             = 0x1c,
+    REG_MODEM_CONFIG_1          = 0x1d,
+    REG_MODEM_CONFIG_2          = 0x1e,
+    REG_SYMB_TIMEOUT_LSB        = 0x1f,
+    REG_PREAMBLE_MSB            = 0x20,
+    REG_PREAMBLE_LSB            = 0x21,
+    REG_PAYLOAD_LENGTH          = 0x22,
+    REG_MAX_PAYLOAD_LENGTH      = 0x23,
+    REG_HOP_PERIOD              = 0x24,
+    REG_FIFO_RX_BYTE_ADDR       = 0x25,
+    REG_MODEM_CONFIG_3          = 0x26,
+    REG_PPM_CORRECTION          = 0x27,
+    REG_FEI_MSB                 = 0x28,
+    REG_FEI_MID                 = 0x29,
+    REG_FEI_LSB                 = 0x2a,
+    REG_RSSI_WIDEBAND           = 0x2c,
+    REG_IF_FREQ_2               = 0x2f,
+    REG_IF_FREQ_1               = 0x30,
+    REG_DETECT_OPTIMIZE         = 0x31,
+    REG_INVERT_IQ               = 0x33,
+    REG_HIGH_BW_OPTIMIZE_1      = 0x36,
+    REG_DETECTION_THRESHOLD     = 0x37,
+    REG_SYNC_WORD               = 0x39,
+    REG_HIGH_BW_OPTIMIZE_2      = 0x3a,
+    REG_INVERT_IQ_2             = 0x3b,
+
+    // IO Control registers
+    REG_DIO_MAPPING_1 = 0x40,
+    REG_DIO_MAPPING_2 = 0x41,
+
+    // Version register
+    REG_VERSION = 0x42,
+
+    // Additional registers
+    REG_TCXO         = 0x4b,
+    REG_PA_DAC       = 0x4d,
+    REG_FORMER_TEMP  = 0x5b,
+    REG_AGC_REF      = 0x61,
+    REG_AGC_THRESH_1 = 0x62,
+    REG_AGC_THRESH_2 = 0x63,
+    REG_AGC_THRESH_3 = 0x64,
+    REG_AGC_PILL     = 0x70,
+};
+
+static constexpr int DIO_MAPPINGS[6][4] = {
+    [0] = {RegIrqFlags::RX_DONE, RegIrqFlags::TX_DONE, RegIrqFlags::CAD_DONE,
+           0},
+    [1] = {RegIrqFlags::RX_TIMEOUT, RegIrqFlags::FHSS_CHANGE_CHANNEL,
+           RegIrqFlags::CAD_DETECTED, 0},
+    [2] = {RegIrqFlags::FHSS_CHANGE_CHANNEL, RegIrqFlags::FHSS_CHANGE_CHANNEL,
+           RegIrqFlags::FHSS_CHANGE_CHANNEL, 0},
+    [3] = {RegIrqFlags::CAD_DONE, RegIrqFlags::VALID_HEADER,
+           RegIrqFlags::PAYLOAD_CRC_ERROR, 0},
+    [4] = {RegIrqFlags::CAD_DETECTED, 0, 0, 0},
+    [5] = {0, 0, 0, 0}};
+
+}  // namespace Lora
+
+}  // namespace SX1278
 
 }  // namespace Boardcore

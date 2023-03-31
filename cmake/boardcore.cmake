@@ -51,13 +51,14 @@ foreach(OPT_BOARD ${BOARDS})
         ${SBS_BASE}/src/shared/drivers/canbus/CanDriver/CanDriver.cpp
         ${SBS_BASE}/src/shared/drivers/canbus/CanDriver/CanInterrupt.cpp
         ${SBS_BASE}/src/shared/drivers/canbus/CanProtocol/CanProtocol.cpp
-        ${SBS_BASE}/src/shared/drivers/i2c/stm32f2_f4_i2c.cpp
         ${SBS_BASE}/src/shared/drivers/interrupt/external_interrupts.cpp
         ${SBS_BASE}/src/shared/drivers/timer/PWM.cpp
         ${SBS_BASE}/src/shared/drivers/timer/TimestampTimer.cpp
         ${SBS_BASE}/src/shared/drivers/runcam/Runcam.cpp
         ${SBS_BASE}/src/shared/drivers/spi/SPITransaction.cpp
         ${SBS_BASE}/src/shared/drivers/usart/USART.cpp
+        ${SBS_BASE}/src/shared/drivers/i2c/I2CDriver.cpp
+        ${SBS_BASE}/src/shared/drivers/i2c/I2C.cpp
 
         # Events
         ${SBS_BASE}/src/shared/events/EventBroker.cpp
@@ -69,7 +70,10 @@ foreach(OPT_BOARD ${BOARDS})
         ${SBS_BASE}/src/shared/radio/gamma868/Gamma868.cpp
         ${SBS_BASE}/src/shared/radio/Xbee/APIFrameParser.cpp
         ${SBS_BASE}/src/shared/radio/Xbee/Xbee.cpp
-        ${SBS_BASE}/src/shared/radio/SX1278/SX1278.cpp
+        ${SBS_BASE}/src/shared/radio/SX1278/SX1278Fsk.cpp
+        ${SBS_BASE}/src/shared/radio/SX1278/SX1278Lora.cpp
+        ${SBS_BASE}/src/shared/radio/SX1278/SX1278Common.cpp
+        ${SBS_BASE}/src/shared/radio/SX1278/Ebyte.cpp
 
         # Scheduler
         ${SBS_BASE}/src/shared/scheduler/TaskScheduler.cpp

@@ -21,7 +21,7 @@
  */
 
 #include <drivers/interrupt/external_interrupts.h>
-#include <radio/SX1278/SX1278.h>
+#include <radio/SX1278/SX1278Fsk.h>
 
 #include <thread>
 
@@ -51,52 +51,63 @@ constexpr uint32_t STATS_TM_PERIOD      = 2000;
 using Mav =
     MavlinkDriver<RADIO_PKT_LENGTH, RADIO_OUT_QUEUE_SIZE, RADIO_MAV_MSG_LENGTH>;
 
-Mav* channel;
-SX1278* sx1278 = nullptr;
-
 #if defined _BOARD_STM32F429ZI_SKYWARD_GS_V2
 #include "interfaces-impl/hwmapping.h"
 
-#define USE_RA01_PC13
-
-#ifdef USE_RA01_PC13  // use ra01
 using cs   = peripherals::ra01::pc13::cs;
 using dio0 = peripherals::ra01::pc13::dio0;
-#else
-using cs   = peripherals::ra01::pe4::cs;
-using dio0 = peripherals::ra01::pe4::dio0;
-#endif
+using dio1 = peripherals::ra01::pc13::dio1;
+using dio3 = peripherals::ra01::pc13::dio3;
+
+using sck  = interfaces::spi4::sck;
+using miso = interfaces::spi4::miso;
+using mosi = interfaces::spi4::mosi;
 
 #define SX1278_SPI SPI4
 
+#define SX1278_IRQ_DIO0 EXTI6_IRQHandlerImpl
+#define SX1278_IRQ_DIO1 EXTI2_IRQHandlerImpl
+#define SX1278_IRQ_DIO3 EXTI11_IRQHandlerImpl
+
 #else
 #error "Target not supported"
 #endif
 
-#if defined _BOARD_STM32F429ZI_SKYWARD_GS_V2
-#ifdef USE_RA01_PC13
-void __attribute__((used)) EXTI6_IRQHandlerImpl()
-#else
-void __attribute__((used)) EXTI3_IRQHandlerImpl()
-#endif
-#else
-#error "Target not supported"
-#endif
+SX1278Fsk* sx1278 = nullptr;
+
+void __attribute__((used)) SX1278_IRQ_DIO0()
 {
     if (sx1278)
-        sx1278->handleDioIRQ();
+        sx1278->handleDioIRQ(SX1278Fsk::Dio::DIO0);
+}
+
+void __attribute__((used)) SX1278_IRQ_DIO1()
+{
+    if (sx1278)
+        sx1278->handleDioIRQ(SX1278Fsk::Dio::DIO1);
+}
+
+void __attribute__((used)) SX1278_IRQ_DIO3()
+{
+    if (sx1278)
+        sx1278->handleDioIRQ(SX1278Fsk::Dio::DIO3);
 }
 
 void initBoard()
 {
-#if defined _BOARD_STM32F429ZI_SKYWARD_GS_V2
-    GpioPin dio0 = dio0::getPin();
-    enableExternalInterrupt(dio0.getPort(), dio0.getNumber(),
+    GpioPin dio0_pin = dio0::getPin();
+    GpioPin dio1_pin = dio1::getPin();
+    GpioPin dio3_pin = dio3::getPin();
+
+    enableExternalInterrupt(dio0_pin.getPort(), dio0_pin.getNumber(),
                             InterruptTrigger::RISING_EDGE);
-#else
-#error "Target not supported"
-#endif
+    enableExternalInterrupt(dio1_pin.getPort(), dio1_pin.getNumber(),
+                            InterruptTrigger::RISING_EDGE);
+    enableExternalInterrupt(dio3_pin.getPort(), dio3_pin.getNumber(),
+                            InterruptTrigger::RISING_EDGE);
 }
+
+Mav* channel;
 
 void onReceive(Mav* channel, const mavlink_message_t& msg)
 {
@@ -144,26 +155,21 @@ int main()
 {
     initBoard();
 
-    // Run default configuration
-    SX1278::Config config = {.freq_rf  = 412000000,
-                             .freq_dev = 25000,
-                             .bitrate  = 19200,
-                             .rx_bw    = SX1278::RxBw::HZ_83300,
-                             .afc_bw   = SX1278::RxBw::HZ_125000,
-                             .ocp      = 120,
-                             .power    = 17,
-                             .shaping  = SX1278::Shaping::GAUSSIAN_BT_1_0,
-                             .dc_free  = SX1278::DcFree::WHITENING};
-
-    SX1278::Error err;
+    SX1278Fsk::Config config;
+    SX1278Fsk::Error err;
 
     SPIBus bus(SX1278_SPI);
     GpioPin cs = cs::getPin();
 
-    sx1278 = new SX1278(bus, cs);
+    SPIBusConfig spi_config;
+    spi_config.clockDivider = SPI::ClockDivider::DIV_64;
+    spi_config.mode         = SPI::Mode::MODE_0;
+    spi_config.bitOrder     = SPI::BitOrder::MSB_FIRST;
+
+    sx1278 = new SX1278Fsk(SPISlave(bus, cs, spi_config));
 
     printf("\n[sx1278] Configuring sx1278...\n");
-    if ((err = sx1278->init(config)) != SX1278::Error::NONE)
+    if ((err = sx1278->init(config)) != SX1278Fsk::Error::NONE)
     {
         printf("[sx1278] sx1278->init error: %s\n", stringFromErr(err));
 
