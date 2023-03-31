@@ -39,7 +39,7 @@ bool H3LIS331DL::init()
 
     SPITransaction spiTr(this->spi);
 
-    uint8_t whoami = spiTr.readRegister(Registers::WHO_AM_I);
+    uint8_t whoami = spiTr.readRegister(Registers::REG_WHO_AM_I);
 
     if (whoami != WHO_AM_I_ID)
     {
@@ -78,10 +78,10 @@ bool H3LIS331DL::init()
         setBits(ctrlReg1, 3, 0b0001'1000, dr);
         setBits(ctrlReg1, 0, 0b0000'0111, 0b111);
 
-        spiTr.writeRegister(Registers::CTRL_REG1, ctrlReg1);
+        spiTr.writeRegister(Registers::REG_CTRL_REG1, ctrlReg1);
 
         this->initialized &=
-            ctrlReg1 == spiTr.readRegister(Registers::CTRL_REG1);
+            ctrlReg1 == spiTr.readRegister(Registers::REG_CTRL_REG1);
         TRACE("[H3LIS331DL] Control Register 1 After init: 0x%02x\n", ctrlReg1);
     }
     else
@@ -100,10 +100,10 @@ bool H3LIS331DL::init()
         setBits(ctrlReg4, 7, 0b1000'0000, this->bdu);
         setBits(ctrlReg4, 4, 0b0011'0000, this->fs);
 
-        spiTr.writeRegister(Registers::CTRL_REG4, ctrlReg4);
+        spiTr.writeRegister(Registers::REG_CTRL_REG4, ctrlReg4);
 
         this->initialized &=
-            ctrlReg4 == spiTr.readRegister(Registers::CTRL_REG4);
+            ctrlReg4 == spiTr.readRegister(Registers::REG_CTRL_REG4);
         TRACE("[H3LIS331DL] Control Register 4 After init: 0x%02x\n", ctrlReg4);
     }
 
@@ -132,7 +132,7 @@ H3LIS331DLData H3LIS331DL::sampleImpl()
         // Read the status register that tells if new data is available.
         // This will allow us to read only data that is new and reuse data that
         // didn't change.
-        uint8_t status = spiTr.readRegister(Registers::STATUS_REG);
+        uint8_t status = spiTr.readRegister(Registers::REG_STATUS_REG);
 
         if ((status & 0b0000'1111) == 0)
         {
@@ -152,8 +152,8 @@ H3LIS331DLData H3LIS331DL::sampleImpl()
         {
 
             // NOTE: Reading multiple bits with readRegisters does not work
-            lPart = spiTr.readRegister(Registers::OUT_X);
-            hPart = spiTr.readRegister(Registers::OUT_X + 1);
+            lPart = spiTr.readRegister(Registers::REG_OUT_X);
+            hPart = spiTr.readRegister(Registers::REG_OUT_X + 1);
 
             // To convert the values I am casting the two 8 bits registers into
             // a signed 16 bit integer then I right-shift it by 4 to match the
@@ -174,8 +174,8 @@ H3LIS331DLData H3LIS331DL::sampleImpl()
         if (status & 0b0000'1010 || status & 0b0010'0000)
         {
             // NOTE: Reading multiple bits with readRegisters does not work
-            lPart        = spiTr.readRegister(Registers::OUT_Y);
-            hPart        = spiTr.readRegister(Registers::OUT_Y + 1);
+            lPart        = spiTr.readRegister(Registers::REG_OUT_Y);
+            hPart        = spiTr.readRegister(Registers::REG_OUT_Y + 1);
             int16_t yInt = static_cast<int16_t>(lPart | (hPart << 8));
             float yFloat = static_cast<float>(yInt >> 4);
             y            = yFloat * sensitivity;
@@ -190,8 +190,8 @@ H3LIS331DLData H3LIS331DL::sampleImpl()
         if (status & 0b0000'1100 || status & 0b0100'0000)
         {
             // NOTE: Reading multiple bits with readRegisters does not work
-            lPart        = spiTr.readRegister(Registers::OUT_Z);
-            hPart        = spiTr.readRegister(Registers::OUT_Z + 1);
+            lPart        = spiTr.readRegister(Registers::REG_OUT_Z);
+            hPart        = spiTr.readRegister(Registers::REG_OUT_Z + 1);
             int16_t zInt = static_cast<int16_t>(lPart | (hPart << 8));
             float zFloat = static_cast<float>(zInt >> 4);
             z            = zFloat * sensitivity;
