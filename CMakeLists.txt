@@ -42,6 +42,9 @@ sbs_target(bmx160-calibration-v3 stm32f429zi_skyward_death_stack_v3)
 add_executable(config-dsgamma src/entrypoints/config-dsgamma.cpp)
 sbs_target(config-dsgamma stm32f429zi_stm32f4discovery)
 
+add_executable(groundstation-nas-extractor src/entrypoints/groundstation-nas-extractor.cpp)
+sbs_target(groundstation-nas-extractor stm32f407vg_stm32f4discovery)
+
 add_executable(imu-calibration src/entrypoints/imu-calibration.cpp)
 sbs_target(imu-calibration stm32f429zi_skyward_parafoil)
 
