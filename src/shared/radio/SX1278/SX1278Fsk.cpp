@@ -46,7 +46,6 @@ SX1278Fsk::Error SX1278Fsk::init(const Config &config)
     // First probe for the device
     if (!checkVersion())
     {
-        TRACE("[sx1278] Wrong chipid\n");
         return Error::BAD_VALUE;
     }
 
@@ -62,7 +61,10 @@ bool SX1278Fsk::checkVersion()
     Lock guard(*this);
     SPITransaction spi(getSpiSlave());
 
-    return spi.readRegister(REG_VERSION) == 0x12;
+    uint8_t version = spi.readRegister(REG_VERSION);
+    TRACE("[sx1278] Chip id: %d\n", version);
+
+    return version == 0x12;
 }
 
 SX1278Fsk::Error SX1278Fsk::configure(const Config &config)
@@ -70,15 +72,19 @@ SX1278Fsk::Error SX1278Fsk::configure(const Config &config)
     // First cycle the device to bring it into Fsk mode (can only be changed in
     // sleep)
     setDefaultMode(RegOpMode::MODE_SLEEP, DEFAULT_MAPPING, false, false);
+    miosix::Thread::sleep(1);
+
     // Make sure the device remains in standby and not in sleep
     setDefaultMode(RegOpMode::MODE_STDBY, DEFAULT_MAPPING, false, false);
+    miosix::Thread::sleep(1);
 
     // Lock the bus
     Lock guard(*this);
     LockMode guard_mode(*this, guard, RegOpMode::MODE_STDBY, DEFAULT_MAPPING);
 
-    if (!waitForIrqBusy(guard_mode, RegIrqFlags::MODE_READY, 1000))
-        return Error::IRQ_TIMEOUT;
+    // The datasheet lies, this IRQ is unreliable, it doesn't always trigger
+    // if (!waitForIrqBusy(guard_mode, RegIrqFlags::MODE_READY, 1000))
+    //     return Error::IRQ_TIMEOUT;
 
     int bitrate              = config.bitrate;
     int freq_dev             = config.freq_dev;

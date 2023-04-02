@@ -42,6 +42,8 @@ using namespace miosix;
 
 // Uncomment the following line to enable Ebyte module
 // #define SX1278_IS_EBYTE
+// Uncomment the following line to ebable Skyward433 module
+// #define SX1278_IS_SKYWARD433
 
 using cs   = peripherals::ra01::pc13::cs;
 using dio0 = peripherals::ra01::pc13::dio0;
@@ -62,6 +64,29 @@ using rxen = Gpio<GPIOD_BASE, 4>;
 #define SX1278_IRQ_DIO0 EXTI6_IRQHandlerImpl
 #define SX1278_IRQ_DIO1 EXTI2_IRQHandlerImpl
 #define SX1278_IRQ_DIO3 EXTI11_IRQHandlerImpl
+
+#elif defined _BOARD_STM32F429ZI_SKYWARD_RIG
+#include "interfaces-impl/hwmapping.h"
+
+#define SX1278_IS_EBYTE
+
+using cs   = radio::cs;
+using dio0 = radio::dio0;
+using dio1 = radio::dio1;
+using dio3 = radio::dio3;
+
+using sck  = radio::sck;
+using miso = radio::miso;
+using mosi = radio::mosi;
+
+using txen = radio::txEn;
+using rxen = radio::rxEn;
+
+#define SX1278_SPI SPI4
+
+#define SX1278_IRQ_DIO0 EXTI5_IRQHandlerImpl
+#define SX1278_IRQ_DIO1 EXTI12_IRQHandlerImpl
+#define SX1278_IRQ_DIO3 EXTI13_IRQHandlerImpl
 
 #else
 #error "Target not supported"
@@ -162,10 +187,15 @@ int main()
     SPIBus bus(SX1278_SPI);
     GpioPin cs = cs::getPin();
 
-#ifdef IS_EBYTE
+#if defined SX1278_IS_EBYTE
+    printf("[sx1278] Confuring Ebyte frontend...\n");
     std::unique_ptr<SX1278::ISX1278Frontend> frontend(
         new EbyteFrontend(txen::getPin(), rxen::getPin()));
+#elif defined SX1278_IS_SKYWARD433
+    printf("[sx1278] Confuring Skyward 433 frontend...\n");
+    std::unique_ptr<SX1278::ISX1278Frontend> frontend(new Skyward433Frontend());
 #else
+    printf("[sx1278] Confuring RA01 frontend...\n");
     std::unique_ptr<SX1278::ISX1278Frontend> frontend(new RA01Frontend());
 #endif
 

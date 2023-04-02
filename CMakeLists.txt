@@ -57,13 +57,25 @@ sbs_target(runcam-settings stm32f407vg_stm32f4discovery)
 add_executable(sdcard-benchmark src/entrypoints/sdcard-benchmark.cpp)
 sbs_target(sdcard-benchmark stm32f429zi_skyward_death_stack_x)
 
-add_executable(sx1278fsk-serial src/entrypoints/sx1278-serial.cpp)
-target_compile_definitions(sx1278fsk-serial PRIVATE SX1278_IS_FSK)
-sbs_target(sx1278fsk-serial stm32f429zi_skyward_groundstation_v2)
+add_executable(sx1278fsk-ra01-serial src/entrypoints/sx1278-serial.cpp)
+target_compile_definitions(sx1278fsk-ra01-serial PRIVATE SX1278_IS_FSK)
+sbs_target(sx1278fsk-ra01-serial stm32f429zi_skyward_groundstation_v2)
 
-add_executable(sx1278lora-serial src/entrypoints/sx1278-serial.cpp)
-target_compile_definitions(sx1278lora-serial PRIVATE SX1278_IS_LORA)
-sbs_target(sx1278lora-serial stm32f429zi_skyward_groundstation_v2)
+add_executable(sx1278lora-ra01-serial src/entrypoints/sx1278-serial.cpp)
+target_compile_definitions(sx1278lora-ra01-serial PRIVATE SX1278_IS_LORA)
+sbs_target(sx1278lora-ra01-serial stm32f429zi_skyward_groundstation_v2)
+
+add_executable(sx1278fsk-skyward433-serial src/entrypoints/sx1278-serial.cpp)
+target_compile_definitions(sx1278fsk-skyward433-serial PRIVATE SX1278_IS_FSK SX1278_IS_SKYWARD433)
+sbs_target(sx1278fsk-skyward433-serial stm32f429zi_skyward_groundstation_v2)
+
+add_executable(sx1278lora-skyward433-serial src/entrypoints/sx1278-serial.cpp)
+target_compile_definitions(sx1278lora-skyward433-serial PRIVATE SX1278_IS_LORA SX1278_IS_SKYWARD433)
+sbs_target(sx1278lora-skyward433-serial stm32f429zi_skyward_groundstation_v2)
+
+add_executable(sx1278fsk-ebyterig-serial src/entrypoints/sx1278-serial.cpp)
+target_compile_definitions(sx1278fsk-ebyterig-serial PRIVATE SX1278_IS_FSK)
+sbs_target(sx1278fsk-ebyterig-serial stm32f429zi_skyward_rig)
 
 #-----------------------------------------------------------------------------#
 #                                    Tests                                    #
@@ -288,13 +300,13 @@ add_executable(test-sx1278fsk-rx src/tests/radio/sx1278/test-sx1278-bench-serial
 target_compile_definitions(test-sx1278fsk-rx PRIVATE DISABLE_TX)
 sbs_target(test-sx1278fsk-rx stm32f429zi_skyward_groundstation_v2)
 
-add_executable(test-sx1278fsk-gui-rx src/tests/radio/sx1278/test-sx1278-bench-gui.cpp)
-target_compile_definitions(test-sx1278fsk-gui-rx PRIVATE DISABLE_TX)
-sbs_target(test-sx1278fsk-gui-rx stm32f429zi_skyward_groundstation_v2)
-
 add_executable(test-sx1278fsk-gui-tx src/tests/radio/sx1278/test-sx1278-bench-gui.cpp)
 target_compile_definitions(test-sx1278fsk-gui-tx PRIVATE DISABLE_RX)
 sbs_target(test-sx1278fsk-gui-tx stm32f429zi_skyward_groundstation_v2)
+
+add_executable(test-sx1278fsk-gui-rx src/tests/radio/sx1278/test-sx1278-bench-gui.cpp)
+target_compile_definitions(test-sx1278fsk-gui-rx PRIVATE DISABLE_TX)
+sbs_target(test-sx1278fsk-gui-rx stm32f429zi_skyward_groundstation_v2)
 
 add_executable(test-sx1278fsk-mavlink src/tests/radio/sx1278/fsk/test-sx1278-mavlink.cpp)
 sbs_target(test-sx1278fsk-mavlink stm32f429zi_skyward_groundstation_v2)

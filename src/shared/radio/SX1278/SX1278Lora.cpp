@@ -151,7 +151,10 @@ bool SX1278Lora::checkVersion()
     Lock guard(*this);
     SPITransaction spi(getSpiSlave());
 
-    return spi.readRegister(REG_VERSION) == 0x12;
+    uint8_t version = spi.readRegister(REG_VERSION);
+    TRACE("[sx1278] Chip id: %d\n", version);
+
+    return version == 0x12;
 }
 
 SX1278Lora::Error SX1278Lora::configure(const Config &config)
