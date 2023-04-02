@@ -69,4 +69,18 @@ public:
     void disableTx() override {}
 };
 
+class Skyward433Frontend : public SX1278::ISX1278Frontend
+{
+public:
+    Skyward433Frontend() {}
+
+    bool isOnPaBoost() override { return false; }
+    int maxInPower() override { return 17; }
+
+    void enableRx() override {}
+    void disableRx() override {}
+    void enableTx() override {}
+    void disableTx() override {}
+};
+
 }  // namespace Boardcore
