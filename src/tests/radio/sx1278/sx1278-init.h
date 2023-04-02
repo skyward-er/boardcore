@@ -38,6 +38,8 @@
 
 // Uncomment the following line to enable Ebyte module
 // #define SX1278_IS_EBYTE
+// Uncomment the following line to ebable Skyward433 module
+#define SX1278_IS_SKYWARD433
 
 using cs   = miosix::peripherals::ra01::pc13::cs;
 using dio0 = miosix::peripherals::ra01::pc13::dio0;
@@ -58,6 +60,29 @@ using rxen = miosix::Gpio<GPIOD_BASE, 4>;
 #define SX1278_IRQ_DIO0 EXTI6_IRQHandlerImpl
 #define SX1278_IRQ_DIO1 EXTI2_IRQHandlerImpl
 #define SX1278_IRQ_DIO3 EXTI11_IRQHandlerImpl
+
+#elif defined _BOARD_STM32F429ZI_SKYWARD_RIG
+#include "interfaces-impl/hwmapping.h"
+
+#define SX1278_IS_EBYTE
+
+using cs   = miosix::radio::cs;
+using dio0 = miosix::radio::dio0;
+using dio1 = miosix::radio::dio1;
+using dio3 = miosix::radio::dio3;
+
+using sck  = miosix::radio::sck;
+using miso = miosix::radio::miso;
+using mosi = miosix::radio::mosi;
+
+using txen = miosix::radio::txEn;
+using rxen = miosix::radio::rxEn;
+
+#define SX1278_SPI SPI4
+
+#define SX1278_IRQ_DIO0 EXTI5_IRQHandlerImpl
+#define SX1278_IRQ_DIO1 EXTI12_IRQHandlerImpl
+#define SX1278_IRQ_DIO3 EXTI13_IRQHandlerImpl
 
 #else
 #error "Target not supported"
@@ -123,19 +148,24 @@ void initBoard()
 #endif
 }
 
+Boardcore::SPIBus sx1278_bus(SX1278_SPI);
+
 bool initRadio()
 {
     // Initialize frontend (if any)
-#ifdef IS_EBYTE
+#if defined SX1278_IS_EBYTE
+    printf("[sx1278] Confuring Ebyte frontend...\n");
     std::unique_ptr<Boardcore::SX1278::ISX1278Frontend> frontend(
         new Boardcore::EbyteFrontend(txen::getPin(), rxen::getPin()));
+#elif defined SX1278_IS_SKYWARD433
+    printf("[sx1278] Confuring Skyward 433 frontend...\n");
+    std::unique_ptr<Boardcore::SX1278::ISX1278Frontend> frontend(
+        new Boardcore::Skyward433Frontend());
 #else
+    printf("[sx1278] Confuring RA01 frontend...\n");
     std::unique_ptr<Boardcore::SX1278::ISX1278Frontend> frontend(
         new Boardcore::RA01Frontend());
 #endif
-
-    Boardcore::SPIBus bus(SX1278_SPI);
-    miosix::GpioPin cs = cs::getPin();
 
     // Initialize actual radio driver
 #ifdef SX1278_IS_LORA
@@ -143,8 +173,9 @@ bool initRadio()
     Boardcore::SX1278Lora::Config config;
     Boardcore::SX1278Lora::Error err;
 
-    sx1278 = new Boardcore::SX1278Lora(
-        bus, cs, Boardcore::SPI::ClockDivider::DIV_64, std::move(frontend));
+    sx1278 = new Boardcore::SX1278Lora(sx1278_bus, cs::getPin(),
+                                       Boardcore::SPI::ClockDivider::DIV_64,
+                                       std::move(frontend));
 
     printf("\n[sx1278] Configuring sx1278 lora...\n");
     if ((err = sx1278->init(config)) != Boardcore::SX1278Lora::Error::NONE)
@@ -159,8 +190,9 @@ bool initRadio()
     Boardcore::SX1278Fsk::Config config;
     Boardcore::SX1278Fsk::Error err;
 
-    sx1278 = new Boardcore::SX1278Fsk(
-        bus, cs, Boardcore::SPI::ClockDivider::DIV_64, std::move(frontend));
+    sx1278 = new Boardcore::SX1278Fsk(sx1278_bus, cs::getPin(),
+                                            Boardcore::SPI::ClockDivider::DIV_64,
+                                            std::move(frontend));
 
     printf("\n[sx1278] Configuring sx1278 fsk...\n");
     if ((err = sx1278->init(config)) != Boardcore::SX1278Fsk::Error::NONE)
