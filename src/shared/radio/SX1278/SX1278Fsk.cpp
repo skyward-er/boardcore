@@ -74,8 +74,8 @@ SX1278Fsk::Error SX1278Fsk::configure(const Config &config)
     setDefaultMode(RegOpMode::MODE_SLEEP, DEFAULT_MAPPING, false, false);
     miosix::Thread::sleep(1);
 
-    // Make sure the device remains in standby and not in sleep
-    setDefaultMode(RegOpMode::MODE_STDBY, DEFAULT_MAPPING, false, false);
+    // Make sure the device remains in RX and not in sleep
+    setDefaultMode(RegOpMode::MODE_RX, DEFAULT_MAPPING, false, false);
     miosix::Thread::sleep(1);
 
     // Lock the bus
@@ -142,6 +142,9 @@ SX1278Fsk::Error SX1278Fsk::configure(const Config &config)
         spi.writeRegister(REG_SYNC_VALUE_1, 0x12);
         spi.writeRegister(REG_SYNC_VALUE_2, 0xad);
 
+        // Set preamble length
+        spi.writeRegister16(REG_PREAMBLE_MSB, 2);
+
         // Setup shaping
         spi.writeRegister(REG_PA_RAMP,
                           RegPaRamp::make(RegPaRamp::PA_RAMP_US_40, shaping));
@@ -176,7 +179,6 @@ SX1278Fsk::Error SX1278Fsk::configure(const Config &config)
         }
 
         // Setup other registers
-        spi.writeRegister16(REG_PREAMBLE_MSB, 2);
 
         spi.writeRegister(
             REG_RX_CONFIG,

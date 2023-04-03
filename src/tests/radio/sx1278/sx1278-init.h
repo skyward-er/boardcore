@@ -39,7 +39,7 @@
 // Uncomment the following line to enable Ebyte module
 // #define SX1278_IS_EBYTE
 // Uncomment the following line to ebable Skyward433 module
-#define SX1278_IS_SKYWARD433
+// #define SX1278_IS_SKYWARD433
 
 using cs   = miosix::peripherals::ra01::pc13::cs;
 using dio0 = miosix::peripherals::ra01::pc13::dio0;
@@ -75,8 +75,8 @@ using sck  = miosix::radio::sck;
 using miso = miosix::radio::miso;
 using mosi = miosix::radio::mosi;
 
-using txen = miosix::radio::txEn;
-using rxen = miosix::radio::rxEn;
+using txen                         = miosix::radio::txEn;
+using rxen                         = miosix::radio::rxEn;
 
 #define SX1278_SPI SPI4
 
@@ -191,8 +191,8 @@ bool initRadio()
     Boardcore::SX1278Fsk::Error err;
 
     sx1278 = new Boardcore::SX1278Fsk(sx1278_bus, cs::getPin(),
-                                            Boardcore::SPI::ClockDivider::DIV_64,
-                                            std::move(frontend));
+                                      Boardcore::SPI::ClockDivider::DIV_64,
+                                      std::move(frontend));
 
     printf("\n[sx1278] Configuring sx1278 fsk...\n");
     if ((err = sx1278->init(config)) != Boardcore::SX1278Fsk::Error::NONE)

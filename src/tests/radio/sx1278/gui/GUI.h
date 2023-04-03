@@ -39,6 +39,16 @@ std::string format_link_speed(size_t value)
         return fmt::format("{} b/s", value);
 }
 
+std::string format_frequency(size_t value)
+{
+    if (value > 1000000)
+        return fmt::format("{:.2f} MHz", static_cast<float>(value) / 1000000);
+    else if (value > 1000)
+        return fmt::format("{:.2f} kHz", static_cast<float>(value) / 1000);
+    else
+        return fmt::format("{} Hz", value);
+}
+
 class StatsScreen
 {
 public:
@@ -91,9 +101,9 @@ public:
         root.addView(&lbl_tx_data, 0.1);
         root.addView(&tx_data, 0.4);
         root.addView(&lbl_rx_data, 0.1);
-        root.addView(&rx_data, 0.8);
+        root.addView(&rx_data, 0.6);
         root.addView(&lbl_misc_data, 0.1);
-        root.addView(&misc_data, 0.2);
+        root.addView(&misc_data, 0.6);
     }
 
     void updateReady()
@@ -112,7 +122,7 @@ public:
         corrupted_count.setText(fmt::format("{}", stats.corrupted_count));
 
         rssi.setText(fmt::format("{} dBm", stats.rssi));
-        fei.setText(fmt::format("{} Hz", stats.fei));
+        fei.setText(format_frequency(stats.fei));
         snr.setText(fmt::format("{}", stats.snr));
     }
 
