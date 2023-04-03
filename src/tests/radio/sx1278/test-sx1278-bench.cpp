@@ -20,13 +20,13 @@
  * THE SOFTWARE.
  */
 
-#include "sx1278-init.h"
-
 #include <drivers/timer/TimestampTimer.h>
 #include <miosix.h>
 #include <utils/MovingAverage.h>
 
 #include <thread>
+
+#include "sx1278-init.h"
 
 using namespace Boardcore;
 using namespace miosix;
@@ -166,4 +166,17 @@ void spawnThreads()
     std::thread send([]() { sendLoop(); });
     send.detach();
 #endif
+
+    /* For now, I'll keep it here, just in case ...
+    std::thread watchdog([]() {
+        while(1) {
+            {
+                FastInterruptDisableLock dlock;
+                sx1278->handleDioIRQ();
+            }
+            Thread::sleep(200);
+        }
+    });
+    watchdog.detach();
+    //*/
 }

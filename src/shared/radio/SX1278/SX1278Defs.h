@@ -230,7 +230,7 @@ inline constexpr uint8_t make(bool rx_trigger_rssi_interrupt,
                               bool restart_rx_on_collision)
 {
     return (rx_trigger_rssi_interrupt ? 0b001 : 0) |
-           (rx_trigger_preable_detect ? 0b110 << 1 : 0) |
+           (rx_trigger_preable_detect ? 0b110 : 0) |
            (agc_auto_on ? 1 << 3 : 0) | (afc_auto_on ? 1 << 4 : 0) |
            (restart_rx_with_pll_lock ? 1 << 5 : 0) |
            (restart_rx_without_pll_lock ? 1 << 6 : 0) |
