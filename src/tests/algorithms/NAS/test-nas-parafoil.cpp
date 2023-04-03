@@ -36,6 +36,10 @@ using namespace miosix;
 using namespace Boardcore;
 using namespace Eigen;
 
+// USART2: AF7
+typedef miosix::Gpio<GPIOA_BASE, 2> u2tx1;
+typedef miosix::Gpio<GPIOA_BASE, 3> u2rx1;
+
 NASConfig getEKConfig();
 void setInitialOrientation();
 void init();
@@ -48,11 +52,17 @@ Vector2f startPos = Vector2f(45.501141, 9.156281);
 NAS* nas;
 
 SPIBus spi1(SPI1);
-MPU9250* imu      = nullptr;
+MPU9250* imu = nullptr;
+USART usart(USART2, 38400);
 UBXGPSSerial* gps = nullptr;
 
 int main()
 {
+    u2rx1::getPin().alternateFunction(7);
+    u2rx1::getPin().mode(Mode::ALTERNATE);
+    u2tx1::getPin().alternateFunction(7);
+    u2tx1::getPin().mode(Mode::ALTERNATE);
+
     init();
 
     nas = new NAS(getEKConfig());
@@ -112,7 +122,7 @@ void init()
     imu = new MPU9250(spi1, sensors::mpu9250::cs::getPin());
     imu->init();
 
-    gps = new UBXGPSSerial(38400, 10, USART2, 38400);
+    gps = new UBXGPSSerial(usart, 38400, 10, 38400);
     gps->init();
     gps->start();
 

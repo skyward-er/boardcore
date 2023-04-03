@@ -56,15 +56,15 @@ public:
     /**
      * @brief Construct a new UBXGPSSerial object.
      *
+     * @param usart USART bus to be used for communication.
      * @param baudrate Baudrate to communicate with the device (max: 921600,
      * min: 4800 for NEO-M9N).
      * @param sampleRate GPS sample rate (max: 25 for NEO-M9N).
-     * @param serialPortNumber Number of the serial port connected to the GPS.
-     * @param serialPortName Name of the file for the gps device.
      * @param defaultBaudrate Startup baudrate (38400 for NEO-M9N).
      */
-    UBXGPSSerial(int baudrate = 921600, uint8_t sampleRate = 10,
-                 USARTType *usartNumber = USART2, int defaultBaudrate = 38400);
+    explicit UBXGPSSerial(USART& usart, uint32_t baudrate = 921600,
+                          uint8_t sampleRate       = 10,
+                          uint32_t defaultBaudrate = 38400);
 
     /**
      * @brief Sets up the serial port baudrate, disables the NMEA messages,
@@ -139,7 +139,7 @@ private:
      * @param frame The received frame.
      * @return True if a valid frame was read.
      */
-    bool readUBXFrame(UBXFrame &frame);
+    bool readUBXFrame(UBXFrame& frame);
 
     /**
      * @brief Writes a UBX frame.
@@ -147,7 +147,7 @@ private:
      * @param frame The frame to write.
      * @return True if the frame is valid.
      */
-    bool writeUBXFrame(const UBXFrame &frame);
+    bool writeUBXFrame(const UBXFrame& frame);
 
     /**
      * @brief Writes a UBX frame and waits for its acknowledgement.
@@ -155,15 +155,14 @@ private:
      * @param frame The frame to write.
      * @return True if the frame is valid and acknowledged.
      */
-    bool safeWriteUBXFrame(const UBXFrame &frame);
+    bool safeWriteUBXFrame(const UBXFrame& frame);
 
     void run() override;
 
-    int baudrate;
-    int defaultBaudrate;
+    USART& usart;
+    uint32_t baudrate;
     uint8_t sampleRate;  // [Hz]
-    USARTType *usartNumber;
-    USART *usart;  // The usart interface
+    uint32_t defaultBaudrate;
 
     mutable miosix::FastMutex mutex;
     UBXGPSData threadSample{};

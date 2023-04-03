@@ -31,14 +31,11 @@ using namespace miosix;
 namespace Boardcore
 {
 
-UBXGPSSerial::UBXGPSSerial(int baudrate, uint8_t sampleRate,
-                           USARTType* usartNumber, int defaultBaudrate)
+UBXGPSSerial::UBXGPSSerial(USART& usart, uint32_t baudrate, uint8_t sampleRate,
+                           uint32_t defaultBaudrate)
+    : usart(usart), baudrate(baudrate), sampleRate(sampleRate),
+      defaultBaudrate(defaultBaudrate)
 {
-    this->usart           = nullptr;
-    this->baudrate        = baudrate;
-    this->defaultBaudrate = defaultBaudrate;
-    this->sampleRate      = sampleRate;
-    this->usartNumber     = usartNumber;
 }
 
 bool UBXGPSSerial::init()
@@ -170,7 +167,7 @@ bool UBXGPSSerial::setBaudrateAndUBX(bool safe)
 
 bool UBXGPSSerial::setSerialCommunication()
 {
-    usart = new USART(usartNumber, defaultBaudrate);
+    usart.setBaudrate(defaultBaudrate);
     // Change the baudrate only if it is different than the default
     if (baudrate != defaultBaudrate)
     {
@@ -183,7 +180,7 @@ bool UBXGPSSerial::setSerialCommunication()
     }
 
     miosix::Thread::sleep(100);
-    usart->setBaudrate(baudrate);
+    usart.setBaudrate(baudrate);
 
     return true;
 }
@@ -252,8 +249,9 @@ bool UBXGPSSerial::readUBXFrame(UBXFrame& frame)
     size_t i = 0;
     while (i < 2)
     {
+        // TODO: Check if this can deadlock
         uint8_t c;
-        if (usart->read(&c, 1) <= 0)  // No more data available
+        if (usart.read(&c, 1) <= 0)  // No more data available
             return false;
 
         if (c == UBXFrame::PREAMBLE[i])
@@ -273,10 +271,10 @@ bool UBXGPSSerial::readUBXFrame(UBXFrame& frame)
         }
     }
 
-    if (usart->read(&frame.message, 2) <= 0 ||
-        usart->read(&frame.payloadLength, 2) <= 0 ||
-        usart->read(frame.payload, frame.getRealPayloadLength()) <= 0 ||
-        usart->read(frame.checksum, 2) <= 0)
+    if (usart.read(&frame.message, 2) <= 0 ||
+        usart.read(&frame.payloadLength, 2) <= 0 ||
+        usart.read(frame.payload, frame.getRealPayloadLength()) <= 0 ||
+        usart.read(frame.checksum, 2) <= 0)
         return false;
 
     if (!frame.isValid())
@@ -299,7 +297,7 @@ bool UBXGPSSerial::writeUBXFrame(const UBXFrame& frame)
     uint8_t packedFrame[frame.getLength()];
     frame.writePacked(packedFrame);
 
-    usart->write(packedFrame, frame.getLength());
+    usart.write(packedFrame, frame.getLength());
 
     return true;
 }
