@@ -26,6 +26,8 @@
 #include <radio/SerialTransceiver/SerialTransceiver.h>
 #include <scheduler/TaskScheduler.h>
 
+#include "NASStateWrapper.h"
+
 using namespace miosix;
 using namespace Boardcore;
 
@@ -37,6 +39,7 @@ void receiveHandler(MavDriver*, const mavlink_message_t&);
 USART usart(USART1, USARTInterface::Baudrate::B115200);
 SerialTransceiver transceiver(usart);
 MavDriver mavlink(&transceiver, receiveHandler);
+NASStateWrapper nasStateWrapper;
 TaskScheduler scheduler;
 
 int main()
@@ -58,19 +61,24 @@ int main()
 
 void sendMessage()
 {
-    mavlink_message_t message;
-    mavlink_msg_nas_tm_pack(1, 1, &message, TimestampTimer::getTimestamp(), 0,
-                            0.75, 2.54, 120.5, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-                            0, 0, 0);
-    mavlink.enqueueMsg(message);
+    NASState state;
+    state.bx = 42.;
+    state.qw = 66.5;
+    nasStateWrapper.setNASState(state);
+
+    mavlink.enqueueMsg(nasStateWrapper.pack(
+        1, 1, TimestampTimer::getTimestamp(), 0, 0, 0, 0, 0));
     printf("Sent message\n");
 }
 
 void receiveHandler(MavDriver* channel, const mavlink_message_t& msg)
 {
-    printf("Received message (%llu) %f %f %f\n",
-           mavlink_msg_nas_tm_get_timestamp(&msg),
-           mavlink_msg_nas_tm_get_nas_n(&msg),
-           mavlink_msg_nas_tm_get_nas_e(&msg),
-           mavlink_msg_nas_tm_get_nas_d(&msg));
+    if (nasStateWrapper.unpack(msg))
+    {
+
+        NASState state = nasStateWrapper.getNASState();
+
+        printf("Received message (%llu) %f %f\n",
+               mavlink_msg_nas_tm_get_timestamp(&msg), state.bx, state.qw);
+    }
 }
