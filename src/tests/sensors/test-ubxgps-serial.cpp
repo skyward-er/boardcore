@@ -32,12 +32,23 @@ using namespace miosix;
 
 #define RATE 4
 
+// USART2: AF7
+typedef miosix::Gpio<GPIOA_BASE, 2> u2tx1;
+typedef miosix::Gpio<GPIOA_BASE, 3> u2rx1;
+
 int main()
 {
     printf("Welcome to the ublox test\n");
 
+    u2rx1::getPin().alternateFunction(7);
+    u2rx1::getPin().mode(Mode::ALTERNATE);
+    u2tx1::getPin().alternateFunction(7);
+    u2tx1::getPin().mode(Mode::ALTERNATE);
+
+    USART usart(USART2, 38400);
+
     // Keep GPS baud rate at default for easier testing
-    UBXGPSSerial gps(38400, RATE, USART2, 9600);
+    UBXGPSSerial gps(usart, 38400, RATE, 9600);
     UBXGPSData dataGPS;
     printf("Gps allocated\n");
 
@@ -67,13 +78,11 @@ int main()
 
     while (true)
     {
-        printf("a\n");
         // Give time to the thread
         Thread::sleep(1000 / RATE);
 
         // Sample
         gps.sample();
-        printf("b\n");
         dataGPS = gps.getLastSample();
 
         // Print out the latest sample
