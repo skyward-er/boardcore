@@ -31,7 +31,9 @@ int main()
 {
     VN100Data sample;
     string sampleRaw;
-    VN100 sensor{USART1, 921600, VN100::CRCOptions::CRC_ENABLE_16};
+    USART usart(USART1, 921600);
+    VN100 sensor{usart, 921600,
+                 VN100::CRCOptions::CRC_ENABLE_16};
 
     // Let the sensor start up
     Thread::sleep(1000);

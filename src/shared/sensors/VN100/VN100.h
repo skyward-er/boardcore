@@ -80,13 +80,13 @@ public:
     /**
      * @brief Constructor.
      *
-     * @param USART port number.
+     * @param usart Serial bus used for the sensor.
      * @param BaudRate different from the sensor's default [9600, 19200, 38400,
      * 57600, 115200, 128000, 230400, 460800, 921600].
      * @param Redundancy check option.
      * @param samplePeriod Sampling period in ms
      */
-    VN100(USARTType *portNumber = USART2, int baudRate = 921600,
+    VN100(USART &usart, int baudrate,
           CRCOptions crc        = CRCOptions::CRC_ENABLE_8,
           uint16_t samplePeriod = 20);
 
@@ -238,8 +238,13 @@ private:
      */
     uint16_t calculateChecksum16(uint8_t *message, int length);
 
-    USARTType *portNumber;
+    /**
+     * @brief Serial interface that is needed to communicate
+     * with the sensor via ASCII codes.
+     */
+    USART &usart;
     int baudRate;
+
     uint16_t samplePeriod;
     CRCOptions crc;
     bool isInit = false;
@@ -265,12 +270,6 @@ private:
      * @brief Actual strlen() of the recvString.
      */
     unsigned int recvStringLength = 0;
-
-    /**
-     * @brief Serial interface that is needed to communicate
-     * with the sensor via ASCII codes.
-     */
-    USARTInterface *serialInterface = nullptr;
 
     /**
      * @brief Mutex to synchronize the reading and writing of the threadSample
