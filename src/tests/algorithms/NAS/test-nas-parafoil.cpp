@@ -48,11 +48,17 @@ Vector2f startPos = Vector2f(45.501141, 9.156281);
 NAS* nas;
 
 SPIBus spi1(SPI1);
-MPU9250* imu      = nullptr;
+MPU9250* imu = nullptr;
+USART usart(USART2, USARTInterface::Baudrate::B38400);
 UBXGPSSerial* gps = nullptr;
 
 int main()
 {
+    u2rx1::getPin().alternateFunction(7);
+    u2rx1::getPin().mode(Mode::ALTERNATE);
+    u2tx1::getPin().alternateFunction(7);
+    u2tx1::getPin().mode(Mode::ALTERNATE);
+
     init();
 
     nas = new NAS(getEKConfig());
@@ -109,10 +115,12 @@ void setInitialOrientation()
 
 void init()
 {
+    usart.init();
+
     imu = new MPU9250(spi1, sensors::mpu9250::cs::getPin());
     imu->init();
 
-    gps = new UBXGPSSerial(USARTInterface::Baudrate::B38400, 10, USART2,
+    gps = new UBXGPSSerial(usart, USARTInterface::Baudrate::B38400, 10,
                            USARTInterface::Baudrate::B38400);
     gps->init();
     gps->start();

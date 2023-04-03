@@ -56,16 +56,16 @@ public:
     /**
      * @brief Construct a new UBXGPSSerial object.
      *
+     * @param usart USART bus to be used for communication.
      * @param baudrate Baudrate to communicate with the device (max: 921600,
      * min: 4800 for NEO-M9N).
      * @param sampleRate GPS sample rate (max: 25 for NEO-M9N).
-     * @param serialPortNumber Number of the serial port connected to the GPS.
-     * @param serialPortName Name of the file for the gps device.
      * @param defaultBaudrate Startup baudrate (38400 for NEO-M9N).
      */
-    UBXGPSSerial(
+    explicit UBXGPSSerial(
+        USART &usart,
         USARTInterface::Baudrate baudrate = USARTInterface::Baudrate::B921600,
-        uint8_t sampleRate = 10, USARTType *usartNumber = USART2,
+        uint8_t sampleRate                = 10,
         USARTInterface::Baudrate defaultBaudrate =
             USARTInterface::Baudrate::B38400);
 
@@ -161,11 +161,10 @@ private:
 
     void run() override;
 
+    USART &usart;  // The usart interface
     Boardcore::USARTInterface::Baudrate baudrate;
     Boardcore::USARTInterface::Baudrate defaultBaudrate;
     uint8_t sampleRate;  // [Hz]
-    USARTType *usartNumber;
-    USART *usart;  // The usart interface
 
     mutable miosix::FastMutex mutex;
     UBXGPSData threadSample{};
