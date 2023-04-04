@@ -86,8 +86,7 @@ public:
      * @param Redundancy check option.
      * @param samplePeriod Sampling period in ms
      */
-    VN100(USART &usart, int baudrate,
-          CRCOptions crc        = CRCOptions::CRC_ENABLE_8,
+    VN100(USART &usart, int baudrate, CRCOptions crc = CRCOptions::CRC_ENABLE_8,
           uint16_t samplePeriod = 20);
 
     bool init() override;

@@ -27,8 +27,7 @@
 namespace Boardcore
 {
 
-VN100::VN100(USART &usart, int baudRate, CRCOptions crc,
-             uint16_t samplePeriod)
+VN100::VN100(USART &usart, int baudRate, CRCOptions crc, uint16_t samplePeriod)
     : usart(usart), baudRate(baudRate), samplePeriod(samplePeriod), crc(crc)
 {
 }
@@ -108,12 +107,6 @@ bool VN100::init()
         return false;
     }
 
-    if (!this->start())
-    {
-        LOG_ERR(logger, "Unable to start the sampling thread");
-        return false;
-    }
-
     // Set the isInit flag true
     isInit = true;
 
@@ -128,11 +121,11 @@ void VN100::run()
     while (!shouldStop())
     {
         long long initialTime = miosix::getTick();
-
-        // Sample the data locking the mutex
-        miosix::Lock<FastMutex> l(mutex);
-        threadSample = sampleData();
-
+        {
+            // Sample the data locking the mutex
+            miosix::Lock<FastMutex> l(mutex);
+            threadSample = sampleData();
+        }
         // Sleep for the sampling period
         miosix::Thread::sleepUntil(initialTime + samplePeriod);
     }
@@ -418,19 +411,17 @@ bool VN100::selfTestImpl()
         return false;
     }
 
-    // I check the model number (I perform the procedure twice to delete junk
-    // problems)
-    sendStringCommand("VNRRG,01");
-    miosix::Thread::sleep(
-        100);  // These sleep are important at very high baud rates
-    recvStringCommand(recvString, recvStringMaxDimension);
-    miosix::Thread::sleep(100);
+    // removing junk
+    usart.clearQueue();
 
+    // I check the model number
     if (!sendStringCommand("VNRRG,01"))
     {
         LOG_WARN(logger, "Unable to send string command");
         return false;
     }
+
+    miosix::Thread::sleep(100);
 
     if (!recvStringCommand(recvString, recvStringMaxDimension))
     {
