@@ -34,6 +34,9 @@
 
 ///< Pointer to serial port classes to let interrupts access the classes
 Boardcore::USART *ports[N_USART_PORTS];
+size_t Boardcore::USARTInterface::tempNBytes =
+    0;  ///< initialization of the static variable where will be put by default
+        ///< the nBytes transmitted/received
 
 #ifdef USART1
 /**
@@ -521,7 +524,7 @@ void USART::setBaudrate(Baudrate baudrate)
     this->baudrate = baudrate;
 }
 
-int USART::read(void *buffer, size_t nBytes)
+bool USART::read(void *buffer, size_t nBytes, bool blocking, size_t &nBytesRead)
 {
     miosix::Lock<miosix::FastMutex> l(rxMutex);
 
@@ -539,8 +542,10 @@ int USART::read(void *buffer, size_t nBytes)
             miosix::FastInterruptEnableLock eLock(dLock);
         }
 
-        // Not checking if the nBytes read are more than 0
-        if (result == nBytes || (idle && result > 0))
+        // If blocking, we are waiting for at least one byte of data before
+        // returning. If not blocking, in the case the bus is idle we return
+        // anyway
+        if ((result == nBytes) || (idle && (blocking ? (result > 0) : true)))
             break;
 
         // Wait for data in the queue
@@ -554,11 +559,12 @@ int USART::read(void *buffer, size_t nBytes)
             }
         } while (rxWaiting);
     }
+    nBytesRead = result;
 
-    return result;
+    return (result > 0);
 }
 
-int USART::write(void *buffer, size_t nBytes)
+bool USART::write(void *buffer, size_t nBytes, size_t &nBytesWritten)
 {
     miosix::Lock<miosix::FastMutex> l(txMutex);
 
@@ -579,10 +585,12 @@ int USART::write(void *buffer, size_t nBytes)
 #endif
     }
 
-    return i;
+    nBytesWritten = i;
+
+    return (i == nBytes);
 }
 
-int USART::writeString(const char *buffer)
+bool USART::writeString(const char *buffer, size_t &nBytesWritten)
 {
     int i = 0;
     miosix::Lock<miosix::FastMutex> l(txMutex);
@@ -613,7 +621,9 @@ int USART::writeString(const char *buffer)
         i++;
     };
 
-    return i;
+    nBytesWritten = i;
+
+    return (i > 0);
 }
 
 void USART::clearQueue() { rxQueue.reset(); }
@@ -776,20 +786,29 @@ bool STM32SerialWrapper::initPins(miosix::GpioPin tx, int nAFtx,
     return true;
 }
 
-int STM32SerialWrapper::writeString(const char *data)
+bool STM32SerialWrapper::read(void *buffer, size_t nBytes, bool blocking,
+                              size_t &nBytesRead)
+{
+    size_t n   = ::read(fd, buffer, nBytes);
+    nBytesRead = n;
+
+    return (n > 0);
+}
+
+bool STM32SerialWrapper::write(void *buffer, size_t nBytes,
+                               size_t &nBytesWritten)
+{
+    size_t n      = ::write(fd, buffer, nBytes);
+    nBytesWritten = n;
+    return (nBytes == n);
+}
+
+bool STM32SerialWrapper::writeString(const char *buffer, size_t &nBytesWritten)
 {
     // strlen + 1 in order to send the '/0' terminated string
-    return ::write(fd, data, strlen(data) + 1);
-}
-
-int STM32SerialWrapper::write(void *buf, size_t nChars)
-{
-    return ::write(fd, buf, nChars);
-}
-
-int STM32SerialWrapper::read(void *buf, size_t nBytes)
-{
-    return ::read(fd, buf, nBytes);
+    size_t n      = ::write(fd, buffer, strlen(buffer) + 1);
+    nBytesWritten = n;
+    return (n > 0);
 }
 
 }  // namespace Boardcore

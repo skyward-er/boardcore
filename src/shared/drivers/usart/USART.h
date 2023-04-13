@@ -154,17 +154,20 @@ public:
      * @brief Blocking read operation to read nBytes or till the data transfer
      * is complete.
      */
-    virtual int read(void *buffer, size_t nBytes) = 0;
+    virtual bool read(void *buffer, size_t nBytes, bool blocking = true,
+                      size_t &nBytesRead = tempNBytes) = 0;
 
     /**
      * @brief Blocking write operation.
      */
-    virtual int write(void *buf, size_t nChars) = 0;
+    virtual bool write(void *buf, size_t nBytes,
+                       size_t &nBytesWritten = tempNBytes) = 0;
 
     /**
      * @brief Write a string to the serial, comprising the '\0' character.
      */
-    virtual int writeString(const char *buffer) = 0;
+    virtual bool writeString(const char *buffer,
+                             size_t &nBytesWritten = tempNBytes) = 0;
 
     /**
      * @brief Returns the id of the serial.
@@ -175,10 +178,13 @@ protected:
     miosix::GpioPin tx{GPIOA_BASE, 0};
     miosix::GpioPin rx{GPIOA_BASE, 0};
 
+    static size_t
+        tempNBytes;  ///< Temporary variable for the default reference.
+
     USARTType *usart;
-    int id           = -1;  ///< Can be from 1 to 8, -1 is invalid
+    int id           = -1;  ///< Can be from 1 to 8, -1 is invalid.
     bool initialized = false;
-    Baudrate baudrate;  ///< Baudrate of the serial communication
+    Baudrate baudrate;  ///< Baudrate of the serial communication.
 };
 
 /**
@@ -252,17 +258,18 @@ public:
      * @brief Blocking read operation to read nBytes or till the data transfer
      * is complete.
      */
-    int read(void *buffer, size_t nBytes) override;
+    [[nodiscard]] bool read(void *buffer, size_t nBytes, bool blocking = true,
+                            size_t &nBytesRead = tempNBytes) override;
 
     /**
      * @brief Blocking write operation.
      */
-    int write(void *buf, size_t nChars) override;
+    bool write(void *buf, size_t nBytes, size_t &nBytesWritten = tempNBytes);
 
     /**
      * @brief Write a string to the serial, comprising the '\0' character.
      */
-    int writeString(const char *buffer) override;
+    bool writeString(const char *buffer, size_t &nBytesWritten = tempNBytes);
 
     /**
      * @brief Set the length of the word to 8 or to 9.
@@ -380,17 +387,18 @@ public:
      * @brief Blocking read operation to read nBytes or till the data transfer
      * is complete.
      */
-    int read(void *buffer, size_t nBytes);
+    [[nodiscard]] bool read(void *buffer, size_t nBytes, bool blocking = true,
+                            size_t &nBytesRead = tempNBytes);
 
     /**
      * @brief Blocking write operation.
      */
-    int write(void *buf, size_t nChars);
+    bool write(void *buf, size_t nBytes, size_t &nBytesWritten = tempNBytes);
 
     /**
      * @brief Write a string to the serial, comprising the '\0' character.
      */
-    int writeString(const char *buffer);
+    bool writeString(const char *buffer, size_t &nBytesWritten = tempNBytes);
 
 private:
     /**
