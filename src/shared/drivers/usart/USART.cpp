@@ -39,9 +39,6 @@ size_t Boardcore::USARTInterface::tempNBytes =
         ///< the nBytes transmitted/received
 
 #ifdef USART1
-typedef miosix::Gpio<GPIOB_BASE, 6> u1tx;  // AF7
-typedef miosix::Gpio<GPIOB_BASE, 7> u1rx;  // AF7
-
 /**
  * \internal Interrupt routine for usart1 actual implementation.
  */
@@ -70,9 +67,6 @@ void __attribute__((naked, used)) USART1_IRQHandler()
 #endif
 
 #ifdef USART2
-typedef miosix::Gpio<GPIOA_BASE, 2> u2tx;  // AF7
-typedef miosix::Gpio<GPIOA_BASE, 3> u2rx;  // AF7
-
 /**
  * \internal Interrupt routine for usart2 actual implementation.
  */
@@ -101,9 +95,6 @@ void __attribute__((naked, used)) USART2_IRQHandler()
 #endif
 
 #ifdef USART3
-typedef miosix::Gpio<GPIOB_BASE, 10> u3tx;  // AF7
-typedef miosix::Gpio<GPIOB_BASE, 11> u3rx;  // AF7
-
 /**
  * \internal Interrupt routine for usart3 actual implementation.
  */
@@ -132,9 +123,6 @@ void __attribute__((naked, used)) USART3_IRQHandler()
 #endif
 
 #ifdef UART4
-typedef miosix::Gpio<GPIOA_BASE, 0> u4tx;  // AF8
-typedef miosix::Gpio<GPIOA_BASE, 1> u4rx;  // AF8
-
 /**
  * \internal Interrupt routine for uart4 actual implementation.
  */
@@ -356,64 +344,106 @@ USART::USART(USARTType *usart, int baudrate, unsigned int queueLen)
     {
 #ifdef USART1
         case USART1_BASE:
-            this->id = 1;
-            irqn     = USART1_IRQn;
+            this->id             = 1;
+            irqn                 = USART1_IRQn;
+            this->serialPortName = std::string("usart1");
             break;
 #endif
 #ifdef USART2
         case USART2_BASE:
-            this->id = 2;
-            irqn     = USART2_IRQn;
+            this->id             = 2;
+            irqn                 = USART2_IRQn;
+            this->serialPortName = std::string("usart2");
             break;
 #endif
 #ifdef USART3
         case USART3_BASE:
-            this->id = 3;
-            irqn     = USART3_IRQn;
+            this->id             = 3;
+            irqn                 = USART3_IRQn;
+            this->serialPortName = std::string("usart3");
             break;
 #endif
 #ifdef UART4
         case UART4_BASE:
-            this->id = 4;
-            irqn     = UART4_IRQn;
+            this->id             = 4;
+            irqn                 = UART4_IRQn;
+            this->serialPortName = std::string("uart4");
             break;
 #endif
 #ifdef UART5
         case UART5_BASE:
-            this->id = 5;
-            irqn     = UART5_IRQn;
+            this->id             = 5;
+            irqn                 = UART5_IRQn;
+            this->serialPortName = std::string("uart5");
             break;
 #endif
 #ifdef USART6
         case USART6_BASE:
-            this->id = 6;
-            irqn     = USART6_IRQn;
+            this->id             = 6;
+            irqn                 = USART6_IRQn;
+            this->serialPortName = std::string("usart6");
             break;
 #endif
 #ifdef UART7
         case UART7_BASE:
-            this->id = 7;
-            irqn     = UART7_IRQn;
+            this->id             = 7;
+            irqn                 = UART7_IRQn;
+            this->serialPortName = std::string("uart7");
             break;
 #endif
 #ifdef UART8
         case UART8_BASE:
-            this->id = 8;
-            irqn     = UART8_IRQn;
+            this->id             = 8;
+            irqn                 = UART8_IRQn;
+            this->serialPortName = std::string("uart8");
             break;
 #endif
         default:
             D(assert(false && "USART selected not supported!"));
     }
+}
 
+USARTInterface::~USARTInterface() {}
+
+void USART::IRQhandleInterrupt()
+{
+    char c;
+
+    // If read data register is empty then read data
+    if (usart->SR & USART_SR_RXNE)
+    {
+        // Always read data, since this clears interrupt flags
+        c = usart->DR;
+        // If no error put data in buffer
+        if (!(usart->SR & USART_SR_FE))
+            if (rxQueue.tryPut(c) == false)  // FIFO overflow
+                ;
+
+        idle = false;
+    }
+
+    if (usart->SR & USART_SR_IDLE)
+        idle = true;
+
+    // Wake up thread if communication finished (idle state) or buffer reached
+    // half of his capacity
+    if (idle || (rxQueue.size() >= rxQueue.capacity() / 2))
+    {
+        c = usart->DR;  // Clears interrupt flags
+
+        if (rxWaiting)
+        {
+            rxWaiting->IRQwakeup();
+            rxWaiting = nullptr;
+        }
+    }
+}
+
+USART::USART(USARTType *usart, int baudrate, unsigned int queueLen)
+    : USARTInterface(usart, baudrate), rxQueue(queueLen)
+{
     // Enabling the peripheral on the right APB
     ClockUtils::enablePeripheralClock(usart);
-
-    // Enabling the usart peripheral
-    {
-        miosix::FastInterruptDisableLock dLock;
-        usart->CR1 |= USART_CR1_UE;
-    }
 
     // Setting the baudrate chosen
     setBaudrate(baudrate);
@@ -423,6 +453,30 @@ USART::USART(USARTType *usart, int baudrate, unsigned int queueLen)
     setWordLength(USART::WordLength::BIT8);
     setParity(USART::ParityBit::NO_PARITY);
     setOversampling(false);
+
+    {
+        miosix::FastInterruptDisableLock dLock;
+
+        // Enable usart, receiver, receiver interrupt and idle interrupt
+        usart->CR1 |= USART_CR1_UE        // Enabling the uart peripheral
+                      | USART_CR1_RXNEIE  // Interrupt on data received
+                      | USART_CR1_IDLEIE  // interrupt on idle line
+                      | USART_CR1_TE      // Transmission enabled
+                      | USART_CR1_RE;     // Reception enabled
+
+        // Sample only one bit
+        usart->CR3 |= USART_CR3_ONEBIT;
+    }
+
+    // Add to the array of usarts so that the interrupts can see it
+    ports[id - 1] = this;
+
+    // Enabling the interrupt for the relative serial port
+    NVIC_SetPriority(irqn, 15);
+    NVIC_EnableIRQ(irqn);
+
+    // Clearing the queue for random data read at the beginning
+    this->clearQueue();
 }
 
 USART::~USART()
@@ -437,40 +491,6 @@ USART::~USART()
 
     // Disabling the interrupt of the serial port
     NVIC_DisableIRQ(irqn);
-}
-
-bool USART::init()
-{
-    if (id < 1 || id > N_USART_PORTS)
-    {
-        TRACE("Not supported USART id\n");
-        return false;
-    }
-
-    {
-        miosix::FastInterruptDisableLock dLock;
-
-        // Enable usart, receiver, receiver interrupt and idle interrupt
-        usart->CR1 |= USART_CR1_RXNEIE    // Interrupt on data received
-                      | USART_CR1_IDLEIE  // interrupt on idle line
-                      | USART_CR1_TE      // Transmission enabled
-                      | USART_CR1_RE;     // Reception enabled
-
-        // Sample only one bit
-        usart->CR3 |= USART_CR3_ONEBIT;
-
-        // Enabling the interrupt for the relative serial port
-        NVIC_SetPriority(irqn, 15);
-        NVIC_EnableIRQ(irqn);
-
-        // Add to the array of usarts so that the interrupts can see it
-        ports[id - 1] = this;
-    }
-
-    // Clearing the queue for random data read at the beginning
-    this->clearQueue();
-
-    return true;
 }
 
 void USART::setWordLength(WordLength wordLength)
@@ -647,77 +667,36 @@ void USART::clearQueue() { rxQueue.reset(); }
 STM32SerialWrapper::STM32SerialWrapper(USARTType *usart, int baudrate)
     : USARTInterface(usart, baudrate)
 {
-    switch (reinterpret_cast<uint32_t>(usart))
-    {
+    D(assert((this->id < 1 || this->id > 4) &&
+             "USART selected not supported!"));
 
-#ifdef USART1
-        case USART1_BASE:
-            this->id = 1;
-            initPins(u1tx::getPin(), 7, u1rx::getPin(), 7);
-            this->serialPortName = std::string("usart1");
-            break;
-#endif
-#ifdef USART2
-        case USART2_BASE:
-            this->id = 2;
-            initPins(u2tx::getPin(), 7, u2rx::getPin(), 7);
-            this->serialPortName = std::string("usart2");
-            break;
-#endif
-#ifdef USART3
-        case USART3_BASE:
-            this->id = 3;
-            initPins(u3tx::getPin(), 7, u3rx::getPin(), 7);
-            this->serialPortName = std::string("usart3");
-            break;
-#endif
-#ifdef UART4
-        case UART4_BASE:
-            this->id = 4;
-            initPins(u4tx::getPin(), 8, u4rx::getPin(), 8);
-            this->serialPortName = std::string("uart4");
-            break;
-#endif
-        default:
-            D(assert(false && "USART selected not supported!"));
+    // Creates and adds the serial port to the devices
+    this->serial = new miosix::STM32Serial(id, baudrate);
+
+    if (!serialCommSetup())
+    {
+        D(assert(false &&
+                 "[STM32SerialWrapper] Error : can't initialize serial "
+                 "communication!\n"));
     }
-    initialized = false;
-    fd          = -1;
 }
 
 STM32SerialWrapper::STM32SerialWrapper(USARTType *usart, int baudrate,
                                        miosix::GpioPin tx, miosix::GpioPin rx)
     : USARTInterface(usart, baudrate)
 {
-    switch (reinterpret_cast<uint32_t>(usart))
+    D(assert((this->id < 1 || this->id > 4) &&
+             "USART selected not supported!"));
+
+    // Creates and adds the serial port to the devices
+    this->serial = new miosix::STM32Serial(id, baudrate, tx, rx);
+
+    if (!serialCommSetup())
     {
-        case USART1_BASE:
-            this->id             = 1;
-            this->serialPortName = std::string("usart1");
-            break;
-        case USART2_BASE:
-            this->id             = 2;
-            this->serialPortName = std::string("usart2");
-            break;
-        case USART3_BASE:
-            this->id             = 3;
-            this->serialPortName = std::string("usart3");
-            break;
-        case UART4_BASE:
-            this->id             = 4;
-            this->serialPortName = std::string("uart4");
-            break;
-        default:
-            D(assert(false && "USART selected not supported!"));
+        D(assert(false &&
+                 "[STM32SerialWrapper] Error : can't initialize serial "
+                 "communication!\n"));
     }
-
-    if (id < 4)
-        initPins(tx, 7, rx, 7);
-    else
-        initPins(tx, 8, rx, 8);
-
-    initialized = false;
-    fd          = -1;
 }
 
 STM32SerialWrapper::~STM32SerialWrapper()
@@ -728,50 +707,15 @@ STM32SerialWrapper::~STM32SerialWrapper()
     devFs->remove(serialPortName.c_str());
 }
 
-bool STM32SerialWrapper::init()
-{
-    if (id > 4)
-    {
-        TRACE(
-            "[STM32SerialWrapper] USART id greater than 3 is not supported\n");
-        return false;
-    }
-
-    if (initialized)
-    {
-        TRACE(
-            "[STM32SerialWrapper] Error : serial communication already "
-            "initialized!\n");
-        return false;
-    }
-    else if (!serialCommSetup())
-    {
-        TRACE(
-            "[STM32SerialWrapper] Error : can't initialize serial "
-            "communication!\n");
-        return false;
-    }
-
-    initialized = true;
-    return true;
-}
-
 bool STM32SerialWrapper::serialCommSetup()
 {
-    // Creates and adds the serial port to the devices
-    if (!pinInitialized)
-        serial = new miosix::STM32Serial(id, static_cast<int>(baudrate));
-    else
-    {
-        serial =
-            new miosix::STM32Serial(id, static_cast<int>(baudrate), tx, rx);
-    }
-
     // Adds a device to the file system
     if (!miosix::FilesystemManager::instance().getDevFs()->addDevice(
             serialPortName.c_str(),
             miosix::intrusive_ref_ptr<miosix::Device>(serial)))
+    {
         return false;
+    }
 
     // Path string "/dev/<name_of_port>" for the port we want to open
     std::string serialPortPath = "/dev/" + serialPortName;
@@ -785,27 +729,6 @@ bool STM32SerialWrapper::serialCommSetup()
         return false;
     }
 
-    return true;
-}
-
-bool STM32SerialWrapper::initPins(miosix::GpioPin tx, int nAFtx,
-                                  miosix::GpioPin rx, int nAFrx)
-{
-    if (pinInitialized)
-        return false;
-
-    miosix::FastInterruptDisableLock dLock;
-
-    this->tx = tx;
-    this->rx = rx;
-
-    tx.mode(miosix::Mode::ALTERNATE);
-    tx.alternateFunction(nAFtx);
-
-    rx.mode(miosix::Mode::ALTERNATE);
-    rx.alternateFunction(nAFrx);
-
-    pinInitialized = true;
     return true;
 }
 

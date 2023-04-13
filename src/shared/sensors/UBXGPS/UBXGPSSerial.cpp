@@ -171,7 +171,6 @@ bool UBXGPSSerial::setBaudrateAndUBX(bool safe)
 bool UBXGPSSerial::setSerialCommunication()
 {
     usart = new USART(usartNumber, defaultBaudrate);
-    usart->init();
     // Change the baudrate only if it is different than the default
     if (baudrate != defaultBaudrate)
     {

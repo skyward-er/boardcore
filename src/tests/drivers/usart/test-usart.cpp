@@ -223,14 +223,12 @@ int main()
 
         // declaring the usart peripherals
         USART usartx(USART6, baudrate);
-        usartx.init();
+        // usartx.setOversampling(false);
+        // usartx.setStopBits(1);
+        // usartx.setWordLength(USART::WordLength::BIT8);
+        // usartx.setParity(USART::ParityBit::NO_PARITY);
 
         USART usarty(USART2, baudrate);
-        // usarty.setOversampling(false);
-        // usarty.setStopBits(1);
-        // usarty.setWordLength(USART::WordLength::BIT8);
-        // usarty.setParity(USART::ParityBit::NO_PARITY);
-        usarty.init();
 
         // testing transmission (both char and binary) "serial 1 <- serial 2"
         testPassed &= testCommunicationSequential(&usartx, &usarty);

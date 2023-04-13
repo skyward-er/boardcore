@@ -139,17 +139,6 @@ int main()
         USART serial1(USART1, baudrates[iBaud]);
         USART serial2(USART2, baudrates[iBaud]);
 
-        if (!serial2.init())
-        {
-            printf("[Serial2] Wrong initialization\n");
-            return 1;
-        }
-
-        if (!serial1.init())
-        {
-            printf("[Serial1] Wrong initialization\n");
-            return 1;
-        }
         printf("\n########################### %d\n", (int)baudrates[iBaud]);
         // testing transmission "serial 1 <- serial 2"
         testCommunication<ctrlPin1_s2, ctrlPin2_s2, ctrlPin1_s1, ctrlPin2_s1>(

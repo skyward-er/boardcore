@@ -54,7 +54,6 @@ int main()
     rx.alternateFunction(7);
 
     USART usart1(USART1, 115200);
-    usart1.init();
 
     Runcam test(usart1);
     if (!test.init())

@@ -334,7 +334,7 @@ bool VN100::configDefaultSerialPort()
     serialInterface = new USART(portNumber, 115200);
 
     // Check correct serial init
-    return serialInterface->init();
+    return true;
 }
 
 /**
@@ -361,7 +361,7 @@ bool VN100::configUserSerialPort()
     serialInterface = new USART(portNumber, baudRate);
 
     // Check correct serial init
-    return serialInterface->init();
+    return true;
 }
 
 bool VN100::setCrc(bool waitResponse)

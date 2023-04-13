@@ -78,15 +78,6 @@ public:
     virtual ~USARTInterface() = 0;
 
     /**
-     * @brief Initializes the peripheral enabling his interrupts, the interrupts
-     * in the NVIC.
-     *
-     * All the setup phase (with the setting of the pins and their alternate
-     * functions) must be done before the initialization of the peripheral.
-     */
-    virtual bool init() = 0;
-
-    /**
      * @brief Read operation to read nBytes or till the data transfer is
      * complete.
      * @param buffer Buffer that will contain the received data.
@@ -123,15 +114,14 @@ public:
     int getId() { return id; };
 
 protected:
-    miosix::GpioPin tx{GPIOA_BASE, 0};
-    miosix::GpioPin rx{GPIOA_BASE, 0};
-
     static size_t
         tempNBytes;  ///< Temporary variable for the default reference.
 
     USARTType *usart;
-    int id           = -1;  ///< Can be from 1 to 8, -1 is invalid.
-    bool initialized = false;
+    int id = -1;                 ///< Can be from 1 to 8, -1 is invalid.
+    IRQn_Type irqn;              ///< IRQ number
+    std::string serialPortName;  ///< Port name of the port that has to be
+                                 ///< created for the communication
     int baudrate;  ///< Baudrate of the serial communication; standard ones
                    ///< are [2400, 9600, 19200, 38400, 57600, 115200,
                    ///< 230400, 256000, 460800, 921600]
@@ -193,16 +183,6 @@ public:
      * list.
      */
     ~USART() override;
-
-    /**
-     * @brief Initializes the peripheral enabling his interrupts, the interrupts
-     * in the NVIC and setting the pins with the appropriate alternate
-     * functions.
-     *
-     * All the setup phase must be done before the initialization of the
-     * peripheral. The pins must be initialized before calling this function.
-     */
-    bool init() override;
 
     /**
      * @brief Read operation to read nBytes or till the data transfer is
@@ -279,7 +259,6 @@ public:
     void clearQueue();
 
 private:
-    IRQn_Type irqn;
     miosix::FastMutex rxMutex;  ///< mutex for receiving on serial
     miosix::FastMutex txMutex;  ///< mutex for transmitting on serial
 
@@ -342,13 +321,6 @@ public:
     ~STM32SerialWrapper();
 
     /**
-     * @brief Initializes the peripheral.
-     *
-     * @see{STM32SerialWrapper::serialCommSetup}
-     */
-    bool init();
-
-    /**
      * @brief Blocking read operation to read nBytes or till the data transfer
      * is complete.
      * @param buffer Buffer that will contain the received data.
@@ -382,28 +354,12 @@ public:
 
 private:
     /**
-     * @brief Initializes the pins with the appropriate alternate functions.
-     *
-     * @param tx Tranmission pin.
-     * @param nAFtx Tranmission pin alternate function.
-     * @param rx Reception pin.
-     * @param nAFrx Reception pin alternate function.
-     */
-    bool initPins(miosix::GpioPin tx, int nAFtx, miosix::GpioPin rx, int nAFrx);
-
-    /**
      * @brief Creates a device that represents the serial port, adds it to the
      * file system and opens the file that represents the device.
      */
     bool serialCommSetup();
 
-    ///< True if initPins() already called successfully, false otherwise
-    bool pinInitialized = false;
-
     miosix::STM32Serial *serial;  ///< Pointer to the serial object
-
-    //< Port name of the port that has to be created for the communication
-    std::string serialPortName;
 
     ///< File descriptor of the serial port file opened for transmission
     int fd;
