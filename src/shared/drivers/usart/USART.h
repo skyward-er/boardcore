@@ -57,63 +57,6 @@ using USARTType = USART_TypeDef;
 #error "Your architecture doesn't support UART"
 #endif
 
-// A nice feature of the stm32 is that the USART are connected to the same
-// GPIOS in all families, stm32f1, f2, f4 and l1. Additionally, USART1 and
-// USART6 are always connected to the APB2, while the other USART/UARTs are
-// connected to the APB1.
-
-// USART1: AF7
-typedef miosix::Gpio<GPIOB_BASE, 6> u1tx1;
-typedef miosix::Gpio<GPIOB_BASE, 7> u1rx1;
-typedef miosix::Gpio<GPIOA_BASE, 9> u1tx2;
-typedef miosix::Gpio<GPIOA_BASE, 10> u1rx2;
-// typedef miosix::Gpio<GPIOA_BASE, 11> u1cts;
-// typedef miosix::Gpio<GPIOA_BASE, 12> u1rts;
-
-// USART2: AF7
-typedef miosix::Gpio<GPIOA_BASE, 2> u2tx1;
-typedef miosix::Gpio<GPIOA_BASE, 3> u2rx1;
-typedef miosix::Gpio<GPIOD_BASE, 5> u2tx2;
-typedef miosix::Gpio<GPIOD_BASE, 6> u2rx2;
-// typedef miosix::Gpio<GPIOA_BASE, 0> u2cts;
-// typedef miosix::Gpio<GPIOA_BASE, 1> u2rts;
-
-// USART3: AF7
-typedef miosix::Gpio<GPIOB_BASE, 10> u3tx1;
-typedef miosix::Gpio<GPIOB_BASE, 11> u3rx1;
-typedef miosix::Gpio<GPIOD_BASE, 8> u3tx2;
-typedef miosix::Gpio<GPIOD_BASE, 9> u3rx2;
-// typedef miosix::Gpio<GPIOB_BASE, 13> u3cts;
-// typedef miosix::Gpio<GPIOB_BASE, 14> u3rts;
-
-// UART4: AF8
-typedef miosix::Gpio<GPIOA_BASE, 0> u4tx1;
-typedef miosix::Gpio<GPIOA_BASE, 1> u4rx1;
-typedef miosix::Gpio<GPIOC_BASE, 10> u4tx2;
-typedef miosix::Gpio<GPIOC_BASE, 11> u4rx2;
-
-// UART5: AF8
-typedef miosix::Gpio<GPIOC_BASE, 12> u5tx;
-typedef miosix::Gpio<GPIOD_BASE, 2> u5rx;
-
-// USART6: AF8
-typedef miosix::Gpio<GPIOC_BASE, 6> u6tx1;
-typedef miosix::Gpio<GPIOC_BASE, 7> u6rx1;
-#ifdef STM32F429xx
-typedef miosix::Gpio<GPIOG_BASE, 14> u6tx2;
-typedef miosix::Gpio<GPIOG_BASE, 9> u6rx2;
-
-// USART7: AF8
-typedef miosix::Gpio<GPIOE_BASE, 8> u7tx1;
-typedef miosix::Gpio<GPIOE_BASE, 7> u7rx1;
-typedef miosix::Gpio<GPIOF_BASE, 7> u7tx2;
-typedef miosix::Gpio<GPIOF_BASE, 6> u7rx2;
-
-// USART8: AF8
-typedef miosix::Gpio<GPIOE_BASE, 1> u8tx;
-typedef miosix::Gpio<GPIOE_BASE, 0> u8rx;
-#endif  // STM32F429xx
-
 namespace Boardcore
 {
 

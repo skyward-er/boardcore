@@ -39,6 +39,9 @@ size_t Boardcore::USARTInterface::tempNBytes =
         ///< the nBytes transmitted/received
 
 #ifdef USART1
+typedef miosix::Gpio<GPIOB_BASE, 6> u1tx;  // AF7
+typedef miosix::Gpio<GPIOB_BASE, 7> u1rx;  // AF7
+
 /**
  * \internal Interrupt routine for usart1 actual implementation.
  */
@@ -67,6 +70,9 @@ void __attribute__((naked, used)) USART1_IRQHandler()
 #endif
 
 #ifdef USART2
+typedef miosix::Gpio<GPIOA_BASE, 2> u2tx;  // AF7
+typedef miosix::Gpio<GPIOA_BASE, 3> u2rx;  // AF7
+
 /**
  * \internal Interrupt routine for usart2 actual implementation.
  */
@@ -95,6 +101,9 @@ void __attribute__((naked, used)) USART2_IRQHandler()
 #endif
 
 #ifdef USART3
+typedef miosix::Gpio<GPIOB_BASE, 10> u3tx;  // AF7
+typedef miosix::Gpio<GPIOB_BASE, 11> u3rx;  // AF7
+
 /**
  * \internal Interrupt routine for usart3 actual implementation.
  */
@@ -123,6 +132,9 @@ void __attribute__((naked, used)) USART3_IRQHandler()
 #endif
 
 #ifdef UART4
+typedef miosix::Gpio<GPIOA_BASE, 0> u4tx;  // AF8
+typedef miosix::Gpio<GPIOA_BASE, 1> u4rx;  // AF8
+
 /**
  * \internal Interrupt routine for uart4 actual implementation.
  */
@@ -636,22 +648,22 @@ STM32SerialWrapper::STM32SerialWrapper(USARTType *usart, Baudrate baudrate)
     {
         case USART1_BASE:
             this->id = 1;
-            initPins(u1tx1::getPin(), 7, u1rx1::getPin(), 7);
+            initPins(u1tx::getPin(), 7, u1rx::getPin(), 7);
             this->serialPortName = std::string("usart1");
             break;
         case USART2_BASE:
             this->id = 2;
-            initPins(u2tx1::getPin(), 7, u2rx1::getPin(), 7);
+            initPins(u2tx::getPin(), 7, u2rx::getPin(), 7);
             this->serialPortName = std::string("usart2");
             break;
         case USART3_BASE:
             this->id = 3;
-            initPins(u3tx1::getPin(), 7, u3rx1::getPin(), 7);
+            initPins(u3tx::getPin(), 7, u3rx::getPin(), 7);
             this->serialPortName = std::string("usart3");
             break;
         case UART4_BASE:
             this->id = 4;
-            initPins(u4tx1::getPin(), 8, u4rx1::getPin(), 8);
+            initPins(u4tx::getPin(), 8, u4rx::getPin(), 8);
             this->serialPortName = std::string("uart4");
             break;
         default:
