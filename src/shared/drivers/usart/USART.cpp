@@ -277,6 +277,11 @@ void __attribute__((naked, used)) UART8_IRQHandler()
 namespace Boardcore
 {
 
+USARTInterface::USARTInterface(USARTType *usart, int baudrate)
+    : usart(usart), baudrate(baudrate)
+{
+}
+
 USARTInterface::~USARTInterface() {}
 
 void USART::IRQhandleInterrupt()
@@ -300,15 +305,16 @@ void USART::IRQhandleInterrupt()
     if (usart->SR & USART_SR_IDLE)
         idle = true;
 
-    if (usart->SR & USART_SR_IDLE || rxQueue.size() >= rxQueue.capacity() / 2)
+    // Wake up thread if communication finished (idle state) or buffer reached
+    // half of his capacity
+    if (idle || (rxQueue.size() >= rxQueue.capacity() / 2))
     {
         c = usart->DR;  // Clears interrupt flags
 
-        // Enough data in buffer or idle line, awake thread
         if (rxWaiting)
         {
             rxWaiting->IRQwakeup();
-            rxWaiting = 0;
+            rxWaiting = nullptr;
         }
     }
 #else
@@ -343,7 +349,7 @@ void USART::IRQhandleInterrupt()
 }
 
 USART::USART(USARTType *usart, int baudrate, unsigned int queueLen)
-    : rxQueue(queueLen)
+    : USARTInterface(usart, baudrate), rxQueue(queueLen)
 {
     // Setting the id of the serial port
     switch (reinterpret_cast<uint32_t>(usart))
@@ -399,8 +405,6 @@ USART::USART(USARTType *usart, int baudrate, unsigned int queueLen)
         default:
             D(assert(false && "USART selected not supported!"));
     }
-
-    this->usart = usart;
 
     // Enabling the peripheral on the right APB
     ClockUtils::enablePeripheralClock(usart);
@@ -464,7 +468,6 @@ bool USART::init()
     }
 
     // Clearing the queue for random data read at the beginning
-    miosix::Thread::sleep(1);
     this->clearQueue();
 
     return true;
@@ -536,7 +539,8 @@ void USART::setBaudrate(int baudrate)
     this->baudrate = baudrate;
 }
 
-bool USART::read(void *buffer, size_t nBytes, bool blocking, size_t &nBytesRead)
+bool USART::read(void *buffer, size_t nBytes, const bool blocking,
+                 size_t &nBytesRead)
 {
     miosix::Lock<miosix::FastMutex> l(rxMutex);
 
@@ -576,7 +580,7 @@ bool USART::read(void *buffer, size_t nBytes, bool blocking, size_t &nBytesRead)
     return (result > 0);
 }
 
-bool USART::write(void *buffer, size_t nBytes, size_t &nBytesWritten)
+bool USART::write(const void *buffer, size_t nBytes, size_t &nBytesWritten)
 {
     miosix::Lock<miosix::FastMutex> l(txMutex);
 
@@ -641,31 +645,39 @@ bool USART::writeString(const char *buffer, size_t &nBytesWritten)
 void USART::clearQueue() { rxQueue.reset(); }
 
 STM32SerialWrapper::STM32SerialWrapper(USARTType *usart, int baudrate)
+    : USARTInterface(usart, baudrate)
 {
-    this->usart    = usart;
-    this->baudrate = baudrate;
     switch (reinterpret_cast<uint32_t>(usart))
     {
+
+#ifdef USART1
         case USART1_BASE:
             this->id = 1;
             initPins(u1tx::getPin(), 7, u1rx::getPin(), 7);
             this->serialPortName = std::string("usart1");
             break;
+#endif
+#ifdef USART2
         case USART2_BASE:
             this->id = 2;
             initPins(u2tx::getPin(), 7, u2rx::getPin(), 7);
             this->serialPortName = std::string("usart2");
             break;
+#endif
+#ifdef USART3
         case USART3_BASE:
             this->id = 3;
             initPins(u3tx::getPin(), 7, u3rx::getPin(), 7);
             this->serialPortName = std::string("usart3");
             break;
+#endif
+#ifdef UART4
         case UART4_BASE:
             this->id = 4;
             initPins(u4tx::getPin(), 8, u4rx::getPin(), 8);
             this->serialPortName = std::string("uart4");
             break;
+#endif
         default:
             D(assert(false && "USART selected not supported!"));
     }
@@ -675,9 +687,8 @@ STM32SerialWrapper::STM32SerialWrapper(USARTType *usart, int baudrate)
 
 STM32SerialWrapper::STM32SerialWrapper(USARTType *usart, int baudrate,
                                        miosix::GpioPin tx, miosix::GpioPin rx)
+    : USARTInterface(usart, baudrate)
 {
-    this->usart    = usart;
-    this->baudrate = baudrate;
     switch (reinterpret_cast<uint32_t>(usart))
     {
         case USART1_BASE:
@@ -798,16 +809,17 @@ bool STM32SerialWrapper::initPins(miosix::GpioPin tx, int nAFtx,
     return true;
 }
 
-bool STM32SerialWrapper::read(void *buffer, size_t nBytes, bool blocking,
+bool STM32SerialWrapper::read(void *buffer, size_t nBytes, const bool blocking,
                               size_t &nBytesRead)
 {
+    D(assert(blocking));
     size_t n   = ::read(fd, buffer, nBytes);
     nBytesRead = n;
 
     return (n > 0);
 }
 
-bool STM32SerialWrapper::write(void *buffer, size_t nBytes,
+bool STM32SerialWrapper::write(const void *buffer, size_t nBytes,
                                size_t &nBytesWritten)
 {
     size_t n      = ::write(fd, buffer, nBytes);

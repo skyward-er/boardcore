@@ -139,7 +139,7 @@ bool testCommunicationSequential(USARTInterface *src, USARTInterface *dst)
     printf("\t%d--> sent: \t'%s'\n", src->getId(), buf_tx);
     src->writeString(buf_tx);
     // Thread::sleep(10); // enable to pass the test with STM32SerialWrapper
-    if (!dst->read(buf_rx, 64, false))
+    if (!dst->read(buf_rx, 64))
     {
         printf("### NO DATA READ ###\n");
         passed = false;
@@ -163,7 +163,7 @@ bool testCommunicationSequential(USARTInterface *src, USARTInterface *dst)
     printf("\t%d--> sent: \t'%s'\n", src->getId(), struct_tx.print().c_str());
     src->write(&struct_tx, sizeof(StructToSend));
     // Thread::sleep(10); // enable to pass the test with STM32SerialWrapper
-    if (!dst->read(&struct_rx, sizeof(StructToSend), false))
+    if (!dst->read(&struct_rx, sizeof(StructToSend)))
     {
         printf("### NO DATA READ ###\n");
         passed = false;
@@ -182,7 +182,9 @@ bool testCommunicationSequential(USARTInterface *src, USARTInterface *dst)
         passed = false;
     }
 
-    if (!dst->read(&struct_rx, sizeof(StructToSend), false))
+    // Testing the non blocking read only if USART class
+    if ((dynamic_cast<const USART *>(dst) != nullptr) &&
+        !dst->read(&struct_rx, sizeof(StructToSend), false))
     {
         printf("Non blocking read passed!\n");
     }
@@ -215,10 +217,8 @@ int main()
 
     bool testPassed = true;
     printf("*** SERIAL 3 WORKING!\n");
-    for (unsigned int iBaud = 0;
-         iBaud < sizeof(baudrates) / sizeof(baudrates[0]); iBaud++)
+    for (int baudrate : baudrates)
     {
-        int baudrate = baudrates[iBaud];
         printf("\n\n########################### %d\n", baudrate);
 
         // declaring the usart peripherals

@@ -67,6 +67,14 @@ namespace Boardcore
 class USARTInterface
 {
 public:
+    /**
+     * @brief Constructor of the USART in order to assign usart and baudrate.
+     * @param usart Pointer to the USART interface.
+     * @param baudrate Baudrate in bit per second. Default values are [2400,
+     * 9600, 19200, 38400, 57600, 115200, 230400, 256000, 460800, 921600]
+     */
+    explicit USARTInterface(USARTType *usart, int baudrate);
+
     virtual ~USARTInterface() = 0;
 
     /**
@@ -79,20 +87,32 @@ public:
     virtual bool init() = 0;
 
     /**
-     * @brief Blocking read operation to read nBytes or till the data transfer
-     * is complete.
+     * @brief Read operation to read nBytes or till the data transfer is
+     * complete.
+     * @param buffer Buffer that will contain the received data.
+     * @param nBytes Maximum size of the buffer.
+     * @param blocking Whether to wait for some data or not.
+     * @param nBytesRead Number of bytes read.
+     * @return If operation succeeded.
      */
-    virtual bool read(void *buffer, size_t nBytes, bool blocking = true,
+    virtual bool read(void *buffer, size_t nBytes, const bool blocking = true,
                       size_t &nBytesRead = tempNBytes) = 0;
 
     /**
      * @brief Blocking write operation.
+     * @param buffer Buffer that contains the data to be sent.
+     * @param nBytes Bytes to be sent.
+     * @param nBytesWritten Number of bytes sent.
+     * @return If operation succeeded.
      */
-    virtual bool write(void *buf, size_t nBytes,
+    virtual bool write(const void *buf, size_t nBytes,
                        size_t &nBytesWritten = tempNBytes) = 0;
 
     /**
      * @brief Write a string to the serial, comprising the '\0' character.
+     * @param buffer Buffer that contains the string to be sent.
+     * @param nBytesWritten Number of characters sent.
+     * @return If operation succeeded.
      */
     virtual bool writeString(const char *buffer,
                              size_t &nBytesWritten = tempNBytes) = 0;
@@ -185,19 +205,33 @@ public:
     bool init() override;
 
     /**
-     * @brief Blocking read operation to read nBytes or till the data transfer
-     * is complete.
+     * @brief Read operation to read nBytes or till the data transfer is
+     * complete.
+     * @param buffer Buffer that will contain the received data.
+     * @param nBytes Maximum size of the buffer.
+     * @param blocking Whether to wait for some data or not.
+     * @param nBytesRead Number of bytes read.
+     * @return If operation succeeded.
      */
-    [[nodiscard]] bool read(void *buffer, size_t nBytes, bool blocking = true,
-                            size_t &nBytesRead = tempNBytes) override;
+    [[nodiscard]] bool read(void *buffer, size_t nBytes,
+                            const bool blocking = false,
+                            size_t &nBytesRead  = tempNBytes) override;
 
     /**
      * @brief Blocking write operation.
+     * @param buffer Buffer that contains the data to be sent.
+     * @param nBytes Bytes to be sent.
+     * @param nBytesWritten Number of bytes sent.
+     * @return If operation succeeded.
      */
-    bool write(void *buf, size_t nBytes, size_t &nBytesWritten = tempNBytes);
+    bool write(const void *buf, size_t nBytes,
+               size_t &nBytesWritten = tempNBytes);
 
     /**
      * @brief Write a string to the serial, comprising the '\0' character.
+     * @param buffer Buffer that contains the string to be sent.
+     * @param nBytesWritten Number of characters sent.
+     * @return If operation succeeded.
      */
     bool writeString(const char *buffer, size_t &nBytesWritten = tempNBytes);
 
@@ -276,7 +310,7 @@ public:
      * - USART2: tx=PA2  rx=PA3
      * - USART3: tx=PB10 rx=PB11
      * @param usart structure that represents the usart peripheral [accepted
-     * are: USART1, USART2, USART3].
+     * are: USART1, USART2, USART3, UART4].
      * @param baudrate baudrate in bit per second. Default values are [2400,
      * 9600, 19200, 38400, 57600, 115200, 230400, 256000, 460800, 921600]
      */
@@ -286,7 +320,7 @@ public:
      * @brief Initializes the serialPortName and initializes the serial port
      * using custom pins.
      * @param usart structure that represents the usart peripheral [accepted
-     * are: USART1, USART2, USART3].
+     * are: USART1, USART2, USART3, UART4].
      * @param baudrate baudrate in bit per second. Default values are [2400,
      * 9600, 19200, 38400, 57600, 115200, 230400, 256000, 460800, 921600]
      * @param tx Tranmission pin
@@ -317,17 +351,32 @@ public:
     /**
      * @brief Blocking read operation to read nBytes or till the data transfer
      * is complete.
+     * @param buffer Buffer that will contain the received data.
+     * @param nBytes Maximum size of the buffer.
+     * @param blocking Must be true; non-blocking read with miosix driver not
+     * supported.
+     * @param nBytesRead Number of bytes read.
+     * @return If operation succeeded.
      */
-    [[nodiscard]] bool read(void *buffer, size_t nBytes, bool blocking = true,
-                            size_t &nBytesRead = tempNBytes);
+    [[nodiscard]] bool read(void *buffer, size_t nBytes,
+                            const bool blocking = true,
+                            size_t &nBytesRead  = tempNBytes);
 
     /**
      * @brief Blocking write operation.
+     * @param buffer Buffer that contains the data to be sent.
+     * @param nBytes Bytes to be sent.
+     * @param nBytesWritten Number of bytes sent.
+     * @return If operation succeeded.
      */
-    bool write(void *buf, size_t nBytes, size_t &nBytesWritten = tempNBytes);
+    bool write(const void *buf, size_t nBytes,
+               size_t &nBytesWritten = tempNBytes);
 
     /**
      * @brief Write a string to the serial, comprising the '\0' character.
+     * @param buffer Buffer that contains the string to be sent.
+     * @param nBytesWritten Number of characters sent.
+     * @return If operation succeeded.
      */
     bool writeString(const char *buffer, size_t &nBytesWritten = tempNBytes);
 
