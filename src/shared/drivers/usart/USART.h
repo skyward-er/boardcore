@@ -67,21 +67,6 @@ namespace Boardcore
 class USARTInterface
 {
 public:
-    enum class Baudrate : int
-    {
-        // B1200   = 1200, // NOT WORKING WITH 1200 baud
-        B2400   = 2400,
-        B9600   = 9600,
-        B19200  = 19200,
-        B38400  = 38400,
-        B57600  = 57600,
-        B115200 = 115200,
-        B230400 = 230400,
-        B256000 = 256000,
-        B460800 = 460800,
-        B921600 = 921600
-    };
-
     virtual ~USARTInterface() = 0;
 
     /**
@@ -127,7 +112,9 @@ protected:
     USARTType *usart;
     int id           = -1;  ///< Can be from 1 to 8, -1 is invalid.
     bool initialized = false;
-    Baudrate baudrate;  ///< Baudrate of the serial communication.
+    int baudrate;  ///< Baudrate of the serial communication; standard ones
+                   ///< are [2400, 9600, 19200, 38400, 57600, 115200,
+                   ///< 230400, 256000, 460800, 921600]
 };
 
 /**
@@ -168,10 +155,10 @@ public:
      *
      * @param usart structure that represents the usart peripheral [accepted
      * are: USART1, USART2, USART3, UART4, UART5, USART6, UART7, UART8].
-     * @param baudrate member of the enum Baudrate that represents the baudrate
-     * with which the communication will take place.
+     * @param baudrate Baudrate in bit per second. Default values are [2400,
+     * 9600, 19200, 38400, 57600, 115200, 230400, 256000, 460800, 921600]
      */
-    USART(USARTType *usart, Baudrate baudrate,
+    USART(USARTType *usart, int baudrate,
           unsigned int queueLen = usart_queue_default_capacity);
 
     ///< Delete copy/move constructors/operators.
@@ -239,9 +226,10 @@ public:
     /**
      * @brief Set the baudrate in the BRR register.
      *
-     * @param pb Baudrate element that represents the baudrate.
+     * @param baudrate Baudrate in bit per second. Default values are [2400,
+     * 9600, 19200, 38400, 57600, 115200, 230400, 256000, 460800, 921600]
      */
-    void setBaudrate(Baudrate br);
+    void setBaudrate(int baudrate);
 
     /**
      * @brief Sets the Over8 bit.
@@ -289,22 +277,22 @@ public:
      * - USART3: tx=PB10 rx=PB11
      * @param usart structure that represents the usart peripheral [accepted
      * are: USART1, USART2, USART3].
-     * @param baudrate member of the enum Baudrate that represents the baudrate
-     * with which the communication will take place.
+     * @param baudrate baudrate in bit per second. Default values are [2400,
+     * 9600, 19200, 38400, 57600, 115200, 230400, 256000, 460800, 921600]
      */
-    STM32SerialWrapper(USARTType *usart, Baudrate baudrate);
+    STM32SerialWrapper(USARTType *usart, int baudrate);
 
     /**
      * @brief Initializes the serialPortName and initializes the serial port
      * using custom pins.
      * @param usart structure that represents the usart peripheral [accepted
      * are: USART1, USART2, USART3].
-     * @param baudrate member of the enum Baudrate that represents the baudrate
-     * with which the communication will take place.
+     * @param baudrate baudrate in bit per second. Default values are [2400,
+     * 9600, 19200, 38400, 57600, 115200, 230400, 256000, 460800, 921600]
      * @param tx Tranmission pin
      * @param rx Reception pin
      */
-    STM32SerialWrapper(USARTType *usart, Baudrate baudrate, miosix::GpioPin tx,
+    STM32SerialWrapper(USARTType *usart, int baudrate, miosix::GpioPin tx,
                        miosix::GpioPin rx);
 
     ///< Delete copy/move constructors/operators.

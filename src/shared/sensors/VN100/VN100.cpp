@@ -27,8 +27,8 @@
 namespace Boardcore
 {
 
-VN100::VN100(USARTType *portNumber, USARTInterface::Baudrate baudRate,
-             CRCOptions crc, uint16_t samplePeriod)
+VN100::VN100(USARTType *portNumber, int baudRate, CRCOptions crc,
+             uint16_t samplePeriod)
     : portNumber(portNumber), baudRate(baudRate), crc(crc)
 {
     this->samplePeriod = samplePeriod;
@@ -331,7 +331,7 @@ bool VN100::disableAsyncMessages(bool waitResponse)
 bool VN100::configDefaultSerialPort()
 {
     // Initial default settings
-    serialInterface = new USART(portNumber, USARTInterface::Baudrate::B115200);
+    serialInterface = new USART(portNumber, 115200);
 
     // Check correct serial init
     return serialInterface->init();
@@ -346,7 +346,7 @@ bool VN100::configUserSerialPort()
     std::string command;
 
     // I format the command to change baud rate
-    command = fmt::format("{}{}", "VNWRG,5,", static_cast<int>(baudRate));
+    command = fmt::format("{}{}", "VNWRG,5,", baudRate);
 
     // I can send the command
     if (!sendStringCommand(command))

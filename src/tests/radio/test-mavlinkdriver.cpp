@@ -36,7 +36,10 @@
 using namespace miosix;
 using namespace Boardcore;
 
-USART usart(USART2, USARTInterface::Baudrate::B115200);
+typedef miosix::Gpio<GPIOA_BASE, 2> u2tx;
+typedef miosix::Gpio<GPIOA_BASE, 3> u2rx;
+
+USART usart(USART2, 115200);
 SerialTransceiver transceiver(usart);
 MavlinkDriver<20, 10> mavlink(&transceiver);
 
@@ -44,10 +47,10 @@ void payloadGenerator();
 
 int main()
 {
-    u2rx1::mode(Mode::ALTERNATE);
-    u2rx1::alternateFunction(7);
-    u2tx1::mode(Mode::ALTERNATE);
-    u2tx1::alternateFunction(7);
+    u2rx::mode(Mode::ALTERNATE);
+    u2rx::alternateFunction(7);
+    u2tx::mode(Mode::ALTERNATE);
+    u2tx::alternateFunction(7);
 
     TaskScheduler scheduler;
     scheduler.addTask(payloadGenerator, 2000);

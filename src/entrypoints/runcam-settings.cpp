@@ -53,7 +53,7 @@ int main()
     tx.alternateFunction(7);
     rx.alternateFunction(7);
 
-    USART usart1(USART1, USARTInterface::Baudrate::B115200);
+    USART usart1(USART1, 115200);
     usart1.init();
 
     Runcam test(usart1);

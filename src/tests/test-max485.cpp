@@ -75,11 +75,8 @@ using ctrlPin2_s2 = miosix::Gpio<GPIOC_BASE, 2>;
 
 char msg[64] = "Testing communication :D";
 char rcv[64];
-USARTInterface::Baudrate baudrates[] = {
-    USARTInterface::Baudrate::B2400,   USARTInterface::Baudrate::B9600,
-    USARTInterface::Baudrate::B19200,  USARTInterface::Baudrate::B115200,
-    USARTInterface::Baudrate::B230400, USARTInterface::Baudrate::B460800,
-    USARTInterface::Baudrate::B921600};
+int baudrates[] = {2400,   9600,   19200,  38400,  57600,
+                   115200, 230400, 256000, 460800, 921600};
 
 // function for the thread that has to read from serial
 void readSer(USARTInterface &s) {}

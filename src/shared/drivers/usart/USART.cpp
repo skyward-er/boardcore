@@ -342,7 +342,7 @@ void USART::IRQhandleInterrupt()
 #endif
 }
 
-USART::USART(USARTType *usart, Baudrate baudrate, unsigned int queueLen)
+USART::USART(USARTType *usart, int baudrate, unsigned int queueLen)
     : rxQueue(queueLen)
 {
     // Setting the id of the serial port
@@ -505,7 +505,7 @@ void USART::setOversampling(bool oversampling)
                   : usart->CR1 &= ~USART_CR1_OVER8);
 }
 
-void USART::setBaudrate(Baudrate baudrate)
+void USART::setBaudrate(int baudrate)
 {
     /*
      * Baudrate setting:
@@ -640,7 +640,7 @@ bool USART::writeString(const char *buffer, size_t &nBytesWritten)
 
 void USART::clearQueue() { rxQueue.reset(); }
 
-STM32SerialWrapper::STM32SerialWrapper(USARTType *usart, Baudrate baudrate)
+STM32SerialWrapper::STM32SerialWrapper(USARTType *usart, int baudrate)
 {
     this->usart    = usart;
     this->baudrate = baudrate;
@@ -673,7 +673,7 @@ STM32SerialWrapper::STM32SerialWrapper(USARTType *usart, Baudrate baudrate)
     fd          = -1;
 }
 
-STM32SerialWrapper::STM32SerialWrapper(USARTType *usart, Baudrate baudrate,
+STM32SerialWrapper::STM32SerialWrapper(USARTType *usart, int baudrate,
                                        miosix::GpioPin tx, miosix::GpioPin rx)
 {
     this->usart    = usart;

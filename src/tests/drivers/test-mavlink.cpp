@@ -52,7 +52,7 @@ MavDriver* mavlink;
  */
 int main()
 {
-    STM32SerialWrapper serial(USART1, USARTInterface::Baudrate::B19200);
+    STM32SerialWrapper serial(USART1, 19200);
     transceiver = new SerialTransceiver(serial);
     mavlink = new MavDriver(transceiver, nullptr, silenceAfterSend, maxPktAge);
 

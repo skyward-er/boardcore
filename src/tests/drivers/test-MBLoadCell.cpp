@@ -59,7 +59,7 @@ int main()
 {
     // In order to disable DEBUG prints of the button press events
     Logging::getStdOutLogSink().setLevel(LOGL_WARNING);
-    USART usart(USART1, USARTInterface::Baudrate::B115200);
+    USART usart(USART1, 115200);
 
     /**
      * Use of CONT_MOD_TD: transmits net and gross weight

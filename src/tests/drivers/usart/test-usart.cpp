@@ -120,12 +120,8 @@ typedef struct
 } StructToSend;
 StructToSend struct_tx = {'C', 42, 420.69, 48.84};
 char buf_tx[64]        = "Testing communication, but very very very loong :D";
-USARTInterface::Baudrate baudrates[] = {
-    USARTInterface::Baudrate::B2400,   USARTInterface::Baudrate::B9600,
-    USARTInterface::Baudrate::B19200,  USARTInterface::Baudrate::B38400,
-    USARTInterface::Baudrate::B57600,  USARTInterface::Baudrate::B115200,
-    USARTInterface::Baudrate::B230400, USARTInterface::Baudrate::B460800,
-    USARTInterface::Baudrate::B921600};
+int baudrates[]        = {2400,   9600,   19200,  38400,  57600,
+                          115200, 230400, 256000, 460800, 921600};
 
 /**
  * Communication: src -> dst
@@ -222,14 +218,14 @@ int main()
     for (unsigned int iBaud = 0;
          iBaud < sizeof(baudrates) / sizeof(baudrates[0]); iBaud++)
     {
-        USARTInterface::Baudrate baudrate = baudrates[iBaud];
-        printf("\n\n########################### %d\n", (int)baudrate);
+        int baudrate = baudrates[iBaud];
+        printf("\n\n########################### %d\n", baudrate);
 
         // declaring the usart peripherals
         USART usartx(USART6, baudrate);
         usartx.init();
 
-        STM32SerialWrapper usarty(USART2, baudrate);
+        USART usarty(USART2, baudrate);
         // usarty.setOversampling(false);
         // usarty.setStopBits(1);
         // usarty.setWordLength(USART::WordLength::BIT8);
