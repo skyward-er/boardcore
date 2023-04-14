@@ -399,6 +399,7 @@ USART::USART(USARTType *usart, int baudrate, unsigned int queueLen)
             break;
 #endif
         default:
+            LOG_ERR(logger, "USART selected not supported!");
             D(assert(false && "USART selected not supported!"));
     }
 }
@@ -667,14 +668,20 @@ void USART::clearQueue() { rxQueue.reset(); }
 STM32SerialWrapper::STM32SerialWrapper(USARTType *usart, int baudrate)
     : USARTInterface(usart, baudrate)
 {
-    D(assert((this->id < 1 || this->id > 4) &&
-             "USART selected not supported!"));
+    if (this->id < 1 || this->id > 4)
+    {
+        LOG_ERR(logger, "USART selected not supported for STM32SerialWrapper!");
+        D(assert(false &&
+                 "USART selected not supported for STM32SerialWrapper!"));
+    }
 
     // Creates and adds the serial port to the devices
     this->serial = new miosix::STM32Serial(id, baudrate);
 
     if (!serialCommSetup())
     {
+        LOG_ERR(logger,
+                "[STM32SerialWrapper] can't initialize serial communication!");
         D(assert(false &&
                  "[STM32SerialWrapper] Error : can't initialize serial "
                  "communication!\n"));
@@ -685,14 +692,20 @@ STM32SerialWrapper::STM32SerialWrapper(USARTType *usart, int baudrate,
                                        miosix::GpioPin tx, miosix::GpioPin rx)
     : USARTInterface(usart, baudrate)
 {
-    D(assert((this->id < 1 || this->id > 4) &&
-             "USART selected not supported!"));
+    if (this->id < 1 || this->id > 4)
+    {
+        LOG_ERR(logger, "USART selected not supported for STM32SerialWrapper!");
+        D(assert(false &&
+                 "USART selected not supported for STM32SerialWrapper!"));
+    }
 
     // Creates and adds the serial port to the devices
     this->serial = new miosix::STM32Serial(id, baudrate, tx, rx);
 
     if (!serialCommSetup())
     {
+        LOG_ERR(logger,
+                "[STM32SerialWrapper] can't initialize serial communication!");
         D(assert(false &&
                  "[STM32SerialWrapper] Error : can't initialize serial "
                  "communication!\n"));
@@ -735,7 +748,15 @@ bool STM32SerialWrapper::serialCommSetup()
 bool STM32SerialWrapper::read(void *buffer, size_t nBytes, const bool blocking,
                               size_t &nBytesRead)
 {
-    D(assert(blocking));
+    // non-blocking read not supported in STM32SerialWrapper
+    if (!blocking)
+    {
+        LOG_ERR(logger,
+                "STM32SerialWrapper::read doesn't support non-blocking read");
+        D(assert(false &&
+                 "STM32SerialWrapper::read doesn't support non-blocking read"));
+    }
+
     size_t n   = ::read(fd, buffer, nBytes);
     nBytesRead = n;
 

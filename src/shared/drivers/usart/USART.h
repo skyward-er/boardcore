@@ -22,6 +22,7 @@
 
 #pragma once
 
+#include <diagnostic/PrintLogger.h>
 #include <interfaces/arch_registers.h>
 #include <miosix.h>
 #include <utils/ClockUtils.h>
@@ -125,6 +126,8 @@ protected:
     int baudrate;  ///< Baudrate of the serial communication; standard ones
                    ///< are [2400, 9600, 19200, 38400, 57600, 115200,
                    ///< 230400, 256000, 460800, 921600]
+
+    PrintLogger logger = Logging::getLogger("usart");
 };
 
 /**
