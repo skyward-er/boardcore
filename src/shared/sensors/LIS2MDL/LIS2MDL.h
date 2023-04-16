@@ -39,10 +39,10 @@ class LIS2MDL : public Sensor<LIS2MDLData>
 public:
     enum ODR : uint8_t
     {
-        ODR_10_HZ  = 0x00,  ///< 10 Hz
-        ODR_20_HZ  = 0x04,  ///< 20 Hz
-        ODR_50_HZ  = 0x08,  ///< 50 Hz
-        ODR_100_HZ = 0x18,  ///< 100 Hz
+        ODR_10_HZ  = 0b00 << 2,  ///< 10 Hz
+        ODR_20_HZ  = 0b01 << 2,  ///< 20 Hz
+        ODR_50_HZ  = 0b10 << 2,  ///< 50 Hz
+        ODR_100_HZ = 0b11 << 2,  ///< 100 Hz
     };
 
     enum OperativeMode : uint8_t
