@@ -40,9 +40,9 @@ public:
     enum ODR : uint8_t
     {
         ODR_10_HZ  = 0x00,  ///< 10 Hz
-        ODR_20_HZ  = 0x01,  ///< 20 Hz
-        ODR_50_HZ  = 0x02,  ///< 50 Hz
-        ODR_100_HZ = 0x03,  ///< 100 Hz
+        ODR_20_HZ  = 0x04,  ///< 20 Hz
+        ODR_50_HZ  = 0x08,  ///< 50 Hz
+        ODR_100_HZ = 0x18,  ///< 100 Hz
     };
 
     enum OperativeMode : uint8_t

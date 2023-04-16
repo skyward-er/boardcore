@@ -24,7 +24,12 @@
 
 #include <drivers/timer/TimestampTimer.h>
 #include <miosix.h>
+#include <sensors/calibration/SensorDataExtra/SensorDataExtra.h>
 #include <utils/Debug.h>
+
+#include <iostream>
+
+using namespace Eigen;
 
 namespace Boardcore
 {
@@ -86,20 +91,18 @@ bool LIS2MDL::selfTest()
         return false;
     }
 
-    constexpr int NUM_SAMPLES = 5;
-    constexpr int SLEEP_TIME  = 50;
+    /**
+     * The device has to be kept still while the self-test is ongoing.
+     * See AN5069 for further details on the self-test procedure.
+     */
 
-    // Absolute value of extra tolerance
-    constexpr float t = 0.1f;
+    static constexpr int NUM_SAMPLES = 50;  // 50 samples suggested by AN5069
+    static constexpr int SLEEP_TIME  = 10;  // 100Hz -> 10ms between samples
+    Vector3f avgPreTest              = Vector3f::Zero();
+    Vector3f avgPostTest             = Vector3f::Zero();
+    Vector3f tmp;
 
-    // Range which delta must be between, one for axis and expressed as {min,
-    // max}. The unit is gauss.
-    constexpr float ST_min = 0.015;
-    constexpr float ST_max = 0.500;
-
-    float avgX = 0.f, avgY = 0.f, avgZ = 0.f;
-
-    // Set configuration for selfTest procedure. selfTest still not enabled
+    // 1. Set configuration for selfTest procedure. selfTest still not enabled
     {
         SPITransaction spi(slave);
         spi.writeRegister(CFG_REG_A,
@@ -108,60 +111,80 @@ bool LIS2MDL::selfTest()
                           spi.readRegister(CFG_REG_B) | OFFSET_CANCELLATION);
         spi.writeRegister(CFG_REG_C, spi.readRegister(CFG_REG_C) | ENABLE_BDU);
     }
+
+    // Wait for power up, ~20ms for a stable output
     miosix::Thread::sleep(20);
 
-    for (int i = 0; i < NUM_SAMPLES; ++i)
+    // 2. Averaging fifty samples before enabling the self-test
     {
-        miosix::Thread::sleep(SLEEP_TIME);
+        for (int i = 0; i < NUM_SAMPLES - 1; i++)
+        {
+            tmp << static_cast<MagnetometerData>(sampleImpl());
+            avgPreTest += tmp;
 
-        LIS2MDLData lastData = sampleImpl();
-        avgX += lastData.magneticFieldX;
-        avgY += lastData.magneticFieldY;
-        avgZ += lastData.magneticFieldZ;
+            miosix::Thread::sleep(SLEEP_TIME);
+        }
+        tmp << static_cast<MagnetometerData>(sampleImpl());
+        avgPreTest += tmp;
+
+        // Compute average
+        avgPreTest /= NUM_SAMPLES;
     }
 
-    avgX /= NUM_SAMPLES;
-    avgY /= NUM_SAMPLES;
-    avgZ /= NUM_SAMPLES;
-
+    // 3. Enable self-test
     {
-        // selfTest is enabled
         SPITransaction spi(slave);
         spi.writeRegister(CFG_REG_C,
                           spi.readRegister(CFG_REG_C) | ENABLE_SELF_TEST);
     }
+
+    // Wait 60ms (suggested in AN)
     miosix::Thread::sleep(60);
 
-    // Deltas: absolute difference between the values measured before and after
-    float deltas[3];
-
-    LIS2MDLData lastData = sampleImpl();
-    deltas[0]            = std::abs(lastData.magneticFieldX - avgX);
-    deltas[1]            = std::abs(lastData.magneticFieldY - avgY);
-    deltas[2]            = std::abs(lastData.magneticFieldZ - avgZ);
-
-    bool passed = true;
-    for (int j = 0; j < 3; ++j)
-        if (deltas[j] < (ST_max - t) && deltas[j] > (ST_min + t))
-            passed = false;
-
-    // Reset configuration, then return
-    applyConfig(configuration);
-
-    if (!passed)
+    // 4. Averaging fifty samples after enabling the self-test
     {
-        lastError = SELF_TEST_FAIL;
-        return false;
+        for (int i = 0; i < NUM_SAMPLES - 1; i++)
+        {
+            tmp << static_cast<MagnetometerData>(sampleImpl());
+            avgPostTest += tmp;
+
+            miosix::Thread::sleep(SLEEP_TIME);
+        }
+        tmp << static_cast<MagnetometerData>(sampleImpl());
+        avgPostTest += tmp;
+
+        // Compute average
+        avgPostTest /= NUM_SAMPLES;
     }
 
+    // 5. Computing the difference in the module for each axis and verifying
+    //    that is falls in the given range: the min and max value are provided
+    //    in the datasheet.
     {
-        // Disable selfTest
-        SPITransaction spi(slave);
-        spi.writeRegister(CFG_REG_C,
-                          spi.readRegister(CFG_REG_C) & ~ENABLE_SELF_TEST);
-    }
+        Vector3f deltas = (avgPostTest - avgPreTest).cwiseAbs();
 
-    return true;
+        // Range which delta must be between, one for axis and expressed as
+        // {min, max}. The unit is gauss.
+        static constexpr float ST_MIN = 0.015;  // [Gauss]
+        static constexpr float ST_MAX = 0.500;  // [Gauss]
+
+        bool passed =
+            (ST_MIN < deltas.array()).all() && (deltas.array() < ST_MAX).all();
+
+        // Reset configuration, then return
+        applyConfig(configuration);
+
+        if (!passed)
+        {
+            LOG_ERR(logger, "selfTest() failed");
+            lastError = SELF_TEST_FAIL;
+            return false;
+        }
+        else
+        {
+            return true;
+        }
+    }
 }
 
 bool LIS2MDL::applyConfig(Config config)
@@ -170,7 +193,7 @@ bool LIS2MDL::applyConfig(Config config)
     uint8_t reg = 0;
 
     // CFG_REG_A: configuration register
-    reg |= config.odr << 2;
+    reg |= config.odr;
     reg |= config.deviceMode;
     reg |= (1 << 7);
     reg |= (spi.readRegister(CFG_REG_A) & 0b01110000);
