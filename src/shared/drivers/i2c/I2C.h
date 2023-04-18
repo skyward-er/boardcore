@@ -89,7 +89,7 @@ public:
                              const void *buffer, const size_t &nBytes);
 
     /**
-     * @brief Non blocking operation to read a 1-byte register from a slave.
+     * @brief Non blocking operation to read an 8-bit register from a slave.
      *
      * This method, if necessary, flushes the bus before the read operation is
      * performed. In case of an error during the communication, this method
@@ -105,7 +105,55 @@ public:
         const uint8_t &registerAddress, uint8_t &registerContent);
 
     /**
-     * @brief Non blocking operation to write a 1-byte register from a slave.
+     * @brief Non blocking operation to read a 16-bit register from a slave.
+     *
+     * This method, if necessary, flushes the bus before the read operation is
+     * performed. In case of an error during the communication, this method
+     * returns false immediately.
+     * @warning Check always if the operation succeeded or not!
+     * @param slaveConfig The configuration struct of the slave device.
+     * @param registerAddress Byte that represents the address of the register.
+     * @param registerContent Where to store the content of the register.
+     * @returns True if the read is successful, false otherwise.
+     */
+    [[nodiscard]] bool readRegister16(
+        const I2CDriver::I2CSlaveConfig &slaveConfig,
+        const uint8_t &registerAddress, uint16_t &registerContent);
+
+    /**
+     * @brief Non blocking operation to read a 24-bit register from a slave.
+     *
+     * This method, if necessary, flushes the bus before the read operation is
+     * performed. In case of an error during the communication, this method
+     * returns false immediately.
+     * @warning Check always if the operation succeeded or not!
+     * @param slaveConfig The configuration struct of the slave device.
+     * @param registerAddress Byte that represents the address of the register.
+     * @param registerContent Where to store the content of the register.
+     * @returns True if the read is successful, false otherwise.
+     */
+    [[nodiscard]] bool readRegister24(
+        const I2CDriver::I2CSlaveConfig &slaveConfig,
+        const uint8_t &registerAddress, uint32_t &registerContent);
+
+    /**
+     * @brief Non blocking operation to read a 32-bit register from a slave.
+     *
+     * This method, if necessary, flushes the bus before the read operation is
+     * performed. In case of an error during the communication, this method
+     * returns false immediately.
+     * @warning Check always if the operation succeeded or not!
+     * @param slaveConfig The configuration struct of the slave device.
+     * @param registerAddress Byte that represents the address of the register.
+     * @param registerContent Where to store the content of the register.
+     * @returns True if the read is successful, false otherwise.
+     */
+    [[nodiscard]] bool readRegister32(
+        const I2CDriver::I2CSlaveConfig &slaveConfig,
+        const uint8_t &registerAddress, uint32_t &registerContent);
+
+    /**
+     * @brief Non blocking operation to write an 8-bit register from a slave.
      *
      * This method, if necessary, flushes the bus before the write operation is
      * performed. In case of an error during the communication, this method
@@ -119,6 +167,54 @@ public:
     [[nodiscard]] bool writeRegister(
         const I2CDriver::I2CSlaveConfig &slaveConfig,
         const uint8_t &registerAddress, const uint8_t &registerContent);
+
+    /**
+     * @brief Non blocking operation to write a 16-bit register from a slave.
+     *
+     * This method, if necessary, flushes the bus before the read operation is
+     * performed. In case of an error during the communication, this method
+     * returns false immediately.
+     * @warning Check always if the operation succeeded or not!
+     * @param slaveConfig The configuration struct of the slave device.
+     * @param registerAddress Byte that represents the address of the register.
+     * @param registerContent The content to write on the register.
+     * @returns True if the write is successful, false otherwise.
+     */
+    [[nodiscard]] bool writeRegister16(
+        const I2CDriver::I2CSlaveConfig &slaveConfig,
+        const uint8_t &registerAddress, const uint16_t &registerContent);
+
+    /**
+     * @brief Non blocking operation to write a 24-bit register from a slave.
+     *
+     * This method, if necessary, flushes the bus before the read operation is
+     * performed. In case of an error during the communication, this method
+     * returns false immediately.
+     * @warning Check always if the operation succeeded or not!
+     * @param slaveConfig The configuration struct of the slave device.
+     * @param registerAddress Byte that represents the address of the register.
+     * @param registerContent The content to write on the register.
+     * @returns True if the write is successful, false otherwise.
+     */
+    [[nodiscard]] bool writeRegister24(
+        const I2CDriver::I2CSlaveConfig &slaveConfig,
+        const uint8_t &registerAddress, const uint32_t &registerContent);
+
+    /**
+     * @brief Non blocking operation to write a 32-bit register from a slave.
+     *
+     * This method, if necessary, flushes the bus before the read operation is
+     * performed. In case of an error during the communication, this method
+     * returns false immediately.
+     * @warning Check always if the operation succeeded or not!
+     * @param slaveConfig The configuration struct of the slave device.
+     * @param registerAddress Byte that represents the address of the register.
+     * @param registerContent The content to write on the register.
+     * @returns True if the write is successful, false otherwise.
+     */
+    [[nodiscard]] bool writeRegister32(
+        const I2CDriver::I2CSlaveConfig &slaveConfig,
+        const uint8_t &registerAddress, const uint32_t &registerContent);
 
     /**
      * @brief Non blocking operation to read n-bytes from register from a slave.
@@ -218,7 +314,7 @@ public:
                              const void *buffer, const size_t &nBytes);
 
     /**
-     * @brief Read a one-byte register from the device.
+     * @brief Read an 8-bit register from the device.
      *
      * This method could have to wait that no other thread is trying to do some
      * operation on the bus. In case of an error during the communication, this
@@ -234,7 +330,55 @@ public:
         const uint8_t &registerAddress, uint8_t &registerContent);
 
     /**
-     * @brief Write a one-byte register from the device.
+     * @brief Read a 16-bit register from the device.
+     *
+     * This method could have to wait that no other thread is trying to do some
+     * operation on the bus. In case of an error during the communication, this
+     * method returns false immediately.
+     * @warning Check always if the operation succeeded or not!
+     * @param slaveConfig The configuration struct of the slave device.
+     * @param registerAddress Byte that represents the address of the register.
+     * @param registerContent Where to store the content of the register.
+     * @returns True if the read is successful, false otherwise.
+     */
+    [[nodiscard]] bool readRegister16(
+        const I2CDriver::I2CSlaveConfig &slaveConfig,
+        const uint8_t &registerAddress, uint16_t &registerContent);
+
+    /**
+     * @brief Read a 24-bit register from the device.
+     *
+     * This method could have to wait that no other thread is trying to do some
+     * operation on the bus. In case of an error during the communication, this
+     * method returns false immediately.
+     * @warning Check always if the operation succeeded or not!
+     * @param slaveConfig The configuration struct of the slave device.
+     * @param registerAddress Byte that represents the address of the register.
+     * @param registerContent Where to store the content of the register.
+     * @returns True if the read is successful, false otherwise.
+     */
+    [[nodiscard]] bool readRegister24(
+        const I2CDriver::I2CSlaveConfig &slaveConfig,
+        const uint8_t &registerAddress, uint32_t &registerContent);
+
+    /**
+     * @brief Read a 32-bit register from the device.
+     *
+     * This method could have to wait that no other thread is trying to do some
+     * operation on the bus. In case of an error during the communication, this
+     * method returns false immediately.
+     * @warning Check always if the operation succeeded or not!
+     * @param slaveConfig The configuration struct of the slave device.
+     * @param registerAddress Byte that represents the address of the register.
+     * @param registerContent Where to store the content of the register.
+     * @returns True if the read is successful, false otherwise.
+     */
+    [[nodiscard]] bool readRegister32(
+        const I2CDriver::I2CSlaveConfig &slaveConfig,
+        const uint8_t &registerAddress, uint32_t &registerContent);
+
+    /**
+     * @brief Write an 8-bit register from the device.
      *
      * This method could have to wait that no other thread is trying to do some
      * operation on the bus. In case of an error during the communication, this
@@ -248,6 +392,54 @@ public:
     [[nodiscard]] bool writeRegister(
         const I2CDriver::I2CSlaveConfig &slaveConfig,
         const uint8_t &registerAddress, const uint8_t &registerContent);
+
+    /**
+     * @brief Write a 16-bit register from the device.
+     *
+     * This method could have to wait that no other thread is trying to do some
+     * operation on the bus. In case of an error during the communication, this
+     * method returns false immediately.
+     * @warning Check always if the operation succeeded or not!
+     * @param slaveConfig The configuration struct of the slave device.
+     * @param registerAddress Byte that represents the address of the register.
+     * @param registerContent The content to write on the register.
+     * @returns True if the write is successful, false otherwise.
+     */
+    [[nodiscard]] bool writeRegister16(
+        const I2CDriver::I2CSlaveConfig &slaveConfig,
+        const uint8_t &registerAddress, const uint16_t &registerContent);
+
+    /**
+     * @brief Write a 24-bit register from the device.
+     *
+     * This method could have to wait that no other thread is trying to do some
+     * operation on the bus. In case of an error during the communication, this
+     * method returns false immediately.
+     * @warning Check always if the operation succeeded or not!
+     * @param slaveConfig The configuration struct of the slave device.
+     * @param registerAddress Byte that represents the address of the register.
+     * @param registerContent The content to write on the register.
+     * @returns True if the write is successful, false otherwise.
+     */
+    [[nodiscard]] bool writeRegister24(
+        const I2CDriver::I2CSlaveConfig &slaveConfig,
+        const uint8_t &registerAddress, const uint32_t &registerContent);
+
+    /**
+     * @brief Write a 32-bit register from the device.
+     *
+     * This method could have to wait that no other thread is trying to do some
+     * operation on the bus. In case of an error during the communication, this
+     * method returns false immediately.
+     * @warning Check always if the operation succeeded or not!
+     * @param slaveConfig The configuration struct of the slave device.
+     * @param registerAddress Byte that represents the address of the register.
+     * @param registerContent The content to write on the register.
+     * @returns True if the write is successful, false otherwise.
+     */
+    [[nodiscard]] bool writeRegister32(
+        const I2CDriver::I2CSlaveConfig &slaveConfig,
+        const uint8_t &registerAddress, const uint32_t &registerContent);
 
     /**
      * @brief Read n-bytes from register from a slave.
