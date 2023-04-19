@@ -25,20 +25,20 @@
 #include <drivers/timer/TimestampTimer.h>
 #include <utils/ClockUtils.h>
 
-#define ADC_RESOLUTION 4095
+static constexpr int ADC_RESOLUTION = 4095;
 
 #if defined(STM32F407xx) || defined(STM32F429xx)
-#define TEMP30_CAL_VALUE ((uint16_t*)((uint32_t)0x1FFF7A2C))
-#define TEMP110_CAL_VALUE ((uint16_t*)((uint32_t)0x1FFF7A2E))
-#define TEMP30 30
-#define TEMP110 110
-#define CALIBRATION_V_DDA 3.3f
+#define CAL_PT1_VALUE ((uint16_t *)((uint32_t)0x1FFF7A2C))
+#define CAL_PT2_VALUE ((uint16_t *)((uint32_t)0x1FFF7A2E))
+static constexpr float CAL_PT1_TEMP = 30;
+static constexpr float CAL_PT2_TEMP = 110;
+static constexpr float CAL_V_DDA    = 3.3f;
 #elif defined(STM32F767xx) || defined(STM32F769xx)
-#define TEMP30_CAL_VALUE ((uint16_t*)((uint32_t)0x1FF0F44C))
-#define TEMP110_CAL_VALUE ((uint16_t*)((uint32_t)0x1FF0F44E))
-#define TEMP30 30
-#define TEMP110 110
-#define CALIBRATION_V_DDA 3.3f
+#define CAL_PT1_VALUE ((uint16_t *)((uint32_t)0x1FF0F44C))
+#define CAL_PT2_VALUE ((uint16_t *)((uint32_t)0x1FF0F44E))
+static constexpr float CAL_PT1_TEMP = 30;
+static constexpr float CAL_PT2_TEMP = 110;
+static constexpr float CAL_V_DDA    = 3.3f;
 #else
 #warning This micro controller does not have a calibrated temperature sensor or is not currently supported by this driver
 #define WITHOUT_CALIBRATION
@@ -47,12 +47,11 @@
 #if defined(STM32F407xx) || defined(STM32F205xx)
 #define TEMP_CH InternalADC::CH16
 #define VBAT_CH InternalADC::CH18
-#define VBAT_DIV 2.0f
+static constexpr float VBAT_DIV = 2.0f;
 #elif defined(STM32F429xx) || defined(STM32F767xx) || defined(STM32F769xx)
 #define TEMP_CH InternalADC::CH18
 #define VBAT_CH InternalADC::CH18
-#define SINGLE_AUX_CHANNEL
-#define VBAT_DIV 4.0f
+static constexpr float VBAT_DIV     = 4.0f;
 #endif
 
 // Error the user if the current target is missing the V_DDA_VOLTAGE macro
@@ -62,23 +61,36 @@
 #error Missing V_DDA_VOLTAGE definition for current target
 #endif
 
-#ifndef WITHOUT_CALIBRATION
-namespace InternalADCConsts
-{
 // Factory calibration values
 // Read "Temperature sensor characteristics" chapter in the datasheet
-static const float voltage30 =
-    static_cast<float>(*TEMP30_CAL_VALUE) * CALIBRATION_V_DDA / ADC_RESOLUTION;
-static const float voltage110 =
-    static_cast<float>(*TEMP110_CAL_VALUE) * CALIBRATION_V_DDA / ADC_RESOLUTION;
-static const float slope = (voltage110 - voltage30) / (TEMP110 - TEMP30);
-}  // namespace InternalADCConsts
+#ifndef WITHOUT_CALIBRATION
+
+float getCalPt1Voltage()
+{
+    static float pt1Voltage =
+        static_cast<float>(*CAL_PT1_VALUE) * CAL_V_DDA / ADC_RESOLUTION;
+    return pt1Voltage;
+}
+
+float getCalPt2Voltage()
+{
+    static float pt2Voltage =
+        static_cast<float>(*CAL_PT2_VALUE) * CAL_V_DDA / ADC_RESOLUTION;
+    return pt2Voltage;
+}
+
+float getCalSlope()
+{
+    static float slope = (getCalPt2Voltage() - getCalPt1Voltage()) /
+                         (CAL_PT2_TEMP - CAL_PT1_TEMP);
+    return slope;
+}
 #endif
 
 namespace Boardcore
 {
 
-InternalADC::InternalADC(ADC_TypeDef* adc) : adc(adc)
+InternalADC::InternalADC(ADC_TypeDef *adc) : adc(adc)
 {
     resetRegisters();
     ClockUtils::enablePeripheralClock(adc);
@@ -94,8 +106,7 @@ InternalADC::InternalADC(ADC_TypeDef* adc) : adc(adc)
 
     for (int i = 0; i < CH_NUM; i++)
     {
-        channelsEnabled[i]   = false;
-        channelsRawValues[i] = 0;
+        channelsEnabled[i] = false;
     }
 }
 
@@ -117,41 +128,69 @@ bool InternalADC::selfTest() { return true; }
 
 InternalADCData InternalADC::sampleImpl()
 {
+    InternalADCData newData;
+    newData.timestamp = TimestampTimer::getTimestamp();
+
     for (int i = 0; i < CH16; i++)
     {
         if (channelsEnabled[i])
         {
-            channelsRawValues[i] = readChannel(static_cast<Channel>(i));
+            newData.voltage[i] = readChannel(static_cast<Channel>(i));
+            newData.voltage[i] =
+                newData.voltage[i] * V_DDA_VOLTAGE / ADC_RESOLUTION;
         }
     }
 
     /**
-     * The temperature and vbat sensors are enabled and then disabled. If left
-     * enabled they somehow disrupt other channels measurements. I did not find
-     * description of this behaviour anywhere but observed it during testing.
-     *
-     * Also the temperature sensors has a startup time of 10us. 12us is used
-     * because during test 10us were not enough.
+     * Quirk: the temperature and vbat sensors are enabled and then disabled. If
+     * left enabled they somehow disrupt other channels measurements. I did not
+     * find description of this behaviour anywhere but observed it during
+     * testing. Also the temperature sensors has a startup time of 10us. 12us is
+     * used because during test 10us were not enough.
+     * The startup time is the same for all Boardcore supported micros.
      */
 
     if (tempEnabled)
     {
         ADC->CCR |= ADC_CCR_TSVREFE;
-        miosix::delayUs(12);
-        temperatureRawValue = readChannel(static_cast<Channel>(TEMP_CH));
+        miosix::delayUs(12);  // Temperature sensor startup time
+        auto temperatureRawValue = readChannel(static_cast<Channel>(TEMP_CH));
         ADC->CCR &= ~ADC_CCR_TSVREFE;
+
+        // Conversion
+        if (temperatureRawValue != 0)
+        {
+            newData.temperature =
+                temperatureRawValue * V_DDA_VOLTAGE / ADC_RESOLUTION;
+
+#ifdef WITHOUT_CALIBRATION
+            // Default conversion
+            newData.temperature = ((newData.temperature - 0.76) / 0.0025) + 25;
+#else
+            // Factory calibration
+            newData.temperature = newData.temperature - getCalPt1Voltage();
+            newData.temperature /= getCalSlope();
+            newData.temperature += CAL_PT1_TEMP;
+#endif
+        }
+        else
+        {
+            newData.temperature = 0;
+        }
     }
 
     if (vbatEnabled)
     {
         ADC->CCR |= ADC_CCR_VBATE;
-        vbatVoltageRawValue = readChannel(static_cast<Channel>(VBAT_CH));
+        auto vbatVoltageRawValue = readChannel(static_cast<Channel>(VBAT_CH));
         ADC->CCR &= ~ADC_CCR_VBATE;
+
+        // Conversion
+        newData.vBat =
+            vbatVoltageRawValue * V_DDA_VOLTAGE / ADC_RESOLUTION * VBAT_DIV;
     }
 
-    timestamp = TimestampTimer::getTimestamp();
-
-    return lastSample;
+    return newData;
 }
 
 void InternalADC::enableChannel(Channel channel, SampleTime sampleTime)
@@ -163,8 +202,7 @@ void InternalADC::enableChannel(Channel channel, SampleTime sampleTime)
 
 void InternalADC::disableChannel(Channel channel)
 {
-    channelsEnabled[channel]   = false;
-    channelsRawValues[channel] = 0;
+    channelsEnabled[channel] = false;
 }
 
 void InternalADC::enableTemperature(SampleTime sampleTime)
@@ -193,50 +231,30 @@ void InternalADC::disableVbat()
         disableChannel(VBAT_CH);
 }
 
-InternalADCData InternalADC::getVoltage(Channel channel)
+ADCData InternalADC::getVoltage(Channel channel)
 {
-    return {timestamp, channel,
-            channelsRawValues[channel] *
-                V_DDA_VOLTAGE /  // cppcheck-suppress ConfigurationNotChecked
-                ADC_RESOLUTION};
+    ADCData data;
+    data.voltageTimestamp = getLastSample().timestamp;
+    data.voltage          = getLastSample().voltage[channel];
+    data.channelId        = channel;
+    return data;
 }
 
 TemperatureData InternalADC::getTemperature()
 {
     TemperatureData data;
-    data.temperatureTimestamp = timestamp;
-
-    if (temperatureRawValue != 0)
-    {
-        data.temperature =
-            temperatureRawValue *
-            V_DDA_VOLTAGE /  // cppcheck-suppress ConfigurationNotChecked
-            ADC_RESOLUTION;
-
-#ifdef WITHOUT_CALIBRATION
-        // Default conversion
-        data.temperature = ((data.temperature - 0.76) / 0.0025) + 25;
-#else
-        // Factory calibration
-        data.temperature = ((data.temperature - InternalADCConsts::voltage30) /
-                            InternalADCConsts::slope) +
-                           TEMP30;
-#endif
-    }
-    else
-    {
-        data.temperature = 0;
-    }
-
+    data.temperatureTimestamp = getLastSample().temperature;
+    data.temperature          = getLastSample().temperature;
     return data;
 }
 
-InternalADCData InternalADC::getVbatVoltage()
+ADCData InternalADC::getVbatVoltage()
 {
-    return {timestamp, VBAT_CH,
-            vbatVoltageRawValue *
-                V_DDA_VOLTAGE /  // cppcheck-suppress ConfigurationNotChecked
-                ADC_RESOLUTION * VBAT_DIV};
+    ADCData data;
+    data.voltageTimestamp = getLastSample().timestamp;
+    data.voltage          = getLastSample().vBat;
+    data.channelId        = VBAT_CH;
+    return data;
 }
 
 inline void InternalADC::resetRegisters()

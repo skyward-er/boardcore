@@ -122,11 +122,11 @@ public:
 
     void disableVbat();
 
-    InternalADCData getVoltage(Channel channel);
+    ADCData getVoltage(Channel channel);
 
     TemperatureData getTemperature();
 
-    InternalADCData getVbatVoltage();
+    ADCData getVbatVoltage();
 
 private:
     void resetRegisters();
@@ -140,11 +140,6 @@ private:
     bool channelsEnabled[CH_NUM];
     bool tempEnabled = false;
     bool vbatEnabled = false;
-
-    uint16_t channelsRawValues[CH_NUM];
-    uint16_t temperatureRawValue = 0;
-    uint16_t vbatVoltageRawValue = 0;
-    uint64_t timestamp           = 0;
 };
 
 }  // namespace Boardcore

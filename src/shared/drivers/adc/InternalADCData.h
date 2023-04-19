@@ -27,24 +27,33 @@
 namespace Boardcore
 {
 
-struct InternalADCData : public ADCData
+struct InternalADCData
 {
-    InternalADCData() : ADCData{0, 0, 0.0} {}
+    uint64_t timestamp = 0;
+    float voltage[16];
+    float temperature;
+    float vBat;
 
-    InternalADCData(uint64_t t, uint8_t channelId, float voltage)
-        : ADCData{t, channelId, voltage}
-    {
-    }
+    InternalADCData() {}
 
     static std::string header()
     {
-        return "voltageTimestamp,channelId,voltage\n";
+        return "timestamp,,voltage_0,voltage_1,voltage_2,voltage_3,voltage_4,"
+               "voltage_5,voltage_6,voltage_7,voltage_8,voltage_9,voltage_10,"
+               "voltage_11,voltage_12,voltage_13,voltage_14,voltage_15,"
+               "temperature,vBat,voltage\n";
     }
 
     void print(std::ostream& os) const
     {
-        os << voltageTimestamp << "," << (int)channelId << "," << voltage
-           << "\n";
+        os << timestamp << ",";
+
+        for (int i = 0; i < 16; i++)
+        {
+            os << voltage[i] << ",";
+        }
+
+        os << temperature << "," << vBat << "\n";
     }
 };
 
