@@ -98,7 +98,7 @@ public:
      * @param slaveConfig The configuration struct of the slave device.
      * @param registerAddress Byte that represents the address of the register.
      * @param registerContent Where to store the content of the register.
-     * @returns True if the write is successful, false otherwise.
+     * @returns True if the read is successful, false otherwise.
      */
     [[nodiscard]] bool readRegister(
         const I2CDriver::I2CSlaveConfig &slaveConfig,
@@ -131,7 +131,7 @@ public:
      * @param registerAddress Byte that represents the address of the register.
      * @param buffer Data buffer where to store the data read.
      * @param nBytes Number of bytes to read.
-     * @returns True if the write is successful, false otherwise.
+     * @returns True if the read is successful, false otherwise.
      */
     [[nodiscard]] bool readFromRegister(
         const I2CDriver::I2CSlaveConfig &slaveConfig,
@@ -260,7 +260,7 @@ public:
      * @param registerAddress Byte that represents the address of the register.
      * @param buffer Data buffer where to store the data read.
      * @param nBytes Number of bytes to read.
-     * @returns True if the write is successful, false otherwise.
+     * @returns True if the read is successful, false otherwise.
      */
     [[nodiscard]] bool readFromRegister(
         const I2CDriver::I2CSlaveConfig &slaveConfig,

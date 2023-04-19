@@ -65,9 +65,14 @@ public:
     // [TODO] limit speed possibilities at compile time with ifdefs?
     enum Speed : uint8_t
     {
-        STANDARD  = 0,
-        FAST      = 1,
-        FAST_PLUS = 2
+        STANDARD = 0,
+        FAST     = 1,
+#ifdef _ARCH_CORTEXM7_STM32F7
+        FAST_PLUS = 2,
+        MAX_SPEED = FAST_PLUS
+#else
+        MAX_SPEED = FAST
+#endif  // _ARCH_CORTEXM7_STM32F7
     };
 
     enum Addressing : uint8_t
@@ -242,8 +247,16 @@ private:
     void setupPeripheral(const I2CSlaveConfig &slaveConfig);
 
 #ifdef _ARCH_CORTEXM7_STM32F7
+    /**
+     * @brief Sets up the transaction, so if we have to make a read or write
+     * transaction and performs the setup of the reload.
+     */
     inline void setupTransaction();
 
+    /**
+     * @brief Sets up the reload, so configures the registers in order to
+     * read/write the bytes left
+     */
     inline void setupReload();
 #endif  // _ARCH_CORTEXM7_STM32F7
 

@@ -19,6 +19,7 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
+#include <diagnostic/CpuMeter/CpuMeter.h>
 
 #include <iostream>
 
@@ -80,6 +81,7 @@ typedef struct
 I2CSensor BMP180{0b1110111, 0xD0, 0x55, {0xE0, 0xB6}};
 I2CSensor BME280{0b1110110, 0xD0, 0x60, {0xE0, 0xB6}};
 I2CSensor OLED{0b0111100, 0xD0, 0x43, {}};
+I2CSensor LPS{0b1011100, 0xF, 0xB4, {}};
 
 I2CDriver::I2CSlaveConfig BMP180Config{BMP180.addressSensor,
                                        I2CDriver::Addressing::BIT7,
@@ -92,6 +94,9 @@ I2CDriver::I2CSlaveConfig BME280Config{BME280.addressSensor,
 I2CDriver::I2CSlaveConfig OLEDConfig{OLED.addressSensor,
                                      I2CDriver::Addressing::BIT7,
                                      I2CDriver::Speed::STANDARD};
+
+I2CDriver::I2CSlaveConfig LPSConfig{
+    LPS.addressSensor, I2CDriver::Addressing::BIT7, I2CDriver::Speed::STANDARD};
 
 bool i2cDriver(I2CDriver &i2c, I2CSensor sensor,
                I2CDriver::I2CSlaveConfig sensorConfig)
@@ -127,7 +132,9 @@ bool i2cDriver(I2CDriver &i2c, I2CSensor sensor,
 
 int main()
 {
-    int nRepeat = 10;
+    I2CDriver i2c(I2C1, i1scl2::getPin(), i1sda2::getPin());
+
+    int nRepeat = 50;
 
     // // thread that uses 100% CPU
     // std::thread t(
@@ -137,13 +144,12 @@ int main()
     //             ;
     //     });
 
-    I2CDriver i2c(I2C1, i1scl2::getPin(), i1sda2::getPin());
-
     for (;;)
     {
         // resetting status of read sensors
         bool statusOLED = true;
         bool statusBMP  = true;
+        bool statusLPS  = true;
 
         for (int i = 0; i < nRepeat; i++)
         {
@@ -155,16 +161,20 @@ int main()
 #endif  // _ARCH_CORTEXM7_STM32F7
                  })
             {
-                statusBMP &= i2cDriver(
-                    i2c, BMP180,
-                    {BMP180.addressSensor, I2CDriver::Addressing::BIT7, speed});
                 statusOLED &= i2cDriver(
                     i2c, OLED,
                     {OLED.addressSensor, I2CDriver::Addressing::BIT7, speed});
+                statusBMP &= i2cDriver(
+                    i2c, BMP180,
+                    {BMP180.addressSensor, I2CDriver::Addressing::BIT7, speed});
+                statusLPS &= i2cDriver(
+                    i2c, LPS,
+                    {LPS.addressSensor, I2CDriver::Addressing::BIT7, speed});
             }
         }
 
-        printf("OLED:%d\tBMP:%d\n", statusOLED, statusBMP);
+        printf("CPU: %5.1f OLED:%d BMP:%d LPS:%d\n",
+               CpuMeter::getCpuStats().mean, statusOLED, statusBMP, statusLPS);
     }
     return 0;
 }
