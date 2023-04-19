@@ -765,13 +765,15 @@ void I2CDriver::IRQhandleInterrupt()
         if (i2c->ISR & I2C_ISR_RXNE)
         {
             // READ
-            transaction.buffRead[transaction.nBytesDone] = i2c->RXDR;
+            transaction.buffRead[transaction.nBytesDone] =
+                static_cast<uint8_t>(i2c->RXDR);
             transaction.nBytesDone++;
         }
         else if (i2c->ISR & (I2C_ISR_TXIS | I2C_ISR_TXE))
         {
             // WRITE
-            i2c->TXDR = transaction.buffWrite[transaction.nBytesDone];
+            i2c->TXDR = static_cast<uint32_t>(
+                transaction.buffWrite[transaction.nBytesDone]);
             transaction.nBytesDone++;
         }
     }
