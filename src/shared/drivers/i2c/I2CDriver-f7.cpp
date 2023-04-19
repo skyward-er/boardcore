@@ -431,6 +431,19 @@ bool I2CDriver::doOperation(const I2CSlaveConfig &slaveConfig)
         // Sending the start condition
         i2c->CR2 |= I2C_CR2_START;
 
+        // setting automatic stop generation if we have to generate STOP
+        // condition. This must be done after the START condition generation
+        // since, in case of a reStart, this would immediately end the previous
+        // transaction before the start condition is generated.
+        if (transaction.generateStop)
+        {
+            i2c->CR2 |= I2C_CR2_AUTOEND;
+        }
+        else
+        {
+            i2c->CR2 &= ~I2C_CR2_AUTOEND;
+        }
+
         // Making the thread wait for the operation completion. The next steps
         // will be performed in the ISR while the thread stays in waiting state.
         // The only way the thread will be waken up are the completion of the
@@ -511,21 +524,6 @@ void I2CDriver::setupTransaction()
         i2c->CR2 &= ~I2C_CR2_RD_WRN;
     }
 
-    // setting automatic stop generation if we won't generate a reStart.
-    // For a bug in the peripheral (or a behaviour not explained in the
-    // datasheet), when we have to issue a reStart condition, we can't set the
-    // AUTOEND flag because it will generate the STOP condition prematurely. So,
-    // in this case, we will generate the STOP condition manually at the end of
-    // the transaction.
-    if (transaction.generateStop && !reStarting)
-    {
-        i2c->CR2 |= I2C_CR2_AUTOEND;
-    }
-    else
-    {
-        i2c->CR2 &= ~I2C_CR2_AUTOEND;
-    }
-
     // setting registers for the remaining bytes
     setupReload();
 }
@@ -549,7 +547,8 @@ void I2CDriver::setupReload()
 void I2CDriver::flushBus()
 {
     // If there isn't any locked state return immediately
-    if (!(lastError & Errors::BUS_LOCKED))
+    if (!((lastError & (Errors::BUS_LOCKED | Errors::BERR)) &&
+          ((i2c->ISR & I2C_ISR_BUSY))))
     {
         return;
     }
@@ -601,10 +600,10 @@ inline bool I2CDriver::IRQwaitForOperationCompletion(
     waiting = miosix::Thread::IRQgetCurrentThread();
 
     // enabling interrupts for errors
-    i2c->CR1 |= I2C_CR1_ERRIE |   // interrupt for errors
-                I2C_CR1_NACKIE |  // interrupt for NACKs
-                I2C_CR1_TCIE |    // interrupt for TC and TCR
-                I2C_CR1_STOPIE;   // interrupt for STOP detected
+    i2c->CR1 |= (I2C_CR1_ERRIE |   // interrupt for errors
+                 I2C_CR1_NACKIE |  // interrupt for NACKs
+                 I2C_CR1_TCIE |    // interrupt for TC and TCR
+                 I2C_CR1_STOPIE);  // interrupt for STOP detected
 
     // flag thread as waiting, enable interrupts in I2C peripheral and yield
     // till an interrupt doesn't wake up the thread
