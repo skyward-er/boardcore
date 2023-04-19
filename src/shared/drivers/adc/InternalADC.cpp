@@ -36,7 +36,7 @@
 #define TEMP30 30
 #define TEMP110 110
 #else
-#warning This microcontroller does not have a calibrated temperature sensor or is not currently supported by this driver
+#warning This micro controller does not have a calibrated temperature sensor or is not currently supported by this driver
 #define WITHOUT_CALIBRATION
 #endif
 
@@ -227,7 +227,7 @@ inline void InternalADC::setChannelSampleTime(Channel channel,
 
 float InternalADC::readChannel(Channel channel)
 {
-    // Slect channel
+    // Select channel
     adc->SQR3 = channel;
 
     // Start conversion

@@ -320,6 +320,7 @@
                 "upcounter",
                 "USART",
                 "vbat",
+                "VBATE",
                 "velnord",
                 "vout",
                 "vsense",

@@ -38,7 +38,7 @@ namespace Boardcore
  * The driver uses basic ADC features, that is the single conversion mode.
  * A previous version of the driver featured injected and regular channels with
  * also DMA. Since ADC conversion time is very low, the driver has been
- * simplified to provide better usability and simplier implementation.
+ * simplified to provide better usability and simpler implementation.
  *
  * @warning This driver has been tested on f205, f407, f429, f767 and f769
  */
