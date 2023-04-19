@@ -44,7 +44,7 @@ namespace Boardcore
  *
  * This is NOT a thread safe driver. The features supported are:
  * - Only Master logic;
- * - Standard/Fast speed modes;
+ * - Standard, Fast and Fast plus (if supported) speed modes;
  * - 7bit addressing;
  * - Exposes basic read or write methods with the option for the write method to
  * not generate a STOP condition;
@@ -62,7 +62,6 @@ public:
         READ  = 1
     };
 
-    // [TODO] limit speed possibilities at compile time with ifdefs?
     enum Speed : uint8_t
     {
         STANDARD = 0,
@@ -82,8 +81,8 @@ public:
     };
 
     /**
-     * @brief Error enums with a value that makes it possible to or them and
-     * report more than one error at once
+     * @brief Error enums with a value that makes it possible to keep the
+     * "or-red" value to store more errors.
      */
     enum Errors : uint16_t
     {
