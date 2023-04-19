@@ -88,8 +88,16 @@ public:
     void disable();
 
 #ifdef _ARCH_CORTEXM7_STM32F7
+    /**
+     * @brief Set the RFFIFO threshold to generate the RXNE event when the FIFO
+     * level is greater than or equal to 8 bit.
+     */
     void set8bitRXNE();
 
+    /**
+     * @brief Set the RFFIFO threshold to generate the RXNE event when the FIFO
+     * level is greater than or equal to 16 bit.
+     */
     void set16bitRXNE();
 #endif
 
@@ -309,6 +317,15 @@ inline void SPIBus::enable() { spi->CR1 |= SPI_CR1_SPE; }
 
 inline void SPIBus::disable() { spi->CR1 &= ~SPI_CR1_SPE; }
 
+/**
+ * The SPI peripheral differs on stm32f7 microcontrollers. Refer to AN4660 for a
+ * comprehensive differences list between different peripherals versions.
+ *
+ * The main difference here is that on the f7 you can transmit between 4 and 16.
+ * There is also a 32bit fifo and a threshold that generates the RXNE event.
+ * For this reason, on f7s we need to configure the 16 bit frame format
+ * differently and change the fifo threshold level.
+ */
 #ifndef _ARCH_CORTEXM7_STM32F7
 
 inline void SPIBus::set8BitFrameFormat() { spi->CR1 &= ~SPI_CR1_DFF; }
@@ -426,7 +443,8 @@ inline void SPIBus::configure(SPIBusConfig newConfig)
         setMasterConfiguration();
 
 #ifdef _ARCH_CORTEXM7_STM32F7
-        // By default we use 8 bit transactions
+        // By default the driver uses 8 bit transactions. Therefore, for f7s,
+        // configure the FIFO threshold to 8 bit
         set8bitRXNE();
 #endif
 
