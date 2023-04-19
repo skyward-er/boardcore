@@ -4208,7 +4208,7 @@ void __attribute__((naked)) DMA2_Stream1_IRQHandler()
  */
 void dma2s0irq()
 {
-    DMA2->LIFCR = 0b1111010000000;
+    DMA2->LIFCR = 0b111101000000;  // Clear channel 1 flags
     if (waiting)
         waiting->IRQwakeup();
     if (waiting->IRQgetPriority() >
