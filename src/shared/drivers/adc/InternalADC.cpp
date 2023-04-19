@@ -196,7 +196,9 @@ void InternalADC::disableVbat()
 InternalADCData InternalADC::getVoltage(Channel channel)
 {
     return {timestamp, channel,
-            channelsRawValues[channel] * V_DDA_VOLTAGE / ADC_RESOLUTION};
+            channelsRawValues[channel] *
+                V_DDA_VOLTAGE /  // cppcheck-suppress ConfigurationNotChecked
+                ADC_RESOLUTION};
 }
 
 TemperatureData InternalADC::getTemperature()
@@ -206,7 +208,10 @@ TemperatureData InternalADC::getTemperature()
 
     if (temperatureRawValue != 0)
     {
-        data.temperature = temperatureRawValue * V_DDA_VOLTAGE / ADC_RESOLUTION;
+        data.temperature =
+            temperatureRawValue *
+            V_DDA_VOLTAGE /  // cppcheck-suppress ConfigurationNotChecked
+            ADC_RESOLUTION;
 
 #ifdef WITHOUT_CALIBRATION
         // Default conversion
@@ -229,7 +234,9 @@ TemperatureData InternalADC::getTemperature()
 InternalADCData InternalADC::getVbatVoltage()
 {
     return {timestamp, VBAT_CH,
-            vbatVoltageRawValue * V_DDA_VOLTAGE / ADC_RESOLUTION * VBAT_DIV};
+            vbatVoltageRawValue *
+                V_DDA_VOLTAGE /  // cppcheck-suppress ConfigurationNotChecked
+                ADC_RESOLUTION * VBAT_DIV};
 }
 
 inline void InternalADC::resetRegisters()
