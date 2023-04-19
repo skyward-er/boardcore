@@ -1,5 +1,5 @@
-/* Copyright (c) 2015-2017 Skyward Experimental Rocketry
- * Author: Luca Erbetta
+/* Copyright (c) 2023 Skyward Experimental Rocketry
+ * Author: Alberto Nidasio
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -20,7 +20,13 @@
  * THE SOFTWARE.
  */
 
+/**
+ * This is a quick and dirty test of the QSPI flash on board the compute unit. A
+ * proper driver for the flash will need to be developed!
+ */
+
 #include <miosix.h>
+#include <utils/ClockUtils.h>
 
 using namespace miosix;
 
@@ -69,6 +75,7 @@ int main()
 
     RCC->AHB1ENR |= RCC_AHB1ENR_GPIOBEN | RCC_AHB1ENR_GPIOFEN;
     RCC->AHB3ENR |= RCC_AHB3ENR_QSPIEN;
+
     RCC_SYNC();
 
     delayMs(2 * 1000);

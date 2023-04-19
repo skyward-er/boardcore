@@ -20,6 +20,12 @@
  * THE SOFTWARE.
  */
 
+/**
+ * This is a quick and dirty test of the RTC time keeping functionality with
+ * the 32.768KHz crystal on board the compute unit. A proper driver will need to
+ * be developed!
+ */
+
 // PA14 -> OSC32_IN
 // PA15 -> OSC32_OUT
 

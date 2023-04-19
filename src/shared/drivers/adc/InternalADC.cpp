@@ -227,6 +227,8 @@ inline void InternalADC::setChannelSampleTime(Channel channel,
 
 float InternalADC::readChannel(Channel channel)
 {
+    // Assuming that ADC_SQR1_L remains 0 (1 conversion)
+
     // Select channel
     adc->SQR3 = channel;
 

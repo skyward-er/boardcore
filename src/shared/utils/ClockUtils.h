@@ -233,8 +233,11 @@ inline bool ClockUtils::enablePeripheralClock(void* peripheral)
                 RCC->AHB1ENR |= RCC_AHB1ENR_BKPSRAMEN;
                 break;
 #endif
-// On some microcontrollers like the stm32f205, CCMDATARAM_BASE is defined
-// incorrectly. So we check for the macro bit
+// In the CMSIS version used in the kernel, the CCMDATARAM_BASE macro is defined
+// for some microcontrollers that do not have the Core Coupled Memory while
+// the RCC_AHB1ENR_CCMDATARAMEN is correctly not defined in such cases. To fix
+// the error, instead of checking for CCMDATARAM_BASE with #ifdef like for the
+// other case statements, I check directly for RCC_AHB1ENR_CCMDATARAMEN.
 #ifdef RCC_AHB1ENR_CCMDATARAMEN
             case CCMDATARAM_BASE:
                 RCC->AHB1ENR |= RCC_AHB1ENR_CCMDATARAMEN;
@@ -591,8 +594,11 @@ inline bool ClockUtils::disablePeripheralClock(void* peripheral)
                 RCC->AHB1ENR &= ~RCC_AHB1ENR_BKPSRAMEN;
                 break;
 #endif
-// On some micrcontrollers like the stm32f205, CCMDATARAM_BASE is defined
-// incorrectly. So we check for the macro bit
+// In the CMSIS version used in the kernel, the CCMDATARAM_BASE macro is defined
+// for some microcontrollers that do not have the Core Coupled Memory while
+// the RCC_AHB1ENR_CCMDATARAMEN is correctly not defined in such cases. To fix
+// the error, instead of checking for CCMDATARAM_BASE with #ifdef like for the
+// other case statements, I check directly for RCC_AHB1ENR_CCMDATARAMEN.
 #ifdef RCC_AHB1ENR_CCMDATARAMEN
             case CCMDATARAM_BASE:
                 RCC->AHB1ENR &= ~RCC_AHB1ENR_CCMDATARAMEN;
