@@ -27,33 +27,29 @@
 using namespace miosix;
 using namespace Boardcore;
 
+GpioPin ch5(GPIOA_BASE, 5);
+GpioPin ch6(GPIOA_BASE, 6);
+
 int main()
 {
-    // Set the clock divider for the analog circuitry (/8)
-    ADC->CCR |= ADC_CCR_ADCPRE_0 | ADC_CCR_ADCPRE_1;
-    // In this case I've set the maximum value, check the datasheet for the
-    // maximum frequency the analog circuitry supports and compare it with the
-    // parent clock
+    ch5.mode(Mode::INPUT_ANALOG);
+    ch6.mode(Mode::INPUT_ANALOG);
 
-    InternalADC adc(ADC1, 3.3);
-    adc.enableChannel(InternalADC::CH5);  // PF7
-    adc.enableChannel(InternalADC::CH6);  // PF8
+    InternalADC adc(ADC1);
+    adc.enableChannel(InternalADC::CH5);  // PA5
+    adc.enableChannel(InternalADC::CH6);  // PA6
     adc.enableTemperature();
     adc.enableVbat();
     adc.init();
-
-    printf("Configuration completed\n");
 
     while (true)
     {
         adc.sample();
 
-        printf(
-            "CH5: %1.3f\tCH6: %1.3f\tCH18: %1.3f\tTemp: %1.3f\tVbat: %1.3f\n",
-            adc.getVoltage(InternalADC::CH5).voltage,
-            adc.getVoltage(InternalADC::CH6).voltage,
-            adc.getVoltage(InternalADC::CH18).voltage,
-            adc.getTemperature().temperature, adc.getVbatVoltage().voltage);
+        printf("CH5: %1.3f\tCH6: %1.3f\tTemp: %1.3f\tVbat: %1.3f\n",
+               adc.getVoltage(InternalADC::CH5).voltage,
+               adc.getVoltage(InternalADC::CH6).voltage,
+               adc.getTemperature().temperature, adc.getVbatVoltage().voltage);
 
         delayMs(1000);
     }

@@ -93,7 +93,7 @@ public:
      * @brief Resets the ADC configuration and automatically enables the
      * peripheral clock.
      */
-    explicit InternalADC(ADC_TypeDef* adc, const float supplyVoltage = 3.3);
+    explicit InternalADC(ADC_TypeDef* adc);
 
     ~InternalADC();
 
@@ -133,20 +133,18 @@ private:
 
     void setChannelSampleTime(Channel channel, SampleTime sampleTime);
 
-    float readChannel(Channel channel);
+    uint16_t readChannel(Channel channel);
 
     ADC_TypeDef* adc;
-    const float supplyVoltage;
 
     bool channelsEnabled[CH_NUM];
-    bool tempEnabled  = false;
-    bool vbatEnabled  = false;
-    bool vbatLastRead = false;
+    bool tempEnabled = false;
+    bool vbatEnabled = false;
 
-    float channelsRawValues[CH_NUM];
-    float temperatureRawValue = 0;
-    float vbatVoltageRawValue = 0;
-    uint64_t timestamp        = 0;
+    uint16_t channelsRawValues[CH_NUM];
+    uint16_t temperatureRawValue = 0;
+    uint16_t vbatVoltageRawValue = 0;
+    uint64_t timestamp           = 0;
 
     static constexpr int RESOLUTION = 4095;  ///< 12 bits
 };

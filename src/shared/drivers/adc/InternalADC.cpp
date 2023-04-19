@@ -41,21 +41,45 @@
 #endif
 
 #if defined(STM32F407xx) || defined(STM32F205xx)
-#define AUX_CH InternalADC::CH16
+#define TEMP_CH InternalADC::CH16
+#define VBAT_CH InternalADC::CH18
 #define VBAT_DIV 2.0f
 #elif defined(STM32F429xx) || defined(STM32F767xx) || defined(STM32F769xx)
-#define AUX_CH InternalADC::CH18
+#define TEMP_CH InternalADC::CH18
+#define VBAT_CH InternalADC::CH18
+#define SINGLE_AUX_CHANNEL
 #define VBAT_DIV 4.0f
+#endif
+
+#ifndef WITHOUT_CALIBRATION
+namespace InternalADCConsts
+{
+// Factory calibration values
+// Read "Temperature sensor characteristics" chapter in the datasheet
+static const float voltage30 =
+    static_cast<float>(*TEMP30_CAL_VALUE) * 3.3 / 4095;
+static const float voltage110 =
+    static_cast<float>(*TEMP110_CAL_VALUE) * 3.3 / 4095;
+static const float slope = (voltage110 - voltage30) / (TEMP110 - TEMP30);
+}  // namespace InternalADCConsts
 #endif
 
 namespace Boardcore
 {
 
-InternalADC::InternalADC(ADC_TypeDef* adc, const float supplyVoltage)
-    : adc(adc), supplyVoltage(supplyVoltage)
+InternalADC::InternalADC(ADC_TypeDef* adc) : adc(adc)
 {
     resetRegisters();
     ClockUtils::enablePeripheralClock(adc);
+
+    // Set the clock divider for the analog circuitry to the highest value (/8).
+    // Currently there is no need to speed up ADC reading. For this reason we
+    // use the safest setting.
+    // If it will need to be changed you need to check the datasheet for the
+    // maximum frequency the analog circuitry supports and compare it with the
+    // parent clock (APB2). Also you need to take into account the sampling time
+    // for the temperature sensor.
+    ADC->CCR |= ADC_CCR_ADCPRE_1 | ADC_CCR_ADCPRE_0;
 
     for (int i = 0; i < CH_NUM; i++)
     {
@@ -82,7 +106,7 @@ bool InternalADC::selfTest() { return true; }
 
 InternalADCData InternalADC::sampleImpl()
 {
-    for (int i = 0; i < CH_NUM; i++)
+    for (int i = 0; i < CH16; i++)
     {
         if (channelsEnabled[i])
         {
@@ -90,28 +114,28 @@ InternalADCData InternalADC::sampleImpl()
         }
     }
 
-    // Prepare the auxiliary channel for the next sample
-    if (vbatLastRead)
-    {
-        vbatVoltageRawValue = channelsRawValues[AUX_CH];
+    /**
+     * The temperature and vbat sensors are enabled and then disabled. If left
+     * enabled they somehow disrupt other channels measurements. I did not find
+     * description of this behaviour anywhere but observed it during testing.
+     *
+     * Also the temperature sensors has a startup time of 10us. 12us is used
+     * because during test 10us were not enough.
+     */
 
-        if (tempEnabled)
-        {
-            ADC->CCR &= ~ADC_CCR_VBATE;
-            ADC->CCR |= ADC_CCR_TSVREFE;
-            vbatLastRead = false;
-        }
+    if (tempEnabled)
+    {
+        ADC->CCR |= ADC_CCR_TSVREFE;
+        miosix::delayUs(12);
+        temperatureRawValue = readChannel(static_cast<Channel>(TEMP_CH));
+        ADC->CCR &= ~ADC_CCR_TSVREFE;
     }
-    else
-    {
-        temperatureRawValue = channelsRawValues[AUX_CH];
 
-        if (vbatEnabled)
-        {
-            ADC->CCR |= ADC_CCR_VBATE;
-            ADC->CCR &= ~ADC_CCR_TSVREFE;
-            vbatLastRead = true;
-        }
+    if (vbatEnabled)
+    {
+        ADC->CCR |= ADC_CCR_VBATE;
+        vbatVoltageRawValue = readChannel(static_cast<Channel>(VBAT_CH));
+        ADC->CCR &= ~ADC_CCR_VBATE;
     }
 
     timestamp = TimestampTimer::getTimestamp();
@@ -135,60 +159,66 @@ void InternalADC::disableChannel(Channel channel)
 void InternalADC::enableTemperature(SampleTime sampleTime)
 {
     tempEnabled = true;
-
-    ADC->CCR &= ~ADC_CCR_VBATE;
-    ADC->CCR |= ADC_CCR_TSVREFE;
-    vbatLastRead = false;
-
-    enableChannel(AUX_CH, sampleTime);
+    enableChannel(TEMP_CH, sampleTime);
 }
 
-void InternalADC::disableTemperature() { tempEnabled = false; }
+void InternalADC::disableTemperature()
+{
+    tempEnabled = false;
+    if (!vbatEnabled || TEMP_CH != VBAT_CH)
+        disableChannel(TEMP_CH);
+}
 
 void InternalADC::enableVbat(SampleTime sampleTime)
 {
     vbatEnabled = true;
-
-    ADC->CCR |= ADC_CCR_VBATE;
-    ADC->CCR &= ~ADC_CCR_TSVREFE;
-    vbatLastRead = true;
-
-    enableChannel(AUX_CH, sampleTime);
+    enableChannel(VBAT_CH, sampleTime);
 }
 
-void InternalADC::disableVbat() { vbatEnabled = false; }
+void InternalADC::disableVbat()
+{
+    vbatEnabled = false;
+    if (!tempEnabled || TEMP_CH != VBAT_CH)
+        disableChannel(VBAT_CH);
+}
 
 InternalADCData InternalADC::getVoltage(Channel channel)
 {
     return {timestamp, channel,
-            channelsRawValues[channel] * supplyVoltage / RESOLUTION};
+            channelsRawValues[channel] * V_DDA_VOLTAGE / RESOLUTION};
 }
 
 TemperatureData InternalADC::getTemperature()
 {
     TemperatureData data;
     data.temperatureTimestamp = timestamp;
-    data.temperature = temperatureRawValue * supplyVoltage / RESOLUTION;
+
+    if (temperatureRawValue != 0)
+    {
+        data.temperature = temperatureRawValue * V_DDA_VOLTAGE / RESOLUTION;
 
 #ifdef WITHOUT_CALIBRATION
-    // Default conversion
-    data.temperature = ((data.temperature - 0.76) / 0.0025) + 25;
+        // Default conversion
+        data.temperature = ((data.temperature - 0.76) / 0.0025) + 25;
 #else
-    // Factory calibration
-    // Read "Temperature sensor characteristics" chapter in the datasheet
-    float voltage30  = static_cast<float>(*TEMP30_CAL_VALUE) * 3.3 / 4095;
-    float voltage110 = static_cast<float>(*TEMP110_CAL_VALUE) * 3.3 / 4095;
-    float slope      = (voltage110 - voltage30) / (TEMP110 - TEMP30);
-    data.temperature = ((data.temperature - voltage30) / slope) + TEMP30;
+        // Factory calibration
+        data.temperature = ((data.temperature - InternalADCConsts::voltage30) /
+                            InternalADCConsts::slope) +
+                           TEMP30;
 #endif
+    }
+    else
+    {
+        data.temperature = 0;
+    }
 
     return data;
 }
 
 InternalADCData InternalADC::getVbatVoltage()
 {
-    return {timestamp, AUX_CH,
-            vbatVoltageRawValue * supplyVoltage / RESOLUTION * VBAT_DIV};
+    return {timestamp, VBAT_CH,
+            vbatVoltageRawValue * V_DDA_VOLTAGE / RESOLUTION * VBAT_DIV};
 }
 
 inline void InternalADC::resetRegisters()
@@ -225,7 +255,7 @@ inline void InternalADC::setChannelSampleTime(Channel channel,
     }
 }
 
-float InternalADC::readChannel(Channel channel)
+uint16_t InternalADC::readChannel(Channel channel)
 {
     // Assuming that ADC_SQR1_L remains 0 (1 conversion)
 
