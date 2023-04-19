@@ -31,7 +31,8 @@
                 "_ARCH_CORTEXM3_STM32F2",
                 "STM32F205xx",
                 "HSE_VALUE=25000000",
-                "SYSCLK_FREQ_120MHz=120000000"
+                "SYSCLK_FREQ_120MHz=120000000",
+                "V_DDA_VOLTAGE=3.3f"
             ],
             "includePath": [
                 "${defaultIncludePaths}",
@@ -52,7 +53,8 @@
                 "_ARCH_CORTEXM4_STM32F4",
                 "STM32F407xx",
                 "HSE_VALUE=8000000",
-                "SYSCLK_FREQ_168MHz=168000000"
+                "SYSCLK_FREQ_168MHz=168000000",
+                "V_DDA_VOLTAGE=3.0f"
             ],
             "includePath": [
                 "${defaultIncludePaths}",
@@ -62,45 +64,26 @@
             ]
         },
         {
-            "name": "stm32f429zi_stm32f4discovery",
+            "name": "stm32f429zi_hre_test_stand",
             "cStandard": "c11",
             "cppStandard": "c++14",
             "compilerPath": "/opt/arm-miosix-eabi/bin/arm-miosix-eabi-g++",
             "defines": [
                 "{defaultDefines}",
-                "_MIOSIX_BOARDNAME=stm32f429zi_stm32f4discovery",
-                "_BOARD_STM32F429ZI_STM32F4DISCOVERY",
+                "_MIOSIX_BOARDNAME=stm32f429zi_hre_test_stand",
+                "_BOARD_STM32F429ZI_HRE_TEST_STAND",
                 "_ARCH_CORTEXM4_STM32F4",
                 "STM32F429xx",
                 "HSE_VALUE=8000000",
-                "SYSCLK_FREQ_168MHz=168000000"
+                "SYSCLK_FREQ_168MHz=168000000",
+                "__ENABLE_XRAM",
+                "V_DDA_VOLTAGE=3.0f"
             ],
             "includePath": [
                 "${defaultIncludePaths}",
                 "${workspaceFolder}/libs/miosix-kernel/miosix/arch/cortexM4_stm32f4/common",
-                "${workspaceFolder}/libs/miosix-kernel/miosix/arch/cortexM4_stm32f4/stm32f429zi_stm32f4discovery",
-                "${workspaceFolder}/libs/miosix-kernel/miosix/config/arch/cortexM4_stm32f4/stm32f429zi_stm32f4discovery"
-            ]
-        },
-        {
-            "name": "stm32f429zi_skyward_death_stack_x",
-            "cStandard": "c11",
-            "cppStandard": "c++14",
-            "compilerPath": "/opt/arm-miosix-eabi/bin/arm-miosix-eabi-g++",
-            "defines": [
-                "{defaultDefines}",
-                "_MIOSIX_BOARDNAME=stm32f429zi_skyward_death_stack_x",
-                "_BOARD_STM32F429ZI_SKYWARD_DEATHST_X",
-                "_ARCH_CORTEXM4_STM32F4",
-                "STM32F429xx",
-                "HSE_VALUE=8000000",
-                "SYSCLK_FREQ_168MHz=168000000"
-            ],
-            "includePath": [
-                "${defaultIncludePaths}",
-                "${workspaceFolder}/libs/miosix-kernel/miosix/arch/cortexM4_stm32f4/common",
-                "${workspaceFolder}/libs/miosix-kernel/miosix/arch/cortexM4_stm32f4/stm32f429zi_skyward_death_stack_x",
-                "${workspaceFolder}/libs/miosix-kernel/miosix/config/arch/cortexM4_stm32f4/stm32f429zi_skyward_death_stack_x"
+                "${workspaceFolder}/libs/miosix-kernel/miosix/arch/cortexM4_stm32f4/stm32f429zi_hre_test_stand",
+                "${workspaceFolder}/libs/miosix-kernel/miosix/config/arch/cortexM4_stm32f4/stm32f429zi_hre_test_stand"
             ]
         },
         {
@@ -115,13 +98,130 @@
                 "_ARCH_CORTEXM4_STM32F4",
                 "STM32F429xx",
                 "HSE_VALUE=8000000",
-                "SYSCLK_FREQ_168MHz=168000000"
+                "SYSCLK_FREQ_168MHz=168000000",
+                "__ENABLE_XRAM",
+                "V_DDA_VOLTAGE=3.3f"
             ],
             "includePath": [
                 "${defaultIncludePaths}",
                 "${workspaceFolder}/libs/miosix-kernel/miosix/arch/cortexM4_stm32f4/common",
                 "${workspaceFolder}/libs/miosix-kernel/miosix/arch/cortexM4_stm32f4/stm32f429zi_skyward_death_stack_v3",
                 "${workspaceFolder}/libs/miosix-kernel/miosix/config/arch/cortexM4_stm32f4/stm32f429zi_skyward_death_stack_v3"
+            ]
+        },
+        {
+            "name": "stm32f429zi_skyward_death_stack_x",
+            "cStandard": "c11",
+            "cppStandard": "c++14",
+            "compilerPath": "/opt/arm-miosix-eabi/bin/arm-miosix-eabi-g++",
+            "defines": [
+                "{defaultDefines}",
+                "_MIOSIX_BOARDNAME=stm32f429zi_skyward_death_stack_x",
+                "_BOARD_STM32F429ZI_SKYWARD_DEATHST_X",
+                "_ARCH_CORTEXM4_STM32F4",
+                "STM32F429xx",
+                "HSE_VALUE=8000000",
+                "SYSCLK_FREQ_168MHz=168000000",
+                "__ENABLE_XRAM",
+                "V_DDA_VOLTAGE=3.3f"
+            ],
+            "includePath": [
+                "${defaultIncludePaths}",
+                "${workspaceFolder}/libs/miosix-kernel/miosix/arch/cortexM4_stm32f4/common",
+                "${workspaceFolder}/libs/miosix-kernel/miosix/arch/cortexM4_stm32f4/stm32f429zi_skyward_death_stack_x",
+                "${workspaceFolder}/libs/miosix-kernel/miosix/config/arch/cortexM4_stm32f4/stm32f429zi_skyward_death_stack_x"
+            ]
+        },
+        {
+            "name": "stm32f429zi_skyward_death_stack_x_maker_faire",
+            "cStandard": "c11",
+            "cppStandard": "c++14",
+            "compilerPath": "/opt/arm-miosix-eabi/bin/arm-miosix-eabi-g++",
+            "defines": [
+                "{defaultDefines}",
+                "_MIOSIX_BOARDNAME=stm32f429zi_skyward_death_stack_x_maker_faire",
+                "_BOARD_STM32F429ZI_SKYWARD_DEATHST_X_MAKER_FAIRE",
+                "_ARCH_CORTEXM4_STM32F4",
+                "STM32F429xx",
+                "HSE_VALUE=8000000",
+                "SYSCLK_FREQ_168MHz=168000000",
+                "__ENABLE_XRAM",
+                "V_DDA_VOLTAGE=3.3f"
+            ],
+            "includePath": [
+                "${defaultIncludePaths}",
+                "${workspaceFolder}/libs/miosix-kernel/miosix/arch/cortexM4_stm32f4/common",
+                "${workspaceFolder}/libs/miosix-kernel/miosix/arch/cortexM4_stm32f4/stm32f429zi_skyward_death_stack_x_maker_faire",
+                "${workspaceFolder}/libs/miosix-kernel/miosix/config/arch/cortexM4_stm32f4/stm32f429zi_skyward_death_stack_x_maker_faire"
+            ]
+        },
+        {
+            "name": "stm32f429zi_skyward_groundstation",
+            "cStandard": "c11",
+            "cppStandard": "c++14",
+            "compilerPath": "/opt/arm-miosix-eabi/bin/arm-miosix-eabi-g++",
+            "defines": [
+                "{defaultDefines}",
+                "_MIOSIX_BOARDNAME=stm32f429zi_skyward_groundstation",
+                "_BOARD_STM32F429ZI_SKYWARD_GS",
+                "_ARCH_CORTEXM4_STM32F4",
+                "STM32F429xx",
+                "HSE_VALUE=8000000",
+                "SYSCLK_FREQ_168MHz=168000000",
+                "__ENABLE_XRAM",
+                "V_DDA_VOLTAGE=3.0f"
+            ],
+            "includePath": [
+                "${defaultIncludePaths}",
+                "${workspaceFolder}/libs/miosix-kernel/miosix/arch/cortexM4_stm32f4/common",
+                "${workspaceFolder}/libs/miosix-kernel/miosix/arch/cortexM4_stm32f4/stm32f429zi_skyward_groundstation",
+                "${workspaceFolder}/libs/miosix-kernel/miosix/config/arch/cortexM4_stm32f4/stm32f429zi_skyward_groundstation"
+            ]
+        },
+        {
+            "name": "stm32f429zi_skyward_groundstation_parafoil",
+            "cStandard": "c11",
+            "cppStandard": "c++14",
+            "compilerPath": "/opt/arm-miosix-eabi/bin/arm-miosix-eabi-g++",
+            "defines": [
+                "{defaultDefines}",
+                "_MIOSIX_BOARDNAME=stm32f429zi_skyward_groundstation_parafoil",
+                "D_BOARD_STM32F429ZI_SKYWARD_GS_PARAFOIL",
+                "_ARCH_CORTEXM4_STM32F4",
+                "STM32F429xx",
+                "HSE_VALUE=8000000",
+                "SYSCLK_FREQ_168MHz=168000000",
+                "__ENABLE_XRAM",
+                "V_DDA_VOLTAGE=3.0f"
+            ],
+            "includePath": [
+                "${defaultIncludePaths}",
+                "${workspaceFolder}/libs/miosix-kernel/miosix/arch/cortexM4_stm32f4/common",
+                "${workspaceFolder}/libs/miosix-kernel/miosix/arch/cortexM4_stm32f4/stm32f429zi_skyward_groundstation_parafoil",
+                "${workspaceFolder}/libs/miosix-kernel/miosix/config/arch/cortexM4_stm32f4/stm32f429zi_skyward_groundstation_parafoil"
+            ]
+        },
+        {
+            "name": "stm32f429zi_skyward_groundstation_v2",
+            "cStandard": "c11",
+            "cppStandard": "c++14",
+            "compilerPath": "/opt/arm-miosix-eabi/bin/arm-miosix-eabi-g++",
+            "defines": [
+                "{defaultDefines}",
+                "_MIOSIX_BOARDNAME=stm32f429zi_skyward_groundstation_v2",
+                "_BOARD_STM32F429ZI_SKYWARD_GS_V2",
+                "_ARCH_CORTEXM4_STM32F4",
+                "STM32F429xx",
+                "HSE_VALUE=8000000",
+                "SYSCLK_FREQ_168MHz=168000000",
+                "__ENABLE_XRAM",
+                "V_DDA_VOLTAGE=3.0f"
+            ],
+            "includePath": [
+                "${defaultIncludePaths}",
+                "${workspaceFolder}/libs/miosix-kernel/miosix/arch/cortexM4_stm32f4/common",
+                "${workspaceFolder}/libs/miosix-kernel/miosix/arch/cortexM4_stm32f4/stm32f429zi_skyward_groundstation_v2",
+                "${workspaceFolder}/libs/miosix-kernel/miosix/config/arch/cortexM4_stm32f4/stm32f429zi_skyward_groundstation_v2"
             ]
         },
         {
@@ -136,7 +236,9 @@
                 "_ARCH_CORTEXM4_STM32F4",
                 "STM32F429xx",
                 "HSE_VALUE=8000000",
-                "SYSCLK_FREQ_168MHz=168000000"
+                "SYSCLK_FREQ_168MHz=168000000",
+                "__ENABLE_XRAM",
+                "V_DDA_VOLTAGE=3.0f"
             ],
             "includePath": [
                 "${defaultIncludePaths}",
@@ -157,13 +259,83 @@
                 "_ARCH_CORTEXM4_STM32F4",
                 "STM32F429xx",
                 "HSE_VALUE=8000000",
-                "SYSCLK_FREQ_168MHz=168000000"
+                "SYSCLK_FREQ_168MHz=168000000",
+                "V_DDA_VOLTAGE=3.3f"
             ],
             "includePath": [
                 "${defaultIncludePaths}",
                 "${workspaceFolder}/libs/miosix-kernel/miosix/arch/cortexM4_stm32f4/common",
                 "${workspaceFolder}/libs/miosix-kernel/miosix/arch/cortexM4_stm32f4/stm32f429zi_skyward_pyxis_auxiliary",
                 "${workspaceFolder}/libs/miosix-kernel/miosix/config/arch/cortexM4_stm32f4/stm32f429zi_skyward_pyxis_auxiliary"
+            ]
+        },
+        {
+            "name": "stm32f429zi_skyward_rig",
+            "cStandard": "c11",
+            "cppStandard": "c++14",
+            "compilerPath": "/opt/arm-miosix-eabi/bin/arm-miosix-eabi-g++",
+            "defines": [
+                "{defaultDefines}",
+                "_MIOSIX_BOARDNAME=stm32f429zi_skyward_rig",
+                "_BOARD_STM32F429ZI_SKYWARD_RIG",
+                "_ARCH_CORTEXM4_STM32F4",
+                "STM32F429xx",
+                "HSE_VALUE=8000000",
+                "SYSCLK_FREQ_168MHz=168000000",
+                "__ENABLE_XRAM",
+                "V_DDA_VOLTAGE=3.0f"
+            ],
+            "includePath": [
+                "${defaultIncludePaths}",
+                "${workspaceFolder}/libs/miosix-kernel/miosix/arch/cortexM4_stm32f4/common",
+                "${workspaceFolder}/libs/miosix-kernel/miosix/arch/cortexM4_stm32f4/stm32f429zi_skyward_rig",
+                "${workspaceFolder}/libs/miosix-kernel/miosix/config/arch/cortexM4_stm32f4/stm32f429zi_skyward_rig"
+            ]
+        },
+        {
+            "name": "stm32f429zi_stm32f4discovery",
+            "cStandard": "c11",
+            "cppStandard": "c++14",
+            "compilerPath": "/opt/arm-miosix-eabi/bin/arm-miosix-eabi-g++",
+            "defines": [
+                "{defaultDefines}",
+                "_MIOSIX_BOARDNAME=stm32f429zi_stm32f4discovery",
+                "_BOARD_STM32F429ZI_STM32F4DISCOVERY",
+                "_ARCH_CORTEXM4_STM32F4",
+                "STM32F429xx",
+                "HSE_VALUE=8000000",
+                "SYSCLK_FREQ_168MHz=168000000",
+                "__ENABLE_XRAM",
+                "V_DDA_VOLTAGE=3.0f"
+            ],
+            "includePath": [
+                "${defaultIncludePaths}",
+                "${workspaceFolder}/libs/miosix-kernel/miosix/arch/cortexM4_stm32f4/common",
+                "${workspaceFolder}/libs/miosix-kernel/miosix/arch/cortexM4_stm32f4/stm32f429zi_stm32f4discovery",
+                "${workspaceFolder}/libs/miosix-kernel/miosix/config/arch/cortexM4_stm32f4/stm32f429zi_stm32f4discovery"
+            ]
+        },
+        {
+            "name": "stm32f767zi_compute_unit",
+            "cStandard": "c11",
+            "cppStandard": "c++14",
+            "compilerPath": "/opt/arm-miosix-eabi/bin/arm-miosix-eabi-g++",
+            "defines": [
+                "{defaultDefines}",
+                "_MIOSIX_BOARDNAME=stm32f767zi_compute_unit",
+                "_BOARD_STM32F767ZI_COMPUTE_UNIT",
+                "_ARCH_CORTEXM7_STM32F7",
+                "STM32F769xx",
+                "HSE_VALUE=25000000",
+                "SYSCLK_FREQ_216MHz=216000000",
+                "__ENABLE_XRAM",
+                "V_DDA_VOLTAGE=3.3f"
+            ],
+            "includePath": [
+                "${defaultIncludePaths}",
+                "${workspaceFolder}/libs/miosix-kernel/miosix/arch/cortexM7_stm32f7/common",
+                "${workspaceFolder}/libs/miosix-kernel/miosix/arch/cortexM7_stm32f7/stm32f767zi_compute_unit",
+                "${workspaceFolder}/libs/miosix-kernel/miosix/config/arch/cortexM7_stm32f7/stm32f767zi_compute_unit"
             ]
         },
         {
@@ -179,7 +351,8 @@
                 "STM32F767xx",
                 "HSE_VALUE=25000000",
                 "SYSCLK_FREQ_216MHz=216000000",
-                "__ENABLE_XRAM"
+                "__ENABLE_XRAM",
+                "V_DDA_VOLTAGE=3.3f"
             ],
             "includePath": [
                 "${defaultIncludePaths}",
@@ -201,35 +374,14 @@
                 "STM32F769xx",
                 "HSE_VALUE=25000000",
                 "SYSCLK_FREQ_216MHz=216000000",
-                "__ENABLE_XRAM"
+                "__ENABLE_XRAM",
+                "V_DDA_VOLTAGE=3.3f"
             ],
             "includePath": [
                 "${defaultIncludePaths}",
                 "${workspaceFolder}/libs/miosix-kernel/miosix/arch/cortexM7_stm32f7/common",
                 "${workspaceFolder}/libs/miosix-kernel/miosix/arch/cortexM7_stm32f7/stm32f769ni_discovery",
                 "${workspaceFolder}/libs/miosix-kernel/miosix/config/arch/cortexM7_stm32f7/stm32f769ni_discovery"
-            ]
-        },
-        {
-            "name": "stm32f767zi_compute_unit",
-            "cStandard": "c11",
-            "cppStandard": "c++14",
-            "compilerPath": "/opt/arm-miosix-eabi/bin/arm-miosix-eabi-g++",
-            "defines": [
-                "{defaultDefines}",
-                "_MIOSIX_BOARDNAME=stm32f767zi_compute_unit",
-                "_BOARD_STM32F767ZI_COMPUTE_UNIT",
-                "_ARCH_CORTEXM7_STM32F7",
-                "STM32F769xx",
-                "HSE_VALUE=25000000",
-                "SYSCLK_FREQ_216MHz=216000000",
-                "__ENABLE_XRAM"
-            ],
-            "includePath": [
-                "${defaultIncludePaths}",
-                "${workspaceFolder}/libs/miosix-kernel/miosix/arch/cortexM7_stm32f7/common",
-                "${workspaceFolder}/libs/miosix-kernel/miosix/arch/cortexM7_stm32f7/stm32f767zi_compute_unit",
-                "${workspaceFolder}/libs/miosix-kernel/miosix/config/arch/cortexM7_stm32f7/stm32f767zi_compute_unit"
             ]
         }
     ],
