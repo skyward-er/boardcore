@@ -289,6 +289,15 @@ inline bool ClockUtils::enablePeripheralClock(void* peripheral)
 #endif
         }
 
+        // AHB3 peripherals
+        {
+#ifdef QSPI_BASE
+            case QSPI_BASE:
+                RCC->AHB3ENR |= RCC_AHB3ENR_QSPIEN;
+                break;
+#endif
+        }
+
         // APB1 peripherals
         {
 #ifdef TIM2_BASE
@@ -334,6 +343,12 @@ inline bool ClockUtils::enablePeripheralClock(void* peripheral)
 #ifdef TIM14_BASE
             case TIM14_BASE:
                 RCC->APB1ENR |= RCC_APB1ENR_TIM14EN;
+                break;
+#endif
+// RTC register interface gate only on stm32f7 micro controllers
+#if defined(RTC_BASE) && defined(_ARCH_CORTEXM7_STM32F7)
+            case RTC_BASE:
+                RCC->APB1ENR |= RCC_APB1ENR_RTCEN;
                 break;
 #endif
 #ifdef WWDG_BASE
@@ -650,6 +665,15 @@ inline bool ClockUtils::disablePeripheralClock(void* peripheral)
 #endif
         }
 
+        // AHB3 peripherals
+        {
+#ifdef QSPI_BASE
+            case QSPI_BASE:
+                RCC->AHB3ENR &= ~RCC_AHB3ENR_QSPIEN;
+                break;
+#endif
+        }
+
         // APB1 peripherals
         {
 #ifdef TIM2_BASE
@@ -695,6 +719,12 @@ inline bool ClockUtils::disablePeripheralClock(void* peripheral)
 #ifdef TIM14_BASE
             case TIM14_BASE:
                 RCC->APB1ENR &= ~RCC_APB1ENR_TIM14EN;
+                break;
+#endif
+// RTC register interface gate only on stm32f7 micro controllers
+#if defined(RTC_BASE) && defined(_ARCH_CORTEXM7_STM32F7)
+            case RTC_BASE:
+                RCC->APB1ENR &= ~RCC_APB1ENR_RTCEN;
                 break;
 #endif
 #ifdef WWDG_BASE

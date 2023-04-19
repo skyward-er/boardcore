@@ -1,5 +1,5 @@
-/* Copyright (c) 2015-2017 Skyward Experimental Rocketry
- * Author: Luca Erbetta
+/* Copyright (c) 2023 Skyward Experimental Rocketry
+ * Author: Alberto Nidasio
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -30,8 +30,10 @@
 // PA15 -> OSC32_OUT
 
 #include <miosix.h>
+#include <utils/ClockUtils.h>
 
 using namespace miosix;
+using namespace Boardcore;
 
 typedef struct RTC_Date
 {
@@ -55,8 +57,9 @@ int main()
     }
 
     // Enable clock to RTC and PWR peripherals
-    RCC->APB1ENR |= RCC_APB1ENR_RTCEN;
-    RCC->APB1ENR |= RCC_APB1ENR_PWREN;
+    ClockUtils::enablePeripheralClock((RTC_TypeDef*)RTC_BASE);
+    ClockUtils::enablePeripheralClock((PWR_TypeDef*)PWR_BASE);
+
     RCC_SYNC();
 
     // Disable backup domain write protection

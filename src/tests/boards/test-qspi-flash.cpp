@@ -29,6 +29,7 @@
 #include <utils/ClockUtils.h>
 
 using namespace miosix;
+using namespace Boardcore;
 
 /**
  * QSPI Flash pins
@@ -73,8 +74,7 @@ int main()
     flash_io3.alternateFunction(9);
     flash_io3.speed(Speed::_100MHz);
 
-    RCC->AHB1ENR |= RCC_AHB1ENR_GPIOBEN | RCC_AHB1ENR_GPIOFEN;
-    RCC->AHB3ENR |= RCC_AHB3ENR_QSPIEN;
+    ClockUtils::enablePeripheralClock((QUADSPI_TypeDef*)QSPI_BASE);
 
     RCC_SYNC();
 
