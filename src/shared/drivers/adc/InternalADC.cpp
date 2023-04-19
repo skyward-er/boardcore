@@ -25,16 +25,20 @@
 #include <drivers/timer/TimestampTimer.h>
 #include <utils/ClockUtils.h>
 
+#define ADC_RESOLUTION 4095
+
 #if defined(STM32F407xx) || defined(STM32F429xx)
 #define TEMP30_CAL_VALUE ((uint16_t*)((uint32_t)0x1FFF7A2C))
 #define TEMP110_CAL_VALUE ((uint16_t*)((uint32_t)0x1FFF7A2E))
 #define TEMP30 30
 #define TEMP110 110
+#define CALIBRATION_V_DDA 3.3f
 #elif defined(STM32F767xx) || defined(STM32F769xx)
 #define TEMP30_CAL_VALUE ((uint16_t*)((uint32_t)0x1FF0F44C))
 #define TEMP110_CAL_VALUE ((uint16_t*)((uint32_t)0x1FF0F44E))
 #define TEMP30 30
 #define TEMP110 110
+#define CALIBRATION_V_DDA 3.3f
 #else
 #warning This micro controller does not have a calibrated temperature sensor or is not currently supported by this driver
 #define WITHOUT_CALIBRATION
@@ -51,15 +55,22 @@
 #define VBAT_DIV 4.0f
 #endif
 
+// Error the user if the current target is missing the V_DDA_VOLTAGE macro
+// If it is missing you need to define it, preferably in the board_settings.h
+// file in miosix. Check your board schematic to find the voltage value.
+#ifndef V_DDA_VOLTAGE
+#error Missing V_DDA_VOLTAGE definition for current target
+#endif
+
 #ifndef WITHOUT_CALIBRATION
 namespace InternalADCConsts
 {
 // Factory calibration values
 // Read "Temperature sensor characteristics" chapter in the datasheet
 static const float voltage30 =
-    static_cast<float>(*TEMP30_CAL_VALUE) * 3.3 / 4095;
+    static_cast<float>(*TEMP30_CAL_VALUE) * CALIBRATION_V_DDA / ADC_RESOLUTION;
 static const float voltage110 =
-    static_cast<float>(*TEMP110_CAL_VALUE) * 3.3 / 4095;
+    static_cast<float>(*TEMP110_CAL_VALUE) * CALIBRATION_V_DDA / ADC_RESOLUTION;
 static const float slope = (voltage110 - voltage30) / (TEMP110 - TEMP30);
 }  // namespace InternalADCConsts
 #endif
@@ -185,7 +196,7 @@ void InternalADC::disableVbat()
 InternalADCData InternalADC::getVoltage(Channel channel)
 {
     return {timestamp, channel,
-            channelsRawValues[channel] * V_DDA_VOLTAGE / RESOLUTION};
+            channelsRawValues[channel] * V_DDA_VOLTAGE / ADC_RESOLUTION};
 }
 
 TemperatureData InternalADC::getTemperature()
@@ -195,7 +206,7 @@ TemperatureData InternalADC::getTemperature()
 
     if (temperatureRawValue != 0)
     {
-        data.temperature = temperatureRawValue * V_DDA_VOLTAGE / RESOLUTION;
+        data.temperature = temperatureRawValue * V_DDA_VOLTAGE / ADC_RESOLUTION;
 
 #ifdef WITHOUT_CALIBRATION
         // Default conversion
@@ -218,7 +229,7 @@ TemperatureData InternalADC::getTemperature()
 InternalADCData InternalADC::getVbatVoltage()
 {
     return {timestamp, VBAT_CH,
-            vbatVoltageRawValue * V_DDA_VOLTAGE / RESOLUTION * VBAT_DIV};
+            vbatVoltageRawValue * V_DDA_VOLTAGE / ADC_RESOLUTION * VBAT_DIV};
 }
 
 inline void InternalADC::resetRegisters()

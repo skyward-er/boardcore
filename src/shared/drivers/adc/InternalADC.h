@@ -145,8 +145,6 @@ private:
     uint16_t temperatureRawValue = 0;
     uint16_t vbatVoltageRawValue = 0;
     uint64_t timestamp           = 0;
-
-    static constexpr int RESOLUTION = 4095;  ///< 12 bits
 };
 
 }  // namespace Boardcore
