@@ -412,10 +412,15 @@ bool I2CDriver::doOperation(const I2CSlaveConfig &slaveConfig)
         setupPeripheral(slaveConfig);
     }
 
-    reStarting = false;
-
     // Setting up transaction
     setupTransaction();
+
+    // Sending STOP condition and wake up thread
+    reStarting = false;
+
+    // clearing pending flags
+    i2c->ICR |= (I2C_ICR_ADDRCF | I2C_ICR_ARLOCF | I2C_ICR_BERRCF |
+                 I2C_ICR_OVRCF | I2C_ICR_STOPCF);
 
     // Starting the transaction with the START bit
     // From the wait till the end of transaction it will all be executed in the
@@ -506,8 +511,13 @@ void I2CDriver::setupTransaction()
         i2c->CR2 &= ~I2C_CR2_RD_WRN;
     }
 
-    // setting automatic stop generation if we won't generate a reStart
-    if (transaction.generateStop)
+    // setting automatic stop generation if we won't generate a reStart.
+    // For a bug in the peripheral (or a behaviour not explained in the
+    // datasheet), when we have to issue a reStart condition, we can't set the
+    // AUTOEND flag because it will generate the STOP condition prematurely. So,
+    // in this case, we will generate the STOP condition manually at the end of
+    // the transaction.
+    if (transaction.generateStop && !reStarting)
     {
         i2c->CR2 |= I2C_CR2_AUTOEND;
     }
@@ -522,17 +532,17 @@ void I2CDriver::setupTransaction()
 
 void I2CDriver::setupReload()
 {
-    if (transaction.nBytes - transaction.nBytesDone <= 0xffu)
+    if ((transaction.nBytes - transaction.nBytesDone) <= 0xffu)
     {
         i2c->CR2 &= ~I2C_CR2_RELOAD;
-        i2c->CR2 |= (transaction.nBytes - transaction.nBytesDone)
-                    << I2C_CR2_NBYTES_Pos;
+        i2c->CR2 |= ((transaction.nBytes - transaction.nBytesDone)
+                     << I2C_CR2_NBYTES_Pos);
     }
     else
     {
         i2c->CR2 |=
-            I2C_CR2_RELOAD |             // There must be a reload
-            0xff << I2C_CR2_NBYTES_Pos;  // maximum bytes that can be sent
+            (I2C_CR2_RELOAD |                // There must be a reload
+             (0xff << I2C_CR2_NBYTES_Pos));  // maximum bytes that can be sent
     }
 }
 
@@ -632,7 +642,9 @@ inline void I2CDriver::IRQwakeUpWaitingThread()
     i2c->CR1 &= ~(I2C_CR1_ERRIE |   // interrupt for errors
                   I2C_CR1_NACKIE |  // interrupt for NACKs
                   I2C_CR1_TCIE |    // interrupt for TC and TCR
-                  I2C_CR1_STOPIE);  // interrupt for STOP detected
+                  I2C_CR1_STOPIE |  // interrupt for STOP detected
+                  I2C_CR1_TXIE |    // interrupt for tx buffer
+                  I2C_CR1_RXIE);    // interrupt for rx buffer
 
     if (waiting)
     {
@@ -650,12 +662,6 @@ inline void I2CDriver::IRQwakeUpWaitingThread()
 
 void I2CDriver::IRQhandleInterrupt()
 {
-    // Transfer complete reload: setting registers for the remaining bytes
-    if (i2c->ISR & I2C_ISR_TCR)
-    {
-        setupReload();
-    }
-
     // If NACK reception, return error
     if (i2c->ISR & I2C_ISR_NACKF)
     {
@@ -677,39 +683,63 @@ void I2CDriver::IRQhandleInterrupt()
             transaction.buffRead[transaction.nBytesDone] = i2c->RXDR;
             transaction.nBytesDone++;
         }
-        else if (i2c->ISR & I2C_ISR_TXIS)
+        else if (i2c->ISR & (I2C_ISR_TXIS | I2C_ISR_TXE))
         {
             // WRITE
             i2c->TXDR = transaction.buffWrite[transaction.nBytesDone];
             transaction.nBytesDone++;
         }
     }
-    else
-    {
-        // Sending STOP condition and wake up thread
-        if (!transaction.generateStop)
-        {
-            reStarting = true;
 
-            // waking up the waiting thread
-            IRQwakeUpWaitingThread();
-        }
+    // Transfer complete reload: setting registers for the remaining bytes
+    if (i2c->ISR & I2C_ISR_TCR)
+    {
+        setupReload();
     }
 
+    // when stop detected on the bus
     if (i2c->ISR & I2C_ISR_STOPF)
     {
-        // waking up the waiting thread after stop condition generated
+        // clearing STOPF
+        i2c->ICR |= I2C_ICR_STOPCF;
+
+        if (transaction.nBytesDone < transaction.nBytes)
+        {
+            error = 1 << 14;
+            lastError |= Errors::BERR;
+        }
+
+        // waking up the waiting thread
         IRQwakeUpWaitingThread();
+        return;
+    }
+
+    // Transfer complete (RELOAD = 0, AUTOEND = 0, NBYTES transferred)
+    if ((i2c->ISR & I2C_ISR_TC) &&
+        (transaction.nBytesDone >= transaction.nBytes))
+    {
+        if (transaction.generateStop)
+        {
+            // stop and wait for STOPF event
+            i2c->CR2 |= I2C_CR2_STOP;
+        }
+        else
+        {
+            reStarting = true;
+            // waking up the waiting thread
+            IRQwakeUpWaitingThread();
+            return;
+        }
     }
 }
 
 void I2CDriver::IRQhandleErrInterrupt()
 {
-    error = i2c->ISR | (1 << 24);
+    error = (i2c->ISR | (1 << 24));
 
     // Clearing all the errors in the register
-    i2c->ICR |= I2C_ICR_ADDRCF | I2C_ICR_ARLOCF | I2C_ICR_BERRCF |
-                I2C_ICR_OVRCF | I2C_ICR_STOPCF;
+    i2c->ICR |= (I2C_ICR_ADDRCF | I2C_ICR_ARLOCF | I2C_ICR_BERRCF |
+                 I2C_ICR_OVRCF | I2C_ICR_STOPCF);
 
     // Waking up the waiting thread
     IRQwakeUpWaitingThread();
