@@ -35,36 +35,12 @@ namespace Boardcore
  *
  * Allows conversions on multiple channels with per-channel sample time.
  *
- * The driver configures the ADC by itself, including the clock.
+ * The driver uses basic ADC features, that is the single conversion mode.
+ * A previous version of the driver featured injected and regular channels with
+ * also DMA. Since ADC conversion time is very low, the driver has been
+ * simplified to provide better usability and simplier implementation.
  *
- * This driver implements the following ADC's features:
- * - injected channels: a list of up to 4 channels that can be converted
- * - scan mode with regular channels: up to 16 channels converted in the same
- * sequence as they are enabled
- * - DMA: Used in scan mode to transfer data from the peripheral data register
- *
- * Note that only the DMA2 controller can be used with the ADC in stm32f4
- * microcontrollers.
- *
- * When you don't use the DMA, the driver works with the injected channels.
- * When a conversion is started the values are stored in 4 specific data
- * register, without the need to use DMA.
- *
- * If you need more than 4 channels you must use DMA. When the regular group
- * of channels is converted, the data will be stored sequentially in a single
- * data register and DMA is needed to save the value between each conversion in
- * another memory location.
- *
- * When using DMA the driver will configure only the memory addresses, you must
- * configure the stream properly!
- *
- * Examples of how to use the internal ADC driver and set up the DMA stream
- * can be found in the test files (test-internal-adc*).
- *
- * The ADC has also other features as value offsets for injected channels,
- * interrupts (such as dma transfer and watchdog), conversion triggering with
- * timers and multi adc mode.
- * This features are not implemented to keep the driver simple.
+ * @warning This driver has been tested on f205, f407, f429, f767 and f769
  */
 class InternalADC : public Sensor<InternalADCData>
 {
@@ -98,10 +74,12 @@ public:
 
     /**
      * @brief Conversion sample time. See reference manual.
+     *
+     * CYCLES_3 is not exposed because in 12-bit mode the minimum is 15
      */
     enum SampleTime : uint8_t
     {
-        CYCLES_3   = 0x0,
+        // CYCLES_3   = 0x0,
         CYCLES_15  = 0x1,
         CYCLES_28  = 0x2,
         CYCLES_56  = 0x3,
@@ -113,84 +91,64 @@ public:
 
     /**
      * @brief Resets the ADC configuration and automatically enables the
-     * peripheral clock (also for the dma channel if used).
+     * peripheral clock.
      */
-    explicit InternalADC(ADC_TypeDef* adc, const float supplyVoltage = 5.0,
-                         const bool isUsingDMA   = false,
-                         DMA_Stream_TypeDef* dma = DMA1_Stream0);
+    explicit InternalADC(ADC_TypeDef* adc, const float supplyVoltage = 3.3);
 
     ~InternalADC();
 
     /**
      * @brief ADC Initialization.
      *
-     * The ADC clock must be set beforehand as well as GPIO configuration
-     * and DMA if used. Also the clock for the analog circuitry should be set
-     * accordingly to the device datasheet.
+     * The ADC clock must be set beforehand as well as GPIO configuration. Also
+     * the clock for the analog circuitry should be set accordingly to the
+     * device datasheet.
      */
     bool init() override;
-
-    /**
-     * @brief Make a regular conversion for the specified channel.
-     */
-    ADCData readChannel(Channel channel, SampleTime sampleTime = CYCLES_3);
-
-    bool enableChannel(Channel channel, SampleTime sampleTime = CYCLES_3);
-
-    bool addRegularChannel(Channel channel);
-
-    InternalADCData getVoltage(Channel channel);
 
     bool selfTest() override;
 
     InternalADCData sampleImpl() override;
 
-    float getSupplyVoltage();
+    void enableChannel(Channel channel, SampleTime sampleTime = CYCLES_480);
+
+    void disableChannel(Channel channel);
+
+    void enableTemperature(SampleTime sampleTime = CYCLES_480);
+
+    void disableTemperature();
+
+    void enableVbat(SampleTime sampleTime = CYCLES_480);
+
+    void disableVbat();
+
+    InternalADCData getVoltage(Channel channel);
+
+    TemperatureData getTemperature();
+
+    InternalADCData getVbatVoltage();
 
 private:
-    inline void resetRegisters();
+    void resetRegisters();
 
-    inline void startInjectedConversion();
+    void setChannelSampleTime(Channel channel, SampleTime sampleTime);
 
-    inline void startRegularConversion();
-
-    inline bool addInjectedChannel(Channel channel);
-
-    inline void setChannelSampleTime(Channel channel, SampleTime sampleTime);
+    float readChannel(Channel channel);
 
     ADC_TypeDef* adc;
-    const float supplyVoltage = 5.0;
+    const float supplyVoltage;
 
-    uint8_t activeChannels = 0;
-    uint64_t timestamp     = 0;
+    bool channelsEnabled[CH_NUM];
+    bool tempEnabled  = false;
+    bool vbatEnabled  = false;
+    bool vbatLastRead = false;
 
-    // Raw value used by DMA
-    uint16_t values[CH_NUM] = {};
+    float channelsRawValues[CH_NUM];
+    float temperatureRawValue = 0;
+    float vbatVoltageRawValue = 0;
+    uint64_t timestamp        = 0;
 
-    // Maps the channel number with the index in the ADC's regular sequence
-    int8_t indexMap[CH_NUM];
-
-    /**
-     * @brief Determines whether to use regular channels or injected channels
-     *
-     * We'll use up to 4 injected channel by default and up to 16 channels when
-     * using DMA.
-     *
-     * The differentiation is necessary because whiteout DMA it is much simpler
-     * to use injected channel for multichannel readings. Otherwise we would
-     * need to handle each channel's end of conversion interrupt or go through
-     */
-    const bool isUsingDMA;
-    DMA_Stream_TypeDef* dmaStream;
-    DMA_TypeDef* dma = DMA2;
-    uint8_t streamNum;
-    uint32_t transferCompleteMask;
-    uint32_t transferErrorMask;
-    volatile uint32_t* statusReg;
-    volatile uint32_t* clearFlagReg;
-
-    static constexpr int INJECTED_CHANNEL_N = 4;
-    static constexpr int RESOLUTION         = 4095;  ///< 12 bits
+    static constexpr int RESOLUTION = 4095;  ///< 12 bits
 };
 
 }  // namespace Boardcore
