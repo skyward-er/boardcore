@@ -23,7 +23,7 @@
 #pragma once
 
 #include <diagnostic/PrintLogger.h>
-#include <drivers/spi/SPIDriver.h>
+#include <drivers/i2c/I2C.h>
 #include <sensors/Sensor.h>
 
 #include "MS5803Data.h"
@@ -31,7 +31,7 @@
 namespace Boardcore
 {
 
-class MS5803 : public Sensor<MS5803Data>
+class MS5803I2C : public Sensor<MS5803Data>
 {
 public:
     enum FSMStates
@@ -72,8 +72,7 @@ public:
 
     static constexpr uint8_t TIMEOUT = 5;
 
-    MS5803(SPIBusInterface& spiBus, miosix::GpioPin cs,
-           SPIBusConfig spiConfig = {}, uint16_t temperatureDivider = 1);
+    MS5803I2C(I2C& bus, uint16_t temperatureDivider = 1);
 
     bool init() override;
 
@@ -96,7 +95,11 @@ private:
 
     MS5803Data updateData();
 
-    SPISlave spiSlave;
+    uint16_t readReg(uint8_t reg);
+
+    I2C& bus;
+    I2CDriver::I2CSlaveConfig slaveConfig{0x77, I2CDriver::Addressing::BIT7,
+                                          I2CDriver::Speed::FAST};
 
     MS5803CalibrationData calibrationData;
     uint16_t temperatureDivider;

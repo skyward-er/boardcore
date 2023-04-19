@@ -21,33 +21,27 @@
  * THE SOFTWARE.
  */
 
-#include "MS5803.h"
+#include "MS5803I2C.h"
 
 #include <drivers/timer/TimestampTimer.h>
 
 namespace Boardcore
 {
 
-MS5803::MS5803(SPIBusInterface& spiBus, miosix::GpioPin cs,
-               SPIBusConfig spiConfig, uint16_t temperatureDivider)
-    : spiSlave(spiBus, cs, spiConfig), temperatureDivider(temperatureDivider)
+MS5803I2C::MS5803I2C(I2C& bus, uint16_t temperatureDivider)
+    : bus(bus), temperatureDivider(temperatureDivider)
 {
-    // Ensure that the write bit is disabled
-    spiSlave.config.writeBit = SPI::WriteBit::DISABLED;
 }
 
-bool MS5803::init()
+bool MS5803I2C::init()
 {
-    SPITransaction transaction{spiSlave};
-
     // Read calibration data
-    calibrationData.sens = transaction.readRegister16(REG_PROM_SENS_MASK);
-    calibrationData.off  = transaction.readRegister16(REG_PROM_OFF_MASK);
-    calibrationData.tcs  = transaction.readRegister16(REG_PROM_TCS_MASK);
-    calibrationData.tco  = transaction.readRegister16(REG_PROM_TCO_MASK);
-    calibrationData.tref = transaction.readRegister16(REG_PROM_TREF_MASK);
-    calibrationData.tempsens =
-        transaction.readRegister16(REG_PROM_TEMPSENS_MASK);
+    calibrationData.sens     = readReg(REG_PROM_SENS_MASK);
+    calibrationData.off      = readReg(REG_PROM_OFF_MASK);
+    calibrationData.tcs      = readReg(REG_PROM_TCS_MASK);
+    calibrationData.tco      = readReg(REG_PROM_TCO_MASK);
+    calibrationData.tref     = readReg(REG_PROM_TREF_MASK);
+    calibrationData.tempsens = readReg(REG_PROM_TEMPSENS_MASK);
 
     LOG_INFO(
         logger,
@@ -58,12 +52,10 @@ bool MS5803::init()
     return true;
 }
 
-bool MS5803::selfTest() { return true; }
+bool MS5803I2C::selfTest() { return true; }
 
-MS5803Data MS5803::sampleImpl()
+MS5803Data MS5803I2C::sampleImpl()
 {
-    SPITransaction transaction{spiSlave};
-
     uint8_t buffer[3];
 
     switch (deviceState)
@@ -71,15 +63,19 @@ MS5803Data MS5803::sampleImpl()
         case STATE_INIT:
         {
             // Begin temperature sampling
-            transaction.write(static_cast<uint8_t>(REG_CONVERT_D2_4096));
+            uint8_t val = static_cast<uint8_t>(REG_CONVERT_D2_4096);
+            bus.write(slaveConfig, &val, 1);
             deviceState = STATE_SAMPLED_TEMP;
             break;
         }
         case STATE_SAMPLED_TEMP:
         {
             // Read back the sampled temperature
-            uint32_t tmpRawTemperature =
-                transaction.readRegister24(REG_ADC_READ);
+            bus.readFromRegister(slaveConfig, REG_ADC_READ, buffer, 3);
+
+            uint32_t tmpRawTemperature = (uint32_t)buffer[2] |
+                                         ((uint32_t)buffer[1] << 8) |
+                                         ((uint32_t)buffer[0] << 16);
             lastTemperatureTimestamp = TimestampTimer::getTimestamp();
 
             // Check if the value is valid
@@ -89,14 +85,19 @@ MS5803Data MS5803::sampleImpl()
                 LOG_ERR(logger, "The read raw temperature isn't valid");
 
             // Begin pressure sampling
-            transaction.write(static_cast<uint8_t>(REG_CONVERT_D1_4096));
+            uint8_t val = static_cast<uint8_t>(REG_CONVERT_D1_4096);
+            bus.write(slaveConfig, &val, 1);
             deviceState = STATE_SAMPLED_PRESS;
             break;
         }
         case STATE_SAMPLED_PRESS:
         {
             // Read back the sampled pressure
-            uint32_t tmpRawPressure = transaction.readRegister24(REG_ADC_READ);
+            bus.readFromRegister(slaveConfig, REG_ADC_READ, buffer, 3);
+
+            uint32_t tmpRawPressure = (uint32_t)buffer[2] |
+                                      ((uint32_t)buffer[1] << 8) |
+                                      ((uint32_t)buffer[0] << 16);
 
             // Check if the value is valid
             if (tmpRawPressure != 0)
@@ -110,13 +111,15 @@ MS5803Data MS5803::sampleImpl()
             if (tempCounter % temperatureDivider == 0)
             {
                 // Begin temperature sampling
-                transaction.write(static_cast<uint8_t>(REG_CONVERT_D2_4096));
+                uint8_t val = static_cast<uint8_t>(REG_CONVERT_D2_4096);
+                bus.write(slaveConfig, &val, 1);
                 deviceState = STATE_SAMPLED_TEMP;
             }
             else
             {
                 // Begin pressure sampling again
-                transaction.write(static_cast<uint8_t>(REG_CONVERT_D1_4096));
+                uint8_t val = static_cast<uint8_t>(REG_CONVERT_D1_4096);
+                bus.write(slaveConfig, &val, 1);
             }
             break;
         }
@@ -127,7 +130,7 @@ MS5803Data MS5803::sampleImpl()
     return lastSample;
 }
 
-MS5803Data MS5803::updateData()
+MS5803Data MS5803I2C::updateData()
 {
     // First order compensation
     int32_t dt   = rawTemperature - (((uint32_t)calibrationData.tref) << 8);
@@ -167,6 +170,14 @@ MS5803Data MS5803::updateData()
 
     return MS5803Data(TimestampTimer::getTimestamp(), pressure,
                       lastTemperatureTimestamp, temp_);
+}
+
+uint16_t MS5803I2C::readReg(uint8_t reg)
+{
+    uint8_t rcv[2];
+    bus.readFromRegister(slaveConfig, reg, rcv, 2);
+    uint16_t data = (rcv[0] << 8) | rcv[1];
+    return data;
 }
 
 }  // namespace Boardcore
