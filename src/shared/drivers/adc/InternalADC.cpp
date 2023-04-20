@@ -137,7 +137,9 @@ InternalADCData InternalADC::sampleImpl()
         {
             newData.voltage[i] = readChannel(static_cast<Channel>(i));
             newData.voltage[i] =
-                newData.voltage[i] * V_DDA_VOLTAGE / ADC_RESOLUTION;
+                newData.voltage[i] *
+                V_DDA_VOLTAGE  // cppcheck-suppress ConfigurationNotChecked
+                / ADC_RESOLUTION;
         }
     }
 
@@ -161,7 +163,9 @@ InternalADCData InternalADC::sampleImpl()
         if (temperatureRawValue != 0)
         {
             newData.temperature =
-                temperatureRawValue * V_DDA_VOLTAGE / ADC_RESOLUTION;
+                temperatureRawValue *
+                V_DDA_VOLTAGE  // cppcheck-suppress ConfigurationNotChecked
+                / ADC_RESOLUTION;
 
 #ifdef WITHOUT_CALIBRATION
             // Default conversion
@@ -185,9 +189,10 @@ InternalADCData InternalADC::sampleImpl()
         auto vbatVoltageRawValue = readChannel(static_cast<Channel>(VBAT_CH));
         ADC->CCR &= ~ADC_CCR_VBATE;
 
-        // Conversion
         newData.vBat =
-            vbatVoltageRawValue * V_DDA_VOLTAGE / ADC_RESOLUTION * VBAT_DIV;
+            vbatVoltageRawValue *
+            V_DDA_VOLTAGE  // cppcheck-suppress ConfigurationNotChecked
+            / ADC_RESOLUTION * VBAT_DIV;
     }
 
     return newData;
