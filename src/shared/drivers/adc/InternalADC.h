@@ -27,6 +27,11 @@
 
 #include "InternalADCData.h"
 
+#if not defined(STM32F407xx) && not defined(STM32F429xx) && \
+    not defined(STM32F767xx) && not defined(STM32F769xx)
+#define INTERNAL_ADC_WITHOUT_CALIBRATION
+#endif
+
 namespace Boardcore
 {
 
@@ -93,7 +98,7 @@ public:
      * @brief Resets the ADC configuration and automatically enables the
      * peripheral clock.
      */
-    explicit InternalADC(ADC_TypeDef* adc);
+    explicit InternalADC(ADC_TypeDef *adc);
 
     ~InternalADC();
 
@@ -135,11 +140,21 @@ private:
 
     uint16_t readChannel(Channel channel);
 
-    ADC_TypeDef* adc;
+    ADC_TypeDef *adc;
 
     bool channelsEnabled[CH_NUM];
     bool tempEnabled = false;
     bool vbatEnabled = false;
+
+#ifndef INTERNAL_ADC_WITHOUT_CALIBRATION
+    void loadCalibrationValues();
+
+    // Factory calibration values
+    // Read "Temperature sensor characteristics" chapter in the datasheet
+    float calPt1Voltage;
+    float calPt2Voltage;
+    float calSlope;
+#endif
 };
 
 }  // namespace Boardcore

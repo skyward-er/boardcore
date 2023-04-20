@@ -27,31 +27,33 @@
 
 static constexpr int ADC_RESOLUTION = 4095;
 
+namespace Boardcore
+{
+
 #if defined(STM32F407xx) || defined(STM32F429xx)
-#define CAL_PT1_VALUE ((uint16_t *)((uint32_t)0x1FFF7A2C))
-#define CAL_PT2_VALUE ((uint16_t *)((uint32_t)0x1FFF7A2E))
-static constexpr float CAL_PT1_TEMP = 30;
-static constexpr float CAL_PT2_TEMP = 110;
-static constexpr float CAL_V_DDA    = 3.3f;
+#define CAL_PT1_VALUE ((uint16_t volatile *)((uint32_t)0x1FFF7A2C))
+#define CAL_PT2_VALUE ((uint16_t volatile *)((uint32_t)0x1FFF7A2E))
+static const float CAL_PT1_TEMP = 30;
+static const float CAL_PT2_TEMP = 110;
+static const float CAL_V_DDA    = 3.3f;
 #elif defined(STM32F767xx) || defined(STM32F769xx)
-#define CAL_PT1_VALUE ((uint16_t *)((uint32_t)0x1FF0F44C))
-#define CAL_PT2_VALUE ((uint16_t *)((uint32_t)0x1FF0F44E))
-static constexpr float CAL_PT1_TEMP = 30;
-static constexpr float CAL_PT2_TEMP = 110;
-static constexpr float CAL_V_DDA    = 3.3f;
+#define CAL_PT1_VALUE ((uint16_t volatile *)((uint32_t)0x1FF0F44C))
+#define CAL_PT2_VALUE ((uint16_t volatile *)((uint32_t)0x1FF0F44E))
+static const float CAL_PT1_TEMP           = 30;
+static const float CAL_PT2_TEMP           = 110;
+static const float CAL_V_DDA              = 3.3f;
 #else
 #warning This micro controller does not have a calibrated temperature sensor or is not currently supported by this driver
-#define WITHOUT_CALIBRATION
 #endif
 
 #if defined(STM32F407xx) || defined(STM32F205xx)
-#define TEMP_CH InternalADC::CH16
-#define VBAT_CH InternalADC::CH18
-static constexpr float VBAT_DIV = 2.0f;
+static const InternalADC::Channel TEMP_CH = InternalADC::CH16;
+static const InternalADC::Channel VBAT_CH = InternalADC::CH18;
+static const float VBAT_DIV               = 2.0f;
 #elif defined(STM32F429xx) || defined(STM32F767xx) || defined(STM32F769xx)
-#define TEMP_CH InternalADC::CH18
-#define VBAT_CH InternalADC::CH18
-static constexpr float VBAT_DIV     = 4.0f;
+static const InternalADC::Channel TEMP_CH = InternalADC::CH18;
+static const InternalADC::Channel VBAT_CH = InternalADC::CH18;
+static const float VBAT_DIV               = 4.0f;
 #endif
 
 // Error the user if the current target is missing the V_DDA_VOLTAGE macro
@@ -61,37 +63,12 @@ static constexpr float VBAT_DIV     = 4.0f;
 #error Missing V_DDA_VOLTAGE definition for current target
 #endif
 
-// Factory calibration values
-// Read "Temperature sensor characteristics" chapter in the datasheet
-#ifndef WITHOUT_CALIBRATION
-
-float getCalPt1Voltage()
-{
-    static float pt1Voltage =
-        static_cast<float>(*CAL_PT1_VALUE) * CAL_V_DDA / ADC_RESOLUTION;
-    return pt1Voltage;
-}
-
-float getCalPt2Voltage()
-{
-    static float pt2Voltage =
-        static_cast<float>(*CAL_PT2_VALUE) * CAL_V_DDA / ADC_RESOLUTION;
-    return pt2Voltage;
-}
-
-float getCalSlope()
-{
-    static float slope = (getCalPt2Voltage() - getCalPt1Voltage()) /
-                         (CAL_PT2_TEMP - CAL_PT1_TEMP);
-    return slope;
-}
-#endif
-
-namespace Boardcore
-{
-
 InternalADC::InternalADC(ADC_TypeDef *adc) : adc(adc)
 {
+#ifndef INTERNAL_ADC_WITHOUT_CALIBRATION
+    loadCalibrationValues();
+#endif
+
     resetRegisters();
     ClockUtils::enablePeripheralClock(adc);
 
@@ -167,13 +144,13 @@ InternalADCData InternalADC::sampleImpl()
                 V_DDA_VOLTAGE  // cppcheck-suppress ConfigurationNotChecked
                 / ADC_RESOLUTION;
 
-#ifdef WITHOUT_CALIBRATION
+#ifdef INTERNAL_ADC_WITHOUT_CALIBRATION
             // Default conversion
             newData.temperature = ((newData.temperature - 0.76) / 0.0025) + 25;
 #else
             // Factory calibration
-            newData.temperature = newData.temperature - getCalPt1Voltage();
-            newData.temperature /= getCalSlope();
+            newData.temperature = newData.temperature - calPt1Voltage;
+            newData.temperature /= calSlope;
             newData.temperature += CAL_PT1_TEMP;
 #endif
         }
@@ -311,5 +288,19 @@ uint16_t InternalADC::readChannel(Channel channel)
 
     return static_cast<uint16_t>(adc->DR);
 }
+
+#ifndef INTERNAL_ADC_WITHOUT_CALIBRATION
+void InternalADC::loadCalibrationValues()
+{
+    calPt1Voltage = static_cast<float>(*CAL_PT1_VALUE);
+    calPt1Voltage *= CAL_V_DDA / ADC_RESOLUTION;
+
+    calPt2Voltage = static_cast<float>(*CAL_PT2_VALUE);
+    calPt2Voltage *= CAL_V_DDA / ADC_RESOLUTION;
+
+    calSlope = calPt1Voltage - calPt2Voltage;
+    calSlope /= CAL_PT2_TEMP - CAL_PT1_TEMP;
+}
+#endif
 
 }  // namespace Boardcore
