@@ -55,6 +55,7 @@ foreach(OPT_BOARD ${BOARDS})
         ${SBS_BASE}/src/shared/drivers/timer/PWM.cpp
         ${SBS_BASE}/src/shared/drivers/timer/TimestampTimer.cpp
         ${SBS_BASE}/src/shared/drivers/runcam/Runcam.cpp
+        ${SBS_BASE}/src/shared/drivers/sdspi/sdspi.cpp
         ${SBS_BASE}/src/shared/drivers/spi/SPITransaction.cpp
         ${SBS_BASE}/src/shared/drivers/usart/USART.cpp
         ${SBS_BASE}/src/shared/drivers/i2c/I2CDriver.cpp
