@@ -20,8 +20,8 @@
  * THE SOFTWARE.
  */
 
-#include <math.h>
-#include <sensors/H3LIS331DL/H3LIS331DL.h>
+#include "H3LIS331DL.h"
+
 #include <utils/Debug.h>
 
 namespace Boardcore
@@ -45,13 +45,13 @@ H3LIS331DL::H3LIS331DL(SPIBusInterface& spiBus, miosix::GpioPin cs,
 
 bool H3LIS331DL::init()
 {
-    if (this->initialized)
+    if (initialized)
     {
         lastError = SensorErrors::ALREADY_INIT;
         return false;
     }
 
-    SPITransaction spiTr(this->spi);
+    SPITransaction spiTr(spi);
 
     uint8_t whoami = spiTr.readRegister(Registers::REG_WHO_AM_I);
 
@@ -65,70 +65,51 @@ bool H3LIS331DL::init()
         return false;
     }
 
-    {                                     // CTRL_REG1 initialization
-        uint8_t ctrlReg1  = 0b0000'0000;  // Default: poweroff
-        uint8_t powerMode = 0;            // Remain in poweroff
-        uint8_t dr        = 0x0;  // Data rate is 0 in case of low power mode
+    // We assume everything is okay, if there are issues while writing the
+    // configuration we will set this flag to false
+    initialized = true;
 
-        if (this->odr <= OutputDataRate::ODR_LP_10)
-        {
-            // the low power mode output data rate is set in PM bits in the
-            // CTRL_REG1 instead in the DR bytes and it starts at configuration
-            // 010. Configuration 000 and 001 are used (in order) as poweroff
-            // and normal power mode.
-            powerMode = 0b010 + this->odr;
-        }
-        else
-        {
-            powerMode = 0b001;  // powermode is set to normal.
+    // CTRL_REG1 initialization
+    {
+        uint8_t ctrlReg1 = 0b0000'0000;  // Default: poweroff
 
-            // As ODR_50 (and the following) does not start at 0 I need to
-            // subtract ODR_50 to align everything to 0
-            dr = this->odr - OutputDataRate::ODR_50;
-        }
-
-        setBits(ctrlReg1, /* left shift */ 5, /*bitmask*/ 0b1110'0000,
-                powerMode);
-        setBits(ctrlReg1, 3, 0b0001'1000, dr);
-        setBits(ctrlReg1, 0, 0b0000'0111, 0b111);
+        ctrlReg1 = odr | CTRL_REG1_XEN | CTRL_REG1_YEN | CTRL_REG1_ZEN;
 
         spiTr.writeRegister(Registers::REG_CTRL_REG1, ctrlReg1);
 
-        this->initialized &=
-            ctrlReg1 == spiTr.readRegister(Registers::REG_CTRL_REG1);
-        TRACE("[H3LIS331DL] Control Register 1 After init: 0x%02x\n", ctrlReg1);
+        initialized &= ctrlReg1 == spiTr.readRegister(Registers::REG_CTRL_REG1);
+
+        TRACE(
+            "[H3LIS331DL] Control Register 1 After init: 0x%02x, expected "
+            "value: 0x%02x\n",
+            spiTr.readRegister(Registers::REG_CTRL_REG1), ctrlReg1);
     }
-    else
-    {
-        if (this->odr < ODR_50)
-        {
-            lastError = SensorErrors::INIT_FAIL;
-            return false;
-        }
 
     {
         // CTRL_REG4 initialization
-        // CTRL_REG4 controls the BDU (@see H3LIS331DL::BlockDataUpdate) and the
-        // FSR (@see H3LIS331DL::FullScaleRange).
+        // CTRL_REG4 controls the BDU (@see H3LIS331DL::BlockDataUpdate) and
+        // the FSR (@see H3LIS331DL::FullScaleRange).
         uint8_t ctrlReg4 = 0b0000'0000;
-        setBits(ctrlReg4, 7, 0b1000'0000, this->bdu);
-        setBits(ctrlReg4, 4, 0b0011'0000, this->fs);
+
+        ctrlReg4 = bdu | fs;
 
         spiTr.writeRegister(Registers::REG_CTRL_REG4, ctrlReg4);
 
-        this->initialized &=
-            ctrlReg4 == spiTr.readRegister(Registers::REG_CTRL_REG4);
-        TRACE("[H3LIS331DL] Control Register 4 After init: 0x%02x\n", ctrlReg4);
+        initialized &= ctrlReg4 == spiTr.readRegister(Registers::REG_CTRL_REG4);
+        TRACE(
+            "[H3LIS331DL] Control Register 4 After init: 0x%02x, expected "
+            "value: 0x%02x\n",
+            spiTr.readRegister(Registers::REG_CTRL_REG4), ctrlReg4);
     }
 
-    return this->initialized;
+    return initialized;
 }
 
 bool H3LIS331DL::selfTest() { return true; }
 
 H3LIS331DLData H3LIS331DL::sampleImpl()
 {
-    if (!this->initialized)
+    if (!initialized)
     {
         lastError = SensorErrors::NOT_INIT;
         return lastSample;
@@ -143,14 +124,14 @@ H3LIS331DLData H3LIS331DL::sampleImpl()
 
     // Read output data registers (X, Y, Z)
     {
-        SPITransaction spiTr(this->spi);
+        SPITransaction spiTr(spi);
 
         // Read the status register that tells if new data is available.
-        // This will allow us to read only data that is new and reuse data that
-        // didn't change.
+        // This will allow us to read only data that is new and reuse data
+        // that didn't change.
         uint8_t status = spiTr.readRegister(Registers::REG_STATUS_REG);
 
-        if ((status & 0b0000'1111) == 0)
+        if (status == 0)
         {
             lastError = SensorErrors::NO_NEW_DATA;
             return lastSample;  // No new data available
@@ -160,23 +141,26 @@ H3LIS331DLData H3LIS331DL::sampleImpl()
         uint16_t hPart;  // data's MSB.
 
         // Here we get the sensitivity based on the FullScaleRange
-        float sensitivity = SENSITIVITY_VALUES[this->fs];
+        float sensitivity = SENSITIVITY_VALUES[this->fs >> 4];
 
-        // Read x-axis if new data is available or old data that was not read
-        // was overrun and never read
-        if (status & 0b0000'1001 || status & 0b0001'0000)
+        // Read x-axis if new data is available or old data that was not
+        // read was overrun and never read
+        if (status & (STATUS_REG_XDR | STATUS_REG_XYZDR | STATUS_REG_XOR |
+                      STATUS_REG_XYZOR))
         {
 
             // NOTE: Reading multiple bits with readRegisters does not work
-            lPart = spiTr.readRegister(Registers::REG_OUT_X);
-            hPart = spiTr.readRegister(Registers::REG_OUT_X + 1);
+            lPart = spiTr.readRegister(Registers::REG_OUT_X_L);
+            hPart = spiTr.readRegister(Registers::REG_OUT_X_H);
 
-            // To convert the values I am casting the two 8 bits registers into
-            // a signed 16 bit integer then I right-shift it by 4 to match the
-            // 12 bit representation of the sensor.
-            // As the values are casted into a signed int the shift also does
-            // sign extention automatically.
+            // To convert the values I am casting the two 8 bits registers
+            // into a signed 16 bit integer then I right-shift it by 4 to
+            // match the 12 bit representation of the sensor. As the values
+            // are casted into a signed int the shift also does sign
+            // extention automatically.
             int16_t xInt = static_cast<int16_t>(lPart | (hPart << 8));
+            // int16_t xInt = static_cast<int16_t>(
+            //    spiTr.readRegister16(Registers::REG_OUT_X));
             float xFloat = static_cast<float>(xInt >> 4);
             x            = xFloat * sensitivity;
         }
@@ -185,14 +169,17 @@ H3LIS331DLData H3LIS331DL::sampleImpl()
             x = lastSample.accelerationX;
         }
 
-        // Read y-axis if new data is available or old data that was not read
-        // was overrun and never read
-        if (status & 0b0000'1010 || status & 0b0010'0000)
+        // Read y-axis if new data is available or old data that was not
+        // read was overrun and never read
+        if (status & (STATUS_REG_YDR | STATUS_REG_XYZDR | STATUS_REG_YOR |
+                      STATUS_REG_XYZOR))
         {
             // NOTE: Reading multiple bits with readRegisters does not work
-            lPart        = spiTr.readRegister(Registers::REG_OUT_Y);
-            hPart        = spiTr.readRegister(Registers::REG_OUT_Y + 1);
+            lPart        = spiTr.readRegister(Registers::REG_OUT_Y_L);
+            hPart        = spiTr.readRegister(Registers::REG_OUT_Y_H);
             int16_t yInt = static_cast<int16_t>(lPart | (hPart << 8));
+            // int16_t yInt = static_cast<int16_t>(
+            //    spiTr.readRegister16(Registers::REG_OUT_Y));
             float yFloat = static_cast<float>(yInt >> 4);
             y            = yFloat * sensitivity;
         }
@@ -201,14 +188,17 @@ H3LIS331DLData H3LIS331DL::sampleImpl()
             y = lastSample.accelerationY;
         }
 
-        // Read z-axis if new data is available or old data that was not read
-        // was overrun and never read
-        if (status & 0b0000'1100 || status & 0b0100'0000)
+        // Read z-axis if new data is available or old data that was not
+        // read was overrun and never read
+        if (status & (STATUS_REG_ZDR | STATUS_REG_XYZDR | STATUS_REG_ZOR |
+                      STATUS_REG_XYZOR))
         {
             // NOTE: Reading multiple bits with readRegisters does not work
-            lPart        = spiTr.readRegister(Registers::REG_OUT_Z);
-            hPart        = spiTr.readRegister(Registers::REG_OUT_Z + 1);
+            lPart        = spiTr.readRegister(Registers::REG_OUT_Z_L);
+            hPart        = spiTr.readRegister(Registers::REG_OUT_Z_H);
             int16_t zInt = static_cast<int16_t>(lPart | (hPart << 8));
+            // int16_t zInt = static_cast<int16_t>(
+            //    spiTr.readRegister16(Registers::REG_OUT_Z));
             float zFloat = static_cast<float>(zInt >> 4);
             z            = zFloat * sensitivity;
         }
