@@ -21,6 +21,8 @@
  */
 
 #pragma once
+
+#include <diagnostic/PrintLogger.h>
 #include <drivers/spi/SPIDriver.h>
 #include <drivers/timer/TimestampTimer.h>
 #include <miosix.h>
@@ -30,6 +32,7 @@
 
 namespace Boardcore
 {
+
 /**
  * Driver for H3LIS331DL, a 3-Axis, high g Accelerometer Sensor made by
  * STMicroelectronics.
@@ -233,6 +236,8 @@ private:
      * Note: This is only changed by init, read by init and sampleImpl.
      */
     bool initialized;
+
+    PrintLogger logger = Logging::getLogger("h3lis331dl");
 };
 
 }  // namespace Boardcore
