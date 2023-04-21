@@ -35,8 +35,7 @@ struct H3LIS331DLData : public AccelerometerData
     H3LIS331DLData(uint64_t ts, float aX, float aY, float aZ)
         : AccelerometerData(ts, aX, aY, aZ){};
 
-    H3LIS331DLData(AccelerometerData acc) : AccelerometerData(acc){};
-<<<<<<< HEAD
+    explicit H3LIS331DLData(AccelerometerData acc) : AccelerometerData(acc){};
 
     static std::string header()
     {
@@ -48,8 +47,6 @@ struct H3LIS331DLData : public AccelerometerData
         os << accelerationTimestamp << "," << accelerationX << ","
            << accelerationY << "," << accelerationZ << "\n";
     }
-=======
->>>>>>> edfa2fc4 ([Drivers] Updated driver logic & fixed bugs)
 };
 
 }  // namespace Boardcore
