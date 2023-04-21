@@ -22,8 +22,6 @@
 
 #include "H3LIS331DL.h"
 
-#include <utils/Debug.h>
-
 namespace Boardcore
 {
 
@@ -58,10 +56,10 @@ bool H3LIS331DL::init()
     if (whoami != WHO_AM_I_ID)
     {
         lastError = SensorErrors::INVALID_WHOAMI;
-        TRACE(
-            "[H3LIS331DL] Failed init. Cause: INVALID_WHOAMI. Expected Value: "
-            "0x%02x. Actual Value: 0x%02x\n",
-            WHO_AM_I_ID, whoami);
+        LOG_ERR(logger,
+                "Failed init. Cause: INVALID_WHOAMI. Expected Value: "
+                "{:X}. Actual Value: {:X}\n",
+                WHO_AM_I_ID, whoami);
         return false;
     }
 
@@ -79,10 +77,10 @@ bool H3LIS331DL::init()
 
         initialized &= ctrlReg1 == spiTr.readRegister(Registers::REG_CTRL_REG1);
 
-        TRACE(
-            "[H3LIS331DL] Control Register 1 After init: 0x%02x, expected "
-            "value: 0x%02x\n",
-            spiTr.readRegister(Registers::REG_CTRL_REG1), ctrlReg1);
+        LOG_DEBUG(logger,
+                  "Control Register 1 After init: {:X}, expected "
+                  "value:{:X}\n",
+                  spiTr.readRegister(Registers::REG_CTRL_REG1), ctrlReg1);
     }
 
     {
@@ -96,10 +94,10 @@ bool H3LIS331DL::init()
         spiTr.writeRegister(Registers::REG_CTRL_REG4, ctrlReg4);
 
         initialized &= ctrlReg4 == spiTr.readRegister(Registers::REG_CTRL_REG4);
-        TRACE(
-            "[H3LIS331DL] Control Register 4 After init: 0x%02x, expected "
-            "value: 0x%02x\n",
-            spiTr.readRegister(Registers::REG_CTRL_REG4), ctrlReg4);
+        LOG_DEBUG(logger,
+                  "Control Register 4 After init: {:X}, expected "
+                  "value: {:X}\n",
+                  spiTr.readRegister(Registers::REG_CTRL_REG4), ctrlReg4);
     }
 
     return initialized;
@@ -149,7 +147,8 @@ H3LIS331DLData H3LIS331DL::sampleImpl()
                       STATUS_REG_XYZOR))
         {
 
-            // NOTE: Reading multiple bits with readRegisters does not work
+            // NOTE: Reading multiple bits with readRegisters or readRegister16
+            // does not work
             lPart = spiTr.readRegister(Registers::REG_OUT_X_L);
             hPart = spiTr.readRegister(Registers::REG_OUT_X_H);
 
@@ -174,7 +173,8 @@ H3LIS331DLData H3LIS331DL::sampleImpl()
         if (status & (STATUS_REG_YDR | STATUS_REG_XYZDR | STATUS_REG_YOR |
                       STATUS_REG_XYZOR))
         {
-            // NOTE: Reading multiple bits with readRegisters does not work
+            // NOTE: Reading multiple bits with readRegisters or readRegister16
+            // does not work
             lPart        = spiTr.readRegister(Registers::REG_OUT_Y_L);
             hPart        = spiTr.readRegister(Registers::REG_OUT_Y_H);
             int16_t yInt = static_cast<int16_t>(lPart | (hPart << 8));
@@ -193,7 +193,8 @@ H3LIS331DLData H3LIS331DL::sampleImpl()
         if (status & (STATUS_REG_ZDR | STATUS_REG_XYZDR | STATUS_REG_ZOR |
                       STATUS_REG_XYZOR))
         {
-            // NOTE: Reading multiple bits with readRegisters does not work
+            // NOTE: Reading multiple bits with readRegisters or readRegister16
+            // does not work
             lPart        = spiTr.readRegister(Registers::REG_OUT_Z_L);
             hPart        = spiTr.readRegister(Registers::REG_OUT_Z_H);
             int16_t zInt = static_cast<int16_t>(lPart | (hPart << 8));
