@@ -40,25 +40,20 @@ static const int N_SCL_BITBANG =
     16;  ///< Number of clocks created for slave locked bus recovery
 static const uint8_t I2C_PIN_ALTERNATE_FUNCTION =
     4;  ///< Alternate Function number of the I2C peripheral pins
-
-static uint8_t PRESC_STD;   ///< PRESC for STANDARD speed
-static uint8_t SCLH_STD;    ///< SCLH for STANDARD speed
-static uint8_t SCLL_STD;    ///< SCLL for STANDARD speed
-static uint8_t SCLDEL_STD;  ///< SCLDEL for STANDARD speed
-static uint8_t SDADEL_STD;  ///< SDADEL for STANDARD speed
-
-static uint8_t PRESC_F;   ///< PRESC for FAST speed
-static uint8_t SCLH_F;    ///< SCLH for FAST speed
-static uint8_t SCLL_F;    ///< SCLL for FAST speed
-static uint8_t SCLDEL_F;  ///< SCLDEL for FAST speed
-static uint8_t SDADEL_F;  ///< SDADEL for FAST speed
-
-static uint8_t PRESC_FP;   ///< PRESC for FAST PLUS speed
-static uint8_t SCLH_FP;    ///< SCLH for FAST PLUS speed
-static uint8_t SCLL_FP;    ///< SCLL for FAST PLUS speed
-static uint8_t SCLDEL_FP;  ///< SCLDEL for FAST PLUS speed
-static uint8_t SDADEL_FP;  ///< SDADEL for FAST PLUS speed
 }  // namespace I2CConsts
+
+/**
+ * @brief Struct that collects all the timing parameters for the clock
+ * generation.
+ */
+typedef struct
+{
+    uint8_t presc;   ///< Timing prescaler
+    uint8_t sclh;    ///< SCL high period
+    uint8_t scll;    ///< SCL low period
+    uint8_t scldel;  ///< Data setup time
+    uint8_t sdadel;  ///< Data hold time
+} I2CTimings;
 
 /**
  * @brief Helper function for calculating the timing parameters for the
@@ -66,17 +61,13 @@ static uint8_t SDADEL_FP;  ///< SDADEL for FAST PLUS speed
  *
  * The formula for the clock is:
  * t_SCL = [(SCLL + 1) + (SCLH + 1)] * (PRESC + 1) * t_I2CCLK + t_sync
- * @param f Peripheral timer clock frequency in kHz
- * @param fi2c I2C clock frequency in kHz
- * @param presc pointer to the prescaler variable to set
- * @param sclh pointer to the sclh variable to set
- * @param scll pointer to the scll variable to set
- * @param scldel pointer to the scldel variable to set
- * @param sdadel pointer to the sdadel variable to set
+ * @param f Peripheral timer clock frequency in kHz.
+ * @param fi2c I2C clock frequency in kHz.
+ * @return Struct with the timings for the wanted i2c frequency.
  */
-void calculateTimings(uint32_t f, uint32_t fi2c, uint8_t *presc, uint8_t *sclh,
-                      uint8_t *scll, uint8_t *scldel, uint8_t *sdadel)
+I2CTimings calculateTimings(uint32_t f, uint32_t fi2c)
 {
+    I2CTimings i2cTimings;
     // calculating the "smallest" prescaler so that we can handle in a more
     // refined way (with SCLL and SCLH) the length of high and low phases. We
     // "limit" SCLL and SCLH to 64 because like so we can have acceptable values
@@ -86,21 +77,23 @@ void calculateTimings(uint32_t f, uint32_t fi2c, uint8_t *presc, uint8_t *sclh,
     // presc is 4 bit long, so avoiding overflow
     if (temp_presc >= 16)
     {
-        *presc = 15;
+        i2cTimings.presc = 15;
     }
     else if (temp_presc == 0)
     {
-        *presc = 0;
+        i2cTimings.presc = 0;
     }
     else
     {
-        *presc = temp_presc - 1;
+        i2cTimings.presc = temp_presc - 1;
     }
 
     // calculating SCLL and SCLH in order to have duty cycle of 50%. Also,
     // correcting for the 250ns delay of the peripheral (250ns = 12 I2C clocks)
     // distributing the correction on SCLL and SCLH
-    *sclh = *scll = (f / (fi2c * 2 * (*presc + 1)) - 1) - (7 / (*presc + 1));
+    i2cTimings.sclh = i2cTimings.scll =
+        (f / (fi2c * 2 * (i2cTimings.presc + 1)) - 1) -
+        (7 / (i2cTimings.presc + 1));
 
     // SCLDEL >= (t_r + t_su) / ((PRESC+1)*t_i2c) - 1 ; approximated without
     // subtracting 1. scldly and sdadly are calculated using values taken from
@@ -108,25 +101,63 @@ void calculateTimings(uint32_t f, uint32_t fi2c, uint8_t *presc, uint8_t *sclh,
     uint32_t scldly = 0, sdadly = 0;
     if (fi2c == 100)
     {
-        scldly = 1250 * f / (*presc + 1) / 1000000;
-        sdadly = (3450 - 1000 - 260) * f / (*presc + 1) / 1000000;
+        scldly = 1250 * f / (i2cTimings.presc + 1) / 1000000;
+        sdadly = (3450 - 1000 - 260) * f / (i2cTimings.presc + 1) / 1000000;
     }
     else if (fi2c == 400)
     {
-        scldly = 400 * f / (*presc + 1) / 1000000;
-        sdadly = (900 - 300 - 260) * f / (*presc + 1) / 1000000;
+        scldly = 400 * f / (i2cTimings.presc + 1) / 1000000;
+        sdadly = (900 - 300 - 260) * f / (i2cTimings.presc + 1) / 1000000;
     }
     else if (fi2c == 1000)
     {
-        scldly = 170 * f / (*presc + 1) / 1000000;
-        sdadly = (450 - 120 - 260) * f / (*presc + 1) / 1000000;
+        scldly = 170 * f / (i2cTimings.presc + 1) / 1000000;
+        sdadly = (450 - 120 - 260) * f / (i2cTimings.presc + 1) / 1000000;
     }
 
     // max value of scldel is 15
-    *scldel = ((scldly < 16) ? (scldly - 1) : 15);
+    i2cTimings.scldel = ((scldly < 16) ? (scldly - 1) : 15);
 
     // max value of sdadel is 15
-    *sdadel = ((sdadly < 16) ? (sdadly - 1) : 15);
+    i2cTimings.sdadel = ((sdadly < 16) ? (sdadly - 1) : 15);
+
+    return i2cTimings;
+}
+
+/**
+ * @brief Used to get the timing parameters for each speed mode. If the speed
+ * mode isn't supported, communication in release mode will take place with
+ * minimum speed (standard mode).
+ * @param speed Speed mode for which we want the timing parameters.
+ * @return The struct with the timing parameters for the speed mode passed.
+ */
+const I2CTimings &getTimings(Boardcore::I2CDriver::Speed speed)
+{
+    // Retrieving the frequency of the APB relative to the I2C peripheral
+    // [kHz] (I2C peripherals are always connected to APB1, Low speed bus). In
+    // fact by default the I2C peripheral is clocked by the APB1 bus; anyway HSI
+    // and SYSCLK can be chosen.
+    static const uint32_t f = Boardcore::ClockUtils::getAPBPeripheralsClock(
+                                  Boardcore::ClockUtils::APB::APB1) /
+                              1000;
+    static const I2CTimings i2cTimingsStd      = calculateTimings(f, 100);
+    static const I2CTimings i2cTimingsFast     = calculateTimings(f, 400);
+    static const I2CTimings i2cTimingsFastPlus = calculateTimings(f, 1000);
+
+    // Calculating for all the speed modes the clock parameters (so we won't
+    // have to calculate them again for every transaction)
+    switch (speed)
+    {
+        case Boardcore::I2CDriver::Speed::STANDARD:;
+            return i2cTimingsStd;
+        case Boardcore::I2CDriver::Speed::FAST:
+            return i2cTimingsFast;
+        case Boardcore::I2CDriver::Speed::FAST_PLUS:
+            return i2cTimingsFastPlus;
+        default:
+            D(assert(false && "Speed mode not supported!"));
+            return i2cTimingsStd;
+    }
 }
 
 #ifdef I2C1
@@ -413,30 +444,6 @@ void I2CDriver::init()
     // bit resets the peripheral)
     i2c->CR1 = 0;
 
-    // Retrieving the frequency of the APB relative to the I2C peripheral
-    // [kHz] (I2C peripherals are always connected to APB1, Low speed bus). In
-    // fact by default the I2C peripheral is clocked by the APB1 bus; anyway HSI
-    // and SYSCLK can be chosen.
-    uint32_t f =
-        ClockUtils::getAPBPeripheralsClock(ClockUtils::APB::APB1) / 1000;
-
-    // Calculating for all the speed modes the clock parameters (so we won't
-    // have to calculate them again for every transaction)
-    // Standard mode (100 kHz)
-    calculateTimings(f, 100, &I2CConsts::PRESC_STD, &I2CConsts::SCLH_STD,
-                     &I2CConsts::SCLL_STD, &I2CConsts::SCLDEL_STD,
-                     &I2CConsts::SDADEL_STD);
-
-    // Fast mode (400 kHz)
-    calculateTimings(f, 400, &I2CConsts::PRESC_F, &I2CConsts::SCLH_F,
-                     &I2CConsts::SCLL_F, &I2CConsts::SCLDEL_F,
-                     &I2CConsts::SDADEL_F);
-
-    // Fast mode plus (1000 kHz)
-    calculateTimings(f, 1000, &I2CConsts::PRESC_FP, &I2CConsts::SCLH_FP,
-                     &I2CConsts::SCLL_FP, &I2CConsts::SCLDEL_FP,
-                     &I2CConsts::SDADEL_FP);
-
     // Enabling the peripheral after initialization
     i2c->CR1 |= I2C_CR1_PE;
 }
@@ -566,39 +573,15 @@ void I2CDriver::setupPeripheral(const I2CSlaveConfig &slaveConfig)
     // state machines and flags in order to start with a clear environment
     i2c->CR1 &= ~I2C_CR1_PE;
 
+    const auto i2cTimings = getTimings(slaveConfig.speed);
+
     // Setting PRESC, SCLH, SCLL, SCLDEL and SDADEL bits in I2C_TIMINGR register
     // to generate correct timings for each speed mode
-    if (slaveConfig.speed == Speed::STANDARD)
-    {
-        i2c->TIMINGR =
-            (I2CConsts::PRESC_STD << I2C_TIMINGR_PRESC_Pos) |    // PRESC
-            (I2CConsts::SCLL_STD << I2C_TIMINGR_SCLL_Pos) |      // SCLL
-            (I2CConsts::SCLH_STD << I2C_TIMINGR_SCLH_Pos) |      // SCLH
-            (I2CConsts::SCLDEL_STD << I2C_TIMINGR_SCLDEL_Pos) |  // SCLDEL
-            (I2CConsts::SDADEL_STD << I2C_TIMINGR_SDADEL_Pos);   // SDADEL
-    }
-    else if (slaveConfig.speed == Speed::FAST)
-    {
-        i2c->TIMINGR =
-            (I2CConsts::PRESC_F << I2C_TIMINGR_PRESC_Pos) |    // PRESC
-            (I2CConsts::SCLL_F << I2C_TIMINGR_SCLL_Pos) |      // SCLL
-            (I2CConsts::SCLH_F << I2C_TIMINGR_SCLH_Pos) |      // SCLH
-            (I2CConsts::SCLDEL_F << I2C_TIMINGR_SCLDEL_Pos) |  // SCLDEL
-            (I2CConsts::SDADEL_F << I2C_TIMINGR_SDADEL_Pos);   // SDADEL
-    }
-    else if (slaveConfig.speed == Speed::FAST_PLUS)
-    {
-        i2c->TIMINGR =
-            (I2CConsts::PRESC_FP << I2C_TIMINGR_PRESC_Pos) |    // PRESC
-            (I2CConsts::SCLL_FP << I2C_TIMINGR_SCLL_Pos) |      // SCLL
-            (I2CConsts::SCLH_FP << I2C_TIMINGR_SCLH_Pos) |      // SCLH
-            (I2CConsts::SCLDEL_FP << I2C_TIMINGR_SCLDEL_Pos) |  // SCLDEL
-            (I2CConsts::SDADEL_FP << I2C_TIMINGR_SDADEL_Pos);   // SDADEL
-    }
-    else
-    {
-        D(assert(false && "speed not supported"));
-    }
+    i2c->TIMINGR = (i2cTimings.presc << I2C_TIMINGR_PRESC_Pos) |    // PRESC
+                   (i2cTimings.scll << I2C_TIMINGR_SCLL_Pos) |      // SCLL
+                   (i2cTimings.sclh << I2C_TIMINGR_SCLH_Pos) |      // SCLH
+                   (i2cTimings.scldel << I2C_TIMINGR_SCLDEL_Pos) |  // SCLDEL
+                   (i2cTimings.sdadel << I2C_TIMINGR_SDADEL_Pos);   // SDADEL
 
     // setting addressing mode and slave address (for 7-Bit addressing the 7
     // bits have to be set on SADD[7:1])
