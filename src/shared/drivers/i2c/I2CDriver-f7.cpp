@@ -444,6 +444,9 @@ void I2CDriver::init()
     // bit resets the peripheral)
     i2c->CR1 = 0;
 
+    // Calling getTimings so that all his static variables are initialized
+    getTimings(I2CDriver::Speed::STANDARD);
+
     // Enabling the peripheral after initialization
     i2c->CR1 |= I2C_CR1_PE;
 }
