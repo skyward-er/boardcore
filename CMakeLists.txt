@@ -392,6 +392,15 @@ sbs_target(test-vn100 stm32f407vg_stm32f4discovery)
 add_executable(test-lis2mdl src/tests/sensors/test-lis2mdl.cpp)
 sbs_target(test-lis2mdl stm32f429zi_stm32f4discovery)
 
+#-----------------------------------------------------------------------------#
+#                                Tests - Utils                                #
+#-----------------------------------------------------------------------------#
+
+add_executable(test-threadtimedwait src/tests/timedwait/test-threadtimedwait.cpp)
+sbs_target(test-threadtimedwait stm32f407vg_stm32f4discovery)
+
+add_executable(test-condtimedwait src/tests/timedwait/test-condtimedwait.cpp)
+sbs_target(test-condtimedwait stm32f407vg_stm32f4discovery)
 
 #-----------------------------------------------------------------------------#
 #                                Tests - Utils                                #
