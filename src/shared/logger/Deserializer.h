@@ -30,6 +30,7 @@
 #include <iostream>
 #include <limits>
 #include <ostream>
+#include <regex>
 #include <string>
 #include <vector>
 
@@ -130,8 +131,13 @@ void Deserializer::registerType()
 template <typename T>
 void Deserializer::printType(T& t, std::string path, std::string prefix)
 {
-    std::string demangledTypeName = tscpp::demangle(typeid(T).name());
     static std::ofstream* stream;
+    std::string demangledTypeName = tscpp::demangle(typeid(T).name());
+
+    // Replace the :: with the _ in order to make the format string cross
+    // platform compatible
+    demangledTypeName =
+        std::regex_replace(demangledTypeName, std::regex("::"), "_");
 
     try
     {
