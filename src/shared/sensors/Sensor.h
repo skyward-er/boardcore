@@ -139,7 +139,7 @@ public:
     /**
      * @return number of elements in the last FIFO sampled from the sensor
      */
-    uint8_t getLastFifoSize() const { return lastFifoLevel; }
+    uint16_t getLastFifoSize() const { return lastFifoLevel; }
 
     /**
      * @brief Called by the interrupt handling routine: provides the timestamp
