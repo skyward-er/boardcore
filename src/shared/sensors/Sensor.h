@@ -116,7 +116,7 @@ class SensorFIFO : public Sensor<Data>
 {
 protected:
     std::array<Data, FifoSize> lastFifo;
-    uint8_t lastFifoLevel = 1;  ///< number of samples in lastFifo
+    uint16_t lastFifoLevel = 1;  ///< number of samples in lastFifo
 
     uint64_t lastInterruptTimestamp = 0;
     uint64_t interruptTimestampDelta =
