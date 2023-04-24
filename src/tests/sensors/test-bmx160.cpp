@@ -103,9 +103,9 @@ int main()
         printf("Fill: %d\n", sensor->getLastFifoSize());
 
         printf("----------------------------\n");
-        uint8_t len = std::min(sensor->getLastFifoSize(), (uint8_t)5);
+        uint16_t len = std::min(sensor->getLastFifoSize(), (uint16_t)5);
 
-        for (uint8_t i = 0; i < len; i++)
+        for (uint16_t i = 0; i < len; i++)
         {
             BMX160Data data = sensor->getFifoElement(i);
             printf("Mag [%.4f s]:\t%.2f\t%.2f\t%.2f\n",
