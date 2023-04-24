@@ -116,7 +116,7 @@ class SensorFIFO : public Sensor<Data>
 {
 protected:
     std::array<Data, FifoSize> lastFifo;
-    uint8_t lastFifoLevel = 1;  ///< number of samples in lastFifo
+    uint16_t lastFifoLevel = 1;  ///< number of samples in lastFifo
 
     uint64_t lastInterruptTimestamp = 0;
     uint64_t interruptTimestampDelta =
@@ -139,7 +139,7 @@ public:
     /**
      * @return number of elements in the last FIFO sampled from the sensor
      */
-    uint8_t getLastFifoSize() const { return lastFifoLevel; }
+    uint16_t getLastFifoSize() const { return lastFifoLevel; }
 
     /**
      * @brief Called by the interrupt handling routine: provides the timestamp
