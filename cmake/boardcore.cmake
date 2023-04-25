@@ -46,19 +46,18 @@ foreach(OPT_BOARD ${BOARDS})
         ${SBS_BASE}/src/shared/diagnostic/CpuMeter/CpuMeter.cpp
         ${SBS_BASE}/src/shared/diagnostic/PrintLogger.cpp
 
-        # Drivers
-        ${SBS_BASE}/src/shared/drivers/AD5204/AD5204.cpp
-        ${SBS_BASE}/src/shared/drivers/adc/InternalADC.cpp
-        ${SBS_BASE}/src/shared/drivers/canbus/CanDriver/CanDriver.cpp
-        ${SBS_BASE}/src/shared/drivers/canbus/CanDriver/CanInterrupt.cpp
-        ${SBS_BASE}/src/shared/drivers/canbus/CanProtocol/CanProtocol.cpp
-        ${SBS_BASE}/src/shared/drivers/interrupt/external_interrupts.cpp
-        ${SBS_BASE}/src/shared/drivers/timer/PWM.cpp
-        ${SBS_BASE}/src/shared/drivers/timer/CountedPWM.cpp
-        ${SBS_BASE}/src/shared/drivers/timer/TimestampTimer.cpp
-        ${SBS_BASE}/src/shared/drivers/runcam/Runcam.cpp
-        ${SBS_BASE}/src/shared/drivers/spi/SPITransaction.cpp
-        ${SBS_BASE}/src/shared/drivers/usart/USART.cpp
+        # # Drivers
+        # ${SBS_BASE}/src/shared/drivers/AD5204/AD5204.cpp
+        # ${SBS_BASE}/src/shared/drivers/adc/InternalADC.cpp
+        # ${SBS_BASE}/src/shared/drivers/canbus/CanDriver/CanDriver.cpp
+        # ${SBS_BASE}/src/shared/drivers/canbus/CanDriver/CanInterrupt.cpp
+        # ${SBS_BASE}/src/shared/drivers/canbus/CanProtocol/CanProtocol.cpp
+        # ${SBS_BASE}/src/shared/drivers/interrupt/external_interrupts.cpp
+        # ${SBS_BASE}/src/shared/drivers/timer/PWM.cpp
+        # ${SBS_BASE}/src/shared/drivers/timer/TimestampTimer.cpp
+        # ${SBS_BASE}/src/shared/drivers/runcam/Runcam.cpp
+        # ${SBS_BASE}/src/shared/drivers/spi/SPITransaction.cpp
+        # ${SBS_BASE}/src/shared/drivers/usart/USART.cpp
         ${SBS_BASE}/src/shared/drivers/i2c/I2CDriver-f4.cpp
         ${SBS_BASE}/src/shared/drivers/i2c/I2CDriver-f7.cpp
         ${SBS_BASE}/src/shared/drivers/i2c/I2C.cpp
@@ -69,47 +68,39 @@ foreach(OPT_BOARD ${BOARDS})
         # Logger
         ${SBS_BASE}/src/shared/logger/Logger.cpp
 
-        # Radio
-        ${SBS_BASE}/src/shared/radio/gamma868/Gamma868.cpp
-        ${SBS_BASE}/src/shared/radio/Xbee/APIFrameParser.cpp
-        ${SBS_BASE}/src/shared/radio/Xbee/Xbee.cpp
-        ${SBS_BASE}/src/shared/radio/SX1278/SX1278Fsk.cpp
-        ${SBS_BASE}/src/shared/radio/SX1278/SX1278Lora.cpp
-        ${SBS_BASE}/src/shared/radio/SX1278/SX1278Common.cpp
-        ${SBS_BASE}/src/shared/radio/SX1278/Ebyte.cpp
+        # # Radio
+        # ${SBS_BASE}/src/shared/radio/gamma868/Gamma868.cpp
+        # ${SBS_BASE}/src/shared/radio/Xbee/APIFrameParser.cpp
+        # ${SBS_BASE}/src/shared/radio/Xbee/Xbee.cpp
+        # ${SBS_BASE}/src/shared/radio/SX1278/SX1278Fsk.cpp
+        # ${SBS_BASE}/src/shared/radio/SX1278/SX1278Lora.cpp
+        # ${SBS_BASE}/src/shared/radio/SX1278/SX1278Common.cpp
+        # ${SBS_BASE}/src/shared/radio/SX1278/Ebyte.cpp
 
         # Scheduler
         ${SBS_BASE}/src/shared/scheduler/TaskScheduler.cpp
 
-        # Sensors
-        ${SBS_BASE}/src/shared/sensors/ADS1118/ADS1118.cpp
-        ${SBS_BASE}/src/shared/sensors/ADS131M04/ADS131M04.cpp
-        ${SBS_BASE}/src/shared/sensors/BME280/BME280.cpp
-        ${SBS_BASE}/src/shared/sensors/BME280/BME280I2C.cpp
-        ${SBS_BASE}/src/shared/sensors/BMP280/BMP280.cpp
-        ${SBS_BASE}/src/shared/sensors/BMP280/BMP280I2C.cpp
-        ${SBS_BASE}/src/shared/sensors/BMX160/BMX160.cpp
-        ${SBS_BASE}/src/shared/sensors/BMX160/BMX160WithCorrection.cpp
-        ${SBS_BASE}/src/shared/sensors/H3LIS331DL/H3LIS331DL.cpp
-        ${SBS_BASE}/src/shared/sensors/HX711/HX711.cpp
-        ${SBS_BASE}/src/shared/sensors/LIS3MDL/LIS3MDL.cpp
-        ${SBS_BASE}/src/shared/sensors/LIS331HH/LIS331HH.cpp
-        ${SBS_BASE}/src/shared/sensors/LPS331AP/LPS331AP.cpp
-        ${SBS_BASE}/src/shared/sensors/MAX6675/MAX6675.cpp
-        ${SBS_BASE}/src/shared/sensors/MAX31855/MAX31855.cpp
-        ${SBS_BASE}/src/shared/sensors/MAX31856/MAX31856.cpp
-        ${SBS_BASE}/src/shared/sensors/MBLoadCell/MBLoadCell.cpp
-        ${SBS_BASE}/src/shared/sensors/MPU9250/MPU9250.cpp
-        ${SBS_BASE}/src/shared/sensors/MS5803/MS5803.cpp
-        ${SBS_BASE}/src/shared/sensors/MS5803/MS5803I2C.cpp
-        ${SBS_BASE}/src/shared/sensors/SensorManager.cpp
-        ${SBS_BASE}/src/shared/sensors/SensorSampler.cpp
-        ${SBS_BASE}/src/shared/sensors/UBXGPS/UBXGPSSerial.cpp
-        ${SBS_BASE}/src/shared/sensors/UBXGPS/UBXGPSSpi.cpp
-        ${SBS_BASE}/src/shared/sensors/VN100/VN100.cpp
-        ${SBS_BASE}/src/shared/sensors/LIS2MDL/LIS2MDL.cpp
-        ${SBS_BASE}/src/shared/sensors/LPS28DFW/LPS28DFW.cpp
-        ${SBS_BASE}/src/shared/sensors/LPS22DF/LPS22DF.cpp
+        # # Sensors
+        # ${SBS_BASE}/src/shared/sensors/ADS1118/ADS1118.cpp
+        # ${SBS_BASE}/src/shared/sensors/ADS131M04/ADS131M04.cpp
+        # ${SBS_BASE}/src/shared/sensors/BME280/BME280.cpp
+        # ${SBS_BASE}/src/shared/sensors/BMP280/BMP280.cpp
+        # ${SBS_BASE}/src/shared/sensors/BMX160/BMX160.cpp
+        # ${SBS_BASE}/src/shared/sensors/BMX160/BMX160WithCorrection.cpp
+        # ${SBS_BASE}/src/shared/sensors/HX711/HX711.cpp
+        # ${SBS_BASE}/src/shared/sensors/LIS3MDL/LIS3MDL.cpp
+        # ${SBS_BASE}/src/shared/sensors/LIS331HH/LIS331HH.cpp
+        # ${SBS_BASE}/src/shared/sensors/MAX6675/MAX6675.cpp
+        # ${SBS_BASE}/src/shared/sensors/MAX31855/MAX31855.cpp
+        # ${SBS_BASE}/src/shared/sensors/MBLoadCell/MBLoadCell.cpp
+        # ${SBS_BASE}/src/shared/sensors/MPU9250/MPU9250.cpp
+        # ${SBS_BASE}/src/shared/sensors/MS5803/MS5803.cpp
+        # ${SBS_BASE}/src/shared/sensors/SensorManager.cpp
+        # ${SBS_BASE}/src/shared/sensors/SensorSampler.cpp
+        # ${SBS_BASE}/src/shared/sensors/UBXGPS/UBXGPSSerial.cpp
+        # ${SBS_BASE}/src/shared/sensors/UBXGPS/UBXGPSSpi.cpp
+        # ${SBS_BASE}/src/shared/sensors/VN100/VN100.cpp
+        # ${SBS_BASE}/src/shared/sensors/LIS2MDL/LIS2MDL.cpp
 
         # Calibration
         ${SBS_BASE}/src/shared/sensors/calibration/BiasCalibration/BiasCalibration.cpp

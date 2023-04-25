@@ -252,7 +252,9 @@ inline void GeneralPurposeTimer<T>::reset()
     timer->CCR4  = 0;
     timer->DCR   = 0;
     timer->DMAR  = 0;
-    timer->OR    = 0;
+#ifndef _ARCH_CORTEXM4_STM32L4
+    timer->OR = 0;
+#endif
 }
 
 template <typename T>

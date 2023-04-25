@@ -317,6 +317,27 @@
             ]
         },
         {
+            "name": "stm32l4r9zi_sensortile",
+            "cStandard": "c11",
+            "cppStandard": "c++14",
+            "compilerPath": "/opt/arm-miosix-eabi/bin/arm-miosix-eabi-g++",
+            "defines": [
+                "{defaultDefines}",
+                "_MIOSIX_BOARDNAME=stm32l4r9zi_sensortile",
+                "_BOARD_STM32L4R9ZI_SENSORTILE",
+                "_ARCH_CORTEXM4_STM32L4",
+                "STM32L4R9xx",
+                "SYSCLK_FREQ_48MHz=48000000",
+                "V_DDA_VOLTAGE=3.3f"
+            ],
+            "includePath": [
+                "${defaultIncludePaths}",
+                "${workspaceFolder}/libs/miosix-kernel/miosix/arch/cortexM4_stm32l4/common",
+                "${workspaceFolder}/libs/miosix-kernel/miosix/arch/cortexM4_stm32l4/stm32l4r9zi_sensortile",
+                "${workspaceFolder}/libs/miosix-kernel/miosix/config/arch/cortexM4_stm32l4/stm32l4r9zi_sensortile"
+            ]
+        },
+        {
             "name": "stm32f767zi_compute_unit",
             "cStandard": "c11",
             "cppStandard": "c++14",

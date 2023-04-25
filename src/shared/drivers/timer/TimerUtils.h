@@ -373,8 +373,17 @@ inline ClockUtils::APB TimerUtils::getTimerInputClock(const TIM_TypeDef *timer)
     // APB1: TIM2-7,12-15
     // APB2: TIM1,8-11
     // TODO: Add support for F103
-    if (timer == TIM1 || timer == TIM8 || timer == TIM9 || timer == TIM10 ||
-        timer == TIM11)
+    if (timer == TIM1 || timer == TIM8
+#ifdef TIM9
+        || timer == TIM9
+#endif
+#ifdef TIM10
+        || timer == TIM10
+#endif
+#ifdef TIM11
+        || timer == TIM11
+#endif
+    )
     {
         return ClockUtils::APB::APB2;
     }

@@ -65,6 +65,9 @@ add_executable(sx1278lora-serial src/entrypoints/sx1278-serial.cpp)
 target_compile_definitions(sx1278lora-serial PRIVATE SX1278_IS_LORA)
 sbs_target(sx1278lora-serial stm32f429zi_skyward_groundstation_v2)
 
+add_executable(sensortile-entry src/entrypoints/sensortile-entry.cpp)
+sbs_target(sensortile-entry stm32l4r9zi_sensortile)
+
 #-----------------------------------------------------------------------------#
 #                                    Tests                                    #
 #-----------------------------------------------------------------------------#

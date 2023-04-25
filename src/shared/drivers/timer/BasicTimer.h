@@ -231,18 +231,30 @@ inline uint8_t BasicTimer::getTimerNumber()
         return 7;
     else if (timer == TIM8)
         return 8;
+#ifdef TIM9
     else if (timer == TIM9)
         return 9;
+#endif
+#ifdef TIM10
     else if (timer == TIM10)
         return 10;
+#endif
+#ifdef TIM11
     else if (timer == TIM11)
         return 11;
+#endif
+#ifdef TIM12
     else if (timer == TIM12)
         return 12;
+#endif
+#ifdef TIM13
     else if (timer == TIM13)
         return 13;
+#endif
+#ifdef TIM14
     else if (timer == TIM14)
         return 14;
+#endif
     else
         return 0;
 }
