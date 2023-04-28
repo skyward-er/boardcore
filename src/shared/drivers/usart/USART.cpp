@@ -268,77 +268,6 @@ namespace Boardcore
 USARTInterface::USARTInterface(USARTType *usart, int baudrate)
     : usart(usart), baudrate(baudrate)
 {
-}
-
-USARTInterface::~USARTInterface() {}
-
-void USART::IRQhandleInterrupt()
-{
-    char c;
-
-#ifndef _ARCH_CORTEXM7_STM32F7
-    // If read data register is empty then read data
-    if (usart->SR & USART_SR_RXNE)
-    {
-        // Always read data, since this clears interrupt flags
-        c = usart->DR;
-        // If no error put data in buffer
-        if (!(usart->SR & USART_SR_FE))
-            if (rxQueue.tryPut(c) == false)  // FIFO overflow
-                ;
-
-        idle = false;
-    }
-
-    if (usart->SR & USART_SR_IDLE)
-        idle = true;
-
-    // Wake up thread if communication finished (idle state) or buffer reached
-    // half of his capacity
-    if (idle || (rxQueue.size() >= rxQueue.capacity() / 2))
-    {
-        c = usart->DR;  // Clears interrupt flags
-
-        if (rxWaiting)
-        {
-            rxWaiting->IRQwakeup();
-            rxWaiting = nullptr;
-        }
-    }
-#else
-    // If read data register is empty then read data
-    if (usart->ISR & USART_ISR_RXNE)
-    {
-        // Always read data
-        c = usart->RDR;
-        // If no error put data in buffer
-        if (!(usart->ISR & USART_ISR_FE))
-            if (rxQueue.tryPut(c) == false)  // FIFO overflow
-                ;
-
-        idle = false;
-    }
-
-    if (usart->ISR & USART_ISR_IDLE)
-        idle = true;
-
-    if (usart->ISR & USART_ISR_IDLE || rxQueue.size() >= rxQueue.capacity() / 2)
-    {
-        usart->ICR = USART_ICR_IDLECF;  // Clears interrupt flags
-
-        // Enough data in buffer or idle line, awake thread
-        if (rxWaiting)
-        {
-            rxWaiting->IRQwakeup();
-            rxWaiting = 0;
-        }
-    }
-#endif
-}
-
-USART::USART(USARTType *usart, int baudrate, unsigned int queueLen)
-    : USARTInterface(usart, baudrate), rxQueue(queueLen)
-{
     // Setting the id of the serial port
     switch (reinterpret_cast<uint32_t>(usart))
     {
@@ -410,6 +339,7 @@ void USART::IRQhandleInterrupt()
 {
     char c;
 
+#ifndef _ARCH_CORTEXM7_STM32F7
     // If read data register is empty then read data
     if (usart->SR & USART_SR_RXNE)
     {
@@ -438,6 +368,35 @@ void USART::IRQhandleInterrupt()
             rxWaiting = nullptr;
         }
     }
+#else
+    // If read data register is empty then read data
+    if (usart->ISR & USART_ISR_RXNE)
+    {
+        // Always read data
+        c = usart->RDR;
+        // If no error put data in buffer
+        if (!(usart->ISR & USART_ISR_FE))
+            if (rxQueue.tryPut(c) == false)  // FIFO overflow
+                ;
+
+        idle = false;
+    }
+
+    if (usart->ISR & USART_ISR_IDLE)
+        idle = true;
+
+    if (idle || (rxQueue.size() >= rxQueue.capacity() / 2))
+    {
+        usart->ICR = USART_ICR_IDLECF;  // Clears interrupt flags
+
+        // Enough data in buffer or idle line, awake thread
+        if (rxWaiting)
+        {
+            rxWaiting->IRQwakeup();
+            rxWaiting = nullptr;
+        }
+    }
+#endif
 }
 
 USART::USART(USARTType *usart, int baudrate, unsigned int queueLen)
