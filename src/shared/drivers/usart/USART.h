@@ -274,6 +274,7 @@ private:
     WordLength wordLength = WordLength::BIT8;
     int stopBits          = 1;      ///< Number of stop bits [1,2]
     bool over8            = false;  ///< Oversalmpling 8 bit
+    bool error            = false;  ///< Error occurred while receiving message
 
     ///< Default queue length
     const static unsigned int usart_queue_default_capacity = 256;

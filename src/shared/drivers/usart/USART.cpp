@@ -338,57 +338,41 @@ USARTInterface::~USARTInterface() {}
 void USART::IRQhandleInterrupt()
 {
     char c;
+    bool received = false;
+    bool framingError;
 
 #ifndef _ARCH_CORTEXM7_STM32F7
     // If read data register is empty then read data
-    if (usart->SR & USART_SR_RXNE)
-    {
-        // Always read data, since this clears interrupt flags
-        c = usart->DR;
-        // If no error put data in buffer
-        if (!(usart->SR & USART_SR_FE))
-            if (rxQueue.tryPut(c) == false)  // FIFO overflow
-                ;
-
-        idle = false;
-    }
-
-    if (usart->SR & USART_SR_IDLE)
-        idle = true;
-
-    // Wake up thread if communication finished (idle state) or buffer reached
-    // half of his capacity
-    if (idle || (rxQueue.size() >= rxQueue.capacity() / 2))
-    {
-        c = usart->DR;  // Clears interrupt flags
-
-        if (rxWaiting)
-        {
-            rxWaiting->IRQwakeup();
-            rxWaiting = nullptr;
-        }
-    }
+    received = ((usart->SR & USART_SR_RXNE) == 0 ? false : true);
+    // If no error put data in buffer
+    framingError = ((usart->SR & USART_SR_FE) == 0 ? false : true);
+    idle         = ((usart->SR & USART_SR_IDLE) == 0 ? false : true);
+    // Always read data, since this clears interrupt flags
+    c = usart->DR;
 #else
     // If read data register is empty then read data
-    if (usart->ISR & USART_ISR_RXNE)
-    {
-        // Always read data
-        c = usart->RDR;
-        // If no error put data in buffer
-        if (!(usart->ISR & USART_ISR_FE))
-            if (rxQueue.tryPut(c) == false)  // FIFO overflow
-                ;
+    received = ((usart->ISR & USART_ISR_RXNE) == 0 ? false : true);
+    // If no error put data in buffer
+    framingError = ((usart->ISR & USART_ISR_FE) == 0 ? false : true);
+    idle         = ((usart->ISR & USART_ISR_IDLE) == 0 ? false : true);
+    // Clears interrupt flags
+    usart->ICR = USART_ICR_IDLECF;
+    // Always read data, since this clears interrupt flags
+    c = usart->RDR;
+#endif
 
-        idle = false;
+    // If we received some data without framing error but the tryPut failed,
+    // report a FIFO overflow
+    // cppcheck-suppress knownConditionTrueFalse
+    if (framingError || (received && !framingError && !rxQueue.tryPut(c)))
+    {
+        error = true;
     }
 
-    if (usart->ISR & USART_ISR_IDLE)
-        idle = true;
-
-    if (idle || (rxQueue.size() >= rxQueue.capacity() / 2))
+    // Wake up thread if communication finished (idle state), buffer reached
+    // half of his capacity or error occurred
+    if (error || idle || (rxQueue.size() >= rxQueue.capacity() / 2))
     {
-        usart->ICR = USART_ICR_IDLECF;  // Clears interrupt flags
-
         // Enough data in buffer or idle line, awake thread
         if (rxWaiting)
         {
@@ -396,7 +380,6 @@ void USART::IRQhandleInterrupt()
             rxWaiting = nullptr;
         }
     }
-#endif
 }
 
 USART::USART(USARTType *usart, int baudrate, unsigned int queueLen)
@@ -526,14 +509,16 @@ bool USART::read(void *buffer, size_t nBytes, const bool blocking,
 
     char *buf     = reinterpret_cast<char *>(buffer);
     size_t result = 0;
+    error         = false;
     miosix::FastInterruptDisableLock dLock;
     for (;;)
     {
-        // Try to get data from the queue
+        // Try to get all the data possible from the queue
         for (; result < nBytes; result++)
         {
-            if (rxQueue.tryGet(buf[result]) == false)
+            if (!rxQueue.tryGet(buf[result]))
                 break;
+
             // This is here just not to keep IRQ disabled for the whole loop
             miosix::FastInterruptEnableLock eLock(dLock);
         }
@@ -541,7 +526,7 @@ bool USART::read(void *buffer, size_t nBytes, const bool blocking,
         // If blocking, we are waiting for at least one byte of data before
         // returning. If not blocking, in the case the bus is idle we return
         // anyway
-        if ((result == nBytes) || (idle && (blocking ? (result > 0) : true)))
+        if ((result == nBytes) || (idle && (!blocking || (result > 0))))
             break;
 
         // Wait for data in the queue
