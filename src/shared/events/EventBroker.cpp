@@ -59,8 +59,8 @@ void EventBroker::post(const Event& ev, uint8_t topic,
 uint16_t EventBroker::postDelayed(const Event& ev, uint8_t topic,
                                   unsigned int delayMs)
 {
-    assert(delayMs >= EVENT_BROKER_MIN_DELAY &&
-           "delayMs must be longer or equal to EVENT_BROKER_MIN_DELAY");
+    D(assert(delayMs >= EVENT_BROKER_MIN_DELAY &&
+             "delayMs must be longer or equal to EVENT_BROKER_MIN_DELAY"));
 
     delayMs = std::min(delayMs, EVENT_BROKER_MIN_DELAY);
 
