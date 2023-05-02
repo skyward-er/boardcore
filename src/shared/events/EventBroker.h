@@ -22,6 +22,7 @@
 
 #pragma once
 
+#include <assert.h>
 #include <diagnostic/PrintLogger.h>
 #include <events/Event.h>
 #include <events/FSM.h>
@@ -79,41 +80,7 @@ public:
      * @param delayMs Delay in milliseconds.
      * @return Unique id of the delayed event.
      */
-    template <unsigned int delayMs>
-    uint16_t postDelayed(const Event& ev, uint8_t topic)
-    {
-        static_assert(
-            delayMs >= EVENT_BROKER_MIN_DELAY,
-            "delayMs must be longer or equal to EVENT_BROKER_MIN_DELAY");
-
-        Lock<FastMutex> lock(mtxDelayedEvents);
-
-        // Delay in system ticks
-        long long delayTicks =
-            static_cast<long long>(delayMs * miosix::TICK_FREQ / 1000);
-
-        DelayedEvent dev{eventCounter++, ev, topic, getTick() + delayTicks};
-        bool added = false;
-
-        // Add the new event in the list, ordered by deadline (first = nearest
-        // deadline)
-        for (auto it = delayedEvents.begin(); it != delayedEvents.end(); it++)
-        {
-            if (dev.deadline < (*it).deadline)
-            {
-                delayedEvents.insert(it, dev);
-                added = true;
-                break;
-            }
-        }
-
-        if (!added)  // In case this is the last/only event in the list
-        {
-            delayedEvents.push_back(dev);
-        }
-
-        return dev.schedId;
-    }
+    uint16_t postDelayed(const Event& ev, uint8_t topic, unsigned int delayMs);
 
     /**
      * Removes a delayed event before it is posted.

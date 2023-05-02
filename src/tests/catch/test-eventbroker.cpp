@@ -211,8 +211,8 @@ TEST_CASE_METHOD(EventBrokerTestFixture, "EventBroker - Events can be dalayed")
     long long start = getTick();
 
     // Post delayed event by 1000 ms
-    broker.postDelayed<1000>(ev, TOPIC_1);
-    broker.postDelayed<3000>(ev, TOPIC_2);
+    broker.postDelayed(ev, TOPIC_1, 1000);
+    broker.postDelayed(ev, TOPIC_2, 3000);
 
     REQUIRE(expectEvent(EV_A, TOPIC_1, start + 1000, 2, broker));
     REQUIRE(expectEvent(EV_A, TOPIC_2, start + 3000, 2, broker));
@@ -225,8 +225,8 @@ TEST_CASE_METHOD(EventBrokerTestFixture,
     long long start = getTick();
 
     // Post delayed event by 1000 ms
-    uint16_t delayed = broker.postDelayed<1000>(ev, TOPIC_1);
-    broker.postDelayed<3000>(ev, TOPIC_2);
+    uint16_t delayed = broker.postDelayed(ev, TOPIC_1, 1000);
+    broker.postDelayed(ev, TOPIC_2, 3000);
 
     SECTION("Individual events can be removed")
     {

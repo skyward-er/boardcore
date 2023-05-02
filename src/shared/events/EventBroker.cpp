@@ -56,6 +56,43 @@ void EventBroker::post(const Event& ev, uint8_t topic,
     }
 }
 
+uint16_t EventBroker::postDelayed(const Event& ev, uint8_t topic,
+                                  unsigned int delayMs)
+{
+    D(assert(delayMs >= EVENT_BROKER_MIN_DELAY &&
+             "delayMs must be longer or equal to EVENT_BROKER_MIN_DELAY"));
+
+    delayMs = std::max(delayMs, EVENT_BROKER_MIN_DELAY);
+
+    Lock<FastMutex> lock(mtxDelayedEvents);
+
+    // Delay in system ticks
+    long long delayTicks =
+        static_cast<long long>(delayMs * miosix::TICK_FREQ / 1000);
+
+    DelayedEvent dev{eventCounter++, ev, topic, getTick() + delayTicks};
+    bool added = false;
+
+    // Add the new event in the list, ordered by deadline (first = nearest
+    // deadline)
+    for (auto it = delayedEvents.begin(); it != delayedEvents.end(); it++)
+    {
+        if (dev.deadline < (*it).deadline)
+        {
+            delayedEvents.insert(it, dev);
+            added = true;
+            break;
+        }
+    }
+
+    if (!added)  // In case this is the last/only event in the list
+    {
+        delayedEvents.push_back(dev);
+    }
+
+    return dev.schedId;
+}
+
 void EventBroker::removeDelayed(uint16_t id)
 {
     Lock<FastMutex> lock(mtxDelayedEvents);

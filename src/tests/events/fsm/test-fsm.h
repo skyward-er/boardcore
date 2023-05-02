@@ -208,8 +208,8 @@ private:
                 v = 1;
 
                 // Post EV_D to itself in 1 seconds
-                delayed_ev_id = EventBroker::getInstance().postDelayed<1000>(
-                    Event{EV_D}, TOPIC_T1);
+                delayed_ev_id = EventBroker::getInstance().postDelayed(
+                    Event{EV_D}, TOPIC_T1, 1000);
 
                 break;
             }
