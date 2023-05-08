@@ -65,6 +65,9 @@ add_executable(sx1278lora-serial src/entrypoints/sx1278-serial.cpp)
 target_compile_definitions(sx1278lora-serial PRIVATE SX1278_IS_LORA)
 sbs_target(sx1278lora-serial stm32f429zi_skyward_groundstation_v2)
 
+add_executable(f769-discovery-display src/entrypoints/f769-discovery-display.cpp)
+sbs_target(f769-discovery-display stm32f769ni_discovery)
+
 #-----------------------------------------------------------------------------#
 #                                    Tests                                    #
 #-----------------------------------------------------------------------------#
