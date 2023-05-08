@@ -108,6 +108,8 @@ public:
                            ///< addressing |6-bit unused|10-bit address|).
         I2CDriver::Addressing addressing;  ///< Addressing mode of the device.
         I2CDriver::Speed speed;            ///< Speed mode of the communication.
+        bool MSBFirst;  ///< Registers with lower values are the MSB of
+                        ///< multi-byte registers
     } I2CSlaveConfig;
 
     /**
