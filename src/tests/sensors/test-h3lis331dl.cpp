@@ -41,18 +41,29 @@ int main()
 {
     Thread::sleep(1000);
 
+    /**
+     * I need to set the pin speed to Speed::_100MHz to solve a bug with
+     * stm32f407vg boards that prevented a correct reading from SPI (in this
+     * scenario)
+     */
     spiSck.mode(miosix::Mode::ALTERNATE);
     spiSck.alternateFunction(5);
+    spiSck.speed(Speed::_100MHz);
+
     spiMiso.mode(miosix::Mode::ALTERNATE);
     spiMiso.alternateFunction(5);
+    spiMiso.speed(Speed::_100MHz);
+
     spiMosi.mode(miosix::Mode::ALTERNATE);
     spiMosi.alternateFunction(5);
+    spiMosi.speed(Speed::_100MHz);
 
     cs.mode(miosix::Mode::OUTPUT);
     cs.high();
 
-    H3LIS331DL sensor(bus, cs, sensor.ODR_50, sensor.BDU_CONTINUOS_UPDATE,
-                      sensor.FS_100);
+    H3LIS331DL sensor(bus, cs, H3LIS331DLDefs::OutputDataRate::ODR_50,
+                      H3LIS331DLDefs::BlockDataUpdate::BDU_CONTINUOS_UPDATE,
+                      H3LIS331DLDefs::FullScaleRange::FS_100);
 
     if (!sensor.init())
     {

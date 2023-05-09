@@ -25,18 +25,20 @@
 namespace Boardcore
 {
 
-constexpr float H3LIS331DL::SENSITIVITY_VALUES[];
-
 H3LIS331DL::H3LIS331DL(SPIBusInterface& spiBus, miosix::GpioPin cs,
-                       SPIBusConfig cfg, OutputDataRate odr,
-                       BlockDataUpdate bdu, FullScaleRange fs)
+                       SPIBusConfig cfg, H3LIS331DLDefs::OutputDataRate odr,
+                       H3LIS331DLDefs::BlockDataUpdate bdu,
+                       H3LIS331DLDefs::FullScaleRange fs)
     : spi(spiBus, cs, cfg), odr(odr), bdu(bdu), fs(fs), initialized(false)
 {
+    spi.config.byteOrder = SPI::Order::LSB_FIRST;
+    spi.config.mode      = SPI::Mode::MODE_3;
 }
 
 H3LIS331DL::H3LIS331DL(SPIBusInterface& spiBus, miosix::GpioPin cs,
-                       OutputDataRate odr, BlockDataUpdate bdu,
-                       FullScaleRange fs)
+                       H3LIS331DLDefs::OutputDataRate odr,
+                       H3LIS331DLDefs::BlockDataUpdate bdu,
+                       H3LIS331DLDefs::FullScaleRange fs)
     : H3LIS331DL(spiBus, cs, {}, odr, bdu, fs)
 {
 }
@@ -51,15 +53,16 @@ bool H3LIS331DL::init()
 
     SPITransaction spiTr(spi);
 
-    uint8_t whoami = spiTr.readRegister(Registers::REG_WHO_AM_I);
+    uint8_t whoami =
+        spiTr.readRegister(H3LIS331DLDefs::Registers::REG_WHO_AM_I);
 
-    if (whoami != WHO_AM_I_ID)
+    if (whoami != H3LIS331DLDefs::WHO_AM_I_ID)
     {
         lastError = SensorErrors::INVALID_WHOAMI;
         LOG_ERR(logger,
                 "Failed init. Cause: INVALID_WHOAMI. Expected Value: "
                 "{:X}. Actual Value: {:X}\n",
-                WHO_AM_I_ID, whoami);
+                H3LIS331DLDefs::WHO_AM_I_ID, whoami);
         return false;
     }
 
@@ -71,16 +74,22 @@ bool H3LIS331DL::init()
     {
         uint8_t ctrlReg1 = 0b0000'0000;  // Default: poweroff
 
-        ctrlReg1 = odr | CTRL_REG1_XEN | CTRL_REG1_YEN | CTRL_REG1_ZEN;
+        ctrlReg1 = odr | H3LIS331DLDefs::CTRL_REG1_XEN |
+                   H3LIS331DLDefs::CTRL_REG1_YEN |
+                   H3LIS331DLDefs::CTRL_REG1_ZEN;
 
-        spiTr.writeRegister(Registers::REG_CTRL_REG1, ctrlReg1);
+        spiTr.writeRegister(H3LIS331DLDefs::Registers::REG_CTRL_REG1, ctrlReg1);
 
-        initialized &= ctrlReg1 == spiTr.readRegister(Registers::REG_CTRL_REG1);
+        miosix::delayUs(10);
+        initialized &=
+            (ctrlReg1 ==
+             spiTr.readRegister(H3LIS331DLDefs::Registers::REG_CTRL_REG1));
 
         LOG_DEBUG(logger,
                   "Control Register 1 After init: {:X}, expected "
-                  "value:{:X}\n",
-                  spiTr.readRegister(Registers::REG_CTRL_REG1), ctrlReg1);
+                  "value:{:X}",
+                  spiTr.readRegister(H3LIS331DLDefs::Registers::REG_CTRL_REG1),
+                  ctrlReg1);
     }
 
     {
@@ -91,13 +100,17 @@ bool H3LIS331DL::init()
 
         ctrlReg4 = bdu | fs;
 
-        spiTr.writeRegister(Registers::REG_CTRL_REG4, ctrlReg4);
+        spiTr.writeRegister(H3LIS331DLDefs::Registers::REG_CTRL_REG4, ctrlReg4);
 
-        initialized &= ctrlReg4 == spiTr.readRegister(Registers::REG_CTRL_REG4);
+        miosix::delayUs(10);
+        initialized &=
+            (ctrlReg4 ==
+             spiTr.readRegister(H3LIS331DLDefs::Registers::REG_CTRL_REG4));
         LOG_DEBUG(logger,
                   "Control Register 4 After init: {:X}, expected "
-                  "value: {:X}\n",
-                  spiTr.readRegister(Registers::REG_CTRL_REG4), ctrlReg4);
+                  "value: {:X}",
+                  spiTr.readRegister(H3LIS331DLDefs::Registers::REG_CTRL_REG4),
+                  ctrlReg4);
     }
 
     return initialized;
@@ -127,85 +140,74 @@ H3LIS331DLData H3LIS331DL::sampleImpl()
         // Read the status register that tells if new data is available.
         // This will allow us to read only data that is new and reuse data
         // that didn't change.
-        uint8_t status = spiTr.readRegister(Registers::REG_STATUS_REG);
+        uint8_t status =
+            spiTr.readRegister(H3LIS331DLDefs::Registers::REG_STATUS_REG);
 
         if (status == 0)
         {
             lastError = SensorErrors::NO_NEW_DATA;
+            LOG_DEBUG(logger, "No new data available.");
             return lastSample;  // No new data available
         }
 
-        uint16_t lPart;  // data's LSB.
-        uint16_t hPart;  // data's MSB.
-
         // Here we get the sensitivity based on the FullScaleRange
-        float sensitivity = SENSITIVITY_VALUES[this->fs >> 4];
+        float sensitivity = H3LIS331DLDefs::SENSITIVITY_VALUES[fs >> 4];
 
         // Read x-axis if new data is available or old data that was not
         // read was overrun and never read
-        if (status & (STATUS_REG_XDR | STATUS_REG_XYZDR | STATUS_REG_XOR |
-                      STATUS_REG_XYZOR))
+        if (status &
+            (H3LIS331DLDefs::STATUS_REG_XDR | H3LIS331DLDefs::STATUS_REG_XYZDR |
+             H3LIS331DLDefs::STATUS_REG_XOR | H3LIS331DLDefs::STATUS_REG_XYZOR))
         {
-
-            // NOTE: Reading multiple bits with readRegisters or readRegister16
-            // does not work
-            lPart = spiTr.readRegister(Registers::REG_OUT_X_L);
-            hPart = spiTr.readRegister(Registers::REG_OUT_X_H);
-
-            // To convert the values I am casting the two 8 bits registers
-            // into a signed 16 bit integer then I right-shift it by 4 to
-            // match the 12 bit representation of the sensor. As the values
-            // are casted into a signed int the shift also does sign
-            // extention automatically.
-            int16_t xInt = static_cast<int16_t>(lPart | (hPart << 8));
-            // int16_t xInt = static_cast<int16_t>(
-            //    spiTr.readRegister16(Registers::REG_OUT_X));
+            int16_t xInt = static_cast<int16_t>(
+                spiTr.readRegister16(H3LIS331DLDefs::Registers::REG_OUT_X_L |
+                                     H3LIS331DLDefs::AUTOINC_ADDR));
             float xFloat = static_cast<float>(xInt >> 4);
             x            = xFloat * sensitivity;
         }
         else  // else just use the last sample
         {
             x = lastSample.accelerationX;
+
+            LOG_DEBUG(logger, "No new data on X-Axis");
         }
 
         // Read y-axis if new data is available or old data that was not
         // read was overrun and never read
-        if (status & (STATUS_REG_YDR | STATUS_REG_XYZDR | STATUS_REG_YOR |
-                      STATUS_REG_XYZOR))
+        if (status &
+            (H3LIS331DLDefs::STATUS_REG_YDR | H3LIS331DLDefs::STATUS_REG_XYZDR |
+             H3LIS331DLDefs::STATUS_REG_YOR | H3LIS331DLDefs::STATUS_REG_XYZOR))
         {
-            // NOTE: Reading multiple bits with readRegisters or readRegister16
-            // does not work
-            lPart        = spiTr.readRegister(Registers::REG_OUT_Y_L);
-            hPart        = spiTr.readRegister(Registers::REG_OUT_Y_H);
-            int16_t yInt = static_cast<int16_t>(lPart | (hPart << 8));
-            // int16_t yInt = static_cast<int16_t>(
-            //    spiTr.readRegister16(Registers::REG_OUT_Y));
+            int16_t yInt = static_cast<int16_t>(
+                spiTr.readRegister16(H3LIS331DLDefs::Registers::REG_OUT_Y_L |
+                                     H3LIS331DLDefs::AUTOINC_ADDR));
             float yFloat = static_cast<float>(yInt >> 4);
             y            = yFloat * sensitivity;
         }
         else
         {
             y = lastSample.accelerationY;
+
+            LOG_DEBUG(logger, "No new data on Y-Axis");
         }
 
         // Read z-axis if new data is available or old data that was not
         // read was overrun and never read
-        if (status & (STATUS_REG_ZDR | STATUS_REG_XYZDR | STATUS_REG_ZOR |
-                      STATUS_REG_XYZOR))
+        if (status &
+            (H3LIS331DLDefs::STATUS_REG_ZDR | H3LIS331DLDefs::STATUS_REG_XYZDR |
+             H3LIS331DLDefs::STATUS_REG_ZOR | H3LIS331DLDefs::STATUS_REG_XYZOR))
         {
-            // NOTE: Reading multiple bits with readRegisters or readRegister16
-            // does not work
-            lPart        = spiTr.readRegister(Registers::REG_OUT_Z_L);
-            hPart        = spiTr.readRegister(Registers::REG_OUT_Z_H);
-            int16_t zInt = static_cast<int16_t>(lPart | (hPart << 8));
-            // int16_t zInt = static_cast<int16_t>(
-            //    spiTr.readRegister16(Registers::REG_OUT_Z));
+            int16_t zInt = static_cast<int16_t>(
+                spiTr.readRegister16(H3LIS331DLDefs::Registers::REG_OUT_Z_L |
+                                     H3LIS331DLDefs::AUTOINC_ADDR));
             float zFloat = static_cast<float>(zInt >> 4);
             z            = zFloat * sensitivity;
         }
         else
         {
             z = lastSample.accelerationZ;
+
+            LOG_DEBUG(logger, "No new data on Z-Axis");
         }
     }
 
