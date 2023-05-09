@@ -86,9 +86,14 @@ uint32_t VACT  = 480;  // Vertical Active time = Y size
 void HAL_DSI_ShortWrite(uint32_t ChannelID, uint32_t Mode, uint32_t Param1,
                         uint32_t Param2)
 {
+    auto start = getTick();
+
     // Wait for Command FIFO Empty
     while (!(DSI->GPSR & DSI_GPSR_CMDFE))
-        ;
+        if (getTick() - start > 1000)
+        {
+            printf("Timeout 1\n");
+        };
 
     // Configure the packet to send a short DCS command with 0 or 1 parameter
     DSI->GHCR = (Mode | (ChannelID << 6) | (Param1 << 8) | (Param2 << 16));
@@ -110,9 +115,14 @@ void HAL_DSI_ShortWrite(uint32_t ChannelID, uint32_t Mode, uint32_t Param1,
 void HAL_DSI_LongWrite(uint32_t ChannelID, uint32_t Mode, uint32_t NbParams,
                        uint32_t Param1, uint8_t *ParametersTable)
 {
+    auto start = getTick();
+
     // Wait for Command FIFO Empty
     while (!(DSI->GPSR & DSI_GPSR_CMDFE))
-        ;
+        if (getTick() - start > 1000)
+        {
+            printf("Timeout 2\n");
+        };
 
     // Set the DCS code hexadecimal on payload byte 1, and the other parameters
     // on the write FIFO command
@@ -169,6 +179,7 @@ void DSI_IO_WriteCmd(uint32_t NbrParams, uint8_t *pParams)
     }
 }
 
+// Step 1
 void bspSetup()
 {
     // All GPIOs ports already enabled by the bsp
@@ -222,30 +233,223 @@ void bspSetup()
     // NVIC_EnableIRQ(DSI_IRQn);
 }
 
+// Step 2
+void dsiSetup()
+{
+    // Turn on the regulator
+    {
+        // Enable the regulator
+        DSI->WRPCR |= DSI_WRPCR_REGEN;
+
+        // Wait until the regulator is ready
+        while (!(DSI->WISR & DSI_WISR_RRS))
+            ;
+    }
+
+    // Set the DSI regulator and PLL parameters
+    {
+        /**
+         * DSI input clock is HSE at 25MHz
+         *
+         * F_VCO = CLK_IN / IDF * 2 * NDIV
+         *       = 25MHz / 5 * 2 * 100
+         *       = 1GHz (between 500MHz and 1GHz)
+         *
+         * HS_CLK = F_vco / 2 / ODF
+         *        = 1GHz / 2 / 1
+         *        = 500MHz
+         *
+         * HS_CLK is the lane frequency in high speed mode
+         *
+         * LANE_BYTE_CLK = PHI / 8
+         *               = 62.5MHz
+         *
+         * LANE_BYTE_CLK must be between 31.25 MHz and 82.5 MHz
+         *
+         * LANE_BYTE_CLK can also use PLLR as clock source. DSI_CFGR2_DSISEL is
+         * used to select the input clock.
+         *
+         * Then we have:
+         * TX_ESC_CLK = LANE_BYTE_CLK / TXECKDIV
+         * TO_CLK = LANE_BYTE_CLK / TOCKDIV
+         * DDR_CLK = HS_CLK / 2
+         *
+         * The TX escape clock is used in Low Power mode. It takes two cycles of
+         * TX_ESC_CLK to transmit one bit in LP mode.
+         *
+         * TX_ESC_CLK must be less that 20MHz and TXECKDIV must be >= 2. A value
+         * of 0 or 1 disables TX_ESC_CLK.
+         */
+
+        // Set the PLL division factors
+        DSI->WRPCR |= 100 << DSI_WRPCR_PLL_NDIV_Pos;  // NDIV = 100
+        DSI->WRPCR |= 5 << DSI_WRPCR_PLL_IDF_Pos;     // IDF = 5
+        DSI->WRPCR |= 0 << DSI_WRPCR_PLL_ODF_Pos;     // ODF = 1
+
+        // Enable the DSI PLL
+        DSI->WRPCR |= DSI_WRPCR_PLLEN;
+
+        // Wait for the lock of the PLL
+        while (!(DSI->WISR & DSI_WISR_PLLLS))
+            ;
+    }
+
+    // Set the PHY parameters
+    {
+        // Enable D-PHY clock and data lane
+        DSI->PCTLR |= DSI_PCTLR_CKE;
+        DSI->PCTLR |= DSI_PCTLR_DEN;
+
+        // Set clock lane in high speed mode
+        DSI->CLCR |= DSI_CLCR_DPCC;
+
+        // Configure the number of active data lanes
+        DSI->PCONFR |= DSI_PCONFR_NL0;  // Two lanes
+    }
+
+    // Set the DSI clock parameters
+    {
+        // Set the TX escape clock division factor
+        // TX_ESC_CLK = LANE_BYTE_CLK / 4 = 15.625MHz
+        // 4 is the highest possible division factor such that TX_ESC_CLK is
+        // less than 20MHz
+        DSI->CCR = 4;
+
+        /**
+         * Calculate the bit period in high-speed mode in unit of 0.25ns
+         *
+         * 500MHz -> 2ns bit period -> 2ns = 8 * 0.25ns
+         *
+         * UIX4 = IntegerPart((1000 / F_PHY_Mhz) * 4)
+         *      = IntegerPart((1000 / 500) * 4)
+         *      = IntegerPart(2 * 4)
+         *      = 8
+         */
+        DSI->WPCR[0] = 8;
+    }
+
+    // Configure DSI Video mode timings
+    {
+        // Select video mode by resetting CMDM and DSIM bits
+        // Default values
+
+        // Configure burst mode
+        DSI->VMCR |= DSI_VMCR_VMT1;
+
+        // Configure the video packet size
+        DSI->VPCR |= HACT;  // Packet size is the horizontal size
+
+        // The number of chunks is 0
+
+        // Set the size of the null packet
+        DSI->VNPCR |= 0xfff;
+
+        // The virtual channel id for the LTDC interface is 0
+
+        // The polarity of control signals is active high (default)
+
+        // Select 24bit color coding for the host
+        DSI->LCOLCR |= 0b0101 << DSI_LCOLCR_COLC_Pos;
+
+        // Select the color coding for the wrapper
+        DSI->WCFGR |= 0b101 << DSI_WCFGR_COLMUX_Pos;
+
+        // Set the Horizontal Synchronization time in lane byte clock cycles
+        DSI->VHSACR |= HSYNC * 62500 / 27429;
+
+        // Set the Horizontal Back Porch in lane byte clock cycles
+        DSI->VHBPCR |= HBP * 62500 / 27429;
+
+        // Set the total line time in lane byte clock cycles
+        DSI->VLCR |= (HSYNC + HBP + HACT + HFP) * 62500 / 27429;
+
+        // Set the Vertical Synchronization time
+        DSI->VVSACR |= VSYNC;
+
+        // Set the Vertical Back Porch
+        DSI->VVBPCR |= VBP;
+
+        // Set the Vertical Active period
+        DSI->VVACR |= VACT;
+
+        // Set the Vertical Front Porch
+        DSI->VVFPCR |= VFP;
+
+        // Enable sending commands in Low Power mode
+        DSI->VMCR |= DSI_VMCR_LPCE;
+
+        // Low power largest packet size
+        // Largest packet size possible to transmit in LP mode in VSA, VBP,
+        // VFP regions. Only useful when sending LP packets is allowed while
+        // streaming is active in video mode
+        DSI->LPMCR |= 64 << DSI_LPMCR_LPSIZE_Pos;
+
+        // Low power VACT largest packet size
+        // Largest packet size possible to transmit in LP mode in HFP region
+        // during VACT period. Only useful when sending LP packets is
+        // allowed while streaming is active in video mode
+        DSI->LPMCR |= 64;
+
+        // Enable LP transition in HFP period
+        DSI->VMCR |= DSI_VMCR_LPHFPE;
+
+        // Enable LP transition in HBP period
+        DSI->VMCR |= DSI_VMCR_LPHBPE;
+
+        // Enable LP transition in VACT period
+        DSI->VMCR |= DSI_VMCR_LPVAE;
+
+        // Enable LP transition in VFP period
+        DSI->VMCR |= DSI_VMCR_LPVFPE;
+
+        // Enable LP transition in VBP period
+        DSI->VMCR |= DSI_VMCR_LPVFPE;
+
+        // Enable LP transition in vertical sync period
+        DSI->VMCR |= DSI_VMCR_LPVSAE;
+
+        // Disable the request for an acknowledge response at the end of a
+        // frame (default)
+    }
+
+    // Enable the DSI host and wrapper: but LTDC is not started yet
+    {
+        // Enable the DSI host
+        DSI->CR |= DSI_CR_EN;
+
+        // Enable the DSI wrapper
+        DSI->WCR |= DSI_WCR_DSIEN;
+    }
+}
+
+// Step 3
 void pllsaiSetup()
 {
-    // The LCD-TFT controller peripheral uses 3 clock domains:
-    // - AHB clock domain (HCLK): For data transfer from the memories to the
-    // Layer FIFO and the frame buffer
-    // - APB2 clock domain (PCLK2): Configuration registers
-    // - Pixel clock domain (LCD_CLK): This domain contains the pixel data
-    // generation, the layer configuration register as well as the LCD-TFT
-    // interface signal generator.
-
-    // LCD_CLK = width x height x refresh rate
-    //         = 800 x 480 x 60
-    //         = 23.04MHz
-
-    // The LTDC clock is connected to the PLLLSAIR clock
-    //
-    // LCD_CLK = 1MHz * N / R / DIV
-    //
-    // Where:
-    //   N = 375
-    //   R = 6
-    //   DIV = 2
-    //
-    // LCD_CLK = 1MHz * 375 / 6 / 2 = 31.25
+    /**
+     * The LCD-TFT controller peripheral uses 3 clock domains:
+     * - AHB clock domain (HCLK): For data transfer from the memories to the
+     * Layer FIFO and the frame buffer
+     * - APB2 clock domain (PCLK2): Configuration registers
+     * - Pixel clock domain (LCD_CLK): This domain contains the pixel data
+     * generation, the layer configuration register as well as the LCD-TFT
+     * interface signal generator.
+     *
+     * Theoretically:
+     * LCD_CLK = width x height x refresh rate
+     *         = 800 x 480 x 60
+     *         = 23.04MHz
+     *
+     * The LTDC clock is connected to the PLLLSAIR clock
+     *
+     * LCD_CLK = 1MHz * N / R / DIV
+     *
+     * Where:
+     *   N = 384
+     *   R = 6
+     *   DIV = 2
+     *
+     * LCD_CLK = 1MHz * 384 / 7 / 2 = 31.25
+     */
 
     // Disable PLLSAI Clock
     RCC->CR &= ~RCC_CR_PLLSAION;
@@ -255,8 +459,8 @@ void pllsaiSetup()
         ;
 
     // Note that this registers are set at 0 after reset
-    RCC->PLLSAICFGR |= 375 << RCC_PLLSAICFGR_PLLSAIN_Pos;
-    RCC->PLLSAICFGR |= 6 << RCC_PLLSAICFGR_PLLSAIR_Pos;
+    RCC->PLLSAICFGR |= 384 << RCC_PLLSAICFGR_PLLSAIN_Pos;
+    RCC->PLLSAICFGR |= 7 << RCC_PLLSAICFGR_PLLSAIR_Pos;
     RCC->DCKCFGR1 |= 0 << RCC_DCKCFGR1_PLLSAIDIVR_Pos;
 
     // Enable PLLSAI Clock
@@ -267,6 +471,7 @@ void pllsaiSetup()
         ;
 }
 
+// Step 4
 void ltdcSetup()
 {
     // Initialize the LTDC
@@ -308,18 +513,11 @@ void ltdcSetup()
         LTDC_Layer1->WVPCR |= (VSYNC + VBP) << LTDC_LxWVPCR_WVSTPOS_Pos;
 
         // Specify the pixel format
-        LTDC_Layer1->PFCR = 0x1;  // for RGB888 (24bit)
+        LTDC_Layer1->PFCR = 0x1;  // 1 for RGB888 (24bit)
 
-        // Configure the background color
-        LTDC_Layer1->DCCR = 0;  // Black
-
-        // Specifies the constant alpha value
-        LTDC_Layer1->CACR = 255;
-
-        // Specifies the blending factors
-        // Blanded color = const alpha x current color + cont alpah x back color
-        LTDC_Layer1->BFCR |= 4 << LTDC_LxBFCR_BF1_Pos;
-        LTDC_Layer1->BFCR |= 5 << LTDC_LxBFCR_BF1_Pos;
+        // Configures the color frame buffer start address
+        // The frame buffer will be in the SDRAM and is 1152000B = 1.1MB
+        LTDC_Layer1->CFBAR = 0xC0000000;
 
         // Configures the color frame buffer pitch
         // The pitch is the increment in bytes to jump to the next line
@@ -329,9 +527,16 @@ void ltdcSetup()
         // Configures the frame buffer line number
         LTDC_Layer1->CFBLNR = VACT;
 
-        // Configures the color frame buffer start address
-        // The frame buffer will be in the SDRAM and is 1152000B = 1.1MB
-        LTDC_Layer1->CFBAR = 0xC0000000;
+        // Configure the background color
+        LTDC_Layer1->DCCR = 255 << LTDC_LxDCCR_DCBLUE_Pos;  // Black
+
+        // Specifies the constant alpha value
+        LTDC_Layer1->CACR = 255;
+
+        // Specifies the blending factors
+        // Blanded color = const alpha x current color + cont alpha x back color
+        LTDC_Layer1->BFCR |= 4 << LTDC_LxBFCR_BF1_Pos;
+        LTDC_Layer1->BFCR |= 5 << LTDC_LxBFCR_BF1_Pos;
 
         // Enable the layer
         LTDC_Layer1->CR |= LTDC_LxCR_LEN;
@@ -339,175 +544,9 @@ void ltdcSetup()
         // Reload shadow registers
         LTDC->SRCR = LTDC_SRCR_IMR;
     }
-}
 
-void dsiSetup()
-{
-    // Turn on the regulator and enable the DSI PLL
-    {
-        // Enable the regulator
-        DSI->WRPCR |= DSI_WRPCR_REGEN;
-
-        // Wait until the regulator is ready
-        while (!(DSI->WISR & DSI_WISR_RRS))
-            ;
-    }
-
-    // Set the DSI clock parameters
-    {
-        /**
-         * DSI input clock is HSE at 25MHz
-         *
-         * F_VCO = CLK_IN / IDF * 2 * NDIV
-         *       = 25MHz / 5 * 2 * 100
-         *       = 1GHz (between 500MHz and 1GHz)
-         *
-         * PHI = F_vco / (2 * ODF)
-         *     = 1GHz / (2 * 1)
-         *     = 500MHz
-         *
-         * PHI is the lane frequency
-         *
-         * Lane_Byte_CLK = PHI / 8
-         *               = 62.5MHz
-         *
-         * Lane_Byte_CLK must be between 31.25 MHz and 82.5 MHz
-         */
-
-        // Set the PLL division factors
-        DSI->WRPCR |= 100 << DSI_WRPCR_PLL_NDIV_Pos;  // NDIV = 100
-        DSI->WRPCR |= 5 << DSI_WRPCR_PLL_IDF_Pos;     // IDF = 5
-        DSI->WRPCR |= 0 << DSI_WRPCR_PLL_ODF_Pos;     // ODF = 1
-
-        // Enable the DSI PLL
-        DSI->WRPCR |= DSI_WRPCR_PLLEN;
-
-        // Wait for the lock of the PLL
-        while (!(DSI->WISR & DSI_WISR_PLLLS))
-            ;
-
-        // Configure the D-PHY parameters
-        DSI->CCR = 4;
-
-        /**
-         * Calculate the bit period in high-speed mode in unit of 0.25 ns
-         *
-         * UIX4 = IntegerPart((1000 / F_PHY_Mhz) * 4)
-         *      = IntegerPart((1000 / 500) * 4)
-         *      = IntegerPart(2 * 4)
-         *      = 8
-         */
-        DSI->WPCR[0] = 8;
-    }
-
-    // Set the PHY parameters
-    {
-        // Enable D-PHY clock and data lane
-        DSI->PCTLR |= DSI_PCTLR_CKE;
-        DSI->PCTLR |= DSI_PCTLR_DEN;
-
-        // Set automatic clock lane control
-        DSI->CLCR |= (DSI_CLCR_DPCC | DSI_CLCR_ACR);
-
-        // Configure the number of active data lanes
-        DSI->PCONFR |= DSI_PCONFR_NL0;  // Two lanes
-
-        // Time for LP/HS and HS/LP transitions for both clock lane and data
-        // lanes
-        DSI->CLTCR |= 40 << DSI_CLTCR_HS2LP_TIME_Pos;  // HS to LP
-        DSI->CLTCR |= 40 << DSI_CLTCR_LP2HS_TIME_Pos;  // LP to HS
-        DSI->DLTCR |= 20 << DSI_DLTCR_HS2LP_TIME_Pos;  // HS to LP
-        DSI->DLTCR |= 20 << DSI_DLTCR_LP2HS_TIME_Pos;  // HS to LP
-
-        // Stop wait time (don't know how much should it be, random high number)
-        DSI->PCONFR |= 100 << DSI_PCONFR_SW_TIME_Pos;
-    }
-
-    // Configure DSI Video mode timings
-    {
-        // Select video mode by resetting CMDM and DSIM bits
-        // Default values
-
-        // Configure burst mode
-        DSI->VMCR |= DSI_VMCR_VMT1;
-
-        // Configure the video packet size
-        DSI->VPCR |= HACT;  // Packet size is the horizontal size
-
-        // The number of chunks is 0
-
-        // Set the size of the null packet
-        DSI->VNPCR |= 0xFFF;
-
-        // The virtual channel id for the LTDC interface is 0
-
-        // The polarity of control signals is active low (default)
-
-        // Select 24bit color coding for the host
-        DSI->LCOLCR |= 0b0100 << DSI_LCOLCR_COLC_Pos;
-        // TODO: Check, for 24bit the value should be 0b0101
-
-        // Select the color coding for the wrapper
-        DSI->WCFGR |= 0b101 << DSI_WCFGR_COLMUX_Pos;
-        // TODO: Check, for 24bit the value should be 0b101
-
-        // Set the Horizontal Synchronization time in lane byte clock cycles
-        DSI->VHSACR |= HSYNC * 62500 / 31250;
-
-        // Set the Horizontal Back Porch in lane byte clock cycles
-        DSI->VHBPCR |= HBP * 62500 / 31250;
-
-        // Set the total line time in lane byte clock cycles
-        DSI->VLCR |= (HSYNC + HBP + HACT + HFP) * 62500 / 31250;
-
-        // Set the Vertical Synchronization time
-        DSI->VVSACR |= VSYNC;
-
-        // Set the Vertical Back Porch
-        DSI->VVBPCR |= VBP;
-
-        // Set the Vertical Front Porch
-        DSI->VVFPCR |= VFP;
-
-        // Set the Vertical Active period
-        DSI->VVACR |= VACT;
-
-        // Enable sending commands in Low Power mode
-        DSI->VMCR |= DSI_VMCR_LPCE;
-
-        // Low power largest packet size
-        // Largest packet size possible to transmit in LP mode in VSA, VBP,
-        // VFP regions. Only useful when sending LP packets is allowed while
-        // streaming is active in video mode
-        DSI->LPMCR |= 64 << DSI_LPMCR_LPSIZE_Pos;
-
-        // Low power VACT largest packet size
-        // Largest packet size possible to transmit in LP mode in HFP region
-        // during VACT period. Only useful when sending LP packets is
-        // allowed while streaming is active in video mode
-        DSI->LPMCR |= 64;
-
-        // Enable LP transition in HFP period
-        DSI->VMCR |= DSI_VMCR_LPHFPE;
-
-        // Enable LP transition in HBP period
-        DSI->VMCR |= DSI_VMCR_LPHBPE;
-
-        // Enable LP transition in VACT period
-        DSI->VMCR |= DSI_VMCR_LPVAE;
-
-        // Enable LP transition in VFP period
-        DSI->VMCR |= DSI_VMCR_LPVFPE;
-
-        // Enable LP transition in VBP period
-        DSI->VMCR |= DSI_VMCR_LPVFPE;
-
-        // Enable LP transition in vertical sync period
-        DSI->VMCR |= DSI_VMCR_LPVSAE;
-
-        // Disable the request for an acknowledge response at the end of a
-        // frame (default)
-    }
+    // Finally enable the display
+    LTDC->GCR |= LTDC_GCR_LTDCEN;
 }
 
 void otm8009aSetup()
@@ -712,17 +751,20 @@ void otm8009aSetup()
     const uint8_t lcdRegData28[] = {0x00, 0x00, 0x01, 0xDF, OTM8009A_CMD_PASET};
 
     // LCD Initialization
+    int i = 1;
     {
         /* Enable CMD2 to access vendor specific commands */
         /* Enter in command 2 mode and set EXTC to enable address shift function
          * (0x00) */
         DSI_IO_WriteCmd(0, (uint8_t *)ShortRegData1);
         DSI_IO_WriteCmd(3, (uint8_t *)lcdRegData1);
+        printf("%d\n", i++);
 
         /* Enter ORISE Command 2 */
         DSI_IO_WriteCmd(0,
                         (uint8_t *)ShortRegData2); /* Shift address to 0x80 */
         DSI_IO_WriteCmd(2, (uint8_t *)lcdRegData2);
+        printf("%d\n", i++);
 
         /////////////////////////////////////////////////////////////////////
         /* SD_PCH_CTRL - 0xC480h - 129th parameter - Default 0x00          */
@@ -730,10 +772,12 @@ void otm8009aSetup()
         /* -> Source output level during porch and non-display area to GND */
         DSI_IO_WriteCmd(0, (uint8_t *)ShortRegData2);
         DSI_IO_WriteCmd(0, (uint8_t *)ShortRegData3);
+        printf("%d\n", i++);
         delayMs(10);
         /* Not documented */
         DSI_IO_WriteCmd(0, (uint8_t *)ShortRegData4);
         DSI_IO_WriteCmd(0, (uint8_t *)ShortRegData5);
+        printf("%d\n", i++);
         delayMs(10);
         /////////////////////////////////////////////////////////////////////
 
@@ -742,6 +786,7 @@ void otm8009aSetup()
         /* -> enable GVDD test mode !!!                         */
         DSI_IO_WriteCmd(0, (uint8_t *)ShortRegData6);
         DSI_IO_WriteCmd(0, (uint8_t *)ShortRegData7);
+        printf("%d\n", i++);
 
         /* PWR_CTRL2 - 0xC590h - 146th parameter - Default 0x79      */
         /* Set pump 4 vgh voltage                                    */
@@ -750,123 +795,156 @@ void otm8009aSetup()
         /* -> from -12.0v downto -9.0v                               */
         DSI_IO_WriteCmd(0, (uint8_t *)ShortRegData8);
         DSI_IO_WriteCmd(0, (uint8_t *)ShortRegData9);
+        printf("%d\n", i++);
 
         /* P_DRV_M - 0xC0B4h - 181th parameter - Default 0x00 */
         /* -> Column inversion                                */
         DSI_IO_WriteCmd(0, (uint8_t *)ShortRegData10);
         DSI_IO_WriteCmd(0, (uint8_t *)ShortRegData11);
+        printf("%d\n", i++);
 
         /* VCOMDC - 0xD900h - 1st parameter - Default 0x39h */
         /* VCOM Voltage settings                            */
         /* -> from -1.0000v downto -1.2625v                 */
         DSI_IO_WriteCmd(0, (uint8_t *)ShortRegData1);
         DSI_IO_WriteCmd(0, (uint8_t *)ShortRegData12);
+        printf("%d\n", i++);
 
         /* Oscillator adjustment for Idle/Normal mode (LPDT only) set to 65Hz
          * (default is 60Hz) */
         DSI_IO_WriteCmd(0, (uint8_t *)ShortRegData13);
         DSI_IO_WriteCmd(0, (uint8_t *)ShortRegData14);
+        printf("%d\n", i++);
 
         /* Video mode internal */
         DSI_IO_WriteCmd(0, (uint8_t *)ShortRegData15);
         DSI_IO_WriteCmd(0, (uint8_t *)ShortRegData16);
+        printf("%d\n", i++);
 
         /* PWR_CTRL2 - 0xC590h - 147h parameter - Default 0x00 */
         /* Set pump 4&5 x6                                     */
         /* -> ONLY VALID when PUMP4_EN_ASDM_HV = "0"           */
         DSI_IO_WriteCmd(0, (uint8_t *)ShortRegData17);
         DSI_IO_WriteCmd(0, (uint8_t *)ShortRegData18);
+        printf("%d\n", i++);
 
         /* PWR_CTRL2 - 0xC590h - 150th parameter - Default 0x33h */
         /* Change pump4 clock ratio                              */
         /* -> from 1 line to 1/2 line                            */
         DSI_IO_WriteCmd(0, (uint8_t *)ShortRegData19);
         DSI_IO_WriteCmd(0, (uint8_t *)ShortRegData9);
+        printf("%d\n", i++);
 
         /* GVDD/NGVDD settings */
         DSI_IO_WriteCmd(0, (uint8_t *)ShortRegData1);
         DSI_IO_WriteCmd(2, (uint8_t *)lcdRegData5);
+        printf("%d\n", i++);
 
         /* PWR_CTRL2 - 0xC590h - 149th parameter - Default 0x33h */
         /* Rewrite the default value !                           */
         DSI_IO_WriteCmd(0, (uint8_t *)ShortRegData20);
         DSI_IO_WriteCmd(0, (uint8_t *)ShortRegData21);
+        printf("%d\n", i++);
 
         /* Panel display timing Setting 3 */
         DSI_IO_WriteCmd(0, (uint8_t *)ShortRegData22);
         DSI_IO_WriteCmd(0, (uint8_t *)ShortRegData23);
+        printf("%d\n", i++);
 
         /* Power control 1 */
         DSI_IO_WriteCmd(0, (uint8_t *)ShortRegData24);
         DSI_IO_WriteCmd(0, (uint8_t *)ShortRegData25);
+        printf("%d\n", i++);
 
         /* Source driver precharge */
         DSI_IO_WriteCmd(0, (uint8_t *)ShortRegData13);
         DSI_IO_WriteCmd(0, (uint8_t *)ShortRegData26);
+        printf("%d\n", i++);
 
         DSI_IO_WriteCmd(0, (uint8_t *)ShortRegData15);
         DSI_IO_WriteCmd(0, (uint8_t *)ShortRegData27);
+        printf("%d\n", i++);
 
         DSI_IO_WriteCmd(0, (uint8_t *)ShortRegData28);
         DSI_IO_WriteCmd(2, (uint8_t *)lcdRegData6);
+        printf("%d\n", i++);
 
         /* GOAVST */
         DSI_IO_WriteCmd(0, (uint8_t *)ShortRegData2);
         DSI_IO_WriteCmd(6, (uint8_t *)lcdRegData7);
+        printf("%d\n", i++);
 
         DSI_IO_WriteCmd(0, (uint8_t *)ShortRegData29);
         DSI_IO_WriteCmd(14, (uint8_t *)lcdRegData8);
+        printf("%d\n", i++);
 
         DSI_IO_WriteCmd(0, (uint8_t *)ShortRegData30);
         DSI_IO_WriteCmd(14, (uint8_t *)lcdRegData9);
+        printf("%d\n", i++);
 
         DSI_IO_WriteCmd(0, (uint8_t *)ShortRegData31);
         DSI_IO_WriteCmd(10, (uint8_t *)lcdRegData10);
+        printf("%d\n", i++);
 
         DSI_IO_WriteCmd(0, (uint8_t *)ShortRegData32);
         DSI_IO_WriteCmd(0, (uint8_t *)ShortRegData46);
+        printf("%d\n", i++);
 
         DSI_IO_WriteCmd(0, (uint8_t *)ShortRegData2);
         DSI_IO_WriteCmd(10, (uint8_t *)lcdRegData11);
+        printf("%d\n", i++);
 
         DSI_IO_WriteCmd(0, (uint8_t *)ShortRegData33);
         DSI_IO_WriteCmd(15, (uint8_t *)lcdRegData12);
+        printf("%d\n", i++);
 
         DSI_IO_WriteCmd(0, (uint8_t *)ShortRegData29);
         DSI_IO_WriteCmd(15, (uint8_t *)lcdRegData13);
+        printf("%d\n", i++);
 
         DSI_IO_WriteCmd(0, (uint8_t *)ShortRegData30);
         DSI_IO_WriteCmd(10, (uint8_t *)lcdRegData14);
+        printf("%d\n", i++);
 
         DSI_IO_WriteCmd(0, (uint8_t *)ShortRegData31);
         DSI_IO_WriteCmd(15, (uint8_t *)lcdRegData15);
+        printf("%d\n", i++);
 
         DSI_IO_WriteCmd(0, (uint8_t *)ShortRegData32);
         DSI_IO_WriteCmd(15, (uint8_t *)lcdRegData16);
+        printf("%d\n", i++);
 
         DSI_IO_WriteCmd(0, (uint8_t *)ShortRegData34);
         DSI_IO_WriteCmd(10, (uint8_t *)lcdRegData17);
+        printf("%d\n", i++);
 
         DSI_IO_WriteCmd(0, (uint8_t *)ShortRegData35);
         DSI_IO_WriteCmd(10, (uint8_t *)lcdRegData18);
+        printf("%d\n", i++);
 
         DSI_IO_WriteCmd(0, (uint8_t *)ShortRegData2);
         DSI_IO_WriteCmd(10, (uint8_t *)lcdRegData19);
+        printf("%d\n", i++);
 
         DSI_IO_WriteCmd(0, (uint8_t *)ShortRegData33);
         DSI_IO_WriteCmd(15, (uint8_t *)lcdRegData20);
+        printf("%d\n", i++);
 
         DSI_IO_WriteCmd(0, (uint8_t *)ShortRegData29);
         DSI_IO_WriteCmd(15, (uint8_t *)lcdRegData21);
+        printf("%d\n", i++);
 
         DSI_IO_WriteCmd(0, (uint8_t *)ShortRegData30);
         DSI_IO_WriteCmd(10, (uint8_t *)lcdRegData22);
+        printf("%d\n", i++);
 
         DSI_IO_WriteCmd(0, (uint8_t *)ShortRegData31);
         DSI_IO_WriteCmd(15, (uint8_t *)lcdRegData23);
+        printf("%d\n", i++);
 
         DSI_IO_WriteCmd(0, (uint8_t *)ShortRegData32);
         DSI_IO_WriteCmd(15, (uint8_t *)lcdRegData24);
+        printf("%d\n", i++);
 
         /////////////////////////////////////////////////////////////////////////////
         /* PWR_CTRL1 - 0xc580h - 130th parameter - default 0x00 */
@@ -875,15 +953,18 @@ void otm8009aSetup()
         DSI_IO_WriteCmd(0, (uint8_t *)ShortRegData47);
         DSI_IO_WriteCmd(0, (uint8_t *)ShortRegData48);
         DSI_IO_WriteCmd(0, (uint8_t *)ShortRegData49);
+        printf("%d\n", i++);
         /////////////////////////////////////////////////////////////////////////////
 
         /* CABC LEDPWM frequency adjusted to 19,5kHz */
         DSI_IO_WriteCmd(0, (uint8_t *)ShortRegData50);
         DSI_IO_WriteCmd(0, (uint8_t *)ShortRegData51);
+        printf("%d\n", i++);
 
         /* Exit CMD2 mode */
         DSI_IO_WriteCmd(0, (uint8_t *)ShortRegData1);
         DSI_IO_WriteCmd(3, (uint8_t *)lcdRegData25);
+        printf("%d\n", i++);
 
         /***************************************************************************
          */
@@ -893,96 +974,130 @@ void otm8009aSetup()
 
         /* NOP - goes back to DCS std command ? */
         DSI_IO_WriteCmd(0, (uint8_t *)ShortRegData1);
+        printf("%d\n", i++);
 
         /* Gamma correction 2.2+ table (HSDT possible) */
         DSI_IO_WriteCmd(0, (uint8_t *)ShortRegData1);
         DSI_IO_WriteCmd(16, (uint8_t *)lcdRegData3);
+        printf("%d\n", i++);
 
         /* Gamma correction 2.2- table (HSDT possible) */
         DSI_IO_WriteCmd(0, (uint8_t *)ShortRegData1);
         DSI_IO_WriteCmd(16, (uint8_t *)lcdRegData4);
+        printf("%d\n", i++);
 
         /* Send Sleep Out command to display : no parameter */
         DSI_IO_WriteCmd(0, (uint8_t *)ShortRegData36);
+        printf("%d\n", i++);
 
         /* Wait for sleep out exit */
         delayMs(120);
 
         /* Set Pixel color format to RGB888 */
         DSI_IO_WriteCmd(0, (uint8_t *)ShortRegData38);
+        printf("%d\n", i++);
 
         /* Send command to configure display in landscape orientation mode. By
            default the orientation mode is portrait  */
         DSI_IO_WriteCmd(0, (uint8_t *)ShortRegData39);
         DSI_IO_WriteCmd(4, (uint8_t *)lcdRegData27);
         DSI_IO_WriteCmd(4, (uint8_t *)lcdRegData28);
+        printf("%d\n", i++);
 
         /** CABC : Content Adaptive Backlight Control section start >> */
         /* Note : defaut is 0 (lowest Brightness), 0xFF is highest Brightness,
          * try 0x7F : intermediate value */
         DSI_IO_WriteCmd(0, (uint8_t *)ShortRegData40);
+        printf("%d\n", i++);
 
         /* defaut is 0, try 0x2C - Brightness Control Block, Display Dimming &
          * BackLight on */
         DSI_IO_WriteCmd(0, (uint8_t *)ShortRegData41);
+        printf("%d\n", i++);
 
         /* defaut is 0, try 0x02 - image Content based Adaptive Brightness
          * [Still Picture] */
         DSI_IO_WriteCmd(0, (uint8_t *)ShortRegData42);
+        printf("%d\n", i++);
 
         /* defaut is 0 (lowest Brightness), 0xFF is highest Brightness */
         DSI_IO_WriteCmd(0, (uint8_t *)ShortRegData43);
+        printf("%d\n", i++);
 
         /** CABC : Content Adaptive Backlight Control section end << */
 
         /* Send Command Display On */
         DSI_IO_WriteCmd(0, (uint8_t *)ShortRegData44);
+        printf("%d\n", i++);
 
         /* NOP command */
         DSI_IO_WriteCmd(0, (uint8_t *)ShortRegData1);
+        printf("%d\n", i++);
 
         /* Send Command GRAM memory write (no parameters) : this initiates frame
          * write via other DSI commands sent by */
         /* DSI host from LTDC incoming pixels in video mode */
         DSI_IO_WriteCmd(0, (uint8_t *)ShortRegData45);
+        printf("%d\n", i++);
     }
-
-    // Enable LTDC by setting LTDCEN bit
-    LTDC->GCR |= LTDC_GCR_LTDCEN;
-
-    DSI->CR |= DSI_CR_EN;
-
-    // Start the LTDC flow through the DSI wrapper (CR.LTDCEN = 1).
-    // In video mode, the data streaming starts as soon as the LTDC is enabled.
-    // In adapted command mode, the frame buffer update is launched as soon as
-    // the CR.LTDCEN bit is set.
-    {
-        // Enable the DSI host
-        DSI->CR |= DSI_CR_EN;
-
-        // Enable the DSI wrapper
-        DSI->WCR |= DSI_WCR_DSIEN;
-    }
-
-    // Switch on the display. Exit DSI ULPM mode if was configured
-    HAL_DSI_ShortWrite(LCD_OTM8009A_ID, DSI_DCS_SHORT_PKT_WRITE_P1,
-                       OTM8009A_CMD_DISPON, 0x00);
 }
 
 int main()
 {
     bspSetup();
-
-    pllsaiSetup();
-
-    ltdcSetup();
+    printf("1. BSP setup done\n");
 
     dsiSetup();
+    printf("2. DSI setup done\n");
 
-    otm8009aSetup();
+    pllsaiSetup();
+    printf("3. PLLSAI setup done\n");
+
+    ltdcSetup();
+    printf("4. LTDC setup done\n");
+
+    // otm8009aSetup();
+    // printf("4. OTM8009A setup done\n");
+
+    // // Disable command trasmission only in low power mode
+    // DSI->CMCR &= ~(DSI_CMCR_GSW0TX | DSI_CMCR_GSW1TX | DSI_CMCR_GSW2TX |
+    //                DSI_CMCR_GSR0TX | DSI_CMCR_GSR1TX | DSI_CMCR_GSR2TX |
+    //                DSI_CMCR_GLWTX | DSI_CMCR_DSW0TX | DSI_CMCR_DSW1TX |
+    //                DSI_CMCR_DSR0TX | DSI_CMCR_DLWTX | DSI_CMCR_MRDPS);
+
+    // DSI->PCR &= ~(DSI_PCR_CRCRXE | DSI_PCR_ECCRXE | DSI_PCR_BTAE |
+    //               DSI_PCR_ETRXE | DSI_PCR_ETTXE);
+    // DSI->PCR |= DSI_PCR_BTAE;
+
+    // // Enable the LTDC
+    // LTDC->GCR |= LTDC_GCR_LTDCEN;
+
+    // // Start the LTDC flow through the DSI wrapper (CR.LTDCEN = 1).
+    // // In video mode, the data streaming starts as soon as the LTDC is
+    // enabled.
+    // // In adapted command mode, the frame buffer update is launched as soon
+    // as
+    // // the CR.LTDCEN bit is set.
+    // DSI->CR |= DSI_CR_EN;
+
+    // // Update the display
+    // DSI->WCR |= DSI_WCR_LTDCEN;
 
     printf("LCD initialization completed!\n");
 
+#define FRAME_BUFFER_START ((uint8_t volatile *)((uint32_t)0xC0000000))
+
+    // int i = 0;
+    // while (true)
+    // {
+    //     FRAME_BUFFER_START[i] = 255;
+    //     printf("%d: %d\n", i, FRAME_BUFFER_START[i]);
+    //     i++;
+    // }
+
     while (true)
-        ;
+    {
+        printf("Hi mom!\n");
+        Thread::sleep(1000);
+    }
 }
