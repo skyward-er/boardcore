@@ -16,6 +16,7 @@
 [submodule "Miosix Kernel"]
 	path = libs/miosix-kernel
 	url = https://git.skywarder.eu/avn/swd/miosix-kernel.git
+	branch = stm32f756
 [submodule "Miosix GUI library"]
 	path = libs/mxgui
 	url = https://git.skywarder.eu/avn/swd/third-party/mxgui.git
