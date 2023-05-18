@@ -50,7 +50,8 @@ static const float CAL_V_DDA              = 3.3f;
 static const InternalADC::Channel TEMP_CH = InternalADC::CH16;
 static const InternalADC::Channel VBAT_CH = InternalADC::CH18;
 static const float VBAT_DIV               = 2.0f;
-#elif defined(STM32F429xx) || defined(STM32F767xx) || defined(STM32F769xx) || defined(STM32F756xx)
+#elif defined(STM32F429xx) || defined(STM32F767xx) || defined(STM32F769xx) || \
+    defined(STM32F756xx)
 static const InternalADC::Channel TEMP_CH = InternalADC::CH18;
 static const InternalADC::Channel VBAT_CH = InternalADC::CH18;
 static const float VBAT_DIV               = 4.0f;
