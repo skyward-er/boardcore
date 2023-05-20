@@ -339,6 +339,30 @@
             ]
         },
         {
+            "name": "stm32f756zg_nucleo",
+            "cStandard": "c11",
+            "cppStandard": "c++14",
+            "compilerPath": "/opt/arm-miosix-eabi/bin/arm-miosix-eabi-g++",
+            "defines": [
+                "{defaultDefines}",
+                "_MIOSIX_BOARDNAME=stm32f756zg_nucleo",
+                "D_BOARD_STM32F756ZG_NUCLEO",
+                "_ARCH_CORTEXM7_STM32F7",
+                "STM32F756xx",
+                "HSE_VALUE=25000000",
+                "SYSCLK_FREQ_216MHz=216000000",
+                "__ENABLE_XRAM",
+                "V_DDA_VOLTAGE=3.3f"
+            ],
+            "includePath": [
+                "${defaultIncludePaths}",
+                "${workspaceFolder}/libs/miosix-kernel/miosix/arch/cortexM7_stm32f7/common",
+                "${workspaceFolder}/libs/miosix-kernel/miosix/arch/cortexM7_stm32f7/stm32f756zg_nucleo",
+                "${workspaceFolder}/libs/miosix-kernel/miosix/config/arch/cortexM7_stm32f7/stm32f756zg_nucleo",
+                "${workspaceFolder}/libs/miosix-kernel/miosix/arch/common/CMSIS/Include"
+            ]
+        },
+        {
             "name": "stm32f767zi_nucleo",
             "cStandard": "c11",
             "cppStandard": "c++14",
