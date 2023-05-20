@@ -18,6 +18,21 @@
         {
             "cwd": "${workspaceRoot}",
             "executable": "${workspaceFolder}/build/${fileBasenameNoExtension}",
+            "name": "F756",
+            "request": "attach",
+            "type": "cortex-debug",
+            "servertype": "openocd",
+            "device": "STM32F756ZG",
+            "svdFile": "${workspaceFolder}/data/gdb/stm32f750.svd",
+            "armToolchainPath": "/opt/arm-miosix-eabi/bin",
+            "toolchainPrefix": "arm-miosix-eabi",
+            "configFiles": [
+                "${workspaceFolder}/data/gdb/stm32f7-stlinv2.cfg"
+            ]
+        },
+        {
+            "cwd": "${workspaceRoot}",
+            "executable": "${workspaceFolder}/build/${fileBasenameNoExtension}",
             "name": "ST-LINK V1 (current entrypoint)",
             "request": "attach",
             "type": "cortex-debug",
