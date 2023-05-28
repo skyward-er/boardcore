@@ -363,8 +363,7 @@ void USART::IRQhandleInterrupt()
 
     // If we received some data without framing error but the tryPut failed,
     // report a FIFO overflow
-    // cppcheck-suppress knownConditionTrueFalse
-    if (framingError || (received && !framingError && !rxQueue.tryPut(c)))
+    if (framingError || (received && !rxQueue.tryPut(c)))
     {
         error = true;
     }
