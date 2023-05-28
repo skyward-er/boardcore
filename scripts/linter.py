@@ -259,7 +259,6 @@ def check_find(directory):
     sum = find_in_code(directory, r'^using namespace', '.h')
     sum += find_in_code(directory,
                         r'[^a-zA-Z0-9]printf\(', pathFilter='shared')
-    sum += find_in_code(directory, r'( |^)assert\(')
     sum += find_in_code(directory, '^ *throw ', pathFilter='catch')
 
     if sum > 0:
