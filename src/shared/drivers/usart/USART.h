@@ -94,20 +94,14 @@ public:
      * @brief Blocking write operation.
      * @param buffer Buffer that contains the data to be sent.
      * @param nBytes Bytes to be sent.
-     * @param nBytesWritten Number of bytes sent.
-     * @return If operation succeeded.
      */
-    virtual bool write(const void *buf, size_t nBytes,
-                       size_t &nBytesWritten = tempNBytes) = 0;
+    virtual void write(const void *buf, size_t nBytes) = 0;
 
     /**
      * @brief Write a string to the serial, comprising the '\0' character.
      * @param buffer Buffer that contains the string to be sent.
-     * @param nBytesWritten Number of characters sent.
-     * @return If operation succeeded.
      */
-    virtual bool writeString(const char *buffer,
-                             size_t &nBytesWritten = tempNBytes) = 0;
+    virtual void writeString(const char *buffer) = 0;
 
     /**
      * @brief Returns the id of the serial.
@@ -204,19 +198,14 @@ public:
      * @brief Blocking write operation.
      * @param buffer Buffer that contains the data to be sent.
      * @param nBytes Bytes to be sent.
-     * @param nBytesWritten Number of bytes sent.
-     * @return If operation succeeded.
      */
-    bool write(const void *buf, size_t nBytes,
-               size_t &nBytesWritten = tempNBytes);
+    void write(const void *buf, size_t nBytes);
 
     /**
      * @brief Write a string to the serial, comprising the '\0' character.
      * @param buffer Buffer that contains the string to be sent.
-     * @param nBytesWritten Number of characters sent.
-     * @return If operation succeeded.
      */
-    bool writeString(const char *buffer, size_t &nBytesWritten = tempNBytes);
+    void writeString(const char *buffer);
 
     /**
      * @brief Set the length of the word to 8 or to 9.
@@ -342,19 +331,14 @@ public:
      * @brief Blocking write operation.
      * @param buffer Buffer that contains the data to be sent.
      * @param nBytes Bytes to be sent.
-     * @param nBytesWritten Number of bytes sent.
-     * @return If operation succeeded.
      */
-    bool write(const void *buf, size_t nBytes,
-               size_t &nBytesWritten = tempNBytes);
+    void write(const void *buf, size_t nBytes);
 
     /**
      * @brief Write a string to the serial, comprising the '\0' character.
      * @param buffer Buffer that contains the string to be sent.
-     * @param nBytesWritten Number of characters sent.
-     * @return If operation succeeded.
      */
-    bool writeString(const char *buffer, size_t &nBytesWritten = tempNBytes);
+    void writeString(const char *buffer);
 
 private:
     /**

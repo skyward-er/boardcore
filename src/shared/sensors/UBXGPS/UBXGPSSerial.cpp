@@ -299,11 +299,7 @@ bool UBXGPSSerial::writeUBXFrame(const UBXFrame& frame)
     uint8_t packedFrame[frame.getLength()];
     frame.writePacked(packedFrame);
 
-    if (!usart->write(packedFrame, frame.getLength()))
-    {
-        LOG_ERR(logger, "Failed to write ubx message");
-        return false;
-    }
+    usart->write(packedFrame, frame.getLength());
 
     return true;
 }

@@ -545,7 +545,7 @@ bool USART::read(void *buffer, size_t nBytes, const bool blocking,
     return (result > 0);
 }
 
-bool USART::write(const void *buffer, size_t nBytes, size_t &nBytesWritten)
+void USART::write(const void *buffer, size_t nBytes)
 {
     miosix::Lock<miosix::FastMutex> l(txMutex);
 
@@ -565,13 +565,9 @@ bool USART::write(const void *buffer, size_t nBytes, size_t &nBytesWritten)
         usart->TDR = *buf++;
 #endif
     }
-
-    nBytesWritten = i;
-
-    return (i == nBytes);
 }
 
-bool USART::writeString(const char *buffer, size_t &nBytesWritten)
+void USART::writeString(const char *buffer)
 {
     int i = 0;
     miosix::Lock<miosix::FastMutex> l(txMutex);
@@ -601,10 +597,6 @@ bool USART::writeString(const char *buffer, size_t &nBytesWritten)
 
         i++;
     };
-
-    nBytesWritten = i;
-
-    return (i > 0);
 }
 
 void USART::clearQueue() { rxQueue.reset(); }
@@ -707,20 +699,15 @@ bool STM32SerialWrapper::read(void *buffer, size_t nBytes, const bool blocking,
     return (n > 0);
 }
 
-bool STM32SerialWrapper::write(const void *buffer, size_t nBytes,
-                               size_t &nBytesWritten)
+void STM32SerialWrapper::write(const void *buffer, size_t nBytes)
 {
-    size_t n      = ::write(fd, buffer, nBytes);
-    nBytesWritten = n;
-    return (nBytes == n);
+    ::write(fd, buffer, nBytes);
 }
 
-bool STM32SerialWrapper::writeString(const char *buffer, size_t &nBytesWritten)
+void STM32SerialWrapper::writeString(const char *buffer)
 {
     // strlen + 1 in order to send the '/0' terminated string
-    size_t n      = ::write(fd, buffer, strlen(buffer) + 1);
-    nBytesWritten = n;
-    return (n > 0);
+    ::write(fd, buffer, strlen(buffer) + 1);
 }
 
 }  // namespace Boardcore

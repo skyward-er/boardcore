@@ -151,11 +151,7 @@ bool VN100::sampleRaw()
     }
 
     // Send the IMU sampling command
-    if (!(serialInterface->writeString(preSampleImuString->c_str())))
-    {
-        LOG_WARN(logger, "Unable to sample due to serial communication error");
-        return false;
-    }
+    serialInterface->writeString(preSampleImuString->c_str());
 
     // Wait some time
     // TODO dimension the time
@@ -245,11 +241,7 @@ VN100Data VN100::sampleData()
     }
 
     // Returns Quaternion, Magnetometer, Accelerometer and Gyro
-    if (!(serialInterface->writeString(preSampleImuString->c_str())))
-    {
-        // If something goes wrong i return the last sampled data
-        return lastSample;
-    }
+    serialInterface->writeString(preSampleImuString->c_str());
 
     // Wait some time
     // TODO dimension the time
@@ -277,11 +269,7 @@ VN100Data VN100::sampleData()
     // Returns Magnetometer, Accelerometer, Gyroscope, Temperature and Pressure
     // (UNCOMPENSATED) DO NOT USE THESE MAGNETOMETER, ACCELEROMETER AND
     // GYROSCOPE VALUES
-    if (!(serialInterface->writeString(preSampleTempPressString->c_str())))
-    {
-        // If something goes wrong i return the last sampled data
-        return lastSample;
-    }
+    serialInterface->writeString(preSampleTempPressString->c_str());
 
     // Wait some time
     // TODO dimension the time
@@ -666,10 +654,7 @@ bool VN100::sendStringCommand(std::string command)
     }
 
     // I send the final command
-    if (!serialInterface->writeString(command.c_str()))
-    {
-        return false;
-    }
+    serialInterface->writeString(command.c_str());
 
     // Wait some time
     // TODO dimension the time
