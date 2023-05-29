@@ -67,7 +67,7 @@ using mosi = interfaces::spi4::mosi;
 #define SX1278_SPI SPI4
 
 #define SX1278_IRQ_DIO0 EXTI6_IRQHandlerImpl
-#define SX1278_IRQ_DIO1 EXTI2_IRQHandlerImpl
+#define SX1278_IRQ_DIO1 EXTI4_IRQHandlerImpl
 #define SX1278_IRQ_DIO3 EXTI11_IRQHandlerImpl
 
 #else
