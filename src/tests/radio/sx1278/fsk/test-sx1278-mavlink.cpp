@@ -41,7 +41,7 @@
 using namespace Boardcore;
 using namespace miosix;
 
-constexpr uint32_t RADIO_PKT_LENGTH     = 63;
+constexpr uint32_t RADIO_PKT_LENGTH     = SX1278Fsk::MTU;
 constexpr uint32_t RADIO_OUT_QUEUE_SIZE = 10;
 constexpr uint32_t RADIO_MAV_MSG_LENGTH = MAVLINK_MAX_DIALECT_PAYLOAD_SIZE;
 constexpr size_t MAV_OUT_BUFFER_MAX_AGE = 200;
@@ -101,11 +101,11 @@ void initBoard()
     GpioPin dio3_pin = dio3::getPin();
 
     enableExternalInterrupt(dio0_pin.getPort(), dio0_pin.getNumber(),
-                            InterruptTrigger::RISING_EDGE);
+                            InterruptTrigger::RISING_FALLING_EDGE);
     enableExternalInterrupt(dio1_pin.getPort(), dio1_pin.getNumber(),
-                            InterruptTrigger::RISING_EDGE);
+                            InterruptTrigger::RISING_FALLING_EDGE);
     enableExternalInterrupt(dio3_pin.getPort(), dio3_pin.getNumber(),
-                            InterruptTrigger::RISING_EDGE);
+                            InterruptTrigger::RISING_FALLING_EDGE);
 }
 
 Mav* channel;

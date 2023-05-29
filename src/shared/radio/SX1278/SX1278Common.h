@@ -26,8 +26,8 @@
 #include <miosix.h>
 #include <radio/Transceiver.h>
 
-#include <memory>
 #include <cmath>
+#include <memory>
 
 #include "SX1278Defs.h"
 
@@ -51,12 +51,14 @@ public:
     virtual float getLastRxRssi() = 0;
 
     /**
-     * @brief Get the frequency error index in Hz, during last packet receive (NaN if not available).
+     * @brief Get the frequency error index in Hz, during last packet receive
+     * (NaN if not available).
      */
     virtual float getLastRxFei() { return std::nanf(""); }
 
     /**
-     * @brief Get the signal to noise ratio, during last packet receive (NaN if not available).
+     * @brief Get the signal to noise ratio, during last packet receive (NaN if
+     * not available).
      */
     virtual float getLastRxSnr() { return std::nanf(""); }
 
@@ -178,25 +180,37 @@ protected:
     /**
      * @brief Wait for generic irq.
      */
-    void waitForIrq(LockMode &guard, IrqFlags irq, bool unlock = false);
+    IrqFlags waitForIrq(LockMode &guard, IrqFlags set_irq, IrqFlags reset_irq,
+                        bool unlock = false);
 
     /**
      * @brief Busy waits for an interrupt by polling the irq register.
      *
      * USE ONLY DURING INITIALIZATION! BAD THINGS *HAVE* HAPPENED DUE TO THIS!
      */
-    bool waitForIrqBusy(LockMode &guard, IrqFlags irq, int timeout);
+    IrqFlags waitForIrqBusy(LockMode &guard, IrqFlags set_irq,
+                            IrqFlags reset_irq, int timeout);
 
     /**
-     * @brief Returns if an interrupt happened, and clears it if it did.
+     * @brief Returns a mask containing triggered interrupts.
+     *
+     * NOTE: This function checks both set irqs (rising edge), and reset irqs
+     * (falling edge). But it only resets set interrupts.
+     *
+     * @param set_irq Mask containing set (rising edge) interrupts.
+     * @param reset_irq Mask containing reset (falling edge) interrupts.
+     * @return Mask containing all triggered interrupts (both rising and
+     * falling)
      */
-    bool checkForIrqAndReset(IrqFlags irq);
+    IrqFlags checkForIrqAndReset(IrqFlags set_irq, IrqFlags reset_irq);
 
     ISX1278Frontend &getFrontend();
 
     SPISlave &getSpiSlave();
 
 private:
+    void waitForIrqInner(LockMode &guard, bool unlock);
+
     DeviceState lockMode(Mode mode, DioMapping mapping, bool set_tx_frontend_on,
                          bool set_rx_frontend_on);
     void unlockMode(DeviceState old_state);

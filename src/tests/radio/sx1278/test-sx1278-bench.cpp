@@ -47,7 +47,7 @@ uint32_t xorshift32()
 
 struct TestMsg
 {
-    static constexpr int WORD_COUNT = 14;
+    static constexpr int WORD_COUNT = 60;
 
     uint32_t payload[WORD_COUNT];
 
