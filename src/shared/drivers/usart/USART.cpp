@@ -34,9 +34,6 @@
 
 ///< Pointer to serial port classes to let interrupts access the classes
 Boardcore::USART *ports[N_USART_PORTS];
-size_t Boardcore::USARTInterface::tempNBytes =
-    0;  ///< initialization of the static variable where will be put by default
-        ///< the nBytes transmitted/received
 
 #ifdef USART1
 /**
@@ -501,8 +498,14 @@ void USART::setBaudrate(int baudrate)
     this->baudrate = baudrate;
 }
 
-bool USART::read(void *buffer, size_t nBytes, const bool blocking,
-                 size_t &nBytesRead)
+bool USART::read(void *buffer, size_t nBytes, const bool blocking)
+{
+    size_t temp;
+    return read(buffer, nBytes, temp, blocking);
+}
+
+bool USART::read(void *buffer, size_t nBytes, size_t &nBytesRead,
+                 const bool blocking)
 {
     miosix::Lock<miosix::FastMutex> l(rxMutex);
 
@@ -680,8 +683,14 @@ bool STM32SerialWrapper::serialCommSetup()
     return true;
 }
 
-bool STM32SerialWrapper::read(void *buffer, size_t nBytes, const bool blocking,
-                              size_t &nBytesRead)
+bool STM32SerialWrapper::read(void *buffer, size_t nBytes, const bool blocking)
+{
+    size_t temp;
+    return read(buffer, nBytes, temp, blocking);
+}
+
+bool STM32SerialWrapper::read(void *buffer, size_t nBytes, size_t &nBytesRead,
+                              const bool blocking)
 {
     // non-blocking read not supported in STM32SerialWrapper
     if (!blocking)

@@ -84,11 +84,22 @@ public:
      * @param buffer Buffer that will contain the received data.
      * @param nBytes Maximum size of the buffer.
      * @param blocking Whether to wait for some data or not.
-     * @param nBytesRead Number of bytes read.
      * @return If operation succeeded.
      */
-    virtual bool read(void *buffer, size_t nBytes, const bool blocking = true,
-                      size_t &nBytesRead = tempNBytes) = 0;
+    virtual bool read(void *buffer, size_t nBytes,
+                      const bool blocking = true) = 0;
+
+    /**
+     * @brief Read operation to read nBytes or till the data transfer is
+     * complete.
+     * @param buffer Buffer that will contain the received data.
+     * @param nBytes Maximum size of the buffer.
+     * @param nBytesRead Number of bytes read.
+     * @param blocking Whether to wait for some data or not.
+     * @return If operation succeeded.
+     */
+    virtual bool read(void *buffer, size_t nBytes, size_t &nBytesRead,
+                      const bool blocking = true) = 0;
 
     /**
      * @brief Blocking write operation.
@@ -109,9 +120,6 @@ public:
     int getId() { return id; };
 
 protected:
-    static size_t
-        tempNBytes;  ///< Temporary variable for the default reference.
-
     USARTType *usart;
     int id = -1;                 ///< Can be from 1 to 8, -1 is invalid.
     IRQn_Type irqn;              ///< IRQ number
@@ -187,12 +195,22 @@ public:
      * @param buffer Buffer that will contain the received data.
      * @param nBytes Maximum size of the buffer.
      * @param blocking Whether to wait for some data or not.
-     * @param nBytesRead Number of bytes read.
      * @return If operation succeeded.
      */
     [[nodiscard]] bool read(void *buffer, size_t nBytes,
-                            const bool blocking = false,
-                            size_t &nBytesRead  = tempNBytes) override;
+                            const bool blocking = false) override;
+
+    /**
+     * @brief Read operation to read nBytes or till the data transfer is
+     * complete.
+     * @param buffer Buffer that will contain the received data.
+     * @param nBytes Maximum size of the buffer.
+     * @param nBytesRead Number of bytes read.
+     * @param blocking Whether to wait for some data or not.
+     * @return If operation succeeded.
+     */
+    [[nodiscard]] bool read(void *buffer, size_t nBytes, size_t &nBytesRead,
+                            const bool blocking = false) override;
 
     /**
      * @brief Blocking write operation.
@@ -320,12 +338,23 @@ public:
      * @param nBytes Maximum size of the buffer.
      * @param blocking Must be true; non-blocking read with miosix driver not
      * supported.
-     * @param nBytesRead Number of bytes read.
      * @return If operation succeeded.
      */
     [[nodiscard]] bool read(void *buffer, size_t nBytes,
-                            const bool blocking = true,
-                            size_t &nBytesRead  = tempNBytes);
+                            const bool blocking = true);
+
+    /**
+     * @brief Blocking read operation to read nBytes or till the data transfer
+     * is complete.
+     * @param buffer Buffer that will contain the received data.
+     * @param nBytes Maximum size of the buffer.
+     * @param nBytesRead Number of bytes read.
+     * @param blocking Must be true; non-blocking read with miosix driver not
+     * supported.
+     * @return If operation succeeded.
+     */
+    [[nodiscard]] bool read(void *buffer, size_t nBytes, size_t &nBytesRead,
+                            const bool blocking = true);
 
     /**
      * @brief Blocking write operation.

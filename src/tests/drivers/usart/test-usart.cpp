@@ -131,6 +131,7 @@ bool testCommunicationSequential(USARTInterface *src, USARTInterface *dst)
 {
     char buf_rx[64] = {0};
     StructToSend struct_rx{0};
+    size_t nReads{0};
     bool passed = true;
 
     /************************** SENDING STRING **************************/
@@ -139,13 +140,23 @@ bool testCommunicationSequential(USARTInterface *src, USARTInterface *dst)
     printf("\t%d--> sent: \t'%s'\n", src->getId(), buf_tx);
     src->writeString(buf_tx);
     // Thread::sleep(10); // enable to pass the test with STM32SerialWrapper
-    if (!dst->read(buf_rx, 64))
+    if (!dst->read(buf_rx, 64, nReads))
     {
         printf("### NO DATA READ ###\n");
         passed = false;
     }
 
     printf("\t%d<-- received: \t'%s'\n", dst->getId(), buf_rx);
+
+    if (nReads != strlen(buf_tx) + 1)
+    {
+        printf("### READ WRONG NUMBER OF BYTES ###\n");
+        passed = false;
+    }
+    else
+    {
+        printf("*** READ EXACT NUMBER OF BYTES ***\n");
+    }
 
     if (strcmp(buf_tx, buf_rx) == 0)
     {
@@ -210,46 +221,55 @@ int main()
     u6tx1::getPin().mode(miosix::Mode::ALTERNATE);
     u6tx1::getPin().alternateFunction(8);
 
-    u2rx1::getPin().mode(miosix::Mode::ALTERNATE);
-    u2rx1::getPin().alternateFunction(7);
-    u2tx1::getPin().mode(miosix::Mode::ALTERNATE);
-    u2tx1::getPin().alternateFunction(7);
+    u4rx2::getPin().mode(miosix::Mode::ALTERNATE);
+    u4rx2::getPin().alternateFunction(8);
+    u4tx2::getPin().mode(miosix::Mode::ALTERNATE);
+    u4tx2::getPin().alternateFunction(8);
 
-    bool testPassed = true;
-    printf("*** SERIAL 3 WORKING!\n");
-    for (int baudrate : baudrates)
+    for (;;)
     {
-        printf("\n\n########################### %d\n", baudrate);
+        bool testPassed = true;
+        printf("*** SERIAL 3 WORKING!\n");
 
-        // declaring the usart peripherals
-        USART usartx(USART6, baudrate);
-        // usartx.setOversampling(false);
-        // usartx.setStopBits(1);
-        // usartx.setWordLength(USART::WordLength::BIT8);
-        // usartx.setParity(USART::ParityBit::NO_PARITY);
+        for (int baudrate : baudrates)
+        {
+            printf("\n\n########################### %d\n", baudrate);
+            // declaring the usart peripherals
+            USART usartx(USART6, baudrate);
+            // usartx.setBaudrate(baudrate);
+            // usartx.setOversampling(false);
+            // usartx.setStopBits(1);
+            // usartx.setWordLength(USART::WordLength::BIT8);
+            // usartx.setParity(USART::ParityBit::NO_PARITY);
 
-        USART usarty(USART2, baudrate);
+            // USART usarty(UART4, baudrate);
+            STM32SerialWrapper usarty(UART4, baudrate, u4rx2::getPin(),
+                                      u4tx2::getPin());
 
-        // testing transmission (both char and binary) "serial 1 <- serial 2"
-        testPassed &= testCommunicationSequential(&usartx, &usarty);
+            // testing transmission (both char and binary) "serial 1 <- serial
+            // 2"
+            testPassed &= testCommunicationSequential(&usartx, &usarty);
 
-        // testing transmission (both char and binary) "serial 1 -> serial 2"
-        testPassed &= testCommunicationSequential(&usarty, &usartx);
-    }
+            // testing transmission (both char and binary) "serial 1 -> serial
+            // 2"
+            testPassed &= testCommunicationSequential(&usarty, &usartx);
+        }
 
-    if (testPassed)
-    {
-        printf(
-            "********************************\n"
-            "***        TEST PASSED       ***\n"
-            "********************************\n");
-    }
-    else
-    {
-        printf(
-            "################################\n"
-            "###        TEST FAILED       ###\n"
-            "################################\n");
+        if (testPassed)
+        {
+            printf(
+                "********************************\n"
+                "***        TEST PASSED       ***\n"
+                "********************************\n");
+        }
+        else
+        {
+            printf(
+                "################################\n"
+                "###        TEST FAILED       ###\n"
+                "################################\n");
+        }
+        Thread::sleep(5000);
     }
     return 0;
 }
