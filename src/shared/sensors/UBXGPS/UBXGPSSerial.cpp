@@ -381,6 +381,14 @@ void UBXGPSSerial::run()
         threadSample.positionDOP   = (float)pvtP.pDOP / 1e2;
         threadSample.satellites    = pvtP.numSV;
         threadSample.fix           = pvtP.fixType;
+        threadSample.ubxTime       = {.year       = pvtP.year,
+                                      .month      = pvtP.month,
+                                      .day        = pvtP.day,
+                                      .hour       = pvtP.hour,
+                                      .minute     = pvtP.min,
+                                      .second     = pvtP.sec,
+                                      .nanosecond = pvtP.nano,
+                                      .accuracy   = pvtP.tAcc};
 
         StackLogger::getInstance().updateStack(THID_GPS);
     }

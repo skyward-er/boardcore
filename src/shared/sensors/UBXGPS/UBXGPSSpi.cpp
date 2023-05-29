@@ -130,6 +130,14 @@ UBXGPSData UBXGPSSpi::sampleImpl()
     sample.positionDOP   = (float)pvtP.pDOP / 1e2;
     sample.satellites    = pvtP.numSV;
     sample.fix           = pvtP.fixType;
+    sample.ubxTime       = {.year       = pvtP.year,
+                            .month      = pvtP.month,
+                            .day        = pvtP.day,
+                            .hour       = pvtP.hour,
+                            .minute     = pvtP.min,
+                            .second     = pvtP.sec,
+                            .nanosecond = pvtP.nano,
+                            .accuracy   = pvtP.tAcc};
 
     return sample;
 }
