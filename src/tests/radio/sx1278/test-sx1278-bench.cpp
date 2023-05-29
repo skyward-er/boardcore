@@ -114,7 +114,7 @@ void recvLoop()
         TestMsg msg = {};
 
         sx1278->receive((uint8_t *)&msg, sizeof(msg));
-        if (true)
+        if (msg.validate())
         {
             stats.recv_count++;
 
@@ -167,14 +167,14 @@ void spawnThreads()
     send.detach();
 #endif
 
-    /* For now, I'll keep it here, just in case ...
-    std::thread watchdog([]() {
+    // For now, I'll keep it here, just in case ...
+    /* std::thread watchdog([]() {
         while(1) {
             {
                 FastInterruptDisableLock dlock;
                 sx1278->handleDioIRQ();
             }
-            Thread::sleep(200);
+            Thread::sleep(2);
         }
     });
     watchdog.detach();

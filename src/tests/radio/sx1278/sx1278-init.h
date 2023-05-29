@@ -58,7 +58,7 @@ using rxen = miosix::Gpio<GPIOD_BASE, 4>;
 #define SX1278_SPI SPI4
 
 #define SX1278_IRQ_DIO0 EXTI6_IRQHandlerImpl
-#define SX1278_IRQ_DIO1 EXTI2_IRQHandlerImpl
+#define SX1278_IRQ_DIO1 EXTI4_IRQHandlerImpl
 #define SX1278_IRQ_DIO3 EXTI11_IRQHandlerImpl
 
 #elif defined _BOARD_STM32F429ZI_SKYWARD_RIG
@@ -132,19 +132,19 @@ void initBoard()
 #ifdef SX1278_IRQ_DIO0
     miosix::GpioPin dio0_pin = dio0::getPin();
     enableExternalInterrupt(dio0_pin.getPort(), dio0_pin.getNumber(),
-                            InterruptTrigger::RISING_EDGE);
+                            InterruptTrigger::RISING_FALLING_EDGE);
 #endif
 
 #ifdef SX1278_IRQ_DIO1
     miosix::GpioPin dio1_pin = dio1::getPin();
     enableExternalInterrupt(dio1_pin.getPort(), dio1_pin.getNumber(),
-                            InterruptTrigger::RISING_EDGE);
+                            InterruptTrigger::RISING_FALLING_EDGE);
 #endif
 
 #ifdef SX1278_IRQ_DIO3
     miosix::GpioPin dio3_pin = dio3::getPin();
     enableExternalInterrupt(dio3_pin.getPort(), dio3_pin.getNumber(),
-                            InterruptTrigger::RISING_EDGE);
+                            InterruptTrigger::RISING_FALLING_EDGE);
 #endif
 }
 
