@@ -105,6 +105,7 @@ public:
             13;  //< Output power in dB (between +2 and +17 with pa_boost = on,
                  // and between +0 and +14 with pa_boost = off, +20 for +20dBm
                  // max power ignoring pa_boost).
+        bool enable_crc = true;  //< Enable hardware CRC calculation/checking
 
         /**
          * @brief Calculates effective and usable bitrate.
@@ -138,7 +139,8 @@ public:
     explicit SX1278Lora(SPIBus &bus, miosix::GpioPin cs,
                         SPI::ClockDivider clock_divider,
                         std::unique_ptr<SX1278::ISX1278Frontend> frontend)
-        : SX1278Common(bus, cs, clock_divider, std::move(frontend))
+        : SX1278Common(bus, cs, clock_divider, std::move(frontend)),
+          crc_enabled(false)
     {
     }
 
@@ -188,6 +190,8 @@ public:
     float getLastRxSnr() override;
 
 private:
+    void enterLoraMode();
+
     void readFifo(uint8_t addr, uint8_t *dst, uint8_t size);
     void writeFifo(uint8_t addr, uint8_t *src, uint8_t size);
 
@@ -198,6 +202,8 @@ private:
     void setMapping(SX1278::DioMapping mapping) override;
 
     void setFreqRF(int freq_rf);
+
+    bool crc_enabled;
 };
 
 }  // namespace Boardcore

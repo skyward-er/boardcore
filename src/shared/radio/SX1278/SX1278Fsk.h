@@ -41,7 +41,7 @@ public:
     /**
      * @brief Maximum transmittable unit of this driver.
      */
-    static constexpr size_t MTU = SX1278::Fsk::FIFO_LEN - 1;
+    static constexpr size_t MTU = 255;
 
     /**
      * @brief Requested SX1278 configuration.
@@ -117,7 +117,8 @@ public:
                          // full power).
         Shaping shaping = Shaping::GAUSSIAN_BT_1_0;  //< Shaping applied to
                                                      // the modulation stream.
-        DcFree dc_free = DcFree::WHITENING;  //< Dc free encoding scheme.
+        DcFree dc_free  = DcFree::WHITENING;  //< Dc free encoding scheme.
+        bool enable_crc = true;  //< Enable hardware CRC calculation/checking
     };
 
     /**
@@ -137,7 +138,8 @@ public:
     explicit SX1278Fsk(SPIBus &bus, miosix::GpioPin cs,
                        SPI::ClockDivider clock_divider,
                        std::unique_ptr<SX1278::ISX1278Frontend> frontend)
-        : SX1278Common(bus, cs, clock_divider, std::move(frontend))
+        : SX1278Common(bus, cs, clock_divider, std::move(frontend)),
+          crc_enabled(false)
     {
     }
 
@@ -161,7 +163,7 @@ public:
      *
      * @param pkt       Buffer to store the received packet into.
      * @param pkt_len   Maximum length of the received data.
-     * @return          Size of the data received or -1 if failure
+     * @return          Size of the data received or -1 on failure
      */
     ssize_t receive(uint8_t *pkt, size_t max_len) override;
 
@@ -192,6 +194,8 @@ public:
     float getLastRxFei() override;
 
 private:
+    void enterFskMode();
+
     void rateLimitTx();
 
     IrqFlags getIrqFlags() override;
@@ -203,6 +207,7 @@ private:
     void setMode(Mode mode) override;
     void setMapping(SX1278::DioMapping mapping) override;
 
+    bool crc_enabled;
     long long last_tx  = 0;
     float last_rx_rssi = 0.0f;
     PrintLogger logger = Logging::getLogger("sx1278");

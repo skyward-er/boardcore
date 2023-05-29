@@ -157,7 +157,7 @@ void recvLoop()
 
 void sendLoop(int interval, const char *data)
 {
-    char buf[64];
+    char buf[SX1278Lora::MTU];
     strncpy(buf, data, sizeof(buf) - 1);
 
     while (1)
@@ -176,8 +176,8 @@ int main()
     SX1278Lora::Config config = {};
     config.power              = 10;
     config.ocp                = 0;
-    config.coding_rate        = SX1278Lora::Config::Cr::CR_4;
-    config.spreading_factor   = SX1278Lora::Config::Sf::SF_12;
+    config.coding_rate        = SX1278Lora::Config::Cr::CR_2;
+    config.spreading_factor   = SX1278Lora::Config::Sf::SF_8;
 
     SX1278Lora::Error err;
 
@@ -203,8 +203,15 @@ int main()
 
     printf("\n[sx1278] Initialization complete!\n");
 
+    const char *msg =
+        "Very very very very very very very very very very very "
+        "very very very very very very very very very very very "
+        "very very very very very very very very very very very "
+        "very very very very very very very very very very very "
+        "long message";
+
     // Spawn all threads
-    std::thread send([]() { sendLoop(3333, "Sample radio message"); });
+    std::thread send([msg]() { sendLoop(3333, msg); });
     std::thread recv([]() { recvLoop(); });
 
     // sx1278->debugDumpRegisters();

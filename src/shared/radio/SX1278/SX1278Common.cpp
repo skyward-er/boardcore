@@ -53,11 +53,10 @@ void SX1278Common::setDefaultMode(Mode mode, DioMapping mapping,
     mutex.unlock();
 }
 
-void SX1278Common::waitForIrq(LockMode &_guard, IrqFlags irq, bool unlock)
+ISX1278::IrqFlags SX1278Common::waitForIrq(LockMode &guard, IrqFlags set_irq,
+                                           IrqFlags reset_irq, bool unlock)
 {
-    // Take a reference to a _guard to MAKE SURE that the mutex is locked, but
-    // otherwise don't do anything with it
-    (void)_guard;
+    IrqFlags ret_irq = 0;
 
     do
     {
@@ -68,45 +67,31 @@ void SX1278Common::waitForIrq(LockMode &_guard, IrqFlags irq, bool unlock)
         }
 
         // Check that this hasn't already happened
-        if (checkForIrqAndReset(irq))
+        if ((ret_irq = checkForIrqAndReset(set_irq, reset_irq)) != 0)
         {
-            return;
+            break;
         }
 
-        if (unlock)
-        {
-            mutex.unlock();
-        }
+        waitForIrqInner(guard, unlock);
 
-        {
-            miosix::FastInterruptDisableLock dLock;
-            while (state.irq_wait_thread)
-            {
-                miosix::Thread::IRQwait();
-                {
-                    miosix::FastInterruptEnableLock eLock(dLock);
-                    miosix::Thread::yield();
-                }
-            }
-        }
-
-        // Regain ownership of the lock
-        if (unlock)
-        {
-            mutex.lock();
-        }
+        // TODO: Check state of the device, and reset if needed!
 
         // Protect against sporadic IRQs
-    } while (!checkForIrqAndReset(irq));
+    } while ((ret_irq = checkForIrqAndReset(set_irq, reset_irq)) == 0);
+
+    return ret_irq;
 }
 
-bool SX1278Common::waitForIrqBusy(LockMode &_guard, IrqFlags irq, int timeout)
+ISX1278::IrqFlags SX1278Common::waitForIrqBusy(LockMode &_guard,
+                                               IrqFlags set_irq,
+                                               IrqFlags reset_irq, int timeout)
 {
     // Take a reference to a _guard to MAKE SURE that the mutex is locked, but
     // otherwise don't do anything with it
     (void)_guard;
 
-    long long start = miosix::getTick();
+    long long start  = miosix::getTick();
+    IrqFlags ret_irq = 0;
 
     while ((miosix::getTick() - start) < timeout)
     {
@@ -116,32 +101,61 @@ bool SX1278Common::waitForIrqBusy(LockMode &_guard, IrqFlags irq, int timeout)
         // Tight loop on IRQ register
         for (unsigned int i = 0; i < 1000 / DELAY; i++)
         {
-            if (checkForIrqAndReset(irq))
+            // Check if some of the interrupts triggered
+            if ((ret_irq = checkForIrqAndReset(set_irq, reset_irq)) != 0)
             {
-                return true;
+                return ret_irq;
             }
 
             miosix::delayUs(DELAY);
         }
     }
 
-    return false;
+    return 0;
 }
 
-bool SX1278Common::checkForIrqAndReset(IrqFlags irq)
+void SX1278Common::waitForIrqInner(LockMode &_guard, bool unlock)
+{
+    // Take a reference to a _guard to MAKE SURE that the mutex is locked, but
+    // otherwise don't do anything with it
+    (void)_guard;
+
+    // Release the lock for others to take
+    if (unlock)
+    {
+        mutex.unlock();
+    }
+
+    {
+        miosix::FastInterruptDisableLock dLock;
+        while (state.irq_wait_thread)
+        {
+            miosix::Thread::IRQwait();
+            {
+                miosix::FastInterruptEnableLock eLock(dLock);
+                miosix::Thread::yield();
+            }
+        }
+    }
+
+    // Regain ownership of the lock
+    if (unlock)
+    {
+        mutex.lock();
+    }
+}
+
+ISX1278::IrqFlags SX1278Common::checkForIrqAndReset(IrqFlags set_irq,
+                                                    IrqFlags reset_irq)
 {
     IrqFlags cur_irq = getIrqFlags();
-    if (cur_irq & irq)
+    if (cur_irq & set_irq)
     {
         // Reset all of the interrupts we have detected
-        resetIrqFlags(cur_irq & irq);
+        resetIrqFlags(cur_irq & set_irq);
+    }
 
-        return true;
-    }
-    else
-    {
-        return false;
-    }
+    return (cur_irq & set_irq) | (~cur_irq & reset_irq);
 }
 
 ISX1278Frontend &SX1278Common::getFrontend() { return *frontend; }

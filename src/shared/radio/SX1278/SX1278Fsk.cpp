@@ -69,13 +69,12 @@ bool SX1278Fsk::checkVersion()
 
 SX1278Fsk::Error SX1278Fsk::configure(const Config &config)
 {
-    // First cycle the device to bring it into Fsk mode (can only be changed in
-    // sleep)
-    setDefaultMode(RegOpMode::MODE_SLEEP, DEFAULT_MAPPING, false, false);
-    miosix::Thread::sleep(1);
+    // First make sure the device is in fsk and in standby
+    enterFskMode();
 
-    // Make sure the device remains in RX and not in sleep
-    setDefaultMode(RegOpMode::MODE_RX, DEFAULT_MAPPING, false, false);
+    // Set default mode to standby, that way we reset the fifo every time we
+    // enter receive
+    setDefaultMode(RegOpMode::MODE_STDBY, DEFAULT_MAPPING, false, false);
     miosix::Thread::sleep(1);
 
     // Lock the bus
@@ -83,7 +82,7 @@ SX1278Fsk::Error SX1278Fsk::configure(const Config &config)
     LockMode guard_mode(*this, guard, RegOpMode::MODE_STDBY, DEFAULT_MAPPING);
 
     // The datasheet lies, this IRQ is unreliable, it doesn't always trigger
-    // if (!waitForIrqBusy(guard_mode, RegIrqFlags::MODE_READY, 1000))
+    // if (!waitForIrqBusy(guard_mode, RegIrqFlags::MODE_READY, 0, 1000))
     //     return Error::IRQ_TIMEOUT;
 
     int bitrate              = config.bitrate;
@@ -98,6 +97,8 @@ SX1278Fsk::Error SX1278Fsk::configure(const Config &config)
         static_cast<RegPaRamp::ModulationShaping>(config.shaping);
     RegPacketConfig1::DcFree dc_free =
         static_cast<RegPacketConfig1::DcFree>(config.dc_free);
+
+    crc_enabled = config.enable_crc;
 
     {
         SPITransaction spi(getSpiSlave());
@@ -200,18 +201,23 @@ SX1278Fsk::Error SX1278Fsk::configure(const Config &config)
             REG_PACKET_CONFIG_1,
             RegPacketConfig1::make(
                 RegPacketConfig1::CRC_WHITENING_TYPE_CCITT_CRC,
-                RegPacketConfig1::ADDRESS_FILTERING_NONE, false, true, dc_free,
-                RegPacketConfig1::PACKET_FORMAT_VARIABLE_LENGTH));
+                RegPacketConfig1::ADDRESS_FILTERING_NONE, true, crc_enabled,
+                dc_free, RegPacketConfig1::PACKET_FORMAT_VARIABLE_LENGTH));
 
         spi.writeRegister(
             REG_PACKET_CONFIG_2,
             RegPacketConfig2::make(false, false, false,
                                    RegPacketConfig2::DATA_MODE_PACKET));
 
+        // Set maximum payload length
+        spi.writeRegister(REG_PACKET_PAYLOAD_LENGTH, MTU);
+
+        // Setup threshold to half of the fifo
         spi.writeRegister(
             REG_FIFO_THRESH,
             RegFifoThresh::make(
-                0x0f, RegFifoThresh::TX_START_CONDITION_FIFO_NOT_EMPTY));
+                FIFO_LEN / 2,
+                RegFifoThresh::TX_START_CONDITION_FIFO_NOT_EMPTY));
 
         spi.writeRegister(REG_NODE_ADRS, 0x00);
         spi.writeRegister(REG_BROADCAST_ADRS, 0x00);
@@ -226,31 +232,77 @@ ssize_t SX1278Fsk::receive(uint8_t *pkt, size_t max_len)
     LockMode guard_mode(*this, guard, RegOpMode::MODE_RX, DEFAULT_MAPPING,
                         false, true);
 
+    // Save the packet locally, we always want to read it all
+    uint8_t tmp_pkt[MTU];
+
+    // TODO: Maybe flush stuff?
+
     uint8_t len = 0;
+    bool crc_ok = false;
+
     do
     {
-        // Special wait for payload ready
-        waitForIrq(guard_mode, RegIrqFlags::PAYLOAD_READY, true);
+        uint8_t cur_len = 0;
+
+        // Special wait for fifo level/payload ready, release the lock at this
+        // stage
+        if ((waitForIrq(guard_mode,
+                        RegIrqFlags::FIFO_LEVEL | RegIrqFlags::PAYLOAD_READY, 0,
+                        true) &
+             RegIrqFlags::PAYLOAD_READY) != 0 &&
+            crc_enabled)
+        {
+            crc_ok = checkForIrqAndReset(RegIrqFlags::CRC_OK, 0) != 0;
+        }
+
         last_rx_rssi = getRssi();
 
+        // Now first packet bit
         {
             SPITransaction spi(getSpiSlave());
             len = spi.readRegister(REG_FIFO);
-            if (len > max_len)
-                return -1;
 
-            spi.readRegisters(REG_FIFO, pkt, len);
+            int read_size = std::min((int)len, FIFO_LEN / 2);
+            // Skip 0 sized read
+            if (read_size != 0)
+                spi.readRegisters(REG_FIFO, &tmp_pkt[cur_len], read_size);
+
+            cur_len += read_size;
+        }
+
+        // Then read the other chunks
+        while (cur_len < len)
+        {
+            if ((waitForIrq(
+                     guard_mode,
+                     RegIrqFlags::FIFO_LEVEL | RegIrqFlags::PAYLOAD_READY, 0) &
+                 RegIrqFlags::PAYLOAD_READY) != 0 &&
+                crc_enabled)
+            {
+                crc_ok = checkForIrqAndReset(RegIrqFlags::CRC_OK, 0) != 0;
+            }
+
+            SPITransaction spi(getSpiSlave());
+
+            int read_size = std::min((int)(len - cur_len), FIFO_LEN / 2);
+            spi.readRegisters(REG_FIFO, &tmp_pkt[cur_len], read_size);
+
+            cur_len += read_size;
         }
 
         // For some reason this sometimes happen?
     } while (len == 0);
 
+    if (len > max_len || (!crc_ok && crc_enabled))
+        return -1;
+
+    // Finally copy the packet to the destination
+    memcpy(pkt, tmp_pkt, len);
     return len;
 }
 
 bool SX1278Fsk::send(uint8_t *pkt, size_t len)
 {
-    // Packets longer than FIFO_LEN (-1 for the len byte) are not supported
     if (len > MTU)
         return false;
 
@@ -262,17 +314,39 @@ bool SX1278Fsk::send(uint8_t *pkt, size_t len)
     LockMode guard_mode(*this, guard, RegOpMode::MODE_TX, DEFAULT_MAPPING, true,
                         false);
 
-    waitForIrq(guard_mode, RegIrqFlags::TX_READY);
+    waitForIrq(guard_mode, RegIrqFlags::TX_READY, 0);
 
+    // Send first segment
     {
         SPITransaction spi(getSpiSlave());
 
         spi.writeRegister(REG_FIFO, static_cast<uint8_t>(len));
-        spi.writeRegisters(REG_FIFO, pkt, len);
+
+        int write_size = std::min((int)len, FIFO_LEN - 1);
+        spi.writeRegisters(REG_FIFO, pkt, write_size);
+
+        pkt += write_size;
+        len -= write_size;
     }
 
+    // Then send the rest using fifo control
+    while (len > 0)
+    {
+        // Wait for FIFO_LEVEL to go down
+        waitForIrq(guard_mode, 0, RegIrqFlags::FIFO_LEVEL);
+
+        SPITransaction spi(getSpiSlave());
+
+        int write_size = std::min((int)len, FIFO_LEN / 2);
+        spi.writeRegisters(REG_FIFO, pkt, write_size);
+
+        pkt += write_size;
+        len -= write_size;
+    }
+
+    // Finally wait for packet sent
     // Wait for packet sent
-    waitForIrq(guard_mode, RegIrqFlags::PACKET_SENT);
+    waitForIrq(guard_mode, RegIrqFlags::PACKET_SENT, 0);
 
     last_tx = now();
     return true;
@@ -290,6 +364,24 @@ float SX1278Fsk::getCurRssi()
 {
     Lock guard(*this);
     return getRssi();
+}
+
+void SX1278Fsk::enterFskMode()
+{
+    Lock guard(*this);
+    SPITransaction spi(getSpiSlave());
+
+    // First enter Fsk sleep
+    spi.writeRegister(REG_OP_MODE,
+                      RegOpMode::make(RegOpMode::MODE_SLEEP, true,
+                                      RegOpMode::MODULATION_TYPE_FSK));
+    miosix::Thread::sleep(1);
+
+    // Then transition to standby
+    spi.writeRegister(REG_OP_MODE,
+                      RegOpMode::make(RegOpMode::MODE_STDBY, true,
+                                      RegOpMode::MODULATION_TYPE_FSK));
+    miosix::Thread::sleep(1);
 }
 
 void SX1278Fsk::rateLimitTx()

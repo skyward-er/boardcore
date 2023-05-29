@@ -90,16 +90,16 @@ void initBoard()
     GpioPin dio3_pin = dio3::getPin();
 
     enableExternalInterrupt(dio0_pin.getPort(), dio0_pin.getNumber(),
-                            InterruptTrigger::RISING_EDGE);
+                            InterruptTrigger::RISING_FALLING_EDGE);
     enableExternalInterrupt(dio1_pin.getPort(), dio1_pin.getNumber(),
-                            InterruptTrigger::RISING_EDGE);
+                            InterruptTrigger::RISING_FALLING_EDGE);
     enableExternalInterrupt(dio3_pin.getPort(), dio3_pin.getNumber(),
-                            InterruptTrigger::RISING_EDGE);
+                            InterruptTrigger::RISING_FALLING_EDGE);
 }
 
 void recvLoop()
 {
-    char buf[64];
+    char buf[SX1278Fsk::MTU];
     while (1)
     {
         ssize_t res =
@@ -116,7 +116,7 @@ void recvLoop()
 
 void sendLoop(int interval, const char *data)
 {
-    char buf[64];
+    char buf[SX1278Fsk::MTU];
     strncpy(buf, data, sizeof(buf) - 1);
 
     while (1)
@@ -157,8 +157,15 @@ int main()
 
     printf("\n[sx1278] Initialization complete!\n");
 
+    const char *msg =
+        "Very very very very very very very very very very very "
+        "very very very very very very very very very very very "
+        "very very very very very very very very very very very "
+        "very very very very very very very very very very very "
+        "long message";
+
     // Spawn all threads
-    std::thread send([]() { sendLoop(1000, "Sample radio message"); });
+    std::thread send([msg]() { sendLoop(3333, msg); });
     std::thread recv([]() { recvLoop(); });
 
     // sx1278->debugDumpRegisters();
