@@ -74,6 +74,17 @@ I2CTimings calculateTimings(uint32_t f, uint32_t fi2c)
     // for SCLDEL and SDADEL
     uint32_t temp_presc = f / (64 * fi2c);
 
+#if defined(_BOARD_STM32F756ZG_NUCLEO)
+    const uint16_t correction = 10;
+#elif defined(_BOARD_STM32F767ZI_COMPUTE_UNIT) || \
+    defined(_BOARD_STM32F767ZI_NUCLEO)
+    const uint16_t correction = 7;
+#else
+    const uint16_t correction = 0;
+#warning \
+    "I2C Timings not corrected, actual frequency could be lower than nominal"
+#endif
+
     // presc is 4 bit long, so avoiding overflow
     if (temp_presc >= 16)
     {
@@ -93,7 +104,7 @@ I2CTimings calculateTimings(uint32_t f, uint32_t fi2c)
     // distributing the correction on SCLL and SCLH
     i2cTimings.sclh = i2cTimings.scll =
         (f / (fi2c * 2 * (i2cTimings.presc + 1)) - 1) -
-        (7 / (i2cTimings.presc + 1));
+        (correction / (i2cTimings.presc + 1));
 
     // SCLDEL >= (t_r + t_su) / ((PRESC+1)*t_i2c) - 1 ; approximated without
     // subtracting 1. scldly and sdadly are calculated using values taken from
