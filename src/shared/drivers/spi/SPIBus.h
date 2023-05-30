@@ -22,6 +22,7 @@
 
 #pragma once
 
+#include <assert.h>
 #include <interfaces/delays.h>
 #include <utils/ClockUtils.h>
 
@@ -489,6 +490,9 @@ inline void SPIBus::read(uint8_t* data, size_t nBytes)
 
 inline void SPIBus::read16(uint16_t* data, size_t nBytes)
 {
+    // At the start of the transfer we assume that the RX FIFO is empty
+    assert((spi->SR & SPI_SR_RXNE) == 0);
+
     // Set 16 bit frame format
     set16BitFrameFormat();
 
@@ -529,6 +533,9 @@ inline void SPIBus::write(const uint8_t* data, size_t nBytes)
 
 inline void SPIBus::write16(const uint16_t* data, size_t nBytes)
 {
+    // At the start of the transfer we assume that the RX FIFO is empty
+    assert((spi->SR & SPI_SR_RXNE) == 0);
+
     // Set 16 bit frame format
     set16BitFrameFormat();
 
@@ -555,6 +562,9 @@ inline void SPIBus::write16(const uint16_t* data, size_t nBytes)
 
 inline uint8_t SPIBus::transfer(uint8_t data)
 {
+    // At the start of the transfer we assume that the RX FIFO is empty
+    assert((spi->SR & SPI_SR_RXNE) == 0);
+
     // Wait until the peripheral is ready to transmit
     while ((spi->SR & SPI_SR_TXE) == 0)
         ;
@@ -572,6 +582,9 @@ inline uint8_t SPIBus::transfer(uint8_t data)
 
 inline uint16_t SPIBus::transfer16(uint16_t data)
 {
+    // At the start of the transfer we assume that the RX FIFO is empty
+    assert((spi->SR & SPI_SR_RXNE) == 0);
+
     // Set 16 bit frame format
     set16BitFrameFormat();
 
@@ -619,6 +632,9 @@ inline void SPIBus::transfer(uint8_t* data, size_t nBytes)
 
 inline void SPIBus::transfer16(uint16_t* data, size_t nBytes)
 {
+    // At the start of the transfer we assume that the RX FIFO is empty
+    assert((spi->SR & SPI_SR_RXNE) == 0);
+
     // Set 16 bit frame format
     set16BitFrameFormat();
 
