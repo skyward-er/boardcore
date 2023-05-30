@@ -501,12 +501,6 @@ inline void SPIBus::read16(uint16_t* data, size_t nBytes)
         // Write the data item to transmit
         spi->DR = 0;
 
-        // Make sure transmission is complete
-        while ((spi->SR & SPI_SR_TXE) == 0)
-            ;
-        while ((spi->SR & SPI_SR_BSY) > 0)
-            ;        
-
         // Wait until data is received
         while ((spi->SR & SPI_SR_RXNE) == 0)
             ;
@@ -547,12 +541,6 @@ inline void SPIBus::write16(const uint16_t* data, size_t nBytes)
         // Write the data item to transmit
         spi->DR = static_cast<uint16_t>(data[i]);
 
-        // Make sure transmission is complete
-        while ((spi->SR & SPI_SR_TXE) == 0)
-            ;
-        while ((spi->SR & SPI_SR_BSY) > 0)
-            ;
-
         // Wait until data is received
         while ((spi->SR & SPI_SR_RXNE) == 0)
             ;
@@ -574,12 +562,6 @@ inline uint8_t SPIBus::transfer(uint8_t data)
     // Write the data item to transmit
     *(volatile uint8_t*)&spi->DR = static_cast<uint8_t>(data);
 
-    // Make sure transmission is complete
-    while ((spi->SR & SPI_SR_TXE) == 0)
-        ;
-    while ((spi->SR & SPI_SR_BSY) > 0)
-        ;
-
     // Wait until data is received
     while ((spi->SR & SPI_SR_RXNE) == 0)
         ;
@@ -600,21 +582,17 @@ inline uint16_t SPIBus::transfer16(uint16_t data)
     // Write the data item to transmit
     spi->DR = static_cast<uint16_t>(data);
 
-    // Make sure transmission is complete
-    while ((spi->SR & SPI_SR_TXE) == 0)
-        ;
-    while ((spi->SR & SPI_SR_BSY) > 0)
-        ;
-
     // Wait until data is received
     while ((spi->SR & SPI_SR_RXNE) == 0)
         ;
 
+    // Read the received data item
+    data = static_cast<uint16_t>(spi->DR);
+
     // Go back to 8 bit frame format
     set8BitFrameFormat();
 
-    // Read the received data item
-    return static_cast<uint16_t>(spi->DR);
+    return data;
 }
 
 inline uint32_t SPIBus::transfer24(uint32_t data)
@@ -652,12 +630,6 @@ inline void SPIBus::transfer16(uint16_t* data, size_t nBytes)
 
         // Write the data item to transmit
         spi->DR = static_cast<uint16_t>(data[i]);
-
-        // Make sure transmission is complete
-        while ((spi->SR & SPI_SR_TXE) == 0)
-            ;
-        while ((spi->SR & SPI_SR_BSY) > 0)
-            ;
 
         // Wait until data is received
         while ((spi->SR & SPI_SR_RXNE) == 0)
