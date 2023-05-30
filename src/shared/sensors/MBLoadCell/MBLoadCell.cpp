@@ -288,7 +288,7 @@ std::string MBLoadCell::receiveASCII()
     // Setting both the control pins to low in order to receive
     ctrlPin1::low();
     ctrlPin2::low();
-    int len  = serial.read(buf, 64);
+    int len  = serial.readBlocking(buf, 64);
     buf[len] = '\0';
 
     return std::string(buf);
@@ -300,7 +300,7 @@ void MBLoadCell::receive(T *buf)
     // Setting both the control pins to low in order to receive
     ctrlPin1::low();
     ctrlPin2::low();
-    serial.read(buf, sizeof(buf));
+    serial.readBlocking(buf, sizeof(buf));
 }
 
 }  // namespace Boardcore

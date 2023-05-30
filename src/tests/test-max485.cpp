@@ -101,7 +101,7 @@ void testCommunication(char *data, USARTInterface &src, USARTInterface &dst)
     std::thread t(
         [&]()
         {
-            dst.read(rcv, 64);
+            dst.readBlocking(rcv, 64);
             printf("\t<--%d received: \t'%s'\n", dst.getId(), rcv);
         });
 

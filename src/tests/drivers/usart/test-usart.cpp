@@ -140,7 +140,7 @@ bool testCommunicationSequential(USARTInterface *src, USARTInterface *dst)
     printf("\t%d--> sent: \t'%s'\n", src->getId(), buf_tx);
     src->writeString(buf_tx);
     // Thread::sleep(10); // enable to pass the test with STM32SerialWrapper
-    if (!dst->read(buf_rx, 64, nReads))
+    if (!dst->readBlocking(buf_rx, 64, nReads))
     {
         printf("### NO DATA READ ###\n");
         passed = false;
@@ -174,7 +174,7 @@ bool testCommunicationSequential(USARTInterface *src, USARTInterface *dst)
     printf("\t%d--> sent: \t'%s'\n", src->getId(), struct_tx.print().c_str());
     src->write(&struct_tx, sizeof(StructToSend));
     // Thread::sleep(10); // enable to pass the test with STM32SerialWrapper
-    if (!dst->read(&struct_rx, sizeof(StructToSend)))
+    if (!dst->readBlocking(&struct_rx, sizeof(StructToSend)))
     {
         printf("### NO DATA READ ###\n");
         passed = false;
@@ -195,7 +195,7 @@ bool testCommunicationSequential(USARTInterface *src, USARTInterface *dst)
 
     // Testing the non blocking read only if USART class
     if ((dynamic_cast<const USART *>(dst) != nullptr) &&
-        !dst->read(&struct_rx, sizeof(StructToSend), false))
+        !dynamic_cast<USART *>(dst)->read(&struct_rx, sizeof(StructToSend)))
     {
         printf("Non blocking read passed!\n");
     }

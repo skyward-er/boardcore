@@ -667,7 +667,7 @@ bool VN100::recvStringCommand(char *command, int maxLength)
 {
     int i = 0;
     // Read the buffer
-    if (!(serialInterface->read(command, maxLength)))
+    if (!(serialInterface->readBlocking(command, maxLength)))
     {
         return false;
     }

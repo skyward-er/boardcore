@@ -79,27 +79,31 @@ public:
     virtual ~USARTInterface() = 0;
 
     /**
-     * @brief Read operation to read nBytes or till the data transfer is
-     * complete.
+     * @brief Blocking read operation to read nBytes or till the data transfer
+     * is complete.
      * @param buffer Buffer that will contain the received data.
      * @param nBytes Maximum size of the buffer.
-     * @param blocking Whether to wait for some data or not.
      * @return If operation succeeded.
      */
-    virtual bool read(void *buffer, size_t nBytes,
-                      const bool blocking = true) = 0;
+    [[nodiscard]] virtual bool readBlocking(void *buffer, size_t nBytes)
+    {
+        size_t temp;
+        return readImpl(buffer, nBytes, temp, true);
+    };
 
     /**
-     * @brief Read operation to read nBytes or till the data transfer is
-     * complete.
+     * @brief Blocking read operation to read nBytes or till the data transfer
+     * is complete.
      * @param buffer Buffer that will contain the received data.
      * @param nBytes Maximum size of the buffer.
-     * @param nBytesRead Number of bytes read.
-     * @param blocking Whether to wait for some data or not.
+     * @param nBytesRead Number of bytes read in the transaction.
      * @return If operation succeeded.
      */
-    virtual bool read(void *buffer, size_t nBytes, size_t &nBytesRead,
-                      const bool blocking = true) = 0;
+    [[nodiscard]] virtual bool readBlocking(void *buffer, size_t nBytes,
+                                            size_t &nBytesRead)
+    {
+        return readImpl(buffer, nBytes, nBytesRead, true);
+    };
 
     /**
      * @brief Blocking write operation.
@@ -120,6 +124,19 @@ public:
     int getId() { return id; };
 
 protected:
+    /**
+     * @brief Read method implementation that supports both blocking and
+     * non-blocking mode and the return of the number of bytes read.
+     * @param buffer Buffer that will contain the received data.
+     * @param nBytes Maximum size of the buffer.
+     * @param nBytesRead Number of bytes read.
+     * @param blocking Whether the read should block or not; in case it isn't
+     * blocking the read could return also 0 bytes.
+     * @return If operation succeeded.
+     */
+    virtual bool readImpl(void *buffer, size_t nBytes, size_t &nBytesRead,
+                          const bool blocking) = 0;
+
     USARTType *usart;
     int id = -1;                 ///< Can be from 1 to 8, -1 is invalid.
     IRQn_Type irqn;              ///< IRQ number
@@ -190,27 +207,34 @@ public:
     ~USART() override;
 
     /**
-     * @brief Read operation to read nBytes or till the data transfer is
-     * complete.
+     * @brief Non-blocking read operation to read nBytes or till the data
+     * transfer is complete.
+     * @warning could also read 0 bytes.
+     *
      * @param buffer Buffer that will contain the received data.
      * @param nBytes Maximum size of the buffer.
-     * @param blocking Whether to wait for some data or not.
      * @return If operation succeeded.
      */
-    [[nodiscard]] bool read(void *buffer, size_t nBytes,
-                            const bool blocking = false) override;
+    [[nodiscard]] bool read(void *buffer, size_t nBytes)
+    {
+        size_t temp;
+        return readImpl(buffer, nBytes, temp, false);
+    }
 
     /**
-     * @brief Read operation to read nBytes or till the data transfer is
-     * complete.
+     * @brief Non-blocking read operation to read nBytes or till the data
+     * transfer is complete.
+     * @warning could also read 0 bytes.
+     *
      * @param buffer Buffer that will contain the received data.
      * @param nBytes Maximum size of the buffer.
      * @param nBytesRead Number of bytes read.
-     * @param blocking Whether to wait for some data or not.
      * @return If operation succeeded.
      */
-    [[nodiscard]] bool read(void *buffer, size_t nBytes, size_t &nBytesRead,
-                            const bool blocking = false) override;
+    [[nodiscard]] bool read(void *buffer, size_t nBytes, size_t &nBytesRead)
+    {
+        return readImpl(buffer, nBytes, nBytesRead, false);
+    };
 
     /**
      * @brief Blocking write operation.
@@ -269,6 +293,19 @@ public:
     void clearQueue();
 
 private:
+    /**
+     * @brief Read method implementation that supports both
+     * blocking/non-blocking mode and the return of the number of bytes read.
+     * @param buffer Buffer that will contain the received data.
+     * @param nBytes Maximum size of the buffer.
+     * @param nBytesRead Number of bytes read.
+     * @param blocking Whether the read should block or not; in case it isn't
+     * blocking the read could return also 0 bytes.
+     * @return If operation succeeded.
+     */
+    [[nodiscard]] bool readImpl(void *buffer, size_t nBytes, size_t &nBytesRead,
+                                const bool blocking) override;
+
     miosix::FastMutex rxMutex;  ///< mutex for receiving on serial
     miosix::FastMutex txMutex;  ///< mutex for transmitting on serial
 
@@ -332,31 +369,6 @@ public:
     ~STM32SerialWrapper();
 
     /**
-     * @brief Blocking read operation to read nBytes or till the data transfer
-     * is complete.
-     * @param buffer Buffer that will contain the received data.
-     * @param nBytes Maximum size of the buffer.
-     * @param blocking Must be true; non-blocking read with miosix driver not
-     * supported.
-     * @return If operation succeeded.
-     */
-    [[nodiscard]] bool read(void *buffer, size_t nBytes,
-                            const bool blocking = true);
-
-    /**
-     * @brief Blocking read operation to read nBytes or till the data transfer
-     * is complete.
-     * @param buffer Buffer that will contain the received data.
-     * @param nBytes Maximum size of the buffer.
-     * @param nBytesRead Number of bytes read.
-     * @param blocking Must be true; non-blocking read with miosix driver not
-     * supported.
-     * @return If operation succeeded.
-     */
-    [[nodiscard]] bool read(void *buffer, size_t nBytes, size_t &nBytesRead,
-                            const bool blocking = true);
-
-    /**
      * @brief Blocking write operation.
      * @param buffer Buffer that contains the data to be sent.
      * @param nBytes Bytes to be sent.
@@ -370,6 +382,19 @@ public:
     void writeString(const char *buffer);
 
 private:
+    /**
+     * @brief Read method implementation that supports both
+     * blocking/non-blocking mode and the return of the number of bytes read.
+     * @param buffer Buffer that will contain the received data.
+     * @param nBytes Maximum size of the buffer.
+     * @param nBytesRead Number of bytes read.
+     * @param blocking Whether the read should block or not; in case it isn't
+     * blocking the read could return also 0 bytes.
+     * @return If operation succeeded.
+     */
+    [[nodiscard]] bool readImpl(void *buffer, size_t nBytes, size_t &nBytesRead,
+                                const bool blocking) override;
+
     /**
      * @brief Creates a device that represents the serial port, adds it to the
      * file system and opens the file that represents the device.

@@ -498,14 +498,8 @@ void USART::setBaudrate(int baudrate)
     this->baudrate = baudrate;
 }
 
-bool USART::read(void *buffer, size_t nBytes, const bool blocking)
-{
-    size_t temp;
-    return read(buffer, nBytes, temp, blocking);
-}
-
-bool USART::read(void *buffer, size_t nBytes, size_t &nBytesRead,
-                 const bool blocking)
+bool USART::readImpl(void *buffer, size_t nBytes, size_t &nBytesRead,
+                     const bool blocking)
 {
     miosix::Lock<miosix::FastMutex> l(rxMutex);
 
@@ -683,14 +677,8 @@ bool STM32SerialWrapper::serialCommSetup()
     return true;
 }
 
-bool STM32SerialWrapper::read(void *buffer, size_t nBytes, const bool blocking)
-{
-    size_t temp;
-    return read(buffer, nBytes, temp, blocking);
-}
-
-bool STM32SerialWrapper::read(void *buffer, size_t nBytes, size_t &nBytesRead,
-                              const bool blocking)
+bool STM32SerialWrapper::readImpl(void *buffer, size_t nBytes,
+                                  size_t &nBytesRead, const bool blocking)
 {
     // non-blocking read not supported in STM32SerialWrapper
     if (!blocking)
