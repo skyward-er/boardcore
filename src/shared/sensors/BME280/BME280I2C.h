@@ -1,4 +1,4 @@
-/* Copyright (c) 2021 Skyward Experimental Rocketry
+/* Copyright (c) 2023 Skyward Experimental Rocketry
  * Author: Alberto Nidasio
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -23,7 +23,7 @@
 #pragma once
 
 #include <diagnostic/PrintLogger.h>
-#include <drivers/spi/SPIDriver.h>
+#include <drivers/i2c/I2C.h>
 #include <sensors/Sensor.h>
 
 #include "BME280Data.h"
@@ -31,7 +31,7 @@
 namespace Boardcore
 {
 
-class BME280 : public Sensor<BME280Data>
+class BME280I2C : public Sensor<BME280Data>
 {
 public:
     enum Oversampling
@@ -157,8 +157,8 @@ public:
     ///< Temperature enabled in forced mode
     static const BME280Config BME280_CONFIG_TEMP_SINGLE;
 
-    explicit BME280(SPISlave spiSlave,
-                    BME280Config config = BME280_CONFIG_ALL_ENABLED);
+    explicit BME280I2C(I2C& bus,
+                       BME280Config config = BME280_CONFIG_ALL_ENABLED);
 
     /**
      * @brief Initialize the device with the specified configuration
@@ -241,7 +241,7 @@ public:
 private:
     BME280Data sampleImpl() override;
 
-    void reset();
+    bool reset();
 
     void setConfiguration();
 
@@ -268,33 +268,36 @@ private:
      */
     bool checkWhoAmI();
 
-    enum BME280Registers : uint8_t
+    enum Registers : uint8_t
     {
         REG_CALIB_0 = 0x88,
         // Calibration register 1-25
 
-        REG_ID    = 0x50,
-        REG_RESET = 0x60,
+        REG_ID    = 0xD0,
+        REG_RESET = 0xE0,
 
         REG_CALIB_26 = 0xE1,
         // Calibration register 27-41
 
-        REG_CTRL_HUM  = 0x72,
-        REG_STATUS    = 0x73,
-        REG_CTRL_MEAS = 0x74,
-        REG_CONFIG    = 0x75,
+        REG_CTRL_HUM  = 0xF2,
+        REG_STATUS    = 0xF3,
+        REG_CTRL_MEAS = 0xF4,
+        REG_CONFIG    = 0xF5,
 
-        REG_PRESS_MSB  = 0x77,
-        REG_PRESS_LSB  = 0x78,
-        REG_PRESS_XLSB = 0x79,
-        REG_TEMP_MSB   = 0x7A,
-        REG_TEMP_LSB   = 0x7B,
-        REG_TEMP_XLSB  = 0x7C,
-        REG_HUM_MSB    = 0x7D,
-        REG_HUM_LSB    = 0x7E,
+        REG_PRESS_MSB  = 0xF7,
+        REG_PRESS_LSB  = 0xF8,
+        REG_PRESS_XLSB = 0xF9,
+        REG_TEMP_MSB   = 0xFA,
+        REG_TEMP_LSB   = 0xFB,
+        REG_TEMP_XLSB  = 0xFC,
+        REG_HUM_MSB    = 0xFD,
+        REG_HUM_LSB    = 0xFE,
     };
 
-    const SPISlave spiSlave;
+    I2C& bus;
+    I2CDriver::I2CSlaveConfig slaveConfig{0x76, I2CDriver::Addressing::BIT7,
+                                          I2CDriver::Speed::STANDARD};
+
     BME280Config config;
     BME280Comp compParams;
     int32_t fineTemperature;  // Used in compensation algorithm

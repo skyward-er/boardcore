@@ -82,7 +82,9 @@ foreach(OPT_BOARD ${BOARDS})
         ${SBS_BASE}/src/shared/sensors/ADS1118/ADS1118.cpp
         ${SBS_BASE}/src/shared/sensors/ADS131M04/ADS131M04.cpp
         ${SBS_BASE}/src/shared/sensors/BME280/BME280.cpp
+        ${SBS_BASE}/src/shared/sensors/BME280/BME280I2C.cpp
         ${SBS_BASE}/src/shared/sensors/BMP280/BMP280.cpp
+        ${SBS_BASE}/src/shared/sensors/BMP280/BMP280I2C.cpp
         ${SBS_BASE}/src/shared/sensors/BMX160/BMX160.cpp
         ${SBS_BASE}/src/shared/sensors/BMX160/BMX160WithCorrection.cpp
         ${SBS_BASE}/src/shared/sensors/HX711/HX711.cpp

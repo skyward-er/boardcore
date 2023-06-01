@@ -1,4 +1,4 @@
-/* Copyright (c) 2021 Skyward Experimental Rocketry
+/* Copyright (c) 2023 Skyward Experimental Rocketry
  * Author: Alberto Nidasio
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -23,15 +23,15 @@
 #pragma once
 
 #include <diagnostic/PrintLogger.h>
-#include <drivers/spi/SPIDriver.h>
+#include <drivers/i2c/I2C.h>
 #include <sensors/Sensor.h>
 
-#include "BME280Data.h"
+#include "BMP280Data.h"
 
 namespace Boardcore
 {
 
-class BME280 : public Sensor<BME280Data>
+class BMP280I2C : public Sensor<BMP280Data>
 {
 public:
     enum Oversampling
@@ -59,8 +59,8 @@ public:
         STB_TIME_250  = 0x3,  ///< 250 ms
         STB_TIME_500  = 0x4,  ///< 500 ms
         STB_TIME_1000 = 0x5,  ///< 1000 ms
-        STB_TIME_10   = 0x6,  ///< 10 ms
-        STB_TIME_20   = 0x7   ///< 20 ms
+        STB_TIME_20   = 0x6,  ///< 20 ms
+        STB_TIME_40   = 0x7   ///< 40 ms
     };
 
     enum FilterCoeff
@@ -72,14 +72,10 @@ public:
         FILTER_COEFF_16 = 0x4   ///< Filter coefficient = 16
     };
 
-    union BME280Config
+    union BMP280Config
     {
-        struct __attribute__((packed)) BME280ConfigBits
+        struct __attribute__((packed)) BMP280ConfigBits
         {
-            Oversampling
-                oversamplingHumidity : 3;  ///< Oversampling of humidity
-            uint8_t : 5;
-
             // status
             /**
              * '1' when the NVM data are being copied to image registers, '0'
@@ -109,17 +105,16 @@ public:
 
         struct
         {
-            uint8_t ctrlHumidity;                ///< Humidity options
             uint8_t status;                      ///< Device status
             uint8_t ctrlPressureAndTemperature;  ///< Pressure and temperature
                                                  ///< options
             uint8_t config;  ///< Rate, filter and interface options
         } bytes;
 
-        uint8_t bytesArray[4];
+        uint8_t bytesArray[3];
     };
 
-    union BME280Comp
+    union BMP280Comp
     {
         struct __attribute__((packed))
         {
@@ -135,30 +130,24 @@ public:
             int16_t dig_P7;
             int16_t dig_P8;
             int16_t dig_P9;
-            uint8_t dig_H1;
-            int16_t dig_H2;
-            uint8_t dig_H3;
-            int16_t dig_H4 : 12;
-            int16_t dig_H5 : 12;
-            int8_t dig_H6;
         } bits;
 
-        uint8_t bytesArray[32];
+        uint8_t bytesArray[24];
     };
 
-    static constexpr uint8_t REG_ID_VAL = 0x60;  ///< Who am I value
+    static constexpr uint8_t REG_ID_VAL = 0x58;  ///< Who am I value
 
     ///< Default register values
-    static const BME280Config BME280_DEFAULT_CONFIG;
+    static const BMP280Config BMP280_DEFAULT_CONFIG;
 
     ///< Datasheet values for indoor navigation
-    static const BME280Config BME280_CONFIG_ALL_ENABLED;
+    static const BMP280Config BMP280_CONFIG_ALL_ENABLED;
 
     ///< Temperature enabled in forced mode
-    static const BME280Config BME280_CONFIG_TEMP_SINGLE;
+    static const BMP280Config BMP280_CONFIG_TEMP_SINGLE;
 
-    explicit BME280(SPISlave spiSlave,
-                    BME280Config config = BME280_CONFIG_ALL_ENABLED);
+    explicit BMP280I2C(I2C& bus,
+                       BMP280Config config = BMP280_CONFIG_ALL_ENABLED);
 
     /**
      * @brief Initialize the device with the specified configuration
@@ -177,12 +166,6 @@ public:
      * be set using setStandbyTime()
      */
     void setSensorMode(Mode mode);
-
-    /**
-     * @brief Sets the oversampling for humidity readings, use SKIPPED to
-     * disable humidity sampling
-     */
-    void setHumidityOversampling(Oversampling oversampling);
 
     /**
      * @brief Sets the oversampling for pressure readings, use SKIPPED to
@@ -208,11 +191,6 @@ public:
     void setStandbyTime(StandbyTime standbyTime);
 
     /**
-     * @brief Reads only the humidity, does not set the configuration
-     */
-    HumidityData readHumidity();
-
-    /**
      * @brief Reads only the pressure, does not set the configuration
      */
     PressureData readPressure();
@@ -227,7 +205,7 @@ public:
      *
      * @return Time in milliseconds
      */
-    static unsigned int calculateMaxMeasurementTime(BME280Config config);
+    static unsigned int calculateMaxMeasurementTime(BMP280Config config);
 
     unsigned int getMaxMeasurementTime();
 
@@ -239,15 +217,15 @@ public:
     bool selfTest() override;
 
 private:
-    BME280Data sampleImpl() override;
+    BMP280Data sampleImpl() override;
 
-    void reset();
+    bool reset();
 
     void setConfiguration();
 
-    void setConfiguration(BME280Config config);
+    void setConfiguration(BMP280Config config);
 
-    BME280Config readConfiguration();
+    BMP280Config readConfiguration();
 
     void loadCompensationParameters();
 
@@ -258,9 +236,6 @@ private:
     int32_t compensateTemperature(int32_t fineTemperature);
 
     uint32_t compensatePressure(int32_t adcPressure);
-
-    uint32_t compensateHumidity(int32_t adcHumidity);
-
     /**
      * @brief Check the WHO AM I code from the device.
      *
@@ -268,38 +243,35 @@ private:
      */
     bool checkWhoAmI();
 
-    enum BME280Registers : uint8_t
+    enum Registers : uint8_t
     {
         REG_CALIB_0 = 0x88,
         // Calibration register 1-25
 
-        REG_ID    = 0x50,
-        REG_RESET = 0x60,
+        REG_ID    = 0xD0,
+        REG_RESET = 0xE0,
 
-        REG_CALIB_26 = 0xE1,
-        // Calibration register 27-41
+        REG_STATUS    = 0xF3,
+        REG_CTRL_MEAS = 0xF4,
+        REG_CONFIG    = 0xF5,
 
-        REG_CTRL_HUM  = 0x72,
-        REG_STATUS    = 0x73,
-        REG_CTRL_MEAS = 0x74,
-        REG_CONFIG    = 0x75,
-
-        REG_PRESS_MSB  = 0x77,
-        REG_PRESS_LSB  = 0x78,
-        REG_PRESS_XLSB = 0x79,
-        REG_TEMP_MSB   = 0x7A,
-        REG_TEMP_LSB   = 0x7B,
-        REG_TEMP_XLSB  = 0x7C,
-        REG_HUM_MSB    = 0x7D,
-        REG_HUM_LSB    = 0x7E,
+        REG_PRESS_MSB  = 0xF7,
+        REG_PRESS_LSB  = 0xF8,
+        REG_PRESS_XLSB = 0xF9,
+        REG_TEMP_MSB   = 0xFA,
+        REG_TEMP_LSB   = 0xFB,
+        REG_TEMP_XLSB  = 0xFC
     };
 
-    const SPISlave spiSlave;
-    BME280Config config;
-    BME280Comp compParams;
+    I2C& bus;
+    I2CDriver::I2CSlaveConfig slaveConfig{0x76, I2CDriver::Addressing::BIT7,
+                                          I2CDriver::Speed::STANDARD};
+
+    BMP280Config config;
+    BMP280Comp compParams;
     int32_t fineTemperature;  // Used in compensation algorithm
 
-    PrintLogger logger = Logging::getLogger("bme280");
+    PrintLogger logger = Logging::getLogger("bmp280");
 };
 
 }  // namespace Boardcore

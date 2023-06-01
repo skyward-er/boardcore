@@ -137,15 +137,14 @@ public:
 
     static constexpr uint8_t REG_ID_VAL = 0x58;  ///< Who am I value
 
-    static const BMP280Config BMP280_DEFAULT_CONFIG;      ///< Default register
-                                                          ///< values
-    static const BMP280Config BMP280_CONFIG_ALL_ENABLED;  ///< Datasheet
-                                                          ///< values for
-                                                          ///< indoor
-                                                          ///< navigation
-    static const BMP280Config BMP280_CONFIG_TEMP_SINGLE;  ///< Temperature
-                                                          ///< enabled in
-                                                          ///< forced mode
+    ///< Default register values
+    static const BMP280Config BMP280_DEFAULT_CONFIG;
+
+    ///< Datasheet values for indoor navigation
+    static const BMP280Config BMP280_CONFIG_ALL_ENABLED;
+
+    ///< Temperature enabled in forced mode
+    static const BMP280Config BMP280_CONFIG_TEMP_SINGLE;
 
     explicit BMP280(SPISlave spiSlave,
                     BMP280Config config = BMP280_CONFIG_ALL_ENABLED);
@@ -206,7 +205,7 @@ public:
      *
      * @return Time in milliseconds
      */
-    static unsigned int calculateMaxMeasurementTime(BMP280Config config_);
+    static unsigned int calculateMaxMeasurementTime(BMP280Config config);
 
     unsigned int getMaxMeasurementTime();
 
@@ -220,9 +219,11 @@ public:
 private:
     BMP280Data sampleImpl() override;
 
+    void reset();
+
     void setConfiguration();
 
-    void setConfiguration(BMP280Config config_);
+    void setConfiguration(BMP280Config config);
 
     BMP280Config readConfiguration();
 
@@ -244,22 +245,22 @@ private:
 
     enum Registers : uint8_t
     {
-        REG_CALIB_0 = 0x88,
+        REG_CALIB_0 = 0x08,
         // Calibration register 1-25
 
-        REG_ID    = 0xD0,
-        REG_RESET = 0xE0,
+        REG_ID    = 0x50,
+        REG_RESET = 0x60,
 
-        REG_STATUS    = 0xF3,
-        REG_CTRL_MEAS = 0xF4,
-        REG_CONFIG    = 0xF5,
+        REG_STATUS    = 0x73,
+        REG_CTRL_MEAS = 0x74,
+        REG_CONFIG    = 0x75,
 
-        REG_PRESS_MSB  = 0xF7,
-        REG_PRESS_LSB  = 0xF8,
-        REG_PRESS_XLSB = 0xF9,
-        REG_TEMP_MSB   = 0xFA,
-        REG_TEMP_LSB   = 0xFB,
-        REG_TEMP_XLSB  = 0xFC
+        REG_PRESS_MSB  = 0x77,
+        REG_PRESS_LSB  = 0x78,
+        REG_PRESS_XLSB = 0x79,
+        REG_TEMP_MSB   = 0x7A,
+        REG_TEMP_LSB   = 0x7B,
+        REG_TEMP_XLSB  = 0x7C
     };
 
     const SPISlave spiSlave;

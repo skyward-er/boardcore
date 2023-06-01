@@ -338,11 +338,17 @@ sbs_target(test-calibration-benchmark stm32f407vg_stm32f4discovery)
 add_executable(test-calibration-stats src/tests/sensors/calibration/test-calibration-stats.cpp)
 sbs_target(test-calibration-stats stm32f407vg_stm32f4discovery)
 
-add_executable(test-bme280 src/tests/sensors/test-bme280.cpp)
-sbs_target(test-bme280 stm32f429zi_stm32f4discovery)
+add_executable(test-bme280-spi src/tests/sensors/test-bme280-spi.cpp)
+sbs_target(test-bme280-spi stm32f429zi_stm32f4discovery)
 
-add_executable(test-bmp280 src/tests/sensors/test-bmp280.cpp)
-sbs_target(test-bmp280 stm32f429zi_stm32f4discovery)
+add_executable(test-bme280-i2c src/tests/sensors/test-bme280-i2c.cpp)
+sbs_target(test-bme280-i2c stm32f429zi_stm32f4discovery)
+
+add_executable(test-bmp280-spi src/tests/sensors/test-bmp280-spi.cpp)
+sbs_target(test-bmp280-spi stm32f429zi_stm32f4discovery)
+
+add_executable(test-bmp280-i2c src/tests/sensors/test-bmp280-i2c.cpp)
+sbs_target(test-bmp280-i2c stm32f429zi_stm32f4discovery)
 
 add_executable(test-bmx160 src/tests/sensors/test-bmx160.cpp)
 sbs_target(test-bmx160 stm32f429zi_skyward_death_stack_x)

@@ -52,15 +52,16 @@ BMP280::BMP280(SPISlave spiSlave, BMP280Config config)
 
 bool BMP280::init()
 {
-    // Check WHO AM I
     if (!checkWhoAmI())
     {
         LOG_ERR(logger, "Invalid WHO AM I");
 
         lastError = SensorErrors::INVALID_WHOAMI;
-
         return false;
     }
+
+    reset();
+    miosix::Thread::sleep(3);
 
     loadCompensationParameters();
 
@@ -70,11 +71,12 @@ bool BMP280::init()
         calculateMaxMeasurementTime(BMP280_CONFIG_TEMP_SINGLE));
     readTemperature();
 
+    // Set the target configuration
     setConfiguration();
 
     BMP280Config readBackConfig = readConfiguration();
 
-    // Check if the configration on the device matches ours
+    // Check if the configuration on the device matches ours
     if (config.bytes.ctrlPressureAndTemperature !=
             readBackConfig.bytes.ctrlPressureAndTemperature ||
         config.bytes.config != readBackConfig.bytes.config)
@@ -82,7 +84,6 @@ bool BMP280::init()
         LOG_ERR(logger, "Device configuration incorrect, setup failed");
 
         lastError = SensorErrors::NOT_INIT;
-
         return false;
     }
 
@@ -127,7 +128,6 @@ void BMP280::setStandbyTime(StandbyTime standbyTime)
 PressureData BMP280::readPressure()
 {
     uint8_t buffer[3];
-    int32_t adc_P = 0;
 
     {
         SPITransaction transaction(spiSlave);
@@ -135,22 +135,21 @@ PressureData BMP280::readPressure()
         transaction.readRegisters(REG_PRESS_MSB, buffer, 3);
     }
 
-    adc_P |= ((uint32_t)buffer[0]) << 12;
+    int32_t adc_P = ((uint32_t)buffer[0]) << 12;
     adc_P |= ((uint32_t)buffer[1]) << 4;
     adc_P |= (buffer[2] >> 4) & 0x0F;
 
-    // Compensate pressure
-    lastSample.pressureTimestamp = TimestampTimer::getTimestamp();
-    lastSample.pressure =
-        (float)compensatePressure(adc_P) / 256;  // Convert to Pa
+    PressureData data;
+    data.pressureTimestamp = TimestampTimer::getTimestamp();
+    data.pressure          = compensatePressure(adc_P);
+    data.pressure /= 256;  // Convert to Pa
 
-    return lastSample;
+    return data;
 }
 
 TemperatureData BMP280::readTemperature()
 {
     uint8_t buffer[3];
-    int32_t adcTemperature = 0;
 
     {
         SPITransaction transaction(spiSlave);
@@ -158,25 +157,26 @@ TemperatureData BMP280::readTemperature()
         transaction.readRegisters(REG_TEMP_MSB, buffer, 3);
     }
 
-    adcTemperature |= ((uint32_t)buffer[0]) << 12;
+    int32_t adcTemperature = ((uint32_t)buffer[0]) << 12;
     adcTemperature |= ((uint32_t)buffer[1]) << 4;
     adcTemperature |= (buffer[2] >> 4) & 0x0F;
 
-    // Compensate temperature
-    fineTemperature                 = computeFineTemperature(adcTemperature);
-    lastSample.temperatureTimestamp = TimestampTimer::getTimestamp();
-    lastSample.temperature = (float)compensateTemperature(fineTemperature) /
-                             100;  // Converto to DegC
+    fineTemperature = computeFineTemperature(adcTemperature);
 
-    return lastSample;
+    TemperatureData data;
+    data.temperatureTimestamp = TimestampTimer::getTimestamp();
+    data.temperature          = compensateTemperature(fineTemperature);
+    data.temperature /= 100;  // Convert to to DegC
+
+    return data;
 }
 
-unsigned int BMP280::calculateMaxMeasurementTime(BMP280Config config_)
+unsigned int BMP280::calculateMaxMeasurementTime(BMP280Config config)
 {
-    // TODO: This folrmula is not present in the BMP280's datasheet, it should
+    // TODO: This formula is not present in the BMP280's datasheet, it should
     // be checked
-    return ceil(1.25 + (2.3 * config_.bits.oversamplingTemperature) +
-                (2.3 * config_.bits.oversamplingPressure + 0.575));
+    return ceil(1.25 + (2.3 * config.bits.oversamplingTemperature) +
+                (2.3 * config.bits.oversamplingPressure + 0.575));
 }
 
 unsigned int BMP280::getMaxMeasurementTime()
@@ -188,39 +188,44 @@ bool BMP280::selfTest() { return checkWhoAmI(); }
 
 BMP280Data BMP280::sampleImpl()
 {
-    uint8_t buffer[8];
-    int32_t adcTemperature = 0;
-    int32_t adc_P          = 0;
-    BMP280Data data;
-
     // TODO: implement selective read!
 
-    // Burst read pressure, temperature and humidity
+    uint8_t buffer[8];
     {
         SPITransaction transaction(spiSlave);
 
         transaction.readRegisters(REG_PRESS_MSB, buffer, 8);
     }
 
-    adcTemperature |= ((uint32_t)buffer[3]) << 12;
+    BMP280Data data;
+
+    int32_t adcTemperature = ((uint32_t)buffer[3]) << 12;
     adcTemperature |= ((uint32_t)buffer[4]) << 4;
     adcTemperature |= (buffer[5] >> 4) & 0x0F;
 
-    adc_P |= ((uint32_t)buffer[0]) << 12;
+    int32_t adc_P = ((uint32_t)buffer[0]) << 12;
     adc_P |= ((uint32_t)buffer[1]) << 4;
     adc_P |= (buffer[2] >> 4) & 0x0F;
 
     // Compensate temperature
     fineTemperature           = computeFineTemperature(adcTemperature);
     data.temperatureTimestamp = TimestampTimer::getTimestamp();
-    data.temperature          = (float)compensateTemperature(fineTemperature) /
-                       100;  // Converto to DegC
+    data.temperature          = compensateTemperature(fineTemperature);
+    data.temperature /= 100;  // Convert to to DegC
 
     // Compensate pressure
     data.pressureTimestamp = TimestampTimer::getTimestamp();
-    data.pressure = (float)compensatePressure(adc_P) / 256;  // Convert to Pa
+    data.pressure          = compensatePressure(adc_P);
+    data.pressure /= 256;  // Convert to Pa
 
     return data;
+}
+
+void BMP280::reset()
+{
+    SPITransaction transaction(spiSlave);
+
+    transaction.writeRegister(REG_RESET, 0xB6);
 }
 
 bool BMP280::checkWhoAmI()
@@ -234,13 +239,13 @@ bool BMP280::checkWhoAmI()
 
 void BMP280::setConfiguration() { setConfiguration(config); }
 
-void BMP280::setConfiguration(BMP280Config config_)
+void BMP280::setConfiguration(BMP280Config config)
 {
     SPITransaction transaction(spiSlave);
 
-    transaction.writeRegister(REG_CONFIG & 0x7F, config_.bytes.config);
-    transaction.writeRegister(REG_CTRL_MEAS & 0x7F,
-                              config_.bytes.ctrlPressureAndTemperature);
+    transaction.writeRegister(REG_CONFIG, config.bytes.config);
+    transaction.writeRegister(REG_CTRL_MEAS,
+                              config.bytes.ctrlPressureAndTemperature);
 }
 
 BMP280::BMP280Config BMP280::readConfiguration()
