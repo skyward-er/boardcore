@@ -1,4 +1,4 @@
-/* Copyright (c) 2021 Skyward Experimental Rocketry
+/* Copyright (c) 2023 Skyward Experimental Rocketry
  * Author: Alberto Nidasio
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -33,36 +33,24 @@ int main()
 {
     I2C bus(I2C3, scl, sda);
     BMP280I2C bmp280(bus);
-    bmp280.init();
 
-    if (!bmp280.selfTest())
-        printf("Self test failed!\n");
-
-    printf("Forced mode\n");
-    for (int i = 0; i < 10; i++)
+    if (!bmp280.init())
     {
-        bmp280.setSensorMode(BMP280I2C::FORCED_MODE);
-
-        Thread::sleep(bmp280.getMaxMeasurementTime());
-
-        bmp280.sample();
-
-        printf("temp: %.2f DegC\tpress: %.2f hPa\n",
-               bmp280.getLastSample().temperature,
-               bmp280.getLastSample().pressure);
-
-        Thread::sleep(1000);
+        printf("Init failed\n");
     }
 
-    printf("Normal mode\n");
-    bmp280.setSensorMode(BMP280I2C::NORMAL_MODE);
+    if (!bmp280.selfTest())
+    {
+        printf("Self test failed\n");
+    }
+
     while (true)
     {
         bmp280.sample();
 
-        printf("temp: %.2f DegC\tpress: %.2f Pa\n",
-               bmp280.getLastSample().temperature,
-               bmp280.getLastSample().pressure);
+        auto data = bmp280.getLastSample();
+        printf("[%.2f]: %.2fPa %.2f°\n", data.pressureTimestamp / 1e6,
+               data.pressure, data.temperature);
 
         Thread::sleep(50);  // 25Hz
     }

@@ -20,7 +20,10 @@
  * THE SOFTWARE.
  */
 
+#pragma once
+
 #include "I2CDriver.h"
+
 namespace Boardcore
 {
 

@@ -190,10 +190,8 @@ MS5803Data MS5803I2C::updateData()
         (((((int64_t)rawPressure) * sens) / 2097152.0) - offs) / 32786.0;
 
     // Pressure in Pascal
-    temp /= 100.0f;
-
     return MS5803Data(TimestampTimer::getTimestamp(), pressure,
-                      lastTemperatureTimestamp, temp);
+                      lastTemperatureTimestamp, temp / 100.0f);
 }
 
 uint16_t MS5803I2C::readReg(uint8_t reg)

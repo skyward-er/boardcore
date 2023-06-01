@@ -1,5 +1,5 @@
-/* Copyright (c) 2018 Skyward Experimental Rocketry
- * Author: Nuno Barcellos
+/* Copyright (c) 2023 Skyward Experimental Rocketry
+ * Author: Alberto Nidasio
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -27,47 +27,30 @@ using namespace miosix;
 
 GpioPin scl(GPIOA_BASE, 8);
 GpioPin sda(GPIOC_BASE, 9);
-/**
- * This test is intended to be run on the Death Stack X
- */
 
 int main()
 {
-    printf("Starting...\n");
-
     I2C bus(I2C3, scl, sda);
-    I2CDriver::I2CSlaveConfig slaveConfig{0x76, I2CDriver::Addressing::BIT7,
-                                          I2CDriver::Speed::STANDARD};
+    MS5803I2C ms5803(bus, 10);
+
+    if (!ms5803.init())
+    {
+        printf("MS5803 Init failed\n");
+    }
+
+    if (!ms5803.selfTest())
+    {
+        printf("Self test failed\n");
+    }
 
     while (true)
     {
-        uint8_t reg = 0xD0;
-        uint8_t data;
-        if (bus.readRegister(slaveConfig, reg, data))
-            printf("data: 0x%02x\n", data);
+        ms5803.sample();
 
-        delayMs(100);
+        auto data = ms5803.getLastSample();
+        printf("[%.2f]: %.2fPa %.2f°\n", data.pressureTimestamp / 1e6,
+               data.pressure, data.temperature);
+
+        Thread::sleep(50);  // 25Hz
     }
-    // printf("2...\n");
-    // MS5803I2C sensor(bus, 10);
-
-    // printf("3...\n");
-
-    // if (!sensor.init())
-    // {
-    //     printf("MS5803 Init failed\n");
-    // }
-
-    // printf("pressureTimestamp,press,temperatureTimestamp,temp\n");
-
-    // while (true)
-    // {
-    //     sensor.sample();
-
-    //     MS5803Data data = sensor.getLastSample();
-    //     printf("%llu,%f,%llu,%f\n", data.pressureTimestamp, data.pressure,
-    //            data.temperatureTimestamp, data.temperature);
-
-    //     Thread::sleep(20);
-    // }
 }

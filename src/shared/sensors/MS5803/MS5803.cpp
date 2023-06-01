@@ -161,10 +161,8 @@ MS5803Data MS5803::updateData()
         (((((int64_t)rawPressure) * sens) / 2097152.0) - offs) / 32786.0;
 
     // Pressure in Pascal
-    temp /= 100.0f;
-
     return MS5803Data(TimestampTimer::getTimestamp(), pressure,
-                      lastTemperatureTimestamp, temp);
+                      lastTemperatureTimestamp, temp / 100.0f);
 }
 
 }  // namespace Boardcore
