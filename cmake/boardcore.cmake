@@ -90,6 +90,7 @@ foreach(OPT_BOARD ${BOARDS})
         ${SBS_BASE}/src/shared/sensors/HX711/HX711.cpp
         ${SBS_BASE}/src/shared/sensors/LIS3MDL/LIS3MDL.cpp
         ${SBS_BASE}/src/shared/sensors/LIS331HH/LIS331HH.cpp
+        ${SBS_BASE}/src/shared/sensors/LPS331AP/LPS331AP.cpp
         ${SBS_BASE}/src/shared/sensors/MAX6675/MAX6675.cpp
         ${SBS_BASE}/src/shared/sensors/MAX31855/MAX31855.cpp
         ${SBS_BASE}/src/shared/sensors/MBLoadCell/MBLoadCell.cpp
