@@ -93,6 +93,7 @@ foreach(OPT_BOARD ${BOARDS})
         ${SBS_BASE}/src/shared/sensors/MBLoadCell/MBLoadCell.cpp
         ${SBS_BASE}/src/shared/sensors/MPU9250/MPU9250.cpp
         ${SBS_BASE}/src/shared/sensors/MS5803/MS5803.cpp
+        ${SBS_BASE}/src/shared/sensors/MS5803/MS5803I2C.cpp
         ${SBS_BASE}/src/shared/sensors/SensorManager.cpp
         ${SBS_BASE}/src/shared/sensors/SensorSampler.cpp
         ${SBS_BASE}/src/shared/sensors/UBXGPS/UBXGPSSerial.cpp

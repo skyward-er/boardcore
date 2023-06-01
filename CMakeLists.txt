@@ -377,8 +377,11 @@ sbs_target(test-max31855 stm32f429zi_stm32f4discovery)
 add_executable(test-mpu9250 src/tests/sensors/test-mpu9250.cpp)
 sbs_target(test-mpu9250 stm32f429zi_skyward_parafoil)
 
-add_executable(test-ms5803 src/tests/sensors/test-ms5803.cpp)
-sbs_target(test-ms5803 stm32f429zi_skyward_death_stack_x)
+add_executable(test-ms5803-spi src/tests/sensors/test-ms5803-spi.cpp)
+sbs_target(test-ms5803-spi stm32f429zi_skyward_death_stack_x)
+
+add_executable(test-ms5803-i2c src/tests/sensors/test-ms5803-i2c.cpp)
+sbs_target(test-ms5803-i2c stm32f429zi_stm32f4discovery)
 
 add_executable(test-ubxgps-serial src/tests/sensors/test-ubxgps-serial.cpp)
 sbs_target(test-ubxgps-serial stm32f429zi_skyward_death_stack_x)
