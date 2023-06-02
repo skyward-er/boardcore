@@ -137,13 +137,21 @@ H3LIS331DLData H3LIS331DL::sampleImpl()
     {
         SPITransaction spiTr(spi);
 
-        // Read the status register that tells if new data is available.
-        // This will allow us to read only data that is new and reuse data
-        // that didn't change.
-        uint8_t status =
-            spiTr.readRegister(H3LIS331DLDefs::Registers::REG_STATUS_REG);
+        // Make a big read to reduce time overhead
+        uint8_t buff[7];
 
-        if (status == 0)
+        spiTr.readRegisters(H3LIS331DLDefs::Registers::REG_STATUS_REG |
+                                H3LIS331DLDefs::AUTOINC_ADDR,
+                            buff, 7);
+
+        // The status register that tells if new data is available is the first
+        // bit that was read from the 7 byte read.
+        uint8_t status = buff[0];
+        uint16_t regX  = buff[2] << 8 | buff[1];
+        uint16_t regY  = buff[4] << 8 | buff[3];
+        uint16_t regZ  = buff[6] << 8 | buff[5];
+
+        if (!(status & H3LIS331DLDefs::STATUS_REG_XYZDR))
         {
             lastError = SensorErrors::NO_NEW_DATA;
             LOG_DEBUG(logger, "No new data available.");
@@ -153,62 +161,17 @@ H3LIS331DLData H3LIS331DL::sampleImpl()
         // Here we get the sensitivity based on the FullScaleRange
         float sensitivity = H3LIS331DLDefs::SENSITIVITY_VALUES[fs >> 4];
 
-        // Read x-axis if new data is available or old data that was not
-        // read was overrun and never read
-        if (status &
-            (H3LIS331DLDefs::STATUS_REG_XDR | H3LIS331DLDefs::STATUS_REG_XYZDR |
-             H3LIS331DLDefs::STATUS_REG_XOR | H3LIS331DLDefs::STATUS_REG_XYZOR))
-        {
-            int16_t xInt = static_cast<int16_t>(
-                spiTr.readRegister16(H3LIS331DLDefs::Registers::REG_OUT_X_L |
-                                     H3LIS331DLDefs::AUTOINC_ADDR));
-            float xFloat = static_cast<float>(xInt >> 4);
-            x            = xFloat * sensitivity;
-        }
-        else  // else just use the last sample
-        {
-            x = lastSample.accelerationX;
+        int16_t xInt = static_cast<int16_t>(regX);
+        float xFloat = static_cast<float>(xInt >> 4);
+        x            = xFloat * sensitivity;
 
-            LOG_DEBUG(logger, "No new data on X-Axis");
-        }
+        int16_t yInt = static_cast<int16_t>(regY);
+        float yFloat = static_cast<float>(yInt >> 4);
+        y            = yFloat * sensitivity;
 
-        // Read y-axis if new data is available or old data that was not
-        // read was overrun and never read
-        if (status &
-            (H3LIS331DLDefs::STATUS_REG_YDR | H3LIS331DLDefs::STATUS_REG_XYZDR |
-             H3LIS331DLDefs::STATUS_REG_YOR | H3LIS331DLDefs::STATUS_REG_XYZOR))
-        {
-            int16_t yInt = static_cast<int16_t>(
-                spiTr.readRegister16(H3LIS331DLDefs::Registers::REG_OUT_Y_L |
-                                     H3LIS331DLDefs::AUTOINC_ADDR));
-            float yFloat = static_cast<float>(yInt >> 4);
-            y            = yFloat * sensitivity;
-        }
-        else
-        {
-            y = lastSample.accelerationY;
-
-            LOG_DEBUG(logger, "No new data on Y-Axis");
-        }
-
-        // Read z-axis if new data is available or old data that was not
-        // read was overrun and never read
-        if (status &
-            (H3LIS331DLDefs::STATUS_REG_ZDR | H3LIS331DLDefs::STATUS_REG_XYZDR |
-             H3LIS331DLDefs::STATUS_REG_ZOR | H3LIS331DLDefs::STATUS_REG_XYZOR))
-        {
-            int16_t zInt = static_cast<int16_t>(
-                spiTr.readRegister16(H3LIS331DLDefs::Registers::REG_OUT_Z_L |
-                                     H3LIS331DLDefs::AUTOINC_ADDR));
-            float zFloat = static_cast<float>(zInt >> 4);
-            z            = zFloat * sensitivity;
-        }
-        else
-        {
-            z = lastSample.accelerationZ;
-
-            LOG_DEBUG(logger, "No new data on Z-Axis");
-        }
+        int16_t zInt = static_cast<int16_t>(regZ);
+        float zFloat = static_cast<float>(zInt >> 4);
+        z            = zFloat * sensitivity;
     }
 
     return H3LIS331DLData(lastSampleTimestamp, x, y, z);
