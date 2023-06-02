@@ -128,24 +128,6 @@ void initBoard()
     rxen::low();
     txen::low();
 #endif
-
-#ifdef SX1278_IRQ_DIO0
-    miosix::GpioPin dio0_pin = dio0::getPin();
-    enableExternalInterrupt(dio0_pin.getPort(), dio0_pin.getNumber(),
-                            InterruptTrigger::RISING_FALLING_EDGE);
-#endif
-
-#ifdef SX1278_IRQ_DIO1
-    miosix::GpioPin dio1_pin = dio1::getPin();
-    enableExternalInterrupt(dio1_pin.getPort(), dio1_pin.getNumber(),
-                            InterruptTrigger::RISING_FALLING_EDGE);
-#endif
-
-#ifdef SX1278_IRQ_DIO3
-    miosix::GpioPin dio3_pin = dio3::getPin();
-    enableExternalInterrupt(dio3_pin.getPort(), dio3_pin.getNumber(),
-                            InterruptTrigger::RISING_FALLING_EDGE);
-#endif
 }
 
 Boardcore::SPIBus sx1278_bus(SX1278_SPI);
@@ -173,7 +155,8 @@ bool initRadio()
     Boardcore::SX1278Lora::Config config;
     Boardcore::SX1278Lora::Error err;
 
-    sx1278 = new Boardcore::SX1278Lora(sx1278_bus, cs::getPin(),
+    sx1278 = new Boardcore::SX1278Lora(sx1278_bus, cs::getPin(), dio0::getPin(),
+                                       dio1::getPin(), dio3::getPin(),
                                        Boardcore::SPI::ClockDivider::DIV_64,
                                        std::move(frontend));
 
@@ -190,9 +173,10 @@ bool initRadio()
     Boardcore::SX1278Fsk::Config config;
     Boardcore::SX1278Fsk::Error err;
 
-    sx1278 = new Boardcore::SX1278Fsk(sx1278_bus, cs::getPin(),
-                                      Boardcore::SPI::ClockDivider::DIV_64,
-                                      std::move(frontend));
+    sx1278 = new Boardcore::SX1278Fsk(sx1278_bus, cs::getPin(), dio0::getPin(),
+                                            dio1::getPin(), dio3::getPin(),
+                                            Boardcore::SPI::ClockDivider::DIV_64,
+                                            std::move(frontend));
 
     printf("\n[sx1278] Configuring sx1278 fsk...\n");
     if ((err = sx1278->init(config)) != Boardcore::SX1278Fsk::Error::NONE)

@@ -163,11 +163,12 @@ SX1278Lora::Error SX1278Lora::configure(const Config &config)
     enterLoraMode();
 
     // Then make sure the device remains in standby and not in sleep
-    setDefaultMode(RegOpMode::MODE_STDBY, DEFAULT_MAPPING, false, false);
+    setDefaultMode(RegOpMode::MODE_STDBY, DEFAULT_MAPPING, InterruptTrigger::RISING_EDGE, false, false);
 
     // Lock the bus
     Lock guard(*this);
-    LockMode mode_guard(*this, guard, RegOpMode::MODE_STDBY, DEFAULT_MAPPING);
+    LockMode mode_guard(*this, guard, RegOpMode::MODE_STDBY, DEFAULT_MAPPING,
+                        InterruptTrigger::RISING_EDGE);
 
     RegModemConfig1::Bw bw = static_cast<RegModemConfig1::Bw>(config.bandwidth);
     RegModemConfig1::Cr cr =
@@ -282,7 +283,8 @@ ssize_t SX1278Lora::receive(uint8_t *pkt, size_t max_len)
     // Use continuous because it doesn't go into timeout (and you cannot
     // disable it...)
     LockMode mode_guard(*this, guard, RegOpMode::MODE_RXCONTINUOUS,
-                        DioMapping(0, 0, 0, 0, 0, 0), false, true);
+                        DioMapping(0, 0, 0, 0, 0, 0),
+                        InterruptTrigger::RISING_EDGE, false, true);
 
     waitForIrq(mode_guard, RegIrqFlags::RX_DONE, 0, true);
 
@@ -317,7 +319,8 @@ bool SX1278Lora::send(uint8_t *pkt, size_t len)
     {
         // Now enter in mode TX to send the packet
         LockMode mode_guard(*this, guard, RegOpMode::MODE_TX,
-                            DioMapping(1, 0, 0, 0, 0, 0), true, false);
+                            DioMapping(1, 0, 0, 0, 0, 0),
+                            InterruptTrigger::RISING_EDGE, true, false);
 
         // Wait for the transmission to end
         waitForIrq(mode_guard, RegIrqFlags::TX_DONE, 0);

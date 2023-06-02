@@ -74,12 +74,14 @@ SX1278Fsk::Error SX1278Fsk::configure(const Config &config)
 
     // Set default mode to standby, that way we reset the fifo every time we
     // enter receive
-    setDefaultMode(RegOpMode::MODE_STDBY, DEFAULT_MAPPING, false, false);
+    setDefaultMode(RegOpMode::MODE_STDBY, DEFAULT_MAPPING,
+                   InterruptTrigger::RISING_EDGE, false, false);
     miosix::Thread::sleep(1);
 
     // Lock the bus
     Lock guard(*this);
-    LockMode guard_mode(*this, guard, RegOpMode::MODE_STDBY, DEFAULT_MAPPING);
+    LockMode guard_mode(*this, guard, RegOpMode::MODE_STDBY, DEFAULT_MAPPING,
+                        InterruptTrigger::RISING_EDGE);
 
     // The datasheet lies, this IRQ is unreliable, it doesn't always trigger
     // if (!waitForIrqBusy(guard_mode, RegIrqFlags::MODE_READY, 0, 1000))
@@ -230,7 +232,7 @@ ssize_t SX1278Fsk::receive(uint8_t *pkt, size_t max_len)
 {
     Lock guard(*this);
     LockMode guard_mode(*this, guard, RegOpMode::MODE_RX, DEFAULT_MAPPING,
-                        false, true);
+                        InterruptTrigger::RISING_EDGE, false, true);
 
     // Save the packet locally, we always want to read it all
     uint8_t tmp_pkt[MTU];
@@ -311,8 +313,8 @@ bool SX1278Fsk::send(uint8_t *pkt, size_t len)
     rateLimitTx();
 
     Lock guard(*this);
-    LockMode guard_mode(*this, guard, RegOpMode::MODE_TX, DEFAULT_MAPPING, true,
-                        false);
+    LockMode guard_mode(*this, guard, RegOpMode::MODE_TX, DEFAULT_MAPPING,
+                        InterruptTrigger::FALLING_EDGE, true, false);
 
     waitForIrq(guard_mode, RegIrqFlags::TX_READY, 0);
 

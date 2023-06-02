@@ -22,6 +22,7 @@
 
 #pragma once
 
+#include <drivers/interrupt/external_interrupts.h>
 #include <drivers/spi/SPIDriver.h>
 #include <miosix.h>
 #include <radio/Transceiver.h>
@@ -114,6 +115,8 @@ private:
         bool is_rx_frontend_on = false;
         // True if the TX frontend is enabled
         bool is_tx_frontend_on = false;
+        // Mode of trigger for dio1
+        InterruptTrigger dio1_trigger = InterruptTrigger::RISING_EDGE;
     };
 
 public:
@@ -123,12 +126,14 @@ public:
     void handleDioIRQ();
 
 protected:
-    explicit SX1278Common(SPIBus &bus, miosix::GpioPin cs,
+    explicit SX1278Common(SPIBus &bus, miosix::GpioPin cs, miosix::GpioPin dio0,
+                          miosix::GpioPin dio1, miosix::GpioPin dio3,
                           SPI::ClockDivider clock_divider,
                           std::unique_ptr<ISX1278Frontend> frontend)
-        : slave(SPISlave(bus, cs, getSpiBusConfig(clock_divider))),
-          frontend(std::move(frontend))
+        : slave(SPISlave(bus, cs, getSpiBusConfig(clock_divider))), dio0(dio0),
+          dio1(dio1), dio3(dio3), frontend(std::move(frontend))
     {
+        enableIrqs();
     }
 
     /**
@@ -152,13 +157,14 @@ protected:
     {
     public:
         LockMode(SX1278Common &driver, Lock &lock, Mode mode,
-                 DioMapping mapping, bool set_tx_frontend_on = false,
+                 DioMapping mapping, InterruptTrigger dio1_trigger,
+                 bool set_tx_frontend_on = false,
                  bool set_rx_frontend_on = false)
             : driver(driver), lock(lock)
         {
             // cppcheck-suppress useInitializationList
-            old_state = driver.lockMode(mode, mapping, set_tx_frontend_on,
-                                        set_rx_frontend_on);
+            old_state = driver.lockMode(mode, mapping, dio1_trigger,
+                                        set_tx_frontend_on, set_rx_frontend_on);
         }
 
         ~LockMode() { driver.unlockMode(old_state); }
@@ -174,7 +180,8 @@ protected:
      *
      * WARNING: This will lock the mutex.
      */
-    void setDefaultMode(Mode mode, DioMapping mapping, bool set_tx_frontend_on,
+    void setDefaultMode(Mode mode, DioMapping mapping,
+                        InterruptTrigger dio1_trigger, bool set_tx_frontend_on,
                         bool set_rx_frontend_on);
 
     /**
@@ -209,21 +216,27 @@ protected:
     SPISlave &getSpiSlave();
 
 private:
+    void enableIrqs();
+
     void waitForIrqInner(LockMode &guard, bool unlock);
 
-    DeviceState lockMode(Mode mode, DioMapping mapping, bool set_tx_frontend_on,
+    DeviceState lockMode(Mode mode, DioMapping mapping,
+                         InterruptTrigger dio1_trigger, bool set_tx_frontend_on,
                          bool set_rx_frontend_on);
     void unlockMode(DeviceState old_state);
 
     void lock();
     void unlock();
 
-    void enterMode(Mode mode, DioMapping mapping, bool set_tx_frontend_on,
-                   bool set_rx_frontend_on);
+    void enterMode(Mode mode, DioMapping mapping, InterruptTrigger dio1_trigger,
+                   bool set_tx_frontend_on, bool set_rx_frontend_on);
 
     miosix::FastMutex mutex;
     DeviceState state;
     SPISlave slave;
+    miosix::GpioPin dio0;
+    miosix::GpioPin dio1;
+    miosix::GpioPin dio3;
     std::unique_ptr<ISX1278Frontend> frontend;
 };
 

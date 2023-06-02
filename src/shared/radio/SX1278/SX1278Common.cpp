@@ -45,11 +45,18 @@ void SX1278Common::handleDioIRQ()
     }
 }
 
+void SX1278Common::enableIrqs() {
+    enableExternalInterrupt(dio0.getPort(), dio0.getNumber(), InterruptTrigger::RISING_EDGE);
+    enableExternalInterrupt(dio1.getPort(), dio1.getNumber(), InterruptTrigger::RISING_EDGE);
+    enableExternalInterrupt(dio3.getPort(), dio3.getNumber(), InterruptTrigger::RISING_EDGE);
+}
+
 void SX1278Common::setDefaultMode(Mode mode, DioMapping mapping,
+                                  InterruptTrigger dio1_trigger,
                                   bool tx_frontend, bool rx_frontend)
 {
     mutex.lock();
-    enterMode(mode, mapping, tx_frontend, rx_frontend);
+    enterMode(mode, mapping, dio1_trigger, tx_frontend, rx_frontend);
     mutex.unlock();
 }
 
@@ -163,13 +170,14 @@ ISX1278Frontend &SX1278Common::getFrontend() { return *frontend; }
 SPISlave &SX1278Common::getSpiSlave() { return slave; }
 
 SX1278Common::DeviceState SX1278Common::lockMode(Mode mode, DioMapping mapping,
+                                                 InterruptTrigger dio1_trigger,
                                                  bool tx_frontend,
                                                  bool rx_frontend)
 {
     // Store previous state
     DeviceState old_state = state;
 
-    enterMode(mode, mapping, tx_frontend, rx_frontend);
+    enterMode(mode, mapping, dio1_trigger, tx_frontend, rx_frontend);
     state.irq_wait_thread = nullptr;
 
     return old_state;
@@ -179,8 +187,8 @@ void SX1278Common::unlockMode(DeviceState old_state)
 {
     // Do this copy manually, we want stuff to be copied in a specific order
     state.irq_wait_thread = old_state.irq_wait_thread;
-    enterMode(old_state.mode, old_state.mapping, old_state.is_tx_frontend_on,
-              old_state.is_rx_frontend_on);
+    enterMode(old_state.mode, old_state.mapping, old_state.dio1_trigger,
+              old_state.is_tx_frontend_on, old_state.is_rx_frontend_on);
 }
 
 void SX1278Common::lock() { mutex.lock(); }
@@ -188,6 +196,7 @@ void SX1278Common::lock() { mutex.lock(); }
 void SX1278Common::unlock() { mutex.unlock(); }
 
 void SX1278Common::enterMode(Mode mode, DioMapping mapping,
+                             InterruptTrigger dio1_trigger,
                              bool set_tx_frontend_on, bool set_rx_frontend_on)
 {
     // disable - enable in order to avoid having both RX/TX frontends active at
@@ -218,11 +227,17 @@ void SX1278Common::enterMode(Mode mode, DioMapping mapping,
     state.is_tx_frontend_on = set_tx_frontend_on;
     state.is_rx_frontend_on = set_rx_frontend_on;
 
-    // Check if necessary
     if (mode != state.mode)
     {
         setMode(mode);
         state.mode = mode;
+    }
+
+    // Change DIO1 interrupt kind
+    if (dio1_trigger != state.dio1_trigger)
+    {
+        enableExternalInterrupt(dio1.getPort(), dio1.getNumber(), dio1_trigger);
+        state.dio1_trigger = dio1_trigger;
     }
 
     // Finally setup DIO mapping

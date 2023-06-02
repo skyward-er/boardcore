@@ -139,12 +139,12 @@ int main()
     SX1278Fsk::Error err;
 
     SPIBus bus(SX1278_SPI);
-    GpioPin cs = cs::getPin();
 
     std::unique_ptr<SX1278::ISX1278Frontend> frontend(new RA01Frontend());
 
-    sx1278 =
-        new SX1278Fsk(bus, cs, SPI::ClockDivider::DIV_64, std::move(frontend));
+    sx1278 = new SX1278Fsk(bus, cs::getPin(), dio0::getPin(), dio1::getPin(),
+                           dio3::getPin(), SPI::ClockDivider::DIV_64,
+                           std::move(frontend));
 
     printf("\n[sx1278] Configuring sx1278...\n");
     if ((err = sx1278->init(config)) != SX1278Fsk::Error::NONE)

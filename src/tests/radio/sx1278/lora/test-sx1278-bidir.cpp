@@ -89,17 +89,6 @@ void initBoard()
     rxen::low();
     txen::low();
 #endif
-
-    GpioPin dio0_pin = dio0::getPin();
-    GpioPin dio1_pin = dio1::getPin();
-    GpioPin dio3_pin = dio3::getPin();
-
-    enableExternalInterrupt(dio0_pin.getPort(), dio0_pin.getNumber(),
-                            InterruptTrigger::RISING_EDGE);
-    enableExternalInterrupt(dio1_pin.getPort(), dio1_pin.getNumber(),
-                            InterruptTrigger::RISING_EDGE);
-    enableExternalInterrupt(dio3_pin.getPort(), dio3_pin.getNumber(),
-                            InterruptTrigger::RISING_EDGE);
 }
 
 bool isByteBuf(uint8_t *buf, ssize_t len)
@@ -182,7 +171,6 @@ int main()
     SX1278Lora::Error err;
 
     SPIBus bus(SX1278_SPI);
-    GpioPin cs = cs::getPin();
 
 #ifdef IS_EBYTE
     std::unique_ptr<SX1278::ISX1278Frontend> frontend(
@@ -191,8 +179,9 @@ int main()
     std::unique_ptr<SX1278::ISX1278Frontend> frontend(new RA01Frontend());
 #endif
 
-    sx1278 =
-        new SX1278Lora(bus, cs, SPI::ClockDivider::DIV_64, std::move(frontend));
+    sx1278 = new SX1278Lora(bus, cs::getPin(), dio0::getPin(), dio1::getPin(),
+                            dio3::getPin(), SPI::ClockDivider::DIV_64,
+                            std::move(frontend));
 
     printf("\n[sx1278] Configuring sx1278...\n");
     if ((err = sx1278->init(config)) != SX1278Lora::Error::NONE)
