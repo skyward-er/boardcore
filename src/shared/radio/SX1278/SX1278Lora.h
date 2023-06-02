@@ -136,10 +136,12 @@ public:
     /**
      * @brief Construct a new SX1278
      */
-    explicit SX1278Lora(SPIBus &bus, miosix::GpioPin cs,
+    explicit SX1278Lora(SPIBus &bus, miosix::GpioPin cs, miosix::GpioPin dio0,
+                        miosix::GpioPin dio1, miosix::GpioPin dio3,
                         SPI::ClockDivider clock_divider,
                         std::unique_ptr<SX1278::ISX1278Frontend> frontend)
-        : SX1278Common(bus, cs, clock_divider, std::move(frontend)),
+        : SX1278Common(bus, cs, dio0, dio1, dio3, clock_divider,
+                       std::move(frontend)),
           crc_enabled(false)
     {
     }

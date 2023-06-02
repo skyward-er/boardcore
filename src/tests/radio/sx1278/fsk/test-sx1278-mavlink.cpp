@@ -96,16 +96,7 @@ void __attribute__((used)) SX1278_IRQ_DIO3()
 
 void initBoard()
 {
-    GpioPin dio0_pin = dio0::getPin();
-    GpioPin dio1_pin = dio1::getPin();
-    GpioPin dio3_pin = dio3::getPin();
 
-    enableExternalInterrupt(dio0_pin.getPort(), dio0_pin.getNumber(),
-                            InterruptTrigger::RISING_FALLING_EDGE);
-    enableExternalInterrupt(dio1_pin.getPort(), dio1_pin.getNumber(),
-                            InterruptTrigger::RISING_FALLING_EDGE);
-    enableExternalInterrupt(dio3_pin.getPort(), dio3_pin.getNumber(),
-                            InterruptTrigger::RISING_FALLING_EDGE);
 }
 
 Mav* channel;
@@ -160,12 +151,11 @@ int main()
     SX1278Fsk::Error err;
 
     SPIBus bus(SX1278_SPI);
-    GpioPin cs = cs::getPin();
 
     std::unique_ptr<SX1278::ISX1278Frontend> frontend(new RA01Frontend());
 
     sx1278 =
-        new SX1278Fsk(bus, cs, SPI::ClockDivider::DIV_64, std::move(frontend));
+        new SX1278Fsk(bus, cs::getPin(), dio0::getPin(), dio1::getPin(), dio3::getPin(), SPI::ClockDivider::DIV_64, std::move(frontend));
 
     printf("\n[sx1278] Configuring sx1278...\n");
     if ((err = sx1278->init(config)) != SX1278Fsk::Error::NONE)
