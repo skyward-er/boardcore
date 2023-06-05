@@ -1,5 +1,5 @@
 /* Copyright (c) 2019 Skyward Experimental Rocketry
- * Author: Alvise de'Faveri Tron
+ * Author: Alvise de'Faveri Tron, Luca Erbetta, Davide Mor
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -358,29 +358,73 @@ constexpr unsigned GetEXTICR_register_value(unsigned P, unsigned N)
     return (ConvertGPIO_BASEtoUnsigned(P) << ((N % 4) * 4));
 }
 
-void enableExternalInterrupt(unsigned int gpioPort, unsigned int gpioNumber,
+constexpr unsigned GetEXTICR_register_mask(unsigned P, unsigned N)
+{
+    return (0b1111 << ((N % 4) * 4));
+}
+
+void enableExternalInterrupt(unsigned int gpioPort, unsigned int gpioNum,
                              InterruptTrigger trigger, unsigned int priority)
 {
-    auto exitcrRegValue = GetEXTICR_register_value(gpioPort, gpioNumber);
+    auto exticrRegValue = GetEXTICR_register_value(gpioPort, gpioNum);
 
     {
         FastInterruptDisableLock dLock;
 
         RCC->APB2ENR |= RCC_APB2ENR_SYSCFGEN;
-        SYSCFG->EXTICR[int(gpioNumber / 4)] |= exitcrRegValue;
+        SYSCFG->EXTICR[int(gpioNum / 4)] |= exticrRegValue;
     }
 
-    EXTI->IMR |= 1 << gpioNumber;
+    EXTI->IMR |= 1 << gpioNum;
 
     if (trigger == InterruptTrigger::RISING_EDGE ||
         trigger == InterruptTrigger::RISING_FALLING_EDGE)
-        EXTI->RTSR |= 1 << gpioNumber;
+        EXTI->RTSR |= 1 << gpioNum;
 
     if (trigger == InterruptTrigger::FALLING_EDGE ||
         trigger == InterruptTrigger::RISING_FALLING_EDGE)
-        EXTI->FTSR |= 1 << gpioNumber;
+        EXTI->FTSR |= 1 << gpioNum;
 
-    NVIC_EnableIRQ(static_cast<IRQn_Type>(GetEXTI_IRQn(gpioNumber)));
-    NVIC_SetPriority(static_cast<IRQn_Type>(GetEXTI_IRQn(gpioNumber)),
-                     priority);
+    NVIC_EnableIRQ(static_cast<IRQn_Type>(GetEXTI_IRQn(gpioNum)));
+    NVIC_SetPriority(static_cast<IRQn_Type>(GetEXTI_IRQn(gpioNum)), priority);
+}
+
+void disableExternalInterrupt(unsigned int gpioPort, unsigned int gpioNum)
+{
+
+    NVIC_DisableIRQ(static_cast<IRQn_Type>(GetEXTI_IRQn(gpioNum)));
+
+    EXTI->RTSR &= ~(1 << gpioNum);
+    EXTI->FTSR &= ~(1 << gpioNum);
+    EXTI->IMR &= ~(1 << gpioNum);
+
+    auto exticrRegMask = GetEXTICR_register_mask(gpioPort, gpioNum);
+
+    {
+        FastInterruptDisableLock dLock;
+
+        SYSCFG->EXTICR[int(gpioNum / 4)] &= ~exticrRegMask;
+    }
+}
+
+void changeInterruptTrigger(unsigned int gpioPort, unsigned int gpioNum,
+                            InterruptTrigger trigger)
+{
+    switch (trigger)
+    {
+        case InterruptTrigger::RISING_EDGE:
+            EXTI->RTSR |= 1 << gpioNum;
+            EXTI->FTSR &= ~(1 << gpioNum);
+            break;
+
+        case InterruptTrigger::FALLING_EDGE:
+            EXTI->RTSR &= ~(1 << gpioNum);
+            EXTI->FTSR |= 1 << gpioNum;
+            break;
+
+        case InterruptTrigger::RISING_FALLING_EDGE:
+            EXTI->RTSR |= 1 << gpioNum;
+            EXTI->FTSR |= 1 << gpioNum;
+            break;
+    }
 }
