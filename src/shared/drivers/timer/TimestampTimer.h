@@ -94,7 +94,7 @@ inline uint64_t TimestampTimer::getTimestamp()
 #else
     // With a timer frequency of 250KHz, the conversion from timer ticks to
     // microseconds only take a 2 byte shift (x4)
-    return static_cast<uint64_t>(timestampTimer.readCounter() << 2);
+    return static_cast<uint64_t>(timestampTimer.readCounter()) << 2;
 
     // If the timer frequency is not a multiple of 2 you must compute the value
     // this way:
