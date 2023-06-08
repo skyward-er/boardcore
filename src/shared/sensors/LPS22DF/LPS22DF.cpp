@@ -48,7 +48,7 @@ SPIBusConfig LPS22DF::getDefaultSPIConfig()
     SPIBusConfig spiConfig;
     spiConfig.clockDivider = SPI::ClockDivider::DIV_256;
     spiConfig.mode         = SPI::Mode::MODE_3;
-    spiConfig.bitOrder     = SPI::Order::LSB_FIRST;
+    spiConfig.byteOrder    = SPI::Order::LSB_FIRST;
     return spiConfig;
 }
 
@@ -66,7 +66,7 @@ bool LPS22DF::init()
         spi.writeRegister(IF_CTRL, if_ctrl::I2C_I3C_DIS);
     }
 
-    // Setting the actual sensor configurations (Mode, ODR, AVG, FSR, DRDY)
+    // Setting the actual sensor configurations (Mode, ODR, AVG)
     if (!setConfig(mConfig))
     {
         LOG_ERR(logger, "Configuration not applied correctly");
@@ -90,17 +90,19 @@ bool LPS22DF::selfTest()
 
     // selfTest procedure does not exist for this sensor. WhoamiValue is checked
     // to assure communication.
-    SPITransaction spi(mSlave);
-    uint8_t value = spi.readRegister(WHO_AM_I);
-
-    if (value != WHO_AM_I_VALUE)
     {
-        LOG_ERR(logger,
-                "WHO_AM_I value differs from expectation: read 0x{:x} "
-                "but expected 0x{:x}",
-                value, WHO_AM_I_VALUE);
-        lastError = INVALID_WHOAMI;
-        return false;
+        SPITransaction spi(mSlave);
+        uint8_t value = spi.readRegister(WHO_AM_I);
+
+        if (value != WHO_AM_I_VALUE)
+        {
+            LOG_ERR(logger,
+                    "WHO_AM_I value differs from expectation: read 0x{:x} "
+                    "but expected 0x{:x}",
+                    value, WHO_AM_I_VALUE);
+            lastError = INVALID_WHOAMI;
+            return false;
+        }
     }
 
     return true;
@@ -114,16 +116,43 @@ bool LPS22DF::setConfig(const Config& config)
     {
         case Mode::ONE_SHOT_MODE:
             mConfig = {config.avg, Mode::ONE_SHOT_MODE, ODR::ONE_SHOT};
+            spi.writeRegister(FIFO_CTRL, fifo_ctrl::BYPASS);
             break;
 
         case Mode::CONITNUOUS_MODE:
             mConfig = config;
+            spi.writeRegister(FIFO_CTRL, fifo_ctrl::CONTINUOUS);
             break;
 
         default:
             LOG_ERR(logger, "Mode not supported");
             return false;
     }
+
+    if (!(setAverage(mConfig.avg) && setOutputDataRate(mConfig.odr)))
+    {
+        LOG_ERR(logger, "Sensor not configured");
+        return false;
+    }
+
+    return true;
+}
+
+bool LPS22DF::setAverage(AVG avg)
+{
+    SPITransaction spi(mSlave);
+    spi.writeRegister(CTRL_REG1, mConfig.odr | avg);
+
+    mConfig.avg = avg;
+    return true;
+}
+
+bool LPS22DF::setOutputDataRate(ODR odr)
+{
+    SPITransaction spi(mSlave);
+    spi.writeRegister(CTRL_REG1, odr | mConfig.avg);
+
+    mConfig.odr = odr;
     return true;
 }
 
