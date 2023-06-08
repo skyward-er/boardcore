@@ -60,18 +60,17 @@ public:
     /**
      * @brief Sets up and enables the PWM timer.
      *
-     * @param timer Pointer to the timer's peripheral registers.
-     * @param pwmFrequency Frequency of the PWM signal.
-     * @param dutyCycleResolution Duty cycle levels.
+     * @param pulseTimer Timer used for the generation of the PWM signal.
+     * @param pulseFrequency Frequency of the PWM signal.
+
      */
-    explicit PWM(TIM_TypeDef* const timer, unsigned int pwmFrequency = 50,
-                 unsigned int dutyCycleResolution = 20000);
+    explicit PWM(TIM_TypeDef* const pulseTimer, uint16_t pulseFrequency = 50);
 
     ~PWM();
 
-    void setFrequency(unsigned int pwmFrequency);
+    void setFrequency(uint16_t pulseFrequency);
 
-    void setDutyCycleResolution(unsigned int dutyCycleResolution);
+    void setDutyCycleResolution(uint16_t dutyCycleResolution);
 
     void enableChannel(TimerUtils::Channel channel,
                        Polarity polarity = Polarity::NORMAL);
@@ -85,8 +84,8 @@ public:
      *
      * Changes the duty cycle only if the specified value is in the range [0,1].
      *
-     * @param channel Channel to change the duty cycle
-     * @param dutyCycle Relative duty cycle, ranges from 0 to 1
+     * @param channel Channel to change the duty cycle.
+     * @param dutyCycle Relative duty cycle, ranges from 0 to 1.
      */
     void setDutyCycle(TimerUtils::Channel channel, float dutyCycle);
 
@@ -105,11 +104,12 @@ private:
     PWM& operator=(const PWM&) = delete;
     PWM(const PWM& p)          = delete;
 
-    void setTimerConfiguration();
+    void configureTimer();
 
-    GP16bitTimer timer;
-    unsigned int pwmFrequency;
-    unsigned int dutyCycleResolution;
+    GP16bitTimer pulseTimer;
+
+    uint16_t pulseFrequency;
+    uint16_t dutyCycleResolution = 10000;
 };
 
 }  // namespace Boardcore

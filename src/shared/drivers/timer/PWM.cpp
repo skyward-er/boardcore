@@ -22,88 +22,86 @@
 
 #include "PWM.h"
 
+using namespace Boardcore::TimerUtils;
+
 namespace Boardcore
 {
 
-PWM::PWM(TIM_TypeDef* const timer, unsigned int pwmFrequency,
-         unsigned int dutyCycleResolution)
-    : timer(timer), pwmFrequency(pwmFrequency),
-      dutyCycleResolution(dutyCycleResolution)
+PWM::PWM(TIM_TypeDef* const pulseTimer, uint16_t pulseFrequency)
+    : pulseTimer(pulseTimer), pulseFrequency(pulseFrequency)
 {
     // Erase the previous timer configuration
-    this->timer.reset();
+    this->pulseTimer.reset();
 
-    // Set up and enable the timer
-    setTimerConfiguration();
+    configureTimer();
+
+    // Keep the timer always enabled
+    this->pulseTimer.enable();
 }
 
-PWM::~PWM() { timer.reset(); }
+PWM::~PWM() { pulseTimer.reset(); }
 
-void PWM::setFrequency(unsigned int pwmFrequency)
+void PWM::setFrequency(uint16_t pulseFrequency)
 {
-    this->pwmFrequency = pwmFrequency;
-    setTimerConfiguration();
+    this->pulseFrequency = pulseFrequency;
+    configureTimer();
 }
 
-void PWM::setDutyCycleResolution(unsigned int dutyCycleResolution)
+void PWM::setDutyCycleResolution(uint16_t dutyCycleResolution)
 {
     this->dutyCycleResolution = dutyCycleResolution;
-    setTimerConfiguration();
+    configureTimer();
 }
 
-void PWM::enableChannel(TimerUtils::Channel channel, Polarity polarity)
+void PWM::enableChannel(Channel channel, Polarity polarity)
 {
-    timer.setOutputCompareMode(channel,
-                               TimerUtils::OutputCompareMode::PWM_MODE_1);
-    timer.setCaptureComparePolarity(
-        channel, static_cast<TimerUtils::OutputComparePolarity>(polarity));
+    pulseTimer.setOutputCompareMode(channel, OutputCompareMode::PWM_MODE_1);
+    pulseTimer.setCaptureComparePolarity(
+        channel, static_cast<OutputComparePolarity>(polarity));
 
     // This will ensure that the duty cycle will change only at the next period
-    timer.enableCaptureComparePreload(channel);
+    pulseTimer.enableCaptureComparePreload(channel);
 
-    timer.enableCaptureCompareOutput(channel);
+    pulseTimer.enableCaptureCompareOutput(channel);
 }
 
-void PWM::disableChannel(TimerUtils::Channel channel)
+void PWM::disableChannel(Channel channel)
 {
-    timer.disableCaptureCompareOutput(channel);
+    pulseTimer.disableCaptureCompareOutput(channel);
 }
 
-bool PWM::isChannelEnabled(TimerUtils::Channel channel)
+bool PWM::isChannelEnabled(Channel channel)
 {
-    return timer.isCaptureComapreOutputEnabled(channel);
+    return pulseTimer.isCaptureCompareOutputEnabled(channel);
 }
 
-void PWM::setDutyCycle(TimerUtils::Channel channel, float dutyCycle)
+void PWM::setDutyCycle(Channel channel, float dutyCycle)
 {
     if (dutyCycle >= 0 && dutyCycle <= 1)
-        timer.setCaptureCompareRegister(
-            channel, static_cast<uint16_t>(
-                         dutyCycle * timer.readAutoReloadRegister() + 0.5));
+    {
+        pulseTimer.setCaptureCompareRegister(
+            channel,
+            static_cast<uint16_t>(
+                dutyCycle * pulseTimer.readAutoReloadRegister() + 0.5));
+    }
 }
 
 float PWM::getDutyCycle(TimerUtils::Channel channel)
 {
-    return static_cast<float>(timer.readCaptureCompareRegister(channel)) /
-           static_cast<float>(timer.readAutoReloadRegister());
+    return static_cast<float>(pulseTimer.readCaptureCompareRegister(channel)) /
+           static_cast<float>(pulseTimer.readAutoReloadRegister());
 }
 
-GP16bitTimer& PWM::getTimer() { return timer; }
+GP16bitTimer& PWM::getTimer() { return pulseTimer; }
 
-void PWM::setTimerConfiguration()
+void PWM::configureTimer()
 {
-    timer.disable();
-    timer.setCounter(0);
-
-    timer.setFrequency(dutyCycleResolution * pwmFrequency);
-
-    timer.setAutoReloadRegister(TimerUtils::getFrequency(timer.getTimer()) /
-                                pwmFrequency);
+    pulseTimer.setFrequency(dutyCycleResolution * pulseFrequency);
+    pulseTimer.setAutoReloadRegister(getFrequency(pulseTimer.getTimer()) /
+                                     pulseFrequency);
 
     // Force the timer to update its configuration
-    timer.generateUpdate();
-
-    timer.enable();
+    pulseTimer.generateUpdate();
 }
 
 }  // namespace Boardcore
