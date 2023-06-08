@@ -79,7 +79,7 @@ public:
     enum Mode
     {
         ONE_SHOT_MODE,   // ODR = ONE_SHOT
-        CONITNUOUS_MODE  // BYPASS, ODR = ord
+        CONITNUOUS_MODE  // BYPASS, ODR = odr
     };
 
     /**
@@ -90,20 +90,18 @@ public:
      * They are applied in the constructor of LPS22DF class
      * and on each call of LPS22DF::applyConfig()
      */
-    struct Config
+    typedef struct
     {
-        Config() {}
-
-        ODR odr;
         AVG avg;
         Mode mode;
+        ODR odr;
 
-        bool enableTemperature      = true;
-        unsigned temperatureDivider = 1;
-        bool enableInterrupt        = false;
-        float threshold             = 0;
-        bool doBlockDataUpdate      = false;
-    };
+        // bool enableTemperature      = true;
+        // unsigned temperatureDivider = 1;
+        // bool enableInterrupt        = false;
+        // float threshold             = 0;
+        // bool doBlockDataUpdate      = false;
+    } Config;
 
     LPS22DF(SPIBusInterface& bus, miosix::GpioPin pin,
             SPIBusConfig spiConfig = {}, Config config = {});
@@ -128,7 +126,7 @@ public:
      * @returns True if the configuration was applied successfully,
      * false otherwise.
      */
-    bool setConfig(Config config);
+    bool setConfig(const Config& config);
 
     bool setAverage(AVG avg);
     bool setOutputDataRate(ODR odr);
@@ -180,10 +178,47 @@ private:
         FIFO_DATA_OUT_PRESS_H  = 0x7a,
     };
 
-    static constexpr uint16_t WHO_AM_I_VALUE     = 0xb4;
-    static constexpr uint16_t LSB_PER_CELSIUS    = 100;   // LSB/°C
-    static constexpr uint16_t LSB_PER_HPA        = 4096;  // LSB/hPa
-    static constexpr float REFERENCE_TEMPERATURE = 25;    // °C
+    static constexpr uint16_t temperatureSensitivity = 100;   // LSB/°C
+    static constexpr uint16_t pressureSensitivity    = 4096;  // LSB/hPa
+    static constexpr float REFERENCE_TEMPERATURE     = 25;    // °C
+
+    enum if_ctrl : uint8_t
+    {
+        CS_PU_DIS   = (1 << 1),
+        INT_PD_DIS  = (1 << 2),
+        SDO_PU_EN   = (1 << 3),
+        SDA_PU_EN   = (1 << 4),
+        SIM         = (1 << 5),
+        I2C_I3C_DIS = (1 << 6),  ///< Disable I2C and I3C digital interfaces
+        INT_EN_I3C  = (1 << 7)
+    };
+
+    enum crtl_reg2 : uint8_t
+    {
+        ONE_SHOT_START = (1 << 0),  ///< Enable one-shot mode
+        SWRESET        = (1 << 2),  ///< Software reset
+        BDU            = (1 << 3),  ///< Block data update
+        EN_LPFP        = (1 << 4),  ///< Enable low-pass filter on pressure data
+        LFPF_CFG       = (1 << 5),  ///< Low-pass filter configuration
+        FS_MODE        = (1 << 6),  ///< Full-scale selection
+        BOOT           = (1 << 7)   ///< Reboot memory content
+    };
+
+    enum ctrl_reg3 : uint8_t {
+        IF_ADD_INC  = (0b1 << 0),    ///< Increment register during a multiple byte access
+        PP_OD       = (0b1 << 1),    ///< Push-pull/open-drain selection on interrupt pin
+        INT_H_L     = (0b1 << 3)     ///< Select interrupt active-high, active-low
+    }
+
+    enum ctrl_reg4 : uint8_t
+    {
+        INT_F_OVR  = (0b1 << 0),  ///< FIFO overrun status on INT_DRDY pin
+        INT_F_WTM  = (0b1 << 1),  ///< FIFO threshold status on INT_DRDY pin
+        INT_F_FULL = (0b1 << 2),  ///< FIFO full flag on INT_DRDY pin
+        INT_EN     = (0b1 << 4),  ///< Interrupt signal on INT_DRDY pin
+        DRDY       = (0b1 << 5),  ///< Date-ready signal on INT_DRDY pin
+        DRDY_PLS   = (0b1 << 6)   ///< Data-ready pulsed on INT_DRDY pin
+    };
 
     PrintLogger logger = Logging::getLogger("lps22df");
 };  // namespace Boardcore
