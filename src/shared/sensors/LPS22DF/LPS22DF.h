@@ -181,6 +181,7 @@ private:
     static constexpr uint16_t temperatureSensitivity = 100;   // LSB/°C
     static constexpr uint16_t pressureSensitivity    = 4096;  // LSB/hPa
     static constexpr float REFERENCE_TEMPERATURE     = 25;    // °C
+    static constexpr uint32_t WHO_AM_I_VALUE         = 0xb4;
 
     enum if_ctrl : uint8_t
     {
@@ -204,11 +205,14 @@ private:
         BOOT           = (1 << 7)   ///< Reboot memory content
     };
 
-    enum ctrl_reg3 : uint8_t {
-        IF_ADD_INC  = (0b1 << 0),    ///< Increment register during a multiple byte access
-        PP_OD       = (0b1 << 1),    ///< Push-pull/open-drain selection on interrupt pin
-        INT_H_L     = (0b1 << 3)     ///< Select interrupt active-high, active-low
-    }
+    enum ctrl_reg3 : uint8_t
+    {
+        IF_ADD_INC =
+            (0b1 << 0),  ///< Increment register during a multiple byte access
+        PP_OD =
+            (0b1 << 1),  ///< Push-pull/open-drain selection on interrupt pin
+        INT_H_L = (0b1 << 3)  ///< Select interrupt active-high, active-low
+    };
 
     enum ctrl_reg4 : uint8_t
     {

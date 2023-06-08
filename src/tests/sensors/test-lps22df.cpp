@@ -52,7 +52,7 @@ int main()
     LPS22DF::Config config;
     config.odr  = LPS22DF::ODR_10;
     config.mode = LPS22DF::CONITNUOUS_MODE;
-    // config.avg                = LPS22DF::AVG_128;
+    config.avg  = LPS22DF::AVG_128;
     // config.temperatureDivider = 5;
 
     LPS22DF sensor(bus, cs, busConfig, config);

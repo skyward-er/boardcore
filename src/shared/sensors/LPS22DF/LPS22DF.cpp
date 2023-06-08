@@ -66,14 +66,6 @@ bool LPS22DF::init()
         spi.writeRegister(IF_CTRL, if_ctrl::I2C_I3C_DIS);
     }
 
-    // Checking the whoami value to assure communication
-    if (!selfTest())
-    {
-        LOG_ERR(logger, "Self-test failed");
-        lastError = SELF_TEST_FAIL;
-        return false;
-    }
-
     // Setting the actual sensor configurations (Mode, ODR, AVG, FSR, DRDY)
     if (!setConfig(mConfig))
     {
@@ -107,7 +99,6 @@ bool LPS22DF::selfTest()
                 "WHO_AM_I value differs from expectation: read 0x{:x} "
                 "but expected 0x{:x}",
                 value, WHO_AM_I_VALUE);
-        TRACE("\n%h", value);
         lastError = INVALID_WHOAMI;
         return false;
     }
