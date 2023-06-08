@@ -47,40 +47,46 @@ int main()
 
     SPIBus bus(SPI1);
 
-    SPIBusConfig busConfig = LPS22DF::getDefaultSPIConfig();
-
     LPS22DF::Config config;
-    config.odr  = LPS22DF::ODR_10;
-    config.mode = LPS22DF::CONITNUOUS_MODE;
-    config.avg  = LPS22DF::AVG_128;
+    config.odr = LPS22DF::ONE_SHOT;
+    config.avg = LPS22DF::AVG_128;
 
-    LPS22DF sensor(bus, cs, busConfig, config);
+    LPS22DF sensor(bus, cs, LPS22DF::getDefaultSPIConfig(), config);
 
-    printf("[LPS22DF] Starting...\n");
+    printf("Starting...\n");
 
     if (!sensor.init())
     {
-        printf("[LPS22DF] Init failed\n");
+        printf("Init failed\n");
         return 0;
     }
-    printf("[LPS22DF] Init done\n");
 
-    printf("[LPS22DF] Doing self test!\n");
     if (!sensor.selfTest())
     {
-        printf("[LPS22DF] Error: selfTest() returned false!\n");
+        printf("Error: selfTest() returned false!\n");
         return 0;
     }
-    printf("[LPS22DF] selfTest returned true\n");
-    printf("[LPS22DF] Now printing some sensor data:\n");
 
+    printf("Trying one shot mode for 10 seconds");
+    for (int i = 0; i < 10 * 10; i++)
+    {
+        sensor.sample();
+        LPS22DFData data = sensor.getLastSample();
+
+        printf("%.2f° | %.2fPa\n", data.temperature, data.pressure);
+
+        miosix::Thread::sleep(100);
+    }
+
+    printf("Now setting 10Hz continuous mode\n");
+    sensor.setOutputDataRate(LPS22DF::ODR_10);
     while (true)
     {
         sensor.sample();
         LPS22DFData data = sensor.getLastSample();
-        printf("%f C | %f hPa\n", data.temperature, data.pressure);
-        miosix::Thread::sleep(1000);
-    }
 
-    return 0;
+        printf("%.2f° | %.2fPa\n", data.temperature, data.pressure);
+
+        miosix::Thread::sleep(100);
+    }
 }

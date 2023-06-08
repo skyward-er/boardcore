@@ -37,9 +37,14 @@ namespace Boardcore
 static constexpr uint8_t WHO_AM_I_VALUE = 0xb4;
 static constexpr uint8_t ENABLE_ONESHOT = (0b01 << 0);
 
+LPS22DF::LPS22DF(SPIBusInterface& bus, miosix::GpioPin pin)
+    : slave(bus, pin, getDefaultSPIConfig())
+{
+}
+
 LPS22DF::LPS22DF(SPIBusInterface& bus, miosix::GpioPin pin,
                  SPIBusConfig spiConfig, Config config)
-    : mSlave(bus, pin, spiConfig), mConfig(config), isInitialized(false)
+    : slave(bus, pin, spiConfig), config(config)
 {
 }
 
@@ -54,27 +59,23 @@ SPIBusConfig LPS22DF::getDefaultSPIConfig()
 
 bool LPS22DF::init()
 {
+    SPITransaction spi(slave);
+
     if (isInitialized)
     {
-        LOG_ERR(logger, "Attempted to initialized sensor twice but failed");
+        LOG_ERR(logger, "Attempted to initialized sensor twice");
         lastError = ALREADY_INIT;
         return false;
     }
 
-    {
-        SPITransaction spi(mSlave);
-        spi.writeRegister(IF_CTRL, if_ctrl::I2C_I3C_DIS);
-    }
+    // Disable I2C and I3C interfaces
+    spi.writeRegister(IF_CTRL_REG, I2C_I3C_DIS);
 
     // Setting the actual sensor configurations (Mode, ODR, AVG)
-    if (!setConfig(mConfig))
-    {
-        LOG_ERR(logger, "Configuration not applied correctly");
-        lastError = SensorErrors::INIT_FAIL;
-        return false;
-    }
+    setConfig(config);
 
-    lastError     = SensorErrors::NO_ERRORS;
+    // TODO: Read back registers to check configuration
+
     isInitialized = true;
     return true;
 }
@@ -91,15 +92,13 @@ bool LPS22DF::selfTest()
     // selfTest procedure does not exist for this sensor. WhoamiValue is checked
     // to assure communication.
     {
-        SPITransaction spi(mSlave);
-        uint8_t value = spi.readRegister(WHO_AM_I);
+        SPITransaction spi(slave);
+        uint8_t value = spi.readRegister(WHO_AM_I_REG);
 
         if (value != WHO_AM_I_VALUE)
         {
-            LOG_ERR(logger,
-                    "WHO_AM_I value differs from expectation: read 0x{:x} "
-                    "but expected 0x{:x}",
-                    value, WHO_AM_I_VALUE);
+            LOG_ERR(logger, "WHO_AM_I: read 0x{:x} but expected 0x{:x}", value,
+                    WHO_AM_I_VALUE);
             lastError = INVALID_WHOAMI;
             return false;
         }
@@ -108,97 +107,60 @@ bool LPS22DF::selfTest()
     return true;
 }
 
-bool LPS22DF::setConfig(const Config& config)
+void LPS22DF::setConfig(const Config& config)
 {
-    SPITransaction spi(mSlave);
+    SPITransaction spi(slave);
 
-    switch (config.mode)
-    {
-        case Mode::ONE_SHOT_MODE:
-            mConfig = {config.avg, Mode::ONE_SHOT_MODE, ODR::ONE_SHOT};
-            spi.writeRegister(FIFO_CTRL, fifo_ctrl::BYPASS);
-            break;
-
-        case Mode::CONITNUOUS_MODE:
-            mConfig = config;
-            spi.writeRegister(FIFO_CTRL, fifo_ctrl::CONTINUOUS);
-            break;
-
-        default:
-            LOG_ERR(logger, "Mode not supported");
-            return false;
-    }
-
-    if (!(setAverage(mConfig.avg) && setOutputDataRate(mConfig.odr)))
-    {
-        LOG_ERR(logger, "Sensor not configured");
-        return false;
-    }
-
-    return true;
+    setAverage(config.avg);
+    setOutputDataRate(config.odr);
 }
 
-bool LPS22DF::setAverage(AVG avg)
+void LPS22DF::setAverage(AVG avg)
 {
-    SPITransaction spi(mSlave);
-    spi.writeRegister(CTRL_REG1, mConfig.odr | avg);
+    SPITransaction spi(slave);
 
-    mConfig.avg = avg;
-    return true;
+    spi.writeRegister(CTRL1_REG, avg);
+
+    config.avg = avg;
 }
 
-bool LPS22DF::setOutputDataRate(ODR odr)
+void LPS22DF::setOutputDataRate(ODR odr)
 {
-    SPITransaction spi(mSlave);
-    spi.writeRegister(CTRL_REG1, odr | mConfig.avg);
+    SPITransaction spi(slave);
 
-    mConfig.odr = odr;
-    return true;
+    spi.writeRegister(CTRL1_REG, odr);
+
+    config.odr = odr;
 }
 
 LPS22DFData LPS22DF::sampleImpl()
 {
     if (!isInitialized)
     {
-        LOG_ERR(logger, "Invoked sampleImpl() but sensor was uninitialized");
+        LOG_ERR(logger, "Invoked sampleImpl() but sensor was not initialized");
         lastError = NOT_INIT;
         return lastSample;
     }
 
-    // uint8_t val[5] = {0};
-    SPITransaction spi(mSlave);
+    SPITransaction spi(slave);
     LPS22DFData data;
 
-    spi.writeRegister(CTRL_REG2, ctrl_reg2::ONE_SHOT_START);
-    uint8_t status_val = spi.readRegister(STATUS);
-
-    lastError              = NO_ERRORS;
-    data.pressureTimestamp = data.temperatureTimestamp =
-        TimestampTimer::getTimestamp();
-
-    spi.readRegister(WHO_AM_I);
-    spi.readRegister(FIFO_CTRL);
-
-    // if (status_val & LPS22DF::status::P_DA)
+    // TODO: Handle ONE SHOT mode
+    if (config.odr == ODR::ONE_SHOT)
     {
-        data.pressure = spi.readRegister24(PRESSURE_OUT_XL);
+        // Trigger sample
+        spi.writeRegister(CTRL2_REG, ONE_SHOT_TRIGGER);
 
-        // if (status_val & LPS22DF::status::T_DA)
-        {
-            data.temperature = spi.readRegister16(TEMP_OUT_L);
-            data.temperature += REFERENCE_TEMPERATURE;
-        }
-        // else
-        // {
-        //     data.temperature          = lastSample.temperature;
-        //     data.temperatureTimestamp = lastSample.temperatureTimestamp;
-        // }
+        // Pool status register until the sample is ready
+        while ((spi.readRegister16(STATUS_REG) & 0x3) == 0)
+            ;
     }
-    // else
-    // {
-    //     lastError = NO_NEW_DATA;
-    //     return lastSample;
-    // }
+
+    data.pressureTimestamp    = TimestampTimer::getTimestamp();
+    data.temperatureTimestamp = data.pressureTimestamp;
+
+    data.pressure    = spi.readRegister24(PRESSURE_OUT_XL_REG) / PRES_SENS;
+    data.temperature = spi.readRegister16(TEMP_OUT_L_REG) / TEMP_SENS;
 
     return data;
 }
