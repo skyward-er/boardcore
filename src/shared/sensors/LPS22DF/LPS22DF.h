@@ -37,10 +37,7 @@ namespace Boardcore
 /**
  * Driver for LPS22DF, Low-power and high-precision MEMS nano pressure sensor.
  */
-
-static constexpr uint32_t LPS22DF_FIFO_SIZE = 128;
-
-class LPS22DF : public SensorFIFO<LPS22DFData, LPS22DF_FIFO_SIZE>
+class LPS22DF : public Sensor<LPS22DFData>
 {
 public:
     /**
@@ -57,34 +54,32 @@ public:
      */
     enum ODR : uint8_t
     {
-        ODR_PWR_DWN = 0x00,  //!<  power-down / one-shot
-        ODR_1_HZ    = 0x01,  //!<   1 Hz
-        ODR_4_HZ    = 0x02,  //!<   4 Hz
-        ODR_10_HZ   = 0x03,  //!<  10 Hz
-        ODR_25_HZ   = 0x04,  //!<  25 Hz
-        ODR_50_HZ   = 0x05,  //!<  50 Hz
-        ODR_75_HZ   = 0x06,  //!<  75 Hz
-        ODR_100_HZ  = 0x07,  //!< 100 Hz
-        ODR_200_HZ  = 0x08,  //!< 200 Hz
+        ONE_SHOT = (0b0000 << 3),
+        ODR_1    = (0b0001 << 3),
+        ODR_4    = (0b0010 << 3),
+        ODR_10   = (0b0011 << 3),
+        ODR_25   = (0b0100 << 3),
+        ODR_50   = (0b0101 << 3),
+        ODR_75   = (0b0110 << 3),
+        ODR_100  = (0b0111 << 3),
+        ODR_200  = (0b1000 << 3)
     };
 
-    /**
-     * @brief FIFO Modes
-     *
-     * Note: The TRIG_MODES bit enables the triggered FIFO modes.
-     * 0 - 00 - Bypass
-     * 0 - 01 - FIFO mode
-     * 0 - 1x - Continuous (Dynamic-Stream)
-     * 1 - 01 - Bypass-to-FIFO
-     * 1 - 01 - Bypass-to-Continuous (Dynamic-Stream)
-     * 1 - 01 - Continuous (Dynamic-Stream)-to-FIFO
-     */
-    enum FIFOMode : uint8_t
+    enum AVG : uint8_t
     {
-        FIFO_MODE0 = 0x0,
-        FIFO_MODE1 = 0x1,
-        FIFO_MODE2 = 0x2,
-        FIFO_MODE3 = 0x3,
+        AVG_4   = 0b000,
+        AVG_8   = 0b001,
+        AVG_16  = 0b010,
+        AVG_32  = 0b011,
+        AVG_64  = 0b100,
+        AVG_128 = 0b101,
+        AVG_512 = 0b111
+    };
+
+    enum Mode
+    {
+        ONE_SHOT_MODE,   // ODR = ONE_SHOT
+        CONITNUOUS_MODE  // BYPASS, ODR = ord
     };
 
     /**
@@ -98,47 +93,65 @@ public:
     struct Config
     {
         Config() {}
-        /**
-         * @brief Data rate configuration
-         *
-         * Default: Power-down / one-shot
-         *
-         * @see LPS22DF::ODR
-         */
-        ODR odr = ODR_PWR_DWN;
 
-        bool enableTemperature = true;
+        ODR odr;
+        AVG avg;
+        Mode mode;
 
+        bool enableTemperature      = true;
         unsigned temperatureDivider = 1;
-
-        bool enableInterrupt[3] = {false, false, false};
-
-        float threshold = 0;
-
-        bool doBlockDataUpdate = false;
+        bool enableInterrupt        = false;
+        float threshold             = 0;
+        bool doBlockDataUpdate      = false;
     };
 
     LPS22DF(SPIBusInterface& bus, miosix::GpioPin pin,
             SPIBusConfig spiConfig = {}, Config config = {});
 
+    static SPIBusConfig getDefaultSPIConfig();
+
     bool init() override;
 
     bool selfTest() override;
 
-    bool applyConfig(Config config);
+    /**
+     * @brief Overwrites the sensor settings.
+     *
+     * Writes a certain config to the sensor registers. This method is
+     * automatically called in LPS22DF::init() using as parameter the
+     * configuration given in the constructor.
+     *
+     * This method checks if the values were actually written in the sensor's
+     * registers and returns false if at least one of them was not as expected.
+     *
+     * @param config The configuration to be applied.
+     * @returns True if the configuration was applied successfully,
+     * false otherwise.
+     */
+    bool setConfig(Config config);
+
+    bool setAverage(AVG avg);
+    bool setOutputDataRate(ODR odr);
 
 private:
     LPS22DFData sampleImpl() override;
 
+    float convertPressure(uint8_t pressXL, uint8_t pressL, uint8_t pressH);
+    float convertTemperature(uint8_t tempL, uint8_t tempH);
+
     SPISlave mSlave;
     Config mConfig;
 
-    unsigned currDiv;
-    bool isInitialized;
-    float mUnit = 0;
+    unsigned tempCounter = 0;
+    bool isInitialized   = false;
 
     enum Registers : uint8_t
     {
+        INTERRUPT_CFG = 0x0b,
+        THS_P_L       = 0x0c,
+        THS_P_H       = 0x0d,
+        IF_CTRL       = 0x0e,
+
         WHO_AM_I = 0x0f,
 
         CTRL_REG1 = 0x20,
@@ -167,16 +180,12 @@ private:
         FIFO_DATA_OUT_PRESS_H  = 0x7a,
     };
 
-    enum Constants : unsigned
-    {
-        WHO_AM_I_VALUE = 0xb4,
-
-        REFERENCE_TEMPERATURE = 25,
-        LSB_PER_CELSIUS       = 100,
-        LSB_PER_HPA           = 4096,
-    };
+    static constexpr uint16_t WHO_AM_I_VALUE     = 0xb4;
+    static constexpr uint16_t LSB_PER_CELSIUS    = 100;   // LSB/°C
+    static constexpr uint16_t LSB_PER_HPA        = 4096;  // LSB/hPa
+    static constexpr float REFERENCE_TEMPERATURE = 25;    // °C
 
     PrintLogger logger = Logging::getLogger("lps22df");
-};
+};  // namespace Boardcore
 
 }  // namespace Boardcore
