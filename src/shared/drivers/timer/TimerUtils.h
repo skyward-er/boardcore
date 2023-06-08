@@ -24,6 +24,8 @@
 
 #include <utils/ClockUtils.h>
 
+#include <cassert>
+
 namespace Boardcore
 {
 
@@ -358,6 +360,11 @@ float getMaxDuration(TIM_TypeDef *timer);
  */
 uint16_t computePrescalerValue(TIM_TypeDef *timer, int targetFrequency);
 
+/**
+ * @brief Returns the corresponding master for for the given channel.
+ */
+MasterMode masterModeFromChannel(const Channel channel);
+
 }  // namespace TimerUtils
 
 inline ClockUtils::APB TimerUtils::getTimerInputClock(const TIM_TypeDef *timer)
@@ -444,6 +451,25 @@ inline uint16_t TimerUtils::computePrescalerValue(TIM_TypeDef *timer,
     int32_t targetPrescaler =
         TimerUtils::getPrescalerInputFrequency(timer) / targetFrequency - 1;
     return targetPrescaler >= 0 ? targetPrescaler : 0;
+}
+
+inline TimerUtils::MasterMode TimerUtils::masterModeFromChannel(
+    const Channel channel)
+{
+    switch (channel)
+    {
+        case Channel::CHANNEL_1:
+            return MasterMode::OC1REF_OUTPUT;
+        case Channel::CHANNEL_2:
+            return MasterMode::OC2REF_OUTPUT;
+        case Channel::CHANNEL_3:
+            return MasterMode::OC3REF_OUTPUT;
+        case Channel::CHANNEL_4:
+            return MasterMode::OC4REF_OUTPUT;
+        default:
+            assert(false && "Invalid channel!");
+            return MasterMode::RESET;
+    }
 }
 
 }  // namespace Boardcore
