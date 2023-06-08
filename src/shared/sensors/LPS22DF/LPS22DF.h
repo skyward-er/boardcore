@@ -128,9 +128,6 @@ public:
 private:
     LPS22DFData sampleImpl() override;
 
-    float convertPressure(uint8_t pressXL, uint8_t pressL, uint8_t pressH);
-    float convertTemperature(uint8_t tempL, uint8_t tempH);
-
     SPISlave mSlave;
     Config mConfig;
 
@@ -187,7 +184,7 @@ private:
         INT_EN_I3C  = (1 << 7)
     };
 
-    enum crtl_reg2 : uint8_t
+    enum ctrl_reg2 : uint8_t
     {
         ONE_SHOT_START = (1 << 0),  ///< Enable one-shot mode
         SWRESET        = (1 << 2),  ///< Software reset

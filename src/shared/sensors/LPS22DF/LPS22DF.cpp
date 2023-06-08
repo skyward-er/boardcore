@@ -76,7 +76,7 @@ bool LPS22DF::init()
 
     lastError     = SensorErrors::NO_ERRORS;
     isInitialized = true;
-    return setConfig(mConfig);
+    return true;
 }
 
 bool LPS22DF::selfTest()
@@ -156,19 +156,6 @@ bool LPS22DF::setOutputDataRate(ODR odr)
     return true;
 }
 
-float LPS22DF::convertPressure(uint8_t pressXL, uint8_t pressL, uint8_t pressH)
-{
-    uint32_t press_value =
-        ((int32_t)((pressH << 24) | (pressL << 16) | (pressXL << 8))) >> 8;
-    return ((float)press_value / pressureSensitivity);
-}
-
-float LPS22DF::convertTemperature(uint8_t tempL, uint8_t tempH)
-{
-    uint16_t temp_value = ((int16_t)((tempH << 8) | (tempL << 0)));
-    return ((float)temp_value / temperatureSensitivity);
-}
-
 LPS22DFData LPS22DF::sampleImpl()
 {
     if (!isInitialized)
@@ -179,38 +166,39 @@ LPS22DFData LPS22DF::sampleImpl()
     }
 
     // uint8_t val[5] = {0};
-    uint8_t status_val = 0;
     SPITransaction spi(mSlave);
     LPS22DFData data;
+
+    spi.writeRegister(CTRL_REG2, ctrl_reg2::ONE_SHOT_START);
+    uint8_t status_val = spi.readRegister(STATUS);
 
     lastError              = NO_ERRORS;
     data.pressureTimestamp = data.temperatureTimestamp =
         TimestampTimer::getTimestamp();
 
-    if (LPS22DF::status::P_DA)
+    spi.readRegister(WHO_AM_I);
+    spi.readRegister(FIFO_CTRL);
+
+    // if (status_val & LPS22DF::status::P_DA)
     {
-        int8_t outPressL  = spi.readRegister(PRESSURE_OUT_L);
-        int8_t outPressH  = spi.readRegister(PRESSURE_OUT_H);
-        int8_t outPressXL = spi.readRegister(PRESSURE_OUT_XL);
-        data.pressure     = convertPressure(outPressXL, outPressL, outPressH);
-        if (LPS22DF::status::T_DA)
+        data.pressure = spi.readRegister24(PRESSURE_OUT_XL);
+
+        // if (status_val & LPS22DF::status::T_DA)
         {
-            int8_t outTempL  = spi.readRegister(TEMP_OUT_L);
-            int8_t outTempH  = spi.readRegister(TEMP_OUT_H);
-            data.temperature = convertTemperature(outTempL, outTempH);
+            data.temperature = spi.readRegister16(TEMP_OUT_L);
             data.temperature += REFERENCE_TEMPERATURE;
         }
-        else
-        {
-            data.temperature          = lastSample.temperature;
-            data.temperatureTimestamp = lastSample.temperatureTimestamp;
-        }
+        // else
+        // {
+        //     data.temperature          = lastSample.temperature;
+        //     data.temperatureTimestamp = lastSample.temperatureTimestamp;
+        // }
     }
-    else
-    {
-        lastError = NO_NEW_DATA;
-        return lastSample;
-    }
+    // else
+    // {
+    //     lastError = NO_NEW_DATA;
+    //     return lastSample;
+    // }
 
     return data;
 }
