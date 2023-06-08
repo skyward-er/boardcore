@@ -208,23 +208,33 @@ private:
     enum ctrl_reg3 : uint8_t
     {
         IF_ADD_INC =
-            (0b1 << 0),  ///< Increment register during a multiple byte access
-        PP_OD =
-            (0b1 << 1),  ///< Push-pull/open-drain selection on interrupt pin
-        INT_H_L = (0b1 << 3)  ///< Select interrupt active-high, active-low
+            (1 << 0),      ///< Increment register during a multiple byte access
+        PP_OD = (1 << 1),  ///< Push-pull/open-drain selection on interrupt pin
+        INT_H_L = (1 << 3)  ///< Select interrupt active-high, active-low
     };
 
     enum ctrl_reg4 : uint8_t
     {
-        INT_F_OVR  = (0b1 << 0),  ///< FIFO overrun status on INT_DRDY pin
-        INT_F_WTM  = (0b1 << 1),  ///< FIFO threshold status on INT_DRDY pin
-        INT_F_FULL = (0b1 << 2),  ///< FIFO full flag on INT_DRDY pin
-        INT_EN     = (0b1 << 4),  ///< Interrupt signal on INT_DRDY pin
-        DRDY       = (0b1 << 5),  ///< Date-ready signal on INT_DRDY pin
-        DRDY_PLS   = (0b1 << 6)   ///< Data-ready pulsed on INT_DRDY pin
+        INT_F_OVR  = (1 << 0),  ///< FIFO overrun status on INT_DRDY pin
+        INT_F_WTM  = (1 << 1),  ///< FIFO threshold status on INT_DRDY pin
+        INT_F_FULL = (1 << 2),  ///< FIFO full flag on INT_DRDY pin
+        INT_EN     = (1 << 4),  ///< Interrupt signal on INT_DRDY pin
+        DRDY       = (1 << 5),  ///< Date-ready signal on INT_DRDY pin
+        DRDY_PLS   = (1 << 6)   ///< Data-ready pulsed on INT_DRDY pin
+    };
+
+    enum fifo_ctrl : uint8_t
+    {
+        BYPASS               = 0b000,
+        FIFO                 = 0b001,
+        CONTINUOUS           = 0b010,
+        BYPASS_TO_FIFO       = 0b101,
+        BYPASS_TO_CONTINUOUS = 0b110,
+        CONTINUOUS_TO_FIFO   = 0b111,
+        STOP_ON_WTM          = (1 << 3)
     };
 
     PrintLogger logger = Logging::getLogger("lps22df");
-};  // namespace Boardcore
+};
 
 }  // namespace Boardcore
