@@ -178,8 +178,8 @@ LPS22DFData LPS22DF::sampleImpl()
         return lastSample;
     }
 
-    uint8_t status = 0;
-    uint8_t val[5] = {0};
+    // uint8_t val[5] = {0};
+    uint8_t status_val = 0;
     SPITransaction spi(mSlave);
     LPS22DFData data;
 
@@ -187,20 +187,29 @@ LPS22DFData LPS22DF::sampleImpl()
     data.pressureTimestamp = data.temperatureTimestamp =
         TimestampTimer::getTimestamp();
 
-    if (mConfig.odr == ODR::ONE_SHOT)
+    if (LPS22DF::status::P_DA)
     {
-        // // TODO
-        // if (!(spi.readRegister(CTRL_REG1) &&
-        //       spi.writeRegister(CTRL_REG2, ENABLE_ONESHOT)))
-        // {
-        //     lastError = BUS_FAULT;
-        //     return lastSample;
-        // }
-
-        data.pressure    = convertPressure(val[0], val[1], val[2]);
-        data.temperature = convertTemperature(val[3], val[4]);
-
-        return data;
+        int8_t outPressL  = spi.readRegister(PRESSURE_OUT_L);
+        int8_t outPressH  = spi.readRegister(PRESSURE_OUT_H);
+        int8_t outPressXL = spi.readRegister(PRESSURE_OUT_XL);
+        data.pressure     = convertPressure(outPressXL, outPressL, outPressH);
+        if (LPS22DF::status::T_DA)
+        {
+            int8_t outTempL  = spi.readRegister(TEMP_OUT_L);
+            int8_t outTempH  = spi.readRegister(TEMP_OUT_H);
+            data.temperature = convertTemperature(outTempL, outTempH);
+            data.temperature += REFERENCE_TEMPERATURE;
+        }
+        else
+        {
+            data.temperature          = lastSample.temperature;
+            data.temperatureTimestamp = lastSample.temperatureTimestamp;
+        }
+    }
+    else
+    {
+        lastError = NO_NEW_DATA;
+        return lastSample;
     }
 
     return data;

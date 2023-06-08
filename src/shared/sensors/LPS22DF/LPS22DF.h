@@ -95,12 +95,6 @@ public:
         AVG avg;
         Mode mode;
         ODR odr;
-
-        // bool enableTemperature      = true;
-        // unsigned temperatureDivider = 1;
-        // bool enableInterrupt        = false;
-        // float threshold             = 0;
-        // bool doBlockDataUpdate      = false;
     } Config;
 
     LPS22DF(SPIBusInterface& bus, miosix::GpioPin pin,
@@ -140,8 +134,7 @@ private:
     SPISlave mSlave;
     Config mConfig;
 
-    unsigned tempCounter = 0;
-    bool isInitialized   = false;
+    bool isInitialized = false;
 
     enum Registers : uint8_t
     {
@@ -232,6 +225,14 @@ private:
         BYPASS_TO_CONTINUOUS = 0b110,
         CONTINUOUS_TO_FIFO   = 0b111,
         STOP_ON_WTM          = (1 << 3)
+    };
+
+    enum status : uint8_t
+    {
+        P_DA = (1 << 0),  ///< Pressure data available
+        T_DA = (1 << 1),  ///< Temperature data available
+        P_OR = (1 << 4),  ///< Pressure data overrun
+        T_OR = (1 << 5)   ///< Temperature data overrun
     };
 
     PrintLogger logger = Logging::getLogger("lps22df");

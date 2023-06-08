@@ -53,34 +53,33 @@ int main()
     config.odr  = LPS22DF::ODR_10;
     config.mode = LPS22DF::CONITNUOUS_MODE;
     config.avg  = LPS22DF::AVG_128;
-    // config.temperatureDivider = 5;
 
     LPS22DF sensor(bus, cs, busConfig, config);
 
-    printf("Starting...\n");
+    printf("[LPS22DF] Starting...\n");
 
     if (!sensor.init())
     {
-        printf("LPS22DF: Init failed\n");
+        printf("[LPS22DF] Init failed\n");
         return 0;
     }
-    printf("LPS22DF: Init done\n");
+    printf("[LPS22DF] Init done\n");
 
-    printf("Doing self test!\n");
+    printf("[LPS22DF] Doing self test!\n");
     if (!sensor.selfTest())
     {
-        printf("Error: selfTest() returned false!\n");
+        printf("[LPS22DF] Error: selfTest() returned false!\n");
         return 0;
     }
-    printf("selfTest returned true\n");
-    printf("Now printing some sensor data:\n");
+    printf("[LPS22DF] selfTest returned true\n");
+    printf("[LPS22DF] Now printing some sensor data:\n");
 
     while (true)
     {
         sensor.sample();
         LPS22DFData data = sensor.getLastSample();
         printf("%f C | %f hPa\n", data.temperature, data.pressure);
-        miosix::Thread::sleep(10);
+        miosix::Thread::sleep(1000);
     }
 
     return 0;
