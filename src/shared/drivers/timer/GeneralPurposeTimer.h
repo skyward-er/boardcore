@@ -186,9 +186,9 @@ public:
      */
     void disableCaptureCompareComplementaryOutput(TimerUtils::Channel channel);
 
-    bool isCaptureComapreOutputEnabled(TimerUtils::Channel channel);
+    bool isCaptureCompareOutputEnabled(TimerUtils::Channel channel);
 
-    bool isCaptureComapreComplementaryOutputEnabled(
+    bool isCaptureCompareComplementaryOutputEnabled(
         TimerUtils::Channel channel);
 
     void setCaptureComparePolarity(TimerUtils::Channel channel,
@@ -202,10 +202,9 @@ public:
 
     T readCaptureCompareRegister(TimerUtils::Channel channel);
 
-    static void clearTriggerInterruptFlag(TIM_TypeDef *timer);
+    void clearTriggerInterruptFlag();
 
-    static void clearCaptureCompareInterruptFlag(TimerUtils::Channel channel,
-                                                 TIM_TypeDef *timer);
+    void clearCaptureCompareInterruptFlag(TimerUtils::Channel channel);
 };
 
 /**
@@ -500,14 +499,14 @@ inline void GeneralPurposeTimer<T>::disableCaptureCompareComplementaryOutput(
 }
 
 template <typename T>
-inline bool GeneralPurposeTimer<T>::isCaptureComapreOutputEnabled(
+inline bool GeneralPurposeTimer<T>::isCaptureCompareOutputEnabled(
     TimerUtils::Channel channel)
 {
     return timer->CCER & (TIM_CCER_CC1E << (static_cast<int>(channel) * 4));
 }
 
 template <typename T>
-inline bool GeneralPurposeTimer<T>::isCaptureComapreComplementaryOutputEnabled(
+inline bool GeneralPurposeTimer<T>::isCaptureCompareComplementaryOutputEnabled(
     TimerUtils::Channel channel)
 {
     return timer->CCER & (TIM_CCER_CC1NE << (static_cast<int>(channel) * 4));
@@ -570,15 +569,14 @@ inline T GeneralPurposeTimer<T>::readCaptureCompareRegister(
 }
 
 template <typename T>
-inline void GeneralPurposeTimer<T>::clearTriggerInterruptFlag(
-    TIM_TypeDef *timer)
+inline void GeneralPurposeTimer<T>::clearTriggerInterruptFlag()
 {
     timer->SR &= ~TIM_SR_TIF;
 }
 
 template <typename T>
 inline void GeneralPurposeTimer<T>::clearCaptureCompareInterruptFlag(
-    TimerUtils::Channel channel, TIM_TypeDef *timer)
+    TimerUtils::Channel channel)
 {
     timer->SR &= ~(TIM_SR_CC1IF << static_cast<int>(channel));
 }
