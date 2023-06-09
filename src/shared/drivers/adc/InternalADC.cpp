@@ -299,7 +299,7 @@ void InternalADC::loadCalibrationValues()
     calPt2Voltage = static_cast<float>(*CAL_PT2_VALUE);
     calPt2Voltage *= CAL_V_DDA / ADC_RESOLUTION;
 
-    calSlope = calPt1Voltage - calPt2Voltage;
+    calSlope = calPt2Voltage - calPt1Voltage;
     calSlope /= CAL_PT2_TEMP - CAL_PT1_TEMP;
 }
 #endif
