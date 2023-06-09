@@ -383,6 +383,9 @@ sbs_target(test-max6675 stm32f429zi_stm32f4discovery)
 add_executable(test-max31855 src/tests/sensors/test-max31855.cpp)
 sbs_target(test-max31855 stm32f429zi_stm32f4discovery)
 
+add_executable(test-max31856 src/tests/sensors/test-max31856.cpp)
+sbs_target(test-max31856 stm32f767zi_compute_unit)
+
 add_executable(test-mpu9250 src/tests/sensors/test-mpu9250.cpp)
 sbs_target(test-mpu9250 stm32f429zi_skyward_parafoil)
 

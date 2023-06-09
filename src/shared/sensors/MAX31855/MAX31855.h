@@ -28,42 +28,23 @@
 
 namespace Boardcore
 {
-/**
- * @brief MAX31855 thermocouple sensor driver.
- */
+
 class MAX31855 : public Sensor<TemperatureData>
 {
 public:
-    /**
-     * @brief Constructor.
-     *
-     * @param bus The Spi bus.
-     * @param cs The CS pin to lower when we need to sample.
-     * @param config The SPI configuration.
-     */
     MAX31855(SPIBusInterface &bus, miosix::GpioPin cs,
              SPIBusConfig config = getDefaultSPIConfig());
 
-    /**
-     * Constructs the default config for SPI Bus.
-     *
-     * @returns The default SPIBusConfig.
-     */
     static SPIBusConfig getDefaultSPIConfig();
 
     bool init();
 
     /**
-     * @brief Checks whether the thermocouple is open.
+     * @brief Checks whether the thermocouple is connected or not.
      *
      * @return True if the thermocouple is connected.
      */
     bool selfTest();
-
-    /**
-     * @brief Checks whether the thermocouple is connected or not.
-     */
-    bool checkConnection();
 
     /**
      * @brief Read the device internal temperature (cold junction).

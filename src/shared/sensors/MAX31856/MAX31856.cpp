@@ -1,5 +1,5 @@
-/* Copyright (c) 2021 Skyward Experimental Rocketry
- * Author: Angelo Zangari
+/* Copyright (c) 2023 Skyward Experimental Rocketry
+ * Author: Alberto Nidasio
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -20,70 +20,90 @@
  * THE SOFTWARE.
  */
 
-#include "MAX31855.h"
+#include "MAX31856.h"
 
 #include <drivers/timer/TimestampTimer.h>
 
 namespace Boardcore
 {
 
-MAX31855::MAX31855(SPIBusInterface& bus, miosix::GpioPin cs,
-                   SPIBusConfig config)
-    : slave(bus, cs, config)
+MAX31856::MAX31856(SPIBusInterface& bus, miosix::GpioPin cs,
+                   SPIBusConfig config, ThermocoupleType type)
+    : slave(bus, cs, config), type(type)
 {
 }
 
-SPIBusConfig MAX31855::getDefaultSPIConfig()
+SPIBusConfig MAX31856::getDefaultSPIConfig()
 {
     SPIBusConfig spiConfig{};
     spiConfig.clockDivider = SPI::ClockDivider::DIV_32;
     spiConfig.mode         = SPI::Mode::MODE_1;
+    spiConfig.writeBit     = SPI::WriteBit::INVERTED;
     return spiConfig;
 }
 
-bool MAX31855::init() { return true; }
-
-bool MAX31855::selfTest()
+bool MAX31856::init()
 {
-    uint16_t sample[2];
+    SPITransaction spi{slave};
 
-    {
-        SPITransaction spi{slave};
-        spi.read16(sample, sizeof(sample));
-    }
+    // Set thermocouple type
+    setThermocoupleType(type);
 
-    // Bits D0, D1 and D2 go high if thermocouple is open or shorted either to
-    // gnd or Vcc
-    if ((sample[1] & 0x7) != 0)
-    {
-        lastError = SensorErrors::SELF_TEST_FAIL;
-        LOG_ERR(logger, "Self test failed, the thermocouple is not connected");
-        return false;
-    }
+    // Enable continuous conversion mode
+    spi.writeRegister(CR0, CR0_CMODE);
 
     return true;
 }
 
-TemperatureData MAX31855::sampleImpl()
+bool MAX31856::selfTest()
 {
-    int16_t sample;
+    SPITransaction spi{slave};
+
+    // Enable open-circuit detection
+    spi.writeRegister(CR0, CR0_CMODE | CR0_OCFAULT_0);
+
+    // Wait for detection
+    // Detection takes 40ms, waiting more to be extra sure
+    miosix::Thread::sleep(100);
+
+    // Read fault register
+    auto fault = spi.readRegister(SR);
+
+    // Disable open-circuit detection
+    spi.writeRegister(CR0, CR0_CMODE);
+
+    return !(fault & SR_OPEN);
+}
+
+void MAX31856::setThermocoupleType(ThermocoupleType type)
+{
+    SPITransaction spi{slave};
+    spi.writeRegister(CR1, static_cast<uint8_t>(type));
+}
+
+TemperatureData MAX31856::sampleImpl()
+{
+    int32_t sample;
 
     {
         SPITransaction spi{slave};
-        sample = spi.read16();
-        sample = sample >> 2;
+        sample = spi.readRegister24(LTCBH);
     }
 
     TemperatureData result{};
     result.temperatureTimestamp = TimestampTimer::getTimestamp();
 
+    // Sign extension
+    sample = sample << 8;
+    sample = sample >> (8 + 5);
+
     // Convert the integer and decimal part separately
-    result.temperature = static_cast<float>(sample) * 0.25;
+    result.temperature = static_cast<float>(sample) * 0.007812;
 
     return result;
 }
 
-TemperatureData MAX31855::readInternalTemperature()
+TemperatureData MAX31856::readInternalTemperature()
 {
     uint16_t sample[2];
 
