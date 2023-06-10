@@ -105,7 +105,7 @@ through the two modes: Video/OSD settings(Long press wifi button);
 #include <diagnostic/PrintLogger.h>
 #include <utils/Debug.h>
 
-#include "RuncamSerial.h"
+#include "drivers/usart/USART.h"
 
 namespace Boardcore
 {
@@ -116,7 +116,9 @@ namespace Boardcore
 class Runcam
 {
 public:
-    Runcam(unsigned int portNumber = defaultPortNumber);
+    explicit Runcam(USARTInterface &serial);
+
+    Runcam() = delete;
 
     bool init();
 
@@ -129,12 +131,6 @@ public:
     void moveDown();
 
 private:
-    /**
-     * @brief Configure Serial Communication
-     */
-    bool configureSerialCommunication();
-
-    unsigned int portNumber;
     bool isInit = false;
 
     /**
@@ -153,12 +149,9 @@ private:
      */
     uint32_t OPEN_MENU = 0xCC01024D;
 
-    RuncamSerial *serialInterface = nullptr;
+    USARTInterface &usart;
 
     PrintLogger logger = Logging::getLogger("runcam");
-
-    static const unsigned int defaultBaudRate   = 115200;
-    static const unsigned int defaultPortNumber = 1;
 };
 
 }  // namespace Boardcore

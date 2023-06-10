@@ -52,7 +52,10 @@ int main()
 
     tx.alternateFunction(7);
     rx.alternateFunction(7);
-    Runcam test(1);
+
+    USART usart1(USART1, 115200);
+
+    Runcam test(usart1);
     if (!test.init())
     {
         return -1;

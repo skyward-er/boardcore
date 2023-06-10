@@ -33,31 +33,15 @@ using ctrlPin2 = miosix::Gpio<GPIOC_BASE, 2>;  ///< Control R/W pin 2
 namespace Boardcore
 {
 
-MBLoadCell::MBLoadCell(LoadCellModes mode, int serialPortNum,
-                       int baudrate = 2400)
+MBLoadCell::MBLoadCell(USARTInterface &serial, LoadCellModes mode)
+    : serial(serial)
 {
     this->settings.mode = mode;
     maxPrint = maxSetted = minPrint = minSetted = 0;
-
-    // Creating the instance of the serial interface
-    serial = new SerialInterface(baudrate, serialPortNum);
 }
 
 bool MBLoadCell::init()
 {
-    if (serial->isInit())
-    {
-        lastError = SensorErrors::ALREADY_INIT;
-    }
-
-    // Initializing the serial connection
-    if (!serial->init())
-    {
-        lastError = SensorErrors::INIT_FAIL;
-        TRACE("[MBLoadCell] init of the serial communication failed\n");
-        return false;
-    }
-
     {
         // Disabling interrupts in order to set with no problems the ctrl pins
         miosix::FastInterruptDisableLock dLock;
@@ -288,12 +272,12 @@ void MBLoadCell::generateRequest(DataAsciiRequest &req,
     req.setChecksum();
 }
 
-void MBLoadCell::transmitASCII(std::string buf)
+void MBLoadCell::transmitASCII(const std::string &buf)
 {
     // Setting both the control pins to high in order to transmit
     ctrlPin1::high();
     ctrlPin2::high();
-    serial->sendString(buf);
+    serial.writeString(buf.c_str());
     miosix::Thread::sleep(10);  // Needs some time (>5ms) idk why
 }
 
@@ -304,7 +288,7 @@ std::string MBLoadCell::receiveASCII()
     // Setting both the control pins to low in order to receive
     ctrlPin1::low();
     ctrlPin2::low();
-    int len  = serial->recvString(buf, 64);
+    int len  = serial.readBlocking(buf, 64);
     buf[len] = '\0';
 
     return std::string(buf);
@@ -316,7 +300,7 @@ void MBLoadCell::receive(T *buf)
     // Setting both the control pins to low in order to receive
     ctrlPin1::low();
     ctrlPin2::low();
-    serial->recvData(buf);
+    serial.readBlocking(buf, sizeof(buf));
 }
 
 }  // namespace Boardcore

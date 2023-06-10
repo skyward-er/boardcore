@@ -27,8 +27,8 @@
 namespace Boardcore
 {
 
-VN100::VN100(USARTType *portNumber, USARTInterface::Baudrate baudRate,
-             CRCOptions crc, uint16_t samplePeriod)
+VN100::VN100(USARTType *portNumber, int baudRate, CRCOptions crc,
+             uint16_t samplePeriod)
     : portNumber(portNumber), baudRate(baudRate), crc(crc)
 {
     this->samplePeriod = samplePeriod;
@@ -151,11 +151,7 @@ bool VN100::sampleRaw()
     }
 
     // Send the IMU sampling command
-    if (!(serialInterface->writeString(preSampleImuString->c_str())))
-    {
-        LOG_WARN(logger, "Unable to sample due to serial communication error");
-        return false;
-    }
+    serialInterface->writeString(preSampleImuString->c_str());
 
     // Wait some time
     // TODO dimension the time
@@ -245,11 +241,7 @@ VN100Data VN100::sampleData()
     }
 
     // Returns Quaternion, Magnetometer, Accelerometer and Gyro
-    if (!(serialInterface->writeString(preSampleImuString->c_str())))
-    {
-        // If something goes wrong i return the last sampled data
-        return lastSample;
-    }
+    serialInterface->writeString(preSampleImuString->c_str());
 
     // Wait some time
     // TODO dimension the time
@@ -277,11 +269,7 @@ VN100Data VN100::sampleData()
     // Returns Magnetometer, Accelerometer, Gyroscope, Temperature and Pressure
     // (UNCOMPENSATED) DO NOT USE THESE MAGNETOMETER, ACCELEROMETER AND
     // GYROSCOPE VALUES
-    if (!(serialInterface->writeString(preSampleTempPressString->c_str())))
-    {
-        // If something goes wrong i return the last sampled data
-        return lastSample;
-    }
+    serialInterface->writeString(preSampleTempPressString->c_str());
 
     // Wait some time
     // TODO dimension the time
@@ -331,10 +319,10 @@ bool VN100::disableAsyncMessages(bool waitResponse)
 bool VN100::configDefaultSerialPort()
 {
     // Initial default settings
-    serialInterface = new USART(portNumber, USARTInterface::Baudrate::B115200);
+    serialInterface = new USART(portNumber, 115200);
 
     // Check correct serial init
-    return serialInterface->init();
+    return true;
 }
 
 /**
@@ -346,7 +334,7 @@ bool VN100::configUserSerialPort()
     std::string command;
 
     // I format the command to change baud rate
-    command = fmt::format("{}{}", "VNWRG,5,", static_cast<int>(baudRate));
+    command = fmt::format("{}{}", "VNWRG,5,", baudRate);
 
     // I can send the command
     if (!sendStringCommand(command))
@@ -361,7 +349,7 @@ bool VN100::configUserSerialPort()
     serialInterface = new USART(portNumber, baudRate);
 
     // Check correct serial init
-    return serialInterface->init();
+    return true;
 }
 
 bool VN100::setCrc(bool waitResponse)
@@ -666,10 +654,7 @@ bool VN100::sendStringCommand(std::string command)
     }
 
     // I send the final command
-    if (!serialInterface->writeString(command.c_str()))
-    {
-        return false;
-    }
+    serialInterface->writeString(command.c_str());
 
     // Wait some time
     // TODO dimension the time
@@ -682,7 +667,7 @@ bool VN100::recvStringCommand(char *command, int maxLength)
 {
     int i = 0;
     // Read the buffer
-    if (!(serialInterface->read(command, maxLength)))
+    if (!(serialInterface->readBlocking(command, maxLength)))
     {
         return false;
     }

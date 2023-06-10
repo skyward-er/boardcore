@@ -31,9 +31,8 @@ using namespace miosix;
 namespace Boardcore
 {
 
-UBXGPSSerial::UBXGPSSerial(USARTInterface::Baudrate baudrate,
-                           uint8_t sampleRate, USARTType* usartNumber,
-                           USARTInterface::Baudrate defaultBaudrate)
+UBXGPSSerial::UBXGPSSerial(int baudrate, uint8_t sampleRate,
+                           USARTType* usartNumber, int defaultBaudrate)
 {
     this->usart           = nullptr;
     this->baudrate        = baudrate;
@@ -155,13 +154,11 @@ bool UBXGPSSerial::setBaudrateAndUBX(bool safe)
         0x00, 0x00               // reserved2
     };
 
-    int baud = (int)baudrate;
-
     // Prepare baudrate
-    payload[8]  = baud;
-    payload[9]  = baud >> 8;
-    payload[10] = baud >> 16;
-    payload[11] = baud >> 24;
+    payload[8]  = baudrate;
+    payload[9]  = baudrate >> 8;
+    payload[10] = baudrate >> 16;
+    payload[11] = baudrate >> 24;
 
     UBXFrame frame{UBXMessage::UBX_CFG_PRT, payload, sizeof(payload)};
 
@@ -174,7 +171,6 @@ bool UBXGPSSerial::setBaudrateAndUBX(bool safe)
 bool UBXGPSSerial::setSerialCommunication()
 {
     usart = new USART(usartNumber, defaultBaudrate);
-    usart->init();
     // Change the baudrate only if it is different than the default
     if (baudrate != defaultBaudrate)
     {
@@ -303,11 +299,7 @@ bool UBXGPSSerial::writeUBXFrame(const UBXFrame& frame)
     uint8_t packedFrame[frame.getLength()];
     frame.writePacked(packedFrame);
 
-    if (usart->write(packedFrame, frame.getLength()) < 0)
-    {
-        LOG_ERR(logger, "Failed to write ubx message");
-        return false;
-    }
+    usart->write(packedFrame, frame.getLength());
 
     return true;
 }

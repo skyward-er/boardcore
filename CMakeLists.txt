@@ -227,9 +227,6 @@ sbs_target(test-timer-utils stm32f429zi_stm32f4discovery)
 add_executable(test-timestamptimer src/tests/drivers/timer/test-timestamptimer.cpp)
 sbs_target(test-timestamptimer stm32f429zi_stm32f4discovery)
 
-add_executable(test-vn100serial src/tests/drivers/test-vn100serial.cpp)
-sbs_target(test-vn100serial stm32f407vg_stm32f4discovery)
-
 add_executable(test-xbee-bidir src/tests/drivers/xbee/test-xbee-bidir.cpp)
 sbs_target(test-xbee-bidir stm32f429zi_skyward_death_stack_x)
 
@@ -245,8 +242,11 @@ sbs_target(test-xbee-rcv stm32f429zi_stm32f4discovery)
 add_executable(test-xbee-snd src/tests/drivers/xbee/test-xbee-snd.cpp)
 sbs_target(test-xbee-snd stm32f429zi_stm32f4discovery)
 
-add_executable(test-usart src/tests/drivers/usart/test-usart.cpp)
-sbs_target(test-usart stm32f407vg_stm32f4discovery)
+add_executable(test-usart-f4 src/tests/drivers/usart/test-usart.cpp)
+sbs_target(test-usart-f4 stm32f429zi_stm32f4discovery)
+
+add_executable(test-usart-f7 src/tests/drivers/usart/test-usart.cpp)
+sbs_target(test-usart-f7 stm32f767zi_nucleo)
 
 add_executable(test-i2c-driver-f4 src/tests/drivers/i2c/test-i2c-driver.cpp)
 sbs_target(test-i2c-driver-f4 stm32f429zi_stm32f4discovery)

@@ -25,7 +25,8 @@
 #include <string.h>
 #include <utils/ButtonHandler/ButtonHandler.h>
 
-//#define PRINT_ALL_SAMPLES // To be defined if we want to print all the samples
+// #define PRINT_ALL_SAMPLES // To be defined if we want to print all the
+// samples
 
 using namespace Boardcore;
 using namespace miosix;
@@ -58,6 +59,7 @@ int main()
 {
     // In order to disable DEBUG prints of the button press events
     Logging::getStdOutLogSink().setLevel(LOGL_WARNING);
+    USART usart(USART1, 115200);
 
     /**
      * Use of CONT_MOD_TD: transmits net and gross weight
@@ -66,7 +68,7 @@ int main()
      * - use of serial port 2: in stm32f407vg TX=PA2, RX=PA3
      * - use of serial port 1: in stm32f407vg TX=PA9, RX=PA10
      */
-    MBLoadCell loadCell(LoadCellModes::CONT_MOD_T, 2, 115200);
+    MBLoadCell loadCell(usart, LoadCellModes::CONT_MOD_T);
 
     // Instanciating the button
     ButtonHandler::getInstance().registerButtonCallback(

@@ -29,7 +29,6 @@
 #include "string"
 #include "string.h"
 #include "thread"
-#include "utils/SerialInterface.h"
 
 using namespace miosix;
 using namespace Boardcore;
@@ -49,6 +48,63 @@ using namespace Boardcore;
  * doesn't have this problem.
  */
 
+// A nice feature of the stm32 is that the USART are connected to the same
+// GPIOS in all families, stm32f1, f2, f4 and l1. Additionally, USART1 and
+// USART6 are always connected to the APB2, while the other USART/UARTs are
+// connected to the APB1.
+
+// USART1: AF7
+typedef miosix::Gpio<GPIOB_BASE, 6> u1tx1;
+typedef miosix::Gpio<GPIOB_BASE, 7> u1rx1;
+typedef miosix::Gpio<GPIOA_BASE, 9> u1tx2;
+typedef miosix::Gpio<GPIOA_BASE, 10> u1rx2;
+// typedef miosix::Gpio<GPIOA_BASE, 11> u1cts;
+// typedef miosix::Gpio<GPIOA_BASE, 12> u1rts;
+
+// USART2: AF7
+typedef miosix::Gpio<GPIOA_BASE, 2> u2tx1;
+typedef miosix::Gpio<GPIOA_BASE, 3> u2rx1;
+typedef miosix::Gpio<GPIOD_BASE, 5> u2tx2;
+typedef miosix::Gpio<GPIOD_BASE, 6> u2rx2;
+// typedef miosix::Gpio<GPIOA_BASE, 0> u2cts;
+// typedef miosix::Gpio<GPIOA_BASE, 1> u2rts;
+
+// USART3: AF7
+typedef miosix::Gpio<GPIOB_BASE, 10> u3tx1;
+typedef miosix::Gpio<GPIOB_BASE, 11> u3rx1;
+typedef miosix::Gpio<GPIOD_BASE, 8> u3tx2;
+typedef miosix::Gpio<GPIOD_BASE, 9> u3rx2;
+// typedef miosix::Gpio<GPIOB_BASE, 13> u3cts;
+// typedef miosix::Gpio<GPIOB_BASE, 14> u3rts;
+
+// UART4: AF8
+typedef miosix::Gpio<GPIOA_BASE, 0> u4tx1;
+typedef miosix::Gpio<GPIOA_BASE, 1> u4rx1;
+typedef miosix::Gpio<GPIOC_BASE, 10> u4tx2;
+typedef miosix::Gpio<GPIOC_BASE, 11> u4rx2;
+
+// UART5: AF8
+typedef miosix::Gpio<GPIOC_BASE, 12> u5tx;
+typedef miosix::Gpio<GPIOD_BASE, 2> u5rx;
+
+// USART6: AF8
+typedef miosix::Gpio<GPIOC_BASE, 6> u6tx1;
+typedef miosix::Gpio<GPIOC_BASE, 7> u6rx1;
+#ifdef STM32F429xx
+typedef miosix::Gpio<GPIOG_BASE, 14> u6tx2;
+typedef miosix::Gpio<GPIOG_BASE, 9> u6rx2;
+
+// USART7: AF8
+typedef miosix::Gpio<GPIOE_BASE, 8> u7tx1;
+typedef miosix::Gpio<GPIOE_BASE, 7> u7rx1;
+typedef miosix::Gpio<GPIOF_BASE, 7> u7tx2;
+typedef miosix::Gpio<GPIOF_BASE, 6> u7rx2;
+
+// USART8: AF8
+typedef miosix::Gpio<GPIOE_BASE, 1> u8tx;
+typedef miosix::Gpio<GPIOE_BASE, 0> u8rx;
+#endif  // STM32F429xx
+
 typedef struct
 {
     char dataChar;
@@ -64,12 +120,8 @@ typedef struct
 } StructToSend;
 StructToSend struct_tx = {'C', 42, 420.69, 48.84};
 char buf_tx[64]        = "Testing communication, but very very very loong :D";
-USARTInterface::Baudrate baudrates[] = {
-    USARTInterface::Baudrate::B2400,   USARTInterface::Baudrate::B9600,
-    USARTInterface::Baudrate::B19200,  USARTInterface::Baudrate::B38400,
-    USARTInterface::Baudrate::B57600,  USARTInterface::Baudrate::B115200,
-    USARTInterface::Baudrate::B230400, USARTInterface::Baudrate::B460800,
-    USARTInterface::Baudrate::B921600};
+int baudrates[]        = {2400,   9600,   19200,  38400,  57600,
+                          115200, 230400, 256000, 460800, 921600};
 
 /**
  * Communication: src -> dst
@@ -77,8 +129,9 @@ USARTInterface::Baudrate baudrates[] = {
  */
 bool testCommunicationSequential(USARTInterface *src, USARTInterface *dst)
 {
-    char buf_rx[64];
-    StructToSend struct_rx;
+    char buf_rx[64] = {0};
+    StructToSend struct_rx{0};
+    size_t nReads{0};
     bool passed = true;
 
     /************************** SENDING STRING **************************/
@@ -87,9 +140,23 @@ bool testCommunicationSequential(USARTInterface *src, USARTInterface *dst)
     printf("\t%d--> sent: \t'%s'\n", src->getId(), buf_tx);
     src->writeString(buf_tx);
     // Thread::sleep(10); // enable to pass the test with STM32SerialWrapper
-    dst->read(buf_rx, 64);
+    if (!dst->readBlocking(buf_rx, 64, nReads))
+    {
+        printf("### NO DATA READ ###\n");
+        passed = false;
+    }
 
     printf("\t%d<-- received: \t'%s'\n", dst->getId(), buf_rx);
+
+    if (nReads != strlen(buf_tx) + 1)
+    {
+        printf("### READ WRONG NUMBER OF BYTES ###\n");
+        passed = false;
+    }
+    else
+    {
+        printf("*** READ EXACT NUMBER OF BYTES ***\n");
+    }
 
     if (strcmp(buf_tx, buf_rx) == 0)
     {
@@ -107,7 +174,12 @@ bool testCommunicationSequential(USARTInterface *src, USARTInterface *dst)
     printf("\t%d--> sent: \t'%s'\n", src->getId(), struct_tx.print().c_str());
     src->write(&struct_tx, sizeof(StructToSend));
     // Thread::sleep(10); // enable to pass the test with STM32SerialWrapper
-    dst->read(&struct_rx, sizeof(StructToSend));
+    if (!dst->readBlocking(&struct_rx, sizeof(StructToSend)))
+    {
+        printf("### NO DATA READ ###\n");
+        passed = false;
+    }
+
     printf("\t%d<-- received: \t'%s'\n", dst->getId(),
            struct_rx.print().c_str());
 
@@ -119,6 +191,13 @@ bool testCommunicationSequential(USARTInterface *src, USARTInterface *dst)
     {
         printf("### %d -> %d ERROR!\n", src->getId(), dst->getId());
         passed = false;
+    }
+
+    // Testing the non blocking read only if USART class
+    if ((dynamic_cast<const USART *>(dst) != nullptr) &&
+        !dynamic_cast<USART *>(dst)->read(&struct_rx, sizeof(StructToSend)))
+    {
+        printf("Non blocking read passed!\n");
     }
 
     return passed;
@@ -137,60 +216,60 @@ bool testCommunicationSequential(USARTInterface *src, USARTInterface *dst)
 int main()
 {
     // Init serial port pins
-    u1rx2::getPin().mode(miosix::Mode::ALTERNATE);
-    u1rx2::getPin().alternateFunction(7);
-    u1tx1::getPin().mode(miosix::Mode::ALTERNATE);
-    u1tx1::getPin().alternateFunction(7);
+    u6rx1::getPin().mode(miosix::Mode::ALTERNATE);
+    u6rx1::getPin().alternateFunction(8);
+    u6tx1::getPin().mode(miosix::Mode::ALTERNATE);
+    u6tx1::getPin().alternateFunction(8);
 
-    u2rx1::getPin().mode(miosix::Mode::ALTERNATE);
-    u2rx1::getPin().alternateFunction(7);
-    u2tx1::getPin().mode(miosix::Mode::ALTERNATE);
-    u2tx1::getPin().alternateFunction(7);
+    u4rx2::getPin().mode(miosix::Mode::ALTERNATE);
+    u4rx2::getPin().alternateFunction(8);
+    u4tx2::getPin().mode(miosix::Mode::ALTERNATE);
+    u4tx2::getPin().alternateFunction(8);
 
-    // u4rx1::getPin().mode(miosix::Mode::ALTERNATE);
-    // u4rx1::getPin().alternateFunction(8);
-    // u4tx1::getPin().mode(miosix::Mode::ALTERNATE);
-    // u4tx1::getPin().alternateFunction(8);
-
-    bool testPassed = true;
-    printf("*** SERIAL 3 WORKING!\n");
-    for (unsigned int iBaud = 0;
-         iBaud < sizeof(baudrates) / sizeof(baudrates[0]); iBaud++)
+    for (;;)
     {
-        USARTInterface::Baudrate baudrate = baudrates[iBaud];
-        printf("\n\n########################### %d\n", (int)baudrate);
+        bool testPassed = true;
+        printf("*** SERIAL 3 WORKING!\n");
 
-        // declaring the usart peripherals
-        STM32SerialWrapper usartx(USART1, baudrate);
-        usartx.init();
+        for (int baudrate : baudrates)
+        {
+            printf("\n\n########################### %d\n", baudrate);
+            // declaring the usart peripherals
+            USART usartx(USART6, baudrate);
+            // usartx.setBaudrate(baudrate);
+            // usartx.setOversampling(false);
+            // usartx.setStopBits(1);
+            // usartx.setWordLength(USART::WordLength::BIT8);
+            // usartx.setParity(USART::ParityBit::NO_PARITY);
 
-        STM32SerialWrapper usarty(USART2, baudrate);
-        // usarty.setOversampling(false);
-        // usarty.setStopBits(1);
-        // usarty.setWordLength(USART::WordLength::BIT8);
-        // usarty.setParity(USART::ParityBit::NO_PARITY);
-        usarty.init();
+            // USART usarty(UART4, baudrate);
+            STM32SerialWrapper usarty(UART4, baudrate, u4rx2::getPin(),
+                                      u4tx2::getPin());
 
-        // testing transmission (both char and binary) "serial 1 <- serial 2"
-        testPassed &= testCommunicationSequential(&usartx, &usarty);
+            // testing transmission (both char and binary) "serial 1 <- serial
+            // 2"
+            testPassed &= testCommunicationSequential(&usartx, &usarty);
 
-        // testing transmission (both char and binary) "serial 1 -> serial 2"
-        testPassed &= testCommunicationSequential(&usarty, &usartx);
-    }
+            // testing transmission (both char and binary) "serial 1 -> serial
+            // 2"
+            testPassed &= testCommunicationSequential(&usarty, &usartx);
+        }
 
-    if (testPassed)
-    {
-        printf(
-            "********************************\n"
-            "***        TEST PASSED       ***\n"
-            "********************************\n");
-    }
-    else
-    {
-        printf(
-            "################################\n"
-            "###        TEST FAILED       ###\n"
-            "################################\n");
+        if (testPassed)
+        {
+            printf(
+                "********************************\n"
+                "***        TEST PASSED       ***\n"
+                "********************************\n");
+        }
+        else
+        {
+            printf(
+                "################################\n"
+                "###        TEST FAILED       ###\n"
+                "################################\n");
+        }
+        Thread::sleep(5000);
     }
     return 0;
 }

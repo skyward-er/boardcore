@@ -22,6 +22,7 @@
 
 #pragma once
 
+#include <diagnostic/PrintLogger.h>
 #include <interfaces/arch_registers.h>
 #include <miosix.h>
 #include <utils/ClockUtils.h>
@@ -37,68 +38,25 @@ using USARTType = USART_TypeDef;
 using USARTType = USART_TypeDef;
 #endif
 
-#ifdef STM32F429xx
+#if defined(UART8)
 #define N_USART_PORTS 8
-#else
+#elif defined(UART7)
+#define N_USART_PORTS 7
+#elif defined(USART6)
 #define N_USART_PORTS 6
+#elif defined(UART5)
+#define N_USART_PORTS 5
+#elif defined(UART4)
+#define N_USART_PORTS 4
+#elif defined(USART3)
+#define N_USART_PORTS 3
+#elif defined(USART2)
+#define N_USART_PORTS 2
+#elif defined(USART1)
+#define N_USART_PORTS 1
+#else
+#error "Your architecture doesn't support UART"
 #endif
-
-// A nice feature of the stm32 is that the USART are connected to the same
-// GPIOS in all families, stm32f1, f2, f4 and l1. Additionally, USART1 and
-// USART6 are always connected to the APB2, while the other USART/UARTs are
-// connected to the APB1.
-
-// USART1: AF7
-typedef miosix::Gpio<GPIOB_BASE, 6> u1tx1;
-typedef miosix::Gpio<GPIOB_BASE, 7> u1rx1;
-typedef miosix::Gpio<GPIOA_BASE, 9> u1tx2;
-typedef miosix::Gpio<GPIOA_BASE, 10> u1rx2;
-// typedef miosix::Gpio<GPIOA_BASE, 11> u1cts;
-// typedef miosix::Gpio<GPIOA_BASE, 12> u1rts;
-
-// USART2: AF7
-typedef miosix::Gpio<GPIOA_BASE, 2> u2tx1;
-typedef miosix::Gpio<GPIOA_BASE, 3> u2rx1;
-typedef miosix::Gpio<GPIOD_BASE, 5> u2tx2;
-typedef miosix::Gpio<GPIOD_BASE, 6> u2rx2;
-// typedef miosix::Gpio<GPIOA_BASE, 0> u2cts;
-// typedef miosix::Gpio<GPIOA_BASE, 1> u2rts;
-
-// USART3: AF7
-typedef miosix::Gpio<GPIOB_BASE, 10> u3tx1;
-typedef miosix::Gpio<GPIOB_BASE, 11> u3rx1;
-typedef miosix::Gpio<GPIOD_BASE, 8> u3tx2;
-typedef miosix::Gpio<GPIOD_BASE, 9> u3rx2;
-// typedef miosix::Gpio<GPIOB_BASE, 13> u3cts;
-// typedef miosix::Gpio<GPIOB_BASE, 14> u3rts;
-
-// UART4: AF8
-typedef miosix::Gpio<GPIOA_BASE, 0> u4tx1;
-typedef miosix::Gpio<GPIOA_BASE, 1> u4rx1;
-typedef miosix::Gpio<GPIOC_BASE, 10> u4tx2;
-typedef miosix::Gpio<GPIOC_BASE, 11> u4rx2;
-
-// UART5: AF8
-typedef miosix::Gpio<GPIOC_BASE, 12> u5tx;
-typedef miosix::Gpio<GPIOD_BASE, 2> u5rx;
-
-// USART6: AF8
-typedef miosix::Gpio<GPIOC_BASE, 6> u6tx1;
-typedef miosix::Gpio<GPIOC_BASE, 7> u6rx1;
-#ifdef STM32F429xx
-typedef miosix::Gpio<GPIOG_BASE, 14> u6tx2;
-typedef miosix::Gpio<GPIOG_BASE, 9> u6rx2;
-
-// USART7: AF8
-typedef miosix::Gpio<GPIOE_BASE, 8> u7tx1;
-typedef miosix::Gpio<GPIOE_BASE, 7> u7rx1;
-typedef miosix::Gpio<GPIOF_BASE, 7> u7tx2;
-typedef miosix::Gpio<GPIOF_BASE, 6> u7rx2;
-
-// USART8: AF8
-typedef miosix::Gpio<GPIOE_BASE, 1> u8tx;
-typedef miosix::Gpio<GPIOE_BASE, 0> u8rx;
-#endif  // STM32F429xx
 
 namespace Boardcore
 {
@@ -110,47 +68,55 @@ namespace Boardcore
 class USARTInterface
 {
 public:
-    enum class Baudrate : int
-    {
-        // B1200   = 1200, // NOT WORKING WITH 1200 baud
-        B2400   = 2400,
-        B9600   = 9600,
-        B19200  = 19200,
-        B38400  = 38400,
-        B57600  = 57600,
-        B115200 = 115200,
-        B230400 = 230400,
-        B256000 = 256000,
-        B460800 = 460800,
-        B921600 = 921600
-    };
+    /**
+     * @brief Constructor of the USART in order to assign usart and baudrate.
+     * @param usart Pointer to the USART interface.
+     * @param baudrate Baudrate in bit per second. Default values are [2400,
+     * 9600, 19200, 38400, 57600, 115200, 230400, 256000, 460800, 921600]
+     */
+    explicit USARTInterface(USARTType *usart, int baudrate);
 
     virtual ~USARTInterface() = 0;
 
     /**
-     * @brief Initializes the peripheral enabling his interrupts, the interrupts
-     * in the NVIC.
-     *
-     * All the setup phase (with the setting of the pins and their alternate
-     * functions) must be done before the initialization of the peripheral.
+     * @brief Blocking read operation to read nBytes or till the data transfer
+     * is complete.
+     * @param buffer Buffer that will contain the received data.
+     * @param nBytes Maximum size of the buffer.
+     * @return If operation succeeded.
      */
-    virtual bool init() = 0;
+    [[nodiscard]] virtual bool readBlocking(void *buffer, size_t nBytes)
+    {
+        size_t temp;
+        return readImpl(buffer, nBytes, temp, true);
+    };
 
     /**
      * @brief Blocking read operation to read nBytes or till the data transfer
      * is complete.
+     * @param buffer Buffer that will contain the received data.
+     * @param nBytes Maximum size of the buffer.
+     * @param nBytesRead Number of bytes read in the transaction.
+     * @return If operation succeeded.
      */
-    virtual int read(void *buffer, size_t nBytes) = 0;
+    [[nodiscard]] virtual bool readBlocking(void *buffer, size_t nBytes,
+                                            size_t &nBytesRead)
+    {
+        return readImpl(buffer, nBytes, nBytesRead, true);
+    };
 
     /**
      * @brief Blocking write operation.
+     * @param buffer Buffer that contains the data to be sent.
+     * @param nBytes Bytes to be sent.
      */
-    virtual int write(void *buf, size_t nChars) = 0;
+    virtual void write(const void *buf, size_t nBytes) = 0;
 
     /**
      * @brief Write a string to the serial, comprising the '\0' character.
+     * @param buffer Buffer that contains the string to be sent.
      */
-    virtual int writeString(const char *buffer) = 0;
+    virtual void writeString(const char *buffer) = 0;
 
     /**
      * @brief Returns the id of the serial.
@@ -158,13 +124,29 @@ public:
     int getId() { return id; };
 
 protected:
-    miosix::GpioPin tx{GPIOA_BASE, 0};
-    miosix::GpioPin rx{GPIOA_BASE, 0};
+    /**
+     * @brief Read method implementation that supports both blocking and
+     * non-blocking mode and the return of the number of bytes read.
+     * @param buffer Buffer that will contain the received data.
+     * @param nBytes Maximum size of the buffer.
+     * @param nBytesRead Number of bytes read.
+     * @param blocking Whether the read should block or not; in case it isn't
+     * blocking the read could return also 0 bytes.
+     * @return If operation succeeded.
+     */
+    virtual bool readImpl(void *buffer, size_t nBytes, size_t &nBytesRead,
+                          const bool blocking) = 0;
 
     USARTType *usart;
-    int id           = -1;  ///< Can be from 1 to 8, -1 is invalid
-    bool initialized = false;
-    Baudrate baudrate;  ///< Baudrate of the serial communication
+    int id = -1;                 ///< Can be from 1 to 8, -1 is invalid.
+    IRQn_Type irqn;              ///< IRQ number
+    std::string serialPortName;  ///< Port name of the port that has to be
+                                 ///< created for the communication
+    int baudrate;  ///< Baudrate of the serial communication; standard ones
+                   ///< are [2400, 9600, 19200, 38400, 57600, 115200,
+                   ///< 230400, 256000, 460800, 921600]
+
+    PrintLogger logger = Logging::getLogger("usart");
 };
 
 /**
@@ -188,9 +170,6 @@ public:
         PARITY    = 1
     };
 
-    ///< Pointer to serial port classes to let interrupts access the classes
-    static USART *ports[];
-
     /**
      * @brief Interrupt handler that deals with receive and idle interrupts.
      *
@@ -208,11 +187,17 @@ public:
      *
      * @param usart structure that represents the usart peripheral [accepted
      * are: USART1, USART2, USART3, UART4, UART5, USART6, UART7, UART8].
-     * @param baudrate member of the enum Baudrate that represents the baudrate
-     * with which the communication will take place.
+     * @param baudrate Baudrate in bit per second. Default values are [2400,
+     * 9600, 19200, 38400, 57600, 115200, 230400, 256000, 460800, 921600]
      */
-    USART(USARTType *usart, Baudrate baudrate,
+    USART(USARTType *usart, int baudrate,
           unsigned int queueLen = usart_queue_default_capacity);
+
+    ///< Delete copy/move constructors/operators.
+    USART(const USART &)            = delete;
+    USART &operator=(const USART &) = delete;
+    USART(USART &&)                 = delete;
+    USART &operator=(USART &&)      = delete;
 
     /**
      * @brief Disables the flags for the generation of the interrupts, the IRQ
@@ -222,30 +207,47 @@ public:
     ~USART() override;
 
     /**
-     * @brief Initializes the peripheral enabling his interrupts, the interrupts
-     * in the NVIC and setting the pins with the appropriate alternate
-     * functions.
+     * @brief Non-blocking read operation to read nBytes or till the data
+     * transfer is complete.
+     * @warning could also read 0 bytes.
      *
-     * All the setup phase must be done before the initialization of the
-     * peripheral. The pins must be initialized before calling this function.
+     * @param buffer Buffer that will contain the received data.
+     * @param nBytes Maximum size of the buffer.
+     * @return If operation succeeded.
      */
-    bool init() override;
+    [[nodiscard]] bool read(void *buffer, size_t nBytes)
+    {
+        size_t temp;
+        return readImpl(buffer, nBytes, temp, false);
+    }
 
     /**
-     * @brief Blocking read operation to read nBytes or till the data transfer
-     * is complete.
+     * @brief Non-blocking read operation to read nBytes or till the data
+     * transfer is complete.
+     * @warning could also read 0 bytes.
+     *
+     * @param buffer Buffer that will contain the received data.
+     * @param nBytes Maximum size of the buffer.
+     * @param nBytesRead Number of bytes read.
+     * @return If operation succeeded.
      */
-    int read(void *buffer, size_t nBytes) override;
+    [[nodiscard]] bool read(void *buffer, size_t nBytes, size_t &nBytesRead)
+    {
+        return readImpl(buffer, nBytes, nBytesRead, false);
+    };
 
     /**
      * @brief Blocking write operation.
+     * @param buffer Buffer that contains the data to be sent.
+     * @param nBytes Bytes to be sent.
      */
-    int write(void *buf, size_t nChars) override;
+    void write(const void *buf, size_t nBytes);
 
     /**
      * @brief Write a string to the serial, comprising the '\0' character.
+     * @param buffer Buffer that contains the string to be sent.
      */
-    int writeString(const char *buffer) override;
+    void writeString(const char *buffer);
 
     /**
      * @brief Set the length of the word to 8 or to 9.
@@ -272,9 +274,10 @@ public:
     /**
      * @brief Set the baudrate in the BRR register.
      *
-     * @param pb Baudrate element that represents the baudrate.
+     * @param baudrate Baudrate in bit per second. Default values are [2400,
+     * 9600, 19200, 38400, 57600, 115200, 230400, 256000, 460800, 921600]
      */
-    void setBaudrate(Baudrate br);
+    void setBaudrate(int baudrate);
 
     /**
      * @brief Sets the Over8 bit.
@@ -290,7 +293,19 @@ public:
     void clearQueue();
 
 private:
-    IRQn_Type irqn;
+    /**
+     * @brief Read method implementation that supports both
+     * blocking/non-blocking mode and the return of the number of bytes read.
+     * @param buffer Buffer that will contain the received data.
+     * @param nBytes Maximum size of the buffer.
+     * @param nBytesRead Number of bytes read.
+     * @param blocking Whether the read should block or not; in case it isn't
+     * blocking the read could return also 0 bytes.
+     * @return If operation succeeded.
+     */
+    [[nodiscard]] bool readImpl(void *buffer, size_t nBytes, size_t &nBytesRead,
+                                const bool blocking) override;
+
     miosix::FastMutex rxMutex;  ///< mutex for receiving on serial
     miosix::FastMutex txMutex;  ///< mutex for transmitting on serial
 
@@ -303,6 +318,7 @@ private:
     WordLength wordLength = WordLength::BIT8;
     int stopBits          = 1;      ///< Number of stop bits [1,2]
     bool over8            = false;  ///< Oversalmpling 8 bit
+    bool error            = false;  ///< Error occurred while receiving message
 
     ///< Default queue length
     const static unsigned int usart_queue_default_capacity = 256;
@@ -321,24 +337,30 @@ public:
      * - USART2: tx=PA2  rx=PA3
      * - USART3: tx=PB10 rx=PB11
      * @param usart structure that represents the usart peripheral [accepted
-     * are: USART1, USART2, USART3].
-     * @param baudrate member of the enum Baudrate that represents the baudrate
-     * with which the communication will take place.
+     * are: USART1, USART2, USART3, UART4].
+     * @param baudrate baudrate in bit per second. Default values are [2400,
+     * 9600, 19200, 38400, 57600, 115200, 230400, 256000, 460800, 921600]
      */
-    STM32SerialWrapper(USARTType *usart, Baudrate baudrate);
+    STM32SerialWrapper(USARTType *usart, int baudrate);
 
     /**
      * @brief Initializes the serialPortName and initializes the serial port
      * using custom pins.
      * @param usart structure that represents the usart peripheral [accepted
-     * are: USART1, USART2, USART3].
-     * @param baudrate member of the enum Baudrate that represents the baudrate
-     * with which the communication will take place.
+     * are: USART1, USART2, USART3, UART4].
+     * @param baudrate baudrate in bit per second. Default values are [2400,
+     * 9600, 19200, 38400, 57600, 115200, 230400, 256000, 460800, 921600]
      * @param tx Tranmission pin
      * @param rx Reception pin
      */
-    STM32SerialWrapper(USARTType *usart, Baudrate baudrate, miosix::GpioPin tx,
+    STM32SerialWrapper(USARTType *usart, int baudrate, miosix::GpioPin tx,
                        miosix::GpioPin rx);
+
+    ///< Delete copy/move constructors/operators.
+    STM32SerialWrapper(const STM32SerialWrapper &)            = delete;
+    STM32SerialWrapper &operator=(const STM32SerialWrapper &) = delete;
+    STM32SerialWrapper(STM32SerialWrapper &&)                 = delete;
+    STM32SerialWrapper &operator=(STM32SerialWrapper &&)      = delete;
 
     /**
      * @brief Removes the device from the list of the devices and closes the
@@ -347,38 +369,31 @@ public:
     ~STM32SerialWrapper();
 
     /**
-     * @brief Initializes the peripheral.
-     *
-     * @see{STM32SerialWrapper::serialCommSetup}
-     */
-    bool init();
-
-    /**
-     * @brief Blocking read operation to read nBytes or till the data transfer
-     * is complete.
-     */
-    int read(void *buffer, size_t nBytes);
-
-    /**
      * @brief Blocking write operation.
+     * @param buffer Buffer that contains the data to be sent.
+     * @param nBytes Bytes to be sent.
      */
-    int write(void *buf, size_t nChars);
+    void write(const void *buf, size_t nBytes);
 
     /**
      * @brief Write a string to the serial, comprising the '\0' character.
+     * @param buffer Buffer that contains the string to be sent.
      */
-    int writeString(const char *buffer);
+    void writeString(const char *buffer);
 
 private:
     /**
-     * @brief Initializes the pins with the appropriate alternate functions.
-     *
-     * @param tx Tranmission pin.
-     * @param nAFtx Tranmission pin alternate function.
-     * @param rx Reception pin.
-     * @param nAFrx Reception pin alternate function.
+     * @brief Read method implementation that supports both
+     * blocking/non-blocking mode and the return of the number of bytes read.
+     * @param buffer Buffer that will contain the received data.
+     * @param nBytes Maximum size of the buffer.
+     * @param nBytesRead Number of bytes read.
+     * @param blocking Whether the read should block or not; in case it isn't
+     * blocking the read could return also 0 bytes.
+     * @return If operation succeeded.
      */
-    bool initPins(miosix::GpioPin tx, int nAFtx, miosix::GpioPin rx, int nAFrx);
+    [[nodiscard]] bool readImpl(void *buffer, size_t nBytes, size_t &nBytesRead,
+                                const bool blocking) override;
 
     /**
      * @brief Creates a device that represents the serial port, adds it to the
@@ -386,13 +401,7 @@ private:
      */
     bool serialCommSetup();
 
-    ///< True if initPins() already called successfully, false otherwise
-    bool pinInitialized = false;
-
     miosix::STM32Serial *serial;  ///< Pointer to the serial object
-
-    //< Port name of the port that has to be created for the communication
-    std::string serialPortName;
 
     ///< File descriptor of the serial port file opened for transmission
     int fd;

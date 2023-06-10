@@ -86,10 +86,9 @@ public:
      * @param Redundancy check option.
      * @param samplePeriod Sampling period in ms
      */
-    VN100(USARTType *portNumber    = USART2,
-          USART::Baudrate baudRate = USART::Baudrate::B921600,
-          CRCOptions crc           = CRCOptions::CRC_ENABLE_8,
-          uint16_t samplePeriod    = 20);
+    VN100(USARTType *portNumber = USART2, int baudRate = 921600,
+          CRCOptions crc        = CRCOptions::CRC_ENABLE_8,
+          uint16_t samplePeriod = 20);
 
     bool init() override;
 
@@ -240,7 +239,7 @@ private:
     uint16_t calculateChecksum16(uint8_t *message, int length);
 
     USARTType *portNumber;
-    USART::Baudrate baudRate;
+    int baudRate;
     uint16_t samplePeriod;
     CRCOptions crc;
     bool isInit = false;
