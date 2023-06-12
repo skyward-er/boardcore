@@ -29,6 +29,17 @@
 namespace Boardcore
 {
 
+/**
+ * @brief MAX31855 thermocouple sensor driver.
+ *
+ * The MAX31855 performs cold-junction compensation and digitizes the signal
+ * from a K, J, N, T, S, R, or E type thermocouple depending on the selected
+ * product variant. The data is output in  a signed 14-bit, SPI-compatible,
+ * read-only format. This converter resolves temperatures to 0.25°C, allows
+ * readings as high as +1800°C and as low as -270°C, and exhibits thermocouple
+ * accuracy of ±2°C for temperatures ranging from -200°C to +700°C for K-type
+ * thermocouples.
+ */
 class MAX31855 : public Sensor<TemperatureData>
 {
 public:

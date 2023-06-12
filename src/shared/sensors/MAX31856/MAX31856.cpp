@@ -49,6 +49,9 @@ bool MAX31856::init()
     // Set thermocouple type
     setThermocoupleType(type);
 
+    // Reset the cold junction offset
+    setColdJunctionOffset(0);
+
     // Enable continuous conversion mode
     spi.writeRegister(CR0, CR0_CMODE);
 
@@ -81,46 +84,44 @@ void MAX31856::setThermocoupleType(ThermocoupleType type)
     spi.writeRegister(CR1, static_cast<uint8_t>(type));
 }
 
-TemperatureData MAX31856::sampleImpl()
+void MAX31856::setColdJunctionOffset(float offset)
 {
-    int32_t sample;
-
-    {
-        SPITransaction spi{slave};
-        sample = spi.readRegister24(LTCBH);
-    }
-
-    TemperatureData result{};
-    result.temperatureTimestamp = TimestampTimer::getTimestamp();
-
-    // Sign extension
-    sample = sample << 8;
-    sample = sample >> (8 + 5);
-
-    // Convert the integer and decimal part separately
-    result.temperature = static_cast<float>(sample) * 0.007812;
-
-    return result;
+    SPITransaction spi{slave};
+    spi.writeRegister(CJTO,
+                      static_cast<int8_t>(offset * 1 / CJ_TEMP_LSB_VALUE));
 }
 
-TemperatureData MAX31856::readInternalTemperature()
+MAX31856Data MAX31856::sampleImpl()
 {
-    uint16_t sample[2];
+    SPITransaction spi{slave};
+    int16_t cjRaw = spi.readRegister16(CJTH);
+    int32_t tcRaw = spi.readRegister24(LTCBH);
 
-    {
-        SPITransaction spi{slave};
-        spi.read16(sample, sizeof(sample));
-    }
-
-    TemperatureData result{};
+    MAX31856Data result;
     result.temperatureTimestamp = TimestampTimer::getTimestamp();
 
-    // Extract data bits
-    sample[1] = sample[1] >> 4;
+    // The register has:
+    // - A leading sign bit (which is actually two's complement)
+    // - The other 18 bits
+    // - 5 unused trailing bits
 
-    // Convert the integer and decimal part separately
-    result.temperature = static_cast<float>(sample[1] >> 4);
-    result.temperature += static_cast<float>(sample[1] & 0xF) * 0.0625;
+    // Since the 24 bit registers value is stored into a 32 bit variable, first
+    // we make a left shift to move the sign bit in the 31st bit, and then a
+    // right shift to remove the unused bits.
+    // This automatically extends the sign
+    tcRaw = tcRaw << 8;
+    tcRaw = tcRaw >> (8 + 5);
+
+    // Here we just make a right shift as the sign bit is already in the 15th
+    // bit. This will also perform the sign extension like in sampleImpl()
+    cjRaw = cjRaw >> 4;
+
+    // Convert the raw value into temperature
+    result.temperature = static_cast<float>(tcRaw) * TC_TEMP_LSB_VALUE;
+
+    // Convert the raw value into temperature
+    result.coldJunctionTemperature =
+        static_cast<float>(cjRaw) * CJ_TEMP_LSB_VALUE;
 
     return result;
 }

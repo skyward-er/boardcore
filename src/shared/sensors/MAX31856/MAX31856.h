@@ -26,10 +26,25 @@
 #include <drivers/spi/SPIDriver.h>
 #include <sensors/Sensor.h>
 
+#include "MAX31856Data.h"
+
 namespace Boardcore
 {
 
-class MAX31856 : public Sensor<TemperatureData>
+/**
+ * @brief MAX31855 thermocouple sensor driver.
+ *
+ * The MAX31856 performs cold-junction compensation and digitizes the signal
+ * from any type of thermocouple. This converter resolves temperatures to
+ * 0.0078125°C, allows readings as high as +1800°C and as low as -210°C
+ * (depending on thermocouple type), and exhibits thermocouple voltage
+ * measurement accuracy of ±0.15%. The thermocouple inputs are protected against
+ * over voltage conditions up to ±45V. A lookup table (LUT) stores linearity
+ * correction data for several types of thermocouples (K, J, N, R, S, T, E, and
+ * B). Line frequency filtering of 50Hz and 60Hz is included, as is thermocouple
+ * fault detection
+ */
+class MAX31856 : public Sensor<MAX31856Data>
 {
 public:
     enum class ThermocoupleType : uint8_t
@@ -63,13 +78,10 @@ public:
 
     void setThermocoupleType(ThermocoupleType type);
 
-    /**
-     * @brief Read the device internal temperature (cold junction).
-     */
-    TemperatureData readInternalTemperature();
+    void setColdJunctionOffset(float offset);
 
 private:
-    TemperatureData sampleImpl() override;
+    MAX31856Data sampleImpl() override;
 
     SPISlave slave;
     ThermocoupleType type;
@@ -99,6 +111,9 @@ private:
     static constexpr uint8_t CR0_CMODE     = 0x1 << 7;
     static constexpr uint8_t CR0_OCFAULT_0 = 0x1 << 4;
     static constexpr uint8_t SR_OPEN       = 0x1 << 0;
+
+    static constexpr float TC_TEMP_LSB_VALUE = 0.007812;  // [°C]
+    static constexpr float CJ_TEMP_LSB_VALUE = 0.0625;    // [°C]
 };
 
 }  // namespace Boardcore

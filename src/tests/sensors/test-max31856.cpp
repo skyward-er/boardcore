@@ -60,13 +60,23 @@ int main()
         printf("The thermocouple is connected\n");
     }
 
+    // Wait for one sample to be made
+    Thread::sleep(100);
+
+    // Set cold junction offset
+    // This should set the cold junction temperature to 25°
+    sensor.sample();
+    auto sample = sensor.getLastSample();
+    sensor.setColdJunctionOffset(sample.coldJunctionTemperature - 25);
+    printf("Offset: %f\n", sample.coldJunctionTemperature - 25);
+
     while (true)
     {
         sensor.sample();
-        TemperatureData sample = sensor.getLastSample();
+        sample = sensor.getLastSample();
 
-        printf("\r\e[0K[%.2f] %.2f", sample.temperatureTimestamp / 1e6,
-               sample.temperature);
+        printf("[%.2f] %f %f\n", sample.temperatureTimestamp / 1e6,
+               sample.temperature, sample.coldJunctionTemperature);
 
         Thread::sleep(100);
     }
