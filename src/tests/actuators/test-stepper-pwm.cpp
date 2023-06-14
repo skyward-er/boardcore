@@ -1,5 +1,5 @@
-/* Copyright (c) 2022 Skyward Experimental Rocketry
- * Author: Alberto Nidasio
+/* Copyright (c) 2023 Skyward Experimental Rocketry
+ * Author: Emilio Corigliano
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -20,20 +20,24 @@
  * THE SOFTWARE.
  */
 
-#include <actuators/Stepper.h>
+#include <actuators/StepperPWM.h>
+#include <drivers/timer/CountedPWM.h>
+#include <miosix.h>
+
+#include <thread>
 
 using namespace miosix;
 using namespace Boardcore;
 
 GpioPin directionPin = GpioPin(GPIOC_BASE, 12);
-GpioPin stepPin      = GpioPin(GPIOB_BASE, 4);
 GpioPin enablePin    = GpioPin(GPIOC_BASE, 10);
-GpioPin resetPin     = GpioPin(GPIOE_BASE, 5);
-GpioPin ms1Pin       = GpioPin(GPIOE_BASE, 6);
-GpioPin ms2Pin       = GpioPin(GPIOE_BASE, 2);
-GpioPin ms3Pin       = GpioPin(GPIOE_BASE, 4);
 
-void setMicroStepping(Stepper& stepper, int16_t microStep)
+GpioPin stepPin = GpioPin(GPIOB_BASE, 4);
+GpioPin ms1Pin  = GpioPin(GPIOE_BASE, 6);
+GpioPin ms2Pin  = GpioPin(GPIOE_BASE, 2);
+GpioPin ms3Pin  = GpioPin(GPIOE_BASE, 4);
+
+void setMicroStepping(StepperPWM& stepper, int16_t microStep)
 {
     switch (microStep)
     {
@@ -69,95 +73,75 @@ void setMicroStepping(Stepper& stepper, int16_t microStep)
     stepper.setMicroStepping(microStep);
 }
 
-void doRoutine(Stepper& stepper)
+void doRoutine(StepperPWM& stepper)
 {
     stepper.enable();
 
-    for (int i = 1; i < 9; i++)
+    for (int i = 1; i < 5; i++)
     {
         stepper.setSpeed(i);
-        printf("Current speed: %d\n", i);
-
-        stepper.setPositionDeg(360);
-        printf("This are 360°\n");
-
-        delayMs(500);
 
         stepper.setPositionDeg(180);
-        printf("This are 180°\n");
-
-        delayMs(500);
-
-        stepper.moveDeg(-180);
-        printf("This are 0°\n");
-
-        delayMs(500);
-
-        printf("1 full rotation\n");
-        stepper.setPositionDeg(-360);
-        delayMs(500);
+        delayMs(2 * 1000);
+        stepper.setPositionDeg(90);
+        delayMs(2 * 1000);
+        stepper.setPositionDeg(180);
+        delayMs(2 * 1000);
+        stepper.setPositionDeg(90);
+        delayMs(2 * 1000);
         stepper.setPosition(0);
-
-        printf("Current position: %f\n", stepper.getCurrentDegPosition());
-        delayMs(1000);
+        delayMs(2 * 1000);
+        stepper.moveDeg(-180);
+        delayMs(2 * 1000);
+        stepper.moveDeg(-360);
+        delayMs(2 * 1000);
+        stepper.setPosition(0);
+        delayMs(5 * 1000);
     }
 
-    stepper.enable();
+    stepper.disable();
 }
 
 int main()
 {
+    // Configure stepper motor pins
     directionPin.mode(Mode::OUTPUT);
-    stepPin.mode(Mode::OUTPUT);
-    resetPin.mode(Mode::OUTPUT);
-    resetPin.high();
+    enablePin.mode(Mode::OUTPUT);
     ms3Pin.mode(Mode::OUTPUT);
     ms2Pin.mode(Mode::OUTPUT);
     ms1Pin.mode(Mode::OUTPUT);
-    enablePin.mode(Mode::OUTPUT);
+    stepPin.mode(Mode::ALTERNATE);
+    stepPin.alternateFunction(2);
 
-    Stepper stepper(stepPin, directionPin, 1, 1.8, false, 8,
-                    Stepper::PinConfiguration::COMMON_CATHODE, enablePin);
+    CountedPWM pwm(
+        TIM3, TimerUtils::Channel::CHANNEL_1, TimerUtils::TriggerSource::ITR3,
+        TIM4, TimerUtils::Channel::CHANNEL_1, TimerUtils::TriggerSource::ITR2);
+
+    StepperPWM stepper(pwm, stepPin, directionPin, 1, 1.8, false, 8,
+                       Stepper::PinConfiguration::COMMON_CATHODE, enablePin);
+    setMicroStepping(stepper, 8);
 
     printf("The stepper is now disabled, waiting 2 seconds...\n");
     delayMs(2 * 1000);
+
+    std::thread th(
+        [&stepper]()
+        {
+            while (true)
+            {
+                printf("Current position: %.2f\n",
+                       stepper.getCurrentDegPosition());
+                Thread::sleep(100);
+            }
+        });
+    th.detach();
 
     while (true)
     {
         printf("Press something to start\n");
         scanf("%*s");
 
-        printf("\t1x micro stepping\n");
-        setMicroStepping(stepper, 8);
         doRoutine(stepper);
-        printf("The stepper is now disabled\n");
-
-        delayMs(1000);
-
-        printf("\t2x micro stepping\n");
-        setMicroStepping(stepper, 8);
-        doRoutine(stepper);
-        printf("The stepper is now disabled\n");
-
-        delayMs(1000);
-
-        printf("\t4x micro stepping\n");
-        setMicroStepping(stepper, 8);
-        doRoutine(stepper);
-        printf("The stepper is now disabled\n");
-
-        delayMs(1000);
-
-        printf("\t8x micro stepping\n");
-        setMicroStepping(stepper, 8);
-        doRoutine(stepper);
-        printf("The stepper is now disabled\n");
-
-        delayMs(1000);
-
-        printf("\t16x micro stepping\n");
-        setMicroStepping(stepper, 8);
-        doRoutine(stepper);
-        printf("The stepper is now disabled\n");
+        Thread::sleep(10 * 1000);
     }
 }

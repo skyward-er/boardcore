@@ -1,5 +1,5 @@
 /* Copyright (c) 2022 Skyward Experimental Rocketry
- * Author: Alberto Nidasio
+ * Authors: Alberto Nidasio, Emilio Corigliano
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -32,13 +32,10 @@ namespace Boardcore
 class Stepper
 {
 public:
-    enum class Microstep
+    enum class PinConfiguration
     {
-        MICROSTEP_1,
-        MICROSTEP_2,
-        MICROSTEP_4,
-        MICROSTEP_8,
-        MICROSTEP_16,
+        COMMON_ANODE,    ///< All + signals connected to Vdd (3v3)
+        COMMON_CATHODE,  ///< All - signals connected to Gnd
     };
 
     /**
@@ -53,14 +50,12 @@ public:
      * @param stepAngle Angle covered by one motor step.
      * @param revertDirection Whether or not revert the direction signal.
      */
-    Stepper(miosix::GpioPin stepPin, miosix::GpioPin directionPin,
-            float speed = 1, float stepAngle = 1.8,
-            bool revertDirection      = false,
-            Microstep microstep       = Microstep::MICROSTEP_1,
-            miosix::GpioPin enablePin = MockGpioPin(),
-            miosix::GpioPin ms1Pin    = MockGpioPin(),
-            miosix::GpioPin ms2Pin    = MockGpioPin(),
-            miosix::GpioPin ms3Pin    = MockGpioPin());
+    Stepper(
+        miosix::GpioPin stepPin, miosix::GpioPin directionPin, float speed = 1,
+        float stepAngle = 1.8, bool revertDirection = false,
+        uint16_t microStep                = 1,
+        PinConfiguration pinConfiguration = PinConfiguration::COMMON_CATHODE,
+        miosix::GpioPin enablePin         = MockGpioPin());
 
     void enable();
 
@@ -68,24 +63,28 @@ public:
 
     /**
      * @brief Changes the stepper motor speed.
-     */
-    void setSpeed(float speed);
-
-    /**
-     * @brief Set the motor driver microstepping configuration.
-     */
-    void setMicrostepping(Microstep microstep);
-
-    /**
-     * @brief Zeros the driver's internal position.
      *
+     * @param speed Speed in rotation per second. [rev/s]
      */
-    void zeroPosition();
+    virtual void setSpeed(float speed);
+
+    /**
+     * @brief Set the motor driver micro stepping configuration.
+     *
+     * This method has no effect if micro steps are changed via physical
+     * switches.
+     */
+    virtual void setMicroStepping(uint16_t microStep);
+
+    /**
+     * @brief Overrides the driver's internal position counter.
+     */
+    void zeroPosition(float degrees = 0);
 
     /**
      * @brief Move the stepper motor by the specified amount of steps.
      */
-    void move(int32_t steps);
+    virtual void move(int16_t steps);
 
     /**
      * @brief Move the stepper motor by the specified amount of degrees.
@@ -97,168 +96,89 @@ public:
      *
      * Note that this function uses delayUs, thus it blocks execution based on
      * the stepper motor speed and movement.
-     *
-     * @param degrees Position in steps.
      */
-    void setPosition(int32_t steps);
+    virtual void setPosition(int16_t steps);
 
     /**
      * @brief Set the position of the stepper motor.
      *
      * Note that this function uses delayUs, thus it blocks execution based on
      * the stepper motor speed and movement.
-     *
-     * @param degrees Position in degrees.
      */
     void setPositionDeg(float degrees);
 
-    uint32_t getCurrentPosition();
+    int16_t getCurrentPosition();
 
-    float getCurrentDegPosition();
+    /**
+     * @brief Returns the current absolute position of the stepper in degrees
+     * [deg].
+     */
+    virtual float getCurrentDegPosition();
 
-private:
-    int getMicrosteppingValue();
+protected:
+    /**
+     * @brief Sets the directionPin to the right value to go in the direction
+     * stored in `currentDirection`.
+     */
+    void setDirection();
+
+    enum Direction : int8_t
+    {
+        CLOCKWISE = 1,  // To move the stepper clockwise seeing it from the top
+                        // of the stepper
+        COUNTER_CLOCKWISE = -1,  // To move the stepper counter-clockwise seeing
+                                 // it from the top of the stepper
+    };
+
+    // This class is not copyable!
+    Stepper& operator=(const Stepper&) = delete;
+    Stepper(const Stepper& p)          = delete;
 
     miosix::GpioPin stepPin;
     miosix::GpioPin directionPin;
-    float speed;
-    float stepAngle;  ///< Degrees per step.
+    float speed;      // [rev/s]
+    float stepAngle;  // [deg/step]
     bool revertDirection;
-    Microstep microstep;
+    uint16_t microStep;
+    PinConfiguration pinConfig;
     miosix::GpioPin enablePin;
-    miosix::GpioPin ms1Pin;
-    miosix::GpioPin ms2Pin;
-    miosix::GpioPin ms3Pin;
 
-    int32_t currentPosition = 0;
+    Direction currentDirection;    // Direction of the stepper
+    float currentPositionDeg = 0;  // Absolute position counter [degrees]
 };
-
-inline Stepper::Stepper(miosix::GpioPin stepPin, miosix::GpioPin directionPin,
-                        float speed, float stepAngle, bool revertDirection,
-                        Microstep microstep, miosix::GpioPin enablePin,
-                        miosix::GpioPin ms1Pin, miosix::GpioPin ms2Pin,
-                        miosix::GpioPin ms3Pin)
-    : stepPin(stepPin), directionPin(directionPin), speed(speed),
-      stepAngle(stepAngle), revertDirection(revertDirection),
-      microstep(microstep), enablePin(enablePin), ms1Pin(ms1Pin),
-      ms2Pin(ms2Pin), ms3Pin(ms3Pin)
-{
-    if (speed < 0)
-        speed = 0;
-
-    setMicrostepping(microstep);
-
-    // Start with the motor disabled
-    disable();
-}
-
-inline void Stepper::enable() { enablePin.low(); }
-
-inline void Stepper::disable() { enablePin.high(); }
 
 inline void Stepper::setSpeed(float speed) { this->speed = speed; }
 
-inline void Stepper::setMicrostepping(Microstep microstep)
+inline void Stepper::setMicroStepping(uint16_t microStep)
 {
-    this->microstep = microstep;
-
-    switch (microstep)
-    {
-        case Microstep::MICROSTEP_1:
-            ms1Pin.low();
-            ms2Pin.low();
-            ms3Pin.low();
-            break;
-        case Microstep::MICROSTEP_2:
-            ms1Pin.high();
-            ms2Pin.low();
-            ms3Pin.low();
-            break;
-        case Microstep::MICROSTEP_4:
-            ms1Pin.low();
-            ms2Pin.high();
-            ms3Pin.low();
-            break;
-        case Microstep::MICROSTEP_8:
-            ms1Pin.high();
-            ms2Pin.high();
-            ms3Pin.low();
-            break;
-        case Microstep::MICROSTEP_16:
-            ms1Pin.high();
-            ms2Pin.high();
-            ms3Pin.high();
-            break;
-    }
+    this->microStep = microStep;
 }
 
-void Stepper::zeroPosition() { currentPosition = 0; }
-
-inline void Stepper::move(int32_t steps)
+inline void Stepper::zeroPosition(float degrees)
 {
-    if (speed == 0)
-        return;
-
-    unsigned int halfStepDelay =
-        1e6 / (speed * 360 / stepAngle * getMicrosteppingValue());
-
-    if (revertDirection == (steps >= 0))
-        directionPin.low();
-    else
-        directionPin.high();
-    miosix::delayUs(halfStepDelay);
-
-    int32_t stepsAbs = steps > 0 ? steps : -steps;
-    for (int i = 0; i < stepsAbs; i++)
-    {
-        stepPin.high();
-        miosix::delayUs(halfStepDelay);
-        stepPin.low();
-        miosix::delayUs(halfStepDelay);
-    }
-
-    currentPosition += steps;
+    currentPositionDeg = degrees;
 }
 
 inline void Stepper::moveDeg(float degrees)
 {
-    move(degrees / stepAngle * getMicrosteppingValue());
+    move(degrees * microStep / stepAngle);
 }
 
-inline void Stepper::setPosition(int32_t steps)
+inline void Stepper::setPosition(int16_t steps)
 {
-    move(steps - currentPosition);
+    setPositionDeg(steps * stepAngle / microStep);
 }
 
 inline void Stepper::setPositionDeg(float position)
 {
-    setPosition(position / stepAngle * getMicrosteppingValue());
+    moveDeg(position - getCurrentDegPosition());
 }
 
-inline uint32_t Stepper::getCurrentPosition() { return currentPosition; }
-
-inline float Stepper::getCurrentDegPosition()
+inline int16_t Stepper::getCurrentPosition()
 {
-    return currentPosition * stepAngle / getMicrosteppingValue();
+    return getCurrentDegPosition() * microStep / stepAngle;
 }
 
-inline int Stepper::getMicrosteppingValue()
-{
-    switch (microstep)
-    {
-        case Microstep::MICROSTEP_1:
-            return 1;
-        case Microstep::MICROSTEP_2:
-            return 2;
-        case Microstep::MICROSTEP_4:
-            return 4;
-        case Microstep::MICROSTEP_8:
-            return 8;
-        case Microstep::MICROSTEP_16:
-            return 16;
-    }
-
-    return 1;
-}
+inline float Stepper::getCurrentDegPosition() { return currentPositionDeg; }
 
 }  // namespace Boardcore
