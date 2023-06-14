@@ -30,6 +30,8 @@ foreach(OPT_BOARD ${BOARDS})
         # Actuators
         ${SBS_BASE}/src/shared/actuators/HBridge/HBridge.cpp
         ${SBS_BASE}/src/shared/actuators/Servo/Servo.cpp
+        ${SBS_BASE}/src/shared/actuators/Stepper.cpp
+        ${SBS_BASE}/src/shared/actuators/StepperPWM.cpp
 
         # Algorithms
         ${SBS_BASE}/src/shared/algorithms/ADA/ADA.cpp
@@ -52,6 +54,7 @@ foreach(OPT_BOARD ${BOARDS})
         ${SBS_BASE}/src/shared/drivers/canbus/CanProtocol/CanProtocol.cpp
         ${SBS_BASE}/src/shared/drivers/interrupt/external_interrupts.cpp
         ${SBS_BASE}/src/shared/drivers/timer/PWM.cpp
+        ${SBS_BASE}/src/shared/drivers/timer/CountedPWM.cpp
         ${SBS_BASE}/src/shared/drivers/timer/TimestampTimer.cpp
         ${SBS_BASE}/src/shared/drivers/runcam/Runcam.cpp
         ${SBS_BASE}/src/shared/drivers/spi/SPITransaction.cpp

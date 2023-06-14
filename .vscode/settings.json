@@ -228,6 +228,8 @@
                 "mavlinkdriver",
                 "MEKF",
                 "microcontrollers",
+                "Microstep",
+                "Microsteps",
                 "MINC",
                 "miosix",
                 "mkdir",

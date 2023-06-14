@@ -138,7 +138,10 @@ add_executable(test-buzzer src/tests/actuators/test-buzzer.cpp)
 sbs_target(test-buzzer stm32f429zi_hre_test_stand)
 
 add_executable(test-stepper src/tests/actuators/test-stepper.cpp)
-sbs_target(test-stepper stm32f429zi_stm32f4discovery)
+sbs_target(test-stepper stm32f767zi_nucleo)
+
+add_executable(test-stepper-pwm src/tests/actuators/test-stepper-pwm.cpp)
+sbs_target(test-stepper-pwm stm32f767zi_nucleo)
 
 #-----------------------------------------------------------------------------#
 #                             Tests - Algorithms                              #
@@ -217,6 +220,9 @@ sbs_target(test-MBLoadCell stm32f407vg_stm32f4discovery)
 
 add_executable(test-pwm src/tests/drivers/timer/test-pwm.cpp)
 sbs_target(test-pwm stm32f429zi_stm32f4discovery)
+
+add_executable(test-counted-pwm src/tests/drivers/timer/test-counted-pwm.cpp)
+sbs_target(test-counted-pwm stm32f429zi_stm32f4discovery)
 
 add_executable(test-spi src/tests/drivers/spi/test-spi.cpp)
 sbs_target(test-spi stm32f407vg_stm32f4discovery)
