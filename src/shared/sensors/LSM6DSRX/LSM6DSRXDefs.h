@@ -63,6 +63,12 @@ const float GYR_SELF_TEST_MIN = 1500.0;
 const float GYR_SELF_TEST_MAX = 7000.0;
 
 /**
+ * @brief Number of timeslots available when extracting
+ * data from fifo.
+ */
+const uint8_t FIFO_TIMESLOT_NUMBER = 4;
+
+/**
  * @brief Internal registers definitions.
  */
 enum Registers
@@ -156,6 +162,20 @@ struct RawFifoData
     uint8_t yh;         ///< high part of DATA_OUT_Y register
     uint8_t zl;         ///< low part of DATA_OUT_Z register
     uint8_t zh;         ///< high part of DATA_OUT_Z register
+};
+
+/**
+ * @brief Temporary struct used to store data extracted from fifo, before
+ * turning it into LSM6DSRXData.
+ *
+ * accPresent and gyrPresent are flags that are set when a sample from the
+ * corresponding sensor is pushed inside the timeslot.
+ */
+struct FifoTimeslotData
+{
+    LSM6DSRXData data;
+    bool accPresent = false;
+    bool gyrPresent = false;
 };
 
 }  // namespace LSM6DSRXDefs

@@ -706,13 +706,19 @@ void LSM6DSRX::readFromFifo()
     const uint16_t numSamples =
         std::min(LSM6DSRXDefs::FIFO_SIZE, unreadDataInFifo());
 
-    // data has 2bits tags that determins the corresponding time slot.
-    // 00 -> first element of the array (timestamps[0])
-    // 11 -> last element of the array (timestamps[3])
-    // when a new timestamp is received from the fifo the array is updated.
-    // NOTE: those timestamps are already converted from sensor ones to
-    // TimestampTimer class.
-    uint64_t timestamps[4] = {0};
+    /**
+     * Data has 2bits tags that determins the corresponding time slot.
+     *
+     * 00 -> first element of the array (timestamps[0])
+     * 11 -> last element of the array (timestamps[3])
+     *
+     * When a new timestamp is received from the fifo the array is updated.
+     * NOTE: those timestamps are already converted from sensor ones to
+     * TimestampTimer class.
+     */
+    LSM6DSRXDefs::FifoTimeslotData
+        timestamps[LSM6DSRXDefs::FIFO_TIMESLOT_NUMBER] = {LSM6DSRXData(), false,
+                                                          false};
 
     // read samples from the sensors
     spi.readRegisters(LSM6DSRXDefs::REG_FIFO_DATA_OUT_TAG,
@@ -739,69 +745,79 @@ void LSM6DSRX::readFromFifo()
         switch (sensorTag)
         {
             case 0x01:
-                // gyroscope data
-                lastFifo[idxFifo].angularSpeedX =
+                // Gyroscope data
+
+                // Set data
+                timestamps[timeslotTag].data.angularSpeedX =
                     static_cast<float>(combineHighLowBits(xl, xh)) *
                     sensitivityGyr;
-                lastFifo[idxFifo].angularSpeedY =
+                timestamps[timeslotTag].data.angularSpeedY =
                     static_cast<float>(combineHighLowBits(yl, yh)) *
                     sensitivityGyr;
-                lastFifo[idxFifo].angularSpeedZ =
+                timestamps[timeslotTag].data.angularSpeedZ =
                     static_cast<float>(combineHighLowBits(zl, zh)) *
                     sensitivityGyr;
 
-                lastFifo[idxFifo].angularSpeedTimestamp =
-                    timestamps[timeslotTag];
+#ifdef DEBUG
+                // Check for debugging
+                if (timestamps[timeslotTag].gyrPresent == true)
+                {
+                    TRACE("ERROR, writing twice gyr data\n");
+                }
+#endif
+                // Set flag
+                timestamps[timeslotTag].gyrPresent = true;
 
-                // set old acc data
-                lastFifo[idxFifo].accelerationX = lastValidSample.accelerationX;
-                lastFifo[idxFifo].accelerationY = lastValidSample.accelerationY;
-                lastFifo[idxFifo].accelerationZ = lastValidSample.accelerationZ;
-                lastFifo[idxFifo].accelerationTimestamp =
-                    lastValidSample.accelerationTimestamp;
+                // Check if we can push into fifo (both samples are present)
+                if (timestamps[timeslotTag].accPresent)
+                {
+                    // push into fifo
+                    lastFifo[idxFifo] = timestamps[timeslotTag].data;
+                    ++idxFifo;
 
-                // update last valid sample for the gyroscope
-                lastValidSample.angularSpeedTimestamp =
-                    lastFifo[idxFifo].angularSpeedTimestamp;
-                lastValidSample.angularSpeedX = lastFifo[idxFifo].angularSpeedX;
-                lastValidSample.angularSpeedY = lastFifo[idxFifo].angularSpeedY;
-                lastValidSample.angularSpeedZ = lastFifo[idxFifo].angularSpeedZ;
+                    // update lastValidSample
+                    lastValidSample = timestamps[timeslotTag].data;
 
-                // update fifo index
-                ++idxFifo;
+                    // reset data
+                    timestamps[timeslotTag].accPresent = false;
+                    timestamps[timeslotTag].gyrPresent = false;
+                }
 
                 break;
             case 0x02:
-                // accelerometer data
-                lastFifo[idxFifo].accelerationX =
+                // Accelerometer data
+                timestamps[timeslotTag].data.accelerationX =
                     static_cast<float>(combineHighLowBits(xl, xh)) *
                     sensitivityAcc;
-                lastFifo[idxFifo].accelerationY =
+                timestamps[timeslotTag].data.accelerationY =
                     static_cast<float>(combineHighLowBits(yl, yh)) *
                     sensitivityAcc;
-                lastFifo[idxFifo].accelerationZ =
+                timestamps[timeslotTag].data.accelerationZ =
                     static_cast<float>(combineHighLowBits(zl, zh)) *
                     sensitivityAcc;
 
-                lastFifo[idxFifo].accelerationTimestamp =
-                    timestamps[timeslotTag];
+#ifdef DEBUG
+                if (timestamps[timeslotTag].accPresent == true)
+                {
+                    TRACE("ERROR, writing twice acc data\n");
+                }
+#endif
+                timestamps[timeslotTag].accPresent = true;
 
-                // set old gyro data
-                lastFifo[idxFifo].angularSpeedX = lastValidSample.angularSpeedX;
-                lastFifo[idxFifo].angularSpeedY = lastValidSample.angularSpeedY;
-                lastFifo[idxFifo].angularSpeedZ = lastValidSample.angularSpeedZ;
-                lastFifo[idxFifo].angularSpeedTimestamp =
-                    lastValidSample.angularSpeedTimestamp;
+                // Check if we can push into fifo (both samples are present)
+                if (timestamps[timeslotTag].gyrPresent)
+                {
+                    // push into fifo
+                    lastFifo[idxFifo] = timestamps[timeslotTag].data;
+                    ++idxFifo;
 
-                // update lastValidSample for the accelerometer
-                lastValidSample.accelerationTimestamp =
-                    lastFifo[idxFifo].accelerationTimestamp;
-                lastValidSample.accelerationX = lastFifo[idxFifo].accelerationX;
-                lastValidSample.accelerationY = lastFifo[idxFifo].accelerationY;
-                lastValidSample.accelerationZ = lastFifo[idxFifo].accelerationZ;
+                    // update lastValidSample
+                    lastValidSample = timestamps[timeslotTag].data;
 
-                // update fifo index
-                ++idxFifo;
+                    // reset data
+                    timestamps[timeslotTag].accPresent = false;
+                    timestamps[timeslotTag].gyrPresent = false;
+                }
 
                 break;
             case 0x04:
@@ -812,8 +828,30 @@ void LSM6DSRX::readFromFifo()
                 t |= static_cast<uint32_t>(combineHighLowBitsUnsigned(yl, yh))
                      << 16;
 
-                timestamps[timeslotTag] =
+                // Check data
+                // when both samples are present the data is saved in fifo and
+                // flags are restored -> if 'flag' is true it means that only 1
+                // of the 2 samples is present, and it is going to be
+                // overwritten by this new timestamp
+#ifdef DEBUG
+                bool flag = timestamps[timeslotTag].accPresent ||
+                            timestamps[timeslotTag].gyrPresent;
+                if (flag == true)
+                {
+                    TRACE(
+                        "ERROR, overwriting not pushed sample with a new "
+                        "timestamp\n");
+                }
+#endif
+
+                // Set new data
+                timestamps[timeslotTag].data.accelerationTimestamp =
                     convertTimestamp(static_cast<uint64_t>(t));
+                timestamps[timeslotTag].data.angularSpeedTimestamp =
+                    timestamps[timeslotTag].data.accelerationTimestamp;
+
+                timestamps[timeslotTag].accPresent = false;
+                timestamps[timeslotTag].gyrPresent = false;
 
                 break;
         }

@@ -108,9 +108,9 @@ int main()
         LSM6DSRXConfig::INTERRUPT::FIFO_THRESHOLD;
     sensConfig.fifoWatermark = 511;
 
-    // testFifoRead(bus, csPin, busConfiguration, sensConfig, int2Pin);
+    testFifoRead(bus, csPin, busConfiguration, sensConfig, int2Pin);
 
-    testSampleImplTime(bus, csPin, busConfiguration, sensConfig);
+    // testSampleImplTime(bus, csPin, busConfiguration, sensConfig);
 
     // testFifoFillingTime(bus, csPin, busConfiguration, sensConfig, int2Pin);
 
@@ -275,14 +275,40 @@ void testFifoRead(SPIBus& bus, miosix::GpioPin csPin,
         const std::array<LSM6DSRXData, LSM6DSRXDefs::FIFO_SIZE>& buf =
             sens->getLastFifo();
 
-        // print last element from fifo
+        // Print fifo
         // std::cout << buf[sens->getLastFifoSize() - 1].header() << "\n";
         // buf[sens->getLastFifoSize() - 1].print(std::cout);
-        for (uint16_t i = 0; i < sens->getLastFifoSize(); ++i)
+        // for (uint16_t i = 0; i < sens->getLastFifoSize(); ++i)
+        // {
+        //     buf[i].print(std::cout);
+        //     std::cout << "\n";
+        // }
+
+        // Check fifo data
+        for (uint16_t i = 1; i < sens->getLastFifoSize(); ++i)
         {
-            buf[i].print(std::cout);
-            std::cout << "\n";
+            // Check for accelerometer timestamps
+            if (buf[i].accelerationTimestamp <=
+                buf[i - 1].accelerationTimestamp)
+            {
+                std::cout << "Error, accelerometer data not ordered\n\n";
+            }
+
+            // Check for gyroscope timestamps
+            if (buf[i].angularSpeedTimestamp <=
+                buf[i - 1].angularSpeedTimestamp)
+            {
+                std::cout << "Error, gyroscope data not ordered\n\n";
+            }
+
+            // Check that gyr and acc timestamps are equal
+            if (buf[i].accelerationTimestamp != buf[i].angularSpeedTimestamp)
+            {
+                std::cout << "Error, timestamps not equal\n\n";
+            }
         }
-        std::cout << "\n\n\n";
+
+        std::cout << "Extraction completed\n\n" << std::endl;
+        getchar();
     }
 }

@@ -139,10 +139,15 @@ struct LSM6DSRXConfig
      */
     enum class FIFO_TIMESTAMP_DECIMATION : uint8_t
     {
-        DISABLED = 0,  ///< Timestamp not batched in FIFO.
-        DEC_1    = 1,  ///< max(BDR_XL[Hz],BDR_GY[Hz]) [Hz]
-        DEC_8    = 2,  ///< max(BDR_XL[Hz],BDR_GY[Hz]) / 8 [Hz]
-        DEC_32   = 3,  ///< max(BDR_XL[Hz],BDR_GY[Hz]) / 32 [Hz]
+        DEC_1 = 1,  ///< max(BDR_XL[Hz],BDR_GY[Hz]) [Hz]
+
+        // Those options below are disabled, because without DEC_1 the driver
+        // would not work properly (multiple samples would share the same
+        // timestamp or have none)
+
+        // DISABLED = 0,  ///< Timestamp not batched in FIFO.
+        // DEC_8    = 2,  ///< max(BDR_XL[Hz],BDR_GY[Hz]) / 8 [Hz]
+        // DEC_32   = 3,  ///< max(BDR_XL[Hz],BDR_GY[Hz]) / 32 [Hz]
     };
 
     /**
