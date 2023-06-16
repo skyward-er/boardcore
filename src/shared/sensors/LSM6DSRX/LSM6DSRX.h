@@ -79,7 +79,7 @@ public:
     LSM6DSRXData getSensorData();
 
     /**
-     * @brief Gather data from FIFO/data registers and temperature sensor.
+     * @brief Gather data from FIFO/data registers.
      */
     LSM6DSRXData sampleImpl() override;
 
