@@ -329,6 +329,9 @@ sbs_target(test-ads1118 stm32f407vg_stm32f4discovery)
 add_executable(test-ads131m04 src/tests/sensors/test-ads131m04.cpp)
 sbs_target(test-ads131m04 stm32f429zi_stm32f4discovery)
 
+add_executable(test-ads131m08 src/tests/sensors/test-ads131m08.cpp)
+sbs_target(test-ads131m08 stm32f767zi_compute_unit)
+
 add_executable(test-analog-pressure-sensors src/tests/sensors/analog/test-analog-pressure-sensors.cpp)
 sbs_target(test-analog-pressure-sensors stm32f429zi_stm32f4discovery)
 

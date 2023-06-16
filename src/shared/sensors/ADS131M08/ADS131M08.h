@@ -26,21 +26,21 @@
 #include <drivers/spi/SPIDriver.h>
 #include <sensors/Sensor.h>
 
-#include "ADS131M04Data.h"
+#include "ADS131M08Data.h"
 
 namespace Boardcore
 {
 
 /**
- * @brief Driver for ADS131M04 4 simultaneous channels adc.
+ * @brief Driver for ADS131M08 8 simultaneous channels adc.
  *
- * The ADS131M04 is a four-channel, simultaneously-sampling, 24-bit,
+ * The ADS131M08 is an eight-channel, simultaneously-sampling, 24-bit,
  * delta-sigma (ΔΣ), analog-to-digital converter (ADC). The individual ADC
  * channels can be independently configured depending on the sensor input. A
  * low-noise, programmable gain amplifier (PGA) provides gains ranging from 1
  * to 128 to amplify low-level signals.
  *
- * Each channel on the ADS131M04 contains a digital decimation filter that
+ * Each channel on the ADS131M08 contains a digital decimation filter that
  * demodulates the output of the ΔΣ modulators. Offset and gain calibration
  * registers can be programmed to automatically adjust output samples for
  * measured offset and gain errors.
@@ -71,7 +71,7 @@ namespace Boardcore
  * - Very-low-power: 62.5-8KSPS
  * You will probably have the ADC in high resolution mode.
  */
-class ADS131M04 : public Sensor<ADS131M04Data>
+class ADS131M08 : public Sensor<ADS131M08Data>
 {
 public:
     /**
@@ -113,7 +113,11 @@ public:
         CHANNEL_0 = 0,
         CHANNEL_1 = 1,
         CHANNEL_2 = 2,
-        CHANNEL_3 = 3
+        CHANNEL_3 = 3,
+        CHANNEL_4 = 4,
+        CHANNEL_5 = 5,
+        CHANNEL_6 = 6,
+        CHANNEL_7 = 7
     };
 
     enum class Input : uint8_t
@@ -124,10 +128,10 @@ public:
         NEGATIVE_DC_TEST = 3   // Negative DC test signal
     };
 
-    ADS131M04(SPIBusInterface &bus, miosix::GpioPin cs,
+    ADS131M08(SPIBusInterface &bus, miosix::GpioPin cs,
               SPIBusConfig config = getDefaultSPIConfig());
 
-    explicit ADS131M04(SPISlave spiSlave);
+    explicit ADS131M08(SPISlave spiSlave);
 
     /**
      * Constructs the default config for SPI Bus.
@@ -160,7 +164,7 @@ public:
     /**
      * @brief Sets the channel gain calibration.
      *
-     * The ADS131M04 corrects for gain errors by multiplying the ADC conversion
+     * The ADS131M08 corrects for gain errors by multiplying the ADC conversion
      * result using the gain calibration registers.
      * The gain calibration value is interpreted as a 24bit unsigned. The values
      * corresponds to n * (1/2^23), ranging from 0 to 2 - (1/2^23).
@@ -187,7 +191,7 @@ public:
     bool selfTest() override;
 
 protected:
-    ADS131M04Data sampleImpl() override;
+    ADS131M08Data sampleImpl() override;
 
 private:
     enum class Registers : uint16_t
@@ -199,7 +203,8 @@ private:
         // Global settings across channels
         REG_MODE        = 0x2,
         REG_CLOCK       = 0x3,
-        REG_GAIN        = 0x4,
+        REG_GAIN_1      = 0x4,
+        REG_GAIN_2      = 0x5,
         REG_CFG         = 0x6,
         REG_THRSHLD_MSB = 0x7,
         REG_THRSHLD_LSB = 0x8,
@@ -225,6 +230,26 @@ private:
         REG_CH3_OCAL_LSB = 0x1A,
         REG_CH3_GCAL_MSB = 0x1B,
         REG_CH3_GCAL_LSB = 0x1C,
+        REG_CH4_CFG      = 0x1D,
+        REG_CH4_OCAL_MSB = 0x1E,
+        REG_CH4_OCAL_LSB = 0x1F,
+        REG_CH4_GCAL_MSB = 0x20,
+        REG_CH4_GCAL_LSB = 0x21,
+        REG_CH5_CFG      = 0x22,
+        REG_CH5_OCAL_MSB = 0x23,
+        REG_CH5_OCAL_LSB = 0x24,
+        REG_CH5_GCAL_MSB = 0x25,
+        REG_CH5_GCAL_LSB = 0x26,
+        REG_CH6_CFG      = 0x27,
+        REG_CH6_OCAL_MSB = 0x28,
+        REG_CH6_OCAL_LSB = 0x29,
+        REG_CH6_GCAL_MSB = 0x2A,
+        REG_CH6_GCAL_LSB = 0x2B,
+        REG_CH7_CFG      = 0x2C,
+        REG_CH7_OCAL_MSB = 0x2D,
+        REG_CH7_OCAL_LSB = 0x2E,
+        REG_CH7_GCAL_MSB = 0x2F,
+        REG_CH7_GCAL_LSB = 0x30,
 
         // Register map CRC
         REG_REGMAP_CRC = 0x3E
@@ -250,11 +275,12 @@ private:
 
     SPISlave spiSlave;
 
-    PGA channelsPGAGain[4] = {PGA::PGA_1, PGA::PGA_1, PGA::PGA_1, PGA::PGA_1};
+    PGA channelsPGAGain[8] = {PGA::PGA_1, PGA::PGA_1, PGA::PGA_1, PGA::PGA_1,
+                              PGA::PGA_1, PGA::PGA_1, PGA::PGA_1, PGA::PGA_1};
 
-    PrintLogger logger = Logging::getLogger("ads131m04");
+    PrintLogger logger = Logging::getLogger("ads131m08");
 
-    static constexpr uint16_t RESET_CMD_RESPONSE = 0xFF24;
+    static constexpr uint16_t RESET_CMD_RESPONSE = 0xFF28;
 
     ///< Digit value in mV for each pga configurations
     const float PGA_LSB_SIZE[8] = {143.0511e-9, 71.5256e-9, 35.7628e-9,
@@ -262,7 +288,7 @@ private:
                                    2.2352e-9,   1.1176e-9};
 };
 
-namespace ADS131M04RegisterBitMasks
+namespace ADS131M08RegisterBitMasks
 {
 
 // Status register
@@ -316,6 +342,6 @@ constexpr uint16_t REG_CHx_CFG_PHASE     = 0x3FF << 6;
 constexpr uint16_t REG_CHx_CFG_DCBLK_DIS = 1 << 2;
 constexpr uint16_t REG_CHx_CFG_MUX       = 3;
 
-}  // namespace ADS131M04RegisterBitMasks
+}  // namespace ADS131M08RegisterBitMasks
 
 }  // namespace Boardcore

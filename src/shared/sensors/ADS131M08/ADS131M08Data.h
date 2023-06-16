@@ -24,14 +24,46 @@
 
 #include <stdint.h>
 
+#include <ostream>
+
 namespace Boardcore
 {
 
-struct ADS131M04HighFreqData
+struct ADS131M08Data
 {
-    uint16_t status;
-    uint8_t rawData[12];
-    uint16_t crc;
+    uint64_t timestamp;
+    float voltage[8];
+
+    ADS131M08Data() : ADS131M08Data{0, 0, 0, 0, 0, 0, 0, 0, 0} {}
+
+    ADS131M08Data(uint64_t timestamp, float voltageCh1, float voltageCh2,
+                  float voltageCh3, float voltageCh4, float voltageCh5,
+                  float voltageCh6, float voltageCh7, float voltageCh8)
+        : timestamp(timestamp)
+    {
+        voltage[0] = voltageCh1;
+        voltage[1] = voltageCh2;
+        voltage[2] = voltageCh3;
+        voltage[3] = voltageCh4;
+        voltage[4] = voltageCh5;
+        voltage[5] = voltageCh6;
+        voltage[6] = voltageCh7;
+        voltage[7] = voltageCh8;
+    }
+
+    static std::string header()
+    {
+        return "timestamp,voltage_channel_1,voltage_channel_2,voltage_channel_"
+               "3,voltage_channel_4,voltage_channel_5,voltage_channel_6,"
+               "voltage_channel_7,voltage_channel_8\n";
+    }
+
+    void print(std::ostream& os) const
+    {
+        os << timestamp << "," << voltage[0] << "," << voltage[1] << ","
+           << voltage[2] << "," << voltage[3] << "," << voltage[4] << ","
+           << voltage[5] << "," << voltage[6] << "," << voltage[7] << "\n";
+    }
 };
 
 }  // namespace Boardcore
