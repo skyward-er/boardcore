@@ -82,7 +82,6 @@ bool LSM6DSRX::init()
     m_sensorTimestampResolution =
         getSensorTimestampResolution() *
         1000;  // return value is in milliseconds, need microseconds.
-    // m_sampleCounter = 0;
 
     m_isInit  = true;
     lastError = SensorErrors::NO_ERRORS;
@@ -513,10 +512,16 @@ int16_t LSM6DSRX::combineHighLowBits(uint8_t low, uint8_t high)
     return ret;
 }
 
+uint16_t LSM6DSRX::combineHighLowBitsUnsigned(uint8_t low, uint8_t high)
+{
+    uint16_t sample = high;
+    sample <<= 8;
+    sample |= low;
+    return sample;
+}
+
 void LSM6DSRX::getAccelerometerData(LSM6DSRXData& data)
 {
-    // D(assert(m_isInit && "init() was not called"));
-
     data.accelerationTimestamp = TimestampTimer::getTimestamp();
 
     data.accelerationX =
@@ -532,8 +537,6 @@ void LSM6DSRX::getAccelerometerData(LSM6DSRXData& data)
 
 void LSM6DSRX::getGyroscopeData(LSM6DSRXData& data)
 {
-    // D(assert(m_isInit && "init() was not called"));
-
     data.angularSpeedTimestamp = TimestampTimer::getTimestamp();
 
     data.angularSpeedX =
@@ -549,8 +552,6 @@ void LSM6DSRX::getGyroscopeData(LSM6DSRXData& data)
 
 uint32_t LSM6DSRX::getSensorTimestamp()
 {
-    // D(assert(m_isInit && "init() was not called"));
-
     SPITransaction spi{m_spiSlave};
 
     uint32_t value = spi.readRegister(LSM6DSRXDefs::REG_TIMESTAMP0);
@@ -635,6 +636,22 @@ float LSM6DSRX::getAxisData(LSM6DSRXDefs::Registers lowReg,
     return ret;
 }
 
+int16_t LSM6DSRX::getAxisData(LSM6DSRXDefs::Registers lowReg,
+                              LSM6DSRXDefs::Registers highReg)
+{
+    int8_t low = 0, high = 0;
+    int16_t sample = 0;
+
+    SPITransaction transaction{m_spiSlave};
+
+    high = transaction.readRegister(highReg);
+    low  = transaction.readRegister(lowReg);
+
+    sample = combineHighLowBits(low, high);
+
+    return sample;
+}
+
 uint64_t LSM6DSRX::convertTimestamp(const uint64_t sensorTimestamp)
 {
     uint64_t deltaSensor = 0;  // difference between 2 sensor timestamps.
@@ -644,8 +661,6 @@ uint64_t LSM6DSRX::convertTimestamp(const uint64_t sensorTimestamp)
     }
     else
     {
-        // CHECK
-        // ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
         deltaSensor = static_cast<uint64_t>(-1) - m_sensorTimestamp0 +
                       sensorTimestamp + 1;
     }
@@ -799,9 +814,6 @@ void LSM6DSRX::readFromFifo()
             case 0x04:
                 // timestamp data --> update timestamps
 
-                // uint32_t t = static_cast<uint32_t>(combineHighLowBits(xl,
-                // xh)); t |= static_cast<uint32_t>(combineHighLowBits(yl, yh))
-                // << 16;
                 uint32_t t =
                     static_cast<uint32_t>(combineHighLowBitsUnsigned(xl, xh));
                 t |= static_cast<uint32_t>(combineHighLowBitsUnsigned(yl, yh))
@@ -811,19 +823,10 @@ void LSM6DSRX::readFromFifo()
                     convertTimestamp(static_cast<uint64_t>(t));
 
                 break;
-                // default:
-                //     // last_error_bad_data;
-                //     break;
         }
     }
 
-    // check if timestamp base values need to be updated
-    // ++m_sampleCounter;
-    // if (m_sampleCounter >= LSM6DSRXDefs::TIMESTAMP_UPDATE_VALUE)
-    // {
-    //     m_sampleCounter = 0;
-    //     correlateTimestamps();
-    // }
+    // update timestamp base values
     correlateTimestamps();
 
     lastFifoLevel = idxFifo;

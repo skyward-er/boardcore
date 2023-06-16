@@ -27,8 +27,8 @@
 #include <utils/Debug.h>
 
 #include <algorithm>
-#include <iostream>  //////////////////////////////////////////////////////////////////////////////////////////////
-#include <vector>  //////////////////////////////////////////////////////////////////////////////////////////////
+#include <iostream>
+#include <vector>
 
 using namespace Boardcore;
 using namespace miosix;
@@ -112,11 +112,6 @@ int main()
         }
     }
 
-    // while(true)
-    // {
-    //     Thread::sleep(5000);
-    // }
-
     // while (true)
     // {
     //     // LSM6DSRXData data = sens.getSensorData();
@@ -164,7 +159,7 @@ int main()
     vetTimestamps.reserve(LSM6DSRXDefs::FIFO_SIZE);
     while (true)
     {
-        // primi sample per far andare un po' il sensore
+        // skip some samples
         for (int i = 0; i < 5; ++i)
         {
             // wait for fifo full interrupt
@@ -177,7 +172,6 @@ int main()
             sens->sampleImpl();
         }
 
-        // sample effettivo
         // wait for fifo full interrupt
         int dataReady = int2Pin.value();
         while (dataReady != 1)
@@ -187,7 +181,7 @@ int main()
         }
         sens->sampleImpl();
 
-        // estrazione dati
+        // data extraction
         const std::array<LSM6DSRXData, LSM6DSRXDefs::FIFO_SIZE>& buf =
             sens->getLastFifo();
         vetTimestamps.clear();
@@ -197,13 +191,13 @@ int main()
         }
         std::sort(vetTimestamps.begin(), vetTimestamps.end());
 
-        // calcolo differenza max
+        // test max difference between timestamps
         uint64_t diffMax = 0, diff = 0;
         for (unsigned int i = 1; i < vetTimestamps.size(); ++i)
         {
             if (vetTimestamps[i] == 0)
             {
-                TRACE("C'E' UNO ZERO\n");
+                TRACE("Timestamp is 0\n");
             }
             if (vetTimestamps[i - 1] > 0)
             {
@@ -215,7 +209,7 @@ int main()
             }
         }
 
-        // print dati
+        // print data
         std::cout << "diffMax: " << diffMax << "\n";
         std::cout << "vetTimestamps:\n";
         for (unsigned int i = 0; i < vetTimestamps.size(); ++i)
