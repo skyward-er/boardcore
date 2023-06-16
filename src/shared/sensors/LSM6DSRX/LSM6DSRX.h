@@ -89,6 +89,21 @@ public:
     uint32_t getSensorTimestamp();
 
     /**
+     * @brief Returns the timestamp resolution in milliseconds.
+     * USED ONLY FOR TESTING, TO BE REMOVED
+     */
+    float getSensorTimestampResolution()
+    {
+        SPITransaction spi{m_spiSlave};
+
+        uint8_t value = spi.readRegister(LSM6DSRXDefs::REG_INTERNAL_FREQ_FINE);
+
+        // TS_Res = 1 / (40000 + (0.0015 * INTERNAL_FREQ_FINE * 40000))
+        float TS_Res = 1 / (40000 + (0.0015 * value * 40000));
+        return TS_Res * 1000;
+    }
+
+    /**
      * @brief Performs a really simple reading from the FIFO buffer.
      * @param buf Buffer where to save data.
      * @param num Number of batch to be red from the FIFO.

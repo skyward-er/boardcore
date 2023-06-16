@@ -116,6 +116,11 @@ enum Registers
     REG_TIMESTAMP1 = 0x41,
     REG_TIMESTAMP2 = 0x42,
     REG_TIMESTAMP3 = 0x43,
+
+    REG_INTERNAL_FREQ_FINE = 0x63,
+
+    REG_INT1_CTRL = 0x0D,  ///< set interrupts on INT1 pin.
+    REG_INT2_CTRL = 0x0E,  ///< set interrupts on INT2 pin.
 };
 
 }  // namespace LSM6DSRXDefs

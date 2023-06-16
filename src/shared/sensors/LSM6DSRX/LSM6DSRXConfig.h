@@ -159,6 +159,23 @@ struct LSM6DSRXConfig
         HZ_52    = 3,  ///< 52 Hz
     };
 
+    /**
+     * @brief Selectable interrupts. You can combine multiple interrupts with
+     * bitwise or.
+     */
+    enum class INTERRUPT : uint8_t
+    {
+        NOTHING  = 0,  ///< no interrupt selected
+        ACC_DRDY = 1,  ///< Accelerometer data ready.
+        GYR_DRDY = 2,  ///< Gyroscope data ready.
+
+        // not ready yet
+
+        // FIFO_THRESHOLD = 8, ///< FIFO threshold interrupt.
+        // FIFO_OVERRUN = 16,  ///< FIFO overrun interrupt.
+        // FIFO_FULL = 32, ///< FIFO full interrupt.
+    };
+
     BDU bdu;  ///< Data update mode.
 
     // accelerometer
@@ -178,6 +195,10 @@ struct LSM6DSRXConfig
                               ///< FIFO.
     FIFO_TEMPERATURE_BDR
     fifoTemperatureBdr;  ///< batch data rate for temperature data in FIFO.
+
+    // interrupt
+    INTERRUPT int1InterruptSelection;  ///< interrupts selected on INT1 pin.
+    INTERRUPT int2InterruptSelection;  ///< interrupts selected on INT2 pin.
 };
 
 }  // namespace Boardcore
