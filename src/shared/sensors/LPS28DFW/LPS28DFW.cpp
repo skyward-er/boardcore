@@ -24,120 +24,17 @@
 
 #include <drivers/timer/TimestampTimer.h>
 
+#include "LPS28DFWDefs.h"
+
 namespace Boardcore
 {
-static const uint16_t lsp28dfwAddress0{0b1011100};
-static const uint16_t lsp28dfwAddress1{0b1011101};
-
-static const uint8_t INTERRUPT_CFG{
-    0x0B};  ///< Interrupt mode for pressure acquisition configuration
-static const uint8_t THS_P_L{0x0C};   ///< User-defined threshold LSB register
-static const uint8_t THS_P_H{0x0D};   ///< User-defined threshold MSB register
-static const uint8_t IF_CTRL{0x0E};   ///< Interface control register
-static const uint8_t WHO_AM_I{0x0F};  ///< Device Who am I register
-static const uint8_t WHO_AM_I_VALUE{0xB4};  ///< Device Who am I value
-static const uint8_t CTRL_REG1_addr{0x10};  ///< Control Register 1 [ODR, AVG]
-
-static const uint8_t CTRL_REG2_addr{0x11};  ///< Control Register 2
-enum CTRL_REG2 : uint8_t
-{
-    ONE_SHOT_START = (0b1 << 0),  ///< Enable one-shot mode
-    SWRESET        = (0b1 << 2),  ///< Software reset
-    BDU            = (0b1 << 3),  ///< Block data update
-    EN_LPFP        = (0b1 << 4),  ///< Enable low-pass filter on pressure data
-    LFPF_CFG       = (0b1 << 5),  ///< Low-pass filter configuration
-    FS_MODE        = (0b1 << 6),  ///< Full-scale selection
-    BOOT           = (0b1 << 7)   ///< Reboot memory content
-};
-
-static const uint8_t CTRL_REG3_addr{0x12};  ///< Control Register 3
-enum CTRL_REG3 : uint8_t
-{
-    IF_ADD_INC =
-        (0b1 << 0),        ///< Increment register during a multiple byte access
-    PP_OD   = (0b1 << 1),  ///< Push-pull/open-drain selection on interrupt pin
-    INT_H_L = (0b1 << 3)   ///< Select interrupt active-high, active-low
-};
-
-static const uint8_t CTRL_REG4_addr{0x13};  ///< Control Register 4
-enum CTRL_REG4 : uint8_t
-{
-    INT_F_OVR  = (0b1 << 0),  ///< FIFO overrun status on INT_DRDY pin
-    INT_F_WTM  = (0b1 << 1),  ///< FIFO threshold status on INT_DRDY pin
-    INT_F_FULL = (0b1 << 2),  ///< FIFO full flag on INT_DRDY pin
-    INT_EN     = (0b1 << 4),  ///< Interrupt signal on INT_DRDY pin
-    DRDY       = (0b1 << 5),  ///< Date-ready signal on INT_DRDY pin
-    DRDY_PLS   = (0b1 << 6)   ///< Data-ready pulsed on INT_DRDY pin
-};
-
-static const uint8_t FIFO_CTRL_addr{0x14};  ///< FIFO control register
-enum FIFO_CTRL : uint8_t
-{
-    BYPASS               = 0b000,
-    FIFO                 = 0b001,
-    CONTINUOUS           = 0b010,
-    BYPASS_TO_FIFO       = 0b101,
-    BYPASS_TO_CONTINUOUS = 0b110,
-    CONTINUOUS_TO_FIFO   = 0b111,
-    STOP_ON_WTM          = (0b1 << 3)  ///< Stop-on-FIFO watermark
-};
-
-static const uint8_t FIFO_WTM_addr{0x15};  ///< FIFO threshold setting register
-static const uint8_t REF_P_L_addr{0x16};   ///< Reference pressure LSB data
-static const uint8_t REF_P_H_addr{0x17};   ///< Reference pressure MSB data
-static const uint8_t RPDS_L_addr{0x1a};    ///< Pressure offset LSB data
-static const uint8_t RPDS_H_addr{0x1b};    ///< Pressure offset HSB data
-static const uint8_t INT_SOURCE_addr{0x24};  ///< Interrupt source register
-enum INT_SOURCE : uint8_t
-{
-    PH      = (0b1 << 0),  ///< Differential pressure High
-    PL      = (0b1 << 1),  ///< Differential pressure Low
-    IA      = (0b1 << 2),  ///< Interrupt active
-    BOOT_ON = (0b1 << 7)   ///< Reboot phase is running
-};
-
-static const uint8_t FIFO_STATUS1_addr{0x25};  ///< FIFO status register 1
-static const uint8_t FIFO_STATUS2_addr{0x26};  ///< FIFO status register 2
-enum FIFO_STATUS2 : uint8_t
-{
-    FIFO_FULL_IA = (0b1 << 5),  ///< FIFO full status
-    FIFO_OVR_IA  = (0b1 << 6),  ///< FIFO overrun status
-    FIFO_WTM_IA  = (0b1 << 7)   ///< FIFO threshold status
-};
-
-static const uint8_t STATUS_addr{0x27};  ///< Status register
-enum STATUS : uint8_t
-{
-    P_DA = (0b1 << 0),  ///< Pressure data available
-    T_DA = (0b1 << 1),  ///< Temperature data available
-    P_OR = (0b1 << 4),  ///< Pressure data overrun
-    T_OR = (0b1 << 5)   ///< Temperature data overrun
-};
-
-static const uint8_t PRESS_OUT_XL_addr{
-    0x28};  ///< Pressure output value LSB data
-static const uint8_t PRESS_OUT_L_addr{
-    0x29};  ///< Pressure output value middle data
-static const uint8_t PRESS_OUT_H_addr{
-    0x2a};  ///< Pressure output value MSB data
-static const uint8_t TEMP_OUT_L_addr{
-    0x2b};  ///< Temperature output value LSB data
-static const uint8_t TEMP_OUT_H_addr{
-    0x2c};  ///< Temperature output value MSB data
-static const uint8_t FIFO_DATA_OUT_PRESS_XL_addr{
-    0x78};  ///< FIFO pressure output LSB data
-static const uint8_t FIFO_DATA_OUT_PRESS_L_addr{
-    0x79};  ///< FIFO pressure output middle data
-static const uint8_t FIFO_DATA_OUT_PRESS_H_addr{
-    0x7a};  ///< FIFO pressure output MSB data
-
 LPS28DFW::LPS28DFW(I2C& i2c, bool sa0, SensorConfig sensorConfig)
-    : i2c(i2c), i2cConfig{(sa0 ? lsp28dfwAddress1 : lsp28dfwAddress0),
-                          I2CDriver::Addressing::BIT7,
-                          I2CDriver::Speed::MAX_SPEED},
-      sensorConfig(sensorConfig)
+    : i2c(i2c), sensorConfig(sensorConfig),
+      i2cConfig{(sa0 ? LPS28DFWDefs::lsp28dfwAddress1
+                     : LPS28DFWDefs::lsp28dfwAddress0),
+                I2CDriver::Addressing::BIT7, I2CDriver::Speed::MAX_SPEED},
+      pressureSensitivity(4096)
 {
-    pressureSensitivity = 4096;  // [LSB/hPa]
 }
 
 bool LPS28DFW::init()
@@ -181,18 +78,19 @@ bool LPS28DFW::setConfig(const SensorConfig& newSensorConfig)
             case Mode::ONE_SHOT_MODE:
                 sensorConfig = {newSensorConfig.fsr, newSensorConfig.avg,
                                 Mode::ONE_SHOT_MODE, ODR::ONE_SHOT, false};
-                fifo_ctrl |= FIFO_CTRL::BYPASS;
+                fifo_ctrl |= LPS28DFWDefs::FIFO_CTRL::BYPASS;
                 break;
             case Mode::CONTINUOUS_MODE:
                 sensorConfig = newSensorConfig;
-                fifo_ctrl |= FIFO_CTRL::CONTINUOUS;
+                fifo_ctrl |= LPS28DFWDefs::FIFO_CTRL::CONTINUOUS;
                 break;
             default:
                 LOG_ERR(logger, "Mode not supported");
                 break;
         }
 
-        if (!i2c.writeRegister(i2cConfig, FIFO_CTRL_addr, fifo_ctrl))
+        if (!i2c.writeRegister(i2cConfig, LPS28DFWDefs::FIFO_CTRL_addr,
+                               fifo_ctrl))
         {
             lastError = BUS_FAULT;
             return false;
@@ -223,19 +121,19 @@ bool LPS28DFW::selfTest()
 
     // Checking the whoami value to assure communication
     uint8_t whoamiValue{0};
-    if (!i2c.readRegister(i2cConfig, WHO_AM_I, whoamiValue))
+    if (!i2c.readRegister(i2cConfig, LPS28DFWDefs::WHO_AM_I, whoamiValue))
     {
         LOG_ERR(logger, "Can't communicate with the sensor");
         lastError = BUS_FAULT;
         return false;
     }
 
-    if (whoamiValue != WHO_AM_I_VALUE)
+    if (whoamiValue != LPS28DFWDefs::WHO_AM_I_VALUE)
     {
         LOG_ERR(logger,
                 "WHO_AM_I value differs from expectation: read 0x{02x} "
                 "but expected 0x{02x}",
-                whoamiValue, WHO_AM_I_VALUE);
+                whoamiValue, LPS28DFWDefs::WHO_AM_I_VALUE);
         lastError = INVALID_WHOAMI;
         return false;
     }
@@ -245,7 +143,8 @@ bool LPS28DFW::selfTest()
 
 bool LPS28DFW::setAverage(AVG avg)
 {
-    if (!i2c.writeRegister(i2cConfig, CTRL_REG1_addr, sensorConfig.odr | avg))
+    if (!i2c.writeRegister(i2cConfig, LPS28DFWDefs::CTRL_REG1_addr,
+                           sensorConfig.odr | avg))
     {
         lastError = BUS_FAULT;
         return false;
@@ -257,7 +156,8 @@ bool LPS28DFW::setAverage(AVG avg)
 
 bool LPS28DFW::setOutputDataRate(ODR odr)
 {
-    if (!i2c.writeRegister(i2cConfig, CTRL_REG1_addr, odr | sensorConfig.avg))
+    if (!i2c.writeRegister(i2cConfig, LPS28DFWDefs::CTRL_REG1_addr,
+                           odr | sensorConfig.avg))
     {
         lastError = BUS_FAULT;
         return false;
@@ -270,7 +170,7 @@ bool LPS28DFW::setOutputDataRate(ODR odr)
 bool LPS28DFW::setFullScaleRange(FullScaleRange fs)
 {
     uint8_t ctrl_reg2;
-    if (!i2c.readRegister(i2cConfig, CTRL_REG2_addr, ctrl_reg2))
+    if (!i2c.readRegister(i2cConfig, LPS28DFWDefs::CTRL_REG2_addr, ctrl_reg2))
     {
         lastError = BUS_FAULT;
         return false;
@@ -279,15 +179,15 @@ bool LPS28DFW::setFullScaleRange(FullScaleRange fs)
     if (fs == FullScaleRange::FS_1260)
     {
         pressureSensitivity = 4096;  // hPa
-        ctrl_reg2           = (ctrl_reg2 & ~CTRL_REG2::FS_MODE);
+        ctrl_reg2           = (ctrl_reg2 & ~LPS28DFWDefs::CTRL_REG2::FS_MODE);
     }
     else
     {
         pressureSensitivity = 2048;  // hPa
-        ctrl_reg2           = (ctrl_reg2 | CTRL_REG2::FS_MODE);
+        ctrl_reg2           = (ctrl_reg2 | LPS28DFWDefs::CTRL_REG2::FS_MODE);
     }
 
-    if (!i2c.writeRegister(i2cConfig, CTRL_REG2_addr, ctrl_reg2))
+    if (!i2c.writeRegister(i2cConfig, LPS28DFWDefs::CTRL_REG2_addr, ctrl_reg2))
     {
         lastError = BUS_FAULT;
         return false;
@@ -299,8 +199,9 @@ bool LPS28DFW::setFullScaleRange(FullScaleRange fs)
 
 bool LPS28DFW::setDRDYInterrupt(bool drdy)
 {
-    if (!i2c.writeRegister(i2cConfig, CTRL_REG4_addr,
-                           (drdy ? (INT_EN | DRDY) : 0)))
+    if (!i2c.writeRegister(
+            i2cConfig, LPS28DFWDefs::CTRL_REG4_addr,
+            (drdy ? (LPS28DFWDefs::INT_EN | LPS28DFWDefs::DRDY) : 0)))
     {
         lastError = BUS_FAULT;
         return false;
@@ -343,10 +244,13 @@ LPS28DFWData LPS28DFW::sampleImpl()
         uint8_t ctrl_reg2_val{0};
         // reading 5 bytes if also Temperature new sample, otherwise only the 3
         // pressure sensors bytes
-        if (!(i2c.readRegister(i2cConfig, CTRL_REG2_addr, ctrl_reg2_val) &&
-              i2c.writeRegister(i2cConfig, CTRL_REG2_addr,
-                                ctrl_reg2_val | CTRL_REG2::ONE_SHOT_START) &&
-              i2c.readFromRegister(i2cConfig, PRESS_OUT_XL_addr, val, 5)))
+        if (!(i2c.readRegister(i2cConfig, LPS28DFWDefs::CTRL_REG2_addr,
+                               ctrl_reg2_val) &&
+              i2c.writeRegister(
+                  i2cConfig, LPS28DFWDefs::CTRL_REG2_addr,
+                  ctrl_reg2_val | LPS28DFWDefs::CTRL_REG2::ONE_SHOT_START) &&
+              i2c.readFromRegister(i2cConfig, LPS28DFWDefs::PRESS_OUT_XL_addr,
+                                   val, 5)))
         {
             lastError = BUS_FAULT;
             return lastSample;
@@ -358,19 +262,20 @@ LPS28DFWData LPS28DFW::sampleImpl()
         return data;
     }
 
-    if (!i2c.readRegister(i2cConfig, STATUS_addr, status))
+    if (!i2c.readRegister(i2cConfig, LPS28DFWDefs::STATUS_addr, status))
     {
         lastError = BUS_FAULT;
         return lastSample;
     }
 
     // If pressure new data present
-    if (status & STATUS::P_DA)
+    if (status & LPS28DFWDefs::STATUS::P_DA)
     {
         // reading 5 bytes if also Temperature new sample, otherwise only the 3
         // pressure sensors bytes
-        if (!i2c.readFromRegister(i2cConfig, PRESS_OUT_XL_addr, val,
-                                  ((status & STATUS::T_DA) ? 5 : 3)))
+        if (!i2c.readFromRegister(
+                i2cConfig, LPS28DFWDefs::PRESS_OUT_XL_addr, val,
+                ((status & LPS28DFWDefs::STATUS::T_DA) ? 5 : 3)))
         {
             lastError = BUS_FAULT;
             return lastSample;
@@ -379,7 +284,7 @@ LPS28DFWData LPS28DFW::sampleImpl()
         data.pressure = convertPressure(val[0], val[1], val[2]);
 
         // If temperature new data present
-        if (status & STATUS::T_DA)
+        if (status & LPS28DFWDefs::STATUS::T_DA)
         {
             data.temperature = convertTemperature(val[3], val[4]);
         }

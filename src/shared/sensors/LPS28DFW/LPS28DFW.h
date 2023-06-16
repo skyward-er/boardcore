@@ -176,8 +176,8 @@ private:
     float convertTemperature(uint8_t tempL, uint8_t tempH);
 
     I2C& i2c;                             ///< I2C bus on which the sensor lays
-    I2CDriver::I2CSlaveConfig i2cConfig;  ///< I2C address and speed mode
     SensorConfig sensorConfig;            ///< Sensor settings
+    I2CDriver::I2CSlaveConfig i2cConfig;  ///< I2C address and speed mode
     bool isInitialized =
         false;  ///< Flag to tell if the sensor has been initialized
     uint16_t pressureSensitivity = 4096;  ///< pressure sensitivity [LSB/hPa]
