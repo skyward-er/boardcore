@@ -120,6 +120,21 @@ private:
     void readFromFifo();
 
     /**
+     * @brief Utility function to handle the saving of a sample inside the fifo
+     * `lastFifo`. This operation could fail if the data to be pushed has the
+     * same timestamp of the last value pushed inside `lastFifo` or the
+     * timestamp is 0: in this case nothing happens to the fifo, data inside
+     * `timeslot` is discarded.
+     *
+     * @param timeslot The timeslot containing data to be pushed inside the
+     * fifo.
+     * @param fifoIdx The current index of the fifo, pointing to the current
+     * writable cell. Updated if operation is successful, unchanged otherwise.
+     */
+    void pushIntoFifo(LSM6DSRXDefs::FifoTimeslotData& timeslot,
+                      uint16_t& fifoIdx);
+
+    /**
      * @brief Returns the number of unread data in the fifo.
      */
     uint16_t unreadDataInFifo();

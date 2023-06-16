@@ -775,16 +775,7 @@ void LSM6DSRX::readFromFifo()
                 // Check if we can push into fifo (both samples are present)
                 if (timestamps[timeslotTag].accPresent)
                 {
-                    // push into fifo
-                    lastFifo[idxFifo] = timestamps[timeslotTag].data;
-                    ++idxFifo;
-
-                    // update lastValidSample
-                    lastValidSample = timestamps[timeslotTag].data;
-
-                    // reset data
-                    timestamps[timeslotTag].accPresent = false;
-                    timestamps[timeslotTag].gyrPresent = false;
+                    pushIntoFifo(timestamps[timeslotTag], idxFifo);
                 }
 
                 break;
@@ -811,16 +802,7 @@ void LSM6DSRX::readFromFifo()
                 // Check if we can push into fifo (both samples are present)
                 if (timestamps[timeslotTag].gyrPresent)
                 {
-                    // push into fifo
-                    lastFifo[idxFifo] = timestamps[timeslotTag].data;
-                    ++idxFifo;
-
-                    // update lastValidSample
-                    lastValidSample = timestamps[timeslotTag].data;
-
-                    // reset data
-                    timestamps[timeslotTag].accPresent = false;
-                    timestamps[timeslotTag].gyrPresent = false;
+                    pushIntoFifo(timestamps[timeslotTag], idxFifo);
                 }
 
                 break;
@@ -866,6 +848,31 @@ void LSM6DSRX::readFromFifo()
     correlateTimestamps();
 
     lastFifoLevel = idxFifo;
+}
+
+void LSM6DSRX::pushIntoFifo(LSM6DSRXDefs::FifoTimeslotData& timeslot,
+                            uint16_t& fifoIdx)
+{
+    // reset flags (done even if data gets discarded)
+    timeslot.accPresent = false;
+    timeslot.gyrPresent = false;
+
+    // check if data can be pushed
+    if ((fifoIdx > 0 && timeslot.data.accelerationTimestamp ==
+                            lastFifo[fifoIdx - 1].accelerationTimestamp) ||
+        timeslot.data.accelerationTimestamp == 0)
+    {
+        // the new sample has the same timestamp of the previous one or
+        // timestamp is 0 --> discarded
+        return;
+    }
+
+    // push into fifo and update index
+    lastFifo[fifoIdx] = timeslot.data;
+    ++fifoIdx;
+
+    // update lastValidSample
+    lastValidSample = timeslot.data;
 }
 
 uint16_t LSM6DSRX::unreadDataInFifo()
