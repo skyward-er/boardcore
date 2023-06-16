@@ -30,6 +30,12 @@ namespace LPS28DFWDefs
 {
 static const uint16_t lsp28dfwAddress0{0b1011100};
 static const uint16_t lsp28dfwAddress1{0b1011101};
+static const uint16_t pressureSensitivity1260hPa{
+    4096};  ///< pressure sensitivity with FSR at 1260 hPa [LSB/hPa]
+static const uint16_t pressureSensitivity4060hPa{
+    2048};  ///< pressure sensitivity with FSR at 4060 hPa [LSB/hPa]
+static const uint16_t temperatureSensitivity{
+    100};  ///< temperature sensitivity [LSB/°C]
 
 static const uint8_t INTERRUPT_CFG{
     0x0B};  ///< Interrupt mode for pressure acquisition configuration
