@@ -96,7 +96,26 @@ private:
         REG_CTRL7_G = 0x16,   ///< enable/disable high performance mode for the
                               ///< gyroscope
 
-        REG_FIFO_CTRL4 = 0x0A,  ///< fifo control register 4 (fifo mode)
+        REG_FIFO_CTRL3 = 0x09,  ///< fifo control register 3 (select batch data
+                                ///< rate for gyro and acc)
+        REG_FIFO_CTRL4 =
+            0x0A,  ///< fifo control register 4 (select fifo mode, batch data
+                   ///< rate for temperature sensor and the decimation factor
+                   ///< for timestamp batching)
+
+        REG_FIFO_STATUS1 =
+            0x3A,  ///< Gives number of unread sensor data stored in FIFO.
+        REG_FIFO_STATUS2 = 0x3B,  ///< Gives number of unread sensor data and
+                                  ///< the current status (watermark, overrun,
+                                  ///< full, BDR counter) of the FIFO.
+
+        REG_FIFO_DATA_OUT_TAG = 0x78,
+        REG_FIFO_DATA_OUT_X_L = 0x79,
+        REG_FIFO_DATA_OUT_X_H = 0x7A,
+        REG_FIFO_DATA_OUT_Y_L = 0x7B,
+        REG_FIFO_DATA_OUT_Y_H = 0x7C,
+        REG_FIFO_DATA_OUT_Z_L = 0x7D,
+        REG_FIFO_DATA_OUT_Z_H = 0x7E,
 
         REG_OUTX_L_A =
             0x28,  ///< Low bits output register for the accelerometer (x axis)
