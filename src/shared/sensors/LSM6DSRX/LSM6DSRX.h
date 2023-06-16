@@ -33,10 +33,7 @@
 namespace Boardcore
 {
 
-class LSM6DSRX
-    : SensorFIFO<
-          LSM6DSRXData,
-          550>  //////////////////////////////////////////////////////////////////////////////
+class LSM6DSRX : SensorFIFO<LSM6DSRXData, 50>
 {
 public:
     /**
@@ -95,15 +92,36 @@ public:
      * @brief Performs a really simple reading from the FIFO buffer.
      * @param buf Buffer where to save data.
      * @param num Number of batch to be red from the FIFO.
-     * @return Returns number of batch red from the FIFO and stored in the
-     * buffer.
      */
-    int readFromFifo()
+    void readFromFifo()
     {
         uint8_t value        = 0;
         int numUnreadSamples = 0;
         SPITransaction spi{m_spiSlave};
-        int num = lastFifo.max_size();
+        int num = lastFifo.max_size();  // number of sample to read
+        int i   = 0;
+
+        // when extracting data from fifo i get data only from one sensor, but
+        // the struct LSM6DSRXData is made to have data from both sensors. The
+        // idea is to copy the value from the last valid sample for the sensor
+        // that hasn't received data.
+        LSM6DSRXData lastValidSample;
+        lastValidSample.accelerationTimestamp = 0;
+        lastValidSample.angularSpeedTimestamp = 0;
+        lastValidSample.accelerationX         = 0.0;
+        lastValidSample.accelerationY         = 0.0;
+        lastValidSample.accelerationZ         = 0.0;
+        lastValidSample.angularSpeedX         = 0.0;
+        lastValidSample.angularSpeedY         = 0.0;
+        lastValidSample.angularSpeedZ         = 0.0;
+
+        // data has 2bits tags that determins the corresponding time slot.
+        // 00 -> first element of the array (timestamps[0])
+        // 11 -> last element of the array (timestamps[3])
+        // when a new timestamp is received from the fifo the array is updated.
+        // NOTE: those timestamps are already converted from sensor ones to
+        // TimestampTimer class.
+        uint64_t timestamps[4] = {0};
 
         // reads the number of unread samples in the fifo
         numUnreadSamples =
@@ -117,21 +135,107 @@ public:
             num = numUnreadSamples;
         }
 
-        for (int i = 0; i < num; ++i)
+        for (i = 0; i < num; ++i)
         {
-            uint8_t tag = spi.readRegister(LSM6DSRXDefs::REG_FIFO_DATA_OUT_TAG);
+            const uint8_t sampleTag =
+                spi.readRegister(LSM6DSRXDefs::REG_FIFO_DATA_OUT_TAG);
+            const uint8_t sensorTag   = (sampleTag >> 3) & 31;
+            const uint8_t timeslotTag = sampleTag & 6;  // & 0b0110
 
-            // differenziare in base al tag
+            switch (sensorTag)
+            {
+                case 0x01:
+                    // gyroscope data
+                    lastFifo[i].angularSpeedX = getAxisData(
+                        LSM6DSRXDefs::REG_FIFO_DATA_OUT_X_L,
+                        LSM6DSRXDefs::REG_FIFO_DATA_OUT_X_H, m_sensitivityGyr);
+                    lastFifo[i].angularSpeedY = getAxisData(
+                        LSM6DSRXDefs::REG_FIFO_DATA_OUT_Y_L,
+                        LSM6DSRXDefs::REG_FIFO_DATA_OUT_Y_H, m_sensitivityGyr);
+                    lastFifo[i].angularSpeedZ = getAxisData(
+                        LSM6DSRXDefs::REG_FIFO_DATA_OUT_Z_L,
+                        LSM6DSRXDefs::REG_FIFO_DATA_OUT_Z_H, m_sensitivityGyr);
 
-            // buf[i].x = getAxisData(LSM6DSRXDefs::REG_FIFO_DATA_OUT_X_L,
-            //                        LSM6DSRXDefs::REG_FIFO_DATA_OUT_X_H);
-            // buf[i].y = getAxisData(LSM6DSRXDefs::REG_FIFO_DATA_OUT_Y_L,
-            //                        LSM6DSRXDefs::REG_FIFO_DATA_OUT_Y_H);
-            // buf[i].z = getAxisData(LSM6DSRXDefs::REG_FIFO_DATA_OUT_Z_L,
-            //                        LSM6DSRXDefs::REG_FIFO_DATA_OUT_Z_H);
+                    // TODO: COME PRENDO TIMESTAMP?
+                    lastFifo[i].angularSpeedTimestamp = timestamps[timeslotTag];
+
+                    // CHECK: va bene cosi'? o devo vedere quali valori hanno lo
+                    // stesso timestamp e metterli insieme?
+                    lastFifo[i].accelerationX = lastValidSample.accelerationX;
+                    lastFifo[i].accelerationY = lastValidSample.accelerationY;
+                    lastFifo[i].accelerationZ = lastValidSample.accelerationZ;
+                    lastFifo[i].accelerationTimestamp =
+                        lastValidSample.accelerationTimestamp;
+
+                    // update last valid sample for the gyroscope
+                    lastValidSample.angularSpeedTimestamp =
+                        lastFifo[i].angularSpeedTimestamp;
+                    lastValidSample.angularSpeedX = lastFifo[i].angularSpeedX;
+                    lastValidSample.angularSpeedY = lastFifo[i].angularSpeedY;
+                    lastValidSample.angularSpeedZ = lastFifo[i].angularSpeedZ;
+
+                    break;
+                case 0x02:
+                    // accelerometer data
+                    lastFifo[i].accelerationX = getAxisData(
+                        LSM6DSRXDefs::REG_FIFO_DATA_OUT_X_L,
+                        LSM6DSRXDefs::REG_FIFO_DATA_OUT_X_H, m_sensitivityAcc);
+                    lastFifo[i].accelerationY = getAxisData(
+                        LSM6DSRXDefs::REG_FIFO_DATA_OUT_Y_L,
+                        LSM6DSRXDefs::REG_FIFO_DATA_OUT_Y_H, m_sensitivityAcc);
+                    lastFifo[i].accelerationZ = getAxisData(
+                        LSM6DSRXDefs::REG_FIFO_DATA_OUT_Z_L,
+                        LSM6DSRXDefs::REG_FIFO_DATA_OUT_Z_H, m_sensitivityAcc);
+
+                    // TODO: COME PRENDO TIMESTAMP?
+                    lastFifo[i].accelerationTimestamp = timestamps[timeslotTag];
+
+                    // CHECK: va bene cosi'? o devo vedere quali valori hanno lo
+                    // stesso timestamp e metterli insieme?
+                    lastFifo[i].angularSpeedX = lastValidSample.angularSpeedX;
+                    lastFifo[i].angularSpeedY = lastValidSample.angularSpeedY;
+                    lastFifo[i].angularSpeedZ = lastValidSample.angularSpeedZ;
+                    lastFifo[i].angularSpeedTimestamp =
+                        lastValidSample.angularSpeedTimestamp;
+
+                    // update lastValidSampe for the accelerometer
+                    lastValidSample.accelerationTimestamp =
+                        lastFifo[i].accelerationTimestamp;
+                    lastValidSample.accelerationX = lastFifo[i].accelerationX;
+                    lastValidSample.accelerationY = lastFifo[i].accelerationY;
+                    lastValidSample.accelerationZ = lastFifo[i].accelerationZ;
+
+                    break;
+                case 0x03:
+                    // temperature data
+
+                    // NECESSARIO? VERRA' CAMPIONATA? perche' se si devo
+                    // aggiungere il valore a LSM6DSRXData
+
+                    break;
+                case 0x04:
+                    // timestamp data --> update timestamps
+
+                    // assemblo dati
+                    uint64_t t = static_cast<uint64_t>(
+                        getAxisData(LSM6DSRXDefs::REG_FIFO_DATA_OUT_X_L,
+                                    LSM6DSRXDefs::REG_FIFO_DATA_OUT_X_H));
+                    t |= static_cast<uint64_t>(
+                             getAxisData(LSM6DSRXDefs::REG_FIFO_DATA_OUT_Y_L,
+                                         LSM6DSRXDefs::REG_FIFO_DATA_OUT_Y_H))
+                         << 16;
+
+                    timestamps[timeslotTag] = convertTimestamp(t);
+
+                    break;
+                    // default:
+                    //     // last_error_bad_data;
+                    //     break;
+            }
         }
 
-        return num;
+        // CHECK
+        lastFifoLevel = num;  // corretto??
     }
 
     /**
@@ -265,6 +369,13 @@ private:
      * @brief Returns the timestamp from the sensor.
      */
     uint32_t getSensorTimestamp();
+
+    /**
+     * @brief Converts timestamp from the value given by the sensor to the one
+     * given by TimestampTimer class.
+     * @param t The timestamp to be converted.
+     */
+    uint64_t convertTimestamp(uint64_t t);
 };
 
 }  // namespace Boardcore

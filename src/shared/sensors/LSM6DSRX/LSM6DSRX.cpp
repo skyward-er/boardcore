@@ -532,6 +532,8 @@ void LSM6DSRX::getGyroscopeData(LSM6DSRXData& data)
 {
     // D(assert(m_isInit && "init() was not called"));
 
+    data.angularSpeedTimestamp = TimestampTimer::getTimestamp();
+
     data.angularSpeedX =
         getAxisData(LSM6DSRXDefs::REG_OUTX_L_G, LSM6DSRXDefs::REG_OUTX_H_G,
                     m_sensitivityGyr);
@@ -619,5 +621,7 @@ float LSM6DSRX::getAxisData(LSM6DSRXDefs::Registers lowReg,
     float ret = static_cast<float>(sample) * sensitivity;
     return ret;
 }
+
+uint64_t LSM6DSRX::convertTimestamp(uint64_t t) { return t; }
 
 }  // namespace Boardcore
