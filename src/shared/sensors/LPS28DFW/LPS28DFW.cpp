@@ -32,9 +32,11 @@ LPS28DFW::LPS28DFW(I2C& i2c, SensorConfig sensorConfig)
     : i2c(i2c), sensorConfig(sensorConfig),
       i2cConfig{(sensorConfig.sa0 ? LPS28DFWDefs::lsp28dfwAddress1
                                   : LPS28DFWDefs::lsp28dfwAddress0),
-                I2CDriver::Addressing::BIT7, I2CDriver::Speed::MAX_SPEED},
-      pressureSensitivity(4096)
+                I2CDriver::Addressing::BIT7, I2CDriver::Speed::MAX_SPEED}
 {
+    pressureSensitivity = (sensorConfig.fsr == FullScaleRange::FS_1260
+                               ? LPS28DFWDefs::pressureSensitivity1260hPa
+                               : LPS28DFWDefs::pressureSensitivity4060hPa);
 }
 
 bool LPS28DFW::init()
@@ -179,12 +181,12 @@ bool LPS28DFW::setFullScaleRange(FullScaleRange fs)
 
     if (fs == FullScaleRange::FS_1260)
     {
-        pressureSensitivity = 4096;  // hPa
+        pressureSensitivity = LPS28DFWDefs::pressureSensitivity1260hPa;
         ctrl_reg2           = (ctrl_reg2 & ~LPS28DFWDefs::CTRL_REG2::FS_MODE);
     }
     else
     {
-        pressureSensitivity = 2048;  // hPa
+        pressureSensitivity = LPS28DFWDefs::pressureSensitivity4060hPa;
         ctrl_reg2           = (ctrl_reg2 | LPS28DFWDefs::CTRL_REG2::FS_MODE);
     }
 
@@ -207,6 +209,7 @@ bool LPS28DFW::setDRDYInterrupt(bool drdy)
         lastError = BUS_FAULT;
         return false;
     }
+
     sensorConfig.drdy = drdy;
     return true;
 }
@@ -227,7 +230,7 @@ float LPS28DFW::convertTemperature(uint8_t tempL, uint8_t tempH)
 {
     // Temperature conversion
     int16_t temp_temp = (tempH << 8) | (tempL << 0);
-    return ((float)temp_temp) / temperatureSensitivity;
+    return ((float)temp_temp) / LPS28DFWDefs::temperatureSensitivity;
 }
 
 LPS28DFWData LPS28DFW::sampleImpl()

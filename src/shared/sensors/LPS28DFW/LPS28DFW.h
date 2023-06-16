@@ -177,9 +177,7 @@ private:
     I2CDriver::I2CSlaveConfig i2cConfig;  ///< I2C address and speed mode
     bool isInitialized =
         false;  ///< Flag to tell if the sensor has been initialized
-    uint16_t pressureSensitivity = 4096;  ///< pressure sensitivity [LSB/hPa]
-    uint16_t temperatureSensitivity =
-        100;  ///< temperature sensitivity [LSB/°C]
+    uint16_t pressureSensitivity;  ///< pressure sensitivity [LSB/hPa]
     PrintLogger logger = Logging::getLogger("lps28dfw");
 };
 
