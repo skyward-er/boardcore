@@ -50,10 +50,13 @@ int main()
     busConfiguration.mode =
         SPI::Mode::MODE_0;  // Set clock polarity to 0 and phase to 1
 
-    LSM6DSRX sens(bus, csPin, busConfiguration,
-                  LSM6DSRX::BDU::CONTINUOUS_UPDATE, LSM6DSRX::ACC_ODR::HZ_104,
-                  LSM6DSRX::OPERATING_MODE::NORMAL,
-                  LSM6DSRX::ACC_FULLSCALE::G2);
+    LSM6DSRXConfig sensConfig;
+    sensConfig.bdu = LSM6DSRXConfig::BDU::CONTINUOUS_UPDATE;
+    sensConfig.fsAcc = LSM6DSRXConfig::ACC_FULLSCALE::G2;
+    sensConfig.odrAcc = LSM6DSRXConfig::ACC_ODR::HZ_104;
+    sensConfig.opModeAcc = LSM6DSRXConfig::OPERATING_MODE::NORMAL;
+
+    LSM6DSRX sens(bus, csPin, busConfiguration, sensConfig);
 
     if (sens.init() == false)
     {
