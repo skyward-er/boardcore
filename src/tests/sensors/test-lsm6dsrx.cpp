@@ -54,14 +54,14 @@ int main()
     sensConfig.bdu = LSM6DSRXConfig::BDU::CONTINUOUS_UPDATE;
 
     sensConfig.fsAcc     = LSM6DSRXConfig::ACC_FULLSCALE::G4;
-    sensConfig.odrAcc    = LSM6DSRXConfig::ACC_ODR::HZ_12_5;
+    sensConfig.odrAcc    = LSM6DSRXConfig::ACC_ODR::HZ_416;
     sensConfig.opModeAcc = LSM6DSRXConfig::OPERATING_MODE::NORMAL;
 
     sensConfig.fsGyr     = LSM6DSRXConfig::GYR_FULLSCALE::DPS_125;
-    sensConfig.odrGyr    = LSM6DSRXConfig::GYR_ODR::HZ_12_5;
+    sensConfig.odrGyr    = LSM6DSRXConfig::GYR_ODR::HZ_416;
     sensConfig.opModeGyr = LSM6DSRXConfig::OPERATING_MODE::NORMAL;
 
-    sensConfig.fifoMode = LSM6DSRXConfig::FIFO_MODE::BYPASS;
+    sensConfig.fifoMode = LSM6DSRXConfig::FIFO_MODE::CONTINUOUS;
     sensConfig.fifoTimestampDecimation =
         LSM6DSRXConfig::FIFO_TIMESTAMP_DECIMATION::DISABLED;
     sensConfig.fifoTemperatureBdr =
@@ -78,22 +78,60 @@ int main()
         }
     }
 
-    LSM6DSRX::SensorData data{0.0, 0.0, 0.0};
+    Thread::sleep(
+        1000);  // sleep in order to produce some data before reading from FIFO.
+
+    // LSM6DSRX::SensorData data{0.0, 0.0, 0.0};
+    const int SIZE = 4;
+    LSM6DSRX::FifoData buf[SIZE];
+
     while (true)
     {
-        sens.getAccelerometerData(data);
-        TRACE("Accelerometer:\n");
-        TRACE("x: %f\n", data.x);
-        TRACE("y: %f\n", data.y);
-        TRACE("z: %f\n\n", data.z);
+        // sens.getAccelerometerData(data);
+        // TRACE("Accelerometer:\n");
+        // TRACE("x: %f\n", data.x);
+        // TRACE("y: %f\n", data.y);
+        // TRACE("z: %f\n\n", data.z);
 
-        sens.getGyroscopeData(data);
-        TRACE("Gyroscope:\n");
-        TRACE("x: %f\n", data.x);
-        TRACE("y: %f\n", data.y);
-        TRACE("z: %f\n\n\n", data.z);
+        // sens.getGyroscopeData(data);
+        // TRACE("Gyroscope:\n");
+        // TRACE("x: %f\n", data.x);
+        // TRACE("y: %f\n", data.y);
+        // TRACE("z: %f\n\n\n", data.z);
 
-        Thread::sleep(1000);
+        const int numBatchRed = sens.readFromFifo(buf, SIZE);
+
+        TRACE("Number of batch in buf: %d\n", numBatchRed);
+        float sensitivity = 0.0;
+        for (int i = 0; i < numBatchRed; ++i)
+        {
+            // read sensor tag
+            uint8_t tagSensor = (buf[i].tag >> 3) & 31;
+            switch (tagSensor)
+            {
+                case 0x01:
+                    // gyroscope
+                    TRACE("%d) GYROSCOPE\n", i);
+                    sensitivity = 4.375;
+                    break;
+                case 0x02:
+                    // accelerometer
+                    TRACE("%d) ACCELEROMETER\n", i);
+                    sensitivity = 0.122;
+                    break;
+                default:
+                    TRACE("%d) UNRECOGNIZED DATA\n", i);
+                    sensitivity = 1.0;
+                    break;
+            }
+
+            // print data
+            TRACE("x: %f\n", static_cast<float>(buf[i].x) * sensitivity);
+            TRACE("y: %f\n", static_cast<float>(buf[i].y) * sensitivity);
+            TRACE("z: %f\n\n\n", static_cast<float>(buf[i].z) * sensitivity);
+        }
+
+        Thread::sleep(2000);
     }
 
     return 0;

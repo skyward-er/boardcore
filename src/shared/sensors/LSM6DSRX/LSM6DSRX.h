@@ -44,6 +44,17 @@ public:
     };
 
     /**
+     * @brief Struct used to store data from FIFO.
+     */
+    struct FifoData
+    {
+        int16_t x;  ///< value red from REG_FIFO_DATA_OUT_X
+        int16_t y;
+        int16_t z;
+        uint8_t tag;  ///< value red from REG_FIFO_DATA_OUT_TAG
+    };
+
+    /**
      * @brief LSM6DSRX constructor.
      *
      * @param bus SPI bus.
@@ -70,6 +81,48 @@ public:
      * @param data The structure where data from the sensor is to be saved.
      */
     void getGyroscopeData(SensorData& data);
+
+    /**
+     * @brief Performs a really simple reading from the FIFO buffer.
+     * @param buf Buffer where to save data.
+     * @param num Number of batch to be red from the FIFO.
+     * @return Returns number of batch red from the FIFO and stored in the
+     * buffer.
+     */
+    int readFromFifo(FifoData buf[], int num)
+    {
+        uint8_t value        = 0;
+        int numUnreadSamples = 0;
+        SPITransaction spiTransaction{m_spiSlave};
+
+        // reads the number of unread samples in the fifo
+        numUnreadSamples =
+            static_cast<int>(spiTransaction.readRegister(REG_FIFO_STATUS1));
+        value = spiTransaction.readRegister(REG_FIFO_STATUS2);
+        numUnreadSamples |= static_cast<int>(value & 3) << 8;
+
+        if (numUnreadSamples < num)
+        {
+            // there is no enough data.
+            num = numUnreadSamples;
+        }
+
+        for (int i = 0; i < num; ++i)
+        {
+            {
+                SPITransaction spiTransaction{m_spiSlave};
+                buf[i].tag = spiTransaction.readRegister(REG_FIFO_DATA_OUT_TAG);
+            }
+            buf[i].x =
+                getAxisData(REG_FIFO_DATA_OUT_X_L, REG_FIFO_DATA_OUT_X_H);
+            buf[i].y =
+                getAxisData(REG_FIFO_DATA_OUT_Y_L, REG_FIFO_DATA_OUT_Y_H);
+            buf[i].z =
+                getAxisData(REG_FIFO_DATA_OUT_Z_L, REG_FIFO_DATA_OUT_Z_H);
+        }
+
+        return num;
+    }
 
 private:
     bool m_isInit = false;
@@ -165,6 +218,26 @@ private:
      * @param sensitivity Sensitivity value for the sample.
      */
     float getAxisData(Registers lowReg, Registers highReg, float sensitivity);
+
+    /**
+     * @brief Reads 16-bits data from the specified registers.
+     * @param lowReg Register containing the low bits of the output.
+     * @param highReg Register containing the high bits of the output.
+     */
+    int16_t getAxisData(Registers lowReg, Registers highReg)
+    {
+        int8_t low = 0, high = 0;
+        int16_t sample = 0;
+
+        SPITransaction transaction{m_spiSlave};
+
+        high = transaction.readRegister(highReg);
+        low  = transaction.readRegister(lowReg);
+
+        sample = combineHighLowBits(low, high);
+
+        return sample;
+    }
 
     /**
      * @brief Initialize the accelerometer.
