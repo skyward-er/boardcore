@@ -37,8 +37,16 @@ LSM6DSRX::LSM6DSRX(SPIBus& bus, miosix::GpioPin csPin,
 {
     isInit = false;
 
-    // check that the watermark value is suitable (it should be a 9bits number)
-    config.fifoWatermark = std::min(config.fifoWatermark, uint16_t(511));
+    // check that the watermark value is suitable
+    config.fifoWatermark = std::min(config.fifoWatermark, uint16_t(170));
+
+    /**
+     * watermark value is multiplied by 3, because every sample is composed of 3
+     * data: timestamp, accelerometer data, gyroscope data. The sensor's fifo
+     * contains all these data one by one. These data are then collected and
+     * crafted inside a single sample by the driver.
+     */
+    config.fifoWatermark *= 3;
 
     // check that ACC_ODR is set to HZ_1_6 only if OPERATING_MODE is equal to
     // NORMAL
@@ -707,8 +715,7 @@ void LSM6DSRX::readFromFifo()
     SPITransaction spi{spiSlave};
 
     // get number of sample to read
-    const uint16_t numSamples =
-        std::min(LSM6DSRXDefs::FIFO_SIZE, unreadDataInFifo());
+    const uint16_t numSamples = unreadDataInFifo();
 
     /**
      * Data has 2bits tags that determins the corresponding time slot.
