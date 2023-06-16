@@ -30,6 +30,9 @@ namespace Boardcore
 namespace LSM6DSRXDefs
 {
 
+/// @brief Fifo max size expressed as number of samples.
+const int FIFO_SIZE = 50;
+
 /// @brief Sensor who_am_i register value.
 const uint8_t WHO_AM_I_VALUE = 0x6B;
 
