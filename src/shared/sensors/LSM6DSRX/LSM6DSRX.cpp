@@ -125,15 +125,22 @@ bool LSM6DSRX::init()
         spiTransaction.writeRegister(LSM6DSRXDefs::REG_CTRL10_C, 1 << 5);
     }
 
-    // enable interrupts
+    // set interrupt
     {
-        SPITransaction spiTransaction{m_spiSlave};
-        spiTransaction.writeRegister(
+        SPITransaction spi{m_spiSlave};
+        spi.writeRegister(
             LSM6DSRXDefs::REG_INT1_CTRL,
             static_cast<uint8_t>(m_config.int1InterruptSelection));
-        spiTransaction.writeRegister(
+        spi.writeRegister(
             LSM6DSRXDefs::REG_INT2_CTRL,
             static_cast<uint8_t>(m_config.int2InterruptSelection));
+
+        // setto a caso watermark per la fifo
+        uint8_t numeroByte =
+            100;  // 100 campioni
+                  // //////////////////////////////////////////////////////////////////////
+        spi.writeRegister(LSM6DSRXDefs::REG_FIFO_CTRL1, numeroByte);
+        spi.writeRegister(LSM6DSRXDefs::REG_FIFO_CTRL2, 0);
     }
 
     m_isInit = true;

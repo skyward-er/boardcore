@@ -59,6 +59,9 @@ enum Registers
     REG_CTRL7_G = 0x16,   ///< enable/disable high performance mode for the
                           ///< gyroscope
 
+    REG_FIFO_CTRL1 = 0x07,
+    REG_FIFO_CTRL2 = 0x08,
+
     REG_FIFO_CTRL3 = 0x09,  ///< fifo control register 3 (select batch data
                             ///< rate for gyro and acc)
     REG_FIFO_CTRL4 = 0x0A,  ///< fifo control register 4 (select fifo mode,
