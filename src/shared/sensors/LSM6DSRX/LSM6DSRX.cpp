@@ -547,7 +547,7 @@ void LSM6DSRX::getGyroscopeData(LSM6DSRXData& data)
 
 uint32_t LSM6DSRX::getSensorTimestamp()
 {
-    D(assert(m_isInit && "init() was not called"));
+    // D(assert(m_isInit && "init() was not called"));
 
     SPITransaction spi{m_spiSlave};
 
@@ -691,7 +691,7 @@ void LSM6DSRX::readFromFifo()
         const uint8_t sampleTag =
             spi.readRegister(LSM6DSRXDefs::REG_FIFO_DATA_OUT_TAG);
         const uint8_t sensorTag   = (sampleTag >> 3) & 31;
-        const uint8_t timeslotTag = sampleTag & 6;  // & 0b0110
+        const uint8_t timeslotTag = (sampleTag & 6) >> 1;  // & 0b0110
 
         // read all registers
         uint8_t xl = spi.readRegister(LSM6DSRXDefs::REG_FIFO_DATA_OUT_X_L);
