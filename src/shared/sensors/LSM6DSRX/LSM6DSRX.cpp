@@ -125,6 +125,17 @@ bool LSM6DSRX::init()
         spiTransaction.writeRegister(LSM6DSRXDefs::REG_CTRL10_C, 1 << 5);
     }
 
+    // enable interrupts
+    {
+        SPITransaction spiTransaction{m_spiSlave};
+        spiTransaction.writeRegister(
+            LSM6DSRXDefs::REG_INT1_CTRL,
+            static_cast<uint8_t>(m_config.int1InterruptSelection));
+        spiTransaction.writeRegister(
+            LSM6DSRXDefs::REG_INT2_CTRL,
+            static_cast<uint8_t>(m_config.int2InterruptSelection));
+    }
+
     m_isInit = true;
     return true;
 }

@@ -46,20 +46,25 @@ int main()
     mosiPin.alternateFunction(6);
     mosiPin.mode(Mode::ALTERNATE);
 
+    GpioPin int1Pin(GPIOC_BASE, 15);  // PC15 interrupt pin 1
+    int1Pin.mode(Mode::INPUT);
+    GpioPin int2Pin(GPIOC_BASE, 13);  // PC13 interrupt pin 2
+    int2Pin.mode(Mode::INPUT);
+
     SPIBusConfig busConfiguration;  // Bus configuration for the sensor
     busConfiguration.clockDivider = SPI::ClockDivider::DIV_256;
     busConfiguration.mode =
         SPI::Mode::MODE_0;  // Set clock polarity to 0 and phase to 1
 
     LSM6DSRXConfig sensConfig;
-    sensConfig.bdu = LSM6DSRXConfig::BDU::CONTINUOUS_UPDATE;
+    sensConfig.bdu = LSM6DSRXConfig::BDU::UPDATE_AFTER_READ;
 
-    sensConfig.fsAcc     = LSM6DSRXConfig::ACC_FULLSCALE::G4;
-    sensConfig.odrAcc    = LSM6DSRXConfig::ACC_ODR::HZ_416;
+    sensConfig.fsAcc     = LSM6DSRXConfig::ACC_FULLSCALE::G2;
+    sensConfig.odrAcc    = LSM6DSRXConfig::ACC_ODR::HZ_1_6;
     sensConfig.opModeAcc = LSM6DSRXConfig::OPERATING_MODE::NORMAL;
 
     sensConfig.fsGyr     = LSM6DSRXConfig::GYR_FULLSCALE::DPS_125;
-    sensConfig.odrGyr    = LSM6DSRXConfig::GYR_ODR::HZ_416;
+    sensConfig.odrGyr    = LSM6DSRXConfig::GYR_ODR::HZ_12_5;
     sensConfig.opModeGyr = LSM6DSRXConfig::OPERATING_MODE::NORMAL;
 
     sensConfig.fifoMode = LSM6DSRXConfig::FIFO_MODE::CONTINUOUS;
@@ -67,6 +72,9 @@ int main()
         LSM6DSRXConfig::FIFO_TIMESTAMP_DECIMATION::DEC_1;
     sensConfig.fifoTemperatureBdr =
         LSM6DSRXConfig::FIFO_TEMPERATURE_BDR::DISABLED;
+
+    sensConfig.int1InterruptSelection = LSM6DSRXConfig::INTERRUPT::GYR_DRDY;
+    sensConfig.int2InterruptSelection = LSM6DSRXConfig::INTERRUPT::ACC_DRDY;
 
     LSM6DSRX sens(bus, csPin, busConfiguration, sensConfig);
 
@@ -93,36 +101,44 @@ int main()
         }
     }
 
-    Thread::sleep(
-        1000);  // sleep in order to produce some data before reading from FIFO.
+    // Thread::sleep(
+    //     1000);  // sleep in order to produce some data before reading from
+    //     FIFO.
 
-    // LSM6DSRX::SensorData data{0.0, 0.0, 0.0};
+    LSM6DSRX::SensorData data{0.0, 0.0, 0.0};
     // const int SIZE = 4;
     // LSM6DSRX::FifoData buf[SIZE];
 
+    int dataReady = 0;
     while (true)
     {
-        // sens.getAccelerometerData(data);
-        // TRACE("Accelerometer:\n");
-        // TRACE("x: %f\n", data.x);
-        // TRACE("y: %f\n", data.y);
-        // TRACE("z: %f\n\n", data.z);
+        // wait for data ready
+        dataReady = int1Pin.value();
+        while (dataReady != 1)
+        {
+            Thread::sleep(20);
+            dataReady = int1Pin.value();
+        }
 
-        // sens.getGyroscopeData(data);
-        // TRACE("Gyroscope:\n");
-        // TRACE("x: %f\n", data.x);
-        // TRACE("y: %f\n", data.y);
-        // TRACE("z: %f\n\n\n", data.z);
+        sens.getGyroscopeData(data);
+        TRACE("Gyroscope:\n");
+        TRACE("x: %f\n", data.x);
+        TRACE("y: %f\n", data.y);
+        TRACE("z: %f\n\n\n", data.z);
 
-        uint32_t sensTime  = sens.getSensorTimestamp();
-        uint32_t timestamp = TimestampTimer::getTimestamp();
-        long long delta    = sensTime - timestamp;
+        // wait for data ready
+        dataReady = int2Pin.value();
+        while (dataReady != 1)
+        {
+            Thread::sleep(20);
+            dataReady = int2Pin.value();
+        }
 
-        TRACE(
-            "Sensor timestamp: %u\n"
-            "Timestamp: %u\n"
-            "Delta: %lld\n\n\n",
-            sensTime, timestamp, delta);
+        sens.getAccelerometerData(data);
+        TRACE("Accelerometer:\n");
+        TRACE("x: %f\n", data.x);
+        TRACE("y: %f\n", data.y);
+        TRACE("z: %f\n\n", data.z);
 
         // const int numBatchRed = sens.readFromFifo(buf, SIZE);
         // TRACE("Number of batch in buf: %d\n", numBatchRed);
@@ -172,7 +188,7 @@ int main()
 
         // }
 
-        Thread::sleep(2000);
+        // Thread::sleep(2000);
     }
 
     return 0;
