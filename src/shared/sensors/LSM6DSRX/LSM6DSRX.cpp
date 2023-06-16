@@ -32,7 +32,7 @@ LSM6DSRX::LSM6DSRX(SPIBus& bus, miosix::GpioPin csPin,
                    SPIBusConfig busConfiguration, LSM6DSRXConfig& configuration)
     : m_spiSlave(bus, csPin, busConfiguration), m_config(configuration)
 {
-    switch (m_config.fsAcc)// pag. 10
+    switch (m_config.fsAcc)  // pag. 10
     {
         case LSM6DSRXConfig::ACC_FULLSCALE::G2:
             m_sensitivityAcc = 0.061;
@@ -51,6 +51,32 @@ LSM6DSRX::LSM6DSRX(SPIBus& bus, miosix::GpioPin csPin,
             m_sensitivityAcc = 0.061;
             break;
     };
+
+    switch (m_config.fsGyr)
+    {
+        case LSM6DSRXConfig::GYR_FULLSCALE::DPS_125:
+            m_sensitivityGyr = 4.375;
+            break;
+        case LSM6DSRXConfig::GYR_FULLSCALE::DPS_250:
+            m_sensitivityGyr = 8.75;
+            break;
+        case LSM6DSRXConfig::GYR_FULLSCALE::DPS_500:
+            m_sensitivityGyr = 17.5;
+            break;
+        case LSM6DSRXConfig::GYR_FULLSCALE::DPS_1000:
+            m_sensitivityGyr = 35.0;
+            break;
+        case LSM6DSRXConfig::GYR_FULLSCALE::DPS_2000:
+            m_sensitivityGyr = 70.0;
+            break;
+        case LSM6DSRXConfig::GYR_FULLSCALE::DPS_4000:
+            m_sensitivityGyr = 140.0;
+            break;
+        default:
+            m_config.fsGyr   = LSM6DSRXConfig::GYR_FULLSCALE::DPS_125;
+            m_sensitivityGyr = 4.375;
+            break;
+    }
 }
 
 bool LSM6DSRX::init()
@@ -64,23 +90,23 @@ bool LSM6DSRX::init()
     {
         SPITransaction spiTransaction{m_spiSlave};
         spiTransaction.writeRegister(REG_CTRL3_C,
-                                 static_cast<uint8_t>(m_config.bdu));
+                                     static_cast<uint8_t>(m_config.bdu));
     }
 
     // Setup accelerometer (pag. 28)
-    if(!initAccelerometer())
+    if (!initAccelerometer())
     {
         return false;
     }
 
     // Setup gyroscope (pag. 28)
-    if(!initGyroscope())
+    if (!initGyroscope())
     {
         return false;
     }
 
     // setup Fifo (pag. 33)
-    if(!initFifo())
+    if (!initFifo())
     {
         return false;
     }
@@ -94,7 +120,7 @@ bool LSM6DSRX::initAccelerometer()
 
     // Setup accelerometer (pag. 28)
 
-    // set accelerometer odr (pag. 52)
+    // set accelerometer odr, fullscale and high resolution (pag. 52)
     uint8_t accSetup = static_cast<uint8_t>(m_config.odrAcc) << 4 |  // odr
                        static_cast<uint8_t>(m_config.fsAcc) << 2 |  // fullscale
                        0 << 1;  // high resolution selection
@@ -114,13 +140,12 @@ bool LSM6DSRX::initGyroscope()
     // setup pag. 28
 
     // set odr, fullscale pag. 53
-    uint8_t gyrSetup = 1 << 6 | 0 << 2; // odr: 104 Hz | fullscale: +250dps
+    uint8_t gyrSetup = static_cast<uint8_t>(m_config.odrGyr) << 4 |  // odr
+                       static_cast<uint8_t>(m_config.fsGyr);  // fullscale
     spiTransaction.writeRegister(REG_CTRL2_G, gyrSetup);
-    // warning: lowest and highest fullscale (125 & 4000 dps) are selectable from a different bit
 
     // set performance mode pag. 58
-    // for now: normal mode
-    uint8_t gyrPerformanceMode = 1 << 7;
+    uint8_t gyrPerformanceMode = static_cast<uint8_t>(m_config.opModeGyr) << 7;
     spiTransaction.writeRegister(REG_CTRL7_G, gyrPerformanceMode);
 
     return true;
@@ -157,7 +182,7 @@ int16_t LSM6DSRX::combineHighLowBits(uint8_t low, uint8_t high)
     return ret;
 }
 
-void LSM6DSRX::getAccelerometerData(AccData& data)
+void LSM6DSRX::getAccelerometerData(SensorData& data)
 {
     // #ifdef DEBUG    // NOT WORKING
     //     assert(isInit && "init() was not called");  // linter off
@@ -168,7 +193,19 @@ void LSM6DSRX::getAccelerometerData(AccData& data)
     data.z = getAxisData(REG_OUTZ_L_A, REG_OUTZ_H_A, m_sensitivityAcc);
 }
 
-float LSM6DSRX::getAxisData(Registers lowReg, Registers highReg, float sensitivity)
+void LSM6DSRX::getGyroscopeData(SensorData& data)
+{
+    // #ifdef DEBUG    // NOT WORKING
+    //     assert(isInit && "init() was not called");  // linter off
+    // #endif
+
+    data.x = getAxisData(REG_OUTX_L_G, REG_OUTX_H_G, m_sensitivityGyr);
+    data.y = getAxisData(REG_OUTY_L_G, REG_OUTY_H_G, m_sensitivityGyr);
+    data.z = getAxisData(REG_OUTZ_L_G, REG_OUTZ_H_G, m_sensitivityGyr);
+}
+
+float LSM6DSRX::getAxisData(Registers lowReg, Registers highReg,
+                            float sensitivity)
 {
     int8_t low = 0, high = 0;
     int16_t sample = 0;
