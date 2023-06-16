@@ -675,10 +675,6 @@ void LSM6DSRX::readFromFifo()
     uint64_t timestamps[4] = {0};
 
     // reads the number of unread samples in the fifo
-    // numUnreadSamples =
-    //     static_cast<int>(spi.readRegister(LSM6DSRXDefs::REG_FIFO_STATUS1));
-    // value = spi.readRegister(LSM6DSRXDefs::REG_FIFO_STATUS2);
-    // numUnreadSamples |= static_cast<int>(value & 3) << 8;
     numUnreadSamples = unreadDataInFifo();
     if (numUnreadSamples < num)
     {
@@ -766,16 +762,8 @@ void LSM6DSRX::readFromFifo()
             case 0x04:
                 // timestamp data --> update timestamps
 
-                // assemblo dati
-                // uint64_t t = static_cast<uint64_t>(
-                //     getAxisData(LSM6DSRXDefs::REG_FIFO_DATA_OUT_X_L,
-                //                 LSM6DSRXDefs::REG_FIFO_DATA_OUT_X_H));
-                // t |= static_cast<uint64_t>(
-                //             getAxisData(LSM6DSRXDefs::REG_FIFO_DATA_OUT_Y_L,
-                //                         LSM6DSRXDefs::REG_FIFO_DATA_OUT_Y_H))
-                //         << 16;
-                uint64_t t = static_cast<uint64_t>(combineHighLowBits(xl, xh));
-                t |= static_cast<uint64_t>(combineHighLowBits(yl, yh)) << 16;
+                uint32_t t = static_cast<uint32_t>(combineHighLowBits(xl, xh));
+                t |= static_cast<uint32_t>(combineHighLowBits(yl, yh)) << 16;
 
                 timestamps[timeslotTag] = convertTimestamp(t);
 
