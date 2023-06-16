@@ -24,7 +24,7 @@
 
 #include <assert.h>
 #include <utils/Debug.h>
-// #include <miosix.h>
+#include <cmath>
 
 namespace Boardcore
 {
@@ -180,10 +180,16 @@ bool LSM6DSRX::initFifo()
 
 bool LSM6DSRX::selfTestAcc()
 {
-    // p. 114 ap
+    bool returnValue = false;
     uint8_t byteValue = 0;
+    uint8_t idx = 0;
+    const uint8_t SIZE_DATA = 5;
     SPITransaction spi{m_spiSlave};
 
+    SensorData averageSF{0.0,0.0,0.0};// average data during self test
+    SensorData averageNormal{0.0,0.0,0.0};// average normal data
+
+    // set registers
     spi.writeRegister(REG_CTRL1_XL, 0x38);
     spi.writeRegister(REG_CTRL2_G, 0x00);
     spi.writeRegister(REG_CTRL3_C, 0x44);
@@ -195,6 +201,7 @@ bool LSM6DSRX::selfTestAcc()
     spi.writeRegister(REG_CTRL9_XL, 0x00);
     spi.writeRegister(REG_CTRL10_C, 0x00);
 
+    // wait for stable output
     miosix::Thread::sleep(100);
 
     // wait for accelerometer data ready
@@ -207,7 +214,94 @@ bool LSM6DSRX::selfTestAcc()
         byteValue = byteValue & 0x01;
     }
 
-    return true;  //
+    // read and discard data
+    getAxisData(REG_OUTX_L_A, REG_OUTX_H_A);
+    getAxisData(REG_OUTY_L_A, REG_OUTY_H_A);
+    getAxisData(REG_OUTZ_L_A, REG_OUTZ_H_A);
+
+
+    // read normal data (self test disabled)
+    for(idx = 0; idx < SIZE_DATA; ++idx)
+    {
+        // wait for accelerometer data ready
+        byteValue = spi.readRegister(REG_STATUS);
+        byteValue = byteValue & 0x01;
+        while (byteValue != 1)
+        {
+            miosix::Thread::sleep(50);
+            byteValue = spi.readRegister(REG_STATUS);
+            byteValue = byteValue & 0x01;
+        }
+
+        // read data
+        averageNormal.x += static_cast<float>(getAxisData(REG_OUTX_L_A, REG_OUTX_H_A));
+        averageNormal.y += static_cast<float>(getAxisData(REG_OUTY_L_A, REG_OUTY_H_A));
+        averageNormal.z += static_cast<float>(getAxisData(REG_OUTZ_L_A, REG_OUTZ_H_A));
+    }
+    averageNormal.x /= SIZE_DATA;
+    averageNormal.y /= SIZE_DATA;
+    averageNormal.z /= SIZE_DATA;
+
+    // enable accelerometer self test
+    spi.writeRegister(REG_CTRL5_C, 0x01);
+
+    // wait for stable output
+    miosix::Thread::sleep(100);
+
+    // wait for accelerometer data ready
+    byteValue = spi.readRegister(REG_STATUS);
+    byteValue = byteValue & 0x01;
+    while (byteValue != 1)
+    {
+        miosix::Thread::sleep(50);
+        byteValue = spi.readRegister(REG_STATUS);
+        byteValue = byteValue & 0x01;
+    }
+
+    // read and discard data
+    getAxisData(REG_OUTX_L_A, REG_OUTX_H_A);
+    getAxisData(REG_OUTY_L_A, REG_OUTY_H_A);
+    getAxisData(REG_OUTZ_L_A, REG_OUTZ_H_A);
+
+    // read self test data
+    for(idx = 0; idx < SIZE_DATA; ++idx)
+    {
+        // wait for accelerometer data ready
+        byteValue = spi.readRegister(REG_STATUS);
+        byteValue = byteValue & 0x01;
+        while (byteValue != 1)
+        {
+            miosix::Thread::sleep(50);
+            byteValue = spi.readRegister(REG_STATUS);
+            byteValue = byteValue & 0x01;
+        }
+
+        // read data
+        averageSF.x += static_cast<float>(getAxisData(REG_OUTX_L_A, REG_OUTX_H_A));
+        averageSF.y += static_cast<float>(getAxisData(REG_OUTY_L_A, REG_OUTY_H_A));
+        averageSF.z += static_cast<float>(getAxisData(REG_OUTZ_L_A, REG_OUTZ_H_A));
+    }
+    averageSF.x /= SIZE_DATA;
+    averageSF.y /= SIZE_DATA;
+    averageSF.z /= SIZE_DATA;
+
+    if(40.0 <= std::abs(averageSF.x - averageNormal.x) && std::abs(averageSF.x - averageNormal.x) <= 1700.0 &&
+        40.0 <= std::abs(averageSF.y - averageNormal.y) && std::abs(averageSF.y - averageNormal.y) <= 1700.0 &&
+        40.0 <= std::abs(averageSF.z - averageNormal.z) && std::abs(averageSF.z - averageNormal.z) <= 1700.0)
+    {
+        returnValue = true;
+    }
+    else
+    {
+        returnValue = false;
+    }
+
+    // Disable self-test
+    spi.writeRegister(REG_CTRL5_C, 0x00);
+    // Disable sensor
+    spi.writeRegister(REG_CTRL1_XL, 0x00);
+
+    return returnValue;
 }
 
 bool LSM6DSRX::checkWhoAmI()
@@ -259,7 +353,7 @@ bool LSM6DSRX::selfTest()
 
     m_isInit = false;
 
-    if (!selfTestAcc() || !selfTestGyr())
+    if (!selfTestAcc() /*|| !selfTestGyr()*/)
     {
         return false;
     }
