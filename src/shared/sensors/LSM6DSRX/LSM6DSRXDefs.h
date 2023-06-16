@@ -111,6 +111,11 @@ enum Registers
         0x26,  ///< Low bits output register for the gyroscope (z axis)
     REG_OUTZ_H_G =
         0x27,  ///< High bits output register for the gyroscope (z axis)
+
+    REG_TIMESTAMP0 = 0x40,
+    REG_TIMESTAMP1 = 0x41,
+    REG_TIMESTAMP2 = 0x42,
+    REG_TIMESTAMP3 = 0x43,
 };
 
 }  // namespace LSM6DSRXDefs
